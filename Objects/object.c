@@ -168,6 +168,7 @@ PyObject_Print(op, fp, flags)
 		return -1;
 	}
 #endif
+	clearerr(fp); /* Clear any previous error condition */
 	if (op == NULL) {
 		fprintf(fp, "<nil>");
 	}
