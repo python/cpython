@@ -70,6 +70,7 @@ PARTPARSE=	$(PYTHON) tools/partparse.py
 
 # Ideally, you shouldn't need to edit beyond this point
 
+RELEASE=1.5.1
 VERSION=1.5
 
 DVIFILES=	api.dvi ext.dvi lib.dvi tut.dvi
@@ -267,19 +268,19 @@ webcheck:
 	$(WEBCHECKER) -m290000 file:`pwd`/lib/
 	$(WEBCHECKER) file:`pwd`/tut/
 
-lib-info-$(VERSION).tar.gz: $(INFOFILES)
+lib-info-$(RELEASE).tar.gz: $(INFOFILES)
 	tar cf - python-???.info* | gzip -9 >$@
 
-latex-$(VERSION).tar.gz:
+latex-$(RELEASE).tar.gz:
 	tools/mktarball.sh
 
 # This snags a PDF version if available, but doesn't fail if not.
-pdf-$(VERSION).tar.gz: $(PDFFILES)
+pdf-$(RELEASE).tar.gz: $(PDFFILES)
 	if test -f ref/ref.pdf ; then cp ref/ref.pdf . ; else true ; fi
 	tar cf - ???.pdf | gzip -9 >$@
 	if test -f ref.pdf ; then rm ref.pdf ; else true ; fi
 
-postscript-$(VERSION).tar.gz: $(PSFILES) ref/ref.ps
+postscript-$(RELEASE).tar.gz: $(PSFILES) ref/ref.ps
 	cp ref/ref.ps .
 	tar cf - ???.ps | gzip -9 >$@
 	rm ref.ps
@@ -287,17 +288,17 @@ postscript-$(VERSION).tar.gz: $(PSFILES) ref/ref.ps
 tarhtml:
 	@echo "Did you remember to run makeMIFs.py in the ref subdirectory...?"
 	tar cf - index.html ???/???.css ???/*.html */*.gif \
-		| gzip -9 >html-$(VERSION).tar.gz
+		| gzip -9 >html-$(RELEASE).tar.gz
 
 # convenience targets:
 
-tarinfo:  lib-info-$(VERSION).tar.gz
+tarinfo:  lib-info-$(RELEASE).tar.gz
 
-tarps:	postscript-$(VERSION).tar.gz
+tarps:	postscript-$(RELEASE).tar.gz
 
-tarpdf:	pdf-$(VERSION).tar.gz
+tarpdf:	pdf-$(RELEASE).tar.gz
 
-tarlatex: latex-$(VERSION).tar.gz
+tarlatex: latex-$(RELEASE).tar.gz
 
 tarballs:  tarpdf tarps tarhtml tarlatex
 
@@ -310,9 +311,9 @@ tarballs:  tarpdf tarps tarhtml tarlatex
 clean:
 	rm -f @* *~ *.aux *.idx *.ilg *.ind *.log *.toc *.blg *.bbl *.py[co]
 	rm -f *.bak *.orig lib1.texi *.out @webchecker.pickle
-	rm -f html-$(VERSION).tar.gz info-$(VERSION).tar.gz
-	rm -f pdf-$(VERSION).tar.gz postscript-$(VERSION).tar.gz
-	rm -f latex-$(VERSION).tar.gz
+	rm -f html-$(RELEASE).tar.gz info-$(RELEASE).tar.gz
+	rm -f pdf-$(RELEASE).tar.gz postscript-$(RELEASE).tar.gz
+	rm -f latex-$(RELEASE).tar.gz
 
 l2hclean:
 	rm -rf api ext lib tut
