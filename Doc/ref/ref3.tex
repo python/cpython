@@ -1293,6 +1293,32 @@ try calling \method{__rpow__()} (the coercion rules would become too
 complicated).
 \end{methoddesc}
 
+\begin{methoddesc}[numeric object]{__iadd__}{self, other}
+\methodline[numeric object]{__isub__}{self, other}
+\methodline[numeric object]{__imul__}{self, other}
+\methodline[numeric object]{__idiv__}{self, other}
+\methodline[numeric object]{__imod__}{self, other}
+\methodline[numeric object]{__ipow__}{self, other\optional{, modulo}}
+\methodline[numeric object]{__ilshift__}{self, other}
+\methodline[numeric object]{__irshift__}{self, other}
+\methodline[numeric object]{__iand__}{self, other}
+\methodline[numeric object]{__ixor__}{self, other}
+\methodline[numeric object]{__ior__}{self, other}
+These methods are called to implement the augmented arithmetic operations
+(\code{+=}, \code{-=}, \code{*=}, \code{/=}, \code{\%=}, \code{**=},
+\code{<<=}, \code{>>=}, \code{\&=}, \code{\^=}, \code{|=}).  These methods
+should attempt to do the operation in-place (modifying \var{self}) and
+return the result (which could be, but does not have to be, \var{self}).  If
+a specific method is not defined, the augmented operation falls back to the
+normal methods.  For instance, to evaluate the expression
+\var{x}\code{+=}\var{y}, where \var{x} is an instance of a class that has an
+\method{__iadd__()} method, \code{\var{x}.__iadd__(\var{y})} is called.  If
+\var{x} is an instance of a class that does not define a \method{__iadd()}
+method, \code{\var{x}.__add__(\var{y})} and \code{\var{y}.__radd__(\var{x})}
+are considered, as with the evaluation of \var{x}\code{+}\var{y}.
+
+\end{methoddesc}
+
 \begin{methoddesc}[numeric object]{__neg__}{self}
 \methodline[numeric object]{__pos__}{self}
 \methodline[numeric object]{__abs__}{self}
