@@ -141,6 +141,7 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 		  RULES="$RULES$obj: $src; \$(CC) \$(CFLAGS) $cpps -c $src$NL"
 		done
 		OBJS="$OBJS $objs"
+		objs=
 		for src in $srcs
 		do
 		  case $src in
@@ -150,12 +151,14 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 		  *.C)   obj=`basename $src .C`.o; cc='$(CCC)';;
 		  *)     continue;;
 		  esac
+		  objs="$objs $obj"
 		  case $src in
 		  glmodule.c) ;;
 		  *) src='$(srcdir)/'$src;;
 		  esac
 		  RULES="$RULES$obj: $src; $cc \$(CFLAGS) $cpps -c $src$NL"
 		done
+		OBJS="$OBJS $objs"
 	done
 
 	case $noobjects in
