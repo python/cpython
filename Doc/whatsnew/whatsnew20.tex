@@ -3,9 +3,9 @@
 % $Id$
 
 \title{What's New in Python 2.0}
-\release{1.01}
+\release{1.02}
 \author{A.M. Kuchling and Moshe Zadka}
-\authoraddress{\email{akuchlin@mems-exchange.org}, \email{moshez@math.huji.ac.il} }
+\authoraddress{\email{akuchlin@mems-exchange.org}, \email{moshez@twistedmatrix.com} }
 \begin{document}
 \maketitle\tableofcontents
 
@@ -152,11 +152,9 @@ The final interface for Unicode support was arrived at through
 countless often-stormy discussions on the python-dev mailing list, and
 mostly implemented by Marc-Andr\'e Lemburg, based on a Unicode string
 type implementation by Fredrik Lundh.  A detailed explanation of the
-interface is in the file \file{Misc/unicode.txt} in the Python source
-distribution; it's also available on the Web at
-\url{http://starship.python.net/crew/lemburg/unicode-proposal.txt}.
-This article will simply cover the most significant points about the Unicode 
-interfaces.
+interface was written up as \pep{100}, ``Python Unicode Integration''.
+This article will simply cover the most significant points about the
+Unicode interfaces.
 
 In Python source code, Unicode strings are written as
 \code{u"string"}.  Arbitrary Unicode characters can be written using a
@@ -1034,7 +1032,7 @@ parser.parse( 'hamlet.xml' )
 \end{verbatim}
 
 For more information, consult the Python documentation, or the XML
-HOWTO at \url{http://www.python.org/doc/howto/xml/}.
+HOWTO at \url{http://pyxml.sourceforge.net/topics/howto/xml-howto.html}.
 
 \subsection{DOM Support}
 
