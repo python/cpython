@@ -53,6 +53,10 @@ def run_method_tests(test):
 
     test('capitalize', ' hello ', ' hello ')
     test('capitalize', 'hello ', 'Hello ')
+
+    test('count', 'aaa', 3, 'a')
+    test('count', 'aaa', 0, 'b')
+    
     test('find', 'abcdefghiabc', 0, 'abc')
     test('find', 'abcdefghiabc', 9, 'abc', 1)
     test('find', 'abcdefghiabc', -1, 'def', 4)

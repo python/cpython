@@ -1976,7 +1976,7 @@ PyObject *PyUnicode_DecodeCharmap(const char *s,
 		x = Py_None;
 		Py_INCREF(x);
 	    } else
-	    goto onError;
+		goto onError;
 	}
 
 	/* Apply mapping */
@@ -2014,9 +2014,9 @@ PyObject *PyUnicode_DecodeCharmap(const char *s,
 			         (targetsize << 2);
 		    extrachars += needed;
 		    if (_PyUnicode_Resize(v, PyUnicode_GET_SIZE(v) + needed)) {
-		Py_DECREF(x);
-		goto onError;
-	    }
+			Py_DECREF(x);
+			goto onError;
+		    }
 		    p = PyUnicode_AS_UNICODE(v) + oldpos;
 		}
 		Py_UNICODE_COPY(p,
@@ -2112,7 +2112,7 @@ PyObject *PyUnicode_EncodeCharmap(const Py_UNICODE *p,
 		x = Py_None;
 		Py_INCREF(x);
 	    } else
-	    goto onError;
+		goto onError;
 	}
 
 	/* Apply mapping */
@@ -2150,9 +2150,9 @@ PyObject *PyUnicode_EncodeCharmap(const Py_UNICODE *p,
 			         (targetsize << 2);
 		    extrachars += needed;
 		    if (_PyString_Resize(&v, PyString_GET_SIZE(v) + needed)) {
-		Py_DECREF(x);
-		goto onError;
-	    }
+			Py_DECREF(x);
+			goto onError;
+		    }
 		    s = PyString_AS_STRING(v) + oldpos;
 		}
 		memcpy(s,
@@ -2391,6 +2391,17 @@ int count(PyUnicodeObject *self,
 	  PyUnicodeObject *substring)
 {
     int count = 0;
+
+    if (start < 0)
+        start += self->length;
+    if (start < 0)
+        start = 0;
+    if (end > self->length)
+        end = self->length;
+    if (end < 0)
+        end += self->length;
+    if (end < 0)
+        end = 0;
 
     if (substring->length == 0)
 	return (end - start + 1);
