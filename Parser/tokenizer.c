@@ -466,6 +466,7 @@ tok_get(tok, p_start, p_end)
 			tok->done = E_TOKEN;
 			return ERRORTOKEN;
 		}
+		tok->lineno++;
 		goto again; /* Read next line */
 	}
 	
