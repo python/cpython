@@ -31,6 +31,7 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #include "compile.h"
 #include "opcode.h"
 #include "structmember.h"
+#include "osdefs.h"			/* SEP */
 
 #include <ctype.h>
 #ifdef HAVE_LIMITS_H
@@ -304,8 +305,7 @@ static void
 com_error(struct compiling *c, PyObject *exc, char *msg)
 {
 	size_t n = strlen(msg);
-	PyObject *v;
-	char buffer[30];
+	PyObject *v, *tb, *tmp;
 	char *s;
 	c->c_errors++;
 	if (c->c_lineno <= 1) {
@@ -313,15 +313,34 @@ com_error(struct compiling *c, PyObject *exc, char *msg)
 		PyErr_SetString(exc, msg);
 		return;
 	}
-	sprintf(buffer, " (line %d)", c->c_lineno);
-	v = PyString_FromStringAndSize((char *)NULL, n + strlen(buffer));
+	v = PyString_FromString(msg);
 	if (v == NULL)
 		return; /* MemoryError, too bad */
-	s = PyString_AS_STRING((PyStringObject *)v);
-	strcpy(s, msg);
-	strcat(s, buffer);
 	PyErr_SetObject(exc, v);
 	Py_DECREF(v);
+
+	/* add attributes for the line number and filename for the error */
+	PyErr_Fetch(&exc, &v, &tb);
+	PyErr_NormalizeException(&exc, &v, &tb);
+	tmp = PyInt_FromLong(c->c_lineno);
+	if (tmp == NULL)
+		PyErr_Clear();
+	else {
+		if (PyObject_SetAttrString(v, "lineno", tmp))
+			PyErr_Clear();
+		Py_DECREF(tmp);
+	}
+	if (c->c_filename != NULL) {
+		tmp = PyString_FromString(c->c_filename);
+		if (tmp == NULL)
+			PyErr_Clear();
+		else {
+			if (PyObject_SetAttrString(v, "filename", tmp))
+				PyErr_Clear();
+			Py_DECREF(tmp);
+		}
+	}
+	PyErr_Restore(exc, v, tb);
 }
 
 
@@ -1178,7 +1197,7 @@ com_argument(struct compiling *c, node *n, PyObject **pkeywords)
 	if (NCH(n) == 1) {
 		if (*pkeywords != NULL) {
 			com_error(c, PyExc_SyntaxError,
-				   "non-keyword arg after keyword arg");
+				  "non-keyword arg after keyword arg");
 		}
 		else {
 			com_node(c, CHILD(n, 0));
@@ -2997,7 +3016,8 @@ com_arglist(struct compiling *c, node *n)
 			c->c_errors++;
 		}
 		if (PyDict_GetItem(c->c_locals, nameval)) {
-			com_error(c, PyExc_SyntaxError,"duplicate argument in function definition");
+			com_error(c, PyExc_SyntaxError,
+				  "duplicate argument in function definition");
 		}
 		com_newlocal_o(c, nameval);
 		Py_DECREF(nameval);
