@@ -429,6 +429,9 @@ class PyBuildExt(build_ext):
                 libs = []
             exts.append( Extension('crypt', ['cryptmodule.c'], libraries=libs) )
 
+        # CSV files
+        exts.append( Extension('_csv', ['_csv.c']) )
+
         # socket(2)
         exts.append( Extension('_socket', ['socketmodule.c'],
                                depends = ['socketmodule.h']) )
