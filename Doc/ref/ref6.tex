@@ -719,9 +719,9 @@ information.
 
 The \keyword{global} statement is a declaration which holds for the
 entire current code block.  It means that the listed identifiers are to be
-interpreted as globals.  While \emph{using} global names is automatic
-if they are not defined in the local scope, \emph{assigning} to global
-names would be impossible without \keyword{global}.
+interpreted as globals.  It would be impossible to assign to a global
+variable without \keyword{global}, although free variables may refer
+to globals without being declared global.
 \indexiii{global}{name}{binding}
 
 Names listed in a \keyword{global} statement must not be used in the same
