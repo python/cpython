@@ -26,12 +26,11 @@ are initialized at the first call to \function{mktemp()}.
 \begin{datadesc}{tempdir}
 When set to a value other than \code{None}, this variable defines the
 directory in which filenames returned by \function{mktemp()} reside.
-The default is taken from the environment variable \code{TMPDIR}; if
+The default is taken from the environment variable \envvar{TMPDIR}; if
 this is not set, either \file{/usr/tmp} is used (on \UNIX{}), or the
 current working directory (all other systems).  No check is made to
 see whether its value is valid.
 \end{datadesc}
-\ttindex{TMPDIR}
 
 \begin{datadesc}{template}
 When set to a value other than \code{None}, this variable defines the
