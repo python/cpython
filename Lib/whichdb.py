@@ -26,6 +26,7 @@ def whichdb(filename):
         pass
 
     # Check for dumbdbm next -- this has a .dir and and a .dat file
+    try:
         f = open(filename + ".dat", "rb")
         f.close()
         f = open(filename + ".dir", "rb")
