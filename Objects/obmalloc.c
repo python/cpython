@@ -565,8 +565,9 @@ error:
  * Unless the optimizer reorders everything, being too smart...
  */
 
+#undef PyObject_Malloc
 void *
-_PyMalloc_Malloc(size_t nbytes)
+PyObject_Malloc(size_t nbytes)
 {
 	block *bp;
 	poolp pool;
@@ -706,8 +707,9 @@ redirect:
 
 /* free */
 
+#undef PyObject_Free
 void
-_PyMalloc_Free(void *p)
+PyObject_Free(void *p)
 {
 	poolp pool;
 	block *lastfree;
@@ -791,15 +793,16 @@ _PyMalloc_Free(void *p)
  * return a non-NULL result.
  */
 
+#undef PyObject_Realloc
 void *
-_PyMalloc_Realloc(void *p, size_t nbytes)
+PyObject_Realloc(void *p, size_t nbytes)
 {
 	void *bp;
 	poolp pool;
 	uint size;
 
 	if (p == NULL)
-		return _PyMalloc_Malloc(nbytes);
+		return PyObject_Malloc(nbytes);
 
 	pool = POOL_ADDR(p);
 	if (ADDRESS_IN_RANGE(p, pool->arenaindex)) {
@@ -811,10 +814,10 @@ _PyMalloc_Realloc(void *p, size_t nbytes)
 			return p;
 		/* We need more memory. */
 		assert(nbytes != 0);
-		bp = _PyMalloc_Malloc(nbytes);
+		bp = PyObject_Malloc(nbytes);
 		if (bp != NULL) {
 			memcpy(bp, p, size);
-			_PyMalloc_Free(p);
+			PyObject_Free(p);
 		}
 		return bp;
 	}
@@ -822,7 +825,7 @@ _PyMalloc_Realloc(void *p, size_t nbytes)
 	INCTHEIRS;
 	if (nbytes <= SMALL_REQUEST_THRESHOLD) {
 		/* Take over this block. */
-		bp = _PyMalloc_Malloc(nbytes ? nbytes : 1);
+		bp = PyObject_Malloc(nbytes ? nbytes : 1);
 		if (bp != NULL) {
 			memcpy(bp, p, nbytes);
 			free(p);
@@ -845,58 +848,27 @@ _PyMalloc_Realloc(void *p, size_t nbytes)
 #else	/* ! WITH_PYMALLOC */
 
 /*==========================================================================*/
-/* pymalloc not enabled:  Redirect the entry points to the PyMem family. */
+/* pymalloc not enabled:  Redirect the entry points to malloc.  These will
+ * only be used by extensions that are compiled with pymalloc enabled. */
 
 void *
-_PyMalloc_Malloc(size_t n)
+PyObject_Malloc(size_t n)
 {
 	return PyMem_MALLOC(n);
 }
 
 void *
-_PyMalloc_Realloc(void *p, size_t n)
+PyObject_Realloc(void *p, size_t n)
 {
 	return PyMem_REALLOC(p, n);
 }
 
 void
-_PyMalloc_Free(void *p)
+PyObject_Free(void *p)
 {
 	PyMem_FREE(p);
 }
 #endif /* WITH_PYMALLOC */
-
-/*==========================================================================*/
-/* Regardless of whether pymalloc is enabled, export entry points for
- * the object-oriented pymalloc functions.
- */
-
-PyObject *
-_PyMalloc_New(PyTypeObject *tp)
-{
-	PyObject *op;
-	op = (PyObject *) _PyMalloc_MALLOC(_PyObject_SIZE(tp));
-	if (op == NULL)
-		return PyErr_NoMemory();
-	return PyObject_INIT(op, tp);
-}
-
-PyVarObject *
-_PyMalloc_NewVar(PyTypeObject *tp, int nitems)
-{
-	PyVarObject *op;
-	const size_t size = _PyObject_VAR_SIZE(tp, nitems);
-	op = (PyVarObject *) _PyMalloc_MALLOC(size);
-	if (op == NULL)
-		return (PyVarObject *)PyErr_NoMemory();
-	return PyObject_INIT_VAR(op, tp, nitems);
-}
-
-void
-_PyMalloc_Del(PyObject *op)
-{
-	_PyMalloc_FREE(op);
-}
 
 #ifdef PYMALLOC_DEBUG
 /*==========================================================================*/
@@ -955,14 +927,14 @@ p[4:8]
 p[8:8+n]
     The requested memory, filled with copies of PYMALLOC_CLEANBYTE.
     Used to catch reference to uninitialized memory.
-    &p[8] is returned.  Note that this is 8-byte aligned if PyMalloc
+    &p[8] is returned.  Note that this is 8-byte aligned if pymalloc
     handled the request itself.
 p[8+n:8+n+4]
     Copies of PYMALLOC_FORBIDDENBYTE.  Used to catch over- writes
     and reads.
 p[8+n+4:8+n+8]
-    A serial number, incremented by 1 on each call to _PyMalloc_DebugMalloc
-    and _PyMalloc_DebugRealloc.
+    A serial number, incremented by 1 on each call to _PyObject_DebugMalloc
+    and _PyObject_DebugRealloc.
     4-byte unsigned integer, big-endian.
     If "bad memory" is detected later, the serial number gives an
     excellent way to set a breakpoint on the next run, to capture the
@@ -970,7 +942,7 @@ p[8+n+4:8+n+8]
 */
 
 void *
-_PyMalloc_DebugMalloc(size_t nbytes)
+_PyObject_DebugMalloc(size_t nbytes)
 {
 	uchar *p;	/* base address of malloc'ed block */
 	uchar *tail;	/* p + 8 + nbytes == pointer to tail pad bytes */
@@ -987,7 +959,7 @@ _PyMalloc_DebugMalloc(size_t nbytes)
 		return NULL;
 	}
 
-	p = _PyMalloc_Malloc(total);
+	p = PyObject_Malloc(total);
 	if (p == NULL)
 		return NULL;
 
@@ -1010,31 +982,31 @@ _PyMalloc_DebugMalloc(size_t nbytes)
    Then calls the underlying free.
 */
 void
-_PyMalloc_DebugFree(void *p)
+_PyObject_DebugFree(void *p)
 {
 	uchar *q = (uchar *)p;
 	size_t nbytes;
 
 	if (p == NULL)
 		return;
-	_PyMalloc_DebugCheckAddress(p);
+	_PyObject_DebugCheckAddress(p);
 	nbytes = read4(q-8);
 	if (nbytes > 0)
 		memset(q, PYMALLOC_DEADBYTE, nbytes);
-	_PyMalloc_Free(q-8);
+	PyObject_Free(q-8);
 }
 
 void *
-_PyMalloc_DebugRealloc(void *p, size_t nbytes)
+_PyObject_DebugRealloc(void *p, size_t nbytes)
 {
 	uchar *q = (uchar *)p;
 	size_t original_nbytes;
 	void *fresh;	/* new memory block, if needed */
 
 	if (p == NULL)
-		return _PyMalloc_DebugMalloc(nbytes);
+		return _PyObject_DebugMalloc(nbytes);
 
-	_PyMalloc_DebugCheckAddress(p);
+	_PyObject_DebugCheckAddress(p);
 	original_nbytes = read4(q-8);
 	if (nbytes == original_nbytes) {
 		/* note that this case is likely to be common due to the
@@ -1061,21 +1033,21 @@ _PyMalloc_DebugRealloc(void *p, size_t nbytes)
 	assert(nbytes != 0);
 	/* More memory is needed:  get it, copy over the first original_nbytes
 	   of the original data, and free the original memory. */
-	fresh = _PyMalloc_DebugMalloc(nbytes);
+	fresh = _PyObject_DebugMalloc(nbytes);
 	if (fresh != NULL) {
 		if (original_nbytes > 0)
 			memcpy(fresh, p, original_nbytes);
-		_PyMalloc_DebugFree(p);
+		_PyObject_DebugFree(p);
 	}
 	return fresh;
 }
 
 /* Check the forbidden bytes on both ends of the memory allocated for p.
- * If anything is wrong, print info to stderr via _PyMalloc_DebugDumpAddress,
+ * If anything is wrong, print info to stderr via _PyObject_DebugDumpAddress,
  * and call Py_FatalError to kill the program.
  */
  void
-_PyMalloc_DebugCheckAddress(const void *p)
+_PyObject_DebugCheckAddress(const void *p)
 {
 	const uchar *q = (const uchar *)p;
 	char *msg;
@@ -1107,13 +1079,13 @@ _PyMalloc_DebugCheckAddress(const void *p)
 	return;
 
 error:
-	_PyMalloc_DebugDumpAddress(p);
+	_PyObject_DebugDumpAddress(p);
 	Py_FatalError(msg);
 }
 
 /* Display info to stderr about the memory block at p. */
 void
-_PyMalloc_DebugDumpAddress(const void *p)
+_PyObject_DebugDumpAddress(const void *p)
 {
 	const uchar *q = (const uchar *)p;
 	const uchar *tail;
@@ -1236,7 +1208,7 @@ printone(const char* msg, ulong value)
 
 /* Print summary info to stderr about the state of pymalloc's structures. */
 void
-_PyMalloc_DebugDumpStats(void)
+_PyObject_DebugDumpStats(void)
 {
 	uint i;
 	const uint numclasses = SMALL_REQUEST_THRESHOLD >> ALIGNMENT_SHIFT;
