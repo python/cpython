@@ -1076,6 +1076,7 @@ class BaseWidget(Misc):
 		self.tk.call('destroy', self._w)
 		Misc.destroy(self)
 	def _do(self, name, args=()):
+		# XXX Obsolete -- better use self.tk.call directly!
 		return self.tk.call((self._w, name) + args)
 
 class Widget(BaseWidget, Pack, Place, Grid):
@@ -1142,7 +1143,7 @@ class Canvas(Widget):
 	def __init__(self, master=None, cnf={}, **kw):
 		Widget.__init__(self, master, 'canvas', cnf, kw)
 	def addtag(self, *args):
-		self._do('addtag', args)
+		self.tk.call((self._w, 'addtag') + args)
 	def addtag_above(self, newtag, tagOrId):
 		self.addtag(newtag, 'above', tagOrId)
 	def addtag_all(self, newtag):
@@ -1158,7 +1159,8 @@ class Canvas(Widget):
 	def addtag_withtag(self, newtag, tagOrId):
 		self.addtag(newtag, 'withtag', tagOrId)
 	def bbox(self, *args):
-		return self._getints(self._do('bbox', args)) or None
+		return self._getints(
+			self.tk.call((self._w, 'bbox') + args)) or None
 	def tag_unbind(self, tagOrId, sequence, funcid=None):
 		self.tk.call(self._w, 'bind', tagOrId, sequence, '')
 		if funcid:
@@ -1175,7 +1177,8 @@ class Canvas(Widget):
 	def coords(self, *args):
 		# XXX Should use _flatten on args
 		return map(getdouble,
-                           self.tk.splitlist(self._do('coords', args)))
+                           self.tk.splitlist(
+				   self.tk.call((self._w, 'coords') + args)))
 	def _create(self, itemType, args, kw): # Args: (val, val, ..., cnf={})
 		args = _flatten(args)
 		cnf = args[-1]
@@ -1206,13 +1209,14 @@ class Canvas(Widget):
 	def create_window(self, *args, **kw):
 		return self._create('window', args, kw)
 	def dchars(self, *args):
-		self._do('dchars', args)
+		self.tk.call((self._w, 'dchars') + args)
 	def delete(self, *args):
-		self._do('delete', args)
+		self.tk.call((self._w, 'delete') + args)
 	def dtag(self, *args):
-		self._do('dtag', args)
+		self.tk.call((self._w, 'dtag') + args)
 	def find(self, *args):
-		return self._getints(self._do('find', args)) or ()
+		return self._getints(
+			self.tk.call((self._w, 'find') + args)) or ()
 	def find_above(self, tagOrId):
 		return self.find('above', tagOrId)
 	def find_all(self):
@@ -1228,42 +1232,46 @@ class Canvas(Widget):
 	def find_withtag(self, tagOrId):
 		return self.find('withtag', tagOrId)
 	def focus(self, *args):
-		return self._do('focus', args)
+		return self.tk.call((self._w, 'focus') + args)
 	def gettags(self, *args):
-		return self.tk.splitlist(self._do('gettags', args))
+		return self.tk.splitlist(
+			self.tk.call((self._w, 'gettags') + args))
 	def icursor(self, *args):
-		self._do('icursor', args)
+		self.tk.call((self._w, 'icursor') + args)
 	def index(self, *args):
-		return getint(self._do('index', args))
+		return getint(self.tk.call((self._w, 'index') + args))
 	def insert(self, *args):
-		self._do('insert', args)
+		self.tk.call((self._w, 'insert') + args)
 	def itemcget(self, tagOrId, option):
-		return self._do('itemcget', (tagOrId, '-'+option))
+		return self.tk.call(
+			(self._w, 'itemcget') + (tagOrId, '-'+option))
 	def itemconfigure(self, tagOrId, cnf=None, **kw):
 		if cnf is None and not kw:
 			cnf = {}
 			for x in self.tk.split(
-				self._do('itemconfigure', (tagOrId,))):
+				self.tk.call(self._w,
+					     'itemconfigure', tagOrId)):
 				cnf[x[0][1:]] = (x[0][1:],) + x[1:]
 			return cnf
 		if type(cnf) == StringType and not kw:
-			x = self.tk.split(self._do('itemconfigure',
-						   (tagOrId, '-'+cnf,)))
+			x = self.tk.split(self.tk.call(
+				self._w, 'itemconfigure', tagOrId, '-'+cnf))
 			return (x[0][1:],) + x[1:]
-		self._do('itemconfigure', (tagOrId,)
-			 + self._options(cnf, kw))
+		self.tk.call((self._w, 'itemconfigure', tagOrId) +
+			     self._options(cnf, kw))
 	itemconfig = itemconfigure
 	def lower(self, *args):
-		self._do('lower', args)
+		self.tk.call((self._w, 'lower') + args)
 	def move(self, *args):
-		self._do('move', args)
+		self.tk.call((self._w, 'move') + args)
 	def postscript(self, cnf={}, **kw):
-		return self._do('postscript', self._options(cnf, kw))
+		return self.tk.call((self._w, 'postscript') +
+				    self._options(cnf, kw))
 	def tkraise(self, *args):
-		self._do('raise', args)
+		self.tk.call((self._w, 'raise') + args)
 	lift = tkraise
 	def scale(self, *args):
-		self._do('scale', args)
+		self.tk.call((self._w, 'scale') + args)
 	def scan_mark(self, x, y):
 		self.tk.call(self._w, 'scan', 'mark', x, y)
 	def scan_dragto(self, x, y):
@@ -1283,11 +1291,11 @@ class Canvas(Widget):
 	def xview(self, *args):
 		if not args:
 			return self._getdoubles(self.tk.call(self._w, 'xview'))
-		self.tk.call((self._w, 'xview')+args)
+		self.tk.call((self._w, 'xview') + args)
 	def yview(self, *args):
 		if not args:
 			return self._getdoubles(self.tk.call(self._w, 'yview'))
-		self.tk.call((self._w, 'yview')+args)
+		self.tk.call((self._w, 'yview') + args)
 
 class Checkbutton(Widget):
 	def __init__(self, master=None, cnf={}, **kw):
@@ -1369,7 +1377,8 @@ class Listbox(Widget):
 	def activate(self, index):
 		self.tk.call(self._w, 'activate', index)
 	def bbox(self, *args):
-		return self._getints(self._do('bbox', args)) or None
+		return self._getints(
+			self.tk.call((self._w, 'bbox') + args)) or None
 	def curselection(self):
 		# XXX Ought to apply self._getints()...
 		return self.tk.splitlist(self.tk.call(
@@ -1416,11 +1425,11 @@ class Listbox(Widget):
 	def xview(self, *what):
 		if not what:
 			return self._getdoubles(self.tk.call(self._w, 'xview'))
-		self.tk.call((self._w, 'xview')+what)
+		self.tk.call((self._w, 'xview') + what)
 	def yview(self, *what):
 		if not what:
 			return self._getdoubles(self.tk.call(self._w, 'yview'))
-		self.tk.call((self._w, 'yview')+what)
+		self.tk.call((self._w, 'yview') + what)
 
 class Menu(Widget):
 	def __init__(self, master=None, cnf={}, **kw):
@@ -1452,8 +1461,8 @@ class Menu(Widget):
 	def activate(self, index):
 		self.tk.call(self._w, 'activate', index)
 	def add(self, itemType, cnf={}, **kw):
-		self.tk.call((self._w, 'add', itemType) 
-		      + self._options(cnf, kw))
+		self.tk.call((self._w, 'add', itemType) +
+			     self._options(cnf, kw))
 	def add_cascade(self, cnf={}, **kw):
 		self.add('cascade', cnf or kw)
 	def add_checkbutton(self, cnf={}, **kw):
@@ -1465,8 +1474,8 @@ class Menu(Widget):
 	def add_separator(self, cnf={}, **kw):
 		self.add('separator', cnf or kw)
 	def insert(self, index, itemType, cnf={}, **kw):
-		self.tk.call((self._w, 'insert', index, itemType) 
-		      + self._options(cnf, kw))
+		self.tk.call((self._w, 'insert', index, itemType) +
+			     self._options(cnf, kw))
 	def insert_cascade(self, index, cnf={}, **kw):
 		self.insert(index, 'cascade', cnf or kw)
 	def insert_checkbutton(self, index, cnf={}, **kw):
@@ -1558,13 +1567,14 @@ class Scrollbar(Widget):
 	def get(self):
 		return self._getdoubles(self.tk.call(self._w, 'get'))
 	def set(self, *args):
-		self.tk.call((self._w, 'set')+args)
+		self.tk.call((self._w, 'set') + args)
 
 class Text(Widget):
 	def __init__(self, master=None, cnf={}, **kw):
 		Widget.__init__(self, master, 'text', cnf, kw)
 	def bbox(self, *args):
-		return self._getints(self._do('bbox', args)) or None
+		return self._getints(
+			self.tk.call((self._w, 'bbox') + args)) or None
 	def tk_textSelectTo(self, index):
 		self.tk.call('tk_textSelectTo', self._w, index)
 	def tk_textBackspace(self):
@@ -1588,7 +1598,7 @@ class Text(Widget):
 	def index(self, index):
 		return self.tk.call(self._w, 'index', index)
 	def insert(self, index, chars, *args):
-		self.tk.call((self._w, 'insert', index, chars)+args)
+		self.tk.call((self._w, 'insert', index, chars) + args)
 	def mark_gravity(self, markName, direction=None):
 		return self.tk.call(
 			(self._w, 'mark', 'gravity', markName, direction))
@@ -1693,13 +1703,13 @@ class Text(Widget):
 	def xview(self, *what):
 		if not what:
 			return self._getdoubles(self.tk.call(self._w, 'xview'))
-		self.tk.call((self._w, 'xview')+what)
+		self.tk.call((self._w, 'xview') + what)
 	def yview(self, *what):
 		if not what:
 			return self._getdoubles(self.tk.call(self._w, 'yview'))
-		self.tk.call((self._w, 'yview')+what)
+		self.tk.call((self._w, 'yview') + what)
 	def yview_pickplace(self, *what):
-		self.tk.call((self._w, 'yview', '-pickplace')+what)
+		self.tk.call((self._w, 'yview', '-pickplace') + what)
 
 class _setit:
 	def __init__(self, var, value):
