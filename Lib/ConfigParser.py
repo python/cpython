@@ -361,9 +361,9 @@ class ConfigParser:
                 sectdict = self.__sections[section]
             except KeyError:
                 raise NoSectionError(section)
-        existed = sectdict.has_key(key)
+        existed = sectdict.has_key(option)
         if existed:
-            del sectdict[key]
+            del sectdict[option]
         return existed
 
     def remove_section(self, section):
