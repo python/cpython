@@ -194,13 +194,19 @@ An \class{IMAP4} instance has the following methods:
 \end{methoddesc}
 
 
-\class{IMAP4} instances have a variable \member{PROTOCOL_VERSION} that
-is set to the most recent supported protocol in the \samp{CAPABILITY}
-response.
+The following attributes are defined on instances of \class{IMAP4}:
 
-Finally, \class{IMAP4} instances have a variable debug which can be
-set to an integer to turn on debugging.  Values greater than 3 trace
-each command.
+
+\begin{memberdesc}{PROTOCOL_VERSION}
+The most recent supported protocol in the \samp{CAPABILITY}
+response from the server.
+\end{memberdesc}
+
+\begin{memberdesc}{debug}
+Integer value to control debugging output.  The initialize value is
+taken from the module variable \code{Debug}.  Values greater than
+three trace each command.
+\end{memberdesc}
 
 
 \subsection{IMAP4 Example}
