@@ -12,6 +12,9 @@ What's New in Python 2.3 alpha 2?
 Core and builtins
 -----------------
 
+- compile(), eval() and the exec statement now fully support source code
+  passed as unicode strings.
+
 - int subclasses can be initialized with longs if the value fits in an int.
   See SF bug #683467.
 
