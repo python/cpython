@@ -57,10 +57,11 @@ extern void init_winreg(void);
 extern void initdatetime(void);
 
 extern void init_multibytecodec(void);
-extern void init_codecs_mapdata_ja_JP(void);
-extern void init_codecs_mapdata_ko_KR(void);
-extern void init_codecs_mapdata_zh_CN(void);
-extern void init_codecs_mapdata_zh_TW(void);
+extern void init_codecs_cn(void);
+extern void init_codecs_hk(void);
+extern void init_codecs_jp(void);
+extern void init_codecs_kr(void);
+extern void init_codecs_tw(void);
 
 /* tools/freeze/makeconfig.py marker for additional "extern" */
 /* -- ADDMODULE MARKER 1 -- */
@@ -129,10 +130,11 @@ struct _inittab _PyImport_Inittab[] = {
 
 	/* CJK codecs */
 	{"_multibytecodec", init_multibytecodec},
-	{"_codecs_mapdata_ja_JP", init_codecs_mapdata_ja_JP},
-	{"_codecs_mapdata_ko_KR", init_codecs_mapdata_ko_KR},
-	{"_codecs_mapdata_zh_CN", init_codecs_mapdata_zh_CN},
-	{"_codecs_mapdata_zh_TW", init_codecs_mapdata_zh_TW},
+	{"_codecs_cn", init_codecs_cn},
+	{"_codecs_hk", init_codecs_hk},
+	{"_codecs_jp", init_codecs_jp},
+	{"_codecs_kr", init_codecs_kr},
+	{"_codecs_tw", init_codecs_tw},
 
 /* tools/freeze/makeconfig.py marker for additional "_inittab" entries */
 /* -- ADDMODULE MARKER 2 -- */
