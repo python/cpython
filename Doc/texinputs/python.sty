@@ -821,28 +821,34 @@
 % Cross-referencing (AMK, new impl. FLD)
 % Sample usage:
 %  \begin{seealso}
-%    \seemodule{rand}{Uniform random number generator}; % Module xref
-%    \seetext{\emph{Encyclopedia Britannica}}.          % Ref to a book
+%    \seemodule{rand}{Uniform random number generator.}; % Module xref
+%    \seetext{\emph{Encyclopedia Britannica}}.           % Ref to a book
 % 
 %    % A funky case: module name contains '_'; have to supply an optional key
-%    \seemodule[copyreg]{copy_reg}{pickle interface constructor registration}
-%
+%    \seemodule[copyreg]{copy_reg}{Interface constructor registration for
+%                                  \module{pickle}.}
 %  \end{seealso}
+%
+% Note that the last parameter for \seemodule and \seetext should be complete
+% sentences and be terminated with the proper punctuation.
 
 \@ifundefined{pdfannotlink}{%
   \newcommand{\py@seemodule}[3][\py@modulebadkey]{%
     \par%
     \ifx\py@modulebadkey#1\def\py@modulekey{#2}\else\def\py@modulekey{#1}\fi%
-    \ref{module-\py@modulekey}:\quad %
-    Module \module{#2}%
-    \quad (#3)%
+    \begin{fulllineitems}
+      \item[Module \module{#2} (section \ref{module-\py@modulekey}):]
+      #3
+    \end{fulllineitems}
   }
 }{\newcommand{\py@seemodule}[3][\py@modulebadkey]{%
     \par%
     \ifx\py@modulebadkey#1\def\py@modulekey{#2}\else\def\py@modulekey{#1}\fi%
-    \ref{module-\py@modulekey}:\quad %
-    \py@linkToName{label-module-\py@modulekey}{ Module \module{#2} }
-    \quad (#3)%
+    \begin{fulllineitems}
+      \item[\py@linkToName{label-module-\py@modulekey}{Module \module{#2}}
+            (section \ref{module-\py@modulekey}):]
+      #3
+    \end{fulllineitems}
   }
 }
 \newenvironment{seealso}[0]{

@@ -1081,12 +1081,16 @@ sub do_cmd_seemodule{
     my $key = next_optional_argument();
     my $module = next_argument();
     my $text = next_argument();
+    my $period = '.';
     $key = $module
         unless $key;
-    return '<div class=seemodule>'
-      . "\n<p>Module <b><tt class=module><a href=\"module-$key.html\">"
-      . "$module</a></tt></b>"
-      . "&nbsp;&nbsp;&nbsp;($text)</p>\n</div>"
+    if ($text =~ /\.$/) {
+	$period = '';
+    }
+    return '<dl compact class=seemodule>'
+      . "\n    <dt>Module <b><tt class=module><a href=\"module-$key.html\">"
+      . "$module</a></tt>:</b>"
+      . "\n    <dd>$text$period\n  </dl>"
       . $_;
 }
 
