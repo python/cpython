@@ -104,7 +104,7 @@ static PyUnicodeObject *unicode_latin1[256];
 static char unicode_default_encoding[100];
 
 Py_UNICODE
-PyUnicode_GetMax()
+PyUnicode_GetMax(void)
 {
 #ifdef Py_UNICODE_WIDE
 	return 0x10FFFF;
@@ -1081,17 +1081,12 @@ PyObject *PyUnicode_DecodeUTF16(const char *s,
 #endif
 	    if (0xDC00 <= ch2 && ch2 <= 0xDFFF) {
 #ifndef Py_UNICODE_WIDE
-		/* This is valid data (a UTF-16 surrogate pair), but
-		   we are not able to store this information since our
-		   Py_UNICODE type only has 16 bits... this might
-		   change someday, even though it's unlikely. */
-		errmsg = "code pairs are not supported";
-		goto utf16Error;
+		*p++ = ch;
+		*p++ = ch2;
 #else
 		*p++ = (((ch & 0x3FF)<<10) | (ch2 & 0x3FF)) + 0x10000;
-		continue;
 #endif
-		
+		continue;
 	    }
 	    else {
                 errmsg = "illegal UTF-16 surrogate";
@@ -1325,7 +1320,8 @@ PyObject *PyUnicode_DecodeUnicodeEscape(const char *s,
                 /* UCS-2 character */
                 *p++ = (Py_UNICODE) chr;
             else if (chr <= 0x10ffff) {
-                /* UCS-4 character. Either store directly, or as surrogate pair. */
+                /* UCS-4 character. Either store directly, or as
+		   surrogate pair. */
 #ifdef Py_UNICODE_WIDE
                 *p++ = chr;
 #else
@@ -1446,24 +1442,50 @@ PyObject *unicodeescape_string(const Py_UNICODE *s,
         else if (ch >= 0x10000) {
             *p++ = '\\';
             *p++ = 'U';
-            *p++ = hexdigit[(ch >> 28) & 0xf];
-            *p++ = hexdigit[(ch >> 24) & 0xf];
-            *p++ = hexdigit[(ch >> 20) & 0xf];
-            *p++ = hexdigit[(ch >> 16) & 0xf];
-            *p++ = hexdigit[(ch >> 12) & 0xf];
-            *p++ = hexdigit[(ch >> 8) & 0xf];
-            *p++ = hexdigit[(ch >> 4) & 0xf];
+            *p++ = hexdigit[(ch >> 28) & 0x0000000F];
+            *p++ = hexdigit[(ch >> 24) & 0x0000000F];
+            *p++ = hexdigit[(ch >> 20) & 0x0000000F];
+            *p++ = hexdigit[(ch >> 16) & 0x0000000F];
+            *p++ = hexdigit[(ch >> 12) & 0x0000000F];
+            *p++ = hexdigit[(ch >> 8) & 0x0000000F];
+            *p++ = hexdigit[(ch >> 4) & 0x0000000F];
             *p++ = hexdigit[ch & 15];
         }
 #endif
+	/* Map UTF-16 surrogate pairs to Unicode \UXXXXXXXX escapes */
+	else if (ch >= 0xD800 && ch < 0xDC00) {
+	    Py_UNICODE ch2;
+	    Py_UCS4 ucs;
+	    
+	    ch2 = *s++;
+	    size--;
+	    if (ch2 >= 0xDC00 && ch2 <= 0xDFFF) {
+		ucs = (((ch & 0x03FF) << 10) | (ch2 & 0x03FF)) + 0x00010000;
+		*p++ = '\\';
+		*p++ = 'U';
+		*p++ = hexdigit[(ucs >> 28) & 0x0000000F];
+		*p++ = hexdigit[(ucs >> 24) & 0x0000000F];
+		*p++ = hexdigit[(ucs >> 20) & 0x0000000F];
+		*p++ = hexdigit[(ucs >> 16) & 0x0000000F];
+		*p++ = hexdigit[(ucs >> 12) & 0x0000000F];
+		*p++ = hexdigit[(ucs >> 8) & 0x0000000F];
+		*p++ = hexdigit[(ucs >> 4) & 0x0000000F];
+		*p++ = hexdigit[ucs & 0x0000000F];
+		continue;
+	    }
+	    /* Fall through: isolated surrogates are copied as-is */
+	    s--;
+	    size++;
+	}
+
         /* Map 16-bit characters to '\uxxxx' */
-        else if (ch >= 256) {
+        if (ch >= 256) {
             *p++ = '\\';
             *p++ = 'u';
-            *p++ = hexdigit[(ch >> 12) & 0xf];
-            *p++ = hexdigit[(ch >> 8) & 0xf];
-            *p++ = hexdigit[(ch >> 4) & 0xf];
-            *p++ = hexdigit[ch & 15];
+            *p++ = hexdigit[(ch >> 12) & 0x000F];
+            *p++ = hexdigit[(ch >> 8) & 0x000F];
+            *p++ = hexdigit[(ch >> 4) & 0x000F];
+            *p++ = hexdigit[ch & 0x000F];
         }
         /* Map special whitespace to '\t', \n', '\r' */
         else if (ch == '\t') {
@@ -1482,8 +1504,8 @@ PyObject *unicodeescape_string(const Py_UNICODE *s,
         else if (ch < ' ' || ch >= 128) {
             *p++ = '\\';
             *p++ = 'x';
-            *p++ = hexdigit[(ch >> 4) & 0xf];
-            *p++ = hexdigit[ch & 15];
+            *p++ = hexdigit[(ch >> 4) & 0x000F];
+            *p++ = hexdigit[ch & 0x000F];
         } 
         /* Copy everything else as-is */
         else
