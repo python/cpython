@@ -126,7 +126,7 @@ def heappush(heap, item):
     pos = len(heap)
     heap.append(None)
     while pos:
-        parentpos = (pos - 1) / 2
+        parentpos = (pos - 1) >> 1
         parent = heap[parentpos]
         if item >= parent:
             break
