@@ -1265,14 +1265,14 @@ extending the Distutils.)
 \subsection{Creating Windows Installers}
 \label{creating-wininst}
 
-Executable installers are the natural format for binary
-distributions on Windows.  They display a nice graphical user interface,
-display some information about the module distribution to be installed taken
+Executable installers are the natural format for binary distributions
+on Windows.  They display a nice graphical user interface, display
+some information about the module distribution to be installed taken
 from the metadata in the setup script, let the user select a few
-(currently maybe too few) options, and start or cancel the installation.
+options, and start or cancel the installation.
 
-Since the metadata is taken from the setup script, creating
-Windows installers is usually as easy as running:
+Since the metadata is taken from the setup script, creating Windows
+installers is usually as easy as running:
 
 \begin{verbatim}
 python setup.py bdist_wininst
@@ -1284,22 +1284,36 @@ or the \command{bdist} command with the \longprogramopt{formats} option:
 python setup.py bdist --formats=wininst
 \end{verbatim}
 
-If you have a pure module distribution (only containing pure
-Python modules and packages), the resulting installer will be
-version independent and have a name like \file{foo-1.0.win32.exe}.
-These installers can even be created on \UNIX{} or MacOS platforms.
+If you have a pure module distribution (only containing pure Python
+modules and packages), the resulting installer will be version
+independent and have a name like \file{foo-1.0.win32.exe}.  These
+installers can even be created on \UNIX{} or MacOS platforms.
 
 If you have a non-pure distribution, the extensions can only be
 created on a Windows platform, and will be Python version dependent.
 The installer filename will reflect this and now has the form
-\file{foo-1.0.win32-py2.0.exe}. You have to create a separate installer
+\file{foo-1.0.win32-py2.0.exe}.  You have to create a separate installer
 for every Python version you want to support.
 
 The installer will try to compile pure modules into bytecode after
-installation on the target system in normal and optimizing mode.
-If you don't want this to happen for some reason, you can run
-the bdist_wininst command with the \longprogramopt{no-target-compile} and/or
-the \longprogramopt{no-target-optimize} option.
+installation on the target system in normal and optimizing mode.  If
+you don't want this to happen for some reason, you can run the
+bdist_wininst command with the \longprogramopt{no-target-compile}
+and/or the \longprogramopt{no-target-optimize} option.
+
+By default the installer will display the cool Python powered logo
+when it is run, but you can also supply your own bitmap which must be
+a Windows .bmp file with the \longprogramopt{bitmap} option.
+
+The installer will also display a large title on the desktop
+background window when it is run, which is constructed from the name
+of your distribution and the version number.  This can be changed to
+another text by using the \longprogramopt{title} option.
+
+The installer file will be written to the ``distribution directory''
+--- normally \file{dist/}, but customizable with the
+\longprogramopt{dist-dir} option.
+
 
 \section{Examples}
 \label{examples}
