@@ -7,8 +7,13 @@
 extern "C" {
 #endif
 
+/* These flags are named after the __future__ statements that introduced
+   them.  May not remain true for later additions, so fiddle this comment
+   accordingly then. */
+#define PyCF_NESTED_SCOPES	(0x00000001UL)
+#define PyCF_GENERATORS		(0x00000002UL)
 typedef struct {
-	int cf_nested_scopes;
+	unsigned long cf_flags;  /* bitmask of PyCF_xxx flags */
 } PyCompilerFlags;
 
 DL_IMPORT(void) Py_SetProgramName(char *);

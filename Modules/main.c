@@ -298,7 +298,7 @@ Py_Main(int argc, char **argv)
 			Py_DECREF(v);
 	}
 
-	cf.cf_nested_scopes = 0;
+	cf.cf_flags = 0;
 
 	if (command) {
 		sts = PyRun_SimpleString(command) != 0;

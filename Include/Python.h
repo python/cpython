@@ -96,8 +96,8 @@
 #include "pystate.h"
 
 #include "modsupport.h"
-#include "ceval.h"
 #include "pythonrun.h"
+#include "ceval.h"
 #include "sysmodule.h"
 #include "intrcheck.h"
 #include "import.h"

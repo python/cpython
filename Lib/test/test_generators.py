@@ -1,3 +1,5 @@
+from __future__ import generators
+
 tutorial_tests = """
 Let's try a simple generator:
 

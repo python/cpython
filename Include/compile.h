@@ -34,6 +34,13 @@ typedef struct {
 #define CO_VARKEYWORDS	0x0008
 #define CO_NESTED       0x0010
 #define CO_GENERATOR    0x0020
+/* XXX Temporary hack.  Until generators are a permanent part of the
+   language, we need a way for a code object to record that generators
+   were *possible* when it was compiled.  This is so code dynamically
+   compiled *by* a code object knows whether to allow yield stmts.  In
+   effect, this passes on the "from __future__ import generators" state
+   in effect when the code block was compiled. */
+#define CO_GENERATOR_ALLOWED    0x1000
 
 extern DL_IMPORT(PyTypeObject) PyCode_Type;
 
@@ -56,6 +63,7 @@ typedef struct {
     int ff_found_docstring;
     int ff_last_lineno;
     int ff_nested_scopes;
+    int ff_generators;
 } PyFutureFeatures;
 
 DL_IMPORT(PyFutureFeatures *) PyNode_Future(struct _node *, char *);

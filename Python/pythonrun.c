@@ -494,7 +494,7 @@ PyRun_InteractiveLoopFlags(FILE *fp, char *filename, PyCompilerFlags *flags)
 
 	if (flags == NULL) {
 		flags = &local_flags;
-		local_flags.cf_nested_scopes = 0;
+		local_flags.cf_flags = 0;
 	}
 	v = PySys_GetObject("ps1");
 	if (v == NULL) {
@@ -1075,10 +1075,14 @@ run_pyc_file(FILE *fp, char *filename, PyObject *globals, PyObject *locals,
 	v = PyEval_EvalCode(co, globals, locals);
 	if (v && flags) {
 		if (co->co_flags & CO_NESTED)
-			flags->cf_nested_scopes = 1;
+			flags->cf_flags |= PyCF_NESTED_SCOPES;
+		if (co->co_flags & CO_GENERATOR)
+			flags->cf_flags |= PyCF_GENERATORS;
 #if 0
 		fprintf(stderr, "run_pyc_file: nested_scopes: %d\n",
-			flags->cf_nested_scopes);
+			flags->cf_flags & PyCF_NESTED_SCOPES);
+		fprintf(stderr, "run_pyc_file: generators: %d\n",
+			flags->cf_flags & PyCF_GENERATORS);
 #endif
 	}
 	Py_DECREF(co);
