@@ -50,6 +50,12 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <Files.h>
 #include <Resources.h>
 
+/* Defined in the MSL runtime: */
+extern void __initialize(void);
+
+/* Defined either in macglue.c or in a MPW library: */
+extern pascal int PLstrcmp(unsigned char *, unsigned char *);
+
 /*
 ** Variables passed from shared lib initialization to PyMac_AddLibResources.
 */
@@ -64,12 +70,7 @@ OSErr pascal
 __initialize_with_resources(CFragInitBlockPtr data)
 {
 	/* Call the MW runtime's initialization routine */
-/* #ifdef __CFM68K__ */
-#if 1
 	__initialize();
-#else
-	__sinit();
-#endif
 	
 	if ( data == nil ) return noErr;
 	if ( data->fragLocator.where == kDataForkCFragLocator ) {

@@ -50,6 +50,9 @@ extern int ccommand(char ***);
 #endif
 #endif
 #include <unistd.h>
+#ifdef USE_MAC_SHARED_LIBRARY
+extern PyMac_AddLibResources(void);
+#endif
 
 #define STARTUP "PythonStartup"
 
