@@ -384,10 +384,21 @@ PyNumber_Multiply(v, w)
 	}
 	m = tp->tp_as_sequence;
 	if (m && m->sq_repeat) {
-		if (!PyInt_Check(w))
+		long mul_value;
+
+		if (PyInt_Check(w)) {
+			mul_value = PyInt_AsLong(w);
+		}
+		else if (PyLong_Check(w)) {
+			mul_value = PyLong_AsLong(w);
+			if (PyErr_Occurred())
+                                return NULL; 
+		}
+		else {
 			return type_error(
 				"can't multiply sequence with non-int");
-		return (*m->sq_repeat)(v, (int)PyInt_AsLong(w));
+		}
+		return (*m->sq_repeat)(v, (int)mul_value);
 	}
 	return type_error("bad operand type(s) for *");
 }
