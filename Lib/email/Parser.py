@@ -20,7 +20,7 @@ except NameError:
     True = 1
     False = 0
 
-nlcre = re.compile('\r\n|\r|\n')
+NLCRE = re.compile('\r\n|\r|\n')
 
 
 
@@ -176,7 +176,7 @@ class Parser:
                 preamble = payload[0:start]
             # Find out what kind of line endings we're using
             start += len(mo.group('sep')) + len(mo.group('ws'))
-            mo = nlcre.search(payload, start)
+            mo = NLCRE.search(payload, start)
             if mo:
                 start += len(mo.group(0))
             # We create a compiled regexp first because we need to be able to
