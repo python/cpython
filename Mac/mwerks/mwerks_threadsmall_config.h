@@ -37,3 +37,6 @@
 #define MSL_USE_PRECOMPILED_HEADERS 0	/* Don't use precomp headers: we include our own */
 #include <ansi_prefix.mac.h>
 #endif
+#ifndef Py_DEBUG
+#define NDEBUG
+#endif
