@@ -143,6 +143,8 @@ Library
 Tools/Demos
 -----------
 
+- The db2pickle and pickle2db scripts can now dump/load gdbm files.
+
 - The pydoc script will display a link to the module documentation for
   modules determined to be part of the core distribution.  The documentation
   base directory defaults to http://www.python.org/doc/current/lib/ but can
