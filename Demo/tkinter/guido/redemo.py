@@ -1,16 +1,4 @@
-"""Basic regular expression demostration facility (Perl style syntax).
-
-This displays a window with two type-in boxes.  In the top box, you
-enter a Perl style regular expression.  In the bottom box, you enter a
-string.  The first match in the string of the regular expression is
-highlighted with a yellow background (or red if the match is empty --
-then the character at the match is highlighted).  The highlighting is
-continuously updated.  At the bottom are a number of checkboxes which
-control the regular expression options used (see the re module for
-descriptions).  When there's no match, or when the regular expression
-is syntactically incorrect, an error message is displayed.
-
-"""
+"""Basic regular expression demostration facility (Perl style syntax)."""
 
 from Tkinter import *
 import re
