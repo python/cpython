@@ -264,7 +264,10 @@ yellow 5
 \begin{itemize}
 
 \item The inner loops for \class{list} and \class{tuple} slicing
- were optimized and now run about one-third faster.                                 
+ were optimized and now run about one-third faster.  The inner
+ loops were also optimized for \class{dict} with performance
+ boosts to \method{keys()}, \method{values()}, \method{items()},
+\method{\iterkeys()}, \method{\itervalues()}, and \method{iteritems()}.
 
 \item The machinery for growing and shrinking lists was optimized
  for speed and for space efficiency.  Small lists (under eight elements)
