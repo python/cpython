@@ -1,5 +1,9 @@
-"""Provide access to Python's configuration information.  The specific names
-defined in the module depend heavily on the platform and configuration.
+"""Provide access to Python's configuration information.  The specific
+configuration variables available depend heavily on the platform and
+configuration.  The values may be retrieved using
+get_config_var(name), and the list of variables is available via
+get_config_vars().keys().  Additional convenience functions are also
+available.
 
 Written by:   Fred L. Drake, Jr.
 Email:        <fdrake@acm.org>
@@ -45,7 +49,7 @@ def get_python_inc(plat_specific=0, prefix=None):
     sys.exec_prefix -- i.e., ignore 'plat_specific'.
     """    
     if prefix is None:
-        prefix = (plat_specific and EXEC_PREFIX or PREFIX)
+        prefix = plat_specific and EXEC_PREFIX or PREFIX
     if os.name == "posix":
         if python_build:
             return "Include/"
@@ -55,9 +59,9 @@ def get_python_inc(plat_specific=0, prefix=None):
     elif os.name == "mac":
         return os.path.join(prefix, "Include")
     else:
-        raise DistutilsPlatformError, \
-              ("I don't know where Python installs its C header files " +
-               "on platform '%s'") % os.name
+        raise DistutilsPlatformError(
+            "I don't know where Python installs its C header files "
+            "on platform '%s'" % os.name)
 
 
 def get_python_lib(plat_specific=0, standard_lib=0, prefix=None):
@@ -75,7 +79,7 @@ def get_python_lib(plat_specific=0, standard_lib=0, prefix=None):
     sys.exec_prefix -- i.e., ignore 'plat_specific'.
     """
     if prefix is None:
-        prefix = (plat_specific and EXEC_PREFIX or PREFIX)
+        prefix = plat_specific and EXEC_PREFIX or PREFIX
        
     if os.name == "posix":
         libpython = os.path.join(prefix,
@@ -96,23 +100,23 @@ def get_python_lib(plat_specific=0, standard_lib=0, prefix=None):
             if standard_lib:
                 return os.path.join(EXEC_PREFIX, "Mac", "Plugins")
             else:
-                raise DistutilsPlatformError, \
-                      "OK, where DO site-specific extensions go on the Mac?"
+                raise DistutilsPlatformError(
+                    "OK, where DO site-specific extensions go on the Mac?")
         else:
             if standard_lib:
                 return os.path.join(PREFIX, "Lib")
             else:
-                raise DistutilsPlatformError, \
-                      "OK, where DO site-specific modules go on the Mac?"
+                raise DistutilsPlatformError(
+                    "OK, where DO site-specific modules go on the Mac?")
     else:
-        raise DistutilsPlatformError, \
-              ("I don't know where Python installs its library " +
-               "on platform '%s'") % os.name
+        raise DistutilsPlatformError(
+            "I don't know where Python installs its library "
+            "on platform '%s'" % os.name)
 
 # get_python_lib()
         
 
-def customize_compiler (compiler):
+def customize_compiler(compiler):
     """Do any platform-specific customization of the CCompiler instance
     'compiler'.  Mainly needed on Unix, so we can plug in the information
     that varies across Unices and is stored in Python's Makefile.
@@ -299,7 +303,7 @@ def _init_posix():
         if hasattr(msg, "strerror"):
             my_msg = my_msg + " (%s)" % msg.strerror
 
-        raise DistutilsPlatformError, my_msg
+        raise DistutilsPlatformError(my_msg)
               
     
     # On AIX, there are wrong paths to the linker scripts in the Makefile
