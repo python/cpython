@@ -51,7 +51,7 @@ class CodecCallbackTest(unittest.TestCase):
 
     def test_uninamereplace(self):
         # We're using the names from the unicode database this time,
-        # and we're doing "systax highlighting" here, i.e. we include
+        # and we're doing "syntax highlighting" here, i.e. we include
         # the replaced text in ANSI escape sequences. For this it is
         # useful that the error handler is not called for every single
         # unencodable character, but for a complete sequence of
