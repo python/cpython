@@ -165,6 +165,7 @@ extern void initarray();
 extern void initmath();
 extern void initparser();
 extern void initmac();
+extern void MacOS_Init();
 extern void initregex();
 extern void initstrop();
 extern void initstruct();
@@ -215,6 +216,7 @@ struct {
 	{"math", initmath},
 	{"parser", initparser},
 	{"mac", initmac},
+	{"MacOS", MacOS_Init},
 	{"regex", initregex},
 	{"strop", initstrop},
 	{"struct", initstruct},
