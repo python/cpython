@@ -184,6 +184,7 @@ types_map = {
     '.ustar': 'application/x-ustar',
     '.wav': 'audio/x-wav',
     '.xbm': 'image/x-xbitmap',
+    '.xml': 'text/xml',
     '.xpm': 'image/x-xpixmap',
     '.xwd': 'image/x-xwindowdump',
     '.zip': 'application/zip',
