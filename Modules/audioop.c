@@ -217,6 +217,32 @@ audioop_max(self, args)
 }
 
 static object *
+audioop_minmax(self, args)
+	object *self;
+	object *args;
+{
+	signed char *cp;
+	int len, size, val;
+	int i;
+	int min = 0x7fffffff, max = -0x7fffffff;
+
+	if (!getargs(args, "(s#i)", &cp, &len, &size))
+		return NULL;
+	if (size != 1 && size != 2 && size != 4) {
+		err_setstr(AudioopError, "Size should be 1, 2 or 4");
+		return NULL;
+	}
+	for (i = 0; i < len; i += size) {
+		if (size == 1) val = (int) *CHARP(cp, i);
+		else if (size == 2) val = (int) *SHORTP(cp, i);
+		else if (size == 4) val = (int) *LONGP(cp, i);
+		if (val > max) max = val;
+		if (val < min) min = val;
+	}
+	return mkvalue("(ii)", min, max);
+}
+
+static object *
 audioop_avg(self, args)
     object *self;
     object *args;
@@ -1178,6 +1204,7 @@ audioop_adpcm2lin(self, args)
 
 static struct methodlist audioop_methods[] = {
     { "max", audioop_max },
+    { "minmax", audioop_minmax },
     { "avg", audioop_avg },
     { "maxpp", audioop_maxpp },
     { "avgpp", audioop_avgpp },
