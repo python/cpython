@@ -919,8 +919,13 @@
   \end{tabular}
 }
 
-\newcommand{\note}[1]{\strong{Note:} #1}
-\newcommand{\warning}[1]{\strong{Warning:} #1}
+\newcommand{\py@noticelabel@note}{Note:}
+\newcommand{\py@noticelabel@warning}{Warning:}
+\newenvironment{notice}[1][note]{
+  \par\strong{\csname py@noticelabel@#1\endcsname}
+}{}
+\newcommand{\note}[1]{\strong{\py@noticelabel@note} #1}
+\newcommand{\warning}[1]{\strong{\py@noticelabel@warning} #1}
 
 % Deprecation stuff.
 % Should be extended to allow an index / list of deprecated stuff.  But

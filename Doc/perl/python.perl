@@ -236,16 +236,35 @@ sub do_cmd_textbf{
     return use_wrappers(@_[0], '<b>', '</b>'); }
 sub do_cmd_textit{
     return use_wrappers(@_[0], '<i>', '</i>'); }
+# This can be changed/overridden for translations:
+%NoticeNames = ('note' => 'Note:',
+                'warning' => 'Warning:',
+                );
+
 sub do_cmd_note{
+    my $label = $NoticeNames{'note'};
     return use_wrappers(
         @_[0],
-        "<span class=\"note\"><b class=\"label\">Note:</b>\n",
+        "<span class=\"note\"><b class=\"label\">$label</b>\n",
         '</span>'); }
 sub do_cmd_warning{
+    my $label = $NoticeNames{'warning'};
     return use_wrappers(
         @_[0],
-        "<span class=\"warning\"><b class=\"label\">Warning:</b>\n",
+        "<span class=\"warning\"><b class=\"label\">$label</b>\n",
         '</span>'); }
+
+sub do_env_notice{
+    local($_) = @_;
+    my $notice = next_optional_argument();
+    if (!$notice) {
+        $notice = 'note';
+    }
+    my $label = $NoticeNames{$notice};
+    return ("<div class=\"$notice\"><b class=\"label\">$label</b>\n"
+            . $_
+            . '</div>');
+}
 
 sub do_cmd_moreargs{
     return '...' . @_[0]; }
