@@ -1,5 +1,8 @@
 import FrameWork
+import MiniAEFrame
 import EasyDialogs
+import AE
+import AppleEvents
 import Res
 import sys
 import Qd
@@ -7,6 +10,13 @@ import Evt
 import Events
 import Dlg
 import Win
+import Menu
+import TwitCore
+import mactwit_mod
+import mactwit_stack
+import mactwit_browser
+import mactwit_edit
+import macfs
 
 # Resource-id (for checking existence)
 ID_MODULES=512
@@ -16,48 +26,92 @@ ID_ABOUT=515
 _arrow = Qd.qd.arrow
 _watch = Qd.GetCursor(4).data
 
-# Made available to TwitCore:
-AskString = EasyDialogs.AskString
-ShowMessage = EasyDialogs.Message
-
-def SetCursor():
-	Qd.SetCursor(_arrow)
-
-def SetWatch():
-	Qd.SetCursor(_watch)
-
-# Exception for temporarily exiting the loop and program
-ExitMainloop = 'ExitMainloop'
-ExitFully = 'ExitFully'
-
-class Application(FrameWork.Application):
+class Twit(FrameWork.Application, TwitCore.Application, MiniAEFrame.AEServer):
 	"""The twit main class - mac-dependent part"""
 
-	def __init__(self, run_args, pm_args):
+	def __init__(self, sessiontype, arg=None):
 		# First init menus, etc.
+		self.app_menu_bar = Menu.GetMenuBar()
 		FrameWork.Application.__init__(self)
+		MiniAEFrame.AEServer.__init__(self)
+		AE.AESetInteractionAllowed(AppleEvents.kAEInteractWithAll)
+		self.installaehandler('aevt', 'odoc', self.ae_open_doc)
+		self.installaehandler('aevt', 'quit', self.do_quit)
+
+		self.dbg_menu_bar = Menu.GetMenuBar()
+		self.setstate(sessiontype)
 		self._quitting = 0
 		self.real_quit = 0
+		self.window_aware = 1
 
 		# Next create our dialogs
-		self.mi_init(run_args, pm_args)
-		if self.real_quit:
-			return
-		
-		if not run_args:
-			# Go into mainloop once
-			self.one_mainloop()
+		self.mi_init(sessiontype, arg)
+		while 1:
 			if self.real_quit:
-				return
+				break
+			if self.initial_cmd:
+				self.to_debugger()	# Will get to mainloop via debugger
+			else:
+				self.one_mainloop()	# Else do it ourselves.
+				
+	def switch_to_app(self):
+		if not self.window_aware:
+			return
+		self.dbg_menu_bar = Menu.GetMenuBar()
+		Menu.SetMenuBar(self.app_menu_bar)
+		Menu.DrawMenuBar()
 		
-		if not pm_args:
-			# And give the debugger control.
-			self.to_debugger()
+	def switch_to_dbg(self):
+		if not self.window_aware:
+			return
+		self.app_menu_bar = Menu.GetMenuBar()
+		Menu.SetMenuBar(self.dbg_menu_bar)
+		Menu.DrawMenuBar()
+		self.run_dialog.force_redraw()
+		if self.module_dialog:
+			self.module_dialog.force_redraw()
 
 	def makeusermenus(self):
-		self.filemenu = m = FrameWork.Menu(self.menubar, "File")
+		self.filemenu = m = FrameWork.Menu(self.menubar, "Debug")
+		self._openitem = FrameWork.MenuItem(m, "Run File...", "O", self.do_open)
+		self._runitem = FrameWork.MenuItem(m, "Run String...", "R", self.do_run)
+		FrameWork.Separator(m)
+		self._awareitem = FrameWork.MenuItem(m, "Window-aware", "", self.do_aware)
+		self._awareitem.check(1)
+		FrameWork.Separator(m)
 		self._quititem = FrameWork.MenuItem(m, "Quit", "Q", self.do_quit)
-	
+		
+		self.controlmenu = m = FrameWork.Menu(self.menubar, "Control")
+		self._stepitem = FrameWork.MenuItem(m, "Step Next", "N", self.do_step)
+		self._stepinitem = FrameWork.MenuItem(m, "Step In", "S", self.do_stepin)
+		self._stepoutitem = FrameWork.MenuItem(m, "Step Out", "U", self.do_stepout)
+		self._continueitem = FrameWork.MenuItem(m, "Continue", "G", self.do_continue)
+		FrameWork.Separator(m)
+		self._killitem = FrameWork.MenuItem(m, "Kill", "K", self.do_kill)
+		
+	def setstate(self, state):
+		self.state = state
+		if state == 'run':
+			self._stepitem.enable(1)
+			self._stepoutitem.enable(1)
+			self._stepinitem.enable(1)
+			self._continueitem.enable(1)
+			self._killitem.enable(1)
+		else:
+			self._stepitem.enable(0)
+			self._stepoutitem.enable(0)
+			self._stepinitem.enable(0)
+			self._continueitem.enable(0)
+			self._killitem.enable(0)
+			
+	def asknewsession(self):
+		if self.state == 'none':
+			return 1
+		if EasyDialogs.AskYesNoCancel("Abort current debug session?") == 1:
+			self.quit_bdb()
+			return 1
+		return 0
+
 	def do_about(self, id, item, window, event):
 		import time
 		d = Dlg.GetNewDialog(ID_ABOUT, -1)
@@ -102,12 +156,54 @@ class Application(FrameWork.Application):
 		while 1:
 			ok, evt = self.getevent(Events.mDownMask|Events.keyDownMask, -1)
 			if ok: return
-	
+			
+	def do_open(self, *args):
+		if not self.asknewsession():
+			return
+		fss, ok = macfs.StandardGetFile('TEXT')
+		if not ok: return
+		self.runfile(fss.as_pathname())
+		
+	def ae_open_doc(self, object=None, **args):
+		if not object: return
+		if self.state <> 'none':
+			if AE.AEInteractWithUser(AppleEvents.kAEDefaultTimeout) == 0:
+				if not self.asknewsession():
+					return
+		if type(object) == type([]):
+			object = object[0]
+		fss, changed = object.Resolve()
+		self.runfile(fss.as_pathname())
+		
+	def do_run(self, *args):
+		if not self.asknewsession():
+			return
+		self.run()
+		
+	def do_aware(self, *args):
+		self.window_aware = not self.window_aware
+		self._awareitem.check(self.window_aware)
+		
 	def do_quit(self, *args):
 		self._quit()			# Signal FrameWork.Application to stop
 		self.real_quit = 1
 		self.quit_bdb()			# Tell debugger to quit.
-			
+
+	def do_step(self, *args):
+		self.run_dialog.click_step()
+		
+	def do_stepin(self, *args):
+		self.run_dialog.click_step_in()
+		
+	def do_stepout(self, *args):
+		self.run_dialog.click_step_out()
+		
+	def do_continue(self, *args):
+		self.run_dialog.click_continue()
+		
+	def do_kill(self, *args):
+		self.run_dialog.click_kill()
+					
 	def exit_mainloop(self):
 		self._quit()			# Signal FrameWork.Application to stop
 		self.real_quit = 0
@@ -115,6 +211,31 @@ class Application(FrameWork.Application):
 	def one_mainloop(self):
 		self.quitting = 0
 		self.mainloop()
+
+	def SetCursor(self):
+		Qd.SetCursor(_arrow)
+	
+	def SetWatch(self):
+		Qd.SetCursor(_watch)
+		
+	def AskString(self, *args):
+		return apply(EasyDialogs.AskString, args)
+		
+	def Message(self, *args):
+		return apply(EasyDialogs.Message, args)
+
+	def new_module_browser(self, parent):
+		return mactwit_mod.ModuleBrowser(parent)
+		
+	def new_stack_browser(self, parent):
+		return mactwit_stack.StackBrowser(parent)
+		
+	def new_var_browser(self, parent, var):
+		return mactwit_browser.VarBrowser(parent).open(var)
+	
+	def edit(self, file, line):
+		return mactwit_edit(file, line)
+	
 		
 def Initialize():
 	try:

@@ -6,6 +6,7 @@ import Win
 import FrameWork
 import EasyDialogs
 import sys
+import TwitCore
 from mac_widgets import MT_AnyList, MT_IndexList, MT_IconTextWidget
 
 # Our dialogs
@@ -20,22 +21,16 @@ I_EXC_TITLE=7
 I_EXC=8
 I_EXCVALUE_TITLE=9
 I_EXCVALUE=10
-I_QUIT=11
-I_CONTINUE=12
-I_STEP=13
-I_BROWSE=14
-I_RULER1=15
-I_RULER2=16
-I_STATE_TITLE=17
-I_STATE=18
-I_STEP_IN=19
-I_STEP_OUT=20
-I_RUN=21
-I_SHOW_COMPLEX=22
-I_SHOW_SYSTEM=23
-I_EDIT=24
+I_BROWSE=11
+I_RULER1=12
+I_RULER2=13
+I_STATE_TITLE=14
+I_STATE=15
+I_SHOW_COMPLEX=16
+I_SHOW_SYSTEM=17
+I_EDIT=18
 
-class StackBrowser(FrameWork.DialogWindow):
+class StackBrowser(FrameWork.DialogWindow, TwitCore.StackBrowser):
 	"""The stack-browser dialog - mac-dependent part"""
 	def open(self):
 		FrameWork.DialogWindow.open(self, ID_STACK)
@@ -62,7 +57,6 @@ class StackBrowser(FrameWork.DialogWindow):
 		self.source.setcontent(self.cur_source)
 		
 	def setexception(self, name, value):
-		print 'SETEXC', (name, value)
 		if name == None:
 			self.wid.HideDialogItem(I_EXC)
 			self.wid.HideDialogItem(I_EXC_TITLE)
@@ -85,46 +79,11 @@ class StackBrowser(FrameWork.DialogWindow):
 		tp, h, rect = self.wid.GetDialogItem(I_STATE)
 		Dlg.SetDialogItemText(h, msg)
 		
-	def setsession_none(self):
-		"""Nothing running, no stack trace"""
-		self.wid.HideDialogItem(I_CONTINUE)
-		self.wid.HideDialogItem(I_STEP)
-		self.wid.HideDialogItem(I_STEP_IN)
-		self.wid.HideDialogItem(I_STEP_OUT)
-		self.wid.ShowDialogItem(I_RUN)
-		
-	def setsession_run(self):
-		"""Running"""
-		self.wid.HideDialogItem(I_RUN)
-		self.wid.ShowDialogItem(I_CONTINUE)
-		self.wid.ShowDialogItem(I_STEP)
-		self.wid.ShowDialogItem(I_STEP_IN)
-		self.wid.ShowDialogItem(I_STEP_OUT)
-		
-	def setsession_pm(self):
-		"""Post-mortem debugging"""
-		self.wid.HideDialogItem(I_CONTINUE)
-		self.wid.HideDialogItem(I_STEP)
-		self.wid.HideDialogItem(I_STEP_IN)
-		self.wid.HideDialogItem(I_STEP_OUT)
-		self.wid.HideDialogItem(I_RUN)
-		
-	def setsession_none(self):
-		"""Nothing running, no stack trace"""
-		self.wid.HideDialogItem(I_CONTINUE)
-		self.wid.HideDialogItem(I_STEP)
-		self.wid.HideDialogItem(I_STEP_IN)
-		self.wid.HideDialogItem(I_STEP_OUT)
-		self.wid.ShowDialogItem(I_RUN)
-		
-		
 	def do_itemhit(self, item, event):
 		(what, message, when, where, modifiers) = event
 		Qd.SetPort(self.wid)
 		where = Qd.GlobalToLocal(where)
-		
-		print 'STACKHIT', item
-		
+				
 		if item == I_STACK:
 			new_stackitem, double = self.stack.click(where, 0)
 			self.click_stack(new_stackitem)
@@ -136,20 +95,8 @@ class StackBrowser(FrameWork.DialogWindow):
 			lineno, inborder = self.source.click(where, 0)
 			if lineno <> None and lineno >= 0:
 				self.click_source(lineno, inborder)
-		elif item == I_QUIT:
-			self.click_quit()
-		elif item == I_CONTINUE:
-			self.click_continue()
-		elif item == I_STEP:
-			self.click_step()
-		elif item == I_STEP_IN:
-			self.click_step_in()
-		elif item == I_STEP_OUT:
-			self.click_step_out()
 		elif item == I_BROWSE:
 			self.click_browse()
-		elif item == I_RUN:
-			self.click_run()
 		elif item == I_SHOW_COMPLEX:
 			self.show_complex = not self.show_complex
 			self.setup_frame()
@@ -177,6 +124,10 @@ class StackBrowser(FrameWork.DialogWindow):
 		self.stack.update(rgn)
 		self.vars.update(rgn)
 		self.source.update(rgn)
+
+	def force_redraw(self):
+		Qd.SetPort(self.wid)
+		Win.InvalRgn(self.wid.GetWindowPort().visRgn)
 		
 	def do_activate(self, activate, event):
 		self.stack.activate(activate)

@@ -6,6 +6,7 @@ import Win
 import FrameWork
 import EasyDialogs
 import sys
+import TwitCore
 from mac_widgets import MT_AnyList, MT_IconTextWidget
 
 # Our dialogs
@@ -19,7 +20,7 @@ I_SOURCE=6
 I_RULER=7
 I_EDIT=8
 
-class ModuleBrowser(FrameWork.DialogWindow):
+class ModuleBrowser(FrameWork.DialogWindow, TwitCore.ModuleBrowser):
 	"""The module-browser dialog - mac-dependent part"""
 	def open(self, module):
 		FrameWork.DialogWindow.open(self, ID_MODULES)
@@ -73,6 +74,10 @@ class ModuleBrowser(FrameWork.DialogWindow):
 		self.modules.update(rgn)
 		self.vars.update(rgn)
 		self.source.update(rgn)
+		
+	def force_redraw(self):
+		Qd.SetPort(self.wid)
+		Win.InvalRgn(self.wid.GetWindowPort().visRgn)
 		
 	def do_activate(self, activate, event):
 		self.modules.activate(activate)
