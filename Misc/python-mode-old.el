@@ -596,6 +596,13 @@ the new line indented."
        ;; happens to be a continuation line too
        (re-search-backward "^[ \t]*\\([^ \t\n#]\\|#[ \t\n]\\)"
 			   nil 'move)
+       ;; if we landed inside a string, go to the beginning of that string
+       (let ((state (parse-partial-sexp
+		     (save-excursion (beginning-of-python-def-or-class)
+				     (point))
+		     (point))))
+	 (if (nth 3 state)
+	     (goto-char (nth 2 state))))
        (py-goto-initial-line)
        (if (py-statement-opens-block-p)
 	   (+ (current-indentation) py-indent-offset)
