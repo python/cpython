@@ -34,23 +34,27 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define HAVE_UNIVERSAL_HEADERS
 #endif
 
-char *macstrerror(int);				/* strerror with mac errors */
+#ifdef __CFM68K__
+#pragma lib_export on
+#endif
 
-extern int PyMac_DoYieldEnabled;	/* Don't do eventloop when false */
+char *PyMac_StrError(int);			/* strerror with mac errors */
+
+extern int PyMac_DoYieldEnabled;		/* Don't do eventloop when false */
 
 extern PyObject *PyMac_OSErrException;		/* Exception for OSErr */
 PyObject *PyMac_GetOSErrException(void);	/* Initialize & return it */
 
-int PyMac_Idle Py_PROTO((void));			/* Idle routine */
-void PyMac_Yield Py_PROTO((void));			/* optional idle routine for mainloop */
-void PyMac_SetYield Py_PROTO((long, long, long, long));	/* Set timeouts */
+int PyMac_Idle Py_PROTO((void));		/* Idle routine */
+void PyMac_Yield Py_PROTO((void));		/* optional idle routine for mainloop */
+void PyMac_SetYield Py_PROTO((long, long, long, long)); /* Set timeouts */
 PyObject *PyErr_Mac(PyObject *, int);		/* Exception with a mac error */
 PyObject *PyMac_Error(OSErr);			/* Uses PyMac_GetOSErrException */
-void PyMac_HandleEvent Py_PROTO((EventRecord *));	/* Handle one event, if possible */
+void PyMac_HandleEvent Py_PROTO((EventRecord *)); /* Handle one event, if possible */
 
 int PyMac_Idle(void);				/* Idle routine */
 
-char *PyMac_GetPythonDir();					/* Return the name of the python dir */
+char *PyMac_GetPythonDir();			/* Return the name of the python dir */
 
 int PyMac_FindResourceModule(char *, char *); /* Test for 'PYC ' resource in a file */
 PyObject * PyMac_LoadResourceModule(char *, char *); /* Load 'PYC ' resource from file */
@@ -72,3 +76,5 @@ PyObject *PyMac_BuildPoint(Point);		/* Convert Point to PyObject */
 
 int PyMac_GetEventRecord(PyObject *, EventRecord *); /* argument parser for EventRecord */
 PyObject *PyMac_BuildEventRecord(EventRecord *); /* Convert EventRecord to PyObject */
+
+void PyMac_InitApplet(void);			/* Initialize and run an Applet */
