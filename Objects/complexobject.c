@@ -294,7 +294,7 @@ complex_hash(v)
 {
 	double intpart, fractpart;
 	int expo;
-	long x;
+	long hipart, x;
 	/* This is designed so that Python numbers with the same
 	   value hash to the same value, otherwise comparisons
 	   of mapping keys will turn out weird */
@@ -309,7 +309,7 @@ complex_hash(v)
 	fractpart = modf(v->cval.real, &intpart);
 #endif
 
-	if (fractpart == 0.0) {
+	if (fractpart == 0.0 && v->cval.imag == 0.0) {
 		if (intpart > 0x7fffffffL || -intpart > 0x7fffffffL) {
 			/* Convert to long int and use its hash... */
 			object *w = dnewlongobject(v->cval.real);
@@ -323,8 +323,36 @@ complex_hash(v)
 	}
 	else {
 		fractpart = frexp(fractpart, &expo);
-		fractpart = fractpart*2147483648.0; /* 2**31 */
-		x = (long) (intpart + fractpart) ^ expo; /* Rather arbitrary */
+		fractpart = fractpart * 2147483648.0; /* 2**31 */
+		hipart = (long)fractpart; /* Take the top 32 bits */
+		fractpart = (fractpart - (double)hipart) * 2147483648.0;
+						/* Get the next 32 bits */
+		x = hipart + (long)fractpart + (long)intpart + (expo << 15);
+						/* Combine everything */
+
+		if (v->cval.imag != 0.0) { /* Hash the imaginary part */
+			/* XXX Note that this hashes complex(x, y)
+			   to the same value as complex(y, x).
+			   Still better than it used to be :-) */
+#ifdef MPW
+			{
+				extended e;
+				fractpart = modf(v->cval.imag, &e);
+				intpart = e;
+			}
+#else
+			fractpart = modf(v->cval.imag, &intpart);
+#endif
+			fractpart = frexp(fractpart, &expo);
+			fractpart = fractpart * 2147483648.0; /* 2**31 */
+			hipart = (long)fractpart; /* Take the top 32 bits */
+			fractpart =
+				(fractpart - (double)hipart) * 2147483648.0;
+						/* Get the next 32 bits */
+			x ^= hipart + (long)fractpart +
+				(long)intpart + (expo << 15);
+						/* Combine everything */
+		}
 	}
 	if (x == -1)
 		x = -2;
