@@ -726,8 +726,10 @@ _expectations = {
         """
         test_al
         test_asynchat
+        test_atexit
         test_bsddb
         test_bsddb185
+        test_bsddb3
         test_cd
         test_cl
         test_commands

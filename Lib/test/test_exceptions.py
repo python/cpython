@@ -3,7 +3,7 @@
 from test.test_support import TestFailed, TESTFN, unlink
 from types import ClassType
 import warnings
-import sys, traceback
+import sys, traceback, os
 
 print '5. Built-in exceptions'
 # XXX This is not really enough, each *operation* should be tested!
@@ -185,7 +185,7 @@ def test_capi1():
         exc, err, tb = sys.exc_info()
         co = tb.tb_frame.f_code
         assert co.co_name == "test_capi1"
-        assert co.co_filename.endswith('test_exceptions.py')
+        assert co.co_filename.endswith('test_exceptions'+os.extsep+'py')
     else:
         print "Expected exception"
 
@@ -197,7 +197,7 @@ def test_capi2():
         exc, err, tb = sys.exc_info()
         co = tb.tb_frame.f_code
         assert co.co_name == "__init__"
-        assert co.co_filename.endswith('test_exceptions.py')
+        assert co.co_filename.endswith('test_exceptions'+os.extsep+'py')
         co2 = tb.tb_frame.f_back.f_code
         assert co2.co_name == "test_capi2"
     else:

@@ -143,7 +143,7 @@
 #undef HAVE_LARGEFILE_SUPPORT
 
 /* Define this if you have the type long long */
-#undef HAVE_LONG_LONG
+#define HAVE_LONG_LONG
 
 /* Define if your compiler supports function prototypes */
 #define HAVE_PROTOTYPES 1
@@ -244,6 +244,9 @@
    shared libraries */ 
 #undef WITH_DL_DLD
 
+/* Define if you want to read files with foreign newlines. */
+#define WITH_UNIVERSAL_NEWLINES 1
+
 /* Define if you want documentation strings in extension modules */
 #define WITH_DOC_STRINGS 1
 
@@ -253,7 +256,7 @@
 #undef WITH_DYLD
 
 /* Define if you want to compile in Python-specific mallocs */
-#undef WITH_PYMALLOC
+#define WITH_PYMALLOC 1
 
 /* Define if you want to produce an OpenStep/Rhapsody framework
    (shared library plus accessory files). */
@@ -291,7 +294,7 @@
 #define SIZEOF_LONG 4
 
 /* The number of bytes in a long long.  */
-#undef SIZEOF_LONG_LONG
+#define SIZEOF_LONG_LONG 8
 
 /* The number of bytes in a short.  */
 #define SIZEOF_SHORT 2
@@ -396,7 +399,7 @@
 #undef HAVE_GETNAMEINFO
 
 /* Define if you have the getpeername function.  */
-#undef HAVE_GETPEERNAME
+#define HAVE_GETPEERNAME
 
 /* Define if you have the getpgid function.  */
 #undef HAVE_GETPGID
@@ -423,7 +426,7 @@
 #undef HAVE_HSTRERROR
 
 /* Define if you have the hypot function.  */
-#undef HAVE_HYPOT
+#define HAVE_HYPOT
 
 /* Define if you have the inet_pton function.  */
 #define HAVE_INET_PTON 1

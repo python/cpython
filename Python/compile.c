@@ -420,7 +420,7 @@ optimize_code(PyObject *code, PyObject* consts)
 			goto exitUnchanged;
 		}
 	}
-	code = PyString_FromStringAndSize(codestr, codelen);
+	code = PyString_FromStringAndSize((char *)codestr, codelen);
 	PyMem_Free(codestr);
 	return code;
 
