@@ -2078,7 +2078,7 @@ sub do_env_alltt{
     return codetext($_);
 }
 
-# List of all filenames produced my do_cmd_verbatiminput()
+# List of all filenames produced by do_cmd_verbatiminput()
 %VerbatimFiles = ();
 @VerbatimOutputs = ();
 
