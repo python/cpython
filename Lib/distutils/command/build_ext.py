@@ -388,7 +388,6 @@ class build_ext (Command):
     # get_outputs ()
 
     def build_extensions(self):
-
         # First, sanity-check the 'extensions' list
         self.check_extensions_list(self.extensions)
 
@@ -396,7 +395,6 @@ class build_ext (Command):
             self.build_extension(ext)
 
     def build_extension(self, ext):
-
         sources = ext.sources
         if sources is None or type(sources) not in (ListType, TupleType):
             raise DistutilsSetupError, \
@@ -421,7 +419,6 @@ class build_ext (Command):
         else:
             ext_filename = os.path.join(self.build_lib,
                                         self.get_ext_filename(fullname))
-
         depends = sources + ext.depends
         if not (self.force or newer_group(depends, ext_filename, 'newer')):
             log.debug("skipping '%s' extension (up-to-date)", ext.name)
@@ -467,7 +464,8 @@ class build_ext (Command):
                                         macros=macros,
                                         include_dirs=ext.include_dirs,
                                         debug=self.debug,
-                                        extra_postargs=extra_args)
+                                        extra_postargs=extra_args,
+                                        depends=ext.depends)
 
         # XXX -- this is a Vile HACK!
         #
