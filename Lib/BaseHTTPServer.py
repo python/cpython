@@ -68,7 +68,6 @@ __all__ = ["HTTPServer", "BaseHTTPRequestHandler"]
 import sys
 import time
 import socket # For gethostbyaddr()
-import string
 import mimetools
 import SocketServer
 
@@ -203,7 +202,7 @@ class BaseHTTPRequestHandler(SocketServer.StreamRequestHandler):
     """
 
     # The Python system version, truncated to its first component.
-    sys_version = "Python/" + string.split(sys.version)[0]
+    sys_version = "Python/" + sys.version.split()[0]
 
     # The server software version.  You may want to override this.
     # The format is multiple whitespace-separated strings,
@@ -228,7 +227,7 @@ class BaseHTTPRequestHandler(SocketServer.StreamRequestHandler):
         elif requestline[-1:] == '\n':
             requestline = requestline[:-1]
         self.requestline = requestline
-        words = string.split(requestline)
+        words = requestline.split()
         if len(words) == 3:
             [command, path, version] = words
             if version[:5] != 'HTTP/':
@@ -468,7 +467,7 @@ def test(HandlerClass = BaseHTTPRequestHandler,
     """
 
     if sys.argv[1:]:
-        port = string.atoi(sys.argv[1])
+        port = sys.argv[1].atoi()
     else:
         port = 8000
     server_address = ('', port)

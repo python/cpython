@@ -306,7 +306,7 @@ class Bdb:
     #
 
     def format_stack_entry(self, frame_lineno, lprefix=': '):
-        import linecache, repr, string
+        import linecache, repr
         frame, lineno = frame_lineno
         filename = self.canonic(frame.f_code.co_filename)
         s = filename + '(' + `lineno` + ')'
@@ -327,7 +327,7 @@ class Bdb:
             s = s + '->'
             s = s + repr.repr(rv)
         line = linecache.getline(filename, lineno)
-        if line: s = s + lprefix + string.strip(line)
+        if line: s = s + lprefix + line.strip()
         return s
 
     # The following two methods can be called by clients to use
@@ -534,12 +534,12 @@ class Tdb(Bdb):
         if not name: name = '???'
         print '+++ call', name, args
     def user_line(self, frame):
-        import linecache, string
+        import linecache
         name = frame.f_code.co_name
         if not name: name = '???'
         fn = self.canonic(frame.f_code.co_filename)
         line = linecache.getline(fn, frame.f_lineno)
-        print '+++', fn, frame.f_lineno, name, ':', string.strip(line)
+        print '+++', fn, frame.f_lineno, name, ':', line.strip()
     def user_return(self, frame, retval):
         print '+++ return', retval
     def user_exception(self, frame, exc_stuff):
@@ -558,3 +558,5 @@ def bar(a):
 def test():
     t = Tdb()
     t.run('import bdb; bdb.foo(10)')
+
+# end

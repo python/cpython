@@ -48,7 +48,6 @@ you - by calling your self.found_terminator() method.
 
 import socket
 import asyncore
-import string
 
 class async_chat (asyncore.dispatcher):
     """This is an abstract class.  You must derive from this class, and add
@@ -120,7 +119,7 @@ class async_chat (asyncore.dispatcher):
                 # 3) end of buffer does not match any prefix:
                 #    collect data
                 terminator_len = len(terminator)
-                index = string.find (self.ac_in_buffer, terminator)
+                index = terminator.find (self.ac_in_buffer)
                 if index != -1:
                     # we found the terminator
                     if index > 0:
