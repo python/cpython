@@ -50,7 +50,8 @@ Think/Symantec C but you are basically on your own.
 Neeracher. The current distribution has been built with a modified version of
 CWGUSI 1.8.0. CWGUSI is
 obtainable from <A
-HREF="ftp://ftp.switch.ch/software/mac/src/mw_c">ftp://ftp.switch.ch/software/mac/src/mw_c</A>.
+HREF="ftp://sunsite.cnlab-switch.ch/software/platform/macos/src">
+ftp://sunsite.cnlab-switch.ch/software/platform/macos/src</A>.
 It is possible to build a non-GUSI Python, see below.
 
 </UL>
@@ -71,7 +72,7 @@ you need:
 
 <LI> Tcl and Tk can be obtained from <A
 HREF="ftp://ftp.smli.com/pub/tcl/mac/">ftp://ftp.smli.com/pub/tcl/mac/</A>.
-The current distributions, Tcl 7.5p1 and Tk 4.1p1 need a bit of work,
+The current distributions, Tcl 7.6 and Tk 4.2 need a bit of work,
 see the section on <A HREF="#tcltk">building Tcl/Tk Python</A>
 below. Get the "full source" distribution, which includes MoreFiles.
 
@@ -114,10 +115,10 @@ Top-level-folder:
 		libjpeg
 		pbmplus
 			libtiff
-	MoreFiles 1.4.2 (not needed by Python, only by tcl/tk)
+	MoreFiles 1.4.3 (not needed by Python, only by tcl/tk)
 	Python
-	Tcl 7.5
-	Tk 4.1
+	Tcl 7.6
+	Tk 4.2
 	Waste 1.2 distribution (if you want waste)
 </PRE>
 
@@ -149,7 +150,7 @@ static 68K, CFM68K or PPC you can skip building the other libraries.
 
 You need to make a minor organizational change to the Tcl/Tk
 distribution. The current instructions are for the
-<code>tcl7.5.1</code> and <code>tk4.1.1</code> distribution:
+<code>tcl7.6</code> and <code>tk4.2</code> distribution:
 
 <UL>
 
@@ -166,27 +167,29 @@ beginning. The tcl library is built with strict ANSI on, and this file
 uses C++ style comments.
 
 <LI> If you want to build <code>SimpleTcl</code> and
-<code>SimpleTk</code> you will probably have to remove the references
-to <code>libmoto</code> from the project.
+<code>SimpleTk</code> you may  have to remove the references
+to <code>libmoto</code> from the project, not everyone has this library.
 
-<LI> You are <EM>strongly</EM> advised to add a line
-<pre><code>
-#define USE_TCLALLOC 1
-</code></pre>
-somewhere at the beginning of <code>MW_TclHeader.pch</code>.
-As distributed, tcl and tk assume that malloc calls always succeed and
-use the resulting pointer without checking for <code>NULL</code>
-values. Needless to say, this wreaks havoc on a Macintosh.
-
-<LI> If you want to build for CFM68K you have to modify <code>TclMacNotify.c</code>
+<LI> If you want to build for CFM68K you have to create the projects
+for the libraries yourself. Take the 68K library projects, set the C++ header
+file to "MW_TclHeaderCFM68K", the project type to "cfm68K library" and the
+filename to "Tcl-CFM68K.Lib" (and similarly for Tk).
+You may also have to modify <code>TclMacNotify.c</code>
 because there is an error in the Apple Universal headers (sic!). Read the
 comments at the beginning of <code>Mac:Python:macglue.c</code> and copy the
 code to <code>TclMacNotify.c</code>. If you get linker errors on <code>GetEvQHdr</code>
-you have not done this correctly.
+you have not done this correctly. <em>XXXX Is this still needed?</em>
+
+<LI> Note that if you use a different release of Tcl and Tk than the ones
+I have used you may have to adapt the Python <code>tkresources.rsrc</code> file.
+This is easiest done by building <code>SimpleTk</code> and copying the TEXT, ICON
+and CRSR resources from it to <code>tkresources.rsrc</code>. This allows
+the <code>_tkinter</code> module to work without an installed Tk/Tcl on your
+machine.
 
 </UL>
 
-Build first the MoreFiles library, then the Tcl library, then
+Build first the Tcl library, then
 SimpleTcl (test it by typing <code>ls -l</code> in the window you get)
 then the Tk library, then SimpleTk (which can again be tested with
 <code>ls -l</code>). If this all worked you are all set to try
