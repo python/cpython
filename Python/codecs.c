@@ -271,6 +271,7 @@ PyObject *PyCodec_Encoder(const char *encoding)
     if (codecs == NULL)
 	goto onError;
     v = PyTuple_GET_ITEM(codecs,0);
+    Py_DECREF(codecs);
     Py_INCREF(v);
     return v;
 
@@ -287,6 +288,7 @@ PyObject *PyCodec_Decoder(const char *encoding)
     if (codecs == NULL)
 	goto onError;
     v = PyTuple_GET_ITEM(codecs,1);
+    Py_DECREF(codecs);
     Py_INCREF(v);
     return v;
 
@@ -298,12 +300,14 @@ PyObject *PyCodec_StreamReader(const char *encoding,
 			       PyObject *stream,
 			       const char *errors)
 {
-    PyObject *codecs;
+    PyObject *codecs, *ret;
 
     codecs = _PyCodec_Lookup(encoding);
     if (codecs == NULL)
 	goto onError;
-    return build_stream_codec(PyTuple_GET_ITEM(codecs,2),stream,errors);
+    ret = build_stream_codec(PyTuple_GET_ITEM(codecs,2),stream,errors);
+    Py_DECREF(codecs);
+    return ret;
 
  onError:
     return NULL;
@@ -313,12 +317,14 @@ PyObject *PyCodec_StreamWriter(const char *encoding,
 			       PyObject *stream,
 			       const char *errors)
 {
-    PyObject *codecs;
+    PyObject *codecs, *ret;
 
     codecs = _PyCodec_Lookup(encoding);
     if (codecs == NULL)
 	goto onError;
-    return build_stream_codec(PyTuple_GET_ITEM(codecs,3),stream,errors);
+    ret = build_stream_codec(PyTuple_GET_ITEM(codecs,3),stream,errors);
+    Py_DECREF(codecs);
+    return ret;
 
  onError:
     return NULL;
