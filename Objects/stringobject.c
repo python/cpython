@@ -2666,7 +2666,7 @@ PyString_Format(PyObject *format, PyObject *args)
 	char *fmt, *res;
 	int fmtcnt, rescnt, reslen, arglen, argidx;
 	int args_owned = 0;
-	PyObject *result, *orig_args;
+	PyObject *result, *orig_args, *v, *w;
 	PyObject *dict = NULL;
 	if (format == NULL || !PyString_Check(format) || args == NULL) {
 		PyErr_BadInternalCall();
@@ -3055,22 +3055,28 @@ PyString_Format(PyObject *format, PyObject *args)
 		Py_INCREF(orig_args);
 		args = orig_args;
 	}
-	/* Paste rest of format string to what we have of the result
-	   string; we reuse result for this */
+	args_owned = 1;
+	/* Take what we have of the result and let the Unicode formatting
+	   function format the rest of the input. */
 	rescnt = res - PyString_AS_STRING(result);
+	if (_PyString_Resize(&result, rescnt))
+		goto error;
 	fmtcnt = PyString_GET_SIZE(format) - \
 		 (fmt - PyString_AS_STRING(format));
-	if (_PyString_Resize(&result, rescnt + fmtcnt)) {
-		Py_DECREF(args);
+	format = PyUnicode_Decode(fmt, fmtcnt, NULL, NULL);
+	if (format == NULL)
 		goto error;
-	}
-	memcpy(PyString_AS_STRING(result) + rescnt, fmt, fmtcnt);
-	format = result;
-	/* Let Unicode do its magic */
-	result = PyUnicode_Format(format, args);
+	v = PyUnicode_Format(format, args);
 	Py_DECREF(format);
+	if (v == NULL)
+		goto error;
+	/* Paste what we have (result) to what the Unicode formatting
+	   function returned (v) and return the result (or error) */
+	w = PyUnicode_Concat(result, v);
+	Py_DECREF(result);
+	Py_DECREF(v);
 	Py_DECREF(args);
-	return result;
+	return w;
 	
  error:
 	Py_DECREF(result);
