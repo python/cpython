@@ -68,7 +68,7 @@ newdbmobject(file, flags, mode)
 	    else
 	        err_setstr(DbmError, (char *) gdbm_strerror(gdbm_errno));
 	    DECREF(dp);
-	    return 0;
+	    return NULL;
 	}
 	return (object *)dp;
 }
@@ -119,7 +119,7 @@ dbm_subscript(dp, key)
 	drec = gdbm_fetch(dp->di_dbm, krec);
 	if ( drec.dptr == 0 ) {
 	    err_setstr(KeyError, GETSTRINGVALUE((stringobject *)key));
-	    return 0;
+	    return NULL;
 	}
 	v = newsizedstringobject(drec.dptr, drec.dsize);
 	free(drec.dptr);
@@ -166,6 +166,21 @@ static mapping_methods dbm_as_mapping = {
 	(binaryfunc)dbm_subscript,	/*mp_subscript*/
 	(objobjargproc)dbm_ass_sub,	/*mp_ass_subscript*/
 };
+
+static object *
+dbm_close(dp, args)
+	register dbmobject *dp;
+	object *args;
+{
+	if ( !getnoarg(args) )
+		return NULL;
+        if ( dp->di_dbm )
+		gdbm_close(dp->di_dbm);
+	dp->di_dbm = NULL;
+	DEL(dp);
+	INCREF(None);
+	return None;
+}
 
 static object *
 dbm_keys(dp, args)
@@ -271,6 +286,7 @@ dbm_reorganize(dp, args)
 }
 
 static struct methodlist dbm_methods[] = {
+	{"close",	(method)dbm_close},
 	{"keys",	(method)dbm_keys},
 	{"has_key",	(method)dbm_has_key},
 	{"firstkey",	(method)dbm_firstkey},
@@ -290,7 +306,7 @@ dbm_getattr(dp, name)
 static typeobject Dbmtype = {
 	OB_HEAD_INIT(&Typetype)
 	0,
-	"Gdbm_dictionary",
+	"gdbm",
 	sizeof(dbmobject),
 	0,
 	(destructor)dbm_dealloc, /*tp_dealloc*/
@@ -311,12 +327,14 @@ dbmopen(self, args)
     object *self;
     object *args;
 {
-    char *name, *flags;
-    int iflags, mode;
+    char *name;
+    char *flags = "r";
+    int iflags;
+   int mode = 0666;
 
 /* XXXX add other flags */
-        if ( !getargs(args, "(ssi)", &name, &flags, &mode) )
-	  return 0;
+        if ( !newgetargs(args, "s|si", &name, &flags, &mode) )
+	  return NULL;
 	if ( strcmp(flags, "r") == 0 )
 	  iflags = GDBM_READER;
 	else if ( strcmp(flags, "w") == 0 )
@@ -328,13 +346,13 @@ dbmopen(self, args)
 	else {
 	    err_setstr(DbmError,
 		       "Flags should be one of 'r', 'w', 'c' or 'n'");
-	    return 0;
+	    return NULL;
 	}
         return newdbmobject(name, iflags, mode);
 }
 
 static struct methodlist dbmmodule_methods[] = {
-    { "open", (method)dbmopen },
+    { "open", (method)dbmopen, 1 },
     { 0, 0 },
 };
 
