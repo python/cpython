@@ -63,7 +63,8 @@ unpack into new subdirectories of dist\.
 
 _tkinter
     Python wrapper for the Tk windowing system.  Requires building
-    Tcl/Tk first.  Following are instructions for Tcl/Tk 8.4.3:
+    Tcl/Tk first.  Following are instructions for Tcl/Tk 8.4.5; these
+    should work for version 8.4.6 too, with suitable substitutions:
 
     Get source
     ----------
@@ -77,19 +78,18 @@ _tkinter
         dist\tk8.4.5\
     respectively.
 
-    Build Tcl first (done here w/ MSVC 6 on Win98SE)
+    Build Tcl first (done here w/ MSVC 7.1 on Windows XP)
     ---------------
+    Use "Start -> All Programs -> Microsoft Visual Studio .NET 2003
+         -> Visual Studio .NET Tools -> Visual Studio .NET 2003 Command Prompt"
+    to get a shell window with the correct environment settings
     cd dist\tcl8.4.5\win
-    run vcvars32.bat [necessary even on Win2K]
     nmake -f makefile.vc
     nmake -f makefile.vc INSTALLDIR=..\..\tcl84 install
 
     XXX Should we compile with OPTS=threads?
 
-    XXX Some tests failed in "nmake -f makefile.vc test".
-    XXX all.tcl:  Total 10480   Passed 9743    Skipped 719     Failed 18
-    XXX
-    XXX That was on Win98SE.  On Win2K:
+    XXX Some tests failed in "nmake -f makefile.vc test".  On Win2K:
     XXX all.tcl   Total 10480   Passed 9781    Skipped 698     Failed  1
 
     Build Tk
@@ -180,9 +180,9 @@ _bsddb
     and follow the "Windows->Building Berkeley DB with Visual C++ .NET"
     instructions for building the Sleepycat
     software.  Note that Berkeley_DB.dsw is in the build_win32 subdirectory.
-    Build the Release version ("build_all -- Win32 Release").
+    Build the "Release Static" version.
 
-    XXX We're actually linking against Release_static\libdb42s.lib.
+    XXX We're linking against Release_static\libdb42s.lib.
     XXX This yields the following warnings:
 """
 Compiling...
@@ -202,8 +202,8 @@ __bsddb - 0 error(s), 5 warning(s)
     is then enabled.  Running in verbose mode may be helpful.
 
     XXX The test_bsddb3 tests don't always pass, on Windows (according to
-    XXX me) or on Linux (according to Barry).  I had much better luck
-    XXX on Win2K than on Win98SE.  The common failure mode across platforms
+    XXX me) or on Linux (according to Barry).  (I had much better luck
+    XXX on Win2K than on Win98SE.)  The common failure mode across platforms
     XXX is
     XXX     DBAgainError: (11, 'Resource temporarily unavailable -- unable
     XXX                         to join the environment')
@@ -254,8 +254,6 @@ _ssl
     the build.  This Python script locates and builds your OpenSSL
     installation, then invokes a simple makefile to build the final .pyd.
 
-    Win9x users:  see "Win9x note" below.
-
     build_ssl.py attempts to catch the most common errors (such as not
     being able to find OpenSSL sources, or not being able to find a Perl
     that works with OpenSSL) and give a reasonable error message.
@@ -266,30 +264,6 @@ _ssl
 
     build_ssl.py/MSVC isn't clever enough to clean OpenSSL - you must do
     this by hand.
-
-    Win9x note:  If, near the start of the build process, you see
-    something like
-
-        C:\Code\openssl-0.9.7c>set OPTS=no-asm
-        Out of environment space
-
-    then you're in trouble, and will probably also see these errors near
-    the end of the process:
-
-        NMAKE : fatal error U1073: don't know how to make
-            'crypto\md5\asm\m5_win32.asm'
-        Stop.
-        NMAKE : fatal error U1073: don't know how to make
-            'C:\Code\openssl-0.9.6g/out32/libeay32.lib'
-        Stop.
-
-    You need more environment space.  Win9x only has room for 256 bytes
-    by default, and especially after installing ActivePerl (which fiddles
-    the PATH envar), you're likely to run out.  KB Q230205
-
-        http://support.microsoft.com/default.aspx?scid=KB;en-us;q230205
-
-    explains how to edit CONFIG.SYS to cure this.
 
 
 YOUR OWN EXTENSION DLLs
