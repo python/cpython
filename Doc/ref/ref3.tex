@@ -841,6 +841,13 @@ a list object, \code{x.__getitem__(i)} is not equivalent to
 operation raise an exception when no appropriate method is defined.
 \withsubitem{(mapping object method)}{\ttindex{__getitem__()}}
 
+When implementing a class that emulates any built-in type, it is
+important that the emulation only be implemented to the degree that it
+makes sense for the object being modelled.  For example, some
+sequences may work well with retrieval of individual elements, but
+extracting a slice may not make sense.  (One example of this is the
+\class{NodeList} interface in the W3C's Document Object Model.)
+
 
 \subsection{Basic customization\label{customization}}
 
