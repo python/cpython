@@ -80,7 +80,9 @@
 VERSION=	@VERSION@
 srcdir=		@srcdir@
 VPATH=		@srcdir@
+CC=		@CC@
 RANLIB=		@RANLIB@
+DEFS=		@DEFS@
 
 # Machine-dependent subdirectories
 MACHDEP=	@MACHDEP@
@@ -139,16 +141,28 @@ DISTFILES=	README ChangeLog $(CONFIGFILES)
 DISTDIRS=	$(SUBDIRS) $(SUBDIRSTOO) Ext-dummy
 DIST=		$(DISTFILES) $(DISTDIRS)
 
+# Compilation flags for getbuildinfo.c only
+CFLAGS=		$(OPT) -I. $(DEFS)
+
 LIBRARY=	libpython$(VERSION).a
 
 # Default target
 all:		$(LIBRARY) python
 
 # Build the interpreter
-python:		$(LIBRARY)
+python:		$(LIBRARY) buildno
+		expr `cat buildno` + 1 >@buildno
+		mv @buildno buildno
+		$(CC) -c $(CFLAGS) -DBUILD=`cat buildno` \
+		      $(srcdir)/Modules/getbuildinfo.c
+		$(AR) cr $(LIBRARY) getbuildinfo.o
+		$(RANLIB) $(LIBRARY)
 		cd Modules;  $(MAKE) OPT="$(OPT)" VERSION="$(VERSION)" \
 			prefix="$(prefix)" exec_prefix="$(exec_prefix)" \
 			LIBRARY=../$(LIBRARY) link
+
+buildno:
+		echo 0 >buildno
 
 # Build the library
 $(LIBRARY):	$(SUBDIRS)
