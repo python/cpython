@@ -1566,7 +1566,7 @@ match_dealloc(MatchObject* self)
 }
 
 static PyObject*
-match_getslice_by_index(MatchObject* self, int index)
+match_getslice_by_index(MatchObject* self, int index, PyObject* def)
 {
 	if (index < 0 || index >= self->groups) {
 		/* raise IndexError if we were given a bad group number */
@@ -1578,9 +1578,9 @@ match_getslice_by_index(MatchObject* self, int index)
 	}
 
 	if (self->string == Py_None || self->mark[index+index] < 0) {
-		/* return None if the string or group is undefined */
-		Py_INCREF(Py_None);
-		return Py_None;
+		/* return default value if the string or group is undefined */
+		Py_INCREF(def);
+		return def;
 	}
 
 	return PySequence_GetSlice(
@@ -1605,9 +1605,9 @@ match_getindex(MatchObject* self, PyObject* index)
 }
 
 static PyObject*
-match_getslice(MatchObject* self, PyObject* index)
+match_getslice(MatchObject* self, PyObject* index, PyObject* def)
 {
-	return match_getslice_by_index(self, match_getindex(self, index));
+	return match_getslice_by_index(self, match_getindex(self, index), def);
 }
 
 static PyObject*
@@ -1620,10 +1620,10 @@ match_group(MatchObject* self, PyObject* args)
 
 	switch (size) {
 	case 0:
-		result = match_getslice(self, Py_False);
+		result = match_getslice(self, Py_False, Py_None);
 		break;
 	case 1:
-		result = match_getslice(self, PyTuple_GET_ITEM(args, 0));
+		result = match_getslice(self, PyTuple_GET_ITEM(args, 0), Py_None);
 		break;
 	default:
 		/* fetch multiple items */
@@ -1631,7 +1631,9 @@ match_group(MatchObject* self, PyObject* args)
 		if (!result)
 			return NULL;
 		for (i = 0; i < size; i++) {
-			PyObject* item = match_getslice(self, PyTuple_GET_ITEM(args, i));
+			PyObject* item = match_getslice(
+                self, PyTuple_GET_ITEM(args, i), Py_None
+                );
 			if (!item) {
 				Py_DECREF(result);
 				return NULL;
@@ -1649,7 +1651,9 @@ match_groups(MatchObject* self, PyObject* args)
 	PyObject* result;
 	int index;
 
-    /* FIXME: <fl> handle default value! */
+	PyObject* def = Py_None;
+	if (!PyArg_ParseTuple(args, "|O", &def))
+		return NULL;
 
 	result = PyTuple_New(self->groups-1);
 	if (!result)
@@ -1657,8 +1661,7 @@ match_groups(MatchObject* self, PyObject* args)
 
 	for (index = 1; index < self->groups; index++) {
 		PyObject* item;
-		/* FIXME: <fl> handle default! */
-		item = match_getslice_by_index(self, index);
+		item = match_getslice_by_index(self, index, def);
 		if (!item) {
 			Py_DECREF(result);
 			return NULL;
@@ -1676,17 +1679,19 @@ match_groupdict(MatchObject* self, PyObject* args)
 	PyObject* keys;
 	int index;
 
-    /* FIXME: <fl> handle default value! */
+	PyObject* def = Py_None;
+	if (!PyArg_ParseTuple(args, "|O", &def))
+		return NULL;
 
 	result = PyDict_New();
-	if (!result)
-		return NULL;
-	if (!self->pattern->groupindex)
+	if (!result || !self->pattern->groupindex)
 		return result;
 
 	keys = PyMapping_Keys(self->pattern->groupindex);
-	if (!keys)
+	if (!keys) {
+        Py_DECREF(result);
 		return NULL;
+    }
 
 	for (index = 0; index < PyList_GET_SIZE(keys); index++) {
 		PyObject* key;
@@ -1697,7 +1702,7 @@ match_groupdict(MatchObject* self, PyObject* args)
 			Py_DECREF(result);
 			return NULL;
 		}
-		item = match_getslice(self, key);
+		item = match_getslice(self, key, def);
 		if (!item) {
 			Py_DECREF(key);
 			Py_DECREF(keys);
