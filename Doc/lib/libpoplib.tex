@@ -119,15 +119,15 @@ Here is a minimal example (without error checking) that opens a
 mailbox and retrieves and prints all messages:
 
 \begin{verbatim}
-import getpass, poplib, string
+import getpass, poplib
 
 M = poplib.POP3('localhost')
 M.user(getpass.getuser())
-M.pass(getpass.getpass())
+M.pass_(getpass.getpass())
 numMessages = len(M.list()[1])
 for i in range(numMessages):
     for j in M.retr(i+1)[1]:
-        sys.stdout.write(j)
+        print j
 \end{verbatim}
 
 At the end of the module, there is a test section that contains a more
