@@ -2781,6 +2781,7 @@ PyString_Format(PyObject *format, PyObject *args)
 			int len;
 			char formatbuf[FORMATBUFLEN]; /* For format{float,int,char}() */
 			char *fmt_start = fmt;
+		        int argidx_start = argidx;
 
 			fmt++;
 			if (*fmt == '(') {
@@ -2934,6 +2935,7 @@ PyString_Format(PyObject *format, PyObject *args)
   			case 'r':
 				if (PyUnicode_Check(v)) {
 					fmt = fmt_start;
+					argidx = argidx_start;
 					goto unicode;
 				}
 				if (c == 's')
@@ -3098,8 +3100,7 @@ PyString_Format(PyObject *format, PyObject *args)
 		Py_DECREF(args);
 		args_owned = 0;
 	}
-	/* Fiddle args right (remove the first argidx-1 arguments) */
-	--argidx;
+	/* Fiddle args right (remove the first argidx arguments) */
 	if (PyTuple_Check(orig_args) && argidx > 0) {
 		PyObject *v;
 		int n = PyTuple_GET_SIZE(orig_args) - argidx;

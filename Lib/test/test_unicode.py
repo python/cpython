@@ -366,6 +366,12 @@ verify('...%(foo)s...' % {u'foo':u"abc",u'def':123} == u'...abc...')
 verify('...%s...%s...%s...%s...' % (1,2,3,u"abc") == u'...1...2...3...abc...')
 verify('...%%...%%s...%s...%s...%s...%s...' % (1,2,3,u"abc") == u'...%...%s...1...2...3...abc...')
 verify('...%s...' % u"abc" == u'...abc...')
+verify('%*s' % (5,u'abc',) == u'  abc')
+verify('%*s' % (-5,u'abc',) == u'abc  ')
+verify('%*.*s' % (5,2,u'abc',) == u'   ab')
+verify('%*.*s' % (5,3,u'abc',) == u'  abc')
+verify('%i %*.*s' % (10, 5,3,u'abc',) == u'10   abc')
+verify('%i%s %*.*s' % (10, 3, 5,3,u'abc',) == u'103   abc')
 print 'done.'
 
 # Test builtin codecs
