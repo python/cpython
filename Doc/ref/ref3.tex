@@ -12,7 +12,7 @@ program is represented by objects or by relations between objects.
 
 Every object has an identity, a type and a value.  An object's
 \emph{identity} never changes once it has been created; you may think
-of it as the object's address in memory.  The `\code{is}' operator
+of it as the object's address in memory.  The `\keyword{is}' operator
 compares the identity of two objects; the
 \function{id()}\bifuncindex{id} function returns an integer
 representing its identity (currently implemented as its address).
@@ -1540,10 +1540,10 @@ original arguments to the operation.
 
 \item
 
-New-style classes (those derived from \code{object}) never invoke the
-\code{__coerce__} method in response to a binary operator; the only
-time \code{__coerce__} is invoked is when the built-in function
-\code{coerce()} is called.
+New-style classes (those derived from \class{object}) never invoke the
+\method{__coerce__()} method in response to a binary operator; the only
+time \method{__coerce__()} is invoked is when the built-in function
+\function{coerce()} is called.
 
 \item
 
@@ -1565,7 +1565,7 @@ binary operator, and \method{__iadd__} for the in-place variant.
 For objects \var{x} and \var{y}, first \code{\var{x}.__op__(\var{y})}
 is tried.  If this is not implemented or returns \code{NotImplemented},
 \code{\var{y}.__rop__(\var{x})} is tried.  If this is also not
-implemented or returns \code{NotImplemented}, a \code{TypeError}
+implemented or returns \code{NotImplemented}, a \exception{TypeError}
 exception is raised.  But see the following exception:
 
 \item
@@ -1573,8 +1573,8 @@ exception is raised.  But see the following exception:
 Exception to the previous item: if the left operand is an instance of
 a built-in type or a new-style class, and the right operand is an
 instance of a proper subclass of that type or class, the right
-operand's \code{__rop__} method is tried \emph{before} the left
-operand's \code{__op__} method.  This is done so that a subclass can
+operand's \method{__rop__()} method is tried \emph{before} the left
+operand's \method{__op__()} method.  This is done so that a subclass can
 completely override binary operators.  Otherwise, the left operand's
 __op__ method would always accept the right operand: when an instance
 of a given class is expected, an instance of a subclass of that class
@@ -1583,17 +1583,17 @@ is always acceptable.
 \item
 
 When either operand type defines a coercion, this coercion is called
-before that type's \code{__op__} or \code{__rop__} method is called,
-but no sooner.  If the coercion returns an object of a different type
-for the operand whose coercion is invoked, part of the process is
-redone using the new object.
+before that type's \method{__op__()} or \method{__rop__()} method is
+called, but no sooner.  If the coercion returns an object of a
+different type for the operand whose coercion is invoked, part of the
+process is redone using the new object.
 
 \item
 
 When an in-place operator (like `\code{+=}') is used, if the left
-operand implements \code{__iop__}, it is invoked without any coercion.
-When the operation falls back to \code{__op__} and/or \code{__rop__},
-the normal coercion rules apply.
+operand implements \method{__iop__()}, it is invoked without any
+coercion.  When the operation falls back to \method{__op__()} and/or
+\method{__rop__()}, the normal coercion rules apply.
 
 \item
 
@@ -1604,23 +1604,23 @@ sequence concatenation, sequence concatenation is invoked.
 
 In \var{x}\code{*}\var{y}, if one operator is a sequence that
 implements sequence repetition, and the other is an integer
-(\code{int} or \code{long}), sequence repetition is invoked.
+(\class{int} or \class{long}), sequence repetition is invoked.
 
 \item
 
-Rich comparisons (implemented by methods \code{__eq__} and so on)
+Rich comparisons (implemented by methods \method{__eq__()} and so on)
 never use coercion.  Three-way comparison (implemented by
-\code{__cmp__}) does use coercion under the same conditions as
+\method{__cmp__()}) does use coercion under the same conditions as
 other binary operations use it.
 
 \item
 
-In the current implementation, the built-in numeric types \code{int},
-\code{long} and \code{float} do not use coercion; the type
-\code{complex} however does use it.  The difference can become
+In the current implementation, the built-in numeric types \class{int},
+\class{long} and \class{float} do not use coercion; the type
+\class{complex} however does use it.  The difference can become
 apparent when subclassing these types.  Over time, the type
-\code{complex} may be fixed to avoid coercion.  All these types
-implement a \code{__coerce__} method, for use by the built-in
-\code{coerce} function.
+\class{complex} may be fixed to avoid coercion.  All these types
+implement a \method{__coerce__()} method, for use by the built-in
+\function{coerce()} function.
 
 \end{itemize}
