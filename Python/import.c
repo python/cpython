@@ -702,7 +702,7 @@ load_source_module(char *name, char *pathname, FILE *fp)
 	PyObject *m;
 
 	mtime = PyOS_GetLastModificationTime(pathname, fp);
-	if (mtime == -1)
+	if (mtime == (time_t)(-1))
 		return NULL;
 #if SIZEOF_TIME_T > 4
 	/* Python's .pyc timestamp handling presumes that the timestamp fits
@@ -711,7 +711,7 @@ load_source_module(char *name, char *pathname, FILE *fp)
 	 */
 	if (mtime >> 32) {
 		PyErr_SetString(PyExc_OverflowError,
-			"modification time overflows a 4 bytes");
+			"modification time overflows a 4 byte field");
 		return NULL;
 	}
 #endif
