@@ -132,7 +132,11 @@ class Message:
             tell = self.fp.tell
         while 1:
             if tell:
-                startofline = tell()
+                try:
+                    startofline = tell()
+                except IOError:
+                    startofline = tell = None
+                    self.seekable = 0
             line = self.fp.readline()
             if not line:
                 self.status = 'EOF in headers'
