@@ -867,52 +867,50 @@ for \constant{SIGABRT} will behave differently.
 Availability: \UNIX, Windows.
 \end{funcdesc}
 
-\begin{funcdesc}{execl}{path, arg0, arg1, ...}
-This is equivalent to
-\samp{execv(\var{path}, (\var{arg0}, \var{arg1}, ...))}.
-Availability: \UNIX{}, Windows.
-\end{funcdesc}
+\begin{funcdesc}{execl}{path, arg0, arg1, \moreargs}
+\funcline{execle}{path, arg0, arg1, \moreargs, env}
+\funcline{execlp}{file, arg0, arg1, \moreargs}
+\funcline{execlpe}{file, arg0, arg1, \moreargs, env}
+\funcline{execv}{path, args}
+\funcline{execve}{path, args, env}
+\funcline{execvp}{file, args}
+\funcline{execvpe}{file, args, env}
+These functions all execute a new program, replacing the current
+process; they do not return.  On \UNIX, the new executable is loaded
+into the current process, and will have the same process ID as the
+caller.  Errors will be reported as \exception{OSError} exceptions.
 
-\begin{funcdesc}{execle}{path, arg0, arg1, ..., env}
-This is equivalent to
-\samp{execve(\var{path}, (\var{arg0}, \var{arg1}, ...), \var{env})}.
-Availability: \UNIX{}, Windows.
-\end{funcdesc}
+The \character{l} and \character{v} variants of the
+\function{exec*()} functions differ in how command-line arguments are
+passed.  The \character{l} variants are perhaps the easiest to work
+with if the number of parameters is fixed when the code is written;
+the individual parameters simply become additional parameters to the
+\function{execl*()} functions.  The \character{v} variants are good
+when the number of parameters is variable, with the arguments being
+passed in a list or tuple as the \var{args} parameter.  In either
+case, the arguments to the child process must start with the name of
+the command being run.
 
-\begin{funcdesc}{execlp}{path, arg0, arg1, ...}
-This is equivalent to
-\samp{execvp(\var{path}, (\var{arg0}, \var{arg1}, ...))}.
-Availability: \UNIX{}, Windows.
-\end{funcdesc}
+The variants which include a \character{p} near the end
+(\function{execlp()}, \function{execlpe()}, \function{execvp()},
+and \function{execvpe()}) will use the \envvar{PATH} environment
+variable to locate the program \var{file}.  When the environment is
+being replaced (using one of the \function{exec*e()} variants,
+discussed in the next paragraph), the
+new environment is used as the source of the \envvar{PATH} variable.
+The other variants, \function{execl()}, \function{execle()},
+\function{execv()}, and \function{execve()}, will not use the
+\envvar{PATH} variable to locate the executable; \var{path} must
+contain an appropriate absolute or relative path.
 
-\begin{funcdesc}{execv}{path, args}
-Execute the executable \var{path} with argument list \var{args},
-replacing the current process (the Python interpreter).
-The argument list may be a tuple or list of strings.
-Availability: \UNIX{}, Windows.
-\end{funcdesc}
-
-\begin{funcdesc}{execve}{path, args, env}
-Execute the executable \var{path} with argument list \var{args},
-and environment \var{env}, replacing the current process (the Python
-interpreter).
-The argument list may be a tuple or list of strings.
-The environment must be a dictionary mapping strings to strings.
-Availability: \UNIX{}, Windows.
-\end{funcdesc}
-
-\begin{funcdesc}{execvp}{path, args}
-This is like \samp{execv(\var{path}, \var{args})} but duplicates
-the shell's actions in searching for an executable file in a list of
-directories.  The directory list is obtained from
-\code{environ['PATH']}.
-Availability: \UNIX{}, Windows.
-\end{funcdesc}
-
-\begin{funcdesc}{execvpe}{path, args, env}
-This is a cross between \function{execve()} and \function{execvp()}.
-The directory list is obtained from \code{\var{env}['PATH']}.
-Availability: \UNIX{}, Windows.
+For \function{execle()}, \function{execlpe()}, \function{execve()},
+and \function{execvpe()} (note that these all end in \character{e}),
+the \var{env} parameter must be a mapping which is used to define the
+environment variables for the new process; the \function{execl()},
+\function{execlp()}, \function{execv()}, and \function{execvp()}
+all cause the new process to inherit the environment of the current
+process.
+Availability: \UNIX, Windows.
 \end{funcdesc}
 
 \begin{funcdesc}{_exit}{n}
@@ -970,33 +968,17 @@ functions are described in section \ref{os-newstreams}.
 
 \begin{funcdesc}{spawnl}{mode, path, \moreargs}
 \funcline{spawnle}{mode, path, \moreargs, env}
-\funcline{spawnlp}{mode, path, \moreargs}
-\funcline{spawnlpe}{mode, path, \moreargs, env}
+\funcline{spawnlp}{mode, file, \moreargs}
+\funcline{spawnlpe}{mode, file, \moreargs, env}
 \funcline{spawnv}{mode, path, args}
 \funcline{spawnve}{mode, path, args, env}
-\funcline{spawnvp}{mode, path, args}
-\funcline{spawnvpe}{mode, path, args, env}
+\funcline{spawnvp}{mode, file, args}
+\funcline{spawnvpe}{mode, file, args, env}
 Execute the program \var{path} in a new process.  If \var{mode} is
 \constant{P_NOWAIT}, this function returns the process ID of the new
 process; it \var{mode} is \constant{P_WAIT}, returns the process's
 exit code if it exits normally, or \code{-\var{signal}}, where
 \var{signal} is the signal that killed the process.
-
-For \function{spawnle()}, \function{spawnlpe()}, \function{spawnve()},
-and \function{spawnvpe()} (note that these all end in \character{e}),
-the \var{env} parameter must be a mapping which is used to define the
-environment variables for the new process; the \function{spawnl()},
-\function{spawnlp()}, \function{spawnv()}, and \function{spawnvp()}
-all cause the new process to inherit the environment of the current
-process.
-
-The variants which include a second \character{p} near the end
-(\function{spawnlp()}, \function{spawnlpe()}, \function{spawnvp()},
-and \function{spawnvpe()}) will use the \envvar{PATH} environment
-variable to locate the program \var{path}.  The other variants,
-\function{spawnl()}, \function{spawnle()}, \function{spawnv()}, and
-\function{spawnve()}, will not use the \envvar{PATH} variable to
-locate the executable.
 
 The \character{l} and \character{v} variants of the
 \function{spawn*()} functions differ in how command-line arguments are
@@ -1009,6 +991,26 @@ passed in a list or tuple as the \var{args} parameter.  In either
 case, the arguments to the child process must start with the name of
 the command being run.
 
+The variants which include a second \character{p} near the end
+(\function{spawnlp()}, \function{spawnlpe()}, \function{spawnvp()},
+and \function{spawnvpe()}) will use the \envvar{PATH} environment
+variable to locate the program \var{file}.  When the environment is
+being replaced (using one of the \function{spawn*e()} variants,
+discussed in the next paragraph), the new environment is used as the
+source of the \envvar{PATH} variable.  The other variants,
+\function{spawnl()}, \function{spawnle()}, \function{spawnv()}, and
+\function{spawnve()}, will not use the \envvar{PATH} variable to
+locate the executable; \var{path} must contain an appropriate absolute
+or relative path.
+
+For \function{spawnle()}, \function{spawnlpe()}, \function{spawnve()},
+and \function{spawnvpe()} (note that these all end in \character{e}),
+the \var{env} parameter must be a mapping which is used to define the
+environment variables for the new process; the \function{spawnl()},
+\function{spawnlp()}, \function{spawnv()}, and \function{spawnvp()}
+all cause the new process to inherit the environment of the current
+process.
+
 As an example, the following calls to \function{spawnlp()} and
 \function{spawnvpe()} are equivalent:
 
@@ -1020,7 +1022,8 @@ L = ['cp', 'index.html', '/dev/null']
 os.spawnvpe(os.P_WAIT, 'cp', L, os.environ)
 \end{verbatim}
 
-Availability: \UNIX{}, Windows.
+Availability: \UNIX, Windows.  \function{spawnvp()} and
+\function{spawnvpe()} are not available on Windows.
 \versionadded{1.6}
 \end{funcdesc}
 
