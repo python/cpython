@@ -5,7 +5,7 @@
 The \module{rgbimg} module allows Python programs to access SGI imglib image
 files (also known as \file{.rgb} files).  The module is far from
 complete, but is provided anyway since the functionality that there is
-is enough in some cases.  Currently, colormap files are not supported.
+enough in some cases.  Currently, colormap files are not supported.
 
 The module defines the following variables and functions:
 
@@ -24,7 +24,7 @@ are currently supported.
 This function reads and decodes the image on the specified file, and
 returns it as a Python string. The string has 4 byte RGBA pixels.
 The bottom left pixel is the first in
-the string. This format is suitable to pass to \code{gl.lrectwrite},
+the string. This format is suitable to pass to \function{gl.lrectwrite()},
 for instance.
 \end{funcdesc}
 
@@ -34,7 +34,7 @@ file \var{file}. \var{x} and \var{y} give the size of the image.
 \var{z} is 1 if the saved image should be 1 byte greyscale, 3 if the
 saved image should be 3 byte RGB data, or 4 if the saved images should
 be 4 byte RGBA data.  The input data always contains 4 bytes per pixel.
-These are the formats returned by \code{gl.lrectread}.
+These are the formats returned by \function{gl.lrectread()}.
 \end{funcdesc}
 
 \begin{funcdesc}{ttob}{flag}

@@ -1,9 +1,10 @@
-\section{Built-in Module \sectcode{rotor}}
+\section{Built-in Module \module{rotor}}
 \label{module-rotor}
 \bimodindex{rotor}
 
 This module implements a rotor-based encryption algorithm, contributed by
-Lance Ellinghouse.  The design is derived from the Enigma device, a machine
+Lance Ellinghouse\index{Ellinghouse, Lance}.  The design is derived
+from the Enigma device\indexii{Enigma}{device}, a machine
 used during World War II to encipher messages.  A rotor is simply a
 permutation.  For example, if the character `A' is the origin of the rotor,
 then a given rotor might map `A' to `L', `B' to `Z', `C' to `G', and so on.
@@ -19,12 +20,10 @@ recursively.  In other words, after enciphering one character, we advance
 the rotors in the same fashion as a car's odometer. Decoding works in the
 same way, except we reverse the permutations and apply them in the opposite
 order.
-\index{Ellinghouse, Lance}
 \indexii{Enigma}{cipher}
 
 The available functions in this module are:
 
-\setindexsubitem{(in module rotor)}
 \begin{funcdesc}{newrotor}{key\optional{, numrotors}}
 Return a rotor object. \var{key} is a string containing the encryption key
 for the object; it can contain arbitrary binary data. The key will be used
@@ -35,32 +34,31 @@ if it is omitted, a default value of 6 will be used.
 
 Rotor objects have the following methods:
 
-\setindexsubitem{(rotor method)}
-\begin{funcdesc}{setkey}{key}
+\begin{methoddesc}[rotor]{setkey}{key}
 Sets the rotor's key to \var{key}.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{encrypt}{plaintext}
+\begin{methoddesc}[rotor]{encrypt}{plaintext}
 Reset the rotor object to its initial state and encrypt \var{plaintext},
 returning a string containing the ciphertext.  The ciphertext is always the
 same length as the original plaintext.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{encryptmore}{plaintext}
+\begin{methoddesc}[rotor]{encryptmore}{plaintext}
 Encrypt \var{plaintext} without resetting the rotor object, and return a
 string containing the ciphertext.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{decrypt}{ciphertext}
+\begin{methoddesc}[rotor]{decrypt}{ciphertext}
 Reset the rotor object to its initial state and decrypt \var{ciphertext},
 returning a string containing the ciphertext.  The plaintext string will
 always be the same length as the ciphertext.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{decryptmore}{ciphertext}
+\begin{methoddesc}[rotor]{decryptmore}{ciphertext}
 Decrypt \var{ciphertext} without resetting the rotor object, and return a
 string containing the ciphertext.
-\end{funcdesc}
+\end{methoddesc}
 
 An example usage:
 \begin{verbatim}
@@ -80,17 +78,18 @@ An example usage:
 'l(\315'
 >>> del rt
 \end{verbatim}
-%
-The module's code is not an exact simulation of the original Enigma device;
-it implements the rotor encryption scheme differently from the original. The
-most important difference is that in the original Enigma, there were only 5
-or 6 different rotors in existence, and they were applied twice to each
-character; the cipher key was the order in which they were placed in the
-machine.  The Python rotor module uses the supplied key to initialize a
-random number generator; the rotor permutations and their initial positions
-are then randomly generated.  The original device only enciphered the
-letters of the alphabet, while this module can handle any 8-bit binary data;
-it also produces binary output.  This module can also operate with an
+
+The module's code is not an exact simulation of the original Enigma
+device; it implements the rotor encryption scheme differently from the
+original. The most important difference is that in the original
+Enigma, there were only 5 or 6 different rotors in existence, and they
+were applied twice to each character; the cipher key was the order in
+which they were placed in the machine.  The Python \module{rotor}
+module uses the supplied key to initialize a random number generator;
+the rotor permutations and their initial positions are then randomly
+generated.  The original device only enciphered the letters of the
+alphabet, while this module can handle any 8-bit binary data; it also
+produces binary output.  This module can also operate with an
 arbitrary number of rotors.
 
 The original Enigma cipher was broken in 1944. % XXX: Is this right?
@@ -102,5 +101,4 @@ for discouraging casual snooping through your files, it will probably be
 just fine, and may be somewhat safer than using the \UNIX{} \program{crypt}
 command.
 \index{NSA}
-\index{National Security Agency}\index{crypt(1)}
-% XXX How were Unix commands represented in the docs?
+\index{National Security Agency}

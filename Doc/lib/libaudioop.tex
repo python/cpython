@@ -1,19 +1,25 @@
-\section{Built-in Module \sectcode{audioop}}
+\section{Built-in Module \module{audioop}}
 \label{module-audioop}
 \bimodindex{audioop}
 
-The \code{audioop} module contains some useful operations on sound fragments.
-It operates on sound fragments consisting of signed integer samples
-8, 16 or 32 bits wide, stored in Python strings.  This is the same
-format as used by the \code{al} and \code{sunaudiodev} modules.  All
-scalar items are integers, unless specified otherwise.
+The \module{audioop} module contains some useful operations on sound
+fragments.  It operates on sound fragments consisting of signed
+integer samples 8, 16 or 32 bits wide, stored in Python strings.  This
+is the same format as used by the \module{al} and \module{sunaudiodev}
+modules.  All scalar items are integers, unless specified otherwise.
+
+% This para is mostly here to provide an excuse for the index entries...
+This module provides support for u-LAW and Intel/DVI ADPCM encodings.
+\index{Intel/DVI ADPCM}
+\index{ADPCM, Intel/DVI}
+\index{u-LAW}
 
 A few of the more complicated operations only take 16-bit samples,
-otherwise the sample size (in bytes) is always a parameter of the operation.
+otherwise the sample size (in bytes) is always a parameter of the
+operation.
 
 The module defines the following variables and functions:
 
-\setindexsubitem{(in module audioop)}
 \begin{excdesc}{error}
 This exception is raised on all errors, such as unknown number of bytes
 per sample, etc.
@@ -28,14 +34,14 @@ length.
 
 \begin{funcdesc}{adpcm2lin}{adpcmfragment, width, state}
 Decode an Intel/DVI ADPCM coded fragment to a linear fragment.  See
-the description of \code{lin2adpcm} for details on ADPCM coding.
+the description of \function{lin2adpcm()} for details on ADPCM coding.
 Return a tuple \code{(\var{sample}, \var{newstate})} where the sample
 has the width specified in \var{width}.
 \end{funcdesc}
 
 \begin{funcdesc}{adpcm32lin}{adpcmfragment, width, state}
-Decode an alternative 3-bit ADPCM code.  See \code{lin2adpcm3} for
-details.
+Decode an alternative 3-bit ADPCM code.  See \function{lin2adpcm3()}
+for details.
 \end{funcdesc}
 
 \begin{funcdesc}{avg}{fragment, width}
@@ -60,26 +66,25 @@ argument.
 
 \begin{funcdesc}{findfactor}{fragment, reference}
 Return a factor \var{F} such that
-\code{rms(add(fragment, mul(reference, -F)))} is minimal, i.e.,
-return the factor with which you should multiply \var{reference} to
-make it match as well as possible to \var{fragment}.  The fragments
-should both contain 2-byte samples.
+\code{rms(add(\var{fragment}, mul(\var{reference}, -\var{F})))} is
+minimal, i.e., return the factor with which you should multiply
+\var{reference} to make it match as well as possible to
+\var{fragment}.  The fragments should both contain 2-byte samples.
 
-The time taken by this routine is proportional to \code{len(fragment)}. 
+The time taken by this routine is proportional to
+\code{len(\var{fragment})}.
 \end{funcdesc}
 
 \begin{funcdesc}{findfit}{fragment, reference}
-This routine (which only accepts 2-byte sample fragments)
-
 Try to match \var{reference} as well as possible to a portion of
 \var{fragment} (which should be the longer fragment).  This is
 (conceptually) done by taking slices out of \var{fragment}, using
-\code{findfactor} to compute the best match, and minimizing the
+\function{findfactor()} to compute the best match, and minimizing the
 result.  The fragments should both contain 2-byte samples.  Return a
 tuple \code{(\var{offset}, \var{factor})} where \var{offset} is the
 (integer) offset into \var{fragment} where the optimal match started
 and \var{factor} is the (floating-point) factor as per
-\code{findfactor}.
+\function{findfactor()}.
 \end{funcdesc}
 
 \begin{funcdesc}{findmax}{fragment, length}
@@ -88,7 +93,7 @@ bytes!)\ with maximum energy, i.e., return \var{i} for which
 \code{rms(fragment[i*2:(i+length)*2])} is maximal.  The fragments
 should both contain 2-byte samples.
 
-The routine takes time proportional to \code{len(fragment)}.
+The routine takes time proportional to \code{len(\var{fragment})}.
 \end{funcdesc}
 
 \begin{funcdesc}{getsample}{fragment, width, index}
@@ -106,11 +111,12 @@ between one sample and the next, divided by a (varying) step.  The
 Intel/DVI ADPCM algorithm has been selected for use by the IMA, so it
 may well become a standard.
 
-\code{State} is a tuple containing the state of the coder.  The coder
+\var{state} is a tuple containing the state of the coder.  The coder
 returns a tuple \code{(\var{adpcmfrag}, \var{newstate})}, and the
-\var{newstate} should be passed to the next call of lin2adpcm.  In the
-initial call \code{None} can be passed as the state.  \var{adpcmfrag}
-is the ADPCM coded fragment packed 2 4-bit values per byte.
+\var{newstate} should be passed to the next call of
+\function{lin2adpcm()}.  In the initial call, \code{None} can be
+passed as the state.  \var{adpcmfrag} is the ADPCM coded fragment
+packed 2 4-bit values per byte.
 \end{funcdesc}
 
 \begin{funcdesc}{lin2adpcm3}{fragment, width, state}
@@ -121,8 +127,8 @@ discouraged.
 \end{funcdesc}
 
 \begin{funcdesc}{lin2ulaw}{fragment, width}
-Convert samples in the audio fragment to U-LAW encoding and return
-this as a Python string.  U-LAW is an audio encoding format whereby
+Convert samples in the audio fragment to u-LAW encoding and return
+this as a Python string.  u-LAW is an audio encoding format whereby
 you get a dynamic range of about 14 bits using only 8 bit samples.  It
 is used by the Sun audio hardware, among others.
 \end{funcdesc}
@@ -147,15 +153,18 @@ multiplied by the floating-point value \var{factor}.  Overflow is
 silently ignored.
 \end{funcdesc}
 
-\begin{funcdesc}{ratecv}{fragment, width, nchannels, inrate, outrate, state\optional{, weightA, weightB}}
+\begin{funcdesc}{ratecv}{fragment, width, nchannels, inrate, outrate,
+                         state\optional{, weightA\optional{, weightB}}}
 Convert the frame rate of the input fragment.
 
-\code{State} is a tuple containing the state of the converter.  The
+\var{state} is a tuple containing the state of the converter.  The
 converter returns a tupl \code{(\var{newfragment}, \var{newstate})},
-and \var{newstate} should be passed to the next call of ratecv.
+and \var{newstate} should be passed to the next call of
+\function{ratecv()}.
 
-The \code{weightA} and \code{weightB} arguments are parameters for a
-simple digital filter and default to 1 and 0 respectively.
+The \var{weightA} and \var{weightB} arguments are parameters for a
+simple digital filter and default to \code{1} and \code{0}
+respectively.
 \end{funcdesc}
 
 \begin{funcdesc}{reverse}{fragment, width}
@@ -164,9 +173,12 @@ Reverse the samples in a fragment and returns the modified fragment.
 
 \begin{funcdesc}{rms}{fragment, width}
 Return the root-mean-square of the fragment, i.e.
+%begin{latexonly}
 \iftexi
+%end{latexonly}
 the square root of the quotient of the sum of all squared sample value,
 divided by the sumber of samples.
+%begin{latexonly}
 \else
 % in eqn: sqrt { sum S sub i sup 2  over n }
 \begin{displaymath}
@@ -174,6 +186,7 @@ divided by the sumber of samples.
 \sqrt{\frac{\sum{{S_{i}}^{2}}}{n}}
 \end{displaymath}
 \fi
+%end{latexonly}
 This is a measure of the power in an audio signal.
 \end{funcdesc}
 
@@ -191,16 +204,17 @@ samples by \var{rfactor}.
 \end{funcdesc}
 
 \begin{funcdesc}{ulaw2lin}{fragment, width}
-Convert sound fragments in ULAW encoding to linearly encoded sound
-fragments.  ULAW encoding always uses 8 bits samples, so \var{width}
+Convert sound fragments in u-LAW encoding to linearly encoded sound
+fragments.  u-LAW encoding always uses 8 bits samples, so \var{width}
 refers only to the sample width of the output fragment here.
 \end{funcdesc}
 
-Note that operations such as \code{mul} or \code{max} make no
-distinction between mono and stereo fragments, i.e.\ all samples are
-treated equal.  If this is a problem the stereo fragment should be split
-into two mono fragments first and recombined later.  Here is an example
-of how to do that:
+Note that operations such as \function{mul()} or \function{max()} make
+no distinction between mono and stereo fragments, i.e.\ all samples
+are treated equal.  If this is a problem the stereo fragment should be
+split into two mono fragments first and recombined later.  Here is an
+example of how to do that:
+
 \begin{verbatim}
 def mul_stereo(sample, width, lfactor, rfactor):
     lsample = audioop.tomono(sample, width, 1, 0)
@@ -211,26 +225,27 @@ def mul_stereo(sample, width, lfactor, rfactor):
     rsample = audioop.tostereo(rsample, width, 0, 1)
     return audioop.add(lsample, rsample, width)
 \end{verbatim}
-%
+
 If you use the ADPCM coder to build network packets and you want your
 protocol to be stateless (i.e.\ to be able to tolerate packet loss)
 you should not only transmit the data but also the state.  Note that
 you should send the \var{initial} state (the one you passed to
-\code{lin2adpcm}) along to the decoder, not the final state (as returned by
-the coder).  If you want to use \code{struct} to store the state in
-binary you can code the first element (the predicted value) in 16 bits
-and the second (the delta index) in 8.
+\function{lin2adpcm()}) along to the decoder, not the final state (as
+returned by the coder).  If you want to use \function{struct.struct()}
+to store the state in binary you can code the first element (the
+predicted value) in 16 bits and the second (the delta index) in 8.
 
 The ADPCM coders have never been tried against other ADPCM coders,
 only against themselves.  It could well be that I misinterpreted the
 standards in which case they will not be interoperable with the
 respective standards.
 
-The \code{find...} routines might look a bit funny at first sight.
+The \function{find*()} routines might look a bit funny at first sight.
 They are primarily meant to do echo cancellation.  A reasonably
 fast way to do this is to pick the most energetic piece of the output
 sample, locate that in the input sample and subtract the whole output
 sample from the input sample:
+
 \begin{verbatim}
 def echocancel(outputdata, inputdata):
     pos = audioop.findmax(outputdata, 800)    # one tenth second
