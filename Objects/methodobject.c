@@ -62,48 +62,58 @@ PyCFunction_Call(PyObject *func, PyObject *arg, PyObject *kw)
 	PyCFunctionObject* f = (PyCFunctionObject*)func;
 	PyCFunction meth = PyCFunction_GET_FUNCTION(func);
 	PyObject *self = PyCFunction_GET_SELF(func);
-	int flags = PyCFunction_GET_FLAGS(func) & ~(METH_CLASS | METH_STATIC);
-	int size = PyTuple_GET_SIZE(arg);
+	int size;
 
-	if (flags & METH_KEYWORDS) {
-		return (*(PyCFunctionWithKeywords)meth)(self, arg, kw);
-	}
-	if (kw != NULL && PyDict_Size(kw) != 0) {
-		PyErr_Format(PyExc_TypeError,
-			     "%.200s() takes no keyword arguments",
-			     f->m_ml->ml_name);
-		return NULL;
-	}
-
-	switch (flags) {
+	switch (PyCFunction_GET_FLAGS(func) & ~(METH_CLASS | METH_STATIC)) {
 	case METH_VARARGS:
-		return (*meth)(self, arg);
+		if (kw == NULL || PyDict_Size(kw) == 0)
+			return (*meth)(self, arg);
+		break;
+	case METH_VARARGS | METH_KEYWORDS:
+		return (*(PyCFunctionWithKeywords)meth)(self, arg, kw);
 	case METH_NOARGS:
-		if (size == 0)
-			return (*meth)(self, NULL);
-		PyErr_Format(PyExc_TypeError,
-			     "%.200s() takes no arguments (%d given)",
-			     f->m_ml->ml_name, size);
-		return NULL;
+		if (kw == NULL || PyDict_Size(kw) == 0) {
+			size = PyTuple_GET_SIZE(arg);
+			if (size == 0)
+				return (*meth)(self, NULL);
+			PyErr_Format(PyExc_TypeError,
+			    "%.200s() takes no arguments (%d given)",
+			    f->m_ml->ml_name, size);
+			return NULL;
+		}
+		break;
 	case METH_O:
-		if (size == 1)
-			return (*meth)(self, PyTuple_GET_ITEM(arg, 0));
-		PyErr_Format(PyExc_TypeError,
-			     "%.200s() takes exactly one argument (%d given)",
-			     f->m_ml->ml_name, size);
-		return NULL;
+		if (kw == NULL || PyDict_Size(kw) == 0) {
+			size = PyTuple_GET_SIZE(arg);
+			if (size == 1)
+				return (*meth)(self, PyTuple_GET_ITEM(arg, 0));
+			PyErr_Format(PyExc_TypeError,
+			    "%.200s() takes exactly one argument (%d given)",
+			    f->m_ml->ml_name, size);
+			return NULL;
+		}
+		break;
 	case METH_OLDARGS:
 		/* the really old style */
-		if (size == 1)
-			arg = PyTuple_GET_ITEM(arg, 0);
-		else if (size == 0)
-			arg = NULL;
-		return (*meth)(self, arg);
+		if (kw == NULL || PyDict_Size(kw) == 0) {
+			size = PyTuple_GET_SIZE(arg);
+			if (size == 1)
+				arg = PyTuple_GET_ITEM(arg, 0);
+			else if (size == 0)
+				arg = NULL;
+			return (*meth)(self, arg);
+		}
+		break;
+	case METH_OLDARGS | METH_KEYWORDS:
+		return (*(PyCFunctionWithKeywords)meth)(self, arg, kw);
 	default:
 		/* should never get here ??? */
 		PyErr_BadInternalCall();
 		return NULL;
 	}
+	PyErr_Format(PyExc_TypeError, "%.200s() takes no keyword arguments",
+		     f->m_ml->ml_name);
+	return NULL;
 }
 
 /* Methods (the standard built-in methods, that is) */
