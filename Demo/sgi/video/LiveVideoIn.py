@@ -33,7 +33,7 @@ class LiveVideoIn:
 	# Note that the data has to be cropped unless vw and vh are
 	# just right for the video board (vw:vh == 4:3 and vh even).
 
-	def init(self, pktmax, vw, vh):
+	def init(self, pktmax, vw, vh, type):
 		if not have_video:
 			raise RuntimeError, 'no video available'
 		if vw % 4 != 0:
@@ -43,6 +43,14 @@ class LiveVideoIn:
 		if realvw < vw:
 			realvw = vw
 		self.realwidth, self.realheight = v.QuerySize(realvw, vh)
+		if not type in ('rgb8', 'grey', 'mono'):
+			raise 'Incorrent video data type'
+		self.type = type
+		if type in ('grey', 'mono'):
+			v.SetParam([SV.COLOR, SV.MONO, SV.INPUT_BYPASS, 1])
+		else:
+			v.SetParam([SV.COLOR, SV.DEFAULT_COLOR, \
+				  SV.INPUT_BYPASS, 0])
 		# Initialize capture
 		(mode, self.realwidth, self.realheight, qsize, rate) = \
 			v.InitContinuousCapture(SV.RGB8_FRAMES, \
@@ -70,7 +78,7 @@ class LiveVideoIn:
 
 	def resizevideo(self, vw, vh):
 		self.close()
-		self = self.init(self.pktmax, vw, vh)
+		self = self.init(self.pktmax, vw, vh, self.type)
 
 	# Remove an instance.
 	# This turns off continuous capture.
@@ -105,8 +113,14 @@ class LiveVideoIn:
 					  self.x1, self.y1)
 			self.lpos = 0
 			self.dataoffset = 0
+			if self.type == 'mono':
+				self.data = imageop.dither2mono(self.data, \
+					  self.width, self.height)
 		data = self.data[self.dataoffset:self.dataoffset+self.pktsize]
 		lpos = self.lpos
 		self.dataoffset = self.dataoffset + self.pktsize
-		self.lpos = self.lpos + self.lpp
+		if self.type == 'mono':
+			self.lpos = self.lpos + self.lpp*8
+		else:
+			self.lpos = self.lpos + self.lpp
 		return lpos, data

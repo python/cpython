@@ -15,6 +15,11 @@
 # -q queuesize  : set the capture queue size (default 2)
 # -r rate       : capture 1 out of every 'rate' frames (default and min 2)
 # -w width      : initial window width (default interactive placement)
+# -n            : Don't write to file, only timing info
+# -d		: drop fields if needed
+# -g		: greyscale
+# -m		: monochrome dithered
+# -M value	: monochrome tresholded with value
 # 
 # moviefile     : here goes the movie data (default film.video);
 #                 the format is documented in cmif-film.ms
@@ -47,7 +52,7 @@ import time
 import posix
 import getopt
 import string
-
+import imageop
 
 # Main program
 
@@ -57,8 +62,13 @@ def main():
 	audio = 0
 	rate = 2
 	width = 0
+	norecord = 0
+	drop = 0
+	mono = 0
+	grey = 0
+	monotreshold = -1
 
-	opts, args = getopt.getopt(sys.argv[1:], 'aq:r:w:')
+	opts, args = getopt.getopt(sys.argv[1:], 'aq:r:w:ndgmM:')
 	for opt, arg in opts:
 		if opt == '-a':
 			audio = 1
@@ -71,6 +81,17 @@ def main():
 				sys.exit(2)
 		elif opt == '-w':
 			width = string.atoi(arg)
+		elif opt == '-n':
+			norecord = 1
+		elif opt == '-d':
+			drop = 1
+		elif opt == '-g':
+			grey = 1
+		elif opt == '-m':
+			mono = 1
+		elif opt == '-M':
+			mono = 1
+			monotreshold = string.atoi(arg)
 
 	if args[2:]:
 		sys.stderr.write('usage: Vrec [options] [file [audiofile]]\n')
@@ -93,6 +114,8 @@ def main():
 	else:
 		audiofilename = None
 
+	if norecord:
+		filename = audiofilename = ''
 	v = sv.OpenVideo()
 	# Determine maximum window size based on signal standard
 	param = [SV.BROADCAST, 0]
@@ -123,11 +146,25 @@ def main():
 	print x, 'x', y
 
 	v.SetSize(x, y)
+<<<<<<< Vrec.py
+
+	if drop:
+		param = [SV.FIELDDROP, 1, SV.GENLOCK, SV.GENLOCK_OFF]
+	else:
+		param = [SV.FIELDDROP, 0, SV.GENLOCK, SV.GENLOCK_ON]
+	if mono or grey:
+		param = param+[SV.COLOR, SV.MONO, SV.INPUT_BYPASS, 1]
+	else:
+		param = param+[SV.COLOR, SV.DEFAULT_COLOR, SV.INPUT_BYPASS, 0]
+	v.SetParam(param)
+	
+=======
 
 	# VERY IMPORTANT (for PAL at least): don't drop fields!
 	param = [SV.FIELDDROP, 0]
 	v.SetParam(param)
 
+>>>>>>> 1.7
 	v.BindGLWindow(win, SV.IN_REPLACE)
 
 	gl.qdevice(DEVICE.LEFTMOUSE)
@@ -142,7 +179,8 @@ def main():
 		if dev == DEVICE.LEFTMOUSE:
 			if val == 1:
 				info = format, x, y, qsize, rate
-				record(v, info, filename, audiofilename)
+				record(v, info, filename, audiofilename,\
+					  mono, grey, monotreshold)
 		elif dev == DEVICE.REDRAW:
 			# Window resize (or move)
 			x, y = gl.getsize()
@@ -159,31 +197,41 @@ def main():
 # Record until the mouse is released (or any other GL event)
 # XXX audio not yet supported
 
-def record(v, info, filename, audiofilename):
+def record(v, info, filename, audiofilename, mono, grey, monotreshold):
 	import thread
 	format, x, y, qsize, rate = info
 	fps = 59.64 # Fields per second
 	# XXX (Strange: need fps of Indigo monitor, not of PAL or NTSC!)
 	tpf = 1000.0 / fps # Time per field in msec
-	vout = VFile.VoutFile().init(filename)
-	vout.format = 'rgb8'
-	vout.width = x
-	vout.height = y
-	vout.writeheader()
-	MAXSIZE = 20 # XXX should be a user option
-	import Queue
-	queue = Queue.Queue().init(MAXSIZE)
-	done = thread.allocate_lock()
-	done.acquire_lock()
-	thread.start_new_thread(saveframes, (vout, queue, done))
-	if audiofilename:
-		audiodone = thread.allocate_lock()
-		audiodone.acquire_lock()
-		audiostop = []
-		initaudio(audiofilename, audiostop, audiodone)
+	if filename:
+		vout = VFile.VoutFile().init(filename)
+		if mono:
+			vout.format = 'mono'
+		elif grey:
+			vout.format = 'grey'
+		else:
+			vout.format = 'rgb8'
+		vout.width = x
+		vout.height = y
+		vout.writeheader()
+		MAXSIZE = 20 # XXX should be a user option
+		import Queue
+		queue = Queue.Queue().init(MAXSIZE)
+		done = thread.allocate_lock()
+		done.acquire_lock()
+		thread.start_new_thread(saveframes, \
+			  (vout, queue, done, mono, monotreshold))
+		if audiofilename:
+			audiodone = thread.allocate_lock()
+			audiodone.acquire_lock()
+			audiostop = []
+			initaudio(audiofilename, audiostop, audiodone)
 	gl.wintitle('(rec) ' + filename)
 	lastid = 0
 	t0 = time.millitimer()
+	count = 0
+	timestamps = []
+	ids = []
 	v.InitContinuousCapture(info)
 	while not gl.qtest():
 		try:
@@ -191,34 +239,62 @@ def record(v, info, filename, audiofilename):
 		except sv.error:
 			time.millisleep(10) # XXX is this necessary?
 			continue
+		timestamps.append(time.millitimer())
+		ids.append(id)
+		
 		id = id + 2*rate
 ##		if id <> lastid + 2*rate:
 ##			print lastid, id
 		lastid = id
 		data = cd.InterleaveFields(1)
 		cd.UnlockCaptureData()
-		queue.put(data, int(id*tpf))
+		count = count+1
+		if filename:
+			queue.put(data, int(id*tpf))
 	t1 = time.millitimer()
 	gl.wintitle('(busy) ' + filename)
 	print lastid, 'fields in', t1-t0, 'msec',
 	print '--', 0.1 * int(lastid * 10000.0 / (t1-t0)), 'fields/sec'
-	if audiofilename:
+	print 'Captured',count*2, 'fields,', 0.1*int(count*20000.0/(t1-t0)), 'f/s',
+	print count*200.0/lastid, '%,',
+	print count*rate*200.0/lastid, '% of wanted rate'
+	t0 = timestamps[0]
+	del timestamps[0]
+	print 'Times:',
+	for t1 in timestamps:
+		print t1-t0,
+		t0 = t1
+	print
+	print 'Ids:',
+	t0 = ids[0]
+	del ids[0]
+	for t1 in ids:
+		print t1-t0,
+		t0 = t1
+	print
+	if filename and audiofilename:
 		audiostop.append(None)
 		audiodone.acquire_lock()
 	v.EndContinuousCapture()
-	queue.put(None) # Sentinel
-	done.acquire_lock()
+	if filename:
+		queue.put(None) # Sentinel
+		done.acquire_lock()
 	gl.wintitle('(done) ' + filename)
 
 
 # Thread to save the frames to the file
 
-def saveframes(vout, queue, done):
+def saveframes(vout, queue, done, mono, monotreshold):
 	while 1:
 		x = queue.get()
 		if not x:
 			break
 		data, t = x
+		if mono and monotreshold >= 0:
+			data = imageop.grey2mono(data, len(data), 1,\
+				  monotreshold)
+		elif mono:
+			data = imageop.dither2mono(data, len(data), 1)
 		vout.writeframe(t, data, None)
 		del data
 	sys.stderr.write('Done writing video\n')
