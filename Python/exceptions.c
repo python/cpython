@@ -1227,7 +1227,6 @@ UnicodeEncodeError__str__(PyObject *self, PyObject *arg)
 {
     PyObject *encodingObj = NULL;
     PyObject *objectObj = NULL;
-    int length;
     int start;
     int end;
     PyObject *reasonObj = NULL;
@@ -1241,8 +1240,6 @@ UnicodeEncodeError__str__(PyObject *self, PyObject *arg)
 
     if (!(objectObj = PyUnicodeEncodeError_GetObject(self)))
 	goto error;
-
-    length = PyUnicode_GET_SIZE(objectObj);
 
     if (PyUnicodeEncodeError_GetStart(self, &start))
 	goto error;
@@ -1307,7 +1304,6 @@ UnicodeDecodeError__str__(PyObject *self, PyObject *arg)
 {
     PyObject *encodingObj = NULL;
     PyObject *objectObj = NULL;
-    int length;
     int start;
     int end;
     PyObject *reasonObj = NULL;
@@ -1321,8 +1317,6 @@ UnicodeDecodeError__str__(PyObject *self, PyObject *arg)
 
     if (!(objectObj = PyUnicodeDecodeError_GetObject(self)))
 	goto error;
-
-    length = PyString_GET_SIZE(objectObj);
 
     if (PyUnicodeDecodeError_GetStart(self, &start))
 	goto error;
@@ -1423,7 +1417,6 @@ static PyObject *
 UnicodeTranslateError__str__(PyObject *self, PyObject *arg)
 {
     PyObject *objectObj = NULL;
-    int length;
     int start;
     int end;
     PyObject *reasonObj = NULL;
@@ -1434,8 +1427,6 @@ UnicodeTranslateError__str__(PyObject *self, PyObject *arg)
 
     if (!(objectObj = PyUnicodeTranslateError_GetObject(self)))
 	goto error;
-
-    length = PyUnicode_GET_SIZE(objectObj);
 
     if (PyUnicodeTranslateError_GetStart(self, &start))
 	goto error;
