@@ -138,6 +138,7 @@ MAINOBJ=	@MAINOBJ@
 LIBOBJS=	@LIBOBJS@
 DLINCLDIR=	@DLINCLDIR@
 DYNLOADFILE=	@DYNLOADFILE@
+MACHDEP_OBJS=	@MACHDEP_OBJS@
 
 PYTHON=		python$(EXE)
 
@@ -222,6 +223,7 @@ PYTHON_OBJS=	\
 		Python/traceback.o \
 		Python/getopt.o \
 		Python/$(DYNLOADFILE) \
+		$(MACHDEP_OBJS) \
 		$(LIBOBJS)
 
 
@@ -411,6 +413,8 @@ Objects/object.o: $(srcdir)/Objects/object.c $(srcdir)/Objects/obmalloc.c
 Objects/unicodectype.o:	$(srcdir)/Objects/unicodectype.c \
 				$(srcdir)/Objects/unicodetype_db.h
 
+Mac/Python/macglue.o: $(srcdir)/Mac/Python/macglue.c
+		$(CC) -c $(CFLAGS) $(CPPFLAGS) -I$(srcdir)/Mac/Include -I$(srcdir)/Python -o $@ $(srcdir)/Mac/Python/macglue.c
 
 ############################################################################
 # Header files
