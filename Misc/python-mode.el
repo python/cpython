@@ -36,10 +36,27 @@
 ;;	(setq auto-mode-alist
 ;;	      (cons '("\\.py$" . python-mode) auto-mode-alist))
 
+;; Here's a brief list of recent additions/improvements:
+;;
+;; - Wrapping and indentation within triple quote strings should work
+;;   properly now.
+;; - `Standard' bug reporting mechanism (use C-c C-b)
+;; - py-mark-block was moved to C-c C-m
+;; - C-c C-v shows you the python-mode version
+;; - a basic python-font-lock-keywords has been added for Emacs 19
+;;   font-lock colorizations.
+;; - proper interaction with pending-del and del-sel modes.
+;; - New py-electric-colon (:) command for improved outdenting.  Also
+;;   py-indent-line (TAB) should handle outdented lines better.
+
 ;; Here's a brief to do list:
 ;;
-;; 1. Better integration with gud-mode for debugging.
-;; 2. Rewrite according to GNU Emacs Lisp standards.
+;; - Better integration with gud-mode for debugging.
+;; - Rewrite according to GNU Emacs Lisp standards.
+;; - py-delete-char should obey numeric arguments.
+;; - even better support for outdenting.  Guido suggests outdents of
+;;   at least one level after a return, raise, break, or continue
+;;   statement.
 
 ;; If you can think of more things you'd like to see, drop me a line.
 ;; If you want to report bugs, use py-submit-bug-report (C-c C-b).
@@ -1843,11 +1860,13 @@ With \\[universal-argument] just submit an enhancement request."
   (interactive
    (list (not (y-or-n-p
 	       "Is this a bug report? (hit `n' to send other comments) "))))
-  (let ((reporter-prompt-for-summary-p (not enhancement-p)))
+  (let ((reporter-prompt-for-summary-p (if enhancement-p
+					   "(Very) brief summary: "
+					 t)))
     (require 'reporter)
     (reporter-submit-bug-report
      py-help-address			;address
-     "python-mode"			;pkgname
+     (concat "python-mode " py-version)	;pkgname
      ;; varlist
      (if enhancement-p nil
        '(py-python-command
