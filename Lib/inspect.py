@@ -349,32 +349,28 @@ class ListReader:
             return self.lines[i]
         else: return ''
 
-class EndOfBlock(Exception): pass
-
-class BlockFinder:
-    """Provide a tokeneater() method to detect the end of a code block."""
-    def __init__(self):
-        self.indent = 0
-        self.started = 0
-        self.last = 0
-
-    def tokeneater(self, type, token, (srow, scol), (erow, ecol), line):
-        if not self.started:
-            if type == tokenize.NAME: self.started = 1
-        elif type == tokenize.NEWLINE:
-            self.last = srow
-        elif type == tokenize.INDENT:
-            self.indent = self.indent + 1
-        elif type == tokenize.DEDENT:
-            self.indent = self.indent - 1
-            if self.indent == 0: raise EndOfBlock, self.last
-
 def getblock(lines):
     """Extract the block of code at the top of the given list of lines."""
-    try:
-        tokenize.tokenize(ListReader(lines).readline, BlockFinder().tokeneater)
-    except EndOfBlock, eob:
-        return lines[:eob.args[0]]
+
+    indent = 0
+    started = 0
+    last = 0
+    tokens = tokenize.generate_tokens(ListReader(lines).readline)
+
+    for (type, token, (srow, scol), (erow, ecol), line) in tokens:
+        if not started:
+            if type == tokenize.NAME:
+                started = 1
+        elif type == tokenize.NEWLINE:
+            last = srow
+        elif type == tokenize.INDENT:
+            indent = indent + 1
+        elif type == tokenize.DEDENT:
+            indent = indent - 1
+            if indent == 0:
+                return lines[:last]
+    else:
+        raise ValueError, "unable to find block"
 
 def getsourcelines(object):
     """Return a list of source lines and starting line number for an object.

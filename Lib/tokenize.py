@@ -111,7 +111,12 @@ def tokenize(readline, tokeneater=printtoken):
     except StopTokenizing:
         pass
 
+# backwards compatible interface, probably not used
 def tokenize_loop(readline, tokeneater):
+    for token_info in generate_tokens(readline):
+        apply(tokeneater, token_info)
+
+def generate_tokens(readline):
     lnum = parenlev = continued = 0
     namechars, numchars = string.letters + '_', string.digits
     contstr, needcont = '', 0
@@ -129,12 +134,12 @@ def tokenize_loop(readline, tokeneater):
             endmatch = endprog.match(line)
             if endmatch:
                 pos = end = endmatch.end(0)
-                tokeneater(STRING, contstr + line[:end],
+                yield (STRING, contstr + line[:end],
                            strstart, (lnum, end), contline + line)
                 contstr, needcont = '', 0
                 contline = None
             elif needcont and line[-2:] != '\\\n' and line[-3:] != '\\\r\n':
-                tokeneater(ERRORTOKEN, contstr + line,
+                yield (ERRORTOKEN, contstr + line,
                            strstart, (lnum, len(line)), contline)
                 contstr = ''
                 contline = None
@@ -156,16 +161,16 @@ def tokenize_loop(readline, tokeneater):
             if pos == max: break
 
             if line[pos] in '#\r\n':           # skip comments or blank lines
-                tokeneater((NL, COMMENT)[line[pos] == '#'], line[pos:],
+                yield ((NL, COMMENT)[line[pos] == '#'], line[pos:],
                            (lnum, pos), (lnum, len(line)), line)
                 continue
 
             if column > indents[-1]:           # count indents or dedents
                 indents.append(column)
-                tokeneater(INDENT, line[:pos], (lnum, 0), (lnum, pos), line)
+                yield (INDENT, line[:pos], (lnum, 0), (lnum, pos), line)
             while column < indents[-1]:
                 indents = indents[:-1]
-                tokeneater(DEDENT, '', (lnum, pos), (lnum, pos), line)
+                yield (DEDENT, '', (lnum, pos), (lnum, pos), line)
 
         else:                                  # continued statement
             if not line:
@@ -181,12 +186,12 @@ def tokenize_loop(readline, tokeneater):
 
                 if initial in numchars or \
                    (initial == '.' and token != '.'):      # ordinary number
-                    tokeneater(NUMBER, token, spos, epos, line)
+                    yield (NUMBER, token, spos, epos, line)
                 elif initial in '\r\n':
-                    tokeneater(parenlev > 0 and NL or NEWLINE,
+                    yield (parenlev > 0 and NL or NEWLINE,
                                token, spos, epos, line)
                 elif initial == '#':
-                    tokeneater(COMMENT, token, spos, epos, line)
+                    yield (COMMENT, token, spos, epos, line)
                 elif token in ("'''", '"""',               # triple-quoted
                                "r'''", 'r"""', "R'''", 'R"""',
                                "u'''", 'u"""', "U'''", 'U"""',
@@ -197,7 +202,7 @@ def tokenize_loop(readline, tokeneater):
                     if endmatch:                           # all on one line
                         pos = endmatch.end(0)
                         token = line[start:pos]
-                        tokeneater(STRING, token, spos, (lnum, pos), line)
+                        yield (STRING, token, spos, (lnum, pos), line)
                     else:
                         strstart = (lnum, start)           # multiple lines
                         contstr = line[start:]
@@ -216,23 +221,23 @@ def tokenize_loop(readline, tokeneater):
                         contline = line
                         break
                     else:                                  # ordinary string
-                        tokeneater(STRING, token, spos, epos, line)
+                        yield (STRING, token, spos, epos, line)
                 elif initial in namechars:                 # ordinary name
-                    tokeneater(NAME, token, spos, epos, line)
+                    yield (NAME, token, spos, epos, line)
                 elif initial == '\\':                      # continued stmt
                     continued = 1
                 else:
                     if initial in '([{': parenlev = parenlev + 1
                     elif initial in ')]}': parenlev = parenlev - 1
-                    tokeneater(OP, token, spos, epos, line)
+                    yield (OP, token, spos, epos, line)
             else:
-                tokeneater(ERRORTOKEN, line[pos],
+                yield (ERRORTOKEN, line[pos],
                            (lnum, pos), (lnum, pos+1), line)
                 pos = pos + 1
 
     for indent in indents[1:]:                 # pop remaining indent levels
-        tokeneater(DEDENT, '', (lnum, 0), (lnum, 0), '')
-    tokeneater(ENDMARKER, '', (lnum, 0), (lnum, 0), '')
+        yield (DEDENT, '', (lnum, 0), (lnum, 0), '')
+    yield (ENDMARKER, '', (lnum, 0), (lnum, 0), '')
 
 if __name__ == '__main__':                     # testing
     import sys

@@ -77,9 +77,8 @@ def check(file):
     if verbose > 1:
         print "checking", `file`, "..."
 
-    reset_globals()
     try:
-        tokenize.tokenize(f.readline, tokeneater)
+        process_tokens(tokenize.generate_tokens(f.readline))
 
     except tokenize.TokenError, msg:
         errprint("%s: Token Error: %s" % (`file`, str(msg)))
@@ -244,28 +243,19 @@ def format_witnesses(w):
         prefix = prefix + "s"
     return prefix + " " + string.join(firsts, ', ')
 
-# The collection of globals, the reset_globals() function, and the
-# tokeneater() function, depend on which version of tokenize is
-# in use.
+# Need Guido's enhancement
+assert hasattr(tokenize, 'NL'), "tokenize module too old"
 
-if hasattr(tokenize, 'NL'):
-    # take advantage of Guido's patch!
-
-    indents = []
-    check_equal = 0
-
-    def reset_globals():
-        global indents, check_equal
-        check_equal = 0
-        indents = [Whitespace("")]
-
-    def tokeneater(type, token, start, end, line,
+def process_tokens(tokens,
                    INDENT=tokenize.INDENT,
                    DEDENT=tokenize.DEDENT,
                    NEWLINE=tokenize.NEWLINE,
-                   JUNK=(tokenize.COMMENT, tokenize.NL) ):
-        global indents, check_equal
+                   JUNK=(tokenize.COMMENT, tokenize.NL)):
 
+    indents = [Whitespace("")]
+    check_equal = 0
+
+    for (type, token, start, end, line) in tokens:
         if type == NEWLINE:
             # a program statement, or ENDMARKER, will eventually follow,
             # after some (possibly empty) run of tokens of the form
@@ -311,62 +301,6 @@ if hasattr(tokenize, 'NL'):
                 msg = "indent not equal e.g. " + format_witnesses(witness)
                 raise NannyNag(start[0], msg, line)
 
-else:
-    # unpatched version of tokenize
-
-    nesting_level = 0
-    indents = []
-    check_equal = 0
-
-    def reset_globals():
-        global nesting_level, indents, check_equal
-        nesting_level = check_equal = 0
-        indents = [Whitespace("")]
-
-    def tokeneater(type, token, start, end, line,
-                   INDENT=tokenize.INDENT,
-                   DEDENT=tokenize.DEDENT,
-                   NEWLINE=tokenize.NEWLINE,
-                   COMMENT=tokenize.COMMENT,
-                   OP=tokenize.OP):
-        global nesting_level, indents, check_equal
-
-        if type == INDENT:
-            check_equal = 0
-            thisguy = Whitespace(token)
-            if not indents[-1].less(thisguy):
-                witness = indents[-1].not_less_witness(thisguy)
-                msg = "indent not greater e.g. " + format_witnesses(witness)
-                raise NannyNag(start[0], msg, line)
-            indents.append(thisguy)
-
-        elif type == DEDENT:
-            del indents[-1]
-
-        elif type == NEWLINE:
-            if nesting_level == 0:
-                check_equal = 1
-
-        elif type == COMMENT:
-            pass
-
-        elif check_equal:
-            check_equal = 0
-            thisguy = Whitespace(line)
-            if not indents[-1].equal(thisguy):
-                witness = indents[-1].not_equal_witness(thisguy)
-                msg = "indent not equal e.g. " + format_witnesses(witness)
-                raise NannyNag(start[0], msg, line)
-
-        if type == OP and token in ('{', '[', '('):
-            nesting_level = nesting_level + 1
-
-        elif type == OP and token in ('}', ']', ')'):
-            if nesting_level == 0:
-                raise NannyNag(start[0],
-                               "unbalanced bracket '" + token + "'",
-                               line)
-            nesting_level = nesting_level - 1
 
 if __name__ == '__main__':
     main()

@@ -223,6 +223,7 @@ def_op('LOAD_LOCALS', 82)
 def_op('RETURN_VALUE', 83)
 def_op('IMPORT_STAR', 84)
 def_op('EXEC_STMT', 85)
+def_op('YIELD_STMT', 86)
 
 def_op('POP_BLOCK', 87)
 def_op('END_FINALLY', 88)

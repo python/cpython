@@ -33,6 +33,7 @@ typedef struct {
 #define CO_VARARGS	0x0004
 #define CO_VARKEYWORDS	0x0008
 #define CO_NESTED       0x0010
+#define CO_GENERATOR    0x0020
 
 extern DL_IMPORT(PyTypeObject) PyCode_Type;
 

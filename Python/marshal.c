@@ -17,6 +17,7 @@
 
 #define TYPE_NULL	'0'
 #define TYPE_NONE	'N'
+#define TYPE_STOPITER	'S'
 #define TYPE_ELLIPSIS   '.'
 #define TYPE_INT	'i'
 #define TYPE_INT64	'I'
@@ -119,6 +120,9 @@ w_object(PyObject *v, WFILE *p)
 	}
 	else if (v == Py_None) {
 		w_byte(TYPE_NONE, p);
+	}
+	else if (v == PyExc_StopIteration) {
+		w_byte(TYPE_STOPITER, p);
 	}
 	else if (v == Py_Ellipsis) {
 	        w_byte(TYPE_ELLIPSIS, p);
@@ -375,6 +379,10 @@ r_object(RFILE *p)
 	case TYPE_NONE:
 		Py_INCREF(Py_None);
 		return Py_None;
+
+	case TYPE_STOPITER:
+		Py_INCREF(PyExc_StopIteration);
+		return PyExc_StopIteration;
 
 	case TYPE_ELLIPSIS:
 		Py_INCREF(Py_Ellipsis);
