@@ -107,7 +107,7 @@ class Message:
 
     def is_multipart(self):
         """Return True if the message consists of multiple parts."""
-        if type(self._payload) is ListType:
+        if isinstance(self._payload, ListType):
             return True
         return False
 
