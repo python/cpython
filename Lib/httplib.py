@@ -352,7 +352,7 @@ class HTTPResponse:
         # For older HTTP, Keep-Alive indiciates persistent connection.
         if self.msg.getheader('keep-alive'):
             return False
-        
+
         # Proxy-Connection is a netscape hack.
         pconn = self.msg.getheader('proxy-connection')
         if pconn and pconn.lower().find("keep-alive") >= 0:

@@ -590,4 +590,3 @@ if __name__ == '__main__':
         print "%7s %s" % item
     resp = s.quit()
     print resp
-

@@ -10,5 +10,3 @@ import unittest
 from bsddb import db
 
 from test.test_support import verbose
-
-

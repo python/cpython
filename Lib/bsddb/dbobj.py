@@ -175,4 +175,3 @@ class DB:
         return apply(self._cobj.verify, args, kwargs)
     def set_get_returns_none(self, *args, **kwargs):
         return apply(self._cobj.set_get_returns_none, args, kwargs)
-

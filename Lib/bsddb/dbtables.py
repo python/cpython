@@ -627,4 +627,3 @@ class bsdTableDB :
             if txn :
                 txn.abort()
             raise TableDBError, dberror[1]
-

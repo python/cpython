@@ -57,4 +57,3 @@ if __name__ == '__main__':
     print '-=' * 38
 
     unittest.main( defaultTest='suite' )
-
