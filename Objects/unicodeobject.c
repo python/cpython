@@ -4810,7 +4810,6 @@ unicode_upper(PyUnicodeObject *self)
     return fixup(self, fixupper);
 }
 
-#if 0
 static char zfill__doc__[] =
 "S.zfill(width) -> unicode\n\
 \n\
@@ -4828,13 +4827,23 @@ unicode_zfill(PyUnicodeObject *self, PyObject *args)
         return NULL;
 
     if (self->length >= width) {
-        Py_INCREF(self);
-        return (PyObject*) self;
+        if (PyUnicode_CheckExact(self)) {
+            Py_INCREF(self);
+            return (PyObject*) self;
+        }
+        else
+            return PyUnicode_FromUnicode(
+                PyUnicode_AS_UNICODE(self),
+                PyUnicode_GET_SIZE(self)
+            );
     }
 
     fill = width - self->length;
 
     u = pad(self, fill, 0, '0');
+
+    if (u == NULL)
+        return NULL;
 
     if (u->str[fill] == '+' || u->str[fill] == '-') {
         /* move sign to beginning of string */
@@ -4844,7 +4853,6 @@ unicode_zfill(PyUnicodeObject *self, PyObject *args)
 
     return (PyObject*) u;
 }
-#endif
 
 #if 0
 static PyObject*
@@ -4956,8 +4964,8 @@ static PyMethodDef unicode_methods[] = {
     {"isnumeric", (PyCFunction) unicode_isnumeric, METH_NOARGS, isnumeric__doc__},
     {"isalpha", (PyCFunction) unicode_isalpha, METH_NOARGS, isalpha__doc__},
     {"isalnum", (PyCFunction) unicode_isalnum, METH_NOARGS, isalnum__doc__},
-#if 0
     {"zfill", (PyCFunction) unicode_zfill, METH_VARARGS, zfill__doc__},
+#if 0
     {"capwords", (PyCFunction) unicode_capwords, METH_NOARGS, capwords__doc__},
 #endif
 

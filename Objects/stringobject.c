@@ -1,4 +1,3 @@
-
 /* String object implementation */
 
 #include "Python.h"
@@ -605,7 +604,8 @@ string_print(PyStringObject *op, FILE *fp, int flags)
 
 	/* figure out which quote to use; single is preferred */
 	quote = '\'';
-	if (strchr(op->ob_sval, '\'') && !strchr(op->ob_sval, '"'))
+	if (strchr(op->ob_sval, '\'') &&
+	    !strchr(op->ob_sval, '"'))
 		quote = '"';
 
 	fputc(quote, fp);
@@ -649,7 +649,8 @@ string_repr(register PyStringObject *op)
 
 		/* figure out which quote to use; single is preferred */
 		quote = '\'';
-		if (strchr(op->ob_sval, '\'') && !strchr(op->ob_sval, '"'))
+		if (strchr(op->ob_sval, '\'') &&
+		    !strchr(op->ob_sval, '"'))
 			quote = '"';
 
 		p = PyString_AS_STRING(v);
@@ -2414,6 +2415,52 @@ string_center(PyStringObject *self, PyObject *args)
     return pad(self, left, marg - left, ' ');
 }
 
+static char zfill__doc__[] =
+"S.zfill(width) -> string\n"
+"\n"
+"Pad a numeric string S with zeros on the left, to fill a field\n"
+"of the specified width.  The string S is never truncated.";
+
+static PyObject *
+string_zfill(PyStringObject *self, PyObject *args)
+{
+    int fill;
+    PyObject *s;
+    char *p;
+
+    int width;
+    if (!PyArg_ParseTuple(args, "i:zfill", &width))
+        return NULL;
+
+    if (PyString_GET_SIZE(self) >= width) {
+        if (PyString_CheckExact(self)) {
+            Py_INCREF(self);
+            return (PyObject*) self;
+        }
+        else
+            return PyString_FromStringAndSize(
+                PyString_AS_STRING(self),
+                PyString_GET_SIZE(self)
+            );
+    }
+
+    fill = width - PyString_GET_SIZE(self);
+
+    s = pad(self, fill, 0, '0');
+
+    if (s == NULL)
+        return NULL;
+
+    p = PyString_AS_STRING(s);
+    if (p[fill] == '+' || p[fill] == '-') {
+        /* move sign to beginning of string */
+        p[0] = p[fill];
+        p[fill] = '0';
+    }
+
+    return (PyObject*) s;
+}
+
 static char isspace__doc__[] =
 "S.isspace() -> int\n"
 "\n"
@@ -2743,9 +2790,11 @@ string_methods[] = {
 	{"istitle", (PyCFunction)string_istitle, METH_NOARGS, istitle__doc__},
 	{"isalpha", (PyCFunction)string_isalpha, METH_NOARGS, isalpha__doc__},
 	{"isalnum", (PyCFunction)string_isalnum, METH_NOARGS, isalnum__doc__},
-	{"capitalize", (PyCFunction)string_capitalize,  METH_NOARGS, capitalize__doc__},
+	{"capitalize", (PyCFunction)string_capitalize,  METH_NOARGS,
+	 capitalize__doc__},
 	{"count",      (PyCFunction)string_count,       METH_VARARGS, count__doc__},
-	{"endswith",   (PyCFunction)string_endswith,    METH_VARARGS, endswith__doc__},
+	{"endswith",   (PyCFunction)string_endswith,    METH_VARARGS,
+	 endswith__doc__},
 	{"find",       (PyCFunction)string_find,        METH_VARARGS, find__doc__},
 	{"index",      (PyCFunction)string_index,       METH_VARARGS, index__doc__},
 	{"lstrip",     (PyCFunction)string_lstrip,      METH_VARARGS, lstrip__doc__},
@@ -2753,21 +2802,24 @@ string_methods[] = {
 	{"rfind",       (PyCFunction)string_rfind,      METH_VARARGS, rfind__doc__},
 	{"rindex",      (PyCFunction)string_rindex,     METH_VARARGS, rindex__doc__},
 	{"rstrip",      (PyCFunction)string_rstrip,     METH_VARARGS, rstrip__doc__},
-	{"startswith",  (PyCFunction)string_startswith, METH_VARARGS, startswith__doc__},
+	{"startswith",  (PyCFunction)string_startswith, METH_VARARGS,
+	 startswith__doc__},
 	{"strip",       (PyCFunction)string_strip,      METH_VARARGS, strip__doc__},
-	{"swapcase",    (PyCFunction)string_swapcase,   METH_NOARGS, swapcase__doc__},
-	{"translate",   (PyCFunction)string_translate,  METH_VARARGS, translate__doc__},
+	{"swapcase",    (PyCFunction)string_swapcase,   METH_NOARGS,
+	 swapcase__doc__},
+	{"translate",   (PyCFunction)string_translate,  METH_VARARGS,
+	 translate__doc__},
 	{"title",       (PyCFunction)string_title,      METH_NOARGS, title__doc__},
 	{"ljust",       (PyCFunction)string_ljust,      METH_VARARGS, ljust__doc__},
 	{"rjust",       (PyCFunction)string_rjust,      METH_VARARGS, rjust__doc__},
 	{"center",      (PyCFunction)string_center,     METH_VARARGS, center__doc__},
+	{"zfill",       (PyCFunction)string_zfill,      METH_VARARGS, zfill__doc__},
 	{"encode",      (PyCFunction)string_encode,     METH_VARARGS, encode__doc__},
 	{"decode",      (PyCFunction)string_decode,     METH_VARARGS, decode__doc__},
-	{"expandtabs",  (PyCFunction)string_expandtabs, METH_VARARGS, expandtabs__doc__},
-	{"splitlines",  (PyCFunction)string_splitlines, METH_VARARGS, splitlines__doc__},
-#if 0
-	{"zfill",       (PyCFunction)string_zfill,      METH_VARARGS, zfill__doc__},
-#endif
+	{"expandtabs",  (PyCFunction)string_expandtabs, METH_VARARGS,
+	 expandtabs__doc__},
+	{"splitlines",  (PyCFunction)string_splitlines, METH_VARARGS,
+	 splitlines__doc__},
 	{NULL,     NULL}		     /* sentinel */
 };
 
@@ -3262,7 +3314,8 @@ PyString_Format(PyObject *format, PyObject *args)
 			char *pbuf;
 			int sign;
 			int len;
-			char formatbuf[FORMATBUFLEN]; /* For format{float,int,char}() */
+			char formatbuf[FORMATBUFLEN];
+			     /* For format{float,int,char}() */
 #ifdef Py_USING_UNICODE
 			char *fmt_start = fmt;
 		        int argidx_start = argidx;
@@ -3460,7 +3513,8 @@ PyString_Format(PyObject *format, PyObject *args)
 				}
 				else {
 					pbuf = formatbuf;
-					len = formatint(pbuf, sizeof(formatbuf),
+					len = formatint(pbuf,
+							sizeof(formatbuf),
 							flags, prec, c, v);
 					if (len < 0)
 						goto error;
@@ -3476,7 +3530,8 @@ PyString_Format(PyObject *format, PyObject *args)
 			case 'g':
 			case 'G':
 				pbuf = formatbuf;
-				len = formatfloat(pbuf, sizeof(formatbuf), flags, prec, c, v);
+				len = formatfloat(pbuf, sizeof(formatbuf),
+					  flags, prec, c, v);
 				if (len < 0)
 					goto error;
 				sign = 1;

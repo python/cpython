@@ -8,15 +8,15 @@ import string_tests
 from UserString import UserString
 
 if __name__ == "__main__":
-    verbose = 0
+    verbose = '-v' in sys.argv
 
 tested_methods = {}
 
-def test(methodname, input, *args):
+def test(methodname, input, output, *args):
     global tested_methods
     tested_methods[methodname] = 1
     if verbose:
-        print '%s.%s(%s) ' % (input, methodname, args),
+        print '%r.%s(%s)' % (input, methodname, ", ".join(map(repr, args))),
     u = UserString(input)
     objects = [input, u, UserString(u)]
     res = [""] * 3
@@ -24,22 +24,20 @@ def test(methodname, input, *args):
         object = objects[i]
         try:
             f = getattr(object, methodname)
-            res[i] = apply(f, args)
-        except:
-            res[i] = sys.exc_type
-    if res[0] != res[1]:
-        if verbose:
-            print 'no'
-        print `input`, f, `res[0]`, "<>", `res[1]`
-    else:
-        if verbose:
-            print 'yes'
-    if res[1] != res[2]:
-        if verbose:
-            print 'no'
-        print `input`, f, `res[1]`, "<>", `res[2]`
-    else:
+        except AttributeError:
+            f = None
+            res[i] = AttributeError
+        else:
+            try:
+                res[i] = apply(f, args)
+            except:
+                res[i] = sys.exc_type
+    if res[0] == res[1] == res[2] == output:
         if verbose:
             print 'yes'
+    else:
+        if verbose:
+            print 'no'
+        print (methodname, input, output, args, res[0], res[1], res[2])
 
 string_tests.run_method_tests(test)
