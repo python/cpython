@@ -1,4 +1,4 @@
-from test.test_support import verify, TestFailed, check_syntax
+from test_support import verify, TestFailed, check_syntax
 
 import warnings
 warnings.filterwarnings("ignore", "import *")
