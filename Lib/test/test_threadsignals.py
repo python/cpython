@@ -4,6 +4,7 @@ import unittest
 import thread
 import signal
 import os
+import sys
 from test import test_support
 
 if sys.platform[:3] in ('win', 'os2') or sys.platform=='riscos':
