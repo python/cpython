@@ -1187,9 +1187,12 @@ It is written as \code{Ellipsis}.
                \label{bltin-file-objects}}
 
 File objects are implemented using C's \code{stdio} package and can be
-created with the built-in function
-\function{open()}\bifuncindex{open} described in section 
-\ref{built-in-funcs}, ``Built-in Functions.''  They are also returned
+created with the built-in constructor
+\function{file()}\bifuncindex{file} described in section 
+\ref{built-in-funcs}, ``Built-in Functions.''\footnote{\function{file()}
+is new in Python 2.2.  The older built-in \function{open()} is an
+alias for \function{file()}.}
+They are also returned
 by some other built-in functions and methods, such as
 \function{os.popen()} and \function{os.fdopen()} and the
 \method{makefile()} method of socket objects.
