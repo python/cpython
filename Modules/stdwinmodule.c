@@ -67,6 +67,9 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "modsupport.h"
 #include "ceval.h"
 #include "sysmodule.h"
+#ifdef macintosh
+#include "macglue.h"
+#endif
 
 #ifdef macintosh
 #include ":::stdwin:H:stdwin.h"
@@ -103,10 +106,6 @@ static type_lock StdwinLock; /* Lock held when interpreter not locked */
 				a, a+1, a+2, a+3, a+4, a+5)
 
 static object *StdwinError; /* Exception stdwin.error */
-
-#ifdef macintosh
-#include "macglue.h"
-#endif
 
 /* Window and menu object types declared here because of forward references */
 
