@@ -549,7 +549,7 @@ bininstall:	altbininstall
 # Install the interpreter with $(VERSION) affixed
 # This goes into $(exec_prefix)
 altbininstall:	$(BUILDPYTHON)
-	@for i in $(BINDIR); \
+	@for i in $(BINDIR) $(LIBDIR); \
 	do \
 		if test ! -d $$i; then \
 			echo "Creating directory $$i"; \
