@@ -4,7 +4,7 @@
 """
 
 import dl
-from test_support import verbose
+from test_support import verbose,TestSkipped
 
 sharedlibs = [
     ('/usr/lib/libc.so', 'getpid'),
@@ -29,4 +29,4 @@ for s, func in sharedlibs:
             print 'worked!'
         break
 else:
-    raise ImportError, 'Could not open any shared libraries'
+    raise TestSkipped, 'Could not open any shared libraries'

@@ -1,4 +1,4 @@
-from test_support import verbose, TestFailed
+from test_support import verbose, TestFailed, TestSkipped
 import nis
 
 print 'nis.maps()'
@@ -9,7 +9,7 @@ except nis.error, msg:
     if verbose:
         raise TestFailed, msg
     # only do this if running under the regression suite
-    raise ImportError, msg
+    raise TestSkipped, msg
 
 done = 0
 for nismap in maps:

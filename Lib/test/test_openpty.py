@@ -1,7 +1,7 @@
 # Test to see if openpty works. (But don't worry if it isn't available.)
 
 import os
-from test_support import verbose, TestFailed
+from test_support import verbose, TestFailed, TestSkipped
 
 try:
     if verbose:
@@ -10,7 +10,7 @@ try:
     if verbose:
         print "(master, slave) = (%d, %d)"%(master, slave)
 except AttributeError:
-    raise ImportError, "No openpty() available."
+    raise TestSkipped, "No openpty() available."
 
 if not os.isatty(master):
     raise TestFailed, "Master-end of pty is not a terminal."

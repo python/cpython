@@ -6,7 +6,7 @@
 """
 import binhex
 import tempfile
-from test_support import verbose
+from test_support import verbose, TestSkipped
 
 def test():
 
@@ -15,7 +15,7 @@ def test():
         fname2 = tempfile.mktemp()
         f = open(fname1, 'w')
     except:
-        raise ImportError, "Cannot test binhex without a temp file"
+        raise TestSkipped, "Cannot test binhex without a temp file"
 
     start = 'Jack is my hero'
     f.write(start)

@@ -3,7 +3,7 @@
     taken mostly from the documentation.
     Roger E. Masse
 """
-from test_support import verbose
+from test_support import verbose, TestSkipped
 import gl, GL, time
 
 glattrs = ['RGBcolor', 'RGBcursor', 'RGBmode', 'RGBrange', 'RGBwritemask',
@@ -87,8 +87,7 @@ def main():
     try:
         display = os.environ['DISPLAY']
     except:
-        # Raise ImportError because regrtest.py handles it specially.
-        raise ImportError, "No $DISPLAY -- skipping gl test"
+        raise TestSkipped, "No $DISPLAY -- skipping gl test"
 
     # touch all the attributes of gl without doing anything
     if verbose:

@@ -12,7 +12,8 @@ functionality.  The mechanics of how the test system operates are fairly
 straightforward.  When a test case is run, the output is compared with the
 expected output that is stored in .../Lib/test/output.  If the test runs to
 completion and the actual and expected outputs match, the test succeeds, if
-not, it fails.  If an ImportError is raised, the test is not run.
+not, it fails.  If an ImportError or test_support.TestSkipped error is
+raised, the test is not run.
 
 You will be writing unit tests (isolated tests of functions and objects
 defined by the module) using white box techniques.  Unlike black box
