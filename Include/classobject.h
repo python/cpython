@@ -58,10 +58,10 @@ PyAPI_FUNC(PyObject *) PyMethod_Class(PyObject *);
  * value associated with name in the dict in which name was found.
  * The point of this routine is that it never calls arbitrary Python
  * code, so is always "safe":  all it does is dict lookups.  The function
- * can't fail, never sets an exceptionm, and NULL is not an error (it just
+ * can't fail, never sets an exception, and NULL is not an error (it just
  * means "not found").
  */
-PyAPI_FUNC(PyObject *)_PyInstance_Lookup(PyObject *pinst, PyObject *name);
+PyAPI_FUNC(PyObject *) _PyInstance_Lookup(PyObject *pinst, PyObject *name);
 
 /* Macros for direct access to these values. Type checks are *not*
    done, so use with care. */
