@@ -154,6 +154,11 @@ class PyBuildExt(build_ext):
             self.announce('WARNING: building of extension "%s" failed: %s' %
                           (ext.name, sys.exc_info()[1]))
             return
+        # Workaround for Mac OS X: The Carbon-based modules cannot be
+        # reliably imported into a command-line Python
+        if 'Carbon' in ext.extra_link_args:
+        	self.announce('WARNING: skipping import check for Carbon-based "%s"' % ext.name)
+        	return
         try:
             __import__(ext.name)
         except ImportError:
