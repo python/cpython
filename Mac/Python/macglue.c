@@ -41,6 +41,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "macglue.h"
 #include "marshal.h"
 #include "import.h"
+#include "importdl.h"
 
 #include "pythonresources.h"
 
@@ -609,8 +610,10 @@ PyMac_InitMenuBar()
 void
 PyMac_RestoreMenuBar()
 {
-	if ( sioux_mbar )
+	if ( sioux_mbar ) {
 		SetMenuBar(sioux_mbar);
+		DrawMenuBar();
+	}
 }
 
 
@@ -647,7 +650,8 @@ SIOUXDoAboutBox(void)
 ** a 'PYC ' resource of the correct name
 */
 int
-PyMac_FindResourceModule(module, filename)
+PyMac_FindResourceModule(obj, module, filename)
+PyStringObject *obj;
 char *module;
 char *filename;
 {
@@ -656,7 +660,27 @@ char *filename;
 	short oldrh, filerh;
 	int ok;
 	Handle h;
-	
+
+#ifdef INTERN_STRINGS
+	/*
+	** If we have interning find_module takes care of interning all
+	** sys.path components. We then keep a record of all sys.path
+	** components for which GetFInfo has failed (usually because the
+	** component in question is a folder), and we don't try opening these
+	** as resource files again.
+	*/
+#define MAXPATHCOMPONENTS 32
+	static PyStringObject *not_a_file[MAXPATHCOMPONENTS];
+	static int max_not_a_file = 0;
+	int i;
+		
+	if ( obj->ob_sinterned ) {
+		for( i=0; i< max_not_a_file; i++ )
+			if ( obj == not_a_file[i] )
+				return 0;
+	}
+#endif /* INTERN_STRINGS */
+
 	if ( strcmp(filename, PyMac_ApplicationPath) == 0 ) {
 		/*
 		** Special case: the application itself. Use a shortcut to
@@ -667,10 +691,15 @@ char *filename;
 		UseResFile(PyMac_AppRefNum);
 		filerh = -1;
 	} else {
-		if ( FSMakeFSSpec(0, 0, Pstring(filename), &fss) != noErr )
-			return 0;			/* It doesn't exist */
-		if ( FSpGetFInfo(&fss, &finfo) != noErr )
-			return 0;			/* shouldn't happen, I guess */
+		if ( FSMakeFSSpec(0, 0, Pstring(filename), &fss) != noErr ||
+		     FSpGetFInfo(&fss, &finfo) != noErr ) {
+#ifdef INTERN_STRINGS
+			if ( max_not_a_file < MAXPATHCOMPONENTS && obj->ob_sinterned )
+				not_a_file[max_not_a_file++] = obj;
+#endif /* INTERN_STRINGS */
+		     	/* doesn't exist or is folder */
+			return 0;
+		}			
 		oldrh = CurResFile();
 		filerh = FSpOpenResFile(&fss, fsRdPerm);
 		if ( filerh == -1 )
@@ -771,6 +800,74 @@ error:
 		return NULL;
 	}
 }
+
+/*
+** Look for a module in a single folder. Upon entry buf and len
+** point to the folder to search, upon exit they refer to the full
+** pathname of the module found (if any).
+*/
+struct filedescr *
+PyMac_FindModuleExtension(char *buf, int *lenp, char *module)
+{
+	struct filedescr *fdp;
+	unsigned char fnbuf[64];
+	int modnamelen = strlen(module);
+	FSSpec fss;
+	short refnum;
+	long dirid;
+	
+	/*
+	** Copy the module name to the buffer (already :-terminated)
+	** We also copy the first suffix, if this matches immedeately we're
+	** lucky and return immedeately.
+	*/
+	if ( !_PyImport_Filetab[0].suffix )
+		return 0;
+		
+	strcpy(buf+*lenp, module);
+	strcpy(buf+*lenp+modnamelen, _PyImport_Filetab[0].suffix);
+	if ( FSMakeFSSpec(0, 0, Pstring(buf), &fss) == noErr )
+		return _PyImport_Filetab;
+	/*
+	** We cannot check for fnfErr (unfortunately), it can mean either that
+	** the file doesn't exist (fine, we try others) or the path leading to it.
+	*/
+	refnum = fss.vRefNum;
+	dirid = fss.parID;
+	if ( refnum == 0 || dirid == 0 )	/* Fail on nonexistent dir */
+		return 0;
+	/*
+	** We now have the folder parameters. Setup the field for the filename
+	*/
+	if ( modnamelen > 54 ) return 0;	/* Leave room for extension */
+	strcpy((char *)fnbuf+1, module);
+	
+	for( fdp = _PyImport_Filetab+1; fdp->suffix; fdp++ ) {
+		strcpy((char *)fnbuf+1+modnamelen, fdp->suffix);
+		fnbuf[0] = strlen((char *)fnbuf+1);
+		if (Py_VerboseFlag > 1)
+			fprintf(stderr, "# trying %s%s\n", buf, fdp->suffix);
+		if ( FSMakeFSSpec(refnum, dirid, fnbuf, &fss) == noErr ) {
+			/* Found it. */
+			strcpy(buf+*lenp+modnamelen, fdp->suffix);
+			*lenp = strlen(buf);
+			return fdp;
+		}
+	}
+	return 0;
+}
+
+#if 0
+int
+PyMac_FileExists(char *name)
+{
+	FSSpec fss;
+	
+	if ( FSMakeFSSpec(0, 0, Pstring(name), &fss) == noErr )
+		return 1;
+	return 0;
+}
+#endif
 
 /*
 ** Helper routine for GetDirectory
