@@ -430,7 +430,8 @@ class build_ext (Command):
                 library_dirs=ext.library_dirs,
                 runtime_library_dirs=ext.runtime_library_dirs,
                 extra_postargs=extra_args,
-                debug=self.debug)
+                debug=self.debug,
+                build_temp=self.build_temp)
 
     # build_extensions ()
 
