@@ -252,7 +252,7 @@ myhittestproc(ControlHandle control, Point where)
 	short c_rv = -1;
 
 	ctl_obj = (ControlObject *)CtlObj_WhichControl(control);
-	arglist = Py_BuildValue("OO&", ctl_obj, PyMac_BuildPoint, &where);
+	arglist = Py_BuildValue("OO&", ctl_obj, PyMac_BuildPoint, where);
 	rv = callcallback(ctl_obj, kControlUserPaneHitTestProcTag, arglist);
 	Py_XDECREF(arglist);
 	/* Ignore errors, nothing we can do about them */
@@ -271,7 +271,7 @@ mytrackingproc(ControlHandle control, Point startPt, ControlActionUPP actionProc
 
 	ctl_obj = (ControlObject *)CtlObj_WhichControl(control);
 	/* We cannot pass the actionProc without lots of work */
-	arglist = Py_BuildValue("OO&", ctl_obj, PyMac_BuildPoint, &startPt);
+	arglist = Py_BuildValue("OO&", ctl_obj, PyMac_BuildPoint, startPt);
 	rv = callcallback(ctl_obj, kControlUserPaneTrackingProcTag, arglist);
 	Py_XDECREF(arglist);
 	if ( rv )

@@ -107,7 +107,7 @@ class MyObjectDefinition(GlobalObjectDefinition):
 				return Py_BuildValue("h", (*self->ob_itself)->fontAscent);
 			if( strcmp(name, "selPoint") == 0 )
 				return Py_BuildValue("O&", PyMac_BuildPoint,
-						&(*self->ob_itself)->selPoint);
+						(*self->ob_itself)->selPoint);
 			if( strcmp(name, "selStart") == 0 )
 				return Py_BuildValue("h", (*self->ob_itself)->selStart);
 			if( strcmp(name, "selEnd") == 0 )

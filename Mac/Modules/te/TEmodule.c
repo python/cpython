@@ -45,7 +45,7 @@ extern PyObject *WinObj_WhichWindow(WindowPtr);
 #include <TextEdit.h>
 
 #define as_TE(h) ((TEHandle)h)
-#define as_Handle(teh) ((Handle)teh)
+#define as_Resource(teh) ((Handle)teh)
 
 /* Exported by Qdmodule.c: */
 extern PyObject *QdRGB_New(RGBColor *);
@@ -743,7 +743,7 @@ static PyObject *TEObj_TEGetHiliteRgn(_self, _args)
 	return _res;
 }
 
-static PyObject *TEObj_as_Handle(_self, _args)
+static PyObject *TEObj_as_Resource(_self, _args)
 	TEObject *_self;
 	PyObject *_args;
 {
@@ -751,7 +751,7 @@ static PyObject *TEObj_as_Handle(_self, _args)
 	Handle _rv;
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
-	_rv = as_Handle(_self->ob_itself);
+	_rv = as_Resource(_self->ob_itself);
 	_res = Py_BuildValue("O&",
 	                     ResObj_New, _rv);
 	return _res;
@@ -830,7 +830,7 @@ static PyMethodDef TEObj_methods[] = {
 	 "(short feature, short action) -> (short _rv)"},
 	{"TEGetHiliteRgn", (PyCFunction)TEObj_TEGetHiliteRgn, 1,
 	 "(RgnHandle region) -> None"},
-	{"as_Handle", (PyCFunction)TEObj_as_Handle, 1,
+	{"as_Resource", (PyCFunction)TEObj_as_Resource, 1,
 	 "() -> (Handle _rv)"},
 	{NULL, NULL, 0}
 };
@@ -857,7 +857,7 @@ static PyObject *TEObj_getattr(self, name)
 					return Py_BuildValue("h", (*self->ob_itself)->fontAscent);
 				if( strcmp(name, "selPoint") == 0 )
 					return Py_BuildValue("O&", PyMac_BuildPoint,
-							&(*self->ob_itself)->selPoint);
+							(*self->ob_itself)->selPoint);
 				if( strcmp(name, "selStart") == 0 )
 					return Py_BuildValue("h", (*self->ob_itself)->selStart);
 				if( strcmp(name, "selEnd") == 0 )
