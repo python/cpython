@@ -348,8 +348,10 @@ product that must have overflowed.
 #define USE_SQ_REPEAT(o) (!PyInt_Check(o) && \
 			  o->ob_type->tp_as_sequence && \
 			  o->ob_type->tp_as_sequence->sq_repeat && \
-			  (!o->ob_type->tp_as_number || \
-			   !o->ob_type->tp_as_number->nb_multiply))
+			  !(o->ob_type->tp_as_number && \
+                            o->ob_type->tp_flags & Py_TPFLAGS_CHECKTYPES && \
+			    o->ob_type->tp_as_number->nb_multiply))
+
 static PyObject *
 int_mul(PyObject *v, PyObject *w)
 {
