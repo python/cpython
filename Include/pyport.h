@@ -579,4 +579,11 @@ typedef	struct fd_set {
 #define Py_GCC_ATTRIBUTE(x) __attribute__(x)
 #endif
 
+/* Eliminate end-of-loop code not reached warnings from SunPro C
+ * when using do{...}while(0) macros
+ */
+#ifdef __SUNPRO_C
+#pragma error_messages (off,E_END_OF_LOOP_CODE_NOT_REACHED)
+#endif
+
 #endif /* Py_PYPORT_H */
