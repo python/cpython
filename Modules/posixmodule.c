@@ -57,6 +57,10 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #endif /* !SYSV */
 
+#ifndef NO_UNISTD
+#include <unistd.h> /* Take this out if it doesn't exist */
+#endif
+
 #include "allobjects.h"
 #include "modsupport.h"
 
@@ -397,6 +401,8 @@ posix_uname(self, args)
 	extern int uname PROTO((struct utsname *));
 	struct utsname u;
 	object *v;
+	if (!getnoarg(args))
+		return NULL;
 	if (uname(&u) < 0)
 		return posix_error();
 	v = newtupleobject(5);
@@ -526,6 +532,8 @@ posix_fork(self, args)
 	object *args;
 {
 	int pid;
+	if (!getnoarg(args))
+		return NULL;
 	pid = fork();
 	if (pid == -1)
 		return posix_error();
@@ -549,7 +557,11 @@ posix_getpgrp(self, args)
 {
 	if (!getnoarg(args))
 		return NULL;
+#ifdef SYSV
+	return newintobject((long)getpgrp());
+#else
 	return newintobject((long)getpgrp(0));
+#endif
 }
 
 static object *
@@ -657,7 +669,7 @@ posix_readlink(self, args)
 	int n;
 	if (!getstrarg(args, &path))
 		return NULL;
-	n = readlink(path, buf, sizeof buf);
+	n = readlink(path, buf, (int) sizeof buf);
 	if (n < 0)
 		return posix_error();
 	return newsizedstringobject(buf, n);
