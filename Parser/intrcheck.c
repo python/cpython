@@ -49,6 +49,11 @@ PyOS_InitInterrupts()
 {
 }
 
+void
+PyOS_FiniInterrupts()
+{
+}
+
 int
 PyOS_InterruptOccurred()
 {
@@ -81,6 +86,11 @@ PyOS_InitInterrupts()
 	_go32_want_ctrl_break(1 /* TRUE */);
 }
 
+void
+PyOS_FiniInterrupts()
+{
+}
+
 int
 PyOS_InterruptOccurred()
 {
@@ -93,6 +103,11 @@ PyOS_InterruptOccurred()
 
 void
 PyOS_InitInterrupts()
+{
+}
+
+void
+PyOS_FiniInterrupts()
 {
 }
 
@@ -170,10 +185,12 @@ intcatcher(sig)
 	Py_AddPendingCall(PyErr_CheckSignals, NULL);
 }
 
+static RETSIGTYPE (*old_siginthandler)() = SIG_DFL;
+
 void
 PyOS_InitInterrupts()
 {
-	if (signal(SIGINT, SIG_IGN) != SIG_IGN)
+	if ((old_siginthandler = signal(SIGINT, SIG_IGN)) != SIG_IGN)
 		signal(SIGINT, intcatcher);
 #ifdef HAVE_SIGINTERRUPT
 	/* This is for SunOS and other modern BSD derivatives.
@@ -184,6 +201,12 @@ PyOS_InitInterrupts()
 	   differently! */
 	siginterrupt(SIGINT, 1);
 #endif /* HAVE_SIGINTERRUPT */
+}
+
+void
+PyOS_FiniInterrupts()
+{
+	signal(SIGINT, old_siginthandler);
 }
 
 int
