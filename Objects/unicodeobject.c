@@ -531,6 +531,10 @@ PyObject *PyUnicode_Decode(const char *s,
         return PyUnicode_DecodeUTF8(s, size, errors);
     else if (strcmp(encoding, "latin-1") == 0)
         return PyUnicode_DecodeLatin1(s, size, errors);
+#if defined(MS_WINDOWS) && defined(HAVE_USABLE_WCHAR_T)
+    else if (strcmp(encoding, "mbcs") == 0)
+        return PyUnicode_DecodeMBCS(s, size, errors);
+#endif
     else if (strcmp(encoding, "ascii") == 0)
         return PyUnicode_DecodeASCII(s, size, errors);
 
@@ -591,6 +595,10 @@ PyObject *PyUnicode_AsEncodedString(PyObject *unicode,
 	    return PyUnicode_AsUTF8String(unicode);
 	else if (strcmp(encoding, "latin-1") == 0)
 	    return PyUnicode_AsLatin1String(unicode);
+#if defined(MS_WINDOWS) && defined(HAVE_USABLE_WCHAR_T)
+	else if (strcmp(encoding, "mbcs") == 0)
+	    return PyUnicode_AsMBCSString(unicode);
+#endif
 	else if (strcmp(encoding, "ascii") == 0)
 	    return PyUnicode_AsASCIIString(unicode);
     }
@@ -2619,6 +2627,17 @@ PyObject *PyUnicode_EncodeMBCS(const Py_UNICODE *p,
         return PyErr_SetFromWindowsErrWithFilename(0, NULL);
     }
     return repr;
+}
+
+PyObject *PyUnicode_AsMBCSString(PyObject *unicode)
+{
+    if (!PyUnicode_Check(unicode)) {
+        PyErr_BadArgument();
+        return NULL;
+    }
+    return PyUnicode_EncodeMBCS(PyUnicode_AS_UNICODE(unicode),
+				PyUnicode_GET_SIZE(unicode),
+				NULL);
 }
 
 #endif /* MS_WINDOWS */
