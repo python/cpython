@@ -300,6 +300,8 @@ print_error()
 			goaway(1);
 		}
 	}
+	sysset("last_type", exception);
+	sysset("last_value", v);
 	if (printobject(exception, stderr, PRINT_RAW) != 0)
 		err_clear();
 	if (v != NULL && v != None) {
