@@ -74,16 +74,10 @@ class MyScanner(Scanner):
 			([("void", "*", "OutMode"), ("short", "*", "OutMode")],
 			 [("VarOutBufferShortsize", "*", "InOutMode")]),
 			
-#			([("void", "wStorage", "OutMode")],
-#			 [("NullStorage", "*", "InMode")]),
-#			
-#			# GetKeys
-#			([('KeyMap', 'theKeys', 'InMode')],
-#			 [('*', '*', 'OutMode')]),
-#			 
-#			# GetTicker
-#			([('unsigned long', '*', '*')],
-#			 [('unsigned_long', '*', '*')]),
+			# SetListCellIndent doesn't have const
+			([("Point", "indent", "OutMode")],
+			 [("Point_ptr", "indent", "InMode")]),
+			
 			]
 
 	def writeinitialdefs(self):

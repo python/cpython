@@ -893,13 +893,14 @@ static PyObject *List_SetListCellIndent(_self, _args)
 	PyObject *_res = NULL;
 	ListHandle list;
 	Point indent;
-	if (!PyArg_ParseTuple(_args, "O&",
-	                      ListObj_Convert, &list))
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      ListObj_Convert, &list,
+	                      PyMac_GetPoint, &indent))
 		return NULL;
 	SetListCellIndent(list,
 	                  &indent);
-	_res = Py_BuildValue("O&",
-	                     PyMac_BuildPoint, indent);
+	Py_INCREF(Py_None);
+	_res = Py_None;
 	return _res;
 }
 
@@ -1039,7 +1040,7 @@ static PyMethodDef List_methods[] = {
 	{"SetListPort", (PyCFunction)List_SetListPort, 1,
 	 "(ListHandle list, CGrafPtr port) -> None"},
 	{"SetListCellIndent", (PyCFunction)List_SetListCellIndent, 1,
-	 "(ListHandle list) -> (Point indent)"},
+	 "(ListHandle list, Point indent) -> None"},
 	{"SetListClickTime", (PyCFunction)List_SetListClickTime, 1,
 	 "(ListHandle list, SInt32 time) -> None"},
 	{"SetListRefCon", (PyCFunction)List_SetListRefCon, 1,
