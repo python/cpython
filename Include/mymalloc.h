@@ -56,6 +56,10 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 extern "C" {
 #endif
 
+#ifdef __CFM68K__
+#pragma lib_export on
+#endif
+
 #ifndef HAVE_STDLIB_H
 extern ANY *malloc Py_PROTO((size_t));
 extern ANY *calloc Py_PROTO((size_t, size_t));
