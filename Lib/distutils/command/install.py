@@ -89,8 +89,8 @@ class install (Command):
         #('install-html=', None, "directory for HTML documentation"),
         #('install-info=', None, "directory for GNU info files"),
 
-        ('record', None,
-         "make a record of installation"),
+        ('record=', None,
+         "filename in which to record list of installed files"),
         ]
 
     # 'sub_commands': a list of commands this command might have to run
@@ -445,8 +445,9 @@ class install (Command):
                 for counter in xrange (len (outputs)):
                     outputs[counter] = outputs[counter][root_len:]
             self.execute(write_file,
-                         ("INSTALLED_FILES", outputs),
-                         "writing list of installed files")
+                         (self.record, outputs),
+                         "writing list of installed files to '%s'" %
+                         self.record)
 
         normalized_path = map (os.path.normpath, sys.path)
         if (not (self.path_file and self.install_path_file) and
