@@ -265,8 +265,8 @@ PyCode_New(argcount, nlocals, stacksize, flags,
 		if (!PyString_Check(v))
 			continue;
 		p = PyString_AsString(v);
-		if ((int)strspn(p, NAME_CHARS)
-		    != PyString_Size(v))
+		if (strspn(p, NAME_CHARS)
+		    != (size_t)PyString_Size(v))
 			continue;
 		PyString_InternInPlace(&PyTuple_GET_ITEM(consts, i));
 	}
@@ -340,7 +340,7 @@ com_error(c, exc, msg)
 	PyObject *exc;
 	char *msg;
 {
-	int n = strlen(msg);
+	size_t n = strlen(msg);
 	PyObject *v;
 	char buffer[30];
 	char *s;
@@ -720,12 +720,12 @@ com_mangle(c, name, buffer, maxlen)
 	struct compiling *c;
 	char *name;
 	char *buffer;
-	int maxlen;
+	size_t maxlen;
 {
 	/* Name mangling: __private becomes _classname__private.
 	   This is independent from how the name is used. */
 	char *p;
-	int nlen, plen;
+	size_t nlen, plen;
 	nlen = strlen(name);
 	if (nlen+2 >= maxlen)
 		return 0; /* Don't mangle __extremely_long_names */
@@ -761,7 +761,7 @@ com_addopnamestr(c, op, name)
 	char buffer[256];
 	if (name != NULL && name[0] == '_' && name[1] == '_' &&
 	    c->c_private != NULL &&
-	    com_mangle(c, name, buffer, (int)sizeof(buffer)))
+	    com_mangle(c, name, buffer, sizeof(buffer)))
 		name = buffer;
 #endif
 	if (name == NULL || (v = PyString_InternFromString(name)) == NULL) {
@@ -883,7 +883,7 @@ parsestr(s)
 	char *s;
 {
 	PyObject *v;
-	int len;
+	size_t len;
 	char *buf;
 	char *p;
 	char *end;
@@ -908,6 +908,10 @@ parsestr(s)
 	}
 	s++;
 	len = strlen(s);
+	if (len > INT_MAX) {
+		PyErr_SetString(PyExc_OverflowError, "string to parse is too long");
+		return NULL;
+	}
 	if (s[--len] != quote) {
 		PyErr_BadInternalCall();
 		return NULL;
@@ -2201,7 +2205,7 @@ com_global_stmt(c, n)
 		char buffer[256];
 		if (s != NULL && s[0] == '_' && s[1] == '_' &&
 		    c->c_private != NULL &&
-		    com_mangle(c, s, buffer, (int)sizeof(buffer)))
+		    com_mangle(c, s, buffer, sizeof(buffer)))
 			s = buffer;
 #endif
 		if (PyDict_GetItemString(c->c_locals, s) != NULL) {

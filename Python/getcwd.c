@@ -62,7 +62,7 @@ getcwd(buf, size)
 		return NULL;
 	}
 	ret = getwd(localbuf);
-	if (ret != NULL && strlen(localbuf) >= size) {
+	if (ret != NULL && strlen(localbuf) >= (size_t)size) {
 		errno = ERANGE;
 		return NULL;
 	}

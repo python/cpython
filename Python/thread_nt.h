@@ -101,6 +101,9 @@ BOOL InitializeNonRecursiveMutex(PNRMUTEX mutex)
 	return mutex->hevent != NULL ;	/* TRUE if the mutex is created */
 }
 
+#ifdef InterlockedCompareExchange
+#undef InterlockedCompareExchange
+#endif
 #define InterlockedCompareExchange(dest,exchange,comperand) (ixchg((dest), (exchange), (comperand)))
 
 VOID DeleteNonRecursiveMutex(PNRMUTEX mutex)
@@ -179,7 +182,7 @@ static void PyThread__init_thread(void)
  */
 int PyThread_start_new_thread(void (*func)(void *), void *arg)
 {
-	long rv;
+	INT_PTR rv;
 	int success = 0;
 
 	dprintf(("%ld: PyThread_start_new_thread called\n", PyThread_get_thread_ident()));
@@ -190,7 +193,7 @@ int PyThread_start_new_thread(void (*func)(void *), void *arg)
  
 	if (rv != -1) {
 		success = 1;
-		dprintf(("%ld: PyThread_start_new_thread succeeded: %ld\n", PyThread_get_thread_ident(), rv));
+		dprintf(("%ld: PyThread_start_new_thread succeeded: %p\n", PyThread_get_thread_ident(), rv));
 	}
 
 	return success;

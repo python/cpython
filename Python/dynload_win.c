@@ -104,7 +104,7 @@ dl_funcptr _PyImport_GetDynLoadFunc(const char *fqname, const char *shortname,
 					"DLL load failed with error code %d",
 					errorCode);
 			} else {
-				int len;
+				size_t len;
 				/* For some reason a \r\n
 				   is appended to the text */
 				if (theLength >= 2 &&

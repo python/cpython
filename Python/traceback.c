@@ -166,7 +166,7 @@ tb_displayline(f, filename, lineno, name)
 		path = PySys_GetObject("path");
 		if (path != NULL && PyList_Check(path)) {
 			int npath = PyList_Size(path);
-			int taillen = strlen(tail);
+			size_t taillen = strlen(tail);
 			char namebuf[MAXPATHLEN+1];
 			for (i = 0; i < npath; i++) {
 				PyObject *v = PyList_GetItem(path, i);
@@ -175,12 +175,12 @@ tb_displayline(f, filename, lineno, name)
 					break;
 				}
 				if (PyString_Check(v)) {
-					int len;
+					size_t len;
 					len = PyString_Size(v);
 					if (len + 1 + taillen >= MAXPATHLEN)
 						continue; /* Too long */
 					strcpy(namebuf, PyString_AsString(v));
-					if ((int)strlen(namebuf) != len)
+					if (strlen(namebuf) != len)
 						continue; /* v contains '\0' */
 					if (len > 0 && namebuf[len-1] != SEP)
 						namebuf[len++] = SEP;
