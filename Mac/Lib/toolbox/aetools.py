@@ -107,14 +107,17 @@ def enumsubst(arguments, key, edict):
 def decodeerror(arguments):
 	"""Create the 'best' argument for a raise MacOS.Error"""
 	errn = arguments['errn']
-	errarg = (errn, )
+	err_a1 = errn
 	if arguments.has_key('errs'):
-		errarg = errarg + (arguments['errs'],)
+		err_a2 = arguments['errs']
+	else:
+		err_a2 = MacOS.GetErrorString(errn)
 	if arguments.has_key('erob'):
-		errarg = errarg + (arguments['erob'],)
-	if len(errarg) == 1:
-		errarg = errarg + ('Server returned error code %d'%errn, )
-	return errarg
+		err_a3 = arguments['erob']
+	else:
+		err_a3 = None
+	
+	return (err_a1, err_a2, err_a3)
 
 class TalkTo:
 	"""An AE connection to an application"""
@@ -178,8 +181,8 @@ class TalkTo:
 		"""Send 'activate' command"""
 		self.send('misc', 'actv')
 
-	def get(self, _object, _attributes={}):
-		"""get: get data from an object
+	def _get(self, _object, as=None, _attributes={}):
+		"""_get: get data from an object
 		Required argument: the object
 		Keyword argument _attributes: AppleEvent attribute dictionary
 		Returns: the data
@@ -188,7 +191,8 @@ class TalkTo:
 		_subcode = 'getd'
 
 		_arguments = {'----':_object}
-
+		if as:
+			_arguments['rtyp'] = mktype(as)
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)

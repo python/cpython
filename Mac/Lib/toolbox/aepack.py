@@ -117,6 +117,7 @@ def unpack(desc):
 	
 	if unpacker_coercions.has_key(t):
 		desc = desc.AECoerceDesc(unpacker_coercions[t])
+		t = desc.type # This is a guess by Jack....
 	
 	if t == typeAEList:
 		l = []
