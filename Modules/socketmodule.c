@@ -2515,11 +2515,6 @@ sock_initobj(PyObject *self, PyObject *args, PyObject *kwds)
 		return -1;
 	}
 	init_sockobject(s, fd, family, type, proto);
-	/* From now on, ignore SIGPIPE and let the error checking
-	   do the work. */
-#ifdef SIGPIPE
-	(void) signal(SIGPIPE, SIG_IGN);
-#endif
 
 	return 0;
 
@@ -3038,9 +3033,6 @@ socket_socketpair(PyObject *self, PyObject *args)
 	/* Create a pair of socket fds */
 	if (socketpair(family, type, proto, sv) < 0)
 		return set_error();
-#ifdef SIGPIPE
-	(void) signal(SIGPIPE, SIG_IGN);
-#endif
 	s0 = new_sockobject(sv[0], family, type, proto);
 	if (s0 == NULL)
 		goto finally;
@@ -3091,11 +3083,6 @@ socket_fromfd(PyObject *self, PyObject *args)
 	if (fd < 0)
 		return set_error();
 	s = new_sockobject(fd, family, type, proto);
-	/* From now on, ignore SIGPIPE and let the error checking
-	   do the work. */
-#ifdef SIGPIPE
-	(void) signal(SIGPIPE, SIG_IGN);
-#endif
 	return (PyObject *) s;
 }
 
