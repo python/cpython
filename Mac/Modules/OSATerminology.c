@@ -1,70 +1,101 @@
-#include <Python/Python.h>
+/*
+** This module is a one-trick pony: given an FSSpec it gets the aeut
+** resources. It was written by Donovan Preston and slightly modified
+** by Jack.
+**
+** It should be considered a placeholder, it will probably be replaced
+** by a full interface to OpenScripting.
+*/
+#include "Python.h"
+#include "macglue.h"
+
+#ifdef WITHOUT_FRAMEWORKS
+#include <OpenScripting.h>
+#else
 #include <Carbon/Carbon.h>
-#include <Python/pymactoolbox.h>
+#endif
 
-PyObject * PyOSA_GetAppTerminology(PyObject* self, PyObject* args) {
-	AEDesc temp;
-	FSSpec tempFSSpec;
-	
-	ComponentInstance defaultComponent;
-	ScriptingComponentSelector theType;
-	SInt16 defaultTerminology;
-	Boolean didLaunch;
-	
+static PyObject *
+PyOSA_GetAppTerminology(PyObject* self, PyObject* args)
+{
+	AEDesc theDesc = {0,0};
+	FSSpec fss;
+	ComponentInstance defaultComponent = NULL;
+	SInt16 defaultTerminology = 0;
+	Boolean didLaunch = 0;
 	OSAError err;
+	long modeFlags = 0;
 	
-	PyObject * returnVal;
+	if (!PyArg_ParseTuple(args, "O&|i", PyMac_GetFSSpec, &fss, &modeFlags))
+		 return NULL;
 	
-	if (!PyArg_ParseTuple(args, "O&", PyMac_GetFSSpec, &tempFSSpec)) return NULL;
-	
-  defaultComponent = OpenDefaultComponent (kOSAComponentType,
-					      'ascr');
-//					      kOSAGenericScriptingComponentSubtype);
-
-  err = GetComponentInstanceError (defaultComponent);
-	printf("OpenDefaultComponent: %d\n", err);
+	defaultComponent = OpenDefaultComponent (kOSAComponentType, 'ascr');
+	err = GetComponentInstanceError (defaultComponent);
+	if (err) return PyMac_Error(err);
 	err = OSAGetCurrentDialect(defaultComponent, &defaultTerminology);
-	printf("getcurrentdialect: %d\n", err);
+	if (err) return PyMac_Error(err);	
 	err = OSAGetAppTerminology (
     	defaultComponent, 
-    	kOSAModeNull, 
-    	&tempFSSpec, 
+    	modeFlags,
+    	&fss, 
     	defaultTerminology, 
     	&didLaunch, 
-    	&temp
+    	&theDesc
 	);
+	if (err) return PyMac_Error(err);
+	return Py_BuildValue("O&i", AEDesc_New, &theDesc, didLaunch);
+}
 
-/*	err = ASGetAppTerminology (
+static PyObject *
+PyOSA_GetSysTerminology(PyObject* self, PyObject* args)
+{
+	AEDesc theDesc = {0,0};
+	FSSpec fss;
+	ComponentInstance defaultComponent = NULL;
+	SInt16 defaultTerminology = 0;
+	Boolean didLaunch = 0;
+	OSAError err;
+	long modeFlags = 0;
+	
+	if (!PyArg_ParseTuple(args, "O&|i", PyMac_GetFSSpec, &fss, &modeFlags))
+		 return NULL;
+	
+	defaultComponent = OpenDefaultComponent (kOSAComponentType, 'ascr');
+	err = GetComponentInstanceError (defaultComponent);
+	if (err) return PyMac_Error(err);
+	err = OSAGetCurrentDialect(defaultComponent, &defaultTerminology);
+	if (err) return PyMac_Error(err);	
+	err = OSAGetAppTerminology (
     	defaultComponent, 
-    	&tempFSSpec, 
+    	modeFlags,
+    	&fss, 
     	defaultTerminology, 
     	&didLaunch, 
-    	&temp
-	);*/
-
-	printf("getappterminology: %d\n", err);
-
-	returnVal = Py_BuildValue("O&i",
-			AEDesc_New, &temp, didLaunch);
-	return returnVal;
+    	&theDesc
+	);
+	if (err) return PyMac_Error(err);
+	return Py_BuildValue("O&i", AEDesc_New, &theDesc, didLaunch);
 }
 
 /* 
  * List of methods defined in the module
  */
-static struct PyMethodDef PyOSA_methods[] =
+static struct PyMethodDef OSATerminology_methods[] =
 {
-  {"GetAppTerminology", 
-   (PyCFunction) PyOSA_GetAppTerminology,
-   METH_VARARGS,
-   "Get an applications terminology, as an AEDesc object."},
-
-  {NULL, (PyCFunction) NULL, 0, NULL}
+  	{"GetAppTerminology", 
+		(PyCFunction) PyOSA_GetAppTerminology,
+		METH_VARARGS,
+		"Get an applications terminology, as an AEDesc object."},
+  	{"GetSysTerminology", 
+		(PyCFunction) PyOSA_GetSysTerminology,
+		METH_VARARGS,
+		"Get an applications system terminology, as an AEDesc object."},
+	{NULL, (PyCFunction) NULL, 0, NULL}
 };
 
 
 void
-initPyOSA(void)
+initOSATerminology(void)
 {
-	Py_InitModule("PyOSA", PyOSA_methods);
+	Py_InitModule("OSATerminology", OSATerminology_methods);
 }
