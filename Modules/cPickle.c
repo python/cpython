@@ -58,7 +58,6 @@ static char cPickle_module_documentation[] =
 
 #include "Python.h"
 #include "cStringIO.h"
-#include "graminit.h"
 #include "mymath.h"
 
 #include <errno.h>
@@ -1883,7 +1882,7 @@ PyImport_ImportModuleNi(char *module_name)
             return NULL;
 
     if (!(import = 
-        PyRun_String(import_str, eval_input, eval_dict, eval_dict))) {
+        PyRun_String(import_str, Py_eval_input, eval_dict, eval_dict))) {
         free(import_str);
         return NULL;
     }
@@ -2223,7 +2222,7 @@ load_string(Unpicklerobject *self) {
         UNLESS(eval_dict = Py_BuildValue("{s{}}", "__builtins__"))
             goto finally;
 
-    UNLESS(str = PyRun_String(s, eval_input, eval_dict, eval_dict))
+    UNLESS(str = PyRun_String(s, Py_eval_input, eval_dict, eval_dict))
         goto finally;
 
     if (PyList_Append(self->stack, str) < 0)
@@ -3870,6 +3869,10 @@ initcPickle() {
 
 /****************************************************************************
  $Log$
+ Revision 2.5  1997/05/07 17:46:13  guido
+ Instead of importing graminit.h whenever one of the three grammar 'root'
+ symbols is needed, define these in Python.h with a Py_ prefix.
+
  Revision 2.4  1997/04/09 17:47:47  guido
  Give PyErr_Format a new name and make it static.
 

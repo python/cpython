@@ -58,6 +58,20 @@ PERFORMANCE OF THIS SOFTWARE.
 
 #include <ctype.h>
 
+/* Three symbols from graminit.h are also defined in Python.h, with
+   Py_ prefixes to their names.  Python.h can't include graminit.h
+   (which defines too many confusing symbols), but we can check here
+   that they haven't changed (which is very unlikely, but possible). */
+#if Py_single_input != single_input
+#error "single_input has changed -- update Py_single_input in Python.h"
+#endif
+#if Py_file_input != file_input
+#error "file_input has changed -- update Py_file_input in Python.h"
+#endif
+#if Py_eval_input != eval_input
+#error "eval_input has changed -- update Py_eval_input in Python.h"
+#endif
+
 int Py_OptimizeFlag = 0;
 
 #define OP_DELETE 0

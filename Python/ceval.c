@@ -43,7 +43,6 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "frameobject.h"
 #include "eval.h"
 #include "opcode.h"
-#include "graminit.h"
 
 #include <ctype.h>
 
@@ -2637,7 +2636,8 @@ exec_statement(f, prog, globals, locals)
 	if (PyFile_Check(prog)) {
 		FILE *fp = PyFile_AsFile(prog);
 		char *name = PyString_AsString(PyFile_Name(prog));
-		if (PyRun_File(fp, name, file_input, globals, locals) == NULL)
+		if (PyRun_File(fp, name, Py_file_input,
+			       globals, locals) == NULL)
 			return -1;
 		return 0;
 	}
@@ -2647,7 +2647,7 @@ exec_statement(f, prog, globals, locals)
 				"embedded '\\0' in exec string");
 		return -1;
 	}
-	v = PyRun_String(s, file_input, globals, locals);
+	v = PyRun_String(s, Py_file_input, globals, locals);
 	if (v == NULL)
 		return -1;
 	Py_DECREF(v);
