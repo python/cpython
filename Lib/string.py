@@ -74,11 +74,17 @@ def split(s, sep=None, maxsplit=0):
 	if sep is not None: return splitfields(s, sep, maxsplit)
 	res = []
 	i, n = 0, len(s)
+	if maxsplit <= 0: maxsplit = n
+	count = 0
 	while i < n:
 		while i < n and s[i] in whitespace: i = i+1
 		if i == n: break
+		if count >= maxsplit:
+		    res.append(s[i:])
+		    break
 		j = i
 		while j < n and s[j] not in whitespace: j = j+1
+		count = count + 1
 		res.append(s[i:j])
 		i = j
 	return res
@@ -93,6 +99,7 @@ def splitfields(s, sep=None, maxsplit=0):
 	if nsep == 0:
 		return [s]
 	ns = len(s)
+	if maxsplit <= 0: maxsplit = ns
 	i = j = 0
 	count = 0
 	while j+nsep <= ns:
@@ -100,8 +107,7 @@ def splitfields(s, sep=None, maxsplit=0):
 			count = count + 1
 			res.append(s[i:j])
 			i = j = j + nsep
-			if (maxsplit and (count >= maxsplit)):
-			    break
+			if count >= maxsplit: break
 			   
 		else:
 			j = j + 1
