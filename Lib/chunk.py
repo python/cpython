@@ -17,7 +17,7 @@ The ID is a 4-byte string which identifies the type of chunk.
 The size field (a 32-bit value, encoded using big-endian byte order)
 gives the size of the whole chunk, including the 8-byte header.
 
-Usually a IFF-type file consists of one or more chunks.  The proposed
+Usually an IFF-type file consists of one or more chunks.  The proposed
 usage of the Chunk class defined here is to instantiate an instance at 
 the start of each chunk and read from the instance until it reaches
 the end, after which a new instance can be instantiated.  At the end
@@ -84,7 +84,7 @@ class Chunk:
             raise ValueError, "I/O operation on closed file"
         return 0
 
-    def seek(self, pos, mode = 0):
+    def seek(self, pos, whence = 0):
         """Seek to specified position into the chunk.
         Default position is 0 (start of chunk).
         If the file is not seekable, this will result in an error.
@@ -94,9 +94,9 @@ class Chunk:
             raise ValueError, "I/O operation on closed file"
         if not self.seekable:
             raise IOError, "cannot seek"
-        if mode == 1:
+        if whence == 1:
             pos = pos + self.size_read
-        elif mode == 2:
+        elif whence == 2:
             pos = pos + self.chunk_size
         if pos < 0 or pos > self.chunksize:
             raise RuntimeError
@@ -108,9 +108,9 @@ class Chunk:
             raise ValueError, "I/O operation on closed file"
         return self.size_read
 
-    def read(self, n = -1):
-        """Read at most n bytes from the chunk.
-        If n is omitted or negative, read until the end
+    def read(self, size = -1):
+        """Read at most size bytes from the chunk.
+        If size is omitted or negative, read until the end
         of the chunk.
 	"""
 
@@ -118,11 +118,11 @@ class Chunk:
             raise ValueError, "I/O operation on closed file"
         if self.size_read >= self.chunksize:
             return ''
-        if n < 0:
-            n = self.chunksize - self.size_read
-        if n > self.chunksize - self.size_read:
-             n = self.chunksize - self.size_read
-        data = self.file.read(n)
+        if size < 0:
+            size = self.chunksize - self.size_read
+        if size > self.chunksize - self.size_read:
+             size = self.chunksize - self.size_read
+        data = self.file.read(size)
         self.size_read = self.size_read + len(data)
         if self.size_read == self.chunksize and \
            self.align and \
