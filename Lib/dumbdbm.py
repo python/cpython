@@ -108,7 +108,7 @@ class _Database:
     def __setitem__(self, key, val):
         if not type(key) == type('') == type(val):
             raise TypeError, "keys and values must be strings"
-        if not self._index.has_key(key):
+        if not key in self._index:
             (pos, siz) = self._addval(val)
             self._addkey(key, (pos, siz))
         else:
@@ -130,10 +130,10 @@ class _Database:
         return self._index.keys()
 
     def has_key(self, key):
-        return self._index.has_key(key)
+        return key in self._index
 
     def __contains__(self, key):
-        return self._index.has_key(key)
+        return key in self._index
 
     def iterkeys(self):
         return self._index.iterkeys()
