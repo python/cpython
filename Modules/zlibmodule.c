@@ -541,21 +541,34 @@ PyZlib_flush(self, args)
   /* When flushing the zstream, there's no input data.  
      If zst.avail_out == 0, that means that more output space is
      needed to complete the flush operation. */ 
-  while (err == Z_OK) {
-      err = deflate(&(self->zst), Z_FINISH);
-      if (self->zst.avail_out <= 0) {
-	  if (_PyString_Resize(&RetVal, length << 1) == -1)  {
-	      PyErr_SetString(PyExc_MemoryError,
-			      "Can't allocate memory to compress data");
-	      return NULL;
-	  }
-	  self->zst.next_out = (unsigned char *)PyString_AsString(RetVal) + length;
-	  self->zst.avail_out = length;
-	  length = length << 1;
+  while (1) {
+      err = deflate(&(self->zst), flushmode);
+
+      /* If the output is Z_OK, and there's still room in the output
+	 buffer, then the flush is complete. */
+      if ( (err == Z_OK) && self->zst.avail_out > 0) break;
+
+      /* A nonzero return indicates some sort of error (but see 
+	 the comment for the error handler below) */
+      if ( err != Z_OK ) break;
+
+      /* There's no space left for output, so increase the buffer and loop 
+	 again */
+      if (_PyString_Resize(&RetVal, length << 1) == -1)  {
+	PyErr_SetString(PyExc_MemoryError,
+			"Can't allocate memory to compress data");
+	return NULL;
       }
+      self->zst.next_out = (unsigned char *)PyString_AsString(RetVal) + length;
+      self->zst.avail_out = length;
+      length = length << 1;
   }
 
-  if (err != Z_STREAM_END) 
+  /* Raise an exception indicating an error.  The condition for
+     detecting a error is kind of complicated; Z_OK indicates no
+     error, but if the flushmode is Z_FINISH, then Z_STREAM_END is
+     also not an error. */
+  if (err!=Z_OK && !(flushmode == Z_FINISH && err == Z_STREAM_END) )
   {
       if (self->zst.msg == Z_NULL)
 	  PyErr_Format(ZlibError, "Error %i while flushing",
@@ -566,6 +579,10 @@ PyZlib_flush(self, args)
       Py_DECREF(RetVal);
       return NULL;
   }
+
+  /* If flushmode is Z_FINISH, we also have to call deflateEnd() to
+     free various data structures */
+
   if (flushmode == Z_FINISH) {
     err=deflateEnd(&(self->zst));
     if (err!=Z_OK) {
