@@ -6,24 +6,27 @@ Pynche is based largely on a similar color editor I wrote years ago for the
 Sunview window system.  That editor was called ICE: the Interactive Color
 Editor.  I'd always wanted to port the editor to X but didn't feel like
 hacking X and C code to do it.  Fast forward many years, to where Python +
-Tkinter + Pmw provides such a nice programming environment, with enough
-power, that I finally buckled down and implemented it.  I changed the name
-because these days, too many other systems have the acronym `ICE'.
+Tkinter provides such a nice programming environment, with enough power, that
+I finally buckled down and implemented it.  I changed the name because these
+days, too many other systems have the acronym `ICE'.
 
-This program currently requires Python 1.5 with Tkinter.  It also requires at
-least Pmw 0.6.1.  It has only been tested on Solaris 2.6.  Feedback is greatly 
-appreciated.  Send email to bwarsaw@python.org
+This program currently requires Python 1.5 with Tkinter.  It has only been
+tested on Solaris 2.6.  Feedback is greatly appreciated.  Send email to
+bwarsaw@python.org
 
-Usage: %(PROGRAM)s [-c color] [-h]
+Usage: %(PROGRAM)s [-d file] [-h] [initialcolor]
 
 Where:
-    --color color
-    -c color
-        initial color, as an X color name or #RRGGBB format
+    --database file
+    -d file
+        Alternate location of a color database file
 
     --help
     -h
         print this message
+
+    initialcolor
+        initial color, as a color name or #RRGGBB format
 
 """
 
@@ -31,10 +34,10 @@ __version__ = '1.0'
 
 import sys
 import getopt
-import Pmw
 import ColorDB
 from Tkinter import *
 from PyncheWidget import PyncheWidget
+from Switchboard import Switchboard
 
 
 
@@ -42,10 +45,6 @@ PROGRAM = sys.argv[0]
 
 # Milliseconds between interrupt checks
 KEEPALIVE_TIMER = 500
-
-RGBCOLOR = 1
-HSICOLOR = 2
-NAMEDCOLOR = 3
 
 # Default locations of rgb.txt or other textual color database
 RGB_TXT = [
@@ -67,30 +66,38 @@ def usage(status, msg=''):
 app = None
 
 def keepalive():
-    # Exercise the Python interpreter regularly so keybard interrupts get
+    # Exercise the Python interpreter regularly so keyboard interrupts get
     # through.
     app.tk.createtimerhandler(KEEPALIVE_TIMER, keepalive)
+
+
+def finished(event=None):
+    sys.exit(0)
 
 
 def main():
     global app
 
-    initialcolor = 'grey50'
     try:
-	opts, args = getopt.getopt(sys.argv[1:],
-				   'hc:',
-				   ['color=', 'help'])
+	opts, args = getopt.getopt(
+            sys.argv[1:],
+            'hd:',
+            ['database=', 'help'])
     except getopt.error, msg:
 	usage(1, msg)
 
-    if args:
+    if len(args) == 0:
+        initialcolor = 'grey50'
+    elif len(args) == 1:
+        initialcolor = args[0]
+    else:
 	usage(1)
 
     for opt, arg in opts:
 	if opt in ('-h', '--help'):
 	    usage(0)
-	elif opt in ('-c', '--color'):
-	    initialcolor = arg
+	elif opt in ('-d', '--database'):
+	    RGB_TXT.insert(0, arg)
 
     # create the windows and go
     for f in RGB_TXT:
@@ -102,8 +109,10 @@ def main():
     else:
 	raise IOError('No color database file found')
 
-    app = Pmw.initialise(fontScheme='pmw1')
+    app = Tk(className='Pynche')
+    app.protocol('WM_DELETE_WINDOW', finished)
     app.title('Pynche %s' % __version__)
+    app.iconname('Pynche')
     app.tk.createtimerhandler(KEEPALIVE_TIMER, keepalive)
 
     # get triplet for initial color
@@ -114,9 +123,14 @@ def main():
 	try:
 	    red, green, blue = ColorDB.rrggbb_to_triplet(initialcolor)
 	except ColorDB.BadColor:
-	    usage(1, 'Bad initial color: %s' % initialcolor)
+            print 'Bad initial color, using default: %s' % initialcolor
+            initialcolor = 'grey50'
+            try:
+                red, green, blue = ColorDB.rrggbb_to_triplet(initialcolor)
+            except ColorDB.BadColor:
+                usage(1, 'Cannot find an initial color to use')
 
-    p = PyncheWidget(colordb, app, color=(red, green, blue))
+    s = Switchboard(app, colordb, red, green, blue)
     try:
 	keepalive()
 	app.mainloop()
