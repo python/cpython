@@ -654,6 +654,7 @@ See the `\\[py-shell]' docs for additional warnings."
     (set-buffer pbuf)
     (let* ((start (point))
 	   (goback (< start pmark))
+	   (goend (and (not goback) (= start (point-max))))
 	   (buffer-read-only nil))
       (goto-char pmark)
       (insert string)
@@ -670,14 +671,18 @@ See the `\\[py-shell]' docs for additional warnings."
 	(if py-scroll-process-buffer
 	    (let* ((pop-up-windows t)
 		   (pwin (display-buffer pbuf)))
-	      (set-window-point pwin (point))))))
-    (set-buffer curbuf)
-    (if file-finished
-	(progn
-	  (py-delete-file-silently (car py-file-queue))
-	  (setq py-file-queue (cdr py-file-queue))
-	  (if py-file-queue
-		(py-execute-file pyproc (car py-file-queue)))))))
+	      (set-window-point pwin (point)))))
+      (set-buffer curbuf)
+      (if file-finished
+	  (progn
+	    (py-delete-file-silently (car py-file-queue))
+	    (setq py-file-queue (cdr py-file-queue))
+	    (if py-file-queue
+		(py-execute-file pyproc (car py-file-queue)))))
+      (and goend
+	   (progn (set-buffer pbuf)
+		  (goto-char (point-max))))
+      )))
 
 (defun py-execute-buffer ()
   "Send the contents of the buffer to a Python interpreter.
