@@ -942,8 +942,9 @@ The following operations are defined on mutable sequence types (where
         {same as \code{\var{s}[len(\var{s}):len(\var{s})] = \var{x}}}{(3)}
   \lineiii{\var{s}.count(\var{x})}
     {return number of \var{i}'s for which \code{\var{s}[\var{i}] == \var{x}}}{}
-  \lineiii{\var{s}.index(\var{x})}
-    {return smallest \var{i} such that \code{\var{s}[\var{i}] == \var{x}}}{(4)}
+  \lineiii{\var{s}.index(\var{x}\optional{, \var{i}\optional{, \var{j}}})}
+    {return smallest \var{k} such that \code{\var{s}[\var{k}] == \var{x}} and
+    \code{\var{i} <= \var{k} < \var{j}}}{(4)}
   \lineiii{\var{s}.insert(\var{i}, \var{x})}
 	{same as \code{\var{s}[\var{i}:\var{i}] = [\var{x}]}}{(5)}
   \lineiii{\var{s}.pop(\optional{\var{i}})}
@@ -982,7 +983,11 @@ Notes:
   mutable sequence types other than lists.
 
 \item[(4)] Raises \exception{ValueError} when \var{x} is not found in
-  \var{s}.
+  \var{s}. When a negative index is passed as the second or third parameter
+  to the \method{index()} method, the list length is added, as for slice
+  indices.  If it is still negative, it is truncated to zero, as for
+  slice indices.  \versionchanged[Previously, \method{index()} didn't
+  have arguments for specifying start and stop positions]{2.3}
 
 \item[(5)] When a negative index is passed as the first parameter to
   the \method{insert()} method, the list length is added, as for slice
