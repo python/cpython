@@ -370,6 +370,21 @@ else AC_MSG_RESULT(no); Py_DEBUG='false'
 fi],
 [AC_MSG_RESULT(no)])
 
+AC_MSG_CHECKING(whether gcc needs -fno-strict-aliasing)
+AC_TRY_CPP([
+#ifdef __GNUC__
+# if defined(__GNUC_MINOR__) && __GNUC__ >= 3 && (__GNUC_MINOR__ >= 3)
+#   error -fno-strict-aliasing needed
+# endif
+#endif
+],[
+  GCC_EXTRA_OPT=
+  AC_MSG_RESULT(no)
+],[
+  GCC_EXTRA_OPT=-fno-strict-aliasing
+  AC_MSG_RESULT(yes)
+])
+
 # Optimizer/debugger flags
 AC_SUBST(OPT)
 if test -z "$OPT"
@@ -383,10 +398,10 @@ then
 		# debug builds.
 		OPT="-g -Wall -Wstrict-prototypes"
 	    else
-		OPT="-g -O3 -Wall -Wstrict-prototypes"
+		OPT="-g -O3 $GCC_EXTRA_OPT -Wall -Wstrict-prototypes"
 	    fi;;
 	*)
-	    OPT="-O3 -Wall -Wstrict-prototypes";;
+	    OPT="-O3 $GCC_EXTRA_OPT -Wall -Wstrict-prototypes";;
 	esac
 	case $ac_sys_system in
 	    SCO_SV*) OPT="$OPT -m486 -DSCO5";;
