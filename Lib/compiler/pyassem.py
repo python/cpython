@@ -99,12 +99,6 @@ class FlowGraph:
         if not self.exit in order:
             order.append(self.exit)
 
-##        for b in order:
-##            print repr(b)
-##            print "\t", b.get_children()
-##            print b
-##            print
-            
         return order
 
     def getBlocks(self):
@@ -222,6 +216,7 @@ CO_OPTIMIZED = 0x0001
 CO_NEWLOCALS = 0x0002
 CO_VARARGS = 0x0004
 CO_VARKEYWORDS = 0x0008
+CO_NESTED = 0x0010
 
 # the FlowGraph is transformed in place; it exists in one of these states
 RAW = "RAW"
@@ -245,6 +240,15 @@ class PyFlowGraph(FlowGraph):
             self.flags = 0
         self.consts = []
         self.names = []
+        # Free variables found by the symbol table scan, including
+        # variables used only in nested scopes, are included here.
+        self.freevars = []
+        self.cellvars = []
+        # The closure list is used to track the order of cell
+        # variables and free variables in the resulting code object.
+        # The offsets used by LOAD_CLOSURE/LOAD_DEREF refer to both
+        # kinds of variables.
+        self.closure = []
         self.varnames = list(args) or []
         for i in range(len(self.varnames)):
             var = self.varnames[i]
@@ -259,6 +263,12 @@ class PyFlowGraph(FlowGraph):
         self.flags = self.flags | flag
         if flag == CO_VARARGS:
             self.argcount = self.argcount - 1
+
+    def setFreeVars(self, names):
+        self.freevars = list(names)
+
+    def setCellVars(self, names):
+        self.cellvars = names
 
     def getCode(self):
         """Get a Python code object"""
@@ -335,6 +345,7 @@ class PyFlowGraph(FlowGraph):
         """Convert arguments from symbolic to concrete form"""
         assert self.stage == FLAT
         self.consts.insert(0, self.docstring)
+        self.sort_cellvars()
         for i in range(len(self.insts)):
             t = self.insts[i]
             if len(t) == 2:
@@ -344,6 +355,19 @@ class PyFlowGraph(FlowGraph):
                 if conv:
                     self.insts[i] = opname, conv(self, oparg)
         self.stage = CONV
+
+    def sort_cellvars(self):
+        """Sort cellvars in the order of varnames and prune from freevars.
+        """
+        cells = {}
+        for name in self.cellvars:
+            cells[name] = 1
+        self.cellvars = [name for name in self.varnames
+                         if cells.has_key(name)]
+        for name in self.cellvars:
+            del cells[name]
+        self.cellvars = self.cellvars + cells.keys()
+        self.closure = self.cellvars + self.freevars
 
     def _lookupName(self, name, list):
         """Return index of name in list, appending if necessary"""
@@ -381,6 +405,17 @@ class PyFlowGraph(FlowGraph):
     _convert_LOAD_GLOBAL = _convert_NAME
     _convert_STORE_GLOBAL = _convert_NAME
     _convert_DELETE_GLOBAL = _convert_NAME
+
+    def _convert_DEREF(self, arg):
+        self._lookupName(arg, self.names)
+        self._lookupName(arg, self.varnames)
+        return self._lookupName(arg, self.closure)
+    _convert_LOAD_DEREF = _convert_DEREF
+    _convert_STORE_DEREF = _convert_DEREF
+
+    def _convert_LOAD_CLOSURE(self, arg):
+        self._lookupName(arg, self.varnames)
+        return self._lookupName(arg, self.closure)
 
     _cmp = list(dis.cmp_op)
     def _convert_COMPARE_OP(self, arg):
@@ -432,7 +467,8 @@ class PyFlowGraph(FlowGraph):
                         self.lnotab.getCode(), self.getConsts(),
                         tuple(self.names), tuple(self.varnames),
                         self.filename, self.name, self.lnotab.firstline,
-                        self.lnotab.getTable())
+                        self.lnotab.getTable(), tuple(self.freevars),
+                        tuple(self.cellvars))
 
     def getConsts(self):
         """Return a tuple for the const slot of the code object
