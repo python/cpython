@@ -45,7 +45,7 @@ The \code{spam} module defines the following functions:
 % Redefine the ``indexsubitem'' macro to point to this module
 % (alternatively, you can put this at the top of the file):
 
-\renewcommand{\indexsubitem}{(in module spam)}
+\setindexsubitem{(in module spam)}
 
 % ---- 3.2. ----
 % For each function, use a ``funcdesc'' block.  This has exactly two
@@ -101,12 +101,12 @@ failure.
 
 Example:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> import spam
 >>> can = spam.open('/etc/passwd')
 >>> can.empty()
 >>> can.close()
-\end{verbatim}\ecode
+\end{verbatim}
 %
 % ==== 5. ====
 % If your module defines new object types (for a built-in module) or
@@ -120,7 +120,7 @@ Example:
 Spam objects (returned by \code{open()} above) have the following
 methods.
 
-\renewcommand{\indexsubitem}{(spam method)}
+\setindexsubitem{(spam method)}
 
 \begin{funcdesc}{empty}{}
 Empty the can into the trash.

@@ -25,7 +25,7 @@ documented upper limit.)
 
 The module defines the following functions:
 
-\renewcommand{\indexsubitem}{(in module al)}
+\setindexsubitem{(in module al)}
 
 \begin{funcdesc}{openport}{name\, direction\optional{\, config}}
 The name and direction arguments are strings.  The optional config
@@ -59,7 +59,7 @@ as returned by \code{al.queryparams}.
 Configuration objects (returned by \code{al.newconfig()} have the
 following methods:
 
-\renewcommand{\indexsubitem}{(audio configuration object method)}
+\setindexsubitem{(audio configuration object method)}
 
 \begin{funcdesc}{getqueuesize}{}
 Return the queue size.
@@ -106,7 +106,7 @@ Set the maximum value for floating sample formats.
 Port objects (returned by \code{al.openport()} have the following
 methods:
 
-\renewcommand{\indexsubitem}{(audio port object method)}
+\setindexsubitem{(audio port object method)}
 
 \begin{funcdesc}{closeport}{}
 Close the port.
@@ -167,7 +167,7 @@ the C header file \file{<audio.h>} except that the name prefix
 \samp{AL_} is omitted.  Read the module source for a complete list of
 the defined names.  Suggested use:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 import al
 from AL import *
-\end{verbatim}\ecode
+\end{verbatim}

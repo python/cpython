@@ -1,7 +1,7 @@
 \section{Built-in Module \sectcode{ctb}}
 \label{module-ctb}
 \bimodindex{ctb}
-\renewcommand{\indexsubitem}{(in module ctb)}
+\setindexsubitem{(in module ctb)}
 
 This module provides a partial interface to the Macintosh
 Communications Toolbox. Currently, only Connection Manager tools are
@@ -45,7 +45,7 @@ Alternatively, passing \code{None} will result in default buffer sizes.
 For all connection methods that take a \var{timeout} argument, a value
 of \code{-1} is indefinite, meaning that the command runs to completion.
 
-\renewcommand{\indexsubitem}{(connection object attribute)}
+\setindexsubitem{(connection object attribute)}
 
 \begin{datadesc}{callback}
 If this member is set to a value other than \code{None} it should point
@@ -60,7 +60,7 @@ calls for the time being.
 \end{datadesc}
 
 
-\renewcommand{\indexsubitem}{(connection object method)}
+\setindexsubitem{(connection object method)}
 
 \begin{funcdesc}{Open}{timeout}
 Open an outgoing connection, waiting at most \var{timeout} seconds for

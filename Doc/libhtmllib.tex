@@ -4,7 +4,7 @@
 \index{HTML}
 \index{hypertext}
 
-\renewcommand{\indexsubitem}{(in module htmllib)}
+\setindexsubitem{(in module htmllib)}
 
 This module defines a class which can serve as a base for parsing text
 files formatted in the HyperText Mark-up Language (HTML).  The class
@@ -40,10 +40,10 @@ incomplete elements are saved in a buffer.  To force processing of all
 unprocessed data, call the \method{close()} method.
 
 For example, to parse the entire contents of a file, use:
-\bcode\begin{verbatim}
+\begin{verbatim}
 parser.feed(open('myfile.html').read())
 parser.close()
-\end{verbatim}\ecode
+\end{verbatim}
 %
 \item
 The interface to define semantics for HTML tags is very simple: derive
@@ -71,7 +71,7 @@ handlers for all HTML 2.0 and many HTML 3.0 and 3.2 elements.
 In addition to tag methods, the \class{HTMLParser} class provides some
 additional methods and instance variables for use within tag methods.
 
-\renewcommand{\indexsubitem}{(HTMLParser attribute)}
+\setindexsubitem{(HTMLParser attribute)}
 
 \begin{datadesc}{formatter}
 This is the formatter instance associated with the parser.
@@ -85,7 +85,7 @@ as within a \code{<PRE>} element.  The default value is false.  This
 affects the operation of \method{handle_data()} and \method{save_end()}.
 \end{datadesc}
 
-\renewcommand{\indexsubitem}{(HTMLParser method)}
+\setindexsubitem{(HTMLParser method)}
 
 \begin{funcdesc}{anchor_bgn}{href\, name\, type}
 This method is called at the start of an anchor region.  The arguments

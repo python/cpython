@@ -36,7 +36,7 @@ of STDWIN for C programmers (aforementioned CWI report).
 
 The following functions are defined in the \code{stdwin} module:
 
-\renewcommand{\indexsubitem}{(in module stdwin)}
+\setindexsubitem{(in module stdwin)}
 \begin{funcdesc}{open}{title}
 Open a new window whose initial title is given by the string argument.
 Return a window object; window object methods are described below.%
@@ -118,14 +118,14 @@ Return the pixel value corresponding to the given color name.
 Return the default foreground color for unknown color names.
 Hint: the following code tests whether you are on a machine that
 supports more than two colors:
-\bcode\begin{verbatim}
+\begin{verbatim}
 if stdwin.fetchcolor('black') <> \
           stdwin.fetchcolor('red') <> \
           stdwin.fetchcolor('white'):
     print 'color machine'
 else:
     print 'monochrome machine'
-\end{verbatim}\ecode
+\end{verbatim}
 \end{funcdesc}
 
 \begin{funcdesc}{setfgcolor}{pixel}
@@ -316,7 +316,7 @@ Window objects are created by \code{stdwin.open()}.  They are closed
 by their \code{close()} method or when they are garbage-collected.
 Window objects have the following methods:
 
-\renewcommand{\indexsubitem}{(window method)}
+\setindexsubitem{(window method)}
 
 \begin{funcdesc}{begindrawing}{}
 Return a drawing object, whose methods (described below) allow drawing
@@ -467,7 +467,7 @@ No drawing object may exist when
 is called.
 Drawing objects have the following methods:
 
-\renewcommand{\indexsubitem}{(drawing method)}
+\setindexsubitem{(drawing method)}
 
 \begin{funcdesc}{box}{rect}
 Draw a box just inside a rectangle.
@@ -605,7 +605,7 @@ A menu object represents a menu.
 The menu is destroyed when the menu object is deleted.
 The following methods are defined:
 
-\renewcommand{\indexsubitem}{(menu method)}
+\setindexsubitem{(menu method)}
 
 \begin{funcdesc}{additem}{text\, shortcut}
 Add a menu item with given text.
@@ -643,7 +643,7 @@ Bitmaps are currently not available on the Macintosh.
 
 The following methods are defined:
 
-\renewcommand{\indexsubitem}{(bitmap method)}
+\setindexsubitem{(bitmap method)}
 
 \begin{funcdesc}{getsize}{}
 Return a tuple representing the width and height of the bitmap.
@@ -669,7 +669,7 @@ A text-edit object represents a text-edit block.
 For semantics, see the STDWIN documentation for C programmers.
 The following methods exist:
 
-\renewcommand{\indexsubitem}{(text-edit method)}
+\setindexsubitem{(text-edit method)}
 
 \begin{funcdesc}{arrow}{code}
 Pass an arrow event to the text-edit block.
@@ -756,7 +756,7 @@ left corner of the window.
 The window will be correctly redrawn when covered and re-exposed.
 The program quits when the close icon or menu item is requested.
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 import stdwin
 from stdwinevents import *
 
@@ -773,7 +773,7 @@ def main():
             break
 
 main()
-\end{verbatim}\ecode
+\end{verbatim}
 %
 \section{Standard Module \sectcode{stdwinevents}}
 \stmodindex{stdwinevents}
@@ -784,10 +784,10 @@ and selection types (\code{WS_PRIMARY} etc.).
 Read the file for details.
 Suggested usage is
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> from stdwinevents import *
 >>> 
-\end{verbatim}\ecode
+\end{verbatim}
 %
 \section{Standard Module \sectcode{rect}}
 \stmodindex{rect}
@@ -798,9 +798,9 @@ A rectangle is defined as in module
 a pair of points, where a point is a pair of integers.
 For example, the rectangle
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 (10, 20), (90, 80)
-\end{verbatim}\ecode
+\end{verbatim}
 %
 is a rectangle whose left, top, right and bottom edges are 10, 20, 90
 and 80, respectively.
@@ -809,7 +809,7 @@ Note that the positive vertical axis points down (as in
 
 The module defines the following objects:
 
-\renewcommand{\indexsubitem}{(in module rect)}
+\setindexsubitem{(in module rect)}
 \begin{excdesc}{error}
 The exception raised by functions in this module when they detect an
 error.
@@ -821,7 +821,7 @@ detail.
 The rectangle returned when some operations return an empty result.
 This makes it possible to quickly check whether a result is empty:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> import rect
 >>> r1 = (10, 20), (90, 80)
 >>> r2 = (0, 0), (10, 20)
@@ -829,7 +829,7 @@ This makes it possible to quickly check whether a result is empty:
 >>> if r3 is rect.empty: print 'Empty intersection'
 Empty intersection
 >>> 
-\end{verbatim}\ecode
+\end{verbatim}
 \end{datadesc}
 
 \begin{funcdesc}{is_empty}{r}

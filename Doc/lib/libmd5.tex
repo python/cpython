@@ -14,23 +14,23 @@ so far using the \code{digest()} method.
 For example, to obtain the digest of the string {\tt"Nobody inspects
 the spammish repetition"}:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> import md5
 >>> m = md5.new()
 >>> m.update("Nobody inspects")
 >>> m.update(" the spammish repetition")
 >>> m.digest()
 '\273d\234\203\335\036\245\311\331\336\311\241\215\360\377\351'
-\end{verbatim}\ecode
+\end{verbatim}
 %
 More condensed:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> md5.new("Nobody inspects the spammish repetition").digest()
 '\273d\234\203\335\036\245\311\331\336\311\241\215\360\377\351'
-\end{verbatim}\ecode
+\end{verbatim}
 %
-\renewcommand{\indexsubitem}{(in module md5)}
+\setindexsubitem{(in module md5)}
 
 \begin{funcdesc}{new}{\optional{arg}}
 Return a new md5 object.  If \var{arg} is present, the method call
@@ -44,7 +44,7 @@ For backward compatibility reasons, this is an alternative name for the
 
 An md5 object has the following methods:
 
-\renewcommand{\indexsubitem}{(md5 method)}
+\setindexsubitem{(md5 method)}
 \begin{funcdesc}{update}{arg}
 Update the md5 object with the string \var{arg}.  Repeated calls are
 equivalent to a single call with the concatenation of all the

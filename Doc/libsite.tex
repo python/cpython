@@ -6,7 +6,7 @@
 
 In earlier versions of Python (up to and including 1.5a3), scripts or
 modules that needed to use site-specific modules would place
-\code{import site} somewhere near the top of their code.  This is no
+\samp{import site} somewhere near the top of their code.  This is no
 longer necessary.
 
 This will append site-specific paths to to the module search path.
@@ -42,29 +42,29 @@ set to \file{/usr/local}.  The Python 1.5 library is then installed in
 files, \file{foo.pth} and \file{bar.pth}.  Assume \file{foo.pth}
 contains the following:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 # foo package configuration
 
 foo
 bar
 bletch
-\end{verbatim}\ecode
+\end{verbatim}
 
 and \file{bar.pth} contains:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 # bar package configuration
 
 bar
-\end{verbatim}\ecode
+\end{verbatim}
 
 Then the following directories are added to \code{sys.path}, in this
 order:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 /usr/local/python1.5/site-packages/bar
 /usr/local/python1.5/site-packages/foo
-\end{verbatim}\ecode
+\end{verbatim}
 
 Note that \file{bletch} is omitted because it doesn't exist; the
 \file{bar} directory precedes the \file{foo} directory because

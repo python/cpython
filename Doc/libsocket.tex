@@ -47,7 +47,7 @@ method.
 
 The module \code{socket} exports the following constants and functions:
 
-\renewcommand{\indexsubitem}{(in module socket)}
+\setindexsubitem{(in module socket)}
 \begin{excdesc}{error}
 This exception is raised for socket- or address-related errors.
 The accompanying value is either a string telling what went wrong or a
@@ -190,7 +190,7 @@ Socket objects have the following methods.  Except for
 \code{makefile()} these correspond to \UNIX{} system calls applicable to
 sockets.
 
-\renewcommand{\indexsubitem}{(socket method)}
+\setindexsubitem{(socket method)}
 \begin{funcdesc}{accept}{}
 Accept a connection.
 The socket must be bound to an address and listening for connections.
@@ -343,7 +343,7 @@ Also note that the server does not \code{send}/\code{receive} on the
 socket it is listening on but on the new socket returned by
 \code{accept}.
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 # Echo server program
 from socket import *
 HOST = ''                 # Symbolic name meaning the local host
@@ -358,9 +358,9 @@ while 1:
     if not data: break
     conn.send(data)
 conn.close()
-\end{verbatim}\ecode
+\end{verbatim}
 %
-\bcode\begin{verbatim}
+\begin{verbatim}
 # Echo client program
 from socket import *
 HOST = 'daring.cwi.nl'    # The remote host
@@ -371,7 +371,7 @@ s.send('Hello, world')
 data = s.recv(1024)
 s.close()
 print 'Received', `data`
-\end{verbatim}\ecode
+\end{verbatim}
 %
 \begin{seealso}
 \seemodule{SocketServer}{classes that simplify writing network servers}

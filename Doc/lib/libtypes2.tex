@@ -2,7 +2,7 @@
 \label{module-types}
 \stmodindex{types}
 
-\renewcommand{\indexsubitem}{(in module types)}
+\setindexsubitem{(in module types)}
 
 This module defines names for all object types that are used by the
 standard Python interpreter (but not for the types defined by various
@@ -14,14 +14,14 @@ all end in \code{Type}.
 Typical use is for functions that do different things depending on
 their argument types, like the following:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 from types import *
 def delete(list, item):
     if type(item) is IntType:
        del list[item]
     else:
        list.remove(item)
-\end{verbatim}\ecode
+\end{verbatim}
 %
 The module defines the following names:
 

@@ -89,7 +89,7 @@ to convert AST objects to other representations such as parse trees
 and compiled code objects, but there are also functions which serve to
 query the type of parse tree represented by an AST object.
 
-\renewcommand{\indexsubitem}{(in module parser)}
+\setindexsubitem{(in module parser)}
 
 
 \subsection{Creating AST Objects}
@@ -289,30 +289,30 @@ bytecode generation, the simplest operation is to do nothing.  For
 this purpose, using the \module{parser} module to produce an
 intermediate data structure is equivelent to the code
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> code = compile('a + 5', 'eval')
 >>> a = 5
 >>> eval(code)
 10
-\end{verbatim}\ecode
+\end{verbatim}
 %
 The equivelent operation using the \module{parser} module is somewhat
 longer, and allows the intermediate internal parse tree to be retained
 as an AST object:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> import parser
 >>> ast = parser.expr('a + 5')
 >>> code = parser.compileast(ast)
 >>> a = 5
 >>> eval(code)
 10
-\end{verbatim}\ecode
+\end{verbatim}
 %
 An application which needs both AST and code objects can package this
 code into readily available functions:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 import parser
 
 def load_suite(source_string):
@@ -324,7 +324,7 @@ def load_expression(source_string):
     ast = parser.expr(source_string)
     code = parser.compileast(ast)
     return ast, code
-\end{verbatim}\ecode
+\end{verbatim}
 %
 \subsubsection{Information Discovery}
 
@@ -367,16 +367,16 @@ Consider the simplest case of interest when searching for docstrings:
 a module consisting of a docstring and nothing else.  (See file
 \file{docstring.py}.)
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 """Some documentation.
 """
-\end{verbatim}\ecode
+\end{verbatim}
 %
 Using the interpreter to take a look at the parse tree, we find a
 bewildering mass of numbers and parentheses, with the documentation
 buried deep in nested tuples.
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> import parser
 >>> import pprint
 >>> ast = parser.suite(open('docstring.py').read())
@@ -404,7 +404,7 @@ buried deep in nested tuples.
    (4, ''))),
  (4, ''),
  (0, ''))
-\end{verbatim}\ecode
+\end{verbatim}
 %
 The numbers at the first element of each node in the tree are the node
 types; they map directly to terminal and non-terminal symbols in the
@@ -444,7 +444,7 @@ form, allowing a simple variable representation to be
 the pattern matching, returning a boolean and a dictionary of variable
 name to value mappings.  (See file \file{example.py}.)
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 from types import ListType, TupleType
 
 def match(pattern, data, vars=None):
@@ -462,13 +462,13 @@ def match(pattern, data, vars=None):
         if not same:
             break
     return same, vars
-\end{verbatim}\ecode
+\end{verbatim}
 %
 Using this simple representation for syntactic variables and the symbolic
 node types, the pattern for the candidate docstring subtrees becomes
 fairly readable.  (See file \file{example.py}.)
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 import symbol
 import token
 
@@ -495,18 +495,18 @@ DOCSTRING_STMT_PATTERN = (
                      )))))))))))))))),
      (token.NEWLINE, '')
      ))
-\end{verbatim}\ecode
+\end{verbatim}
 %
 Using the \function{match()} function with this pattern, extracting the
 module docstring from the parse tree created previously is easy:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> found, vars = match(DOCSTRING_STMT_PATTERN, tup[1])
 >>> found
 1
 >>> vars
 {'docstring': '"""Some documentation.\012"""'}
-\end{verbatim}\ecode
+\end{verbatim}
 %
 Once specific data can be extracted from a location where it is
 expected, the question of where information can be expected
@@ -569,7 +569,7 @@ grammar, but the method which recursively creates new information
 objects requires further examination.  Here is the relevant part of
 the \class{SuiteInfoBase} definition from \file{example.py}:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 class SuiteInfoBase:
     _docstring = ''
     _name = ''
@@ -599,7 +599,7 @@ class SuiteInfoBase:
                 elif cstmt[0] == symbol.classdef:
                     name = cstmt[2][1]
                     self._class_info[name] = ClassInfo(cstmt)
-\end{verbatim}\ecode
+\end{verbatim}
 %
 After initializing some internal state, the constructor calls the
 \method{_extract_info()} method.  This method performs the bulk of the
@@ -620,13 +620,13 @@ def square(x): "Square an argument."; return x ** 2
 while the long form uses an indented block and allows nested
 definitions:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 def make_power(exp):
     "Make a function that raises an argument to the exponent `exp'."
     def raiser(x, y=exp):
         return x ** y
     return raiser
-\end{verbatim}\ecode
+\end{verbatim}
 %
 When the short form is used, the code block may contain a docstring as
 the first, and possibly only, \constant{small_stmt} element.  The
@@ -662,7 +662,7 @@ the real extraction algorithm remains common to all forms of code
 blocks.  A high-level function can be used to extract the complete set
 of information from a source file.  (See file \file{example.py}.)
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 def get_docs(fileName):
     source = open(fileName).read()
     import os
@@ -671,7 +671,7 @@ def get_docs(fileName):
     ast = parser.suite(source)
     tup = parser.ast2tuple(ast)
     return ModuleInfo(tup, basename)
-\end{verbatim}\ecode
+\end{verbatim}
 %
 This provides an easy-to-use interface to the documentation of a
 module.  If information is required which is not extracted by the code
@@ -703,7 +703,7 @@ to may change between Python versions.
 
 This module also provides one additional data object:
 
-\renewcommand{\indexsubitem}{(in module symbol)}
+\setindexsubitem{(in module symbol)}
 
 
 \begin{datadesc}{sym_name}
@@ -731,7 +731,7 @@ versions.
 This module also provides one data object and some functions.  The
 functions mirror definitions in the Python C header files.
 
-\renewcommand{\indexsubitem}{(in module token)}
+\setindexsubitem{(in module token)}
 
 
 \begin{datadesc}{tok_name}

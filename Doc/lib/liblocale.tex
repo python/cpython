@@ -16,7 +16,7 @@ available.
 
 The \code{locale} module defines the following functions:
 
-\renewcommand{\indexsubitem}{(in module locale)}
+\setindexsubitem{(in module locale)}
 
 \begin{funcdesc}{setlocale}{category\optional{\, value}}
 If \var{value} is specified, modifies the locale setting for the
@@ -31,10 +31,10 @@ If no \var{value} is specified, the current setting for the
 
 \code{setlocale()} is not thread safe on most systems. Applications
 typically start with a call of
-\bcode\begin{verbatim}
+\begin{verbatim}
 import locale
 locale.setlocale(locale.LC_ALL,"")
-\end{verbatim}\ecode
+\end{verbatim}
 This sets the locale for all categories to the user's default setting
 (typically specified in the \code{LANG} environment variable). If the
 locale is not changed thereafter, using multithreading should not
@@ -182,9 +182,9 @@ Exception raised when \code{setlocale()} fails.
 
 Example:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> import locale
 >>> locale.open(locale.LC_ALL,"de") #setting locale to German
 >>> locale.strcoll("f\344n","foo")  #comparing a string containing an umlaut 
 >>> can.close()
-\end{verbatim}\ecode
+\end{verbatim}

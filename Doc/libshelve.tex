@@ -13,7 +13,7 @@ sub-objects.  The keys are ordinary strings.
 To summarize the interface (\code{key} is a string, \code{data} is an
 arbitrary object):
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 import shelve
 
 d = shelve.open(filename) # open, with (g)dbm filename -- no suffix
@@ -28,7 +28,7 @@ flag = d.has_key(key)   # true if the key exists
 list = d.keys() # a list of all existing keys (slow!)
 
 d.close()       # close it
-\end{verbatim}\ecode
+\end{verbatim}
 %
 Restrictions:
 

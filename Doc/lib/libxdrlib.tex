@@ -4,7 +4,7 @@
 \index{XDR}
 \index{External Data Representation}
 
-\renewcommand{\indexsubitem}{(in module xdrlib)}
+\setindexsubitem{(in module xdrlib)}
 
 
 The \code{xdrlib} module supports the External Data Representation
@@ -215,11 +215,11 @@ variables.
 
 Here is an example of how you would catch one of these exceptions:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 import xdrlib
 p = xdrlib.Packer()
 try:
     p.pack_double(8.01)
 except xdrlib.ConversionError, instance:
     print 'packing the double failed:', instance.msg
-\end{verbatim}\ecode
+\end{verbatim}

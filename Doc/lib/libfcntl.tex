@@ -11,7 +11,7 @@ file or socket object.
 
 The module defines the following functions:
 
-\renewcommand{\indexsubitem}{(in module struct)}
+\setindexsubitem{(in module struct)}
 
 \begin{funcdesc}{fcntl}{fd\, op\optional{\, arg}}
   Perform the requested operation on file descriptor \code{\var{fd}}.
@@ -56,7 +56,7 @@ script, found in the \file{Tools/scripts} directory.
 
 Examples (all on a SVR4 compliant system):
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 import struct, FCNTL
 
 file = open(...)
@@ -64,7 +64,7 @@ rv = fcntl(file.fileno(), FCNTL.O_NDELAY, 1)
 
 lockdata = struct.pack('hhllhh', FCNTL.F_WRLCK, 0, 0, 0, 0, 0)
 rv = fcntl(file.fileno(), FCNTL.F_SETLKW, lockdata)
-\end{verbatim}\ecode
+\end{verbatim}
 %
 Note that in the first example the return value variable \code{rv} will
 hold an integer value; in the second example it will hold a string

@@ -3,7 +3,7 @@
 \stmodindex{ftplib}
 \indexii{FTP}{protocol}
 
-\renewcommand{\indexsubitem}{(in module ftplib)}
+\setindexsubitem{(in module ftplib)}
 
 This module defines the class \code{FTP} and a few related items.  The
 \code{FTP} class implements the client side of the FTP protocol.  You
@@ -14,7 +14,7 @@ more information on FTP (File Transfer Protocol), see Internet \rfc{959}.
 
 Here's a sample session using the \code{ftplib} module:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> from ftplib import FTP
 >>> ftp = FTP('ftp.cwi.nl')   # connect to host, default port
 >>> ftp.login()               # user anonymous, passwd user@hostname
@@ -27,7 +27,7 @@ dr-xr-srwt 105 ftp-usr  pdmaint     1536 Mar 21 14:32 ..
  .
  .
 >>> ftp.quit()
-\end{verbatim}\ecode
+\end{verbatim}
 %
 The module defines the following items:
 
@@ -68,7 +68,7 @@ not begin with a digit in the range 1--5.
 
 FTP instances have the following methods:
 
-\renewcommand{\indexsubitem}{(FTP object method)}
+\setindexsubitem{(FTP object method)}
 
 \begin{funcdesc}{set_debuglevel}{level}
 Set the instance's debugging level.  This controls the amount of

@@ -8,7 +8,7 @@
 \indexii{flattening}{objects}
 \indexii{pickling}{objects}
 
-\renewcommand{\indexsubitem}{(in module pickle)}
+\setindexsubitem{(in module pickle)}
 
 The \code{pickle} module implements a basic but powerful algorithm for
 ``pickling'' (a.k.a.\ serializing, marshalling or flattening) nearly
@@ -94,7 +94,7 @@ There are some restrictions on the pickling of class instances.
 First of all, the class must be defined at the top level in a module.
 Furthermore, all its instance variables must be picklable.
 
-\renewcommand{\indexsubitem}{(pickle protocol)}
+\setindexsubitem{(pickle protocol)}
 
 When a pickled class instance is unpickled, its \code{__init__()} method
 is normally \emph{not} invoked.  \strong{Note:} This is a deviation
@@ -144,35 +144,35 @@ definition is not pickled, but re-imported by the unpickling process.
 Therefore, the restriction that the class must be defined at the top
 level in a module applies to pickled classes as well.
 
-\renewcommand{\indexsubitem}{(in module pickle)}
+\setindexsubitem{(in module pickle)}
 
 The interface can be summarized as follows.
 
 To pickle an object \code{x} onto a file \code{f}, open for writing:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 p = pickle.Pickler(f)
 p.dump(x)
-\end{verbatim}\ecode
+\end{verbatim}
 %
 A shorthand for this is:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 pickle.dump(x, f)
-\end{verbatim}\ecode
+\end{verbatim}
 %
 To unpickle an object \code{x} from a file \code{f}, open for reading:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 u = pickle.Unpickler(f)
 x = u.load()
-\end{verbatim}\ecode
+\end{verbatim}
 %
 A shorthand is:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 x = pickle.load(f)
-\end{verbatim}\ecode
+\end{verbatim}
 %
 The \code{Pickler} class only calls the method \code{f.write()} with a
 string argument.  The \code{Unpickler} calls the methods \code{f.read()}

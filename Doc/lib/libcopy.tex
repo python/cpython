@@ -1,7 +1,7 @@
 \section{Standard Module \sectcode{copy}}
 \label{module-copy}
 \stmodindex{copy}
-\renewcommand{\indexsubitem}{(copy function)}
+\setindexsubitem{(copy function)}
 \ttindex{copy}
 \ttindex{deepcopy}
 
@@ -9,12 +9,12 @@ This module provides generic (shallow and deep) copying operations.
 
 Interface summary:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 import copy
 
 x = copy.copy(y)        # make a shallow copy of y
 x = copy.deepcopy(y)    # make a deep copy of y
-\end{verbatim}\ecode
+\end{verbatim}
 %
 For module specific errors, \code{copy.error} is raised.
 
@@ -76,7 +76,7 @@ to control pickling: they can define methods called
 \code{__setstate__()}.  See the description of module \code{pickle}
 for information on these methods.
 \refstmodindex{pickle}
-\renewcommand{\indexsubitem}{(copy protocol)}
+\setindexsubitem{(copy protocol)}
 \ttindex{__getinitargs__}
 \ttindex{__getstate__}
 \ttindex{__setstate__}

@@ -186,7 +186,7 @@ the string.
 
 The module defines these functions, and an exception:
 
-\renewcommand{\indexsubitem}{(in module regex)}
+\setindexsubitem{(in module regex)}
 
 \begin{funcdesc}{match}{pattern\, string}
   Return how many characters at the beginning of \var{string} match
@@ -215,16 +215,16 @@ The module defines these functions, and an exception:
 
   The sequence
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 prog = regex.compile(pat)
 result = prog.match(str)
-\end{verbatim}\ecode
+\end{verbatim}
 %
 is equivalent to
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 result = regex.match(pat, str)
-\end{verbatim}\ecode
+\end{verbatim}
 
 but the version using \code{compile()} is more efficient when multiple
 regular expressions are used concurrently in a single program.  (The
@@ -274,7 +274,7 @@ equivalents.
 \noindent
 Compiled regular expression objects support these methods:
 
-\renewcommand{\indexsubitem}{(regex method)}
+\setindexsubitem{(regex method)}
 \begin{funcdesc}{match}{string\optional{\, pos}}
   Return how many characters at the beginning of \var{string} match
   the compiled regular expression.  Return \code{-1} if the string
@@ -319,7 +319,7 @@ identifying groups by their group name.
 \noindent
 Compiled regular expressions support these data attributes:
 
-\renewcommand{\indexsubitem}{(regex attribute)}
+\setindexsubitem{(regex attribute)}
 
 \begin{datadesc}{regs}
 When the last call to the \code{match()} or \code{search()} method found a

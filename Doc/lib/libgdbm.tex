@@ -15,7 +15,7 @@ Printing a \code{gdbm} object doesn't print the keys and values, and the
 
 The module defines the following constant and functions:
 
-\renewcommand{\indexsubitem}{(in module gdbm)}
+\setindexsubitem{(in module gdbm)}
 \begin{excdesc}{error}
 Raised on \code{gdbm}-specific errors, such as I/O errors. \code{KeyError} is
 raised for general mapping errors like specifying an incorrect key.
@@ -57,12 +57,12 @@ method returns the starting key.
 Returns the key that follows \var{key} in the traversal.  The
 following code prints every key in the database \code{db}, without having to
 create a list in memory that contains them all:
-\bcode\begin{verbatim}
+\begin{verbatim}
 k=db.firstkey()
 while k!=None:
     print k
     k=db.nextkey(k)
-\end{verbatim}\ecode
+\end{verbatim}
 \end{funcdesc}
 
 \begin{funcdesc}{reorganize}{}

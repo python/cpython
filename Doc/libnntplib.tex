@@ -3,7 +3,7 @@
 \stmodindex{nntplib}
 \indexii{NNTP}{protocol}
 
-\renewcommand{\indexsubitem}{(in module nntplib)}
+\setindexsubitem{(in module nntplib)}
 
 This module defines the class \code{NNTP} which implements the client
 side of the NNTP protocol.  It can be used to implement a news reader
@@ -14,7 +14,7 @@ Here are two small examples of how it can be used.  To list some
 statistics about a newsgroup and print the subjects of the last 10
 articles:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> s = NNTP('news.cwi.nl')
 >>> resp, count, first, last, name = s.group('comp.lang.python')
 >>> print 'Group', name, 'has', count, 'articles, range', first, 'to', last
@@ -35,12 +35,12 @@ Group comp.lang.python has 59 articles, range 3742 to 3803
 >>> s.quit()
 '205 news.cwi.nl closing connection.  Goodbye.'
 >>> 
-\end{verbatim}\ecode
+\end{verbatim}
 
 To post an article from a file (this assumes that the article has
 valid headers):
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> s = NNTP('news.cwi.nl')
 >>> f = open('/tmp/article')
 >>> s.post(f)
@@ -48,7 +48,7 @@ valid headers):
 >>> s.quit()
 '205 news.cwi.nl closing connection.  Goodbye.'
 >>> 
-\end{verbatim}\ecode
+\end{verbatim}
 %
 The module itself defines the following items:
 
@@ -83,7 +83,7 @@ is the server's response: a string beginning with a three-digit code.
 If the server's response indicates an error, the method raises one of
 the above exceptions.
 
-\renewcommand{\indexsubitem}{(NNTP object method)}
+\setindexsubitem{(NNTP object method)}
 
 \begin{funcdesc}{getwelcome}{}
 Return the welcome message sent by the server in reply to the initial

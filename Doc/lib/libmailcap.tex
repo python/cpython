@@ -1,7 +1,7 @@
 \section{Standard Module \sectcode{mailcap}}
 \label{module-mailcap}
 \stmodindex{mailcap}
-\renewcommand{\indexsubitem}{(in module mailcap)}
+\setindexsubitem{(in module mailcap)}
 
 Mailcap files are used to configure how MIME-aware applications such
 as mail readers and Web browsers react to files with different MIME
@@ -69,9 +69,9 @@ will override settings in the system mailcap files
 \end{funcdesc}
 
 An example usage:
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> import mailcap
 >>> d=mailcap.getcaps()
 >>> mailcap.findmatch(d, 'video/mpeg', filename='/tmp/tmp1223')
 ('xmpeg /tmp/tmp1223', {'view': 'xmpeg %s'})
-\end{verbatim}\ecode
+\end{verbatim}

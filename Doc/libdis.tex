@@ -11,10 +11,10 @@ this module takes as an input is defined in the file
 
 Example: Given the function myfunc
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 def myfunc(alist):
   return len(alist)
-\end{verbatim}\ecode
+\end{verbatim}
 
 the following command can be used to get the disassembly of \code{myfunc()}:
 
@@ -33,7 +33,7 @@ the following command can be used to get the disassembly of \code{myfunc()}:
 
 The \code{dis} module defines the following functions:
 
-\renewcommand{\indexsubitem}{(in module dis)}
+\setindexsubitem{(in module dis)}
 
 \begin{funcdesc}{dis}{\optional{bytesource}}
 Disassemble the \var{bytesource} object. \var{bytesource} can denote
@@ -107,7 +107,7 @@ Sequence of byte codes of boolean operations.
 The Python compiler currently generates the following byte code
 instructions.
 
-\renewcommand{\indexsubitem}{(byte code insns)}
+\setindexsubitem{(byte code insns)}
 
 \begin{opcodedesc}{STOP_CODE}{}
 Indicates end-of-code to the compiler, not used by the interpreter.
@@ -507,5 +507,5 @@ default parameters, which are found below TOS.
 Pushes a slice object on the stack.  \var{argc} must be 2 or 3.  If it
 is 2, \code{slice(TOS1, TOS)} is pushed; if it is 3,
 \code{slice(TOS2, TOS1, TOS)} is pushed.
-See the \code{slice()} built-in function.
+See the \code{slice()}\bifuncindex{slice} built-in function.
 \end{opcodedesc}

@@ -2,7 +2,7 @@
 \label{module-macfs}
 \bimodindex{macfs}
 
-\renewcommand{\indexsubitem}{(in module macfs)}
+\setindexsubitem{(in module macfs)}
 
 This module provides access to macintosh FSSpec handling, the Alias
 Manager, finder aliases and the Standard File package.
@@ -103,13 +103,13 @@ function returns an FSSpec object pointing to the application.
 
 \subsection{FSSpec objects}
 
-\renewcommand{\indexsubitem}{(FSSpec object attribute)}
+\setindexsubitem{(FSSpec object attribute)}
 \begin{datadesc}{data}
 The raw data from the FSSpec object, suitable for passing
 to other applications, for instance.
 \end{datadesc}
 
-\renewcommand{\indexsubitem}{(FSSpec object method)}
+\setindexsubitem{(FSSpec object method)}
 \begin{funcdesc}{as_pathname}{}
 Return the full pathname of the file described by the FSSpec object.
 \end{funcdesc}
@@ -159,13 +159,13 @@ Python.
 
 \subsection{alias objects}
 
-\renewcommand{\indexsubitem}{(alias object attribute)}
+\setindexsubitem{(alias object attribute)}
 \begin{datadesc}{data}
 The raw data for the Alias record, suitable for storing in a resource
 or transmitting to other programs.
 \end{datadesc}
 
-\renewcommand{\indexsubitem}{(alias object method)}
+\setindexsubitem{(alias object method)}
 \begin{funcdesc}{Resolve}{\optional{file}}
 Resolve the alias. If the alias was created as a relative alias you
 should pass the file relative to which it is. Return the FSSpec for
@@ -196,7 +196,7 @@ modifying the resource.
 See Inside Mac for a complete description of what the various fields
 mean.
 
-\renewcommand{\indexsubitem}{(FInfo object attribute)}
+\setindexsubitem{(FInfo object attribute)}
 \begin{datadesc}{Creator}
 The 4-char creator code of the file.
 \end{datadesc}

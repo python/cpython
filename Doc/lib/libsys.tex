@@ -6,7 +6,7 @@ This module provides access to some variables used or maintained by the
 interpreter and to functions that interact strongly with the interpreter.
 It is always available.
 
-\renewcommand{\indexsubitem}{(in module sys)}
+\setindexsubitem{(in module sys)}
 
 \begin{datadesc}{argv}
   The list of command line arguments passed to a Python script.
@@ -81,10 +81,10 @@ installed; by default, this is also \code{"/usr/local"}.  This can be
 set at build time with the \code{--exec-prefix} argument to the
 \code{configure} script.  Specifically, all configuration files
 (e.g. the \code{config.h} header file) are installed in the directory
-\code{sys.exec_prefix+"/lib/python\emph{VER}/config"}, and shared library
+\code{sys.exec_prefix+"/lib/python\var{version}/config"}, and shared library
 modules are installed in
-\code{sys.exec_prefix+"/lib/python\emph{VER}/lib-dynload"},
-where \emph{VER} is equal to \code{sys.version[:3]}.
+\code{sys.exec_prefix+"/lib/python\var{version}/lib-dynload"},
+where \var{version} is equal to \code{sys.version[:3]}.
 \end{datadesc}
 
 \begin{funcdesc}{exit}{n}
@@ -162,10 +162,10 @@ independent Python files are installed; by default, this is the string
 \code{"/usr/local"}.  This can be set at build time with the
 \code{--prefix} argument to the \code{configure} script.  The main
 collection of Python library modules is installed in the directory
-\code{sys.prefix+"/lib/python\emph{VER}"} while the platform
+\code{sys.prefix+"/lib/python\var{version}"} while the platform
 independent header files (all except \code{config.h}) are stored in
-\code{sys.prefix+"/include/python\emph{VER}"},
-where \emph{VER} is equal to \code{sys.version[:3]}.
+\code{sys.prefix+"/include/python\var{version}"},
+where \var{version} is equal to \code{sys.version[:3]}.
 
 \end{datadesc}
 

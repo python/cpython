@@ -7,7 +7,7 @@
 \index{URL}
 \index{httpd}
 
-\renewcommand{\indexsubitem}{(in module BaseHTTPServer)}
+\setindexsubitem{(in module BaseHTTPServer)}
 
 This module defines two classes for implementing HTTP servers
 (web servers). Usually, this module isn't used directly, but is used
@@ -21,13 +21,13 @@ subclass. It creates and listens at the web socket, dispatching the
 requests to a handler. Code to create and run the server looks like
 this:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 def run(server_class=BaseHTTPServer.HTTPServer,
         handler_class=BaseHTTPServer.BaseHTTPRequestHandler):
   server_address = ('', 8000)
   httpd = server_class(server_address, handler_class)
   httpd.serve_forever()
-\end{verbatim}\ecode
+\end{verbatim}
 %
 The \code{HTTPServer} class builds on the \code{TCPServer} class by
 storing the server address as instance
@@ -49,7 +49,7 @@ from the request. For example, for the request \code{SPAM}, the
 the relevant information is stored into instance variables of the
 handler.
 
-\renewcommand{\indexsubitem}{(BaseHTTPRequestHandler instance variable)}
+\setindexsubitem{(BaseHTTPRequestHandler instance variable)}
 
 \code{BaseHTTPRequestHandler} has the following instance variables:
 
@@ -88,7 +88,7 @@ Proper adherance to the HTTP protocol must be used when writing
 to this stream.
 \end{datadesc}
 
-\renewcommand{\indexsubitem}{(BaseHTTPRequestHandler class variable)}
+\setindexsubitem{(BaseHTTPRequestHandler class variable)}
 
 \code{BaseHTTPRequestHandler} has the following class variables:
 
@@ -138,7 +138,7 @@ error response, and \var{longmessage} as the \var{explain} key
 (see the \code{error_message_format} class variable).
 \end{datadesc}
 
-\renewcommand{\indexsubitem}{(BaseHTTPRequestHandler method)}
+\setindexsubitem{(BaseHTTPRequestHandler method)}
 
 A \code{BaseHTTPRequestHandler} instance has the following methods:
 
