@@ -412,7 +412,7 @@ class BaseHandler:
             # classes which are not aware of handler_order).
             return True
         return self.handler_order < other.handler_order
-            
+
 
 class HTTPDefaultErrorHandler(BaseHandler):
     def http_error_default(self, req, fp, code, msg, hdrs):
