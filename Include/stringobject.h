@@ -25,7 +25,7 @@ functions should be applied to nil objects.
 */
 
 /* Caching the hash (ob_shash) saves recalculation of a string's hash value.
-   Interning strings (ob_sinterned) tries to ensure that only one string
+   Interning strings (ob_sstate) tries to ensure that only one string
    object with a given value exists, so equality tests can be one pointer
    comparison.  This is generally restricted to strings that "look like"
    Python identifiers, although the intern() builtin can be used to force
@@ -35,9 +35,13 @@ functions should be applied to nil objects.
 typedef struct {
     PyObject_VAR_HEAD
     long ob_shash;
-    PyObject *ob_sinterned;
+    int ob_sstate;
     char ob_sval[1];
 } PyStringObject;
+
+#define SSTATE_NOT_INTERNED 0
+#define SSTATE_INTERNED_MORTAL 1
+#define SSTATE_INTERNED_IMMORTAL 2
 
 PyAPI_DATA(PyTypeObject) PyBaseString_Type;
 PyAPI_DATA(PyTypeObject) PyString_Type;
@@ -66,8 +70,12 @@ extern DL_IMPORT(PyObject *) PyString_DecodeEscape(const char *, int,
 						   const char *);
 
 PyAPI_FUNC(void) PyString_InternInPlace(PyObject **);
+PyAPI_FUNC(void) PyString_InternImmortal(PyObject **);
 PyAPI_FUNC(PyObject *) PyString_InternFromString(const char *);
 PyAPI_FUNC(void) _Py_ReleaseInternedStrings(void);
+
+/* Use only if you know it's a string */
+#define PyString_CHECK_INTERNED(op) (((PyStringObject *)(op))->ob_sstate)
 
 /* Macro, trading safety for speed */
 #define PyString_AS_STRING(op) (((PyStringObject *)(op))->ob_sval)

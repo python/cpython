@@ -511,15 +511,9 @@ PyDict_SetItem(register PyObject *op, PyObject *key, PyObject *value)
 	}
 	mp = (dictobject *)op;
 	if (PyString_CheckExact(key)) {
-		if (((PyStringObject *)key)->ob_sinterned != NULL) {
-			key = ((PyStringObject *)key)->ob_sinterned;
-			hash = ((PyStringObject *)key)->ob_shash;
-		}
-		else {
-			hash = ((PyStringObject *)key)->ob_shash;
-			if (hash == -1)
-				hash = PyObject_Hash(key);
-		}
+		hash = ((PyStringObject *)key)->ob_shash;
+		if (hash == -1)
+			hash = PyObject_Hash(key);
 	}
 	else {
 		hash = PyObject_Hash(key);

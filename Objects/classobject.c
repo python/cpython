@@ -2300,37 +2300,38 @@ instancemethod_traverse(PyMethodObject *im, visitproc visit, void *arg)
 	return 0;
 }
 
-static char *
-getclassname(PyObject *class)
+static void
+getclassname(PyObject *class, char *buf, int bufsize)
 {
 	PyObject *name;
 
+	assert(bufsize > 1);
+	strcpy(buf, "?"); /* Default outcome */
 	if (class == NULL)
-		name = NULL;
-	else
-		name = PyObject_GetAttrString(class, "__name__");
+		return;
+	name = PyObject_GetAttrString(class, "__name__");
 	if (name == NULL) {
 		/* This function cannot return an exception */
 		PyErr_Clear();
-		return "?";
+		return;
 	}
-	if (!PyString_Check(name)) {
-		Py_DECREF(name);
-		return "?";
+	if (PyString_Check(name)) {
+		strncpy(buf, PyString_AS_STRING(name), bufsize);
+		buf[bufsize-1] = '\0';
 	}
-	PyString_InternInPlace(&name);
 	Py_DECREF(name);
-	return PyString_AS_STRING(name);
 }
 
-static char *
-getinstclassname(PyObject *inst)
+static void
+getinstclassname(PyObject *inst, char *buf, int bufsize)
 {
 	PyObject *class;
-	char *name;
 
-	if (inst == NULL)
-		return "nothing";
+	if (inst == NULL) {
+		assert(bufsize > strlen("nothing"));
+		strcpy(buf, "nothing");
+		return;
+	}
 
 	class = PyObject_GetAttrString(inst, "__class__");
 	if (class == NULL) {
@@ -2339,9 +2340,8 @@ getinstclassname(PyObject *inst)
 		class = (PyObject *)(inst->ob_type);
 		Py_INCREF(class);
 	}
-	name = getclassname(class);
+	getclassname(class, buf, bufsize);
 	Py_XDECREF(class);
-	return name;
 }
 
 static PyObject *
@@ -2366,14 +2366,18 @@ instancemethod_call(PyObject *func, PyObject *arg, PyObject *kw)
 				return NULL;
 		}
 		if (!ok) {
+			char clsbuf[256];
+			char instbuf[256];
+			getclassname(class, clsbuf, sizeof(clsbuf));
+			getinstclassname(self, instbuf, sizeof(instbuf));
 			PyErr_Format(PyExc_TypeError,
 				     "unbound method %s%s must be called with "
 				     "%s instance as first argument "
 				     "(got %s%s instead)",
 				     PyEval_GetFuncName(func),
 				     PyEval_GetFuncDesc(func),
-				     getclassname(class),
-				     getinstclassname(self),
+				     clsbuf,
+				     instbuf,
 				     self == NULL ? "" : " instance");
 			return NULL;
 		}

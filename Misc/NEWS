@@ -57,6 +57,10 @@ Type/class unification and new-style classes
 
 Core and builtins
 
+- A subtle change to the semantics of the built-in function intern():
+  interned strings are no longer immortal.  You must keep a reference
+  to the return value intern() around to get the benefit.
+
 - Use of 'None' as a variable, argument or attribute name now
   issues a SyntaxWarning.  In the future, None may become a keyword.
 
@@ -513,6 +517,19 @@ Build
   modules in the README file for details.
 
 C API
+
+- The string object's layout has changed: the pointer member
+  ob_sinterned has been replaced by an int member ob_sstate.  On some
+  platforms (e.g. most 64-bit systems) this may change the offset of
+  the ob_sval member, so as a precaution the API_VERSION has been
+  incremented.  The apparently unused feature of "indirect interned
+  strings", supported by the ob_sinterned member, is gone.  Interned
+  strings are now usually mortal; theres a new API,
+  PyString_InternImmortal() that creates immortal interned strings.
+  (The ob_sstate member can only take three values; however, while
+  making it a char saves a few bytes per string object on average, in
+  it also slowed things down a bit because ob_sval was no longer
+  aligned.)
 
 - The Py_InitModule*() functions now accept NULL for the 'methods'
   argument.  Modules without global functions are becoming more common
