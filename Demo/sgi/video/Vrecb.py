@@ -1,28 +1,7 @@
 #! /ufs/guido/bin/sgi/python-405
 #! /ufs/guido/bin/sgi/python
 
-# Capture a continuous CMIF movie using the Indigo video library and board
-
-
-# Usage:
-#
-# makemovie [-r rate] [-w width] [moviefile]
-
-
-# Options:
-#
-# -r rate       : capture 1 out of every 'rate' frames (default 1)
-# -w width      : initial window width (default interactive placement)
-# -d		: drop fields if needed
-# -g bits	: greyscale (2, 4 or 8 bits)
-# -G            : 2-bit greyscale dithered
-# -m		: monochrome dithered
-# -M value	: monochrome tresholded with value
-# -f		: Capture fields (in stead of frames)
-# -n number     : Capture 'number' fields (default 60)
-# 
-# moviefile     : here goes the movie data (default film.video);
-#                 the format is documented in cmif-film.ms
+# Capture a CMIF movie using the Indigo video library and board in burst mode
 
 
 # User interface:
@@ -51,6 +30,38 @@ import string
 import imageop
 import sgi
 
+
+# Usage and help functions (keep this up-to-date if you change the program!)
+
+def usage():
+	print 'Usage: Vrecb [options] [moviefile]'
+	print
+	print 'Options:'
+	print '-r rate       : capture 1 out of every "rate" frames', \
+	                     '(default and min 1)'
+	print '-w width      : initial window width', \
+		  	     '(default interactive placement)'
+	print '-d            : drop fields if needed'
+	print '-g bits       : greyscale (2, 4 or 8 bits)'
+	print '-G            : 2-bit greyscale dithered'
+	print '-m            : monochrome dithered'
+	print '-M value      : monochrome tresholded with value'
+	print '-f            : Capture fields (instead of frames)'
+	print '-n number     : Capture this many frames (default 60)'
+	print 'moviefile     : here goes the movie data (default film.video)'
+
+def help():
+	print 'Press the left mouse button to start recording.'
+	print 'Recording time is determined by the -n option.'
+	print 'You can record as many times as you wish, but each'
+	print 'recording overwrites the output file(s) -- only the'
+	print 'last recording is kept.'
+	print
+	print 'Press ESC or use the window manager Quit or Close window option'
+	print 'to quit.  If you quit before recording anything, the output'
+	print 'file(s) are not touched.'
+
+
 # Main program
 
 def main():
@@ -65,37 +76,55 @@ def main():
 	fields = 0
 	number = 60
 
-	opts, args = getopt.getopt(sys.argv[1:], 'r:w:dg:mM:Gfn:')
-	for opt, arg in opts:
-		if opt == '-r':
-			rate = string.atoi(arg)
-			if rate < 2:
-				sys.stderr.write('-r rate must be >= 2\n')
-				sys.exit(2)
-		elif opt == '-w':
-			width = string.atoi(arg)
-		elif opt == '-d':
-			drop = 1
-		elif opt == '-g':
-			grey = 1
-			greybits = string.atoi(arg)
-			if not greybits in (2,4,8):
-				print 'Only 2, 4 or 8 bit greyscale supported'
-		elif opt == '-G':
-			grey = 1
-			greybits = -2
-		elif opt == '-m':
-			mono = 1
-		elif opt == '-M':
-			mono = 1
-			monotreshold = string.atoi(arg)
-		elif opt == '-f':
-			fields = 1
-		elif opt == '-n':
-			number = string.atoi(arg)
+	try:
+		opts, args = getopt.getopt(sys.argv[1:], 'r:w:dg:mM:Gfn:')
+	except getopt.error, msg:
+		sys.stdout = sys.stderr
+		print 'Error:', msg, '\n'
+		usage()
+		sys.exit(2)
+
+	try:
+		for opt, arg in opts:
+			if opt == '-r':
+				rate = string.atoi(arg)
+				if rate < 1:
+				    sys.stderr.write('-r rate must be >= 1\n')
+				    sys.exit(2)
+			elif opt == '-w':
+				width = string.atoi(arg)
+			elif opt == '-d':
+				drop = 1
+			elif opt == '-g':
+				grey = 1
+				greybits = string.atoi(arg)
+				if not greybits in (2,4,8):
+				    sys.stderr.write( \
+				    'Only 2, 4 or 8 bit greyscale supported\n')
+				    sys.exit(2)
+			elif opt == '-G':
+				grey = 1
+				greybits = -2
+			elif opt == '-m':
+				mono = 1
+			elif opt == '-M':
+				mono = 1
+				monotreshold = string.atoi(arg)
+			elif opt == '-f':
+				fields = 1
+			elif opt == '-n':
+				number = string.atoi(arg)
+	except string.atoi_error:
+		sys.stdout = sys.stderr
+		print 'Option', opt, 'requires integer argument'
+		sys.exit(2)
+
+	if not fields:
+		print '-f option assumed until Jack fixes it'
+		fields = 1
 
 	if args[2:]:
-		sys.stderr.write('usage: Vrec [options] [file]\n')
+		sys.stderr.write('usage: Vrecb [options] [file]\n')
 		sys.exit(2)
 
 	if args:
@@ -151,7 +180,7 @@ def main():
 	gl.qdevice(DEVICE.WINSHUT)
 	gl.qdevice(DEVICE.ESCKEY)
 
-	print 'Press left mouse to start recording'
+	help()
 
 	while 1:
 		dev, val = gl.qread()
@@ -231,6 +260,7 @@ def record(v, info, filename, mono, grey, greybits, monotreshold, fields):
 			vout.packfactor = (1,-2)
 		else:
 			print 'Sorry, can only save fields at the moment'
+			print '(i.e. you *must* use the -f option)'
 			gl.wintitle(filename)
 			return
 		vout.writeheader()
