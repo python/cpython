@@ -1,7 +1,9 @@
 #! /usr/local/python
 
-# Factorize numbers, slowly.
-# This version uses plain integers and is thus limited to 2**31-1.
+# Factorize numbers.
+# The algorithm is not efficient, but easy to understand.
+# If there are large factors, it will take forever to find them,
+# because we try all odd numbers between 3 and sqrt(n)...
 
 import sys
 from math import sqrt
@@ -17,13 +19,13 @@ def fact(n):
 		res.append(2)
 		n = n/2
 	# Try odd numbers up to sqrt(n)
-	limit = int(sqrt(float(n+1)))
+	limit = sqrt(n+1)
 	i = 3
 	while i <= limit:
 		if n%i = 0:
 			res.append(i)
 			n = n/i
-			limit = int(sqrt(float(n+1)))
+			limit = sqrt(n+1)
 		else:
 			i = i+2
 	res.append(n)
@@ -32,12 +34,12 @@ def fact(n):
 def main():
 	if len(sys.argv) > 1:
 		for arg in sys.argv[1:]:
-			n = int(eval(arg))
+			n = eval(arg)
 			print n, fact(n)
 	else:
 		try:
 			while 1:
-				n = int(input())
+				n = input()
 				print n, fact(n)
 		except EOFError:
 			pass
