@@ -4520,9 +4520,9 @@ pcre_exec(const pcre *external_re, const pcre_extra *external_extra,
      they won't cost too much performance. */ 
 volatile int resetcount, ocount;
 volatile int first_char = -1;
+const uschar * volatile start_bits = NULL;
+const uschar * volatile start_match = (const uschar *)subject + start_pos;
 match_data match_block;
-const uschar *start_bits = NULL;
-const uschar *start_match = (const uschar *)subject + start_pos;
 const uschar *end_subject;
 const real_pcre *re = (const real_pcre *)external_re;
 const real_pcre_extra *extra = (const real_pcre_extra *)external_extra;
