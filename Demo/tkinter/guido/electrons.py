@@ -41,19 +41,19 @@ class Electrons:
 		self.tk.update()
 
 	def random_move(self,n):
+		import whrandom
+		c = self.canvas
 		for i in range(1,n+1):
 			p = self.pieces[i]
-			c = self.canvas
-			import rand
-			x = rand.choice(range(-2,4))
-			y = rand.choice(range(-3,4))
+			x = whrandom.choice(range(-2,4))
+			y = whrandom.choice(range(-3,4))
 			c.move(p, x, y)
 		self.tk.update()
 
 	# Run -- never returns
 	def run(self):
 		try:
-			while 1:
+			for i in range(500):
 				self.random_move(self.n)
 		except TclError:
 			try:
