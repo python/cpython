@@ -96,56 +96,51 @@ def open_pathname(pathname, verbose=0):
 			raise
 	return refno
 	
+def resource_pathname(pathname, verbose=0):
+	"""Return the pathname for a resource file (either DF or RF based).
+	If the pathname given already refers to such a file simply return it,
+	otherwise first decode it."""
+	try:
+		refno = Res.FSpOpenResFile(pathname, 1)
+		Res.CloseResFile(refno)
+	except Res.Error, arg:
+		if arg[0] in (-37, -39):
+			# No resource fork. We may be on OSX, and this may be either
+			# a data-fork based resource file or a AppleSingle file
+			# from the CVS repository.
+			try:
+				refno = Res.FSOpenResourceFile(pathname, u'', 1)
+			except Res.Error, arg:
+				if arg[0] != -199:
+					# -199 is "bad resource map"
+					raise
+			else:
+				return refno
+			# Finally try decoding an AppleSingle file
+			pathname = _decode(pathname, verbose=verbose)
+		else:
+			raise
+	return pathname
+	
 def open_error_resource():
 	"""Open the resource file containing the error code to error message
 	mapping."""
 	need('Estr', 1, filename="errors.rsrc", modname=__name__)
 	
-def _decode(pathname, verbose=0, newpathname=None):
+def _decode(pathname, verbose=0):
 	# Decode an AppleSingle resource file, return the new pathname.
-	if not newpathname:
-		newpathname = pathname + '.df.rsrc'
-		if os.path.exists(newpathname) and \
-			os.stat(newpathname).st_mtime >= os.stat(pathname).st_mtime:
-			return newpathname
+	newpathname = pathname + '.df.rsrc'
+	if os.path.exists(newpathname) and \
+		os.stat(newpathname).st_mtime >= os.stat(pathname).st_mtime:
+		return newpathname
+	if hasattr(os, 'access') and not \
+		os.access(os.path.dirname(pathname), os.W_OK|os.X_OK):
+		# The destination directory isn't writeable. Create the file in
+		# a temporary directory
+		import tempfile
+		fd, newpathname = tempfile.mkstemp(".rsrc")
 	if verbose:
-		print 'Decoding', pathname
+		print 'Decoding', pathname, 'to', newpathname
 	import applesingle
 	applesingle.decode(pathname, newpathname, resonly=1)
 	return newpathname
-	
-def install(src, dst, mkdirs=0):
-	"""Copy a resource file. The result will always be a datafork-based
-	resource file, whether the source is datafork-based, resource-fork
-	based or AppleSingle-encoded."""
-	if mkdirs:
-		macostools.mkdirs(os.path.split(dst)[0])
-	try:
-		refno = Res.FSOpenResourceFile(src, u'', 1)
-	except Res.Error, arg:
-		if arg[0] != -199:
-			# -199 is "bad resource map"
-			raise
-	else:
-		# Resource-fork based. Simply copy.
-		Res.CloseResFile(refno)
-		macostools.copy(src, dst)
-		
-	try:
-		refno = Res.FSpOpenResFile(src, 1)
-	except Res.Error, arg:
-		if not arg[0] in (-37, -39):
-			raise
-	else:
-		Res.CloseResFile(refno)
-		BUFSIZ=0x80000      # Copy in 0.5Mb chunks
-		ifp = MacOS.openrf(src, '*rb')
-		ofp = open(dst, 'wb')
-		d = ifp.read(BUFSIZ)
-		while d:
-			ofp.write(d)
-			d = ifp.read(BUFSIZ)
-		ifp.close()
-		ofp.close()
-		
-	_decode(src, newpathname=dst)
