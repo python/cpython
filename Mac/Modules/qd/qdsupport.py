@@ -310,6 +310,36 @@ for f in functions: module.add(f)
 ##for f in r_methods: r_object.add(f)
 ##for f in po_methods: po_object.add(f)
 
+# Manual generator: get data out of a bitmap
+getdata_body = """
+int from, length;
+char *cp;
+
+if ( !PyArg_ParseTuple(_args, "ii", &from, &length) )
+	return NULL;
+cp = _self->ob_itself->baseAddr+from;
+return PyString_FromStringAndSize(cp, length);
+"""
+f = ManualGenerator("getdata", getdata_body)
+f.docstring = lambda: """(int start, int size) -> string. Return bytes from the bitmap"""
+bm_object.add(f)
+
+# Manual generator: store data in a bitmap
+putdata_body = """
+int from, length;
+char *cp, *icp;
+
+if ( !PyArg_ParseTuple(_args, "is#", &from, &icp, &length) )
+	return NULL;
+cp = _self->ob_itself->baseAddr+from;
+memcpy(cp, icp, length);
+Py_INCREF(Py_None);
+return Py_None;
+"""
+f = ManualGenerator("putdata", putdata_body)
+f.docstring = lambda: """(int start, string data). Store bytes into the bitmap"""
+bm_object.add(f)
+
 #
 # We manually generate a routine to create a BitMap from python data.
 #
