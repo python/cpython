@@ -100,7 +100,9 @@ list2set(list, set, fd2obj)
 		SOCKET v;
 
 		/* any intervening fileno() calls could decr this refcnt */
-		o = PyList_GetItem(list, i);
+		if (!(o = PyList_GetItem(list, i)))
+                    return NULL;
+
 		Py_INCREF(o);
 
 		if (PyInt_Check(o)) {
