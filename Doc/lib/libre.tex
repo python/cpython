@@ -597,6 +597,15 @@ The pattern string from which the regex object was compiled.
 
 \class{MatchObject} instances support the following methods and attributes:
 
+\begin{methoddesc}[MatchObject]{expand}{template}
+ Return the string obtained by doing backslash substitution on the
+template string \var{template}, as done by the \method{sub()} method.
+Escapes such as \samp{\e n} are converted to the appropriate
+characters, and numeric backreferences (\samp{\e 1}, \samp{\e 2}) and named
+backreferences (\samp{\e g<1>}, \samp{\e g<name>}) are replaced by the contents of the
+corresponding group.
+\end{methoddesc}
+
 \begin{methoddesc}[MatchObject]{group}{\optional{group1, \moreargs}}
 Returns one or more subgroups of the match.  If there is a single
 argument, the result is a single string; if there are
