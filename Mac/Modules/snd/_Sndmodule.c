@@ -961,6 +961,52 @@ static PyObject *Snd_SPBVersion(PyObject *_self, PyObject *_args)
 	return _res;
 }
 
+static PyObject *Snd_SndRecord(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	Point corner;
+	OSType quality;
+	SndListHandle sndHandle;
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      PyMac_GetPoint, &corner,
+	                      PyMac_GetOSType, &quality))
+		return NULL;
+	_err = SndRecord((ModalFilterUPP)0,
+	                 corner,
+	                 quality,
+	                 &sndHandle);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("O&",
+	                     ResObj_New, sndHandle);
+	return _res;
+}
+
+#if !TARGET_API_MAC_CARBON
+
+static PyObject *Snd_SndRecordToFile(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	Point corner;
+	OSType quality;
+	short fRefNum;
+	if (!PyArg_ParseTuple(_args, "O&O&h",
+	                      PyMac_GetPoint, &corner,
+	                      PyMac_GetOSType, &quality,
+	                      &fRefNum))
+		return NULL;
+	_err = SndRecordToFile((ModalFilterUPP)0,
+	                       corner,
+	                       quality,
+	                       fRefNum);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+#endif
+
 static PyObject *Snd_SPBSignInDevice(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -1309,6 +1355,13 @@ static PyMethodDef Snd_methods[] = {
 	 "(OSType compressionType) -> (Str255 compressionName)"},
 	{"SPBVersion", (PyCFunction)Snd_SPBVersion, 1,
 	 "() -> (NumVersion _rv)"},
+	{"SndRecord", (PyCFunction)Snd_SndRecord, 1,
+	 "(Point corner, OSType quality) -> (SndListHandle sndHandle)"},
+
+#if !TARGET_API_MAC_CARBON
+	{"SndRecordToFile", (PyCFunction)Snd_SndRecordToFile, 1,
+	 "(Point corner, OSType quality, short fRefNum) -> None"},
+#endif
 	{"SPBSignInDevice", (PyCFunction)Snd_SPBSignInDevice, 1,
 	 "(short deviceRefNum, Str255 deviceName) -> None"},
 	{"SPBSignOutDevice", (PyCFunction)Snd_SPBSignOutDevice, 1,
