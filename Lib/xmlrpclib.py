@@ -779,16 +779,14 @@ class Unmarshaller:
     dispatch["name"] = end_string # struct keys are always strings
 
     def end_array(self, data):
-        mark = self._marks[-1]
-        del self._marks[-1]
+        mark = self._marks.pop()
         # map arrays to Python lists
         self._stack[mark:] = [self._stack[mark:]]
         self._value = 0
     dispatch["array"] = end_array
 
     def end_struct(self, data):
-        mark = self._marks[-1]
-        del self._marks[-1]
+        mark = self._marks.pop()
         # map structs to Python dictionaries
         dict = {}
         items = self._stack[mark:]

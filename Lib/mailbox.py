@@ -202,8 +202,7 @@ class MHMailbox:
     def next(self):
         if not self.boxes:
             return None
-        fn = self.boxes[0]
-        del self.boxes[0]
+        fn = self.boxes.pop(0)
         fp = open(os.path.join(self.dirname, fn))
         return self.factory(fp)
 
@@ -233,8 +232,7 @@ class Maildir:
     def next(self):
         if not self.boxes:
             return None
-        fn = self.boxes[0]
-        del self.boxes[0]
+        fn = self.boxes.pop(0)
         fp = open(fn)
         return self.factory(fp)
 

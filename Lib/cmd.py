@@ -109,8 +109,7 @@ class Cmd:
         stop = None
         while not stop:
             if self.cmdqueue:
-                line = self.cmdqueue[0]
-                del self.cmdqueue[0]
+                line = self.cmdqueue.pop(0)
             else:
                 if self.use_rawinput:
                     try:
@@ -261,11 +260,10 @@ class Cmd:
         names = []
         classes = [self.__class__]
         while classes:
-            aclass = classes[0]
+            aclass = classes.pop(0)
             if aclass.__bases__:
                 classes = classes + list(aclass.__bases__)
             names = names + dir(aclass)
-            del classes[0]
         return names
 
     def complete_help(self, *args):

@@ -44,8 +44,7 @@ class mutex:
         """Unlock a mutex.  If the queue is not empty, call the next
         function with its argument."""
         if self.queue:
-            function, argument = self.queue[0]
-            del self.queue[0]
+            function, argument = self.queue.pop(0)
             function(argument)
         else:
             self.locked = 0
