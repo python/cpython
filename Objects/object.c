@@ -1259,7 +1259,8 @@ PyObject_GenericGetAttr(PyObject *obj, PyObject *name)
 
 	descr = _PyType_Lookup(tp, name);
 	f = NULL;
-	if (descr != NULL) {
+	if (descr != NULL &&
+	    PyType_HasFeature(descr->ob_type, Py_TPFLAGS_HAVE_CLASS)) {
 		f = descr->ob_type->tp_descr_get;
 		if (f != NULL && PyDescr_IsData(descr)) {
 			res = f(descr, obj, (PyObject *)obj->ob_type);
@@ -1333,7 +1334,8 @@ PyObject_GenericSetAttr(PyObject *obj, PyObject *name, PyObject *value)
 
 	descr = _PyType_Lookup(tp, name);
 	f = NULL;
-	if (descr != NULL) {
+	if (descr != NULL &&
+	    PyType_HasFeature(descr->ob_type, Py_TPFLAGS_HAVE_CLASS)) {
 		f = descr->ob_type->tp_descr_set;
 		if (f != NULL && PyDescr_IsData(descr)) {
 			res = f(descr, obj, value);
