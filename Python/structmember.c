@@ -129,6 +129,12 @@ PyMember_GetOne(char *addr, PyMemberDef *l)
 			v = Py_None;
 		Py_INCREF(v);
 		break;
+	case T_OBJECT_EX:
+		v = *(PyObject **)addr;
+		if (v == NULL)
+			PyErr_SetString(PyExc_AttributeError, l->name);
+		Py_XINCREF(v);
+		break;
 	default:
 		PyErr_SetString(PyExc_SystemError, "bad memberdescr type");
 		v = NULL;
@@ -175,7 +181,7 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
 		PyErr_SetString(PyExc_RuntimeError, "restricted attribute");
 		return -1;
 	}
-	if (v == NULL && l->type != T_OBJECT) {
+	if (v == NULL && l->type != T_OBJECT_EX && l->type != T_OBJECT) {
 		PyErr_SetString(PyExc_TypeError,
 				"can't delete numeric/char attribute");
 		return -1;
@@ -246,6 +252,7 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
 		}
 		break;
 	case T_OBJECT:
+	case T_OBJECT_EX:
 		Py_XINCREF(v);
 		oldv = *(PyObject **)addr;
 		*(PyObject **)addr = v;
