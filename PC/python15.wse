@@ -1,7 +1,6 @@
 Document Type: WSE
 item: Global
   Version=5.0
-  Title=Python 1.5 Installation
   Flags=00010100
   Languages=65 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
   Japanese Font Name=MS Gothic
@@ -30,7 +29,7 @@ item: Global
   Variable Flags4=00001000
   Variable Name5=_SRC_
   Variable Description5=Root of Python Build Tree
-  Variable Default5=C:\src\Python-1.5b2
+  Variable Default5=C:\src\Python-1.5
   Variable Flags5=00001001
 end
 item: Open/Close INSTALL.LOG
@@ -118,6 +117,7 @@ end
 item: Wizard Block
   Direction Variable=DIRECTION
   Display Variable=DISPLAY
+  Bitmap Pathname=%_WISE_%\DIALOGS\TEMPLATE\WIZARD.BMP
   X Position=9
   Y Position=10
   Filler Color=8421440
@@ -712,32 +712,37 @@ item: Install File
 end
 item: Install File
   Source=%_SRC_%\pcbuild\Release\parser.dll
-  Destination=%MAINDIR%\parser.pyd
+  Destination=%MAINDIR%\DLLs\parser.pyd
   Flags=0000000000000010
 end
 item: Install File
   Source=%_SRC_%\pcbuild\Release\_tkinter.dll
-  Destination=%MAINDIR%\_tkinter.pyd
+  Destination=%MAINDIR%\DLLs\_tkinter.pyd
   Flags=0000000000000010
 end
 item: Install File
   Source=%_SRC_%\pcbuild\Release\zlib.pyd
-  Destination=%MAINDIR%\zlib.pyd
+  Destination=%MAINDIR%\DLLs\zlib.pyd
   Flags=0000000000000010
 end
 item: Install File
   Source=%_SRC_%\..\zlibvc104dll\zlib.dll
-  Destination=%MAINDIR%\zlib.dll
+  Destination=%SYS32%\zlib.dll
   Flags=0000000000000010
 end
 item: Install File
   Source=%_SRC_%\pcbuild\Release\bsddb.pyd
-  Destination=%MAINDIR%\bsddb.pyd
+  Destination=%MAINDIR%\DLLs\bsddb.pyd
   Flags=0000000000000010
 end
 item: Install File
   Source=%_SRC_%\pcbuild\Release\python15.dll
   Destination=%SYS32%\python15.dll
+  Flags=0000000000000010
+end
+item: Install File
+  Source=%_SRC_%\pcbuild\Release\python15.lib
+  Destination=%SYS32%\python15.lib
   Flags=0000000000000010
 end
 item: Install File
@@ -771,6 +776,18 @@ item: Install File
   Source=%_SRC_%\Lib\lib-tk\*.py
   Destination=%MAINDIR%\Lib\lib-tk
   Description=Tkinter related library modules
+  Flags=0000000000000010
+end
+item: Install File
+  Source=%_SRC_%\pcbuild\Release\*.lib
+  Destination=%MAINDIR%\libs
+  Description=.lib files
+  Flags=0000000000000010
+end
+item: Install File
+  Source=%_SRC_%\Include\*.h
+  Destination=%MAINDIR%\include
+  Description=Header files
   Flags=0000000000000010
 end
 item: Install File
@@ -902,6 +919,9 @@ item: If/While Statement
   Value=D
   Flags=00001010
 end
+item: Add Text to INSTALL.LOG
+  Text=File Tree: %MAINDIR%\Lib\*.*
+end
 item: Edit Registry
   Key=.py
   New Value=Python.File
@@ -967,7 +987,7 @@ item: Edit Registry
 end
 item: Edit Registry
   Key=Software\Python\PythonCore\%PY_VERSION%\PythonPath
-  New Value=%MAINDIR%\Lib\plat-win;%MAINDIR%\Lib;%MAINDIR%
+  New Value=%MAINDIR%\Lib\plat-win;%MAINDIR%\Lib;%MAINDIR%\DLLs
   Root=2
 end
 item: Edit Registry
@@ -1004,15 +1024,12 @@ item: Set Variable
   Flags=00010100
 end
 item: Include Script
-  Pathname=c:\program files\wise\include\uninstal.wse
+  Pathname=C:\Program Files\WISE\include\uninstal.wse
 end
 item: If/While Statement
   Variable=COMPONENTS
   Value=D
   Flags=00001010
-end
-item: Add Text to INSTALL.LOG
-  Text=File Tree: %MAINDIR%\Lib\*.*
 end
 item: Check Configuration
   Flags=10111011
@@ -1050,25 +1067,25 @@ item: Create Shortcut
   Key Type=1536
   Flags=00000001
 end
-remarked item: If/While Statement
+item: If/While Statement
   Variable=COMPONENTS
   Value=B
   Flags=00001010
 end
-remarked item: Create Shortcut
-  Source=%MAINDIR%\Help\python.hlp
+item: Create Shortcut
+  Source=%MAINDIR%\Doc\index.html
   Destination=%GROUP%\Python Manuals.lnk
   Working Directory=%MAINDIR%
   Key Type=1536
   Flags=00000001
 end
-remarked item: End Block
+item: End Block
 end
 item: Else Statement
 end
 item: Add ProgMan Icon
   Group=%GROUP%
-  Icon Name=python
+  Icon Name=Python
   Command Line=%MAINDIR%\python.exe
   Default Directory=%MAINDIR%
 end
@@ -1080,8 +1097,8 @@ end
 item: Add ProgMan Icon
   Group=%GROUP%
   Icon Name=Python Manuals
-  Command Line=%MAINDIR%\doc\python.html
-  Default Directory=%MAINDIR%\Help
+  Command Line=%MAINDIR%\Doc\index.html
+  Default Directory=%MAINDIR%\Doc
 end
 item: End Block
 end
@@ -1095,6 +1112,7 @@ end
 item: Wizard Block
   Direction Variable=DIRECTION
   Display Variable=DISPLAY
+  Bitmap Pathname=%_WISE_%\DIALOGS\TEMPLATE\WIZARD.BMP
   X Position=9
   Y Position=10
   Filler Color=8421440
