@@ -58,22 +58,6 @@ initmodule(name, methods)
 }
 
 
-/* Convenience functions to set a type error exception and return 0 */
-
-int
-err_badarg()
-{
-	err_setstr(TypeError, "illegal argument type for built-in function");
-	return 0;
-}
-
-object *
-err_nomem()
-{
-	err_setstr(MemoryError, "in built-in function");
-	return NULL;
-}
-
 /* Argument list handling tools.
    All return 1 for success, or call err_set*() and return 0 for failure */
 
