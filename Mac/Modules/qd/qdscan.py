@@ -182,6 +182,10 @@ extend						= 0x40
 			 ([('RgnHandle', 'maskRgn', 'InMode')],
 			  [('OptRgnHandle', 'maskRgn', 'InMode')]),
 			  
+			 ('QDFlushPortBuffer',
+			  [('RgnHandle', '*', 'InMode')],
+			  [('OptRgnHandle', '*', 'InMode')]),
+			  
 			 # Accessors with reference argument also returned.
 			 ([('Rect_ptr', 'GetPortBounds', 'ReturnMode')],
 			  [('void', '*', 'ReturnMode')]),

@@ -4802,7 +4802,7 @@ static PyObject *Qd_QDFlushPortBuffer(_self, _args)
 	RgnHandle region;
 	if (!PyArg_ParseTuple(_args, "O&O&",
 	                      GrafObj_Convert, &port,
-	                      ResObj_Convert, &region))
+	                      OptResObj_Convert, &region))
 		return NULL;
 	QDFlushPortBuffer(port,
 	                  region);
