@@ -449,7 +449,13 @@ Availability: \UNIX.
 
 \begin{funcdesc}{fsync}{fd}
 Force write of file with filedescriptor \var{fd} to disk.
-Availability: \UNIX.
+
+On Windows this calls the MS \cfunction{_commit()} function.  If you're
+starting with a Python file object \var{f}, first do
+\code{\var{f}.flush()}, and then do \code{os.fsync(\var{f}.fileno()},
+to ensure that all internal buffers associated with \var{f} are written
+to disk.
+Availability: \UNIX, and Windows starting in 2.3.
 \end{funcdesc}
 
 \begin{funcdesc}{ftruncate}{fd, length}
@@ -921,7 +927,7 @@ order
 \member{st_atime},
 \member{st_mtime},
 \member{st_ctime}.
-More items may be added at the end by some implementations. 
+More items may be added at the end by some implementations.
 The standard module \refmodule{stat}\refstmodindex{stat} defines
 functions and constants that are useful for extracting information
 from a \ctype{stat} structure.

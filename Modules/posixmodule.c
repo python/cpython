@@ -112,6 +112,8 @@ corresponding Unix manual entries for more information on calls.");
 #define HAVE_POPEN      1
 #define HAVE_SYSTEM	1
 #define HAVE_CWAIT	1
+#define HAVE_FSYNC	1
+#define fsync _commit
 #else
 #if defined(PYOS_OS2) && defined(PYCC_GCC) || defined(__VMS)
 /* Everything needed is defined in PC/os2emx/pyconfig.h or vms/pyconfig.h */
@@ -301,7 +303,7 @@ extern int lstat(const char *, struct stat *);
 #	define STRUCT_STAT struct stat
 #endif
 
-#if defined(MAJOR_IN_MKDEV) 
+#if defined(MAJOR_IN_MKDEV)
 #include <sys/mkdev.h>
 #else
 #if defined(MAJOR_IN_SYSMACROS)
@@ -325,7 +327,7 @@ extern char **environ;
 
 #if defined(__VMS)
 /* add some values to provide a similar environment like POSIX */
-static 
+static
 void
 vms_add_posix_env(PyObject *d)
 {
@@ -516,8 +518,8 @@ static PyObject *_PyUnicode_FromFileSystemEncodedObject(register PyObject *obj)
 	return PyUnicode_FromUnicode(PyUnicode_AS_UNICODE(obj),
 	                             PyUnicode_GET_SIZE(obj));
 	}
-	return PyUnicode_FromEncodedObject(obj, 
-	                                   Py_FileSystemDefaultEncoding, 
+	return PyUnicode_FromEncodedObject(obj,
+	                                   Py_FileSystemDefaultEncoding,
 	                                   "strict");
 }
 
@@ -621,19 +623,19 @@ posix_fildes(PyObject *fdobj, int (*func)(int))
 }
 
 #ifdef Py_WIN_WIDE_FILENAMES
-static int 
+static int
 unicode_file_names(void)
 {
 	static int canusewide = -1;
 	if (canusewide == -1) {
-		/* As per doc for ::GetVersion(), this is the correct test for 
+		/* As per doc for ::GetVersion(), this is the correct test for
 		   the Windows NT family. */
 		canusewide = (GetVersion() < 0x80000000) ? 1 : 0;
 	}
 	return canusewide;
 }
 #endif
-  
+
 static PyObject *
 posix_1str(PyObject *args, char *format, int (*func)(const char*),
 	   char *wformat, int (*wfunc)(const Py_UNICODE*))
@@ -678,7 +680,7 @@ posix_1str(PyObject *args, char *format, int (*func)(const char*),
 }
 
 static PyObject *
-posix_2str(PyObject *args, 
+posix_2str(PyObject *args,
 	   char *format,
 	   int (*func)(const char *, const char *),
 	   char *wformat,
@@ -971,7 +973,7 @@ _pystat_fromstructstat(STRUCT_STAT st)
 }
 
 static PyObject *
-posix_do_stat(PyObject *self, PyObject *args, 
+posix_do_stat(PyObject *self, PyObject *args,
 	      char *format,
 #ifdef __VMS
 	      int (*statfunc)(const char *, STRUCT_STAT *, ...),
@@ -1181,7 +1183,7 @@ posix_chdir(PyObject *self, PyObject *args)
 #elif defined(PYOS_OS2) && defined(PYCC_GCC)
 	return posix_1str(args, "et:chdir", _chdir2, NULL, NULL);
 #elif defined(__VMS)
-	return posix_1str(args, "et:chdir", (int (*)(const char *))chdir, 
+	return posix_1str(args, "et:chdir", (int (*)(const char *))chdir,
 			  NULL, NULL);
 #else
 	return posix_1str(args, "et:chdir", chdir, NULL, NULL);
@@ -1314,7 +1316,7 @@ posix_lchown(PyObject *self, PyObject *args)
 	Py_BEGIN_ALLOW_THREADS
 	res = lchown(path, (uid_t) uid, (gid_t) gid);
 	Py_END_ALLOW_THREADS
-	if (res < 0) 
+	if (res < 0)
 		return posix_error_with_allocated_filename(path);
 	PyMem_Free(path);
 	Py_INCREF(Py_None);
@@ -1646,7 +1648,7 @@ posix_listdir(PyObject *self, PyObject *args)
 			PyObject *w;
 
 			w = PyUnicode_FromEncodedObject(v,
-					Py_FileSystemDefaultEncoding, 
+					Py_FileSystemDefaultEncoding,
 					"strict");
 			if (w != NULL) {
 				Py_DECREF(v);
@@ -1692,7 +1694,7 @@ posix__getfullpathname(PyObject *self, PyObject *args)
 		if (PyArg_ParseTuple(args, "U|:_getfullpathname", &po)) {
 			Py_UNICODE woutbuf[MAX_PATH*2];
 			Py_UNICODE *wtemp;
-			if (!GetFullPathNameW(PyUnicode_AS_UNICODE(po), 
+			if (!GetFullPathNameW(PyUnicode_AS_UNICODE(po),
 						sizeof(woutbuf)/sizeof(woutbuf[0]),
 						 woutbuf, &wtemp))
 				return win32_error("GetFullPathName", "");
@@ -3185,7 +3187,7 @@ os2emx_popen3(PyObject *self, PyObject *args)
 /*
  * Variation on os2emx.popen2
  *
- * The result of this function is 2 pipes - the processes stdin, 
+ * The result of this function is 2 pipes - the processes stdin,
  * and stdout+stderr combined as a single pipe.
  */
 
@@ -3519,7 +3521,7 @@ _PyPopen(char *cmdstring, int mode, int n, int bufsize)
 				}
 			}
 		}
-		     
+
 		/*
 		 * Clean up our localized references for the dictionary keys
 		 * and value since PyDict_SetItem will Py_INCREF any copies
@@ -3936,7 +3938,7 @@ _PyPopenCreateProcess(char *cmdstring,
 				s3,
 				cmdstring);
 			/* Not passing CREATE_NEW_CONSOLE has been known to
-			   cause random failures on win9x.  Specifically a 
+			   cause random failures on win9x.  Specifically a
 			   dialog:
 			   "Your program accessed mem currently in use at xxx"
 			   and a hopeful warning about the stability of your
