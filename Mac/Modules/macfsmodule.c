@@ -347,6 +347,54 @@ mfs_GetFSSpecFSSpec(self)
 	return NULL;
 }
 
+/*
+** Two generally useful routines
+*/
+static OSErr
+PyMac_GetFileDates(fss, crdat, mddat, bkdat)
+	FSSpec *fss;
+	unsigned long *crdat, *mddat, *bkdat;
+{
+	CInfoPBRec pb;
+	OSErr error;
+	
+	pb.dirInfo.ioNamePtr = fss->name;
+	pb.dirInfo.ioFDirIndex = 0;
+	pb.dirInfo.ioVRefNum = fss->vRefNum;
+	pb.dirInfo.ioDrDirID = fss->parID;
+	error = PBGetCatInfoSync(&pb);
+	if ( error ) return error;
+	*crdat = pb.hFileInfo.ioFlCrDat;
+	*mddat = pb.hFileInfo.ioFlMdDat;
+	*bkdat = pb.hFileInfo.ioFlBkDat;
+	return 0;
+}	
+
+static OSErr
+PyMac_SetFileDates(fss, crdat, mddat, bkdat)
+	FSSpec *fss;
+	unsigned long crdat, mddat, bkdat;
+{
+	CInfoPBRec pb;
+	OSErr error;
+	
+	pb.dirInfo.ioNamePtr = fss->name;
+	pb.dirInfo.ioFDirIndex = 0;
+	pb.dirInfo.ioVRefNum = fss->vRefNum;
+	pb.dirInfo.ioDrDirID = fss->parID;
+	error = PBGetCatInfoSync(&pb);
+	if ( error ) return error;
+	pb.dirInfo.ioNamePtr = fss->name;
+	pb.dirInfo.ioFDirIndex = 0;
+	pb.dirInfo.ioVRefNum = fss->vRefNum;
+	pb.dirInfo.ioDrDirID = fss->parID;
+	pb.hFileInfo.ioFlCrDat = crdat;
+	pb.hFileInfo.ioFlMdDat = mddat;
+	pb.hFileInfo.ioFlBkDat = bkdat;
+	error = PBSetCatInfoSync(&pb);
+	return error;
+}
+
 static object *
 mfss_as_pathname(self, args)
 	mfssobject *self;
@@ -507,6 +555,44 @@ mfss_SetFInfo(self, args)
 	return None;
 }
 
+static object *
+mfss_GetDates(self, args)
+	mfssobject *self;
+	object *args;
+{
+	OSErr err;
+	unsigned long crdat, mddat, bkdat;
+	
+	if (!newgetargs(args, ""))
+		return NULL;
+	err = PyMac_GetFileDates(&self->fsspec, &crdat, &mddat, &bkdat);
+	if ( err ) {
+		PyErr_Mac(ErrorObject, err);
+		return NULL;
+	}
+	return mkvalue("ddd", (double)crdat, (double)mddat, (double)bkdat);
+}
+
+static object *
+mfss_SetDates(self, args)
+	mfssobject *self;
+	object *args;
+{
+	OSErr err;
+	double crdat, mddat, bkdat;
+	
+	if (!newgetargs(args, "ddd", &crdat, &mddat, &bkdat))
+		return NULL;
+	err = PyMac_SetFileDates(&self->fsspec, (unsigned long)crdat, 
+				(unsigned long)mddat, (unsigned long)bkdat);
+	if ( err ) {
+		PyErr_Mac(ErrorObject, err);
+		return NULL;
+	}
+	INCREF(None);
+	return None;
+}
+
 static struct methodlist mfss_methods[] = {
 	{"as_pathname",		(method)mfss_as_pathname,			1},
 	{"as_tuple",		(method)mfss_as_tuple,				1},
@@ -516,6 +602,8 @@ static struct methodlist mfss_methods[] = {
 	{"SetCreatorType",	(method)mfss_SetCreatorType,		1},
 	{"GetFInfo",		(method)mfss_GetFInfo,				1},
 	{"SetFInfo",		(method)mfss_SetFInfo,				1},
+	{"GetDates",		(method)mfss_GetDates,				1},
+	{"SetDates",		(method)mfss_SetDates,				1},
  
 	{NULL,			NULL}		/* sentinel */
 };
