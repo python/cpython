@@ -5067,8 +5067,9 @@ PyObject *PyUnicode_Format(PyObject *format,
 
 	    default:
 		PyErr_Format(PyExc_ValueError,
-			     "unsupported format character '%c' (0x%x)",
-			     c, c);
+			     "unsupported format character '%c' (0x%x) "
+			     "at index %i",
+			     c, c, fmt -1 - PyUnicode_AS_UNICODE(uformat));
 		goto onError;
 	    }
 	    if (sign) {
