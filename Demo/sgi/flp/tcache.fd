@@ -1,0 +1,51 @@
+Magic: 12321
+
+Internal Form Definition File
+    (do not change)
+
+Number of forms: 2
+
+=============== FORM ===============
+Name: first
+Width: 340.000000
+Height: 160.000000
+Number of Objects: 1
+
+--------------------
+class: 1
+type: 1
+box: 0.000000 0.000000 340.000000 160.000000
+boxtype: 1
+colors: 47 47
+alignment: 4
+style: 0
+size: 10.000000
+lcol: 0
+label: 
+name: 
+callback: 
+argument: 
+
+=============== FORM ===============
+Name: second
+Width: 150.000000
+Height: 400.000000
+Number of Objects: 1
+
+--------------------
+class: 1
+type: 1
+box: 0.000000 0.000000 150.000000 400.000000
+boxtype: 1
+colors: 47 47
+alignment: 4
+style: 0
+size: 10.000000
+lcol: 0
+label: 
+name: 
+callback: 
+argument: 
+
+==============================
+create_the_forms
