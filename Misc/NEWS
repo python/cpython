@@ -72,6 +72,9 @@ Extension modules
 Library
 -------
 
+- urllib2 now recognizes Basic authentication even if other authentication
+  schemes are offered.
+
 - Bug #1001053.  wave.open() now accepts unicode filenames.
 
 - gzip.GzipFile has a new fileno() method, to retrieve the handle of the
