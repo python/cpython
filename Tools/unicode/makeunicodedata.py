@@ -165,38 +165,66 @@ def getsize(data):
     else:
         return 4
 
-def splitbins(bins):
-    # split a sparse integer table into two tables, such as:
-    #   value = t2[(t1[char>>shift]<<shift)+(char&mask)]
-    # and value == 0 means no data
-    bytes = sys.maxint
-    for shift in range(16):
-        bin1 = []
-        bin2 = []
+def splitbins(t, trace=0):
+    """t, trace=0 -> (t1, t2, shift).  Split a table to save space.
+
+    t is a sequence of ints.  This function can be useful to save space if
+    many of the ints are the same.  t1 and t2 are lists of ints, and shift
+    is an int, chosen to minimize the combined size of t1 and t2 (in C
+    code), and where for each i in range(len(t)),
+        t[i] == t2[(t1[i >> shift] << shift) + (i & mask)]
+    where mask is a bitmask isolating the last "shift" bits.
+
+    If optional arg trace is true (default false), progress info is
+    printed to sys.stderr.
+    """
+
+    import sys
+    if trace:
+        def dump(t1, t2, shift, bytes):
+            print >>sys.stderr, "%d+%d bins at shift %d; %d bytes" % (
+                len(t1), len(t2), shift, bytes)
+        print >>sys.stderr, "Size of original table:", len(t)*getsize(t), \
+                            "bytes"
+    n = len(t)-1    # last valid index
+    maxshift = 0    # the most we can shift n and still have something left
+    if n > 0:
+        while n >> 1:
+            n >>= 1
+            maxshift += 1
+    del n
+    bytes = sys.maxint  # smallest total size so far
+    t = tuple(t)    # so slices can be dict keys
+    for shift in range(maxshift + 1):
+        t1 = []
+        t2 = []
         size = 2**shift
         bincache = {}
-        for i in range(0, len(bins), size):
-            bin = bins[i:i+size]
-            index = bincache.get(tuple(bin))
+        for i in range(0, len(t), size):
+            bin = t[i:i+size]
+            index = bincache.get(bin)
             if index is None:
-                index = len(bin2)
-                bincache[tuple(bin)] = index
-                for v in bin:
-                    if v is None:
-                        bin2.append(0)
-                    else:
-                        bin2.append(v)
-            bin1.append(index>>shift)
+                index = len(t2)
+                bincache[bin] = index
+                t2.extend(bin)
+            t1.append(index >> shift)
         # determine memory size
-        b = len(bin1)*getsize(bin1) + len(bin2)*getsize(bin2)
+        b = len(t1)*getsize(t1) + len(t2)*getsize(t2)
+        if trace:
+            dump(t1, t2, shift, b)
         if b < bytes:
-            best = shift, bin1, bin2
+            best = t1, t2, shift
             bytes = b
-    shift, bin1, bin2 = best
-##     print >>sys.stderr, "%d+%d bins at shift %d; %d bytes" % (
-##         len(bin1), len(bin2), shift, bytes
-##         )
-    return bin1, bin2, shift
+    t1, t2, shift = best
+    if trace:
+        print >>sys.stderr, "Best:",
+        dump(t1, t2, shift, bytes)
+    if __debug__:
+        # exhaustively verify that the decomposition is correct
+        mask = ~((~0) << shift) # i.e., low-bit mask of shift bits
+        for i in xrange(len(t)):
+            assert t[i] == t2[(t1[i >> shift] << shift) + (i & mask)]
+    return best
 
 if __name__ == "__main__":
     maketable()
