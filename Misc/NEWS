@@ -35,6 +35,8 @@ Extension Modules
 Library
 -------
 
+- Patch #1121234: Properly cleanup _exit and tkerror commands.
+
 - Applied a security fix to SimpleXMLRPCserver (PSF-2005-001).  This
   disables recursive traversal through instance attributes, which can
   be exploited in various ways.
