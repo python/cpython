@@ -28,6 +28,19 @@ class UserList:
 		else:
 			self.data[i:j] = list.data
 	def __delslice__(self, i, j): del self.data[i:j]
+	def __add__(self, list):
+		if type(list) == type(self.data):
+			return self.__class__(self.data + list)
+		else:
+			return self.__class__(self.data + list.data)
+	def __radd__(self, list):
+		if type(list) == type(self.data):
+			return self.__class__(list + self.data)
+		else:
+			return self.__class__(list.data + self.data)
+	def __mul__(self, n):
+		return self.__class__(self.data*n)
+	__rmul__ = __mul__
 	def append(self, item): self.data.append(item)
 	def insert(self, i, item): self.data.insert(i, item)
 	def remove(self, item): self.data.remove(item)
