@@ -302,14 +302,57 @@ static void PySSL_dealloc(PySSLObject *self)
 	PyObject_Del(self);
 }
 
+/* If the socket has a timeout, do a select() on the socket.
+   The argument writing indicates the direction.
+   Return non-zero if the socket timed out, zero otherwise.
+ */
+static int
+wait_for_timeout(PySocketSockObject *s, int writing)
+{
+	fd_set fds;
+	struct timeval tv;
+	int rc;
+
+	/* Nothing to do unless we're in timeout mode (not non-blocking) */
+	if (s->sock_timeout <= 0.0)
+		return 0;
+
+	/* Guard against closed socket */
+	if (s->sock_fd < 0)
+		return 0;
+
+	/* Construct the arguments to select */
+	tv.tv_sec = (int)s->sock_timeout;
+	tv.tv_usec = (int)((s->sock_timeout - tv.tv_sec) * 1e6);
+	FD_ZERO(&fds);
+	FD_SET(s->sock_fd, &fds);
+
+	/* See if the socket is ready */
+	if (writing)
+		rc = select(s->sock_fd+1, NULL, &fds, NULL, &tv);
+	else
+		rc = select(s->sock_fd+1, &fds, NULL, NULL, &tv);
+
+	/* Return 1 on timeout, 0 otherwise */
+	return rc == 0;
+}
+
 static PyObject *PySSL_SSLwrite(PySSLObject *self, PyObject *args)
 {
 	char *data;
 	int len;
+	int timedout;
 
 	if (!PyArg_ParseTuple(args, "s#:write", &data, &len))
 		return NULL;
 
+	Py_BEGIN_ALLOW_THREADS
+	timedout = wait_for_timeout(self->Socket, 1);
+	Py_END_ALLOW_THREADS
+	if (timedout) {
+		PyErr_SetString(PySSLErrorObject, "The write operation timed out");
+		return NULL;
+	}
 	Py_BEGIN_ALLOW_THREADS
 	len = SSL_write(self->ssl, data, len);
 	Py_END_ALLOW_THREADS
@@ -330,6 +373,7 @@ static PyObject *PySSL_SSLread(PySSLObject *self, PyObject *args)
 	PyObject *buf;
 	int count = 0;
 	int len = 1024;
+	int timedout;
 
 	if (!PyArg_ParseTuple(args, "|i:read", &len))
 		return NULL;
@@ -337,6 +381,13 @@ static PyObject *PySSL_SSLread(PySSLObject *self, PyObject *args)
 	if (!(buf = PyString_FromStringAndSize((char *) 0, len)))
 		return NULL;
 
+	Py_BEGIN_ALLOW_THREADS
+	timedout = wait_for_timeout(self->Socket, 0);
+	Py_END_ALLOW_THREADS
+	if (timedout) {
+		PyErr_SetString(PySSLErrorObject, "The read operation timed out");
+		return NULL;
+	}
 	Py_BEGIN_ALLOW_THREADS
 	count = SSL_read(self->ssl, PyString_AsString(buf), len);
 	Py_END_ALLOW_THREADS
