@@ -396,9 +396,9 @@ try_rich_compare(PyObject *v, PyObject *w, int op)
 /* Try a genuine rich comparison, returning an int.  Return:
    -1 for exception (including the case where try_rich_compare() returns an
       object that's not a Boolean);
-   0 if the outcome is false;
-   1 if the outcome is true;
-   2 if this particular rich comparison is not implemented or undefined.
+    0 if the outcome is false;
+    1 if the outcome is true;
+    2 if this particular rich comparison is not implemented or undefined.
 */
 static int
 try_rich_compare_bool(PyObject *v, PyObject *w, int op)
@@ -422,10 +422,10 @@ try_rich_compare_bool(PyObject *v, PyObject *w, int op)
 
 /* Try rich comparisons to determine a 3-way comparison.  Return:
    -2 for an exception;
-   -1 if v < w;
-   0 if v == w;
-   1 if v > w;
-   2 if this particular rich comparison is not implemented or undefined.
+   -1 if v  < w;
+    0 if v == w;
+    1 if v  > w;
+    2 if this particular rich comparison is not implemented or undefined.
 */
 static int
 try_rich_to_3way_compare(PyObject *v, PyObject *w)
@@ -455,10 +455,10 @@ try_rich_to_3way_compare(PyObject *v, PyObject *w)
 
 /* Try a 3-way comparison, returning an int.  Return:
    -2 for an exception;
-   -1 if v < w;
-   0 if v == w;
-   1 if v > w;
-   2 if this particular 3-way comparison is not implemented or undefined.
+   -1 if v <  w;
+    0 if v == w;
+    1 if v  > w;
+    2 if this particular 3-way comparison is not implemented or undefined.
 */
 static int
 try_3way_compare(PyObject *v, PyObject *w)
@@ -523,9 +523,9 @@ try_3way_compare(PyObject *v, PyObject *w)
 
 /* Final fallback 3-way comparison, returning an int.  Return:
    -2 if an error occurred;
-   -1 if v < w;
-   0 if v == w;
-   1 if v > w.
+   -1 if v <  w;
+    0 if v == w;
+    1 if v >  w.
 */
 static int
 default_3way_compare(PyObject *v, PyObject *w)
@@ -590,9 +590,9 @@ default_3way_compare(PyObject *v, PyObject *w)
 
 /* Do a 3-way comparison, by hook or by crook.  Return:
    -2 for an exception;
-   -1 if v < w;
+   -1 if v <  w;
     0 if v == w;
-    1 if v > w;
+    1 if v >  w;
    If the object implements a tp_compare function, it returns
    whatever this function returns (whether with an exception or not).
 */
@@ -723,6 +723,13 @@ delete_token(PyObject *token)
 	Py_DECREF(token);
 }
 
+/* Compare v to w.  Return
+   -1 if v <  w or exception (PyErr_Occurred() true in latter case).
+    0 if v == w.
+    1 if v > w.
+   XXX The docs (C API manual) say the return value is undefined in case
+   XXX of error.
+*/
 int
 PyObject_Compare(PyObject *v, PyObject *w)
 {
@@ -771,6 +778,7 @@ PyObject_Compare(PyObject *v, PyObject *w)
 	return result < 0 ? -1 : result;
 }
 
+/* Return (new reference to) Py_True or Py_False. */
 static PyObject *
 convert_3way_to_object(int op, int c)
 {
@@ -788,7 +796,12 @@ convert_3way_to_object(int op, int c)
 	return result;
 }
 	
-
+/* We want a rich comparison but don't have one.  Try a 3-way cmp instead.
+   Return
+   NULL      if error
+   Py_True   if v op w
+   Py_False  if not (v op w)
+*/
 static PyObject *
 try_3way_to_rich_compare(PyObject *v, PyObject *w, int op)
 {
@@ -802,6 +815,12 @@ try_3way_to_rich_compare(PyObject *v, PyObject *w, int op)
 	return convert_3way_to_object(op, c);
 }
 
+/* Do rich comparison on v and w.  Return
+   NULL      if error
+   Else a new reference to an object other than Py_NotImplemented, usually(?):
+   Py_True   if v op w
+   Py_False  if not (v op w)
+*/
 static PyObject *
 do_richcmp(PyObject *v, PyObject *w, int op)
 {
@@ -841,6 +860,13 @@ do_richcmp(PyObject *v, PyObject *w, int op)
 	return try_3way_to_rich_compare(v, w, op);
 }
 
+/* Return:
+   NULL for exception;
+   NotImplemented if this particular rich comparison is not implemented or
+     undefined;
+   some object not equal to NotImplemented if it is implemented
+     (this latter object may not be a Boolean).
+*/
 PyObject *
 PyObject_RichCompare(PyObject *v, PyObject *w, int op)
 {
