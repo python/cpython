@@ -2,9 +2,6 @@ from test_support import verify, verbose
 import sys
 
 def check_all(modname):
-    import warnings
-    warnings.filterwarnings("ignore", "", DeprecationWarning, modname)
-
     names = {}
     try:
         exec "import %s" % modname in names
@@ -122,6 +119,9 @@ check_all("quopri")
 check_all("random")
 check_all("re")
 check_all("reconvert")
+import warnings
+warnings.filterwarnings("ignore", ".* regsub .*", DeprecationWarning, "regsub",
+                        append=1)
 check_all("regsub")
 check_all("repr")
 check_all("rexec")
