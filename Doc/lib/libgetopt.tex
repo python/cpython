@@ -45,7 +45,7 @@ be mixed.
 
 An example using only \UNIX{} style options:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> import getopt, string
 >>> args = string.split('-a -b -cfoo -d bar a1 a2')
 >>> args
@@ -56,11 +56,11 @@ An example using only \UNIX{} style options:
 >>> args
 ['a1', 'a2']
 >>> 
-\end{verbatim}\ecode
+\end{verbatim}
 %
 Using long option names is equally easy:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> s = '--condition=foo --testing --output-file abc.def -x a1 a2'
 >>> args = string.split(s)
 >>> args
@@ -72,7 +72,7 @@ Using long option names is equally easy:
 >>> args
 ['a1', 'a2']
 >>> 
-\end{verbatim}\ecode
+\end{verbatim}
 %
 The exception
 \code{getopt.error}

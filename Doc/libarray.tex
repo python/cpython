@@ -36,7 +36,7 @@ See also built-in module \code{struct}.
 
 The module defines the following function:
 
-\renewcommand{\indexsubitem}{(in module array)}
+\setindexsubitem{(in module array)}
 
 \begin{funcdesc}{array}{typecode\optional{\, initializer}}
 Return a new array whose items are restricted by \var{typecode}, and
@@ -124,9 +124,9 @@ numbers.  The string is guaranteed to be able to be converted back to
 an array with the same type and value using reverse quotes
 (\code{``}).  Examples:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 array('l')
 array('c', 'hello world')
 array('l', [1, 2, 3, 4, 5])
 array('d', [1.0, 2.0, 3.14])
-\end{verbatim}\ecode
+\end{verbatim}

@@ -11,7 +11,7 @@ leading and trailing \samp{__} are also provided for convenience.
 
 The \code{operator} module defines the following functions:
 
-\renewcommand{\indexsubitem}{(in module operator)}
+\setindexsubitem{(in module operator)}
 
 \begin{funcdesc}{add}{a, b}
 Return \var{a} \code{+} \var{b}, for \var{a} and \var{b} numbers.
@@ -188,10 +188,10 @@ Delete the slice of \var{a} from index \var{b} to index \var{c}\code{-1}.
 Example: Build a dictionary that maps the ordinals from \code{0} to
 \code{256} to their character equivalents.
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> import operator
 >>> d = {}
 >>> keys = range(256)
 >>> vals = map(chr, keys)
 >>> map(operator.setitem, [d]*len(keys), keys, vals)
-\end{verbatim}\ecode
+\end{verbatim}

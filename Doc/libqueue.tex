@@ -18,7 +18,7 @@ Python.
 
 The \code{Queue} module defines the following exception:
 
-\renewcommand{\indexsubitem}{(in module Queue)}
+\setindexsubitem{(in module Queue)}
 
 \begin{excdesc}{Empty}
 Exception raised when non-blocking get (e.g. \code{get_nowait()}) is
@@ -35,7 +35,7 @@ other queue organizations (e.g. stack) but the inheritable interface
 is not described here.  See the source code for details.  The public
 interface methods are:
 
-\renewcommand{\indexsubitem}{(__init__ method)}
+\setindexsubitem{(__init__ method)}
 
 \begin{funcdesc}{__init__}{maxsize}
 Constructor for the class.  \var{maxsize} is an integer that sets the
@@ -45,41 +45,41 @@ queue items are consumed.  If \var{maxsize} is less than or equal to
 zero, the queue size is infinite.
 \end{funcdesc}
 
-\renewcommand{\indexsubitem}{(qsize method)}
+\setindexsubitem{(qsize method)}
 
 \begin{funcdesc}{qsize}{}
 Returns the approximate size of the queue.  Because of multithreading
 semantics, this number is not reliable.
 \end{funcdesc}
 
-\renewcommand{\indexsubitem}{(empty method)}
+\setindexsubitem{(empty method)}
 
 \begin{funcdesc}{empty}{}
 Returns 1 if the queue is empty, 0 otherwise.  Because of
 multithreading semantics, this is not reliable.
 \end{funcdesc}
 
-\renewcommand{\indexsubitem}{(full method)}
+\setindexsubitem{(full method)}
 
 \begin{funcdesc}{full}{}
 Returns 1 if the queue is full, 0 otherwise.  Because of
 multithreading semantics, this is not reliable.
 \end{funcdesc}
 
-\renewcommand{\indexsubitem}{(put method)}
+\setindexsubitem{(put method)}
 
 \begin{funcdesc}{put}{item}
 Puts \var{item} into the queue.
 \end{funcdesc}
 
-\renewcommand{\indexsubitem}{(get method)}
+\setindexsubitem{(get method)}
 
 \begin{funcdesc}{get}{}
 Gets and returns an item from the queue, blocking if necessary until
 one is available.
 \end{funcdesc}
 
-\renewcommand{\indexsubitem}{(get_nowait method)}
+\setindexsubitem{(get_nowait method)}
 
 \begin{funcdesc}{get_nowait}{}
 Gets and returns an item from the queue if one is immediately

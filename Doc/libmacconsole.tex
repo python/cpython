@@ -2,7 +2,7 @@
 \label{module-macconsole}
 \bimodindex{macconsole}
 
-\renewcommand{\indexsubitem}{(in module macconsole)}
+\setindexsubitem{(in module macconsole)}
 
 This module is available on the Macintosh, provided Python has been
 built using the Think C compiler. It provides an interface to the
@@ -36,7 +36,7 @@ object. \var{fp} should be one of \code{sys.stdin}, \code{sys.stdout} or
 \subsection{macconsole options object}
 These options are examined when a window is created:
 
-\renewcommand{\indexsubitem}{(macconsole option)}
+\setindexsubitem{(macconsole option)}
 \begin{datadesc}{top}
 \dataline{left}
 The origin of the window.
@@ -63,7 +63,7 @@ If set non-zero, the window will wait for user action before closing.
 
 \subsection{console window object}
 
-\renewcommand{\indexsubitem}{(console window attribute)}
+\setindexsubitem{(console window attribute)}
 
 \begin{datadesc}{file}
 The file object corresponding to this console window. If the file is
@@ -71,7 +71,7 @@ buffered, you should call \code{file.flush()} between \code{write()}
 and \code{read()} calls.
 \end{datadesc}
 
-\renewcommand{\indexsubitem}{(console window method)}
+\setindexsubitem{(console window method)}
 
 \begin{funcdesc}{setmode}{mode}
 Set the input mode of the console to \var{C_ECHO}, etc.

@@ -10,7 +10,7 @@ item numbers correspond. See the source for details.
 
 The \code{EasyDialogs} module defines the following functions:
 
-\renewcommand{\indexsubitem}{(in module EasyDialogs)}
+\setindexsubitem{(in module EasyDialogs)}
 
 \begin{funcdesc}{Message}{str}
 A modal dialog with the message text \var{str}, which should be at
@@ -75,7 +75,7 @@ for more details.
 
 The \code{FrameWork} module defines the following functions:
 
-\renewcommand{\indexsubitem}{(in module FrameWork)}
+\setindexsubitem{(in module FrameWork)}
 
 \begin{funcdesc}{Application}{}
 An object representing the complete application. See below for a
@@ -148,7 +148,7 @@ Set the mouse cursor to an arrow.
 \subsection{Application objects}
 Application objects have the following methods, among others:
 
-\renewcommand{\indexsubitem}{(Application method)}
+\setindexsubitem{(Application method)}
 
 \begin{funcdesc}{makeusermenus}{}
 Override this method if you need menus in your application. Append the
@@ -225,7 +225,7 @@ null-event is passed (so you can look at mouse position, etc).
 
 Window objects have the following methods, among others:
 
-\renewcommand{\indexsubitem}{(Window method)}
+\setindexsubitem{(Window method)}
 
 \begin{funcdesc}{open}{}
 Override this method to open a window. Store the MacOS window-id in
@@ -263,7 +263,7 @@ The window was activated (\code{activate==1}) or deactivated
 ControlsWindow objects have the following methods besides those of
 \code{Window} objects:
 
-\renewcommand{\indexsubitem}{(ControlsWindow method)}
+\setindexsubitem{(ControlsWindow method)}
 
 \begin{funcdesc}{do_controlhit}{window\, control\, pcode\, event}
 Part \code{pcode} of control \code{control} was hit by the
@@ -275,7 +275,7 @@ user. Tracking and such has already been taken care of.
 ScrolledWindow objects are ControlsWindow objects with the following
 extra methods:
 
-\renewcommand{\indexsubitem}{(ScrolledWindow method)}
+\setindexsubitem{(ScrolledWindow method)}
 
 \begin{funcdesc}{scrollbars}{\optional{wantx\, wanty}}
 Create (or destroy) horizontal and vertical scrollbars. The arguments
@@ -331,7 +331,7 @@ and has been handled.
 DialogWindow objects have the following methods besides those of
 \code{Window} objects:
 
-\renewcommand{\indexsubitem}{(DialogWindow method)}
+\setindexsubitem{(DialogWindow method)}
 
 \begin{funcdesc}{open}{resid}
 Create the dialog window, from the DLOG resource with id
@@ -358,7 +358,7 @@ application scriptable.
 
 The \var{MiniAEFrame} module defines the following classes:
 
-\renewcommand{\indexsubitem}{(in module MiniAEFrame)}
+\setindexsubitem{(in module MiniAEFrame)}
 
 \begin{funcdesc}{AEServer}{}
 A class that handles AppleEvent dispatch. Your application should
@@ -379,7 +379,7 @@ provide its own windows, etc.
 
 \subsection{AEServer Objects}
 
-\renewcommand{\indexsubitem}{(AEServer method)}
+\setindexsubitem{(AEServer method)}
 
 \begin{funcdesc}{installaehandler}{classe\, type\, callback}
 Installs an AppleEvent handler. \code{Classe} and \code{type} are the

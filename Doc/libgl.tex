@@ -41,15 +41,15 @@ All (short, long, unsigned) integer arguments or return values that are
 only used to specify the length of an array argument are omitted.
 For example, the C call
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 lmdef(deftype, index, np, props)
-\end{verbatim}\ecode
+\end{verbatim}
 %
 is translated to Python as
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 lmdef(deftype, index, props)
-\end{verbatim}\ecode
+\end{verbatim}
 %
 \item
 Output arguments are omitted from the argument list; they are
@@ -60,22 +60,22 @@ because of the previous rule) and an output argument, the return value
 comes first in the tuple.
 Examples: the C call
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 getmcolor(i, &red, &green, &blue)
-\end{verbatim}\ecode
+\end{verbatim}
 %
 is translated to Python as
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 red, green, blue = getmcolor(i)
-\end{verbatim}\ecode
+\end{verbatim}
 %
 \end{itemize}
 
 The following functions are non-standard or have special argument
 conventions:
 
-\renewcommand{\indexsubitem}{(in module gl)}
+\setindexsubitem{(in module gl)}
 \begin{funcdesc}{varray}{argument}
 %JHXXX the argument-argument added
 Equivalent to but faster than a number of
@@ -160,7 +160,7 @@ No method is provided to detect buffer overrun.
 
 Here is a tiny but complete example GL program in Python:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 import gl, GL, time
 
 def main():
@@ -182,7 +182,7 @@ def main():
     time.sleep(5)
 
 main()
-\end{verbatim}\ecode
+\end{verbatim}
 %
 \section{Standard Modules \sectcode{GL} and \sectcode{DEVICE}}
 \nodename{GL and DEVICE}

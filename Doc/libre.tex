@@ -258,7 +258,7 @@ for the current locale.
 
 The module defines the following functions and constants, and an exception:
 
-\renewcommand{\indexsubitem}{(in module re)}
+\setindexsubitem{(in module re)}
 
 \begin{funcdesc}{compile}{pattern\optional{\, flags}}
   Compile a regular expression pattern into a regular expression
@@ -313,10 +313,10 @@ leftmost such \code{\#} through the end of the line are ignored.
 
 The sequence
 %
-\bcode\begin{verbatim}
+\begin{verbatim}
 prog = re.compile(pat)
 result = prog.match(str)
-\end{verbatim}\ecode
+\end{verbatim}
 %
 is equivalent to
 
@@ -365,14 +365,14 @@ expression will be used several times in a single program.
   1.5 release, \var{maxsplit} was ignored.  This has been fixed in
   later releases.)
 %
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> re.split('[\W]+', 'Words, words, words.')
 ['Words', 'words', 'words', '']
 >>> re.split('([\W]+)', 'Words, words, words.')
 ['Words', ', ', 'words', ', ', 'words', '.', '']
 >>> re.split('[\W]+', 'Words, words, words.', 1)
 ['Words', 'words, words.']
-\end{verbatim}\ecode
+\end{verbatim}
 %
   This function combines and extends the functionality of
   the old \code{regsub.split()} and \code{regsub.splitx()}.
@@ -387,13 +387,13 @@ it is called for every non-overlapping occurance of \var{pattern}.
 The function takes a single match object argument, and returns the
 replacement string.  For example:
 %
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> def dashrepl(matchobj):
 ...    if matchobj.group(0) == '-': return ' '
 ...    else: return '-'
 >>> re.sub('-{1,2}', dashrepl, 'pro----gram-files')
 'pro--gram files'
-\end{verbatim}\ecode
+\end{verbatim}
 %
 The pattern may be a string or a 
 regex object; if you need to specify
@@ -428,7 +428,7 @@ Perform the same operation as \code{sub()}, but return a tuple
 Compiled regular expression objects support the following methods and
 attributes:
 
-\renewcommand{\indexsubitem}{(re method)}
+\setindexsubitem{(re method)}
 \begin{funcdesc}{match}{string\optional{\, pos}\optional{\, endpos}}
   If zero or more characters at the beginning of \var{string} match
   this regular expression, return a corresponding
@@ -469,7 +469,7 @@ Identical to the \code{sub()} function, using the compiled pattern.
 Identical to the \code{subn()} function, using the compiled pattern.
 \end{funcdesc}
 
-\renewcommand{\indexsubitem}{(regex attribute)}
+\setindexsubitem{(regex attribute)}
 
 \begin{datadesc}{flags}
 The flags argument used when the regex object was compiled, or 0 if no

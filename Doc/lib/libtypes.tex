@@ -25,7 +25,7 @@ The following values are considered false:
 \index{false}
 
 \begin{itemize}
-\renewcommand{\indexsubitem}{(Built-in object)}
+\setindexsubitem{(Built-in object)}
 
 \item	\code{None}
 	\ttindex{None}
@@ -409,13 +409,13 @@ If the right argument is a dictionary (or any kind of mapping), then
 the formats in the string must have a parenthesized key into that
 dictionary inserted immediately after the \code{\%} character, and
 each format formats the corresponding entry from the mapping.  E.g.
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> count = 2
 >>> language = 'Python'
 >>> print '%(language)s has %(count)03d quote types.' % vars()
 Python has 002 quote types.
 >>> 
-\end{verbatim}\ecode
+\end{verbatim}
 In this case no * specifiers may occur in a format (since they
 require a sequential parameter list).
 
@@ -466,7 +466,7 @@ The following operations are defined on mutable sequence types (where
 \indexii{subscript}{assignment}
 \indexii{slice}{assignment}
 \stindex{del}
-\renewcommand{\indexsubitem}{(list method)}
+\setindexsubitem{(list method)}
 \ttindex{append}
 \ttindex{count}
 \ttindex{index}
@@ -538,7 +538,7 @@ mapping, \var{k} is a key and \var{x} is an arbitrary object):
 \indexiii{operations on}{dictionary}{type}
 \stindex{del}
 \bifuncindex{len}
-\renewcommand{\indexsubitem}{(dictionary method)}
+\setindexsubitem{(dictionary method)}
 \ttindex{keys}
 \ttindex{has_key}
 
@@ -681,7 +681,7 @@ device or writing a file opened for reading.
 Files have the following methods:
 
 
-\renewcommand{\indexsubitem}{(file method)}
+\setindexsubitem{(file method)}
 
 \begin{funcdesc}{close}{}
   Close the file.  A closed file cannot be read or written anymore.

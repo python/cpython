@@ -4,7 +4,7 @@
 \indexii{\POSIX{}}{I/O control}
 \indexii{tty}{I/O control}
 
-\renewcommand{\indexsubitem}{(in module termios)}
+\setindexsubitem{(in module termios)}
 
 This module provides an interface to the \POSIX{} calls for tty I/O
 control.  For a complete description of these calls, see the \POSIX{} or
@@ -77,7 +77,7 @@ Note the technique using a separate \code{termios.tcgetattr()} call
 and a \code{try \ldots{} finally} statement to ensure that the old tty
 attributes are restored exactly no matter what happens:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 def getpass(prompt = "Password: "):
     import termios, TERMIOS, sys
     fd = sys.stdin.fileno()
@@ -90,14 +90,14 @@ def getpass(prompt = "Password: "):
     finally:
         termios.tcsetattr(fd, TERMIOS.TCSADRAIN, old)
     return passwd
-\end{verbatim}\ecode
+\end{verbatim}
 %
 \section{Standard Module \sectcode{TERMIOS}}
 \stmodindex{TERMIOS}
 \indexii{\POSIX{}}{I/O control}
 \indexii{tty}{I/O control}
 
-\renewcommand{\indexsubitem}{(in module TERMIOS)}
+\setindexsubitem{(in module TERMIOS)}
 
 This module defines the symbolic constants required to use the
 \code{termios} module (see the previous section).  See the \POSIX{} or

@@ -41,7 +41,7 @@ Module \code{fl} defines the following functions.  For more information
 about what they do, see the description of the equivalent C function
 in the FORMS documentation:
 
-\renewcommand{\indexsubitem}{(in module fl)}
+\setindexsubitem{(in module fl)}
 \begin{funcdesc}{make_form}{type\, width\, height}
 Create a form with given type, width and height.  This returns a
 \dfn{form} object, whose methods are described below.
@@ -146,7 +146,7 @@ kinds of FORMS object also have some methods specific to that kind;
 these methods are listed here.
 
 \begin{flushleft}
-\renewcommand{\indexsubitem}{(form object method)}
+\setindexsubitem{(form object method)}
 \begin{funcdesc}{show_form}{placement\, bordertype\, name}
   Show the form.
 \end{funcdesc}
@@ -389,7 +389,7 @@ documentation:
 Besides methods specific to particular kinds of FORMS objects, all
 FORMS objects also have the following methods:
 
-\renewcommand{\indexsubitem}{(FORMS object method)}
+\setindexsubitem{(FORMS object method)}
 \begin{funcdesc}{set_call_back}{function\, argument}
 Set the object's callback function and argument.  When the object
 needs interaction, the callback function will be called with two
@@ -468,10 +468,10 @@ the C header file \file{<forms.h>} except that the name prefix
 \samp{FL_} is omitted.  Read the module source for a complete list of
 the defined names.  Suggested use:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 import fl
 from FL import *
-\end{verbatim}\ecode
+\end{verbatim}
 %
 \section{Standard Module \sectcode{flp}}
 \label{module-flp}

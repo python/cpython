@@ -21,7 +21,7 @@ the same as a standard file object.
 
 The posixfile module defines the following constants:
 
-\renewcommand{\indexsubitem}{(in module posixfile)}
+\setindexsubitem{(in module posixfile)}
 \begin{datadesc}{SEEK_SET}
 offset is calculated from the start of the file
 \end{datadesc}
@@ -36,7 +36,7 @@ offset is calculated from the end of the file
 
 The posixfile module defines the following functions:
 
-\renewcommand{\indexsubitem}{(in module posixfile)}
+\setindexsubitem{(in module posixfile)}
 
 \begin{funcdesc}{open}{filename\optional{\, mode\optional{\, bufsize}}}
  Create a new posixfile object with the given filename and mode.  The
@@ -52,7 +52,7 @@ The posixfile module defines the following functions:
 
 The posixfile object defines the following additional methods:
 
-\renewcommand{\indexsubitem}{(posixfile method)}
+\setindexsubitem{(posixfile method)}
 \begin{funcdesc}{lock}{fmt\, \optional{len\optional{\, start\optional{\, whence}}}}
  Lock the specified section of the file that the file object is
  referring to.  The format is explained
@@ -146,7 +146,7 @@ by the same call.
 
 Examples:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 from posixfile import *
 
 file = open('/tmp/test', 'w')
@@ -154,4 +154,4 @@ file.lock('w|')
 ...
 file.lock('u')
 file.close()
-\end{verbatim}\ecode
+\end{verbatim}

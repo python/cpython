@@ -5,7 +5,7 @@ The Python interpreter has a number of functions built into it that
 are always available.  They are listed here in alphabetical order.
 
 
-\renewcommand{\indexsubitem}{(built-in function)}
+\setindexsubitem{(built-in function)}
 
 \begin{funcdesc}{__import__}{name\optional{, globals\optional{, locals\optional{, fromlist}}}}
 This function is invoked by the \code{import} statement.  It
@@ -135,14 +135,14 @@ class instances are callable if they have an attribute \code{__call__}.
   and for class instances, methods are not included.
   The resulting list is sorted alphabetically.  For example:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> import sys
 >>> dir()
 ['sys']
 >>> dir(sys)
 ['argv', 'exit', 'modules', 'path', 'stderr', 'stdin', 'stdout']
 >>> 
-\end{verbatim}\ecode
+\end{verbatim}
 \end{funcdesc}
 
 \begin{funcdesc}{divmod}{a\, b}
@@ -166,12 +166,12 @@ class instances are callable if they have an attribute \code{__call__}.
   called.  The return value is the result of the evaluated expression.
   Syntax errors are reported as exceptions.  Example:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> x = 1
 >>> print eval('x+1')
 2
 >>> 
-\end{verbatim}\ecode
+\end{verbatim}
 %
   This function can also be used to execute arbitrary code objects
   (e.g.\ created by \code{compile()}).  In this case pass a code
@@ -448,7 +448,7 @@ there's no reliable way to determine whether this is the case.}
   greater than \var{stop}.  \var{step} must not be zero (or else an
   exception is raised).  Example:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> range(10)
 [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 >>> range(1, 11)
@@ -464,7 +464,7 @@ there's no reliable way to determine whether this is the case.}
 >>> range(1, 0)
 []
 >>> 
-\end{verbatim}\ecode
+\end{verbatim}
 \end{funcdesc}
 
 \begin{funcdesc}{raw_input}{\optional{prompt}}
@@ -473,13 +473,13 @@ there's no reliable way to determine whether this is the case.}
   converts it to a string (stripping a trailing newline), and returns that.
   When \EOF{} is read, \code{EOFError} is raised. Example:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> s = raw_input('--> ')
 --> Monty Python's Flying Circus
 >>> s
 "Monty Python's Flying Circus"
 >>> 
-\end{verbatim}\ecode
+\end{verbatim}
 
 If the \code{readline} module was loaded, then
 \code{raw_input()} will use it to provide elaborate
@@ -604,10 +604,10 @@ built-in types.
 \obindex{type}
 For instance:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> import types
 >>> if isinstance(x, types.StringType): print "It's a string"
-\end{verbatim}\ecode
+\end{verbatim}
 \end{funcdesc}
 
 \begin{funcdesc}{vars}{\optional{object}}

@@ -2,7 +2,7 @@
 \label{module-macspeech}
 \bimodindex{macspeech}
 
-\renewcommand{\indexsubitem}{(in module macspeech)}
+\setindexsubitem{(in module macspeech)}
 
 This module provides an interface to the Macintosh Speech Manager,
 allowing you to let the Macintosh utter phrases. You need a version of
@@ -42,7 +42,7 @@ Return a voice object for voice number \var{num}.
 Voice objects contain the description of a voice. It is currently not
 yet possible to access the parameters of a voice.
 
-\renewcommand{\indexsubitem}{(voice object method)}
+\setindexsubitem{(voice object method)}
 
 \begin{funcdesc}{GetGender}{}
 Return the gender of the voice: 0 for male, 1 for female and -1 for neuter.
@@ -59,7 +59,7 @@ speakers at the same time. Please note that channel pitch and rate are
 interrelated in some way, so that to make your Macintosh sing you will
 have to adjust both.
 
-\renewcommand{\indexsubitem}{(speech channel object method)}
+\setindexsubitem{(speech channel object method)}
 \begin{funcdesc}{SpeakText}{str}
 Start uttering the given string.
 \end{funcdesc}

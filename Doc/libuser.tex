@@ -40,13 +40,13 @@ define variables in their \file{.pythonrc.py} file that you test in
 your module.  For example, a module \code{spam} that has a verbosity
 level can look for a variable \code{user.spam_verbose}, as follows:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 import user
 try:
     verbose = user.spam_verbose  # user's verbosity preference
 except AttributeError:
     verbose = 0                  # default verbosity
-\end{verbatim}\ecode
+\end{verbatim}
 
 Programs with extensive customization needs are better off reading a
 program-specific customization file.

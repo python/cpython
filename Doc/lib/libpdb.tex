@@ -2,7 +2,7 @@
 \stmodindex{pdb}
 \index{debugging}
 
-\renewcommand{\indexsubitem}{(in module pdb)}
+\setindexsubitem{(in module pdb)}
 
 The module \code{pdb} defines an interactive source code debugger for
 Python programs.  It supports setting
@@ -29,7 +29,7 @@ specific modules).
 The debugger's prompt is ``\code{(Pdb) }''.
 Typical usage to run a program under control of the debugger is:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> import pdb
 >>> import mymodule
 >>> pdb.run('mymodule.test()')
@@ -40,7 +40,7 @@ Typical usage to run a program under control of the debugger is:
 NameError: 'spam'
 > <string>(1)?()
 (Pdb) 
-\end{verbatim}\ecode
+\end{verbatim}
 %
 \code{pdb.py} can also be invoked as
 a script to debug other scripts.  For example:
@@ -48,7 +48,7 @@ a script to debug other scripts.  For example:
 
 Typical usage to inspect a crashed program is:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> import pdb
 >>> import mymodule
 >>> mymodule.test()
@@ -63,7 +63,7 @@ NameError: spam
 > ./mymodule.py(3)test2()
 -> print spam
 (Pdb) 
-\end{verbatim}\ecode
+\end{verbatim}
 %
 The module defines the following functions; each enters the debugger
 in a slightly different way:
@@ -224,10 +224,10 @@ The exclamation point can be omitted unless the first word
 of the statement resembles a debugger command.
 To set a global variable, you can prefix the assignment
 command with a ``\code{global}'' command on the same line, e.g.:
-\bcode\begin{verbatim}
+\begin{verbatim}
 (Pdb) global list_options; list_options = ['-l']
 (Pdb)
-\end{verbatim}\ecode
+\end{verbatim}
 %
 \item[q(uit)]
 

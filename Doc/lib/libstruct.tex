@@ -13,7 +13,7 @@ See also built-in module \code{array}.
 
 The module defines the following exception and functions:
 
-\renewcommand{\indexsubitem}{(in module struct)}
+\setindexsubitem{(in module struct)}
 \begin{excdesc}{error}
   Exception raised on various occasions; argument is a string
   describing what is wrong.
@@ -120,7 +120,7 @@ byte-swapping); use the appropriate choice of \code{'<'} or
 Examples (all using native byte order, size and alignment, on a
 big-endian machine):
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> from struct import *
 >>> pack('hhl', 1, 2, 3)
 '\000\001\000\002\000\000\000\003'
@@ -129,7 +129,7 @@ big-endian machine):
 >>> calcsize('hhl')
 8
 >>> 
-\end{verbatim}\ecode
+\end{verbatim}
 %
 Hint: to align the end of a structure to the alignment requirement of
 a particular type, end the format with the code for that type with a

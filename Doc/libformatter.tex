@@ -2,7 +2,7 @@
 \label{module-formatter}
 \stmodindex{formatter}
 
-\renewcommand{\indexsubitem}{(in module formatter)}
+\setindexsubitem{(in module formatter)}
 
 This module supports two interface definitions, each with mulitple
 implementations.  The \emph{formatter} interface is used by the
@@ -47,14 +47,14 @@ be called without having to track whether the property was changed.
 
 The following attributes are defined for formatter instance objects:
 
-\renewcommand{\indexsubitem}{(formatter object data)}
+\setindexsubitem{(formatter object data)}
 
 \begin{datadesc}{writer}
 The writer instance with which the formatter interacts.
 \end{datadesc}
 
 
-\renewcommand{\indexsubitem}{(formatter object method)}
+\setindexsubitem{(formatter object method)}
 
 \begin{funcdesc}{end_paragraph}{blanklines}
 Close any open paragraphs and insert at least \code{blanklines}
@@ -187,7 +187,7 @@ Two implementations of formatter objects are provided by this module.
 Most applications may use one of these classes without modification or
 subclassing.
 
-\renewcommand{\indexsubitem}{(in module formatter)}
+\setindexsubitem{(in module formatter)}
 
 \begin{funcdesc}{NullFormatter}{\optional{writer\code{ = None}}}
 A formatter which does nothing.  If \code{writer} is omitted, a
@@ -215,7 +215,7 @@ Note that while most applications can use the \code{AbstractFormatter}
 class as a formatter, the writer must typically be provided by the
 application.
 
-\renewcommand{\indexsubitem}{(writer object method)}
+\setindexsubitem{(writer object method)}
 
 \begin{funcdesc}{flush}{}
 Flush any buffered output or device control events.
@@ -307,7 +307,7 @@ Three implementations of the writer object interface are provided as
 examples by this module.  Most applications will need to derive new
 writer classes from the \code{NullWriter} class.
 
-\renewcommand{\indexsubitem}{(in module formatter)}
+\setindexsubitem{(in module formatter)}
 
 \begin{funcdesc}{NullWriter}{}
 A writer which only provides the interface definition; no actions are

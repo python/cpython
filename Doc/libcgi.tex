@@ -7,7 +7,7 @@
 \indexii{MIME}{headers}
 \index{URL}
 
-\renewcommand{\indexsubitem}{(in module cgi)}
+\setindexsubitem{(in module cgi)}
 
 Support module for CGI (Common Gateway Interface) scripts.
 
@@ -40,20 +40,20 @@ by a blank line.  The first section contains a number of headers,
 telling the client what kind of data is following.  Python code to
 generate a minimal header section looks like this:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 print "Content-type: text/html"     # HTML is following
 print                               # blank line, end of headers
-\end{verbatim}\ecode
+\end{verbatim}
 %
 The second section is usually HTML, which allows the client software
 to display nicely formatted text with header, in-line images, etc.
 Here's Python code that prints a simple piece of HTML:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 print "<TITLE>CGI script output</TITLE>"
 print "<H1>This is my first CGI script</H1>"
 print "Hello, world!"
-\end{verbatim}\ecode
+\end{verbatim}
 %
 (It may not be fully legal HTML according to the letter of the
 standard, but any browser will understand it.)
@@ -77,7 +77,7 @@ dictionary.  For instance, the following code (which assumes that the
 \code{Content-type} header and blank line have already been printed) checks that 
 the fields \code{name} and \code{addr} are both set to a non-empty string:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 form = cgi.FieldStorage()
 form_ok = 0
 if form.has_key("name") and form.has_key("addr"):
@@ -88,7 +88,7 @@ if not form_ok:
     print "Please fill in the name and addr fields."
     return
 ...further form processing here...
-\end{verbatim}\ecode
+\end{verbatim}
 %
 Here the fields, accessed through \code{form[key]}, are themselves instances
 of \code{FieldStorage} (or \code{MiniFieldStorage}, depending on the form encoding).
@@ -101,7 +101,7 @@ name), use the \code{type()} function to determine whether you have a single
 instance or a list of instances.  For example, here's code that
 concatenates any number of username fields, separated by commas:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 username = form["username"]
 if type(username) is type([]):
     # Multiple username fields specified
@@ -116,7 +116,7 @@ if type(username) is type([]):
 else:
     # Single username field specified
     usernames = username.value
-\end{verbatim}\ecode
+\end{verbatim}
 %
 If a field represents an uploaded file, the value attribute reads the 
 entire file in memory as a string.  This may not be what you want.  You can 
@@ -124,7 +124,7 @@ test for an uploaded file by testing either the filename attribute or the
 file attribute.  You can then read the data at leasure from the file 
 attribute:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 fileitem = form["userfile"]
 if fileitem.file:
     # It's an uploaded file; count lines
@@ -133,7 +133,7 @@ if fileitem.file:
         line = fileitem.file.readline()
         if not line: break
         linecount = linecount + 1
-\end{verbatim}\ecode
+\end{verbatim}
 %
 The file upload draft standard entertains the possibility of uploading
 multiple files from one field (using a recursive \code{multipart/*}
@@ -267,9 +267,9 @@ Make sure that your script is readable and executable by ``others''; the
 that the first line of the script contains \code{\#!} starting in column 1
 followed by the pathname of the Python interpreter, for instance:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 #!/usr/local/bin/python
-\end{verbatim}\ecode
+\end{verbatim}
 %
 Make sure the Python interpreter exists and is executable by ``others''.
 
@@ -289,11 +289,11 @@ If you need to load modules from a directory which is not on Python's
 default module search path, you can change the path in your script,
 before importing other modules, e.g.:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 import sys
 sys.path.insert(0, "/usr/home/joe/lib/python")
 sys.path.insert(0, "/usr/local/lib/python")
-\end{verbatim}\ecode
+\end{verbatim}
 %
 (This way, the directory inserted last will be searched first!)
 
@@ -327,9 +327,9 @@ Give it the right mode etc, and send it a request.  If it's installed
 in the standard \file{cgi-bin} directory, it should be possible to send it a
 request by entering a URL into your browser of the form:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 http://yourhostname/cgi-bin/cgi.py?name=Joe+Blow&addr=At+Home
-\end{verbatim}\ecode
+\end{verbatim}
 %
 If this gives an error of type 404, the server cannot find the script
 -- perhaps you need to install it in a different directory.  If it
@@ -345,9 +345,9 @@ The next step could be to call the \code{cgi} module's \code{test()}
 function from your script: replace its main code with the single
 statement
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 cgi.test()
-\end{verbatim}\ecode
+\end{verbatim}
 %
 This should produce the same results as those gotten from installing
 the \file{cgi.py} file itself.
@@ -380,7 +380,7 @@ Here are the rules:
 
 For example:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 import sys
 import traceback
 print "Content-type: text/html"
@@ -391,7 +391,7 @@ try:
 except:
     print "\n\n<PRE>"
     traceback.print_exc()
-\end{verbatim}\ecode
+\end{verbatim}
 %
 Notes: The assignment to \code{sys.stderr} is needed because the traceback
 prints to \code{sys.stderr}.
@@ -402,13 +402,13 @@ If you suspect that there may be a problem in importing the traceback
 module, you can use an even more robust approach (which only uses
 built-in modules):
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 import sys
 sys.stderr = sys.stdout
 print "Content-type: text/plain"
 print
 ...your code here...
-\end{verbatim}\ecode
+\end{verbatim}
 %
 This relies on the Python interpreter to print the traceback.  The
 content type of the output is set to plain text, which disables all

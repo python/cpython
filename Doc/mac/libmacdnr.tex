@@ -9,7 +9,7 @@ all Mac Python versions.
 
 The \code{macdnr} module defines the following functions:
 
-\renewcommand{\indexsubitem}{(in module macdnr)}
+\setindexsubitem{(in module macdnr)}
 
 \begin{funcdesc}{Open}{\optional{filename}}
 Open the domain name resolver extension.  If \var{filename} is given it
@@ -64,7 +64,7 @@ this will result in an implicit wait for the query to complete.
 The \var{rtnCode} and \var{cname} attributes are always available, the
 others depend on the type of query (address, hinfo or mx).
 
-\renewcommand{\indexsubitem}{(dnr result object method)}
+\setindexsubitem{(dnr result object method)}
 
 % Add args, as in {arg1\, arg2 \optional{\, arg3}}
 \begin{funcdesc}{wait}{}
@@ -76,7 +76,7 @@ Wait for the query to complete.
 Return 1 if the query is complete.
 \end{funcdesc}
 
-\renewcommand{\indexsubitem}{(dnr result object attribute)}
+\setindexsubitem{(dnr result object attribute)}
 
 \begin{datadesc}{rtnCode}
 The error code returned by the query.
@@ -111,9 +111,9 @@ will only return a single mx record.  Mx queries only.
 
 The simplest way to use the module to convert names to dotted-decimal
 strings, without worrying about idle time, etc:
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> def gethostname(name):
 ...     import macdnr
 ...     dnrr = macdnr.StrToAddr(name)
 ...     return macdnr.AddrToStr(dnrr.ip0)
-\end{verbatim}\ecode
+\end{verbatim}

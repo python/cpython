@@ -13,7 +13,7 @@ otherwise the sample size (in bytes) is always a parameter of the operation.
 
 The module defines the following variables and functions:
 
-\renewcommand{\indexsubitem}{(in module audioop)}
+\setindexsubitem{(in module audioop)}
 \begin{excdesc}{error}
 This exception is raised on all errors, such as unknown number of bytes
 per sample, etc.
@@ -201,7 +201,7 @@ distinction between mono and stereo fragments, i.e.\ all samples are
 treated equal.  If this is a problem the stereo fragment should be split
 into two mono fragments first and recombined later.  Here is an example
 of how to do that:
-\bcode\begin{verbatim}
+\begin{verbatim}
 def mul_stereo(sample, width, lfactor, rfactor):
     lsample = audioop.tomono(sample, width, 1, 0)
     rsample = audioop.tomono(sample, width, 0, 1)
@@ -210,7 +210,7 @@ def mul_stereo(sample, width, lfactor, rfactor):
     lsample = audioop.tostereo(lsample, width, 1, 0)
     rsample = audioop.tostereo(rsample, width, 0, 1)
     return audioop.add(lsample, rsample, width)
-\end{verbatim}\ecode
+\end{verbatim}
 %
 If you use the ADPCM coder to build network packets and you want your
 protocol to be stateless (i.e.\ to be able to tolerate packet loss)
@@ -231,7 +231,7 @@ They are primarily meant to do echo cancellation.  A reasonably
 fast way to do this is to pick the most energetic piece of the output
 sample, locate that in the input sample and subtract the whole output
 sample from the input sample:
-\bcode\begin{verbatim}
+\begin{verbatim}
 def echocancel(outputdata, inputdata):
     pos = audioop.findmax(outputdata, 800)    # one tenth second
     out_test = outputdata[pos*2:]
@@ -244,4 +244,4 @@ def echocancel(outputdata, inputdata):
     postfill = '\0'*(len(inputdata)-len(prefill)-len(outputdata))
     outputdata = prefill + audioop.mul(outputdata,2,-factor) + postfill
     return audioop.add(inputdata, outputdata, 2)
-\end{verbatim}\ecode
+\end{verbatim}

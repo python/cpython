@@ -10,7 +10,7 @@ the exception \code{amoeba.error = 'amoeba.error'}.
 
 The module \code{amoeba} defines the following items:
 
-\renewcommand{\indexsubitem}{(in module amoeba)}
+\setindexsubitem{(in module amoeba)}
 \begin{funcdesc}{name_append}{path\, cap}
 Stores a capability in the Amoeba directory tree.
 Arguments are the pathname (a string) and the capability (a capability
@@ -77,15 +77,15 @@ and
 \emph{a2c}(U).
 For example:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> amoeba.name_lookup('/profile/cap')
 aa:1c:95:52:6a:fa/14(ff)/8e:ba:5b:8:11:1a
 >>> 
-\end{verbatim}\ecode
+\end{verbatim}
 %
 The following methods are defined for capability objects.
 
-\renewcommand{\indexsubitem}{(capability method)}
+\setindexsubitem{(capability method)}
 \begin{funcdesc}{dir_list}{}
 Returns a list of the names of the entries in an Amoeba directory.
 \end{funcdesc}

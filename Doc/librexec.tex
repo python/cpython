@@ -1,60 +1,60 @@
 \section{Standard Module \sectcode{rexec}}
 \label{module-rexec}
 \stmodindex{rexec}
-\renewcommand{\indexsubitem}{(in module rexec)}
+\setindexsubitem{(in module rexec)}
 
-This module contains the \code{RExec} class, which supports
+This module contains the \class{RExec} class, which supports
 \code{r_exec()}, \code{r_eval()}, \code{r_execfile()}, and
 \code{r_import()} methods, which are restricted versions of the standard
 Python functions \code{exec()}, \code{eval()}, \code{execfile()}, and
 the \code{import} statement.
 Code executed in this restricted environment will
 only have access to modules and functions that are deemed safe; you
-can subclass \code{RExec} to add or remove capabilities as desired.
+can subclass \class{RExec} to add or remove capabilities as desired.
 
-\emph{Note:} The \code{RExec} class can prevent code from performing
+\emph{Note:} The \class{RExec} class can prevent code from performing
 unsafe operations like reading or writing disk files, or using TCP/IP
 sockets.  However, it does not protect against code using extremely
 large amounts of memory or CPU time.  
 
 \begin{funcdesc}{RExec}{\optional{hooks\optional{\, verbose}}}
-Returns an instance of the \code{RExec} class.  
+Returns an instance of the \class{RExec} class.  
 
 \var{hooks} is an instance of the \code{RHooks} class or a subclass of it.
 If it is omitted or \code{None}, the default \code{RHooks} class is
 instantiated.
-Whenever the RExec module searches for a module (even a built-in one)
-or reads a module's code, it doesn't actually go out to the file
-system itself.  Rather, it calls methods of an RHooks instance that
-was passed to or created by its constructor.  (Actually, the RExec
-object doesn't make these calls---they are made by a module loader
-object that's part of the RExec object.  This allows another level of
-flexibility, e.g. using packages.)
+Whenever the \module{RExec} module searches for a module (even a
+built-in one) or reads a module's code, it doesn't actually go out to
+the file system itself.  Rather, it calls methods of an \class{RHooks}
+instance that was passed to or created by its constructor.  (Actually,
+the \class{RExec} object doesn't make these calls --- they are made by
+a module loader object that's part of the \class{RExec} object.  This
+allows another level of flexibility, e.g. using packages.)
 
-By providing an alternate RHooks object, we can control the
+By providing an alternate \class{RHooks} object, we can control the
 file system accesses made to import a module, without changing the
 actual algorithm that controls the order in which those accesses are
-made.  For instance, we could substitute an RHooks object that passes
-all filesystem requests to a file server elsewhere, via some RPC
-mechanism such as ILU.  Grail's applet loader uses this to support
+made.  For instance, we could substitute an \class{RHooks} object that
+passes all filesystem requests to a file server elsewhere, via some
+RPC mechanism such as ILU.  Grail's applet loader uses this to support
 importing applets from a URL for a directory.
 
 If \var{verbose} is true, additional debugging output may be sent to
 standard output.
 \end{funcdesc}
 
-The RExec class has the following class attributes, which are used by the
-\code{__init__} method.  Changing them on an existing instance won't
-have any effect; instead, create a subclass of \code{RExec} and assign
-them new values in the class definition.  Instances of the new class
-will then use those new values.  All these attributes are tuples of
-strings.
+The \class{RExec} class has the following class attributes, which are
+used by the \code{__init__()} method.  Changing them on an existing
+instance won't have any effect; instead, create a subclass of
+\class{RExec} and assign them new values in the class definition.
+Instances of the new class will then use those new values.  All these
+attributes are tuples of strings.
 
-\renewcommand{\indexsubitem}{(RExec object attribute)}
+\setindexsubitem{(RExec object attribute)}
 \begin{datadesc}{nok_builtin_names}
 Contains the names of built-in functions which will \emph{not} be
 available to programs running in the restricted environment.  The
-value for \code{RExec} is \code{('open',} \code{'reload',}
+value for \class{RExec} is \code{('open',} \code{'reload',}
 \code{'__import__')}.  (This gives the exceptions, because by far the
 majority of built-in functions are harmless.  A subclass that wants to
 override this variable should probably start with the value from the
@@ -65,7 +65,7 @@ added to this module.)
 
 \begin{datadesc}{ok_builtin_modules}
 Contains the names of built-in modules which can be safely imported.
-The value for \code{RExec} is \code{('audioop',} \code{'array',}
+The value for \class{RExec} is \code{('audioop',} \code{'array',}
 \code{'binascii',} \code{'cmath',} \code{'errno',} \code{'imageop',}
 \code{'marshal',} \code{'math',} \code{'md5',} \code{'operator',}
 \code{'parser',} \code{'regex',} \code{'rotor',} \code{'select',}
@@ -77,7 +77,7 @@ class as a starting point.
 \begin{datadesc}{ok_path}
 Contains the directories which will be searched when an \code{import}
 is performed in the restricted environment.  
-The value for \code{RExec} is the same as \code{sys.path} (at the time
+The value for \class{RExec} is the same as \code{sys.path} (at the time
 the module is loaded) for unrestricted code.
 \end{datadesc}
 
@@ -85,7 +85,7 @@ the module is loaded) for unrestricted code.
 % Should this be called ok_os_names?
 Contains the names of the functions in the \code{os} module which will be
 available to programs running in the restricted environment.  The
-value for \code{RExec} is \code{('error',} \code{'fstat',}
+value for \class{RExec} is \code{('error',} \code{'fstat',}
 \code{'listdir',} \code{'lstat',} \code{'readlink',} \code{'stat',}
 \code{'times',} \code{'uname',} \code{'getpid',} \code{'getppid',}
 \code{'getcwd',} \code{'getuid',} \code{'getgid',} \code{'geteuid',}
@@ -95,13 +95,13 @@ value for \code{RExec} is \code{('error',} \code{'fstat',}
 \begin{datadesc}{ok_sys_names}
 Contains the names of the functions and variables in the \code{sys}
 module which will be available to programs running in the restricted
-environment.  The value for \code{RExec} is \code{('ps1',}
+environment.  The value for \class{RExec} is \code{('ps1',}
 \code{'ps2',} \code{'copyright',} \code{'version',} \code{'platform',}
 \code{'exit',} \code{'maxint')}.
 \end{datadesc}
 
-RExec instances support the following methods:
-\renewcommand{\indexsubitem}{(RExec object method)}
+\class{RExec} instances support the following methods:
+\setindexsubitem{(RExec object method)}
 
 \begin{funcdesc}{r_eval}{code}
 \var{code} must either be a string containing a Python expression, or
@@ -141,7 +141,7 @@ Execute the Python code contained in the file \var{filename} in the
 restricted environment.
 \end{funcdesc}
 
-\code{RExec} objects must also support various methods which will be
+\class{RExec} objects must also support various methods which will be
 implicitly called by code executing in the restricted environment.
 Overriding these methods in a subclass is used to change the policies
 enforced by a restricted environment.
@@ -155,7 +155,7 @@ exception if the module is considered unsafe.
 Method called when \code{open()} is called in the restricted
 environment.  The arguments are identical to those of \code{open()},
 and a file object (or a class instance compatible with file objects)
-should be returned.  \code{RExec}'s default behaviour is allow opening
+should be returned.  \class{RExec}'s default behaviour is allow opening
 any file for reading, but forbidding any attempt to write a file.  See
 the example below for an implementation of a less restrictive
 \code{r_open()}.
@@ -173,7 +173,7 @@ restricted environment's \code{sys.modules} dictionary).
 And their equivalents with access to restricted standard I/O streams:
 
 \begin{funcdesc}{s_import}{modulename\optional{\, globals, locals, fromlist}}
-Import the module \var{modulename}, raising an \code{ImportError}
+Import the module \var{modulename}, raising an \exception{ImportError}
 exception if the module is considered unsafe.
 \end{funcdesc}
 
@@ -189,10 +189,11 @@ Unload the module object \var{module}.
 \subsection{An example}
 
 Let us say that we want a slightly more relaxed policy than the
-standard RExec class.  For example, if we're willing to allow files in
-\file{/tmp} to be written, we can subclass the \code{RExec} class:
+standard \class{RExec} class.  For example, if we're willing to allow
+files in \file{/tmp} to be written, we can subclass the \class{RExec}
+class:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 class TmpWriterRExec(rexec.RExec):
     def r_open(self, file, mode='r', buf=-1):
         if mode in ('r', 'rb'):
@@ -206,7 +207,7 @@ class TmpWriterRExec(rexec.RExec):
                 raise IOError, "'..' in filename forbidden"
         else: raise IOError, "Illegal open() mode"
         return open(file, mode, buf)
-\end{verbatim}\ecode
+\end{verbatim}
 %
 Notice that the above code will occasionally forbid a perfectly valid
 filename; for example, code in the restricted environment won't be

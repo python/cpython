@@ -24,7 +24,7 @@ order.
 
 The available functions in this module are:
 
-\renewcommand{\indexsubitem}{(in module rotor)}
+\setindexsubitem{(in module rotor)}
 \begin{funcdesc}{newrotor}{key\optional{\, numrotors}}
 Return a rotor object. \var{key} is a string containing the encryption key
 for the object; it can contain arbitrary binary data. The key will be used
@@ -35,7 +35,7 @@ if it is omitted, a default value of 6 will be used.
 
 Rotor objects have the following methods:
 
-\renewcommand{\indexsubitem}{(rotor method)}
+\setindexsubitem{(rotor method)}
 \begin{funcdesc}{setkey}{key}
 Sets the rotor's key to \var{key}.
 \end{funcdesc}
@@ -63,7 +63,7 @@ string containing the ciphertext.
 \end{funcdesc}
 
 An example usage:
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> import rotor
 >>> rt = rotor.newrotor('key', 12)
 >>> rt.encrypt('bar')
@@ -79,7 +79,7 @@ An example usage:
 >>> rt.decrypt('\357\375$')
 'l(\315'
 >>> del rt
-\end{verbatim}\ecode
+\end{verbatim}
 %
 The module's code is not an exact simulation of the original Enigma device;
 it implements the rotor encryption scheme differently from the original. The

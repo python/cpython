@@ -2,7 +2,7 @@
 \label{module-mactcp}
 \bimodindex{mactcp}
 
-\renewcommand{\indexsubitem}{(in module mactcp)}
+\setindexsubitem{(in module mactcp)}
 
 This module provides an interface to the Macintosh TCP/IP driver
 MacTCP\@. There is an accompanying module \code{macdnr} which provides an
@@ -42,7 +42,7 @@ datagrams on, a value of zero will make MacTCP select a free port.
 
 \subsection{TCP Stream Objects}
 
-\renewcommand{\indexsubitem}{(TCP stream attribute)}
+\setindexsubitem{(TCP stream attribute)}
 
 \begin{datadesc}{asr}
 When set to a value different than \code{None} this should point to a
@@ -54,7 +54,7 @@ is a Python addition to the MacTCP semantics.
 It is safe to do further calls from the \code{asr}.
 \end{datadesc}
 
-\renewcommand{\indexsubitem}{(TCP stream method)}
+\setindexsubitem{(TCP stream method)}
 
 \begin{funcdesc}{PassiveOpen}{port}
 Wait for an incoming connection on TCP port \var{port} (zero makes the
@@ -119,7 +119,7 @@ This object has no methods, only some members holding information on
 the connection. A complete description of all fields in this objects
 can be found in the Apple documentation. The most interesting ones are:
 
-\renewcommand{\indexsubitem}{(TCP status attribute)}
+\setindexsubitem{(TCP status attribute)}
 
 \begin{datadesc}{localHost}
 \dataline{localPort}
@@ -149,7 +149,7 @@ without blocking).
 Note that, unlike the name suggests, there is nothing stream-like
 about UDP.
 
-\renewcommand{\indexsubitem}{(UDP stream attribute)}
+\setindexsubitem{(UDP stream attribute)}
 
 \begin{datadesc}{asr}
 The asynchronous service routine to be called on events such as
@@ -161,7 +161,7 @@ single argument, the event code.
 A read-only member giving the port number of this UDP stream.
 \end{datadesc}
 
-\renewcommand{\indexsubitem}{(UDP stream method)}
+\setindexsubitem{(UDP stream method)}
 
 \begin{funcdesc}{Read}{timeout}
 Read a datagram, waiting at most \var{timeout} seconds (-1 is

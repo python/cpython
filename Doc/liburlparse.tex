@@ -7,7 +7,7 @@
 \indexii{URL}{parsing}
 \indexii{relative}{URL}
 
-\renewcommand{\indexsubitem}{(in module urlparse)}
+\setindexsubitem{(in module urlparse)}
 
 This module defines a standard interface to break URL strings up in
 components (addessing scheme, network location, path etc.), to combine
@@ -35,15 +35,15 @@ retained if present.
 
 Example:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 urlparse('http://www.cwi.nl:80/%7Eguido/Python.html')
-\end{verbatim}\ecode
+\end{verbatim}
 %
 yields the tuple
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 ('http', 'www.cwi.nl:80', '/%7Eguido/Python.html', '', '', '')
-\end{verbatim}\ecode
+\end{verbatim}
 %
 If the \var{default_scheme} argument is specified, it gives the
 default addressing scheme, to be used only if the URL string does not
@@ -70,15 +70,15 @@ components in the relative URL.
 
 Example:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 urljoin('http://www.cwi.nl/%7Eguido/Python.html', 'FAQ.html')
-\end{verbatim}\ecode
+\end{verbatim}
 %
 yields the string
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 'http://www.cwi.nl/%7Eguido/FAQ.html'
-\end{verbatim}\ecode
+\end{verbatim}
 %
 The \var{allow_fragments} argument has the same meaning as for
 \code{urlparse()}.

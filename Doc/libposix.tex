@@ -28,7 +28,7 @@ for type errors, while errors reported by the system calls raise
 
 Module \code{posix} defines the following data items:
 
-\renewcommand{\indexsubitem}{(data in module posix)}
+\setindexsubitem{(data in module posix)}
 \begin{datadesc}{environ}
 A dictionary representing the string environment at the time
 the interpreter was started.
@@ -50,7 +50,7 @@ a mapping object that behaves almost like a dictionary but invokes
 \code{putenv()} automatically called whenever an item is changed.
 \end{datadesc}
 
-\renewcommand{\indexsubitem}{(exception in module posix)}
+\setindexsubitem{(exception in module posix)}
 \begin{excdesc}{error}
 This exception is raised when a \POSIX{} function returns a
 \POSIX{}-related error (e.g., not for illegal argument types).  Its
@@ -64,7 +64,7 @@ names for the error codes defined by the underlying operating system.
 
 It defines the following functions and constants:
 
-\renewcommand{\indexsubitem}{(in module posix)}
+\setindexsubitem{(in module posix)}
 \begin{funcdesc}{chdir}{path}
 Change the current working directory to \var{path}.
 \end{funcdesc}

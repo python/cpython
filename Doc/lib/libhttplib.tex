@@ -3,7 +3,7 @@
 \stmodindex{httplib}
 \index{HTTP}
 
-\renewcommand{\indexsubitem}{(in module httplib)}
+\setindexsubitem{(in module httplib)}
 
 This module defines a class which implements the client side of the
 HTTP protocol.  It is normally not used directly --- the module
@@ -20,11 +20,11 @@ method should be used to connect to a server.  For example, the
 following calls all create instances that connect to the server at the
 same host and port:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> h1 = httplib.HTTP('www.cwi.nl')
 >>> h2 = httplib.HTTP('www.cwi.nl:80')
 >>> h3 = httplib.HTTP('www.cwi.nl', 80)
-\end{verbatim}\ecode
+\end{verbatim}
 %
 Once an \code{HTTP} instance has been connected to an HTTP server, it
 should be used as follows:
@@ -51,7 +51,7 @@ file object that it returns.
 
 \code{HTTP} instances have the following methods:
 
-\renewcommand{\indexsubitem}{(HTTP method)}
+\setindexsubitem{(HTTP method)}
 
 \begin{funcdesc}{set_debuglevel}{level}
 Set the debugging level (the amount of debugging output printed).
@@ -112,7 +112,7 @@ methods.
 
 Here is an example session:
 
-\bcode\begin{verbatim}
+\begin{verbatim}
 >>> import httplib
 >>> h = httplib.HTTP('www.cwi.nl')
 >>> h.putrequest('GET', '/index.html')
@@ -125,4 +125,4 @@ Here is an example session:
 >>> data = f.read() # Get the raw HTML
 >>> f.close()
 >>> 
-\end{verbatim}\ecode
+\end{verbatim}
