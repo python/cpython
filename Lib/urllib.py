@@ -30,7 +30,7 @@ import types
 
 __all__ = ["urlopen", "URLopener", "FancyURLopener", "urlretrieve",
            "urlcleanup", "quote", "quote_plus", "unquote", "unquote_plus",
-           "urlencode"]
+           "urlencode", "url2pathname", "pathname2url"]
 
 __version__ = '1.15'    # XXX This version is not always updated :-(
 
