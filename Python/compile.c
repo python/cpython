@@ -4178,7 +4178,7 @@ symtable_check_shadow(struct symtable *st, PyObject *name, int flags)
 {
 	char buf[500];
 	PyObject *children, *v;
-	PySymtableEntryObject *child;
+	PySymtableEntryObject *child = NULL;
 	int i;
 
 	if (!(flags & DEF_BOUND))
@@ -4202,7 +4202,9 @@ symtable_check_shadow(struct symtable *st, PyObject *name, int flags)
 		if (!(cflags & DEF_BOUND))
 			break;
 	}
-	
+
+	assert(child != NULL);
+
 	sprintf(buf, "local name '%.100s' in '%.100s' shadows "
 		"use of '%.100s' as global in nested scope '%.100s'",
 		PyString_AS_STRING(name),
@@ -4328,6 +4330,10 @@ symtable_load_symbols(struct compiling *c)
 				if (PyDict_SetItem(c->c_globals, name,
 						   implicit) < 0)
 					goto fail;
+				v = PyInt_FromLong(flags);
+				if (PyDict_SetItem(st->st_global, name, v))
+					goto fail;
+				Py_DECREF(v);
 			}
 		}
 	}
@@ -4360,6 +4366,7 @@ symtable_init()
 	st->st_nscopes = 0;
 	st->st_errors = 0;
 	st->st_tmpname = 0;
+	st->st_global_star = 0;
 	st->st_private = NULL;
 	return st;
  fail:
@@ -4922,6 +4929,12 @@ symtable_global(struct symtable *st, node *n)
 {
 	int i;
 
+	if (st->st_nscopes == 1) {
+		if (symtable_warn(st, 
+		  "global statement has no meaning at module level") < 0)
+			return;
+	}
+
 	for (i = 1; i < NCH(n); i += 2) {
 		char *name = STR(CHILD(n, i));
 		int flags;
@@ -4991,6 +5004,8 @@ symtable_import(struct symtable *st, node *n)
 		}
 		if (TYPE(CHILD(n, 3)) == STAR) {
 			st->st_cur->ste_optimized |= OPT_IMPORT_STAR;
+			if (st->st_nscopes == 1)
+			    st->st_global_star = 1;
 		} else {
 			for (i = 3; i < NCH(n); i += 2) {
 				node *c = CHILD(n, i);
