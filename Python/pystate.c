@@ -109,6 +109,7 @@ PyThreadState_New(PyInterpreterState *interp)
 		tstate->recursion_depth = 0;
 		tstate->ticker = 0;
 		tstate->tracing = 0;
+		tstate->use_tracing = 0;
 
 		tstate->dict = NULL;
 
