@@ -1918,6 +1918,26 @@ forms_make_form(dummy, args)
 	return newformobject(form);
 }
 
+static object *
+forms_activate_all_forms(f, args)
+	object *f;
+	object *args;
+{
+	fl_activate_all_forms();
+	INCREF(None);
+	return None;
+}
+
+static object *
+forms_deactivate_all_forms(f, args)
+	object *f;
+	object *args;
+{
+	fl_deactivate_all_forms();
+	INCREF(None);
+	return None;
+}
+
 static object *my_event_callback = NULL;
 
 static object *
@@ -2247,8 +2267,8 @@ forms_tie(self, args)
 
 static object *
 forms_show_message(f, args)
-     object *f;
-     object *args;
+	object *f;
+	object *args;
 {
 	char *a, *b, *c;
 
@@ -2262,8 +2282,8 @@ forms_show_message(f, args)
 
 static object *
 forms_show_choice(f, args)
-     object *f;
-     object *args;
+	object *f;
+	object *args;
 {
 	char *m1, *m2, *m3, *b1, *b2, *b3;
 	int nb;
@@ -2300,8 +2320,8 @@ forms_show_choice(f, args)
 
 static object *
 forms_show_question(f, args)
-     object *f;
-     object *args;
+	object *f;
+	object *args;
 {
 	int ret;
 	char *a, *b, *c;
@@ -2315,8 +2335,8 @@ forms_show_question(f, args)
 
 static object *
 forms_show_input(f, args)
-     object *f;
-     object *args;
+	object *f;
+	object *args;
 {
         char *str;
 	char *a, *b;
@@ -2334,8 +2354,8 @@ forms_show_input(f, args)
 
 static object *
 forms_file_selector(f, args)
-     object *f;
-     object *args;
+	object *f;
+	object *args;
 {
         char *str;
 	char *a, *b, *c, *d;
@@ -2354,8 +2374,8 @@ forms_file_selector(f, args)
 
 static object *
 forms_file_selector_func(args, func)
-     object *args;
-     char *(*func)();
+	object *args;
+	char *(*func)();
 {
 	char *str;
 
@@ -2370,24 +2390,24 @@ forms_file_selector_func(args, func)
 
 static object *
 forms_get_directory(f, args)
-     object *f;
-     object *args;
+	object *f;
+	object *args;
 {
 	return forms_file_selector_func(args, fl_get_directory);
 }
 
 static object *
 forms_get_pattern(f, args)
-     object *f;
-     object *args;
+	object *f;
+	object *args;
 {
 	return forms_file_selector_func(args, fl_get_pattern);
 }
 
 static object *
 forms_get_filename(f, args)
-     object *f;
-     object *args;
+	object *f;
+	object *args;
 {
 	return forms_file_selector_func(args, fl_get_filename);
 }
@@ -2395,6 +2415,8 @@ forms_get_filename(f, args)
 static struct methodlist forms_methods[] = {
 /* adm */
 	{"make_form",		forms_make_form},
+	{"activate_all_forms",	forms_activate_all_forms},
+	{"deactivate_all_forms",forms_deactivate_all_forms},
 /* gl support wrappers */
 	{"qdevice",		forms_qdevice},
 	{"unqdevice",		forms_unqdevice},
