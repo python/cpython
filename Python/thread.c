@@ -49,6 +49,12 @@ extern char *getenv();
 #include <unistd.h>
 #endif
 
+#ifdef __sgi
+#ifndef HAVE_PTHREAD_H /* XXX Need to check in configure.in */
+#undef _POSIX_THREADS
+#endif
+#endif
+
 #include "thread.h"
 
 #ifdef __ksr__
