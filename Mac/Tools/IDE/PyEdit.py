@@ -775,9 +775,9 @@ class _saveoptions:
 		self.w = w = W.ModalDialog((260, 160), 'Save options')
 		radiobuttons = []
 		w.label = W.TextBox((8, 8, 80, 18), "File creator:")
-		w.ide_radio = W.RadioButton((8, 22, 160, 18), "This application", radiobuttons, self.ide_hit)
-		w.interp_radio = W.RadioButton((8, 42, 160, 18), "MacPython Interpreter", radiobuttons, self.interp_hit)
-		w.interpx_radio = W.RadioButton((8, 62, 160, 18), "OSX PythonW Interpreter", radiobuttons, self.interpx_hit)
+		w.ide_radio = W.RadioButton((8, 22, 160, 18), "PythonIDE", radiobuttons, self.ide_hit)
+		w.interp_radio = W.RadioButton((8, 42, 160, 18), "MacPython-OS9 Interpreter", radiobuttons, self.interp_hit)
+		w.interpx_radio = W.RadioButton((8, 62, 160, 18), "PythonLauncher", radiobuttons, self.interpx_hit)
 		w.other_radio = W.RadioButton((8, 82, 50, 18), "Other:", radiobuttons)
 		w.other_creator = W.EditText((62, 82, 40, 20), creator, self.otherselect)
 		w.none_radio = W.RadioButton((8, 102, 160, 18), "None", radiobuttons, self.none_hit)
