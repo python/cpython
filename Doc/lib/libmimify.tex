@@ -48,6 +48,7 @@ parts that are coded in the base64 encoding are decoded as well.
 
 \begin{funcdesc}{mime_decode_header}{line}
 Return a decoded version of the encoded header line in \var{line}.
+This only supports the ISO 8859-1 charset (Latin-1).
 \end{funcdesc}
 
 \begin{funcdesc}{mime_encode_header}{line}
