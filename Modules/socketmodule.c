@@ -564,7 +564,6 @@ BUILD_FUNC_DEF_2(PySocketSock_getsockopt,PySocketSockObject *,s, PyObject *,args
 	int res;
 	PyObject *buf;
 	int buflen;
-	int flag;
 
 	if (PyArg_Parse(args, "(ii)", &level, &optname)) {
 		int flag = 0;
@@ -957,16 +956,11 @@ BUILD_FUNC_DEF_2(PySocketSock_getattr,PySocketSockObject *,s, char *,name)
 static PyObject *
 BUILD_FUNC_DEF_1(PySocketSock_repr,PySocketSockObject *,s)
 {
-	PyObject *addro;
-	struct sockaddr *addr;
 	char buf[512];
-	PyObject *t, *comma, *v;
-	int i, len;
 	sprintf(buf, 
 		"<socket object, fd=%d, family=%d, type=%d, protocol=%d>", 
 		s->sock_fd, s->sock_family, s->sock_type, s->sock_proto);
-	t = PyString_FromString(buf);
-	return t;
+	return PyString_FromString(buf);
 }
 
 
@@ -1034,8 +1028,7 @@ BUILD_FUNC_DEF_2(PySocket_gethostbyaddr,PyObject *,self, PyObject *, args)
         struct sockaddr_in addr;
 	char *ip_num;
 	struct hostent *h;
-	int d1,d2,d3,d4;
-	char ch, **pch;
+	char **pch;
 	PyObject *rtn_tuple = (PyObject *)NULL;
 	PyObject *name_list = (PyObject *)NULL;
 	PyObject *addr_list = (PyObject *)NULL;
