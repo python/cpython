@@ -171,14 +171,11 @@ _PyObject_Del(op)
 	PyObject *op;
 {
 #ifdef WITH_CYCLE_GC
-	if (PyType_IS_GC(op->ob_type)) {
-		PyGC_Head *g = PyObject_AS_GC(op);
-		PyObject_FREE(g);
-	} else
-#endif
-	{
-		PyObject_FREE(op);
+	if (op && PyType_IS_GC(op->ob_type)) {
+		op = (PyObject *) PyObject_AS_GC(op);
 	}
+#endif
+	PyObject_FREE(op);
 }
 
 #ifndef WITH_CYCLE_GC

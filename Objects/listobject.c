@@ -209,6 +209,7 @@ list_dealloc(op)
 		}
 		PyMem_FREE(op->ob_item);
 	}
+	op = (PyListObject *) PyObject_AS_GC(op);
 	PyObject_DEL(op);
 	Py_TRASHCAN_SAFE_END(op)
 }
