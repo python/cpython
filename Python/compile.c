@@ -4284,7 +4284,7 @@ symtable_default_args(struct symtable *st, node *n)
 static void
 symtable_params(struct symtable *st, node *n)
 {
-	int i, complex = 0, ext = 0;
+	int i, complex = -1, ext = 0;
 	node *c = NULL;
 
 	if (TYPE(n) == parameters) {
@@ -4308,16 +4308,8 @@ symtable_params(struct symtable *st, node *n)
 			char nbuf[10];
 			sprintf(nbuf, ".%d", i);
 			symtable_add_def(st, nbuf, DEF_PARAM);
-			complex = 1;
+			complex = i;
 		}
-	}
-	if (complex) {
-		int j;
-		for (j = 0; j < i; j += 2) {
-			c = CHILD(n, j);
-			if (TYPE(CHILD(c, 0)) == LPAR)
-				symtable_params_fplist(st, CHILD(c, 1));
-		} 
 	}
 	if (ext) {
 		c = CHILD(n, i);
@@ -4327,14 +4319,25 @@ symtable_params(struct symtable *st, node *n)
 					 DEF_PARAM | DEF_STAR);
 			i += 2;
 			if (i >= NCH(n))
-				return;
+				c = NULL;
+			else
 			c = CHILD(n, i);
 		}
-		if (TYPE(c) == DOUBLESTAR) {
+		if (c && TYPE(c) == DOUBLESTAR) {
 			i++;
 			symtable_add_def(st, STR(CHILD(n, i)), 
 					 DEF_PARAM | DEF_DOUBLESTAR);
 		}
+	}
+	if (complex >= 0) {
+		int j;
+		for (j = 0; j <= complex; j++) {
+			c = CHILD(n, j);
+			if (TYPE(c) == COMMA)
+			    c = CHILD(n, ++j);
+			if (TYPE(CHILD(c, 0)) == LPAR)
+				symtable_params_fplist(st, CHILD(c, 1));
+		} 
 	}
 }
 
