@@ -35,15 +35,19 @@ def decode(s):
 
 
 _charmap = {}
-for c in map(chr, range(256)):
-    _charmap[c] = c
+for c in range(128):
+    _charmap[chr(c)] = chr(c)
+    _charmap[unichr(c + 128)] = chr(c + 128)
 _charmap["\n"] = r"\n"
 _charmap["\\"] = r"\\"
 del c
 
 _null_join = ''.join
 def encode(s):
-    return _null_join(map(_charmap.get, s))
+    try:
+        return _null_join(map(_charmap.get, s))
+    except TypeError:
+        raise Exception("could not encode %r: %r" % (s, map(_charmap.get, s)))
 
 
 class ESISReader(xml.sax.xmlreader.XMLReader):
