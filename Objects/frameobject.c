@@ -345,12 +345,11 @@ map_to_dict(PyObject *map, int nmap, PyObject *dict, PyObject **values,
 {
 	int j;
 	for (j = nmap; --j >= 0; ) {
-		PyObject *key = PyTuple_GetItem(map, j);
+		PyObject *key = PyTuple_GET_ITEM(map, j);
 		PyObject *value = values[j];
 		if (deref)
 			value = PyCell_GET(value);
 		if (value == NULL) {
-			PyErr_Clear();
 			if (PyDict_DelItem(dict, key) != 0)
 				PyErr_Clear();
 		}
@@ -367,17 +366,21 @@ dict_to_map(PyObject *map, int nmap, PyObject *dict, PyObject **values,
 {
 	int j;
 	for (j = nmap; --j >= 0; ) {
-		PyObject *key = PyTuple_GetItem(map, j);
+		PyObject *key = PyTuple_GET_ITEM(map, j);
 		PyObject *value = PyDict_GetItem(dict, key);
-		Py_XINCREF(value);
 		if (deref) {
 			if (value || clear) {
-				if (PyCell_Set(values[j], value) < 0)
-					PyErr_Clear();
+				if (PyCell_GET(values[j]) != value) {
+					if (PyCell_Set(values[j], value) < 0)
+						PyErr_Clear();
+				}
 			}
 		} else if (value != NULL || clear) {
-			Py_XDECREF(values[j]);
-			values[j] = value;
+			if (values[j] != value) {
+				Py_XINCREF(value);
+				Py_XDECREF(values[j]);
+				values[j] = value;
+			}
 		}
 	}
 }
