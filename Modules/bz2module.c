@@ -1480,7 +1480,7 @@ BZ2Comp_compress(BZ2CompObject *self, PyObject *args)
 		}
 	}
 
-	_PyString_Resize(&ret, BZS_TOTAL_OUT(bzs) - totalout);
+	_PyString_Resize(&ret, (int)(BZS_TOTAL_OUT(bzs) - totalout));
 
 	RELEASE_LOCK(self);
 	return ret;
