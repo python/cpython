@@ -20,6 +20,7 @@ via cmdline switches:
 NUM_THREADS = 20        # change w/ -t option
 FILES_PER_THREAD = 50   # change w/ -f option
 
+import thread # If this fails, we can't test this module
 import threading
 from test_support import TestFailed
 import StringIO
