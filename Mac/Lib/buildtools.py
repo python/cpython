@@ -353,58 +353,31 @@ def process_common_macho(template, progress, code, rsrcname, destname, is_update
 	ofp.close()
 		
 	
-	if progress:
-		progress.label("Copy resources...")
-		progress.set(20)
-	resfilename = 'python.rsrc'  # XXXX later: '%s.rsrc' % shortname
-	try:
-		output = Res.FSOpenResourceFile(
-				os.path.join(destname, 'Contents', 'Resources', resfilename), 
-				u'', WRITE)
-	except MacOS.Error:
-		fsr, dummy = Res.FSCreateResourceFile(
-				os.path.join(destname, 'Contents', 'Resources'), 
-				unicode(resfilename), '')
-		output = Res.FSOpenResourceFile(fsr, u'', WRITE)
-	
 	# Copy the resources from the target specific resource template, if any
 	typesfound, ownertype = [], None
 	try:
 		input = macresource.open_pathname(rsrcname)
 	except (MacOS.Error, ValueError):
-		pass
 		if progress:
 			progress.inc(50)
 	else:
+		if progress:
+			progress.label("Copy resources...")
+			progress.set(20)
+		resfilename = 'python.rsrc'  # XXXX later: '%s.rsrc' % shortname
+		try:
+			output = Res.FSOpenResourceFile(
+					os.path.join(destname, 'Contents', 'Resources', resfilename), 
+					u'', WRITE)
+		except MacOS.Error:
+			fsr, dummy = Res.FSCreateResourceFile(
+					os.path.join(destname, 'Contents', 'Resources'), 
+					unicode(resfilename), '')
+			output = Res.FSOpenResourceFile(fsr, u'', WRITE)
+		
 		typesfound, ownertype = copyres(input, output, [], 0, progress)
 		Res.CloseResFile(input)
-	
-	# Check which resource-types we should not copy from the template
-	skiptypes = []
-##	if 'vers' in typesfound: skiptypes.append('vers')
-##	if 'SIZE' in typesfound: skiptypes.append('SIZE')
-##	if 'BNDL' in typesfound: skiptypes = skiptypes + ['BNDL', 'FREF', 'icl4', 
-##			'icl8', 'ics4', 'ics8', 'ICN#', 'ics#']
-##	if not copy_codefragment:
-##		skiptypes.append('cfrg')
-##	skipowner = (ownertype <> None)
-	
-	# Copy the resources from the template
-	
-	input = Res.FSOpenResourceFile(
-			os.path.join(template, 'Contents', 'Resources', 'python.rsrc'), u'', READ)
-	if progress:
-		progress.label("Copy standard resources...")
-		progress.inc(0)
-##	dummy, tmplowner = copyres(input, output, skiptypes, 1, progress)
-	dummy, tmplowner = copyres(input, output, skiptypes, 1, None)
-		
-	Res.CloseResFile(input)
-##	if ownertype == None:
-##		raise BuildError, "No owner resource found in either resource file or template"
-	# Make sure we're manipulating the output resource file now
-	
-	Res.CloseResFile(output)
+		Res.CloseResFile(output)
 
 	if code:
 		if raw:

@@ -81,8 +81,42 @@ char *PyMac_StrError(int err)
 	static char buf[256];
 	Handle h;
 	char *str;
+	static int errors_loaded;
 	
 	h = GetResource('Estr', err);
+	if (!h && !errors_loaded) {
+		/*
+		** Attempt to open the resource file containing the
+		** Estr resources. We ignore all errors. We also try
+		** this only once.
+		*/
+		errors_loaded = 1;
+		PyObject *m, *rv;
+		
+		m = PyImport_ImportModule("macresource");
+		if (!m) {
+			if (Py_VerboseFlag)
+				PyErr_Print();
+			PyErr_Clear();
+		} else {
+			rv = PyObject_CallMethod(m, "open_error_resource", "");
+			if (!rv) {
+				if (Py_VerboseFlag)
+					PyErr_Print();
+				PyErr_Clear();
+			} else {
+				Py_DECREF(rv);
+				/* And try again... */
+				h = GetResource('Estr', err);
+			}
+		}
+	}
+	/*
+	** Whether the code above succeeded or not, we won't try
+	** again.
+	*/
+	errors_loaded = 1;
+		
 	if ( h ) {
 		HLock(h);
 		str = (char *)*h;

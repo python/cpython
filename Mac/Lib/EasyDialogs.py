@@ -27,6 +27,15 @@ import MacOS
 import string
 from Carbon.ControlAccessor import *	# Also import Controls constants
 import macfs
+import macresource
+
+_initialized = 0
+
+def _initialize():
+	global _initialized
+	if _initialized: return
+	macresource.need("DLOG", 260, "dialogs.rsrc", __name__)
+
 
 def cr2lf(text):
 	if '\r' in text:
@@ -47,7 +56,7 @@ def Message(msg, id=260, ok=None):
 	
 	The MESSAGE string can be at most 255 characters long.
 	"""
-	
+	_initialize()
 	d = GetNewDialog(id, -1)
 	if not d:
 		print "EasyDialogs: Can't get DLOG resource with id =", id, " (missing resource file?)"
@@ -79,6 +88,7 @@ def AskString(prompt, default = "", id=261, ok=None, cancel=None):
 	can be at most 255 characters long.
 	"""
 	
+	_initialize()
 	d = GetNewDialog(id, -1)
 	if not d:
 		print "EasyDialogs: Can't get DLOG resource with id =", id, " (missing resource file?)"
@@ -119,6 +129,7 @@ def AskPassword(prompt,	 default='', id=264, ok=None, cancel=None):
 	The PROMPT and DEFAULT strings, as well as the return value,
 	can be at most 255 characters long.
 	"""
+	_initialize()
 	d = GetNewDialog(id, -1)
 	if not d:
 		print "EasyDialogs: Can't get DLOG resource with id =", id, " (missing resource file?)"
@@ -161,6 +172,7 @@ def AskYesNoCancel(question, default = 0, yes=None, no=None, cancel=None, id=262
 	The QUESTION string can be at most 255 characters.
 	"""
 	
+	_initialize()
 	d = GetNewDialog(id, -1)
 	if not d:
 		print "EasyDialogs: Can't get DLOG resource with id =", id, " (missing resource file?)"
@@ -221,6 +233,7 @@ class ProgressBar:
 	def __init__(self, title="Working...", maxval=0, label="", id=263):
 		self.w = None
 		self.d = None
+		_initialize()
 		self.d = GetNewDialog(id, -1)
 		self.w = self.d.GetDialogWindow()
 		self.label(label)
@@ -391,6 +404,7 @@ def _selectoption(d, optionlist, idx):
 
 
 def GetArgv(optionlist=None, commandlist=None, addoldfile=1, addnewfile=1, addfolder=1, id=ARGV_ID):
+	_initialize()
 	d = GetNewDialog(id, -1)
 	if not d:
 		print "EasyDialogs: Can't get DLOG resource with id =", id, " (missing resource file?)"

@@ -37,16 +37,11 @@ LDFLAGS=-F$(builddir) -framework System -framework Python -framework Carbon \
 	-framework Foundation
 CC=cc
 LD=cc
-REZ=/Developer/Tools/Rez
-DEREZ=/Developer/Tools/DeRez
 CPMAC=/Developer/Tools/CpMac
 
 PYTHON=$(builddir)/python.exe
 APPTEMPLATE=$(srcdir)/Mac/OSXResources/app
 APPSUBDIRS=MacOS Resources Resources/English.lproj
-RESOURCEDIR=$(srcdir)/Mac/Resources
-RESOURCEFILE=python.rsrc
-RFCONVERTER=$(srcdir)/Mac/Lib/applesingle.py
 CACHERSRC=$(srcdir)/Mac/scripts/cachersrc.py
 
 installapps: install_PythonLauncher install_Python install_BuildApplet install_IDE install_IDLE
@@ -94,29 +89,6 @@ install_Python: $(PYTHON)
 		done; \
 	done
 	$(INSTALL_PROGRAM) $(STRIPFLAG) $(PYTHON) $(APPINSTALLDIR)/Contents/MacOS/python
-# Create a temporary version of the resources here
-# Note that the resource files can either be real 2-fork resource files
-# or AppleSingle encoded files.
-	@if test -s $(RESOURCEDIR)/dialogs.rsrc; then \
-		echo $(PYTHON) $(RFCONVERTER) -r $(RESOURCEDIR)/dialogs.rsrc dialogs.rsrc ;\
-		$(PYTHON) $(RFCONVERTER) -r $(RESOURCEDIR)/dialogs.rsrc dialogs.rsrc ; \
-		echo $(DEREZ) -useDF -skip ckid dialogs.rsrc > dialogs.r ; \
-		$(DEREZ) -useDF -skip ckid dialogs.rsrc > dialogs.r ; \
-	else \
-		echo $(DEREZ) -skip ckid $(RESOURCEDIR)/dialogs.rsrc > dialogs.r ; \
-		$(DEREZ) -skip ckid $(RESOURCEDIR)/dialogs.rsrc > dialogs.r ; \
-	fi
-	@if test -s $(RESOURCEDIR)/errors.rsrc; then \
-		echo $(PYTHON) $(RFCONVERTER) -r $(RESOURCEDIR)/errors.rsrc errors.rsrc ;\
-		$(PYTHON) $(RFCONVERTER) -r $(RESOURCEDIR)/errors.rsrc errors.rsrc ; \
-		echo $(DEREZ) -useDF -skip ckid errors.rsrc > errors.r ; \
-		$(DEREZ) -useDF -skip ckid errors.rsrc > errors.r ; \
-	else \
-		echo $(DEREZ) -skip ckid $(RESOURCEDIR)/errors.rsrc > errors.r ; \
-		$(DEREZ) -skip ckid $(RESOURCEDIR)/errors.rsrc > errors.r ; \
-	fi
-	$(REZ) -useDF -o $(RESOURCEFILE) dialogs.r errors.r 
-	$(INSTALL_DATA) $(RESOURCEFILE) $(APPINSTALLDIR)/Contents/Resources/$(RESOURCEFILE)
 # Finally create the documentation symlink
 	$(LN) -fsn ../../../../English.lproj/Documentation $(APPINSTALLDIR)/Contents/Resources/English.lproj/Documentation
 	
@@ -205,11 +177,11 @@ installmacsubtree:
 			echo $(INSTALL_DATA) $$i $(MACLIBDEST); \
 		fi; \
 	done
-##	@for i in $(MACLIBSRC)/*.rsrc; \
-##	do \
-##		echo $(CPMAC) $$i $$b ; \
-##		$(CPMAC) $$i $$b ; \
-##	done
+	@for i in $(MACLIBSRC)/*.rsrc; \
+	do \
+		echo $(CPMAC) $$i $(MACLIBDEST) ; \
+		$(CPMAC) $$i $(MACLIBDEST) ; \
+	done
 	@for d in $(MACLIBSUBDIRS); \
 	do \
 		a=$(MACLIBSRC)/$$d; \
