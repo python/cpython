@@ -84,9 +84,9 @@ def convert_path (pathname):
     """
     if os.sep == '/':
         return pathname
-    if pathname[0] == '/':
+    if pathname and pathname[0] == '/':
         raise ValueError, "path '%s' cannot be absolute" % pathname
-    if pathname[-1] == '/':
+    if pathname and pathname[-1] == '/':
         raise ValueError, "path '%s' cannot end with '/'" % pathname
 
     paths = string.split(pathname, '/')
