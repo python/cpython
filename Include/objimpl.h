@@ -258,7 +258,7 @@ typedef union _gc_head {
 	long double dummy;  /* force worst-case alignment */
 } PyGC_Head;
 
-extern PyGC_Head _PyGC_generation0;
+extern PyGC_Head *_PyGC_generation0;
 
 #define _Py_AS_GC(o) ((PyGC_Head *)(o)-1)
 
@@ -268,10 +268,10 @@ extern PyGC_Head _PyGC_generation0;
 	PyGC_Head *g = _Py_AS_GC(o); \
 	if (g->gc.gc_next != NULL) \
 		Py_FatalError("GC object already in linked list"); \
-	g->gc.gc_next = &_PyGC_generation0; \
-	g->gc.gc_prev = _PyGC_generation0.gc.gc_prev; \
+	g->gc.gc_next = _PyGC_generation0; \
+	g->gc.gc_prev = _PyGC_generation0->gc.gc_prev; \
 	g->gc.gc_prev->gc.gc_next = g; \
-	_PyGC_generation0.gc.gc_prev = g; \
+	_PyGC_generation0->gc.gc_prev = g; \
     } while (0);
 
 /* Tell the GC to stop tracking this object. */
