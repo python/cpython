@@ -80,7 +80,7 @@ class build_scripts (Command):
                 match = first_line_re.match(first_line)
                 if match:
                     adjust = 1
-                    post_interp = match.group(1)
+                    post_interp = match.group(1) or ''
 
             if adjust:
                 self.announce("copying and adjusting %s -> %s" %
