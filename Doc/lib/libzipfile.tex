@@ -47,14 +47,14 @@ The available attributes of this module are:
   are described in section \ref{zipinfo-objects}, ``ZipInfo Objects.''
 \end{classdesc}
 
-\begin{funcdesc}{is_zipfile}{path} 
-  Returns true if \var{path} is a valid ZIP file based on its magic
+\begin{funcdesc}{is_zipfile}{filename}
+  Returns true if \var{filename} is a valid ZIP file based on its magic
   number, otherwise returns false.  This module does not currently
   handle ZIP files which have appended comments.
 \end{funcdesc}
 
 \begin{datadesc}{ZIP_STORED}
-  The numeric constant (\code{0}) for an uncompressed archive member.
+  The numeric constant for an uncompressed archive member.
 \end{datadesc}
 
 \begin{datadesc}{ZIP_DEFLATED}
