@@ -365,9 +365,46 @@ class Pickler:
         save = self.save
         write = self.write
 
-        save(func)
-        save(args)
-        write(REDUCE)
+        # Protocol 2 special case: if func's name is __newobj__, use NEWOBJ
+        if self.proto >= 2 and getattr(func, "__name__", "") == "__newobj__":
+            # A __reduce__ implementation can direct protocol 2 to
+            # use the more efficient NEWOBJ opcode, while still
+            # allowing protocol 0 and 1 to work normally.  For this to
+            # work, the function returned by __reduce__ should be
+            # called __newobj__, and its first argument should be a
+            # new-style class.  The implementation for __newobj__
+            # should be as follows, although pickle has no way to
+            # verify this:
+            #
+            # def __newobj__(cls, *args):
+            #     return cls.__new__(cls, *args)
+            #
+            # Protocols 0 and 1 will pickle a reference to __newobj__,
+            # while protocol 2 (and above) will pickle a reference to
+            # cls, the remaining args tuple, and the NEWOBJ code,
+            # which calls cls.__new__(cls, *args) at unpickling time
+            # (see load_newobj below).  If __reduce__ returns a
+            # three-tuple, the state from the third tuple item will be
+            # pickled regardless of the protocol, calling __setstate__
+            # at unpickling time (see load_build below).
+            #
+            # Note that no standard __newobj__ implementation exists;
+            # you have to provide your own.  This is to enforce
+            # compatibility with Python 2.2 (pickles written using
+            # protocol 0 or 1 in Python 2.3 should be unpicklable by
+            # Python 2.2).
+            cls = args[0]
+            if not hasattr(cls, "__new__"):
+                raise PicklingError(
+                    "args[0] from __newobj__ args has no __new__")
+            args = args[1:]
+            save(cls)
+            save(args)
+            write(NEWOBJ)
+        else:
+            save(func)
+            save(args)
+            write(REDUCE)
 
         if state is not None:
             save(state)
@@ -375,7 +412,6 @@ class Pickler:
 
     def save_newobj(self, obj):
         # Save a new-style class instance, using protocol 2.
-        # XXX This is still experimental.
         assert self.proto >= 2          # This only works for protocol 2
         t = type(obj)
         getnewargs = getattr(obj, "__getnewargs__", None)
