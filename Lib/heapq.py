@@ -13,7 +13,7 @@ heap = []            # creates an empty heap
 heappush(heap, item) # pushes a new item on the heap
 item = heappop(heap) # pops the smallest item from the heap
 item = heap[0]       # smallest item on the heap without popping it
-heapify(heap)        # transform list into a heap, in-place, in linear time
+heapify(x)           # transforms list into a heap, in-place, in linear time
 
 Our API differs from textbook heap algorithms as follows:
 
@@ -175,16 +175,16 @@ def heappop(heap):
         returnitem = lastelt
     return returnitem
 
-def heapify(heap):
-    """Transform list heap into a heap, in-place, in O(len(heap)) time."""
-    n = len(heap)
+def heapify(x):
+    """Transform list into a heap, in-place, in O(len(heap)) time."""
+    n = len(x)
     # Transform bottom-up.  The largest index there's any point to looking at
     # is the largest with a child index in-range, so must have 2*i + 1 < n,
     # or i < (n-1)/2.  If n is even = 2*j, this is (2*j-1)/2 = j-1/2 so
     # j-1 is the largest, which is n//2 - 1.  If n is odd = 2*j+1, this is
     # (2*j+1-1)/2 = j so j-1 is the largest, and that's again n//2-1.
     for i in xrange(n//2 - 1, -1, -1):
-        _siftdown(heap, i)
+        _siftdown(x, i)
 
 if __name__ == "__main__":
     # Simple sanity test
