@@ -1565,21 +1565,42 @@ eval_code2(co, globals, locals,
 			else {
 				object *args = newtupleobject(na);
 				object *kwdict = NULL;
-				if (args == NULL)
+				if (args == NULL) {
 					x = NULL;
-				else if (nk > 0) {
-					err_setstr(SystemError,
-			"calling built-in with keywords not yet implemented");
-					x = NULL;
+					break;
 				}
-				else {
-					while (--na >= 0) {
-						w = POP();
-						SETTUPLEITEM(args, na, w);
+				if (nk > 0) {
+					kwdict = newdictobject();
+					if (kwdict == NULL) {
+						x = NULL;
+						break;
 					}
-					x = call_object(func, args);
-					DECREF(args);
+					err = 0;
+					while (--nk >= 0) {
+						object *value = POP();
+						object *key = POP();
+						err = mappinginsert(
+							kwdict, key, value);
+						if (err) {
+							DECREF(key);
+							DECREF(value);
+							break;
+						}
+					}
+					if (err) {
+						DECREF(args);
+						DECREF(kwdict);
+						break;
+					}
 				}
+				while (--na >= 0) {
+					w = POP();
+					SETTUPLEITEM(args, na, w);
+				}
+				x = PyEval_CallObjectWithKeywords(
+					func, args, kwdict);
+				DECREF(args);
+				XDECREF(kwdict);
 			}
 			DECREF(func);
 			while (stack_pointer > pfunc) {
@@ -2281,25 +2302,28 @@ call_builtin(func, arg, kw)
 	object *arg;
 	object *kw;
 {
-	if (kw != NULL) {
-		err_setstr(SystemError,
-			"calling built-in with keywords not yet implemented");
-		return NULL;
-	}
 	if (is_methodobject(func)) {
 		method meth = getmethod(func);
 		object *self = getself(func);
-		if (!getvarargs(func)) {
+		int flags = getflags(func);
+		if (!(flags & METH_VARARGS)) {
 			int size = gettuplesize(arg);
 			if (size == 1)
 				arg = GETTUPLEITEM(arg, 0);
 			else if (size == 0)
 				arg = NULL;
 		}
+		if (flags & METH_KEYWORDS)
+			return (*(PyCFunctionWithKeywords)meth)(self, arg, kw);
+		if (kw != NULL) {
+			err_setstr(TypeError,
+				   "this function takes no keyword arguments");
+			return NULL;
+		}
 		return (*meth)(self, arg);
 	}
 	if (is_classobject(func)) {
-		return newinstanceobject(func, arg);
+		return newinstanceobject(func, arg, kw);
 	}
 	if (is_instanceobject(func)) {
 	        object *res, *call = getattr(func,"__call__");
@@ -2309,7 +2333,7 @@ call_builtin(func, arg, kw)
 				   "no __call__ method defined");
 			return NULL;
 		}
-		res = call_object(call, arg);
+		res = PyEval_CallObjectWithKeywords(call, arg, kw);
 		DECREF(call);
 		return res;
 	}
