@@ -1,5 +1,10 @@
+#!/usr/local/bin/python
+# -*- mode: python -*-
+# $Id$
+
 from test_support import verbose
 import re
+import reop
 import sys, os, string, traceback
 
 from re_tests import *
@@ -7,6 +12,7 @@ if verbose: print 'Running re_tests test suite'
 
 for t in tests:
     print t
+    sys.stdout.flush()
     pattern=s=outcome=repl=expected=None
     if len(t)==5:
 	pattern, s, outcome, repl, expected = t
@@ -21,6 +27,8 @@ for t in tests:
 	if outcome==SYNTAX_ERROR: pass	# Expected a syntax error
 	else: 
 	    print '=== Syntax error:', t
+    except KeyboardInterrupt:
+	raise KeyboardInterrupt
     except:
 	print '*** Unexpected error ***'
 	if verbose:
@@ -28,7 +36,7 @@ for t in tests:
     else:
 	try:
 	    result=obj.search(s)
-	except regex.error, msg:
+	except (re.error, reop.error), msg:
 	    print '=== Unexpected exception', t, repr(msg)
 	if outcome==SYNTAX_ERROR:
 	    # This should have been a syntax error; forget it.
@@ -41,22 +49,26 @@ for t in tests:
 		# Matched, as expected, so now we compute the
 		# result string and compare it to our expected result.
 		start, end = result.span(0)
-		vardict={'found': result.group(0), 'groups': result.group()}
+		vardict={'found': result.group(0),
+			 'groups': result.group(),
+			 'flags': result.re.flags}
 		for i in range(1, 100):
 		    try:
 			gi = result.group(i)
 			# Special hack because else the string concat fails:
-			if gi is None: gi = "None"
+			if gi is None:
+			    gi = "None"
 		    except IndexError:
 			gi = "Error"
 		    vardict['g%d' % i] = gi
 		for i in result.re.groupindex.keys():
 		    try:
 			gi = result.group(i)
+			if gi is None:
+			    gi = "None"
 		    except IndexError:
-			pass
-		    else:
-			vardict[i] = str(gi)
+			gi = "Error"
+		    vardict[i] = gi
 		repl=eval(repl, vardict)
 		if repl!=expected:
 		    print '=== grouping error', t,

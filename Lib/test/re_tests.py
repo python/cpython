@@ -262,7 +262,7 @@ tests = [
     ('(*)b', '-', SYNTAX_ERROR),
     ('$b', 'b', FAIL),
     ('a\\', '-', SYNTAX_ERROR),
-    ('a\\(b', 'a(b', SUCCEED, 'found+"-"+g1', 'a(b-'),
+    ('a\\(b', 'a(b', SUCCEED, 'found+"-"+g1', 'a(b-Error'),
     ('a\\(*b', 'ab', SUCCEED, 'found', 'ab'),
     ('a\\(*b', 'a((b', SUCCEED, 'found', 'a((b'),
     ('a\\\\b', 'a\\b', SUCCEED, 'found', 'a\\b'),
@@ -306,21 +306,22 @@ tests = [
     ('(ab|a)b*c', 'abc', SUCCEED, 'found+"-"+g1', 'abc-ab'),
     ('((a)(b)c)(d)', 'abcd', SUCCEED, 'g1+"-"+g2+"-"+g3+"-"+g4', 'abc-a-b-d'),
     ('[a-zA-Z_][a-zA-Z0-9_]*', 'alpha', SUCCEED, 'found', 'alpha'),
-    ('^a(bc+|b[eh])g|.h$', 'abh', SUCCEED, 'found+"-"+g1', 'bh-'),
-    ('(bc+d$|ef*g.|h?i(j|k))', 'effgz', SUCCEED, 'found+"-"+g1+"-"+g2', 'effgz-effgz-'),
+    ('^a(bc+|b[eh])g|.h$', 'abh', SUCCEED, 'found+"-"+g1', 'bh-None'),
+    ('(bc+d$|ef*g.|h?i(j|k))', 'effgz', SUCCEED, 'found+"-"+g1+"-"+g2', 'effgz-effgz-None'),
     ('(bc+d$|ef*g.|h?i(j|k))', 'ij', SUCCEED, 'found+"-"+g1+"-"+g2', 'ij-ij-j'),
     ('(bc+d$|ef*g.|h?i(j|k))', 'effg', FAIL),
     ('(bc+d$|ef*g.|h?i(j|k))', 'bcdd', FAIL),
-    ('(bc+d$|ef*g.|h?i(j|k))', 'reffgz', SUCCEED, 'found+"-"+g1+"-"+g2', 'effgz-effgz-'),
+    ('(bc+d$|ef*g.|h?i(j|k))', 'reffgz', SUCCEED, 'found+"-"+g1+"-"+g2', 'effgz-effgz-None'),
     ('((((((((((a))))))))))', 'a', SUCCEED, 'g10', 'a'),
     ('((((((((((a))))))))))\\10', 'aa', SUCCEED, 'found', 'aa'),
-    ('((((((((((a))))))))))\\41', 'aa', FAIL),
-    ('((((((((((a))))))))))\\41', 'a!', SUCCEED, 'found', 'a!'),
+# Python does not have the same rules for \\41 so this is a syntax error
+#    ('((((((((((a))))))))))\\41', 'aa', FAIL),
+#    ('((((((((((a))))))))))\\41', 'a!', SUCCEED, 'found', 'a!'),
     ('(((((((((a)))))))))', 'a', SUCCEED, 'found', 'a'),
     ('multiple words of text', 'uh-uh', FAIL),
     ('multiple words', 'multiple words, yeah', SUCCEED, 'found', 'multiple words'),
     ('(.*)c(.*)', 'abcde', SUCCEED, 'found+"-"+g1+"-"+g2', 'abcde-ab-de'),
-    ('\\((.*), (.*)\\)', '(a, b)', SUCCEED, '(g2, g1)', '(b, a)'),
+    ('\\((.*), (.*)\\)', '(a, b)', SUCCEED, 'g2+"-"+g1', 'b-a'),
     ('[k]', 'ab', FAIL),
     ##('abcd', 'abcd', SUCCEED, 'found+"-"+\\found+"-"+\\\\found', 'abcd-$&-\\abcd'),
     ##('a(bc)d', 'abcd', SUCCEED, 'g1+"-"+\\g1+"-"+\\\\g1', 'bc-$1-\\bc'),
@@ -389,7 +390,7 @@ tests = [
     ('(?i)(*)b', '-', SYNTAX_ERROR),
     ('(?i)$b', 'B', FAIL),
     ('(?i)a\\', '-', SYNTAX_ERROR),
-    ('(?i)a\\(b', 'A(B', SUCCEED, 'found+"-"+g1', 'A(B-'),
+    ('(?i)a\\(b', 'A(B', SUCCEED, 'found+"-"+g1', 'A(B-Error'),
     ('(?i)a\\(*b', 'AB', SUCCEED, 'found', 'AB'),
     ('(?i)a\\(*b', 'A((B', SUCCEED, 'found', 'A((B'),
     ('(?i)a\\\\b', 'A\\B', SUCCEED, 'found', 'A\\B'),
@@ -409,7 +410,7 @@ tests = [
     ('(?i)(a+|b){1,}', 'AB', SUCCEED, 'found+"-"+g1', 'AB-B'),
     ('(?i)(a+|b)?', 'AB', SUCCEED, 'found+"-"+g1', 'A-A'),
     ('(?i)(a+|b){0,1}', 'AB', SUCCEED, 'found+"-"+g1', 'A-A'),
-    ('(?i)(a+|b){0,1}?', 'AB', SUCCEED, 'found+"-"+g1', '-'),
+    ('(?i)(a+|b){0,1}?', 'AB', SUCCEED, 'found+"-"+g1', '-None'),
     ('(?i))(', '-', SYNTAX_ERROR),
     ('(?i)[^ab]*', 'CDE', SUCCEED, 'found', 'CDE'),
     ('(?i)abc', '', FAIL),
@@ -436,35 +437,62 @@ tests = [
     ('(?i)(ab|a)b*c', 'ABC', SUCCEED, 'found+"-"+g1', 'ABC-AB'),
     ('(?i)((a)(b)c)(d)', 'ABCD', SUCCEED, 'g1+"-"+g2+"-"+g3+"-"+g4', 'ABC-A-B-D'),
     ('(?i)[a-zA-Z_][a-zA-Z0-9_]*', 'ALPHA', SUCCEED, 'found', 'ALPHA'),
-    ('(?i)^a(bc+|b[eh])g|.h$', 'ABH', SUCCEED, 'found+"-"+g1', 'BH-'),
-    ('(?i)(bc+d$|ef*g.|h?i(j|k))', 'EFFGZ', SUCCEED, 'found+"-"+g1+"-"+g2', 'EFFGZ-EFFGZ-'),
+    ('(?i)^a(bc+|b[eh])g|.h$', 'ABH', SUCCEED, 'found+"-"+g1', 'BH-None'),
+    ('(?i)(bc+d$|ef*g.|h?i(j|k))', 'EFFGZ', SUCCEED, 'found+"-"+g1+"-"+g2', 'EFFGZ-EFFGZ-None'),
     ('(?i)(bc+d$|ef*g.|h?i(j|k))', 'IJ', SUCCEED, 'found+"-"+g1+"-"+g2', 'IJ-IJ-J'),
     ('(?i)(bc+d$|ef*g.|h?i(j|k))', 'EFFG', FAIL),
     ('(?i)(bc+d$|ef*g.|h?i(j|k))', 'BCDD', FAIL),
-    ('(?i)(bc+d$|ef*g.|h?i(j|k))', 'REFFGZ', SUCCEED, 'found+"-"+g1+"-"+g2', 'EFFGZ-EFFGZ-'),
+    ('(?i)(bc+d$|ef*g.|h?i(j|k))', 'REFFGZ', SUCCEED, 'found+"-"+g1+"-"+g2', 'EFFGZ-EFFGZ-None'),
     ('(?i)((((((((((a))))))))))', 'A', SUCCEED, 'g10', 'A'),
     ('(?i)((((((((((a))))))))))\\10', 'AA', SUCCEED, 'found', 'AA'),
-    ('(?i)((((((((((a))))))))))\\41', 'AA', FAIL),
-    ('(?i)((((((((((a))))))))))\\41', 'A!', SUCCEED, 'found', 'A!'),
+    #('(?i)((((((((((a))))))))))\\41', 'AA', FAIL),
+    #('(?i)((((((((((a))))))))))\\41', 'A!', SUCCEED, 'found', 'A!'),
     ('(?i)(((((((((a)))))))))', 'A', SUCCEED, 'found', 'A'),
     ('(?i)(?:(?:(?:(?:(?:(?:(?:(?:(?:(a))))))))))', 'A', SUCCEED, 'g1', 'A'),
     ('(?i)(?:(?:(?:(?:(?:(?:(?:(?:(?:(a|b|c))))))))))', 'C', SUCCEED, 'g1', 'C'),
     ('(?i)multiple words of text', 'UH-UH', FAIL),
     ('(?i)multiple words', 'MULTIPLE WORDS, YEAH', SUCCEED, 'found', 'MULTIPLE WORDS'),
     ('(?i)(.*)c(.*)', 'ABCDE', SUCCEED, 'found+"-"+g1+"-"+g2', 'ABCDE-AB-DE'),
-    ('(?i)\\((.*), (.*)\\)', '(A, B)', SUCCEED, '(g2, g1)', '(B, A)'),
+    ('(?i)\\((.*), (.*)\\)', '(A, B)', SUCCEED, 'g2+"-"+g1', 'B-A'),
     ('(?i)[k]', 'AB', FAIL),
     ##('(?i)abcd', 'ABCD', SUCCEED, 'found+"-"+\\found+"-"+\\\\found', 'ABCD-$&-\\ABCD'),
     ##('(?i)a(bc)d', 'ABCD', SUCCEED, 'g1+"-"+\\g1+"-"+\\\\g1', 'BC-$1-\\BC'),
     ('(?i)a[-]?c', 'AC', SUCCEED, 'found', 'AC'),
     ('(?i)(abc)\\1', 'ABCABC', SUCCEED, 'g1', 'ABC'),
     ('(?i)([a-c]*)\\1', 'ABCABC', SUCCEED, 'g1', 'ABC'),
-    ('a(?!b).', 'abad', SUCCEED, 'found', 'ad'),
-    ('a(?=d).', 'abad', SUCCEED, 'found', 'ad'),
-    ('a(?=c|d).', 'abad', SUCCEED, 'found', 'ad'),
+    # these zero-width assertions are not supported
+    #('a(?!b).', 'abad', SUCCEED, 'found', 'ad'),
+    #('a(?=d).', 'abad', SUCCEED, 'found', 'ad'),
+    #('a(?=c|d).', 'abad', SUCCEED, 'found', 'ad'),
     ('a(?:b|c|d)(.)', 'ace', SUCCEED, 'g1', 'e'),
     ('a(?:b|c|d)*(.)', 'ace', SUCCEED, 'g1', 'e'),
     ('a(?:b|c|d)+?(.)', 'ace', SUCCEED, 'g1', 'e'),
-    ('a(?:b|(c|e){1,2}?|d)+?(.)', 'ace', SUCCEED, 'g1+"-"+g2', 'c-e'),
+    ('a(?:b|(c|e){1,2}?|d)+?(.)', 'ace', SUCCEED, 'g1 + g2', 'ce'),
     ('^(.+)?B', 'AB', SUCCEED, 'g1', 'A'),
+
+    # Comments using the (?#...) syntax
+
+    ('w(?# comment', 'w', SYNTAX_ERROR),
+    ('w(?# comment 1)xy(?# comment 2)z', 'wxyz', SUCCEED, 'found', 'wxyz'),
+    
+    # Comments using the x embedded pattern modifier (in an unusual place too)
+
+    ("""w# comment 1
+        x(?x) y
+	# comment 2
+	z""", 'wxyz', SUCCEED, 'found', 'wxyz'),
+
+    # using the m embedded pattern modifier
+
+    ('^abc', """jkl
+abc
+xyz""", FAIL),
+    ('(?m)^abc', """jkl
+abc
+xyz""", SUCCEED, 'found', 'abc'),
+
+    # using the s embedded pattern modifier
+
+    ('a.b', 'a\nb', FAIL),
+    ('(?s)a.b', 'a\nb', SUCCEED, 'found', 'a\nb'),
 ]
