@@ -1657,9 +1657,8 @@ class TZInfoBase(unittest.TestCase):
     def test_aware_compare(self):
         cls = self.theclass
 
-        # Primarily trying to ensure that utcoffset() gets called even if
-        # the comparands have the same tzinfo member.  timetz comparison
-        # didn't used to do so, although datetimetz comparison did.
+        # Ensure that utcoffset() gets ignored if the comparands have
+        # the same tzinfo member.
         class OperandDependentOffset(tzinfo):
             def utcoffset(self, t):
                 if t.minute < 10:
@@ -1671,6 +1670,16 @@ class TZInfoBase(unittest.TestCase):
         d0 = base.replace(minute=3)
         d1 = base.replace(minute=9)
         d2 = base.replace(minute=11)
+        for x in d0, d1, d2:
+            for y in d0, d1, d2:
+                got = cmp(x, y)
+                expected = cmp(x.minute, y.minute)
+                self.assertEqual(got, expected)
+
+        # However, if they're different members, uctoffset is not ignored.
+        d0 = base.replace(minute=3, tzinfo=OperandDependentOffset())
+        d1 = base.replace(minute=9, tzinfo=OperandDependentOffset())
+        d2 = base.replace(minute=11, tzinfo=OperandDependentOffset())
         for x in d0, d1, d2:
             for y in d0, d1, d2:
                 got = cmp(x, y)
@@ -1893,6 +1902,36 @@ class TestTimeTZ(TestTime, TZInfoBase):
         self.assertRaises(ValueError, base.replace, second=100)
         self.assertRaises(ValueError, base.replace, microsecond=1000000)
 
+    def test_mixed_compare(self):
+        t1 = time(1, 2, 3)
+        t2 = timetz(1, 2, 3)
+        self.assertEqual(t1, t2)
+        t2 = t2.replace(tzinfo=None)
+        self.assertEqual(t1, t2)
+        t2 = t2.replace(tzinfo=FixedOffset(None, ""))
+        self.assertEqual(t1, t2)
+        t2 = t2.replace(tzinfo=FixedOffset(0, ""))
+        self.assertRaises(TypeError, lambda: t1 == t2)
+
+        # In timetz w/ identical tzinfo objects, utcoffset is ignored.
+        class Varies(tzinfo):
+            def __init__(self):
+                self.offset = 22
+            def utcoffset(self, t):
+                self.offset += 1
+                return self.offset
+
+        v = Varies()
+        t1 = t2.replace(tzinfo=v)
+        t2 = t2.replace(tzinfo=v)
+        self.assertEqual(t1.utcoffset(), timedelta(minutes=23))
+        self.assertEqual(t2.utcoffset(), timedelta(minutes=24))
+        self.assertEqual(t1, t2)
+
+        # But if they're not identical, it isn't ignored.
+        t2 = t2.replace(tzinfo=Varies())
+        self.failUnless(t1 < t2)  # t1's offset counter still going up
+
 
 class TestDateTimeTZ(TestDateTime, TZInfoBase):
     theclass = datetimetz
@@ -1971,7 +2010,7 @@ class TestDateTimeTZ(TestDateTime, TZInfoBase):
             def utcoffset(self, dt): return 1440 # out of bounds
         t1 = self.theclass(2, 2, 2, tzinfo=Bogus())
         t2 = self.theclass(2, 2, 2, tzinfo=FixedOffset(0, ""))
-        self.assertRaises(ValueError, lambda: t1 == t1)
+        self.assertRaises(ValueError, lambda: t1 == t2)
 
     def test_pickling(self):
         import pickle, cPickle
@@ -2389,10 +2428,8 @@ class TestDateTimeTZ(TestDateTime, TZInfoBase):
     def test_aware_subtract(self):
         cls = self.theclass
 
-        # Primarily trying to ensure that utcoffset() gets called even if
-        # the operands have the same tzinfo member.  Subtraction didn't
-        # used to do this, and it makes a difference for DST-aware tzinfo
-        # instances.
+        # Ensure that utcoffset() is ignored when the operands have the
+        # same tzinfo member.
         class OperandDependentOffset(tzinfo):
             def utcoffset(self, t):
                 if t.minute < 10:
@@ -2407,6 +2444,18 @@ class TestDateTimeTZ(TestDateTime, TZInfoBase):
         for x in d0, d1, d2:
             for y in d0, d1, d2:
                 got = x - y
+                expected = timedelta(minutes=x.minute - y.minute)
+                self.assertEqual(got, expected)
+
+        # OTOH, if the tzinfo members are distinct, utcoffsets aren't
+        # ignored.
+        base = cls(8, 9, 10, 11, 12, 13, 14)
+        d0 = base.replace(minute=3, tzinfo=OperandDependentOffset())
+        d1 = base.replace(minute=9, tzinfo=OperandDependentOffset())
+        d2 = base.replace(minute=11, tzinfo=OperandDependentOffset())
+        for x in d0, d1, d2:
+            for y in d0, d1, d2:
+                got = x - y
                 if (x is d0 or x is d1) and (y is d0 or y is d1):
                     expected = timedelta(0)
                 elif x is y is d2:
@@ -2418,6 +2467,35 @@ class TestDateTimeTZ(TestDateTime, TZInfoBase):
                     expected = timedelta(minutes=0-(11-59))
                 self.assertEqual(got, expected)
 
+    def test_mixed_compare(self):
+        t1 = datetime(1, 2, 3, 4, 5, 6, 7)
+        t2 = datetimetz(1, 2, 3, 4, 5, 6, 7)
+        self.assertEqual(t1, t2)
+        t2 = t2.replace(tzinfo=None)
+        self.assertEqual(t1, t2)
+        t2 = t2.replace(tzinfo=FixedOffset(None, ""))
+        self.assertEqual(t1, t2)
+        t2 = t2.replace(tzinfo=FixedOffset(0, ""))
+        self.assertRaises(TypeError, lambda: t1 == t2)
+
+        # In datetimetz w/ identical tzinfo objects, utcoffset is ignored.
+        class Varies(tzinfo):
+            def __init__(self):
+                self.offset = 22
+            def utcoffset(self, t):
+                self.offset += 1
+                return self.offset
+
+        v = Varies()
+        t1 = t2.replace(tzinfo=v)
+        t2 = t2.replace(tzinfo=v)
+        self.assertEqual(t1.utcoffset(), timedelta(minutes=23))
+        self.assertEqual(t2.utcoffset(), timedelta(minutes=24))
+        self.assertEqual(t1, t2)
+
+        # But if they're not identical, it isn't ignored.
+        t2 = t2.replace(tzinfo=Varies())
+        self.failUnless(t1 < t2)  # t1's offset counter still going up
 
 def test_suite():
     allsuites = [unittest.makeSuite(klass, 'test')

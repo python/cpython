@@ -3136,17 +3136,28 @@ datetime_richcompare(PyDateTime_DateTime *self, PyObject *other, int op)
 			     other->ob_type->tp_name);
 		return NULL;
 	}
-	n1 = classify_utcoffset((PyObject *)self, &offset1);
-	assert(n1 != OFFSET_UNKNOWN);
-	if (n1 == OFFSET_ERROR)
-		return NULL;
+	/* Ignore utcoffsets if they have identical tzinfo members.  This
+	 * isn't an optimization, it's design.  If utcoffset() doesn't ignore
+	 * its argument, it may return different results for self and other
+	 * even if they have identical tzinfo members, and we're deliberately
+	 * suppressing that (possible) difference.
+	 */
+	if (get_tzinfo_member((PyObject *)self) == get_tzinfo_member(other)) {
+		offset1 = offset2 = 0;
+		n1 = n2 = OFFSET_NAIVE;
+	}
+	else {
+		n1 = classify_utcoffset((PyObject *)self, &offset1);
+		assert(n1 != OFFSET_UNKNOWN);
+		if (n1 == OFFSET_ERROR)
+			return NULL;
 
-	n2 = classify_utcoffset(other, &offset2);
-	assert(n2 != OFFSET_UNKNOWN);
-	if (n2 == OFFSET_ERROR)
-		return NULL;
-
-	/* If they're both naive, or both aware and have the same offsets,
+		n2 = classify_utcoffset(other, &offset2);
+		assert(n2 != OFFSET_UNKNOWN);
+		if (n2 == OFFSET_ERROR)
+			return NULL;
+	}
+ 	/* If they're both naive, or both aware and have the same offsets,
 	 * we get off cheap.  Note that if they're both naive, offset1 ==
 	 * offset2 == 0 at this point.
 	 */
@@ -3656,15 +3667,27 @@ time_richcompare(PyDateTime_Time *self, PyObject *other, int op)
 			     other->ob_type->tp_name);
 		return NULL;
 	}
-	n1 = classify_utcoffset((PyObject *)self, &offset1);
-	assert(n1 != OFFSET_UNKNOWN);
-	if (n1 == OFFSET_ERROR)
-		return NULL;
+	/* Ignore utcoffsets if they have identical tzinfo members.  This
+	 * isn't an optimization, it's design.  If utcoffset() doesn't ignore
+	 * its argument, it may return different results for self and other
+	 * even if they have identical tzinfo members, and we're deliberately
+	 * suppressing that (possible) difference.
+	 */
+	if (get_tzinfo_member((PyObject *)self) == get_tzinfo_member(other)) {
+		offset1 = offset2 = 0;
+		n1 = n2 = OFFSET_NAIVE;
+	}
+	else {
+		n1 = classify_utcoffset((PyObject *)self, &offset1);
+		assert(n1 != OFFSET_UNKNOWN);
+		if (n1 == OFFSET_ERROR)
+			return NULL;
 
-	n2 = classify_utcoffset(other, &offset2);
-	assert(n2 != OFFSET_UNKNOWN);
-	if (n2 == OFFSET_ERROR)
-		return NULL;
+		n2 = classify_utcoffset(other, &offset2);
+		assert(n2 != OFFSET_UNKNOWN);
+		if (n2 == OFFSET_ERROR)
+			return NULL;
+	}
 
 	/* If they're both naive, or both aware and have the same offsets,
 	 * we get off cheap.  Note that if they're both naive, offset1 ==
@@ -4601,15 +4624,29 @@ datetimetz_subtract(PyObject *left, PyObject *right)
 			int offset1, offset2;
 			PyDateTime_Delta *delta;
 
-			n1 = classify_utcoffset(left, &offset1);
-			assert(n1 != OFFSET_UNKNOWN);
-			if (n1 == OFFSET_ERROR)
-				return NULL;
+			/* Ignore utcoffsets if they have identical tzinfo
+			 * members.  This isn't an optimization, it's design.
+			 * If utcoffset() doesn't ignore its argument, it may
+			 * return different results for self and other even
+			 * if they have identical tzinfo members, and we're
+			 * deliberately suppressing that (possible) difference.
+			 */
+			if (get_tzinfo_member(left) ==
+			    get_tzinfo_member(right)) {
+				offset1 = offset2 = 0;
+				n1 = n2 = OFFSET_NAIVE;
+			}
+			else {
+				n1 = classify_utcoffset(left, &offset1);
+				assert(n1 != OFFSET_UNKNOWN);
+				if (n1 == OFFSET_ERROR)
+					return NULL;
 
-			n2 = classify_utcoffset(right, &offset2);
-			assert(n2 != OFFSET_UNKNOWN);
-			if (n2 == OFFSET_ERROR)
-				return NULL;
+				n2 = classify_utcoffset(right, &offset2);
+				assert(n2 != OFFSET_UNKNOWN);
+				if (n2 == OFFSET_ERROR)
+					return NULL;
+			}
 
 			if (n1 != n2) {
 				PyErr_SetString(PyExc_TypeError,
