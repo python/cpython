@@ -8,6 +8,12 @@ except ImportError:
 if not hasattr(termios,'TIOCGPGRP'):
     raise TestSkipped("termios module doesn't have TIOCGPGRP")
 
+try:
+    tty = open("/dev/tty", "r")
+    tty.close()
+except IOError:
+    raise TestSkipped("Unable to open /dev/tty")
+
 class IoctlTests(unittest.TestCase):
     def test_ioctl(self):
         pgrp = os.getpgrp()
