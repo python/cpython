@@ -59,9 +59,9 @@ class Parser:
         meaning it parses the entire contents of the file.
         """
         root = self._class()
-        self._parseheaders(root, fp)
+        firstbodyline = self._parseheaders(root, fp)
         if not headersonly:
-            self._parsebody(root, fp)
+            self._parsebody(root, fp, firstbodyline)
         return root
 
     def parsestr(self, text, headersonly=False):
@@ -80,6 +80,7 @@ class Parser:
         lastheader = ''
         lastvalue = []
         lineno = 0
+        firstbodyline = None
         while True:
             # Don't strip the line before we test for the end condition,
             # because whitespace-only header lines are RFC compliant
@@ -120,13 +121,16 @@ class Parser:
             if i < 0:
                 if self._strict:
                     raise Errors.HeaderParseError(
-                        "Not a header, not a continuation: ``%s''"%line)
+                        "Not a header, not a continuation: ``%s''" % line)
                 elif lineno == 1 and line.startswith('--'):
                     # allow through duplicate boundary tags.
                     continue
                 else:
-                    raise Errors.HeaderParseError(
-                        "Not a header, not a continuation: ``%s''"%line)
+                    # There was no separating blank line as mandated by RFC
+                    # 2822, but we're in non-strict mode.  So just offer up
+                    # this current line as the first body line.
+                    firstbodyline = line
+                    break
             if lastheader:
                 container[lastheader] = NL.join(lastvalue)
             lastheader = line[:i]
@@ -134,8 +138,9 @@ class Parser:
         # Make sure we retain the last header
         if lastheader:
             container[lastheader] = NL.join(lastvalue)
+        return firstbodyline
 
-    def _parsebody(self, container, fp):
+    def _parsebody(self, container, fp, firstbodyline=None):
         # Parse the body, but first split the payload on the content-type
         # boundary if present.
         boundary = container.get_boundary()
@@ -152,6 +157,8 @@ class Parser:
             # boundary.
             separator = '--' + boundary
             payload = fp.read()
+            if firstbodyline is not None:
+                payload = firstbodyline + '\n' + payload
             # We use an RE here because boundaries can have trailing
             # whitespace.
             mo = re.search(
@@ -260,7 +267,10 @@ class Parser:
                 self._parsebody(msg, fp)
             container.attach(msg)
         else:
-            container.set_payload(fp.read())
+            text = fp.read()
+            if firstbodyline is not None:
+                text = firstbodyline + '\n' + text
+            container.set_payload(text)
 
 
 
@@ -274,6 +284,9 @@ class HeaderParser(Parser):
     Parsing with this subclass can be considerably faster if all you're
     interested in is the message headers.
     """
-    def _parsebody(self, container, fp):
+    def _parsebody(self, container, fp, firstbodyline=None):
         # Consume but do not parse, the body
-        container.set_payload(fp.read())
+        text = fp.read()
+        if firstbodyline is not None:
+            text = firstbodyline + '\n' + text
+        container.set_payload(text)
