@@ -75,7 +75,7 @@ Otherwise, exactly one of the following three options must be given:
                       module executed, in the module's directory.
                       See also `--coverdir', `--file', `--no-report' below.
 -l, --listfuncs       Keep track of which functions are executed at least
-                      once and write the results to sys.stdout after the the
+                      once and write the results to sys.stdout after the
                       program exits.
 -r, --report          Generate a report from a counts file; do not execute
                       any code.  `--file' must specify the results file to
