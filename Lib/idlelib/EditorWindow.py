@@ -85,13 +85,13 @@ IDLEfork %s
 IDLE is an Integrated DeveLopment Environment for Python \
 by Guido van Rossum.
 
-IDLEfork is an official experimental development version of IDLE.
+IDLEfork is an official experimental development version of IDLE. \
 Succesful new features in IDLEfork will be mereged back in to stable IDLE.
 
 This version of IDLEfork is based on the work in stable IDLE version %s, \
-IDLEfork 0.7.1 released by David Scherer, and the VPython idle fork. 
+IDLE fork 0.7.1 released by David Scherer, and the VPython idle fork. 
 
-See README.txt for more details on IDLEfork.
+See README.txt and NEWS.txt for more details on this verion of IDLEfork.
 
 WARNING: IDLEfork is at this stage alpha quality software, expect things \
 to be broken. 
