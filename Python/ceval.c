@@ -409,6 +409,10 @@ eval_code2(co, globals, locals,
 			kwdict = newmappingobject();
 			if (kwdict == NULL)
 				goto fail;
+			i = co->co_argcount;
+			if (co->co_flags & CO_VARARGS)
+				i++;
+			SETLOCAL(i, kwdict);
 		}
 		if (argcount > co->co_argcount) {
 			if (!(co->co_flags & CO_VARARGS)) {
@@ -424,12 +428,14 @@ eval_code2(co, globals, locals,
 		}
 		if (co->co_flags & CO_VARARGS) {
 			u = newtupleobject(argcount - n);
+			if (u == NULL)
+				goto fail;
+			SETLOCAL(co->co_argcount, u);
 			for (i = n; i < argcount; i++) {
 				x = args[i];
 				INCREF(x);
 				SETTUPLEITEM(u, i-n, x);
 			}
-			SETLOCAL(co->co_argcount, u);
 		}
 		for (i = 0; i < kwcount; i++) {
 			object *keyword = kws[2*i];
@@ -479,25 +485,11 @@ eval_code2(co, globals, locals,
 				}
 			}
 		}
-		if (kwdict != NULL) {
-			i = co->co_argcount;
-			if (co->co_flags & CO_VARARGS)
-				i++;
-			SETLOCAL(i, kwdict);
-		}
-		if (0) {
-	 fail:
-			XDECREF(kwdict);
-			goto fail2;
-		}
 	}
 	else {
 		if (argcount > 0 || kwcount > 0) {
 			err_setstr(TypeError, "no arguments expected");
- fail2:
-			current_frame = f->f_back;
-			DECREF(f);
-			return NULL;
+			goto fail;
 		}
 	}
 
@@ -517,9 +509,7 @@ eval_code2(co, globals, locals,
 		if (call_trace(&sys_trace, &f->f_trace, f, "call",
 			       None/*XXX how to compute arguments now?*/)) {
 			/* Trace function raised an error */
-			current_frame = f->f_back;
-			DECREF(f);
-			return NULL;
+			goto fail;
 		}
 	}
 
@@ -528,9 +518,7 @@ eval_code2(co, globals, locals,
 		   itself and isn't called for "line" events */
 		if (call_trace(&sys_profile, (object**)0, f, "call",
 			       None/*XXX*/)) {
-			current_frame = f->f_back;
-			DECREF(f);
-			return NULL;
+			goto fail;
 		}
 	}
 
@@ -567,6 +555,9 @@ eval_code2(co, globals, locals,
 					goto on_error;
 				}
 			}
+#ifdef macintosh
+#undef HAVE_SIGNAL_H
+#endif
 #ifndef HAVE_SIGNAL_H /* Is this the right #define? */
 /* If we have true signals, the signal handler will call
    Py_AddPendingCall() so we don't have to call sigcheck().
@@ -1697,6 +1688,10 @@ eval_code2(co, globals, locals,
 		}
 	}
 
+	--recursion_depth;
+
+  fail: /* Jump here from prelude on failure */
+
 	/* Kill all local variables */
 
 	{
@@ -1713,7 +1708,6 @@ eval_code2(co, globals, locals,
 
 	current_frame = f->f_back;
 	DECREF(f);
-	--recursion_depth;
 	
 	return retval;
 }
