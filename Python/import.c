@@ -303,7 +303,7 @@ get_module(m, name, m_ret)
 			}
 		}
 	}
-	v = eval_code(co, d, d, (object *)NULL);
+	v = eval_code(co, d, d, (object *)NULL, (object *)NULL);
 	DECREF(co);
 	return v;
 }
@@ -422,7 +422,7 @@ init_frozen(name)
 		return -1;
 	if ((m = add_module(name)) == NULL ||
 	    (d = getmoduledict(m)) == NULL ||
-	    (v = eval_code(co, d, d, (object *)NULL)) == NULL) {
+	    (v = eval_code(co, d, d, (object*)NULL, (object*)NULL)) == NULL) {
 		DECREF(co);
 		return -1;
 	}

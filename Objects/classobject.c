@@ -29,19 +29,14 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "structmember.h"
 #include "ceval.h"
 
-typedef struct {
-	OB_HEAD
-	object	*cl_bases;	/* A tuple */
-	object	*cl_methods;	/* A dictionary */
-	object	*cl_name;	/* A string */
-} classobject;
-
 object *
-newclassobject(bases, methods, name)
+newclassobject(bases, dict, name)
 	object *bases; /* NULL or tuple of classobjects! */
-	object *methods;
+	object *dict;
 	object *name; /* String; NULL if unknown */
 {
+	int pos;
+	object *key, *value;
 	classobject *op;
 	if (bases == NULL) {
 		bases = newtupleobject(0);
@@ -56,10 +51,15 @@ newclassobject(bases, methods, name)
 		return NULL;
 	}
 	op->cl_bases = bases;
-	INCREF(methods);
-	op->cl_methods = methods;
+	INCREF(dict);
+	op->cl_dict = dict;
 	XINCREF(name);
 	op->cl_name = name;
+	pos = 0;
+	while (mappinggetnext(dict, &pos, &key, &value)) {
+		if (is_accessobject(value))
+			setaccessowner(value, (object *)op);
+	}
 	return (object *) op;
 }
 
@@ -70,9 +70,31 @@ class_dealloc(op)
 	classobject *op;
 {
 	DECREF(op->cl_bases);
-	DECREF(op->cl_methods);
+	DECREF(op->cl_dict);
 	XDECREF(op->cl_name);
 	free((ANY *)op);
+}
+
+static object *
+class_lookup(cp, name, pclass)
+	classobject *cp;
+	char *name;
+	classobject **pclass;
+{
+	int i, n;
+	object *value = dictlookup(cp->cl_dict, name);
+	if (value != NULL) {
+		*pclass = cp;
+		return value;
+	}
+	n = gettuplesize(cp->cl_bases);
+	for (i = 0; i < n; i++) {
+		object *v = class_lookup((classobject *)
+				 gettupleitem(cp->cl_bases, i), name, pclass);
+		if (v != NULL)
+			return v;
+	}
+	return NULL;
 }
 
 static object *
@@ -81,9 +103,10 @@ class_getattr(op, name)
 	register char *name;
 {
 	register object *v;
+	object *class;
 	if (strcmp(name, "__dict__") == 0) {
-		INCREF(op->cl_methods);
-		return op->cl_methods;
+		INCREF(op->cl_dict);
+		return op->cl_dict;
 	}
 	if (strcmp(name, "__bases__") == 0) {
 		INCREF(op->cl_bases);
@@ -97,24 +120,16 @@ class_getattr(op, name)
 		INCREF(v);
 		return v;
 	}
-	v = dictlookup(op->cl_methods, name);
+	v = class_lookup(op, name, &class);
 	if (v != NULL) {
 		if (is_accessobject(v))
-			v = getaccessvalue(v, (object *)NULL);
+			v = getaccessvalue(v, getclass());
+		else if (is_funcobject(v))
+			v = newinstancemethodobject(v, (object *)NULL,
+						    (object *)class);
 		else
 			INCREF(v);
 		return v;
-	}
-	{
-		int n = gettuplesize(op->cl_bases);
-		int i;
-		for (i = 0; i < n; i++) {
-			v = class_getattr((classobject *)
-					gettupleitem(op->cl_bases, i), name);
-			if (v != NULL)
-				return v;
-			err_clear();
-		}
 	}
 	err_setstr(AttributeError, name);
 	return NULL;
@@ -134,18 +149,18 @@ class_setattr(op, name, v)
 			return -1;
 		}
 	}
-	ac = dictlookup(op->cl_methods, name);
+	ac = dictlookup(op->cl_dict, name);
 	if (ac != NULL && is_accessobject(ac))
-		return setaccessvalue(ac, (object *)NULL, v);
+		return setaccessvalue(ac, getclass(), v);
 	if (v == NULL) {
-		int rv = dictremove(op->cl_methods, name);
+		int rv = dictremove(op->cl_dict, name);
 		if (rv < 0)
 			err_setstr(AttributeError,
 				   "delete non-existing class attribute");
 		return rv;
 	}
 	else
-		return dictinsert(op->cl_methods, name, v);
+		return dictinsert(op->cl_dict, name, v);
 }
 
 static object *
@@ -179,16 +194,70 @@ typeobject Classtype = {
 	0,		/*tp_as_mapping*/
 };
 
+int
+issubclass(class, base)
+	object *class;
+	object *base;
+{
+	int i, n;
+	classobject *cp;
+	if (class == NULL || !is_classobject(class))
+		return 0;
+	if (class == base)
+		return 1;
+	cp = (classobject *)class;
+	n = gettuplesize(cp->cl_bases);
+	for (i = 0; i < n; i++) {
+		if (issubclass(gettupleitem(cp->cl_bases, i), base))
+			return 1;
+	}
+	return 0;
+}
 
-/* We're not done yet: next, we define instance objects... */
+
+/* Instance objects */
 
 typedef struct {
 	OB_HEAD
 	classobject	*in_class;	/* The class object */
-	object		*in_attr;	/* A dictionary */
+	object		*in_dict;	/* A dictionary */
 } instanceobject;
 
 static object *instance_getattr PROTO((instanceobject *, char *));
+
+static int
+addaccess(class, inst)
+	classobject *class;
+	instanceobject *inst;
+{
+	int i, n, pos, ret;
+	object *key, *value, *ac;
+	
+	n = gettuplesize(class->cl_bases);
+	for (i = 0; i < n; i++) {
+		if (addaccess(gettupleitem(class->cl_bases, i), inst) < 0)
+			return -1;
+	}
+	
+	pos = 0;
+	while (mappinggetnext(class->cl_dict, &pos, &key, &value)) {
+		if (!is_accessobject(value))
+			continue;
+		ac = dict2lookup(inst->in_dict, key);
+		if (ac != NULL && is_accessobject(ac)) {
+			err_setval(ConflictError, key);
+			return -1;
+		}
+		ac = cloneaccessobject(value);
+		if (ac == NULL)
+			return -1;
+		ret = dict2insert(inst->in_dict, key, ac);
+		DECREF(ac);
+		if (ret != 0)
+			return -1;
+    	}
+	return 0;
+}
 
 object *
 newinstanceobject(class, arg)
@@ -198,8 +267,6 @@ newinstanceobject(class, arg)
 	register instanceobject *inst;
 	object *v;
 	object *init;
-	int pos;
-	object *key, *value;
 	if (!is_classobject(class)) {
 		err_badcall();
 		return NULL;
@@ -209,25 +276,11 @@ newinstanceobject(class, arg)
 		return NULL;
 	INCREF(class);
 	inst->in_class = (classobject *)class;
-	inst->in_attr = newdictobject();
-	if (inst->in_attr == NULL) {
-	error:
+	inst->in_dict = newdictobject();
+	if (inst->in_dict == NULL ||
+	    addaccess((classobject *)class, inst) != 0) {
 		DECREF(inst);
 		return NULL;
-	}
-	pos = 0;
-	while (mappinggetnext(((classobject *)class)->cl_methods,
-			      &pos, &key, &value)) {
-		if (is_accessobject(value)) {
-			object *ac = cloneaccessobject(value);
-			int err;
-			if (ac == NULL)
-				goto error;
-			err = dict2insert(inst->in_attr, key, ac);
-			DECREF(ac);
-			if (err)
-				goto error;
-		}
 	}
 	init = instance_getattr(inst, "__init__");
 	if (init == NULL) {
@@ -288,7 +341,7 @@ instance_dealloc(inst)
 	if (--inst->ob_refcnt > 0)
 		return; /* __del__ added a reference; don't delete now */
 	DECREF(inst->in_class);
-	XDECREF(inst->in_attr);
+	XDECREF(inst->in_dict);
 	free((ANY *)inst);
 }
 
@@ -298,31 +351,30 @@ instance_getattr(inst, name)
 	register char *name;
 {
 	register object *v;
+	classobject *class;
 	if (strcmp(name, "__dict__") == 0) {
-		INCREF(inst->in_attr);
-		return inst->in_attr;
+		INCREF(inst->in_dict);
+		return inst->in_dict;
 	}
 	if (strcmp(name, "__class__") == 0) {
 		INCREF(inst->in_class);
 		return (object *)inst->in_class;
 	}
-	v = dictlookup(inst->in_attr, name);
+	v = dictlookup(inst->in_dict, name);
 	if (v != NULL) {
 		if (is_accessobject(v))
-			v = getaccessvalue(v, (object *)NULL);
+			v = getaccessvalue(v, getclass());
 		else
 			INCREF(v);
 		return v;
 	}
-	v = class_getattr(inst->in_class, name);
+	v = class_lookup(inst->in_class, name, &class);
 	if (v == NULL)
-		return v; /* class_getattr() has set the error */
-	if (is_funcobject(v)) {
-		object *w = newinstancemethodobject(v, (object *)inst);
-		DECREF(v);
-		return w;
-	}
-	DECREF(v);
+		goto error;
+	if (is_funcobject(v))
+		return newinstancemethodobject(v, (object *)inst,
+					       (object *)class);
+ error:
 	err_setstr(AttributeError, name);
 	return NULL;
 }
@@ -341,18 +393,18 @@ instance_setattr(inst, name, v)
 			return -1;
 		}
 	}
-	ac = dictlookup(inst->in_attr, name);
+	ac = dictlookup(inst->in_dict, name);
 	if (ac != NULL && is_accessobject(ac))
-		return setaccessvalue(ac, (object *)NULL, v);
+		return setaccessvalue(ac, getclass(), v);
 	if (v == NULL) {
-		int rv = dictremove(inst->in_attr, name);
+		int rv = dictremove(inst->in_dict, name);
 		if (rv < 0)
 			err_setstr(AttributeError,
 				   "delete non-existing instance attribute");
 		return rv;
 	}
 	else
-		return dictinsert(inst->in_attr, name, v);
+		return dictinsert(inst->in_dict, name, v);
 }
 
 static object *
@@ -893,18 +945,24 @@ instance_convert(inst, methodname)
 }
 
 
-/* And finally, here are instance method objects */
+/* Instance method objects are used for two purposes:
+   (a) as bound instance methods (returned by instancename.methodname)
+   (b) as unbound methods (returned by ClassName.methodname)
+   In case (b), im_self is NULL
+*/
 
 typedef struct {
 	OB_HEAD
-	object	*im_func;	/* The method function */
-	object	*im_self;	/* The object to which this applies */
+	object	*im_func;	/* The function implementing the method */
+	object	*im_self;	/* The instance it is bound to, or NULL */
+	object	*im_class;	/* The class that defined the method */
 } instancemethodobject;
 
 object *
-newinstancemethodobject(func, self)
+newinstancemethodobject(func, self, class)
 	object *func;
 	object *self;
+	object *class;
 {
 	register instancemethodobject *im;
 	if (!is_funcobject(func)) {
@@ -916,8 +974,10 @@ newinstancemethodobject(func, self)
 		return NULL;
 	INCREF(func);
 	im->im_func = func;
-	INCREF(self);
+	XINCREF(self);
 	im->im_self = self;
+	INCREF(class);
+	im->im_class = class;
 	return (object *)im;
 }
 
@@ -943,6 +1003,17 @@ instancemethodgetself(im)
 	return ((instancemethodobject *)im)->im_self;
 }
 
+object *
+instancemethodgetclass(im)
+	register object *im;
+{
+	if (!is_instancemethodobject(im)) {
+		err_badcall();
+		return NULL;
+	}
+	return ((instancemethodobject *)im)->im_class;
+}
+
 /* Class method methods */
 
 #define OFF(x) offsetof(instancemethodobject, x)
@@ -950,6 +1021,7 @@ instancemethodgetself(im)
 static struct memberlist instancemethod_memberlist[] = {
 	{"im_func",	T_OBJECT,	OFF(im_func)},
 	{"im_self",	T_OBJECT,	OFF(im_self)},
+	{"im_class",	T_OBJECT,	OFF(im_class)},
 	{NULL}	/* Sentinel */
 };
 
@@ -966,7 +1038,8 @@ instancemethod_dealloc(im)
 	register instancemethodobject *im;
 {
 	DECREF(im->im_func);
-	DECREF(im->im_self);
+	XDECREF(im->im_self);
+	DECREF(im->im_class);
 	free((ANY *)im);
 }
 
@@ -985,20 +1058,32 @@ instancemethod_repr(a)
 	instancemethodobject *a;
 {
 	char buf[240];
-	object *classname =
-		((instanceobject *)(a->im_self))->in_class->cl_name;
-	object *funcname = ((funcobject *)(a->im_func))->func_name;
-	char *cname, *fname;
-	if (classname != NULL && is_stringobject(classname))
-		cname = getstringvalue(classname);
+	instanceobject *self = (instanceobject *)(a->im_self);
+	funcobject *func = (funcobject *)(a->im_func);
+	classobject *class = (classobject *)(a->im_class);
+	object *fclassname, *iclassname, *funcname;
+	char *fcname, *icname, *fname;
+	fclassname = class->cl_name;
+	funcname = func->func_name;
+	if (fclassname != NULL && is_stringobject(fclassname))
+		fcname = getstringvalue(fclassname);
 	else
-		cname = "?";
+		fcname = "?";
 	if (funcname != NULL && is_stringobject(funcname))
 		fname = getstringvalue(funcname);
 	else
 		fname = "?";
-	sprintf(buf, "<method %.100s of %.100s instance at %lx>",
-		fname, cname, (long)a->im_func);
+	if (self == NULL)
+		sprintf(buf, "<unbound method %.100s.%.100s>", fcname, fname);
+	else {
+		iclassname = self->in_class->cl_name;
+		if (iclassname != NULL && is_stringobject(iclassname))
+			icname = getstringvalue(iclassname);
+		else
+			icname = "?";
+		sprintf(buf, "<method %.60s.%.60s of %.60s instance at %lx>",
+			fcname, fname, icname, (long)self);
+	}
 	return newstringobject(buf);
 }
 
@@ -1007,7 +1092,10 @@ instancemethod_hash(a)
 	instancemethodobject *a;
 {
 	long x, y;
-	x = hashobject(a->im_self);
+	if (a->im_self == NULL)
+		x = hashobject(None);
+	else
+		x = hashobject(a->im_self);
 	if (x == -1)
 		return -1;
 	y = hashobject(a->im_func);

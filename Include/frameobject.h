@@ -36,6 +36,7 @@ typedef struct _frame {
 	codeobject *f_code;	/* code segment */
 	object *f_globals;	/* global symbol table (dictobject) */
 	object *f_locals;	/* local symbol table (dictobject) */
+	object *f_class;	/* class context (classobject or NULL) */
 	object *f_fastlocals;	/* fast local variables (listobject) */
 	object *f_localmap;	/* local variable names (dictobject) */
 	object **f_valuestack;	/* malloc'ed array */
@@ -55,7 +56,7 @@ extern typeobject Frametype;
 #define is_frameobject(op) ((op)->ob_type == &Frametype)
 
 frameobject * newframeobject PROTO(
-	(frameobject *, codeobject *, object *, object *, int, int));
+	(frameobject *, codeobject *, object *, object *, object *, int, int));
 
 
 /* The rest of the interface is specific for frame objects */

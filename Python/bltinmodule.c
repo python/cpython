@@ -212,7 +212,7 @@ exec_eval(v, start)
 	}
 	if (is_codeobject(str))
 		return eval_code((codeobject *) str, globals, locals,
-				 (object *)NULL);
+				 (object *)NULL, (object *)NULL);
 	s = getstringvalue(str);
 	if (strlen(s) != getstringsize(str)) {
 		err_setstr(ValueError, "embedded '\\0' in string arg");
