@@ -288,6 +288,8 @@ class Pickler:
             s = mdumps(l)[1:]
             self.write(BINUNICODE + s + encoding)
         else:
+            object = object.replace(u"\\", u"\\u005c")
+            object = object.replace(u"\n", u"\\u000a")
             self.write(UNICODE + object.encode('raw-unicode-escape') + '\n')
 
         memo_len = len(memo)

@@ -33,6 +33,11 @@ http://sourceforge.net/tracker/index.php?func=detail&aid=<id>&group_id=5470&atid
 
 - #121965 -- fixing containment in xrange() objects
 
+- #126161 #123634 -- pickle.py, cPickle.c -- fix pickling unicode strings
+  this is *backwards incompatible* with older pickles containing unicode
+  strings -- but this has to be done, the previous pickling scheme broke
+  anyway.
+
 
 What's New in Python 2.0?
 =========================
