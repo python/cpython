@@ -1,5 +1,5 @@
 """\
-minidom.py -- a lightweight DOM implementation based on SAX.
+minidom.py -- a lightweight DOM implementation.
 
 parse( "foo.xml" )
 
@@ -27,21 +27,12 @@ except AttributeError:
     _StringTypes = (types.StringType,)
 del types
 
+import xml.dom
+_Node = xml.dom.Node
+del xml
 
-class Node:
-    ELEMENT_NODE                = 1
-    ATTRIBUTE_NODE              = 2
-    TEXT_NODE                   = 3
-    CDATA_SECTION_NODE          = 4
-    ENTITY_REFERENCE_NODE       = 5
-    ENTITY_NODE                 = 6
-    PROCESSING_INSTRUCTION_NODE = 7
-    COMMENT_NODE                = 8
-    DOCUMENT_NODE               = 9
-    DOCUMENT_TYPE_NODE          = 10
-    DOCUMENT_FRAGMENT_NODE      = 11
-    NOTATION_NODE               = 12
 
+class Node(_Node):
     allnodes = {}
     _debug = 0
     _makeParentNodes = 1
@@ -59,7 +50,7 @@ class Node:
 
     def __getattr__(self, key):
         if key[0:2] == "__":
-            raise AttributeError
+            raise AttributeError, key
         # getattr should never call getattr!
         if self.__dict__.has_key("inGetAttr"):
             del self.inGetAttr
@@ -158,25 +149,36 @@ class Node:
         return oldChild
 
     def normalize(self):
-        if len(self.childNodes) > 1:
-            L = [self.childNodes[0]]
-            for child in self.childNodes[1:]:
-                if (  child.nodeType == Node.TEXT_NODE
-                      and L[-1].nodeType == child.nodeType):
+        L = []
+        for child in self.childNodes:
+            if child.nodeType == Node.TEXT_NODE:
+                data = child.data
+                if data and L and L[-1].nodeType == child.nodeType:
                     # collapse text node
                     node = L[-1]
                     node.data = node.nodeValue = node.data + child.data
                     node.nextSibling = child.nextSibling
                     child.unlink()
+                elif data:
+                    if L:
+                        L[-1].nextSibling = child
+                        child.previousSibling = L[-1]
+                    else:
+                        child.previousSibling = None
+                    L.append(child)
                 else:
+                    # empty text node; discard
+                    child.unlink()
+            else:
+                if L:
                     L[-1].nextSibling = child
                     child.previousSibling = L[-1]
-                    L.append(child)
+                else:
+                    child.previousSibling = None
+                L.append(child)
+                if child.nodeType == Node.ELEMENT_NODE:
                     child.normalize()
-            self.childNodes = L
-        elif self.childNodes:
-            # exactly one child -- just recurse
-            self.childNodes[0].normalize()
+        self.childNodes[:] = L
 
     def cloneNode(self, deep):
         import new
@@ -224,7 +226,8 @@ def _getElementsByTagNameNSHelper(parent, nsURI, localName, rc):
             if ((localName == "*" or node.tagName == localName) and
                 (nsURI == "*" or node.namespaceURI == nsURI)):
                 rc.append(node)
-            _getElementsByTagNameNSHelper(node, name, rc)
+            _getElementsByTagNameNSHelper(node, nsURI, localName, rc)
+    return rc
 
 class Attr(Node):
     nodeType = Node.ATTRIBUTE_NODE
@@ -242,10 +245,13 @@ class Attr(Node):
         # nodeValue and value are set elsewhere
 
     def __setattr__(self, name, value):
+        d = self.__dict__
         if name in ("value", "nodeValue"):
-            self.__dict__["value"] = self.__dict__["nodeValue"] = value
+            d["value"] = d["nodeValue"] = value
+        elif name in ("name", "nodeName"):
+            d["name"] = d["nodeName"] = value
         else:
-            self.__dict__[name] = value
+            d[name] = value
 
     def cloneNode(self, deep):
         clone = Node.cloneNode(self, deep)
@@ -253,19 +259,28 @@ class Attr(Node):
             del clone.ownerElement
         return clone
 
-class AttributeList:
+
+class NamedNodeMap:
     """The attribute list is a transient interface to the underlying
     dictionaries.  Mutations here will change the underlying element's
-    dictionary"""
+    dictionary.
+
+    Ordering is imposed artificially and does not reflect the order of
+    attributes as found in an input document.
+    """
 
     def __init__(self, attrs, attrsNS):
         self._attrs = attrs
         self._attrsNS = attrsNS
-        self.length = len(self._attrs)
+
+    def __getattr__(self, name):
+        if name == "length":
+            return len(self._attrs)
+        raise AttributeError, name
 
     def item(self, index):
         try:
-            return self[self.keys()[index]]
+            return self[self._attrs.keys()[index]]
         except IndexError:
             return None
 
@@ -315,17 +330,28 @@ class AttributeList:
             if not isinstance(value, Attr):
                 raise TypeError, "value must be a string or Attr object"
             node = value
-        old = self._attrs.get(attname, None)
+        self.setNamedItem(node)
+
+    def setNamedItem(self, node):
+        old = self._attrs.get(node.name)
         if old:
             old.unlink()
         self._attrs[node.name] = node
         self._attrsNS[(node.namespaceURI, node.localName)] = node
+        return old
+
+    def setNamedItemNS(self, node):
+        return self.setNamedItem(node)
 
     def __delitem__(self, attname_or_tuple):
         node = self[attname_or_tuple]
         node.unlink()
         del self._attrs[node.name]
         del self._attrsNS[(node.namespaceURI, node.localName)]
+        self.length = len(self._attrs)
+
+AttributeList = NamedNodeMap
+
 
 class Element(Node):
     nodeType = Node.ELEMENT_NODE
@@ -495,6 +521,19 @@ class Text(Node):
             dotdotdot = ""
         return "<DOM Text node \"%s%s\">" % (self.data[0:10], dotdotdot)
 
+    def splitText(self, offset):
+        if offset < 0 or offset > len(self.data):
+            raise ValueError, "illegal offset value for splitText()"
+        newText = Text(self.data[offset:])
+        next = self.nextSibling
+        if self.parentNode and self in self.parentNode.childNodes:
+            if next is None:
+                self.parentNode.appendChild(newText)
+            else:
+                self.parentNode.insertBefore(newText, next)
+        self.data = self.data[:offset]
+        return newText
+
     def writexml(self, writer):
         _write_data(writer, self.data)
 
@@ -505,20 +544,83 @@ def _nssplit(qualifiedName):
     elif len(fields) == 1:
         return ('', fields[0])
 
+
+class DocumentType(Node):
+    nodeType = Node.DOCUMENT_TYPE_NODE
+    nodeValue = None
+    attributes = None
+    name = None
+    publicId = None
+    systemId = None
+    internalSubset = ""
+    entities = None
+    notations = None
+
+    def __init__(self, qualifiedName):
+        Node.__init__(self)
+        if qualifiedName:
+            prefix, localname = _nssplit(qualifiedName)
+            self.name = localname
+
+
+class DOMImplementation:
+    def hasFeature(self, feature, version):
+        if version not in ("1.0", "2.0"):
+            return 0
+        feature = _string.lower(feature)
+        return feature == "core"
+
+    def createDocument(self, namespaceURI, qualifiedName, doctype):
+        if doctype and doctype.parentNode is not None:
+            raise ValueError, "doctype object owned by another DOM tree"
+        doc = Document()
+        if doctype is None:
+            doctype = self.createDocumentType(qualifiedName, None, None)
+        if qualifiedName:
+            prefix, localname = _nssplit(qualifiedName)
+            if prefix == "xml" \
+               and namespaceURI != "http://www.w3.org/XML/1998/namespace":
+                raise ValueError, "illegal use of 'xml' prefix"
+            if prefix and not namespaceURI:
+                raise ValueError, "illegal use of prefix without namespaces"
+        doctype.parentNode = doc
+        doc.doctype = doctype
+        doc.implementation = self
+        return doc
+
+    def createDocumentType(self, qualifiedName, publicId, systemId):
+        doctype = DocumentType(qualifiedName)
+        doctype.publicId = publicId
+        doctype.systemId = systemId
+        return doctype
+
+
 class Document(Node):
     nodeType = Node.DOCUMENT_NODE
     nodeName = "#document"
     nodeValue = None
     attributes = None
-    documentElement = None
+    doctype = None
+    parentNode = None
+
+    implementation = DOMImplementation()
 
     def appendChild(self, node):
-        if node.nodeType == Node.ELEMENT_NODE:
-            if self.documentElement:
-                raise TypeError, "Two document elements disallowed"
-            else:
-                self.documentElement = node
+        if node.nodeType == Node.ELEMENT_NODE \
+           and self._get_documentElement():
+            raise TypeError, "two document elements disallowed"
         return Node.appendChild(self, node)
+
+    def _get_documentElement(self):
+        for node in self.childNodes:
+            if node.nodeType == Node.ELEMENT_NODE:
+                return node
+
+    def unlink(self):
+        if self.doctype is not None:
+            self.doctype.unlink()
+            self.doctype = None
+        Node.unlink(self)
 
     createElement = Element
 
@@ -543,10 +645,6 @@ class Document(Node):
     def getElementsByTagNameNS(self, namespaceURI, localName):
         _getElementsByTagNameNSHelper(self, namespaceURI, localName)
 
-    def unlink(self):
-        self.documentElement = None
-        Node.unlink(self)
-
     def getElementsByTagName(self, name):
         rc = []
         _getElementsByTagNameHelper(self, name, rc)
@@ -557,10 +655,8 @@ class Document(Node):
             node.writexml(writer)
 
 def _get_StringIO():
-    try:
-        from cStringIO import StringIO
-    except ImportError:
-        from StringIO import StringIO
+    # we can't use cStringIO since it doesn't support Unicode strings
+    from StringIO import StringIO
     return StringIO()
 
 def _doparse(func, args, kwargs):
@@ -570,11 +666,11 @@ def _doparse(func, args, kwargs):
     return rootNode
 
 def parse(*args, **kwargs):
-    "Parse a file into a DOM by filename or file object"
+    """Parse a file into a DOM by filename or file object."""
     from xml.dom import pulldom
     return _doparse(pulldom.parse, args, kwargs)
 
 def parseString(*args, **kwargs):
-    "Parse a file into a DOM from a string"
+    """Parse a file into a DOM from a string."""
     from xml.dom import pulldom
     return _doparse(pulldom.parseString, args, kwargs)
