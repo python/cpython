@@ -24,6 +24,8 @@ Build
 
 C API
 
+- The enumerators of cmp_op have been renamed to use the prefix PyCmp_.
+
 - An old #define of ANY as void has been removed from pyport.h.  This
   hasn't been used since Python's pre-ANSI days, and the #define has
   been marked as obsolete since then.  SF bug 495548 says it created

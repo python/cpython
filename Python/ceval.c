@@ -1785,14 +1785,14 @@ eval_frame(PyFrameObject *f)
 				a = PyInt_AS_LONG(v);
 				b = PyInt_AS_LONG(w);
 				switch (oparg) {
-				case LT: res = a <  b; break;
-				case LE: res = a <= b; break;
-				case EQ: res = a == b; break;
-				case NE: res = a != b; break;
-				case GT: res = a >  b; break;
-				case GE: res = a >= b; break;
-				case IS: res = v == w; break;
-				case IS_NOT: res = v != w; break;
+				case PyCmp_LT: res = a <  b; break;
+				case PyCmp_LE: res = a <= b; break;
+				case PyCmp_EQ: res = a == b; break;
+				case PyCmp_NE: res = a != b; break;
+				case PyCmp_GT: res = a >  b; break;
+				case PyCmp_GE: res = a >= b; break;
+				case PyCmp_IS: res = v == w; break;
+				case PyCmp_IS_NOT: res = v != w; break;
 				default: goto slow_compare;
 				}
 				x = res ? Py_True : Py_False;
@@ -2986,6 +2986,10 @@ PyEval_MergeCompilerFlags(PyCompilerFlags *cf)
 			result = 1;
 			cf->cf_flags |= compilerflags;
 		}
+		if (codeflags & CO_GENERATOR_ALLOWED) {
+			result = 1;
+			cf->cf_flags |= CO_GENERATOR_ALLOWED;
+		}
 	}
 	return result;
 }
@@ -3470,21 +3474,21 @@ cmp_outcome(int op, register PyObject *v, register PyObject *w)
 {
 	int res = 0;
 	switch (op) {
-	case IS:
-	case IS_NOT:
+	case PyCmp_IS:
+	case PyCmp_IS_NOT:
 		res = (v == w);
-		if (op == (int) IS_NOT)
+		if (op == (int) PyCmp_IS_NOT)
 			res = !res;
 		break;
-	case IN:
-	case NOT_IN:
+	case PyCmp_IN:
+	case PyCmp_NOT_IN:
 		res = PySequence_Contains(w, v);
 		if (res < 0)
 			return NULL;
-		if (op == (int) NOT_IN)
+		if (op == (int) PyCmp_NOT_IN)
 			res = !res;
 		break;
-	case EXC_MATCH:
+	case PyCmp_EXC_MATCH:
 		res = PyErr_GivenExceptionMatches(v, w);
 		break;
 	default:

@@ -702,7 +702,7 @@ com_addbyte(struct compiling *c, int byte)
 {
 	/*fprintf(stderr, "%3d: %3d\n", c->c_nexti, byte);*/
 	assert(byte >= 0 && byte <= 255);
-	assert(c->c_code);
+	assert(c->c_code != 0);
 	if (com_check_size(&c->c_code, c->c_nexti)) {
 		c->c_errors++;
 		return;
@@ -2138,26 +2138,26 @@ cmp_type(node *n)
 	if (NCH(n) == 1) {
 		n = CHILD(n, 0);
 		switch (TYPE(n)) {
-		case LESS:	return LT;
-		case GREATER:	return GT;
+		case LESS:	return PyCmp_LT;
+		case GREATER:	return PyCmp_GT;
 		case EQEQUAL:			/* == */
-		case EQUAL:	return EQ;
-		case LESSEQUAL:	return LE;
-		case GREATEREQUAL: return GE;
-		case NOTEQUAL:	return NE;	/* <> or != */
-		case NAME:	if (strcmp(STR(n), "in") == 0) return IN;
-				if (strcmp(STR(n), "is") == 0) return IS;
+		case EQUAL:	return PyCmp_EQ;
+		case LESSEQUAL:	return PyCmp_LE;
+		case GREATEREQUAL: return PyCmp_GE;
+		case NOTEQUAL:	return PyCmp_NE;	/* <> or != */
+		case NAME:	if (strcmp(STR(n), "in") == 0) return PyCmp_IN;
+				if (strcmp(STR(n), "is") == 0) return PyCmp_IS;
 		}
 	}
 	else if (NCH(n) == 2) {
 		switch (TYPE(CHILD(n, 0))) {
 		case NAME:	if (strcmp(STR(CHILD(n, 1)), "in") == 0)
-					return NOT_IN;
+					return PyCmp_NOT_IN;
 				if (strcmp(STR(CHILD(n, 0)), "is") == 0)
-					return IS_NOT;
+					return PyCmp_IS_NOT;
 		}
 	}
-	return BAD;
+	return PyCmp_BAD;
 }
 
 static void
@@ -2214,7 +2214,7 @@ com_comparison(struct compiling *c, node *n)
 			com_addbyte(c, ROT_THREE);
 		}
 		op = cmp_type(CHILD(n, i-1));
-		if (op == BAD) {
+		if (op == PyCmp_BAD) {
 			com_error(c, PyExc_SystemError,
 				  "com_comparison: unknown comparison op");
 		}
@@ -3247,7 +3247,7 @@ com_try_except(struct compiling *c, node *n)
 			com_addbyte(c, DUP_TOP);
 			com_push(c, 1);
 			com_node(c, CHILD(ch, 1));
-			com_addoparg(c, COMPARE_OP, EXC_MATCH);
+			com_addoparg(c, COMPARE_OP, PyCmp_EXC_MATCH);
 			com_pop(c, 1);
 			com_addfwref(c, JUMP_IF_FALSE, &except_anchor);
 			com_addbyte(c, POP_TOP);
