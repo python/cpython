@@ -5,7 +5,7 @@ from glstdwin import key2code
 
 class MenuObject:
 	#
-	def _init(self, (win, title)):
+	def _init(self, win, title):
 		self._win = win
 		self._title = title
 		self._items = []
@@ -15,20 +15,22 @@ class MenuObject:
 		self._win.remove(self)
 		del self._win
 	#
-	def additem(self, arg):
-		if type(arg) == type(()):
-			text, shortcut = arg
+	def additem(self, *args):
+		if len(args) == 2:
+			text, shortcut = args
+		elif len(args) == 1:
+			text, shortcut = args[0], None
 		else:
-			text, shortcut = arg, None
+			raise TypeError, 'arg count'
 		self._items.append([text, shortcut, 1, 0])
 	#
-	def setitem(self, (i, text)):
+	def setitem(self, i, text):
 		self._items[i][0] = text
 	#
-	def enable(self, (i, flag)):
+	def enable(self, i, flag):
 		self._items[i][2] = flag
 	#
-	def check(self, (i, flag)):
+	def check(self, i, flag):
 		self._items[i][3] = flag
 	#
 	def _makepup(self, firstitem):
