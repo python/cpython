@@ -34,30 +34,29 @@ class install_lib (Command):
         # Get all the information we need to install pure Python modules
         # from the umbrella 'install' command -- build (source) directory,
         # install (target) directory, and whether to compile .py files.
-        self.set_undefined_options ('install',
-                                    ('build_lib', 'build_dir'),
-                                    ('install_lib', 'install_dir'),
-                                    ('force', 'force'),
-                                    ('compile_py', 'compile'),
-                                    ('optimize_py', 'optimize'),
-                                    ('skip_build', 'skip_build'),
-                                   )
-
+        self.set_undefined_options('install',
+                                   ('build_lib', 'build_dir'),
+                                   ('install_lib', 'install_dir'),
+                                   ('force', 'force'),
+                                   ('compile_py', 'compile'),
+                                   ('optimize_py', 'optimize'),
+                                   ('skip_build', 'skip_build'),
+                                  )
 
     def run (self):
 
         # Make sure we have built everything we need first
         if not self.skip_build:
             if self.distribution.has_pure_modules():
-                self.run_command ('build_py')
+                self.run_command('build_py')
             if self.distribution.has_ext_modules():
-                self.run_command ('build_ext')
+                self.run_command('build_ext')
 
         # Install everything: simply dump the entire contents of the build
         # directory to the installation directory (that's the beauty of
         # having a build directory!)
         if os.path.isdir(self.build_dir):
-            outfiles = self.copy_tree (self.build_dir, self.install_dir)
+            outfiles = self.copy_tree(self.build_dir, self.install_dir)
         else:
             self.warn("'%s' does not exist -- no Python modules to install" %
                       self.build_dir)
@@ -76,10 +75,10 @@ class install_lib (Command):
                 if f[-3:] == '.py':
                     out_fn = f + (__debug__ and "c" or "o")
                     compile_msg = "byte-compiling %s to %s" % \
-                                  (f, os.path.basename (out_fn))
+                                  (f, os.path.basename(out_fn))
                     skip_msg = "skipping byte-compilation of %s" % f
-                    self.make_file (f, out_fn, compile, (f,),
-                                    compile_msg, skip_msg)
+                    self.make_file(f, out_fn, compile, (f,),
+                                   compile_msg, skip_msg)
     # run ()
 
 
@@ -88,14 +87,14 @@ class install_lib (Command):
         if not has_any:
             return []
 
-        build_cmd = self.get_finalized_command (build_cmd)
+        build_cmd = self.get_finalized_command(build_cmd)
         build_files = build_cmd.get_outputs()
-        build_dir = getattr (build_cmd, cmd_option)
+        build_dir = getattr(build_cmd, cmd_option)
 
-        prefix_len = len (build_dir) + len (os.sep)
+        prefix_len = len(build_dir) + len(os.sep)
         outputs = []
         for file in build_files:
-            outputs.append (os.path.join (output_dir, file[prefix_len:]))
+            outputs.append(os.path.join(output_dir, file[prefix_len:]))
 
         return outputs
 
@@ -112,21 +111,21 @@ class install_lib (Command):
     def get_outputs (self):
         """Return the list of files that would be installed if this command
         were actually run.  Not affected by the "dry-run" flag or whether
-        modules have actually been built yet."""
-
+        modules have actually been built yet.
+        """
         pure_outputs = \
-            self._mutate_outputs (self.distribution.has_pure_modules(),
-                                  'build_py', 'build_lib',
-                                  self.install_dir)
+            self._mutate_outputs(self.distribution.has_pure_modules(),
+                                 'build_py', 'build_lib',
+                                 self.install_dir)
         if self.compile:
             bytecode_outputs = self._bytecode_filenames(pure_outputs)
         else:
             bytecode_outputs = []
 
         ext_outputs = \
-            self._mutate_outputs (self.distribution.has_ext_modules(),
-                                  'build_ext', 'build_lib',
-                                  self.install_dir)
+            self._mutate_outputs(self.distribution.has_ext_modules(),
+                                 'build_ext', 'build_lib',
+                                 self.install_dir)
 
         return pure_outputs + bytecode_outputs + ext_outputs
 
@@ -136,20 +135,18 @@ class install_lib (Command):
         """Get the list of files that are input to this command, ie. the
         files that get installed as they are named in the build tree.
         The files in this list correspond one-to-one to the output
-        filenames returned by 'get_outputs()'."""
-
+        filenames returned by 'get_outputs()'.
+        """
         inputs = []
         
         if self.distribution.has_pure_modules():
-            build_py = self.get_finalized_command ('build_py')
-            inputs.extend (build_py.get_outputs())
+            build_py = self.get_finalized_command('build_py')
+            inputs.extend(build_py.get_outputs())
 
         if self.distribution.has_ext_modules():
-            build_ext = self.get_finalized_command ('build_ext')
-            inputs.extend (build_ext.get_outputs())
+            build_ext = self.get_finalized_command('build_ext')
+            inputs.extend(build_ext.get_outputs())
 
         return inputs
-            
-        
 
 # class install_lib
