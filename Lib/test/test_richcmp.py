@@ -1,6 +1,6 @@
 # Tests for rich comparisons
 
-from test_support import TestFailed
+from test_support import TestFailed, verify
 
 class Number:
 
@@ -167,11 +167,33 @@ def tabulate(c1=Number, c2=Number):
     print
     print '*' * 50
                 
+def misbehavin():
+    class Misb:
+        def __lt__(self, other): return 0
+        def __gt__(self, other): return 0
+        def __eq__(self, other): return 0
+        def __le__(self, other): raise TestFailed, "This shouldn't happen"
+        def __ge__(self, other): raise TestFailed, "This shouldn't happen"
+        def __ne__(self, other): raise TestFailed, "This shouldn't happen"
+        def __cmp__(self, other): raise RuntimeError, "expected"
+    a = Misb()
+    b = Misb()
+    verify((a<b) == 0)
+    verify((a==b) == 0)
+    verify((a>b) == 0)
+    try:
+        print cmp(a, b)
+    except RuntimeError:
+        pass
+    else:
+        raise TestFailed, "cmp(Misb(), Misb()) didn't raise RuntimeError"
+
 def main():
     basic()
     tabulate()
     tabulate(c1=int)
     tabulate(c2=int)
     testvector()
+    misbehavin()
 
 main()
