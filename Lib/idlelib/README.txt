@@ -1,38 +1,58 @@
-IDLEfork README
-===============
+IDLE is Python's Tkinter-based Integrated DeveLopment Environment.
 
-IDLEfork is an official experimental fork of Python's Integrated DeveLopment
-Environment, IDLE.  The biggest change is to execute Python code in a separate
-process, which is /restarted/ for each Run (F5) initiated from an editor
-window.  This enhancement of IDLE has often been requested, and is now finally
-available, complete with the IDLE debugger.  The magic "reload/import *"
-incantations are no longer required when editing/testing a module two or three
-steps down the import chain.
+IDLE emphasizes a lightweight, clean design with a simple user interface.
+Although it is suitable for beginners, even advanced users will find that
+IDLE has everything they really need to develop pure Python code.
 
-It is possible to interrupt tightly looping user code with a control-c, even on
-Windows.
+IDLE features a multi-window text editor with multiple undo, Python colorizing,
+and many other capabilities, e.g. smart indent, call tips, and autocompletion.
 
-There is also a new GUI configuration manager which makes it easy to select
-fonts, colors, keybindings, and startup options.  There is new feature where
-the user can specify additional help sources, either locally or on the web.
+The editor has comprehensive search functions, including searching through
+multiple files.  Class browsers and path browsers provide fast access to
+code objects from a top level viewpoint without dealing with code folding.
 
-IDLEfork will be merged back into the Python distribution in the near future
-(probably 2.3), replacing the current version of IDLE.
+There is a Python Shell window which features colorizing and command recall.
 
-For information on this release, refer to NEWS.txt
+IDLE executes Python code in a separate process, which is restarted for each
+Run (F5) initiated from an editor window.  The environment can also be 
+restarted from the Shell window without restarting IDLE.
 
-If you find bugs let us know about them by using the IDLEfork Bug Tracker.  See
-the IDLEfork home page at
+This enhancement has often been requested, and is now finally available.  The
+magic "reload/import *" incantations are no longer required when editing and
+testing a module two or three steps down the import chain.
 
-http://idlefork.sourceforge.net 
+It is possible to interrupt tightly looping user code, even on Windows.
 
-for details.  Patches are always appreciated at the IDLEfork Patch Tracker, and
-Change Requests should be posted to the RFE Tracker at
+Applications which cannot support subprocesses and/or sockets can still run
+IDLE in a single process.
 
-https://sourceforge.net/tracker/?group_id=9579&atid=359579  
+IDLE has an integrated debugger with stepping, persistent breakpoints, and call
+stack visibility.
+
+There is a GUI configuration manager which makes it easy to select fonts,
+colors, keybindings, and startup options.  This facility includes a feature
+which allows the user to specify additional help sources, either locally or on
+the web.
+
+IDLE is coded in 100% pure Python, using the Tkinter GUI toolkit (Tk/Tcl)
+and is cross-platform, working on Unix, Mac, and Windows.
+
+IDLE accepts command line arguments.  Try idle -h to see the options.
+
+
+If you find bugs or have suggestions, let us know about them by using the
+Python Bug Tracker:
+
+http://sourceforge.net/projects/python
+
+Patches are always appreciated at the Python Patch Tracker, and change
+requests should be posted to the RFE Tracker.
+
+For further details and links, read the Help files and check the IDLE home
+page at
+
+http://www.python.org/idle/
 
 There is a mail list for IDLE: idle-dev@python.org.  You can join at
 
 http://mail.python.org/mailman/listinfo/idle-dev
-
-Thanks for trying IDLEfork.
