@@ -1,4 +1,5 @@
 #include "macstat.h"
+#include "rename2.h"
 
 /* Interfaced used by import.c */
 

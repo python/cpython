@@ -40,7 +40,7 @@ char *macstrerror(int err)
 
 /* Set a MAC-specific error from errno, and return NULL; return None if no error */
 PyObject * 
-PyErr_Mac(object *eobj, int err)
+PyErr_Mac(PyObject *eobj, int err)
 {
 	char *msg;
 	PyObject *v;

@@ -27,8 +27,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "Python.h"
 #include "macglue.h"
 
-#include <stdio.h>
-#include <string.h>
 #include <errno.h>
 
 #include <OSUtils.h> /* for Set(Current)A5 */
@@ -78,7 +76,7 @@ GetStr255(PyObject *v, Str255 pbuf)
 /* Resource objects */
 
 typedef struct {
-	OB_HEAD
+	PyObject_HEAD
 	Handle h;
 } RsrcObject;
 
@@ -226,8 +224,8 @@ MacOS_GetFileType(PyObject *self, PyObject *args)
 	type = PyString_FromStringAndSize((char *)&info.fdType, 4);
 	creator = PyString_FromStringAndSize((char *)&info.fdCreator, 4);
 	res = Py_BuildValue("OO", type, creator);
-	DECREF(type);
-	DECREF(creator);
+	Py_DECREF(type);
+	Py_DECREF(creator);
 	return res;
 }
 
@@ -251,7 +249,7 @@ MacOS_SetFileType(PyObject *self, PyObject *args)
 	info.fdCreator = creator;
 	if ((err = SetFInfo(name, 0, &info)) != noErr) {
 		errno = err;
-		err_errno(MacOS_Error);
+		PyErr_SetFromErrno(MacOS_Error);
 		return NULL;
 	}
 	Py_INCREF(Py_None);
@@ -278,7 +276,7 @@ GetSndCommand(PyObject *v, SndCommand *pc)
 }
 
 typedef struct {
-	OB_HEAD
+	PyObject_HEAD
 	SndChannelPtr chan;
 } SndChObject;
 
@@ -304,7 +302,7 @@ SndCh_Cleanup(SndChObject *s, int quitNow)
 		s->chan = NULL;
 		SndDisposeChannel(chan, quitNow);
 		if (userInfo != 0)
-			DEL(userInfo);
+			PyMem_DEL(userInfo);
 	}
 }
 
@@ -436,7 +434,7 @@ MySafeCallback(arg)
 	Py_DECREF(args);
 	if (res == NULL)
 		return -1;
-	DECREF(res);
+	Py_DECREF(res);
 	return 0;
 }
 
@@ -472,7 +470,7 @@ MacOS_SndNewChannel(PyObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, "h|lO", &synth, &init, &callback))
 		return NULL;
 	if (callback != NULL) {
-		p = NEW(cbinfo, 1);
+		p = PyMem_NEW(cbinfo, 1);
 		if (p == NULL)
 			return PyErr_NoMemory();
 		p->A5 = SetCurrentA5();
@@ -483,13 +481,13 @@ MacOS_SndNewChannel(PyObject *self, PyObject *args)
 	err = SndNewChannel(&chan, synth, init, userroutine);
 	if (err) {
 		if (p)
-			DEL(p);
+			PyMem_DEL(p);
 		return PyErr_Mac(MacOS_Error, (int)err);
 	}
 	res = (PyObject *)SndCh_FromSndChannelPtr(chan);
 	if (res == NULL) {
 		SndDisposeChannel(chan, 1);
-		DEL(p);
+		PyMem_DEL(p);
 	}
 	else {
 		chan->userInfo = (long)p;

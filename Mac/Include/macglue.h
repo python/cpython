@@ -1,3 +1,3 @@
-char *macstrerror PROTO((int));				/* strerror with mac errors */
-object *PyErr_Mac PROTO((object *, int));	/* Exception with a mac error */
-int PyMac_Idle PROTO((void));				/* Idle routine */
+char *macstrerror Py_PROTO((int));			/* strerror with mac errors */
+PyObject *PyErr_Mac Py_PROTO((PyObject *, int));	/* Exception with a mac error */
+int PyMac_Idle Py_PROTO((void));			/* Idle routine */
