@@ -295,8 +295,12 @@ class EditorWindow:
         import pyclbr
         if pyclbr._modules.has_key(base):
             del pyclbr._modules[base]
+        save_cursor = self.text["cursor"]
+        self.text["cursor"] = "watch"
+        self.text.update_idletasks()
         import ClassBrowser
         ClassBrowser.ClassBrowser(self.flist, base, [head])
+        self.text["cursor"] = save_cursor
 
     def gotoline(self, lineno):
         if lineno is not None and lineno > 0:
@@ -393,13 +397,25 @@ class EditorWindow:
         self.center()
 
     def center(self, mark="insert"):
-        insert = float(self.text.index(mark + " linestart"))
-        end = float(self.text.index("end"))
-        if insert > end-insert:
-            self.text.see("1.0")
-        else:
-            self.text.see("end")
-        self.text.see(mark)
+        text = self.text
+        top, bot = self.getwindowlines()
+        lineno = self.getlineno(mark)
+        height = bot - top
+        newtop = max(1, lineno - height/2)
+        text.yview(float(newtop))
+
+    def getwindowlines(self):
+        text = self.text
+        top = self.getlineno("@0,0")
+        bot = self.getlineno("@0,65535")
+        if top == bot:
+            height = int(text['height'])
+            bot = top + height - 1
+        return top, bot
+
+    def getlineno(self, mark="insert"):
+        text = self.text
+        return int(float(text.index(mark)))
 
     def close_event(self, event):
         self.close()
