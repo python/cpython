@@ -2004,6 +2004,50 @@ PyCurses_Start_Color(PyObject *self, PyObject *args)
 }
 
 static PyObject *
+PyCurses_tigetflag(PyObject *self, PyObject *args)
+{
+	char *capname;
+
+	PyCursesInitialised;
+		
+	if (!PyArg_ParseTuple(args, "z", &capname))
+		return NULL;
+
+	return PyInt_FromLong( (long) tigetflag( capname ) );
+}
+
+static PyObject *
+PyCurses_tigetnum(PyObject *self, PyObject *args)
+{
+	char *capname;
+
+	PyCursesInitialised;
+		
+	if (!PyArg_ParseTuple(args, "z", &capname))
+		return NULL;
+
+	return PyInt_FromLong( (long) tigetnum( capname ) );
+}
+
+static PyObject *
+PyCurses_tigetstr(PyObject *self, PyObject *args)
+{
+	char *capname;
+
+	PyCursesInitialised;
+		
+	if (!PyArg_ParseTuple(args, "z", &capname))
+		return NULL;
+
+	capname = tigetstr( capname );
+	if (capname == 0 || capname == (char*) -1) {
+		Py_INCREF(Py_None);
+		return Py_None;
+	}
+	return PyString_FromString( capname );
+}
+
+static PyObject *
 PyCurses_TypeAhead(PyObject *self, PyObject *args)
 {
   int fd;
@@ -2149,6 +2193,9 @@ static PyMethodDef PyCurses_methods[] = {
   {"start_color",         (PyCFunction)PyCurses_Start_Color},
   {"termattrs",           (PyCFunction)PyCurses_termattrs},
   {"termname",            (PyCFunction)PyCurses_termname},
+  {"tigetflag",		  (PyCFunction)PyCurses_tigetflag, METH_VARARGS},
+  {"tigetnum",		  (PyCFunction)PyCurses_tigetnum, METH_VARARGS},
+  {"tigetstr",		  (PyCFunction)PyCurses_tigetstr, METH_VARARGS},
   {"typeahead",           (PyCFunction)PyCurses_TypeAhead},
   {"unctrl",              (PyCFunction)PyCurses_UnCtrl},
   {"ungetch",             (PyCFunction)PyCurses_UngetCh},
