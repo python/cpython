@@ -57,3 +57,29 @@ string_tests.run_inplace_tests(str)
 string.whitespace
 string.lowercase
 string.uppercase
+
+# Float formatting
+for prec in range(100):
+    formatstring = u'%%.%if' % prec
+    value = 0.01
+    for x in range(60):
+        value = value * 3.141592655 / 3.0 * 10.0
+        #print 'Overflow check for x=%i and prec=%i:' % \
+        #      (x, prec),
+        try:
+            result = formatstring % value
+        except OverflowError:
+            # The formatfloat() code in stringobject.c and
+            # unicodeobject.c uses a 120 byte buffer and switches from
+            # 'f' formatting to 'g' at precision 50, so we expect
+            # OverflowErrors for the ranges x < 50 and prec >= 67.
+            if x >= 50 or \
+               prec < 67:
+                print '*** unexpected OverflowError for x=%i and prec=%i' % (x, prec)
+            else:
+                #print 'OverflowError'
+                pass
+        else:
+            #print result
+            pass
+    
