@@ -27,13 +27,13 @@ sub do_cmd_e{ local($_) = @_; '&#92;' . $_; }
 
 sub do_cmd_optional{
 	local($_) = @_;
-	s/$any_next_pair_pr_rx/<\/VAR><BIG>\[<\/BIG><VAR>\2<\/VAR><BIG>\]<\/BIG><VAR>/;
+	s/$any_next_pair_pr_rx/<\/var><big>\[<\/big><var>\2<\/var><big>\]<\/big><var>/;
 	$_;
 }
 
 sub do_cmd_varvars{
 	local($_) = @_;
-	s/$any_next_pair_pr_rx/<VAR>\2<\/VAR>/;
+	s/$any_next_pair_pr_rx/<var>\2<\/var>/;
 	$_;
 }
 
@@ -41,7 +41,7 @@ sub do_cmd_varvars{
 
 sub do_cmd_code{
 	local($_) = @_;
-	s/$any_next_pair_pr_rx/<CODE>\2<\/CODE>/;
+	s/$any_next_pair_pr_rx/<code>\2<\/code>/;
 	$_;
 }
 
@@ -49,51 +49,41 @@ sub do_cmd_sectcode{ &do_cmd_code(@_); }
 
 sub do_cmd_kbd{
 	local($_) = @_;
-	s/$any_next_pair_pr_rx/<KBD>\2<\/KBD>/;
+	s/$any_next_pair_pr_rx/<kbd>\2<\/kbd>/;
 	$_;
 }
 
 sub do_cmd_key{
 	local($_) = @_;
-	s/$any_next_pair_pr_rx/<TT>\2<\/TT>/;
-	$_;
-}
-
-sub do_cmd_samp{
-	local($_) = @_;
-	s/$any_next_pair_pr_rx/`<SAMP>\2<\/SAMP>'/;
+	s/$any_next_pair_pr_rx/<tt>\2<\/tt>/;
 	$_;
 }
 
 sub do_cmd_var{
 	local($_) = @_;
-	s/$any_next_pair_pr_rx/<VAR>\2<\/VAR>/;
-	$_;
-}
-
-sub do_cmd_file{
-	local($_) = @_;
-	s/$any_next_pair_pr_rx/`<CODE>\2<\/CODE>'/;
+	s/$any_next_pair_pr_rx/<var>\2<\/var>/;
 	$_;
 }
 
 sub do_cmd_dfn{
 	local($_) = @_;
-	s/$any_next_pair_pr_rx/<I><DFN>\2<\/DFN><\/I>/;
+	s/$any_next_pair_pr_rx/<i><dfn>\2<\/dfn><\/i>/;
 	$_;
 }
 
 sub do_cmd_emph{
 	local($_) = @_;
-	s/$any_next_pair_pr_rx/<EM>\2<\/EM>/;
+	s/$any_next_pair_pr_rx/<em>\2<\/em>/;
 	$_;
 }
 
 sub do_cmd_strong{
 	local($_) = @_;
-	s/$any_next_pair_pr_rx/<STRONG>\2<\/STRONG>/;
+	s/$any_next_pair_pr_rx/<strong>\2<\/strong>/;
 	$_;
 }
+
+# file and samp are at the end of this file since they screw up fontlock.
 
 # index commands
 
@@ -182,7 +172,7 @@ sub get_indexsubitem{
 
 sub do_env_cfuncdesc{
   local($_) = @_;
-  local($return_type,$function_name,$arg_list) = ('', '', '');
+  local($return_type,$function_name,$arg_list,$idx) = ('', '', '', '');
   local($cfuncdesc_rx) =
     "$next_pair_rx$any_next_pair_rx3$any_next_pair_rx5";
   $* = 1;
@@ -190,11 +180,12 @@ sub do_env_cfuncdesc{
     $return_type = "$2";
     $function_name = "$4";
     $arg_list = "$6";
-    &make_index_entry($3,"<TT>$function_name</TT> " . &get_indexsubitem);
+    $idx = &make_str_index_entry($3,
+			"<tt>$function_name</tt> " . &get_indexsubitem);
   }
   $* = 0;
-  "<DL><DT>$return_type <STRONG><A NAME=\"$3\">$function_name</A></STRONG>" .
-    "(<VAR>$arg_list</VAR>)\n<DD>$'\n</DL>"
+  "<dl><dt>$return_type <strong>$idx</strong>" .
+    "(<var>$arg_list</var>)\n<dd>$'\n</dl>"
 }
 
 sub do_env_ctypedesc{
@@ -205,74 +196,109 @@ sub do_env_ctypedesc{
   $* = 1;
   if (/$cfuncdesc_rx/o) {
     $type_name = "$2";
-    &make_index_entry($1,"<TT>$var_name</TT> " . &get_indexsubitem);
+    $idx = &make_str_index_entry($1,
+				 "<tt>$type_name</tt> " . &get_indexsubitem);
   }
   $* = 0;
-  "<DL><DT><STRONG><A NAME=\"$1\">$type_name</A></STRONG>\n<DD>$'\n</DL>"
+  "<dl><dt><strong>$idx</strong>\n<dd>$'\n</dl>"
 }
 
 sub do_env_cvardesc{
   local($_) = @_;
-  local($var_type,$var_name) = ('', '');
+  local($var_type,$var_name,$idx) = ('', '', '');
   local($cfuncdesc_rx) =
     "$next_pair_rx$any_next_pair_rx3";
   $* = 1;
   if (/$cfuncdesc_rx/o) {
     $var_type = "$2";
     $var_name = "$4";
-    &make_index_entry($3,"<TT>$var_name</TT> " . &get_indexsubitem);
+    $idx = &make_str_index_entry($3,"<tt>$var_name</tt> " . &get_indexsubitem);
   }
   $* = 0;
-  "<DL><DT>$var_type <STRONG><A NAME=\"$3\">$var_name</A></STRONG>\n" .
-    "<DD>$'\n</DL>"
+  "<dl><dt>$var_type <strong>$idx</strong>\n" .
+    "<dd>$'\n</dl>";
 }
 
 sub do_env_funcdesc{
   local($_) = @_;
-  local($function_name,$arg_list) = ('', '');
+  local($function_name,$arg_list,$idx) = ('', '', '');
   local($funcdesc_rx) = "$next_pair_rx$any_next_pair_rx3";
   $* = 1;
   if (/$funcdesc_rx/o) {
     $function_name = "$2";
     $arg_list = "$4";
-    &make_index_entry($1,"<TT>$function_name</TT> " . &get_indexsubitem);
+    $idx = &make_str_index_entry($3,
+			"<tt>$function_name</tt> " . &get_indexsubitem);
   }
   $* = 0;
-  "<DL><DT><STRONG><A NAME=\"$3\">$function_name</A></STRONG>" .
-    "(<VAR>$arg_list</VAR>)\n<DD>$'\n</DL>"
+  "<dl><dt><strong>$idx</strong> (<var>$arg_list</var>)\n<dd>$'\n</dl>";
+}
+
+sub do_env_opcodedesc{
+  local($_) = @_;
+  local($opcode_name,$arg_list,$stuff,$idx) = ('', '', '', '');
+  local($opcodedesc_rx) = "$next_pair_rx$any_next_pair_rx3";
+  $* = 1;
+  if (/$opcodedesc_rx/o) {
+    $opcode_name = "$2";
+    $arg_list = "$4";
+    $idx = &make_str_index_entry($3,
+			"<tt>$opcode_name</tt> (byte code instruction)");
+  }
+  $* = 0;
+  $stuff = "<dl><dt><strong>$idx</strong>";
+  if ($arg_list) {
+    $stuff = "$stuff&nbsp;&nbsp;&nbsp;&nbsp;<var>$arg_list</var>";
+  }
+  $stuff . "\n<dd>$'\n</dl>";
 }
 
 sub do_env_datadesc{
   local($_) = @_;
-  local($data_name) = ('', '');
+  local($data_name,$idx) = ('', '');
   local($datadesc_rx) = "$next_pair_rx";
   $* = 1;
   if (/$datadesc_rx/o) {
     $data_name = "$2";
-    &make_index_entry($1,"<TT>$data_name</TT> " . &get_indexsubitem);
+    $idx = &make_str_index_entry($3,
+				 "<tt>$data_name</tt> " . &get_indexsubitem);
   }
   $* = 0;
-  "<DL><DT><STRONG><A NAME=\"$3\">$data_name</A></STRONG>" .
-    "\n<DD>$'\n</DL>"
+  "<dl><dt><strong>$idx</strong>" .
+    "\n<dd>$'\n</dl>"
 }
 
 sub do_env_excdesc{ &do_env_datadesc(@_); }
 
 sub do_env_seealso{
   local($_) = @_;
-  "<P><B>See Also:</B></P>\n" . $_;
+  "<p><b>See Also:</b></p>\n" . $_;
 }
 
 sub do_cmd_seemodule{
   local($_) = @_;
   local($any_next_pair_pr_rx3) = "$OP(\\d+)$CP([\\s\\S]*)$OP\\3$CP";
-  s/$next_pair_pr_rx$any_next_pair_pr_rx3/<P><CODE><B>\2<\/B><\/CODE> (\4)<\/P>/;
+  s/$next_pair_pr_rx$any_next_pair_pr_rx3/<p><code><b>\2<\/b><\/code> (\4)<\/p>/;
   $_;
 }
 
 sub do_cmd_seetext{
   local($_) = @_;
   "<p>" . $_;
+}
+
+# These are located down here since they screw up fontlock.
+
+sub do_cmd_file{
+	local($_) = @_;
+	s/$any_next_pair_pr_rx/`<code>\2<\/code>'/;
+	$_;
+}
+
+sub do_cmd_samp{
+	local($_) = @_;
+	s/$any_next_pair_pr_rx/`<samp>\2<\/samp>'/;
+	$_;
 }
 
 1;				# This must be the last line
