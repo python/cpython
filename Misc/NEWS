@@ -149,6 +149,11 @@ Core
 
 Library
 
+- The constants ascii_letters, ascii_lowercase. and ascii_uppercase
+  were added to the string module.  These a locale-indenpendent
+  constants, unlike letters, lowercase, and uppercase.  These are now
+  use in appropriate locations in the standard library.
+
 - The flags used in dlopen calls can now be configured using
   sys.setdlopenflags and queried using sys.getdlopenflags.
 
