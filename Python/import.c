@@ -214,9 +214,9 @@ imp_lock_held(PyObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, ":lock_held"))
 		return NULL;
 #ifdef WITH_THREAD
-	return PyInt_FromLong(import_lock_thread != -1);
+	return PyBool_FromLong(import_lock_thread != -1);
 #else
-	return PyInt_FromLong(0);
+	return PyBool_FromLong(0);
 #endif
 }
 
@@ -2295,7 +2295,7 @@ imp_is_builtin(PyObject *self, PyObject *args)
 	char *name;
 	if (!PyArg_ParseTuple(args, "s:is_builtin", &name))
 		return NULL;
-	return PyInt_FromLong(is_builtin(name));
+	return PyBool_FromLong(is_builtin(name));
 }
 
 static PyObject *
@@ -2306,7 +2306,7 @@ imp_is_frozen(PyObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, "s:is_frozen", &name))
 		return NULL;
 	p = find_frozen(name);
-	return PyInt_FromLong((long) (p == NULL ? 0 : p->size));
+	return PyBool_FromLong((long) (p == NULL ? 0 : p->size));
 }
 
 static FILE *
