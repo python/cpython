@@ -250,8 +250,11 @@ I_PPC_EXTENSIONS : (buildmwproject, "CWIE", [
 		(":Extensions:Numerical:Mac:numpymodules.prj", "multiarraymodule"),
 		(":Extensions:Numerical:Mac:numpymodules.prj", "_numpy"),
 		(":Extensions:Numerical:Mac:numpymodules.prj", "umathmodule"),
-		(":Extensions:Numerical:Mac:numpymodules.prj", "lapack_litemodule"),
-		(":Extensions:Numerical:Mac:numpymodules.prj", "ranlibmodule"),
+		(":Extensions:Numerical:Mac:numpymodules.prj", "arrayfns"),
+		(":Extensions:Numerical:Packages:FFT:Mac:fftpack.prj", "fftpack.ppc"),
+		(":Extensions:Numerical:Packages:LALITE:Mac:lapack_lite.prj", "lapack_lite.ppc"),
+		(":Extensions:Numerical:Packages:RANLIB:Mac:ranlib.prj", "ranlib.ppc"),
+		(":Extensions:Numerical:Packages:RNG:Mac:RNG.prj", "RNG.ppc"),
 	]),
 
 I_68K_EXTENSIONS : (buildmwproject, "CWIE", [
