@@ -2544,6 +2544,7 @@ init_curses(void)
 	/* Add a CObject for the C API */
 	c_api_object = PyCObject_FromVoidPtr((void *)PyCurses_API, NULL);
 	PyDict_SetItemString(d, "_C_API", c_api_object);
+	Py_DECREF(c_api_object);
 
 	/* For exception curses.error */
 	PyCursesError = PyErr_NewException("_curses.error", NULL, NULL);
