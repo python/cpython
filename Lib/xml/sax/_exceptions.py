@@ -79,10 +79,11 @@ class SAXParseException(SAXException):
 
     def __str__(self):
         "Create a string representation of the exception."
-        return "%s at %s:%d:%d" % (self._msg,
-                                   self.getSystemId(),
-                                   self.getLineNumber(),
-                                   self.getColumnNumber())
+        sysid = self.getSystemId()
+        if sysid is None:
+            sysid = "<unknown>"
+        return "%s:%d:%d: %s" % (sysid, self.getLineNumber(),
+                                 self.getColumnNumber(), self._msg)
 
 
 # ===== SAXNOTRECOGNIZEDEXCEPTION =====

@@ -81,7 +81,8 @@ class ExpatParser(xmlreader.IncrementalParser, xmlreader.Locator):
             self._parser.Parse(data, isFinal)
         except expat.error:
             error_code = self._parser.ErrorCode
-            raise SAXParseException(expat.ErrorString(error_code), None, self)
+            exc = SAXParseException(expat.ErrorString(error_code), None, self)
+            self._err_handler.fatalError(exc)
 
     def close(self):
         if self._entity_stack:
