@@ -44,8 +44,10 @@ def clear_cache():
 # (e.g. netloc is a single string) and we don't expand % escapes.
 def urlparse(url, scheme = '', allow_framents = 1):
 	key = url, scheme, allow_framents
-	if _parse_cache.has_key(key):
+	try:
 	    return _parse_cache[key]
+	except KeyError:
+	    pass
 	if len(_parse_cache) >= MAX_CACHE_SIZE:	# avoid runaway growth
 	    clear_cache()
 	netloc = path = params = query = fragment = ''
