@@ -276,12 +276,14 @@ for that service.  The protocol name should be \code{'tcp'} or
 \code{'udp'}.
 \end{funcdesc}
 
-\begin{funcdesc}{socket}{family, type\optional{, proto}}
+\begin{funcdesc}{socket}{\optional{family\optional{,
+                         type\optional{, proto}}}}
 Create a new socket using the given address family, socket type and
-protocol number.  The address family should be \constant{AF_INET}, \constant{AF_INET6} or
-\constant{AF_UNIX}.  The socket type should be \constant{SOCK_STREAM},
-\constant{SOCK_DGRAM} or perhaps one of the other \samp{SOCK_} constants.
-The protocol number is usually zero and may be omitted in that case.
+protocol number.  The address family should be \constant{AF_INET} (the
+default), \constant{AF_INET6} or \constant{AF_UNIX}.  The socket type
+should be \constant{SOCK_STREAM} (the default), \constant{SOCK_DGRAM}
+or perhaps one of the other \samp{SOCK_} constants.  The protocol
+number is usually zero and may be omitted in that case.
 \end{funcdesc}
 
 \begin{funcdesc}{ssl}{sock\optional{, keyfile, certfile}}
