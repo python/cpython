@@ -317,14 +317,17 @@ You can also change the prompts \code{sys.ps1} and \code{sys.ps2} in
 this file.
 
 If you want to read an additional start-up file from the current
-directory, you can program this in the global start-up file, e.g.
-\samp{execfile('.pythonrc')}.  If you want to use the startup file
-in a script, you must write this explicitly in the script:
+directory, you can program this in the global start-up file,
+e.g.\ \samp{execfile('.pythonrc')}\indexii{.pythonrc.py}{file}.  If
+you want to use the startup file in a script, you must do this
+explicitly in the script:
 
 \begin{verbatim}
 import os
-execfile(os.environ['PYTHONSTARTUP'])
+if os.path.isfile(os.environ['PYTHONSTARTUP']):
+    execfile(os.environ['PYTHONSTARTUP'])
 \end{verbatim}
+
 
 \chapter{An Informal Introduction to Python}
 \label{informal}
@@ -2313,8 +2316,7 @@ stored and reused by other programs or by a future invocation of the
 same program; the technical term for this is a \dfn{persistent}
 object.  Because \module{pickle} is so widely used, many authors who
 write Python extensions take care to ensure that new data types such
-as matrices, XXX more examples needed XXX, can be properly pickled and
-unpickled.
+as matrices can be properly pickled and unpickled.
 
 
 
@@ -3453,6 +3455,28 @@ TAB: complete
 
 in your \file{\$HOME/.inputrc}.  (Of course, this makes it hard to type
 indented continuation lines...)
+
+Automatic completion of variable and module names is optionally
+available.  To enable it in the interpreter's interactive mode, add
+the following to your \file{\$HOME/.pythonrc} file:% $ <- bow to font-lock
+\indexii{.pythonrc.py}{file}%
+\refstmodindex{rlcompleter}%
+\refbimodindex{readline}
+
+\begin{verbatim}
+import rlcompleter, readline
+readline.parse_and_bind('tab: complete')
+\end{verbatim}
+
+This binds the TAB key to the completion function, so hitting the TAB
+key twice suggests completions; it looks at Python statement names,
+the current local variables, and the available module names.  For
+dotted expressions such as \code{string.a}, it will evaluate the the
+expression up to the final \character{.} and then suggest completions
+from the attributes of the resulting object.  Note that this may
+execute application-defined code if an object with a
+\method{__getattr__()} method is part of the expression.
+
 
 \section{Commentary}
 \label{commentary}
