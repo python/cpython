@@ -330,7 +330,7 @@ getaddrinfo(hostname, servname, hints, res)
 			break;
 		default:
 			ERR(EAI_SOCKTYPE);
-			break;
+			/* unreachable */
 		}
 	}
 
