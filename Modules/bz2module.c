@@ -7,9 +7,9 @@ Copyright (c) 2002  Python Software Foundation; All Rights Reserved
 
 */
 
+#include "Python.h"
 #include <stdio.h>
 #include <bzlib.h>
-#include "Python.h"
 #include "structmember.h"
 
 #ifdef WITH_THREAD
