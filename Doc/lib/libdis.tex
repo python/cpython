@@ -130,6 +130,11 @@ Lifts second and third stack item one position up, moves top down
 to position three.
 \end{opcodedesc}
 
+\begin{opcodedesc}{ROT_FOUR}{}
+Lifts second, third and forth stack item one position up, moves top down to
+position four.
+\end{opcodedesc}
+
 \begin{opcodedesc}{DUP_TOP}{}
 Duplicates the reference on top of the stack.
 \end{opcodedesc}
@@ -207,6 +212,55 @@ Implements \code{TOS = TOS1 \^\ TOS}.
 
 \begin{opcodedesc}{BINARY_OR}{}
 Implements \code{TOS = TOS1 | TOS}.
+\end{opcodedesc}
+
+In-place operations are like binary operations, in that they remove TOS and
+TOS1, and push the result back on the stack, but the operation is done
+in-place when TOS1 supports it, and the resulting TOS may be (but does not
+have to be) the original TOS1.
+
+\begin{opcodedesc}{INPLACE_POWER}{}
+Implements in-place \code{TOS = TOS1 ** TOS}.
+\end{opcodedesc}
+
+\begin{opcodedesc}{INPLACE_MULTIPLY}{}
+Implements in-place \code{TOS = TOS1 * TOS}.
+\end{opcodedesc}
+
+\begin{opcodedesc}{INPLACE_DIVIDE}{}
+Implements in-place \code{TOS = TOS1 / TOS}.
+\end{opcodedesc}
+
+\begin{opcodedesc}{INPLACE_MODULO}{}
+Implements in-place \code{TOS = TOS1 \%{} TOS}.
+\end{opcodedesc}
+
+\begin{opcodedesc}{INPLACE_ADD}{}
+Implements in-place \code{TOS = TOS1 + TOS}.
+\end{opcodedesc}
+
+\begin{opcodedesc}{INPLACE_SUBTRACT}{}
+Implements in-place \code{TOS = TOS1 - TOS}.
+\end{opcodedesc}
+
+\begin{opcodedesc}{INPLACE_LSHIFT}{}
+Implements in-place \code{TOS = TOS1 << TOS}.
+\end{opcodedesc}
+
+\begin{opcodedesc}{INPLACE_RSHIFT}{}
+Implements in-place \code{TOS = TOS1 >> TOS}.
+\end{opcodedesc}
+
+\begin{opcodedesc}{INPLACE_AND}{}
+Implements in-place \code{TOS = TOS1 \&\ TOS}.
+\end{opcodedesc}
+
+\begin{opcodedesc}{INPLACE_XOR}{}
+Implements in-place \code{TOS = TOS1 \^\ TOS}.
+\end{opcodedesc}
+
+\begin{opcodedesc}{INPLACE_OR}{}
+Implements in-place \code{TOS = TOS1 | TOS}.
 \end{opcodedesc}
 
 The slice opcodes take up to three parameters.
@@ -365,6 +419,11 @@ the stack right-to-left.
 %\begin{opcodedesc}{UNPACK_ARG}{count}
 %This opcode is obsolete.
 %\end{opcodedesc}
+
+\begin{opcodedesc}{DUP_TOPX}{count}
+Duplicate \var{count} items, keeping them in the same order. Due to
+implementation limits, \var{count} should be between 1 and 5 inclusive.
+\end{opcodedesc}
 
 \begin{opcodedesc}{STORE_ATTR}{namei}
 Implements \code{TOS.name = TOS1}, where \var{namei} is the index
