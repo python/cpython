@@ -731,6 +731,14 @@ class Misc:
 		return self.tk.splitlist(
 		    self.tk.call('event', 'info', virtual))
 
+	# Image related commands
+
+	def image_names(self):
+		return self.tk.call('image', 'names')
+
+	def image_types(self):
+		return self.tk.call('image', 'types')
+
 
 class CallWrapper:
 	def __init__(self, func, subst, widget):
