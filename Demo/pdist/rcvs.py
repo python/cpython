@@ -4,8 +4,11 @@
 
 # XXX To do:
 #
+# Bugs:
+# - if the remote file is deleted, "rcvs update" will fail
+#
 # Functionality:
-# - descend into directories
+# - descend into directories (alraedy done for update)
 # - cvs add; cvs rm
 # - commit new files
 # - conflict resolution
@@ -188,6 +191,7 @@ class MyFile(File):
 	def put(self, message = ""):
 		print "Checking in", self.file, "..."
 		data = open(self.file).read()
+		self.proxy.lock(self.file)
 		messages = self.proxy.put(self.file, data, message)
 		if messages:
 			print messages
@@ -314,7 +318,7 @@ class RCVS(CVS):
 
 class rcvs(CommandFrameWork):
 
-	GlobalFlags = 'd:h:p:qv'
+	GlobalFlags = 'd:h:p:qvL'
 	UsageMessage = \
 "usage: rcvs [-d directory] [-h host] [-p port] [-q] [-v] [subcommand arg ...]"
 	PostUsageMessage = \
