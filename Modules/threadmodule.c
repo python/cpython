@@ -197,7 +197,7 @@ t_bootstrap(void *boot_raw)
 		if (PyErr_ExceptionMatches(PyExc_SystemExit))
 			PyErr_Clear();
 		else {
-			fprintf(stderr, "Unhandled exception in thread:\n");
+			PySys_WriteStderr("Unhandled exception in thread:\n");
 			PyErr_PrintEx(0);
 		}
 	}
