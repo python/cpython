@@ -24,8 +24,8 @@ is distributed with an rgb.txt file from the X11R6.4 distribution for
 this reason, but you can use a different file with the -d option.  The
 file xlicense.txt contains the license only for rgb.txt.
 
-Pynche is pronounced `Pinch-ee'.  Start it by running the pynche.py
-driver.  On Windows, run pynche.pyw to inhibit the console window.
+Pynche is pronounced `Pinch-ee'.  Start it by running the `pynche'
+script.  On Windows, run pynche.pyw to inhibit the console window.
 
 The top part of the main Pynche window contains the "variation
 strips".  Each strip contains a number of "color chips".  The strips
