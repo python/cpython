@@ -266,6 +266,12 @@ export PYTHONPATH
 exec "${executable}" "${main}" "$@"
 """
 
+ARGVEMULATOR="""\
+import argvemulator, os
+
+argvemulator.ArgvCollector().mainloop()
+execfile(os.path.join(os.path.split(__file__)[0], "%(realmainprogram)s"))
+"""
 
 class AppBuilder(BundleBuilder):
 
@@ -293,6 +299,10 @@ class AppBuilder(BundleBuilder):
 
 	# If True, build standalone app.
 	standalone = 0
+	
+	# If True, add a real main program that emulates sys.argv before calling
+	# mainprogram
+	argv_emulation = 0
 
 	# The following attributes are only used when building a standalone app.
 
@@ -368,6 +378,27 @@ class AppBuilder(BundleBuilder):
 		if self.mainprogram is not None:
 			mainprogram = os.path.basename(self.mainprogram)
 			self.files.append((self.mainprogram, pathjoin(resdir, mainprogram)))
+			if self.argv_emulation:
+				# Change the main program, and create the helper main program (which
+				# does argv collection and then calls the real main).
+				# Also update the included modules (if we're creating a standalone
+				# program) and the plist
+				realmainprogram = mainprogram
+				mainprogram = '__argvemulator_' + mainprogram
+				resdirpath = pathjoin(self.bundlepath, resdir)
+				mainprogrampath = pathjoin(resdirpath, mainprogram)
+				makedirs(resdirpath)
+				open(mainprogrampath, "w").write(ARGVEMULATOR % locals())
+				if self.standalone:
+					self.includeModules.append("argvemulator")
+					self.includeModules.append("os")
+				if not self.plist.has_key("CFBundleDocumentTypes"):
+					self.plist["CFBundleDocumentTypes"] = [
+						{ "CFBundleTypeOSTypes" : [
+							"****",
+							"fold",
+							"disk"],
+						  "CFBundleTypeRole": "Viewer"}]
 			# Write bootstrap script
 			executable = os.path.basename(self.executable)
 			execdir = pathjoin(self.bundlepath, self.execdir)
@@ -619,6 +650,7 @@ Options:
   -r, --resource=FILE    extra file or folder to be copied to Resources
   -e, --executable=FILE  the executable to be used
   -m, --mainprogram=FILE the Python main program
+  -a, --argv             add a wrapper main program to create sys.argv
   -p, --plist=FILE       .plist file (default: generate one)
       --nib=NAME         main nib name
   -c, --creator=CCCC     4-char creator code (default: '????')
@@ -647,10 +679,10 @@ def main(builder=None):
 	if builder is None:
 		builder = AppBuilder(verbosity=1)
 
-	shortopts = "b:n:r:e:m:c:p:lx:i:hvq"
+	shortopts = "b:n:r:e:m:c:p:lx:i:hvqa"
 	longopts = ("builddir=", "name=", "resource=", "executable=",
 		"mainprogram=", "creator=", "nib=", "plist=", "link",
-		"link-exec", "help", "verbose", "quiet", "standalone",
+		"link-exec", "help", "verbose", "quiet", "argv", "standalone",
 		"exclude=", "include=", "package=", "strip", "iconfile=")
 
 	try:
@@ -669,6 +701,8 @@ def main(builder=None):
 			builder.executable = arg
 		elif opt in ('-m', '--mainprogram'):
 			builder.mainprogram = arg
+		elif opt in ('-a', '--argv'):
+			builder.argv_emulation = 1
 		elif opt in ('-c', '--creator'):
 			builder.creator = arg
 		elif opt == '--iconfile':
