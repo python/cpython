@@ -268,7 +268,7 @@ Documentation
   - point out the importance of reassigning data members before
     assigning thier values
 
-  - correct my missconception about return values from visitprocs. Sigh.
+  - correct my misconception about return values from visitprocs. Sigh.
 
   - mention the labor saving Py_VISIT and Py_CLEAR macros.
 
