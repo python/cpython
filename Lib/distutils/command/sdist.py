@@ -11,7 +11,8 @@ import fnmatch
 from types import *
 from glob import glob
 from distutils.core import Command
-from distutils.util import newer, create_tree, remove_tree, native_path
+from distutils.util import newer, create_tree, remove_tree, native_path, \
+     write_file
 from distutils.archive_util import check_archive_formats
 from distutils.text_file import TextFile
 from distutils.errors import DistutilsExecError, DistutilsOptionError
@@ -447,10 +448,9 @@ class sdist (Command):
            by 'find_defaults()' and 'read_template()') to the manifest file
            named by 'self.manifest'."""
 
-        manifest = open (self.manifest, "w")
-        for fn in self.files:
-            manifest.write (fn + '\n')
-        manifest.close ()
+        self.execute(write_file,
+                     (self.manifest, self.files),
+                     "writing manifest file")
 
     # write_manifest ()
 
