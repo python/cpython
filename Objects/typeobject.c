@@ -719,7 +719,7 @@ pmerge(PyObject *acc, PyObject* to_merge) {
 			}
 		}
 		goto again;
-	  skip:
+	  skip: ;
 	}
 
 	PyMem_FREE(remain);
