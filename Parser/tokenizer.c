@@ -424,6 +424,8 @@ tok_get(tok, p_start, p_end)
 				col++;
 			else if (c == '\t')
 				col = (col/tok->tabsize + 1) * tok->tabsize;
+			else if (c == '\014') /* Control-L (formfeed) */
+				col = 0; /* For Emacs users */
 			else
 				break;
 		}
@@ -492,7 +494,7 @@ tok_get(tok, p_start, p_end)
 	/* Skip spaces */
 	do {
 		c = tok_nextc(tok);
-	} while (c == ' ' || c == '\t');
+	} while (c == ' ' || c == '\t' || c == '\014');
 	
 	/* Set start of current token */
 	tok->start = tok->cur - 1;
