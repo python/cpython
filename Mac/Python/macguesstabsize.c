@@ -17,14 +17,12 @@ guesstabsize(path)
 	s[0] = strlen(path);
 	memcpy(s+1, path, s[0]);
 	refnum = OpenResFile(s);
-/* printf("%s --> refnum=%d\n", path, refnum); */
 	if (refnum == -1)
 		return 0;
 	UseResFile(refnum);
 	h = GetIndResource('ETAB', 1);
 	if (h != 0) {
 		tabsize = (*(short**)h)[1];
-/* printf("tabsize=%d\n", tabsize); */
 	}
 	CloseResFile(refnum);
 	return tabsize;
