@@ -11,6 +11,9 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 /* Generic object operations; and implementation of None (NoObject) */
 
 #include "Python.h"
+#ifdef HAVE_LIMITS_H
+#include <limits.h>
+#endif
 
 #ifdef macintosh
 #include "macglue.h"
@@ -339,7 +342,11 @@ PyObject *_PyCompareState_Key;
    some types) and decremented on exit.  If the count exceeds the
    nesting limit, enable code to detect circular data structures.
 */
+#ifdef macintosh
+#define NESTING_LIMIT 60
+#else
 #define NESTING_LIMIT 500
+#endif
 int _PyCompareState_nesting = 0;
 
 static PyObject*
@@ -394,6 +401,12 @@ PyObject_Compare(PyObject *v, PyObject *w)
 	PyTypeObject *vtp, *wtp;
 	int result;
 
+#if defined(USE_STACKCHECK)
+	if (PyOS_CheckStack() < 0) {
+		PyErr_SetString(PyExc_MemoryError, "Stack overflow");
+        return -1;
+	}
+#endif
 	if (v == NULL || w == NULL) {
 		PyErr_BadInternalCall();
 		return -1;
