@@ -191,6 +191,9 @@ GLHACK=-Dclear=__GLclear
 # Dynamic readlines
 #xreadlines xreadlinesmodule.c
 
+# CSV file helper
+#_csv _csv.c
+
 # Socket module helper for socket(2)
 #_socket socketmodule.c
 
