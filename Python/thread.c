@@ -150,8 +150,12 @@ void PyThread_init_thread _P0()
 #include "thread_lwp.h"
 #endif
 
+#ifdef _GNU_PTH
+#include "thread_pth.h"
+#else
 #ifdef _POSIX_THREADS
 #include "thread_pthread.h"
+#endif
 #endif
 
 #ifdef C_THREADS

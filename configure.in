@@ -654,6 +654,10 @@ AC_DEFINE(_REENTRANT)
 AC_CHECK_HEADER(mach/cthreads.h, [AC_DEFINE(WITH_THREAD)
 AC_DEFINE(C_THREADS)
 LIBOBJS="$LIBOBJS thread.o"],[
+AC_CHECK_LIB(pth, pth_init, [AC_DEFINE(WITH_THREAD)
+AC_DEFINE(_GNU_PTH)
+LIBS="-lpth $LIBS"
+LIBOBJS="$LIBOBJS thread.o"],[
 AC_CHECK_LIB(pthread, pthread_create, [AC_DEFINE(WITH_THREAD)
 AC_DEFINE(_POSIX_THREADS)
 LIBS="-lpthread $LIBS"
@@ -680,7 +684,7 @@ AC_CHECK_LIB(cma, pthread_create, [AC_DEFINE(WITH_THREAD)
 AC_DEFINE(_POSIX_THREADS)
 LIBS="$LIBS -lcma"
 LIBOBJS="$LIBOBJS thread.o"])
-])])])])])])])
+])])])])])])])])
 
 AC_CHECK_LIB(mpc, usconfig, [AC_DEFINE(WITH_THREAD)
 LIBS="$LIBS -lmpc"

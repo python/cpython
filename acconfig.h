@@ -35,6 +35,9 @@
    This is the case on Motorola V4 (R40V4.2) */
 #undef GETTIMEOFDAY_NO_TZ
 
+/* Define if you have GNU PTH threads */
+#undef _GNU_PTH
+
 /* Define this if your time.h defines altzone */
 #undef HAVE_ALTZONE
 
