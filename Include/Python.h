@@ -10,7 +10,7 @@
 #endif
 
 /* Forcing SUSv2 compatibility still produces problems on some
-   platforms, True64 and SGI IRIX begin two of them, so for now the
+   platforms, True64 and SGI IRIX being two of them, so for now the
    define is switched off. */
 #if 0
 #ifndef _XOPEN_SOURCE
