@@ -264,3 +264,28 @@ PyThreadState_GetDict(void)
 		_PyThreadState_Current->dict = PyDict_New();
 	return _PyThreadState_Current->dict;
 }
+
+
+/* Routines for advanced debuggers, requested by David Beazley.
+   Don't use unless you know what you are doing! */
+
+PyInterpreterState *
+PyInterpreterState_Head(void)
+{
+	return interp_head;
+}
+
+PyInterpreterState *
+PyInterpreterState_Next(PyInterpreterState *interp) {
+	return interp->next;
+}
+
+PyThreadState *
+PyInterpreterState_ThreadHead(PyInterpreterState *interp) {
+	return interp->tstate_head;
+}
+
+PyThreadState *
+PyThreadState_Next(PyThreadState *tstate) {
+	return tstate->next;
+}
