@@ -413,18 +413,20 @@ for more information.
 
 There are two more things to do before you can use your new extension:
 compiling and linking it with the Python system.  If you use dynamic
-loading, the details depend on the style of dynamic loading your
-system uses; see the chapters about building extension modules on
-\UNIX{} (chapter \ref{building-on-unix}) and Windows (chapter
-\ref{building-on-windows}) for more information about this.
-% XXX Add information about MacOS  
+loading, the details may depend on the style of dynamic loading your
+system uses; see the chapters about building extension modules
+(chapter \ref{building}) and additional information that pertains only
+to building on Windows (chapter \ref{building-on-windows}) for more
+information about this.
+% XXX Add information about Mac OS
 
 If you can't use dynamic loading, or if you want to make your module a
 permanent part of the Python interpreter, you will have to change the
 configuration setup and rebuild the interpreter.  Luckily, this is
-very simple: just place your file (\file{spammodule.c} for example) in
-the \file{Modules/} directory of an unpacked source distribution, add
-a line to the file \file{Modules/Setup.local} describing your file:
+very simple on \UNIX: just place your file (\file{spammodule.c} for
+example) in the \file{Modules/} directory of an unpacked source
+distribution, add a line to the file \file{Modules/Setup.local}
+describing your file:
 
 \begin{verbatim}
 spam spammodule.o
