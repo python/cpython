@@ -52,6 +52,10 @@ extern time_t PyOS_GetLastModificationTime(char *, FILE *);
        MWH, 2002-08-03: Removed SET_LINENO.  Couldn't be bothered figuring
        out the MAGIC schemes, so just incremented it by 10.
 
+       GvR, 2002-08-31: Because MWH changed the bytecode again, moved the
+       magic number *back* to 62011.  This should get the snake-farm to
+       throw away its old .pyc files, amongst others.
+
    Known values:
        Python 1.5:   20121
        Python 1.5.1: 20121
@@ -64,8 +68,9 @@ extern time_t PyOS_GetLastModificationTime(char *, FILE *);
        Python 2.2:   60717
        Python 2.3a0: 62011
        Python 2.3a0: 62021
+       Python 2.3a0: 62011 (!)
 */
-#define MAGIC (62021 | ((long)'\r'<<16) | ((long)'\n'<<24))
+#define MAGIC (62011 | ((long)'\r'<<16) | ((long)'\n'<<24))
 
 /* Magic word as global; note that _PyImport_Init() can change the
    value of this global to accommodate for alterations of how the
