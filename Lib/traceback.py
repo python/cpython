@@ -166,8 +166,14 @@ def format_exception_only(etype, value):
 						s = s + ' '
 				list.append('%s^\n' % s)
 				value = msg
-		list.append('%s: %s\n' % (str(stype), str(value)))
+		list.append('%s: %s\n' % (str(stype), _some_str(value)))
 	return list
+
+def _some_str(value):
+	try:
+		return str(value)
+	except:
+		return '<unprintable %s object>' % type(value).__name__
 
 
 def print_exc(limit=None, file=None):
