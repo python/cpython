@@ -35,3 +35,6 @@
 (require 'cc-mode)
 (if (not (assoc "python" c-style-alist))
     (c-add-style "python" python-cc-style))
+
+(provide 'ccpy-style)
+;;; ccpy-style.el ends here
