@@ -12,6 +12,9 @@ What's New in Python 2.4 alpha 1?
 Core and builtins
 -----------------
 
+- Optimized the byte coding for multiple assignments like "a,b=b,a" and
+  "a,b,c=1,2,3".  Improves their speed by 25% to 30%.
+
 - Limit the nested depth of a tuple for the second argument to isinstance()
   and issubclass() to the recursion limit of the interpreter.
   Fixes bug  #858016 .

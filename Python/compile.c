@@ -327,6 +327,43 @@ intern_strings(PyObject *tuple)
 #define ABSOLUTE_JUMP(op) (op==JUMP_ABSOLUTE || op==CONTINUE_LOOP)
 #define GETJUMPTGT(arr, i) (GETARG(arr,i) + (ABSOLUTE_JUMP(arr[i]) ? 0 : i+3))
 #define SETARG(arr, i, val) arr[i+2] = val>>8; arr[i+1] = val & 255
+#define CODESIZE(op)  (HAS_ARG(op) ? 3 : 1)
+#define ISBASICBLOCK(blocks, start, bytes) (blocks[start]==blocks[start+bytes-1])
+
+static unsigned int *
+markblocks(unsigned char *code, int len)
+{
+	unsigned int *blocks = PyMem_Malloc(len*sizeof(int));
+	int i,j, opcode, oldblock, newblock, blockcnt = 0;
+
+	if (blocks == NULL)
+		return NULL;
+	memset(blocks, 0, len*sizeof(int));
+	for (i=0 ; i<len ; i+=CODESIZE(opcode)) {
+		opcode = code[i];
+		switch (opcode) {
+			case FOR_ITER:
+			case JUMP_FORWARD:
+			case JUMP_IF_FALSE:
+			case JUMP_IF_TRUE:
+			case JUMP_ABSOLUTE:
+			case CONTINUE_LOOP:
+			case SETUP_LOOP:
+			case SETUP_EXCEPT:
+			case SETUP_FINALLY:
+				j = GETJUMPTGT(code, i);
+				oldblock = blocks[j];
+				newblock = ++blockcnt;
+				for (; j<len ; j++) {
+					if (blocks[j] != (unsigned)oldblock)
+						break;
+					blocks[j] = newblock;
+				}
+			break;
+		}
+	}
+	return blocks;
+}
 
 static PyObject *
 optimize_code(PyObject *code, PyObject* consts)
@@ -334,18 +371,24 @@ optimize_code(PyObject *code, PyObject* consts)
 	int i, j, codelen;
 	int tgt, tgttgt, opcode;
 	unsigned char *codestr;
+	unsigned int *blocks;
 
 	/* Make a modifiable copy of the code string */
 	if (!PyString_Check(code))
 		goto exitUnchanged;
 	codelen = PyString_Size(code);
 	codestr = PyMem_Malloc(codelen);
-	if (codestr == NULL) 
+	if (codestr == NULL)
 		goto exitUnchanged;
 	codestr = memcpy(codestr, PyString_AS_STRING(code), codelen);
+	blocks = markblocks(codestr, codelen);
+	if (blocks == NULL) {
+		PyMem_Free(codestr);
+		goto exitUnchanged;
+	}
 	assert(PyTuple_Check(consts));
 
-	for (i=0 ; i<codelen-7 ; i += HAS_ARG(codestr[i]) ? 3 : 1) {
+	for (i=0 ; i<codelen ; i += CODESIZE(codestr[i])) {
 		opcode = codestr[i];
 		switch (opcode) {
 
@@ -362,6 +405,33 @@ optimize_code(PyObject *code, PyObject* consts)
 			SETARG(codestr, i, 4);
 			break;
 
+		/* Replace BUILD_SEQN 2 UNPACK_SEQN 2 with ROT2 JMP+2 NOP NOP.
+		   Replace BUILD_SEQN 3 UNPACK_SEQN 3 with ROT3 ROT2 JMP+1 NOP. */
+		case BUILD_TUPLE:
+		case BUILD_LIST:
+			if (codestr[i+3] != UNPACK_SEQUENCE)
+				continue;
+			if (!ISBASICBLOCK(blocks,i,6))
+				continue;
+			if (GETARG(codestr, i) == 2 && \
+			    GETARG(codestr, i+3) == 2) {
+				codestr[i] = ROT_TWO;
+				codestr[i+1] = JUMP_FORWARD;
+				SETARG(codestr, i+1, 2);
+				codestr[i+4] = DUP_TOP;  /* Filler codes used as NOPs */
+				codestr[i+5] = POP_TOP;
+				continue;
+			} 
+			if (GETARG(codestr, i) == 3 && \
+			    GETARG(codestr, i+3) == 3) {
+				codestr[i] = ROT_THREE;
+				codestr[i+1] = ROT_TWO;
+				codestr[i+2] = JUMP_FORWARD;
+				SETARG(codestr, i+2, 1);
+				codestr[i+5] = DUP_TOP;
+			}
+			break;
+
 		/* Replace jumps to unconditional jumps */
 		case FOR_ITER:
 		case JUMP_FORWARD:
@@ -373,7 +443,7 @@ optimize_code(PyObject *code, PyObject* consts)
 		case SETUP_EXCEPT:
 		case SETUP_FINALLY:
 			tgt = GETJUMPTGT(codestr, i);
-			if (!UNCONDITIONAL_JUMP(codestr[tgt])) 
+			if (!UNCONDITIONAL_JUMP(codestr[tgt]))
 				continue;
 			tgttgt = GETJUMPTGT(codestr, tgt);
 			if (opcode == JUMP_FORWARD) /* JMP_ABS can go backwards */
@@ -393,6 +463,7 @@ optimize_code(PyObject *code, PyObject* consts)
 	}
 	code = PyString_FromStringAndSize((char *)codestr, codelen);
 	PyMem_Free(codestr);
+	PyMem_Free(blocks);
 	return code;
 
 exitUnchanged:
