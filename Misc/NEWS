@@ -243,6 +243,11 @@ Mac
 
 - Fixed two bugs in MacOSX framework handling.
 
+- pythonw did not allow user interaction in 2.3rc1, this has been fixed.
+
+- Python is now compiled with -mno-fused-madd, making all tests pass
+  on Panther.
+
 What's New in Python 2.3 beta 2?
 ================================
 
