@@ -740,10 +740,13 @@ class main:
         root.withdraw()
         flist = PyShellFileList(root)
 
-        dbg=OnDemandOutputWindow(flist)
-        dbg.set_title('IDLE Debugging Messages')
-        sys.stdout = PseudoFile(dbg,['stdout'])
-        sys.stderr = PseudoFile(dbg,['stderr'])
+        # the following causes lockups and silent failures when debugging
+        # changes to EditorWindow.__init__  ; the console works fine for idle
+        # debugging in any case, so disable this unnescesary stuff.
+        #dbg=OnDemandOutputWindow(flist)
+        #dbg.set_title('IDLE Debugging Messages')
+        #sys.stdout = PseudoFile(dbg,['stdout'])
+        #sys.stderr = PseudoFile(dbg,['stderr'])
         
         try:
             self.server = protocol.Server(connection_hook = self.address_ok)
