@@ -2154,15 +2154,9 @@ com_test(struct compiling *c, node *n)
 			return;
 		}
 		symtable_exit_scope(c->c_symtable);
-		if (co == NULL) {
-			c->c_errors++;
-			i = 255;
-			closure = 0;
-		} else {
-			i = com_addconst(c, co);
-			Py_DECREF(co);
-			closure = com_make_closure(c, (PyCodeObject *)co);
-		}
+		i = com_addconst(c, co);
+		closure = com_make_closure(c, (PyCodeObject *)co);
+		Py_DECREF(co);
 		com_addoparg(c, LOAD_CONST, i);
 		com_push(c, 1);
 		if (closure)
