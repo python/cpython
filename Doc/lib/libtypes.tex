@@ -215,9 +215,9 @@ Notes:
 \begin{description}
 
 \item[(1)]
-For (plain or long) integer division, the result is an integer; it
-always truncates towards zero.
-% XXXJH integer division is better defined nowadays
+For (plain or long) integer division, the result is an integer.
+The result is always rounded towards minus infinity: 1/2 is 0, 
+(-1)/2 is -1, 1/(-2) is -1, and (-1)/(-2) is 0.
 \indexii{integer}{division}
 \indexiii{long}{integer}{division}
 
@@ -666,17 +666,17 @@ Files have the following methods:
   \code{0}.
 \end{funcdesc}
 
-\begin{funcdesc}{read}{size}
+\begin{funcdesc}{read}{\optional{size}}
   Read at most \var{size} bytes from the file (less if the read hits
   \EOF{} or no more data is immediately available on a pipe, tty or
-  similar device).  If the \var{size} argument is omitted, read all
-  data until \EOF{} is reached.  The bytes are returned as a string
+  similar device).  If the \var{size} argument is negative or omitted,
+  read all data until \EOF{} is reached.  The bytes are returned as a string
   object.  An empty string is returned when \EOF{} is encountered
   immediately.  (For certain files, like ttys, it makes sense to
   continue reading after an \EOF{} is hit.)
 \end{funcdesc}
 
-\begin{funcdesc}{readline}{}
+\begin{funcdesc}{readline}optional{size}}
   Read one entire line from the file.  A trailing newline character is
   kept in the string%
 \footnote{The advantage of leaving the newline on is that an empty string 
@@ -686,7 +686,10 @@ Files have the following methods:
 	you can tell whether the last line of a file ended in a newline
 	or not (yes this happens!).}
   (but may be absent when a file ends with an
-  incomplete line).  An empty string is returned when \EOF{} is hit
+  incomplete line).  If thevar{size} argument is present and
+  non-negative, it is a maximum byte count (including the trailing
+  newline) and an incomplete line may be returned.
+  An empty string is returned when \EOF{} is hit
   immediately.  Note: unlike \code{stdio}'s \code{fgets()}, the returned
   string contains null characters (\code{'\e 0'}) if they occurred in the
   input.
