@@ -48,7 +48,7 @@ class Code:
 	    print self.data
 	    raise
 
-def _compile(code, pattern, flags, level=0):
+def _compile(code, pattern, flags):
     append = code.append
     for op, av in pattern:
 	if op is ANY:
@@ -70,23 +70,26 @@ def _compile(code, pattern, flags, level=0):
 	    tail = []
 	    for av in av[1]:
 		skip = len(code); append(0)
-		_compile(code, av, flags, level)
-		append(OPCODES[JUMP])
-		tail.append(len(code)); append(0)
+		_compile(code, av, flags)
+##		append(OPCODES[SUCCESS])
+ 		append(OPCODES[JUMP])
+ 		tail.append(len(code)); append(0)
 		code[skip] = len(code) - skip
 	    append(0) # end of branch
-	    for tail in tail:
+ 	    for tail in tail:
 		code[tail] = len(code) - tail
 	elif op is CALL:
 	    append(OPCODES[op])
 	    skip = len(code); append(0)
-	    _compile(code, av, flags, level+1)
+	    _compile(code, av, flags)
 	    append(OPCODES[SUCCESS])
 	    code[skip] = len(code) - skip
-	elif op is CATEGORY: # not used by current parser
+	elif op is CATEGORY:
 	    append(OPCODES[op])
 	    if flags & SRE_FLAG_LOCALE:
 		append(CH_LOCALE[CHCODES[av]])
+	    elif flags & SRE_FLAG_UNICODE:
+		append(CH_UNICODE[CHCODES[av]])
 	    else:
 		append(CHCODES[av])
 	elif op is GROUP:
@@ -98,8 +101,8 @@ def _compile(code, pattern, flags, level=0):
 	elif op is IN:
 	    if flags & SRE_FLAG_IGNORECASE:
 		append(OPCODES[OP_IGNORE[op]])
-		def fixup(literal):
-		    return ord(literal.lower())
+		def fixup(literal, flags=flags):
+		    return _sre.getlower(ord(literal), flags)
 	    else:
 		append(OPCODES[op])
 		fixup = ord
@@ -116,6 +119,8 @@ def _compile(code, pattern, flags, level=0):
 		elif op is CATEGORY:
 		    if flags & SRE_FLAG_LOCALE:
 			append(CH_LOCALE[CHCODES[av]])
+		    elif flags & SRE_FLAG_UNICODE:
+			append(CH_UNICODE[CHCODES[av]])
 		    else:
 			append(CHCODES[av])
 		else:
@@ -125,42 +130,49 @@ def _compile(code, pattern, flags, level=0):
 	elif op in (LITERAL, NOT_LITERAL):
 	    if flags & SRE_FLAG_IGNORECASE:
 		append(OPCODES[OP_IGNORE[op]])
-		append(ord(av.lower()))
 	    else:
 		append(OPCODES[op])
-		append(ord(av))
+	    append(ord(av))
 	elif op is MARK:
 	    append(OPCODES[op])
 	    append(av)
  	elif op in (REPEAT, MIN_REPEAT, MAX_REPEAT):
-	    lo, hi = av[2].getwidth()
- 	    if lo == 0:
- 		raise SyntaxError, "cannot repeat zero-width items"
-	    if lo == hi == 1 and op is MAX_REPEAT:
-		append(OPCODES[MAX_REPEAT_ONE])
+	    if flags & SRE_FLAG_TEMPLATE:
+		append(OPCODES[REPEAT])
 		skip = len(code); append(0)
 		append(av[0])
 		append(av[1])
-		_compile(code, av[2], flags, level+1)
+		_compile(code, av[2], flags)
 		append(OPCODES[SUCCESS])
 		code[skip] = len(code) - skip
 	    else:
-		append(OPCODES[op])
-		skip = len(code); append(0)
-		append(av[0])
-		append(av[1])
-		_compile(code, av[2], flags, level+1)
-		if op is MIN_REPEAT:
-		    append(OPCODES[MIN_UNTIL])
+		lo, hi = av[2].getwidth()
+		if lo == 0:
+		    raise error, "nothing to repeat"
+		if 0 and lo == hi == 1 and op is MAX_REPEAT:
+		    # FIXME: <fl> need a better way to figure out when
+		    # it's safe to use this one (in the parser, probably)
+		    append(OPCODES[MAX_REPEAT_ONE])
+		    skip = len(code); append(0)
+		    append(av[0])
+		    append(av[1])
+		    _compile(code, av[2], flags)
+		    append(OPCODES[SUCCESS])
+		    code[skip] = len(code) - skip
 		else:
-		    append(OPCODES[MAX_UNTIL])
-		code[skip] = len(code) - skip
+		    append(OPCODES[op])
+		    skip = len(code); append(0)
+		    append(av[0])
+		    append(av[1])
+		    _compile(code, av[2], flags)
+		    append(OPCODES[SUCCESS])
+		    code[skip] = len(code) - skip
 	elif op is SUBPATTERN:
  	    group = av[0]
  	    if group:
  		append(OPCODES[MARK])
  		append((group-1)*2)
-	    _compile(code, av[1], flags, level+1)
+	    _compile(code, av[1], flags)
  	    if group:
  		append(OPCODES[MARK])
  		append((group-1)*2+1)
