@@ -22,6 +22,7 @@ main(argc, argv)
     int argc;
     char **argv;
 {
+	extern int Py_FrozenMain Py_PROTO((int, char **));
 """ + ((not __debug__ and """
         Py_OptimizeFlag++;
 """) or "")  + """
