@@ -7,9 +7,9 @@ def expect(actual, expected, name):
         raise TestFailed, "test_%s: actual %d, expected %d" % (
             name, actual, expected)
 
-def expect_not(actual, expected, name):
-    if actual == expected:
-        raise TestFailed, "test_%s: actual %d unexpected" % (name, actual)
+def expect_nonzero(actual, name):
+    if actual == 0:
+        raise TestFailed, "test_%s: unexpected zero" % name
 
 def run_test(name, thunk):
     if verbose:
@@ -48,7 +48,21 @@ def test_class():
     A.a = A
     gc.collect()
     del A
-    expect_not(gc.collect(), 0, "class")
+    expect_nonzero(gc.collect(), "class")
+
+def test_staticclass():
+    class A(object):
+        __dynamic__ = 0
+    gc.collect()
+    del A
+    expect_nonzero(gc.collect(), "staticclass")
+
+def test_dynamicclass():
+    class A(object):
+        __dynamic__ = 1
+    gc.collect()
+    del A
+    expect_nonzero(gc.collect(), "dynamicclass")
 
 def test_instance():
     class A:
@@ -57,7 +71,7 @@ def test_instance():
     a.a = a
     gc.collect()
     del a
-    expect_not(gc.collect(), 0, "instance")
+    expect_nonzero(gc.collect(), "instance")
 
 def test_method():
     # Tricky: self.__init__ is a bound method, it references the instance.
@@ -67,7 +81,7 @@ def test_method():
     a = A()
     gc.collect()
     del a
-    expect_not(gc.collect(), 0, "method")
+    expect_nonzero(gc.collect(), "method")
 
 def test_finalizer():
     # A() is uncollectable if it is part of a cycle, make sure it shows up
@@ -84,7 +98,7 @@ def test_finalizer():
     gc.collect()
     del a
     del b
-    expect_not(gc.collect(), 0, "finalizer")
+    expect_nonzero(gc.collect(), "finalizer")
     for obj in gc.garbage:
         if id(obj) == id_a:
             del obj.a
@@ -153,6 +167,8 @@ def test_all():
     run_test("dicts", test_dict)
     run_test("tuples", test_tuple)
     run_test("classes", test_class)
+    run_test("static classes", test_staticclass)
+    run_test("dynamic classes", test_dynamicclass)
     run_test("instances", test_instance)
     run_test("methods", test_method)
     run_test("functions", test_function)

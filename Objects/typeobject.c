@@ -265,7 +265,7 @@ subtype_dealloc(PyObject *self)
 
 	/* Finalize GC if the base doesn't do GC and we do */
 	if (PyType_IS_GC(type) && !PyType_IS_GC(base))
-		PyObject_GC_Fini(self);
+		_PyObject_GC_UNTRACK(self);
 
 	/* Call the base tp_dealloc() */
 	assert(f);
@@ -864,6 +864,8 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 		Py_TPFLAGS_BASETYPE;
 	if (dynamic)
 		type->tp_flags |= Py_TPFLAGS_DYNAMICTYPE;
+	if (base->tp_flags & Py_TPFLAGS_HAVE_GC)
+		type->tp_flags |= Py_TPFLAGS_HAVE_GC;
 
 	/* It's a new-style number unless it specifically inherits any
 	   old-style numeric behavior */
@@ -934,7 +936,8 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 	else {
 		if (add_dict) {
 			if (base->tp_itemsize)
-				type->tp_dictoffset = -(long)sizeof(PyObject *);
+				type->tp_dictoffset =
+					-(long)sizeof(PyObject *);
 			else
 				type->tp_dictoffset = slotoffset;
 			slotoffset += sizeof(PyObject *);
@@ -966,7 +969,13 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 
 	/* Always override allocation strategy to use regular heap */
 	type->tp_alloc = PyType_GenericAlloc;
-	type->tp_free = _PyObject_Del;
+	if (type->tp_flags & Py_TPFLAGS_HAVE_GC) {
+		type->tp_free = _PyObject_GC_Del;
+		type->tp_traverse = base->tp_traverse;
+		type->tp_clear = base->tp_clear;
+	}
+	else
+		type->tp_free = _PyObject_Del;
 
 	/* Initialize the rest */
 	if (PyType_Ready(type) < 0) {
@@ -1080,6 +1089,7 @@ type_dealloc(PyTypeObject *type)
 
 	/* Assert this is a heap-allocated type object */
 	assert(type->tp_flags & Py_TPFLAGS_HEAPTYPE);
+	_PyObject_GC_UNTRACK(type);
 	et = (etype *)type;
 	Py_XDECREF(type->tp_base);
 	Py_XDECREF(type->tp_dict);
@@ -1102,6 +1112,72 @@ static char type_doc[] =
 "type(object) -> the object's type\n"
 "type(name, bases, dict) -> a new type";
 
+static int
+type_traverse(PyTypeObject *type, visitproc visit, void *arg)
+{
+	etype *et;
+	int err;
+
+	if (!(type->tp_flags & Py_TPFLAGS_HEAPTYPE))
+		return 0;
+
+	et = (etype *)type;
+
+#define VISIT(SLOT) \
+	if (SLOT) { \
+		err = visit((PyObject *)(SLOT), arg); \
+		if (err) \
+			return err; \
+	}
+
+	VISIT(type->tp_dict);
+	VISIT(type->tp_defined);
+	VISIT(type->tp_mro);
+	VISIT(type->tp_bases);
+	VISIT(type->tp_base);
+	VISIT(et->slots);
+
+#undef VISIT
+
+	return 0;
+}
+
+static int
+type_clear(PyTypeObject *type)
+{
+	etype *et;
+	PyObject *tmp;
+
+	if (!(type->tp_flags & Py_TPFLAGS_HEAPTYPE))
+		return 0;
+
+	et = (etype *)type;
+
+#define CLEAR(SLOT) \
+	if (SLOT) { \
+		tmp = (PyObject *)(SLOT); \
+		SLOT = NULL; \
+		Py_DECREF(tmp); \
+	}
+
+	CLEAR(type->tp_dict);
+	CLEAR(type->tp_defined);
+	CLEAR(type->tp_mro);
+	CLEAR(type->tp_bases);
+	CLEAR(type->tp_base);
+	CLEAR(et->slots);
+
+#undef CLEAR
+
+	return 0;
+}
+
+static int
+type_is_gc(PyTypeObject *type)
+{
+	return type->tp_flags & Py_TPFLAGS_HEAPTYPE;
+}
+
 PyTypeObject PyType_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,					/* ob_size */
@@ -1123,10 +1199,11 @@ PyTypeObject PyType_Type = {
 	(getattrofunc)type_getattro,		/* tp_getattro */
 	(setattrofunc)type_setattro,		/* tp_setattro */
 	0,					/* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+		Py_TPFLAGS_BASETYPE,		/* tp_flags */
 	type_doc,				/* tp_doc */
-	0,					/* tp_traverse */
-	0,					/* tp_clear */
+	(traverseproc)type_traverse,		/* tp_traverse */
+	(inquiry)type_clear,			/* tp_clear */
 	0,					/* tp_richcompare */
 	0,					/* tp_weaklistoffset */
 	0,					/* tp_iter */
@@ -1142,6 +1219,8 @@ PyTypeObject PyType_Type = {
 	0,					/* tp_init */
 	0,					/* tp_alloc */
 	type_new,				/* tp_new */
+	_PyObject_GC_Del,			/* tp_free */
+	(inquiry)type_is_gc,			/* tp_is_gc */
 };
 
 
@@ -3531,6 +3610,7 @@ super_dealloc(PyObject *self)
 {
 	superobject *su = (superobject *)self;
 
+	_PyObject_GC_UNTRACK(self);
 	Py_XDECREF(su->obj);
 	Py_XDECREF(su->type);
 	self->ob_type->tp_free(self);
@@ -3666,6 +3746,27 @@ static char super_doc[] =
 "    def meth(self, arg):\n"
 "        super(C, self).meth(arg)";
 
+static int
+super_traverse(PyObject *self, visitproc visit, void *arg)
+{
+	superobject *su = (superobject *)self;
+	int err;
+
+#define VISIT(SLOT) \
+	if (SLOT) { \
+		err = visit((PyObject *)(SLOT), arg); \
+		if (err) \
+			return err; \
+	}
+
+	VISIT(su->obj);
+	VISIT(su->type);
+
+#undef VISIT
+
+	return 0;
+}
+
 PyTypeObject PySuper_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,					/* ob_size */
@@ -3688,9 +3789,10 @@ PyTypeObject PySuper_Type = {
 	super_getattro,				/* tp_getattro */
 	0,					/* tp_setattro */
 	0,					/* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+		Py_TPFLAGS_BASETYPE,		/* tp_flags */
  	super_doc,				/* tp_doc */
- 	0,					/* tp_traverse */
+ 	super_traverse,				/* tp_traverse */
  	0,					/* tp_clear */
 	0,					/* tp_richcompare */
 	0,					/* tp_weaklistoffset */
@@ -3707,5 +3809,5 @@ PyTypeObject PySuper_Type = {
 	super_init,				/* tp_init */
 	PyType_GenericAlloc,			/* tp_alloc */
 	PyType_GenericNew,			/* tp_new */
-	_PyObject_Del,				/* tp_free */
+	_PyObject_GC_Del,			/* tp_free */
 };
