@@ -171,10 +171,10 @@ class BundleBuilder(Defaults):
         files = self.files[:]
         for path in self.resources:
             files.append((path, pathjoin("Contents", "Resources",
-                os.path.basename(path))))
+                os.path.basename(os.path.normpath(path)))))
         for path in self.libs:
             files.append((path, pathjoin("Contents", "Frameworks",
-                os.path.basename(path))))
+                os.path.basename(os.path.normpath(path)))))
         if self.symlink:
             self.message("Making symbolic links", 1)
             msg = "Making symlink from"
