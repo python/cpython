@@ -261,7 +261,7 @@ support the \method{clear()}, \method{copy()}, \method{popitem()}, or
 \method{get()} and \method{setdefault()} was only added in Python
 2.2.)
 
-Finally, \class{Message} instances have two public instance variables:
+Finally, \class{Message} instances have some public instance variables:
 
 \begin{memberdesc}{headers}
 A list containing the entire set of header lines, in the order in
@@ -273,6 +273,12 @@ blank line terminating the headers is not contained in the list.
 \begin{memberdesc}{fp}
 The file or file-like object passed at instantiation time.  This can
 be used to read the message content.
+\end{memberdesc}
+
+\begin{memberdesc}{unixfrom}
+The \UNIX{} \samp{From~} line, if the message had one, or an empty
+string.  This is needed to regenerate the message in some contexts,
+such as an \code{mbox}-style mailbox file.
 \end{memberdesc}
 
 
