@@ -409,11 +409,12 @@ class RPCClient(SocketIO):
 
     def accept(self):
         working_sock, address = self.listening_sock.accept()
+        if self.debugging:
+            print>>sys.__stderr__, "** Connection request from ", address
         if address[0] == '127.0.0.1':
-            print>>sys.__stderr__, "Idle accepted connection from ", address
             SocketIO.__init__(self, working_sock)
         else:
-            print>>sys.__stderr__, "Invalid host: ", address
+            print>>sys.__stderr__, "** Invalid host: ", address
             raise socket.error
 
     def get_remote_proxy(self, oid):
