@@ -74,7 +74,7 @@ static int assign_subscript PROTO((object *, object *, object *));
 static int assign_slice PROTO((object *, object *, object *, object *));
 static int cmp_exception PROTO((object *, object *));
 static int cmp_member PROTO((object *, object *));
-static object *cmp_outcome PROTO((enum cmp_op, object *, object *));
+static object *cmp_outcome PROTO((int, object *, object *));
 static int import_from PROTO((object *, object *, object *));
 static object *build_class PROTO((object *, object *));
 
@@ -928,7 +928,7 @@ eval_code(co, globals, locals, arg)
 		case COMPARE_OP:
 			w = POP();
 			v = POP();
-			x = cmp_outcome((enum cmp_op)oparg, v, w);
+			x = cmp_outcome(oparg, v, w);
 			DECREF(v);
 			DECREF(w);
 			PUSH(x);
@@ -1892,7 +1892,7 @@ cmp_member(v, w)
 
 static object *
 cmp_outcome(op, v, w)
-	enum cmp_op op;
+	int op;
 	register object *v;
 	register object *w;
 {
