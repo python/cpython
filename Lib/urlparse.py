@@ -43,10 +43,33 @@ def clear_cache():
     _parse_cache = {}
 
 
-def urlparse(url, scheme = '', allow_fragments = 1):
+def urlparse(url, scheme='', allow_fragments=1):
     """Parse a URL into 6 components:
     <scheme>://<netloc>/<path>;<params>?<query>#<fragment>
     Return a 6-tuple: (scheme, netloc, path, params, query, fragment).
+    Note that we don't break the components up in smaller bits
+    (e.g. netloc is a single string) and we don't expand % escapes."""
+    tuple = urlsplit(url, scheme, allow_fragments)
+    scheme, netloc, url, query, fragment = tuple
+    if scheme in uses_params and ';' in url:
+        url, params = _splitparams(url)
+    else:
+        params = ''
+    return scheme, netloc, url, params, query, fragment
+
+def _splitparams(url):
+    if '/'  in url:
+        i = url.find(';', url.rfind('/'))
+        if i < 0:
+            return url, ''
+    else:
+        i = url.find(';')
+    return url[:i], url[i+1:]
+
+def urlsplit(url, scheme='', allow_fragments=1):
+    """Parse a URL into 5 components:
+    <scheme>://<netloc>/<path>?<query>#<fragment>
+    Return a 5-tuple: (scheme, netloc, path, query, fragment).
     Note that we don't break the components up in smaller bits
     (e.g. netloc is a single string) and we don't expand % escapes."""
     key = url, scheme, allow_fragments
@@ -55,7 +78,7 @@ def urlparse(url, scheme = '', allow_fragments = 1):
         return cached
     if len(_parse_cache) >= MAX_CACHE_SIZE: # avoid runaway growth
         clear_cache()
-    netloc = params = query = fragment = ''
+    netloc = query = fragment = ''
     i = url.find(':')
     if i > 0:
         if url[:i] == 'http': # optimize the common case
@@ -67,20 +90,11 @@ def urlparse(url, scheme = '', allow_fragments = 1):
                     i = len(url)
                 netloc = url[2:i]
                 url = url[i:]
-            if allow_fragments:
-                i = url.rfind('#')
-                if i >= 0:
-                    fragment = url[i+1:]
-                    url = url[:i]
-            i = url.find('?')
-            if i >= 0:
-                query = url[i+1:]
-                url = url[:i]
-            i = url.find(';')
-            if i >= 0:
-                params = url[i+1:]
-                url = url[:i]
-            tuple = scheme, netloc, url, params, query, fragment
+            if allow_fragments and '#' in url:
+                url, fragment = url.split('#', 1)
+            if '?' in url:
+                url, query = url.split('?', 1)
+            tuple = scheme, netloc, url, query, fragment
             _parse_cache[key] = tuple
             return tuple
         for c in url[:i]:
@@ -94,19 +108,11 @@ def urlparse(url, scheme = '', allow_fragments = 1):
             if i < 0:
                 i = len(url)
             netloc, url = url[2:i], url[i:]
-    if allow_fragments and scheme in uses_fragment:
-        i = url.rfind('#')
-        if i >= 0:
-            url, fragment = url[:i], url[i+1:]
-    if scheme in uses_query:
-        i = url.find('?')
-        if i >= 0:
-            url, query = url[:i], url[i+1:]
-    if scheme in uses_params:
-        i = url.find(';')
-        if i >= 0:
-            url, params = url[:i], url[i+1:]
-    tuple = scheme, netloc, url, params, query, fragment
+    if allow_fragments and scheme in uses_fragment and '#' in url:
+        url, fragment = url.split('#', 1)
+    if scheme in uses_query and '?' in url:
+        url, query = url.split('?', 1)
+    tuple = scheme, netloc, url, query, fragment
     _parse_cache[key] = tuple
     return tuple
 
@@ -115,13 +121,16 @@ def urlunparse((scheme, netloc, url, params, query, fragment)):
     slightly different, but equivalent URL, if the URL that was parsed
     originally had redundant delimiters, e.g. a ? with an empty query
     (the draft states that these are equivalent)."""
+    if params:
+        url = "%s;%s" % (url, params)
+    return urlunsplit((scheme, netloc, url, query, fragment))
+
+def urlunsplit((scheme, netloc, url, query, fragment)):
     if netloc or (scheme in uses_netloc and url[:2] == '//'):
         if url and url[:1] != '/': url = '/' + url
         url = '//' + (netloc or '') + url
     if scheme:
         url = scheme + ':' + url
-    if params:
-        url = url + ';' + params
     if query:
         url = url + '?' + query
     if fragment:
@@ -187,9 +196,12 @@ def urldefrag(url):
     the URL contained no fragments, the second element is the
     empty string.
     """
-    s, n, p, a, q, frag = urlparse(url)
-    defrag = urlunparse((s, n, p, a, q, ''))
-    return defrag, frag
+    if '#' in url:
+        s, n, p, a, q, frag = urlparse(url)
+        defrag = urlunparse((s, n, p, a, q, ''))
+        return defrag, frag
+    else:
+        return url, ''
 
 
 test_input = """
