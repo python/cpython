@@ -126,13 +126,14 @@ class StripWidget:
                  numchips   = _NUMCHIPS,
                  generator  = None,
                  axis       = None,
-                 label      = ''):
+                 label      = '',
+                 uwdvar     = None):
         # instance variables
 	self.__generator = generator
 	self.__axis = axis
         self.__numchips = numchips
 	assert self.__axis in (0, 1, 2)
-	self.__update_while_dragging = 0
+	self.__uwd = uwdvar
         # the last chip selected
         self.__lastchip = None
         self.__sb = switchboard
@@ -202,7 +203,7 @@ class StripWidget:
             color = self.__chips[chip[0]-1]
             red, green, blue = ColorDB.rrggbb_to_triplet(color)
             etype = int(event.type)
-            if (etype == BTNUP or self.__update_while_dragging):
+            if (etype == BTNUP or self.__uwd.get()):
                 # update everyone
                 self.__sb.update_views(red, green, blue)
             else:
@@ -259,31 +260,35 @@ class StripWidget:
         # move the arrows around
         self.__trackarrow(chip, (red, green, blue))
 
-    def set_update_while_dragging(self, flag):
-	self.__update_while_dragging = flag
-
-
 
 class StripViewer:
     def __init__(self, switchboard, parent=None):
         self.__sb = switchboard
         # create a frame inside the parent
-        self.__frame = Frame(parent)
+        self.__frame = Frame(parent, relief=GROOVE, borderwidth=2)
         self.__frame.pack()
+        uwd = BooleanVar()
         self.__reds = StripWidget(switchboard, self.__frame,
                                   generator=constant_cyan_generator,
                                   axis=0,
-                                  label='Red Variations')
+                                  label='Red Variations',
+                                  uwdvar=uwd)
 
         self.__greens = StripWidget(switchboard, self.__frame,
                                     generator=constant_magenta_generator,
                                     axis=1,
-                                    label='Green Variations')
+                                    label='Green Variations',
+                                    uwdvar=uwd)
 
         self.__blues = StripWidget(switchboard, self.__frame,
                                    generator=constant_yellow_generator,
                                    axis=2,
-                                   label='Blue Variations')
+                                   label='Blue Variations',
+                                   uwdvar=uwd)
+        self.__uwd = Checkbutton(self.__frame,
+                                 text='Update while dragging',
+                                 variable=uwd)
+        self.__uwd.pack()
 
     def update_yourself(self, red, green, blue):
         self.__reds.update_yourself(red, green, blue)
