@@ -17,6 +17,11 @@ Extension modules
 
 - fcntl now exposes the strops.h I_* constants.
 
+- datetime changes:
+
+  today() and now() now round system timestamps to the closest
+  microsecond <http://www.python.org/sf/661086>.
+
 Library
 -------
 
