@@ -5799,6 +5799,24 @@ static PyMethodDef unicode_methods[] = {
     {NULL, NULL}
 };
 
+static PyObject *
+unicode_mod(PyObject *v, PyObject *w)
+{
+       if (!PyUnicode_Check(v)) {
+               Py_INCREF(Py_NotImplemented);
+               return Py_NotImplemented;
+       }
+       return PyUnicode_Format(v, w);
+}
+
+static PyNumberMethods unicode_as_number = {
+	0,				/*nb_add*/
+	0,				/*nb_subtract*/
+	0,				/*nb_multiply*/
+	0,				/*nb_divide*/
+	unicode_mod,			/*nb_remainder*/
+};
+
 static PySequenceMethods unicode_as_sequence = {
     (inquiry) unicode_length, 		/* sq_length */
     (binaryfunc) PyUnicode_Concat, 	/* sq_concat */
@@ -6647,7 +6665,7 @@ PyTypeObject PyUnicode_Type = {
     0, 					/* tp_setattr */
     (cmpfunc) unicode_compare, 		/* tp_compare */
     (reprfunc) unicode_repr, 		/* tp_repr */
-    0, 					/* tp_as_number */
+    &unicode_as_number, 		/* tp_as_number */
     &unicode_as_sequence, 		/* tp_as_sequence */
     &unicode_as_mapping, 		/* tp_as_mapping */
     (hashfunc) unicode_hash, 		/* tp_hash*/
@@ -6656,7 +6674,8 @@ PyTypeObject PyUnicode_Type = {
     PyObject_GenericGetAttr, 		/* tp_getattro */
     0,			 		/* tp_setattro */
     &unicode_as_buffer,			/* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_CHECKTYPES |
+	    Py_TPFLAGS_BASETYPE,	/* tp_flags */
     unicode_doc,			/* tp_doc */
     0,					/* tp_traverse */
     0,					/* tp_clear */
