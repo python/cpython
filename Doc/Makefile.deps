@@ -170,6 +170,7 @@ LIBFILES= $(MANSTYLES) $(COMMONTEX) \
 	../lib/libpyexpat.tex \
 	../lib/libqueue.tex \
 	../lib/liblocale.tex \
+	../lib/libgettext.tex \
 	../lib/libbasehttp.tex \
 	../lib/libcookie.tex \
 	../lib/libcopyreg.tex \
