@@ -516,7 +516,7 @@ static struct constant {
 #ifdef ECHOKE
 	{"ECHOKE", ECHOKE},
 #endif
-#endif FLUSHO
+#ifndef FLUSHO
 	{"FLUSHO", FLUSHO},
 #endif
 	{"NOFLSH", NOFLSH},
