@@ -1,16 +1,19 @@
 # Display digits of pi in a window, calculating in a separate thread.
 # Compare ../scripts/pi.py.
 
+import sys
 import time
 import thread
 import stdwin
 from stdwinevents import *
 
+ok = 1
+
 digits = []
 
 def worker():
 	k, a, b, a1, b1 = 2l, 4l, 1l, 12l, 4l
-	while 1:
+	while ok:
 		# Next approximation
 		p, q, k = k*k, 2l*k+1l, k+1l
 		a, b, a1, b1 = a1, b1, p*a+q*a1, p*b+q*b1
@@ -23,11 +26,13 @@ def worker():
 			d, d1 = a/b, a1/b1
 
 def main():
+	global ok
 	digits_seen = 0
 	thread.start_new_thread(worker, ())
 	tw = stdwin.textwidth('0 ')
 	lh = stdwin.lineheight()
 	stdwin.setdefwinsize(20 * tw, 20 * lh)
+	stdwin.setdefscrollbars(0, 1)
 	win = stdwin.open('digits of pi')
 	options = win.menucreate('Options')
 	options.additem('Auto scroll')
@@ -37,7 +42,8 @@ def main():
 		win.settimer(1)
 		type, w, detail = stdwin.getevent()
 		if type == WE_CLOSE:
-			thread.exit_prog(0)
+			ok = 0
+			sys.exit(0)
 		elif type == WE_DRAW:
 			(left, top), (right, bottom) = detail
 			digits_seen = len(digits)
