@@ -236,18 +236,7 @@ class BuildExt (Command):
             library_dirs = build_info.get ('library_dirs')
             extra_args = build_info.get ('extra_link_args') or []
             if self.compiler.compiler_type == 'msvc':
-                def_file = build_info.get ('def_file')
-                if def_file is None:
-                    source_dir = os.path.dirname (sources[0])
-                    ext_base = (string.split (extension_name, '.'))[-1]
-                    def_file = os.path.join (source_dir, "%s.def" % ext_base)
-                    if not os.path.exists (def_file):
-                        self.warn ("file '%s' not found: " % def_file +
-                                   "might have problems building DLL")
-                        def_file = None
-
-                if def_file is not None:
-                    extra_args.append ('/DEF:' + def_file)
+                extra_args.append ('/export:init%s' % extension_name)
 
             ext_filename = self.extension_filename \
                            (extension_name, self.package)
