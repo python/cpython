@@ -61,18 +61,15 @@ extern long PyOS_GetLastModificationTime(); /* In getmtime.c */
 /* New way to come up with the magic number: (YEAR-1995), MONTH, DAY */
 #define MAGIC (20121 | ((long)'\r'<<16) | ((long)'\n'<<24))
 
-static PyObject *_PyImport_Modules; /* This becomes sys.modules */
+/* See _PyImport_FixupExtension() below */
+static PyObject *extensions = NULL;
 
 
 /* Initialize things */
 
 void
-PyImport_Init()
+_PyImport_Init()
 {
-	if (_PyImport_Modules != NULL)
-		Py_FatalError("duplicate initimport() call");
-	if ((_PyImport_Modules = PyDict_New()) == NULL)
-		Py_FatalError("no mem for dictionary of modules");
 	if (Py_OptimizeFlag) {
 		/* Replace ".pyc" with ".pyo" in import_filetab */
 		struct filedescr *p;
@@ -83,21 +80,44 @@ PyImport_Init()
 	}
 }
 
+void
+_PyImport_Fini()
+{
+	Py_XDECREF(extensions);
+	extensions = NULL;
+}
+
+
+/* Helper for sys */
+
+PyObject *
+PyImport_GetModuleDict()
+{
+	PyInterpreterState *interp = PyThreadState_Get()->interp;
+	if (interp->modules == NULL)
+		Py_FatalError("PyImport_GetModuleDict: no module dictionary!");
+	return interp->modules;
+}
+
 
 /* Un-initialize things, as good as we can */
 
 void
 PyImport_Cleanup()
 {
-	if (_PyImport_Modules != NULL) {
-		PyObject *tmp = _PyImport_Modules;
-		_PyImport_Modules = NULL;
-		/* This deletes all modules from sys.modules.
-		   When a module is deallocated, it in turn clears its
-		   dictionary, thus hopefully breaking any circular
-		   references between modules and between a module's
-		   dictionary and its functions.  Note that "import"
-		   will fail while we are cleaning up.  */
+	PyInterpreterState *interp = PyThreadState_Get()->interp;
+	PyObject *tmp = interp->modules;
+	if (tmp != NULL) {
+		int pos;
+		PyObject *key, *value;
+		interp->modules = NULL;
+		pos = 0;
+		while (PyDict_Next(tmp, &pos, &key, &value)) {
+			if (PyModule_Check(value)) {
+				PyObject *d = PyModule_GetDict(value);
+				PyDict_Clear(d);
+			}
+		}
 		PyDict_Clear(tmp);
 		Py_DECREF(tmp);
 	}
@@ -113,12 +133,70 @@ PyImport_GetMagicNumber()
 }
 
 
-/* Helper for sysmodule.c -- return modules dictionary */
+/* Magic for extension modules (built-in as well as dynamically
+   loaded).  To prevent initializing an extension module more than
+   once, we keep a static dictionary 'extensions' keyed by module name
+   (for built-in modules) or by filename (for dynamically loaded
+   modules), containing these modules.  A copy od the module's
+   dictionary is stored by calling _PyImport_FixupExtension()
+   immediately after the module initialization function succeeds.  A
+   copy can be retrieved from there by calling
+   _PyImport_FindExtension(). */
 
 PyObject *
-PyImport_GetModuleDict()
+_PyImport_FixupExtension(name, filename)
+	char *name;
+	char *filename;
 {
-	return _PyImport_Modules;
+	PyObject *modules, *mod, *dict, *copy;
+	if (extensions == NULL) {
+		extensions = PyDict_New();
+		if (extensions == NULL)
+			return NULL;
+	}
+	modules = PyImport_GetModuleDict();
+	mod = PyDict_GetItemString(modules, name);
+	if (mod == NULL || !PyModule_Check(mod)) {
+		PyErr_SetString(PyExc_SystemError,
+				"_PyImport_FixupExtension: module not loaded");
+		return NULL;
+	}
+	dict = PyModule_GetDict(mod);
+	if (dict == NULL)
+		return NULL;
+	copy = PyObject_CallMethod(dict, "copy", "");
+	if (copy == NULL)
+		return NULL;
+	PyDict_SetItemString(extensions, filename, copy);
+	Py_DECREF(copy);
+	return copy;
+}
+
+PyObject *
+_PyImport_FindExtension(name, filename)
+	char *name;
+	char *filename;
+{
+	PyObject *dict, *mod, *mdict, *result;
+	if (extensions == NULL)
+		return NULL;
+	dict = PyDict_GetItemString(extensions, filename);
+	if (dict == NULL)
+		return NULL;
+	mod = PyImport_AddModule(name);
+	if (mod == NULL)
+		return NULL;
+	mdict = PyModule_GetDict(mod);
+	if (mdict == NULL)
+		return NULL;
+	result = PyObject_CallMethod(mdict, "update", "O", dict);
+	if (result == NULL)
+		return NULL;
+	Py_DECREF(result);
+	if (Py_VerboseFlag)
+		fprintf(stderr, "import %s # previously loaded (%s)\n",
+			name, filename);
+	return mod;
 }
 
 
@@ -132,20 +210,16 @@ PyObject *
 PyImport_AddModule(name)
 	char *name;
 {
+	PyObject *modules = PyImport_GetModuleDict();
 	PyObject *m;
 
-	if (_PyImport_Modules == NULL) {
-		PyErr_SetString(PyExc_SystemError,
-				"sys.modules has been deleted");
-		return NULL;
-	}
-	if ((m = PyDict_GetItemString(_PyImport_Modules, name)) != NULL &&
+	if ((m = PyDict_GetItemString(modules, name)) != NULL &&
 	    PyModule_Check(m))
 		return m;
 	m = PyModule_New(name);
 	if (m == NULL)
 		return NULL;
-	if (PyDict_SetItemString(_PyImport_Modules, name, m) != 0) {
+	if (PyDict_SetItemString(modules, name, m) != 0) {
 		Py_DECREF(m);
 		return NULL;
 	}
@@ -163,6 +237,7 @@ PyImport_ExecCodeModule(name, co)
 	char *name;
 	PyObject *co;
 {
+	PyObject *modules = PyImport_GetModuleDict();
 	PyObject *m, *d, *v;
 
 	m = PyImport_AddModule(name);
@@ -183,7 +258,7 @@ PyImport_ExecCodeModule(name, co)
 		return NULL;
 	Py_DECREF(v);
 
-	if ((m = PyDict_GetItemString(_PyImport_Modules, name)) == NULL) {
+	if ((m = PyDict_GetItemString(modules, name)) == NULL) {
 		PyErr_SetString(PyExc_SystemError,
 				"loaded module not found in sys.modules");
 		return NULL;
@@ -573,19 +648,26 @@ static int
 init_builtin(name)
 	char *name;
 {
-	int i;
-	for (i = 0; _PyImport_Inittab[i].name != NULL; i++) {
-		if (strcmp(name, _PyImport_Inittab[i].name) == 0) {
-			if (_PyImport_Inittab[i].initfunc == NULL) {
+	PyInterpreterState *interp = PyThreadState_Get()->interp;
+	struct _inittab *p;
+	PyObject *mod;
+
+	if ((mod = _PyImport_FindExtension(name, name)) != NULL)
+		return 1;
+
+	for (p = _PyImport_Inittab; p->name != NULL; p++) {
+		if (strcmp(name, p->name) == 0) {
+			if (p->initfunc == NULL) {
 				PyErr_SetString(PyExc_ImportError,
 					   "Cannot re-init internal module");
 				return -1;
 			}
 			if (Py_VerboseFlag)
-				fprintf(stderr, "import %s # builtin\n",
-					name);
-			(*_PyImport_Inittab[i].initfunc)();
+				fprintf(stderr, "import %s # builtin\n", name);
+			(*p->initfunc)();
 			if (PyErr_Occurred())
+				return -1;
+			if (_PyImport_FixupExtension(name, name) == NULL)
 				return -1;
 			return 1;
 		}
@@ -666,14 +748,10 @@ PyObject *
 PyImport_ImportModule(name)
 	char *name;
 {
+	PyObject *modules = PyImport_GetModuleDict();
 	PyObject *m;
 
-	if (_PyImport_Modules == NULL) {
-		PyErr_SetString(PyExc_SystemError,
-				"sys.modules has been deleted");
-		return NULL;
-	}
-	if ((m = PyDict_GetItemString(_PyImport_Modules, name)) != NULL) {
+	if ((m = PyDict_GetItemString(modules, name)) != NULL) {
 		Py_INCREF(m);
 	}
 	else {
@@ -682,7 +760,7 @@ PyImport_ImportModule(name)
 		    (i = PyImport_ImportFrozenModule(name))) {
 			if (i < 0)
 				return NULL;
-			if ((m = PyDict_GetItemString(_PyImport_Modules,
+			if ((m = PyDict_GetItemString(modules,
 						      name)) == NULL) {
 			    if (PyErr_Occurred() == NULL)
 			        PyErr_SetString(PyExc_SystemError,
@@ -706,6 +784,7 @@ PyObject *
 PyImport_ReloadModule(m)
 	PyObject *m;
 {
+	PyObject *modules = PyImport_GetModuleDict();
 	char *name;
 	int i;
 
@@ -717,12 +796,7 @@ PyImport_ReloadModule(m)
 	name = PyModule_GetName(m);
 	if (name == NULL)
 		return NULL;
-	if (_PyImport_Modules == NULL) {
-		PyErr_SetString(PyExc_SystemError,
-				"sys.modules has been deleted");
-		return NULL;
-	}
-	if (m != PyDict_GetItemString(_PyImport_Modules, name)) {
+	if (m != PyDict_GetItemString(modules, name)) {
 		PyErr_SetString(PyExc_ImportError,
 				"reload() module not in sys.modules");
 		return NULL;

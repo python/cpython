@@ -130,6 +130,18 @@ PyEval_InitThreads()
 }
 
 void
+PyEval_AcquireLock()
+{
+	acquire_lock(interpreter_lock, 1);
+}
+
+void
+PyEval_ReleaseLock()
+{
+	release_lock(interpreter_lock);
+}
+
+void
 PyEval_AcquireThread(tstate)
 	PyThreadState *tstate;
 {
@@ -402,9 +414,6 @@ eval_code2(co, globals, locals,
 
 /* Start of code */
 
-	if (tstate == NULL)
-		Py_FatalError("eval_code2 called without a current thread");
-
 #ifdef USE_STACKCHECK
 	if (tstate->recursion_depth%10 == 0 && PyOS_CheckStack()) {
 		PyErr_SetString(PyExc_MemoryError, "Stack overflow");
@@ -590,7 +599,7 @@ eval_code2(co, globals, locals,
 		   Py_MakePendingCalls() above. */
 		
 		if (things_to_do || --tstate->ticker < 0) {
-			tstate->ticker = tstate->sys_checkinterval;
+			tstate->ticker = tstate->interp->checkinterval;
 			if (things_to_do) {
 				if (Py_MakePendingCalls() < 0) {
 					why = WHY_EXCEPTION;
@@ -612,14 +621,15 @@ eval_code2(co, globals, locals,
 			if (interpreter_lock) {
 				/* Give another thread a chance */
 
-				PyThreadState *tstate =
-					PyThreadState_Swap(NULL);
+				if (PyThreadState_Swap(NULL) != tstate)
+					Py_FatalError("ceval: tstate mix-up");
 				release_lock(interpreter_lock);
 
 				/* Other threads may run now */
 
 				acquire_lock(interpreter_lock, 1);
-				PyThreadState_Swap(tstate);
+				if (PyThreadState_Swap(tstate) != NULL)
+					Py_FatalError("ceval: orphan tstate");
 			}
 #endif
 		}
@@ -2176,9 +2186,10 @@ call_trace(p_trace, p_newtrace, f, msg, arg)
 PyObject *
 PyEval_GetBuiltins()
 {
-	PyFrameObject *current_frame = PyThreadState_Get()->frame;
+	PyThreadState *tstate = PyThreadState_Get();
+	PyFrameObject *current_frame = tstate->frame;
 	if (current_frame == NULL)
-		return PyBuiltin_GetModule();
+		return tstate->interp->builtins;
 	else
 		return current_frame->f_builtins;
 }

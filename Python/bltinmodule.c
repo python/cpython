@@ -1668,21 +1668,6 @@ static PyMethodDef builtin_methods[] = {
 	{NULL,		NULL},
 };
 
-static PyObject *builtin_mod;
-static PyObject *builtin_dict;
-
-PyObject *
-PyBuiltin_GetModule()
-{
-	return builtin_mod;
-}
-
-PyObject *
-PyBuiltin_GetDict()
-{
-	return builtin_dict;
-}
-
 /* Predefined exceptions */
 
 PyObject *PyExc_AccessError;
@@ -1707,54 +1692,90 @@ PyObject *PyExc_ValueError;
 PyObject *PyExc_ZeroDivisionError;
 
 static PyObject *
-newstdexception(name)
+newstdexception(dict, name)
+	PyObject *dict;
 	char *name;
 {
 	PyObject *v = PyString_FromString(name);
-	if (v == NULL || PyDict_SetItemString(builtin_dict, name, v) != 0)
+	if (v == NULL || PyDict_SetItemString(dict, name, v) != 0)
 		Py_FatalError("no mem for new standard exception");
 	return v;
 }
 
 static void
-initerrors()
+initerrors(dict)
+	PyObject *dict;
 {
-	PyExc_AccessError = newstdexception("AccessError");
-	PyExc_AssertionError = newstdexception("AssertionError");
-	PyExc_AttributeError = newstdexception("AttributeError");
-	PyExc_EOFError = newstdexception("EOFError");
-	PyExc_FloatingPointError = newstdexception("FloatingPointError");
-	PyExc_IOError = newstdexception("IOError");
-	PyExc_ImportError = newstdexception("ImportError");
-	PyExc_IndexError = newstdexception("IndexError");
-	PyExc_KeyError = newstdexception("KeyError");
-	PyExc_KeyboardInterrupt = newstdexception("KeyboardInterrupt");
-	PyExc_MemoryError = newstdexception("MemoryError");
-	PyExc_NameError = newstdexception("NameError");
-	PyExc_OverflowError = newstdexception("OverflowError");
-	PyExc_RuntimeError = newstdexception("RuntimeError");
-	PyExc_SyntaxError = newstdexception("SyntaxError");
-	PyExc_SystemError = newstdexception("SystemError");
-	PyExc_SystemExit = newstdexception("SystemExit");
-	PyExc_TypeError = newstdexception("TypeError");
-	PyExc_ValueError = newstdexception("ValueError");
-	PyExc_ZeroDivisionError = newstdexception("ZeroDivisionError");
+	PyExc_AccessError = newstdexception(dict, "AccessError");
+	PyExc_AssertionError = newstdexception(dict, "AssertionError");
+	PyExc_AttributeError = newstdexception(dict, "AttributeError");
+	PyExc_EOFError = newstdexception(dict, "EOFError");
+	PyExc_FloatingPointError = newstdexception(dict, "FloatingPointError");
+	PyExc_IOError = newstdexception(dict, "IOError");
+	PyExc_ImportError = newstdexception(dict, "ImportError");
+	PyExc_IndexError = newstdexception(dict, "IndexError");
+	PyExc_KeyError = newstdexception(dict, "KeyError");
+	PyExc_KeyboardInterrupt = newstdexception(dict, "KeyboardInterrupt");
+	PyExc_MemoryError = newstdexception(dict, "MemoryError");
+	PyExc_NameError = newstdexception(dict, "NameError");
+	PyExc_OverflowError = newstdexception(dict, "OverflowError");
+	PyExc_RuntimeError = newstdexception(dict, "RuntimeError");
+	PyExc_SyntaxError = newstdexception(dict, "SyntaxError");
+	PyExc_SystemError = newstdexception(dict, "SystemError");
+	PyExc_SystemExit = newstdexception(dict, "SystemExit");
+	PyExc_TypeError = newstdexception(dict, "TypeError");
+	PyExc_ValueError = newstdexception(dict, "ValueError");
+	PyExc_ZeroDivisionError = newstdexception(dict, "ZeroDivisionError");
+}
+
+static void
+finierrors()
+{
+	Py_XDECREF(PyExc_AccessError); PyExc_AccessError = NULL;
+	Py_XDECREF(PyExc_AssertionError); PyExc_AssertionError = NULL;
+	Py_XDECREF(PyExc_AttributeError); PyExc_AttributeError = NULL;
+	Py_XDECREF(PyExc_EOFError); PyExc_EOFError = NULL;
+	Py_XDECREF(PyExc_FloatingPointError); PyExc_FloatingPointError = NULL;
+	Py_XDECREF(PyExc_IOError); PyExc_IOError = NULL;
+	Py_XDECREF(PyExc_ImportError); PyExc_ImportError = NULL;
+	Py_XDECREF(PyExc_IndexError); PyExc_IndexError = NULL;
+	Py_XDECREF(PyExc_KeyError); PyExc_KeyError = NULL;
+	Py_XDECREF(PyExc_KeyboardInterrupt); PyExc_KeyboardInterrupt = NULL;
+	Py_XDECREF(PyExc_MemoryError); PyExc_MemoryError = NULL;
+	Py_XDECREF(PyExc_NameError); PyExc_NameError = NULL;
+	Py_XDECREF(PyExc_OverflowError); PyExc_OverflowError = NULL;
+	Py_XDECREF(PyExc_RuntimeError); PyExc_RuntimeError = NULL;
+	Py_XDECREF(PyExc_SyntaxError); PyExc_SyntaxError = NULL;
+	Py_XDECREF(PyExc_SystemError); PyExc_SystemError = NULL;
+	Py_XDECREF(PyExc_SystemExit); PyExc_SystemExit = NULL;
+	Py_XDECREF(PyExc_TypeError); PyExc_TypeError = NULL;
+	Py_XDECREF(PyExc_ValueError); PyExc_ValueError = NULL;
+	Py_XDECREF(PyExc_ZeroDivisionError); PyExc_ZeroDivisionError = NULL;
+}
+
+PyObject *
+_PyBuiltin_Init()
+{
+	PyObject *mod, *dict;
+	mod = Py_InitModule("__builtin__", builtin_methods);
+	if (mod == NULL)
+		return NULL;
+	dict = PyModule_GetDict(mod);
+	initerrors(dict);
+	if (PyDict_SetItemString(dict, "None", Py_None) < 0)
+		return NULL;
+	if (PyDict_SetItemString(dict, "Ellipsis", Py_Ellipsis) < 0)
+		return NULL;
+	if (PyDict_SetItemString(dict, "__debug__",
+			  PyInt_FromLong(Py_OptimizeFlag == 0)) < 0)
+		return NULL;
+	return mod;
 }
 
 void
-PyBuiltin_Init()
+_PyBuiltin_Fini()
 {
-	builtin_mod = Py_InitModule("__builtin__", builtin_methods);
-	builtin_dict = PyModule_GetDict(builtin_mod);
-	Py_INCREF(builtin_dict);
-	initerrors();
-	(void) PyDict_SetItemString(builtin_dict, "None", Py_None);
-	(void) PyDict_SetItemString(builtin_dict, "Ellipsis", Py_Ellipsis);
-	(void) PyDict_SetItemString(builtin_dict, "__debug__",
-			  PyInt_FromLong(Py_OptimizeFlag == 0));
-	if (PyErr_Occurred())
-		Py_FatalError(
-		  "error creating None/Ellipsis/__debug__ in __builtin__");
+	finierrors();
 }
 
 

@@ -33,6 +33,14 @@ PERFORMANCE OF THIS SOFTWARE.
 
 #include "Python.h"
 
+#define ZAP(x) { \
+	PyObject *tmp = (PyObject *)(x); \
+	(x) = NULL; \
+	Py_XDECREF(tmp); \
+}
+
+
+static PyInterpreterState *interp_head = NULL;
 
 static PyThreadState *current_tstate = NULL;
 
@@ -41,13 +49,46 @@ PyInterpreterState *
 PyInterpreterState_New()
 {
 	PyInterpreterState *interp = PyMem_NEW(PyInterpreterState, 1);
+
 	if (interp != NULL) {
-		interp->import_modules = NULL;
+		interp->modules = NULL;
 		interp->sysdict = NULL;
-		interp->nthreads = 0;
-		interp->nexitfuncs = 0;
+		interp->builtins = NULL;
+		interp->checkinterval = 10;
+		interp->tstate_head = NULL;
+
+		interp->next = interp_head;
+		interp_head = interp;
 	}
+
 	return interp;
+}
+
+
+void
+PyInterpreterState_Clear(interp)
+	PyInterpreterState *interp;
+{
+	PyThreadState *p;
+	for (p = interp->tstate_head; p != NULL; p = p->next)
+		PyThreadState_Clear(p);
+	ZAP(interp->modules);
+	ZAP(interp->sysdict);
+	ZAP(interp->builtins);
+}
+
+
+static void
+zapthreads(interp)
+	PyInterpreterState *interp;
+{
+	PyThreadState *p, *q;
+	p = interp->tstate_head;
+	while (p != NULL) {
+		q = p->next;
+		PyThreadState_Delete(p);
+		p = q;
+	}
 }
 
 
@@ -55,9 +96,18 @@ void
 PyInterpreterState_Delete(interp)
 	PyInterpreterState *interp;
 {
-	Py_XDECREF(interp->import_modules);
-	Py_XDECREF(interp->sysdict);
-
+	PyInterpreterState **p;
+	zapthreads(interp);
+	for (p = &interp_head; ; p = &(*p)->next) {
+		if (*p == NULL)
+			Py_FatalError(
+				"PyInterpreterState_Delete: invalid interp");
+		if (*p == interp)
+			break;
+	}
+	if (interp->tstate_head != NULL)
+		Py_FatalError("PyInterpreterState_Delete: remaining threads");
+	*p = interp->next;
 	PyMem_DEL(interp);
 }
 
@@ -67,9 +117,9 @@ PyThreadState_New(interp)
 	PyInterpreterState *interp;
 {
 	PyThreadState *tstate = PyMem_NEW(PyThreadState, 1);
-	/* fprintf(stderr, "new tstate -> %p\n", tstate); */
+
 	if (tstate != NULL) {
-		tstate->interpreter_state = interp;
+		tstate->interp = interp;
 
 		tstate->frame = NULL;
 		tstate->recursion_depth = 0;
@@ -86,11 +136,35 @@ PyThreadState_New(interp)
 
 		tstate->sys_profilefunc = NULL;
 		tstate->sys_tracefunc = NULL;
-		tstate->sys_checkinterval = 0;
 
-		interp->nthreads++;
+		tstate->next = interp->tstate_head;
+		interp->tstate_head = tstate;
 	}
+
 	return tstate;
+}
+
+
+void
+PyThreadState_Clear(tstate)
+	PyThreadState *tstate;
+{
+	if (tstate->frame != NULL)
+		fprintf(stderr,
+		  "PyThreadState_Clear: warning: thread still has a frame");
+
+	ZAP(tstate->frame);
+
+	ZAP(tstate->curexc_type);
+	ZAP(tstate->curexc_value);
+	ZAP(tstate->curexc_traceback);
+
+	ZAP(tstate->exc_type);
+	ZAP(tstate->exc_value);
+	ZAP(tstate->exc_traceback);
+
+	ZAP(tstate->sys_profilefunc);
+	ZAP(tstate->sys_tracefunc);
 }
 
 
@@ -98,24 +172,23 @@ void
 PyThreadState_Delete(tstate)
 	PyThreadState *tstate;
 {
-	/* fprintf(stderr, "delete tstate %p\n", tstate); */
+	PyInterpreterState *interp;
+	PyThreadState **p;
+	if (tstate == NULL)
+		Py_FatalError("PyThreadState_Delete: NULL tstate");
 	if (tstate == current_tstate)
-		current_tstate = NULL;
-	tstate->interpreter_state->nthreads--;
-
-	Py_XDECREF((PyObject *) (tstate->frame)); /* XXX really? */
-
-	Py_XDECREF(tstate->curexc_type);
-	Py_XDECREF(tstate->curexc_value);
-	Py_XDECREF(tstate->curexc_traceback);
-
-	Py_XDECREF(tstate->exc_type);
-	Py_XDECREF(tstate->exc_value);
-	Py_XDECREF(tstate->exc_traceback);
-
-	Py_XDECREF(tstate->sys_profilefunc);
-	Py_XDECREF(tstate->sys_tracefunc);
-
+		Py_FatalError("PyThreadState_Delete: tstate is still current");
+	interp = tstate->interp;
+	if (interp == NULL)
+		Py_FatalError("PyThreadState_Delete: NULL interp");
+	for (p = &interp->tstate_head; ; p = &(*p)->next) {
+		if (*p == NULL)
+			Py_FatalError(
+				"PyThreadState_Delete: invalid tstate");
+		if (*p == tstate)
+			break;
+	}
+	*p = tstate->next;
 	PyMem_DEL(tstate);
 }
 
@@ -123,7 +196,9 @@ PyThreadState_Delete(tstate)
 PyThreadState *
 PyThreadState_Get()
 {
-	/* fprintf(stderr, "get tstate -> %p\n", current_tstate); */
+	if (current_tstate == NULL)
+		Py_FatalError("PyThreadState_Get: no current thread");
+
 	return current_tstate;
 }
 
@@ -133,7 +208,8 @@ PyThreadState_Swap(new)
 	PyThreadState *new;
 {
 	PyThreadState *old = current_tstate;
-	/* fprintf(stderr, "swap tstate new=%p <--> old=%p\n", new, old); */
+
 	current_tstate = new;
+
 	return old;
 }
