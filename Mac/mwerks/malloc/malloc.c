@@ -333,8 +333,21 @@ realloc(cp, nbytes)
 	*/
 	expensive = 0;
 	if ( i == 0xff ) {
-		expensive = 1;
+		/* Big block. See if it has to stay big */
+		if (nbytes+OVERHEAD > MAXMALLOC) {
+			/* Yup, try to resize it first */
+			SetPtrSize((Ptr)op, nbytes+OVERHEAD);
+			if ( MemError() == 0 ) {
+#ifdef RCHECK
+				op->ov_size = (nbytes + RSLOP - 1) & ~(RSLOP - 1);
+				*(u_short *)((caddr_t)(op + 1) + op->ov_size) = RMAGIC;
+#endif
+				return cp;
+			}
+			/* Nope, failed. Take the long way */
+		}
 		maxsize = GetPtrSize((Ptr)op);
+		expensive = 1;
 	} else {
 		maxsize = 1 << (i+3);
 		if ( nbytes + OVERHEAD > maxsize )
