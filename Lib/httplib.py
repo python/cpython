@@ -166,7 +166,10 @@ class HTTPResponse:
         # NOTE: RFC 2616, S4.4, #3 says we ignore this if tr_enc is "chunked"
         length = self.msg.getheader('content-length')
         if length and not self.chunked:
-            self.length = int(length)
+            try:
+                self.length = int(length)
+            except ValueError:
+                self.length = None
         else:
             self.length = None
 
