@@ -95,9 +95,12 @@ sub do_cmd_textless{ '&lt;' . $_[0]; }
 sub do_cmd_textunderscore{ '_' . $_[0]; }
 sub do_cmd_infinity{ '&infin;' . $_[0]; }
 sub do_cmd_plusminus{ '&plusmn;' . $_[0]; }
+sub do_cmd_guilabel{
+    return use_wrappers($_[0]. '<span class="guilabel">', '</span>'); }
 sub do_cmd_menuselection{
-    return use_wrappers($_[0], '<span class="menuselection">', '</span>'); }
-sub do_cmd_sub{ ' > ' . $_[0]; }
+    return use_wrappers($_[0], '<span class="guilabel">', '</span>'); }
+sub do_cmd_sub{
+    return '</span> &gt; <span class="guilabel">' . $_[0]; }
 
 
 # words typeset in a special way (not in HTML though)

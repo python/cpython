@@ -821,8 +821,11 @@
 \newcommand{\NULL}{\constant{NULL}}
 \newcommand{\infinity}{\ensuremath{\infty}}
 \newcommand{\plusminus}{\ensuremath{\pm}}
+
+% \guilabel{Start}
+\newcommand{\guilabel}[1]{\textsf{#1}}
 % \menuselection{Start \sub Programs \sub Python}
-\newcommand{\menuselection}[1]{\textsf{\def\sub{ \ensuremath{>} }#1}}
+\newcommand{\menuselection}[1]{\guilabel{{\def\sub{ \ensuremath{>} }#1}}}
 
 % Also for consistency: spell Python "Python", not "python"!
 
