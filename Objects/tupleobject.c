@@ -27,6 +27,7 @@ PyObject *
 PyTuple_New(register int size)
 {
 	register PyTupleObject *op;
+	int i;
 	if (size < 0) {
 		PyErr_BadInternalCall();
 		return NULL;
@@ -68,7 +69,8 @@ PyTuple_New(register int size)
 		if (op == NULL)
 			return NULL;
 	}
-	memset(op->ob_item, 0, sizeof(*op->ob_item) * size);
+	for (i=0; i < size; i++)
+		op->ob_item[i] = NULL;
 #if MAXSAVESIZE > 0
 	if (size == 0) {
 		free_tuples[0] = op;
