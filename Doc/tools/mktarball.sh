@@ -5,14 +5,14 @@
 #    from the Makefile or someplace.
 #
 #  usage:
-#	./mktarball.sh [tag]
+#	./mktarball.sh release [tag]
 #
 #  without [tag]:  generate from the current version that's checked in
 #		   (*NOT* what's in the current directory!)
 #
 #  with [tag]:  generate from the named tag
 
-RELEASE=1.5.1
+RELEASE=$1; shift
 
 TEMPDIR=tmp.$$
 MYDIR=`pwd`
@@ -28,7 +28,7 @@ else
     rm -r `find $TEMPDIR -name CVS -print` || exit $?
 fi
 
-rm -f `find $TEMPDIR/Python-$RELEASE -name .cvsignore -print`
+rm -f `find $TEMPDIR -name .cvsignore -print`
 
 rm -f $TEMPDIR/Python-$RELEASE/Doc/ref/ref.pdf
 rm -f $TEMPDIR/Python-$RELEASE/Doc/ref/ref.ps
