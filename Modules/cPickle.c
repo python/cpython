@@ -2072,6 +2072,10 @@ newPicklerobject(PyObject *file, int bin) {
 
     if (PyFile_Check(file)) {
         self->fp = PyFile_AsFile(file);
+	if (self->fp == NULL) {
+	    PyErr_SetString(PyExc_IOError, "output file closed");
+	    return NULL;
+	}
         self->write_func = write_file;
     }
     else if (PycStringIO_OutputCheck(file)) {
@@ -3897,6 +3901,10 @@ newUnpicklerobject(PyObject *f) {
     /* Set read, readline based on type of f */
     if (PyFile_Check(f)) {
         self->fp = PyFile_AsFile(f);
+	if (self->fp == NULL) {
+	    PyErr_SetString(PyExc_IOError, "input file closed");
+	    return NULL;
+	}
         self->read_func = read_file;
         self->readline_func = readline_file;
     }
