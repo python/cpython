@@ -58,7 +58,8 @@
 ;; - proper interaction with pending-del and del-sel modes.
 ;; - Better support for outdenting: py-electric-colon (:) and
 ;;   py-indent-line (TAB) improvements; one level of outdentation
-;;   added after a return, raise, break, or continue statement
+;;   added after a return, raise, break, pass, or continue statement.
+;;   Defeated by prefixing command with C-u.
 ;; - New py-electric-colon (:) command for improved outdenting  Also
 ;;   py-indent-line (TAB) should handle outdented lines better
 ;; - improved (I think) C-c > and C-c <
@@ -788,12 +789,12 @@ Electric behavior is inhibited inside a string or comment."
       (save-excursion
 	(let ((here (point))
 	      (outdent 0)
-	      (indent (py-compute-indentation)))
+	      (indent (py-compute-indentation t)))
 	  (if (and (not arg)
 		   (py-outdent-p)
 		   (= indent (save-excursion
 			       (py-next-statement -1)
-			       (py-compute-indentation)))
+			       (py-compute-indentation t)))
 		   )
 	      (setq outdent py-indent-offset))
 	  ;; Don't indent, only outdent.  This assumes that any lines that
@@ -1037,12 +1038,17 @@ argument delets that many characters."
 (put 'py-delete-char 'delete-selection 'supersede)
 (put 'py-delete-char 'pending-delete   'supersede)
 
-(defun py-indent-line ()
-  "Fix the indentation of the current line according to Python rules."
-  (interactive)
+(defun py-indent-line (&optional arg)
+  "Fix the indentation of the current line according to Python rules.
+With \\[universal-argument], ignore outdenting rules for block
+closing statements (e.g. return, raise, break, continue, pass)
+
+This function is normally bound to `indent-line-function' so
+\\[indent-for-tab-command] will call it."
+  (interactive "P")
   (let* ((ci (current-indentation))
 	 (move-to-indentation-p (<= (current-column) ci))
-	 (need (py-compute-indentation)))
+	 (need (py-compute-indentation (not arg))))
     ;; see if we need to outdent
     (if (py-outdent-p)
 	(setq need (- need py-indent-offset)))
@@ -1068,7 +1074,10 @@ the new line indented."
       (insert-char ?\n 1)
       (move-to-column ci))))
 
-(defun py-compute-indentation ()
+(defun py-compute-indentation (honor-block-close-p)
+  ;; implements all the rules for indentation computation.  when
+  ;; honor-block-close-p is non-nil, statements such as return, raise,
+  ;; break, continue, and pass force one level of outdenting.
   (save-excursion
     (let ((pps (parse-partial-sexp (save-excursion
 				     (beginning-of-python-def-or-class)
@@ -1214,7 +1223,7 @@ the new line indented."
 	(+ (current-indentation)
 	   (if (py-statement-opens-block-p)
 	       py-indent-offset
-	     (if (py-statement-closes-block-p)
+	     (if (and honor-block-close-p (py-statement-closes-block-p))
 		 (- py-indent-offset)
 	       0)))
 	)))))
@@ -1374,7 +1383,7 @@ initial line; and comment lines beginning in column 1 are ignored."
 	  (target-column 0)		; column to which to indent
 	  (base-shifted-by 0)		; amount last base line was shifted
 	  (indent-base (if (looking-at "[ \t\n]")
-			   (py-compute-indentation)
+			   (py-compute-indentation t)
 			 0))
 	  ci)
       (while (< (point) end)
@@ -2223,12 +2232,12 @@ local bindings to py-newline-and-indent."))
 
 (defun py-statement-closes-block-p ()
   ;; true iff the current statement `closes' a block == the line
-  ;; starts with `return', `raise', `break' or `continue'.  doesn't
-  ;; catch embedded statements
+  ;; starts with `return', `raise', `break', `continue', and `pass'.
+  ;; doesn't catch embedded statements
   (let ((here (point)))
     (back-to-indentation)
     (prog1
-	(looking-at "\\(return\\|raise\\|break\\|continue\\)\\>")
+	(looking-at "\\(return\\|raise\\|break\\|continue\\|pass\\)\\>")
       (goto-char here))))
 
 ;; go to point right beyond final line of block begun by the current
