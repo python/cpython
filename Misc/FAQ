@@ -6,8 +6,9 @@ Reply-to: guido@cwi.nl (Guido van Rossum)
 Approved: news-answers-request@MIT.Edu
 
 Archive-name: python-faq/part1
-Version: 1.19--
-Last-modified: 2 January 1995
+Submitted-by: Guido van Rossum <guido@cwi.nl>
+Version: 1.20
+Last-modified: 7 Februari 1995
 
 This article contains answers to Frequently Asked Questions about
 Python (an object-oriented interpreted programming language -- see
@@ -101,6 +102,7 @@ Here's an overview of the questions per chapter:
   3.12. Q. Trouble with prototypes on Ultrix.
   3.13. Q. Trouble with posix.listdir on NeXTSTEP 3.2.
   3.14. Q. Other trouble building Python on platform X.
+  3.15. Q. How to configure dynamic loading on Lixux.
 
  4. Programming in Python
   4.1. Q. Is there a source code level debugger with breakpoints, step,
@@ -580,11 +582,14 @@ toplevel).
 
 3.8. Q. Python built with gcc for the DEC Alpha doesn't work.
 
-People have reported problems with both gcc 2.5.8 and 2.6.0.  The DEC
-OSF/1 cc compiler does not have these problems so it's probably gcc's
-fault.  One person reported that the problem went away when using -g
-instead of -O so this may be an option if you insist on using gcc.  If
-someone tracks it down more completely I'd like to hear about it!
+People have reported problems with gcc 2.5.8 up to 2.6.2.  The
+DEC OSF/1 cc compiler does not have these problems so it's probably
+gcc's fault.  The latest news is that the problem still exists but
+only when you use -O and only in the Modules subdirectory.  So one
+solution is to compile everything except Modules with gcc -O and then
+do the Modules directory with gcc without -O.  If you find a version
+of gcc which doesn't have this bug or if you can reduce it further to
+a particular file, please let me know.
 
 3.9. Q. I use VPATH but some targets are built in the source directory.
 
@@ -662,10 +667,9 @@ HAVE_PROTOTYPES.
 
 3.13. Q. Trouble with posix.listdir on NeXTSTEP 3.2.
 
-A. If you built 1.2, you probably forgot to pass -posix as mentioned
-in the README file -- this links with the right version of the
-libraries.  If you built an earlier version, that's also your problem
-(edit Makefile to add it to OPT), but you also need to remove this
+A. You need to pass "-posix" to the C compiler, especially in the link
+phase -- it uses the correct version of the C library.  The easiest
+way is perhaps to do "make OPT=-posix".  You also need to remove this
 NeXT-specific section from import.c:
 
                 #if defined(NeXT) || defined(WITH_RLD) 
@@ -681,6 +685,51 @@ don't tell me what type of computer and what operating system (and
 version) you are using it will be difficult for me to figure out what
 is the matter.  If you get a specific error message, please email it
 to me too.
+
+3.15. Q. How to configure dynamic loading on Lixux.
+
+A. (Thanks to Andrew Kuchling):
+
+Linux requires that you use the GNU DLD library.  The stages of using
+dynamic libraries on Linux are:
+
+1) Get dld from [some -- see below] Linux site.  I believe the version
+number is 3.2.4.  Be careful here; the most recent GNU version is
+3.2.3, and doesn't support Linux; be sure to get it from a Linux
+mirror, not a GNU mirror.  Compile it and install the library libdld.a
+somewhere; I used /usr/local/lib.
+
+2) Get Jack Jansen's DL library; its location is given in the
+_Extending Python_ manual as ftp://ftp.cwi.nl/pub/dynload/.  Compile
+it and install libdl.a wherever you put libdld.a.
+
+3) Run Python's configure script, giving it the --with-dl-dld option,
+which requires a parameter giving the directory where you put the
+libraries.
+
+4) Recompile Python.
+
+If you run into trouble with this, send me some mail and we can work
+on the problem.
+
+I don't use ELF binaries, because I'd rather wait until everything is
+reliable; my current impression (and please correct me if I'm wrong)
+is that gcc-elf is still a bit wonky, and you have to compile the
+entire GNU library yourself.  I'd much rather wait until ELF is a more
+standard part of Linux distributions.  I suspect that once ELF is
+common, Python's configure script will pick up the dlfcn.h header file
+and dynamic linking will work automatically.  Time will tell,
+however...
+
+It turns out that Linux DLD is not on sunsite.unc.edu; instead it's
+located at:
+<URL:ftp://tsx-11.mit.edu/pub/linux/sources/libs/dld-3.2.4.src.tar.gz>
+
+tsx-11 has mirrors; off the top of my head, one is ftp.uu.net, where
+the URL would be:
+<URL:ftp://ftp.uu.net/systems/unix/linux/sources/libs/dld-3.2.4.src.tar.gz>
+
+
 
 
 4. Programming in Python
@@ -977,7 +1026,7 @@ Anthony Baxter <anthony.baxter@aaii.oz.au> has written an interface to
 mSQL (mini-SQL).  <URL:ftp://ftp.cwi.nl/pub/python/PymSQL.tar.gz>.
 
 Tom Culliton <culliton@clark.net> has written an Oracle module.  Write
-him to get a copy of a late BETA version.
+him to get a copy of the latest version.
 
 4.15. Q. Is it possible to write obfuscated one-liners in Python?
 
