@@ -258,10 +258,11 @@ Restructure the table by allocating a new table and reinserting all
 items again.  When entries have been deleted, the new table may
 actually be smaller than the old one.
 */
-static int dictresize Py_PROTO((dictobject *));
+static int dictresize Py_PROTO((dictobject *, int));
 static int
-dictresize(mp)
+dictresize(mp, minused)
 	dictobject *mp;
+	int minused;
 {
 	register int oldsize = mp->ma_size;
 	register int newsize, newpoly;
@@ -269,14 +270,13 @@ dictresize(mp)
 	register dictentry *newtable;
 	register dictentry *ep;
 	register int i;
-	newsize = mp->ma_size;
 	for (i = 0, newsize = MINSIZE; ; i++, newsize <<= 1) {
 		if (i > sizeof(polys)/sizeof(polys[0])) {
 			/* Ran out of polynomials */
 			PyErr_NoMemory();
 			return -1;
 		}
-		if (newsize > mp->ma_used*2) {
+		if (newsize > minused) {
 			newpoly = polys[i];
 			break;
 		}
@@ -366,9 +366,9 @@ PyDict_SetItem(op, key, value)
 		if (hash == -1)
 			return -1;
 	}
-	/* if fill >= 2/3 size, resize */
+	/* if fill >= 2/3 size, double in size */
 	if (mp->ma_fill*3 >= mp->ma_size*2) {
-		if (dictresize(mp) != 0) {
+		if (dictresize(mp, mp->ma_used*2) != 0) {
 			if (mp->ma_fill+1 > mp->ma_size)
 				return -1;
 		}
@@ -674,6 +674,68 @@ dict_items(mp, args)
 	return v;
 }
 
+static PyObject *
+dict_absorb(mp, args)
+      register dictobject *mp;
+      PyObject *args;
+{
+	register int i;
+	dictobject *other;
+        dictentry *entry;
+	if (!PyArg_Parse(args, "O!", &PyDict_Type, &other))
+		return NULL;
+	if (other == mp)
+		goto done; /* a.absorb(a); nothing to do */
+	/* Do one big resize at the start, rather than incrementally
+	   resizing as we insert new items.  Expect that there will be
+	   no (or few) overlapping keys. */
+	if ((mp->ma_fill + other->ma_used)*3 >= mp->ma_size*2) {
+		if (dictresize(mp, (mp->ma_used + other->ma_used)*3/2) != 0)
+			return NULL;
+	}
+	for (i = 0; i < other->ma_size; i++) {
+		entry = &other->ma_table[i];
+		if (entry->me_value != NULL) {
+			Py_INCREF(entry->me_key);
+			Py_INCREF(entry->me_value);
+			insertdict(mp, entry->me_key, entry->me_hash,
+				   entry->me_value);
+		}
+	}
+  done:
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
+static PyObject *
+dict_copy(mp, args)
+      register dictobject *mp;
+      PyObject *args;
+{
+	register int i;
+	dictobject *copy;
+        dictentry *entry;
+	if (!PyArg_Parse(args, ""))
+		return NULL;
+	copy = (dictobject *)PyDict_New();
+	if (copy == NULL)
+		return NULL;
+	if (mp->ma_used > 0) {
+		if (dictresize(copy, mp->ma_used*3/2) != 0)
+			return NULL;
+		for (i = 0; i < mp->ma_size; i++) {
+			entry = &mp->ma_table[i];
+			if (entry->me_value != NULL) {
+				Py_INCREF(entry->me_key);
+				Py_INCREF(entry->me_value);
+				insertdict(copy, entry->me_key, entry->me_hash,
+					   entry->me_value);
+			}
+		}
+	}
+	return (PyObject *)copy;
+}
+
 int
 PyDict_Size(mp)
 	PyObject *mp;
@@ -901,7 +963,9 @@ dict_clear(mp, args)
 }
 
 static PyMethodDef mapp_methods[] = {
+	{"absorb",	(PyCFunction)dict_absorb},
 	{"clear",	(PyCFunction)dict_clear},
+	{"copy",	(PyCFunction)dict_copy},
 	{"has_key",	(PyCFunction)dict_has_key},
 	{"items",	(PyCFunction)dict_items},
 	{"keys",	(PyCFunction)dict_keys},
