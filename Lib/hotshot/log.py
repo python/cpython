@@ -95,12 +95,7 @@ class LogReader:
 
     def next(self, index=0):
         while 1:
-            try:
-                what, tdelta, fileno, lineno = self._nextitem()
-            except TypeError:
-                # logreader().next() returns None at the end
-                self._reader.close()
-                raise StopIteration()
+            what, tdelta, fileno, lineno = self._nextitem()
 
             # handle the most common cases first
 
