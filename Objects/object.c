@@ -895,7 +895,7 @@ PyObject_RichCompareBool(PyObject *v, PyObject *w, int op)
 }
 
 /* Set of hash utility functions to help maintaining the invariant that
-	iff a==b then hash(a)==hash(b)
+	if a==b then hash(a)==hash(b)
 
    All the utility functions (_Py_Hash*()) return "-1" to signify an error.
 */
