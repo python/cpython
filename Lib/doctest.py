@@ -2342,26 +2342,33 @@ def debug_script(src, pm=False, globs=None):
     "Debug a test script.  `src` is the script, as a string."
     import pdb
 
-    srcfilename = tempfile.mktemp("doctestdebug.py")
+    # Note that tempfile.NameTemporaryFile() cannot be used.  As the
+    # docs say, a file so created cannot be opened by name a second time
+    # on modern Windows boxes, and execfile() needs to open it.
+    srcfilename = tempfile.mktemp(".py", "doctestdebug")
     f = open(srcfilename, 'w')
     f.write(src)
     f.close()
 
-    if globs:
-        globs = globs.copy()
-    else:
-        globs = {}
+    try:
+        if globs:
+            globs = globs.copy()
+        else:
+            globs = {}
 
-    if pm:
-        try:
-            execfile(srcfilename, globs, globs)
-        except:
-            print sys.exc_info()[1]
-            pdb.post_mortem(sys.exc_info()[2])
-    else:
-        # Note that %r is vital here.  '%s' instead can, e.g., cause
-        # backslashes to get treated as metacharacters on Windows.
-        pdb.run("execfile(%r)" % srcfilename, globs, globs)
+        if pm:
+            try:
+                execfile(srcfilename, globs, globs)
+            except:
+                print sys.exc_info()[1]
+                pdb.post_mortem(sys.exc_info()[2])
+        else:
+            # Note that %r is vital here.  '%s' instead can, e.g., cause
+            # backslashes to get treated as metacharacters on Windows.
+            pdb.run("execfile(%r)" % srcfilename, globs, globs)
+
+    finally:
+        os.remove(srcfilename)
 
 def debug(module, name, pm=False):
     """Debug a single doctest docstring.
