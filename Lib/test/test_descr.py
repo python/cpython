@@ -1671,7 +1671,7 @@ def inherits():
                 self.ateof = 1
             return s
 
-    f = open(TESTFN, 'w')
+    f = file(name=TESTFN, mode='w')
     lines = ['a\n', 'b\n', 'c\n']
     try:
         f.writelines(lines)
@@ -1716,7 +1716,7 @@ def keywords():
         else:
             raise TestFailed("expected TypeError from bogus keyword "
                              "argument to %r" % constructor)
-            
+
 def all():
     lists()
     dicts()
