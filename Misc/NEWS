@@ -12,6 +12,12 @@ What's New in Python 2.4 alpha 3?
 Core and builtins
 -----------------
 
+- OverflowWarning is no longer generated.  PEP 237 scheduled this to
+  occur in Python 2.3, but since OverflowWarning was disabled by default,
+  nobody realized it was still being generated.  On the chance that user
+  code is still using them, the Python builtin OverflowWarning, and
+  corresponding C API PyExc_OverflowWarning, will exist until Python 2.5.
+
 - Py_InitializeEx has been added.
 
 - Fix the order of application of decorators.  The proper order is bottom-up;

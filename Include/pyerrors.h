@@ -74,6 +74,7 @@ PyAPI_DATA(PyObject *) PyExc_UserWarning;
 PyAPI_DATA(PyObject *) PyExc_DeprecationWarning;
 PyAPI_DATA(PyObject *) PyExc_PendingDeprecationWarning;
 PyAPI_DATA(PyObject *) PyExc_SyntaxWarning;
+/* PyExc_OverflowWarning will go away for Python 2.5 */
 PyAPI_DATA(PyObject *) PyExc_OverflowWarning;
 PyAPI_DATA(PyObject *) PyExc_RuntimeWarning;
 PyAPI_DATA(PyObject *) PyExc_FutureWarning;

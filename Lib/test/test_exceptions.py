@@ -85,15 +85,16 @@ except NameError: pass
 
 r(OverflowError)
 # XXX
-# Obscure:  this test relies on int+int raising OverflowError if the
-# ints are big enough.  But ints no longer do that by default.  This
-# test will have to go away someday.  For now, we can convert the
-# transitional OverflowWarning into an error.
+# Obscure:  in 2.2 and 2.3, this test relied on changing OverflowWarning
+# into an error, in order to trigger OverflowError.  In 2.4, OverflowWarning
+# should no longer be generated, so the focus of the test shifts to showing
+# that OverflowError *isn't* generated.  OverflowWarning should be gone
+# in Python 2.5, and then the filterwarnings() call, and this comment,
+# should go away.
 warnings.filterwarnings("error", "", OverflowWarning, __name__)
 x = 1
-try:
-    while 1: x = x+x
-except OverflowError: pass
+for dummy in range(128):
+    x += x  # this simply shouldn't blow up
 
 r(RuntimeError)
 print '(not used any more?)'

@@ -10,19 +10,6 @@ PyInt_GetMax(void)
 	return LONG_MAX;	/* To initialize sys.maxint */
 }
 
-/* Return 1 if exception raised, 0 if caller should retry using longs */
-static int
-err_ovf(char *msg)
-{
-	if (PyErr_Warn(PyExc_OverflowWarning, msg) < 0) {
-		if (PyErr_ExceptionMatches(PyExc_OverflowWarning))
-			PyErr_SetString(PyExc_OverflowError, msg);
-		return 1;
-	}
-	else
-		return 0;
-}
-
 /* Integers are quite normal objects, to make object handling uniform.
    (Using odd pointers to represent integers would save much space
    but require extra checks for this special case throughout the code.)
@@ -306,11 +293,8 @@ PyInt_FromString(char *s, char **pend, int base)
 		PyErr_SetString(PyExc_ValueError, buffer);
 		return NULL;
 	}
-	else if (errno != 0) {
-		if (err_ovf("string/unicode conversion"))
-			return NULL;
+	else if (errno != 0)
 		return PyLong_FromString(s, pend, base);
-	}
 	if (pend)
 		*pend = end;
 	return PyInt_FromLong(x);
@@ -396,8 +380,6 @@ int_add(PyIntObject *v, PyIntObject *w)
 	x = a + b;
 	if ((x^a) >= 0 || (x^b) >= 0)
 		return PyInt_FromLong(x);
-	if (err_ovf("integer addition"))
-		return NULL;
 	return PyLong_Type.tp_as_number->nb_add((PyObject *)v, (PyObject *)w);
 }
 
@@ -410,8 +392,6 @@ int_sub(PyIntObject *v, PyIntObject *w)
 	x = a - b;
 	if ((x^a) >= 0 || (x^~b) >= 0)
 		return PyInt_FromLong(x);
-	if (err_ovf("integer subtraction"))
-		return NULL;
 	return PyLong_Type.tp_as_number->nb_subtract((PyObject *)v,
 						     (PyObject *)w);
 }
@@ -475,8 +455,6 @@ int_mul(PyObject *v, PyObject *w)
 		   32 * absdiff <= absprod -- 5 good bits is "close enough" */
 		if (32.0 * absdiff <= absprod)
 			return PyInt_FromLong(longprod);
-		else if (err_ovf("integer multiplication"))
-			return NULL;
 		else
 			return PyLong_Type.tp_as_number->nb_multiply(v, w);
 	}
@@ -501,11 +479,8 @@ i_divmod(register long x, register long y,
 		return DIVMOD_ERROR;
 	}
 	/* (-sys.maxint-1)/-1 is the only overflow case. */
-	if (y == -1 && x < 0 && x == -x) {
-		if (err_ovf("integer division"))
-			return DIVMOD_ERROR;
+	if (y == -1 && x < 0 && x == -x)
 		return DIVMOD_OVERFLOW;
-	}
 	xdivy = x / y;
 	xmody = x - xdivy * y;
 	/* If the signs of x and y differ, and the remainder is non-0,
@@ -654,8 +629,6 @@ int_pow(PyIntObject *v, PyIntObject *w, PyIntObject *z)
 			if (temp == 0)
 				break; /* Avoid ix / 0 */
 			if (ix / temp != prev) {
-				if (err_ovf("integer exponentiation"))
-					return NULL;
 				return PyLong_Type.tp_as_number->nb_power(
 					(PyObject *)v,
 					(PyObject *)w,
@@ -666,9 +639,7 @@ int_pow(PyIntObject *v, PyIntObject *w, PyIntObject *z)
 	        if (iw==0) break;
 	 	prev = temp;
 	 	temp *= temp;	/* Square the value of temp */
-	 	if (prev!=0 && temp/prev!=prev) {
-			if (err_ovf("integer exponentiation"))
-				return NULL;
+	 	if (prev != 0 && temp / prev != prev) {
 			return PyLong_Type.tp_as_number->nb_power(
 				(PyObject *)v, (PyObject *)w, (PyObject *)z);
 		}
@@ -701,10 +672,7 @@ int_neg(PyIntObject *v)
 	a = v->ob_ival;
 	x = -a;
 	if (a < 0 && x < 0) {
-		PyObject *o;
-		if (err_ovf("integer negation"))
-			return NULL;
-		o = PyLong_FromLong(a);
+		PyObject *o = PyLong_FromLong(a);
 		if (o != NULL) {
 			PyObject *result = PyNumber_Negative(o);
 			Py_DECREF(o);
