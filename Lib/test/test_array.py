@@ -592,6 +592,13 @@ class BaseTest(unittest.TestCase):
         b = array.array(self.badtypecode())
         self.assertRaises(TypeError, a.extend, b)
 
+        a = array.array(self.typecode, self.example)
+        a.extend(self.example[::-1])
+        self.assertEqual(
+            a,
+            array.array(self.typecode, self.example+self.example[::-1])
+        )
+
     def test_coveritertraverse(self):
         try:
             import gc

@@ -104,10 +104,13 @@ data from a file written on a machine with a different byte order.
 Return the number of occurences of \var{x} in the array.
 \end{methoddesc}
 
-\begin{methoddesc}[array]{extend}{a}
-Append array items from \var{a} to the end of the array.  The two
-arrays must have \emph{exactly} the same type code; if not,
-\exception{TypeError} will be raised.
+\begin{methoddesc}[array]{extend}{iterable}
+Append items from \var{iterable} to the end of the array.  If
+\var{iterable} is another array, it must have \emph{exactly} the same
+type code; if not, \exception{TypeError} will be raised.  If
+\var{iterable} is not an array, it must be iterable and its
+elements must be the right type to be appended to the array.
+\versionchanged[Formerly, the argument could only be another array]{2.4}
 \end{methoddesc}
 
 \begin{methoddesc}[array]{fromfile}{f, n}
