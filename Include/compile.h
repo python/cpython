@@ -41,7 +41,6 @@ typedef struct {
    effect, this passes on the "from __future__ import generators" state
    in effect when the code block was compiled. */
 #define CO_GENERATOR_ALLOWED    0x1000
-/* XXX Ditto for future division */
 #define CO_FUTURE_DIVISION    	0x2000
 
 extern DL_IMPORT(PyTypeObject) PyCode_Type;
@@ -64,22 +63,15 @@ DL_IMPORT(int) PyCode_Addr2Line(PyCodeObject *, int);
 typedef struct {
     int ff_found_docstring;
     int ff_last_lineno;
-    int ff_nested_scopes;
-    int ff_generators;
-    int ff_division;
+    int ff_features;
 } PyFutureFeatures;
 
 DL_IMPORT(PyFutureFeatures *) PyNode_Future(struct _node *, char *);
 DL_IMPORT(PyCodeObject *) PyNode_CompileFlags(struct _node *, char *,
 					      PyCompilerFlags *);
 
-#define NESTED_SCOPES_DEFAULT 1
 #define FUTURE_NESTED_SCOPES "nested_scopes"
-
-#define GENERATORS_DEFAULT 0
 #define FUTURE_GENERATORS "generators"
-
-#define DIVISION_DEFAULT 0
 #define FUTURE_DIVISION "division"
 
 /* for internal use only */
