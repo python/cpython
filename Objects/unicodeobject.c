@@ -5708,7 +5708,7 @@ PyObject *PyUnicode_Format(PyObject *format,
 	    }
 	    if (dict && (argidx < arglen) && c != '%') {
 		PyErr_SetString(PyExc_TypeError,
-				"not all arguments converted");
+				"not all arguments converted during string formatting");
 		goto onError;
 	    }
 	    Py_XDECREF(temp);
@@ -5716,7 +5716,7 @@ PyObject *PyUnicode_Format(PyObject *format,
     } /* until end */
     if (argidx < arglen && !dict) {
 	PyErr_SetString(PyExc_TypeError,
-			"not all arguments converted");
+			"not all arguments converted during string formatting");
 	goto onError;
     }
 
