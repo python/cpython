@@ -120,7 +120,7 @@ BSC32=bscmake.exe
 LINK32=link.exe
 # ADD BASE LINK32 ..\..\bsddb\port\win32\db.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib /nologo /subsystem:windows /dll /debug /machine:ALPHA /nodefaultlib:"MSVCRT" /out:"./bsddb_d.pyd" /pdbtype:sept /libpath:"Debug" /export:initbsddb
 # SUBTRACT BASE LINK32 /pdb:none
-# ADD LINK32 ..\..\bsddb\port\win32\db.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib /nologo /subsystem:windows /dll /debug /machine:ALPHA /nodefaultlib:"MSVCRT" /out:"alpha-temp-debug\bsddb_d.pyd" /pdbtype:sept /libpath:"Debug" /export:initbsddb
+# ADD LINK32 ..\..\bsddb\port\win32\db.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib wsock32.lib /nologo /subsystem:windows /dll /debug /machine:ALPHA /nodefaultlib:"MSVCRT" /out:"alpha-temp-debug\bsddb_d.pyd" /pdbtype:sept /libpath:"Debug" /export:initbsddb
 # SUBTRACT LINK32 /verbose /pdb:none
 
 !ELSEIF  "$(CFG)" == "bsddb - Win32 Alpha Release"
@@ -152,7 +152,7 @@ BSC32=bscmake.exe
 LINK32=link.exe
 # ADD BASE LINK32 ..\..\bsddb\port\win32\db.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib /nologo /subsystem:windows /dll /debug /machine:ALPHA /out:"./bsddb.pyd" /libpath:"Release" /export:initbsddb
 # SUBTRACT BASE LINK32 /pdb:none
-# ADD LINK32 ..\..\bsddb\port\win32\db.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib /nologo /subsystem:windows /dll /debug /machine:ALPHA /out:"alpha-temp-release\bsddb.pyd" /libpath:"Release" /export:initbsddb
+# ADD LINK32 ..\..\bsddb\port\win32\db.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib wsock32.lib /nologo /subsystem:windows /dll /debug /machine:ALPHA /out:"alpha-temp-release\bsddb.pyd" /libpath:"Release" /export:initbsddb
 # SUBTRACT LINK32 /verbose /pdb:none
 
 !ENDIF 

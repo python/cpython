@@ -57,7 +57,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /dll /machine:I386
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib largeint.lib winmm.lib /nologo /base:"0x1e100000" /subsystem:windows /dll /debug /machine:I386 /nodefaultlib:"libc" /libpath:"Release"
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib largeint.lib winmm.lib /nologo /base:"0x1e100000" /subsystem:windows /dll /debug /machine:I386 /nodefaultlib:"libc" /libpath:"Release"
 # SUBTRACT LINK32 /pdb:none
 
 !ELSEIF  "$(CFG)" == "python16 - Win32 Debug"
@@ -88,7 +88,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /dll /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib largeint.lib winmm.lib /nologo /base:"0x1e100000" /subsystem:windows /dll /debug /machine:I386 /nodefaultlib:"libc" /out:"./python16_d.dll" /pdbtype:sept /libpath:"Debug"
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib largeint.lib winmm.lib /nologo /base:"0x1e100000" /subsystem:windows /dll /debug /machine:I386 /nodefaultlib:"libc" /out:"./python16_d.dll" /pdbtype:sept /libpath:"Debug"
 # SUBTRACT LINK32 /pdb:none
 
 !ELSEIF  "$(CFG)" == "python16 - Win32 Alpha Debug"
@@ -120,7 +120,7 @@ BSC32=bscmake.exe
 LINK32=link.exe
 # ADD BASE LINK32 wsock32.lib largeint.lib winmm.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib /nologo /base:"0x1e100000" /subsystem:windows /dll /debug /machine:ALPHA /nodefaultlib:"libc" /out:"./python16_d.dll" /pdbtype:sept /libpath:"Debug"
 # SUBTRACT BASE LINK32 /pdb:none
-# ADD LINK32 wsock32.lib largeint.lib winmm.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib /nologo /base:"0x1e100000" /subsystem:windows /dll /debug /machine:ALPHA /nodefaultlib:"libc" /out:"./python16_d.dll" /pdbtype:sept /libpath:"Debug"
+# ADD LINK32 largeint.lib winmm.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib /nologo /base:"0x1e100000" /subsystem:windows /dll /debug /machine:ALPHA /nodefaultlib:"libc" /out:"./python16_d.dll" /pdbtype:sept /libpath:"Debug"
 # SUBTRACT LINK32 /pdb:none
 
 !ELSEIF  "$(CFG)" == "python16 - Win32 Alpha Release"
@@ -152,7 +152,7 @@ BSC32=bscmake.exe
 LINK32=link.exe
 # ADD BASE LINK32 wsock32.lib largeint.lib winmm.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib /nologo /base:"0x1e100000" /subsystem:windows /dll /debug /machine:ALPHA /nodefaultlib:"libc" /libpath:"Release"
 # SUBTRACT BASE LINK32 /pdb:none
-# ADD LINK32 wsock32.lib largeint.lib winmm.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib /nologo /base:"0x1e100000" /subsystem:windows /dll /debug /machine:ALPHA /nodefaultlib:"libc" /libpath:"Release"
+# ADD LINK32 largeint.lib winmm.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib /nologo /base:"0x1e100000" /subsystem:windows /dll /debug /machine:ALPHA /nodefaultlib:"libc" /libpath:"Release"
 # SUBTRACT LINK32 /pdb:none
 
 !ENDIF 
@@ -1373,21 +1373,6 @@ SOURCE=..\Modules\rotormodule.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Modules\selectmodule.c
-
-!IF  "$(CFG)" == "python16 - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "python16 - Win32 Debug"
-
-!ELSEIF  "$(CFG)" == "python16 - Win32 Alpha Debug"
-
-!ELSEIF  "$(CFG)" == "python16 - Win32 Alpha Release"
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
 SOURCE=..\Modules\shamodule.c
 
 !IF  "$(CFG)" == "python16 - Win32 Release"
@@ -1419,21 +1404,6 @@ SOURCE=..\Modules\signalmodule.c
 # Begin Source File
 
 SOURCE=..\Objects\sliceobject.c
-
-!IF  "$(CFG)" == "python16 - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "python16 - Win32 Debug"
-
-!ELSEIF  "$(CFG)" == "python16 - Win32 Alpha Debug"
-
-!ELSEIF  "$(CFG)" == "python16 - Win32 Alpha Release"
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=..\Modules\socketmodule.c
 
 !IF  "$(CFG)" == "python16 - Win32 Release"
 
@@ -1644,36 +1614,6 @@ SOURCE=..\Objects\typeobject.c
 # Begin Source File
 
 SOURCE=..\Objects\unicodectype.c
-
-!IF  "$(CFG)" == "python16 - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "python16 - Win32 Debug"
-
-!ELSEIF  "$(CFG)" == "python16 - Win32 Alpha Debug"
-
-!ELSEIF  "$(CFG)" == "python16 - Win32 Alpha Release"
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=..\Modules\unicodedata.c
-
-!IF  "$(CFG)" == "python16 - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "python16 - Win32 Debug"
-
-!ELSEIF  "$(CFG)" == "python16 - Win32 Alpha Debug"
-
-!ELSEIF  "$(CFG)" == "python16 - Win32 Alpha Release"
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=..\Modules\unicodedatabase.c
 
 !IF  "$(CFG)" == "python16 - Win32 Release"
 
