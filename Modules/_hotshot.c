@@ -14,7 +14,6 @@
  */
 #ifdef MS_WIN32
 #include <windows.h>
-#include <largeint.h>
 #include <direct.h>    /* for getcwd() */
 typedef __int64 hs_time;
 #define GETTIMEOFDAY(P_HS_TIME) \

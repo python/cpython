@@ -51,7 +51,6 @@ extern int ftime(struct timeb *);
 #if defined(MS_WIN32) && !defined(MS_WIN64) && !defined(__BORLANDC__)
 /* Win32 has better clock replacement
    XXX Win64 does not yet, but might when the platform matures. */
-#include <largeint.h>
 #undef HAVE_CLOCK /* We have our own version down below */
 #endif /* MS_WIN32 && !MS_WIN64 */
 
@@ -144,36 +143,33 @@ time_clock(PyObject *self, PyObject *args)
 #endif /* HAVE_CLOCK */
 
 #if defined(MS_WIN32) && !defined(MS_WIN64) && !defined(__BORLANDC__)
-/* Due to Mark Hammond */
+/* Due to Mark Hammond and Tim Peters */
 static PyObject *
 time_clock(PyObject *self, PyObject *args)
 {
-	static LARGE_INTEGER ctrStart;
-	static LARGE_INTEGER divisor = {0,0};
-	LARGE_INTEGER now, diff, rem;
+	static LONG_LONG ctrStart;
+	static double divisor = 0.0;
+	LONG_LONG now;
+	double diff;
 
+	assert(sizeof(LONG_LONG) == sizeof(LARGE_INTEGER));
 	if (!PyArg_ParseTuple(args, ":clock"))
 		return NULL;
 
-	if (LargeIntegerEqualToZero(divisor)) {
-		QueryPerformanceCounter(&ctrStart);
-		if (!QueryPerformanceFrequency(&divisor) ||
-		    LargeIntegerEqualToZero(divisor)) {
-				/* Unlikely to happen -
-				   this works on all intel machines at least!
-				   Revert to clock() */
+	if (divisor == 0.0) {
+		LONG_LONG freq;
+		QueryPerformanceCounter((LARGE_INTEGER*)&ctrStart);
+		if (!QueryPerformanceFrequency((LARGE_INTEGER*)&freq) ||
+		    freq == 0) {
+			/* Unlikely to happen - this works on all intel
+			   machines at least!  Revert to clock() */
 			return PyFloat_FromDouble(clock());
 		}
+		divisor = (double)freq;
 	}
-	QueryPerformanceCounter(&now);
-	diff = LargeIntegerSubtract(now, ctrStart);
-	diff = LargeIntegerDivide(diff, divisor, &rem);
-	/* XXX - we assume both divide results fit in 32 bits.  This is
-	   true on Intels.  First person who can afford a machine that
-	   doesnt deserves to fix it :-)
-	*/
-	return PyFloat_FromDouble((double)diff.LowPart +
-		              ((double)rem.LowPart / (double)divisor.LowPart));
+	QueryPerformanceCounter((LARGE_INTEGER*)&now);
+	diff = (double)(now - ctrStart);
+	return PyFloat_FromDouble(diff / divisor);
 }
 
 #define HAVE_CLOCK /* So it gets included in the methods */
