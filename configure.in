@@ -2003,6 +2003,7 @@ AC_TRY_LINK([
 AC_MSG_CHECKING(for inet_pton)
 AC_TRY_COMPILE([
 #include "confdefs.h" 
+#include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -2015,7 +2016,7 @@ AC_TRY_COMPILE([
 AC_MSG_CHECKING(for setgroups)
 AC_TRY_COMPILE([
 #include "confdefs.h" 
-#include <unistd.h.h>
+#include <unistd.h>
 ], 
 void* p = setgroups,
   AC_DEFINE(HAVE_SETGROUPS, 1, Define if you have the 'setgroups' function.)
