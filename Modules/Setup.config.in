@@ -20,8 +20,18 @@
 # The ncurses library, under Linux
 @USE_NCURSES_MODULE@_curses _cursesmodule.c -lncurses -ltermcap
 
-# bsddb module enabled by --with-libdb or presence of db.h
+# bsddb(3) module enabled by --with-libdb or presence of db.h
 @USE_BSDDB_MODULE@bsddb bsddbmodule.c @HAVE_LIBDB@
 
 # dbm(3) may require -lndbm or similar
 @USE_DBM_MODULE@dbm dbmmodule.c @HAVE_LIBNDBM@
+
+# ndbm(3) may require -lndbm or similar
+@USE_NDBM_MODULE@ndbm ndbmmodule.c @HAVE_LIBNDBM@
+
+# gdbm(3) may require -lgdbm or similar
+@USE_GDBM_MODULE@gdbm gdbmmodule.c @HAVE_LIBGDBM@
+
+# crypt(3) may require -lcrypt or similar
+@USE_CRYPT_MODULE@crypt cryptmodule.c @HAVE_LIBCRYPT@
+

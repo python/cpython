@@ -749,19 +749,46 @@ AC_MSG_RESULT($withval)
 LIBS="$withval $LIBS"
 ], AC_MSG_RESULT(no))
 
-# This is used to generate Setup.config
+#
+# These are used to generate Setup.config.  They autoconfigure several
+# features that are otherwise severe pains in the butt.
+#
+# ncurses
 AC_SUBST(USE_NCURSES_MODULE)
 AC_CHECK_LIB(ncurses, initscr, 
 	[USE_NCURSES_MODULE=""],
 	[USE_NCURSES_MODULE="#"],
 	-ltermcap)
-
-# This is used to generate Setup.config
+# GNU readline
 AC_SUBST(USE_READLINE_MODULE)
 AC_CHECK_LIB(readline, readline, 
 	[USE_READLINE_MODULE=""],
 	[USE_READLINE_MODULE="#"], 
 	-ltermcap)
+# gdbm(3)
+AC_SUBST(USE_GDBM_MODULE)
+AC_SUBST(HAVE_LIBGDBM)
+AC_CHECK_LIB(gdbm, gdbm_open, 
+	[USE_GDBM_MODULE="" 
+	HAVE_LIBGDBM=-lgdbm],
+	[USE_GDBM_MODULE="#"
+	HAVE_LIBGDBM=""])
+# ndbm(3)
+AC_SUBST(USE_NDBM_MODULE)
+AC_SUBST(HAVE_LIBNDBM)
+AC_CHECK_LIB(ndbm, ndbm_open, 
+	[USE_NDBM_MODULE=""
+	HAVE_LIBNDBM=-lndbm],
+	[USE_NDBM_MODULE="#"
+	HAVE_LIBNDBM=""])
+# crypt(3)
+AC_SUBST(USE_CRYPT_MODULE)
+AC_SUBST(HAVE_LIBCRYPT)
+AC_CHECK_LIB(crypt, crypt, 
+	[USE_CRYPT_MODULE=""
+	HAVE_LIBCRYPT=-lcrypt],
+	[USE_CRYPT_MODULE="#"
+	HAVE_LIBCRYPT=""])
 
 # This is used to generate Setup.config
 AC_SUBST(USE_THREAD_MODULE)
@@ -905,7 +932,7 @@ else
     # make sure user knows why dbm support wasn't enabled even though
     # s/he requested it
     if test "$with_dbm" = "yes"
-    then echo $ac_n "(requested by no ndbm.h was found) $ac_c"
+    then echo $ac_n "(requested but no ndbm.h was found) $ac_c"
     fi
     with_dbm="no"
 fi
