@@ -8,10 +8,11 @@
 
 
 The \module{pyclbr} can be used to determine some limited information
-about the classes and methods defined in a module.  The information
+about the classes, methods and top-level functions
+defined in a module.  The information
 provided is sufficient to implement a traditional three-pane class
 browser.  The information is extracted from the source code rather
-than from an imported module, so this module is safe to use with
+than by importing the module, so this module is safe to use with
 untrusted source code.  This restriction makes it impossible to use
 this module with modules not implemented in Python, including many
 standard and optional extension modules.
@@ -27,11 +28,22 @@ standard and optional extension modules.
   module source code.
 \end{funcdesc}
 
+\begin{funcdesc}{readmodule_ex}{module\optional{, path}}
+  % The 'inpackage' parameter appears to be for internal use only....
+  Like \function{readmodule()}, but the returned dictionary, in addition
+  to mapping class names to class descriptor objects, also maps
+  top-level function names to function descriptor objects.  Moreover, if
+  the module being read is a package, the key \code{'__path__'} in the
+  returned dictionary has as its value a list which contains the package
+  search path.
+\end{funcdesc}
+
 
 \subsection{Class Descriptor Objects \label{pyclbr-class-objects}}
 
 The class descriptor objects used as values in the dictionary returned
-by \function{readmodule()} provide the following data members:
+by \function{readmodule()} and \function{readmodule_ex()}
+provide the following data members:
 
 
 \begin{memberdesc}[class descriptor]{module}
@@ -56,10 +68,34 @@ by \function{readmodule()} provide the following data members:
 \end{memberdesc}
 
 \begin{memberdesc}[class descriptor]{file}
-  Name of the file containing the class statement defining the class.
+  Name of the file containing the \code{class} statement defining the class.
 \end{memberdesc}
 
 \begin{memberdesc}[class descriptor]{lineno}
-  The line number of the class statement within the file named by
+  The line number of the \code{class} statement within the file named by
+  \member{file}.
+\end{memberdesc}
+
+\subsection{Function Descriptor Objects \label{pyclbr-function-objects}}
+
+The function descriptor objects used as values in the dictionary returned
+by \function{readmodule_ex()} provide the following data members:
+
+
+\begin{memberdesc}[function descriptor]{module}
+  The name of the module defining the function described by the function
+  descriptor.
+\end{memberdesc}
+
+\begin{memberdesc}[function descriptor]{name}
+  The name of the function.
+\end{memberdesc}
+
+\begin{memberdesc}[function descriptor]{file}
+  Name of the file containing the \code{def} statement defining the function.
+\end{memberdesc}
+
+\begin{memberdesc}[function descriptor]{lineno}
+  The line number of the \code{def} statement within the file named by
   \member{file}.
 \end{memberdesc}
