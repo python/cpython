@@ -77,10 +77,12 @@ class Cddb:
 		self.artist = ''
 		self.title = ''
 		self.track = [None] + [''] * ntracks
+		self.trackartist = [None] + [''] * ntracks
+		self.notes = []
 		if not hasattr(self, 'file'):
 			return
 		import regex
-		reg = regex.compile('^\\([^.]*\\)\\.\\([^:]*\\):\t\\(.*\\)')
+		reg = regex.compile('^\\([^.]*\\)\\.\\([^:]*\\):[\t ]+\\(.*\\)')
 		while 1:
 			line = f.readline()
 			if not line:
@@ -101,6 +103,8 @@ class Cddb:
 						self.toc = value
 					if self.toc != value:
 						print 'toc\'s don\'t match'
+				elif name2 == 'notes':
+					self.notes.append(value)
 			elif name1[:5] == 'track':
 				try:
 					trackno = string.atoi(name1[5:])
@@ -112,7 +116,10 @@ class Cddb:
 						  ' in file ' + file + \
 						  ' out of range'
 					continue
-				self.track[trackno] = value
+				if name2 == 'title':
+					self.track[trackno] = value
+				elif name2 == 'artist':
+					self.trackartist[trackno] = value
 		f.close()
 		for i in range(2, len(self.track)):
 			track = self.track[i]
@@ -181,6 +188,8 @@ class Cddb:
 		f.write('album.title:\t' + self.title + '\n')
 		f.write('album.artist:\t' + self.artist + '\n')
 		f.write('album.toc:\t' + self.toc + '\n')
+		for note in self.notes:
+			f.write('album.notes:\t' + note + '\n')
 		prevpref = None
 		for i in range(1, len(self.track)):
 			track = self.track[i]
