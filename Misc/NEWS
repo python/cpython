@@ -51,6 +51,8 @@ Release date: XX-XXX-2003
 
 - New codec for Ukrainian Cyrillic.
 
+- SF #665913: fix crash on Solaris when closing an mmap'ed file which
+  was already closed.
 
 What's New in Python 2.2.2 (final) ?
 Release date: 14-Oct-2002
