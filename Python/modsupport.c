@@ -96,6 +96,21 @@ getintintarg(v, a, b)
 }
 
 int
+getintintintarg(v, a, b, c)
+	object *v;
+	int *a;
+	int *b;
+	int *c;
+{
+	if (v == NULL || !is_tupleobject(v) || gettuplesize(v) != 3) {
+		return err_badarg();
+	}
+	return getintarg(gettupleitem(v, 0), a) &&
+		getintarg(gettupleitem(v, 1), b) &&
+		getintarg(gettupleitem(v, 2), c);
+}
+
+int
 getlongarg(v, a)
 	object *v;
 	long *a;
