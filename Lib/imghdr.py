@@ -6,7 +6,7 @@
 #-------------------------#
 
 def what(filename, h=None):
-	if not h:
+	if h is None:
 		f = open(filename, 'r')
 		h = f.read(32)
 	else:
