@@ -37,7 +37,7 @@ def parseString(string, handler, errorHandler=ErrorHandler()):
         from cStringIO import StringIO
     except ImportError:
         from StringIO import StringIO
-        
+
     if errorHandler is None:
         errorHandler = ErrorHandler()
     parser = make_parser()
@@ -61,8 +61,8 @@ del os
 _key = "python.xml.sax.parser"
 if sys.platform[:4] == "java" and sys.registry.containsKey(_key):
     default_parser_list = string.split(sys.registry.getProperty(_key), ",")
-    
-    
+
+
 def make_parser(parser_list = []):
     """Creates and returns a SAX parser.
 
@@ -85,8 +85,8 @@ def make_parser(parser_list = []):
             # so try the next one
             pass
 
-    raise SAXReaderNotAvailable("No parsers found", None)  
-    
+    raise SAXReaderNotAvailable("No parsers found", None)
+
 # --- Internal utility methods used by make_parser
 
 if sys.platform[ : 4] == "java":
