@@ -369,6 +369,7 @@ byte_compile(files, optimize=%s, force=%s,
         elif optimize == 2:
             cmd.insert(1, "-OO")
         spawn(cmd, verbose=verbose, dry_run=dry_run)
+        os.remove(script_name)
         
     # "Direct" byte-compilation: use the py_compile module to compile
     # right here, right now.  Note that the script generated in indirect
