@@ -55,6 +55,8 @@ void Py_Exit Py_PROTO((int));
 
 void Py_Cleanup Py_PROTO((void));
 
+void Py_FatalError Py_PROTO((char *));
+
 #ifdef __cplusplus
 }
 #endif
