@@ -101,7 +101,7 @@ time timemodule.c	# time operations and variables
 fcntl fcntlmodule.c	# fcntl(2) and ioctl(2)
 pwd pwdmodule.c		# pwd(3) 
 grp grpmodule.c		# grp(3)
-crypt cryptmodule.c	# crypt(3)
+crypt cryptmodule.c # -lcrypt	# crypt(3); needs -lcrypt on some systems
 select selectmodule.c	# select(2); not on ancient System V
 socket socketmodule.c	# socket(2); not on ancient System V
 signal signalmodule.c	# signal(2)
@@ -237,6 +237,10 @@ md5 md5module.c md5c.c
 # libraries/objects to the second line, and use that.
 #
 # In all cases also enable the last line (TKPATH).
+#
+# This was designed to build with Tk 3.6 and Tcl 7.3, but also seems
+# to work Tk 4.0 beta.  (Tkinter.py hasn't been fixed though, so for
+# the time being Tk 3.6 is the version of choice!)
 
 # *** Use ONE of the following two lines, see previous comments ***
 #tkinter tkintermodule.c -I/usr/local/include -L/usr/local/lib -ltk -ltcl -lX11
