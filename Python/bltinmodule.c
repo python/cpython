@@ -78,20 +78,27 @@ builtin_dir(self, v)
 	object *d;
 	if (v == NULL) {
 		d = getlocals();
+		INCREF(d);
 	}
 	else {
-		if (!is_moduleobject(v)) {
+		d = getattr(v, "__dict__");
+		if (d == NULL) {
 			err_setstr(TypeError,
-				"dir() argument must be module or absent");
+				"dir() argument has no variable attributes");
 			return NULL;
 		}
-		d = getmoduledict(v);
 	}
-	v = getdictkeys(d);
-	if (sortlist(v) != 0) {
-		DECREF(v);
-		v = NULL;
+	if (!is_dictobject(d)) { /* Assume it is None */
+		v = newlistobject(0);
 	}
+	else {
+		v = getdictkeys(d);
+		if (sortlist(v) != 0) {
+			DECREF(v);
+			v = NULL;
+		}
+	}
+	DECREF(d);
 	return v;
 }
 
