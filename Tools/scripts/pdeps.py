@@ -67,13 +67,13 @@ m_from = regexp.compile('^[ \t]*import[ \t]+([^#]+)')
 def process(filename, table):
 	fp = open(filename, 'r')
 	mod = path.basename(filename)
-	if mod[-3:] = '.py':
+	if mod[-3:] == '.py':
 		mod = mod[:-3]
 	table[mod] = list = []
 	while 1:
 		line = fp.readline()
 		if not line: break
-		while line[-1:] = '\\':
+		while line[-1:] == '\\':
 			nextline = fp.readline()
 			if not nextline: break
 			line = line[:-1] + nextline

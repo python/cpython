@@ -25,8 +25,8 @@ def getstatusoutput(cmd):
 	pipe = posix.popen('{ ' + cmd + '; } 2>&1', 'r')
 	text = pipe.read()
 	sts = pipe.close()
-	if sts = None: sts = 0
-	if text[-1:] = '\n': text = text[:-1]
+	if sts == None: sts = 0
+	if text[-1:] == '\n': text = text[:-1]
 	return sts, text
 
 

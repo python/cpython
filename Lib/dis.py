@@ -22,8 +22,8 @@ def disassemble(co, lasti):
 	while i < n:
 		c = code[i]
 		op = ord(c)
-		if op = SET_LINENO and i > 0: print # Extra blank line
-		if i = lasti: print '-->',
+		if op == SET_LINENO and i > 0: print # Extra blank line
+		if i == lasti: print '-->',
 		else: print '   ',
 		if i in labels: print '>>',
 		else: print '  ',

@@ -174,7 +174,7 @@ def cmp(a, b):
 #
 def remove(list, item):
 	for i in range(len(list)):
-		if list[i] = item:
+		if list[i] == item:
 			del list[i]
 			break
 

@@ -40,9 +40,13 @@ if 0xff <> 255: raise TestFailed, 'hex number'
 if 0377 <> 255: raise TestFailed, 'octal number'
 x = 3.14
 x = 0.314
+x = .14
+x = 3.
 x = 3e14
 x = 3E14
 x = 3e-14
+x = 3.e14
+x = .14e3
 x = 0L
 x = 0l
 x = 0xffffffffffffffffL
@@ -209,11 +213,11 @@ print 'test' # and_test ('or' and_test)*
 ### comparison: expr (comp_op expr)*
 ### comp_op: '<'|'>'|'='|'>' '='|'<' '='|'<' '>'|'in'|'not' 'in'|'is'|'is' 'not'
 if 1: pass
-if 1 = 1: pass
-if 1 < 1 > 1 = 1 >= 1 <= 1 <> 1 in 1 not in 1 is 1 is not 1: pass
-if not 1 = 1 = 1: pass
-if not 1 = 1 and 1 and 1: pass
-if 1 and 1 or 1 and 1 and 1 or not 1 = 1 = 1 and 1: pass
+if 1 == 1: pass
+if 1 < 1 > 1 == 1 >= 1 <= 1 <> 1 in 1 not in 1 is 1 is not 1: pass
+if not 1 == 1 == 1: pass
+if not 1 == 1 and 1 and 1: pass
+if 1 and 1 or 1 and 1 and 1 or not 1 == 1 == 1 and 1: pass
 
 print 'expr' # term (('+'|'-') term)*
 x = 1
@@ -236,17 +240,34 @@ x = 1
 c = sys.path[0]
 x = time.time()
 x = sys.modules['time'].time()
-a = '01234'
-c = a[0]
-c = a[0:5]
-c = a[:5]
-c = a[0:]
-c = a[:]
-c = a[-5:]
-c = a[:-1]
-c = a[-4:-3]
+for a in '01234', (0,1,2,3,4), [0,1,2,3,4]:
+	c = a[0]
+	c = a[-1]
+	c = a[0:5]
+	c = a[:5]
+	c = a[0:]
+	c = a[:]
+	c = a[-5:]
+	c = a[:-1]
+	c = a[-4:-3]
+a = [0,1,2,3,4]
+del a[0]
+a = [0,1,2,3,4]
+del a[-1]
+a = [0,1,2,3,4]
+del a[1:2]
+a = [0,1,2,3,4]
+del a[:1]
+a = [0,1,2,3,4]
+del a[-1:]
+a = [0,1,2,3,4]
+a[0] = 0
+a[-1] = 4
+a[1:2] = [1]
+a[1:4] = [0]
+a[1:-1] = [1,2,3]
 
-print 'atom' # '(' [testlist] ')' | '[' [testlist] ']' | '{' '}' | '`' testlist '`' | NAME | NUMBER | STRING
+print 'atom' # '(' [tetslist] ')' | '[' [testlist] ']' | '{' '}' | '`' testlist '`' | NAME | NUMBER | STRING
 x = (1)
 x = (1 or 2 or 3)
 x = (1 or 2 or 3, 2, 3)
@@ -476,7 +497,7 @@ import string
 reload(string)
 
 print 'type'
-if type('') <> type('123') or type('') = type(()):
+if type('') <> type('123') or type('') == type(()):
 	raise TestFailed, 'type()'
 
 

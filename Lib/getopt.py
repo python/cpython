@@ -22,15 +22,15 @@ error = 'getopt error'
 
 def getopt(args, options):
     list = []
-    while args and args[0][0] = '-' and args[0] <> '-':
-    	if args[0] = '--':
+    while args and args[0][0] == '-' and args[0] <> '-':
+    	if args[0] == '--':
     	    args = args[1:]
     	    break
     	optstring, args = args[0][1:], args[1:]
     	while optstring <> '':
     	    opt, optstring = optstring[0], optstring[1:]
     	    if classify(opt, options): # May raise exception as well
-    	    	if optstring = '':
+    	    	if optstring == '':
     	    	    if not args:
     	    	    	raise error, 'option -' + opt + ' requires argument'
     	    	    optstring, args = args[0], args[1:]
@@ -42,6 +42,6 @@ def getopt(args, options):
 
 def classify(opt, options): # Helper to check type of option
     for i in range(len(options)):
-	if opt = options[i] <> ':':
-	    return options[i+1:i+2] = ':'
+	if opt == options[i] <> ':':
+	    return options[i+1:i+2] == ':'
     raise error, 'option -' + opt + ' not recognized'

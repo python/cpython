@@ -21,7 +21,7 @@ def isabs(s):
 
 def join(s, t):
 	if (not s) or isabs(t): return t
-	if t[:1] = ':': t = t[1:]
+	if t[:1] == ':': t = t[1:]
 	if ':' not in s:
 		s = ':' + s
 	if s[-1:] <> ':':
@@ -40,7 +40,7 @@ def split(s):
 	if ':' not in s: return '', s
 	colon = 0
 	for i in range(len(s)):
-		if s[i] = ':': colon = i+1
+		if s[i] == ':': colon = i+1
 	return s[:colon], s[colon:]
 
 

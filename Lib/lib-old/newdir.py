@@ -53,7 +53,7 @@ def listattrs(x):
 	return total
 	i = 0
 	while i+1 < len(total):
-		if total[i] = total[i+1]:
+		if total[i] == total[i+1]:
 			del total[i+1]
 		else:
 			i = i+1
@@ -62,7 +62,7 @@ def listattrs(x):
 # Helper to recognize functions
 #
 def is_function(x):
-	return type(x) = type(is_function)
+	return type(x) == type(is_function)
 
 # Approximation of builtin dir(); this lists the user's
 # variables by default, not the current local name space.
@@ -71,7 +71,7 @@ def is_function(x):
 #
 class _dirclass:
 	def dir(args):
-		if type(args) = type(()):
+		if type(args) == type(()):
 			return listattrs(args[1])
 		else:
 			import __main__

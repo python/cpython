@@ -44,7 +44,7 @@ def forget(path):
 def forget_prefix(prefix):
 	n = len(prefix)
 	for path in cache.keys():
-		if path[:n] = prefix:
+		if path[:n] == prefix:
 			del cache[path]
 
 
@@ -52,16 +52,16 @@ def forget_prefix(prefix):
 # entries in subdirectories.
 #
 def forget_dir(prefix):
-	if prefix[-1:] = '/' and prefix <> '/':
+	if prefix[-1:] == '/' and prefix <> '/':
 		prefix = prefix[:-1]
 	forget(prefix)
 	if prefix[-1:] <> '/':
 		prefix = prefix + '/'
 	n = len(prefix)
 	for path in cache.keys():
-		if path[:n] = prefix:
+		if path[:n] == prefix:
 			rest = path[n:]
-			if rest[-1:] = '/': rest = rest[:-1]
+			if rest[-1:] == '/': rest = rest[:-1]
 			if '/' not in rest:
 				del cache[path]
 

@@ -53,7 +53,7 @@ def make_all(mat):
 	return all
 
 def make_elements(n, d):
-	if d = 0: return [poly.one(0, 0)]
+	if d == 0: return [poly.one(0, 0)]
 	sub = make_elements(n, d-1)
 	all = []
 	for a in sub:
@@ -75,7 +75,7 @@ def checkfield(n, p):
 	inv1 = inv[:]
 	all1.sort()
 	inv1.sort()
-	if all1 = inv1: print 'BINGO!'
+	if all1 == inv1: print 'BINGO!'
 	else:
 		print 'Sorry:', n, p
 		print all

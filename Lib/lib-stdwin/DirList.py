@@ -25,7 +25,7 @@ class DirList(VSplit):
 			if path.isdir(path.join(dirname, name)):
 				fullname = path.join(dirname, name)
 				btn = SubdirButton().definetext(self, fullname)
-			elif name[-3:] = '.py':
+			elif name[-3:] == '.py':
 				btn = ModuleButton().definetext(self, name)
 			else:
 				btn = FileButton().definetext(self, name)

@@ -51,7 +51,7 @@ class StripChart(LabelAppearance, NoReactivity):
 	#
 	def draw(self, (d, area)):
 		area = rect.intersect(area, self.bounds)
-		if area = rect.empty:
+		if area == rect.empty:
 			return
 		d.cliprect(area)
 		d.erase(self.bounds)

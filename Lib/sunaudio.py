@@ -44,7 +44,7 @@ def gethdr(fp):
 def printhdr(file):
 	hdr = gethdr(open(file, 'r'))
 	data_size, encoding, sample_rate, channels, info = hdr
-	while info[-1:] = '\0':
+	while info[-1:] == '\0':
 		info = info[:-1]
 	print 'File name:  ', file
 	print 'Data size:  ', data_size

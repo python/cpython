@@ -49,44 +49,44 @@ def mainloop():				# Handle events until no windows left
 
 def treatevent(e):			# Handle a stdwin event
 	type, w, detail = e
-	if type = WE_DRAW:
+	if type == WE_DRAW:
 		w.draw(w, detail)
-	elif type = WE_MENU:
+	elif type == WE_MENU:
 		m, item = detail
 		m.action[item](w, m, item)
-	elif type = WE_COMMAND:
+	elif type == WE_COMMAND:
 		treatcommand(w, detail)
-	elif type = WE_CHAR:
+	elif type == WE_CHAR:
 		w.char(w, detail)
-	elif type = WE_MOUSE_DOWN:
+	elif type == WE_MOUSE_DOWN:
 		if detail[1] > 1: w.m2down(w, detail)
 		else: w.mdown(w, detail)
-	elif type = WE_MOUSE_MOVE:
+	elif type == WE_MOUSE_MOVE:
 		w.mmove(w, detail)
-	elif type = WE_MOUSE_UP:
+	elif type == WE_MOUSE_UP:
 		if detail[1] > 1: w.m2up(w, detail)
 		else: w.mup(w, detail)
-	elif type = WE_SIZE:
+	elif type == WE_SIZE:
 		w.size(w, w.getwinsize())
-	elif type = WE_ACTIVATE:
+	elif type == WE_ACTIVATE:
 		w.activate(w)
-	elif type = WE_DEACTIVATE:
+	elif type == WE_DEACTIVATE:
 		w.deactivate(w)
-	elif type = WE_MOVE:
+	elif type == WE_MOVE:
 		w.move(w)
-	elif type = WE_TIMER:
+	elif type == WE_TIMER:
 		w.timer(w)
-	elif type = WE_CLOSE:
+	elif type == WE_CLOSE:
 		w.close(w)
 
 def treatcommand(w, type):		# Handle a we_command event
-	if type = WC_CLOSE:
+	if type == WC_CLOSE:
 		w.close(w)
-	elif type = WC_RETURN:
+	elif type == WC_RETURN:
 		w.enter(w)
-	elif type = WC_TAB:
+	elif type == WC_TAB:
 		w.tab(w)
-	elif type = WC_BACKSPACE:
+	elif type == WC_BACKSPACE:
 		w.backspace(w)
 	elif type in (WC_LEFT, WC_UP, WC_RIGHT, WC_DOWN):
 		w.arrow(w, type)
@@ -101,13 +101,13 @@ def close(w):				# Close method
 			break
 
 def arrow(w, detail):			# Arrow key method
-	if detail = WC_LEFT:
+	if detail == WC_LEFT:
 		w.kleft(w)
-	elif detail = WC_UP:
+	elif detail == WC_UP:
 		w.kup(w)
-	elif detail = WC_RIGHT:
+	elif detail == WC_RIGHT:
 		w.kright(w)
-	elif detail = WC_DOWN:
+	elif detail == WC_DOWN:
 		w.kdown(w)
 
 

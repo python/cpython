@@ -30,7 +30,7 @@ def ggrep(syntax, pat, filename):
 			prefix = string.rjust(`lineno`, 3) + ': '
 			print prefix + line
 			if 0: # XXX
-				start, end = prog.regs()[0]
+				start, end = prog.regs[0]
 				line = line[:start]
 				if '\t' not in line:
 					prefix = ' ' * (len(prefix) + start)

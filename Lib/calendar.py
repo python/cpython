@@ -16,7 +16,7 @@ day_0 = 3		# The epoch begins on a Thursday (Monday = 0)
 
 # Return 1 for leap years, 0 for non-leap years
 def isleap(year):
-	return year % 4 = 0 and (year % 100 <> 0 or year % 400 = 0)
+	return year % 4 == 0 and (year % 100 <> 0 or year % 400 == 0)
 
 # Constants for months referenced later
 January = 1
@@ -45,7 +45,7 @@ def gmtime(secs):
 	yday = days
 	month = January
 	while 1:
-		md = mdays[month] + (month = February and isleap(year))
+		md = mdays[month] + (month == February and isleap(year))
 		if days < md: break
 		days = days - md
 		month = month + 1
@@ -122,7 +122,7 @@ def weekday(year, month, day):
 # Return weekday (0-6 ~ Mon-Sun) and number of days (28-31) for year, month
 def monthrange(year, month):
 	day1 = weekday(year, month, 1)
-	ndays = mdays[month] + (month = February and isleap(year))
+	ndays = mdays[month] + (month == February and isleap(year))
 	return day1, ndays
 
 # Return a matrix representing a month's calendar
@@ -161,7 +161,7 @@ def center(str, width):
 # Print a single week (no newline)
 def prweek(week, width):
 	for day in week:
-		if day = 0: print ' '*width,
+		if day == 0: print ' '*width,
 		else:
 			if width > 2: print ' '*(width-3),
 			if day < 10: print '',

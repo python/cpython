@@ -170,18 +170,18 @@ def main():
 		return 1
 	optu = optc = optd = 0
 	for opt, void in optlist:
-		if opt = '-u':
+		if opt == '-u':
 			optu = 1
-		elif opt = '-c':
+		elif opt == '-c':
 			optc = 1
-		elif opt = '-d':
+		elif opt == '-d':
 			optd = 1
-	if optu = optc = optd = 0:
+	if optu == optc == optd == 0:
 		optu = optc = optd = 1
 	if not args:
 		args = ['-']
 	for file in args:
-		if file = '-':
+		if file == '-':
 			readinput(sys.stdin)
 		else:
 			readinput(open(file, 'r'))

@@ -10,8 +10,8 @@ import stat
 # (begins with '/').
 #
 def join(a, b):
-	if b[:1] = '/': return b
-	if a = '' or a[-1:] = '/': return a + b
+	if b[:1] == '/': return b
+	if a == '' or a[-1:] == '/': return a + b
 	# Note: join('x', '') returns 'x/'; is this what we want?
 	return a + '/' + b
 
@@ -27,7 +27,7 @@ def split(p):
 	head, tail = '', ''
 	for c in p:
 		tail = tail + c
-		if c = '/':
+		if c == '/':
 			head, tail = head + tail, ''
 	return head, tail
 
@@ -40,9 +40,9 @@ def split(p):
 def splitext(p):
 	root, ext = '', ''
 	for c in p:
-		if c = '/':
+		if c == '/':
 			root, ext = root + ext + c, ''
-		elif c = '.' or ext:
+		elif c == '.' or ext:
 			ext = ext + c
 		else:
 			root = root + c
@@ -64,7 +64,7 @@ def commonprefix(m):
 		for i in range(len(prefix)):
 			if prefix[:i+1] <> item[:i+1]:
 				prefix = prefix[:i]
-				if i = 0: return ''
+				if i == 0: return ''
 				break
 	return prefix
 
@@ -122,8 +122,8 @@ def sameopenfile(fp1, fp2):
 # describing the same file?
 #
 def samestat(s1, s2):
-	return s1[stat.ST_INO] = s2[stat.ST_INO] and \
-		s1[stat.ST_DEV] = s2[stat.STD_DEV]
+	return s1[stat.ST_INO] == s2[stat.ST_INO] and \
+		s1[stat.ST_DEV] == s2[stat.STD_DEV]
 
 
 # Subroutine and global data used by ismount().
@@ -137,7 +137,7 @@ def _getmounts():
 	lines = string.splitfields(data, '\n')
 	for line in lines:
 		words = string.split(line)
-		if len(words) >= 3 and words[1] = 'on':
+		if len(words) >= 3 and words[1] == 'on':
 			mounts.append(words[2])
 	return mounts
 

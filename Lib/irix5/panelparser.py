@@ -20,16 +20,16 @@ def tokenize_string(s):
 		c = s[:1]
 		if c in whitespace:
 			s = s[1:]
-		elif c = ';':
+		elif c == ';':
 			s = ''
-		elif c = '"':
+		elif c == '"':
 			n = len(s)
 			i = 1
 			while i < n:
 				c = s[i]
 				i = i+1
-				if c = '"': break
-				if c = '\\': i = i+1
+				if c == '"': break
+				if c == '\\': i = i+1
 			tokens.append(s[:i])
 			s = s[i:]
 		elif c in operators:
@@ -78,9 +78,9 @@ def parse_expr(tokens):
 	while 1:
 		if not tokens:
 			raise syntax_error, 'missing ")"'
-		if tokens[0] = ')':
+		if tokens[0] == ')':
 			return expr, tokens[1:]
-		elif tokens[0] = '(':
+		elif tokens[0] == '(':
 			subexpr, tokens = parse_expr(tokens)
 			expr.append(subexpr)
 		else:

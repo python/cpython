@@ -31,7 +31,7 @@ def dumpsymtab(dict):
 def dumpvar(name, x):
 	import sys
 	t = type(x)
-	if t = type({}):
+	if t == type({}):
 		print name, '= {}'
 		for key in x.keys():
 			item = x[key]
@@ -42,7 +42,7 @@ def dumpvar(name, x):
 		if not printable(x):
 			print '#',
 		print name, '=', `x`
-	elif t = type(sys):
+	elif t == type(sys):
 		print 'import', name, '#', x
 	else:
 		print '#', name, '=', x
@@ -58,6 +58,6 @@ def printable(x):
 			if not printable(item):
 				return 0
 		return 1
-	if x = {}:
+	if x == {}:
 		return 1
 	return 0

@@ -17,7 +17,7 @@ debug = 0
 # Test if an object is a list.
 #
 def is_list(x):
-	return type(x) = type([])
+	return type(x) == type([])
 
 
 # Reverse a list.
@@ -34,7 +34,7 @@ def reverse(list):
 #
 def getattrlist(list, name):
 	for item in list:
-		if item and is_list(item) and item[0] = name:
+		if item and is_list(item) and item[0] == name:
 			return item[1:]
 	return []
 
@@ -43,8 +43,8 @@ def getattrlist(list, name):
 #
 def getproplist(list, name):
 	for item in list:
-		if item and is_list(item) and item[0] = 'prop':
-			if len(item) > 1 and item[1] = name:
+		if item and is_list(item) and item[0] == 'prop':
+			if len(item) > 1 and item[1] == name:
 				return item[2:]
 	return []
 
@@ -53,7 +53,7 @@ def getproplist(list, name):
 #
 def is_endgroup(list):
 	x = getproplist(list, 'end-of-group')
-	return (x and x[0] = '#t')
+	return (x and x[0] == '#t')
 
 
 # Neatly display an actuator definition given as S-expression
@@ -63,13 +63,13 @@ def show_actuator(prefix, a):
 	for item in a:
 		if not is_list(item):
 			print prefix, item
-		elif item and item[0] = 'al':
+		elif item and item[0] == 'al':
 			print prefix, 'Subactuator list:'
 			for a in item[1:]:
 				show_actuator(prefix + '    ', a)
-		elif len(item) = 2:
+		elif len(item) == 2:
 			print prefix, item[0], '=>', item[1]
-		elif len(item) = 3 and item[0] = 'prop':
+		elif len(item) == 3 and item[0] == 'prop':
 			print prefix, 'Prop', item[1], '=>',
 			print item[2]
 		else:
@@ -82,13 +82,13 @@ def show_panel(prefix, p):
 	for item in p:
 		if not is_list(item):
 			print prefix, item
-		elif item and item[0] = 'al':
+		elif item and item[0] == 'al':
 			print prefix, 'Actuator list:'
 			for a in item[1:]:
 				show_actuator(prefix + '    ', a)
-		elif len(item) = 2:
+		elif len(item) == 2:
 			print prefix, item[0], '=>', item[1]
-		elif len(item) = 3 and item[0] = 'prop':
+		elif len(item) == 3 and item[0] == 'prop':
 			print prefix, 'Prop', item[1], '=>',
 			print item[2]
 		else:
@@ -112,14 +112,14 @@ def dummy_callback(arg):
 #
 def assign_members(target, attrlist, exclist, prefix):
 	for item in attrlist:
-		if is_list(item) and len(item) = 2 and item[0] not in exclist:
+		if is_list(item) and len(item) == 2 and item[0] not in exclist:
 			name, value = item[0], item[1]
 			ok = 1
 			if value[0] in '-0123456789':
 				value = eval(value)
-			elif value[0] = '"':
+			elif value[0] == '"':
 				value = value[1:-1]
-			elif value = 'move-then-resize':
+			elif value == 'move-then-resize':
 				# Strange default set by Panel Editor...
 				ok = 0
 			else:
@@ -148,7 +148,7 @@ def build_actuator(descr):
 	else:
 		actuatorname = ''
 	type = descr[0]
-	if type[:4] = 'pnl_': type = type[4:]
+	if type[:4] == 'pnl_': type = type[4:]
 	act = pnl.mkact(type)
 	act.downfunc = act.activefunc = act.upfunc = dummy_callback
 	#
@@ -158,9 +158,9 @@ def build_actuator(descr):
 	#
 	datalist = getattrlist(descr, 'data')
 	prefix = ''
-	if type[-4:] = 'puck':
+	if type[-4:] == 'puck':
 		prefix = 'puck_'
-	elif type = 'mouse':
+	elif type == 'mouse':
 		prefix = 'mouse_'
 	assign_members(act, datalist, [], prefix)
 	#

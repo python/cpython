@@ -33,7 +33,7 @@ def treat_file(file):
 		print 'Cannot open', file
 		return
 	base = path.basename(file)
-	if base[-3:] = '.py': base = base[:-3]
+	if base[-3:] == '.py': base = base[:-3]
 	s = base + '\t' + file + '\t' + '1\n'
 	tags.append(s)
 	while 1:

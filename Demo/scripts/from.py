@@ -24,13 +24,13 @@ except RuntimeError:
 while 1:
 	line = mail.readline()
 	if not line: break # EOF
-	if line[:5] = 'From ':
+	if line[:5] == 'From ':
 		# Start of message found
 		print line[:-1],
 		while 1:
 			line = mail.readline()
 			if not line: break # EOF
-			if line = '\n': break # Blank line ends headers
-			if line[:8] = 'Subject:':
+			if line == '\n': break # Blank line ends headers
+			if line[:8] == 'Subject:':
 				print `line[9:-1]`,
 		print

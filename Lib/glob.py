@@ -7,7 +7,7 @@ import fnmatch
 def glob(pathname):
 	if not has_magic(pathname): return [pathname]
 	dirname, basename = path.split(pathname)
-	if dirname[-1:] = '/' and dirname <> '/':
+	if dirname[-1:] == '/' and dirname <> '/':
 		dirname = dirname[:-1]
 	if has_magic(dirname):
 		list = glob(dirname)
@@ -34,9 +34,10 @@ def glob1(dirname, pattern):
 		names = posix.listdir(dirname)
 	except posix.error:
 		return []
+	names.sort()
 	result = []
 	for name in names:
-		if name[0] <> '.' or pattern[0] = '.':
+		if name[0] <> '.' or pattern[0] == '.':
 			if fnmatch.fnmatch(name, pattern): result.append(name)
 	return result
 

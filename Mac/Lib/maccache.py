@@ -37,17 +37,17 @@ def _stat(name):
 		cache[name] = NONE
 		return NONE
 	cache[name] = list
-	if name[-1:] = ':': cache[name[:-1]] = list
+	if name[-1:] == ':': cache[name[:-1]] = list
 	else: cache[name+':'] = list
 	return list
 
 def isdir(name):
 	st = _stat(name)
-	return type(st) = LISTTYPE
+	return type(st) == LISTTYPE
 
 def isfile(name):
 	st = _stat(name)
-	return st = FILE
+	return st == FILE
 
 def exists(name):
 	st = _stat(name)
@@ -55,7 +55,7 @@ def exists(name):
 
 def listdir(name):
 	st = _stat(name)
-	if type(st) = LISTTYPE:
+	if type(st) == LISTTYPE:
 		return st
 	else:
 		raise RuntimeError, 'list non-directory'

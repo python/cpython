@@ -19,7 +19,7 @@ def cmp(f1, f2): # Compare two files, use the cache if possible.
 	if s1[0] <> 8 or s2[0] <> 8:
 		# Either is a not a plain file -- always report as different
 		return 0
-	if s1 = s2:
+	if s1 == s2:
 		# type, size & mtime match -- report same
 		return 1
 	if s1[:2] <> s2[:2]: # Types or sizes differ, don't bother
@@ -30,7 +30,7 @@ def cmp(f1, f2): # Compare two files, use the cache if possible.
 	try:
 		cs1, cs2, outcome = cache[key]
 		# cache hit
-		if s1 = cs1 and s2 = cs2:
+		if s1 == cs1 and s2 == cs2:
 			# cached signatures match
 			return outcome
 		# stale cached signature(s)
