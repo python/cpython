@@ -463,21 +463,24 @@ will be executed later, it must be set explicitly with a call to
 \code{PySys_SetArgv(\var{argc}, \var{argv})} subsequent to the call 
 to \code{Py_Initialize()}.
 
-On Unix, \code{Py_Initialize()} calculates the module search path 
-based upon its best guess for the location of the standard Python 
-interpreter executable, assuming that the Python library is found in a 
-fixed location relative to the Python interpreter executable.  In 
-particular, it looks for a directory named \code{lib/python1.5} 
-(replacing \code{1.5} with the current interpreter version) relative 
-to the parent directory where the executable named \code{python} is 
-found on the shell command search path (the environment variable 
-\code{\$PATH}).  For instance, if the Python executable is found in 
-\code{/usr/local/bin/python}, it will assume that the libraries are in 
-\code{/usr/local/lib/python1.5}.  In fact, this also the ``fallback'' 
-location, used when no executable file named \code{python} is found 
-along \code{\$PATH}.  The user can change this behavior by setting the 
-environment variable \code{\$PYTHONHOME}, and can insert additional 
-directories in front of the standard path by setting 
+On most systems (in particular, on Unix and Windows, although the
+details are slightly different), \code{Py_Initialize()} calculates the
+module search path based upon its best guess for the location of the
+standard Python interpreter executable, assuming that the Python
+library is found in a fixed location relative to the Python
+interpreter executable.  In particular, it looks for a directory named
+\code{lib/python1.5} (replacing \code{1.5} with the current
+interpreter version) relative to the parent directory where the
+executable named \code{python} is found on the shell command search
+path (the environment variable \code{\$PATH}).
+
+For instance, if the Python executable is found in
+\code{/usr/local/bin/python}, it will assume that the libraries are in
+\code{/usr/local/lib/python1.5}.  In fact, this also the ``fallback''
+location, used when no executable file named \code{python} is found
+along \code{\$PATH}.  The user can change this behavior by setting the
+environment variable \code{\$PYTHONHOME}, and can insert additional
+directories in front of the standard path by setting
 \code{\$PYTHONPATH}.
 
 The embedding application can steer the search by calling 
@@ -646,14 +649,6 @@ would make it dangerous to continue using the Python interpreter;
 e.g., when the object administration appears to be corrupted.
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{void}{PyImport_Init}{}
-Initialize the module table.  For internal use only.
-\end{cfuncdesc}
-
-\begin{cfuncdesc}{void}{PyImport_Cleanup}{}
-Empty the module table.  For internal use only.
-\end{cfuncdesc}
-
 \begin{cfuncdesc}{void}{PyBuiltin_Init}{}
 Initialize the \code{__builtin__} module.  For internal use only.
 \end{cfuncdesc}
@@ -742,7 +737,35 @@ Test whether the error indicator is set.  If set, return the exception
 \code{type} (the first argument to the last call to one of the
 \code{PyErr_Set*()} functions or to \code{PyErr_Restore()}).  If not
 set, return \NULL{}.  You do not own a reference to the return value,
-so you do not need to \code{Py_DECREF()} it.
+so you do not need to \code{Py_DECREF()} it.  Note: do not compare the
+return value to a specific exception; use
+\code{PyErr_ExceptionMatches} instead, shown below.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{int}{PyErr_ExceptionMatches}{PyObject *exc}
+\strong{NEW in 1.5a4!}
+Equivalent to
+\code{PyErr_GivenExceptionMatches(PyErr_Occurred(), \var{exc})}.
+This should only be called when an exception is actually set.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{int}{PyErr_GivenExceptionMatches}{PyObject *given, PyObject *exc}
+\strong{NEW in 1.5a4!}
+Return true if the \var{given} exception matches the exception in
+\var{exc}.  If \var{exc} is a class object, this also returns true
+when \var{given} is a subclass.  If \var{exc} is a tuple, all
+exceptions in the tuple (and recursively in subtuples) are searched
+for a match.  This should only be called when an exception is actually
+set.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{void}{PyErr_NormalizeException}{PyObject**exc, PyObject**val, PyObject**tb}
+\strong{NEW in 1.5a4!}
+Under certain circumstances, the values returned by
+\code{PyErr_Fetch()} below can be ``unnormalized'', meaning that
+\var{*exc} is a class object but \var{*val} is not an instance of the
+same class.  This function can be used to instantiate the class in
+that case.  If the values are already normalized, nothing happens.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{void}{PyErr_Clear}{}
@@ -846,13 +869,39 @@ the effect of a \code{SIGINT} signal arriving -- the next time
 raised.
 \end{cfuncdesc}
 
+\begin{cfuncdesc}{PyObject *}{PyErr_NewException}{char *name,
+PyObject *base, PyObject *dict}
+\strong{NEW in 1.5a4!}
+This utility function creates and returns a new exception object.  The
+\var{name} argument must be the name of the new exception, a C string
+of the form \code{module.class}.  The \var{base} and \var{dict}
+arguments are normally \code{NULL}.  Normally, this creates a class
+object derived from the root for all exceptions, the built-in name
+\code{Exception} (accessible in C as \code{PyExc_Exception}).  In this
+case the \code{__module__} attribute of the new class is set to the
+first part (up to the last dot) of the \var{name} argument, and the
+class name is set to the last part (after the last dot).  When the
+user has specified the \code{-X} command line option to use string
+exceptions, for backward compatibility, or when the \var{base}
+argument is not a class object (and not \code{NULL}), a string object
+created from the entire \var{name} argument is returned.  The
+\var{base} argument can be used to specify an alternate base class.
+The \var{dict} argument can be used to specify a dictionary of class
+variables and methods.
+\end{cfuncdesc}
+
+
 \section{Standard Exceptions}
 
 All standard Python exceptions are available as global variables whose
 names are \code{PyExc_} followed by the Python exception name.
 These have the type \code{PyObject *}; they are all string objects.
-For completion, here are all the variables:
-\code{PyExc_AccessError},
+For completeness, here are all the variables (the first four are new
+in Python 1.5a4):
+\code{PyExc_Exception},
+\code{PyExc_StandardError},
+\code{PyExc_ArithmeticError},
+\code{PyExc_LookupError},
 \code{PyExc_AssertionError},
 \code{PyExc_AttributeError},
 \code{PyExc_EOFError},
@@ -880,6 +929,8 @@ The functions in this chapter perform various utility tasks, such as
 parsing function arguments and constructing Python values from C
 values.
 
+\section{OS Utilities}
+
 \begin{cfuncdesc}{int}{Py_FdIsInteractive}{FILE *fp, char *filename}
 Return true (nonzero) if the standard I/O file \code{fp} with name
 \code{filename} is deemed interactive.  This is the case for files for
@@ -894,6 +945,153 @@ Return the time of last modification of the file \code{filename}.
 The result is encoded in the same way as the timestamp returned by
 the standard C library function \code{time()}.
 \end{cfuncdesc}
+
+
+\section{Importing modules}
+
+\begin{cfuncdesc}{PyObject *}{PyImport_ImportModule}{char *name}
+This is a simplified interface to \code{PyImport_ImportModuleEx}
+below, leaving the \var{globals} and \var{locals} arguments set to
+\code{NULL}.  When the \var{name} argument contains a dot (i.e., when
+it specifies a submodule of a package), the \var{fromlist} argument is
+set to the list \code{['*']} so that the return value is the named
+module rather than the top-level package containing it as would
+otherwise be the case.  (Unfortunately, this has an additional side
+effect when \var{name} in fact specifies a subpackage instead of a
+submodule: the submodules specified in the package's \code{__all__}
+variable are loaded.)  Return a new reference to the imported module,
+or \code{NULL} with an exception set on failure (the module may still
+be created in this case).
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject *}{PyImport_ImportModuleEx}{char *name, PyObject *globals, PyObject *locals, PyObject *fromlist}
+\strong{NEW in 1.5a4!}
+Import a module.  This is best described by referring to the built-in
+Python function \code{__import()__}, as the standard
+\code{__import__()} function calls this function directly.
+
+% Should move this para to libfuncs.tex:
+For example, the statement \code{import spam} results in the following
+call:
+\code{__import__('spam', globals(), locals(), [])};
+the statement \code{from spam.ham import eggs} results in
+\code{__import__('spam.ham', globals(), locals(), ['eggs'])}.
+Note that even though \code{locals()} and \code{['eggs']} are passed
+in as arguments, the \code{__import__()} function does not set the
+local variable named \code{eggs}; this is done by subsequent code that
+is generated for the import statement.
+
+The return value is a new reference to the imported module or
+top-level package, or \code{NULL} with an exception set on failure
+(the module may still be created in this case).  When the \var{name}
+variable is of the form \code{package.module}, normally, the top-level
+package (the name up till the first dot) is returned, \emph{not} the
+module named by \var{name}.  However, when a non-empty \var{fromlist}
+argument is given, the module named by \var{name} is returned.  This
+is done for compatibility with the bytecode generated for the
+different kinds of import statement; when using \code{import
+spam.ham.eggs}, the top-level package \code{spam} must be placed in
+the importing namespace, but when using \code{from spam.ham import
+eggs}, the \code{spam.ham} subpackage must be used to find the
+\code{eggs} variable.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject *}{PyImport_Import}{PyObject *name}
+This is a higher-level interface that calls the current ``import hook
+function''.  It invokes the \code{__import__()} function from the
+\code{__builtins__} of the current globals.  This means that the
+import is done using whatever import hooks are installed in the
+current environment, e.g. by \code{rexec} or \code{ihooks}.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject *}{PyImport_ReloadModule}{PyObject *m}
+Reload a module.  This is best described by referring to the built-in
+Python function \code{reload()}, as the standard \code{reload()}
+function calls this function directly.  Return a new reference to the
+reloaded module, or \code{NULL} with an exception set on failure (the
+module still exists in this case).
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject *}{PyImport_AddModule}{char *name}
+Return the module object corresponding to a module name.  The
+\var{name} argument may be of the form \code{package.module}).  First
+check the modules dictionary if there's one there, and if not, create
+a new one and insert in in the modules dictionary.  Because the former
+action is most common, this does not return a new reference, and you
+do not own the returned reference.  Return \code{NULL} with an
+exception set on failure.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject *}{PyImport_ExecCodeModule}{char *name, PyObject *co}
+Given a module name (possibly of the form \code{package.module}) and a
+code object read from a Python bytecode file or obtained from the
+built-in function \code{compile()}, load the module.  Return a new
+reference to the module object, or \code{NULL} with an exception set
+if an error occurred (the module may still be created in this case).
+(This function would reload the module if it was already imported.)
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{long}{PyImport_GetMagicNumber}{}
+Return the magic number for Python bytecode files (a.k.a. \code{.pyc}
+and \code{.pyo} files).  The magic number should be present in the
+first four bytes of the bytecode file, in little-endian byte order.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject *}{PyImport_GetModuleDict}{}
+Return the dictionary used for the module administration
+(a.k.a. \code{sys.modules}).  Note that this is a per-interpreter
+variable.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{void}{_PyImport_Init}{}
+Initialize the import mechanism.  For internal use only.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{void}{PyImport_Cleanup}{}
+Empty the module table.  For internal use only.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{void}{_PyImport_Fini}{}
+Finalize the import mechanism.  For internal use only.
+\end{cfuncdesc}
+
+\begin{cvardesc}{extern PyObject *}{_PyImport_FindExtension}{char *, char *}
+For internal use only.
+\end{cvardesc}
+
+\begin{cvardesc}{extern PyObject *}{_PyImport_FixupExtension}{char *, char *}
+For internal use only.
+\end{cvardesc}
+
+\begin{cfuncdesc}{int}{PyImport_ImportFrozenModule}{char *}
+Load a frozen module.  Return \code{1} for success, \code{0} if the
+module is not found, and \code{-1} with an exception set if the
+initialization failed.  To access the imported module on a successful
+load, use \code{PyImport_ImportModule()).
+(Note the misnomer -- this function would reload the module if it was
+already imported.)
+\end{cfuncdesc}
+
+\begin{ctypedesc}{struct _frozen}
+This is the structure type definition for frozen module descriptors,
+as generated by the \code{freeze} utility (see \file{Tools/freeze/} in
+the Python source distribution).  Its definition is:
+\bcode\begin{verbatim}
+struct _frozen {
+	char *name;
+	unsigned char *code;
+	int size;
+};
+\end{verbatim}\ecode
+\end{ctypedesc}
+
+\begin{cvardesc}{struct _frozen *}{PyImport_FrozenModules}
+This pointer is initialized to point to an array of \code{struct
+_freeze} records, terminated by one whose members are all \code{NULL}
+or zero.  When a frozen module is imported, it is searched in this
+table.  Third party code could play tricks with this to provide a
+dynamically created collection of frozen modules.
+\end{cvardesc}
 
 
 \chapter{Debugging}
@@ -1557,20 +1755,29 @@ functions; with the exception of \code{Py_SetProgramName()},
 modules (\code{sys.modules}), and creates the fundamental modules 
 \code{__builtin__}, \code{__main__} and \code{sys}.  It also 
 initializes the module search path (\code{sys.path}).  It does not set 
-\code{sys.argv}; use \code{PySys_SetArgv()} for that.  It is a fatal 
-error to call it for a second time without calling 
-\code{Py_Finalize()} first.  There is no return value; it is a fatal 
-error if the initialization fails.
+\code{sys.argv}; use \code{PySys_SetArgv()} for that.  This is a no-op
+when called for a second time (without calling \code{Py_Finalize()}
+first).  There is no return value; it is a fatal error if the
+initialization fails.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{int}{Py_IsInitialized}{}
+\strong{NEW in 1.5a4!}
+Return true (nonzero) when the Python interpreter has been
+initialized, false (zero) if not.  After \code{Py_Finalize()} is
+called, this returns false until \code{Py_Initialize()} is called
+again.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{void}{Py_Finalize}{}
+\strong{NEW in 1.5a3!}
 Undo all initializations made by \code{Py_Initialize()} and subsequent 
 use of Python/C API functions, and destroy all sub-interpreters (see 
 \code{Py_NewInterpreter()} below) that were created and not yet 
-destroyed since the last call to \code{Py_Initialize()}.  Ideally, 
-this frees all memory allocated by the Python interpreter.  It is a 
-fatal error to call it for a second time without calling 
-\code{Py_Initialize()} again first.  There is no return value; errors 
+destroyed since the last call to \code{Py_Initialize()}.  Ideally,
+this frees all memory allocated by the Python interpreter.  This is a
+no-op when called for a second time (without calling
+\code{Py_Initialize()} again first).  There is no return value; errors
 during finalization are ignored.
 
 This function is provided for a number of reasons.  An embedding 
@@ -1595,6 +1802,7 @@ calls \code{Py_Initialize()} and \code{Py_Finalize()} more than once.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyThreadState *}{Py_NewInterpreter}{}
+\strong{NEW in 1.5a3!}
 Create a new sub-interpreter.  This is an (almost) totally separate 
 environment for the execution of Python code.  In particular, the new 
 interpreter has separate, independent versions of all imported 
@@ -1647,6 +1855,7 @@ a hard-to-fix bug that will be addressed in a future release.)
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{void}{Py_EndInterpreter}{PyThreadState *tstate}
+\strong{NEW in 1.5a3!}
 Destroy the (sub-)interpreter represented by the given thread state.  
 The given thread state must be the current thread state.  See the 
 discussion of thread states below.  When the call returns, the current 
@@ -1658,6 +1867,7 @@ been explicitly destroyed at that point.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{void}{Py_SetProgramName}{char *name}
+\strong{NEW in 1.5a3!}
 This function should be called before \code{Py_Initialize()} is called 
 for the first time, if it is called at all.  It tells the interpreter 
 the value of the \code{argv[0]} argument to the \code{main()} function 
@@ -1729,12 +1939,13 @@ platform.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{char *}{Py_GetProgramFullPath}{}
+\strong{NEW in 1.5a3!}
 Return the full program name of the Python executable; this is 
 computed as a side-effect of deriving the default module search path 
 from the program name (set by \code{Py_SetProgramName()} above).  The 
 returned string points into static storage; the caller should not 
 modify its value.  The value is available to Python code as 
-\code{sys.executable}.  % XXX is that the right sys.name?
+\code{sys.executable}.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{char *}{Py_GetPath}{}
@@ -1822,15 +2033,22 @@ the variable \code{sys.version}.
 \section{Thread State and the Global Interpreter Lock}
 
 \begin{cfuncdesc}{void}{PyEval_AcquireLock}{}
+\strong{NEW in 1.5a3!}
+HIRO
+
+
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{void}{PyEval_ReleaseLock}{}
+\strong{NEW in 1.5a3!}
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{void}{PyEval_AcquireThread}{PyThreadState *tstate}
+\strong{NEW in 1.5a3!}
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{void}{PyEval_ReleaseThread}{PyThreadState *tstate}
+\strong{NEW in 1.5a3!}
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{void}{PyEval_RestoreThread}{PyThreadState *tstate}
