@@ -1494,6 +1494,10 @@ class TestIdempotent(TestEmailBase):
         msg, text = self._msgobj('msg_33.txt')
         self._idempotent(msg, text)
 
+    def test_text_plain_in_a_multipart_digest(self):
+        msg, text = self._msgobj('msg_34.txt')
+        self._idempotent(msg, text)
+
     def test_content_type(self):
         eq = self.assertEquals
         unless = self.failUnless
