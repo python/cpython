@@ -9,6 +9,9 @@
 % for PDF output, use maximal compression & a lot of other stuff
 % (test for PDF recommended by Tanmoy Bhattacharya <tanmoy@qcd.lanl.gov>)
 %
+\newif\if@doing@page@targets
+\@doing@page@targetsfalse
+
 \ifx\pdfoutput\undefined\else\ifcase\pdfoutput
   \let\LinkColor=\relax
   \let\NormalColor=\relax
@@ -51,11 +54,9 @@
     \unvbox \@begindvibox
     \@hyperfixhead
   }
-  \def\hyperpageanchor{\pdfdest name{page.\thepage}}
-  \let\HYPERPAGEANCHOR\hyperpageanchor
   \def\@hyperfixhead{%
    \let\H@old@thehead\@thehead
-       \gdef\@foo{\pdfdest name{page.\thepage} fit}%
+       \gdef\@foo{\if@doing@page@targets\pdfdest name{page.\thepage} fit\fi}%
      \expandafter\ifx\expandafter\@empty\H@old@thehead
        \def\H@old@thehead{\hfil}\fi
     \def\@thehead{\@foo\relax\H@old@thehead}%
@@ -175,8 +176,16 @@
   \endgroup%
 }
 
-% Augment the sectioning commands used to get our own font family in place:
-\renewcommand{\section}{\@startsection {section}{1}{\z@}%
+\newcommand{\reset@python}{
+  \global\let\@thisclass=\@undefined
+  \global\let\@thismodule=\@undefined
+}
+\reset@python
+
+% Augment the sectioning commands used to get our own font family in place,
+% and reset some internal data items:
+\renewcommand{\section}{\reset@python%
+                        \@startsection {section}{1}{\z@}%
                                    {-3.5ex \@plus -1ex \@minus -.2ex}%
                                    {2.3ex \@plus.2ex}%
                                    {\reset@font\Large\HeaderFamily}}
@@ -278,10 +287,6 @@
   \addcontentsline{toc}{chapter}{\indexname}
 }
 
-% these should dump an error or warning to the transcript
-\newcommand{\@thismodule}{$<<$ ERROR - NO CURRENT MODULE $>>$}
-\newcommand{\@thisclass}{$<<$ ERROR - NO CURRENT CLASS $>>$}
-
 \newcommand{\makemodindex}{
   \newwrite\modindexfile
   \openout\modindexfile=mod\jobname.idx
@@ -290,8 +295,8 @@
 
 % Add the defining entry for a module
 \newcommand{\@modindex}[2]{%
-  \renewcommand{\@thismodule}{#1}
-  \setindexsubitem{(in module \@thismodule)}%
+  \global\def\@thismodule{#1}
+  \setindexsubitem{(in module #1)}%
   \index{#1@{\idxcode{#1}} (#2module)|textbf}%
   \if@UseModuleIndex%
     \write\modindexfile{\protect\indexentry{#1@{\tt #1}}{\thepage}}%
@@ -327,73 +332,149 @@
                  \let\makelabel=\itemnewline}
 }{\end{list}}
 
-
-% cfuncdesc should be called as
-% \begin{cfuncdesc}{type}{name}{arglist}
-% ... description ...
-% \end{cfuncdesc}
-\newenvironment{cfuncdesc}[3]{%
-  \begin{fulllineitems}%
-    \item[\code{#1 \bfcode{#2}(\varvars{#3})}]%
-    \index{#2@{\idxcode{#2()}}}%
-}{\end{fulllineitems}}
-
-\newenvironment{cvardesc}[2]{%
-  \begin{fulllineitems}%
-    \item[\code{#1 \bfcode{#2}}]%
-    \index{#2@{\idxcode{#2}}}%
-}{\end{fulllineitems}}
-
-\newenvironment{ctypedesc}[1]{%
-  \begin{fulllineitems}%
-    \item[\bfcode{#1}]\ttindex{#1}
-}{\end{fulllineitems}}
-
-\newcommand{\funcline}[2]{\funclineni{#1}{#2}\ttindex{#1()}}
-\newenvironment{funcdesc}[2]{%
-  \begin{fulllineitems}%
-    \funcline{#1}{#2}%
-}{\end{fulllineitems}}
-
+% \optional is mostly for use in the arguments parameters to the various
+% {*desc} environments defined below, but may be used elsewhere.  Known to
+% be used in the debugger chapter.
 \newcommand{\optional}[1]{%
   {\textnormal{\Large[}}{#1}\hspace{0.5mm}{\textnormal{\Large]}}}
 
+% C functions ------------------------------------------------------------
+% \begin{cfuncdesc}{type}{name}{arglist}
+\newenvironment{cfuncdesc}[3]{
+  \begin{fulllineitems}
+    \item[\code{#1 \bfcode{#2}(\varvars{#3})}\index{#2@{\idxcode{#2()}}}]
+}{\end{fulllineitems}}
+
+% C variables ------------------------------------------------------------
+% \begin{cvardesc}{type}{name}
+\newenvironment{cvardesc}[2]{
+  \begin{fulllineitems}
+    \item[\code{#1 \bfcode{#2}}\index{#2@{\idxcode{#2}}}]
+}{\end{fulllineitems}}
+
+% C data types -----------------------------------------------------------
+% \begin{ctypedesc}{typedef name}
+\newenvironment{ctypedesc}[1]{
+  \begin{fulllineitems}
+    \item[\bfcode{#1}\ttindex{#1}]
+}{\end{fulllineitems}}
+
+% simple functions (not methods) -----------------------------------------
+% \begin{funcdesc}{name}{args}
+\newcommand{\funcline}[2]{\funclineni{#1}{#2}\ttindex{#1()}}
+\newenvironment{funcdesc}[2]{
+  \begin{fulllineitems}
+    \funcline{#1}{#2}
+}{\end{fulllineitems}}
+
 % similar to {funcdesc}, but doesn't add to the index
 \newcommand{\funclineni}[2]{\item[\code{\bfcode{#1}(\varvars{#2})}]}
-\newenvironment{funcdescni}[2]{%
-  \begin{fulllineitems}%
-    \funclineni{#1}{#2}%
+\newenvironment{funcdescni}[2]{
+  \begin{fulllineitems}
+    \funclineni{#1}{#2}
 }{\end{fulllineitems}}
 
-\newenvironment{classdesc}[2]{%
-  \renewcommand{\@thisclass}{#1}%
-  \begin{fulllineitems}%
-    \item[\code{\bfcode{#1}(\varvars{#2})}]%
-    \withsubitem{(class in \@thismodule)}{\ttindex{#1}}%
-    \def\baseclasses##1{}%
+% classes ----------------------------------------------------------------
+% \begin{classdesc}{name}{constructor args}
+\newenvironment{classdesc}[2]{
+  \global\def\@thisclass{#1}
+  \begin{fulllineitems}
+    \item[\code{\bfcode{#1}(\varvars{#2})}%
+      \withsubitem{(class in \@thismodule)}{\ttindex{#1}}]
+    \def\baseclasses##1{}
 }{\end{fulllineitems}}
 
-\newenvironment{excdesc}[1]{%
-  \begin{fulllineitems}%
-    \item[\bfcode{#1}]\ttindex{#1}%
+
+\newcommand{\@classbadkey}{--bad current class--}
+\let\@classbadkey=\@undefined
+
+% object method ----------------------------------------------------------
+% \begin{methoddesc}[classname]{methodname}{args}
+\newcommand{\methodline}[3][\@classbadkey]{
+  \methodlineni{#2}{#3}
+  \ifx#1\@undefined
+    \withsubitem{(\@thisclass\ method)}{\ttindex{#2()}}
+  \else
+    \withsubitem{(#1 method)}{\ttindex{#2()}}
+  \fi
+}
+\newenvironment{methoddesc}[3][\@classbadkey]{
+  \begin{fulllineitems}
+    \ifx#1\@undefined
+      \methodline{#2}{#3}
+    \else
+      \def\@thisclass{#1}
+      \methodline[#1]{#2}{#3}
+    \fi
 }{\end{fulllineitems}}
 
+% similar to {methoddesc}, but doesn't add to the index
+% (never actually uses the optional argument)
+\newcommand{\methodlineni}[3][\@classbadkey]{%
+  \item[\code{\bfcode{#2}(\varvars{#3})}]}
+\newenvironment{methoddescni}[3][\@classbadkey]{
+  \begin{fulllineitems}
+    \methodlineni{#2}{#3}
+}{\end{fulllineitems}}
+
+% object data attribute --------------------------------------------------
+% \begin{memberdesc}[classname]{membername}
+\newcommand{\memberline}[2][\@classbadkey]{%
+  \ifx#1\@undefined
+    \memberlineni{#2}
+    \withsubitem{(\@thisclass\ attribute)}{\ttindex{#2()}}
+  \else
+    \memberlineni{#2}
+    \withsubitem{(#1 attribute)}{\ttindex{#2()}}
+  \fi
+}
+\newenvironment{memberdesc}[2][\@classbadkey]{
+  \begin{fulllineitems}
+    \ifx#1\@undefined
+      \memberline{#2}
+    \else
+      \def\@thisclass{#1}
+      \memberline[#1]{#2}
+    \fi
+}{\end{fulllineitems}}
+
+% similar to {memberdesc}, but doesn't add to the index
+% (never actually uses the optional argument)
+\newcommand{\memberlineni}[2][\@classbadkey]{\item[\bfcode{#2}]}
+\newenvironment{memberdescni}[2][\@classbadkey]{
+  \begin{fulllineitems}
+    \memberlineni{#2}
+}{\end{fulllineitems}}
+
+% For exceptions: --------------------------------------------------------
+% \begin{excdesc}{name}
+%  -- need support for constructor; maybe use optional parameter?
+\newenvironment{excdesc}[1]{
+  \begin{fulllineitems}
+    \item[\bfcode{#1}\ttindex{#1}]
+}{\end{fulllineitems}}
+
+% Module data or constants: ----------------------------------------------
+% \begin{datadesc}{name}
 \newcommand{\dataline}[1]{\datalineni{#1}\ttindex{#1}}
-\newenvironment{datadesc}[1]{%
-  \begin{fulllineitems}%
-    \dataline{#1}%
+\newenvironment{datadesc}[1]{
+  \begin{fulllineitems}
+    \dataline{#1}
 }{\end{fulllineitems}}
 
 % similar to {datadesc}, but doesn't add to the index
-\newcommand{\datalineni}[1]{\item[\bfcode{#1}]}
-\newenvironment{datadescni}[1]{%
-  \begin{fulllineitems}%
-    \datalineni{#1}%
+\newcommand{\datalineni}[1]{\item[\bfcode{#1}]\nopagebreak}
+\newenvironment{datadescni}[1]{
+  \begin{fulllineitems}
+    \datalineni{#1}
 }{\end{fulllineitems}}
 
-\newenvironment{opcodedesc}[2]{%
-  \begin{fulllineitems}%
-    \item[\bfcode{#1}\quad\var{#2}]%
+% bytecode instruction ---------------------------------------------------
+% \begin{opcodedesc}{name}{var}
+% -- {var} may be {}
+\newenvironment{opcodedesc}[2]{
+  \begin{fulllineitems}
+    \item[\bfcode{#1}\quad\var{#2}]
 }{\end{fulllineitems}}
 
 
@@ -432,13 +513,13 @@
 
 % Use this def/redef approach for \url{} since hyperref defined this already,
 % but only if we actually used hyperref:
-\@ifundefined{pdfannotlink}{%
-  \newcommand{\pythonurl}[1]{\mbox{\small\textsf{#1}}}%
+\@ifundefined{pdfannotlink}{
+  \newcommand{\pythonurl}[1]{\mbox{\small\textsf{#1}}}
 }{
   \newcommand{\pythonurl}[1]{{%
     \pdfannotlink attr{/Border [0 0 0]} user{/S /URI /URI (#1)}%
     \LinkColor%				color of the link text
-    \mbox{\small\textsf{#1}}%
+    {\small\textsf{#1}}%
     \NormalColor%			Turn it back off; these are declarative
     \pdfendlink}%			and don't appear bound to the current
   }%					formatting "box".
@@ -544,7 +625,6 @@
 %
 %  \end{seealso}
 
-\newif\if@keyedmodule\@keyedmodulefalse
 \newcommand{\@modulebadkey}{{--just-some-junk--}}
 
 \@ifundefined{pdfannotlink}{%
