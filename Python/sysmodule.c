@@ -562,6 +562,28 @@ sys_getframe(PyObject *self, PyObject *args)
 	return (PyObject*)f;
 }
 
+PyDoc_STRVAR(callstats_doc,
+"callstats() -> tuple of integers\n\
+\n\
+Return a tuple of function call statistics, if CALL_PROFILE was defined\n\
+when Python was built.  Otherwise, return None.\n\
+\n\
+When enabled, this function returns detailed, implementation-specific\n\
+details about the number of function calls executed. The return value is\n\
+a 11-tuple where the entries in the tuple are counts of:\n\
+0. all function calls\n\
+1. calls to PyFunction_Type objects\n\
+2. PyFunction calls that do not create an argument tuple\n\
+3. PyFunction calls that do not create an argument tuple\n\
+   and bypass PyEval_EvalCodeEx()\n\
+4. PyMethod calls\n\
+5. PyMethod calls on bound methods\n\
+6. PyType calls\n\
+7. PyCFunction calls\n\
+8. generator calls\n\
+9. All other calls\n\
+10. Number of stack pops performed by call_function()"
+);
 
 #ifdef Py_TRACE_REFS
 /* Defined in objects.c because it uses static globals if that file */
@@ -575,13 +597,15 @@ extern PyObject *_Py_GetDXProfile(PyObject *,  PyObject *);
 
 static PyMethodDef sys_methods[] = {
 	/* Might as well keep this in alphabetic order */
+	{"callstats", (PyCFunction)PyEval_GetCallStats, METH_NOARGS, 
+	 callstats_doc},
 	{"displayhook",	sys_displayhook, METH_O, displayhook_doc},
 	{"exc_info",	(PyCFunction)sys_exc_info, METH_NOARGS, exc_info_doc},
 	{"excepthook",	sys_excepthook, METH_VARARGS, excepthook_doc},
 	{"exit",	sys_exit, METH_VARARGS, exit_doc},
 #ifdef Py_USING_UNICODE
-	{"getdefaultencoding", (PyCFunction)sys_getdefaultencoding, METH_NOARGS,
-	 getdefaultencoding_doc}, 
+	{"getdefaultencoding", (PyCFunction)sys_getdefaultencoding, 
+	 METH_NOARGS, getdefaultencoding_doc}, 
 #endif
 #ifdef HAVE_DLOPEN
 	{"getdlopenflags", (PyCFunction)sys_getdlopenflags, METH_NOARGS, 
