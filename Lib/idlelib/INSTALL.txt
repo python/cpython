@@ -21,14 +21,18 @@ IDLEfork-0.9xx-1.noarch.rpm
 IDLEfork-0.9xx.tar.gz
 	This is a distutils sdist (source) tarfile which can be used to make 
 	installations on platforms not supported by the above files.
-	It is configured to install as IDLE, not IDLEfork.
+	It remains configured to install as IDLE, not IDLEfork.
 
 	Unpack in ..../Tools/, cd to the IDLEfork directory created, and
-	<python setup.py install> to install as IDLE.  If you don't want to
-	step on Python IDLE, it is also possible to simply run <python idle.py>
-	to test in the IDLEfork source directory without installation.  In this
-	case, IDLEfork will not be on your PATH unless you are in the source
-	directory.
+	<python setup.py install> to install in ....site-packages/idlelib.  
+
+        If you don't want to overwrite Python IDLE, it is also possible to
+	simply run <python idle.py> to test in the IDLEfork source directory
+	without making an installation.  In this case, IDLE will not be on
+	your PATH unless you are in the source directory.  Also, it is then
+	advisable to remove any Python IDLE installation by removing
+	..../site-packages/idlelib so the two identically named packages don't
+	conflict.
 
 See README.txt for more details on this version of IDLEfork. 
 
