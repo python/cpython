@@ -56,10 +56,10 @@ class CanvasItem:
 		self.canvas.focus(self.id)
 	def gettags(self):
 		return self.canvas.gettags(self.id)
-	def icursor(self):
-		self.canvas.icursor(self.id)
-	def index(self):
-		return self.canvas.index(self.id)
+	def icursor(self, index):
+		self.canvas.icursor(self.id, index)
+	def index(self, index):
+		return self.canvas.index(self.id, index)
 	def insert(self, beforethis, string):
 		self.canvas.insert(self.id, beforethis, string)
 	def lower(self, belowthis=None):
@@ -154,7 +154,7 @@ class Group:
 	def gettags(self):
 		return self.canvas.tk.splitlist(self._do('gettags', self.tag))
 	def icursor(self, index):
-		return self._do('icursor')
+		return self._do('icursor', index)
 	def index(self, index):
 		return self.canvas.tk.getint(self._do('index', index))
 	def insert(self, beforeThis, string):
