@@ -78,13 +78,9 @@ class PyBuildExt(build_ext):
             ext.include_dirs.append( '.' ) # to get config.h
             ext.include_dirs.append( os.path.join(srcdir, './Include') )
 
-            # Try importing a module; if it's already been built statically,
+            # If a module has already been built statically,
             # don't build it here
-            try:
-                __import__(ext.name)
-            except ImportError:
-                pass # Not built, so this is what we expect
-            else:
+            if ext.name in sys.builtin_module_names:
                 self.extensions.remove(ext)
 
         # When you run "make CC=altcc" or something similar, you really want
@@ -237,10 +233,14 @@ class PyBuildExt(build_ext):
         # socket(2)
         # Detect SSL support for the socket module
         ssl_incs = find_file('openssl/ssl.h', inc_dirs,
-                             ['/usr/local/ssl/include']
+                             ['/usr/local/ssl/include',
+                              '/usr/contrib/ssl/include/'
+                             ]
                              )
         ssl_libs = find_library_file(self.compiler, 'ssl',lib_dirs,
-                                     ['/usr/local/ssl/lib'] )
+                                     ['/usr/local/ssl/lib',
+                                      '/usr/contrib/ssl/lib/'
+                                     ] )
         
         if (ssl_incs is not None and
             ssl_libs is not None):
