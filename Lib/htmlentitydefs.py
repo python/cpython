@@ -2,6 +2,9 @@
 # http://www.w3.org/hypertext/WWW/MarkUp/html-spec/html-spec_14.html
 
 entitydefs = {
+    'lt':       '<',
+    'gt':       '>',
+    'amp':      '&',
     'nbsp':	chr(160),	# no-break space
     'iexcl':	chr(161),	# inverted exclamation mark
     'cent':	chr(162),	# cent sign
