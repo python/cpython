@@ -70,7 +70,7 @@ copy_grouping(char* s)
             break;
         if (PyList_SetItem(result, i, val)) {
             Py_DECREF(val);
-            val = 0;
+            val = NULL;
             break;
         }
     } while (s[i] != '\0' && s[i] != CHAR_MAX);
@@ -110,7 +110,7 @@ fixup_ulcase(void)
             ul[n++] = c;
     }
     ulo = PyString_FromStringAndSize((const char *)ul, n);
-    if(!ulo)
+    if (!ulo)
         return;
     if (string)
         PyDict_SetItemString(string, "uppercase", ulo);
@@ -157,7 +157,7 @@ PyLocale_setlocale(PyObject* self, PyObject* args)
     struct lconv *lc;
 
     if (!PyArg_ParseTuple(args, "i|z:setlocale", &category, &locale))
-        return 0;
+        return NULL;
 
     if (locale) {
         /* set locale */
@@ -226,11 +226,11 @@ PyLocale_localeconv(PyObject* self, PyObject* args)
     PyObject *x;
 
     if (!PyArg_NoArgs(args))
-        return 0;
+        return NULL;
 
     result = PyDict_New();
-    if(!result)
-        return 0;
+    if (!result)
+        return NULL;
 
     /* if LC_NUMERIC is different in the C library, use saved value */
     l = localeconv();
@@ -319,7 +319,7 @@ PyLocale_strxfrm(PyObject* self, PyObject* args)
     size_t n1, n2;
     PyObject *result;
 
-    if(!PyArg_ParseTuple(args, "s:strxfrm", &s))
+    if (!PyArg_ParseTuple(args, "s:strxfrm", &s))
         return NULL;
 
     /* assume no change in size, first */
@@ -346,6 +346,9 @@ PyLocale_getdefaultlocale(PyObject* self, PyObject* args)
 {
     char encoding[100];
     char locale[100];
+
+    if (!PyArg_NoArgs(args))
+        return NULL;
 
     sprintf(encoding, "cp%d", GetACP());
 
@@ -383,7 +386,7 @@ static struct PyMethodDef PyLocale_Methods[] = {
   {"strcoll", (PyCFunction) PyLocale_strcoll, 1, strcoll__doc__},
   {"strxfrm", (PyCFunction) PyLocale_strxfrm, 1, strxfrm__doc__},
 #if defined(MS_WIN32)
-  {"_getdefaultlocale", (PyCFunction) PyLocale_getdefaultlocale, 1},
+  {"_getdefaultlocale", (PyCFunction) PyLocale_getdefaultlocale, 0},
 #endif
   {NULL, NULL}
 };
