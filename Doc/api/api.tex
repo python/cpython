@@ -1,4 +1,5 @@
-\documentstyle[twoside,11pt,myformat]{report}
+\documentclass[twoside]{report}
+\usepackage{myformat}
 
 \title{Python/C API Reference Manual}
 
@@ -9,6 +10,7 @@
 
 \begin{document}
 
+\pagestyle{empty}
 \pagenumbering{roman}
 
 \maketitle
@@ -31,14 +33,7 @@ source code releases.
 
 \end{abstract}
 
-\pagebreak
-
-{
-\parskip = 0mm
-\tableofcontents
-}
-
-\pagebreak
+\mytableofcontents
 
 \pagenumbering{arabic}
 
