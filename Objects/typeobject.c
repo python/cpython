@@ -5025,6 +5025,7 @@ typedef struct {
 	PyObject_HEAD
 	PyTypeObject *type;
 	PyObject *obj;
+	PyTypeObject *obj_type;
 } superobject;
 
 static PyMemberDef super_members[] = {
@@ -5032,6 +5033,8 @@ static PyMemberDef super_members[] = {
 	 "the class invoking super()"},
 	{"__self__",  T_OBJECT, offsetof(superobject, obj), READONLY,
 	 "the instance invoking super(); may be None"},
+	{"__self_class__", T_OBJECT, offsetof(superobject, obj_type), READONLY,
+	 "the type of the the instance invoking super(); may be None"},
 	{0}
 };
 
@@ -5043,6 +5046,7 @@ super_dealloc(PyObject *self)
 	_PyObject_GC_UNTRACK(self);
 	Py_XDECREF(su->obj);
 	Py_XDECREF(su->type);
+	Py_XDECREF(su->obj_type);
 	self->ob_type->tp_free(self);
 }
 
@@ -5051,11 +5055,11 @@ super_repr(PyObject *self)
 {
 	superobject *su = (superobject *)self;
 
-	if (su->obj)
+	if (su->obj_type)
 		return PyString_FromFormat(
 			"<super: <class '%s'>, <%s object>>",
 			su->type ? su->type->tp_name : "NULL",
-			su->obj->ob_type->tp_name);
+			su->obj_type->tp_name);
 	else
 		return PyString_FromFormat(
 			"<super: <class '%s'>, NULL>",
@@ -5067,13 +5071,13 @@ super_getattro(PyObject *self, PyObject *name)
 {
 	superobject *su = (superobject *)self;
 
-	if (su->obj != NULL) {
+	if (su->obj_type != NULL) {
 		PyObject *mro, *res, *tmp, *dict;
 		PyTypeObject *starttype;
 		descrgetfunc f;
 		int i, n;
 
-		starttype = su->obj->ob_type;
+		starttype = su->obj_type;
 		mro = starttype->tp_mro;
 
 		if (mro == NULL)
@@ -5086,6 +5090,7 @@ super_getattro(PyObject *self, PyObject *name)
 			if ((PyObject *)(su->type) == PyTuple_GET_ITEM(mro, i))
 				break;
 		}
+#if 0
 		if (i >= n && PyType_Check(su->obj)) {
 			starttype = (PyTypeObject *)(su->obj);
 			mro = starttype->tp_mro;
@@ -5101,6 +5106,7 @@ super_getattro(PyObject *self, PyObject *name)
 					break;
 			}
 		}
+#endif
 		i++;
 		res = NULL;
 		for (; i < n; i++) {
@@ -5128,19 +5134,71 @@ super_getattro(PyObject *self, PyObject *name)
 	return PyObject_GenericGetAttr(self, name);
 }
 
-static int
+static PyTypeObject *
 supercheck(PyTypeObject *type, PyObject *obj)
 {
-	if (!PyType_IsSubtype(obj->ob_type, type) &&
-	    !(PyType_Check(obj) &&
-	      PyType_IsSubtype((PyTypeObject *)obj, type))) {
-		PyErr_SetString(PyExc_TypeError,
+	/* Check that a super() call makes sense.  Return a type object.
+
+	   obj can be a new-style class, or an instance of one:
+
+	   - If it is a class, it must be a subclass of 'type'.  This case is
+	     used for class methods; the return value is obj.
+
+	   - If it is an instance, it must be an instance of 'type'.  This is
+	     the normal case; the return value is obj.__class__.
+
+	   But... when obj is an instance, we want to allow for the case where
+	   obj->ob_type is not a subclass of type, but obj.__class__ is!
+	   This will allow using super() with a proxy for obj.
+	*/
+
+	if (PyType_Check(obj)) {
+		/* It's a new-style class */
+		if (PyType_IsSubtype((PyTypeObject *)obj, type)) {
+			Py_INCREF(obj);
+			return (PyTypeObject *)obj;
+		}
+		else
+			goto fail;
+	}
+	else if (PyType_IsSubtype(obj->ob_type, type)) {
+		Py_INCREF(obj->ob_type);
+		return obj->ob_type;
+	}
+	else {
+		/* Try the slow way */
+		static PyObject *class_str = NULL;
+		PyObject *class_attr;
+
+		if (class_str == NULL) {
+			class_str = PyString_FromString("__class__");
+			if (class_str == NULL)
+				return NULL;
+		}
+
+		class_attr = PyObject_GetAttr(obj, class_str);
+
+		if (class_attr != NULL &&
+		    PyType_Check(class_attr) &&
+		    (PyTypeObject *)class_attr != obj->ob_type)
+		{
+			int ok = PyType_IsSubtype(
+				(PyTypeObject *)class_attr, type);
+			if (ok)
+				return (PyTypeObject *)class_attr;
+		}
+
+		if (class_attr == NULL)
+			PyErr_Clear();
+		else
+			Py_DECREF(class_attr);
+	}
+
+  fail:
+	PyErr_SetString(PyExc_TypeError,
 			"super(type, obj): "
 			"obj must be an instance or subtype of type");
-		return -1;
-	}
-	else
-		return 0;
+	return NULL;
 }
 
 static PyObject *
@@ -5161,7 +5219,8 @@ super_descr_get(PyObject *self, PyObject *obj, PyObject *type)
 					     "OO", su->type, obj);
 	else {
 		/* Inline the common case */
-		if (supercheck(su->type, obj) < 0)
+		PyTypeObject *obj_type = supercheck(su->type, obj);
+		if (obj_type == NULL)
 			return NULL;
 		new = (superobject *)PySuper_Type.tp_new(&PySuper_Type,
 							 NULL, NULL);
@@ -5171,6 +5230,7 @@ super_descr_get(PyObject *self, PyObject *obj, PyObject *type)
 		Py_INCREF(obj);
 		new->type = su->type;
 		new->obj = obj;
+		new->obj_type = obj_type;
 		return (PyObject *)new;
 	}
 }
@@ -5181,17 +5241,22 @@ super_init(PyObject *self, PyObject *args, PyObject *kwds)
 	superobject *su = (superobject *)self;
 	PyTypeObject *type;
 	PyObject *obj = NULL;
+	PyTypeObject *obj_type = NULL;
 
 	if (!PyArg_ParseTuple(args, "O!|O:super", &PyType_Type, &type, &obj))
 		return -1;
 	if (obj == Py_None)
 		obj = NULL;
-	if (obj != NULL && supercheck(type, obj) < 0)
-		return -1;
+	if (obj != NULL) {
+		obj_type = supercheck(type, obj);
+		if (obj_type == NULL)
+			return -1;
+		Py_INCREF(obj);
+	}
 	Py_INCREF(type);
-	Py_XINCREF(obj);
 	su->type = type;
 	su->obj = obj;
+	su->obj_type = obj_type;
 	return 0;
 }
 
@@ -5219,6 +5284,7 @@ super_traverse(PyObject *self, visitproc visit, void *arg)
 
 	VISIT(su->obj);
 	VISIT(su->type);
+	VISIT(su->obj_type);
 
 #undef VISIT
 

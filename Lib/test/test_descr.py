@@ -3791,6 +3791,13 @@ def isinst_isclass():
     pa = Proxy(a)
     verify(isinstance(a, C))  # Baseline
     verify(isinstance(pa, C)) # Test
+    # Test with a classic subclass
+    class D(C):
+        pass
+    a = D()
+    pa = Proxy(a)
+    verify(isinstance(a, C))  # Baseline
+    verify(isinstance(pa, C)) # Test
     # Test with a new-style class
     class C(object):
         pass
@@ -3798,6 +3805,37 @@ def isinst_isclass():
     pa = Proxy(a)
     verify(isinstance(a, C))  # Baseline
     verify(isinstance(pa, C)) # Test
+    # Test with a new-style subclass
+    class D(C):
+        pass
+    a = D()
+    pa = Proxy(a)
+    verify(isinstance(a, C))  # Baseline
+    verify(isinstance(pa, C)) # Test
+
+def proxysuper():
+    if verbose:
+        print "Testing super() for a proxy object..."
+    class Proxy(object):
+        def __init__(self, obj):
+            self.__obj = obj
+        def __getattribute__(self, name):
+            if name.startswith("_Proxy__"):
+                return object.__getattribute__(self, name)
+            else:
+                return getattr(self.__obj, name)
+
+    class B(object):
+        def f(self):
+            return "B.f"
+
+    class C(B):
+        def f(self):
+            return super(C, self).f() + "->C.f"
+
+    obj = C()
+    p = Proxy(obj)
+    vereq(C.__dict__["f"](p), "B.f->C.f")
 
 
 def test_main():
@@ -3887,6 +3925,7 @@ def test_main():
     dict_type_with_metaclass()
     meth_class_get()
     isinst_isclass()
+    proxysuper()
 
     if verbose: print "All OK"
 

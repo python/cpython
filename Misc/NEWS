@@ -12,6 +12,9 @@ What's New in Python 2.3 alpha 2?
 Core and builtins
 -----------------
 
+- super(X, x): x may now be a proxy for an X instance, i.e.
+  issubclass(x.__class__, X) but not issubclass(type(x), X).
+
 - isinstance(x, X): if X is a new-style class, this is now equivalent
   to issubclass(type(x), X) or issubclass(x.__class__, X).  Previously
   only type(x) was tested.  (For classic classes this was already the
