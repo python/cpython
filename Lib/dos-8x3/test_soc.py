@@ -65,7 +65,7 @@ for optional in ("AF_UNIX",
 		 ):
     missing_ok(optional)
 
-socktype = socket.socket_type
+socktype = socket.SocketType
 hostname = socket.gethostname()
 ip = socket.gethostbyname(hostname)
 hname, aliases, ipaddrs = socket.gethostbyaddr(ip)

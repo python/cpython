@@ -60,3 +60,51 @@ except regex.error:
     print 'caught expected exception'
 else:
     print 'expected regex.error not raised'
+
+from regex_tests import *
+if verbose: print 'Running regex_tests test suite'
+
+for t in tests:
+    pattern=s=outcome=repl=expected=None
+    if len(t)==5:
+	pattern, s, outcome, repl, expected = t
+    elif len(t)==3:
+	pattern, s, outcome = t 
+    else:
+	raise ValueError, ('Test tuples should have 3 or 5 fields',t)
+
+    try:
+	obj=regex.compile(pattern)
+    except regex.error:
+	if outcome==SYNTAX_ERROR: pass    # Expected a syntax error
+	else: 
+	    # Regex syntax errors aren't yet reported, so for 
+	    # the official test suite they'll be quietly ignored.
+	    pass
+	    #print '=== Syntax error:', t
+    else:
+	try:
+	    result=obj.search(s)
+	except regex.error, msg:
+	    print '=== Unexpected exception', t, repr(msg)
+	if outcome==SYNTAX_ERROR:
+	    # This should have been a syntax error; forget it.
+	    pass
+	elif outcome==FAIL:
+	    if result==-1: pass   # No match, as expected
+	    else: print '=== Succeeded incorrectly', t
+	elif outcome==SUCCEED:
+	    if result!=-1:
+		# Matched, as expected, so now we compute the
+		# result string and compare it to our expected result.
+		start, end = obj.regs[0]
+		found=s[start:end]
+		groups=obj.group(1,2,3,4,5,6,7,8,9,10)
+		vardict=vars()
+		for i in range(len(groups)):
+		    vardict['g'+str(i+1)]=str(groups[i])
+		repl=eval(repl)
+		if repl!=expected:
+		    print '=== grouping error', t, repr(repl)+' should be '+repr(expected)
+	    else:
+		print '=== Failed incorrectly', t

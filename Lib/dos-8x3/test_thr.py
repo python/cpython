@@ -21,7 +21,7 @@ def task(ident):
 	delay = whrandom.random() * numtasks
 	whmutex.release()
 	if verbose:
-	    print 'task', ident, 'will run for', delay, 'sec'
+	    print 'task', ident, 'will run for', round(delay, 1), 'sec'
 	time.sleep(delay)
 	if verbose:
 	    print 'task', ident, 'done'
@@ -89,7 +89,7 @@ def task2(ident):
 			delay = whrandom.random() * numtasks
 			whmutex.release()
 		if verbose:
-		    print 'task', ident, 'will run for', delay, 'sec'
+		    print 'task', ident, 'will run for', round(delay, 1), 'sec'
 		time.sleep(delay)
 		if verbose:
 		    print 'task', ident, 'entering barrier', i

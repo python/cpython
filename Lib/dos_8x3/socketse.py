@@ -34,10 +34,10 @@ synchronous servers of four types:
 	| UDPServer |------->| UnixDatagramServer |
 	+-----------+        +--------------------+
 
-(Note that UnixDatagramServer derives from UDPServer, not from
+Note that UnixDatagramServer derives from UDPServer, not from
 UnixStreamServer -- the only difference between an IP and a Unix
 stream server is the address family, which is simply repeated in both
-unix server classes.)
+unix server classes.
 
 Forking and threading versions of each type of server can be created
 using the ForkingServer and ThreadingServer mix-in classes.  For
@@ -45,8 +45,8 @@ instance, a threading UDP server class is created as follows:
 
 	class ThreadingUDPServer(ThreadingMixIn, UDPServer): pass
 
-(The Mix-in class must come first, since it overrides a method defined
-in UDPServer!)
+The Mix-in class must come first, since it overrides a method defined
+in UDPServer!
 
 To implement a service, you must derive a class from
 BaseRequestHandler and redefine its handle() method.  You can then run
@@ -266,7 +266,7 @@ class UDPServer(TCPServer):
     max_packet_size = 8192
 
     def get_request(self):
-	return self.socket.recvfrom(max_packet_size)
+	return self.socket.recvfrom(self.max_packet_size)
 
 
 if hasattr(socket, 'AF_UNIX'):
