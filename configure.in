@@ -6,7 +6,7 @@ AC_CONFIG_HEADER(config.h)
 
 # Set VERSION so we only need to edit in one place (i.e., here)
 AC_SUBST(VERSION)
-VERSION=1.6
+VERSION=2.0
 
 # NEXTSTEP stuff
 if test -f /usr/lib/NextStep/software_version -o -f /System/Library/CoreServices/software_version ; then
