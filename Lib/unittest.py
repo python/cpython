@@ -46,7 +46,7 @@ SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
 __author__ = "Steve Purcell"
 __email__ = "stephen_purcell at yahoo dot com"
-__version__ = "#Revision: 1.57 $"[11:-2]
+__version__ = "#Revision: 1.58 $"[11:-2]
 
 import time
 import sys
@@ -517,7 +517,6 @@ class TestLoader:
             return self.loadTestsFromTestCase(obj)
         elif type(obj) == types.UnboundMethodType:
             return parent(obj.__name__)
-            return obj.im_class(obj.__name__)
         elif isinstance(obj, unittest.TestSuite):
             return obj
         elif callable(obj):
