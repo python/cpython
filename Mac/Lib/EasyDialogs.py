@@ -158,7 +158,7 @@ def AskYesNoCancel(question, default = 0, yes=None, no=None, cancel=None, id=262
 	When the user presses Return, the DEFAULT value is returned.
 	If omitted, this is 0 (No).
 	
-	The QUESTION strign ca be at most 255 characters.
+	The QUESTION string can be at most 255 characters.
 	"""
 	
 	d = GetNewDialog(id, -1)
