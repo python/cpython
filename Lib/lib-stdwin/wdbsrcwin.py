@@ -70,6 +70,9 @@ class DebuggerSourceWindow(srcwin.SourceWindow):
 			s = s + ' '
 		return s
 	
+	def getmargin(self):
+		return stdwin.textwidth('[' + `self.linecount+1` + ']->B ')
+	
 	def setlineno(self, newlineno):
 		if newlineno != self.curlineno:
 			oldlineno = self.curlineno
