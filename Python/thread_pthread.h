@@ -48,6 +48,13 @@
 
 #endif
 
+#ifdef USE_GUSI
+/* The Macintosh GUSI I/O library sets the stackspace to
+** 20KB, much too low. We up it to 64K.
+*/
+#define THREAD_STACK_SIZE 0x10000
+#endif
+
 
 /* set default attribute object for different versions */
 
@@ -128,10 +135,17 @@ PyThread_start_new_thread(void (*func)(void *), void *arg)
 {
 	pthread_t th;
 	int success;
+#ifdef THREAD_STACK_SIZE
+	pthread_attr_t attrs;
+#endif
 	dprintf(("PyThread_start_new_thread called\n"));
 	if (!initialized)
 		PyThread_init_thread();
 
+#ifdef THREAD_STACK_SIZE
+	pthread_attr_init(&attrs);
+	pthread_attr_setstacksize(&attrs, THREAD_STACK_SIZE);
+#endif
 	success = pthread_create(&th, 
 #if defined(PY_PTHREAD_D4)
 				 pthread_attr_default,
@@ -146,12 +160,18 @@ PyThread_start_new_thread(void (*func)(void *), void *arg)
 				 func,
 				 arg
 #elif defined(PY_PTHREAD_STD)
+#ifdef THREAD_STACK_SIZE
+				 &attrs,
+#else
 				 (pthread_attr_t*)NULL,
+#endif
 				 (void* (*)(void *))func,
 				 (void *)arg
 #endif
 				 );
-
+#ifdef THREAD_STACK_SIZE
+	pthread_attr_destroy(&attrs);
+#endif
 	if (success == 0) {
 #if defined(PY_PTHREAD_D4) || defined(PY_PTHREAD_D6) || defined(PY_PTHREAD_D7)
 		pthread_detach(&th);
