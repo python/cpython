@@ -1,0 +1,143 @@
+\section{\module{bsddb} ---
+         Interface to Berkeley DB library}
+
+\declaremodule{extension}{bsddb}
+  \platform{Unix, Windows}
+\modulesynopsis{Interface to Berkeley DB database library}
+\sectionauthor{Skip Montanaro}{skip@mojam.com}
+
+
+The \module{bsddb} module provides an interface to the Berkeley DB library.
+Users can create hash, btree or record based library files using the
+appropriate open call. Bsddb objects behave generally like dictionaries.
+Keys and values must be strings, however, so to use other objects as keys or 
+to store other kinds of objects the user must serialize them somehow,
+typically using marshal.dumps or pickle.dumps.
+
+The \module{bsddb} module is only available on \UNIX{} systems, so it is not
+built by default in the standard Python distribution.  Also, there are two
+incompatible versions of the underlying library.  Version 1.85 is widely
+available, but has some known bugs.  Version 2 is not quite as widely used,
+but does offer some improvements.  The \module{bsddb} module uses the 1.85
+interface.  Users wishing to use version 2 of the Berkeley DB library will
+have to modify the source for the module to include db_185.h instead of
+db.h.
+
+The \module{bsddb} module defines the following functions that create
+objects that access the appropriate type of Berkeley DB file.  The first two
+arguments of each function are the same.  For ease of portability, only the
+first two arguments should be used in most instances.
+
+\begin{funcdesc}{hashopen}{filename\optional{, flag\optional{,
+mode\optional{, bsize\optional{, ffactor\optional{, nelem\optional{,
+cachesize\optional{, hash\optional{, lorder}}}}}}}}}
+Open the hash format file named \var{filename}.  The optional \var{flag}
+identifies the mode used to open the file.  It may be ``r'' (read only),
+``w'' (read-write), ``c'' (read-write - create if necessary) or ``n''
+(read-write - truncate to zero length).  The other arguments are rarely used
+and are just passed to the low-level dbopen function.  Consult the
+Berkeley DB documentation for their use and interpretation.
+\end{funcdesc}
+
+
+\begin{funcdesc}{btopen}{filename\optional{, flag\optional{,
+mode\optional{, btflags\optional{, cachesize\optional{, maxkeypage\optional{,
+minkeypage\optional{, psize\optional{, lorder}}}}}}}}}
+Open the btree format file named \var{filename}.  The optional \var{flag}
+identifies the mode used to open the file.  It may be ``r'' (read only),
+``w'' (read-write), ``c'' (read-write - create if necessary) or ``n''
+(read-write - truncate to zero length).  The other arguments are rarely used
+and are just passed to the low-level dbopen function.  Consult the
+Berkeley DB documentation for their use and interpretation.
+\end{funcdesc}
+
+\begin{funcdesc}{rnopen}{filename\optional{, flag\optional{, mode\optional{,
+rnflags\optional{, cachesize\optional{, psize\optional{, lorder\optional{,
+reclen\optional{, bval\optional{, bfname}}}}}}}}}}
+Open a DB record format file named \var{filename}.  The optional \var{flag}
+identifies the mode used to open the file.  It may be ``r'' (read only),
+``w'' (read-write), ``c'' (read-write - create if necessary) or ``n''
+(read-write - truncate to zero length).  The other arguments are rarely used
+and are just passed to the low-level dbopen function.  Consult the
+Berkeley DB documentation for their use and interpretation.
+\end{funcdesc}
+
+
+\begin{seealso}
+  \seemodule{dbhash}{DBM-style interface to the \module{bsddb}}
+\end{seealso}
+
+
+\subsection{Hash, BTree and Record Objects \label{bsddb-objects}}
+
+Once instantiated, hash, btree and record objects support the following
+methods:
+
+\begin{methoddesc}{close}{}
+Close the underlying file.  The object can no longer be accessed.  Since
+there is no open \method{open} method for these objects, to open the file
+again a new \module{bsddb} module open function must be called.
+\end{methoddesc}
+
+\begin{methoddesc}{keys}{}
+Return the list of keys contained in the DB file.  The order of the list is
+unspecified and should not be relied on.  In particular, the order of the
+list returned is different for different file formats.
+\end{methoddesc}
+
+\begin{methoddesc}{has_key}{key}
+Return 1 if the DB file contains the argument as a key.
+\end{methoddesc}
+
+\begin{methoddesc}{set_location}{key}
+Set the cursor to the item indicated by the key and return it.
+\end{methoddesc}
+
+\begin{methoddesc}{first}{}
+Set the cursor to the first item in the DB file and return it.  The order of 
+keys in the file is unspecified.
+\end{methoddesc}
+
+\begin{methoddesc}{next}{}
+Set the cursor to the next item in the DB file and return it.  The order of 
+keys in the file is unspecified.
+\end{methoddesc}
+
+\begin{methoddesc}{previous}{}
+Set the cursor to the first item in the DB file and return it.  The order of 
+keys in the file is unspecified.
+\end{methoddesc}
+
+\begin{methoddesc}{last}{}
+Set the cursor to the last item in the DB file and return it.  The order of 
+keys in the file is unspecified.
+\end{methoddesc}
+
+\begin{methoddesc}{sync}{}
+Synchronize the database on disk.
+\end{methoddesc}
+
+Example:
+
+\begin{verbatim}
+>>> import bsddb
+>>> db = bsddb.btopen('/tmp/spam.db', 'c')
+>>> for i in range(10): db['%d'%i] = '%d'% (i*i)
+... 
+>>> db['3']
+'9'
+>>> db.keys()
+['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
+>>> db.first()
+('0', '0')
+>>> db.next()
+('1', '1')
+>>> db.last()
+('9', '81')
+>>> db.set_location('2')
+('2', '4')
+>>> db.previous() 
+('1', '1')
+>>> db.sync()
+0
+\end{verbatim}
