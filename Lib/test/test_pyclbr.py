@@ -9,9 +9,9 @@ import pyclbr
 
 # This next line triggers an error on old versions of pyclbr.
 
-from commands import getstatus 
+from commands import getstatus
 
-# Here we test the python class browser code.  
+# Here we test the python class browser code.
 #
 # The main function in this suite, 'testModule', compares the output
 # of pyclbr with the introspected members of a module.  Because pyclbr
@@ -27,8 +27,8 @@ class PyclbrTest(unittest.TestCase):
                 ok = (item in p2) or (item in ignore)
                 if not ok:
                     self.fail("%r missing" % item)
-        
- 
+
+
     def assertHasattr(self, obj, attr, ignore):
         ''' succeed iff hasattr(obj,attr) or attr in ignore. '''
         if attr in ignore: return
@@ -55,13 +55,13 @@ class PyclbrTest(unittest.TestCase):
             module is loaded with __import__.'''
 
         if module == None:
-            module = __import__(moduleName, globals(), {}, [])      
+            module = __import__(moduleName, globals(), {}, [])
 
         dict = pyclbr.readmodule_ex(moduleName)
 
         # Make sure the toplevel functions and classes are the same.
         for name, value in dict.items():
-            if name in ignore: 
+            if name in ignore:
                 continue
             self.assertHasattr(module, name, ignore)
             py_item = getattr(module, name)
@@ -70,9 +70,9 @@ class PyclbrTest(unittest.TestCase):
             else:
                 self.assertEquals(type(py_item), ClassType)
                 real_bases = [base.__name__ for base in py_item.__bases__]
-                pyclbr_bases = [ getattr(base, 'name', base) 
+                pyclbr_bases = [ getattr(base, 'name', base)
                                  for base in value.super ]
-                                   
+
                 self.assertListEq(real_bases, pyclbr_bases, ignore)
 
                 actualMethods = []
@@ -119,7 +119,8 @@ class PyclbrTest(unittest.TestCase):
                             'bisect'))     # imported method, set with =
 
         cm('urllib', ignore=('getproxies_environment', # set with =
-                             'getproxies_registry'))   # set with =
+                             'getproxies_registry',    # set with =
+                             'open_https'))            # not on all platforms
 
         #XXXX bad example
         #cm('urllib2', ignore=('at_cnri',    # defined inside __main__
@@ -129,30 +130,27 @@ class PyclbrTest(unittest.TestCase):
         #                     ))
 
 
-        
-        cm('pickle', ignore=('g',))       # deleted declaration
-        
-        cm('aifc', ignore=('openfp',))    # set with =
-        
-        cm('httplib', ignore=('error',))  # set with =
 
+        cm('pickle', ignore=('g',))       # deleted declaration
+
+        cm('aifc', ignore=('openfp',))    # set with =
+
+        cm('httplib', ignore=('error',    # set with =
+                              'HTTPS'))   # not on all platforms
 
         cm('Cookie', ignore=('__str__', 'Cookie')) # set with =
-        
+
         cm('sre_parse', ignore=('literal', # nested def
                                 'makedict', 'dump' # from sre_constants
                                 ))
 
-        cm('test.test_pyclbr', 
+        cm('test.test_pyclbr',
            module=sys.modules[__name__])
 
         # pydoc doesn't work because of string issues
         # cm('pydoc', pydoc)
-        
+
         # pdb plays too many dynamic games
-        # cm('pdb', pdb) 
+        # cm('pdb', pdb)
 
 run_unittest(PyclbrTest)
-
-
-
