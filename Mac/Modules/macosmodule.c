@@ -710,11 +710,11 @@ initMacOS()
 	/* Initialize MacOS.Error exception */
 	MacOS_Error = PyMac_GetOSErrException();
 	if (MacOS_Error == NULL || PyDict_SetItemString(d, "Error", MacOS_Error) != 0)
-		Py_FatalError("can't define MacOS.Error");
+		return;
 	Rftype.ob_type = &PyType_Type;
 	Py_INCREF(&Rftype);
 	if (PyDict_SetItemString(d, "ResourceForkType", (PyObject *)&Rftype) != 0)
-		Py_FatalError("can't define MacOS.ResourceForkType");
+		return;
 	/*
 	** This is a hack: the following constant added to the id() of a string
 	** object gives you the address of the data. Unfortunately, it is needed for
@@ -725,10 +725,10 @@ initMacOS()
 		long off = (long)&(p->ob_sval[0]);
 		
 		if( PyDict_SetItemString(d, "string_id_to_buffer", Py_BuildValue("i", off)) != 0)
-			Py_FatalError("Can't define MacOS.string_id_to_buffer");
+			return;
 	}
 	if (PyDict_SetItemString(d, "AppearanceCompliant", 
 				Py_BuildValue("i", PyMac_AppearanceCompliant)) != 0)
-		Py_FatalError("can't define MacOS.AppearanceCompliant");
+		return;
 }
 
