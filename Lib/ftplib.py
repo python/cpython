@@ -105,7 +105,6 @@ class FTP:
 		if host:
 			resp = self.connect(host)
 			if user: resp = self.login(user, passwd, acct)
-		return resp
 
 	def connect(self, host = '', port = 0):
 		'''Connect to host.  Arguments are:
@@ -469,8 +468,7 @@ class FTP:
 		del self.file, self.sock
 
 
-import regex
-_150_re = regex.compile("150 .* (\([0-9][0-9]*\) bytes)", regex.casefold)
+_150_re = None
 
 def parse150(resp):
     '''Parse the '150' response for a RETR request.
@@ -479,9 +477,13 @@ def parse150(resp):
     '''
     if resp[:3] != '150':
 	raise error_reply, resp
-    length = _150_re.match(resp)
-    if length >= 0:
-	return string.atoi(_150_re.group(1))
+    global _150_re
+    if _150_re is None:
+	import re
+	_150_re = re.compile("150 .* \(([0-9][0-9]*) bytes\)", re.IGNORECASE)
+    m = _150_re.match(resp)
+    if m:
+	return string.atoi(m.group(1))
     return None
 
 
