@@ -17,6 +17,9 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #else
 #include <sys/types.h>		/* For size_t */
 #endif
+#ifdef HAVE_LIMITS_H
+#include <limits.h>
+#endif
 
 #define ROUNDUP(n, PyTryBlock) \
 	((((n)+(PyTryBlock)-1)/(PyTryBlock))*(PyTryBlock))
@@ -258,6 +261,7 @@ static int
 list_compare(PyListObject *v, PyListObject *w)
 {
 	int i;
+	
 	for (i = 0; i < v->ob_size && i < w->ob_size; i++) {
 		int cmp = PyObject_Compare(v->ob_item[i], w->ob_item[i]);
 		if (cmp != 0)
