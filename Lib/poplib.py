@@ -6,16 +6,13 @@ Based on the J. Myers POP3 draft, Jan. 96
 # Author: David Ascher <david_ascher@brown.edu>
 #         [heavily stealing from nntplib.py]
 # Updated: Piers Lauder <piers@cs.su.oz.au> [Jul '97]
+# String method conversion and test jig improvements by ESR, February 2001.
 
 # Example (see the test function at the end of this file)
 
-TESTSERVER = "localhost"
-TESTACCOUNT = "test"
-TESTPASSWORD = "_passwd_"
-
 # Imports
 
-import re, socket, string
+import re, socket
 
 # Exception raised when an error or invalid response is received:
 
@@ -192,10 +189,10 @@ class POP3:
         Result is tuple of 2 ints (message count, mailbox size)
         """
         retval = self._shortcmd('STAT')
-        rets = string.split(retval)
+        rets = retval.split()
         #if self._debugging: print '*stat*', `rets`
-        numMessages = string.atoi(rets[1])
-        sizeMessages = string.atoi(rets[2])
+        numMessages = int(rets[1])
+        sizeMessages = int(rets[2])
         return (numMessages, sizeMessages)
 
 
@@ -281,7 +278,7 @@ class POP3:
             raise error_proto('-ERR APOP not supported by server')
         import md5
         digest = md5.new(m.group(1)+secret).digest()
-        digest = string.join(map(lambda x:'%02x'%ord(x), digest), '')
+        digest = ''.join(map(lambda x:'%02x'%ord(x), digest))
         return self._shortcmd('APOP %s %s' % (user, digest))
 
 
@@ -307,10 +304,11 @@ class POP3:
 
 
 if __name__ == "__main__":
-    a = POP3(TESTSERVER)
+    import sys
+    a = POP3(sys.argv[1])
     print a.getwelcome()
-    a.user(TESTACCOUNT)
-    a.pass_(TESTPASSWORD)
+    a.user(sys.argv[2])
+    a.pass_(sys.argv[3])
     a.list()
     (numMsgs, totalSize) = a.stat()
     for i in range(1, numMsgs + 1):
