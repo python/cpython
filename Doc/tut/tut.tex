@@ -2996,9 +2996,9 @@ except:
 \end{verbatim}
 
 The \keyword{try} \ldots\ \keyword{except} statement has an optional
-\emph{else clause}, which must follow all except clauses.  It is
-useful to place code that must be executed if the try clause does not
-raise an exception.  For example:
+\emph{else clause}, which, when present, must follow all except
+clauses.  It is useful for code that must be executed if the try
+clause does not raise an exception.  For example:
 
 \begin{verbatim}
 for arg in sys.argv[1:]:
@@ -3010,6 +3010,11 @@ for arg in sys.argv[1:]:
         print arg, 'has', len(f.readlines()), 'lines'
         f.close()
 \end{verbatim}
+
+The use of the \keyword{else} clause is better than adding additional
+code to the \keyword{try} clause because it avoids accidentally
+catching an exception that wasn't raised by the code being protected
+by the \keyword{try} \ldots\ \keyword{except} statement.
 
 
 When an exception occurs, it may have an associated value, also known as
