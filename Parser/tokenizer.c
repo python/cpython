@@ -255,11 +255,13 @@ static int
 check_coding_spec(const char* line, int size, struct tok_state *tok,
 		  int set_readline(struct tok_state *, const char *))
 {
+	char * cs;
 	int r = 1;
+
         if (tok->cont_line)
 		/* It's a continuation line, so it can't be a coding spec. */
 		return 1;
-	char* cs = get_coding_spec(line, size);
+	cs = get_coding_spec(line, size);
 	if (cs != NULL) {
 		tok->read_coding_spec = 1;
 		if (tok->encoding == NULL) {
