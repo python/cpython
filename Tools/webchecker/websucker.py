@@ -73,10 +73,13 @@ class Sucker(webchecker.Checker):
     def savefile(self, text, path):
         dir, base = os.path.split(path)
         makedirs(dir)
-        f = open(path, "wb")
-        f.write(text)
-        f.close()
-        self.message("saved %s", path)
+        try:
+            f = open(path, "wb")
+            f.write(text)
+            f.close()
+            self.message("saved %s", path)
+        except IOError, msg:
+            self.message("didn't save %s: %s", path, str(msg))
 
     def savefilename(self, url):
         type, rest = urllib.splittype(url)
@@ -93,7 +96,16 @@ class Sucker(webchecker.Checker):
         return path
 
 def makedirs(dir):
-    if not dir or os.path.exists(dir):
+    if not dir:
+        return
+    if os.path.exists(dir):
+        if not os.path.isdir(dir):
+            try:
+                os.rename(dir, dir + ".bak")
+                os.mkdir(dir)
+                os.rename(dir + ".bak", os.path.join(dir, "index.html"))
+            except os.error:
+                pass
         return
     head, tail = os.path.split(dir)
     if not tail:
