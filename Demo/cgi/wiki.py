@@ -1,6 +1,6 @@
 """Wiki main program.  Imported and run by cgi3.py."""
 
-import os, re, cgi, sys
+import os, re, cgi, sys, tempfile
 escape = cgi.escape
 
 def main():
@@ -16,7 +16,7 @@ def main():
 
 class WikiPage:
 
-    homedir = "/tmp"
+    homedir = tempfile.gettempdir()
     scripturl = os.path.basename(sys.argv[0])
 
     def __init__(self, name):
