@@ -24,15 +24,21 @@ def main():
 	a.sampwidth = AL.SAMPLE_16
 	a.nchannels = AL.STEREO
 	a.samprate = AL.RATE_44100
+	r = readcd.Readcd().init()
 	l = []
 	for arg in sys.argv[2:]:
-		l.append(eval(arg))
-	print l
-	r = readcd.Readcd().init()
-	r.set(l)
+		x = eval(arg)
+		try:
+			l = len(x)
+			r.appendstretch(x[0], x[1])
+		except TypeError:
+			r.appendtrack(x)
 	r.setcallback(CD.AUDIO, writeaudio, a)
 	r.setcallback(CD.PTIME, ptimecallback, None)
-	r.play()
+	try:
+		r.play()
+	except KeyboardInterrupt:
+		pass
 	a.destroy()
 
 main()
