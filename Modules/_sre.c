@@ -506,6 +506,19 @@ SRE_CHARSET(SRE_CODE* set, SRE_CODE ch)
             set += 16;
             break;
 
+	case SRE_OP_BIGCHARSET:
+	    /* <BIGCHARSET> <blockcount> <256 blockindices> <blocks> */
+	{
+	    int count, block;
+	    count = *(set++);
+	    block = ((unsigned char*)set)[ch >> 8];
+	    set += 128;
+	    if (set[block*16 + ((ch & 255)>>4)] & (1 << (ch & 15)))
+		return ok;
+	    set += count*16;
+	    break;
+	}
+
         case SRE_OP_CATEGORY:
             /* <CATEGORY> <code> */
             if (sre_category(set[0], (int) ch))

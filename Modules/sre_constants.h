@@ -11,7 +11,7 @@
  * See the _sre.c file for information on usage and redistribution.
  */
 
-#define SRE_MAGIC 20010320
+#define SRE_MAGIC 20010701
 #define SRE_OP_FAILURE 0
 #define SRE_OP_SUCCESS 1
 #define SRE_OP_ANY 2
@@ -23,24 +23,25 @@
 #define SRE_OP_CALL 8
 #define SRE_OP_CATEGORY 9
 #define SRE_OP_CHARSET 10
-#define SRE_OP_GROUPREF 11
-#define SRE_OP_GROUPREF_IGNORE 12
-#define SRE_OP_IN 13
-#define SRE_OP_IN_IGNORE 14
-#define SRE_OP_INFO 15
-#define SRE_OP_JUMP 16
-#define SRE_OP_LITERAL 17
-#define SRE_OP_LITERAL_IGNORE 18
-#define SRE_OP_MARK 19
-#define SRE_OP_MAX_UNTIL 20
-#define SRE_OP_MIN_UNTIL 21
-#define SRE_OP_NOT_LITERAL 22
-#define SRE_OP_NOT_LITERAL_IGNORE 23
-#define SRE_OP_NEGATE 24
-#define SRE_OP_RANGE 25
-#define SRE_OP_REPEAT 26
-#define SRE_OP_REPEAT_ONE 27
-#define SRE_OP_SUBPATTERN 28
+#define SRE_OP_BIGCHARSET 11
+#define SRE_OP_GROUPREF 12
+#define SRE_OP_GROUPREF_IGNORE 13
+#define SRE_OP_IN 14
+#define SRE_OP_IN_IGNORE 15
+#define SRE_OP_INFO 16
+#define SRE_OP_JUMP 17
+#define SRE_OP_LITERAL 18
+#define SRE_OP_LITERAL_IGNORE 19
+#define SRE_OP_MARK 20
+#define SRE_OP_MAX_UNTIL 21
+#define SRE_OP_MIN_UNTIL 22
+#define SRE_OP_NOT_LITERAL 23
+#define SRE_OP_NOT_LITERAL_IGNORE 24
+#define SRE_OP_NEGATE 25
+#define SRE_OP_RANGE 26
+#define SRE_OP_REPEAT 27
+#define SRE_OP_REPEAT_ONE 28
+#define SRE_OP_SUBPATTERN 29
 #define SRE_AT_BEGINNING 0
 #define SRE_AT_BEGINNING_LINE 1
 #define SRE_AT_BEGINNING_STRING 2
