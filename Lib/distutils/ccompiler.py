@@ -883,6 +883,51 @@ class CCompiler:
         """
         raise NotImplementedError
 
+    def has_function(self, funcname,
+                     includes=None,
+                     include_dirs=None,
+                     libraries=None,
+                     library_dirs=None):
+        """Return a boolean indicating whether funcname is supported on
+        the current platform.  The optional arguments can be used to
+        augment the compilation environment.
+        """
+
+        # this can't be included at module scope because it tries to
+        # import math which might not be available at that point - maybe
+        # the necessary logic should just be inlined?
+        import tempfile
+        if includes is None:
+            includes = []
+        if include_dirs is None:
+            include_dirs = []
+        if libraries is None:
+            libraries = []
+        if library_dirs is None:
+            library_dirs = []
+        fd, fname = tempfile.mkstemp(".c", funcname, text=True)
+        f = os.fdopen(fd, "w")
+        for incl in includes:
+            f.write("""#include "%s"\n""" % incl)
+        f.write("""\
+main (int argc, char **argv) {
+    %s();
+}
+""" % funcname)
+        f.close()
+        try:
+            objects = self.compile([fname], include_dirs=include_dirs)
+        except CompileError:
+            return False
+
+        try:
+            self.link_executable(objects, "a.out",
+                                 libraries=libraries,
+                                 library_dirs=library_dirs)
+        except (LinkError, TypeError):
+            return False
+        return True
+
     def find_library_file (self, dirs, lib, debug=0):
         """Search the specified list of directories for a static or shared
         library file 'lib' and return the full path to that file.  If
