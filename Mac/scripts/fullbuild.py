@@ -96,12 +96,13 @@ def buildmwproject(top, creator, projects):
 def buildapplet(top, dummy, list):
 	"""Create python applets"""
 	template = buildtools.findtemplate()
-	for src in list:
+	for src, dst in list:
 		if src[-3:] != '.py':
 			raise 'Should end in .py', src
 		base = os.path.basename(src)
-		dst = os.path.join(top, base)[:-3]
+		#dst = os.path.join(top, base)[:-3]
 		src = os.path.join(top, src)
+		dst = os.path.join(top, dst)
 		try:
 			os.unlink(dst)
 		except os.error:
@@ -190,10 +191,11 @@ I_68K_EXTENSIONS : (buildmwproject, "CWIE", [
 	]),
 
 I_APPLETS : (buildapplet, None, [
-		":Mac:scripts:EditPythonPrefs.py",
-		":Mac:scripts:BuildApplet.py",
-		":Mac:scripts:BuildApplication.py",
-		":Mac:scripts:ConfigurePython.py"
+		(":Mac:scripts:EditPythonPrefs.py", "EditPythonPrefs"),
+		(":Mac:scripts:BuildApplet.py", "BuildApplet"),
+		(":Mac:scripts:BuildApplication.py", "BuildApplication"),
+		(":Mac:scripts:ConfigurePython.py", "ConfigurePython"),
+		(":Mac:Tools:IDE:PythonIDE.py", "Python IDE"),
 	]),
 }
 
