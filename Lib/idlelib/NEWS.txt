@@ -1,6 +1,11 @@
 What's New in IDLE 1.0.5rc1?
 ============================
 
+*Release date: 08-Feb-2005*
+
+What's New in IDLE 1.0.5rc1?
+============================
+
 *Release date: 26-Jan-2005*
 
 - On OpenBSD, terminating IDLE with ctrl-c from the command line caused a
