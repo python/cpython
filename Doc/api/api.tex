@@ -4539,14 +4539,14 @@ discussion of this macro.  It is a no-op when thread support is
 disabled at compile time.
 \end{csimplemacrodesc}
 
-\begin{csimplemacrodesc}{Py_BEGIN_BLOCK_THREADS}
+\begin{csimplemacrodesc}{Py_BLOCK_THREADS}
 This macro expands to \samp{PyEval_RestoreThread(_save);} i.e. it
 is equivalent to \code{Py_END_ALLOW_THREADS} without the closing
 brace.  It is a no-op when thread support is disabled at compile
 time.
 \end{csimplemacrodesc}
 
-\begin{csimplemacrodesc}{Py_BEGIN_UNBLOCK_THREADS}
+\begin{csimplemacrodesc}{Py_UNBLOCK_THREADS}
 This macro expands to \samp{_save = PyEval_SaveThread();} i.e. it is
 equivalent to \code{Py_BEGIN_ALLOW_THREADS} without the opening brace
 and variable declaration.  It is a no-op when thread support is
