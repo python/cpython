@@ -163,8 +163,8 @@ LIBFILES = lib.tex \
 
 # Library document
 lib.dvi: modindex.py indfix.py $(LIBFILES)
-	echo '\begin{theindex}\end{theindex}' >$*.ind
-	echo '\begin{theindex}\label{modindex}\end{theindex}' >modules.ind
+	echo '\\''begin{theindex}\end{theindex}' >$*.ind
+	echo '\\''begin{theindex}\label{modindex}\end{theindex}' >modules.ind
 	$(LATEX) $*
 	./modindex.py modules.idx
 	./fix_hack $*.idx
@@ -180,7 +180,7 @@ tut.dvi: tut.tex
 # Extending & Embedding, Python/C API documents.
 # Done this way to avoid repeated command sets.
 .tex.dvi:
-	echo '\begin{theindex}\end{theindex}' >$*.ind
+	echo '\\''begin{theindex}\end{theindex}' >$*.ind
 	$(LATEX) $*
 	./fix_hack $*.idx
 	$(MAKEINDEX) $*.idx
