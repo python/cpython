@@ -347,7 +347,7 @@ class AutoIndent:
 
     def comment_region_event(self, event):
         head, tail, chars, lines = self.get_region()
-        for pos in range(len(lines)):
+        for pos in range(len(lines) - 1):
             line = lines[pos]
             lines[pos] = '##' + line
         self.set_region(head, tail, chars, lines)
