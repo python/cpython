@@ -295,15 +295,17 @@ def compileaete(aete, resinfo, fname):
 	
 	# Generate property dicts and element dicts for all types declared in this module
 	fp.write("def getbaseclasses(v):\n")
-	fp.write("\tif hasattr(v, '_superclassnames'):\n")
+	fp.write("\tif hasattr(v, '_superclassnames') and v._superclassnames:\n")
 	fp.write("\t\tv._propdict = {}\n")
 	fp.write("\t\tv._elemdict = {}\n")
 	fp.write("\t\tfor superclass in v._superclassnames:\n")
-	fp.write("\t\t\tgetbaseclasses(superclass)\n")
-	fp.write("\t\t\tv._propdict.update(getattr(eval(superclass), '_privpropdict'))\n")
-	fp.write("\t\t\tv._elemdict.update(getattr(eval(superclass), '_privelemdict'))\n")
+##	fp.write("\t\t\tgetbaseclasses(superclass)\n")
+	fp.write("\t\t\tv._propdict.update(getattr(eval(superclass), '_privpropdict', {}))\n")
+	fp.write("\t\t\tv._elemdict.update(getattr(eval(superclass), '_privelemdict', {}))\n")
 	fp.write("\t\tv._propdict.update(v._privpropdict)\n")
 	fp.write("\t\tv._elemdict.update(v._privelemdict)\n")
+	fp.write("\t\tv._superclassnames = None\n")
+	fp.write("\n")
 	fp.write("import StdSuites\n")
 	if allprecompinfo:
 		fp.write("\n#\n# Set property and element dictionaries now that all classes have been defined\n#\n")
@@ -474,7 +476,7 @@ def compileevent(fp, event, enumsneeded):
 	# Generate doc string (important, since it may be the only
 	# available documentation, due to our name-remaping)
 	#
-	fp.write('\t\t"""%s: %s\n'%(name, desc))
+	fp.write('\t\t"""%s: %s\n'%(ascii(name), ascii(desc)))
 	if has_arg:
 		fp.write("\t\tRequired argument: %s\n"%getdatadoc(accepts))
 	elif opt_arg:
@@ -800,7 +802,7 @@ class ObjectCompiler:
 	
 	def compileenumerator(self, item):
 		[name, code, desc] = item
-		self.fp.write("\t%s : %s,\t# %s\n" % (`identify(name)`, `code`, desc))
+		self.fp.write("\t%s : %s,\t# %s\n" % (`identify(name)`, `code`, ascii(desc)))
 		
 	def checkforenum(self, enum):
 		"""This enum code is used by an event. Make sure it's available"""
@@ -887,7 +889,7 @@ def identify(str):
 	- prepend _ if the result is a python keyword
 	"""
 	if not str:
-		return "_empty_ae_name"
+		return "empty_ae_name_"
 	rv = ''
 	ok = string.ascii_letters + '_'
 	ok2 = ok + string.digits
@@ -900,7 +902,7 @@ def identify(str):
 			rv = rv + '_%02.2x_'%ord(c)
 		ok = ok2
 	if keyword.iskeyword(rv):
-		rv = '_' + rv
+		rv = rv + '_'
 	return rv
 
 # Call the main program
