@@ -1,0 +1,5 @@
+
+Here we check that `__file__` is provided:
+
+  >>> type(__file__)
+  <type 'str'>

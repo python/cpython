@@ -2328,6 +2328,8 @@ def DocFileTest(path, module_relative=True, package=None,
                 globs=None, parser=DocTestParser(), **options):
     if globs is None:
         globs = {}
+    else:
+        globs = globs.copy()
 
     if package and not module_relative:
         raise ValueError("Package may only be specified for module-"
@@ -2337,6 +2339,8 @@ def DocFileTest(path, module_relative=True, package=None,
     if module_relative:
         package = _normalize_module(package)
         path = _module_relative_path(package, path)
+    if "__file__" not in globs:
+        globs["__file__"] = path
 
     # Find the file and read it.
     name = os.path.basename(path)

@@ -1107,6 +1107,10 @@ instances from text files and modules with doctests:
   defaults to a normal parser (i.e., \code{\class{DocTestParser}()}).
 
   \versionadded{2.4}
+
+  Starting in Python 2.5, the global \code{__file__} was added to the
+  globals provided to doctests loaded from a text file using
+  \function{DocFileSuite()}.
 \end{funcdesc}
 
 \begin{funcdesc}{DocTestSuite}{\optional{module}\optional{,
