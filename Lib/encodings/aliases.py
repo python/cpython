@@ -24,8 +24,8 @@ aliases = {
     'u16': 'utf_16',
     'utf_16be': 'utf_16_be',
     'utf_16le': 'utf_16_le',
-    'UnicodeBigUnmarked': 'utf_16_be',
-    'UnicodeLittleUnmarked': 'utf_16_le',
+    'unicodebigunmarked': 'utf_16_be',
+    'unicodelittleunmarked': 'utf_16_le',
 
     # ASCII
     'us_ascii': 'ascii',
@@ -47,11 +47,11 @@ aliases = {
     'iso_8859_9': 'iso8859_9',
 
     # Mac
-    'MacCentralEurope': 'mac_latin2',
-    'MacCyrillic': 'mac_cyrillic',
-    'MacGreek': 'mac_greek',
-    'MacIceland': 'mac_iceland',
-    'MacRoman': 'mac_roman',
-    'MacTurkish': 'mac_turkish',
+    'maccentraleurope': 'mac_latin2',
+    'maccyrillic': 'mac_cyrillic',
+    'macgreek': 'mac_greek',
+    'maciceland': 'mac_iceland',
+    'macroman': 'mac_roman',
+    'macturkish': 'mac_turkish',
 
 }
