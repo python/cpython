@@ -5,11 +5,6 @@ Generated from Moes:System folder:Extensions:Scripting Additions:Dialects:Englis
 AETE/AEUT resource version 1/0, language 0, script 0
 """
 
-import addpack
-addpack.addpack('Tools')
-addpack.addpack('bgen')
-addpack.addpack('ae')
-
 import aetools
 import MacOS
 

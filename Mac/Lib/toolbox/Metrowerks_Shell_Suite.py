@@ -5,11 +5,6 @@ Generated from Sap:Codewarrior7:Metrowerks CodeWarrior:CodeWarrior IDE 1.3
 AETE/AEUT resource version 1/0, language 0, script 0
 """
 
-import addpack
-addpack.addpack('Tools')
-addpack.addpack('bgen')
-addpack.addpack('ae')
-
 import aetools
 import MacOS
 
