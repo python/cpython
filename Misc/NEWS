@@ -12,6 +12,8 @@ What's New in Python 2.3 alpha 2?
 Core and builtins
 -----------------
 
+- filter returns now Unicode results for Unicode arguments.
+
 - raw_input can now return Unicode objects.
 
 - List objects' sort() method now accepts None as the comparison function.

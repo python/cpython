@@ -365,6 +365,12 @@ class BuiltinTest(unittest.TestCase):
             def __getitem__(self, index):
                 raise ValueError
         self.assertRaises(ValueError, filter, lambda x: x >="3", badstr("1234"))
+        if have_unicode:
+            # test biltinmodule.c::filterstring()
+            self.assertEqual(filter(None, unicode("12")), unicode("12"))
+            self.assertEqual(filter(lambda x: x>="3", unicode("1234")), unicode("34"))
+            self.assertRaises(TypeError, filter, 42, unicode("12"))
+            self.assertRaises(ValueError, filter, lambda x: x >="3", badstr(unicode("1234")))
 
     def test_float(self):
         self.assertEqual(float(3.14), 3.14)
