@@ -136,6 +136,16 @@ regression test case, though there are some general rules:
       completion print) to indicate the failure, but proceed instead of
       raising TestFailed.
 
+    * Use "assert" sparingly, if at all.  It's usually better to just print
+      what you got, and rely on regrtest's got-vs-expected comparison to
+      catch deviations from what you expect.  assert statements aren't
+      executed at all when regrtest is run in -O mode; and, because they
+      cause the test to stop immediately, can lead to a long & tedious
+      test-fix, test-fix, test-fix, ... cycle when things are badly broken
+      (and note that "badly broken" often includes running the test suite
+      for the first time on new platforms or under new implementations of
+      the language).
+
 
 Miscellaneous
 
@@ -157,9 +167,35 @@ provides the following useful objects:
       modules use it.  Search for "verbose" in the test_*.py files to see
       lots of examples.
 
+    * use_large_resources - true iff tests requiring large time or space
+      should be run.
+
     * fcmp(x,y) - you can call this function to compare two floating point
       numbers when you expect them to only be approximately equal withing a
       fuzz factor (test_support.FUZZ, which defaults to 1e-6).
+
+NOTE:  Always import something from test_support like so:
+
+    from test_support import verbose
+
+or like so:
+
+    import test_support
+    ... use test_support.verbose in the code ...
+
+Never import anything from test_support like this:
+
+    from test.test_support import verbose
+
+"test" is a package already, so can refer to modules it contains without
+"test." qualification.  If you do an explicit "test.xxx" qualification, that
+can fool Python into believing test.xxx is a module distinct from the xxx
+in the current package, and you can end up importing two distinct copies of
+xxx.  This is especially bad if xxx=test_support, as regrtest.py can (and
+routinely does) overwrite its "verbose" and "use_large_resources"
+attributes:  if you get a second copy of test_support loaded, it may not
+have the same values for those as regrtest intended.
+
 
 Python and C statement coverage results are currently available at
 
