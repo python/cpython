@@ -17,6 +17,10 @@ class Debugger(bdb.Bdb):
         bdb.Bdb.__init__(self)
         self.pyshell = pyshell
         self.make_gui()
+    
+    def canonic(self, filename):
+        # Canonicalize filename -- called by Bdb
+        return os.path.normcase(os.path.abspath(filename))
 
     def close(self, event=None):
         if self.interacting:
