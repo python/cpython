@@ -615,7 +615,7 @@ PARA_LEVEL_ELEMENTS = (
 
 PARA_LEVEL_PRECEEDERS = (
     "setindexsubitem", "author",
-    "stindex", "obindex", "COMMENT", "label", "input", "title",
+    "stindex", "obindex", "COMMENT", "label", "xi:include", "title",
     "versionadded", "versionchanged", "declaremodule", "modulesynopsis",
     "moduleauthor", "indexterm", "leader",
     )
