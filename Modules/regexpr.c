@@ -13,6 +13,7 @@ software is provided "as is" without express or implied warranty.
 
 Created: Thu Sep 26 17:14:05 1991 ylo
 Last modified: Mon Nov  4 17:06:48 1991 ylo
+Ported to Think C: 19 Jan 1992 guido@cwi.nl
 
 This code draws many ideas from the regular expression packages by
 Henry Spencer of the University of Toronto and Richard Stallman of the
@@ -25,13 +26,21 @@ $Header$
 
 */
 
+#include "PROTO.h" /* For PROTO macro --Guido */
+
 #include <stdio.h>
 #include <assert.h>
 #include "regexpr.h"
 
+#ifdef THINK_C
+/* Think C on the Mac really needs these headers... --Guido */
+#include <stdlib.h>
+#include <string.h>
+#else
 char *malloc();
 void free();
 char *realloc();
+#endif
 
 #define MACRO_BEGIN do {
 #define MACRO_END } while (0)
@@ -136,6 +145,7 @@ static char re_syntax_table[256];
 
 #endif /* emacs */
 
+static void re_compile_initialize PROTO((void));
 static void re_compile_initialize()
 {
   int a;
@@ -244,6 +254,7 @@ int syntax;
   return ret;
 }
 
+static int hex_char_to_decimal PROTO((int));
 static int hex_char_to_decimal(ch)
 int ch;
 {
@@ -752,6 +763,8 @@ regexp_t bufp;
 #undef SETBIT
 #undef SET_FIELDS
 
+static void re_compile_fastmap_aux
+	PROTO((char *, int, char *, char *, char *));
 static void re_compile_fastmap_aux(code, pos, visited, can_be_null, fastmap)
 char *code, *visited, *can_be_null, *fastmap;
 int pos;
@@ -848,6 +861,7 @@ int pos;
       }
 }
 
+static int re_do_compile_fastmap PROTO((char *, int, int, char *, char *));
 static int re_do_compile_fastmap(buffer, used, pos, can_be_null, fastmap)
 char *buffer, *fastmap, *can_be_null;
 int used, pos;
@@ -1328,7 +1342,7 @@ regexp_registers_t regs;
 	  /*NOTREACHED*/
 	}
     }
-#if 0 /* This line is never reached */
+#if 0 /* This line is never reached --Guido */
   abort();
 #endif
   /*NOTREACHED*/
@@ -1396,7 +1410,6 @@ regexp_registers_t regs;
     }
   else
     dir = 1;
-  /* range--; /* Bugfix by Guido */
   if (anchor == 2)
     if (pos != 0)
       return -1;
