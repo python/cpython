@@ -249,6 +249,7 @@ tarhtml:
 # - useful results: .dvi, .ps, .texi, .info
 clean:	l2hclean
 	rm -f @* *~ *.aux *.idx *.ilg *.ind *.log *.toc *.blg *.bbl *.pyc
+	rm -f *.texi *.info*
 	rm -f *.bak *.orig
 
 l2hclean:
