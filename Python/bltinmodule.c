@@ -47,14 +47,10 @@ builtin___import__(self, args)
 	object *args;
 {
 	char *name;
-	object *m;
 
 	if (!newgetargs(args, "s:__import__", &name))
 		return NULL;
-	m = import_module(name);
-	XINCREF(m);
-
-	return m;
+	return import_module(name);
 }
 
 

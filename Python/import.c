@@ -110,8 +110,8 @@ get_modules()
 /* Get the module object corresponding to a module name.
    First check the modules dictionary if there's one there,
    if not, create a new one and insert in in the modules dictionary.
-   Because the former action is most common, this does not return a
-   'new' reference! */
+   Because the former action is most common, THIS DOES NOT RETURN A
+   'NEW' REFERENCE! */
 
 object *
 add_module(name)
@@ -135,7 +135,8 @@ add_module(name)
 }
 
 
-/* Execute a code object in a module and return its module object */
+/* Execute a code object in a module and return the module object
+   WITH INCREMENTED REFERENCE COUNT */
 
 static object *
 exec_code_module(name, co)
@@ -247,7 +248,7 @@ read_compiled_module(fp)
 
 
 /* Load a module from a compiled file, execute it, and return its
-   module object */
+   module object WITH INCREMENTED REFERENCE COUNT */
 
 static object *
 load_compiled_module(name, cpathname, fp)
@@ -344,8 +345,8 @@ write_compiled_module(co, cpathname, mtime)
 
 
 /* Load a source module from a given file and return its module
-   object.  If there's a matching byte-compiled file, use that
-   instead. */
+   object WITH INCREMENTED REFERENCE COUNT.  If there's a matching
+   byte-compiled file, use that instead. */
 
 static object *
 load_source_module(name, pathname, fp)
@@ -452,7 +453,7 @@ find_module(name, path, buf, buflen, p_fp)
 
 
 /* Load an external module using the default search path and return
-   its module object */
+   its module object WITH INCREMENTED REFERENCE COUNT */
 
 static object *
 load_module(name)
@@ -461,7 +462,7 @@ load_module(name)
 	char buf[MAXPATHLEN+1];
 	struct filedescr *fdp;
 	FILE *fp = NULL;
-	object *m = NULL;
+	object *m;
 
 	fdp = find_module(name, (object *)NULL, buf, MAXPATHLEN+1, &fp);
 	if (fdp == NULL)
@@ -484,6 +485,7 @@ load_module(name)
 	default:
 		err_setstr(SystemError,
 			   "find_module returned unexpected result");
+		m = NULL;
 
 	}
 	fclose(fp);
@@ -556,12 +558,15 @@ init_frozen(name)
 	}
 	m = exec_code_module(name, (codeobject *)co);
 	DECREF(co);
-	return m == NULL ? -1 : 1;
+	if (m == NULL)
+		return -1;
+	DECREF(m);
+	return 1;
 }
 
 
 /* Import a module, either built-in, frozen, or external, and return
-   its module object */
+   its module object WITH INCREMENTED REFERENCE COUNT */
 
 object *
 import_module(name)
@@ -569,7 +574,10 @@ import_module(name)
 {
 	object *m;
 
-	if ((m = dictlookup(import_modules, name)) == NULL) {
+	if ((m = dictlookup(import_modules, name)) != NULL) {
+		INCREF(m);
+	}
+	else {
 		int i;
 		if ((i = init_builtin(name)) || (i = init_frozen(name))) {
 			if (i < 0)
@@ -579,6 +587,8 @@ import_module(name)
 			        err_setstr(SystemError,
 				 "built-in module not initialized properly");
 			}
+			else
+				INCREF(m);
 		}
 		else
 			m = load_module(name);
@@ -613,10 +623,10 @@ reload_module(m)
 	if ((i = init_builtin(name)) || (i = init_frozen(name))) {
 		if (i < 0)
 			return NULL;
+		INCREF(m);
 	}
 	else
 		m = load_module(name);
-	XINCREF(m);
 	return m;
 }
 
