@@ -114,6 +114,33 @@ class CommonTest(unittest.TestCase):
         self.checkraises(TypeError, 'hello', 'count')
         self.checkraises(TypeError, 'hello', 'count', 42)
 
+        # For a variety of combinations,
+        #    verify that str.count() matches an equivalent function
+        #    replacing all occurrences and then differencing the string lengths
+        charset = ['', 'a', 'b']
+        digits = 7
+        base = len(charset)
+        teststrings = set()
+        for i in xrange(base ** digits):
+            entry = []
+            for j in xrange(digits):
+                i, m = divmod(i, base)
+                entry.append(charset[m])
+            teststrings.add(''.join(entry))
+        teststrings = list(teststrings)
+        for i in teststrings:
+            i = self.fixtype(i)
+            n = len(i)
+            for j in teststrings:
+                r1 = i.count(j)
+                if j:
+                    r2, rem = divmod(n - len(i.replace(j, '')), len(j))
+                else:
+                    r2, rem = len(i)+1, 0
+                if rem or r1 != r2:
+                    self.assertEqual(rem, 0)
+                    self.assertEqual(r1, r2)
+
     def test_find(self):
         self.checkequal(0, 'abcdefghiabc', 'find', 'abc')
         self.checkequal(9, 'abcdefghiabc', 'find', 'abc', 1)
@@ -135,6 +162,7 @@ class CommonTest(unittest.TestCase):
                 i, m = divmod(i, base)
                 entry.append(charset[m])
             teststrings.add(''.join(entry))
+        teststrings = list(teststrings)
         for i in teststrings:
             i = self.fixtype(i)
             for j in teststrings:
