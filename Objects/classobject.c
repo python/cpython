@@ -781,6 +781,25 @@ instance_repr(PyInstanceObject *inst)
 	return res;
 }
 
+static PyObject *
+instance_str(PyInstanceObject *inst)
+{
+	PyObject *func;
+	PyObject *res;
+	static PyObject *strstr;
+
+	if (strstr == NULL)
+		strstr = PyString_InternFromString("__str__");
+	func = instance_getattr(inst, strstr);
+	if (func == NULL) {
+		PyErr_Clear();
+		return instance_repr(inst);
+	}
+	res = PyEval_CallObject(func, (PyObject *)NULL);
+	Py_DECREF(func);
+	return res;
+}
+
 static long
 instance_hash(PyInstanceObject *inst)
 {
@@ -1766,7 +1785,7 @@ PyTypeObject PyInstance_Type = {
 	&instance_as_mapping,			/* tp_as_mapping */
 	(hashfunc)instance_hash,		/* tp_hash */
 	0,					/* tp_call */
-	0,					/* tp_str */
+	(reprfunc)instance_str,			/* tp_str */
 	(getattrofunc)instance_getattr,		/* tp_getattro */
 	(setattrofunc)instance_setattr,		/* tp_setattro */
 	0,					/* tp_as_buffer */

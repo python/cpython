@@ -188,24 +188,17 @@ PyObject_Print(PyObject *op, FILE *fp, int flags)
 			fprintf(fp, "<refcnt %u at %p>",
 				op->ob_refcnt, op);
 		else if (op->ob_type->tp_print == NULL) {
-			if (op->ob_type->tp_repr == NULL) {
-				fprintf(fp, "<%s object at %p>",
-					op->ob_type->tp_name, op);
-			}
+			PyObject *s;
+			if (flags & Py_PRINT_RAW)
+				s = PyObject_Str(op);
+			else
+				s = PyObject_Repr(op);
+			if (s == NULL)
+				ret = -1;
 			else {
-				PyObject *s;
-				if (flags & Py_PRINT_RAW)
-					s = PyObject_Str(op);
-				else
-					s = PyObject_Repr(op);
-				if (s == NULL)
-					ret = -1;
-				else {
-					ret = PyObject_Print(s, fp,
-							     Py_PRINT_RAW);
-				}
-				Py_XDECREF(s);
+				ret = PyObject_Print(s, fp, Py_PRINT_RAW);
 			}
+			Py_XDECREF(s);
 		}
 		else
 			ret = (*op->ob_type->tp_print)(op, fp, flags);
@@ -290,22 +283,14 @@ PyObject_Str(PyObject *v)
 	
 	if (v == NULL)
 		return PyString_FromString("<NULL>");
-	else if (PyString_Check(v)) {
+	if (PyString_Check(v)) {
 		Py_INCREF(v);
 		return v;
 	}
-	else if (v->ob_type->tp_str != NULL)
-		res = (*v->ob_type->tp_str)(v);
-	else {
-		PyObject *func;
-		if (!PyInstance_Check(v) ||
-		    (func = PyObject_GetAttrString(v, "__str__")) == NULL) {
-			PyErr_Clear();
-			return PyObject_Repr(v);
-		}
-		res = PyEval_CallObject(func, (PyObject *)NULL);
-		Py_DECREF(func);
-	}
+	if (v->ob_type->tp_str == NULL)
+		return PyObject_Repr(v);
+
+	res = (*v->ob_type->tp_str)(v);
 	if (res == NULL)
 		return NULL;
 	if (PyUnicode_Check(res)) {
