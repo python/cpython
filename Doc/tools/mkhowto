@@ -1,0 +1,444 @@
+#! /usr/bin/env python
+#  -*- Python -*-
+"""usage: %(program)s [options...] file ...
+
+Options specifying formats to build:
+    --html		HyperText Markup Language
+    --pdf		Portable Document Format (default)
+    --ps		PostScript
+    --dvi		'DeVice Indepentent' format from TeX
+    --text		ASCII text (requires lynx)
+
+    More than one output format may be specified, or --all.
+
+HTML options:
+    --address, -a	Specify an address for page footers.
+    --link		Specify the number of levels to include on each page.
+    --split, -s		Specify a section level for page splitting, default: %(max_split_depth)s.
+    --iconserver, -i	Specify location of icons (default: ../).
+
+Other options:
+    --a4		Format for A4 paper.
+    --letter		Format for US letter paper (the default).
+    --help, -H		Show this text.
+    --logging, -l	Log stdout and stderr to a file (*.how).
+    --debugging, -D	Echo commands as they are executed.
+    --keep, -k		Keep temporary files around.
+    --quiet, -q		Do not print command output to stdout.
+			(stderr is also lost,  sorry; see *.how for errors)
+"""
+
+import getopt
+import glob
+import os
+import shutil
+import string
+import sys
+import tempfile
+
+
+MYDIR = os.path.normpath(os.path.join(os.getcwd(), sys.path[0]))
+TOPDIR = os.path.normpath(os.path.join(MYDIR, os.pardir))
+
+ISTFILE = os.path.join(TOPDIR, "texinputs", "python.ist")
+NODE2LABEL_SCRIPT = os.path.join(MYDIR, "node2label.pl")
+L2H_INIT_FILE = os.path.join(TOPDIR, "perl", "l2hinit.perl")
+
+BIBTEX_BINARY = "bibtex"
+DVIPS_BINARY = "dvips"
+LATEX_BINARY = "latex"
+LATEX2HTML_BINARY = "latex2html"
+LYNX_BINARY = "lynx"
+MAKEINDEX_BINARY = "makeindex"
+PDFLATEX_BINARY = "pdflatex"
+PERL_BINARY = "perl"
+PYTHON_BINARY = "python"
+
+
+def usage(options):
+    print __doc__ % options
+
+def error(options, message, err=2):
+    sys.stdout = sys.stderr
+    print message
+    print
+    usage(options)
+    sys.exit(2)
+
+
+class Options:
+    program = os.path.basename(sys.argv[0])
+    #
+    address = ''
+    debugging = 0
+    discard_temps = 1
+    have_temps = 0
+    icon_server = None
+    logging = 0
+    max_link_depth = 3
+    max_split_depth = 6
+    paper = "letter"
+    quiet = 0
+    style_file = os.path.join(TOPDIR, "html", "style.css")
+    #
+    DEFAULT_FORMATS = ("pdf",)
+    ALL_FORMATS = ("dvi", "html", "pdf", "ps", "text")
+
+    def __init__(self):
+        self.config_files = []
+        self.formats = []
+
+    def __getitem__(self, key):
+        # This is used when formatting the usage message.
+        try:
+            return getattr(self, key)
+        except AttributeError:
+            raise KeyError, key
+
+    def parse(self, args):
+        opts, args = getopt.getopt(args, "Hi:a:s:lDkq",
+                                   ["all", "postscript", "help", "iconserver=",
+                                    "address=", "a4", "l2h-config=", "letter",
+                                    "link=", "split=", "logging", "debugging",
+                                    "keep", "quiet"] + list(self.ALL_FORMATS))
+        for opt, arg in opts:
+            if opt == "--all":
+                self.formats = list(self.ALL_FORMATS)
+            elif opt in ("-H", "--help"):
+                usage(self)
+                sys.exit()
+            elif opt == "--iconserver":
+                self.icon_server = arg
+            elif opt in ("-a", "--address"):
+                self.address = arg
+            elif opt == "--a4":
+                self.paper = "a4"
+            elif opt == "--letter":
+                self.paper = "letter"
+            elif opt == "--l2h-config":
+                self.config_files.append(arg)
+            elif opt == "--link":
+                self.max_link_depth = int(arg)
+            elif opt in ("-s", "--split"):
+                self.max_split_depth = int(arg)
+            elif opt in ("-l", "--logging"):
+                self.logging = self.logging + 1
+            elif opt in ("-D", "--debugging"):
+                self.debugging = self.debugging + 1
+            elif opt in ("-k", "--keep"):
+                self.discard_temps = 0
+            elif opt in ("-q", "--quiet"):
+                self.quiet = 1
+            #
+            # Format specifiers:
+            #
+            elif opt[2:] in self.ALL_FORMATS:
+                self.add_format(opt[2:])
+            elif opt == "--postscript":
+                # synonym for --ps
+                self.add_format("ps")
+        self.initialize()
+        #
+        # return the args to allow the caller access:
+        #
+        return args
+
+    def add_format(self, format):
+        """Add a format to the formats list if not present."""
+        if not format in self.formats:
+            self.formats.append(format)
+
+    def initialize(self):
+        """Complete initialization.  This is needed if parse() isn't used."""
+        # add the default format if no formats were specified:
+        if not self.formats:
+            self.formats = self.DEFAULT_FORMATS
+        # determine the base set of texinputs directories:
+        texinputs = string.split(os.environ.get("TEXINPUTS", ""), os.pathsep)
+        if not texinputs:
+            texinputs = ['']
+        self.base_texinputs = [
+            os.path.join(TOPDIR, "paper-" + self.paper),
+            os.path.join(TOPDIR, "texinputs"),
+            ] + texinputs
+
+
+class Job:
+    def __init__(self, options, path):
+        self.options = options
+        self.filedir, self.doc = split_pathname(path)
+        self.log_filename = self.doc + ".how"
+        if os.path.exists(self.log_filename):
+            os.unlink(self.log_filename)
+        if os.path.exists(self.doc + ".l2h"):
+            self.l2h_aux_init_file = tempfile.mktemp()
+        else:
+            self.l2h_aux_init_file = self.doc + ".l2h"
+        self.write_l2h_aux_init_file()
+
+    def build(self):
+        self.setup_texinputs()
+        formats = self.options.formats
+        if "dvi" in formats or "ps" in formats:
+            self.build_dvi()
+        if "pdf" in formats:
+            self.build_pdf()
+        if "ps" in formats:
+            self.build_ps()
+        if "html" in formats:
+            self.require_temps()
+            self.build_html(self.doc)
+            if self.options.icon_server == ".":
+                pattern = os.path.join(TOPDIR, "html", "icons", "*.gif")
+                for fn in glob.glob(pattern):
+                    new_fn = os.path.join(self.doc, os.path.basename(fn))
+                    shutil.copyfile(fn, new_fn)
+        if "text" in formats:
+            self.require_temps()
+            tempdir = self.doc
+            need_html = "html" not in formats
+            if self.options.max_split_depth != 1:
+                fp = open(self.l2h_aux_init_file, "a")
+                fp.write("# re-hack this file for --text:\n")
+                l2hoption(fp, "MAX_SPLIT_DEPTH", "1")
+                fp.write("1;\n")
+                fp.close()
+                tempdir = self.doc + "-temp-html"
+                need_html = 1
+            if need_html:
+                self.build_html(tempdir, max_split_depth=1)
+            self.build_text(tempdir)
+        if self.options.discard_temps:
+            self.cleanup()
+
+    def setup_texinputs(self):
+        texinputs = [self.filedir] + list(self.options.base_texinputs)
+        os.environ["TEXINPUTS"] = string.join(texinputs, os.pathsep)
+
+    __have_temps = 0
+    def build_aux(self, binary=None):
+        if binary is None:
+            binary = LATEX_BINARY
+        new_index(   "%s.ind" % self.doc, "genindex")
+        new_index("mod%s.ind" % self.doc, "modindex")
+        self.run("%s %s" % (binary, self.doc))
+        self.use_bibtex = check_for_bibtex(self.doc + ".aux")
+        self.__have_temps = 1
+
+    def build_dvi(self):
+        self.use_latex(LATEX_BINARY)
+
+    def build_pdf(self):
+        self.use_latex(PDFLATEX_BINARY)
+
+    def use_latex(self, binary):
+        self.require_temps(binary=binary)
+        if os.path.isfile("mod%s.idx" % self.doc):
+            self.run("%s mod%s.idx" % (MAKEINDEX_BINARY, self.doc))
+        if os.path.isfile(self.doc + ".idx"):
+            # call to Doc/tools/fix_hack omitted; doesn't appear necessary
+            self.run("%s %s.idx" % (MAKEINDEX_BINARY, self.doc))
+            import indfix
+            indfix.process(self.doc + ".ind")
+        if self.use_bibtex:
+            self.run("%s %s" % (BIBTEX_BINARY, self.doc))
+        synopsis_file = self.doc + ".syn"
+        if os.path.isfile(synopsis_file):
+            # impose uniq requirement on last line....
+            uniqify_module_table(synopsis_file)
+        self.run("%s %s" % (binary, self.doc))
+        if os.path.isfile("mod%s.idx" % self.doc):
+            self.run("%s -s %s mod%s.idx"
+                     % (MAKEINDEX_BINARY, ISTFILE, self.doc))
+        if os.path.isfile(self.doc + ".idx"):
+            self.run("%s -s %s %s.idx" % (MAKEINDEX_BINARY, ISTFILE, self.doc))
+        if os.path.isfile(self.doc + ".toc") and binary == PDFLATEX_BINARY:
+            import toc2bkm
+            toc2bkm.process(self.doc + ".toc", self.doc + ".bkm", "section")
+        if os.path.isfile(synopsis_file):
+            # impose uniq requirement on last line....
+            uniqify_module_table(synopsis_file)
+        if self.use_bibtex:
+            self.run("%s %s" % (BIBTEX_BINARY, self.doc))
+        self.run("%s %s" % (binary, self.doc))
+
+    def build_ps(self):
+        self.run("%s -N0 -o %s.ps %s" % (DVIPS_BINARY, self.doc, self.doc))
+
+    def build_html(self, builddir=None, max_split_depth=None):
+        if builddir is None:
+            builddir = self.doc
+        if max_split_depth is None:
+            max_split_depth = self.options.max_split_depth
+        texfile = None
+        for p in string.split(os.environ["TEXINPUTS"], os.pathsep):
+            fn = os.path.join(p, self.doc + ".tex")
+            if os.path.isfile(fn):
+                texfile = fn
+                break
+        if not texfile:
+            sys.stderr.write("Could not locate %s.tex; aborting.\n" % self.doc)
+            sys.exit(1)
+        # remove leading ./ (or equiv.); might avoid problems w/ dvips
+        if texfile[:2] == os.curdir + os.sep:
+            texfile = texfile[2:]
+        # build the command line and run LaTeX2HTML:
+        args = [LATEX2HTML_BINARY,
+                "-init_file", L2H_INIT_FILE,
+                "-init_file", self.l2h_aux_init_file,
+                "-dir", builddir,
+                texfile
+                ]
+        self.run(string.join(args))     # XXX need quoting!
+        # ... postprocess
+        shutil.copyfile(self.options.style_file,
+                        os.path.join(builddir, self.doc + ".css"))
+        if max_split_depth != 1:
+            pwd = os.getcwd()
+            try:
+                os.chdir(builddir)
+                self.run("%s %s *.html" % (PERL_BINARY, NODE2LABEL_SCRIPT))
+            finally:
+                os.chdir(pwd)
+
+    def build_text(self, tempdir=None):
+        if tempdir is None:
+            tempdir = self.doc
+        indexfile = os.path.join(tempdir, "index.html")
+        self.run("%s -nolist -dump %s >%s.txt"
+                 % (LYNX_BINARY, indexfile, self.doc))
+
+    def require_temps(self, binary=None):
+        if not self.__have_temps:
+            self.build_aux(binary=binary)
+
+    def write_l2h_aux_init_file(self):
+        fp = open(self.l2h_aux_init_file, "w")
+        fp.write("# auxillary init file for latex2html\n"
+                 "# generated by mkhowto\n"
+                 )
+        options = self.options
+        for fn in options.config_files:
+            fp.write(open(fn).read())
+            fp.write("\n"
+                     "\n"
+                     'print "\nInitializing from file: %s\";\n\n'
+                     % string_to_perl(fn))
+        l2hoption(fp, "ICONSERVER", options.icon_server)
+        l2hoption(fp, "ADDRESS", options.address)
+        l2hoption(fp, "MAX_LINK_DEPTH", options.max_link_depth)
+        l2hoption(fp, "MAX_SPLIT_DEPTH", options.max_split_depth)
+        fp.write("1;\n")
+        fp.close()
+
+    def cleanup(self):
+        self.__have_temps = 0
+        for pattern in ("%s.aux", "%s.log", "%s.out", "%s.toc", "%s.bkm",
+                        "%s.idx", "%s.ilg", "%s.ind", "%s.syn", "%s.pla",
+                        "%s.bbl", "%s.blg",
+                        "mod%s.idx", "mod%s.ind", "mod%s.ilg",
+                        ):
+            safe_unlink(pattern % self.doc)
+        for spec in ("IMG*", "*.pl", "WARNINGS", "index.dat", "modindex.dat"):
+            pattern = os.path.join(self.doc, spec)
+            map(safe_unlink, glob.glob(pattern))
+        if "dvi" not in self.options.formats:
+            safe_unlink(self.doc + ".dvi")
+        if os.path.isdir(self.doc + "-temp-html"):
+            shutil.rmtree(self.doc + "-temp-html", ignore_errors=1)
+        if not self.options.logging:
+            os.unlink(self.log_filename)
+        if not self.options.debugging:
+            os.unlink(self.l2h_aux_init_file)
+
+    def run(self, command):
+        if not self.options.quiet:
+            print "+++", command
+        fp = open(self.log_filename, "a")
+        fp.write("+++ %s\n" % command)
+        fp.close()
+        rc = os.system("(%s) >>%s 2>&1" % (command, self.log_filename))
+        if rc:
+            sys.stderr.write(
+                "Session transcript and error messages are in %s.\n"
+                % self.log_filename)
+            sys.exit(rc)
+
+
+def safe_unlink(path):
+    try:
+        os.unlink(path)
+    except os.error:
+        pass
+
+
+def split_pathname(pathname):
+    pathname = os.path.normpath(os.path.join(os.getcwd(), pathname))
+    dirname, basename = os.path.split(pathname)
+    if basename[-4:] == ".tex":
+        basename = basename[:-4]
+    return dirname, basename
+
+
+def main():
+    options = Options()
+    try:
+        args = options.parse(sys.argv[1:])
+    except getopt.error, msg:
+        error(options, msg)
+    if not args:
+        # attempt to locate single .tex file in current directory:
+        args = glob.glob("*.tex")
+        if not args:
+            error(options, "No file to process.")
+        if len(args) > 1:
+            error(options, "Could not deduce which files should be processed.")
+    #
+    # parameters are processed, let's go!
+    #
+    for path in args:
+        Job(options, path).build()
+
+
+def l2hoption(fp, option, value):
+    if value:
+        fp.write('$%s = "%s";\n' % (option, string_to_perl(str(value))))
+
+
+_to_perl = {}
+for c in map(chr, range(1, 256)):
+    _to_perl[c] = c
+_to_perl["@"] = "\\@"
+_to_perl["$"] = "\\$"
+_to_perl['"'] = '\\"'
+
+def string_to_perl(s):
+    return string.join(map(_to_perl.get, s), '')
+
+
+def check_for_bibtex(filename):
+    fp = open(filename)
+    pos = string.find(fp.read(), r"\bibdata{")
+    fp.close()
+    return pos >= 0
+
+def uniqify_module_table(filename):
+    lines = open(filename).readlines()
+    if len(lines) > 1:
+        if lines[-1] == lines[-2]:
+            del lines[-1]
+    open(filename, "w").writelines(lines)
+
+
+def new_index(filename, label="genindex"):
+    fp = open(filename, "w")
+    fp.write(r"""\
+\begin{theindex}
+\label{%s}
+\end{theindex}
+""" % label)
+    fp.close()
+
+
+if __name__ == "__main__":
+    main()
