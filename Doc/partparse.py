@@ -1063,6 +1063,9 @@ def do_funcdesc(length, buf, pp, i):
     elif len(idxsi) == 3 and idxsi[:2] == ['in', 'module']:
 	command = 'deffn'
 	cat_class = 'function of ' + string.join(idxsi[1:])
+    elif len(idxsi) > 3 and idxsi[:2] == ['in', 'modules']:
+	command = 'deffn'
+	cat_class = 'function of ' + string.join(idxsi[1:])
 
     if not command:
 	raise error, 'don\'t know what to do with indexsubitem ' + `idxsi`
@@ -1110,9 +1113,11 @@ def do_excdesc(length, buf, pp, i):
 	command = 'defcv'
 	cat_class = 'exception'
 	class_class = string.join(idxsi[2:])
-
-
-    if not command:
+    elif idxsi == ['built-in', 'exception', 'base', 'class']:
+	command = 'defcv'
+	cat_class = 'exception'
+	class_class = "exception base class"
+    else:
 	raise error, 'don\'t know what to do with indexsubitem ' + `idxsi`
 
     ch.chtype = chunk_type[CSLINE]
@@ -1174,6 +1179,31 @@ def do_datadesc(length, buf, pp, i):
     pp.insert(i, chunk(GROUP, wh, cslinearg))
     i, length = i+1, length+1
     hist.command = command
+    return length, i
+
+
+def do_opcodedesc(length, buf, pp, i):
+    startpoint = i-1
+    ch = pp[startpoint]
+    wh = ch.where
+    length, newi = getnextarg(length, buf, pp, i)
+    dataname = chunk(GROUP, wh, pp[i:newi])
+    del pp[i:newi]
+    length = length - (newi-i)
+
+    ch.chtype = chunk_type[CSLINE]
+    ch.data = "defcv"
+
+    cslinearg = [chunk(GROUP, wh, [chunk(PLAIN, wh, "data")]),
+		 chunk(PLAIN, wh, ' '),
+		 chunk(GROUP, wh, [chunk(PLAIN, wh, "byte code instruction")]),
+		 chunk(PLAIN, wh, ' '),
+		 dataname,
+		 ]
+
+    pp.insert(i, chunk(GROUP, wh, cslinearg))
+    i, length = i+1, length+1
+    hist.command = ch.data
     return length, i
 
 
@@ -1378,6 +1408,22 @@ def changeit(buf, pp):
 		i, length = i+1, length+1
 		length, i = do_datadesc(length, buf, pp, i)
 
+	    elif envname == 'opcodedesc':
+		pp.insert(i, chunk(PLAIN, ch.where, ''))
+		i, length = i+1, length+1
+		length, i = do_opcodedesc(length, buf, pp, i)
+
+	    elif envname == 'seealso':
+		chunks = [chunk(ENDLINE, ch.where, "\n"),
+			  chunk(CSNAME, ch.where, "b"),
+			  chunk(GROUP, ch.where, [
+			      chunk(PLAIN, ch.where, "See also: ")]),
+			  chunk(ENDLINE, ch.where, "\n"),
+			  chunk(ENDLINE, ch.where, "\n")]
+		pp[i-1:i] = chunks
+		length = length + len(chunks) - 1
+		i = i + len(chunks) - 1
+
 	    else:
 		print 'WARNING: don\'t know what to do with env ' + `envname`
 
@@ -1430,8 +1476,12 @@ def changeit(buf, pp):
 			  chunk(GROUP, ch.where, [
 			  chunk(PLAIN, ch.where, hist.command)])]
 		i, length = i+2, length+2
+
+	    elif envname in ('seealso', 'opcodedesc'):
+		pass
+
 	    else:
-		print 'WARNING: ending env ' + `envname` + 'has no actions'
+		print 'WARNING: ending env %s has no actions' % `envname`
 
 	elif ch.chtype == chunk_type[CSNAME]:
 	    # control name transformations
@@ -1753,7 +1803,7 @@ def changeit(buf, pp):
 		pp.insert(i, chunk(GROUP, ch.where, ingroupch))
 		length, i = length+1, i+1
 
-	    elif s_buf_data == 'bimodindex':
+	    elif s_buf_data in ('bimodindex', 'refbimodindex'):
 		ch.chtype = chunk_type[CSLINE]
 		ch.data = 'pindex'
 		length, newi = getnextarg(length, buf, pp, i)
@@ -1770,10 +1820,27 @@ def changeit(buf, pp):
 		pp.insert(i, chunk(GROUP, ch.where, ingroupch))
 		length, i = length+1, i+1
 
+	    elif s_buf_data == 'refmodindex':
+		ch.chtype = chunk_type[CSLINE]
+		ch.data = 'pindex'
+		length, newi = getnextarg(length, buf, pp, i)
+		ingroupch = pp[i:newi]
+		del pp[i:newi]
+		length = length - (newi-i)
+
+## 		ingroupch.append(chunk(PLAIN, ch.where, ' '))
+## 		ingroupch.append(chunk(CSNAME, ch.where, 'r'))
+## 		ingroupch.append(chunk(GROUP, ch.where, [
+## 			  chunk(PLAIN, ch.where,
+## 			  '(built-in)')]))
+
+		pp.insert(i, chunk(GROUP, ch.where, ingroupch))
+		length, i = length+1, i+1
+
 	    elif s_buf_data == 'sectcode':
 		ch.data = 'code'
 
-	    elif s_buf_data == 'stmodindex':
+	    elif s_buf_data in ('stmodindex', 'refstmodindex'):
 		ch.chtype = chunk_type[CSLINE]
 		# use the program index as module index
 		ch.data = 'pindex'
@@ -1791,8 +1858,27 @@ def changeit(buf, pp):
 		pp.insert(i, chunk(GROUP, ch.where, ingroupch))
 		length, i = length+1, i+1
 
-	    elif s_buf_data == 'stindex':
+	    elif s_buf_data in ('stmodindex', 'refstmodindex'):
+		ch.chtype = chunk_type[CSLINE]
+		# use the program index as module index
+		ch.data = 'pindex'
+		length, newi = getnextarg(length, buf, pp, i)
+		ingroupch = pp[i:newi]
+		del pp[i:newi]
+		length = length - (newi-i)
+
+		ingroupch.append(chunk(PLAIN, ch.where, ' '))
+		ingroupch.append(chunk(CSNAME, ch.where, 'r'))
+		ingroupch.append(chunk(GROUP, ch.where, [
+			  chunk(PLAIN, ch.where,
+			  '(standard)')]))
+
+		pp.insert(i, chunk(GROUP, ch.where, ingroupch))
+		length, i = length+1, i+1
+
+	    elif s_buf_data in ('stindex', 'kwindex'):
 		# XXX must actually go to newindex st
+		what = (s_buf_data[:2] == "st") and "statement" or "keyword"
 		wh = ch.where
 		ch.chtype = chunk_type[CSLINE]
 		ch.data = 'cindex'
@@ -1804,7 +1890,7 @@ def changeit(buf, pp):
 		length = length - (newi-i)
 
 		t = ingroupch[:]
-		t.append(chunk(PLAIN, wh, ' statement'))
+		t.append(chunk(PLAIN, wh, ' ' + what))
 
 		pp.insert(i, chunk(GROUP, wh, t))
 		i, length = i+1, length+1
@@ -1813,7 +1899,7 @@ def changeit(buf, pp):
 		i, length = i+1, length+1
 
 		t = ingroupch[:]
-		t.insert(0, chunk(PLAIN, wh, 'statement, '))
+		t.insert(0, chunk(PLAIN, wh, what + ', '))
 
 		pp.insert(i, chunk(GROUP, wh, t))
 		i, length = i+1, length+1
@@ -1947,8 +2033,28 @@ def changeit(buf, pp):
 ## 		ch.data = flattext(buf, [ch])
 ## 		ch.chtype = chunk_type[PLAIN]
 
+	    elif s_buf_data == 'seemodule':
+		ch.data = "code"
+		data = pp[i+1].data
+		data.insert(0, chunk(PLAIN, ch.where, " ("))
+		data.append(chunk(PLAIN, ch.where, ")"))
+		pp[i+1:i+2] = data
+		length = length + len(data) - 1
+
+	    elif s_buf_data == 'seetext':
+		data = pp[i].data
+		data.insert(0, chunk(ENDLINE, ch.where, "\n"))
+		pp[i-1:i+1] = data
+		i = i - 1
+		length = length + len(data) - 2
+
 	    elif s_buf_data in ('noindent', 'indexsubitem'):
 		pass
+
+	    elif s_buf_data == 'label':
+		del pp[i-1:i+1]
+		length = length - 2
+		i = i - 1
 
 	    else:
 		print "don't know what to do with keyword " + s_buf_data
