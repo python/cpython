@@ -1220,8 +1220,10 @@ PySequence_Tuple(PyObject *v)
 				n += 10;
 			else
 				n += 100;
-			if (_PyTuple_Resize(&result, n, 0) != 0)
+			if (_PyTuple_Resize(&result, n, 0) != 0) {
+				Py_DECREF(item);
 				goto Fail;
+			}
 		}
 		PyTuple_SET_ITEM(result, j, item);
 	}
