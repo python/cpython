@@ -5,7 +5,7 @@ from test_support import *
 print 'oct'
 if oct(100) != '0144': raise TestFailed, 'oct(100)'
 if oct(100L) != '0144L': raise TestFailed, 'oct(100L)'
-if oct(-100) != '-0144': raise TestFailed, 'oct(-100)'
+if oct(-100) != '037777777634': raise TestFailed, 'oct(-100)'
 if oct(-100L) != '-0144L': raise TestFailed, 'oct(-100L)'
 
 print 'open'
