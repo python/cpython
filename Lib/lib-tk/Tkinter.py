@@ -964,7 +964,7 @@ class Canvas(Widget):
 			self._w, 'canvasy', screeny, gridspacing))
 	def coords(self, *args):
 		return map(self.tk.getdouble,
-                           self.tk.splitlist(self._do('coords', args))
+                           self.tk.splitlist(self._do('coords', args)))
 	def _create(self, itemType, args, kw): # Args: (val, val, ..., cnf={})
 		args = _flatten(args)
 		cnf = args[-1]
