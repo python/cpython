@@ -1,7 +1,10 @@
 """Module symbol-table generator"""
 
 from compiler import ast
+from compiler.consts import SC_LOCAL, SC_GLOBAL, SC_FREE, SC_CELL, SC_UNKNOWN
 import types
+
+import sys
 
 MANGLE_LEN = 256
 
@@ -14,7 +17,12 @@ class Scope:
         self.uses = {}
         self.globals = {}
         self.params = {}
+        self.frees = {}
+        self.cells = {}
         self.children = []
+        # nested is true if the class could contain free variables,
+        # i.e. if it is nested within another function.
+        self.nested = None
         self.klass = None
         if klass is not None:
             for i in range(len(klass)):
@@ -70,13 +78,112 @@ class Scope:
     def get_children(self):
         return self.children
 
+    def DEBUG(self):
+        return
+        print >> sys.stderr, self.name, self.nested and "nested" or ""
+        print >> sys.stderr, "\tglobals: ", self.globals
+        print >> sys.stderr, "\tcells: ", self.cells
+        print >> sys.stderr, "\tdefs: ", self.defs
+        print >> sys.stderr, "\tuses: ", self.uses
+        print >> sys.stderr, "\tfrees:", self.frees
+
+    def check_name(self, name):
+        """Return scope of name.
+
+        The scope of a name could be LOCAL, GLOBAL, FREE, or CELL.
+        """
+        if self.globals.has_key(name):
+            return SC_GLOBAL
+        if self.cells.has_key(name):
+            return SC_CELL
+        if self.defs.has_key(name):
+            return SC_LOCAL
+        if self.nested and (self.frees.has_key(name) or
+                            self.uses.has_key(name)):
+            return SC_FREE
+        if self.nested:
+            return SC_UNKNOWN
+        else:
+            return SC_GLOBAL
+
+    def get_free_vars(self):
+        if not self.nested:
+            return ()
+        free = {}
+        free.update(self.frees)
+        for name in self.uses.keys():
+            if not (self.defs.has_key(name) or
+                    self.globals.has_key(name)):
+                free[name] = 1
+        return free.keys()
+
+    def handle_children(self):
+        for child in self.children:
+            frees = child.get_free_vars()
+            globals = self.add_frees(frees)
+            for name in globals:
+                child.force_global(name)
+
+    def force_global(self, name):
+        """Force name to be global in scope.
+
+        Some child of the current node had a free reference to name.
+        When the child was processed, it was labelled a free
+        variable.  Now that all its enclosing scope have been
+        processed, the name is known to be a global or builtin.  So
+        walk back down the child chain and set the name to be global
+        rather than free.
+
+        Be careful to stop if a child does not think the name is
+        free. 
+        """
+        self.globals[name] = 1
+        if self.frees.has_key(name):
+            del self.frees[name]
+        for child in self.children:
+            if child.check_name(name) == SC_FREE:
+                child.force_global(name)
+
+    def add_frees(self, names):
+        """Process list of free vars from nested scope.
+
+        Returns a list of names that are either 1) declared global in the
+        parent or 2) undefined in a top-level parent.  In either case,
+        the nested scope should treat them as globals.
+        """
+        child_globals = []
+        for name in names:
+            sc = self.check_name(name)
+            if self.nested:
+                if sc == SC_UNKNOWN or sc == SC_FREE \
+                   or isinstance(self, ClassScope):
+                    self.frees[name] = 1
+                elif sc == SC_GLOBAL:
+                    child_globals.append(name)
+                elif isinstance(self, FunctionScope) and sc == SC_LOCAL:
+                    self.cells[name] = 1
+                else:
+                    child_globals.append(name)
+            else:
+                if sc == SC_LOCAL:
+                    self.cells[name] = 1
+                else:
+                    child_globals.append(name)
+        return child_globals
+
+    def get_cell_vars(self):
+        return self.cells.keys()
+
 class ModuleScope(Scope):
     __super_init = Scope.__init__
     
     def __init__(self):
         self.__super_init("global", self)
 
-class LambdaScope(Scope):
+class FunctionScope(Scope):
+    pass
+
+class LambdaScope(FunctionScope):
     __super_init = Scope.__init__
 
     __counter = 1
@@ -85,9 +192,6 @@ class LambdaScope(Scope):
         i = self.__counter
         self.__counter += 1
         self.__super_init("lambda.%d" % i, module, klass)
-
-class FunctionScope(Scope):
-    pass
 
 class ClassScope(Scope):
     __super_init = Scope.__init__
@@ -111,17 +215,24 @@ class SymbolVisitor:
         for n in node.defaults:
             self.visit(n, parent)
         scope = FunctionScope(node.name, self.module, self.klass)
+        if parent.nested or isinstance(parent, FunctionScope):
+            scope.nested = 1
         self.scopes[node] = scope
         self._do_args(scope, node.argnames)
         self.visit(node.code, scope)
-
+        self.handle_free_vars(scope, parent)
+        scope.DEBUG()
+        
     def visitLambda(self, node, parent):
         for n in node.defaults:
             self.visit(n, parent)
         scope = LambdaScope(self.module, self.klass)
+        if parent.nested or isinstance(parent, FunctionScope):
+            scope.nested = 1
         self.scopes[node] = scope
         self._do_args(scope, node.argnames)
         self.visit(node.code, scope)
+        self.handle_free_vars(scope, parent)
 
     def _do_args(self, scope, args):
         for name in args:
@@ -130,16 +241,25 @@ class SymbolVisitor:
             else:
                 scope.add_param(name)
 
+    def handle_free_vars(self, scope, parent):
+        parent.add_child(scope)
+        if scope.children:
+            scope.DEBUG()
+        scope.handle_children()
+
     def visitClass(self, node, parent):
         parent.add_def(node.name)
         for n in node.bases:
             self.visit(n, parent)
         scope = ClassScope(node.name, self.module)
+        if parent.nested or isinstance(parent, FunctionScope):
+            scope.nested = 1
         self.scopes[node] = scope
         prev = self.klass
         self.klass = node.name
         self.visit(node.code, scope)
         self.klass = prev
+        self.handle_free_vars(scope, parent)
 
     # name can be a def or a use
 
