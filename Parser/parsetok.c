@@ -133,7 +133,7 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
 		else
 			started = 1;
 		len = b - a; /* XXX this may compute NULL - NULL */
-		str = PyMem_NEW(char, len + 1);
+		str = (char *) PyObject_MALLOC(len + 1);
 		if (str == NULL) {
 			fprintf(stderr, "no mem for next token\n");
 			err_ret->error = E_NOMEM;
@@ -157,7 +157,7 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
 		     PyParser_AddToken(ps, (int)type, str, tok->lineno,
 				       &(err_ret->expected))) != E_OK) {
 			if (err_ret->error != E_DONE)
-				PyMem_DEL(str);
+				PyObject_FREE(str);
 			break;
 		}
 	}
@@ -178,7 +178,7 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
 		err_ret->offset = tok->cur - tok->buf;
 		if (tok->buf != NULL) {
 			size_t len = tok->inp - tok->buf;
-			err_ret->text = PyMem_NEW(char, len + 1);
+			err_ret->text = (char *) PyObject_MALLOC(len + 1);
 			if (err_ret->text != NULL) {
 				if (len > 0)
 					strncpy(err_ret->text, tok->buf, len);
