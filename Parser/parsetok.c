@@ -13,12 +13,18 @@ int Py_TabcheckFlag;
 
 
 /* Forward */
-static node *parsetok(struct tok_state *, grammar *, int, perrdetail *);
+static node *parsetok(struct tok_state *, grammar *, int, perrdetail *, int);
 
 /* Parse input coming from a string.  Return error code, print some errors. */
-
 node *
 PyParser_ParseString(char *s, grammar *g, int start, perrdetail *err_ret)
+{
+	return PyParser_ParseStringFlags(s, g, start, err_ret, 0);
+}
+
+node *
+PyParser_ParseStringFlags(char *s, grammar *g, int start,
+		          perrdetail *err_ret, int flags)
 {
 	struct tok_state *tok;
 
@@ -42,7 +48,7 @@ PyParser_ParseString(char *s, grammar *g, int start, perrdetail *err_ret)
 			tok->alterror++;
 	}
 
-	return parsetok(tok, g, start, err_ret);
+	return parsetok(tok, g, start, err_ret, flags);
 }
 
 
@@ -51,6 +57,14 @@ PyParser_ParseString(char *s, grammar *g, int start, perrdetail *err_ret)
 node *
 PyParser_ParseFile(FILE *fp, char *filename, grammar *g, int start,
 		   char *ps1, char *ps2, perrdetail *err_ret)
+{
+	return PyParser_ParseFileFlags(fp, filename, g, start, ps1, ps2,
+				       err_ret, 0);
+}
+
+node *
+PyParser_ParseFileFlags(FILE *fp, char *filename, grammar *g, int start,
+			char *ps1, char *ps2, perrdetail *err_ret, int flags)
 {
 	struct tok_state *tok;
 
@@ -72,14 +86,15 @@ PyParser_ParseFile(FILE *fp, char *filename, grammar *g, int start,
 	}
 
 
-	return parsetok(tok, g, start, err_ret);
+	return parsetok(tok, g, start, err_ret, flags);
 }
 
 /* Parse input coming from the given tokenizer structure.
    Return error code. */
 
 static node *
-parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret)
+parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
+	 int flags)
 {
 	parser_state *ps;
 	node *n;
@@ -90,6 +105,8 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret)
 		err_ret->error = E_NOMEM;
 		return NULL;
 	}
+	if (flags & PyPARSE_YIELD_IS_KEYWORD)
+		ps->p_generators = 1;
 
 	for (;;) {
 		char *a, *b;
