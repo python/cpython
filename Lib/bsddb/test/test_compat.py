@@ -4,7 +4,6 @@ regression test suite.
 """
 
 import sys, os, string
-import bsddb
 import unittest
 import tempfile
 
