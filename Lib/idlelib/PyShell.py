@@ -25,6 +25,7 @@ from configHandler import idleConf
 import idlever
 
 import rpc
+import RemoteDebugger
 
 # XX hardwire this for now, remove later  KBK 09Jun02
 use_subprocess = 1 # Set to 1 to spawn subprocess for command execution
@@ -89,8 +90,7 @@ linecache.checkcache = linecache_checkcache
 
 
 class PyShellEditorWindow(EditorWindow):
-
-    # Regular text edit window when a shell is present
+    "Regular text edit window when a shell is present"
     # XXX ought to merge with regular editor window
 
     def __init__(self, *args):
@@ -532,6 +532,8 @@ class PyShell(OutputWindow):
         if db:
             self.interp.setdebugger(None)
             db.close()
+            if self.interp.rpcclt:
+                RemoteDebugger.close_remote_debugger(self.interp.rpcclt)
             self.resetoutput()
             self.console.write("[DEBUG OFF]\n")
             sys.ps1 = ">>> "
@@ -551,7 +553,6 @@ class PyShell(OutputWindow):
         self.set_debugger_indicator()
 
     def open_remote_debugger(self):
-        import RemoteDebugger
         gui = RemoteDebugger.start_remote_debugger(self.interp.rpcclt, self)
         self.interp.setdebugger(gui)
         sys.ps1 = "[DEBUG ON]\n>>> "
@@ -559,7 +560,7 @@ class PyShell(OutputWindow):
         self.set_debugger_indicator()
 
     def beginexecuting(self):
-        # Helper for ModifiedInterpreter
+        "Helper for ModifiedInterpreter"
         self.resetoutput()
         self.executing = 1
         ##self._cancel_check = self.cancel_check

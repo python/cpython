@@ -52,6 +52,7 @@ class GUIProxy:
         self.oid = gui_adap_oid
 
     def interaction(self, message, frame, info=None):
+        # calls rpc.SocketIO.remotecall() via run.MyHandler instance
         self.conn.remotecall(self.oid, "interaction",
                              (message, wrap_frame(frame), wrap_info(info)),
                              {})
@@ -156,20 +157,21 @@ class IdbAdapter:
 #----------end class IdbAdapter----------
 
 
-def start_debugger(conn, gui_adap_oid):
+def start_debugger(rpchandler, gui_adap_oid):
     """Start the debugger and its RPC link in the Python subprocess
 
     Start the subprocess side of the split debugger and set up that side of the
     RPC link by instantiating the GUIProxy, Idb debugger, and IdbAdapter
-    objects and linking them together.  Register the IdbAdapter to handle RPC
-    requests from the split debugger GUI via the IdbProxy.
+    objects and linking them together.  Register the IdbAdapter with the
+    RPCServer to handle RPC requests from the split debugger GUI via the
+    IdbProxy.
 
     """
-    gui_proxy = GUIProxy(conn, gui_adap_oid)
+    gui_proxy = GUIProxy(rpchandler, gui_adap_oid)
     idb = Debugger.Idb(gui_proxy)
     idb_adap = IdbAdapter(idb)
     idb_adap_oid = "idb_adapter"
-    conn.register(idb_adap_oid, idb_adap)
+    rpchandler.register(idb_adap_oid, idb_adap)
     return idb_adap_oid
 
 
@@ -315,25 +317,39 @@ class IdbProxy:
         msg = self.call("clear_all_file_breaks", filename)
         
 
-def start_remote_debugger(conn, pyshell):
+def start_remote_debugger(rpcclt, pyshell):
     """Start the subprocess debugger, initialize the debugger GUI and RPC link
 
     Request the RPCServer start the Python subprocess debugger and link.  Set
     up the Idle side of the split debugger by instantiating the IdbProxy,
     debugger GUI, and debugger GUIAdapter objects and linking them together.
 
-    Register the GUIAdapter to handle debugger GUI interaction requests coming
-    from the subprocess debugger via the GUIProxy.
+    Register the GUIAdapter with the RPCClient to handle debugger GUI
+    interaction requests coming from the subprocess debugger via the GUIProxy.
 
     The IdbAdapter will pass execution and environment requests coming from the
     Idle debugger GUI to the subprocess debugger via the IdbProxy.
 
     """
     gui_adap_oid = "gui_adapter"
-    idb_adap_oid = conn.remotecall("exec", "start_the_debugger",\
+    idb_adap_oid = rpcclt.remotecall("exec", "start_the_debugger",\
                                    (gui_adap_oid,), {})
-    idb_proxy = IdbProxy(conn, idb_adap_oid)
+    idb_proxy = IdbProxy(rpcclt, idb_adap_oid)
     gui = Debugger.Debugger(pyshell, idb_proxy)
-    gui_adap = GUIAdapter(conn, gui)
-    conn.register(gui_adap_oid, gui_adap)
+    gui_adap = GUIAdapter(rpcclt, gui)
+    rpcclt.register(gui_adap_oid, gui_adap)
     return gui
+
+def close_remote_debugger(rpcclt):
+    """Shut down subprocess debugger and Idle side of debugger RPC link
+
+    Request that the RPCServer shut down the subprocess debugger and link.
+    Unregister the GUIAdapter, which will cause a GC on the Idle process
+    debugger and RPC link objects.  (The second reference to the debugger GUI
+    is deleted in PyShell.close_remote_debugger().)
+
+    """    
+    idb_adap_oid = "idb_adapter"
+    rpcclt.remotecall("exec", "stop_the_debugger", (idb_adap_oid,), {})
+    gui_adap_oid = "gui_adapter"
+    rpcclt.unregister(gui_adap_oid)

@@ -23,7 +23,7 @@ class MyHandler(rpc.RPCHandler):
 class Executive:
 
     def __init__(self, rpchandler):
-        self.conn = rpchandler
+        self.rpchandler = rpchandler
         import __main__
         self.locals = __main__.__dict__
 
@@ -32,14 +32,18 @@ class Executive:
 
     def start_the_debugger(self, gui_adap_oid):
         import RemoteDebugger
-        return RemoteDebugger.start_debugger(self.conn, gui_adap_oid)
+        return RemoteDebugger.start_debugger(self.rpchandler, gui_adap_oid)
+
+    def stop_the_debugger(self, idb_adap_oid):
+        "Unregister the Idb Adapter.  Link objects and Idb then subject to GC"
+        self.rpchandler.unregister(idb_adap_oid)
 
     def stackviewer(self, flist_oid=None):
         if not hasattr(sys, "last_traceback"):
             return None
         flist = None
         if flist_oid is not None:
-            flist = self.conn.get_remote_proxy(flist_oid)
+            flist = self.rpchandler.get_remote_proxy(flist_oid)
         import RemoteObjectBrowser
         import StackViewer
         tb = sys.last_traceback
