@@ -21,9 +21,11 @@ of the pair returned by \code{split(\var{path})}.
 \end{funcdesc}
 
 \begin{funcdesc}{commonprefix}{list}
-Return the longest string that is a prefix of all strings in
+Return the longest path prefix (taken character-by-character) that is a
+prefix of all paths in 
 \var{list}.  If \var{list} is empty, return the empty string
-(\code{''}).
+(\code{''}).  Note that this may return invalid paths because it works a
+character at a time.
 \end{funcdesc}
 
 \begin{funcdesc}{dirname}{path}
