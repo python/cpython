@@ -10,7 +10,8 @@ __revision__ = "$Id$"
 import os, string
 from types import *
 from distutils.core import Command, DEBUG
-from distutils.util import get_platform, write_file
+from distutils.util import get_platform
+from distutils.file_util import write_file
 from distutils.errors import *
 
 class bdist_rpm (Command):

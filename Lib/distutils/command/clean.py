@@ -8,7 +8,7 @@ __revision__ = "$Id$"
 
 import os
 from distutils.core import Command
-from distutils.util import remove_tree
+from distutils.dir_util import remove_tree
 
 class clean (Command):
 

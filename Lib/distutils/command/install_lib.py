@@ -4,7 +4,7 @@ __revision__ = "$Id$"
 
 import sys, os, string
 from distutils.core import Command
-from distutils.util import copy_tree
+from distutils.dir_util import copy_tree
 
 class install_lib (Command):
 
