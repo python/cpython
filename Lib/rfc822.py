@@ -158,7 +158,7 @@ class Message:
             if headerseen:
                 # It's a legal header line, save it.
                 list.append(line)
-                self.dict[headerseen] = string.strip(line[len(headerseen)+2:])
+                self.dict[headerseen] = string.strip(line[len(headerseen)+1:])
                 continue
             else:
                 # It's not a header line; throw it back and stop here.
