@@ -158,7 +158,7 @@ class BasicTestRunner:
 
 
 def run_suite(suite):
-    """Run tests from a unittest.TestCase-derived class."""
+    """Run tests from a unittest.TestSuite-derived class."""
     if verbose:
         runner = unittest.TextTestRunner(sys.stdout, verbosity=2)
     else:
