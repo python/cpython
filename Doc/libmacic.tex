@@ -27,16 +27,16 @@ Exception raised on errors in the \module{ic} module.
 \end{excdesc}
 
 
-The \module{ic} module defines the following functions:
+The \module{ic} module defines the following class and function:
 
-\begin{funcdesc}{IC}{\optional{signature\optional{, ic}}}
+\begin{classdesc}{IC}{\optional{signature\optional{, ic}}}
 Create an internet config object. The signature is a 4-character creator
 code of the current application (default \code{'Pyth'}) which may
 influence some of ICs settings. The optional \var{ic} argument is a
 low-level \code{icglue.icinstance} created beforehand, this may be
 useful if you want to get preferences from a different config file,
 etc.
-\end{funcdesc}
+\end{classdesc}
 
 \begin{funcdesc}{launchurl}{url\optional{, hint}}
 \funcline{parseurl}{data\optional{, start\optional{, end\optional{, hint}}}}
@@ -48,14 +48,14 @@ described below.
 \end{funcdesc}
 
 
-\subsection{IC objects}
+\subsection{IC Objects}
 
-IC objects have a mapping interface, hence to obtain the mail address
-you simply get \code{\var{ic}['MailAddress']}. Assignment also works,
-and changes the option in the configuration file.
+\class{IC} objects have a mapping interface, hence to obtain the mail
+address you simply get \code{\var{ic}['MailAddress']}. Assignment also
+works, and changes the option in the configuration file.
 
 The module knows about various datatypes, and converts the internal IC
-representation to a ``logical'' Python datastructure. Running the
+representation to a ``logical'' Python data structure. Running the
 \module{ic} module standalone will run a test program that lists all
 keys and values in your IC database, this will have to server as
 documentation.
@@ -65,18 +65,18 @@ instance of the \code{ICOpaqueData} type, with the raw data in its
 \member{data} attribute. Objects of this type are also acceptable values
 for assignment.
 
-Besides the dictionary interface IC objects have the following methods:
+Besides the dictionary interface, \class{IC} objects have the
+following methods:
 
-\setindexsubitem{(IC attribute)}
 
-\begin{funcdesc}{launchurl}{url\optional{, hint}}
+\begin{methoddesc}{launchurl}{url\optional{, hint}}
 Parse the given URL, lauch the correct application and pass it the
 URL. The optional \var{hint} can be a scheme name such as
 \code{'mailto:'}, in which case incomplete URLs are completed with this
 scheme.  If \var{hint} is not provided, incomplete URLs are invalid.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{parseurl}{data\optional{, start\optional{, end\optional{, hint}}}}
+\begin{methoddesc}{parseurl}{data\optional{, start\optional{, end\optional{, hint}}}}
 Find an URL somewhere in \var{data} and return start position, end
 position and the URL. The optional \var{start} and \var{end} can be
 used to limit the search, so for instance if a user clicks in a long
@@ -84,9 +84,9 @@ textfield you can pass the whole textfield and the click-position in
 \var{start} and this routine will return the whole URL in which the
 user clicked.  As above, \var{hint} is an optional scheme used to
 complete incomplete URLs.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{mapfile}{file}
+\begin{methoddesc}{mapfile}{file}
 Return the mapping entry for the given \var{file}, which can be passed
 as either a filename or an \function{macfs.FSSpec()} result, and which
 need not exist.
@@ -105,20 +105,20 @@ file type, \var{appname} is the printable name of the application to
 which this file belongs, \var{postappname} is the name of the
 postprocessing application, \var{mimetype} is the MIME type of this
 file and \var{entryname} is the name of this entry.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{maptypecreator}{type, creator\optional{, filename}}
+\begin{methoddesc}{maptypecreator}{type, creator\optional{, filename}}
 Return the mapping entry for files with given 4-character \var{type} and
 \var{creator} codes. The optional \var{filename} may be specified to
 further help finding the correct entry (if the creator code is
 \code{'????'}, for instance).
 
 The mapping entry is returned in the same format as for \var{mapfile}.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{settypecreator}{file}
+\begin{methoddesc}{settypecreator}{file}
 Given an existing \var{file}, specified either as a filename or as an
 \function{macfs.FSSpec()} result, set its creator and type correctly based
 on its extension.  The finder is told about the change, so the finder
 icon will be updated quickly.
-\end{funcdesc}
+\end{methoddesc}
