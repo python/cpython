@@ -139,86 +139,70 @@ float_compare(v, w)
 static object *
 float_add(v, w)
 	floatobject *v;
-	object *w;
+	floatobject *w;
 {
-	if (!is_floatobject(w)) {
-		err_badarg();
-		return NULL;
-	}
-	return newfloatobject(v->ob_fval + ((floatobject *)w) -> ob_fval);
+	return newfloatobject(v->ob_fval + w->ob_fval);
 }
 
 static object *
 float_sub(v, w)
 	floatobject *v;
-	object *w;
+	floatobject *w;
 {
-	if (!is_floatobject(w)) {
-		err_badarg();
-		return NULL;
-	}
-	return newfloatobject(v->ob_fval - ((floatobject *)w) -> ob_fval);
+	return newfloatobject(v->ob_fval - w->ob_fval);
 }
 
 static object *
 float_mul(v, w)
 	floatobject *v;
-	object *w;
+	floatobject *w;
 {
-	if (!is_floatobject(w)) {
-		err_badarg();
-		return NULL;
-	}
-	return newfloatobject(v->ob_fval * ((floatobject *)w) -> ob_fval);
+	return newfloatobject(v->ob_fval * w->ob_fval);
 }
 
 static object *
 float_div(v, w)
 	floatobject *v;
-	object *w;
+	floatobject *w;
 {
-	if (!is_floatobject(w)) {
-		err_badarg();
-		return NULL;
-	}
-	if (((floatobject *)w) -> ob_fval == 0) {
+	if (w->ob_fval == 0) {
 		err_setstr(ZeroDivisionError, "float division");
 		return NULL;
 	}
-	return newfloatobject(v->ob_fval / ((floatobject *)w) -> ob_fval);
+	return newfloatobject(v->ob_fval / w->ob_fval);
 }
 
 static object *
 float_rem(v, w)
 	floatobject *v;
-	object *w;
+	floatobject *w;
 {
-	double wx;
-	if (!is_floatobject(w)) {
-		err_badarg();
-		return NULL;
-	}
-	wx = ((floatobject *)w) -> ob_fval;
+	double vx, wx;
+	double div, mod;
+	wx = w->ob_fval;
 	if (wx == 0.0) {
-		err_setstr(ZeroDivisionError, "float remainder");
+		err_setstr(ZeroDivisionError, "float modulo");
 		return NULL;
 	}
-	return newfloatobject(fmod(v->ob_fval, wx));
+	vx = v->ob_fval;
+	mod = fmod(vx, wx);
+	div = (vx - mod) / wx;
+	if (wx*mod < 0) {
+		mod += wx;
+		div -= 1.0;
+	}
+	return newfloatobject(mod);
 }
 
 static object *
 float_divmod(v, w)
 	floatobject *v;
-	object *w;
+	floatobject *w;
 {
 	double vx, wx;
 	double div, mod;
 	object *t;
-	if (!is_floatobject(w)) {
-		err_badarg();
-		return NULL;
-	}
-	wx = ((floatobject *)w) -> ob_fval;
+	wx = w->ob_fval;
 	if (wx == 0.0) {
 		err_setstr(ZeroDivisionError, "float divmod()");
 		return NULL;
@@ -245,15 +229,11 @@ float_divmod(v, w)
 static object *
 float_pow(v, w)
 	floatobject *v;
-	object *w;
+	floatobject *w;
 {
 	double iv, iw, ix;
-	if (!is_floatobject(w)) {
-		err_badarg();
-		return NULL;
-	}
 	iv = v->ob_fval;
-	iw = ((floatobject *)w)->ob_fval;
+	iw = w->ob_fval;
 	/* Sort out special cases here instead of relying on pow() */
 	if (iw == 0.0)
 		return newfloatobject(1.0); /* x**0 is 1, even 0**0 */
@@ -347,10 +327,3 @@ typeobject Floattype = {
 	0,			/*tp_as_sequence*/
 	0,			/*tp_as_mapping*/
 };
-
-/*
-XXX This is not enough.  Need:
-- automatic casts for mixed arithmetic (3.1 * 4)
-- mixed comparisons (!)
-- look at other uses of ints that could be extended to floats
-*/
