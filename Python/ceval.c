@@ -454,8 +454,9 @@ eval_code2(co, globals, locals,
 		}
 		if (argcount > co->co_argcount) {
 			if (!(co->co_flags & CO_VARARGS)) {
-				PyErr_SetString(PyExc_TypeError,
-						"too many arguments");
+				PyErr_Format(PyExc_TypeError,
+				"too many arguments; expected %d, got %d",
+					     co->co_argcount, argcount);
 				goto fail;
 			}
 			n = co->co_argcount;
@@ -513,8 +514,9 @@ eval_code2(co, globals, locals,
 			int m = co->co_argcount - defcount;
 			for (i = argcount; i < m; i++) {
 				if (GETLOCAL(i) == NULL) {
-					PyErr_SetString(PyExc_TypeError,
-						   "not enough arguments");
+					PyErr_Format(PyExc_TypeError,
+				"not enough arguments; expected %d, got %d",
+						     m, i);
 					goto fail;
 				}
 			}
