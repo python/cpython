@@ -168,7 +168,7 @@ reg_search(re, args)
 }
 
 static object *
-reg_substring(re, args)
+reg_group(re, args)
 	regexobject *re;
 	object *args;
 {
@@ -179,7 +179,7 @@ reg_substring(re, args)
 		if (res == NULL)
 			return NULL;
 		for (i = 0; i < n; i++) {
-			object *v = reg_substring(re, gettupleitem(args, i));
+			object *v = reg_group(re, gettupleitem(args, i));
 			if (v == NULL) {
 				DECREF(res);
 				return NULL;
@@ -191,12 +191,12 @@ reg_substring(re, args)
 	if (!getargs(args, "i", &i))
 		return NULL;
 	if (i < 0 || i >= RE_NREGS) {
-		err_setstr(RegexError, "substring() index out of range");
+		err_setstr(RegexError, "group() index out of range");
 		return NULL;
 	}
 	if (re->re_lastok == NULL) {
 		err_setstr(RegexError,
-		    "substring() only valid after successful match/search");
+		    "group() only valid after successful match/search");
 		return NULL;
 	}
 	a = re->re_regs.start[i];
@@ -211,7 +211,7 @@ reg_substring(re, args)
 static struct methodlist reg_methods[] = {
 	{"match",	reg_match},
 	{"search",	reg_search},
-	{"substring",	reg_substring},
+	{"group",	reg_group},
 	{NULL,		NULL}		/* sentinel */
 };
 
@@ -222,20 +222,39 @@ reg_getattr(re, name)
 {
 	if (strcmp(name, "regs") == 0) {
 		if (re->re_lastok == NULL) {
-			err_setstr(RegexError,
-			  "regs only valid after successful match/search");
-			return NULL;
+			INCREF(None);
+			return None;
 		}
 		return makeresult(&re->re_regs);
 	}
 	if (strcmp(name, "last") == 0) {
 		if (re->re_lastok == NULL) {
-			err_setstr(RegexError,
-			  "last only valid after successful match/search");
-			return NULL;
+			INCREF(None);
+			return None;
 		}
 		INCREF(re->re_lastok);
 		return re->re_lastok;
+	}
+	if (strcmp(name, "translate") == 0) {
+		if (re->re_translate == NULL) {
+			INCREF(None);
+			return None;
+		}
+		INCREF(re->re_translate);
+		return re->re_translate;
+	}
+	if (strcmp(name, "__members__") == 0) {
+		object *list = newlistobject(3);
+		if (list) {
+			setlistitem(list, 0, newstringobject("last"));
+			setlistitem(list, 1, newstringobject("regs"));
+			setlistitem(list, 2, newstringobject("translate"));
+			if (err_occurred()) {
+				DECREF(list);
+				list = NULL;
+			}
+		}
+		return list;
 	}
 	return findmethod(reg_methods, (object *)re, name);
 }
@@ -373,7 +392,7 @@ static struct methodlist regex_global_methods[] = {
 
 initregex()
 {
-	object *m, *d;
+	object *m, *d, *v;
 	
 	m = initmodule("regex", regex_global_methods);
 	d = getmoduledict(m);
@@ -382,4 +401,19 @@ initregex()
 	RegexError = newstringobject("regex.error");
 	if (RegexError == NULL || dictinsert(d, "error", RegexError) != 0)
 		fatal("can't define regex.error");
+
+	/* Initialize regex.casefold constant */
+	v = newsizedstringobject((char *)NULL, 256);
+	if (v != NULL) {
+		int i;
+		char *s = getstringvalue(v);
+		for (i = 0; i < 256; i++) {
+			if (isupper(i))
+				s[i] = tolower(i);
+			else
+				s[i] = i;
+		}
+		dictinsert(d, "casefold", v);
+		DECREF(v);
+	}
 }
