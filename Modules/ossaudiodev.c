@@ -117,15 +117,8 @@ newossobject(PyObject *arg)
         return NULL;
     }
 
-    /* Open the correct device.  The base device name comes from the
-     * AUDIODEV environment variable first, then /dev/dsp.  The
-     * control device tacks "ctl" onto the base device name.
-     * 
-     * Note that the only difference between /dev/audio and /dev/dsp
-     * is that the former uses logarithmic mu-law encoding and the
-     * latter uses 8-bit unsigned encoding.
-     */
-
+    /* Open the correct device: either the 'device' argument,
+       or the AUDIODEV environment variable, or "/dev/dsp". */
     if (basedev == NULL) {              /* called with one arg */
        basedev = getenv("AUDIODEV");
        if (basedev == NULL)             /* $AUDIODEV not set */
