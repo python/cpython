@@ -58,20 +58,20 @@ g(1, 2, 3, *(4, 5))
 class Nothing: pass
 try:
     g(*Nothing())
-except AttributeError, attr:
+except TypeError, attr:
     pass
 else:
-    print "should raise AttributeError: __len__"
+    print "should raise TypeError"
 
 class Nothing:
     def __len__(self):
         return 5
 try:
     g(*Nothing())
-except AttributeError, attr:
+except TypeError, attr:
     pass
 else:
-    print "should raise AttributeError: __getitem__"
+    print "should raise TypeError"
 
 class Nothing:
     def __len__(self):

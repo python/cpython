@@ -275,6 +275,39 @@ class TestCase(unittest.TestCase):
             except OSError:
                 pass
 
+    # Test tuples()'s use of iterators.
+    def test_builtin_tuple(self):
+        self.assertEqual(tuple(SequenceClass(5)), (0, 1, 2, 3, 4))
+        self.assertEqual(tuple(SequenceClass(0)), ())
+        self.assertEqual(tuple([]), ())
+        self.assertEqual(tuple(()), ())
+        self.assertEqual(tuple("abc"), ("a", "b", "c"))
+
+        d = {"one": 1, "two": 2, "three": 3}
+        self.assertEqual(tuple(d), tuple(d.keys()))
+
+        self.assertRaises(TypeError, tuple, list)
+        self.assertRaises(TypeError, tuple, 42)
+
+        f = open(TESTFN, "w")
+        try:
+            for i in range(5):
+                f.write("%d\n" % i)
+        finally:
+            f.close()
+        f = open(TESTFN, "r")
+        try:
+            self.assertEqual(tuple(f), ("0\n", "1\n", "2\n", "3\n", "4\n"))
+            f.seek(0, 0)
+            self.assertEqual(tuple(f.xreadlines()),
+                             ("0\n", "1\n", "2\n", "3\n", "4\n"))
+        finally:
+            f.close()
+            try:
+                unlink(TESTFN)
+            except OSError:
+                pass
+
     # Test filter()'s use of iterators.
     def test_builtin_filter(self):
         self.assertEqual(filter(None, SequenceClass(5)), range(1, 5))

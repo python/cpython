@@ -24,9 +24,9 @@ Core
     min()
     reduce()
     XXX TODO string.join(), unicode.join()
-    XXX TODO tuple()
+    tuple()
     XXX TODO zip()
-    XXX TODO 'x in y' (!) (?)
+    XXX TODO 'x in y'
 
 What's New in Python 2.1 (final)?
 =================================
