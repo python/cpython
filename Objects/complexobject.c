@@ -270,20 +270,22 @@ complex_dealloc(PyObject *op)
 
 
 static void
-complex_to_buf(char *buf, PyComplexObject *v, int precision)
+complex_to_buf(char *buf, int bufsz, PyComplexObject *v, int precision)
 {
 	if (v->cval.real == 0.)
-		sprintf(buf, "%.*gj", precision, v->cval.imag);
+		PyOS_snprintf(buf, bufsz, "%.*gj",
+			      precision, v->cval.imag);
 	else
-		sprintf(buf, "(%.*g%+.*gj)", precision, v->cval.real,
-					     precision, v->cval.imag);
+		PyOS_snprintf(buf, bufsz, "(%.*g%+.*gj)",
+			      precision, v->cval.real,
+			      precision, v->cval.imag);
 }
 
 static int
 complex_print(PyComplexObject *v, FILE *fp, int flags)
 {
 	char buf[100];
-	complex_to_buf(buf, v,
+	complex_to_buf(buf, sizeof(buf), v,
 		       (flags & Py_PRINT_RAW) ? PREC_STR : PREC_REPR);
 	fputs(buf, fp);
 	return 0;
@@ -293,7 +295,7 @@ static PyObject *
 complex_repr(PyComplexObject *v)
 {
 	char buf[100];
-	complex_to_buf(buf, v, PREC_REPR);
+	complex_to_buf(buf, sizeof(buf), v, PREC_REPR);
 	return PyString_FromString(buf);
 }
 
@@ -301,7 +303,7 @@ static PyObject *
 complex_str(PyComplexObject *v)
 {
 	char buf[100];
-	complex_to_buf(buf, v, PREC_STR);
+	complex_to_buf(buf, sizeof(buf), v, PREC_STR);
 	return PyString_FromString(buf);
 }
 
@@ -752,7 +754,7 @@ complex_subtype_from_string(PyTypeObject *type, PyObject *v)
 				z = strtod(s, &end) ;
 			PyFPE_END_PROTECT(z)
 				if (errno != 0) {
-					sprintf(buffer,
+					PyOS_snprintf(buffer, sizeof(buffer),
 					  "float() out of range: %.150s", s);
 					PyErr_SetString(
 						PyExc_ValueError,
