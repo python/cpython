@@ -1144,7 +1144,25 @@ posix_chmod(PyObject *self, PyObject *args)
 	char *path = NULL;
 	int i;
 	int res;
-	if (!PyArg_ParseTuple(args, "eti", Py_FileSystemDefaultEncoding,
+#ifdef Py_WIN_WIDE_FILENAMES
+	if (unicode_file_names()) {
+		PyUnicodeObject *po;
+		if (PyArg_ParseTuple(args, "Ui|:chmod", &po, &i)) {
+			Py_BEGIN_ALLOW_THREADS
+			res = _wchmod(PyUnicode_AS_UNICODE(po), i);
+			Py_END_ALLOW_THREADS
+			if (res < 0)
+				return posix_error_with_unicode_filename(
+						PyUnicode_AS_UNICODE(po));
+			Py_INCREF(Py_None);
+			return Py_None;
+		}
+		/* Drop the argument parsing error as narrow strings
+		   are also valid. */
+		PyErr_Clear();
+	}
+#endif /* Py_WIN_WIDE_FILENAMES */
+	if (!PyArg_ParseTuple(args, "eti:chmod", Py_FileSystemDefaultEncoding,
 	                      &path, &i))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
@@ -1916,11 +1934,32 @@ posix_utime(PyObject *self, PyObject *args)
 #define UTIME_ARG buf
 #endif /* HAVE_UTIMES */
 
-	if (!PyArg_ParseTuple(args, "sO:utime", &path, &arg))
+	int have_unicode_filename = 0;
+#ifdef Py_WIN_WIDE_FILENAMES
+	PyUnicodeObject *obwpath;
+	wchar_t *wpath;
+	if (unicode_file_names()) {
+		if (PyArg_ParseTuple(args, "UO|:utime", &obwpath, &arg)) {
+			wpath = PyUnicode_AS_UNICODE(obwpath);
+			have_unicode_filename = 1;
+		} else
+			/* Drop the argument parsing error as narrow strings
+			   are also valid. */
+			PyErr_Clear();
+	}
+#endif /* Py_WIN_WIDE_FILENAMES */
+
+	if (!have_unicode_filename && \
+		!PyArg_ParseTuple(args, "sO:utime", &path, &arg))
 		return NULL;
 	if (arg == Py_None) {
 		/* optional time values not given */
 		Py_BEGIN_ALLOW_THREADS
+#ifdef Py_WIN_WIDE_FILENAMES
+		if (have_unicode_filename)
+			res = _wutime(wpath, NULL);
+		else
+#endif /* Py_WIN_WIDE_FILENAMES */
 		res = utime(path, NULL);
 		Py_END_ALLOW_THREADS
 	}
@@ -1946,9 +1985,17 @@ posix_utime(PyObject *self, PyObject *args)
 		Py_END_ALLOW_THREADS
 #else
 		Py_BEGIN_ALLOW_THREADS
+#ifdef Py_WIN_WIDE_FILENAMES
+		if (have_unicode_filename)
+			/* utime is OK with utimbuf, but _wutime insists 
+			   on _utimbuf (the msvc headers assert the 
+			   underscore version is ansi) */
+			res = _wutime(wpath, (struct _utimbuf *)UTIME_ARG);
+		else
+#endif /* Py_WIN_WIDE_FILENAMES */
 		res = utime(path, UTIME_ARG);
 		Py_END_ALLOW_THREADS
-#endif
+#endif /* HAVE_UTIMES */
 	}
 	if (res < 0)
 		return posix_error_with_filename(path);
