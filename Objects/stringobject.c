@@ -150,12 +150,17 @@ PyString_FromString(const char *str)
 PyObject *
 PyString_FromFormatV(const char *format, va_list vargs)
 {
-	va_list count = vargs;
+	va_list count;
 	int n = 0;
 	const char* f;
 	char *s;
 	PyObject* string;
 
+#ifdef VA_LIST_IS_ARRAY
+	memcpy(count, vargs, sizeof(va_list));
+#else
+	count = vargs;
+#endif
 	/* step 1: figure out how large a buffer we need */
 	for (f = format; *f; f++) {
 		if (*f == '%') {
