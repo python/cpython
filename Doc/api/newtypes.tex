@@ -83,6 +83,9 @@ defining new object types.
                                             PyMethodDef *methods}
   Create a new module object based on a name and table of functions,
   returning the new module object.
+
+  \versionchanged[Older versions of Python did not support \NULL{} as
+                  the value for the \var{methods} argument]{2.3}
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{Py_InitModule3}{char *name,
@@ -91,6 +94,9 @@ defining new object types.
   Create a new module object based on a name and table of functions,
   returning the new module object.  If \var{doc} is non-\NULL, it will
   be used to define the docstring for the module.
+
+  \versionchanged[Older versions of Python did not support \NULL{} as
+                  the value for the \var{methods} argument]{2.3}
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{Py_InitModule4}{char *name,
@@ -109,6 +115,9 @@ defining new object types.
   \note{Most uses of this function should probably be using
   the \cfunction{Py_InitModule3()} instead; only use this if you are
   sure you need it.}
+
+  \versionchanged[Older versions of Python did not support \NULL{} as
+                  the value for the \var{methods} argument]{2.3}
 \end{cfuncdesc}
 
 DL_IMPORT
