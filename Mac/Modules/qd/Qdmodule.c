@@ -447,6 +447,48 @@ static PyObject *QDGA_getattr(self, name)
 		if ( strcmp(name, "randSeed") == 0 ) 
 			return Py_BuildValue("l", &qd.randSeed);
 			
+#else
+
+		if ( strcmp(name, "arrow") == 0 ) {
+			Cursor rv;
+			GetQDGlobalsArrow(&rv);
+			return PyString_FromStringAndSize((char *)&rv, sizeof(rv));
+		}
+		if ( strcmp(name, "black") == 0 ) {
+			Pattern rv;
+			GetQDGlobalsBlack(&rv);
+			return PyString_FromStringAndSize((char *)&rv, sizeof(rv));
+		}
+		if ( strcmp(name, "white") == 0 )  {
+			Pattern rv;
+			GetQDGlobalsWhite(&rv);
+			return PyString_FromStringAndSize((char *)&rv, sizeof(rv));
+		}
+		if ( strcmp(name, "gray") == 0 )  {
+			Pattern rv;
+			GetQDGlobalsGray(&rv);
+			return PyString_FromStringAndSize((char *)&rv, sizeof(rv));
+		}
+		if ( strcmp(name, "ltGray") == 0 )  {
+			Pattern rv;
+			GetQDGlobalsLightGray(&rv);
+			return PyString_FromStringAndSize((char *)&rv, sizeof(rv));
+		}
+		if ( strcmp(name, "dkGray") == 0 )  {
+			Pattern rv;
+			GetQDGlobalsDarkGray(&rv);
+			return PyString_FromStringAndSize((char *)&rv, sizeof(rv));
+		}
+		if ( strcmp(name, "screenBits") == 0 ) {
+			BitMap rv;
+			GetQDGlobalsScreenBits(&rv);
+			return BMObj_New(&rv);
+		}
+		if ( strcmp(name, "thePort") == 0 ) 
+			return GrafObj_New(GetQDGlobalsThePort());
+		if ( strcmp(name, "randSeed") == 0 ) 
+			return Py_BuildValue("l", GetQDGlobalsRandomSeed());
+			
 #endif
 	return Py_FindMethodInChain(&QDGA_chain, (PyObject *)self, name);
 }
