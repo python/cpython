@@ -146,8 +146,7 @@ class build_ext (Command):
 
         # Setup the CCompiler object that we'll use to do all the
         # compiling and linking
-        self.compiler = new_compiler (plat=os.environ.get ('PLAT'),
-                                      verbose=self.verbose,
+        self.compiler = new_compiler (verbose=self.verbose,
                                       dry_run=self.dry_run,
                                       force=self.force)
         if self.include_dirs is not None:
