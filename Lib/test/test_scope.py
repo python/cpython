@@ -179,21 +179,24 @@ verify(f(6) == 720)
 
 print "11. unoptimized namespaces"
 
-check_syntax("""def unoptimized_clash1(strip):
+check_syntax("""from __future__ import nested_scopes
+def unoptimized_clash1(strip):
     def f(s):
         from string import *
         return strip(s) # ambiguity: free or local
     return f
 """)
 
-check_syntax("""def unoptimized_clash2():
+check_syntax("""from __future__ import nested_scopes
+def unoptimized_clash2():
     from string import *
     def f(s):
         return strip(s) # ambiguity: global or local
     return f
 """)
 
-check_syntax("""def unoptimized_clash2():
+check_syntax("""from __future__ import nested_scopes
+def unoptimized_clash2():
     from string import *
     def g():
         def f(s):
@@ -202,20 +205,23 @@ check_syntax("""def unoptimized_clash2():
 """)
 
 # XXX could allow this for exec with const argument, but what's the point
-check_syntax("""def error(y):
+check_syntax("""from __future__ import nested_scopes
+def error(y):
     exec "a = 1"
     def f(x):
         return x + y
     return f
 """)
 
-check_syntax("""def f(x):
+check_syntax("""from __future__ import nested_scopes
+def f(x):
     def g():
         return x
     del x # can't del name
 """)
 
-check_syntax("""def f():
+check_syntax("""from __future__ import nested_scopes
+def f():
     def g():
          from string import *
          return strip # global or local?
