@@ -10,7 +10,7 @@ blddir=		../..
 srcdir=		../..
 
 # Python version
-VERSION=	2.2
+VERSION=	2.3
 
 # Compiler flags
 OPT=		-g
@@ -28,7 +28,7 @@ SYSLIBS=	-lm
 MODLIBS=	
 ALLLIBS=	$(LIBPYTHON) $(MODLIBS) $(LIBS) $(SYSLIBS)
 
-# Build the demo application
+# Build the demo applications
 all:		demo loop importexc
 demo:		demo.o
 		$(CC) $(LDFLAGS) demo.o $(ALLLIBS) -o demo
