@@ -651,7 +651,7 @@ PyObject *
 PyNumber_InPlaceOr(PyObject *v, PyObject *w)
 {
 	PyObject * (*f)(PyObject *, PyObject *) = NULL;
-	PyObject *x;
+	PyObject *x = NULL;
 
 	if (PyInstance_Check(v)) {
 		if (PyInstance_HalfBinOp(v, w, "__ior__", &x,
@@ -683,7 +683,7 @@ PyObject *
 PyNumber_InPlaceXor(PyObject *v, PyObject *w)
 {
 	PyObject * (*f)(PyObject *, PyObject *) = NULL;
-	PyObject *x;
+	PyObject *x = NULL;
 
 	if (PyInstance_Check(v)) {
 		if (PyInstance_HalfBinOp(v, w, "__ixor__", &x,
@@ -715,7 +715,7 @@ PyObject *
 PyNumber_InPlaceAnd(PyObject *v, PyObject *w)
 {
 	PyObject * (*f)(PyObject *, PyObject *) = NULL;
-	PyObject *x;
+	PyObject *x = NULL;
 
 	if (PyInstance_Check(v)) {
 		if (PyInstance_HalfBinOp(v, w, "__iand__", &x,
@@ -747,7 +747,7 @@ PyObject *
 PyNumber_InPlaceLshift(PyObject *v, PyObject *w)
 {
 	PyObject * (*f)(PyObject *, PyObject *) = NULL;
-	PyObject *x;
+	PyObject *x = NULL;
 
 	if (PyInstance_Check(v)) {
 		if (PyInstance_HalfBinOp(v, w, "__ilshift__", &x,
@@ -779,7 +779,7 @@ PyObject *
 PyNumber_InPlaceRshift(PyObject *v, PyObject *w)
 {
 	PyObject * (*f)(PyObject *, PyObject *) = NULL;
-	PyObject *x;
+	PyObject *x = NULL;
 
 	if (PyInstance_Check(v)) {
 		if (PyInstance_HalfBinOp(v, w, "__irshift__", &x,
@@ -811,7 +811,7 @@ PyObject *
 PyNumber_InPlaceAdd(PyObject *v, PyObject *w)
 {
 	PyObject * (*f)(PyObject *, PyObject *) = NULL;
-	PyObject *x;
+	PyObject *x = NULL;
 
 	if (PyInstance_Check(v)) {
 		if (PyInstance_HalfBinOp(v, w, "__iadd__", &x,
@@ -855,7 +855,7 @@ PyObject *
 PyNumber_InPlaceSubtract(PyObject *v, PyObject *w)
 {
 	PyObject * (*f)(PyObject *, PyObject *) = NULL;
-	PyObject *x;
+	PyObject *x = NULL;
 
 	if (PyInstance_Check(v)) {
 		if (PyInstance_HalfBinOp(v, w, "__isub__", &x,
@@ -888,7 +888,7 @@ PyNumber_InPlaceMultiply(PyObject *v, PyObject *w)
 {
 	PyObject * (*f)(PyObject *, PyObject *) = NULL;
 	PyObject * (*g)(PyObject *, int) = NULL;
-	PyObject *x;
+	PyObject *x = NULL;
 
 	if (PyInstance_Check(v)) {
 		if (PyInstance_HalfBinOp(v, w, "__imul__", &x,
@@ -955,7 +955,7 @@ PyObject *
 PyNumber_InPlaceDivide(PyObject *v, PyObject *w)
 {
 	PyObject * (*f)(PyObject *, PyObject *) = NULL;
-	PyObject *x;
+	PyObject *x = NULL;
 
 	if (PyInstance_Check(v)) {
 		if (PyInstance_HalfBinOp(v, w, "__idiv__", &x,
@@ -987,7 +987,7 @@ PyObject *
 PyNumber_InPlaceRemainder(PyObject *v, PyObject *w)
 {
 	PyObject * (*f)(PyObject *, PyObject *) = NULL;
-	PyObject *x;
+	PyObject *x = NULL;
 
 	if (PyInstance_Check(v)) {
 		if (PyInstance_HalfBinOp(v, w, "__imod__", &x,
@@ -1026,7 +1026,7 @@ static PyObject *
 do_inplace_pow(PyObject *v, PyObject *w)
 {
 	PyObject * (*f)(PyObject *, PyObject *, PyObject *) = NULL;
-	PyObject *x;
+	PyObject *x = NULL;
 
 	if (PyInstance_Check(v)) {
 		if (PyInstance_HalfBinOp(v, w, "__ipow__", &x, do_pow, 0) <= 0)
