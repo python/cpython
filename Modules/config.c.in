@@ -107,19 +107,47 @@ getargcargv(argc,argv)
    version number (from patchlevel.h), and the current date (if known
    to the compiler, else a manually inserted date). */
 
-#define VERSION "%s (%s)"
+#define VERSION "%s (%s)%s"
 
 #ifdef __DATE__
 #define DATE __DATE__
 #else
-#define DATE "Aug 17 1994"
+#define DATE "Feb 13 1995"
+#endif
+
+#ifdef THINK_C
+#define COMPILER " [THINK C]"
+#endif
+
+#ifdef __MWERKS__
+#ifdef __powerc
+#define COMPILER " [CW PPC]"
+#else
+#define COMPILER " [CW 68K]"
+#endif
+#endif
+
+#ifdef MPW
+#ifdef __SC__
+#define COMPILER " [Symantec MPW]"
+#else
+#define COMPILER " [Apple MPW]"
+#endif
+#endif
+
+#ifdef __GNUC__
+#define COMPILER " [GCC " ##__VERSION__ "]"
+#endif
+
+#ifndef COMPILER
+#define COMPILER ""
 #endif
 
 char *
 getversion()
 {
 	static char version[80];
-	sprintf(version, VERSION, PATCHLEVEL, DATE);
+	sprintf(version, VERSION, PATCHLEVEL, DATE, COMPILER);
 	return version;
 }
 
