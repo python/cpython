@@ -1779,6 +1779,13 @@ com_global_stmt(c, n)
 	/* 'global' NAME (',' NAME)* */
 	for (i = 1; i < NCH(n); i += 2) {
 		char *s = STR(CHILD(n, i));
+#ifdef PRIVATE_NAME_MANGLING
+		char buffer[256];
+		if (s != NULL && s[0] == '_' && s[1] == '_' &&
+		    c->c_private != NULL &&
+		    com_mangle(c, s, buffer, (int)sizeof(buffer)))
+			s = buffer;
+#endif
 		if (dictlookup(c->c_locals, s) != NULL) {
 			err_setstr(SyntaxError, "name is local and global");
 			c->c_errors++;
