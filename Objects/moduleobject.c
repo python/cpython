@@ -132,11 +132,16 @@ module_setattr(m, name, v)
 	object *v;
 {
 	if (strcmp(name, "__dict__") == 0 || strcmp(name, "__name__") == 0) {
-		err_setstr(TypeError, "can't assign to reserved member name");
+		err_setstr(TypeError, "read-only special attribute");
 		return -1;
 	}
-	if (v == NULL)
-		return dictremove(m->md_dict, name);
+	if (v == NULL) {
+		int rv = dictremove(m->md_dict, name);
+		if (rv < 0)
+			err_setstr(AttributeError,
+				   "delete non-existing module attribute");
+		return rv;
+	}
 	else
 		return dictinsert(m->md_dict, name, v);
 }
