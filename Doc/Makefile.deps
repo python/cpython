@@ -195,6 +195,7 @@ LIBFILES= ../lib/lib.tex \
 	../lib/libchunk.tex \
 	../lib/libcodeop.tex \
 	../lib/libcurses.tex \
+	../lib/libdl.tex \
 	../lib/libmutex.tex \
 	../lib/libnis.tex \
 	../lib/libpipes.tex \
