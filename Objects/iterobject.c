@@ -44,13 +44,6 @@ iter_traverse(seqiterobject *it, visitproc visit, void *arg)
 }
 
 static PyObject *
-iter_getiter(PyObject *it)
-{
-	Py_INCREF(it);
-	return it;
-}
-
-static PyObject *
 iter_iternext(PyObject *iterator)
 {
 	seqiterobject *it;
@@ -106,7 +99,7 @@ PyTypeObject PySeqIter_Type = {
  	0,					/* tp_clear */
 	0,					/* tp_richcompare */
 	0,					/* tp_weaklistoffset */
-	(getiterfunc)iter_getiter,		/* tp_iter */
+	PyObject_GenericGetIter,		/* tp_iter */
 	(iternextfunc)iter_iternext,		/* tp_iternext */
 	0,					/* tp_methods */
 	0,					/* tp_members */
@@ -223,7 +216,7 @@ PyTypeObject PyCallIter_Type = {
  	0,					/* tp_clear */
 	0,					/* tp_richcompare */
 	0,					/* tp_weaklistoffset */
-	(getiterfunc)iter_getiter,		/* tp_iter */
+	PyObject_GenericGetIter,		/* tp_iter */
 	(iternextfunc)calliter_iternext,	/* tp_iternext */
 	0,					/* tp_methods */
 	0,					/* tp_members */

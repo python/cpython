@@ -2398,14 +2398,6 @@ listiter_traverse(listiterobject *it, visitproc visit, void *arg)
 	return visit((PyObject *)it->it_seq, arg);
 }
 
-
-static PyObject *
-listiter_getiter(PyObject *it)
-{
-	Py_INCREF(it);
-	return it;
-}
-
 static PyObject *
 listiter_next(listiterobject *it)
 {
@@ -2458,7 +2450,7 @@ PyTypeObject PyListIter_Type = {
 	0,					/* tp_clear */
 	0,					/* tp_richcompare */
 	0,					/* tp_weaklistoffset */
-	(getiterfunc)listiter_getiter,		/* tp_iter */
+	PyObject_GenericGetIter,		/* tp_iter */
 	(iternextfunc)listiter_next,		/* tp_iternext */
 	0,					/* tp_methods */
 	0,					/* tp_members */

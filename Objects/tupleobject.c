@@ -779,14 +779,6 @@ tupleiter_traverse(tupleiterobject *it, visitproc visit, void *arg)
 	return visit((PyObject *)it->it_seq, arg);
 }
 
-
-static PyObject *
-tupleiter_getiter(PyObject *it)
-{
-	Py_INCREF(it);
-	return it;
-}
-
 static PyObject *
 tupleiter_next(tupleiterobject *it)
 {
@@ -839,6 +831,6 @@ PyTypeObject PyTupleIter_Type = {
 	0,					/* tp_clear */
 	0,					/* tp_richcompare */
 	0,					/* tp_weaklistoffset */
-	(getiterfunc)tupleiter_getiter,		/* tp_iter */
+	PyObject_GenericGetIter,		/* tp_iter */
 	(iternextfunc)tupleiter_next,		/* tp_iternext */
 };

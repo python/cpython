@@ -105,13 +105,6 @@ cycle_next(cycleobject *lz)
 	}
 }
 
-static PyObject *
-cycle_getiter(PyObject *lz)
-{
-	Py_INCREF(lz);
-	return lz;
-}
-
 PyDoc_STRVAR(cycle_doc,
 "cycle(iterable) --> cycle object\n\
 \n\
@@ -147,7 +140,7 @@ PyTypeObject cycle_type = {
 	0,				/* tp_clear */
 	0,				/* tp_richcompare */
 	0,				/* tp_weaklistoffset */
-	(getiterfunc)cycle_getiter,	/* tp_iter */
+	PyObject_GenericGetIter,	/* tp_iter */
 	(iternextfunc)cycle_next,	/* tp_iternext */
 	0,				/* tp_methods */
 	0,				/* tp_members */
@@ -261,13 +254,6 @@ dropwhile_next(dropwhileobject *lz)
 	}
 }
 
-static PyObject *
-dropwhile_getiter(PyObject *lz)
-{
-	Py_INCREF(lz);
-	return lz;
-}
-
 PyDoc_STRVAR(dropwhile_doc,
 "dropwhile(predicate, iterable) --> dropwhile object\n\
 \n\
@@ -303,7 +289,7 @@ PyTypeObject dropwhile_type = {
 	0,				/* tp_clear */
 	0,				/* tp_richcompare */
 	0,				/* tp_weaklistoffset */
-	(getiterfunc)dropwhile_getiter,	/* tp_iter */
+	PyObject_GenericGetIter,	/* tp_iter */
 	(iternextfunc)dropwhile_next,	/* tp_iternext */
 	0,				/* tp_methods */
 	0,				/* tp_members */
@@ -416,13 +402,6 @@ takewhile_next(takewhileobject *lz)
 	return NULL;
 }
 
-static PyObject *
-takewhile_getiter(PyObject *lz)
-{
-	Py_INCREF(lz);
-	return lz;
-}
-
 PyDoc_STRVAR(takewhile_doc,
 "takewhile(predicate, iterable) --> takewhile object\n\
 \n\
@@ -458,7 +437,7 @@ PyTypeObject takewhile_type = {
 	0,				/* tp_clear */
 	0,				/* tp_richcompare */
 	0,				/* tp_weaklistoffset */
-	(getiterfunc)takewhile_getiter,	/* tp_iter */
+	PyObject_GenericGetIter,	/* tp_iter */
 	(iternextfunc)takewhile_next,	/* tp_iternext */
 	0,				/* tp_methods */
 	0,				/* tp_members */
@@ -589,13 +568,6 @@ islice_next(isliceobject *lz)
 	return item;
 }
 
-static PyObject *
-islice_getiter(PyObject *lz)
-{
-	Py_INCREF(lz);
-	return lz;
-}
-
 PyDoc_STRVAR(islice_doc,
 "islice(iterable, [start,] stop [, step]) --> islice object\n\
 \n\
@@ -635,7 +607,7 @@ PyTypeObject islice_type = {
 	0,				/* tp_clear */
 	0,				/* tp_richcompare */
 	0,				/* tp_weaklistoffset */
-	(getiterfunc)islice_getiter,	/* tp_iter */
+	PyObject_GenericGetIter,	/* tp_iter */
 	(iternextfunc)islice_next,	/* tp_iternext */
 	0,				/* tp_methods */
 	0,				/* tp_members */
@@ -739,13 +711,6 @@ starmap_next(starmapobject *lz)
 	return result;
 }
 
-static PyObject *
-starmap_getiter(PyObject *lz)
-{
-	Py_INCREF(lz);
-	return lz;
-}
-
 PyDoc_STRVAR(starmap_doc,
 "starmap(function, sequence) --> starmap object\n\
 \n\
@@ -781,7 +746,7 @@ PyTypeObject starmap_type = {
 	0,				/* tp_clear */
 	0,				/* tp_richcompare */
 	0,				/* tp_weaklistoffset */
-	(getiterfunc)starmap_getiter,	/* tp_iter */
+	PyObject_GenericGetIter,	/* tp_iter */
 	(iternextfunc)starmap_next,	/* tp_iternext */
 	0,				/* tp_methods */
 	0,				/* tp_members */
@@ -930,13 +895,6 @@ imap_next(imapobject *lz)
 	return result;
 }
 
-static PyObject *
-imap_getiter(PyObject *lz)
-{
-	Py_INCREF(lz);
-	return lz;
-}
-
 PyDoc_STRVAR(imap_doc,
 "imap(func, *iterables) --> imap object\n\
 \n\
@@ -975,7 +933,7 @@ PyTypeObject imap_type = {
 	0,				/* tp_clear */
 	0,				/* tp_richcompare */
 	0,				/* tp_weaklistoffset */
-	(getiterfunc)imap_getiter,	/* tp_iter */
+	PyObject_GenericGetIter,	/* tp_iter */
 	(iternextfunc)imap_next,	/* tp_iternext */
 	0,				/* tp_methods */
 	0,				/* tp_members */
@@ -1074,13 +1032,6 @@ chain_next(chainobject *lz)
 	return NULL;
 }
 
-static PyObject *
-chain_getiter(PyObject *lz)
-{
-	Py_INCREF(lz);
-	return lz;
-}
-
 PyDoc_STRVAR(chain_doc,
 "chain(*iterables) --> chain object\n\
 \n\
@@ -1117,7 +1068,7 @@ PyTypeObject chain_type = {
 	0,				/* tp_clear */
 	0,				/* tp_richcompare */
 	0,				/* tp_weaklistoffset */
-	(getiterfunc)chain_getiter,	/* tp_iter */
+	PyObject_GenericGetIter,	/* tp_iter */
 	(iternextfunc)chain_next,	/* tp_iternext */
 	0,				/* tp_methods */
 	0,				/* tp_members */
@@ -1231,13 +1182,6 @@ ifilter_next(ifilterobject *lz)
 	}
 }
 
-static PyObject *
-ifilter_getiter(PyObject *lz)
-{
-	Py_INCREF(lz);
-	return lz;
-}
-
 PyDoc_STRVAR(ifilter_doc,
 "ifilter(function or None, sequence) --> ifilter object\n\
 \n\
@@ -1273,7 +1217,7 @@ PyTypeObject ifilter_type = {
 	0,				/* tp_clear */
 	0,				/* tp_richcompare */
 	0,				/* tp_weaklistoffset */
-	(getiterfunc)ifilter_getiter,	/* tp_iter */
+	PyObject_GenericGetIter,	/* tp_iter */
 	(iternextfunc)ifilter_next,	/* tp_iternext */
 	0,				/* tp_methods */
 	0,				/* tp_members */
@@ -1387,13 +1331,6 @@ ifilterfalse_next(ifilterfalseobject *lz)
 	}
 }
 
-static PyObject *
-ifilterfalse_getiter(PyObject *lz)
-{
-	Py_INCREF(lz);
-	return lz;
-}
-
 PyDoc_STRVAR(ifilterfalse_doc,
 "ifilterfalse(function or None, sequence) --> ifilterfalse object\n\
 \n\
@@ -1429,7 +1366,7 @@ PyTypeObject ifilterfalse_type = {
 	0,				/* tp_clear */
 	0,				/* tp_richcompare */
 	0,				/* tp_weaklistoffset */
-	(getiterfunc)ifilterfalse_getiter,	/* tp_iter */
+	PyObject_GenericGetIter,	/* tp_iter */
 	(iternextfunc)ifilterfalse_next,	/* tp_iternext */
 	0,				/* tp_methods */
 	0,				/* tp_members */
@@ -1479,13 +1416,6 @@ count_next(countobject *lz)
 	return PyInt_FromLong(lz->cnt++);
 }
 
-static PyObject *
-count_getiter(PyObject *lz)
-{
-	Py_INCREF(lz);
-	return lz;
-}
-
 PyDoc_STRVAR(count_doc,
 "count([firstval]) --> count object\n\
 \n\
@@ -1520,7 +1450,7 @@ PyTypeObject count_type = {
 	0,				/* tp_clear */
 	0,				/* tp_richcompare */
 	0,				/* tp_weaklistoffset */
-	(getiterfunc)count_getiter,	/* tp_iter */
+	PyObject_GenericGetIter,	/* tp_iter */
 	(iternextfunc)count_next,	/* tp_iternext */
 	0,				/* tp_methods */
 	0,				/* tp_members */
@@ -1665,13 +1595,6 @@ izip_next(izipobject *lz)
 	return result;
 }
 
-static PyObject *
-izip_getiter(PyObject *lz)
-{
-	Py_INCREF(lz);
-	return lz;
-}
-
 PyDoc_STRVAR(izip_doc,
 "izip(iter1 [,iter2 [...]]) --> izip object\n\
 \n\
@@ -1711,7 +1634,7 @@ PyTypeObject izip_type = {
 	0,				/* tp_clear */
 	0,				/* tp_richcompare */
 	0,				/* tp_weaklistoffset */
-	(getiterfunc)izip_getiter,	/* tp_iter */
+	PyObject_GenericGetIter,	/* tp_iter */
 	(iternextfunc)izip_next,	/* tp_iternext */
 	0,				/* tp_methods */
 	0,				/* tp_members */
@@ -1784,13 +1707,6 @@ repeat_next(repeatobject *ro)
 	return ro->element;
 }
 
-static PyObject *
-repeat_getiter(PyObject *ro)
-{
-	Py_INCREF(ro);
-	return ro;
-}
-
 PyDoc_STRVAR(repeat_doc,
 "repeat(element [,times]) -> create an iterator which returns the element\n\
 for the specified number of times.  If not specified, returns the element\n\
@@ -1825,7 +1741,7 @@ PyTypeObject repeat_type = {
 	0,				/* tp_clear */
 	0,				/* tp_richcompare */
 	0,				/* tp_weaklistoffset */
-	(getiterfunc)repeat_getiter,	/* tp_iter */
+	PyObject_GenericGetIter,	/* tp_iter */
 	(iternextfunc)repeat_next,	/* tp_iternext */
 	0,				/* tp_methods */
 	0,				/* tp_members */

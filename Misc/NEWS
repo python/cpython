@@ -86,6 +86,9 @@ Build
 C API
 -----
 
+- Added PyObject_GenericGetIter() to fill the tp_iter slot for the
+  typical case where the method returns its self argument.
+
 - The extended type structure used for heap types (new-style
   classes defined by Python code using a class statement) is now
   exported from object.h as PyHeapTypeObject.  (SF patch #696193.)
