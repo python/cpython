@@ -125,12 +125,12 @@ select_select(self, args)
 
     /* Get args. Looks funny because of optional timeout argument */
     if ( getargs(args, "(OOOO)", &ifdlist, &ofdlist, &efdlist, &tout) ) {
-	seconds = (int)timeout;
 	if (tout == None)
 	    tvp = (struct timeval *)0;
 	else {
-	    if (!getargs(tout, "%d;timeout must be float or None", &timeout))
+	    if (!getargs(tout, "d;timeout must be float or None", &timeout))
 		    return NULL;
+	    seconds = (int)timeout;
 	    timeout = timeout - (double)seconds;
 	    tv.tv_sec = seconds;
 	    tv.tv_usec = (int)(timeout*1000000.0);
