@@ -460,7 +460,7 @@ Cygwin: With recent (relative to the time of writing, 2001-12-19)
         bug in Cygwin pthreads that causes test_threadedtempfile to
         hang.
 
-        (2) The _curses module does not build.  This is an known
+        (2) The _curses module does not build.  This is a known
         Cygwin ncurses problem that should be resolved the next time
         that this package is released.
 
