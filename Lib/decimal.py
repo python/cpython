@@ -1924,7 +1924,7 @@ class Decimal(object):
 
         tmp = Decimal(self)
 
-        expadd = tmp._exp / 2
+        expadd = tmp._exp // 2
         if tmp._exp & 1:
             tmp._int += (0,)
             tmp._exp = 0
@@ -1939,12 +1939,12 @@ class Decimal(object):
             ans = Decimal( (0, (8,1,9), tmp.adjusted()  - 2) )
             ans = ans.__add__(tmp.__mul__(Decimal((0, (2,5,9), -2)),
                                           context=context), context=context)
-            ans._exp -= 1 + tmp.adjusted()/2
+            ans._exp -= 1 + tmp.adjusted() // 2
         else:
             ans = Decimal( (0, (2,5,9), tmp._exp + len(tmp._int)- 3) )
             ans = ans.__add__(tmp.__mul__(Decimal((0, (8,1,9), -3)),
                                           context=context), context=context)
-            ans._exp -= 1 + tmp.adjusted()/2
+            ans._exp -= 1 + tmp.adjusted()  // 2
 
         #ans is now a linear approximation.
 
