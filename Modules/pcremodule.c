@@ -231,7 +231,7 @@ PyPcre_compile(self, args)
 	newpattern[j++]='\0';
 	newpattern[j++]='\0';
 	newpattern[j++]='\0';
-	newpattern[j]='\0';
+        newpattern[j]='\0';
 
 	rv->regex = pcre_compile((char*)newpattern, options, 
 				 &error, &erroroffset, dictionary);

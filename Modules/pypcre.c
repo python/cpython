@@ -571,6 +571,15 @@ restrictions:
 
 /* #define DEBUG */
 
+/* Use a macro for debugging printing, 'cause that eliminates the the use
+of #ifdef inline, and there are *still* stupid compilers about that don't like
+indented pre-processor statements. I suppose it's only been 10 years... */
+
+#ifdef DEBUG
+#define DPRINTF(p) printf p
+#else
+#define DPRINTF(p) /*nothing*/
+#endif
 
 /* Include the internals header, which itself includes Standard C headers plus
 the external pcre header. */
@@ -740,7 +749,8 @@ Arguments:
 Returns:     nothing
 */
 
-static pchars(uschar *p, int length, BOOL is_subject, match_data *md)
+static void
+pchars(const uschar *p, int length, BOOL is_subject, match_data *md)
 {
 int c;
 if (is_subject && length > md->end_subject - p) length = md->end_subject - p;
@@ -1605,9 +1615,17 @@ for (;; ptr++)
           if (code == previous) code += 2; else previous[1]++;
           }
 
-        /* Insert an UPTO if the max is greater than the min. */
+        /* If the maximum is unlimited, insert an OP_STAR. */
 
-        if (repeat_max != repeat_min)
+        if (repeat_max < 0)
+          {
+          *code++ = c;
+          *code++ = OP_STAR + repeat_type;
+          }
+
+        /* Else insert an UPTO if the max is greater than the min. */
+
+        else if (repeat_max != repeat_min)
           {
           *code++ = c;
           repeat_max -= repeat_min;
@@ -1651,7 +1669,7 @@ for (;; ptr++)
     else if ((int)*previous >= OP_BRA)
       {
       int i;
-      int length = code - previous;
+      int len = code - previous;
 
       if (repeat_max == -1 && could_be_empty(previous))
         {
@@ -1668,8 +1686,8 @@ for (;; ptr++)
         {
         for (i = 1; i < repeat_min; i++)
           {
-          memcpy(code, previous, length);
-          code += length;
+          memcpy(code, previous, len);
+          code += len;
           }
         }
 
@@ -1681,22 +1699,22 @@ for (;; ptr++)
         {
         if (repeat_min == 0)
           {
-          memmove(previous+1, previous, length);
+          memmove(previous+1, previous, len);
           code++;
           *previous++ = OP_BRAZERO + repeat_type;
           }
 
         for (i = 1; i < repeat_min; i++)
           {
-          memcpy(code, previous, length);
-          code += length;
+          memcpy(code, previous, len);
+          code += len;
           }
 
         for (i = (repeat_min > 0)? repeat_min : 1; i < repeat_max; i++)
           {
           *code++ = OP_BRAZERO + repeat_type;
-          memcpy(code, previous, length);
-          code += length;
+          memcpy(code, previous, len);
+          code += len;
           }
         }
 
@@ -2240,10 +2258,8 @@ if ((options & ~PUBLIC_OPTIONS) != 0)
   return NULL;
   }
 
-#ifdef DEBUG
-printf("------------------------------------------------------------------\n");
-printf("%s\n", pattern);
-#endif
+DPRINTF(("------------------------------------------------------------------\n"));
+DPRINTF(("%s\n", pattern));
 
 /* The first thing to do is to make a pass over the pattern to compute the
 amount of store required to hold the compiled code. This does not have to be
@@ -2358,9 +2374,9 @@ while ((c = *(++ptr)) != 0)
       {
       if (*ptr == '\\')
         {
-        int c = check_escape(&ptr, errorptr, bracount, options, TRUE);
+        int ch = check_escape(&ptr, errorptr, bracount, options, TRUE);
         if (*errorptr != NULL) goto PCRE_ERROR_RETURN;
-        if (-c == ESC_b) class_charcount++; else class_charcount = 10;
+        if (-ch == ESC_b) class_charcount++; else class_charcount = 10;
         }
       else class_charcount++;
       ptr++;
@@ -2376,7 +2392,7 @@ while ((c = *(++ptr)) != 0)
 
       /* A repeat needs either 1 or 5 bytes. */
 
-      if (ptr[1] == '{' && is_counted_repeat(ptr+2))
+      if (*ptr != 0 && ptr[1] == '{' && is_counted_repeat(ptr+2))
         {
         ptr = read_repeat_counts(ptr+2, &min, &max, errorptr);
         if (*errorptr != NULL) goto PCRE_ERROR_RETURN;
@@ -2508,37 +2524,38 @@ while ((c = *(++ptr)) != 0)
     continue;
 
     /* Handle ket. Look for subsequent max/min; for certain sets of values we
-    have to replicate this bracket up to that many times. */
+    have to replicate this bracket up to that many times. If brastackptr is
+    0 this is an unmatched bracket which will generate an error, but take care
+    not to try to access brastack[-1]. */
 
     case ')':
     length += 3;
       {
-      int min = 1;
-      int max = 1;
-      int duplength = length - brastack[--brastackptr];
+      int minval = 1;
+      int maxval = 1;
+      int duplength = (brastackptr > 0)? length - brastack[--brastackptr] : 0;
 
       /* Leave ptr at the final char; for read_repeat_counts this happens
       automatically; for the others we need an increment. */
 
       if ((c = ptr[1]) == '{' && is_counted_repeat(ptr+2))
         {
-        ptr = read_repeat_counts(ptr+2, &min, &max, errorptr);
+        ptr = read_repeat_counts(ptr+2, &minval, &maxval, errorptr);
         if (*errorptr != NULL) goto PCRE_ERROR_RETURN;
         }
-      else if (c == '*') { min = 0; max = -1; ptr++; }
-      else if (c == '+') { max = -1; ptr++; }
-      else if (c == '?') { min = 0; ptr++; }
+      else if (c == '*') { minval = 0; maxval = -1; ptr++; }
+      else if (c == '+') { maxval = -1; ptr++; }
+      else if (c == '?') { minval = 0; ptr++; }
 
-      /* If there is a minimum > 1 we have to replicate up to min-1 times; if
-      there is a limited maximum we have to replicate up to max-1 times and
-      allow for a BRAZERO item before each optional copy, as we also have to
-      do before the first copy if the minimum is zero. */
+      /* If there is a minimum > 1 we have to replicate up to minval-1 times;
+      if there is a limited maximum we have to replicate up to maxval-1 times
+      and allow for a BRAZERO item before each optional copy, as we also have
+      to do before the first copy if the minimum is zero. */
 
-      if (min == 0) length++;
-        else if (min > 1) length += (min - 1) * duplength;
-      if (max > min) length += (max - min) * (duplength + 1);
+      if (minval == 0) length++;
+        else if (minval > 1) length += (minval - 1) * duplength;
+      if (maxval > minval) length += (maxval - minval) * (duplength + 1);
       }
-
     continue;
 
     /* Non-special character. For a run of such characters the length required
@@ -2599,9 +2616,12 @@ if (length > 65539)
   }
 
 /* Compute the size of data block needed and get it, either from malloc or
-externally provided function. Put in the magic number and the options. */
+externally provided function. We specify "code[0]" in the offsetof() expression
+rather than just "code", because it has been reported that one broken compiler
+fails on "code" because it is also an independent variable. It should make no
+difference to the value of the offsetof(). */
 
-size = length + offsetof(real_pcre, code);
+size = length + offsetof(real_pcre, code[0]);
 re = (real_pcre *)(pcre_malloc)(size+50);
 
 if (re == NULL)
@@ -2609,6 +2629,8 @@ if (re == NULL)
   *errorptr = ERR21;
   return NULL;
   }
+
+/* Put in the magic number and the options. */
 
 re->magic_number = MAGIC_NUMBER;
 re->options = options;
@@ -2661,10 +2683,10 @@ if ((options & PCRE_ANCHORED) == 0)
     re->options |= PCRE_ANCHORED;
   else
     {
-    int c = find_firstchar(re->code);
-    if (c >= 0)
+    int ch = find_firstchar(re->code);
+    if (ch >= 0)
       {
-      re->first_char = c;
+      re->first_char = ch;
       re->options |= PCRE_FIRSTSET;
       }
     else if (is_startline(re->code))
@@ -2756,7 +2778,7 @@ while (code < code_end)
     case OP_MINUPTO:
     if (isprint(c = code[3])) printf("    %c{", c);
       else printf("    \\x%02x{", c);
-    if (*code != OP_EXACT) printf(",");
+    if (*code != OP_EXACT) printf("0,");
     printf("%d}", (code[1] << 8) + code[2]);
     if (*code == OP_MINUPTO) printf("?");
     code += 3;
@@ -2801,7 +2823,8 @@ while (code < code_end)
 
     case OP_REF:
     printf("    \\%d", *(++code));
-    break;
+    code ++;
+    goto CLASS_REF_REPEAT;
 
     case OP_CLASS:
     case OP_CLASS_L:
@@ -2839,6 +2862,8 @@ while (code < code_end)
       printf("]");
       code += 32;
       /*      code ++;*/
+
+      CLASS_REF_REPEAT:
 
       switch(*code)
         {
@@ -3071,9 +3096,7 @@ for (;;)
     int number = (*ecode - OP_BRA) << 1;
     int save_offset1 = 0, save_offset2 = 0;
 
-#ifdef DEBUG
-    printf("start bracket %d\n", number/2);
-#endif
+    DPRINTF(("start bracket %d\n", number/2));
 
     if (number > 0 && number < md->offset_end)
       {
@@ -3081,9 +3104,7 @@ for (;;)
       save_offset2 = md->offset_vector[number+1];
       md->offset_vector[number] = eptr - md->start_subject;
 
-#ifdef DEBUG
-      printf("saving %d %d\n", save_offset1, save_offset2);
-#endif
+      DPRINTF(("saving %d %d\n", save_offset1, save_offset2));
       }
 
     /* Recurse for all the alternatives. */
@@ -3095,9 +3116,7 @@ for (;;)
       }
     while (*ecode == OP_ALT);
 
-#ifdef DEBUG
-    printf("bracket %d failed\n", number/2);
-#endif
+    DPRINTF(("bracket %d failed\n", number/2));
 
     if (number > 0 && number < md->offset_end)
       {
@@ -3170,7 +3189,7 @@ for (;;)
       ecode += (ecode[1] << 8) + ecode[2];
       }
     while (*ecode == OP_ALT);
-    if (*ecode == OP_KET) return FALSE;
+    if (*ecode == OP_KET) FAIL;
 
     /* Continue as from after the assertion, updating the offsets high water
     mark, since extracts may have been taken. */
@@ -3236,9 +3255,7 @@ for (;;)
 
       number = (*prev - OP_BRA) << 1;
 
-#ifdef DEBUG
-      printf("end bracket %d\n", number/2);
-#endif
+      DPRINTF(("end bracket %d\n", number/2));
 
       if (number > 0)
         {
@@ -3457,14 +3474,14 @@ for (;;)
 
     case OP_NOT_WORDCHAR_L:
     if (eptr >= md->end_subject || (*eptr=='_' || isalnum(*eptr) ))
-      return FALSE;
+      FAIL;
     eptr++;
     ecode++;
     break;
 
     case OP_WORDCHAR_L:
     if (eptr >= md->end_subject || (*eptr!='_' && !isalnum(*eptr) ))
-      return FALSE;
+      FAIL;
     eptr++;
     ecode++;
     break;
@@ -3833,7 +3850,7 @@ for (;;)
       register int length = ecode[1];
       ecode += 2;
 
-#ifdef DEBUG
+#ifdef DEBUG  /* Sigh. Some compilers never learn. */ 
       if (eptr >= md->end_subject)
         printf("matching subject <null> against pattern ");
       else
@@ -3901,10 +3918,8 @@ for (;;)
     maximum. Alternatively, if maximizing, find the maximum number of
     characters and work backwards. */
 
-#ifdef DEBUG
-    printf("matching %c{%d,%d} against subject %.*s\n", c, min, max,
-      max, eptr);
-#endif
+    DPRINTF(("matching %c{%d,%d} against subject %.*s\n", c, min, max,
+      max, eptr));
 
     if (md->caseless)
       {
@@ -3969,7 +3984,7 @@ for (;;)
     /* Match a negated single character */
 
     case OP_NOT:
-    if (eptr > md->end_subject) FAIL;
+    if (eptr >= md->end_subject) FAIL;
     ecode++;
     if (md->caseless)
       {
@@ -4028,10 +4043,8 @@ for (;;)
     maximum. Alternatively, if maximizing, find the maximum number of
     characters and work backwards. */
 
-#ifdef DEBUG
-    printf("negative matching %c{%d,%d} against subject %.*s\n", c, min, max,
-      max, eptr);
-#endif
+    DPRINTF(("negative matching %c{%d,%d} against subject %.*s\n", c, min, max,
+      max, eptr));
 
     if (md->caseless)
       {
@@ -4174,12 +4187,12 @@ for (;;)
 
       case OP_NOT_WORDCHAR_L:
       for (i = 1; i <= min; i++, eptr++) if (*eptr=='_' || isalnum(*eptr))
-        return FALSE;
+        FAIL;
       break;
 
       case OP_WORDCHAR_L:
       for (i = 1; i <= min; i++, eptr++) if (*eptr!='_' && !isalnum(*eptr))
-        return FALSE;
+        FAIL;
       break;
       }
 
@@ -4308,9 +4321,7 @@ for (;;)
     /* There's been some horrible disaster. */
 
     default:
-#ifdef DEBUG
-    printf("Unknown opcode %d\n", *ecode);
-#endif
+    DPRINTF(("Unknown opcode %d\n", *ecode));
     md->errorcode = PCRE_ERROR_UNKNOWN_NODE;
     FAIL;
     }
@@ -4355,6 +4366,35 @@ succeed:
 
 
 /*************************************************
+*         Segregate setjmp()                     *
+*************************************************/
+
+/* The -Wall option of gcc gives warnings for all local variables when setjmp()
+is used, even if the coding conforms to the rules of ANSI C. To avoid this, we
+hide it in a separate function. This is called only when PCRE_EXTRA is set,
+since it's needed only for the extension \X option, and with any luck, a good
+compiler will spot the tail recursion and compile it efficiently.
+
+Arguments:
+   eptr        pointer in subject
+   ecode       position in code
+   offset_top  current top pointer
+   md          pointer to "static" info for the match
+
+Returns:       TRUE if matched
+*/
+
+static BOOL
+match_with_setjmp(const uschar *eptr, const uschar *ecode, int offset_top,
+  match_data *match_block)
+{
+return setjmp(match_block->fail_env) == 0 &&
+      match(eptr, ecode, offset_top, match_block);
+}
+
+
+
+/*************************************************
 *         Execute a Regular Expression           *
 *************************************************/
 
@@ -4384,17 +4424,17 @@ pcre_exec(const pcre *external_re, const pcre_extra *external_extra,
   /* The "volatile" directives are to make gcc -Wall stop complaining
      that these variables can be clobbered by the longjmp.  Hopefully
      they won't cost too much performance. */ 
-volatile int resetcount;
-volatile int ocount = offsetcount;
-volatile int first_char = -1;
+int resetcount, ocount;
+int first_char = -1;
 match_data match_block;
-volatile const uschar *start_bits = NULL;
-const uschar *start_match = (uschar *)subject;
+const uschar *start_bits = NULL;
+const uschar *start_match = (const uschar *)subject;
 const uschar *end_subject;
 const real_pcre *re = (const real_pcre *)external_re;
 const real_pcre_extra *extra = (const real_pcre_extra *)external_extra;
-volatile BOOL anchored = ((re->options | options) & PCRE_ANCHORED) != 0;
-volatile BOOL startline = (re->options & PCRE_STARTLINE) != 0;
+BOOL using_temporary_offsets = FALSE;
+BOOL anchored = ((re->options | options) & PCRE_ANCHORED) != 0;
+BOOL startline = (re->options & PCRE_STARTLINE) != 0;
 
 if ((options & ~PUBLIC_EXEC_OPTIONS) != 0) return PCRE_ERROR_BADOPTION;
 
@@ -4427,18 +4467,17 @@ match_block.errorcode = PCRE_ERROR_NOMATCH;     /* Default error */
 
 /* If the expression has got more back references than the offsets supplied can
 hold, we get a temporary bit of working store to use during the matching.
-Otherwise, we can use the vector supplied, rounding down the size of it to a
-multiple of 2. */
+Otherwise, we can use the vector supplied, rounding down its size to a multiple
+of 2. */
 
-ocount &= (-2);
-if (re->top_backref > 0 && re->top_backref + 1 >= ocount/2)
+ocount = offsetcount & (-2);
+if (re->top_backref > 0 && re->top_backref >= ocount/2)
   {
   ocount = re->top_backref * 2 + 2;
   match_block.offset_vector = (pcre_malloc)(ocount * sizeof(int));
   if (match_block.offset_vector == NULL) return PCRE_ERROR_NOMEMORY;
-#ifdef DEBUG
-  printf("Got memory to hold back references\n");
-#endif
+  using_temporary_offsets = TRUE;
+  DPRINTF(("Got memory to hold back references\n"));
   }
 else match_block.offset_vector = offsets;
 
@@ -4459,7 +4498,7 @@ the right check, because multiline is now set. If it now yields FALSE, the
 expression must have had ^ starting some of its branches. Check to see if
 that is true for *all* branches, and if so, set the startline flag. */
 
-if (match_block. multiline && anchored && (re->options & PCRE_MULTILINE) == 0 &&
+if (match_block.multiline && anchored && (re->options & PCRE_MULTILINE) == 0 &&
     !is_anchored(re->code, match_block.multiline))
   {
   anchored = FALSE;
@@ -4491,6 +4530,7 @@ if (!anchored)
 
 do
   {
+  int rc;
   register int *iptr = match_block.offset_vector;
   register int *iend = iptr + resetcount;
 
@@ -4532,7 +4572,7 @@ do
       }
     }
 
-#ifdef DEBUG
+#ifdef DEBUG  /* Sigh. Some compilers never learn. */
   printf(">>>> Match against: ");
   pchars(start_match, end_subject - start_match, TRUE, &match_block);
   printf("\n");
@@ -4546,7 +4586,10 @@ do
   if certain parts of the pattern were not used.
 
   Before starting the match, we have to set up a longjmp() target to enable
-  the "cut" operation to fail a match completely without backtracking. */
+  the "cut" operation to fail a match completely without backtracking. This
+  is done in a separate function to avoid compiler warnings. We need not do
+  it unless PCRE_EXTRA is set, since only in that case is the "cut" operation
+  enabled. */
 
   /* To handle errors such as running out of memory for the failure
      stack, we need to save this location via setjmp(), so
@@ -4554,45 +4597,41 @@ do
   if (setjmp(match_block.error_env)==0)
     {
 
-  if (setjmp(match_block.fail_env) == 0 &&
-      match(start_match, re->code, 2, &match_block))
+  if ((re->options & PCRE_EXTRA) != 0)
     {
-    int rc;
-
-    if (ocount != offsetcount)
-      {
-      if (offsetcount >= 4)
-        {
-        memcpy(offsets + 2, match_block.offset_vector + 2,
-          (offsetcount - 2) * sizeof(int));
-#ifdef DEBUG
-        printf("Copied offsets; freeing temporary memory\n");
-#endif
-        }
-      if (match_block.end_offset_top > offsetcount)
-        match_block.offset_overflow = TRUE;
-
-#ifdef DEBUG
-      printf("Freeing temporary memory\n");
-#endif
-
-      (pcre_free)(match_block.offset_vector);
-      }
-  
-    rc = match_block.offset_overflow? 0 : match_block.end_offset_top/2;
-
-    if (match_block.offset_end < 2) rc = 0; else
-      {
-      offsets[0] = start_match - match_block.start_subject;
-      offsets[1] = match_block.end_match_ptr - match_block.start_subject;
-      }
-
-#ifdef DEBUG
-    printf(">>>> returning %d\n", rc);
-#endif
-    free_stack(&match_block);
-    return rc;
+    if (!match_with_setjmp(start_match, re->code, 2, &match_block))
+      continue;
     }
+  else if (!match(start_match, re->code, 2, &match_block)) continue;
+
+  /* Copy the offset information from temporary store if necessary */
+
+  if (using_temporary_offsets)
+    {
+    if (offsetcount >= 4)
+      {
+      memcpy(offsets + 2, match_block.offset_vector + 2,
+        (offsetcount - 2) * sizeof(int));
+      DPRINTF(("Copied offsets from temporary memory\n"));
+      }
+    if (match_block.end_offset_top > offsetcount)
+      match_block.offset_overflow = TRUE;
+
+    DPRINTF(("Freeing temporary memory\n"));
+    (pcre_free)(match_block.offset_vector);
+    }
+
+  rc = match_block.offset_overflow? 0 : match_block.end_offset_top/2;
+
+  if (match_block.offset_end < 2) rc = 0; else
+    {
+    offsets[0] = start_match - match_block.start_subject;
+    offsets[1] = match_block.end_match_ptr - match_block.start_subject;
+    }
+
+  DPRINTF((">>>> returning %d\n", rc));
+  free_stack(&match_block);
+  return rc;
   }  /* End of (if setjmp(match_block.error_env)...) */
   /* Return an error code; pcremodule.c will preserve the exception */
   if (PyErr_Occurred()) return PCRE_ERROR_NOMEMORY;
@@ -4603,11 +4642,17 @@ while (!anchored &&
        match_block.errorcode == PCRE_ERROR_NOMATCH &&
        start_match++ < end_subject);
 
+if (using_temporary_offsets)
+  {
+  DPRINTF(("Freeing temporary memory\n"));
+  (pcre_free)(match_block.offset_vector);
+  }
+
 #ifdef DEBUG
 printf(">>>> returning %d\n", match_block.errorcode);
 #endif
 
-return match_block.errorcode;
+ return match_block.errorcode;
 }
 
 /* End of pcre.c */

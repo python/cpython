@@ -3,7 +3,7 @@
 *************************************************/
 
 
-#define PCRE_VERSION       "1.02 12-Dec-1997"
+#define PCRE_VERSION       "1.04 22-Dec-1997"
 
 
 /* This is a library of functions to support regular expressions whose syntax
@@ -39,6 +39,7 @@ modules, but which are not relevant to the outside. */
 define a macro for memmove() if USE_BCOPY is defined. */
 
 #ifdef USE_BCOPY
+#undef  memmove        /* some systems may have a macro */
 #define memmove(a, b, c) bcopy(b, a, c)
 #endif
  
@@ -52,6 +53,13 @@ define a macro for memmove() if USE_BCOPY is defined. */
 #include <stdlib.h>
 #include <string.h>
 #include "pcre.h"
+
+/* In case there is no definition of offsetof() provided - though any proper
+Standard C system should have one. */
+
+#ifndef offsetof
+#define offsetof(p_type,field) ((size_t)&(((p_type *)0)->field))
+#endif
 
 /* Private options flags start at the most significant end of the two bytes.
 The public options defined in pcre.h start at the least significant end. Make

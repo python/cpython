@@ -14,6 +14,7 @@
 /* Have to include stdlib.h in order to ensure that size_t is defined;
 it is needed here for malloc. */
 
+#include <sys/types.h>
 #include <stdlib.h>
 
 /* Options */
