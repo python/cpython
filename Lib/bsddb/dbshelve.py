@@ -67,7 +67,7 @@ def open(filename, flags=db.DB_CREATE, mode=0660, filetype=db.DB_HASH,
         elif sflag == 'n':
             flags = db.DB_TRUNCATE | db.DB_CREATE
         else:
-            raise error, "flags should be one of 'r', 'w', 'c' or 'n' or use the bsddb.db.DB_* flags"
+            raise db.DBError, "flags should be one of 'r', 'w', 'c' or 'n' or use the bsddb.db.DB_* flags"
 
     d = DBShelf(dbenv)
     d.open(filename, dbname, filetype, flags, mode)
@@ -145,9 +145,15 @@ class DBShelf(DictMixin):
     #-----------------------------------
     # Other methods
 
-    def append(self, value, txn=None):
+    def __append(self, value, txn=None):
         data = cPickle.dumps(value, self.binary)
         return self.db.append(data, txn)
+
+    def append(self, value, txn=None):
+        if self.get_type() != db.DB_RECNO:
+            self.append = self.__append
+            return self.append(value, txn=txn)
+        raise db.DBError, "append() only supported when dbshelve opened with filetype=dbshelve.db.DB_RECNO"
 
 
     def associate(self, secondaryDB, callback, flags=0):
