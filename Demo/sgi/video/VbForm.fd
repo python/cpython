@@ -1,0 +1,270 @@
+Magic: 12321
+
+Internal Form Definition File
+    (do not change)
+
+Number of forms: 1
+
+=============== FORM ===============
+Name: form
+Width: 350.000000
+Height: 240.000000
+Number of Objects: 17
+
+--------------------
+class: 1
+type: 1
+box: 0.000000 0.000000 350.000000 240.000000
+boxtype: 1
+colors: 47 47
+alignment: 4
+style: 0
+size: 11.000000
+lcol: 0
+label: 
+name: 
+callback: 
+argument: 
+
+--------------------
+class: 1
+type: 2
+box: 140.000000 10.000000 120.000000 160.000000
+boxtype: 2
+colors: 47 47
+alignment: 0
+style: 0
+size: 11.000000
+lcol: 0
+label: Burst mode:
+name: 
+callback: 
+argument: 
+
+--------------------
+class: 1
+type: 2
+box: 10.000000 10.000000 120.000000 160.000000
+boxtype: 2
+colors: 47 47
+alignment: 0
+style: 0
+size: 11.000000
+lcol: 0
+label: Options:
+name: 
+callback: 
+argument: 
+
+--------------------
+class: 31
+type: 2
+box: 60.000000 50.000000 40.000000 30.000000
+boxtype: 2
+colors: 13 5
+alignment: 0
+style: 0
+size: 11.000000
+lcol: 0
+label: Capture rate:
+name: in_rate
+callback: cb_rate
+argument: 0
+
+--------------------
+class: 31
+type: 1
+box: 150.000000 70.000000 100.000000 30.000000
+boxtype: 2
+colors: 13 5
+alignment: 0
+style: 0
+size: 11.000000
+lcol: 0
+label: Max Mbytes:
+name: in_maxmem
+callback: cb_maxmem
+argument: 0
+
+--------------------
+class: 31
+type: 2
+box: 150.000000 20.000000 100.000000 30.000000
+boxtype: 2
+colors: 13 5
+alignment: 0
+style: 0
+size: 11.000000
+lcol: 0
+label: Nr. of fields:
+name: in_nframes
+callback: cb_nframes
+argument: 0
+
+--------------------
+class: 12
+type: 1
+box: 150.000000 130.000000 100.000000 30.000000
+boxtype: 1
+colors: 39 3
+alignment: 4
+style: 0
+size: 11.000000
+lcol: 0
+label: Burst mode
+name: b_burst
+callback: cb_burst
+argument: 0
+
+--------------------
+class: 31
+type: 0
+box: 50.000000 200.000000 209.999985 30.000000
+boxtype: 2
+colors: 13 5
+alignment: 2
+style: 0
+size: 11.000000
+lcol: 0
+label: File:
+name: in_file
+callback: cb_file
+argument: 0
+
+--------------------
+class: 11
+type: 0
+box: 270.000000 200.000000 70.000000 30.000000
+boxtype: 1
+colors: 47 47
+alignment: 4
+style: 0
+size: 11.000000
+lcol: 0
+label: Open...
+name: b_open
+callback: cb_open
+argument: 0
+
+--------------------
+class: 11
+type: 0
+box: 270.000000 110.000000 70.000015 60.000004
+boxtype: 1
+colors: 47 47
+alignment: 4
+style: 1
+size: 11.000000
+lcol: 0
+label: Capture
+name: b_capture
+callback: cb_capture
+argument: 0
+
+--------------------
+class: 13
+type: 1
+box: 20.000000 20.000000 110.000000 30.000000
+boxtype: 0
+colors: 7 3
+alignment: 4
+style: 0
+size: 11.000000
+lcol: 0
+label: "Fielddrop"
+name: b_drop
+callback: cb_drop
+argument: 0
+
+--------------------
+class: 2
+type: 0
+box: 30.000000 50.000000 30.000000 30.000000
+boxtype: 0
+colors: 47 47
+alignment: 2
+style: 0
+size: 11.000000
+lcol: 0
+label: 1/
+name: 
+callback: 
+argument: 
+
+--------------------
+class: 2
+type: 0
+box: 100.000000 50.000000 30.000000 30.000000
+boxtype: 0
+colors: 47 47
+alignment: 2
+style: 0
+size: 11.000000
+lcol: 0
+label: fr
+name: 
+callback: 
+argument: 
+
+--------------------
+class: 11
+type: 0
+box: 270.000000 10.000000 70.000008 30.000000
+boxtype: 1
+colors: 47 47
+alignment: 4
+style: 0
+size: 11.000000
+lcol: 0
+label: Quit
+name: b_quit
+callback: cb_quit
+argument: 0
+
+--------------------
+class: 11
+type: 0
+box: 270.000000 60.000000 70.000000 30.000000
+boxtype: 1
+colors: 47 47
+alignment: 4
+style: 0
+size: 11.000000
+lcol: 0
+label: Play
+name: b_play
+callback: cb_play
+argument: 0
+
+--------------------
+class: 42
+type: 0
+box: 20.000000 110.000000 100.000000 30.000000
+boxtype: 5
+colors: 7 0
+alignment: 0
+style: 0
+size: 11.000000
+lcol: 0
+label: Video format:
+name: c_format
+callback: cb_format
+argument: 0
+
+--------------------
+class: 11
+type: 0
+box: 0.000000 0.000000 350.000000 240.000000
+boxtype: 1
+colors: 47 47
+alignment: 4
+style: 0
+size: 11.000000
+lcol: 0
+label: Stop capture
+name: b_stop
+callback: cb_stop
+argument: 0
+
+==============================
+create_the_forms
