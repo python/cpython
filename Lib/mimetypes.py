@@ -12,7 +12,7 @@ Data:
 
 knownfiles -- list of files to parse
 inited -- flag set when init() has been called
-suffixes_map -- dictionary mapping suffixes to suffixes
+suffix_map -- dictionary mapping suffixes to suffixes
 encodings_map -- dictionary mapping suffixes to encodings
 types_map -- dictionary mapping suffixes to types
 
@@ -23,6 +23,7 @@ read_mime_types(file) -- parse one file, return a dictionary or None
 
 """
 
+import os
 import posixpath
 import urllib
 
@@ -36,6 +37,117 @@ knownfiles = [
     ]
 
 inited = 0
+
+
+class MimeTypes:
+    """MIME-types datastore.
+
+    This datastore can handle information from mime.types-style files
+    and supports basic determination of MIME type from a filename or
+    URL, and can guess a reasonable extension given a MIME type.
+    """
+
+    def __init__(self, filenames=()):
+        if not inited:
+            init()
+        self.encodings_map = encodings_map.copy()
+        self.suffix_map = suffix_map.copy()
+        self.types_map = types_map.copy()
+        for name in filenames:
+            self.read(name)
+
+    def guess_type(self, url):
+        """Guess the type of a file based on its URL.
+
+        Return value is a tuple (type, encoding) where type is None if
+        the type can't be guessed (no or unknown suffix) or a string
+        of the form type/subtype, usable for a MIME Content-type
+        header; and encoding is None for no encoding or the name of
+        the program used to encode (e.g. compress or gzip).  The
+        mappings are table driven.  Encoding suffixes are case
+        sensitive; type suffixes are first tried case sensitive, then
+        case insensitive.
+
+        The suffixes .tgz, .taz and .tz (case sensitive!) are all
+        mapped to '.tar.gz'.  (This is table-driven too, using the
+        dictionary suffix_map.)
+        """
+        scheme, url = urllib.splittype(url)
+        if scheme == 'data':
+            # syntax of data URLs:
+            # dataurl   := "data:" [ mediatype ] [ ";base64" ] "," data
+            # mediatype := [ type "/" subtype ] *( ";" parameter )
+            # data      := *urlchar
+            # parameter := attribute "=" value
+            # type/subtype defaults to "text/plain"
+            comma = url.find(',')
+            if comma < 0:
+                # bad data URL
+                return None, None
+            semi = url.find(';', 0, comma)
+            if semi >= 0:
+                type = url[:semi]
+            else:
+                type = url[:comma]
+            if '=' in type or '/' not in type:
+                type = 'text/plain'
+            return type, None           # never compressed, so encoding is None
+        base, ext = posixpath.splitext(url)
+        while self.suffix_map.has_key(ext):
+            base, ext = posixpath.splitext(base + self.suffix_map[ext])
+        if self.encodings_map.has_key(ext):
+            encoding = self.encodings_map[ext]
+            base, ext = posixpath.splitext(base)
+        else:
+            encoding = None
+        types_map = self.types_map
+        if types_map.has_key(ext):
+            return types_map[ext], encoding
+        elif types_map.has_key(ext.lower()):
+            return types_map[ext.lower()], encoding
+        else:
+            return None, encoding
+
+    def guess_extension(self, type):
+        """Guess the extension for a file based on its MIME type.
+
+        Return value is a string giving a filename extension,
+        including the leading dot ('.').  The extension is not
+        guaranteed to have been associated with any particular data
+        stream, but would be mapped to the MIME type `type' by
+        guess_type().  If no extension can be guessed for `type', None
+        is returned.
+        """
+        type = type.lower()
+        for ext, stype in self.types_map.items():
+            if type == stype:
+                return ext
+        return None
+
+    def read(self, filename):
+        """Read a single mime.types-format file, specified by pathname."""
+        fp = open(filename)
+        self.readfp(fp)
+        fp.close()
+
+    def readfp(self):
+        """Read a single mime.types-format file."""
+        map = self.types_map
+        while 1:
+            line = f.readline()
+            if not line:
+                break
+            words = line.split()
+            for i in range(len(words)):
+                if words[i][0] == '#':
+                    del words[i:]
+                    break
+            if not words:
+                continue
+            type, suffixes = words[0], words[1:]
+            for suff in suffixes:
+                map['.' + suff] = type
+
 
 def guess_type(url):
     """Guess the type of a file based on its URL.
@@ -51,44 +163,10 @@ def guess_type(url):
     The suffixes .tgz, .taz and .tz (case sensitive!) are all mapped
     to ".tar.gz".  (This is table-driven too, using the dictionary
     suffix_map).
-
     """
-    if not inited:
-        init()
-    scheme, url = urllib.splittype(url)
-    if scheme == 'data':
-        # syntax of data URLs:
-        # dataurl   := "data:" [ mediatype ] [ ";base64" ] "," data
-        # mediatype := [ type "/" subtype ] *( ";" parameter )
-        # data      := *urlchar
-        # parameter := attribute "=" value
-        # type/subtype defaults to "text/plain"
-        comma = url.find(',')
-        if comma < 0:
-            # bad data URL
-            return None, None
-        semi = url.find(';', 0, comma)
-        if semi >= 0:
-            type = url[:semi]
-        else:
-            type = url[:comma]
-        if '=' in type or '/' not in type:
-            type = 'text/plain'
-        return type, None               # never compressed, so encoding is None
-    base, ext = posixpath.splitext(url)
-    while suffix_map.has_key(ext):
-        base, ext = posixpath.splitext(base + suffix_map[ext])
-    if encodings_map.has_key(ext):
-        encoding = encodings_map[ext]
-        base, ext = posixpath.splitext(base)
-    else:
-        encoding = None
-    if types_map.has_key(ext):
-        return types_map[ext], encoding
-    elif types_map.has_key(ext.lower()):
-        return types_map[ext.lower()], encoding
-    else:
-        return None, encoding
+    init()
+    return guess_type(url)
+
 
 def guess_extension(type):
     """Guess the extension for a file based on its MIME type.
@@ -99,50 +177,43 @@ def guess_extension(type):
     MIME type `type' by guess_type().  If no extension can be guessed for
     `type', None is returned.
     """
-    global inited
-    if not inited:
-        init()
-    type = type.lower()
-    for ext, stype in types_map.items():
-        if type == stype:
-            return ext
-    return None
+    init()
+    return guess_extension(type)
+
 
 def init(files=None):
+    global guess_extension, guess_type
+    global suffix_map, types_map, encodings_map
     global inited
-    for file in files or knownfiles:
-        s = read_mime_types(file)
-        if s:
-            for key, value in s.items():
-                types_map[key] = value
     inited = 1
+    db = MimeTypes()
+    if files is None:
+        files = knownfiles
+    for file in files:
+        if os.path.isfile(file):
+            db.readfp(open(file))
+    encodings_map = db.encodings_map
+    suffix_map = db.encodings_map
+    types_map = db.types_map
+    guess_extension = db.guess_extension
+    guess_type = db.guess_type
+
 
 def read_mime_types(file):
     try:
         f = open(file)
     except IOError:
         return None
-    map = {}
-    while 1:
-        line = f.readline()
-        if not line: break
-        words = line.split()
-        for i in range(len(words)):
-            if words[i][0] == '#':
-                del words[i:]
-                break
-        if not words: continue
-        type, suffixes = words[0], words[1:]
-        for suff in suffixes:
-            map['.'+suff] = type
-    f.close()
-    return map
+    db = MimeTypes()
+    db.readfp(f)
+    return db.types_map
+
 
 suffix_map = {
     '.tgz': '.tar.gz',
     '.taz': '.tar.gz',
     '.tz': '.tar.gz',
-}
+    }
 
 encodings_map = {
     '.gz': 'gzip',
