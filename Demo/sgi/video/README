@@ -59,9 +59,9 @@ Vtime.py	Copy a video file, manipulating the time codes (e.g.
 		faster/slower, or regenerate time codes, or drop
 		frames too close apart)
 
-Vcopy.py	selectively write frames from one movie file to another
-		usage: Vcopy [-t type] [-m treshold] [-a] infile outfile
-		commands: 'n' gets next frame; 'w' writes current frame
+Vcopy.py	Universal video file copying tool.  Can manipulate the
+		time codes, change the type, size, and packfactor.
+		Subsumes Vtime.py.
 
 Vmkjpeg.py	compress an rgb or grey video file to jpeg[grey] format
 
