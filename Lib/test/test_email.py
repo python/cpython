@@ -158,7 +158,7 @@ class TestMessageAPI(TestEmailBase):
         msg.set_boundary('BOUNDARY')
         header, value = msg.items()[4]
         eq(header.lower(), 'content-type')
-        eq(value, 'text/plain; charset=us-ascii; boundary="BOUNDARY"')
+        eq(value, 'text/plain; charset="us-ascii"; boundary="BOUNDARY"')
         # This one has a Content-Type: header, with a boundary, stuck in the
         # middle of its headers.  Make sure the order is preserved; it should
         # be fifth.
@@ -1785,6 +1785,17 @@ A very long line that must get split to something other than at the
  76th character boundary to test the non-default behavior''')
         h = Header(hstr, maxlinelen=1024, header_name='Subject')
         eq(h.encode(), hstr)
+
+
+# Test RFC 2231 header parameters decoding
+class TestRFC2231(TestEmailBase):
+    def test_get_param(self):
+        eq = self.assertEqual
+        msg = self._msgobj('msg_29.txt')
+        eq(msg.get_param('title'),
+           ('us-ascii', 'en', 'This is even more ***fun*** isn\'t it!'))
+        eq(msg.get_param('title', unquote=0),
+           ('us-ascii', 'en', '"This is even more ***fun*** isn\'t it!"'))
 
 
 
