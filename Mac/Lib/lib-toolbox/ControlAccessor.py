@@ -21,6 +21,8 @@ _codingdict = {
 	kControlEditTextPasswordTag: (None, None, None),
 	
 	kControlPopupButtonMenuIDTag: ("h", None, None),
+	
+	kControlListBoxDoubleClickTag: ("b", None, None),
 }
 
 def SetControlData(control, part, selector, data):
@@ -49,5 +51,7 @@ def GetControlData(control, part, selector):
 		data = struct.unpack(structfmt, data)
 	if decoder:
 		data = decoder(data)
+	if type(data) == type(()) and len(data) == 1:
+		data = data[0]
 	return data
 	
