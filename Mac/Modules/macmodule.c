@@ -36,9 +36,9 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include <fcntl.h>
 
-#include "::unixemu:macdefs.h"
-#include "::unixemu:dir.h"
-#include "::unixemu:stat.h"
+#include ":::unixemu:macdefs.h"
+#include ":::unixemu:dir.h"
+#include ":::unixemu:stat.h"
 
 #ifndef MAXPATHLEN
 #define MAXPATHLEN 1024
@@ -426,7 +426,7 @@ mac_write(self, args)
 }
 
 static struct methodlist mac_methods[] = {
-	{"access",	mac_access},
+	{"access_",	mac_access}, /* "access" is a Python reserved word */
 	{"chdir",	mac_chdir},
 	{"close",	mac_close},
 #ifdef MPW
