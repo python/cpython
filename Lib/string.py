@@ -115,7 +115,7 @@ def rindex(s, sub, i = 0):
 
 # Count non-overlapping occurrences of substring
 def count(s, sub, i = 0):
-	if i < 0: i = i + len(s)
+	if i < 0: i = max(0, i + len(s))
 	n = len(sub)
 	m = len(s) + 1 - n
 	if n == 0: return m-i
@@ -130,7 +130,7 @@ def count(s, sub, i = 0):
 
 # Find substring, return -1 if not found
 def find(s, sub, i = 0):
-	if i < 0: i = i + len(s)
+	if i < 0: i = max(0, i + len(s))
 	n = len(sub)
 	m = len(s) + 1 - n
 	while i < m:
@@ -140,7 +140,7 @@ def find(s, sub, i = 0):
 
 # Find last substring, return -1 if not found
 def rfind(s, sub, i = 0):
-	if i < 0: i = i + len(s)
+	if i < 0: i = max(0, i + len(s))
 	n = len(sub)
 	m = len(s) + 1 - n
 	r = -1
@@ -168,7 +168,10 @@ def atof(str):
 		raise ValueError, 'non-float argument to string.atof'
 
 # Convert string to integer
-def atoi(str):
+def atoi(str, base=10):
+	if base != 10:
+		# We only get here if strop doesn't define atoi()
+		raise ValueError, "this string.atoi doesn't support base != 10"
 	sign = ''
 	s = str
 	if s and s[0] in '+-':
@@ -183,7 +186,10 @@ def atoi(str):
 	return eval(sign + s)
 
 # Convert string to long integer
-def atol(str):
+def atol(str, base=10):
+	if base != 10:
+		# We only get here if strop doesn't define atol()
+		raise ValueError, "this string.atol doesn't support base != 10"
 	sign = ''
 	s = str
 	if s and s[0] in '+-':
