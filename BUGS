@@ -9,12 +9,11 @@ nother to make an entry in this file, unless it was a serious bug
 Known BUGS in 1.1.1 and 1.2
 ---------------------------
 
-(-) C-level coerce() doesn't call __coerce__ when it should (and
-similar for __cmp__)
+(-) a file with unmatched triple quotes causes a loop in the scanner
 
 (-) tkinter seems to leave an exception around sometime which breaks
 unmarshalling code objects [hard to reproduce, have added a trap to
-catch it]
+marshal.c to catch it]
 
 (-) destroying all modules may destroy __builtin__ (or other modules)
 while destructors of other modules may still need it [hard to fix --
@@ -28,16 +27,14 @@ DECREF can cause recursive calls to methods of the object being
 modified.  Other files too.  [Only partially fixed -- listobject.c is
 still suspect.]
 
-(-) if __getattr__ prints something, calling repr(x) from cmd line
-forgets a newline
-
 (-) doneimport() should be called *before* the Py_AtExit code is
 called [problem: what if other threads are still active?]
 
-Environmental bugs
-------------------
+Known portability problems
+--------------------------
 
-(-) tkinter doesn't seem to see any declaration of malloc on sunos 4.1.3
+(-) tkinter doesn't seem to see any declaration of malloc on sunos
+4.1.3?
 
 (-) arraymodule doesn't compile under Ultrix (FPROTO macro)
 
@@ -49,8 +46,8 @@ Environmental bugs
 
 (-) regen calls h2py which isn't defined by default
 
-(-) make libinstall (or similar) references to machdep directory but
-doesn't create it
+(-) make sharedinstall references to machdep directory but doesn't
+create it
 
 (-) HP doesn't compile out of the box (needs LIBS=-ldld or
 LIBS=/usr/lib/libdld.sl) [hard to test without a HP machine handy]
@@ -58,6 +55,12 @@ LIBS=/usr/lib/libdld.sl) [hard to test without a HP machine handy]
 ======================================================================
 BUGS present in 1.1.1 and fixed in 1.2
 --------------------------------------
+
+(*) if __getattr__ or __repr__ prints something, calling repr(x) from
+cmd line forgets a newline
+
+(*) C-level coerce() doesn't call __coerce__ when it should (and
+similar for __cmp__)
 
 (*) struct module aligns doubles wrongly when compiled with -DDEBUG on
 sparc

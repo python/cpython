@@ -1,4 +1,67 @@
+Thu Jan 12 12:27:23 1995  Guido van Rossum  <guido@voorn.cwi.nl>
+
+	* Python/ceval.c (eval_code/PRINT_EXPR): fix messed output when
+	x.__repr__() prints something and repr(x) is called at the prompt
+
+	* Python/pythonrun.c (initmain), Python/import.c
+	(exec_code_module): use getbuiltins(), not getbuiltindict() to
+	initialize new modules
+
+	* Python/ceval.c (getbuiltins): return getbuiltindict() instead of
+	NULL if no current frame
+
+	* Modules/cryptmodule.c: removed redundant include of modsupport.h
+
+	* Modules/signalmodule.c: remove unwanted trigraph from comment
+
+	* Modules/Setup.in: clarify status of dlmodule.c
+
+	* Objects/object.c (cmpobject): properly implement cmp() for class
+        instances
+
+Wed Jan 11 10:56:12 1995  Guido van Rossum  <guido@voorn.cwi.nl>
+
+	* README: removed references to --with-svr4; added docs for
+	--without-gcc
+
+	* Modules/mathmodule.c: rearrange declarations somewhat
+
 Tue Jan 10 11:34:23 1995  Guido van Rossum  <guido@voorn.cwi.nl>
+
+	* Include/*.h, Python/getmtime.c, Modules/<several>.c: THE GREAT
+        RENAMING (inspired by Jun Hamano).  One now either includes
+	"Python.h" and then uses new names only, or one includes
+	"allobjects.h" and uses old names.  "rename1.h" no longer exists;
+	instead, "rename2.h" performs the reverse mapping.
+
+	* Python/bltinmodule.c (builtin_filter): fix subtle refcount big
+	in filter() (Tim MacKenzie)
+
+	* Include/mymalloc.h, Modules/{Makefile.pre.in,config.c.in}:
+	change to make things palatable for C++ (Tim MacKenzie)
+
+	* Modules/socketmodule.c: only call hstrerror() if it exists
+
+	* Modules/tkintermodule.c: added interface to Tk_DoOneEvent() (R
+	Lindsay Todd)
+
+	* Objects/longobject.c (long_pow): some defensive programming
+	(Eric Siegerman)
+
+	* Objects/intobject.c (int_pow): fix memory leak in ternary pow()
+	(Eric Siegerman)
+
+	* Modules/posixmodule.c (posix_fdopen, posix_popen): add optional
+	argument to specify buffer size as for __builtin__.open(); also
+	make mode argument optional (default "r")
+
+	* Objects/classobject.c (instance_coerce): implement coercions
+	involving instances properly
+
+	* Objects/object.c, Python/bltinmodule.c: moved coerce() to
+	objects.c, where it belongs
+
+	* Doc/libfuncs.tex: added execfile(); reformulated eval() somewhat
 
 	* Python/bltinmodule.c (builtin_{execfile,eval}): fix
 	globals/locals defaults to match the manual again; also allow None

@@ -1,8 +1,14 @@
+(*) add buffering parameter to fdopen() and popen()
+
+(-) "f()=0" generates syntax error msg without line number
+
 (-) interface to getdtablesize() in posix
 
 (-) reentrancy with global variables vs. decref in
 ./Modules/cdmodule.c ./Modules/flmodule.c ./Objects/accessobject.c
 ./Objects/frameobject.c ./Python/traceback.c
+
+(-) check reentrancy in list updates?
 
 (-) speed up regsub.gsub
 
@@ -20,7 +26,7 @@
 
 (-) modules should be able to define a module destructor hook
 
-(-) destroy modules in reverse order of importation
+(-) destroy modules in reverse order of importation?
 
 (-) make array a standard built-in object
 
@@ -46,11 +52,11 @@ where found, __version__ string?
 (-) pass dict of builtins to exec / execfile / eval ???
 
 (?) stack frame correspondence problem (Jim Roskind)
-(probably solved by err_setval_tb)
+(probably solved by err_fetch / err_restore)
 
 (-) make lots of places use newgetargs
 
-(-) no tp_str member in typeobject
+(*) no tp_str member in typeobject
 
 (-) readline 2.0 on sequent has ^C problem (works only first time)
 
