@@ -379,15 +379,18 @@ the Python-level parameters to be passed in as a tuple acceptable for
 parsing via \cfunction{PyArg_ParseTuple()}; more information on this
 function is provided below.
 
-The \constant{METH_KEYWORDS} bit may be set in the third field if keyword
-arguments should be passed to the function.  In this case, the C
-function should accept a third \samp{PyObject *} parameter which will
-be a dictionary of keywords.  Use \cfunction{PyArg_ParseTupleAndKeywords()}
-to parse the arguments to such a function.
+The \constant{METH_KEYWORDS} bit may be set in the third field if
+keyword arguments should be passed to the function.  In this case, the
+C function should accept a third \samp{PyObject *} parameter which
+will be a dictionary of keywords.  Use
+\cfunction{PyArg_ParseTupleAndKeywords()} to parse the arguments to
+such a function.
 
 The method table must be passed to the interpreter in the module's
-initialization function (which should be the only non-\code{static}
-item defined in the module file):
+initialization function.  The initialization function must be named
+\cfunction{init\var{name}()}, where \var{name} is the name of the
+module, and should be the only non-\keyword{static} item defined in
+the module file:
 
 \begin{verbatim}
 void
