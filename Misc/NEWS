@@ -290,6 +290,8 @@ Extension modules
 Library
 -------
 
+- Added global runctx function to profile module
+
 - Add hlist missing entryconfigure and entrycget methods.
 
 - The ptcp154 codec was added for Kazakh character set support.

@@ -1,6 +1,8 @@
 """Test suite for the profile module."""
 
 import profile
+import os
+from test.test_support import TESTFN, vereq
 
 # In order to have reproducible time, we simulate a timer in the global
 # variable 'ticks', which represents simulated time in milliseconds.
@@ -82,5 +84,17 @@ class C:
         ticks += 1
         raise AttributeError
 
+
+def test_2():
+        d = globals().copy()
+        def testfunc():
+            global x
+            x = 1
+        d['testfunc'] = testfunc
+        profile.runctx("testfunc()", d, d, TESTFN)
+        vereq (x, 1)
+        os.unlink (TESTFN)
+
 if __name__ == "__main__":
     test_main()
+    test_2()
