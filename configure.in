@@ -124,7 +124,8 @@ AC_MSG_RESULT($cpp_type)
 AC_HEADER_STDC
 AC_CHECK_HEADERS(dlfcn.h fcntl.h limits.h ncurses.h \
 signal.h stdarg.h stddef.h stdlib.h thread.h unistd.h utime.h \
-sys/audioio.h sys/lock.h sys/param.h sys/select.h sys/time.h sys/times.h \
+sys/audioio.h sys/file.h sys/lock.h \
+sys/param.h sys/select.h sys/time.h sys/times.h \
 sys/un.h sys/utsname.h sys/wait.h)
 AC_HEADER_DIRENT
 
@@ -148,6 +149,8 @@ AC_TYPE_SIGNAL
 AC_TYPE_SIZE_T
 AC_TYPE_UID_T
 
+AC_CHECK_SIZEOF(int)
+AC_CHECK_SIZEOF(long)
 
 # Set info about shared libraries.
 AC_SUBST(SO)
@@ -209,7 +212,8 @@ if test -z "$LINKFORSHARED"
 then
 	case $ac_sys_system in
 	AIX*)	LINKFORSHARED="-Wl,-bE:python.exp";;
-	hp*|HP*) LINKFORSHARED="-Wl,-E";;
+	hp*|HP*)
+	    LINKFORSHARED="-Wl,-E -Wl,+s -Wl,+b\$(BINLIBDEST)/sharedmodules";;
 	Linux*) LINKFORSHARED="-rdynamic";;
 	next) LINKFORSHARED="-u libsys_s";;
 	SCO_SV*) LINKFORSHARED="-Bdynamic -dy -Wl,-Bexport";;
