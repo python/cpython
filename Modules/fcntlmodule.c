@@ -31,8 +31,8 @@ PERFORMANCE OF THIS SOFTWARE.
 
 /* fcntl module */
 
-#include "allobjects.h"
-#include "modsupport.h"
+#include "Python.h"
+/*#include "modsupport.h"*/
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -48,10 +48,10 @@ PERFORMANCE OF THIS SOFTWARE.
 
 /* fcntl(fd, opt, [arg]) */
 
-static object *
+static PyObject *
 fcntl_fcntl(self, args)
-	object *self; /* Not used */
-	object *args;
+	PyObject *self; /* Not used */
+	PyObject *args;
 {
 	int fd;
 	int code;
@@ -61,47 +61,48 @@ fcntl_fcntl(self, args)
 	int len;
 	char buf[1024];
 
-	if (getargs(args, "(iis#)", &fd, &code, &str, &len)) {
+	if (PyArg_Parse(args, "(iis#)", &fd, &code, &str, &len)) {
 		if (len > sizeof buf) {
-			err_setstr(ValueError, "fcntl string arg too long");
+			PyErr_SetString(PyExc_ValueError,
+					"fcntl string arg too long");
 			return NULL;
 		}
 		memcpy(buf, str, len);
-		BGN_SAVE
+		Py_BEGIN_ALLOW_THREADS
 		ret = fcntl(fd, code, buf);
-		END_SAVE
+		Py_END_ALLOW_THREADS
 		if (ret < 0) {
-			err_errno(IOError);
+			PyErr_SetFromErrno(PyExc_IOError);
 			return NULL;
 		}
-		return newsizedstringobject(buf, len);
+		return PyString_FromStringAndSize(buf, len);
 	}
 
-	err_clear();
-	if (getargs(args, "(ii)", &fd, &code))
+	PyErr_Clear();
+	if (PyArg_Parse(args, "(ii)", &fd, &code))
 		arg = 0;
 	else {
-		err_clear();
-		if (!getargs(args, "(iii)", &fd, &code, &arg))
+		PyErr_Clear();
+		if (!PyArg_Parse(args, "(iii)", &fd, &code, &arg))
 			return NULL;
 	}
-	BGN_SAVE
+	Py_BEGIN_ALLOW_THREADS
 	ret = fcntl(fd, code, arg);
-	END_SAVE
+	Py_END_ALLOW_THREADS
 	if (ret < 0) {
-		err_errno(IOError);
+		PyErr_SetFromErrno(PyExc_IOError);
 		return NULL;
 	}
-	return newintobject((long)ret);
+	return PyInt_FromLong((long)ret);
 }
 
 
 /* ioctl(fd, opt, [arg]) */
 
-static object *
+static PyObject *
 fcntl_ioctl(self, args)
-	object *self; /* Not used */
-	object *args;
+	PyObject *self; /* Not used */
+	PyObject *args;
 {
 	int fd;
 	int code;
@@ -111,56 +112,57 @@ fcntl_ioctl(self, args)
 	int len;
 	char buf[1024];
 
-	if (getargs(args, "(iis#)", &fd, &code, &str, &len)) {
+	if (PyArg_Parse(args, "(iis#)", &fd, &code, &str, &len)) {
 		if (len > sizeof buf) {
-			err_setstr(ValueError, "ioctl string arg too long");
+			PyErr_SetString(PyExc_ValueError,
+					"ioctl string arg too long");
 			return NULL;
 		}
 		memcpy(buf, str, len);
-		BGN_SAVE
+		Py_BEGIN_ALLOW_THREADS
 		ret = ioctl(fd, code, buf);
-		END_SAVE
+		Py_END_ALLOW_THREADS
 		if (ret < 0) {
-			err_errno(IOError);
+			PyErr_SetFromErrno(PyExc_IOError);
 			return NULL;
 		}
-		return newsizedstringobject(buf, len);
+		return PyString_FromStringAndSize(buf, len);
 	}
 
-	err_clear();
-	if (getargs(args, "(ii)", &fd, &code))
+	PyErr_Clear();
+	if (PyArg_Parse(args, "(ii)", &fd, &code))
 		arg = 0;
 	else {
-		err_clear();
-		if (!getargs(args, "(iii)", &fd, &code, &arg))
+		PyErr_Clear();
+		if (!PyArg_Parse(args, "(iii)", &fd, &code, &arg))
 			return NULL;
 	}
-	BGN_SAVE
+	Py_BEGIN_ALLOW_THREADS
 	ret = ioctl(fd, code, arg);
-	END_SAVE
+	Py_END_ALLOW_THREADS
 	if (ret < 0) {
-		err_errno(IOError);
+		PyErr_SetFromErrno(PyExc_IOError);
 		return NULL;
 	}
-	return newintobject((long)ret);
+	return PyInt_FromLong((long)ret);
 }
 
 
 /* flock(fd, operation) */
 
-static object *
+static PyObject *
 fcntl_flock(self, args)
-	object *self; /* Not used */
-	object *args;
+	PyObject *self; /* Not used */
+	PyObject *args;
 {
 	int fd;
 	int code;
 	int ret;
 
-	if (!getargs(args, "(ii)", &fd, &code))
+	if (!PyArg_Parse(args, "(ii)", &fd, &code))
 		return NULL;
 
-	BGN_SAVE
+	Py_BEGIN_ALLOW_THREADS
 #ifdef HAVE_FLOCK
 	ret = flock(fd, code);
 #else
@@ -180,27 +182,28 @@ fcntl_flock(self, args)
 		else if (code & LOCK_EX)
 			l.l_type = F_WRLCK;
 		else {
-			err_setstr(ValueError, "unrecognized flock argument");
+			PyErr_SetString(PyExc_ValueError,
+					"unrecognized flock argument");
 			return NULL;
 		}
 		l.l_whence = l.l_start = l.l_len = 0;
 		ret = fcntl(fd, (code & LOCK_NB) ? F_SETLK : F_SETLKW, &l);
 	}
 #endif /* HAVE_FLOCK */
-	END_SAVE
+	Py_END_ALLOW_THREADS
 	if (ret < 0) {
-		err_errno(IOError);
+		PyErr_SetFromErrno(PyExc_IOError);
 		return NULL;
 	}
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
 /* lockf(fd, operation) */
-static object *
+static PyObject *
 fcntl_lockf(self, args)
-	object *self; /* Not used */
-	object *args;
+	PyObject *self; /* Not used */
+	PyObject *args;
 {
 	int fd, code, len = 0, start = 0, whence = 0, ret;
 
@@ -208,7 +211,7 @@ fcntl_lockf(self, args)
 			       &start, &whence))
 	    return NULL;
 
-	BGN_SAVE
+	Py_BEGIN_ALLOW_THREADS
 #ifndef LOCK_SH
 #define LOCK_SH		1	/* shared lock */
 #define LOCK_EX		2	/* exclusive lock */
@@ -224,7 +227,8 @@ fcntl_lockf(self, args)
 		else if (code & LOCK_EX)
 			l.l_type = F_WRLCK;
 		else {
-			err_setstr(ValueError, "unrecognized flock argument");
+			PyErr_SetString(PyExc_ValueError,
+					"unrecognized flock argument");
 			return NULL;
 		}
 		l.l_len = len;
@@ -232,18 +236,18 @@ fcntl_lockf(self, args)
 		l.l_whence = whence;
 		ret = fcntl(fd, (code & LOCK_NB) ? F_SETLK : F_SETLKW, &l);
 	}
-	END_SAVE
+	Py_END_ALLOW_THREADS
 	if (ret < 0) {
-		err_errno(IOError);
+		PyErr_SetFromErrno(PyExc_IOError);
 		return NULL;
 	}
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
 /* List of functions */
 
-static struct methodlist fcntl_methods[] = {
+static PyMethodDef fcntl_methods[] = {
 	{"fcntl",	fcntl_fcntl},
 	{"ioctl",	fcntl_ioctl},
 	{"flock",	fcntl_flock},
@@ -257,15 +261,15 @@ static struct methodlist fcntl_methods[] = {
 void
 initfcntl()
 {
-	object *m, *d;
+	PyObject *m, *d;
 
 	/* Create the module and add the functions */
-	m = initmodule("fcntl", fcntl_methods);
+	m = Py_InitModule("fcntl", fcntl_methods);
 
 	/* Add some symbolic constants to the module */
-	d = getmoduledict(m);
+	d = PyModule_GetDict(m);
 
 	/* Check for errors */
-	if (err_occurred())
-		fatal("can't initialize module fcntl");
+	if (PyErr_Occurred())
+		Py_FatalError("can't initialize module fcntl");
 }
