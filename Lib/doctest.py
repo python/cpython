@@ -200,6 +200,7 @@ __all__ = [
     'DebugRunner',
     # 6. Test Functions
     'testmod',
+    'testfile',
     'run_docstring_examples',
     # 7. Tester
     'Tester',
@@ -477,6 +478,30 @@ class _OutputRedirectingPdb(pdb.Pdb):
         pdb.Pdb.trace_dispatch(self, *args)
         # Restore stdout.
         sys.stdout = save_stdout
+
+def _module_relative_path(module, path):
+    if not inspect.ismodule(module):
+        raise TypeError, 'Expected a module: %r' % module
+    if path.startswith('/'):
+        raise ValueError, 'Module-relative files may not have absolute paths'
+
+    # Find the base directory for the path.
+    if hasattr(module, '__file__'):
+        # A normal module/package
+        basedir = os.path.split(module.__file__)[0]
+    elif module.__name__ == '__main__':
+        # An interactive session.
+        if len(sys.argv)>0 and sys.argv[0] != '':
+            basedir = os.path.split(sys.argv[0])[0]
+        else:
+            basedir = os.curdir
+    else:
+        # A module w/o __file__ (this includes builtins)
+        raise ValueError("Can't resolve paths relative to the module " +
+                         module + " (it has no __file__)")
+
+    # Combine the base directory and the path.
+    return os.path.join(basedir, *(path.split('/')))
 
 ######################################################################
 ## 2. Example & DocTest
@@ -1881,6 +1906,7 @@ def testmod(m=None, name=None, globs=None, verbose=None, isprivate=None,
         DONT_ACCEPT_BLANKLINE
         NORMALIZE_WHITESPACE
         ELLIPSIS
+        IGNORE_EXCEPTION_DETAIL
         REPORT_UDIFF
         REPORT_CDIFF
         REPORT_NDIFF
@@ -1896,9 +1922,7 @@ def testmod(m=None, name=None, globs=None, verbose=None, isprivate=None,
     treat all functions as public.  Optionally, "isprivate" can be
     set to doctest.is_private to skip over functions marked as private
     using the underscore naming convention; see its docs for details.
-    """
 
-    """ [XX] This is no longer true:
     Advanced tomfoolery:  testmod runs methods of a local instance of
     class doctest.Tester, then merges the results into (or creates)
     global Tester instance doctest.master.  Methods of doctest.master
@@ -1939,6 +1963,121 @@ def testmod(m=None, name=None, globs=None, verbose=None, isprivate=None,
 
     for test in finder.find(m, name, globs=globs, extraglobs=extraglobs):
         runner.run(test)
+
+    if report:
+        runner.summarize()
+
+    if master is None:
+        master = runner
+    else:
+        master.merge(runner)
+
+    return runner.failures, runner.tries
+
+def testfile(filename, module_relative=True, name=None, package=None,
+             globs=None, verbose=None, report=True, optionflags=0,
+             extraglobs=None, raise_on_error=False):
+    """
+    Test examples in the given file.  Return (#failures, #tests).
+
+    Optional keyword arg "module_relative" specifies how filenames
+    should be interpreted:
+
+      - If "module_relative" is True (the default), then "filename"
+         specifies a module-relative path.  By default, this path is
+         relative to the calling module's directory; but if the
+         "package" argument is specified, then it is relative to that
+         package.  To ensure os-independence, "filename" should use
+         "/" characters to separate path segments, and should not
+         be an absolute path (i.e., it may not begin with "/").
+
+      - If "module_relative" is False, then "filename" specifies an
+        os-specific path.  The path may be absolute or relative (to
+        the current working directory).
+
+    Optional keyword arg "name" gives the name of the file; by default
+    use the file's name.
+
+    Optional keyword argument "package" is a Python package or the
+    name of a Python package whose directory should be used as the
+    base directory for a module relative filename.  If no package is
+    specified, then the calling module's directory is used as the base
+    directory for module relative filenames.  It is an error to
+    specify "package" if "module_relative" is False.
+
+    Optional keyword arg "globs" gives a dict to be used as the globals
+    when executing examples; by default, use {}.  A copy of this dict
+    is actually used for each docstring, so that each docstring's
+    examples start with a clean slate.
+
+    Optional keyword arg "extraglobs" gives a dictionary that should be
+    merged into the globals that are used to execute examples.  By
+    default, no extra globals are used.
+
+    Optional keyword arg "verbose" prints lots of stuff if true, prints
+    only failures if false; by default, it's true iff "-v" is in sys.argv.
+
+    Optional keyword arg "report" prints a summary at the end when true,
+    else prints nothing at the end.  In verbose mode, the summary is
+    detailed, else very brief (in fact, empty if all tests passed).
+
+    Optional keyword arg "optionflags" or's together module constants,
+    and defaults to 0.  Possible values (see the docs for details):
+
+        DONT_ACCEPT_TRUE_FOR_1
+        DONT_ACCEPT_BLANKLINE
+        NORMALIZE_WHITESPACE
+        ELLIPSIS
+        IGNORE_EXCEPTION_DETAIL
+        REPORT_UDIFF
+        REPORT_CDIFF
+        REPORT_NDIFF
+        REPORT_ONLY_FIRST_FAILURE
+
+    Optional keyword arg "raise_on_error" raises an exception on the
+    first unexpected exception or failure. This allows failures to be
+    post-mortem debugged.
+
+    Advanced tomfoolery:  testmod runs methods of a local instance of
+    class doctest.Tester, then merges the results into (or creates)
+    global Tester instance doctest.master.  Methods of doctest.master
+    can be called directly too, if you want to do something unusual.
+    Passing report=0 to testmod is especially useful then, to delay
+    displaying a summary.  Invoke doctest.master.summarize(verbose)
+    when you're done fiddling.
+    """
+    global master
+
+    if package and not module_relative:
+        raise ValueError("Package may only be specified for module-"
+                         "relative paths.")
+                         
+    # Relativize the path
+    if module_relative:
+        package = _normalize_module(package)
+        filename = _module_relative_path(package, filename)
+
+    # If no name was given, then use the file's name.
+    if name is None:
+        name = os.path.split(filename)[-1]
+
+    # Assemble the globals.
+    if globs is None:
+        globs = {}
+    else:
+        globs = globs.copy()
+    if extraglobs is not None:
+        globs.update(extraglobs)
+
+    if raise_on_error:
+        runner = DebugRunner(verbose=verbose, optionflags=optionflags)
+    else:
+        runner = DocTestRunner(verbose=verbose, optionflags=optionflags)
+
+    # Read the file, convert it to a test, and run it.
+    s = open(filename).read()
+    test = DocTestParser().get_doctest(s, globs, name, filename, 0)
+    runner.run(test)
 
     if report:
         runner.summarize()
@@ -2311,52 +2450,59 @@ class DocFileCase(DocTestCase):
                 % (self._dt_test.name, self._dt_test.filename, err)
                 )
 
-def DocFileTest(path, package=None, globs=None, **options):
-    name = path.split('/')[-1]
-
-    # Interpret relative paths as relative to the given package's
-    # directory (or the current module, if no package is specified).
-    if not os.path.isabs(path):
-        package = _normalize_module(package)
-        if hasattr(package, '__file__'):
-            # A normal package/module.
-            dir = os.path.split(package.__file__)[0]
-            path = os.path.join(dir, *(path.split('/')))
-        elif package.__name__ == '__main__':
-            # An interactive session.
-            if sys.argv[0] != '':
-                dir = os.path.split(sys.argv[0])[0]
-                path = os.path.join(dir, *(path.split('/')))
-        else:
-            # A module w/o __file__ (this includes builtins)
-            raise ValueError("Can't resolve paths relative to " +
-                             "the module %s (it has" % package +
-                             "no __file__)")
-
-    doc = open(path).read()
-
+def DocFileTest(path, module_relative=True, package=None,
+                globs=None, **options):
     if globs is None:
         globs = {}
 
-    test = DocTestParser().get_doctest(doc, globs, name, path, 0)
+    if package and not module_relative:
+        raise ValueError("Package may only be specified for module-"
+                         "relative paths.")
+    
+    # Relativize the path.
+    if module_relative:
+        package = _normalize_module(package)
+        path = _module_relative_path(package, path)
 
+    # Find the file and read it.
+    name = os.path.split(path)[-1]
+
+    doc = open(path).read()
+
+    # Convert it to a test, and wrap it in a DocFileCase.
+    test = DocTestParser().get_doctest(doc, globs, name, path, 0)
     return DocFileCase(test, **options)
 
 def DocFileSuite(*paths, **kw):
-    """Creates a suite of doctest files.
-
-    One or more text file paths are given as strings.  These should
-    use "/" characters to separate path segments.  Paths are relative
-    to the directory of the calling module, or relative to the package
-    passed as a keyword argument.
+    """A unittest suite for one or more doctest files.
+    
+    The path to each doctest file is given as a string; the
+    interpretation of that string depends on the keyword argument
+    "module_relative".
 
     A number of options may be provided as keyword arguments:
 
+    module_relative
+      If "module_relative" is True, then the given file paths are
+      interpreted as os-independent module-relative paths.  By
+      default, these paths are relative to the calling module's
+      directory; but if the "package" argument is specified, then
+      they are relative to that package.  To ensure os-independence,
+      "filename" should use "/" characters to separate path
+      segments, and may not be an absolute path (i.e., it may not
+      begin with "/").
+      
+      If "module_relative" is False, then the given file paths are
+      interpreted as os-specific paths.  These paths may be absolute
+      or relative (to the current working directory).
+
     package
-      The name of a Python package.  Text-file paths will be
-      interpreted relative to the directory containing this package.
-      The package may be supplied as a package object or as a dotted
-      package name.
+      A Python package or the name of a Python package whose directory
+      should be used as the base directory for module relative paths.
+      If "package" is not specified, then the calling module's
+      directory is used as the base directory for module relative
+      filenames.  It is an error to specify "package" if
+      "module_relative" is False.
 
     setUp
       The name of a set-up function.  This is called before running the
@@ -2375,14 +2521,14 @@ def DocFileSuite(*paths, **kw):
 
     optionflags
        A set of doctest option flags expressed as an integer.
-
     """
     suite = unittest.TestSuite()
 
     # We do this here so that _normalize_module is called at the right
     # level.  If it were called in DocFileTest, then this function
     # would be the caller and we might guess the package incorrectly.
-    kw['package'] = _normalize_module(kw.get('package'))
+    if kw.get('module_relative', True):
+        kw['package'] = _normalize_module(kw.get('package'))
 
     for path in paths:
         suite.addTest(DocFileTest(path, **kw))

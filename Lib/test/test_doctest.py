@@ -1829,8 +1829,9 @@ def test_DocFileSuite():
          ...                              package=new.module('__main__'))
          >>> sys.argv = save_argv
 
-       Absolute paths may also be used; they should use the native
-       path separator (*not* '/').
+       By setting `module_relative=False`, os-specific paths may be
+       used (including absolute paths and paths relative to the
+       working directory):
 
          >>> # Get the absolute path of the test package.
          >>> test_doctest_path = os.path.abspath(test.test_doctest.__file__)
@@ -1839,9 +1840,16 @@ def test_DocFileSuite():
          >>> # Use it to find the absolute path of test_doctest.txt.
          >>> test_file = os.path.join(test_pkg_path, 'test_doctest.txt')
 
-         >>> suite = doctest.DocFileSuite(test_file)
+         >>> suite = doctest.DocFileSuite(test_file, module_relative=False)
          >>> suite.run(unittest.TestResult())
          <unittest.TestResult run=1 errors=0 failures=1>
+
+       It is an error to specify `package` when `module_relative=False`:
+
+         >>> suite = doctest.DocFileSuite(test_file, module_relative=False,
+         ...                              package='test')
+         Traceback (most recent call last):
+         ValueError: Package may only be specified for module-relative paths.
 
        You can specify initial global variables:
 
@@ -1990,6 +1998,127 @@ def test_unittest_reportflags():
       >>> ignored = doctest.set_unittest_reportflags(old)
 
     """
+
+def test_testfile(): r"""
+Tests for the `testfile()` function.  This function runs all the
+doctest examples in a given file.  In its simple invokation, it is
+called with the name of a file, which is taken to be relative to the
+calling module.  The return value is (#failures, #tests).
+
+    >>> doctest.testfile('test_doctest.txt') # doctest: +ELLIPSIS
+    **********************************************************************
+    File "...", line 6, in test_doctest.txt
+    Failed example:
+        favorite_color
+    Exception raised:
+        ...
+        NameError: name 'favorite_color' is not defined
+    **********************************************************************
+    1 items had failures:
+       1 of   2 in test_doctest.txt
+    ***Test Failed*** 1 failures.
+    (1, 2)
+    >>> doctest.master = None  # Reset master.
+
+(Note: we'll be clearing doctest.master after each call to
+`doctest.testfile`, to supress warnings about multiple tests with the
+same name.)
+
+Globals may be specified with the `globs` and `extraglobs` parameters:
+
+    >>> globs = {'favorite_color': 'blue'}
+    >>> doctest.testfile('test_doctest.txt', globs=globs)
+    (0, 2)
+    >>> doctest.master = None  # Reset master.
+
+    >>> extraglobs = {'favorite_color': 'red'}
+    >>> doctest.testfile('test_doctest.txt', globs=globs,
+    ...                  extraglobs=extraglobs) # doctest: +ELLIPSIS
+    **********************************************************************
+    File "...", line 6, in test_doctest.txt
+    Failed example:
+        favorite_color
+    Expected:
+        'blue'
+    Got:
+        'red'
+    **********************************************************************
+    1 items had failures:
+       1 of   2 in test_doctest.txt
+    ***Test Failed*** 1 failures.
+    (1, 2)
+    >>> doctest.master = None  # Reset master.
+
+The file may be made relative to a given module or package, using the
+optional `module_relative` parameter:
+
+    >>> doctest.testfile('test_doctest.txt', globs=globs,
+    ...                  module_relative='test')
+    (0, 2)
+    >>> doctest.master = None  # Reset master.
+
+Verbosity can be increased with the optional `verbose` paremter:
+
+    >>> doctest.testfile('test_doctest.txt', globs=globs, verbose=True)
+    Trying:
+        favorite_color
+    Expecting:
+        'blue'
+    ok
+    Trying:
+        if 1:
+           print 'a'
+           print
+           print 'b'
+    Expecting:
+        a
+        <BLANKLINE>
+        b
+    ok
+    1 items passed all tests:
+       2 tests in test_doctest.txt
+    2 tests in 1 items.
+    2 passed and 0 failed.
+    Test passed.
+    (0, 2)
+    >>> doctest.master = None  # Reset master.
+
+The name of the test may be specified with the optional `name`
+parameter:
+
+    >>> doctest.testfile('test_doctest.txt', name='newname')
+    ... # doctest: +ELLIPSIS
+    **********************************************************************
+    File "...", line 6, in newname
+    ...
+    (1, 2)
+    >>> doctest.master = None  # Reset master.
+
+The summary report may be supressed with the optional `report`
+parameter:
+
+    >>> doctest.testfile('test_doctest.txt', report=False)
+    ... # doctest: +ELLIPSIS
+    **********************************************************************
+    File "...", line 6, in test_doctest.txt
+    Failed example:
+        favorite_color
+    Exception raised:
+        ...
+        NameError: name 'favorite_color' is not defined
+    (1, 2)
+    >>> doctest.master = None  # Reset master.
+
+The optional keyword argument `raise_on_error` can be used to raise an
+exception on the first error (which may be useful for postmortem
+debugging):
+
+    >>> doctest.testfile('test_doctest.txt', raise_on_error=True)
+    ... # doctest: +ELLIPSIS
+    Traceback (most recent call last):
+    UnexpectedException: ...
+    >>> doctest.master = None  # Reset master.
+"""
 
 # old_test1, ... used to live in doctest.py, but cluttered it.  Note
 # that these use the deprecated doctest.Tester, so should go away (or
