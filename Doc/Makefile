@@ -11,6 +11,8 @@
 #   mac -- Macintosh Library Modules
 #   ref -- Python Reference Manual
 #   tut -- Python Tutorial
+#   inst -- Installing Python Modules
+#   dist -- Distributing Python Modules
 #
 # The latex sources for each of these documents are in subdirectories
 # with the three-letter designations above as the directory names.
@@ -64,7 +66,7 @@ RELEASE=1.6a2
 
 # These must be declared phony since there
 # are directories with matching names:
-.PHONY: api doc ext lib mac ref tut
+.PHONY: api doc ext lib mac ref tut inst dist
 .PHONY: html info longhtml
 
 
@@ -105,6 +107,12 @@ ref ref.ps:
 tut tut.ps:
 	(cd paper-$(PAPER); $(MAKE) tut.ps)
 
+inst inst.ps:
+	(cd paper-$(PAPER); $(MAKE) inst.ps)
+
+dist dist.ps:
+	(cd paper-$(PAPER); $(MAKE) dist.ps)
+
 
 api.dvi:
 	(cd paper-$(PAPER); $(MAKE) api.dvi)
@@ -127,6 +135,12 @@ ref.dvi:
 tut.dvi:
 	(cd paper-$(PAPER); $(MAKE) tut.dvi)
 
+inst.dvi:
+	(cd paper-$(PAPER); $(MAKE) inst.dvi)
+
+dist.dvi:
+	(cd paper-$(PAPER); $(MAKE) dist.dvi)
+
 
 api.pdf:
 	(cd paper-$(PAPER); $(MAKE) api.pdf)
@@ -148,6 +162,12 @@ ref.pdf:
 
 tut.pdf:
 	(cd paper-$(PAPER); $(MAKE) tut.pdf)
+
+inst.pdf:
+	(cd paper-$(PAPER); $(MAKE) inst.pdf)
+
+dist.pdf:
+	(cd paper-$(PAPER); $(MAKE) dist.pdf)
 
 
 # The remaining part of the Makefile is concerned with various
@@ -195,6 +215,12 @@ htmlref:
 
 htmltut:
 	(cd $(HTMLDIR); $(MAKE) PAPER=$(PAPER) -f ../html/Makefile tut)
+
+htmlinst:
+	(cd $(HTMLDIR); $(MAKE) PAPER=$(PAPER) -f ../html/Makefile inst)
+
+htmldist:
+	(cd $(HTMLDIR); $(MAKE) PAPER=$(PAPER) -f ../html/Makefile dist)
 
 longhtml:
 	(cd longhtml; $(MAKE) PAPER=$(PAPER))
