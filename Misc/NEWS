@@ -43,6 +43,12 @@ Core and builtins
   instead of going through __getitem__.  If __getitem__ access is
   preferred, then __iter__ can be overriden.
 
+- Creating an attribute on a module (i.e. a global variable created by
+  __setattr__) that causes a builtin name to be shadowed now raises a
+  DeprecationWarning.  In future versions of Python the effect may be
+  undefined (in order to allow for optimization of global and builtin
+  name lookups).
+
 Extension modules
 -----------------
 
