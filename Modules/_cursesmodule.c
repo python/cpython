@@ -613,6 +613,20 @@ PyCursesWindow_EchoChar(self,arg)
 			    "echochar");
 }
 
+#ifdef NCURSES_MOUSE_VERSION
+static PyObject *
+PyCursesWindow_Enclose(self,arg)
+     PyCursesWindowObject *self;
+     PyObject * arg;
+{
+	int x, y;
+	if (!PyArg_Parse(arg,"(ii);y,x", &y, &x))
+		return NULL;
+
+	return PyInt_FromLong( wenclose(self->win,y,x) );
+}
+#endif
+
 static PyObject *
 PyCursesWindow_GetBkgd(self, arg)
      PyCursesWindowObject *self;
@@ -1273,6 +1287,9 @@ static PyMethodDef PyCursesWindow_Methods[] = {
 	{"deleteln",        (PyCFunction)PyCursesWindow_wdeleteln},
 	{"derwin",          (PyCFunction)PyCursesWindow_DerWin},
 	{"echochar",        (PyCFunction)PyCursesWindow_EchoChar},
+#ifdef NCURSES_MOUSE_VERSION
+	{"enclose",         (PyCFunction)PyCursesWindow_Enclose},
+#endif
 	{"erase",           (PyCFunction)PyCursesWindow_werase},
 	{"getbegyx",        (PyCFunction)PyCursesWindow_getbegyx},
 	{"getbkgd",         (PyCFunction)PyCursesWindow_GetBkgd},
@@ -1594,6 +1611,48 @@ PyCurses_getsyx(self, arg)
   return Py_BuildValue("(ii)", y, x);
 }
 
+#ifdef NCURSES_MOUSE_VERSION
+static PyObject *
+PyCurses_GetMouse(self,arg)
+     PyObject *self;
+     PyObject * arg;
+{
+	int rtn;
+	MEVENT event;
+
+	PyCursesInitialised
+	if (!PyArg_NoArgs(arg)) return NULL;
+
+	rtn = getmouse( &event );
+	if (rtn == ERR) {
+		PyErr_SetString(PyCursesError, "getmouse() returned ERR");
+		return NULL;
+	}
+	return Py_BuildValue("(hiiil)", 
+			     (short)event.id, 
+			     event.x, event.y, event.z,
+			     (long) event.bstate);
+}
+
+static PyObject *
+PyCurses_UngetMouse(self,args)
+     PyObject *self;
+     PyObject *args;
+{
+	int rtn;
+	MEVENT event;
+
+	PyCursesInitialised
+	if (!PyArg_ParseTuple(args, "(hiiil)",
+			     &event.id, 
+			     &event.x, &event.y, &event.z,
+			     (int *) &event.bstate))
+	  return NULL;
+
+	return PyCursesCheckERR(ungetmouse(&event), "ungetmouse");
+}
+#endif
+
 static PyObject *
 PyCurses_GetWin(self,arg)
      PyCursesWindowObject *self;
@@ -1864,6 +1923,36 @@ PyCurses_Meta(self,arg)
 
   return PyCursesCheckERR(meta(stdscr, ch), "meta");
 }
+
+#ifdef NCURSES_MOUSE_VERSION
+static PyObject *
+PyCurses_MouseInterval(self,arg)
+     PyObject * self;
+     PyObject * arg;
+{
+	int interval;
+	PyCursesInitialised 
+
+	if (!PyArg_Parse(arg,"i;interval",&interval)) 
+		return NULL;
+	return PyCursesCheckERR(mouseinterval(interval), "mouseinterval");
+}
+
+static PyObject *
+PyCurses_MouseMask(self,arg)
+     PyObject * self;
+     PyObject * arg;
+{
+	int newmask, rtn;
+	mmask_t oldmask, availmask;
+
+	PyCursesInitialised 
+	if (!PyArg_Parse(arg,"i;mousemask",&newmask)) 
+		return NULL;
+	availmask = mousemask(newmask, &oldmask);
+	return Py_BuildValue("(ll)", (long)availmask, (long)oldmask);
+}
+#endif
 
 static PyObject *
 PyCurses_NewPad(self,arg)
@@ -2168,6 +2257,10 @@ static PyMethodDef PyCurses_methods[] = {
   {"filter",              (PyCFunction)PyCurses_filter},
   {"flash",               (PyCFunction)PyCurses_flash},
   {"flushinp",            (PyCFunction)PyCurses_flushinp},
+#ifdef NCURSES_MOUSE_VERSION
+  {"getmouse",            (PyCFunction)PyCurses_GetMouse},
+  {"ungetmouse",          (PyCFunction)PyCurses_UngetMouse, METH_VARARGS},
+#endif
   {"getsyx",              (PyCFunction)PyCurses_getsyx},
   {"getwin",              (PyCFunction)PyCurses_GetWin},
   {"has_colors",          (PyCFunction)PyCurses_has_colors},
@@ -2186,6 +2279,10 @@ static PyMethodDef PyCurses_methods[] = {
   {"killchar",            (PyCFunction)PyCurses_KillChar}, 
   {"longname",            (PyCFunction)PyCurses_longname}, 
   {"meta",                (PyCFunction)PyCurses_Meta},
+#ifdef NCURSES_MOUSE_VERSION
+  {"mouseinterval",       (PyCFunction)PyCurses_MouseInterval},
+  {"mousemask",           (PyCFunction)PyCurses_MouseMask},
+#endif
   {"newpad",              (PyCFunction)PyCurses_NewPad},
   {"newwin",              (PyCFunction)PyCurses_NewWindow},
   {"nl",                  (PyCFunction)PyCurses_nl},
@@ -2269,6 +2366,39 @@ init_curses()
 	SetDictInt("COLOR_CYAN",        COLOR_CYAN);
 	SetDictInt("COLOR_WHITE",       COLOR_WHITE);
 
+#ifdef NCURSES_MOUSE_VERSION
+	/* Mouse-related constants */
+	SetDictInt("BUTTON1_PRESSED",          BUTTON1_PRESSED);
+	SetDictInt("BUTTON1_RELEASED",         BUTTON1_RELEASED);
+	SetDictInt("BUTTON1_CLICKED",          BUTTON1_CLICKED);
+	SetDictInt("BUTTON1_DOUBLE_CLICKED",   BUTTON1_DOUBLE_CLICKED);
+	SetDictInt("BUTTON1_TRIPLE_CLICKED",   BUTTON1_TRIPLE_CLICKED);
+
+	SetDictInt("BUTTON2_PRESSED",          BUTTON2_PRESSED);
+	SetDictInt("BUTTON2_RELEASED",         BUTTON2_RELEASED);
+	SetDictInt("BUTTON2_CLICKED",          BUTTON2_CLICKED);
+	SetDictInt("BUTTON2_DOUBLE_CLICKED",   BUTTON2_DOUBLE_CLICKED);
+	SetDictInt("BUTTON2_TRIPLE_CLICKED",   BUTTON2_TRIPLE_CLICKED);
+
+	SetDictInt("BUTTON3_PRESSED",          BUTTON3_PRESSED);
+	SetDictInt("BUTTON3_RELEASED",         BUTTON3_RELEASED);
+	SetDictInt("BUTTON3_CLICKED",          BUTTON3_CLICKED);
+	SetDictInt("BUTTON3_DOUBLE_CLICKED",   BUTTON3_DOUBLE_CLICKED);
+	SetDictInt("BUTTON3_TRIPLE_CLICKED",   BUTTON3_TRIPLE_CLICKED);
+
+	SetDictInt("BUTTON4_PRESSED",          BUTTON4_PRESSED);
+	SetDictInt("BUTTON4_RELEASED",         BUTTON4_RELEASED);
+	SetDictInt("BUTTON4_CLICKED",          BUTTON4_CLICKED);
+	SetDictInt("BUTTON4_DOUBLE_CLICKED",   BUTTON4_DOUBLE_CLICKED);
+	SetDictInt("BUTTON4_TRIPLE_CLICKED",   BUTTON4_TRIPLE_CLICKED);
+
+	SetDictInt("BUTTON_SHIFT",             BUTTON_SHIFT);
+	SetDictInt("BUTTON_CTRL",              BUTTON_CTRL);
+	SetDictInt("BUTTON_ALT",               BUTTON_ALT);
+
+	SetDictInt("ALL_MOUSE_EVENTS",         ALL_MOUSE_EVENTS);
+	SetDictInt("REPORT_MOUSE_POSITION",    REPORT_MOUSE_POSITION);
+#endif
 	/* Now set everything up for KEY_ variables */
 	{
 	  int key;
