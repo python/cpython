@@ -1691,6 +1691,9 @@ repeat_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	if (!PyArg_ParseTuple(args, "O|l:repeat", &element, &cnt))
 		return NULL;
 
+	if (PyTuple_Size(args) == 2 && cnt < 0)
+		cnt = 0;
+
 	ro = (repeatobject *)type->tp_alloc(type, 0);
 	if (ro == NULL)
 		return NULL;
