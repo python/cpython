@@ -215,6 +215,12 @@
 /* Define if you have the clock function.  */
 #undef HAVE_CLOCK
 
+/* Define if you have the ctermid function.  */
+#undef HAVE_CTERMID
+
+/* Define if you have the ctermid_r function.  */
+#undef HAVE_CTERMID_R
+
 /* Define if you have the dlopen function.  */
 #undef HAVE_DLOPEN
 
@@ -374,11 +380,23 @@
 /* Define if you have the tcsetpgrp function.  */
 #undef HAVE_TCSETPGRP
 
+/* Define if you have the tempnam function.  */
+#undef HAVE_TEMPNAM
+
 /* Define if you have the timegm function.  */
 #undef HAVE_TIMEGM
 
 /* Define if you have the times function.  */
 #undef HAVE_TIMES
+
+/* Define if you have the tmpfile function.  */
+#undef HAVE_TMPFILE
+
+/* Define if you have the tmpnam function.  */
+#undef HAVE_TMPNAM
+
+/* Define if you have the tmpnam_r function.  */
+#undef HAVE_TMPNAM_R
 
 /* Define if you have the truncate function.  */
 #undef HAVE_TRUNCATE
