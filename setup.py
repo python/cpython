@@ -12,6 +12,7 @@ from distutils import text_file
 from distutils.errors import *
 from distutils.core import Extension, setup
 from distutils.command.build_ext import build_ext
+from distutils.command.install import install
 
 # This global variable is used to hold the list of modules to be disabled.
 disabled_module_list = []
@@ -598,10 +599,18 @@ class PyBuildExt(build_ext):
         # *** Uncomment these for TOGL extension only:
         #       -lGL -lGLU -lXext -lXmu \
 
+class PyBuildInstall(install):
+    # Suppress the warning about installation into the lib_dynload
+    # directory, which is not in sys.path when running Python during
+    # installation:
+    def initialize_options (self):
+        install.initialize_options(self)
+        self.warn_dir=0
+    
 def main():
     setup(name = 'Python standard library',
           version = '%d.%d' % sys.version_info[:2],
-          cmdclass = {'build_ext':PyBuildExt},
+          cmdclass = {'build_ext':PyBuildExt, 'install':PyBuildInstall},
           # The struct module is defined here, because build_ext won't be
           # called unless there's at least one extension module defined.
           ext_modules=[Extension('struct', ['structmodule.c'])],
