@@ -289,6 +289,10 @@ _PySys_Init()
 	PyDict_SetItemString(sysdict, "stdin", sysin);
 	PyDict_SetItemString(sysdict, "stdout", sysout);
 	PyDict_SetItemString(sysdict, "stderr", syserr);
+	/* Make backup copies for cleanup */
+	PyDict_SetItemString(sysdict, "__stdin__", sysin);
+	PyDict_SetItemString(sysdict, "__stdout__", sysout);
+	PyDict_SetItemString(sysdict, "__stderr__", syserr);
 	Py_XDECREF(sysin);
 	Py_XDECREF(sysout);
 	Py_XDECREF(syserr);
