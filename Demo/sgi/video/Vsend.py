@@ -1,11 +1,13 @@
 #!/ufs/guido/bin/sgi/python-405
 
 # Send live video UDP packets.
-# Usage: Vsend [host [port]]
+# Usage: Vsend [-b] [-h height] [-p port] [-s size] [-t ttl] [-w width]
+#              [host] ..
 
 import sys
 import time
 import struct
+import string
 from socket import *
 from SOCKET import *
 import gl, GL, DEVICE
@@ -13,37 +15,73 @@ sys.path.append('/ufs/guido/src/video')
 import LiveVideoIn
 import LiveVideoOut
 import SV
+import getopt
+from IN import *
 
-PKTMAX_UCAST = 16*1024 - 6
-PKTMAX_BCAST = 1450
-WIDTH = 400
-HEIGHT = 300
-HOST = '225.0.0.250' # Multicast address!
-PORT = 5555
+from senddefs import *
+
+def usage(msg):
+	print msg
+	print 'usage: Vsend [-b] [-h height] [-p port] [-s size] [-t ttl]',
+	print '[-w width] [host] ...'
+	print '-b        : broadcast on local net'
+	print '-h height : window height (default ' + `DEFHEIGHT` + ')'
+	print '-p port   : port to use (default ' + `DEFPORT` + ')'
+	print '-t ttl    : time-to-live (multicast only; default 1)'
+	print '-s size   : max packet size (default ' + `DEFPKTMAX` + ')'
+	print '-w width  : window width (default ' + `DEFWIDTH` + ')'
+	print '[host] ...: host(s) to send to (default multicast to ' + \
+		DEFMCAST + ')'
+	sys.exit(2)
+
 
 def main():
+	sys.stdout = sys.stderr
+
+	hosts = []
+	port = DEFPORT
+	ttl = -1
+	pktmax = DEFPKTMAX
+	width = DEFWIDTH
+	height = DEFHEIGHT
+
+	try:
+		opts, args = getopt.getopt(sys.argv[1:], 'bh:p:s:t:w:')
+	except getopt.error, msg:
+		usage(msg)
+
+	try:
+		for opt, optarg in opts:
+			if opt == '-p':
+				port = string.atoi(optarg)
+			if opt == '-b':
+				host = '<broadcast>'
+			if opt == '-t':
+				ttl = string.atoi(optarg)
+			if opt == '-s':
+				pktmax = string.atoi(optarg)
+			if opt == '-w':
+				width = string.atoi(optarg)
+			if opt == '-h':
+				height = string.atoi(optarg)
+	except string.atoi_error, msg:
+		usage('bad integer: ' + msg)
+
+	for host in args:
+		hosts.append(gethostbyname(host))
+
+	if not hosts:
+		hosts.append(gethostbyname(DEFMCAST))
+
 	if not LiveVideoIn.have_video:
-		print 'Sorry, no video (use python-405 on roos)'
+		print 'Sorry, no video available (use python-405 on roos)'
 		sys.exit(1)
 
-	host = HOST
-	port = PORT
-	if sys.argv[1:]:
-		host = sys.argv[1]
-		if host == '-b':
-			host = '<broadcast>'
-		if sys.argv[2:]:
-			port = eval(sys.argv[2])
-
-	if host == '<broadcast>':
-		pktmax = PKTMAX_BCAST
-	else:
-		pktmax = PKTMAX_UCAST
-
 	gl.foreground()
-	gl.prefsize(WIDTH, HEIGHT)
+	gl.prefsize(width, height)
+	gl.stepunit(8, 6)
 	wid = gl.winopen('Vsend')
-	gl.keepaspect(WIDTH, HEIGHT)
+	gl.keepaspect(width, height)
 	gl.stepunit(8, 6)
 	gl.maxsize(SV.PAL_XMAX, SV.PAL_YMAX)
 	gl.winconstraints()
@@ -62,6 +100,8 @@ def main():
 
 	s = socket(AF_INET, SOCK_DGRAM)
 	s.setsockopt(SOL_SOCKET, SO_BROADCAST, 1)
+	if ttl >= 0:
+		s.setsockopt(IPPROTO_IP, IP_MULTICAST_TTL, chr(ttl))
 
 	frozen = 0
 
@@ -101,9 +141,16 @@ def main():
 			lvo.putnextpacket(pos, data)
 
 		hdr = struct.pack('hhh', pos, width, height)
-		s.sendto(hdr + data, (host, port))
+		for host in hosts:
+			try:
+				s.sendto(hdr + data, (host, port))
+			except error, msg: # really socket.error
+				if msg[0] <> 121: # no buffer space available
+					raise error, msg # re-raise it
+				print 'Warning:', msg[1]
 
 	lvi.close()
 	lvo.close()
+
 
 main()

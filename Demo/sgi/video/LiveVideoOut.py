@@ -53,4 +53,5 @@ class LiveVideoOut:
 		gl.winset(oldwid)
 
 	def close(self):
-		print 'Done video out'
+		##print 'Done video out'
+		pass
