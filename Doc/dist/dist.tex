@@ -3,6 +3,8 @@
 \usepackage{times}
 \usepackage{distutils}
 
+% $Id$
+
 \title{Distributing Python Modules}
 
 \author{Greg Ward}
@@ -714,8 +716,8 @@ to create a gzipped tarball and a zip file.  The available formats are:
 \begin{description}
 \item[(1)] default on Windows
 \item[(2)] default on Unix
-\item[(3)] under both Unix and Windows, requires either external
-  Info-ZIP utility \emph{or} the \module{zipfile} module
+\item[(3)] requires either external \program{zip} utility or
+  \module{zipfile} module (not part of the standard Python library)
 \item[(4)] requires external utilities: \program{tar} and possibly one
   of \program{gzip}, \program{bzip2}, or \program{compress}
 \end{description}
@@ -884,7 +886,7 @@ installers of your module distribution: for users of RPM-based Linux
 systems, it's a binary RPM; for Windows users, it's an executable
 installer; for Debian-based Linux users, it's a Debian package; and so
 forth.  Obviously, no one person will be able to create built
-distributions for every platform under the sun, so the Distutils is
+distributions for every platform under the sun, so the Distutils are
 designed to enable module developers to concentrate on their
 specialty---writing code and creating source distributions---while an
 intermediary species of \emph{packager} springs up to turn source
@@ -908,25 +910,28 @@ python setup.py bdist
 then the Distutils builds my module distribution (the Distutils itself
 in this case), does a ``fake'' installation (also in the \file{build}
 directory), and creates the default type of built distribution for my
-platform.  Currently, the default format for built distributions is a
-``dumb'' archive---tarball on Unix, ZIP file on Windows.  (These are
-called ``dumb'' built distributions, because they must be unpacked in a
-specific location to work.)
+platform.  The default format for built distributions is a ``dumb'' tar
+file on Unix, and an simple executable installer on Windows.  (That tar
+file is considered ``dumb'' because it has to be unpacked in a specific
+location to work.)
 
 Thus, the above command on a Unix system creates
 \file{Distutils-0.9.1.\filevar{plat}.tar.gz}; unpacking this tarball
-from the root of the filesystemq installs the Distutils just as though
-you had downloaded the source distribution and run \code{python setup.py
-  install}.  (Assuming that the target system has their Python
-installation laid out the same as you do---another reason these are
-called ``dumb'' distributions.)  Obviously, for pure Python
-distributions, this isn't a huge win---but for non-pure distributions,
-which include extensions that would need to be compiled, it can mean the
-difference between someone being able to use your extensions or not.
+from the right place installs the Distutils just as though you had
+downloaded the source distribution and run \code{python setup.py
+  install}.  (The ``right place'' is either the root of the filesystem or 
+Python's \filevar{prefix} directory, depending on the options given to
+the \command{bdist\_dumb} command; the default is to make dumb
+distributions relative to \filevar{prefix}.)  
 
-\XXX{filenames are inaccurate here!}
+Obviously, for pure Python distributions, this isn't a huge win---but
+for non-pure distributions, which include extensions that would need to
+be compiled, it can mean the difference between someone being able to
+use your extensions or not.  And creating ``smart'' built distributions,
+such as an RPM package or an executable installer for Windows, is a big
+win for users even if your distribution doesn't include any extensions.
 
-The \command{bdist} command has a \longprogramopt{format} option,
+The \command{bdist} command has a \longprogramopt{formats} option,
 similar to the \command{sdist} command, which you can use to select the
 types of built distribution to generate: for example,
 \begin{verbatim}
@@ -939,13 +944,13 @@ unpacked from the root directory to install the Distutils.
 The available formats for built distributions are:
 \begin{tableiii}{l|l|c}{code}%
   {Format}{Description}{Notes}
-  \lineiii{zip}{zip file (\file{.zip})}{}
-  \lineiii{gztar}{gzipped tar file (\file{.tar.gz})}{(1)}
-  \lineiii{ztar}{compressed tar file (\file{.tar.Z})}{}
-  \lineiii{tar}{tar file (\file{.tar})}{}
-  \lineiii{rpm}{RPM}{}
-  \lineiii{srpm}{source RPM}{\XXX{to do!}}
-  \lineiii{wininst}{self-extracting ZIP file for Windows}{(2)}
+  \lineiii{gztar}{gzipped tar file (\file{.tar.gz})}{(1),(3)}
+  \lineiii{ztar}{compressed tar file (\file{.tar.Z})}{(3)}
+  \lineiii{tar}{tar file (\file{.tar})}{(3)}
+  \lineiii{zip}{zip file (\file{.zip})}{(4)}
+  \lineiii{rpm}{RPM}{(5)}
+  \lineiii{srpm}{source RPM}{(5) \XXX{to do!}}
+  \lineiii{wininst}{self-extracting ZIP file for Windows}{(2),(6)}
   %\lineiii{wise}{Wise installer for Windows}{(3)}
 \end{tableiii}
 
@@ -953,6 +958,13 @@ The available formats for built distributions are:
 \begin{description}
 \item[(1)] default on Unix
 \item[(2)] default on Windows \XXX{to-do!}
+\item[(3)] requires external utilities: \program{tar} and possibly one
+  of \program{gzip}, \program{bzip2}, or \program{compress}
+\item[(4)] requires either external \program{zip} utility or
+  \module{zipfile} module (not part of the standard Python library)
+\item[(5)] requires external \program{rpm} utility, version 3.0.4 or
+  better (use \code{rpm --version} to find out which version you have)
+\item[(6)] \XXX{requirements for \command{bdist\_wininst}?}
 %\item[(3)] not implemented yet
 \end{description}
 
@@ -972,6 +984,135 @@ each, are:
   \lineii{bdist\_wininst}{wininst}
   %\lineii{bdist\_wise}{wise}
 \end{tableii}
+
+The following sections give details on the individual \command{bdist\_*}
+commands.
+
+
+\subsection{Creating dumb built distributions}
+\label{creating-dumb}
+
+\XXX{Need to document absolute vs. prefix-relative packages here, but
+  first I have to implement it!}
+
+
+\subsection{Creating RPM packages}
+\label{creating-rpms}
+
+The RPM format is used by many of popular Linux distributions, including
+Red Hat, SuSE, and Mandrake.  If one of these (or any of the other
+RPM-based Linux distributions) is your usual environment, creating RPM
+packages for other users of that same distribution is trivial.
+Depending on the complexity of your module distribution and differences
+between Linux distributions, you may also be able to create RPMs that
+work on different RPM-based distributions.
+
+The usual way to create an RPM of your module distribution is to run the 
+\command{bdist\_rpm} command:
+\begin{verbatim}
+python setup.py bdist_rpm
+\end{verbatim}
+or the \command{bdist} command with the \longprogramopt{format} option:
+\begin{verbatim}
+python setup.py bdist --formats=rpm
+\end{verbatim}
+The former allows you to specify RPM-specific options; the latter allows 
+you to easily specify multiple formats in one run.  If you need to do
+both, you can explicitly specify multiple \command{bdist\_*} commands
+and their options:
+\begin{verbatim}
+python setup.py bdist_rpm --packager="John Doe <jdoe@python.net>" \
+                bdist_wininst --target_version="2.0"
+\end{verbatim}
+
+Creating RPM packages is driven by a \file{.spec} file, much as using
+the Distutils is driven by the setup script.  To make your life easier,
+the \command{bdist\_rpm} command normally creates a \file{.spec} file
+based on the information you supply in the setup script, on the command
+line, and in any Distutils configuration files.  Various options and
+section in the \file{.spec} file are derived from options in the setup
+script as follows:
+\begin{tableii}{l|l}{textrm}%
+  {RPM \file{.spec} file option or section}{Distutils setup script option}
+  \lineii{Name}{\option{name}}
+  \lineii{Summary (in preamble)}{\option{description}}
+  \lineii{Version}{\option{version}}
+  \lineii{Vendor}{\option{author} and \option{author\_email}, or \\&
+                  \option{maintainer} and \option{maintainer\_email}}
+  \lineii{Copyright}{\option{licence}}
+  \lineii{Url}{\option{url}}
+  \lineii{\%description (section)}{\option{long\_description}}
+\end{tableii}
+
+Additionally, there many options in \file{.spec} files that don't have
+corresponding options in the setup script.  Most of these are handled
+through options to the \command{bdist\_rpm} command as follows:
+\begin{tableiii}{l|l|l}{textrm}%
+  {RPM \file{.spec} file option or section}%
+  {\command{bdist\_rpm} option}%
+  {default value}
+  \lineiii{Release}{\option{release}}{``1''}
+  \lineiii{Group}{\option{group}}{``Development/Libraries''}
+  \lineiii{Vendor}{\option{vendor}}{(see above)}
+  \lineiii{Packager}{packager}{(none)}
+  \lineiii{Provides}{provides}{(none)}
+  \lineiii{Requires}{requires}{(none)}
+  \lineiii{Conflicts}{conflicts}{(none)}
+  \lineiii{Obsoletes}{obsoletes}{(none)}
+  \lineiii{Distribution}{\option{distribution\_name}}{(none)}
+  \lineiii{BuildRequires}{\option{build\_requires}}{(none)}
+  \lineiii{Icon}{\option{icon}}{(none)}
+\end{tableiii}
+Obviously, supplying even a few of these options on the command-line
+would be tedious and error-prone, so it's usually best to put them in
+the setup configuration file, \file{setup.cfg}---see
+section~\ref{setup-config}.  If you distribute or package many Python
+module distributions, you might want to put options that apply to all of
+them in your personal Distutils configuration file
+(\file{\textasciitilde/.pydistutils.cfg}).
+
+There are three steps to building a binary RPM package, all of which are 
+handled automatically by the Distutils:
+\begin{enumerate}
+\item create a \file{.spec} file, which describes the package (analogous 
+  to the Distutils setup script; in fact, much of the information in the 
+  setup script winds up in the \file{.spec} file)
+\item create the source RPM
+\item create the ``binary'' RPM (which may or may not contain binary
+  code, depending on whether your module distribution contains Python
+  extensions)
+\end{enumerate}
+Normally, RPM bundles the last two steps together; when you use the
+Distutils, all three steps are typically bundled together.
+
+If you wish, you can separate these three steps.  You can use the
+\longprogramopt{spec-only} option to make \command{bdist\_rpm} just
+create the \file{.spec} file and exit; in this case, the \file{.spec}
+file will be written to the ``distribution directory''---normally
+\file{dist/}, but customizable with the \longprogramopt{dist-dir}
+option.  (Normally, the \file{.spec} file winds up deep in the ``build
+tree,'' in a temporary directory created by \command{bdist\_rpm}.)
+
+\XXX{this isn't implemented yet---is it needed?!}
+You can also specify a custom \file{.spec} file with the
+\longprogramopt{spec-file} option; used in conjunctin with
+\longprogramopt{spec-only}, this gives you an opportunity to customize
+the \file{.spec} file manually:
+\begin{verbatim}
+> python setup.py bdist_rpm --spec-only
+# ...edit dist/FooBar-1.0.spec
+> python setup.py bdist_rpm --spec-file=dist/FooBar-1.0.spec
+\end{verbatim}
+(Although a better way to do this is probably to override the standard
+\command{bdist\_rpm} command with one that writes whatever else you want
+to the \file{.spec} file; see section~\ref{extending} for information on
+extending the Distutils.)
+
+
+\subsection{Creating Windows installers}
+\label{creating-wininst}
+
+
 
 \section{Examples}
 \label{examples}
@@ -1059,6 +1200,7 @@ This command installs all (Python) scripts in the distribution.
 
 
 \XXX{fragment moved down from above: needs context!}
+
 The manifest template commands are:
 \begin{tableii}{ll}{command}{Command}{Description}
   \lineii{include \var{pat1} \var{pat2} ... }
@@ -1085,6 +1227,7 @@ characters in \var{range} (e.g., \code{a-z}, \code{a-zA-Z},
 \code{a-f0-9\_.}).  The definition of ``regular filename character'' is
 platform-specific: on Unix it is anything except slash; on Windows
 anything except backslash or colon; on Mac OS anything except colon.
+
 \XXX{Windows and Mac OS support not there yet}
 
 
