@@ -1,19 +1,19 @@
-from test_support import verify, verbose, TestFailed
+from test_support import verify, verbose
 import sys
 
-def check_all(_modname):
-    exec "import %s" % _modname
-    verify(hasattr(sys.modules[_modname],"__all__"),
-           "%s has no __all__ attribute" % _modname)
-    exec "del %s" % _modname
-    exec "from %s import *" % _modname
-
-    _keys = locals().keys()
-    _keys.remove("_modname")
-    _keys.sort()
-    all = list(sys.modules[_modname].__all__) # in case it's a tuple
+def check_all(modname):
+    names = {}
+    exec "import %s" % modname in names
+    verify(hasattr(sys.modules[modname], "__all__"),
+           "%s has no __all__ attribute" % modname)
+    names = {}
+    exec "from %s import *" % modname in names
+    del names["__builtins__"]
+    keys = names.keys()
+    keys.sort()
+    all = list(sys.modules[modname].__all__) # in case it's a tuple
     all.sort()
-    verify(_keys==all,"%s != %s" % (_keys,all))
+    verify(keys==all, "%s != %s" % (keys, all))
 
 check_all("BaseHTTPServer")
 check_all("Bastion")
@@ -48,7 +48,13 @@ check_all("commands")
 check_all("compileall")
 check_all("copy")
 check_all("copy_reg")
-check_all("dbhash")
+try:
+    import bsddb
+except ImportError:
+    if verbose:
+        print "can't import bsddb, so skipping dbhash"
+else:
+    check_all("dbhash")
 check_all("dircache")
 check_all("dis")
 check_all("doctest")
