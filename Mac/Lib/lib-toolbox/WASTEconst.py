@@ -1,5 +1,6 @@
-# Generated from ':::::Waste 1.2 Distribution:WASTE C/C++ Headers:WASTE.h'
+# Generated from ':::::Waste 1.3 Distribution:WASTE C/C++ Headers:WASTE.h'
 
+kPascalStackBased = None # workaround for header parsing
 weCantUndoErr = -10015
 weEmptySelectionErr = -10013
 weNotHandledErr = -1708
@@ -12,6 +13,9 @@ weFlushRight = -1
 weFlushDefault = 0
 weCenter = 1
 weJustify = 2
+weDirDefault = 1
+weDirRightToLeft = -1
+weDirLeftToRight = 0
 weDoFont = 0x0001
 weDoFace = 0x0002
 weDoSize = 0x0004
@@ -56,14 +60,18 @@ weCharTypeHook = 'ctyp'
 weClickLoop = 'clik'
 weCurrentDrag = 'drag'
 weDrawTextHook = 'draw'
+weEraseHook = 'eras'
+weFluxProc = 'flux'
 weHiliteDropAreaHook = 'hidr'
 weLineBreakHook = 'lbrk'
 wePixelToCharHook = 'p2c '
 wePort = 'port'
+wePreTrackDragHook = 'ptrk'
 weRefCon = 'refc'
 weScrollProc = 'scrl'
 weText = 'text'
 weTranslateDragHook = 'xdrg'
+weTranslucencyThreshold = 'tluc'
 weTSMDocumentID = 'tsmd'
 weTSMPreUpdate = 'pre '
 weTSMPostUpdate = 'post'
