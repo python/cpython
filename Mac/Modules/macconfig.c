@@ -112,6 +112,7 @@ extern void initScrap();
 extern void initTE();
 extern void initColorPicker();
 extern void initPrinting();
+extern void initDrag();
 #endif
 #ifdef USE_CORE_TOOLBOX
 extern void initCtl();
@@ -234,6 +235,7 @@ struct _inittab _PyImport_Inittab[] = {
 	{"TE", initTE},
 	{"ColorPicker", initColorPicker},
 	{"Printing", initPrinting},
+	{"Drag", initDrag},
 #endif
 #ifdef USE_QT
 	{"Cm", initCm},
