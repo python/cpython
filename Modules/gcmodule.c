@@ -28,9 +28,6 @@
 /* Get the object given the GC head */
 #define FROM_GC(g) ((PyObject *)(((PyGC_Head *)g)+1))
 
-/* True if an object is tracked by the GC */
-#define IS_TRACKED(o) ((AS_GC(o))->gc.gc_next != NULL)
-
 /*** Global GC state ***/
 
 struct gc_generation {
@@ -58,6 +55,12 @@ static int enabled = 1; /* automatic collection enabled? */
 /* true if we are currently running the collector */
 static int collecting;
 
+/* list of uncollectable objects */
+static PyObject *garbage;
+
+/* Python string to use if unhandled exception occurs */
+static PyObject *gc_str;
+
 /* set for debugging information */
 #define DEBUG_STATS		(1<<0) /* print collection statistics */
 #define DEBUG_COLLECTABLE	(1<<1) /* print collectable objects */
@@ -72,29 +75,53 @@ static int collecting;
 				DEBUG_SAVEALL
 static int debug;
 
-/* When a collection begins, gc_refs is set to ob_refcnt for, and only for,
- * the objects in the generation being collected, called the "young"
- * generation at that point.  As collection proceeds, the gc_refs members
- * of young objects are set to GC_REACHABLE when it becomes known that they're
- * uncollectable, and to GC_TENTATIVELY_UNREACHABLE when the evidence
- * suggests they are collectable (this can't be known for certain until all
- * of the young generation is scanned).
- */
+/*--------------------------------------------------------------------------
+gc_refs values.
 
-/* Special gc_refs values. */
+Between collections, every gc'ed object has one of two gc_refs values:
+
+GC_UNTRACKED
+    The initial state; objects returned by PyObject_GC_Malloc are in this
+    state.  The object doesn't live in any generation list, and its
+    tp_traverse slot must not be called.
+
+GC_REACHABLE
+    The object lives in some generation list, and its tp_traverse is safe to
+    call.  An object transitions to GC_REACHABLE when PyObject_GC_Track
+    is called.
+
+During a collection, gc_refs can temporarily take on other states:
+
+>= 0
+    At the start of a collection, update_refs() copies the true refcount
+    to gc_refs, for each object in the generation being collected.
+    subtract_refs() then adjusts gc_refs so that it equals the number of
+    times an object is referenced directly from outside the generation
+    being collected.
+    gc_refs reamins >= 0 throughout these steps.
+
+GC_TENTATIVELY_UNREACHABLE
+    move_unreachable() then moves objects not reachable (whether directly or
+    indirectly) from outside the generation into an "unreachable" set.
+    Objects that are found to be reachable have gc_refs set to GC_REACHABLE
+    again.  Objects that are found to be unreachable have gc_refs set to
+    GC_TENTATIVELY_UNREACHABLE.  It's "tentatively" because the pass doing
+    this can't be sure until it ends, and GC_TENTATIVELY_UNREACHABLE may
+    transition back to GC_REACHABLE.
+
+    Only objects with GC_TENTATIVELY_UNREACHABLE still set are candidates
+    for collection.  If it's decided not to collect such an object (e.g.,
+    it has a __del__ method), its gc_refs is restored to GC_REACHABLE again.
+----------------------------------------------------------------------------
+*/
 #define GC_UNTRACKED			_PyGC_REFS_UNTRACKED
 #define GC_REACHABLE			_PyGC_REFS_REACHABLE
 #define GC_TENTATIVELY_UNREACHABLE	_PyGC_REFS_TENTATIVELY_UNREACHABLE
 
+#define IS_TRACKED(o) ((AS_GC(o))->gc.gc_refs != GC_UNTRACKED)
 #define IS_REACHABLE(o) ((AS_GC(o))->gc.gc_refs == GC_REACHABLE)
 #define IS_TENTATIVELY_UNREACHABLE(o) ( \
 	(AS_GC(o))->gc.gc_refs == GC_TENTATIVELY_UNREACHABLE)
-
-/* list of uncollectable objects */
-static PyObject *garbage;
-
-/* Python string to use if unhandled exception occurs */
-static PyObject *gc_str;
 
 /*** list functions ***/
 
@@ -253,7 +280,7 @@ visit_reachable(PyObject *op, PyGC_Head *reachable)
 		 * list, and move_unreachable will eventually get to it.
 		 * If gc_refs == GC_REACHABLE, it's either in some other
 		 * generation so we don't care about it, or move_unreachable
-		 * already deat with it.
+		 * already dealt with it.
 		 * If gc_refs == GC_UNTRACKED, it must be ignored.
 		 */
 		 else {
@@ -290,7 +317,25 @@ move_unreachable(PyGC_Head *young, PyGC_Head *unreachable)
 	while (gc != young) {
 		PyGC_Head *next;
 
-		if (gc->gc.gc_refs == 0) {
+		if (gc->gc.gc_refs) {
+                        /* gc is definitely reachable from outside the
+                         * original 'young'.  Mark it as such, and traverse
+                         * its pointers to find any other objects that may
+                         * be directly reachable from it.  Note that the
+                         * call to tp_traverse may append objects to young,
+                         * so we have to wait until it returns to determine
+                         * the next object to visit.
+                         */
+                        PyObject *op = FROM_GC(gc);
+                        traverseproc traverse = op->ob_type->tp_traverse;
+                        assert(gc->gc.gc_refs > 0);
+                        gc->gc.gc_refs = GC_REACHABLE;
+                        (void) traverse(op,
+                                        (visitproc)visit_reachable,
+                                        (void *)young);
+                        next = gc->gc.gc_next;
+		}
+		else {
 			/* This *may* be unreachable.  To make progress,
 			 * assume it is.  gc isn't directly reachable from
 			 * any object we've already traversed, but may be
@@ -302,23 +347,6 @@ move_unreachable(PyGC_Head *young, PyGC_Head *unreachable)
 			gc_list_remove(gc);
 			gc_list_append(gc, unreachable);
 			gc->gc.gc_refs = GC_TENTATIVELY_UNREACHABLE;
-		}
-		else {
-			/* gc is definitely reachable from outside the
-			 * original 'young'.  Mark it as such, and traverse
-			 * its pointers to find any other objects that may
-			 * be directly reachable from it.  Note that the
-			 * call to tp_traverse may append objects to young,
-			 * so we have to wait until it returns to determine
-			 * the next object to visit.
-			 */
-			PyObject *op = FROM_GC(gc);
-			traverseproc traverse = op->ob_type->tp_traverse;
-			gc->gc.gc_refs = GC_REACHABLE;
-			(void) traverse(op,
-			       		(visitproc)visit_reachable,
-			    		(void *)young);
-			next = gc->gc.gc_next;
 		}
 		gc = next;
 	}
@@ -974,7 +1002,6 @@ _PyObject_GC_Malloc(size_t basicsize)
 	PyGC_Head *g = PyObject_MALLOC(sizeof(PyGC_Head) + basicsize);
 	if (g == NULL)
 		return PyErr_NoMemory();
-	g->gc.gc_next = NULL;
 	g->gc.gc_refs = GC_UNTRACKED;
 	generations[0].count++; /* number of allocated GC objects */
  	if (generations[0].count > generations[0].threshold &&

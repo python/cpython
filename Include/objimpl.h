@@ -251,7 +251,7 @@ extern DL_IMPORT(PyVarObject *) _PyObject_GC_Resize(PyVarObject *, int);
 /* GC information is stored BEFORE the object structure. */
 typedef union _gc_head {
 	struct {
-		union _gc_head *gc_next; /* not NULL if object is tracked */
+		union _gc_head *gc_next;
 		union _gc_head *gc_prev;
 		int gc_refs;
 	} gc;
@@ -272,7 +272,6 @@ extern PyGC_Head *_PyGC_generation0;
 	PyGC_Head *g = _Py_AS_GC(o); \
 	if (g->gc.gc_refs != _PyGC_REFS_UNTRACKED) \
 		Py_FatalError("GC object already tracked"); \
-	assert(g->gc.gc_refs == _PyGC_REFS_UNTRACKED); \
 	g->gc.gc_refs = _PyGC_REFS_REACHABLE; \
 	g->gc.gc_next = _PyGC_generation0; \
 	g->gc.gc_prev = _PyGC_generation0->gc.gc_prev; \
@@ -280,7 +279,10 @@ extern PyGC_Head *_PyGC_generation0;
 	_PyGC_generation0->gc.gc_prev = g; \
     } while (0);
 
-/* Tell the GC to stop tracking this object. */
+/* Tell the GC to stop tracking this object.
+ * gc_next doesn't need to be set to NULL, but doing so is a good
+ * way to provoke memory errors if calling code is confused.
+ */
 #define _PyObject_GC_UNTRACK(o) do { \
 	PyGC_Head *g = _Py_AS_GC(o); \
 	assert(g->gc.gc_refs != _PyGC_REFS_UNTRACKED); \
