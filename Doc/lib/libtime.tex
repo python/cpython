@@ -324,6 +324,102 @@ timezone, the second is the name of the local DST timezone.  If no DST
 timezone is defined, the second string should not be used.
 \end{datadesc}
 
+\begin{funcdesc}{tzset}{}
+Resets the time conversion rules used by the library routines.
+The environment variable \envvar{TZ} specifies how this is done.
+\versionadded{2.3}
+
+Availability: \UNIX.
+
+\begin{notice}
+Although in many cases, changing the \envvar{TZ} environment variable
+may affect the output of functions like \function{localtime} without calling 
+\function{tzset}, this behavior should not be relied on.
+
+The \envvar{TZ} environment variable should contain no whitespace.
+\end{notice}
+
+The standard format of the \envvar{TZ} environment variable is:
+(whitespace added for clarity)
+\begin{itemize}
+    \item[std offset [dst [offset] [,start[/time], end[/time]]]]
+\end{itemize}
+
+Where:
+
+\begin{itemize}
+  \item[std and dst]
+    Three or more alphanumerics giving the timezone abbreviations.
+    These will be propogated into time.tzname
+
+  \item[offset]
+    The offset has the form: \plusminus hh[:mm[:ss]].
+    This indicates the value added the local time to arrive at UTC. 
+    If preceded by a '-', the timezone is east of the Prime 
+    Meridian; otherwise, it is west. If no offset follows
+    dst, summmer time is assumed to be one hour ahead of standard time.
+
+  \item[start[/time],end[/time]]
+    Indicates when to change to and back from DST. The format of the
+    start and end dates are one of the following:
+
+    \begin{itemize}
+      \item[J\var{n}]
+        The Julian day \var{n} (1 <= \var{n} <= 365). Leap days are not 
+        counted, so in all years February 28 is day 59 and
+        March 1 is day 60.
+
+    \item[\var{n}]
+        The zero-based Julian day (0 <= \var{n} <= 365). Leap days are
+        counted, and it is possible to refer to February 29.
+
+      \item[M\var{m}.\var{n}.\var{d}]
+        The \var{d}'th day (0 <= \var{d} <= 6) or week \var{n} 
+        of month \var{m} of the year (1 <= \var{n} <= 5, 
+        1 <= \var{m} <= 12, where week 5 means "the last \var{d} day
+        in month \var{m}" which may occur in either the fourth or 
+        the fifth week). Week 1 is the first week in which the 
+        \var{d}'th day occurs. Day zero is Sunday.
+    \end{itemize}
+
+    time has the same format as offset except that no leading sign ('-' or
+    '+') is allowed. The default, if time is not given, is 02:00:00.
+\end{itemize}
+
+
+\begin{verbatim}
+>>> os.environ['TZ'] = 'EST+05EDT,M4.1.0,M10.5.0'
+>>> time.tzset()
+>>> time.strftime('%X %x %Z')
+'02:07:36 05/08/03 EDT'
+>>> os.environ['TZ'] = 'AEST-10AEDT-11,M10.5.0,M3.5.0'
+>>> time.tzset()
+>>> time.strftime('%X %x %Z')
+'16:08:12 05/08/03 AEST'
+\end{verbatim}
+
+On many Unix systems (including *BSD, Linux, Solaris, and Darwin), it
+is more convenient to use the system's zoneinfo (\manpage{tzfile}{5}) 
+database to specify the timezone rules. To do this, set the 
+\envvar{TZ} environment variable to the path of the required timezone 
+datafile, relative to the root of the systems 'zoneinfo' timezone database,
+usually located at \file{/usr/share/zoneinfo}. For example, 
+\code{'US/Eastern'}, \code{'Australia/Melbourne'}, \code{'Egypt'} or 
+\code{'Europe/Amsterdam'}.
+
+\begin{verbatim}
+>>> os.environ['TZ'] = 'US/Eastern'
+>>> time.tzset()
+>>> time.tzname
+('EST', 'EDT')
+>>> os.environ['TZ'] = 'Egypt'
+>>> time.tzset()
+>>> time.tzname
+('EET', 'EEST')
+\end{verbatim}
+
+\end{funcdesc}
+
 
 \begin{seealso}
   \seemodule{locale}{Internationalization services.  The locale
