@@ -356,6 +356,7 @@ class Aifc_read():
 	# _ssnd_seek_needed -- 1 iff positioned correctly in audio
 	#		file for readframes()
 	# _ssnd_chunk -- instantiation of a chunk class for the SSND chunk
+	# _framesize -- size of one frame in the file
 	def initfp(self, file):
 		self._file = file
 		self._version = 0
@@ -497,24 +498,15 @@ class Aifc_read():
 		if self._ssnd_seek_needed:
 			self._ssnd_chunk.rewind()
 			dummy = self._ssnd_chunk.read(8)
-			pos = self._soundpos * self._nchannels * self._sampwidth
-			if self._decomp:
-				if self._comptype in ('ULAW', 'ALAW'):
-					pos = pos / 2
+			pos = self._soundpos * self._framesize
 			if pos:
 				self._ssnd_chunk.setpos(pos + 8)
 			self._ssnd_seek_needed = 0
 		if nframes == 0:
 			return ''
-		size = nframes * self._nchannels * self._sampwidth
-		if self._decomp:
-			if self._comptype in ('ULAW', 'ALAW'):
-				size = size / 2
-		data = self._ssnd_chunk.read(size)
+		data = self._ssnd_chunk.read(nframes * self._framesize)
 		if self._decomp and data:
-			params = [CL.FRAME_BUFFER_SIZE, len(data) * 2, \
-				  CL.COMPRESSED_BUFFER_SIZE, len(data)]
-			self._decomp.SetParams(params)
+			self._decomp.SetParam(CL.FRAME_BUFFER_SIZE, len(data) * 2)
 			data = self._decomp.Decompress(len(data) / self._nchannels, data)
 		self._soundpos = self._soundpos + len(data) / (self._nchannels * self._sampwidth)
 		return data
@@ -530,6 +522,7 @@ class Aifc_read():
 		self._sampwidth = _convert1(sampwidth, _sampwidthlist)
 		framerate = _read_float(chunk)
 		self._framerate = _convert1(framerate, _frameratelist)
+		self._framesize = self._nchannels * self._sampwidth
 		if self._aifc:
 			#DEBUG: SGI's soundeditor produces a bad size :-(
 			kludge = 0
@@ -555,8 +548,10 @@ class Aifc_read():
 					raise Error, 'cannot read compressed AIFF-C files'
 				if self._comptype == 'ULAW':
 					scheme = CL.G711_ULAW
+					self._framesize = self._framesize / 2
 				elif self._comptype == 'ALAW':
 					scheme = CL.G711_ALAW
+					self._framesize = self._framesize / 2
 				else:
 					raise Error, 'unsupported compression type'
 				self._decomp = cl.OpenDecompressor(scheme)
@@ -643,6 +638,7 @@ class Aifc_write():
 	def setnchannels(self, nchannels):
 		if self._nframeswritten:
 			raise Error, 'cannot change parameters after starting to write'
+		dummy = _convert(nchannels, _nchannelslist)
 		self._nchannels = nchannels
 
 	def getnchannels(self):
@@ -653,6 +649,7 @@ class Aifc_write():
 	def setsampwidth(self, sampwidth):
 		if self._nframeswritten:
 			raise Error, 'cannot change parameters after starting to write'
+		dummy = _convert2(sampwidth, _sampwidthlist)
 		self._sampwidth = sampwidth
 
 	def getsampwidth(self):
@@ -663,6 +660,7 @@ class Aifc_write():
 	def setframerate(self, framerate):
 		if self._nframeswritten:
 			raise Error, 'cannot change parameters after starting to write'
+		dummy = _convert2(framerate, _frameratelist)
 		self._framerate = framerate
 
 	def getframerate(self):
@@ -702,6 +700,9 @@ class Aifc_write():
 			raise Error, 'cannot change parameters after starting to write'
 		if comptype not in ('NONE', 'ULAW', 'ALAW'):
 			raise Error, 'unsupported compression type'
+		dummy = _convert2(nchannels, _nchannelslist)
+		dummy = _convert2(sampwidth, _sampwidthlist)
+		dummy = _convert2(framerate, _frameratelist)
 		self._nchannels = nchannels
 		self._sampwidth = sampwidth
 		self._framerate = framerate
@@ -755,9 +756,9 @@ class Aifc_write():
 			self._write_header(len(data))
 		nframes = len(data) / (self._sampwidth * self._nchannels)
 		if self._comp:
-			params = [CL.FRAME_BUFFER_SIZE, len(data), \
-				  CL.COMPRESSED_BUFFER_SIZE, len(data)]
-			self._comp.SetParams(params)
+			self._comp.SetParam(CL.FRAME_BUFFER_SIZE, len(data))
+			self._comp.SetParam(CL.COMPRESSED_BUFFER_SIZE, \
+				  len(data))
 			data = self._comp.Compress(nframes, data)
 		self._file.write(data)
 		self._nframeswritten = self._nframeswritten + nframes
@@ -803,7 +804,9 @@ class Aifc_write():
 			self._comp = cl.OpenCompressor(scheme)
 			params = [CL.ORIGINAL_FORMAT, 0, \
 				  CL.BITS_PER_COMPONENT, 0, \
-				  CL.FRAME_RATE, self._framerate]
+				  CL.FRAME_RATE, self._framerate, \
+				  CL.FRAME_BUFFER_SIZE, 100, \
+				  CL.COMPRESSED_BUFFER_SIZE, 100]
 			if self._nchannels == AL.MONO:
 				params[1] = CL.MONO
 			else:
@@ -815,6 +818,8 @@ class Aifc_write():
 			else:
 				params[3] = 24
 			self._comp.SetParams(params)
+			# the compressor produces a header which we ignore
+			dummy = self._comp.Compress(0, '')
 		self._file.write('FORM')
 		if not self._nframes:
 			self._nframes = initlength / (self._nchannels * self._sampwidth)
@@ -836,7 +841,7 @@ class Aifc_write():
 			self._file.write('AIFF')
 		self._file.write('COMM')
 		_write_long(self._file, commlength)
-		_write_short(self._file, self._nchannels)
+		_write_short(self._file, _convert2(self._nchannels, _nchannelslist))
 		self._nframes_pos = self._file.tell()
 		_write_long(self._file, self._nframes)
 		_write_short(self._file, _convert2(self._sampwidth, _sampwidthlist))

@@ -45,7 +45,7 @@ static int error_handler_called = 0;
 			  Utility routines.
 ********************************************************************/
 static void
-cl_ErrorHandler(long errnum, const char *fmt, ...)
+cl_ErrorHandler(CL_Handle handle, int code, const char *fmt, ...)
 {
 	va_list ap;
 	char errbuf[BUFSIZ];	/* hopefully big enough */
@@ -68,10 +68,10 @@ cl_ErrorHandler(long errnum, const char *fmt, ...)
  * This is not very efficient.
  */
 static int
-param_type_is_float(CL_Handle comp, long param)
+param_type_is_float(CL_Handle comp, int param)
 {
-	long bufferlength;
-	long *PVbuffer;
+	int bufferlength;
+	int *PVbuffer;
 	int ret;
 
 	error_handler_called = 0;
@@ -82,7 +82,7 @@ param_type_is_float(CL_Handle comp, long param)
 	if (param < 0 || param >= bufferlength / 2)
 		return -1;
 
-	PVbuffer = NEW(long, bufferlength);
+	PVbuffer = NEW(int, bufferlength);
 	if (PVbuffer == NULL)
 		return -1;
 
@@ -110,9 +110,9 @@ static object *
 cl_CompressImage(self, args)
 	object *self, *args;
 {
-	long compressionScheme, width, height, originalFormat;
+	int compressionScheme, width, height, originalFormat;
 	float compressionRatio;
-	long frameBufferSize, compressedBufferSize;
+	int frameBufferSize, compressedBufferSize;
 	char *frameBuffer;
 	object *compressedBuffer;
 
@@ -156,9 +156,9 @@ static object *
 cl_DecompressImage(self, args)
 	object *self, *args;
 {
-	long compressionScheme, width, height, originalFormat;
+	int compressionScheme, width, height, originalFormat;
 	char *compressedBuffer;
-	long compressedBufferSize, frameBufferSize;
+	int compressedBufferSize, frameBufferSize;
 	object *frameBuffer;
 
 	if (!getargs(args, "(iiiis#i)", &compressionScheme, &width, &height,
@@ -197,7 +197,7 @@ static object *
 doClose(self, args, close_func)
 	clobject *self;
 	object *args;
-	long (*close_func) PROTO((CL_Handle));
+	int (*close_func) PROTO((CL_Handle));
 {
 	CheckCompressor(self);
 
@@ -238,10 +238,10 @@ clm_Compress(self, args)
 	clobject *self;
 	object *args;
 {
-	long numberOfFrames;
-	long frameBufferSize, compressedBufferSize;
+	int numberOfFrames;
+	int frameBufferSize, compressedBufferSize;
 	char *frameBuffer;
-	long PVbuf[2];
+	int PVbuf[2];
 	object *data;
 
 	CheckCompressor(self);
@@ -291,11 +291,11 @@ clm_Decompress(self, args)
 	clobject *self;
 	object *args;
 {
-	long PVbuf[2];
+	int PVbuf[2];
 	object *data;
-	long numberOfFrames;
+	int numberOfFrames;
 	char *compressedData;
-	long compressedDataSize;
+	int compressedDataSize;
 
 	CheckCompressor(self);
 
@@ -331,13 +331,14 @@ static object *
 doParams(self, args, func, modified)
 	clobject *self;
 	object *args;
-	void (*func)(CL_Handle, long *, long);
+	void (*func)(CL_Handle, int *, int);
 	int modified;
 {
 	object *list, *v;
-	long *PVbuffer;
-	long length;
+	int *PVbuffer;
+	int length;
 	int i;
+	float number;
 	
 	CheckCompressor(self);
 
@@ -348,14 +349,15 @@ doParams(self, args, func, modified)
 		return NULL;
 	}
 	length = getlistsize(list);
-	PVbuffer = NEW(long, length);
+	PVbuffer = NEW(int, length);
 	if (PVbuffer == NULL)
 		return err_nomem();
 	for (i = 0; i < length; i++) {
 		v = getlistitem(list, i);
-		if (is_floatobject(v))
-			PVbuffer[i] = clFloatToRatio(getfloatvalue(v));
-		else if (is_intobject(v))
+		if (is_floatobject(v)) {
+			number = getfloatvalue(v);
+			PVbuffer[i] = CL_TypeIsInt(number);
+		} else if (is_intobject(v))
 			PVbuffer[i] = getintvalue(v);
 		else {
 			DEL(PVbuffer);
@@ -371,10 +373,12 @@ doParams(self, args, func, modified)
 
 	if (modified) {
 		for (i = 0; i < length; i++) {
-			v = getlistitem(list, i);
-			if (is_floatobject(v))
-				v = newfloatobject(clRatioToFloat(PVbuffer[i]));
-			else
+			if ((i & 1) &&
+			    param_type_is_float(self->ob_compressorHdl,
+						PVbuffer[i-1]) > 0) {
+				number = CL_TypeIsFloat(PVbuffer[i]);
+				v = newfloatobject(number);
+			} else
 				v = newintobject(PVbuffer[i]);
 			setlistitem(list, i, v);
 		}
@@ -399,7 +403,98 @@ clm_SetParams(self, args)
 	clobject *self;
 	object *args;
 {
-	return doParams(self, args, clSetParams, 1);
+	return doParams(self, args, clSetParams, 0);
+}
+
+static object *
+do_get(self, args, func)
+	clobject *self;
+	object *args;
+	int (*func)(CL_Handle, int);
+{
+	int paramID, value;
+	float fvalue;
+
+	CheckCompressor(self);
+
+	if (!getargs(args, "i", &paramID))
+		return NULL;
+
+	error_handler_called = 0;
+	value = (*func)(self->ob_compressorHdl, paramID);
+	if (error_handler_called)
+		return NULL;
+
+	if (param_type_is_float(self->ob_compressorHdl, paramID) > 0) {
+		fvalue = CL_TypeIsFloat(value);
+		return newfloatobject(fvalue);
+	}
+
+	return newintobject(value);
+}
+
+static object *
+clm_GetParam(self, args)
+	clobject *self;
+	object *args;
+{
+	return do_get(self, args, clGetParam);
+}
+
+static object *
+clm_GetDefault(self, args)
+	clobject *self;
+	object *args;
+{
+	return do_get(self, args, clGetDefault);
+}
+
+static object *
+do_set(self, args, func)
+	clobject *self;
+	object *args;
+	int (*func)(CL_Handle, int, int);
+{
+	int paramID, value;
+	float fvalue;
+
+	CheckCompressor(self);
+
+	if (!getargs(args, "(ii)", &paramID, &value)) {
+		err_clear();
+		if (!getargs(args, "(if)", &paramID, &fvalue)) {
+			err_clear();
+			err_setstr(TypeError, "bad argument list (format '(ii)' or '(if)')");
+			return NULL;
+		}
+		value = CL_TypeIsInt(fvalue);
+	}
+
+	error_handler_called = 0;
+	value = (*func)(self->ob_compressorHdl, paramID, value);
+	if (error_handler_called)
+		return NULL;
+
+	if (param_type_is_float(self->ob_compressorHdl, paramID) > 0)
+		return newfloatobject(CL_TypeIsFloat(value));
+	else
+		return newintobject(value);
+}
+
+static object *
+clm_SetParam(self, args)
+	clobject *self;
+	object *args;
+{
+	return do_set(self, args, clSetParam);
+}
+
+static object *
+clm_SetDefault(self, args)
+	clobject *self;
+	object *args;
+{
+	return do_set(self, args, clSetDefault);
 }
 
 static object *
@@ -408,7 +503,7 @@ clm_GetParamID(self, args)
 	object *args;
 {
 	char *name;
-	long value;
+	int value;
 
 	CheckCompressor(self);
 
@@ -431,8 +526,8 @@ clm_QueryParams(self, args)
 	clobject *self;
 	object *args;
 {
-	long bufferlength;
-	long *PVbuffer;
+	int bufferlength;
+	int *PVbuffer;
 	object *list;
 	int i;
 
@@ -446,7 +541,7 @@ clm_QueryParams(self, args)
 	if (error_handler_called)
 		return NULL;
 
-	PVbuffer = NEW(long, bufferlength);
+	PVbuffer = NEW(int, bufferlength);
 	if (PVbuffer == NULL)
 		return err_nomem();
 
@@ -483,8 +578,8 @@ clm_GetMinMax(self, args)
 	clobject *self;
 	object *args;
 {
-	long param, min, max;
-	double fmin, fmax;
+	int param, min, max;
+	float fmin, fmax;
 
 	CheckCompressor(self);
 
@@ -494,8 +589,8 @@ clm_GetMinMax(self, args)
 	clGetMinMax(self->ob_compressorHdl, param, &min, &max);
 
 	if (param_type_is_float(self->ob_compressorHdl, param) > 0) {
-		fmin = clRatioToFloat(min);
-		fmax = clRatioToFloat(max);
+		fmin = CL_TypeIsFloat(min);
+		fmax = CL_TypeIsFloat(max);
 		return mkvalue("(ff)", fmin, fmax);
 	}
 
@@ -503,11 +598,27 @@ clm_GetMinMax(self, args)
 }
 
 static object *
+clm_SetMin(self, args)
+	clobject *self;
+	object *args;
+{
+	return do_set(self, args, clSetMin);
+}
+
+static object *
+clm_SetMax(self, args)
+	clobject *self;
+	object *args;
+{
+	return do_set(self, args, clSetMax);
+}
+
+static object *
 clm_GetName(self, args)
 	clobject *self;
 	object *args;
 {
-	long param;
+	int param;
 	char *name;
 
 	CheckCompressor(self);
@@ -527,29 +638,20 @@ clm_GetName(self, args)
 }
 
 static object *
-clm_GetDefault(self, args)
+clm_ReadHeader(self, args)
 	clobject *self;
 	object *args;
 {
-	long param, value;
-	double fvalue;
+	char *header;
+	int headerSize;
 
 	CheckCompressor(self);
 
-	if (!getargs(args, "i", &param))
+	if (!getargs(args, "s#", &header, &headerSize))
 		return NULL;
 
-	error_handler_called = 0;
-	value = clGetDefault(self->ob_compressorHdl, param);
-	if (error_handler_called)
-		return NULL;
-
-	if (param_type_is_float(self->ob_compressorHdl, param) > 0) {
-		fvalue = clRatioToFloat(value);
-		return newfloatobject(fvalue);
-	}
-
-	return newintobject(value);
+	return newintobject(clReadHeader(self->ob_compressorHdl,
+					 headerSize, header));
 }
 
 static struct methodlist compressor_methods[] = {
@@ -559,9 +661,14 @@ static struct methodlist compressor_methods[] = {
 	{"GetDefault",		clm_GetDefault},
 	{"GetMinMax",		clm_GetMinMax},
 	{"GetName",		clm_GetName},
+	{"GetParam",		clm_GetParam},
 	{"GetParamID",		clm_GetParamID},
 	{"GetParams",		clm_GetParams},
 	{"QueryParams",		clm_QueryParams},
+	{"SetDefault",		clm_SetDefault},
+	{"SetMax",		clm_SetMax},
+	{"SetMin",		clm_SetMin},
+	{"SetParam",		clm_SetParam},
 	{"SetParams",		clm_SetParams},
 	{NULL,			NULL}		/* sentinel */
 };
@@ -573,9 +680,15 @@ static struct methodlist decompressor_methods[] = {
 	{"GetDefault",		clm_GetDefault},
 	{"GetMinMax",		clm_GetMinMax},
 	{"GetName",		clm_GetName},
+	{"GetParam",		clm_GetParam},
 	{"GetParamID",		clm_GetParamID},
 	{"GetParams",		clm_GetParams},
+	{"ReadHeader",		clm_ReadHeader},
 	{"QueryParams",		clm_QueryParams},
+	{"SetDefault",		clm_SetDefault},
+	{"SetMax",		clm_SetMax},
+	{"SetMin",		clm_SetMin},
+	{"SetParam",		clm_SetParam},
 	{"SetParams",		clm_SetParams},
 	{NULL,			NULL}		/* sentinel */
 };
@@ -625,10 +738,10 @@ static typeobject Cltype = {
 static object *
 doOpen(self, args, open_func, iscompressor)
 	object *self, *args;
-	long (*open_func) PROTO((long, CL_Handle *));
+	int (*open_func) PROTO((int, CL_Handle *));
 	int iscompressor;
 {
-	long scheme;
+	int scheme;
 	clobject *new;
 
 	if (!getargs(args, "i", &scheme))
@@ -665,11 +778,138 @@ cl_OpenDecompressor(self, args)
 	return doOpen(self, args, clOpenDecompressor, 0);
 }
 
+static object *
+cl_QueryScheme(self, args)
+	object *self, *args;
+{
+	char *header;
+	int headerlen;
+	int scheme;
+
+	if (!getargs(args, "s#", &header, &headerlen))
+		return NULL;
+
+	scheme = clQueryScheme(header);
+	if (scheme < 0) {
+		err_setstr(ClError, "unknown compression scheme");
+		return NULL;
+	}
+
+	return newintobject(scheme);
+}
+
+static object *
+cl_QueryMaxHeaderSize(self, args)
+	object *self, *args;
+{
+	int scheme;
+
+	if (!getargs(args, "i", &scheme))
+		return NULL;
+
+	return newintobject(clQueryMaxHeaderSize(scheme));
+}
+
+static object *
+cl_QueryAlgorithms(self, args)
+	object *self, *args;
+{
+	int algorithmMediaType;
+	int bufferlength;
+	int *PVbuffer;
+	object *list;
+	int i;
+
+	if (!getargs(args, "i", &algorithmMediaType))
+		return NULL;
+
+	error_handler_called = 0;
+	bufferlength = clQueryAlgorithms(algorithmMediaType, 0, 0);
+	if (error_handler_called)
+		return NULL;
+
+	PVbuffer = NEW(int, bufferlength);
+	if (PVbuffer == NULL)
+		return err_nomem();
+
+	bufferlength = clQueryAlgorithms(algorithmMediaType, PVbuffer,
+				     bufferlength);
+	if (error_handler_called) {
+		DEL(PVbuffer);
+		return NULL;
+	}
+
+	list = newlistobject(bufferlength);
+	if (list == NULL) {
+		DEL(PVbuffer);
+		return NULL;
+	}
+
+	for (i = 0; i < bufferlength; i++) {
+		if (i & 1)
+			setlistitem(list, i, newintobject(PVbuffer[i]));
+		else if (PVbuffer[i] == 0) {
+			INCREF(None);
+			setlistitem(list, i, None);
+		} else
+			setlistitem(list, i, newstringobject((char *) PVbuffer[i]));
+	}
+
+	DEL(PVbuffer);
+
+	return list;
+}
+
+static object *
+cl_QuerySchemeFromName(self, args)
+	object *self, *args;
+{
+	int algorithmMediaType;
+	char *name;
+	int scheme;
+
+	if (!getargs(args, "(is)", &algorithmMediaType, &name))
+		return NULL;
+
+	error_handler_called = 0;
+	scheme = clQuerySchemeFromName(algorithmMediaType, name);
+	if (error_handler_called) {
+		err_setstr(ClError, "unknown compression scheme");
+		return NULL;
+	}
+
+	return newintobject(scheme);
+}
+
+static object *
+cl_GetAlgorithmName(self, args)
+	object *self, *args;
+{
+	int scheme;
+	char *name;
+
+	if (!getargs(args, "i", &scheme))
+		return NULL;
+
+	name = clGetAlgorithmName(scheme);
+	if (name == 0) {
+		err_setstr(ClError, "unknown compression scheme");
+		return NULL;
+	}
+
+	return newstringobject(name);
+}
+
 static struct methodlist cl_methods[] = {
 	{"CompressImage",	cl_CompressImage},
 	{"DecompressImage",	cl_DecompressImage},
+	{"GetAlgorithmName",	cl_GetAlgorithmName},
 	{"OpenCompressor",	cl_OpenCompressor},
 	{"OpenDecompressor",	cl_OpenDecompressor},
+	{"QueryAlgorithms",	cl_QueryAlgorithms},
+	{"QueryMaxHeaderSize",	cl_QueryMaxHeaderSize},
+	{"QueryScheme",		cl_QueryScheme},
+	{"QuerySchemeFromName",	cl_QuerySchemeFromName},
 	{NULL,			NULL} /* Sentinel */
 };
 
