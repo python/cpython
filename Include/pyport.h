@@ -118,6 +118,38 @@ typedef unsigned LONG_LONG Py_uintptr_t;
 
 #endif /* !HAVE_SYS_SELECT_H */
 
+/*******************************
+ * stat() and fstat() fiddling *
+ *******************************/
+
+/* We expect that stat and fstat exist on most systems.
+ *  It's confirmed on Unix, Mac and Windows.
+ *  If you don't have them, add
+ *      #define DONT_HAVE_STAT
+ * and/or
+ *      #define DONT_HAVE_FSTAT
+ * to your config.h. Python code beyond this should check HAVE_STAT and
+ * HAVE_FSTAT instead.
+ * Also
+ *      #define DONT_HAVE_SYS_STAT_H
+ * if <sys/stat.h> doesn't exist on your platform, and
+ *      #define HAVE_STAT_H
+ * if <stat.h> does (don't look at me -- ths mess is inherited).
+ */
+#ifndef DONT_HAVE_STAT
+#define HAVE_STAT
+#endif
+
+#ifndef DONT_HAVE_FSTAT
+#define HAVE_FSTAT
+#endif
+
+#ifndef DONT_HAVE_SYS_STAT_H
+#include <sys/stat.h>
+#elif defined(HAVE_STAT_H)
+#include <stat.h>
+#endif
+
 
 #ifdef __cplusplus
 /* Move this down here since some C++ #include's don't like to be included
@@ -192,7 +224,7 @@ extern int gethostname(char *, int);
 #ifdef __BEOS__
 /* Unchecked */
 /* It's in the libs, but not the headers... - [cjh] */
-int shutdown( int, int ); 
+int shutdown( int, int );
 #endif
 
 #ifdef HAVE__GETPTY
@@ -305,7 +337,7 @@ extern double hypot(double, double);
 #define sqrt sqrtd
 #define tan tand
 #define tanh tanhd
-#endif 
+#endif
 
 
 /************************************
