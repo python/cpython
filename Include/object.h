@@ -294,6 +294,9 @@ extern DL_IMPORT(void) Py_ReprLeave(PyObject *);
 extern DL_IMPORT(long) _Py_HashDouble(double);
 extern DL_IMPORT(long) _Py_HashPointer(void*);
 
+/* Helper for passing objects to printf and the like */
+#define PyObject_REPR(obj) PyString_AS_STRING(PyObject_Repr(obj))
+
 /* Flag bits for printing: */
 #define Py_PRINT_RAW	1	/* No string quotes etc. */
 
