@@ -33,6 +33,7 @@
  * 2001-07-01 fl  added BIGCHARSET support (from Martin von Loewis)
  * 2001-09-18 fl  added _getliteral helper
  * 2001-10-18 fl  fixed group reset issue (from Matthew Mueller)
+ * 2001-10-20 fl  added split primitive; reenable unicode for 1.6/2.0/2.1
  *
  * Copyright (c) 1997-2001 by Secret Labs AB.  All rights reserved.
  *
@@ -65,13 +66,18 @@ static char copyright[] =
 /* defining this one enables tracing */
 #undef VERBOSE
 
-#if PY_VERSION_HEX >= 0x01060000 && defined(Py_USING_UNICODE)
+#if PY_VERSION_HEX >= 0x01060000
+#if PY_VERSION_HEX  < 0x02020000 || defined(Py_USING_UNICODE)
 /* defining this enables unicode support (default under 1.6a1 and later) */
 #define HAVE_UNICODE
+#endif
 #endif
 
 /* -------------------------------------------------------------------- */
 /* optional features */
+
+/* test: define to use sre._split helper instead of C code */
+#undef USE_PYTHON_SPLIT
 
 /* prevent run-away recursion (bad patterns on long strings) */
 
@@ -1488,14 +1494,20 @@ state_fini(SRE_STATE* state)
 }
 
 LOCAL(PyObject*)
-state_getslice(SRE_STATE* state, int index, PyObject* string)
+state_getslice(SRE_STATE* state, int index, PyObject* string, int empty)
 {
     int i, j;
 
     index = (index - 1) * 2;
 
     if (string == Py_None || !state->mark[index] || !state->mark[index+1]) {
-        i = j = 0;
+        if (empty)
+            /* want empty string */
+            i = j = 0;
+        else {
+            Py_INCREF(Py_None);
+            return Py_None;
+        }
     } else {
         i = ((char*)state->mark[index] - (char*)state->beginning) /
             state->charsize;
@@ -1782,6 +1794,7 @@ pattern_subn(PatternObject* self, PyObject* args, PyObject* kw)
         );
 }
 
+#if defined(USE_PYTHON_SPLIT)
 static PyObject*
 pattern_split(PatternObject* self, PyObject* args, PyObject* kw)
 {
@@ -1798,6 +1811,7 @@ pattern_split(PatternObject* self, PyObject* args, PyObject* kw)
         Py_BuildValue("OOO", self, string, maxsplit)
         );
 }
+#endif
 
 static PyObject*
 pattern_findall(PatternObject* self, PyObject* args, PyObject* kw)
@@ -1805,7 +1819,7 @@ pattern_findall(PatternObject* self, PyObject* args, PyObject* kw)
     SRE_STATE state;
     PyObject* list;
     int status;
-    int i;
+    int i, b, e;
 
     PyObject* string;
     int start = 0;
@@ -1842,17 +1856,16 @@ pattern_findall(PatternObject* self, PyObject* args, PyObject* kw)
             /* don't bother to build a match object */
             switch (self->groups) {
             case 0:
-                item = PySequence_GetSlice(
-                    string,
-                    ((char*) state.start - (char*) state.beginning) /
-                    state.charsize,
-                    ((char*) state.ptr - (char*) state.beginning) /
-                    state.charsize);
+                b = ((char*) state.start - (char*) state.beginning) /
+                    state.charsize;
+                e = ((char*) state.ptr - (char*) state.beginning) /
+                    state.charsize;
+                item = PySequence_GetSlice(string, b, e);
                 if (!item)
                     goto error;
                 break;
             case 1:
-                item = state_getslice(&state, 1, string);
+                item = state_getslice(&state, 1, string, 1);
                 if (!item)
                     goto error;
                 break;
@@ -1861,7 +1874,7 @@ pattern_findall(PatternObject* self, PyObject* args, PyObject* kw)
                 if (!item)
                     goto error;
                 for (i = 0; i < self->groups; i++) {
-                    PyObject* o = state_getslice(&state, i+1, string);
+                    PyObject* o = state_getslice(&state, i+1, string, 1);
                     if (!o) {
                         Py_DECREF(item);
                         goto error;
@@ -1902,6 +1915,117 @@ error:
     return NULL;
     
 }
+
+#if !defined(USE_PYTHON_SPLIT)
+static PyObject*
+pattern_split(PatternObject* self, PyObject* args, PyObject* kw)
+{
+    SRE_STATE state;
+    PyObject* list;
+    PyObject* item;
+    int status;
+    int n;
+    int i, b, e;
+    int g;
+
+    PyObject* string;
+    int maxsplit = 0;
+    static char* kwlist[] = { "source", "maxsplit", NULL };
+    if (!PyArg_ParseTupleAndKeywords(args, kw, "O|i:split", kwlist,
+                                     &string, &maxsplit))
+        return NULL;
+
+    string = state_init(&state, self, string, 0, INT_MAX);
+    if (!string)
+        return NULL;
+
+    list = PyList_New(0);
+
+    i = n = 0;
+
+    while (maxsplit == 0 || n < maxsplit) {
+
+        state_reset(&state);
+
+        state.ptr = state.start;
+
+        if (state.charsize == 1) {
+            status = sre_search(&state, PatternObject_GetCode(self));
+        } else {
+#if defined(HAVE_UNICODE)
+            status = sre_usearch(&state, PatternObject_GetCode(self));
+#endif
+        }
+
+        if (status > 0) {
+
+            if (state.start == state.ptr) {
+                if (i >= state.endpos)
+                    break;
+                /* skip one character */
+                state.start = (void*) ((char*) state.ptr + state.charsize);
+                continue;
+            }
+
+            b = ((char*) state.start - (char*) state.beginning) /
+                state.charsize;
+            e = ((char*) state.ptr - (char*) state.beginning) /
+                state.charsize;
+
+            /* get segment before this match */
+            item = PySequence_GetSlice(string, i, b);
+            if (!item)
+                goto error;
+            status = PyList_Append(list, item);
+            Py_DECREF(item);
+            if (status < 0)
+                goto error;
+
+            for (g = 0; g < self->groups; g++) {
+                item = state_getslice(&state, g+1, string, 0);
+                if (!item)
+                    goto error;
+                status = PyList_Append(list, item);
+                Py_DECREF(item);
+                if (status < 0)
+                    goto error;
+            }
+
+            i = e;
+            n = n + 1;
+
+            state.start = state.ptr;
+
+        } else {
+
+            if (status == 0)
+                break;
+
+            pattern_error(status);
+            goto error;
+
+        }
+    }
+
+    /* get segment following last match */
+    item = PySequence_GetSlice(string, i, state.endpos);
+    if (!item)
+        goto error;
+    status = PyList_Append(list, item);
+    Py_DECREF(item);
+    if (status < 0)
+        goto error;
+
+    state_fini(&state);
+    return list;
+
+error:
+    Py_DECREF(list);
+    state_fini(&state);
+    return NULL;
+    
+}
+#endif
 
 static PyObject*
 pattern_copy(PatternObject* self, PyObject* args)
