@@ -42,7 +42,7 @@ except ImportError:
 import base64
 
 # Intrapackage imports
-from Encoders import _bencode, _qencode
+from email.Encoders import _bencode, _qencode
 
 COMMASPACE = ', '
 UEMPTYSTRING = u''
@@ -135,7 +135,7 @@ def decode(s):
     """
     warnings.warn('Use Header.decode_header() instead.', DeprecationWarning, 2)
     # Intra-package import here to avoid circular import problems.
-    from Header import decode_header
+    from email.Header import decode_header
     L = decode_header(s)
     if not isinstance(L, ListType):
         # s wasn't decoded
