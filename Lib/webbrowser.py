@@ -116,7 +116,6 @@ class Netscape:
         cmd = "%s %s -remote '%s' >/dev/null 2>&1" % (self.name,
                                                       raise_opt,
                                                       action)
-        print cmd
         rc = os.system(cmd)
         if rc:
             import time
@@ -233,7 +232,7 @@ class WindowsDefault:
 # the TERM and DISPLAY cases, because we might be running Python from inside
 # an xterm.
 if os.environ.get("TERM") or os.environ.get("DISPLAY"):
-    _tryorder = ("mozilla","netscape","kfm","grail","links","lynx","w3m")
+    _tryorder = ["mozilla","netscape","kfm","grail","links","lynx","w3m"]
 
     # Easy cases first -- register console browsers if we have them.
     if os.environ.get("TERM"):
@@ -282,7 +281,7 @@ class InternetConfig:
 #
 
 if sys.platform[:3] == "win":
-    _tryorder = ("netscape", "windows-default")
+    _tryorder = ["netscape", "windows-default"]
     register("windows-default", WindowsDefault)
 
 #
@@ -296,7 +295,7 @@ except ImportError:
 else:
     # internet-config is the only supported controller on MacOS,
     # so don't mess with the default!
-    _tryorder = ("internet-config", )
+    _tryorder = ["internet-config"]
     register("internet-config", InternetConfig)
 
 #
@@ -304,7 +303,7 @@ else:
 #
 
 if sys.platform[:3] == "os2" and _iscommand("netscape.exe"):
-    _tryorder = ("os2netscape",)
+    _tryorder = ["os2netscape"]
     register("os2netscape", None,
              GenericBrowser("start netscape.exe %s"))
 
