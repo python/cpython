@@ -83,6 +83,8 @@ python	    The Python main program, named python.exe.  This should
 
 _tkinter    The optional _tkinter extension, _tkinter.dll; see below.
 
+NumPy, multiarray, fast_umath    projects to build Numerical Python.
+
 ALl end products of the compilation are placed in the subdirectory
 vc40 (which Developer Studio creates); object files are placed in
 vc40/tmp.  There are no separate Release and Debug project variants.
@@ -100,6 +102,16 @@ file vclibs41.zip which contains the files tcl75.lib and tk41.lib, and
 placed those files in C:\tcl\bin.  In order to use _tkinter, the
 Tkinter.py module must be on PYTHONPATH.  It is found in the
 Lib\tkinter subdirectory.
+
+*** How to build Numerical Python ***
+
+This has been tested only with NumPy 1.0alpha2.  Unpack the NumPy
+tarfile so that it creates a NumPy subdirectory in the Python
+distribution directory.  You need to create exports files
+NumPy/multiarray.def and NumPy/fast_umath.def (see PC/_tkinter.def for
+an example).  Then build the targets NumPy, multiarray and fast_umath,
+in that order.  To use Numerical Python you have to append NumPy/Lib
+to sys.path.
 
 
 Microsoft Visual C++ Version 1.5 (16-bit Windows)
