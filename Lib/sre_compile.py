@@ -399,7 +399,7 @@ def _compile_info(code, pattern, flags):
                 table[i+1] = table[table[i+1]-1]+1
         code.extend(table[1:]) # don't store first entry
     elif charset:
-        _compile_charset(charset, 0, code)
+        _compile_charset(charset, flags, code)
     code[skip] = len(code) - skip
 
 STRING_TYPES = [type("")]
