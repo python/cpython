@@ -26,6 +26,8 @@ can log in on your machine.  Use with caution!
 
 #include <Python.h>
 
+extern int Py_VerboseFlag;
+
 #ifndef PORT
 #define PORT 4000
 #endif
@@ -62,8 +64,11 @@ main(int argc, char **argv)
 	if (argc > 0 && argv[0] != NULL && argv[0][0] != '\0')
 		progname = argv[0];
 
-	while ((c = getopt(argc, argv, "")) != EOF) {
+	while ((c = getopt(argc, argv, "v")) != EOF) {
 		switch (c) {
+		case 'v':
+			Py_VerboseFlag++;
+			break;
 		default:
 			usage();
 		}
@@ -173,7 +178,8 @@ main_thread(int port)
 		PyEval_AcquireThread(gtstate);
 		gtstate = NULL;
 		Py_Finalize();
-		Py_Finalize();
+		/* And a second time, just because we can. */
+		Py_Finalize(); /* This should be harmless. */
 	}
 	exit(0);
 }
