@@ -832,8 +832,10 @@ PyString_Format(format, args)
 					goto error;
 				}
 				width = PyInt_AsLong(v);
-				if (width < 0)
-					width = 0;
+				if (width < 0) {
+					flags |= F_LJUST;
+					width = -width;
+				}
 				if (--fmtcnt >= 0)
 					c = *fmt++;
 			}
