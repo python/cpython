@@ -137,6 +137,29 @@ and keyword arguments taken from the optional dictionary kwargs.";
 
 
 static PyObject *
+builtin_buffer(self, args)
+	PyObject *self;
+	PyObject *args;
+{
+	PyObject *ob;
+	int offset = 0;
+	int size = Py_END_OF_BUFFER;
+
+	if ( !PyArg_ParseTuple(args, "O|ii:buffer", &ob, &offset, &size) )
+	    return NULL;
+	return PyBuffer_FromObject(ob, offset, size);
+}
+
+static char buffer_doc[] =
+"buffer(object [, offset[, size]) -> object\n\
+\n\
+Creates a new buffer object which references the given object.\n\
+The buffer will reference a slice of the target object from the\n\
+start of the object (or at the specified offset). The slice will\n\
+extend to the end of the target object (or with the specified size).";
+
+
+static PyObject *
 builtin_callable(self, args)
 	PyObject *self;
 	PyObject *args;
@@ -1923,6 +1946,7 @@ static PyMethodDef builtin_methods[] = {
 	{"__import__",	builtin___import__, 1, import_doc},
 	{"abs",		builtin_abs, 1, abs_doc},
 	{"apply",	builtin_apply, 1, apply_doc},
+	{"buffer",	builtin_buffer, 1, buffer_doc},
 	{"callable",	builtin_callable, 1, callable_doc},
 	{"chr",		builtin_chr, 1, chr_doc},
 	{"cmp",		builtin_cmp, 1, cmp_doc},
