@@ -3438,46 +3438,32 @@ err_args(PyObject *func, int flags, int nargs)
 			     nargs);
 }
 
-#ifdef WITH_C_PROF
-#define BEGIN_C_TRACE \
-if (tstate->use_tracing) { \
+#define C_TRACE(call) \
+if (tstate->use_tracing && tstate->c_profilefunc) { \
+	if (call_trace(tstate->c_profilefunc, \
+		tstate->c_profileobj, \
+		tstate->frame, PyTrace_C_CALL, \
+		func)) \
+		{ return NULL; } \
+	call; \
 	if (tstate->c_profilefunc != NULL) { \
-		PyObject *func_name = \
-			PyString_FromString (((PyCFunctionObject *) \
-						func)->m_ml->ml_name); \
-		are_tracing = 1; \
-		if (call_trace(tstate->c_profilefunc, \
-			tstate->c_profileobj, \
-			tstate->frame, PyTrace_C_CALL, \
-			func_name)) \
-			{ return NULL; } \
-		Py_DECREF (func_name); \
+		if (x == NULL) { \
+			if (call_trace (tstate->c_profilefunc, \
+				tstate->c_profileobj, \
+				tstate->frame, PyTrace_C_EXCEPTION, \
+				func)) \
+				{ return NULL; } \
+		} else { \
+			if (call_trace(tstate->c_profilefunc, \
+				tstate->c_profileobj, \
+				tstate->frame, PyTrace_C_RETURN, \
+				func)) \
+				{ return NULL; } \
 		} \
+	} \
+} else { \
+	call; \
 	}
-
-#define END_C_TRACE \
-	if (tstate->use_tracing && are_tracing) { \
-		if (tstate->c_profilefunc != NULL) { \
-			if (x == NULL) { \
-				if (call_trace (tstate->c_profilefunc, \
-					tstate->c_profileobj, \
-					tstate->frame, PyTrace_C_EXCEPTION, \
-					NULL)) \
-					{ return NULL; } \
-			} else { \
-				if (call_trace(tstate->c_profilefunc, \
-					tstate->c_profileobj, \
-					tstate->frame, PyTrace_C_RETURN, \
-					NULL))	\
-					{ return NULL; } \
-			} \
-		} \
-	}
-#else
-#define BEGIN_C_TRACE
-#define END_C_TRACE
-#endif
-
 
 static PyObject *
 call_function(PyObject ***pp_stack, int oparg
@@ -3493,30 +3479,22 @@ call_function(PyObject ***pp_stack, int oparg
 	PyObject *func = *pfunc;
 	PyObject *x, *w;
 
-#ifdef WITH_C_PROF
-	int     are_tracing = 0;
-	PyThreadState *tstate = PyThreadState_GET();
-#endif
-
 	/* Always dispatch PyCFunction first, because these are
 	   presumed to be the most frequent callable object.
 	*/
 	if (PyCFunction_Check(func) && nk == 0) {
 		int flags = PyCFunction_GET_FLAGS(func);
 		PCALL(PCALL_CFUNCTION);
+		PyThreadState *tstate = PyThreadState_GET();
 		if (flags & (METH_NOARGS | METH_O)) {
 			PyCFunction meth = PyCFunction_GET_FUNCTION(func);
 			PyObject *self = PyCFunction_GET_SELF(func);
 			if (flags & METH_NOARGS && na == 0) {
- 				BEGIN_C_TRACE
-				x = (*meth)(self, NULL);
-				END_C_TRACE
+				C_TRACE(x=(*meth)(self,NULL));
 			}
 			else if (flags & METH_O && na == 1) {
 				PyObject *arg = EXT_POP(*pp_stack);
-				BEGIN_C_TRACE
-				x = (*meth)(self, arg);
-				END_C_TRACE
+				C_TRACE(x=(*meth)(self,arg));
 				Py_DECREF(arg);
 			}
 			else {
@@ -3527,15 +3505,13 @@ call_function(PyObject ***pp_stack, int oparg
 		else {
 			PyObject *callargs;
 			callargs = load_args(pp_stack, na);
-			BEGIN_C_TRACE
 #ifdef WITH_TSC
 			rdtscll(*pintr0);
 #endif
-			x = PyCFunction_Call(func, callargs, NULL);
+			C_TRACE(x=PyCFunction_Call(func,callargs,NULL));
 #ifdef WITH_TSC
 			rdtscll(*pintr1);
 #endif
-			END_C_TRACE
 			Py_XDECREF(callargs);
 		}
 	} else {

@@ -1946,19 +1946,6 @@ then
 fi
 AC_MSG_RESULT($with_doc_strings)
 
-# Check for C call profiling support
-AC_MSG_CHECKING(for --with-c-profiling)
-AC_ARG_WITH(c-profiling,
-[  --with-c-profiling      Enable profiling of builtins and C extension functions], [
-if test "$withval" != no
-then
-  AC_DEFINE(WITH_C_PROF, 1,
-    [Define to enable profile hooks for C extension functions and builtins])
-    AC_MSG_RESULT(yes)
-else AC_MSG_RESULT(no)
-fi],
-[AC_MSG_RESULT(no)])
-
 # Check for Python-specific malloc support
 AC_MSG_CHECKING(for --with-tsc)
 AC_ARG_WITH(tsc,
