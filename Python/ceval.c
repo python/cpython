@@ -2743,7 +2743,10 @@ do_raise(PyObject *type, PyObject *value, PyObject *tb)
 		Py_DECREF(tmp);
 	}
 
-	if (PyString_Check(type))
+	if (PyString_CheckExact(type))
+		/* Raising builtin string is deprecated but still allowed --
+		 * do nothing.  Raising an instance of a new-style str
+		 * subclass is right out. */
 		;
 
 	else if (PyClass_Check(type))
