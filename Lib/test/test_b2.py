@@ -267,7 +267,7 @@ if tuple(xrange(0,10,2)) != tuple(range(0,10,2)):
     raise TestFailed, 'xrange(0,10,2)'
 # regression tests for SourceForge bug #121695
 def _range_test(r):
-    assert r.start != r.stop, 'Test not valid for passed-in xrange object.'
+    verify(r.start != r.stop, 'Test not valid for passed-in xrange object.')
     if r.stop in r:
         raise TestFailed, 'r.stop in ' + `r`
     if r.stop-r.step not in r:

@@ -1,7 +1,7 @@
 # Test case for the os.poll() function
 
 import sys, os, select, random
-from test_support import verbose, TestSkipped, TESTFN
+from test_support import verify, verbose, TestSkipped, TESTFN
 
 try:
     select.poll
@@ -55,7 +55,7 @@ def test_poll1():
             raise RuntimeError, "no pipes ready for reading"
         rd = random.choice(ready_readers)
         buf = os.read(rd, MSG_LEN)
-        assert len(buf) == MSG_LEN
+        verify(len(buf) == MSG_LEN)
         print buf
         os.close(r2w[rd]) ; os.close( rd )
         p.unregister( r2w[rd] )
@@ -75,17 +75,17 @@ def poll_unit_tests():
     p = select.poll()
     p.register(FD)
     r = p.poll()
-    assert r[0] == (FD, select.POLLNVAL)
+    verify(r[0] == (FD, select.POLLNVAL))
 
     f = open(TESTFN, 'w')
     fd = f.fileno()
     p = select.poll()
     p.register(f)
     r = p.poll()
-    assert r[0][0] == fd
+    verify(r[0][0] == fd)
     f.close()
     r = p.poll()
-    assert r[0] == (fd, select.POLLNVAL)
+    verify(r[0] == (fd, select.POLLNVAL))
     os.unlink(TESTFN)
 
     # type error for invalid arguments

@@ -12,7 +12,7 @@ That's OK, fork() is a grotesque hack anyway. ;-) [cjh]
 """
 
 import os, sys, time, thread
-from test_support import TestSkipped
+from test_support import verify, verbose, TestSkipped
 
 try:
     if os.uname()[0] == "BeOS":
@@ -51,7 +51,7 @@ def main():
 
     a = alive.keys()
     a.sort()
-    assert a == range(NUM_THREADS)
+    verify(a == range(NUM_THREADS))
 
     prefork_lives = alive.copy()
 
@@ -68,8 +68,9 @@ def main():
     else:
         # Parent
         spid, status = os.waitpid(cpid, 0)
-        assert spid == cpid
-        assert status == 0, "cause = %d, exit = %d" % (status&0xff, status>>8)
+        verify(spid == cpid)
+        verify(status == 0,
+                "cause = %d, exit = %d" % (status&0xff, status>>8) )
         global stop
         # Tell threads to die
         stop = 1

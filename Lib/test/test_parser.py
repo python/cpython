@@ -3,7 +3,7 @@ import parser
 import pprint
 import sys
 
-from test_support import TestFailed
+from test_support import verify, TestFailed
 
 #
 #  First, we test that we can generate trees from valid source fragments,

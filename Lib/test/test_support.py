@@ -71,3 +71,15 @@ def findfile(file, here=__file__):
         fn = os.path.join(dn, file)
         if os.path.exists(fn): return fn
     return file
+
+def verify(condition, reason='test failed'):
+	
+	""" Verify that condition is true. If not, raise an
+	    AssertionError.
+
+	    The optinal argument reason can be given to provide
+	    a better error text.
+	
+	"""
+	if not condition:
+		raise AssertionError,reason

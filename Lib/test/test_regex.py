@@ -1,4 +1,4 @@
-from test_support import verbose
+from test_support import verify, verbose
 import warnings
 warnings.filterwarnings("ignore", "the regex module is deprecated",
                         DeprecationWarning, __name__)

@@ -31,11 +31,11 @@ def WriteTestData(root_key):
 
     # Check we wrote as many items as we thought.
     nkeys, nvalues, since_mod = QueryInfoKey(key)
-    assert nkeys==1, "Not the correct number of sub keys"
-    assert nvalues==1, "Not the correct number of values"
+    verify(nkeys==1, "Not the correct number of sub keys")
+    verify(nvalues==1, "Not the correct number of values")
     nkeys, nvalues, since_mod = QueryInfoKey(sub_key)
-    assert nkeys==0, "Not the correct number of sub keys"
-    assert nvalues==len(test_data), "Not the correct number of values"
+    verify(nkeys==0, "Not the correct number of sub keys")
+    verify(nvalues==len(test_data), "Not the correct number of values")
     # Close this key this way...
     # (but before we do, copy the key as an integer - this allows
     # us to test that the key really gets closed).
@@ -58,7 +58,7 @@ def WriteTestData(root_key):
 def ReadTestData(root_key):
     # Check we can get default value for this key.
     val = QueryValue(root_key, test_key_name)
-    assert val=="Default value", "Registry didn't give back the correct value"
+    verify(val=="Default value", "Registry didn't give back the correct value")
 
     key = OpenKey(root_key, test_key_name)
     # Read the sub-keys
@@ -70,21 +70,21 @@ def ReadTestData(root_key):
             data = EnumValue(sub_key, index)
         except EnvironmentError:
             break
-        assert data in test_data, "Didn't read back the correct test data"
+        verify(data in test_data, "Didn't read back the correct test data")
         index = index + 1
-    assert index==len(test_data), "Didn't read the correct number of items"
+    verify(index==len(test_data), "Didn't read the correct number of items")
     # Check I can directly access each item
     for value_name, value_data, value_type in test_data:
         read_val, read_typ = QueryValueEx(sub_key, value_name)
-        assert read_val==value_data and read_typ == value_type, \
-               "Could not directly read the value"
+        verify(read_val==value_data and read_typ == value_type, \
+               "Could not directly read the value" )
     sub_key.Close()
     # Enumerate our main key.
     read_val = EnumKey(key, 0)
-    assert read_val == "sub_key", "Read subkey value wrong"
+    verify(read_val == "sub_key", "Read subkey value wrong")
     try:
         EnumKey(key, 1)
-        assert 0, "Was able to get a second key when I only have one!"
+        verify(0, "Was able to get a second key when I only have one!")
     except EnvironmentError:
         pass
 
@@ -100,14 +100,14 @@ def DeleteTestData(root_key):
         DeleteValue(sub_key, value_name)
 
     nkeys, nvalues, since_mod = QueryInfoKey(sub_key)
-    assert nkeys==0 and nvalues==0, "subkey not empty before delete"
+    verify(nkeys==0 and nvalues==0, "subkey not empty before delete")
     sub_key.Close()
     DeleteKey(key, "sub_key")
 
     try:
         # Shouldnt be able to delete it twice!
         DeleteKey(key, "sub_key")
-        assert 0, "Deleting the key twice succeeded"
+        verify(0, "Deleting the key twice succeeded")
     except EnvironmentError:
         pass
     key.Close()
@@ -115,7 +115,7 @@ def DeleteTestData(root_key):
     # Opening should now fail!
     try:
         key = OpenKey(root_key, test_key_name)
-        assert 0, "Could open the non-existent key"
+        verify(0, "Could open the non-existent key")
     except WindowsError: # Use this error name this time
         pass
 

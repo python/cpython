@@ -4,7 +4,7 @@
 """
 
 import grp
-from test_support import verbose
+from test_support import verify, verbose
 
 groups = grp.getgrall()
 if verbose:

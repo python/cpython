@@ -2,7 +2,7 @@
    Sjoerd Mullender
 '''
 
-from test_support import verbose
+from test_support import verify, verbose
 
 testdoc = """\
 <?xml version="1.0" encoding="UTF-8" standalone='yes' ?>

@@ -1,3 +1,4 @@
+from test_support import verify, verbose
 from UserList import UserList
 from test_support import TestFailed
 import string
@@ -79,11 +80,11 @@ g(*Nothing())
 # make sure the function call doesn't stomp on the dictionary?
 d = {'a': 1, 'b': 2, 'c': 3}
 d2 = d.copy()
-assert d == d2
+verify(d == d2)
 g(1, d=4, **d)
 print d
 print d2
-assert d == d2, "function call modified dictionary"
+verify(d == d2, "function call modified dictionary")
 
 # what about willful misconduct?
 def saboteur(**kw):
@@ -91,7 +92,7 @@ def saboteur(**kw):
     return kw
 d = {}
 kw = saboteur(a=1, **d)
-assert d == {}
+verify(d == {})
 # break the cycle
 del kw['x']
 

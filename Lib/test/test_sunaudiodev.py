@@ -1,4 +1,4 @@
-from test_support import verbose, findfile, TestFailed
+from test_support import verify, verbose, findfile, TestFailed
 import sunaudiodev
 import os
 

@@ -1,4 +1,4 @@
-from test_support import verbose, TestFailed
+from test_support import verify, verbose, TestFailed
 import gc
 
 def run_test(name, thunk):
@@ -161,7 +161,7 @@ def test():
         print "disabling automatic collection"
     enabled = gc.isenabled()
     gc.disable()
-    assert not gc.isenabled()
+    verify(not gc.isenabled() )
     debug = gc.get_debug()
     gc.set_debug(debug & ~gc.DEBUG_LEAK) # this test is supposed to leak
 
@@ -174,7 +174,7 @@ def test():
             print "restoring automatic collection"
         # make sure to always test gc.enable()
         gc.enable()
-        assert gc.isenabled()
+        verify(gc.isenabled())
         if not enabled:
             gc.disable()
 

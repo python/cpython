@@ -1,4 +1,4 @@
-from test_support import TestFailed, verbose
+from test_support import verify, verbose, TestFailed
 from string import join
 from random import random, randint
 
@@ -41,7 +41,7 @@ def check(ok, *args):
 # The sign of the number is also random.
 
 def getran(ndigits):
-    assert ndigits > 0
+    verify(ndigits > 0)
     nbits_hi = ndigits * SHIFT
     nbits_lo = nbits_hi - SHIFT + 1
     answer = 0L
@@ -50,13 +50,13 @@ def getran(ndigits):
     while nbits < nbits_lo:
         bits = (r >> 1) + 1
         bits = min(bits, nbits_hi - nbits)
-        assert 1 <= bits <= SHIFT
+        verify(1 <= bits <= SHIFT)
         nbits = nbits + bits
         answer = answer << bits
         if r & 1:
             answer = answer | ((1 << bits) - 1)
         r = int(random() * (SHIFT * 2))
-    assert nbits_lo <= nbits <= nbits_hi
+    verify(nbits_lo <= nbits <= nbits_hi)
     if random() < 0.5:
         answer = -answer
     return answer

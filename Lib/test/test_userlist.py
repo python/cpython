@@ -3,7 +3,7 @@
 from UserList import UserList
 from test_support import TestFailed
 
-# Use check instead of assert so -O doesn't render the
+# Use check instead of verify(so -O doesn't render the)
 # test useless.
 def check(predicate, msg):
     if not predicate:

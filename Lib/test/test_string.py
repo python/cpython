@@ -1,4 +1,4 @@
-from test_support import verbose, TestSkipped
+from test_support import verify, verbose, TestSkipped
 import string_tests
 import string, sys
 
