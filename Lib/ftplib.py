@@ -109,28 +109,28 @@ class FTP:
             if user: self.login(user, passwd, acct)
 
     def connect(self, host = '', port = 0):
-	'''Connect to host.  Arguments are:
-	- host: hostname to connect to (string, default previous host)
-	- port: port to connect to (integer, default previous port)'''
-	if host: self.host = host
-	if port: self.port = port
-	self.passiveserver = 0
-	for res in socket.getaddrinfo(self.host, self.port, 0, socket.SOCK_STREAM):
-	    af, socktype, proto, canonname, sa = res
-	    try:
-		self.sock = socket.socket(af, socktype, proto)
-		self.sock.connect(sa)
-	    except socket.error, msg:
-		self.sock.close()
-		self.sock = None
-		continue
-	    break
-	if not self.sock:
-	    raise socket.error, msg
-	self.af = af
-	self.file = self.sock.makefile('rb')
-	self.welcome = self.getresp()
-	return self.welcome
+        '''Connect to host.  Arguments are:
+        - host: hostname to connect to (string, default previous host)
+        - port: port to connect to (integer, default previous port)'''
+        if host: self.host = host
+        if port: self.port = port
+        self.passiveserver = 0
+        for res in socket.getaddrinfo(self.host, self.port, 0, socket.SOCK_STREAM):
+            af, socktype, proto, canonname, sa = res
+            try:
+                self.sock = socket.socket(af, socktype, proto)
+                self.sock.connect(sa)
+            except socket.error, msg:
+                self.sock.close()
+                self.sock = None
+                continue
+            break
+        if not self.sock:
+            raise socket.error, msg
+        self.af = af
+        self.file = self.sock.makefile('rb')
+        self.welcome = self.getresp()
+        return self.welcome
 
     def getwelcome(self):
         '''Get the welcome message from the server.
@@ -256,47 +256,47 @@ class FTP:
         return self.voidcmd(cmd)
 
     def sendeprt(self, host, port):
-	'''Send a EPRT command with the current host and the given port number.'''
-	af = 0
-	if self.af == socket.AF_INET:
-	    af = 1
-	if self.af == socket.AF_INET6:
-	    af = 2
-	if af == 0:
-	    raise error_proto, 'unsupported address family'
-	fields = ['', `af`, host, `port`, '']
-	cmd = 'EPRT ' + string.joinfields(fields, '|')
-	return self.voidcmd(cmd)
+        '''Send a EPRT command with the current host and the given port number.'''
+        af = 0
+        if self.af == socket.AF_INET:
+            af = 1
+        if self.af == socket.AF_INET6:
+            af = 2
+        if af == 0:
+            raise error_proto, 'unsupported address family'
+        fields = ['', `af`, host, `port`, '']
+        cmd = 'EPRT ' + string.joinfields(fields, '|')
+        return self.voidcmd(cmd)
 
     def makeport(self):
-	'''Create a new socket and send a PORT command for it.'''
-	for res in socket.getaddrinfo(None, 0, self.af, socket.SOCK_STREAM, 0, socket.AI_PASSIVE):
-	    af, socktype, proto, canonname, sa = res
-	    try:
-		sock = socket.socket(af, socktype, proto)
-		sock.bind(sa)
-	    except socket.error, msg:
-		sock.close()
-		sock = None
-		continue
-	    break
-	if not sock:
-	    raise socket.error, msg
-	sock.listen(1)
-	port = sock.getsockname()[1] # Get proper port
-	host = self.sock.getsockname()[0] # Get proper host
-	if self.af == socket.AF_INET:
-	    resp = self.sendport(host, port)
-	else:
-	    resp = self.sendeprt(host, port)
-	return sock
+        '''Create a new socket and send a PORT command for it.'''
+        for res in socket.getaddrinfo(None, 0, self.af, socket.SOCK_STREAM, 0, socket.AI_PASSIVE):
+            af, socktype, proto, canonname, sa = res
+            try:
+                sock = socket.socket(af, socktype, proto)
+                sock.bind(sa)
+            except socket.error, msg:
+                sock.close()
+                sock = None
+                continue
+            break
+        if not sock:
+            raise socket.error, msg
+        sock.listen(1)
+        port = sock.getsockname()[1] # Get proper port
+        host = self.sock.getsockname()[0] # Get proper host
+        if self.af == socket.AF_INET:
+            resp = self.sendport(host, port)
+        else:
+            resp = self.sendeprt(host, port)
+        return sock
 
     def makepasv(self):
-	if self.af == socket.AF_INET:
-	    host, port = parse227(self.sendcmd('PASV'))
-	else:
-	    host, port = parse229(self.sendcmd('EPSV'), self.sock.getpeername())
-	return host, port
+        if self.af == socket.AF_INET:
+            host, port = parse227(self.sendcmd('PASV'))
+        else:
+            host, port = parse229(self.sendcmd('EPSV'), self.sock.getpeername())
+        return host, port
 
     def ntransfercmd(self, cmd, rest=None):
         """Initiate a transfer over the data connection.
@@ -316,9 +316,9 @@ class FTP:
         size = None
         if self.passiveserver:
             host, port = self.makepasv()
-	    af, socktype, proto, canon, sa = socket.getaddrinfo(host, port, 0, socket.SOCK_STREAM)[0]
-	    conn = socket.socket(af, socktype, proto)
-	    conn.connect(sa)
+            af, socktype, proto, canon, sa = socket.getaddrinfo(host, port, 0, socket.SOCK_STREAM)[0]
+            conn = socket.socket(af, socktype, proto)
+            conn.connect(sa)
             if rest is not None:
                 self.sendcmd("REST %s" % rest)
             resp = self.sendcmd(cmd)
@@ -575,17 +575,17 @@ def parse229(resp, peer):
     Return ('host.addr.as.numbers', port#) tuple.'''
 
     if resp[:3] <> '229':
-	raise error_reply, resp
+        raise error_reply, resp
     left = string.find(resp, '(')
     if left < 0: raise error_proto, resp
     right = string.find(resp, ')', left + 1)
     if right < 0:
-	raise error_proto, resp	# should contain '(|||port|)'
+        raise error_proto, resp # should contain '(|||port|)'
     if resp[left + 1] <> resp[right - 1]:
-	raise error_proto, resp
+        raise error_proto, resp
     parts = string.split(resp[left + 1:right], resp[left+1])
     if len(parts) <> 5:
-	raise error_proto, resp
+        raise error_proto, resp
     host = peer[0]
     port = string.atoi(parts[3])
     return host, port

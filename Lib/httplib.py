@@ -357,22 +357,22 @@ class HTTPConnection:
 
     def connect(self):
         """Connect to the host and port specified in __init__."""
- 	for res in socket.getaddrinfo(self.host, self.port, 0, socket.SOCK_STREAM):
- 	    af, socktype, proto, canonname, sa = res
- 	    try:
- 		self.sock = socket.socket(af, socktype, proto)
-		if self.debuglevel > 0:
-		    print "connect: (%s, %s)" % (self.host, self.port)
-		self.sock.connect(sa)
-	    except socket.error, msg:
-		if self.debuglevel > 0:
-		    print 'connect fail:', (self.host, self.port)
-		self.sock.close()
-		self.sock = None
-		continue
-	    break
-	if not self.sock:
-	    raise socket.error, msg
+        for res in socket.getaddrinfo(self.host, self.port, 0, socket.SOCK_STREAM):
+            af, socktype, proto, canonname, sa = res
+            try:
+                self.sock = socket.socket(af, socktype, proto)
+                if self.debuglevel > 0:
+                    print "connect: (%s, %s)" % (self.host, self.port)
+                self.sock.connect(sa)
+            except socket.error, msg:
+                if self.debuglevel > 0:
+                    print 'connect fail:', (self.host, self.port)
+                self.sock.close()
+                self.sock = None
+                continue
+            break
+        if not self.sock:
+            raise socket.error, msg
 
     def close(self):
         """Close the connection to the HTTP server."""

@@ -73,23 +73,23 @@ class POP3:
 
 
     def __init__(self, host, port = POP3_PORT):
-	self.host = host
-	self.port = port
-	for res in socket.getaddrinfo(self.host, self.port, 0, socket.SOCK_STREAM):
-	    af, socktype, proto, canonname, sa = res
-	    try:
-		self.sock = socket.socket(af, socktype, proto)
-		self.sock.connect(sa)
-	    except socket.error, msg:
-		self.sock.close()
-		self.sock = None
-		continue
-	    break
-	if not self.sock:
-	    raise socket.error, msg
-	self.file = self.sock.makefile('rb')
-	self._debugging = 0
-	self.welcome = self._getresp()
+        self.host = host
+        self.port = port
+        for res in socket.getaddrinfo(self.host, self.port, 0, socket.SOCK_STREAM):
+            af, socktype, proto, canonname, sa = res
+            try:
+                self.sock = socket.socket(af, socktype, proto)
+                self.sock.connect(sa)
+            except socket.error, msg:
+                self.sock.close()
+                self.sock = None
+                continue
+            break
+        if not self.sock:
+            raise socket.error, msg
+        self.file = self.sock.makefile('rb')
+        self._debugging = 0
+        self.welcome = self._getresp()
 
 
     def _putline(self, line):

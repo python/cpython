@@ -208,7 +208,7 @@ class SMTP:
         specified during instantiation.
 
         """
-	if not port and (host.find(':') == host.rfind(':')):
+        if not port and (host.find(':') == host.rfind(':')):
             i = host.rfind(':')
             if i >= 0:
                 host, port = host[:i], host[i+1:]
@@ -216,21 +216,21 @@ class SMTP:
                 except ValueError:
                     raise socket.error, "nonnumeric port"
         if not port: port = SMTP_PORT
- 	if self.debuglevel > 0: print 'connect:', (host, port)
- 	for res in socket.getaddrinfo(host, port, 0, socket.SOCK_STREAM):
- 	    af, socktype, proto, canonname, sa = res
- 	    try:
- 		self.sock = socket.socket(af, socktype, proto)
- 		if self.debuglevel > 0: print 'connect:', (host, port)
- 		self.sock.connect(sa)
- 	    except socket.error, msg:
- 		if self.debuglevel > 0: print 'connect fail:', (host, port)
- 		self.sock.close()
- 		self.sock = None
- 		continue
- 	    break
-	if not self.sock:
- 	    raise socket.error, msg
+        if self.debuglevel > 0: print 'connect:', (host, port)
+        for res in socket.getaddrinfo(host, port, 0, socket.SOCK_STREAM):
+            af, socktype, proto, canonname, sa = res
+            try:
+                self.sock = socket.socket(af, socktype, proto)
+                if self.debuglevel > 0: print 'connect:', (host, port)
+                self.sock.connect(sa)
+            except socket.error, msg:
+                if self.debuglevel > 0: print 'connect fail:', (host, port)
+                self.sock.close()
+                self.sock = None
+                continue
+            break
+        if not self.sock:
+            raise socket.error, msg
         (code, msg) = self.getreply()
         if self.debuglevel > 0: print "connect:", msg
         return (code, msg)
