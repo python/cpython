@@ -547,7 +547,7 @@ to return a string that would yield an object with the same value
 when passed to \function{eval()}.
 \end{funcdesc}
 
-\begin{funcdesc}{round}{x, n}
+\begin{funcdesc}{round}{x\optional{, n}}
   Return the floating point value \var{x} rounded to \var{n} digits
   after the decimal point.  If \var{n} is omitted, it defaults to zero.
   The result is a floating point number.  Values are rounded to the
@@ -558,9 +558,9 @@ when passed to \function{eval()}.
 
 \begin{funcdesc}{setattr}{object, name, value}
   This is the counterpart of \function{getattr()}.  The arguments are an
-  object, a string and an arbitrary value.  The string must be the name
-  of one of the object's attributes.  The function assigns the value to
-  the attribute, provided the object allows it.  For example,
+  object, a string and an arbitrary value.  The string may name an
+  existing attribute or a new attribute.  The function assigns the
+  value to the attribute, provided the object allows it.  For example,
   \code{setattr(\var{x}, '\var{foobar}', 123)} is equivalent to
   \code{\var{x}.\var{foobar} = 123}.
 \end{funcdesc}
