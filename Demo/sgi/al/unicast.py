@@ -12,7 +12,7 @@ from socket import *
 
 host = sys.argv[1]
 
-port = 54321
+port = 5555
 if sys.argv[2:]: port = eval(sys.argv[1])
 
 s = socket(AF_INET, SOCK_DGRAM)
