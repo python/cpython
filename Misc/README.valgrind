@@ -1,24 +1,26 @@
 This document describes some caveats about the use of Valgrind with
-Python.  Valgrind is used periodically by Python developers to try 
+Python.  Valgrind is used periodically by Python developers to try
 to ensure there are no memory leaks or invalid memory reads/writes.
 
 If you don't want to read about the details of using Valgrind, there
-are still two things you must do to suppress the warnings.  First, 
+are still two things you must do to suppress the warnings.  First,
 you must use a suppressions file.  One is supplied in
 Misc/valgrind-python.supp.  Second, you must do one of the following:
 
   * Uncomment Py_USING_MEMORY_DEBUGGER in Objects/obmalloc.c,
-    then rebuild Python 
-  * Uncomment the lines in Misc/valgrind-python.supp that 
+    then rebuild Python
+  * Uncomment the lines in Misc/valgrind-python.supp that
     suppress the warnings for PyObject_Free and PyObject_Realloc
 
 Details:
 --------
-Python uses its own allocation scheme on top of malloc called PyMalloc.
-Valgrind my show some unexpected results when PyMalloc is used.
+Python uses its own small-object allocation scheme on top of malloc,
+called PyMalloc.
+
+Valgrind may show some unexpected results when PyMalloc is used.
 Starting with Python 2.3, PyMalloc is used by default.  You can disable
 PyMalloc when configuring python by adding the --without-pymalloc option.
-If you disable PyMalloc, most of the information in this document and 
+If you disable PyMalloc, most of the information in this document and
 the supplied suppressions file will not be useful.
 
 If you use valgrind on a default build of Python,  you will see
@@ -32,18 +34,19 @@ These are expected and not a problem.  Tim Peters explains
 the situation:
 
         PyMalloc needs to know whether an arbitrary address is one
-	that's managed by it, or is managed by the system malloc.  
+	that's managed by it, or is managed by the system malloc.
 	The current scheme allows this to be determined in constant
 	time, regardless of how many memory areas are under pymalloc's
 	control.
 
         The memory pymalloc manages itself is in one or more "arenas",
-	each a large contiguous memory area obtained from malloc.  
-	The base address of each arena is saved by pymalloc 
-	in a vector, and a field at the start of each arena contains
-	the index of that arena's base address in that vector.
+	each a large contiguous memory area obtained from malloc.
+	The base address of each arena is saved by pymalloc
+	in a vector.  Each arena is carved into "pools", and a field at
+	the start of each pool contains the index of that pool's arena's
+	base address in that vector.
 
-        Given an arbitrary address, pymalloc computes the arena base
+        Given an arbitrary address, pymalloc computes the pool base
 	address corresponding to it, then looks at "the index" stored
 	near there.  If the index read up is out of bounds for the
 	vector of arena base addresses pymalloc maintains, then
@@ -55,14 +58,17 @@ the situation:
 
         to
 
-            the computed arena address
+            the arbitrary address pymalloc is investigating
 
-        pymalloc controls this arena if and only if they're equal.
+        pymalloc controls this arbitrary address if and only if it lies
+        in the arena the address's pool's index claims it lies in.
 
         It doesn't matter whether the memory pymalloc reads up ("the
 	index") is initialized.  If it's not initialized, then
 	whatever trash gets read up will lead pymalloc to conclude
-	(correctly) that the address isn't controlled by it.
+	(correctly) that the address isn't controlled by it, either
+	because the index is out of bounds, or the index is in bounds
+	but the arena it represents doesn't contain the address.
 
         This determination has to be made on every call to one of
 	pymalloc's free/realloc entry points, so its speed is critical
