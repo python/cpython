@@ -8,4 +8,7 @@ normal compression/decompression succeeded
 compress/decompression obj succeeded
 decompress with init options succeeded
 decompressobj with init options succeeded
+should be '': ''
+max_length decompressobj succeeded
+unconsumed_tail should be '': ''
 Testing on 17K of random data
