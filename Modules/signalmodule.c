@@ -17,7 +17,7 @@
 #include <signal.h>
 
 #ifndef SIG_ERR
-#define SIG_ERR ((void (*)(int))-1)
+#define SIG_ERR ((PyOS_sighandler_t)(-1))
 #endif
 
 #if defined(PYOS_OS2)
@@ -38,7 +38,6 @@
 #endif
 
 
-
 /*
    NOTES ON THE INTERACTION BETWEEN SIGNALS AND THREADS
 
@@ -83,10 +82,9 @@ static PyObject *DefaultHandler;
 static PyObject *IgnoreHandler;
 static PyObject *IntHandler;
 
-static void (*old_siginthandler)(int) = SIG_DFL;
+static PyOS_sighandler_t old_siginthandler = SIG_DFL;
 
 
-
 static PyObject *
 signal_default_int_handler(PyObject *self, PyObject *args)
 {
@@ -100,7 +98,6 @@ static char default_int_handler_doc[] =
 The default handler for SIGINT instated by Python.\n\
 It raises KeyboardInterrupt.";
 
-
 
 static int
 checksignals_witharg(void * unused)
@@ -133,11 +130,10 @@ signal_handler(int sig_num)
 #ifdef HAVE_SIGINTERRUPT
 	siginterrupt(sig_num, 1);
 #endif
-	signal(sig_num, signal_handler);
+	PyOS_setsig(sig_num, signal_handler);
 }
 
 
-
 #ifdef HAVE_ALARM
 static PyObject *
 signal_alarm(PyObject *self, PyObject *args)
@@ -181,7 +177,7 @@ Wait until a signal arrives.";
 
 #endif
 
-
+
 static PyObject *
 signal_signal(PyObject *self, PyObject *args)
 {
@@ -217,7 +213,7 @@ signal_signal(PyObject *self, PyObject *args)
 #ifdef HAVE_SIGINTERRUPT
 	siginterrupt(sig_num, 1);
 #endif
-	if (signal(sig_num, func) == SIG_ERR) {
+	if (PyOS_setsig(sig_num, func) == SIG_ERR) {
 		PyErr_SetFromErrno(PyExc_RuntimeError);
 		return NULL;
 	}
@@ -239,7 +235,7 @@ returned.  See getsignal() for possible return values.\n\
 A signal handler function is called with two arguments:\n\
 the first is the signal number, the second is the interrupted stack frame.";
 
-
+
 static PyObject *
 signal_getsignal(PyObject *self, PyObject *args)
 {
@@ -267,7 +263,7 @@ None -- if an unknown handler is in effect\n\
 anything else -- the callable Python object used as a handler\n\
 ";
 
-
+
 /* List of functions defined in the module */
 static PyMethodDef signal_methods[] = {
 #ifdef HAVE_ALARM
@@ -284,7 +280,6 @@ static PyMethodDef signal_methods[] = {
 };
 
 
-
 static char module_doc[] =
 "This module provides mechanisms to use signal handlers in Python.\n\
 \n\
@@ -346,14 +341,7 @@ initsignal(void)
 	Handlers[0].tripped = 0;
 	for (i = 1; i < NSIG; i++) {
 		void (*t)(int);
-#ifdef HAVE_SIGACTION
-		struct sigaction act;
-		sigaction(i,  0, &act);
-		t = act.sa_handler;
-#else
-		t = signal(i, SIG_IGN);
-		signal(i, t);
-#endif
+		t = PyOS_getsig(i);
 		Handlers[i].tripped = 0;
 		if (t == SIG_DFL)
 			Handlers[i].func = DefaultHandler;
@@ -368,7 +356,7 @@ initsignal(void)
 		Py_INCREF(IntHandler);
 		Py_DECREF(Handlers[SIGINT].func);
 		Handlers[SIGINT].func = IntHandler;
-		old_siginthandler = signal(SIGINT, &signal_handler);
+		old_siginthandler = PyOS_setsig(SIGINT, &signal_handler);
 	}
 
 #ifdef SIGHUP
@@ -555,7 +543,7 @@ finisignal(void)
 	int i;
 	PyObject *func;
 
-	signal(SIGINT, old_siginthandler);
+	PyOS_setsig(SIGINT, old_siginthandler);
 	old_siginthandler = SIG_DFL;
 
 	for (i = 1; i < NSIG; i++) {
@@ -564,7 +552,7 @@ finisignal(void)
 		Handlers[i].func = NULL;
 		if (i != SIGINT && func != NULL && func != Py_None &&
 		    func != DefaultHandler && func != IgnoreHandler)
-			signal(i, SIG_DFL);
+			PyOS_setsig(i, SIG_DFL);
 		Py_XDECREF(func);
 	}
 
@@ -577,7 +565,6 @@ finisignal(void)
 }
 
 
-
 /* Declared in pyerrors.h */
 int
 PyErr_CheckSignals(void)
@@ -615,7 +602,7 @@ PyErr_CheckSignals(void)
 	return 0;
 }
 
-
+
 /* Replacements for intrcheck.c functionality
  * Declared in pyerrors.h
  */
