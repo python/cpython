@@ -338,13 +338,15 @@ def main():
     # search for unknown modules in extensions directories (not on Windows)
     addfiles = []
     addmoddefns = [] # Windows list of modules.
-    if unknown:
+    if unknown or (not win and builtins):
         if not win:
             addfiles, addmods = \
-                      checkextensions.checkextensions(unknown, extensions)
+                      checkextensions.checkextensions(unknown+builtins,
+                                                      extensions)
             for mod in addmods:
-                unknown.remove(mod)
-            builtins = builtins + addmods
+                if mod in unknown:
+                    unknown.remove(mod)
+                    builtins.append(mod)
         else:
             # Do the windows thang...
             import checkextensions_win32
