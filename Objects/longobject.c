@@ -562,7 +562,7 @@ PyLong_AsVoidPtr(PyObject *vv)
  * rewritten to use the newer PyLong_{As,From}ByteArray API.
  */
 
-#define IS_LITTLE_ENDIAN *(char*)&one != '\0'
+#define IS_LITTLE_ENDIAN (int)*(unsigned char*)&one
 
 /* Create a new long int object from a C LONG_LONG int. */
 
