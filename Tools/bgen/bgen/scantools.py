@@ -585,8 +585,8 @@ class Scanner_OSX(Scanner):
 	"""Scanner for modern (post UH3.3) Universal Headers """
 	def initpatterns(self):
 		Scanner.initpatterns(self)
-		self.head_pat = "^EXTERN_API_C"
-		self.type_pat = "EXTERN_API_C" + \
+		self.head_pat = "^EXTERN_API\(_C\)?"
+		self.type_pat = "EXTERN_API\(_C\)?" + \
 						"[ \t\n]*([ \t\n]*" + \
 						"\(<type>[a-zA-Z0-9_* \t]*[a-zA-Z0-9_*]\)" + \
 						"[ \t\n]*)[ \t\n]*"
