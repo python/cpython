@@ -186,6 +186,7 @@ LIBFILES= $(MANSTYLES) $(COMMONTEX) \
 	../lib/libcmd.tex \
 	../lib/libmultifile.tex \
 	../lib/libthreading.tex \
+	../lib/libwebbrowser.tex \
 	../lib/internet.tex \
 	../lib/netdata.tex \
 	../lib/markup.tex \
