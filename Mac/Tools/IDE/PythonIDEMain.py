@@ -156,8 +156,6 @@ class PythonIDE(Wapplication.Application):
 		self.makehelpmenu()
 	
 	def quitevent(self, theAppleEvent, theReply):
-		from Carbon import AE
-		AE.AEInteractWithUser(50000000)
 		self._quit()
 	
 	def suspendresume(self, onoff):
