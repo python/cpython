@@ -161,7 +161,7 @@ w_object(v, p)
 		n = gettuplesize(v);
 		w_long((long)n, p);
 		for (i = 0; i < n; i++) {
-			w_object(gettupleitem(v, i), p);
+			w_object(GETTUPLEITEM(v, i), p);
 		}
 	}
 	else if (is_listobject(v)) {
@@ -220,9 +220,9 @@ wr_object(x, fp)
 
 typedef WFILE RFILE; /* Same struct with different invariants */
 
-#define r_byte(p) ((p)->fp ? getc((p)->fp) \
-			  : ((p)->ptr != (p)->end) ? \
-		   	    (unsigned char)*(p)->ptr++ : EOF)
+#define rs_byte(p) (((p)->ptr != (p)->end) ? (unsigned char)*(p)->ptr++ : EOF)
+
+#define r_byte(p) ((p)->fp ? getc((p)->fp) : rs_byte(p))
 
 static int
 r_string(s, n, p)
@@ -255,10 +255,19 @@ r_long(p)
 	RFILE *p;
 {
 	register long x;
-	x = r_byte(p);
-	x |= (long)r_byte(p) << 8;
-	x |= (long)r_byte(p) << 16;
-	x |= (long)r_byte(p) << 24;
+	register FILE *fp = p->fp;
+	if (fp) {
+		x = getc(fp);
+		x |= (long)getc(fp) << 8;
+		x |= (long)getc(fp) << 16;
+		x |= (long)getc(fp) << 24;
+	}
+	else {
+		x = rs_byte(p);
+		x |= (long)rs_byte(p) << 8;
+		x |= (long)rs_byte(p) << 16;
+		x |= (long)rs_byte(p) << 24;
+	}
 	/* XXX If your long is > 32 bits, add sign-extension here!!! */
 	return x;
 }
@@ -335,7 +344,7 @@ r_object(p)
 		if (v == NULL)
 			return v;
 		for (i = 0; i < n; i++)
-			settupleitem(v, (int)i, r_object(p));
+			SETTUPLEITEM(v, (int)i, r_object(p));
 		return v;
 	
 	case TYPE_LIST:
