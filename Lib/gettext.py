@@ -235,7 +235,11 @@ def translation(domain, localedir=None, languages=None, class_=None):
         raise IOError(ENOENT, 'No translation file found for domain', domain)
     key = os.path.abspath(mofile)
     # TBD: do we need to worry about the file pointer getting collected?
-    t = _translations.setdefault(key, class_(open(mofile, 'rb')))
+    # Avoid opening, reading, and parsing the .mo file after it's been done
+    # once.
+    t = _translations.get(key)
+    if t is None:
+        t = _translations.setdefault(key, class_(open(mofile, 'rb')))
     return t
 
 
