@@ -743,14 +743,20 @@ class FaqWizard:
         if commit_ok:
             emit(COMMIT)
         else:
-            emit(NOCOMMIT)
+            emit(NOCOMMIT_HEAD)
+            self.errordetail()
+            emit(NOCOMMIT_TAIL)
         emit(EDITFORM2, self.ui, entry, load_my_cookie())
         emit(EDITFORM3)
 
     def cantcommit(self):
         self.prologue(T_CANTCOMMIT)
         print CANTCOMMIT_HEAD
-        if not self.ui.passwd:
+        self.errordetail()
+        print CANTCOMMIT_TAIL
+
+    def errordetail(self):
+        if PASSWORD and self.ui.password != PASSWORD:
             emit(NEED_PASSWD)
         if not self.ui.log:
             emit(NEED_LOG)
@@ -758,7 +764,6 @@ class FaqWizard:
             emit(NEED_AUTHOR)
         if not self.ui.email:
             emit(NEED_EMAIL)
-        print CANTCOMMIT_TAIL
 
     def commit(self, entry):
         file = entry.file
