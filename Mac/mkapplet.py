@@ -27,6 +27,9 @@ TEMPLATE = "PythonApplet"
 RESTYPE = 'PYC '
 RESNAME = '__main__'
 
+# A resource with this name sets the "owner" (creator) of the destination
+OWNERNAME = "owner resource"
+
 # OpenResFile mode parameters
 READ = 1
 WRITE = 2
@@ -107,7 +110,6 @@ def process(template, filename):
 	ctor, type = MacOS.GetCreatorAndType(destname)
 	if type in undefs: type = 'APPL'
 	if ctor in undefs: ctor = tctor
-	MacOS.SetCreatorAndType(destname, ctor, type)
 	
 	# Open the output resource fork
 	
@@ -121,8 +123,9 @@ def process(template, filename):
 	# Copy the resources from the template
 	
 	input = FSpOpenResFile(template, READ)
-	copyres(input, output)
+	newctor = copyres(input, output)
 	CloseResFile(input)
+	if newctor: ctor = newctor
 	
 	# Copy the resources from the target specific resource template, if any
 	
@@ -131,8 +134,13 @@ def process(template, filename):
 	except MacOS.Error:
 		pass
 	else:
-		copyres(input, output)
+		newctor = copyres(input, output)
 		CloseResFile(input)
+		if newctor: ctor = newctor
+	
+	# Now set the creator and type of the destination
+	
+	MacOS.SetCreatorAndType(destname, ctor, type)
 	
 	# Make sure we're manipulating the output resource file now
 	
@@ -171,10 +179,13 @@ def process(template, filename):
 	message("Applet %s created." % `destname`)
 
 
-# Copy resources between two resource file descriptors
-# Exception: don't copy a __main__ resource
+# Copy resources between two resource file descriptors.
+# Exception: don't copy a __main__ resource.
+# If a resource's name is "owner resource", its type is returned
+# (so the caller can use it to set the destination's creator)
 
 def copyres(input, output):
+	ctor = None
 	UseResFile(input)
 	ntypes = Count1Types()
 	for itype in range(1, 1+ntypes):
@@ -183,8 +194,10 @@ def copyres(input, output):
 		for ires in range(1, 1+nresources):
 			res = Get1IndResource(type, ires)
 			id, type, name = res.GetResInfo()
-			if (type, name) == (RESTYPE, RESNAME):
+			lcname = string.lower(name)
+			if (type, lcname) == (RESTYPE, RESNAME):
 				continue # Don't copy __main__ from template
+			if lcname == OWNERNAME: ctor = type
 			size = res.SizeResource()
 			attrs = res.GetResAttrs()
 			print id, type, name, size, hex(attrs)
@@ -199,9 +212,12 @@ def copyres(input, output):
 				print "Overwriting..."
 				res2.RmveResource()
 			res.AddResource(type, id, name)
-			#res.SetResAttrs(attrs)
 			res.WriteResource()
+			attrs = attrs | res.GetResAttrs()
+			print "New attrs =", hex(attrs)
+			res.SetResAttrs(attrs)
 			UseResFile(input)
+	return ctor
 
 
 # Show a message and exit
@@ -230,3 +246,4 @@ def message(str, id = 256):
 
 if __name__ == '__main__':
 	main()
+
