@@ -105,6 +105,7 @@ Exception\n\
       +-- UserWarning\n\
       +-- DeprecationWarning\n\
       +-- SyntaxWarning\n\
+      +-- OverflowWarning\n\
       +-- RuntimeWarning";
 
 
@@ -912,6 +913,9 @@ static char
 SyntaxWarning__doc__[] = "Base class for warnings about dubious syntax.";
 
 static char
+OverflowWarning__doc__[] = "Base class for warnings about numeric overflow.";
+
+static char
 RuntimeWarning__doc__[] =
 "Base class for warnings about dubious runtime behavior.";
 
@@ -973,6 +977,7 @@ PyObject *PyExc_Warning;
 PyObject *PyExc_UserWarning;
 PyObject *PyExc_DeprecationWarning;
 PyObject *PyExc_SyntaxWarning;
+PyObject *PyExc_OverflowWarning;
 PyObject *PyExc_RuntimeWarning;
 
 
@@ -1047,6 +1052,8 @@ static struct {
  {"DeprecationWarning", &PyExc_DeprecationWarning, &PyExc_Warning,
   DeprecationWarning__doc__},
  {"SyntaxWarning", &PyExc_SyntaxWarning, &PyExc_Warning, SyntaxWarning__doc__},
+ {"OverflowWarning", &PyExc_OverflowWarning, &PyExc_Warning,
+  OverflowWarning__doc__},
  {"RuntimeWarning", &PyExc_RuntimeWarning, &PyExc_Warning,
   RuntimeWarning__doc__},
  /* Sentinel */
