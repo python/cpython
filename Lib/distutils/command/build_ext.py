@@ -77,6 +77,8 @@ class build_ext (Command):
          "forcibly build everything (ignore file timestamps)"),
         ('compiler=', 'c',
          "specify the compiler type"),
+        ('swig-cpp', None,
+         "make SWIG create C++ files (default is C)"),
         ]
 
     help_options = [
@@ -101,6 +103,7 @@ class build_ext (Command):
         self.debug = None
         self.force = None
         self.compiler = None
+        self.swig_cpp = None
 
 
     def finalize_options (self):
@@ -443,15 +446,20 @@ class build_ext (Command):
         swig_sources = []
         swig_targets = {}
 
-        # XXX this drops generated C files into the source tree, which
+        # XXX this drops generated C/C++ files into the source tree, which
         # is fine for developers who want to distribute the generated
         # source -- but there should be an option to put SWIG output in
         # the temp dir.
 
+        if self.swig_cpp:
+            target_ext = '.cpp'
+        else:
+            target_ext = '.c'
+
         for source in sources:
             (base, ext) = os.path.splitext(source)
             if ext == ".i":             # SWIG interface file
-                new_sources.append(base + ".c") # umm, what if it's C++?
+                new_sources.append(base + target_ext)
                 swig_sources.append(source)
                 swig_targets[source] = new_sources[-1]
             else:
@@ -461,11 +469,14 @@ class build_ext (Command):
             return new_sources
 
         swig = self.find_swig()
-        swig_cmd = [swig, "-python", "-dnone", "-ISWIG"] # again, C++?!?
+        swig_cmd = [swig, "-python", "-dnone", "-ISWIG"]
+        if self.swig_cpp:
+            swig_cmd.append ("-c++")
 
         for source in swig_sources:
-            self.announce ("swigging %s to %s" % (src, obj))
-            self.spawn(swig_cmd + ["-o", swig_targets[source], source])
+            target = swig_targets[source]
+            self.announce ("swigging %s to %s" % (source, target))
+            self.spawn(swig_cmd + ["-o", target, source])
 
         return new_sources
 
@@ -528,10 +539,11 @@ class build_ext (Command):
             modname = string.split (ext.name, '.')[-1]
             extra_args.append('/export:init%s' % modname)
 
-        # The MSVC linker generates unneeded .lib and .exp files,
-        # which cannot be suppressed by any linker switches.  So
-        # make sure they are generated in the temporary build
-        # directory.
+        # The MSVC linker generates .lib and .exp files, which cannot be
+        # suppressed by any linker switches. The .lib files may even be
+        # needed! Make sure they are generated in the temporary build
+        # directory. Since they have different names for debug and release
+        # builds, they can go into the same directory.
         implib_file = os.path.join (
             self.build_temp,
             self.get_ext_libname (ext.name))
