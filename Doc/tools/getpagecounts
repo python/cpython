@@ -1,9 +1,11 @@
 #! /usr/bin/env python
-#  -*- Python -*-
 
 """Generate a page count report of the PostScript version of the manuals."""
 
 __version__ = '$Revision$'
+
+import getopt
+import sys
 
 
 class PageCounter:
@@ -11,6 +13,7 @@ class PageCounter:
         self.doclist = []
         self.total = 0
         self.title_width = 0
+        self.version = ""
 
     def add_document(self, prefix, title):
         count = count_pages(prefix + ".ps")
@@ -25,7 +28,19 @@ class PageCounter:
         print
         print "  Total page count:  %d" % self.total
 
+    def parse_options(self):
+        opts, args = getopt.getopt(sys.argv[1:], "r:", ["release="])
+        assert not args
+        for opt, arg in opts:
+            if opt in ("-r", "--release"):
+                self.version = arg
+
     def run(self):
+        self.parse_options()
+        if self.version:
+            version = self.version[:3]
+            self.add_document("whatsnew" + version.replace(".", ""),
+                              "What's New in Python " + version)
         for prefix, title in [
             ("api", "Python/C API"),
             ("ext", "Extending and Embedding the Python Interpreter"),
@@ -48,23 +63,17 @@ If you plan to print this, be aware that some of the documents are
 long.  It is formatted for printing on two-sided paper; if you do plan
 to print this, *please* print two-sided if you have a printer capable
 of it!  To locate published copies of the larger manuals, or other
-Python reference material, consult the PSA Online Bookstore at:
+Python reference material, consult the Python Bookstore at:
 
-             http://www.python.org/psa/bookstore/
+             http://www.amk.ca/bookstore/
 
-The following manuals are included:
+The following manuals are included in this package:
 """
     SUFFIX = """\
 
 
 If you have any questions, comments, or suggestions regarding these
 documents, please send them via email to python-docs@python.org.
-
-If you would like to support the development and maintenance of
-documentation for Python, please consider joining the Python Software
-Activity (PSA; see http://www.python.org/psa/), or urging your
-organization to join the PSA or the Python Consortium (see
-http://www.python.org/consortium/).
 """
 
 def count_pages(filename):
