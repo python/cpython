@@ -2479,6 +2479,137 @@ posix_strerror(self, args)
 #endif /* strerror */
 
 
+#ifdef HAVE_SYS_WAIT_H
+
+#ifdef WIFSTOPPED
+static char posix_WIFSTOPPED__doc__[] =
+"WIFSTOPPED(status) -> Boolean\n\
+See Unix documentation.";
+
+static PyObject *
+posix_WIFSTOPPED(self, args)
+	PyObject *self;
+	PyObject *args;
+{
+	int status = 0;
+   
+	if (!PyArg_Parse(args, "i", &status))
+	{
+		return NULL;
+	}
+   
+	return Py_BuildValue("i", WIFSTOPPED(status));
+}
+#endif /* WIFSTOPPED */
+
+#ifdef WIFSIGNALED
+static char posix_WIFSIGNALED__doc__[] =
+"WIFSIGNALED(status) -> Boolean\n\
+See Unix documentation.";
+
+static PyObject *
+posix_WIFSIGNALED(self, args)
+	PyObject *self;
+	PyObject *args;
+{
+	int status = 0;
+   
+	if (!PyArg_Parse(args, "i", &status))
+	{
+		return NULL;
+	}
+   
+	return Py_BuildValue("i", WIFSIGNALED(status));
+}
+#endif /* WIFSIGNALED */
+
+#ifdef WIFEXITED
+static char posix_WIFEXITED__doc__[] =
+"WIFEXITED(status) -> Boolean\n\
+See Unix documentation.";
+
+static PyObject *
+posix_WIFEXITED(self, args)
+	PyObject *self;
+	PyObject *args;
+{
+	int status = 0;
+   
+	if (!PyArg_Parse(args, "i", &status))
+	{
+		return NULL;
+	}
+   
+	return Py_BuildValue("i", WIFEXITED(status));
+}
+#endif /* WIFEXITED */
+
+#ifdef WIFSTOPPED
+static char posix_WEXITSTATUS__doc__[] =
+"WEXITSTATUS(status) -> integer\n\
+See Unix documentation.";
+
+static PyObject *
+posix_WEXITSTATUS(self, args)
+	PyObject *self;
+	PyObject *args;
+{
+	int status = 0;
+   
+	if (!PyArg_Parse(args, "i", &status))
+	{
+		return NULL;
+	}
+   
+	return Py_BuildValue("i", WEXITSTATUS(status));
+}
+#endif /* WEXITSTATUS */
+
+#ifdef WTERMSIG
+static char posix_WTERMSIG__doc__[] =
+"WTERMSIG(status) -> integer\n\
+See Unix documentation.";
+
+static PyObject *
+posix_WTERMSIG(self, args)
+	PyObject *self;
+	PyObject *args;
+{
+	int status = 0;
+   
+	if (!PyArg_Parse(args, "i", &status))
+	{
+		return NULL;
+	}
+   
+	return Py_BuildValue("i", WTERMSIG(status));
+}
+#endif /* WTERMSIG */
+
+#ifdef WSTOPSIG
+static char posix_WSTOPSIG__doc__[] =
+"WSTOPSIG(status) -> integer\n\
+See Unix documentation.";
+
+static PyObject *
+posix_WSTOPSIG(self, args)
+	PyObject *self;
+	PyObject *args;
+{
+	int status = 0;
+   
+	if (!PyArg_Parse(args, "i", &status))
+	{
+		return NULL;
+	}
+   
+	return Py_BuildValue("i", WSTOPSIG(status));
+}
+#endif /* WSTOPSIG */
+
+#endif /* HAVE_SYS_WAIT_H */
+
+
 static PyMethodDef posix_methods[] = {
 	{"chdir",	posix_chdir, 0, posix_chdir__doc__},
 	{"chmod",	posix_chmod, 0, posix_chmod__doc__},
@@ -2606,6 +2737,26 @@ static PyMethodDef posix_methods[] = {
 #ifdef HAVE_STRERROR
 	{"strerror",	posix_strerror, 1, posix_strerror__doc__},
 #endif
+#ifdef HAVE_SYS_WAIT_H
+#ifdef WIFSTOPPED
+        {"WIFSTOPPED",	posix_WIFSTOPPED, 0, posix_WIFSTOPPED__doc__},
+#endif /* WIFSTOPPED */
+#ifdef WIFSIGNALED
+        {"WIFSIGNALED",	posix_WIFSIGNALED, 0, posix_WIFSIGNALED__doc__},
+#endif /* WIFSIGNALED */
+#ifdef WIFEXITED
+        {"WIFEXITED",	posix_WIFEXITED, 0, posix_WIFEXITED__doc__},
+#endif /* WIFEXITED */
+#ifdef WEXITSTATUS
+        {"WEXITSTATUS",	posix_WEXITSTATUS, 0, posix_WEXITSTATUS__doc__},
+#endif /* WEXITSTATUS */
+#ifdef WTERMSIG
+        {"WTERMSIG",	posix_WTERMSIG, 0, posix_WTERMSIG__doc__},
+#endif /* WTERMSIG */
+#ifdef WSTOPSIG
+        {"WSTOPSIG",	posix_WSTOPSIG, 0, posix_WSTOPSIG__doc__},
+#endif /* WSTOPSIG */
+#endif /* HAVE_SYS_WAIT_H */
 	{NULL,		NULL}		 /* Sentinel */
 };
 
