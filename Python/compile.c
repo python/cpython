@@ -3780,22 +3780,28 @@ struct symtable *
 PyNode_CompileSymtable(node *n, char *filename)
 {
 	struct symtable *st;
+	PyFutureFeatures *ff;
 
+	ff = PyNode_Future(n, filename);
+	if (ff == NULL)
+		return NULL;
 	st = symtable_init();
 	if (st == NULL)
 		return NULL;
-	assert(st->st_symbols != NULL);
+	st->st_future = ff;
 	symtable_enter_scope(st, TOP, TYPE(n), n->n_lineno);
-	if (st->st_errors > 0) {
-		PySymtable_Free(st);
-		return NULL;
-	}
+	if (st->st_errors > 0)
+		goto fail;
 	symtable_node(st, n);
-	if (st->st_errors > 0) {
-		PySymtable_Free(st);
-		return NULL;
-	}
+	if (st->st_errors > 0)
+		goto fail;
+
 	return st;
+ fail:
+	PyMem_Free((void *)ff);
+	st->st_future = NULL;
+	PySymtable_Free(st);
+	return NULL;
 }
 
 static PyCodeObject *
