@@ -1826,42 +1826,16 @@ def testmod(m=None, name=None, globs=None, verbose=None, isprivate=None,
     detailed, else very brief (in fact, empty if all tests passed).
 
     Optional keyword arg "optionflags" or's together module constants,
-    and defaults to 0.  This is new in 2.3.  Possible values:
+    and defaults to 0.  This is new in 2.3.  Possible values (see the
+    docs for details):
 
         DONT_ACCEPT_TRUE_FOR_1
-            By default, if an expected output block contains just "1",
-            an actual output block containing just "True" is considered
-            to be a match, and similarly for "0" versus "False".  When
-            DONT_ACCEPT_TRUE_FOR_1 is specified, neither substitution
-            is allowed.
-
         DONT_ACCEPT_BLANKLINE
-            By default, if an expected output block contains a line
-            containing only the string "<BLANKLINE>", then that line
-            will match a blank line in the actual output.  When
-            DONT_ACCEPT_BLANKLINE is specified, this substitution is
-            not allowed.
-
         NORMALIZE_WHITESPACE
-            When NORMALIZE_WHITESPACE is specified, all sequences of
-            whitespace are treated as equal.  I.e., any sequence of
-            whitespace within the expected output will match any
-            sequence of whitespace within the actual output.
-
         ELLIPSIS
-            When ELLIPSIS is specified, then an ellipsis marker
-            ("...") in the expected output can match any substring in
-            the actual output.
-
         UNIFIED_DIFF
-            When UNIFIED_DIFF is specified, failures that involve
-            multi-line expected and actual outputs will be displayed
-            using a unified diff.
-
         CONTEXT_DIFF
-            When CONTEXT_DIFF is specified, failures that involve
-            multi-line expected and actual outputs will be displayed
-            using a context diff.
+        NDIFF_DIFF
 
     Optional keyword arg "raise_on_error" raises an exception on the
     first unexpected exception or failure. This allows failures to be
