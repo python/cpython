@@ -95,6 +95,8 @@ Core and builtins
 Extension modules
 -----------------
 
+- socket.SHUT_{RD,WR,RDWR} was added.
+
 - os.getsid was added.
 
 - The pwd module incorrectly advertised its struct type as

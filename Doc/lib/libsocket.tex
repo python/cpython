@@ -638,8 +638,8 @@ structures as strings).
 
 \begin{methoddesc}[socket]{shutdown}{how}
 Shut down one or both halves of the connection.  If \var{how} is
-\code{0}, further receives are disallowed.  If \var{how} is \code{1},
-further sends are disallowed.  If \var{how} is \code{2}, further sends
+\constant{SHUT_RD}, further receives are disallowed.  If \var{how} is \constant{SHUT_WR},
+further sends are disallowed.  If \var{how} is \constant{SHUT_RDWR}, further sends
 and receives are disallowed.
 \end{methoddesc}
 
