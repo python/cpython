@@ -1180,35 +1180,40 @@ item: Install File
   Flags=0000000000000010
 end
 item: Install File
-  Source=..\lib\distutils\README
+  Source=..\lib\distutils\readme
   Destination=%MAINDIR%\Lib\distutils\README.txt
   Flags=0000000000000010
 end
 item: Install File
-  Source=..\lib\distutils\command\*.*
+  Source=..\lib\distutils\command\*.py
   Destination=%MAINDIR%\Lib\distutils\command
+  Flags=0000000000000010
+end
+item: Install File
+  Source=..\lib\distutils\command\command_template
+  Destination=%MAINDIR%\Lib\distutils\command\command_template
   Flags=0000000000000010
 end
 item: Remark
 end
 item: Install File
-  Source=..\lib\xml\*.*
+  Source=..\lib\xml\*.py
   Destination=%MAINDIR%\Lib\xml
   Description=XML support packages
   Flags=0000000000000010
 end
 item: Install File
-  Source=..\lib\xml\dom\*.*
+  Source=..\lib\xml\dom\*.py
   Destination=%MAINDIR%\Lib\xml\dom
   Flags=0000000000000010
 end
 item: Install File
-  Source=..\lib\xml\parsers\*.*
+  Source=..\lib\xml\parsers\*.py
   Destination=%MAINDIR%\Lib\xml\parsers
   Flags=0000000000000010
 end
 item: Install File
-  Source=..\lib\xml\sax\*.*
+  Source=..\lib\xml\sax\*.py
   Destination=%MAINDIR%\Lib\xml\sax
   Flags=0000000000000010
 end
@@ -1321,6 +1326,8 @@ end
 item: Add Text to INSTALL.LOG
   Text=File Tree: %MAINDIR%\Tools\*.*
 end
+item: Remark
+end
 item: Install File
   Source=..\tools\scripts\*.py
   Destination=%MAINDIR%\Tools\Scripts
@@ -1345,6 +1352,8 @@ item: Install File
   Description=Utility Scripts
   Flags=0000000000000010
 end
+item: Remark
+end
 item: Install File
   Source=..\tools\webchecker\*.py
   Destination=%MAINDIR%\Tools\webchecker
@@ -1357,6 +1366,8 @@ item: Install File
   Description=Web checker tool
   Flags=0000000000000010
 end
+item: Remark
+end
 item: Install File
   Source=..\tools\versioncheck\*.py
   Destination=%MAINDIR%\Tools\versioncheck
@@ -1368,6 +1379,8 @@ item: Install File
   Destination=%MAINDIR%\Tools\versioncheck\README.txt
   Description=Version checker tool
   Flags=0000000000000010
+end
+item: Remark
 end
 item: Install File
   Source=..\tools\idle\*.py
@@ -1393,6 +1406,8 @@ item: Install File
   Description=IDLE bootstrap script
   Flags=0000000000000010
 end
+item: Remark
+end
 item: Install File
   Source=..\tools\compiler\*.py
   Destination=%MAINDIR%\Tools\compiler
@@ -1410,6 +1425,8 @@ item: Install File
   Destination=%MAINDIR%\Tools\compiler\compiler
   Description=Python compiler written in Python
   Flags=0000000000000010
+end
+item: Remark
 end
 item: Install File
   Source=..\tools\pynche\*.py
@@ -1482,6 +1499,8 @@ item: Install File
   Destination=%MAINDIR%\Lib\test
   Description=Python Test files
   Flags=0000000000000010
+end
+item: Remark
 end
 item: Install File
   Source=..\lib\test\output\*.*
