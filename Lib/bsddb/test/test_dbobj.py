@@ -3,7 +3,12 @@ import sys, os, string
 import unittest
 import glob
 
-from bsddb import db, dbobj
+try:
+    # For Python 2.3
+    from bsddb import db, dbobj
+except ImportError:
+    # For earlier Pythons w/distutils pybsddb
+    from bsddb3 import db, dbobj
 
 
 #----------------------------------------------------------------------

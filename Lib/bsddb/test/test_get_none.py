@@ -7,7 +7,12 @@ import tempfile
 from pprint import pprint
 import unittest
 
-from bsddb import db
+try:
+    # For Python 2.3
+    from bsddb import db
+except ImportError:
+    # For earlier Pythons w/distutils pybsddb
+    from bsddb3 import db
 
 from test_all import verbose
 

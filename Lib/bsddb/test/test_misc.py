@@ -5,8 +5,12 @@ import os
 import sys
 import unittest
 
-from bsddb import db
-from bsddb import dbshelve
+try:
+    # For Python 2.3
+    from bsddb import db, dbshelve
+except ImportError:
+    # For earlier Pythons w/distutils pybsddb
+    from bsddb3 import db, dbshelve
 
 from test.test_support import verbose
 

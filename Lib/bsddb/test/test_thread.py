@@ -26,7 +26,14 @@ except ImportError:
 
 import unittest
 from test_all import verbose
-from bsddb import db, dbutils
+
+try:
+    # For Python 2.3
+    from bsddb import db, dbutils
+except ImportError:
+    # For earlier Pythons w/distutils pybsddb
+    from bsddb3 import db, dbutils
+
 
 #----------------------------------------------------------------------
 
