@@ -41,8 +41,8 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #ifdef USE_TOOLBOX_OBJECT_GLUE
 extern int _PyMac_GetFSSpec(PyObject *, FSSpec *);
-extern PyObject *_PyMac_BuildFSRef(FSRef *);
-extern int _PyMac_GetFSSpec(PyObject *, FSSpec *);
+extern PyObject *_PyMac_BuildFSSpec(FSSpec *);
+extern int _PyMac_GetFSRef(PyObject *, FSRef *);
 extern PyObject *_PyMac_BuildFSRef(FSRef *);
 #define PyMac_GetFSSpec _PyMac_GetFSSpec
 #define PyMac_BuildFSSpec _PyMac_BuildFSSpec
