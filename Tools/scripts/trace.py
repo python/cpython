@@ -74,6 +74,8 @@ Execution:
    -r,--report         Generate a report from a results file; do not
                          execute any code.
         (One of `-t', `-c' or `-r' must be specified)
+   -s,--summary        Generate a brief summary for each file.  (Can only
+                         be used with -c or -r.)
 
 I/O:
    -f,--file=          File name for accumulating results over several runs.
@@ -85,6 +87,7 @@ I/O:
                          with a '>>>>>> '.
    -R,--no-report      Do not generate the annotated reports.  Useful if
                          you want to accumulate several over tests.
+   -C,--coverdir=      Generate .cover files in this directory
 
 Selection:                 Do not trace or log lines from ...
   --ignore-module=[string]   modules with the given __name__, and submodules
@@ -197,8 +200,9 @@ class CoverageResults:
             if modules.has_key(key):
                 # make sure they point to the same file
                 assert modules[key] == other_modules[key], \
-                      "Strange! filename %s has two different module names" % \
-                      (key, modules[key], other_module[key])
+                      "Strange! filename %s has two different module " \
+                      "names: %s and %s" % \
+                      (key, modules[key], other_modules[key])
             else:
                 modules[key] = other_modules[key]
 
@@ -254,6 +258,8 @@ def find_executable_linenos(filename):
     """
     import parser
 
+    assert filename.endswith('.py')
+
     prog = open(filename).read()
     ast = parser.suite(prog)
     code = parser.compileast(ast, filename)
@@ -281,7 +287,7 @@ def commonprefix(dirs):
     return os.sep.join(prefix)
 
 def create_results_log(results, dirname = ".", show_missing = 1,
-                       save_counts = 0):
+                       save_counts = 0, summary = 0, coverdir = None):
     import re
     # turn the counts data ("(filename, lineno) = count") into something
     # accessible on a per-file basis
@@ -302,6 +308,9 @@ def create_results_log(results, dirname = ".", show_missing = 1,
     # line embedded in a multiline string.
     blank = re.compile(r'^\s*(#.*)?$')
 
+    # accumulate summary info, if needed
+    sums = {}
+
     # generate file paths for the coverage files we are going to write...
     fnlist = []
     tfdir = tempfile.gettempdir()
@@ -315,36 +324,38 @@ def create_results_log(results, dirname = ".", show_missing = 1,
         if filename.startswith(tfdir):
             continue
 
-        # XXX this is almost certainly not portable!!!
-        fndir = os.path.dirname(filename)
-        if filename[:1] == os.sep:
-            coverpath = os.path.join(dirname, "."+fndir)
-        else:
-            coverpath = os.path.join(dirname, fndir)
+        modulename = os.path.split(results.modules[key])[1]
 
         if filename.endswith(".pyc") or filename.endswith(".pyo"):
             filename = filename[:-1]
+
+        if coverdir:
+            listfilename = os.path.join(coverdir, modulename + ".cover")
+        else:
+            # XXX this is almost certainly not portable!!!
+            fndir = os.path.dirname(filename)
+            if os.path.isabs(filename):
+                coverpath = fndir
+            else:
+                coverpath = os.path.join(dirname, fndir)
+
+            # build list file name by appending a ".cover" to the module name
+            # and sticking it into the specified directory
+            if "." in modulename:
+                # A module in a package
+                finalname = modulename.split(".")[-1]
+                listfilename = os.path.join(coverpath, finalname + ".cover")
+            else:
+                listfilename = os.path.join(coverpath, modulename + ".cover")
 
         # Get the original lines from the .py file
         try:
             lines = open(filename, 'r').readlines()
         except IOError, err:
-            sys.stderr.write("%s: Could not open %s for reading " \
-                             "because: %s - skipping\n" % \
-                             ("trace", `filename`, err.strerror))
+            print >> sys.stderr, "trace: Could not open %s for reading " \
+                  "because: %s - skipping" % (`filename`, err.strerror)
             continue
 
-        modulename = os.path.split(results.modules[key])[1]
-
-        # build list file name by appending a ".cover" to the module name
-        # and sticking it into the specified directory
-        listfilename = os.path.join(coverpath, modulename + ".cover")
-        #sys.stderr.write("modulename: %(modulename)s\n"
-        #                 "filename: %(filename)s\n"
-        #                 "coverpath: %(coverpath)s\n"
-        #                 "listfilename: %(listfilename)s\n"
-        #                 "dirname: %(dirname)s\n"
-        #                 % locals())
         try:
             outfile = open(listfilename, 'w')
         except IOError, err:
@@ -360,6 +371,8 @@ def create_results_log(results, dirname = ".", show_missing = 1,
         else:
             executable_linenos = {}
 
+        n_lines = 0
+        n_hits = 0
         lines_hit = per_file[key]
         for i in range(len(lines)):
             line = lines[i]
@@ -369,6 +382,8 @@ def create_results_log(results, dirname = ".", show_missing = 1,
             if lines_hit.has_key(i+1):
                 # count precedes the lines that we captured
                 outfile.write('%5d: ' % lines_hit[i+1])
+                n_hits = n_hits + 1
+                n_lines = n_lines + 1
             elif blank.match(line):
                 # blank lines and comments are preceded by dots
                 outfile.write('    . ')
@@ -383,9 +398,14 @@ def create_results_log(results, dirname = ".", show_missing = 1,
                     outfile.write('>>>>>> ')
                 else:
                     outfile.write(' '*7)
+                n_lines = n_lines + 1
             outfile.write(string.expandtabs(lines[i], 8))
 
         outfile.close()
+
+        if summary and n_lines:
+            percent = int(100 * n_hits / n_lines)
+            sums[modulename] = n_lines, percent, modulename, filename
 
         if save_counts:
             # try and store counts and module info into dirname
@@ -397,6 +417,14 @@ def create_results_log(results, dirname = ".", show_missing = 1,
             except IOError, err:
                 sys.stderr.write("cannot save counts/modules " \
                                  "files because %s" % err.strerror)
+
+    if summary and sums:
+        mods = sums.keys()
+        mods.sort()
+        print "lines   cov%   module   (path)"
+        for m in mods:
+            n_lines, percent, modulename, filename = sums[m]
+            print "%5d   %3d%%   %s   (%s)" % sums[m]
 
 # There is a lot of code shared between these two classes even though
 # it is straightforward to make a super class to share code.  However,
@@ -419,7 +447,12 @@ class Coverage:
             filename = frame.f_globals.get("__file__", None)
             if filename is None:
                 filename = frame.f_code.co_filename
-            modulename = frame.f_globals["__name__"]
+            try:
+                modulename = frame.f_globals["__name__"]
+            except KeyError:
+                # PyRun_String() for example
+                # XXX what to do?
+                modulename = None
 
             # We do this next block to keep from having to make methods
             # calls, which also requires resetting the trace
@@ -449,12 +482,18 @@ class Trace:
         self.ignore = ignore
         self.ignore_names = ignore._ignore # access ignore's cache (speed hack)
 
-        self.files = {'<string>': None}  # stores lines from the .py file, or None
+        self.files = {'<string>': None}  # stores lines from the .py file,
+                                         # or None
 
     def trace(self, frame, why, arg):
         if why == 'line':
             filename = frame.f_code.co_filename
-            modulename = frame.f_globals["__name__"]
+            try:
+                modulename = frame.f_globals["__name__"]
+            except KeyError:
+                # PyRun_String() for example
+                # XXX what to do?
+                modulename = None
 
             # We do this next block to keep from having to make methods
             # calls, which also requires resetting the trace
@@ -474,7 +513,8 @@ class Trace:
 
                 # If you want to see filenames (the original behaviour), try:
                 #   modulename = filename
-                # or, prettier but confusing when several files have the same name
+                # or, prettier but confusing when several files have the
+                # same name
                 #   modulename = os.path.basename(filename)
 
                 if files[filename] != None:
@@ -487,7 +527,7 @@ class Trace:
 
 
 def _err_exit(msg):
-    sys.stderr.write("%s: %s\n" % (sys.argv[0], msg))
+    print >> sys.stderr, "%s: %s" % (sys.argv[0], msg)
     sys.exit(1)
 
 def main(argv = None):
@@ -496,15 +536,17 @@ def main(argv = None):
     if argv is None:
         argv = sys.argv
     try:
-        opts, prog_argv = getopt.getopt(argv[1:], "tcrRf:d:m",
+        opts, prog_argv = getopt.getopt(argv[1:], "tcrRf:d:msC:",
                                         ["help", "version", "trace", "count",
                                          "report", "no-report",
                                          "file=", "logdir=", "missing",
-                                         "ignore-module=", "ignore-dir="])
+                                         "ignore-module=", "ignore-dir=",
+                                         "coverdir="])
 
     except getopt.error, msg:
-        sys.stderr.write("%s: %s\n" % (sys.argv[0], msg))
-        sys.stderr.write("Try `%s --help' for more information\n" % sys.argv[0])
+        print >> sys.stderr, "%s: %s" % (sys.argv[0], msg)
+        print >> sys.stderr, "Try `%s --help' for more information" \
+              % sys.argv[0]
         sys.exit(1)
 
     trace = 0
@@ -516,6 +558,8 @@ def main(argv = None):
     missing = 0
     ignore_modules = []
     ignore_dirs = []
+    coverdir = None
+    summary = 0
 
     for opt, val in opts:
         if opt == "--help":
@@ -552,6 +596,14 @@ def main(argv = None):
 
         if opt == "-m" or opt == "--missing":
             missing = 1
+            continue
+
+        if opt == "-C" or opt == "--coverdir":
+            coverdir = val
+            continue
+
+        if opt == "-s" or opt == "--summary":
+            summary = 1
             continue
 
         if opt == "--ignore-module":
@@ -638,7 +690,8 @@ def main(argv = None):
                 results.update(CoverageResults(old_counts, old_modules))
 
         if not no_report:
-            create_results_log(results, logdir, missing)
+            create_results_log(results, logdir, missing,
+                               summary=summary, coverdir=coverdir)
 
         if counts_file:
             try:
@@ -651,7 +704,8 @@ def main(argv = None):
     elif report:
         old_counts, old_modules = marshal.load(open(counts_file, 'rb'))
         results = CoverageResults(old_counts, old_modules)
-        create_results_log(results, logdir, missing)
+        create_results_log(results, logdir, missing,
+                           summary=summary, coverdir=coverdir)
 
     else:
         assert 0, "Should never get here"
