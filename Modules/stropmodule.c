@@ -537,6 +537,10 @@ strop_atoi(self, args)
 	}
 	else if (!getargs(args, "s", &s))
 		return NULL;
+	if (s[0] == '\0') {
+		err_setstr(ValueError, "empty string for atoi()");
+		return NULL;
+	}
 	errno = 0;
 	if (base == 0 && s[0] == '0')
 		x = (long) mystrtoul(s, &end, base);
@@ -573,6 +577,10 @@ strop_atol(self, args)
 	}
 	else if (!getargs(args, "s", &s))
 		return NULL;
+	if (s[0] == '\0') {
+		err_setstr(ValueError, "empty string for atol()");
+		return NULL;
+	}
 	x = long_escan(s, &end, base);
 	if (x == NULL)
 		return NULL;
@@ -598,6 +606,10 @@ strop_atof(self, args)
 
 	if (!getargs(args, "s", &s))
 		return NULL;
+	if (s[0] == '\0') {
+		err_setstr(ValueError, "empty string for atof()");
+		return NULL;
+	}
 	errno = 0;
 	x = strtod(s, &end);
 	if (*end != '\0') {
