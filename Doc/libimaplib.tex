@@ -6,6 +6,7 @@
 \section{Standard Module \module{imaplib}}
 \stmodindex{imaplib}
 \label{module-imaplib}
+\indexii{IMAP4}{protocol}
 
 This module defines a class, \class{IMAP4}, which encapsulates a
 connection to an IMAP4 server and implements the IMAP4rev1 client
@@ -117,9 +118,11 @@ An \class{IMAP4} instance has the following methods:
   envelope and data.
 \end{methoddesc}
 
-\begin{methoddesc}{list}{directory='""', pattern='*'}
-  List mailbox names in directory matching pattern. Returned data contains a
-  list of \samp{LIST} responses.
+\begin{methoddesc}{list}{\optional{directory\optional{, pattern}}}
+  List mailbox names in \var{directory} matching
+  \var{pattern}.  \var{directory} defaults to the top-level mail
+  folder, and \var{pattern} defaults to match anything.  Returned data
+  contains a list of \samp{LIST} responses.
 \end{methoddesc}
 
 \begin{methoddesc}{login}{user, password}
@@ -130,9 +133,11 @@ An \class{IMAP4} instance has the following methods:
   Shutdown connection to server. Returns server \samp{BYE} response.
 \end{methoddesc}
 
-\begin{methoddesc}{lsub}{directory='""', pattern='*'}
-  List subscribed mailbox names in directory matching
-  pattern. Returned data are tuples of message part envelope and data.
+\begin{methoddesc}{lsub}{\optional{directory\optional{, pattern}}}
+  List subscribed mailbox names in directory matching pattern.
+  \var{directory} defaults to the top level directory and
+  \var{pattern} defaults to match any mailbox.
+  Returned data are tuples of message part envelope and data.
 \end{methoddesc}
 
 \begin{methoddesc}{recent}{}
