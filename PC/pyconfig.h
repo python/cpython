@@ -481,6 +481,9 @@ typedef int pid_t;
    shared libraries */
 /* #undef WITH_DL_DLD */
 
+/* Define if you want documentation strings in extension modules */
+#define WITH_DOC_STRINGS 1
+
 /* Define if you want to compile in rudimentary thread support */
 /* #undef WITH_THREAD */
 

@@ -300,6 +300,9 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
    shared libraries */ 
 #undef WITH_DL_DLD
 
+/* Define if you want documentation strings in extension modules */
+#define WITH_DOC_STRINGS 1
+
 /* Define if you want to use the new-style (Openstep, Rhapsody, MacOS)
    dynamic linker (dyld) instead of the old-style (NextStep) dynamic
    linker (rld). Dyld is necessary to support frameworks. */

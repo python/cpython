@@ -202,6 +202,9 @@ typedef int pid_t;
 /* #define HAVE_UNISTD_H      1 */ /* #include <unistd.h>                   */
 /* #define HAVE_UNAME         1 */ /* uname ()                              */
 
+/* Define if you want documentation strings in extension modules */
+#define WITH_DOC_STRINGS 1
+
 #ifdef USE_DL_EXPORT
   #define DL_IMPORT(RTYPE) RTYPE _System
 #endif
