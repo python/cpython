@@ -8,6 +8,7 @@
 
 package main;
 
+use warnings;
 use File::Basename;
 
 
@@ -26,7 +27,7 @@ sub next_optional_argument{
 }
 
 sub make_icon_filename($){
-    my($myname, $mydir, $myext) = fileparse(@_[0], '\..*');
+    my($myname, $mydir, $myext) = fileparse($_[0], '\..*');
     chop $mydir;
     if ($mydir eq '.') {
         $mydir = $ICONSERVER;
@@ -37,7 +38,7 @@ sub make_icon_filename($){
 }
 
 sub get_link_icon($){
-    my $url = @_[0];
+    my $url = $_[0];
     if ($OFF_SITE_LINK_ICON && ($url =~ /^[-a-zA-Z0-9.]+:/)) {
         # absolute URL; assume it points off-site
         my $icon = make_icon_filename($OFF_SITE_LINK_ICON);
@@ -72,7 +73,7 @@ sub do_cmd_let{
 	s/[\\]([a-zA-Z]+)\s*(=\s*)?([^\\])/$matched=1; ''/es;
 	if ($matched) {
 	    my($new, $char) = ($1, $3);
-	    eval "sub do_cmd_$new { \"\\$char\" . \@_[0]; }";
+	    eval "sub do_cmd_$new { \"\\$char\" . \$_[0]; }";
 	    print "\ndefining handler for \\$new to insert '$char'\n";
 	}
 	else {
@@ -85,37 +86,38 @@ sub do_cmd_let{
 
 # the older version of LaTeX2HTML we use doesn't support this, but we use it:
 
-sub do_cmd_textasciitilde{ '&#126;' . @_[0]; }
-sub do_cmd_textasciicircum{ '^' . @_[0]; }
-sub do_cmd_textbar{ '|' . @_[0]; }
-sub do_cmd_textgreater{ '&gt;' . @_[0]; }
-sub do_cmd_textless{ '&lt;' . @_[0]; }
-sub do_cmd_infinity{ '&infin;' . @_[0]; }
-sub do_cmd_plusminus{ '&plusmn;' . @_[0]; }
-sub do_cmd_menuselection{ @_[0]; }
-sub do_cmd_sub{ ' > ' . @_[0]; }
+sub do_cmd_textasciitilde{ '&#126;' . $_[0]; }
+sub do_cmd_textasciicircum{ '^' . $_[0]; }
+sub do_cmd_textbar{ '|' . $_[0]; }
+sub do_cmd_textgreater{ '&gt;' . $_[0]; }
+sub do_cmd_textless{ '&lt;' . $_[0]; }
+sub do_cmd_textunderscore{ '_' . $_[0]; }
+sub do_cmd_infinity{ '&infin;' . $_[0]; }
+sub do_cmd_plusminus{ '&plusmn;' . $_[0]; }
+sub do_cmd_menuselection{ $_[0]; }
+sub do_cmd_sub{ ' > ' . $_[0]; }
 
 
 # words typeset in a special way (not in HTML though)
 
-sub do_cmd_ABC{ 'ABC' . @_[0]; }
-sub do_cmd_UNIX{ 'Unix'. @_[0]; }
-sub do_cmd_ASCII{ 'ASCII' . @_[0]; }
-sub do_cmd_POSIX{ 'POSIX' . @_[0]; }
-sub do_cmd_C{ 'C' . @_[0]; }
-sub do_cmd_Cpp{ 'C++' . @_[0]; }
-sub do_cmd_EOF{ 'EOF' . @_[0]; }
-sub do_cmd_NULL{ '<tt class="constant">NULL</tt>' . @_[0]; }
+sub do_cmd_ABC{ 'ABC' . $_[0]; }
+sub do_cmd_UNIX{ 'Unix'. $_[0]; }
+sub do_cmd_ASCII{ 'ASCII' . $_[0]; }
+sub do_cmd_POSIX{ 'POSIX' . $_[0]; }
+sub do_cmd_C{ 'C' . $_[0]; }
+sub do_cmd_Cpp{ 'C++' . $_[0]; }
+sub do_cmd_EOF{ 'EOF' . $_[0]; }
+sub do_cmd_NULL{ '<tt class="constant">NULL</tt>' . $_[0]; }
 
-sub do_cmd_e{ '&#92;' . @_[0]; }
+sub do_cmd_e{ '&#92;' . $_[0]; }
 
 $DEVELOPER_ADDRESS = '';
 $SHORT_VERSION = '';
 $RELEASE_INFO = '';
 $PACKAGE_VERSION = '';
 
-sub do_cmd_version{ $PACKAGE_VERSION . @_[0]; }
-sub do_cmd_shortversion{ $SHORT_VERSION . @_[0]; }
+sub do_cmd_version{ $PACKAGE_VERSION . $_[0]; }
+sub do_cmd_shortversion{ $SHORT_VERSION . $_[0]; }
 sub do_cmd_release{
     local($_) = @_;
     $PACKAGE_VERSION = next_argument();
@@ -140,9 +142,9 @@ sub do_cmd_authoraddress{
     return $_;
 }
 
-#sub do_cmd_developer{ do_cmd_author(@_[0]); }
-#sub do_cmd_developers{ do_cmd_author(@_[0]); }
-#sub do_cmd_developersaddress{ do_cmd_authoraddress(@_[0]); }
+#sub do_cmd_developer{ do_cmd_author($_[0]); }
+#sub do_cmd_developers{ do_cmd_author($_[0]); }
+#sub do_cmd_developersaddress{ do_cmd_authoraddress($_[0]); }
 
 sub do_cmd_hackscore{
     local($_) = @_;
@@ -159,11 +161,11 @@ sub use_wrappers($$$){
 $IN_DESC_HANDLER = 0;
 sub do_cmd_optional{
     if ($IN_DESC_HANDLER) {
-        return use_wrappers(@_[0], "</var><big>\[</big><var>",
+        return use_wrappers($_[0], "</var><big>\[</big><var>",
                             "</var><big>\]</big><var>");
     }
     else {
-        return use_wrappers(@_[0], "<big>\[</big>", "<big>\]</big>");
+        return use_wrappers($_[0], "<big>\[</big>", "<big>\]</big>");
     }
 }
 
@@ -172,70 +174,70 @@ sub do_cmd_optional{
 # output files for users that read them over the network rather than
 # from local repositories.
 
-sub do_cmd_pytype{ return @_[0]; }
+sub do_cmd_pytype{ return $_[0]; }
 sub do_cmd_makevar{
-    return use_wrappers(@_[0], '<span class="makevar">', '</span>'); }
+    return use_wrappers($_[0], '<span class="makevar">', '</span>'); }
 sub do_cmd_code{
-    return use_wrappers(@_[0], '<code>', '</code>'); }
+    return use_wrappers($_[0], '<code>', '</code>'); }
 sub do_cmd_module{
-    return use_wrappers(@_[0], '<tt class="module">', '</tt>'); }
+    return use_wrappers($_[0], '<tt class="module">', '</tt>'); }
 sub do_cmd_keyword{
-    return use_wrappers(@_[0], '<tt class="keyword">', '</tt>'); }
+    return use_wrappers($_[0], '<tt class="keyword">', '</tt>'); }
 sub do_cmd_exception{
-    return use_wrappers(@_[0], '<tt class="exception">', '</tt>'); }
+    return use_wrappers($_[0], '<tt class="exception">', '</tt>'); }
 sub do_cmd_class{
-    return use_wrappers(@_[0], '<tt class="class">', '</tt>'); }
+    return use_wrappers($_[0], '<tt class="class">', '</tt>'); }
 sub do_cmd_function{
-    return use_wrappers(@_[0], '<tt class="function">', '</tt>'); }
+    return use_wrappers($_[0], '<tt class="function">', '</tt>'); }
 sub do_cmd_constant{
-    return use_wrappers(@_[0], '<tt class="constant">', '</tt>'); }
+    return use_wrappers($_[0], '<tt class="constant">', '</tt>'); }
 sub do_cmd_member{
-    return use_wrappers(@_[0], '<tt class="member">', '</tt>'); }
+    return use_wrappers($_[0], '<tt class="member">', '</tt>'); }
 sub do_cmd_method{
-    return use_wrappers(@_[0], '<tt class="method">', '</tt>'); }
+    return use_wrappers($_[0], '<tt class="method">', '</tt>'); }
 sub do_cmd_cfunction{
-    return use_wrappers(@_[0], '<tt class="cfunction">', '</tt>'); }
+    return use_wrappers($_[0], '<tt class="cfunction">', '</tt>'); }
 sub do_cmd_cdata{
-    return use_wrappers(@_[0], '<tt class="cdata">', '</tt>'); }
+    return use_wrappers($_[0], '<tt class="cdata">', '</tt>'); }
 sub do_cmd_ctype{
-    return use_wrappers(@_[0], '<tt class="ctype">', '</tt>'); }
+    return use_wrappers($_[0], '<tt class="ctype">', '</tt>'); }
 sub do_cmd_regexp{
-    return use_wrappers(@_[0], '<tt class="regexp">', '</tt>'); }
+    return use_wrappers($_[0], '<tt class="regexp">', '</tt>'); }
 sub do_cmd_character{
-    return use_wrappers(@_[0], '"<tt class="character">', '</tt>"'); }
+    return use_wrappers($_[0], '"<tt class="character">', '</tt>"'); }
 sub do_cmd_program{
-    return use_wrappers(@_[0], '<b class="program">', '</b>'); }
+    return use_wrappers($_[0], '<b class="program">', '</b>'); }
 sub do_cmd_programopt{
-    return use_wrappers(@_[0], '<b class="programopt">', '</b>'); }
+    return use_wrappers($_[0], '<b class="programopt">', '</b>'); }
 sub do_cmd_longprogramopt{
     # note that the --- will be later converted to -- by LaTeX2HTML
-    return use_wrappers(@_[0], '<b class="programopt">---', '</b>'); }
+    return use_wrappers($_[0], '<b class="programopt">---', '</b>'); }
 sub do_cmd_email{
-    return use_wrappers(@_[0], '<span class="email">', '</span>'); }
+    return use_wrappers($_[0], '<span class="email">', '</span>'); }
 sub do_cmd_mailheader{
-    return use_wrappers(@_[0], '<span class="mailheader">', ':</span>'); }
+    return use_wrappers($_[0], '<span class="mailheader">', ':</span>'); }
 sub do_cmd_mimetype{
-    return use_wrappers(@_[0], '<span class="mimetype">', '</span>'); }
+    return use_wrappers($_[0], '<span class="mimetype">', '</span>'); }
 sub do_cmd_var{
-    return use_wrappers(@_[0], "<var>", "</var>"); }
+    return use_wrappers($_[0], "<var>", "</var>"); }
 sub do_cmd_dfn{
-    return use_wrappers(@_[0], '<i class="dfn">', '</i>'); }
+    return use_wrappers($_[0], '<i class="dfn">', '</i>'); }
 sub do_cmd_emph{
-    return use_wrappers(@_[0], '<i>', '</i>'); }
+    return use_wrappers($_[0], '<i>', '</i>'); }
 sub do_cmd_file{
-    return use_wrappers(@_[0], '<span class="file">', '</span>'); }
+    return use_wrappers($_[0], '<span class="file">', '</span>'); }
 sub do_cmd_filenq{
-    return do_cmd_file(@_[0]); }
+    return do_cmd_file($_[0]); }
 sub do_cmd_samp{
-    return use_wrappers(@_[0], '"<tt class="samp">', '</tt>"'); }
+    return use_wrappers($_[0], '"<tt class="samp">', '</tt>"'); }
 sub do_cmd_kbd{
-    return use_wrappers(@_[0], '<kbd>', '</kbd>'); }
+    return use_wrappers($_[0], '<kbd>', '</kbd>'); }
 sub do_cmd_strong{
-    return use_wrappers(@_[0], '<b>', '</b>'); }
+    return use_wrappers($_[0], '<b>', '</b>'); }
 sub do_cmd_textbf{
-    return use_wrappers(@_[0], '<b>', '</b>'); }
+    return use_wrappers($_[0], '<b>', '</b>'); }
 sub do_cmd_textit{
-    return use_wrappers(@_[0], '<i>', '</i>'); }
+    return use_wrappers($_[0], '<i>', '</i>'); }
 # This can be changed/overridden for translations:
 %NoticeNames = ('note' => 'Note:',
                 'warning' => 'Warning:',
@@ -244,13 +246,13 @@ sub do_cmd_textit{
 sub do_cmd_note{
     my $label = $NoticeNames{'note'};
     return use_wrappers(
-        @_[0],
+        $_[0],
         "<span class=\"note\"><b class=\"label\">$label</b>\n",
         '</span>'); }
 sub do_cmd_warning{
     my $label = $NoticeNames{'warning'};
     return use_wrappers(
-        @_[0],
+        $_[0],
         "<span class=\"warning\"><b class=\"label\">$label</b>\n",
         '</span>'); }
 
@@ -267,9 +269,9 @@ sub do_env_notice{
 }
 
 sub do_cmd_moreargs{
-    return '...' . @_[0]; }
+    return '...' . $_[0]; }
 sub do_cmd_unspecified{
-    return '...' . @_[0]; }
+    return '...' . $_[0]; }
 
 
 sub do_cmd_refmodule{
@@ -395,8 +397,8 @@ sub do_cmd_deprecated{
 
 sub versionnote($$){
     # one or two parameters:  \versionnote[explanation]{version}
-    my $type = @_[0];
-    local $_ = @_[1];
+    my $type = $_[0];
+    local $_ = $_[1];
     my $explanation = next_optional_argument();
     my $release = next_argument();
     my $text = "$type in version $release.";
@@ -407,11 +409,11 @@ sub versionnote($$){
 }
 
 sub do_cmd_versionadded{
-    return versionnote('New', @_[0]);
+    return versionnote('New', $_[0]);
 }
 
 sub do_cmd_versionchanged{
-    return versionnote('Changed', @_[0]);
+    return versionnote('Changed', $_[0]);
 }
 
 #
@@ -471,7 +473,7 @@ sub do_cmd_withsubitem{
 # mod\jobname.idx file; we can just ignore it.  (Defining this suppresses
 # a warning that \makemodindex is unknown.)
 #
-sub do_cmd_makemodindex{ return @_[0]; }
+sub do_cmd_makemodindex{ return $_[0]; }
 
 # We're in the document subdirectory when this happens!
 #
@@ -493,7 +495,7 @@ sub write_idxfile($$){
 
 sub gen_link($$){
     my($node, $target) = @_;
-    print INTLABELS "\$internal_labels{\"$target\"} = \"$URL/$node\";\n";
+    print INTLABELS "\$internal_labels{\"$target\"} = \"/$node\";\n";
     return "<a href=\"$node#$target\">";
 }
 
@@ -517,12 +519,12 @@ sub define_indexing_macro(@){
     my $count = @_;
     my $i = 0;
     for (; $i < $count; ++$i) {
-	my $name = @_[$i];
+	my $name = $_[$i];
 	my $cmd = "idx_cmd_$name";
 	die "\nNo function $cmd() defined!\n"
 	  if (!defined &$cmd);
 	eval ("sub do_cmd_$name { return process_index_macros("
-	      . "\@_[0], '$name'); }");
+	      . "\$_[0], '$name'); }");
 	if (length($IndexMacroPattern) == 0) {
 	    $IndexMacroPattern = "$name";
 	}
@@ -535,7 +537,7 @@ sub define_indexing_macro(@){
 $DEBUG_INDEXING = 0;
 sub process_index_macros($$){
     local($_) = @_;
-    my $cmdname = @_[1];	# This is what triggered us in the first place;
+    my $cmdname = $_[1];	# This is what triggered us in the first place;
 				# we know it's real, so just process it.
     my($name, $aname, $ahref) = new_link_info();
     my $cmd = "idx_cmd_$cmdname";
@@ -564,22 +566,22 @@ sub process_index_macros($$){
 define_indexing_macro('index');
 sub idx_cmd_index($){
     my $str = next_argument();
-    add_index_entry("$str", @_[0]);
+    add_index_entry("$str", $_[0]);
 }
 
 define_indexing_macro('kwindex');
 sub idx_cmd_kwindex($){
     my $str = next_argument();
-    add_index_entry("<tt>$str</tt>!keyword", @_[0]);
-    add_index_entry("keyword!<tt>$str</tt>", @_[0]);
+    add_index_entry("<tt>$str</tt>!keyword", $_[0]);
+    add_index_entry("keyword!<tt>$str</tt>", $_[0]);
 }
 
 define_indexing_macro('indexii');
 sub idx_cmd_indexii($){
     my $str1 = next_argument();
     my $str2 = next_argument();
-    add_index_entry("$str1!$str2", @_[0]);
-    add_index_entry("$str2!$str1", @_[0]);
+    add_index_entry("$str1!$str2", $_[0]);
+    add_index_entry("$str2!$str1", $_[0]);
 }
 
 define_indexing_macro('indexiii');
@@ -587,9 +589,9 @@ sub idx_cmd_indexiii($){
     my $str1 = next_argument();
     my $str2 = next_argument();
     my $str3 = next_argument();
-    add_index_entry("$str1!$str2 $str3", @_[0]);
-    add_index_entry("$str2!$str3, $str1", @_[0]);
-    add_index_entry("$str3!$str1 $str2", @_[0]);
+    add_index_entry("$str1!$str2 $str3", $_[0]);
+    add_index_entry("$str2!$str3, $str1", $_[0]);
+    add_index_entry("$str3!$str1 $str2", $_[0]);
 }
 
 define_indexing_macro('indexiv');
@@ -598,17 +600,17 @@ sub idx_cmd_indexiv($){
     my $str2 = next_argument();
     my $str3 = next_argument();
     my $str4 = next_argument();
-    add_index_entry("$str1!$str2 $str3 $str4", @_[0]);
-    add_index_entry("$str2!$str3 $str4, $str1", @_[0]);
-    add_index_entry("$str3!$str4, $str1 $str2", @_[0]);
-    add_index_entry("$str4!$$str1 $str2 $str3", @_[0]);
+    add_index_entry("$str1!$str2 $str3 $str4", $_[0]);
+    add_index_entry("$str2!$str3 $str4, $str1", $_[0]);
+    add_index_entry("$str3!$str4, $str1 $str2", $_[0]);
+    add_index_entry("$str4!$str1 $str2 $str3", $_[0]);
 }
 
 define_indexing_macro('ttindex');
 sub idx_cmd_ttindex($){
     my $str = next_argument();
     my $entry = $str . get_indexsubitem();
-    add_index_entry($entry, @_[0]);
+    add_index_entry($entry, $_[0]);
 }
 
 sub my_typed_index_helper($$){
@@ -619,16 +621,16 @@ sub my_typed_index_helper($$){
 }
 
 define_indexing_macro('stindex', 'opindex', 'exindex', 'obindex');
-sub idx_cmd_stindex($){ my_typed_index_helper('statement', @_[0]); }
-sub idx_cmd_opindex($){ my_typed_index_helper('operator', @_[0]); }
-sub idx_cmd_exindex($){ my_typed_index_helper('exception', @_[0]); }
-sub idx_cmd_obindex($){ my_typed_index_helper('object', @_[0]); }
+sub idx_cmd_stindex($){ my_typed_index_helper('statement', $_[0]); }
+sub idx_cmd_opindex($){ my_typed_index_helper('operator', $_[0]); }
+sub idx_cmd_exindex($){ my_typed_index_helper('exception', $_[0]); }
+sub idx_cmd_obindex($){ my_typed_index_helper('object', $_[0]); }
 
 define_indexing_macro('bifuncindex');
 sub idx_cmd_bifuncindex($){
     my $str = next_argument();
     add_index_entry("<tt class=\"function\">$str()</tt> (built-in function)",
-                    @_[0]);
+                    $_[0]);
 }
 
 
@@ -678,10 +680,14 @@ sub my_module_index_helper($$){
     return define_module($word, $name) . $_;
 }
 
-sub do_cmd_modindex{ return my_module_index_helper('', @_); }
-sub do_cmd_bimodindex{ return my_module_index_helper('built-in', @_); }
-sub do_cmd_exmodindex{ return my_module_index_helper('extension', @_); }
-sub do_cmd_stmodindex{ return my_module_index_helper('standard', @_); }
+sub do_cmd_modindex{ return my_module_index_helper('', $_[0]); }
+sub do_cmd_bimodindex{ return my_module_index_helper('built-in', $_[0]); }
+sub do_cmd_exmodindex{ return my_module_index_helper('extension', $_[0]); }
+sub do_cmd_stmodindex{ return my_module_index_helper('standard', $_[0]); }
+#     local($_) = @_;
+#     my $name = next_argument();
+#     return define_module('standard', $name) . $_;
+# }
 
 sub ref_module_index_helper($$){
     my($word, $ahref) = @_;
@@ -698,12 +704,16 @@ sub ref_module_index_helper($$){
 # these should be adjusted a bit....
 define_indexing_macro('refmodindex', 'refbimodindex',
 		      'refexmodindex', 'refstmodindex');
-sub idx_cmd_refmodindex($){ return ref_module_index_helper('', @_); }
-sub idx_cmd_refbimodindex($){ return ref_module_index_helper('built-in', @_); }
-sub idx_cmd_refexmodindex($){ return ref_module_index_helper('extension', @_);}
-sub idx_cmd_refstmodindex($){ return ref_module_index_helper('standard', @_); }
+sub idx_cmd_refmodindex($){
+    return ref_module_index_helper('', $_[0]); }
+sub idx_cmd_refbimodindex($){
+    return ref_module_index_helper('built-in', $_[0]); }
+sub idx_cmd_refexmodindex($){
+    return ref_module_index_helper('extension', $_[0]);}
+sub idx_cmd_refstmodindex($){
+    return ref_module_index_helper('standard', $_[0]); }
 
-sub do_cmd_nodename{ return do_cmd_label(@_); }
+sub do_cmd_nodename{ return do_cmd_label($_[0]); }
 
 sub init_myformat(){
     $anchor_invisible_mark = '&nbsp;';
@@ -717,7 +727,7 @@ init_myformat();
 # instead of the dummy filler.
 #
 sub make_str_index_entry($){
-    my $str = @_[0];
+    my $str = $_[0];
     my($name, $aname, $ahref) = new_link_info();
     add_index_entry($str, $ahref);
     return "$aname$str</a>";
@@ -859,9 +869,9 @@ sub process_grammar_files(){
 sub strip_grammar_markup($){
     local($_) = @_;
     s/\\productioncont/              /g;
-    s/\\production(<<\d+>>)(.+)\1/\n\2 ::= /g;
-    s/\\token(<<\d+>>)(.+)\1/\2/g;
-    s/\\e([^a-zA-Z])/\\\1/g;
+    s/\\production(<<\d+>>)(.+)\1/\n$2 ::= /g;
+    s/\\token(<<\d+>>)(.+)\1/$2/g;
+    s/\\e([^a-zA-Z])/\\$1/g;
     s/<<\d+>>//g;
     s/;SPMgt;/>/g;
     s/;SPMlt;/</g;
@@ -875,8 +885,7 @@ $REFCOUNTS_LOADED = 0;
 sub load_refcounts(){
     $REFCOUNTS_LOADED = 1;
 
-    my $myname, $mydir, $myext;
-    ($myname, $mydir, $myext) = fileparse(__FILE__, '\..*');
+    my($myname, $mydir, $myext) = fileparse(__FILE__, '\..*');
     chop $mydir;			# remove trailing '/'
     ($myname, $mydir, $myext) = fileparse($mydir, '\..*');
     chop $mydir;			# remove trailing '/'
@@ -912,8 +921,8 @@ sub cfuncline_helper($$$){
         "<tt class=\"cfunction\">$name()</tt>" . get_indexsubitem());
     $idx =~ s/ \(.*\)//;
     $idx =~ s/\(\)//;		# ???? - why both of these?
-    $args =~ s/(\s|\*)([a-z_][a-z_0-9]*),/\1<var>\2<\/var>,/g;
-    $args =~ s/(\s|\*)([a-z_][a-z_0-9]*)$/\1<var>\2<\/var>/s;
+    $args =~ s/(\s|\*)([a-z_][a-z_0-9]*),/$1<var>$2<\/var>,/g;
+    $args =~ s/(\s|\*)([a-z_][a-z_0-9]*)$/$1<var>$2<\/var>/s;
     return ('<table cellpadding="0" cellspacing="0"><tr valign="baseline">'
             . "<td><nobr>$type\&nbsp;<b>$idx</b>(</nobr></td>"
             . "<td>$args)</td>"
@@ -1153,7 +1162,7 @@ sub handle_classlike_descriptor($$){
 }
 
 sub do_env_classdesc{
-    return handle_classlike_descriptor(@_[0], "class");
+    return handle_classlike_descriptor($_[0], "class");
 }
 
 sub do_env_classdescstar{
@@ -1168,7 +1177,7 @@ sub do_env_classdescstar{
 }
 
 sub do_env_excclassdesc{
-    return handle_classlike_descriptor(@_[0], "exception");
+    return handle_classlike_descriptor($_[0], "exception");
 }
 
 
@@ -1296,7 +1305,7 @@ sub do_cmd_memberlineni{
 sub fix_font($){
     # do a little magic on a font name to get the right behavior in the first
     # column of the output table
-    my $font = @_[0];
+    my $font = $_[0];
     if (defined $FontConversions{$font}) {
         $font = $FontConversions{$font};
     }
@@ -1304,7 +1313,10 @@ sub fix_font($){
 }
 
 sub figure_column_alignment($){
-    my $a = @_[0];
+    my $a = $_[0];
+    if (!defined $a) {
+        return '';
+    }
     my $mark = substr($a, 0, 1);
     my $r = '';
     if ($mark eq 'c')
@@ -1320,7 +1332,7 @@ sub figure_column_alignment($){
 
 sub setup_column_alignments($){
     local($_) = @_;
-    my($s1, $s2, $s3, $s4, $a5) = split(/[|]/,$_);
+    my($s1, $s2, $s3, $s4, $s5) = split(/[|]/,$_);
     my $a1 = figure_column_alignment($s1);
     my $a2 = figure_column_alignment($s2);
     my $a3 = figure_column_alignment($s3);
@@ -1701,7 +1713,7 @@ require SynopsisTable;
 
 sub get_chapter_id(){
     my $id = do_cmd_thechapter('');
-    $id =~ s/<SPAN CLASS="arabic">(\d+)<\/SPAN>/\1/;
+    $id =~ s/<SPAN CLASS="arabic">(\d+)<\/SPAN>/$1/;
     $id =~ s/\.//;
     return $id;
 }
@@ -1710,7 +1722,7 @@ sub get_chapter_id(){
 %ModuleSynopses = ();
 
 sub get_synopsis_table($){
-    my $chap = @_[0];
+    my $chap = $_[0];
     my $key;
     foreach $key (keys %ModuleSynopses) {
 	if ($key eq $chap) {
@@ -1767,10 +1779,9 @@ sub do_cmd_localmoduletable{
 
 sub process_all_localmoduletables(){
     my $key;
-    my $st, $file;
     foreach $key (keys %ModuleSynopses) {
-        $st = $ModuleSynopses{$key};
-        $file = $st->get_file();
+        my $st = $ModuleSynopses{$key};
+        my $file = $st->get_file();
         if ($file) {
             process_localmoduletables_in_file($file);
         }
@@ -1781,7 +1792,7 @@ sub process_all_localmoduletables(){
 }
 
 sub process_localmoduletables_in_file($){
-    my $file = @_[0];
+    my $file = $_[0];
     open(MYFILE, "<$file");
     local($_);
     sysread(MYFILE, $_, 1024*1024);
@@ -1811,13 +1822,13 @@ sub process_python_state(){
 sub do_env_seealso{
     return ("<div class=\"seealso\">\n  "
             . "<p class=\"heading\"><b>See Also:</b></p>\n"
-            . @_[0]
+            . $_[0]
             . '</div>');
 }
 
 sub do_env_seealsostar{
     return ("<div class=\"seealso-simple\">\n  "
-            . @_[0]
+            . $_[0]
             . '</div>');
 }
 
@@ -1842,7 +1853,7 @@ sub do_cmd_seemodule{
 }
 
 sub strip_html_markup($){
-    my $str = @_[0];
+    my $str = $_[0];
     my $s = "$str";
     $s =~ s/<[a-zA-Z0-9]+(\s+[a-zA-Z0-9]+(\s*=\s*(\'[^\']*\'|\"[^\"]*\"|[a-zA-Z0-9]+))?)*\s*>//g;
     $s =~ s/<\/[a-zA-Z0-9]+>//g;
@@ -1866,12 +1877,12 @@ sub handle_rfclike_reference($$$){
 }
 
 sub do_cmd_seepep{
-    return handle_rfclike_reference(@_[0], "PEP", $PEP_FORMAT);
+    return handle_rfclike_reference($_[0], "PEP", $PEP_FORMAT);
 }
 
 sub do_cmd_seerfc{
     # XXX Would be nice to add links to the text/plain and PDF versions.
-    return handle_rfclike_reference(@_[0], "RFC", $RFC_FORMAT);
+    return handle_rfclike_reference($_[0], "RFC", $RFC_FORMAT);
 }
 
 sub do_cmd_seetitle{
@@ -1918,7 +1929,7 @@ sub do_cmd_seetext{
 #
 
 sub do_env_definitions{
-    return "<dl class=\"definitions\">" . @_[0] . "</dl>\n";
+    return "<dl class=\"definitions\">" . $_[0] . "</dl>\n";
 }
 
 sub do_cmd_term{
@@ -2000,7 +2011,7 @@ sub do_env_alltt{
 @VerbatimOutputs = ();
 
 sub get_verbatim_output_name($){
-    my $file = @_[0];
+    my $file = $_[0];
     #
     # Re-write the source filename to always use a .txt extension
     # so that Web servers will present it as text/plain.  This is
@@ -2012,8 +2023,7 @@ sub get_verbatim_output_name($){
         # We've seen this one before; re-use the same output file.
         return $VerbatimFiles{$file};
     }
-    my $srcname, $srcdir, $srcext;
-    ($srcname, $srcdir, $srcext) = fileparse($file, '\..*');
+    my($srcname, $srcdir, $srcext) = fileparse($file, '\..*');
     $filename = "$srcname.txt";
     #
     # We need to determine if our default filename is already
