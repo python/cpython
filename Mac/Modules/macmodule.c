@@ -567,7 +567,7 @@ mac_write(self, args)
 {
 	int fd, size;
 	char *buffer;
-	if (!PyArg_Parse(args, "(im#)", &fd, &buffer, &size))
+	if (!PyArg_Parse(args, "(is#)", &fd, &buffer, &size))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
 	size = write(fd, buffer, size);

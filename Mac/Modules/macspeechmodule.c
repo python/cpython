@@ -29,7 +29,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "Speech.h"
 
 #ifdef __MWERKS__
-#include <Strings.h>
+#include <TextUtils.h>
 #define c2pstr C2PStr
 #define p2cstr P2CStr
 #else
@@ -150,7 +150,7 @@ sc_SpeakText(self, args)
 	char *str;
 	int len;
 	
-	if (!PyArg_Parse(args, "m#", &str, &len))
+	if (!PyArg_Parse(args, "s#", &str, &len))
 		return NULL;
 	if ( self->curtext ) {
 		StopSpeech(self->chan);
