@@ -266,7 +266,7 @@ class dispatcher:
                 socket.SOL_SOCKET, socket.SO_REUSEADDR,
                 self.socket.getsockopt (socket.SOL_SOCKET, socket.SO_REUSEADDR) | 1
                 )
-        except:
+        except socket.error:
             pass
 
     # ==================================================
