@@ -89,6 +89,31 @@ class XMLParser:
     # Interface -- initialize and reset this instance
     def __init__(self):
         self.reset()
+        if self.elements is XMLParser.elements:
+            self.__fixelements()
+
+    def __fixelements(self):
+        self.elements = {}
+        self.__fixdict(self.__dict__)
+        self.__fixclass(self.__class__)
+
+    def __fixclass(self, kl):
+        self.__fixdict(kl.__dict__)
+        for k in kl.__bases__:
+            self.__fixclass(k)
+
+    def __fixdict(self, dict):
+        for key, val in dict.items():
+            if key[:6] == 'start_':
+                key = key[6:]
+                start, end = self.elements.get(key, (None, None))
+                if start is None:
+                    self.elements[key] = val, end
+            elif key[:4] == 'end_':
+                key = key[4:]
+                start, end = self.elements.get(key, (None, None))
+                if end is None:
+                    self.elements[key] = start, val
 
     # Interface -- reset this instance.  Loses all unprocessed data
     def reset(self):
