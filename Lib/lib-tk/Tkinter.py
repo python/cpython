@@ -221,7 +221,10 @@ class Misc:
 				try:
 					apply(func, args)
 				finally:
-					self.deletecommand(tmp[0])
+					try:
+						self.deletecommand(tmp[0])
+					except TclError:
+						pass
 			name = self._register(callit)
 			tmp.append(name)
 			return self.tk.call('after', ms, name)
