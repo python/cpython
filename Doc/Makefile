@@ -133,13 +133,14 @@ LIBFILES = lib.tex \
     liblocale.tex libbasehttp.tex libcopyreg.tex
 
 # Library document
-lib.dvi: modindex.py $(LIBFILES)
+lib.dvi: modindex.py indfix.py $(LIBFILES)
 	touch lib.ind
 	touch modules.ind
 	$(LATEX) lib
 	./modindex.py modules.idx
 	./fix_hack lib.idx
 	$(MAKEINDEX) lib.idx
+	./indfix.py lib.ind
 	./modindex.py modules.idx
 	$(LATEX) lib
 
