@@ -64,7 +64,7 @@ class StringIO:
 		r = self.buf[self.pos:newpos]
 		self.pos = newpos
 		return r
-	def readline(self):
+	def readline(self, length=None):
 		if self.buflist:
 			self.buf = self.buf + string.joinfields(self.buflist, '')
 			self.buflist = []
@@ -73,6 +73,9 @@ class StringIO:
 			newpos = self.len
 		else:
 			newpos = i+1
+		if length is not None:
+			if self.pos + length < newpos:
+				newpos = self.pos + length
 		r = self.buf[self.pos:newpos]
 		self.pos = newpos
 		return r
