@@ -633,12 +633,12 @@ default_3way_compare(PyObject *v, PyObject *w)
 	if (w == Py_None)
 		return 1;
 
-	/* different type: compare type names */
-	if (v->ob_type->tp_as_number)
+	/* different type: compare type names; numbers are smaller */
+	if (PyNumber_Check(v))
 		vname = "";
 	else
 		vname = v->ob_type->tp_name;
-	if (w->ob_type->tp_as_number)
+	if (PyNumber_Check(w))
 		wname = "";
 	else
 		wname = w->ob_type->tp_name;
