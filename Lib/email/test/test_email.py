@@ -1310,6 +1310,15 @@ class TestRFC2047(unittest.TestCase):
         hu = make_header(dh).__unicode__().encode('latin-1')
         eq(hu, 'Andr\xe9 Pirard <pirard@dom.ain>')
 
+    def test_whitespace_eater_unicode_2(self):
+        eq = self.assertEqual
+        s = 'The =?iso-8859-1?b?cXVpY2sgYnJvd24gZm94?= jumped over the =?iso-8859-1?b?bGF6eSBkb2c=?='
+        dh = decode_header(s)
+        eq(dh, [('The', None), ('quick brown fox', 'iso-8859-1'),
+                ('jumped over the', None), ('lazy dog', 'iso-8859-1')])
+        hu = make_header(dh).__unicode__()
+        eq(hu, u'The quick brown fox jumped over the lazy dog')
+
 
 
 # Test the MIMEMessage class
