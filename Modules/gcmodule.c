@@ -359,19 +359,17 @@ move_unreachable(PyGC_Head *young, PyGC_Head *unreachable)
 
 /* Return true if object has a finalization method.
  * CAUTION:  An instance of an old-style class has to be checked for a
- *__del__ method, and that can cause arbitrary Python code to get executed
- * via the class's __getattr__ hook (if any).  This function can therefore
- * mutate the object graph, and that's been the source of subtle bugs.
+ *__del__ method, and earlier versions of this used to call PyObject_HasAttr,
+ * which in turn could call the class's __getattr__ hook (if any).  That
+ * could invoke arbitrary Python code, mutating the object graph in arbitrary
+ * ways, and that was the source of some excruciatingly subtle bugs.
  */
 static int
 has_finalizer(PyObject *op)
 {
 	if (PyInstance_Check(op)) {
-		/* This is the dangerous path:  hasattr can invoke
-		 * the class __getattr__(), and that can do anything.
-		 */
 		assert(delstr != NULL);
-		return PyObject_HasAttr(op, delstr);
+		return _PyInstance_Lookup(op, delstr) != NULL;
 	}
 	else if (PyType_HasFeature(op->ob_type, Py_TPFLAGS_HEAPTYPE))
 		return op->ob_type->tp_del != NULL;
@@ -379,38 +377,28 @@ has_finalizer(PyObject *op)
 		return 0;
 }
 
-/* Move all objects out of unreachable, into collectable or finalizers.
- * It's possible that some objects will get collected (via refcount falling
- * to 0), or resurrected, as a side effect of checking for __del__ methods.
- * After, finalizers contains all the objects from unreachable that haven't
- * been collected by magic, and that have a finalizer.  gc_refs is
- * GC_REACHABLE for all of those.  collectable contains all the remaining
- * objects from unreachable, and gc_refs remains GC_TENTATIVELY_UNREACHABLE
- * for those (we're still not sure they're reclaimable after this!  Some
- * may yet by reachable *from* the objects in finalizers).
+/* Move the objects in unreachable with __del__ methods into finalizers.
+ * The objects remaining in unreachable do not have __del__ methods, and
+ * gc_refs remains GC_TENTATIVELY_UNREACHABLE for them.  The objects
+ * moved into finalizers have gc_refs changed to GC_REACHABLE.
  */
 static void
-move_finalizers(PyGC_Head *unreachable, PyGC_Head *collectable,
-		PyGC_Head *finalizers)
+move_finalizers(PyGC_Head *unreachable, PyGC_Head *finalizers)
 {
-	while (!gc_list_is_empty(unreachable)) {
-		PyGC_Head *gc = unreachable->gc.gc_next;
+	PyGC_Head *gc = unreachable->gc.gc_next;
+
+	while (gc != unreachable) {
 		PyObject *op = FROM_GC(gc);
-		int finalizer;
+		PyGC_Head *next = gc->gc.gc_next;
 
 		assert(IS_TENTATIVELY_UNREACHABLE(op));
 
-		finalizer = has_finalizer(op);
-		if (unreachable->gc.gc_next == gc) {
+		if (has_finalizer(op)) {
 			gc_list_remove(gc);
-			if (finalizer) {
-				gc_list_append(gc, finalizers);
-				gc->gc.gc_refs = GC_REACHABLE;
-			}
-			else
-				gc_list_append(gc, collectable);
+			gc_list_append(gc, finalizers);
+			gc->gc.gc_refs = GC_REACHABLE;
 		}
-		/* else has_finalizer() deleted op via side effect */
+		gc = next;
 	}
 }
 
@@ -430,11 +418,10 @@ visit_move(PyObject *op, PyGC_Head *tolist)
 }
 
 /* Move objects that are reachable from finalizers, from the unreachable set
- * into the reachable_from_finalizers set.
+ * into finalizers set.
  */
 static void
-move_finalizer_reachable(PyGC_Head *finalizers,
-			 PyGC_Head *reachable_from_finalizers)
+move_finalizer_reachable(PyGC_Head *finalizers)
 {
 	traverseproc traverse;
 	PyGC_Head *gc = finalizers->gc.gc_next;
@@ -443,7 +430,7 @@ move_finalizer_reachable(PyGC_Head *finalizers,
 		traverse = FROM_GC(gc)->ob_type->tp_traverse;
 		(void) traverse(FROM_GC(gc),
 				(visitproc)visit_move,
-				(void *)reachable_from_finalizers);
+				(void *)finalizers);
 	}
 }
 
@@ -475,24 +462,32 @@ debug_cycle(char *msg, PyObject *op)
 
 /* Handle uncollectable garbage (cycles with finalizers, and stuff reachable
  * only from such cycles).
- * If DEBUG_SAVEALL or hasfinalizer, the objects in finalizers are appended
- * to the module garbage list (a Python list).  The objects in finalizers
- * are merged into the old list regardless.
+ * If DEBUG_SAVEALL, all objects in finalizers are appended to the module
+ * garbage list (a Python list), else only the objects in finalizers with
+ * __del__ methods are appended to garbage.  All objects in finalizers are
+ * merged into the old list regardless.
  * Returns 0 if all OK, <0 on error (out of memory to grow the garbage list).
  * The finalizers list is made empty on a successful return.
  */
 static int
-handle_finalizers(PyGC_Head *finalizers, PyGC_Head *old, int hasfinalizer)
+handle_finalizers(PyGC_Head *finalizers, PyGC_Head *old)
 {
+	PyGC_Head *gc = finalizers->gc.gc_next;
+
 	if (garbage == NULL) {
 		garbage = PyList_New(0);
 		if (garbage == NULL)
 			Py_FatalError("gc couldn't create gc.garbage list");
 	}
-	if ((debug & DEBUG_SAVEALL) || hasfinalizer) {
-		if (append_objects(garbage, finalizers) < 0)
-			return -1;
+	for (; gc != finalizers; gc = gc->gc.gc_next) {
+		PyObject *op = FROM_GC(gc);
+
+		if ((debug & DEBUG_SAVEALL) || has_finalizer(op)) {
+			if (PyList_Append(garbage, op) < 0)
+				return -1;
+		}
 	}
+
 	gc_list_merge(finalizers, old);
 	return 0;
 }
@@ -541,9 +536,7 @@ collect(int generation)
 	PyGC_Head *young; /* the generation we are examining */
 	PyGC_Head *old; /* next older generation */
 	PyGC_Head unreachable;
-	PyGC_Head collectable;
 	PyGC_Head finalizers;
-	PyGC_Head reachable_from_finalizers;
 	PyGC_Head *gc;
 
 	if (delstr == NULL) {
@@ -606,31 +599,19 @@ collect(int generation)
 	 * care not to create such things.  For Python, finalizers means
 	 * instance objects with __del__ methods.
 	 *
-	 * Move each unreachable object into the collectable set or the
-	 * finalizers set.  Because we need to check for __del__ methods on
-	 * instances of classic classes, arbitrary Python code may get
-	 * executed by getattr hooks:  that may resurrect or deallocate (via
-	 * refcount falling to 0) unreachable objects, so this is very
-	 * delicate.
-	 */
-	gc_list_init(&collectable);
+	 * Move unreachable objects with finalizers into a different list.
+ 	 */
 	gc_list_init(&finalizers);
-	move_finalizers(&unreachable, &collectable, &finalizers);
+	move_finalizers(&unreachable, &finalizers);
 	/* finalizers contains the unreachable objects with a finalizer;
 	 * unreachable objects reachable only *from* those are also
-	 * uncollectable; we move those into a separate list
-	 * (reachable_from_finalizers) so we don't have to do the dangerous
-	 * has_finalizer() test again later.
+	 * uncollectable, and we move those into the finalizers list too.
 	 */
-	gc_list_init(&reachable_from_finalizers);
-	move_finalizer_reachable(&finalizers, &reachable_from_finalizers);
-	/* And move everything only reachable from the reachable stuff. */
-	move_finalizer_reachable(&reachable_from_finalizers,
-				 &reachable_from_finalizers);
+	move_finalizer_reachable(&finalizers);
 
 	/* Collect statistics on collectable objects found and print
 	 * debugging information. */
-	for (gc = collectable.gc.gc_next; gc != &collectable;
+	for (gc = unreachable.gc.gc_next; gc != &unreachable;
 			gc = gc->gc.gc_next) {
 		m++;
 		if (debug & DEBUG_COLLECTABLE) {
@@ -640,19 +621,12 @@ collect(int generation)
 	/* Call tp_clear on objects in the collectable set.  This will cause
 	 * the reference cycles to be broken. It may also cause some objects
 	 * in finalizers and/or reachable_from_finalizers to be freed */
-	delete_garbage(&collectable, old);
+	delete_garbage(&unreachable, old);
 
 	/* Collect statistics on uncollectable objects found and print
 	 * debugging information. */
 	for (gc = finalizers.gc.gc_next;
 	     gc != &finalizers;
-	     gc = gc->gc.gc_next) {
-		n++;
-		if (debug & DEBUG_UNCOLLECTABLE)
-			debug_cycle("uncollectable", FROM_GC(gc));
-	}
-	for (gc = reachable_from_finalizers.gc.gc_next;
-	     gc != &reachable_from_finalizers;
 	     gc = gc->gc.gc_next) {
 		n++;
 		if (debug & DEBUG_UNCOLLECTABLE)
@@ -673,13 +647,11 @@ collect(int generation)
 	 * reachable list of garbage.  The programmer has to deal with
 	 * this if they insist on creating this type of structure.
 	 */
-	if (handle_finalizers(&finalizers, old, 1) == 0)
-		(void)handle_finalizers(&reachable_from_finalizers, old, 0);
+	(void)handle_finalizers(&finalizers, old);
 
 	if (PyErr_Occurred()) {
-		if (gc_str == NULL) {
+		if (gc_str == NULL)
 		    gc_str = PyString_FromString("garbage collection");
-		}
 		PyErr_WriteUnraisable(gc_str);
 		Py_FatalError("unexpected exception during garbage collection");
 	}
