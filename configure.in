@@ -20,6 +20,8 @@ VERSION=2.3
 AC_SUBST(SOVERSION)
 SOVERSION=1.0
 
+AC_DEFINE(_XOPEN_SOURCE, 500)
+
 # Arguments passed to configure.
 AC_SUBST(CONFIG_ARGS)
 CONFIG_ARGS="$ac_configure_args"
