@@ -973,10 +973,10 @@ class ObjectCompiler:
 			if pname == othername:
 				return
 			if self.fp:
-				self.fp.write("\n%s = %s\n"%(pname, othername))
+				self.fp.write("\n_Prop_%s = _Prop_%s\n"%(pname, othername))
 		else:
 			if self.fp:
-				self.fp.write("class %s(aetools.NProperty):\n" % pname)
+				self.fp.write("class _Prop_%s(aetools.NProperty):\n" % pname)
 				self.fp.write('\t"""%s - %s """\n' % (ascii(name), ascii(what[1])))
 				self.fp.write("\twhich = %s\n" % `code`)
 				self.fp.write("\twant = %s\n" % `what[0]`)
@@ -1041,7 +1041,7 @@ class ObjectCompiler:
 		if self.fp:
 			self.fp.write("%s._privpropdict = {\n"%cname)
 			for n in plist:
-				self.fp.write("\t'%s' : %s,\n"%(n, n))
+				self.fp.write("\t'%s' : _Prop_%s,\n"%(n, n))
 			self.fp.write("}\n")
 			self.fp.write("%s._privelemdict = {\n"%cname)
 			for n, fulln in elist:
@@ -1094,26 +1094,26 @@ class ObjectCompiler:
 			self.fp.write("\t%s : %s,\n" % (`k`, v))
 		self.fp.write("}\n")
 		
-		self.fp.write("\n_propdeclarations = {\n")
-		proplist = self.namemappers[0].getall('property')
-		proplist.sort()
-		for k, v in proplist:
-			self.fp.write("\t%s : %s,\n" % (`k`, v))
-		self.fp.write("}\n")
-		
-		self.fp.write("\n_compdeclarations = {\n")
-		complist = self.namemappers[0].getall('comparison')
-		complist.sort()
-		for k, v in complist:
-			self.fp.write("\t%s : %s,\n" % (`k`, v))
-		self.fp.write("}\n")
-		
-		self.fp.write("\n_enumdeclarations = {\n")
-		enumlist = self.namemappers[0].getall('enum')
-		enumlist.sort()
-		for k, v in enumlist:
-			self.fp.write("\t%s : %s,\n" % (`k`, v))
-		self.fp.write("}\n")
+##		self.fp.write("\n_propdeclarations = {\n")
+##		proplist = self.namemappers[0].getall('property')
+##		proplist.sort()
+##		for k, v in proplist:
+##			self.fp.write("\t%s : _Prop_%s,\n" % (`k`, v))
+##		self.fp.write("}\n")
+##		
+##		self.fp.write("\n_compdeclarations = {\n")
+##		complist = self.namemappers[0].getall('comparison')
+##		complist.sort()
+##		for k, v in complist:
+##			self.fp.write("\t%s : %s,\n" % (`k`, v))
+##		self.fp.write("}\n")
+##		
+##		self.fp.write("\n_enumdeclarations = {\n")
+##		enumlist = self.namemappers[0].getall('enum')
+##		enumlist.sort()
+##		for k, v in enumlist:
+##			self.fp.write("\t%s : %s,\n" % (`k`, v))
+##		self.fp.write("}\n")
 
 def compiledata(data):
 	[type, description, flags] = data
