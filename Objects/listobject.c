@@ -719,7 +719,7 @@ quicksort(array, size, compare)
 		r = hi-2;
 		for (;;) {
 			/* Move left index to element > pivot */
-			for (;;) {
+			while (l < hi) {
 				k = docompare(*l, pivot, compare); 
 				if (k == CMPERROR)
 					return -1;
@@ -728,7 +728,7 @@ quicksort(array, size, compare)
 				l++;
 			}
 			/* Move right index to element < pivot */
-			for (;;) {
+			while (r >= lo) {
 				k = docompare(pivot, *r, compare);
 				if (k == CMPERROR)
 					return -1;
