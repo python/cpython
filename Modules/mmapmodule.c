@@ -232,8 +232,17 @@ mmap_find_method(mmap_object *self,
 	if (!PyArg_ParseTuple (args, "s#|i:find", &needle, &len, &start)) {
 		return NULL;
 	} else {
-		char *p = self->data+self->pos;
-		char *e = self->data+self->size;
+		char *p;
+		char *e = self->data + self->size;
+
+                if (start < 0)
+                    start += self->size;
+                if (start < 0)
+                    start = 0;
+                else if (start > self->size)
+                    start = self->size;
+                p = self->data + start;
+
 		while (p < e) {
 			char *s = p;
 			char *n = needle;
@@ -243,7 +252,7 @@ mmap_find_method(mmap_object *self,
 			if (!*n) {
 				return Py_BuildValue (
 					"i",
-					(int) (p - (self->data + start)));
+					(int) (p - self->data));
 			}
 			p++;
 		}
