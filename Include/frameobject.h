@@ -54,26 +54,6 @@ DL_IMPORT(PyFrameObject *) PyFrame_New(PyThreadState *, PyCodeObject *,
 
 /* The rest of the interface is specific for frame objects */
 
-/* Tuple access macros */
-
-#ifndef Py_DEBUG
-#define GETITEM(v, i) PyTuple_GET_ITEM((PyTupleObject *)(v), (i))
-#define GETITEMNAME(v, i) \
-	PyString_AS_STRING((PyStringObject *)GETITEM((v), (i)))
-#else
-#define GETITEM(v, i) PyTuple_GetItem((v), (i))
-#define GETITEMNAME(v, i) PyString_AsString(GETITEM(v, i))
-#endif
-
-#define GETUSTRINGVALUE(s) ((unsigned char *)PyString_AS_STRING(s))
-
-/* Code access macros */
-
-#define Getconst(f, i)	(GETITEM((f)->f_code->co_consts, (i)))
-#define Getname(f, i)	(GETITEMNAME((f)->f_code->co_names, (i)))
-#define Getnamev(f, i)	(GETITEM((f)->f_code->co_names, (i)))
-
-
 /* Block management functions */
 
 DL_IMPORT(void) PyFrame_BlockSetup(PyFrameObject *, int, int, int);
