@@ -24,7 +24,10 @@ def warn(message, category=None, stacklevel=1):
     else:
         globals = caller.f_globals
         lineno = caller.f_lineno
-    module = globals['__name__']
+    if globals.has_key('__name__'):
+        module = globals['__name__']
+    else:
+        module = "<string>"
     filename = globals.get('__file__')
     if filename:
         fnl = filename.lower()
