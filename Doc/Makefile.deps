@@ -125,6 +125,7 @@ LIBFILES= $(MANSTYLES) $(INDEXSTYLES) $(COMMONTEX) \
 	lib/libmarshal.tex \
 	lib/libwarnings.tex \
 	lib/libimp.tex \
+	lib/libzipimport.tex \
 	lib/libpkgutil.tex \
 	lib/libparser.tex \
 	lib/libbltin.tex \
