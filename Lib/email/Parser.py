@@ -158,3 +158,19 @@ class Parser:
             container.add_payload(msg)
         else:
             container.add_payload(fp.read())
+
+
+
+class HeaderParser(Parser):
+    """A subclass of Parser, this one only meaningfully parses message headers.
+
+    This class can be used if all you're interested in is the headers of a
+    message.  While it consumes the message body, it does not parse it, but
+    simply makes it available as a string payload.
+
+    Parsing with this subclass can be considerably faster if all you're
+    interested in is the message headers.
+    """
+    def _parsebody(self, container, fp):
+        # Consume but do not parse, the body
+        container.set_payload(fp.read())
