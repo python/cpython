@@ -1,4 +1,4 @@
-"""A parser for HTML."""
+"""A parser for HTML and XHTML."""
 
 # This file is based on sgmllib.py, but the API is slightly different.
 
@@ -18,7 +18,7 @@ interesting_cdata = re.compile(r'<(/|\Z)')
 incomplete = re.compile('&([a-zA-Z][-.a-zA-Z0-9]*|#[0-9]*)?')
 
 entityref = re.compile('&([a-zA-Z][-.a-zA-Z0-9]*)[^a-zA-Z0-9]')
-charref = re.compile('&#([0-9]+)[^0-9]')
+charref = re.compile('&#(?:[0-9]+|[xX][0-9a-fA-F]+)[^0-9a-fA-F]')
 
 starttagopen = re.compile('<[a-zA-Z]')
 piopen = re.compile(r'<\?')
@@ -73,32 +73,35 @@ class HTMLParseError(Exception):
         return result
 
 
-# HTML parser class -- find tags and call handler functions.
-# Usage:
-#
-#     p = HTMLParser(); p.feed(data); ...; p.close()
-
-# Start tags are handled by calling self.handle_starttag() or
-# self.handle_startendtag(); end tags by self.handle_endtag().  The
-# data between tags is passed from the parser to the derived class by
-# calling self.handle_data() with the data as argument (the data may
-# be split up in arbitrary chunks).  Entity references are passed by
-# calling self.handle_entityref() with the entity reference as the
-# argument.  Numeric character references are passed to
-# self.handle_charref() with the string containing the reference as
-# the argument.
-
 class HTMLParser:
+    """Find tags and other markup and call handler functions.
+
+    Usage:
+        p = HTMLParser()
+        p.feed(data)
+        ...
+        p.close()
+
+    Start tags are handled by calling self.handle_starttag() or
+    self.handle_startendtag(); end tags by self.handle_endtag().  The
+    data between tags is passed from the parser to the derived class
+    by calling self.handle_data() with the data as argument (the data
+    may be split up in arbitrary chunks).  Entity references are
+    passed by calling self.handle_entityref() with the entity
+    reference as the argument.  Numeric character references are
+    passed to self.handle_charref() with the string containing the
+    reference as the argument.
+    """
 
     CDATA_CONTENT_ELEMENTS = ("script", "style")
 
 
-    # Interface -- initialize and reset this instance
     def __init__(self):
+        """Initialize and reset this instance."""
         self.reset()
 
-    # Interface -- reset this instance.  Loses all unprocessed data
     def reset(self):
+        """Reset this instance.  Loses all unprocessed data."""
         self.rawdata = ''
         self.stack = []
         self.lasttag = '???'
@@ -106,16 +109,17 @@ class HTMLParser:
         self.offset = 0
         self.interesting = interesting_normal
 
-    # Interface -- feed some data to the parser.  Call this as
-    # often as you want, with as little or as much text as you
-    # want (may include '\n').  (This just saves the text, all the
-    # processing is done by goahead().)
     def feed(self, data):
+        """Feed data to the parser.
+
+        Call this as often as you want, with as little or as much text
+        as you want (may include '\n').
+        """
         self.rawdata = self.rawdata + data
         self.goahead(0)
 
-    # Interface -- handle the remaining data
     def close(self):
+        """Handle any buffered data."""
         self.goahead(1)
 
     # Internal -- update line number and offset.  This should be
@@ -135,14 +139,14 @@ class HTMLParser:
             self.offset = self.offset + j-i
         return j
 
-    # Interface -- return current line number and offset.
     def getpos(self):
+        """Return current line number and offset."""
         return self.lineno, self.offset
 
     __starttag_text = None
 
-    # Interface -- return full source of start tag: "<...>"
     def get_starttag_text(self):
+        """Return full source of start tag: '<...>'."""
         return self.__starttag_text
 
     def set_cdata_mode(self):
@@ -195,7 +199,7 @@ class HTMLParser:
             elif rawdata[i] == '&':
                 match = charref.match(rawdata, i)
                 if match:
-                    name = match.group(1)
+                    name = match.group()[2:-1]
                     self.handle_charref(name)
                     k = match.end()
                     if rawdata[k-1] != ';':
