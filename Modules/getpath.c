@@ -385,7 +385,7 @@ calculate_path()
 	static char separator[2] = {SEP, '\0'};
 	char *pythonpath = PYTHONPATH;
 	char *rtpypath = getenv("PYTHONPATH");
-	char *home = getenv("PYTHONHOME");
+	char *home = Py_GetPythonHome();
 	char *path = getenv("PATH");
 	char *prog = Py_GetProgramName();
 	char argv0_path[MAXPATHLEN+1];
@@ -454,6 +454,7 @@ calculate_path()
 	reduce(argv0_path);
 
 	if (!(pfound = search_for_prefix(argv0_path, home))) {
+		if (!Py_FrozenFlag)
 		fprintf(stderr,
 		   "Could not find platform independent libraries <prefix>\n");
 		strcpy(prefix, PREFIX);
@@ -463,6 +464,7 @@ calculate_path()
 		reduce(prefix);
 	
 	if (!(efound = search_for_exec_prefix(argv0_path, home))) {
+		if (!Py_FrozenFlag)
 		fprintf(stderr,
 		"Could not find platform dependent libraries <exec_prefix>\n");
 		strcpy(exec_prefix, EXEC_PREFIX);
@@ -470,7 +472,7 @@ calculate_path()
 	}
 	/* If we found EXEC_PREFIX do *not* reduce it!  (Yet.) */
 
-	if (!pfound || !efound)
+	if ((!pfound || !efound) && !Py_FrozenFlag)
 		fprintf(stderr,
 		 "Consider setting $PYTHONHOME to <prefix>[:<exec_prefix>]\n");
 
