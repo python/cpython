@@ -558,13 +558,9 @@ main(int argc, char **argv)
 		if (locateResourcePy("__main__.py", scriptpath, 1024))
 			script = scriptpath;
 			
-		printf("original argc=%d\n", argc);
-		for(i=0; i<argc; i++) printf("original argv[%d] = \"%s\"\n", i, argv[i]);
 
 		init_common(&argc, &argv, 0);
 
-		printf("modified argc=%d\n", argc);
-		for(i=0; i<argc; i++) printf("modified argv[%d] = \"%s\"\n", i, argv[i]);
 	}
 
 	Py_Main(argc, argv, script);
