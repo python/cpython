@@ -1231,6 +1231,61 @@ dict_tp_clear(PyObject *op)
 }
 
 
+staticforward PyObject *dictiter_new(dictobject *, binaryfunc);
+
+static PyObject *
+select_key(PyObject *key, PyObject *value)
+{
+	Py_INCREF(key);
+	return key;
+}
+
+static PyObject *
+select_value(PyObject *key, PyObject *value)
+{
+	Py_INCREF(value);
+	return value;
+}
+
+static PyObject *
+select_item(PyObject *key, PyObject *value)
+{
+	PyObject *res = PyTuple_New(2);
+
+	if (res != NULL) {
+		Py_INCREF(key);
+		Py_INCREF(value);
+		PyTuple_SET_ITEM(res, 0, key);
+		PyTuple_SET_ITEM(res, 1, value);
+	}
+	return res;
+}
+
+static PyObject *
+dict_iterkeys(dictobject *dict, PyObject *args)
+{
+	if (!PyArg_ParseTuple(args, ""))
+		return NULL;
+	return dictiter_new(dict, select_key);
+}
+
+static PyObject *
+dict_itervalues(dictobject *dict, PyObject *args)
+{
+	if (!PyArg_ParseTuple(args, ""))
+		return NULL;
+	return dictiter_new(dict, select_value);
+}
+
+static PyObject *
+dict_iteritems(dictobject *dict, PyObject *args)
+{
+	if (!PyArg_ParseTuple(args, ""))
+		return NULL;
+	return dictiter_new(dict, select_item);
+}
+
+
 static char has_key__doc__[] =
 "D.has_key(k) -> 1 if D has a key k, else 0";
 
@@ -1262,6 +1317,15 @@ static char clear__doc__[] =
 static char copy__doc__[] =
 "D.copy() -> a shallow copy of D";
 
+static char iterkeys__doc__[] =
+"D.iterkeys() -> an iterator over the keys of D";
+
+static char itervalues__doc__[] =
+"D.itervalues() -> an iterator over the values of D";
+
+static char iteritems__doc__[] =
+"D.iteritems() -> an iterator over the (key, value) items of D";
+
 static PyMethodDef mapp_methods[] = {
 	{"has_key",	(PyCFunction)dict_has_key,      METH_VARARGS,
 	 has_key__doc__},
@@ -1283,6 +1347,12 @@ static PyMethodDef mapp_methods[] = {
 	 clear__doc__},
 	{"copy",	(PyCFunction)dict_copy,		METH_OLDARGS,
 	 copy__doc__},
+	{"iterkeys",	(PyCFunction)dict_iterkeys,	METH_VARARGS,
+	 iterkeys__doc__},
+	{"itervalues",	(PyCFunction)dict_itervalues,	METH_VARARGS,
+	 itervalues__doc__},
+	{"iteritems",	(PyCFunction)dict_iteritems,	METH_VARARGS,
+	 iteritems__doc__},
 	{NULL,		NULL}	/* sentinel */
 };
 
@@ -1324,7 +1394,11 @@ static PySequenceMethods dict_as_sequence = {
 	0,					/* sq_inplace_repeat */
 };
 
-staticforward PyObject *dictiter_new(dictobject *);
+static PyObject *
+dict_iter(dictobject *dict)
+{
+	return dictiter_new(dict, select_key);
+}
 
 PyTypeObject PyDict_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
@@ -1353,7 +1427,7 @@ PyTypeObject PyDict_Type = {
 	(inquiry)dict_tp_clear,			/* tp_clear */
 	0,					/* tp_richcompare */
 	0,					/* tp_weaklistoffset */
-	(getiterfunc)dictiter_new,		/* tp_iter */
+	(getiterfunc)dict_iter,			/* tp_iter */
 	0,					/* tp_iternext */
 };
 
@@ -1407,10 +1481,11 @@ typedef struct {
 	dictobject *di_dict;
 	int di_size;
 	int di_pos;
+	binaryfunc di_select;
 } dictiterobject;
 
 static PyObject *
-dictiter_new(dictobject *dict)
+dictiter_new(dictobject *dict, binaryfunc select)
 {
 	dictiterobject *di;
 	di = PyObject_NEW(dictiterobject, &PyDictIter_Type);
@@ -1420,6 +1495,7 @@ dictiter_new(dictobject *dict)
 	di->di_dict = dict;
 	di->di_size = dict->ma_size;
 	di->di_pos = 0;
+	di->di_select = select;
 	return (PyObject *)di;
 }
 
@@ -1433,16 +1509,15 @@ dictiter_dealloc(dictiterobject *di)
 static PyObject *
 dictiter_next(dictiterobject *di, PyObject *args)
 {
-	PyObject *key;
+	PyObject *key, *value;
 
 	if (di->di_size != di->di_dict->ma_size) {
 		PyErr_SetString(PyExc_RuntimeError,
 				"dictionary changed size during iteration");
 		return NULL;
 	}
-	if (PyDict_Next((PyObject *)(di->di_dict), &di->di_pos, &key, NULL)) {
-		Py_INCREF(key);
-		return key;
+	if (PyDict_Next((PyObject *)(di->di_dict), &di->di_pos, &key, &value)) {
+		return (*di->di_select)(key, value);
 	}
 	PyErr_SetObject(PyExc_StopIteration, Py_None);
 	return NULL;
@@ -1469,16 +1544,15 @@ dictiter_getattr(dictiterobject *di, char *name)
 
 static PyObject *dictiter_iternext(dictiterobject *di)
 {
-	PyObject *key;
+	PyObject *key, *value;
 
 	if (di->di_size != di->di_dict->ma_size) {
 		PyErr_SetString(PyExc_RuntimeError,
 				"dictionary changed size during iteration");
 		return NULL;
 	}
-	if (PyDict_Next((PyObject *)(di->di_dict), &di->di_pos, &key, NULL)) {
-		Py_INCREF(key);
-		return key;
+	if (PyDict_Next((PyObject *)(di->di_dict), &di->di_pos, &key, &value)) {
+		return (*di->di_select)(key, value);
 	}
 	return NULL;
 }
