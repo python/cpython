@@ -619,15 +619,38 @@ class Editor(W.Window):
 			savedir = os.getcwd()
 			os.chdir(dir)
 			sys.path.insert(0, dir)
-		else:
-			cwdindex = None
+		self._scriptDone = False
+		if sys.platform == "darwin":
+			# On MacOSX, MacPython doesn't poll for command-period
+			# (cancel), so to enable the user to cancel a running
+			# script, we have to spawn a thread which does the
+			# polling. It will send a SIGINT to the main thread
+			# (in which the script is running) when the user types
+			# command-period.
+			from threading import Thread
+			t = Thread(target=self._userCancelledMonitor,
+					name="UserCancelledMonitor")
+			t.start()
 		try:
 			execstring(pytext, globals, locals, file, self.debugging, 
 					modname, self.profiling)
 		finally:
+			self._scriptDone = True
 			if self.path:
 				os.chdir(savedir)
 				del sys.path[0]
+	
+	def _userCancelledMonitor(self):
+		import time
+		from signal import SIGINT
+		while not self._scriptDone:
+			if Evt.CheckEventQueueForUserCancel():
+				# Send a SIGINT signal to ourselves.
+				# This gets delivered to the main thread,
+				# cancelling the running script.
+				os.kill(os.getpid(), SIGINT)
+				break
+			time.sleep(0.25)
 	
 	def getenvironment(self):
 		if self.path:
