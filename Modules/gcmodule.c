@@ -96,7 +96,7 @@ During a collection, gc_refs can temporarily take on other states:
     subtract_refs() then adjusts gc_refs so that it equals the number of
     times an object is referenced directly from outside the generation
     being collected.
-    gc_refs reamins >= 0 throughout these steps.
+    gc_refs remains >= 0 throughout these steps.
 
 GC_TENTATIVELY_UNREACHABLE
     move_unreachable() then moves objects not reachable (whether directly or
