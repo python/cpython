@@ -28,7 +28,7 @@ language for highly customizable C applications such as editors or
 window managers.
 
 Python is available for various operating systems, amongst which
-several flavors of {\UNIX}, the Apple Macintosh, MS-DOS, Windows
+several flavors of \UNIX{}, the Apple Macintosh, MS-DOS, Windows
 (3.1(1), '95 and NT flavors), OS/2, and others.
 
 This tutorial introduces the reader informally to the basic concepts
@@ -162,7 +162,7 @@ modules that can save you a lot of time when writing Python programs.
 
 The Python interpreter is usually installed as {\tt /usr/local/bin/python}
 on those machines where it is available; putting {\tt /usr/local/bin} in
-your {\UNIX} shell's search path makes it possible to start it by
+your \UNIX{} shell's search path makes it possible to start it by
 typing the command
 
 \bcode\begin{verbatim}
@@ -174,7 +174,7 @@ lives is an installation option, other places are possible; check with
 your local Python guru or system administrator.  (E.g., {\tt
 /usr/local/python} is a popular alternative location.)
 
-The interpreter operates somewhat like the {\UNIX} shell: when called
+The interpreter operates somewhat like the \UNIX{} shell: when called
 with standard input connected to a tty device, it reads and executes
 commands interactively; when called with a file name argument or with
 a file as standard input, it reads and executes a {\em script} from
@@ -223,7 +223,7 @@ with the {\em primary\ prompt}, usually three greater-than signs ({\tt
 >>>}); for continuation lines it prompts with the
 {\em secondary\ prompt},
 by default three dots ({\tt ...}).  Typing an EOF character
-(Control-D on {\UNIX}, Control-Z on DOS or Windows)
+(Control-D on \UNIX{}, Control-Z on DOS or Windows)
 at the primary prompt causes the interpreter to exit with a zero exit
 status.
 
@@ -269,7 +269,7 @@ When a module named {\tt spam} is imported, the interpreter searches
 for a file named {\tt spam.py} in the current directory,
 and then in the list of directories specified by
 the environment variable {\tt PYTHONPATH}.  This has the same syntax as
-the {\UNIX} shell variable {\tt PATH}, i.e., a list of colon-separated
+the \UNIX{} shell variable {\tt PATH}, i.e., a list of colon-separated
 directory names.  When {\tt PYTHONPATH} is not set, or when the file
 is not found there, the search continues in an installation-dependent
 default path, usually {\tt .:/usr/local/lib/python}.
@@ -303,7 +303,7 @@ the module {\tt compileall} creates {\tt .pyc} files for all modules.)
 
 \subsection{Executable Python scripts}
 
-On BSD'ish {\UNIX} systems, Python scripts can be made directly
+On BSD'ish \UNIX{} systems, Python scripts can be made directly
 executable, like shell scripts, by putting the line
 
 \bcode\begin{verbatim}
@@ -320,7 +320,7 @@ When you use Python interactively, it is frequently handy to have some
 standard commands executed every time the interpreter is started.  You
 can do this by setting an environment variable named {\tt
 PYTHONSTARTUP} to the name of a file containing your start-up
-commands.  This is similar to the {\tt .profile} feature of the UNIX
+commands.  This is similar to the {\tt .profile} feature of the \UNIX{}
 shells.
 
 This file is only read in interactive sessions, not when Python reads
@@ -3229,9 +3229,9 @@ exactly as if \code{cmp(x, y)} were a binary operator like \code{+}
 
 \section{Unix Signal Handling}
 
-On {\UNIX}, Python now supports signal handling.  The module
+On \UNIX{}, Python now supports signal handling.  The module
 \code{signal} exports functions \code{signal}, \code{pause} and
-\code{alarm}, which act similar to their {\UNIX} counterparts.  The
+\code{alarm}, which act similar to their \UNIX{} counterparts.  The
 module also exports the conventional names for the various signal
 classes (also usable with \code{os.kill()}) and \code{SIG_IGN} and
 \code{SIG_DFL}.  See the section on \code{signal} in the Library
