@@ -44,6 +44,9 @@ Extension modules
 Library
 -------
 
+- logging.handlers.SMTPHandler.date_time has been removed;
+  the class now uses email.Utils.formatdate to generate the time stamp.
+
 - A new function tkFont.nametofont was added to return an existing
   font. The Font class constructor now has an additional exists argument
   which, if True, requests to return/configure an existing font, rather
