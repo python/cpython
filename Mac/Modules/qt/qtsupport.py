@@ -46,6 +46,10 @@ staticforward int MovieCtlObj_Convert(PyObject *, TimeBase *);
 staticforward PyObject *TimeBaseObj_New(TimeBase);
 staticforward int TimeBaseObj_Convert(PyObject *, TimeBase *);
 
+/* Macro to allow us to GetNextInterestingTime without duration */
+#define GetMediaNextInterestingTimeOnly(media, flags, time, rate, rv) \
+			GetMediaNextInterestingTime(media, flags, time, rate, rv, NULL)
+			
 /*
 ** Parse/generate time records
 */
@@ -261,6 +265,15 @@ f = Function(void, 'MoviesTask',
 )
 functions.append(f)
 
+# And we want a GetMediaNextInterestingTime without duration
+f = Method(void, 'GetMediaNextInterestingTimeOnly',
+    (Media, 'theMedia', InMode),
+    (short, 'interestingTimeFlags', InMode),
+    (TimeValue, 'time', InMode),
+    (Fixed, 'rate', InMode),
+    (TimeValue, 'interestingTime', OutMode),
+)
+Media_methods.append(f)
 
 # add the populated lists to the generator groups
 # (in a different wordl the scan program would generate this)
