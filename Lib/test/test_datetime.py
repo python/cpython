@@ -1029,6 +1029,26 @@ class TestDate(HarmlessMixedComparison):
         self.assertEqual(dt1.toordinal(), dt2.toordinal())
         self.assertEqual(dt2.newmeth(-7), dt1.year + dt1.month - 7)
 
+    def test_backdoor_resistance(self):
+        # For fast unpickling, the constructor accepts a pickle string.
+        # This is a low-overhead backdoor.  A user can (by intent or
+        # mistake) pass a string directly, which (if it's the right length)
+        # will get treated like a pickle, and bypass the normal sanity
+        # checks in the constructor.  This can create insane objects.
+        # The constructor doesn't want to burn the time to validate all
+        # fields, but does check the month field.  This stops, e.g.,
+        # datetime.datetime('1995-03-25') from yielding an insane object.
+        base = '1995-03-25'
+        if not issubclass(self.theclass, datetime):
+            base = base[:4]
+        for month_byte in '9', chr(0), chr(13), '\xff':
+            self.assertRaises(TypeError, self.theclass,
+                                         base[:2] + month_byte + base[3:])
+        for ord_byte in range(1, 13):
+            # This shouldn't blow up because of the month byte alone.  If
+            # the implementation changes to do more-careful checking, it may
+            # blow up because other fields are insane.
+            self.theclass(base[:2] + chr(ord_byte) + base[3:])
 
 #############################################################################
 # datetime tests
