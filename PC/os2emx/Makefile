@@ -1,4 +1,4 @@
-#####################==================----------------úúúúúúúúúúúúú
+#####################==================----------------·············
 #
 # Top-Level Makefile for Building Python 2.3 for OS/2 using GCC/EMX
 # Originally written by Andrew Zabolotny, <bit@eltech.ru> for Python 1.5.2
@@ -21,7 +21,7 @@
 #   make lx		(if you have lxlite)
 #   make test		(optional)
 #
-#####################==================----------------úúúúúúúúúúúúú
+#####################==================----------------·············
 
 # === Compilation mode: debug or release ===
 MODE=		optimize
@@ -308,6 +308,7 @@ SRC.OBJECT=	$(addprefix $(TOP), \
 		Objects/complexobject.c \
 		Objects/descrobject.c \
 		Objects/dictobject.c \
+		Objects/enumobject.c \
 		Objects/fileobject.c \
 		Objects/floatobject.c \
 		Objects/frameobject.c \
