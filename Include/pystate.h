@@ -49,6 +49,7 @@ typedef struct _ts {
     int recursion_depth;
     int ticker;
     int tracing;
+    int use_tracing;
 
     Py_tracefunc c_profilefunc;
     Py_tracefunc c_tracefunc;
