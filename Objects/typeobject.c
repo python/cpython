@@ -1157,12 +1157,12 @@ object_repr(PyObject *self)
 	if (name == NULL)
 		return NULL;
 	if (mod != NULL && strcmp(PyString_AS_STRING(mod), "__builtin__"))
-		rtn = PyString_FromFormat("<%s.%s instance at %p>",
+		rtn = PyString_FromFormat("<%s.%s object at %p>",
 					  PyString_AS_STRING(mod),
 					  PyString_AS_STRING(name),
 					  self);
 	else
-		rtn = PyString_FromFormat("<%s instance at %p>",
+		rtn = PyString_FromFormat("<%s object at %p>",
 					  type->tp_name, self);
 	Py_XDECREF(mod);
 	Py_DECREF(name);

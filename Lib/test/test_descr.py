@@ -1193,7 +1193,7 @@ def specials():
     verify(not c1 == c2)
     # Note that the module name appears in str/repr, and that varies
     # depending on whether this test is run standalone or from a framework.
-    verify(str(c1).find('C instance at ') >= 0)
+    verify(str(c1).find('C object at ') >= 0)
     verify(str(c1) == repr(c1))
     verify(-1 not in c1)
     for i in range(10):
@@ -1216,7 +1216,7 @@ def specials():
     verify(not d1 == d2)
     # Note that the module name appears in str/repr, and that varies
     # depending on whether this test is run standalone or from a framework.
-    verify(str(d1).find('D instance at ') >= 0)
+    verify(str(d1).find('D object at ') >= 0)
     verify(str(d1) == repr(d1))
     verify(-1 not in d1)
     for i in range(10):
