@@ -243,7 +243,9 @@ typedef int pid_t;
 
 /* define the ANSI intptr_t type for portable use of a pointer sized
    integer */
+#if _MSC_VER >= 1200 /* This file only exists in VC 6.0 or higher */
 #include <basetsd.h>
+#endif
 #if defined(MS_WINDOWS) && !defined(MS_WIN64)
 typedef long intptr_t;
 #endif
