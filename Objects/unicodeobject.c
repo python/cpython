@@ -261,7 +261,7 @@ int PyUnicode_Resize(PyObject **unicode,
 	return -1;
     }
     v = (PyUnicodeObject *)*unicode;
-    if (v == NULL || !PyUnicode_Check(v) || v->ob_refcnt != 1) {
+    if (v == NULL || !PyUnicode_Check(v) || v->ob_refcnt != 1 || length < 0) {
 	PyErr_BadInternalCall();
 	return -1;
     }
@@ -6483,10 +6483,14 @@ PyObject *PyUnicode_Format(PyObject *format,
 	    }
 	    if (width < len)
 		width = len;
-	    if (rescnt < width + (sign != 0)) {
+	    if (rescnt - (sign != 0) < width) {
 		reslen -= rescnt;
 		rescnt = width + fmtcnt + 100;
 		reslen += rescnt;
+		if (reslen < 0) {
+		    Py_DECREF(result);
+		    return PyErr_NoMemory();
+		}
 		if (_PyUnicode_Resize(&result, reslen) < 0)
 		    return NULL;
 		res = PyUnicode_AS_UNICODE(result)

@@ -3319,7 +3319,7 @@ _PyString_Resize(PyObject **pv, int newsize)
 	register PyObject *v;
 	register PyStringObject *sv;
 	v = *pv;
-	if (!PyString_Check(v) || v->ob_refcnt != 1) {
+	if (!PyString_Check(v) || v->ob_refcnt != 1 || newsize < 0) {
 		*pv = 0;
 		Py_DECREF(v);
 		PyErr_BadInternalCall();
@@ -3959,10 +3959,14 @@ PyString_Format(PyObject *format, PyObject *args)
 			}
 			if (width < len)
 				width = len;
-			if (rescnt < width + (sign != 0)) {
+			if (rescnt - (sign != 0) < width) {
 				reslen -= rescnt;
 				rescnt = width + fmtcnt + 100;
 				reslen += rescnt;
+				if (reslen < 0) {
+					Py_DECREF(result);
+					return PyErr_NoMemory();
+				}
 				if (_PyString_Resize(&result, reslen) < 0)
 					return NULL;
 				res = PyString_AS_STRING(result)
