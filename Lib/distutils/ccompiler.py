@@ -319,7 +319,7 @@ class CCompiler:
         self.objects = copy (objects)
 
 
-    # -- Priviate utility methods --------------------------------------
+    # -- Private utility methods --------------------------------------
     # (here for the convenience of subclasses)
 
     def _fix_compile_args (self, output_dir, macros, include_dirs):
