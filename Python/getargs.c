@@ -1005,7 +1005,16 @@ PyArg_ParseTupleAndKeywords(PyObject *args,
 {
 	int retval;
 	va_list va;
-	
+
+	if ((args == NULL || !PyTuple_Check(args)) ||
+	    (keywords != NULL && !PyDict_Check(keywords)) ||
+	    format == NULL ||
+	    kwlist == NULL)
+	{
+		PyErr_BadInternalCall();
+		return -1;
+	}
+
 	va_start(va, kwlist);
 	retval = vgetargskeywords(args, keywords, format, kwlist, &va);	
 	va_end(va);
@@ -1028,6 +1037,12 @@ vgetargskeywords(PyObject *args, PyObject *keywords, char *format,
 	char *msg, *ks, **p;
 	int nkwds, pos, match, converted;
 	PyObject *key, *value;
+
+	assert(args != NULL && PyTuple_Check(args));
+	assert(keywords == NULL || PyDict_Check(keywords));
+	assert(format != NULL);
+	assert(kwlist != NULL);
+	assert(p_va != NULL);
 
 	/* nested tuples cannot be parsed when using keyword arguments */
 
