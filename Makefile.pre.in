@@ -875,6 +875,7 @@ idleinstall:
 	./$(BUILDPYTHON) $(srcdir)/Tools/idle/setup.py install \
 	--check-tkinter \
 	--prefix=$(prefix) \
+	--install-purelib=$(LIBDEST) \
 	--install-scripts=$(BINDIR) \
 	--install-platlib=$(DESTSHARED) \
 	--root=/$(DESTDIR)
