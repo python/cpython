@@ -22,6 +22,16 @@ Extension modules
 Library
 -------
 
+- SF bug #1028306:  Trying to compare a ``datetime.date`` to a
+  ``datetime.datetime`` mistakenly compared only the year, month and day.
+  Now it acts like a mixed-type comparison:  ``False`` for ``==``,
+  ``True`` for ``!=``, and raises ``TypeError`` for other comparison
+  operators.  Because datetime is a subclass of date, comparing only the
+  base class (date) members can still be done, if that's desired, by
+  forcing using of the approprate date method; e.g.,
+  ``a_date.__eq__(a_datetime)`` is true if and only if the year, month
+  and day members of ``a_date`` and ``a_datetime`` are equal.
+
 - bdist_rpm now supports command line options --force-arch,
   {pre,post}-install,  {pre,post}-uninstall, and
   {prep,build,install,clean,verify}-script.

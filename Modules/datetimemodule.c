@@ -4075,7 +4075,17 @@ datetime_richcompare(PyDateTime_DateTime *self, PyObject *other, int op)
 	int offset1, offset2;
 
 	if (! PyDateTime_Check(other)) {
-		if (PyObject_HasAttrString(other, "timetuple")) {
+		/* If other has a "timetuple" attr, that's an advertised
+		 * hook for other classes to ask to get comparison control.
+		 * However, date instances have a timetuple attr, and we
+		 * don't want to allow that comparison.  Because datetime
+		 * is a subclass of date, when mixing date and datetime
+		 * in a comparison, Python gives datetime the first shot
+		 * (it's the more specific subtype).  So we can stop that
+		 * combination here reliably.
+		 */
+		if (PyObject_HasAttrString(other, "timetuple") &&
+		    ! PyDate_Check(other)) {
 			/* A hook for other kinds of datetime objects. */
 			Py_INCREF(Py_NotImplemented);
 			return Py_NotImplemented;

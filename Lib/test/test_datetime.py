@@ -3151,6 +3151,48 @@ class TestTimezoneConversions(unittest.TestCase):
             fstart += HOUR
 
 
+#############################################################################
+# oddballs
+
+class Oddballs(unittest.TestCase):
+
+    def test_bug_1028306(self):
+        # Trying to compare a date to a datetime should act like a mixed-
+        # type comparison, despite that datetime is a subclass of date.
+        as_date = date.today()
+        as_datetime = datetime.combine(as_date, time())
+        self.assert_(as_date != as_datetime)
+        self.assert_(as_datetime != as_date)
+        self.assert_(not as_date == as_datetime)
+        self.assert_(not as_datetime == as_date)
+        self.assertRaises(TypeError, lambda: as_date < as_datetime)
+        self.assertRaises(TypeError, lambda: as_datetime < as_date)
+        self.assertRaises(TypeError, lambda: as_date <= as_datetime)
+        self.assertRaises(TypeError, lambda: as_datetime <= as_date)
+        self.assertRaises(TypeError, lambda: as_date > as_datetime)
+        self.assertRaises(TypeError, lambda: as_datetime > as_date)
+        self.assertRaises(TypeError, lambda: as_date >= as_datetime)
+        self.assertRaises(TypeError, lambda: as_datetime >= as_date)
+
+        # Neverthelss, comparison should work with the base-class (date)
+        # projection if use of a date method is forced.
+        self.assert_(as_date.__eq__(as_datetime))
+        different_day = (as_date.day + 1) % 20 + 1
+        self.assert_(not as_date.__eq__(as_datetime.replace(day=
+                                                     different_day)))
+
+        # And date should compare with other subclasses of date.  If a
+        # subclass wants to stop this, it's up to the subclass to do so.
+        date_sc = SubclassDate(as_date.year, as_date.month, as_date.day)
+        self.assertEqual(as_date, date_sc)
+        self.assertEqual(date_sc, as_date)
+
+        # Ditto for datetimes.
+        datetime_sc = SubclassDatetime(as_datetime.year, as_datetime.month,
+                                       as_date.day, 0, 0, 0)
+        self.assertEqual(as_datetime, datetime_sc)
+        self.assertEqual(datetime_sc, as_datetime)
+
 def test_suite():
     allsuites = [unittest.makeSuite(klass, 'test')
                  for klass in (TestModule,
@@ -3163,6 +3205,7 @@ def test_suite():
                                TestTimeTZ,
                                TestDateTimeTZ,
                                TestTimezoneConversions,
+                               Oddballs,
                               )
                 ]
     return unittest.TestSuite(allsuites)
