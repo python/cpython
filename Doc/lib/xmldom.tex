@@ -40,20 +40,20 @@ code.  The DOM is a standard tree representation for XML data.
 The Document Object Model is being defined by the W3C in stages, or
 ``levels'' in their terminology.  The Python mapping of the API is
 substantially based on the DOM Level 2 recommendation.  Some aspects
-of the API will only become available in Python 2.1, or may only be
-available in particular DOM implementations.
+of the API will only become available in future Python releases, or
+may only be available in particular DOM implementations.
 
 DOM applications typically start by parsing some XML into a DOM.  How
 this is accomplished is not covered at all by DOM Level 1, and Level 2
-provides only limited improvements.  There is a
+provides only limited improvements: There is a
 \class{DOMImplementation} object class which provides access to
-\class{Document} creation methods, but these methods were only added
-in DOM Level 2 and were not implemented in time for Python 2.0.  There
-is also no well-defined way to access these methods without an
-existing \class{Document} object.  For Python 2.0, consult the
-documentation for each particular DOM implementation to determine the
-bootstrap procedure needed to create and initialize \class{Document}
-and \class{DocumentType} instances.
+\class{Document} creation methods, but no way to access an XML
+reader/parser/Document builder in an implementation-independent way.
+There is also no well-defined way to access these methods without an
+existing \class{Document} object.  In Python, each DOM implementation
+will provide a function \function{getDOMImplementation}. DOM Level 3
+adds a Load/Store specification, which defines an interface to the
+reader, but this is not implemented in Python.
 
 Once you have a DOM document object, you can access the parts of your
 XML document through its properties and methods.  These properties are
