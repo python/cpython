@@ -32,26 +32,32 @@ h1, h2, h3, h4, h5, h6	{ font-family: avantgarde, sans-serif;
 h1			{ font-size: 180% }
 h2			{ font-size: 150% }
 h3, h4			{ font-size: 120% }
-code, tt		{ font-family: courier }
-var			{ font: italic normal serif }
+code, tt		{ font-family: monospace }
+var			{ font-family: serif;
+                          font-style: italic;
+                          font-weight: normal }
 
 .navigation .title	{ font-family: avantgarde, sans-serif;
 			  font-size: 110% }
 
-.verbatim		{ color: darkblue }
+.verbatim		{ color: #00008b }
 
 .email			{ font-family: avantgarde, sans-serif }
 .mimetype		{ font-family: avantgarde, sans-serif }
 .newsgroup		{ font-family: avantgarde, sans-serif }
 .url			{ font-family: avantgarde, sans-serif }
-.file			{ font-family: avantgarge, sans-serif }
+.file			{ font-family: avantgarde, sans-serif }
+
+.refcount-info          { font-style: italic }
+.refcount-info .value   { font-weight: bold;
+                          color: #006600 }
 
 /*
  * Some decoration for the "See also:" blocks, in part inspired by some of
  * the styling on Lars Marius Garshol's XSA pages.
  * (The blue in the navigation bars is #99CCFF.)
  */
-.seealso		{ background-color: floralwhite;
+.seealso		{ background-color: #fffaf0;
                           border: thin solid black;
                           padding: 4pt }
 
