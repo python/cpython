@@ -166,11 +166,19 @@ type_call(PyTypeObject *type, PyObject *args, PyObject *kwds)
 PyObject *
 PyType_GenericAlloc(PyTypeObject *type, int nitems)
 {
+#define PTRSIZE (sizeof(PyObject *))
+
 	int size;
 	PyObject *obj;
 
 	/* Inline PyObject_New() so we can zero the memory */
 	size = _PyObject_VAR_SIZE(type, nitems);
+	/* Round up size, if necessary, so we fully zero out __dict__ */
+	if (type->tp_itemsize % PTRSIZE != 0) {
+		size += PTRSIZE - 1;
+		size /= PTRSIZE;
+		size *= PTRSIZE;
+	}
 	if (PyType_IS_GC(type)) {
 		obj = _PyObject_GC_Malloc(type, nitems);
 	}
@@ -202,8 +210,6 @@ PyType_GenericNew(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static void
 subtype_dealloc(PyObject *self)
 {
-	int dictoffset = self->ob_type->tp_dictoffset;
-	int weaklistoffset = self->ob_type->tp_weaklistoffset;
 	PyTypeObject *type, *base;
 	destructor f;
 
@@ -218,17 +224,19 @@ subtype_dealloc(PyObject *self)
 	}
 
 	/* If we added a dict, DECREF it */
-	if (dictoffset && !base->tp_dictoffset) {
-		PyObject **dictptr = (PyObject **) ((char *)self + dictoffset);
-		PyObject *dict = *dictptr;
-		if (dict != NULL) {
-			Py_DECREF(dict);
-			*dictptr = NULL;
+	if (type->tp_dictoffset && !base->tp_dictoffset) {
+		PyObject **dictptr = _PyObject_GetDictPtr(self);
+		if (dictptr != NULL) {
+			PyObject *dict = *dictptr;
+			if (dict != NULL) {
+				Py_DECREF(dict);
+				*dictptr = NULL;
+			}
 		}
 	}
 
 	/* If we added weaklist, we clear it */
-	if (weaklistoffset && !base->tp_weaklistoffset)
+	if (type->tp_weaklistoffset && !base->tp_weaklistoffset)
 		PyObject_ClearWeakRefs(self);
 
 	/* Finalize GC if the base doesn't do GC and we do */
@@ -580,6 +588,33 @@ staticforward void object_dealloc(PyObject *);
 staticforward int object_init(PyObject *, PyObject *, PyObject *);
 
 static PyObject *
+subtype_dict(PyObject *obj, void *context)
+{
+	PyObject **dictptr = _PyObject_GetDictPtr(obj);
+	PyObject *dict;
+
+	if (dictptr == NULL) {
+		PyErr_SetString(PyExc_AttributeError,
+				"This object has no __dict__");
+		return NULL;
+	}
+	dict = *dictptr;
+	if (dict == NULL) {
+		Py_INCREF(Py_None);
+		return Py_None;
+	}
+	else {
+		Py_INCREF(dict);
+		return dict;
+	}
+}
+
+struct getsetlist subtype_getsets[] = {
+	{"__dict__", subtype_dict, NULL, NULL},
+	{0},
+};
+
+static PyObject *
 type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 {
 	PyObject *name, *bases, *dict;
@@ -732,7 +767,6 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 	if (slots == NULL && base->tp_dictoffset == 0 &&
 	    (base->tp_setattro == PyObject_GenericSetAttr ||
 	     base->tp_setattro == NULL)) {
-		nslots++;
 		add_dict++;
 	}
 	if (slots == NULL && base->tp_weaklistoffset == 0 &&
@@ -829,15 +863,15 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 	}
 	else {
 		if (add_dict) {
-			type->tp_dictoffset = slotoffset;
-			mp->name = "__dict__";
-			mp->type = T_OBJECT;
-			mp->offset = slotoffset;
-			mp->readonly = 1;
-			mp++;
+			if (base->tp_itemsize)
+				type->tp_dictoffset = -sizeof(PyObject *);
+			else
+				type->tp_dictoffset = slotoffset;
 			slotoffset += sizeof(PyObject *);
+			type->tp_getset = subtype_getsets;
 		}
 		if (add_weak) {
+			assert(!base->tp_itemsize);
 			type->tp_weaklistoffset = slotoffset;
 			mp->name = "__weakref__";
 			mp->type = T_OBJECT;
@@ -848,6 +882,7 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 		}
 	}
 	type->tp_basicsize = slotoffset;
+	type->tp_itemsize = base->tp_itemsize;
 	type->tp_members = et->members;
 
 	/* Special case some slots */
