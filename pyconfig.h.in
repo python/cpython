@@ -498,6 +498,9 @@
 /* Define if you have the setgid function.  */
 #undef HAVE_SETGID
 
+/* Define if you have the setgroups function.  */
+#undef HAVE_SETGROUPS
+
 /* Define if you have the setlocale function.  */
 #undef HAVE_SETLOCALE
 

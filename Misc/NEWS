@@ -44,7 +44,7 @@ Extension modules
 
 - readline now supports setting the startup_hook and the pre_event_hook.
 
-- posix supports chroot where available.
+- posix supports chroot and setgroups where available.
 
 - Decompression objects in the zlib module now accept an optional
   second parameter to decompress() that specifies the maximum amount

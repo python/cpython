@@ -204,6 +204,13 @@ Set the current process' group id.
 Availability: \UNIX{}.
 \end{funcdesc}
 
+\begin{funcdesc}{setgroups}{groups}
+Set list of supplemental group ids associated with the current
+process to \var{groups}.
+Availability: \UNIX{}.
+\versionadded{2.2}
+\end{funcdesc}
+
 \begin{funcdesc}{setpgrp}{}
 Calls the system call \cfunction{setpgrp()} or \cfunction{setpgrp(0,
 0)} depending on which version is implemented (if any).  See the
