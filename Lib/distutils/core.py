@@ -416,30 +416,25 @@ class Distribution:
            Then invoke 'run()' on that command object (or an existing
            one)."""
 
-        # XXX currently, this is the only place where we invoke a
-        # command object's 'run()' method -- so it might make sense to
-        # put the 'set_final_options()' call here, too, instead of
-        # requiring every command's 'run()' to call it first.        
-
         # Already been here, done that? then return silently.
         if self.have_run.get (command):
             return
 
         self.announce ("running " + command)
         cmd_obj = self.find_command_obj (command)
+        cmd_obj.ensure_ready ()
         cmd_obj.run ()
         self.have_run[command] = 1
 
 
     def get_command_option (self, command, option):
-        """Create a command object for 'command' if necessary, finalize
-           its option values by invoking its 'set_final_options()'
-           method, and return the value of its 'option' option.  Raise
-           DistutilsOptionError if 'option' is not known for
-           that 'command'."""
+        """Create a command object for 'command' if necessary, ensure that
+           its option values are all set to their final values, and return
+           the value of its 'option' option.  Raise DistutilsOptionError if
+           'option' is not known for that 'command'."""
 
         cmd_obj = self.find_command_obj (command)
-        cmd_obj.set_final_options ()
+        cmd_obj.ensure_ready ()
         return cmd_obj.get_option (option)
         try:
             return getattr (cmd_obj, option)
@@ -449,14 +444,14 @@ class Distribution:
 
 
     def get_command_options (self, command, *options):
-        """Create a command object for 'command' if necessary, finalize
-           its option values by invoking its 'set_final_options()'
-           method, and return the values of all the options listed in
-           'options' for that command.  Raise DistutilsOptionError if
-           'option' is not known for that 'command'."""
+        """Create a command object for 'command' if necessary, ensure that
+           its option values are all set to their final values, and return
+           a tuple containing the values of all the options listed in
+           'options' for that command.  Raise DistutilsOptionError if any
+           invalid option is supplied in 'options'."""
 
         cmd_obj = self.find_command_obj (command)
-        cmd_obj.set_final_options ()
+        cmd_obj.ensure_ready ()
         values = []
         try:
             for opt in options:
@@ -474,14 +469,14 @@ class Command:
     """Abstract base class for defining command classes, the "worker bees"
        of the Distutils.  A useful analogy for command classes is to
        think of them as subroutines with local variables called
-       "options".  The options are "declared" in 'set_initial_options()'
+       "options".  The options are "declared" in 'set_default_options()'
        and "initialized" (given their real values) in
        'set_final_options()', both of which must be defined by every
        command class.  The distinction between the two is necessary
        because option values might come from the outside world (command
        line, option file, ...), and any options dependent on other
        options must be computed *after* these outside influences have
-       been processed -- hence 'set_final_values()'.  The "body" of the
+       been processed -- hence 'set_final_options()'.  The "body" of the
        subroutine, where it does all its work based on the values of its
        options, is the 'run()' method, which must also be implemented by
        every command class."""
@@ -502,7 +497,20 @@ class Command:
         self.distribution = dist
         self.set_default_options ()
 
+        # 'ready' records whether or not 'set_final_options()' has been
+        # called.  'set_final_options()' itself should not pay attention to
+        # this flag: it is the business of 'ensure_ready()', which always
+        # calls 'set_final_options()', to respect/update it.
+        self.ready = 0
+
     # end __init__ ()
+
+
+    def ensure_ready (self):
+        if not self.ready:
+            self.set_final_options ()
+        self.ready = 1
+        
 
     # Subclasses must define:
     #   set_default_options()
@@ -664,22 +672,32 @@ class Command:
 
     def set_peer_option (self, command, option, value):
         """Attempt to simulate a command-line override of some option
-           value in another command.  Creates a command object for
-           'command' if necessary, sets 'option' to 'value', and invokes
-           'set_final_options()' on that command object.  This will only
-           have the desired effect if the command object for 'command'
-           has not previously been created.  Generally this is used to
-           ensure that the options in 'command' dependent on 'option'
-           are computed, hopefully (but not necessarily) deriving from
-           'value'.  It might be more accurate to call this method
-           'influence_dependent_peer_options()'."""        
+           value in another command.  Finds the command object for
+           'command', sets its 'option' to 'value', and unconditionally
+           calls 'set_final_options()' on it: this means that some command
+           objects may have 'set_final_options()' invoked more than once.
+           Even so, this is not entirely reliable: the other command may
+           already be initialized to its satisfaction, in which case the
+           second 'set_final_options()' invocation will have little or no
+           effect."""
 
         cmd_obj = self.distribution.find_command_obj (command)
         cmd_obj.set_option (option, value)
         cmd_obj.set_final_options ()
 
 
+    def find_peer (self, command, create=1):
+        """Wrapper around Distribution's 'find_command_obj()' method:
+           find (create if necessary and 'create' is true) the command
+           object for 'command'.."""
+
+        return self.distribution.find_command_obj (command, create)
+
+
     def get_peer_option (self, command, option):
+        """Find or create the command object for 'command', and return
+           its 'option' option."""
+
         cmd_obj = self.distribution.find_command_obj (command)
         return cmd_obj.get_option (option)
 
@@ -760,6 +778,13 @@ class Command:
         return util.move_file (src, dst,
                                self.distribution.verbose >= level,
                                self.distribution.dry_run)
+
+
+    def spawn (self, cmd, search_path=1, level=1):
+        from distutils.spawn import spawn
+        spawn (cmd, search_path,
+               self.distribution.verbose >= level,
+               self.distribution.dry_run)
 
 
     def make_file (self, infiles, outfile, func, args,
