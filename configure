@@ -1,6 +1,6 @@
 #! /bin/sh
 
-# From configure.in Revision: 1.77 
+# From configure.in Revision: 1.78 
 
 # Guess values for system-dependent variables and create Makefiles.
 # Generated automatically using autoconf version 2.12 
@@ -1874,7 +1874,7 @@ echo "configure:1874: checking LINKFORSHARED" >&5
 if test -z "$LINKFORSHARED"
 then
 	case $ac_sys_system/$ac_sys_release in
-	AIX*)	LINKFORSHARED='-Wl,-bE:$(srcdir)/python.exp -lld';;
+	AIX*)	LINKFORSHARED='-Wl,-bE:python.exp -lld';;
 	hp*|HP*)
 	    LINKFORSHARED="-Wl,-E -Wl,+s -Wl,+b\$(BINLIBDEST)/lib-dynload";;
 	Linux*) LINKFORSHARED="-Xlinker -export-dynamic";;
