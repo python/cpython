@@ -1126,6 +1126,8 @@ directory is empty:
 import os
 from os.path import join
 # Delete everything reachable from the directory named in 'top'.
+# CAUTION:  This is dangerous!  For example, if top == '/', it
+# could delete all your disk files.
 for root, dirs, files in os.walk(top, topdown=False):
     for name in files:
         os.remove(join(root, name))
