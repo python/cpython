@@ -2,7 +2,7 @@ audiopy - a program to control the Solaris audio device.
 
 Contact: Barry Warsaw
 Email:   bwarsaw@python.org
-Version: 0.1
+Version: 1.0
 
 Introduction
 
@@ -31,10 +31,11 @@ Introduction
 Running as a GUI
 
     Simply start audiopy with no arguments to start it as a Tkinter
-    based GUI application.  It will pop up a window with two sections: 
+    based GUI application.  It will pop up a window with two sections:
     the top portion contains three radio buttons indicating your
-    selected input device; the bottom portion contains three
-    checkboxes indicating your selected output devices.
+    selected input device; the middle portion contains three
+    checkboxes indicating your selected output devices; the bottom
+    portion contains a slider that changes the output gain.
 
     Note the underlined characters in the button labels.  These
     indicate keyboard accelerators so that pressing Alt+character you
@@ -48,9 +49,10 @@ Running as a GUI
     Unsupported devices will appear dimmed out in the GUI.  When run
     as a GUI, audiopy monitors the audio device and automatically
     updates its display if the state of the device is changed by some
-    other means.  In Python 1.5.2 this is done by occasionally polling
-    the device, but in Python 1.5.2 no polling is necessary (you don't
-    really need to know this, but I thought I'd plug 1.5.2 :-).
+    other means.  With Python versions before 1.5.2 this is done by
+    occasionally polling the device, but in Python 1.5.2 no polling is
+    necessary (you don't really need to know this, but I thought I'd
+    plug 1.5.2 :-).
     
 Running as a Command Line Program
 
