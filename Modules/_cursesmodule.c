@@ -100,13 +100,14 @@ char *PyCursesVersion = "2.1";
 /* Includes */
 
 #include "Python.h"
-#define CURSES_MODULE
-#include "py_curses.h"
 
 #ifdef __osf__
 #define _XOPEN_SOURCE_EXTENDED  /* Define macro for OSF/1 */
 #define STRICT_SYSV_CURSES      /* Don't use ncurses extensions */
 #endif
+
+#define CURSES_MODULE
+#include "py_curses.h"
 
 /*  These prototypes are in <term.h>, but including this header 
     #defines many common symbols (such as "lines") which breaks the 
