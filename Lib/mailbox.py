@@ -15,7 +15,7 @@ class _Mailbox:
         self.factory = factory
 
     def __iter__(self):
-        return self
+        return iter(self.next, None)
 
     def next(self):
         while 1:
@@ -195,7 +195,7 @@ class MHMailbox:
         self.factory = factory
 
     def __iter__(self):
-        return self
+        return iter(self.next, None)
 
     def next(self):
         if not self.boxes:
@@ -226,7 +226,7 @@ class Maildir:
         self.boxes = boxes
 
     def __iter__(self):
-        return self
+        return iter(self.next, None)
 
     def next(self):
         if not self.boxes:
