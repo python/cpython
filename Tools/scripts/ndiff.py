@@ -1,17 +1,21 @@
 #! /usr/bin/env python
 
-# Module ndiff version 1.3.0
-# Released to the public domain 26-Mar-1999,
+# Module ndiff version 1.4.0
+# Released to the public domain 27-Mar-1999,
 # by Tim Peters (tim_one@email.msn.com).
 
 # Provided as-is; use at your own risk; no warranty; no promises; enjoy!
 
 """ndiff [-q] file1 file2
+    or
+ndiff (-r1 | -r2) < ndiff_output > file1_or_file2
 
 Print a human-friendly file difference report to stdout.  Both inter-
-and intra-line differences are noted.
+and intra-line differences are noted.  In the second form, recreate file1
+(-r1) or file2 (-r2) on stdout, from an ndiff report on stdin.
 
-If -q ("quiet") is not specified, the first two lines of output are
+In the first form, if -q ("quiet") is not specified, the first two lines
+of output are
 
 -: file1
 +: file2
@@ -24,22 +28,22 @@ Each remaining line begins with a two-letter code:
     "? "    line not present in either input file
 
 Lines beginning with "? " attempt to guide the eye to intraline
-differences, and were not present in either input file.
+differences, and were not present in either input file.  These lines can
+be confusing if the source files contain tab characters.
 
 The first file can be recovered by retaining only lines that begin with
-"  " or "- ", and deleting those 2-character prefixes.
+"  " or "- ", and deleting those 2-character prefixes; use ndiff with -r1.
 
 The second file can be recovered similarly, but by retaining only "  "
-and "+ " lines.  On Unix, the second file can be recovered by piping the
-output through
+and "+ " lines; use ndiff with -r2; or, on Unix, the second file can be
+recovered by piping the output through
+
     sed -n '/^[+ ] /s/^..//p'
-Modifications to recover the first file are left as an exercise for
-the reader.
 
 See module comments for details and programmatic interface.
 """
 
-__version__ = 1, 3, 0
+__version__ = 1, 4, 0
 
 # SequenceMatcher tries to compute a "human-friendly diff" between
 # two sequences (chiefly picturing a file as a sequence of lines,
@@ -324,7 +328,7 @@ class SequenceMatcher:
         if k:
             if alo < i and blo < j:
                 self.__helper(alo, i, blo, j, answer)
-            answer.append( x )
+            answer.append(x)
             if i+k < ahi and j+k < bhi:
                 self.__helper(i+k, ahi, j+k, bhi, answer)
 
@@ -528,14 +532,20 @@ def fancy_helper(a, alo, ahi, b, blo, bhi):
     elif blo < bhi:
         dump('+', b, blo, bhi)
 
+def fail(msg):
+    import sys
+    out = sys.stderr.write
+    out(msg + "\n\n")
+    out(__doc__)
+    return 0
+
 # open a file & return the file object; gripe and return 0 if it
 # couldn't be opened
 def fopen(fname):
     try:
         return open(fname, 'r')
     except IOError, detail:
-        print "couldn't open " + fname + ": " + str(detail)
-        return 0
+        return fail("couldn't open " + fname + ": " + str(detail))
 
 # open two files & spray the diff to stdout; return false iff a problem
 def fcompare(f1name, f2name):
@@ -568,33 +578,52 @@ def fcompare(f1name, f2name):
 def main(args):
     import getopt
     try:
-        opts, args = getopt.getopt(args, "q")
+        opts, args = getopt.getopt(args, "qr:")
     except getopt.error, detail:
-        print str(detail)
-        print __doc__
-        return 0
+        return fail(str(detail))
     noisy = 1
+    qseen = rseen = 0
     for opt, val in opts:
         if opt == "-q":
+            qseen = 1
             noisy = 0
+        elif opt == "-r":
+            rseen = 1
+            whichfile = val
+    if qseen and rseen:
+        return fail("can't specify both -q and -r")
+    if rseen:
+        if args:
+            return fail("no args allowed with -r option")
+        if whichfile in "12":
+            restore(whichfile)
+            return 1
+        return fail("-r value must be 1 or 2")
     if len(args) != 2:
-        print 'need 2 args'
-        print __doc__
-        return 0
+        return fail("need 2 filename args")
     f1name, f2name = args
     if noisy:
         print '-:', f1name
         print '+:', f2name
     return fcompare(f1name, f2name)
 
+def restore(which):
+    import sys
+    tag = {"1": "- ", "2": "+ "}[which]
+    prefixes = ("  ", tag)
+    for line in sys.stdin.readlines():
+        if line[:2] in prefixes:
+            print line[2:],
+
 if __name__ == '__main__':
     import sys
     args = sys.argv[1:]
-    if 1:
-        main(args)
-    else:
+    if "-profile" in args:
         import profile, pstats
+        args.remove("-profile")
         statf = "ndiff.pro"
         profile.run("main(args)", statf)
         stats = pstats.Stats(statf)
         stats.strip_dirs().sort_stats('time').print_stats()
+    else:
+        main(args)
