@@ -566,6 +566,17 @@ mapping_items(mp, args)
 	return v;
 }
 
+int
+getmappingsize(mp)
+	object *mp;
+{
+	if (mp == NULL || !is_mappingobject(mp)) {
+		err_badcall();
+		return NULL;
+	}
+	return ((mappingobject *)mp)->ma_used;
+}
+
 object *
 getmappingkeys(mp)
 	object *mp;
