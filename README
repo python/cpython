@@ -1073,11 +1073,11 @@ however this assumes that you only need to add modules.)
 Building on non-UNIX systems
 ----------------------------
 
-For Windows (2000/NT/ME/98/95), assuming you have MS VC++ 6.0, the
+For Windows (2000/NT/ME/98/95), assuming you have MS VC++ 7.1, the
 project files are in PCbuild, the workspace is pcbuild.dsw.  See
 PCbuild\readme.txt for detailed instructions.
 
-For other non-Unix Windows compilers, in particular Windows 3.1 and
+For other non-Unix Windows compilers, in particular MS VC++ 6.0 and
 for OS/2, enter the directory "PC" and read the file "readme.txt".
 
 For the Mac, a separate source distribution will be made available,
