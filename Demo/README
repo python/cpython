@@ -1,8 +1,17 @@
 This directory contains various demonstrations of what you can do with
-Python.  Most demos are grouped sub(sub*)directories according to
-required optional built-in modules or specific platform; there is also
-a set of generally useful scripts and there are some more-or-less
-complete applications.
+Python.  They were all written by me except where explicitly stated
+otherwise -- in general, demos contributed by others ends up in the
+../Contrib directory, unless I think they're of utmost general
+importance (like Matt Conway's Tk demos).
+
+A fair number of utilities that are useful when while developing
+Python code can be found in the ../Tools directory -- some of these
+can also be considered good examples of how to write Python code.
+
+Finally, in order to save disk space and net bandwidth, not all
+subdirectories listed here are distributed.  They are listed just
+in case I change my mind about them.
+
 
 classes		Some examples of how to use classes.
 
@@ -12,20 +21,13 @@ ibrowse		An Emacs info file browser (uses stdwin).
 		See also ../doc (the Python library documentation can
 		be converted to info format).
 
-lutz		Some demos written by Mark Lutz -- includes a nice
-		enhanced Python shell!!!
-
 md5test		Test program for the optional md5 module.
 
 rpc		A set of classes for building clients and servers for
 		Sun RPC.
 
-rsa		An RSA public-key cryptosystem (needs mpz and md5).
-
 scripts		Some useful Python scripts that I put in my bin
 		directory.  No optional built-in modules needed.
-
-stoffel		Some games written by Stoffel Erasmus.
 
 sockets		Examples for the new built-in module 'socket'.
 
@@ -41,11 +43,11 @@ stdwin		Demos that use the STDWIN library.  Require the 'stdwin'
 threads		Demos that use the 'thread' module.  (Currently these
 		only run on SGIs, but this may change in the future.)
 
-WARNING: many scripts are executable and have a first line saying
+tkinter		Demos using the Tk interface (including Matt Conway's
+		excellent set of demos).
 
-	#! /usr/local/bin/python
+www		An old, abandoned collection of WWW utilities.
 
-This is unlikely to give good results unless you've really installed
-the latest version python there.  Edit the first line before
-installing such scripts; to try them out, you can just say "python
-foo.py" or enter python interactively and say "import foo".
+
+--Guido van Rossum, CWI, Amsterdam <mailto:Guido.van.Rossum@cwi.nl>
+<http://www.cwi.nl/cwi/people/Guido.van.Rossum.html>
