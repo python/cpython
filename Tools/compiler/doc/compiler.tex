@@ -262,7 +262,7 @@ correct order.  A walk begins with a call to \method{preorder()}.  For
 each node, it checks the \var{visitor} argument to \method{preorder()}
 for a method named `visitNodeType,' where NodeType is the name of the
 node's class, e.g. for a \class{While} node a \method{visitWhile()}
-would be called .  If the method exists, it is called with the node as
+would be called.  If the method exists, it is called with the node as
 its first argument.
 
 The visitor method for a particular node type can control how child
