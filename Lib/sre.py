@@ -45,7 +45,7 @@ The special characters are:
     "|"      A|B, creates an RE that will match either A or B.
     (...)    Matches the RE inside the parentheses.
              The contents can be retrieved or matched later in the string.
-    (?iLmsx) Set the I, L, M, S, or X flag for the RE.
+    (?iLmsx) Set the I, L, M, S, or X flag for the RE (see below).
     (?:...)  Non-grouping version of regular parentheses.
     (?P<name>...) The substring matched by the group is accessible by name.
     (?P=name)     Matches the text matched earlier by the group named name.
@@ -80,7 +80,6 @@ This module exports the following functions:
     findall  Find all occurrences of a pattern in a string.
     compile  Compile a pattern into a RegexObject.
     purge    Clear the regular expression cache.
-    template Compile a template pattern, returning a pattern object.
     escape   Backslash all non-alphanumerics in a string.
 
 Some of the functions in this module takes flags as optional parameters:
@@ -90,11 +89,12 @@ Some of the functions in this module takes flags as optional parameters:
                    "$" matches the end of lines as well as the string.
     S  DOTALL      "." matches any character at all, including the newline.
     X  VERBOSE     Ignore whitespace and comments for nicer looking RE's.
-    U  UNICODE     Use unicode locale.
+    U  UNICODE     Make \w, \W, \b, \B, dependent on the Unicode locale.
 
 This module also defines an exception 'error'.
 
 """
+
 import sre_compile
 import sre_parse
 
@@ -104,7 +104,7 @@ __all__ = [ "match", "search", "sub", "subn", "split", "findall",
     "U", "IGNORECASE", "LOCALE", "MULTILINE", "DOTALL", "VERBOSE",
     "UNICODE", "error" ]
 
-__version__ = "2.1b2"
+__version__ = "2.1.1"
 
 # this module works under 1.5.2 and later.  don't use string methods
 import string
@@ -269,6 +269,9 @@ def _subn(pattern, template, text, count=0, sub=0):
         b, e = m.span()
         if i < b:
             append(text[i:b])
+        elif i == b == e and n:
+            append(text[i:b])
+            continue # ignore empty match at previous position
         append(filter(m))
         i = e
         n = n + 1

@@ -123,6 +123,10 @@ test(r"""sre.sub('\r\n', r'\n', 'abc\r\ndef\r\n')""", 'abc\ndef\n')
 test(r"""sre.sub(r'\r\n', '\n', 'abc\r\ndef\r\n')""", 'abc\ndef\n')
 test(r"""sre.sub('\r\n', '\n', 'abc\r\ndef\r\n')""", 'abc\ndef\n')
 
+# Test for empty sub() behaviour, see SF bug #462270
+test(r"""sre.sub('x*', '-', 'abxd')""", '-a-b-d-')
+test(r"""sre.sub('x+', '-', 'abxd')""", 'ab-d')
+
 if verbose:
     print 'Running tests on symbolic references'
 

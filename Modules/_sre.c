@@ -31,6 +31,7 @@
  * 2001-04-28 fl  added __copy__ methods (work in progress)
  * 2001-05-14 fl  fixes for 1.5.2
  * 2001-07-01 fl  added BIGCHARSET support (from Martin von Loewis)
+ * 2001-09-18 fl  
  *
  * Copyright (c) 1997-2001 by Secret Labs AB.  All rights reserved.
  *
@@ -132,6 +133,8 @@ static char copyright[] =
 #define SRE_LINEBREAK_MASK 4
 #define SRE_ALNUM_MASK 8
 #define SRE_WORD_MASK 16
+
+/* FIXME: this assumes ASCII.  create tables in init_sre() instead */
 
 static char sre_char_info[128] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 6, 2,
 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0,
@@ -1141,6 +1144,7 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern, int level)
     }
 
     /* can't end up here */
+    /* return SRE_ERROR_ILLEGAL; -- see python-dev discussion */
 }
 
 LOCAL(int)
@@ -2624,16 +2628,17 @@ init_sre(void)
     m = Py_InitModule("_" SRE_MODULE, _functions);
     d = PyModule_GetDict(m);
 
-    PyDict_SetItemString(
-        d, "MAGIC", (x = (PyObject*) PyInt_FromLong(SRE_MAGIC))
-        );
-    Py_XDECREF(x);
+    x = PyInt_FromLong(SRE_MAGIC);
+    if (x) {
+        PyDict_SetItemString(d, "MAGIC", x);
+        Py_DECREF(x);
+    }
 
-    PyDict_SetItemString(
-	d, "copyright", (x = (PyObject*)PyString_FromString(copyright))
-        );
-    Py_XDECREF(x);
-
+    x = PyString_FromString(copyright);
+    if (x) {
+        PyDict_SetItemString(d, "copyright", x);
+        Py_DECREF(x);
+    }
 }
 
 #endif /* !defined(SRE_RECURSIVE) */
