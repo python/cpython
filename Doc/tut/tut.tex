@@ -2053,6 +2053,43 @@ always creates a tuple, and unpacking works for any sequence.
 % XXX Add a bit on the difference between tuples and lists.
 
 
+\section{Sets \label{sets}}
+
+Python also includes a data type for \emph{sets}.  A set is an unordered
+collection with no duplicate elements.  Basic uses include membership
+testing and eliminating duplicate entries.  Set objects also support
+mathematical operations like union, intersection, difference, and
+symmetric difference.
+
+Here is a brief demonstration:
+
+\begin{verbatim}
+>>> basket = ['apple', 'orange', 'apple', 'pear', 'orange', 'banana']
+>>> fruits = set(basket)               # create a set without duplicates
+>>> fruits
+set(['orange', 'pear', 'apple', 'banana'])
+>>> 'orange' in fruits                 # fast membership testing
+True
+>>> 'crabgrass' in fruits
+False
+
+>>> # Demonstrate set operations on unique letters from two words
+...
+>>> a = set('abracadabra')
+>>> b = set('alacazam')
+>>> a                                  # unique letters in a
+set(['a', 'r', 'b', 'c', 'd'])
+>>> a - b                              # letters in a but not in b
+set(['r', 'd', 'b'])
+>>> a | b                              # letters in either a or b
+set(['a', 'c', 'r', 'd', 'b', 'm', 'z', 'l'])
+>>> a & b                              # letters in both a and b
+set(['a', 'c'])
+>>> a ^ b                              # letters in a or b but not both
+set(['r', 'd', 'b', 'm', 'z', 'l'])
+\end{verbatim}
+
+
 \section{Dictionaries \label{dictionaries}}
 
 Another useful data type built into Python is the
