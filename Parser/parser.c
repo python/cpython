@@ -40,7 +40,7 @@ s_push(register stack *s, dfa *d, node *parent)
 	register stackentry *top;
 	if (s->s_top == s->s_base) {
 		fprintf(stderr, "s_push: parser stack overflow\n");
-		return -1;
+		return E_NOMEM;
 	}
 	top = --s->s_top;
 	top->s_dfa = d;
