@@ -72,7 +72,7 @@ mailbox specified by \var{dirname} is made available.
 Access a Babyl mailbox, which is similar to an MMDF mailbox.  In
 Babyl format, each message has two sets of headers, the
 \emph{original} headers and the \emph{visible} headers.  The original
-headers appear before a a line containing only \code{'*** EOOH ***'}
+headers appear before a line containing only \code{'*** EOOH ***'}
 (End-Of-Original-Headers) and the visible headers appear after the
 \code{EOOH} line.  Babyl-compliant mail readers will show you only the
 visible headers, and \class{BabylMailbox} objects will return messages

@@ -46,7 +46,7 @@ certain stdio libraries in which \cfunction{tell()} discards buffered
 data before discovering that the \cfunction{lseek()} system call
 doesn't work.  For maximum portability, you should set the seekable
 argument to zero to prevent that initial \method{tell()} when passing
-in an unseekable object such as a a file object created from a socket
+in an unseekable object such as a file object created from a socket
 object.
 
 Input lines as read from the file may either be terminated by CR-LF or
