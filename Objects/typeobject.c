@@ -1147,7 +1147,7 @@ type_subclasses(PyTypeObject *type, PyObject *args_ignored)
 	n = PyList_GET_SIZE(raw);
 	for (i = 0; i < n; i++) {
 		ref = PyList_GET_ITEM(raw, i);
-		assert(PyWeakref_CheckRef(res));
+		assert(PyWeakref_CheckRef(ref));
 		ref = PyWeakref_GET_OBJECT(ref);
 		if (ref != Py_None) {
 			if (PyList_Append(list, ref) < 0) {
