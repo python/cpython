@@ -43,13 +43,21 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #undef S_ISREG
 #endif
 
+#include "macstat.h"
 #ifdef USE_GUSI
+/* Remove defines from macstat.h */
+#undef S_IFMT
+#undef S_IFDIR
+#undef S_IFREG
+#undef S_IREAD
+#undef S_IWRITE
+#undef S_IEXEC
+
 #include <GUSI.h>
 #include <sys/types.h>
 #include <stat.h>
-#define macstat stat
 #else
-#include "macstat.h"
+#define stat macstat
 #endif
 
 #ifdef __MWERKS__
@@ -435,16 +443,29 @@ mac_stat(self, args)
 	object *self;
 	object *args;
 {
-	struct macstat st;
+	struct stat st;
 	char *path;
 	int res;
 	if (!getargs(args, "s", &path))
 		return NULL;
 	BGN_SAVE
-	res = macstat(path, &st);
+	res = stat(path, &st);
 	END_SAVE
 	if (res != 0)
 		return mac_error();
+#if 1
+	return mkvalue("(lllllllddd)",
+		    (long)st.st_mode,
+		    (long)st.st_ino,
+		    (long)st.st_dev,
+		    (long)st.st_nlink,
+		    (long)st.st_uid,
+		    (long)st.st_gid,
+		    (long)st.st_size,
+		    (double)st.st_atime,
+		    (double)st.st_mtime,
+		    (double)st.st_ctime);
+#else
 	return mkvalue("(llllllllll)",
 		    (long)st.st_mode,
 		    (long)st.st_ino,
@@ -456,6 +477,7 @@ mac_stat(self, args)
 		    (long)st.st_atime,
 		    (long)st.st_mtime,
 		    (long)st.st_ctime);
+#endif
 }
 
 static object *
@@ -463,18 +485,29 @@ mac_xstat(self, args)
 	object *self;
 	object *args;
 {
-	struct macstat st;
+	struct macstat mst;
+	struct stat st;
 	char *path;
 	int res;
 	if (!getargs(args, "s", &path))
 		return NULL;
+	/*
+	** Convoluted: we want stat() and xstat() to agree, so we call both
+	** stat and macstat, and use the latter only for values not provided by
+	** the former.
+	*/
 	BGN_SAVE
-	res = macstat(path, &st);
+	res = macstat(path, &mst);
 	END_SAVE
 	if (res != 0)
 		return mac_error();
-#ifdef USE_GUSI
-	return mkvalue("(llllllllll)",
+	BGN_SAVE
+	res = stat(path, &st);
+	END_SAVE
+	if (res != 0)
+		return mac_error();
+#if 1
+	return mkvalue("(llllllldddls#s#)",
 		    (long)st.st_mode,
 		    (long)st.st_ino,
 		    (long)st.st_dev,
@@ -482,9 +515,12 @@ mac_xstat(self, args)
 		    (long)st.st_uid,
 		    (long)st.st_gid,
 		    (long)st.st_size,
-		    (long)st.st_atime,
-		    (long)st.st_mtime,
-		    (long)st.st_ctime);
+		    (double)st.st_atime,
+		    (double)st.st_mtime,
+		    (double)st.st_ctime,
+		    (long)mst.st_rsize,
+		    mst.st_creator, 4,
+		    mst.st_type, 4);
 #else
 	return mkvalue("(llllllllllls#s#)",
 		    (long)st.st_mode,
@@ -497,9 +533,9 @@ mac_xstat(self, args)
 		    (long)st.st_atime,
 		    (long)st.st_mtime,
 		    (long)st.st_ctime,
-		    (long)st.st_rsize,
-		    st.st_creator, 4,
-		    st.st_type, 4);
+		    (long)mst.st_rsize,
+		    mst.st_creator, 4,
+		    mst.st_type, 4);
 #endif
 }
 
