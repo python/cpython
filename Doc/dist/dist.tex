@@ -21,7 +21,7 @@
 \begin{abstract}
   \noindent
   This document describes the Python Distribution Utilities
-  (``Distutils'') from the module developer's point-of-view, describing
+  (``Distutils'') from the module developer's point of view, describing
   how to use the Distutils to make Python modules and extensions easily
   available to a wider audience with very little overhead for
   build/release/install mechanics.
@@ -71,21 +71,21 @@ Python module distributions in the most natural way for their platform,
 without having to run a single setup script or compile a line of code.
 
 
-\subsection{A simple example}
+\subsection{A Simple Example}
 \label{simple-example}
 
-The setup script is usually quite simple, although since it's written in
-Python, there are no arbitrary limits to what you can do with
-it, though you should be careful about putting arbitrarily expensive
-  operations in your setup script. Unlike, say, Autoconf-style configure
-  scripts, the setup script may be run multiple times in the course of
-  building and installing your module distribution.  If you need to
-  insert potentially expensive processing steps into the Distutils
-  chain, see section~\ref{extending} on extending the Distutils.
+The setup script is usually quite simple, although since it's written
+in Python, there are no arbitrary limits to what you can do with it,
+though you should be careful about putting arbitrarily expensive
+operations in your setup script. Unlike, say, Autoconf-style configure
+scripts, the setup script may be run multiple times in the course of
+building and installing your module distribution.  If you need to
+insert potentially expensive processing steps into the Distutils
+chain, see section~\ref{extending} on extending the Distutils.
 
 If all you want to do is distribute a module called \module{foo},
 contained in a file \file{foo.py}, then your setup script can be as
-little as this:
+simple as this:
 
 \begin{verbatim}
 from distutils.core import setup
@@ -99,11 +99,11 @@ Some observations:
 \item most information that you supply to the Distutils is supplied as
   keyword arguments to the \function{setup()} function
 \item those keyword arguments fall into two categories: package
-  meta-data (name, version number) and information about what's in the
+  metadata (name, version number) and information about what's in the
   package (a list of pure Python modules, in this case)
 \item modules are specified by module name, not filename (the same will
   hold true for packages and extensions)
-\item it's recommended that you supply a little more meta-data, in
+\item it's recommended that you supply a little more metadata, in
   particular your name, email address and a URL for the project
   (see section~\ref{setup-script} for an example)
 \end{itemize}
@@ -116,7 +116,7 @@ python setup.py sdist
 \end{verbatim}
 
 which will create an archive file (e.g., tarball on \UNIX, ZIP file on
-Windows) containing your setup script, \file{setup.py}, and your module,
+Windows) containing your setup script \file{setup.py}, and your module
 \file{foo.py}.  The archive file will be named \file{foo-1.0.tar.gz} (or
 \file{.zip}), and will unpack into a directory \file{foo-1.0}.
 
@@ -132,7 +132,7 @@ which will ultimately copy \file{foo.py} to the appropriate directory
 for third-party modules in their Python installation.
 
 This simple example demonstrates some fundamental concepts of the
-Distutils: first, both developers and installers have the same basic
+Distutils. First, both developers and installers have the same basic
 user interface, i.e. the setup script.  The difference is which
 Distutils \emph{commands} they use: the \command{sdist} command is
 almost exclusively for module developers, while \command{install} is
@@ -155,16 +155,17 @@ current directory.
 
 Other useful built distribution formats are RPM, implemented by the
 \command{bdist\_rpm} command, Solaris \program{pkgtool}
-(\command{bdist\_pkgtool}, and HP-UX \program{swinstall} (\command{bdist_sdux}).
-For example, the following command will create an RPM file called
-\file{foo-1.0.noarch.rpm}:
+(\command{bdist\_pkgtool}), and HP-UX \program{swinstall}
+(\command{bdist_sdux}).  For example, the following command will
+create an RPM file called \file{foo-1.0.noarch.rpm}:
 
 \begin{verbatim}
 python setup.py bdist_rpm
 \end{verbatim}
 
-(This uses the \command{rpm} command, so has to be run on an RPM-based
-system such as Red Hat Linux, SuSE Linux, or Mandrake Linux.)
+(The \command{bdist\_rpm} command uses the \command{rpm} executable,
+therefore this has to be run on an RPM-based system such as Red Hat
+Linux, SuSE Linux, or Mandrake Linux.)
 
 You can find out what distribution formats are available at any time by
 running
@@ -209,7 +210,7 @@ following glossary of common Python terms:
   third-party modules that don't belong to a larger module collection.
   Unlike regular packages, modules in the root package can be found in
   many directories: in fact, every directory listed in \code{sys.path}
-  can contribute modules to the root package.
+  contributes modules to the root package.
 \end{description}
 
 
@@ -277,7 +278,7 @@ setup(name="Distutils",
 
 There are only two differences between this and the trivial one-file
 distribution presented in section~\ref{simple-example}: more
-meta-data, and the specification of pure Python modules by package,
+metadata, and the specification of pure Python modules by package,
 rather than by module.  This is important since the Distutils consist of
 a couple of dozen modules split into (so far) two packages; an explicit
 list of every module would be tedious to generate and difficult to
@@ -294,15 +295,17 @@ this document are slash-separated.  (MacOS programmers should keep in
 mind that the \emph{absence} of a leading slash indicates a relative
 path, the opposite of the MacOS convention with colons.)
 
-This, of course, only applies to pathnames given to Distutils functions.
-If you, for example, use standard python functions such as \function{glob.glob}
-or \function{os.listdir} to specify files, you should be careful to write portable
-code instead of hardcoding path separators:
+This, of course, only applies to pathnames given to Distutils
+functions.  If you, for example, use standard python functions such as
+\function{glob.glob} or \function{os.listdir} to specify files, you
+should be careful to write portable code instead of hardcoding path
+separators:
 
 \begin{verbatim}
     glob.glob(os.path.join('mydir', 'subdir', '*.html'))
     os.listdir(os.path.join('mydir', 'subdir'))
 \end{verbatim}
+
 
 \subsection{Listing whole packages}
 \label{listing-packages}
@@ -317,15 +320,15 @@ obvious one, i.e. package \module{distutils} is found in the directory
 \code{packages = ['foo']} in your setup script, you are promising that
 the Distutils will find a file \file{foo/\_\_init\_\_.py} (which might
 be spelled differently on your system, but you get the idea) relative to
-the directory where your setup script lives.  (If you break this
-promise, the Distutils will issue a warning but process the broken
-package anyways.)
+the directory where your setup script lives.  If you break this
+promise, the Distutils will issue a warning but still process the broken
+package anyways.
 
 If you use a different convention to lay out your source directory,
 that's no problem: you just have to supply the \option{package\_dir}
 option to tell the Distutils about your convention.  For example, say
 you keep all Python source under \file{lib}, so that modules in the
-``root package'' (i.e., not in any package at all) are right in
+``root package'' (i.e., not in any package at all) are in
 \file{lib}, modules in the \module{foo} package are in \file{lib/foo},
 and so forth.  Then you would put
 
@@ -383,6 +386,7 @@ the \option{package\_dir} option.
 \subsection{Describing extension modules}
 \label{describing-extensions}
 
+% XXX read over this section
 Just as writing Python extension modules is a bit more complicated than
 writing pure Python modules, describing them to the Distutils is a bit
 more complicated.  Unlike pure modules, it's not enough just to list
@@ -617,11 +621,11 @@ is not needed when building compiled extensions: Distutils
 will automatically add \code{initmodule}
 to the list of exported symbols.
 
-\subsection{Listing scripts}
+\subsection{Installing Scripts}
 So far we have been dealing with pure and non-pure Python modules,
 which are usually not run by themselves but imported by scripts.
 
-Scripts are files containing Python source code, indended to be
+Scripts are files containing Python source code, intended to be
 started from the command line.  Scripts don't require Distutils to do
 anything very complicated.  The only clever feature is that if the
 first line of the script starts with \code{\#!} and contains the word
@@ -629,14 +633,21 @@ first line of the script starts with \code{\#!} and contains the word
 current interpreter location.
 
 The \option{scripts} option simply is a list of files to be handled
-in this way.
+in this way.  From the PyXML setup script:
+
+\begin{verbatim}
+setup (... 
+       scripts = ['scripts/xmlproc_parse', 'scripts/xmlproc_val']
+      )
+\end{verbatim}
 
 
-\subsection{Listing additional files}
+\subsection{Installing Additional Files}
 
 The \option{data\_files} option can be used to specify additional
-files needed by the module distribution: configuration files,
-data files, anything which does not fit in the previous categories.
+files needed by the module distribution: configuration files, message
+catalogs, data files, anything which doesn't fit in the previous
+categories.
 
 \option{data\_files} specifies a sequence of (\var{directory},
 \var{files}) pairs in the following way:
@@ -644,7 +655,9 @@ data files, anything which does not fit in the previous categories.
 \begin{verbatim}
 setup(...
       data_files=[('bitmaps', ['bm/b1.gif', 'bm/b2.gif']),
-                  ('config', ['cfg/data.cfg'])])
+                  ('config', ['cfg/data.cfg']),
+                  ('/etc/init.d', ['init-script'])]
+     )
 \end{verbatim}
 
 Note that you can specify the directory names where the data files
@@ -738,9 +751,6 @@ Options for 'build_ext' command:
   --undef (-U)         C preprocessor macros to undefine
 [...]
 \end{verbatim}
-
-Or consult section \ref{reference} of this document (the command
-reference).
 
 Note that an option spelled \longprogramopt{foo-bar} on the command-line 
 is spelled \option{foo\_bar} in configuration files.
@@ -1258,10 +1268,10 @@ extending the Distutils.)
 Executable installers are the natural format for binary
 distributions on Windows.  They display a nice graphical user interface,
 display some information about the module distribution to be installed taken
-from the meta-data in the setup script, let the user select a few
+from the metadata in the setup script, let the user select a few
 (currently maybe too few) options, and start or cancel the installation.
 
-Since the meta-data is taken from the setup script, creating
+Since the metadata is taken from the setup script, creating
 Windows installers is usually as easy as running:
 
 \begin{verbatim}
