@@ -137,7 +137,7 @@ def dotest(pickle):
             pass
         else:
             print "accepted insecure string: %s" % repr(buf)
-        
+
 
 import pickle
 dotest(pickle)

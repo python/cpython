@@ -2,7 +2,7 @@
 """Test script for the grp module
    Roger E. Masse
 """
-  
+
 import grp
 from test_support import verbose
 

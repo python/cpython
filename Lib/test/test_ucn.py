@@ -52,31 +52,30 @@ k_cchMaxUnicodeName = 83
 
 s = "\N{" + "1" * (k_cchMaxUnicodeName + 2) + "}"
 try:
-  unicode(s, 'unicode-escape', 'strict')
+    unicode(s, 'unicode-escape', 'strict')
 except UnicodeError:
-  pass
+    pass
 else:
-  raise AssertionError, "failed to raise an exception when presented " \
-                        "with a UCN > k_cchMaxUnicodeName"
+    raise AssertionError, "failed to raise an exception when presented " \
+                          "with a UCN > k_cchMaxUnicodeName"
 try:
-  unicode("\N{blah}", 'unicode-escape', 'strict')
+    unicode("\N{blah}", 'unicode-escape', 'strict')
 except UnicodeError:
-  pass
+    pass
 else:
-  raise AssertionError, "failed to raise an exception when given a bogus character name"
+    raise AssertionError, "failed to raise an exception when given a bogus character name"
 
 try:
-  unicode("\N{SPACE", 'unicode-escape', 'strict')
+    unicode("\N{SPACE", 'unicode-escape', 'strict')
 except UnicodeError:
-  pass
+    pass
 else:
-  raise AssertionError, "failed to raise an exception for a missing closing brace."
+    raise AssertionError, "failed to raise an exception for a missing closing brace."
 
 try:
-  unicode("\NSPACE", 'unicode-escape', 'strict')
+    unicode("\NSPACE", 'unicode-escape', 'strict')
 except UnicodeError:
-  pass
+    pass
 else:
-  raise AssertionError, "failed to raise an exception for a missing opening brace."
+    raise AssertionError, "failed to raise an exception for a missing opening brace."
 print "done."
-

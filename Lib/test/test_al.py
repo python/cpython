@@ -21,4 +21,3 @@ def main():
         getattr(al, attr)
 
 main()
-

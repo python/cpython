@@ -4,7 +4,7 @@ import sys
 
 class HackedSysModule:
     # The regression test will have real values in sys.argv, which
-    # will completely confuse the test of the cgi module 
+    # will completely confuse the test of the cgi module
     argv = []
     stdin = sys.stdin
 
@@ -53,7 +53,7 @@ def do_test(buf, method):
 
 # A list of test cases.  Each test case is a a two-tuple that contains
 # a string with the query and a dictionary with the expected result.
-    
+
 parse_test_cases = [
     ("", ValueError("bad query field: ''")),
     ("&", ValueError("bad query field: ''")),
@@ -90,7 +90,7 @@ parse_test_cases = [
       'ss': ['env'],
       'view': ['bustomer'],
       }),
-    
+
     ("group_id=5470&set=custom&_assigned_to=31392&_status=1&_category=100&SUBMIT=Browse",
      {'SUBMIT': ['Browse'],
       '_assigned_to': ['31392'],

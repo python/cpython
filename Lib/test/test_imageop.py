@@ -18,7 +18,7 @@ def main(use_rgbimg=1):
         image, width, height = getrgbimage('test.rgb')
     else:
         image, width, height = getimage('test.rgb')
-        
+
     # Return the selected part of image, which should by width by height
     # in size and consist of pixels of psize bytes.
     if verbose:
@@ -28,7 +28,7 @@ def main(use_rgbimg=1):
     # Return image scaled to size newwidth by newheight. No interpolation
     # is done, scaling is done by simple-minded pixel duplication or removal.
     # Therefore, computer-generated images or dithered images will
-    # not look nice after scaling. 
+    # not look nice after scaling.
     if verbose:
         print 'scale'
     scaleimage = imageop.scale(image, 4, width, height, 1, 1)
@@ -36,7 +36,7 @@ def main(use_rgbimg=1):
     # Run a vertical low-pass filter over an image. It does so by computing
     # each destination pixel as the average of two vertically-aligned source
     # pixels. The main use of this routine is to forestall excessive flicker
-    # if the image two vertically-aligned source pixels,  hence the name. 
+    # if the image two vertically-aligned source pixels,  hence the name.
     if verbose:
         print 'tovideo'
     videoimage = imageop.tovideo (image, 4, width, height)
@@ -50,7 +50,7 @@ def main(use_rgbimg=1):
     if verbose:
         print 'rgb82rgb'
     image = imageop.rgb82rgb(greyimage, width, height)
-    
+
     # Convert an rgb image to an 8 bit greyscale image
     if verbose:
         print 'rgb2grey'
@@ -60,13 +60,13 @@ def main(use_rgbimg=1):
     if verbose:
         print 'grey2rgb'
     image = imageop.grey2rgb(greyimage, width, height)
-    
+
     # Convert a 8-bit deep greyscale image to a 1-bit deep image by
     # thresholding all the pixels. The resulting image is tightly packed
-    # and is probably only useful as an argument to mono2grey. 
+    # and is probably only useful as an argument to mono2grey.
     if verbose:
         print 'grey2mono'
-    monoimage = imageop.grey2mono (greyimage, width, height, 0) 
+    monoimage = imageop.grey2mono (greyimage, width, height, 0)
 
     # monoimage, width, height = getimage('monotest.rgb')
     # Convert a 1-bit monochrome image to an 8 bit greyscale or color image.
@@ -85,30 +85,30 @@ def main(use_rgbimg=1):
     monoimage = imageop.dither2mono (greyimage, width, height)
 
     # Convert an 8-bit greyscale image to a 4-bit greyscale image without
-    # dithering. 
+    # dithering.
     if verbose:
         print 'grey2grey4'
-    grey4image = imageop.grey2grey4 (greyimage, width, height) 
+    grey4image = imageop.grey2grey4 (greyimage, width, height)
 
     # Convert an 8-bit greyscale image to a 2-bit greyscale image without
-    # dithering. 
+    # dithering.
     if verbose:
         print 'grey2grey2'
-    grey2image = imageop.grey2grey2 (greyimage, width, height) 
+    grey2image = imageop.grey2grey2 (greyimage, width, height)
 
     # Convert an 8-bit greyscale image to a 2-bit greyscale image with
     # dithering. As for dither2mono, the dithering algorithm is currently
-    # very simple. 
+    # very simple.
     if verbose:
         print 'dither2grey2'
-    grey2image = imageop.dither2grey2 (greyimage, width, height) 
+    grey2image = imageop.dither2grey2 (greyimage, width, height)
 
-    # Convert a 4-bit greyscale image to an 8-bit greyscale image. 
+    # Convert a 4-bit greyscale image to an 8-bit greyscale image.
     if verbose:
         print 'grey42grey'
-    greyimage = imageop.grey42grey (grey4image, width, height) 
+    greyimage = imageop.grey42grey (grey4image, width, height)
 
-    # Convert a 2-bit greyscale image to an 8-bit greyscale image. 
+    # Convert a 2-bit greyscale image to an 8-bit greyscale image.
     if verbose:
         print 'grey22grey'
     image = imageop.grey22grey (grey2image, width, height)
@@ -132,14 +132,14 @@ def getrgbimage(name):
 
     image = rgbimg.longimagedata(name)
     return (image, sizes[0], sizes[1])
-  
+
 def getimage(name):
     """return a tuple consisting of
        image (in 'imgfile' format) width and height
     """
 
     import imgfile
-  
+
     try:
         sizes = imgfile.getsizes(name)
     except imgfile.error:

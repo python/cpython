@@ -179,41 +179,41 @@ if 0:
 
     # Non surrogate above surrogate value, fixup required
     def test_lecmp(s, s2):
-      assert s <  s2 , "comparison failed on %s < %s" % (s, s2)
+        assert s <  s2 , "comparison failed on %s < %s" % (s, s2)
 
     def test_fixup(s):
-      s2 = u'\ud800\udc01'
-      test_lecmp(s, s2)
-      s2 = u'\ud900\udc01'
-      test_lecmp(s, s2)
-      s2 = u'\uda00\udc01'
-      test_lecmp(s, s2)
-      s2 = u'\udb00\udc01'
-      test_lecmp(s, s2)
-      s2 = u'\ud800\udd01'
-      test_lecmp(s, s2)
-      s2 = u'\ud900\udd01'
-      test_lecmp(s, s2)
-      s2 = u'\uda00\udd01'
-      test_lecmp(s, s2)
-      s2 = u'\udb00\udd01'
-      test_lecmp(s, s2)
-      s2 = u'\ud800\ude01'
-      test_lecmp(s, s2)
-      s2 = u'\ud900\ude01'
-      test_lecmp(s, s2)
-      s2 = u'\uda00\ude01'
-      test_lecmp(s, s2)
-      s2 = u'\udb00\ude01'
-      test_lecmp(s, s2)
-      s2 = u'\ud800\udfff'
-      test_lecmp(s, s2)
-      s2 = u'\ud900\udfff'
-      test_lecmp(s, s2)
-      s2 = u'\uda00\udfff'
-      test_lecmp(s, s2)
-      s2 = u'\udb00\udfff'
-      test_lecmp(s, s2)
+        s2 = u'\ud800\udc01'
+        test_lecmp(s, s2)
+        s2 = u'\ud900\udc01'
+        test_lecmp(s, s2)
+        s2 = u'\uda00\udc01'
+        test_lecmp(s, s2)
+        s2 = u'\udb00\udc01'
+        test_lecmp(s, s2)
+        s2 = u'\ud800\udd01'
+        test_lecmp(s, s2)
+        s2 = u'\ud900\udd01'
+        test_lecmp(s, s2)
+        s2 = u'\uda00\udd01'
+        test_lecmp(s, s2)
+        s2 = u'\udb00\udd01'
+        test_lecmp(s, s2)
+        s2 = u'\ud800\ude01'
+        test_lecmp(s, s2)
+        s2 = u'\ud900\ude01'
+        test_lecmp(s, s2)
+        s2 = u'\uda00\ude01'
+        test_lecmp(s, s2)
+        s2 = u'\udb00\ude01'
+        test_lecmp(s, s2)
+        s2 = u'\ud800\udfff'
+        test_lecmp(s, s2)
+        s2 = u'\ud900\udfff'
+        test_lecmp(s, s2)
+        s2 = u'\uda00\udfff'
+        test_lecmp(s, s2)
+        s2 = u'\udb00\udfff'
+        test_lecmp(s, s2)
 
     test_fixup(u'\ue000')
     test_fixup(u'\uff61')
@@ -321,13 +321,13 @@ assert u"%c" % (u"a",) == u'a'
 assert u"%c" % ("a",) == u'a'
 assert u"%c" % (34,) == u'"'
 assert u"%c" % (36,) == u'$'
-value = u"%r, %r" % (u"abc", "abc") 
+value = u"%r, %r" % (u"abc", "abc")
 if value != u"u'abc', 'abc'":
     print '*** formatting failed for "%s"' % 'u"%r, %r" % (u"abc", "abc")'
 
 assert u"%(x)s, %(y)s" % {'x':u"abc", 'y':"def"} == u'abc, def'
 try:
-    value = u"%(x)s, %(ä)s" % {'x':u"abc", u'ä'.encode('utf-8'):"def"} 
+    value = u"%(x)s, %(ä)s" % {'x':u"abc", u'ä'.encode('utf-8'):"def"}
 except KeyError:
     print '*** formatting failed for "%s"' % "u'abc, def'"
 else:
@@ -453,7 +453,7 @@ for encoding in (
     'cp037', 'cp1026',
     'cp437', 'cp500', 'cp737', 'cp775', 'cp850',
     'cp852', 'cp855', 'cp860', 'cp861', 'cp862',
-    'cp863', 'cp865', 'cp866', 
+    'cp863', 'cp865', 'cp866',
     'iso8859_10', 'iso8859_13', 'iso8859_14', 'iso8859_15',
     'iso8859_2', 'iso8859_3', 'iso8859_4', 'iso8859_5', 'iso8859_6',
     'iso8859_7', 'iso8859_9', 'koi8_r', 'latin_1',
@@ -465,10 +465,10 @@ for encoding in (
 
     'mac_greek', 'mac_iceland','mac_roman', 'mac_turkish',
     'cp1006', 'cp875', 'iso8859_8',
-    
+
     ### These have undefined mappings:
     #'cp424',
-    
+
     ):
     try:
         assert unicode(s,encoding).encode(encoding) == s
@@ -483,21 +483,21 @@ for encoding in (
     'cp037', 'cp1026',
     'cp437', 'cp500', 'cp737', 'cp775', 'cp850',
     'cp852', 'cp855', 'cp860', 'cp861', 'cp862',
-    'cp863', 'cp865', 'cp866', 
+    'cp863', 'cp865', 'cp866',
     'iso8859_10', 'iso8859_13', 'iso8859_14', 'iso8859_15',
     'iso8859_2', 'iso8859_3', 'iso8859_4', 'iso8859_5', 'iso8859_6',
     'iso8859_7', 'iso8859_9', 'koi8_r', 'latin_1',
     'mac_cyrillic', 'mac_latin2',
-    
+
     ### These have undefined mappings:
     #'cp1250', 'cp1251', 'cp1252', 'cp1253', 'cp1254', 'cp1255',
     #'cp1256', 'cp1257', 'cp1258',
     #'cp424', 'cp856', 'cp857', 'cp864', 'cp869', 'cp874',
     #'mac_greek', 'mac_iceland','mac_roman', 'mac_turkish',
-    
+
     ### These fail the round-trip:
     #'cp1006', 'cp875', 'iso8859_8',
-    
+
     ):
     try:
         assert unicode(s,encoding).encode(encoding) == s
@@ -515,4 +515,3 @@ assert (u"abc" "def") == u"abcdef"
 assert (u"abc" u"def" "ghi") == u"abcdefghi"
 assert ("abc" "def" u"ghi") == u"abcdefghi"
 print 'done.'
-

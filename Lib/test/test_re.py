@@ -351,7 +351,7 @@ for t in tests:
             # string), so we'll ignore patterns that feature it.
 
             if pattern[:2] != '\\B' and pattern[-2:] != '\\B' \
-			   and result != None:
+                           and result != None:
                 obj = re.compile(pattern)
                 result = obj.search(s, result.start(0), result.end(0) + 1)
                 if result == None:

@@ -67,7 +67,7 @@ testmeths = [
 class AllTests:
     def __coerce__(self, *args):
         print "__coerce__:", args
-        return (self,) + args 
+        return (self,) + args
 
     def __hash__(self, *args):
         print "__hash__:", args
@@ -202,18 +202,17 @@ del testme
 # Interfering tests
 
 class ExtraTests:
-	def __getattr__(self, *args):
-		print "__getattr__:", args
-		return "SomeVal"
+    def __getattr__(self, *args):
+        print "__getattr__:", args
+        return "SomeVal"
 
-	def __setattr__(self, *args):
-		print "__setattr__:", args
+    def __setattr__(self, *args):
+        print "__setattr__:", args
 
-	def __delattr__(self, *args):
-		print "__delattr__:", args
+    def __delattr__(self, *args):
+        print "__delattr__:", args
 
 testme = ExtraTests()
 testme.spam
 testme.eggs = "spam, spam, spam and ham"
 del testme.cardinal
-

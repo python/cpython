@@ -3,7 +3,7 @@
    Roger E. Masse
 """
 
-from test_support import verbose    
+from test_support import verbose
 import crypt
 
 c = crypt.crypt('mypassword', 'ab')

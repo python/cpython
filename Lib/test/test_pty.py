@@ -88,4 +88,3 @@ else:
 os.close(master_fd)
 
 # pty.fork() passed.
-

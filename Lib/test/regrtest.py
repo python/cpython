@@ -46,14 +46,14 @@ def main(tests=None, testdir=None, verbose=0, quiet=0, generate=0,
     """Execute a test suite.
 
     This also parses command-line options and modifies its behavior
-    accordingly. 
+    accordingly.
 
     tests -- a list of strings containing test names (optional)
     testdir -- the directory in which to look for tests (optional)
 
     Users other than the Python test suite will certainly want to
     specify testdir; if it's omitted, the directory containing the
-    Python test suite is searched for.  
+    Python test suite is searched for.
 
     If the tests argument is omitted, the tests listed on the
     command-line will be used.  If that's empty, too, then all *.py
@@ -65,7 +65,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=0, generate=0,
     command line.
 
     """
-    
+
     try:
         opts, args = getopt.getopt(sys.argv[1:], 'vgqxsrl', ['have-resources'])
     except getopt.error, msg:

@@ -53,7 +53,7 @@ print '6.4 Numeric types (mostly conversions)'
 if 0 <> 0L or 0 <> 0.0 or 0L <> 0.0: raise TestFailed, 'mixed comparisons'
 if 1 <> 1L or 1 <> 1.0 or 1L <> 1.0: raise TestFailed, 'mixed comparisons'
 if -1 <> -1L or -1 <> -1.0 or -1L <> -1.0:
-	raise TestFailed, 'int/long/float value not equal'
+    raise TestFailed, 'int/long/float value not equal'
 if int(1.9) == 1 == int(1.1) and int(-1.1) == -1 == int(-1.9): pass
 else: raise TestFailed, 'int() does not round properly'
 if long(1.9) == 1L == long(1.1) and long(-1.1) == -1L == long(-1.9): pass
@@ -70,7 +70,7 @@ if not -24 < -12: raise TestFailed, 'int op'
 # Test for a particular bug in integer multiply
 xsize, ysize, zsize = 238, 356, 4
 if not (xsize*ysize*zsize == zsize*xsize*ysize == 338912):
-	raise TestFailed, 'int mul commutativity'
+    raise TestFailed, 'int mul commutativity'
 print '6.4.2 Long integers'
 if 12L + 24L <> 36L: raise TestFailed, 'long op'
 if 12L + (-24L) <> -12L: raise TestFailed, 'long op'
@@ -139,15 +139,15 @@ else: raise TestFailed, 'in/not in list'
 a = [1, 2, 3, 4, 5]
 a[:-1] = a
 if a != [1, 2, 3, 4, 5, 5]:
-	raise TestFailed, "list self-slice-assign (head)"
+    raise TestFailed, "list self-slice-assign (head)"
 a = [1, 2, 3, 4, 5]
 a[1:] = a
 if a != [1, 1, 2, 3, 4, 5]:
-	raise TestFailed, "list self-slice-assign (tail)"
+    raise TestFailed, "list self-slice-assign (tail)"
 a = [1, 2, 3, 4, 5]
 a[1:-1] = a
 if a != [1, 1, 2, 3, 4, 5, 5]:
-	raise TestFailed, "list self-slice-assign (center)"
+    raise TestFailed, "list self-slice-assign (center)"
 
 
 print '6.5.3a Additional list operations'
@@ -212,10 +212,10 @@ z.sort(myComparison)
 
 # Test extreme cases with long ints
 a = [0,1,2,3,4]
-if a[ -pow(2,128L): 3 ] != [0,1,2]: 
-	raise TestFailed, "list slicing with too-small long integer"
-if a[ 3: pow(2,145L) ] != [3,4]: 
-	raise TestFailed, "list slicing with too-large long integer"
+if a[ -pow(2,128L): 3 ] != [0,1,2]:
+    raise TestFailed, "list slicing with too-small long integer"
+if a[ 3: pow(2,145L) ] != [3,4]:
+    raise TestFailed, "list slicing with too-large long integer"
 
 print '6.6 Mappings == Dictionaries'
 d = {}
@@ -256,12 +256,12 @@ if d.get('a', 3) != 1: raise TestFailed, 'present dict get, w/ 2nd arg'
 # dict.setdefault()
 d = {}
 if d.setdefault('key0') <> None:
-	raise TestFailed, 'missing {} setdefault, no 2nd arg'
+    raise TestFailed, 'missing {} setdefault, no 2nd arg'
 if d.setdefault('key0') <> None:
-	raise TestFailed, 'present {} setdefault, no 2nd arg'
+    raise TestFailed, 'present {} setdefault, no 2nd arg'
 d.setdefault('key', []).append(3)
 if d['key'][0] <> 3:
-	raise TestFailed, 'missing {} setdefault, w/ 2nd arg'
+    raise TestFailed, 'missing {} setdefault, w/ 2nd arg'
 d.setdefault('key', []).append(4)
 if len(d['key']) <> 2:
-	raise TestFailed, 'present {} setdefault, w/ 2nd arg'
+    raise TestFailed, 'present {} setdefault, w/ 2nd arg'

@@ -16,9 +16,9 @@ tstfile = os.path.join(os.path.dirname(base), "test.xml")
 del base
 
 def confirm(test, testname = "Test"):
-    if test: 
+    if test:
         print "Passed " + testname
-    else: 
+    else:
         print "Failed " + testname
         raise Exception
 
@@ -41,7 +41,7 @@ def testInsertBefore():
     docel = dom.documentElement
     #docel.insertBefore( dom.createProcessingInstruction("a", "b"),
     #                        docel.childNodes[1])
-                            
+
     #docel.insertBefore( dom.createProcessingInstruction("a", "b"),
     #                        docel.childNodes[0])
 
@@ -133,7 +133,7 @@ def testRemoveAttrNS():
     dom = Document()
     child = dom.appendChild(
             dom.createElementNS("http://www.python.org", "python:abc"))
-    child.setAttributeNS("http://www.w3.org", "xmlns:python", 
+    child.setAttributeNS("http://www.w3.org", "xmlns:python",
                                             "http://www.python.org")
     child.setAttributeNS("http://www.python.org", "python:abcattr", "foo")
     confirm(len(child.attributes) == 2)
@@ -141,7 +141,7 @@ def testRemoveAttrNS():
     confirm(len(child.attributes) == 1)
 
     dom.unlink()
-    
+
 def testRemoveAttributeNode():
     dom = Document()
     child = dom.appendChild(dom.createElement("foo"))
@@ -313,11 +313,11 @@ def testSiblings():
     root = doc.documentElement
     (pi, text, elm) = root.childNodes
 
-    confirm(pi.nextSibling is text and 
-            pi.previousSibling is None and 
-            text.nextSibling is elm and 
-            text.previousSibling is pi and 
-            elm.nextSibling is None and 
+    confirm(pi.nextSibling is text and
+            pi.previousSibling is None and
+            text.nextSibling is elm and
+            text.previousSibling is pi and
+            elm.nextSibling is None and
             elm.previousSibling is text, "testSiblings")
 
     doc.unlink()
@@ -347,7 +347,7 @@ def testSAX2DOM():
     sax2dom.startElement("subelm", {})
     sax2dom.characters("text")
     sax2dom.endElement("subelm")
-    sax2dom.characters("text")    
+    sax2dom.characters("text")
     sax2dom.endElement("doc")
     sax2dom.endDocument()
 
@@ -370,11 +370,11 @@ def testSAX2DOM():
             elm1.parentNode is root and
             text2.parentNode is root and
             text3.parentNode is elm1, "testSAX2DOM - parents")
-            
+
     doc.unlink()
 
 # --- MAIN PROGRAM
-    
+
 names = globals().keys()
 names.sort()
 

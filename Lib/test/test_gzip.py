@@ -1,4 +1,3 @@
-
 import sys, os
 import gzip, tempfile
 
@@ -38,7 +37,7 @@ while 1:
     line_length = (line_length + 1) % 50
 f.close()
 
-# Try .readlines() 
+# Try .readlines()
 
 f = gzip.GzipFile(filename, 'rb')
 L = f.readlines()
@@ -47,7 +46,7 @@ f.close()
 f = gzip.GzipFile(filename, 'rb')
 while 1:
     L = f.readlines(150)
-    if L == []: break    
+    if L == []: break
 f.close()
 
 

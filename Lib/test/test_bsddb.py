@@ -12,7 +12,7 @@ def test(openmethod, what):
 
     if verbose:
         print '\nTesting: ', what
-        
+
     fname = tempfile.mktemp()
     f = openmethod(fname, 'c')
     if verbose:

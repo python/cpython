@@ -20,7 +20,7 @@ def test(name, input, output, *args):
             f = getattr(string, name)
             value = apply(f, (input,) + args)
     except:
-         value = sys.exc_type
+        value = sys.exc_type
     if value != output:
         if verbose:
             print 'no'
@@ -35,4 +35,3 @@ string_tests.run_method_tests(test)
 string.whitespace
 string.lowercase
 string.uppercase
-

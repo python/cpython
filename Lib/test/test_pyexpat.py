@@ -2,13 +2,13 @@
 
 # XXX TypeErrors on calling handlers, or on bad return values from a
 # handler, are obscure and unhelpful.
-        
+
 from xml.parsers import expat
-                
+
 class Outputter:
     def StartElementHandler(self, name, attrs):
         print 'Start element:\n\t', repr(name), attrs
-        
+
     def EndElementHandler(self, name):
         print 'End element:\n\t', repr(name)
 
@@ -43,11 +43,11 @@ class Outputter:
     def UnparsedEntityDeclHandler(self, *args):
         entityName, base, systemId, publicId, notationName = args
         print 'Unparsed entity decl:\n\t', args
-    
+
     def NotStandaloneHandler(self, userData):
         print 'Not standalone'
         return 1
-        
+
     def ExternalEntityRefHandler(self, *args):
         context, base, sysId, pubId = args
         print 'External entity ref:', args
