@@ -1,3 +1,16 @@
+What's New in Python 2.1.3?
+Release date: XX-XXX-XXXX
+===========================
+
+Core
+
+- Fixed two bugs reported as SF #535905: under certain conditions,
+  deallocating a deeply nested structure could cause a segfault in the
+  garbage collector, due to interaction with the "trashcan" code;
+  access to the current frame during destruction of a local variable
+  could access a pointer to freed memory.
+
+
 What's New in Python 2.1.2 (final)?
 ===================================
 
