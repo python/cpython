@@ -32,14 +32,14 @@ Limitations:
 - only AF_INET and AF_UNIX address families are supported
 - no asynchronous I/O
 - no read/write operations (use send/recv instead)
-- no flags on send/recv operations
+- no flags on sendto/recvfrom operations
 - no setsockopt() call
 
 Interface:
 
 - socket.gethostbyname(hostname) --> host IP address (string: 'dd.dd.dd.dd')
-- socket.getservbyname(server, type) --> port number
-- socket.socket(family, type) --> new socket object
+- socket.getservbyname(servername, protocolname) --> port number
+- socket.socket(family, type [, proto]) --> new socket object
 - family and type constants from <socket.h> are accessed as socket.AF_INET etc.
 - errors are reported as the exception socket.error
 - an Internet socket address is a pair (hostname, port)
@@ -325,7 +325,10 @@ sock_accept(s, args)
 		return socket_error();
 	/* Create the new object with unspecified family,
 	   to avoid calls to bind() etc. on it. */
-	res = makepair((object *) newsockobject(newfd, AF_UNSPEC, 0, 0),
+	res = makepair((object *) newsockobject(newfd,
+						s->sock_family,
+						s->sock_type,
+						s->sock_proto),
 		       makesockaddr((struct sockaddr *) addrbuf, addrlen));
 	if (res == NULL)
 		close(newfd);
@@ -666,7 +669,7 @@ socket_socket(self, args)
 	sockobject *s;
 	int family, type, proto, fd;
 	if (args != NULL && is_tupleobject(args) && gettuplesize(args) == 3) {
-		if (!getintintarg(args, &family, &type, &proto))
+		if (!getintintintarg(args, &family, &type, &proto))
 			return NULL;
 	}
 	else {
