@@ -176,6 +176,7 @@ Here's an overview of the questions per chapter:
   4.38. Q. How do I copy an object in Python?
   4.39. Q. How to implement persistent objects in Python?  (Persistent ==
         automatically saved to and restored from disk.)
+  4.40. Q. I try to use __spam and I get an error about _SomeClassName__spam.
 
  5. Extending Python
   5.1. Q. Can I create my own functions in C?
@@ -1677,6 +1678,12 @@ A. The library module "pickle" now solves this in a very general way
 (though you still can't store things like open files, sockests or
 windows), and the library module "shelve" uses pickle and (g)dbm to
 create presistent mappings containing arbitrary Python objects.
+
+4.40. Q. I try to use __spam and I get an error about _SomeClassName__spam.
+
+A. Variables with double leading underscore are "mangled" to provide a
+simple but effective way to define class private variables.  See the
+chapter "New in Release 1.4" in the Python Tutorial.
 
 
 5. Extending Python
