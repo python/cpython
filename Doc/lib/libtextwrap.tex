@@ -15,16 +15,17 @@ wrapping or filling one or two text strings, the convenience functions
 should be good enough; otherwise, you should use an instance of
 \class{TextWrapper} for efficiency.
 
-\begin{funcdesc}{wrap}{text, width=70, **kwargs}
+\begin{funcdesc}{wrap}{text\optional{, width\optional{, \moreargs}}}
 Wraps the single paragraph in \var{text} (a string) so every line is at
 most \var{width} characters long.  Returns a list of output lines,
 without final newlines.
 
 Optional keyword arguments correspond to the instance attributes of
-\class{TextWrapper}, documented below.
+\class{TextWrapper}, documented below.  \var{width} defaults to
+\code{70}.
 \end{funcdesc}
 
-\begin{funcdesc}{fill}{text, width=70, **kwargs}
+\begin{funcdesc}{fill}{text\optional{, width\optional{, \moreargs}}}
 Wraps the single paragraph in \var{text}, and returns a single string
 containing the wrapped paragraph.  \function{fill()} is shorthand for
 \begin{verbatim}
@@ -41,16 +42,9 @@ instance is not reused, so for applications that wrap/fill many text
 strings, it will be more efficient for you to create your own
 \class{TextWrapper} object.
 
-% XXX how to typeset long argument lists? this just spills off
-% the edge of the page, with or without \\ delimiters
-\begin{classdesc}{TextWrapper}{width=70, \\
-                               initial_indent="", \\
-                               subsequent_indent="", \\
-                               expand_tabs=True, \\
-                               replace_whitespace=True, \\
-                               fix_sentence_endings=False, \\
-                               break_long_words=True}
-
+\begin{classdesc}{TextWrapper}{width, initial_indent, subsequent_indent,
+                               expand_tabs, replace_whitespace,
+                               fix_sentence_endings, break_long_words}
 Each keyword argument to the constructor corresponds to an instance
 attribute, so for example
 \begin{verbatim}
@@ -64,16 +58,19 @@ wrapper.initial_indent = "* "
 
 You can re-use the same \class{TextWrapper} object many times, and you
 can change any of its options through direct assignment to instance
-attributes between uses.  The effects of the instance attributes are as
-follows:
+attributes between uses.
+\end{classdesc}
 
-\begin{memberdesc}[bool]{expand_tabs}
+
+The effects of the instance attributes are as follows:
+
+\begin{memberdesc}{expand_tabs}
 If true (the default), then all tab characters in \var{text} will be
 expanded to spaces using the \method{expand_tabs()} method of
 \var{text}.
 \end{memberdesc}
 
-\begin{memberdesc}[bool]{replace_whitespace}
+\begin{memberdesc}{replace_whitespace}
 If true (the default), each whitespace character (as defined by
 \var{string.whitespace}) remaining after tab expansion will be replaced
 by a single space.  \note{If \var{expand_tabs} is false and
@@ -81,20 +78,19 @@ by a single space.  \note{If \var{expand_tabs} is false and
 a single space, which is \emph{not} the same as tab expansion.}
 \end{memberdesc}
 
-% XXX how to typeset the empty string? this looks awful, and "" is worse.
-\begin{memberdesc}[string]{initial_indent}
-(default: '') String that will be prepended to the first line of wrapped
-output.  Counts towards the length of the first line.
+\begin{memberdesc}{initial_indent}
+(default: \code{''}) String that will be prepended to the first line
+of wrapped output.  Counts towards the length of the first line.
 \end{memberdesc}
 
-\begin{memberdesc}[string]{subsequent_indent}
-(default: '') String that will be prepended to all lines of wrapped
-output except the first.  Counts towards the length of each line except
-the first.
+\begin{memberdesc}{subsequent_indent}
+(default: \code{''}) String that will be prepended to all lines of
+wrapped output except the first.  Counts towards the length of each
+line except the first.
 \end{memberdesc}
 
-\begin{memberdesc}[bool]{fix_sentence_endings}
-(default: false) If true, \class{TextWrapper} attempts to detect
+\begin{memberdesc}{fix_sentence_endings}
+(default: \code{False}) If true, \class{TextWrapper} attempts to detect
 sentence endings and ensure that sentences are always separated by
 exactly two spaces.  This is generally desired for text in a monospaced
 font.  However, the sentence detection algorithm is imperfect: it
@@ -115,7 +111,7 @@ definition of ``lowercase letter'', it is specific to English-language
 texts.  Thus, \var{fix_sentence_endings} is false by default.
 \end{memberdesc}
 
-\begin{memberdesc}[bool]{break_long_words}
+\begin{memberdesc}{break_long_words}
 If true (the default), then words longer than \var{width} will be broken
 in order to ensure that no lines are longer than \var{width}.  If it is
 false, long words will not be broken, and some lines may be longer than
@@ -137,5 +133,3 @@ of output lines, without final newlines.
 Wraps the single paragraph in \var{text}, and returns a single string
 containing the wrapped paragraph.
 \end{methoddesc}
-
-\end{classdesc}
