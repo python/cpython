@@ -2859,17 +2859,17 @@ static PyObject *
 basestring_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
 	PyErr_SetString(PyExc_TypeError,
-			"The string type cannot be instantiated");
+			"The basestring type cannot be instantiated");
 	return NULL;
 }
 
 static char basestring_doc[] =
-"Type string cannot be instantiated; it is the base for str and unicode.";
+"Type basestring cannot be instantiated; it is the base for str and unicode.";
 
 PyTypeObject PyBaseString_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,
-	"string",
+	"basestring",
 	0,
 	0,
  	0,			 		/* tp_dealloc */
