@@ -94,6 +94,18 @@ def test_jpeg(h, f):
 
 tests.append(test_jpeg)
 
+def test_bmp(h, f):
+	if h[:2] == 'BM':
+		return 'bmp'
+		
+tests.append(test_bmp)
+
+def test_png(h, f):
+	if h[:8] == "\211PNG\r\n\032\n":
+		return 'png'
+
+tests.append(test_png)
+
 #--------------------#
 # Small test program #
 #--------------------#
