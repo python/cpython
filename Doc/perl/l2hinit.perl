@@ -577,7 +577,7 @@ sub set_depth_levels {
 # initialize() is called in the main LaTeX2HTML script (which happens
 # before style files are loaded).
 #
-%declarations = ('preform' => '<dl><dd><pre class="verbatim"></pre></dl>',
+%declarations = ('preform' => '<div class="verbatim"><pre></pre></div>',
 		 %declarations);
 
 

@@ -65,9 +65,11 @@ var                     { font-family: times, serif;
 
 .titlegraphic           { vertical-align: top; }
 
-.verbatim               { color: #00008b;
+.verbatim pre           { color: #00008b;
                           font-family: lucida typewriter, lucidatypewriter,
-                                       monospace; }
+                                       monospace;
+                          font-size: 90%; }
+.verbatim               { margin-left: 2em; }
 
 .grammar                { background-color: #99ccff;
                           margin-right: 0.5in;
