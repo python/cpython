@@ -474,7 +474,7 @@ Internals
 - On Unix, fix code for finding Python installation directory so that
   it works when argv[0] is a relative path.
 
-- Added a true tnicode_internal_encode() function and fixed the
+- Added a true unicode_internal_encode() function and fixed the
   unicode_internal_decode function() to support Unicode objects directly
   rather than by generating a copy of the object.
 
