@@ -8,6 +8,8 @@ Without you I would've stopped working on Python long ago!
 
 	--Guido
 
+PS: In the standard Python distribution this file is encoded in Latin-1.
+
 Jim Ahlstrom
 Jyrki Alakuijala
 Mark Anacker
@@ -214,7 +216,7 @@ Eric Lindvall
 Per Lindqvist
 Nick Lockwood
 Stephanie Lockwood
-Martin von Loewis
+Martin von Löwis
 Anne Lord
 Ray Loyzaga
 Fredrik Lundh
@@ -330,6 +332,7 @@ Kalle Svensson
 Neale Pickett
 Dan Pierson
 François Pinard
+Hajime Saitou
 RajGopal Srinivasan
 Jim St. Pierre
 Quentin Stafford-Fraser
@@ -343,7 +346,6 @@ Amy Taylor
 Tobias Thelen
 Eric Tiedemann
 Tracy Tims
-Christian Tismer
 Christian Tismer
 R Lindsay Todd
 Bennett Todd
@@ -389,4 +391,3 @@ Moshe Zadka
 Milan Zamazal
 Siebren van der Zee
 Uwe Zessin
-hajime@jsk.t.u-tokyo.ac.jp
