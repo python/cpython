@@ -9,6 +9,8 @@
 #
 # written by Fredrik Lundh, May 1997
 #
+# fixed initialcolor handling in August 1998
+#
 
 #
 # options (all have default values):
@@ -20,10 +22,6 @@
 #
 # - title: dialog title
 #
-
-# FIXME: as of Tk 8.0a2, the Unix colour picker is really ugly, and
-# doesn't seem to work properly on true colour displays.  maybe we
-# should use the instant python version instead?
 
 from tkCommonDialog import Dialog
 
@@ -42,7 +40,7 @@ class Chooser(Dialog):
             color = self.options["initialcolor"]
             if type(color) == type(()):
                 # assume an RGB triplet
-                self.options["initialcolor"] = "%02x%02x%02x" % color
+                self.options["initialcolor"] = "#%02x%02x%02x" % color
         except KeyError:
             pass
 
@@ -60,6 +58,10 @@ class Chooser(Dialog):
 
 def askcolor(color = None, **options):
     "Ask for a color"
+
+    if color:
+	options = options.copy()
+	options["initialcolor"] = color
 
     return apply(Chooser, (), options).show()
 
