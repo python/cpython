@@ -130,14 +130,30 @@ if __name__ == "__main__":
 
     # Start off with UTF-8
     enc = "utf-8"
+    import sys
 
     # See whether CODESET is defined
     try:
         import locale
+        locale.setlocale(locale.LC_ALL,'')
         enc = locale.nl_langinfo(locale.CODESET)
     except (ImportError, AttributeError):
         pass
 
-    print "open", askopenfilename(filetypes=[("all files", "*")]).encode(enc)
-    print "saveas", asksaveasfilename().encode(enc)
+    # dialog for openening files
+
+    openfilename=askopenfilename(filetypes=[("all files", "*")])
+    try:
+        fp=open(openfilename,"r")
+        fp.close()
+    except:
+        print "Could not open File: " 
+        print sys.exc_info()[1]
+
+    print "open", openfilename.encode(enc)
+
+    # dialog for saving files
+
+    saveasfilename=asksaveasfilename()
+    print "saveas", saveasfilename.encode(enc)
 
