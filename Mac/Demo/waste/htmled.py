@@ -790,15 +790,15 @@ class Wed(Application):
 class MyHTMLParser(htmllib.HTMLParser):
 	
     def anchor_bgn(self, href, name, type):
-		self.anchor = href
-		if self.anchor:
-			self.anchorlist.append(href)
-			self.formatter.push_style('anchor')
+	    self.anchor = href
+	    if self.anchor:
+		    self.anchorlist.append(href)
+		    self.formatter.push_style('anchor')
 
     def anchor_end(self):
-		if self.anchor:
-			self.anchor = None
-			self.formatter.pop_style()
+	    if self.anchor:
+		    self.anchor = None
+		    self.formatter.pop_style()
 
 			
 def getfontnames():
