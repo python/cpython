@@ -1,5 +1,6 @@
 import copy
 import sys
+import warnings
 
 # Fake a number that implements numeric methods through __coerce__
 class CoerceNumber:
@@ -109,5 +110,9 @@ def do_prefix_binops():
                 else:
                     print '=', x
 
+warnings.filterwarnings("ignore",
+                        r'complex divmod\(\), // and % are deprecated',
+                        DeprecationWarning,
+                        r'test_coercion$')
 do_infix_binops()
 do_prefix_binops()
