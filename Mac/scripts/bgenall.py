@@ -6,7 +6,10 @@ import string
 
 def bgenone(dirname, shortname):
 	os.chdir(dirname)
-	m = __import__(shortname+'scan')
+	try:
+		m = __import__(shortname+'scan')
+	except:
+		return 0
 	try:
 		m.main()
 	except:
