@@ -1,3 +1,4 @@
+#!/usr/bin/env pythonw
 """IDLE.app
 
 Installation:
