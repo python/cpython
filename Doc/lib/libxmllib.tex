@@ -101,27 +101,28 @@ passed to \method{handle_xml()} default to \code{None} and the string
 \end{methoddesc}
 
 \begin{methoddesc}{handle_doctype}{tag, pubid, syslit, data}
-This method is called when the \samp{<!DOCTYPE...>} tag is processed.
-The arguments are the name of the root element, the Formal Public
-Identifier (or \code{None} if not specified), the system identifier,
-and the uninterpreted contents of the internal DTD subset as a string
-(or \code{None} if not present).
+This\index{DOCTYPE declaration} method is called when the
+\samp{<!DOCTYPE...>} declaration is processed.  The arguments are the
+tag name of the root element, the Formal Public\index{Formal Public
+Identifier} Identifier (or \code{None} if not specified), the system
+identifier, and the uninterpreted contents of the internal DTD subset
+as a string (or \code{None} if not present).
 \end{methoddesc}
 
 \begin{methoddesc}{handle_starttag}{tag, method, attributes}
 This method is called to handle start tags for which a start tag
 handler is defined in the instance variable \member{elements}.  The
-\var{tag} argument is the name of the tag, and the \var{method}
-argument is the function (method) which should be used to support semantic
-interpretation of the start tag.  The \var{attributes} argument is a
-dictionary of attributes, the key being the \var{name} and the value
-being the \var{value} of the attribute found inside the tag's
-\code{<>} brackets.  Character and entity references in the
-\var{value} have been interpreted.  For instance, for the start tag
-\code{<A HREF="http://www.cwi.nl/">}, this method would be called as
-\code{handle_starttag('A', self.elements['A'][0], \{'HREF': 'http://www.cwi.nl/'\})}.
-The base implementation simply calls \var{method} with \var{attributes}
-as the only argument.
+\var{tag} argument is the name of the tag, and the
+\var{method} argument is the function (method) which should be used to
+support semantic interpretation of the start tag.  The
+\var{attributes} argument is a dictionary of attributes, the key being
+the \var{name} and the value being the \var{value} of the attribute
+found inside the tag's \code{<>} brackets.  Character and entity
+references in the \var{value} have been interpreted.  For instance,
+for the start tag \code{<A HREF="http://www.cwi.nl/">}, this method
+would be called as \code{handle_starttag('A', self.elements['A'][0],
+\{'HREF': 'http://www.cwi.nl/'\})}.  The base implementation simply
+calls \var{method} with \var{attributes} as the only argument.
 \end{methoddesc}
 
 \begin{methoddesc}{handle_endtag}{tag, method}
@@ -187,10 +188,11 @@ does nothing.  Note that if a document starts with \samp{<?xml
 This method is called when a declaration is encountered.  The
 \var{data} argument is a string containing the text between the
 \samp{<!} and \samp{>} delimiters, but not the delimiters
-themselves.  For example, the entity \samp{<!ENTITY text>} will
-cause this method to be called with the argument \code{'ENTITY text'}.  The
-default method does nothing.  Note that \samp{<!DOCTYPE ...>} is
-handled separately if it is located at the start of the document.
+themselves.  For example, the \index{ENTITY declaration}entity
+declaration \samp{<!ENTITY text>} will cause this method to be called
+with the argument \code{'ENTITY text'}.  The default method does
+nothing.  Note that \samp{<!DOCTYPE ...>} is handled separately if it
+is located at the start of the document.
 \end{methoddesc}
 
 \begin{methoddesc}{syntax_error}{message}
