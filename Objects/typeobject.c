@@ -2594,6 +2594,24 @@ wrap_cmpfunc(PyObject *self, PyObject *args, void *wrapped)
 	return PyInt_FromLong((long)res);
 }
 
+/* Helper to check for object.__setattr__ or __delattr__ applied to a type.
+   This is called the Carlo Verre hack after its discoverer. */
+static int
+hackcheck(PyObject *self, setattrofunc func, char *what)
+{
+	PyTypeObject *type = self->ob_type;
+	while (type && type->tp_flags & Py_TPFLAGS_HEAPTYPE)
+		type = type->tp_base;
+	if (type->tp_setattro != func) {
+		PyErr_Format(PyExc_TypeError,
+			     "can't apply this %s to %s object",
+			     what,
+			     type->tp_name);
+		return 0;
+	}
+	return 1;
+}
+
 static PyObject *
 wrap_setattr(PyObject *self, PyObject *args, void *wrapped)
 {
@@ -2602,6 +2620,8 @@ wrap_setattr(PyObject *self, PyObject *args, void *wrapped)
 	PyObject *name, *value;
 
 	if (!PyArg_ParseTuple(args, "OO", &name, &value))
+		return NULL;
+	if (!hackcheck(self, func, "__setattr__"))
 		return NULL;
 	res = (*func)(self, name, value);
 	if (res < 0)
@@ -2618,6 +2638,8 @@ wrap_delattr(PyObject *self, PyObject *args, void *wrapped)
 	PyObject *name;
 
 	if (!PyArg_ParseTuple(args, "O", &name))
+		return NULL;
+	if (!hackcheck(self, func, "__delattr__"))
 		return NULL;
 	res = (*func)(self, name, NULL);
 	if (res < 0)
