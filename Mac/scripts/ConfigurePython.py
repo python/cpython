@@ -192,6 +192,7 @@ def main():
 	print 'Creating PythonCore aliases in Extensions folder...'
 	os.chdir('::')
 	n = 0
+	n = n + mkcorealias('PythonCore', 'PythonCore')
 	n = n + mkcorealias('PythonCorePPC', ':build.macppc.shared:PythonCorePPC')
 	n = n + mkcorealias('PythonCoreCFM68K', ':build.mac68k.shared:PythonCoreCFM68K')
 	if n == 0:
