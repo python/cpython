@@ -1,0 +1,9 @@
+Demo programs for the SGI Video library for the Indigo (IRIX 4.0.5).
+These are more-or-less literal translations of the C programs from the
+Indigo Video Programming Guide, by Sjoerd Mullender, with minor
+changes by Guido.
+
+simpleinput.py		Live video in a resizable window
+rgbgrab.py		Grab still frames
+contcapt.py		Continuous capturing (to a window)
+burstcapt.py		Burst capturing
