@@ -1,11 +1,15 @@
 import pickle
 import unittest
 from cStringIO import StringIO
-from test.pickletester import AbstractPickleTests, AbstractPickleModuleTests, \
-     AbstractPersistentPicklerTests
+
 from test import test_support
 
-class PickleTests(AbstractPickleTests, AbstractPickleModuleTests):
+from test.pickletester import AbstractPickleTests
+from test.pickletester import TempAbstractPickleTests as XXXTemp
+from test.pickletester import AbstractPickleModuleTests
+from test.pickletester import AbstractPersistentPicklerTests
+
+class PickleTests(AbstractPickleTests, AbstractPickleModuleTests, XXXTemp):
 
     def setUp(self):
         self.dumps = pickle.dumps
