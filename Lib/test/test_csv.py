@@ -4,7 +4,7 @@
 import sys
 import unittest
 from StringIO import StringIO
-from csv import csv
+import csv
 import gc
 from test.test_support import verbose
 
