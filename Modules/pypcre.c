@@ -1032,7 +1032,7 @@ else
       for(c=0, i=0; ptr[i]!=0 && i<3; i++) 
 	{
 	  if (( pcre_ctypes[ ptr[i] ] & ctype_odigit) != 0)
-	    c = c * 8 + ptr[i]-'0';
+	    c = (c * 8 + ptr[i]-'0') & 255;
 	  else
 	    break; /* Non-octal character--break out of the loop */
 	}
