@@ -319,8 +319,8 @@ eval_code2(co, globals, locals,
 	object *owner;
 {
 	register unsigned char *next_instr;
-	register int opcode;	/* Current opcode */
-	register int oparg;	/* Current opcode argument, if any */
+	register int opcode = 0; /* Current opcode */
+	register int oparg = 0;	/* Current opcode argument, if any */
 	register object **stack_pointer;
 	register enum why_code why; /* Reason for block stack unwind */
 	register int err;	/* Error status -- nonzero if error */
@@ -330,8 +330,8 @@ eval_code2(co, globals, locals,
 	register object *u;
 	register object *t;
 	register frameobject *f; /* Current frame */
-	register object **fastlocals;
-	object *retval;		/* Return value */
+	register object **fastlocals = NULL;
+	object *retval = NULL;	/* Return value */
 #ifdef SUPPORT_OBSOLETE_ACCESS
 	int defmode = 0;	/* Default access mode for new variables */
 #endif
@@ -1793,8 +1793,8 @@ eval_code2(co, globals, locals,
 				break;
 			}
 			if (b->b_type == SETUP_FINALLY ||
-					b->b_type == SETUP_EXCEPT &&
-					why == WHY_EXCEPTION) {
+			    (b->b_type == SETUP_EXCEPT &&
+			     why == WHY_EXCEPTION)) {
 				if (why == WHY_EXCEPTION) {
 					object *exc, *val, *tb;
 					err_fetch(&exc, &val, &tb);
@@ -2055,7 +2055,7 @@ or(v, w)
 {
 	BINOP("__or__", "__ror__", or);
 	if (v->ob_type->tp_as_number != NULL) {
-		object *x;
+		object *x = NULL;
 		object * (*f) FPROTO((object *, object *));
 		if (coerce(&v, &w) != 0)
 			return NULL;
@@ -2076,7 +2076,7 @@ xor(v, w)
 {
 	BINOP("__xor__", "__rxor__", xor);
 	if (v->ob_type->tp_as_number != NULL) {
-		object *x;
+		object *x = NULL;
 		object * (*f) FPROTO((object *, object *));
 		if (coerce(&v, &w) != 0)
 			return NULL;
@@ -2097,7 +2097,7 @@ and(v, w)
 {
 	BINOP("__and__", "__rand__", and);
 	if (v->ob_type->tp_as_number != NULL) {
-		object *x;
+		object *x = NULL;
 		object * (*f) FPROTO((object *, object *));
 		if (coerce(&v, &w) != 0)
 			return NULL;
@@ -2118,7 +2118,7 @@ lshift(v, w)
 {
 	BINOP("__lshift__", "__rlshift__", lshift);
 	if (v->ob_type->tp_as_number != NULL) {
-		object *x;
+		object *x = NULL;
 		object * (*f) FPROTO((object *, object *));
 		if (coerce(&v, &w) != 0)
 			return NULL;
@@ -2139,7 +2139,7 @@ rshift(v, w)
 {
 	BINOP("__rshift__", "__rrshift__", rshift);
 	if (v->ob_type->tp_as_number != NULL) {
-		object *x;
+		object *x = NULL;
 		object * (*f) FPROTO((object *, object *));
 		if (coerce(&v, &w) != 0)
 			return NULL;
@@ -2379,7 +2379,7 @@ PyEval_CallObjectWithKeywords(func, arg, kw)
 		return NULL;
 	}
 
-        if (call = func->ob_type->tp_call)
+        if ((call = func->ob_type->tp_call) != NULL)
                 result = (*call)(func, arg, kw);
         else if (is_instancemethodobject(func) || is_funcobject(func))
 		result = call_function(func, arg, kw);
@@ -2890,22 +2890,6 @@ build_class(methods, bases, name)
 		err_setstr(SystemError, "build_class with non-tuple bases");
 		return NULL;
 	}
-	if (gettuplesize(bases) > 0) {
-		object *base;
-		base = GETTUPLEITEM(bases, 0);
-		/* Call the base's *type*, if it is callable.
-		   This code is a hook for Donald Beaudry's type extensions.
-		   In unexended Python it will never be triggered since its
-		   types are not callable. */
-		if (base->ob_type->ob_type->tp_call) {
-			object *args;
-			object *class;
-			args = mkvalue("(OOO)", name, bases, methods);
-			class = call_object((object *)base->ob_type, args);
-			DECREF(args);
-			return class;
-		}
-	}
 	if (!is_dictobject(methods)) {
 		err_setstr(SystemError, "build_class with non-dictionary");
 		return NULL;
@@ -2917,6 +2901,20 @@ build_class(methods, bases, name)
 	for (i = gettuplesize(bases); --i >= 0; ) {
 		object *base = GETTUPLEITEM(bases, i);
 		if (!is_classobject(base)) {
+			/* Call the base's *type*, if it is callable.
+			   This code is a hook for Donald Beaudry's
+			   and Jim Fulton's type extensions.  In
+			   unexended Python it will never be triggered
+			   since its types are not callable. */
+			if (base->ob_type->ob_type->tp_call) {
+			  	object *args;
+				object *class;
+				args = mkvalue("(OOO)", name, bases, methods);
+				class = call_object((object *)base->ob_type,
+						    args);
+				DECREF(args);
+				return class;
+			}
 			err_setstr(TypeError,
 				"base is not a class object");
 			return NULL;
