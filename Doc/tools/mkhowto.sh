@@ -13,7 +13,7 @@ DEFAULT_FORMAT=PDF
 USE_DEFAULT_FORMAT=true
 DISCARD_TEMPS=true
 
-HTML_SPLIT_LEVEL=''
+HTML_SPLIT_LEVEL=0
 L2H_INIT_FILE=$TOPDIR/perl/l2hinit.perl
 
 # This is needed to support kpathsea based TeX installations.  Others are
@@ -55,7 +55,7 @@ EOF
 }
 
 build_html() {
-    if [ "$HTML_SPLIT_LEVEL" ] ; then
+    if [ "$HTML_SPLIT_LEVEL" -gt 0 ] ; then
 	if [ "$ADDRESS" ] ; then
 	    latex2html -init_file $L2H_INIT_FILE \
 	     -address "$ADDRESS" \
@@ -76,7 +76,7 @@ build_html() {
 	     $1 || exit $?
 	fi
     fi
-    if [ "$HTML_SPLIT_LEVEL" != 1 ] ; then
+    if [ "$HTML_SPLIT_LEVEL" -ne 1 ] ; then
 	(cd $FILE; $MYDIR/node2label.pl *.html) || exit $?
     fi
 }
@@ -123,7 +123,7 @@ build_pdf() {
 }
 
 build_ps() {
-    dvips -N0 -o $1.ps -f $1 || exit $?
+    dvips -N0 -o $1.ps $1 || exit $?
 }
 
 cleanup() {
