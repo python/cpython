@@ -730,8 +730,8 @@ number of local variables used by the function (including arguments);
 variables (starting with the argument names); \member{co_cellvars} is
 a tuple containing the names of local variables that are referenced by
 nested functions; \member{co_freevars} is a tuple containing the names
-of local variables that are neither local nor global; \member{co_code}
-is a string representing the sequence of bytecode instructions;
+of free variables; \member{co_code} is a string representing the
+sequence of bytecode instructions;
 \member{co_consts} is a tuple containing the literals used by the
 bytecode; \member{co_names} is a tuple containing the names used by
 the bytecode; \member{co_filename} is the filename from which the code
@@ -741,10 +741,6 @@ byte code offsets to line numbers (for details see the source code of
 the interpreter); \member{co_stacksize} is the required stack size
 (including local variables); \member{co_flags} is an integer encoding
 a number of flags for the interpreter.
-
-The \member{co_cellvars} and \member{co_freevars} are present in
-Python 2.1 when nested scopes are not enabled, but the code itself
-does not use or create cells.
 
 \withsubitem{(code object attribute)}{
   \ttindex{co_argcount}
@@ -766,10 +762,19 @@ The following flag bits are defined for \member{co_flags}: bit
 \code{0x04} is set if the function uses the \samp{*arguments} syntax
 to accept an arbitrary number of positional arguments; bit
 \code{0x08} is set if the function uses the \samp{**keywords} syntax
-to accept arbitrary keyword arguments; other bits are used internally
-or reserved for future use; bit \code{0x10} is set if the function was
-compiled with nested scopes enabled.  If\index{documentation string} a
-code object represents a function, the first item in
+to accept arbitrary keyword arguments; bit \code{0x20} is set if the
+function is a \obindex{generator}.
+
+Future feature declarations (\samp{from __future__ import division})
+also use bits in \member{co_flags} to indicate whether a code object
+was compiled with a particular feature enabled: bit \code{0x2000} is
+set if the function was compiled with future division enabled; bits
+\code{0x10} and \code{0x1000} were used in earlier versions of Python.
+
+Other bits in \member{co_flags} are reserved for internal use.
+
+If\index{documentation string} a code object represents a function,
+the first item in
 \member{co_consts} is the documentation string of the function, or
 \code{None} if undefined.
 
