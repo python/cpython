@@ -13,8 +13,10 @@ BdbQuit = 'bdb.BdbQuit' # Exception to give up completely
 
 class Bdb: # Basic Debugger
 	
-	def init(self):
+	def __init__(self):
 		self.breaks = {}
+
+	def init(self):			# BW compat only
 		return self
 	
 	def reset(self):
@@ -303,5 +305,5 @@ def bar(a):
 def test():
 	import linecache
 	linecache.checkcache()
-	t = Tdb().init()
+	t = Tdb()
 	t.run('import bdb; bdb.foo(10)')
