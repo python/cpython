@@ -3,7 +3,7 @@
 """
 "PYSTONE" Benchmark Program
 
-Version:	Python/1.0 (corresponds to C/1.1)
+Version:	Python/1.1 (corresponds to C/1.1 plus 2 Pystone fixes)
 
 Author:		Reinhold P. Weicker,  CACM Vol 27, No 10, 10/84 pg. 1013.
 
@@ -12,13 +12,31 @@ Author:		Reinhold P. Weicker,  CACM Vol 27, No 10, 10/84 pg. 1013.
 		at the expense of C-ness.
 
 		Translated from C to Python by Guido van Rossum.
+
+Version History:
+
+		Version 1.1 corrects two bugs in version 1.0:
+
+		First, it leaked memory: in Proc1(), NextRecord ends
+		up having a pointer to itself.  I have corrected this
+		by zapping NextRecord.PtrComp at the end of Proc1().
+
+		Second, Proc3() used the operator != to compare a
+		record to None.  This is rather inefficient and not
+		true to the intention of the original benchmark (where
+		a pointer comparison to None is intended; the !=
+		operator attempts to find a method __cmp__ to do value
+		comparison of the record).  Version 1.1 runs 5-10
+		percent faster than version 1.0, so benchmark figures
+		of different versions can't be compared directly.
+
 """
 
 LOOPS = 1000
 
 from time import clock
 
-__version__ = "1.0"
+__version__ = "1.1"
 
 [Ident1, Ident2, Ident3, Ident4, Ident5] = range(1, 6)
 
@@ -121,6 +139,7 @@ def Proc1(PtrParIn):
 		NextRecord.IntComp = Proc7(NextRecord.IntComp, 10)
 	else:
 		PtrParIn = NextRecord.copy()
+	NextRecord.PtrComp = None
 	return PtrParIn
 
 def Proc2(IntParIO):
@@ -137,7 +156,7 @@ def Proc2(IntParIO):
 def Proc3(PtrParOut):
 	global IntGlob
 	
-	if PtrGlb != None:
+	if PtrGlb is not None:
 		PtrParOut = PtrGlb.PtrComp
 	else:
 		IntGlob = 100
