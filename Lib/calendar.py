@@ -9,7 +9,6 @@ set the first day of the week (0=Monday, 6=Sunday)."""
 
 # Import functions and variables from time module
 from time import localtime, mktime, strftime
-from types import SliceType
 
 __all__ = ["error","setfirstweekday","firstweekday","isleap",
            "leapdays","weekday","monthrange","monthcalendar",
@@ -31,15 +30,7 @@ mdays = [0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
 # that, but supply localized names.  Note that the values are computed
 # fresh on each call, in case the user changes locale between calls.
 
-class _indexer:
-    def __getitem__(self, i):
-        if isinstance(i, SliceType):
-            return self.data[i.start : i.stop]
-        else:
-            # May raise an appropriate exception.
-            return self.data[i]
-
-class _localized_month(_indexer):
+class _localized_month:
     def __init__(self, format):
         self.format = format
 
@@ -47,12 +38,12 @@ class _localized_month(_indexer):
         self.data = [strftime(self.format, (2001, j, 1, 12, 0, 0, 1, 1, 0))
                      for j in range(1, 13)]
         self.data.insert(0, "")
-        return _indexer.__getitem__(self, i)
+        return self.data[i]
 
     def __len__(self):
         return 13
 
-class _localized_day(_indexer):
+class _localized_day:
     def __init__(self, format):
         self.format = format
 
@@ -60,7 +51,7 @@ class _localized_day(_indexer):
         # January 1, 2001, was a Monday.
         self.data = [strftime(self.format, (2001, 1, j+1, 12, 0, 0, j, j+1, 0))
                      for j in range(7)]
-        return _indexer.__getitem__(self, i)
+        return self.data[i]
 
     def __len__(self_):
         return 7
