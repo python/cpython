@@ -131,13 +131,12 @@ called directly, so they are not documented here.  For details,
 consult the module code.
 
 
-\subsection{SMTP Example}
-\label{SMTP-example}
+\subsection{SMTP Example \label{SMTP-example}}
 
 % really need a little description here...
 
 \begin{verbatim}
-import sys, rfc822
+import rfc822, string, sys
 
 def prompt(prompt):
     sys.stdout.write(prompt + ": ")
