@@ -213,6 +213,7 @@ random_seed(RandomObject *self, PyObject *args)
 	unsigned long *key = NULL;
 	unsigned long keymax;		/* # of allocated slots in key */
 	unsigned long keyused;		/* # of used slots in key */
+	int err;
 
 	PyObject *arg = NULL;
 
@@ -261,11 +262,13 @@ random_seed(RandomObject *self, PyObject *args)
 	thirtytwo = PyInt_FromLong(32L);
 	if (thirtytwo == NULL)
 		goto Done;
-	while (PyObject_IsTrue(n)) {
+	while ((err=PyObject_IsTrue(n))) {
 		PyObject *newn;
 		PyObject *pychunk;
 		unsigned long chunk;
 
+		if (err == -1)
+			goto Done;
 		pychunk = PyNumber_And(n, masklower);
 		if (pychunk == NULL)
 			goto Done;
