@@ -259,8 +259,8 @@ PySocket_ssl(PyObject *self, PyObject *args)
 	return (PyObject *)rv;
 }
 
-static char ssl_doc[] =
-"ssl(socket, [keyfile, certfile]) -> sslobject";
+PyDoc_STRVAR(ssl_doc,
+"ssl(socket, [keyfile, certfile]) -> sslobject");
 
 /* SSL object methods */
 
@@ -306,11 +306,11 @@ static PyObject *PySSL_SSLwrite(PySSLObject *self, PyObject *args)
 		return PySSL_SetError(self, len);
 }
 
-static char PySSL_SSLwrite_doc[] =
+PyDoc_STRVAR(PySSL_SSLwrite_doc,
 "write(s) -> len\n\
 \n\
 Writes the string s into the SSL object.  Returns the number\n\
-of bytes written.";
+of bytes written.");
 
 static PyObject *PySSL_SSLread(PySSLObject *self, PyObject *args)
 {
@@ -336,10 +336,10 @@ static PyObject *PySSL_SSLread(PySSLObject *self, PyObject *args)
 	return buf;
 }
 
-static char PySSL_SSLread_doc[] =
+PyDoc_STRVAR(PySSL_SSLread_doc,
 "read([len]) -> string\n\
 \n\
-Read up to len bytes from the SSL socket.";
+Read up to len bytes from the SSL socket.");
 
 static PyMethodDef PySSLMethods[] = {
 	{"write", (PyCFunction)PySSL_SSLwrite, METH_VARARGS,
@@ -392,11 +392,11 @@ PySSL_RAND_add(PyObject *self, PyObject *args)
     return Py_None;
 }
 
-static char PySSL_RAND_add_doc[] =
+PyDoc_STRVAR(PySSL_RAND_add_doc,
 "RAND_add(string, entropy)\n\
 \n\
 Mix string into the OpenSSL PRNG state.  entropy (a float) is a lower\n\
-bound on the entropy contained in string.";
+bound on the entropy contained in string.");
 
 static PyObject *
 PySSL_RAND_status(PyObject *self)
@@ -404,12 +404,12 @@ PySSL_RAND_status(PyObject *self)
     return PyInt_FromLong(RAND_status());
 }
 
-static char PySSL_RAND_status_doc[] = 
+PyDoc_STRVAR(PySSL_RAND_status_doc,
 "RAND_status() -> 0 or 1\n\
 \n\
 Returns 1 if the OpenSSL PRNG has been seeded with enough data and 0 if not.\n\
 It is necessary to seed the PRNG with RAND_add() on some platforms before\n\
-using the ssl() function.";
+using the ssl() function.");
 
 static PyObject *
 PySSL_RAND_egd(PyObject *self, PyObject *arg)
@@ -430,12 +430,12 @@ PySSL_RAND_egd(PyObject *self, PyObject *arg)
     return PyInt_FromLong(bytes);
 }
 
-static char PySSL_RAND_egd_doc[] = 
+PyDoc_STRVAR(PySSL_RAND_egd_doc,
 "RAND_egd(path) -> bytes\n\
 \n\
 Queries the entropy gather daemon (EGD) on socket path.  Returns number\n\
 of bytes read.  Raises socket.sslerror if connection to EGD fails or\n\
-if it does provide enough data to seed PRNG.";
+if it does provide enough data to seed PRNG.");
 
 #endif
 
@@ -456,9 +456,9 @@ static PyMethodDef PySSL_methods[] = {
 };
 
 
-static char module_doc[] =
+PyDoc_STRVAR(module_doc,
 "Implementation module for SSL socket operations.  See the socket module\n\
-for documentation.";
+for documentation.");
 
 DL_EXPORT(void)
 init_ssl(void)

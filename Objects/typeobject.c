@@ -1487,9 +1487,9 @@ static PyMethodDef type_methods[] = {
 	{0}
 };
 
-static char type_doc[] =
+PyDoc_STRVAR(type_doc,
 "type(object) -> the object's type\n"
-"type(name, bases, dict) -> a new type";
+"type(name, bases, dict) -> a new type");
 
 static int
 type_traverse(PyTypeObject *type, visitproc visit, void *arg)
@@ -4355,14 +4355,14 @@ super_init(PyObject *self, PyObject *args, PyObject *kwds)
 	return 0;
 }
 
-static char super_doc[] =
+PyDoc_STRVAR(super_doc,
 "super(type) -> unbound super object\n"
 "super(type, obj) -> bound super object; requires isinstance(obj, type)\n"
 "super(type, type2) -> bound super object; requires issubclass(type2, type)\n"
 "Typical use to call a cooperative superclass method:\n"
 "class C(B):\n"
 "    def meth(self, arg):\n"
-"        super(C, self).meth(arg)";
+"        super(C, self).meth(arg)");
 
 static int
 super_traverse(PyObject *self, visitproc visit, void *arg)

@@ -719,10 +719,10 @@ float_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	return new;
 }
 
-static char float_doc[] =
+PyDoc_STRVAR(float_doc,
 "float(x) -> floating point number\n\
 \n\
-Convert a string or number to a floating point number, if possible.";
+Convert a string or number to a floating point number, if possible.");
 
 
 static PyNumberMethods float_as_number = {

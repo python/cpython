@@ -912,11 +912,11 @@ complex_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	return complex_subtype_from_c_complex(type, cr);
 }
 
-static char complex_doc[] =
+PyDoc_STRVAR(complex_doc,
 "complex(real[, imag]) -> complex number\n"
 "\n"
 "Create a complex number from a real part and an optional imaginary part.\n"
-"This is equivalent to (real + imag*1j) where imag defaults to 0.";
+"This is equivalent to (real + imag*1j) where imag defaults to 0.");
 
 static PyNumberMethods complex_as_number = {
 	(binaryfunc)complex_add, 		/* nb_add */

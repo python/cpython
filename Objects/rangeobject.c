@@ -110,12 +110,12 @@ range_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 	return PyRange_New(ilow, n, istep, 1);
 }
 
-static char range_doc[] =
+PyDoc_STRVAR(range_doc,
 "xrange([start,] stop[, step]) -> xrange object\n\
 \n\
 Like range(), but instead of returning a list, returns an object that\n\
 generates the numbers in the range on demand.  This is slightly slower\n\
-than range() but more memory efficient.";
+than range() but more memory efficient.");
 
 static PyObject *
 range_item(rangeobject *r, int i)

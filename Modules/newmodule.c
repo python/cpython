@@ -4,9 +4,9 @@
 #include "Python.h"
 #include "compile.h"
 
-static char new_instance_doc[] =
+PyDoc_STRVAR(new_instance_doc,
 "Create an instance object from (CLASS [, DICT]) without calling its\n\
-__init__() method.  DICT must be a dictionary or None.";
+__init__() method.  DICT must be a dictionary or None.");
 
 static PyObject *
 new_instance(PyObject* unused, PyObject* args)
@@ -30,8 +30,8 @@ new_instance(PyObject* unused, PyObject* args)
 	return PyInstance_NewRaw(klass, dict);
 }
 
-static char new_im_doc[] =
-"Create a instance method object from (FUNCTION, INSTANCE, CLASS).";
+PyDoc_STRVAR(new_im_doc,
+"Create a instance method object from (FUNCTION, INSTANCE, CLASS).");
 
 static PyObject *
 new_instancemethod(PyObject* unused, PyObject* args)
@@ -53,8 +53,8 @@ new_instancemethod(PyObject* unused, PyObject* args)
 	return PyMethod_New(func, self, classObj);
 }
 
-static char new_function_doc[] =
-"Create a function object from (CODE, GLOBALS, [NAME [, ARGDEFS]]).";
+PyDoc_STRVAR(new_function_doc,
+"Create a function object from (CODE, GLOBALS, [NAME [, ARGDEFS]]).");
 
 static PyObject *
 new_function(PyObject* unused, PyObject* args)
@@ -95,10 +95,10 @@ new_function(PyObject* unused, PyObject* args)
 	return (PyObject *)newfunc;
 }
 
-static char new_code_doc[] =
+PyDoc_STRVAR(new_code_doc,
 "Create a code object from (ARGCOUNT, NLOCALS, STACKSIZE, FLAGS, CODESTRING,\n"
 "CONSTANTS, NAMES, VARNAMES, FILENAME, NAME, FIRSTLINENO, LNOTAB, FREEVARS,\n"
-"CELLVARS).";
+"CELLVARS).");
 
 static PyObject *
 new_code(PyObject* unused, PyObject* args)
@@ -157,8 +157,8 @@ new_code(PyObject* unused, PyObject* args)
 				      firstlineno, lnotab); 
 }
 
-static char new_module_doc[] =
-"Create a module object from (NAME).";
+PyDoc_STRVAR(new_module_doc,
+"Create a module object from (NAME).");
 
 static PyObject *
 new_module(PyObject* unused, PyObject* args)
@@ -170,8 +170,8 @@ new_module(PyObject* unused, PyObject* args)
 	return PyModule_New(name);
 }
 
-static char new_class_doc[] =
-"Create a class object from (NAME, BASE_CLASSES, DICT).";
+PyDoc_STRVAR(new_class_doc,
+"Create a class object from (NAME, BASE_CLASSES, DICT).");
 
 static PyObject *
 new_class(PyObject* unused, PyObject* args)
@@ -202,10 +202,10 @@ static PyMethodDef new_methods[] = {
 	{NULL,			NULL}		/* sentinel */
 };
 
-static char new_doc[] =
+PyDoc_STRVAR(new_doc,
 "Functions to create new objects used by the interpreter.\n\
 \n\
-You need to know a great deal about the interpreter to use this!";
+You need to know a great deal about the interpreter to use this!");
 
 DL_EXPORT(void)
 initnew(void)

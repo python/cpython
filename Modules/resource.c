@@ -17,12 +17,12 @@
 
 static PyObject *ResourceError;
 
-static char struct_rusage__doc__[] =
-	"struct_rusage: Result from getrusage.\n\n"
-	"This object may be accessed either as a tuple of\n"
-	"    (utime,stime,maxrss,ixrss,idrss,isrss,minflt,majflt,\n"
-	"    nswap,inblock,oublock,msgsnd,msgrcv,nsignals,nvcsw,nivcsw)\n"
-	"or via the attributes ru_utime, ru_stime, ru_maxrss, and so on.\n";
+PyDoc_STRVAR(struct_rusage__doc__,
+"struct_rusage: Result from getrusage.\n\n"
+"This object may be accessed either as a tuple of\n"
+"    (utime,stime,maxrss,ixrss,idrss,isrss,minflt,majflt,\n"
+"    nswap,inblock,oublock,msgsnd,msgrcv,nsignals,nvcsw,nivcsw)\n"
+"or via the attributes ru_utime, ru_stime, ru_maxrss, and so on.");
 
 static PyStructSequence_Field struct_rusage_fields[] = {
 	{"ru_utime",	"user time used"},

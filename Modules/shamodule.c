@@ -350,8 +350,7 @@ SHA_dealloc(PyObject *ptr)
 
 /* External methods for a hashing object */
 
-static char SHA_copy__doc__[] = 
-"Return a copy of the hashing object.";
+PyDoc_STRVAR(SHA_copy__doc__, "Return a copy of the hashing object.");
 
 static PyObject *
 SHA_copy(SHAobject *self, PyObject *args)
@@ -368,8 +367,8 @@ SHA_copy(SHAobject *self, PyObject *args)
     return (PyObject *)newobj;
 }
 
-static char SHA_digest__doc__[] = 
-"Return the digest value as a string of binary data.";
+PyDoc_STRVAR(SHA_digest__doc__,
+"Return the digest value as a string of binary data.");
 
 static PyObject *
 SHA_digest(SHAobject *self, PyObject *args)
@@ -385,8 +384,8 @@ SHA_digest(SHAobject *self, PyObject *args)
     return PyString_FromStringAndSize((const char *)digest, sizeof(digest));
 }
 
-static char SHA_hexdigest__doc__[] = 
-"Return the digest value as a string of hexadecimal digits.";
+PyDoc_STRVAR(SHA_hexdigest__doc__,
+"Return the digest value as a string of hexadecimal digits.");
 
 static PyObject *
 SHA_hexdigest(SHAobject *self, PyObject *args)
@@ -427,8 +426,8 @@ SHA_hexdigest(SHAobject *self, PyObject *args)
     return retval;
 }
 
-static char SHA_update__doc__[] = 
-"Update this hashing object's state with the provided string.";
+PyDoc_STRVAR(SHA_update__doc__,
+"Update this hashing object's state with the provided string.");
 
 static PyObject *
 SHA_update(SHAobject *self, PyObject *args)
@@ -479,10 +478,10 @@ static PyTypeObject SHAtype = {
 
 /* The single module-level function: new() */
 
-static char SHA_new__doc__[] =
- "Return a new SHA hashing object.  An optional string "
- "argument may be provided; if present, this string will be "
- " automatically hashed."; 
+PyDoc_STRVAR(SHA_new__doc__,
+"Return a new SHA hashing object.  An optional string argument\n\
+may be provided; if present, this string will be automatically\n\
+hashed.");
 
 static PyObject *
 SHA_new(PyObject *self, PyObject *args, PyObject *kwdict)

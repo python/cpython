@@ -458,7 +458,7 @@ static PyMethodDef unicodedata_functions[] = {
     {NULL, NULL}		/* sentinel */
 };
 
-static char *unicodedata_docstring = "unicode character database";
+PyDoc_STRVAR(unicodedata_docstring, "unicode character database");
 
 DL_EXPORT(void)
 initunicodedata(void)

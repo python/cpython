@@ -40,7 +40,7 @@ builtin___import__(PyObject *self, PyObject *args)
 	return PyImport_ImportModuleEx(name, globals, locals, fromlist);
 }
 
-static char import_doc[] =
+PyDoc_STRVAR(import_doc,
 "__import__(name, globals, locals, fromlist) -> module\n\
 \n\
 Import a module.  The globals are only used to determine the context;\n\
@@ -49,7 +49,7 @@ should be a list of names to emulate ``from name import ...'', or an\n\
 empty list to emulate ``import name''.\n\
 When importing a module from a package, note that __import__('A.B', ...)\n\
 returns package A when fromlist is empty, but its submodule B when\n\
-fromlist is not empty.";
+fromlist is not empty.");
 
 
 static PyObject *
@@ -58,10 +58,10 @@ builtin_abs(PyObject *self, PyObject *v)
 	return PyNumber_Absolute(v);
 }
 
-static char abs_doc[] =
+PyDoc_STRVAR(abs_doc,
 "abs(number) -> number\n\
 \n\
-Return the absolute value of the argument.";
+Return the absolute value of the argument.");
 
 
 static PyObject *
@@ -98,12 +98,12 @@ builtin_apply(PyObject *self, PyObject *args)
 	return retval;
 }
 
-static char apply_doc[] =
+PyDoc_STRVAR(apply_doc,
 "apply(object[, args[, kwargs]]) -> value\n\
 \n\
 Call a callable object with positional arguments taken from the tuple args,\n\
 and keyword arguments taken from the optional dictionary kwargs.\n\
-Note that classes are callable, as are instances with a __call__() method.";
+Note that classes are callable, as are instances with a __call__() method.");
 
 
 static PyObject *
@@ -118,13 +118,13 @@ builtin_buffer(PyObject *self, PyObject *args)
 	return PyBuffer_FromObject(ob, offset, size);
 }
 
-static char buffer_doc[] =
+PyDoc_STRVAR(buffer_doc,
 "buffer(object [, offset[, size]]) -> object\n\
 \n\
 Create a new buffer object which references the given object.\n\
 The buffer will reference a slice of the target object from the\n\
 start of the object (or at the specified offset). The slice will\n\
-extend to the end of the target object (or with the specified size).";
+extend to the end of the target object (or with the specified size).");
 
 
 static PyObject *
@@ -133,11 +133,11 @@ builtin_callable(PyObject *self, PyObject *v)
 	return PyBool_FromLong((long)PyCallable_Check(v));
 }
 
-static char callable_doc[] =
+PyDoc_STRVAR(callable_doc,
 "callable(object) -> bool\n\
 \n\
 Return whether the object is callable (i.e., some kind of function).\n\
-Note that classes are callable, as are instances with a __call__() method.";
+Note that classes are callable, as are instances with a __call__() method.");
 
 
 static PyObject *
@@ -246,12 +246,12 @@ Fail_it:
 	return NULL;
 }
 
-static char filter_doc[] =
+PyDoc_STRVAR(filter_doc,
 "filter(function or None, sequence) -> list, tuple, or string\n"
 "\n"
 "Return those items of sequence for which function(item) is true.  If\n"
 "function is None, return the items that are true.  If sequence is a tuple\n"
-"or string, return the same type, else return a list.";
+"or string, return the same type, else return a list.");
 
 static PyObject *
 builtin_chr(PyObject *self, PyObject *args)
@@ -270,10 +270,10 @@ builtin_chr(PyObject *self, PyObject *args)
 	return PyString_FromStringAndSize(s, 1);
 }
 
-static char chr_doc[] =
+PyDoc_STRVAR(chr_doc,
 "chr(i) -> character\n\
 \n\
-Return a string of one character with ordinal i; 0 <= i < 256.";
+Return a string of one character with ordinal i; 0 <= i < 256.");
 
 
 #ifdef Py_USING_UNICODE
@@ -321,10 +321,10 @@ builtin_unichr(PyObject *self, PyObject *args)
 	}
 }
 
-static char unichr_doc[] =
+PyDoc_STRVAR(unichr_doc,
 "unichr(i) -> Unicode character\n\
 \n\
-Return a Unicode string of one character with ordinal i; 0 <= i <= 0x10ffff.";
+Return a Unicode string of one character with ordinal i; 0 <= i <= 0x10ffff.");
 #endif
 
 
@@ -341,10 +341,10 @@ builtin_cmp(PyObject *self, PyObject *args)
 	return PyInt_FromLong((long)c);
 }
 
-static char cmp_doc[] =
+PyDoc_STRVAR(cmp_doc,
 "cmp(x, y) -> integer\n\
 \n\
-Return negative if x<y, zero if x==y, positive if x>y.";
+Return negative if x<y, zero if x==y, positive if x>y.");
 
 
 static PyObject *
@@ -363,11 +363,11 @@ builtin_coerce(PyObject *self, PyObject *args)
 	return res;
 }
 
-static char coerce_doc[] =
+PyDoc_STRVAR(coerce_doc,
 "coerce(x, y) -> None or (x1, y1)\n\
 \n\
 When x and y can be coerced to values of the same type, return a tuple\n\
-containing the coerced values.  When they can't be coerced, return None.";
+containing the coerced values.  When they can't be coerced, return None.");
 
 
 static PyObject *
@@ -411,7 +411,7 @@ builtin_compile(PyObject *self, PyObject *args)
 	return Py_CompileStringFlags(str, filename, start, &cf);
 }
 
-static char compile_doc[] =
+PyDoc_STRVAR(compile_doc,
 "compile(source, filename, mode[, flags[, dont_inherit]]) -> code object\n\
 \n\
 Compile the source string (a Python module, statement or expression)\n\
@@ -424,7 +424,7 @@ the compilation of the code.\n\
 The dont_inherit argument, if non-zero, stops the compilation inheriting\n\
 the effects of any future statements in effect in the code calling\n\
 compile; if absent or zero these statements do influence the compilation,\n\
-in addition to any features explicitly specified.";
+in addition to any features explicitly specified.");
 
 static PyObject *
 builtin_dir(PyObject *self, PyObject *args)
@@ -436,7 +436,7 @@ builtin_dir(PyObject *self, PyObject *args)
 	return PyObject_Dir(arg);
 }
 
-static char dir_doc[] =
+PyDoc_STRVAR(dir_doc,
 "dir([object]) -> list of strings\n"
 "\n"
 "Return an alphabetized list of names comprising (some of) the attributes\n"
@@ -447,7 +447,7 @@ static char dir_doc[] =
 "Type or class object:  its attributes, and recursively the attributes of\n"
 "    its bases.\n"
 "Otherwise:  its attributes, its class's attributes, and recursively the\n"
-"    attributes of its class's base classes.";
+"    attributes of its class's base classes.");
 
 static PyObject *
 builtin_divmod(PyObject *self, PyObject *args)
@@ -459,10 +459,10 @@ builtin_divmod(PyObject *self, PyObject *args)
 	return PyNumber_Divmod(v, w);
 }
 
-static char divmod_doc[] =
+PyDoc_STRVAR(divmod_doc,
 "divmod(x, y) -> (div, mod)\n\
 \n\
-Return the tuple ((x-x%y)/y, x%y).  Invariant: div*y + mod == x.";
+Return the tuple ((x-x%y)/y, x%y).  Invariant: div*y + mod == x.");
 
 
 static PyObject *
@@ -517,14 +517,14 @@ builtin_eval(PyObject *self, PyObject *args)
 	return PyRun_StringFlags(str, Py_eval_input, globals, locals, &cf);
 }
 
-static char eval_doc[] =
+PyDoc_STRVAR(eval_doc,
 "eval(source[, globals[, locals]]) -> value\n\
 \n\
 Evaluate the source in the context of globals and locals.\n\
 The source may be a string representing a Python expression\n\
 or a code object as returned by compile().\n\
 The globals and locals are dictionaries, defaulting to the current\n\
-globals and locals.  If only globals is given, locals defaults to it.";
+globals and locals.  If only globals is given, locals defaults to it.");
 
 
 static PyObject *
@@ -616,12 +616,12 @@ builtin_execfile(PyObject *self, PyObject *args)
 	return res;
 }
 
-static char execfile_doc[] =
+PyDoc_STRVAR(execfile_doc,
 "execfile(filename[, globals[, locals]])\n\
 \n\
 Read and execute a Python script from a file.\n\
 The globals and locals are dictionaries, defaulting to the current\n\
-globals and locals.  If only globals is given, locals defaults to it.";
+globals and locals.  If only globals is given, locals defaults to it.");
 
 
 static PyObject *
@@ -656,12 +656,12 @@ builtin_getattr(PyObject *self, PyObject *args)
 	return result;
 }
 
-static char getattr_doc[] =
+PyDoc_STRVAR(getattr_doc,
 "getattr(object, name[, default]) -> value\n\
 \n\
 Get a named attribute from an object; getattr(x, 'y') is equivalent to x.y.\n\
 When a default argument is given, it is returned when the attribute doesn't\n\
-exist; without it, an exception is raised in that case.";
+exist; without it, an exception is raised in that case.");
 
 
 static PyObject *
@@ -674,10 +674,10 @@ builtin_globals(PyObject *self)
 	return d;
 }
 
-static char globals_doc[] =
+PyDoc_STRVAR(globals_doc,
 "globals() -> dictionary\n\
 \n\
-Return the dictionary containing the current scope's global variables.";
+Return the dictionary containing the current scope's global variables.");
 
 
 static PyObject *
@@ -712,11 +712,11 @@ builtin_hasattr(PyObject *self, PyObject *args)
 	return Py_True;
 }
 
-static char hasattr_doc[] =
+PyDoc_STRVAR(hasattr_doc,
 "hasattr(object, name) -> bool\n\
 \n\
 Return whether the object has an attribute with the given name.\n\
-(This is done by calling getattr(object, name) and catching exceptions.)";
+(This is done by calling getattr(object, name) and catching exceptions.)");
 
 
 static PyObject *
@@ -725,11 +725,11 @@ builtin_id(PyObject *self, PyObject *v)
 	return PyLong_FromVoidPtr(v);
 }
 
-static char id_doc[] =
+PyDoc_STRVAR(id_doc,
 "id(object) -> integer\n\
 \n\
 Return the identity of an object.  This is guaranteed to be unique among\n\
-simultaneously existing objects.  (Hint: it's the object's memory address.)";
+simultaneously existing objects.  (Hint: it's the object's memory address.)");
 
 
 static PyObject *
@@ -888,7 +888,7 @@ Succeed:
 	return result;
 }
 
-static char map_doc[] =
+PyDoc_STRVAR(map_doc,
 "map(function, sequence[, sequence, ...]) -> list\n\
 \n\
 Return a list of the results of applying the function to the items of\n\
@@ -896,7 +896,7 @@ the argument sequence(s).  If more than one sequence is given, the\n\
 function is called with an argument list consisting of the corresponding\n\
 item of each sequence, substituting None for missing values when not all\n\
 sequences have the same length.  If the function is None, return a list of\n\
-the items of the sequence (or a list of tuples if more than one sequence).";
+the items of the sequence (or a list of tuples if more than one sequence).");
 
 
 static PyObject *
@@ -914,11 +914,11 @@ builtin_setattr(PyObject *self, PyObject *args)
 	return Py_None;
 }
 
-static char setattr_doc[] =
+PyDoc_STRVAR(setattr_doc,
 "setattr(object, name, value)\n\
 \n\
 Set a named attribute on an object; setattr(x, 'y', v) is equivalent to\n\
-``x.y = v''.";
+``x.y = v''.");
 
 
 static PyObject *
@@ -935,11 +935,11 @@ builtin_delattr(PyObject *self, PyObject *args)
 	return Py_None;
 }
 
-static char delattr_doc[] =
+PyDoc_STRVAR(delattr_doc,
 "delattr(object, name)\n\
 \n\
 Delete a named attribute on an object; delattr(x, 'y') is equivalent to\n\
-``del x.y''.";
+``del x.y''.");
 
 
 static PyObject *
@@ -953,11 +953,11 @@ builtin_hash(PyObject *self, PyObject *v)
 	return PyInt_FromLong(x);
 }
 
-static char hash_doc[] =
+PyDoc_STRVAR(hash_doc,
 "hash(object) -> integer\n\
 \n\
 Return a hash value for the object.  Two objects with the same value have\n\
-the same hash value.  The reverse is not necessarily true, but likely.";
+the same hash value.  The reverse is not necessarily true, but likely.");
 
 
 static PyObject *
@@ -974,10 +974,10 @@ builtin_hex(PyObject *self, PyObject *v)
 	return (*nb->nb_hex)(v);
 }
 
-static char hex_doc[] =
+PyDoc_STRVAR(hex_doc,
 "hex(number) -> string\n\
 \n\
-Return the hexadecimal representation of an integer or long integer.";
+Return the hexadecimal representation of an integer or long integer.");
 
 
 static PyObject *builtin_raw_input(PyObject *, PyObject *);
@@ -1009,10 +1009,10 @@ builtin_input(PyObject *self, PyObject *args)
 	return res;
 }
 
-static char input_doc[] =
+PyDoc_STRVAR(input_doc,
 "input([prompt]) -> value\n\
 \n\
-Equivalent to eval(raw_input(prompt)).";
+Equivalent to eval(raw_input(prompt)).");
 
 
 static PyObject *
@@ -1026,13 +1026,13 @@ builtin_intern(PyObject *self, PyObject *args)
 	return s;
 }
 
-static char intern_doc[] =
+PyDoc_STRVAR(intern_doc,
 "intern(string) -> string\n\
 \n\
 ``Intern'' the given string.  This enters the string in the (global)\n\
 table of interned strings whose purpose is to speed up dictionary lookups.\n\
 Return the string itself or the previously interned string object with the\n\
-same value.";
+same value.");
 
 
 static PyObject *
@@ -1052,13 +1052,13 @@ builtin_iter(PyObject *self, PyObject *args)
 	return PyCallIter_New(v, w);
 }
 
-static char iter_doc[] =
+PyDoc_STRVAR(iter_doc,
 "iter(collection) -> iterator\n\
 iter(callable, sentinel) -> iterator\n\
 \n\
 Get an iterator from an object.  In the first form, the argument must\n\
 supply its own iterator, or be a sequence.\n\
-In the second form, the callable is called until it returns the sentinel.";
+In the second form, the callable is called until it returns the sentinel.");
 
 
 static PyObject *
@@ -1072,10 +1072,10 @@ builtin_len(PyObject *self, PyObject *v)
 	return PyInt_FromLong(res);
 }
 
-static char len_doc[] =
+PyDoc_STRVAR(len_doc,
 "len(object) -> integer\n\
 \n\
-Return the number of items of a sequence or mapping.";
+Return the number of items of a sequence or mapping.");
 
 
 static PyObject *
@@ -1097,10 +1097,10 @@ builtin_slice(PyObject *self, PyObject *args)
 	return PySlice_New(start, stop, step);
 }
 
-static char slice_doc[] =
+PyDoc_STRVAR(slice_doc,
 "slice([start,] stop[, step]) -> slice object\n\
 \n\
-Create a slice object.  This is used for slicing by the Numeric extensions.";
+Create a slice object.  This is used for slicing by the Numeric extensions.");
 
 
 static PyObject *
@@ -1113,10 +1113,10 @@ builtin_locals(PyObject *self)
 	return d;
 }
 
-static char locals_doc[] =
+PyDoc_STRVAR(locals_doc,
 "locals() -> dictionary\n\
 \n\
-Return the dictionary containing the current scope's local variables.";
+Return the dictionary containing the current scope's local variables.");
 
 
 static PyObject *
@@ -1176,12 +1176,12 @@ builtin_min(PyObject *self, PyObject *v)
 	return min_max(v, Py_LT);
 }
 
-static char min_doc[] =
+PyDoc_STRVAR(min_doc,
 "min(sequence) -> value\n\
 min(a, b, c, ...) -> value\n\
 \n\
 With a single sequence argument, return its smallest item.\n\
-With two or more arguments, return the smallest argument.";
+With two or more arguments, return the smallest argument.");
 
 
 static PyObject *
@@ -1190,12 +1190,12 @@ builtin_max(PyObject *self, PyObject *v)
 	return min_max(v, Py_GT);
 }
 
-static char max_doc[] =
+PyDoc_STRVAR(max_doc,
 "max(sequence) -> value\n\
 max(a, b, c, ...) -> value\n\
 \n\
 With a single sequence argument, return its largest item.\n\
-With two or more arguments, return the largest argument.";
+With two or more arguments, return the largest argument.");
 
 
 static PyObject *
@@ -1212,10 +1212,10 @@ builtin_oct(PyObject *self, PyObject *v)
 	return (*nb->nb_oct)(v);
 }
 
-static char oct_doc[] =
+PyDoc_STRVAR(oct_doc,
 "oct(number) -> string\n\
 \n\
-Return the octal representation of an integer or long integer.";
+Return the octal representation of an integer or long integer.");
 
 
 static PyObject *
@@ -1252,10 +1252,10 @@ builtin_ord(PyObject *self, PyObject* obj)
 	return NULL;
 }
 
-static char ord_doc[] =
+PyDoc_STRVAR(ord_doc,
 "ord(c) -> integer\n\
 \n\
-Return the integer ordinal of a one-character string.";
+Return the integer ordinal of a one-character string.");
 
 
 static PyObject *
@@ -1268,11 +1268,11 @@ builtin_pow(PyObject *self, PyObject *args)
 	return PyNumber_Power(v, w, z);
 }
 
-static char pow_doc[] =
+PyDoc_STRVAR(pow_doc,
 "pow(x, y[, z]) -> number\n\
 \n\
 With two arguments, equivalent to x**y.  With three arguments,\n\
-equivalent to (x**y) % z, but may be more efficient (e.g. for longs).";
+equivalent to (x**y) % z, but may be more efficient (e.g. for longs).");
 
 
 /* Return number of items in range/xrange (lo, hi, step).  step > 0
@@ -1354,14 +1354,14 @@ builtin_range(PyObject *self, PyObject *args)
 	return v;
 }
 
-static char range_doc[] =
+PyDoc_STRVAR(range_doc,
 "range([start,] stop[, step]) -> list of integers\n\
 \n\
 Return a list containing an arithmetic progression of integers.\n\
 range(i, j) returns [i, i+1, i+2, ..., j-1]; start (!) defaults to 0.\n\
 When step is given, it specifies the increment (or decrement).\n\
 For example, range(4) returns [0, 1, 2, 3].  The end point is omitted!\n\
-These are exactly the valid indices for a list of 4 elements.";
+These are exactly the valid indices for a list of 4 elements.");
 
 
 static PyObject *
@@ -1432,13 +1432,13 @@ builtin_raw_input(PyObject *self, PyObject *args)
 	return PyFile_GetLine(f, -1);
 }
 
-static char raw_input_doc[] =
+PyDoc_STRVAR(raw_input_doc,
 "raw_input([prompt]) -> string\n\
 \n\
 Read a string from standard input.  The trailing newline is stripped.\n\
 If the user hits EOF (Unix: Ctl-D, Windows: Ctl-Z+Return), raise EOFError.\n\
 On Unix, GNU readline is used if enabled.  The prompt string, if given,\n\
-is printed without a trailing newline before reading.";
+is printed without a trailing newline before reading.");
 
 
 static PyObject *
@@ -1504,7 +1504,7 @@ Fail:
 	return NULL;
 }
 
-static char reduce_doc[] =
+PyDoc_STRVAR(reduce_doc,
 "reduce(function, sequence[, initial]) -> value\n\
 \n\
 Apply a function of two arguments cumulatively to the items of a sequence,\n\
@@ -1512,7 +1512,7 @@ from left to right, so as to reduce the sequence to a single value.\n\
 For example, reduce(lambda x, y: x+y, [1, 2, 3, 4, 5]) calculates\n\
 ((((1+2)+3)+4)+5).  If initial is present, it is placed before the items\n\
 of the sequence in the calculation, and serves as a default when the\n\
-sequence is empty.";
+sequence is empty.");
 
 
 static PyObject *
@@ -1521,10 +1521,10 @@ builtin_reload(PyObject *self, PyObject *v)
 	return PyImport_ReloadModule(v);
 }
 
-static char reload_doc[] =
+PyDoc_STRVAR(reload_doc,
 "reload(module) -> module\n\
 \n\
-Reload the module.  The module must have been successfully imported before.";
+Reload the module.  The module must have been successfully imported before.");
 
 
 static PyObject *
@@ -1533,11 +1533,11 @@ builtin_repr(PyObject *self, PyObject *v)
 	return PyObject_Repr(v);
 }
 
-static char repr_doc[] =
+PyDoc_STRVAR(repr_doc,
 "repr(object) -> string\n\
 \n\
 Return the canonical string representation of the object.\n\
-For most object types, eval(repr(object)) == object.";
+For most object types, eval(repr(object)) == object.");
 
 
 static PyObject *
@@ -1569,11 +1569,11 @@ builtin_round(PyObject *self, PyObject *args)
 	return PyFloat_FromDouble(x);
 }
 
-static char round_doc[] =
+PyDoc_STRVAR(round_doc,
 "round(number[, ndigits]) -> floating point number\n\
 \n\
 Round a number to a given precision in decimal digits (default 0 digits).\n\
-This always returns a floating point number.  Precision may be negative.";
+This always returns a floating point number.  Precision may be negative.");
 
 
 static PyObject *
@@ -1605,11 +1605,11 @@ builtin_vars(PyObject *self, PyObject *args)
 	return d;
 }
 
-static char vars_doc[] =
+PyDoc_STRVAR(vars_doc,
 "vars([object]) -> dictionary\n\
 \n\
 Without arguments, equivalent to locals().\n\
-With an argument, equivalent to object.__dict__.";
+With an argument, equivalent to object.__dict__.");
 
 static PyObject *
 builtin_isinstance(PyObject *self, PyObject *args)
@@ -1627,13 +1627,13 @@ builtin_isinstance(PyObject *self, PyObject *args)
 	return PyBool_FromLong(retval);
 }
 
-static char isinstance_doc[] =
+PyDoc_STRVAR(isinstance_doc,
 "isinstance(object, class-or-type-or-tuple) -> bool\n\
 \n\
 Return whether an object is an instance of a class or of a subclass thereof.\n\
 With a type as second argument, return whether that is the object's type.\n\
 The form using a tuple, isinstance(x, (A, B, ...)), is a shortcut for\n\
-isinstance(x, A) or isinstance(x, B) or ... (etc.).";
+isinstance(x, A) or isinstance(x, B) or ... (etc.).");
 
 
 static PyObject *
@@ -1652,10 +1652,10 @@ builtin_issubclass(PyObject *self, PyObject *args)
 	return PyBool_FromLong(retval);
 }
 
-static char issubclass_doc[] =
+PyDoc_STRVAR(issubclass_doc,
 "issubclass(C, B) -> bool\n\
 \n\
-Return whether class C is a subclass (i.e., a derived class) of class B.";
+Return whether class C is a subclass (i.e., a derived class) of class B.");
 
 
 static PyObject*
@@ -1763,12 +1763,12 @@ Fail_ret:
 }
 
 
-static char zip_doc[] =
+PyDoc_STRVAR(zip_doc,
 "zip(seq1 [, seq2 [...]]) -> [(seq1[0], seq2[0] ...), (...)]\n\
 \n\
 Return a list of tuples, where each tuple contains the i-th element\n\
 from each of the argument sequences.  The returned list is truncated\n\
-in length to the length of the shortest argument sequence.";
+in length to the length of the shortest argument sequence.");
 
 
 static PyMethodDef builtin_methods[] = {
@@ -1822,10 +1822,10 @@ static PyMethodDef builtin_methods[] = {
 	{NULL,		NULL},
 };
 
-static char builtin_doc[] =
+PyDoc_STRVAR(builtin_doc,
 "Built-in functions, exceptions, and other objects.\n\
 \n\
-Noteworthy: None is the `nil' object; Ellipsis represents `...' in slices.";
+Noteworthy: None is the `nil' object; Ellipsis represents `...' in slices.");
 
 PyObject *
 _PyBuiltin_Init(void)

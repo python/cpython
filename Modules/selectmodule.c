@@ -351,12 +351,12 @@ update_ufd_array(pollObject *self)
 	return 1;
 }
 
-static char poll_register_doc[] =
+PyDoc_STRVAR(poll_register_doc,
 "register(fd [, eventmask] ) -> None\n\n\
 Register a file descriptor with the polling object.\n\
 fd -- either an integer, or an object with a fileno() method returning an\n\
       int.\n\
-events -- an optional bitmask describing the type of events to check for";
+events -- an optional bitmask describing the type of events to check for");
 
 static PyObject *
 poll_register(pollObject *self, PyObject *args) 
@@ -394,9 +394,9 @@ poll_register(pollObject *self, PyObject *args)
 	return Py_None;
 }
 
-static char poll_unregister_doc[] =
+PyDoc_STRVAR(poll_unregister_doc,
 "unregister(fd) -> None\n\n\
-Remove a file descriptor being tracked by the polling object.";
+Remove a file descriptor being tracked by the polling object.");
 
 static PyObject *
 poll_unregister(pollObject *self, PyObject *args) 
@@ -431,10 +431,10 @@ poll_unregister(pollObject *self, PyObject *args)
 	return Py_None;
 }
 
-static char poll_poll_doc[] =
+PyDoc_STRVAR(poll_poll_doc,
 "poll( [timeout] ) -> list of (fd, event) 2-tuples\n\n\
 Polls the set of registered file descriptors, returning a list containing \n\
-any descriptors that have events or errors to report.";
+any descriptors that have events or errors to report.");
 
 static PyObject *
 poll_poll(pollObject *self, PyObject *args) 
@@ -580,9 +580,9 @@ statichere PyTypeObject poll_Type = {
 	0,			/*tp_hash*/
 };
 
-static char poll_doc[] = 
+PyDoc_STRVAR(poll_doc,
 "Returns a polling object, which supports registering and\n\
-unregistering file descriptors, and then polling them for I/O events.";
+unregistering file descriptors, and then polling them for I/O events.");
 
 static PyObject *
 select_poll(PyObject *self, PyObject *args)
@@ -598,7 +598,7 @@ select_poll(PyObject *self, PyObject *args)
 }
 #endif /* HAVE_POLL */
 
-static char select_doc[] =
+PyDoc_STRVAR(select_doc,
 "select(rlist, wlist, xlist[, timeout]) -> (rlist, wlist, xlist)\n\
 \n\
 Wait until one or more file descriptors are ready for some kind of I/O.\n\
@@ -619,7 +619,7 @@ arguments; each contains the subset of the corresponding file descriptors\n\
 that are ready.\n\
 \n\
 *** IMPORTANT NOTICE ***\n\
-On Windows, only sockets are supported; on Unix, all file descriptors.";
+On Windows, only sockets are supported; on Unix, all file descriptors.");
 
 static PyMethodDef select_methods[] = {
     {"select",	select_select, METH_VARARGS, select_doc},
@@ -629,11 +629,11 @@ static PyMethodDef select_methods[] = {
     {0,  	0},			     /* sentinel */
 };
 
-static char module_doc[] =
+PyDoc_STRVAR(module_doc,
 "This module supports asynchronous I/O on multiple file descriptors.\n\
 \n\
 *** IMPORTANT NOTICE ***\n\
-On Windows, only sockets are supported; on Unix, all file descriptors.";
+On Windows, only sockets are supported; on Unix, all file descriptors.");
 
 DL_EXPORT(void)
 initselect(void)

@@ -493,7 +493,7 @@ cm_init(PyObject *self, PyObject *args, PyObject *kwds)
 	return 0;
 }
 
-static char classmethod_doc[] =
+PyDoc_STRVAR(classmethod_doc,
 "classmethod(function) -> method\n\
 \n\
 Convert a function to be a class method.\n\
@@ -512,7 +512,7 @@ If a class method is called for a derived class, the derived class\n\
 object is passed as the implied first argument.\n\
 \n\
 Class methods are different than C++ or Java static methods.\n\
-If you want those, see the staticmethod builtin.";
+If you want those, see the staticmethod builtin.");
 
 PyTypeObject PyClassMethod_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
@@ -625,7 +625,7 @@ sm_init(PyObject *self, PyObject *args, PyObject *kwds)
 	return 0;
 }
 
-static char staticmethod_doc[] =
+PyDoc_STRVAR(staticmethod_doc,
 "staticmethod(function) -> method\n\
 \n\
 Convert a function to be a static method.\n\
@@ -641,7 +641,7 @@ It can be called either on the class (e.g. C.f()) or on an instance\n\
 (e.g. C().f()).  The instance is ignored except for its class.\n\
 \n\
 Static methods in Python are similar to those found in Java or C++.\n\
-For a more advanced concept, see the classmethod builtin.";
+For a more advanced concept, see the classmethod builtin.");
 
 PyTypeObject PyStaticMethod_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)

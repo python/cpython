@@ -1117,13 +1117,13 @@ split_whitespace(const char *s, int len, int maxsplit)
 }
 
 
-static char split__doc__[] =
+PyDoc_STRVAR(split__doc__,
 "S.split([sep [,maxsplit]]) -> list of strings\n\
 \n\
 Return a list of the words in the string S, using sep as the\n\
 delimiter string.  If maxsplit is given, at most maxsplit\n\
 splits are done. If sep is not specified, any whitespace string\n\
-is a separator.";
+is a separator.");
 
 static PyObject *
 string_split(PyStringObject *self, PyObject *args)
@@ -1191,11 +1191,11 @@ string_split(PyStringObject *self, PyObject *args)
 }
 
 
-static char join__doc__[] =
+PyDoc_STRVAR(join__doc__,
 "S.join(sequence) -> string\n\
 \n\
 Return a string which is the concatenation of the strings in the\n\
-sequence.  The separator between elements is S.";
+sequence.  The separator between elements is S.");
 
 static PyObject *
 string_join(PyStringObject *self, PyObject *orig)
@@ -1365,14 +1365,14 @@ string_find_internal(PyStringObject *self, PyObject *args, int dir)
 }
 
 
-static char find__doc__[] =
+PyDoc_STRVAR(find__doc__,
 "S.find(sub [,start [,end]]) -> int\n\
 \n\
 Return the lowest index in S where substring sub is found,\n\
 such that sub is contained within s[start,end].  Optional\n\
 arguments start and end are interpreted as in slice notation.\n\
 \n\
-Return -1 on failure.";
+Return -1 on failure.");
 
 static PyObject *
 string_find(PyStringObject *self, PyObject *args)
@@ -1384,10 +1384,10 @@ string_find(PyStringObject *self, PyObject *args)
 }
 
 
-static char index__doc__[] =
+PyDoc_STRVAR(index__doc__,
 "S.index(sub [,start [,end]]) -> int\n\
 \n\
-Like S.find() but raise ValueError when the substring is not found.";
+Like S.find() but raise ValueError when the substring is not found.");
 
 static PyObject *
 string_index(PyStringObject *self, PyObject *args)
@@ -1404,14 +1404,14 @@ string_index(PyStringObject *self, PyObject *args)
 }
 
 
-static char rfind__doc__[] =
+PyDoc_STRVAR(rfind__doc__,
 "S.rfind(sub [,start [,end]]) -> int\n\
 \n\
 Return the highest index in S where substring sub is found,\n\
 such that sub is contained within s[start,end].  Optional\n\
 arguments start and end are interpreted as in slice notation.\n\
 \n\
-Return -1 on failure.";
+Return -1 on failure.");
 
 static PyObject *
 string_rfind(PyStringObject *self, PyObject *args)
@@ -1423,10 +1423,10 @@ string_rfind(PyStringObject *self, PyObject *args)
 }
 
 
-static char rindex__doc__[] =
+PyDoc_STRVAR(rindex__doc__,
 "S.rindex(sub [,start [,end]]) -> int\n\
 \n\
-Like S.rfind() but raise ValueError when the substring is not found.";
+Like S.rfind() but raise ValueError when the substring is not found.");
 
 static PyObject *
 string_rindex(PyStringObject *self, PyObject *args)
@@ -1546,13 +1546,13 @@ do_argstrip(PyStringObject *self, int striptype, PyObject *args)
 }
 
 
-static char strip__doc__[] =
+PyDoc_STRVAR(strip__doc__,
 "S.strip([sep]) -> string or unicode\n\
 \n\
 Return a copy of the string S with leading and trailing\n\
 whitespace removed.\n\
 If sep is given and not None, remove characters in sep instead.\n\
-If sep is unicode, S will be converted to unicode before stripping";
+If sep is unicode, S will be converted to unicode before stripping");
 
 static PyObject *
 string_strip(PyStringObject *self, PyObject *args)
@@ -1564,12 +1564,12 @@ string_strip(PyStringObject *self, PyObject *args)
 }
 
 
-static char lstrip__doc__[] =
+PyDoc_STRVAR(lstrip__doc__,
 "S.lstrip([sep]) -> string or unicode\n\
 \n\
 Return a copy of the string S with leading whitespace removed.\n\
 If sep is given and not None, remove characters in sep instead.\n\
-If sep is unicode, S will be converted to unicode before stripping";
+If sep is unicode, S will be converted to unicode before stripping");
 
 static PyObject *
 string_lstrip(PyStringObject *self, PyObject *args)
@@ -1581,12 +1581,12 @@ string_lstrip(PyStringObject *self, PyObject *args)
 }
 
 
-static char rstrip__doc__[] =
+PyDoc_STRVAR(rstrip__doc__,
 "S.rstrip([sep]) -> string or unicode\n\
 \n\
 Return a copy of the string S with trailing whitespace removed.\n\
 If sep is given and not None, remove characters in sep instead.\n\
-If sep is unicode, S will be converted to unicode before stripping";
+If sep is unicode, S will be converted to unicode before stripping");
 
 static PyObject *
 string_rstrip(PyStringObject *self, PyObject *args)
@@ -1598,10 +1598,10 @@ string_rstrip(PyStringObject *self, PyObject *args)
 }
 
 
-static char lower__doc__[] =
+PyDoc_STRVAR(lower__doc__,
 "S.lower() -> string\n\
 \n\
-Return a copy of the string S converted to lowercase.";
+Return a copy of the string S converted to lowercase.");
 
 static PyObject *
 string_lower(PyStringObject *self)
@@ -1626,10 +1626,10 @@ string_lower(PyStringObject *self)
 }
 
 
-static char upper__doc__[] =
+PyDoc_STRVAR(upper__doc__,
 "S.upper() -> string\n\
 \n\
-Return a copy of the string S converted to uppercase.";
+Return a copy of the string S converted to uppercase.");
 
 static PyObject *
 string_upper(PyStringObject *self)
@@ -1654,11 +1654,11 @@ string_upper(PyStringObject *self)
 }
 
 
-static char title__doc__[] =
+PyDoc_STRVAR(title__doc__,
 "S.title() -> string\n\
 \n\
 Return a titlecased version of S, i.e. words start with uppercase\n\
-characters, all remaining cased characters have lowercase.";
+characters, all remaining cased characters have lowercase.");
 
 static PyObject*
 string_title(PyStringObject *self)
@@ -1689,11 +1689,11 @@ string_title(PyStringObject *self)
 	return new;
 }
 
-static char capitalize__doc__[] =
+PyDoc_STRVAR(capitalize__doc__,
 "S.capitalize() -> string\n\
 \n\
 Return a copy of the string S with only its first character\n\
-capitalized.";
+capitalized.");
 
 static PyObject *
 string_capitalize(PyStringObject *self)
@@ -1726,12 +1726,12 @@ string_capitalize(PyStringObject *self)
 }
 
 
-static char count__doc__[] =
+PyDoc_STRVAR(count__doc__,
 "S.count(sub[, start[, end]]) -> int\n\
 \n\
 Return the number of occurrences of substring sub in string\n\
 S[start:end].  Optional arguments start and end are\n\
-interpreted as in slice notation.";
+interpreted as in slice notation.");
 
 static PyObject *
 string_count(PyStringObject *self, PyObject *args)
@@ -1790,11 +1790,11 @@ string_count(PyStringObject *self, PyObject *args)
 }
 
 
-static char swapcase__doc__[] =
+PyDoc_STRVAR(swapcase__doc__,
 "S.swapcase() -> string\n\
 \n\
 Return a copy of the string S with uppercase characters\n\
-converted to lowercase and vice versa.";
+converted to lowercase and vice versa.");
 
 static PyObject *
 string_swapcase(PyStringObject *self)
@@ -1823,13 +1823,13 @@ string_swapcase(PyStringObject *self)
 }
 
 
-static char translate__doc__[] =
+PyDoc_STRVAR(translate__doc__,
 "S.translate(table [,deletechars]) -> string\n\
 \n\
 Return a copy of the string S, where all characters occurring\n\
 in the optional argument deletechars are removed, and the\n\
 remaining characters have been mapped through the given\n\
-translation table, which must be a string of length 256.";
+translation table, which must be a string of length 256.");
 
 static PyObject *
 string_translate(PyStringObject *self, PyObject *args)
@@ -2079,12 +2079,12 @@ mymemreplace(const char *str, int len,		/* input string */
 }
 
 
-static char replace__doc__[] =
+PyDoc_STRVAR(replace__doc__,
 "S.replace (old, new[, maxsplit]) -> string\n\
 \n\
 Return a copy of string S with all occurrences of substring\n\
 old replaced by new.  If the optional argument maxsplit is\n\
-given, only the first maxsplit occurrences are replaced.";
+given, only the first maxsplit occurrences are replaced.");
 
 static PyObject *
 string_replace(PyStringObject *self, PyObject *args)
@@ -2154,12 +2154,12 @@ string_replace(PyStringObject *self, PyObject *args)
 }
 
 
-static char startswith__doc__[] =
+PyDoc_STRVAR(startswith__doc__,
 "S.startswith(prefix[, start[, end]]) -> bool\n\
 \n\
 Return True if S starts with the specified prefix, False otherwise.  With\n\
 optional start, test S beginning at that position.  With optional end, stop\n\
-comparing S at that position.";
+comparing S at that position.");
 
 static PyObject *
 string_startswith(PyStringObject *self, PyObject *args)
@@ -2213,12 +2213,12 @@ string_startswith(PyStringObject *self, PyObject *args)
 }
 
 
-static char endswith__doc__[] =
+PyDoc_STRVAR(endswith__doc__,
 "S.endswith(suffix[, start[, end]]) -> bool\n\
 \n\
 Return True if S ends with the specified suffix, False otherwise.  With\n\
 optional start, test S beginning at that position.  With optional end, stop\n\
-comparing S at that position.";
+comparing S at that position.");
 
 static PyObject *
 string_endswith(PyStringObject *self, PyObject *args)
@@ -2265,13 +2265,13 @@ string_endswith(PyStringObject *self, PyObject *args)
 }
 
 
-static char encode__doc__[] =
+PyDoc_STRVAR(encode__doc__,
 "S.encode([encoding[,errors]]) -> object\n\
 \n\
 Encodes S using the codec registered for encoding. encoding defaults\n\
 to the default encoding. errors may be given to set a different error\n\
 handling scheme. Default is 'strict' meaning that encoding errors raise\n\
-a ValueError. Other possible values are 'ignore' and 'replace'.";
+a ValueError. Other possible values are 'ignore' and 'replace'.");
 
 static PyObject *
 string_encode(PyStringObject *self, PyObject *args)
@@ -2284,13 +2284,13 @@ string_encode(PyStringObject *self, PyObject *args)
 }
 
 
-static char decode__doc__[] =
+PyDoc_STRVAR(decode__doc__,
 "S.decode([encoding[,errors]]) -> object\n\
 \n\
 Decodes S using the codec registered for encoding. encoding defaults\n\
 to the default encoding. errors may be given to set a different error\n\
 handling scheme. Default is 'strict' meaning that encoding errors raise\n\
-a ValueError. Other possible values are 'ignore' and 'replace'.";
+a ValueError. Other possible values are 'ignore' and 'replace'.");
 
 static PyObject *
 string_decode(PyStringObject *self, PyObject *args)
@@ -2303,11 +2303,11 @@ string_decode(PyStringObject *self, PyObject *args)
 }
 
 
-static char expandtabs__doc__[] =
+PyDoc_STRVAR(expandtabs__doc__,
 "S.expandtabs([tabsize]) -> string\n\
 \n\
 Return a copy of S where all tab characters are expanded using spaces.\n\
-If tabsize is not given, a tab size of 8 characters is assumed.";
+If tabsize is not given, a tab size of 8 characters is assumed.");
 
 static PyObject*
 string_expandtabs(PyStringObject *self, PyObject *args)
@@ -2395,11 +2395,11 @@ pad(PyStringObject *self, int left, int right, char fill)
     return u;
 }
 
-static char ljust__doc__[] =
+PyDoc_STRVAR(ljust__doc__,
 "S.ljust(width) -> string\n"
 "\n"
 "Return S left justified in a string of length width. Padding is\n"
-"done using spaces.";
+"done using spaces.");
 
 static PyObject *
 string_ljust(PyStringObject *self, PyObject *args)
@@ -2417,11 +2417,11 @@ string_ljust(PyStringObject *self, PyObject *args)
 }
 
 
-static char rjust__doc__[] =
+PyDoc_STRVAR(rjust__doc__,
 "S.rjust(width) -> string\n"
 "\n"
 "Return S right justified in a string of length width. Padding is\n"
-"done using spaces.";
+"done using spaces.");
 
 static PyObject *
 string_rjust(PyStringObject *self, PyObject *args)
@@ -2439,11 +2439,11 @@ string_rjust(PyStringObject *self, PyObject *args)
 }
 
 
-static char center__doc__[] =
+PyDoc_STRVAR(center__doc__,
 "S.center(width) -> string\n"
 "\n"
 "Return S centered in a string of length width. Padding is done\n"
-"using spaces.";
+"using spaces.");
 
 static PyObject *
 string_center(PyStringObject *self, PyObject *args)
@@ -2465,11 +2465,11 @@ string_center(PyStringObject *self, PyObject *args)
     return pad(self, left, marg - left, ' ');
 }
 
-static char zfill__doc__[] =
+PyDoc_STRVAR(zfill__doc__,
 "S.zfill(width) -> string\n"
 "\n"
 "Pad a numeric string S with zeros on the left, to fill a field\n"
-"of the specified width.  The string S is never truncated.";
+"of the specified width.  The string S is never truncated.");
 
 static PyObject *
 string_zfill(PyStringObject *self, PyObject *args)
@@ -2511,11 +2511,11 @@ string_zfill(PyStringObject *self, PyObject *args)
     return (PyObject*) s;
 }
 
-static char isspace__doc__[] =
+PyDoc_STRVAR(isspace__doc__,
 "S.isspace() -> bool\n"
 "\n"
 "Return True if there are only whitespace characters in S,\n"
-"False otherwise.";
+"False otherwise.");
 
 static PyObject*
 string_isspace(PyStringObject *self)
@@ -2542,11 +2542,11 @@ string_isspace(PyStringObject *self)
 }
 
 
-static char isalpha__doc__[] =
+PyDoc_STRVAR(isalpha__doc__,
 "S.isalpha() -> bool\n\
 \n\
 Return True if  all characters in S are alphabetic\n\
-and there is at least one character in S, False otherwise.";
+and there is at least one character in S, False otherwise.");
 
 static PyObject*
 string_isalpha(PyStringObject *self)
@@ -2573,11 +2573,11 @@ string_isalpha(PyStringObject *self)
 }
 
 
-static char isalnum__doc__[] =
+PyDoc_STRVAR(isalnum__doc__,
 "S.isalnum() -> bool\n\
 \n\
 Return True if  all characters in S are alphanumeric\n\
-and there is at least one character in S, False otherwise.";
+and there is at least one character in S, False otherwise.");
 
 static PyObject*
 string_isalnum(PyStringObject *self)
@@ -2604,11 +2604,11 @@ string_isalnum(PyStringObject *self)
 }
 
 
-static char isdigit__doc__[] =
+PyDoc_STRVAR(isdigit__doc__,
 "S.isdigit() -> bool\n\
 \n\
 Return True if there are only digit characters in S,\n\
-False otherwise.";
+False otherwise.");
 
 static PyObject*
 string_isdigit(PyStringObject *self)
@@ -2635,11 +2635,11 @@ string_isdigit(PyStringObject *self)
 }
 
 
-static char islower__doc__[] =
+PyDoc_STRVAR(islower__doc__,
 "S.islower() -> bool\n\
 \n\
 Return True if all cased characters in S are lowercase and there is\n\
-at least one cased character in S, False otherwise.";
+at least one cased character in S, False otherwise.");
 
 static PyObject*
 string_islower(PyStringObject *self)
@@ -2669,11 +2669,11 @@ string_islower(PyStringObject *self)
 }
 
 
-static char isupper__doc__[] =
+PyDoc_STRVAR(isupper__doc__,
 "S.isupper() -> bool\n\
 \n\
 Return True if  all cased characters in S are uppercase and there is\n\
-at least one cased character in S, False otherwise.";
+at least one cased character in S, False otherwise.");
 
 static PyObject*
 string_isupper(PyStringObject *self)
@@ -2703,12 +2703,12 @@ string_isupper(PyStringObject *self)
 }
 
 
-static char istitle__doc__[] =
+PyDoc_STRVAR(istitle__doc__,
 "S.istitle() -> bool\n\
 \n\
 Return True if S is a titlecased string, i.e. uppercase characters\n\
 may only follow uncased characters and lowercase characters only cased\n\
-ones. Return False otherwise.";
+ones. Return False otherwise.");
 
 static PyObject*
 string_istitle(PyStringObject *self, PyObject *uncased)
@@ -2751,12 +2751,12 @@ string_istitle(PyStringObject *self, PyObject *uncased)
 }
 
 
-static char splitlines__doc__[] =
+PyDoc_STRVAR(splitlines__doc__,
 "S.splitlines([keepends]) -> list of strings\n\
 \n\
 Return a list of the lines in S, breaking at line boundaries.\n\
 Line breaks are not included in the resulting list unless keepends\n\
-is given and true.";
+is given and true.");
 
 #define SPLIT_APPEND(data, left, right)					\
 	str = PyString_FromStringAndSize(data + left, right - left);	\
@@ -2923,8 +2923,8 @@ basestring_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	return NULL;
 }
 
-static char basestring_doc[] =
-"Type basestring cannot be instantiated; it is the base for str and unicode.";
+PyDoc_STRVAR(basestring_doc,
+"Type basestring cannot be instantiated; it is the base for str and unicode.");
 
 PyTypeObject PyBaseString_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
@@ -2969,11 +2969,11 @@ PyTypeObject PyBaseString_Type = {
 	0,		                	/* tp_free */
 };
 
-static char string_doc[] =
+PyDoc_STRVAR(string_doc,
 "str(object) -> string\n\
 \n\
 Return a nice string representation of the object.\n\
-If the argument is a string, the return value is the same object.";
+If the argument is a string, the return value is the same object.");
 
 PyTypeObject PyString_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)

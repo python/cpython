@@ -1,11 +1,11 @@
 #include "Python.h"
 #include "structmember.h"
 
-static char xxsubtype__doc__[] =
+PyDoc_STRVAR(xxsubtype__doc__,
 "xxsubtype is an example module showing how to subtype builtin types from C.\n"
 "test_descr.py in the standard test suite requires it in order to complete.\n"
 "If you don't care about the examples, and don't intend to run the Python\n"
-"test suite, you can recompile Python without Modules/xxsubtype.c.";
+"test suite, you can recompile Python without Modules/xxsubtype.c.");
 
 /* We link this module statically for convenience.  If compiled as a shared
    library instead, some compilers don't allow addresses of Python objects

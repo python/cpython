@@ -90,8 +90,8 @@ static PyMethodDef enum_methods[] = {
 	{NULL,      NULL}       /* sentinel */
 };
 
-static char enum_doc[] =
-	"enumerate(iterable) -> create an enumerating-iterator";
+PyDoc_STRVAR(enum_doc,
+"enumerate(iterable) -> create an enumerating-iterator");
 
 PyTypeObject PyEnum_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)

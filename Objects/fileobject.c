@@ -1462,30 +1462,30 @@ file_writelines(PyFileObject *f, PyObject *seq)
 #undef CHUNKSIZE
 }
 
-static char readline_doc[] =
+PyDoc_STRVAR(readline_doc,
 "readline([size]) -> next line from the file, as a string.\n"
 "\n"
 "Retain newline.  A non-negative size argument limits the maximum\n"
 "number of bytes to return (an incomplete line may be returned then).\n"
-"Return an empty string at EOF.";
+"Return an empty string at EOF.");
 
-static char read_doc[] =
+PyDoc_STRVAR(read_doc,
 "read([size]) -> read at most size bytes, returned as a string.\n"
 "\n"
-"If the size argument is negative or omitted, read until EOF is reached.";
+"If the size argument is negative or omitted, read until EOF is reached.");
 
-static char write_doc[] =
+PyDoc_STRVAR(write_doc,
 "write(str) -> None.  Write string str to file.\n"
 "\n"
 "Note that due to buffering, flush() or close() may be needed before\n"
-"the file on disk reflects the data written.";
+"the file on disk reflects the data written.");
 
-static char fileno_doc[] =
+PyDoc_STRVAR(fileno_doc,
 "fileno() -> integer \"file descriptor\".\n"
 "\n"
-"This is needed for lower-level file interfaces, such os.read().";
+"This is needed for lower-level file interfaces, such os.read().");
 
-static char seek_doc[] =
+PyDoc_STRVAR(seek_doc,
 "seek(offset[, whence]) -> None.  Move to new file position.\n"
 "\n"
 "Argument offset is a byte count.  Optional argument whence defaults to\n"
@@ -1494,53 +1494,53 @@ static char seek_doc[] =
 "relative to end of file, usually negative, although many platforms allow\n"
 "seeking beyond the end of a file).\n"
 "\n"
-"Note that not all file objects are seekable.";
+"Note that not all file objects are seekable.");
 
 #ifdef HAVE_FTRUNCATE
-static char truncate_doc[] =
+PyDoc_STRVAR(truncate_doc,
 "truncate([size]) -> None.  Truncate the file to at most size bytes.\n"
 "\n"
-"Size defaults to the current file position, as returned by tell().";
+"Size defaults to the current file position, as returned by tell().");
 #endif
 
-static char tell_doc[] =
-"tell() -> current file position, an integer (may be a long integer).";
+PyDoc_STRVAR(tell_doc,
+"tell() -> current file position, an integer (may be a long integer).");
 
-static char readinto_doc[] =
-"readinto() -> Undocumented.  Don't use this; it may go away.";
+PyDoc_STRVAR(readinto_doc,
+"readinto() -> Undocumented.  Don't use this; it may go away.");
 
-static char readlines_doc[] =
+PyDoc_STRVAR(readlines_doc,
 "readlines([size]) -> list of strings, each a line from the file.\n"
 "\n"
 "Call readline() repeatedly and return a list of the lines so read.\n"
 "The optional size argument, if given, is an approximate bound on the\n"
-"total number of bytes in the lines returned.";
+"total number of bytes in the lines returned.");
 
-static char xreadlines_doc[] =
+PyDoc_STRVAR(xreadlines_doc,
 "xreadlines() -> next line from the file, as a string.\n"
 "\n"
 "Equivalent to xreadlines.xreadlines(file).  This is like readline(), but\n"
-"often quicker, due to reading ahead internally.";
+"often quicker, due to reading ahead internally.");
 
-static char writelines_doc[] =
+PyDoc_STRVAR(writelines_doc,
 "writelines(sequence_of_strings) -> None.  Write the strings to the file.\n"
 "\n"
 "Note that newlines are not added.  The sequence can be any iterable object\n"
-"producing strings. This is equivalent to calling write() for each string.";
+"producing strings. This is equivalent to calling write() for each string.");
 
-static char flush_doc[] =
-"flush() -> None.  Flush the internal I/O buffer.";
+PyDoc_STRVAR(flush_doc,
+"flush() -> None.  Flush the internal I/O buffer.");
 
-static char close_doc[] =
+PyDoc_STRVAR(close_doc,
 "close() -> None or (perhaps) an integer.  Close the file.\n"
 "\n"
 "Sets data attribute .closed to True.  A closed file cannot be used for\n"
 "further I/O operations.  close() may be called more than once without\n"
 "error.  Some kinds of file objects (for example, opened by popen())\n"
-"may return an exit status upon closing.";
+"may return an exit status upon closing.");
 
-static char isatty_doc[] =
-"isatty() -> true or false.  True if the file is connected to a tty device.";
+PyDoc_STRVAR(isatty_doc,
+"isatty() -> true or false.  True if the file is connected to a tty device.");
 
 static PyMethodDef file_methods[] = {
 	{"readline",	(PyCFunction)file_readline,   METH_VARARGS, readline_doc},
@@ -1687,7 +1687,8 @@ Done:
 	return ret;
 }
 
-static char file_doc[] =
+PyDoc_VAR(file_doc) =
+PyDoc_STR(
 "file(name[, mode[, buffering]]) -> file object\n"
 "\n"
 "Open a file.  The mode can be 'r', 'w' or 'a' for reading (default),\n"
@@ -1697,7 +1698,9 @@ static char file_doc[] =
 "Add a '+' to the mode to allow simultaneous reading and writing.\n"
 "If the buffering argument is given, 0 means unbuffered, 1 means line\n"
 "buffered, and larger numbers specify the buffer size.\n"
+)
 #ifdef WITH_UNIVERSAL_NEWLINES
+PyDoc_STR(
 "Add a 'U' to mode to open the file for input with universal newline\n"
 "support.  Any line ending in the input file will be seen as a '\\n'\n"
 "in Python.  Also, a file so opened gains the attribute 'newlines';\n"
@@ -1705,9 +1708,12 @@ static char file_doc[] =
 "'\\r', '\\n', '\\r\\n' or a tuple containing all the newline types seen.\n"
 "\n"
 "'U' cannot be combined with 'w' or '+' mode.\n"
+)
 #endif /* WITH_UNIVERSAL_NEWLINES */
+PyDoc_STR(
 "\n"
-"Note:  open() is an alias for file().\n";
+"Note:  open() is an alias for file()."
+);
 
 PyTypeObject PyFile_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)

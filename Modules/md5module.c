@@ -61,12 +61,12 @@ md5_update(md5object *self, PyObject *args)
 	return Py_None;
 }
 
-static char update_doc [] =
+PyDoc_STRVAR(update_doc,
 "update (arg)\n\
 \n\
 Update the md5 object with the string arg. Repeated calls are\n\
 equivalent to a single call with the concatenation of all the\n\
-arguments.";
+arguments.");
 
 
 static PyObject *
@@ -82,12 +82,12 @@ md5_digest(md5object *self)
 	return PyString_FromStringAndSize((char *)aDigest, 16);
 }
 
-static char digest_doc [] =
+PyDoc_STRVAR(digest_doc,
 "digest() -> string\n\
 \n\
 Return the digest of the strings passed to the update() method so\n\
 far. This is an 16-byte string which may contain non-ASCII characters,\n\
-including null bytes.";
+including null bytes.");
 
 
 static PyObject *
@@ -116,10 +116,10 @@ md5_hexdigest(md5object *self)
 }
 
 
-static char hexdigest_doc [] =
+PyDoc_STRVAR(hexdigest_doc,
 "hexdigest() -> string\n\
 \n\
-Like digest(), but returns the digest as a string of hexadecimal digits.";
+Like digest(), but returns the digest as a string of hexadecimal digits.");
 
 
 static PyObject *
@@ -135,10 +135,10 @@ md5_copy(md5object *self)
 	return (PyObject *)md5p;
 }
 
-static char copy_doc [] =
+PyDoc_STRVAR(copy_doc,
 "copy() -> md5 object\n\
 \n\
-Return a copy (``clone'') of the md5 object.";
+Return a copy (``clone'') of the md5 object.");
 
 
 static PyMethodDef md5_methods[] = {
@@ -159,8 +159,7 @@ md5_getattr(md5object *self, char *name)
 	return Py_FindMethod(md5_methods, (PyObject *)self, name);
 }
 
-static char module_doc [] =
-
+PyDoc_STRVAR(module_doc,
 "This module implements the interface to RSA's MD5 message digest\n\
 algorithm (see also Internet RFC 1321). Its use is quite\n\
 straightforward: use the new() to create an md5 object. You can now\n\
@@ -176,10 +175,9 @@ md5([arg]) -- DEPRECATED, same as new, but for compatibility\n\
 \n\
 Special Objects:\n\
 \n\
-MD5Type -- type object for md5 objects\n\
-";
+MD5Type -- type object for md5 objects");
 
-static char md5type_doc [] =
+PyDoc_STRVAR(md5type_doc,
 "An md5 represents the object used to calculate the MD5 checksum of a\n\
 string of information.\n\
 \n\
@@ -187,8 +185,7 @@ Methods:\n\
 \n\
 update() -- updates the current digest with an additional string\n\
 digest() -- return the current digest value\n\
-copy() -- return a copy of the current md5 object\n\
-";
+copy() -- return a copy of the current md5 object");
 
 statichere PyTypeObject MD5type = {
 	PyObject_HEAD_INIT(NULL)
@@ -238,11 +235,11 @@ MD5_new(PyObject *self, PyObject *args)
 	return (PyObject *)md5p;
 }
 
-static char new_doc [] =
+PyDoc_STRVAR(new_doc,
 "new([arg]) -> md5 object\n\
 \n\
 Return a new md5 object. If arg is present, the method call update(arg)\n\
-is made.";
+is made.");
 
 
 /* List of functions exported by this module */

@@ -120,7 +120,7 @@ static PyObject *riscos_listdir(PyObject *self,PyObject *args)
 	return d;
 }
 
-static char stat_result__doc__[] = 
+PyDoc_STRVAR(stat_result__doc__,
 "stat_result: Result from stat or lstat.\n\n\
 This object may be accessed either as a tuple of\n\
   (mode,ino,dev,nlink,uid,gid,size,atime,mtime,ctime)\n\
@@ -128,7 +128,7 @@ or via the attributes st_mode, st_ino, st_dev, st_nlink, st_uid, and so on.\n\
 \n\
 RiscOS: The fields st_ftype, st_attrs, and st_obtype are also available.\n\
 \n\
-See os.stat for more information.\n";
+See os.stat for more information.");
 
 static PyStructSequence_Field stat_result_fields[] = {
         { "st_mode",  "protection bits" },

@@ -1,12 +1,11 @@
-static char cPickle_module_documentation[] =
-"C implementation and optimization of the Python pickle module\n"
-"\n"
-"cPickle.c,v 1.71 1999/07/11 13:30:34 jim Exp\n"
-;
-
 #include "Python.h"
 #include "cStringIO.h"
 #include "structmember.h"
+
+PyDoc_STRVAR(cPickle_module_documentation,
+"C implementation and optimization of the Python pickle module\n"
+"\n"
+"cPickle.c,v 1.71 1999/07/11 13:30:34 jim Exp\n");
 
 #ifndef Py_eval_input
 #include <graminit.h>
@@ -2511,8 +2510,8 @@ static PyGetSetDef Pickler_getsets[] = {
     {NULL}
 };
 
-static char Picklertype__doc__[] =
-"Objects that know how to pickle objects\n";
+PyDoc_STRVAR(Picklertype__doc__,
+"Objects that know how to pickle objects\n");
 
 static PyTypeObject Picklertype = {
     PyObject_HEAD_INIT(NULL)
@@ -4609,8 +4608,8 @@ cpm_loads(PyObject *self, PyObject *args)
 }
 
 
-static char Unpicklertype__doc__[] =
-"Objects that know how to unpickle";
+PyDoc_STRVAR(Unpicklertype__doc__,
+"Objects that know how to unpickle");
 
 static PyTypeObject Unpicklertype = {
     PyObject_HEAD_INIT(NULL)

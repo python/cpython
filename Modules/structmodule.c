@@ -4,8 +4,11 @@
 /* New version supporting byte order, alignment and size options,
    character strings, and unsigned numbers */
 
-static char struct__doc__[] = "\
-Functions to convert between Python values and C structs.\n\
+#include "Python.h"
+#include <ctype.h>
+
+PyDoc_STRVAR(struct__doc__,
+"Functions to convert between Python values and C structs.\n\
 Python strings are used to hold the data representing the C struct\n\
 and also as format strings to describe the layout of data in the C struct.\n\
 \n\
@@ -29,11 +32,7 @@ Special case (not in native mode unless 'long long' in platform C):\n\
  q:long long; Q:unsigned long long\n\
 Whitespace between formats is ignored.\n\
 \n\
-The variable struct.error is an exception raised on errors.";
-
-#include "Python.h"
-
-#include <ctype.h>
+The variable struct.error is an exception raised on errors.");
 
 
 /* Exception */
@@ -1227,10 +1226,10 @@ calcsize(const char *fmt, const formatdef *f)
 }
 
 
-static char calcsize__doc__[] = "\
-calcsize(fmt) -> int\n\
+PyDoc_STRVAR(calcsize__doc__,
+"calcsize(fmt) -> int\n\
 Return size of C struct described by format string fmt.\n\
-See struct.__doc__ for more on format strings.";
+See struct.__doc__ for more on format strings.");
 
 static PyObject *
 struct_calcsize(PyObject *self, PyObject *args)
@@ -1249,10 +1248,10 @@ struct_calcsize(PyObject *self, PyObject *args)
 }
 
 
-static char pack__doc__[] = "\
-pack(fmt, v1, v2, ...) -> string\n\
+PyDoc_STRVAR(pack__doc__,
+"pack(fmt, v1, v2, ...) -> string\n\
 Return string containing values v1, v2, ... packed according to fmt.\n\
-See struct.__doc__ for more on format strings.";
+See struct.__doc__ for more on format strings.");
 
 static PyObject *
 struct_pack(PyObject *self, PyObject *args)
@@ -1389,11 +1388,11 @@ struct_pack(PyObject *self, PyObject *args)
 }
 
 
-static char unpack__doc__[] = "\
-unpack(fmt, string) -> (v1, v2, ...)\n\
+PyDoc_STRVAR(unpack__doc__,
+"unpack(fmt, string) -> (v1, v2, ...)\n\
 Unpack the string, containing packed C structure data, according\n\
 to fmt.  Requires len(string)==calcsize(fmt).\n\
-See struct.__doc__ for more on format strings.";
+See struct.__doc__ for more on format strings.");
 
 static PyObject *
 struct_unpack(PyObject *self, PyObject *args)

@@ -820,10 +820,10 @@ array_count(arrayobject *self, PyObject *args)
 	return PyInt_FromLong((long)count);
 }
 
-static char count_doc [] =
+PyDoc_STRVAR(count_doc,
 "count(x)\n\
 \n\
-Return number of occurences of x in the array.";
+Return number of occurences of x in the array.");
 
 static PyObject *
 array_index(arrayobject *self, PyObject *args)
@@ -847,10 +847,10 @@ array_index(arrayobject *self, PyObject *args)
 	return NULL;
 }
 
-static char index_doc [] =
+PyDoc_STRVAR(index_doc,
 "index(x)\n\
 \n\
-Return index of first occurence of x in the array.";
+Return index of first occurence of x in the array.");
 
 static PyObject *
 array_remove(arrayobject *self, PyObject *args)
@@ -878,10 +878,10 @@ array_remove(arrayobject *self, PyObject *args)
 	return NULL;
 }
 
-static char remove_doc [] =
+PyDoc_STRVAR(remove_doc,
 "remove(x)\n\
 \n\
-Remove the first occurence of x in the array.";
+Remove the first occurence of x in the array.");
 
 static PyObject *
 array_pop(arrayobject *self, PyObject *args)
@@ -909,10 +909,10 @@ array_pop(arrayobject *self, PyObject *args)
 	return v;
 }
 
-static char pop_doc [] =
+PyDoc_STRVAR(pop_doc,
 "pop([i])\n\
 \n\
-Return the i-th element and delete it from the array. i defaults to -1.";
+Return the i-th element and delete it from the array. i defaults to -1.");
 
 static PyObject *
 array_extend(arrayobject *self, PyObject *args)
@@ -927,10 +927,10 @@ array_extend(arrayobject *self, PyObject *args)
 	return Py_None;
 }
 
-static char extend_doc [] =
+PyDoc_STRVAR(extend_doc,
 "extend(array)\n\
 \n\
- Append array items to the end of the array.";
+ Append array items to the end of the array.");
 
 static PyObject *
 array_insert(arrayobject *self, PyObject *args)
@@ -942,10 +942,10 @@ array_insert(arrayobject *self, PyObject *args)
 	return ins(self, i, v);
 }
 
-static char insert_doc [] =
+PyDoc_STRVAR(insert_doc,
 "insert(i,x)\n\
 \n\
-Insert a new item x into the array before position i.";
+Insert a new item x into the array before position i.");
 
 
 static PyObject *
@@ -964,13 +964,13 @@ array_buffer_info(arrayobject *self, PyObject *args)
 	return retval;
 }
 
-static char buffer_info_doc [] =
+PyDoc_STRVAR(buffer_info_doc,
 "buffer_info() -> (address, length)\n\
 \n\
 Return a tuple (address, length) giving the current memory address and\n\
 the length in items of the buffer used to hold array's contents\n\
 The length should be multiplied by the itemsize attribute to calculate\n\
-the buffer length in bytes.";
+the buffer length in bytes.");
 
 
 static PyObject *
@@ -982,10 +982,10 @@ array_append(arrayobject *self, PyObject *args)
 	return ins(self, (int) self->ob_size, v);
 }
 
-static char append_doc [] =
+PyDoc_STRVAR(append_doc,
 "append(x)\n\
 \n\
-Append new value x to the end of the array.";
+Append new value x to the end of the array.");
 
 
 static PyObject *
@@ -1042,11 +1042,11 @@ array_byteswap(arrayobject *self, PyObject *args)
 	return Py_None;
 }
 
-static char byteswap_doc [] =
+PyDoc_STRVAR(byteswap_doc,
 "byteswap()\n\
 \n\
 Byteswap all items of the array.  If the items in the array are not 1, 2,\n\
-4, or 8 bytes in size, RuntimeError is raised.";
+4, or 8 bytes in size, RuntimeError is raised.");
 
 static PyObject *
 array_reverse(arrayobject *self, PyObject *args)
@@ -1078,10 +1078,10 @@ array_reverse(arrayobject *self, PyObject *args)
 	return Py_None;
 }
 
-static char reverse_doc [] =
+PyDoc_STRVAR(reverse_doc,
 "reverse()\n\
 \n\
-Reverse the order of the items in the array.";
+Reverse the order of the items in the array.");
 
 static PyObject *
 array_fromfile(arrayobject *self, PyObject *args)
@@ -1130,11 +1130,11 @@ array_fromfile(arrayobject *self, PyObject *args)
 	return Py_None;
 }
 
-static char fromfile_doc [] =
+PyDoc_STRVAR(fromfile_doc,
 "fromfile(f, n)\n\
 \n\
 Read n objects from the file object f and append them to the end of the\n\
-array.  Also called as read.";
+array.  Also called as read.");
 
 
 static PyObject *
@@ -1161,11 +1161,11 @@ array_tofile(arrayobject *self, PyObject *args)
 	return Py_None;
 }
 
-static char tofile_doc [] =
+PyDoc_STRVAR(tofile_doc,
 "tofile(f)\n\
 \n\
 Write all items (as machine values) to the file object f.  Also called as\n\
-write.";
+write.");
 
 
 static PyObject *
@@ -1207,10 +1207,10 @@ array_fromlist(arrayobject *self, PyObject *args)
 	return Py_None;
 }
 
-static char fromlist_doc [] =
+PyDoc_STRVAR(fromlist_doc,
 "fromlist(list)\n\
 \n\
-Append items to array from list.";
+Append items to array from list.");
 
 
 static PyObject *
@@ -1233,10 +1233,10 @@ array_tolist(arrayobject *self, PyObject *args)
 	return list;
 }
 
-static char tolist_doc [] =
+PyDoc_STRVAR(tolist_doc,
 "tolist() -> list\n\
 \n\
-Convert array to an ordinary list with the same items.";
+Convert array to an ordinary list with the same items.");
 
 
 static PyObject *
@@ -1269,11 +1269,11 @@ array_fromstring(arrayobject *self, PyObject *args)
 	return Py_None;
 }
 
-static char fromstring_doc [] =
+PyDoc_STRVAR(fromstring_doc,
 "fromstring(string)\n\
 \n\
 Appends items from the string, interpreting it as an array of machine\n\
-values,as if it had been read from a file using the fromfile() method).";
+values,as if it had been read from a file using the fromfile() method).");
 
 
 static PyObject *
@@ -1285,11 +1285,11 @@ array_tostring(arrayobject *self, PyObject *args)
 				    self->ob_size * self->ob_descr->itemsize);
 }
 
-static char tostring_doc [] =
+PyDoc_STRVAR(tostring_doc,
 "tostring() -> string\n\
 \n\
 Convert the array to an array of machine values and return the string\n\
-representation.";
+representation.");
 
 
 
@@ -1325,13 +1325,13 @@ array_fromunicode(arrayobject *self, PyObject *args)
 	return Py_None;
 }
 
-static char fromunicode_doc[] =
+PyDoc_STRVAR(fromunicode_doc,
 "fromunicode(ustr)\n\
 \n\
 Extends this array with data from the unicode string ustr.\n\
 The array must be a type 'u' array; otherwise a ValueError\n\
 is raised.  Use array.fromstring(ustr.decode(...)) to\n\
-append Unicode data to an array of some other type.";
+append Unicode data to an array of some other type.");
 
 
 static PyObject *
@@ -1347,13 +1347,13 @@ array_tounicode(arrayobject *self, PyObject *args)
 	return PyUnicode_FromUnicode((Py_UNICODE *) self->ob_item, self->ob_size);
 }
 
-static char tounicode_doc [] =
+PyDoc_STRVAR(tounicode_doc,
 "tounicode() -> unicode\n\
 \n\
 Convert the array to a unicode string.  The array must be\n\
 a type 'u' array; otherwise a ValueError is raised.  Use\n\
 array.tostring().decode() to obtain a unicode string from\n\
-an array of some other type.";
+an array of some other type.");
 
 #endif /* Py_USING_UNICODE */
 
@@ -1621,7 +1621,7 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 }
 
 
-static char module_doc [] =
+PyDoc_STRVAR(module_doc,
 "This module defines an object type which can efficiently represent\n\
 an array of basic values: characters, integers, floating point\n\
 numbers.  Arrays are sequence types and behave very much like lists,\n\
@@ -1646,9 +1646,9 @@ is a single character.  The following type codes are defined:\n\
 The constructor is:\n\
 \n\
 array(typecode [, initializer]) -- create a new array\n\
-";
+");
 
-static char arraytype_doc [] =
+PyDoc_STRVAR(arraytype_doc,
 "array(typecode [, initializer]) -> array\n\
 \n\
 Return a new array whose items are restricted by typecode, and\n\
@@ -1683,7 +1683,7 @@ Attributes:\n\
 \n\
 typecode -- the typecode character used to create the array\n\
 itemsize -- the length in bytes of one array item\n\
-";
+");
 
 statichere PyTypeObject Arraytype = {
 	PyObject_HEAD_INIT(NULL)

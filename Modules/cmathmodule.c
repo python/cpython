@@ -29,10 +29,10 @@ c_acos(Py_complex x)
 		    c_sqrt(c_diff(c_one,c_prod(x,x))))))));
 }
 
-static char c_acos_doc[] =
+PyDoc_STRVAR(c_acos_doc,
 "acos(x)\n"
 "\n"
-"Return the arc cosine of x.";
+"Return the arc cosine of x.");
 
 
 static Py_complex
@@ -45,10 +45,10 @@ c_acosh(Py_complex x)
 	return c_sum(z, z);
 }
 
-static char c_acosh_doc[] =
+PyDoc_STRVAR(c_acosh_doc,
 "acosh(x)\n"
 "\n"
-"Return the hyperbolic arccosine of x.";
+"Return the hyperbolic arccosine of x.");
 
 
 static Py_complex
@@ -62,10 +62,10 @@ c_asin(Py_complex x)
 		    )       )     );
 }
 
-static char c_asin_doc[] =
+PyDoc_STRVAR(c_asin_doc,
 "asin(x)\n"
 "\n"
-"Return the arc sine of x.";
+"Return the arc sine of x.");
 
 
 static Py_complex
@@ -78,10 +78,10 @@ c_asinh(Py_complex x)
 	return c_sum(z, z);
 }
 
-static char c_asinh_doc[] =
+PyDoc_STRVAR(c_asinh_doc,
 "asinh(x)\n"
 "\n"
-"Return the hyperbolic arc sine of x.";
+"Return the hyperbolic arc sine of x.");
 
 
 static Py_complex
@@ -90,10 +90,10 @@ c_atan(Py_complex x)
 	return c_prod(c_halfi,c_log(c_quot(c_sum(c_i,x),c_diff(c_i,x))));
 }
 
-static char c_atan_doc[] =
+PyDoc_STRVAR(c_atan_doc,
 "atan(x)\n"
 "\n"
-"Return the arc tangent of x.";
+"Return the arc tangent of x.");
 
 
 static Py_complex
@@ -102,10 +102,10 @@ c_atanh(Py_complex x)
 	return c_prod(c_half,c_log(c_quot(c_sum(c_one,x),c_diff(c_one,x))));
 }
 
-static char c_atanh_doc[] =
+PyDoc_STRVAR(c_atanh_doc,
 "atanh(x)\n"
 "\n"
-"Return the hyperbolic arc tangent of x.";
+"Return the hyperbolic arc tangent of x.");
 
 
 static Py_complex
@@ -117,10 +117,10 @@ c_cos(Py_complex x)
 	return r;
 }
 
-static char c_cos_doc[] =
+PyDoc_STRVAR(c_cos_doc,
 "cos(x)\n"
 "n"
-"Return the cosine of x.";
+"Return the cosine of x.");
 
 
 static Py_complex
@@ -132,10 +132,10 @@ c_cosh(Py_complex x)
 	return r;
 }
 
-static char c_cosh_doc[] =
+PyDoc_STRVAR(c_cosh_doc,
 "cosh(x)\n"
 "n"
-"Return the hyperbolic cosine of x.";
+"Return the hyperbolic cosine of x.");
 
 
 static Py_complex
@@ -148,10 +148,10 @@ c_exp(Py_complex x)
 	return r;
 }
 
-static char c_exp_doc[] =
+PyDoc_STRVAR(c_exp_doc,
 "exp(x)\n"
 "\n"
-"Return the exponential value e**x.";
+"Return the exponential value e**x.");
 
 
 static Py_complex
@@ -164,10 +164,10 @@ c_log(Py_complex x)
 	return r;
 }
 
-static char c_log_doc[] =
+PyDoc_STRVAR(c_log_doc,
 "log(x)\n"
 "\n"
-"Return the natural logarithm of x.";
+"Return the natural logarithm of x.");
 
 
 static Py_complex
@@ -180,10 +180,10 @@ c_log10(Py_complex x)
 	return r;
 }
 
-static char c_log10_doc[] =
+PyDoc_STRVAR(c_log10_doc,
 "log10(x)\n"
 "\n"
-"Return the base-10 logarithm of x.";
+"Return the base-10 logarithm of x.");
 
 
 /* internal function not available from Python */
@@ -206,10 +206,10 @@ c_sin(Py_complex x)
 	return r;
 }
 
-static char c_sin_doc[] =
+PyDoc_STRVAR(c_sin_doc,
 "sin(x)\n"
 "\n"
-"Return the sine of x.";
+"Return the sine of x.");
 
 
 static Py_complex
@@ -221,10 +221,10 @@ c_sinh(Py_complex x)
 	return r;
 }
 
-static char c_sinh_doc[] =
+PyDoc_STRVAR(c_sinh_doc,
 "sinh(x)\n"
 "\n"
-"Return the hyperbolic sine of x.";
+"Return the hyperbolic sine of x.");
 
 
 static Py_complex
@@ -253,10 +253,10 @@ c_sqrt(Py_complex x)
 	return r;
 }
 
-static char c_sqrt_doc[] =
+PyDoc_STRVAR(c_sqrt_doc,
 "sqrt(x)\n"
 "\n"
-"Return the square root of x.";
+"Return the square root of x.");
 
 
 static Py_complex
@@ -280,10 +280,10 @@ c_tan(Py_complex x)
 	return r;
 }
 
-static char c_tan_doc[] =
+PyDoc_STRVAR(c_tan_doc,
 "tan(x)\n"
 "\n"
-"Return the tangent of x.";
+"Return the tangent of x.");
 
 
 static Py_complex
@@ -307,10 +307,10 @@ c_tanh(Py_complex x)
 	return r;
 }
 
-static char c_tanh_doc[] =
+PyDoc_STRVAR(c_tanh_doc,
 "tanh(x)\n"
 "\n"
-"Return the hyperbolic tangent of x.";
+"Return the hyperbolic tangent of x.");
 
 
 /* And now the glue to make them available from Python: */
@@ -367,9 +367,9 @@ FUNC1(cmath_tan, c_tan)
 FUNC1(cmath_tanh, c_tanh)
 
 
-static char module_doc[] =
+PyDoc_STRVAR(module_doc,
 "This module is always available. It provides access to mathematical\n"
-"functions for complex numbers.";
+"functions for complex numbers.");
 
 static PyMethodDef cmath_methods[] = {
 	{"acos",   cmath_acos,  METH_VARARGS, c_acos_doc},

@@ -2261,14 +2261,14 @@ long_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	return (PyObject *)new;
 }
 
-static char long_doc[] =
+PyDoc_STRVAR(long_doc,
 "long(x[, base]) -> integer\n\
 \n\
 Convert a string or number to a long integer, if possible.  A floating\n\
 point argument will be truncated towards zero (this does not include a\n\
 string representation of a floating point number!)  When converting a\n\
 string, use the optional base.  It is an error to supply a base when\n\
-converting a non-string.";
+converting a non-string.");
 
 static PyNumberMethods long_as_number = {
 	(binaryfunc)	long_add,	/*nb_add*/

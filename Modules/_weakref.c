@@ -5,9 +5,9 @@
         ((PyWeakReference **) PyObject_GET_WEAKREFS_LISTPTR(o))
 
 
-static char weakref_getweakrefcount__doc__[] =
+PyDoc_STRVAR(weakref_getweakrefcount__doc__,
 "getweakrefcount(object) -- return the number of weak references\n"
-"to 'object'.";
+"to 'object'.");
 
 static PyObject *
 weakref_getweakrefcount(PyObject *self, PyObject *object)
@@ -26,9 +26,9 @@ weakref_getweakrefcount(PyObject *self, PyObject *object)
 }
 
 
-static char weakref_getweakrefs__doc__[] =
+PyDoc_STRVAR(weakref_getweakrefs__doc__,
 "getweakrefs(object) -- return a list of all weak reference objects\n"
-"that point to 'object'.";
+"that point to 'object'.");
 
 static PyObject *
 weakref_getweakrefs(PyObject *self, PyObject *object)
@@ -57,10 +57,10 @@ weakref_getweakrefs(PyObject *self, PyObject *object)
 }
 
 
-static char weakref_ref__doc__[] =
+PyDoc_STRVAR(weakref_ref__doc__,
 "new(object[, callback]) -- create a weak reference to 'object';\n"
 "when 'object' is finalized, 'callback' will be called and passed\n"
-"a reference to 'object'.";
+"a reference to 'object'.");
 
 static PyObject *
 weakref_ref(PyObject *self, PyObject *args)
@@ -76,10 +76,10 @@ weakref_ref(PyObject *self, PyObject *args)
 }
 
 
-static char weakref_proxy__doc__[] =
+PyDoc_STRVAR(weakref_proxy__doc__,
 "proxy(object[, callback]) -- create a proxy object that weakly\n"
 "references 'object'.  'callback', if given, is called with a\n"
-"reference to the proxy when it is about to be finalized.";
+"reference to the proxy when it is about to be finalized.");
 
 static PyObject *
 weakref_proxy(PyObject *self, PyObject *args)

@@ -72,8 +72,7 @@ fcntl_fcntl(PyObject *self, PyObject *args)
 	return PyInt_FromLong((long)ret);
 }
 
-static char fcntl_doc [] =
-
+PyDoc_STRVAR(fcntl_doc,
 "fcntl(fd, opt, [arg])\n\
 \n\
 Perform the requested operation on file descriptor fd.  The operation\n\
@@ -84,7 +83,7 @@ the return value of fcntl is a string of that length, containing the\n\
 resulting value put in the arg buffer by the operating system.The length\n\
 of the arg string is not allowed to exceed 1024 bytes. If the arg given\n\
 is an integer or if none is specified, the result value is an integer\n\
-corresponding to the return value of the fcntl call in the C code.";
+corresponding to the return value of the fcntl call in the C code.");
 
 
 /* ioctl(fd, opt, [arg]) */
@@ -136,7 +135,7 @@ fcntl_ioctl(PyObject *self, PyObject *args)
 	return PyInt_FromLong((long)ret);
 }
 
-static char ioctl_doc [] =
+PyDoc_STRVAR(ioctl_doc,
 "ioctl(fd, opt, [arg])\n\
 \n\
 Perform the requested operation on file descriptor fd.  The operation\n\
@@ -147,7 +146,7 @@ given as a string, the return value of ioctl is a string of that length,\n\
 containing the resulting value put in the arg buffer by the operating system.\n\
 The length of the arg string is not allowed to exceed 1024 bytes. If the arg\n\
 given is an integer or if none is specified, the result value is an integer\n\
-corresponding to the return value of the ioctl call in the C code.";
+corresponding to the return value of the ioctl call in the C code.");
 
 
 /* flock(fd, operation) */
@@ -202,12 +201,12 @@ fcntl_flock(PyObject *self, PyObject *args)
 	return Py_None;
 }
 
-static char flock_doc [] =
+PyDoc_STRVAR(flock_doc,
 "flock(fd, operation)\n\
 \n\
 Perform the lock operation op on file descriptor fd.  See the Unix \n\
 manual flock(3) for details.  (On some systems, this function is\n\
-emulated using fcntl().)";
+emulated using fcntl().)");
 
 
 /* lockf(fd, operation) */
@@ -283,7 +282,7 @@ fcntl_lockf(PyObject *self, PyObject *args)
 #endif  /* defined(PYOS_OS2) && defined(PYCC_GCC) */
 }
 
-static char lockf_doc [] =
+PyDoc_STRVAR(lockf_doc,
 "lockf (fd, operation, length=0, start=0, whence=0)\n\
 \n\
 This is essentially a wrapper around the fcntl() locking calls.  fd is the\n\
@@ -306,7 +305,7 @@ starts.  whence is as with fileobj.seek(), specifically:\n\
 \n\
     0 - relative to the start of the file (SEEK_SET)\n\
     1 - relative to the current buffer position (SEEK_CUR)\n\
-    2 - relative to the end of the file (SEEK_END)";
+    2 - relative to the end of the file (SEEK_END)");
 
 /* List of functions */
 
@@ -319,12 +318,11 @@ static PyMethodDef fcntl_methods[] = {
 };
 
 
-static char module_doc [] =
-
+PyDoc_STRVAR(module_doc,
 "This module performs file control and I/O control on file \n\
 descriptors.  It is an interface to the fcntl() and ioctl() Unix\n\
 routines.  File descriptors can be obtained with the fileno() method of\n\
-a file or socket object.";
+a file or socket object.");
 
 /* Module initialisation */
 
