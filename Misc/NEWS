@@ -1,6 +1,14 @@
 What's New in Python 2.1 alpha 2?
 =================================
+
 Core language, builtins, and interpreter
+
+- repr(string) is easier to read, now using hex escapes instead of octal,
+  and using \t, \n and \r instead of \011, \012 and \015 (respectively):
+
+  >>> "\texample \r\n" + chr(0) + chr(255)
+  '\texample \r\n\x00\xff'         # in 2.1
+  '\011example \015\012\000\377'   # in 2.0
 
 
 Standard library
