@@ -5,7 +5,7 @@ There are two kinds of tables: sets, for which a member test is provided,
 and mappings, for which a mapping function is provided.
 """
 
-import unicodedata, sets
+import unicodedata
 
 assert unicodedata.unidata_version == '3.2.0'
 
@@ -16,7 +16,7 @@ def in_table_a1(code):
     return (c & 0xFFFF) not in (0xFFFE, 0xFFFF)
 
 
-b1_set = sets.Set([173, 847, 6150, 6155, 6156, 6157, 8203, 8204, 8205, 8288, 65279] + range(65024,65040))
+b1_set = set([173, 847, 6150, 6155, 6156, 6157, 8203, 8204, 8205, 8288, 65279] + range(65024,65040))
 def in_table_b1(code):
     return ord(code) in b1_set
 
@@ -217,7 +217,7 @@ def in_table_c11_c12(code):
 def in_table_c21(code):
     return ord(code) < 128 and unicodedata.category(code) == "Cc"
 
-c22_specials = sets.Set([1757, 1807, 6158, 8204, 8205, 8232, 8233, 65279] + range(8288,8292) + range(8298,8304) + range(65529,65533) + range(119155,119163))
+c22_specials = set([1757, 1807, 6158, 8204, 8205, 8232, 8233, 65279] + range(8288,8292) + range(8298,8304) + range(65529,65533) + range(119155,119163))
 def in_table_c22(code):
     c = ord(code)
     if c < 128: return False
@@ -244,22 +244,22 @@ def in_table_c5(code):
     return unicodedata.category(code) == "Cs"
 
 
-c6_set = sets.Set(range(65529,65534))
+c6_set = set(range(65529,65534))
 def in_table_c6(code):
     return ord(code) in c6_set
 
 
-c7_set = sets.Set(range(12272,12284))
+c7_set = set(range(12272,12284))
 def in_table_c7(code):
     return ord(code) in c7_set
 
 
-c8_set = sets.Set([832, 833, 8206, 8207] + range(8234,8239) + range(8298,8304))
+c8_set = set([832, 833, 8206, 8207] + range(8234,8239) + range(8298,8304))
 def in_table_c8(code):
     return ord(code) in c8_set
 
 
-c9_set = sets.Set([917505] + range(917536,917632))
+c9_set = set([917505] + range(917536,917632))
 def in_table_c9(code):
     return ord(code) in c9_set
 
@@ -270,3 +270,4 @@ def in_table_d1(code):
 
 def in_table_d2(code):
     return unicodedata.bidirectional(code) == "L"
+

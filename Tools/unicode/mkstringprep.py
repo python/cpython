@@ -1,5 +1,4 @@
-import re, unicodedata, sys, sets
-from sets import Set
+import re, unicodedata, sys
 
 if sys.maxunicode == 65535:
     raise RuntimeError, "need UCS-4 Python"
@@ -40,10 +39,10 @@ def compact_set(l):
         single.append(prev)
     tuple = " + ".join(["range(%d,%d)" % t for t in tuple])
     if not single:
-        return "sets.Set(%s)" % tuple
+        return "set(%s)" % tuple
     if not tuple:
-        return "sets.Set(%s)" % repr(single)
-    return "sets.Set(%s + %s)" % (repr(single),tuple)
+        return "set(%s)" % repr(single)
+    return "set(%s + %s)" % (repr(single),tuple)
 
 ############## Read the tables in the RFC #######################
 
@@ -114,7 +113,7 @@ There are two kinds of tables: sets, for which a member test is provided,
 and mappings, for which a mapping function is provided.
 \"\"\"
 
-import unicodedata, sets
+import unicodedata
 """
 
 print "assert unicodedata.unidata_version == %s" % repr(unicodedata.unidata_version)
@@ -124,14 +123,14 @@ print "assert unicodedata.unidata_version == %s" % repr(unicodedata.unidata_vers
 name, table = tables[0]
 del tables[0]
 assert name == "A.1"
-table = Set(table.keys())
-Cn = Set(gen_category(["Cn"]))
+table = set(table.keys())
+Cn = set(gen_category(["Cn"]))
 
 # FDD0..FDEF are process internal codes
-Cn -= Set(range(0xFDD0, 0xFDF0))
+Cn -= set(range(0xFDD0, 0xFDF0))
 # not a character
-Cn -= Set(range(0xFFFE, 0x110000, 0x10000))
-Cn -= Set(range(0xFFFF, 0x110000, 0x10000))
+Cn -= set(range(0xFFFE, 0x110000, 0x10000))
+Cn -= set(range(0xFFFF, 0x110000, 0x10000))
 
 # assert table == Cn
 
@@ -251,8 +250,8 @@ name, table = tables[0]
 del tables[0]
 assert name == "C.1.2"
 
-# table = Set(table.keys())
-# Zs = Set(gen_category(["Zs"])) - Set([0x20])
+# table = set(table.keys())
+# Zs = set(gen_category(["Zs"])) - set([0x20])
 # assert Zs == table
 
 print """
@@ -268,9 +267,9 @@ name, table_c21 = tables[0]
 del tables[0]
 assert name == "C.2.1"
 
-Cc = Set(gen_category(["Cc"]))
-Cc_ascii = Cc & Set(range(128))
-table_c21 = Set(table_c21.keys())
+Cc = set(gen_category(["Cc"]))
+Cc_ascii = Cc & set(range(128))
+table_c21 = set(table_c21.keys())
 assert Cc_ascii == table_c21
 
 print """
@@ -285,7 +284,7 @@ del tables[0]
 assert name == "C.2.2"
 
 Cc_nonascii = Cc - Cc_ascii
-table_c22 = Set(table_c22.keys())
+table_c22 = set(table_c22.keys())
 assert len(Cc_nonascii - table_c22) == 0
 
 specials = list(table_c22 - Cc_nonascii)
@@ -308,8 +307,8 @@ name, table = tables[0]
 del tables[0]
 assert name == "C.3"
 
-Co = Set(gen_category(["Co"]))
-assert Set(table.keys()) == Co
+Co = set(gen_category(["Co"]))
+assert set(table.keys()) == Co
 
 print """
 def in_table_c3(code):
@@ -322,10 +321,10 @@ name, table = tables[0]
 del tables[0]
 assert name == "C.4"
 
-nonchar = Set(range(0xFDD0,0xFDF0) +
+nonchar = set(range(0xFDD0,0xFDF0) +
               range(0xFFFE,0x110000,0x10000) +
               range(0xFFFF,0x110000,0x10000))
-table = Set(table.keys())
+table = set(table.keys())
 assert table == nonchar
 
 print """
@@ -341,8 +340,8 @@ name, table = tables[0]
 del tables[0]
 assert name == "C.5"
 
-Cs = Set(gen_category(["Cs"]))
-assert Set(table.keys()) == Cs
+Cs = set(gen_category(["Cs"]))
+assert set(table.keys()) == Cs
 
 print """
 def in_table_c5(code):
@@ -410,8 +409,8 @@ name, table = tables[0]
 del tables[0]
 assert name == "D.1"
 
-RandAL = Set(gen_bidirectional(["R","AL"]))
-assert Set(table.keys()) == RandAL
+RandAL = set(gen_bidirectional(["R","AL"]))
+assert set(table.keys()) == RandAL
 
 print """
 def in_table_d1(code):
@@ -423,8 +422,8 @@ name, table = tables[0]
 del tables[0]
 assert name == "D.2"
 
-L = Set(gen_bidirectional(["L"]))
-assert Set(table.keys()) == L
+L = set(gen_bidirectional(["L"]))
+assert set(table.keys()) == L
 
 print """
 def in_table_d2(code):
