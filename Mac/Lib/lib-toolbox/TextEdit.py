@@ -39,6 +39,7 @@ teFAutoScroll = 0
 teFTextBuffering = 1
 teFOutlineHilite = 2
 teFInlineInput = 3
+teFUseWhiteBackground = 4
 teFUseInlineInput = 5
 teFInlineInputAutoScroll = 6
 teBitClear = 0
