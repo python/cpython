@@ -1097,6 +1097,8 @@ vgetargskeywords(PyObject *args, PyObject *keywords, char *format,
 					thiskw);
 				return 0;
 			}
+			else if (PyErr_Occurred())
+				return 0;
 		}
 	}
 
@@ -1107,10 +1109,11 @@ vgetargskeywords(PyObject *args, PyObject *keywords, char *format,
 		for (i = nargs; i < min; i++) {
 			if (PyDict_GetItemString(keywords, kwlist[i]))
 				len++;
+			else if (PyErr_Occurred())
+				return 0;
 		}
 	}
-	PyErr_Clear();	
-	
+
 	/* make sure we got an acceptable number of arguments; the message
 	   is a little confusing with keywords since keyword arguments
 	   which are supplied, but don't match the required arguments
@@ -1159,7 +1162,7 @@ vgetargskeywords(PyObject *args, PyObject *keywords, char *format,
 	  "number of items in format string and keyword list do not match");
 		return 0;
 	}	  	  
-		
+
 	/* convert the keyword arguments; this uses the format 
 	   string where it was left after processing args */
 	converted = 0;
@@ -1178,8 +1181,9 @@ vgetargskeywords(PyObject *args, PyObject *keywords, char *format,
 			}
 			converted++;
 		}
+		else if (PyErr_Occurred())
+			return 0;
 		else {
-			PyErr_Clear();
 			msg = skipitem(&format, p_va);
 			if (msg) {
 				seterror(i+1, msg, levels, fname, message);
