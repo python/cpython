@@ -49,7 +49,7 @@ def	genallprojects():
 	genpluginproject("pyexpat", 
 		sources=["pyexpat.c"], 
 		libraries=["libexpat.ppc.lib"], 
-		extradirs=["::::expat:mac"])
+		extradirs=["::::expat:*"])
 	genpluginproject("zlib", 
 		libraries=["zlib.ppc.Lib"], 
 		extradirs=["::::imglibs:zlib:mac", "::::imglibs:zlib"])
