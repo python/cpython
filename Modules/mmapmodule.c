@@ -32,7 +32,13 @@
 #include <unistd.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
+
+#ifndef MS_SYNC
+/* This is missing e.g. on SunOS 4.1.4 */
+#define MS_SYNC 0
 #endif
+
+#endif /* UNIX */
 
 #include <string.h>
 #include <sys/types.h>
