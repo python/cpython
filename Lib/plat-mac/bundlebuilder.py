@@ -207,7 +207,7 @@ else:
 	PYC_EXT = ".pyo"
 
 MAGIC = imp.get_magic()
-USE_FROZEN = hasattr(imp, "set_frozenmodules")
+USE_ZIPIMPORT = "zipimport" in sys.builtin_module_names
 
 # For standalone apps, we have our own minimal site.py. We don't need
 # all the cruft of the real site.py.
@@ -216,28 +216,30 @@ import sys
 del sys.path[1:]  # sys.path[0] is Contents/Resources/
 """
 
-if USE_FROZEN:
-	FROZEN_ARCHIVE = "FrozenModules.marshal"
-	SITE_PY += """\
-# bootstrapping
-import imp, marshal
-f = open(sys.path[0] + "/%s", "rb")
-imp.set_frozenmodules(marshal.load(f))
-f.close()
-""" % FROZEN_ARCHIVE
+if USE_ZIPIMPORT:
+	ZIP_ARCHIVE = "Modules.zip"
+	SITE_PY += "sys.path.append(sys.path[0] + '/%s')\n" % ZIP_ARCHIVE
+	def getPycData(fullname, code, ispkg):
+		if ispkg:
+			fullname += ".__init__"
+		path = fullname.replace(".", os.sep) + PYC_EXT
+		return path, MAGIC + '\0\0\0\0' + marshal.dumps(code)
 
 SITE_CO = compile(SITE_PY, "<-bundlebuilder.py->", "exec")
 
 EXT_LOADER = """\
-import imp, sys, os
-for p in sys.path:
-	path = os.path.join(p, "%(filename)s")
-	if os.path.exists(path):
-		break
-else:
-	assert 0, "file not found: %(filename)s"
-mod = imp.load_dynamic("%(name)s", path)
-sys.modules["%(name)s"] = mod
+def __load():
+	import imp, sys, os
+	for p in sys.path:
+		path = os.path.join(p, "%(filename)s")
+		if os.path.exists(path):
+			break
+	else:
+		assert 0, "file not found: %(filename)s"
+	mod = imp.load_dynamic("%(name)s", path)
+
+__load()
+del __load
 """
 
 MAYMISS_MODULES = ['mac', 'os2', 'nt', 'ntpath', 'dos', 'dospath',
@@ -384,23 +386,17 @@ class AppBuilder(BundleBuilder):
 	def addPythonModules(self):
 		self.message("Adding Python modules", 1)
 
-		if USE_FROZEN:
-			# This anticipates the acceptance of this patch:
-			#   http://www.python.org/sf/642578
-			# Create a file containing all modules, frozen.
-			frozenmodules = []
-			for name, code, ispkg in self.pymodules:
-				if ispkg:
-					self.message("Adding Python package %s" % name, 2)
-				else:
-					self.message("Adding Python module %s" % name, 2)
-				frozenmodules.append((name, marshal.dumps(code), ispkg))
-			frozenmodules = tuple(frozenmodules)
-			relpath = pathjoin("Contents", "Resources", FROZEN_ARCHIVE)
+		if USE_ZIPIMPORT:
+			# Create a zip file containing all modules as pyc.
+			import zipfile
+			relpath = pathjoin("Contents", "Resources", ZIP_ARCHIVE)
 			abspath = pathjoin(self.bundlepath, relpath)
-			f = open(abspath, "wb")
-			marshal.dump(frozenmodules, f)
-			f.close()
+			zf = zipfile.ZipFile(abspath, "w", zipfile.ZIP_DEFLATED)
+			for name, code, ispkg in self.pymodules:
+				self.message("Adding Python module %s" % name, 2)
+				path, pyc = getPycData(name, code, ispkg)
+				zf.writestr(path, pyc)
+			zf.close()
 			# add site.pyc
 			sitepath = pathjoin(self.bundlepath, "Contents", "Resources",
 					"site" + PYC_EXT)
@@ -438,6 +434,9 @@ class AppBuilder(BundleBuilder):
 		self.message("Finding module dependencies", 1)
 		import modulefinder
 		mf = modulefinder.ModuleFinder(excludes=self.excludeModules)
+		if USE_ZIPIMPORT:
+			# zipimport imports zlib, must add it manually
+			mf.import_hook("zlib")
 		# manually add our own site.py
 		site = mf.add_module("site")
 		site.__code__ = SITE_CO
@@ -460,9 +459,10 @@ class AppBuilder(BundleBuilder):
 				# C extension
 				path = mod.__file__
 				filename = os.path.basename(path)
-				if USE_FROZEN:
-					# "proper" freezing, put extensions in Contents/Resources/,
-					# freeze a tiny "loader" program. Due to Thomas Heller.
+				if USE_ZIPIMPORT:
+					# Python modules are stored in a Zip archive, but put
+					# extensions in Contents/Resources/.a and add a tiny "loader"
+					# program in the Zip archive. Due to Thomas Heller.
 					dstpath = pathjoin("Contents", "Resources", filename)
 					source = EXT_LOADER % {"name": name, "filename": filename}
 					code = compile(source, "<dynloader for %s>" % name, "exec")
@@ -475,9 +475,9 @@ class AppBuilder(BundleBuilder):
 				self.binaries.append(dstpath)
 			if mod.__code__ is not None:
 				ispkg = mod.__path__ is not None
-				if not USE_FROZEN or name != "site":
+				if not USE_ZIPIMPORT or name != "site":
 					# Our site.py is doing the bootstrapping, so we must
-					# include a real .pyc file if USE_FROZEN is True.
+					# include a real .pyc file if USE_ZIPIMPORT is True.
 					self.pymodules.append((name, mod.__code__, ispkg))
 
 		if hasattr(mf, "any_missing_maybe"):
@@ -546,10 +546,9 @@ def findPackageContents(name, searchpath=None):
 
 def writePyc(code, path):
 	f = open(path, "wb")
-	f.write("\0" * 8)  # don't bother about a time stamp
-	marshal.dump(code, f)
-	f.seek(0, 0)
 	f.write(MAGIC)
+	f.write("\0" * 4)  # don't bother about a time stamp
+	marshal.dump(code, f)
 	f.close()
 
 def copy(src, dst, mkdirs=0):
