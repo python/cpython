@@ -114,10 +114,21 @@
 \let\endfulllineitems\endlist
 
 
-% cfuncdesc should be called as an \begin{cfuncdesc} ... \end{cfuncdesc}
+% cfuncdesc should be called as
+% \begin{cfuncdesc}{type}{name}{arglist}
+% ... description ...
+% \end{cfuncdesc}
 \newcommand{\cfuncline}[3]{\item[\code{#1 #2(\varvars{#3})}]\ttindex{#2}}
 \newcommand{\cfuncdesc}[3]{\fulllineitems\cfuncline{#1}{#2}{#3}}
 \let\endcfuncdesc\endfulllineitems
+
+\newcommand{\cvarline}[2]{\item[\code{#1 #2}]\ttindex{#2}}
+\newcommand{\cvardesc}[2]{\fulllineitems\cvarline{#1}{#2}}
+\let\endcvardesc\endfulllineitems
+
+\newcommand{\ctypeline}[1]{\item[\code{#1}]\ttindex{#1}}
+\newcommand{\ctypedesc}[1]{\fulllineitems\ctypeline{#1}}
+\let\endctypedesc\endfulllineitems
 
 % funcdesc should be called as an \begin{funcdesc} ... \end{funcdesc}
 \newcommand{\funcline}[2]{\item[\code{#1(\varvars{#2})}]\ttindex{#1}}
