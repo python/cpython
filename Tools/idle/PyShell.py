@@ -217,11 +217,11 @@ class ModifiedInterpreter(InteractiveInterpreter):
                     raise
                 else:
                     self.showtraceback()
-                    if self.tkconsole.jit_stack_view:
+                    if self.tkconsole.getvar("<<toggle-jit-stack-viewer>>"):
                         self.tkconsole.open_stack_viewer()
             except:
                 self.showtraceback()
-                if self.tkconsole.jit_stack_view:
+                if self.tkconsole.getvar("<<toggle-jit-stack-viewer>>"):
                     self.tkconsole.open_stack_viewer()
 
         finally:
@@ -289,17 +289,20 @@ class PyShell(OutputWindow):
             tkMessageBox.showerror("Don't debug now",
                 "You can only toggle the debugger when idle",
                 master=self.text)
+            self.set_debugger_indicator()
             return "break"
-        db = self.interp.getdebugger()
-        if db:
-            self.close_debugger()
         else:
-            self.open_debugger()
-
-    jit_stack_view = 0
-
+            db = self.interp.getdebugger()
+            if db:
+                self.close_debugger()
+            else:
+                self.open_debugger()
+    
+    def set_debugger_indicator(self):
+        db = self.interp.getdebugger()
+        self.setvar("<<toggle-debugger>>", not not db)
     def toggle_jit_stack_viewer( self, event=None):
-        self.jit_stack_view = not self.jit_stack_view
+        pass # All we need is the variable
 
     def close_debugger(self):
         db = self.interp.getdebugger()
@@ -310,12 +313,14 @@ class PyShell(OutputWindow):
             self.console.write("[DEBUG OFF]\n")
             sys.ps1 = ">>> "
             self.showprompt()
+        self.set_debugger_indicator()
 
     def open_debugger(self):
         import Debugger
         self.interp.setdebugger(Debugger.Debugger(self))
         sys.ps1 = "[DEBUG ON]\n>>> "
         self.showprompt()
+        self.set_debugger_indicator()
 
     def beginexecuting(self):
         # Helper for ModifiedInterpreter
@@ -335,8 +340,8 @@ class PyShell(OutputWindow):
         if self.executing:
             # XXX Need to ask a question here
             if not tkMessageBox.askokcancel(
-                "Cancel?",
-                "The program is still running; do you want to cancel it?",
+                "Kill?",
+                "The program is still running; do you want to kill it?",
                 default="ok",
                 master=self.text):
                 return "cancel"

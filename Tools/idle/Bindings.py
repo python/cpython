@@ -7,7 +7,6 @@
 
 import sys
 import string
-import re
 from keydefs import *
 
 menudefs = [
@@ -42,9 +41,9 @@ menudefs = [
   ]),
  ('debug', [
    ('_Go to file/line', '<<goto-file-line>>'),
-   ('_Open stack viewer', '<<open-stack-viewer>>'),
-   ('_Debugger toggle', '<<toggle-debugger>>'),
-   ('_JIT Stack viewer toggle', '<<toggle-jit-stack-viewer>>' ),
+   ('_Stack viewer', '<<open-stack-viewer>>'),
+   ('!_Debugger', '<<toggle-debugger>>'),
+   ('!_Auto-open stack viewer', '<<toggle-jit-stack-viewer>>' ),
   ]),
  ('help', [
    ('_Help...', '<<help>>'),
@@ -53,62 +52,7 @@ menudefs = [
   ]),
 ]
 
-def prepstr(s):
-    # Helper to extract the underscore from a string,
-    # e.g. prepstr("Co_py") returns (2, "Copy").
-    i = string.find(s, '_')
-    if i >= 0:
-        s = s[:i] + s[i+1:]
-    return i, s
-
-keynames = {
- 'bracketleft': '[',
- 'bracketright': ']',
- 'slash': '/',
-}
-
-def get_accelerator(keydefs, event):
-    keylist = keydefs.get(event)
-    if not keylist:
-        return ""
-    s = keylist[0]
-    s = re.sub(r"-[a-z]\b", lambda m: string.upper(m.group()), s)
-    s = re.sub(r"\b\w+\b", lambda m: keynames.get(m.group(), m.group()), s)
-    s = re.sub("Key-", "", s)
-    s = re.sub("Control-", "Ctrl-", s)
-    s = re.sub("-", "+", s)
-    s = re.sub("><", " ", s)
-    s = re.sub("<", "", s)
-    s = re.sub(">", "", s)
-    return s
-
 if sys.platform == 'win32':
     default_keydefs = windows_keydefs
 else:
     default_keydefs = unix_keydefs
-
-def apply_bindings(text, keydefs=default_keydefs):
-    text.keydefs = keydefs
-    for event, keylist in keydefs.items():
-        if keylist:
-            apply(text.event_add, (event,) + tuple(keylist))
-
-def fill_menus(text, menudict, defs=menudefs, keydefs=default_keydefs):
-    # Fill the menus for the given text widget.  The menudict argument is
-    # a dictionary containing the menus, keyed by their lowercased name.
-    # Menus that are absent or None are ignored.
-    for mname, itemlist in defs:
-        menu = menudict.get(mname)
-        if not menu:
-            continue
-        for item in itemlist:
-            if not item:
-                menu.add_separator()
-            else:
-                label, event = item
-                underline, label = prepstr(label)
-                accelerator = get_accelerator(keydefs, event)
-                def command(text=text, event=event):
-                    text.event_generate(event)
-                menu.add_command(label=label, underline=underline,
-                                 command=command, accelerator=accelerator)

@@ -1,6 +1,7 @@
 import sys
 import os
 import string
+import re
 import imp
 from Tkinter import *
 import tkSimpleDialog
@@ -93,7 +94,7 @@ class EditorWindow:
                                 background="white", wrap="none")
 
         self.createmenubar()
-        self.Bindings.apply_bindings(text)
+        self.apply_bindings()
 
         self.top.protocol("WM_DELETE_WINDOW", self.close)
         self.top.bind("<<close-window>>", self.close_event)
@@ -172,15 +173,19 @@ class EditorWindow:
 
     def createmenubar(self):
         mbar = self.menubar
-        self.menudict = mdict = {}
+        self.menudict = menudict = {}
         for name, label in self.menu_specs:
-            underline, label = self.Bindings.prepstr(label)
-            mdict[name] = menu = Menu(mbar, name=name)
+            underline, label = prepstr(label)
+            menudict[name] = menu = Menu(mbar, name=name)
             mbar.add_cascade(label=label, menu=menu, underline=underline)
-        self.Bindings.fill_menus(self.text, mdict)
+        self.fill_menus()
 
     def postwindowsmenu(self):
         # Only called when Windows menu exists
+        # XXX Actually, this Just-In-Time updating interferes
+        # XXX badly with the tear-off feature.  It would be better
+        # XXX to update all Windows menus whenever the list of windows
+        # XXX changes.
         menu = self.menudict['windows']
         end = menu.index("end")
         if end is None:
@@ -477,7 +482,7 @@ class EditorWindow:
             if hasattr(ins, kdname):
                 keydefs.update(getattr(ins, kdname))
         if keydefs:
-            self.Bindings.apply_bindings(self.text, keydefs)
+            self.apply_bindings(keydefs)
             for vevent in keydefs.keys():
                 methodname = string.replace(vevent, "-", "_")
                 while methodname[:1] == '<':
@@ -488,9 +493,103 @@ class EditorWindow:
                 if hasattr(ins, methodname):
                     self.text.bind(vevent, getattr(ins, methodname))
         if hasattr(ins, "menudefs"):
-            self.Bindings.fill_menus(self.text, self. menudict,
-                                     ins.menudefs, keydefs)
+            self.fill_menus(ins.menudefs, keydefs)
         return ins
+
+    def apply_bindings(self, keydefs=None):
+        if keydefs is None:
+            keydefs = self.Bindings.default_keydefs
+        text = self.text
+        text.keydefs = keydefs
+        for event, keylist in keydefs.items():
+            if keylist:
+                apply(text.event_add, (event,) + tuple(keylist))
+
+    def fill_menus(self, defs=None, keydefs=None):
+        # Fill the menus.
+        # Menus that are absent or None in self.menudict are ignored.
+        if defs is None:
+            defs = self.Bindings.menudefs
+        if keydefs is None:
+            keydefs = self.Bindings.default_keydefs
+        menudict = self.menudict
+        text = self.text
+        for mname, itemlist in defs:
+            menu = menudict.get(mname)
+            if not menu:
+                continue
+            for item in itemlist:
+                if not item:
+                    menu.add_separator()
+                else:
+                    label, event = item
+                    checkbutton = (label[:1] == '!')
+                    if checkbutton:
+                        label = label[1:]
+                    underline, label = prepstr(label)
+                    accelerator = get_accelerator(keydefs, event)
+                    def command(text=text, event=event):
+                        text.event_generate(event)
+                    if checkbutton:
+                        var = self.getrawvar(event, BooleanVar)
+                        menu.add_checkbutton(label=label, underline=underline,
+                            command=command, accelerator=accelerator,
+                            variable=var)
+                    else:
+                        menu.add_command(label=label, underline=underline,
+                            command=command, accelerator=accelerator)
+    
+    def getvar(self, name):
+        var = self.getrawvar(name)
+        if var:
+            return var.get()
+    
+    def setvar(self, name, value, vartype=None):
+        var = self.getrawvar(name, vartype)
+        if var:
+            var.set(value)
+    
+    def getrawvar(self, name, vartype=None):
+        key = ".VARS."
+        vars = self.menudict.get(key)
+        if not vars and vartype:
+            self.menudict[key] = vars = {}
+        if vars is not None:
+            var = vars.get(name)
+            if not var and vartype:
+                vars[name] = var = vartype(self.text)
+            return var
+
+
+def prepstr(s):
+    # Helper to extract the underscore from a string,
+    # e.g. prepstr("Co_py") returns (2, "Copy").
+    i = string.find(s, '_')
+    if i >= 0:
+        s = s[:i] + s[i+1:]
+    return i, s
+
+
+keynames = {
+ 'bracketleft': '[',
+ 'bracketright': ']',
+ 'slash': '/',
+}
+
+def get_accelerator(keydefs, event):
+    keylist = keydefs.get(event)
+    if not keylist:
+        return ""
+    s = keylist[0]
+    s = re.sub(r"-[a-z]\b", lambda m: string.upper(m.group()), s)
+    s = re.sub(r"\b\w+\b", lambda m: keynames.get(m.group(), m.group()), s)
+    s = re.sub("Key-", "", s)
+    s = re.sub("Control-", "Ctrl-", s)
+    s = re.sub("-", "+", s)
+    s = re.sub("><", " ", s)
+    s = re.sub("<", "", s)
+    s = re.sub(">", "", s)
+    return s
 
 
 def fixwordbreaks(root):
