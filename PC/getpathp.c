@@ -30,7 +30,7 @@ PERFORMANCE OF THIS SOFTWARE.
 ******************************************************************/
 
 /* Return the initial module search path. */
-/* Used by DOS, OS/2, Windows 3.1.  Works on NT too. */
+/* Used by DOS, OS/2, Windows 3.1, Windows 95/98, Windows NT. */
 
 #include "Python.h"
 #include "osdefs.h"
