@@ -1,4 +1,9 @@
 What's New in Python 2.2.4?
+Release date: XX-XXX-XXXX
+===========================
+
+- The email package handles some RFC 2231 parameters with missing
+  CHARSET fields better.
 
 - SF #746304: Builtin functions are now copy.[deep]copyable.
   Classes are now also deepcopyable.
