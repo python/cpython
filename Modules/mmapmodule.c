@@ -75,7 +75,7 @@ mmap_object_dealloc(mmap_object * m_obj)
 static PyObject *
 mmap_close_method (mmap_object * self, PyObject * args)
 {
-        if (!PyArg_NoArgs(args))
+        if (!PyArg_ParseTuple(args, ":close"))
 		return NULL;
 #ifdef MS_WIN32
 	UnmapViewOfFile (self->data);
@@ -120,7 +120,7 @@ mmap_read_byte_method (mmap_object * self,
 	char value;
 	char * where;
 	CHECK_VALID(NULL);
-        if (!PyArg_NoArgs(args))
+        if (!PyArg_ParseTuple(args, ":read_byte"))
 		return NULL;
 	if (self->pos >= 0 && self->pos < self->size) {
 	        where = self->data + self->pos;
@@ -143,7 +143,7 @@ mmap_read_line_method (mmap_object * self,
 	PyObject * result;
 
 	CHECK_VALID(NULL);
-        if (!PyArg_NoArgs(args))
+        if (!PyArg_ParseTuple(args, ":readline"))
 		return NULL;
 
 	eol = memchr(start, '\n', self->size - self->pos);
@@ -250,7 +250,7 @@ mmap_size_method (mmap_object * self,
 		  PyObject * args)
 {
 	CHECK_VALID(NULL);
-        if (!PyArg_NoArgs(args))
+        if (!PyArg_ParseTuple(args, ":size"))
 		return NULL;
 
 #ifdef MS_WIN32
@@ -354,7 +354,7 @@ static PyObject *
 mmap_tell_method (mmap_object * self, PyObject * args)
 {
 	CHECK_VALID(NULL);
-        if (!PyArg_NoArgs(args))
+        if (!PyArg_ParseTuple(args, ":tell"))
 		return NULL;
 	return (Py_BuildValue ("l", self->pos) );
 }
