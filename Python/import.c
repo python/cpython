@@ -998,6 +998,7 @@ static PyObject *get_parent Py_PROTO((PyObject *globals,
 				      char *buf, int *p_buflen));
 static PyObject *load_next Py_PROTO((PyObject *mod, PyObject *altmod,
 				     char **p_name, char *buf, int *p_buflen));
+static int mark_miss Py_PROTO((char *name));
 static int ensure_fromlist Py_PROTO((PyObject *mod, PyObject *fromlist,
 				     char *buf, int buflen));
 static PyObject * import_submodule Py_PROTO((PyObject *mod,
@@ -1168,11 +1169,17 @@ load_next(mod, altmod, p_name, buf, p_buflen)
 	result = import_submodule(mod, p, buf);
 	if (result == Py_None && altmod != mod) {
 		Py_DECREF(result);
-		/* Here, altmod must be None */
-		strncpy(buf, name, len);
-		buf[len] = '\0';
-		*p_buflen = len;
-		result = import_submodule(altmod, buf, buf);
+		/* Here, altmod must be None and mod must not be None */
+		result = import_submodule(altmod, name, name);
+		if (result != NULL && result != Py_None) {
+			if (mark_miss(buf) != 0) {
+				Py_DECREF(result);
+				return NULL;
+			}
+			strncpy(buf, name, len);
+			buf[len] = '\0';
+			*p_buflen = len;
+		}
 	}
 	if (result == NULL)
 		return NULL;
@@ -1185,6 +1192,14 @@ load_next(mod, altmod, p_name, buf, p_buflen)
 	}
 
 	return result;
+}
+
+static int
+mark_miss(name)
+	char *name;
+{
+	PyObject *modules = PyImport_GetModuleDict();
+	return PyDict_SetItemString(modules, name, Py_None);
 }
 
 static int
