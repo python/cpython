@@ -351,7 +351,6 @@ class _OutputRedirectingPdb(pdb.Pdb):
         try:
             return pdb.Pdb.trace_dispatch(self, *args)
         finally:
-            # Restore stdout.
             sys.stdout = save_stdout
 
 # [XX] Normalize with respect to os.path.pardir?
