@@ -593,19 +593,25 @@ structure.
 
 \subsection{Port-Specific Changes}
 
-
-XXX write this
-
-XXX OS/2 EMX port
+Support for a port to IBM's OS/2 using the EMX runtime environment was
+merged into the main Python source tree.  EMX is a POSIX emulation
+layer over the OS/2 system APIs.  The Python port for EMX tries to
+support all the POSIX-like capability exposed by the EMX runtime, and
+mostly succeeds; \function{fork()} and \function{fcntl()} are
+restricted by the limitations of the underlying emulation layer.  The
+standard OS/2 port, which uses IBM's Visual Age compiler, also gained
+support for case-sensitive import semantics as part of the integration
+of the EMX port into CVS.  (Contributed by Andrew MacIntyre.)
 
 On MacOS, most toolbox modules have been weaklinked to improve
 backward compatibility.  This means that modules will no longer fail
 to load if a single routine is missing on the curent OS version.
-Instead calling the missing routine will raise an exception.  
+Instead calling the missing routine will raise an exception.
+(Contributed by Jack Jansen.)
 
-Sean Reifschneider contributed an updated RPM spec file that can be
-found in the \file{Misc/RPM/} directory in the Python source
-distribution.
+The RPM spec files, found in the \file{Misc/RPM/} directory in the
+Python source distribution, were updated for 2.3.  (Contributed by
+Sean Reifschneider.)
 
 
 %======================================================================
@@ -620,11 +626,12 @@ as well as \UNIX.
 
 \end{itemize}
 
+
 %======================================================================
 \section{Acknowledgements \label{acks}}
 
 The author would like to thank the following people for offering
 suggestions, corrections and assistance with various drafts of this
-article: Fred~L. Drake, Jr., Detlef Lannert.
+article: Fred~L. Drake, Jr., Detlef Lannert, Andrew MacIntyre.
 
 \end{document}
