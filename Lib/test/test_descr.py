@@ -1401,6 +1401,7 @@ def inherits():
     a = precfloat(12345)
     verify(float(a) == 12345.0)
     verify(float(a).__class__ is float)
+    verify((+a).__class__ is float)
 
     class madtuple(tuple):
         _rev = None
