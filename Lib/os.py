@@ -591,3 +591,23 @@ if _exists("fork"):
             stdout, stdin = popen2.popen4(cmd, bufsize)
             return stdin, stdout
         __all__.append("popen4")
+
+import copy_reg as _copy_reg
+
+def _make_stat_result(tup, dict):
+    return stat_result(tup, dict)
+
+def _pickle_stat_result(sr):
+    (type, args) = sr.__reduce__()
+    return (_make_stat_result, args)
+
+_copy_reg.pickle(stat_result, _pickle_stat_result,_make_stat_result)
+
+def _make_statvfs_result(tup, dict):
+    return statvfs_result(tup, dict)
+
+def _pickle_statvfs_result(sr):
+    (type, args) = sr.__reduce__()
+    return (_make_statvfs_result, args)
+
+_copy_reg.pickle(statvfs_result, _pickle_statvfs_result,_make_statvfs_result)
