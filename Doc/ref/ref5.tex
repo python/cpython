@@ -714,7 +714,7 @@ following identity: \code{x == (x/y)*y + (x\%y)}.  Integer division and
 modulo are also connected with the built-in function \function{divmod()}:
 \code{divmod(x, y) == (x/y, x\%y)}.  These identities don't hold for
 floating point numbers; there similar identities hold
-approximately where \code{x/y} is replaced by \code{floor(x/y)}) or
+approximately where \code{x/y} is replaced by \code{floor(x/y)} or
 \code{floor(x/y) - 1}\footnote{
     If x is very close to an exact integer multiple of y, it's
     possible for \code{floor(x/y)} to be one larger than
@@ -867,7 +867,15 @@ behavior.
 
 \item
 Tuples and lists are compared lexicographically using comparison of
-corresponding items.
+corresponding elements.  This means that to compare equal, each
+element must compare equal and the two sequences must be of the same
+type and have the same length.
+
+If not equal, the sequences are ordered the same as their first
+differing elements.  For example, \code{cmp([1,2,x], [1,2,y])} returns
+the same as \code{cmp(x,y)}.  If the corresponding element does not
+exist, the shorter sequence is ordered first (for example,
+\code{[1,2] < [1,2,3]}).
 
 \item
 Mappings (dictionaries) compare equal if and only if their sorted
