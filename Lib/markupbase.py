@@ -38,10 +38,10 @@ class ParserBase:
         if i >= j:
             return j
         rawdata = self.rawdata
-        nlines = string.count(rawdata, "\n", i, j)
+        nlines = rawdata.count("\n", i, j)
         if nlines:
             self.lineno = self.lineno + nlines
-            pos = string.rindex(rawdata, "\n", i, j) # Should not fail
+            pos = rawdata.rindex("\n", i, j) # Should not fail
             self.offset = j-(pos+1)
         else:
             self.offset = self.offset + j-i
@@ -176,7 +176,7 @@ class ParserBase:
         # style content model; just skip until '>'
         rawdata = self.rawdata
         if '>' in rawdata[j:]:
-            return string.find(rawdata, ">", j) + 1
+            return rawdata.find(">", j) + 1
         return -1
 
     # Internal -- scan past <!ATTLIST declarations
@@ -200,7 +200,7 @@ class ParserBase:
             if c == "(":
                 # an enumerated type; look for ')'
                 if ")" in rawdata[j:]:
-                    j = string.find(rawdata, ")", j) + 1
+                    j = rawdata.find(")", j) + 1
                 else:
                     return -1
                 while rawdata[j:j+1] in string.whitespace:
@@ -307,7 +307,7 @@ class ParserBase:
             name = s.strip()
             if (i + len(s)) == n:
                 return None, -1  # end of buffer
-            return string.lower(name), m.end()
+            return name.lower(), m.end()
         else:
             self.updatepos(declstartpos, i)
             self.error("expected name token")
