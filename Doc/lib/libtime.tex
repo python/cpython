@@ -126,11 +126,18 @@ the C function of the same name, there is no trailing newline.
 \end{funcdesc}
 
 \begin{funcdesc}{clock}{}
-Return the current CPU time as a floating point number expressed in
+On \UNIX, return
+the current processor time as a floating point number expressed in
 seconds.  The precision, and in fact the very definition of the meaning
-of ``CPU time''\index{CPU time}, depends on that of the C function
-of the same name, but in any case, this is the function to use for
-benchmarking\index{benchmarking} Python or timing algorithms.
+of ``processor time''\index{CPU time}\index{processor time}, depends
+on that of the C function of the same name, but in any case, this is
+the function to use for benchmarking\index{benchmarking} Python or
+timing algorithms.
+
+On Windows, this function returns the nearest approximation to
+wall-clock time since the first call to this function, based on the
+Win32 function \cfunction{QueryPerformanceCounter()}.  The resolution
+is typically better than one microsecond.
 \end{funcdesc}
 
 \begin{funcdesc}{ctime}{\optional{secs}}
