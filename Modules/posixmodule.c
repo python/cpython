@@ -1736,6 +1736,10 @@ posix__getfullpathname(PyObject *self, PyObject *args)
 	if (!GetFullPathName(inbuf, sizeof(outbuf)/sizeof(outbuf[0]),
 	                     outbuf, &temp))
 		return win32_error("GetFullPathName", inbuf);
+	if (PyUnicode_Check(PyTuple_GetItem(args, 0))) {
+		return PyUnicode_Decode(outbuf, strlen(outbuf),
+			Py_FileSystemDefaultEncoding, NULL);
+	}
 	return PyString_FromString(outbuf);
 } /* end of posix__getfullpathname */
 #endif /* MS_WINDOWS */
