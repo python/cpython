@@ -4081,6 +4081,28 @@ update_one_slot(PyTypeObject *type, slotdef *p)
 					use_generic = 1;
 			}
 		}
+		else if (descr->ob_type == &PyCFunction_Type &&
+			 PyCFunction_GET_FUNCTION(descr) ==
+			 (PyCFunction)tp_new_wrapper &&
+			 strcmp(p->name, "__new__") == 0)
+		{
+			/* The __new__ wrapper is not a wrapper descriptor,
+			   so must be special-cased differently.
+			   If we don't do this, creating an instance will
+			   always use slot_tp_new which will look up
+			   __new__ in the MRO which will call tp_new_wrapper
+			   which will look through the base classes looking
+			   for a static base and call its tp_new (usually
+			   PyType_GenericNew), after performing various
+			   sanity checks and constructing a new argument
+			   list.  Cut all that nonsense short -- this speeds
+			   up instance creation tremendously. */
+			specific = type->tp_new;
+			/* XXX I'm not 100% sure that there isn't a hole
+			   in this reasoning that requires additional
+			   sanity checks.  I'll buy the first person to
+			   point out a bug in this reasoning a beer. */
+		}
 		else {
 			use_generic = 1;
 			generic = p->function;
