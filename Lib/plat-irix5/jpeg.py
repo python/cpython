@@ -5,7 +5,8 @@
 # XXX It appears that compressing grayscale images doesn't work right;
 # XXX the resulting file causes weirdness.
 
-error = 'jpeg.error' # Exception
+class error(Exception):
+	pass
 
 options = {'quality': 75, 'optimize': 0, 'smooth': 0, 'forcegray': 0}
 

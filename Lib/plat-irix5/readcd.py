@@ -2,8 +2,10 @@
 
 import cd, CD
 
-Error = 'Readcd.Error'
-_Stop = 'Readcd.Stop'
+class Error(Exception):
+	pass
+class _Stop(Exception):
+	pass
 
 def _doatime(self, cb_type, data):
 	if ((data[0] * 60) + data[1]) * 75 + data[2] > self.end:

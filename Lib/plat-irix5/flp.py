@@ -12,7 +12,8 @@ SPLITLINE = '--------------------'
 FORMLINE = '=============== FORM ==============='
 ENDLINE = '=============================='
 
-error = 'flp.error'
+class error(Exception):
+    pass
 
 ##################################################################
 #    Part 1 - The parsing routines                               #
