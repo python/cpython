@@ -461,8 +461,9 @@ Currently-active file is at the head of the list.")
     ;; who cares?  XEmacs 20 does the right thing with these too).
     (define-key py-mode-map [delete]    'py-electric-delete)
     (define-key py-mode-map [backspace] 'py-electric-backspace))
-  ;; marking interesting locations
-  (define-key py-mode-map "\e\C-h"    'py-mark-def-or-class)
+  ;; Separate M-BS from C-M-h.  The former should remain
+  ;; backward-kill-word.
+  (define-key py-mode-map [(control meta h)] 'py-mark-def-or-class)
   (define-key py-mode-map "\C-c\C-k"  'py-mark-block)
   ;; Miscellaneous
   (define-key py-mode-map "\C-c:"     'py-guess-indent-offset)
