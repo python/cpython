@@ -8,37 +8,85 @@ This is Python release 1.5 alpha 3
 What's new in this release?
 ---------------------------
 
-Too much has changed to list it all; I'll be more complete later.
+Too much has changed to list it all here.  There's a long list of
+changes in Misc/NEWS.  That's still not complete, but it's getting
+there...  I'm working my way through a year of change logs to extract
+meaningful descriptions of all but the most insignificant changes.
 
-The most important changes since Python 1.4 include:
+Here are the most importand changes since 1.5a2:
 
-- Many previously undocumented modules are now documented; some are
-now officially obsolete or deprecated.
+  - The new "re" module is here (still very experimental).  This is a
+  new regular expression package that uses Perl syntax and solves some
+  thread-safeness problems with the matching interface.
 
-- It's much faster (almost twice for pystone.py -- see Tools/scripts.)
+  - In support of the re module, a new form of string literals is
+  introduced, "raw strings": e.g. r"\n" is equal to "\\n".
 
-- There's an assert statement.
+  - Many previously undocumented modules are now documented; some are
+  now officially obsolete or deprecated.  (Thanks Andrew Kuchling!)
 
-- There's a -O option that removes SET_LINENO instructions and code
-prefixed with ``if __debug__: ...''.
+  - The build process now builds a single library (libpython1.5.a)
+  which contains everything except for the main() entry point.  This
+  makes life much easier for applications that embed Python.
 
-- It's much smarter about the initial value for sys.path; you can
-control it easier using $PYTHONHOME (see the usage message, e.g. try
-``python -h'').
+  - GNU readline is now configured as an extension module.
 
-- The Grand Renaming is completed: all linker-visible symbols defined
-by Python now have a "Py" or "_Py" prefix, and the same is true for
-most macros and typedefs.
+  - There is much better support for embedding Python in applications
+  that use threads.  Such applications can now create multiple
+  interpreter instances if they like to.  Embedding applications can
+  also uninitialize or reinitialize Python, and explicitly manipulate
+  the global lock.
 
-- The build strategy now uses a single library (libpython1.5.a) which
-contains everything except for the main() entry point.  This makes
-life much easier for applications that want to embed Python.
+  - Tk 8.0b2 is supported.  Support for Tk 4.0 is dropped (4.1 and
+  higher are still supported).
 
-- There is also much better support for embedding Python in
-applications that use threads.
+  - New Tk dialog modules by Fredrik Lundh: tkColorChooser.py,
+  tkCommonDialog.py, tkMessageBox.py, tkFileDialog.py,
+  tkSimpleDialog.py.
 
-- Unfinished projects: documentation; multiple independent
-interpreters; more Windows support.
+  - I've redone many aspects of the Windows version -- e.g. sys.path
+  is set more like it is done on Unix, there's a new module msvcrt
+  which exports a bunch of MS VC runtime functions like setmode() and
+  kbhit(), and there are new project files for DevStudio VC++ 5.0.
+
+  - Some new speedups, e.g. inlined some opcodes for int arguments
+  (i+i, i-i, L[i]; Fredrik Lundh).
+
+  - All known leaks have been plugged.
+
+  - New dictionary d.update(e): for k, v in e.items(): d[k] = v.
+
+  - New strategy for clearing modules: globals whose name starts with
+  a single underscore are deleted first.
+
+  - Comparisons can now raise exceptions.
+
+  - Metaclasses can now be programmed in Python (see Misc/NEWS, search
+  for "corollary").
+
+  - New tools faqwiz and webchecker included.
+
+Other important changes, if thgis is the first release you see since
+1.4:
+
+  - It's much faster (almost twice for pystone.py -- see
+  Tools/scripts.)
+
+  - There's an assert statement.
+
+  - There's a -O option that removes SET_LINENO instructions, assert
+  statements and code prefixed with ``if __debug__: ...''.
+
+  - It's much smarter about the initial value for sys.path; you can
+  control it easier using $PYTHONHOME (see the usage message, e.g. try
+  ``python -h'').  In most situations, the interpreter can be
+  installed at an arbitrary location without having to recompile.
+
+  - The Grand Renaming is completed: all linker-visible symbols
+  defined by Python now have a "Py" or "_Py" prefix, and the same is
+  true for most macros and typedefs.
+
+  - New regression test.
 
 
 What is Python anyway?
@@ -156,8 +204,10 @@ See also the platform specific notes in the next section.
 
 If recursive makes fail, try invoking make as "make MAKE=make".
 
-If you run into other trouble, see section 3 of the FAQ (file
-Misc/FAQ) for hints on what can go wrong, and how to fix it.
+If you run into other trouble, see section 3 of the FAQ
+(http://grail.cnri.reston.va.us/cgi-bin/faqw.py or
+http://www.python.org/doc/FAQ.html) for hints on what can go wrong,
+and how to fix it.
 
 If you rerun the configure script with different options, remove all
 object files by running "make clean" before rebuilding.  Believe it or
@@ -332,7 +382,7 @@ created.  The only file not installed with a version number in its
 name is the manual page, installed as "/usr/local/man/man1/python.1"
 by default.
 
-If you have a previous installation of a pre-1.4 Python that you don't
+If you have a previous installation of a pre-1.5 Python that you don't
 want to replace yet, use "make altinstall".  This installs the same
 set of files as "make install" except it doesn't create the hard link
 to "python1.5" named "python" and it doesn't install the manual page
@@ -530,8 +580,9 @@ below).
 All documentation is also available on-line via the Python web site
 (http://www.python.org/, see below).  It can also be downloaded
 separately from the ftp archives (see below) in Emacs INFO, HTML or
-PostScript form -- see the web site or the FAQ (file Misc/FAQ) for
-more info.
+PostScript form -- see the web site or the FAQ
+(http://grail.cnri.reston.va.us/cgi-bin/faqw.py or
+http://www.python.org/doc/FAQ.html) for more info.
 
 
 Emacs mode
@@ -539,7 +590,8 @@ Emacs mode
 
 There's an excellent Emacs editing mode for Python code; see the file 
 Misc/python-mode.el.  Originally written by Tim Peters, it is now 
-maintained by Barry Warsaw <bwarsaw@cnri.reston.va.us>.
+maintained by Barry Warsaw <bwarsaw@cnri.reston.va.us>.  The latest
+version is online at ftp://ftp.python.org/pub/emacs/python-mode.el.
 
 
 Web site
@@ -553,9 +605,9 @@ that's close you you.
 Ftp site
 --------
 
-Python's own ftp site is ftp.python.org, directory /pub/python.  See
-the FAQ (file Misc/FAQ) for a list of other ftp sites carrying the
-Python distribution.
+Python's own ftp site is ftp://ftp.python.org/pub/python.  There are
+numerous mirrors; see http://www.python.org/python/Mirrors.html for a
+list of mirror sites.
 
 
 Newsgroup and mailing list
@@ -588,10 +640,10 @@ your bug has already been reported!
 Questions
 ---------
 
-For help, if you can't find it in the manuals, the FAQ or on the web
-site, it's best to post to the comp.lang.python or the Python mailing
-list (see above).  If you specifically don't want to involve the
-newsgroup or mailing list, send questions to python-help@python.org.
+For help, if you can't find it in the manuals or on the web site, it's
+best to post to the comp.lang.python or the Python mailing list (see
+above).  If you specifically don't want to involve the newsgroup or
+mailing list, send questions to python-help@python.org.
 
 
 The Tk interface
