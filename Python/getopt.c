@@ -62,7 +62,10 @@ char optstring[];
 		opt_ptr = &argv[optind++][1]; 
 	}
 
-	if ((ptr = strchr(optstring, option = *opt_ptr++)) == NULL) {
+	if ( (option = *opt_ptr++) == '\0')
+	  return -1;
+	
+	if ((ptr = strchr(optstring, option)) == NULL) {
 		if (opterr)
 			fprintf(stderr, "Unknown option: -%c\n", option);
 
