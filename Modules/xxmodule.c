@@ -208,10 +208,26 @@ xx_bug(self, args)
 	return Py_None;
 }
 
+/* Test bad format character */
+
+static PyObject *
+xx_roj(self, args)
+	PyObject *self; /* Not used */
+	PyObject *args;
+{
+	PyObject *a;
+	long b;
+	if (!PyArg_ParseTuple(args, "O#", &a, &b))
+		return NULL;
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
 
 /* List of functions defined in the module */
 
 static PyMethodDef xx_methods[] = {
+	{"roj",		xx_roj,		1},
 	{"foo",		xx_foo,		1},
 	{"new",		xx_new,		1},
 	{"bug",		xx_bug,		1},
