@@ -1,3 +1,28 @@
-Sample programs that use the curses package:
+This is a collection of demos and tests for the curses module. 
+
+ncurses demos
+=============
+
+These demos are converted from the C versions in the ncurses
+distribution, and were contributed by Thomas Gellekum <tg@FreeBSD.org>
+I didn't strive for a `pythonic' style, but bluntly copied the
+originals. I won't attempt to `beautify' the program anytime soon, but
+I wouldn't mind someone else making an effort in that direction, of
+course.
+
+ncurses.py	-- currently only a panels demo
+                   XXX this won't work until panel support is checked in
+rain.py		-- raindrops keep falling on my desktop
+tclock.py	-- ASCII clock, by Howard Jones
+
+Please send bugfixes and new contributions to me or, even better,
+submit them to the Python Bug Tracker on SourceForge
+(<URL:http://sourceforge.net/bugs/?group_id=5470>).
+
+
+Other demos
+===========
 
 life.py		Simple game of Life
+
+
