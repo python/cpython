@@ -98,6 +98,7 @@ typedef struct {
 	int field_len;		/* length of current field */
 	int had_parse_error;	/* did we have a parse error? */
 	int numeric_field;	/* treat field as numeric */
+	unsigned long line_num;	/* Source-file line number */
 } ReaderObj;
 
 staticforward PyTypeObject Reader_Type;
@@ -734,6 +735,7 @@ parse_process_char(ReaderObj *self, char c)
 
 static struct PyMemberDef Reader_memberlist[] = {
 	{ "dialect", T_OBJECT, R_OFF(dialect), RO },
+	{ "line_num", T_ULONG, R_OFF(line_num), RO },
 	{ NULL }
 };
 
@@ -753,6 +755,7 @@ Reader_iternext(ReaderObj *self)
                                                     "newline inside string");
                         return NULL;
                 }
+		++self->line_num;
 
                 if (self->had_parse_error)
 			if (parse_reset(self) < 0) {
@@ -924,6 +927,7 @@ csv_reader(PyObject *module, PyObject *args, PyObject *keyword_args)
         self->input_iter = NULL;
 	self->field = NULL;
 	self->field_size = 0;
+	self->line_num = 0;
 
 	if (parse_reset(self) < 0) {
                 Py_DECREF(self);
