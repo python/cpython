@@ -17,19 +17,19 @@
 %\section{Introduction \label{intro}}
 
 {\large This article is a draft, and is currently up to date for
-Python 2.3beta1.  Please send any additions, comments or errata to the
+Python 2.3rc1.  Please send any additions, comments or errata to the
 author.}
 
 This article explains the new features in Python 2.3.  The tentative
-release date of Python 2.3 is currently scheduled for mid-2003.
+release date of Python 2.3 is currently scheduled for August 2003.
 
 This article doesn't attempt to provide a complete specification of
 the new features, but instead provides a convenient overview.  For
 full details, you should refer to the documentation for Python 2.3,
 such as the \citetitle[../lib/lib.html]{Python Library Reference} and
 the \citetitle[../ref/ref.html]{Python Reference Manual}.  If you want
-to understand the complete implementation and design rationale for a
-change, refer to the PEP for a particular new feature.
+to understand the complete implementation and design rationale, 
+refer to the PEP for a particular new feature.
 
 
 %======================================================================
@@ -61,8 +61,8 @@ Set([1, 2, 5])
 \end{verbatim}
 
 The union and intersection of sets can be computed with the
-\method{union()} and \method{intersection()} methods or
-alternatively using the bitwise operators \code{\&} and \code{|}.
+\method{union()} and \method{intersection()} methods; an alternative
+notation uses the bitwise operators \code{\&} and \code{|}.
 Mutable sets also have in-place versions of these methods,
 \method{union_update()} and \method{intersection_update()}.
 
@@ -85,8 +85,8 @@ Set([1, 2, 3, 4, 5, 6])
 
 It's also possible to take the symmetric difference of two sets.  This
 is the set of all elements in the union that aren't in the
-intersection.  An alternative way of expressing the symmetric
-difference is that it contains all elements that are in exactly one
+intersection.  Another way of putting it is that the symmetric
+difference contains all elements that are in exactly one
 set.  Again, there's an alternative notation (\code{\^}), and an
 in-place version with the ungainly name
 \method{symmetric_difference_update()}.
@@ -286,8 +286,8 @@ file.  For example, a UTF-8 file can be declared with:
 \end{verbatim}
 
 Without such an encoding declaration, the default encoding used is
-7-bit ASCII.  Executing or importing modules containing string
-literals with 8-bit characters and no encoding declaration will result
+7-bit ASCII.  Executing or importing modules that contain string
+literals with 8-bit characters and have no encoding declaration will result
 in a \exception{DeprecationWarning} being signalled by Python 2.3; in
 2.4 this will be a syntax error.
 
@@ -346,10 +346,11 @@ Hammond.}
 
 The three major operating systems used today are Microsoft Windows,
 Apple's Macintosh OS, and the various \UNIX\ derivatives.  A minor
-irritation is that these three platforms all use different characters
+irritation of cross-platform work 
+is that these three platforms all use different characters
 to mark the ends of lines in text files.  \UNIX\ uses the linefeed
-(ASCII character 10), while MacOS uses the carriage return (ASCII
-character 13), and Windows uses a two-character sequence containing a
+(ASCII character 10), MacOS uses the carriage return (ASCII
+character 13), and Windows uses a two-character sequence of a
 carriage return plus a newline.
 
 Python's file objects can now support end of line conventions other
@@ -365,8 +366,8 @@ executing a file with the \function{execfile()} function.  This means
 that Python modules can be shared between all three operating systems
 without needing to convert the line-endings.
 
-This feature can be disabled at compile-time by specifying
-\longprogramopt{without-universal-newlines} when running Python's
+This feature can be disabled when compiling Python by specifying
+the \longprogramopt{without-universal-newlines} switch when running Python's
 \program{configure} script.
 
 \begin{seealso}
@@ -386,8 +387,7 @@ certain loops a bit clearer.  \code{enumerate(thing)}, where
 that will return \code{(0, \var{thing}[0])}, \code{(1,
 \var{thing}[1])}, \code{(2, \var{thing}[2])}, and so forth.  
 
-Fairly often you'll see code to change every element of a list that
-looks like this:
+A common idiom to change every element of a list looks like this:
 
 \begin{verbatim}
 for i in range(len(L)):
@@ -2212,7 +2212,7 @@ Other new platforms now supported by Python include AtheOS
 
 As usual, there were a bunch of other improvements and bugfixes
 scattered throughout the source tree.  A search through the CVS change
-logs finds there were 121 patches applied and 103 bugs fixed between
+logs finds there were 523 patches applied and 514 bugs fixed between
 Python 2.2 and 2.3.  Both figures are likely to be underestimates.
 
 Some of the more notable changes are:
