@@ -150,6 +150,11 @@ Return the current process's group id.
 (Not on MS-DOS.)
 \end{funcdesc}
 
+\begin{funcdesc}{getpgrp}{}
+Return the current process group id.
+(Not on MS-DOS.)
+\end{funcdesc}
+
 \begin{funcdesc}{getpid}{}
 Return the current process id.
 (Not on MS-DOS.)
@@ -194,8 +199,25 @@ Like \code{stat()}, but do not follow symbolic links.  (On systems
 without symbolic links, this is identical to \code{posix.stat}.)
 \end{funcdesc}
 
-\begin{funcdesc}{mkdir}{path\, mode}
+\begin{funcdesc}{mkfifo}{path\optional{\, mode}}
+Create a FIFO (a POSIX named pipe) named \var{path} with numeric mode
+\var{mode}.  The default \var{mode} is 0666 (octal).  The current
+umask value is first masked out from the mode.
+(Not on MS-DOS.)
+
+FIFOs are pipes that can be accessed like regular files.  FIFOs exist
+until they are deleted (for example with \code{os.unlink}).
+Generally, FIFOs are used as rendez-vous between ``client'' and
+``server'' type processes: the server opens the FIFO for reading, and
+the client opens it for writing.  Note that \code{mkfifo()} doesn't
+open the FIFO -- it just creates the rendez-vous point.
+\end{funcdesc}
+
+\begin{funcdesc}{mkdir}{path\optional{\, mode}}
 Create a directory named \var{path} with numeric mode \var{mode}.
+The default \var{mode} is 0777 (octal).  On some systems, \var{mode}
+is ignored.  Where it is used, the current umask value is first
+masked out.
 \end{funcdesc}
 
 \begin{funcdesc}{nice}{increment}
@@ -263,6 +285,25 @@ Set the current process's group id.
 (Not on MS-DOS.)
 \end{funcdesc}
 
+\begin{funcdesc}{setpgrp}{}
+Calls the system call \code{setpgrp()} or \code{setpgrp(0, 0)}
+depending on which version is implemented (if any).  See the {\UNIX}
+manual for the semantics.
+(Not on MS-DOS.)
+\end{funcdesc}
+
+\begin{funcdesc}{setpgid}{pid\, pgrp}
+Calls the system call \code{setpgid()}.  See the {\UNIX} manual for
+the semantics.
+(Not on MS-DOS.)
+\end{funcdesc}
+
+\begin{funcdesc}{setsid}{}
+Calls the system call \code{setsid()}.  See the {\UNIX} manual for the
+semantics.
+(Not on MS-DOS.)
+\end{funcdesc}
+
 \begin{funcdesc}{setuid}{uid}
 Set the current process's user id.
 (Not on MS-DOS.)
@@ -302,6 +343,19 @@ limitations.  Changes to \code{posix.environ}, \code{sys.stdin} etc.\ are
 not reflected in the environment of the executed command.  The return
 value is the exit status of the process as returned by Standard C
 \code{system()}.
+\end{funcdesc}
+
+\begin{funcdesc}{tcgetpgrp}{fd}
+Return the process group associated with the terminal given by
+\var{fd} (an open file descriptor as returned by \code{posix.open()}).
+(Not on MS-DOS.)
+\end{funcdesc}
+
+\begin{funcdesc}{tcsetpgrp}{fd\, pg}
+Set the process group associated with the terminal given by
+\var{fd} (an open file descriptor as returned by \code{posix.open()})
+to \var{pg}.
+(Not on MS-DOS.)
 \end{funcdesc}
 
 \begin{funcdesc}{times}{}
