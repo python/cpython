@@ -710,6 +710,25 @@ can be useful.
     matches an empty line in actual output; and doctest directives
     were added]{2.4}
 
+There's also a way to register new option flag names, although this
+isn't useful unless you intend to extend \module{doctest} internals
+via subclassing:
+
+\begin{funcdesc}{register_optionflag}{name}
+  Create a new option flag with a given name, and return the new
+  flag's integer value.  \function{register_optionflag()} can be
+  used when subclassing \class{OutputChecker} or
+  \class{DocTestRunner} to create new options that are supported by
+  your subclasses.  \function{register_optionflag} should always be
+  called using the following idiom:
+
+\begin{verbatim}
+  MY_FLAG = register_optionflag('MY_FLAG')
+\end{verbatim}
+
+  \versionadded{2.4}
+\end{funcdesc}
+
 \subsubsection{Warnings\label{doctest-warnings}}
 
 \module{doctest} is serious about requiring exact matches in expected
@@ -1619,18 +1638,6 @@ Doctest provides three mechanisms for debugging doctest examples:
     A tuple containing information about the unexpected exception, as
     returned by \function{sys.exc_info()}.
 \end{memberdesc}
-
-\begin{funcdesc}{register_optionflag}{name}
-    Create a new option flag with a given name, and return the new
-    flag's integer value.  \function{register_optionflag()} can be
-    used when subclassing \class{OutputChecker} or
-    \class{DocTestRunner} to create new options that are supported by
-    your subclasses.  \function{register_optionflag} should always be
-    called using the following idiom:
-\begin{verbatim}
-  MY_FLAG = register_optionflag('MY_FLAG')
-\end{verbatim}
-\end{funcdesc}
 
 \subsection{Soapbox\label{doctest-soapbox}}
 
