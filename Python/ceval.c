@@ -548,6 +548,9 @@ eval_frame(PyFrameObject *f)
 #define POP()		BASIC_POP()
 #endif
 
+/* Strict int check macros */
+#define ISSTRICTINT(v)	((v)->ob_type == &PyInt_Type)
+
 /* Local variable macros */
 
 #define GETLOCAL(i)	(fastlocals[i])
@@ -909,7 +912,7 @@ eval_frame(PyFrameObject *f)
 		case BINARY_ADD:
 			w = POP();
 			v = POP();
-			if (PyInt_Check(v) && PyInt_Check(w)) {
+			if (ISSTRICTINT(v) && ISSTRICTINT(w)) {
 				/* INLINE: int + int */
 				register long a, b, i;
 				a = PyInt_AS_LONG(v);
@@ -932,7 +935,7 @@ eval_frame(PyFrameObject *f)
 		case BINARY_SUBTRACT:
 			w = POP();
 			v = POP();
-			if (PyInt_Check(v) && PyInt_Check(w)) {
+			if (ISSTRICTINT(v) && ISSTRICTINT(w)) {
 				/* INLINE: int - int */
 				register long a, b, i;
 				a = PyInt_AS_LONG(v);
@@ -955,7 +958,7 @@ eval_frame(PyFrameObject *f)
 		case BINARY_SUBSCR:
 			w = POP();
 			v = POP();
-			if (v->ob_type == &PyList_Type && PyInt_Check(w)) {
+			if (v->ob_type == &PyList_Type && ISSTRICTINT(w)) {
 				/* INLINE: list[int] */
 				long i = PyInt_AsLong(w);
 				if (i < 0)
@@ -1092,7 +1095,7 @@ eval_frame(PyFrameObject *f)
 		case INPLACE_ADD:
 			w = POP();
 			v = POP();
-			if (PyInt_Check(v) && PyInt_Check(w)) {
+			if (ISSTRICTINT(v) && ISSTRICTINT(w)) {
 				/* INLINE: int + int */
 				register long a, b, i;
 				a = PyInt_AS_LONG(v);
@@ -1115,7 +1118,7 @@ eval_frame(PyFrameObject *f)
 		case INPLACE_SUBTRACT:
 			w = POP();
 			v = POP();
-			if (PyInt_Check(v) && PyInt_Check(w)) {
+			if (ISSTRICTINT(v) && ISSTRICTINT(w)) {
 				/* INLINE: int - int */
 				register long a, b, i;
 				a = PyInt_AS_LONG(v);
@@ -1718,7 +1721,7 @@ eval_frame(PyFrameObject *f)
 		case COMPARE_OP:
 			w = POP();
 			v = POP();
-			if (PyInt_Check(v) && PyInt_Check(w)) {
+			if (ISSTRICTINT(v) && ISSTRICTINT(w)) {
 				/* INLINE: cmp(int, int) */
 				register long a, b;
 				register int res;
