@@ -457,7 +457,7 @@ com_init(c, filename)
 	return 1;
 	
   fail_0000:
-  	Py_DECREF(c->c_lnotab);
+  	Py_DECREF(c->c_varnames);
   fail_000:
   	Py_DECREF(c->c_locals);
   fail_00:
