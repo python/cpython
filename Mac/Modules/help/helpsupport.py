@@ -6,7 +6,6 @@
 import string
 
 # Declarations that change for each manager
-MACHEADERFILE = 'Balloons.h'		# The Apple header file
 MODNAME = '_Help'				# The name of the module
 OBJECTNAME = 'UNUSED'			# The basic name of the objects used here
 KIND = 'Record'				# Usually 'Ptr' or 'Handle'
@@ -22,22 +21,26 @@ from macsupport import *
 
 # Create the type objects
 MenuRef = OpaqueByValueType("MenuRef", "MenuObj")
-
+MenuItemIndex = Type("MenuItemIndex", "H")
 
 #WindowPeek = OpaqueByValueType("WindowPeek", OBJECTPREFIX)
 
-RgnHandle = FakeType("(RgnHandle)0")
+#RgnHandle = FakeType("(RgnHandle)0")
 # XXXX Should be next, but this will break a lot of code...
 # RgnHandle = OpaqueByValueType("RgnHandle", "OptResObj")
 
-KeyMap = ArrayOutputBufferType("KeyMap")
+#KeyMap = ArrayOutputBufferType("KeyMap")
 ##MacOSEventKind = Type("MacOSEventKind", "h") # Old-style
 ##MacOSEventMask = Type("MacOSEventMask", "h") # Old-style
-EventMask = Type("EventMask", "H")
-EventKind = Type("EventKind", "H")
+#EventMask = Type("EventMask", "H")
+#EventKind = Type("EventKind", "H")
 
 includestuff = includestuff + """
-#include <%s>""" % MACHEADERFILE + """
+#ifdef WITHOUT_FRAMEWORKS
+#include <MacHelp.h>
+#else
+#include <Carbon/Carbon.h>
+#endif
 """
 
 class MyObjectDefinition(GlobalObjectDefinition):

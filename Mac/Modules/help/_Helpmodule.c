@@ -20,264 +20,141 @@
     }} while(0)
 
 
-#include <Balloons.h>
+#ifdef WITHOUT_FRAMEWORKS
+#include <MacHelp.h>
+#else
+#include <Carbon/Carbon.h>
+#endif
 
 static PyObject *Help_Error;
 
-static PyObject *Help_HMGetHelpMenuHandle(PyObject *_self, PyObject *_args)
+static PyObject *Help_HMGetHelpMenu(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
-	OSErr _err;
-	MenuRef mh;
+	OSStatus _err;
+	MenuRef outHelpMenu;
+	MenuItemIndex outFirstCustomItemIndex;
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
-	_err = HMGetHelpMenuHandle(&mh);
+	_err = HMGetHelpMenu(&outHelpMenu,
+	                     &outFirstCustomItemIndex);
 	if (_err != noErr) return PyMac_Error(_err);
-	_res = Py_BuildValue("O&",
-	                     MenuObj_New, mh);
+	_res = Py_BuildValue("O&H",
+	                     MenuObj_New, outHelpMenu,
+	                     outFirstCustomItemIndex);
 	return _res;
 }
 
-static PyObject *Help_HMRemoveBalloon(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	OSErr _err;
-	if (!PyArg_ParseTuple(_args, ""))
-		return NULL;
-	_err = HMRemoveBalloon();
-	if (_err != noErr) return PyMac_Error(_err);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
-}
-
-static PyObject *Help_HMIsBalloon(PyObject *_self, PyObject *_args)
+static PyObject *Help_HMAreHelpTagsDisplayed(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
-	_rv = HMIsBalloon();
+	_rv = HMAreHelpTagsDisplayed();
 	_res = Py_BuildValue("b",
 	                     _rv);
 	return _res;
 }
 
-static PyObject *Help_HMGetBalloons(PyObject *_self, PyObject *_args)
+static PyObject *Help_HMSetHelpTagsDisplayed(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
-	Boolean _rv;
-	if (!PyArg_ParseTuple(_args, ""))
-		return NULL;
-	_rv = HMGetBalloons();
-	_res = Py_BuildValue("b",
-	                     _rv);
-	return _res;
-}
-
-static PyObject *Help_HMSetBalloons(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	OSErr _err;
-	Boolean flag;
+	OSStatus _err;
+	Boolean inDisplayTags;
 	if (!PyArg_ParseTuple(_args, "b",
-	                      &flag))
+	                      &inDisplayTags))
 		return NULL;
-	_err = HMSetBalloons(flag);
+	_err = HMSetHelpTagsDisplayed(inDisplayTags);
 	if (_err != noErr) return PyMac_Error(_err);
 	Py_INCREF(Py_None);
 	_res = Py_None;
 	return _res;
 }
 
-static PyObject *Help_HMSetFont(PyObject *_self, PyObject *_args)
+static PyObject *Help_HMSetTagDelay(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
-	OSErr _err;
-	SInt16 font;
-	if (!PyArg_ParseTuple(_args, "h",
-	                      &font))
+	OSStatus _err;
+	Duration inDelay;
+	if (!PyArg_ParseTuple(_args, "l",
+	                      &inDelay))
 		return NULL;
-	_err = HMSetFont(font);
+	_err = HMSetTagDelay(inDelay);
 	if (_err != noErr) return PyMac_Error(_err);
 	Py_INCREF(Py_None);
 	_res = Py_None;
 	return _res;
 }
 
-static PyObject *Help_HMSetFontSize(PyObject *_self, PyObject *_args)
+static PyObject *Help_HMGetTagDelay(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
-	OSErr _err;
-	UInt16 fontSize;
-	if (!PyArg_ParseTuple(_args, "H",
-	                      &fontSize))
-		return NULL;
-	_err = HMSetFontSize(fontSize);
-	if (_err != noErr) return PyMac_Error(_err);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
-}
-
-static PyObject *Help_HMGetFont(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	OSErr _err;
-	SInt16 font;
+	OSStatus _err;
+	Duration outDelay;
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
-	_err = HMGetFont(&font);
+	_err = HMGetTagDelay(&outDelay);
 	if (_err != noErr) return PyMac_Error(_err);
-	_res = Py_BuildValue("h",
-	                     font);
+	_res = Py_BuildValue("l",
+	                     outDelay);
 	return _res;
 }
 
-static PyObject *Help_HMGetFontSize(PyObject *_self, PyObject *_args)
+static PyObject *Help_HMSetMenuHelpFromBalloonRsrc(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
-	OSErr _err;
-	UInt16 fontSize;
-	if (!PyArg_ParseTuple(_args, ""))
+	OSStatus _err;
+	MenuRef inMenu;
+	SInt16 inHmnuRsrcID;
+	if (!PyArg_ParseTuple(_args, "O&h",
+	                      MenuObj_Convert, &inMenu,
+	                      &inHmnuRsrcID))
 		return NULL;
-	_err = HMGetFontSize(&fontSize);
-	if (_err != noErr) return PyMac_Error(_err);
-	_res = Py_BuildValue("H",
-	                     fontSize);
-	return _res;
-}
-
-static PyObject *Help_HMSetDialogResID(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	OSErr _err;
-	SInt16 resID;
-	if (!PyArg_ParseTuple(_args, "h",
-	                      &resID))
-		return NULL;
-	_err = HMSetDialogResID(resID);
+	_err = HMSetMenuHelpFromBalloonRsrc(inMenu,
+	                                    inHmnuRsrcID);
 	if (_err != noErr) return PyMac_Error(_err);
 	Py_INCREF(Py_None);
 	_res = Py_None;
 	return _res;
 }
 
-static PyObject *Help_HMSetMenuResID(PyObject *_self, PyObject *_args)
+static PyObject *Help_HMSetDialogHelpFromBalloonRsrc(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
-	OSErr _err;
-	SInt16 menuID;
-	SInt16 resID;
-	if (!PyArg_ParseTuple(_args, "hh",
-	                      &menuID,
-	                      &resID))
+	OSStatus _err;
+	DialogPtr inDialog;
+	SInt16 inHdlgRsrcID;
+	SInt16 inItemStart;
+	if (!PyArg_ParseTuple(_args, "O&hh",
+	                      DlgObj_Convert, &inDialog,
+	                      &inHdlgRsrcID,
+	                      &inItemStart))
 		return NULL;
-	_err = HMSetMenuResID(menuID,
-	                      resID);
+	_err = HMSetDialogHelpFromBalloonRsrc(inDialog,
+	                                      inHdlgRsrcID,
+	                                      inItemStart);
 	if (_err != noErr) return PyMac_Error(_err);
 	Py_INCREF(Py_None);
 	_res = Py_None;
-	return _res;
-}
-
-static PyObject *Help_HMScanTemplateItems(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	OSErr _err;
-	SInt16 whichID;
-	SInt16 whichResFile;
-	ResType whichType;
-	if (!PyArg_ParseTuple(_args, "hhO&",
-	                      &whichID,
-	                      &whichResFile,
-	                      PyMac_GetOSType, &whichType))
-		return NULL;
-	_err = HMScanTemplateItems(whichID,
-	                           whichResFile,
-	                           whichType);
-	if (_err != noErr) return PyMac_Error(_err);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
-}
-
-static PyObject *Help_HMGetDialogResID(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	OSErr _err;
-	SInt16 resID;
-	if (!PyArg_ParseTuple(_args, ""))
-		return NULL;
-	_err = HMGetDialogResID(&resID);
-	if (_err != noErr) return PyMac_Error(_err);
-	_res = Py_BuildValue("h",
-	                     resID);
-	return _res;
-}
-
-static PyObject *Help_HMGetMenuResID(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	OSErr _err;
-	SInt16 menuID;
-	SInt16 resID;
-	if (!PyArg_ParseTuple(_args, "h",
-	                      &menuID))
-		return NULL;
-	_err = HMGetMenuResID(menuID,
-	                      &resID);
-	if (_err != noErr) return PyMac_Error(_err);
-	_res = Py_BuildValue("h",
-	                     resID);
-	return _res;
-}
-
-static PyObject *Help_HMGetBalloonWindow(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	OSErr _err;
-	WindowPtr window;
-	if (!PyArg_ParseTuple(_args, ""))
-		return NULL;
-	_err = HMGetBalloonWindow(&window);
-	if (_err != noErr) return PyMac_Error(_err);
-	_res = Py_BuildValue("O&",
-	                     WinObj_New, window);
 	return _res;
 }
 
 static PyMethodDef Help_methods[] = {
-	{"HMGetHelpMenuHandle", (PyCFunction)Help_HMGetHelpMenuHandle, 1,
-	 PyDoc_STR("() -> (MenuRef mh)")},
-	{"HMRemoveBalloon", (PyCFunction)Help_HMRemoveBalloon, 1,
-	 PyDoc_STR("() -> None")},
-	{"HMIsBalloon", (PyCFunction)Help_HMIsBalloon, 1,
+	{"HMGetHelpMenu", (PyCFunction)Help_HMGetHelpMenu, 1,
+	 PyDoc_STR("() -> (MenuRef outHelpMenu, MenuItemIndex outFirstCustomItemIndex)")},
+	{"HMAreHelpTagsDisplayed", (PyCFunction)Help_HMAreHelpTagsDisplayed, 1,
 	 PyDoc_STR("() -> (Boolean _rv)")},
-	{"HMGetBalloons", (PyCFunction)Help_HMGetBalloons, 1,
-	 PyDoc_STR("() -> (Boolean _rv)")},
-	{"HMSetBalloons", (PyCFunction)Help_HMSetBalloons, 1,
-	 PyDoc_STR("(Boolean flag) -> None")},
-	{"HMSetFont", (PyCFunction)Help_HMSetFont, 1,
-	 PyDoc_STR("(SInt16 font) -> None")},
-	{"HMSetFontSize", (PyCFunction)Help_HMSetFontSize, 1,
-	 PyDoc_STR("(UInt16 fontSize) -> None")},
-	{"HMGetFont", (PyCFunction)Help_HMGetFont, 1,
-	 PyDoc_STR("() -> (SInt16 font)")},
-	{"HMGetFontSize", (PyCFunction)Help_HMGetFontSize, 1,
-	 PyDoc_STR("() -> (UInt16 fontSize)")},
-	{"HMSetDialogResID", (PyCFunction)Help_HMSetDialogResID, 1,
-	 PyDoc_STR("(SInt16 resID) -> None")},
-	{"HMSetMenuResID", (PyCFunction)Help_HMSetMenuResID, 1,
-	 PyDoc_STR("(SInt16 menuID, SInt16 resID) -> None")},
-	{"HMScanTemplateItems", (PyCFunction)Help_HMScanTemplateItems, 1,
-	 PyDoc_STR("(SInt16 whichID, SInt16 whichResFile, ResType whichType) -> None")},
-	{"HMGetDialogResID", (PyCFunction)Help_HMGetDialogResID, 1,
-	 PyDoc_STR("() -> (SInt16 resID)")},
-	{"HMGetMenuResID", (PyCFunction)Help_HMGetMenuResID, 1,
-	 PyDoc_STR("(SInt16 menuID) -> (SInt16 resID)")},
-	{"HMGetBalloonWindow", (PyCFunction)Help_HMGetBalloonWindow, 1,
-	 PyDoc_STR("() -> (WindowPtr window)")},
+	{"HMSetHelpTagsDisplayed", (PyCFunction)Help_HMSetHelpTagsDisplayed, 1,
+	 PyDoc_STR("(Boolean inDisplayTags) -> None")},
+	{"HMSetTagDelay", (PyCFunction)Help_HMSetTagDelay, 1,
+	 PyDoc_STR("(Duration inDelay) -> None")},
+	{"HMGetTagDelay", (PyCFunction)Help_HMGetTagDelay, 1,
+	 PyDoc_STR("() -> (Duration outDelay)")},
+	{"HMSetMenuHelpFromBalloonRsrc", (PyCFunction)Help_HMSetMenuHelpFromBalloonRsrc, 1,
+	 PyDoc_STR("(MenuRef inMenu, SInt16 inHmnuRsrcID) -> None")},
+	{"HMSetDialogHelpFromBalloonRsrc", (PyCFunction)Help_HMSetDialogHelpFromBalloonRsrc, 1,
+	 PyDoc_STR("(DialogPtr inDialog, SInt16 inHdlgRsrcID, SInt16 inItemStart) -> None")},
 	{NULL, NULL, 0}
 };
 

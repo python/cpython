@@ -6,7 +6,7 @@ from bgenlocations import TOOLBOXDIR, BGENDIR
 sys.path.append(BGENDIR)
 from scantools import Scanner
 
-LONG = "Balloons"
+LONG = "MacHelp"
 SHORT = "help"
 OBJECT = "NOTUSED"
 
@@ -45,15 +45,22 @@ class MyScanner(Scanner):
 
 	def makeblacklisttypes(self):
 		return [
-			"TipFunctionUPP",
-			"HMMessageRecord",
-			"HMMessageRecord_ptr",
+##			"TipFunctionUPP",
+##			"HMMessageRecord",
+##			"HMMessageRecord_ptr",
+			"HMWindowContentUPP",
+			"HMMenuTitleContentUPP",
+			"HMControlContentUPP",
+			"HMMenuItemContentUPP",
+			# For the moment
+			"HMHelpContentRec",
+			"HMHelpContentRec_ptr",
 			]
 
 	def makerepairinstructions(self):
 		return [
-			([("WindowPtr", "*", "OutMode")],
-			 [("ExistingWindowPtr", "*", "*")]),
+##			([("WindowPtr", "*", "OutMode")],
+##			 [("ExistingWindowPtr", "*", "*")]),
 			]
 			
 if __name__ == "__main__":

@@ -778,6 +778,8 @@ class PyBuildExt(build_ext):
                         extra_link_args=['-framework', 'Carbon']) )
                 exts.append( Extension('_AE', ['ae/_AEmodule.c'],
                         extra_link_args=['-framework', 'Carbon']) )
+                exts.append( Extension('_AH', ['ah/_AHmodule.c'],
+                        extra_link_args=['-framework', 'Carbon']) )
                 exts.append( Extension('_App', ['app/_Appmodule.c'],
                         extra_link_args=['-framework', 'Carbon']) )
                 exts.append( Extension('_CarbonEvt', ['carbonevt/_CarbonEvtmodule.c'],
@@ -796,6 +798,8 @@ class PyBuildExt(build_ext):
                 exts.append( Extension('_Evt', ['evt/_Evtmodule.c'],
                         extra_link_args=['-framework', 'Carbon']) )
                 exts.append( Extension('_Fm', ['fm/_Fmmodule.c'],
+                        extra_link_args=['-framework', 'Carbon']) )
+                exts.append( Extension('_Help', ['help/_Helpmodule.c'],
                         extra_link_args=['-framework', 'Carbon']) )
                 exts.append( Extension('_Icn', ['icn/_Icnmodule.c'],
                         extra_link_args=['-framework', 'Carbon']) )
