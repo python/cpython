@@ -620,6 +620,7 @@ HTMLPKGFILES=*.html */*.css */*.html */*.gif */*.png */*.txt
 
 html-$(RELEASE).tar:	$(ALLHTMLFILES) $(HTMLCSSFILES)
 	mkdir Python-Docs-$(RELEASE)
+	-find html -name '*.gif' -size 0 | xargs rm -f
 	cd html && tar cf ../temp.tar $(HTMLPKGFILES)
 	cd Python-Docs-$(RELEASE) && tar xf ../temp.tar
 	rm temp.tar
