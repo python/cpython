@@ -2,11 +2,12 @@
 # euc_kr.py: Python Unicode Codec for EUC_KR
 #
 # Written by Hye-Shik Chang <perky@FreeBSD.org>
-# $CJKCodecs: euc_kr.py,v 1.3 2004/01/17 11:26:10 perky Exp $
+# $CJKCodecs: euc_kr.py,v 1.8 2004/06/28 18:16:03 perky Exp $
 #
 
-from _codecs_euc_kr import codec
-import codecs
+import _codecs_kr, codecs
+
+codec = _codecs_kr.getcodec('euc_kr')
 
 class Codec(codecs.Codec):
     encode = codec.encode
@@ -30,4 +31,4 @@ class StreamWriter(Codec, codecs.StreamWriter):
         self.reset = __codec.reset
 
 def getregentry():
-    return (Codec().encode,Codec().decode,StreamReader,StreamWriter)
+    return (codec.encode, codec.decode, StreamReader, StreamWriter)

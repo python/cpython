@@ -3,7 +3,7 @@
 # test_codecencodings_cn.py
 #   Codec encoding tests for PRC encodings.
 #
-# $CJKCodecs: test_codecencodings_cn.py,v 1.1 2003/12/19 03:00:05 perky Exp $
+# $CJKCodecs: test_codecencodings_cn.py,v 1.2 2004/06/19 06:09:55 perky Exp $
 
 from test import test_support
 from test import test_multibytecodec_support
@@ -27,8 +27,8 @@ class Test_GBK(test_multibytecodec_support.TestBase, unittest.TestCase):
     tstring = test_multibytecodec_support.load_teststring('gbk')
     codectests = (
         # invalid bytes
-        ("abc\x80\x80\xc1\xc4", "strict",  None),
-        ("abc\xc8", "strict",  None),
+        ("abc\x80\x80\xc1\xc4", "strict",  None),  
+        ("abc\xc8", "strict",  None),  
         ("abc\x80\x80\xc1\xc4", "replace", u"abc\ufffd\u804a"),
         ("abc\x80\x80\xc1\xc4\xc8", "replace", u"abc\ufffd\u804a\ufffd"),
         ("abc\x80\x80\xc1\xc4", "ignore",  u"abc\u804a"),

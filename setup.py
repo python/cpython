@@ -763,15 +763,9 @@ class PyBuildExt(build_ext):
         # Hye-Shik Chang's CJKCodecs modules.
         exts.append(Extension('_multibytecodec',
                               ['cjkcodecs/multibytecodec.c']))
-        for loc in ('ja_JP', 'ko_KR', 'zh_CN', 'zh_TW'):
-            exts.append(Extension('_codecs_mapdata_' + loc,
-                                  ['cjkcodecs/mapdata_%s.c' % loc]))
-        for enc in ('shift_jis', 'cp932', 'euc_jp', 'iso2022_jp',
-                    'iso2022_jp_1', 'iso2022_jp_2', 'iso2022_jp_3',
-                    'iso2022_jp_ext', 'shift_jisx0213', 'euc_jisx0213',
-                    'euc_kr', 'cp949', 'johab', 'iso2022_kr', 'gb2312',
-                    'gbk', 'gb18030', 'hz', 'big5', 'cp950'):
-            exts.append(Extension('_codecs_' + enc, ['cjkcodecs/_%s.c' % enc]))
+        for loc in ('kr', 'jp', 'cn', 'tw', 'hk', 'iso2022'):
+            exts.append(Extension('_codecs_' + loc,
+                                  ['cjkcodecs/_codecs_%s.c' % loc]))
 
         # Dynamic loading module
         if sys.maxint == 0x7fffffff:

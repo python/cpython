@@ -3,7 +3,7 @@
 # test_codecencodings_jp.py
 #   Codec encoding tests for Japanese encodings.
 #
-# $CJKCodecs: test_codecencodings_jp.py,v 1.2 2004/01/06 09:25:37 perky Exp $
+# $CJKCodecs: test_codecencodings_jp.py,v 1.3 2004/06/19 06:09:55 perky Exp $
 
 from test import test_support
 from test import test_multibytecodec_support
@@ -64,16 +64,6 @@ class Test_EUC_JP_COMPAT(test_multibytecodec_support.TestBase,
         (u"\u203e", "strict", "\x7e"),
     )
 
-class Test_EUC_JP_STRICT(test_multibytecodec_support.TestBase,
-                         unittest.TestCase):
-    encoding = 'euc_jp_strict'
-    tstring = test_multibytecodec_support.load_teststring('euc_jp')
-    codectests = eucjp_commontests + (
-        ("\xa1\xc0\\", "strict", u"\\\\"),
-        (u"\xa5", "strict", None),
-        (u"\u203e", "strict", None),
-    )
-
 shiftjis_commonenctests = (
     ("abc\x80\x80\x82\x84", "strict",  None),
     ("abc\xf8", "strict",  None),
@@ -88,14 +78,6 @@ class Test_SJIS_COMPAT(test_multibytecodec_support.TestBase, unittest.TestCase):
     codectests = shiftjis_commonenctests + (
         ("\\\x7e", "strict", u"\\\x7e"),
         ("\x81\x5f\x81\x61\x81\x7c", "strict", u"\uff3c\u2016\u2212"),
-    )
-
-class Test_SJIS_STRICT(test_multibytecodec_support.TestBase, unittest.TestCase):
-    encoding = 'shift_jis_strict'
-    tstring = test_multibytecodec_support.load_teststring('shift_jis')
-    codectests = shiftjis_commonenctests + (
-        ("\\\x7e", "replace", u"\xa5\u203e"),
-        ("\x81\x5f\x81\x61\x81\x7c", "replace", u"\x5c\u2016\u2212"),
     )
 
 class Test_SJISX0213(test_multibytecodec_support.TestBase, unittest.TestCase):
@@ -123,9 +105,6 @@ def test_main():
     suite.addTest(unittest.makeSuite(Test_EUC_JISX0213))
     suite.addTest(unittest.makeSuite(Test_EUC_JP_COMPAT))
     suite.addTest(unittest.makeSuite(Test_SJIS_COMPAT))
-    if test_multibytecodec_support.__cjkcodecs__:
-        suite.addTest(unittest.makeSuite(Test_EUC_JP_STRICT))
-        suite.addTest(unittest.makeSuite(Test_SJIS_STRICT))
     suite.addTest(unittest.makeSuite(Test_SJISX0213))
     test_support.run_suite(suite)
 

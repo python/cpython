@@ -3,7 +3,7 @@
 # test_codecencodings_kr.py
 #   Codec encoding tests for ROK encodings.
 #
-# $CJKCodecs: test_codecencodings_kr.py,v 1.1 2003/12/19 03:00:06 perky Exp $
+# $CJKCodecs: test_codecencodings_kr.py,v 1.2 2004/06/19 06:09:55 perky Exp $
 
 from test import test_support
 from test import test_multibytecodec_support

@@ -484,42 +484,12 @@ GLHACK=-Dclear=__GLclear
 # multibytecodec is required for all the other CJK codec modules
 #_multibytecodec cjkcodecs/multibytecodec.c
 
-# mapdata modules are required to support their respective dependent codecs
-#_codecs_mapdata_ja_JP cjkcodecs/mapdata_ja_JP.c
-#_codecs_mapdata_ko_KR cjkcodecs/mapdata_ko_KR.c
-#_codecs_mapdata_zh_CN cjkcodecs/mapdata_zh_CN.c
-#_codecs_mapdata_zh_TW cjkcodecs/mapdata_zh_TW.c
-
-# ja_JP codecs
-#_codecs_cp932 cjkcodecs/_cp932.c
-#_codecs_euc_jisx0213 cjkcodecs/_euc_jisx0213.c
-#_codecs_euc_jp cjkcodecs/_euc_jp.c
-#_codecs_iso2022_jp cjkcodecs/_iso2022_jp.c
-#_codecs_iso2022_jp_1 cjkcodecs/_iso2022_jp_1.c
-#_codecs_iso2022_jp_3 cjkcodecs/_iso2022_jp_3.c
-#_codecs_iso2022_jp_ext cjkcodecs/_iso2022_jp_ext.c
-#_codecs_shift_jis cjkcodecs/_shift_jis.c
-#_codecs_shift_jisx0213 cjkcodecs/_shift_jisx0213.c
-
-# ko_KR codecs
-#_codecs_cp949 cjkcodecs/_cp949.c
-#_codecs_euc_kr cjkcodecs/_euc_kr.c
-#_codecs_iso2022_kr cjkcodecs/_iso2022_kr.c
-#_codecs_johab cjkcodecs/_johab.c
-
-# zh_CN codecs
-#_codecs_gb18030 cjkcodecs/_gb18030.c
-#_codecs_gb2312 cjkcodecs/_gb2312.c
-#_codecs_gbk cjkcodecs/_gbk.c
-#_codecs_hz cjkcodecs/_hz.c
-
-# zh_TW codecs
-#_codecs_big5 cjkcodecs/_big5.c
-#_codecs_cp950 cjkcodecs/_cp950.c
-
-# international codecs
-#_codecs_iso2022_jp_2 cjkcodecs/_iso2022_jp_2.c # requires ja_JP, ko_KR, zh_CN
-
+#_codecs_cn cjkcodecs/_codecs_cn.c
+#_codecs_hk cjkcodecs/_codecs_hk.c
+#_codecs_iso2022 cjkcodecs/_codecs_iso2022.c
+#_codecs_jp cjkcodecs/_codecs_jp.c
+#_codecs_kr cjkcodecs/_codecs_kr.c
+#_codecs_tw cjkcodecs/_codecs_tw.c
 
 # Example -- included for reference only:
 # xx xxmodule.c

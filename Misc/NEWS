@@ -34,6 +34,9 @@ Extension modules
 Library
 -------
 
+- Several new unicode codecs are added: big5hkscs, euc_jis_2004,
+  iso2022_jp_2004, shift_jis_2004.
+
 - Bug #788520.  Queue.{get, get_nowait, put, put_nowait} have new
   implementations, exploiting Conditions (which didn't exist at the time
   Queue was introduced).  A minor semantic change is that the Full and
