@@ -151,6 +151,11 @@ AC_ARG_WITH(cxx, [  --with-cxx=<compiler>           enable C++ support],[
 ])
 AC_MSG_RESULT($with_cxx)
 
+if test "$with_cxx" = "yes"
+then
+	AC_ERROR(must supply a compiler when using --with-cxx)
+fi
+
 dnl The following fragment works similar to AC_PROG_CXX.
 dnl It does not fail if CXX is not found, and it is not executed if 
 dnl --without-cxx was given.
