@@ -520,17 +520,19 @@ value or \code{None}. Socket operations will raise an
 \exception{error} exception if the timeout period \var{value} has
 elapsed before the operation has completed. Setting a timeout of
 \code{None} disables timeouts on socket operations.
+\versionadded{2.3}
 \end{methoddesc}
 
 \begin{methoddesc}[socket]{gettimeout}{}
 Returns the timeout in floating seconds associated with socket
 operations.  A timeout of \code{None} indicates that timeouts on
 socket operations are disabled.
+\versionadded{2.3}
 \end{methoddesc}
 
 Some notes on the interaction between socket blocking and timeouts:
-socket blocking mode takes precedence over timeouts. If a socket if
-set to non-blocking mode, then timeouts set on sockets are not used.
+socket blocking mode takes precedence over timeouts. If a socket is
+set to non-blocking mode, then timeouts are not used.
 The timeout value associated with the socket can still be set using
 \method{settimeout()} and its value retrieved using
 \method{gettimeout()}, but the timeout is never enforced (an exception
