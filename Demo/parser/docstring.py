@@ -1,0 +1,2 @@
+"""Some documentation.
+"""
