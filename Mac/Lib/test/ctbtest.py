@@ -1,8 +1,11 @@
 #
 # Simple test program for ctb module: emulate a terminal.
+# To simplify matters use the python console window for output.
 #
 import ctb
-import macconsole
+import Evt
+import Events
+import MacOS
 import sys
 
 def cb(err):
@@ -12,29 +15,35 @@ def main():
 	if not ctb.available():
 		print 'Communications Toolbox not available'
 		sys.exit(1)
-#	c = macconsole.copen('Terminal window')
+	# Disable Python's event processing (we do that)
+	MacOS.EnableAppswitch(0)
 	print 'Minimal terminal emulator V1.0'
-	print '(type @ to exit)'
+	print '(type command-Q to exit)'
 	print
-	c = macconsole.fopen(sys.stdin)
-	f = sys.stdin
-	c.setmode(macconsole.C_RAW)
 	
 	l = ctb.CMNew('Serial Tool', None)
-	l.Open(0)
+	l.Open(10)
+	l.SetConfig(l.GetConfig() + ' baud 4800')
 	
 	while 1:
-		l.Idle()
-		d = f.read(1)
-		if d == '@':
-			break
+		l.Idle()	# Give time to ctb
+		
+		ok, evt = Evt.WaitNextEvent(0xffff, 0)
+		if ok:
+			what, message, when, where, modifiers = evt
+			
+			if what == Events.keyDown:
+				# It is ours. Check for command-. to terminate
+				ch = chr(message & Events.charCodeMask)
+				if ch == 'q' and (modifiers & Events.cmdKey):
+					break
+				l.Write(ch, ctb.cmData, -1, 0)
+		d, dummy = l.Read(1000, ctb.cmData, 1)
 		if d:
-			l.Write(d, ctb.cmData, -1, 0)
-		l.Idle()
-		d, dummy = l.Read(1000, ctb.cmData, 0)
-		if d:
-			f.write(d)
-			f.flush()
+			for ch in d:
+				if ch != '\r':
+					sys.stdout.write(ch)
+			sys.stdout.flush()
 	l.Close(-1, 1)
 	del l
 			
