@@ -304,8 +304,9 @@ extern DL_IMPORT(int) PyType_IsSubtype(PyTypeObject *, PyTypeObject *);
 #define PyObject_TypeCheck(ob, tp) \
 	((ob)->ob_type == (tp) || PyType_IsSubtype((ob)->ob_type, (tp)))
 
-extern DL_IMPORT(PyTypeObject) PyType_Type; /* Metatype */
-extern DL_IMPORT(PyTypeObject) PyBaseObject_Type; /* Most base object type */
+extern DL_IMPORT(PyTypeObject) PyType_Type; /* built-in 'type' */
+extern DL_IMPORT(PyTypeObject) PyBaseObject_Type; /* built-in 'object' */
+extern DL_IMPORT(PyTypeObject) PySuper_Type; /* built-in 'super' */
 
 #define PyType_Check(op) PyObject_TypeCheck(op, &PyType_Type)
 
