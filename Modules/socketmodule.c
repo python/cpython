@@ -850,7 +850,7 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
 		strncpy(ifr.ifr_name, interfaceName, sizeof(ifr.ifr_name));
 		ifr.ifr_name[(sizeof(ifr.ifr_name))-1] = '\0';
 		if (ioctl(s->sock_fd, SIOCGIFINDEX, &ifr) < 0) {
-			PyErr_SetFromErrno(PySocket_Error);
+			PySocket_Err();
 			return 0;
 		}
 		addr = &(s->sock_addr.ll);
@@ -2530,8 +2530,7 @@ PySSL_SetError(SSL *ssl, int ret)
 			/* the underlying BIO reported an I/O error */
 			Py_DECREF(v);
 			Py_DECREF(n);
-			PyErr_SetFromErrno(PyExc_IOError);
-			return NULL;
+			return PySocket_Err();
 		} else {
 			/* XXX Protected by global interpreter lock */
 			errstr = ERR_error_string(e, NULL);
