@@ -45,7 +45,7 @@ ConfigParser -- responsible for parsing a list of
     read(filenames)
         read and parse the list of named configuration files, given by
         name.  A single filename is also allowed.  Non-existing files
-        are ignored.
+        are ignored.  Return list of successfully read files.
 
     readfp(fp, filename=None)
         read and parse one configuration file, given as a file object.
@@ -252,9 +252,12 @@ class RawConfigParser:
         home directory, systemwide directory), and all existing
         configuration files in the list will be read.  A single
         filename may also be given.
+
+        Return list of successfully read files.
         """
         if isinstance(filenames, basestring):
             filenames = [filenames]
+        read_ok = []
         for filename in filenames:
             try:
                 fp = open(filename)
@@ -262,6 +265,8 @@ class RawConfigParser:
                 continue
             self._read(fp, filename)
             fp.close()
+            read_ok.append(filename)
+        return read_ok
 
     def readfp(self, fp, filename=None):
         """Like read() but the argument must be a file-like object.

@@ -177,7 +177,8 @@ return \constant{True}; otherwise return \constant{False}.
 \end{methoddesc}
 
 \begin{methoddesc}{read}{filenames}
-Read and parse a list of filenames.  If \var{filenames} is a string or
+Attempt to read and parse a list of filenames, returning a list of filenames
+which were successfully parsed.  If \var{filenames} is a string or
 Unicode string, it is treated as a single filename.
 If a file named in \var{filenames} cannot be opened, that file will be
 ignored.  This is designed so that you can specify a list of potential
@@ -197,6 +198,7 @@ config = ConfigParser.ConfigParser()
 config.readfp(open('defaults.cfg'))
 config.read(['site.cfg', os.path.expanduser('~/.myapp.cfg')])
 \end{verbatim}
+\versionchanged[Returns list of successfully parsed filenames]{2.4}
 \end{methoddesc}
 
 \begin{methoddesc}{readfp}{fp\optional{, filename}}
