@@ -62,7 +62,7 @@
   }
   \def\@hyperfixhead{%
    \let\H@old@thehead\@thehead
-       \gdef\@foo{\if@doing@page@targets\pdfdest name{page.\thepage} fit\fi}%
+       \gdef\@foo{\if@doing@page@targets\pdfdest name{page.\thepage x} fit\fi}%
      \expandafter\ifx\expandafter\@empty\H@old@thehead
        \def\H@old@thehead{\hfil}\fi
     \def\@thehead{\@foo\relax\H@old@thehead}%
