@@ -307,6 +307,17 @@ class _fileobject(object):
         data = self._rbuf
         if size < 0:
             # Read until \n or EOF, whichever comes first
+            if self._rbufsize <= 1:
+                # Speed up unbuffered case
+                assert data == ""
+                buffers = []
+                recv = self._sock.recv
+                while data != "\n":
+                    data = recv(1)
+                    if not data:
+                        break
+                    buffers.append(data)
+                return "".join(buffers)
             nl = data.find('\n')
             if nl >= 0:
                 nl += 1
