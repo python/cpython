@@ -25,11 +25,13 @@ PyAPI_FUNC(PyObject *) PyEval_CallMethod(PyObject *obj,
 PyAPI_FUNC(void) PyEval_SetProfile(Py_tracefunc, PyObject *);
 PyAPI_FUNC(void) PyEval_SetTrace(Py_tracefunc, PyObject *);
 
+struct _frame; /* Avoid including frameobject.h */
+
 PyAPI_FUNC(PyObject *) PyEval_GetBuiltins(void);
 PyAPI_FUNC(PyObject *) PyEval_GetGlobals(void);
 PyAPI_FUNC(PyObject *) PyEval_GetLocals(void);
 PyAPI_FUNC(PyObject *) PyEval_GetOwner(void);
-PyAPI_FUNC(PyObject *) PyEval_GetFrame(void);
+PyAPI_FUNC(struct _frame *) PyEval_GetFrame(void);
 PyAPI_FUNC(int) PyEval_GetRestricted(void);
 
 /* Look at the current frame's (if any) code's co_flags, and turn on
