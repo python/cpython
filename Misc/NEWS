@@ -207,11 +207,6 @@ Core and builtins
 Extension modules
 -----------------
 
-- The readline module now exposes the readline() function to the Python
-  programmer.  readline.readline() should be a drop-in replacement for
-  raw_input() but coupled with the other readline module functionality allow
-  programmers to offer history and input recall to their users.
-
 - operator.isMappingType() and operator.isSequenceType() now give
   fewer false positives.
 
