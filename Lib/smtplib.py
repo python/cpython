@@ -4,6 +4,8 @@
 Author: The Dragon De Monsyne <dragondm@integral.org>
 ESMTP support, test code and doc fixes added by
 Eric S. Raymond <esr@thyrsus.com>
+Better RFC 821 compliance (MAIL and RCPT, and CRLF in data)
+by Carey Evans <c.evans@clear.net.nz>, for picky mail servers.
 
 (This was modified from the Python 1.5 library HTTP lib.)
 
@@ -42,6 +44,37 @@ SMTPServerDisconnected="Server not connected"
 SMTPSenderRefused="Sender address refused"
 SMTPRecipientsRefused="All Recipients refused"
 SMTPDataError="Error transmitting message data"
+
+def quoteaddr(addr):
+    """Quote a subset of the email addresses defined by RFC 821.
+
+    Technically, only a <mailbox> is allowed.  In addition,
+    email addresses without a domain are permitted.
+
+    Addresses will not be modified if they are already quoted
+    (actually if they begin with '<' and end with '>'."""
+    if re.match('(?s)\A<.*>\Z', addr):
+        return addr
+
+    localpart = None
+    domain = ''
+    try:
+        at = string.rindex(addr, '@')
+        localpart = addr[:at]
+        domain = addr[at:]
+    except ValueError:
+        localpart = addr
+
+    pat = re.compile(r'([<>()\[\]\\,;:@\"\001-\037\177])')
+    return '<%s%s>' % (pat.sub(r'\\\1', localpart), domain)
+
+def quotedata(data):
+    """Quote data for email.
+
+    Double leading '.', and change Unix newline '\n' into
+    Internet CRLF end-of-line."""
+    return re.sub(r'(?m)^\.', '..',
+                  re.sub(r'\r?\n', CRLF, data))
 
 class SMTP:
     """This class manages a connection to an SMTP or ESMTP server."""
@@ -208,36 +241,25 @@ class SMTP:
             options = " " + string.joinfields(options, ' ')
         else:
             options = ''
-        self.putcmd("mail from:", sender + options)
+        self.putcmd("mail", "from:" + quoteaddr(sender) + options)
         return self.getreply()
 
     def rcpt(self,recip):
         """ SMTP 'rcpt' command. Indicates 1 recipient for this mail. """
-        self.putcmd("rcpt","to: %s" % recip)
+        self.putcmd("rcpt","to:%s" % quoteaddr(recip))
         return self.getreply()
 
     def data(self,msg):
         """ SMTP 'DATA' command. Sends message data to server. 
             Automatically quotes lines beginning with a period per rfc821. """
-        #quote periods in msg according to RFC821
-        # ps, I don't know why I have to do it this way... doing: 
-        # quotepat=re.compile(r"^[.]",re.M)
-        # msg=re.sub(quotepat,"..",msg)
-        # should work, but it dosen't (it doubles the number of any 
-        # contiguous series of .'s at the beginning of a line, 
-        #instead of just adding one. )
-        quotepat=re.compile(r"^[.]+",re.M)
-        def m(pat):
-          return "."+pat.group(0)
-        msg=re.sub(quotepat,m,msg)
         self.putcmd("data")
         (code,repl)=self.getreply()
         if self.debuglevel >0 : print "data:", (code,repl)
         if code <> 354:
             return -1
         else:
-            self.send(msg)
-            self.send("\n.\n")
+            self.send(quotedata(msg))
+            self.send("%s.%s" % (CRLF, CRLF))
             (code,msg)=self.getreply()
             if self.debuglevel >0 : print "data:", (code,msg)
             return code
