@@ -26,6 +26,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 extern object *initmodule PROTO((char *, struct methodlist *));
 extern int getargs PROTO((object *, char *, ...));
+extern object *mkvalue PROTO((char *, ...));
 
 #define getnoarg(v) getargs(v, "")
 #define getintarg(v, a) getargs(v, "i", a)
