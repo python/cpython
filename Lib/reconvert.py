@@ -166,7 +166,7 @@ def quote(s, quote=None):
         if q in s and altq not in s:
             q = altq
     else:
-        assert quote in ('"', "'")
+        assert quote in ('"', "'", '"""', "'''")
         q = quote
     res = q
     for c in s:
