@@ -3488,9 +3488,10 @@ call_function(PyObject ***pp_stack, int oparg
 	PyObject *func = *pfunc;
 	PyObject *x, *w;
 
+#ifdef WITH_C_PROF
 	int     are_tracing = 0;
-
 	PyThreadState *tstate = PyThreadState_GET();
+#endif
 
 	/* Always dispatch PyCFunction first, because these are
 	   presumed to be the most frequent callable object.
