@@ -272,7 +272,9 @@ class Transformer:
         # augassign testlist | testlist ('=' testlist)*
         exprNode = self.com_node(nodelist[-1])
         if len(nodelist) == 1:
-            return Discard(exprNode)
+            n = Discard(exprNode)
+            n.lineno = exprNode.lineno
+            return n
         if nodelist[1][0] == token.EQUAL:
             nodes = []
             for i in range(0, len(nodelist) - 2, 2):
