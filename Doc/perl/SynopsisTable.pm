@@ -1,7 +1,7 @@
 package SynopsisTable;
 
 sub new{
-    return bless {names=>'', info=>{}};
+    return bless {names=>'', info=>{}, file=>''};
 }
 
 sub declare{
@@ -13,6 +13,20 @@ sub declare{
 	$self->{names} .= "$name";
     }
     $self->{info}{$name} = "$key,$type,";
+}
+
+# The 'file' attribute is used to store the filename of the node in which
+# the table will be presented; this assumes that each table will be presented
+# only once, which works for the current use of this object.
+
+sub set_file{
+    my($self, $filename) = @_;
+    $self->{file} = "$filename";
+}
+
+sub get_file{
+    my $self = shift;
+    return $self->{file};
 }
 
 sub set_synopsis{
