@@ -2853,7 +2853,7 @@ item: Custom Dialog Set
       Text Italian=&Annulla
     end
     item: Static
-      Rectangle=108 10 323 40
+      Rectangle=108 10 323 48
       Create Flags=01010000000000000000000000000000
       Flags=0000000000000001
       Name=Times New Roman
@@ -2865,7 +2865,7 @@ item: Custom Dialog Set
       Text Italian=Installazione completata!
     end
     item: Static
-      Rectangle=108 48 320 86
+      Rectangle=108 44 320 82
       Create Flags=01010000000000000000000000000000
       Text=%APPTITLE% has been successfully installed.
       Text=
@@ -2889,7 +2889,7 @@ item: Custom Dialog Set
       Create Flags=01010000000000000000000000000111
     end
     item: Static
-      Rectangle=106 123 308 213
+      Rectangle=106 105 312 210
       Enabled Color=00000000000000001111111111111111
       Create Flags=01010000000000000000000000000000
       Text=Special Windows thanks to:
@@ -2897,13 +2897,15 @@ item: Custom Dialog Set
       Text=Wise Solutions, for the use of InstallMaster 8.1.
       Text=    http://www.wisesolutions.com/
       Text=
+      Text=
       Text=LettError, Erik van Blokland, for the Python for Windows graphic.
       Text=    http://www.letterror.com/
+      Text=
       Text=
       Text=Mark Hammond, without whose years of freely shared Windows expertise, Python for Windows would still be Python for DOS.
     end
     item: Static
-      Rectangle=106 114 312 115
+      Rectangle=106 95 312 96
       Action=3
       Enabled Color=00000000000000001111111111111111
       Create Flags=01010000000000000000000000001001
