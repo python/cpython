@@ -91,7 +91,7 @@ class Cmd:
         pass
 
     def onecmd(self, line):
-        line = string.strip(line)
+        line = line.strip()
         if not line:
             return self.emptyline()
         elif line[0] == '?':
@@ -104,7 +104,7 @@ class Cmd:
         self.lastcmd = line
         i, n = 0, len(line)
         while i < n and line[i] in self.identchars: i = i+1
-        cmd, arg = line[:i], string.strip(line[i:])
+        cmd, arg = line[:i], line[i:].strip()
         if cmd == '':
             return self.default(line)
         else:
