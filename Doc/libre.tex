@@ -57,7 +57,10 @@ characters either stand for classes of ordinary characters, or affect
 how the regular expressions around them are interpreted.
 
 The special characters are:
-\begin{itemize}
+% define these since they're used twice:
+\newcommand{\MyLeftMargin}{0.7in}
+\newcommand{\MyLabelWidth}{0.65in}
+\begin{list}{}{\leftmargin \MyLeftMargin \labelwidth \MyLabelWidth}
 \item[\code{.}] (Dot.)  In the default mode, this matches any
 character except a newline.  If the \code{DOTALL} flag has been
 specified, this matches any character including a newline.
@@ -192,14 +195,14 @@ is a negative lookahead assertion.  For example,
 \code{Isaac (?!Asimov)} will match 'Isaac~' only if it's \emph{not}
 followed by 'Asimov'.
 
-\end{itemize}
+\end{list}
 
 The special sequences consist of '\code{\e}' and a character from the
 list below.  If the ordinary character is not on the list, then the
 resulting RE will match the second character.  For example,
 \code{\e\$} matches the character '\$'.  
 
-\begin{itemize}
+\begin{list}{}{\leftmargin \MyLeftMargin \labelwidth \MyLabelWidth}
 
 %
 \item[\code{\e \var{number}}] Matches the contents of the group of the
@@ -251,7 +254,7 @@ for the current locale.
 
 \item[\code{\e \e}] Matches a literal backslash.
 
-\end{itemize}
+\end{list}
 
 \subsection{Module Contents}
 \nodename{Contents of Module re}
