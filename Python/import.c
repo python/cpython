@@ -1373,7 +1373,7 @@ PyImport_ImportModuleEx(name, globals, locals, fromlist)
 {
 	PyObject *result;
 	lock_import();
-	result = import_module_ex(name, globals, lock_import, fromlist);
+	result = import_module_ex(name, globals, locals, fromlist);
 	unlock_import();
 	return result;
 }
