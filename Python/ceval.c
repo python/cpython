@@ -782,7 +782,7 @@ eval_code(co, globals, locals, owner, arg)
 			/* A tuple is equivalent to its first element here */
 			while (is_tupleobject(w) && gettuplesize(w) > 0) {
 				u = w;
-				w = gettupleitem(u, 0);
+				w = GETTUPLEITEM(u, 0);
 				INCREF(w);
 				DECREF(u);
 			}
@@ -977,7 +977,7 @@ eval_code(co, globals, locals, owner, arg)
 						break;
 					}
 					for (; --oparg >= 0; ) {
-						w = gettupleitem(v, oparg);
+						w = GETTUPLEITEM(v, oparg);
 						INCREF(w);
 						PUSH(w);
 					}
@@ -1003,54 +1003,6 @@ eval_code(co, globals, locals, owner, arg)
 					break;
 				}
 				n = gettuplesize(v);
-#ifdef COMPAT_HACKS
-/* Implement various compatibility hacks (for 0.9.4 or earlier):
-   (a) f(a,b,...) accepts f((1,2,...))
-   (b) f((a,b,...)) accepts f(1,2,...)
-   (c) f(self,(a,b,...)) accepts f(x,1,2,...)
-*/
-				if (n == 1 && oparg != 1) {
-					/* Rule (a) */
-					w = gettupleitem(v, 0);
-					if (is_tupleobject(w)) {
-						INCREF(w);
-						DECREF(v);
-						v = w;
-						n = gettuplesize(v);
-					}
-				}
-				else if (n != 1 && oparg == 1) {
-					/* Rule (b) */
-					PUSH(v);
-					break;
-					/* Don't fall through */
-				}
-				else if (n > 2 && oparg == 2) {
-					/* Rule (c) */
-					int i;
-					w = newtupleobject(n-1);
-					u = newtupleobject(2);
-					if (u == NULL || w == NULL) {
-						XDECREF(w);
-						XDECREF(u);
-						DECREF(v);
-						why = WHY_EXCEPTION;
-						break;
-					}
-					t = gettupleitem(v, 0);
-					INCREF(t);
-					settupleitem(u, 0, t);
-					for (i = 1; i < n; i++) {
-						t = gettupleitem(v, i);
-						INCREF(t);
-						settupleitem(w, i-1, t);
-					}
-					settupleitem(u, 1, w);
-					DECREF(v);
-					v = u;
-					n = 2;
-				}
-#endif /* Disabled compatibility hacks */
 				if (n != oparg) {
 					err_setstr(TypeError,
 						"arg count mismatch");
@@ -1078,7 +1030,7 @@ eval_code(co, globals, locals, owner, arg)
 					break;
 				}
 				for (; --oparg >= 0; ) {
-					w = gettupleitem(v, oparg);
+					w = GETTUPLEITEM(v, oparg);
 					INCREF(w);
 					PUSH(w);
 				}
@@ -1288,9 +1240,7 @@ eval_code(co, globals, locals, owner, arg)
 			if (x != NULL) {
 				for (; --oparg >= 0;) {
 					w = POP();
-					err = settupleitem(x, oparg, w);
-					if (err != 0)
-						break;
+					SETTUPLEITEM(x, oparg, w);
 				}
 				PUSH(x);
 			}
@@ -1683,12 +1633,12 @@ call_trace(p_trace, p_newtrace, f, msg, arg)
 	if (what == NULL)
 		goto cleanup;
 	INCREF(f);
-	settupleitem(arglist, 0, (object *)f);
-	settupleitem(arglist, 1, what);
+	SETTUPLEITEM(arglist, 0, (object *)f);
+	SETTUPLEITEM(arglist, 1, what);
 	if (arg == NULL)
 		arg = None;
 	INCREF(arg);
-	settupleitem(arglist, 2, arg);
+	SETTUPLEITEM(arglist, 2, arg);
 	tracing++;
 	fast_2_locals(f);
 	res = call_object(*p_trace, arglist); /* May clear *p_trace! */
@@ -2074,14 +2024,17 @@ call_object(func, arg)
         object *result;
         
         if (call = func->ob_type->tp_call) {
+#if 0
+		/* XXX Why is this here??? */
           	int size = gettuplesize(arg);
                 if (arg) {
 			size = gettuplesize(arg);
 			if (size == 1)
-				arg = gettupleitem(arg, 0);
+				arg = GETTUPLEITEM(arg, 0);
 			else if (size == 0)
 				arg = NULL;
-		} 
+		}
+#endif
                 result = (*call)(func, arg);
         }
         else if (is_instancemethodobject(func) || is_funcobject(func))
@@ -2106,7 +2059,7 @@ call_builtin(func, arg)
 		if (!getvarargs(func) && arg != NULL && is_tupleobject(arg)) {
 			int size = gettuplesize(arg);
 			if (size == 1)
-				arg = gettupleitem(arg, 0);
+				arg = GETTUPLEITEM(arg, 0);
 			else if (size == 0)
 				arg = NULL;
 		}
@@ -2151,7 +2104,7 @@ call_function(func, arg)
 			   the class (or a derived class) as first argument */
 			if (arg != NULL && is_tupleobject(arg) &&
 			    gettuplesize(arg) >= 1) {
-				self = gettupleitem(arg, 0);
+				self = GETTUPLEITEM(arg, 0);
 				if (self != NULL &&
 				    is_instanceobject(self) &&
 				    issubclass((object *)
@@ -2178,18 +2131,18 @@ call_function(func, arg)
 			if (newarg == NULL)
 				return NULL;
 			INCREF(self);
-			settupleitem(newarg, 0, self);
+			SETTUPLEITEM(newarg, 0, self);
 			if (arg != NULL && !is_tupleobject(arg)) {
 				INCREF(arg);
-				settupleitem(newarg, 1, arg);
+				SETTUPLEITEM(newarg, 1, arg);
 			}
 			else {
 				int i;
 				object *v;
 				for (i = 0; i < argcount; i++) {
-					v = gettupleitem(arg, i);
+					v = GETTUPLEITEM(arg, i);
 					XINCREF(v);
-					settupleitem(newarg, i+1, v);
+					SETTUPLEITEM(newarg, i+1, v);
 				}
 			}
 			arg = newarg;
@@ -2221,14 +2174,14 @@ call_function(func, arg)
 				return NULL;
 			}
 			for (i = 0; i < actualcount; i++) {
-				v = gettupleitem(arg, i);
+				v = GETTUPLEITEM(arg, i);
 				XINCREF(v);
-				settupleitem(newarg, i, v);
+				SETTUPLEITEM(newarg, i, v);
 			}
 			for (; i < argcount; i++, j++) {
-				v = gettupleitem(argdefs, j);
+				v = GETTUPLEITEM(argdefs, j);
 				XINCREF(v);
-				settupleitem(newarg, i, v);
+				SETTUPLEITEM(newarg, i, v);
 			}
 			DECREF(arg);
 			arg = newarg;
@@ -2422,7 +2375,7 @@ cmp_exception(err, v)
 		n = gettuplesize(v);
 		for (i = 0; i < n; i++) {
 			/* Test recursively */
-			if (cmp_exception(err, gettupleitem(v, i)))
+			if (cmp_exception(err, GETTUPLEITEM(v, i)))
 				return 1;
 		}
 		return 0;
@@ -2586,7 +2539,7 @@ build_class(methods, bases, name)
 	}
 	if (gettuplesize(bases) > 0) {
 		object *base;
-		base = gettupleitem(bases, 0);
+		base = GETTUPLEITEM(bases, 0);
 		/* Call the base's *type*, if it is callable.
 		   This code is a hook for Donald Beaudry's type extensions.
 		   In unexended Python it will never be triggered since its
@@ -2609,7 +2562,7 @@ build_class(methods, bases, name)
 		return NULL;
 	}
 	for (i = gettuplesize(bases); --i >= 0; ) {
-		object *base = gettupleitem(bases, i);
+		object *base = GETTUPLEITEM(bases, i);
 		if (!is_classobject(base)) {
 			err_setstr(TypeError,
 				"base is not a class object");
@@ -2636,7 +2589,7 @@ access_statement(name, vmode, f)
 		object *map = f->f_localmap;
 		value = NULL;
 		for (fastind = gettuplesize(map); --fastind >= 0; ) {
-			object *fname = gettupleitem(map, fastind);
+			object *fname = GETTUPLEITEM(map, fastind);
 			if (cmpobject(name, fname) == 0) {
 				value = getlistitem(f->f_fastlocals, fastind);
 				break;
@@ -2741,7 +2694,6 @@ find_from_args(f, nexti)
 	next_instr = GETUSTRINGVALUE(f->f_code->co_code) + nexti;
 	opcode = (*next_instr++);
 	if (opcode != IMPORT_FROM) {
-		printf("next opcode: %d\n", opcode);
 		INCREF(None);
 		return None;
 	}
