@@ -469,25 +469,10 @@ float_divmod(PyObject *v, PyObject *w)
 	return Py_BuildValue("(dd)", floordiv, mod);
 }
 
-static double powu(double x, long n)
-{
-	double r = 1.;
-	double p = x;
-	long mask = 1;
-	while (mask > 0 && n >= mask) {
-		if (n & mask)
-			r *= p;
-		mask <<= 1;
-		p *= p;
-	}
-	return r;
-}
-
 static PyObject *
 float_pow(PyObject *v, PyObject *w, PyObject *z)
 {
 	double iv, iw, ix;
-	long intw;
  /* XXX Doesn't handle overflows if z!=None yet; it may never do so :(
   * The z parameter is really only going to be useful for integers and
   * long integers.  Maybe something clever with logarithms could be done.
@@ -495,23 +480,23 @@ float_pow(PyObject *v, PyObject *w, PyObject *z)
   */
 	CONVERT_TO_DOUBLE(v, iv);
 	CONVERT_TO_DOUBLE(w, iw);
-	intw = (long)iw;
 
 	/* Sort out special cases here instead of relying on pow() */
-	if (iw == 0) { 		/* x**0 is 1, even 0**0 */
+	if (iw == 0) { 		/* v**0 is 1, even 0**0 */
 		PyFPE_START_PROTECT("pow", return NULL)
 		if ((PyObject *)z != Py_None) {
 			double iz;
 			CONVERT_TO_DOUBLE(z, iz);
-			ix=fmod(1.0, iz);
-			if (ix!=0 && iz<0) ix+=iz;
+			ix = fmod(1.0, iz);
+			if (ix != 0 && iz < 0)
+				ix += iz;
 		}
 		else
 			ix = 1.0;
 		PyFPE_END_PROTECT(ix)
 		return PyFloat_FromDouble(ix); 
 	}
-	if (iv == 0.0) {
+	if (iv == 0.0) {  /* 0**w is error if w<0, else 1 */
 		if (iw < 0.0) {
 			PyErr_SetString(PyExc_ZeroDivisionError,
 					"0.0 cannot be raised to a negative power");
@@ -519,29 +504,15 @@ float_pow(PyObject *v, PyObject *w, PyObject *z)
 		}
 		return PyFloat_FromDouble(0.0);
 	}
-
-	if (iw == intw && intw > LONG_MIN) {
-		/* ruled out LONG_MIN because -LONG_MIN isn't representable */
-		errno = 0;
-		PyFPE_START_PROTECT("pow", return NULL)
-		if (intw > 0)
-			ix = powu(iv, intw);
-		else
-			ix = 1./powu(iv, -intw);
-		PyFPE_END_PROTECT(ix)
+	if (iv < 0.0 && iw != floor(iw)) {
+		PyErr_SetString(PyExc_ValueError,
+				"negative number cannot be raised to a fractional power");
+		return NULL;
 	}
-	else {
-		/* Sort out special cases here instead of relying on pow() */
-		if (iv < 0.0) {
-			PyErr_SetString(PyExc_ValueError,
-					"negative number cannot be raised to a fractional power");
-			return NULL;
-		}
-		errno = 0;
-		PyFPE_START_PROTECT("pow", return NULL)
-		ix = pow(iv, iw);
-		PyFPE_END_PROTECT(ix)
-	}
+	errno = 0;
+	PyFPE_START_PROTECT("pow", return NULL)
+	ix = pow(iv, iw);
+	PyFPE_END_PROTECT(ix)
 	CHECK(ix);
 	if (errno != 0) {
 		/* XXX could it be another type of error? */
@@ -552,9 +523,9 @@ float_pow(PyObject *v, PyObject *w, PyObject *z)
 		double iz;
 		CONVERT_TO_DOUBLE(z, iz);
 		PyFPE_START_PROTECT("pow", return 0)
-	 	ix=fmod(ix, iz);	/* XXX To Be Rewritten */
-	 	if (ix!=0 && ((iv<0 && iz>0) || (iv>0 && iz<0) )) {
-		     ix+=iz;
+	 	ix = fmod(ix, iz);	/* XXX To Be Rewritten */
+	 	if (ix != 0 && ((iv < 0 && iz > 0) || (iv > 0 && iz < 0) )) {
+		     ix += iz;
 		}
   		PyFPE_END_PROTECT(ix)
 	}
