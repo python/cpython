@@ -423,8 +423,13 @@ al_openport (self, args)
 	object *name, *dir;
 	ALport port;
 	ALconfig config = NULL;
-	int size = gettuplesize(args);
+	int size;
 
+	if (args == NULL || !is_tupleobject(args)) {
+		err_badarg();
+		return NULL;
+	}
+	size = gettuplesize(args);
 	if (size == 2) {
 		if (!getstrstrarg (args, &name, &dir))
 			return NULL;
@@ -440,6 +445,11 @@ al_openport (self, args)
 
 	port = ALopenport(getstringvalue(name), getstringvalue(dir), config);
 
+	if (port == NULL) {
+		err_errno(RuntimeError);
+		return NULL;
+	}
+
 	return newportobject (port);
 }
 
@@ -452,6 +462,10 @@ al_newconfig (self, args)
 	if (!getnoarg (args)) return NULL;
 
 	config = ALnewconfig ();
+	if (config == NULL) {
+		err_errno(RuntimeError);
+		return NULL;
+	}
 
 	return newconfigobject (config);
 }
@@ -522,6 +536,8 @@ doParams(args, func, modified)
 		for (i = 0; i < length; i++)
 			setlistitem(list, i, newintobject(PVbuffer[i]));
 	}
+
+	DEL(PVbuffer);
 
 	INCREF(None);
 	return None;
