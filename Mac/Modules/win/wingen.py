@@ -67,7 +67,7 @@ f = Method(void, 'SendBehind',
 )
 methods.append(f)
 
-f = Function(WindowPtr, 'FrontWindow',
+f = Function(ExistingWindowPtr, 'FrontWindow',
 )
 functions.append(f)
 
@@ -224,3 +224,5 @@ f = Method(void, 'DragWindow',
     (Rect_ptr, 'boundsRect', InMode),
 )
 methods.append(f)
+
+

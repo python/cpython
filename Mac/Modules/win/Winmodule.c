@@ -661,7 +661,7 @@ static PyObject *Win_FrontWindow(_self, _args)
 		return NULL;
 	_rv = FrontWindow();
 	_res = Py_BuildValue("O&",
-	                     WinObj_New, _rv);
+	                     WinObj_WhichWindow, _rv);
 	return _res;
 }
 
@@ -870,4 +870,5 @@ void initWin()
 }
 
 /* ========================= End module Win ========================= */
+
 
