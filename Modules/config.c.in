@@ -295,6 +295,21 @@ extern void initmd5();
 #ifdef USE_ARRAY
 extern void initarray();
 #endif
+#ifdef USE_XT
+extern void initXt();
+#endif
+#ifdef USE_XAW
+extern void initXaw();
+#endif
+#ifdef USE_XM
+extern void initXm();
+#endif
+#ifdef USE_GLX
+extern void initGlx();
+#endif
+#ifdef USE_HTML
+extern void initHTML();
+#endif
 /* -- ADDMODULE MARKER 1 -- */
 
 struct {
@@ -448,6 +463,26 @@ struct {
 
 #ifdef USE_ARRAY
        {"array", initarray},
+#endif
+
+#ifdef USE_XT
+	{"Xt", initXt},
+#endif
+
+#ifdef USE_XAW
+	{"Xaw", initXaw},
+#endif
+
+#ifdef USE_XM
+	{"Xm", initXm},
+#endif
+
+#ifdef USE_GLX
+	{"Glx", initGlx},
+#endif
+
+#ifdef USE_HTML
+	{"HTML", initHTML},
 #endif
 
 /* -- ADDMODULE MARKER 2 -- */

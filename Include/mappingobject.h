@@ -1,3 +1,9 @@
+#ifndef Py_MAPPINGOBJECT_H
+#define Py_MAPPINGOBJECT_H
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /***********************************************************
 Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
@@ -38,3 +44,8 @@ extern int mappinggetnext
 extern object *getmappingkeys PROTO((object *mp));
 extern object *getmappingvalues PROTO((object *mp));
 extern object *getmappingitems PROTO((object *mp));
+
+#ifdef __cplusplus
+}
+#endif
+#endif /* !Py_MAPPINGOBJECT_H */

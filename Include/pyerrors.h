@@ -1,3 +1,9 @@
+#ifndef Py_ERRORS_H
+#define Py_ERRORS_H
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /***********************************************************
 Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
@@ -63,3 +69,8 @@ extern void err_input PROTO((int));
 extern void err_badcall PROTO((void));
 
 extern object *err_getexc PROTO((void));
+
+#ifdef __cplusplus
+}
+#endif
+#endif /* !Py_ERRORS_H */

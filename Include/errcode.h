@@ -1,3 +1,9 @@
+#ifndef Py_ERRCODE_H
+#define Py_ERRCODE_H
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /***********************************************************
 Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
@@ -34,3 +40,8 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define E_NOMEM		15	/* Ran out of memory */
 #define E_DONE		16	/* Parsing complete */
 #define E_ERROR		17	/* Execution error */
+
+#ifdef __cplusplus
+}
+#endif
+#endif /* !Py_ERRCODE_H */

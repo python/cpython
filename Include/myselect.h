@@ -1,3 +1,9 @@
+#ifndef Py_MYSELECT_H
+#define Py_MYSELECT_H
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /***********************************************************
 Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
@@ -78,3 +84,8 @@ typedef	struct fd_set {
 #define FD_ZERO(p)	memset((char *)(p), '\0', sizeof(*(p)))
 
 #endif /* FD_SET */
+
+#ifdef __cplusplus
+}
+#endif
+#endif /* !Py_MYSELECT_H */

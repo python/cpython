@@ -1,3 +1,9 @@
+#ifndef Py_FILEOBJECT_H
+#define Py_FILEOBJECT_H
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /***********************************************************
 Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
@@ -33,3 +39,8 @@ extern object *newopenfileobject
 	PROTO((FILE *, char *, char *, int (*)FPROTO((FILE *))));
 extern FILE *getfilefile PROTO((object *));
 extern object *filegetline PROTO((object *, int));
+
+#ifdef __cplusplus
+}
+#endif
+#endif /* !Py_FILEOBJECT_H */

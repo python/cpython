@@ -1,3 +1,9 @@
+#ifndef Py_SYSMODULE_H
+#define Py_SYSMODULE_H
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /***********************************************************
 Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
@@ -30,3 +36,8 @@ FILE *sysgetfile PROTO((char *, FILE *));
 void initsys PROTO((void));
 
 extern object *sys_trace, *sys_profile;
+
+#ifdef __cplusplus
+}
+#endif
+#endif /* !Py_SYSMODULE_H */

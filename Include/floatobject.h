@@ -1,3 +1,9 @@
+#ifndef Py_FLOATOBJECT_H
+#define Py_FLOATOBJECT_H
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /***********************************************************
 Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
@@ -42,3 +48,8 @@ extern double getfloatvalue PROTO((object *));
 
 /* Macro, trading safety for speed */
 #define GETFLOATVALUE(op) ((op)->ob_fval)
+
+#ifdef __cplusplus
+}
+#endif
+#endif /* !Py_FLOATOBJECT_H */

@@ -1,3 +1,9 @@
+#ifndef Py_STRUCTMEMBER_H
+#define Py_STRUCTMEMBER_H
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /***********************************************************
 Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
@@ -70,3 +76,8 @@ struct memberlist {
 
 object *getmember PROTO((char *, struct memberlist *, char *));
 int setmember PROTO((char *, struct memberlist *, char *, object *));
+
+#ifdef __cplusplus
+}
+#endif
+#endif /* !Py_STRUCTMEMBER_H */

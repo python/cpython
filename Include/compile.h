@@ -1,3 +1,9 @@
+#ifndef Py_COMPILE_H
+#define Py_COMPILE_H
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /***********************************************************
 Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
@@ -51,3 +57,8 @@ struct _node; /* Declare the existence of this type */
 codeobject *compile PROTO((struct _node *, char *));
 codeobject *newcodeobject
 	PROTO((object *, object *, object *, object *, object *));
+
+#ifdef __cplusplus
+}
+#endif
+#endif /* !Py_COMPILE_H */

@@ -1,3 +1,9 @@
+#ifndef Py_PARSETOK_H
+#define Py_PARSETOK_H
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /***********************************************************
 Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
@@ -27,3 +33,8 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 extern int parsestring PROTO((char *, grammar *, int start, node **n_ret));
 extern int parsefile PROTO((FILE *, char *, grammar *, int start,
 					char *ps1, char *ps2, node **n_ret));
+
+#ifdef __cplusplus
+}
+#endif
+#endif /* !Py_PARSETOK_H */

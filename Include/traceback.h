@@ -1,3 +1,9 @@
+#ifndef Py_TRACEBACK_H
+#define Py_TRACEBACK_H
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /***********************************************************
 Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
@@ -28,3 +34,8 @@ int tb_here PROTO((struct _frame *));
 object *tb_fetch PROTO((void));
 int tb_store PROTO((object *));
 int tb_print PROTO((object *, object *));
+
+#ifdef __cplusplus
+}
+#endif
+#endif /* !Py_TRACEBACK_H */

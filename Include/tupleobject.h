@@ -1,3 +1,9 @@
+#ifndef Py_TUPLEOBJECT_H
+#define Py_TUPLEOBJECT_H
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /***********************************************************
 Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
@@ -55,3 +61,8 @@ extern object *gettupleslice PROTO((object *, int, int));
 
 /* Macro, trading safety for speed */
 #define GETTUPLEITEM(op, i) ((op)->ob_item[i])
+
+#ifdef __cplusplus
+}
+#endif
+#endif /* !Py_TUPLEOBJECT_H */

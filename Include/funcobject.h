@@ -1,3 +1,9 @@
+#ifndef Py_FUNCOBJECT_H
+#define Py_FUNCOBJECT_H
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /***********************************************************
 Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
@@ -38,3 +44,8 @@ extern typeobject Functype;
 extern object *newfuncobject PROTO((object *, object *));
 extern object *getfunccode PROTO((object *));
 extern object *getfuncglobals PROTO((object *));
+
+#ifdef __cplusplus
+}
+#endif
+#endif /* !Py_FUNCOBJECT_H */

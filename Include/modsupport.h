@@ -1,3 +1,9 @@
+#ifndef Py_MODSUPPORT_H
+#define Py_MODSUPPORT_H
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /***********************************************************
 Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
@@ -45,3 +51,8 @@ extern object *vmkvalue PROTO((char *, va_list));
 #define getintarg(v, a) getargs(v, "i", a)
 #define getlongarg(v, a) getargs(v, "l", a)
 #define getstrarg(v, a) getargs(v, "s", a)
+
+#ifdef __cplusplus
+}
+#endif
+#endif /* !Py_MODSUPPORT_H */

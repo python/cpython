@@ -85,15 +85,15 @@ extern int chdir PROTO((const char *));
 extern int rmdir PROTO((const char *));
 extern int chmod PROTO((const char *, mode_t));
 extern char *getcwd PROTO((char *, int)); /* XXX or size_t? */
-#if 0
+#ifndef MSDOS
 extern char *strerror PROTO((int));
 extern int link PROTO((const char *, const char *));
 extern int rename PROTO((const char *, const char *));
 extern int stat PROTO((const char *, struct stat *));
 extern int unlink PROTO((const char *));
 extern int pclose PROTO((FILE *));
-#endif
-#endif /* _SEQUENT_ */
+#endif /* !MSDOS */
+#endif /* !_SEQUENT_ */
 #ifdef NO_LSTAT
 #define lstat stat
 #else

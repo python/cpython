@@ -1,3 +1,9 @@
+#ifndef Py_FRAMEOBJECT_H
+#define Py_FRAMEOBJECT_H
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /***********************************************************
 Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
@@ -88,3 +94,8 @@ block *pop_block PROTO((frameobject *));
 /* Extend the value stack */
 
 object **extend_stack PROTO((frameobject *, int, int));
+
+#ifdef __cplusplus
+}
+#endif
+#endif /* !Py_FRAMEOBJECT_H */

@@ -1,3 +1,9 @@
+#ifndef Py_REGEXPR_H
+#define Py_REGEXPR_H
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*
 
 regexpr.h
@@ -138,3 +144,8 @@ int re_exec();
 #endif /* REGEXPR_H */
 
 
+
+#ifdef __cplusplus
+}
+#endif
+#endif /* !Py_REGEXPR_H */

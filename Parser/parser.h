@@ -1,3 +1,9 @@
+#ifndef Py_PARSER_H
+#define Py_PARSER_H
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /***********************************************************
 Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
@@ -48,3 +54,8 @@ parser_state *newparser PROTO((struct _grammar *g, int start));
 void delparser PROTO((parser_state *ps));
 int addtoken PROTO((parser_state *ps, int type, char *str, int lineno));
 void addaccelerators PROTO((grammar *g));
+
+#ifdef __cplusplus
+}
+#endif
+#endif /* !Py_PARSER_H */

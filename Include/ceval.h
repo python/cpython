@@ -1,3 +1,9 @@
+#ifndef Py_CEVAL_H
+#define Py_CEVAL_H
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /***********************************************************
 Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
@@ -100,3 +106,8 @@ extern void restore_thread PROTO((object *));
 #define END_SAVE }
 
 #endif /* !USE_THREAD */
+
+#ifdef __cplusplus
+}
+#endif
+#endif /* !Py_CEVAL_H */

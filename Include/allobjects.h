@@ -1,3 +1,9 @@
+#ifndef Py_ALLOBJECTS_H
+#define Py_ALLOBJECTS_H
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /***********************************************************
 Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
@@ -53,4 +59,14 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "errors.h"
 #include "mymalloc.h"
 
+#include "modsupport.h"
+#include "ceval.h"
+
+#include "rename1.h"
+
 extern void fatal PROTO((char *));
+
+#ifdef __cplusplus
+}
+#endif
+#endif /* !Py_ALLOBJECTS_H */

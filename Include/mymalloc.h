@@ -1,3 +1,9 @@
+#ifndef Py_MYMALLOC_H
+#define Py_MYMALLOC_H
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /***********************************************************
 Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
@@ -74,3 +80,8 @@ extern ANY *calloc PROTO((MALLARG, MALLARG));
 extern ANY *realloc PROTO((ANY *, MALLARG));
 extern void free PROTO((ANY *)); /* XXX sometimes int on Unix old systems */
 #endif
+
+#ifdef __cplusplus
+}
+#endif
+#endif /* !Py_MYMALLOC_H */

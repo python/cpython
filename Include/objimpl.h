@@ -1,3 +1,9 @@
+#ifndef Py_OBJIMPL_H
+#define Py_OBJIMPL_H
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /***********************************************************
 Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
@@ -46,3 +52,8 @@ extern varobject *newvarobject PROTO((typeobject *, unsigned int));
 
 #define NEWOBJ(type, typeobj) ((type *) newobject(typeobj))
 #define NEWVAROBJ(type, typeobj, n) ((type *) newvarobject(typeobj, n))
+
+#ifdef __cplusplus
+}
+#endif
+#endif /* !Py_OBJIMPL_H */

@@ -1,3 +1,9 @@
+#ifndef Py_INTRCHECK_H
+#define Py_INTRCHECK_H
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /***********************************************************
 Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
@@ -24,3 +30,8 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 extern int intrcheck PROTO((void));
 extern void initintr PROTO((void));
+
+#ifdef __cplusplus
+}
+#endif
+#endif /* !Py_INTRCHECK_H */

@@ -1,3 +1,9 @@
+#ifndef Py_INTOBJECT_H
+#define Py_INTOBJECT_H
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /***********************************************************
 Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
@@ -70,3 +76,8 @@ extern intobject FalseObject, TrueObject; /* Don't use these directly */
 
 /* Macro, trading safety for speed */
 #define GETINTVALUE(op) ((op)->ob_ival)
+
+#ifdef __cplusplus
+}
+#endif
+#endif /* !Py_INTOBJECT_H */

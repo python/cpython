@@ -1,3 +1,9 @@
+#ifndef Py_LONGINTREPR_H
+#define Py_LONGINTREPR_H
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /***********************************************************
 Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
@@ -61,3 +67,8 @@ struct _longobject {
 };
 
 longobject *alloclongobject PROTO((int));
+
+#ifdef __cplusplus
+}
+#endif
+#endif /* !Py_LONGINTREPR_H */
