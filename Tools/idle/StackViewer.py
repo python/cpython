@@ -18,6 +18,7 @@ class StackViewer:
             root = top = Tk()
         else:
             top = Toplevel(root)
+        self.top.protocol("WM_DELETE_WINDOW", self.close)
         self.root = root
         self.top = top
         top.wm_title("Stack viewer")
@@ -51,6 +52,9 @@ class StackViewer:
         stack = getstack()
         self.load_stack(stack)
         self.statuslabel.config(text=getexception())
+    
+    def close(self):
+        self.top.destroy()
 
     def load_stack(self, stack):
         self.stack = stack
