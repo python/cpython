@@ -202,18 +202,15 @@ class MSVCCompiler (CCompiler) :
            specified source filename."""
         return self._change_extensions( source_filenames, self._shared_lib_ext )
 
-    # XXX ummm... these aren't right, are they?  I thought library 'foo' on
-    # DOS/Windows was to be found in "foo.lib", not "libfoo.lib"!
-
     def library_filename (self, libname):
         """Return the static library filename corresponding to the
            specified library name."""
-        return "lib%s%s" %( libname, self._static_lib_ext )
+        return "%s%s" %( libname, self._static_lib_ext )
 
     def shared_library_filename (self, libname):
         """Return the shared library filename corresponding to the
            specified library name."""
-        return "lib%s%s" %( libname, self._shared_lib_ext )
+        return "%s%s" %( libname, self._shared_lib_ext )
 
 
     def library_dir_option (self, dir):
