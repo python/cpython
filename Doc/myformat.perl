@@ -58,11 +58,18 @@ sub do_cmd_method{ &do_cmd_code(@_); }
 sub do_cmd_email{ &do_cmd_code(@_); }
 sub do_cmd_program{ &do_cmd_code(@_); }
 
+sub do_cmd_email{
+    local($_) = @_;
+    s/$any_next_pair_pr_rx/<tt><font face=sans-serif>\2<\/font><\/tt>/;
+    $_;
+}
+
 sub do_cmd_url{
     # use the URL as both text and hyperlink
     local($_) = @_;
-    s/$any_next_pair_pr_rx/<tt><a href="\2">\2<\/a><\/tt>/;
-    $_;
+    s/$any_next_pair_pr_rx//;
+    local($url) = $2;
+    "<tt><font face=sans-serif><a href=\"$url\">$url</a></font></tt>" . $_;
 }
 
 sub do_cmd_manpage{
@@ -225,24 +232,36 @@ sub make_mod_index_entry{
 }
 
 sub my_module_index_helper{
-    local($word, $_, $define) = @_;
+    local($word, $_) = @_;
+    s/$next_pair_pr_rx[\n]*//o;
+    local($br_id, $str) = ($1, $2);
+    local($section_tag) = join('', @curr_sec_id);
+    &make_mod_index_entry("SECTION$section_tag",
+			  "<tt>$str</tt> ($word module)", 'DEF');
+    $_;
+}
+
+sub ref_module_index_helper{
+    local($word, $_) = @_;
     s/$next_pair_pr_rx//o;
     local($br_id, $str) = ($1, $2);
-    &make_mod_index_entry($br_id, "<tt>$str</tt> ($word module)",
-			  $define) . $_;
+    &make_mod_index_entry($br_id, "<tt>$str</tt> ($word module)", 'REF') . $_;
 }
 
 sub do_cmd_bifuncindex{ &my_parword_index_helper('built-in function', @_); }
-sub do_cmd_bimodindex{ &my_module_index_helper('built-in', @_, 'DEF'); }
-sub do_cmd_stmodindex{ &my_module_index_helper('standard', @_, 'DEF'); }
+sub do_cmd_bimodindex{ &my_module_index_helper('built-in', @_); }
+sub do_cmd_stmodindex{ &my_module_index_helper('standard', @_); }
 
-sub do_cmd_refbimodindex{ &my_module_index_helper('built-in', @_, 'REF'); }
-sub do_cmd_refstmodindex{ &my_module_index_helper('standard', @_, 'REF'); }
+# these should be adjusted a bit....
+sub do_cmd_refbimodindex{ &ref_module_index_helper('built-in', @_); }
+sub do_cmd_refstmodindex{ &ref_module_index_helper('standard', @_); }
 
 sub do_cmd_nodename{ &do_cmd_label(@_); }
 
 sub init_myformat{
     # XXX need some way for this to be called after &initialise;
+    $anchor_mark = '';
+    $icons{'anchor_mark'} = '';
     # <<2>>...<<2>>
     $any_next_pair_rx3 = "$O(\\d+)$C([\\s\\S]*)$O\\3$C";
     $any_next_pair_rx5 = "$O(\\d+)$C([\\s\\S]*)$O\\5$C";
@@ -526,10 +545,20 @@ sub do_env_seealso{
 }
 
 sub do_cmd_seemodule{
+    # Insert the right magic to jump to the module definition.  This should
+    # work most of the time, at least for repeat builds....
     local($_) = @_;
     local($any_next_pair_pr_rx3) = "$OP(\\d+)$CP([\\s\\S]*)$OP\\3$CP";
-    s/$next_pair_pr_rx$any_next_pair_pr_rx3/<p><tt><b>\2<\/b><\/tt> (\4)<\/p>/;
-    $_;
+    s/$next_pair_pr_rx$any_next_pair_pr_rx3//;
+    local($module,$text,$node,$key) = ($2, $4, '', "module$2");
+    $key =~ s/_//g;
+#    $node = $external_labels{$key} unless
+#      ($node = $ref_files{$key});
+    $node = $key;
+    print "seemodule $module: $node#$key\n";
+    "<p>Module <tt><b><a href=\"$node#$key\">$module</a></b></tt>"
+      . "&nbsp;&nbsp;&nbsp;($text)</p>"
+      . $_;
 }
 
 sub do_cmd_seetext{
