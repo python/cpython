@@ -473,9 +473,7 @@ class Unpickler:
 			      "Failed to import class %s from module %s" % \
 			      (name, module)
 		klass = env[name]
-		# if type(klass) != ClassType:
-		if (type(klass) is FunctionType or
-		    type(klass) is BuiltinFunctionType):
+		if type(klass) is BuiltinFunctionType:
 			raise SystemError, \
 			 "Imported object %s from module %s is not a class" % \
 			 (name, module)
