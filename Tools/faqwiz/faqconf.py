@@ -30,12 +30,42 @@ MAXHITS = 10				# Max #hits to be shown directly
 COOKIE_LIFETIME = 28*24*3600		# Cookie expiration in seconds
 					# (28*24*3600 = 28 days = 4 weeks)
 
+# Markers appended to title to indicate recently change
+# (may contain HTML, e.g. <IMG>); and corresponding 
+
+MARK_VERY_RECENT = " **"		# Changed very recently
+MARK_RECENT = " *"			# Changed recently
+DT_VERY_RECENT = 24*3600		# 24 hours
+DT_RECENT = 7*24*3600			# 7 days
+
+EXPLAIN_MARKS = """
+<P>
+(Entries marked with ** were changed within the last 24 hours;
+entries marked with * were changed within the last 7 days.)
+<P>
+"""
+
+# Version -- don't change unless you edit faqwiz.py
+
+WIZVERSION = "0.3 (alpha)"		# FAQ Wizard version
+
 # This parameter is normally overwritten with a dynamic value
 
 FAQCGI = 'faqw.py'			# Relative URL of the FAQ cgi script
 import os, sys
 FAQCGI = os.path.basename(sys.argv[0]) or FAQCGI
 del os, sys
+
+# Regular expression to recognize FAQ entry files: group(1) should be
+# the section number, group(2) should be the question number.  Both
+# should be fixed width so simple-minded sorting yields the right
+# order.
+
+OKFILENAME = "^faq\([0-9][0-9]\)\.\([0-9][0-9][0-9]\)\.htp$"
+
+# Format to construct a FAQ entry file name
+
+NEWFILENAME = "faq%02d.%03d.htp"
 
 # Load local customizations on top of the previous parameters
 
@@ -49,20 +79,12 @@ except ImporError:
 COOKIE_NAME = SHORTNAME + "-FAQ-Wizard"	# Name used for Netscape cookie
 FAQNAME = SHORTNAME + " FAQ"		# Name of the FAQ
 
-# Regular expression to recognize FAQ entry files: group(1) should be
-# the section number, group(2) should be the question number.  Both
-# should be fixed width so simple-minded sorting yields the right
-# order.
+# Load local customizations again, in case they set COOKIE_NAME or FAQNAME
 
-OKFILENAME = "^faq\([0-9][0-9]\)\.\([0-9][0-9][0-9]\)\.htp$"
-
-# Format to construct a FAQ entry file name
-
-NEWFILENAME = "faq%02d.%03d.htp"
-
-# Version -- don't change unless you edit faqwiz.py
-
-WIZVERSION = "0.3 (alpha)"		# FAQ Wizard version
+try:
+    from faqcust import *
+except ImporError:
+    pass
 
 # ----------------------------------------------------------------------
 
@@ -205,9 +227,13 @@ LOCAL_ENTRY = """\
 
 # Entry formatting
 
-ENTRY_HEADER = """
+ENTRY_HEADER1 = """
 <HR>
-<H2><A NAME="%(sec)s.%(num)s">%(title)s</A></H2>
+<H2><A NAME="%(sec)s.%(num)s">%(title)s</A>\
+"""
+
+ENTRY_HEADER2 = """\
+</H2>
 """
 
 ENTRY_FOOTER = """
