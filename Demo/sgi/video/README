@@ -24,7 +24,7 @@ editor, not in this directory but in /ufs/guido/mm/.)
 When we got our own Indigo entry-level video board (in June 1992) and
 a version of the Irix video library that supported capturing PAL
 format (in August 1992), Sjoerd added an interface to the video
-library to Python (sv) and Guido wrote makemovie.py (based upon a
+library to Python (sv) and Guido wrote Vrec.py (based upon a
 still frame grabber by Sjoerd, in turn based upon SGI demo code in C)
 to record a movie using it.
 
@@ -54,10 +54,10 @@ camcorder.py	record video movies or make snapshots (in movie format)
 		p	pause recording (record single frame if paused)
 		ESC	quit
 
-colorsys.py	color conversions, used by video
-
-makemovie.py	record video movies using the Indigo video library and
+Vrec.py		record video movies using the Indigo video library and
 		board
+
+colorsys.py	color conversions, used by video
 
 statit.py	various statistics operations on movie files
 
@@ -95,6 +95,10 @@ Vinfo.py	similar but more modern, using VFile.py
 vpregs.py	definition of VP registers
 
 vtime.py	virtual time module imported by syncaudio.py and camcorder.py
+
+Vtime.py	(unrelated to vtime!!!) Copy a video file,
+		manipulating the time codes (e.g. faster/slower, or
+		regenerate time codes, or drop frames too close apart)
 
 
 The following are C programs, either for efficiency or because they
