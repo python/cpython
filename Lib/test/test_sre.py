@@ -104,6 +104,9 @@ test(r"""sre.sub(r'(?P<a>x)', '\g<a>\g<1>', 'xx')""", 'xxxx')
 test(r"""sre.sub(r'(?P<unk>x)', '\g<unk>\g<unk>', 'xx')""", 'xxxx')
 test(r"""sre.sub(r'(?P<unk>x)', '\g<1>\g<1>', 'xx')""", 'xxxx')
 
+# bug 449964: fails for group followed by other escape
+test(r"""sre.sub(r'(?P<unk>x)', '\g<1>\g<1>\\b', 'xx')""", 'xx\bxx\b')
+
 test(r"""sre.sub(r'a', r'\t\n\v\r\f\a\b\B\Z\a\A\w\W\s\S\d\D', 'a')""", '\t\n\v\r\f\a\b\\B\\Z\a\\A\\w\\W\\s\\S\\d\\D')
 test(r"""sre.sub(r'a', '\t\n\v\r\f\a', 'a')""", '\t\n\v\r\f\a')
 test(r"""sre.sub(r'a', '\t\n\v\r\f\a', 'a')""", (chr(9)+chr(10)+chr(11)+chr(13)+chr(12)+chr(7)))

@@ -647,9 +647,9 @@ def parse_template(source, pattern):
             p.append((LITERAL, literal))
     sep = source[:0]
     if type(sep) is type(""):
-        char = chr
+        makechar = chr
     else:
-        char = unichr
+        makechar = unichr
     while 1:
         this = s.get()
         if this is None:
@@ -693,14 +693,14 @@ def parse_template(source, pattern):
                         break
                 if not code:
                     this = this[1:]
-                    code = LITERAL, char(atoi(this[-6:], 8) & 0xff)
+                    code = LITERAL, makechar(atoi(this[-6:], 8) & 0xff)
                 if code[0] is LITERAL:
                     literal(code[1])
                 else:
                     a(code)
             else:
                 try:
-                    this = char(ESCAPES[this][1])
+                    this = makechar(ESCAPES[this][1])
                 except KeyError:
                     pass
                 literal(this)
