@@ -1,7 +1,7 @@
-What's New in IDLE 1.1a0?
+What's New in IDLE 1.1a1?
 =========================
 
-*Release date: XX-XXX-2004*
+*Release date: 08-JUL-2004*
 
 - Redirect the warning stream to the shell during the ScriptBinding check of
   user code and format the warning similarly to an exception for both that
