@@ -29,7 +29,7 @@ class LiveVideoIn:
 
 	# Initialize an instance.  Arguments:
 	# vw, vh: size of the video window data to be captured.
-	# For some reason, vw MUST be a multiples of 4.
+	# For some reason, vw MUST be a multiple of 4.
 	# Note that the data has to be cropped unless vw and vh are
 	# just right for the video board (vw:vh == 4:3 and vh even).
 
