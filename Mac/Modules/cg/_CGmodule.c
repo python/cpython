@@ -1129,6 +1129,23 @@ static PyObject *CGContextRefObj_SyncCGContextOriginWithPort(CGContextRefObject 
 	return _res;
 }
 
+static PyObject *CGContextRefObj_ClipCGContextToRegion(CGContextRefObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	Rect portRect;
+	RgnHandle region;
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      PyMac_GetRect, &portRect,
+	                      ResObj_Convert, &region))
+		return NULL;
+	ClipCGContextToRegion(_self->ob_itself,
+	                      &portRect,
+	                      region);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
 static PyMethodDef CGContextRefObj_methods[] = {
 	{"CGContextSaveGState", (PyCFunction)CGContextRefObj_CGContextSaveGState, 1,
 	 "() -> None"},
@@ -1244,6 +1261,8 @@ static PyMethodDef CGContextRefObj_methods[] = {
 	 "(int shouldAntialias) -> None"},
 	{"SyncCGContextOriginWithPort", (PyCFunction)CGContextRefObj_SyncCGContextOriginWithPort, 1,
 	 "(CGrafPtr port) -> None"},
+	{"ClipCGContextToRegion", (PyCFunction)CGContextRefObj_ClipCGContextToRegion, 1,
+	 "(Rect portRect, RgnHandle region) -> None"},
 	{NULL, NULL, 0}
 };
 
