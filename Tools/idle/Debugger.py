@@ -2,28 +2,29 @@ import os
 import bdb
 import traceback
 from Tkinter import *
+from WindowList import ListedToplevel
 
 import StackViewer
 
 
 class Debugger(bdb.Bdb):
-    
+
     interacting = 0
-    
+
     vstack = vsource = vlocals = vglobals = None
-    
+
     def __init__(self, pyshell):
         bdb.Bdb.__init__(self)
         self.pyshell = pyshell
         self.make_gui()
-    
+
     def close(self):
         if self.interacting:
             self.top.bell()
             return
         self.pyshell.close_debugger()
         self.top.destroy()
-        
+
     def run(self, *args):
         try:
             self.interacting = 1
@@ -41,12 +42,14 @@ class Debugger(bdb.Bdb):
 
     def user_exception(self, frame, info):
         self.interaction(frame, info)
-    
+
     def make_gui(self):
         pyshell = self.pyshell
         self.flist = pyshell.flist
         self.root = root = pyshell.root
-        self.top = top = Toplevel(root)
+        self.top = top =ListedToplevel(root)
+        self.top.wm_title("Debug Control")
+        self.top.wm_iconname("Debug")
         top.wm_protocol("WM_DELETE_WINDOW", self.close)
         #
         self.bframe = bframe = Frame(top)
@@ -113,9 +116,9 @@ class Debugger(bdb.Bdb):
             self.show_locals()
         if self.vglobals.get():
             self.show_globals()
-    
+
     frame = None
-    
+
     def interaction(self, frame, info=None):
         self.frame = frame
         code = frame.f_code
@@ -167,7 +170,7 @@ class Debugger(bdb.Bdb):
         self.status.configure(text="")
         self.error.configure(text="", background=self.errorbg)
         self.frame = None
-    
+
     def sync_source_line(self):
         frame = self.frame
         if not frame:
@@ -179,19 +182,19 @@ class Debugger(bdb.Bdb):
             edit = self.flist.open(file)
             if edit:
                 edit.gotoline(lineno)
-    
+
     def cont(self):
         self.set_continue()
         self.root.quit()
-        
+
     def step(self):
         self.set_step()
         self.root.quit()
-    
+
     def next(self):
         self.set_next(self.frame)
         self.root.quit()
-    
+
     def ret(self):
         self.set_return(self.frame)
         self.root.quit()
@@ -211,7 +214,7 @@ class Debugger(bdb.Bdb):
                 self.stackviewer = None
                 sv.close()
             self.fstack['height'] = 1
-    
+
     def show_source(self):
         if self.vsource.get():
             self.sync_source_line()
@@ -277,16 +280,16 @@ class Debugger(bdb.Bdb):
             text.bell()
             return
         text.tag_add("BREAK", "insert linestart", "insert lineend +1char")
-    
+
     # A literal copy of Bdb.set_break() without the print statement at the end
     def set_break(self, filename, lineno, temporary=0, cond = None):
-	import linecache # Import as late as possible
-	line = linecache.getline(filename, lineno)
-	if not line:
-		return 'That line does not exist!'
-	if not self.breaks.has_key(filename):
-		self.breaks[filename] = []
-	list = self.breaks[filename]
-	if not lineno in list:
-		list.append(lineno)
-	bp = bdb.Breakpoint(filename, lineno, temporary, cond)
+        import linecache # Import as late as possible
+        line = linecache.getline(filename, lineno)
+        if not line:
+                return 'That line does not exist!'
+        if not self.breaks.has_key(filename):
+                self.breaks[filename] = []
+        list = self.breaks[filename]
+        if not lineno in list:
+                list.append(lineno)
+        bp = bdb.Breakpoint(filename, lineno, temporary, cond)

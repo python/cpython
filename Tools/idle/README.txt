@@ -1,23 +1,22 @@
-IDLE 0.1 - 10/16/98
+IDLE 0.2 - 01/01/99
 -------------------
 
 This is a *very* early preliminary release of IDLE, my own attempt at
-a Tkinter-based IDE for Python.  It currently has the following
-features:
+a Tkinter-based IDE for Python.  It has the following features:
 
 - multi-window text editor with multiple undo and Python colorizing
 - Python shell (a.k.a. interactive interpreter) window subclass
 - debugger
 - 100% pure Python
-- works on Windows and Unix (should work on Mac too)
+- works on Windows and Unix (probably works on Mac too)
 
 The main program is in the file "idle"; on Windows you can use
 idle.pyw to avoid popping up a DOS console.  Any arguments passed are
 interpreted as files that will be opened for editing.
 
-IDLE requires Python 1.5.2, so it is currently only usable for PSA
-members who have the latest 1.5.2 alpha release (a public beta release
-is due shortly).
+IDLE requires Python 1.5.2, so it is currently only usable with the
+Python 1.5.2 beta distribution (luckily, IDLE is bundled with Python
+1.5.2).
 
 Please send feedback to the Python newsgroup, comp.lang.python.
 
@@ -27,45 +26,70 @@ Please send feedback to the Python newsgroup, comp.lang.python.
 
 TO DO:
 
+- "GO" command
+- "Modularize" command
+- command expansion from keywords, module contents, other buffers, etc.
 - "Recent documents" menu item
-- use platform specific default bindings
-- title and Windows menu should have base filename first
-- restructure state sensitive code to avoid testing flags all the time
-- integrated debugger
-- object browser instead of current stack viewer
-- save some user state (e.g. window and cursor positions, bindings)
-- make backups when saving
-- check file mtimes at various points
-- interface with RCS/CVS/Perforce ???
-- more search options: case [in]sensitive, fwd/back, string/regex
-- global query replace
-- incremental search
 - more emacsisms:
+  - parentheses matching
   - reindent, reformat text etc.
   - M-[, M-] to move by paragraphs
   - smart stuff with whitespace around Return
   - filter region?
-  - grep?
+  - incremental search?
+  - ^K should cut to buffer
+  - command to fill text paragraphs
+- restructure state sensitive code to avoid testing flags all the time
+- finish debugger
+- object browser instead of current stack viewer
+- persistent user state (e.g. window and cursor positions, bindings)
+- make backups when saving
+- check file mtimes at various points
+- interface with RCS/CVS/Perforce ???
 - status bar?
 - better help?
+- don't open second class browser on same module
 
 Details:
 
 - when there's a selection, left/right arrow should go to either
   end of the selection
-- ^O should honor autoindent
+- ^O (on Unix -- open-line) should honor autoindent
+- after paste, show end of pasted text
+- on Windows, should turn short filename to long filename (not only in argv!)
+  (shouldn't this be done -- or undone -- by ntpath.normpath?)
 
 Structural problems:
 
 - too much knowledge in FileList about EditorWindow (for example)
 - Several occurrences of scrollable listbox with title and certain
   behavior; should create base class to generalize this
-- class browser could become an outline?
 
 ======================================================================
 
 Comparison to PTUI
 ------------------
+
++ PTUI has a status line
+
++ PTUI's help is better (HTML!)
+
++ PTUI can attach a shell to any module
+
++ PTUI's auto indent is better
+  (understands that "if a: # blah, blah" opens a block)
+
++ IDLE requires 4x backspace to dedent a line
+
++ PTUI has more bells and whistles:
+  open multiple
+  append
+  modularize
+  examine
+  go
+
+? PTUI's fontify is faster but synchronous (and still too slow);
+  does a lousy job if editing affects lines below
 
 - PTUI's shell is worse:
   no coloring;
@@ -76,34 +100,18 @@ Comparison to PTUI
   no redo;
   one char at a time
 
-- PTUI's framework is better:
-  status line
-  (not sure if I like the toolbar)
-
 - PTUI's GUI is a tad ugly:
-  I don't like the multiple buffers in one window model
+  I don't like the multiple buffers in one window model;
+  I don't like the big buttons at the top of the widow
 
-- PTUI's help is better (HTML!)
+- PTUI lacks an integrated debugger
 
-- PTUI's search/replace is better (more features)
+- PTUI lacks a class browser
 
-- PTUI's auto indent is better
-  (understands that "if a: # blah, blah" opens a block)
-
-- PTUI's key bindings are a bit weird (DEL to dedent a line!?!?!?)
-
-- PTUI's fontify is faster but synchronous (and still too slow);
-  also doesn't do as good a job if editing affects lines far below
-
-- PTUI has more bells and whistles:
-  open multiple
-  append
-  zap tabs
-  fontify (you could argue it's not needed in my code)
-  comment/uncomment
-  modularize
-  examine
-  go
+- PTUI lacks many of IDLE's features:
+  - expand word
+  - regular expression search
+  - search files (grep)
 
 ======================================================================
 

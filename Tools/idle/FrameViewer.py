@@ -10,7 +10,7 @@ class FrameViewer:
         self.repr = Repr()
         self.repr.maxstring = 60
         self.load_variables()
-        
+
     def load_variables(self):
         row = 0
         if self.frame.f_locals is not self.frame.f_globals:
@@ -22,7 +22,7 @@ class FrameViewer:
                   borderwidth=2, relief="raised")
         l.grid(row=row, column=0, columnspan=2, sticky="ew")
         row = self.load_names(self.frame.f_globals, row+1)
-        
+
     def load_names(self, dict, row):
         names = dict.keys()
         names.sort()

@@ -1,7 +1,7 @@
 import string
 
 class History:
-    
+
     def __init__(self, text):
         self.text = text
         self.history = []

@@ -1,7 +1,7 @@
 """Primitive class browser.
 
 XXX TO DO:
-    
+
 - generalize the scrolling listbox with some behavior into a base class
 - add popup menu with more options (e.g. doc strings, base classes, imports)
 - show function argument list (have to do pattern matching on source)
@@ -14,12 +14,13 @@ import string
 import pyclbr
 from Tkinter import *
 import tkMessageBox
+from WindowList import ListedToplevel
 
 from ScrolledList import ScrolledList
 
 
 class ClassBrowser:
-    
+
     def __init__(self, flist, name, path=[]):
         root = flist.root
         try:
@@ -34,9 +35,10 @@ class ClassBrowser:
         self.flist = flist
         self.dict = dict
         self.root = root
-        self.top = top = Toplevel(root)
+        self.top = top = ListedToplevel(root)
         self.top.protocol("WM_DELETE_WINDOW", self.close)
-        top.wm_title("Class browser")
+        top.wm_title("Class Browser - " + name)
+        top.wm_iconname("ClBrowser")
         self.leftframe = leftframe = Frame(top)
         self.leftframe.pack(side="left", fill="both", expand=1)
         # Create help label
@@ -48,12 +50,12 @@ class ClassBrowser:
             self.leftframe, self.flist, self)
         # Load the classes
         self.load_classes(dict, name)
-    
+
     def close(self):
         self.classviewer = None
         self.methodviewer = None
         self.top.destroy()
-        
+
     def load_classes(self, dict, module):
         self.classviewer.load_classes(dict, module)
         if self.botframe:
@@ -64,7 +66,7 @@ class ClassBrowser:
     botframe = None
     methodhelplabel = None
     methodviewer = None
-    
+
     def show_methods(self, cl):
         if not self.botframe:
             self.botframe = Frame(self.top)
@@ -78,12 +80,12 @@ class ClassBrowser:
 
 
 class ClassViewer(ScrolledList):
-    
+
     def __init__(self, master, flist, browser):
         ScrolledList.__init__(self, master)
         self.flist = flist
         self.browser = browser
-        
+
     def load_classes(self, dict, module):
         self.clear()
         self.dict = dict
@@ -103,7 +105,7 @@ class ClassViewer(ScrolledList):
                     super.append(name)
                 s = s + "(%s)" % string.join(super, ", ")
             self.append(s)
-    
+
     def getname(self, index):
         name = self.listbox.get(index)
         i = string.find(name, '(')
@@ -113,13 +115,13 @@ class ClassViewer(ScrolledList):
 
     def getclass(self, index):
         return self.dict[self.getname(index)]
-    
+
     def on_select(self, index):
         self.show_methods(index)
-    
+
     def on_double(self, index):
         self.show_source(index)
-    
+
     def show_methods(self, index):
         cl = self.getclass(index)
         self.browser.show_methods(cl)
@@ -132,13 +134,13 @@ class ClassViewer(ScrolledList):
 
 
 class MethodViewer(ScrolledList):
-    
+
     def __init__(self, master, flist):
         ScrolledList.__init__(self, master)
         self.flist = flist
-        
+
     classinfo = None
-    
+
     def load_methods(self, cl):
         self.classinfo = cl
         self.clear()
@@ -151,10 +153,10 @@ class MethodViewer(ScrolledList):
 
     def click_event(self, event):
         pass
-    
+
     def on_double(self, index):
         self.show_source(self.get(index))
-    
+
     def show_source(self, name):
         if os.path.isfile(self.classinfo.file):
             edit = self.flist.open(self.classinfo.file)

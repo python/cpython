@@ -3,6 +3,18 @@ import string
 from Tkinter import *
 from Delegator import Delegator
 
+#$ event <<redo>>
+#$ win <Control-y>
+#$ unix <Alt-z>
+
+#$ event <<undo>>
+#$ win <Control-z>
+#$ unix <Control-z>
+
+#$ event <<dump-undo-state>>
+#$ win <Control-backslash>
+#$ unix <Control-backslash>
+
 
 class UndoDelegator(Delegator):
 
@@ -11,7 +23,7 @@ class UndoDelegator(Delegator):
     def __init__(self):
         Delegator.__init__(self)
         self.reset_undo()
-    
+
     def setdelegate(self, delegate):
         if self.delegate is not None:
             self.unbind("<<undo>>")
