@@ -370,7 +370,7 @@ def getmodule(object):
     """Return the module an object was defined in, or None if not found."""
     if ismodule(object):
         return object
-    if isclass(object):
+    if hasattr(object, '__module__'):
         return sys.modules.get(object.__module__)
     try:
         file = getabsfile(object)
