@@ -1,6 +1,16 @@
 """Guess which db package to use to open a db file."""
 
 import os
+import struct
+
+try:
+    import dbm
+    _dbmerror = dbm.error
+except ImportError:
+    dbm = None
+    # just some sort of valid exception which might be raised in the
+    # dbm test
+    _dbmerror = IOError
 
 def whichdb(filename):
     """Guess which db package to use to open a db file.
@@ -15,8 +25,6 @@ def whichdb(filename):
     database using that module may still fail.
     """
 
-    import struct
-
     # Check for dbm first -- this has a .pag and a .dir file
     try:
         f = open(filename + os.extsep + "pag", "rb")
@@ -25,7 +33,20 @@ def whichdb(filename):
         f.close()
         return "dbm"
     except IOError:
-        pass
+        # some dbm emulations based on Berkeley DB generate a .db file
+        # some do not, but they should be caught by the dbhash checks
+        try:
+            f = open(filename + os.extsep + "db", "rb")
+            f.close()
+            # guarantee we can actually open the file using dbm
+            # kind of overkill, but since we are dealing with emulations
+            # it seems like a prudent step
+            if dbm is not None:
+                d = dbm.open(filename)
+                d.close()
+                return "dbm"
+        except (IOError, _dbmerror):
+            pass
 
     # Check for dumbdbm next -- this has a .dir and and a .dat file
     try:
