@@ -179,7 +179,7 @@ static PyTypeObject Fhtype = {
 /* Font Manager functions */
 
 static PyObject *
-fm_init(PyObject *self, *args)
+fm_init(PyObject *self, PyObject *args)
 {
 	if (!PyArg_NoArgs(args))
 		return NULL;
@@ -189,7 +189,7 @@ fm_init(PyObject *self, *args)
 }
 
 static PyObject *
-fm_findfont(PyObject *self, *args)
+fm_findfont(PyObject *self, PyObject *args)
 {
 	char *str;
 	if (!PyArg_Parse(args, "s", &str))
@@ -198,7 +198,7 @@ fm_findfont(PyObject *self, *args)
 }
 
 static PyObject *
-fm_prstr(PyObject *self, *args)
+fm_prstr(PyObject *self, PyObject *args)
 {
 	char *str;
 	if (!PyArg_Parse(args, "s", &str))
@@ -259,7 +259,7 @@ fm_setpath(PyObject *self, PyObject *args)
 }
 
 static PyObject *
-fm_fontpath(PyObject *self, *args)
+fm_fontpath(PyObject *self, PyObject *args)
 {
 	if (!PyArg_NoArgs(args))
 		return NULL;
