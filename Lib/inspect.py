@@ -169,7 +169,7 @@ def getdoc(object):
         return string.join(lines, '\n')
 
 def getfile(object):
-    """Try to guess which (text or binary) file an object was defined in."""
+    """Work out which source or compiled file an object was defined in."""
     if ismodule(object):
         if hasattr(object, '__file__'):
             return object.__file__
@@ -192,6 +192,21 @@ def getfile(object):
     raise TypeError, 'arg is not a module, class, method, ' \
                      'function, traceback, frame, or code object'
 
+def getsourcefile(object):
+    """Return the Python source file an object was defined in, if it exists."""
+    filename = getfile(object)
+    if string.lower(filename[-4:]) in ['.pyc', '.pyo']:
+        filename = filename[:-4] + '.py'
+    if string.lower(filename[-3:]) == '.py' and os.path.exists(filename):
+        return filename
+
+def getabsfile(object):
+    """Return an absolute path to the source file or compiled file for an object.
+
+    The idea is for each object to have a unique origin, so this routine normalizes
+    the result as much as possible."""
+    return os.path.normcase(os.path.abspath(getsourcefile(object) or getfile(object)))
+
 modulesbyfile = {}
 
 def getmodule(object):
@@ -199,15 +214,14 @@ def getmodule(object):
     if isclass(object):
         return sys.modules.get(object.__module__)
     try:
-        file = os.path.abspath(getsourcefile(object))
+        file = getabsfile(object)
     except TypeError:
         return None
     if modulesbyfile.has_key(file):
         return sys.modules[modulesbyfile[file]]
     for module in sys.modules.values():
         if hasattr(module, '__file__'):
-            modulesbyfile[
-                os.path.abspath(getsourcefile(module))] = module.__name__
+            modulesbyfile[getabsfile(module)] = module.__name__
     if modulesbyfile.has_key(file):
         return sys.modules[modulesbyfile[file]]
     main = sys.modules['__main__']
@@ -220,13 +234,6 @@ def getmodule(object):
         builtinobject = getattr(builtin, object.__name__)
         if builtinobject is object: return builtin
     except AttributeError: pass
-
-def getsourcefile(object):
-    """Try to guess which Python source file an object was defined in."""
-    filename = getfile(object)
-    if filename[-4:] == '.pyc':
-        filename = filename[:-4] + '.py'
-    return filename
 
 def findsource(object):
     """Return the entire source file and starting line number for an object.
@@ -571,7 +578,7 @@ def getframeinfo(frame, context=1):
             start = min(start, len(lines) - context)
             lines = lines[start:start+context]
             index = lineno - 1 - start
-        except:
+        except IOError:
             lines = index = None
     else:
         lines = index = None
