@@ -540,14 +540,17 @@ class Editor(W.Window):
 
 	def _run_with_cl_interpreter(self):
 		import Terminal
-		interp_path = os.path.join(sys.exec_prefix, "bin", "python")
+		interp_path = os.path.join(sys.exec_prefix, 
+			"Resources", "Python.app", "Contents", "MacOS", "Python")
+		if not os.path.exists(interp_path):
+			interp_path = os.path.join(sys.exec_prefix, "bin", "python")
 		file_path = self.path
 		if not os.path.exists(interp_path):
 			# This "can happen" if we are running IDE under MacPython-OS9.
 			raise W.AlertError, "Can't find command-line Python"
 		cmd = '"%s" "%s" ; exit' % (interp_path, file_path)
 		t = Terminal.Terminal()
-		t.do_script(with_command=cmd)
+		t.do_script(cmd)
 	
 	def runselection(self):
 		self._runselection()
