@@ -5,7 +5,7 @@
 
 from stdwinevents import *
 
-class TextEdit():
+class TextEdit:
 	#
 	def create(self, (parent, (cols, rows))):
 		parent.addchild(self)
