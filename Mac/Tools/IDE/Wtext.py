@@ -1,23 +1,14 @@
-from Carbon import Qd
-from Carbon import TE
-from Carbon import Fm
+from Carbon import Evt, Events, Fm, Fonts
+from Carbon import Qd, Res, Scrap
+from Carbon import TE, TextEdit, Win
 import waste
 import WASTEconst
-from Carbon import Res
-from Carbon import Evt
-from Carbon import Events
-from Carbon import Scrap
-import string
-
-from Carbon import Win
 import Wbase
 import Wkeys
 import Wcontrols
 import PyFontify
-from types import *
-from Carbon import Fonts
-from Carbon import TextEdit
-
+import string
+from types import TupleType, StringType
 
 
 class TextBox(Wbase.Widget):
@@ -105,6 +96,7 @@ class EditText(Wbase.SelectableWidget, _ScrollWidget):
 		self.temptext = text
 		self.ted = None
 		self.selection = None
+		self.oldselection = None
 		self._callback = callback
 		self.changed = 0
 		self.selchanged = 0
@@ -154,6 +146,13 @@ class EditText(Wbase.SelectableWidget, _ScrollWidget):
 		self.ted = None
 		self.temptext = None
 		Wbase.SelectableWidget.close(self)
+	
+	def textchanged(self, all=0):
+		self.changed = 1
+	
+	def selectionchanged(self):
+		self.selchanged = 1
+		self.oldselection = self.getselection()
 	
 	def gettabsettings(self):
 		return self.tabsettings
@@ -208,7 +207,7 @@ class EditText(Wbase.SelectableWidget, _ScrollWidget):
 		viewrect = self.ted.WEGetViewRect()
 		Qd.EraseRect(viewrect)
 		self.ted.WEUpdate(self._parentwindow.wid.GetWindowPort().visRgn)
-		self.selchanged = 1
+		self.selectionchanged()
 		self.updatescrollbars()
 	
 	def adjust(self, oldbounds):
@@ -235,7 +234,7 @@ class EditText(Wbase.SelectableWidget, _ScrollWidget):
 	
 	def selectall(self):
 		self.ted.WESetSelection(0, self.ted.WEGetTextLength())
-		self.selchanged = 1
+		self.selectionchanged()
 		self.updatescrollbars()
 	
 	def selectline(self, lineno, charoffset = 0):
@@ -246,7 +245,7 @@ class EditText(Wbase.SelectableWidget, _ScrollWidget):
 		# Let's fool Waste by initially selecting one char less:
 		self.ted.WESetSelection(newselstart + charoffset, newselend-1)
 		self.ted.WESetSelection(newselstart + charoffset, newselend)
-		self.selchanged = 1
+		self.selectionchanged()
 		self.updatescrollbars()
 	
 	def getselection(self):
@@ -256,7 +255,7 @@ class EditText(Wbase.SelectableWidget, _ScrollWidget):
 			return self.selection
 	
 	def setselection(self, selstart, selend):
-		self.selchanged = 1
+		self.selectionchanged()
 		if self.ted:
 			self.ted.WESetSelection(selstart, selend)
 			self.ted.WESelView()
@@ -284,12 +283,12 @@ class EditText(Wbase.SelectableWidget, _ScrollWidget):
 		if oldselstart <> newselstart or  oldselend <> newselend:
 			self.ted.WESetSelection(newselstart, newselend)
 			self.updatescrollbars()
-		self.selchanged = 1
+		self.selectionchanged()
 	
 	def insert(self, text):
 		self.ted.WEInsert(text, None, None)
-		self.changed = 1
-		self.selchanged = 1
+		self.textchanged()
+		self.selectionchanged()
 	
 	# text
 	def set(self, text):
@@ -306,8 +305,8 @@ class EditText(Wbase.SelectableWidget, _ScrollWidget):
 			Qd.RectRgn(rgn, viewrect)
 			Qd.EraseRect(viewrect)
 			self.draw(rgn)
-			#self.GetWindow().InvalWindowRect(self.ted.WEGetViewRect())
 			self.updatescrollbars()
+			self.textchanged(1)
 	
 	def get(self):
 		if not self._parent:
@@ -321,9 +320,9 @@ class EditText(Wbase.SelectableWidget, _ScrollWidget):
 		if self._enabled and not modifiers & Events.cmdKey or char in Wkeys.arrowkeys:
 			self.ted.WEKey(ord(char), modifiers)
 			if char not in Wkeys.navigationkeys:
-				self.changed = 1
+				self.textchanged()
 			if char not in Wkeys.scrollkeys:
-				self.selchanged = 1
+				self.selectionchanged()
 			self.updatescrollbars()
 			if self._callback:
 				Wbase.CallbackCall(self._callback, 0, char, modifiers)
@@ -332,7 +331,7 @@ class EditText(Wbase.SelectableWidget, _ScrollWidget):
 		if not self._enabled:
 			return
 		self.ted.WEClick(point, modifiers, Evt.TickCount())
-		self.selchanged = 1
+		self.selectionchanged()
 		self.updatescrollbars()
 		return 1
 	
@@ -411,8 +410,8 @@ class EditText(Wbase.SelectableWidget, _ScrollWidget):
 		self.ted.WECut()
 		self.updatescrollbars()
 		self.selview()
-		self.changed = 1
-		self.selchanged = 1
+		self.textchanged()
+		self.selectionchanged()
 		if self._callback:
 			Wbase.CallbackCall(self._callback, 0, "", None)
 	
@@ -422,8 +421,8 @@ class EditText(Wbase.SelectableWidget, _ScrollWidget):
 		self.selview()
 		self.ted.WEPaste()
 		self.updatescrollbars()
-		self.changed = 1
-		self.selchanged = 1
+		self.textchanged()
+		self.selectionchanged()
 		if self._callback:
 			Wbase.CallbackCall(self._callback, 0, "", None)
 	
@@ -431,8 +430,8 @@ class EditText(Wbase.SelectableWidget, _ScrollWidget):
 		self.ted.WEDelete()
 		self.selview()
 		self.updatescrollbars()
-		self.changed = 1
-		self.selchanged = 1
+		self.textchanged()
+		self.selectionchanged()
 		if self._callback:
 			Wbase.CallbackCall(self._callback, 0, "", None)
 	
@@ -442,8 +441,8 @@ class EditText(Wbase.SelectableWidget, _ScrollWidget):
 			return
 		self.ted.WEUndo()
 		self.updatescrollbars()
-		self.changed = 1
-		self.selchanged = 1
+		self.textchanged()
+		self.selectionchanged()
 		if self._callback:
 			Wbase.CallbackCall(self._callback, 0, "", None)
 	
@@ -610,6 +609,8 @@ class TextEditor(EditText):
 import re
 commentPat = re.compile("[ \t]*(#)")
 indentPat = re.compile("[ \t]*")
+kStringColor = (0, 0x7fff, 0)
+kCommentColor = (0, 0, 0xb000)
 
 
 class PyEditor(TextEditor):
@@ -627,10 +628,111 @@ class PyEditor(TextEditor):
 		self.bind("cmd]", self.domenu_shiftright)
 		self.bind("cmdshift[", self.domenu_uncomment)
 		self.bind("cmdshift]", self.domenu_comment)
+		self.bind("cmdshiftd", self.alldirty)
 		self.file = file	# only for debugger reference
 		self._debugger = debugger
 		if debugger:
 			debugger.register_editor(self, self.file)
+		self._dirty = (0, None)
+		self.do_fontify = 0
+	
+	#def open(self):
+	#	TextEditor.open(self)
+	#	if self.do_fontify:
+	#		self.fontify()
+	#	self._dirty = (None, None)
+	
+	def _getflags(self):
+		flags = (WASTEconst.weDoDrawOffscreen | WASTEconst.weDoUseTempMem |
+				WASTEconst.weDoAutoScroll | WASTEconst.weDoOutlineHilite)
+		if self.readonly:
+			flags = flags | WASTEconst.weDoReadOnly
+		else:
+			flags = flags | WASTEconst.weDoUndo
+		return flags
+	
+	def textchanged(self, all=0):
+		self.changed = 1
+		if all:
+			self._dirty = (0, None)
+			return
+		oldsel = self.oldselection
+		sel = self.getselection()
+		if not sel:
+			# XXX what to do?
+			return
+		selstart, selend = sel
+		selstart, selend = min(selstart, selend), max(selstart, selend)
+		if oldsel:
+			oldselstart, oldselend = min(oldsel), max(oldsel)
+			selstart, selend = min(selstart, oldselstart), max(selend, oldselend)
+		startline = self.offsettoline(selstart)
+		endline = self.offsettoline(selend)
+		selstart, _ = self.ted.WEGetLineRange(startline)
+		_, selend = self.ted.WEGetLineRange(endline)
+		if selstart > 0:
+			selstart = selstart - 1
+		self._dirty = (selstart, selend)
+	
+	def idle(self):
+		self.SetPort()
+		self.ted.WEIdle()
+		if not self.do_fontify:
+			return
+		start, end = self._dirty
+		if start is None:
+			return
+		textLength = self.ted.WEGetTextLength()
+		if end is None:
+			end = textLength
+		if start >= end:
+			self._dirty = (None, None)
+		else:
+			self.fontify(start, end)
+			self._dirty = (None, None)
+	
+	def alldirty(self, *args):
+		self._dirty = (0, None)
+	
+	def fontify(self, start=0, end=None):
+		#W.SetCursor('watch')
+		if self.readonly:
+			self.ted.WEFeatureFlag(WASTEconst.weFReadOnly, 0)
+		self.ted.WEFeatureFlag(WASTEconst.weFOutlineHilite, 0)
+		self.ted.WEDeactivate()
+		self.ted.WEFeatureFlag(WASTEconst.weFAutoScroll, 0)
+		self.ted.WEFeatureFlag(WASTEconst.weFUndo, 0)
+		pytext = self.get().replace("\r", "\n")
+		if end is None:
+			end = len(pytext)
+		else:
+			end = min(end, len(pytext))
+		selstart, selend = self.ted.WEGetSelection()
+		self.ted.WESetSelection(start, end)
+		self.ted.WESetStyle(WASTEconst.weDoFace | WASTEconst.weDoColor, 
+				(0, 0, 12, (0, 0, 0)))
+		
+		tags = PyFontify.fontify(pytext, start, end)
+		styles = {
+			'string': (WASTEconst.weDoColor, (0, 0, 0, kStringColor)),
+			'keyword': (WASTEconst.weDoFace, (0, 1, 0, (0, 0, 0))),
+			'comment': (WASTEconst.weDoFace | WASTEconst.weDoColor, (0, 0, 0, kCommentColor)),
+			'identifier': (WASTEconst.weDoColor, (0, 0, 0, (0xbfff, 0, 0)))
+		}
+		setselection = self.ted.WESetSelection
+		setstyle = self.ted.WESetStyle
+		for tag, start, end, sublist in tags:
+			setselection(start, end)
+			mode, style = styles[tag]
+			setstyle(mode, style)
+		self.ted.WESetSelection(selstart, selend)
+		self.SetPort()
+		self.ted.WEFeatureFlag(WASTEconst.weFAutoScroll, 1)
+		self.ted.WEFeatureFlag(WASTEconst.weFUndo, 1)
+		self.ted.WEActivate()
+		self.ted.WEFeatureFlag(WASTEconst.weFOutlineHilite, 1)
+		if self.readonly:
+			self.ted.WEFeatureFlag(WASTEconst.weFReadOnly, 1)
 	
 	def domenu_shiftleft(self):
 		self.expandselection()
@@ -786,8 +888,8 @@ class PyEditor(TextEditor):
 		else:
 			self.ted.WEKey(ord(char), modifiers)
 		if char not in Wkeys.navigationkeys:
-			self.changed = 1
-		self.selchanged = 1
+			self.textchanged()
+		self.selectionchanged()
 		self.updatescrollbars()
 	
 	def balanceparens(self, char):

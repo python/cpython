@@ -96,7 +96,7 @@ class Editor(W.Window):
 		W.Window.__init__(self, bounds, self.title, minsize = (330, 120), tabbable = 0)
 		self.setupwidgets(text)
 		if change > 0:
-			self.editgroup.editor.changed = 1
+			self.editgroup.editor.textchanged()
 		
 		if self.settings.has_key("selection"):
 			selstart, selend = self.settings["selection"]
@@ -247,12 +247,12 @@ class Editor(W.Window):
 	def domenu_toggle_run_as_main(self):
 		self.run_as_main = not self.run_as_main
 		self.run_with_interpreter = 0
-		self.editgroup.editor.selchanged = 1
+		self.editgroup.editor.selectionchanged()
 	
 	def domenu_toggle_run_with_interpreter(self):
 		self.run_with_interpreter = not self.run_with_interpreter
 		self.run_as_main = 0
-		self.editgroup.editor.selchanged = 1
+		self.editgroup.editor.selectionchanged()
 	
 	def showbreakpoints(self, onoff):
 		self.editgroup.editor.showbreakpoints(onoff)
@@ -314,7 +314,7 @@ class Editor(W.Window):
 	def domenu_options(self, *args):
 		rv = SaveOptions(self._creator)
 		if rv:
-			self.editgroup.editor.selchanged = 1 # ouch...
+			self.editgroup.editor.selectionchanged() # ouch...
 			self._creator = rv
 	
 	def clicklinefield(self):
@@ -633,6 +633,8 @@ class Editor(W.Window):
 				dir, dirname = os.path.split(dir)
 				modname = dirname + '.' + modname
 			subname = _filename_as_modname(self.title)
+			if subname is None:
+				return self.globals, file, None
 			if modname:
 				if subname == "__init__":
 					# strip trailing period
@@ -949,8 +951,8 @@ class SearchEngine:
 			self.hide()
 			import EasyDialogs
 			from Carbon import Res
-			editor.changed = 1
-			editor.selchanged = 1
+			editor.textchanged()
+			editor.selectionchanged()
 			editor.ted.WEUseText(Res.Resource(Text))
 			editor.ted.WECalText()
 			editor.SetPort()
@@ -1147,6 +1149,9 @@ def execstring(pytext, globals, locals, filename="<string>", debugging=0,
 		raise W.AlertError, detail
 	except (KeyboardInterrupt, BdbQuit):
 		pass
+	except SystemExit, arg:
+		if arg.code:
+			sys.stderr.write("Script exited with status code: %s\n" % repr(arg.code))
 	except:
 		if haveThreading:
 			import continuation
@@ -1268,7 +1273,7 @@ def geteditorprefs():
 		tabsettings = prefs.pyedit.tabsettings
 		windowsize = prefs.pyedit.windowsize
 	except:
-		fontsettings = prefs.pyedit.fontsettings = ("Python-Sans", 0, 9, (0, 0, 0))
+		fontsettings = prefs.pyedit.fontsettings = ("Geneva", 0, 10, (0, 0, 0))
 		tabsettings = prefs.pyedit.tabsettings = (8, 1)
 		windowsize = prefs.pyedit.windowsize = (500, 250)
 		sys.exc_traceback = None
