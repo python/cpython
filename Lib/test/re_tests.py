@@ -548,6 +548,13 @@ tests = [
     ('a(?:b|(c|e){1,2}?|d)+?(.)', 'ace', SUCCEED, 'g1 + g2', 'ce'),
     ('^(.+)?B', 'AB', SUCCEED, 'g1', 'A'),
 
+    # lookbehind: split by : but not if it is escaped by -.
+    ('(?<!-):(.*?)(?<!-):', 'a:bc-:de:f', SUCCEED, 'g1', 'bc-:de' ),
+    # escaping with \ as we know it
+    ('(?<!\\\):(.*?)(?<!\\\):', 'a:bc\\:de:f', SUCCEED, 'g1', 'bc\\:de' ),
+    # terminating with ' and escaping with ? as in edifact
+    ("(?<!\\?)'(.*?)(?<!\\?)'", "a'bc?'de'f", SUCCEED, 'g1', "bc?'de" ), 
+
     # Comments using the (?#...) syntax
 
     ('w(?# comment', 'w', SYNTAX_ERROR),
