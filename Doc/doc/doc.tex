@@ -571,6 +571,26 @@ distribution, to create or maintain whole documents or sections.
       \macro{release} in the preamble.
     \end{macrodesc}
 
+    \begin{macrodesc}{versionadded}{\p{version}}
+      The version of Python which added the described feature to the
+      library or C API.  This is typically added to the end of the
+      first paragraph of the description before any availability
+      notes.  The location should be selected so the explanation makes
+      sense and may vary as needed.
+    \end{macrodesc}
+
+    \begin{macrodesc}{versionchanged}{\op{explanation}\p{version}}
+      The version of Python in which the named feature was changed in
+      some way (new parameters, changed side effects, etc.).
+      \var{explanation} should be a \emph{brief} explanation of the
+      change consisting of a non-capitalized sentence fragment; a
+      period will be appended by the formatting process.
+      This is typically added to the end of the first paragraph of the
+      description before any availability notes and after
+      \macro{versionadded}.  The location should be selected so the
+      explanation makes sense and may vary as needed.
+    \end{macrodesc}
+
 
   \subsection{Module-specific Markup}
 
