@@ -462,8 +462,10 @@ class Misc:
 				_string.join(self._subst_format)))
 			self.tk.call(what + (sequence, cmd))
 			return funcid
-		else:
+		elif sequence:
 			return self.tk.call(what + (sequence,))
+		else:
+			return self.tk.splitlist(self.tk.call(what))
 	def bind(self, sequence=None, func=None, add=None):
 		return self._bind(('bind', self._w), sequence, func, add)
 	def unbind(self, sequence, funcid=None):
@@ -1600,6 +1602,30 @@ class Text(Widget):
 		return self._getints(self.tk.call(self._w, 'dlineinfo', index))
 	def get(self, index1, index2=None):
 		return self.tk.call(self._w, 'get', index1, index2)
+	# (Image commands are new in 8.0)
+	def image_cget(self, index, option):
+		if option[:1] != "-":
+			option = "-" + option
+		if option[-1:] == "_":
+			option = option[:-1]
+		return self.tk.call(self._w, "image", "cget", index, option)
+	def image_configure(self, index, cnf={}, **kw):
+		if not cnf and not kw:
+			cnf = {}
+			for x in self.tk.split(
+				    self.tk.call(
+					self._w, "image", "configure", index)):
+				cnf[x[0][1:]] = (x[0][1:],) + x[1:]
+			return cnf
+		apply(self.tk.call,
+		      (self._w, "image", "configure", index)
+		      + self._options(cnf, kw))
+	def image_create(self, index, cnf={}, **kw):
+		return apply(self.tk.call,
+			     (self._w, "image", "create", index)
+			     + self._options(cnf, kw))
+	def image_names(self):
+		return self.tk.call(self._w, "image", "names")
 	def index(self, index):
 		return self.tk.call(self._w, 'index', index)
 	def insert(self, index, chars, *args):
