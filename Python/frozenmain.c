@@ -77,6 +77,6 @@ Py_FrozenMain(argc, argv)
 	if (inspect && isatty((int)fileno(stdin)))
 		sts = PyRun_AnyFile(stdin, "<stdin>") != 0;
 
-	Py_Exit(sts);
-	/*NOTREACHED*/
+	Py_Finalize();
+	return sts;
 }

@@ -2,6 +2,7 @@
 
 extern int Py_Main();
 
+int
 main(argc, argv)
 	int argc;
 	char **argv;
