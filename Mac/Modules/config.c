@@ -1,5 +1,6 @@
-/***********************************************************
-Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+/* Generated automatically from ../../Modules/config.c.in by makesetup. */
+/* -*- C -*- ***********************************************
+Copyright 1991, 1992, 1993, 1994 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
 
                         All Rights Reserved
@@ -34,6 +35,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "myproto.h"
 #include "mymalloc.h"
 #include "osdefs.h"
+#include "intrcheck.h"
 
 
 #ifndef NO_MAIN
@@ -52,17 +54,9 @@ main(argc, argv)
 	char **argv;
 {
 #ifdef macintosh
-
-#ifndef MPW /* XXX RJW undefined in MPW */
-	wargs(&argc, &argv);
+	/* Macs always support stdwin */
+//	wargs(&argc, &argv);
 #endif
-
-#ifndef MPW_3 /* XXX RJW doesn't seem to work with MPW C 3.0 */
-	extern int std_open_hook();
-	set_open_hook (std_open_hook);
-#endif
-#endif
-
 	argv0 = argv[0];
 	realmain(argc, argv);
 }
@@ -76,6 +70,40 @@ getprogramname()
 #endif
 
 
+/* Python version information */
+
+#include "patchlevel.h"
+
+/* Return the version string.  This is constructed from the official
+   version number (from patchlevel.h), and the current date (if known
+   to the compiler, else a manually inserted date). */
+
+#define VERSION "%s (%s)"
+
+#ifdef __DATE__
+#define DATE __DATE__
+#else
+#define DATE "Aug 17 1994"
+#endif
+
+char *
+getversion()
+{
+	static char version[80];
+	sprintf(version, VERSION, PATCHLEVEL, DATE);
+	return version;
+}
+
+
+/* Return the copyright string.  This is updated manually. */
+
+char *
+getcopyright()
+{
+	return "Copyright 1991-1994 Stichting Mathematisch Centrum, Amsterdam";
+}
+
+
 /* Return the initial python search path.  This is called once from
    initsys() to initialize sys.path.
    The environment variable PYTHONPATH is fetched and the default path
@@ -85,14 +113,14 @@ getprogramname()
 
 #ifndef PYTHONPATH
 #ifdef macintosh
-#define PYTHONPATH ": :Lib :Lib:stdwin :Demo"
+#define PYTHONPATH ": :Lib :Lib:stdwin :Lib:test :Lib:mac"
 #endif /* macintosh */
 #endif /* !PYTHONPATH */
 
 #ifndef PYTHONPATH
-#ifdef MSDOS
+#if defined(MSDOS) || defined(NT)
 #define PYTHONPATH ".;..\\lib;\\python\\lib"
-#endif /* MSDOS */
+#endif /* MSDOS || NT */
 #endif /* !PYTHONPATH */
 
 #ifndef PYTHONPATH
@@ -146,6 +174,7 @@ extern void initfcntl();
 extern void initnis();
 extern void initpwd();
 extern void initgrp();
+extern void initcrypt();
 extern void initselect();
 extern void initsocket();
 extern void initaudioop();
@@ -166,6 +195,10 @@ extern void initsv();
 extern void initfl();
 extern void initthread();
 extern void inittiming();
+extern void initsignal();
+extern void initnew();
+extern void initdl();
+extern void initsyslog();
 
 /* -- ADDMODULE MARKER 1 -- */
 
@@ -187,9 +220,11 @@ struct {
 	{"audioop", initaudioop},
 	{"imageop", initimageop},
 	{"rgbimg", initrgbimg},
-	{"stdwin", initstdwin},
+//	{"stdwin", initstdwin},
 	{"md5", initmd5},
 	{"rotor", initrotor},
+//	{"signal", initsignal},
+	{"new", initnew},
 
 /* -- ADDMODULE MARKER 2 -- */
 

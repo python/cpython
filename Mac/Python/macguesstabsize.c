@@ -10,12 +10,12 @@
 guesstabsize(path)
 	char *path;
 {
-	char s[256];
+	Str255 s;
 	int refnum;
 	Handle h;
 	int tabsize = 0;
 	s[0] = strlen(path);
-	strncpy(s+1, path, s[0]);
+	memcpy(s+1, path, s[0]);
 	refnum = OpenResFile(s);
 /* printf("%s --> refnum=%d\n", path, refnum); */
 	if (refnum == -1)

@@ -1,5 +1,9 @@
 #! /usr/local/bin/python
 
+# Replace \r by \n -- useful after transferring files from the Mac...
+# Run this on UNIX.
+# Usage: crlf.py file ...
+
 import sys
 import os
 import string
@@ -7,8 +11,8 @@ import string
 def main():
 	args = sys.argv[1:]
 	if not args:
-		print 'no files'
-		sys.exit(1)
+		print 'usage:', sys.argv[0], 'file ...'
+		sys.exit(2)
 	for file in args:
 		print file, '...'
 		data = open(file, 'r').read()
