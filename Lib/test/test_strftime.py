@@ -23,8 +23,8 @@ def strftest(now):
     gmt = time.gmtime(now)
     now = time.localtime(now)
 
-    if now[3] < 12: ampm='AM'
-    else: ampm='PM'
+    if now[3] < 12: ampm='(AM|am)'
+    else: ampm='(PM|pm)'
 
     jan1 = time.localtime(time.mktime((now[0], 1, 1) + (0,)*6))
 
