@@ -82,7 +82,7 @@ builtin_dir(self, v)
 	else {
 		if (!is_moduleobject(v)) {
 			err_setstr(TypeError,
-				"dir() argument, must be module or absent");
+				"dir() argument must be module or absent");
 			return NULL;
 		}
 		d = getmoduledict(v);
@@ -96,22 +96,28 @@ builtin_dir(self, v)
 }
 
 static object *
-builtin_divmod(self, v)
+builtin_divmod(self, args)
 	object *self;
-	object *v;
+	object *args;
 {
-	object *x;
-	number_methods *nm;
-	if (v == NULL || !is_tupleobject(v) || gettuplesize(v) != 2) {
+	object *v, *w, *x;
+	if (args == NULL || !is_tupleobject(args) || gettuplesize(args) != 2) {
 		err_setstr(TypeError, "divmod() requires 2 arguments");
 		return NULL;
 	}
-	x = gettupleitem(v, 0);
-	if ((nm = x->ob_type->tp_as_number) == NULL) {
+	v = gettupleitem(args, 0);
+	w = gettupleitem(args, 1);
+	if (v->ob_type->tp_as_number == NULL ||
+				w->ob_type->tp_as_number == NULL) {
 		err_setstr(TypeError, "divmod() requires numeric arguments");
 		return NULL;
 	}
-	return (*nm->nb_divmod)(x, gettupleitem(v, 1));
+	if (coerce(&v, &w) != 0)
+		return NULL;
+	x = (*v->ob_type->tp_as_number->nb_divmod)(v, w);
+	DECREF(v);
+	DECREF(w);
+	return x;
 }
 
 static object *
@@ -362,22 +368,28 @@ builtin_ord(self, v)
 }
 
 static object *
-builtin_pow(self, v)
+builtin_pow(self, args)
 	object *self;
-	object *v;
+	object *args;
 {
-	object *x;
-	number_methods *nm;
-	if (v == NULL || !is_tupleobject(v) || gettuplesize(v) != 2) {
+	object *v, *w, *x;
+	if (args == NULL || !is_tupleobject(args) || gettuplesize(args) != 2) {
 		err_setstr(TypeError, "pow() requires 2 arguments");
 		return NULL;
 	}
-	x = gettupleitem(v, 0);
-	if ((nm = x->ob_type->tp_as_number) == NULL) {
+	v = gettupleitem(args, 0);
+	w = gettupleitem(args, 1);
+	if (v->ob_type->tp_as_number == NULL ||
+				w->ob_type->tp_as_number == NULL) {
 		err_setstr(TypeError, "pow() requires numeric arguments");
 		return NULL;
 	}
-	return (*nm->nb_power)(x, gettupleitem(v, 1));
+	if (coerce(&v, &w) != 0)
+		return NULL;
+	x = (*v->ob_type->tp_as_number->nb_power)(v, w);
+	DECREF(v);
+	DECREF(w);
+	return x;
 }
 
 static object *
@@ -556,4 +568,51 @@ initbuiltin()
 	INCREF(builtin_dict);
 	initerrors();
 	(void) dictinsert(builtin_dict, "None", None);
+}
+
+/* Coerce two numeric types to the "larger" one.
+   Increment the reference count on each argument.
+   Return -1 and raise an exception if no coercion is possible
+   (and then no reference count is incremented).
+   XXX This should be distributed over the various numeric types,
+   XXX but for now I don't see how to implement that.
+   XXX So, for now, if you add a new numeric type,
+   XXX you must add to this function as well. */
+
+int
+coerce(pv, pw)
+	object **pv, **pw;
+{
+	register object *v = *pv;
+	register object *w = *pw;
+	if (v->ob_type == w->ob_type) {
+		INCREF(v);
+		INCREF(w);
+		return 0;
+	}
+	if (v->ob_type->tp_as_number == NULL ||
+					w->ob_type->tp_as_number == NULL) {
+		err_setstr(TypeError, "mixing number and non-number");
+		return -1;
+	}
+	if (is_floatobject(v) || is_floatobject(w)) {
+		v = builtin_float((object *)0, v);
+		w = builtin_float((object *)0, w);
+	}
+	else if (is_longobject(v) || is_longobject(w)) {
+		v = builtin_long((object *)0, v);
+		w = builtin_long((object *)0, w);
+	}
+	else {
+		err_setstr(TypeError, "can't coerce numeric types?!?!?");
+		return -1;
+	}
+	if (v == NULL || w == NULL) {
+		XDECREF(v);
+		XDECREF(w);
+		return -1;
+	}
+	*pv = v;
+	*pw = w;
+	return 0;
 }
