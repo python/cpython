@@ -962,7 +962,7 @@ static PyObject *bozo_obj = NULL;
 static int
 valid_identifier(PyObject *s)
 {
-	char *p;
+	unsigned char *p;
 	int i, n;
 
 	if (!PyString_Check(s)) {
@@ -970,7 +970,7 @@ valid_identifier(PyObject *s)
 				"__slots__ must be strings");
 		return 0;
 	}
-	p = PyString_AS_STRING(s);
+	p = (unsigned char *) PyString_AS_STRING(s);
 	n = PyString_GET_SIZE(s);
 	/* We must reject an empty name.  As a hack, we bump the
 	   length to 1 so that the loop will balk on the trailing \0. */
