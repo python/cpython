@@ -845,6 +845,11 @@ Py_FdIsInteractive:char*:filename::
 
 Py_Finalize:void:::
 
+Py_FindMethod:PyObject*::+1:
+Py_FindMethod:PyMethodDef[]:methods::
+Py_FindMethod:PyObject*:self:+1:
+Py_FindMethod:char*:name::
+
 Py_GetBuildInfoconst:char*:::
 
 Py_GetCompilerconst:char*:::
