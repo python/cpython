@@ -5,7 +5,7 @@
 # Tix Demostration Program
 #
 # This sample program is structured in such a way so that it can be
-# executed from the Tix demo program "widget": it must have a
+# executed from the Tix demo program "tixwidgets.py":  it must have a
 # procedure called "RunSample". It should also have the "if" statment
 # at the end of this file so that it can be run as a standalone
 # program using tixwish.
@@ -19,15 +19,9 @@
 import Tix, os, copy
 from Tkconstants import *
 
-TCL_DONT_WAIT		= 1<<1
-TCL_WINDOW_EVENTS	= 1<<2
-TCL_FILE_EVENTS		= 1<<3
-TCL_TIMER_EVENTS	= 1<<4
-TCL_IDLE_EVENTS		= 1<<5
 TCL_ALL_EVENTS		= 0
 
 def RunSample (root):
-    global dirlist
     dirlist = DemoDirList(root)
     dirlist.mainloop()
     dirlist.destroy()
@@ -38,7 +32,7 @@ class DemoDirList:
         self.exit = -1
         
         z = w.winfo_toplevel()
-        z.wm_title('Tix.DirList Widget Demo')
+        z.wm_protocol("WM_DELETE_WINDOW", lambda self=self: self.quitcmd())
         
         # Create the tixDirList and the tixLabelEntry widgets on the on the top
         # of the dialog box
@@ -98,7 +92,6 @@ class DemoDirList:
                      command = lambda self=self: self.quitcmd () )
 
         box.pack( anchor='s', fill='x', side=BOTTOM)
-        z.wm_protocol("WM_DELETE_WINDOW", lambda self=self: self.quitcmd())
 
     def copy_name (self, dir, ent):
         # This should work as it is the entry's textvariable
@@ -108,24 +101,21 @@ class DemoDirList:
         ent.entry.insert(0, self.dlist_dir)
 
     def okcmd (self):
-        # tixDemo:Status "You have selected the directory" + $self.dlist_dir
-
+        # tixDemo:Status "You have selected the directory" + self.dlist_dir
         self.quitcmd()
 
     def quitcmd (self):
-        # self.root.destroy()
         self.exit = 0
 
     def mainloop(self):
         while self.exit < 0:
             self.root.tk.dooneevent(TCL_ALL_EVENTS)
-        # self.root.tk.dooneevent(TCL_DONT_WAIT)
 
     def destroy (self):
         self.root.destroy()
 
 # This "if" statement makes it possible to run this script file inside or
-# outside of the main demo program "widget".
+# outside of the main demo program "tixwidgets.py".
 #
 if __name__== '__main__' :
     import tkMessageBox, traceback

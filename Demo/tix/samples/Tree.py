@@ -1,11 +1,11 @@
-#!/usr/local/bin/python
+# -*-mode: python; fill-column: 75; tab-width: 8; coding: iso-latin-1-unix -*-
 # 
 # $Id$
 #
 # Tix Demostration Program
 #
 # This sample program is structured in such a way so that it can be
-# executed from the Tix demo program "tixwidgets": it must have a
+# executed from the Tix demo program "tixwidgets.py": it must have a
 # procedure called "RunSample". It should also have the "if" statment
 # at the end of this file so that it can be run as a standalone
 # program.
