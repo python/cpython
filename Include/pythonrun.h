@@ -40,6 +40,9 @@ PERFORMANCE OF THIS SOFTWARE.
 void Py_SetProgramName Py_PROTO((char *));
 char *Py_GetProgramName Py_PROTO((void));
 
+void Py_SetPythonHome Py_PROTO((char *));
+char *Py_GetPythonHome Py_PROTO((void));
+
 void Py_Initialize Py_PROTO((void));
 void Py_Finalize Py_PROTO((void));
 int Py_IsInitialized Py_PROTO((void));
@@ -62,6 +65,7 @@ PyObject *PyRun_File Py_PROTO((FILE *, char *, int, PyObject *, PyObject *));
 PyObject *Py_CompileString Py_PROTO((char *, char *, int));
 
 void PyErr_Print Py_PROTO((void));
+void PyErr_PrintEx Py_PROTO((int));
 
 int Py_AtExit Py_PROTO((void (*func) Py_PROTO((void))));
 
