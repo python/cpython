@@ -31,8 +31,8 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 extern void PyMac_InitApplication();
 
 main() {
-#if defined(__MWERKS__) && defined(USE_TK)
-	PyTk_InitGUSI();
+#if defined(USE_GUSI)
+	GUSIDefaultSetup();
 #endif
 #if defined(__MWERKS__) && defined(__CFM68K__)
 	printf("Hello, world!\n");

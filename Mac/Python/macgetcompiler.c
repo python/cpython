@@ -5,13 +5,18 @@
 #endif
 
 #ifdef __MWERKS__
+#ifdef USE_GUSI
+#define HASGUSI " w/GUSI"
+#else
+#define HASGUSI ""
+#endif
 #ifdef __powerc
-#define COMPILER " [CW PPC]"
+#define COMPILER " [CW PPC" HASGUSI "]"
 #else
 #ifdef __CFM68K__
-#define COMPILER " [CW CFM68K]"
+#define COMPILER " [CW CFM68K" HASGUSI "]"
 #else
-#define COMPILER " [CW 68K]"
+#define COMPILER " [CW 68K" HASGUSI "]"
 #endif
 #endif
 #endif

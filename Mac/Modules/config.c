@@ -122,6 +122,10 @@ extern void initimgop();
 #ifdef USE_TK
 extern void init_tkinter();
 #endif
+#ifdef USE_GUSI
+extern void initsocket();
+extern void initselect();
+#endif
 /* -- ADDMODULE MARKER 1 -- */
 
 extern void PyMarshal_Init();
@@ -203,6 +207,10 @@ struct {
 #endif
 #ifdef USE_TK
 	{"_tkinter",	init_tkinter},
+#endif
+#ifdef USE_GUSI
+	{"socket",	initsocket},
+	{"select",	initselect},
 #endif
 
 /* -- ADDMODULE MARKER 2 -- */
