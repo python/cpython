@@ -2,6 +2,7 @@
 
 def main():
 	import sys
+	sys.stdout = sys.stderr
 	del sys.argv[:1]
 	if not sys.argv:
 		import macfs
@@ -16,16 +17,21 @@ def main():
 	except SystemExit, msg:
 		if msg:
 			message("Exit status: %s" % str(msg))
-		sys.exit(msg)
+		print "exit", `msg`
+		#sys.exit(msg)
 	except:
 		etype = sys.exc_type
 		if hasattr(etype, "__name__"): etype = etype.__name__
 		message("%s: %s" % (etype, sys.exc_value))
-		sys.exit(1)
+		print "exit 1"
+		#sys.exit(1)
 
-def message(str = "Hello, world!", id = 129):
+def message(str = "Hello, world!", id = 256):
 	import Dlg
 	d = Dlg.GetNewDialog(id, -1)
+	if not d:
+		print str
+		return
 	tp, h, rect = d.GetDItem(2)
 	Dlg.SetIText(h, str)
 	while 1:
