@@ -144,6 +144,19 @@ This means that logger instances never need to be passed between different
 parts of an application.
 \end{funcdesc}
 
+\begin{funcdesc}{getLoggerClass}{}
+Return either the standard \class{Logger} class, or the last class passed to
+\function{setLoggerClass()}. This function may be called from within a new
+class definition, to ensure that installing a customised \class{Logger} class
+will not undo customisations already applied by other code. For example:
+
+\begin{verbatim}
+ class MyLogger(logging.getLoggerClass()):
+     # ... override behaviour here
+\end{verbatim}
+
+\end{funcdesc}
+
 \begin{funcdesc}{debug}{msg\optional{, *args\optional{, **kwargs}}}
 Logs a message with level \constant{DEBUG} on the root logger.
 The \var{msg} is the message format string, and the \var{args} are the
