@@ -279,6 +279,22 @@ source code of the innermost frame.")
   :type 'function
   :group 'python)
 
+;; Not customizable
+(defvar py-master-file nil
+  "If non-nil, execute the named file instead of the buffer's file.
+The intent is to allow someone to set this variable file local
+variable section, e.g.:
+
+    # Local Variables:
+    # py-master-file: \"master.py\"
+    # End:
+
+so that hitting \\[py-execute-buffer] in that buffer executes the
+named master file instead of the buffer's file.  Note that if the file
+name has a relative path, the `default-directory' for the file is
+prepended to come up with a buffer name.")
+(make-variable-buffer-local 'py-master-file)
+
 
 
 ;; ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1205,12 +1221,20 @@ is inserted at the end.  See also the command `py-clear-queue'."
 ;; Code execution command
 (defun py-execute-buffer (&optional async)
   "Send the contents of the buffer to a Python interpreter.
+If the file local variable `py-master-file' is non-nil, execute the
+named file instead of the buffer's file.
+
 If there is a *Python* process buffer it is used.  If a clipping
 restriction is in effect, only the accessible portion of the buffer is
 sent.  A trailing newline will be supplied if needed.
 
 See the `\\[py-execute-region]' docs for an account of some subtleties."
   (interactive "P")
+  (if py-master-file
+      (let* ((filename (expand-file-name py-master-file))
+	     (buffer (or (get-file-buffer filename)
+			 (find-file-noselect filename))))
+	(set-buffer buffer)))
   (py-execute-region (point-min) (point-max) async))
 
 
