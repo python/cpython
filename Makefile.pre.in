@@ -106,6 +106,7 @@ LIBP=		$(LIBDIR)/python$(VERSION)
 # Symbols used for using shared libraries
 SO=		@SO@
 LDSHARED=	@LDSHARED@
+BLDSHARED=	@BLDSHARED@
 DESTSHARED=	$(BINLIBDEST)/lib-dynload
 
 # Executable suffix (.exe on Windows and Mac OS X)
@@ -329,7 +330,7 @@ libpython$(VERSION).so:	$(LIBRARY)
 	    /bin/rm -rf ./dgux \
 	    ;; \
 	beos) \
-	    $(srcdir)/BeOS/ar-fake so $(LIBRARY) $@ \
+	    $(AR) so $(LIBRARY) $@ \
 	    ;; \
 	esac
 
@@ -690,15 +691,13 @@ libainstall:	all
 	fi
 	@case "$(MACHDEP)" in beos*) \
 		echo; echo "Installing support files for building shared extension modules on BeOS:"; \
-		$(INSTALL_DATA) BeOS/README $(LIBPL)/README;	\
+		$(INSTALL_DATA) Misc/BeOS-NOTES $(LIBPL)/README;	\
 		echo; echo "$(LIBPL)/README";			\
-		$(INSTALL_DATA) BeOS/README.readline-2.2 $(LIBPL)/README.readline-2.2; \
-		echo "$(LIBPL)/README.readline-2.2";		\
-		$(INSTALL_PROGRAM) BeOS/ar-fake $(LIBPL)/ar-fake; \
-		echo "$(LIBPL)/ar-fake";			\
-		$(INSTALL_PROGRAM) BeOS/linkmodule $(LIBPL)/linkmodule; \
-		echo "$(LIBPL)/linkmodule";			\
-		echo; echo "See BeOS/README for details.";	\
+		$(INSTALL_PROGRAM) Modules/ar_beos $(LIBPL)/ar_beos; \
+		echo "$(LIBPL)/ar_beos";			\
+		$(INSTALL_PROGRAM) Modules/ld_so_beos $(LIBPL)/ld_so_beos; \
+		echo "$(LIBPL)/ld_so_beos";			\
+		echo; echo "See Misc/BeOS-NOTES for details.";	\
 		;; \
 	esac
 
