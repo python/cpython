@@ -578,10 +578,21 @@ maybe_pyc_file(FILE *fp, char* filename, char* ext, int closeit)
 		   be read as they are on disk. */
 		unsigned int halfmagic = PyImport_GetMagicNumber() & 0xFFFF;
 		unsigned char buf[2];
-		if (fread(buf, 1, 2, fp) == 2
-		    && ((unsigned int)buf[1]<<8 | buf[0]) == halfmagic)
-			return 1;
-		fseek(fp, 0, SEEK_SET);
+		/* Mess:  In case of -x, the stream is NOT at its start now,
+		   and ungetc() was used to push back the first newline,
+		   which makes the current stream position formally undefined
+		   until that newline is read back.  So first we getc(), so
+		   that ftell() is well-defined.
+		*/
+		const int maybepushedback = getc(fp);
+		const long currentpos = ftell(fp);
+		int ispyc = 0;
+		rewind(fp);
+		ispyc = fread(buf, 1, 2, fp) == 2 &&
+		        ((unsigned int)buf[1]<<8 | buf[0]) == halfmagic;
+		fseek(fp, currentpos, SEEK_SET);
+		ungetc(maybepushedback, fp);
+		return ispyc;
 	}
 	return 0;
 } 
