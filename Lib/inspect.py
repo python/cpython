@@ -380,7 +380,9 @@ def getmodule(object):
         return sys.modules.get(modulesbyfile[file])
     for module in sys.modules.values():
         if hasattr(module, '__file__'):
-            modulesbyfile[getabsfile(module)] = module.__name__
+            modulesbyfile[
+                os.path.realpath(
+                        getabsfile(module))] = module.__name__
     if file in modulesbyfile:
         return sys.modules.get(modulesbyfile[file])
     main = sys.modules['__main__']
