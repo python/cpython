@@ -2535,12 +2535,44 @@ slice_index(v, pi)
 {
 	if (v != NULL) {
 		long x;
-		if (!PyInt_Check(v)) {
+		if (PyInt_Check(v)) {
+			x = PyInt_AsLong(v);
+		} else if (PyLong_Check(v)) {
+			x = PyLong_AsLong(v);
+			if (x==-1 && PyErr_Occurred()) {
+				PyObject *long_zero;
+
+				if (!PyErr_ExceptionMatches( PyExc_OverflowError ) ) {
+					/* It's not an overflow error, so just 
+					   signal an error */
+					return -1;
+				}
+
+				/* It's an overflow error, so we need to 
+				   check the sign of the long integer, 
+				   set the value to INT_MAX or 0, and clear 
+				   the error. */
+
+				/* Create a long integer with a value of 0 */
+				long_zero = PyLong_FromLong( 0L );
+				if (long_zero == NULL) return -1;
+
+				/* Check sign */
+				if (PyObject_Compare(long_zero, v) < 0)
+					x = INT_MAX;
+				else
+					x = 0;
+				
+				/* Free the long integer we created, and clear the
+				   OverflowError */
+				Py_DECREF(long_zero);
+				PyErr_Clear();
+			}
+		} else {
 			PyErr_SetString(PyExc_TypeError,
 					"slice index must be int");
 			return -1;
 		}
-		x = PyInt_AsLong(v);
 		/* Truncate -- very long indices are truncated anyway */
 		if (x > INT_MAX)
 			x = INT_MAX;
