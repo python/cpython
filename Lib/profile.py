@@ -40,6 +40,7 @@ import os
 import time
 import marshal
 
+__all__ = ["run","help","Profile"]
 
 # Sample timer for use with
 #i_count = 0

@@ -4,6 +4,8 @@
 
 # (Dec 1991 version).
 
+__all__ = ["encode","decode"]
+
 ESCAPE = '='
 MAXLINESIZE = 76
 HEX = '0123456789ABCDEF'

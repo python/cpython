@@ -41,6 +41,8 @@ try:
 except ImportError:
     from StringIO import StringIO
 
+__all__ = ["pprint","pformat","isreadable","isrecursive","saferepr",
+           "PrettyPrinter"]
 
 def pprint(object, stream=None):
     """Pretty-print a Python object to a stream [default is sys.sydout]."""

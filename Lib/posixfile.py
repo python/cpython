@@ -53,6 +53,8 @@ f.lock(mode [, len [, start [, whence]]])
               query only
 """
 
+__all__ = ["open","fileopen","SEEK_SET","SEEK_CUR","SEEK_END"]
+
 class _posixfile_:
     """File wrapper class that provides extra POSIX file routines."""
 
