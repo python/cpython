@@ -75,11 +75,13 @@ PyString_FromStringAndSize(const char *str, int size)
 	if (size == 0) {
 		PyObject *t = (PyObject *)op;
 		PyString_InternInPlace(&t);
+		op = (PyStringObject *)t;
 		nullstring = op;
 		Py_INCREF(op);
 	} else if (size == 1 && str != NULL) {
 		PyObject *t = (PyObject *)op;
 		PyString_InternInPlace(&t);
+		op = (PyStringObject *)t;
 		characters[*str & UCHAR_MAX] = op;
 		Py_INCREF(op);
 	}
@@ -131,11 +133,13 @@ PyString_FromString(const char *str)
 	if (size == 0) {
 		PyObject *t = (PyObject *)op;
 		PyString_InternInPlace(&t);
+		op = (PyStringObject *)t;
 		nullstring = op;
 		Py_INCREF(op);
 	} else if (size == 1) {
 		PyObject *t = (PyObject *)op;
 		PyString_InternInPlace(&t);
+		op = (PyStringObject *)t;
 		characters[*str & UCHAR_MAX] = op;
 		Py_INCREF(op);
 	}
