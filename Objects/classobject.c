@@ -353,10 +353,10 @@ newinstanceobject(class, arg, kw)
 	init = instance_getattr1(inst, initstr);
 	if (init == NULL) {
 		err_clear();
-		if (arg != NULL && (!is_tupleobject(arg) ||
-				    gettuplesize(arg) != 0)
-		    || kw != NULL && (!is_dictobject(kw) ||
-				      getdictsize(kw) != 0)) {
+		if ((arg != NULL && (!is_tupleobject(arg) ||
+				     gettuplesize(arg) != 0))
+		    || (kw != NULL && (!is_dictobject(kw) ||
+				      getdictsize(kw) != 0))) {
 			err_setstr(TypeError,
 				   "this constructor takes no arguments");
 			DECREF(inst);
@@ -411,19 +411,32 @@ instance_dealloc(inst)
 		delstr = newstringobject("__del__");
 	if ((del = instance_getattr1(inst, delstr)) != NULL) {
 		object *res = call_object(del, (object *)NULL);
-		DECREF(del);
 		if (res == NULL) {
-			PyObject *f = sysget("stderr");
+			object *f, *t, *v, *tb;
+ 			err_fetch(&t, &v, &tb);
+			f = sysget("stderr");
 			err_clear();
 			if (f != NULL) {
-				writestring("exception in ", f);
-				writestring(PyString_AsString(
-					inst->in_class->cl_name), f);
-				writestring(".__del__() ignored\n", f);
+				writestring("Exception ", f);
+				if (t) {
+					writeobject(t, f, Py_PRINT_RAW);
+					if (v && v != None) {
+						writestring(": ", f);
+						writeobject(v, f, 0);
+					}
+				}
+				writestring(" in ", f);
+				writeobject(del, f, 0);
+				writestring(" ignored\n", f);
+				err_clear(); /* Just in case */
 			}
+			Py_XDECREF(t);
+			Py_XDECREF(v);
+			Py_XDECREF(tb);
 		}
 		else
 			DECREF(res);
+		DECREF(del);
 	}
 	/* Restore the saved exception and undo the temporary revival */
 	err_restore(error_type, error_value, error_traceback);
@@ -632,7 +645,6 @@ instance_compare(inst, other)
 	long outcome;
 	result = instance_compare1(inst, other);
 	if (result == NULL || !is_intobject(result)) {
-	error:
 		err_clear();
 		return (inst < other) ? -1 : 1;
 	}
