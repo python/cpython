@@ -1,6 +1,6 @@
+#include "Python.h"
 #include <ctype.h>
 
-#include "Python.h"
 #include "compile.h"
 #include "frameobject.h"
 #ifdef HAVE_EXPAT_H
