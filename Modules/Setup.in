@@ -237,6 +237,10 @@ md5 md5module.c md5c.c
 # components such as dialogs and buttons using SGI's GL and FM
 # libraries.  You must ftp the FORMS library separately from
 # ftp://ftp.cs.ruu.nl/pub/SGI/FORMS.  It was tested with FORMS 2.2a.
+# NOTE: if you want to be able to use FORMS and curses simultaneously
+# (or both link them statically into the same binary), you must
+# compile all of FORMS with the cc option "-Dclear=__GLclear".
+
 # The FORMS variable must point to the FORMS subdirectory of the forms
 # toplevel directory:
 
