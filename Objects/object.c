@@ -192,7 +192,7 @@ PyObject_Print(PyObject *op, FILE *fp, int flags)
 }
 
 /* For debugging convenience.  See Misc/gdbinit for some useful gdb hooks */
-void _PyObject_Dump(PyObject* op) 
+void _PyObject_Dump(PyObject* op)
 {
 	if (op == NULL)
 		fprintf(stderr, "NULL\n");
@@ -256,7 +256,7 @@ PyObject *
 PyObject_Str(PyObject *v)
 {
 	PyObject *res;
-	
+
 	if (v == NULL)
 		return PyString_FromString("<NULL>");
 	if (PyString_CheckExact(v)) {
@@ -295,7 +295,7 @@ PyObject *
 PyObject_Unicode(PyObject *v)
 {
 	PyObject *res;
-	
+
 	if (v == NULL)
 		res = PyString_FromString("<NULL>");
 	if (PyUnicode_CheckExact(v)) {
@@ -699,9 +699,9 @@ get_inprogress_dict(void)
 	if (tstate_dict == NULL) {
 		PyErr_BadInternalCall();
 		return NULL;
-	} 
+	}
 
-	inprogress = PyDict_GetItem(tstate_dict, key); 
+	inprogress = PyDict_GetItem(tstate_dict, key);
 	if (inprogress == NULL) {
 		inprogress = PyDict_New();
 		if (inprogress == NULL)
@@ -848,7 +848,7 @@ convert_3way_to_object(int op, int c)
 	Py_INCREF(result);
 	return result;
 }
-	
+
 /* We want a rich comparison but don't have one.  Try a 3-way cmp instead.
    Return
    NULL      if error
@@ -1063,13 +1063,13 @@ _Py_HashPointer(void *p)
 	/* convert to a Python long and hash that */
 	PyObject* longobj;
 	long x;
-	
+
 	if ((longobj = PyLong_FromVoidPtr(p)) == NULL) {
 		x = -1;
 		goto finally;
 	}
 	x = PyObject_Hash(longobj);
-	
+
 finally:
 	Py_XDECREF(longobj);
 	return x;
@@ -1195,7 +1195,7 @@ PyObject_SetAttr(PyObject *v, PyObject *name, PyObject *value)
 			if (name == NULL)
 				return -1;
 		}
-		else 
+		else
 #endif
 		{
 			PyErr_SetString(PyExc_TypeError,
@@ -1285,7 +1285,7 @@ PyObject_GenericGetAttr(PyObject *obj, PyObject *name)
 			if (name == NULL)
 				return NULL;
 		}
-		else 
+		else
 #endif
 		{
 			PyErr_SetString(PyExc_TypeError,
@@ -1361,7 +1361,7 @@ PyObject_GenericSetAttr(PyObject *obj, PyObject *name, PyObject *value)
 			if (name == NULL)
 				return -1;
 		}
-		else 
+		else
 #endif
 		{
 			PyErr_SetString(PyExc_TypeError,
@@ -1450,7 +1450,7 @@ PyObject_IsTrue(PyObject *v)
 	return (res > 0) ? 1 : res;
 }
 
-/* equivalent of 'not v' 
+/* equivalent of 'not v'
    Return -1 if an error occurred */
 
 int
@@ -1758,7 +1758,7 @@ none_repr(PyObject *op)
 
 /* ARGUSED */
 static void
-none_dealloc(PyObject* ignore) 
+none_dealloc(PyObject* ignore)
 {
 	/* This should never get called, but we also don't want to SEGV if
 	 * we accidently decref None out of existance.
@@ -2042,62 +2042,52 @@ Py_ReprLeave(PyObject *obj)
 	}
 }
 
-/*
-  trashcan
-  CT 2k0130
-  non-recursively destroy nested objects
+/* Trashcan support. */
 
-  CT 2k0223
-  everything is now done in a macro.
-
-  CT 2k0305
-  modified to use functions, after Tim Peter's suggestion.
-
-  CT 2k0309
-  modified to restore a possible error.
-
-  CT 2k0325
-  added better safe than sorry check for threadstate
-
-  CT 2k0422
-  complete rewrite. We now build a chain via ob_type
-  and save the limited number of types in ob_refcnt.
-  This is perfect since we don't need any memory.
-  A patch for free-threading would need just a lock.
-*/
-
-#define Py_TRASHCAN_TUPLE       1
-#define Py_TRASHCAN_LIST        2
-#define Py_TRASHCAN_DICT        3
-#define Py_TRASHCAN_FRAME       4
-#define Py_TRASHCAN_TRACEBACK   5
-/* extend here if other objects want protection */
-
+/* Current call-stack depth of tp_dealloc calls. */
 int _PyTrash_delete_nesting = 0;
 
-PyObject * _PyTrash_delete_later = NULL;
+/* List of objects that still need to be cleaned up, singly linked via their
+ * gc headers' gc_prev pointers.
+ */
+PyObject *_PyTrash_delete_later = NULL;
 
+/* Add op to the _PyTrash_delete_later list.  Called when the current
+ * call-stack depth gets large.  op must be a currently untracked gc'ed
+ * object, with refcount 0.  Py_DECREF must already have been called on it.
+ */
 void
 _PyTrash_deposit_object(PyObject *op)
 {
-	assert (_Py_AS_GC(op)->gc.gc_next == NULL);
+	assert(PyObject_IS_GC(op));
+	assert(_Py_AS_GC(op)->gc.gc_refs == _PyGC_REFS_UNTRACKED);
+	assert(op->ob_refcnt == 0);
 	_Py_AS_GC(op)->gc.gc_prev = (PyGC_Head *)_PyTrash_delete_later;
 	_PyTrash_delete_later = op;
 }
 
+/* Dealloccate all the objects in the _PyTrash_delete_later list.  Called when
+ * the call-stack unwinds again.
+ */
 void
 _PyTrash_destroy_chain(void)
 {
 	while (_PyTrash_delete_later) {
-		PyObject *shredder = _PyTrash_delete_later;
+		PyObject *op = _PyTrash_delete_later;
+		destructor dealloc = op->ob_type->tp_dealloc;
 
 		_PyTrash_delete_later =
-			(PyObject*) _Py_AS_GC(shredder)->gc.gc_prev;
+			(PyObject*) _Py_AS_GC(op)->gc.gc_prev;
 
-		_Py_NewReference(shredder);
-
+		/* Call the deallocator directly.  This used to try to
+		 * fool Py_DECREF into calling it indirectly, but
+		 * Py_DECREF was already called on this object, and in
+		 * assorted non-release builds calling Py_DECREF again ends
+		 * up distorting allocation statistics.
+		 */
+		assert(op->ob_refcnt == 0);
 		++_PyTrash_delete_nesting;
-		Py_DECREF(shredder);
+		(*dealloc)(op);
 		--_PyTrash_delete_nesting;
 	}
 }
