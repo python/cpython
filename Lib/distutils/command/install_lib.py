@@ -59,21 +59,16 @@ class install_lib (Command):
             from py_compile import compile
 
             for f in outfiles:
-                # XXX can't assume this filename mapping! (what if
-                # we're running under "python -O"?)
-
                 # only compile the file if it is actually a .py file
                 if f[-3:] == '.py':
-                    out_fn = string.replace (f, '.py', '.pyc')
-                    
+                    out_fn = f + (__debug__ and "c" or "o")
+                    compile_msg = "byte-compiling %s to %s" % \
+                                  (f, os.path.basename (out_fn))
+                    skip_msg = "byte-compilation of %s skipped" % f
                     self.make_file (f, out_fn, compile, (f,),
-                                    "byte-compiling %s" % f,
-                                    "byte-compilation of %s skipped" % f)
-                    
-        # XXX ignore self.optimize for now, since we don't really know if
-        # we're compiling optimally or not, and couldn't pick what to do
-        # even if we did know.  ;-(
-
+                                    compile_msg, skip_msg)
+                                    
+                                    
     # run ()
 
 
