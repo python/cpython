@@ -40,8 +40,10 @@ PyInterpreterState_New(void)
 		interp->checkinterval = 10;
 		interp->tstate_head = NULL;
 
+		HEAD_LOCK();
 		interp->next = interp_head;
 		interp_head = interp;
+		HEAD_UNLOCK();
 	}
 
 	return interp;
@@ -79,6 +81,7 @@ PyInterpreterState_Delete(PyInterpreterState *interp)
 {
 	PyInterpreterState **p;
 	zapthreads(interp);
+	HEAD_LOCK();
 	for (p = &interp_head; ; p = &(*p)->next) {
 		if (*p == NULL)
 			Py_FatalError(
@@ -89,6 +92,7 @@ PyInterpreterState_Delete(PyInterpreterState *interp)
 	if (interp->tstate_head != NULL)
 		Py_FatalError("PyInterpreterState_Delete: remaining threads");
 	*p = interp->next;
+	HEAD_UNLOCK();
 	PyMem_DEL(interp);
 }
 
