@@ -1872,3 +1872,12 @@ item: Custom Dialog Set
 end
 item: End Block
 end
+item: New Event
+  Name=Cancel
+end
+item: Remark
+  Text=This include script supports a rollback to preinstallation state if the user chooses to cancel before the installation is complete.
+end
+item: Include Script
+  Pathname=%_WISE_%\INCLUDE\rollback.wse
+end
