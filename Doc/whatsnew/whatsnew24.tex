@@ -273,12 +273,13 @@ yellow 5
   method.  Previously, the pre-sizing optimization only applied to
   sequence arguments.
 
-\item The unbound methods \method{list.__getitem__()},
+\item The methods \method{list.__getitem__()},
   \method{dict.__getitem__()}, and \method{dict.__contains__()} are
   are now implemented as \class{method_descriptor} objects rather
   than \class{wrapper_descriptor} objects.  This form of optimized
   access doubles their performance and makes them more suitable for
-  use as arguments to functionals:  \samp{map(dict.__contains__, mydict)}.
+  use as arguments to functionals:
+  \samp{map(mydict.__getitem__, keylist)}.
 
 \end{itemize}
 
