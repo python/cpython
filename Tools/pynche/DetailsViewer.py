@@ -85,42 +85,45 @@ class DetailsViewer:
         frame = self.__frame = Frame(root)
         frame.pack(expand=YES, fill=X)
         self.__l1 = Label(frame, text='Move Sliders:')
-        self.__l1.grid(row=1, column=0, columnspan=3, sticky=E)
+        self.__l1.grid(row=1, column=0, sticky=E)
         self.__rvar = IntVar()
         self.__rvar.set(4)
         self.__radio1 = Checkbutton(frame, text='Red',
                                     variable=self.__rvar,
                                     command=self.__effect,
                                     onvalue=4, offvalue=0)
-        self.__radio1.grid(row=1, column=3, columnspan=3, sticky=W)
+        self.__radio1.grid(row=1, column=1, sticky=W)
         self.__gvar = IntVar()
         self.__gvar.set(2)
         self.__radio2 = Checkbutton(frame, text='Green',
                                     variable=self.__gvar,
                                     command=self.__effect,
                                     onvalue=2, offvalue=0)
-        self.__radio2.grid(row=2, column=3, columnspan=3, sticky=W)
+        self.__radio2.grid(row=2, column=1, sticky=W)
         self.__bvar = IntVar()
         self.__bvar.set(1)
         self.__radio3 = Checkbutton(frame, text='Blue',
                                     variable=self.__bvar,
                                     command=self.__effect,
                                     onvalue=1, offvalue=0)
-        self.__radio3.grid(row=3, column=3, columnspan=3, sticky=W)
+        self.__radio3.grid(row=3, column=1, sticky=W)
         self.__l2 = Label(frame)
-        self.__l2.grid(row=4, column=3, columnspan=3, sticky=W)
+        self.__l2.grid(row=4, column=1, sticky=W)
         self.__effect()
         #
         # Boundary behavior
         self.__l3 = Label(frame, text='At boundary:')
-        self.__l3.grid(row=5, column=0, columnspan=3, sticky=E)
+        self.__l3.grid(row=5, column=0, sticky=E)
         self.__boundvar = StringVar()
         self.__boundvar.set(STOP)
         self.__omenu = OptionMenu(frame, self.__boundvar,
                                   STOP, WRAP, RATIO, GRAV)
-        self.__omenu.grid(row=5, column=3, columnspan=3, sticky=W)
+        self.__omenu.grid(row=5, column=1, sticky=W)
+        self.__omenu.configure(width=17)
         #
         # Buttons
+        frame = self.__btnframe = Frame(frame)
+        frame.grid(row=0, column=0, columnspan=2, sticky='EW')
         self.__down25 = Button(frame, text='-25',
                                command=self.__minus25)
         self.__down10 = Button(frame, text='-10',
@@ -133,12 +136,12 @@ class DetailsViewer:
                              command=self.__plus10)
         self.__up25 = Button(frame, text='+25',
                              command=self.__plus25)
-        self.__down25.grid(row=0, column=0)
-        self.__down10.grid(row=0, column=1)
-        self.__down1.grid(row=0, column=2)
-        self.__up1.grid(row=0, column=3)
-        self.__up10.grid(row=0, column=4)
-        self.__up25.grid(row=0, column=5)
+        self.__down25.pack(expand=YES, fill=X, side=LEFT)
+        self.__down10.pack(expand=YES, fill=X, side=LEFT)
+        self.__down1.pack(expand=YES, fill=X, side=LEFT)
+        self.__up1.pack(expand=YES, fill=X, side=LEFT)
+        self.__up10.pack(expand=YES, fill=X, side=LEFT)
+        self.__up25.pack(expand=YES, fill=X, side=LEFT)
 
     def __effect(self, event=None):
         tie = self.__rvar.get() + self.__gvar.get() + self.__bvar.get()
