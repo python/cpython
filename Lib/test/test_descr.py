@@ -2,6 +2,11 @@
 
 from test_support import verify, vereq, verbose, TestFailed, TESTFN
 from copy import deepcopy
+import warnings
+
+warnings.filterwarnings("ignore",
+         r'complex divmod\(\), // and % are deprecated$',
+         DeprecationWarning, r'(<string>|test_descr)$')
 
 def veris(a, b):
     if a is not b:
