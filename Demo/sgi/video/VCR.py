@@ -5,6 +5,7 @@ import sys
 import struct
 import select
 import posix
+import time
 
 DEVICE='/dev/ttyd2'
 
@@ -75,20 +76,8 @@ def initline(name):
 	dummy = fcntl.ioctl(fd, IOCTL.TCSETA, arg)
 	return fp, ofp
 
-#ifp, ofp = initline('/dev/ttyd2')
-#while 1:
-#	print 'GO'
-#	inset, d, d = select.select([sys.stdin, ifp], [], [])
-#	if sys.stdin in inset:
-#		cmd = eval(sys.stdin.readline(100))
-#		print 'CMD:', `cmd`
-#		if cmd:
-#			ofp.write(cmd)
-#			ofp.flush()
-#	if ifp in inset:
-#		data = ifp.read(1)
-#		print 'LEN', len(data), 'DATA', `data`
-
+#
+#
 error = 'VCR.error'
 
 # Commands/replies:
@@ -116,12 +105,17 @@ STILL='\x4f'
 STEP_FWD ='\x2b'    # Was: '\xad'
 FM_SELECT=EXP_8 + '\xc8'
 FM_STILL=EXP_8 + '\xcd'
+PREVIEW=EXP_7 + '\x9d'
+REVIEW=EXP_7 + '\x9e'
 DM_OFF=EXP_8 + '\xc9'
 DM_SET=EXP_8 + '\xc4'
 FWD_SHUTTLE='\xb5'
 REV_SHUTTLE='\xb6'
 EM_SELECT=EXP_8 + '\xc0'
 N_FRAME_REC=EXP_8 + '\x92'
+SEARCH_PREROLL=EXP_8 + '\x90'
+EDIT_PB_STANDBY=EXP_8 + '\x96'
+EDIT_PLAY=EXP_8 + '\x98'
 
 IN_ENTRY=EXP_7 + '\x90'
 IN_ENTRY_RESET=EXP_7 + '\x91'
@@ -137,12 +131,54 @@ OUT_ENTRY_INC=EXP_7 + '\x96'
 OUT_ENTRY_DEC=EXP_7 + '\x98'
 OUT_ENTRY_SENSE=EXP_7 + '\x9b'
 
+MUTE_AUDIO = '\x24'
+MUTE_AUDIO_OFF = '\x25'
+MUTE_VIDEO = '\x26'
+MUTE_VIDEO_OFF = '\x27'
+MUTE_AV = EXP_7 + '\xc6'
+MUTE_AV_OFF = EXP_7 + '\xc7'
+
 DEBUG=0
 
 class VCR:
 	def init(self):
 		self.ifp, self.ofp = initline(DEVICE)
+		self.busy_cmd = None
+		self.async = 0
+		self.cb = None
+		self.cb_arg = None
 		return self
+
+	def _check(self):
+		if self.busy_cmd:
+			raise error, 'Another command active: '+self.busy_cmd
+
+	def _endlongcmd(self, name):
+		if not self.async:
+			self.waitready()
+			return 1
+		self.busy_cmd = name
+		return 'VCR BUSY'
+
+	def fileno(self):
+		return self.ifp.fileno()
+
+	def setasync(self, async):
+		self.async = async
+
+	def setcallback(self, cb, arg):
+		self.setasync(1)
+		self.cb = cb
+		self.cb_arg = arg
+
+	def poll(self):
+		if not self.async:
+			raise error, 'Can only call poll() in async mode'
+		if not self.busy_cmd:
+			return
+		if self.testready():
+			if self.cb:
+				apply(self.cb, self.cb_arg)
 
 	def _cmd(self, cmd):
 		if DEBUG:
@@ -153,12 +189,16 @@ class VCR:
 	def _waitdata(self, len, tout):
 		rep = ''
 		while len > 0:
-			ready, d1, d2 = select.select([self.ifp], [], [], tout)
+			if tout == None:
+				ready, d1, d2 = select.select( \
+					  [self.ifp], [], [])
+			else:
+				ready, d1, d2 = select.select( \
+					  [self.ifp], [], [], tout)
 			if ready == []:
 ##				if rep:
 ##					print 'FLUSHED:', `rep`
 				return None
-			# XXXX Niet goed: er is meer gebufferd!
 			data = self.ifp.read(1)
 			if DEBUG:
 				print '<<<',`data`
@@ -219,7 +259,12 @@ class VCR:
 			if not ok:
 				raise error, 'Error while transmitting number'
 
-	def wait(self):
+	def initvcr(self, *optarg):
+		timeout = None
+		if optarg <> ():
+			timeout = optarg[0]
+			starttime = time.time()
+		self.busy_cmd = None
 		self._iflush()
 		while 1:
 ##			print 'SENDCL'
@@ -227,6 +272,10 @@ class VCR:
 			rep = self._waitdata(1, 2)
 ##			print `rep`
 			if rep in ( None, CL, NAK ):
+				if timeout:
+					if time.time() - starttime > timeout:
+						raise error, \
+							  'No reply from VCR'
 				continue
 			break
 		if rep <> ACK:
@@ -234,12 +283,23 @@ class VCR:
 		dummy = self.simplecmd(CTRL_ENABLE)
 
 	def waitready(self):
-		rep = self._waitdata(1, 60)
+		rep = self._waitdata(1, None)
 		if rep == None:
-			raise error, 'Command not finished in one minute'
+			raise error, 'Unexpected None reply from waitdata'
 		if rep not in  (COMPLETION, ACK):
 			self._iflush()
 			raise error, 'Unexpected waitready reply:' + `rep`
+		self.busy_cmd = None
+
+	def testready(self):
+		rep = self._waitdata(1, 0)
+		if rep == None:
+			return 0
+		if rep not in  (COMPLETION, ACK):
+			self._iflush()
+			raise error, 'Unexpected waitready reply:' + `rep`
+		self.busy_cmd = None
+		return 1
 
 	def play(self): return self.simplecmd(PLAY)
 	def stop(self): return self.simplecmd(STOP)
@@ -258,11 +318,11 @@ class VCR:
 		self._number(f, 2)
 		if not self.simplecmd(ENTER):
 			return 0
-		self.waitready()
-		return 1
+		return self._endlongcmd('goto')
 
 	# XXXX TC_SENSE doesn't seem to work
 	def faulty_where(self):
+		self._check()
 		self._cmd(TC_SENSE)
 		h = self._getnumber(2)
 		m = self._getnumber(2)
@@ -274,6 +334,7 @@ class VCR:
 		return self.addr2tc(self.sense())
 
 	def sense(self):
+		self._check()
 		self._cmd(ADDR_SENSE)
 		num = self._getnumber(5)
 		return num
@@ -291,6 +352,7 @@ class VCR:
 		return ((h*60 + m)*60 + s)*25 + f
 
 	def fmmode(self, mode):
+		self._check()
 		if mode == 'off':
 			arg = 0
 		elif mode == 'buffer':
@@ -306,7 +368,21 @@ class VCR:
 			return 0
 		return 1
 
+	def mute(self, mode, value):
+		self._check()
+		if mode == 'audio':
+			cmds = (MUTE_AUDIO_OFF, MUTE_AUDIO)
+		elif mode == 'video':
+			cmds = (MUTE_VIDEO_OFF, MUTE_VIDEO)
+		elif mode == 'av':
+			cmds = (MUTE_AV_OFF, MUTE_AV)
+		else:
+			raise error, 'mute type should be audio, video or av'
+		cmd = cmds[value]
+		return self.simplecmd(cmd)
+
 	def editmode(self, mode):
+		self._check()
 		if mode == 'off':
 			a0 = a1 = a2 = 0
 		elif mode == 'format':
@@ -338,16 +414,40 @@ class VCR:
 		self._number(num, 4)
 		if not self.simplecmd(ENTER):
 			return 0
-		self.waitready()
-		return 1
+		return self._endlongcmd('nframerec')
 
 	def fmstill(self):
 		if not self.simplecmd(FM_STILL):
 			return 0
-		self.waitready()
-		return 1
+		return self._endlongcmd('fmstill')
+
+	def preview(self):
+		if not self.simplecmd(PREVIEW):
+			return 0
+		return self._endlongcmd('preview')
+
+	def review(self):
+		if not self.simplecmd(REVIEW):
+			return 0
+		return self._endlongcmd('review')
+
+	def search_preroll(self):
+		if not self.simplecmd(SEARCH_PREROLL):
+			return 0
+		return self._endlongcmd('search_preroll')
+
+	def edit_pb_standby(self):
+		if not self.simplecmd(EDIT_PB_STANDBY):
+			return 0
+		return self._endlongcmd('edit_pb_standby')
+
+	def edit_play(self):
+		if not self.simplecmd(EDIT_PLAY):
+			return 0
+		return self._endlongcmd('edit_play')
 
 	def dmcontrol(self, mode):
+		self._check()
 		if mode == 'off':
 			return self.simplecmd(DM_OFF)
 		if mode == 'multi freeze':
@@ -380,6 +480,7 @@ class VCR:
 		return 1
 
 	def getentry(self, which):
+		self._check()
 		if which == 'in':
 			cmd = IN_ENTRY_SENSE
 		elif which == 'out':
@@ -404,6 +505,7 @@ class VCR:
 			  OUT_ENTRY_SET, OUT_ENTRY_INC, OUT_ENTRY_DEC))
 
 	def ioentry(self, arg, (Load, Clear, Set, Inc, Dec)):
+		self._check()
 		if type(arg) == type(()):
 			h, m, s, f = arg
 			if not self.simplecmd(Set):
