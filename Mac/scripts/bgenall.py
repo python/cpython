@@ -19,8 +19,12 @@ def bgenone(dirname, shortname):
 def main():
 	success = []
 	failure = []
-	sys.path.insert(0, ':')
-	srcdir = os.path.join(os.path.join(sys.prefix, 'Mac'), 'Modules')
+	sys.path.insert(0, os.curdir)
+	if len(sys.argv) > 1:
+		srcdir = sys.argv[1]
+	else:
+		srcdir = os.path.join(os.path.join(sys.prefix, 'Mac'), 'Modules')
+	srcdir = os.path.abspath(srcdir)
 	contents = os.listdir(srcdir)
 	for name in contents:
 		moduledir = os.path.join(srcdir, name)
