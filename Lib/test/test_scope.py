@@ -383,3 +383,26 @@ def f():
     return g()
 verify(f() == 2)
 verify(x == 2)
+
+print "16. check leaks"
+
+class Foo:
+    count = 0
+    
+    def __init__(self):
+        Foo.count += 1
+
+    def __del__(self):
+        Foo.count -= 1
+
+def f1():
+    x = Foo()
+    def f2():
+        return x
+    f2()
+    
+for i in range(100):
+    f1()
+
+verify(Foo.count == 0)
+
