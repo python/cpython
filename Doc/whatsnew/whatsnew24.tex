@@ -70,6 +70,10 @@ as a member of another set.  Accordingly, it does not have methods
 like \method{add()} and \method{remove()} which could alter its contents.
 
 % XXX what happens to the sets module?
+% The current thinking is that the sets module will be left alone.
+% That way, existing code will continue to run without alteration.
+% Also, the module provides an autoconversion feature not supported by set()
+% and frozenset().
 
 \begin{seealso}
 \seepep{218}{Adding a Built-In Set Object Type}{Originally proposed by
@@ -105,8 +109,8 @@ iterators.  If you want to reverse an iterator, first convert it to
 a list with \function{list()}.
 
 \begin{verbatim}
->>> input = open('/etc/passwd', 'r')
->>> for line in reversed(list(input)):
+>>> data = open('/etc/passwd', 'r')
+>>> for line in reversed(list(data)):
 ...   print line
 ... 
 root:*:0:0:System Administrator:/var/root:/bin/tcsh
@@ -132,7 +136,9 @@ language.
 fill character other than a space.
 
 \item Strings also gained an \method{rsplit()} method that
-works like the \method{split()} method but splits from the end of the string.
+works like the \method{split()} method but splits from the end of
+the string.  Possible applications include splitting a filename
+from a path or a domain name from URL.
 
 \begin{verbatim}
 >>> 'a b c'.split(None, 1)
@@ -169,7 +175,7 @@ list case-insensitively:
 \end{verbatim}
 
 The last example, which uses the \var{cmp} parameter, is the old way
-to perform a case-insensitive sort.  It works, but is slower than
+to perform a case-insensitive sort.  It works but is slower than
 using a \var{key} parameter.  Using \var{key} results in calling the
 \method{lower()} method once for each element in the list while using
 \var{cmp} will call the method twice for each comparison.
@@ -230,7 +236,7 @@ yellow 5
 
 \item The \function{zip()} built-in function and \function{itertools.izip()}
   now return an empty list instead of raising a \exception{TypeError}
-  exception if called with no arguments.  This makes the functions more
+  exception if called with no arguments.  This makes the function more
   suitable for use with variable length argument lists:
 
 \begin{verbatim}
@@ -319,36 +325,41 @@ counting, or identifying duplicate elements:
 
 \begin{verbatim}
 >>> word = 'abracadabra'
->>> letters = sorted(word)   # Turn string into sorted list of letters
+>>> letters = sorted(word)   # Turn string into a sorted list of letters
 >>> letters 
 ['a', 'a', 'a', 'a', 'a', 'b', 'b', 'c', 'd', 'r', 'r']
->>> [k for k, g in groupby(word)]                     # List unique letters
+>>> [k for k, g in groupby(letters)]                     # List unique letters
 ['a', 'b', 'c', 'd', 'r']
->>> [(k, len(list(g))) for k, g in groupby(word)]     # Count letter occurences
+>>> [(k, len(list(g))) for k, g in groupby(letters)]     # Count letter occurences
 [('a', 5), ('b', 2), ('c', 1), ('d', 1), ('r', 2)]
->>> [k for k, g in groupby(word) if len(list(g)) > 1] # List duplicate letters
+>>> [k for k, g in groupby(letters) if len(list(g)) > 1] # List duplicated letters
 ['a', 'b', 'r']
 \end{verbatim}
 
-\item \module{itertools} also gained a function named \function{tee(\var{iterator}, \var{N})} that returns \var{N} independent iterators 
-that replicate \var{iterator}.  If \var{N} is omitted, the default is
-2.
+\item \module{itertools} also gained a function named
+\function{tee(\var{iterator}, \var{N})} that returns \var{N} independent
+iterators that replicate \var{iterator}.  If \var{N} is omitted, the
+default is 2.
 
 \begin{verbatim}
 >>> L = [1,2,3]
 >>> i1, i2 = itertools.tee(L)
 >>> i1,i2
 (<itertools.tee object at 0x402c2080>, <itertools.tee object at 0x402c2090>)
->>> list(i1)
+>>> list(i1)               # Run the first iterator to exhaustion
 [1, 2, 3]
->>> list(i2)
+>>> list(i2)               # Run the second iterator to exhaustion
 [1, 2, 3]
 >\end{verbatim}
 
 Note that \function{tee()} has to keep copies of the values returned 
-by the iterator; in the worst case it may need to keep all of them.  
-This should therefore be used carefully if \var{iterator}
-returns a very large stream of results.
+by the iterator; in the worst case, it may need to keep all of them.  
+This should therefore be used carefully if there the leading iterator
+can run far ahead of the trailing iterator in a long stream of inputs.
+If the separation is large, then it becomes preferrable to use
+\function{list()} instead.  When the iterators track closely with one
+another, \function{tee()} is ideal.  Possible applications include
+bookmarking, windowing, or lookahead iterators.
 
 \item A new \function{getsid()} function was added to the
 \module{posix} module that underlies the \module{os} module.
@@ -357,26 +368,25 @@ returns a very large stream of results.
 \item The \module{operator} module gained two new functions, 
 \function{attrgetter(\var{attr})} and \function{itemgetter(\var{index})}.
 Both functions return callables that take a single argument and return
-the corresponding attribute or item; these callables are handy for use
-with \function{map()} or \function{list.sort()}.  For example, here's a simple 
-us
+the corresponding attribute or item; these callables make excellent
+data extractors when used with \function{map()} or \function{sorted()}.
+For example:
 
 \begin{verbatim}
->>> L = [('c', 2), ('d', 1), ('a', '4'), ('b', 3)]
+>>> L = [('c', 2), ('d', 1), ('a', 4), ('b', 3)]
 >>> map(operator.itemgetter(0), L)
 ['c', 'd', 'a', 'b']
 >>> map(operator.itemgetter(1), L)
-[2, 1, '4', 3]
->>> L.sort(key=operator.itemgetter(1)) # Sort list by second item in tuples
->>> L
-[('d', 1), ('c', 2), ('b', 3), ('a', '4')]
+[2, 1, 4, 3]
+>>> sorted(L, key=operator.itemgetter(1)) # Sort list by second tuple item
+[('d', 1), ('c', 2), ('b', 3), ('a', 4)]
 \end{verbatim}
 
 \item The \module{random} module has a new method called \method{getrandbits(N)} 
    which returns an N-bit long integer.  This method supports the existing
    \method{randrange()} method, making it possible to efficiently generate
    arbitrarily large random numbers (suitable for prime number generation in
-   RSA applications).
+   RSA applications for example).
 
 \item The regular expression language accepted by the \module{re} module
    was extended with simple conditional expressions, written as
