@@ -1978,6 +1978,105 @@ static PyTypeObject Tkapp_Type =
 
 /**** Tkinter Module ****/
 
+typedef struct {
+	PyObject* tuple;
+	int size; /* current size */
+	int maxsize; /* allocated size */
+} FlattenContext;
+
+static int
+_bump(FlattenContext* context, int size)
+{
+	/* expand tuple to hold (at least) size new items.	return true if
+	   successful, false if an exception was raised*/
+
+	int maxsize = context->maxsize * 2;
+
+	if (maxsize < context->size + size)
+		maxsize = context->size + size;
+
+	context->maxsize = maxsize;
+
+	return _PyTuple_Resize(&context->tuple, maxsize, 0) >= 0;
+}
+
+static int
+_flatten1(FlattenContext* context, PyObject* item)
+{
+	/* add tuple or list to argument tuple (recursively) */
+
+	int i, size;
+
+	if (PyList_Check(item)) {
+		size = PyList_GET_SIZE(item);
+		/* preallocate (assume no nesting) */
+		if (context->size + size > context->maxsize && !_bump(context, size))
+			return 0;
+		/* copy items to output tuple */
+		for (i = 0; i < size; i++) {
+			PyObject *o = PyList_GET_ITEM(item, i);
+			if (PyList_Check(o) || PyTuple_Check(o)) {
+				if (!_flatten1(context, o))
+					return 0;
+			} else if (o != Py_None) {
+				if (context->size + 1 > context->maxsize && !_bump(context, 1))
+					return 0;
+				Py_INCREF(o);
+				PyTuple_SET_ITEM(context->tuple, context->size++, o);
+			}
+		}
+	} else if (PyTuple_Check(item)) {
+		/* same, for tuples */
+		size = PyTuple_GET_SIZE(item);
+		if (context->size + size > context->maxsize && !_bump(context, size))
+			return 0;
+		for (i = 0; i < size; i++) {
+			PyObject *o = PyTuple_GET_ITEM(item, i);
+			if (PyList_Check(o) || PyTuple_Check(o)) {
+				if (!_flatten1(context, o))
+					return 0;
+			} else if (o != Py_None) {
+				if (context->size + 1 > context->maxsize && !_bump(context, 1))
+					return 0;
+				Py_INCREF(o);
+				PyTuple_SET_ITEM(context->tuple, context->size++, o);
+			}
+		}
+	} else {
+		PyErr_SetString(PyExc_TypeError, "argument must be sequence");
+		return 0;
+	}
+	return 1;
+}
+
+static PyObject *
+Tkinter_Flatten(PyObject* self, PyObject* args)
+{
+	FlattenContext context;
+	PyObject* item;
+
+	if (!PyArg_ParseTuple(args, "O:_flatten", &item))
+		return NULL;
+
+	context.maxsize = PySequence_Length(item);
+	if (context.maxsize <= 0)
+		return PyTuple_New(0);
+	
+	context.tuple = PyTuple_New(context.maxsize);
+	if (!context.tuple)
+		return NULL;
+	
+	context.size = 0;
+
+	if (!_flatten1(&context, item))
+		return NULL;
+
+	if (_PyTuple_Resize(&context.tuple, context.size, 0))
+		return NULL;
+
+	return context.tuple;
+}
+
 static PyObject *
 Tkinter_Create(self, args)
 	PyObject *self;
@@ -2006,6 +2105,7 @@ Tkinter_Create(self, args)
 
 static PyMethodDef moduleMethods[] =
 {
+	{"_flatten",           Tkinter_Flatten, 1},
 	{"create",             Tkinter_Create, 1},
 #ifdef HAVE_CREATEFILEHANDLER
 	{"createfilehandler",  Tkapp_CreateFileHandler, 1},

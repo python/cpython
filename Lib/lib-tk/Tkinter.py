@@ -39,6 +39,9 @@ def _flatten(tuple):
 			res = res + (item,)
 	return res
 
+try: _flatten = _tkinter._flatten
+except AttributeError: pass
+
 def _cnfmerge(cnfs):
 	if type(cnfs) is DictionaryType:
 		return cnfs
@@ -54,6 +57,9 @@ def _cnfmerge(cnfs):
 				for k, v in c.items():
 					cnf[k] = v
 		return cnf
+
+try: _cnfmerge = _tkinter._cnfmerge
+except AttributeError: pass
 
 class Event:
 	pass
