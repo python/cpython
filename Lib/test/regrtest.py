@@ -32,7 +32,6 @@ of /tmp).
 """
 
 import sys
-import string
 import os
 import getopt
 import traceback
@@ -106,7 +105,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=0, generate=0,
         filename = os.path.join(gettempdir(), 'pynexttest')
         try:
             fp = open(filename, 'r')
-            next = string.strip(fp.read())
+            next = fp.read().strip()
             tests = [next]
             fp.close()
         except IOError:
@@ -163,10 +162,10 @@ def main(tests=None, testdir=None, verbose=0, quiet=0, generate=0,
             print "that passes in verbose mode may fail without it."
     if bad:
         print count(len(bad), "test"), "failed:",
-        print string.join(bad)
+        print " ".join(bad)
     if skipped and not quiet:
         print count(len(skipped), "test"), "skipped:",
-        print string.join(skipped)
+        print " ".join(skipped)
 
     if single:
         alltests = findtests(testdir, stdtests, nottests)

@@ -30,7 +30,6 @@ def testimage(name):
 
     import sys
     import os
-    import string
 
     outputfile = '/tmp/deleteme'
 
@@ -47,9 +46,9 @@ def testimage(name):
         else: # ...or the full path of the module
             ourname = sys.modules[__name__].__file__
 
-        parts = string.splitfields(ourname, os.sep)
+        parts = ourname.split(os.sep)
         parts[-1] = name
-        name = string.joinfields(parts, os.sep)
+        name = os.sep.joinfields(parts)
         sizes = imgfile.getsizes(name)
     if verbose:
         print 'Opening test image: %s, sizes: %s' % (name, str(sizes))

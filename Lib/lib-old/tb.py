@@ -5,7 +5,6 @@
 import sys
 import os
 from stat import *
-import string
 import linecache
 
 def br(): browser(sys.last_traceback)
@@ -35,7 +34,7 @@ def browser(tb):
 		except EOFError:
 			print '\n[EOF]'
 			break
-		cmd = string.strip(line)
+		cmd = line.strip()
 		if cmd:
 			if cmd == 'quit':
 				break
@@ -62,8 +61,8 @@ def browserlist(tb):
 	last = lineno
 	first = max(1, last-10)
 	for i in range(first, last+1):
-		if i == lineno: prefix = '***' + string.rjust(`i`, 4) + ':'
-		else: prefix = string.rjust(`i`, 7) + ':'
+		if i == lineno: prefix = '***' + `i`.rjust(4) + ':'
+		else: prefix = `i`.rjust(7) + ':'
 		line = linecache.getline(filename, i)
 		if line[-1:] == '\n': line = line[:-1]
 		print prefix + line
@@ -115,14 +114,14 @@ def printtbheader(tb):
 	info = '"' + filename + '"(' + `lineno` + ')'
 	line = linecache.getline(filename, lineno)
 	if line:
-		info = info + ': ' + string.strip(line)
+		info = info + ': ' + line.strip()
 	print info
 
 def printsymbols(d):
 	keys = d.keys()
 	keys.sort()
 	for name in keys:
-		print '  ' + string.ljust(name, 12) + ':',
+		print '  ' + name.ljust(12) + ':',
 		printobject(d[name], 4)
 		print
 

@@ -112,16 +112,15 @@ def main():
     Extra arguments are used to seed the random generator.
 
     """
-    import string
     # default range (inclusive)
     k1 = 15
     k2 = 19
     if sys.argv[1:]:
         # one argument: single point
-        k1 = k2 = string.atoi(sys.argv[1])
+        k1 = k2 = int(sys.argv[1])
         if sys.argv[2:]:
             # two arguments: specify range
-            k2 = string.atoi(sys.argv[2])
+            k2 = int(sys.argv[2])
             if sys.argv[3:]:
                 # derive random seed from remaining arguments
                 x, y, z = 0, 0, 0

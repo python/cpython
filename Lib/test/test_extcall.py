@@ -1,6 +1,5 @@
 from test_support import verify, verbose, TestFailed
 from UserList import UserList
-import string
 
 def sortdict(d):
     keys = d.keys()
@@ -195,7 +194,7 @@ for args in ['', 'a', 'ab']:
                 if vararg: arglist.append('*' + vararg)
                 if kwarg: arglist.append('**' + kwarg)
                 decl = 'def %s(%s): print "ok %s", a, b, d, e, v, k' % (
-                    name, string.join(arglist, ', '), name)
+                    name, ', '.join(arglist), name)
                 exec(decl)
                 func = eval(name)
                 funcs.append(func)

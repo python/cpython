@@ -163,7 +163,6 @@ XXX Need to have an explicit name for '', e.g. '__root__'.
 
 
 import imp
-import string
 import sys
 import __builtin__
 
@@ -206,7 +205,7 @@ class PackageLoader(ModuleLoader):
     def load_dynamic(self, name, stuff):
         file, filename, (suff, mode, type) = stuff
         # Hack around restriction in imp.load_dynamic()
-        i = string.rfind(name, '.')
+        i = name.rfind('.')
         tail = name[i+1:]
         if sys.modules.has_key(tail):
             save = sys.modules[tail]
@@ -241,7 +240,7 @@ class PackageLoader(ModuleLoader):
     def set_parent(self, m):
         name = m.__name__
         if '.' in name:
-            name = name[:string.rfind(name, '.')]
+            name = name[:name.rfind('.')]
         else:
             name = ''
         m.__ = sys.modules[name]
@@ -250,7 +249,7 @@ class PackageLoader(ModuleLoader):
         name = package.__name__
         package.__domain__ = domain = [name]
         while '.' in name:
-            name = name[:string.rfind(name, '.')]
+            name = name[:name.rfind('.')]
             domain.append(name)
         if name:
             domain.append('')
@@ -285,7 +284,7 @@ class PackageImporter(ModuleImporter):
             if not name:
                 return self.finish(package, p, '', fromlist)
             if '.' in name:
-                i = string.find(name, '.')
+                i = name.find('.')
                 name, tail = name[:i], name[i:]
             else:
                 tail = ''
@@ -293,7 +292,7 @@ class PackageImporter(ModuleImporter):
             m = self.get1(mname)
             return self.finish(package, m, tail, fromlist)
         if '.' in name:
-            i = string.find(name, '.')
+            i = name.find('.')
             name, tail = name[:i], name[i:]
         else:
             tail = ''
@@ -312,7 +311,7 @@ class PackageImporter(ModuleImporter):
             yname, tail = yname + tail, ''
             m = self.get1(yname)
         while tail:
-            i = string.find(tail, '.', 1)
+            i = tail.find('.', 1)
             if i > 0:
                 head, tail = tail[:i], tail[i:]
             else:
@@ -351,7 +350,7 @@ class PackageImporter(ModuleImporter):
         if sys.modules.has_key(name):
             return sys.modules[name]
         if '.' in name:
-            i = string.rfind(name, '.')
+            i = name.rfind('.')
             head, tail = name[:i], name[i+1:]
         else:
             head, tail = '', name
@@ -367,7 +366,7 @@ class PackageImporter(ModuleImporter):
     def reload(self, module):
         name = module.__name__
         if '.' in name:
-            i = string.rfind(name, '.')
+            i = name.rfind('.')
             head, tail = name[:i], name[i+1:]
             path = sys.modules[head].__path__
         else:

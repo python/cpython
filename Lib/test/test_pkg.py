@@ -1,6 +1,6 @@
 # Test packages (dotted-name import)
 
-import sys, os, string, tempfile, traceback
+import sys, os, tempfile, traceback
 from os import mkdir, rmdir             # Can't test if these fail
 del mkdir, rmdir
 from test_support import verify, verbose, TestFailed
@@ -10,7 +10,7 @@ from test_support import verify, verbose, TestFailed
 def mkhier(root, descr):
     mkdir(root)
     for name, contents in descr:
-        comps = string.split(name)
+        comps = name.split()
         fullname = root
         for c in comps:
             fullname = os.path.join(fullname, c)

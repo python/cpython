@@ -1,6 +1,6 @@
 from test_support import verify
 import mmap
-import string, os, re, sys
+import os, re, sys
 
 PAGESIZE = mmap.PAGESIZE
 
@@ -21,8 +21,8 @@ def test_both():
     # Simple sanity checks
 
     print type(m)  # SF bug 128713:  segfaulted on Linux
-    print '  Position of foo:', string.find(m, 'foo') / float(PAGESIZE), 'pages'
-    verify(string.find(m, 'foo') == PAGESIZE)
+    print '  Position of foo:', m.find('foo') / float(PAGESIZE), 'pages'
+    verify(m.find('foo') == PAGESIZE)
 
     print '  Length of file:', len(m) / float(PAGESIZE), 'pages'
     verify(len(m) == 2*PAGESIZE)
