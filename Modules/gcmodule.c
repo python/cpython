@@ -701,17 +701,19 @@ static char gc_get_objects__doc__[] =
 ;
 
 /* appending objects in a GC list to a Python list */
-static void
+static int
 append_objects(PyObject *py_list, PyGC_Head *gc_list)
 {
 	PyGC_Head *gc;
 	for (gc = gc_list->gc.gc_next; gc != gc_list; gc = gc->gc.gc_next) {
 		PyObject *op = FROM_GC(gc);
 		if (op != py_list) {
-			Py_INCREF(op);
-			PyList_Append(py_list, op);
+			if (PyList_Append(py_list, op)) {
+				return -1; /* exception */
+			}
 		}
 	}
+	return 0;
 }
 
 static PyObject *
@@ -722,9 +724,12 @@ gc_get_objects(PyObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, ":get_objects")) /* check no args */
 		return NULL;
 	result = PyList_New(0);
-	append_objects(result, &_PyGC_generation0);
-	append_objects(result, &generation1);
-	append_objects(result, &generation2);
+	if (append_objects(result, &_PyGC_generation0) ||
+	    append_objects(result, &generation1) ||
+	    append_objects(result, &generation2)) {
+		Py_DECREF(result);
+		return NULL;
+	}
 	return result;
 }
 
