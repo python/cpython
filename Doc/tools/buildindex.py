@@ -286,6 +286,15 @@ def dump(nodes, fp):
         fp.write(node.dump())
 
 
+def process_nodes(nodes, columns, letters):
+    nodes.sort()
+    collapse(nodes)
+    if letters:
+        return format_html_letters(nodes, columns)
+    else:
+        return format_html(nodes, columns)
+
+
 def main():
     import getopt
     ifn = "-"
@@ -307,12 +316,7 @@ def main():
     for fn in args:
         nodes = nodes + load(open(fn))
     num_nodes = len(nodes)
-    nodes.sort()
-    collapse(nodes)
-    if letters:
-        html = format_html_letters(nodes, columns)
-    else:
-        html = format_html(nodes, columns)
+    html = process_nodes(nodes, columns, letters)
     program = os.path.basename(sys.argv[0])
     if ofn == "-":
         sys.stdout.write(html)
