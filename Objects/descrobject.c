@@ -57,10 +57,9 @@ wrapper_repr(PyWrapperDescrObject *descr)
 }
 
 static int
-descr_check(PyDescrObject *descr, PyObject *obj, PyTypeObject *type,
-	    PyObject **pres)
+descr_check(PyDescrObject *descr, PyObject *obj, PyObject **pres)
 {
-	if (obj == NULL || (obj == Py_None && type != Py_None->ob_type)) {
+	if (obj == NULL) {
 		Py_INCREF(descr);
 		*pres = (PyObject *)descr;
 		return 1;
@@ -79,38 +78,69 @@ descr_check(PyDescrObject *descr, PyObject *obj, PyTypeObject *type,
 }
 
 static PyObject *
-classmethod_get(PyMethodDescrObject *descr, PyObject *obj,
-		PyTypeObject *type)
+classmethod_get(PyMethodDescrObject *descr, PyObject *obj, PyObject *type)
 {
-	return PyCFunction_New(descr->d_method, (PyObject *)type);
+	/* Ensure a valid type.  Class methods ignore obj. */
+	if (type == NULL) {
+		if (obj != NULL)
+			type = (PyObject *)obj->ob_type;
+		else {
+			/* Wot - no type?! */
+			PyErr_Format(PyExc_TypeError,
+				     "descriptor '%s' for type '%s' "
+				     "needs either an object or a type",
+				     descr_name((PyDescrObject *)descr),
+				     descr->d_type->tp_name);
+			return NULL;
+		}
+	}
+	if (!PyType_Check(type)) {
+		PyErr_Format(PyExc_TypeError,
+			     "descriptor '%s' for type '%s' "
+			     "needs a type, not a '%s' as arg 2",
+			     descr_name((PyDescrObject *)descr),
+			     descr->d_type->tp_name,
+			     type->ob_type->tp_name);
+		return NULL;
+	}
+	if (!PyType_IsSubtype((PyTypeObject *)type, descr->d_type)) {
+		PyErr_Format(PyExc_TypeError,
+			     "descriptor '%s' for type '%s' "
+			     "doesn't apply to type '%s'",
+			     descr_name((PyDescrObject *)descr),
+			     descr->d_type->tp_name,
+			     ((PyTypeObject *)type)->tp_name);
+		return NULL;
+	}
+	return PyCFunction_New(descr->d_method, type);
 }
 
 static PyObject *
-method_get(PyMethodDescrObject *descr, PyObject *obj, PyTypeObject *type)
+method_get(PyMethodDescrObject *descr, PyObject *obj, PyObject *type)
 {
 	PyObject *res;
 
-	if (descr_check((PyDescrObject *)descr, obj, type, &res))
+	if (descr_check((PyDescrObject *)descr, obj, &res))
 		return res;
 	return PyCFunction_New(descr->d_method, obj);
 }
 
 static PyObject *
-member_get(PyMemberDescrObject *descr, PyObject *obj, PyTypeObject *type)
+member_get(PyMemberDescrObject *descr, PyObject *obj, PyObject *type)
 {
 	PyObject *res;
 
-	if (descr_check((PyDescrObject *)descr, obj, type, &res))
+	if (descr_check((PyDescrObject *)descr, obj, &res))
 		return res;
 	return PyMember_GetOne((char *)obj, descr->d_member);
 }
 
 static PyObject *
-getset_get(PyGetSetDescrObject *descr, PyObject *obj, PyTypeObject *type)
+getset_get(PyGetSetDescrObject *descr, PyObject *obj, PyObject *type)
 {
 	PyObject *res;
 
-	if (descr_check((PyDescrObject *)descr, obj, type, &res))
+	if (descr_check((PyDescrObject *)descr, obj, &res))
 		return res;
 	if (descr->d_getset->get != NULL)
 		return descr->d_getset->get(obj, descr->d_getset->closure);
@@ -122,11 +152,11 @@ getset_get(PyGetSetDescrObject *descr, PyObject *obj, PyTypeObject *type)
 }
 
 static PyObject *
-wrapper_get(PyWrapperDescrObject *descr, PyObject *obj, PyTypeObject *type)
+wrapper_get(PyWrapperDescrObject *descr, PyObject *obj, PyObject *type)
 {
 	PyObject *res;
 
-	if (descr_check((PyDescrObject *)descr, obj, type, &res))
+	if (descr_check((PyDescrObject *)descr, obj, &res))
 		return res;
 	return PyWrapper_New((PyObject *)descr, obj);
 }
@@ -395,10 +425,11 @@ static PyTypeObject PyMethodDescr_Type = {
 	0,					/* tp_descr_set */
 };
 
+/* This is for METH_CLASS in C, not for "f = classmethod(f)" in Python! */
 static PyTypeObject PyClassMethodDescr_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,
-	"special_method_descriptor",
+	"classmethod_descriptor",
 	sizeof(PyMethodDescrObject),
 	0,
 	(destructor)descr_dealloc,		/* tp_dealloc */
@@ -411,7 +442,7 @@ static PyTypeObject PyClassMethodDescr_Type = {
 	0,					/* tp_as_sequence */
 	0,					/* tp_as_mapping */
 	0,					/* tp_hash */
-	(ternaryfunc)classmethoddescr_call,		/* tp_call */
+	(ternaryfunc)classmethoddescr_call,	/* tp_call */
 	0,					/* tp_str */
 	PyObject_GenericGetAttr,		/* tp_getattro */
 	0,					/* tp_setattro */
