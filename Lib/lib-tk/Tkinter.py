@@ -1158,7 +1158,6 @@ def At(x, y=None):
 		return '@' + `x` + ',' + `y`
 
 class Canvas(Widget):
-	_tagcommands = None
 	def __init__(self, master=None, cnf={}, **kw):
 		Widget.__init__(self, master, 'canvas', cnf, kw)
 	def addtag(self, *args):
@@ -1185,16 +1184,8 @@ class Canvas(Widget):
 		if funcid:
 			self.deletecommand(funcid)
 	def tag_bind(self, tagOrId, sequence=None, func=None, add=None):
-		res = self._bind((self._w, 'bind', tagOrId),
-				 sequence, func, add)
-		if sequence and func and res:
-			# remember the funcid for later
-			if self._tagcommands is None:
-				self._tagcommands = {}
-			list = self._tagcommands.get(tagOrId) or []
-			self._tagcommands[tagOrId] = list
-			list.append(res)
-		return res
+		return self._bind((self._w, 'bind', tagOrId),
+				  sequence, func, add)
 	def canvasx(self, screenx, gridspacing=None):
 		return getdouble(self.tk.call(
 			self._w, 'canvasx', screenx, gridspacing))
