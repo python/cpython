@@ -11,13 +11,11 @@ def b():
 # setting attributes on functions
 try:
     b.publish
-except AttributeError:
-    pass
-else:
-    raise TestFailed, 'expected AttributeError'
+except AttributeError: pass
+else: raise TestFailed, 'expected AttributeError'
 
-if b.__dict__ <> None:
-    raise TestFailed, 'expected unassigned func.__dict__ to be None'
+if b.__dict__ <> {}:
+    raise TestFailed, 'expected unassigned func.__dict__ to be {}'
 
 b.publish = 1
 if b.publish <> 1:
@@ -31,41 +29,43 @@ if b.__doc__ <> docstring:
 if 'publish' not in dir(b):
     raise TestFailed, 'attribute not in dir()'
 
-del b.__dict__
-if b.__dict__ <> None:
-    raise TestFailed, 'del func.__dict__ did not result in __dict__ == None'
+try:
+    del b.__dict__
+except TypeError: pass
+else: raise TestFailed, 'del func.__dict__ expected TypeError'
 
 b.publish = 1
-b.__dict__ = None
-if b.__dict__ <> None:
-    raise TestFailed, 'func.__dict__ = None did not result in __dict__ == None'
+try:
+    b.__dict__ = None
+except TypeError: pass
+else: raise TestFailed, 'func.__dict__ = None expected TypeError'
 
+d = {'hello': 'world'}
+b.__dict__ = d
+if b.func_dict is not d:
+    raise TestFailed, 'func.__dict__ assignment to dictionary failed'
+if b.hello <> 'world':
+    raise TestFailed, 'attribute after func.__dict__ assignment failed'
 
 f1 = F()
 f2 = F()
 
 try:
     F.a.publish
-except AttributeError:
-    pass
-else:
-    raise TestFailed, 'expected AttributeError'
+except AttributeError: pass
+else: raise TestFailed, 'expected AttributeError'
 
 try:
     f1.a.publish
-except AttributeError:
-    pass
-else:
-    raise TestFailed, 'expected AttributeError'
+except AttributeError: pass
+else: raise TestFailed, 'expected AttributeError'
 
 # In Python 2.1 beta 1, we disallowed setting attributes on unbound methods
 # (it was already disallowed on bound methods).  See the PEP for details.
 try:
     F.a.publish = 1
-except TypeError:
-    pass
-else:
-    raise TestFailed, 'expected TypeError'
+except TypeError: pass
+else: raise TestFailed, 'expected TypeError'
 
 # But setting it explicitly on the underlying function object is okay.
 F.a.im_func.publish = 1
@@ -84,18 +84,14 @@ if 'publish' not in dir(F.a):
 
 try:
     f1.a.publish = 0
-except TypeError:
-    pass
-else:
-    raise TestFailed, 'expected TypeError'
+except TypeError: pass
+else: raise TestFailed, 'expected TypeError'
 
 # See the comment above about the change in semantics for Python 2.1b1
 try:
     F.a.myclass = F
-except TypeError:
-    pass
-else:
-    raise TestFailed, 'expected TypeError'
+except TypeError: pass
+else: raise TestFailed, 'expected TypeError'
 
 F.a.im_func.myclass = F
 
@@ -105,16 +101,14 @@ f1.a.myclass
 F.a.myclass
 
 if f1.a.myclass is not f2.a.myclass or \
-   f1.a.myclass is not F.a.myclass:
+       f1.a.myclass is not F.a.myclass:
     raise TestFailed, 'attributes were not the same'
 
 # try setting __dict__
 try:
     F.a.__dict__ = (1, 2, 3)
-except TypeError:
-    pass
-else:
-    raise TestFailed, 'expected TypeError'
+except TypeError: pass
+else: raise TestFailed, 'expected TypeError'
 
 F.a.im_func.__dict__ = {'one': 11, 'two': 22, 'three': 33}
 
@@ -126,10 +120,8 @@ d = UserDict({'four': 44, 'five': 55})
 
 try:
     F.a.__dict__ = d
-except TypeError:
-    pass
-else:
-    raise TestFailed
+except TypeError: pass
+else: raise TestFailed
 
 if f2.a.one <> f1.a.one <> F.a.one <> 11:
     raise TestFailed
@@ -175,9 +167,21 @@ else: raise TestFailed
 # Regression test for a crash in pre-2.1a1
 def another():
     pass
-del another.__dict__
-del another.func_dict
-another.func_dict = None
+
+try:
+    del another.__dict__
+except TypeError: pass
+else: raise TestFailed
+
+try:
+    del another.func_dict
+except TypeError: pass
+else: raise TestFailed
+
+try:
+    another.func_dict = None
+except TypeError: pass
+else: raise TestFailed
 
 try:
     del another.bar
@@ -197,7 +201,8 @@ def bar():
 def temp():
     print 1
 
-if foo==bar: raise TestFailed
+if foo==bar:
+    raise TestFailed
 
 d={}
 d[foo] = 1
