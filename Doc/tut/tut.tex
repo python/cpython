@@ -4415,7 +4415,7 @@ as interactive aids for working with large modules like \module{os}:
 \begin{verbatim}
 >>> import os
 >>> dir(os)
-<returns a listi of all module functions>
+<returns a list of all module functions>
 >>> help(os)
 <returns an extensive manual page created from the module's docstrings>
 \end{verbatim}
@@ -4427,7 +4427,7 @@ module provides a higher level interface that is easier to use:
 \begin{verbatim}
 >>> import shutil
 >>> shutil.copyfile('data.db', 'archive.db')
->>> shutil.move('/build/excecutables', 'installdir')
+>>> shutil.move('/build/executables', 'installdir')
 \end{verbatim}
 
 
@@ -4585,8 +4585,12 @@ datetime.date(2003, 12, 2)
 \section{Data Compression\label{data-compression}}
 
 Common data archiving and compression formats are directly supported
-by modules including: \module{zlib}, \module{gzip}, \module{bz2},
-\module{zipfile}, and \module{tar}.
+by modules including:
+\ulink{\module{zlib}}{../lib/module-zlib.html},
+\ulink{\module{gzip}}{../lib/module-gzip.html},
+\ulink{\module{bz2}}{../lib/module-bz2.html},
+\ulink{\module{zipfile}}{../lib/module-zipfile.html}, and
+\ulink{\module{tarfile}}{../lib/module-tarfile.html}.
 
 \begin{verbatim}
 >>> import zlib
@@ -4617,7 +4621,6 @@ quickly demonstrates that the traditional approach is faster:
 
 \begin{verbatim}
 >>> from timeit import Timer
->>> dir(Timer)
 >>> Timer('t=a; a=b; b=t', 'a=1; b=2').timeit()
 0.60864915603680925
 >>> Timer('a,b = b,a', 'a=1; b=2').timeit()
@@ -4676,29 +4679,34 @@ unittest.main() # Calling from the command line invokes all tests
 
 \section{Batteries Included\label{batteries-included}}
 
-Python has a ``batteries included'' philosophy.  The is best seen
-through the sophisticated and robust capabilites of its larger
+Python has a ``batteries included'' philosophy.  This is best seen
+through the sophisticated and robust capabilities of its larger
 packages. For example:
 
-* The \module{xmlrpclib} and \module{SimpleXMLRPCServer} modules make
-implementing remote procedure calls into an almost trivial task.
-Despite the names, no direct knowledge or handling of XML is needed.
+* The \ulink{\module{xmlrpclib}}{../lib/module-xmlrpclib.html} and
+\ulink{\module{SimpleXMLRPCServer}}{../lib/module-SimpleXMLRPCServer.html}
+modules make implementing remote procedure calls into an almost trivial
+task.  Despite the names, no direct knowledge or handling of XML is needed.
 
-* The \module{email} package is a library for managing email messages,
+* The \ulink{\module{email}}{../lib/module-email.html}
+package is a library for managing email messages,
 including MIME and other RFC 2822-based message documents.  Unlike
 \module{smtplib} and \module{poplib} which actually send and receive
 messages, the email package has a complete toolset for building or
 decoding complex message structures (including attachments)
 and for implementing internet encoding and header protocols.
 
-* The \module{xml.dom} and \module{xml.sax} packages provide robust
-support for parsing this popular data interchange format.  Likewise,
+* The \ulink{\module{xml.dom}}{../lib/module-xml.dom.html} and
+\ulink{\module{xml.sax}}{../lib/module-xml.sax.html} packages provide
+robust support for parsing this popular data interchange format.  Likewise,
 the \module{csv} module supports direct reads and writes in a common
 database format.  Together, these modules and packages greatly simplify
 data interchange between python applications and other tools.
 
 * Internationalization is supported by a number of modules including
-\module{gettext}, \module{locale}, and the \module{codecs} package.
+\ulink{\module{gettext}}{../lib/module-gettext.html},
+\ulink{\module{locale}}{../lib/module-locale.html}, and the
+\ulink{\module{codecs}}{../lib/module-codecs.html} package.
 
 
 
