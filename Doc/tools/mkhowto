@@ -227,9 +227,12 @@ class Job:
         self.doctype = get_doctype(path)
         self.filedir, self.doc = split_pathname(path)
         self.builddir = os.path.abspath(options.builddir or self.doc)
-        if not os.path.exists(self.builddir):
-            os.mkdir(self.builddir)
-        self.log_filename = os.path.join(self.builddir, self.doc + ".how")
+        if ("html" in options.formats or "text" in options.formats):
+            if not os.path.exists(self.builddir):
+                os.mkdir(self.builddir)
+            self.log_filename = os.path.join(self.builddir, self.doc + ".how")
+        else:
+            self.log_filename = os.path.abspath(self.doc + ".how")
         if os.path.exists(self.log_filename):
             os.unlink(self.log_filename)
         if os.path.exists(self.doc + ".l2h"):
@@ -350,9 +353,7 @@ class Job:
     def build_ps(self):
         self.run("%s -N0 -o %s.ps %s" % (DVIPS_BINARY, self.doc, self.doc))
 
-    def build_html(self, builddir=None, max_split_depth=None):
-        if builddir is None:
-            builddir = self.builddir
+    def build_html(self, builddir, max_split_depth=None):
         if max_split_depth is None:
             max_split_depth = self.options.max_split_depth
         texfile = None
