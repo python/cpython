@@ -328,6 +328,7 @@ BUILD_FUNC_DEF_2(setipaddr, char*,name, struct sockaddr_in *,addr_ret)
 {
 	struct hostent *hp;
 	int d1, d2, d3, d4;
+	int h_length;
 	char ch;
 #ifdef HAVE_GETHOSTBYNAME_R
 	struct hostent hp_allocated;
@@ -368,9 +369,6 @@ BUILD_FUNC_DEF_2(setipaddr, char*,name, struct sockaddr_in *,addr_ret)
 	PyThread_acquire_lock(gethostbyname_lock,1);
 #endif
 	hp = gethostbyname(name);
-#if defined(WITH_THREAD) && !defined(MS_WINDOWS)
-	PyThread_release_lock(gethostbyname_lock);
-#endif
 #endif /* HAVE_GETHOSTBYNAME_R */
 	Py_END_ALLOW_THREADS
 
@@ -382,10 +380,17 @@ BUILD_FUNC_DEF_2(setipaddr, char*,name, struct sockaddr_in *,addr_ret)
 #else
 		PyErr_SetString(PySocket_Error, "host not found");
 #endif
+#if defined(WITH_THREAD) && !defined(HAVE_GETHOSTBYNAME_R) && !defined(MS_WINDOWS)
+		PyThread_release_lock(gethostbyname_lock);
+#endif
 		return -1;
 	}
 	memcpy((char *) &addr_ret->sin_addr, hp->h_addr, hp->h_length);
-	return hp->h_length;
+	h_length = hp->h_length;
+#if defined(WITH_THREAD) && !defined(HAVE_GETHOSTBYNAME_R) && !defined(MS_WINDOWS)
+	PyThread_release_lock(gethostbyname_lock);
+#endif
+	return h_length;
 }
 
 
@@ -1409,6 +1414,7 @@ BUILD_FUNC_DEF_2(PySocket_gethostbyname_ex,PyObject *,self, PyObject *,args)
 	char *name;
 	struct hostent *h;
 	struct sockaddr_in addr;
+	PyObject *ret;
 #ifdef HAVE_GETHOSTBYNAME_R
 	struct hostent hp_allocated;
 	char buf[16384];
@@ -1434,12 +1440,13 @@ BUILD_FUNC_DEF_2(PySocket_gethostbyname_ex,PyObject *,self, PyObject *,args)
 	PyThread_acquire_lock(gethostbyname_lock,1);
 #endif
 	h = gethostbyname(name);
-#if defined(WITH_THREAD) && !defined(MS_WINDOWS)
-	PyThread_release_lock(gethostbyname_lock);
-#endif
 #endif /* HAVE_GETHOSTBYNAME_R */
 	Py_END_ALLOW_THREADS
-	return gethost_common(h,&addr);
+	ret = gethost_common(h,&addr);
+#if defined(WITH_THREAD) && !defined(HAVE_GETHOSTBYNAME_R) && !defined(MS_WINDOWS)
+	PyThread_release_lock(gethostbyname_lock);
+#endif
+	return ret;
 }
 
 static char ghbn_ex_doc[] =
