@@ -1,7 +1,9 @@
 """
 gensuitemodule - Generate an AE suite module from an aete/aeut resource
 
-Based on aete.py
+Based on aete.py.
+
+Reading and understanding this code is left as an exercise to the reader.
 """
 
 import MacOS
@@ -18,9 +20,9 @@ def main():
 	fss, ok = macfs.PromptGetFile('Select file with aeut/aete resource:')
 	if not ok:
 		sys.exit(0)
-	process(fss.as_pathname())
+	processfile(fss.as_pathname())
 
-def process(fullname):
+def processfile(fullname):
 	"""Process all resources in a single file"""
 	cur = CurResFile()
 	print fullname
@@ -35,19 +37,24 @@ def process(fullname):
 			res = Get1IndResource('aeut', 1+i)
 			resources.append(res)
 		print "\nLISTING aete+aeut RESOURCES IN", `fullname`
+		aetelist = []
 		for res in resources:
 			print "decoding", res.GetResInfo(), "..."
 			data = res.data
 			aete = decode(data)
-			# switch back (needed for dialogs in Python)
-			UseResFile(cur)
-			compileaete(aete, fullname)
-			UseResFile(rf)
+			aetelist.append((aete, res.GetResInfo()))
 	finally:
 		if rf <> cur:
 			CloseResFile(rf)
 			UseResFile(cur)
+	# switch back (needed for dialogs in Python)
+	UseResFile(cur)
+	compileaetelist(aetelist, fullname)
 
+def compileaetelist(aetelist, fullname):
+	for aete, resinfo in aetelist:
+		compileaete(aete, resinfo, fullname)
+		
 def decode(data):
 	"""Decode a resource into a python data structure"""
 	f = StringIO.StringIO(data)
@@ -211,21 +218,81 @@ getaete = [
 	(getlist, "suites", getsuite)
 	]
 
-def compileaete(aete, fname):
+def compileaete(aete, resinfo, fname):
 	"""Generate code for a full aete resource. fname passed for doc purposes"""
 	[version, language, script, suites] = aete
 	major, minor = divmod(version, 256)
+	fss = macfs.FSSpec(fname)
+	creatorsignature, dummy = fss.GetCreatorType()
+	packagename = identify(os.path.basename(fname))
+	if language:
+		packagename = packagename+'_lang%d'%language
+	if script:
+		packagename = packagename+'_script%d'%script
+	if len(packagename) > 27:
+		packagename = packagename[:27]
+	macfs.SetFolder(os.path.join(sys.prefix, ':Mac:Lib:lib-scriptpackages'))
+	fss, ok = macfs.GetDirectory('Package folder for %s'%packagename)
+	if not ok:
+		return
+	pathname = fss.as_pathname()
+	packagename = os.path.split(os.path.normpath(pathname))[1]
+	fss, ok = macfs.GetDirectory('Package folder for base suite (usually StdSuites)')
+	if ok:
+		dirname, basepkgname = os.path.split(os.path.normpath(fss.as_pathname()))
+		if not dirname in sys.path:
+			sys.path.insert(0, dirname)
+		basepackage = __import__(basepkgname)
+	else:
+		basepackage = None
+	macfs.SetFolder(pathname)
+	suitelist = []
 	for suite in suites:
-		compilesuite(suite, major, minor, language, script, fname)
+		code, modname = compilesuite(suite, major, minor, language, script, fname, basepackage)
+		if modname:
+			suitelist.append((code, modname))
+	fss, ok = macfs.StandardPutFile('Package module', '__init__.py')
+	if not ok:
+		return
+	fp = open(fss.as_pathname(), 'w')
+	fss.SetCreatorType('Pyth', 'TEXT')
+	fp.write('"""\n')
+	fp.write("Package generated from %s\n"%fname)
+	fp.write("Resource %s resid %d %s\n"%(resinfo[1], resinfo[0], resinfo[2]))
+	fp.write('"""\n')
+	fp.write('import aetools\n')
+	for code, modname in suitelist:
+		fp.write("import %s\n" % modname)
+	fp.write("\n\n_code_to_module = {\n")
+	for code, modname in suitelist:
+		fp.write("\t'%s' : %s,\n"%(code, modname))
+	fp.write("}\n\n")
+	fp.write("\n\n_code_to_fullname = {\n")
+	for code, modname in suitelist:
+		fp.write("\t'%s' : '%s.%s',\n"%(code, packagename, modname))
+	fp.write("}\n\n")
+	for code, modname in suitelist:
+		fp.write("from %s import *\n"%modname)
+	if suitelist:
+		fp.write("\n\nclass %s(%s_Events"%(packagename, suitelist[0][1]))
+		for code, modname in suitelist[1:]:
+			fp.write(",\n\t%s_Events"%modname)
+		fp.write(",\n\taetools.TalkTo):\n")
+		fp.write("\t_signature = '%s'\n\n"%creatorsignature)
+	fp.close()
 
-def compilesuite(suite, major, minor, language, script, fname):
+def compilesuite(suite, major, minor, language, script, fname, basepackage=None):
 	"""Generate code for a single suite"""
 	[name, desc, code, level, version, events, classes, comps, enums] = suite
 	
 	modname = identify(name)
+	if len(modname) > 28:
+		modname = modname[:27]
 	fss, ok = macfs.StandardPutFile('Python output file', modname+'.py')
 	if not ok:
-		return
+		return None, None
+	pathname = fss.as_pathname()
+	modname = os.path.splitext(os.path.split(pathname)[1])[0]
 	fp = open(fss.as_pathname(), 'w')
 	fss.SetCreatorType('Pyth', 'TEXT')
 	
@@ -239,8 +306,15 @@ def compilesuite(suite, major, minor, language, script, fname):
 	fp.write('import aetools\n')
 	fp.write('import MacOS\n\n')
 	fp.write("_code = %s\n\n"% `code`)
-	
-	compileclassheader(fp, modname)
+	if basepackage and basepackage._code_to_module.has_key(code):
+		# We are an extension of a baseclass (usually an application extending
+		# Standard_Suite or so). Import everything from our base module
+		fp.write('from %s import *\n'%basepackage._code_to_fullname[code])
+		basemodule = basepackage._code_to_module[code]
+	else:
+		# We are not an extension.
+		basemodule = None
+	compileclassheader(fp, modname, basemodule)
 
 	enumsneeded = {}
 	if events:
@@ -249,7 +323,7 @@ def compilesuite(suite, major, minor, language, script, fname):
 	else:
 		fp.write("\tpass\n\n")
 
-	objc = ObjectCompiler(fp)
+	objc = ObjectCompiler(fp, basemodule)
 	for cls in classes:
 		objc.compileclass(cls)
 	for cls in classes:
@@ -263,10 +337,16 @@ def compilesuite(suite, major, minor, language, script, fname):
 		objc.checkforenum(enum)
 		
 	objc.dumpindex()
+	
+	return code, modname
 
-def compileclassheader(fp, name):
+def compileclassheader(fp, name, module=None):
 	"""Generate class boilerplate"""
-	fp.write("class %s:\n\n"%name)
+	classname = '%s_Events'%name
+	if module and hasattr(module, classname):
+		fp.write("class %s(%s):\n\n"%(classname, classname))
+	else:
+		fp.write("class %s:\n\n"%classname)
 	
 def compileevent(fp, event, enumsneeded):
 	"""Generate code for a single event"""
@@ -378,7 +458,7 @@ def compileargument(arg):
 	print "#        %s (%s)" % (name, `keyword`), compiledata(what)
 
 class ObjectCompiler:
-	def __init__(self, fp):
+	def __init__(self, fp, basesuite=None):
 		self.fp = fp
 		self.propnames = {}
 		self.classnames = {}
@@ -387,12 +467,20 @@ class ObjectCompiler:
 		self.compcodes = {}
 		self.enumcodes = {}
 		self.othersuites = []
+		self.basesuite = basesuite
 		
 	def findcodename(self, type, code):
 		while 1:
 			if type == 'property':
+				# First we check whether we ourselves have defined it
 				if self.propcodes.has_key(code):
 					return self.propcodes[code], self.propcodes[code], None
+				# Next we check whether our base suite module has defined it
+				if self.basesuite and self.basesuite._propdeclarations.has_key(code):
+					name = self.basesuite._propdeclarations[code].__name__
+					return name, name, None
+				# Finally we test whether one of the other suites we know about has defined
+				# it.
 				for s in self.othersuites:
 					if s._propdeclarations.has_key(code):
 						name = s._propdeclarations[code].__name__
@@ -400,6 +488,9 @@ class ObjectCompiler:
 			if type == 'class':
 				if self.classcodes.has_key(code):
 					return self.classcodes[code], self.classcodes[code], None
+				if self.basesuite and self.basesuite._classdeclarations.has_key(code):
+					name = self.basesuite._classdeclarations[code].__name__
+					return name, name, None
 				for s in self.othersuites:
 					if s._classdeclarations.has_key(code):
 						name = s._classdeclarations[code].__name__
@@ -407,6 +498,9 @@ class ObjectCompiler:
 			if type == 'enum':
 				if self.enumcodes.has_key(code):
 					return self.enumcodes[code], self.enumcodes[code], None
+				if self.basesuite and self.basesuite._enumdeclarations.has_key(code):
+					name = '_Enum_' + identify(code)
+					return name, name, None
 				for s in self.othersuites:
 					if s._enumdeclarations.has_key(code):
 						name = '_Enum_' + identify(code)
@@ -414,11 +508,15 @@ class ObjectCompiler:
 			if type == 'comparison':
 				if self.compcodes.has_key(code):
 					return self.compcodes[code], self.compcodes[code], None
+				if self.basesuite and self.basesuite._compdeclarations.has_key(code):
+					name = self.basesuite._compdeclarations[code].__name__
+					return name, name, None
 				for s in self.othersuites:
 					if s._compdeclarations.has_key(code):
 						name = s._compdeclarations[code].__name__
 						return name, '%s.%s' % (s.__name__, name), s.__name__
-						
+			# If all this has failed we ask the user for a guess on where it could
+			# be and retry.	
 			m = self.askdefinitionmodule(type, code)
 			if not m: return None, None, None
 			self.othersuites.append(m)
@@ -443,7 +541,7 @@ class ObjectCompiler:
 			self.classnames[pname] = code
 		else:
 			self.fp.write('\nclass %s(aetools.ComponentItem):\n' % pname)
-			self.fp.write('\t"""%s - %s"""\n' % (name, desc))
+			self.fp.write('\t"""%s - %s """\n' % (name, desc))
 			self.fp.write('\twant = %s\n' % `code`)
 			self.classnames[pname] = code
 			self.classcodes[code] = pname
@@ -462,7 +560,7 @@ class ObjectCompiler:
 			self.fp.write("# repeated property %s %s\n"%(pname, what[1]))
 		else:
 			self.fp.write("class %s(aetools.NProperty):\n" % pname)
-			self.fp.write('\t"""%s - %s"""\n' % (name, what[1]))
+			self.fp.write('\t"""%s - %s """\n' % (name, what[1]))
 			self.fp.write("\twhich = %s\n" % `code`)
 			self.fp.write("\twant = %s\n" % `what[0]`)
 			self.propnames[pname] = code
@@ -510,7 +608,7 @@ class ObjectCompiler:
 		iname = identify(name)
 		self.compcodes[code] = iname
 		self.fp.write("class %s(aetools.NComparison):\n" % iname)
-		self.fp.write('\t"""%s - %s"""\n' % (name, comment))
+		self.fp.write('\t"""%s - %s """\n' % (name, comment))
 		
 	def compileenumeration(self, enum):
 		[code, items] = enum
