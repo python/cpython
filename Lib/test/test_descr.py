@@ -2974,6 +2974,31 @@ def docdescriptor():
     vereq(NewClass.__doc__, 'object=None; type=NewClass')
     vereq(NewClass().__doc__, 'object=NewClass instance; type=NewClass')
 
+def string_exceptions():
+    if verbose:
+        print "Testing string exceptions ..."
+
+    # Ensure builtin strings work OK as exceptions.
+    astring = "An exception string."
+    try:
+        raise astring
+    except astring:
+        pass
+    else:
+        raise TestFailed, "builtin string not usable as exception"
+
+    # Ensure string subclass instances do not.
+    class MyStr(str):
+        pass
+
+    newstring = MyStr("oops -- shouldn't work")
+    try:
+        raise newstring
+    except TypeError:
+        pass
+    except:
+        raise TestFailed, "string subclass allowed as exception"
+
 def test_main():
     class_docstrings()
     lists()
@@ -3039,6 +3064,7 @@ def test_main():
     funnynew()
     imulbug()
     docdescriptor()
+    string_exceptions()
     if verbose: print "All OK"
 
 if __name__ == "__main__":
