@@ -719,7 +719,7 @@ xmlparse_getattr(xmlparseobject *self, char *name)
     if (strcmp(name, "__members__") == 0) {
         int i;
         PyObject *rc = PyList_New(0);
-        for(i = 0; handler_info[i].name!=NULL; i++) {
+        for(i = 0; handler_info[i].name != NULL; i++) {
             PyList_Append(rc, 
                           PyString_FromString(handler_info[i].name));
         }
@@ -727,6 +727,7 @@ xmlparse_getattr(xmlparseobject *self, char *name)
         PyList_Append(rc, PyString_FromString("ErrorLineNumber"));
         PyList_Append(rc, PyString_FromString("ErrorColumnNumber"));
         PyList_Append(rc, PyString_FromString("ErrorByteIndex"));
+        PyList_Append(rc, PyString_FromString("returns_unicode"));
 
         return rc;
     }
