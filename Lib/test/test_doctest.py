@@ -923,7 +923,7 @@ output to match any substring in the actual output:
     ...                 # doctest: +NORMALIZE_WHITESPACE
     [0,    1, ...,   18,    19]
 
-The UNIFIED_DIFF flag causes failures that involve multi-line expected
+The REPORT_UDIFF flag causes failures that involve multi-line expected
 and actual outputs to be displayed using a unified diff:
 
     >>> def f(x):
@@ -965,7 +965,7 @@ and actual outputs to be displayed using a unified diff:
 
     >>> # With the flag:
     >>> test = doctest.DocTestFinder().find(f)[0]
-    >>> flags = doctest.UNIFIED_DIFF
+    >>> flags = doctest.REPORT_UDIFF
     >>> doctest.DocTestRunner(verbose=False, optionflags=flags).run(test)
     **********************************************************************
     Line 2, in f
@@ -985,12 +985,12 @@ and actual outputs to be displayed using a unified diff:
     <BLANKLINE>
     (1, 1)
 
-The CONTEXT_DIFF flag causes failures that involve multi-line expected
+The REPORT_CDIFF flag causes failures that involve multi-line expected
 and actual outputs to be displayed using a context diff:
 
-    >>> # Reuse f() from the UNIFIED_DIFF example, above.
+    >>> # Reuse f() from the REPORT_UDIFF example, above.
     >>> test = doctest.DocTestFinder().find(f)[0]
-    >>> flags = doctest.CONTEXT_DIFF
+    >>> flags = doctest.REPORT_CDIFF
     >>> doctest.DocTestRunner(verbose=False, optionflags=flags).run(test)
     **********************************************************************
     Line 2, in f
@@ -1019,7 +1019,7 @@ and actual outputs to be displayed using a context diff:
     (1, 1)
 
 
-The NDIFF_DIFF flag causes failures to use the difflib.Differ algorithm
+The REPORT_NDIFF flag causes failures to use the difflib.Differ algorithm
 used by the popular ndiff.py utility.  This does intraline difference
 marking, as well as interline differences.
 
@@ -1029,7 +1029,7 @@ marking, as well as interline differences.
     ...     a b c d e f g h i j k 1 m
     ...     '''
     >>> test = doctest.DocTestFinder().find(f)[0]
-    >>> flags = doctest.NDIFF_DIFF
+    >>> flags = doctest.REPORT_NDIFF
     >>> doctest.DocTestRunner(verbose=False, optionflags=flags).run(test)
     **********************************************************************
     Line 2, in f

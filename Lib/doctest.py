@@ -176,9 +176,9 @@ __all__ = [
     'DONT_ACCEPT_BLANKLINE',
     'NORMALIZE_WHITESPACE',
     'ELLIPSIS',
-    'UNIFIED_DIFF',
-    'CONTEXT_DIFF',
-    'NDIFF_DIFF',
+    'REPORT_UDIFF',
+    'REPORT_CDIFF',
+    'REPORT_NDIFF',
     # 1. Utility Functions
     'is_private',
     # 2. Example & DocTest
@@ -257,9 +257,9 @@ DONT_ACCEPT_TRUE_FOR_1 = register_optionflag('DONT_ACCEPT_TRUE_FOR_1')
 DONT_ACCEPT_BLANKLINE = register_optionflag('DONT_ACCEPT_BLANKLINE')
 NORMALIZE_WHITESPACE = register_optionflag('NORMALIZE_WHITESPACE')
 ELLIPSIS = register_optionflag('ELLIPSIS')
-UNIFIED_DIFF = register_optionflag('UNIFIED_DIFF')
-CONTEXT_DIFF = register_optionflag('CONTEXT_DIFF')
-NDIFF_DIFF = register_optionflag('NDIFF_DIFF')
+REPORT_UDIFF = register_optionflag('REPORT_UDIFF')
+REPORT_CDIFF = register_optionflag('REPORT_CDIFF')
+REPORT_NDIFF = register_optionflag('REPORT_NDIFF')
 
 # Special string markers for use in `want` strings:
 BLANKLINE_MARKER = '<BLANKLINE>'
@@ -1582,9 +1582,9 @@ class OutputChecker:
     # Should we do a fancy diff?
     def _do_a_fancy_diff(self, want, got, optionflags):
         # Not unless they asked for a fancy diff.
-        if not optionflags & (UNIFIED_DIFF |
-                              CONTEXT_DIFF |
-                              NDIFF_DIFF):
+        if not optionflags & (REPORT_UDIFF |
+                              REPORT_CDIFF |
+                              REPORT_NDIFF):
             return False
         # If expected output uses ellipsis, a meaningful fancy diff is
         # too hard.
@@ -1592,7 +1592,7 @@ class OutputChecker:
             return False
         # ndiff does intraline difference marking, so can be useful even
         # for 1-line inputs.
-        if optionflags & NDIFF_DIFF:
+        if optionflags & REPORT_NDIFF:
             return True
         # The other diff types need at least a few lines to be helpful.
         return want.count('\n') > 2 and got.count('\n') > 2
@@ -1617,15 +1617,15 @@ class OutputChecker:
             want_lines = [l+'\n' for l in want.split('\n')]
             got_lines = [l+'\n' for l in got.split('\n')]
             # Use difflib to find their differences.
-            if optionflags & UNIFIED_DIFF:
+            if optionflags & REPORT_UDIFF:
                 diff = difflib.unified_diff(want_lines, got_lines, n=2)
                 diff = list(diff)[2:] # strip the diff header
                 kind = 'unified diff with -expected +actual'
-            elif optionflags & CONTEXT_DIFF:
+            elif optionflags & REPORT_CDIFF:
                 diff = difflib.context_diff(want_lines, got_lines, n=2)
                 diff = list(diff)[2:] # strip the diff header
                 kind = 'context diff with expected followed by actual'
-            elif optionflags & NDIFF_DIFF:
+            elif optionflags & REPORT_NDIFF:
                 engine = difflib.Differ(charjunk=difflib.IS_CHARACTER_JUNK)
                 diff = list(engine.compare(want_lines, got_lines))
                 kind = 'ndiff with -expected +actual'
@@ -1839,9 +1839,9 @@ def testmod(m=None, name=None, globs=None, verbose=None, isprivate=None,
         DONT_ACCEPT_BLANKLINE
         NORMALIZE_WHITESPACE
         ELLIPSIS
-        UNIFIED_DIFF
-        CONTEXT_DIFF
-        NDIFF_DIFF
+        REPORT_UDIFF
+        REPORT_CDIFF
+        REPORT_NDIFF
 
     Optional keyword arg "raise_on_error" raises an exception on the
     first unexpected exception or failure. This allows failures to be
