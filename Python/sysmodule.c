@@ -183,8 +183,10 @@ sys_getcounts(self, args)
 #endif
 
 #ifdef Py_TRACE_REFS
-extern PyObject *getobjects Py_PROTO((PyObject *, PyObject *));
+/* Defined in objects.c because it uses static globals if that file */
+extern PyObject *_Py_GetObjects Py_PROTO((PyObject *, PyObject *));
 #endif
+
 static struct methodlist sys_methods[] = {
 	{"exit",	sys_exit, 0},
 	{"getrefcount",	sys_getrefcount, 0},
@@ -192,7 +194,7 @@ static struct methodlist sys_methods[] = {
 	{"getcounts",	sys_getcounts, 0},
 #endif
 #ifdef Py_TRACE_REFS
-	{"getobjects",	getobjects, 1},
+	{"getobjects",	_Py_GetObjects, 1},
 #endif
 #ifdef USE_MALLOPT
 	{"mdebug",	sys_mdebug, 0},
