@@ -25,8 +25,8 @@ class install_ext (Command):
 
     def finalize_options (self):
         self.set_undefined_options ('install',
-                                    ('build_platlib', 'build_dir'),
-                                    ('install_platlib', 'install_dir'))
+                                    ('build_lib', 'build_dir'),
+                                    ('install_lib', 'install_dir'))
 
     def run (self):
 
