@@ -292,13 +292,14 @@ PyString_FromFormatV(const char *format, va_list vargs)
 	}
 	
  end:
-	_PyString_Resize(&string, s - PyString_AsString(string));
+	_PyString_Resize(&string, s - PyString_AS_STRING(string));
 	return string;
 }
 	
 PyObject *
 PyString_FromFormat(const char *format, ...) 
 {
+	PyObject* ret;
 	va_list vargs;
 
 #ifdef HAVE_STDARG_PROTOTYPES
@@ -306,7 +307,9 @@ PyString_FromFormat(const char *format, ...)
 #else
 	va_start(vargs);
 #endif
-	return PyString_FromFormatV(format, vargs);
+	ret = PyString_FromFormatV(format, vargs);
+	va_end(vargs);
+	return ret;
 }
 
 
