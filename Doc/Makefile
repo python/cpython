@@ -76,6 +76,9 @@ MKHTML=	   $(PYTHON) tools/mkhowto --html --about html/stdabout.dat \
 		--address $(PYTHONDOCS) --up-link ../index.html \
 		--up-title "Python Documentation Index" \
 		--global-module-index "../modindex.html"
+MKISILOHTML=$(PYTHON) tools/mkhowto --html --about html/stdabout.dat \
+		--l2h-init perl/isilo.perl --numeric --split 1
+MKISILO=   iSilo386 -U -y -rCR -d0
 MKPDF=	   $(PYTHON) ../tools/mkhowto --paper=$(PAPER) --pdf
 MKPS=	   $(PYTHON) ../tools/mkhowto --paper=$(PAPER) --ps
 
@@ -126,7 +129,7 @@ include Makefile.deps
 # These must be declared phony since there
 # are directories with matching names:
 .PHONY: api doc ext lib mac ref tut inst dist
-.PHONY: html info
+.PHONY: html info isilo
 
 
 # Main target
@@ -290,6 +293,104 @@ dist html/dist/dist.html: $(DISTFILES) perl/distutils.perl
 	$(MKHTML) --dir html/dist --split 4 dist/dist.tex
 
 
+# The iSilo format is used by the iSilo document reader for PalmOS devices.
+
+ISILOINDEXFILES=isilo/api/api.html \
+	isilo/doc/doc.html \
+	isilo/ext/ext.html \
+	isilo/lib/lib.html \
+	isilo/mac/mac.html \
+	isilo/ref/ref.html \
+	isilo/tut/tut.html \
+	isilo/inst/inst.html \
+	isilo/dist/dist.html
+
+$(ISILOINDEXFILES): $(COMMONPERL) html/about.dat perl/isilo.perl
+
+isilo:	isilo/python-api-$(RELEASE).pdb \
+	isilo/python-doc-$(RELEASE).pdb \
+	isilo/python-ext-$(RELEASE).pdb \
+	isilo/python-lib-$(RELEASE).pdb \
+	isilo/python-mac-$(RELEASE).pdb \
+	isilo/python-ref-$(RELEASE).pdb \
+	isilo/python-tut-$(RELEASE).pdb \
+	isilo/python-dist-$(RELEASE).pdb \
+	isilo/python-inst-$(RELEASE).pdb
+
+isilo/python-api-$(RELEASE).pdb: isilo/api/api.html
+	$(MKISILO) "-iPython/C API Reference Manual" \
+		isilo/api/api.html $@
+
+isilo/python-doc-$(RELEASE).pdb: isilo/doc/doc.html
+	$(MKISILO) "-iDocumenting Python" \
+		isilo/doc/doc.html $@
+
+isilo/python-ext-$(RELEASE).pdb: isilo/ext/ext.html
+	$(MKISILO) "-iExtending & Embedding Python" \
+		isilo/ext/ext.html $@
+
+isilo/python-lib-$(RELEASE).pdb: isilo/lib/lib.html
+	$(MKISILO) "-iPython Library Reference" \
+		isilo/lib/lib.html $@
+
+isilo/python-mac-$(RELEASE).pdb: isilo/mac/mac.html
+	$(MKISILO) "-iPython/C API Reference Manual" \
+		isilo/mac/mac.html $@
+
+isilo/python-ref-$(RELEASE).pdb: isilo/ref/ref.html
+	$(MKISILO) "-iPython Reference Manual" \
+		isilo/ref/ref.html $@
+
+isilo/python-tut-$(RELEASE).pdb: isilo/tut/tut.html
+	$(MKISILO) "-iPython Tutorial" \
+		isilo/tut/tut.html $@
+
+isilo/python-dist-$(RELEASE).pdb: isilo/dist/dist.html
+	$(MKISILO) "-iDistributing Python Modules" \
+		isilo/dist/dist.html $@
+
+isilo/python-inst-$(RELEASE).pdb: isilo/inst/inst.html
+	$(MKISILO) "-iInstalling Python Modules" \
+		isilo/inst/inst.html $@
+
+isilo/api/api.html: $(APIFILES)
+	$(MKISILOHTML) --dir isilo/api api/api.tex
+
+isilo/doc/doc.html: $(DOCFILES)
+	$(MKISILOHTML) --dir isilo/doc doc/doc.tex
+
+isilo/ext/ext.html: $(EXTFILES)
+	$(MKISILOHTML) --dir isilo/ext ext/ext.tex
+
+isilo/lib/lib.html: $(LIBFILES)
+	$(MKISILOHTML) --dir isilo/lib lib/lib.tex
+
+isilo/mac/mac.html: $(MACFILES)
+	$(MKISILOHTML) --dir isilo/mac mac/mac.tex
+
+isilo/ref/ref.html: $(REFFILES)
+	$(MKISILOHTML) --dir isilo/ref ref/ref.tex
+
+isilo/tut/tut.html: $(TUTFILES)
+	$(MKISILOHTML) --dir isilo/tut tut/tut.tex
+
+isilo/inst/inst.html: $(INSTFILES) perl/distutils.perl
+	$(MKISILOHTML) --dir isilo/inst inst/inst.tex
+
+isilo/dist/dist.html: $(DISTFILES) perl/distutils.perl
+	$(MKISILOHTML) --dir isilo/dist dist/dist.tex
+
+# These are useful if you need to transport the iSilo-ready HTML to
+# another machine to perform the conversion:
+
+isilozip:  isilo-html-$(RELEASE).zip
+
+isilo-html-$(RELEASE).zip:	$(ISILOINDEXFILES)
+	rm -f $@
+	cd isilo && \
+		zip -q -9 ../$@ */*.css */*.html */*.txt
+
+
 # webchecker needs an extra flag to process the huge index from the libref
 WEBCHECKER=$(PYTHON) ../Tools/webchecker/webchecker.py
 HTMLBASE=  file:`pwd`/html
@@ -382,6 +483,10 @@ html-$(RELEASE).zip:	$(ALLHTMLFILES)
 	cd html && \
 		zip -q -9 ../$@ *.html */*.css */*.html */*.gif */*.txt
 
+isilo-$(RELEASE).zip:	isilo
+	cd isilo && zip -q -9 ../$@ python-*-$(RELEASE).pdb
+
+
 # convenience targets:
 
 tarhtml:	html-$(RELEASE).tgz
@@ -396,6 +501,7 @@ ziphtml:	html-$(RELEASE).zip
 zipps:		postscript-$(PAPER)-$(RELEASE).zip
 zippdf:		pdf-$(PAPER)-$(RELEASE).zip
 ziplatex:	latex-$(RELEASE).zip
+zipisilo:	isilo-$(RELEASE).zip
 
 zips:		zippdf zipps ziphtml
 
@@ -441,5 +547,8 @@ clobber:
 	rm -rf html/index.html html/modindex.html html/acks.html
 	rm -rf html/api/ html/doc/ html/ext/ html/lib/ html/mac/
 	rm -rf html/ref/ html/tut/ html/inst/ html/dist/
+	rm -rf isilo/api/ isilo/doc/ isilo/ext/ isilo/lib/ isilo/mac/
+	rm -rf isilo/ref/ isilo/tut/ isilo/inst/ isilo/dist/
+	rm -f isilo/python-*-$(RELEASE).pdb isilo-$(RELEASE).zip
 
 realclean distclean:  clobber
