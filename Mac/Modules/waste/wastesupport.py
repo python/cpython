@@ -63,6 +63,9 @@ includestuff = includestuff + """
 #include <%s>""" % MACHEADERFILE + """
 #include <WEObjectHandlers.h>
 #include <WETabs.h>
+#ifndef PyDoc_STR
+#define PyDoc_STR(x) (x)
+#endif
 
 /* Exported by Qdmodule.c: */
 extern PyObject *QdRGB_New(RGBColor *);

@@ -20,6 +20,9 @@
     }} while(0)
 
 
+#ifndef PyDoc_STR
+#define PyDoc_STR(x) (x)
+#endif
 #ifdef WITHOUT_FRAMEWORKS
 #include <MacHelp.h>
 #else
