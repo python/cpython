@@ -124,7 +124,7 @@ for each thread.
 \begin{cfuncdesc}{void}{PyErr_SetObject}{PyObject *type, PyObject *value}
   This function is similar to \cfunction{PyErr_SetString()} but lets
   you specify an arbitrary Python object for the ``value'' of the
-  exception.  You need not increment its reference count.
+  exception.  One reference to \var{value} is stolen.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyErr_Format}{PyObject *exception,
