@@ -58,7 +58,7 @@ BSC32=bscmake.exe
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /dll /machine:I386
 # ADD LINK32 user32.lib kernel32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib ..\..\bsddb\port\win32\db.lib /nologo /subsystem:windows /dll /debug /machine:I386 /out:"./bsddb.pyd" /libpath:"Release" /export:initbsddb
-# SUBTRACT LINK32 /pdb:none
+# SUBTRACT LINK32 /verbose /pdb:none
 
 !ELSEIF  "$(CFG)" == "bsddb - Win32 Debug"
 
@@ -89,7 +89,7 @@ BSC32=bscmake.exe
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /dll /debug /machine:I386 /pdbtype:sept
 # ADD LINK32 user32.lib kernel32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib ..\..\bsddb\port\win32\db.lib /nologo /subsystem:windows /dll /debug /machine:I386 /nodefaultlib:"MSVCRT" /out:"./bsddb_d.pyd" /pdbtype:sept /libpath:"Debug" /export:initbsddb
-# SUBTRACT LINK32 /pdb:none
+# SUBTRACT LINK32 /verbose /pdb:none
 
 !ELSEIF  "$(CFG)" == "bsddb - Win32 Alpha Debug"
 
@@ -105,12 +105,12 @@ LINK32=link.exe
 # PROP Intermediate_Dir "alpha-temp-debug"
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
-MTL=midl.exe
-# ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /o "NUL" /win32
-# ADD MTL /nologo /D "_DEBUG" /mktyplib203 /o "NUL" /win32
 CPP=cl.exe
 # ADD BASE CPP /nologo /MTd /Gt0 /W3 /GX /Zi /Od /I "..\Include" /I "..\PC" /I "..\..\bsddb\include" /I "..\..\bsddb\port\include" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /YX /FD /c
 # ADD CPP /nologo /MDd /Gt0 /W3 /GX /Zi /Od /I "..\Include" /I "..\PC" /I "..\..\bsddb\include" /I "..\..\bsddb\port\include" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /YX /FD /c
+MTL=midl.exe
+# ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /o "NUL" /win32
+# ADD MTL /nologo /D "_DEBUG" /mktyplib203 /o "NUL" /win32
 RSC=rc.exe
 # ADD BASE RSC /l 0x409 /d "_DEBUG"
 # ADD RSC /l 0x409 /d "_DEBUG"
@@ -121,7 +121,7 @@ LINK32=link.exe
 # ADD BASE LINK32 ..\..\bsddb\port\win32\db.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib /nologo /subsystem:windows /dll /debug /machine:ALPHA /nodefaultlib:"MSVCRT" /out:"./bsddb_d.pyd" /pdbtype:sept /libpath:"Debug" /export:initbsddb
 # SUBTRACT BASE LINK32 /pdb:none
 # ADD LINK32 ..\..\bsddb\port\win32\db.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib /nologo /subsystem:windows /dll /debug /machine:ALPHA /nodefaultlib:"MSVCRT" /out:"alpha-temp-debug\bsddb_d.pyd" /pdbtype:sept /libpath:"Debug" /export:initbsddb
-# SUBTRACT LINK32 /pdb:none
+# SUBTRACT LINK32 /verbose /pdb:none
 
 !ELSEIF  "$(CFG)" == "bsddb - Win32 Alpha Release"
 
@@ -137,12 +137,12 @@ LINK32=link.exe
 # PROP Intermediate_Dir "alpha-temp-release"
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
-MTL=midl.exe
-# ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /o "NUL" /win32
-# ADD MTL /nologo /D "NDEBUG" /mktyplib203 /o "NUL" /win32
 CPP=cl.exe
 # ADD BASE CPP /nologo /MT /Gt0 /W3 /GX /Zi /O2 /I "..\Include" /I "..\PC" /I "..\..\bsddb\include" /I "..\..\bsddb\port\include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /YX /FD /c
 # ADD CPP /nologo /MD /Gt0 /W3 /GX /O2 /I "..\Include" /I "..\PC" /I "..\..\bsddb\include" /I "..\..\bsddb\port\include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /YX /FD /c
+MTL=midl.exe
+# ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /o "NUL" /win32
+# ADD MTL /nologo /D "NDEBUG" /mktyplib203 /o "NUL" /win32
 RSC=rc.exe
 # ADD BASE RSC /l 0x409 /d "NDEBUG"
 # ADD RSC /l 0x409 /d "NDEBUG"
@@ -153,7 +153,7 @@ LINK32=link.exe
 # ADD BASE LINK32 ..\..\bsddb\port\win32\db.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib /nologo /subsystem:windows /dll /debug /machine:ALPHA /out:"./bsddb.pyd" /libpath:"Release" /export:initbsddb
 # SUBTRACT BASE LINK32 /pdb:none
 # ADD LINK32 ..\..\bsddb\port\win32\db.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib /nologo /subsystem:windows /dll /debug /machine:ALPHA /out:"alpha-temp-release\bsddb.pyd" /libpath:"Release" /export:initbsddb
-# SUBTRACT LINK32 /pdb:none
+# SUBTRACT LINK32 /verbose /pdb:none
 
 !ENDIF 
 
