@@ -47,7 +47,7 @@ def test():
     # Ensure default comparison compares id() of args
     L = []
     for i in range(10):
-        L.insert(len(L)/2, Empty())
+        L.insert(len(L)//2, Empty())
     for a in L:
         for b in L:
             if cmp(a, b) != cmp(id(a), id(b)):

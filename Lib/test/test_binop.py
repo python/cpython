@@ -42,8 +42,8 @@ class Rat(object):
         if den == 0:
             raise ZeroDivisionError, "zero denominator"
         g = gcd(den, num)
-        self.__num = long(num/g)
-        self.__den = long(den/g)
+        self.__num = long(num//g)
+        self.__den = long(den//g)
 
     def _get_num(self):
         """Accessor function for read-only 'num' attribute of Rat."""

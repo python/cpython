@@ -590,7 +590,7 @@ def getframeinfo(frame, context=1):
     filename = getsourcefile(frame)
     lineno = getlineno(frame)
     if context > 0:
-        start = lineno - 1 - context/2
+        start = lineno - 1 - context//2
         try:
             lines, lnum = findsource(frame)
         except IOError:

@@ -86,7 +86,7 @@ if pid == pty.CHILD:
 else:
     debug("Waiting for child (%d) to finish."%pid)
     (pid, status) = os.waitpid(pid, 0)
-    res = status / 256
+    res = status >> 8
     debug("Child (%d) exited with status %d (%d)."%(pid, res, status))
     if res == 1:
         raise TestFailed, "Child raised an unexpected exception in os.setsid()"

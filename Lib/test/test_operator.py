@@ -82,7 +82,7 @@ class OperatorTestCase(unittest.TestCase):
         self.assert_(a == [0, 1, 8, 9])
 
     def test_div(self):
-        self.failUnless(operator.div(5, 2) == 2)
+        self.failUnless(operator.floordiv(5, 2) == 2)
 
     def test_floordiv(self):
         self.failUnless(operator.floordiv(5, 2) == 2)
