@@ -67,7 +67,7 @@ def test():
             try:
                 test_bug737473.test()
             except ValueError:
-                # this loads source code to linecache 
+                # this loads source code to linecache
                 traceback.extract_tb(sys.exc_traceback)
 
             print >> open(testfile, 'w'), """\
