@@ -452,6 +452,8 @@ The following operations are defined on mutable sequence types (where
 	{same as \code{\var{s}[\var{i}:\var{j}] = []}}{}
   \lineiii{\var{s}.append(\var{x})}
 	{same as \code{\var{s}[len(\var{s}):len(\var{s})] = [\var{x}]}}{}
+  \lineiii{\var{s}.extend(\var{x})}
+        {same as \code{\var{s}[len(\var{s}):len(\var{s})] = \var{x}}}{(5)}
   \lineiii{\var{s}.count(\var{x})}
     {return number of \var{i}'s for which \code{\var{s}[\var{i}] == \var{x}}}{}
   \lineiii{\var{s}.index(\var{x})}
@@ -476,6 +478,7 @@ The following operations are defined on mutable sequence types (where
 \stindex{del}
 \withsubitem{(list method)}{%
   \ttindex{append}%
+  \ttindex{extend}%
   \ttindex{count}%
   \ttindex{index}%
   \ttindex{insert}%
@@ -509,6 +512,9 @@ by other mutable sequence types than lists.
 The optional argument \var{i} defaults to \code{-1}, so that
 by default the last item is removed and returned.
 
+\item[(5)] Raises an exception when \var{x} is not a list object.  The 
+\method{extend()} method is experimental and not supported by mutable types
+other than lists.
 \end{description}
 
 
