@@ -294,6 +294,14 @@ Tools/Demos
 
 Build
 
+- A bug was fixed that could cause COUNT_ALLOCS builds to segfault, or
+  get into infinite loops, when a new-style class got garbage-collected.
+  Unfortunately, to avoid this, the way COUNT_ALLOCS works requires
+  that new-style classes be immortal in COUNT_ALLOCS builds.  Note that
+  COUNT_ALLOCS is not enabled by default, in either release or debug
+  builds, and that new-style classes are immortal only in COUNT_ALLOCS
+  builds.
+
 - Compiling out the cyclic garbage collector is no longer an option.
   The old symbol WITH_CYCLE_GC is now ignored, and Python.h arranges
   that it's always defined (for the benefit of any extension modules
