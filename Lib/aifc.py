@@ -146,18 +146,6 @@ _AIFC_version = 0xA2805140		# Version 1 of AIFF-C
 _skiplist = 'COMT', 'INST', 'MIDI', 'AESD', \
 	  'APPL', 'NAME', 'AUTH', '(c) ', 'ANNO'
 
-def _convert1(value, list):
-	for t in list:
-		if value == t[0]:
-			return t[1]
-	raise Error, 'unknown parameter value'
-
-def _convert2(value, list):
-	for t in list:
-		if value == t[1]:
-			return t[0]
-	raise Error, 'unknown parameter value'
-
 def _read_long(file):
 	x = 0L
 	for i in range(4):
