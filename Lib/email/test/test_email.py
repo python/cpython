@@ -1465,6 +1465,14 @@ class TestIdempotent(TestEmailBase):
         msg, text = self._msgobj('msg_31.txt')
         self._idempotent(msg, text)
 
+    def test_rfc2231_charset(self):
+        msg, text = self._msgobj('msg_32.txt')
+        self._idempotent(msg, text)
+
+    def test_more_rfc2231_parameters(self):
+        msg, text = self._msgobj('msg_33.txt')
+        self._idempotent(msg, text)
+
     def test_content_type(self):
         eq = self.assertEquals
         unless = self.failUnless
@@ -1513,6 +1521,7 @@ class TestIdempotent(TestEmailBase):
         eq(msg1.get_type(), 'text/plain')
         self.failUnless(isinstance(msg1.get_payload(), StringType))
         eq(msg1.get_payload(), '\n')
+
 
 
 # Test various other bits of the package's functionality
@@ -2147,6 +2156,15 @@ A very long line that must get split to something other than at the
         h.append('hello', 'iso-8859-1')
         eq(h, '=?iso-8859-1?q?hello?=')
 
+    def test_unicode_error(self):
+        raises = self.assertRaises
+        raises(UnicodeError, Header, u'[P\xf6stal]', 'us-ascii')
+        raises(UnicodeError, Header, '[P\xf6stal]', 'us-ascii')
+        h = Header()
+        raises(UnicodeError, h.append, u'[P\xf6stal]', 'us-ascii')
+        raises(UnicodeError, h.append, '[P\xf6stal]', 'us-ascii')
+        raises(UnicodeError, Header, u'\u83ca\u5730\u6642\u592b', 'iso-8859-1')
+
 
 
 # Test RFC 2231 header parameters (en/de)coding
@@ -2225,6 +2243,11 @@ Do you like this message?
 
 -Me
 """)
+
+    def test_rfc2231_get_content_charset(self):
+        eq = self.assertEqual
+        msg = self._msgobj('msg_32.txt')
+        eq(msg.get_content_charset(), 'us-ascii')
 
 
 
