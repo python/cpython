@@ -657,10 +657,10 @@ PyObject *PyUnicode_DecodeUTF8(const char *s,
     e = s + size;
 
     while (s < e) {
-        register Py_UNICODE ch = (unsigned char)*s;
+        Py_UCS4 ch = (unsigned char)*s;
 
         if (ch < 0x80) {
-            *p++ = ch;
+            *p++ = (Py_UNICODE)ch;
             s++;
             continue;
         }
@@ -687,7 +687,7 @@ PyObject *PyUnicode_DecodeUTF8(const char *s,
             if (ch < 0x80)
                 UTF8_ERROR("illegal encoding");
 	    else
-		*p++ = ch;
+				*p++ = (Py_UNICODE)ch;
             break;
 
         case 3:
@@ -698,7 +698,30 @@ PyObject *PyUnicode_DecodeUTF8(const char *s,
             if (ch < 0x800 || (ch >= 0xd800 && ch < 0xe000))
                 UTF8_ERROR("illegal encoding");
 	    else
-		*p++ = ch;
+				*p++ = (Py_UNICODE)ch;
+            break;
+
+        case 4:
+            if ((s[1] & 0xc0) != 0x80 ||
+                (s[2] & 0xc0) != 0x80 ||
+                (s[3] & 0xc0) != 0x80)
+                UTF8_ERROR("invalid data");
+            ch = ((s[0] & 0x7) << 18) + ((s[1] & 0x3f) << 12) +
+                 ((s[2] & 0x3f) << 6) + (s[3] & 0x3f);
+            /* validate and convert to UTF-16 */
+            if ((ch < 0x10000) ||                  /* minimum value allowed for 4 byte encoding */
+                (ch > 0x10ffff))                   /* maximum value allowed for UTF-16 */
+                UTF8_ERROR("illegal encoding");
+            /*  compute and append the two surrogates: */
+            
+            /*  translate from 10000..10FFFF to 0..FFFF */
+            ch -= 0x10000;
+                    
+            /*  high surrogate = top 10 bits added to D800 */
+            *p++ = (Py_UNICODE)(0xD800 + (ch >> 10));
+                    
+            /*  low surrogate = bottom 10 bits added to DC00 */
+            *p++ = (Py_UNICODE)(0xDC00 + (ch & ~0xFC00));
             break;
 
         default:
@@ -758,32 +781,60 @@ PyObject *PyUnicode_EncodeUTF8(const Py_UNICODE *s,
     PyObject *v;
     char *p;
     char *q;
+    Py_UCS4 ch2;
+    unsigned int cbAllocated = 3 * size;
+    unsigned int cbWritten = 0;
+    int i = 0;
 
-    v = PyString_FromStringAndSize(NULL, 3 * size);
+    v = PyString_FromStringAndSize(NULL, cbAllocated);
     if (v == NULL)
         return NULL;
     if (size == 0)
         goto done;
 
     p = q = PyString_AS_STRING(v);
-    while (size-- > 0) {
-        Py_UNICODE ch = *s++;
-        if (ch < 0x80)
+    while (i < size) {
+        Py_UCS4 ch = s[i++];
+        if (ch < 0x80) {
             *p++ = (char) ch;
+            cbWritten++;
+        }
         else if (ch < 0x0800) {
             *p++ = 0xc0 | (ch >> 6);
             *p++ = 0x80 | (ch & 0x3f);
-	} else if (0xD800 <= ch && ch <= 0xDFFF) {
-	    /* These byte ranges are reserved for UTF-16 surrogate
-	       bytes which the Python implementation currently does
-	       not support. */
-	    if (utf8_encoding_error(&s, &p, errors, 
-				    "unsupported code range"))
+            cbWritten += 2;
+        }
+        else {
+            /* Check for high surrogate */
+            if (0xD800 <= ch && ch <= 0xDBFF) {
+                if (i != size) {
+                    ch2 = s[i];
+                    if (0xDC00 <= ch2 && ch2 <= 0xDFFF) {
+                        
+                        if (cbWritten >= (cbAllocated - 4)) {
+			    /* Provide enough room for some more
+			       surrogates */
+			    cbAllocated += 4*10;
+                            if (_PyString_Resize(&v, cbAllocated))
 		goto onError;
-        } else {
-            *p++ = 0xe0 | (ch >> 12);
-            *p++ = 0x80 | ((ch >> 6) & 0x3f);
-            *p++ = 0x80 | (ch & 0x3f);
+                        }
+
+                        /* combine the two values */
+                        ch = ((ch - 0xD800)<<10 | (ch2-0xDC00))+0x10000;
+                    
+                        *p++ = (char)((ch >> 18) | 0xf0);
+                        *p++ = (char)(0x80 | (ch >> 12) & 0x3f);
+                        i++;
+                        cbWritten += 4;
+                    }
+                }
+            }
+            else {
+                *p++ = (char)(0xe0 | (ch >> 12));
+                cbWritten += 3;
+            }
+            *p++ = (char)(0x80 | ((ch >> 6) & 0x3f));
+            *p++ = (char)(0x80 | (ch & 0x3f));
         }
     }
     *p = '\0';
@@ -1217,7 +1268,7 @@ PyObject *PyUnicode_DecodeUnicodeEscape(const char *s,
             {
                 const char *start = s + 1;
                 const char *endBrace = start;
-                unsigned int uiValue;
+                Py_UCS4 value;
                 unsigned long j;
 
                 /* look for either the closing brace, or we
@@ -1248,25 +1299,25 @@ PyObject *PyUnicode_DecodeUnicodeEscape(const char *s,
                         }
                         goto ucnFallthrough;
                     }
-                    uiValue = ((_Py_UnicodeCharacterName *)
-                               (pucnHash->getValue(j)))->uiValue;
-                    if (uiValue < 1<<16)
+                    value = ((_Py_UnicodeCharacterName *)
+                               (pucnHash->getValue(j)))->value;
+                    if (value < 1<<16)
                     {
                         /* In UCS-2 range, easy solution.. */
-                        *p++ = uiValue;
+                        *p++ = value;
                     }
                     else
                     {
                         /* Oops, its in UCS-4 space, */
                         /*  compute and append the two surrogates: */
                         /*  translate from 10000..10FFFF to 0..FFFFF */
-                        uiValue -= 0x10000;
+                        value -= 0x10000;
                     
                         /* high surrogate = top 10 bits added to D800 */
-                        *p++ = 0xD800 + (uiValue >> 10);
+                        *p++ = 0xD800 + (value >> 10);
                         
                         /* low surrogate  = bottom 10 bits added to DC00 */
-                        *p++ = 0xDC00 + (uiValue & ~0xFC00);
+                        *p++ = 0xDC00 + (value & ~0xFC00);
                     }
                     s = endBrace + 1;
                 }
@@ -3091,12 +3142,12 @@ unicode_center(PyUnicodeObject *self, PyObject *args)
 /* gleaned from: */
 /* http://www-4.ibm.com/software/developer/library/utf16.html?dwzone=unicode */
 
-static unsigned long utf16Fixup[32] =
+static short utf16Fixup[32] =
 {
     0, 0, 0, 0, 0, 0, 0, 0, 
     0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 
-    0, 0, 0, 0x2000, 0xf800, 0xf800, 0xf800, 0xf800
+    0, 0, 0, 0x2000, -0x800, -0x800, -0x800, -0x800
 };
 
 static int
@@ -3111,7 +3162,7 @@ unicode_compare(PyUnicodeObject *str1, PyUnicodeObject *str2)
     len2 = str2->length;
     
     while (len1 > 0 && len2 > 0) {
-	unsigned long c1, c2;
+        Py_UNICODE c1, c2;     
 	long diff;
 
         c1 = *s1++;
