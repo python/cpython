@@ -353,6 +353,21 @@ def myComparison(x,y):
 z = range(12)
 z.sort(myComparison)
 
+try: z.sort(2)
+except TypeError: pass
+else: raise TestFailed, 'list sort compare function is not callable'
+
+def selfmodifyingComparison(x,y):
+    z[0] = 1
+    return cmp(x, y)
+try: z.sort(selfmodifyingComparison)
+except TypeError: pass
+else: raise TestFailed, 'modifying list during sort'
+
+try: z.sort(lambda x, y: 's')
+except TypeError: pass
+else: raise TestFailed, 'list sort compare function does not return int'
+
 # Test extreme cases with long ints
 a = [0,1,2,3,4]
 if a[ -pow(2,128L): 3 ] != [0,1,2]:
