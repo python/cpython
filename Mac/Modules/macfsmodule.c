@@ -26,6 +26,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "modsupport.h"		/* For getargs() etc. */
 #include "macglue.h"
 
+#include <Memory.h>
 #include <Files.h>
 #include <StandardFile.h>
 #include <Aliases.h>

@@ -23,6 +23,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 ******************************************************************/
 
 #include "Python.h"
+
 #include "macglue.h"
 
 #include <OSUtils.h> /* for Set(Current)A5 */
@@ -401,7 +402,7 @@ PyMac_GetPythonDir()
 		prefrh = FSpOpenResFile(&dirspec, fsRdWrShPerm);
 		if ( prefrh == -1 ) {
 			/* It doesn't exist. Try to create it */
-			FSpCreateResFile(&dirspec, 'PYTH', 'pref', NULL);
+			FSpCreateResFile(&dirspec, 'PYTH', 'pref', 0);
 	  		prefrh = FSpOpenResFile(&dirspec, fsRdWrShPerm);
 			if ( prefrh == -1 ) {
 				cannotmodify = 1;
