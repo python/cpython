@@ -165,7 +165,7 @@ set_hook(const char * funcname, PyObject **hook_var, PyThreadState **tstate, PyO
 {
 	PyObject *function = Py_None;
 	char buf[80];
-	sprintf(buf, "|O:set_%s", funcname);
+	sprintf(buf, "|O:set_%.50s", funcname);
 	if (!PyArg_ParseTuple(args, buf, &function))
 		return NULL;
 	if (function == Py_None) {
@@ -181,7 +181,7 @@ set_hook(const char * funcname, PyObject **hook_var, PyThreadState **tstate, PyO
 		*tstate = PyThreadState_Get();
 	}
 	else {
-		sprintf(buf, "set_%s(func): argument not callable", funcname);
+		sprintf(buf, "set_%.50s(func): argument not callable", funcname);
 		PyErr_SetString(PyExc_TypeError, buf);
 		return NULL;
 	}

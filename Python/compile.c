@@ -4195,7 +4195,7 @@ get_ref_type(struct compiling *c, char *name)
 			return GLOBAL_IMPLICIT;
 		}
 	}
-	sprintf(buf, 
+	PyOS_snprintf(buf, sizeof(buf),
 		"unknown scope for %.100s in %.100s(%s) "
 		"in %s\nsymbols: %s\nlocals: %s\nglobals: %s\n",
 		name, c->c_name, 
