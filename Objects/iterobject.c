@@ -37,7 +37,7 @@ iter_traverse(seqiterobject *it, visitproc visit, void *arg)
 }
 
 static PyObject *
-iter_next(seqiterobject *it, PyObject *args)
+iter_next(seqiterobject *it)
 {
 	PyObject *seq = it->it_seq;
 	PyObject *result = PySequence_GetItem(seq, it->it_index++);
@@ -91,7 +91,7 @@ iter_iternext(PyObject *iterator)
 }
 
 static PyMethodDef iter_methods[] = {
-	{"next",	(PyCFunction)iter_next,	METH_VARARGS,
+	{"next",	(PyCFunction)iter_next,	METH_NOARGS,
 	 "it.next() -- get the next value, or raise StopIteration"},
 	{NULL,		NULL}		/* sentinel */
 };

@@ -53,12 +53,8 @@ fromlist is not empty.";
 
 
 static PyObject *
-builtin_abs(PyObject *self, PyObject *args)
+builtin_abs(PyObject *self, PyObject *v)
 {
-	PyObject *v;
-
-	if (!PyArg_ParseTuple(args, "O:abs", &v))
-		return NULL;
 	return PyNumber_Absolute(v);
 }
 
@@ -132,12 +128,8 @@ extend to the end of the target object (or with the specified size).";
 
 
 static PyObject *
-builtin_callable(PyObject *self, PyObject *args)
+builtin_callable(PyObject *self, PyObject *v)
 {
-	PyObject *v;
-
-	if (!PyArg_ParseTuple(args, "O:callable", &v))
-		return NULL;
 	return PyInt_FromLong((long)PyCallable_Check(v));
 }
 
@@ -667,12 +659,10 @@ exist; without it, an exception is raised in that case.";
 
 
 static PyObject *
-builtin_globals(PyObject *self, PyObject *args)
+builtin_globals(PyObject *self)
 {
 	PyObject *d;
 
-	if (!PyArg_ParseTuple(args, ":globals"))
-		return NULL;
 	d = PyEval_GetGlobals();
 	Py_INCREF(d);
 	return d;
@@ -722,12 +712,8 @@ Return whether the object has an attribute with the given name.\n\
 
 
 static PyObject *
-builtin_id(PyObject *self, PyObject *args)
+builtin_id(PyObject *self, PyObject *v)
 {
-	PyObject *v;
-
-	if (!PyArg_ParseTuple(args, "O:id", &v))
-		return NULL;
 	return PyLong_FromVoidPtr(v);
 }
 
@@ -949,13 +935,10 @@ Delete a named attribute on an object; delattr(x, 'y') is equivalent to\n\
 
 
 static PyObject *
-builtin_hash(PyObject *self, PyObject *args)
+builtin_hash(PyObject *self, PyObject *v)
 {
-	PyObject *v;
 	long x;
 
-	if (!PyArg_ParseTuple(args, "O:hash", &v))
-		return NULL;
 	x = PyObject_Hash(v);
 	if (x == -1)
 		return NULL;
@@ -970,13 +953,9 @@ the same hash value.  The reverse is not necessarily true, but likely.";
 
 
 static PyObject *
-builtin_hex(PyObject *self, PyObject *args)
+builtin_hex(PyObject *self, PyObject *v)
 {
-	PyObject *v;
 	PyNumberMethods *nb;
-
-	if (!PyArg_ParseTuple(args, "O:hex", &v))
-		return NULL;
 
 	if ((nb = v->ob_type->tp_as_number) == NULL ||
 	    nb->nb_hex == NULL) {
@@ -1075,13 +1054,10 @@ In the second form, the callable is called until it returns the sentinel.";
 
 
 static PyObject *
-builtin_len(PyObject *self, PyObject *args)
+builtin_len(PyObject *self, PyObject *v)
 {
-	PyObject *v;
 	long res;
 
-	if (!PyArg_ParseTuple(args, "O:len", &v))
-		return NULL;
 	res = PyObject_Size(v);
 	if (res < 0 && PyErr_Occurred())
 		return NULL;
@@ -1120,12 +1096,10 @@ Create a slice object.  This is used for slicing by the Numeric extensions.";
 
 
 static PyObject *
-builtin_locals(PyObject *self, PyObject *args)
+builtin_locals(PyObject *self)
 {
 	PyObject *d;
 
-	if (!PyArg_ParseTuple(args, ":locals"))
-		return NULL;
 	d = PyEval_GetLocals();
 	Py_INCREF(d);
 	return d;
@@ -1217,13 +1191,10 @@ With two or more arguments, return the largest argument.";
 
 
 static PyObject *
-builtin_oct(PyObject *self, PyObject *args)
+builtin_oct(PyObject *self, PyObject *v)
 {
-	PyObject *v;
 	PyNumberMethods *nb;
 
-	if (!PyArg_ParseTuple(args, "O:oct", &v))
-		return NULL;
 	if (v == NULL || (nb = v->ob_type->tp_as_number) == NULL ||
 	    nb->nb_oct == NULL) {
 		PyErr_SetString(PyExc_TypeError,
@@ -1270,14 +1241,10 @@ buffered, and larger numbers specify the buffer size.";
 
 
 static PyObject *
-builtin_ord(PyObject *self, PyObject *args)
+builtin_ord(PyObject *self, PyObject* obj)
 {
-	PyObject *obj;
 	long ord;
 	int size;
-
-	if (!PyArg_ParseTuple(args, "O:ord", &obj))
-		return NULL;
 
 	if (PyString_Check(obj)) {
 		size = PyString_GET_SIZE(obj);
@@ -1611,12 +1578,8 @@ sequence is empty.";
 
 
 static PyObject *
-builtin_reload(PyObject *self, PyObject *args)
+builtin_reload(PyObject *self, PyObject *v)
 {
-	PyObject *v;
-
-	if (!PyArg_ParseTuple(args, "O:reload", &v))
-		return NULL;
 	return PyImport_ReloadModule(v);
 }
 
@@ -1627,12 +1590,8 @@ Reload the module.  The module must have been successfully imported before.";
 
 
 static PyObject *
-builtin_repr(PyObject *self, PyObject *args)
+builtin_repr(PyObject *self, PyObject *v)
 {
-	PyObject *v;
-
-	if (!PyArg_ParseTuple(args, "O:repr", &v))
-		return NULL;
 	return PyObject_Repr(v);
 }
 
@@ -1841,53 +1800,53 @@ in length to the length of the shortest argument sequence.";
 
 
 static PyMethodDef builtin_methods[] = {
-	{"__import__",	builtin___import__, 1, import_doc},
-	{"abs",		builtin_abs, 1, abs_doc},
-	{"apply",	builtin_apply, 1, apply_doc},
-	{"buffer",	builtin_buffer, 1, buffer_doc},
-	{"callable",	builtin_callable, 1, callable_doc},
-	{"chr",		builtin_chr, 1, chr_doc},
-	{"cmp",		builtin_cmp, 1, cmp_doc},
-	{"coerce",	builtin_coerce, 1, coerce_doc},
-	{"compile",	builtin_compile, 1, compile_doc},
-	{"delattr",	builtin_delattr, 1, delattr_doc},
-	{"dir",		builtin_dir, 1, dir_doc},
-	{"divmod",	builtin_divmod, 1, divmod_doc},
-	{"eval",	builtin_eval, 1, eval_doc},
-	{"execfile",	builtin_execfile, 1, execfile_doc},
-	{"filter",	builtin_filter, 1, filter_doc},
-	{"getattr",	builtin_getattr, 1, getattr_doc},
-	{"globals",	builtin_globals, 1, globals_doc},
-	{"hasattr",	builtin_hasattr, 1, hasattr_doc},
-	{"hash",	builtin_hash, 1, hash_doc},
-	{"hex",		builtin_hex, 1, hex_doc},
-	{"id",		builtin_id, 1, id_doc},
-	{"input",	builtin_input, 1, input_doc},
-	{"intern",	builtin_intern, 1, intern_doc},
-	{"isinstance",  builtin_isinstance, 1, isinstance_doc},
-	{"issubclass",  builtin_issubclass, 1, issubclass_doc},
-	{"iter",	builtin_iter, 1, iter_doc},
-	{"len",		builtin_len, 1, len_doc},
-	{"locals",	builtin_locals, 1, locals_doc},
-	{"map",		builtin_map, 1, map_doc},
-	{"max",		builtin_max, 1, max_doc},
-	{"min",		builtin_min, 1, min_doc},
-	{"oct",		builtin_oct, 1, oct_doc},
-	{"open",	builtin_open, 1, open_doc},
-	{"ord",		builtin_ord, 1, ord_doc},
-	{"pow",		builtin_pow, 1, pow_doc},
-	{"range",	builtin_range, 1, range_doc},
-	{"raw_input",	builtin_raw_input, 1, raw_input_doc},
-	{"reduce",	builtin_reduce, 1, reduce_doc},
-	{"reload",	builtin_reload, 1, reload_doc},
-	{"repr",	builtin_repr, 1, repr_doc},
-	{"round",	builtin_round, 1, round_doc},
-	{"setattr",	builtin_setattr, 1, setattr_doc},
-	{"slice",       builtin_slice, 1, slice_doc},
-	{"unichr",	builtin_unichr, 1, unichr_doc},
-	{"vars",	builtin_vars, 1, vars_doc},
-	{"xrange",	builtin_xrange, 1, xrange_doc},
- 	{"zip",         builtin_zip, 1, zip_doc},
+ 	{"__import__",	builtin___import__, METH_VARARGS, import_doc},
+ 	{"abs",		builtin_abs,        METH_O, abs_doc},
+ 	{"apply",	builtin_apply,      METH_VARARGS, apply_doc},
+ 	{"buffer",	builtin_buffer,     METH_VARARGS, buffer_doc},
+ 	{"callable",	builtin_callable,   METH_O, callable_doc},
+ 	{"chr",		builtin_chr,        METH_VARARGS, chr_doc},
+ 	{"cmp",		builtin_cmp,        METH_VARARGS, cmp_doc},
+ 	{"coerce",	builtin_coerce,     METH_VARARGS, coerce_doc},
+ 	{"compile",	builtin_compile,    METH_VARARGS, compile_doc},
+ 	{"delattr",	builtin_delattr,    METH_VARARGS, delattr_doc},
+ 	{"dir",		builtin_dir,        METH_VARARGS, dir_doc},
+ 	{"divmod",	builtin_divmod,     METH_VARARGS, divmod_doc},
+ 	{"eval",	builtin_eval,       METH_VARARGS, eval_doc},
+ 	{"execfile",	builtin_execfile,   METH_VARARGS, execfile_doc},
+ 	{"filter",	builtin_filter,     METH_VARARGS, filter_doc},
+ 	{"getattr",	builtin_getattr,    METH_VARARGS, getattr_doc},
+ 	{"globals",	(PyCFunction)builtin_globals,    METH_NOARGS, globals_doc},
+ 	{"hasattr",	builtin_hasattr,    METH_VARARGS, hasattr_doc},
+ 	{"hash",	builtin_hash,       METH_O, hash_doc},
+ 	{"hex",		builtin_hex,        METH_O, hex_doc},
+ 	{"id",		builtin_id,         METH_O, id_doc},
+ 	{"input",	builtin_input,      METH_VARARGS, input_doc},
+ 	{"intern",	builtin_intern,     METH_VARARGS, intern_doc},
+ 	{"isinstance",  builtin_isinstance, METH_VARARGS, isinstance_doc},
+ 	{"issubclass",  builtin_issubclass, METH_VARARGS, issubclass_doc},
+ 	{"iter",	builtin_iter,       METH_VARARGS, iter_doc},
+ 	{"len",		builtin_len,        METH_O, len_doc},
+ 	{"locals",	(PyCFunction)builtin_locals,     METH_NOARGS, locals_doc},
+ 	{"map",		builtin_map,        METH_VARARGS, map_doc},
+ 	{"max",		builtin_max,        METH_VARARGS, max_doc},
+ 	{"min",		builtin_min,        METH_VARARGS, min_doc},
+ 	{"oct",		builtin_oct,        METH_O, oct_doc},
+ 	{"open",	builtin_open,       METH_VARARGS, open_doc},
+ 	{"ord",		builtin_ord,        METH_O, ord_doc},
+ 	{"pow",		builtin_pow,        METH_VARARGS, pow_doc},
+ 	{"range",	builtin_range,      METH_VARARGS, range_doc},
+ 	{"raw_input",	builtin_raw_input,  METH_VARARGS, raw_input_doc},
+ 	{"reduce",	builtin_reduce,     METH_VARARGS, reduce_doc},
+ 	{"reload",	builtin_reload,     METH_O, reload_doc},
+ 	{"repr",	builtin_repr,       METH_O, repr_doc},
+ 	{"round",	builtin_round,      METH_VARARGS, round_doc},
+ 	{"setattr",	builtin_setattr,    METH_VARARGS, setattr_doc},
+ 	{"slice",       builtin_slice,      METH_VARARGS, slice_doc},
+ 	{"unichr",	builtin_unichr,     METH_VARARGS, unichr_doc},
+ 	{"vars",	builtin_vars,       METH_VARARGS, vars_doc},
+ 	{"xrange",	builtin_xrange,     METH_VARARGS, xrange_doc},
+  	{"zip",         builtin_zip,        METH_VARARGS, zip_doc},
 	{NULL,		NULL},
 };
 

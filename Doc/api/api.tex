@@ -5257,6 +5257,68 @@ structure has four fields:
 \end{tableiii}
 \end{ctypedesc}
 
+The \var{ml_meth} is a C function pointer. The functions may be of
+different types, but they always return \ctype{PyObject*}. If the
+function is not of the \ctype{PyCFunction}, the compiler will require
+a cast in the method table. Even though \ctype{PyCFunction} defines
+the first parameter as \ctype{PyObject*}, it is common that the method
+implementation uses a the specific C type of the \var{self} object.
+
+The flags can have the following values. Only METH_VARARGS and
+METH_KEYWORDS can be combined; the others can't.
+
+\begin{datadesc}{METH_VARARGS}
+
+This is the typical calling convention, where the methods have the
+type \ctype{PyMethodDef}. The function expects two \ctype{PyObject*}.
+The first one is the \var{self} object for methods; for module
+functions, it has the value given to \cfunction{PyInitModule4} (or
+\NULL{} if \cfunction{PyInitModule} was used). The second parameter
+(often called \var{args}) is a tuple object representing all
+arguments. This parameter is typically processed using
+\cfunction{PyArg_ParseTuple}.
+
+\end{datadesc}
+
+\begin{datadesc}{METH_KEYWORDS}
+
+Methods with these flags must be of type
+\ctype{PyCFunctionWithKeywords}.  The function expects three
+parameters: \var{self}, \var{args}, and a dictionary of all the keyword
+arguments. The flag is typically combined with METH_VARARGS, and the
+parameters are typically processed using
+\cfunction{PyArg_ParseTupleAndKeywords}.
+
+\end{datadesc}
+
+\begin{datadesc}{METH_NOARGS}
+
+Methods without parameters don't need to check whether arguments are
+given if they are listed with the \code{METH_NOARGS} flag. They need
+to be of type \ctype{PyNoArgsFunction}, i.e. they expect a single
+\var{self} parameter.
+
+\end{datadesc}
+
+\begin{datadesc}{METH_O}
+
+Methods with a single object argument can be listed with the
+\code{METH_O} flag, instead of invoking \cfunction{PyArg_ParseTuple}
+with a \code{``O''} argument. They have the type \ctype{PyCFunction},
+with the \var{self} parameter, and a \ctype{PyObject*} parameter
+representing the single argument.
+
+\end{datadesc}
+
+\begin{datadesc}{METH_OLDARGS}
+
+This calling convention is deprecated. The method must be of type
+\ctype{PyCFunction}. The second argument is \NULL{} if no arguments
+are given, a single object if exactly one argument is given, and a
+tuple of objects if more than one argument is given.
+
+\end{datadesc}
+
 \begin{cfuncdesc}{PyObject*}{Py_FindMethod}{PyMethodDef[] table,
                                             PyObject *ob, char *name}
 Return a bound method object for an extension type implemented in C.

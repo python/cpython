@@ -63,6 +63,7 @@ PyCFunction_Call(PyObject *func, PyObject *arg, PyObject *kw)
 	PyCFunction meth = PyCFunction_GET_FUNCTION(func);
 	PyObject *self = PyCFunction_GET_SELF(func);
 	int flags = PyCFunction_GET_FLAGS(func);
+	int size = PyTuple_GET_SIZE(arg);
 
 	if (flags & METH_KEYWORDS) {
 		return (*(PyCFunctionWithKeywords)meth)(self, arg, kw);
@@ -73,21 +74,39 @@ PyCFunction_Call(PyObject *func, PyObject *arg, PyObject *kw)
 			     f->m_ml->ml_name);
 		return NULL;
 	}
-	if (flags & METH_VARARGS) {
+
+	switch (flags) {
+	case METH_VARARGS:
 		return (*meth)(self, arg);
-	}
-	if (!(flags & METH_VARARGS)) {
+		break;
+	case METH_NOARGS:
+		if (size == 0)
+			return (*meth)(self, NULL);
+		PyErr_Format(PyExc_TypeError,
+			     "%.200s() takes no arguments (%d given)",
+			     f->m_ml->ml_name, size);
+		return NULL;
+		break;
+	case METH_O:
+		if (size == 1)
+			return (*meth)(self, PyTuple_GET_ITEM(arg, 0));
+		PyErr_Format(PyExc_TypeError,
+			     "%.200s() takes exactly one argument (%d given)",
+			     f->m_ml->ml_name, size);
+		return NULL;
+		break;
+	case METH_OLDARGS:
 		/* the really old style */
-		int size = PyTuple_GET_SIZE(arg);
 		if (size == 1)
 			arg = PyTuple_GET_ITEM(arg, 0);
 		else if (size == 0)
 			arg = NULL;
 		return (*meth)(self, arg);
+	default:
+		/* should never get here ??? */
+		PyErr_BadInternalCall();
+		return NULL;
 	}
-	/* should never get here ??? */
-	PyErr_BadInternalCall();
-	return NULL;
 }
 
 /* Methods (the standard built-in methods, that is) */

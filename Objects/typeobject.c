@@ -376,12 +376,10 @@ mro_implementation(PyTypeObject *type)
 }
 
 static PyObject *
-mro_external(PyObject *self, PyObject *args)
+mro_external(PyObject *self)
 {
 	PyTypeObject *type = (PyTypeObject *)self;
 
-	if (!PyArg_ParseTuple(args, ""))
-		return NULL;
 	return mro_implementation(type);
 }
 
@@ -845,7 +843,7 @@ type_dealloc(PyTypeObject *type)
 }
 
 static PyMethodDef type_methods[] = {
-	{"mro", mro_external, METH_VARARGS,
+	{"mro", (PyCFunction)mro_external, METH_NOARGS,
 	 "mro() -> list\nreturn a type's method resolution order"},
 	{0}
 };

@@ -90,6 +90,12 @@ Core
   (These warnings currently don't conform to the warnings framework of
   PEP 230; we intend to fix this in 2.2a2.)
 
+- Two new flags METH_NOARGS and METH_O are available in method definition
+  tables to simplify implementation of methods with no arguments and a
+  single untyped argument. Calling such methods is more efficient than
+  calling corresponding METH_VARARGS methods. METH_OLDARGS is now
+  deprecated.
+
 - The UTF-16 codec was modified to be more RFC compliant. It will now
   only remove BOM characters at the start of the string and then
   only if running in native mode (UTF-16-LE and -BE won't remove a

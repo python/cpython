@@ -243,9 +243,6 @@ range_tolist(rangeobject *self, PyObject *args)
 
 	WARN("xrange.tolist() is deprecated; use list(xrange) instead");
 
-	if (! PyArg_ParseTuple(args, ":tolist"))
-		return NULL;
-
 	if (self->totlen == -1)
 		return PyErr_NoMemory();
 
@@ -266,7 +263,7 @@ range_getattr(rangeobject *r, char *name)
 	PyObject *result;
 
 	static PyMethodDef range_methods[] = {
-		{"tolist",	(PyCFunction)range_tolist, METH_VARARGS,
+		{"tolist",	(PyCFunction)range_tolist, METH_NOARGS,
                  "tolist() -> list\n"
                  "Return a list object with the same values.\n"
                  "(This method is deprecated; use list() instead.)"},

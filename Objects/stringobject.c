@@ -921,7 +921,7 @@ Return a string which is the concatenation of the strings in the\n\
 sequence.  The separator between elements is S.";
 
 static PyObject *
-string_join(PyStringObject *self, PyObject *args)
+string_join(PyStringObject *self, PyObject *orig)
 {
 	char *sep = PyString_AS_STRING(self);
 	const int seplen = PyString_GET_SIZE(self);
@@ -930,10 +930,7 @@ string_join(PyStringObject *self, PyObject *args)
 	int seqlen = 0;
 	size_t sz = 0;
 	int i;
-	PyObject *orig, *seq, *item;
-
-	if (!PyArg_ParseTuple(args, "O:join", &orig))
-		return NULL;
+	PyObject *seq, *item;
 
 	seq = PySequence_Fast(orig, "");
 	if (seq == NULL) {
@@ -1029,19 +1026,9 @@ string_join(PyStringObject *self, PyObject *args)
 PyObject *
 _PyString_Join(PyObject *sep, PyObject *x)
 {
-	PyObject* args;
-	PyObject* result = NULL;
-
 	assert(sep != NULL && PyString_Check(sep));
 	assert(x != NULL);
-	args = PyTuple_New(1);
-	if (args != NULL) {
-		Py_INCREF(x);
-		PyTuple_SET_ITEM(args, 0, x);
-		result = string_join((PyStringObject *)sep, args);
-		Py_DECREF(args);
-	}
-	return result;
+	return string_join((PyStringObject *)sep, x);
 }
 
 static long
@@ -1176,13 +1163,10 @@ string_rindex(PyStringObject *self, PyObject *args)
 
 
 static PyObject *
-do_strip(PyStringObject *self, PyObject *args, int striptype)
+do_strip(PyStringObject *self, int striptype)
 {
 	char *s = PyString_AS_STRING(self);
 	int len = PyString_GET_SIZE(self), i, j;
-
-	if (!PyArg_ParseTuple(args, ":strip"))
-		return NULL;
 
 	i = 0;
 	if (striptype != RIGHTSTRIP) {
@@ -1215,9 +1199,9 @@ Return a copy of the string S with leading and trailing\n\
 whitespace removed.";
 
 static PyObject *
-string_strip(PyStringObject *self, PyObject *args)
+string_strip(PyStringObject *self)
 {
-	return do_strip(self, args, BOTHSTRIP);
+	return do_strip(self, BOTHSTRIP);
 }
 
 
@@ -1227,9 +1211,9 @@ static char lstrip__doc__[] =
 Return a copy of the string S with leading whitespace removed.";
 
 static PyObject *
-string_lstrip(PyStringObject *self, PyObject *args)
+string_lstrip(PyStringObject *self)
 {
-	return do_strip(self, args, LEFTSTRIP);
+	return do_strip(self, LEFTSTRIP);
 }
 
 
@@ -1239,9 +1223,9 @@ static char rstrip__doc__[] =
 Return a copy of the string S with trailing whitespace removed.";
 
 static PyObject *
-string_rstrip(PyStringObject *self, PyObject *args)
+string_rstrip(PyStringObject *self)
 {
-	return do_strip(self, args, RIGHTSTRIP);
+	return do_strip(self, RIGHTSTRIP);
 }
 
 
@@ -1251,14 +1235,12 @@ static char lower__doc__[] =
 Return a copy of the string S converted to lowercase.";
 
 static PyObject *
-string_lower(PyStringObject *self, PyObject *args)
+string_lower(PyStringObject *self)
 {
 	char *s = PyString_AS_STRING(self), *s_new;
 	int i, n = PyString_GET_SIZE(self);
 	PyObject *new;
 
-	if (!PyArg_ParseTuple(args, ":lower"))
-		return NULL;
 	new = PyString_FromStringAndSize(NULL, n);
 	if (new == NULL)
 		return NULL;
@@ -1281,14 +1263,12 @@ static char upper__doc__[] =
 Return a copy of the string S converted to uppercase.";
 
 static PyObject *
-string_upper(PyStringObject *self, PyObject *args)
+string_upper(PyStringObject *self)
 {
 	char *s = PyString_AS_STRING(self), *s_new;
 	int i, n = PyString_GET_SIZE(self);
 	PyObject *new;
 
-	if (!PyArg_ParseTuple(args, ":upper"))
-		return NULL;
 	new = PyString_FromStringAndSize(NULL, n);
 	if (new == NULL)
 		return NULL;
@@ -1312,15 +1292,13 @@ Return a titlecased version of S, i.e. words start with uppercase\n\
 characters, all remaining cased characters have lowercase.";
 
 static PyObject*
-string_title(PyStringObject *self, PyObject *args)
+string_title(PyStringObject *self)
 {
 	char *s = PyString_AS_STRING(self), *s_new;
 	int i, n = PyString_GET_SIZE(self);
 	int previous_is_cased = 0;
 	PyObject *new;
 
-	if (!PyArg_ParseTuple(args, ":title"))
-		return NULL;
 	new = PyString_FromStringAndSize(NULL, n);
 	if (new == NULL)
 		return NULL;
@@ -1349,14 +1327,12 @@ Return a copy of the string S with only its first character\n\
 capitalized.";
 
 static PyObject *
-string_capitalize(PyStringObject *self, PyObject *args)
+string_capitalize(PyStringObject *self)
 {
 	char *s = PyString_AS_STRING(self), *s_new;
 	int i, n = PyString_GET_SIZE(self);
 	PyObject *new;
 
-	if (!PyArg_ParseTuple(args, ":capitalize"))
-		return NULL;
 	new = PyString_FromStringAndSize(NULL, n);
 	if (new == NULL)
 		return NULL;
@@ -1450,14 +1426,12 @@ Return a copy of the string S with uppercase characters\n\
 converted to lowercase and vice versa.";
 
 static PyObject *
-string_swapcase(PyStringObject *self, PyObject *args)
+string_swapcase(PyStringObject *self)
 {
 	char *s = PyString_AS_STRING(self), *s_new;
 	int i, n = PyString_GET_SIZE(self);
 	PyObject *new;
 
-	if (!PyArg_ParseTuple(args, ":swapcase"))
-		return NULL;
 	new = PyString_FromStringAndSize(NULL, n);
 	if (new == NULL)
 		return NULL;
@@ -2150,14 +2124,11 @@ Return 1 if there are only whitespace characters in S,\n\
 0 otherwise.";
 
 static PyObject*
-string_isspace(PyStringObject *self, PyObject *args)
+string_isspace(PyStringObject *self)
 {
     register const unsigned char *p
         = (unsigned char *) PyString_AS_STRING(self);
     register const unsigned char *e;
-
-    if (!PyArg_NoArgs(args))
-        return NULL;
 
     /* Shortcut for single character strings */
     if (PyString_GET_SIZE(self) == 1 &&
@@ -2184,14 +2155,11 @@ Return 1 if  all characters in S are alphabetic\n\
 and there is at least one character in S, 0 otherwise.";
 
 static PyObject*
-string_isalpha(PyStringObject *self, PyObject *args)
+string_isalpha(PyStringObject *self)
 {
     register const unsigned char *p
         = (unsigned char *) PyString_AS_STRING(self);
     register const unsigned char *e;
-
-    if (!PyArg_NoArgs(args))
-        return NULL;
 
     /* Shortcut for single character strings */
     if (PyString_GET_SIZE(self) == 1 &&
@@ -2218,14 +2186,11 @@ Return 1 if  all characters in S are alphanumeric\n\
 and there is at least one character in S, 0 otherwise.";
 
 static PyObject*
-string_isalnum(PyStringObject *self, PyObject *args)
+string_isalnum(PyStringObject *self)
 {
     register const unsigned char *p
         = (unsigned char *) PyString_AS_STRING(self);
     register const unsigned char *e;
-
-    if (!PyArg_NoArgs(args))
-        return NULL;
 
     /* Shortcut for single character strings */
     if (PyString_GET_SIZE(self) == 1 &&
@@ -2252,14 +2217,11 @@ Return 1 if there are only digit characters in S,\n\
 0 otherwise.";
 
 static PyObject*
-string_isdigit(PyStringObject *self, PyObject *args)
+string_isdigit(PyStringObject *self)
 {
     register const unsigned char *p
         = (unsigned char *) PyString_AS_STRING(self);
     register const unsigned char *e;
-
-    if (!PyArg_NoArgs(args))
-        return NULL;
 
     /* Shortcut for single character strings */
     if (PyString_GET_SIZE(self) == 1 &&
@@ -2286,15 +2248,12 @@ Return 1 if  all cased characters in S are lowercase and there is\n\
 at least one cased character in S, 0 otherwise.";
 
 static PyObject*
-string_islower(PyStringObject *self, PyObject *args)
+string_islower(PyStringObject *self)
 {
     register const unsigned char *p
         = (unsigned char *) PyString_AS_STRING(self);
     register const unsigned char *e;
     int cased;
-
-    if (!PyArg_NoArgs(args))
-        return NULL;
 
     /* Shortcut for single character strings */
     if (PyString_GET_SIZE(self) == 1)
@@ -2323,15 +2282,12 @@ Return 1 if  all cased characters in S are uppercase and there is\n\
 at least one cased character in S, 0 otherwise.";
 
 static PyObject*
-string_isupper(PyStringObject *self, PyObject *args)
+string_isupper(PyStringObject *self)
 {
     register const unsigned char *p
         = (unsigned char *) PyString_AS_STRING(self);
     register const unsigned char *e;
     int cased;
-
-    if (!PyArg_NoArgs(args))
-        return NULL;
 
     /* Shortcut for single character strings */
     if (PyString_GET_SIZE(self) == 1)
@@ -2361,15 +2317,12 @@ may only follow uncased characters and lowercase characters only cased\n\
 ones. Return 0 otherwise.";
 
 static PyObject*
-string_istitle(PyStringObject *self, PyObject *args)
+string_istitle(PyStringObject *self, PyObject *uncased)
 {
     register const unsigned char *p
         = (unsigned char *) PyString_AS_STRING(self);
     register const unsigned char *e;
     int cased, previous_is_cased;
-
-    if (!PyArg_NoArgs(args))
-        return NULL;
 
     /* Shortcut for single character strings */
     if (PyString_GET_SIZE(self) == 1)
@@ -2482,41 +2435,41 @@ static PyMethodDef
 string_methods[] = {
 	/* Counterparts of the obsolete stropmodule functions; except
 	   string.maketrans(). */
-	{"join",       (PyCFunction)string_join,       1, join__doc__},
-	{"split",       (PyCFunction)string_split,       1, split__doc__},
-	{"lower",      (PyCFunction)string_lower,      1, lower__doc__},
-	{"upper",       (PyCFunction)string_upper,       1, upper__doc__},
-	{"islower", (PyCFunction)string_islower, 0, islower__doc__},
-	{"isupper", (PyCFunction)string_isupper, 0, isupper__doc__},
-	{"isspace", (PyCFunction)string_isspace, 0, isspace__doc__},
-	{"isdigit", (PyCFunction)string_isdigit, 0, isdigit__doc__},
-	{"istitle", (PyCFunction)string_istitle, 0, istitle__doc__},
-	{"isalpha", (PyCFunction)string_isalpha, 0, isalpha__doc__},
-	{"isalnum", (PyCFunction)string_isalnum, 0, isalnum__doc__},
-	{"capitalize", (PyCFunction)string_capitalize, 1, capitalize__doc__},
-	{"count",      (PyCFunction)string_count,      1, count__doc__},
-	{"endswith",   (PyCFunction)string_endswith,   1, endswith__doc__},
-	{"find",       (PyCFunction)string_find,       1, find__doc__},
-	{"index",      (PyCFunction)string_index,      1, index__doc__},
-	{"lstrip",     (PyCFunction)string_lstrip,     1, lstrip__doc__},
-	{"replace",     (PyCFunction)string_replace,     1, replace__doc__},
-	{"rfind",       (PyCFunction)string_rfind,       1, rfind__doc__},
-	{"rindex",      (PyCFunction)string_rindex,      1, rindex__doc__},
-	{"rstrip",      (PyCFunction)string_rstrip,      1, rstrip__doc__},
-	{"startswith",  (PyCFunction)string_startswith,  1, startswith__doc__},
-	{"strip",       (PyCFunction)string_strip,       1, strip__doc__},
-	{"swapcase",    (PyCFunction)string_swapcase,    1, swapcase__doc__},
-	{"translate",   (PyCFunction)string_translate,   1, translate__doc__},
-	{"title",       (PyCFunction)string_title,       1, title__doc__},
-	{"ljust",       (PyCFunction)string_ljust,       1, ljust__doc__},
-	{"rjust",       (PyCFunction)string_rjust,       1, rjust__doc__},
-	{"center",      (PyCFunction)string_center,      1, center__doc__},
-	{"encode",      (PyCFunction)string_encode,      1, encode__doc__},
-	{"decode",      (PyCFunction)string_decode,      1, decode__doc__},
-	{"expandtabs",  (PyCFunction)string_expandtabs,  1, expandtabs__doc__},
-	{"splitlines",  (PyCFunction)string_splitlines,  1, splitlines__doc__},
+	{"join",       (PyCFunction)string_join,   METH_O, join__doc__},
+	{"split",       (PyCFunction)string_split, METH_VARARGS, split__doc__},
+	{"lower",      (PyCFunction)string_lower,  METH_NOARGS, lower__doc__},
+	{"upper",       (PyCFunction)string_upper, METH_NOARGS, upper__doc__},
+	{"islower", (PyCFunction)string_islower, METH_NOARGS, islower__doc__},
+	{"isupper", (PyCFunction)string_isupper, METH_NOARGS, isupper__doc__},
+	{"isspace", (PyCFunction)string_isspace, METH_NOARGS, isspace__doc__},
+	{"isdigit", (PyCFunction)string_isdigit, METH_NOARGS, isdigit__doc__},
+	{"istitle", (PyCFunction)string_istitle, METH_NOARGS, istitle__doc__},
+	{"isalpha", (PyCFunction)string_isalpha, METH_NOARGS, isalpha__doc__},
+	{"isalnum", (PyCFunction)string_isalnum, METH_NOARGS, isalnum__doc__},
+	{"capitalize", (PyCFunction)string_capitalize,  METH_NOARGS, capitalize__doc__},
+	{"count",      (PyCFunction)string_count,       METH_VARARGS, count__doc__},
+	{"endswith",   (PyCFunction)string_endswith,    METH_VARARGS, endswith__doc__},
+	{"find",       (PyCFunction)string_find,        METH_VARARGS, find__doc__},
+	{"index",      (PyCFunction)string_index,       METH_VARARGS, index__doc__},
+	{"lstrip",     (PyCFunction)string_lstrip,      METH_NOARGS, lstrip__doc__},
+	{"replace",     (PyCFunction)string_replace,    METH_VARARGS, replace__doc__},
+	{"rfind",       (PyCFunction)string_rfind,      METH_VARARGS, rfind__doc__},
+	{"rindex",      (PyCFunction)string_rindex,     METH_VARARGS, rindex__doc__},
+	{"rstrip",      (PyCFunction)string_rstrip,     METH_NOARGS, rstrip__doc__},
+	{"startswith",  (PyCFunction)string_startswith, METH_VARARGS, startswith__doc__},
+	{"strip",       (PyCFunction)string_strip,      METH_NOARGS, strip__doc__},
+	{"swapcase",    (PyCFunction)string_swapcase,   METH_NOARGS, swapcase__doc__},
+	{"translate",   (PyCFunction)string_translate,  METH_VARARGS, translate__doc__},
+	{"title",       (PyCFunction)string_title,      METH_NOARGS, title__doc__},
+	{"ljust",       (PyCFunction)string_ljust,      METH_VARARGS, ljust__doc__},
+	{"rjust",       (PyCFunction)string_rjust,      METH_VARARGS, rjust__doc__},
+	{"center",      (PyCFunction)string_center,     METH_VARARGS, center__doc__},
+	{"encode",      (PyCFunction)string_encode,     METH_VARARGS, encode__doc__},
+	{"decode",      (PyCFunction)string_decode,     METH_VARARGS, decode__doc__},
+	{"expandtabs",  (PyCFunction)string_expandtabs, METH_VARARGS, expandtabs__doc__},
+	{"splitlines",  (PyCFunction)string_splitlines, METH_VARARGS, splitlines__doc__},
 #if 0
-	{"zfill",       (PyCFunction)string_zfill,       1, zfill__doc__},
+	{"zfill",       (PyCFunction)string_zfill,      METH_VARARGS, zfill__doc__},
 #endif
 	{NULL,     NULL}		     /* sentinel */
 };

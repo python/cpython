@@ -580,18 +580,16 @@ complex_float(PyObject *v)
 }
 
 static PyObject *
-complex_conjugate(PyObject *self, PyObject *args)
+complex_conjugate(PyObject *self)
 {
 	Py_complex c;
-	if (!PyArg_ParseTuple(args, ":conjugate"))
-		return NULL;
 	c = ((PyComplexObject *)self)->cval;
 	c.imag = -c.imag;
 	return PyComplex_FromCComplex(c);
 }
 
 static PyMethodDef complex_methods[] = {
-	{"conjugate",	complex_conjugate,	1},
+	{"conjugate",	(PyCFunction)complex_conjugate,	METH_NOARGS},
 	{NULL,		NULL}		/* sentinel */
 };
 

@@ -166,12 +166,9 @@ gen_iternext(genobject *gen)
 }
 
 static PyObject *
-gen_next(genobject *gen, PyObject *args)
+gen_next(genobject *gen)
 {
 	PyObject *result;
-
-	if (!PyArg_ParseTuple(args, ":next"))
-		return NULL;
 
 	result = gen_iternext(gen);
 
@@ -191,7 +188,7 @@ gen_getiter(PyObject *gen)
 }
 
 static struct PyMethodDef gen_methods[] = {
-	{"next",     (PyCFunction)gen_next, METH_VARARGS,
+	{"next",     (PyCFunction)gen_next, METH_NOARGS,
 	 	"next() -- get the next value, or raise StopIteration"},
 	{NULL,          NULL}   /* Sentinel */
 };
@@ -1938,7 +1935,7 @@ eval_frame(PyFrameObject *f)
 		    */
 		    if (PyCFunction_Check(func)) {
 			    int flags = PyCFunction_GET_FLAGS(func);
-			    if (flags > 1 || nk != 0) 
+			    if (nk != 0 || (flags & METH_KEYWORDS))
 				    x = do_call(func, &stack_pointer,
 						na, nk);
 			    else if (flags == METH_VARARGS) {
@@ -1946,9 +1943,9 @@ eval_frame(PyFrameObject *f)
 				    callargs = load_args(&stack_pointer, na);
 				    x = PyCFunction_Call(func, callargs, NULL);
 				    Py_XDECREF(callargs); 
-			    } else if (!(flags & METH_KEYWORDS))
-				       x = fast_cfunction(func,
-							  &stack_pointer, na);
+			    } else
+				    x = fast_cfunction(func,
+						       &stack_pointer, na);
 		    } else {
 			    if (PyMethod_Check(func)
 				&& PyMethod_GET_SELF(func) != NULL) {
@@ -3046,20 +3043,50 @@ fast_cfunction(PyObject *func, PyObject ***pp_stack, int na)
 {
 	PyCFunction meth = PyCFunction_GET_FUNCTION(func);
 	PyObject *self = PyCFunction_GET_SELF(func);
+	int flags = PyCFunction_GET_FLAGS(func);
 
- 	if (na == 0)
- 		return (*meth)(self, NULL);
- 	else if (na == 1) {
- 		PyObject *arg = EXT_POP(*pp_stack);
- 		PyObject *result =  (*meth)(self, arg);
- 		Py_DECREF(arg);
- 		return result;
- 	} else {
- 		PyObject *args = load_args(pp_stack, na);
- 		PyObject *result = (*meth)(self, args);
- 		Py_DECREF(args);
- 		return result;
-	}
+	switch (flags) {
+	case METH_OLDARGS:
+		if (na == 0)
+			return (*meth)(self, NULL);
+		else if (na == 1) {
+			PyObject *arg = EXT_POP(*pp_stack);
+			PyObject *result =  (*meth)(self, arg);
+			Py_DECREF(arg);
+			return result;
+		} else {
+			PyObject *args = load_args(pp_stack, na);
+			PyObject *result = (*meth)(self, args);
+			Py_DECREF(args);
+			return result;
+		}
+		break;
+	case METH_NOARGS:
+		if (na == 0)
+			return (*meth)(self, NULL);
+		PyErr_Format(PyExc_TypeError,
+			     "%.200s() takes no arguments (%d given)",
+			     ((PyCFunctionObject*)func)->m_ml->ml_name, na);
+		return NULL;
+		break;
+	case METH_O:
+		if (na == 1) {
+			PyObject *arg = EXT_POP(*pp_stack);
+			PyObject *result = (*meth)(self, arg);
+			Py_DECREF(arg);
+			return result;
+		}
+		PyErr_Format(PyExc_TypeError,
+			     "%.200s() takes exactly one argument (%d given)",
+			     ((PyCFunctionObject*)func)->m_ml->ml_name, na);
+		return NULL;
+		break;
+	default:
+		fprintf(stderr, "%.200s() flags = %d\n", 
+			((PyCFunctionObject*)func)->m_ml->ml_name, flags);
+		PyErr_BadInternalCall();
+		return NULL;
+	}		
 }
 
 static PyObject *

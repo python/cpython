@@ -3251,10 +3251,8 @@ Return a titlecased version of S, i.e. words start with title case\n\
 characters, all remaining cased characters have lower case.";
 
 static PyObject*
-unicode_title(PyUnicodeObject *self, PyObject *args)
+unicode_title(PyUnicodeObject *self)
 {
-    if (!PyArg_NoArgs(args))
-        return NULL;
     return fixup(self, fixtitle);
 }
 
@@ -3265,10 +3263,8 @@ Return a capitalized version of S, i.e. make the first character\n\
 have upper case.";
 
 static PyObject*
-unicode_capitalize(PyUnicodeObject *self, PyObject *args)
+unicode_capitalize(PyUnicodeObject *self)
 {
-    if (!PyArg_NoArgs(args))
-        return NULL;
     return fixup(self, fixcapitalize);
 }
 
@@ -3280,14 +3276,11 @@ Apply .capitalize() to all words in S and return the result with\n\
 normalized whitespace (all whitespace strings are replaced by ' ').";
 
 static PyObject*
-unicode_capwords(PyUnicodeObject *self, PyObject *args)
+unicode_capwords(PyUnicodeObject *self)
 {
     PyObject *list;
     PyObject *item;
     int i;
-
-    if (!PyArg_NoArgs(args))
-        return NULL;
 
     /* Split into words */
     list = split(self, NULL, -1);
@@ -3771,14 +3764,11 @@ Return 1 if  all cased characters in S are lowercase and there is\n\
 at least one cased character in S, 0 otherwise.";
 
 static PyObject*
-unicode_islower(PyUnicodeObject *self, PyObject *args)
+unicode_islower(PyUnicodeObject *self)
 {
     register const Py_UNICODE *p = PyUnicode_AS_UNICODE(self);
     register const Py_UNICODE *e;
     int cased;
-
-    if (!PyArg_NoArgs(args))
-        return NULL;
 
     /* Shortcut for single character strings */
     if (PyUnicode_GET_SIZE(self) == 1)
@@ -3808,14 +3798,11 @@ Return 1 if  all cased characters in S are uppercase and there is\n\
 at least one cased character in S, 0 otherwise.";
 
 static PyObject*
-unicode_isupper(PyUnicodeObject *self, PyObject *args)
+unicode_isupper(PyUnicodeObject *self)
 {
     register const Py_UNICODE *p = PyUnicode_AS_UNICODE(self);
     register const Py_UNICODE *e;
     int cased;
-
-    if (!PyArg_NoArgs(args))
-        return NULL;
 
     /* Shortcut for single character strings */
     if (PyUnicode_GET_SIZE(self) == 1)
@@ -3846,14 +3833,11 @@ may only follow uncased characters and lowercase characters only cased\n\
 ones. Return 0 otherwise.";
 
 static PyObject*
-unicode_istitle(PyUnicodeObject *self, PyObject *args)
+unicode_istitle(PyUnicodeObject *self)
 {
     register const Py_UNICODE *p = PyUnicode_AS_UNICODE(self);
     register const Py_UNICODE *e;
     int cased, previous_is_cased;
-
-    if (!PyArg_NoArgs(args))
-        return NULL;
 
     /* Shortcut for single character strings */
     if (PyUnicode_GET_SIZE(self) == 1)
@@ -3895,13 +3879,10 @@ Return 1 if there are only whitespace characters in S,\n\
 0 otherwise.";
 
 static PyObject*
-unicode_isspace(PyUnicodeObject *self, PyObject *args)
+unicode_isspace(PyUnicodeObject *self)
 {
     register const Py_UNICODE *p = PyUnicode_AS_UNICODE(self);
     register const Py_UNICODE *e;
-
-    if (!PyArg_NoArgs(args))
-        return NULL;
 
     /* Shortcut for single character strings */
     if (PyUnicode_GET_SIZE(self) == 1 &&
@@ -3927,13 +3908,10 @@ Return 1 if  all characters in S are alphabetic\n\
 and there is at least one character in S, 0 otherwise.";
 
 static PyObject*
-unicode_isalpha(PyUnicodeObject *self, PyObject *args)
+unicode_isalpha(PyUnicodeObject *self)
 {
     register const Py_UNICODE *p = PyUnicode_AS_UNICODE(self);
     register const Py_UNICODE *e;
-
-    if (!PyArg_NoArgs(args))
-        return NULL;
 
     /* Shortcut for single character strings */
     if (PyUnicode_GET_SIZE(self) == 1 &&
@@ -3959,13 +3937,10 @@ Return 1 if  all characters in S are alphanumeric\n\
 and there is at least one character in S, 0 otherwise.";
 
 static PyObject*
-unicode_isalnum(PyUnicodeObject *self, PyObject *args)
+unicode_isalnum(PyUnicodeObject *self)
 {
     register const Py_UNICODE *p = PyUnicode_AS_UNICODE(self);
     register const Py_UNICODE *e;
-
-    if (!PyArg_NoArgs(args))
-        return NULL;
 
     /* Shortcut for single character strings */
     if (PyUnicode_GET_SIZE(self) == 1 &&
@@ -3991,13 +3966,10 @@ Return 1 if there are only decimal characters in S,\n\
 0 otherwise.";
 
 static PyObject*
-unicode_isdecimal(PyUnicodeObject *self, PyObject *args)
+unicode_isdecimal(PyUnicodeObject *self)
 {
     register const Py_UNICODE *p = PyUnicode_AS_UNICODE(self);
     register const Py_UNICODE *e;
-
-    if (!PyArg_NoArgs(args))
-        return NULL;
 
     /* Shortcut for single character strings */
     if (PyUnicode_GET_SIZE(self) == 1 &&
@@ -4023,13 +3995,10 @@ Return 1 if there are only digit characters in S,\n\
 0 otherwise.";
 
 static PyObject*
-unicode_isdigit(PyUnicodeObject *self, PyObject *args)
+unicode_isdigit(PyUnicodeObject *self)
 {
     register const Py_UNICODE *p = PyUnicode_AS_UNICODE(self);
     register const Py_UNICODE *e;
-
-    if (!PyArg_NoArgs(args))
-        return NULL;
 
     /* Shortcut for single character strings */
     if (PyUnicode_GET_SIZE(self) == 1 &&
@@ -4055,13 +4024,10 @@ Return 1 if there are only numeric characters in S,\n\
 0 otherwise.";
 
 static PyObject*
-unicode_isnumeric(PyUnicodeObject *self, PyObject *args)
+unicode_isnumeric(PyUnicodeObject *self)
 {
     register const Py_UNICODE *p = PyUnicode_AS_UNICODE(self);
     register const Py_UNICODE *e;
-
-    if (!PyArg_NoArgs(args))
-        return NULL;
 
     /* Shortcut for single character strings */
     if (PyUnicode_GET_SIZE(self) == 1 &&
@@ -4087,13 +4053,9 @@ Return a string which is the concatenation of the strings in the\n\
 sequence.  The separator between elements is S.";
 
 static PyObject*
-unicode_join(PyUnicodeObject *self, PyObject *args)
+unicode_join(PyObject *self, PyObject *data)
 {
-    PyObject *data;
-    if (!PyArg_ParseTuple(args, "O:join", &data))
-        return NULL;
-
-    return PyUnicode_Join((PyObject *)self, data);
+    return PyUnicode_Join(self, data);
 }
 
 static int
@@ -4129,10 +4091,8 @@ static char lower__doc__[] =
 Return a copy of the string S converted to lowercase.";
 
 static PyObject*
-unicode_lower(PyUnicodeObject *self, PyObject *args)
+unicode_lower(PyUnicodeObject *self)
 {
-    if (!PyArg_NoArgs(args))
-        return NULL;
     return fixup(self, fixlower);
 }
 
@@ -4142,10 +4102,8 @@ static char lstrip__doc__[] =
 Return a copy of the string S with leading whitespace removed.";
 
 static PyObject *
-unicode_lstrip(PyUnicodeObject *self, PyObject *args)
+unicode_lstrip(PyUnicodeObject *self)
 {
-    if (!PyArg_NoArgs(args))
-        return NULL;
     return strip(self, 1, 0);
 }
 
@@ -4357,10 +4315,8 @@ static char rstrip__doc__[] =
 Return a copy of the string S with trailing whitespace removed.";
 
 static PyObject *
-unicode_rstrip(PyUnicodeObject *self, PyObject *args)
+unicode_rstrip(PyUnicodeObject *self)
 {
-    if (!PyArg_NoArgs(args))
-        return NULL;
     return strip(self, 0, 1);
 }
 
@@ -4465,10 +4421,8 @@ static char strip__doc__[] =
 Return a copy of S with leading and trailing whitespace removed.";
 
 static PyObject *
-unicode_strip(PyUnicodeObject *self, PyObject *args)
+unicode_strip(PyUnicodeObject *self)
 {
-    if (!PyArg_NoArgs(args))
-        return NULL;
     return strip(self, 1, 1);
 }
 
@@ -4479,10 +4433,8 @@ Return a copy of S with uppercase characters converted to lowercase\n\
 and vice versa.";
 
 static PyObject*
-unicode_swapcase(PyUnicodeObject *self, PyObject *args)
+unicode_swapcase(PyUnicodeObject *self)
 {
-    if (!PyArg_NoArgs(args))
-        return NULL;
     return fixup(self, fixswapcase);
 }
 
@@ -4495,12 +4447,8 @@ Unicode ordinals to Unicode ordinals or None. Unmapped characters\n\
 are left untouched. Characters mapped to None are deleted.";
 
 static PyObject*
-unicode_translate(PyUnicodeObject *self, PyObject *args)
+unicode_translate(PyUnicodeObject *self, PyObject *table)
 {
-    PyObject *table;
-    
-    if (!PyArg_ParseTuple(args, "O:translate", &table))
-	return NULL;
     return PyUnicode_TranslateCharmap(self->str, 
 				      self->length,
 				      table, 
@@ -4513,10 +4461,8 @@ static char upper__doc__[] =
 Return a copy of S converted to uppercase.";
 
 static PyObject*
-unicode_upper(PyUnicodeObject *self, PyObject *args)
+unicode_upper(PyUnicodeObject *self)
 {
-    if (!PyArg_NoArgs(args))
-        return NULL;
     return fixup(self, fixupper);
 }
 
@@ -4558,10 +4504,8 @@ unicode_zfill(PyUnicodeObject *self, PyObject *args)
 
 #if 0
 static PyObject*
-unicode_freelistsize(PyUnicodeObject *self, PyObject *args)
+unicode_freelistsize(PyUnicodeObject *self)
 {
-    if (!PyArg_NoArgs(args))
-        return NULL;
     return PyInt_FromLong(unicode_freelist_size);
 }
 #endif
@@ -4633,49 +4577,49 @@ static PyMethodDef unicode_methods[] = {
     /* Order is according to common usage: often used methods should
        appear first, since lookup is done sequentially. */
 
-    {"encode", (PyCFunction) unicode_encode, 1, encode__doc__},
-    {"replace", (PyCFunction) unicode_replace, 1, replace__doc__},
-    {"split", (PyCFunction) unicode_split, 1, split__doc__},
-    {"join", (PyCFunction) unicode_join, 1, join__doc__},
-    {"capitalize", (PyCFunction) unicode_capitalize, 0, capitalize__doc__},
-    {"title", (PyCFunction) unicode_title, 0, title__doc__},
-    {"center", (PyCFunction) unicode_center, 1, center__doc__},
-    {"count", (PyCFunction) unicode_count, 1, count__doc__},
-    {"expandtabs", (PyCFunction) unicode_expandtabs, 1, expandtabs__doc__},
-    {"find", (PyCFunction) unicode_find, 1, find__doc__},
-    {"index", (PyCFunction) unicode_index, 1, index__doc__},
-    {"ljust", (PyCFunction) unicode_ljust, 1, ljust__doc__},
-    {"lower", (PyCFunction) unicode_lower, 0, lower__doc__},
-    {"lstrip", (PyCFunction) unicode_lstrip, 0, lstrip__doc__},
-/*  {"maketrans", (PyCFunction) unicode_maketrans, 1, maketrans__doc__}, */
-    {"rfind", (PyCFunction) unicode_rfind, 1, rfind__doc__},
-    {"rindex", (PyCFunction) unicode_rindex, 1, rindex__doc__},
-    {"rjust", (PyCFunction) unicode_rjust, 1, rjust__doc__},
-    {"rstrip", (PyCFunction) unicode_rstrip, 0, rstrip__doc__},
-    {"splitlines", (PyCFunction) unicode_splitlines, 1, splitlines__doc__},
-    {"strip", (PyCFunction) unicode_strip, 0, strip__doc__},
-    {"swapcase", (PyCFunction) unicode_swapcase, 0, swapcase__doc__},
-    {"translate", (PyCFunction) unicode_translate, 1, translate__doc__},
-    {"upper", (PyCFunction) unicode_upper, 0, upper__doc__},
-    {"startswith", (PyCFunction) unicode_startswith, 1, startswith__doc__},
-    {"endswith", (PyCFunction) unicode_endswith, 1, endswith__doc__},
-    {"islower", (PyCFunction) unicode_islower, 0, islower__doc__},
-    {"isupper", (PyCFunction) unicode_isupper, 0, isupper__doc__},
-    {"istitle", (PyCFunction) unicode_istitle, 0, istitle__doc__},
-    {"isspace", (PyCFunction) unicode_isspace, 0, isspace__doc__},
-    {"isdecimal", (PyCFunction) unicode_isdecimal, 0, isdecimal__doc__},
-    {"isdigit", (PyCFunction) unicode_isdigit, 0, isdigit__doc__},
-    {"isnumeric", (PyCFunction) unicode_isnumeric, 0, isnumeric__doc__},
-    {"isalpha", (PyCFunction) unicode_isalpha, 0, isalpha__doc__},
-    {"isalnum", (PyCFunction) unicode_isalnum, 0, isalnum__doc__},
+    {"encode", (PyCFunction) unicode_encode, METH_VARARGS, encode__doc__},
+    {"replace", (PyCFunction) unicode_replace, METH_VARARGS, replace__doc__},
+    {"split", (PyCFunction) unicode_split, METH_VARARGS, split__doc__},
+    {"join", (PyCFunction) unicode_join, METH_O, join__doc__},
+    {"capitalize", (PyCFunction) unicode_capitalize, METH_NOARGS, capitalize__doc__},
+    {"title", (PyCFunction) unicode_title, METH_NOARGS, title__doc__},
+    {"center", (PyCFunction) unicode_center, METH_VARARGS, center__doc__},
+    {"count", (PyCFunction) unicode_count, METH_VARARGS, count__doc__},
+    {"expandtabs", (PyCFunction) unicode_expandtabs, METH_VARARGS, expandtabs__doc__},
+    {"find", (PyCFunction) unicode_find, METH_VARARGS, find__doc__},
+    {"index", (PyCFunction) unicode_index, METH_VARARGS, index__doc__},
+    {"ljust", (PyCFunction) unicode_ljust, METH_VARARGS, ljust__doc__},
+    {"lower", (PyCFunction) unicode_lower, METH_NOARGS, lower__doc__},
+    {"lstrip", (PyCFunction) unicode_lstrip, METH_NOARGS, lstrip__doc__},
+/*  {"maketrans", (PyCFunction) unicode_maketrans, METH_VARARGS, maketrans__doc__}, */
+    {"rfind", (PyCFunction) unicode_rfind, METH_VARARGS, rfind__doc__},
+    {"rindex", (PyCFunction) unicode_rindex, METH_VARARGS, rindex__doc__},
+    {"rjust", (PyCFunction) unicode_rjust, METH_VARARGS, rjust__doc__},
+    {"rstrip", (PyCFunction) unicode_rstrip, METH_NOARGS, rstrip__doc__},
+    {"splitlines", (PyCFunction) unicode_splitlines, METH_VARARGS, splitlines__doc__},
+    {"strip", (PyCFunction) unicode_strip, METH_NOARGS, strip__doc__},
+    {"swapcase", (PyCFunction) unicode_swapcase, METH_NOARGS, swapcase__doc__},
+    {"translate", (PyCFunction) unicode_translate, METH_O, translate__doc__},
+    {"upper", (PyCFunction) unicode_upper, METH_NOARGS, upper__doc__},
+    {"startswith", (PyCFunction) unicode_startswith, METH_VARARGS, startswith__doc__},
+    {"endswith", (PyCFunction) unicode_endswith, METH_VARARGS, endswith__doc__},
+    {"islower", (PyCFunction) unicode_islower, METH_NOARGS, islower__doc__},
+    {"isupper", (PyCFunction) unicode_isupper, METH_NOARGS, isupper__doc__},
+    {"istitle", (PyCFunction) unicode_istitle, METH_NOARGS, istitle__doc__},
+    {"isspace", (PyCFunction) unicode_isspace, METH_NOARGS, isspace__doc__},
+    {"isdecimal", (PyCFunction) unicode_isdecimal, METH_NOARGS, isdecimal__doc__},
+    {"isdigit", (PyCFunction) unicode_isdigit, METH_NOARGS, isdigit__doc__},
+    {"isnumeric", (PyCFunction) unicode_isnumeric, METH_NOARGS, isnumeric__doc__},
+    {"isalpha", (PyCFunction) unicode_isalpha, METH_NOARGS, isalpha__doc__},
+    {"isalnum", (PyCFunction) unicode_isalnum, METH_NOARGS, isalnum__doc__},
 #if 0
-    {"zfill", (PyCFunction) unicode_zfill, 1, zfill__doc__},
-    {"capwords", (PyCFunction) unicode_capwords, 0, capwords__doc__},
+    {"zfill", (PyCFunction) unicode_zfill, METH_VARARGS, zfill__doc__},
+    {"capwords", (PyCFunction) unicode_capwords, METH_NOARGS, capwords__doc__},
 #endif
 
 #if 0
     /* This one is just used for debugging the implementation. */
-    {"freelistsize", (PyCFunction) unicode_freelistsize, 0},
+    {"freelistsize", (PyCFunction) unicode_freelistsize, METH_NOARGS},
 #endif
 
     {NULL, NULL}
