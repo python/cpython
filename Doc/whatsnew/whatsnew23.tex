@@ -514,7 +514,7 @@ instances are converted to text by a \class{Formatter} class.
 Log records are usually propagated up the hierarchy, so a message
 logged to \samp{server.auth} is also seen by \samp{server} and
 \samp{root}, but a handler can prevent this by setting its
-\member{propagate} attribute to \code{True}.
+\member{propagate} attribute to \code{False}.
 
 With all of these features the \module{logging} package should provide
 enough flexibility for even the most complicated applications.  This
@@ -743,12 +743,14 @@ or use them directly in subscripts:
 [0, 2, 4]
 \end{verbatim}
 
-To make implementing sequences that support extended slicing in Python
-easier, slice objects now have a method \method{indices} which given
-the length of a sequence returns \code{(start, stop, step)} handling
-omitted and out-of-bounds indices in a manner consistent with regular
-slices (and this innocuous phrase hides a welter of confusing
-details!).  The method is intended to be used like this:
+To simplify implementing sequences that support extended slicing,
+slice objects now have a method \method{indices(\var{length})} which,
+given the length of a sequence, returns a \code{(start, stop, step)}
+tuple that can be passed directly to \function{range()}.
+\method{indices()} handles omitted and out-of-bounds indices in a
+manner consistent with regular slices (and this innocuous phrase hides
+a welter of confusing details!).  The method is intended to be used
+like this:
 
 \begin{verbatim}
 class FakeSeq:
@@ -1699,6 +1701,6 @@ suggestions, corrections and assistance with various drafts of this
 article: Simon Brunning, Michael Chermside, Scott David Daniels,
 Fred~L. Drake, Jr., Michael Hudson, Detlef Lannert, Martin von
 L\"owis, Andrew MacIntyre, Lalo Martins, Gustavo Niemeyer, Neal
-Norwitz, Neil Schemenauer, Jason Tishler.
+Norwitz, Chris Reedy, Neil Schemenauer, Jason Tishler.
 
 \end{document}
