@@ -278,6 +278,7 @@ PySys_Init()
 	extern char *Py_GetVersion Py_PROTO((void));
 	extern char *Py_GetCopyright Py_PROTO((void));
 	extern char *Py_GetPlatform Py_PROTO((void));
+	extern char *Py_GetProgramFullPath Py_PROTO((void));
 	extern char *Py_GetPrefix Py_PROTO((void));
 	extern char *Py_GetExecPrefix Py_PROTO((void));
 	extern int fclose Py_PROTO((FILE *));
@@ -303,6 +304,9 @@ PySys_Init()
 	Py_XDECREF(v);
 	PyDict_SetItemString(sysdict, "platform",
 			     v = PyString_FromString(Py_GetPlatform()));
+	Py_XDECREF(v);
+	PyDict_SetItemString(sysdict, "executable",
+			     v = PyString_FromString(Py_GetProgramFullPath()));
 	Py_XDECREF(v);
 	PyDict_SetItemString(sysdict, "prefix",
 			     v = PyString_FromString(Py_GetPrefix()));
