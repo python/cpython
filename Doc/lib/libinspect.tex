@@ -282,6 +282,12 @@ created, it is important to ensure they are explicitly broken to avoid
 the delayed destruction of objects and increased memory consumption
 which occurs.
 
+\begin{funcdesc}{getframeinfo}{frame\optional{, context}}
+  Get information about a frame or traceback object.  A 5-tuple
+  is returned, the last five elements of the frame's frame record.
+  The optional second argument specifies the number of lines of context
+  to return, which are centered around the current line.
+
 \begin{funcdesc}{getouterframes}{frame\optional{, context}}
   Get a list of frame records for a frame and all higher (calling)
   frames.
