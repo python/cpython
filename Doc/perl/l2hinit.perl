@@ -129,7 +129,7 @@ sub make_nav_panel{
 sub top_navigation_panel {
     "<div class=navigation>\n"
       . make_nav_panel()
-      . '<br><hr><p></div>';
+      . '<br><hr></div>';
 }
 
 sub bot_navigation_panel {
