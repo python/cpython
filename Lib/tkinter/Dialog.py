@@ -4,11 +4,12 @@ from Tkinter import *
 class Dialog(Widget):
 	def __init__(self, master=None, cnf={}):
 		Widget._setup(self, master, cnf)
-		self.num = apply(self.tk.call,
-				 ('tk_dialog', self._w,
-				  cnf['title'], cnf['text'], 
-				  cnf['bitmap'], cnf['default'])
-				 + cnf['strings'])
+		self.num = self.tk.getint(
+			apply(self.tk.call,
+			      ('tk_dialog', self._w,
+			       cnf['title'], cnf['text'], 
+			       cnf['bitmap'], cnf['default'])
+			      + cnf['strings']))
 		try: Widget.destroy(self)
 		except TclError: pass
 	def destroy(self): pass
