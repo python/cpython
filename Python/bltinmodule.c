@@ -844,7 +844,7 @@ void
 initbuiltin()
 {
 	object *m;
-	m = initmodule("builtin", builtin_methods);
+	m = initmodule("__builtin__", builtin_methods);
 	builtin_dict = getmoduledict(m);
 	INCREF(builtin_dict);
 	initerrors();

@@ -582,7 +582,7 @@ posix__exit(self, args)
 /* XXX To do: exece, execp */
 
 static object *
-posix_exec(self, args)
+posix_execv(self, args)
 	object *self;
 	object *args;
 {
@@ -592,7 +592,7 @@ posix_exec(self, args)
 	int i, argc;
 	object *(*getitem) PROTO((object *, int));
 
-	/* exec has two arguments: (path, argv), where
+	/* execv has two arguments: (path, argv), where
 	   argv is a list or tuple of strings. */
 
 	if (!getargs(args, "(sO)", &path, &argv))
@@ -1180,7 +1180,7 @@ static struct methodlist posix_methods[] = {
 
 #ifndef MSDOS
 	{"_exit",	posix__exit},
-	{"exec",	posix_exec},
+	{"execv",	posix_execv},
 	{"fork",	posix_fork},
 	{"getegid",	posix_getegid},
 	{"geteuid",	posix_geteuid},
