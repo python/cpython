@@ -52,8 +52,8 @@ what's tested is actually `z in y'.
 # - Guido van Rossum rewrote much of the code, made some API changes,
 #   and cleaned up the docstrings.
 #
-# - Raymond Hettinger implemented a number of speedups and other
-#   improvements.
+# - Raymond Hettinger added a number of speedups and other
+#   bugs^H^H^H^Himprovements.
 
 
 __all__ = ['BaseSet', 'Set', 'ImmutableSet']
@@ -70,9 +70,8 @@ class BaseSet(object):
         """This is an abstract class."""
         # Don't call this from a concrete subclass!
         if self.__class__ is BaseSet:
-            # XXX Maybe raise TypeError instead, like basestring()?
-            raise NotImplementedError, ("BaseSet is an abstract class.  "
-                                        "Use Set or ImmutableSet.")
+            raise TypeError, ("BaseSet is an abstract class.  "
+                              "Use Set or ImmutableSet.")
 
     # Standard protocols: __len__, __repr__, __str__, __iter__
 
@@ -233,7 +232,7 @@ class BaseSet(object):
         try:
             return element in self._data
         except TypeError:
-            transform = getattr(element, "_as_temporary_immutable", None)
+            transform = getattr(element, "_as_temporarily_immutable", None)
             if transform is None:
                 raise # re-raise the TypeError exception we caught
             return transform() in self._data
@@ -279,6 +278,21 @@ class BaseSet(object):
             result ^= hash(elt)
         return result
 
+    def _update(self, iterable):
+        # The main loop for update() and the subclass __init__() methods.
+        # XXX This can be optimized a bit by first trying the loop
+        # without setting up a try/except for each element.
+        data = self._data
+        value = True
+        for element in iterable:
+            try:
+                data[element] = value
+            except TypeError:
+                transform = getattr(element, "_as_immutable", None)
+                if transform is None:
+                    raise # re-raise the TypeError exception we caught
+                data[transform()] = value
+
 
 class ImmutableSet(BaseSet):
     """Immutable set class."""
@@ -287,26 +301,12 @@ class ImmutableSet(BaseSet):
 
     # BaseSet + hashing
 
-    def __init__(self, seq):
-        """Construct an immutable set from a sequence."""
-        # XXX Maybe this should default seq to None?
-        # XXX Creating an empty immutable set is not unheard of.
+    def __init__(self, iterable=None):
+        """Construct an immutable set from an optional iterable."""
         self._hashcode = None
-        self._data = data = {}
-        # I don't know a faster way to do this in pure Python.
-        # Custom code written in C only did it 65% faster,
-        # preallocating the dict to len(seq); without
-        # preallocation it was only 25% faster.  So the speed of
-        # this Python code is respectable.  Just copying True into
-        # a local variable is responsible for a 7-8% speedup.
-        value = True
-        # XXX Should this perhaps look for _as_immutable?
-        # XXX If so, should use self.update(seq).
-        # XXX (Well, ImmutableSet doesn't have update(); the base
-        # XXX class could have _update() which does this though, and
-        # XXX we could use that here and in Set.update().)
-        for key in seq:
-            data[key] = value
+        self._data = {}
+        if iterable is not None:
+            self._update(iterable)
 
     def __hash__(self):
         if self._hashcode is None:
@@ -321,15 +321,16 @@ class Set(BaseSet):
 
     # BaseSet + operations requiring mutability; no hashing
 
-    def __init__(self, seq=None):
-        """Construct an immutable set from a sequence."""
-        self._data = data = {}
-        if seq is not None:
-            value = True
-            # XXX Should this perhaps look for _as_immutable?
-            # XXX If so, should use self.update(seq).
-            for key in seq:
-                data[key] = value
+    def __init__(self, iterable=None):
+        """Construct a set from an optional iterable."""
+        self._data = {}
+        if iterable is not None:
+            self._update(iterable)
+
+    def __hash__(self):
+        """A Set cannot be hashed."""
+        # We inherit object.__hash__, so we must deny this explicitly
+        raise TypeError, "Can't hash a Set, only an ImmutableSet."
 
     # In-place union, intersection, differences
 
@@ -380,16 +381,7 @@ class Set(BaseSet):
 
     def update(self, iterable):
         """Add all values from an iterable (such as a list or file)."""
-        data = self._data
-        value = True
-        for element in iterable:
-            try:
-                data[element] = value
-            except TypeError:
-                transform = getattr(element, "_as_temporary_immutable", None)
-                if transform is None:
-                    raise # re-raise the TypeError exception we caught
-                data[transform()] = value
+        self._update(iterable)
 
     def clear(self):
         """Remove all elements from this set."""
@@ -405,7 +397,7 @@ class Set(BaseSet):
         try:
             self._data[element] = True
         except TypeError:
-            transform = getattr(element, "_as_temporary_immutable", None)
+            transform = getattr(element, "_as_immutable", None)
             if transform is None:
                 raise # re-raise the TypeError exception we caught
             self._data[transform()] = True
@@ -418,7 +410,7 @@ class Set(BaseSet):
         try:
             del self._data[element]
         except TypeError:
-            transform = getattr(element, "_as_temporary_immutable", None)
+            transform = getattr(element, "_as_temporarily_immutable", None)
             if transform is None:
                 raise # re-raise the TypeError exception we caught
             del self._data[transform()]
