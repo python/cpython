@@ -163,12 +163,7 @@
  * some address space wastage, but this is the most portable way to request
  * memory from the system across various platforms.
  */
-
-/* ALLOCATED_ARENA_SIZE is passed to malloc; after alignment, we can't
- * count on more than ARENA_SIZE bytes being usable for pools.
- */
-#define ALLOCATED_ARENA_SIZE	(256 << 10)	/* 256KB */
-#define ARENA_SIZE		(ALLOCATED_ARENA_SIZE - SYSTEM_PAGE_SIZE)
+#define ARENA_SIZE		(256 << 10)	/* 256KB */
 
 #ifdef WITH_MEMORY_LIMITS
 #define MAX_ARENAS		(SMALL_MEMORY_LIMIT / ARENA_SIZE)
@@ -180,7 +175,6 @@
  */
 #define POOL_SIZE		SYSTEM_PAGE_SIZE	/* must be 2^N */
 #define POOL_SIZE_MASK		SYSTEM_PAGE_SIZE_MASK
-#define ARENA_NB_POOLS		(ARENA_SIZE / POOL_SIZE)
 
 /*
  * -- End of tunable settings section --
@@ -324,13 +318,10 @@ static uptr *arenas = NULL;
 static ulong narenas = 0;
 static ulong maxarenas = 0;
 
-/* Number of pools already allocated from the current arena.  This is
- * initialized to the max # of pools to provoke the first allocation request
- * into allocating a new arena.
- */
-static uint watermark = ARENA_NB_POOLS;
+/* Number of pools still available to be allocated in the current arena. */
+static uint nfreepools = 0;
 
-/* Free space start address in current arena. */
+/* Free space start address in current arena.  This is pool-aligned. */
 static block *arenabase = NULL;
 
 #if 0
@@ -360,14 +351,20 @@ dumpem(void *ptr)
 static block *
 new_arena(void)
 {
-	block *bp = (block *)PyMem_MALLOC(ALLOCATED_ARENA_SIZE);
+	uint excess;	/* number of bytes above pool alignment */
+	block *bp = (block *)PyMem_MALLOC(ARENA_SIZE);
 	if (bp == NULL)
 		return NULL;
 
-	watermark = 0;
-	/* Page-round up */
-	arenabase = bp + (SYSTEM_PAGE_SIZE -
-			  ((off_t )bp & SYSTEM_PAGE_SIZE_MASK));
+	/* arenabase <- first pool-aligned address in the arena
+	   nfreepools <- number of whole pools that fit after alignment */
+	arenabase = bp;
+	nfreepools = ARENA_SIZE / POOL_SIZE;
+	excess = (uint)bp & POOL_SIZE_MASK;
+	if (excess != 0) {
+		--nfreepools;
+		arenabase += POOL_SIZE - excess;
+	}
 
 	/* Make room for a new entry in the arenas vector. */
 	if (arenas == NULL) {
@@ -437,13 +434,13 @@ error:
  * to come from.
  * Tricky:  Letting B be the arena base address in arenas[I], P belongs to the
  * arena if and only if
- *	B <= P < B + ALLOCATED_ARENA_SIZE
+ *	B <= P < B + ARENA_SIZE
  * Subtracting B throughout, this is true iff
- *	0 <= P-B < ALLOCATED_ARENA_SIZE
+ *	0 <= P-B < ARENA_SIZE
  * By using unsigned arithmetic, the "0 <=" half of the test can be skipped.
  */
 #define ADDRESS_IN_RANGE(P, I) \
-	((I) < narenas && (uptr)(P) - arenas[I] < (uptr)ALLOCATED_ARENA_SIZE)
+	((I) < narenas && (uptr)(P) - arenas[I] < (uptr)ARENA_SIZE)
 /*==========================================================================*/
 
 /* malloc */
@@ -558,11 +555,10 @@ _PyMalloc_Malloc(size_t nbytes)
                 /*
                  * Allocate new pool
                  */
-		if (watermark < ARENA_NB_POOLS) {
-			/* commit malloc(POOL_SIZE) from the current arena */
+		if (nfreepools) {
 		commit_pool:
-			watermark++;
-			pool = (poolp )arenabase;
+			--nfreepools;
+			pool = (poolp)arenabase;
 			arenabase += POOL_SIZE;
 			pool->arenaindex = narenas - 1;
 			pool->szidx = DUMMY_SIZE_IDX;
