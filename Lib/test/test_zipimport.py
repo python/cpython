@@ -95,6 +95,13 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
         # (Hence the 'A' in the test method name: to make it the first
         # item in a list sorted by name, like unittest.makeSuite() does.)
         #
+        # This test fails on platforms on which the zlib module is
+        # statically linked, but the problem it tests for can't
+        # occur in that case (builtin modules are always found first),
+        # so we'll simply skip it then. Bug #765456.
+        #
+        if "zlib" in sys.builtin_module_names:
+            return
         if "zlib" in sys.modules:
             del sys.modules["zlib"]
         files = {"zlib.py": (NOW, test_src)}
