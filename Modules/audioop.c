@@ -847,7 +847,7 @@ audioop_lin2adpcm(self, args)
 {
     signed char *cp;
     signed char *ncp;
-    int len, size, val, step, valprev, delta, index, sign;
+    int len, size, val, step, valpred, delta, index, sign, vpdiff, diff;
     object *rv, *state, *str;
     int i, outputbuffer, bufferstep;
 
@@ -869,10 +869,10 @@ audioop_lin2adpcm(self, args)
     /* Decode state, should have (value, step) */
     if ( state == None ) {
 	/* First time, it seems. Set defaults */
-	valprev = 0;
+	valpred = 0;
 	step = 7;
 	index = 0;
-    } else if ( !getargs(state, "(iii)", &valprev, &step, &index) )
+    } else if ( !getargs(state, "(iii)", &valpred, &step, &index) )
       return 0;
 
     bufferstep = 1;
@@ -883,29 +883,50 @@ audioop_lin2adpcm(self, args)
 	else if ( size == 4 ) val = ((int)*LONGP(cp, i)) >> 16;
 
 	/* Step 1 - compute difference with previous value */
-	delta = val - valprev;
-	sign = (delta < 0) ? 8 : 0;
-	if ( sign ) delta = (-delta);
+	diff = val - valpred;
+	sign = (diff < 0) ? 8 : 0;
+	if ( sign ) diff = (-diff);
 
 	/* Step 2 - Divide and clamp */
-#ifdef NODIVIDE
-	Program using shifts and subtracts;
-#else
-	delta = (delta<<2) / step;
-	if ( delta > 7 ) delta = 7;
-#endif
-	  
+	/* Note:
+	** This code *approximately* computes:
+	**    delta = diff*4/step;
+	**    vpdiff = (delta+0.5)*step/4;
+	** but in shift step bits are dropped. The net result of this is
+	** that even if you have fast mul/div hardware you cannot put it to
+	** good use since the fixup would be too expensive.
+	*/
+	delta = 0;
+	vpdiff = (step >> 3);
+	
+	if ( diff >= step ) {
+	    delta = 4;
+	    diff -= step;
+	    vpdiff += step;
+	}
+	step >>= 1;
+	if ( diff >= step  ) {
+	    delta |= 2;
+	    diff -= step;
+	    vpdiff += step;
+	}
+	step >>= 1;
+	if ( diff >= step ) {
+	    delta |= 1;
+	    vpdiff += step;
+	}
+
 	/* Step 3 - Update previous value */
 	if ( sign )
-	  valprev -= (delta*step)>>2;
+	  valpred -= vpdiff;
 	else
-	  valprev += (delta*step)>>2;
+	  valpred += vpdiff;
 
 	/* Step 4 - Clamp previous value to 16 bits */
-	if ( valprev > 32767 )
-	  valprev = 32767;
-	else if ( valprev < -32768 )
-	  valprev = -32768;
+	if ( valpred > 32767 )
+	  valpred = 32767;
+	else if ( valpred < -32768 )
+	  valpred = -32768;
 
 	/* Step 5 - Assemble value, update index and step values */
 	delta |= sign;
@@ -915,15 +936,15 @@ audioop_lin2adpcm(self, args)
 	if ( index > 88 ) index = 88;
 	step = stepsizeTable[index];
 
-	/* Step 6 - Output value (as a whole byte, currently) */
+	/* Step 6 - Output value */
 	if ( bufferstep ) {
-	    outputbuffer = (delta << 4);
+	    outputbuffer = (delta << 4) & 0xf0;
 	} else {
-	    *ncp++ = delta | outputbuffer;
+	    *ncp++ = (delta & 0x0f) | outputbuffer;
 	}
 	bufferstep = !bufferstep;
     }
-    rv = mkvalue("(O(iii))", str, valprev, step, index);
+    rv = mkvalue("(O(iii))", str, valpred, step, index);
     DECREF(str);
     return rv;
 }
@@ -935,7 +956,7 @@ audioop_adpcm2lin(self, args)
 {
     signed char *cp;
     signed char *ncp;
-    int len, size, val, valprev, step, delta, index, sign;
+    int len, size, val, valpred, step, delta, index, sign, vpdiff;
     object *rv, *str, *state;
     int i, inputbuffer, bufferstep;
 
@@ -951,10 +972,10 @@ audioop_adpcm2lin(self, args)
     /* Decode state, should have (value, step) */
     if ( state == None ) {
 	/* First time, it seems. Set defaults */
-	valprev = 0;
+	valpred = 0;
 	step = 7;
 	index = 0;
-    } else if ( !getargs(state, "(iii)", &valprev, &step, &index) )
+    } else if ( !getargs(state, "(iii)", &valpred, &step, &index) )
       return 0;
     
     str = newsizedstringobject(NULL, len*size*2);
@@ -975,36 +996,46 @@ audioop_adpcm2lin(self, args)
 
 	bufferstep = !bufferstep;
 
+	/* Step 2 - Find new index value (for later) */
 	index += indexTable[delta];
 	if ( index < 0 ) index = 0;
 	if ( index > 88 ) index = 88;
 
-	/* Step 2 - Separate sign and magnitude */
+	/* Step 3 - Separate sign and magnitude */
 	sign = delta & 8;
 	delta = delta & 7;
 
-	/* Step 3 - update output value */
+	/* Step 4 - Compute difference and new predicted value */
+	/*
+	** Computes 'vpdiff = (delta+0.5)*step/4', but see comment
+	** in adpcm_coder.
+	*/
+	vpdiff = step >> 3;
+	if ( delta & 4 ) vpdiff += step;
+	if ( delta & 2 ) vpdiff += step>>1;
+	if ( delta & 1 ) vpdiff += step>>2;
+
 	if ( sign )
-	  valprev -= (delta*step) >> 2;
+	  valpred -= vpdiff;
 	else
-	  valprev += (delta*step) >> 2;
+	  valpred += vpdiff;
 
-	/* Step 4 - clamp output value */
-	if ( valprev > 32767 )
-	  valprev = 32767;
-	else if ( valprev < -32768 )
-	  valprev = -32768;
+	/* Step 5 - clamp output value */
+	if ( valpred > 32767 )
+	  valpred = 32767;
+	else if ( valpred < -32768 )
+	  valpred = -32768;
 
-	/* Step 5 - Update step value */
+	/* Step 6 - Update step value */
 	step = stepsizeTable[index];
 
 	/* Step 6 - Output value */
-	if ( size == 1 )      *CHARP(ncp, i) = (signed char)(valprev >> 8);
-	else if ( size == 2 ) *SHORTP(ncp, i) = (short)(valprev);
-	else if ( size == 4 ) *LONGP(ncp, i) = (long)(valprev<<16);
+	if ( size == 1 )      *CHARP(ncp, i) = (signed char)(valpred >> 8);
+	else if ( size == 2 ) *SHORTP(ncp, i) = (short)(valpred);
+	else if ( size == 4 ) *LONGP(ncp, i) = (long)(valpred<<16);
     }
 
-    rv = mkvalue("(O(iii))", str, valprev, step, index);
+    rv = mkvalue("(O(iii))", str, valpred, step, index);
     DECREF(str);
     return rv;
 }
