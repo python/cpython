@@ -47,6 +47,9 @@
 /* struct addrinfo (netdb.h) */
 #undef HAVE_ADDRINFO
 
+/* Define if you have getaddrinfo() */
+#undef HAVE_GETADDRINFO
+
 /* struct sockaddr_storage (sys/socket.h) */
 #undef HAVE_SOCKADDR_STORAGE
 

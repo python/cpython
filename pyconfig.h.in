@@ -121,6 +121,9 @@
 /* struct addrinfo (netdb.h) */
 #undef HAVE_ADDRINFO
 
+/* Define if you have getaddrinfo() */
+#undef HAVE_GETADDRINFO
+
 /* struct sockaddr_storage (sys/socket.h) */
 #undef HAVE_SOCKADDR_STORAGE
 
@@ -401,9 +404,6 @@
 
 /* Define if you have the gai_strerror function.  */
 #undef HAVE_GAI_STRERROR
-
-/* Define if you have the getaddrinfo function.  */
-#undef HAVE_GETADDRINFO
 
 /* Define if you have the getcwd function.  */
 #undef HAVE_GETCWD
