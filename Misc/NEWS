@@ -173,6 +173,9 @@ Extension modules
 Library
 -------
 
+- distutils compilers now compile source files in the same order as
+  they are passed to the compiler.
+
 - pprint.pprint() and pprint.pformat() now have additional parameters
   indent, width and depth.
 
