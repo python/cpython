@@ -4,6 +4,9 @@
 import struct
 
 
+Long = type(0L)
+
+
 class Packer:
 
 	def init(self):
@@ -20,9 +23,12 @@ class Packer:
 		self.buf = self.buf + \
 			(chr(int(x>>24 & 0xff)) + chr(int(x>>16 & 0xff)) + \
 			 chr(int(x>>8 & 0xff)) + chr(int(x & 0xff)))
-	if struct.pack('i', 1) == '\0\0\0\1':
+	if struct.pack('l', 1) == '\0\0\0\1':
 		def pack_uint(self, x):
-			self.buf = self.buf + struct.pack('i', x)
+			if type(x) == Long:
+				x = int((x + 0x80000000L) % 0x100000000L \
+					   - 0x80000000L)
+			self.buf = self.buf + struct.pack('l', x)
 
 	pack_int = pack_uint
 
@@ -33,8 +39,8 @@ class Packer:
 		else: self.buf = self.buf + '\0\0\0\0'
 
 	def pack_uhyper(self, x):
-		self.pack_uint(x>>32 & 0xffffffff)
-		self.pack_uint(x & 0xffffffff)
+		self.pack_uint(int(x>>32 & 0xffffffff))
+		self.pack_uint(int(x & 0xffffffff))
 
 	pack_hyper = pack_uhyper
 
