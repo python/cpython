@@ -38,6 +38,13 @@ class MyScanner(Scanner):
 			"AntiTextSetApplicationAware",
 			]
 
+	def makegreylist(self):
+		return [
+			('#ifndef TARGET_API_MAC_CARBON', [
+				'InitFonts',
+				'SetFontLock',
+				'FlushFonts',
+			])]
 	def makeblacklisttypes(self):
 		return [
 			"FMInput_ptr",	# Not needed for now

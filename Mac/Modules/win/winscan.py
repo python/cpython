@@ -63,9 +63,7 @@ class MyScanner(Scanner):
 				'ValidRect',
 				'InvalRgn',
 				'InvalRect',
-			]),
-			('#ifndef TARGET_API_MAC_CARBON_NOTYET', [
-				'IsValidWindowPtr',
+				'IsValidWindowPtr', # I think this is useless for Python, but not sure...
 			])]
 			
 	def makeblacklisttypes(self):

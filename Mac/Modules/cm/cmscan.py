@@ -58,6 +58,13 @@ class MyScanner(Scanner):
 			"OpenAComponent",
 			]
 
+	def makegreylist(self):
+		return [
+			('#ifndef TARGET_API_MAC_CARBON', [
+				'SetComponentInstanceA5',
+				'GetComponentInstanceA5',
+			])]
+
 	def makeblacklisttypes(self):
 		return [
 			"ResourceSpec",

@@ -192,6 +192,8 @@ static PyObject *CmpInstObj_SetComponentInstanceStorage(_self, _args)
 	return _res;
 }
 
+#ifndef TARGET_API_MAC_CARBON
+
 static PyObject *CmpInstObj_GetComponentInstanceA5(_self, _args)
 	ComponentInstanceObject *_self;
 	PyObject *_args;
@@ -205,6 +207,9 @@ static PyObject *CmpInstObj_GetComponentInstanceA5(_self, _args)
 	                     _rv);
 	return _res;
 }
+#endif
+
+#ifndef TARGET_API_MAC_CARBON
 
 static PyObject *CmpInstObj_SetComponentInstanceA5(_self, _args)
 	ComponentInstanceObject *_self;
@@ -221,6 +226,7 @@ static PyObject *CmpInstObj_SetComponentInstanceA5(_self, _args)
 	_res = Py_None;
 	return _res;
 }
+#endif
 
 static PyObject *CmpInstObj_ComponentFunctionImplemented(_self, _args)
 	ComponentInstanceObject *_self;
@@ -281,10 +287,16 @@ static PyMethodDef CmpInstObj_methods[] = {
 	 "() -> (Handle _rv)"},
 	{"SetComponentInstanceStorage", (PyCFunction)CmpInstObj_SetComponentInstanceStorage, 1,
 	 "(Handle theStorage) -> None"},
+
+#ifndef TARGET_API_MAC_CARBON
 	{"GetComponentInstanceA5", (PyCFunction)CmpInstObj_GetComponentInstanceA5, 1,
 	 "() -> (long _rv)"},
+#endif
+
+#ifndef TARGET_API_MAC_CARBON
 	{"SetComponentInstanceA5", (PyCFunction)CmpInstObj_SetComponentInstanceA5, 1,
 	 "(long theA5) -> None"},
+#endif
 	{"ComponentFunctionImplemented", (PyCFunction)CmpInstObj_ComponentFunctionImplemented, 1,
 	 "(short ftnNumber) -> (long _rv)"},
 	{"GetComponentVersion", (PyCFunction)CmpInstObj_GetComponentVersion, 1,

@@ -188,6 +188,8 @@ static PyObject *SndCh_SndPlay(_self, _args)
 	return _res;
 }
 
+#ifndef TARGET_API_MAC_CARBON
+
 static PyObject *SndCh_SndStartFilePlay(_self, _args)
 	SndChannelObject *_self;
 	PyObject *_args;
@@ -217,6 +219,9 @@ static PyObject *SndCh_SndStartFilePlay(_self, _args)
 	_res = Py_None;
 	return _res;
 }
+#endif
+
+#ifndef TARGET_API_MAC_CARBON
 
 static PyObject *SndCh_SndPauseFilePlay(_self, _args)
 	SndChannelObject *_self;
@@ -232,6 +237,9 @@ static PyObject *SndCh_SndPauseFilePlay(_self, _args)
 	_res = Py_None;
 	return _res;
 }
+#endif
+
+#ifndef TARGET_API_MAC_CARBON
 
 static PyObject *SndCh_SndStopFilePlay(_self, _args)
 	SndChannelObject *_self;
@@ -250,6 +258,7 @@ static PyObject *SndCh_SndStopFilePlay(_self, _args)
 	_res = Py_None;
 	return _res;
 }
+#endif
 
 static PyObject *SndCh_SndChannelStatus(_self, _args)
 	SndChannelObject *_self;
@@ -321,12 +330,21 @@ static PyMethodDef SndCh_methods[] = {
 	 "(SndCommand cmd) -> None"},
 	{"SndPlay", (PyCFunction)SndCh_SndPlay, 1,
 	 "(SndListHandle sndHandle, Boolean async) -> None"},
+
+#ifndef TARGET_API_MAC_CARBON
 	{"SndStartFilePlay", (PyCFunction)SndCh_SndStartFilePlay, 1,
 	 "(short fRefNum, short resNum, long bufferSize, Boolean async) -> None"},
+#endif
+
+#ifndef TARGET_API_MAC_CARBON
 	{"SndPauseFilePlay", (PyCFunction)SndCh_SndPauseFilePlay, 1,
 	 "() -> None"},
+#endif
+
+#ifndef TARGET_API_MAC_CARBON
 	{"SndStopFilePlay", (PyCFunction)SndCh_SndStopFilePlay, 1,
 	 "(Boolean quietNow) -> None"},
+#endif
 	{"SndChannelStatus", (PyCFunction)SndCh_SndChannelStatus, 1,
 	 "(short theLength) -> (SCStatus theStatus)"},
 	{"SndGetInfo", (PyCFunction)SndCh_SndGetInfo, 1,
@@ -471,11 +489,13 @@ static int SPBObj_setattr(self, name, value)
 			self->ob_completion = value;
 			Py_INCREF(value);
 			rv = 1;
+#ifndef TARGET_API_MAC_CARBON_NOTYET
 		} else if (strcmp(name, "interruptRoutine") == 0) {
 			self->ob_spb.completionRoutine = NewSIInterruptProc(SPB_interrupt);
 			self->ob_interrupt = value;
 			Py_INCREF(value);
 			rv = 1;
+#endif
 		}
 		if ( rv ) return 0;
 		else return -1;
@@ -570,6 +590,8 @@ static PyObject *Snd_SndNewChannel(_self, _args)
 	return _res;
 }
 
+#ifndef TARGET_API_MAC_CARBON
+
 static PyObject *Snd_SndControl(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
@@ -588,6 +610,7 @@ static PyObject *Snd_SndControl(_self, _args)
 	                     SndCmd_New, &cmd);
 	return _res;
 }
+#endif
 
 static PyObject *Snd_SndSoundManagerVersion(_self, _args)
 	PyObject *_self;
@@ -654,6 +677,8 @@ static PyObject *Snd_SndSetSysBeepState(_self, _args)
 	return _res;
 }
 
+#ifndef TARGET_API_MAC_CARBON
+
 static PyObject *Snd_MACEVersion(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
@@ -667,6 +692,9 @@ static PyObject *Snd_MACEVersion(_self, _args)
 	                     PyMac_BuildNumVersion, _rv);
 	return _res;
 }
+#endif
+
+#ifndef TARGET_API_MAC_CARBON
 
 static PyObject *Snd_Comp3to1(_self, _args)
 	PyObject *_self;
@@ -711,6 +739,9 @@ static PyObject *Snd_Comp3to1(_self, _args)
  buffer__error__: ;
 	return _res;
 }
+#endif
+
+#ifndef TARGET_API_MAC_CARBON
 
 static PyObject *Snd_Exp1to3(_self, _args)
 	PyObject *_self;
@@ -755,6 +786,9 @@ static PyObject *Snd_Exp1to3(_self, _args)
  buffer__error__: ;
 	return _res;
 }
+#endif
+
+#ifndef TARGET_API_MAC_CARBON
 
 static PyObject *Snd_Comp6to1(_self, _args)
 	PyObject *_self;
@@ -799,6 +833,9 @@ static PyObject *Snd_Comp6to1(_self, _args)
  buffer__error__: ;
 	return _res;
 }
+#endif
+
+#ifndef TARGET_API_MAC_CARBON
 
 static PyObject *Snd_Exp1to6(_self, _args)
 	PyObject *_self;
@@ -843,6 +880,7 @@ static PyObject *Snd_Exp1to6(_self, _args)
  buffer__error__: ;
 	return _res;
 }
+#endif
 
 static PyObject *Snd_GetSysBeepVolume(_self, _args)
 	PyObject *_self;
@@ -1153,6 +1191,8 @@ static PyObject *Snd_SPBRecord(_self, _args)
 	return _res;
 }
 
+#ifndef TARGET_API_MAC_CARBON
+
 static PyObject *Snd_SPBRecordToFile(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
@@ -1175,6 +1215,7 @@ static PyObject *Snd_SPBRecordToFile(_self, _args)
 	_res = Py_None;
 	return _res;
 }
+#endif
 
 static PyObject *Snd_SPBPauseRecording(_self, _args)
 	PyObject *_self;
@@ -1352,8 +1393,11 @@ static PyMethodDef Snd_methods[] = {
 	 "(short duration) -> None"},
 	{"SndNewChannel", (PyCFunction)Snd_SndNewChannel, 1,
 	 "(short synth, long init, PyObject* userRoutine) -> (SndChannelPtr chan)"},
+
+#ifndef TARGET_API_MAC_CARBON
 	{"SndControl", (PyCFunction)Snd_SndControl, 1,
 	 "(short id) -> (SndCommand cmd)"},
+#endif
 	{"SndSoundManagerVersion", (PyCFunction)Snd_SndSoundManagerVersion, 1,
 	 "() -> (NumVersion _rv)"},
 	{"SndManagerStatus", (PyCFunction)Snd_SndManagerStatus, 1,
@@ -1362,16 +1406,31 @@ static PyMethodDef Snd_methods[] = {
 	 "() -> (short sysBeepState)"},
 	{"SndSetSysBeepState", (PyCFunction)Snd_SndSetSysBeepState, 1,
 	 "(short sysBeepState) -> None"},
+
+#ifndef TARGET_API_MAC_CARBON
 	{"MACEVersion", (PyCFunction)Snd_MACEVersion, 1,
 	 "() -> (NumVersion _rv)"},
+#endif
+
+#ifndef TARGET_API_MAC_CARBON
 	{"Comp3to1", (PyCFunction)Snd_Comp3to1, 1,
 	 "(Buffer buffer, StateBlock state, unsigned long numChannels, unsigned long whichChannel) -> (Buffer buffer, StateBlock state)"},
+#endif
+
+#ifndef TARGET_API_MAC_CARBON
 	{"Exp1to3", (PyCFunction)Snd_Exp1to3, 1,
 	 "(Buffer buffer, StateBlock state, unsigned long numChannels, unsigned long whichChannel) -> (Buffer buffer, StateBlock state)"},
+#endif
+
+#ifndef TARGET_API_MAC_CARBON
 	{"Comp6to1", (PyCFunction)Snd_Comp6to1, 1,
 	 "(Buffer buffer, StateBlock state, unsigned long numChannels, unsigned long whichChannel) -> (Buffer buffer, StateBlock state)"},
+#endif
+
+#ifndef TARGET_API_MAC_CARBON
 	{"Exp1to6", (PyCFunction)Snd_Exp1to6, 1,
 	 "(Buffer buffer, StateBlock state, unsigned long numChannels, unsigned long whichChannel) -> (Buffer buffer, StateBlock state)"},
+#endif
 	{"GetSysBeepVolume", (PyCFunction)Snd_GetSysBeepVolume, 1,
 	 "() -> (long level)"},
 	{"SetSysBeepVolume", (PyCFunction)Snd_SetSysBeepVolume, 1,
@@ -1404,8 +1463,11 @@ static PyMethodDef Snd_methods[] = {
 	 "(long inRefNum) -> None"},
 	{"SPBRecord", (PyCFunction)Snd_SPBRecord, 1,
 	 "(SPBPtr inParamPtr, Boolean asynchFlag) -> None"},
+
+#ifndef TARGET_API_MAC_CARBON
 	{"SPBRecordToFile", (PyCFunction)Snd_SPBRecordToFile, 1,
 	 "(short fRefNum, SPBPtr inParamPtr, Boolean asynchFlag) -> None"},
+#endif
 	{"SPBPauseRecording", (PyCFunction)Snd_SPBPauseRecording, 1,
 	 "(long inRefNum) -> None"},
 	{"SPBResumeRecording", (PyCFunction)Snd_SPBResumeRecording, 1,

@@ -62,6 +62,21 @@ class SoundScanner(Scanner):
 
 			]
 
+	def makegreylist(self):
+		return [
+			('#ifndef TARGET_API_MAC_CARBON', [
+				'MACEVersion',
+				'SPBRecordToFile',
+				'Exp1to6',
+				'Comp6to1',
+				'Exp1to3',
+				'Comp3to1',
+				'SndControl',
+				'SndStopFilePlay',
+				'SndStartFilePlay',
+				'SndPauseFilePlay',
+			])]
+
 	def makeblacklisttypes(self):
 		return [
 			"GetSoundVol",
