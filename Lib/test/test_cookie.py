@@ -3,6 +3,11 @@
 from test.test_support import verify, verbose, run_doctest
 import Cookie
 
+import warnings
+warnings.filterwarnings("ignore",
+                        ".* class is insecure.*",
+                        DeprecationWarning)
+
 # Currently this only tests SimpleCookie
 
 cases = [
