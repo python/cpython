@@ -46,7 +46,7 @@ entries marked with * were changed within the last 7 days.)
 
 # Version -- don't change unless you edit faqwiz.py
 
-WIZVERSION = "0.5"			# FAQ Wizard version
+WIZVERSION = "0.6"			# FAQ Wizard version
 
 # This parameter is normally overwritten with a dynamic value
 
@@ -77,13 +77,6 @@ except ImportError:
 
 COOKIE_NAME = SHORTNAME + "-FAQ-Wizard"	# Name used for Netscape cookie
 FAQNAME = SHORTNAME + " FAQ"		# Name of the FAQ
-
-# Load local customizations again, in case they set COOKIE_NAME or FAQNAME
-
-try:
-    from faqcust import *
-except ImportError:
-    pass
 
 # ----------------------------------------------------------------------
 
@@ -543,3 +536,10 @@ Any line that begins with a space or tab is assumed to be part of
 literal text.  Blocks of literal text delineated by blank lines are
 placed inside &lt;PRE&gt;...&lt;/PRE&gt;.
 """
+
+# Load local customizations again, in case they set some other variables
+
+try:
+    from faqcust import *
+except ImportError:
+    pass
