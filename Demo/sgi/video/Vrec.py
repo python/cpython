@@ -75,10 +75,18 @@ def main():
 		elif opt == '-t':
 			TIME = string.atoi(arg)
 
+	if args[2:]:
+		sys.stderr.write('usage: Vrec [options] [file [audiofile]]\n')
+		sys.exit(2)
+
 	if args:
 		filename = args[0]
 	else:
 		filename = 'film.video'
+
+	if args[1:] and not audio:
+		sys.stderr.write('-a turned on by appearance of 2nd file\n')
+		audio = 1
 
 	if audio:
 		if args[1:]:
@@ -171,6 +179,8 @@ def record(v, filename, audiofilename):
 	vout.writeheader()
 	buffer = []
 	thread.start_new_thread(saveframes, (vout, buffer))
+	if audiofilename:
+		initaudio(audiofilename, buffer)
 	gl.wintitle('(rec) ' + filename)
 	v.StartCapture()
 	t0 = time.millitimer()
@@ -202,14 +212,50 @@ def saveframes(vout, buffer):
 			time.millisleep(10)
 		else:
 			x = buffer[0]
-			del buffer[0]
 			if not x:
 				break
+			del buffer[0]
 			data, t = x
 			vout.writeframe(t, data, None)
 			del data
 	sys.stderr.write('Done writing\n')
 	vout.close()
+
+
+# Initialize audio recording
+
+AQSIZE = 8000
+
+def initaudio(filename, buffer):
+	import thread, aiff
+	afile = aiff.Aiff().init(filename, 'w')
+	afile.nchannels = AL.MONO
+	afile.sampwidth = AL.SAMPLE_8
+	params = [AL.INPUT_RATE, 0]
+	al.getparams(AL.DEFAULT_DEVICE, params)
+	print 'audio sampling rate =', params[1]
+	afile.samprate = params[1]
+	c = al.newconfig()
+	c.setchannels(AL.MONO)
+	c.setqueuesize(AQSIZE)
+	c.setwidth(AL.SAMPLE_8)
+	aport = al.openport(filename, 'r', c)
+	thread.start_new_thread(audiorecord, (afile, aport, buffer))
+
+
+# Thread to record audio samples
+
+# XXX should use writesampsraw for efficiency, but then destroy doesn't
+# XXX seem to set the #samples in the header correctly
+
+def audiorecord(afile, aport, buffer):
+	while buffer[-1:] <> [None]:
+		data = aport.readsamps(AQSIZE/2)
+##		afile.writesampsraw(data)
+		afile.writesamps(data)
+		del data
+	afile.destroy()
+	print 'Done writing audio'
 
 
 # Don't forget to call the main program
