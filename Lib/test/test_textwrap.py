@@ -224,11 +224,27 @@ What a mess!
         self.check_split("what the--.", ["what", " ", "the--."])
         self.check_split("--text--.", ["--text--."])
 
-        # My initial mis-interpretation of part of the bug report --
-        # These were always handled correctly, but it can't hurt to make
-        # sure that they *stay* correct!
+        # When I first read bug #596434, this is what I thought David
+        # was talking about.  I was wrong; these have always worked
+        # fine.  The real problem is tested in test_funky_parens()
+        # below...
         self.check_split("--option", ["--option"])
         self.check_split("--option-opt", ["--option-", "opt"])
+        self.check_split("foo --option-opt bar",
+                         ["foo", " ", "--option-", "opt", " ", "bar"])
+
+    def test_funky_parens (self):
+        # Second part of SF bug #596434: long option strings inside
+        # parentheses.
+        self.check_split("foo (--option) bar",
+                         ["foo", " ", "(--option)", " ", "bar"])
+
+        # Related stuff -- make sure parens work in simpler contexts.
+        self.check_split("foo (bar) baz",
+                         ["foo", " ", "(bar)", " ", "baz"])
+        self.check_split("blah (ding dong), wubba",
+                         ["blah", " ", "(ding", " ", "dong),",
+                          " ", "wubba"])
 
     def test_initial_whitespace(self):
         # SF bug #622849 reported inconsistent handling of leading
