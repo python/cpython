@@ -24,7 +24,7 @@ BUILDINDEX=$(TOOLSDIR)/buildindex.py
 # make it clear to l2h, since our support only generates HTML 4.0
 L2HARGS=   -html_version 4.0
 
-PYTHONDOCS='<hr>Send comments to <a href="mailto:python-docs@python.org">python-docs@python.org</a>.'
+PYTHONDOCS='<hr>Send comments on this document to <a href="mailto:python-docs@python.org">python-docs@python.org</a>.'
 HTMLBASE=  file:`pwd`
 
 INDEXFILES=api/api.html \
