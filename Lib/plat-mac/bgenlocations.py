@@ -31,6 +31,14 @@ TOOLBOXDIR="/Users/jack/src/python/Lib/plat-mac/Carbon"
 # Creator for C files:
 CREATOR="CWIE"
 
+# The previous definitions can be overriden by creating a module 
+# bgenlocationscustomize.py and putting it in site-packages (or anywere else 
+# on sys.path, actually)
+try:
+	from bgenlocationscustomize import *
+except ImportError:
+	pass
+
 if not os.path.exists(BGENDIR):
     raise Error, "Please fix bgenlocations.py, BGENDIR does not exist: %s" % BGENDIR
 if not os.path.exists(INCLUDEDIR):
