@@ -675,7 +675,7 @@ dict_items(mp, args)
 }
 
 static PyObject *
-dict_absorb(mp, args)
+dict_update(mp, args)
       register dictobject *mp;
       PyObject *args;
 {
@@ -685,7 +685,7 @@ dict_absorb(mp, args)
 	if (!PyArg_Parse(args, "O!", &PyDict_Type, &other))
 		return NULL;
 	if (other == mp)
-		goto done; /* a.absorb(a); nothing to do */
+		goto done; /* a.update(a); nothing to do */
 	/* Do one big resize at the start, rather than incrementally
 	   resizing as we insert new items.  Expect that there will be
 	   no (or few) overlapping keys. */
@@ -963,7 +963,7 @@ dict_clear(mp, args)
 }
 
 static PyMethodDef mapp_methods[] = {
-	{"absorb",	(PyCFunction)dict_absorb},
+	{"update",	(PyCFunction)dict_update},
 	{"clear",	(PyCFunction)dict_clear},
 	{"copy",	(PyCFunction)dict_copy},
 	{"has_key",	(PyCFunction)dict_has_key},
