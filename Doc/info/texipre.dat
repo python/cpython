@@ -1,4 +1,4 @@
-\input texinfo   @c -*-texinfo-*-
+\input texinfo
 @c %**start of header
 @setfilename python-lib.info
 @settitle Python library reference
@@ -91,7 +91,7 @@ the language, see the @cite{Python Tutorial}.  The @cite{Python
 Reference Manual} gives a more formal definition of the language.
 (These manuals are not yet available in INFO or Texinfo format.)
 
-This version corresponds to Python version 1.4 (Oct 25 1996).
+This version corresponds to Python version 1.5 (Oct 25 1996).
 
 @end ifinfo
 
