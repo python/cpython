@@ -1,0 +1,70 @@
+Newsgroups: comp.lang.misc,comp.lang.c,comp.lang.c++,comp.lang.perl,comp.lang.tcl
+Followup-to: comp.lang.misc
+Subject: Python 1.0.0 is out!
+
+--> Tired of decyphering the Perl code you wrote last week?
+
+--> Frustrated with Bourne shell syntax?
+
+--> Spent too much time staring at core dumps lately?
+
+Maybe you should try Python, the next generation object-oriented
+scripting and prototyping language, with a *readable* syntax.  Python
+has been used by hundreds of happy users all over the world during the
+past three years, and is now ready for prime time.
+
+Python is an interpreted language, and has the usual advantages of
+such languages, such as run-time checks (e.g. bounds checking),
+execution of dynamically generated code, automatic memory allocation,
+high level operations on strings, lists and dictionaries (associative
+arrays), and a fast edit-compile-run cycle.  Additionally, it features
+modules, classes, exceptions, and dynamic linking of extensions
+written in C or C++.  It has arbitrary precision integers.
+
+Python can be run interactively, and there is an extensive Emacs
+editing mode which includes the capability to execute regions of code.
+For the truly desperate there is a source level debugger (written in
+Python, of course :-).
+
+Python comes with a large library of standard modules and classes, as
+well as an extensive set of demo programs.  It has interfaces to most
+Unix system calls and library functions, and there exist extensions
+that interface to window systems and graphics libraries like X and
+SGI's GL.
+
+Python's source (in C) and documentation (in LaTeX and PostScript) are
+freely available on the Internet.  It builds without intervention on
+most Unix platforms: error-free builds have been confirmed for SGI
+IRIX 4 and 5, Sun SunOS 4 and Solaris 2, HP-UX, DEC Ultrix and OSF/1,
+IBM AIX, and SCO ODT 3.0.  A Macintosh binary is also available -- a
+DOS binary is in the works.
+
+If you have a WWW viewer (e.g. Mosaic), you can see all Python
+documentation on-line: point your viewer at the URL
+http://www.cwi.nl/~guido/Python.html.
+
+The source and documentation are available by anonymous ftp from the
+following sites -- please pick the one closest to you:
+
+Site                    IP address      Directory
+
+ftp.cwi.nl		192.16.184.180	/pub/python
+gatekeeper.dec.com      16.1.0.2        /pub/plan/python/cwi
+ftp.uu.net              192.48.96.9     /languages/python
+ftp.fu-berlin.de        130.133.4.50    /pub/unix/languages/python
+
+The file is called python1.0.0.tar.Z (some mirror sites convert it to
+a .gz file or split it up in separate parts).  See the INDEX file for
+other goodies: FAQ, NEWS, PostScript, Emacs info, Mac binary, etc.
+(Please don't ask me to mail it to you -- at 1.76 Megabytes it is
+unwieldy at least...)
+
+There's a mailing list; write to <python-list@cwi.nl> to subscribe (no
+LISTSERV commands please).  A FAQ list is regularly posted to
+comp.lang.misc.  A newsgroup may be created in the near future.
+
+[Excuse the hype -- Python really is a neat language, if I may say so.
+Please direct all followups to comp.lang.misc only.]
+
+--Guido van Rossum, CWI, Amsterdam <Guido.van.Rossum@cwi.nl>
+URL:  <http://www.cwi.nl/cwi/people/Guido.van.Rossum.html>
