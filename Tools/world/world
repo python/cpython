@@ -271,6 +271,8 @@ nameorgs = {
     # If you have a clue as to why this is, or if there is an official
     # document describing this, please let me know.  ISO3166 certainly makes
     # no mention of this.
+    #
+    # See <url:http://www.ripe.net/docs/ripe-159.html#222123>
     "uk": "United Kingdom (common practice)",
     }
 
