@@ -961,7 +961,7 @@ MPZ_powm(PyObject *self, PyObject *args)
 {
 	PyObject *base, *exp, *mod;
 	mpzobject *mpzbase = NULL, *mpzexp = NULL, *mpzmod = NULL;
-	mpzobject *z;
+	mpzobject *z = NULL;
 	int tstres;
 
 
@@ -975,10 +975,15 @@ MPZ_powm(PyObject *self, PyObject *args)
 		Py_XDECREF(mpzbase);
 		Py_XDECREF(mpzexp);
 		Py_XDECREF(mpzmod);
+		Py_XDECREF(z);
 		return NULL;
 	}
 
 	if ((tstres=mpz_cmp_ui(&mpzexp->mpz, (unsigned long int)0)) == 0) {
+		Py_DECREF(mpzbase);
+		Py_DECREF(mpzexp);
+		Py_DECREF(mpzmod);
+		Py_DECREF(z);
 		Py_INCREF(mpz_value_one);
 		return (PyObject *)mpz_value_one;
 	}
@@ -987,6 +992,7 @@ MPZ_powm(PyObject *self, PyObject *args)
 		Py_DECREF(mpzbase);
 		Py_DECREF(mpzexp);
 		Py_DECREF(mpzmod);
+		Py_DECREF(z);
 		PyErr_SetString(PyExc_ValueError, "modulus cannot be 0");
 		return NULL;
 	}
