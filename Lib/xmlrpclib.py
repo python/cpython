@@ -109,7 +109,7 @@ Exported classes:
 
   ServerProxy    Represents a logical connection to an XML-RPC server
 
-  MultiCall      Executor of boxcared xmlrpc requests 
+  MultiCall      Executor of boxcared xmlrpc requests
   Boolean        boolean wrapper to generate a "boolean" XML-RPC value
   DateTime       dateTime wrapper for an ISO 8601 string or time tuple or
                  localtime integer value to generate a "dateTime.iso8601"
@@ -894,7 +894,7 @@ class _MultiCallMethod:
 def MultiCallIterator(results):
     """Iterates over the results of a multicall. Exceptions are
     thrown in response to xmlrpc faults."""
-    
+
     for i in results:
         if type(i) == type({}):
             raise Fault(i['faultCode'], i['faultString'])
@@ -903,7 +903,7 @@ def MultiCallIterator(results):
         else:
             raise ValueError,\
                   "unexpected type in multicall result"
-        
+
 class MultiCall:
     """server -> a object used to boxcar method calls
 
@@ -920,14 +920,14 @@ class MultiCall:
 
     add_result, address = multicall()
     """
-    
+
     def __init__(self, server):
         self.__server = server
         self.__call_list = []
-        
+
     def __repr__(self):
         return "<MultiCall at %x>" % id(self)
-    
+
     __str__ = __repr__
 
     def __getattr__(self, name):
@@ -939,7 +939,7 @@ class MultiCall:
             marshalled_list.append({'methodName' : name, 'params' : args})
 
         return MultiCallIterator(self.__server.system.multicall(marshalled_list))
-        
+
 # --------------------------------------------------------------------
 # convenience functions
 
@@ -1071,7 +1071,6 @@ def loads(data):
     If the XML-RPC packet represents a fault condition, this function
     raises a Fault exception.
     """
-    import sys
     p, u = getparser()
     p.feed(data)
     p.close()
@@ -1392,7 +1391,7 @@ class ServerProxy:
             )
 
     __str__ = __repr__
-    
+
     def __getattr__(self, name):
         # magic method dispatcher
         return _Method(self.__request, name)
