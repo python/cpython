@@ -16,7 +16,7 @@ def test(method, input, output, *args):
         value = apply(f, args)
     except:
         value = sys.exc_type
-        exc = sys.exc_info()
+        exc = sys.exc_info()[:2]
     else:
         exc = None
     if value != output:
@@ -24,7 +24,7 @@ def test(method, input, output, *args):
             print 'no'
         print '*',f, `input`, `output`, `value`
         if exc:
-            print '  value == %s: %s' % (exc[:2])
+            print '  value == %s: %s' % (exc)
     else:
         if verbose:
             print 'yes'
