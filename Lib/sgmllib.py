@@ -14,8 +14,8 @@ import string
 
 # Regular expressions used for parsing
 
-incomplete = regex.compile( \
-	  '<!-?\|</[a-zA-Z][a-zA-Z0-9]*[ \t\n]*\|</?\|' + \
+incomplete = regex.compile(
+	  '<!-?\|</[a-zA-Z][a-zA-Z0-9]*[ \t\n]*\|</?\|' +
 	  '&#[a-zA-Z0-9]*\|&[a-zA-Z][a-zA-Z0-9]*\|&')
 entityref = regex.compile('&[a-zA-Z][a-zA-Z0-9]*[;.]')
 charref = regex.compile('&#[a-zA-Z0-9]+;')
@@ -59,7 +59,7 @@ class SGMLParser:
 	# Interface -- feed some data to the parser.  Call this as
 	# often as you want, with as little or as much text as you
 	# want (may include '\n').  (This just saves the text, all the
-	# processing is done by process() or close().)
+	# processing is done by goahead().)
 	def feed(self, data):
 		self.rawdata = self.rawdata + data
 		self.goahead(0)
@@ -172,9 +172,9 @@ class SGMLParser:
 		# Now parse the data between i+1 and j into a tag and attrs
 		attrs = []
 		tagfind = regex.compile('[a-zA-Z][a-zA-Z0-9]*')
-		attrfind = regex.compile( \
-		  '[ \t\n]+\([a-zA-Z][a-zA-Z0-9]*\)' + \
-		  '\([ \t\n]*=[ \t\n]*' + \
+		attrfind = regex.compile(
+		  '[ \t\n]+\([a-zA-Z][a-zA-Z0-9]*\)' +
+		  '\([ \t\n]*=[ \t\n]*' +
 		     '\(\'[^\']*\';\|"[^"]*"\|[-a-zA-Z0-9./:+*%?!()_#]+\)\)?')
 		k = tagfind.match(rawdata, i+1)
 		if k < 0:
@@ -196,7 +196,7 @@ class SGMLParser:
 					attrvalue = attrvalue[1:-1]
 			else:
 				attrvalue = ''
-			attrs.append(string.lower(attrname), attrvalue)
+			attrs.append((string.lower(attrname), attrvalue))
 			k = k + l
 		j = j+1
 		try:
@@ -253,7 +253,7 @@ class SGMLParser:
 
 	# Example -- handle entity reference, no need to override
 	def handle_entityref(self, name):
-		table = self.__class__.entitydefs
+		table = self.entitydefs
 		name = string.lower(name)
 		if table.has_key(name):
 			self.handle_data(table[name])
@@ -318,4 +318,5 @@ def test():
 		x.feed(line)
 
 
-#test()
+if __name__ == '__main__':
+	test()
