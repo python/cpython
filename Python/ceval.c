@@ -612,6 +612,8 @@ eval_frame(PyFrameObject *f)
 			if (call_trace(tstate->c_tracefunc, tstate->c_traceobj,
 				       f, PyTrace_CALL, Py_None)) {
 				/* Trace function raised an error */
+				--tstate->recursion_depth;
+				tstate->frame = f->f_back;
 				return NULL;
 			}
 		}
@@ -622,6 +624,8 @@ eval_frame(PyFrameObject *f)
 				       tstate->c_profileobj,
 				       f, PyTrace_CALL, Py_None)) {
 				/* Profile function raised an error */
+				--tstate->recursion_depth;
+				tstate->frame = f->f_back;
 				return NULL;
 			}
 		}
