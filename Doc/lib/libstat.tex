@@ -13,38 +13,62 @@ interpreting the results of \function{os.stat()},
 complete details about the \cfunction{stat()}, \cfunction{fstat()} and
 \cfunction{lstat()} calls, consult the documentation for your system.
 
-The \module{stat} module defines the following functions:
+The \module{stat} module defines the following functions to test for
+specific file types:
 
 
 \begin{funcdesc}{S_ISDIR}{mode}
-Return non-zero if the mode was gotten from a directory.
+Return non-zero if the mode is from a directory.
 \end{funcdesc}
 
 \begin{funcdesc}{S_ISCHR}{mode}
-Return non-zero if the mode was gotten from a character special device.
+Return non-zero if the mode is from a character special device file.
 \end{funcdesc}
 
 \begin{funcdesc}{S_ISBLK}{mode}
-Return non-zero if the mode was gotten from a block special device.
+Return non-zero if the mode is from a block special device file.
 \end{funcdesc}
 
 \begin{funcdesc}{S_ISREG}{mode}
-Return non-zero if the mode was gotten from a regular file.
+Return non-zero if the mode is from a regular file.
 \end{funcdesc}
 
 \begin{funcdesc}{S_ISFIFO}{mode}
-Return non-zero if the mode was gotten from a FIFO.
+Return non-zero if the mode is from a FIFO (named pipe).
 \end{funcdesc}
 
 \begin{funcdesc}{S_ISLNK}{mode}
-Return non-zero if the mode was gotten from a symbolic link.
+Return non-zero if the mode is from a symbolic link.
 \end{funcdesc}
 
 \begin{funcdesc}{S_ISSOCK}{mode}
-Return non-zero if the mode was gotten from a socket.
+Return non-zero if the mode is from a socket.
 \end{funcdesc}
 
-All the data items below are simply symbolic indexes into the 10-tuple
+Two additional functions are defined for more general manipulation of
+the file's mode:
+
+\begin{funcdesc}{S_IMODE}{mode}
+Return the portion of the file's mode that can be set by
+\function{os.chmod()}---that is, the file's permission bits, plus the
+sticky bit, set-group-id, and set-user-id bits (on systems that support
+them).
+\end{funcdesc}
+
+\begin{funcdesc}{S_IFMT}{mode}
+Return the portion of the file's mode that describes the file type (used
+by the \function{S_IS*()} functions above).
+\end{funcdesc}
+
+Normally, you would use the \function{os.path.is*()} functions for
+testing the type of a file; the functions here are useful when you are
+doing multiple tests of the same file and wish to avoid the overhead of
+the \cfunction{stat()} system call for each test.  These are also
+useful when checking for information about a file that isn't handled
+by \refmodule{os.path}, like the tests for block and character
+devices.
+
+All the variables below are simply symbolic indexes into the 10-tuple
 returned by \function{os.stat()}, \function{os.fstat()} or
 \function{os.lstat()}.
 
