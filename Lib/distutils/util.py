@@ -111,7 +111,8 @@ def change_root (new_root, pathname):
               "nothing known about platform '%s'" % os.name
 
 
-def _check_environ ():
+_environ_checked = 0
+def check_environ ():
     """Ensure that 'os.environ' has all the environment variables we
        guarantee that users can use in config files, command-line
        options, etc.  Currently this includes:
@@ -120,12 +121,18 @@ def _check_environ ():
                 and OS (see 'get_platform()')
     """
 
+    global _environ_checked
+    if _environ_checked:
+        return
+
     if os.name == 'posix' and not os.environ.has_key('HOME'):
         import pwd
         os.environ['HOME'] = pwd.getpwuid (os.getuid())[5]
 
     if not os.environ.has_key('PLAT'):
         os.environ['PLAT'] = get_platform ()
+
+    _environ_checked = 1
 
 
 def subst_vars (str, local_vars):
@@ -138,7 +145,7 @@ def subst_vars (str, local_vars):
        '_check_environ()'.  Raise ValueError for any variables not found in
        either 'local_vars' or 'os.environ'."""
 
-    _check_environ ()
+    check_environ ()
     def _subst (match, local_vars=local_vars):
         var_name = match.group(1)
         if local_vars.has_key (var_name):
