@@ -625,6 +625,10 @@ method should only be used when the socket is in blocking mode; in
 timeout or non-blocking mode file operations that cannot be completed
 immediately will fail.
 
+Note that the \method{connect()} operation is subject to the timeout
+setting, and in general it is recommended to call
+\method{settimeout()} before calling \method{connect()}.
+
 \begin{methoddesc}[socket]{setsockopt}{level, optname, value}
 Set the value of the given socket option (see the \UNIX{} manual page
 \manpage{setsockopt}{2}).  The needed symbolic constants are defined in
