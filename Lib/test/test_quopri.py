@@ -5,7 +5,7 @@ from cStringIO import StringIO
 from quopri import *
 
 
-
+
 ENCSAMPLE = """\
 Here's a bunch of special=20
 
@@ -25,8 +25,8 @@ characters... have fun!
 """
 
 # First line ends with a space
-DECSAMPLE = """\
-Here's a bunch of special 
+DECSAMPLE = "Here's a bunch of special \n" + \
+"""\
 
 ¡¢£¤¥¦§¨©
 ª«¬­®¯°±²³
@@ -44,7 +44,7 @@ characters... have fun!
 """
 
 
-
+
 class QuopriTestCase(unittest.TestCase):
     # Each entry is a tuple of (plaintext, encoded string).  These strings are
     # used in the "quotetabs=0" tests.
@@ -103,15 +103,15 @@ zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz''')
         ('hello world', 'hello=20world'),
         ('hello\tworld', 'hello=09world'),
         )
-        
+
     def test_encodestring(self):
         for p, e in self.STRINGS:
             self.assert_(encodestring(p) == e)
-        
+
     def test_decodestring(self):
         for p, e in self.STRINGS:
             self.assert_(decodestring(e) == p)
-        
+
     def test_idempotent_string(self):
         for p, e in self.STRINGS:
             self.assert_(decodestring(encodestring(e)) == e)
@@ -135,5 +135,5 @@ zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz''')
             self.assert_(encodestring(p, quotetabs=1) == e)
             self.assert_(decodestring(e) == p)
 
-
+
 test_support.run_unittest(QuopriTestCase)

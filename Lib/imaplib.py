@@ -566,10 +566,10 @@ class IMAP4:
         (typ, [data]) = <instance>.sort(sort_criteria, charset, search_criteria, ...)
         """
         name = 'SORT'
-        #if not name in self.capabilities:	# Let the server decide!
-        #	raise self.error('unimplemented extension command: %s' % name)
+        #if not name in self.capabilities:      # Let the server decide!
+        #       raise self.error('unimplemented extension command: %s' % name)
         if (sort_criteria[0],sort_criteria[-1]) != ('(',')'):
-        	sort_criteria = '(%s)' % sort_criteria
+            sort_criteria = '(%s)' % sort_criteria
         typ, dat = apply(self._simple_command, (name, sort_criteria, charset) + search_criteria)
         return self._untagged_response(typ, dat, name)
 
@@ -580,7 +580,7 @@ class IMAP4:
         (typ, [data]) = <instance>.status(mailbox, names)
         """
         name = 'STATUS'
-        #if self.PROTOCOL_VERSION == 'IMAP4':	# Let the server decide!
+        #if self.PROTOCOL_VERSION == 'IMAP4':   # Let the server decide!
         #    raise self.error('%s unimplemented in IMAP4 (obtain IMAP4rev1 server, or re-code)' % name)
         typ, dat = self._simple_command(name, mailbox, names)
         return self._untagged_response(typ, dat, name)
@@ -647,7 +647,7 @@ class IMAP4:
         Returns response appropriate to extension command `name'.
         """
         name = name.upper()
-        #if not name in self.capabilities:	# Let the server decide!
+        #if not name in self.capabilities:      # Let the server decide!
         #    raise self.error('unknown extension command: %s' % name)
         if not Commands.has_key(name):
             Commands[name] = (self.state,)

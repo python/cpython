@@ -286,7 +286,7 @@ def _optimize_unicode(charset, fixup):
         else:
             header.append(mapping[2*i]+256*mapping[2*i+1])
     data[0:0] = header
-    return [(BIGCHARSET, data)]    
+    return [(BIGCHARSET, data)]
 
 def _simple(av):
     # check if av is a "simple" operator

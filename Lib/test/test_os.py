@@ -52,7 +52,7 @@ class TemporaryFileTests(unittest.TestCase):
         if not hasattr(os, "tmpnam"):
             return
         self.check_tempfile(os.tmpnam())
-        
+
 
 
 run_unittest(TemporaryFileTests)
