@@ -186,6 +186,7 @@ class BuiltinTest(unittest.TestCase):
             def __coerce__(self, other):
                 raise ValueError
         self.assertRaises(ValueError, coerce, 42, BadNumber())
+        self.assertRaises(OverflowError, coerce, 0.5, int("12345" * 1000))
 
     def test_compile(self):
         compile('print 1\n', '', 'exec')
