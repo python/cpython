@@ -73,6 +73,8 @@ Comments are ignored by the syntax; they are not tokens.
 
 
 \subsection{Encoding declarations\label{encodings}}
+\index{source character set}
+\index{encodings}
 
 If a comment in the first or second line of the Python script matches
 the regular expression \regexp{coding[=:]\e s*([-\e w.]+)}, this comment is
@@ -385,16 +387,18 @@ String literals are described by the following lexical definitions:
   \production{longstringitem}
              {\token{longstringchar} | \token{escapeseq}}
   \production{shortstringchar}
-             {<any ASCII character except "\e" or newline or the quote>}
+             {<any source character except "\e" or newline or the quote>}
   \production{longstringchar}
-             {<any ASCII character except "\e">}
+             {<any source character except "\e">}
   \production{escapeseq}
              {"\e" <any ASCII character>}
 \end{productionlist}
 
 One syntactic restriction not indicated by these productions is that
 whitespace is not allowed between the \grammartoken{stringprefix} and
-the rest of the string literal.
+the rest of the string literal. The source character set is defined
+by the encoding declaration; it is \ASCII if no encoding declaration
+is given in the source file; see \ref{encodings}.
 
 \index{triple-quoted string}
 \index{Unicode Consortium}
@@ -447,8 +451,8 @@ to those used by Standard C.  The recognized escape sequences are:
 \lineiii{\e U\var{xxxxxxxx}}
         {Character with 32-bit hex value \var{xxxxxxxx} (Unicode only)}{(2)}
 \lineiii{\e v}	{\ASCII{} Vertical Tab (VT)}{}
-\lineiii{\e\var{ooo}} {\ASCII{} character with octal value \var{ooo}}{(3)}
-\lineiii{\e x\var{hh}} {\ASCII{} character with hex value \var{hh}}{(4)}
+\lineiii{\e\var{ooo}} {Character with octal value \var{ooo}}{(3,5)}
+\lineiii{\e x\var{hh}} {Character with hex value \var{hh}}{(4,5)}
 \end{tableiii}
 \index{ASCII@\ASCII}
 
@@ -469,6 +473,12 @@ Notes:
   As in Standard C, up to three octal digits are accepted.
 \item[(4)]
   Unlike in Standard C, at most two hex digits are accepted.
+\item[(5)]
+  In a string literal, hexadecimal and octal escapes denote the
+  byte with the given value; it is not necessary that the byte
+  encodes a character in the source character set. In a Unicode
+  literal, these escapes denote a Unicode character with the given
+  value.
 \end{itemize}
 
 
