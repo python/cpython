@@ -3,6 +3,8 @@ import bdb
 import traceback
 from Tkinter import *
 
+import StackViewer
+
 
 class Debugger(bdb.Bdb):
     
@@ -85,6 +87,13 @@ class Debugger(bdb.Bdb):
         self.status.pack(anchor="w")
         self.error = Label(top, anchor="w")
         self.error.pack(anchor="w")
+        #
+        self.fstack = Frame(top, height=1)
+        self.fstack.pack(expand=1, fill="both")
+        self.flocals = Frame(top)
+        self.flocals.pack(expand=1, fill="both")
+        self.fglobals = Frame(top, height=1)
+        self.fglobals.pack(expand=1, fill="both")
     
     def interaction(self, frame, info=None):
         self.frame = frame
@@ -115,6 +124,15 @@ class Debugger(bdb.Bdb):
         if sv:
             stack, i = self.get_stack(self.frame, tb)
             sv.load_stack(stack, i)
+        lv = self.localsviewer
+        gv = self.globalsviewer
+        if lv:
+            if not gv or self.frame.f_locals is not self.frame.f_globals:
+                lv.load_dict(self.frame.f_locals)
+            else:
+                lv.load_dict(None)
+        if gv:
+            gv.load_dict(self.frame.f_globals)
         if self.vsource.get():
             self.sync_source_line()
         for b in self.buttons:
@@ -159,9 +177,8 @@ class Debugger(bdb.Bdb):
 
     def show_stack(self):
         if not self.stackviewer and self.vstack.get():
-            import StackViewer
             self.stackviewer = sv = StackViewer.StackViewer(
-                self.top, self.flist, self)
+                self.fstack, self.flist, self)
             if self.frame:
                 stack, i = self.get_stack(self.frame, None)
                 sv.load_stack(stack, i)
@@ -170,16 +187,37 @@ class Debugger(bdb.Bdb):
             if sv and not self.vstack.get():
                 self.stackviewer = None
                 sv.close()
+            self.fstack['height'] = 1
     
     def show_source(self):
         if self.vsource.get():
             self.sync_source_line()
 
     def show_frame(self, (frame, lineno)):
-        print frame, lineno
+        pass
+
+    localsviewer = None
 
     def show_locals(self):
-        pass
-    
+        lv = self.localsviewer
+        if not lv and self.vlocals.get():
+            self.localsviewer = lv = StackViewer.NamespaceViewer(
+                self.flocals, "Locals")
+            if self.frame:
+                lv.load_dict(self.frame.f_locals)
+        elif lv and not self.vlocals.get():
+            self.localsviewer = None
+            lv.close()
+
+    globalsviewer = None
+
     def show_globals(self):
-        pass
+        lv = self.globalsviewer
+        if not lv and self.vglobals.get():
+            self.globalsviewer = lv = StackViewer.NamespaceViewer(
+                self.fglobals, "Locals")
+            if self.frame:
+                lv.load_dict(self.frame.f_globals)
+        elif lv and not self.vglobals.get():
+            self.globalsviewer = None
+            lv.close()

@@ -107,7 +107,8 @@ class StackViewer(ScrolledList):
 ##        else:
 ##            l["height"] = len(stack)
 ##            self.topframe.pack(expand=0)
-        for frame, lineno in stack:
+        for i in range(len(stack)):
+            frame, lineno = stack[i]
             try:
                 modname = frame.f_globals["__name__"]
             except:
@@ -122,6 +123,8 @@ class StackViewer(ScrolledList):
             else:
                 item = "%s.%s(), line %d: %s" % (modname, funcname,
                                                  lineno, sourceline)
+            if i == index:
+                item = "> " + item
             self.append(item)
         if index is not None:
             self.select(index)
@@ -189,20 +192,24 @@ def getexception(type=None, value=None):
 
 class NamespaceViewer:
     
-    def __init__(self, master, title, dict):
+    def __init__(self, master, title, dict=None):
         width = 0
-        height = 20*len(dict) # XXX 20 == observed height of Entry widget
+        height = 40
+        if dict:
+            height = 20*len(dict) # XXX 20 == observed height of Entry widget
         self.master = master
         self.title = title
         self.dict = dict
         self.repr = Repr()
         self.repr.maxstring = 60
         self.repr.maxother = 60
-        self.label = Label(master, text=title, borderwidth=2, relief="groove")
+        self.frame = frame = Frame(master)
+        self.frame.pack(expand=1, fill="both")
+        self.label = Label(frame, text=title, borderwidth=2, relief="groove")
         self.label.pack(fill="x")
-        self.vbar = vbar = Scrollbar(master, name="vbar")
+        self.vbar = vbar = Scrollbar(frame, name="vbar")
         vbar.pack(side="right", fill="y")
-        self.canvas = canvas = Canvas(master,
+        self.canvas = canvas = Canvas(frame,
                                       height=min(300, max(40, height)),
                                       scrollregion=(0, 0, width, height))
         canvas.pack(side="left", fill="both", expand=1)
@@ -210,34 +217,43 @@ class NamespaceViewer:
         canvas["yscrollcommand"] = vbar.set
         self.subframe = subframe = Frame(canvas)
         self.sfid = canvas.create_window(0, 0, window=subframe, anchor="nw")
-        names = dict.keys()
-        names.sort()
-        row = 0
-        for name in names:
-            value = dict[name]
-            svalue = self.repr.repr(value) # repr(value)
-            l = Label(subframe, text=name)
-            l.grid(row=row, column=0, sticky="nw")
-##            l = Label(subframe, text=svalue, justify="l", wraplength=300)
-            l = Entry(subframe, width=0, borderwidth=0)
-            l.insert(0, svalue)
-##            l["state"] = "disabled"
-            l.grid(row=row, column=1, sticky="nw")
-            row = row+1
+        self.load_dict(dict)
+    
+    def load_dict(self, dict):
+        subframe = self.subframe
+        frame = self.frame
+        for c in subframe.children.values():
+            c.destroy()
+        if not dict:
+            l = Label(subframe, text="None")
+            l.grid(row=0, column=0)
+        else:
+            names = dict.keys()
+            names.sort()
+            row = 0
+            for name in names:
+                value = dict[name]
+                svalue = self.repr.repr(value) # repr(value)
+                l = Label(subframe, text=name)
+                l.grid(row=row, column=0, sticky="nw")
+    ##            l = Label(subframe, text=svalue, justify="l", wraplength=300)
+                l = Entry(subframe, width=0, borderwidth=0)
+                l.insert(0, svalue)
+    ##            l["state"] = "disabled"
+                l.grid(row=row, column=1, sticky="nw")
+                row = row+1
+        # XXX Could we use a <Configure> callback for the following?
         subframe.update_idletasks() # Alas!
         width = subframe.winfo_reqwidth()
         height = subframe.winfo_reqheight()
-        canvas["scrollregion"] = (0, 0, width, height)
-##        if height > 300:
-##            canvas["height"] = 300
-##            master.pack(expand=1)
-##        else:
-##            canvas["height"] = height
-##            master.pack(expand=0)
+        canvas = self.canvas
+        self.canvas["scrollregion"] = (0, 0, width, height)
+        if height > 300:
+            canvas["height"] = 300
+            frame.pack(expand=1)
+        else:
+            canvas["height"] = height
+            frame.pack(expand=0)
 
     def close(self):
-        for c in self.subframe, self.label, self.vbar, self.canvas:
-            try:
-                c.destroy()
-            except:
-                pass
+        self.frame.destroy()
