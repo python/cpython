@@ -103,5 +103,6 @@ Test Succeeded testTooManyDocumentElements
 Passed Test
 Test Succeeded testUnlink
 Test Succeeded testWriteText
+Passed Test
 Test Succeeded testWriteXML
 All tests succeeded
