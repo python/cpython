@@ -885,6 +885,7 @@ see its docs for details.
                 for thing, count in passed:
                     print " %3d tests in %s" % (count, thing)
         if failed:
+            print "*" * 65
             print len(failed), "items had failures:"
             failed.sort()
             for thing, (f, t) in failed:
