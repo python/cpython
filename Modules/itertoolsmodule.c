@@ -882,7 +882,7 @@ the following reasons:
      None.  
 
   4) If a need does arise, it can be met by __builtins__.map() or by 
-     writing a generator.
+     writing:  chain(iterable, repeat(None)).
 
   5) Similar toolsets in Haskell and SML do not have automatic None fill-in.
 */
@@ -1574,8 +1574,18 @@ izip_dealloc(izipobject *lz)
 static int
 izip_traverse(izipobject *lz, visitproc visit, void *arg)
 {
-	if (lz->ittuple)
-		return visit(lz->ittuple, arg);
+	int err;
+
+	if (lz->ittuple) {
+		err = visit(lz->ittuple, arg);
+		if (err)
+			return err;
+	}
+	if (lz->result) {
+		err = visit(lz->result, arg);
+		if (err)
+			return err;
+	}
 	return 0;
 }
 
