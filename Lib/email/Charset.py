@@ -11,7 +11,7 @@ else:
     from types import UnicodeType
     def _is_unicode(x):
         return isinstance(x, UnicodeType)
-    
+
 from email.Encoders import encode_7or8bit
 import email.base64MIME
 import email.quopriMIME

@@ -105,7 +105,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 if len(line) > 0 and line[0] != '#':
                     self.onecmd(line)
 
-    # Override Bdb methods 
+    # Override Bdb methods
 
     def user_call(self, frame, argument_list):
         """This method is called when there is the remote possibility

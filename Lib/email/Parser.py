@@ -129,7 +129,7 @@ class Parser:
             # boundary.
             separator = '--' + boundary
             payload = fp.read()
-            # We use an RE here because boundaries can have trailing 
+            # We use an RE here because boundaries can have trailing
             # whitespace.
             mo = re.search(
                 r'(?P<sep>' + re.escape(separator) + r')(?P<ws>[ \t]*)',
@@ -176,15 +176,15 @@ class Parser:
                 terminator = len(payload)
             # We split the textual payload on the boundary separator, which
             # includes the trailing newline. If the container is a
-            # multipart/digest then the subparts are by default message/rfc822 
-            # instead of text/plain.  In that case, they'll have a optional 
-            # block of MIME headers, then an empty line followed by the 
+            # multipart/digest then the subparts are by default message/rfc822
+            # instead of text/plain.  In that case, they'll have a optional
+            # block of MIME headers, then an empty line followed by the
             # message headers.
             parts = re.split(
                 linesep + re.escape(separator) + r'[ \t]*' + linesep,
                 payload[start:terminator])
             for part in parts:
-                if isdigest: 
+                if isdigest:
                     if part[0] == linesep:
                         # There's no header block so create an empty message
                         # object as the container, and lop off the newline so

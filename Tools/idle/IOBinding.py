@@ -209,7 +209,7 @@ class IOBinding:
                 "installation. The file may not display correctly" % name,
                 master = self.text)
             enc = None
-            
+
         if enc:
             try:
                 return unicode(chars, enc)

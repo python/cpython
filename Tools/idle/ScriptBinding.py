@@ -53,7 +53,7 @@ class ScriptBinding:
     def __init__(self, editwin):
         if not editwin.runnable:
             self.menudefs = []
-            self.keydefs = {}        
+            self.keydefs = {}
         self.editwin = editwin
         # Provide instance variables referenced by Debugger
         # XXX This should be done differently
