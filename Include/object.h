@@ -315,6 +315,7 @@ typedef struct _typeobject {
 	PyObject *tp_cache;
 	PyObject *tp_subclasses;
 	PyObject *tp_weaklist;
+	destructor tp_del;
 
 #ifdef COUNT_ALLOCS
 	/* these must be last and never explicitly initialized */

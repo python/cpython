@@ -356,68 +356,6 @@ subtype_clear(PyObject *self)
 	return 0;
 }
 
-static PyObject *lookup_maybe(PyObject *, char *, PyObject **);
-
-static int
-call_finalizer(PyObject *self)
-{
-	static PyObject *del_str = NULL;
-	PyObject *del, *res;
-	PyObject *error_type, *error_value, *error_traceback;
-
-	/* Temporarily resurrect the object. */
-	assert(self->ob_refcnt == 0);
-	self->ob_refcnt = 1;
-
-	/* Save the current exception, if any. */
-	PyErr_Fetch(&error_type, &error_value, &error_traceback);
-
-	/* Execute __del__ method, if any. */
-	del = lookup_maybe(self, "__del__", &del_str);
-	if (del != NULL) {
-		res = PyEval_CallObject(del, NULL);
-		if (res == NULL)
-			PyErr_WriteUnraisable(del);
-		else
-			Py_DECREF(res);
-		Py_DECREF(del);
-	}
-
-	/* Restore the saved exception. */
-	PyErr_Restore(error_type, error_value, error_traceback);
-
-	/* Undo the temporary resurrection; can't use DECREF here, it would
-	 * cause a recursive call.
-	 */
-	assert(self->ob_refcnt > 0);
-	if (--self->ob_refcnt == 0)
-		return 0;	/* this is the normal path out */
-
-	/* __del__ resurrected it!  Make it look like the original Py_DECREF
-	 * never happened.
-	 */
-	{
-		int refcnt = self->ob_refcnt;
-		_Py_NewReference(self);
-		self->ob_refcnt = refcnt;
-	}
-	assert(!PyType_IS_GC(self->ob_type) ||
-	       _Py_AS_GC(self)->gc.gc_refs != _PyGC_REFS_UNTRACKED);
-	/* If Py_REF_DEBUG, the original decref dropped _Py_RefTotal, but
-	 * _Py_NewReference bumped it again, so that's a wash.
-	 * If Py_TRACE_REFS, _Py_NewReference re-added self to the object
-	 * chain, so no more to do there either.
-	 * If COUNT_ALLOCS, the original decref bumped tp_frees, and
-	 * _Py_NewReference bumped tp_allocs:  both of those need to be
-	 * undone.
-	 */
-#ifdef COUNT_ALLOCS
-	--self->ob_type->tp_frees;
-	--self->ob_type->tp_allocs;
-#endif
-	return -1; /* __del__ added a reference; don't delete now */
-}
-
 static void
 subtype_dealloc(PyObject *self)
 {
@@ -438,8 +376,11 @@ subtype_dealloc(PyObject *self)
 		   clear_slots(), or DECREF the dict, or clear weakrefs. */
 
 		/* Maybe call finalizer; exit early if resurrected */
-		if (call_finalizer(self) < 0)
-			return;
+		if (type->tp_del) {
+			type->tp_del(self);
+			if (self->ob_refcnt > 0)
+				return;
+		}
 
 		/* Find the nearest base with a different tp_dealloc */
 		base = type;
@@ -468,8 +409,11 @@ subtype_dealloc(PyObject *self)
 	_PyObject_GC_TRACK(self); /* We'll untrack for real later */
 
 	/* Maybe call finalizer; exit early if resurrected */
-	if (call_finalizer(self) < 0)
-		goto endlabel;
+	if (type->tp_del) {
+		type->tp_del(self);
+		if (self->ob_refcnt > 0)
+			goto endlabel;
+	}
 
 	/* Find the nearest base with a different tp_dealloc
 	   and clear slots while we're at it */
@@ -3721,6 +3665,65 @@ slot_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	return x;
 }
 
+static void
+slot_tp_del(PyObject *self)
+{
+	static PyObject *del_str = NULL;
+	PyObject *del, *res;
+	PyObject *error_type, *error_value, *error_traceback;
+
+	/* Temporarily resurrect the object. */
+	assert(self->ob_refcnt == 0);
+	self->ob_refcnt = 1;
+
+	/* Save the current exception, if any. */
+	PyErr_Fetch(&error_type, &error_value, &error_traceback);
+
+	/* Execute __del__ method, if any. */
+	del = lookup_maybe(self, "__del__", &del_str);
+	if (del != NULL) {
+		res = PyEval_CallObject(del, NULL);
+		if (res == NULL)
+			PyErr_WriteUnraisable(del);
+		else
+			Py_DECREF(res);
+		Py_DECREF(del);
+	}
+
+	/* Restore the saved exception. */
+	PyErr_Restore(error_type, error_value, error_traceback);
+
+	/* Undo the temporary resurrection; can't use DECREF here, it would
+	 * cause a recursive call.
+	 */
+	assert(self->ob_refcnt > 0);
+	if (--self->ob_refcnt == 0)
+		return;	/* this is the normal path out */
+
+	/* __del__ resurrected it!  Make it look like the original Py_DECREF
+	 * never happened.
+	 */
+	{
+		int refcnt = self->ob_refcnt;
+		_Py_NewReference(self);
+		self->ob_refcnt = refcnt;
+	}
+	assert(!PyType_IS_GC(self->ob_type) ||
+	       _Py_AS_GC(self)->gc.gc_refs != _PyGC_REFS_UNTRACKED);
+	/* If Py_REF_DEBUG, the original decref dropped _Py_RefTotal, but
+	 * _Py_NewReference bumped it again, so that's a wash.
+	 * If Py_TRACE_REFS, _Py_NewReference re-added self to the object
+	 * chain, so no more to do there either.
+	 * If COUNT_ALLOCS, the original decref bumped tp_frees, and
+	 * _Py_NewReference bumped tp_allocs:  both of those need to be
+	 * undone.
+	 */
+#ifdef COUNT_ALLOCS
+	--self->ob_type->tp_frees;
+	--self->ob_type->tp_allocs;
+#endif
+}
+
 
 /* Table mapping __foo__ names to tp_foo offsets and slot_tp_foo wrapper
    functions.  The offsets here are relative to the 'etype' structure, which
@@ -3949,6 +3952,7 @@ static slotdef slotdefs[] = {
 	       "see x.__class__.__doc__ for signature",
 	       PyWrapperFlag_KEYWORDS),
 	TPSLOT("__new__", tp_new, slot_tp_new, NULL, ""),
+	TPSLOT("__del__", tp_del, slot_tp_del, NULL, ""),
 	{NULL}
 };
 
