@@ -36,6 +36,9 @@ PERFORMANCE OF THIS SOFTWARE.
 
 #include <stdarg.h>
 #include <cl.h>
+#if defined(CL_JPEG_SOFTWARE) && !defined(CL_JPEG_COSMO)
+#include <dmedia/cl_cosmo.h>
+#endif
 #include "Python.h"
 
 typedef struct {
@@ -148,7 +151,7 @@ cl_CompressImage(PyObject *self, PyObject *args)
 			    compressionRatio, (void *) frameBuffer,
 			    &compressedBufferSize,
 			    (void *) PyString_AsString(compressedBuffer))
-	    == FAILURE) {
+	    == FAILURE || error_handler_called) {
 		Py_DECREF(compressedBuffer);
 		if (!error_handler_called)
 			PyErr_SetString(ClError, "clCompressImage failed");
@@ -191,7 +194,7 @@ cl_DecompressImage(PyObject *self, PyObject *args)
 	if (clDecompressImage(compressionScheme, width, height, originalFormat,
 			      compressedBufferSize, compressedBuffer,
 			      (void *) PyString_AsString(frameBuffer))
-	    == FAILURE) {
+	    == FAILURE || error_handler_called) {
 		Py_DECREF(frameBuffer);
 		if (!error_handler_called)
 			PyErr_SetString(ClError, "clDecompressImage failed");
@@ -218,7 +221,8 @@ doClose(clobject *self, PyObject *args, int (*close_func)(CL_Handle))
 		return NULL;
 
 	error_handler_called = 0;
-	if ((*close_func)(self->ob_compressorHdl) == FAILURE) {
+	if ((*close_func)(self->ob_compressorHdl) == FAILURE ||
+	    error_handler_called) {
 		if (!error_handler_called)
 			PyErr_SetString(ClError, "close failed");
 		return NULL;
@@ -273,7 +277,8 @@ clm_Compress(PyObject *self, PyObject *args)
 	error_handler_called = 0;
 	if (clCompress(SELF->ob_compressorHdl, numberOfFrames,
 		       (void *) frameBuffer, &compressedBufferSize,
-		       (void *) PyString_AsString(data)) == FAILURE) {
+		       (void *) PyString_AsString(data)) == FAILURE ||
+	    error_handler_called) {
 		Py_DECREF(data);
 		if (!error_handler_called)
 			PyErr_SetString(ClError, "compress failed");
@@ -321,7 +326,8 @@ clm_Decompress(PyObject *self, PyObject *args)
 	error_handler_called = 0;
 	if (clDecompress(SELF->ob_compressorHdl, numberOfFrames,
 			 compressedDataSize, (void *) compressedData,
-			 (void *) PyString_AsString(data)) == FAILURE) {
+			 (void *) PyString_AsString(data)) == FAILURE ||
+	    error_handler_called) {
 		Py_DECREF(data);
 		if (!error_handler_called)
 			PyErr_SetString(ClError, "decompress failed");
@@ -493,7 +499,7 @@ clm_GetParamID(PyObject *self, PyObject *args)
 
 	error_handler_called = 0;
 	value = clGetParamID(SELF->ob_compressorHdl, name);
-	if (value == FAILURE) {
+	if (value == FAILURE || error_handler_called) {
 		if (!error_handler_called)
 			PyErr_SetString(ClError, "getparamid failed");
 		return NULL;
@@ -716,7 +722,8 @@ doOpen(PyObject *self, PyObject *args, int (*open_func)(int, CL_Handle *),
 	new->ob_paramtypes = NULL;
 
 	error_handler_called = 0;
-	if ((*open_func)(scheme, &new->ob_compressorHdl) == FAILURE) {
+	if ((*open_func)(scheme, &new->ob_compressorHdl) == FAILURE ||
+	    error_handler_called) {
 		Py_DECREF(new);
 		if (!error_handler_called)
 			PyErr_SetString(ClError, "Open(De)Compressor failed");
@@ -994,7 +1001,7 @@ static PyMethodDef cl_methods[] = {
 void
 initcl()
 {
-	PyObject *m, *d;
+	PyObject *m, *d, *x;
 
 	m = Py_InitModule("cl", cl_methods);
 	d = PyModule_GetDict(m);
@@ -1002,341 +1009,1595 @@ initcl()
 	ClError = PyString_FromString("cl.error");
 	(void) PyDict_SetItemString(d, "error", ClError);
 
-	(void) PyDict_SetItemString(d, "MAX_NUMBER_OF_ORIGINAL_FORMATS",
-			   PyInt_FromLong(CL_MAX_NUMBER_OF_ORIGINAL_FORMATS));
-	(void) PyDict_SetItemString(d, "MONO", PyInt_FromLong(CL_MONO));
-	(void) PyDict_SetItemString(d, "STEREO_INTERLEAVED",
-				    PyInt_FromLong(CL_STEREO_INTERLEAVED));
-	(void) PyDict_SetItemString(d, "RGB", PyInt_FromLong(CL_RGB));
-	(void) PyDict_SetItemString(d, "RGBX", PyInt_FromLong(CL_RGBX));
-	(void) PyDict_SetItemString(d, "RGBA", PyInt_FromLong(CL_RGBA));
-	(void) PyDict_SetItemString(d, "RGB332", PyInt_FromLong(CL_RGB332));
-	(void) PyDict_SetItemString(d, "GRAYSCALE",
-				    PyInt_FromLong(CL_GRAYSCALE));
-	(void) PyDict_SetItemString(d, "Y", PyInt_FromLong(CL_Y));
-	(void) PyDict_SetItemString(d, "YUV", PyInt_FromLong(CL_YUV));
-	(void) PyDict_SetItemString(d, "YCbCr", PyInt_FromLong(CL_YCbCr));
-	(void) PyDict_SetItemString(d, "YUV422", PyInt_FromLong(CL_YUV422));
-	(void) PyDict_SetItemString(d, "YCbCr422",
-				    PyInt_FromLong(CL_YCbCr422));
-	(void) PyDict_SetItemString(d, "YUV422HC",
-				    PyInt_FromLong(CL_YUV422HC));
-	(void) PyDict_SetItemString(d, "YCbCr422HC",
-				    PyInt_FromLong(CL_YCbCr422HC));
-	(void) PyDict_SetItemString(d, "YUV422DC",
-				    PyInt_FromLong(CL_YUV422DC));
-	(void) PyDict_SetItemString(d, "YCbCr422DC",
-				    PyInt_FromLong(CL_YCbCr422DC));
-	(void) PyDict_SetItemString(d, "RGB8", PyInt_FromLong(CL_RGB8));
-	(void) PyDict_SetItemString(d, "BEST_FIT",
-				    PyInt_FromLong(CL_BEST_FIT));
-	(void) PyDict_SetItemString(d, "MAX_NUMBER_OF_AUDIO_ALGORITHMS",
-			   PyInt_FromLong(CL_MAX_NUMBER_OF_AUDIO_ALGORITHMS));
-	(void) PyDict_SetItemString(d, "MAX_NUMBER_OF_VIDEO_ALGORITHMS",
-			   PyInt_FromLong(CL_MAX_NUMBER_OF_VIDEO_ALGORITHMS));
-	(void) PyDict_SetItemString(d, "AUDIO", PyInt_FromLong(CL_AUDIO));
-	(void) PyDict_SetItemString(d, "VIDEO", PyInt_FromLong(CL_VIDEO));
-	(void) PyDict_SetItemString(d, "UNKNOWN_SCHEME",
-				    PyInt_FromLong(CL_UNKNOWN_SCHEME));
-	(void) PyDict_SetItemString(d, "UNCOMPRESSED_AUDIO",
-				    PyInt_FromLong(CL_UNCOMPRESSED_AUDIO));
-	(void) PyDict_SetItemString(d, "G711_ULAW",
-				    PyInt_FromLong(CL_G711_ULAW));
-	(void) PyDict_SetItemString(d, "ULAW", PyInt_FromLong(CL_ULAW));
-	(void) PyDict_SetItemString(d, "G711_ALAW",
-				    PyInt_FromLong(CL_G711_ALAW));
-	(void) PyDict_SetItemString(d, "ALAW", PyInt_FromLong(CL_ALAW));
-	(void) PyDict_SetItemString(d, "AWARE_MPEG_AUDIO",
-				    PyInt_FromLong(CL_AWARE_MPEG_AUDIO));
-	(void) PyDict_SetItemString(d, "AWARE_MULTIRATE",
-				    PyInt_FromLong(CL_AWARE_MULTIRATE));
-	(void) PyDict_SetItemString(d, "UNCOMPRESSED",
-				    PyInt_FromLong(CL_UNCOMPRESSED));
-	(void) PyDict_SetItemString(d, "UNCOMPRESSED_VIDEO",
-				    PyInt_FromLong(CL_UNCOMPRESSED_VIDEO));
-	(void) PyDict_SetItemString(d, "RLE", PyInt_FromLong(CL_RLE));
-	(void) PyDict_SetItemString(d, "JPEG", PyInt_FromLong(CL_JPEG));
-#ifdef IRIX_5_3_LIBRARY
-	(void) PyDict_SetItemString(d, "JPEG_SOFTWARE",
-				    PyInt_FromLong(CL_JPEG_SOFTWARE));
+#ifdef CL_ADDED_ALGORITHM_ERROR
+	x = PyInt_FromLong(CL_ADDED_ALGORITHM_ERROR);
+	if (x == NULL || PyDict_SetItemString(d, "ADDED_ALGORITHM_ERROR", x) < 0)
+		goto error;
+	Py_DECREF(x);
 #endif
-	(void) PyDict_SetItemString(d, "MPEG_VIDEO",
-				    PyInt_FromLong(CL_MPEG_VIDEO));
-	(void) PyDict_SetItemString(d, "MVC1", PyInt_FromLong(CL_MVC1));
-	(void) PyDict_SetItemString(d, "RTR", PyInt_FromLong(CL_RTR));
-	(void) PyDict_SetItemString(d, "RTR1", PyInt_FromLong(CL_RTR1));
-	(void) PyDict_SetItemString(d, "HDCC", PyInt_FromLong(CL_HDCC));
-	(void) PyDict_SetItemString(d, "MVC2", PyInt_FromLong(CL_MVC2));
-	(void) PyDict_SetItemString(d, "RLE24", PyInt_FromLong(CL_RLE24));
-	(void) PyDict_SetItemString(d, "MAX_NUMBER_OF_PARAMS",
-				    PyInt_FromLong(CL_MAX_NUMBER_OF_PARAMS));
-	(void) PyDict_SetItemString(d, "IMAGE_WIDTH",
-				    PyInt_FromLong(CL_IMAGE_WIDTH));
-	(void) PyDict_SetItemString(d, "IMAGE_HEIGHT",
-				    PyInt_FromLong(CL_IMAGE_HEIGHT));
-	(void) PyDict_SetItemString(d, "ORIGINAL_FORMAT",
-				    PyInt_FromLong(CL_ORIGINAL_FORMAT));
-	(void) PyDict_SetItemString(d, "INTERNAL_FORMAT",
-				    PyInt_FromLong(CL_INTERNAL_FORMAT));
-	(void) PyDict_SetItemString(d, "COMPONENTS",
-				    PyInt_FromLong(CL_COMPONENTS));
-	(void) PyDict_SetItemString(d, "BITS_PER_COMPONENT",
-				    PyInt_FromLong(CL_BITS_PER_COMPONENT));
-	(void) PyDict_SetItemString(d, "FRAME_RATE",
-				    PyInt_FromLong(CL_FRAME_RATE));
-	(void) PyDict_SetItemString(d, "COMPRESSION_RATIO",
-				    PyInt_FromLong(CL_COMPRESSION_RATIO));
-	(void) PyDict_SetItemString(d, "EXACT_COMPRESSION_RATIO",
-				  PyInt_FromLong(CL_EXACT_COMPRESSION_RATIO));
-	(void) PyDict_SetItemString(d, "FRAME_BUFFER_SIZE",
-				    PyInt_FromLong(CL_FRAME_BUFFER_SIZE));
-	(void) PyDict_SetItemString(d, "COMPRESSED_BUFFER_SIZE",
-				    PyInt_FromLong(CL_COMPRESSED_BUFFER_SIZE));
-	(void) PyDict_SetItemString(d, "BLOCK_SIZE",
-				    PyInt_FromLong(CL_BLOCK_SIZE));
-	(void) PyDict_SetItemString(d, "PREROLL", PyInt_FromLong(CL_PREROLL));
-	(void) PyDict_SetItemString(d, "FRAME_TYPE",
-				    PyInt_FromLong(CL_FRAME_TYPE));
-	(void) PyDict_SetItemString(d, "ALGORITHM_ID",
-				    PyInt_FromLong(CL_ALGORITHM_ID));
-	(void) PyDict_SetItemString(d, "ALGORITHM_VERSION",
-				    PyInt_FromLong(CL_ALGORITHM_VERSION));
-	(void) PyDict_SetItemString(d, "ORIENTATION",
-				    PyInt_FromLong(CL_ORIENTATION));
-	(void) PyDict_SetItemString(d, "NUMBER_OF_FRAMES",
-				    PyInt_FromLong(CL_NUMBER_OF_FRAMES));
-	(void) PyDict_SetItemString(d, "SPEED", PyInt_FromLong(CL_SPEED));
-	(void) PyDict_SetItemString(d, "LAST_FRAME_INDEX",
-				    PyInt_FromLong(CL_LAST_FRAME_INDEX));
-#ifdef IRIX_5_3_LIBRARY
-	(void) PyDict_SetItemString(d, "ENABLE_IMAGEINFO",
-				    PyInt_FromLong(CL_ENABLE_IMAGEINFO));
-	(void) PyDict_SetItemString(d, "INTERNAL_IMAGE_WIDTH",
-				    PyInt_FromLong(CL_INTERNAL_IMAGE_WIDTH));
-	(void) PyDict_SetItemString(d, "INTERNAL_IMAGE_HEIGHT",
-				    PyInt_FromLong(CL_INTERNAL_IMAGE_HEIGHT));
+#ifdef CL_ALAW
+	x = PyInt_FromLong(CL_ALAW);
+	if (x == NULL || PyDict_SetItemString(d, "ALAW", x) < 0)
+		goto error;
+	Py_DECREF(x);
 #endif
-	(void) PyDict_SetItemString(d, "NUMBER_OF_PARAMS",
-				    PyInt_FromLong(CL_NUMBER_OF_PARAMS));
-#ifdef IRIX_5_3_LIBRARY
-	(void) PyDict_SetItemString(d, "MVC2_LUMA_THRESHOLD",
-				    PyInt_FromLong(CL_MVC2_LUMA_THRESHOLD));
-	(void) PyDict_SetItemString(d, "MVC2_CHROMA_THRESHOLD",
-				    PyInt_FromLong(CL_MVC2_CHROMA_THRESHOLD));
-	(void) PyDict_SetItemString(d, "MVC2_EDGE_THRESHOLD",
-				    PyInt_FromLong(CL_MVC2_EDGE_THRESHOLD));
-	(void) PyDict_SetItemString(d, "MVC2_BLENDING",
-				    PyInt_FromLong(CL_MVC2_BLENDING));
-	(void) PyDict_SetItemString(d, "MVC2_BLENDING_OFF",
-				    PyInt_FromLong(CL_MVC2_BLENDING_OFF));
-	(void) PyDict_SetItemString(d, "MVC2_BLENDING_ON",
-				    PyInt_FromLong(CL_MVC2_BLENDING_ON));
-	(void) PyDict_SetItemString(d, "JPEG_QUALITY_FACTOR",
-				    PyInt_FromLong(CL_JPEG_QUALITY_FACTOR));
-	(void) PyDict_SetItemString(d, "JPEG_STREAM_HEADERS",
-				    PyInt_FromLong(CL_JPEG_STREAM_HEADERS));
-	(void) PyDict_SetItemString(d, "JPEG_QUANTIZATION_TABLES",
-				 PyInt_FromLong(CL_JPEG_QUANTIZATION_TABLES));
-	(void) PyDict_SetItemString(d, "JPEG_NUM_PARAMS",
-				    PyInt_FromLong(CL_JPEG_NUM_PARAMS));
-	(void) PyDict_SetItemString(d, "RTR_QUALITY_LEVEL",
-				    PyInt_FromLong(CL_RTR_QUALITY_LEVEL));
-	(void) PyDict_SetItemString(d, "HDCC_TILE_THRESHOLD",
-				    PyInt_FromLong(CL_HDCC_TILE_THRESHOLD));
-	(void) PyDict_SetItemString(d, "HDCC_SAMPLES_PER_TILE",
-				    PyInt_FromLong(CL_HDCC_SAMPLES_PER_TILE));
+#ifdef CL_ALGORITHM_ID
+	x = PyInt_FromLong(CL_ALGORITHM_ID);
+	if (x == NULL || PyDict_SetItemString(d, "ALGORITHM_ID", x) < 0)
+		goto error;
+	Py_DECREF(x);
 #endif
-	(void) PyDict_SetItemString(d, "END_OF_SEQUENCE",
-				    PyInt_FromLong(CL_END_OF_SEQUENCE));
-	(void) PyDict_SetItemString(d, "CHANNEL_POLICY",
-				    PyInt_FromLong(CL_CHANNEL_POLICY));
-	(void) PyDict_SetItemString(d, "NOISE_MARGIN",
-				    PyInt_FromLong(CL_NOISE_MARGIN));
-	(void) PyDict_SetItemString(d, "BITRATE_POLICY",
-				    PyInt_FromLong(CL_BITRATE_POLICY));
-	(void) PyDict_SetItemString(d, "BITRATE_TARGET",
-				    PyInt_FromLong(CL_BITRATE_TARGET));
-	(void) PyDict_SetItemString(d, "LAYER", PyInt_FromLong(CL_LAYER));
-	(void) PyDict_SetItemString(d, "ENUM_VALUE",
-				    PyInt_FromLong(CL_ENUM_VALUE));
-	(void) PyDict_SetItemString(d, "RANGE_VALUE",
-				    PyInt_FromLong(CL_RANGE_VALUE));
-	(void) PyDict_SetItemString(d, "FLOATING_ENUM_VALUE",
-				    PyInt_FromLong(CL_FLOATING_ENUM_VALUE));
-	(void) PyDict_SetItemString(d, "FLOATING_RANGE_VALUE",
-				    PyInt_FromLong(CL_FLOATING_RANGE_VALUE));
-	(void) PyDict_SetItemString(d, "DECOMPRESSOR",
-				    PyInt_FromLong(CL_DECOMPRESSOR));
-	(void) PyDict_SetItemString(d, "COMPRESSOR",
-				    PyInt_FromLong(CL_COMPRESSOR));
-	(void) PyDict_SetItemString(d, "CODEC", PyInt_FromLong(CL_CODEC));
-	(void) PyDict_SetItemString(d, "NONE", PyInt_FromLong(CL_NONE));
-#ifdef IRIX_5_3_LIBRARY
-	(void) PyDict_SetItemString(d, "BUF_FRAME",
-				    PyInt_FromLong(CL_BUF_FRAME));
-	(void) PyDict_SetItemString(d, "BUF_DATA",
-				    PyInt_FromLong(CL_BUF_DATA));
+#ifdef CL_ALGORITHM_TABLE_FULL
+	x = PyInt_FromLong(CL_ALGORITHM_TABLE_FULL);
+	if (x == NULL || PyDict_SetItemString(d, "ALGORITHM_TABLE_FULL", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_ALGORITHM_VERSION
+	x = PyInt_FromLong(CL_ALGORITHM_VERSION);
+	if (x == NULL || PyDict_SetItemString(d, "ALGORITHM_VERSION", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_ALG_AUDIO
+	x = PyInt_FromLong(CL_ALG_AUDIO);
+	if (x == NULL || PyDict_SetItemString(d, "ALG_AUDIO", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_ALG_VIDEO
+	x = PyInt_FromLong(CL_ALG_VIDEO);
+	if (x == NULL || PyDict_SetItemString(d, "ALG_VIDEO", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_AUDIO
+	x = PyInt_FromLong(CL_AUDIO);
+	if (x == NULL || PyDict_SetItemString(d, "AUDIO", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_AWARE_BITRATE_POLICY
+	x = PyInt_FromLong(CL_AWARE_BITRATE_POLICY);
+	if (x == NULL || PyDict_SetItemString(d, "AWARE_BITRATE_POLICY", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_AWARE_BITRATE_TARGET
+	x = PyInt_FromLong(CL_AWARE_BITRATE_TARGET);
+	if (x == NULL || PyDict_SetItemString(d, "AWARE_BITRATE_TARGET", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_AWARE_CHANNEL_POLICY
+	x = PyInt_FromLong(CL_AWARE_CHANNEL_POLICY);
+	if (x == NULL || PyDict_SetItemString(d, "AWARE_CHANNEL_POLICY", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_AWARE_CONST_QUAL
+	x = PyInt_FromLong(CL_AWARE_CONST_QUAL);
+	if (x == NULL || PyDict_SetItemString(d, "AWARE_CONST_QUAL", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_AWARE_ERROR
+	x = PyInt_FromLong(CL_AWARE_ERROR);
+	if (x == NULL || PyDict_SetItemString(d, "AWARE_ERROR", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_AWARE_FIXED_RATE
+	x = PyInt_FromLong(CL_AWARE_FIXED_RATE);
+	if (x == NULL || PyDict_SetItemString(d, "AWARE_FIXED_RATE", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_AWARE_INDEPENDENT
+	x = PyInt_FromLong(CL_AWARE_INDEPENDENT);
+	if (x == NULL || PyDict_SetItemString(d, "AWARE_INDEPENDENT", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_AWARE_JOINT_STEREO
+	x = PyInt_FromLong(CL_AWARE_JOINT_STEREO);
+	if (x == NULL || PyDict_SetItemString(d, "AWARE_JOINT_STEREO", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_AWARE_LAYER
+	x = PyInt_FromLong(CL_AWARE_LAYER);
+	if (x == NULL || PyDict_SetItemString(d, "AWARE_LAYER", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_AWARE_LOSSLESS
+	x = PyInt_FromLong(CL_AWARE_LOSSLESS);
+	if (x == NULL || PyDict_SetItemString(d, "AWARE_LOSSLESS", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_AWARE_MPEG_AUDIO
+	x = PyInt_FromLong(CL_AWARE_MPEG_AUDIO);
+	if (x == NULL || PyDict_SetItemString(d, "AWARE_MPEG_AUDIO", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_AWARE_MPEG_LAYER_I
+	x = PyInt_FromLong(CL_AWARE_MPEG_LAYER_I);
+	if (x == NULL || PyDict_SetItemString(d, "AWARE_MPEG_LAYER_I", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_AWARE_MPEG_LAYER_II
+	x = PyInt_FromLong(CL_AWARE_MPEG_LAYER_II);
+	if (x == NULL || PyDict_SetItemString(d, "AWARE_MPEG_LAYER_II", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_AWARE_MULTIRATE
+	x = PyInt_FromLong(CL_AWARE_MULTIRATE);
+	if (x == NULL || PyDict_SetItemString(d, "AWARE_MULTIRATE", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_AWARE_NOISE_MARGIN
+	x = PyInt_FromLong(CL_AWARE_NOISE_MARGIN);
+	if (x == NULL || PyDict_SetItemString(d, "AWARE_NOISE_MARGIN", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_AWARE_STEREO
+	x = PyInt_FromLong(CL_AWARE_STEREO);
+	if (x == NULL || PyDict_SetItemString(d, "AWARE_STEREO", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_BAD_ALGORITHM_NAME
+	x = PyInt_FromLong(CL_BAD_ALGORITHM_NAME);
+	if (x == NULL || PyDict_SetItemString(d, "BAD_ALGORITHM_NAME", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_BAD_ALGORITHM_TYPE
+	x = PyInt_FromLong(CL_BAD_ALGORITHM_TYPE);
+	if (x == NULL || PyDict_SetItemString(d, "BAD_ALGORITHM_TYPE", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_BAD_BLOCK_SIZE
+	x = PyInt_FromLong(CL_BAD_BLOCK_SIZE);
+	if (x == NULL || PyDict_SetItemString(d, "BAD_BLOCK_SIZE", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_BAD_BOARD
+	x = PyInt_FromLong(CL_BAD_BOARD);
+	if (x == NULL || PyDict_SetItemString(d, "BAD_BOARD", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_BAD_BUFFERING
+	x = PyInt_FromLong(CL_BAD_BUFFERING);
+	if (x == NULL || PyDict_SetItemString(d, "BAD_BUFFERING", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_BAD_BUFFERLENGTH_NEG
+	x = PyInt_FromLong(CL_BAD_BUFFERLENGTH_NEG);
+	if (x == NULL || PyDict_SetItemString(d, "BAD_BUFFERLENGTH_NEG", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_BAD_BUFFERLENGTH_ODD
+	x = PyInt_FromLong(CL_BAD_BUFFERLENGTH_ODD);
+	if (x == NULL || PyDict_SetItemString(d, "BAD_BUFFERLENGTH_ODD", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_BAD_BUFFER_EXISTS
+	x = PyInt_FromLong(CL_BAD_BUFFER_EXISTS);
+	if (x == NULL || PyDict_SetItemString(d, "BAD_BUFFER_EXISTS", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_BAD_BUFFER_HANDLE
+	x = PyInt_FromLong(CL_BAD_BUFFER_HANDLE);
+	if (x == NULL || PyDict_SetItemString(d, "BAD_BUFFER_HANDLE", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_BAD_BUFFER_POINTER
+	x = PyInt_FromLong(CL_BAD_BUFFER_POINTER);
+	if (x == NULL || PyDict_SetItemString(d, "BAD_BUFFER_POINTER", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_BAD_BUFFER_QUERY_SIZE
+	x = PyInt_FromLong(CL_BAD_BUFFER_QUERY_SIZE);
+	if (x == NULL || PyDict_SetItemString(d, "BAD_BUFFER_QUERY_SIZE", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_BAD_BUFFER_SIZE
+	x = PyInt_FromLong(CL_BAD_BUFFER_SIZE);
+	if (x == NULL || PyDict_SetItemString(d, "BAD_BUFFER_SIZE", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_BAD_BUFFER_SIZE_POINTER
+	x = PyInt_FromLong(CL_BAD_BUFFER_SIZE_POINTER);
+	if (x == NULL || PyDict_SetItemString(d, "BAD_BUFFER_SIZE_POINTER", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_BAD_BUFFER_TYPE
+	x = PyInt_FromLong(CL_BAD_BUFFER_TYPE);
+	if (x == NULL || PyDict_SetItemString(d, "BAD_BUFFER_TYPE", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_BAD_COMPRESSION_SCHEME
+	x = PyInt_FromLong(CL_BAD_COMPRESSION_SCHEME);
+	if (x == NULL || PyDict_SetItemString(d, "BAD_COMPRESSION_SCHEME", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_BAD_COMPRESSOR_HANDLE
+	x = PyInt_FromLong(CL_BAD_COMPRESSOR_HANDLE);
+	if (x == NULL || PyDict_SetItemString(d, "BAD_COMPRESSOR_HANDLE", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_BAD_COMPRESSOR_HANDLE_POINTER
+	x = PyInt_FromLong(CL_BAD_COMPRESSOR_HANDLE_POINTER);
+	if (x == NULL || PyDict_SetItemString(d, "BAD_COMPRESSOR_HANDLE_POINTER", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_BAD_FRAME_SIZE
+	x = PyInt_FromLong(CL_BAD_FRAME_SIZE);
+	if (x == NULL || PyDict_SetItemString(d, "BAD_FRAME_SIZE", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_BAD_FUNCTIONALITY
+	x = PyInt_FromLong(CL_BAD_FUNCTIONALITY);
+	if (x == NULL || PyDict_SetItemString(d, "BAD_FUNCTIONALITY", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_BAD_FUNCTION_POINTER
+	x = PyInt_FromLong(CL_BAD_FUNCTION_POINTER);
+	if (x == NULL || PyDict_SetItemString(d, "BAD_FUNCTION_POINTER", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_BAD_HEADER_SIZE
+	x = PyInt_FromLong(CL_BAD_HEADER_SIZE);
+	if (x == NULL || PyDict_SetItemString(d, "BAD_HEADER_SIZE", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_BAD_INITIAL_VALUE
+	x = PyInt_FromLong(CL_BAD_INITIAL_VALUE);
+	if (x == NULL || PyDict_SetItemString(d, "BAD_INITIAL_VALUE", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_BAD_INTERNAL_FORMAT
+	x = PyInt_FromLong(CL_BAD_INTERNAL_FORMAT);
+	if (x == NULL || PyDict_SetItemString(d, "BAD_INTERNAL_FORMAT", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_BAD_LICENSE
+	x = PyInt_FromLong(CL_BAD_LICENSE);
+	if (x == NULL || PyDict_SetItemString(d, "BAD_LICENSE", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_BAD_MIN_GT_MAX
+	x = PyInt_FromLong(CL_BAD_MIN_GT_MAX);
+	if (x == NULL || PyDict_SetItemString(d, "BAD_MIN_GT_MAX", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_BAD_NO_BUFFERSPACE
+	x = PyInt_FromLong(CL_BAD_NO_BUFFERSPACE);
+	if (x == NULL || PyDict_SetItemString(d, "BAD_NO_BUFFERSPACE", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_BAD_NUMBER_OF_BLOCKS
+	x = PyInt_FromLong(CL_BAD_NUMBER_OF_BLOCKS);
+	if (x == NULL || PyDict_SetItemString(d, "BAD_NUMBER_OF_BLOCKS", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_BAD_PARAM
+	x = PyInt_FromLong(CL_BAD_PARAM);
+	if (x == NULL || PyDict_SetItemString(d, "BAD_PARAM", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_BAD_PARAM_ID_POINTER
+	x = PyInt_FromLong(CL_BAD_PARAM_ID_POINTER);
+	if (x == NULL || PyDict_SetItemString(d, "BAD_PARAM_ID_POINTER", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_BAD_PARAM_TYPE
+	x = PyInt_FromLong(CL_BAD_PARAM_TYPE);
+	if (x == NULL || PyDict_SetItemString(d, "BAD_PARAM_TYPE", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_BAD_POINTER
+	x = PyInt_FromLong(CL_BAD_POINTER);
+	if (x == NULL || PyDict_SetItemString(d, "BAD_POINTER", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_BAD_PVBUFFER
+	x = PyInt_FromLong(CL_BAD_PVBUFFER);
+	if (x == NULL || PyDict_SetItemString(d, "BAD_PVBUFFER", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_BAD_SCHEME_POINTER
+	x = PyInt_FromLong(CL_BAD_SCHEME_POINTER);
+	if (x == NULL || PyDict_SetItemString(d, "BAD_SCHEME_POINTER", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_BAD_STREAM_HEADER
+	x = PyInt_FromLong(CL_BAD_STREAM_HEADER);
+	if (x == NULL || PyDict_SetItemString(d, "BAD_STREAM_HEADER", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_BAD_STRING_POINTER
+	x = PyInt_FromLong(CL_BAD_STRING_POINTER);
+	if (x == NULL || PyDict_SetItemString(d, "BAD_STRING_POINTER", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_BAD_TEXT_STRING_PTR
+	x = PyInt_FromLong(CL_BAD_TEXT_STRING_PTR);
+	if (x == NULL || PyDict_SetItemString(d, "BAD_TEXT_STRING_PTR", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_BEST_FIT
+	x = PyInt_FromLong(CL_BEST_FIT);
+	if (x == NULL || PyDict_SetItemString(d, "BEST_FIT", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_BIDIRECTIONAL
+	x = PyInt_FromLong(CL_BIDIRECTIONAL);
+	if (x == NULL || PyDict_SetItemString(d, "BIDIRECTIONAL", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_BITRATE
+	x = PyInt_FromLong(CL_BITRATE);
+	if (x == NULL || PyDict_SetItemString(d, "BITRATE", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_BITRATE_POLICY
+	x = PyInt_FromLong(CL_BITRATE_POLICY);
+	if (x == NULL || PyDict_SetItemString(d, "BITRATE_POLICY", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_BITRATE_TARGET
+	x = PyInt_FromLong(CL_BITRATE_TARGET);
+	if (x == NULL || PyDict_SetItemString(d, "BITRATE_TARGET", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_BITS_PER_COMPONENT
+	x = PyInt_FromLong(CL_BITS_PER_COMPONENT);
+	if (x == NULL || PyDict_SetItemString(d, "BITS_PER_COMPONENT", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_BLENDING
+	x = PyInt_FromLong(CL_BLENDING);
+	if (x == NULL || PyDict_SetItemString(d, "BLENDING", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_BLOCK_SIZE
+	x = PyInt_FromLong(CL_BLOCK_SIZE);
+	if (x == NULL || PyDict_SetItemString(d, "BLOCK_SIZE", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_BOTTOM_UP
+	x = PyInt_FromLong(CL_BOTTOM_UP);
+	if (x == NULL || PyDict_SetItemString(d, "BOTTOM_UP", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_BUFFER_NOT_CREATED
+	x = PyInt_FromLong(CL_BUFFER_NOT_CREATED);
+	if (x == NULL || PyDict_SetItemString(d, "BUFFER_NOT_CREATED", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_BUF_COMPRESSED
+	x = PyInt_FromLong(CL_BUF_COMPRESSED);
+	if (x == NULL || PyDict_SetItemString(d, "BUF_COMPRESSED", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_BUF_DATA
+	x = PyInt_FromLong(CL_BUF_DATA);
+	if (x == NULL || PyDict_SetItemString(d, "BUF_DATA", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_BUF_FRAME
+	x = PyInt_FromLong(CL_BUF_FRAME);
+	if (x == NULL || PyDict_SetItemString(d, "BUF_FRAME", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_CHANNEL_POLICY
+	x = PyInt_FromLong(CL_CHANNEL_POLICY);
+	if (x == NULL || PyDict_SetItemString(d, "CHANNEL_POLICY", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_CHROMA_THRESHOLD
+	x = PyInt_FromLong(CL_CHROMA_THRESHOLD);
+	if (x == NULL || PyDict_SetItemString(d, "CHROMA_THRESHOLD", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_CODEC
+	x = PyInt_FromLong(CL_CODEC);
+	if (x == NULL || PyDict_SetItemString(d, "CODEC", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_COMPONENTS
+	x = PyInt_FromLong(CL_COMPONENTS);
+	if (x == NULL || PyDict_SetItemString(d, "COMPONENTS", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_COMPRESSED_BUFFER_SIZE
+	x = PyInt_FromLong(CL_COMPRESSED_BUFFER_SIZE);
+	if (x == NULL || PyDict_SetItemString(d, "COMPRESSED_BUFFER_SIZE", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_COMPRESSION_RATIO
+	x = PyInt_FromLong(CL_COMPRESSION_RATIO);
+	if (x == NULL || PyDict_SetItemString(d, "COMPRESSION_RATIO", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_COMPRESSOR
+	x = PyInt_FromLong(CL_COMPRESSOR);
+	if (x == NULL || PyDict_SetItemString(d, "COMPRESSOR", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_CONTINUOUS_BLOCK
+	x = PyInt_FromLong(CL_CONTINUOUS_BLOCK);
+	if (x == NULL || PyDict_SetItemString(d, "CONTINUOUS_BLOCK", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_CONTINUOUS_NONBLOCK
+	x = PyInt_FromLong(CL_CONTINUOUS_NONBLOCK);
+	if (x == NULL || PyDict_SetItemString(d, "CONTINUOUS_NONBLOCK", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_COSMO_CODEC_CONTROL
+	x = PyInt_FromLong(CL_COSMO_CODEC_CONTROL);
+	if (x == NULL || PyDict_SetItemString(d, "COSMO_CODEC_CONTROL", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_COSMO_NUM_PARAMS
+	x = PyInt_FromLong(CL_COSMO_NUM_PARAMS);
+	if (x == NULL || PyDict_SetItemString(d, "COSMO_NUM_PARAMS", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_COSMO_VALUE_BASE
+	x = PyInt_FromLong(CL_COSMO_VALUE_BASE);
+	if (x == NULL || PyDict_SetItemString(d, "COSMO_VALUE_BASE", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_COSMO_VIDEO_MANUAL_CONTROL
+	x = PyInt_FromLong(CL_COSMO_VIDEO_MANUAL_CONTROL);
+	if (x == NULL || PyDict_SetItemString(d, "COSMO_VIDEO_MANUAL_CONTROL", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_COSMO_VIDEO_TRANSFER_MODE
+	x = PyInt_FromLong(CL_COSMO_VIDEO_TRANSFER_MODE);
+	if (x == NULL || PyDict_SetItemString(d, "COSMO_VIDEO_TRANSFER_MODE", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_DATA
+	x = PyInt_FromLong(CL_DATA);
+	if (x == NULL || PyDict_SetItemString(d, "DATA", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_DECOMPRESSOR
+	x = PyInt_FromLong(CL_DECOMPRESSOR);
+	if (x == NULL || PyDict_SetItemString(d, "DECOMPRESSOR", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_DSO_ERROR
+	x = PyInt_FromLong(CL_DSO_ERROR);
+	if (x == NULL || PyDict_SetItemString(d, "DSO_ERROR", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_EDGE_THRESHOLD
+	x = PyInt_FromLong(CL_EDGE_THRESHOLD);
+	if (x == NULL || PyDict_SetItemString(d, "EDGE_THRESHOLD", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_ENABLE_IMAGEINFO
+	x = PyInt_FromLong(CL_ENABLE_IMAGEINFO);
+	if (x == NULL || PyDict_SetItemString(d, "ENABLE_IMAGEINFO", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_END_OF_SEQUENCE
+	x = PyInt_FromLong(CL_END_OF_SEQUENCE);
+	if (x == NULL || PyDict_SetItemString(d, "END_OF_SEQUENCE", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_ENUM_VALUE
+	x = PyInt_FromLong(CL_ENUM_VALUE);
+	if (x == NULL || PyDict_SetItemString(d, "ENUM_VALUE", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_EXACT_COMPRESSION_RATIO
+	x = PyInt_FromLong(CL_EXACT_COMPRESSION_RATIO);
+	if (x == NULL || PyDict_SetItemString(d, "EXACT_COMPRESSION_RATIO", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_EXTERNAL_DEVICE
+	x = PyInt_FromLong((long) CL_EXTERNAL_DEVICE);
+	if (x == NULL || PyDict_SetItemString(d, "EXTERNAL_DEVICE", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_FLOATING_ENUM_VALUE
+	x = PyInt_FromLong(CL_FLOATING_ENUM_VALUE);
+	if (x == NULL || PyDict_SetItemString(d, "FLOATING_ENUM_VALUE", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_FLOATING_RANGE_VALUE
+	x = PyInt_FromLong(CL_FLOATING_RANGE_VALUE);
+	if (x == NULL || PyDict_SetItemString(d, "FLOATING_RANGE_VALUE", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_FORMAT
+	x = PyInt_FromLong(CL_FORMAT);
+	if (x == NULL || PyDict_SetItemString(d, "FORMAT", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_FORMAT_ABGR
+	x = PyInt_FromLong(CL_FORMAT_ABGR);
+	if (x == NULL || PyDict_SetItemString(d, "FORMAT_ABGR", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_FORMAT_BGR
+	x = PyInt_FromLong(CL_FORMAT_BGR);
+	if (x == NULL || PyDict_SetItemString(d, "FORMAT_BGR", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_FORMAT_BGR233
+	x = PyInt_FromLong(CL_FORMAT_BGR233);
+	if (x == NULL || PyDict_SetItemString(d, "FORMAT_BGR233", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_FORMAT_GRAYSCALE
+	x = PyInt_FromLong(CL_FORMAT_GRAYSCALE);
+	if (x == NULL || PyDict_SetItemString(d, "FORMAT_GRAYSCALE", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_FORMAT_MONO
+	x = PyInt_FromLong(CL_FORMAT_MONO);
+	if (x == NULL || PyDict_SetItemString(d, "FORMAT_MONO", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_FORMAT_RBG323
+	x = PyInt_FromLong(CL_FORMAT_RBG323);
+	if (x == NULL || PyDict_SetItemString(d, "FORMAT_RBG323", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_FORMAT_STEREO_INTERLEAVED
+	x = PyInt_FromLong(CL_FORMAT_STEREO_INTERLEAVED);
+	if (x == NULL || PyDict_SetItemString(d, "FORMAT_STEREO_INTERLEAVED", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_FORMAT_XBGR
+	x = PyInt_FromLong(CL_FORMAT_XBGR);
+	if (x == NULL || PyDict_SetItemString(d, "FORMAT_XBGR", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_FORMAT_YCbCr
+	x = PyInt_FromLong(CL_FORMAT_YCbCr);
+	if (x == NULL || PyDict_SetItemString(d, "FORMAT_YCbCr", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_FORMAT_YCbCr422
+	x = PyInt_FromLong(CL_FORMAT_YCbCr422);
+	if (x == NULL || PyDict_SetItemString(d, "FORMAT_YCbCr422", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_FORMAT_YCbCr422DC
+	x = PyInt_FromLong(CL_FORMAT_YCbCr422DC);
+	if (x == NULL || PyDict_SetItemString(d, "FORMAT_YCbCr422DC", x) < 0)
+		goto error;
+	Py_DECREF(x);
 #endif
 #ifdef CL_FRAME
-	(void) PyDict_SetItemString(d, "FRAME", PyInt_FromLong(CL_FRAME));
-	(void) PyDict_SetItemString(d, "DATA", PyInt_FromLong(CL_DATA));
+	x = PyInt_FromLong(CL_FRAME);
+	if (x == NULL || PyDict_SetItemString(d, "FRAME", x) < 0)
+		goto error;
+	Py_DECREF(x);
 #endif
-	(void) PyDict_SetItemString(d, "NONE", PyInt_FromLong(CL_NONE));
-	(void) PyDict_SetItemString(d, "KEYFRAME",
-				    PyInt_FromLong(CL_KEYFRAME));
-	(void) PyDict_SetItemString(d, "INTRA", PyInt_FromLong(CL_INTRA));
-	(void) PyDict_SetItemString(d, "PREDICTED",
-				    PyInt_FromLong(CL_PREDICTED));
-	(void) PyDict_SetItemString(d, "BIDIRECTIONAL",
-				    PyInt_FromLong(CL_BIDIRECTIONAL));
-	(void) PyDict_SetItemString(d, "TOP_DOWN",
-				    PyInt_FromLong(CL_TOP_DOWN));
-	(void) PyDict_SetItemString(d, "BOTTOM_UP",
-				    PyInt_FromLong(CL_BOTTOM_UP));
-#ifdef IRIX_5_3_LIBRARY
-	(void) PyDict_SetItemString(d, "CONTINUOUS_BLOCK",
-				    PyInt_FromLong(CL_CONTINUOUS_BLOCK));
-	(void) PyDict_SetItemString(d, "CONTINUOUS_NONBLOCK",
-				    PyInt_FromLong(CL_CONTINUOUS_NONBLOCK));
-	(void) PyDict_SetItemString(d, "EXTERNAL_DEVICE",
-				    PyInt_FromLong((long)CL_EXTERNAL_DEVICE));
+#ifdef CL_FRAMES_PER_CHUNK
+	x = PyInt_FromLong(CL_FRAMES_PER_CHUNK);
+	if (x == NULL || PyDict_SetItemString(d, "FRAMES_PER_CHUNK", x) < 0)
+		goto error;
+	Py_DECREF(x);
 #endif
-	(void) PyDict_SetItemString(d, "AWCMP_STEREO",
-				    PyInt_FromLong(AWCMP_STEREO));
-	(void) PyDict_SetItemString(d, "AWCMP_JOINT_STEREO",
-				    PyInt_FromLong(AWCMP_JOINT_STEREO));
-	(void) PyDict_SetItemString(d, "AWCMP_INDEPENDENT",
-				    PyInt_FromLong(AWCMP_INDEPENDENT));
-	(void) PyDict_SetItemString(d, "AWCMP_FIXED_RATE",
-				    PyInt_FromLong(AWCMP_FIXED_RATE));
-	(void) PyDict_SetItemString(d, "AWCMP_CONST_QUAL",
-				    PyInt_FromLong(AWCMP_CONST_QUAL));
-	(void) PyDict_SetItemString(d, "AWCMP_LOSSLESS",
-				    PyInt_FromLong(AWCMP_LOSSLESS));
-	(void) PyDict_SetItemString(d, "AWCMP_MPEG_LAYER_I",
-				    PyInt_FromLong(AWCMP_MPEG_LAYER_I));
-	(void) PyDict_SetItemString(d, "AWCMP_MPEG_LAYER_II",
-				    PyInt_FromLong(AWCMP_MPEG_LAYER_II));
-	(void) PyDict_SetItemString(d, "HEADER_START_CODE",
-				    PyInt_FromLong(CL_HEADER_START_CODE));
-	(void) PyDict_SetItemString(d, "BAD_NO_BUFFERSPACE",
-				    PyInt_FromLong(CL_BAD_NO_BUFFERSPACE));
-	(void) PyDict_SetItemString(d, "BAD_PVBUFFER",
-				    PyInt_FromLong(CL_BAD_PVBUFFER));
-	(void) PyDict_SetItemString(d, "BAD_BUFFERLENGTH_NEG",
-				    PyInt_FromLong(CL_BAD_BUFFERLENGTH_NEG));
-	(void) PyDict_SetItemString(d, "BAD_BUFFERLENGTH_ODD",
-				    PyInt_FromLong(CL_BAD_BUFFERLENGTH_ODD));
-	(void) PyDict_SetItemString(d, "BAD_PARAM",
-				    PyInt_FromLong(CL_BAD_PARAM));
-	(void) PyDict_SetItemString(d, "BAD_COMPRESSION_SCHEME",
-				    PyInt_FromLong(CL_BAD_COMPRESSION_SCHEME));
-	(void) PyDict_SetItemString(d, "BAD_COMPRESSOR_HANDLE",
-				    PyInt_FromLong(CL_BAD_COMPRESSOR_HANDLE));
-	(void) PyDict_SetItemString(d, "BAD_COMPRESSOR_HANDLE_POINTER",
-			    PyInt_FromLong(CL_BAD_COMPRESSOR_HANDLE_POINTER));
-	(void) PyDict_SetItemString(d, "BAD_BUFFER_HANDLE",
-				    PyInt_FromLong(CL_BAD_BUFFER_HANDLE));
-	(void) PyDict_SetItemString(d, "BAD_BUFFER_QUERY_SIZE",
-				    PyInt_FromLong(CL_BAD_BUFFER_QUERY_SIZE));
-	(void) PyDict_SetItemString(d, "JPEG_ERROR",
-				    PyInt_FromLong(CL_JPEG_ERROR));
-	(void) PyDict_SetItemString(d, "BAD_FRAME_SIZE",
-				    PyInt_FromLong(CL_BAD_FRAME_SIZE));
-	(void) PyDict_SetItemString(d, "PARAM_OUT_OF_RANGE",
-				    PyInt_FromLong(CL_PARAM_OUT_OF_RANGE));
-	(void) PyDict_SetItemString(d, "ADDED_ALGORITHM_ERROR",
-				    PyInt_FromLong(CL_ADDED_ALGORITHM_ERROR));
-	(void) PyDict_SetItemString(d, "BAD_ALGORITHM_TYPE",
-				    PyInt_FromLong(CL_BAD_ALGORITHM_TYPE));
-	(void) PyDict_SetItemString(d, "BAD_ALGORITHM_NAME",
-				    PyInt_FromLong(CL_BAD_ALGORITHM_NAME));
-	(void) PyDict_SetItemString(d, "BAD_BUFFERING",
-				    PyInt_FromLong(CL_BAD_BUFFERING));
-	(void) PyDict_SetItemString(d, "BUFFER_NOT_CREATED",
-				    PyInt_FromLong(CL_BUFFER_NOT_CREATED));
-	(void) PyDict_SetItemString(d, "BAD_BUFFER_EXISTS",
-				    PyInt_FromLong(CL_BAD_BUFFER_EXISTS));
-	(void) PyDict_SetItemString(d, "BAD_INTERNAL_FORMAT",
-				    PyInt_FromLong(CL_BAD_INTERNAL_FORMAT));
-	(void) PyDict_SetItemString(d, "BAD_BUFFER_POINTER",
-				    PyInt_FromLong(CL_BAD_BUFFER_POINTER));
-	(void) PyDict_SetItemString(d, "FRAME_BUFFER_SIZE_ZERO",
-				    PyInt_FromLong(CL_FRAME_BUFFER_SIZE_ZERO));
-	(void) PyDict_SetItemString(d, "BAD_STREAM_HEADER",
-				    PyInt_FromLong(CL_BAD_STREAM_HEADER));
-	(void) PyDict_SetItemString(d, "BAD_LICENSE",
-				    PyInt_FromLong(CL_BAD_LICENSE));
-	(void) PyDict_SetItemString(d, "AWARE_ERROR",
-				    PyInt_FromLong(CL_AWARE_ERROR));
-	(void) PyDict_SetItemString(d, "BAD_BUFFER_SIZE_POINTER",
-				 PyInt_FromLong(CL_BAD_BUFFER_SIZE_POINTER));
-	(void) PyDict_SetItemString(d, "BAD_BUFFER_SIZE",
-				    PyInt_FromLong(CL_BAD_BUFFER_SIZE));
-	(void) PyDict_SetItemString(d, "BAD_BUFFER_TYPE",
-				    PyInt_FromLong(CL_BAD_BUFFER_TYPE));
-	(void) PyDict_SetItemString(d, "BAD_HEADER_SIZE",
-				    PyInt_FromLong(CL_BAD_HEADER_SIZE));
-	(void) PyDict_SetItemString(d, "BAD_FUNCTION_POINTER",
-				    PyInt_FromLong(CL_BAD_FUNCTION_POINTER));
-	(void) PyDict_SetItemString(d, "BAD_SCHEME_POINTER",
-				    PyInt_FromLong(CL_BAD_SCHEME_POINTER));
-	(void) PyDict_SetItemString(d, "BAD_STRING_POINTER",
-				    PyInt_FromLong(CL_BAD_STRING_POINTER));
-	(void) PyDict_SetItemString(d, "BAD_MIN_GT_MAX",
-				    PyInt_FromLong(CL_BAD_MIN_GT_MAX));
-	(void) PyDict_SetItemString(d, "BAD_INITIAL_VALUE",
-				    PyInt_FromLong(CL_BAD_INITIAL_VALUE));
-	(void) PyDict_SetItemString(d, "BAD_PARAM_ID_POINTER",
-				    PyInt_FromLong(CL_BAD_PARAM_ID_POINTER));
-	(void) PyDict_SetItemString(d, "BAD_PARAM_TYPE",
-				    PyInt_FromLong(CL_BAD_PARAM_TYPE));
-	(void) PyDict_SetItemString(d, "BAD_TEXT_STRING_PTR",
-				    PyInt_FromLong(CL_BAD_TEXT_STRING_PTR));
-	(void) PyDict_SetItemString(d, "BAD_FUNCTIONALITY",
-				    PyInt_FromLong(CL_BAD_FUNCTIONALITY));
-	(void) PyDict_SetItemString(d, "BAD_NUMBER_OF_BLOCKS",
-				    PyInt_FromLong(CL_BAD_NUMBER_OF_BLOCKS));
-	(void) PyDict_SetItemString(d, "BAD_BLOCK_SIZE",
-				    PyInt_FromLong(CL_BAD_BLOCK_SIZE));
-	(void) PyDict_SetItemString(d, "BAD_POINTER",
-				    PyInt_FromLong(CL_BAD_POINTER));
-	(void) PyDict_SetItemString(d, "BAD_BOARD",
-				    PyInt_FromLong(CL_BAD_BOARD));
-	(void) PyDict_SetItemString(d, "MVC2_ERROR",
-				    PyInt_FromLong(CL_MVC2_ERROR));
-#ifdef IRIX_5_3_LIBRARY
-	(void) PyDict_SetItemString(d, "NEXT_NOT_AVAILABLE",
-				    PyInt_FromLong(CL_NEXT_NOT_AVAILABLE));
-	(void) PyDict_SetItemString(d, "SCHEME_BUSY",
-				    PyInt_FromLong(CL_SCHEME_BUSY));
-	(void) PyDict_SetItemString(d, "SCHEME_NOT_AVAILABLE",
-				    PyInt_FromLong(CL_SCHEME_NOT_AVAILABLE));
+#ifdef CL_FRAME_BUFFER_SIZE
+	x = PyInt_FromLong(CL_FRAME_BUFFER_SIZE);
+	if (x == NULL || PyDict_SetItemString(d, "FRAME_BUFFER_SIZE", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_FRAME_BUFFER_SIZE_ZERO
+	x = PyInt_FromLong(CL_FRAME_BUFFER_SIZE_ZERO);
+	if (x == NULL || PyDict_SetItemString(d, "FRAME_BUFFER_SIZE_ZERO", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_FRAME_INDEX
+	x = PyInt_FromLong(CL_FRAME_INDEX);
+	if (x == NULL || PyDict_SetItemString(d, "FRAME_INDEX", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_FRAME_RATE
+	x = PyInt_FromLong(CL_FRAME_RATE);
+	if (x == NULL || PyDict_SetItemString(d, "FRAME_RATE", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_FRAME_SIZE
+	x = PyInt_FromLong(CL_FRAME_SIZE);
+	if (x == NULL || PyDict_SetItemString(d, "FRAME_SIZE", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_FRAME_TYPE
+	x = PyInt_FromLong(CL_FRAME_TYPE);
+	if (x == NULL || PyDict_SetItemString(d, "FRAME_TYPE", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_G711_ALAW
+	x = PyInt_FromLong(CL_G711_ALAW);
+	if (x == NULL || PyDict_SetItemString(d, "G711_ALAW", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_G711_ALAW_SOFTWARE
+	x = PyInt_FromLong(CL_G711_ALAW_SOFTWARE);
+	if (x == NULL || PyDict_SetItemString(d, "G711_ALAW_SOFTWARE", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_G711_ULAW
+	x = PyInt_FromLong(CL_G711_ULAW);
+	if (x == NULL || PyDict_SetItemString(d, "G711_ULAW", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_G711_ULAW_SOFTWARE
+	x = PyInt_FromLong(CL_G711_ULAW_SOFTWARE);
+	if (x == NULL || PyDict_SetItemString(d, "G711_ULAW_SOFTWARE", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_GRAYSCALE
+	x = PyInt_FromLong(CL_GRAYSCALE);
+	if (x == NULL || PyDict_SetItemString(d, "GRAYSCALE", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_HDCC
+	x = PyInt_FromLong(CL_HDCC);
+	if (x == NULL || PyDict_SetItemString(d, "HDCC", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_HDCC_SAMPLES_PER_TILE
+	x = PyInt_FromLong(CL_HDCC_SAMPLES_PER_TILE);
+	if (x == NULL || PyDict_SetItemString(d, "HDCC_SAMPLES_PER_TILE", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_HDCC_SOFTWARE
+	x = PyInt_FromLong(CL_HDCC_SOFTWARE);
+	if (x == NULL || PyDict_SetItemString(d, "HDCC_SOFTWARE", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_HDCC_TILE_THRESHOLD
+	x = PyInt_FromLong(CL_HDCC_TILE_THRESHOLD);
+	if (x == NULL || PyDict_SetItemString(d, "HDCC_TILE_THRESHOLD", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_HEADER_START_CODE
+	x = PyInt_FromLong(CL_HEADER_START_CODE);
+	if (x == NULL || PyDict_SetItemString(d, "HEADER_START_CODE", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_IMAGEINFO_FIELDMASK
+	x = PyInt_FromLong(CL_IMAGEINFO_FIELDMASK);
+	if (x == NULL || PyDict_SetItemString(d, "IMAGEINFO_FIELDMASK", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_IMAGE_CROP_BOTTOM
+	x = PyInt_FromLong(CL_IMAGE_CROP_BOTTOM);
+	if (x == NULL || PyDict_SetItemString(d, "IMAGE_CROP_BOTTOM", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_IMAGE_CROP_LEFT
+	x = PyInt_FromLong(CL_IMAGE_CROP_LEFT);
+	if (x == NULL || PyDict_SetItemString(d, "IMAGE_CROP_LEFT", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_IMAGE_CROP_RIGHT
+	x = PyInt_FromLong(CL_IMAGE_CROP_RIGHT);
+	if (x == NULL || PyDict_SetItemString(d, "IMAGE_CROP_RIGHT", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_IMAGE_CROP_TOP
+	x = PyInt_FromLong(CL_IMAGE_CROP_TOP);
+	if (x == NULL || PyDict_SetItemString(d, "IMAGE_CROP_TOP", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_IMAGE_HEIGHT
+	x = PyInt_FromLong(CL_IMAGE_HEIGHT);
+	if (x == NULL || PyDict_SetItemString(d, "IMAGE_HEIGHT", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_IMAGE_WIDTH
+	x = PyInt_FromLong(CL_IMAGE_WIDTH);
+	if (x == NULL || PyDict_SetItemString(d, "IMAGE_WIDTH", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_IMPACT_CODEC_CONTROL
+	x = PyInt_FromLong(CL_IMPACT_CODEC_CONTROL);
+	if (x == NULL || PyDict_SetItemString(d, "IMPACT_CODEC_CONTROL", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_IMPACT_FRAME_INTERLEAVE
+	x = PyInt_FromLong(CL_IMPACT_FRAME_INTERLEAVE);
+	if (x == NULL || PyDict_SetItemString(d, "IMPACT_FRAME_INTERLEAVE", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_IMPACT_NUM_PARAMS
+	x = PyInt_FromLong(CL_IMPACT_NUM_PARAMS);
+	if (x == NULL || PyDict_SetItemString(d, "IMPACT_NUM_PARAMS", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_INTERNAL_FORMAT
+	x = PyInt_FromLong(CL_INTERNAL_FORMAT);
+	if (x == NULL || PyDict_SetItemString(d, "INTERNAL_FORMAT", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_INTERNAL_IMAGE_HEIGHT
+	x = PyInt_FromLong(CL_INTERNAL_IMAGE_HEIGHT);
+	if (x == NULL || PyDict_SetItemString(d, "INTERNAL_IMAGE_HEIGHT", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_INTERNAL_IMAGE_WIDTH
+	x = PyInt_FromLong(CL_INTERNAL_IMAGE_WIDTH);
+	if (x == NULL || PyDict_SetItemString(d, "INTERNAL_IMAGE_WIDTH", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_INTRA
+	x = PyInt_FromLong(CL_INTRA);
+	if (x == NULL || PyDict_SetItemString(d, "INTRA", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_JPEG
+	x = PyInt_FromLong(CL_JPEG);
+	if (x == NULL || PyDict_SetItemString(d, "JPEG", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_JPEG_COSMO
+	x = PyInt_FromLong(CL_JPEG_COSMO);
+	if (x == NULL || PyDict_SetItemString(d, "JPEG_COSMO", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_JPEG_ERROR
+	x = PyInt_FromLong(CL_JPEG_ERROR);
+	if (x == NULL || PyDict_SetItemString(d, "JPEG_ERROR", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_JPEG_IMPACT
+	x = PyInt_FromLong(CL_JPEG_IMPACT);
+	if (x == NULL || PyDict_SetItemString(d, "JPEG_IMPACT", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_JPEG_NUM_PARAMS
+	x = PyInt_FromLong(CL_JPEG_NUM_PARAMS);
+	if (x == NULL || PyDict_SetItemString(d, "JPEG_NUM_PARAMS", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_JPEG_QUALITY_FACTOR
+	x = PyInt_FromLong(CL_JPEG_QUALITY_FACTOR);
+	if (x == NULL || PyDict_SetItemString(d, "JPEG_QUALITY_FACTOR", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_JPEG_QUANTIZATION_TABLES
+	x = PyInt_FromLong(CL_JPEG_QUANTIZATION_TABLES);
+	if (x == NULL || PyDict_SetItemString(d, "JPEG_QUANTIZATION_TABLES", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_JPEG_SOFTWARE
+	x = PyInt_FromLong(CL_JPEG_SOFTWARE);
+	if (x == NULL || PyDict_SetItemString(d, "JPEG_SOFTWARE", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_JPEG_STREAM_HEADERS
+	x = PyInt_FromLong(CL_JPEG_STREAM_HEADERS);
+	if (x == NULL || PyDict_SetItemString(d, "JPEG_STREAM_HEADERS", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_KEYFRAME
+	x = PyInt_FromLong(CL_KEYFRAME);
+	if (x == NULL || PyDict_SetItemString(d, "KEYFRAME", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_KEYFRAME_DISTANCE
+	x = PyInt_FromLong(CL_KEYFRAME_DISTANCE);
+	if (x == NULL || PyDict_SetItemString(d, "KEYFRAME_DISTANCE", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_LAST_FRAME_INDEX
+	x = PyInt_FromLong(CL_LAST_FRAME_INDEX);
+	if (x == NULL || PyDict_SetItemString(d, "LAST_FRAME_INDEX", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_LAYER
+	x = PyInt_FromLong(CL_LAYER);
+	if (x == NULL || PyDict_SetItemString(d, "LAYER", x) < 0)
+		goto error;
+	Py_DECREF(x);
 #endif
 #ifdef CL_LUMA_THRESHOLD
-	/* backward compatibility */
-	(void) PyDict_SetItemString(d, "LUMA_THRESHOLD",
-				    PyInt_FromLong(CL_LUMA_THRESHOLD));
-	(void) PyDict_SetItemString(d, "CHROMA_THRESHOLD",
-				    PyInt_FromLong(CL_CHROMA_THRESHOLD));
-	(void) PyDict_SetItemString(d, "EDGE_THRESHOLD",
-				    PyInt_FromLong(CL_EDGE_THRESHOLD));
-	(void) PyDict_SetItemString(d, "BLENDING",
-				    PyInt_FromLong(CL_BLENDING));
-	(void) PyDict_SetItemString(d, "QUALITY_FACTOR",
-				    PyInt_FromLong(CL_QUALITY_FACTOR));
-	(void) PyDict_SetItemString(d, "STREAM_HEADERS",
-				    PyInt_FromLong(CL_STREAM_HEADERS));
-	(void) PyDict_SetItemString(d, "QUALITY_LEVEL",
-				    PyInt_FromLong(CL_QUALITY_LEVEL));
-	(void) PyDict_SetItemString(d, "TILE_THRESHOLD",
-				    PyInt_FromLong(CL_TILE_THRESHOLD));
-	(void) PyDict_SetItemString(d, "SAMPLES_PER_TILE",
-				    PyInt_FromLong(CL_SAMPLES_PER_TILE));
+	x = PyInt_FromLong(CL_LUMA_THRESHOLD);
+	if (x == NULL || PyDict_SetItemString(d, "LUMA_THRESHOLD", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_MAX_NUMBER_OF_AUDIO_ALGORITHMS
+	x = PyInt_FromLong(CL_MAX_NUMBER_OF_AUDIO_ALGORITHMS);
+	if (x == NULL || PyDict_SetItemString(d, "MAX_NUMBER_OF_AUDIO_ALGORITHMS", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_MAX_NUMBER_OF_FORMATS
+	x = PyInt_FromLong(CL_MAX_NUMBER_OF_FORMATS);
+	if (x == NULL || PyDict_SetItemString(d, "MAX_NUMBER_OF_FORMATS", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_MAX_NUMBER_OF_ORIGINAL_FORMATS
+	x = PyInt_FromLong(CL_MAX_NUMBER_OF_ORIGINAL_FORMATS);
+	if (x == NULL || PyDict_SetItemString(d, "MAX_NUMBER_OF_ORIGINAL_FORMATS", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_MAX_NUMBER_OF_PARAMS
+	x = PyInt_FromLong(CL_MAX_NUMBER_OF_PARAMS);
+	if (x == NULL || PyDict_SetItemString(d, "MAX_NUMBER_OF_PARAMS", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_MAX_NUMBER_OF_VIDEO_ALGORITHMS
+	x = PyInt_FromLong(CL_MAX_NUMBER_OF_VIDEO_ALGORITHMS);
+	if (x == NULL || PyDict_SetItemString(d, "MAX_NUMBER_OF_VIDEO_ALGORITHMS", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_MONO
+	x = PyInt_FromLong(CL_MONO);
+	if (x == NULL || PyDict_SetItemString(d, "MONO", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_MPEG1_AUDIO_AWARE
+	x = PyInt_FromLong(CL_MPEG1_AUDIO_AWARE);
+	if (x == NULL || PyDict_SetItemString(d, "MPEG1_AUDIO_AWARE", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_MPEG1_AUDIO_LAYER
+	x = PyInt_FromLong(CL_MPEG1_AUDIO_LAYER);
+	if (x == NULL || PyDict_SetItemString(d, "MPEG1_AUDIO_LAYER", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_MPEG1_AUDIO_LAYER_I
+	x = PyInt_FromLong(CL_MPEG1_AUDIO_LAYER_I);
+	if (x == NULL || PyDict_SetItemString(d, "MPEG1_AUDIO_LAYER_I", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_MPEG1_AUDIO_LAYER_II
+	x = PyInt_FromLong(CL_MPEG1_AUDIO_LAYER_II);
+	if (x == NULL || PyDict_SetItemString(d, "MPEG1_AUDIO_LAYER_II", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_MPEG1_AUDIO_MODE
+	x = PyInt_FromLong(CL_MPEG1_AUDIO_MODE);
+	if (x == NULL || PyDict_SetItemString(d, "MPEG1_AUDIO_MODE", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_MPEG1_AUDIO_MODE_DUAL
+	x = PyInt_FromLong(CL_MPEG1_AUDIO_MODE_DUAL);
+	if (x == NULL || PyDict_SetItemString(d, "MPEG1_AUDIO_MODE_DUAL", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_MPEG1_AUDIO_MODE_JOINT
+	x = PyInt_FromLong(CL_MPEG1_AUDIO_MODE_JOINT);
+	if (x == NULL || PyDict_SetItemString(d, "MPEG1_AUDIO_MODE_JOINT", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_MPEG1_AUDIO_MODE_SINGLE
+	x = PyInt_FromLong(CL_MPEG1_AUDIO_MODE_SINGLE);
+	if (x == NULL || PyDict_SetItemString(d, "MPEG1_AUDIO_MODE_SINGLE", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_MPEG1_AUDIO_MODE_STEREO
+	x = PyInt_FromLong(CL_MPEG1_AUDIO_MODE_STEREO);
+	if (x == NULL || PyDict_SetItemString(d, "MPEG1_AUDIO_MODE_STEREO", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_MPEG1_AUDIO_SOFTWARE
+	x = PyInt_FromLong(CL_MPEG1_AUDIO_SOFTWARE);
+	if (x == NULL || PyDict_SetItemString(d, "MPEG1_AUDIO_SOFTWARE", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_MPEG1_END_OF_STREAM
+	x = PyInt_FromLong(CL_MPEG1_END_OF_STREAM);
+	if (x == NULL || PyDict_SetItemString(d, "MPEG1_END_OF_STREAM", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_MPEG1_ERROR
+	x = PyInt_FromLong(CL_MPEG1_ERROR);
+	if (x == NULL || PyDict_SetItemString(d, "MPEG1_ERROR", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_MPEG1_NUM_PARAMS
+	x = PyInt_FromLong(CL_MPEG1_NUM_PARAMS);
+	if (x == NULL || PyDict_SetItemString(d, "MPEG1_NUM_PARAMS", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_MPEG1_VIDEO_M
+	x = PyInt_FromLong(CL_MPEG1_VIDEO_M);
+	if (x == NULL || PyDict_SetItemString(d, "MPEG1_VIDEO_M", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_MPEG1_VIDEO_MAX_MOTION_VECTOR_LENGTH_B_X
+	x = PyInt_FromLong(CL_MPEG1_VIDEO_MAX_MOTION_VECTOR_LENGTH_B_X);
+	if (x == NULL || PyDict_SetItemString(d, "MPEG1_VIDEO_MAX_MOTION_VECTOR_LENGTH_B_X", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_MPEG1_VIDEO_MAX_MOTION_VECTOR_LENGTH_B_Y
+	x = PyInt_FromLong(CL_MPEG1_VIDEO_MAX_MOTION_VECTOR_LENGTH_B_Y);
+	if (x == NULL || PyDict_SetItemString(d, "MPEG1_VIDEO_MAX_MOTION_VECTOR_LENGTH_B_Y", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_MPEG1_VIDEO_MAX_MOTION_VECTOR_LENGTH_P_X
+	x = PyInt_FromLong(CL_MPEG1_VIDEO_MAX_MOTION_VECTOR_LENGTH_P_X);
+	if (x == NULL || PyDict_SetItemString(d, "MPEG1_VIDEO_MAX_MOTION_VECTOR_LENGTH_P_X", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_MPEG1_VIDEO_MAX_MOTION_VECTOR_LENGTH_P_Y
+	x = PyInt_FromLong(CL_MPEG1_VIDEO_MAX_MOTION_VECTOR_LENGTH_P_Y);
+	if (x == NULL || PyDict_SetItemString(d, "MPEG1_VIDEO_MAX_MOTION_VECTOR_LENGTH_P_Y", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_MPEG1_VIDEO_N
+	x = PyInt_FromLong(CL_MPEG1_VIDEO_N);
+	if (x == NULL || PyDict_SetItemString(d, "MPEG1_VIDEO_N", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_MPEG1_VIDEO_SOFTNESS
+	x = PyInt_FromLong(CL_MPEG1_VIDEO_SOFTNESS);
+	if (x == NULL || PyDict_SetItemString(d, "MPEG1_VIDEO_SOFTNESS", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_MPEG1_VIDEO_SOFTNESS_MAXIMUM
+	x = PyInt_FromLong(CL_MPEG1_VIDEO_SOFTNESS_MAXIMUM);
+	if (x == NULL || PyDict_SetItemString(d, "MPEG1_VIDEO_SOFTNESS_MAXIMUM", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_MPEG1_VIDEO_SOFTNESS_MEDIUM
+	x = PyInt_FromLong(CL_MPEG1_VIDEO_SOFTNESS_MEDIUM);
+	if (x == NULL || PyDict_SetItemString(d, "MPEG1_VIDEO_SOFTNESS_MEDIUM", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_MPEG1_VIDEO_SOFTNESS_NONE
+	x = PyInt_FromLong(CL_MPEG1_VIDEO_SOFTNESS_NONE);
+	if (x == NULL || PyDict_SetItemString(d, "MPEG1_VIDEO_SOFTNESS_NONE", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_MPEG1_VIDEO_SOFTWARE
+	x = PyInt_FromLong(CL_MPEG1_VIDEO_SOFTWARE);
+	if (x == NULL || PyDict_SetItemString(d, "MPEG1_VIDEO_SOFTWARE", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_MPEG_VIDEO
+	x = PyInt_FromLong(CL_MPEG_VIDEO);
+	if (x == NULL || PyDict_SetItemString(d, "MPEG_VIDEO", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_MULTIRATE_AWARE
+	x = PyInt_FromLong(CL_MULTIRATE_AWARE);
+	if (x == NULL || PyDict_SetItemString(d, "MULTIRATE_AWARE", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_MVC1
+	x = PyInt_FromLong(CL_MVC1);
+	if (x == NULL || PyDict_SetItemString(d, "MVC1", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_MVC1_SOFTWARE
+	x = PyInt_FromLong(CL_MVC1_SOFTWARE);
+	if (x == NULL || PyDict_SetItemString(d, "MVC1_SOFTWARE", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_MVC2
+	x = PyInt_FromLong(CL_MVC2);
+	if (x == NULL || PyDict_SetItemString(d, "MVC2", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_MVC2_BLENDING
+	x = PyInt_FromLong(CL_MVC2_BLENDING);
+	if (x == NULL || PyDict_SetItemString(d, "MVC2_BLENDING", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_MVC2_BLENDING_OFF
+	x = PyInt_FromLong(CL_MVC2_BLENDING_OFF);
+	if (x == NULL || PyDict_SetItemString(d, "MVC2_BLENDING_OFF", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_MVC2_BLENDING_ON
+	x = PyInt_FromLong(CL_MVC2_BLENDING_ON);
+	if (x == NULL || PyDict_SetItemString(d, "MVC2_BLENDING_ON", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_MVC2_CHROMA_THRESHOLD
+	x = PyInt_FromLong(CL_MVC2_CHROMA_THRESHOLD);
+	if (x == NULL || PyDict_SetItemString(d, "MVC2_CHROMA_THRESHOLD", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_MVC2_EDGE_THRESHOLD
+	x = PyInt_FromLong(CL_MVC2_EDGE_THRESHOLD);
+	if (x == NULL || PyDict_SetItemString(d, "MVC2_EDGE_THRESHOLD", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_MVC2_ERROR
+	x = PyInt_FromLong(CL_MVC2_ERROR);
+	if (x == NULL || PyDict_SetItemString(d, "MVC2_ERROR", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_MVC2_LUMA_THRESHOLD
+	x = PyInt_FromLong(CL_MVC2_LUMA_THRESHOLD);
+	if (x == NULL || PyDict_SetItemString(d, "MVC2_LUMA_THRESHOLD", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_MVC2_SOFTWARE
+	x = PyInt_FromLong(CL_MVC2_SOFTWARE);
+	if (x == NULL || PyDict_SetItemString(d, "MVC2_SOFTWARE", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_MVC3_QUALITY_LEVEL
+	x = PyInt_FromLong(CL_MVC3_QUALITY_LEVEL);
+	if (x == NULL || PyDict_SetItemString(d, "MVC3_QUALITY_LEVEL", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_MVC3_SOFTWARE
+	x = PyInt_FromLong(CL_MVC3_SOFTWARE);
+	if (x == NULL || PyDict_SetItemString(d, "MVC3_SOFTWARE", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_NEXT_NOT_AVAILABLE
+	x = PyInt_FromLong(CL_NEXT_NOT_AVAILABLE);
+	if (x == NULL || PyDict_SetItemString(d, "NEXT_NOT_AVAILABLE", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_NOISE_MARGIN
+	x = PyInt_FromLong(CL_NOISE_MARGIN);
+	if (x == NULL || PyDict_SetItemString(d, "NOISE_MARGIN", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_NONE
+	x = PyInt_FromLong(CL_NONE);
+	if (x == NULL || PyDict_SetItemString(d, "NONE", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_NUMBER_OF_FORMATS
+	x = PyInt_FromLong(CL_NUMBER_OF_FORMATS);
+	if (x == NULL || PyDict_SetItemString(d, "NUMBER_OF_FORMATS", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_NUMBER_OF_FRAMES
+	x = PyInt_FromLong(CL_NUMBER_OF_FRAMES);
+	if (x == NULL || PyDict_SetItemString(d, "NUMBER_OF_FRAMES", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_NUMBER_OF_PARAMS
+	x = PyInt_FromLong(CL_NUMBER_OF_PARAMS);
+	if (x == NULL || PyDict_SetItemString(d, "NUMBER_OF_PARAMS", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_NUMBER_OF_PARAMS_FREEZE
+	x = PyInt_FromLong(CL_NUMBER_OF_PARAMS_FREEZE);
+	if (x == NULL || PyDict_SetItemString(d, "NUMBER_OF_PARAMS_FREEZE", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_NUMBER_OF_VIDEO_FORMATS
+	x = PyInt_FromLong(CL_NUMBER_OF_VIDEO_FORMATS);
+	if (x == NULL || PyDict_SetItemString(d, "NUMBER_OF_VIDEO_FORMATS", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_ORIENTATION
+	x = PyInt_FromLong(CL_ORIENTATION);
+	if (x == NULL || PyDict_SetItemString(d, "ORIENTATION", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_ORIGINAL_FORMAT
+	x = PyInt_FromLong(CL_ORIGINAL_FORMAT);
+	if (x == NULL || PyDict_SetItemString(d, "ORIGINAL_FORMAT", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_PARAM_OUT_OF_RANGE
+	x = PyInt_FromLong(CL_PARAM_OUT_OF_RANGE);
+	if (x == NULL || PyDict_SetItemString(d, "PARAM_OUT_OF_RANGE", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_PIXEL_ASPECT
+	x = PyInt_FromLong(CL_PIXEL_ASPECT);
+	if (x == NULL || PyDict_SetItemString(d, "PIXEL_ASPECT", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_PREDICTED
+	x = PyInt_FromLong(CL_PREDICTED);
+	if (x == NULL || PyDict_SetItemString(d, "PREDICTED", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_PREROLL
+	x = PyInt_FromLong(CL_PREROLL);
+	if (x == NULL || PyDict_SetItemString(d, "PREROLL", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_QUALITY_FACTOR
+	x = PyInt_FromLong(CL_QUALITY_FACTOR);
+	if (x == NULL || PyDict_SetItemString(d, "QUALITY_FACTOR", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_QUALITY_LEVEL
+	x = PyInt_FromLong(CL_QUALITY_LEVEL);
+	if (x == NULL || PyDict_SetItemString(d, "QUALITY_LEVEL", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_QUALITY_SPATIAL
+	x = PyInt_FromLong(CL_QUALITY_SPATIAL);
+	if (x == NULL || PyDict_SetItemString(d, "QUALITY_SPATIAL", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_QUALITY_TEMPORAL
+	x = PyInt_FromLong(CL_QUALITY_TEMPORAL);
+	if (x == NULL || PyDict_SetItemString(d, "QUALITY_TEMPORAL", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_QUANTIZATION_TABLES
+	x = PyInt_FromLong(CL_QUANTIZATION_TABLES);
+	if (x == NULL || PyDict_SetItemString(d, "QUANTIZATION_TABLES", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_RANGE_VALUE
+	x = PyInt_FromLong(CL_RANGE_VALUE);
+	if (x == NULL || PyDict_SetItemString(d, "RANGE_VALUE", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_RGB
+	x = PyInt_FromLong(CL_RGB);
+	if (x == NULL || PyDict_SetItemString(d, "RGB", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_RGB332
+	x = PyInt_FromLong(CL_RGB332);
+	if (x == NULL || PyDict_SetItemString(d, "RGB332", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_RGB8
+	x = PyInt_FromLong(CL_RGB8);
+	if (x == NULL || PyDict_SetItemString(d, "RGB8", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_RGBA
+	x = PyInt_FromLong(CL_RGBA);
+	if (x == NULL || PyDict_SetItemString(d, "RGBA", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_RGBX
+	x = PyInt_FromLong(CL_RGBX);
+	if (x == NULL || PyDict_SetItemString(d, "RGBX", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_RLE
+	x = PyInt_FromLong(CL_RLE);
+	if (x == NULL || PyDict_SetItemString(d, "RLE", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_RLE24
+	x = PyInt_FromLong(CL_RLE24);
+	if (x == NULL || PyDict_SetItemString(d, "RLE24", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_RLE24_SOFTWARE
+	x = PyInt_FromLong(CL_RLE24_SOFTWARE);
+	if (x == NULL || PyDict_SetItemString(d, "RLE24_SOFTWARE", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_RLE_SOFTWARE
+	x = PyInt_FromLong(CL_RLE_SOFTWARE);
+	if (x == NULL || PyDict_SetItemString(d, "RLE_SOFTWARE", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_RTR
+	x = PyInt_FromLong(CL_RTR);
+	if (x == NULL || PyDict_SetItemString(d, "RTR", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_RTR1
+	x = PyInt_FromLong(CL_RTR1);
+	if (x == NULL || PyDict_SetItemString(d, "RTR1", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_RTR_QUALITY_LEVEL
+	x = PyInt_FromLong(CL_RTR_QUALITY_LEVEL);
+	if (x == NULL || PyDict_SetItemString(d, "RTR_QUALITY_LEVEL", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_SAMPLES_PER_TILE
+	x = PyInt_FromLong(CL_SAMPLES_PER_TILE);
+	if (x == NULL || PyDict_SetItemString(d, "SAMPLES_PER_TILE", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_SCHEME_BUSY
+	x = PyInt_FromLong(CL_SCHEME_BUSY);
+	if (x == NULL || PyDict_SetItemString(d, "SCHEME_BUSY", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_SCHEME_NOT_AVAILABLE
+	x = PyInt_FromLong(CL_SCHEME_NOT_AVAILABLE);
+	if (x == NULL || PyDict_SetItemString(d, "SCHEME_NOT_AVAILABLE", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_SPEED
+	x = PyInt_FromLong(CL_SPEED);
+	if (x == NULL || PyDict_SetItemString(d, "SPEED", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_STEREO_INTERLEAVED
+	x = PyInt_FromLong(CL_STEREO_INTERLEAVED);
+	if (x == NULL || PyDict_SetItemString(d, "STEREO_INTERLEAVED", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_STREAM_HEADERS
+	x = PyInt_FromLong(CL_STREAM_HEADERS);
+	if (x == NULL || PyDict_SetItemString(d, "STREAM_HEADERS", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_TILE_THRESHOLD
+	x = PyInt_FromLong(CL_TILE_THRESHOLD);
+	if (x == NULL || PyDict_SetItemString(d, "TILE_THRESHOLD", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_TOP_DOWN
+	x = PyInt_FromLong(CL_TOP_DOWN);
+	if (x == NULL || PyDict_SetItemString(d, "TOP_DOWN", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_ULAW
+	x = PyInt_FromLong(CL_ULAW);
+	if (x == NULL || PyDict_SetItemString(d, "ULAW", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_UNCOMPRESSED
+	x = PyInt_FromLong(CL_UNCOMPRESSED);
+	if (x == NULL || PyDict_SetItemString(d, "UNCOMPRESSED", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_UNCOMPRESSED_AUDIO
+	x = PyInt_FromLong(CL_UNCOMPRESSED_AUDIO);
+	if (x == NULL || PyDict_SetItemString(d, "UNCOMPRESSED_AUDIO", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_UNCOMPRESSED_VIDEO
+	x = PyInt_FromLong(CL_UNCOMPRESSED_VIDEO);
+	if (x == NULL || PyDict_SetItemString(d, "UNCOMPRESSED_VIDEO", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_UNKNOWN_SCHEME
+	x = PyInt_FromLong(CL_UNKNOWN_SCHEME);
+	if (x == NULL || PyDict_SetItemString(d, "UNKNOWN_SCHEME", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_VIDEO
+	x = PyInt_FromLong(CL_VIDEO);
+	if (x == NULL || PyDict_SetItemString(d, "VIDEO", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_Y
+	x = PyInt_FromLong(CL_Y);
+	if (x == NULL || PyDict_SetItemString(d, "Y", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_YCbCr
+	x = PyInt_FromLong(CL_YCbCr);
+	if (x == NULL || PyDict_SetItemString(d, "YCbCr", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_YCbCr422
+	x = PyInt_FromLong(CL_YCbCr422);
+	if (x == NULL || PyDict_SetItemString(d, "YCbCr422", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_YCbCr422DC
+	x = PyInt_FromLong(CL_YCbCr422DC);
+	if (x == NULL || PyDict_SetItemString(d, "YCbCr422DC", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_YCbCr422HC
+	x = PyInt_FromLong(CL_YCbCr422HC);
+	if (x == NULL || PyDict_SetItemString(d, "YCbCr422HC", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_YUV
+	x = PyInt_FromLong(CL_YUV);
+	if (x == NULL || PyDict_SetItemString(d, "YUV", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_YUV422
+	x = PyInt_FromLong(CL_YUV422);
+	if (x == NULL || PyDict_SetItemString(d, "YUV422", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_YUV422DC
+	x = PyInt_FromLong(CL_YUV422DC);
+	if (x == NULL || PyDict_SetItemString(d, "YUV422DC", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef CL_YUV422HC
+	x = PyInt_FromLong(CL_YUV422HC);
+	if (x == NULL || PyDict_SetItemString(d, "YUV422HC", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef AWCMP_STEREO
+	x = PyInt_FromLong(AWCMP_STEREO);
+	if (x == NULL || PyDict_SetItemString(d, "AWCMP_STEREO", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef AWCMP_JOINT_STEREO
+	x = PyInt_FromLong(AWCMP_JOINT_STEREO);
+	if (x == NULL || PyDict_SetItemString(d, "AWCMP_JOINT_STEREO", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef AWCMP_INDEPENDENT
+	x = PyInt_FromLong(AWCMP_INDEPENDENT);
+	if (x == NULL || PyDict_SetItemString(d, "AWCMP_INDEPENDENT", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef AWCMP_FIXED_RATE
+	x = PyInt_FromLong(AWCMP_FIXED_RATE);
+	if (x == NULL || PyDict_SetItemString(d, "AWCMP_FIXED_RATE", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef AWCMP_CONST_QUAL
+	x = PyInt_FromLong(AWCMP_CONST_QUAL);
+	if (x == NULL || PyDict_SetItemString(d, "AWCMP_CONST_QUAL", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef AWCMP_LOSSLESS
+	x = PyInt_FromLong(AWCMP_LOSSLESS);
+	if (x == NULL || PyDict_SetItemString(d, "AWCMP_LOSSLESS", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef AWCMP_MPEG_LAYER_I
+	x = PyInt_FromLong(AWCMP_MPEG_LAYER_I);
+	if (x == NULL || PyDict_SetItemString(d, "AWCMP_MPEG_LAYER_I", x) < 0)
+		goto error;
+	Py_DECREF(x);
+#endif
+#ifdef AWCMP_MPEG_LAYER_II
+	x = PyInt_FromLong(AWCMP_MPEG_LAYER_II);
+	if (x == NULL || PyDict_SetItemString(d, "AWCMP_MPEG_LAYER_II", x) < 0)
+		goto error;
+	Py_DECREF(x);
 #endif
 
-	if (PyErr_Occurred())
+	if (PyErr_Occurred()) {
+	  error:
 		Py_FatalError("can't initialize module cl");
+	}
 
 	(void) clSetErrorHandler(cl_ErrorHandler);
 }
