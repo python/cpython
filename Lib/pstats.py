@@ -538,6 +538,7 @@ if __name__ == '__main__':
 
     class ProfileBrowser(cmd.Cmd):
         def __init__(self, profile=None):
+            cmd.Cmd.__init__(self)
             self.prompt = "% "
             if profile:
                 self.stats = Stats(profile)

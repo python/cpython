@@ -14,6 +14,8 @@ Library
   value using the minimal quoting required for the value; more
   reliable than using xml.sax.saxutils.escape() for attribute values.
 
+- Readline completion support for cmd.Cmd was added.
+
 New platforms
 
 C API
