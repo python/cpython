@@ -75,6 +75,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #define AttributeError PyExc_AttributeError
 #define ConflictError PyExc_ConflictError
 #define EOFError PyExc_EOFError
+#define FloatingPointError PyExc_FloatingPointError
 #define IOError PyExc_IOError
 #define ImportError PyExc_ImportError
 #define IndexError PyExc_IndexError
