@@ -138,6 +138,15 @@ form \code{unpack_\var{type}}, and take no arguments.  They return the
 unpacked object.  The same caveats apply for \code{unpack_float} and
 \code{unpack_double} as above.
 
+\begin{funcdesc}{unpack_float}{}
+Unpacks a single-precision floating point number.
+\end{funcdesc}
+
+\begin{funcdesc}{unpack_double}{}
+Unpacks a double-precision floating point number, similarly to
+\code{unpack_float}.
+\end{funcdesc}
+
 In addition, the following methods unpack strings, bytes, and opaque
 data:
 
@@ -152,7 +161,7 @@ Unpacks and returns a fixed length opaque data stream, similarly to
 \code{unpack_fstring}.
 \end{funcdesc}
 
-\begin{funcdesc}{pack_string}{}
+\begin{funcdesc}{unpack_string}{}
 Unpacks and returns a variable length string.  The length of the
 string is first unpacked as an unsigned integer, then the string data
 is unpacked with \code{unpack_fstring}.
@@ -160,12 +169,12 @@ is unpacked with \code{unpack_fstring}.
 
 \begin{funcdesc}{unpack_opaque}{}
 Unpacks and returns a variable length opaque data string, similarly to
-\code{pack_string}.
+\code{unpack_string}.
 \end{funcdesc}
 
 \begin{funcdesc}{unpack_bytes}{}
 Unpacks and returns a variable length byte stream, similarly to
-\code{pack_string}.
+\code{unpack_string}.
 \end{funcdesc}
 
 The following methods support unpacking arrays and lists:
