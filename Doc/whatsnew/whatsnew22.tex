@@ -50,7 +50,7 @@ features, and was written by Cameron Laird and Kathryn Soraiz.}
 
 
 %======================================================================
-\section{PEP 252: Type and Class Changes}
+\section{PEPs 252 and 253: Type and Class Changes}
 
 The largest and most far-reaching changes in Python 2.2 are to
 Python's model of objects and classes.  The changes should be backward
@@ -333,6 +333,8 @@ the above example, the list becomes [\class{D}, \class{B}, \class{C},
 Following this rule, referring to \method{D.save()} will return
 \method{C.save()}, which is the behaviour we're after.  This lookup
 rule is the same as the one followed by Common Lisp.  
+
+% XXX mention super()
 
 
 \subsection{Attribute Access}
@@ -871,22 +873,21 @@ Python's Unicode support has been enhanced a bit in 2.2.  Unicode
 strings are usually stored as UCS-2, as 16-bit unsigned integers.
 Python 2.2 can also be compiled to use UCS-4, 32-bit unsigned
 integers, as its internal encoding by supplying
-\longprogramopt{enable-unicode=ucs4} to the configure script.  When
-built to use UCS-4 (a ``wide Python''), the interpreter can natively
-handle Unicode characters from U+000000 to U+110000, so the range of
-legal values for the \function{unichr()} function is expanded
+\longprogramopt{enable-unicode=ucs4} to the configure script.  
+(It's also possible to specify
+\longprogramopt{disable-unicode} to completely disable Unicode
+support.)
+
+When built to use UCS-4 (a ``wide Python''), the interpreter can
+natively handle Unicode characters from U+000000 to U+110000, so the
+range of legal values for the \function{unichr()} function is expanded
 accordingly.  Using an interpreter compiled to use UCS-2 (a ``narrow
 Python''), values greater than 65535 will still cause
 \function{unichr()} to raise a \exception{ValueError} exception.
+This is all described in \pep{261}, ``Support for `wide' Unicode
+characters''; consult it for further details.
 
-% XXX is this still unimplemented?
-All this is the province of the still-unimplemented \pep{261}, ``Support
-for `wide' Unicode characters''; consult it for further details, and
-please offer comments on the PEP and on your experiences with the
-2.2 beta releases.
-% XXX update previous line once 2.2 reaches beta or final.
-
-Another change is much simpler to explain. Since their introduction,
+Another change is simpler to explain. Since their introduction,
 Unicode strings have supported an \method{encode()} method to convert
 the string to a selected encoding such as UTF-8 or Latin-1.  A
 symmetric \method{decode(\optional{\var{encoding}})} method has been
@@ -928,8 +929,8 @@ L\"owis.
 
 \begin{seealso}
 
-\seepep{261}{Support for `wide' Unicode characters}{PEP written by
-Paul Prescod.  Not yet accepted or fully implemented.}
+\seepep{261}{Support for `wide' Unicode characters}{Written by
+Paul Prescod.}
 
 \end{seealso}
 
@@ -1074,8 +1075,25 @@ The \module{SimpleXMLRPCServer} module makes it easy to create
 straightforward XML-RPC servers.  See \url{http://www.xmlrpc.com/} for
 more information about XML-RPC.
 
-  \item The new \module{hmac} module implements implements the HMAC
+  \item The new \module{hmac} module implements the HMAC
   algorithm described by \rfc{2104}.
+  (Contributed by Gerhard H\"aring.)
+
+  \item Several functions that originally returned lengthy tuples now
+  return pseudo-sequences that still behave like tuples but also have
+  mnemonic attributes such as member{st_mtime} or \member{tm_year}.
+  The enhanced functions include \function{stat()},
+  \function{fstat()}, \function{statvfs()}, and \function{fstatvfs()}
+  in the \module{os} module, and \function{localtime()},
+  \function{gmtime()}, and \function{strptime()} in the \module{time}
+  module.  
+  
+  For example, to obtain a file's size using the old tuples, you'd end
+  up writing something like \code{file_size =
+  os.stat(filename)[stat.ST_SIZE]}, but now this can be written more
+  clearly as \code{file_size = os.stat(filename).st_size}.
+
+   The original patch for this feature was contributed by Nick Mathewson.
 
   \item The Python profiler has been extensively reworked and various
   errors in its output have been corrected.  (Contributed by Fred
@@ -1104,20 +1122,25 @@ more information about XML-RPC.
   to the SRE engine underlying the \module{re} module.  For example,
   the \function{re.sub()} and \function{re.split()} functions have
   been rewritten in C.  Another contributed patch speeds up certain
-  Unicode character ranges by a factor of two. (SRE is maintained by
+  Unicode character ranges by a factor of two, and a new \method{finditer()} 
+  method that returns an iterator over all the non-overlapping matches in 
+  a given string. 
+  (SRE is maintained by
   Fredrik Lundh.  The BIGCHARSET patch was contributed by Martin von
   L\"owis.)
 
   \item The \module{smtplib} module now supports \rfc{2487}, ``Secure
   SMTP over TLS'', so it's now possible to encrypt the SMTP traffic
   between a Python program and the mail transport agent being handed a
-  message.  (Contributed by Gerhard H\"aring.)
+  message.  \module{smtplib} also supports SMTP authentication. 
+  (Contributed by Gerhard H\"aring.)
 
   \item The \module{imaplib} module, maintained by Piers Lauder, has
   support for several new extensions: the NAMESPACE extension defined
   in \rfc{2342}, SORT, GETACL and SETACL.  (Contributed by Anthony
   Baxter and Michel Pelletier.)
 
+  % XXX should the 'email' module get a section of its own?
   \item The \module{rfc822} module's parsing of email addresses is now
   compliant with \rfc{2822}, an update to \rfc{822}.  (The module's
   name is \emph{not} going to be changed to \samp{rfc2822}.)  A new
@@ -1302,9 +1325,10 @@ to experiment with these modules can uncomment them manually.
   now convert it to an MBCS encoded string, as used by the Microsoft
   file APIs.  As MBCS is explicitly used by the file APIs, Python's
   choice of ASCII as the default encoding turns out to be an
-  annoyance.
-  (Contributed by Mark Hammond with assistance from Marc-Andr\'e
-  Lemburg.)
+  annoyance.  On Unix, the locale's character set is used if
+  \function{locale.nl_langinfo(CODESET)} is available.  (Windows
+  support was contributed by Mark Hammond with assistance from
+  Marc-Andr\'e Lemburg. Unix support was added by Martin von L\"owis.)
 
   \item Large file support is now enabled on Windows.  (Contributed by
   Tim Peters.)
@@ -1371,8 +1395,9 @@ to experiment with these modules can uncomment them manually.
 The author would like to thank the following people for offering
 suggestions, corrections and assistance with various drafts of this
 article: Fred Bremmer, Keith Briggs, Andrew Dalke, Fred~L. Drake, Jr.,
-Carel Fellinger, Mark Hammond, Stephen Hansen, Michael Hudson, Jack Jansen,
-Marc-Andr\'e Lemburg, Fredrik Lundh, Michael McLay, Tim Peters, Jens
-Quade, Tom Reinhardt, Neil Schemenauer, Guido van Rossum.
+Carel Fellinger, Mark Hammond, Stephen Hansen, Michael Hudson, Jack
+Jansen, Marc-Andr\'e Lemburg, Martin von L\"owis, Fredrik Lundh,
+Michael McLay, Nick Mathewson, Paul Moore, Tim Peters, Jens Quade, Tom
+Reinhardt, Neil Schemenauer, Guido van Rossum.
 
 \end{document}
