@@ -9,70 +9,107 @@ posting by Fredrik Lundh; I have revised some modules' status.)
 
 \section{Fundamental, and pretty straightforward to document}
 
-cPickle.c --- mostly the same as pickle but no subclassing
+\begin{description}
+\item[cPickle.c]
+--- mostly the same as pickle but no subclassing
 
-cStringIO.c --- mostly the same as StringIO but no subclassing
+\item[cStringIO.c]
+--- mostly the same as StringIO but no subclassing
+\end{description}
 
 
 \section{Frameworks; somewhat harder to document, but well worth the effort}
 
-Tkinter.py --- Interface to Tcl/Tk for graphical user interfaces;
+\begin{description}
+\item[Tkinter.py]
+--- Interface to Tcl/Tk for graphical user interfaces;
 Fredrik Lundh is working on this one!
 
-CGIHTTPServer.py --- CGI-savvy HTTP Server
+\item[CGIHTTPServer.py]
+--- CGI-savvy HTTP Server
 
-SimpleHTTPServer.py --- Simple HTTP Server
+\item[SimpleHTTPServer.py]
+--- Simple HTTP Server
+\end{description}
 
 
 \section{Stuff useful to a lot of people, including the CGI crowd}
 
-MimeWriter.py --- Generic MIME writer
+\begin{description}
+\item[MimeWriter.py]
+--- Generic MIME writer
 
-multifile.py --- make each part of a multipart message ``feel'' like
+\item[multifile.py]
+--- make each part of a multipart message ``feel'' like
+
+\item[poplib.py]
+--- Post Office Protocol client by Dave Ascher.
+\end{description}
 
 
 \section{Miscellaneous useful utilities}
 
 Some of these are very old and/or not very robust; marked with ``hmm''.
 
-calendar.py --- Calendar printing functions
+\begin{description}
+\item[calendar.py]
+--- Calendar printing functions
 
-ConfigParser.py --- Parse a file of sectioned configuration parameters
+\item[ConfigParser.py]
+--- Parse a file of sectioned configuration parameters
 
-cmp.py --- Efficiently compare files
+\item[cmp.py]
+--- Efficiently compare files
 
-cmpcache.py --- Efficiently compare files (uses statcache)
+\item[cmpcache.py]
+--- Efficiently compare files (uses statcache)
 
-dircache.py --- like os.listdir, but caches results
+\item[dircache.py]
+--- like os.listdir, but caches results
 
-dircmp.py --- class to build directory diff tools on
+\item[dircmp.py]
+--- class to build directory diff tools on
 
-linecache.py --- Cache lines from files (used by pdb)
+\item[linecache.py]
+--- Cache lines from files (used by pdb)
 
-pipes.py --- Conversion pipeline templates (hmm)
+\item[pipes.py]
+--- Conversion pipeline templates (hmm)
 
-popen2.py --- improved popen, can read AND write simultaneously
+\item[popen2.py]
+--- improved popen, can read AND write simultaneously
 
-statcache.py --- Maintain a cache of file stats
+\item[statcache.py]
+--- Maintain a cache of file stats
 
-colorsys.py --- Conversion between RGB and other color systems
+\item[colorsys.py]
+--- Conversion between RGB and other color systems
 
-dbhash.py --- (g)dbm-like wrapper for bsdhash.hashopen
+\item[dbhash.py]
+--- (g)dbm-like wrapper for bsdhash.hashopen
 
-mhlib.py --- MH interface
+\item[mhlib.py]
+--- MH interface
 
-pty.py --- Pseudo terminal utilities
+\item[pty.py]
+--- Pseudo terminal utilities
 
-tty.py --- Terminal utilities
+\item[tty.py]
+--- Terminal utilities
 
-cmd.py --- build line-oriented command interpreters (used by pdb)
+\item[cmd.py]
+--- build line-oriented command interpreters (used by pdb)
 
-bdb.py --- A generic Python debugger base class (used by pdb)
+\item[bdb.py]
+--- A generic Python debugger base class (used by pdb)
 
-ihooks.py --- Import hook support (for rexec)
+\item[ihooks.py]
+--- Import hook support (for rexec)
 
-bisect.py --- Bisection algorithms (this is actually useful at times,
+\item[bisect.py]
+--- Bisection algorithms (this is actually useful at times,
 especially as reference material)
+\end{description}
 
 
 \section{Parsing Python}
@@ -80,75 +117,111 @@ especially as reference material)
 (One could argue that these should all be documented together with the
 parser module.)
 
-tokenize.py --- regular expression that recognizes Python tokens; also
+\begin{description}
+\item[tokenize.py]
+--- regular expression that recognizes Python tokens; also
 contains helper code for colorizing Python source code.
 
-pyclbr.py --- Parse a Python file and retrieve classes and methods
+\item[pyclbr.py]
+--- Parse a Python file and retrieve classes and methods
+\end{description}
 
 
 \section{Platform specific modules}
 
-ntpath.py --- equivalent of posixpath on 32-bit Windows
+\begin{description}
+\item[ntpath.py]
+--- equivalent of posixpath on 32-bit Windows
 
-dospath.py --- equivalent of posixpath on MS-DOS
+\item[dospath.py]
+--- equivalent of posixpath on MS-DOS
+\end{description}
 
 
 \section{Code objects and files, debugger etc.}
 
-compileall.py --- force "compilation" of all .py files in a directory
+\begin{description}
+\item[compileall.py]
+--- force "compilation" of all .py files in a directory
 
-py_compile.py --- "compile" a .py file to a .pyc file
+\item[py_compile.py]
+--- "compile" a .py file to a .pyc file
 
-repr.py --- Redo the `...` (representation) but with limits on most
+\item[repr.py]
+--- Redo the `...` (representation) but with limits on most
 sizes (used by pdb)
+\end{description}
 
 
 \section{Multimedia}
 
-audiodev.py --- Plays audio files
+\begin{description}
+\item[audiodev.py]
+--- Plays audio files
 
-sunau.py --- parse Sun and NeXT audio files
+\item[sunau.py]
+--- parse Sun and NeXT audio files
 
-sunaudio.py --- interpret sun audio headers
+\item[sunaudio.py]
+--- interpret sun audio headers
 
-toaiff.py --- Convert "arbitrary" sound files to AIFF files
+\item[toaiff.py]
+--- Convert "arbitrary" sound files to AIFF files
 
-sndhdr.py --- recognizing sound files
+\item[sndhdr.py]
+--- recognizing sound files
 
-wave.py --- parse WAVE files
+\item[wave.py]
+--- parse WAVE files
 
-whatsound.py --- recognizing sound files
+\item[whatsound.py]
+--- recognizing sound files
+\end{description}
 
 
 \section{Oddities}
 
 These modules are probably also obsolete, or just not very useful.
 
-dump.py --- Print python code that reconstructs a variable
+\begin{description}
+\item[dump.py]
+--- Print python code that reconstructs a variable
 
-find.py --- find files matching pattern in directory tree
+\item[find.py]
+--- find files matching pattern in directory tree
 
-fpformat.py --- General floating point formatting functions ---
+\item[fpformat.py]
+--- General floating point formatting functions ---
 interesting demonstration of how to do this without using the \C{}
 library
 
-grep.py --- grep
+\item[grep.py]
+--- grep
 
-mutex.py --- Mutual exclusion --- for use with module sched
+\item[mutex.py]
+--- Mutual exclusion --- for use with module sched
 
-packmail.py --- create a self-unpacking \UNIX{} shell archive
+\item[packmail.py]
+--- create a self-unpacking \UNIX{} shell archive
 
-poly.py --- Polynomials
+\item[poly.py]
+--- Polynomials
 
-sched.py --- event scheduler class
+\item[sched.py]
+--- event scheduler class
 
-shutil.py --- utility functions usable in a shell-like program
+\item[shutil.py]
+--- utility functions usable in a shell-like program
 
-util.py --- useful functions that don't fit elsewhere
+\item[util.py]
+--- useful functions that don't fit elsewhere
 
-zmod.py --- Compute properties of mathematical "fields"
+\item[zmod.py]
+--- Compute properties of mathematical "fields"
 
-tzparse.py --- Parse a timezone specification (unfinished)
+\item[tzparse.py]
+--- Parse a timezone specification (unfinished)
+\end{description}
 
 
 \section{Obsolete}
@@ -160,56 +233,77 @@ but are available in the directory \file{lib-old/} installed  under
 modules, add that directory to \code{sys.path}, possibly using
 \envvar{PYTHONPATH}.
 
-newdir.py --- New dir() function (the standard dir() is now just as good)
+\begin{description}
+\item[newdir.py]
+--- New dir() function (the standard dir() is now just as good)
 
-addpack.py --- standard support for "packages"
+\item[addpack.py]
+--- standard support for "packages"
 
-fmt.py --- text formatting abstractions (too slow)
+\item[fmt.py]
+--- text formatting abstractions (too slow)
 
-Para.py --- helper for fmt.py
+\item[Para.py]
+--- helper for fmt.py
 
-lockfile.py --- wrapper around FCNTL file locking (use
+\item[lockfile.py]
+--- wrapper around FCNTL file locking (use
 fcntl.lockf/flock intead)
 
-tb.py --- Print tracebacks, with a dump of local variables (use
+\item[tb.py]
+--- Print tracebacks, with a dump of local variables (use
 pdb.pm() or traceback.py instead)
 
-codehack.py --- extract function name or line number from a function
+\item[codehack.py]
+--- extract function name or line number from a function
 code object (these are now accessible as attributes: co.co_name,
 func.func_name, co.co_firstlineno)
+\end{description}
 
 
 \section{Extension modules}
 
-bsddbmodule.c --- Interface to the Berkeley DB interface (yet another
+\begin{description}
+\item[bsddbmodule.c]
+--- Interface to the Berkeley DB interface (yet another
 dbm clone).
 
-cursesmodule.c --- Curses interface.
+\item[cursesmodule.c]
+--- Curses interface.
 
-dlmodule.c ---  A highly experimental and dangerous device for calling
+\item[dlmodule.c]
+---  A highly experimental and dangerous device for calling
 arbitrary C functions in arbitrary shared libraries.
 
-newmodule.c --- Tommy Burnette's `new' module (creates new empty
-objects of certain kinds) --- dangerous.
+\item[newmodule.c]
+--- Tommy Burnette's `new' module (creates new empty objects of
+certain kinds) --- dangerous.
 
-nismodule.c --- NIS (a.k.a. Sun's Yellow Pages) interface.
+\item[nismodule.c]
+--- NIS (a.k.a. Sun's Yellow Pages) interface.
 
-timingmodule.c --- Measure time intervals to high resolution (obsolete
---- use time.clock() instead).
+\item[timingmodule.c]
+--- Measure time intervals to high resolution (obsolete --- use
+time.clock() instead).
 
-stdwinmodule.c --- Interface to STDWIN (an old, unsupported
+\item[stdwinmodule.c]
+--- Interface to STDWIN (an old, unsupported
 platform-independent GUI package).  Obsolete; use Tkinter for a
 platform-independent GUI instead.
 
 The following are SGI specific:
 
-clmodule.c --- Interface to the SGI compression library.
+\item[clmodule.c]
+--- Interface to the SGI compression library.
 
-svmodule.c --- Interface to the ``simple video'' board on SGI Indigo
+\item[svmodule.c]
+--- Interface to the ``simple video'' board on SGI Indigo
 (obsolete hardware).
 
 The following is Windows specific:
 
-msvcrtmodule.c (in directory PC) --- define a number of Windows
+\item[msvcrtmodule.c]
+(in directory \file{PC/}) --- define a number of Windows
 specific goodies like \code{khbit()}, \code{getch()} and
 \code{setmode()}.  (Windows 95 and NT only.)
+\end{description}
