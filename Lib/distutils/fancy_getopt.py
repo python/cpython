@@ -105,6 +105,19 @@ class FancyGetopt:
             self.option_table.append (option)
             self.option_index[long_option] = option
 
+
+    def has_option (self, long_option):
+        """Return true if the option table for this parser has an
+        option with long name 'long_option'."""
+        return self.option_index.has_key(long_option)
+
+    def get_attr_name (self, long_option):
+        """Translate long option name 'long_option' to the form it 
+        has as an attribute of some object: ie., translate hyphens
+        to underscores."""
+        return string.translate (long_option, longopt_xlate)
+
+
     def set_negative_aliases (self, negative_alias):
         """Set the negative aliases for this option parser.
         'negative_alias' should be a dictionary mapping option names to
@@ -183,7 +196,7 @@ class FancyGetopt:
                       ("invalid long option name '%s' " +
                        "(must be letters, numbers, hyphens only") % long
 
-            self.attr_name[long] = string.translate (long, longopt_xlate)
+            self.attr_name[long] = self.get_attr_name (long)
             if short:
                 self.short_opts.append (short)
                 self.short2long[short[0]] = long
