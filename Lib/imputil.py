@@ -1,8 +1,14 @@
-#
-# imputil.py: import utilities
-#
+"""
+Import utilities
 
-### docco needed here and in Docs/ ...
+Exported classes:
+    ImportManager   Manage the import process
+
+    Importer        Base class for replacing standard import functions
+    BuiltinImporter Emulate the import mechanism for builtin and frozen modules
+
+    DynLoadSuffixImporter
+"""
 
 # note: avoid importing non-builtin modules
 import imp                      ### not available in JPython?
