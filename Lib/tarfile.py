@@ -655,11 +655,21 @@ class TarInfo(object):
         """Construct a TarInfo object from a 512 byte string buffer.
         """
         tarinfo = cls()
-        tarinfo.name   =  nts(buf[0:100])
+        tarinfo.name   = nts(buf[0:100])
         tarinfo.mode   = int(buf[100:108], 8)
         tarinfo.uid    = int(buf[108:116],8)
         tarinfo.gid    = int(buf[116:124],8)
-        tarinfo.size   = long(buf[124:136], 8)
+
+        # There are two possible codings for the size field we
+        # have to discriminate, see comment in tobuf() below.
+        if buf[124] != chr(0200):
+            tarinfo.size = long(buf[124:136], 8)
+        else:
+            tarinfo.size = 0L
+            for i in range(11):
+                tarinfo.size <<= 8
+                tarinfo.size += ord(buf[125 + i])
+
         tarinfo.mtime  = long(buf[136:148], 8)
         tarinfo.chksum = int(buf[148:156], 8)
         tarinfo.type   = buf[156:157]
@@ -689,16 +699,28 @@ class TarInfo(object):
     def tobuf(self):
         """Return a tar header block as a 512 byte string.
         """
-        name = self.name
+        # Prefer the size to be encoded as 11 octal ascii digits
+        # which is the most portable. If the size exceeds this
+        # limit (>= 8 GB), encode it as an 88-bit value which is
+        # a GNU tar feature.
+        if self.size <= MAXSIZE_MEMBER:
+            size = "%011o" % self.size
+        else:
+            s = self.size
+            size = ""
+            for i in range(11):
+                size = chr(s & 0377) + size
+                s >>= 8
+            size = chr(0200) + size
 
         # The following code was contributed by Detlef Lannert.
         parts = []
         for value, fieldsize in (
-                (name, 100),
+                (self.name, 100),
                 ("%07o" % (self.mode & 07777), 8),
                 ("%07o" % self.uid, 8),
                 ("%07o" % self.gid, 8),
-                ("%011o" % self.size, 12),
+                (size, 12),
                 ("%011o" % self.mtime, 12),
                 ("        ", 8),
                 (self.type, 1),
@@ -1236,7 +1258,11 @@ class TarFile(object):
             tarinfo.linkname = normpath(tarinfo.linkname)
 
         if tarinfo.size > MAXSIZE_MEMBER:
-            raise ValueError, "file is too large (>8GB)"
+            if self.posix:
+                raise ValueError, "file is too large (>= 8 GB)"
+            else:
+                self._dbg(2, "tarfile: Created GNU tar largefile header")
+
 
         if len(tarinfo.linkname) > LENGTH_LINK:
             if self.posix:
