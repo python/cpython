@@ -397,7 +397,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             except ValueError:
                 print 'Breakpoint index %r is not a number' % i
                 continue
-            
+
             if not (0 <= i < len(bdb.Breakpoint.bpbynumber)):
                 print 'No breakpoint numbered', i
                 continue

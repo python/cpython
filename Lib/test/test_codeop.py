@@ -65,12 +65,12 @@ class CodeopTests(unittest.TestCase):
                             compile("pass", "<input>", 'single',
                                     PyCF_DONT_IMPLY_DEDENT))
             self.assertEquals(compile_command("\n"),
-                            compile("pass", "<input>", 'single', 
+                            compile("pass", "<input>", 'single',
                                     PyCF_DONT_IMPLY_DEDENT))
         else:
             av("")
             av("\n")
-        
+
         av("a = 1")
         av("\na = 1")
         av("a = 1\n")
@@ -125,9 +125,9 @@ class CodeopTests(unittest.TestCase):
         ai("if 1:")
         ai("if 1:\n")
         ai("if 1:\n pass\n if 1:\n  pass\n else:")
-        ai("if 1:\n pass\n if 1:\n  pass\n else:\n")          
-        ai("if 1:\n pass\n if 1:\n  pass\n else:\n  pass") 
-        
+        ai("if 1:\n pass\n if 1:\n  pass\n else:\n")
+        ai("if 1:\n pass\n if 1:\n  pass\n else:\n  pass")
+
         ai("def x():")
         ai("def x():\n")
         ai("def x():\n\n")
@@ -156,7 +156,7 @@ class CodeopTests(unittest.TestCase):
         ai("a @")
         ai("a b @")
         ai("a ** @")
-        
+
         ai("a = ")
         ai("a = 9 +")
 

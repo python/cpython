@@ -84,7 +84,7 @@ class urlopenNetworkTests(unittest.TestCase):
         self.assertEqual(gotten_url, URL)
 
     def test_fileno(self):
-        if (sys.platform in ('win32',) or 
+        if (sys.platform in ('win32',) or
                 not hasattr(os, 'fdopen')):
             # On Windows, socket handles are not file descriptors; this
             # test can't pass on Windows.

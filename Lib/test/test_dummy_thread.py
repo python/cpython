@@ -109,7 +109,7 @@ class MiscTests(unittest.TestCase):
             _thread.interrupt_main()
         self.failUnlessRaises(KeyboardInterrupt, _thread.start_new_thread,
                               call_interrupt, tuple())
-    
+
     def test_interrupt_in_main(self):
         # Make sure that if interrupt_main is called in main threat that
         # KeyboardInterrupt is raised instantly.
