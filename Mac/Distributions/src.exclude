@@ -19,3 +19,4 @@ CVS
 Makefile.pre.in
 PyIDE-src
 [(]*[)]
+*.pyo
