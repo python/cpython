@@ -7,7 +7,7 @@ quoted-printable.
 
 Usage:
 	mimify(input, output)
-	unmimify(input, output)
+	unmimify(input, output, decode_base64 = 0)
 to encode and decode respectively.  Input and output may be the name
 of a file or an open file object.  Only a readline() method is used
 on the input file, only a write() method is used on the output file.
