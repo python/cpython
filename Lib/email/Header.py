@@ -151,7 +151,8 @@ class Header:
     def append(self, s, charset=None):
         """Append string s with Charset charset to the MIME header.
 
-        charset defaults to the one given in the class constructor.
+        charset defaults to the one given in the class constructor.  If
+        charset is given, it should be an instance of email.Charset.Charset.
         """
         if charset is None:
             charset = self._charset
