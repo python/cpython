@@ -215,7 +215,7 @@ except ImportError:
 else:
     class InternetConfig:
         def open(self, url, new=0):
-            ic.launcurl(url)
+            ic.launchurl(url)
 
         def open_new(self, url):
             self.open(url)
