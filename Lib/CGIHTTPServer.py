@@ -192,6 +192,7 @@ class CGIHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
             if '=' not in decoded_query:
                 args.append(decoded_query)
             nobody = nobody_uid()
+            self.rfile.flush() # Always flush before forking
             self.wfile.flush() # Always flush before forking
             pid = os.fork()
             if pid != 0:
@@ -226,7 +227,7 @@ class CGIHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
                 cmdline = "%s -u %s" % (interp, cmdline)
             if '=' not in query and '"' not in query:
                 cmdline = '%s "%s"' % (cmdline, query)
-            self.log_error("command: %s", cmdline)
+            self.log_message("command: %s", cmdline)
             try:
                 nbytes = int(length)
             except:
@@ -241,7 +242,7 @@ class CGIHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
             if sts:
                 self.log_error("CGI script exit status %#x", sts)
             else:
-                self.log_error("CGI script exited OK")
+                self.log_message("CGI script exited OK")
 
         else:
             # Other O.S. -- execute script in this process
@@ -266,7 +267,7 @@ class CGIHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
             except SystemExit, sts:
                 self.log_error("CGI script exit status %s", str(sts))
             else:
-                self.log_error("CGI script exited OK")
+                self.log_message("CGI script exited OK")
 
 
 nobody = None
