@@ -42,9 +42,6 @@ ConfigParser -- responsible for for parsing a list of
     options(section)
         return list of configuration options for the named section
 
-    has_option(section, option)
-        return whether the given section has the given option
-
     read(filenames)
         read and parse the list of named configuration files, given by
         name.  A single filename is also allowed.  Non-existing files
@@ -214,10 +211,6 @@ class ConfigParser:
         if opts.has_key('__name__'):
             del opts['__name__']
         return opts.keys()
-
-    def has_option(self, section, option):
-        """Return whether the given section has the given option."""
-        return option in self.options(section)
 
     def read(self, filenames):
         """Read and parse a filename or a list of filenames.
