@@ -48,7 +48,10 @@ def main():
 
     prefork_lives = alive.copy()
 
-    cpid = os.fork()
+    if sys.platform in ['unixware7']:
+        cpid = os.fork1()
+    else:
+        cpid = os.fork()
 
     if cpid == 0:
         # Child

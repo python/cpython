@@ -52,7 +52,9 @@ AC_MSG_CHECKING(MACHDEP)
 if test -z "$MACHDEP"
 then
 	ac_sys_system=`uname -s`
-	if test "$ac_sys_system" = "AIX" -o "$ac_sys_system" = "Monterey64"; then
+	if test "$ac_sys_system" = "AIX" -o \
+		"$ac_sys_system" = "Monterey64" -o \
+		"$ac_sys_system" = "UnixWare"; then
 		ac_sys_release=`uname -v`
 	else
 		ac_sys_release=`uname -r`
@@ -125,8 +127,15 @@ AC_ARG_WITH(gcc, [  --without-gcc                   never use gcc], [
 		;;
     Monterey*)
         RANLIB=:
-        without_gcc=;;
-	*)	without_gcc=no;;
+	    without_gcc=
+	    ;;
+	UnixWare*)
+	    RANLIB=:
+	    without_gcc=
+	    ;;
+	*)
+	    without_gcc=no
+	    ;;
 	esac])
 AC_MSG_RESULT($without_gcc)
 
@@ -264,6 +273,9 @@ cygwin*)
       LDLIBRARY='libpython$(VERSION).dll.a'
       DLLLIBRARY='libpython$(VERSION).dll'
       ;;
+unixware*)
+      LDLIBRARY='libpython$(VERSION).so'
+      ;;
 esac
 AC_MSG_RESULT($LDLIBRARY)
 
@@ -298,12 +310,20 @@ then
 	case $GCC in
 	yes)
 		case $ac_cv_prog_cc_g in
-		yes)	OPT="-g -O2 -Wall -Wstrict-prototypes";;
-		*)	OPT="-O2 -Wall -Wstrict-prototypes";;
+	yes)
+	    OPT="-g -O2 -Wall -Wstrict-prototypes";;
+	*)
+	    OPT="-O2 -Wall -Wstrict-prototypes";;
 		esac
 		;;
-	*)	OPT="-O";;
+    *)
+	case $ac_sys_system in
+	UnixWare*)
+	    OPT="-O -K pentium,host,inline,loop_unroll,alloca ";;
+	*)
+	    OPT="-O";;
 	esac
+    esac
 fi
 
 # The current (beta) Monterey compiler dies with optimizations
@@ -597,7 +617,7 @@ then
 	UnixWare*)
 		if test "$GCC" = "yes"
 		then LDSHARED="$(CC) -shared"
-		else LDSHARED="$(CC) -G"
+		else LDSHARED="ld -G -dy -Bdynamic"
 		fi;;
 	SCO_SV*) LDSHARED="cc -G -KPIC -Ki486 -belf -Wl,-Bexport";;
 	Monterey*) LDSHARED="cc -G -dy -Bdynamic -Bexport -L/usr/lib/ia64l64";;
@@ -627,7 +647,7 @@ then
 	UnixWare*)
 		if test "$GCC" = "yes"
 		then CCSHARED="-fPIC"
-		else CCSHARED="-KPIC"
+		else CCSHARED="-KPIC -G -dy -Bdynamic"
 		fi;;
 	SCO_SV*) CCSHARED="-KPIC -dy -Bdynamic";;
 	Monterey*) CCSHARED="-G";;
@@ -658,7 +678,7 @@ then
 	# loading of any modules which reference it in System.framework
 	next/4*|next/5*) LINKFORSHARED="-u __dummy -framework System" ;;
 	Darwin/*) LINKFORSHARED="-u __dummy -framework System -framework Foundation" ;;
-	UnixWare*) LINKFORSHARED="-Wl,-Bexport";;
+	UnixWare*) LINKFORSHARED="-dy -Bdynamic -Wl,-Bexport";;
 	SCO_SV*) LINKFORSHARED="-Bdynamic -dy -Wl,-Bexport";;
 	ReliantUNIX*) LINKFORSHARED="-W1 -Blargedynsym";;
 	FreeBSD*|NetBSD*) 
@@ -793,77 +813,86 @@ if test "$with_threads" = "no"
 then
     USE_THREAD_MODULE="#"
 else
-    if test ! -z "$with_threads" -a -d "$with_threads"
-    then LDFLAGS="$LDFLAGS -L$with_threads"
-    fi
-    if test ! -z "$withval" -a -d "$withval"
-    then LDFLAGS="$LDFLAGS -L$withval"
-    fi
-    AC_DEFINE(_REENTRANT)
-    AC_CHECK_HEADER(mach/cthreads.h, [AC_DEFINE(WITH_THREAD)
-    AC_DEFINE(C_THREADS)
-    LIBOBJS="$LIBOBJS thread.o"],[
-    AC_MSG_CHECKING(for --with-pth)
-    AC_ARG_WITH(pth,
-    [  --with-pth                      use GNU pth threading libraries], [
-    AC_MSG_RESULT($withval)
-    AC_DEFINE(WITH_THREAD)
-    AC_DEFINE(HAVE_PTH)
-    LIBS="-lpth $LIBS"
-    LIBOBJS="$LIBOBJS thread.o"],[
-    AC_MSG_RESULT(no)
-    AC_CHECK_LIB(pthread, pthread_create, [AC_DEFINE(WITH_THREAD)
-    AC_DEFINE(_POSIX_THREADS)
-    LIBS="-lpthread $LIBS"
-    LIBOBJS="$LIBOBJS thread.o"],[
-    AC_CHECK_FUNC(pthread_detach, [AC_DEFINE(WITH_THREAD)
-    case $ac_sys_system in
-      Darwin*) ;;
-      *) AC_DEFINE(_POSIX_THREADS);;
-    esac
-    LIBOBJS="$LIBOBJS thread.o"],[
-    AC_CHECK_HEADER(kernel/OS.h, [AC_DEFINE(WITH_THREAD)
-    AC_DEFINE(BEOS_THREADS)
-    LIBOBJS="$LIBOBJS thread.o"],[
-    AC_CHECK_LIB(pthreads, pthread_create, [AC_DEFINE(WITH_THREAD)
-    AC_DEFINE(_POSIX_THREADS)
-    LIBS="$LIBS -lpthreads"
-    LIBOBJS="$LIBOBJS thread.o"], [
-    AC_CHECK_LIB(c_r, pthread_create, [AC_DEFINE(WITH_THREAD)
-    AC_DEFINE(_POSIX_THREADS)
-    LIBS="$LIBS -lc_r"
-    LIBOBJS="$LIBOBJS thread.o"], [
-    AC_CHECK_LIB(thread, __d6_pthread_create, [AC_DEFINE(WITH_THREAD)
-    AC_DEFINE(_POSIX_THREADS)
-    LIBS="$LIBS -lthread"
-    LIBOBJS="$LIBOBJS thread.o"], [
-    AC_CHECK_LIB(pthread, __pthread_create_system, [AC_DEFINE(WITH_THREAD)
-    AC_DEFINE(_POSIX_THREADS)
-    LIBS="$LIBS -lpthread"
-    LIBOBJS="$LIBOBJS thread.o"], [
-    AC_CHECK_LIB(cma, pthread_create, [AC_DEFINE(WITH_THREAD)
-    AC_DEFINE(_POSIX_THREADS)
-    LIBS="$LIBS -lcma"
-    LIBOBJS="$LIBOBJS thread.o"],[
-    USE_THREAD_MODULE="#"])
-    ])])])])])])])])])
+    if test "$ac_sys_system" = "UnixWare"
+     then
+	CC="${CC} -Kthread"
+	LIBOBJS="$LIBOBJS thread.o"
+	AC_DEFINE(WITH_THREAD)
+	AC_DEFINE(_POSIX_THREADS)
+	USE_THREAD_MODULE=""
+    else
+	if test ! -z "$with_threads" -a -d "$with_threads"
+	then LDFLAGS="$LDFLAGS -L$with_threads"
+	fi
+	if test ! -z "$withval" -a -d "$withval"
+	then LDFLAGS="$LDFLAGS -L$withval"
+	fi
+	AC_DEFINE(_REENTRANT)
+	AC_CHECK_HEADER(mach/cthreads.h, [AC_DEFINE(WITH_THREAD)
+	AC_DEFINE(C_THREADS)
+	LIBOBJS="$LIBOBJS thread.o"],[
+	AC_MSG_CHECKING(for --with-pth)
+	AC_ARG_WITH(pth,
+	[  --with-pth                      use GNU pth threading libraries], [
+	AC_MSG_RESULT($withval)
+	AC_DEFINE(WITH_THREAD)
+	AC_DEFINE(HAVE_PTH)
+	LIBS="-lpth $LIBS"
+	LIBOBJS="$LIBOBJS thread.o"],[
+	AC_MSG_RESULT(no)
+	AC_CHECK_LIB(pthread, pthread_create, [AC_DEFINE(WITH_THREAD)
+	AC_DEFINE(_POSIX_THREADS)
+	LIBS="-lpthread $LIBS"
+	LIBOBJS="$LIBOBJS thread.o"],[
+	AC_CHECK_FUNC(pthread_detach, [AC_DEFINE(WITH_THREAD)
+	case $ac_sys_system in
+	  Darwin*) ;;
+	  *) AC_DEFINE(_POSIX_THREADS);;
+	esac
+	LIBOBJS="$LIBOBJS thread.o"],[
+	AC_CHECK_HEADER(kernel/OS.h, [AC_DEFINE(WITH_THREAD)
+	AC_DEFINE(BEOS_THREADS)
+	LIBOBJS="$LIBOBJS thread.o"],[
+	AC_CHECK_LIB(pthreads, pthread_create, [AC_DEFINE(WITH_THREAD)
+	AC_DEFINE(_POSIX_THREADS)
+	LIBS="$LIBS -lpthreads"
+	LIBOBJS="$LIBOBJS thread.o"], [
+	AC_CHECK_LIB(c_r, pthread_create, [AC_DEFINE(WITH_THREAD)
+	AC_DEFINE(_POSIX_THREADS)
+	LIBS="$LIBS -lc_r"
+	LIBOBJS="$LIBOBJS thread.o"], [
+	AC_CHECK_LIB(thread, __d6_pthread_create, [AC_DEFINE(WITH_THREAD)
+	AC_DEFINE(_POSIX_THREADS)
+	LIBS="$LIBS -lthread"
+	LIBOBJS="$LIBOBJS thread.o"], [
+	AC_CHECK_LIB(pthread, __pthread_create_system, [AC_DEFINE(WITH_THREAD)
+	AC_DEFINE(_POSIX_THREADS)
+	LIBS="$LIBS -lpthread"
+	LIBOBJS="$LIBOBJS thread.o"], [
+	AC_CHECK_LIB(cma, pthread_create, [AC_DEFINE(WITH_THREAD)
+	AC_DEFINE(_POSIX_THREADS)
+	LIBS="$LIBS -lcma"
+	LIBOBJS="$LIBOBJS thread.o"],[
+	USE_THREAD_MODULE="#"])
+	])])])])])])])])])
 
-    AC_CHECK_LIB(mpc, usconfig, [AC_DEFINE(WITH_THREAD)
-    LIBS="$LIBS -lmpc"
-    LIBOBJS="$LIBOBJS thread.o"
-    USE_THREAD_MODULE=""])
-    AC_CHECK_LIB(thread, thr_create, [AC_DEFINE(WITH_THREAD)
-    LIBS="$LIBS -lthread"
-    LIBOBJS="$LIBOBJS thread.o"
-    USE_THREAD_MODULE=""])
+	AC_CHECK_LIB(mpc, usconfig, [AC_DEFINE(WITH_THREAD)
+	LIBS="$LIBS -lmpc"
+	LIBOBJS="$LIBOBJS thread.o"
+	USE_THREAD_MODULE=""])
+	AC_CHECK_LIB(thread, thr_create, [AC_DEFINE(WITH_THREAD)
+	LIBS="$LIBS -lthread"
+	LIBOBJS="$LIBOBJS thread.o"
+	USE_THREAD_MODULE=""])
 
-    if test "$USE_THREAD_MODULE" != "#"
-    then
-        # If the above checks didn't disable threads, (at least) OSF1
-        # needs this '-threads' argument during linking.
-        case $ac_sys_system in
-        OSF1) LDLAST=-threads;;
-        esac
+	if test "$USE_THREAD_MODULE" != "#"
+	then
+	    # If the above checks didn't disable threads, (at least) OSF1
+	    # needs this '-threads' argument during linking.
+	    case $ac_sys_system in
+	    OSF1) LDLAST=-threads;;
+	    esac
+	fi
     fi
 fi
 
