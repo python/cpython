@@ -124,7 +124,6 @@ class Debugger:
         self.bstack.grid(row=0, column=0)
         if not self.vsource:
             self.__class__.vsource = BooleanVar(top)
-            ##self.vsource.set(1)
         self.bsource = Checkbutton(cframe,
             text="Source", command=self.show_source, variable=self.vsource)
         self.bsource.grid(row=0, column=1)
@@ -136,7 +135,6 @@ class Debugger:
         self.blocals.grid(row=1, column=0)
         if not self.vglobals:
             self.__class__.vglobals = BooleanVar(top)
-            ##self.vglobals.set(1)
         self.bglobals = Checkbutton(cframe,
             text="Globals", command=self.show_globals, variable=self.vglobals)
         self.bglobals.grid(row=1, column=1)
@@ -307,22 +305,13 @@ class Debugger:
             gv.load_dict(gdict, force, self.pyshell.interp.rpcclt)
 
     def set_breakpoint_here(self, filename, lineno):
-        msg = self.idb.set_break(filename, lineno)
-        if msg:
-            text.bell()
-            return
+        self.idb.set_break(filename, lineno)
 
     def clear_breakpoint_here(self, filename, lineno):
-        msg = self.idb.clear_break(filename, lineno)
-        if msg:
-            text.bell()
-            return
+        self.idb.clear_break(filename, lineno)
 
     def clear_file_breaks(self, filename):
-        msg = self.idb.clear_all_file_breaks(filename)
-        if msg:
-            text.bell()
-            return
+        self.idb.clear_all_file_breaks(filename)
 
     def load_breakpoints(self):
         "Load PyShellEditorWindow breakpoints into subprocess debugger"
@@ -468,10 +457,8 @@ class NamespaceViewer:
                     svalue = svalue[1:-1]
                 l = Label(subframe, text=name)
                 l.grid(row=row, column=0, sticky="nw")
-    ##            l = Label(subframe, text=svalue, justify="l", wraplength=300)
                 l = Entry(subframe, width=0, borderwidth=0)
                 l.insert(0, svalue)
-    ##            l["state"] = "disabled"
                 l.grid(row=row, column=1, sticky="nw")
                 row = row+1
         self.dict = dict
