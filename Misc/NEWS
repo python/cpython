@@ -3,7 +3,7 @@ What's New in Python 2.1 alpha 1?
 
 Core language, builtins, and interpreter
 
-- %[duxXo] formats of negative Python longs now produce a sign
+- %[xXo] formats of negative Python longs now produce a sign
   character.  In 1.6 and earlier, they never produced a sign,
   and raised an error if the value of the long was too large
   to fit in a Python int.  In 2.0, they produced a sign if and
@@ -12,10 +12,20 @@ Core language, builtins, and interpreter
   platforms), and inconsistent with hex() and oct().  Example:
 
   >>> "%x" % -0x42L
-  '-42'  # in 2.1
+  '-42'      # in 2.1
   'ffffffbe' # in 2.0 and before, on 32-bit machines
   >>> hex(-0x42L)
   '-0x42L'   # in all versions of Python
+
+  The behavior of %d formats for negative Python longs remains
+  the same as in 2.0 (although in 1.6 and before, they raised
+  an error if the long didn't fit in a Python int).
+
+  %u formats don't make sense for Python longs, but are allowed
+  and treated the same as %d in 2.1.  In 2.0, a negative long
+  formatted via %u produced a sign if and only if too large to
+  fit in an int.  In 1.6 and earlier, a negative long formatted
+  via %u raised an error if it was too big to fit in an int.
 
 
 What's New in Python 2.0?
