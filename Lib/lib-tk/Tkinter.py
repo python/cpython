@@ -1050,7 +1050,10 @@ class Misc:
             e.widget = W
         e.x_root = getint(X)
         e.y_root = getint(Y)
-        e.delta = getint(D)
+        try:
+            e.delta = getint(D)
+        except ValueError:
+            e.delta = 0
         return (e,)
     def _report_exception(self):
         """Internal function."""
