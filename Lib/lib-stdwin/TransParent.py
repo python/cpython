@@ -31,7 +31,7 @@ class TransParent() = ManageOneChild():
 	def create(self, parent):
 		parent.addchild(self)
 		self.parent = parent
-		self.child = 0 # No child yet
+		self.child = None # No child yet
 		return self
 	#
 	# Downcalls from parent to child
@@ -41,11 +41,12 @@ class TransParent() = ManageOneChild():
 		if self.child: self.child.destroy()
 		del self.child
 	#
-	def minsize(self, m):
+	def getminsize(self, args):
 		if not self.child:
-			return 0, 0
+			m, size = args
+			return size
 		else:
-			return self.child.minsize(m)
+			return self.child.getminsize(args)
 	def getbounds(self, bounds):
 		if not self.child:
 			raise Error, 'getbounds w/o child'
@@ -75,6 +76,13 @@ class TransParent() = ManageOneChild():
 	def mouse_up(self, detail):
 		if self.child: self.child.mouse_up(detail)
 	#
+	def keybd(self, type_detail):
+		self.child.keybd(type_detail)
+	def activate(self):
+		self.child.activate()
+	def deactivate(self):
+		self.child.deactivate()
+	#
 	def timer(self):
 		if self.child: self.child.timer()
 	#
@@ -94,6 +102,11 @@ class TransParent() = ManageOneChild():
 		self.parent.need_altdraw(self)
 	def no_altdraw(self, child):
 		self.parent.no_altdraw(self)
+	#
+	def need_keybd(self, child):
+		self.parent.need_keybd(self)
+	def no_keybd(self, child):
+		self.parent.no_keybd(self)
 	#
 	def begindrawing(self):
 		return self.parent.begindrawing()
