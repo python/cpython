@@ -170,7 +170,7 @@ python:		$(LIBRARY) buildno
 		      $(srcdir)/Modules/getbuildinfo.c
 		$(AR) cr $(LIBRARY) getbuildinfo.o
 		$(RANLIB) $(LIBRARY)
-@DGUX_IS_BROKEN@
+		@DGUX_IS_BROKEN@
 		cd Modules;  $(MAKE) OPT="$(OPT)" VERSION="$(VERSION)" \
 			prefix="$(prefix)" exec_prefix="$(exec_prefix)" \
 			LIBRARY=../$(LIBRARY) link
@@ -252,7 +252,7 @@ altbininstall:	python
 			fi; \
 		done
 		$(INSTALL_PROGRAM) python$(EXE) $(BINDIR)/python$(VERSION)$(EXE)
-@DGUX_IS_BROKEN@
+		@DGUX_IS_BROKEN@
 		if test -f libpython$(VERSION).so; then \
 			$(INSTALL_DATA) libpython$(VERSION).so $(LIBDIR); \
 		else	true; \
