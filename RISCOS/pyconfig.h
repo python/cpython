@@ -1,5 +1,8 @@
 /* RISCOS/pyconfig.h: Python configuration for RISC OS  */
 
+#ifndef Py_PYCONFIG_H
+#define Py_PYCONFIG_H
+
 /* Define if on AIX 3.
    System headers sometimes define this.
    We just want to avoid a redefinition error message.  */
@@ -577,12 +580,6 @@
 /* Define if you have the <libutil.h> header file.  */
 #undef HAVE_LIBUTIL_H
 
-/* Define if you have the <limits.h> header file.  */
-#define HAVE_LIMITS_H 1
-
-/* Define if you have the <locale.h> header file.  */
-#define HAVE_LOCALE_H 1
-
 /* Define if you have the <ncurses.h> header file.  */
 #undef HAVE_NCURSES_H
 
@@ -603,18 +600,6 @@
 
 /* Define if you have the <pty.h> header file.  */
 #undef HAVE_PTY_H
-
-/* Define if you have the <signal.h> header file.  */
-#define HAVE_SIGNAL_H 1
-
-/* Define if you have the <stdarg.h> header file.  */
-#define HAVE_STDARG_H 1
-
-/* Define if you have the <stddef.h> header file.  */
-#define HAVE_STDDEF_H 1
-
-/* Define if you have the <stdlib.h> header file.  */
-#define HAVE_STDLIB_H 1
 
 /* Define if you have the <sys/audioio.h> header file.  */
 #undef HAVE_SYS_AUDIOIO_H
@@ -706,3 +691,5 @@
 #undef DONT_HAVE_SYS_STAT_H
 
 #define PLATFORM "riscos"
+
+#endif /* Py_PYCONFIG_H */

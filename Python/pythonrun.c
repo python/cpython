@@ -13,9 +13,7 @@
 #include "eval.h"
 #include "marshal.h"
 
-#ifdef HAVE_SIGNAL_H
 #include <signal.h>
-#endif
 
 #ifdef HAVE_LANGINFO_H
 #include <locale.h>
@@ -1563,7 +1561,6 @@ Py_Exit(int sts)
 static void
 initsigs(void)
 {
-#ifdef HAVE_SIGNAL_H
 #ifdef SIGPIPE
 	signal(SIGPIPE, SIG_IGN);
 #endif
@@ -1573,7 +1570,6 @@ initsigs(void)
 #ifdef SIGXFSZ
 	signal(SIGXFSZ, SIG_IGN);
 #endif
-#endif /* HAVE_SIGNAL_H */
 	PyOS_InitInterrupts(); /* May imply initsignal() */
 }
 

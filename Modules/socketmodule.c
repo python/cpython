@@ -247,9 +247,7 @@ int h_errno; /* not used */
 
 #endif
 
-#ifdef HAVE_STDDEF_H
-# include <stddef.h>
-#endif
+#include <stddef.h>
 
 #ifndef offsetof
 # define offsetof(type, member)	((size_t)(&((type *)0)->member))

@@ -266,14 +266,8 @@
 /* Define to 1 if you have the <libutil.h> header file. */
 #undef HAVE_LIBUTIL_H
 
-/* Define to 1 if you have the <limits.h> header file. */
-#undef HAVE_LIMITS_H
-
 /* Define if you have the 'link' function. */
 #undef HAVE_LINK
-
-/* Define to 1 if you have the <locale.h> header file. */
-#undef HAVE_LOCALE_H
 
 /* Define this if you have the type long long. */
 #undef HAVE_LONG_LONG
@@ -416,9 +410,6 @@
 /* Define to 1 if you have the `siginterrupt' function. */
 #undef HAVE_SIGINTERRUPT
 
-/* Define to 1 if you have the <signal.h> header file. */
-#undef HAVE_SIGNAL_H
-
 /* Define to 1 if you have the `sigrelse' function. */
 #undef HAVE_SIGRELSE
 
@@ -437,24 +428,12 @@
 /* Define if you have struct stat.st_mtim.tv_nsec */
 #undef HAVE_STAT_TV_NSEC
 
-/* Define to 1 if you have the <stdarg.h> header file. */
-#undef HAVE_STDARG_H
-
 /* Define if your compiler supports variable length function prototypes (e.g.
    void fprintf(FILE *, char *, ...);) *and* <stdarg.h> */
 #undef HAVE_STDARG_PROTOTYPES
 
-/* Define to 1 if you have the <stddef.h> header file. */
-#undef HAVE_STDDEF_H
-
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H
-
-/* Define to 1 if you have the <stdlib.h> header file. */
-#undef HAVE_STDLIB_H
-
-/* Define to 1 if you have the `strdup' function. */
-#undef HAVE_STRDUP
 
 /* Define to 1 if you have the `strerror' function. */
 #undef HAVE_STRERROR
@@ -464,9 +443,6 @@
 
 /* Define to 1 if you have the <strings.h> header file. */
 #undef HAVE_STRINGS_H
-
-/* Define to 1 if you have the <string.h> header file. */
-#undef HAVE_STRING_H
 
 /* Define to 1 if you have the <stropts.h> header file. */
 #undef HAVE_STROPTS_H

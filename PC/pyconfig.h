@@ -28,7 +28,6 @@ MS_CORE_DLL.
 */
 
 #include <io.h>
-#define HAVE_LIMITS_H
 #define HAVE_SYS_UTIME_H
 #define HAVE_HYPOT
 #define HAVE_TEMPNAM
@@ -478,20 +477,8 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 /* Define if you have the <fcntl.h> header file.  */
 #define HAVE_FCNTL_H 1
 
-/* Define if you have the <signal.h> header file.  */
-#define HAVE_SIGNAL_H 1
-
-/* Define if you have the <stdarg.h> header file.  */
-#define HAVE_STDARG_H 1
-
 /* Define if you have the <stdarg.h> prototypes.  */
 #define HAVE_STDARG_PROTOTYPES
-
-/* Define if you have the <stddef.h> header file.  */
-#define HAVE_STDDEF_H 1
-
-/* Define if you have the <stdlib.h> header file.  */
-#define HAVE_STDLIB_H 1
 
 /* Define if you have the <sys/audioio.h> header file.  */
 /* #undef HAVE_SYS_AUDIOIO_H */

@@ -109,29 +109,22 @@ typedef int pid_t;
 /* #undef BAD_STATIC_FORWARD */ /* if compiler botches static fwd decls */
 
 #define STDC_HEADERS             1 /* VAC++ is an ANSI C Compiler           */
-#define HAVE_LIMITS_H            1 /* #include <limits.h>                   */
-#define HAVE_STDLIB_H            1 /* #include <stdlib.h>                   */
 #define HAVE_HYPOT               1 /* hypot()                               */
 #define HAVE_PUTENV              1 /* putenv()                              */
-#define HAVE_STDDEF_H            1 /* #include <stddef.h>                   */
 /* #define VA_LIST_IS_ARRAY   1 */ /* if va_list is an array of some kind   */
 
   /* Variable-Arguments/Prototypes */
 #define HAVE_PROTOTYPES          1 /* VAC++ supports C Function Prototypes  */
-#define HAVE_STDARG_H            1 /* #include <stdarg.h>                   */
 #define HAVE_STDARG_PROTOTYPES   1 /* Our <stdarg.h> has prototypes         */
 
   /* String/Memory/Locale Operations */
-#define HAVE_STRDUP              1 /* strdup()                              */
 #define HAVE_MEMMOVE             1 /* memmove()                             */
 #define HAVE_STRERROR            1 /* strerror()                            */
 #define HAVE_SETLOCALE           1 /* setlocale()                           */
-#define HAVE_LOCALE_H            1 /* #include <locale.h>                   */
 #define MALLOC_ZERO_RETURNS_NULL 1 /* Our malloc(0) returns a NULL ptr      */
 
   /* Signal Handling */
 #define RETSIGTYPE            void /* Return type of handlers (int or void) */
-#define HAVE_SIGNAL_H            1 /* #include <signal.h>                   */
 /* #undef WANT_SIGFPE_HANDLER   */ /* Handle SIGFPE (see Include/pyfpe.h)   */
 /* #define HAVE_ALARM         1 */ /* alarm()                               */
 /* #define HAVE_SIGINTERRUPT  1 */ /* siginterrupt()                        */
