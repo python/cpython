@@ -1,20 +1,25 @@
-"""Handle exceptions in CGI scripts by formatting tracebacks into nice HTML.
+"""More comprehensive traceback formatting for Python scripts.
 
 To enable this module, do:
 
     import cgitb; cgitb.enable()
 
-at the top of your CGI script.  The optional arguments to enable() are:
+at the top of your script.  The optional arguments to enable() are:
 
     display     - if true, tracebacks are displayed in the web browser
     logdir      - if set, tracebacks are written to files in this directory
     context     - number of lines of source code to show for each stack frame
+    format	- 'text' or 'html' controls the output format
 
-By default, tracebacks are displayed but not saved, and context is 5.
+By default, tracebacks are displayed but not saved, the context is 5 lines
+and the output format is 'html' (for backwards compatibility with the
+original use of this module)
 
 Alternatively, if you have caught an exception and want cgitb to display it
-for you, call cgitb.handler().  The optional argument to handler() is a 3-item
-tuple (etype, evalue, etb) just like the value of sys.exc_info()."""
+for you, call cgitb.handler().  The optional argument to handler() is a
+3-item tuple (etype, evalue, etb) just like the value of sys.exc_info().
+The default handler displays output as HTML.
+"""
 
 __author__ = 'Ka-Ping Yee'
 __version__ = '$Revision$'
@@ -160,30 +165,105 @@ function calls leading up to the error, in the order they occurred.'''
 -->
 ''' % ''.join(traceback.format_exception(etype, evalue, etb))
 
+def text((etype, evalue, etb), context=5):
+    """Return a plain text document describing a given traceback."""
+    import os, types, time, traceback, linecache, inspect, pydoc
+
+    if type(etype) is types.ClassType:
+        etype = etype.__name__
+    pyver = 'Python ' + sys.version.split()[0] + ': ' + sys.executable
+    date = time.ctime(time.time())
+    head = "%s\n%s\n%s\n" % (str(etype), pyver, date) + '''
+A problem occurred in a Python script.  Here is the sequence of
+function calls leading up to the error, in the order they occurred.
+'''
+
+    frames = []
+    records = inspect.getinnerframes(etb, context)
+    for frame, file, lnum, func, lines, index in records:
+        file = file and os.path.abspath(file) or '?'
+        args, varargs, varkw, locals = inspect.getargvalues(frame)
+        call = ''
+        if func != '?':
+            call = 'in ' + func + \
+                inspect.formatargvalues(args, varargs, varkw, locals,
+                    formatvalue=lambda value: '=' + pydoc.text.repr(value))
+
+        highlight = {}
+        def reader(lnum=[lnum]):
+            highlight[lnum[0]] = 1
+            try: return linecache.getline(file, lnum[0])
+            finally: lnum[0] += 1
+        vars = scanvars(reader, frame, locals)
+
+        rows = [' %s %s' % (file, call)]
+        if index is not None:
+            i = lnum - index
+            for line in lines:
+                num = '%5d ' % i
+                rows.append(num+line.rstrip())
+                i += 1
+
+        done, dump = {}, []
+        for name, where, value in vars:
+            if name in done: continue
+            done[name] = 1
+            if value is not __UNDEF__:
+                if where == 'global': name = 'global ' + name
+                elif where == 'local': name = name
+                else: name = where + name.split('.')[-1]
+                dump.append('%s = %s' % (name, pydoc.text.repr(value)))
+            else:
+                dump.append(name + ' undefined')
+
+        rows.append('\n'.join(dump))
+        frames.append('\n%s\n' % '\n'.join(rows))
+
+    exception = ['%s: %s' % (str(etype), str(evalue))]
+    if type(evalue) is types.InstanceType:
+        for name in dir(evalue):
+            value = pydoc.text.repr(getattr(evalue, name))
+            exception.append('\n%s%s = %s' % (" "*4, name, value))
+
+    import traceback
+    return head + ''.join(frames) + ''.join(exception) + '''
+
+The above is a description of an error in a Python program.  Here is
+the original traceback:
+
+%s
+''' % ''.join(traceback.format_exception(etype, evalue, etb))
+
 class Hook:
     """A hook to replace sys.excepthook that shows tracebacks in HTML."""
 
-    def __init__(self, display=1, logdir=None, context=5, file=None):
+    def __init__(self, display=1, logdir=None, context=5, file=None,
+                 format="html"):
         self.display = display          # send tracebacks to browser if true
         self.logdir = logdir            # log tracebacks to files if not None
         self.context = context          # number of source code lines per frame
         self.file = file or sys.stdout  # place to send the output
+        self.format = format
 
     def __call__(self, etype, evalue, etb):
         self.handle((etype, evalue, etb))
 
     def handle(self, info=None):
         info = info or sys.exc_info()
-        self.file.write(reset())
+        if self.format == "html":
+            self.file.write(reset())
 
+        formatter = (self.format=="html") and html or text
+        plain = False
         try:
-            text, doc = 0, html(info, self.context)
+            doc = formatter(info, self.context)
         except:                         # just in case something goes wrong
             import traceback
-            text, doc = 1, ''.join(traceback.format_exception(*info))
+            doc = ''.join(traceback.format_exception(*info))
+            plain = True
 
         if self.display:
-            if text:
+            if plain:
                 doc = doc.replace('&', '&amp;').replace('<', '&lt;')
                 self.file.write('<pre>' + doc + '</pre>\n')
             else:
@@ -193,8 +273,8 @@ class Hook:
 
         if self.logdir is not None:
             import os, tempfile
-            (fd, path) = tempfile.mkstemp(suffix=['.html', '.txt'][text],
-                                          dir=self.logdir)
+            suffix = ['.html', '.txt'][self.format=="html"]
+            (fd, path) = tempfile.mkstemp(suffix=suffix, dir=self.logdir)
             try:
                 file = os.fdopen(fd, 'w')
                 file.write(doc)
@@ -208,10 +288,11 @@ class Hook:
         except: pass
 
 handler = Hook().handle
-def enable(display=1, logdir=None, context=5):
+def enable(display=1, logdir=None, context=5, format="html"):
     """Install an exception handler that formats tracebacks as HTML.
 
     The optional argument 'display' can be set to 0 to suppress sending the
     traceback to the browser, and 'logdir' can be set to a directory to cause
     tracebacks to be written to files there."""
-    sys.excepthook = Hook(display, logdir, context)
+    sys.excepthook = Hook(display=display, logdir=logdir,
+                          context=context, format=format)
