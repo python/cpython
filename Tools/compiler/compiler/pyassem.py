@@ -495,7 +495,7 @@ class TupleArg:
     def __repr__(self):
         return "TupleArg(%s, %s)" % (self.count, self.names)
     def getName(self):
-        return ".nested%d" % self.count
+        return ".%d" % self.count
 
 def getArgCount(args):
     argcount = len(args)
