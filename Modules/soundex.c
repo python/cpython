@@ -1,5 +1,5 @@
 /*
-  $Header$
+  [Header: soundexmodule.c,v 1.2 95/05/02 15:40:45 dwwillia Exp ]
   
   Perform soundex comparisons on strings.
 
