@@ -11,7 +11,16 @@ What's New in Python 2.3.5?
 
 Core and builtins
 -----------------
+
 - Partially revert the fix for #1074011; don't try to fflush stdin anymore.
+
+Library
+-------
+
+- Applied a security fix to SimpleXMLRPCserver (PSF-2005-001).  This
+  disables recursive traversal through instance attributes, which can
+  be exploited in various ways.
+
 
 What's New in Python 2.3.5rc1?
 ==============================
