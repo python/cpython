@@ -54,7 +54,7 @@ static PyObject *Win_Error;
 
 PyTypeObject Window_Type;
 
-#define WinObj_Check(x) ((x)->ob_type == &Window_Type)
+#define WinObj_Check(x) ((x)->ob_type == &Window_Type || PyObject_TypeCheck((x), &Window_Type))
 
 typedef struct WindowObject {
 	PyObject_HEAD

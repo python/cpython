@@ -79,7 +79,7 @@ static PyObject *Menu_Error;
 
 PyTypeObject Menu_Type;
 
-#define MenuObj_Check(x) ((x)->ob_type == &Menu_Type)
+#define MenuObj_Check(x) ((x)->ob_type == &Menu_Type || PyObject_TypeCheck((x), &Menu_Type))
 
 typedef struct MenuObject {
 	PyObject_HEAD

@@ -71,7 +71,7 @@ static PyObject *List_Error;
 
 PyTypeObject List_Type;
 
-#define ListObj_Check(x) ((x)->ob_type == &List_Type)
+#define ListObj_Check(x) ((x)->ob_type == &List_Type || PyObject_TypeCheck((x), &List_Type))
 
 typedef struct ListObject {
 	PyObject_HEAD

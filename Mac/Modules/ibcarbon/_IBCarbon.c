@@ -26,7 +26,7 @@ static PyObject *IBCarbon_Error;
 
 PyTypeObject IBNibRef_Type;
 
-#define IBNibRefObj_Check(x) ((x)->ob_type == &IBNibRef_Type)
+#define IBNibRefObj_Check(x) ((x)->ob_type == &IBNibRef_Type || PyObject_TypeCheck((x), &IBNibRef_Type))
 
 typedef struct IBNibRefObject {
 	PyObject_HEAD

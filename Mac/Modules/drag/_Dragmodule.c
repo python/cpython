@@ -49,7 +49,7 @@ static PyObject *Drag_Error;
 
 PyTypeObject DragObj_Type;
 
-#define DragObj_Check(x) ((x)->ob_type == &DragObj_Type)
+#define DragObj_Check(x) ((x)->ob_type == &DragObj_Type || PyObject_TypeCheck((x), &DragObj_Type))
 
 typedef struct DragObjObject {
 	PyObject_HEAD

@@ -101,7 +101,7 @@ static PyObject *File_Error;
 
 PyTypeObject Alias_Type;
 
-#define Alias_Check(x) ((x)->ob_type == &Alias_Type)
+#define Alias_Check(x) ((x)->ob_type == &Alias_Type || PyObject_TypeCheck((x), &Alias_Type))
 
 typedef struct AliasObject {
 	PyObject_HEAD
@@ -447,7 +447,7 @@ PyTypeObject Alias_Type = {
 
 PyTypeObject FSSpec_Type;
 
-#define FSSpec_Check(x) ((x)->ob_type == &FSSpec_Type)
+#define FSSpec_Check(x) ((x)->ob_type == &FSSpec_Type || PyObject_TypeCheck((x), &FSSpec_Type))
 
 typedef struct FSSpecObject {
 	PyObject_HEAD
@@ -916,7 +916,7 @@ PyTypeObject FSSpec_Type = {
 
 PyTypeObject FSRef_Type;
 
-#define FSRef_Check(x) ((x)->ob_type == &FSRef_Type)
+#define FSRef_Check(x) ((x)->ob_type == &FSRef_Type || PyObject_TypeCheck((x), &FSRef_Type))
 
 typedef struct FSRefObject {
 	PyObject_HEAD

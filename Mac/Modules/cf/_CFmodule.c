@@ -128,7 +128,7 @@ static PyObject *CF_Error;
 
 PyTypeObject CFTypeRef_Type;
 
-#define CFTypeRefObj_Check(x) ((x)->ob_type == &CFTypeRef_Type)
+#define CFTypeRefObj_Check(x) ((x)->ob_type == &CFTypeRef_Type || PyObject_TypeCheck((x), &CFTypeRef_Type))
 
 typedef struct CFTypeRefObject {
 	PyObject_HEAD
@@ -442,7 +442,7 @@ PyTypeObject CFTypeRef_Type = {
 
 PyTypeObject CFArrayRef_Type;
 
-#define CFArrayRefObj_Check(x) ((x)->ob_type == &CFArrayRef_Type)
+#define CFArrayRefObj_Check(x) ((x)->ob_type == &CFArrayRef_Type || PyObject_TypeCheck((x), &CFArrayRef_Type))
 
 typedef struct CFArrayRefObject {
 	PyObject_HEAD
@@ -598,7 +598,7 @@ PyTypeObject CFArrayRef_Type = {
 
 PyTypeObject CFMutableArrayRef_Type;
 
-#define CFMutableArrayRefObj_Check(x) ((x)->ob_type == &CFMutableArrayRef_Type)
+#define CFMutableArrayRefObj_Check(x) ((x)->ob_type == &CFMutableArrayRef_Type || PyObject_TypeCheck((x), &CFMutableArrayRef_Type))
 
 typedef struct CFMutableArrayRefObject {
 	PyObject_HEAD
@@ -783,7 +783,7 @@ PyTypeObject CFMutableArrayRef_Type = {
 
 PyTypeObject CFDictionaryRef_Type;
 
-#define CFDictionaryRefObj_Check(x) ((x)->ob_type == &CFDictionaryRef_Type)
+#define CFDictionaryRefObj_Check(x) ((x)->ob_type == &CFDictionaryRef_Type || PyObject_TypeCheck((x), &CFDictionaryRef_Type))
 
 typedef struct CFDictionaryRefObject {
 	PyObject_HEAD
@@ -921,7 +921,7 @@ PyTypeObject CFDictionaryRef_Type = {
 
 PyTypeObject CFMutableDictionaryRef_Type;
 
-#define CFMutableDictionaryRefObj_Check(x) ((x)->ob_type == &CFMutableDictionaryRef_Type)
+#define CFMutableDictionaryRefObj_Check(x) ((x)->ob_type == &CFMutableDictionaryRef_Type || PyObject_TypeCheck((x), &CFMutableDictionaryRef_Type))
 
 typedef struct CFMutableDictionaryRefObject {
 	PyObject_HEAD
@@ -1043,7 +1043,7 @@ PyTypeObject CFMutableDictionaryRef_Type = {
 
 PyTypeObject CFDataRef_Type;
 
-#define CFDataRefObj_Check(x) ((x)->ob_type == &CFDataRef_Type)
+#define CFDataRefObj_Check(x) ((x)->ob_type == &CFDataRef_Type || PyObject_TypeCheck((x), &CFDataRef_Type))
 
 typedef struct CFDataRefObject {
 	PyObject_HEAD
@@ -1219,7 +1219,7 @@ PyTypeObject CFDataRef_Type = {
 
 PyTypeObject CFMutableDataRef_Type;
 
-#define CFMutableDataRefObj_Check(x) ((x)->ob_type == &CFMutableDataRef_Type)
+#define CFMutableDataRefObj_Check(x) ((x)->ob_type == &CFMutableDataRef_Type || PyObject_TypeCheck((x), &CFMutableDataRef_Type))
 
 typedef struct CFMutableDataRefObject {
 	PyObject_HEAD
@@ -1429,7 +1429,7 @@ PyTypeObject CFMutableDataRef_Type = {
 
 PyTypeObject CFStringRef_Type;
 
-#define CFStringRefObj_Check(x) ((x)->ob_type == &CFStringRef_Type)
+#define CFStringRefObj_Check(x) ((x)->ob_type == &CFStringRef_Type || PyObject_TypeCheck((x), &CFStringRef_Type))
 
 typedef struct CFStringRefObject {
 	PyObject_HEAD
@@ -2114,7 +2114,7 @@ PyTypeObject CFStringRef_Type = {
 
 PyTypeObject CFMutableStringRef_Type;
 
-#define CFMutableStringRefObj_Check(x) ((x)->ob_type == &CFMutableStringRef_Type)
+#define CFMutableStringRefObj_Check(x) ((x)->ob_type == &CFMutableStringRef_Type || PyObject_TypeCheck((x), &CFMutableStringRef_Type))
 
 typedef struct CFMutableStringRefObject {
 	PyObject_HEAD
@@ -2447,7 +2447,7 @@ PyTypeObject CFMutableStringRef_Type = {
 
 PyTypeObject CFURLRef_Type;
 
-#define CFURLRefObj_Check(x) ((x)->ob_type == &CFURLRef_Type)
+#define CFURLRefObj_Check(x) ((x)->ob_type == &CFURLRef_Type || PyObject_TypeCheck((x), &CFURLRef_Type))
 
 typedef struct CFURLRefObject {
 	PyObject_HEAD

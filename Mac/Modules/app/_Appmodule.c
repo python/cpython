@@ -40,7 +40,7 @@ static PyObject *App_Error;
 
 PyTypeObject ThemeDrawingState_Type;
 
-#define ThemeDrawingStateObj_Check(x) ((x)->ob_type == &ThemeDrawingState_Type)
+#define ThemeDrawingStateObj_Check(x) ((x)->ob_type == &ThemeDrawingState_Type || PyObject_TypeCheck((x), &ThemeDrawingState_Type))
 
 typedef struct ThemeDrawingStateObject {
 	PyObject_HEAD

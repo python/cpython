@@ -67,7 +67,7 @@ static PyObject *TE_Error;
 
 PyTypeObject TE_Type;
 
-#define TEObj_Check(x) ((x)->ob_type == &TE_Type)
+#define TEObj_Check(x) ((x)->ob_type == &TE_Type || PyObject_TypeCheck((x), &TE_Type))
 
 typedef struct TEObject {
 	PyObject_HEAD

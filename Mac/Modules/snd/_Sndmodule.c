@@ -52,7 +52,7 @@ static PyObject *Snd_Error;
 
 static PyTypeObject SndChannel_Type;
 
-#define SndCh_Check(x) ((x)->ob_type == &SndChannel_Type)
+#define SndCh_Check(x) ((x)->ob_type == &SndChannel_Type || PyObject_TypeCheck((x), &SndChannel_Type))
 
 typedef struct SndChannelObject {
 	PyObject_HEAD
@@ -267,7 +267,7 @@ static PyTypeObject SndChannel_Type = {
 
 static PyTypeObject SPB_Type;
 
-#define SPBObj_Check(x) ((x)->ob_type == &SPB_Type)
+#define SPBObj_Check(x) ((x)->ob_type == &SPB_Type || PyObject_TypeCheck((x), &SPB_Type))
 
 typedef struct SPBObject {
 	PyObject_HEAD

@@ -145,7 +145,7 @@ static PyObject *Qd_Error;
 
 PyTypeObject GrafPort_Type;
 
-#define GrafObj_Check(x) ((x)->ob_type == &GrafPort_Type)
+#define GrafObj_Check(x) ((x)->ob_type == &GrafPort_Type || PyObject_TypeCheck((x), &GrafPort_Type))
 
 typedef struct GrafPortObject {
 	PyObject_HEAD
@@ -1137,7 +1137,7 @@ PyTypeObject GrafPort_Type = {
 
 PyTypeObject BitMap_Type;
 
-#define BMObj_Check(x) ((x)->ob_type == &BitMap_Type)
+#define BMObj_Check(x) ((x)->ob_type == &BitMap_Type || PyObject_TypeCheck((x), &BitMap_Type))
 
 typedef struct BitMapObject {
 	PyObject_HEAD
