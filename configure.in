@@ -196,7 +196,7 @@ LIBS="$LIBS -ldl -ldld"])
 AC_HAVE_FUNCS(chown clock dlopen ftime gettimeofday getpeername getpgrp getpid getwd link lstat nice readlink select setgid setuid setsid setpgid setpgrp setvbuf siginterrupt symlink tcgetpgrp tcsetpgrp times uname waitpid)
 AC_REPLACE_FUNCS(dup2 getcwd strerror memmove)
 AC_FUNC_CHECK(getpgrp, AC_COMPILE_CHECK([argument to getpgrp], [#include <unistd.h>], [getpgrp(0);], AC_DEFINE(GETPGRP_HAVE_ARG)))
-+ AC_FUNC_CHECK(setpgrp, AC_COMPILE_CHECK([arguments to setpgrp], [#include <unistd.h>], [setpgrp(0,0);], AC_DEFINE(SETPGRP_HAVE_ARG)))
+AC_FUNC_CHECK(setpgrp, AC_COMPILE_CHECK([arguments to setpgrp], [#include <unistd.h>], [setpgrp(0,0);], AC_DEFINE(SETPGRP_HAVE_ARG)))
 
 # checks for structures
 AC_TIME_WITH_SYS_TIME
