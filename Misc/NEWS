@@ -266,7 +266,7 @@ Documentation
 - Improved the tutorial on creating types in C.
 
   - point out the importance of reassigning data members before
-    assigning thier values
+    assigning their values
 
   - correct my misconception about return values from visitprocs. Sigh.
 
