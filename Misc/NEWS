@@ -2,6 +2,11 @@ What's New in Python 2.2.3 ?
 Release date: XX-XXX-2003
 ============================
 
+- Fixed two places in PyObject_Generic{Get,Set}Attr() where the
+  tp_descr_{get,set} slot of a descriptor's type was accessed without
+  checking tp_flags whether those slots actually exist.  This could
+  cause segfaults in Zope.
+
 - The imp module now has ways to acquire and release the "import
   lock": imp.acquire_lock() and imp.release_lock().  Note: this is a
   reentrant lock, so releasing the lock only truly releases it when
