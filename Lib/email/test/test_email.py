@@ -794,6 +794,22 @@ Received-2: <15975.17901.207240.414604@sgigritzmann1.mathematik.tu-muenchen.de>
 
 """)
 
+    def test_long_unbreakable_lines_with_continuation(self):
+        eq = self.ndiffAssertEqual
+        msg = Message()
+        t = """\
+ iVBORw0KGgoAAAANSUhEUgAAADAAAAAwBAMAAAClLOS0AAAAGFBMVEUAAAAkHiJeRUIcGBi9
+ locQDQ4zJykFBAXJfWDjAAACYUlEQVR4nF2TQY/jIAyFc6lydlG5x8Nyp1Y69wj1PN2I5gzp"""
+        msg['Face-1'] = t
+        msg['Face-2'] = Header(t, header_name='Face-2')
+        eq(msg.as_string(), """\
+Face-1: iVBORw0KGgoAAAANSUhEUgAAADAAAAAwBAMAAAClLOS0AAAAGFBMVEUAAAAkHiJeRUIcGBi9
+\tlocQDQ4zJykFBAXJfWDjAAACYUlEQVR4nF2TQY/jIAyFc6lydlG5x8Nyp1Y69wj1PN2I5gzp
+Face-2: iVBORw0KGgoAAAANSUhEUgAAADAAAAAwBAMAAAClLOS0AAAAGFBMVEUAAAAkHiJeRUIcGBi9
+ locQDQ4zJykFBAXJfWDjAAACYUlEQVR4nF2TQY/jIAyFc6lydlG5x8Nyp1Y69wj1PN2I5gzp
+
+""")
+
 
 
 # Test mangling of "From " lines in the body of a message
