@@ -1286,7 +1286,7 @@ sometimes have odd bugs.  Brett Cannon contributed a portable
 implementation that's written in pure Python, which should behave
 identically on all platforms.
 
-\item The \module{UserDict) has a new \class{DictMixin} class which
+\item The \module{UserDict} module has a new \class{DictMixin} class which
 defines all dictionary methods for classes that already have a minimum
 mapping interface.  This greatly simplifies writing classes that need
 to be substitutable for dictionaries, such as the classes in 
@@ -1294,7 +1294,7 @@ the \module{shelve} module.
  
 Adding the mixin as a superclass provides the full dictionary
 interface whenever the class defines \method{__getitem__},
-\method{__setitem__}, \method{__delitem__), and \method{keys}.
+\method{__setitem__}, \method{__delitem__}, and \method{keys}.
 For example:
  
 \begin{verbatim}
@@ -1371,6 +1371,20 @@ stamps, or if they use the tuple API. If used, the feature should be
 activated on an application level instead of trying to enable it on a
 per-use basis.
 
+\item The \module{Tkinter} module now works with a thread-enabled 
+version of Tcl.  Tcl's threading model requires that widgets only be
+accessed from the thread in which they're created; accesses from
+another thread can cause Tcl to panic.  For certain Tcl interfaces,
+\module{Tkinter} will now automatically avoid this by marshalling a
+command, passing it to the correct thread, and waiting for the results
+when a widget is accessed from a different thread.  Other interfaces
+can't be handled automatically but \module{Tkinter} will now raise an
+exception on such an access so that you can at least find out about
+the problem.  See
+\url{http://mail.python.org/pipermail/python-dev/2002-December/031107.html}
+for a more detailed explanation of this change.  (Implemented by
+Martin von L\"owis.)
+
 \item Calling Tcl methods through \module{_tkinter} no longer 
 returns only strings. Instead, if Tcl returns other objects those
 objects are converted to their Python equivalent, if one exists, or
@@ -1392,7 +1406,7 @@ import Tkinter
 Tkinter.wantobjects = 0
 \end{verbatim}
 
-Please report any breakage caused by this change as a bug.
+Any breakage caused by this change should be reported as a bug.
 
 \end{itemize}
 
