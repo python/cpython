@@ -292,6 +292,8 @@ mfsi_getattr(mfsiobject *self, char *name)
 		return PyMac_BuildPoint(self->finfo.fdLocation);
 	else if ( strcmp(name, "Fldr") == 0 )
 		return Py_BuildValue("i", (int)self->finfo.fdFldr);
+	else if ( strcmp(name, "__members__") == 0 )
+		return Py_BuildValue("[sssss]", "Type", "Creator", "Flags", "Location", "Fldr");
 	else
 		return Py_FindMethod(mfsi_methods, (PyObject *)self, name);
 }
