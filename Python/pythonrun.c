@@ -48,6 +48,10 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <console.h>
 #endif
 
+#ifdef __MWERKS__
+#include <SIOUX.h>
+#endif
+
 extern char *getpythonpath();
 
 extern grammar gram; /* From graminit.c */
@@ -641,9 +645,16 @@ goaway(sts)
 	}
 #endif /* TRACE_REFS */
 
+	/* XXXX Jack thinks it would be nicer to pause if any output has
+	** been generated since the last interaction with the user...
+	*/
 #ifdef THINK_C
 	if (sts == 0)
 		console_options.pause_atexit = 0;
+#endif
+#ifdef __MWERKS__
+	if (sts == 0)
+		SIOUXSettings.autocloseonquit = 1;
 #endif
 	exit(sts);
 #endif /* WITH_THREAD */
