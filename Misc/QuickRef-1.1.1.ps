@@ -1,0 +1,6639 @@
+%!PS-Adobe-3.0
+%%BoundingBox: (atend)
+%%Pages: (atend)
+%%PageOrder: (atend)
+%%DocumentFonts: (atend)
+%%Creator: Frame 4.0
+%%DocumentData: Clean7Bit
+%%EndComments
+%%BeginProlog
+%
+% Frame ps_prolog 4.0, for use with Frame 4.0 products
+% This ps_prolog file is Copyright (c) 1986-1993 Frame Technology
+% Corporation.  All rights reserved.  This ps_prolog file may be
+% freely copied and distributed in conjunction with documents created
+% using FrameMaker, FrameBuilder and FrameViewer as long as this 
+% copyright notice is preserved.
+%
+% Frame products normally print colors as their true color on a color printer
+% or as shades of gray, based on luminance, on a black-and white printer. The
+% following flag, if set to True, forces all non-white colors to print as pure
+% black. This has no effect on bitmap images.
+/FMPrintAllColorsAsBlack             false def
+%
+% Frame products can either set their own line screens or use a printer's 
+% default settings. Three flags below control this separately for no 
+% separations, spot separations and process separations. If a flag
+% is true, then the default printer settings will not be changed. If it is
+% false, Frame products will use their own settings from a table based on
+% the printer's resolution.
+/FMUseDefaultNoSeparationScreen      true  def
+/FMUseDefaultSpotSeparationScreen    true  def
+/FMUseDefaultProcessSeparationScreen false def
+%
+% For any given PostScript printer resolution, Frame products have two sets of 
+% screen angles and frequencies for printing process separations, which are 
+% recomended by Adobe. The following variable chooses the higher frequencies
+% when set to true or the lower frequencies when set to false. This is only
+% effective if the appropriate FMUseDefault...SeparationScreen flag is false.
+/FMUseHighFrequencyScreens true def
+%
+% PostScript Level 2 printers contain an "Accurate Screens" feature which can
+% improve process separation rendering at the expense of compute time. This 
+% flag is ignored by PostScript Level 1 printers.
+/FMUseAcccurateScreens true def
+%
+% The following PostScript procedure defines the spot function that Frame
+% products will use for process separations. You may un-comment-out one of
+% the alternative functions below, or use your own.
+%
+% Dot function
+/FMSpotFunction {abs exch abs 2 copy add 1 gt 
+		{1 sub dup mul exch 1 sub dup mul add 1 sub }
+		{dup mul exch dup mul add 1 exch sub }ifelse } def
+%
+% Line function
+% /FMSpotFunction { pop } def
+%
+% Elipse function
+% /FMSpotFunction { dup 5 mul 8 div mul exch dup mul exch add 
+%		sqrt 1 exch sub } def
+%
+%
+/FMversion (4.0) def 
+/FMLevel1 /languagelevel where {pop languagelevel} {1} ifelse 2 lt def
+/FMPColor
+	FMLevel1 {
+		false
+		/colorimage where {pop pop true} if
+	} {
+		true
+	} ifelse
+def
+/FrameDict 400 dict def 
+systemdict /errordict known not {/errordict 10 dict def
+		errordict /rangecheck {stop} put} if
+% The readline in PS 23.0 doesn't recognize cr's as nl's on AppleTalk
+FrameDict /tmprangecheck errordict /rangecheck get put 
+errordict /rangecheck {FrameDict /bug true put} put 
+FrameDict /bug false put 
+mark 
+% Some PS machines read past the CR, so keep the following 3 lines together!
+currentfile 5 string readline
+00
+0000000000
+cleartomark 
+errordict /rangecheck FrameDict /tmprangecheck get put 
+FrameDict /bug get { 
+	/readline {
+		/gstring exch def
+		/gfile exch def
+		/gindex 0 def
+		{
+			gfile read pop 
+			dup 10 eq {exit} if 
+			dup 13 eq {exit} if 
+			gstring exch gindex exch put 
+			/gindex gindex 1 add def 
+		} loop
+		pop 
+		gstring 0 gindex getinterval true 
+		} bind def
+	} if
+/FMshowpage /showpage load def
+/FMquit /quit load def
+/FMFAILURE { 
+	dup = flush 
+	FMshowpage 
+	/Helvetica findfont 12 scalefont setfont
+	72 200 moveto
+	show FMshowpage 
+	FMquit 
+	} def 
+/FMVERSION {
+	FMversion ne {
+		(Frame product version does not match ps_prolog!) FMFAILURE
+		} if
+	} def 
+/FMBADEPSF { 
+	(PostScript Lang. Ref. Man., 2nd Ed., H.2.4 says EPS must not call X              )
+	dup dup (X) search pop exch pop exch pop length 
+	4 -1 roll 
+	putinterval 
+	FMFAILURE
+	} def
+/FMLOCAL {
+	FrameDict begin
+	0 def 
+	end 
+	} def 
+/concatprocs
+	{
+	/proc2 exch cvlit def/proc1 exch cvlit def/newproc proc1 length proc2 length add array def
+	newproc 0 proc1 putinterval newproc proc1 length proc2 putinterval newproc cvx
+}def
+FrameDict begin 
+/FMnone 0 def
+/FMcyan 1 def
+/FMmagenta 2 def
+/FMyellow 3 def
+/FMblack 4 def
+/FMcustom 5 def
+/FrameNegative false def 
+/FrameSepIs FMnone def 
+/FrameSepBlack 0 def
+/FrameSepYellow 0 def
+/FrameSepMagenta 0 def
+/FrameSepCyan 0 def
+/FrameSepRed 1 def
+/FrameSepGreen 1 def
+/FrameSepBlue 1 def
+/FrameCurGray 1 def
+/FrameCurPat null def
+/FrameCurColors [ 0 0 0 1 0 0 0 ] def 
+/FrameColorEpsilon .001 def	
+/eqepsilon {		
+	sub dup 0 lt {neg} if
+	FrameColorEpsilon le
+} bind def
+/FrameCmpColorsCMYK { 
+	2 copy 0 get exch 0 get eqepsilon {
+		2 copy 1 get exch 1 get eqepsilon {
+			2 copy 2 get exch 2 get eqepsilon {
+				3 get exch 3 get eqepsilon
+			} {pop pop false} ifelse
+		}{pop pop false} ifelse
+	} {pop pop false} ifelse
+} bind def
+/FrameCmpColorsRGB { 
+	2 copy 4 get exch 0 get eqepsilon {
+		2 copy 5 get exch 1 get eqepsilon {
+			6 get exch 2 get eqepsilon
+		}{pop pop false} ifelse
+	} {pop pop false} ifelse
+} bind def
+/RGBtoCMYK { 
+	1 exch sub 
+	3 1 roll 
+	1 exch sub 
+	3 1 roll 
+	1 exch sub 
+	3 1 roll 
+	3 copy 
+	2 copy 
+	le { pop } { exch pop } ifelse 
+	2 copy 
+	le { pop } { exch pop } ifelse 
+	dup dup dup 
+	6 1 roll 
+	4 1 roll 
+	7 1 roll 
+	sub 
+	6 1 roll 
+	sub 
+	5 1 roll 
+	sub 
+	4 1 roll 
+} bind def
+/CMYKtoRGB { 
+	dup dup 4 -1 roll add 						  
+	5 1 roll 3 -1 roll add 						  
+	4 1 roll add 								  
+	1 exch sub dup 0 lt {pop 0} if 3 1 roll 	  
+	1 exch sub dup 0 lt {pop 0} if exch 	      
+	1 exch sub dup 0 lt {pop 0} if exch	  		  
+} bind def
+/FrameSepInit {
+	1.0 RealSetgray
+} bind def
+/FrameSetSepColor { 
+	/FrameSepBlue exch def
+	/FrameSepGreen exch def
+	/FrameSepRed exch def
+	/FrameSepBlack exch def
+	/FrameSepYellow exch def
+	/FrameSepMagenta exch def
+	/FrameSepCyan exch def
+	/FrameSepIs FMcustom def
+	setCurrentScreen	
+} bind def
+/FrameSetCyan {
+	/FrameSepBlue 1.0 def
+	/FrameSepGreen 1.0 def
+	/FrameSepRed 0.0 def
+	/FrameSepBlack 0.0 def
+	/FrameSepYellow 0.0 def
+	/FrameSepMagenta 0.0 def
+	/FrameSepCyan 1.0 def
+	/FrameSepIs FMcyan def
+	setCurrentScreen	
+} bind def
+ 
+/FrameSetMagenta {
+	/FrameSepBlue 1.0 def
+	/FrameSepGreen 0.0 def
+	/FrameSepRed 1.0 def
+	/FrameSepBlack 0.0 def
+	/FrameSepYellow 0.0 def
+	/FrameSepMagenta 1.0 def
+	/FrameSepCyan 0.0 def
+	/FrameSepIs FMmagenta def
+	setCurrentScreen
+} bind def
+ 
+/FrameSetYellow {
+	/FrameSepBlue 0.0 def
+	/FrameSepGreen 1.0 def
+	/FrameSepRed 1.0 def
+	/FrameSepBlack 0.0 def
+	/FrameSepYellow 1.0 def
+	/FrameSepMagenta 0.0 def
+	/FrameSepCyan 0.0 def
+	/FrameSepIs FMyellow def
+	setCurrentScreen
+} bind def
+ 
+/FrameSetBlack {
+	/FrameSepBlue 0.0 def
+	/FrameSepGreen 0.0 def
+	/FrameSepRed 0.0 def
+	/FrameSepBlack 1.0 def
+	/FrameSepYellow 0.0 def
+	/FrameSepMagenta 0.0 def
+	/FrameSepCyan 0.0 def
+	/FrameSepIs FMblack def
+	setCurrentScreen
+} bind def
+ 
+/FrameNoSep { 
+	/FrameSepIs FMnone def
+	setCurrentScreen
+} bind def
+/FrameSetSepColors { 
+	FrameDict begin
+	[ exch 1 add 1 roll ]
+	/FrameSepColors  
+	exch def end
+	} bind def
+/FrameColorInSepListCMYK { 
+	FrameSepColors {  
+       		exch dup 3 -1 roll 
+       		FrameCmpColorsCMYK 
+       		{ pop true exit } if
+    	} forall 
+	dup true ne {pop false} if
+	} bind def
+/FrameColorInSepListRGB { 
+	FrameSepColors {  
+       		exch dup 3 -1 roll 
+       		FrameCmpColorsRGB 
+       		{ pop true exit } if
+    	} forall 
+	dup true ne {pop false} if
+	} bind def
+/RealSetgray /setgray load def
+/RealSetrgbcolor /setrgbcolor load def
+/RealSethsbcolor /sethsbcolor load def
+end 
+/setgray { 
+	FrameDict begin
+	FrameSepIs FMnone eq
+		{ RealSetgray } 
+		{ 
+		FrameSepIs FMblack eq 
+			{ RealSetgray } 
+			{ FrameSepIs FMcustom eq 
+			  FrameSepRed 0 eq and
+			  FrameSepGreen 0 eq and
+			  FrameSepBlue 0 eq and {
+			  	RealSetgray
+			  } {
+				1 RealSetgray pop 
+			  } ifelse
+			} ifelse
+		} ifelse
+	end
+} bind def
+/setrgbcolor { 
+	FrameDict begin
+	FrameSepIs FMnone eq
+	{  RealSetrgbcolor }
+	{
+		3 copy [ 4 1 roll ] 
+		FrameColorInSepListRGB
+		{
+				FrameSepBlue eq exch 
+			 	FrameSepGreen eq and exch 
+			 	FrameSepRed eq and
+			 	{ 0 } { 1 } ifelse
+		}
+		{
+			FMPColor {
+				RealSetrgbcolor
+				currentcmykcolor
+			} {
+				RGBtoCMYK
+			} ifelse
+			FrameSepIs FMblack eq
+			{1.0 exch sub 4 1 roll pop pop pop} {
+			FrameSepIs FMyellow eq
+			{pop 1.0 exch sub 3 1 roll pop pop} {
+			FrameSepIs FMmagenta eq
+			{pop pop 1.0 exch sub exch pop } {
+			FrameSepIs FMcyan eq
+			{pop pop pop 1.0 exch sub } 
+			{pop pop pop pop 1} ifelse } ifelse } ifelse } ifelse 
+		} ifelse
+		RealSetgray
+	} 
+	ifelse
+	end
+} bind def
+/sethsbcolor {
+	FrameDict begin
+	FrameSepIs FMnone eq 
+	{ RealSethsbcolor } 
+	{
+		RealSethsbcolor 
+		currentrgbcolor  
+		setrgbcolor 
+	} 
+	ifelse
+	end
+} bind def
+FrameDict begin
+/setcmykcolor where {
+	pop /RealSetcmykcolor /setcmykcolor load def
+} {
+	/RealSetcmykcolor {
+		4 1 roll
+		3 { 3 index add 0 max 1 min 1 exch sub 3 1 roll} repeat 
+		setrgbcolor pop
+	} bind def
+} ifelse
+userdict /setcmykcolor { 
+		FrameDict begin
+		FrameSepIs FMnone eq
+		{ RealSetcmykcolor } 
+		{
+			4 copy [ 5 1 roll ]
+			FrameColorInSepListCMYK
+			{
+				FrameSepBlack eq exch 
+				FrameSepYellow eq and exch 
+				FrameSepMagenta eq and exch 
+				FrameSepCyan eq and 
+				{ 0 } { 1 } ifelse
+			}
+			{
+				FrameSepIs FMblack eq
+				{1.0 exch sub 4 1 roll pop pop pop} {
+				FrameSepIs FMyellow eq
+				{pop 1.0 exch sub 3 1 roll pop pop} {
+				FrameSepIs FMmagenta eq
+				{pop pop 1.0 exch sub exch pop } {
+				FrameSepIs FMcyan eq
+				{pop pop pop 1.0 exch sub } 
+				{pop pop pop pop 1} ifelse } ifelse } ifelse } ifelse 
+			} ifelse
+			RealSetgray
+		}
+		ifelse
+		end
+	} bind put
+FMLevel1 not { 
+	
+	/patProcDict 5 dict dup begin
+		<0f1e3c78f0e1c387> { 3 setlinewidth -1 -1 moveto 9 9 lineto stroke 
+											4 -4 moveto 12 4 lineto stroke
+											-4 4 moveto 4 12 lineto stroke} bind def
+		<0f87c3e1f0783c1e> { 3 setlinewidth -1 9 moveto 9 -1 lineto stroke 
+											-4 4 moveto 4 -4 lineto stroke
+											4 12 moveto 12 4 lineto stroke} bind def
+		<8142241818244281> { 1 setlinewidth -1 9 moveto 9 -1 lineto stroke
+											-1 -1 moveto 9 9 lineto stroke } bind def
+		<03060c183060c081> { 1 setlinewidth -1 -1 moveto 9 9 lineto stroke 
+											4 -4 moveto 12 4 lineto stroke
+											-4 4 moveto 4 12 lineto stroke} bind def
+		<8040201008040201> { 1 setlinewidth -1 9 moveto 9 -1 lineto stroke 
+											-4 4 moveto 4 -4 lineto stroke
+											4 12 moveto 12 4 lineto stroke} bind def
+	end def
+	/patDict 15 dict dup begin
+		/PatternType 1 def		
+		/PaintType 2 def		
+		/TilingType 3 def		
+		/BBox [ 0 0 8 8 ] def 	
+		/XStep 8 def			
+		/YStep 8 def			
+		/PaintProc {
+			begin
+			patProcDict bstring known {
+				patProcDict bstring get exec
+			} {
+				8 8 true [1 0 0 -1 0 8] bstring imagemask
+			} ifelse
+			end
+		} bind def
+	end def
+} if
+/combineColor {
+    FrameSepIs FMnone eq
+	{
+		graymode FMLevel1 or not {
+			
+			[/Pattern [/DeviceCMYK]] setcolorspace
+			FrameCurColors 0 4 getinterval aload pop FrameCurPat setcolor
+		} {
+			FrameCurColors 3 get 1.0 ge {
+				FrameCurGray RealSetgray
+			} {
+				FMPColor graymode and {
+					0 1 3 { 
+						FrameCurColors exch get
+						1 FrameCurGray sub mul
+					} for
+					RealSetcmykcolor
+				} {
+					4 1 6 {
+						FrameCurColors exch get
+						graymode {
+							1 exch sub 1 FrameCurGray sub mul 1 exch sub
+						} {
+							1.0 lt {FrameCurGray} {1} ifelse
+						} ifelse
+					} for
+					RealSetrgbcolor
+				} ifelse
+			} ifelse
+		} ifelse
+	} { 
+		FrameCurColors 0 4 getinterval aload
+		FrameColorInSepListCMYK {
+			FrameSepBlack eq exch 
+			FrameSepYellow eq and exch 
+			FrameSepMagenta eq and exch 
+			FrameSepCyan eq and
+			FrameSepIs FMcustom eq and
+			{ FrameCurGray } { 1 } ifelse
+		} {
+			FrameSepIs FMblack eq
+			{FrameCurGray 1.0 exch sub mul 1.0 exch sub 4 1 roll pop pop pop} {
+			FrameSepIs FMyellow eq
+			{pop FrameCurGray 1.0 exch sub mul 1.0 exch sub 3 1 roll pop pop} {
+			FrameSepIs FMmagenta eq
+			{pop pop FrameCurGray 1.0 exch sub mul 1.0 exch sub exch pop } {
+			FrameSepIs FMcyan eq
+			{pop pop pop FrameCurGray 1.0 exch sub mul 1.0 exch sub } 
+			{pop pop pop pop 1} ifelse } ifelse } ifelse } ifelse 
+		} ifelse
+		graymode FMLevel1 or not {
+			
+			[/Pattern [/DeviceGray]] setcolorspace
+			FrameCurPat setcolor
+		} { 
+			graymode not FMLevel1 and {
+				
+				dup 1 lt {pop FrameCurGray} if
+			} if
+			RealSetgray
+		} ifelse
+	} ifelse
+} bind def
+/savematrix {
+	orgmatrix currentmatrix pop
+	} bind def
+/restorematrix {
+	orgmatrix setmatrix
+	} bind def
+/dmatrix matrix def
+/dpi    72 0 dmatrix defaultmatrix dtransform
+    dup mul exch   dup mul add   sqrt def
+	
+/freq dpi dup 72 div round dup 0 eq {pop 1} if 8 mul div def
+/sangle 1 0 dmatrix defaultmatrix dtransform exch atan def
+/dpiranges   [  2540    2400    1693     1270    1200     635      600      0      ] def
+/CMLowFreqs  [ 100.402  94.8683 89.2289 100.402  94.8683  66.9349  63.2456 47.4342 ] def
+/YLowFreqs   [  95.25   90.0    84.65    95.25   90.0     70.5556  66.6667 50.0    ] def
+/KLowFreqs   [  89.8026 84.8528 79.8088  89.8026 84.8528  74.8355  70.7107 53.033  ] def
+/CLowAngles  [  71.5651 71.5651 71.5651 71.5651  71.5651  71.5651  71.5651 71.5651 ] def
+/MLowAngles  [  18.4349 18.4349 18.4349 18.4349  18.4349  18.4349  18.4349 18.4349 ] def
+/YLowTDot    [  true    true    false    true    true     false    false   false   ] def
+/CMHighFreqs [ 133.87  126.491 133.843  108.503 102.523  100.402   94.8683 63.2456 ] def
+/YHighFreqs  [ 127.0   120.0   126.975  115.455 109.091   95.25    90.0    60.0    ] def
+/KHighFreqs  [ 119.737 113.137 119.713  128.289 121.218   89.8026  84.8528 63.6395 ] def
+/CHighAngles [  71.5651 71.5651 71.5651  70.0169 70.0169  71.5651  71.5651 71.5651 ] def
+/MHighAngles [  18.4349 18.4349 18.4349  19.9831 19.9831  18.4349  18.4349 18.4349 ] def
+/YHighTDot   [  false   false   true     false   false    true     true    false   ] def
+/PatFreq     [	10.5833 10.0     9.4055  10.5833 10.0	  10.5833  10.0	   9.375   ] def
+/screenIndex {
+	0 1 dpiranges length 1 sub { dup dpiranges exch get 1 sub dpi le {exit} {pop} ifelse } for
+} bind def
+/getCyanScreen {
+	FMUseHighFrequencyScreens { CHighAngles CMHighFreqs} {CLowAngles CMLowFreqs} ifelse
+		screenIndex dup 3 1 roll get 3 1 roll get /FMSpotFunction load
+} bind def
+/getMagentaScreen {
+	FMUseHighFrequencyScreens { MHighAngles CMHighFreqs } {MLowAngles CMLowFreqs} ifelse
+		screenIndex dup 3 1 roll get 3 1 roll get /FMSpotFunction load
+} bind def
+/getYellowScreen {
+	FMUseHighFrequencyScreens { YHighTDot YHighFreqs} { YLowTDot YLowFreqs } ifelse
+		screenIndex dup 3 1 roll get 3 1 roll get { 3 div
+			{2 { 1 add 2 div 3 mul dup floor sub 2 mul 1 sub exch} repeat
+			FMSpotFunction } } {/FMSpotFunction load } ifelse
+			0.0 exch
+} bind def
+/getBlackScreen  {
+	FMUseHighFrequencyScreens { KHighFreqs } { KLowFreqs } ifelse
+		screenIndex get 45.0 /FMSpotFunction load 
+} bind def
+/getSpotScreen {
+	getBlackScreen
+} bind def
+/getCompositeScreen {
+	getBlackScreen
+} bind def
+/FMSetScreen 
+	FMLevel1 { /setscreen load 
+	}{ {
+		8 dict begin
+		/HalftoneType 1 def
+		/SpotFunction exch def
+		/Angle exch def
+		/Frequency exch def
+		/AccurateScreens FMUseAcccurateScreens def
+		currentdict end sethalftone
+	} bind } ifelse
+def
+/setDefaultScreen {
+	FMPColor {
+		orgrxfer cvx orggxfer cvx orgbxfer cvx orgxfer cvx setcolortransfer
+	}
+	{
+		orgxfer cvx settransfer
+	} ifelse
+	orgfreq organgle orgproc cvx setscreen
+} bind def
+/setCurrentScreen {
+	FrameSepIs FMnone eq {
+		FMUseDefaultNoSeparationScreen {
+			setDefaultScreen
+		} {
+			getCompositeScreen FMSetScreen
+		} ifelse
+	} {
+		FrameSepIs FMcustom eq {
+			FMUseDefaultSpotSeparationScreen {
+				setDefaultScreen
+			} {
+				getSpotScreen FMSetScreen
+			} ifelse
+		} {
+			FMUseDefaultProcessSeparationScreen {
+				setDefaultScreen
+			} {
+				FrameSepIs FMcyan eq {
+					getCyanScreen FMSetScreen
+				} {
+					FrameSepIs FMmagenta eq {
+						getMagentaScreen FMSetScreen
+					} {
+						FrameSepIs FMyellow eq {
+							getYellowScreen FMSetScreen
+						} {
+							getBlackScreen FMSetScreen
+						} ifelse
+					} ifelse
+				} ifelse
+			} ifelse
+		} ifelse
+	} ifelse 
+} bind def
+end
+	/gstring FMLOCAL
+	/gfile FMLOCAL
+	/gindex FMLOCAL
+	/orgrxfer FMLOCAL
+	/orggxfer FMLOCAL
+	/orgbxfer FMLOCAL
+	/orgxfer FMLOCAL
+	/orgproc FMLOCAL
+	/orgrproc FMLOCAL
+	/orggproc FMLOCAL
+	/orgbproc FMLOCAL
+	/organgle FMLOCAL
+	/orgrangle FMLOCAL
+	/orggangle FMLOCAL
+	/orgbangle FMLOCAL
+	/orgfreq FMLOCAL
+	/orgrfreq FMLOCAL
+	/orggfreq FMLOCAL
+	/orgbfreq FMLOCAL
+	/yscale FMLOCAL
+	/xscale FMLOCAL
+	/edown FMLOCAL
+	/manualfeed FMLOCAL
+	/paperheight FMLOCAL
+	/paperwidth FMLOCAL
+/FMDOCUMENT { 
+	array /FMfonts exch def 
+	/#copies exch def
+	FrameDict begin
+	0 ne /manualfeed exch def
+	/paperheight exch def
+	/paperwidth exch def
+	0 ne /FrameNegative exch def 
+	0 ne /edown exch def 
+	/yscale exch def
+	/xscale exch def
+	FMLevel1 {
+		manualfeed {setmanualfeed} if
+		/FMdicttop countdictstack 1 add def 
+		/FMoptop count def 
+		setpapername 
+		manualfeed {true} {papersize} ifelse 
+		{manualpapersize} {false} ifelse 
+		{desperatepapersize} {false} ifelse 
+		{ (Can't select requested paper size for Frame print job!) FMFAILURE } if
+		count -1 FMoptop {pop pop} for
+		countdictstack -1 FMdicttop {pop end} for 
+		}
+		{{1 dict dup /PageSize [paperwidth paperheight]put setpagedevice}stopped
+		{ (Can't select requested paper size for Frame print job!) FMFAILURE } if
+		 {1 dict dup /ManualFeed manualfeed put setpagedevice } stopped pop }
+	ifelse 
+	
+	FMPColor {
+		currentcolorscreen
+			cvlit /orgproc exch def
+				  /organgle exch def 
+				  /orgfreq exch def
+			cvlit /orgbproc exch def
+				  /orgbangle exch def 
+				  /orgbfreq exch def
+			cvlit /orggproc exch def
+				  /orggangle exch def 
+				  /orggfreq exch def
+			cvlit /orgrproc exch def
+				  /orgrangle exch def 
+				  /orgrfreq exch def
+			currentcolortransfer 
+			FrameNegative {
+				1 1 4 { 
+					pop { 1 exch sub } concatprocs 4 1 roll
+				} for
+				4 copy
+				setcolortransfer
+			} if
+			cvlit /orgxfer exch def
+			cvlit /orgbxfer exch def
+			cvlit /orggxfer exch def
+			cvlit /orgrxfer exch def
+	} {
+		currentscreen 
+			cvlit /orgproc exch def
+				  /organgle exch def 
+				  /orgfreq exch def
+				  
+		currenttransfer 
+		FrameNegative {
+			{ 1 exch sub } concatprocs
+			dup settransfer
+		} if 
+		cvlit /orgxfer exch def
+	} ifelse
+	end 
+} def 
+/pagesave FMLOCAL
+/orgmatrix FMLOCAL
+/landscape FMLOCAL
+/pwid FMLOCAL
+/FMBEGINPAGE { 
+	FrameDict begin 
+	/pagesave save def
+	3.86 setmiterlimit
+	/landscape exch 0 ne def
+	landscape { 
+		90 rotate 0 exch dup /pwid exch def neg translate pop 
+	}{
+		pop /pwid exch def
+	} ifelse
+	edown { [-1 0 0 1 pwid 0] concat } if
+	0 0 moveto paperwidth 0 lineto paperwidth paperheight lineto 
+	0 paperheight lineto 0 0 lineto 1 setgray fill
+	xscale yscale scale
+	/orgmatrix matrix def
+	gsave 
+} def 
+/FMENDPAGE {
+	grestore 
+	pagesave restore
+	end 
+	showpage
+	} def 
+/FMFONTDEFINE { 
+	FrameDict begin
+	findfont 
+	ReEncode 
+	1 index exch 
+	definefont 
+	FMfonts 3 1 roll 
+	put
+	end 
+	} def 
+/FMFILLS {
+	FrameDict begin dup
+	array /fillvals exch def
+	dict /patCache exch def
+	end 
+	} def 
+/FMFILL {
+	FrameDict begin
+	 fillvals 3 1 roll put
+	end 
+	} def 
+/FMNORMALIZEGRAPHICS { 
+	newpath
+	0.0 0.0 moveto
+	1 setlinewidth
+	0 setlinecap
+	0 0 0 sethsbcolor
+	0 setgray 
+	} bind def
+	/fx FMLOCAL
+	/fy FMLOCAL
+	/fh FMLOCAL
+	/fw FMLOCAL
+	/llx FMLOCAL
+	/lly FMLOCAL
+	/urx FMLOCAL
+	/ury FMLOCAL
+/FMBEGINEPSF { 
+	end 
+	/FMEPSF save def 
+	/showpage {} def 
+% See Adobe's "PostScript Language Reference Manual, 2nd Edition", page 714.
+% "...the following operators MUST NOT be used in an EPS file:" (emphasis ours)
+	/banddevice {(banddevice) FMBADEPSF} def
+	/clear {(clear) FMBADEPSF} def
+	/cleardictstack {(cleardictstack) FMBADEPSF} def 
+	/copypage {(copypage) FMBADEPSF} def
+	/erasepage {(erasepage) FMBADEPSF} def
+	/exitserver {(exitserver) FMBADEPSF} def
+	/framedevice {(framedevice) FMBADEPSF} def
+	/grestoreall {(grestoreall) FMBADEPSF} def
+	/initclip {(initclip) FMBADEPSF} def
+	/initgraphics {(initgraphics) FMBADEPSF} def
+	/initmatrix {(initmatrix) FMBADEPSF} def
+	/quit {(quit) FMBADEPSF} def
+	/renderbands {(renderbands) FMBADEPSF} def
+	/setglobal {(setglobal) FMBADEPSF} def
+	/setpagedevice {(setpagedevice) FMBADEPSF} def
+	/setshared {(setshared) FMBADEPSF} def
+	/startjob {(startjob) FMBADEPSF} def
+	/lettertray {(lettertray) FMBADEPSF} def
+	/letter {(letter) FMBADEPSF} def
+	/lettersmall {(lettersmall) FMBADEPSF} def
+	/11x17tray {(11x17tray) FMBADEPSF} def
+	/11x17 {(11x17) FMBADEPSF} def
+	/ledgertray {(ledgertray) FMBADEPSF} def
+	/ledger {(ledger) FMBADEPSF} def
+	/legaltray {(legaltray) FMBADEPSF} def
+	/legal {(legal) FMBADEPSF} def
+	/statementtray {(statementtray) FMBADEPSF} def
+	/statement {(statement) FMBADEPSF} def
+	/executivetray {(executivetray) FMBADEPSF} def
+	/executive {(executive) FMBADEPSF} def
+	/a3tray {(a3tray) FMBADEPSF} def
+	/a3 {(a3) FMBADEPSF} def
+	/a4tray {(a4tray) FMBADEPSF} def
+	/a4 {(a4) FMBADEPSF} def
+	/a4small {(a4small) FMBADEPSF} def
+	/b4tray {(b4tray) FMBADEPSF} def
+	/b4 {(b4) FMBADEPSF} def
+	/b5tray {(b5tray) FMBADEPSF} def
+	/b5 {(b5) FMBADEPSF} def
+	FMNORMALIZEGRAPHICS 
+	[/fy /fx /fh /fw /ury /urx /lly /llx] {exch def} forall 
+	fx fw 2 div add fy fh 2 div add  translate
+	rotate
+	fw 2 div neg fh 2 div neg translate
+	fw urx llx sub div fh ury lly sub div scale 
+	llx neg lly neg translate 
+	/FMdicttop countdictstack 1 add def 
+	/FMoptop count def 
+	} bind def
+/FMENDEPSF {
+	count -1 FMoptop {pop pop} for 
+	countdictstack -1 FMdicttop {pop end} for 
+	FMEPSF restore
+	FrameDict begin 
+	} bind def
+FrameDict begin 
+/setmanualfeed {
+%%BeginFeature *ManualFeed True
+	 statusdict /manualfeed true put
+%%EndFeature
+	} bind def
+/max {2 copy lt {exch} if pop} bind def
+/min {2 copy gt {exch} if pop} bind def
+/inch {72 mul} def
+/pagedimen { 
+	paperheight sub abs 16 lt exch 
+	paperwidth sub abs 16 lt and
+	{/papername exch def} {pop} ifelse
+	} bind def
+	/papersizedict FMLOCAL
+/setpapername { 
+	/papersizedict 14 dict def 
+	papersizedict begin
+	/papername /unknown def 
+		/Letter 8.5 inch 11.0 inch pagedimen
+		/LetterSmall 7.68 inch 10.16 inch pagedimen
+		/Tabloid 11.0 inch 17.0 inch pagedimen
+		/Ledger 17.0 inch 11.0 inch pagedimen
+		/Legal 8.5 inch 14.0 inch pagedimen
+		/Statement 5.5 inch 8.5 inch pagedimen
+		/Executive 7.5 inch 10.0 inch pagedimen
+		/A3 11.69 inch 16.5 inch pagedimen
+		/A4 8.26 inch 11.69 inch pagedimen
+		/A4Small 7.47 inch 10.85 inch pagedimen
+		/B4 10.125 inch 14.33 inch pagedimen
+		/B5 7.16 inch 10.125 inch pagedimen
+	end
+	} bind def
+/papersize {
+	papersizedict begin
+		/Letter {lettertray letter} def
+		/LetterSmall {lettertray lettersmall} def
+		/Tabloid {11x17tray 11x17} def
+		/Ledger {ledgertray ledger} def
+		/Legal {legaltray legal} def
+		/Statement {statementtray statement} def
+		/Executive {executivetray executive} def
+		/A3 {a3tray a3} def
+		/A4 {a4tray a4} def
+		/A4Small {a4tray a4small} def
+		/B4 {b4tray b4} def
+		/B5 {b5tray b5} def
+		/unknown {unknown} def
+	papersizedict dup papername known {papername} {/unknown} ifelse get
+	end
+	statusdict begin stopped end 
+	} bind def
+/manualpapersize {
+	papersizedict begin
+		/Letter {letter} def
+		/LetterSmall {lettersmall} def
+		/Tabloid {11x17} def
+		/Ledger {ledger} def
+		/Legal {legal} def
+		/Statement {statement} def
+		/Executive {executive} def
+		/A3 {a3} def
+		/A4 {a4} def
+		/A4Small {a4small} def
+		/B4 {b4} def
+		/B5 {b5} def
+		/unknown {unknown} def
+	papersizedict dup papername known {papername} {/unknown} ifelse get
+	end
+	stopped 
+	} bind def
+/desperatepapersize {
+	statusdict /setpageparams known
+		{
+		paperwidth paperheight 0 1 
+		statusdict begin
+		{setpageparams} stopped 
+		end
+		} {true} ifelse 
+	} bind def
+/DiacriticEncoding [
+/.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef
+/.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef
+/.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef
+/.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef
+/.notdef /.notdef /.notdef /.notdef /space /exclam /quotedbl
+/numbersign /dollar /percent /ampersand /quotesingle /parenleft
+/parenright /asterisk /plus /comma /hyphen /period /slash /zero /one
+/two /three /four /five /six /seven /eight /nine /colon /semicolon
+/less /equal /greater /question /at /A /B /C /D /E /F /G /H /I /J /K
+/L /M /N /O /P /Q /R /S /T /U /V /W /X /Y /Z /bracketleft /backslash
+/bracketright /asciicircum /underscore /grave /a /b /c /d /e /f /g /h
+/i /j /k /l /m /n /o /p /q /r /s /t /u /v /w /x /y /z /braceleft /bar
+/braceright /asciitilde /.notdef /Adieresis /Aring /Ccedilla /Eacute
+/Ntilde /Odieresis /Udieresis /aacute /agrave /acircumflex /adieresis
+/atilde /aring /ccedilla /eacute /egrave /ecircumflex /edieresis
+/iacute /igrave /icircumflex /idieresis /ntilde /oacute /ograve
+/ocircumflex /odieresis /otilde /uacute /ugrave /ucircumflex
+/udieresis /dagger /.notdef /cent /sterling /section /bullet
+/paragraph /germandbls /registered /copyright /trademark /acute
+/dieresis /.notdef /AE /Oslash /.notdef /.notdef /.notdef /.notdef
+/yen /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef
+/ordfeminine /ordmasculine /.notdef /ae /oslash /questiondown
+/exclamdown /logicalnot /.notdef /florin /.notdef /.notdef
+/guillemotleft /guillemotright /ellipsis /.notdef /Agrave /Atilde
+/Otilde /OE /oe /endash /emdash /quotedblleft /quotedblright
+/quoteleft /quoteright /.notdef /.notdef /ydieresis /Ydieresis
+/fraction /currency /guilsinglleft /guilsinglright /fi /fl /daggerdbl
+/periodcentered /quotesinglbase /quotedblbase /perthousand
+/Acircumflex /Ecircumflex /Aacute /Edieresis /Egrave /Iacute
+/Icircumflex /Idieresis /Igrave /Oacute /Ocircumflex /.notdef /Ograve
+/Uacute /Ucircumflex /Ugrave /dotlessi /circumflex /tilde /macron
+/breve /dotaccent /ring /cedilla /hungarumlaut /ogonek /caron
+] def
+/ReEncode { 
+	dup 
+	length 
+	dict begin 
+	{
+	1 index /FID ne 
+		{def} 
+		{pop pop} ifelse 
+	} forall 
+	0 eq {/Encoding DiacriticEncoding def} if 
+	currentdict 
+	end 
+	} bind def
+FMPColor 
+	
+	{
+	/BEGINBITMAPCOLOR { 
+		BITMAPCOLOR} def
+	/BEGINBITMAPCOLORc { 
+		BITMAPCOLORc} def
+	/BEGINBITMAPTRUECOLOR { 
+		BITMAPTRUECOLOR } def
+	/BEGINBITMAPTRUECOLORc { 
+		BITMAPTRUECOLORc } def
+	}
+	
+	{
+	/BEGINBITMAPCOLOR { 
+		BITMAPGRAY} def
+	/BEGINBITMAPCOLORc { 
+		BITMAPGRAYc} def
+	/BEGINBITMAPTRUECOLOR { 
+		BITMAPTRUEGRAY } def
+	/BEGINBITMAPTRUECOLORc { 
+		BITMAPTRUEGRAYc } def
+	}
+ifelse
+/K { 
+	FMPrintAllColorsAsBlack {
+		dup 1 eq 2 index 1 eq and 3 index 1 eq and not
+			{7 {pop} repeat 0 0 0 1 0 0 0} if
+	} if 
+	FrameCurColors astore 
+	pop combineColor
+} bind def
+/graymode true def
+	/bwidth FMLOCAL
+	/bpside FMLOCAL
+	/bstring FMLOCAL
+	/onbits FMLOCAL
+	/offbits FMLOCAL
+	/xindex FMLOCAL
+	/yindex FMLOCAL
+	/x FMLOCAL
+	/y FMLOCAL
+/setPatternMode {
+	FMLevel1 {
+		/bwidth  exch def
+		/bpside  exch def
+		/bstring exch def
+		/onbits 0 def  /offbits 0 def
+		freq sangle landscape {90 add} if 
+			{/y exch def
+			 /x exch def
+			 /xindex x 1 add 2 div bpside mul cvi def
+			 /yindex y 1 add 2 div bpside mul cvi def
+			 bstring yindex bwidth mul xindex 8 idiv add get
+			 1 7 xindex 8 mod sub bitshift and 0 ne FrameNegative {not} if
+			 {/onbits  onbits  1 add def 1}
+			 {/offbits offbits 1 add def 0}
+			 ifelse
+			}
+			setscreen
+		offbits offbits onbits add div FrameNegative {1.0 exch sub} if
+		/FrameCurGray exch def
+	} { 
+		pop pop
+		dup patCache exch known {
+			patCache exch get
+		} { 
+			dup
+			patDict /bstring 3 -1 roll put
+			patDict 
+			9 PatFreq screenIndex get div dup matrix scale
+			makepattern
+			dup 
+			patCache 4 -1 roll 3 -1 roll put
+		} ifelse
+		/FrameCurGray 0 def
+		/FrameCurPat exch def
+	} ifelse
+	/graymode false def
+	combineColor
+} bind def
+/setGrayScaleMode {
+	graymode not {
+		/graymode true def
+		FMLevel1 {
+			setCurrentScreen
+		} if
+	} if
+	/FrameCurGray exch def
+	combineColor
+} bind def
+/normalize {
+	transform round exch round exch itransform
+	} bind def
+/dnormalize {
+	dtransform round exch round exch idtransform
+	} bind def
+/lnormalize { 
+	0 dtransform exch cvi 2 idiv 2 mul 1 add exch idtransform pop
+	} bind def
+/H { 
+	lnormalize setlinewidth
+	} bind def
+/Z {
+	setlinecap
+	} bind def
+	
+/PFill {
+	graymode FMLevel1 or not {
+		gsave 1 setgray eofill grestore
+	} if
+} bind def
+/PStroke {
+	graymode FMLevel1 or not {
+		gsave 1 setgray stroke grestore
+	} if
+	stroke
+} bind def
+	/fillvals FMLOCAL
+/X { 
+	fillvals exch get
+	dup type /stringtype eq
+	{8 1 setPatternMode} 
+	{setGrayScaleMode}
+	ifelse
+	} bind def
+/V { 
+	PFill gsave eofill grestore
+	} bind def
+/Vclip {
+	clip
+	} bind def
+/Vstrk {
+	currentlinewidth exch setlinewidth PStroke setlinewidth
+	} bind def
+/N { 
+	PStroke
+	} bind def
+/Nclip {
+	strokepath clip newpath
+	} bind def
+/Nstrk {
+	currentlinewidth exch setlinewidth PStroke setlinewidth
+	} bind def
+/M {newpath moveto} bind def
+/E {lineto} bind def
+/D {curveto} bind def
+/O {closepath} bind def
+	/n FMLOCAL
+/L { 
+ 	/n exch def
+	newpath
+	normalize
+	moveto 
+	2 1 n {pop normalize lineto} for
+	} bind def
+/Y { 
+	L 
+	closepath
+	} bind def
+	/x1 FMLOCAL
+	/x2 FMLOCAL
+	/y1 FMLOCAL
+	/y2 FMLOCAL
+/R { 
+	/y2 exch def
+	/x2 exch def
+	/y1 exch def
+	/x1 exch def
+	x1 y1
+	x2 y1
+	x2 y2
+	x1 y2
+	4 Y 
+	} bind def
+	/rad FMLOCAL
+/rarc 
+	{rad 
+	 arcto
+	} bind def
+/RR { 
+	/rad exch def
+	normalize
+	/y2 exch def
+	/x2 exch def
+	normalize
+	/y1 exch def
+	/x1 exch def
+	mark
+	newpath
+	{
+	x1 y1 rad add moveto
+	x1 y2 x2 y2 rarc
+	x2 y2 x2 y1 rarc
+	x2 y1 x1 y1 rarc
+	x1 y1 x1 y2 rarc
+	closepath
+	} stopped {x1 y1 x2 y2 R} if 
+	cleartomark
+	} bind def
+/RRR { 
+	/rad exch def
+	normalize /y4 exch def /x4 exch def
+	normalize /y3 exch def /x3 exch def
+	normalize /y2 exch def /x2 exch def
+	normalize /y1 exch def /x1 exch def
+	newpath
+	normalize moveto 
+	mark
+	{
+	x2 y2 x3 y3 rarc
+	x3 y3 x4 y4 rarc
+	x4 y4 x1 y1 rarc
+	x1 y1 x2 y2 rarc
+	closepath
+	} stopped
+	 {x1 y1 x2 y2 x3 y3 x4 y4 newpath moveto lineto lineto lineto closepath} if
+	cleartomark
+	} bind def
+/C { 
+	grestore
+	gsave
+	R 
+	clip
+	setCurrentScreen
+} bind def
+/CP { 
+	grestore
+	gsave
+	Y 
+	clip
+	setCurrentScreen
+} bind def
+	/FMpointsize FMLOCAL
+/F { 
+	FMfonts exch get
+	FMpointsize scalefont
+	setfont
+	} bind def
+/Q { 
+	/FMpointsize exch def
+	F 
+	} bind def
+/T { 
+	moveto show
+	} bind def
+/RF { 
+	rotate
+	0 ne {-1 1 scale} if
+	} bind def
+/TF { 
+	gsave
+	moveto 
+	RF
+	show
+	grestore
+	} bind def
+/P { 
+	moveto
+	0 32 3 2 roll widthshow
+	} bind def
+/PF { 
+	gsave
+	moveto 
+	RF
+	0 32 3 2 roll widthshow
+	grestore
+	} bind def
+/S { 
+	moveto
+	0 exch ashow
+	} bind def
+/SF { 
+	gsave
+	moveto
+	RF
+	0 exch ashow
+	grestore
+	} bind def
+/B { 
+	moveto
+	0 32 4 2 roll 0 exch awidthshow
+	} bind def
+/BF { 
+	gsave
+	moveto
+	RF
+	0 32 4 2 roll 0 exch awidthshow
+	grestore
+	} bind def
+/G { 
+	gsave
+	newpath
+	normalize translate 0.0 0.0 moveto 
+	dnormalize scale 
+	0.0 0.0 1.0 5 3 roll arc 
+	closepath 
+	PFill fill
+	grestore
+	} bind def
+/Gstrk {
+	savematrix
+    newpath
+    2 index 2 div add exch 3 index 2 div sub exch 
+    normalize 2 index 2 div sub exch 3 index 2 div add exch 
+    translate
+    scale 
+    0.0 0.0 1.0 5 3 roll arc 
+    restorematrix
+    currentlinewidth exch setlinewidth PStroke setlinewidth
+    } bind def
+/Gclip { 
+	newpath
+	savematrix
+	normalize translate 0.0 0.0 moveto 
+	dnormalize scale 
+	0.0 0.0 1.0 5 3 roll arc 
+	closepath 
+	clip newpath
+	restorematrix
+	} bind def
+/GG { 
+	gsave
+	newpath
+	normalize translate 0.0 0.0 moveto 
+	rotate 
+	dnormalize scale 
+	0.0 0.0 1.0 5 3 roll arc 
+	closepath
+	PFill
+	fill
+	grestore
+	} bind def
+/GGclip { 
+	savematrix
+	newpath
+    normalize translate 0.0 0.0 moveto 
+    rotate 
+    dnormalize scale 
+    0.0 0.0 1.0 5 3 roll arc 
+    closepath
+	clip newpath
+	restorematrix
+	} bind def
+/GGstrk { 
+	savematrix
+    newpath
+    normalize translate 0.0 0.0 moveto 
+    rotate 
+    dnormalize scale 
+    0.0 0.0 1.0 5 3 roll arc 
+    closepath 
+	restorematrix
+    currentlinewidth exch setlinewidth PStroke setlinewidth
+	} bind def
+/A { 
+	gsave
+	savematrix
+	newpath
+	2 index 2 div add exch 3 index 2 div sub exch 
+	normalize 2 index 2 div sub exch 3 index 2 div add exch 
+	translate 
+	scale 
+	0.0 0.0 1.0 5 3 roll arc 
+	restorematrix
+	PStroke
+	grestore
+	} bind def
+/Aclip {
+	newpath
+	savematrix
+	normalize translate 0.0 0.0 moveto 
+	dnormalize scale 
+	0.0 0.0 1.0 5 3 roll arc 
+	closepath 
+	strokepath clip newpath
+	restorematrix
+} bind def
+/Astrk {
+	Gstrk
+} bind def
+/AA { 
+	gsave
+	savematrix
+	newpath
+	
+	3 index 2 div add exch 4 index 2 div sub exch 
+	
+	normalize 3 index 2 div sub exch 4 index 2 div add exch
+	translate 
+	rotate 
+	scale 
+	0.0 0.0 1.0 5 3 roll arc 
+	restorematrix
+	PStroke
+	grestore
+	} bind def
+/AAclip {
+	savematrix
+	newpath
+    normalize translate 0.0 0.0 moveto 
+    rotate 
+    dnormalize scale 
+    0.0 0.0 1.0 5 3 roll arc 
+    closepath
+	strokepath clip newpath
+	restorematrix
+} bind def
+/AAstrk {
+	GGstrk
+} bind def
+	/x FMLOCAL
+	/y FMLOCAL
+	/w FMLOCAL
+	/h FMLOCAL
+	/xx FMLOCAL
+	/yy FMLOCAL
+	/ww FMLOCAL
+	/hh FMLOCAL
+	/FMsaveobject FMLOCAL
+	/FMoptop FMLOCAL
+	/FMdicttop FMLOCAL
+/BEGINPRINTCODE { 
+	/FMdicttop countdictstack 1 add def 
+	/FMoptop count 7 sub def 
+	/FMsaveobject save def
+	userdict begin 
+	/showpage {} def 
+	FMNORMALIZEGRAPHICS 
+	3 index neg 3 index neg translate
+	} bind def
+/ENDPRINTCODE {
+	count -1 FMoptop {pop pop} for 
+	countdictstack -1 FMdicttop {pop end} for 
+	FMsaveobject restore 
+	} bind def
+/gn { 
+	0 
+	{	46 mul 
+		cf read pop 
+		32 sub 
+		dup 46 lt {exit} if 
+		46 sub add 
+		} loop
+	add 
+	} bind def
+	/str FMLOCAL
+/cfs { 
+	/str sl string def 
+	0 1 sl 1 sub {str exch val put} for 
+	str def 
+	} bind def
+/ic [ 
+	0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0223
+	0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0223
+	0
+	{0 hx} {1 hx} {2 hx} {3 hx} {4 hx} {5 hx} {6 hx} {7 hx} {8 hx} {9 hx}
+	{10 hx} {11 hx} {12 hx} {13 hx} {14 hx} {15 hx} {16 hx} {17 hx} {18 hx}
+	{19 hx} {gn hx} {0} {1} {2} {3} {4} {5} {6} {7} {8} {9} {10} {11} {12}
+	{13} {14} {15} {16} {17} {18} {19} {gn} {0 wh} {1 wh} {2 wh} {3 wh}
+	{4 wh} {5 wh} {6 wh} {7 wh} {8 wh} {9 wh} {10 wh} {11 wh} {12 wh}
+	{13 wh} {14 wh} {gn wh} {0 bl} {1 bl} {2 bl} {3 bl} {4 bl} {5 bl} {6 bl}
+	{7 bl} {8 bl} {9 bl} {10 bl} {11 bl} {12 bl} {13 bl} {14 bl} {gn bl}
+	{0 fl} {1 fl} {2 fl} {3 fl} {4 fl} {5 fl} {6 fl} {7 fl} {8 fl} {9 fl}
+	{10 fl} {11 fl} {12 fl} {13 fl} {14 fl} {gn fl}
+	] def
+	/sl FMLOCAL
+	/val FMLOCAL
+	/ws FMLOCAL
+	/im FMLOCAL
+	/bs FMLOCAL
+	/cs FMLOCAL
+	/len FMLOCAL
+	/pos FMLOCAL
+/ms { 
+	/sl exch def 
+	/val 255 def 
+	/ws cfs 
+	/im cfs 
+	/val 0 def 
+	/bs cfs 
+	/cs cfs 
+	} bind def
+400 ms 
+/ip { 
+	is 
+	0 
+	cf cs readline pop 
+	{	ic exch get exec 
+		add 
+		} forall 
+	pop 
+	
+	} bind def
+/rip { 
+	   
+	  
+	  bis ris copy pop 
+      is
+      0
+      cf cs readline pop 
+      {       ic exch get exec 
+              add 
+              } forall 
+	  pop pop 
+	  ris gis copy pop 
+	  dup is exch 
+	  
+      cf cs readline pop 
+      {       ic exch get exec 
+              add 
+              } forall 
+	  pop pop
+	  gis bis copy pop 
+	  dup add is exch 
+	  
+      cf cs readline pop 
+      {       ic exch get exec 
+              add 
+              } forall 
+      pop 
+      
+      } bind def
+/wh { 
+	/len exch def 
+	/pos exch def 
+	ws 0 len getinterval im pos len getinterval copy pop
+	pos len 
+	} bind def
+/bl { 
+	/len exch def 
+	/pos exch def 
+	bs 0 len getinterval im pos len getinterval copy pop
+	pos len 
+	} bind def
+/s1 1 string def
+/fl { 
+	/len exch def 
+	/pos exch def 
+	/val cf s1 readhexstring pop 0 get def
+	pos 1 pos len add 1 sub {im exch val put} for
+	pos len 
+	} bind def
+/hx { 
+	3 copy getinterval 
+	cf exch readhexstring pop pop 
+	} bind def
+	/h FMLOCAL
+	/w FMLOCAL
+	/d FMLOCAL
+	/lb FMLOCAL
+	/bitmapsave FMLOCAL
+	/is FMLOCAL
+	/cf FMLOCAL
+/wbytes { 
+      dup dup
+      24 eq { pop pop 3 mul }
+      { 8 eq {pop} {1 eq {7 add 8 idiv} {3 add 4 idiv} ifelse} ifelse } ifelse
+	} bind def
+/BEGINBITMAPBWc { 
+	1 {} COMMONBITMAPc
+	} bind def
+/BEGINBITMAPGRAYc { 
+	8 {} COMMONBITMAPc
+	} bind def
+/BEGINBITMAP2BITc { 
+	2 {} COMMONBITMAPc
+	} bind def
+/COMMONBITMAPc { 
+		 
+	/r exch def
+	/d exch def
+	gsave
+	
+	3 index 2 div add exch	
+	4 index 2 div add exch	
+	translate		
+	rotate			
+	1 index 2 div neg	
+	1 index 2 div neg	
+	translate		
+	scale			
+	/h exch def /w exch def
+	/lb w d wbytes def 
+	sl lb lt {lb ms} if 
+	/bitmapsave save def 
+	r                    
+	/is im 0 lb getinterval def 
+	ws 0 lb getinterval is copy pop 
+	/cf currentfile def 
+	w h d [w 0 0 h neg 0 h] 
+	{ip} image 
+	bitmapsave restore 
+	grestore
+	} bind def
+/BEGINBITMAPBW { 
+	1 {} COMMONBITMAP
+	} bind def
+/BEGINBITMAPGRAY { 
+	8 {} COMMONBITMAP
+	} bind def
+/BEGINBITMAP2BIT { 
+	2 {} COMMONBITMAP
+	} bind def
+/COMMONBITMAP { 
+	/r exch def
+	/d exch def
+	gsave
+	
+	3 index 2 div add exch	
+	4 index 2 div add exch	
+	translate		
+	rotate			
+	1 index 2 div neg	
+	1 index 2 div neg	
+	translate		
+	scale			
+	/h exch def /w exch def
+	/bitmapsave save def 
+	r                    
+	/is w d wbytes string def
+	/cf currentfile def 
+	w h d [w 0 0 h neg 0 h] 
+	{cf is readhexstring pop} image
+	bitmapsave restore 
+	grestore
+	} bind def
+/ngrayt 256 array def
+/nredt 256 array def
+/nbluet 256 array def
+/ngreent 256 array def
+	/gryt FMLOCAL
+	/blut FMLOCAL
+	/grnt FMLOCAL
+	/redt FMLOCAL
+	/indx FMLOCAL
+	/cynu FMLOCAL
+	/magu FMLOCAL
+	/yelu FMLOCAL
+	/k FMLOCAL
+	/u FMLOCAL
+FMLevel1 {
+/colorsetup {
+	currentcolortransfer
+	/gryt exch def
+	/blut exch def
+	/grnt exch def
+	/redt exch def
+	0 1 255 {
+		/indx exch def
+		/cynu 1 red indx get 255 div sub def
+		/magu 1 green indx get 255 div sub def
+		/yelu 1 blue indx get 255 div sub def
+		/k cynu magu min yelu min def
+		/u k currentundercolorremoval exec def
+%		/u 0 def
+		nredt indx 1 0 cynu u sub max sub redt exec put
+		ngreent indx 1 0 magu u sub max sub grnt exec put
+		nbluet indx 1 0 yelu u sub max sub blut exec put
+		ngrayt indx 1 k currentblackgeneration exec sub gryt exec put
+	} for
+	{255 mul cvi nredt exch get}
+	{255 mul cvi ngreent exch get}
+	{255 mul cvi nbluet exch get}
+	{255 mul cvi ngrayt exch get}
+	setcolortransfer
+	{pop 0} setundercolorremoval
+	{} setblackgeneration
+	} bind def
+}
+{
+/colorSetup2 {
+	[ /Indexed /DeviceRGB 255 
+		{dup red exch get 255 div 
+		 exch dup green exch get 255 div 
+		 exch blue exch get 255 div}
+	] setcolorspace
+} bind def
+} ifelse
+	/tran FMLOCAL
+/fakecolorsetup {
+	/tran 256 string def
+	0 1 255 {/indx exch def 
+		tran indx
+		red indx get 77 mul
+		green indx get 151 mul
+		blue indx get 28 mul
+		add add 256 idiv put} for
+	currenttransfer
+	{255 mul cvi tran exch get 255.0 div}
+	exch concatprocs settransfer
+} bind def
+/BITMAPCOLOR { 
+	/d 8 def
+	gsave
+	
+	3 index 2 div add exch	
+	4 index 2 div add exch	
+	translate		
+	rotate			
+	1 index 2 div neg	
+	1 index 2 div neg	
+	translate		
+	scale			
+	/h exch def /w exch def
+	/bitmapsave save def
+	FMLevel1 {	
+		colorsetup
+		/is w d wbytes string def
+		/cf currentfile def 
+		w h d [w 0 0 h neg 0 h] 
+		{cf is readhexstring pop} {is} {is} true 3 colorimage 
+	} {
+		colorSetup2
+		/is w d wbytes string def
+		/cf currentfile def 
+		7 dict dup begin
+			/ImageType 1 def
+			/Width w def
+			/Height h def
+			/ImageMatrix [w 0 0 h neg 0 h] def
+			/DataSource {cf is readhexstring pop} bind def
+			/BitsPerComponent d def
+			/Decode [0 255] def
+		end image	
+	} ifelse
+	bitmapsave restore 
+	grestore
+	} bind def
+/BITMAPCOLORc { 
+	/d 8 def
+	gsave
+	
+	3 index 2 div add exch	
+	4 index 2 div add exch	
+	translate		
+	rotate			
+	1 index 2 div neg	
+	1 index 2 div neg	
+	translate		
+	scale			
+	/h exch def /w exch def
+	/lb w d wbytes def 
+	sl lb lt {lb ms} if 
+	/bitmapsave save def 
+	FMLevel1 {	
+		colorsetup
+		/is im 0 lb getinterval def 
+		ws 0 lb getinterval is copy pop 
+		/cf currentfile def 
+		w h d [w 0 0 h neg 0 h] 
+		{ip} {is} {is} true 3 colorimage
+	} {
+		colorSetup2
+		/is im 0 lb getinterval def 
+		ws 0 lb getinterval is copy pop 
+		/cf currentfile def 
+		7 dict dup begin
+			/ImageType 1 def
+			/Width w def
+			/Height h def
+			/ImageMatrix [w 0 0 h neg 0 h] def
+			/DataSource {ip} bind def
+			/BitsPerComponent d def
+			/Decode [0 255] def
+		end image	
+	} ifelse
+	bitmapsave restore 
+	grestore
+	} bind def
+/BITMAPTRUECOLORc { 
+	/d 24 def
+        gsave
+ 	
+	3 index 2 div add exch	
+	4 index 2 div add exch	
+	translate		
+	rotate			
+	1 index 2 div neg	
+	1 index 2 div neg	
+	translate		
+	scale			
+	/h exch def /w exch def
+	/lb w d wbytes def 
+	sl lb lt {lb ms} if 
+        /bitmapsave save def 
+        
+	/is im 0 lb getinterval def	
+	/ris im 0 w getinterval def	
+	/gis im w w getinterval def	
+	/bis im w 2 mul w getinterval def 
+        
+        ws 0 lb getinterval is copy pop 
+        /cf currentfile def 
+        w h 8 [w 0 0 h neg 0 h] 
+        {w rip pop ris} {gis} {bis} true 3 colorimage
+        bitmapsave restore 
+        grestore
+        } bind def
+/BITMAPTRUECOLOR { 
+        gsave
+		
+		3 index 2 div add exch	
+		4 index 2 div add exch	
+		translate		
+		rotate			
+		1 index 2 div neg	
+		1 index 2 div neg	
+		translate		
+		scale			
+		/h exch def /w exch def
+        /bitmapsave save def 
+        /is w string def
+        /gis w string def
+        /bis w string def
+        /cf currentfile def 
+        w h 8 [w 0 0 h neg 0 h] 
+        { cf is readhexstring pop } 
+        { cf gis readhexstring pop } 
+        { cf bis readhexstring pop } 
+        true 3 colorimage 
+        bitmapsave restore 
+        grestore
+        } bind def
+/BITMAPTRUEGRAYc { 
+	/d 24 def
+        gsave
+	
+	3 index 2 div add exch	
+	4 index 2 div add exch	
+	translate		
+	rotate			
+	1 index 2 div neg	
+	1 index 2 div neg	
+	translate		
+	scale			
+	/h exch def /w exch def
+	/lb w d wbytes def 
+	sl lb lt {lb ms} if 
+        /bitmapsave save def 
+        
+	/is im 0 lb getinterval def	
+	/ris im 0 w getinterval def	
+	/gis im w w getinterval def	
+	/bis im w 2 mul w getinterval def 
+        ws 0 lb getinterval is copy pop 
+        /cf currentfile def 
+        w h 8 [w 0 0 h neg 0 h] 
+        {w rip pop ris gis bis w gray} image
+        bitmapsave restore 
+        grestore
+        } bind def
+/ww FMLOCAL
+/r FMLOCAL
+/g FMLOCAL
+/b FMLOCAL
+/i FMLOCAL
+/gray { 
+        /ww exch def
+        /b exch def
+        /g exch def
+        /r exch def
+        0 1 ww 1 sub { /i exch def r i get .299 mul g i get .587 mul
+			b i get .114 mul add add r i 3 -1 roll floor cvi put } for
+        r
+        } bind def
+/BITMAPTRUEGRAY { 
+        gsave
+		
+		3 index 2 div add exch	
+		4 index 2 div add exch	
+		translate		
+		rotate			
+		1 index 2 div neg	
+		1 index 2 div neg	
+		translate		
+		scale			
+		/h exch def /w exch def
+        /bitmapsave save def 
+        /is w string def
+        /gis w string def
+        /bis w string def
+        /cf currentfile def 
+        w h 8 [w 0 0 h neg 0 h] 
+        { cf is readhexstring pop 
+          cf gis readhexstring pop 
+          cf bis readhexstring pop w gray}  image
+        bitmapsave restore 
+        grestore
+        } bind def
+/BITMAPGRAY { 
+	8 {fakecolorsetup} COMMONBITMAP
+	} bind def
+/BITMAPGRAYc { 
+	8 {fakecolorsetup} COMMONBITMAPc
+	} bind def
+/ENDBITMAP {
+	} bind def
+end 
+	/ALDsave FMLOCAL
+	/ALDmatrix matrix def ALDmatrix currentmatrix pop
+/StartALD {
+	/ALDsave save def
+	 savematrix
+	 ALDmatrix setmatrix
+	} bind def
+/InALD {
+	 restorematrix
+	} bind def
+/DoneALD {
+	 ALDsave restore
+	} bind def
+/I { setdash } bind def
+/J { [] 0 setdash } bind def
+%%EndProlog
+%%BeginSetup
+(4.0) FMVERSION
+1 1 0 0 595.28 841.89 0 1 7 FMDOCUMENT
+0 0 /Times-Bold FMFONTDEFINE
+1 0 /Times-Roman FMFONTDEFINE
+2 0 /Courier FMFONTDEFINE
+3 0 /Times-Italic FMFONTDEFINE
+4 1 /ZapfDingbats FMFONTDEFINE
+32 FMFILLS
+0 0 FMFILL
+1 0.1 FMFILL
+2 0.3 FMFILL
+3 0.5 FMFILL
+4 0.7 FMFILL
+5 0.9 FMFILL
+6 0.97 FMFILL
+7 1 FMFILL
+8 <0f1e3c78f0e1c387> FMFILL
+9 <0f87c3e1f0783c1e> FMFILL
+10 <cccccccccccccccc> FMFILL
+11 <ffff0000ffff0000> FMFILL
+12 <8142241818244281> FMFILL
+13 <03060c183060c081> FMFILL
+14 <8040201008040201> FMFILL
+16 1 FMFILL
+17 0.9 FMFILL
+18 0.7 FMFILL
+19 0.5 FMFILL
+20 0.3 FMFILL
+21 0.1 FMFILL
+22 0.03 FMFILL
+23 0 FMFILL
+24 <f0e1c3870f1e3c78> FMFILL
+25 <f0783c1e0f87c3e1> FMFILL
+26 <3333333333333333> FMFILL
+27 <0000ffff0000ffff> FMFILL
+28 <7ebddbe7e7dbbd7e> FMFILL
+29 <fcf9f3e7cf9f3f7e> FMFILL
+30 <7fbfdfeff7fbfdfe> FMFILL
+%%EndSetup
+%%Page: "1" 1
+%%BeginPaperSize: A4
+%%EndPaperSize
+595.28 841.89 1 FMBEGINPAGE
+[0 0 0 1 0 0 0]
+[ 0 0 0 0 1 1 1]
+[ 0 1 1 0 1 0 0]
+[ 1 0 1 0 0 1 0]
+[ 1 1 0 0 0 0 1]
+[ 1 0 0 0 0 1 1]
+[ 0 1 0 0 1 0 1]
+[ 0 0 1 0 1 1 0]
+ 8 FrameSetSepColors
+FrameNoSep
+0 0 0 1 0 0 0 K
+J
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 18 Q
+0 X
+0 0 0 1 0 0 0 K
+(A Python Quick Refer) 56.69 773.2 T
+(ence) 227.85 773.2 T
+1 12 Q
+(Postscript version v1.1.1, by Anthony Baxter) 56.69 748.2 T
+(,) 272.87 748.2 T
+2 F
+(<anthony@aaii.oz.au>) 56.69 734.2 T
+(Based on:) 56.69 720.2 T
+(ASCII v1.0; 1994/09/27) 56.69 706.2 T
+1 F
+(Author: Chris Hof) 56.69 692.2 T
+(fmann,) 144.47 692.2 T
+2 F
+(choffman@vicorp.com) 56.69 678.2 T
+1 F
+(Based on) 56.69 664.2 T
+(\245) 56.69 650.2 T
+(Python Bestiary) 70.87 650.2 T
+(,) 147.09 650.2 T
+(by Ken Manheimer) 85.04 636.2 T
+(,) 177.87 636.2 T
+2 F
+(\050ken.manheimer@nist.gov\051) 85.04 622.2 T
+1 F
+(\245) 56.69 608.2 T
+(Python manuals,) 70.87 608.2 T
+(by Guido van Rossum,) 85.04 594.2 T
+2 F
+(\050guido@cwi.nl\051) 85.04 580.2 T
+1 F
+(\245) 56.69 566.2 T
+(python-mode.el,) 70.87 566.2 T
+(by T) 85.04 552.2 T
+(im Peters,) 106.95 552.2 T
+2 F
+(\050tim@ksr.com\051) 85.04 538.2 T
+0 14 Q
+(Invocation Options) 308.98 775.86 T
+2 12 Q
+(python) 308.98 756.2 T
+([-diuv]) 355.18 756.2 T
+([-c) 408.58 756.2 T
+(command |) 433.18 756.2 T
+(script | - ] [args]) 308.98 742.2 T
+(-d) 308.98 728.2 T
+1 F
+(T) 337.32 728.2 T
+(urn on parser debugging output \050for) 344.23 728.2 T
+(wizards only) 337.32 714.2 T
+(, depending on compilation) 398.2 714.2 T
+(options\051.) 337.32 700.2 T
+(-i) 308.98 686.2 T
+-0.35 (When a script is passed as \336rst ar) 337.32 686.2 P
+-0.35 (gument) 494.27 686.2 P
+-0.09 (or the -c option is used, enter interactive) 337.32 672.2 P
+(mode after executing the script or the) 337.32 658.2 T
+(command. It does not read the) 337.32 644.2 T
+($) 337.32 630.2 T
+2 F
+(PYTHONSTARTUP) 343.32 630.2 T
+1 F
+( \336le. This can be) 436.92 630.2 T
+(useful to inspect global variables or a) 337.32 616.2 T
+-0.29 (stack trace when a script raises an excep-) 337.32 602.2 P
+(tion.) 337.32 588.2 T
+2 F
+(-u) 308.98 574.2 T
+1 F
+(Force stdout and stderr to be totally) 337.32 574.2 T
+(unbuf) 337.32 560.2 T
+(fered.) 365.1 560.2 T
+2 F
+(-v) 308.98 546.2 T
+1 F
+(Print a message each time a module is) 337.32 546.2 T
+(initialized, showing the place \050\336lename) 337.32 532.2 T
+(or built-in module\051 from which it is) 337.32 518.2 T
+(loaded.) 337.32 504.2 T
+(-c) 308.98 490.2 T
+2 F
+(command) 321.3 490.2 T
+1 F
+(Specify the command to execute) 337.32 476.2 T
+3 F
+(\050see) 496.96 476.2 T
+-0.01 (next section\051) 337.32 462.2 P
+1 F
+-0.01 (. This terminates the option) 398.3 462.2 P
+(list \050following options are passed as) 337.32 448.2 T
+(ar) 337.32 434.2 T
+(guments to the command\051.) 346.43 434.2 T
+2 F
+(-) 308.98 420.2 T
+1 F
+(anything afterward is passed as options) 337.32 420.2 T
+(to python script or command, not inter-) 337.32 406.2 T
+(preted as an option to interpreter itself.) 337.32 392.2 T
+(script) 308.98 378.2 T
+(is the name of a python \336le to execute) 338.64 378.2 T
+2 F
+(args) 308.98 364.2 T
+1 F
+(are passed to script or command \050in) 340.78 364.2 T
+2 F
+(sys.argv) 337.32 350.2 T
+1 F
+(\051) 394.92 350.2 T
+(If no script or command, Python enters inter-) 308.98 336.2 T
+(active mode. Uses \322) 308.98 322.2 T
+2 F
+(readline) 404.95 322.2 T
+1 F
+(\323 package for) 462.55 322.2 T
+(input, if available.) 308.98 308.2 T
+0 14 Q
+(Envir) 561.26 775.86 T
+(onment V) 595.24 775.86 T
+(ariables) 652.67 775.86 T
+2 12 Q
+(PYTHONPATH) 561.26 756.2 T
+1 F
+(Augments the default search path for module) 561.26 742.2 T
+(\336les. The format is the same as the shell\325) 561.26 728.2 T
+(s) 756.91 728.2 T
+($) 561.26 714.2 T
+2 F
+(PATH) 567.26 714.2 T
+1 F
+(: one or more directory pathnames sep-) 596.06 714.2 T
+(arated by colons.) 561.26 700.2 T
+2 F
+(PYTHONSTARTUP) 561.26 686.2 T
+1 F
+(If this is the name of a readable \336le, the) 561.26 672.2 T
+(Python commands in that \336le are executed) 561.26 658.2 T
+(before the \336rst prompt is displayed in interac-) 561.26 644.2 T
+(tive mode.) 561.26 630.2 T
+2 F
+(PYTHONDEBUG) 561.26 616.2 T
+1 F
+(If non-empty) 561.26 602.2 T
+(, same as) 623.47 602.2 T
+2 F
+(-d) 670.12 602.2 T
+1 F
+( option) 684.52 602.2 T
+2 F
+(PYTHONINSPECT) 561.26 588.2 T
+1 F
+(If non-empty) 561.26 574.2 T
+(, same as) 623.47 574.2 T
+2 F
+(-i) 670.12 574.2 T
+1 F
+( option) 684.52 574.2 T
+2 F
+(PYTHONUNBUFFERED) 561.26 560.2 T
+1 F
+(If non-empty) 561.26 546.2 T
+(, same as) 623.47 546.2 T
+2 F
+(-u) 670.12 546.2 T
+1 F
+( option) 684.52 546.2 T
+2 F
+(PYTHONVERBOSE) 561.26 532.2 T
+1 F
+(If non-empty) 561.26 518.2 T
+(, same as) 623.47 518.2 T
+2 F
+(-v) 670.12 518.2 T
+1 F
+( option) 684.52 518.2 T
+0 14 Q
+(T) 561.26 488.86 T
+(erms used in this document) 569.31 488.86 T
+1 12 Q
+(sequence\320 a string, list or tuple) 561.26 469.2 T
+(suite\320 a series of statements, possibly sepa-) 561.26 455.2 T
+-0.29 (rated by newlines. Must all be at same indenta-) 561.26 441.2 P
+(tion level, except for suites inside compound) 561.26 427.2 T
+(statements) 561.26 413.2 T
+2 F
+(<x>) 561.26 399.2 T
+1 F
+(\320 in a syntax diagram: not literally the) 582.86 399.2 T
+(string \322x\323 but some token referred to as \322x\323) 561.26 385.2 T
+2 F
+([xxx]) 561.26 371.2 T
+1 F
+(\320 in a syntax diagram means \322xxx\323 is) 597.26 371.2 T
+(optional) 561.26 357.2 T
+(x) 561.26 343.2 T
+4 F
+(\325) 570.26 343.2 T
+1 F
+( y\320 means the value of <x> is <y>) 580.32 343.2 T
+(x) 561.26 329.2 T
+4 F
+(\326) 570.26 329.2 T
+1 F
+( y\320 means \322x is equivalent to y\323) 582.45 329.2 T
+0 0 0 1 0 0 0 K
+FMENDPAGE
+%%EndPage: "1" 1
+%%Page: "2" 2
+595.28 841.89 1 FMBEGINPAGE
+[0 0 0 1 0 0 0]
+[ 0 0 0 0 1 1 1]
+[ 0 1 1 0 1 0 0]
+[ 1 0 1 0 0 1 0]
+[ 1 1 0 0 0 0 1]
+[ 1 0 0 0 0 1 1]
+[ 0 1 0 0 1 0 1]
+[ 0 0 1 0 1 1 0]
+ 8 FrameSetSepColors
+FrameNoSep
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 14 Q
+0 X
+0 0 0 1 0 0 0 K
+(Notable lexical entities) 56.69 775.86 T
+108.69 745.01 56.69 745.01 2 L
+V
+1.14 H
+0 Z
+N
+0 12 Q
+(Keywords) 56.69 746.2 T
+2 F
+(and elif from lambda return) 56.69 725.2 T
+-1.08 (break else global not try class) 56.69 711.2 P
+(except if or while continue) 56.69 697.2 T
+-1.08 (exec import pass def f) 56.69 683.2 P
+-1.08 (inally in) 210.78 683.2 P
+(print del or is raise) 56.69 669.2 T
+126.35 640.01 56.69 640.01 2 L
+V
+N
+0 F
+(Illegitimate T) 56.69 641.2 T
+266.61 640.01 125.25 640.01 2 L
+V
+N
+(okens \050only valid in strings\051) 125.25 641.2 T
+2 F
+(@ $ ?) 56.69 620.2 T
+1 F
+(A statement must all be on a single line. T) 56.69 606.2 T
+(o) 258.51 606.2 T
+(break a statement over multiple lines use \322) 56.69 592.2 T
+2 F
+(\134) 260.99 592.2 T
+1 F
+(\323,) 268.19 592.2 T
+(as with the C preprocessor) 56.69 578.2 T
+(.) 183.34 578.2 T
+3 F
+(Exception: can always br) 56.69 564.2 T
+(eak when inside any) 178.57 564.2 T
+2 F
+(\050\051) 56.69 550.2 T
+1 F
+(,) 71.09 550.2 T
+2 F
+([]) 77.09 550.2 T
+3 F
+(, or) 91.49 550.2 T
+2 F
+({}) 111.16 550.2 T
+3 F
+( pair) 125.56 550.2 T
+1 F
+(.) 147.9 550.2 T
+(More than one statement can appear on a line) 56.69 536.2 T
+(if they are separated with semicolons \050\322) 56.69 522.2 T
+2 F
+(;) 247.31 522.2 T
+1 F
+(\323\051) 254.51 522.2 T
+(Comments start with \322) 56.69 508.2 T
+2 F
+(#) 165.03 508.2 T
+1 F
+(\323 and continue to end) 172.23 508.2 T
+(of line.) 56.69 494.2 T
+113.36 465.01 56.69 465.01 2 L
+V
+N
+0 F
+(Identi\336ers:) 56.69 466.2 T
+2 F
+(\050letter|\323_\323\051\050letter|digit|\323_\323\051*) 56.69 445.2 T
+97.36 416.01 56.69 416.01 2 L
+V
+N
+0 F
+(Strings:) 56.69 417.2 T
+2 F
+(\322a string\323 \324another string\325) 56.69 396.2 T
+-1.62 (\324\325\325a string containing embedded) 56.69 382.2 P
+(newlines, and quote \050\324\051 marks,) 56.69 368.2 T
+(can be delimited with triple) 56.69 354.2 T
+(quotes.\325\325\325) 56.69 340.2 T
+422.98 776.01 308.98 776.01 2 L
+V
+N
+0 F
+(String Literal Escapes) 308.98 777.2 T
+1 F
+( \134newline) 308.98 756.2 T
+(Ignored \050escape newline\051) 379.84 756.2 T
+2 F
+(\134\134) 308.98 742.2 T
+1 F
+(Literal backslash \050\134\051) 379.84 742.2 T
+2 F
+(\134e) 308.98 728.2 T
+1 F
+( Escape \050ESC\051) 379.84 728.2 T
+2 F
+(\134v) 308.98 714.2 T
+1 F
+(V) 379.84 714.2 T
+(ertical T) 387.17 714.2 T
+(ab \050VT\051) 426.65 714.2 T
+2 F
+(\134\325) 308.98 700.2 T
+1 F
+(Single quote \050\324\051) 379.84 700.2 T
+2 F
+(\134f) 308.98 686.2 T
+1 F
+(Formfeed \050FF\051) 379.84 686.2 T
+2 F
+(\1340OO) 308.98 672.2 T
+1 F
+(\050zero\051 char with value 0) 379.84 672.2 T
+2 F
+(\134\323) 308.98 658.2 T
+1 F
+(Double quote \050\322\051) 379.84 658.2 T
+2 F
+(\134n) 308.98 644.2 T
+1 F
+(Linefeed \050LF\051) 379.84 644.2 T
+2 F
+(\134) 308.98 630.2 T
+1 F
+(octal value OO) 316.18 630.2 T
+2 F
+(\134a) 308.98 616.2 T
+1 F
+(Bell \050BEL\051) 379.84 616.2 T
+2 F
+(\134r) 308.98 602.2 T
+1 F
+(Carriage Return \050CR\051) 379.84 602.2 T
+2 F
+(\134xXX) 308.98 588.2 T
+1 F
+(char with hex value) 379.84 588.2 T
+2 F
+(XX) 477.15 588.2 T
+1 F
+(\134b) 308.98 574.2 T
+(Backspace \050BS\051) 379.84 574.2 T
+(\134t) 308.98 560.2 T
+(Horizontal T) 379.84 560.2 T
+(ab \050T) 440.66 560.2 T
+(AB\051) 465.35 560.2 T
+(\134<any other char> is left as-is) 308.98 546.2 T
+2 F
+(NULL) 308.98 532.2 T
+1 F
+( byte \050) 337.78 532.2 T
+2 F
+(\134000) 368.44 532.2 T
+1 F
+(\051 is) 397.24 532.2 T
+430.57 530.89 415.24 530.89 2 L
+V
+0.59 H
+N
+(not) 415.24 532.2 T
+( an end-of-string) 430.57 532.2 T
+(marker;) 308.98 518.2 T
+2 F
+(NULL) 349.3 518.2 T
+1 F
+(\325) 376.99 518.2 T
+(s may be imbedded in strings) 380.33 518.2 T
+(Strings \050and tuples\051 are immutable: they can-) 308.98 504.2 T
+(not be modi\336ed.) 308.98 490.2 T
+373.3 461.01 308.98 461.01 2 L
+V
+1.14 H
+N
+0 F
+(Other types:) 308.98 462.2 T
+1 F
+(long integer \050unlimited precision\051:) 308.98 441.2 T
+2 F
+(1234567890L) 340.16 427.2 T
+1 F
+(octal integer:) 308.98 413.2 T
+2 F
+(0177, 017777777777777L) 340.16 399.2 T
+1 F
+(hex integer:) 308.98 385.2 T
+2 F
+(0xFF, 0xFFFFFFFFFFFFL) 340.16 371.2 T
+1 F
+(\337oat:) 308.98 357.2 T
+2 F
+(3.14e-10) 340.16 343.2 T
+1 F
+(tuple of length 0, 1, 2, etc:) 308.98 329.2 T
+2 F
+(\050\051 \0501,\051 \0501,2\051) 340.16 315.2 T
+3 F
+(\050par) 561.26 777.2 T
+(entheses ar) 581.48 777.2 T
+(e optional if len > 0\051) 635.36 777.2 T
+1 F
+(list of length 0, 1, 2, etc:) 561.26 763.2 T
+2 F
+([] [1] [1,2]) 592.44 749.2 T
+1 F
+(dictionary of length 0, 1, 2, etc:) 561.26 735.2 T
+2 F
+-0.23 ({} {1 : \324one\325} {1 : \324one\325,) 592.44 721.2 P
+(\324next\325: \3242nd\325}) 561.26 707.2 T
+3 F
+(\050Indexing is 0-based. Negative indices \050usu-) 561.26 693.2 T
+(ally\051 mean count backwar) 561.26 679.2 T
+(ds fr) 685.8 679.2 T
+(om end of) 707.02 679.2 T
+(sequence.\051) 561.26 665.2 T
+1 F
+( Sequence slicing) 561.26 651.2 T
+-0.79 ([starting-at-index : but-less-than-index]) 595.28 637.2 P
+3 F
+(\050Start defaults to \3240\325; End defaults to) 561.26 623.2 T
+(\324sequence-length\325.\051) 561.26 609.2 T
+2 F
+(a = \0500,1,2,3,4,5,6,7\051) 561.26 595.2 T
+(a[3]) 561.26 581.2 T
+4 F
+(\325) 597.26 581.2 T
+2 F
+(3) 610.65 581.2 T
+(a[-1]) 561.26 567.2 T
+4 F
+(\325) 604.46 567.2 T
+2 F
+(7) 617.85 567.2 T
+(a[2:4]) 561.26 553.2 T
+4 F
+(\325) 611.66 553.2 T
+2 F
+(\0502, 3\051) 621.72 553.2 T
+(a[1:]) 561.26 539.2 T
+4 F
+(\325) 604.46 539.2 T
+2 F
+(\0501, 2, 3, 4, 5, 6, 7\051) 617.85 539.2 T
+(a[:3]) 561.26 525.2 T
+4 F
+(\325) 604.46 525.2 T
+2 F
+(\0500, 1, 2\051) 614.52 525.2 T
+(a[:]) 561.26 511.2 T
+4 F
+(\325) 597.26 511.2 T
+2 F
+(\0500,1,2,3,4,5,6,7\051) 607.32 511.2 T
+3 F
+( \050makes a) 729.72 511.2 T
+(copy of the sequence.\051) 561.26 497.2 T
+0 0 0 1 0 0 0 K
+FMENDPAGE
+%%EndPage: "2" 2
+%%Page: "3" 3
+595.28 841.89 1 FMBEGINPAGE
+[0 0 0 1 0 0 0]
+[ 0 0 0 0 1 1 1]
+[ 0 1 1 0 1 0 0]
+[ 1 0 1 0 0 1 0]
+[ 1 1 0 0 0 0 1]
+[ 1 0 0 0 0 1 1]
+[ 0 1 0 0 1 0 1]
+[ 0 0 1 0 1 1 0]
+ 8 FrameSetSepColors
+FrameNoSep
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 14 Q
+0 X
+0 0 0 1 0 0 0 K
+(Basic T) 56.69 775.86 T
+(ypes and Their Operations) 100.39 775.86 T
+272.69 745.01 56.69 745.01 2 L
+V
+1.14 H
+0 Z
+N
+0 12 Q
+(Comparisions \050de\336ned between any types\051) 56.69 746.2 T
+2 F
+(<) 56.69 725.2 T
+1 F
+(strictly less than) 127.56 725.2 T
+2 F
+(<=) 56.69 711.2 T
+1 F
+(less than or equal) 127.56 711.2 T
+2 F
+(>) 56.69 697.2 T
+1 F
+(strictly greater than) 127.56 697.2 T
+2 F
+(>=) 56.69 683.2 T
+1 F
+(greater than or equal) 127.56 683.2 T
+2 F
+(==) 56.69 669.2 T
+1 F
+(equal) 127.56 669.2 T
+2 F
+(!=) 56.69 655.2 T
+1 F
+(not equal \050 \322) 127.56 655.2 T
+2 F
+(<>) 187.21 655.2 T
+1 F
+(\323 is also) 201.61 655.2 T
+(allowed\051) 127.56 641.2 T
+2 F
+(is) 56.69 627.2 T
+1 F
+(object identity) 127.56 627.2 T
+3 F
+(\050ar) 199.56 627.2 T
+(e) 213.78 627.2 T
+256.1 626.05 222.11 626.05 2 L
+V
+0.58 H
+N
+(objects) 222.11 627.2 T
+(identical, not values\051) 127.56 613.2 T
+2 F
+(is not) 56.69 599.2 T
+1 F
+(negated object identity) 127.56 599.2 T
+2 F
+(X < Y < Z < W) 56.69 585.2 T
+1 F
+(has expected meaning,) 157.49 585.2 T
+(unlike) 127.56 571.2 T
+2 F
+( C) 157.56 571.2 T
+207.7 542.01 56.69 542.01 2 L
+V
+1.14 H
+N
+0 F
+(Boolean values and operators) 56.69 543.2 T
+1 F
+(False values:) 56.69 522.2 T
+2 F
+(None) 127.56 522.2 T
+1 F
+(, numeric zeros, empty) 156.36 522.2 T
+(sequences and mappings) 127.56 508.2 T
+(T) 56.69 494.2 T
+(rue values:) 63.6 494.2 T
+(all other values) 127.56 494.2 T
+2 F
+(not) 56.69 480.2 T
+(X) 81.29 480.2 T
+1 F
+(:) 88.49 480.2 T
+(if) 127.56 480.2 T
+2 F
+(X) 137.89 480.2 T
+1 F
+( is false then 1, else 0) 145.09 480.2 T
+2 F
+(X) 56.69 466.2 T
+(or) 66.89 466.2 T
+(Y) 84.29 466.2 T
+1 F
+(:) 90.39 466.2 T
+(if) 127.56 466.2 T
+2 F
+(X) 137.89 466.2 T
+1 F
+( is false then) 145.09 466.2 T
+2 F
+(Y) 208.41 466.2 T
+1 F
+(, else) 214.07 466.2 T
+2 F
+(X) 241.73 466.2 T
+(X) 56.69 452.2 T
+(and) 66.89 452.2 T
+(Y) 91.49 452.2 T
+1 F
+(if) 101.69 452.2 T
+2 F
+(X) 112.03 452.2 T
+1 F
+( is false then) 119.22 452.2 T
+2 F
+(X) 182.55 452.2 T
+1 F
+(, else) 189.75 452.2 T
+2 F
+(Y) 217.41 452.2 T
+3 F
+(\050\324) 56.69 438.2 T
+2 F
+(or) 64.68 438.2 T
+3 F
+(\325, \324) 79.53 438.2 T
+2 F
+(and) 93.52 438.2 T
+3 F
+(\325 evaluate second ar) 115.12 438.2 T
+(g only if nec-) 212.32 438.2 T
+(essary to determine outcome\051) 56.69 424.2 T
+69.35 395.01 56.69 395.01 2 L
+V
+N
+0 F
+(Pr) 56.69 396.2 T
+252.45 395.01 69.14 395.01 2 L
+V
+N
+(ede\336ned object of special type:None) 69.14 396.2 T
+2 F
+(None) 56.69 375.2 T
+1 F
+( is used as default return value on func-) 85.49 375.2 T
+(tions. Input that evaluates to) 56.69 361.2 T
+2 F
+(None) 195.35 361.2 T
+1 F
+( does not) 224.15 361.2 T
+(print when running Python interactively) 56.69 347.2 T
+383.29 776.01 308.98 776.01 2 L
+V
+N
+0 F
+(Numeric types) 308.98 777.2 T
+1 F
+(Floats, integers and long integers. Floats are) 308.98 756.2 T
+(implemented with C doubles. Integers are) 308.98 742.2 T
+-0.58 (implemented with C longs. Long integers have) 308.98 728.2 P
+(unlimited size \050only limit is system resources\051) 308.98 714.2 T
+468.3 685.01 308.98 685.01 2 L
+V
+N
+0 F
+(Operators on all numeric types) 308.98 686.2 T
+2 F
+(abs\050x\051) 308.98 665.2 T
+1 F
+(absolute value of x) 379.84 665.2 T
+2 F
+(int\050x\051) 308.98 651.2 T
+1 F
+(x converted to integer) 379.84 651.2 T
+2 F
+(long\050x\051) 308.98 637.2 T
+1 F
+(x converted to long integer) 379.84 637.2 T
+2 F
+(f) 308.98 623.2 T
+(loat\050x\051) 316.18 623.2 T
+1 F
+(x converted to \337oating point) 379.84 623.2 T
+2 F
+(-x) 308.98 609.2 T
+1 F
+(x negated) 379.84 609.2 T
+2 F
+(+x) 308.98 595.2 T
+1 F
+(x unchanged) 379.84 595.2 T
+2 F
+(x+y) 308.98 581.2 T
+1 F
+(sum of x and y) 379.84 581.2 T
+2 F
+(x-y) 308.98 567.2 T
+1 F
+(dif) 379.84 567.2 T
+(ference of x and y) 392.96 567.2 T
+2 F
+(x*y) 308.98 553.2 T
+1 F
+(product of x and y) 379.84 553.2 T
+2 F
+(x/y) 308.98 539.2 T
+1 F
+(quotient of x and y) 379.84 539.2 T
+2 F
+(x%y) 308.98 525.2 T
+1 F
+(remainder of x / y) 379.84 525.2 T
+2 F
+(pow\050x,y\051) 308.98 511.2 T
+1 F
+(x to the power y) 379.84 511.2 T
+2 F
+(divmod\050x,y\051) 308.98 497.2 T
+1 F
+(the tuple \050) 388.18 497.2 T
+2 F
+(x/y,x%y) 436.84 497.2 T
+1 F
+(\051) 487.24 497.2 T
+526.97 468.01 308.98 468.01 2 L
+V
+N
+0 F
+(Bit operators on integers and long integers) 308.98 469.2 T
+2 F
+(~x) 308.98 448.2 T
+1 F
+(the bits of x inverted) 379.84 448.2 T
+2 F
+(x^y) 308.98 434.2 T
+1 F
+(bitwise exclusive or of x and y) 379.84 434.2 T
+2 F
+(x&y) 308.98 420.2 T
+1 F
+(bitwise and of x and y) 379.84 420.2 T
+2 F
+(x|y) 308.98 406.2 T
+1 F
+(bitwise or of x and y) 379.84 406.2 T
+2 F
+(x<<n) 308.98 392.2 T
+1 F
+(x shifted left by n bits) 379.84 392.2 T
+2 F
+(x>>n) 308.98 378.2 T
+1 F
+(x shifted right by n bits) 379.84 378.2 T
+409.96 349.01 308.98 349.01 2 L
+V
+N
+0 F
+(Numeric exceptions) 308.98 350.2 T
+2 F
+(TypeError) 308.98 329.2 T
+1 F
+(: raised on application of) 373.78 329.2 T
+(arithemetic opertion to non-number) 308.98 315.2 T
+2 F
+-2.18 (Overf) 561.26 777.2 P
+-2.18 (lowError) 597.26 777.2 P
+1 F
+-0.91 (: numeric bounds exceeded) 654.86 777.2 P
+2 F
+(ZeroDivisionError) 561.26 763.2 T
+1 F
+(: raised when zero) 683.66 763.2 T
+(second ar) 561.26 749.2 T
+(gument of div or modulo op) 606.69 749.2 T
+756.92 720.01 561.26 720.01 2 L
+V
+N
+0 F
+(Operators on all sequence types \050lists,) 561.26 721.2 T
+636.6 703.01 561.26 703.01 2 L
+V
+N
+(tuples, strings\051) 561.26 704.2 T
+2 F
+(len\050s\051) 561.26 683.2 T
+1 F
+(length of s) 632.13 683.2 T
+2 F
+(min\050s\051) 561.26 669.2 T
+1 F
+(smallest item of s) 632.13 669.2 T
+2 F
+(max\050s\051) 561.26 655.2 T
+1 F
+(lar) 632.13 655.2 T
+(gest item of s) 644.57 655.2 T
+2 F
+(x in s) 561.26 641.2 T
+1 F
+(1 if an item of s is equal to x,) 632.13 641.2 T
+(else 0) 632.13 627.2 T
+2 F
+(x not in s) 561.26 613.2 T
+1 F
+(0 if an item of s is equal to x,) 633.26 613.2 T
+(else 1) 632.13 599.2 T
+2 F
+(s+t) 561.26 585.2 T
+1 F
+(the concatenation of s and t) 632.13 585.2 T
+2 F
+(s*n, n*s) 561.26 571.2 T
+1 F
+(n copies of s concatenated) 632.13 571.2 T
+2 F
+(s[i]) 561.26 557.2 T
+1 F
+(i\325) 632.13 557.2 T
+(th item of s, origin 0) 639.24 557.2 T
+2 F
+(s[i:j]) 561.26 543.2 T
+1 F
+(slice of s from i to j) 632.13 543.2 T
+3 F
+(\050slice fr) 729.12 543.2 T
+(om) 765.67 543.2 T
+(index) 632.13 529.2 T
+2 F
+(i) 661.12 529.2 T
+3 F
+( up to but not including) 668.32 529.2 T
+(index) 632.13 515.2 T
+2 F
+(j) 661.12 515.2 T
+3 F
+(.) 668.32 515.2 T
+2 F
+(i) 674.32 515.2 T
+3 F
+( defaults to) 681.52 515.2 T
+2 F
+(0) 737.86 515.2 T
+3 F
+(,) 745.06 515.2 T
+2 F
+(j) 751.06 515.2 T
+3 F
+( to) 758.26 515.2 T
+2 F
+(len\050s\051) 632.13 501.2 T
+3 F
+(.Negative goes fr) 675.33 501.2 T
+(om) 756.54 501.2 T
+(right-end of sequence\051) 632.13 487.2 T
+762.25 458.01 561.26 458.01 2 L
+V
+N
+0 F
+( Operators on mutable sequences \050lists\051) 561.26 459.2 T
+2 F
+(s[i]=x) 561.26 438.2 T
+1 F
+(item) 632.13 438.2 T
+2 F
+(i) 656.46 438.2 T
+1 F
+( of) 663.66 438.2 T
+2 F
+(s) 679.66 438.2 T
+1 F
+( is replaced by) 686.86 438.2 T
+2 F
+(x) 759.51 438.2 T
+(s[i:j]=t) 561.26 424.2 T
+1 F
+(slice of) 632.13 424.2 T
+2 F
+(s) 670.12 424.2 T
+1 F
+( from) 677.32 424.2 T
+2 F
+(i) 706.65 424.2 T
+1 F
+( to) 713.85 424.2 T
+2 F
+(j) 729.18 424.2 T
+1 F
+( is) 736.38 424.2 T
+(replaced by) 632.13 410.2 T
+2 F
+(t) 690.77 410.2 T
+(del s[i:j]) 561.26 396.2 T
+1 F
+(delete slice \050) 633.26 396.2 T
+3 F
+(same as) 693.91 396.2 T
+2 F
+(s[i:j]=[]) 632.13 382.2 T
+1 F
+(\051) 696.93 382.2 T
+2 F
+(s.append\050x\051) 561.26 368.2 T
+1 F
+(add) 640.46 368.2 T
+2 F
+(x) 660.79 368.2 T
+1 F
+( to end of) 667.99 368.2 T
+2 F
+(s) 716.65 368.2 T
+(s.count\050x\051) 561.26 354.2 T
+1 F
+(return number of) 633.26 354.2 T
+2 F
+(i) 717.57 354.2 T
+1 F
+(\325) 724.77 354.2 T
+(s for which) 728.11 354.2 T
+2 F
+(s[i] == x) 632.13 340.2 T
+(s.index\050x\051) 561.26 326.2 T
+1 F
+(return smallest) 633.26 326.2 T
+2 F
+(i) 707.25 326.2 T
+1 F
+( such that) 714.45 326.2 T
+2 F
+(s[i] == x1\051) 632.13 312.2 T
+0 0 0 1 0 0 0 K
+FMENDPAGE
+%%EndPage: "3" 3
+%%Page: "4" 4
+595.28 841.89 1 FMBEGINPAGE
+[0 0 0 1 0 0 0]
+[ 0 0 0 0 1 1 1]
+[ 0 1 1 0 1 0 0]
+[ 1 0 1 0 0 1 0]
+[ 1 1 0 0 0 0 1]
+[ 1 0 0 0 0 1 1]
+[ 0 1 0 0 1 0 1]
+[ 0 0 1 0 1 1 0]
+ 8 FrameSetSepColors
+FrameNoSep
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+2 12 Q
+0 X
+0 0 0 1 0 0 0 K
+(s.insert\050i, x\051) 56.69 777.2 T
+1 F
+(item) 157.49 777.2 T
+2 F
+(i) 181.83 777.2 T
+1 F
+( becomes) 189.03 777.2 T
+2 F
+(x) 237.02 777.2 T
+1 F
+(, old) 244.22 777.2 T
+(item) 127.56 763.2 T
+2 F
+(i) 151.9 763.2 T
+1 F
+( is now at) 159.1 763.2 T
+2 F
+(i+1) 208.43 763.2 T
+1 F
+(, etc.) 230.03 763.2 T
+2 F
+(s.remove\050x\051) 56.69 749.2 T
+1 F
+(same as) 155.9 749.2 T
+2 F
+(del) 196.56 749.2 T
+(s[s.index\050x\051]) 127.56 735.2 T
+(s.reverse\050\051) 56.69 721.2 T
+1 F
+-0.63 (reverses the items of) 155.9 721.2 P
+2 F
+-1.51 (s) 255.36 721.2 P
+1 F
+-0.63 ( \050in) 262.56 721.2 P
+(place\051) 127.56 707.2 T
+2 F
+(s.sort\050\051) 56.69 693.2 T
+1 F
+(sorts the list \050in place\051) 127.56 693.2 T
+3 F
+(\050Optional parameter: function) 127.56 679.2 T
+-0.22 (of two ar) 127.56 665.2 P
+-0.22 (guments r) 170.01 665.2 P
+-0.22 (eturning) 217.01 665.2 P
+2 F
+-0.54 (-1) 260.45 665.2 P
+3 F
+-0.22 (,) 274.85 665.2 P
+2 F
+(0) 127.56 651.2 T
+3 F
+( or) 134.76 651.2 T
+2 F
+(1) 151.43 651.2 T
+3 F
+( depending on whether) 158.63 651.2 T
+(ar) 127.56 637.2 T
+(g1 is) 137.78 637.2 T
+2 F
+(>) 163.79 637.2 T
+3 F
+(,) 170.99 637.2 T
+2 F
+(==) 176.99 637.2 T
+3 F
+(,) 191.39 637.2 T
+2 F
+(<) 197.39 637.2 T
+3 F
+( ar) 204.59 637.2 T
+(g2\051) 217.81 637.2 T
+2 F
+(IndexError) 56.69 623.2 T
+1 F
+( is raised on out-of-range) 128.69 623.2 T
+(sequence subscript) 56.69 609.2 T
+253.71 580.01 56.69 580.01 2 L
+V
+1.14 H
+0 Z
+N
+0 F
+(Operations on mappings \050dictionaries\051) 56.69 581.2 T
+2 F
+(len\050a\051) 56.69 560.2 T
+1 F
+(the number of items in) 127.56 560.2 T
+2 F
+(a) 239.22 560.2 T
+(a[k]) 56.69 546.2 T
+1 F
+(the item of a with key) 127.56 546.2 T
+2 F
+(k) 235.55 546.2 T
+(a[k] = x) 56.69 532.2 T
+1 F
+(set) 127.56 532.2 T
+2 F
+(a[k]) 143.89 532.2 T
+1 F
+( to) 172.69 532.2 T
+2 F
+(x) 188.03 532.2 T
+(del a[k]) 56.69 518.2 T
+1 F
+(remove) 127.56 518.2 T
+2 F
+(a[k]) 166.55 518.2 T
+1 F
+( from) 195.35 518.2 T
+2 F
+(a) 224.68 518.2 T
+(a.items\050\051) 56.69 504.2 T
+1 F
+(a copy of) 127.56 504.2 T
+2 F
+(a) 175.21 504.2 T
+1 F
+(\325) 182.41 504.2 T
+(s list of \050key) 185.75 504.2 T
+(, item\051) 244.63 504.2 T
+(pairs) 127.56 490.2 T
+2 F
+(a.keys\050\051) 56.69 476.2 T
+1 F
+(a copy of) 127.56 476.2 T
+2 F
+(a) 175.21 476.2 T
+1 F
+(\325) 182.41 476.2 T
+(s list of keys) 185.75 476.2 T
+2 F
+(a.values\050\051) 56.69 462.2 T
+1 F
+(a copy of) 128.69 462.2 T
+2 F
+(a) 176.35 462.2 T
+1 F
+(\325) 183.54 462.2 T
+(s list of values) 186.88 462.2 T
+2 F
+(a.has_key\050k\051) 56.69 448.2 T
+(1) 143.09 448.2 T
+1 F
+( if) 150.29 448.2 T
+2 F
+(a) 163.62 448.2 T
+1 F
+( has a key) 170.82 448.2 T
+2 F
+(k) 221.48 448.2 T
+1 F
+(, else) 228.68 448.2 T
+2 F
+(0) 256.34 448.2 T
+(TypeError) 56.69 420.2 T
+1 F
+( is raised if key not acceptable.) 121.49 420.2 T
+2 F
+-1.24 (KeyError) 56.69 406.2 P
+1 F
+-0.51 ( is raised if attempt is made to read) 114.29 406.2 P
+(with non-existent key) 56.69 392.2 T
+221.98 363.01 56.69 363.01 2 L
+V
+N
+0 F
+(Format operator for strings \050%\051) 56.69 364.2 T
+1 F
+(Uses sprintf codes, supports:) 56.69 343.2 T
+2 F
+(%) 197.68 343.2 T
+1 F
+(,) 204.88 343.2 T
+2 F
+(c) 210.88 343.2 T
+1 F
+(,) 218.08 343.2 T
+2 F
+(s) 224.08 343.2 T
+1 F
+(,) 231.28 343.2 T
+2 F
+(i) 237.28 343.2 T
+1 F
+(,) 244.48 343.2 T
+2 F
+(d) 250.48 343.2 T
+1 F
+(,) 257.68 343.2 T
+2 F
+(u) 263.68 343.2 T
+1 F
+(,) 270.88 343.2 T
+2 F
+(o) 56.69 329.2 T
+1 F
+(,) 63.89 329.2 T
+2 F
+(x) 69.89 329.2 T
+1 F
+(,) 77.09 329.2 T
+2 F
+(X) 83.09 329.2 T
+1 F
+(,) 90.29 329.2 T
+2 F
+(e) 96.29 329.2 T
+1 F
+(,) 103.49 329.2 T
+2 F
+(E) 109.49 329.2 T
+1 F
+(,) 116.69 329.2 T
+2 F
+(f) 122.69 329.2 T
+1 F
+(,) 129.89 329.2 T
+2 F
+(g) 135.89 329.2 T
+1 F
+(,) 143.09 329.2 T
+2 F
+(G) 149.09 329.2 T
+1 F
+(.) 156.29 329.2 T
+-0.34 (W) 56.69 315.2 P
+-0.34 (idth and precision may be a) 67.54 315.2 P
+2 F
+-0.82 (*) 200.8 315.2 P
+1 F
+-0.34 ( to specify that) 208 315.2 P
+(an integer ar) 308.98 777.2 T
+(gument speci\336es the actual width) 368.74 777.2 T
+-0.29 (or precision. The \337ag characters) 308.98 763.2 P
+2 F
+-0.7 (-) 464.81 763.2 P
+1 F
+-0.29 (,) 472.01 763.2 P
+2 F
+-0.7 (+) 477.72 763.2 P
+1 F
+-0.29 (, blank,) 484.92 763.2 P
+2 F
+-0.7 (#) 523 763.2 P
+1 F
+(and) 308.98 749.2 T
+2 F
+(0) 329.3 749.2 T
+1 F
+( are understood.) 336.5 749.2 T
+2 F
+(%s) 308.98 735.2 T
+1 F
+( will convert any type ar) 323.38 735.2 T
+(gument to string) 440.14 735.2 T
+(\050uses) 308.98 721.2 T
+2 F
+(str\050\051) 336.64 721.2 T
+1 F
+( function\051) 372.64 721.2 T
+2 F
+(a=\324%s has %03d quote types\325%) 308.98 707.2 T
+(\050\324Python\325,2\051) 308.98 693.2 T
+(a) 308.98 679.2 T
+4 F
+(\325) 316.18 679.2 T
+1 F
+(\324) 326.23 679.2 T
+2 F
+(Python has 002 quote types) 330.23 679.2 T
+1 F
+(.\325) 517.43 679.2 T
+(Right-hand-side can be a mapping:) 308.98 665.2 T
+2 F
+-1.08 (a = \324%\050lang\051s has %\050c\05103d quote) 308.98 651.2 P
+(types.\325 % {\324c\325:2,) 308.98 637.2 T
+(\324lang\325:\325Python}) 308.98 623.2 T
+3 F
+(\050) 308.98 609.2 T
+2 F
+(vars\050\051) 312.97 609.2 T
+3 F
+( function very handy to use on right-) 356.17 609.2 T
+(hand-side.\051) 308.98 595.2 T
+370.63 566.01 308.98 566.01 2 L
+V
+N
+0 F
+(File Objects) 308.98 567.2 T
+1 F
+(Created with built-in function) 308.98 546.2 T
+2 F
+(open\050\051) 454.97 546.2 T
+1 F
+( ; may) 498.17 546.2 T
+(be created by other modules\325) 308.98 532.2 T
+(s functions as) 447.61 532.2 T
+(well. Operators:) 308.98 518.2 T
+2 F
+(f.close\050x\051) 308.98 504.2 T
+1 F
+(close \336le) 380.98 504.2 T
+2 F
+(f.f) 308.98 490.2 T
+(lush\050x\051) 330.58 490.2 T
+1 F
+(\337ush \336le\325) 380.98 490.2 T
+(s internal buf) 425.99 490.2 T
+(fer) 489.1 490.2 T
+(.) 501.76 490.2 T
+2 F
+(f.isatty\050\0511) 308.98 476.2 T
+1 F
+( if \336le is connected to a tty-) 388.18 476.2 T
+(like dev) 379.84 462.2 T
+(, else) 417.39 462.2 T
+2 F
+(0) 445.05 462.2 T
+(f.read\050[size]\051) 308.98 448.2 T
+1 F
+(read at most most) 379.84 434.2 T
+2 F
+(<size>) 467.84 434.2 T
+1 F
+(bytes from \336le and return as a) 379.84 420.2 T
+(string object. If) 379.84 406.2 T
+2 F
+(<size>) 456.5 406.2 T
+1 F
+( omit-) 499.7 406.2 T
+(ted, read to) 379.84 392.2 T
+2 F
+(EOF) 436.49 392.2 T
+1 F
+(.) 457.13 392.2 T
+2 F
+(f.readline\050\051) 308.98 378.2 T
+1 F
+(read one entire line from \336le) 379.84 364.2 T
+2 F
+(f.readlines\050\051) 308.98 350.2 T
+1 F
+(read until) 379.84 336.2 T
+2 F
+(EOF) 428.5 336.2 T
+1 F
+( with) 450.1 336.2 T
+2 F
+(read-) 477.44 336.2 T
+-0.58 (line\050\051) 379.84 322.2 P
+1 F
+-0.24 ( and return list of lines) 423.04 322.2 P
+(read.) 379.84 308.2 T
+2 F
+(f.seek\050offset, whence=0\051) 561.26 777.2 T
+1 F
+(set \336le\325) 632.13 763.2 T
+(s position, like stdio\325) 667.13 763.2 T
+(s) 767.15 763.2 T
+2 F
+(fseek\050\051) 632.13 749.2 T
+1 F
+(.) 682.53 749.2 T
+2 F
+(whence == 0) 632.13 735.2 T
+1 F
+( then use abso-) 711.33 735.2 T
+(lute indexing) 632.13 721.2 T
+2 F
+(whence == 1) 632.13 707.2 T
+1 F
+( then of) 711.33 707.2 T
+(fset rel-) 747.77 707.2 T
+(ative to current pos) 632.13 693.2 T
+2 F
+(whence == 2) 632.13 679.2 T
+1 F
+( then of) 711.33 679.2 T
+(fset rel-) 747.77 679.2 T
+(ative to \336le end) 632.13 665.2 T
+2 F
+(f.tell\050\051) 561.26 651.2 T
+1 F
+(return \336le\325) 632.13 651.2 T
+(s current position) 682.45 651.2 T
+2 F
+(f.write\050str\051) 561.26 637.2 T
+1 F
+(W) 632.13 623.2 T
+(rite string to \336le.) 642.97 623.2 T
+2 F
+(EOFError) 561.26 609.2 T
+1 F
+( \321 End-of-\336le hit when reading) 618.86 609.2 T
+(\050may be raised many times, e.g. if) 561.26 595.2 T
+2 F
+(<f>) 727.23 595.2 T
+1 F
+( is a) 748.83 595.2 T
+(tty\051.) 561.26 581.2 T
+2 F
+(IOError) 561.26 567.2 T
+1 F
+( \321 Other I/O-related I/O operation) 611.66 567.2 T
+(failure) 561.26 553.2 T
+0 14 Q
+(Advanced T) 561.26 523.86 T
+(ypes) 632.95 523.86 T
+3 12 Q
+(See manuals for mor) 561.26 504.2 T
+(e details) 660.48 504.2 T
+1 F
+(Module Objects) 561.26 490.2 T
+(Class Objects) 561.26 476.2 T
+(T) 561.26 462.2 T
+(ype Objects) 567.75 462.2 T
+(Callable types:) 561.26 448.2 T
+(User) 595.28 434.2 T
+(-de\336ned \050written in Python\051:) 617.69 434.2 T
+(User) 623.62 420.2 T
+(-de\336ned Function Objects) 646.04 420.2 T
+(User) 623.62 406.2 T
+(-de\336ned Method Objects) 646.04 406.2 T
+(Built-in \050written in C\051:) 595.28 392.2 T
+(Built-in Function Objects) 623.62 378.2 T
+(Built-in Method Objects) 623.62 364.2 T
+(Internal T) 561.26 350.2 T
+(ypes:) 608.07 350.2 T
+(Code Objects) 595.28 336.2 T
+(Frame Objects) 595.28 322.2 T
+(T) 595.28 308.2 T
+(raceback Objects) 602.19 308.2 T
+0 0 0 1 0 0 0 K
+FMENDPAGE
+%%EndPage: "4" 4
+%%Page: "5" 5
+595.28 841.89 1 FMBEGINPAGE
+[0 0 0 1 0 0 0]
+[ 0 0 0 0 1 1 1]
+[ 0 1 1 0 1 0 0]
+[ 1 0 1 0 0 1 0]
+[ 1 1 0 0 0 0 1]
+[ 1 0 0 0 0 1 1]
+[ 0 1 0 0 1 0 1]
+[ 0 0 1 0 1 1 0]
+ 8 FrameSetSepColors
+FrameNoSep
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 14 Q
+0 X
+0 0 0 1 0 0 0 K
+(Statements) 56.69 775.86 T
+2 12 Q
+(pass) 56.69 756.2 T
+1 F
+(Null statement) 127.56 756.2 T
+2 F
+(=) 56.69 742.2 T
+1 F
+(assignment operator) 127.56 742.2 T
+(. Can) 223.88 742.2 T
+(unpack tuples,) 127.56 728.2 T
+2 F
+-1.78 (f) 127.56 714.2 P
+-1.78 (irst,second = a[0:2]) 134.76 714.2 P
+(del) 56.69 700.2 T
+1 F
+(Unbind name from object, or) 127.56 700.2 T
+(attributes from objects, etc.) 127.56 686.2 T
+2 F
+(print [<c1> [,<c2>]* [,]) 56.69 672.2 T
+1 F
+(W) 127.56 658.2 T
+(rites to) 138.41 658.2 T
+2 F
+(sys.stdout) 174.41 658.2 T
+1 F
+(. Puts) 246.41 658.2 T
+-0.92 (spaces between ar) 127.56 644.2 P
+-0.92 (guments. Puts) 212.13 644.2 P
+-0.38 (newline at end unless statement) 127.56 630.2 P
+(ends with comma. Print is not) 127.56 616.2 T
+(required when running interac-) 127.56 602.2 T
+(tively) 127.56 588.2 T
+(, simply typing an expres-) 154.12 588.2 T
+(sion will print its value, unless) 127.56 574.2 T
+(the value is) 127.56 560.2 T
+2 F
+(None) 185.22 560.2 T
+1 F
+(.) 214.02 560.2 T
+2 F
+(exec<x>[in <glob> [,<loc>]]) 56.69 546.2 T
+1 F
+(executes) 127.56 532.2 T
+2 F
+(<x>) 171.88 532.2 T
+1 F
+( in namespace) 193.48 532.2 T
+(provided. Defaults to current) 127.56 518.2 T
+(namespace.) 127.56 504.2 T
+2 F
+(<glob>) 186.2 504.2 T
+1 F
+( is a dic-) 229.4 504.2 T
+-0.19 (tionary containing global name-) 127.56 490.2 P
+(space,) 127.56 476.2 T
+2 F
+(<loc>) 160.21 476.2 T
+1 F
+( contains local) 196.21 476.2 T
+(namespace.) 127.56 462.2 T
+2 F
+(<x>) 186.2 462.2 T
+1 F
+( can be a) 207.8 462.2 T
+(string, \336le object or a function) 127.56 448.2 T
+(object.) 127.56 434.2 T
+0 14 Q
+(Contr) 56.69 404.86 T
+(ol Flow) 92.21 404.86 T
+2 12 Q
+(if <condition>: <suite>) 56.69 385.2 T
+([elif <condition>: <suite>]*) 56.69 371.2 T
+([else: suite]) 56.69 357.2 T
+1 F
+(usual) 127.56 343.2 T
+2 F
+(if/else_if/else) 155.89 343.2 T
+1 F
+(statement) 127.56 329.2 T
+2 F
+(while <condition>: <suite>) 56.69 315.2 T
+([else: <suite>]) 379.84 777.2 T
+1 F
+(usual while statement.) 379.84 763.2 T
+2 F
+(else) 489.83 763.2 T
+1 F
+(suite is executed after loop) 379.84 749.2 T
+(exits, unless the loop is exited) 379.84 735.2 T
+(with) 379.84 721.2 T
+2 F
+(break) 404.18 721.2 T
+(for <target> in <condition-) 308.98 707.2 T
+(list>: <suite>) 379.84 693.2 T
+([else: <suite>]) 379.84 679.2 T
+1 F
+(iterates over sequence) 379.84 665.2 T
+2 F
+(<con-) 488.8 665.2 T
+(dition-list>) 379.84 651.2 T
+1 F
+( assigning) 466.24 651.2 T
+(each element to) 379.84 637.2 T
+2 F
+(<target>) 458.15 637.2 T
+1 F
+(.) 515.75 637.2 T
+2 F
+(else) 379.84 623.2 T
+1 F
+( suite executed at end) 408.64 623.2 T
+(unless loop exited with \322break\323) 379.84 609.2 T
+2 F
+(break) 308.98 595.2 T
+1 F
+( immediately exit) 379.84 595.2 T
+2 F
+(for) 466.84 595.2 T
+1 F
+( or) 488.44 595.2 T
+2 F
+(while) 379.84 581.2 T
+1 F
+( loop) 415.84 581.2 T
+2 F
+(continue) 308.98 567.2 T
+1 F
+(immediately do next iteration) 379.84 567.2 T
+(of) 379.84 553.2 T
+2 F
+(for) 392.84 553.2 T
+1 F
+( or) 414.44 553.2 T
+2 F
+(while) 430.43 553.2 T
+1 F
+( loop) 466.43 553.2 T
+2 F
+(return [<result>]) 308.98 539.2 T
+1 F
+(return from function \050or) 379.84 525.2 T
+(method\051 and return) 379.84 511.2 T
+2 F
+(<result>) 379.84 497.2 T
+1 F
+(. If no result given,) 437.44 497.2 T
+(then returns) 379.84 483.2 T
+2 F
+(None) 439.83 483.2 T
+1 F
+(.) 468.63 483.2 T
+0 14 Q
+(Exception Statements) 308.98 453.86 T
+2 12 Q
+(try: <suite1>) 308.98 434.2 T
+([except [<exception> [,) 308.98 420.2 T
+(<value>]: <suite2>]+) 379.84 406.2 T
+([else: <suite3>]) 308.98 392.2 T
+1 F
+(statements in) 379.84 378.2 T
+2 F
+(<suite1>) 445.84 378.2 T
+1 F
+( are) 503.44 378.2 T
+(executed. If an exception) 379.84 364.2 T
+(occurs, look in) 379.84 350.2 T
+2 F
+(except) 453.83 350.2 T
+1 F
+(clauses for matching) 379.84 336.2 T
+2 F
+(<excep-) 482.15 336.2 T
+(tion>) 379.84 322.2 T
+1 F
+(. If matches or bare) 415.84 322.2 T
+2 F
+(except) 379.84 308.2 T
+1 F
+( execute suite of that) 423.04 308.2 T
+-0.18 (clause. If no exception happens) 632.13 777.2 P
+(suite in) 632.13 763.2 T
+2 F
+(else) 670.13 763.2 T
+1 F
+( clause is exe-) 698.93 763.2 T
+(cuted after) 632.13 749.2 T
+2 F
+(<suite1>) 686.1 749.2 T
+1 F
+(. If) 743.7 749.2 T
+2 F
+(<exception>) 632.13 735.2 T
+1 F
+( has a value, it) 711.33 735.2 T
+(is put in) 632.13 721.2 T
+2 F
+(<value>) 673.8 721.2 T
+1 F
+(.) 724.2 721.2 T
+2 F
+(<excep-) 730.2 721.2 T
+(tion>) 632.13 707.2 T
+1 F
+( can also be tuple of) 668.13 707.2 T
+(exceptions, e.g.) 632.13 693.2 T
+2 F
+(except) 709.78 693.2 T
+(\050KeyError, NameEr-) 632.13 679.2 T
+(ror\051, val: print val) 632.13 665.2 T
+(try: <suite1>) 561.26 651.2 T
+(f) 561.26 637.2 T
+(inally: <suite2>) 568.46 637.2 T
+1 F
+(statements in) 632.13 623.2 T
+2 F
+(<suite1>) 698.13 623.2 T
+1 F
+( are) 755.73 623.2 T
+(executed. If no exception, exe-) 632.13 609.2 T
+(cute) 632.13 595.2 T
+2 F
+(<suite2>) 655.12 595.2 T
+1 F
+( \050even if) 712.72 595.2 T
+2 F
+(<suite1>) 632.13 581.2 T
+1 F
+( is exited with a) 689.73 581.2 T
+2 F
+(return) 632.13 567.2 T
+1 F
+(,) 675.33 567.2 T
+2 F
+(break) 681.33 567.2 T
+1 F
+( or) 717.33 567.2 T
+2 F
+(con-) 733.32 567.2 T
+(tinue) 632.13 553.2 T
+1 F
+( statement\051. If an excep-) 668.13 553.2 T
+(tion did occur) 632.13 539.2 T
+(, executes) 698.31 539.2 T
+2 F
+(<suite2>) 632.13 525.2 T
+1 F
+( and them immedi-) 689.73 525.2 T
+(ately reraises exception.) 632.13 511.2 T
+2 F
+(raise <exception> [,<value>]) 561.26 497.2 T
+1 F
+(raises) 632.13 483.2 T
+2 F
+(<exception>) 662.45 483.2 T
+1 F
+( with) 741.65 483.2 T
+(optional parameter) 632.13 469.2 T
+2 F
+(<value>) 725.44 469.2 T
+1 F
+(.) 775.84 469.2 T
+(An exception is simply a string \050object\051. Cre-) 561.26 441.2 T
+(ate a new one simply by creating a new string:) 561.26 427.2 T
+2 F
+(my_exception = \324it went wrong\325) 561.26 413.2 T
+(try: if bad:) 561.26 399.2 T
+(raise my_exception, bad) 595.28 385.2 T
+(except my_exception, value:) 561.26 371.2 T
+(print \324Oops\325, value) 595.28 357.2 T
+0 0 0 1 0 0 0 K
+FMENDPAGE
+%%EndPage: "5" 5
+%%Page: "6" 6
+595.28 841.89 1 FMBEGINPAGE
+[0 0 0 1 0 0 0]
+[ 0 0 0 0 1 1 1]
+[ 0 1 1 0 1 0 0]
+[ 1 0 1 0 0 1 0]
+[ 1 1 0 0 0 0 1]
+[ 1 0 0 0 0 1 1]
+[ 0 1 0 0 1 0 1]
+[ 0 0 1 0 1 1 0]
+ 8 FrameSetSepColors
+FrameNoSep
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 14 Q
+0 X
+0 0 0 1 0 0 0 K
+(Name Space Statements) 56.69 775.86 T
+1 12 Q
+(import <module_id1> [, <module_id2>]*) 56.69 756.2 T
+(imports modules. Members of) 127.56 742.2 T
+(module must be) 127.56 728.2 T
+( referred to by) 207.23 728.2 T
+(qualifying with module name:) 127.56 714.2 T
+(\322import sys; print sys.ar) 127.56 700.2 T
+(gv:) 242.68 700.2 T
+2 F
+(from <module_id> import <id1>) 56.69 686.2 T
+([, <id2>]*) 127.56 672.2 T
+1 F
+(imports names from module) 127.56 658.2 T
+2 F
+(<module_id>) 127.56 644.2 T
+1 F
+(. Names) 206.76 644.2 T
+( are) 249.08 644.2 T
+(not quali\336ed:) 127.56 630.2 T
+2 F
+(from sys import argv) 127.56 616.2 T
+(print argv\323) 127.56 602.2 T
+(from <module_id> import *) 56.69 588.2 T
+1 F
+(imports all names in module) 127.56 574.2 T
+2 F
+(<module_id>) 127.56 560.2 T
+1 F
+(, except those) 206.76 560.2 T
+(starting with) 127.56 546.2 T
+2 F
+(_) 190.9 546.2 T
+(global <id1> [,<id2>]*) 56.69 532.2 T
+1 F
+(ids are from global scope \050usu-) 127.56 518.2 T
+(ally meaning from module\051) 127.56 504.2 T
+(rather than local \050usually mean-) 127.56 490.2 T
+(ing only in function\051.) 127.56 476.2 T
+(In a function with no \322global\323) 127.56 462.2 T
+(statements, assume) 127.56 448.2 T
+2 F
+(a) 222.55 448.2 T
+1 F
+( is name) 229.75 448.2 T
+(that hasn\325) 127.56 434.2 T
+(t been used in fcn or) 174.34 434.2 T
+(module so far) 127.56 420.2 T
+(.) 192.89 420.2 T
+(T) 127.56 406.2 T
+(ry to read from) 134.47 406.2 T
+2 F
+(a) 209.78 406.2 T
+4 F
+(\325) 216.98 406.2 T
+2 F
+(NameEr-) 227.04 406.2 T
+(ror) 127.56 392.2 T
+1 F
+(.) 148.5 392.2 T
+(T) 127.56 378.2 T
+(ry to write to) 134.47 378.2 T
+2 F
+(a) 199.8 378.2 T
+4 F
+(\325) 207 378.2 T
+1 F
+(creates) 217.05 378.2 T
+2 F
+(a) 253.37 378.2 T
+1 F
+(local to fcn. If) 127.56 364.2 T
+2 F
+(a) 198.54 364.2 T
+1 F
+( not de\336ned in) 205.74 364.2 T
+(fcn, but is in module, then:) 127.56 350.2 T
+(T) 127.56 336.2 T
+(ry to read from) 134.47 336.2 T
+2 F
+(a) 209.78 336.2 T
+1 F
+(, gets value) 216.98 336.2 T
+(from module.) 127.56 322.2 T
+(T) 127.56 308.2 T
+(ry to write to) 134.47 308.2 T
+2 F
+(a) 199.8 308.2 T
+1 F
+(, changes) 207 308.2 T
+2 F
+(a) 254.65 308.2 T
+1 F
+( in) 261.85 308.2 T
+(module) 379.84 777.2 T
+0 14 Q
+(Function De\336nition) 308.98 747.86 T
+2 12 Q
+-2.15 (def <func_id> \050[<param_list>]\051:) 308.98 728.2 P
+(<suite>) 379.84 714.2 T
+1 F
+(creates a function object and) 379.84 700.2 T
+(assigns it name) 379.84 686.2 T
+2 F
+(<func_id>) 456.17 686.2 T
+1 F
+(.) 520.97 686.2 T
+2 F
+-1.22 (<param_list>) 308.98 672.2 P
+4 F
+-0.57 (\325) 401.35 672.2 P
+2 F
+-1.22 ([<id> [, <id>]*]) 414.18 672.2 P
+([<id>=<v>) 379.84 658.2 T
+([,<id>=<v>]*]) 379.84 644.2 T
+([,*<id>]) 379.84 630.2 T
+1 F
+(Parameters with \322) 379.84 616.2 T
+2 F
+(=) 465.82 616.2 T
+1 F
+(\323 have) 473.02 616.2 T
+(default values \050) 379.84 602.2 T
+2 F
+(<v>) 453.82 602.2 T
+1 F
+( is evalu-) 475.42 602.2 T
+(ated when function de\336ned\051. If) 379.84 588.2 T
+(list ends with \322) 379.84 574.2 T
+2 F
+(*<id>) 452.18 574.2 T
+1 F
+(\323 then) 488.18 574.2 T
+2 F
+(<id>) 379.84 560.2 T
+1 F
+( is assigned a tuple of all) 408.64 560.2 T
+(remaining ar) 379.84 546.2 T
+(gs passed to func-) 440.61 546.2 T
+(tion.) 379.84 532.2 T
+3 F
+(\050allows varar) 401.51 532.2 T
+(g functions\051) 466.07 532.2 T
+1 F
+(.) 523.07 532.2 T
+0 14 Q
+(Class De\336nition) 308.98 502.86 T
+2 12 Q
+(class <class_id>) 308.98 483.2 T
+([\050<super_class1>) 379.84 469.2 T
+([,<super_class2>]*\051]:) 379.84 455.2 T
+( <suite>) 379.84 441.2 T
+1 F
+(Creates a class object and assigns it name) 308.98 427.2 T
+2 F
+(<class_id>) 308.98 413.2 T
+1 F
+(.) 380.98 413.2 T
+2 F
+(<suite>) 386.98 413.2 T
+1 F
+( may contain) 437.38 413.2 T
+(\322) 308.98 399.2 T
+2 F
+(def) 314.3 399.2 T
+1 F
+(\323s of class methods and assignments to) 335.9 399.2 T
+(class attributes) 308.98 385.2 T
+(E.g.) 308.98 371.2 T
+2 F
+(class my_cl \050cl1, cl_lst[3]\051:) 308.98 357.2 T
+1 F
+(Creates a class object inheriting from both) 308.98 343.2 T
+2 F
+(cl1) 308.98 329.2 T
+1 F
+( and whatever class object) 330.58 329.2 T
+2 F
+(cl_lst[3]) 459.54 329.2 T
+1 F
+-0.38 (evaluates to. Assigns new class object to name) 308.98 315.2 P
+2 F
+(my_class) 561.26 777.2 T
+1 F
+(.) 618.86 777.2 T
+(First ar) 561.26 763.2 T
+(g to class methods is always instance) 595.38 763.2 T
+(object. By convention this is called \322) 561.26 749.2 T
+2 F
+(self) 738.25 749.2 T
+1 F
+(\323.) 767.05 749.2 T
+(Special method) 561.26 735.2 T
+2 F
+(__init__\050\051) 638.59 735.2 T
+1 F
+( called when) 710.59 735.2 T
+(instance created. Create instance by \322calling\323) 561.26 721.2 T
+(class object, possibly with ar) 561.26 707.2 T
+(gs. In current) 699.37 707.2 T
+-0.55 (implementation, you can\325) 561.26 693.2 P
+-0.55 (t subclass of) 682.94 693.2 P
+-0.55 (f built-in) 740.96 693.2 P
+(classes.) 561.26 679.2 T
+3 F
+(E.g.) 561.26 665.2 T
+2 F
+(class c \050c_parent\051:) 561.26 651.2 T
+(def __init__\050self, name\051:) 575.43 637.2 T
+(self.name = name) 589.61 623.2 T
+(def print_name\050self\051:) 589.61 609.2 T
+(print \322I\325m\323,\134) 603.78 595.2 T
+(self.name) 603.78 581.2 T
+(def call_parent\050self\051:) 589.61 567.2 T
+(c_parent.print_name\050self\051) 603.78 553.2 T
+(instance = c\050\324tom\325\051) 561.26 539.2 T
+(print instance.name) 561.26 525.2 T
+(\324tom\325) 561.26 511.2 T
+(instance.print_name\050\051) 561.26 497.2 T
+(\322I\325m tom\323) 561.26 483.2 T
+1 F
+-0.05 (Call parent\325) 561.26 469.2 P
+-0.05 (s super class by accessing parent\325) 617.54 469.2 P
+-0.05 (s) 777.58 469.2 P
+(method directly and passing \322) 561.26 455.2 T
+2 F
+(self) 704.58 455.2 T
+1 F
+(\323 explic-) 733.38 455.2 T
+(itly \050see \322) 561.26 441.2 T
+2 F
+(call_parent) 607.92 441.2 T
+1 F
+(\323 in example) 687.12 441.2 T
+(above\051.) 561.26 427.2 T
+(Many other special methods available for) 561.26 413.2 T
+(implementing arithmetic operators, sequence,) 561.26 399.2 T
+(mapping indexing, etc.) 561.26 385.2 T
+0 14 Q
+(Others) 561.26 355.86 T
+2 12 Q
+(lambda [<param_list>]: <condi-) 561.26 336.2 T
+(tion>) 632.13 322.2 T
+1 F
+(Create an anonymous function.) 632.13 308.2 T
+0 0 0 1 0 0 0 K
+FMENDPAGE
+%%EndPage: "6" 6
+%%Page: "7" 7
+595.28 841.89 1 FMBEGINPAGE
+[0 0 0 1 0 0 0]
+[ 0 0 0 0 1 1 1]
+[ 0 1 1 0 1 0 0]
+[ 1 0 1 0 0 1 0]
+[ 1 1 0 0 0 0 1]
+[ 1 0 0 0 0 1 1]
+[ 0 1 0 0 1 0 1]
+[ 0 0 1 0 1 1 0]
+ 8 FrameSetSepColors
+FrameNoSep
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+2 12 Q
+0 X
+0 0 0 1 0 0 0 K
+(<condition>) 127.56 777.2 T
+1 F
+( must be an) 206.76 777.2 T
+(expression not a statement) 127.56 763.2 T
+(\050e.g., not \322) 127.56 749.2 T
+2 F
+(if xx:) 178.55 749.2 T
+1 F
+(...\323,) 221.75 749.2 T
+(\322) 127.56 735.2 T
+2 F
+(print xxx) 132.89 735.2 T
+1 F
+(\323, etc.\051 and thus) 197.69 735.2 T
+(can\325) 127.56 721.2 T
+(t contain newlines. Used) 147.99 721.2 T
+(mostly for) 127.56 707.2 T
+2 F
+(f) 180.23 707.2 T
+(ilter\050\051) 187.43 707.2 T
+1 F
+(,) 237.83 707.2 T
+2 F
+(map\050\051) 127.56 693.2 T
+1 F
+(,) 163.56 693.2 T
+2 F
+(reduce\050\051) 169.56 693.2 T
+1 F
+( functions.) 227.16 693.2 T
+0 14 Q
+(Built-In Functions) 56.69 663.86 T
+2 12 Q
+(abs\050x\051) 56.69 644.2 T
+1 F
+(Return the absolute value of a) 127.56 644.2 T
+(number) 127.56 630.2 T
+2 F
+(apply\050f,args\051) 56.69 616.2 T
+1 F
+(Call func/method) 127.56 602.2 T
+2 F
+(<f>) 214.22 602.2 T
+1 F
+( with) 235.82 602.2 T
+(ar) 127.56 588.2 T
+(gs) 136.67 588.2 T
+2 F
+(<args>) 150.34 588.2 T
+(chr\050i\051) 56.69 574.2 T
+1 F
+(Return one-character string) 127.56 574.2 T
+(whose ASCII code is integer) 127.56 560.2 T
+2 F
+(i) 268.54 560.2 T
+(cmp\050x,y\051) 56.69 546.2 T
+1 F
+(Return neg, zero, pos if) 127.56 546.2 T
+2 F
+(x) 243.2 546.2 T
+(<) 253.4 546.2 T
+1 F
+(,) 260.6 546.2 T
+2 F
+(==) 127.56 532.2 T
+1 F
+(,) 141.96 532.2 T
+2 F
+(>) 147.96 532.2 T
+1 F
+( to) 155.16 532.2 T
+2 F
+(y) 170.49 532.2 T
+(coerce\050x,y\051) 56.69 518.2 T
+1 F
+(Return a tuple of the two) 127.56 504.2 T
+(numeric ar) 127.56 490.2 T
+(guments converted) 178.99 490.2 T
+(to a common type.) 127.56 476.2 T
+2 F
+-2.15 (compile\050string, f) 56.69 462.2 P
+-2.15 (ilename, kind\051) 176.94 462.2 P
+1 F
+(Compile) 127.56 448.2 T
+2 F
+(<string>) 171.9 448.2 T
+1 F
+( into a) 229.5 448.2 T
+(code object.) 127.56 434.2 T
+2 F
+(<f) 188.54 434.2 T
+(ilename>) 202.94 434.2 T
+1 F
+( is) 260.54 434.2 T
+(used for error reporting, can be) 127.56 420.2 T
+(any string.) 127.56 406.2 T
+2 F
+(<kind>) 181.22 406.2 T
+1 F
+( is either) 224.42 406.2 T
+(\324) 127.56 392.2 T
+2 F
+(eval) 131.55 392.2 T
+1 F
+(\325 if) 160.35 392.2 T
+2 F
+(<string>) 177.68 392.2 T
+1 F
+( is a sin-) 235.28 392.2 T
+(gle stmt, else it should be) 127.56 378.2 T
+(\324) 127.56 364.2 T
+2 F
+(exec) 131.55 364.2 T
+1 F
+(\325.) 160.35 364.2 T
+2 F
+(dir\050[object]\051) 56.69 350.2 T
+1 F
+(If no ar) 127.56 336.2 T
+(gs, return the list of) 162.66 336.2 T
+(names in current local symbol) 127.56 322.2 T
+(table. W) 127.56 308.2 T
+(ith a module, class or) 167.74 308.2 T
+(class instance object as ar) 379.84 777.2 T
+(g,) 502.93 777.2 T
+(return list of names in its attr) 379.84 763.2 T
+(dict.) 379.84 749.2 T
+2 F
+(divmod\050a,b\051) 308.98 735.2 T
+1 F
+(Returns tuple of) 379.84 721.2 T
+2 F
+(\050a/b, a%b\051) 460.17 721.2 T
+(eval\050s, globals, locals\051) 308.98 707.2 T
+1 F
+(Eval string) 379.84 693.2 T
+2 F
+(<s>) 435.17 693.2 T
+1 F
+( in \050optional\051) 456.77 693.2 T
+2 F
+(<globals>) 379.84 679.2 T
+1 F
+(,) 444.64 679.2 T
+2 F
+(<locals>) 450.64 679.2 T
+1 F
+(.) 508.24 679.2 T
+2 F
+(<s>) 379.84 665.2 T
+1 F
+( must have no) 401.44 665.2 T
+2 F
+(NULL) 471.44 665.2 T
+1 F
+(\325) 499.13 665.2 T
+(s or) 502.47 665.2 T
+(newlines.) 379.84 651.2 T
+2 F
+(<s>) 428.5 651.2 T
+1 F
+( can also be a) 450.1 651.2 T
+(code object. E.g.:) 379.84 637.2 T
+2 F
+(x = 1;) 466.49 637.2 T
+(incr_x = eval\050\324x +) 379.84 623.2 T
+(1\325\051) 379.84 609.2 T
+(f) 308.98 595.2 T
+(ilter\050function, list\051) 316.18 595.2 T
+1 F
+(Construct a list from those ele-) 379.84 581.2 T
+(ments of) 379.84 567.2 T
+2 F
+(<list>) 424.51 567.2 T
+1 F
+( for which) 467.71 567.2 T
+2 F
+(<function>) 379.84 553.2 T
+1 F
+( returns true.) 451.84 553.2 T
+2 F
+(<function>) 379.84 539.2 T
+1 F
+( takes one) 451.84 539.2 T
+(parameter) 379.84 525.2 T
+(.) 427.16 525.2 T
+2 F
+(f) 308.98 511.2 T
+(loat\050x\051) 316.18 511.2 T
+1 F
+(Convert a number to \337oating) 379.84 511.2 T
+(point.) 379.84 497.2 T
+2 F
+(getattr\050object, name\051) 308.98 483.2 T
+1 F
+(Get attr called) 379.84 469.2 T
+2 F
+(<name>) 450.82 469.2 T
+1 F
+( from) 494.02 469.2 T
+2 F
+(<object>) 379.84 455.2 T
+1 F
+(.) 437.44 455.2 T
+2 F
+(getattr\050x, \324foobar\325\051) 379.84 441.2 T
+4 F
+(\326) 379.84 427.2 T
+2 F
+(x.foobar) 395.37 427.2 T
+(hasattr\050object, name\051) 308.98 413.2 T
+1 F
+(Returns true if) 379.84 399.2 T
+2 F
+(<object>) 452.17 399.2 T
+1 F
+( has) 509.77 399.2 T
+(attr called) 379.84 385.2 T
+2 F
+(<name>) 430.49 385.2 T
+1 F
+(.) 473.69 385.2 T
+2 F
+(hash\050object\051) 308.98 371.2 T
+1 F
+(Return the hash value of the) 379.84 357.2 T
+(object \050if it has one\051) 379.84 343.2 T
+2 F
+(hex\050x\051) 308.98 329.2 T
+1 F
+-0.11 (Convert a number to a hexadec-) 379.84 329.2 P
+(imal string.) 379.84 315.2 T
+2 F
+(id\050object\051) 561.26 777.2 T
+1 F
+(Return a unique \324identity\325 inte-) 632.13 763.2 T
+(ger for an object.) 632.13 749.2 T
+2 F
+(input\050[prompt]\051) 561.26 735.2 T
+1 F
+(Prints prompt, if given. Reads) 632.13 721.2 T
+(input and evaluates it.) 632.13 707.2 T
+2 F
+(int\050x\051) 561.26 693.2 T
+1 F
+(Convert a number to a plain) 632.13 693.2 T
+(integer) 632.13 679.2 T
+(.) 664.79 679.2 T
+2 F
+(len\050s\051) 561.26 665.2 T
+1 F
+(Return the length \050the number) 632.13 665.2 T
+(of items\051 of an object.) 632.13 651.2 T
+2 F
+(long\050x\051) 561.26 637.2 T
+1 F
+(Convert a number to a long) 632.13 637.2 T
+(integer) 632.13 623.2 T
+(.) 664.79 623.2 T
+2 F
+(map\050function, list, ...\051) 561.26 609.2 T
+1 F
+(Apply) 632.13 595.2 T
+2 F
+(<function>) 665.13 595.2 T
+1 F
+( to every) 737.13 595.2 T
+(item of) 632.13 581.2 T
+2 F
+(<list>) 669.46 581.2 T
+1 F
+( and return a) 712.66 581.2 T
+(list of the results. If additional) 632.13 567.2 T
+(ar) 632.13 553.2 T
+(guments are passed,) 641.23 553.2 T
+2 F
+(<func-) 740.55 553.2 T
+(tion>) 632.13 539.2 T
+1 F
+( must take that many) 668.13 539.2 T
+(ar) 632.13 525.2 T
+(guments and it is given to) 641.23 525.2 T
+2 F
+(<function>) 632.13 511.2 T
+1 F
+( on each call.) 704.13 511.2 T
+2 F
+(max\050s\051) 561.26 497.2 T
+1 F
+(Return the lar) 632.13 497.2 T
+(gest item of a) 697.9 497.2 T
+(non-empty sequence.) 632.13 483.2 T
+2 F
+(min\050s\051) 561.26 469.2 T
+1 F
+(Return the smallest item of a) 632.13 469.2 T
+(non-empty sequence.) 632.13 455.2 T
+2 F
+(oct\050x\051) 561.26 441.2 T
+1 F
+(Convert a number to an octal) 632.13 441.2 T
+(string.) 632.13 427.2 T
+2 F
+(open\050f) 561.26 413.2 T
+(ilename, mode=\325r\325, buf-) 604.46 413.2 T
+(size=<implementation) 632.13 399.2 T
+(dependent>) 632.13 385.2 T
+1 F
+(Return a new \336le object. First) 632.13 371.2 T
+(two ar) 632.13 357.2 T
+(gs are same as those for) 662.23 357.2 T
+(C\325) 632.13 343.2 T
+(s \322stdio open\323 function.) 643.47 343.2 T
+2 F
+(<bufsize>) 632.13 329.2 T
+1 F
+( is) 696.93 329.2 T
+2 F
+(0) 710.93 329.2 T
+1 F
+( for unbuf) 718.13 329.2 T
+(f-) 765.9 329.2 T
+(ered,) 632.13 315.2 T
+2 F
+(1) 658.78 315.2 T
+1 F
+( for line-buf) 665.98 315.2 T
+(fered, nega-) 723.75 315.2 T
+0 0 0 1 0 0 0 K
+FMENDPAGE
+%%EndPage: "7" 7
+%%Page: "8" 8
+595.28 841.89 1 FMBEGINPAGE
+[0 0 0 1 0 0 0]
+[ 0 0 0 0 1 1 1]
+[ 0 1 1 0 1 0 0]
+[ 1 0 1 0 0 1 0]
+[ 1 1 0 0 0 0 1]
+[ 1 0 0 0 0 1 1]
+[ 0 1 0 0 1 0 1]
+[ 0 0 1 0 1 1 0]
+ 8 FrameSetSepColors
+FrameNoSep
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+1 12 Q
+0 X
+0 0 0 1 0 0 0 K
+(tive for sys-default, all else, of) 127.56 777.2 T
+(\050about\051 given size.) 127.56 763.2 T
+2 F
+(ord\050c\051) 56.69 749.2 T
+1 F
+(Return integer) 127.56 749.2 T
+2 F
+(ASCII) 199.55 749.2 T
+1 F
+( value of) 235.55 749.2 T
+2 F
+(<c>) 127.56 735.2 T
+1 F
+( \050a string of len) 149.16 735.2 T
+2 F
+(1) 225.48 735.2 T
+1 F
+(\051.) 232.68 735.2 T
+2 F
+(pow\050x, y\051) 56.69 721.2 T
+1 F
+(Return) 127.56 721.2 T
+2 F
+(x) 163.22 721.2 T
+1 F
+( to power) 170.42 721.2 T
+2 F
+(y) 218.75 721.2 T
+1 F
+(.) 225.17 721.2 T
+2 F
+(range\050start, end, step\051) 56.69 707.2 T
+1 F
+(return list of ints from) 127.56 693.2 T
+2 F
+(>=) 236.55 693.2 T
+1 F
+( start) 250.96 693.2 T
+-0.18 (and) 127.56 679.2 P
+2 F
+-0.43 (<) 147.71 679.2 P
+1 F
+-0.18 ( end. W) 154.91 679.2 P
+-0.18 (ith 1 ar) 191.73 679.2 P
+-0.18 (g, list from) 225.16 679.2 P
+(0 to) 127.56 665.2 T
+2 F
+(<arg>-1.) 148.9 665.2 T
+1 F
+( W) 206.49 665.2 T
+(ith 2 ar) 220.34 665.2 T
+(gs,) 254.12 665.2 T
+(list from) 127.56 651.2 T
+2 F
+(<start>) 171.56 651.2 T
+1 F
+( to) 221.96 651.2 T
+2 F
+(<end>-) 237.3 651.2 T
+(1) 127.56 637.2 T
+1 F
+(W) 141.96 637.2 T
+(ith 3 ar) 152.81 637.2 T
+(gs, list from) 186.59 637.2 T
+2 F
+(<start>) 127.56 623.2 T
+1 F
+( up to) 177.96 623.2 T
+2 F
+(<end>) 208.29 623.2 T
+1 F
+( by) 244.29 623.2 T
+2 F
+(<step>) 127.56 609.2 T
+(raw_input\050[prompt]\051) 56.69 595.2 T
+1 F
+-0.21 (Print prompt if given, then read) 127.56 581.2 P
+(string from std input.) 127.56 567.2 T
+2 F
+(reduce\050f, list [, init]\051) 56.69 553.2 T
+1 F
+(Apply the binary function) 127.56 539.2 T
+2 F
+(<f>) 254.88 539.2 T
+1 F
+-0.52 (to the items of) 127.56 525.2 P
+2 F
+-1.24 (<list>) 197.49 525.2 P
+1 F
+-0.52 ( so as to) 240.69 525.2 P
+(reduce the list to a single value.) 127.56 511.2 T
+(If) 127.56 497.2 T
+2 F
+(<init>) 138.55 497.2 T
+1 F
+( given, it is \322pre-) 181.75 497.2 T
+(pended\323 to) 127.56 483.2 T
+2 F
+(<list>) 182.88 483.2 T
+1 F
+(.) 226.08 483.2 T
+2 F
+(reload\050module\051) 56.69 469.2 T
+1 F
+(Re-parse and re-initialize an) 127.56 455.2 T
+(already imported module. Use-) 127.56 441.2 T
+(ful in interactive mode, if you) 127.56 427.2 T
+(want to reload a module after) 127.56 413.2 T
+-0.05 (\336xing it. If module was synacti-) 127.56 399.2 P
+-0.17 (cally correct but had an error in) 127.56 385.2 P
+(initialization, must import it) 127.56 371.2 T
+(one more time before calling) 127.56 357.2 T
+2 F
+(reload) 127.56 343.2 T
+1 F
+(\050\051.) 170.76 343.2 T
+2 F
+(repr\050object\051) 56.69 329.2 T
+1 F
+(Return a string containing a) 127.56 315.2 T
+(printable representation of an) 379.84 777.2 T
+(object. Equivalent to `object`) 379.84 763.2 T
+(\050using backquotes\051.) 379.84 749.2 T
+2 F
+(round\050x,n=0\051) 308.98 735.2 T
+1 F
+(Return the \337oating point value) 379.84 721.2 T
+(x rounded to n digits) 379.84 707.2 T
+(after the) 482.18 707.2 T
+(decimal point.) 379.84 693.2 T
+2 F
+(setattr\050object, name, value\051) 308.98 679.2 T
+1 F
+(This is the counterpart of) 379.84 665.2 T
+2 F
+(getattr) 379.84 651.2 T
+1 F
+(\050\051.) 430.24 651.2 T
+2 F
+(setattr\050o,) 444.23 651.2 T
+(\324foobar\325, 3\051) 379.84 637.2 T
+4 F
+(\326) 469.24 637.2 T
+2 F
+(o.foo-) 484.77 637.2 T
+(bar = 3) 379.84 623.2 T
+(str\050object\051) 308.98 609.2 T
+1 F
+(Return a string containing a) 379.84 595.2 T
+(nicely printable representation) 379.84 581.2 T
+(of an object.) 379.84 567.2 T
+2 F
+(type\050object\051) 308.98 553.2 T
+1 F
+(Return type of an object.) 379.84 539.2 T
+(E.g.,) 308.98 525.2 T
+2 F
+(if type\050x\051 == type\050\324\325\051:) 323.15 511.2 T
+(print \324It is a string\325) 337.32 497.2 T
+(vars\050[object]\051) 308.98 483.2 T
+1 F
+(W) 379.84 469.2 T
+(ithout ar) 390.69 469.2 T
+(guments, return a) 430.81 469.2 T
+-0.06 (dictionary corresponding to the) 379.84 455.2 P
+(current local symbol table.) 379.84 441.2 T
+(W) 379.84 427.2 T
+(ith a module, class or class) 390.69 427.2 T
+(instance object as ar) 379.84 413.2 T
+(gument) 476.6 413.2 T
+-0.18 (returns a dictionary correspond-) 379.84 399.2 P
+-0.54 (ing to the object\325) 379.84 385.2 P
+-0.54 (s symbol table.) 459.21 385.2 P
+(Useful with \322) 379.84 371.2 T
+2 F
+(%) 444.5 371.2 T
+1 F
+(\323 formatting) 451.7 371.2 T
+(operator) 379.84 357.2 T
+(. Don\325) 419.17 357.2 T
+(t simply type) 449.61 357.2 T
+2 F
+-0.06 (vars\050\051) 379.84 343.2 P
+1 F
+-0.03 ( at interactive prompt!) 423.04 343.2 P
+(\050But) 379.84 329.2 T
+2 F
+(print vars\050\051) 404.18 329.2 T
+1 F
+( is \336ne.\051) 490.58 329.2 T
+2 F
+(xrange\050start, end, step\051) 308.98 315.2 T
+1 F
+(Like) 632.13 777.2 T
+2 F
+(range\050\051) 657.12 777.2 T
+1 F
+(, but doesn\325) 707.52 777.2 T
+(t) 763.63 777.2 T
+(actually store entire list all at) 632.13 763.2 T
+-0.36 (once. Good to use in) 632.13 749.2 P
+2 F
+-0.86 (for) 732.31 749.2 P
+1 F
+-0.36 ( loops) 753.91 749.2 P
+(when there is a big range and) 632.13 735.2 T
+(little memory) 632.13 721.2 T
+(.) 696.35 721.2 T
+0 14 Q
+(Built-In Exceptions) 561.26 691.86 T
+2 12 Q
+(AttributeError) 561.26 672.2 T
+1 F
+(On attribute reference or) 632.13 658.2 T
+(assignment failure) 632.13 644.2 T
+2 F
+(EOFError) 561.26 630.2 T
+1 F
+(Immediate end-of-\336le hit by) 632.13 616.2 T
+(input\050\051 or raw_input\050\051) 632.13 602.2 T
+2 F
+(IOError) 561.26 588.2 T
+1 F
+(I/O-related I/O operation fail-) 632.13 574.2 T
+(ure) 632.13 560.2 T
+2 F
+(ImportError) 561.26 546.2 T
+1 F
+(On failure of `import\325 to \336nd) 632.13 532.2 T
+(module or name) 632.13 518.2 T
+2 F
+(IndexError) 561.26 504.2 T
+1 F
+(On out-of-range sequence sub-) 632.13 490.2 T
+(script) 632.13 476.2 T
+2 F
+(KeyError) 561.26 462.2 T
+1 F
+(On reference to a non-existent) 632.13 448.2 T
+(mapping \050dict\051 key) 632.13 434.2 T
+2 F
+(KeyboardInterrupt) 561.26 420.2 T
+1 F
+(On user entry of the interrupt) 632.13 406.2 T
+(key \050often `Control-C\325\051) 632.13 392.2 T
+2 F
+(MemoryError) 561.26 378.2 T
+1 F
+(On recoverable memory) 632.13 364.2 T
+(exhaustion) 632.13 350.2 T
+2 F
+(NameError) 561.26 336.2 T
+1 F
+(On failure to \336nd a local or glo-) 632.13 322.2 T
+(bal \050unquali\336ed\051 name) 632.13 308.2 T
+0 0 0 1 0 0 0 K
+FMENDPAGE
+%%EndPage: "8" 8
+%%Page: "9" 9
+595.28 841.89 1 FMBEGINPAGE
+[0 0 0 1 0 0 0]
+[ 0 0 0 0 1 1 1]
+[ 0 1 1 0 1 0 0]
+[ 1 0 1 0 0 1 0]
+[ 1 1 0 0 0 0 1]
+[ 1 0 0 0 0 1 1]
+[ 0 1 0 0 1 0 1]
+[ 0 0 1 0 1 1 0]
+ 8 FrameSetSepColors
+FrameNoSep
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+2 12 Q
+0 X
+0 0 0 1 0 0 0 K
+(Overf) 56.69 777.2 T
+(lowError) 92.69 777.2 T
+1 F
+(On excessively lar) 127.56 763.2 T
+(ge arithme-) 215.99 763.2 T
+(tic operation) 127.56 749.2 T
+2 F
+(RuntimeError) 56.69 735.2 T
+1 F
+(Obsolete catch-all; de\336ne a) 127.56 721.2 T
+(suitable error instead) 127.56 707.2 T
+2 F
+(SyntaxError) 56.69 693.2 T
+1 F
+(On parser encountering a syn-) 127.56 679.2 T
+(tax error) 127.56 665.2 T
+2 F
+(SystemError) 56.69 651.2 T
+1 F
+(On non-fatal interpreter error -) 127.56 637.2 T
+(bug - report it) 127.56 623.2 T
+2 F
+(SystemExit) 56.69 609.2 T
+1 F
+(On `sys.exit\050\051\325) 127.56 595.2 T
+2 F
+(TypeError) 56.69 581.2 T
+1 F
+(On passing inappropriate type) 127.56 567.2 T
+(to built-in op or func) 127.56 553.2 T
+2 F
+(ValueError) 56.69 539.2 T
+1 F
+(On ar) 127.56 525.2 T
+(g error not covered by) 154.33 525.2 T
+(T) 127.56 511.2 T
+(ypeError or more precise) 134.05 511.2 T
+2 F
+(ZeroDivisionError) 56.69 497.2 T
+1 F
+(On division or modulo opera-) 127.56 483.2 T
+(tion with 0 as 2nd ar) 127.56 469.2 T
+(g) 225.67 469.2 T
+0 14 Q
+(Special Methods For User) 56.69 439.86 T
+(-De\336ned) 211.32 439.86 T
+(Classes) 56.69 422.86 T
+3 12 Q
+(E.g) 56.69 403.2 T
+1 F
+(.) 73.03 403.2 T
+2 F
+(class x:) 56.69 389.2 T
+(def __init__\050self, v\051:) 70.87 375.2 T
+(self.value = v def) 85.04 361.2 T
+(__add__\050self, r\051:) 70.87 347.2 T
+(return self.value + r) 85.04 333.2 T
+(a = x\0503\051) 56.69 319.2 T
+3 F
+(\050like calling) 323.15 777.2 T
+2 F
+(x.__init__\050a,3\051\051) 383.81 777.2 T
+(a + 4) 308.98 763.2 T
+3 F
+(\050equivalent to) 323.15 749.2 T
+2 F
+( a.__add__\0504\051\051) 389.47 749.2 T
+456.97 720.01 308.98 720.01 2 L
+V
+1.14 H
+0 Z
+N
+0 F
+(Special methods for any type) 308.98 721.2 T
+3 F
+(\050s: self, o: other\051) 308.98 700.2 T
+2 F
+( __init__\050s, args\051) 308.98 686.2 T
+1 F
+(object instantiation) 379.84 672.2 T
+2 F
+(__del__\050s\051) 308.98 658.2 T
+1 F
+(called on object demise) 379.84 644.2 T
+2 F
+(__repr__\050s\051) 308.98 630.2 T
+(repr) 379.84 616.2 T
+1 F
+(\050\051 and `...` conversions) 408.64 616.2 T
+2 F
+(__str__\050s\051) 308.98 602.2 T
+(str) 379.84 588.2 T
+1 F
+(\050\051 and \324) 401.44 588.2 T
+2 F
+(print) 436.76 588.2 T
+1 F
+(\325 statement) 472.76 588.2 T
+2 F
+(__cmp__\050s, o\051) 308.98 574.2 T
+1 F
+(implements) 379.84 560.2 T
+2 F
+(<) 438.85 560.2 T
+1 F
+(,) 446.05 560.2 T
+2 F
+(==) 452.05 560.2 T
+1 F
+(,) 466.45 560.2 T
+2 F
+(>) 472.45 560.2 T
+1 F
+(,) 479.65 560.2 T
+2 F
+(<=) 485.65 560.2 T
+1 F
+(,) 500.05 560.2 T
+2 F
+(<>) 506.05 560.2 T
+1 F
+(,) 520.45 560.2 T
+2 F
+(!=) 379.84 546.2 T
+1 F
+(,) 394.24 546.2 T
+2 F
+(>=) 400.24 546.2 T
+1 F
+(,) 414.64 546.2 T
+2 F
+(is) 420.64 546.2 T
+1 F
+( [) 435.04 546.2 T
+2 F
+(not) 442.04 546.2 T
+1 F
+(]) 463.64 546.2 T
+2 F
+(__hash__\050s\051) 308.98 532.2 T
+(hash) 379.84 518.2 T
+1 F
+(\050\051 and dict operations) 408.64 518.2 T
+508.3 489.01 308.98 489.01 2 L
+V
+N
+0 F
+(Numeric operations vs special methods) 308.98 490.2 T
+3 F
+(\050s: self, o: other\051) 308.98 469.2 T
+2 F
+(s+o = __add__\050s,o\051) 308.98 455.2 T
+(s-o = __sub__\050s,o\051) 308.98 441.2 T
+(s*o = __mul__\050s,o\051) 308.98 427.2 T
+(s/o = __div__\050s,o\051) 308.98 413.2 T
+(s%o = __mod__\050s,o\051) 308.98 399.2 T
+(divmod\050s,o\051 = __divmod__\050s,o\051) 308.98 385.2 T
+(pow\050s,o\051 = __pow__\050s,o\051) 308.98 371.2 T
+(s&o = __and__\050s,o\051) 308.98 357.2 T
+(s^o = __xor__\050s,o\051) 308.98 343.2 T
+(s|o = __or__\050s,o\051) 308.98 329.2 T
+(s<<o = __lshift__\050s,o\051) 308.98 315.2 T
+(s>>o = __rshift__\050s,o\051) 561.26 777.2 T
+(nonzero\050s\051 = __nonzero__\050s\051) 561.26 763.2 T
+3 F
+(\050used in boolean testing\051) 632.13 749.2 T
+2 F
+(-s = __neg__\050s\051) 561.26 735.2 T
+(+s = __pos__\050s\051) 561.26 721.2 T
+(abs\050s\051 = __abs__\050s\051) 561.26 707.2 T
+(~s = __invert__\050s\051) 561.26 693.2 T
+3 F
+(\050bitwise\051) 698.06 693.2 T
+2 F
+(int\050s\051 = __int__\050s\051) 561.26 679.2 T
+(long\050s\051 = __long__\050s\051) 561.26 665.2 T
+(f) 561.26 651.2 T
+(loat\050s\051 = __f) 568.46 651.2 T
+(loat__\050s\051) 662.06 651.2 T
+(oct\050s\051 = __oct__\050s\051) 561.26 637.2 T
+(hex\050s\051 = __hex__\050s\051) 561.26 623.2 T
+(coerce\050s,o\051 = __coerce__\050s,o\051) 561.26 609.2 T
+782.95 580.01 561.26 580.01 2 L
+V
+N
+0 F
+(All seqs and maps, general operations plus:) 561.26 581.2 T
+3 F
+(\050s: self, i: index or key\051) 561.26 560.2 T
+2 F
+( len\050s\051 = __len__\050s\051) 561.26 546.2 T
+1 F
+(length of object,) 632.13 532.2 T
+2 F
+(>= 0.) 713.45 532.2 T
+1 F
+(Length 0 == false) 632.13 518.2 T
+2 F
+(s[i] = __getitem__\050s,i\051) 561.26 504.2 T
+1 F
+(Element at index/key) 632.13 490.2 T
+2 F
+(i) 737.11 490.2 T
+1 F
+(, origin) 744.31 490.2 T
+2 F
+(0) 632.13 476.2 T
+735.6 447.01 561.26 447.01 2 L
+V
+N
+0 F
+(Sequences, general methods, plus:) 561.26 448.2 T
+2 F
+(s[i]=v) 561.26 427.2 T
+4 F
+(\325) 611.66 427.2 T
+2 F
+(__setitem__\050s,i,v\051) 625.05 427.2 T
+(del s[i]) 561.26 413.2 T
+4 F
+(\325) 626.06 413.2 T
+2 F
+(__delitem__\050s,i\051) 639.45 413.2 T
+(s[i:j]) 561.26 399.2 T
+4 F
+(\325) 611.66 399.2 T
+2 F
+(__getslice__\050s,i,j\051) 621.72 399.2 T
+(s[i:j]=seq) 561.26 385.2 T
+4 F
+(\325) 640.46 385.2 T
+2 F
+(__setslice__\050s,i,j,seq\051) 561.26 371.2 T
+(del s[i:j]) 561.26 357.2 T
+4 F
+(\325) 640.46 357.2 T
+2 F
+(__delslice__\050s,i,j\051==s[i:j]=[]) 561.26 343.2 T
+0 0 0 1 0 0 0 K
+FMENDPAGE
+%%EndPage: "9" 9
+%%Page: "10" 10
+595.28 841.89 1 FMBEGINPAGE
+[0 0 0 1 0 0 0]
+[ 0 0 0 0 1 1 1]
+[ 0 1 1 0 1 0 0]
+[ 1 0 1 0 0 1 0]
+[ 1 1 0 0 0 0 1]
+[ 1 0 0 0 0 1 1]
+[ 0 1 0 0 1 0 1]
+[ 0 0 1 0 1 1 0]
+ 8 FrameSetSepColors
+FrameNoSep
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+229.71 776.01 56.69 776.01 2 L
+0 X
+0 0 0 1 0 0 0 K
+V
+1.14 H
+0 Z
+N
+0 12 Q
+(Mappings, general methods, plus:) 56.69 777.2 T
+2 F
+(hash\050s\051) 56.69 756.2 T
+4 F
+(\325) 114.29 756.2 T
+2 F
+( __hash__\050s\051) 124.35 756.2 T
+1 F
+(hash value for dictionary refer-) 127.56 742.2 T
+(ences) 127.56 728.2 T
+2 F
+(s[k]=v) 56.69 714.2 T
+4 F
+(\325) 107.09 714.2 T
+2 F
+(__setitem__\050s,k,v\051) 120.49 714.2 T
+(del s[k]) 56.69 700.2 T
+4 F
+(\325) 121.49 700.2 T
+2 F
+(__delitem__\050s,k\051) 134.88 700.2 T
+257.66 671.01 56.69 671.01 2 L
+V
+N
+0 F
+(Special informative state attributes for) 56.69 672.2 T
+116.35 654.01 56.69 654.01 2 L
+V
+N
+(some types:) 56.69 655.2 T
+2 F
+(X.__dict__) 56.69 634.2 T
+1 F
+-0.12 (dict used to store object\325) 127.56 620.2 P
+-0.12 (s write-) 244.42 620.2 P
+(able attributes) 127.56 606.2 T
+2 F
+(X.__methods__) 56.69 592.2 T
+1 F
+(list of X\325) 127.56 578.2 T
+(s methods; on many) 170.23 578.2 T
+(built-in types.) 127.56 564.2 T
+2 F
+(X.__members__) 56.69 550.2 T
+1 F
+(lists of X\325) 127.56 536.2 T
+(s data attributes) 174.9 536.2 T
+2 F
+(X.__class__) 56.69 522.2 T
+1 F
+(class to which X belongs) 127.56 508.2 T
+2 F
+(X.__bases__) 56.69 494.2 T
+1 F
+(tuple of X base classes) 127.56 480.2 T
+2 F
+(M.__name__) 56.69 466.2 T
+1 F
+-0.22 (r/o attr) 127.56 452.2 P
+-0.22 (, module\325) 159.19 452.2 P
+-0.22 (s name as string) 204.3 452.2 P
+0 14 Q
+(Important Modules) 56.69 422.86 T
+72.03 392.01 56.69 392.01 2 L
+V
+N
+0 12 Q
+(sys) 56.69 393.2 T
+1 F
+(V) 56.69 372.2 T
+(ariables:) 64.03 372.2 T
+2 F
+(argv) 56.69 358.2 T
+1 F
+(The list of command line ar) 127.56 358.2 T
+(gu-) 260.33 358.2 T
+-0.65 (ments passed to a Python script.) 127.56 344.2 P
+(sys.ar) 127.56 330.2 T
+(gv[0] is the script name.) 155 330.2 T
+2 F
+(builtin_module_names) 56.69 316.2 T
+1 F
+(A list of strings giving the) 379.84 777.2 T
+-0.26 (names of all modules written in) 379.84 763.2 P
+(C that are linked into this inter-) 379.84 749.2 T
+(preter) 379.84 735.2 T
+(.) 407.17 735.2 T
+2 F
+(exc_type) 308.98 721.2 T
+(exc_value) 308.98 707.2 T
+(exc_traceback) 308.98 693.2 T
+1 F
+(Set when in an exception han-) 379.84 679.2 T
+(dler) 379.84 665.2 T
+(. Are last exception, last) 397.84 665.2 T
+(exception value, and traceback) 379.84 651.2 T
+-0.24 (object of call stack when excep-) 379.84 637.2 P
+(tion occured.) 379.84 623.2 T
+2 F
+(exitfunc) 308.98 609.2 T
+1 F
+(User can set to a parameterless) 379.84 609.2 T
+(fcn. It will get called before) 379.84 595.2 T
+(interpreter exits.) 379.84 581.2 T
+2 F
+(last_type) 308.98 567.2 T
+(last_value) 308.98 553.2 T
+(last_traceback) 308.98 539.2 T
+1 F
+-0.15 (Set only when an exception not) 379.84 525.2 P
+(handled and interpreter prints) 379.84 511.2 T
+(an error) 379.84 497.2 T
+(. Used by debuggers.) 416.83 497.2 T
+2 F
+(modules) 308.98 483.2 T
+1 F
+(List of modules that have) 379.84 483.2 T
+(already been loaded.) 379.84 469.2 T
+2 F
+(path) 308.98 455.2 T
+1 F
+( Search path for external mod-) 379.84 455.2 T
+(ules. Can be modi\336ed by pro-) 379.84 441.2 T
+(gram.) 379.84 427.2 T
+2 F
+(ps1) 308.98 413.2 T
+(ps2) 308.98 399.2 T
+1 F
+(prompts to use in interactive) 379.84 399.2 T
+(mode.) 379.84 385.2 T
+2 F
+(stdin stdout) 308.98 371.2 T
+(stderr) 308.98 357.2 T
+1 F
+(File objects used for I/O. User) 379.84 357.2 T
+-0.15 (can redirect by assigning a new) 379.84 343.2 P
+(\336le object to them \050or any) 379.84 329.2 T
+(object with a method \322write\050\051\323) 379.84 315.2 T
+(taking string ar) 632.13 777.2 T
+(gument\051.) 704.57 777.2 T
+2 F
+(tracebacklimit) 561.26 763.2 T
+1 F
+(Maximum levels of tb info) 632.13 749.2 T
+(printed on error) 632.13 735.2 T
+(.) 706.78 735.2 T
+(Functions:) 561.26 721.2 T
+2 F
+(exit\050n\051) 561.26 707.2 T
+1 F
+(Exit with status <n>. Raises) 632.13 707.2 T
+(SystemExit exception. \050Hence) 632.13 693.2 T
+(can be caught and ignored by) 632.13 679.2 T
+(program\051) 632.13 665.2 T
+2 F
+(settrace\050func\051) 561.26 651.2 T
+1 F
+(Sets a trace function: called) 632.13 637.2 T
+(before each line of code is) 632.13 623.2 T
+(exited.) 632.13 609.2 T
+2 F
+(setprof) 561.26 595.2 T
+(ile\050func\051) 611.66 595.2 T
+1 F
+(Sets a pro\336le function for per-) 632.13 581.2 T
+(formance pro\336ling.) 632.13 567.2 T
+571.93 538.01 561.26 538.01 2 L
+V
+N
+0 F
+(os) 561.26 539.2 T
+1 F
+(synonym for whatever O/S-speci\336c module is) 561.26 518.2 T
+(proper for current environment. Uses) 561.26 504.2 T
+2 F
+(posix) 742.54 504.2 T
+1 F
+(whenever possible.) 561.26 490.2 T
+(V) 561.26 476.2 T
+(ariables) 568.59 476.2 T
+2 F
+(name) 561.26 462.2 T
+1 F
+(name of O/S-speci\336c module) 632.13 462.2 T
+(\050e.g.) 632.13 448.2 T
+2 F
+(posix) 656.45 448.2 T
+1 F
+( or) 692.45 448.2 T
+2 F
+(mac) 708.45 448.2 T
+1 F
+(\051) 730.05 448.2 T
+2 F
+(path) 561.26 434.2 T
+1 F
+(O/S-speci\336c module for path) 632.13 434.2 T
+(manipulations. On Unix,) 632.13 420.2 T
+2 F
+(os.path.split\050\051) 632.13 406.2 T
+4 F
+(\326) 743.13 406.2 T
+2 F
+(posixpath.split\050\051) 632.13 392.2 T
+(curdir) 561.26 378.2 T
+1 F
+(string used to represent current) 632.13 378.2 T
+(directory \050\324.\325\051) 632.13 364.2 T
+2 F
+(pardir) 561.26 350.2 T
+1 F
+(string used to represent parent) 632.13 350.2 T
+(directory \050\324..\325\051) 632.13 336.2 T
+2 F
+(sep) 561.26 322.2 T
+1 F
+(string used to separate directo-) 632.13 322.2 T
+(ries \050\324/\325\051) 632.13 308.2 T
+0 0 0 1 0 0 0 K
+FMENDPAGE
+%%EndPage: "10" 10
+%%Page: "11" 11
+595.28 841.89 1 FMBEGINPAGE
+[0 0 0 1 0 0 0]
+[ 0 0 0 0 1 1 1]
+[ 0 1 1 0 1 0 0]
+[ 1 0 1 0 0 1 0]
+[ 1 1 0 0 0 0 1]
+[ 1 0 0 0 0 1 1]
+[ 0 1 0 0 1 0 1]
+[ 0 0 1 0 1 1 0]
+ 8 FrameSetSepColors
+FrameNoSep
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+83.37 776.01 56.69 776.01 2 L
+0 X
+0 0 0 1 0 0 0 K
+V
+1.14 H
+0 Z
+N
+0 12 Q
+(posix) 56.69 777.2 T
+1 F
+(V) 56.69 756.2 T
+(ariables:) 64.03 756.2 T
+(environ) 56.69 742.2 T
+(dictionary of environment vari-) 127.56 742.2 T
+(ables,) 127.56 728.2 T
+(E.g..) 56.69 714.2 T
+2 F
+(posix.environ[\324HOME\325]) 82.03 714.2 T
+(error) 56.69 700.2 T
+1 F
+(exception raised on POSIX-) 127.56 700.2 T
+(related error) 127.56 686.2 T
+(. Corresponding) 185.87 686.2 T
+(value is tuple of errno code and) 127.56 672.2 T
+(perror\050\051 string.) 127.56 658.2 T
+(Some Functions \050see doc for more\051:) 56.69 644.2 T
+2 F
+(chdir\050path\051) 56.69 630.2 T
+1 F
+(Go to) 127.56 616.2 T
+2 F
+(<path>) 157.56 616.2 T
+1 F
+(.) 200.76 616.2 T
+2 F
+(close\050fd\051) 56.69 602.2 T
+1 F
+(Close \336le descriptor) 127.56 602.2 T
+2 F
+(<fd>) 227.22 602.2 T
+1 F
+(.) 256.02 602.2 T
+2 F
+(_exit\050n\051) 56.69 588.2 T
+1 F
+(Immediate exit, with no clean-) 127.56 588.2 T
+(ups, no) 127.56 574.2 T
+2 F
+(SystemExit) 165.23 574.2 T
+1 F
+(, etc.) 237.23 574.2 T
+(Should use this to exit a child) 127.56 560.2 T
+(process.) 127.56 546.2 T
+2 F
+(exec\050p, args\051) 56.69 532.2 T
+1 F
+-0.79 (\322Become\323 executable) 127.56 518.2 P
+2 F
+-1.89 (<p>) 233.27 518.2 P
+1 F
+-0.79 ( with) 254.87 518.2 P
+(ar) 127.56 504.2 T
+(gs) 136.67 504.2 T
+2 F
+(<args>) 150.34 504.2 T
+(fork\050\051) 56.69 490.2 T
+1 F
+(Like C\325) 127.56 490.2 T
+(s) 163.9 490.2 T
+2 F
+(fork) 171.56 490.2 T
+1 F
+(\050\051. Returns 0 to) 200.36 490.2 T
+(child, child pid to parent.) 127.56 476.2 T
+2 F
+(kill\050pid, signal\051) 56.69 462.2 T
+1 F
+(Like C\325) 127.56 448.2 T
+(s kill) 163.9 448.2 T
+2 F
+(listdir\050path\051) 56.69 434.2 T
+1 F
+(List names of entries in direc-) 127.56 420.2 T
+(tory <path>.) 127.56 406.2 T
+2 F
+(open\050f) 56.69 392.2 T
+(ile, f) 99.89 392.2 T
+(lags, mode\051) 143.09 392.2 T
+1 F
+(Like C\325) 127.56 378.2 T
+(s) 163.9 378.2 T
+2 F
+(open) 171.56 378.2 T
+1 F
+(\050\051. Returns \336le) 200.36 378.2 T
+(descriptor) 127.56 364.2 T
+(.) 174.89 364.2 T
+2 F
+(pipe) 56.69 350.2 T
+1 F
+(\050\051) 85.49 350.2 T
+(Creates pipe. Returns pair of) 127.56 350.2 T
+(\336le descriptors \050r) 127.56 336.2 T
+(, w\051.) 209.06 336.2 T
+2 F
+(popen\050command, mode\051) 56.69 322.2 T
+1 F
+(Open a pipe to or from) 127.56 308.2 T
+2 F
+(<com-) 240.2 308.2 T
+(mand>) 379.84 777.2 T
+1 F
+(. Result is a \336le object) 415.84 777.2 T
+-0.13 (to read to or write from, as indi-) 379.84 763.2 P
+(cated by) 379.84 749.2 T
+2 F
+(<mode>) 423.16 749.2 T
+1 F
+( being \324r) 466.36 749.2 T
+(\325 or) 507.46 749.2 T
+(\324w\325.) 379.84 735.2 T
+2 F
+(read\050fd, n\051) 308.98 721.2 T
+1 F
+(Read <n> bytes from <fd> and) 379.84 707.2 T
+(return as string.) 379.84 693.2 T
+2 F
+(stat\050path\051) 308.98 679.2 T
+1 F
+(Returns) 379.84 665.2 T
+2 F
+(st_mode,) 420.17 665.2 T
+(st_ino, st_dev,) 379.84 651.2 T
+(st_nlink, st_uid,) 379.84 637.2 T
+(st_gid, st_size,) 379.84 623.2 T
+(st_atime, st_mtime,) 379.84 609.2 T
+(st_ctime) 379.84 595.2 T
+1 F
+(.) 437.44 595.2 T
+2 F
+(system\050command\051) 308.98 581.2 T
+1 F
+(Execute string) 379.84 567.2 T
+2 F
+(<command>) 451.83 567.2 T
+1 F
+( in) 516.63 567.2 T
+-0.1 (a subhell. Returns exit status of) 379.84 553.2 P
+(subshell.) 379.84 539.2 T
+2 F
+(unlink\050path\051) 308.98 525.2 T
+1 F
+(Unlink \050\322delete\323\051 path/\336le.) 379.84 511.2 T
+2 F
+(wait\050\051) 308.98 497.2 T
+1 F
+(W) 379.84 497.2 T
+(ait for child process comple-) 390.21 497.2 T
+(tion. Returns tuple of pid,) 379.84 483.2 T
+(exit_status) 379.84 469.2 T
+2 F
+(waitpid\050pid, options\051) 308.98 455.2 T
+1 F
+(W) 379.84 441.2 T
+(ait for process pid to com-) 390.21 441.2 T
+(plete. Returns tuple of pid,) 379.84 427.2 T
+(exit_status) 379.84 413.2 T
+2 F
+(write\050fd, str\051) 308.98 399.2 T
+1 F
+-0.65 (W) 379.84 385.2 P
+-0.65 (rite) 390.69 385.2 P
+2 F
+-1.56 (<str>) 409.04 385.2 P
+1 F
+-0.65 ( to) 445.04 385.2 P
+2 F
+-1.56 (<fd>) 459.08 385.2 P
+1 F
+-0.65 (. Returns) 487.88 385.2 P
+(num bytes written.) 379.84 371.2 T
+358.99 342.01 308.98 342.01 2 L
+V
+N
+0 F
+(posixpath) 308.98 343.2 T
+1 F
+(Some Functions \050see doc for more\051:) 308.98 322.2 T
+2 F
+(exists\050p\051) 308.98 308.2 T
+1 F
+-0.54 (T) 379.84 308.2 P
+-0.54 (rue if string) 386.75 308.2 P
+2 F
+-1.29 (<p>) 444.13 308.2 P
+1 F
+-0.54 ( is an existing) 465.73 308.2 P
+(path) 632.13 777.2 T
+2 F
+(expanduser\050p\051) 561.26 763.2 T
+1 F
+(Returns string that is) 632.13 749.2 T
+2 F
+(<p>) 734.8 749.2 T
+1 F
+( with) 756.4 749.2 T
+(\322~\323 expansion done.) 632.13 735.2 T
+2 F
+(isabs\050p\051) 561.26 721.2 T
+1 F
+(T) 632.13 707.2 T
+(rue if string) 639.04 707.2 T
+2 F
+(<p>) 698.03 707.2 T
+1 F
+( is an abso-) 719.63 707.2 T
+(lute path.) 632.13 693.2 T
+2 F
+(isdir\050p\051) 561.26 679.2 T
+1 F
+-0.04 (T) 632.13 665.2 P
+-0.04 (rue if string <p> is a directory) 639.04 665.2 P
+-0.04 (.) 782.2 665.2 P
+2 F
+(isf) 561.26 651.2 T
+(ile\050p\051) 582.86 651.2 T
+1 F
+(T) 632.13 651.2 T
+(rue if string <p> is a regular) 639.04 651.2 T
+(\336le.) 632.13 637.2 T
+2 F
+(islink\050p\051) 561.26 623.2 T
+1 F
+-0.24 (T) 632.13 623.2 P
+-0.24 (rue if string <p> is a symbolic) 639.04 623.2 P
+(link.) 632.13 609.2 T
+2 F
+(isf) 561.26 595.2 T
+(ile\050p\051) 582.86 595.2 T
+1 F
+(T) 632.13 595.2 T
+(rue if string <p> is a regular) 639.04 595.2 T
+(\336le.) 632.13 581.2 T
+2 F
+(ismount\050p\051) 561.26 567.2 T
+1 F
+(T) 633.26 567.2 T
+(rue if string <p> is a mount) 640.17 567.2 T
+(point.) 632.13 553.2 T
+2 F
+(split\050p\051) 561.26 539.2 T
+1 F
+(Splits into \050head, tail\051 where) 632.13 539.2 T
+2 F
+(<tail>) 632.13 525.2 T
+1 F
+( is last pathname com-) 675.33 525.2 T
+(ponent and) 632.13 511.2 T
+2 F
+(<head>) 688.12 511.2 T
+1 F
+( is every-) 731.32 511.2 T
+(thing leading up to that.) 632.13 497.2 T
+2 F
+(splitext\050p\051) 561.26 483.2 T
+1 F
+(Splits into) 632.13 469.2 T
+2 F
+(\050root, ext\051) 684.15 469.2 T
+1 F
+(where last comp of) 632.13 455.2 T
+2 F
+(<root>) 726.77 455.2 T
+1 F
+-0.52 (contains no periods and) 632.13 441.2 P
+2 F
+-1.24 (<ext>) 746.71 441.2 P
+1 F
+-0.23 (is empty or starts with a period.) 632.13 427.2 P
+2 F
+(walk\050p, visit, arg\051) 561.26 413.2 T
+1 F
+(Calls the function) 632.13 399.2 T
+2 F
+(<visit>) 720.46 399.2 T
+1 F
+(with ar) 632.13 385.2 T
+(guments) 665.57 385.2 T
+2 F
+( \050<arg>,) 706.24 385.2 T
+-2.03 (<dirname>, <names>\051) 632.13 371.2 P
+1 F
+-0.85 ( for) 766.9 371.2 P
+(each directory in the directory) 632.13 357.2 T
+(tree rooted at) 632.13 343.2 T
+2 F
+(<p>) 698.44 343.2 T
+1 F
+( The ar) 720.04 343.2 T
+(gu-) 753.81 343.2 T
+-0.93 (ment) 632.13 329.2 P
+2 F
+-2.23 (<dirname>) 658.2 329.2 P
+1 F
+-0.93 ( speci\336es the) 723 329.2 P
+(visited directory) 632.13 315.2 T
+(, the ar) 709.67 315.2 T
+(gument) 742.44 315.2 T
+0 0 0 1 0 0 0 K
+FMENDPAGE
+%%EndPage: "11" 11
+%%Page: "12" 12
+595.28 841.89 1 FMBEGINPAGE
+[0 0 0 1 0 0 0]
+[ 0 0 0 0 1 1 1]
+[ 0 1 1 0 1 0 0]
+[ 1 0 1 0 0 1 0]
+[ 1 1 0 0 0 0 1]
+[ 1 0 0 0 0 1 1]
+[ 0 1 0 0 1 0 1]
+[ 0 0 1 0 1 1 0]
+ 8 FrameSetSepColors
+FrameNoSep
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+2 12 Q
+0 X
+0 0 0 1 0 0 0 K
+(<names>) 127.56 777.2 T
+1 F
+( lists the \336les in the) 177.96 777.2 T
+(directory) 127.56 763.2 T
+(. The) 170.1 763.2 T
+2 F
+(<visit>) 197.76 763.2 T
+1 F
+( func-) 248.16 763.2 T
+(tion may modify) 127.56 749.2 T
+2 F
+(<names>) 210.56 749.2 T
+1 F
+( to) 260.96 749.2 T
+(in\337uence the set of directories) 127.56 735.2 T
+(visited below) 127.56 721.2 T
+2 F
+(<dirname>) 194.89 721.2 T
+1 F
+(,) 259.69 721.2 T
+(e.g., to avoid visiting certain) 127.56 707.2 T
+(parts of the tree.) 127.56 693.2 T
+83.36 664.01 56.69 664.01 2 L
+V
+1.14 H
+0 Z
+N
+0 F
+(math) 56.69 665.2 T
+1 F
+(V) 56.69 644.2 T
+(ariables:) 64.03 644.2 T
+2 F
+(pi e) 107.68 644.2 T
+1 F
+-0.5 (Functions \050see ordinary C man pages for info\051:) 56.69 630.2 P
+2 F
+(acos\050x\051) 56.69 616.2 T
+(asin\050x\051) 147.4 616.2 T
+(atan\050x\051) 205 616.2 T
+(atan2\050x,y\051) 56.69 602.2 T
+(ceil\050x\051) 147.4 602.2 T
+(cos\050x\051) 205 602.2 T
+(cosh\050x\051) 56.69 588.2 T
+(exp\050x\051) 147.4 588.2 T
+(fabs\050x\051) 204.09 588.2 T
+(f) 56.69 574.2 T
+(loor\050x\051) 63.89 574.2 T
+(fmod\050x,y\051) 147.4 574.2 T
+(ldexp\050x,y\051) 56.69 560.2 T
+(log\050x\051) 147.4 560.2 T
+(log10\050x\051) 204.09 560.2 T
+(pow\050x,y\051) 56.69 546.2 T
+(sin\050x\051) 147.4 546.2 T
+(sinh\050x\051) 204.09 546.2 T
+(sqrt\050x\051) 56.69 532.2 T
+(tan\050x\051) 147.4 532.2 T
+(tanh\050x\051.) 204.09 532.2 T
+(frexp\050x\051 -) 56.69 518.2 T
+3 F
+(Differ) 135.89 518.2 T
+(ent than C:) 164.12 518.2 T
+2 F
+(\050f) 56.69 504.2 T
+(loat,int\051=frexp\050f) 71.09 504.2 T
+(loat\051) 193.49 504.2 T
+(modf\050x\051 -) 56.69 490.2 T
+3 F
+(Differ) 128.69 490.2 T
+(ent than C:) 156.92 490.2 T
+2 F
+(\050f) 56.69 476.2 T
+(loat,f) 71.09 476.2 T
+(loat\051=modf\050f) 114.29 476.2 T
+(loat\051) 200.69 476.2 T
+86.69 447.01 56.69 447.01 2 L
+V
+N
+0 F
+(string) 56.69 448.2 T
+1 F
+(Some V) 56.69 427.2 T
+(ariables:) 94.36 427.2 T
+2 F
+(digits) 56.69 413.2 T
+1 F
+(The string \3240123456789\325) 127.56 413.2 T
+2 F
+(uppercase) 56.69 399.2 T
+(lowercase) 56.69 385.2 T
+(whitespace) 56.69 371.2 T
+1 F
+(Strings containing the appropri-) 127.56 357.2 T
+(ate characters) 127.56 343.2 T
+2 F
+(index_error) 56.69 329.2 T
+1 F
+-0.51 (Exception raised by) 127.56 315.2 P
+2 F
+-1.23 (index) 224.33 315.2 P
+1 F
+-0.51 (\050\051 if) 260.33 315.2 P
+2 F
+(substr) 379.84 777.2 T
+1 F
+( not found.) 423.04 777.2 T
+(Some Functions:) 308.98 763.2 T
+2 F
+(index\050s, sub, i=0\051) 308.98 749.2 T
+1 F
+-0.2 (Return the lowest index in) 379.84 735.2 P
+2 F
+-0.48 (<s>) 508.51 735.2 P
+1 F
+-0.31 (not smaller than) 379.84 721.2 P
+2 F
+-0.74 (<i>) 459.25 721.2 P
+1 F
+-0.31 ( where the) 480.85 721.2 P
+(substring) 379.84 707.2 T
+2 F
+(<sub>) 426.85 707.2 T
+1 F
+( is found.) 462.85 707.2 T
+2 F
+(lower\050s\051) 308.98 693.2 T
+1 F
+(Return a string that is) 379.84 693.2 T
+2 F
+(<s>) 486.17 693.2 T
+1 F
+( in) 507.77 693.2 T
+(lowercase) 379.84 679.2 T
+2 F
+(splitf) 308.98 665.2 T
+(ields\050s, sep\051) 352.18 665.2 T
+1 F
+(Returns a list containing the) 379.84 651.2 T
+(\336elds of the string) 379.84 637.2 T
+2 F
+(<s>) 469.84 637.2 T
+1 F
+(, using) 491.44 637.2 T
+(the string) 379.84 623.2 T
+2 F
+(<sep>) 427.84 623.2 T
+1 F
+( as a separa-) 463.84 623.2 T
+(tor) 379.84 609.2 T
+(.) 392.51 609.2 T
+2 F
+(joinf) 308.98 595.2 T
+(ields\050words, sep\051) 344.98 595.2 T
+1 F
+(Concatenate a list or tuple of) 379.84 581.2 T
+(words with intervening separa-) 379.84 567.2 T
+(tors.) 379.84 553.2 T
+2 F
+(strip\050s\051) 308.98 539.2 T
+1 F
+(Return a string that is) 379.84 539.2 T
+2 F
+(<s>) 486.17 539.2 T
+1 F
+(without leading and trailing) 379.84 525.2 T
+(whitespace.) 379.84 511.2 T
+2 F
+(upper\050s\051) 308.98 497.2 T
+1 F
+(Return a string that is) 379.84 497.2 T
+2 F
+(<s>) 486.17 497.2 T
+1 F
+( in) 507.77 497.2 T
+(uppercase) 379.84 483.2 T
+314.3 454.01 308.98 454.01 2 L
+V
+N
+0 F
+(r) 308.98 455.2 T
+336.74 454.01 314.09 454.01 2 L
+V
+N
+(egex) 314.09 455.2 T
+3 F
+(Patterns ar) 308.98 434.2 T
+(e speci\336ed as strings. Default syn-) 362.87 434.2 T
+(tax is emacs-style.) 308.98 420.2 T
+1 F
+(V) 308.98 406.2 T
+(ariables:) 316.31 406.2 T
+2 F
+(error) 308.98 392.2 T
+1 F
+(Exception when pattern string) 379.84 392.2 T
+(isn\325) 379.84 378.2 T
+(t valid regexp.) 397.63 378.2 T
+(Functions:) 308.98 364.2 T
+2 F
+(match\050pattern, string\051) 308.98 350.2 T
+1 F
+(Return how many characters at) 379.84 336.2 T
+(the beginning of) 379.84 322.2 T
+2 F
+(<string>) 461.5 322.2 T
+1 F
+-0.78 (match regexp) 379.84 308.2 P
+2 F
+-1.87 (<pattern>) 446.27 308.2 P
+1 F
+-0.78 (.) 511.07 308.2 P
+2 F
+-1.87 (-1) 516.29 308.2 P
+1 F
+(if none.) 632.13 777.2 T
+2 F
+(search\050pattern, string\051) 561.26 763.2 T
+1 F
+(Return the \336rst position in) 632.13 749.2 T
+2 F
+(<string>) 632.13 735.2 T
+1 F
+( that matches) 689.73 735.2 T
+(regexp) 632.13 721.2 T
+2 F
+(<pattern>) 667.78 721.2 T
+1 F
+(. Return) 732.58 721.2 T
+2 F
+(-) 632.13 707.2 T
+(1) 639.33 707.2 T
+1 F
+( if none.) 646.53 707.2 T
+2 F
+(compile\050pattern [,translate]\051) 561.26 693.2 T
+1 F
+( Create regexp object that has) 632.13 679.2 T
+(methods match\050\051 and search\050\051) 632.13 665.2 T
+(working as above. Also) 632.13 651.2 T
+2 F
+(group\050i1, [,i2]*\051) 632.13 637.2 T
+3 F
+(E.g.) 561.26 623.2 T
+2 F
+(p= \134) 561.26 609.2 T
+(compile\050\324id\134\050[a-) 561.26 595.2 T
+(z]\134\051\134\050[a-) 676.46 595.2 T
+(z]\134\051\325\051) 741.26 595.2 T
+(p.match\050\324idab\325\051 ==> 4) 561.26 581.2 T
+(p.group\0501, 2\051 ==> \050\324a\325,\324b\325\051) 561.26 567.2 T
+(set_sytax\050f) 561.26 553.2 T
+(lag\051) 640.46 553.2 T
+1 F
+(Set syntax \337ags for future calls) 632.13 539.2 T
+(to) 632.13 525.2 T
+2 F
+(match) 644.46 525.2 T
+1 F
+(\050\051,) 680.46 525.2 T
+2 F
+(search) 694.45 525.2 T
+1 F
+(\050\051 and) 737.65 525.2 T
+2 F
+(compile) 632.13 511.2 T
+1 F
+(\050\051. Returns current) 682.53 511.2 T
+(value. Flags in module) 632.13 497.2 T
+2 F
+(regex_syntax) 632.13 483.2 T
+1 F
+(.) 718.53 483.2 T
+2 F
+(symcomp\050pattern [,translate]\051) 561.26 469.2 T
+1 F
+-0.65 (Like compile but with symbolic) 632.13 455.2 P
+(group names. Names in angle) 632.13 441.2 T
+(brackets. Access through) 632.13 427.2 T
+(group method.) 632.13 413.2 T
+3 F
+(E.g.) 561.26 399.2 T
+2 F
+(p = \134) 561.26 385.2 T
+(symcomp\050\324id\134\050<l1>[a-) 561.26 371.2 T
+(z]\134\051\134\050<l2>[) 705.26 371.2 T
+(a-z]\134\051\325\051) 561.26 357.2 T
+(p.match\050\324idab\325\051 ==> 4) 561.26 343.2 T
+(p.group\050\324l1\325\051 ==> \324a\325) 561.26 329.2 T
+0 0 0 1 0 0 0 K
+FMENDPAGE
+%%EndPage: "12" 12
+%%Page: "13" 13
+595.28 841.89 1 FMBEGINPAGE
+[0 0 0 1 0 0 0]
+[ 0 0 0 0 1 1 1]
+[ 0 1 1 0 1 0 0]
+[ 1 0 1 0 0 1 0]
+[ 1 1 0 0 0 0 1]
+[ 1 0 0 0 0 1 1]
+[ 0 1 0 0 1 0 1]
+[ 0 0 1 0 1 1 0]
+ 8 FrameSetSepColors
+FrameNoSep
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+62.02 776.01 56.69 776.01 2 L
+0 X
+0 0 0 1 0 0 0 K
+V
+1.14 H
+0 Z
+N
+0 12 Q
+(r) 56.69 777.2 T
+123.8 776.01 61.81 776.01 2 L
+V
+N
+(egex_syntax) 61.81 777.2 T
+3 F
+(Flags for) 56.69 756.2 T
+2 F
+(regex.set_syntax) 104.03 756.2 T
+1 F
+(\050\051.) 219.23 756.2 T
+3 F
+(BitOr the \337ags you want together and pass to) 56.69 742.2 T
+(function.) 56.69 728.2 T
+1 F
+(V) 56.69 714.2 T
+(ariables:) 64.03 714.2 T
+2 F
+(RE_NO_BK_PARENS) 56.69 700.2 T
+1 F
+-0.27 (if set, \050 means grouping, \134\050 is lit-) 127.56 686.2 P
+(eral \322\050\322) 127.56 672.2 T
+(if not, vice versa) 127.56 658.2 T
+2 F
+(RE_NO_BK_VBAR) 56.69 644.2 T
+1 F
+(if set, | means or) 127.56 630.2 T
+(, \134| is literal \322|\323) 205.8 630.2 T
+(if not, vice versa) 127.56 616.2 T
+2 F
+(RE_BK_PLUS_QM) 56.69 602.2 T
+1 F
+(if set, + or ? are operator) 127.56 588.2 T
+(, \134+, \134?) 245.47 588.2 T
+(are literal) 127.56 574.2 T
+(if not, vice versa) 127.56 560.2 T
+2 F
+(RE_TIGHT_VBAR) 56.69 546.2 T
+1 F
+(-- if set, | binds tighter) 155.9 546.2 T
+(than ^ or $) 127.56 532.2 T
+(if not, vice versa) 127.56 518.2 T
+2 F
+(RE_NEWLINE_OR) 56.69 504.2 T
+1 F
+(if set, \134n is an OR operator) 127.56 490.2 T
+(if not, it is a normal char) 127.56 476.2 T
+2 F
+(RE_CONTEXT_INDEP_OPS) 56.69 462.2 T
+1 F
+(if not set, special chars always) 127.56 448.2 T
+(have special meaning) 127.56 434.2 T
+( if set, depends on context:) 127.56 420.2 T
+2 F
+-0.53 (^) 56.69 406.2 P
+1 F
+-0.22 ( - only special at the beginning, or after \050 or) 63.89 406.2 P
+2 F
+-0.53 (|) 273.43 406.2 P
+($) 56.69 392.2 T
+1 F
+( - only special at the end, or before) 63.89 392.2 T
+2 F
+(\051) 233.85 392.2 T
+1 F
+( or) 241.05 392.2 T
+2 F
+(|) 257.05 392.2 T
+(*,) 56.69 378.2 T
+(+,) 74.09 378.2 T
+(?) 91.49 378.2 T
+1 F
+( - only special when not after the) 98.69 378.2 T
+(beginning,) 56.69 364.2 T
+2 F
+(\050) 110.69 364.2 T
+1 F
+(, or) 117.89 364.2 T
+2 F
+(|) 136.89 364.2 T
+(RE_SYNTAX_AWK =) 56.69 350.2 T
+(\050RE_NO_BK_PARENS |) 127.56 336.2 T
+(RE_NO_BK_VBAR |) 127.56 322.2 T
+(RE_CONTEXT_INDEP_OPS\051) 127.56 308.2 T
+(RE_SYNTAX_EGREP =) 308.98 777.2 T
+(\050RE_SYNTAX_AWK |) 379.84 763.2 T
+(RE_NEWLINE_OR\051) 379.84 749.2 T
+-2.15 (RE_SYNTAX_GREP = \050RE_BK_PLUS_QM) 308.98 735.2 P
+(| RE_NEWLINE_OR\051) 379.84 721.2 T
+(RE_SYNTAX_EMACS = 0) 308.98 707.2 T
+314.3 678.01 308.98 678.01 2 L
+V
+N
+0 F
+(r) 308.98 679.2 T
+352.43 678.01 314.09 678.01 2 L
+V
+N
+(eg_sub) 314.09 679.2 T
+1 F
+(Functions:) 308.98 658.2 T
+2 F
+(sub\050pattern, rep, str\051) 308.98 644.2 T
+1 F
+(Replace 1st occur of) 379.84 630.2 T
+2 F
+(<pat-) 481.15 630.2 T
+(tern>) 379.84 616.2 T
+1 F
+( in) 415.84 616.2 T
+2 F
+(<str>) 431.18 616.2 T
+1 F
+( by) 467.18 616.2 T
+2 F
+(<rep>) 485.18 616.2 T
+1 F
+(and return this.) 379.84 602.2 T
+2 F
+(gsub\050pattern, rep, str\051) 308.98 588.2 T
+1 F
+(Replace) 379.84 574.2 T
+433.49 572.89 421.49 572.89 2 L
+V
+0.59 H
+N
+(all) 421.49 574.2 T
+( occurances of) 433.49 574.2 T
+2 F
+(<pattern>) 379.84 560.2 T
+1 F
+( in) 444.64 560.2 T
+2 F
+(<str>) 459.98 560.2 T
+1 F
+( by) 495.98 560.2 T
+2 F
+(<rep>) 379.84 546.2 T
+1 F
+( and return this.) 415.84 546.2 T
+2 F
+(split\050str, pattern\051) 308.98 532.2 T
+1 F
+(Split) 379.84 518.2 T
+2 F
+(<str>) 405.52 518.2 T
+1 F
+( into \336elds seper-) 441.52 518.2 T
+(ated by delimiters matching) 379.84 504.2 T
+2 F
+(<pattern>) 379.84 490.2 T
+1 F
+( and return as list) 444.64 490.2 T
+(of strings.) 379.84 476.2 T
+0 14 Q
+(Other Modules In Base Distribution) 308.98 446.86 T
+352.99 416.01 308.98 416.01 2 L
+V
+1.14 H
+N
+0 12 Q
+(Built-ins) 308.98 417.2 T
+1 F
+( sys) 308.98 396.2 T
+(Interpreter state vars and func-) 379.84 396.2 T
+(tions) 379.84 382.2 T
+2 F
+(__built-in__) 308.98 368.2 T
+1 F
+(Access to all built-in python) 379.84 354.2 T
+(identi\336ers) 379.84 340.2 T
+2 F
+(__main__) 308.98 326.2 T
+1 F
+(Scope of the interpreters main) 379.84 326.2 T
+(program, script or stdin) 379.84 312.2 T
+2 F
+(array) 561.26 777.2 T
+1 F
+(Obj ef) 632.13 777.2 T
+(\336ciently representing) 662.23 777.2 T
+(arrays of basic values) 632.13 763.2 T
+2 F
+(math) 561.26 749.2 T
+1 F
+(Math functions of C standard) 632.13 749.2 T
+2 F
+(time) 561.26 735.2 T
+1 F
+(T) 632.13 735.2 T
+(ime-related functions) 639.04 735.2 T
+2 F
+(regex) 561.26 721.2 T
+1 F
+(Regular expression matching) 632.13 721.2 T
+(operations) 632.13 707.2 T
+2 F
+(marshal) 561.26 693.2 T
+1 F
+(Read and write some python) 632.13 693.2 T
+(values in binary format) 632.13 679.2 T
+2 F
+(struct) 561.26 665.2 T
+1 F
+(Convert between python val-) 632.13 665.2 T
+(ues and C structs) 632.13 651.2 T
+609.27 622.01 561.26 622.01 2 L
+V
+N
+0 F
+(Standard) 561.26 623.2 T
+2 F
+(getopt) 561.26 602.2 T
+1 F
+-0.06 (Parse cmd line ar) 632.13 602.2 P
+-0.06 (gs in sys.ar) 714.71 602.2 P
+-0.06 (gv) 768.04 602.2 P
+-0.06 (.) 779.26 602.2 P
+(A la UNIX \324getopt\325.) 632.13 588.2 T
+2 F
+(os) 561.26 574.2 T
+1 F
+-0.7 (A more portable interface to OS) 632.13 574.2 P
+(dependent functionality) 632.13 560.2 T
+2 F
+(rand) 561.26 546.2 T
+1 F
+(Pseudo-random generator) 632.13 546.2 T
+(, like) 755.28 546.2 T
+(C rand\050\051) 632.13 532.2 T
+2 F
+(regsub) 561.26 518.2 T
+1 F
+(Functions useful for working) 632.13 518.2 T
+(with regular expressions) 632.13 504.2 T
+2 F
+(string) 561.26 490.2 T
+1 F
+(Useful string and characters) 632.13 490.2 T
+(functions and exceptions) 632.13 476.2 T
+2 F
+(whrandom) 561.26 462.2 T
+1 F
+(W) 632.13 462.2 T
+(ichmann-Hill pseudo-ran-) 642.97 462.2 T
+(dom number generator) 632.13 448.2 T
+585.93 419.01 561.26 419.01 2 L
+V
+N
+0 F
+(Unix) 561.26 420.2 T
+2 F
+(dbm) 561.26 399.2 T
+1 F
+(Interface to Unix ndbm data-) 632.13 399.2 T
+(base library) 632.13 385.2 T
+2 F
+(grp) 561.26 371.2 T
+1 F
+(Interface to Unix group data-) 632.13 371.2 T
+(base) 632.13 357.2 T
+2 F
+(posix) 561.26 343.2 T
+1 F
+(OS functionality standardized) 632.13 343.2 T
+(by C and) 632.13 329.2 T
+2 F
+(POSIX) 678.46 329.2 T
+1 F
+( standards) 714.46 329.2 T
+2 F
+(posixpath) 561.26 315.2 T
+(POSIX) 632.13 315.2 T
+1 F
+( pathname functions) 668.13 315.2 T
+0 0 0 1 0 0 0 K
+FMENDPAGE
+%%EndPage: "13" 13
+%%Page: "14" 14
+595.28 841.89 1 FMBEGINPAGE
+[0 0 0 1 0 0 0]
+[ 0 0 0 0 1 1 1]
+[ 0 1 1 0 1 0 0]
+[ 1 0 1 0 0 1 0]
+[ 1 1 0 0 0 0 1]
+[ 1 0 0 0 0 1 1]
+[ 0 1 0 0 1 0 1]
+[ 0 0 1 0 1 1 0]
+ 8 FrameSetSepColors
+FrameNoSep
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+2 12 Q
+0 X
+0 0 0 1 0 0 0 K
+(pwd) 56.69 777.2 T
+1 F
+(Access to the Unix password) 127.56 777.2 T
+(database) 127.56 763.2 T
+2 F
+(select) 56.69 749.2 T
+1 F
+-0.52 (Access to Unix select multiplex) 127.56 749.2 P
+(\336le synchronization) 127.56 735.2 T
+2 F
+(socket) 56.69 721.2 T
+1 F
+-0.25 (Access to BSD socket interface) 127.56 721.2 P
+2 F
+(thread) 56.69 707.2 T
+1 F
+(Low-level primitives for work-) 127.56 707.2 T
+(ing with process threads) 127.56 693.2 T
+116.69 664.01 56.69 664.01 2 L
+V
+1.14 H
+0 Z
+N
+0 F
+(Multimedia) 56.69 665.2 T
+2 F
+(audioop) 56.69 644.2 T
+1 F
+(Useful operations on sound) 127.56 644.2 T
+(fragments) 127.56 630.2 T
+2 F
+(imageop) 56.69 616.2 T
+1 F
+(Useful operations on images) 127.56 616.2 T
+2 F
+(jpeg) 56.69 602.2 T
+1 F
+(Access to jpeg image compres-) 127.56 602.2 T
+(sor and decompressor) 127.56 588.2 T
+2 F
+(rgbimg) 56.69 574.2 T
+1 F
+(Access SGI imglib image \336les) 127.56 574.2 T
+191.03 545.01 56.69 545.01 2 L
+V
+N
+0 F
+(Cryptographic Extensions) 56.69 546.2 T
+2 F
+(md5) 56.69 525.2 T
+1 F
+(Interface to RSA) 127.56 525.2 T
+(\325) 207.54 525.2 T
+(s MD5 mes-) 210.88 525.2 T
+(sage digest algorithm) 127.56 511.2 T
+2 F
+(mpz) 56.69 497.2 T
+1 F
+(Interface to int part of GNU) 127.56 497.2 T
+(multiple precision library) 127.56 483.2 T
+2 F
+(rotor) 56.69 469.2 T
+1 F
+(Implementation of a rotor) 127.56 469.2 T
+(-) 250.97 469.2 T
+(based encryption algorithm) 127.56 455.2 T
+173.72 426.01 56.69 426.01 2 L
+V
+N
+0 F
+(Stdwin \321 Standard W) 56.69 427.2 T
+244.51 426.01 173.5 426.01 2 L
+V
+N
+(indow System) 173.5 427.2 T
+1 F
+(stdwin) 56.69 406.2 T
+-0.26 (Standard W) 127.56 406.2 P
+-0.26 (indow System inter-) 183.81 406.2 P
+(face) 127.56 392.2 T
+(stdwinevents) 56.69 378.2 T
+(Stdwin event, command, and) 127.56 378.2 T
+(selection constants) 127.56 364.2 T
+(rect) 56.69 350.2 T
+(Rectangle manipulation opera-) 127.56 350.2 T
+(tions) 127.56 336.2 T
+398.3 776.01 308.98 776.01 2 L
+V
+N
+0 F
+(SGI IRIX \0504 & 5\051) 308.98 777.2 T
+1 F
+(al) 308.98 756.2 T
+(SGI audio facilities) 379.84 756.2 T
+(AL) 308.98 742.2 T
+(al constants) 379.84 742.2 T
+(\337) 308.98 728.2 T
+(Interface to FORMS library) 379.84 728.2 T
+(FL) 308.98 714.2 T
+(\337 constants) 379.84 714.2 T
+(\337p) 308.98 700.2 T
+(Functions for form designer) 379.84 700.2 T
+(fm) 308.98 686.2 T
+(Access to font manager library) 379.84 686.2 T
+(gl) 308.98 672.2 T
+(Access to graphics library) 379.84 672.2 T
+(GL) 308.98 658.2 T
+(Constants for gl) 379.84 658.2 T
+(DEVICE) 308.98 644.2 T
+(More constants for gl) 379.84 644.2 T
+(img\336le) 308.98 630.2 T
+(Imglib image \336le interface) 379.84 630.2 T
+348.98 601.01 308.98 601.01 2 L
+V
+N
+0 F
+(SUNOS) 308.98 602.2 T
+1 F
+(sunaudiodev) 308.98 581.2 T
+(Access to sun audio interface) 379.84 581.2 T
+0 14 Q
+(W) 308.98 551.86 T
+(orkspace exploration and idiom) 322.21 551.86 T
+(hints) 308.98 534.86 T
+1 12 Q
+(dir\050<module>\051) 308.98 515.2 T
+-0.57 (list functions, variables in) 408.19 515.2 P
+(<module>) 379.84 501.2 T
+(dir\050\051) 308.98 487.2 T
+(get object keys, defaults) 408.19 487.2 T
+(to local name space) 379.84 473.2 T
+(X.__methods__) 308.98 459.2 T
+-0.62 (list of methods supported by X) 385.31 459.2 P
+(\050if any\051) 379.84 445.2 T
+(X.__members__) 308.98 431.2 T
+(List of X\325) 388.63 431.2 T
+(s data attributes) 435.3 431.2 T
+(if __name__ == \324__main__\325: main\050\051) 308.98 417.2 T
+(invoke main if running as script) 379.84 403.2 T
+(map\050None, lst1, lst2, ...\051) 308.98 389.2 T
+(mer) 379.84 375.2 T
+(ge lists) 398.29 375.2 T
+(b = a[:]) 308.98 361.2 T
+(create copy of seq structure) 379.84 361.2 T
+(_) 308.98 347.2 T
+(in interactive mode, is last) 379.84 347.2 T
+(value printed) 379.84 333.2 T
+(vars\050\051) 308.98 319.2 T
+(DO NOT type at interactive) 379.84 319.2 T
+(prompt! Y) 632.13 777.2 T
+(ou get in\336nite loop) 681.25 777.2 T
+(\050C-c will exit\051.) 632.13 763.2 T
+0 14 Q
+(Python Mode for Emacs) 561.26 733.86 T
+1 12 Q
+(T) 561.26 714.2 T
+(ype C-c ? when in python-mode for exten-) 567.75 714.2 T
+(sive help.) 561.26 700.2 T
+607.93 671.01 561.26 671.01 2 L
+V
+N
+0 F
+(INDENT) 561.26 672.2 T
+615.7 671.01 607.04 671.01 2 L
+V
+N
+(A) 607.04 672.2 T
+645.49 671.01 614.82 671.01 2 L
+V
+N
+(TION) 614.82 672.2 T
+1 F
+(Primarily for entering new code:) 561.26 651.2 T
+(T) 561.26 637.2 T
+(AB) 567.63 637.2 T
+(indent line appropriately) 632.13 637.2 T
+(LFD) 561.26 623.2 T
+(insert newline, then indent) 632.13 623.2 T
+(DEL) 561.26 609.2 T
+(reduce indentation, or delete) 632.13 609.2 T
+(single character) 632.13 595.2 T
+(Primarily for reindenting existing code:) 561.26 581.2 T
+(C-c :) 561.26 567.2 T
+(guess py-indent-of) 632.13 567.2 T
+(fset from) 721.56 567.2 T
+(\336le content; change locally) 632.13 553.2 T
+(C-u C-c :) 561.26 539.2 T
+(ditto, but change globally) 632.13 539.2 T
+(C-c T) 561.26 525.2 T
+(AB) 587.96 525.2 T
+(reindent region to match its) 632.13 525.2 T
+(context) 632.13 511.2 T
+(C-c <) 561.26 497.2 T
+(shift region left by py-indent-) 632.13 497.2 T
+(of) 632.13 483.2 T
+(fset) 641.91 483.2 T
+(C-c >) 561.26 469.2 T
+(shift region right by py-indent-) 632.13 469.2 T
+(of) 632.13 455.2 T
+(fset) 641.91 455.2 T
+703.9 412.01 561.26 412.01 2 L
+V
+N
+0 F
+(MARKING & MANIPULA) 561.26 413.2 T
+736.69 412.01 703.02 412.01 2 L
+V
+N
+(TING) 703.02 413.2 T
+673.94 395.01 561.26 395.01 2 L
+V
+N
+(REGIONS OF CODE) 561.26 396.2 T
+1 F
+(C-c C-b) 561.26 375.2 T
+(mark block of lines) 632.13 375.2 T
+(M-C-h) 561.26 361.2 T
+(mark smallest enclosing def) 632.13 361.2 T
+(C-u M-C-h) 561.26 347.2 T
+(mark smallest enclosing class) 632.13 347.2 T
+(C-c #) 561.26 333.2 T
+(comment out region of code) 632.13 333.2 T
+(C-u C-c #) 561.26 319.2 T
+(uncomment region of code) 632.13 319.2 T
+0 0 0 1 0 0 0 K
+FMENDPAGE
+%%EndPage: "14" 14
+%%Page: "15" 15
+595.28 841.89 1 FMBEGINPAGE
+[0 0 0 1 0 0 0]
+[ 0 0 0 0 1 1 1]
+[ 0 1 1 0 1 0 0]
+[ 1 0 1 0 0 1 0]
+[ 1 1 0 0 0 0 1]
+[ 1 0 0 0 0 1 1]
+[ 0 1 0 0 1 0 1]
+[ 0 0 1 0 1 1 0]
+ 8 FrameSetSepColors
+FrameNoSep
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+149.69 776.01 56.69 776.01 2 L
+0 X
+0 0 0 1 0 0 0 K
+V
+1.14 H
+0 Z
+N
+0 12 Q
+(MOVING POINT) 56.69 777.2 T
+1 F
+(C-c C-p) 56.69 756.2 T
+(move to statement preceding) 127.56 756.2 T
+(point) 127.56 742.2 T
+(C-c C-n) 56.69 728.2 T
+(move to statement following) 127.56 728.2 T
+(point) 127.56 714.2 T
+(C-c C-u) 56.69 700.2 T
+(move up to start of current) 127.56 700.2 T
+(block) 127.56 686.2 T
+(M-C-a) 56.69 672.2 T
+(move to start of def) 127.56 672.2 T
+(C-u M-C-a) 56.69 658.2 T
+(move to start of class) 127.56 658.2 T
+(M-C-e) 56.69 644.2 T
+(move to end of def) 127.56 644.2 T
+(C-u M-C-e) 56.69 630.2 T
+(move to end of class) 127.56 630.2 T
+221.37 601.01 56.69 601.01 2 L
+V
+N
+0 F
+(EXECUTING PYTHON CODE) 56.69 602.2 T
+1 F
+(C-c C-c) 56.69 581.2 T
+(sends the entire buf) 127.56 581.2 T
+(fer to the) 220.99 581.2 T
+(Python interpreter) 127.56 567.2 T
+(C-c |) 56.69 553.2 T
+(sends the current region) 127.56 553.2 T
+(C-c !) 56.69 539.2 T
+(starts a Python interpreter win-) 127.56 539.2 T
+(dow; this will be used by) 127.56 525.2 T
+-0.23 (subse-) 250.9 525.2 S
+(quent C-c C-c or C-c |) 127.56 511.2 T
+(commands) 127.56 497.2 T
+0 14 Q
+(The Python Debugger) 56.69 467.86 T
+106.68 437.01 56.69 437.01 2 L
+V
+N
+0 12 Q
+(Accessing) 56.69 438.2 T
+2 F
+(import pdb) 56.69 417.2 T
+3 F
+(\050it\325) 56.69 403.2 T
+(s a module written in Python\051) 69.81 403.2 T
+1 F
+(Functions) 56.69 389.2 T
+2 F
+(run\050string\051) 56.69 375.2 T
+1 F
+(interpret string in the debugger) 127.56 361.2 T
+2 F
+-2.15 (runctx\050string, globals, locals\051) 56.69 347.2 P
+1 F
+( interpret string using globals) 127.56 333.2 T
+(and locals for namespace) 127.56 319.2 T
+2 F
+(runcall\050fun, arg1, arg2, ...\051) 308.98 777.2 T
+1 F
+(run function object) 379.84 763.2 T
+2 F
+(<fun>) 474.16 763.2 T
+1 F
+(with ar) 379.84 749.2 T
+(gs given.) 413.29 749.2 T
+2 F
+(pm\050\051) 308.98 735.2 T
+1 F
+(run postmortem on last excep-) 379.84 735.2 T
+(tion \050like debugging a core \336le\051) 379.84 721.2 T
+2 F
+(post_mortem\050t\051) 308.98 707.2 T
+1 F
+(run postmortem on traceback) 379.84 693.2 T
+(object) 379.84 679.2 T
+2 F
+(<t>) 412.17 679.2 T
+1 F
+(De\336nes class \322) 308.98 665.2 T
+2 F
+(Pdb) 380.29 665.2 T
+1 F
+(\323) 401.89 665.2 T
+(use) 379.84 651.2 T
+2 F
+(Pdb) 398.84 651.2 T
+1 F
+( to create reusable) 420.44 651.2 T
+(debugger objects. Object pre-) 379.84 637.2 T
+(serves state \050i.e. break points\051) 379.84 623.2 T
+(between calls.) 379.84 609.2 T
+2 F
+(Pdb) 308.98 595.2 T
+1 F
+( de\336nes methods) 330.58 595.2 T
+2 F
+(run\050string\051) 308.98 581.2 T
+1 F
+( interpret string in the debugger) 379.84 567.2 T
+2 F
+-2.15 (runctx\050string, globals, locals\051) 308.98 553.2 P
+1 F
+(interpret string using globals) 379.84 539.2 T
+(and locals for namespace) 379.84 525.2 T
+2 F
+(runcall\050fun, arg1, arg2, ...\051) 308.98 511.2 T
+1 F
+(run function object with ar) 379.84 497.2 T
+(gs) 507.61 497.2 T
+(runs until a breakpoint hit,) 379.84 483.2 T
+-0.59 (exception, or end of program. If) 379.84 469.2 P
+(an exception occurs, variable) 379.84 455.2 T
+2 F
+(__exception__) 379.84 441.2 T
+1 F
+( holds) 473.44 441.2 T
+(\050exception,value\051.) 379.84 427.2 T
+367.64 398.01 308.98 398.01 2 L
+V
+N
+0 F
+(Commands) 308.98 399.2 T
+2 F
+(h, help) 308.98 378.2 T
+1 F
+(brief reminder of commands) 379.84 378.2 T
+2 F
+(b, break [<arg>]) 308.98 364.2 T
+1 F
+-0.65 (if) 379.84 350.2 P
+2 F
+-1.56 (<arg>) 389.52 350.2 P
+1 F
+-0.65 ( numeric, break at line) 425.52 350.2 P
+2 F
+(<arg>) 379.84 336.2 T
+1 F
+( in current \336le) 415.84 336.2 T
+(if) 379.84 322.2 T
+2 F
+(<arg>) 390.17 322.2 T
+1 F
+( is function object,) 426.17 322.2 T
+(break on entry to fcn) 379.84 308.2 T
+2 F
+(<arg>) 482.81 308.2 T
+1 F
+(if no ar) 632.13 777.2 T
+(g, list breakpoints) 666.57 777.2 T
+2 F
+(cl, clear [<arg>]) 561.26 763.2 T
+1 F
+(if) 632.13 749.2 T
+2 F
+(<arg>) 642.46 749.2 T
+1 F
+( numeric, clear break-) 678.46 749.2 T
+(point at) 632.13 735.2 T
+2 F
+(<arg>) 671.46 735.2 T
+1 F
+( in current \336le) 707.46 735.2 T
+(if no ar) 632.13 721.2 T
+(g, clear all breakpoints) 666.57 721.2 T
+(after con\336rmation) 632.13 707.2 T
+2 F
+(w, where) 561.26 693.2 T
+1 F
+(print current call stack) 632.13 693.2 T
+2 F
+(u, up) 561.26 679.2 T
+1 F
+(move up one stack frame \050to) 632.13 679.2 T
+(top-level caller\051) 632.13 665.2 T
+2 F
+(d, down) 561.26 651.2 T
+1 F
+(move down one stack frame) 632.13 651.2 T
+2 F
+(s, step) 561.26 637.2 T
+1 F
+(advance one line in the pro-) 632.13 637.2 T
+(gram, stepping into calls) 632.13 623.2 T
+2 F
+(n, next) 561.26 609.2 T
+1 F
+(advance one line, stepping) 632.13 609.2 T
+(over calls) 632.13 595.2 T
+2 F
+(r, return) 561.26 581.2 T
+1 F
+-1.01 (continue execution until current) 633.26 581.2 P
+(function returns \050the return) 632.13 567.2 T
+(value is saved in variable) 632.13 553.2 T
+2 F
+(__return__) 632.13 539.2 T
+1 F
+(, which can be) 704.13 539.2 T
+(printed or manipulated from) 632.13 525.2 T
+(debugger\051) 632.13 511.2 T
+2 F
+(c, continue) 561.26 497.2 T
+1 F
+(continue until next breakpoint) 632.13 483.2 T
+2 F
+(a, args) 561.26 469.2 T
+1 F
+(print ar) 632.13 469.2 T
+(gs to current function) 666.9 469.2 T
+2 F
+(rv, retval) 561.26 455.2 T
+1 F
+(prints return value from last) 632.13 441.2 T
+(function that returned) 632.13 427.2 T
+2 F
+(p, print <arg>) 561.26 413.2 T
+1 F
+(prints value of) 632.13 399.2 T
+2 F
+(<arg>) 704.45 399.2 T
+1 F
+( in cur-) 740.45 399.2 T
+(rent stack frame) 632.13 385.2 T
+2 F
+(l, list [<f) 561.26 371.2 T
+(irst> [, <last>]]) 640.46 371.2 T
+1 F
+-0.04 (List source code for the current) 632.13 357.2 P
+(\336le. W) 632.13 343.2 T
+(ithout ar) 664.31 343.2 T
+(guments, list 1) 704.43 343.2 T
+(1) 774.33 343.2 T
+(lines around the current line or) 632.13 329.2 T
+(continue the previous listing.) 632.13 315.2 T
+0 0 0 1 0 0 0 K
+FMENDPAGE
+%%EndPage: "15" 15
+%%Page: "16" 16
+595.28 841.89 1 FMBEGINPAGE
+[0 0 0 1 0 0 0]
+[ 0 0 0 0 1 1 1]
+[ 0 1 1 0 1 0 0]
+[ 1 0 1 0 0 1 0]
+[ 1 1 0 0 0 0 1]
+[ 1 0 0 0 0 1 1]
+[ 0 1 0 0 1 0 1]
+[ 0 0 1 0 1 1 0]
+ 8 FrameSetSepColors
+FrameNoSep
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+1 12 Q
+0 X
+0 0 0 1 0 0 0 K
+-0.46 (W) 127.56 777.2 P
+-0.46 (ith one ar) 138.41 777.2 P
+-0.46 (gument, list 1) 182.59 777.2 P
+-0.46 (1 lines) 246.89 777.2 P
+(starting at that line. W) 127.56 763.2 T
+(ith two) 234.07 763.2 T
+-0.14 (ar) 127.56 749.2 P
+-0.14 (guments, list the given range;) 136.67 749.2 P
+(if the second ar) 127.56 735.2 T
+(gument is less) 200.99 735.2 T
+(than the \336rst, it is a count.) 127.56 721.2 T
+2 F
+(whatis <arg>) 56.69 707.2 T
+1 F
+(prints type of) 127.56 693.2 T
+2 F
+(<arg>) 194.55 693.2 T
+(!) 56.69 679.2 T
+1 F
+-0.56 (executes rest of line as a Python) 127.56 679.2 P
+(statement in the current stack) 127.56 665.2 T
+(frame) 127.56 651.2 T
+2 F
+(q quit) 56.69 637.2 T
+1 F
+-0.73 (immediately stop execution and) 127.56 637.2 P
+(leave debugger) 127.56 623.2 T
+2 F
+(<return>) 56.69 609.2 T
+1 F
+(executes last command again) 127.56 609.2 T
+(Any input debugger doesn\325) 56.69 595.2 T
+(t recognize as a) 187.46 595.2 T
+-0.34 (command is assumed to be a Python statement) 56.69 581.2 P
+(to execute in the current stack frame, same as) 56.69 567.2 T
+(the exclamation mark \050\322) 56.69 553.2 T
+2 F
+(!) 173 553.2 T
+1 F
+(\323\051 command does.) 180.2 553.2 T
+102.03 524.01 56.69 524.01 2 L
+V
+1.14 H
+0 Z
+N
+0 F
+(Example) 56.69 525.2 T
+2 F
+(\0501394\051 python) 56.69 504.2 T
+(Python 1.0.3 \050Sep 26 1994\051) 56.69 490.2 T
+(>>> import rm) 56.69 476.2 T
+(>>> rm.run\050\051) 56.69 462.2 T
+(Traceback \050innermost last\051:) 56.69 448.2 T
+(File \322<stdin>\323, line 1) 70.87 434.2 T
+(File \322./rm.py\323, line 7) 70.87 420.2 T
+(x = div\0503\051) 85.04 406.2 T
+(File \322./rm.py\323, line 2) 70.87 392.2 T
+(return a / r) 85.04 378.2 T
+(ZeroDivisionError: integer) 56.69 364.2 T
+(division or modulo) 56.69 350.2 T
+(>>> import pdb) 56.69 336.2 T
+(>>> pdb.pm\050\051) 56.69 322.2 T
+(> ./rm.py\0502\051div: return a / r) 56.69 308.2 T
+(\050Pdb\051 list) 308.98 777.2 T
+(1 def div\050a\051:) 323.15 763.2 T
+(2 -> return a / r) 323.15 749.2 T
+(3) 323.15 735.2 T
+(4 def run\050\051:) 323.15 721.2 T
+(5 global r) 323.15 707.2 T
+(6 r = 0) 323.15 693.2 T
+(7 x = div\0503\051) 323.15 679.2 T
+(8 print x) 323.15 665.2 T
+([EOF]) 308.98 651.2 T
+(\050Pdb\051 print r) 308.98 637.2 T
+(0) 308.98 623.2 T
+(\050Pdb\051 q) 308.98 609.2 T
+(>>> pdb.runcall\050rm.run\051 etc.) 308.98 595.2 T
+344.99 566.01 308.98 566.01 2 L
+V
+N
+0 F
+(Quirks) 308.98 567.2 T
+1 F
+(Breakpoints are stored as \336lename, line) 308.98 546.2 T
+(number tuples. If a module is reloaded after) 308.98 532.2 T
+(editing, any remembered breakpoints are) 308.98 518.2 T
+(likely to be wrong.) 308.98 504.2 T
+(Always single-steps through top-most stack) 308.98 490.2 T
+(frame. That is, \322c\323 acts like \322n\323.) 308.98 476.2 T
+0 0 0 1 0 0 0 K
+FMENDPAGE
+%%EndPage: "16" 16
+%%Trailer
+%%BoundingBox: 0 0 595.28 841.89
+%%PageOrder: Ascend
+%%Pages: 16
+%%DocumentFonts: Times-Bold
+%%+ Times-Roman
+%%+ Courier
+%%+ Times-Italic
+%%+ ZapfDingbats
+%%EOF
