@@ -459,6 +459,9 @@
 /* Define if you have the kill function.  */
 #undef HAVE_KILL
 
+/* Define if you have the killpg function.  */
+#undef HAVE_KILLPG
+
 /* Define if you have the link function.  */
 #undef HAVE_LINK
 

@@ -13,6 +13,8 @@ Core and builtins
   Previously, an xreadlines object was returned which would raise
   a ValueError when the xreadlines.next() method was called.
 
+- posix.killpg has been added where available.
+
 Extension modules
 
 - dl now builds on every system that has dlfcn.h.  Failure in case

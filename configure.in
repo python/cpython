@@ -1423,7 +1423,7 @@ AC_MSG_RESULT(MACHDEP_OBJS)
 AC_CHECK_FUNCS(alarm chown chroot clock confstr ctermid ctermid_r execv \
  flock fork fsync fdatasync fpathconf ftime ftruncate \
  gai_strerror getgroups getlogin getpeername getpid getpwent getwd \
- hstrerror inet_pton kill link lstat mkfifo mktime mremap \
+ hstrerror inet_pton kill killpg link lstat mkfifo mktime mremap \
  nice pathconf pause plock poll pthread_init \
  putenv readlink \
  select setegid seteuid setgid setgroups \
