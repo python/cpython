@@ -597,7 +597,7 @@ def main(argv=None):
     try:
         opts, prog_argv = getopt.getopt(argv[1:], "tcrRf:d:msC:l",
                                         ["help", "version", "trace", "count",
-                                         "report", "no-report",
+                                         "report", "no-report", "summary",
                                          "file=", "missing",
                                          "ignore-module=", "ignore-dir=",
                                          "coverdir=", "listfuncs",])
