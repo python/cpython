@@ -11,8 +11,6 @@ filename or a (writable) file object.
 To parse a plist from a file, use the readPlist(pathOrFile)
 function, with a file name or a (readable) file object as the only
 argument. It returns the top level object (usually a dictionary).
-(Warning: you need pyexpat installed for this to work, ie. it doesn't
-work with a vanilla Python 2.2 as shipped with MacOS X.2.)
 
 Values can be strings, integers, floats, booleans, tuples, lists,
 dictionaries, Data or Date objects. String values (including dictionary
@@ -22,10 +20,6 @@ This module exports a class named Dict(), which allows you to easily
 construct (nested) dicts using keyword arguments as well as accessing
 values with attribute notation, where d.foo is equivalent to d["foo"].
 Regular dictionaries work, too.
-
-To support Boolean values in plists with Python < 2.3, "bool", "True"
-and "False" are exported. Use these symbols from this module if you
-want to be compatible with Python 2.2.x (strongly recommended).
 
 The <data> plist type is supported through the Data class. This is a
 thin wrapper around a Python string.
@@ -63,10 +57,8 @@ Parse Plist example:
 """
 
 
-__all__ = ["readPlist", "writePlist", "Plist", "Data", "Date", "Dict",
-           "False", "True", "bool"]
-# Note: the Plist class has been deprecated, Dict, False, True and bool
-# are here only for compatibility with Python 2.2.
+__all__ = ["readPlist", "writePlist", "Plist", "Data", "Date", "Dict"]
+# Note: the Plist class has been deprecated.
 
 
 def readPlist(pathOrFile):
@@ -215,7 +207,7 @@ class Dict(dict):
 
     """Convenience dictionary subclass: it allows dict construction using
     keyword arguments (just like dict() in 2.3) as well as attribute notation
-    to retrieve values, making d.foo more or less uquivalent to d["foo"].
+    to retrieve values, making d.foo equivalent to d["foo"].
     """
 
     def __new__(cls, **kwargs):
@@ -400,66 +392,3 @@ class PlistParser:
         self.addObject(Data.fromBase64(self.getData()))
     def end_date(self):
         self.addObject(Date(self.getData()))
-
-
-# cruft to support booleans in Python <= 2.3
-import sys
-if sys.version_info[:2] < (2, 3):
-    # Python 2.2 and earlier: no booleans
-    # Python 2.2.x: booleans are ints
-    class bool(int):
-        """Imitation of the Python 2.3 bool object."""
-        def __new__(cls, value):
-            return int.__new__(cls, not not value)
-        def __repr__(self):
-            if self:
-                return "True"
-            else:
-                return "False"
-    True = bool(1)
-    False = bool(0)
-else:
-    # Bind the boolean builtins to local names
-    True = True
-    False = False
-    bool = bool
-
-
-if __name__ == "__main__":
-    from StringIO import StringIO
-    import time
-    if len(sys.argv) == 1:
-        pl = Dict(
-            aString="Doodah",
-            aList=["A", "B", 12, 32.1, [1, 2, 3]],
-            aFloat = 0.1,
-            anInt = 728,
-            aDict=Dict(
-                anotherString="<hello & hi there!>",
-                aUnicodeValue=u'M\xe4ssig, Ma\xdf',
-                aTrueValue=True,
-                aFalseValue=False,
-            ),
-            someData = Data("<binary gunk>"),
-            someMoreData = Data("<lots of binary gunk>" * 10),
-#            aDate = Date(time.mktime(time.gmtime())),
-        )
-    elif len(sys.argv) == 2:
-        pl = readPlist(sys.argv[1])
-    else:
-        print "Too many arguments: at most 1 plist file can be given."
-        sys.exit(1)
-
-    # unicode keys are possible, but a little awkward to use:
-    pl[u'\xc5benraa'] = "That was a unicode key."
-    f = StringIO()
-    writePlist(pl, f)
-    xml = f.getvalue()
-    print xml
-    f.seek(0)
-    pl2 = readPlist(f)
-    assert pl == pl2
-    f = StringIO()
-    writePlist(pl2, f)
-    assert xml == f.getvalue()
-    #print repr(pl2)
