@@ -119,7 +119,7 @@ new_function(unused, args)
 }
 
 static char new_code_doc[] =
-"Create a code object from (ARGCOUNT, NLOCALS, FLAGS, CODESTRING, CONSTANTS, NAMES, VARNAMES, FILENAME, NAME).";
+"Create a code object from (ARGCOUNT, NLOCALS, STACKSIZE, FLAGS, CODESTRING, CONSTANTS, NAMES, VARNAMES, FILENAME, NAME).";
 
 static PyObject *
 new_code(unused, args)
@@ -128,6 +128,7 @@ new_code(unused, args)
 {
 	int argcount;
 	int nlocals;
+	int stacksize;
 	int flags;
 	PyObject* code;
 	PyObject* consts;
@@ -136,15 +137,15 @@ new_code(unused, args)
 	PyObject* filename;
 	PyObject* name;
   
-	if (!PyArg_ParseTuple(args, "iiiSO!O!O!SS",
-			      &argcount, &nlocals, &flags, /* These are new */
+	if (!PyArg_ParseTuple(args, "iiiiSO!O!O!SS",
+			      &argcount, &nlocals, &stacksize, &flags,
 			      &code,
 			      &PyTuple_Type, &consts,
 			      &PyTuple_Type, &names,
-			      &PyTuple_Type, &varnames,	/* These are new */
+			      &PyTuple_Type, &varnames,
 			      &filename, &name))
 		return NULL;
-	return (PyObject *)PyCode_New(argcount, nlocals, flags,
+	return (PyObject *)PyCode_New(argcount, nlocals, stacksize, flags,
 				      code, consts, names, varnames,
 				      filename, name);
 }
