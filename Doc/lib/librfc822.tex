@@ -48,7 +48,7 @@ e.g.\ \code{\var{m}['From']}, \code{\var{m}['from']} and
 \end{classdesc}
 
 \begin{classdesc}{AddressList}{field}
-You may instantiate the AddresssList helper class using a single
+You may instantiate the \class{AddressList} helper class using a single
 string parameter, a comma-separated list of \rfc{822} addresses to be
 parsed.  (The parameter \code{None} yields an empty list.)
 \end{classdesc}
@@ -235,13 +235,13 @@ Addresses are rendered in "name" <host@domain> form, comma-separated.
 \end{methoddesc}
 
 \begin{methoddesc}{__add__}{name}
-Return an AddressList instance that contains all addresses in both
-AddressList operands, with duplicates removed (set union).
+Return an \class{AddressList} instance that contains all addresses in
+both \class{AddressList} operands, with duplicates removed (set union).
 \end{methoddesc}
 
 \begin{methoddesc}{__sub__}{name}
-Return an AddressList instance that contains every address in the
-left-hand AddressList operand that is not present in the right-hand
+Return an \class{AddressList} instance that contains every address in the
+left-hand \class{AddressList} operand that is not present in the right-hand
 address operand (set difference).
 \end{methoddesc}
 
