@@ -731,11 +731,6 @@ audioop_lin2adpcm3(self, args)
 	return 0;
     }
     
-    str = newsizedstringobject(NULL, len/size);
-    if ( str == 0 )
-      return 0;
-    ncp = (signed char *)getstringvalue(str);
-
     /* Decode state, should have (value, step) */
     if ( state == None ) {
 	/* First time, it seems. Set defaults */
@@ -743,6 +738,11 @@ audioop_lin2adpcm3(self, args)
 	step = 4;	/* The '4' is magic. Dunno it's significance */
     } else if ( !getargs(state, "(ii)", &valprev, &step) )
       return 0;
+
+    str = newsizedstringobject(NULL, len/size);
+    if ( str == 0 )
+      return 0;
+    ncp = (signed char *)getstringvalue(str);
 
     for ( i=0; i < len; i += size ) {
 	if ( size == 1 )      val = ((int)*CHARP(cp, i)) << 8;
@@ -861,11 +861,6 @@ audioop_lin2adpcm(self, args)
 	return 0;
     }
     
-    str = newsizedstringobject(NULL, len/(size*2));
-    if ( str == 0 )
-      return 0;
-    ncp = (signed char *)getstringvalue(str);
-
     /* Decode state, should have (value, step) */
     if ( state == None ) {
 	/* First time, it seems. Set defaults */
@@ -874,6 +869,11 @@ audioop_lin2adpcm(self, args)
 	index = 0;
     } else if ( !getargs(state, "(ii)", &valpred, &index) )
       return 0;
+
+    str = newsizedstringobject(NULL, len/(size*2));
+    if ( str == 0 )
+      return 0;
+    ncp = (signed char *)getstringvalue(str);
 
     step = stepsizeTable[index];
     bufferstep = 1;
