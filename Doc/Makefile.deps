@@ -308,6 +308,8 @@ LIBFILES= $(MANSTYLES) $(INDEXSTYLES) $(COMMONTEX) \
 	lib/libasyncore.tex \
 	lib/libatexit.tex \
 	lib/libmmap.tex \
+	lib/tkinter.tex \
+	lib/libturtle.tex \
 	lib/libcfgparser.tex
 
 # LaTeX source files for Macintosh Library Modules.
