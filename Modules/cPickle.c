@@ -682,12 +682,11 @@ whichmodule(PyObject *class_map, PyObject *global, PyObject *global_name) {
         Py_INCREF(module);
         return module;
     }
-    else {
-        PyErr_Clear();
-    }
 
-    UNLESS(modules_dict = PySys_GetObject("modules"))
+    UNLESS(modules_dict = PySys_GetObject("modules")) {
+	PyErr_SetString(PyExc_SystemError, "lost sys.modules");
         return NULL;
+    }
 
     i = 0;
     while ((j = PyDict_Next(modules_dict, &i, &name, &module))) {
