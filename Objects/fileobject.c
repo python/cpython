@@ -225,20 +225,28 @@ typedef off_t Py_off_t;
 static int
 _portable_fseek(FILE *fp, Py_off_t offset, int whence)
 {
-#if defined(HAVE_FSEEKO)
+#if !defined(HAVE_LARGEFILE_SUPPORT)
+	return fseek(fp, offset, whence);
+#elif defined(HAVE_FSEEKO) && SIZEOF_OFF_T >= 8
 	return fseeko(fp, offset, whence);
 #elif defined(HAVE_FSEEK64)
 	return fseek64(fp, offset, whence);
 #elif defined(__BEOS__)
 	return _fseek(fp, offset, whence);
-#elif defined(HAVE_LARGEFILE_SUPPORT) && SIZEOF_FPOS_T >= 8
+#elif SIZEOF_FPOS_T >= 8
 	/* lacking a 64-bit capable fseek(), use a 64-bit capable fsetpos()
 	   and fgetpos() to implement fseek()*/
 	fpos_t pos;
 	switch (whence) {
 	case SEEK_END:
+#ifdef MS_WINDOWS
+		fflush(fp);
+		if (_lseeki64(fileno(fp), 0, 2) == -1)
+			return -1;
+#else
 		if (fseek(fp, 0, SEEK_END) != 0)
 			return -1;
+#endif
 		/* fall through */
 	case SEEK_CUR:
 		if (fgetpos(fp, &pos) != 0)
@@ -249,7 +257,7 @@ _portable_fseek(FILE *fp, Py_off_t offset, int whence)
 	}
 	return fsetpos(fp, &offset);
 #else
-	return fseek(fp, offset, whence);
+#error "Large file support, but no way to fseek."
 #endif
 }
 
@@ -260,17 +268,19 @@ _portable_fseek(FILE *fp, Py_off_t offset, int whence)
 static Py_off_t
 _portable_ftell(FILE* fp)
 {
-#if SIZEOF_FPOS_T >= 8 && defined(HAVE_LARGEFILE_SUPPORT)
+#if !defined(HAVE_LARGEFILE_SUPPORT)
+	return ftell(fp);
+#elif defined(HAVE_FTELLO) && SIZEOF_OFF_T >= 8
+	return ftello(fp);
+#elif defined(HAVE_FTELL64)
+	return ftell64(fp);
+#elif SIZEOF_FPOS_T >= 8
 	fpos_t pos;
 	if (fgetpos(fp, &pos) != 0)
 		return -1;
 	return pos;
-#elif defined(HAVE_FTELLO) && defined(HAVE_LARGEFILE_SUPPORT)
-	return ftello(fp);
-#elif defined(HAVE_FTELL64) && defined(HAVE_LARGEFILE_SUPPORT)
-	return ftell64(fp);
 #else
-	return ftell(fp);
+#error "Large file support, but no way to ftell."
 #endif
 }
 
