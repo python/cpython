@@ -1,7 +1,7 @@
 What's New in IDLE 1.0.3?
 ===================================
 
-*Release date: XX-XXX-2004*
+*Release date: 13-May-2004*
 
 - Keybindings with the Shift modifier now work correctly.  So do bindings which
   use the Space key.  Limit unmodified user keybindings to the function keys.
