@@ -34,6 +34,14 @@ PERFORMANCE OF THIS SOFTWARE.
 
 extern int ResObj_Convert(PyObject *, Handle *); /* From Resmodule.c */
 
+#if TARGET_API_MAC_CARBON
+/* The Carbon headers define PRAGMA_ALIGN_SUPPORT to something illegal,
+** because you shouldn't use it for Carbon. All good and well, but portable
+** code still needs it. So, we undefine it here.
+*/
+#undef PRAGMA_ALIGN_SUPPORTED
+#define PRAGMA_ALIGN_SUPPORTED 0
+#endif /* TARGET_API_MAC_CARBON */
 
 #include "ICAPI.h"
 
