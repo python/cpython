@@ -1,0 +1,23 @@
+test_exceptions
+5. Built-in exceptions
+AttributeError
+EOFError
+IOError
+ImportError
+IndexError
+KeyError
+KeyboardInterrupt
+(not testable in a script)
+MemoryError
+(not safe to test)
+NameError
+OverflowError
+RuntimeError
+(not used any more?)
+SyntaxError
+SystemError
+(hard to reproduce)
+SystemExit
+TypeError
+ValueError
+ZeroDivisionError

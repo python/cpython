@@ -1,0 +1,26 @@
+test_math
+math module, testing with eps 1e-05
+constants
+acos
+asin
+atan
+atan2
+ceil
+cos
+cosh
+exp
+fabs
+floor
+fmod
+frexp
+hypot
+ldexp
+log
+log10
+modf
+pow
+sin
+sinh
+sqrt
+tan
+tanh
