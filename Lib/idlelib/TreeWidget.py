@@ -428,8 +428,8 @@ class ScrolledCanvas:
         self.canvas.bind("<Key-Next>", self.page_down)
         self.canvas.bind("<Key-Up>", self.unit_up)
         self.canvas.bind("<Key-Down>", self.unit_down)
-        if isinstance(master, Toplevel) or isinstance(master, Tk):
-            self.canvas.bind("<Alt-F2>", self.zoom_height)
+        #if isinstance(master, Toplevel) or isinstance(master, Tk):
+        self.canvas.bind("<Alt-Key-2>", self.zoom_height)
         self.canvas.focus_set()
     def page_up(self, event):
         self.canvas.yview_scroll(-1, "page")
