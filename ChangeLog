@@ -1,3 +1,17 @@
+========================================================================
+Release of 1.0.0 BETA 6 (Jan 24 1994)
+========================================================================
+Mon Jan 24 16:37:46 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Doc/ref?.tex: Change \verb\<stuff>\ into \verb@<stuff>@ so
+	latex2html doesn't crash
+
+Thu Jan 20 18:05:18 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Ext-dummy/, README, Makefile.in: Created new directory
+	Ext-dummy/.  Ext-dummy/ contains its own README and copies of
+	Extensions/mk{ext,mf}.py.
+
 Tue Jan 18 11:04:16 1994  Guido van Rossum  (guido@voorn.cwi.nl)
 
 	* Python/getmtime.c: Include config.h if we have it
