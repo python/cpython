@@ -567,6 +567,7 @@ _expectations = {
         test_grp
         test_iconv_codecs
         test_imgfile
+        test_ioctl
         test_largefile
         test_linuxaudiodev
         test_macfs
