@@ -1,0 +1,29 @@
+\section{Standard Module \sectcode{anydbm}}
+\stmodindex{anydbm}
+\stmodindex{dumbdbm}
+
+\code{anydbm} is a generic interface to variants of the DBM
+database--DBM, GDBM, or dbhash.  If none of these modules is
+installed, the slow-but-simple implementation in \file{dumbdbm.py}
+will be used.   
+
+\begin{funcdesc}{open}{filename\optional{\, flag\, mode}}
+Open the database file \var{filename} and return a corresponding object.  
+The optional \var{flag} argument can be
+\code{'r'} to open an existing database for reading only,
+\code{'w'} to open an existing database for reading and writing,
+\code{'c'} to create the database if it doesn't exist, or
+\code{'n'}, which will always create a new empty database.  If not
+specified, the default value is \code{'r'}.
+
+The optional \var{mode} argument is the \UNIX{} mode of the file, used
+only when the database has to be created.  It defaults to octal
+\code{0666}.
+\end{funcdesc}
+
+THe object returned by \code{open()} supports most of the same
+functionality as dictionaries; keys and their corresponding values can
+be stored, retrieved, and deleted, and the \code{has_key()} and
+\code{keys()} methods are available. Keys and values must always be strings.
+
+
