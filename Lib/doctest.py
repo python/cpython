@@ -1259,27 +1259,30 @@ class DocTestRunner:
         if compileflags is None:
             compileflags = _extract_future_flags(test.globs)
 
+        save_stdout = sys.stdout
         if out is None:
-            out = sys.stdout.write
-        saveout = sys.stdout
+            out = save_stdout.write
+        sys.stdout = self._fakeout
 
-        # Note that don't save away the previous pdb.set_trace. Rather,
-        # we safe pdb.set_trace on import (see import section above).
-        # We then call and restore that original cersion.  We do it this
-        # way to make this feature testable.  If we kept and called the
-        # previous version, we'd end up restoring the original stdout,
-        # which is not what we want.
+        # Patch pdb.set_trace to restore sys.stdout, so that interactive
+        # debugging output is visible (not still redirected to self._fakeout).
+        # Note that we run "the real" pdb.set_trace (captured at doctest
+        # import time) in our replacement.  Because the current run() may
+        # run another doctest (and so on), the current pdb.set_trace may be
+        # our set_trace function, which changes sys.stdout.  If we called
+        # a chain of those, we wouldn't be left with the save_stdout
+        # *this* run() invocation wants.
         def set_trace():
-            sys.stdout = saveout
+            sys.stdout = save_stdout
             real_pdb_set_trace()
 
+        save_set_trace = pdb.set_trace
+        pdb.set_trace = set_trace
         try:
-            sys.stdout = self._fakeout
-            pdb.set_trace = set_trace
             return self.__run(test, compileflags, out)
         finally:
-            sys.stdout = saveout
-            pdb.set_trace = real_pdb_set_trace
+            sys.stdout = save_stdout
+            pdb.set_trace = save_set_trace
             if clear_globs:
                 test.globs.clear()
 

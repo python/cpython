@@ -1044,7 +1044,6 @@ def test_pdb_set_trace():
       ... >>> calls_set_trace()
       ... '''
       >>> test = parser.get_doctest(doc, globals(), "foo", "foo.py", 0)
-
       >>> fake_stdin = tempfile.TemporaryFile(mode='w+')
       >>> fake_stdin.write('\n'.join([
       ...    'up',       # up out of pdb.set_trace
