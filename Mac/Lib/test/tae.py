@@ -11,7 +11,7 @@ import macfs
 import sys
 import MacOS
 
-MacOS.EnableAppswitch(0)
+MacOS.SchedParams(1, 0)
 
 def aehandler(request, reply):
 	tosend = []

@@ -42,14 +42,14 @@ def myaskstring(str, default=''):
 
 def main():
 	echo = EchoServer()
-	yield = MacOS.EnableAppswitch(-1)		# Disable Python's own "event handling"
+	savepars = MacOS.SchedParams(0, 0)		# Disable Python's own "event handling"
 	try:
 		try:
 			echo.mainloop(everyEvent, 0)
 		except Quit:
 			pass
 	finally:
-		MacOS.EnableAppswitch(yield)	# Let Python have a go at events
+		apply(MacOS.SchedParams, savepars)	# Let Python have a go at events
 		echo.close()
 
 

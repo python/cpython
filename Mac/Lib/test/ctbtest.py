@@ -16,7 +16,7 @@ def main():
 		print 'Communications Toolbox not available'
 		sys.exit(1)
 	# Disable Python's event processing (we do that)
-	MacOS.EnableAppswitch(0)
+	MacOS.SchedParams(1, 0)
 	print 'Minimal terminal emulator V1.0'
 	print '(type command-Q to exit)'
 	print

@@ -33,11 +33,11 @@ def mymessage(str):
 
 def main():
 	echo = EchoServer()
-	yield = MacOS.EnableAppswitch(-1)		# Disable Python's own "event handling"
+	saveparams = MacOS.SchedParams(0, 0)	# Disable Python's own "event handling"
 	try:
 		echo.mainloop(everyEvent, 0)
 	finally:
-		MacOS.EnableAppswitch(yield)	# Let Python have a go at events
+		apply(MacOS.SchedParams, saveparams)	# Let Python have a go at events
 		echo.close()
 
 
