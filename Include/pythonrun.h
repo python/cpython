@@ -114,8 +114,8 @@ PyAPI_FUNC(void) PyOS_FiniInterrupts(void);
 
 /* Stuff with no proper home (yet) */
 PyAPI_FUNC(char *) PyOS_Readline(char *);
-PyAPI_FUNC(int) (*PyOS_InputHook)(void);
-PyAPI_FUNC(char) *(*PyOS_ReadlineFunctionPointer)(char *);
+PyAPI_DATA(int) (*PyOS_InputHook)(void);
+PyAPI_DATA(char) *(*PyOS_ReadlineFunctionPointer)(char *);
 
 /* Stack size, in "pointers" (so we get extra safety margins
    on 64-bit platforms).  On a 32-bit platform, this translates
