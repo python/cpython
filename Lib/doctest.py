@@ -444,7 +444,13 @@ class _SpoofOut:
     def write(self, s):
         self.buf.append(s)
     def get(self):
-        return "".join(self.buf)
+        guts = "".join(self.buf)
+        # If anything at all was written, make sure there's a trailing
+        # newline.  There's no way for the expected output to indicate
+        # that a trailing newline is missing.
+        if guts and not guts.endswith("\n"):
+            guts = guts + "\n"
+        return guts
     def clear(self):
         self.buf = []
     def flush(self):
