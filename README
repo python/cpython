@@ -418,52 +418,70 @@ Mac OS X 10: One of the regular expression tests fails
         install a symlink in /usr/local/bin/python to the executable
         deep down in the framework.
 
-Cygwin: With recent (relative to the time of writing, 2001-12-11)
-        Cygwin installations, Python builds and passes all tests on
-        NT/2000 if the _socket module is linked statically.  If the
-        _socket module is linked dynamically (the default), then
-        failures can occur under certain conditions related to fork().
-        This is a known Cygwin problem that may be resolved by rebasing
-        the necessary DLLs to prevent base address conflicts.
+Cygwin: With recent (relative to the time of writing, 2001-12-19)
+        Cygwin installations, there are problems with the interaction
+        of dynamic linking and fork().  This manifests itself in build
+        failures during the execution of setup.py.
 
-        Threads support should still be disable due to a known bug in
-        Cygwin pthreads that causes test_threadedtempfile to hang.
+        There are two workarounds that both enable Python (albeit
+        without threading support) to build and pass all tests on
+        NT/2000 (and most likely XP as well, though reports of testing
+        on XP would be appreciated).
 
-        To workaround the above, run "./configure --with-threads=no" and
-        include any other options you need (--prefix, etc.).  Then in
-        Modules/Setup uncomment the lines:
+        The workarounds:
+
+        (a) the band-aid fix is to link the _socket module statically
+        rather than dynamically (which is the default).
+
+        To do this, run "./configure --with-threads=no" including any
+        other options you need (--prefix, etc.).  Then in Modules/Setup
+         uncomment the lines:
 
         #SSL=/usr/local/ssl
         #_socket socketmodule.c \
         #	-DUSE_SSL -I$(SSL)/include -I$(SSL)/include/openssl \
         #	-L$(SSL)/lib -lssl -lcrypto
 
-        and remove "local/" from the SSL variable.  And finally, just
-        run "make"!
+        and remove "local/" from the SSL variable.  Finally, just run
+        "make"!
 
-        The _curses module does not build.  This is an known Cygwin
-        ncurses problem that should be resolved the next time that this
-        package is released.
+        (b) The "proper" fix is to rebase the cygwin DLLs to prevent
+        base address conflicts.  Details on how to do this can be
+        found in the following mail:
+
+           http://sources.redhat.com/ml/cygwin/2001-12/msg00894.html
+
+        It is hoped that a version of this solution will be
+        incorporated into the cygwin distribution fairly soon.
+
+        Two additional problems:
+
+        (1) Threading support should still be disabled due to a known
+        bug in Cygwin pthreads that causes test_threadedtempfile to
+        hang.
+
+        (2) The _curses module does not build.  This is an known
+        Cygwin ncurses problem that should be resolved the next time
+        that this package is released.
 
         On older versions of Cygwin, test_poll may hang and test_strftime
         may fail.
 
-        The situation on 9X/Me/XP is not accurately known at present.
-        However, it is expected that XP should be the same (or at least
-        very similar to) NT/2000.  Some time ago, there were reports that
-        the following regression tests failed on 9X/Me:
+        The situation on 9X/Me is not accurately known at present.
+        Some time ago, there were reports that the following
+        regression tests failed:
 
             test_pwd
             test_select (hang)
             test_socket
 
-        Due to the test_select hang on 9X/Me, one should run the regression
-        test using the following:
+        Due to the test_select hang on 9X/Me, one should run the
+        regression test using the following:
 
             make TESTOPTS='-l -x test_select' test
 
-        News regarding these platforms with more recent Cygwin verions would
-        be appreciated!
+        News regarding these platforms with more recent Cygwin
+        versions would be appreciated!
 
 Configuring threads
 -------------------
