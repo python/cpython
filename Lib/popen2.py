@@ -89,7 +89,8 @@ class Popen3:
             _active.remove(self)
         return self.sts
 
-if hasattr(os, "popen2"):
+
+if sys.platform[:3] == "win":
     def popen2(cmd, mode='t', bufsize=-1):
         """Execute the shell command 'cmd' in a sub-process.  If 'bufsize' is
         specified, it sets the buffer size for the I/O pipes.  The file objects
@@ -109,7 +110,7 @@ else:
         inst = Popen3(cmd, 0, bufsize)
         return inst.fromchild, inst.tochild
 
-if hasattr(os, "popen3"):
+if sys.platform[:3] == "win":
     def popen3(cmd, mode='t', bufsize=-1):
         """Execute the shell command 'cmd' in a sub-process.  If 'bufsize' is
         specified, it sets the buffer size for the I/O pipes.  The file objects
@@ -129,7 +130,7 @@ else:
         inst = Popen3(cmd, 1, bufsize)
         return inst.fromchild, inst.tochild, inst.childerr
 
-if hasattr(os, "popen4"):
+if sys.platform[:3] == "win":
     def popen4(cmd, mode='t', bufsize=-1):
         """Execute the shell command 'cmd' in a sub-process.  If 'bufsize' is
         specified, it sets the buffer size for the I/O pipes.  The file objects
@@ -138,6 +139,7 @@ if hasattr(os, "popen4"):
         return r, w
 else:
     pass # not yet on unix
+
 
 def _test():
     cmd  = "cat"
