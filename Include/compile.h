@@ -81,11 +81,6 @@ PyAPI_FUNC(PyCodeObject *) PyNode_CompileFlags(struct _node *, const char *,
 #define FUTURE_GENERATORS "generators"
 #define FUTURE_DIVISION "division"
 
-/* for internal use only */
-#define _PyCode_GETCODEPTR(co, pp) \
-	((*(co)->co_code->ob_type->tp_as_buffer->bf_getreadbuffer) \
-	 ((co)->co_code, 0, (void **)(pp)))
-
 #ifdef __cplusplus
 }
 #endif

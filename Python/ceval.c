@@ -754,7 +754,7 @@ eval_frame(PyFrameObject *f)
 	consts = co->co_consts;
 	fastlocals = f->f_localsplus;
 	freevars = f->f_localsplus + f->f_nlocals;
-	_PyCode_GETCODEPTR(co, &first_instr);
+	first_instr = PyString_AS_STRING(co->co_code);
 	/* An explanation is in order for the next line.
 
 	   f->f_lasti now refers to the index of the last instruction
