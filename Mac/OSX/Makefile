@@ -83,8 +83,11 @@ LIBSRC=$(PYTHONBUILDDIR)/Mac/Lib
 LIBSUBDIRS=Carbon lib-scriptpackages lib-scriptpackages/CodeWarrior lib-scriptpackages/Explorer \
 	lib-scriptpackages/Finder lib-scriptpackages/Netscape lib-scriptpackages/StdSuites \
 	mkcwproject mkcwproject/template mkcwproject/template-carbon mkcwproject/template-ppc
+TOOLSDEST=$(INSTALLDIR)/Mac/Tools
+TOOLSSRC=$(PYTHONBUILDDIR)/Mac/Tools
+TOOLSSUBDIRS=IDE
 installmacsubtree:
-	@for i in $(LIBDEST); \
+	@for i in $(LIBDEST) $(TOOLSDEST); \
 	do \
 		if test ! -d $$i; then \
 			echo "Creating directory $$i"; \
@@ -137,6 +140,42 @@ installmacsubtree:
 			esac; \
 		done; \
 	done
+	@for d in $(TOOLSSUBDIRS); \
+	do \
+		a=$(TOOLSSRC)/$$d; \
+		if test ! -d $$a; then continue; else true; fi; \
+		b=$(TOOLSDEST)/$$d; \
+		if test ! -d $$b; then \
+			echo "Creating directory $$b"; \
+			$(INSTALL) -d -m $(DIRMODE) $$b; \
+		else	true; \
+		fi; \
+	done
+	@for d in $(TOOLSSUBDIRS); \
+	do \
+		a=$(TOOLSSRC)/$$d; \
+		if test ! -d $$a; then continue; else true; fi; \
+		b=$(TOOLSDEST)/$$d; \
+		for i in $$a/*; \
+		do \
+			case $$i in \
+			*CVS) ;; \
+			*.py[co]) ;; \
+			*.orig) ;; \
+			*~) ;; \
+			*) \
+				if test -d $$i; then continue; fi; \
+				if test -x $$i; then \
+				    echo $(INSTALL_SCRIPT) $$i $$b; \
+				    $(INSTALL_SCRIPT) $$i $$b; \
+				else \
+				    echo $(INSTALL_DATA) $$i $$b; \
+				    $(INSTALL_DATA) $$i $$b; \
+				fi;; \
+			esac; \
+		done; \
+	done
+
 	@echo '** Copy the contents of sample_sitecustomize.py (or similar code) into'
 	@echo '**' $(INSTALLDIR)/lib/python2.2/sitecustomize.py
 	
