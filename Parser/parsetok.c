@@ -89,17 +89,21 @@ parsefile(fp, filename, g, start, ps1, ps2, n_ret)
 		char *p;
 		fprintf(stderr, "Parsing error: file %s, line %d:\n",
 						filename, tok->lineno);
-		*tok->inp = '\0';
-		if (tok->inp > tok->buf && tok->inp[-1] == '\n')
-			tok->inp[-1] = '\0';
-		fprintf(stderr, "%s\n", tok->buf);
-		for (p = tok->buf; p < tok->cur; p++) {
-			if (*p == '\t')
-				putc('\t', stderr);
-			else
-				putc(' ', stderr);
+		if (tok->buf == NULL)
+			fprintf(stderr, "(EOF)\n");
+		else {
+			*tok->inp = '\0';
+			if (tok->inp > tok->buf && tok->inp[-1] == '\n')
+				tok->inp[-1] = '\0';
+			fprintf(stderr, "%s\n", tok->buf);
+			for (p = tok->buf; p < tok->cur; p++) {
+				if (*p == '\t')
+					putc('\t', stderr);
+				else
+					putc(' ', stderr);
+			}
+			fprintf(stderr, "^\n");
 		}
-		fprintf(stderr, "^\n");
 	}
 	tok_free(tok);
 	return ret;
