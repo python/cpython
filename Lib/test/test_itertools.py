@@ -1,6 +1,7 @@
 import unittest
 from test import test_support
 from itertools import *
+from weakref import proxy
 import sys
 import operator
 import random
@@ -381,6 +382,13 @@ class TestBasicOps(unittest.TestCase):
         self.assertRaises(TypeError, tnew, 10)
         t3 = tnew(t1)
         self.assert_(list(t1) == list(t2) == list(t3) == list('abc'))
+
+        # test that tee objects are weak referencable
+        a, b = tee(xrange(10))
+        p = proxy(a)
+        self.assertEqual(getattr(p, '__class__'), type(b))
+        del a
+        self.assertRaises(ReferenceError, getattr, p, '__class__')
 
     def test_StopIteration(self):
         self.assertRaises(StopIteration, izip().next)
