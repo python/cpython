@@ -45,7 +45,7 @@ class bdist (Command):
     help_options = [
         ('help-formats', None,
          "lists available distribution formats", show_formats),
-	]
+        ]
 
     # The following commands do not take a format option from bdist
     no_format_option = ('bdist_rpm',)

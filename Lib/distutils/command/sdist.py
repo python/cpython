@@ -74,7 +74,7 @@ class sdist (Command):
     help_options = [
         ('help-formats', None,
          "list available distribution formats", show_formats),
-	]
+        ]
 
     negative_opt = {'no-defaults': 'use-defaults',
                     'no-prune': 'prune' }

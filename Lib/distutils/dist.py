@@ -284,7 +284,7 @@ class Distribution:
             user_filename = ".pydistutils.cfg"
         else:
             user_filename = "pydistutils.cfg"
-	
+
         # And look for the user config file
         if os.environ.has_key('HOME'):
             user_file = os.path.join(os.environ.get('HOME'), user_filename)
@@ -461,8 +461,8 @@ class Distribution:
             negative_opt = copy(negative_opt)
             negative_opt.update(cmd_class.negative_opt)
 
-	# Check for help_options in command class.  They have a different
-	# format (tuple of four) so we need to preprocess them here.
+        # Check for help_options in command class.  They have a different
+        # format (tuple of four) so we need to preprocess them here.
         if (hasattr(cmd_class, 'help_options') and
             type(cmd_class.help_options) is ListType):
             help_options = fix_help_options(cmd_class.help_options)
@@ -487,7 +487,7 @@ class Distribution:
             for (help_option, short, desc, func) in cmd_class.help_options:
                 if hasattr(opts, parser.get_attr_name(help_option)):
                     help_option_found=1
-		    #print "showing help for option %s of command %s" % \
+                    #print "showing help for option %s of command %s" % \
                     #      (help_option[0],cmd_class)
 
                     if callable(func):
@@ -563,7 +563,7 @@ class Distribution:
         return
 
     # _show_help ()
-	
+
 
     def handle_display_options (self, option_order):
         """If there were any non-global "display-only" options

@@ -47,7 +47,7 @@ class build (Command):
     help_options = [
         ('help-compiler', None,
          "list available compilers", show_compilers),
-	]
+        ]
 
     def initialize_options (self):
         self.build_base = 'build'

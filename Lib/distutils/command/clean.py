@@ -60,7 +60,7 @@ class clean (Command):
             # remove build directories
             for directory in (self.build_lib,
                               self.bdist_base,
-			      self.build_scripts):
+                              self.build_scripts):
                 if os.path.exists(directory):
                     remove_tree(directory, self.verbose, self.dry_run)
                 else:

@@ -498,7 +498,7 @@ class install (Command):
                          self.record)
 
         sys_path = map(os.path.normpath, sys.path)
-	sys_path = map(os.path.normcase, sys_path)
+        sys_path = map(os.path.normcase, sys_path)
         install_lib = os.path.normcase(os.path.normpath(self.install_lib))
         if (self.warn_dir and
             not (self.path_file and self.install_path_file) and
