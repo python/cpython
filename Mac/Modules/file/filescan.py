@@ -134,8 +134,6 @@ class MyScanner(Scanner_OSX):
 
 			
 			"CatPositionRec", # State variable, not too difficult
-			"FSCatalogInfo", # Lots of fields, difficult struct
-			"FSCatalogInfo_ptr", # Lots of fields, difficult struct
 			"FSIterator", # Should become an object
 			"FSForkInfo", # Lots of fields, difficult struct
 			"FSSearchParams", # Also catsearch stuff
@@ -180,6 +178,17 @@ class MyScanner(Scanner_OSX):
 
 			([('FSRef_ptr', 'fromFile', 'InMode')],
     		 [('OptFSRefPtr', 'fromFile', 'InMode')]),
+    		 
+    		# FSCatalogInfo input handling
+			([('FSCatalogInfoBitmap', 'whichInfo', 'InMode'),
+    		  ('FSCatalogInfo_ptr', 'catalogInfo', 'InMode')],
+    		 [('FSCatalogInfoAndBitmap_in', 'catalogInfo', 'InMode')]),
+    		
+    		# FSCatalogInfo output handling
+			([('FSCatalogInfoBitmap', 'whichInfo', 'InMode'),
+    		  ('FSCatalogInfo', 'catalogInfo', 'OutMode')],
+    		 [('FSCatalogInfoAndBitmap_out', 'catalogInfo', 'InOutMode')]),
+    		
 
 		]
 		

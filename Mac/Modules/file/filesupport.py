@@ -50,6 +50,53 @@ class OptionalFSxxxType(OpaqueByValueType):
 	def declare(self, name):
 		Output("%s %s__buf__;", self.typeName, name)
 		Output("%s *%s = &%s__buf__;", self.typeName, name, name)
+
+class FSCatalogInfoAndBitmapType(InputOnlyType):
+	
+	def __init__(self):
+		InputOnlyType.__init__(self, "BUG", "BUG")
+		
+	def declare(self, name):
+		Output("PyObject *%s__object;", name)
+		Output("FSCatalogInfoBitname %s__bitmap;", name)
+		Output("FSCatalogInfo %s;", name)
+		
+	def getargsFormat(self):
+		return "lO"
+		
+	def getargsArgs(self, name):
+		return "%s__bitmap, %s__object"%(name, name)
+		
+	def getargsCheck(self, name):
+		Output("convert_FSCatalogInfo(%s__object, %s__bitmap, %s);", name, name, name)
+		
+	def passOutput(self, name):
+		return "%s__bitmap, %s"% (name, name)
+		
+	def mkvalueFormat(self):
+		return "O"
+
+	def mkvalueArgs(self, name):
+		return "%s__object" % (name)
+		
+	def xxxxmkvalueCheck(self, name):
+		Output("%s__object = new_FSCatalogInfo(%s__bitmap, %s);", name, name)
+	
+class FSCatalogInfoAndBitmap_inType(FSCatalogInfoAndBitmapType, InputOnlyMixIn):
+	
+	def xxxxmkvalueCheck(self, name):
+		pass
+	
+class FSCatalogInfoAndBitmap_outType(FSCatalogInfoAndBitmapType):
+
+	def getargsFormat(self):
+		return "l"
+		
+	def getargsArgs(self, name):
+		return "%s__bitmap" % name
+		
+	def getargsCheck(self, name):
+		pass
 	
 FInfo = OpaqueType("FInfo", "FInfo")
 FInfo_ptr = OpaqueType("FInfo", "FInfo")
@@ -60,6 +107,8 @@ OptFSSpecPtr = OptionalFSxxxType("FSSpec", "BUG", "myPyMac_GetOptFSSpecPtr")
 FSRef = OpaqueType("FSRef", "FSRef")
 FSRef_ptr = OpaqueType("FSRef", "FSRef")
 OptFSRefPtr = OptionalFSxxxType("FSRef", "BUG", "myPyMac_GetOptFSRefPtr")
+FSCatalogInfoAndBitmap_in = FSCatalogInfoAndBitmap_inType()
+FSCatalogInfoAndBitmap_out = FSCatalogInfoAndBitmap_outType()
 
 # To be done:
 #CatPositionRec
