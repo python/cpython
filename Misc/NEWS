@@ -79,17 +79,20 @@ Core and builtins
 -----------------
 
 - Import from zipfiles is now supported.  The name of a zipfile placed
-  on sys.path causes the import statement to look for importable
-  Python modules (with .py, pyc and .pyo extensions) and packages
-  inside the zipfile.  To support this, several new variables have
-  been added to the sys module: sys.meta_path, sys.path_hooks, and
-  sys.path_importer_cache; these make extending the import statement
-  much more convenient than overriding the __import__ built-in
-  function.  For a description of these, see PEP 302.  The zipfile
-  import follows the specification (though not the sample
-  implementation) of PEP 273.  The semantics of __path__ are
+  on sys.path causes the import statement to look for importable Python
+  modules (with .py, pyc and .pyo extensions) and packages inside the
+  zipfile.  The zipfile import follows the specification (though not
+  the sample implementation) of PEP 273.  The semantics of __path__ are
   compatible with those that have been implemented in Jython since
   Jython 2.1.
+
+- PEP 302 has been accepted.  Although it was inititally developed to
+  support zipimport, it offers a new, general import hook mechanism. 
+  Several new variables have been added to the sys module:
+  sys.meta_path, sys.path_hooks, and sys.path_importer_cache; these
+  make extending the import statement much more convenient than
+  overriding the __import__ built-in function.  For a description of
+  these, see PEP 302.
 
 - A frame object's f_lineno attribute can now be written to from a
   trace function to change which line will execute next.  A command to
