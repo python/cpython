@@ -71,14 +71,14 @@ getself(op)
 }
 
 int
-getvarargs(op)
+getflags(op)
 	object *op;
 {
 	if (!is_methodobject(op)) {
 		err_badcall();
 		return -1;
 	}
-	return ((methodobject *)op) -> m_ml -> ml_flags & METH_VARARGS;
+	return ((methodobject *)op) -> m_ml -> ml_flags;
 }
 
 /* Methods (the standard built-in methods, that is) */
