@@ -180,11 +180,11 @@ class If(Node):
 class Exec(Node):
   nodes['exec'] = 'Exec'
 
-  def __init__(self, expr1, expr2, expr3):
-    self.expr1 = expr1
-    self.expr2 = expr2
-    self.expr3 = expr3
-    self._children = ('exec', expr1, expr2, expr3)
+  def __init__(self, expr, locals, globals):
+    self.expr = expr
+    self.locals = locals
+    self.globals = globals
+    self._children = ('exec', expr, locals, globals)
 
   def __repr__(self):
     return "Exec(%s,%s,%s)" % self._children[1:]
@@ -362,9 +362,9 @@ class List(Node):
 class Dict(Node):
   nodes['dict'] = 'Dict'
 
-  def __init__(self, keys):
-    self.keys = keys
-    self._children = ('dict', keys)
+  def __init__(self, items):
+    self.items = items
+    self._children = ('dict', items)
 
   def __repr__(self):
     return "Dict(%s)" % self._children[1:]
@@ -497,10 +497,10 @@ class Slice(Node):
 class Assert(Node):
   nodes['assert'] = 'Assert'
 
-  def __init__(self, expr1, expr2):
-    self.expr1 = expr1
-    self.expr2 = expr2
-    self._children = ('assert', expr1, expr2)
+  def __init__(self, test, fail):
+    self.test = test
+    self.fail = fail
+    self._children = ('assert', test, fail)
 
   def __repr__(self):
     return "Assert(%s,%s)" % self._children[1:]
