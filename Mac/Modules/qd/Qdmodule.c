@@ -3842,96 +3842,6 @@ static PyObject *Qd_AngleFromSlope(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_OpenCursorComponent(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	OSErr _err;
-	Component c;
-	ComponentInstance ci;
-	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpObj_Convert, &c))
-		return NULL;
-	_err = OpenCursorComponent(c,
-	                           &ci);
-	if (_err != noErr) return PyMac_Error(_err);
-	_res = Py_BuildValue("O&",
-	                     CmpInstObj_New, ci);
-	return _res;
-}
-
-static PyObject *Qd_CloseCursorComponent(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	OSErr _err;
-	ComponentInstance ci;
-	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
-		return NULL;
-	_err = CloseCursorComponent(ci);
-	if (_err != noErr) return PyMac_Error(_err);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
-}
-
-static PyObject *Qd_SetCursorComponent(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	OSErr _err;
-	ComponentInstance ci;
-	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
-		return NULL;
-	_err = SetCursorComponent(ci);
-	if (_err != noErr) return PyMac_Error(_err);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
-}
-
-static PyObject *Qd_CursorComponentChanged(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	OSErr _err;
-	ComponentInstance ci;
-	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &ci))
-		return NULL;
-	_err = CursorComponentChanged(ci);
-	if (_err != noErr) return PyMac_Error(_err);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
-}
-
-static PyObject *Qd_CursorComponentSetData(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	OSErr _err;
-	ComponentInstance ci;
-	long data;
-	if (!PyArg_ParseTuple(_args, "O&l",
-	                      CmpInstObj_Convert, &ci,
-	                      &data))
-		return NULL;
-	_err = CursorComponentSetData(ci,
-	                              data);
-	if (_err != noErr) return PyMac_Error(_err);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
-}
-
 static PyObject *Qd_GetPortPixMap(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
@@ -6019,16 +5929,6 @@ static PyMethodDef Qd_methods[] = {
 	 "(short angle) -> (Fixed _rv)"},
 	{"AngleFromSlope", (PyCFunction)Qd_AngleFromSlope, 1,
 	 "(Fixed slope) -> (short _rv)"},
-	{"OpenCursorComponent", (PyCFunction)Qd_OpenCursorComponent, 1,
-	 "(Component c) -> (ComponentInstance ci)"},
-	{"CloseCursorComponent", (PyCFunction)Qd_CloseCursorComponent, 1,
-	 "(ComponentInstance ci) -> None"},
-	{"SetCursorComponent", (PyCFunction)Qd_SetCursorComponent, 1,
-	 "(ComponentInstance ci) -> None"},
-	{"CursorComponentChanged", (PyCFunction)Qd_CursorComponentChanged, 1,
-	 "(ComponentInstance ci) -> None"},
-	{"CursorComponentSetData", (PyCFunction)Qd_CursorComponentSetData, 1,
-	 "(ComponentInstance ci, long data) -> None"},
 	{"GetPortPixMap", (PyCFunction)Qd_GetPortPixMap, 1,
 	 "(CGrafPtr port) -> (PixMapHandle _rv)"},
 	{"GetPortBounds", (PyCFunction)Qd_GetPortBounds, 1,

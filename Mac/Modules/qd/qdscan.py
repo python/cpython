@@ -104,6 +104,12 @@ extend						= 0x40
 			
 			'HandleToRgn', # Funny signature
 
+			# Need Cm, which we don't want to drag in just yet
+			'OpenCursorComponent',
+			'CloseCursorComponent',
+			'SetCursorComponent',
+			'CursorComponentChanged',
+			'CursorComponentSetData',
 			]
 
 	def makegreylist(self):
