@@ -1256,7 +1256,7 @@ call_sys_exitfunc(void)
 	PyObject *exitfunc = PySys_GetObject("exitfunc");
 
 	if (exitfunc) {
-		PyObject *res, *f;
+		PyObject *res;
 		Py_INCREF(exitfunc);
 		PySys_SetObject("exitfunc", (PyObject *)NULL);
 		res = PyEval_CallObject(exitfunc, (PyObject *)NULL);
