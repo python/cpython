@@ -3,7 +3,7 @@
 """
 Synopsis: %(prog)s [-h|-b|-r] dbfile [ picklefile ]
 
-Convert the bsddb database file given on the command like to a pickle
+Convert the database file given on the command line to a pickle
 representation.  The optional flags indicate the type of the database (hash,
 btree, recno).  The default is hash.  If a pickle file is named it is opened
 for write access (deleting any existing data).  If no pickle file is named,
