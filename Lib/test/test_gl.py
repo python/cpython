@@ -87,7 +87,8 @@ def main():
     try:
 	display = os.environ['DISPLAY']
     except:
-	raise SystemExit
+	# Raise ImportError because regrtest.py handles it specially.
+	raise ImportError, "No $DISPLAY -- skipping gl test"
 
     # touch all the attributes of gl without doing anything
     if verbose:
@@ -108,6 +109,9 @@ def main():
     if verbose:
 	print 'winopen "CrissCross"'
     w = gl.winopen('CrissCross')
+    if verbose:
+	print 'clear'
+    gl.clear()
     if verbose:
 	print 'ortho2'
     gl.ortho2(0.0, 400.0, 0.0, 400.0)
@@ -130,12 +134,18 @@ def main():
     if verbose:
 	print 'bgnline'
     gl.bgnline()
-    gl.v2f(400.0, 0.0)
-    gl.v2f(0.0, 400.0)
     if verbose:
-	print 'Displaying window for 5 seconds...'
+	print 'v2i'
+    gl.v2i(400, 0)
+    gl.v2i(0, 400)
+    if verbose:
+	print 'endline'
     gl.endline()
-    time.sleep(5)
+    if verbose:
+	print 'Displaying window for 2 seconds...'
+    time.sleep(2)
+    if verbose:
+	print 'winclose'
     gl.winclose(w)
     
 main()
