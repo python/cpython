@@ -25,6 +25,11 @@ ALERT_NONBOOT=517
 ALERT_NONBOOT_COPY=1
 ALERT_NONBOOT_ALIAS=2
 
+ALERT_NOTPYTHONFOLDER=518
+ALERT_NOTPYTHONFOLDER_REMOVE_QUIT=1
+ALERT_NOTPYTHONFOLDER_QUIT=2
+ALERT_NOTPYTHONFOLDER_CONTINUE=3
+
 APPLET_LIST=[
 		(":Mac:scripts:EditPythonPrefs.py", "EditPythonPrefs", None),
 		(":Mac:scripts:BuildApplet.py", "BuildApplet", None),
@@ -41,7 +46,7 @@ def getextensiondirfile(fname):
 	import macfs
 	import MACFS
 	try:
-		vrefnum, dirid = macfs.FindFolder(MACFS.kOnSystemDisk, MACFS.kExtensionFolderType, 0)
+		vrefnum, dirid = macfs.FindFolder(MACFS.kOnSystemDisk, MACFS.kSharedLibrariesFolderType, 0)
 		fss = macfs.FSSpec((vrefnum, dirid, fname))
 	except macfs.error:
 		return None
@@ -112,7 +117,17 @@ def main():
 	except Res.Error:
 		verbose = 1
 		print "Not running as applet: verbose on"
+	oldcwd = os.getcwd()
 	os.chdir(sys.prefix)
+	newcwd = os.getcwd()
+	if oldcwd != newcwd:
+		import Dlg
+		rv = Dlg.CautionAlert(ALERT_NOTPYTHONFOLDER, None)
+		if rv == ALERT_NOTPYTHONFOLDER_REMOVE_QUIT:
+			print "TBD: Should remove preferences file"
+			sys.exit(0)
+		elif rv == ALERT_NOTPYTHONFOLDER_QUIT:
+			sys.exit(0)
 	
 	sys.path.append('::Mac:Lib')
 	import macostools
