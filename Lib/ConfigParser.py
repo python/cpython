@@ -293,7 +293,7 @@ class ConfigParser:
         depth = 0
         while depth < 10:               # Loop through this until it's done
             depth = depth + 1
-            if string.find(value, "%(") >= 0:
+            if value.find("%(") >= 0:
                 try:
                     value = value % d
                 except KeyError, key:
@@ -315,13 +315,13 @@ class ConfigParser:
 
     def getboolean(self, section, option):
         v = self.get(section, option)
-        val = string.atoi(v)
+        val = v.atoi()
         if val not in (0, 1):
             raise ValueError, 'Not a boolean: %s' % v
         return val
 
     def optionxform(self, optionstr):
-        return string.lower(optionstr)
+        return optionstr.lower()
 
     def has_option(self, section, option):
         """Check for the existence of a given option in a given section."""
@@ -419,14 +419,14 @@ class ConfigParser:
                 break
             lineno = lineno + 1
             # comment or blank line?
-            if string.strip(line) == '' or line[0] in '#;':
+            if line.strip() == '' or line[0] in '#;':
                 continue
-            if string.lower(string.split(line)[0]) == 'rem' \
+            if line.split()[0].lower() == 'rem' \
                and line[0] in "rR":      # no leading whitespace
                 continue
             # continuation line?
             if line[0] in ' \t' and cursect is not None and optname:
-                value = string.strip(line)
+                value = line.strip()
                 if value:
                     cursect[optname] = cursect[optname] + '\n ' + value
             # a section header or option header?
@@ -455,10 +455,10 @@ class ConfigParser:
                         if vi in ('=', ':') and ';' in optval:
                             # ';' is a comment delimiter only if it follows
                             # a spacing character
-                            pos = string.find(optval, ';')
+                            pos = optval.find(';')
                             if pos and optval[pos-1] in string.whitespace:
                                 optval = optval[:pos]
-                        optval = string.strip(optval)
+                        optval = optval.strip()
                         # allow empty values
                         if optval == '""':
                             optval = ''
