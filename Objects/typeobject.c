@@ -2091,29 +2091,52 @@ static struct wrapperbase tab_init[] = {
 static PyObject *
 tp_new_wrapper(PyObject *self, PyObject *args, PyObject *kwds)
 {
-	PyTypeObject *type, *subtype;
+	PyTypeObject *type, *subtype, *staticbase;
 	PyObject *arg0, *res;
 
 	if (self == NULL || !PyType_Check(self))
 		Py_FatalError("__new__() called with non-type 'self'");
 	type = (PyTypeObject *)self;
 	if (!PyTuple_Check(args) || PyTuple_GET_SIZE(args) < 1) {
-		PyErr_SetString(PyExc_TypeError,
-				"T.__new__(): not enough arguments");
+		PyErr_Format(PyExc_TypeError,
+			     "%s.__new__(): not enough arguments",
+			     type->tp_name);
 		return NULL;
 	}
 	arg0 = PyTuple_GET_ITEM(args, 0);
 	if (!PyType_Check(arg0)) {
-		PyErr_SetString(PyExc_TypeError,
-				"T.__new__(S): S is not a type object");
+		PyErr_Format(PyExc_TypeError,
+			     "%s.__new__(X): X is not a type object (%s)",
+			     type->tp_name,
+			     arg0->ob_type->tp_name);
 		return NULL;
 	}
 	subtype = (PyTypeObject *)arg0;
 	if (!PyType_IsSubtype(subtype, type)) {
-		PyErr_SetString(PyExc_TypeError,
-				"T.__new__(S): S is not a subtype of T");
+		PyErr_Format(PyExc_TypeError,
+			     "%s.__new__(%s): %s is not a subtype of %s",
+			     type->tp_name,
+			     subtype->tp_name,
+			     subtype->tp_name,
+			     type->tp_name);
 		return NULL;
 	}
+
+	/* Check that the use doesn't do something silly and unsafe like
+	   object.__new__(dictionary).  To do this, we check that the
+	   most derived base that's not a heap type is this type. */
+	staticbase = subtype;
+	while (staticbase && (staticbase->tp_flags & Py_TPFLAGS_HEAPTYPE))
+		staticbase = staticbase->tp_base;
+	if (staticbase != type) {
+		PyErr_Format(PyExc_TypeError,
+			     "%s.__new__(%s) is not safe, use %s.__new__()",
+			     type->tp_name,
+			     subtype->tp_name,
+			     staticbase == NULL ? "?" : staticbase->tp_name);
+		return NULL;
+	}
+
 	args = PyTuple_GetSlice(args, 1, PyTuple_GET_SIZE(args));
 	if (args == NULL)
 		return NULL;
