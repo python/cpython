@@ -515,21 +515,6 @@
   \addcontentsline{toc}{chapter}{\indexname}
 }
 
-%  Use a similar trick to catch the end of the {abstract} environment,
-%  but here make sure the abstract is followed by a blank page if the
-% 'openright' option is used.
-%
-\let\OldEndAbstract=\endabstract
-\renewcommand{\endabstract}{
-  \if@openright
-    \ifodd\value{page}
-      \typeout{Adding blank page after the abstract.}
-      \vfil\pagebreak
-    \fi
-  \fi
-  \OldEndAbstract
-}
-
 % Allow the release number to be specified independently of the
 % \date{}.  This allows the date to reflect the document's date and
 % release to specify the Python release that is documented.
