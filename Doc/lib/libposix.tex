@@ -4,7 +4,7 @@
 \declaremodule{builtin}{posix}
   \platform{Unix}
 \modulesynopsis{The most common \POSIX{} system calls (normally used
-via module \module{os}).}
+                via module \module{os}).}
 
 
 This module provides access to operating system functionality that is
@@ -13,12 +13,12 @@ disguised \UNIX{} interface).
 
 \strong{Do not import this module directly.}  Instead, import the
 module \refmodule{os}, which provides a \emph{portable} version of this
-interface.  On \UNIX{}, the \module{os} module provides a superset of
+interface.  On \UNIX{}, the \refmodule{os} module provides a superset of
 the \module{posix} interface.  On non-\UNIX{} operating systems the
 \module{posix} module is not available, but a subset is always
-available through the \module{os} interface.  Once \module{os} is
+available through the \refmodule{os} interface.  Once \refmodule{os} is
 imported, there is \emph{no} performance penalty in using it instead
-of \module{posix}.  In addition, \module{os}\refstmodindex{os}
+of \module{posix}.  In addition, \refmodule{os}\refstmodindex{os}
 provides some additional functionality, such as automatically calling
 \function{putenv()} when an entry in \code{os.environ} is changed.
 
@@ -68,8 +68,8 @@ Module \module{posix} defines the following data item:
 \begin{datadesc}{environ}
 A dictionary representing the string environment at the time the
 interpreter was started. For example, \code{environ['HOME']} is the
-pathname of your home directory, equivalent to \code{getenv("HOME")}
-in C.
+pathname of your home directory, equivalent to
+\code{getenv("HOME")} in C.
 
 Modifying this dictionary does not affect the string environment
 passed on by \function{execv()}, \function{popen()} or
