@@ -20,18 +20,18 @@ let these be any arbitrary python type.
 */
 
 typedef struct {
-	PyObject_HEAD
-	PyObject *start, *stop, *step;
+    PyObject_HEAD
+    PyObject *start, *stop, *step;
 } PySliceObject;
 
 extern DL_IMPORT(PyTypeObject) PySlice_Type;
 
 #define PySlice_Check(op) ((op)->ob_type == &PySlice_Type)
 
-DL_IMPORT(PyObject *) PySlice_New Py_PROTO((
-	PyObject* start, PyObject* stop, PyObject* step));
-DL_IMPORT(int) PySlice_GetIndices Py_PROTO((
-	PySliceObject *r, int length, int *start, int *stop, int *step));
+DL_IMPORT(PyObject *) PySlice_New(PyObject* start, PyObject* stop,
+                                  PyObject* step);
+DL_IMPORT(int) PySlice_GetIndices(PySliceObject *r, int length,
+                                  int *start, int *stop, int *step);
 
 #ifdef __cplusplus
 }

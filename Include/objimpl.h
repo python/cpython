@@ -1,9 +1,3 @@
-#ifndef Py_OBJIMPL_H
-#define Py_OBJIMPL_H
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /***********************************************************
 Copyright (c) 2000, BeOpen.com.
 Copyright (c) 1995-2000, Corporation for National Research Initiatives.
@@ -13,6 +7,12 @@ All rights reserved.
 See the file "Misc/COPYRIGHT" for information on usage and
 redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 ******************************************************************/
+
+#ifndef Py_OBJIMPL_H
+#define Py_OBJIMPL_H
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #include "mymalloc.h"
 
@@ -137,9 +137,9 @@ extern void PyCore_OBJECT_FREE_FUNC PyCore_OBJECT_FREE_PROTO;
    as Python. These wrappers *do not* make sure that allocating 0
    bytes returns a non-NULL pointer. Returned pointers must be checked
    for NULL explicitly; no action is performed on failure. */
-extern DL_IMPORT(ANY *) PyObject_Malloc Py_PROTO((size_t));
-extern DL_IMPORT(ANY *) PyObject_Realloc Py_PROTO((ANY *, size_t));
-extern DL_IMPORT(void) PyObject_Free Py_PROTO((ANY *));
+extern DL_IMPORT(ANY *) PyObject_Malloc(size_t);
+extern DL_IMPORT(ANY *) PyObject_Realloc(ANY *, size_t);
+extern DL_IMPORT(void) PyObject_Free(ANY *);
 
 /* Macros */
 #define PyObject_MALLOC(n)           PyCore_OBJECT_MALLOC(n)
@@ -152,11 +152,12 @@ extern DL_IMPORT(void) PyObject_Free Py_PROTO((ANY *));
  */
 
 /* Functions */
-extern DL_IMPORT(PyObject *) PyObject_Init Py_PROTO((PyObject *, PyTypeObject *));
-extern DL_IMPORT(PyVarObject *) PyObject_InitVar Py_PROTO((PyVarObject *, PyTypeObject *, int));
-extern DL_IMPORT(PyObject *) _PyObject_New Py_PROTO((PyTypeObject *));
-extern DL_IMPORT(PyVarObject *) _PyObject_NewVar Py_PROTO((PyTypeObject *, int));
-extern DL_IMPORT(void) _PyObject_Del Py_PROTO((PyObject *));
+extern DL_IMPORT(PyObject *) PyObject_Init(PyObject *, PyTypeObject *);
+extern DL_IMPORT(PyVarObject *) PyObject_InitVar(PyVarObject *,
+                                                 PyTypeObject *, int);
+extern DL_IMPORT(PyObject *) _PyObject_New(PyTypeObject *);
+extern DL_IMPORT(PyVarObject *) _PyObject_NewVar(PyTypeObject *, int);
+extern DL_IMPORT(void) _PyObject_Del(PyObject *);
 
 #define PyObject_New(type, typeobj) \
 		( (type *) _PyObject_New(typeobj) )
@@ -240,10 +241,10 @@ extern DL_IMPORT(void) _PyObject_Del Py_PROTO((PyObject *));
 #else
 
 /* Add the object into the container set */
-extern DL_IMPORT(void) _PyGC_Insert Py_PROTO((PyObject *));
+extern DL_IMPORT(void) _PyGC_Insert(PyObject *);
 
 /* Remove the object from the container set */
-extern DL_IMPORT(void) _PyGC_Remove Py_PROTO((PyObject *));
+extern DL_IMPORT(void) _PyGC_Remove(PyObject *);
 
 #define PyObject_GC_Init(op) _PyGC_Insert((PyObject *)op)
 #define PyObject_GC_Fini(op) _PyGC_Remove((PyObject *)op)

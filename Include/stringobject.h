@@ -1,9 +1,3 @@
-#ifndef Py_STRINGOBJECT_H
-#define Py_STRINGOBJECT_H
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /***********************************************************
 Copyright (c) 2000, BeOpen.com.
 Copyright (c) 1995-2000, Corporation for National Research Initiatives.
@@ -15,6 +9,12 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 ******************************************************************/
 
 /* String object interface */
+
+#ifndef Py_STRINGOBJECT_H
+#define Py_STRINGOBJECT_H
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /*
 Type PyStringObject represents a character string.  An extra zero byte is
@@ -46,32 +46,32 @@ functions should be applied to nil objects.
 #endif
 
 typedef struct {
-	PyObject_VAR_HEAD
+    PyObject_VAR_HEAD
 #ifdef CACHE_HASH
-	long ob_shash;
+    long ob_shash;
 #endif
 #ifdef INTERN_STRINGS
-	PyObject *ob_sinterned;
+    PyObject *ob_sinterned;
 #endif
-	char ob_sval[1];
+    char ob_sval[1];
 } PyStringObject;
 
 extern DL_IMPORT(PyTypeObject) PyString_Type;
 
 #define PyString_Check(op) ((op)->ob_type == &PyString_Type)
 
-extern DL_IMPORT(PyObject *) PyString_FromStringAndSize Py_PROTO((const char *, int));
-extern DL_IMPORT(PyObject *) PyString_FromString Py_PROTO((const char *));
-extern DL_IMPORT(int) PyString_Size Py_PROTO((PyObject *));
-extern DL_IMPORT(char *) PyString_AsString Py_PROTO((PyObject *));
-extern DL_IMPORT(void) PyString_Concat Py_PROTO((PyObject **, PyObject *));
-extern DL_IMPORT(void) PyString_ConcatAndDel Py_PROTO((PyObject **, PyObject *));
-extern DL_IMPORT(int) _PyString_Resize Py_PROTO((PyObject **, int));
-extern DL_IMPORT(PyObject *) PyString_Format Py_PROTO((PyObject *, PyObject *));
+extern DL_IMPORT(PyObject *) PyString_FromStringAndSize(const char *, int);
+extern DL_IMPORT(PyObject *) PyString_FromString(const char *);
+extern DL_IMPORT(int) PyString_Size(PyObject *);
+extern DL_IMPORT(char *) PyString_AsString(PyObject *);
+extern DL_IMPORT(void) PyString_Concat(PyObject **, PyObject *);
+extern DL_IMPORT(void) PyString_ConcatAndDel(PyObject **, PyObject *);
+extern DL_IMPORT(int) _PyString_Resize(PyObject **, int);
+extern DL_IMPORT(PyObject *) PyString_Format(PyObject *, PyObject *);
 
 #ifdef INTERN_STRINGS
-extern DL_IMPORT(void) PyString_InternInPlace Py_PROTO((PyObject **));
-extern DL_IMPORT(PyObject *) PyString_InternFromString Py_PROTO((const char *));
+extern DL_IMPORT(void) PyString_InternInPlace(PyObject **);
+extern DL_IMPORT(PyObject *) PyString_InternFromString(const char *);
 #else
 #define PyString_InternInPlace(p)
 #define PyString_InternFromString(cp) PyString_FromString(cp)
