@@ -71,7 +71,8 @@ realmain(argc, argv)
 			   that look like options are left for the
 			   the command to interpret. */
 			command = malloc(strlen(optarg) + 2);
-			/* Ignore malloc errors this early... */
+			if (command == NULL)
+				fatal("not enough memory to copy -c argument");
 			strcpy(command, optarg);
 			strcat(command, "\n");
 			break;
