@@ -1,4 +1,4 @@
-;;; Major mode for editing Python programs, version 1.09
+;;; Major mode for editing Python programs, version 1.10
 ;; by: Tim Peters <tim@ksr.com>
 ;; after an original idea by: Michael A. Guravage
 ;;
@@ -127,6 +127,12 @@ Currently-active file is at the head of the list.")
     ;; else arrange for our hook to run theirs
     (setq py-inherited-kill-emacs-hook kill-emacs-hook)
     (setq kill-emacs-hook 'py-kill-emacs-hook)))
+
+(defvar python-mode-hook nil
+  "*Hook called by `python-mode'.")
+
+(and (fboundp 'make-obsolete-variable)
+     (make-obsolete-variable 'py-mode-hook 'python-mode-hook))
 
 (defvar py-beep-if-tab-change t
   "*Ring the bell if tab-width is changed.
@@ -273,7 +279,9 @@ py-beep-if-tab-change\tring the bell if tab-width is changed"
 	    (if py-beep-if-tab-change (beep)))))
     (goto-char start))
 
-  (run-hooks 'py-mode-hook))
+  (if python-mode-hook
+      (run-hooks 'python-mode-hook)
+    (run-hooks 'py-mode-hook)))
 
 ;;; Functions that execute Python commands in a subprocess
 
@@ -1409,8 +1417,9 @@ CONTROL), press and release `n' (while still holding down CONTROL), &
 then release CONTROL.
 
 Entering Python mode calls with no arguments the value of the variable
-`py-mode-hook', if that value exists and is not nil; see the `Hooks'
-section of the Elisp manual for details.
+`python-mode-hook', if that value exists and is not nil; for backward
+compatibility it also tries `py-mode-hook'; see the `Hooks' section of
+the Elisp manual for details.
 
 Obscure:  When python-mode is first loaded, it looks for all bindings
 to newline-and-indent in the global keymap, and shadows them with
