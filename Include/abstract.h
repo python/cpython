@@ -384,24 +384,20 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
      int PyObject_IsTrue(PyObject *o);
 
-	 Returns 1 if the object, o, is considered to be true, and
-	 0 otherwise. This is equivalent to the Python expression:
-	 not not o
+	 Returns 1 if the object, o, is considered to be true, 0 if o is
+	 considered to be false and -1 on failure. This is equivalent to the
+	 Python expression: not not o
 
-	 This function always succeeds.
-	 
        */
 
      /* Implemented elsewhere:
 
      int PyObject_Not(PyObject *o);
 
-	 Returns 0 if the object, o, is considered to be true, and
-	 1 otherwise. This is equivalent to the Python expression:
-	 not o
+	 Returns 0 if the object, o, is considered to be true, 1 if o is
+	 considered to be false and -1 on failure. This is equivalent to the
+	 Python expression: not o
 
-	 This function always succeeds.
-	 
        */
 
      PyAPI_FUNC(PyObject *) PyObject_Type(PyObject *o);
