@@ -2926,10 +2926,7 @@ symbolic links (using \function{os.symlink}) instead of copying: set it
 to \code{'hard'} or \code{'sym'}; if it is \code{None} (the default),
 files are copied. Don't set \var{link} on systems that don't support
 it: \function{copy_file()} doesn't check if hard or symbolic linking is
-available.
-
-Under Mac OS 9, uses the native file copy function in \module{macostools}; 
-on other systems, uses \var{_copy_file_contents()} to copy file contents.
+available.  It uses \var{_copy_file_contents()} to copy file contents.
 
 Return a tuple \samp{(dest_name, copied)}: \var{dest_name} is the actual 
 name of the output file, and \var{copied} is true if the file was copied 
