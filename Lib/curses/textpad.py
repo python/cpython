@@ -66,10 +66,10 @@ class Textbox:
             if y < self.maxy or x < self.maxx:
                 # The try-catch ignores the error we trigger from some curses
                 # versions by trying to write into the lowest-rightmost spot
-                # in the self.window.
+                # in the window.
                 try:
                     self.win.addch(ch)
-                except ERR:
+                except curses.error:
                     pass
         elif ch == ascii.SOH:				# ^a
             self.win.move(y, 0)
