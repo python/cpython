@@ -2,6 +2,8 @@
 
 from time import time as _time, sleep as _sleep
 
+__all__ = ['Empty', 'Full', 'Queue']
+
 class Empty(Exception):
     "Exception raised by Queue.get(block=0)/get_nowait()."
     pass
