@@ -721,7 +721,7 @@ static object *
 int_oct(v)
 	intobject *v;
 {
-	char buf[20];
+	char buf[100];
 	long x = v -> ob_ival;
 	if (x == 0)
 		strcpy(buf, "0");
@@ -734,7 +734,7 @@ static object *
 int_hex(v)
 	intobject *v;
 {
-	char buf[20];
+	char buf[100];
 	long x = v -> ob_ival;
 	sprintf(buf, "0x%lx", x);
 	return newstringobject(buf);
