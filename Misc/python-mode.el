@@ -60,8 +60,6 @@
 
 ;; - Better integration with pdb.py and gud-mode for debugging.
 ;; - Rewrite according to GNU Emacs Lisp standards.
-;; - have py-execute-region on indented code act as if the region is
-;;   left justified.  Avoids syntax errors.
 ;; - add a py-goto-block-down, bound to C-c C-d
 
 ;;; Code:
@@ -2801,7 +2799,7 @@ local bindings to py-newline-and-indent."))
   "Return the parse state at point (see `parse-partial-sexp' docs)."
   (save-excursion
     (let ((here (point))
-	  pps done)
+	  in-listcomp pps done)
       (while (not done)
 	;; back up to the first preceding line (if any; else start of
 	;; buffer) that begins with a popular Python keyword, or a
@@ -2810,6 +2808,13 @@ local bindings to py-newline-and-indent."))
 	;; at a non-zero nesting level.  It may be slow for people who
 	;; write huge code blocks or huge lists ... tough beans.
 	(re-search-backward py-parse-state-re nil 'move)
+	;; Watch out for landing inside a list comprehension
+	(save-excursion
+	  (if (and (looking-at "[ \t]*\\<\\(if\\|for\\)\\>")
+		   (py-safe (progn (up-list -1) t))
+		   (eq (char-after) ?\[))
+	      (setq in-listcomp (point))
+	    (setq in-listcomp nil)))
 	(beginning-of-line)
 	;; In XEmacs, we have a much better way to test for whether
 	;; we're in a triple-quoted string or not.  Emacs does not
@@ -2832,6 +2837,9 @@ local bindings to py-newline-and-indent."))
 	  ;; XEmacs
 	  (setq done (or (not (buffer-syntactic-context))
 			 (bobp)))
+	  (when in-listcomp
+	    (goto-char in-listcomp)
+	    (setq done nil))
 	  (when done
 	    (setq pps (parse-partial-sexp (point) here)))
 	  ))
