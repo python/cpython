@@ -23,6 +23,9 @@ reference material.
 \item[\module{Tkdnd}]
 --- Drag-and-drop support for \module{Tkinter}.
 
+\item[\module{turtle}]
+--- Turtle graphics in a Tk window.
+
 \item[\module{test}]
 --- Regression testing framework.  This is used for the Python
 regression test, but is useful for other Python libraries as well.
@@ -35,6 +38,11 @@ This is a package rather than a module.
 Some of these are very old and/or not very robust; marked with ``hmm.''
 
 \begin{description}
+\item[\module{dircmp}]
+--- Class to build directory diff tools on (may become a demo or tool).
+\deprecated{1.6}{The \refmodule{filecmp} module will replace
+\module{dircmp}.}
+
 \item[\module{bdb}]
 --- A generic Python debugger base class (used by pdb)
 
@@ -72,7 +80,7 @@ document these.
 --- Platform-independent API for playing audio data
 
 \item[\module{sunaudio}]
---- interpret sun audio headers (may become obsolete or a tool/demo)
+--- Interpret Sun audio headers (may become obsolete or a tool/demo)
 
 \item[\module{toaiff}]
 --- Convert "arbitrary" sound files to AIFF files; should probably
@@ -80,14 +88,23 @@ become a tool or demo.  Requires the external program \program{sox}.
 \end{description}
 
 
-\section{Obsolete}
+\section{Obsolete \label{obsolete-modules}}
 
-These modules are not on the standard module search path;
-\indexiii{module}{search}{path}
-but are available in the directory \file{lib-old/} installed  under
-\file{\textrm{\$prefix}/lib/python1.5/}. % $ <-- bow to font lock
-To use any of these modules, add that directory to \code{sys.path},
-possibly using \envvar{PYTHONPATH}.
+These modules are not normally available for import; additional work
+must be done to make them available.
+
+Those which are written in Python will be installed into the directory 
+\file{lib-old/} installed as part of the standard library.  To use
+these, the directory must be added to \code{sys.path}, possibly using
+\envvar{PYTHONPATH}.
+
+Obsolete extension modules written in C are not built by default.
+Under \UNIX, these must be enabled by uncommenting the appropriate
+lines in \file{Modules/Setup} in the build tree and either rebuilding
+Python if the modules are statically linked, or building and
+installing the shared object if using dynamically-loaded extensions.
+
+% XXX need Windows instructions!
 
 \begin{description}
 \item[\module{addpack}]

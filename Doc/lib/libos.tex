@@ -262,7 +262,9 @@ argument to the built-in \function{open()} function.  The exit status of
 the command (encoded in the format specified for \function{wait()}) is
 available as the return value of the \method{close()} method of the file
 object, except that when the exit status is zero (termination without
-errors), \code{None} is returned.
+errors), \code{None} is returned.  \strong{Note:} This function
+behaves unreliably under Windows due to the native implementation of
+\cfunction{popen()}.
 Availability: \UNIX{}, Windows.
 \end{funcdesc}
 
@@ -443,11 +445,34 @@ Availability: Macintosh, \UNIX{}, Windows.
 \subsection{Files and Directories \label{os-file-dir}}
 
 \begin{funcdesc}{access}{path, mode}
-Check read/write/execute permissions for this process or extance of file
-\var{path}.  Return \code{1} if access is granted, \code{0} if not.
-See the \UNIX{} manual for the semantics.
+Check read/write/execute permissions for this process or existence of
+file \var{path}.  \var{mode} should be \constant{F_OK} to test the
+existence of \var{path}, or it can be the inclusive OR of one or more
+of \constant{R_OK}, \constant{W_OK}, and \constant{X_OK} to test
+permissions.  Return \code{1} if access is allowed, \code{0} if not.
+See the \UNIX{} man page \manpage{access}{2} for more information.
 Availability: \UNIX{}.
 \end{funcdesc}
+
+\begin{datadesc}{F_OK}
+  Value to pass as the \var{mode} parameter of \function{access()} to
+  test the existence of \var{path}.
+\end{datadesc}
+
+\begin{datadesc}{R_OK}
+  Value to include in the \var{mode} parameter of \function{access()}
+  to test the readability of \var{path}.
+\end{datadesc}
+
+\begin{datadesc}{W_OK}
+  Value to include in the \var{mode} parameter of \function{access()}
+  to test the writability of \var{path}.
+\end{datadesc}
+
+\begin{datadesc}{X_OK}
+  Value to include in the \var{mode} parameter of \function{access()}
+  to determine if \var{path} can be executed.
+\end{datadesc}
 
 \begin{funcdesc}{chdir}{path}
 \index{directory!changing}
@@ -877,9 +902,10 @@ process status is available immediately.
 Availability: \UNIX{}.
 \end{datadesc}
 
-The following functions take a process stats code as returned by
-\function{waitpid()} as a parameter.  They may be used to determine
-the disposition of a process.
+The following functions take a process status code as returned by
+\function{system()}, \function{wait()}, or \function{waitpid()} as a
+parameter.  They may be used to determine the disposition of a
+process.
 
 \begin{funcdesc}{WIFSTOPPED}{status}
 Return true if the process has been stopped.

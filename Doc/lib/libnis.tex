@@ -5,7 +5,7 @@
   \platform{UNIX}
 \moduleauthor{Fred Gansevles}{Fred.Gansevles@cs.utwente.nl}
 \sectionauthor{Moshe Zadka}{mzadka@geocities.com}
-\modulesynopsis{Interface to Sun's N.I.S. (a.k.a. Yellow Pages) library.}
+\modulesynopsis{Interface to Sun's NIS (a.k.a. Yellow Pages) library.}
 
 The \module{nis} module gives a thin wrapper around the NIS library, useful
 for central administration of several hosts.
@@ -23,8 +23,6 @@ Return value is an arbitary array of bytes (i.e., may contain \code{NULL}
 and other joys).
 
 Note that \var{mapname} is first checked if it is an alias to another name.
-XXX Describe list of all aliases? Internal for the C code, so
-    I'm not sure it's a good idea.
 \end{funcdesc}
 
 \begin{funcdesc}{cat}{mapname}

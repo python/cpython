@@ -3,6 +3,7 @@
 
 \declaremodule{standard}{pickle}
 \modulesynopsis{Convert Python objects to streams of bytes and back.}
+% Substantial improvements by Jim Kerr <jbkerr@sr.hp.com>.
 
 \index{persistency}
 \indexii{persistent}{objects}
@@ -37,17 +38,29 @@ interface except that \class{Pickler} and \class{Unpickler} are
 factory functions, not classes (so they cannot be used as base classes
 for inheritance).
 
-Unlike the built-in module \refmodule{marshal}\refbimodindex{marshal},
-\module{pickle} handles the following correctly:
-
+Although the \module{pickle} module can use the built-in module
+\refmodule{marshal}\refbimodindex{marshal} internally, it differs from 
+\refmodule{marshal} in the way it handles certain kinds of data:
 
 \begin{itemize}
 
-\item recursive objects (objects containing references to themselves)
+\item Recursive objects (objects containing references to themselves): 
+      \module{pickle} keeps track of the objects it has already
+      serialized, so later references to the same object won't be
+      serialized again.  (The \refmodule{marshal} module breaks for
+      this.)
 
-\item object sharing (references to the same object in different places)
+\item Object sharing (references to the same object in different
+      places):  This is similar to self-referencing objects;
+      \module{pickle} stores the object once, and ensures that all
+      other references point to the master copy.  Shared objects
+      remain shared, which can be very important for mutable objects.
 
-\item user-defined classes and their instances
+\item User-defined classes and their instances:  \refmodule{marshal}
+      does not support these at all, but \module{pickle} can save
+      and restore class instances transparently.  The class definition 
+      must be importable and live in the same module as when the
+      object was stored.
 
 \end{itemize}
 
@@ -177,16 +190,15 @@ x = pickle.load(f)
 \end{verbatim}
 
 The \class{Pickler} class only calls the method \code{f.write()} with a
-\withsubitem{(class in pickle)}{
-  \ttindex{Unpickler}\ttindex{Pickler}}
+\withsubitem{(class in pickle)}{\ttindex{Unpickler}\ttindex{Pickler}}
 string argument.  The \class{Unpickler} calls the methods \code{f.read()}
 (with an integer argument) and \code{f.readline()} (without argument),
 both returning a string.  It is explicitly allowed to pass non-file
 objects here, as long as they have the right methods.
 
 The constructor for the \class{Pickler} class has an optional second
-argument, \var{bin}.  If this is present and nonzero, the binary
-pickle format is used; if it is zero or absent, the (less efficient,
+argument, \var{bin}.  If this is present and true, the binary
+pickle format is used; if it is absent or false, the (less efficient,
 but backwards compatible) text pickle format is used.  The
 \class{Unpickler} class does not have an argument to distinguish
 between binary and text pickle formats; it accepts either format.
@@ -202,6 +214,11 @@ The following types can be pickled:
 \item strings
 
 \item tuples, lists and dictionaries containing only picklable objects
+
+\item functions defined at the top level of a module (by name
+      reference, not storage of the implementation)
+
+\item built-in functions
 
 \item classes that are defined at the top level in a module
 
@@ -276,11 +293,80 @@ This exception is raised when an unpicklable object is passed to
 \end{seealso}
 
 
+\subsection{Example \label{pickle-example}}
+
+Here's a simple example of how to modify pickling behavior for a
+class.  The \class{TextReader} class opens a text file, and returns
+the line number and line contents each time its \method{readline()}
+method is called. If a \class{TextReader} instance is pickled, all
+attributes \emph{except} the file object member are saved. When the
+instance is unpickled, the file is reopened, and reading resumes from
+the last location. The \method{__setstate__()} and
+\method{__getstate__()} methods are used to implement this behavior.
+
+\begin{verbatim}
+# illustrate __setstate__ and __getstate__  methods
+# used in pickling.
+
+class TextReader:
+    "Print and number lines in a text file."
+    def __init__(self,file):
+        self.file = file
+        self.fh = open(file,'r')
+        self.lineno = 0
+
+    def readline(self):
+        self.lineno = self.lineno + 1
+        line = self.fh.readline()
+        if not line:
+            return None
+        return "%d: %s" % (self.lineno,line[:-1])
+
+    # return data representation for pickled object
+    def __getstate__(self):
+        odict = self.__dict__    # get attribute dictionary
+        del odict['fh']          # remove filehandle entry
+        return odict
+
+    # restore object state from data representation generated 
+    # by __getstate__
+    def __setstate__(self,dict):
+        fh = open(dict['file'])  # reopen file
+        count = dict['lineno']   # read from file...
+        while count:             # until line count is restored
+            fh.readline()
+            count = count - 1
+        dict['fh'] = fh          # create filehandle entry
+        self.__dict__ = dict     # make dict our attribute dictionary
+\end{verbatim}
+
+A sample usage might be something like this:
+
+\begin{verbatim}
+>>> import TextReader
+>>> obj = TextReader.TextReader("TextReader.py")
+>>> obj.readline()
+'1: #!/usr/local/bin/python'
+>>> # (more invocations of obj.readline() here)
+... obj.readline()
+'7: class TextReader:'
+>>> import pickle
+>>> pickle.dump(obj,open('save.p','w'))
+
+  (start another Python session)
+
+>>> import pickle
+>>> reader = pickle.load(open('save.p'))
+>>> reader.readline()
+'8:     "Print and number lines in a text file."'
+\end{verbatim}
+
+
 \section{\module{cPickle} ---
          Alternate implementation of \module{pickle}}
 
 \declaremodule{builtin}{cPickle}
-\modulesynopsis{Faster version of \module{pickle}, but not subclassable.}
+\modulesynopsis{Faster version of \refmodule{pickle}, but not subclassable.}
 \moduleauthor{Jim Fulton}{jfulton@digicool.com}
 \sectionauthor{Fred L. Drake, Jr.}{fdrake@acm.org}
 

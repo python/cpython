@@ -98,11 +98,12 @@ passed to \method{handle_xml()} default to \code{None} and the string
 \code{'no'} respectively.
 \end{methoddesc}
 
-\begin{methoddesc}{handle_doctype}{tag, data}
+\begin{methoddesc}{handle_doctype}{tag, pubid, syslit, data}
 This method is called when the \samp{<!DOCTYPE...>} tag is processed.
-The arguments are the name of the root element and the uninterpreted
-contents of the tag, starting after the white space after the name of
-the root element.
+The arguments are the name of the root element, the Formal Public
+Identifier (or \code{None} if not specified), the system identifier,
+and the uninterpreted contents of the internal DTD subset as a string
+(or \code{None} if not present).
 \end{methoddesc}
 
 \begin{methoddesc}{handle_starttag}{tag, method, attributes}
@@ -226,6 +227,12 @@ implementation calls \method{syntax_error()} to signal an error.
 
 
 \begin{seealso}
+  \seetext{The XML specification, published by the World Wide Web
+           Consortium (W3C), is available online at
+           \url{http://www.w3.org/TR/REC-xml}.  References to
+           additional material on XML are available at
+           \url{http://www.w3.org/XML/}.}
+
   \seetext{The Python XML Topic Guide provides a great deal of information
            on using XML from Python and links to other sources of information
            on XML.  It's located on the Web at

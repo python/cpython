@@ -62,7 +62,8 @@ The module defines these functions:
   Write the value on the open file.  The value must be a supported
   type.  The file must be an open file object such as
   \code{sys.stdout} or returned by \function{open()} or
-  \function{posix.popen()}.
+  \function{posix.popen()}.  It must be opened in binary mode
+  (\code{'wb'} or \code{'w+b'}).
 
   If the value has (or contains an object that has) an unsupported type,
   a \exception{ValueError} exception is raised --- but garbage data
@@ -73,7 +74,8 @@ The module defines these functions:
 \begin{funcdesc}{load}{file}
   Read one value from the open file and return it.  If no valid value
   is read, raise \exception{EOFError}, \exception{ValueError} or
-  \exception{TypeError}.  The file must be an open file object.
+  \exception{TypeError}.  The file must be an open file object opened
+  in binary mode (\code{'rb'} or \code{'r+b'}).
 
   \strong{Warning:} If an object containing an unsupported type was
   marshalled with \function{dump()}, \function{load()} will substitute

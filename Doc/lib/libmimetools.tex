@@ -2,7 +2,7 @@
          Tools for parsing MIME messages}
 
 \declaremodule{standard}{mimetools}
-\modulesynopsis{Tools for parsing MIME style message bodies.}
+\modulesynopsis{Tools for parsing MIME-style message bodies.}
 
 
 This module defines a subclass of the \class{rfc822.Message} class and
@@ -38,7 +38,7 @@ Valid values for \var{encoding} are the same as for \method{decode()}.
 \end{funcdesc}
 
 \begin{funcdesc}{copyliteral}{input, output}
-Read lines until \EOF{} from open file \var{input} and write them to
+Read lines from open file \var{input} until \EOF{} and write them to
 open file \var{output}.
 \end{funcdesc}
 
@@ -46,6 +46,12 @@ open file \var{output}.
 Read blocks until \EOF{} from open file \var{input} and write them to
 open file \var{output}.  The block size is currently fixed at 8192.
 \end{funcdesc}
+
+
+\begin{seealso}
+  \seemodule{rfc822}{Provides the base class for
+                     \class{mimetools.Message}.}
+\end{seealso}
 
 
 \subsection{Additional Methods of Message objects}

@@ -1,13 +1,14 @@
-% LaTeXed from excellent doc-string.
 \section{\module{codeop} ---
          Compile Python code}
+
+% LaTeXed from excellent doc-string.
 
 \declaremodule{standard}{codeop}
 \sectionauthor{Moshe Zadka}{mzadka@geocities.com}
 \modulesynopsis{Compile (possibly incomplete) Python code.}
 
 The \module{codeop} module provides a function to compile Python code
-with hints on whether it certainly complete, possible complete or
+with hints on whether it is certainly complete, possibly complete or
 definitely incomplete.  This is used by the \refmodule{code} module
 and should not normally be used directly.
 
@@ -15,25 +16,22 @@ The \module{codeop} module defines the following function:
 
 \begin{funcdesc}{compile_command}
                 {source\optional{, filename\optional{, symbol}}}
-
-Try to compile \var{source}, which should be a string of Python
-code. Return a code object if \var{source} is valid
+Tries to compile \var{source}, which should be a string of Python
+code and return a code object if \var{source} is valid
 Python code. In that case, the filename attribute of the code object
 will be \var{filename}, which defaults to \code{'<input>'}.
-
-Return \code{None} if \var{source} is \emph{not} valid Python
+Returns \code{None} if \var{source} is \emph{not} valid Python
 code, but is a prefix of valid Python code.
 
-Raise an exception if there is a problem with \var{source}:
-\begin{itemize}
-        \item \exception{SyntaxError}
-              if there is invalid Python syntax.
-        \item \exception{OverflowError}
-              if there is an invalid numeric constant.
-\end{itemize}
+If there is a problem with \var{source}, an exception will be raised.
+\exception{SyntaxError} is raised if there is invalid Python syntax,
+and \exception{OverflowError} if there is an invalid numeric
+constant.
 
-The \var{symbol} argument means whether to compile it as a statement
-(\code{'single'}, the default) or as an expression (\code{'eval'}).
+The \var{symbol} argument determines whether \var{source} is compiled
+as a statement (\code{'single'}, the default) or as an expression
+(\code{'eval'}).  Any other value will cause \exception{ValueError} to 
+be raised.
 
 \strong{Caveat:}
 It is possible (but not likely) that the parser stops parsing

@@ -1,18 +1,18 @@
-% This section was contributed by Drew Csillag <drew_csillag@geocities.com>.
-
 \section{\module{calendar} ---
-         Functions that emulate the \UNIX{} \program{cal} program.}
+         General calendar-related functions}
+
 \declaremodule{standard}{calendar}
-
-\modulesynopsis{Functions that emulate the \UNIX{} \program{cal}
-program.}
-
+\modulesynopsis{General functions for working with the calendar,
+                including some emulation of the \UNIX{} \program{cal}
+                program.}
+\sectionauthor{Drew Csillag}{drew_csillag@geocities.com}
 
 This module allows you to output calendars like the \UNIX{}
-\manpage{cal}{1} program.
+\program{cal} program, and provides additional useful functions
+related to the calendar.
 
 \begin{funcdesc}{isleap}{year}
-Returns \code{1} if \var{year} is a leap year.
+Returns true if \var{year} is a leap year.
 \end{funcdesc}
 
 \begin{funcdesc}{leapdays}{year1, year2}
@@ -48,9 +48,14 @@ Prints the calendar for the year \var{year}.
 \end{funcdesc}
 
 \begin{funcdesc}{timegm}{tuple}
-An unrelated but handy function that takes a time tuple such are
-returned by the \function{gmtime()} function in the \module{time}
+An unrelated but handy function that takes a time tuple such as
+returned by the \function{gmtime()} function in the \refmodule{time}
 module, and returns the corresponding Unix timestamp value, assuming
 an epoch of 1970, and the POSIX encoding.  In fact,
-\function{gmtime()} and \function{timegm()} are each others inverse.
+\function{time.gmtime()} and \function{timegm()} are each others' inverse.
 \end{funcdesc}
+
+
+\begin{seealso}
+  \seemodule{time}{Low-level time related functions.}
+\end{seealso}

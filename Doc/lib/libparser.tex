@@ -1,5 +1,6 @@
-% libparser.tex
-%
+\section{\module{parser} ---
+         Access Python parse trees}
+
 % Copyright 1995 Virginia Polytechnic Institute and State University
 % and Fred L. Drake, Jr.  This copyright notice must be distributed on
 % all copies, but this document otherwise may be distributed as part
@@ -7,10 +8,6 @@
 % in any representation, either on paper or electronically.  This
 % restriction does not affect other elements in a distributed package
 % in any way.
-%
-
-\section{\module{parser} ---
-         Access Python parse trees}
 
 \declaremodule{builtin}{parser}
 \modulesynopsis{Access parse trees for Python source code.}
@@ -166,7 +163,7 @@ extracted with or without line numbering information.
 \begin{funcdesc}{ast2list}{ast\optional{, line_info}}
 This function accepts an AST object from the caller in
 \var{ast} and returns a Python list representing the
-equivelent parse tree.  The resulting list representation can be used
+equivalent parse tree.  The resulting list representation can be used
 for inspection or the creation of a new parse tree in list form.  This
 function does not fail so long as memory is available to build the
 list representation.  If the parse tree will only be used for
@@ -185,7 +182,7 @@ omitted if the flag is false or omitted.
 \begin{funcdesc}{ast2tuple}{ast\optional{, line_info}}
 This function accepts an AST object from the caller in
 \var{ast} and returns a Python tuple representing the
-equivelent parse tree.  Other than returning a tuple instead of a
+equivalent parse tree.  Other than returning a tuple instead of a
 list, this function is identical to \function{ast2list()}.
 
 If \var{line_info} is true, line number information will be
@@ -238,7 +235,7 @@ identical to those created by the built-in
 \begin{funcdesc}{issuite}{ast}
 This function mirrors \function{isexpr()} in that it reports whether an
 AST object represents an \code{'exec'} form, commonly known as a
-``suite.''  It is not safe to assume that this function is equivelent
+``suite.''  It is not safe to assume that this function is equivalent
 to \samp{not isexpr(\var{ast})}, as additional syntactic fragments may
 be supported in the future.
 \end{funcdesc}
@@ -273,9 +270,6 @@ to the descriptions of each function for detailed information.
 
 
 \subsection{AST Objects \label{AST Objects}}
-
-AST objects returned by \function{expr()}, \function{suite()} and
-\function{sequence2ast()} have no methods of their own.
 
 Ordered and equality comparisons are supported between AST objects.
 Pickling of AST objects (using the \refmodule{pickle} module) is also
@@ -326,7 +320,7 @@ discovery.
 While many useful operations may take place between parsing and
 bytecode generation, the simplest operation is to do nothing.  For
 this purpose, using the \module{parser} module to produce an
-intermediate data structure is equivelent to the code
+intermediate data structure is equivalent to the code
 
 \begin{verbatim}
 >>> code = compile('a + 5', 'eval')
@@ -335,7 +329,7 @@ intermediate data structure is equivelent to the code
 10
 \end{verbatim}
 
-The equivelent operation using the \module{parser} module is somewhat
+The equivalent operation using the \module{parser} module is somewhat
 longer, and allows the intermediate internal parse tree to be retained
 as an AST object:
 
@@ -474,7 +468,7 @@ structure.
 
 By replacing the actual docstring with something to signify a variable
 component of the tree, we allow a simple pattern matching approach to
-check any given subtree for equivelence to the general pattern for
+check any given subtree for equivalence to the general pattern for
 docstrings.  Since the example demonstrates information extraction, we
 can safely require that the tree be in tuple form rather than list
 form, allowing a simple variable representation to be

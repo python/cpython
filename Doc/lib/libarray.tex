@@ -76,11 +76,11 @@ numbers are valid as long as the array exists and no length-changing
 operations are applied to it.
 \end{methoddesc}
 
-\begin{methoddesc}[array]{byteswap}{x}
+\begin{methoddesc}[array]{byteswap}{}
 ``Byteswap'' all items of the array.  This is only supported for
-integer values; for other types of values, \exception{RuntimeError} is
-raised.  It is useful when reading data from a file written on a
-machine with a different byte order.
+values which are 1, 2, 4, or 8 bytes in size; for other types of
+values, \exception{RuntimeError} is raised.  It is useful when reading
+data from a file written on a machine with a different byte order.
 \end{methoddesc}
 
 \begin{methoddesc}[array]{fromfile}{f, n}
@@ -150,7 +150,8 @@ represented as \code{array(\var{typecode}, \var{initializer})}.  The
 string if the \var{typecode} is \code{'c'}, otherwise it is a list of
 numbers.  The string is guaranteed to be able to be converted back to
 an array with the same type and value using reverse quotes
-(\code{``}).  Examples:
+(\code{``}), so long as the \function{array()} function has been
+imported using \samp{from array import array}.  Examples:
 
 \begin{verbatim}
 array('l')
@@ -163,4 +164,10 @@ array('d', [1.0, 2.0, 3.14])
 \begin{seealso}
   \seemodule{struct}{packing and unpacking of heterogeneous binary data}
   \seemodule{xdrlib}{packing and unpacking of XDR data}
+  \seetext{The Numeric Python extension (NumPy) defines another array
+           type; see \emph{The Numerical Python Manual} for additional 
+           information (available online at
+           \url{ftp://ftp-icf.llnl.gov/pub/python/numericalpython.pdf}). 
+           Further information about NumPy is available at
+           \url{http://www.python.org/topics/scicomp/numpy.html}.}
 \end{seealso}

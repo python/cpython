@@ -10,14 +10,14 @@
 
 This module performs base64 encoding and decoding of arbitrary binary
 strings into text strings that can be safely emailed or posted.  The
-encoding scheme is defined in \rfc{1421} (``Privacy Enhancement for
-Internet Electronic Mail: Part I: Message Encryption and
-Authentication Procedures'', section 4.3.2.4, ``Step 4: Printable
-Encoding'') and is used for MIME email and
-various other Internet-related applications; it is not the same as the
-output produced by the \program{uuencode} program.  For example, the
-string \code{'www.python.org'} is encoded as the string
-\code{'d3d3LnB5dGhvbi5vcmc=\e n'}.  
+encoding scheme is defined in \rfc{1521} (\emph{MIME
+(Multipurpose Internet Mail Extensions) Part One: Mechanisms for
+Specifying and Describing the Format of Internet Message Bodies},
+section 5.2, ``Base64 Content-Transfer-Encoding'') and is used for
+MIME email and various other Internet-related applications; it is not
+the same as the output produced by the \program{uuencode} program.
+For example, the string \code{'www.python.org'} is encoded as the
+string \code{'d3d3LnB5dGhvbi5vcmc=\e n'}.  
 
 
 \begin{funcdesc}{decode}{input, output}
@@ -52,4 +52,9 @@ base64 encoded data.
 \begin{seealso}
   \seemodule{binascii}{support module containing \ASCII{}-to-binary
                        and binary-to-\ASCII{} conversions}
+  \seetext{Internet \rfc{1521}, \emph{MIME (Multipurpose Internet
+           Mail Extensions) Part One: Mechanisms for Specifying and
+           Describing the Format of Internet Message Bodies}, section
+           5.2, ``Base64 Content-Transfer-Encoding,'' provides the
+           definition of the base64 encoding.}
 \end{seealso}

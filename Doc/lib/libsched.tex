@@ -1,6 +1,7 @@
-% LaTeXed and enhanced from comments in file
 \section{\module{sched} ---
          Event scheduler}
+
+% LaTeXed and enhanced from comments in file
 
 \declaremodule{standard}{sched}
 \sectionauthor{Moshe Zadka}{mzadka@geocities.com}
@@ -49,7 +50,8 @@ From print_time 930343700.273
 
 \begin{methoddesc}{enterabs}{time, priority, action, argument}
 Schedule a new event. The \var{time} argument should be a numeric type
-compatible to the return value of \var{timefunc}. Events scheduled for
+compatible with the return value of the \var{timefunc} function passed 
+to the constructor. Events scheduled for
 the same \var{time} will be executed in the order of their
 \var{priority}.
 

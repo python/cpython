@@ -1,12 +1,13 @@
 \section{\module{time} ---
-         Time access and conversions.}
-\declaremodule{builtin}{time}
+         Time access and conversions}
 
+\declaremodule{builtin}{time}
 \modulesynopsis{Time access and conversions.}
 
 
 This module provides various time-related functions.
-It is always available.
+It is always available, but not all functions are available
+on all platforms.
 
 An explanation of some terminology and conventions is in order.
 
@@ -72,17 +73,29 @@ nonzero fraction (\UNIX{} \cfunction{select()} is used to implement
 this, where available).
 
 \item
+
 The time tuple as returned by \function{gmtime()},
 \function{localtime()}, and \function{strptime()}, and accepted by
 \function{asctime()}, \function{mktime()} and \function{strftime()},
-is a tuple of 9 integers: year (e.g.\ 1993), month (1--12), day
-(1--31), hour (0--23), minute (0--59), second (0--59), weekday (0--6,
-monday is 0), Julian day (1--366) and daylight savings flag (-1, 0 or
-1).  Note that unlike the C structure, the month value is a range
-of 1-12, not 0-11.  A year value will be handled as descibed under
-``Year 2000 (Y2K) issues'' above.  A \code{-1} argument as daylight
-savings flag, passed to \function{mktime()} will usually result in the
-correct daylight savings state to be filled in.
+is a tuple of 9 integers:
+
+\begin{tableiii}{r|l|l}{textrm}{Index}{Field}{Values}
+  \lineiii{0}{year}{(e.g.\ 1993)}
+  \lineiii{1}{month}{range [1,12]}
+  \lineiii{2}{day}{range [1,31]}
+  \lineiii{3}{hour}{range [0,23]}
+  \lineiii{4}{minute}{range [0,59]}
+  \lineiii{5}{second}{range [0,61]; see \strong{(1)} in \function{strftime()} description}
+  \lineiii{6}{weekday}{range [0,6], monday is 0}
+  \lineiii{7}{Julian day}{range [1,366]}
+  \lineiii{8}{daylight savings flag}{0, 1 or -1; see below}
+\end{tableiii}
+
+Note that unlike the C structure, the month value is a
+range of 1-12, not 0-11.  A year value will be handled as described
+under ``Year 2000 (Y2K) issues'' above.  A \code{-1} argument as
+daylight savings flag, passed to \function{mktime()} will usually
+result in the correct daylight savings state to be filled in.
 
 \end{itemize}
 
@@ -168,34 +181,43 @@ They are shown without the optional field width and precision
 specification, and are replaced by the indicated characters in the
 \function{strftime()} result:
 
-\begin{tableii}{c|p{24em}}{code}{Directive}{Meaning}
-  \lineii{\%a}{Locale's abbreviated weekday name.}
-  \lineii{\%A}{Locale's full weekday name.}
-  \lineii{\%b}{Locale's abbreviated month name.}
-  \lineii{\%B}{Locale's full month name.}
-  \lineii{\%c}{Locale's appropriate date and time representation.}
-  \lineii{\%d}{Day of the month as a decimal number [01,31].}
-  \lineii{\%H}{Hour (24-hour clock) as a decimal number [00,23].}
-  \lineii{\%I}{Hour (12-hour clock) as a decimal number [01,12].}
-  \lineii{\%j}{Day of the year as a decimal number [001,366].}
-  \lineii{\%m}{Month as a decimal number [01,12].}
-  \lineii{\%M}{Minute as a decimal number [00,59].}
-  \lineii{\%p}{Locale's equivalent of either AM or PM.}
-  \lineii{\%S}{Second as a decimal number [00,61].}
-  \lineii{\%U}{Week number of the year (Sunday as the first day of the
-               week) as a decimal number [00,53].  All days in a new year
-               preceding the first Sunday are considered to be in week 0.}
-  \lineii{\%w}{Weekday as a decimal number [0(Sunday),6].}
-  \lineii{\%W}{Week number of the year (Monday as the first day of the
-               week) as a decimal number [00,53].  All days in a new year
-               preceding the first Sunday are considered to be in week 0.}
-  \lineii{\%x}{Locale's appropriate date representation.}
-  \lineii{\%X}{Locale's appropriate time representation.}
-  \lineii{\%y}{Year without century as a decimal number [00,99].}
-  \lineii{\%Y}{Year with century as a decimal number.}
-  \lineii{\%Z}{Time zone name (or by no characters if no time zone exists).}
-  \lineii{\%\%}{\%}
-\end{tableii}
+\begin{tableiii}{c|p{24em}|c}{code}{Directive}{Meaning}{Notes}
+  \lineiii{\%a}{Locale's abbreviated weekday name.}{}
+  \lineiii{\%A}{Locale's full weekday name.}{}
+  \lineiii{\%b}{Locale's abbreviated month name.}{}
+  \lineiii{\%B}{Locale's full month name.}{}
+  \lineiii{\%c}{Locale's appropriate date and time representation.}{}
+  \lineiii{\%d}{Day of the month as a decimal number [01,31].}{}
+  \lineiii{\%H}{Hour (24-hour clock) as a decimal number [00,23].}{}
+  \lineiii{\%I}{Hour (12-hour clock) as a decimal number [01,12].}{}
+  \lineiii{\%j}{Day of the year as a decimal number [001,366].}{}
+  \lineiii{\%m}{Month as a decimal number [01,12].}{}
+  \lineiii{\%M}{Minute as a decimal number [00,59].}{}
+  \lineiii{\%p}{Locale's equivalent of either AM or PM.}{}
+  \lineiii{\%S}{Second as a decimal number [00,61].}{(1)}
+  \lineiii{\%U}{Week number of the year (Sunday as the first day of the
+                week) as a decimal number [00,53].  All days in a new year
+                preceding the first Sunday are considered to be in week 0.}{}
+  \lineiii{\%w}{Weekday as a decimal number [0(Sunday),6].}{}
+  \lineiii{\%W}{Week number of the year (Monday as the first day of the
+                week) as a decimal number [00,53].  All days in a new year
+                preceding the first Sunday are considered to be in week 0.}{}
+  \lineiii{\%x}{Locale's appropriate date representation.}{}
+  \lineiii{\%X}{Locale's appropriate time representation.}{}
+  \lineiii{\%y}{Year without century as a decimal number [00,99].}{}
+  \lineiii{\%Y}{Year with century as a decimal number.}{}
+  \lineiii{\%Z}{Time zone name (or by no characters if no time zone exists).}{}
+  \lineiii{\%\%}{A literal \character{\%} character.}{}
+\end{tableiii}
+
+\noindent
+Notes:
+
+\begin{description}
+  \item[(1)]
+    The range really is \code{0} to \code{61}; this accounts for leap
+    seconds and the (very rare) double leap seconds.
+\end{description}
 
 Additional directives may be supported on certain platforms, but
 only the ones listed here have a meaning standardized by ANSI C.
@@ -215,8 +237,9 @@ directives as those used by \function{strftime()}; it defaults to
 returned by \function{ctime()}.  The same platform caveats apply; see
 the local \UNIX{} documentation for restrictions or additional
 supported directives.  If \var{string} cannot be parsed according to
-\var{format}, \exception{ValueError} is raised.  This function may not
-be defined on all platforms.
+\var{format}, \exception{ValueError} is raised.
+
+Availability: Most modern \UNIX{} systems.
 \end{funcdesc}
 
 \begin{funcdesc}{time}{}
@@ -238,3 +261,9 @@ timezone, the second is the name of the local DST timezone.  If no DST
 timezone is defined, the second string should not be used.
 \end{datadesc}
 
+
+\begin{seealso}
+  \seemodule{locale}{Internationalization services.  The locale
+                     settings can affect the return values for some of 
+                     the functions in the \module{time} module.}
+\end{seealso}

@@ -45,23 +45,35 @@ The module defines the following exception and functions:
 Format characters have the following meaning; the conversion between
 C and Python values should be obvious given their types:
 
-\begin{tableiii}{c|l|l}{samp}{Format}{C Type}{Python}
-  \lineiii{x}{pad byte}{no value}
-  \lineiii{c}{\ctype{char}}{string of length 1}
-  \lineiii{b}{\ctype{signed char}}{integer}
-  \lineiii{B}{\ctype{unsigned char}}{integer}
-  \lineiii{h}{\ctype{short}}{integer}
-  \lineiii{H}{\ctype{unsigned short}}{integer}
-  \lineiii{i}{\ctype{int}}{integer}
-  \lineiii{I}{\ctype{unsigned int}}{integer}
-  \lineiii{l}{\ctype{long}}{integer}
-  \lineiii{L}{\ctype{unsigned long}}{integer}
-  \lineiii{f}{\ctype{float}}{float}
-  \lineiii{d}{\ctype{double}}{float}
-  \lineiii{s}{\ctype{char[]}}{string}
-  \lineiii{p}{\ctype{char[]}}{string}
-  \lineiii{P}{\ctype{void *}}{integer}
-\end{tableiii}
+\begin{tableiv}{c|l|l|c}{samp}{Format}{C Type}{Python}{Notes}
+  \lineiv{x}{pad byte}{no value}{}
+  \lineiv{c}{\ctype{char}}{string of length 1}{}
+  \lineiv{b}{\ctype{signed char}}{integer}{}
+  \lineiv{B}{\ctype{unsigned char}}{integer}{}
+  \lineiv{h}{\ctype{short}}{integer}{}
+  \lineiv{H}{\ctype{unsigned short}}{integer}{}
+  \lineiv{i}{\ctype{int}}{integer}{}
+  \lineiv{I}{\ctype{unsigned int}}{long}{(1)}
+  \lineiv{l}{\ctype{long}}{integer}{}
+  \lineiv{L}{\ctype{unsigned long}}{long}{}
+  \lineiv{f}{\ctype{float}}{float}{}
+  \lineiv{d}{\ctype{double}}{float}{}
+  \lineiv{s}{\ctype{char[]}}{string}{}
+  \lineiv{p}{\ctype{char[]}}{string}{}
+  \lineiv{P}{\ctype{void *}}{integer}{}
+\end{tableiv}
+
+\noindent
+Notes:
+
+\begin{description}
+\item[(1)]
+  The \character{I} conversion code will convert to a Python long if
+  the C \ctype{int} is the same size as a C \ctype{long}, which is
+  typical on most modern systems.  If a C \ctype{int} is smaller than
+  a C \ctype{long}, an Python integer will be created instead.
+\end{description}
+
 
 A format character may be preceded by an integral repeat count;
 e.g.\ the format string \code{'4h'} means exactly the same as

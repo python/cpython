@@ -1,12 +1,9 @@
-% LaTeX'ized from the comments in the module by Skip Montanaro
-% <skip@mojam.com>.
-
 \section{\module{telnetlib} ---
          Telnet client}
 
 \declaremodule{standard}{telnetlib}
 \modulesynopsis{Telnet client class.}
-
+\sectionauthor{Skip Montanaro}{skip@mojam.com}
 
 The \module{telnetlib} module provides a \class{Telnet} class that
 implements the Telnet protocol.  See \rfc{854} for details about the
@@ -149,3 +146,32 @@ If a regular expression ends with a greedy match (e.g. \regexp{.*})
 or if more than one expression can match the same input, the
 results are undeterministic, and may depend on the I/O timing.
 \end{methoddesc}
+
+
+\subsection{Telnet Example \label{telnet-example}}
+\sectionauthor{Peter Funk}{pf@artcom-gmbh.de}
+
+A simple example illustrating typical use:
+
+\begin{verbatim}
+import getpass
+import sys
+import telnetlib
+
+HOST = "localhost"
+user = raw_input("Enter your remote account: ")
+password = getpass.getpass()
+
+tn = telnetlib.Telnet(HOST)
+
+tn.read_until("login: ")
+tn.write(user + "\n")
+if password:
+    tn.read_until("Password: ")
+    tn.write(password + "\n")
+
+tn.write("ls\n")
+tn.write("exit\n")
+
+print tn.read_all()
+\end{verbatim}

@@ -33,9 +33,10 @@ The return value consists of two elements: the first is a list of
 program arguments left after the option list was stripped (this is a
 trailing slice of the first argument).
 Each option-and-value pair returned has the option as its first
-element, prefixed with a hyphen (e.g., \code{'-x'}), and the option
-argument as its second element, or an empty string if the option has
-no argument.
+element, prefixed with a hyphen for short options (e.g., \code{'-x'})
+or two hyphens for long options (e.g., \code{'-}\code{-long-option'}),
+and the option argument as its second element, or an empty string if
+the option has no argument.
 The options occur in the list in the same order in which they were
 found, thus allowing multiple occurrences.  Long and short options may
 be mixed.

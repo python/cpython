@@ -11,10 +11,14 @@ It is available on all \UNIX{} versions.
 
 Group database entries are reported as 4-tuples containing the
 following items from the group database (see \code{<grp.h>}), in order:
-\code{gr_name},
-\code{gr_passwd},
-\code{gr_gid},
-\code{gr_mem}.
+
+\begin{tableiii}{r|l|l}{textrm}{Index}{Field}{Meaning}
+  \lineiii{0}{gr_name}{the name of the group}
+  \lineiii{1}{gr_passwd}{the (encrypted) group password; often empty}
+  \lineiii{2}{gr_gid}{the numerical group ID}
+  \lineiii{3}{gr_mem}{all the group member's  user  names}
+\end{tableiii}
+
 The gid is an integer, name and password are strings, and the member
 list is a list of strings.
 (Note that most users are not explicitly listed as members of the
@@ -34,3 +38,8 @@ Return the group database entry for the given group name.
 \begin{funcdesc}{getgrall}{}
 Return a list of all available group entries, in arbitrary order.
 \end{funcdesc}
+
+
+\begin{seealso}
+  \seemodule{pwd}{An interface to the user database, similar to this.}
+\end{seealso}

@@ -1,13 +1,27 @@
 \section{\module{whrandom} ---
-         Floating point pseudo-random number generator.}
-\declaremodule{standard}{whrandom}
+         Pseudo-random number generator}
 
+\declaremodule{standard}{whrandom}
 \modulesynopsis{Floating point pseudo-random number generator.}
 
 
 This module implements a Wichmann-Hill pseudo-random number generator
-class that is also named \code{whrandom}.  Instances of the
-\code{whrandom} class have the following methods:
+class that is also named \class{whrandom}.  Instances of the
+\class{whrandom} class conform to the Random Number Generator
+interface described in section \ref{rng-objects}.  They also offer the 
+following method, specific to the Wichmann-Hill algorithm:
+
+\begin{methoddesc}[whrandom]{seed}{\optional{x, y, z}}
+  Initializes the random number generator from the integers \var{x},
+  \var{y} and \var{z}.  When the module is first imported, the random
+  number is initialized using values derived from the current time.
+  If \var{x}, \var{y}, and \var{z} are either omitted or \code{0}, the 
+  seed will be computed from the current system time.  If one or two
+  of the parameters are \code{0}, but not all three, the zero values
+  are replaced by ones.  This causes some apparently different seeds
+  to be equal, with the corresponding result on the pseudo-random
+  series produced by the generator.
+\end{methoddesc}
 
 \begin{funcdesc}{choice}{seq}
 Chooses a random element from the non-empty sequence \var{seq} and returns it.
@@ -31,17 +45,23 @@ number is initialized using values derived from the current time.
 Returns a random real number \var{N} such that \code{\var{a}<=\var{N}<\var{b}}.
 \end{funcdesc}
 
-When imported, the \code{whrandom} module also creates an instance of
-the \code{whrandom} class, and makes the methods of that instance
+When imported, the \module{whrandom} module also creates an instance of
+the \class{whrandom} class, and makes the methods of that instance
 available at the module level.  Therefore one can write either 
 \code{N = whrandom.random()} or:
+
 \begin{verbatim}
 generator = whrandom.whrandom()
 N = generator.random()
 \end{verbatim}
 
+Note that using separate instances of the generator leads to
+independent sequences of pseudo-random numbers.
+
 \begin{seealso}
-  \seemodule{random}{generators for various random distributions}
+  \seemodule{random}{Generators for various random distributions and
+                     documentation for the Random Number Generator
+                     interface.}
   \seetext{Wichmann, B. A. \& Hill, I. D., ``Algorithm AS 183: 
            An efficient and portable pseudo-random number generator'',
            \citetitle{Applied Statistics} 31 (1982) 188-190.}

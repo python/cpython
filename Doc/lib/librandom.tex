@@ -12,22 +12,25 @@ or Gaussian, lognormal, negative exponential, gamma, and beta
 distributions.  For generating distribution of angles, the circular
 uniform and von Mises distributions are available.
 
-The module exports the following functions, which are exactly
-equivalent to those in the \refmodule{whrandom} module:
-\function{choice()}, \function{randint()}, \function{random()} and
-\function{uniform()}.  See the documentation for the
-\refmodule{whrandom} module for these functions.
 
-The following functions specific to the \module{random} module are also
-defined, and all return real values.  Function parameters are named
-after the corresponding variables in the distribution's equation, as
-used in common mathematical practice; most of these equations can be
-found in any statistics text.
+The \module{random} module supports the \emph{Random Number
+Generator} interface, described in section \ref{rng-objects}.  This
+interface of the module, as well as the distribution-specific
+functions described below, all use the pseudo-random generator
+provided by the \refmodule{whrandom} module.
+
+
+The following functions are defined to support specific distributions,
+and all return real values.  Function parameters are named after the
+corresponding variables in the distribution's equation, as used in
+common mathematical practice; most of these equations can be found in
+any statistics text.  These are expected to become part of the Random
+Number Generator interface in a future release.
 
 \begin{funcdesc}{betavariate}{alpha, beta}
 Beta distribution.  Conditions on the parameters are
-\code{\var{alpha} >- 1} and \code{\var{beta} > -1}.
-Returned values will range between 0 and 1.
+\code{\var{alpha} > -1} and \code{\var{beta} > -1}.
+Returned values range between 0 and 1.
 \end{funcdesc}
 
 \begin{funcdesc}{cunifvariate}{mean, arc}
@@ -59,8 +62,8 @@ standard deviation.  This is slightly faster than the
 \begin{funcdesc}{lognormvariate}{mu, sigma}
 Log normal distribution.  If you take the natural logarithm of this
 distribution, you'll get a normal distribution with mean \var{mu} and
-standard deviation \var{sigma}.  \var{mu} can have any value, and \var{sigma}
-must be greater than zero.  
+standard deviation \var{sigma}.  \var{mu} can have any value, and
+\var{sigma} must be greater than zero.  
 \end{funcdesc}
 
 \begin{funcdesc}{normalvariate}{mu, sigma}
@@ -86,5 +89,40 @@ Weibull distribution.  \var{alpha} is the scale parameter and
 \end{funcdesc}
 
 \begin{seealso}
-  \seemodule{whrandom}{the standard Python random number generator}
+  \seemodule{whrandom}{The standard Python random number generator.}
 \end{seealso}
+
+
+\subsection{The Random Number Generator Interface
+            \label{rng-objects}}
+
+% XXX This *must* be updated before a future release!
+
+The \dfn{Random Number Generator} interface describes the methods
+which are available for all random number generators.  This will be
+enhanced in future releases of Python.
+
+In this release of Python, the modules \refmodule{random},
+\refmodule{whrandom}, and instances of the
+\class{whrandom.whrandom} class all conform to this interface.
+
+
+\begin{funcdesc}{choice}{seq}
+Chooses a random element from the non-empty sequence \var{seq} and
+returns it.
+\end{funcdesc}
+
+\begin{funcdesc}{randint}{a, b}
+Returns a random integer \var{N} such that
+\code{\var{a} <= \var{N} <= \var{b}}.
+\end{funcdesc}
+
+\begin{funcdesc}{random}{}
+Returns the next random floating point number in the range [0.0
+... 1.0).
+\end{funcdesc}
+
+\begin{funcdesc}{uniform}{a, b}
+Returns a random real number \var{N} such that
+\code{\var{a} <= \var{N} < \var{b}}.
+\end{funcdesc}

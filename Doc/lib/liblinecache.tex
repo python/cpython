@@ -17,7 +17,9 @@ The \module{linecache} module defines the following functions:
 
 \begin{funcdesc}{getline}{filename, lineno}
 Get line \var{lineno} from file named \var{filename}. This function
-will never throw an exception --- it will return \code{''} on errors.
+will never throw an exception --- it will return \code{''} on errors
+(the terminating newline character will be included for lines that are
+found).
 
 If a file named \var{filename} is not found, the function will look
 for it in the module\indexiii{module}{search}{path} search path,
@@ -25,9 +27,8 @@ for it in the module\indexiii{module}{search}{path} search path,
 \end{funcdesc}
 
 \begin{funcdesc}{clearcache}{}
-Clear the cache.  Use this function if you know that you do not need
-to read lines from many of files you already read from using this
-module.
+Clear the cache.  Use this function if you no longer need lines from
+files previously read using \function{getline()}.
 \end{funcdesc}
 
 \begin{funcdesc}{checkcache}{}

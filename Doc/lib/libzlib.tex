@@ -1,6 +1,3 @@
-% XXX The module has been extended (by Jeremy and Andrew) but this
-% documentation is incorrect in some cases.
-
 \section{\module{zlib} ---
          Compression compatible with \program{gzip}}
 
@@ -16,10 +13,6 @@ The zlib library has its own home page at
 most recent version as of April 1999; use a later version if one
 is available.  There are known incompatibilities between the Python
 module and earlier versions of the zlib library.
-
-The documentation for this module is woefully out of date.  In some
-cases, the doc strings have been updated more recently.  In other
-cases, they are both stale.
 
 The available exception and functions in this module are:
 
@@ -68,12 +61,29 @@ The available exception and functions in this module are:
   should not be used for authentication or digital signatures.
 \end{funcdesc}
 
-\begin{funcdesc}{decompress}{string\optional{, wbits\optional{, buffsize}}}
+\begin{funcdesc}{decompress}{string\optional{, wbits\optional{, bufsize}}}
   Decompresses the data in \var{string}, returning a string containing
   the uncompressed data.  The \var{wbits} parameter controls the size of
-  the window buffer.  If \var{buffsize} is given, it is used as the
+  the window buffer.  If \var{bufsize} is given, it is used as the
   initial size of the output buffer.  Raises the \exception{error}
   exception if any error occurs.
+
+The absolute value of \var{wbits} is the base two logarithm of the
+size of the history buffer (the ``window size'') used when compressing
+data.  Its absolute value should be between 8 and 15 for the most
+recent versions of the zlib library, larger values resulting in better
+compression at the expense of greater memory usage.  The default value
+is 15.  When \var{wbits} is negative, the standard
+\program{gzip} header is suppressed; this is an undocumented feature
+of the zlib library, used for compatibility with \program{unzip}'s
+compression file format.
+
+\var{bufsize} is the initial size of the buffer used to hold
+decompressed data.  If more space is required, the buffer size will be
+increased as needed, so you don't have to get this value exactly
+right; tuning it will only save a few calls to \cfunction{malloc()}.  The
+default size is 16384.
+   
 \end{funcdesc}
 
 \begin{funcdesc}{decompressobj}{\optional{wbits}}
@@ -106,7 +116,20 @@ prevents compressing any more data.  After calling
 action is to delete the object.  
 \end{methoddesc}
 
-Decompression objects support the following methods:
+Decompression objects support the following methods, and a single attribute:
+
+\begin{memberdesc}{unused_data}
+A string which contains any unused data from the last string fed to
+this decompression object.  If the whole string turned out to contain
+compressed data, this is \code{""}, the empty string. 
+
+The only way to determine where a string of compressed data ends is by
+actually decompressing it.  This means that when compressed data is
+contained part of a larger file, you can only find the end of it by
+reading data and feeding it into a decompression object's
+\method{decompress} method until the \member{unused_data} attribute is
+no longer the empty string.  
+\end{memberdesc}
 
 \begin{methoddesc}[Decompress]{decompress}{string}
 Decompress \var{string}, returning a string containing the
