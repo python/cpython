@@ -901,7 +901,8 @@ new_mmap_object(PyObject *self, PyObject *args, PyObject *kwdict)
 	/* on OpenVMS we must ensure that all bytes are written to the file */
 	fsync(fd);
 #  endif
-	if (fstat(fd, &st) == 0 && (size_t)map_size > st.st_size) {
+	if (fstat(fd, &st) == 0 && S_ISREG(st.st_mode) &&
+	    (size_t)map_size > st.st_size) {
 		PyErr_SetString(PyExc_ValueError, 
 				"mmap length is greater than file size");
 		return NULL;
