@@ -447,10 +447,7 @@ getarrayitem(PyObject *op, int i)
 	register arrayobject *ap;
 	assert(array_Check(op));
 	ap = (arrayobject *)op;
-	if (i < 0 || i >= ap->ob_size) {
-		PyErr_SetString(PyExc_IndexError, "array index out of range");
-		return NULL;
-	}
+	assert(i>=0 && i<ap->ob_size);
 	return (*ap->ob_descr->getitem)(ap, i);
 }
 
