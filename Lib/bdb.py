@@ -16,6 +16,7 @@ class Bdb: # Basic Debugger
 	
 	def __init__(self):
 		self.breaks = {}
+		self.cbreaks = {}
 	
 	def reset(self):
 		import linecache
@@ -85,11 +86,16 @@ class Bdb: # Basic Debugger
 		return 0
 	
 	def break_here(self, frame):
-		if not self.breaks.has_key(frame.f_code.co_filename):
+	        filename=frame.f_code.co_filename
+		if not self.breaks.has_key(filename):
 			return 0
-		if not frame.f_lineno in \
-				self.breaks[frame.f_code.co_filename]:
+		lineno=frame.f_lineno
+		if not lineno in self.breaks[filename]:
 			return 0
+		if self.cbreaks.has_key((filename, lineno)):
+		    cond=self.cbreaks[filename, lineno]
+		    return eval(cond, frame.f_globals,
+				frame.f_locals)
 		return 1
 	
 	def break_anywhere(self, frame):
@@ -178,7 +184,7 @@ class Bdb: # Basic Debugger
 	# error message is something went wrong, None if all is well.
 	# Call self.get_*break*() to see the breakpoints.
 	
-	def set_break(self, filename, lineno):
+	def set_break(self, filename, lineno, cond=None):
 		import linecache # Import as late as possible
 		line = linecache.getline(filename, lineno)
 		if not line:
@@ -189,6 +195,7 @@ class Bdb: # Basic Debugger
 		if lineno in list:
 			return 'There is already a breakpoint there!'
 		list.append(lineno)
+		if cond is not None: self.cbreaks[filename, lineno]=cond
 	
 	def clear_break(self, filename, lineno):
 		if not self.breaks.has_key(filename):
@@ -198,16 +205,21 @@ class Bdb: # Basic Debugger
 		self.breaks[filename].remove(lineno)
 		if not self.breaks[filename]:
 			del self.breaks[filename]
+		try: del self.cbreaks[filename, lineno]
+		except: pass
 	
 	def clear_all_file_breaks(self, filename):
 		if not self.breaks.has_key(filename):
 			return 'There are no breakpoints in that file!'
 		del self.breaks[filename]
+		for f,l in self.cbreaks.keys():
+		    if f==filename: del self.cbreaks[f,l]
 	
 	def clear_all_breaks(self):
 		if not self.breaks:
 			return 'There are no breakpoints!'
 		self.breaks = {}
+		self.cbreaks = {}
 	
 	def get_break(self, filename, lineno):
 		return self.breaks.has_key(filename) and \
