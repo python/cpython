@@ -79,6 +79,8 @@ class Message:
         self._charset = None
         # Defaults for multipart messages
         self.preamble = self.epilogue = None
+        # Default content type
+        self._default_type = 'text/plain'
 
     def __str__(self):
         """Return the entire formatted message as a string.
@@ -394,6 +396,26 @@ class Message:
         if len(parts) > 1:
             return ctype.split('/')[1]
         return failobj
+
+    def get_default_type(self):
+        """Return the `default' content type.
+
+        Most messages have a default content type of text/plain, except for
+        messages that are subparts of multipart/digest containers.  Such
+        subparts then have a default content type of message/rfc822.
+        """
+        return self._default_type
+
+    def set_default_type(self, ctype):
+        """Set the `default' content type.
+
+        ctype must be either "text/plain" or "message/rfc822".  The default
+        content type is not stored in the Content-Type: header.
+        """
+        if ctype not in ('text/plain', 'message/rfc822'):
+            raise ValueError(
+                'first arg must be either "text/plain" or "message/rfc822"')
+        self._default_type = ctype
 
     def _get_params_preserve(self, failobj, header):
         # Like get_params() but preserves the quoting of values.  BAW:
