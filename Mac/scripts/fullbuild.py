@@ -39,6 +39,7 @@ DIALOG_ID = 512
 
 I_OK=1
 I_CANCEL=2
+I_INC_BUILDNO=19
 
 I_CORE=3
 I_PPC_PLUGINS=4
@@ -110,7 +111,7 @@ def buildfat(top, dummy, list):
 		print 'Building fat binary', dst
 		cfmfile.mergecfmfiles((src1, src2), dst)
 		
-def handle_dialog():
+def handle_dialog(filename):
 	"""Handle selection dialog, return list of selected items"""
 	d = Dlg.GetNewDialog(DIALOG_ID, -1)
 	d.SetDialogDefaultItem(I_OK)
@@ -122,6 +123,9 @@ def handle_dialog():
 			break
 		if n == I_CANCEL:
 			return []
+		if n == I_INC_BUILDNO:
+			incbuildno(filename)
+			continue
 		if n < len(results):
 			results[n] = (not results[n])
 			tp, h, rect = d.GetDialogItem(n)
@@ -211,10 +215,8 @@ def main():
 		sys.exit(0)
 	dir = dir.as_pathname()
 	
-	todo = handle_dialog()
-	
-	incbuildno(os.path.join(dir, MACBUILDNO))
-	
+	todo = handle_dialog(os.path.join(dir, MACBUILDNO))
+		
 	instructions = []
 	for i in todo:
 		instructions.append(BUILD_DICT[i])
