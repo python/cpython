@@ -601,7 +601,6 @@ complex_getattr(self, name)
 	complexobject *self;
 	char *name;
 {
-	Py_complex cval;
 	if (strcmp(name, "real") == 0)
 		return (object *)newfloatobject(self->cval.real);
 	else if (strcmp(name, "imag") == 0)
