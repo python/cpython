@@ -2683,18 +2683,40 @@ string_methods[] = {
 	{NULL,     NULL}		     /* sentinel */
 };
 
+staticforward PyObject *
+str_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
+
 static PyObject *
 string_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
 	PyObject *x = NULL;
 	static char *kwlist[] = {"object", 0};
 
-	assert(type == &PyString_Type);
+	if (type != &PyString_Type)
+		return str_subtype_new(type, args, kwds);
 	if (!PyArg_ParseTupleAndKeywords(args, kwds, "|O:str", kwlist, &x))
 		return NULL;
 	if (x == NULL)
 		return PyString_FromString("");
 	return PyObject_Str(x);
+}
+
+static PyObject *
+str_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+	PyObject *tmp, *new;
+	int n;
+
+	assert(PyType_IsSubtype(type, &PyString_Type));
+	tmp = string_new(&PyString_Type, args, kwds);
+	if (tmp == NULL)
+		return NULL;
+	assert(PyString_Check(tmp));
+	new = type->tp_alloc(type, n = PyString_GET_SIZE(tmp));
+	if (new == NULL)
+		return NULL;
+	memcpy(PyString_AS_STRING(new), PyString_AS_STRING(tmp), n+1);
+	return new;
 }
 
 static char string_doc[] =
@@ -2724,7 +2746,7 @@ PyTypeObject PyString_Type = {
 	PyObject_GenericGetAttr,		/* tp_getattro */
 	0,					/* tp_setattro */
 	&string_as_buffer,			/* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT,			/* tp_flags */
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
 	string_doc,				/* tp_doc */
 	0,					/* tp_traverse */
 	0,					/* tp_clear */

@@ -475,13 +475,17 @@ tuplerichcompare(PyObject *v, PyObject *w, int op)
 	return PyObject_RichCompare(vt->ob_item[i], wt->ob_item[i], op);
 }
 
+staticforward PyObject *
+tuple_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
+
 static PyObject *
 tuple_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
 	PyObject *arg = NULL;
 	static char *kwlist[] = {"sequence", 0};
 
-	assert(type == &PyTuple_Type);
+	if (type != &PyTuple_Type)
+		return tuple_subtype_new(type, args, kwds);
 	if (!PyArg_ParseTupleAndKeywords(args, kwds, "|O:tuple", kwlist, &arg))
 		return NULL;
 
@@ -489,6 +493,29 @@ tuple_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		return PyTuple_New(0);
 	else
 		return PySequence_Tuple(arg);
+}
+
+static PyObject *
+tuple_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+	PyObject *tmp, *new, *item;
+	int i, n;
+
+	assert(PyType_IsSubtype(type, &PyTuple_Type));
+	tmp = tuple_new(&PyTuple_Type, args, kwds);
+	if (tmp == NULL)
+		return NULL;
+	assert(PyTuple_Check(tmp));
+	new = type->tp_alloc(type, n = PyTuple_GET_SIZE(tmp));
+	if (new == NULL)
+		return NULL;
+	for (i = 0; i < n; i++) {
+		item = PyTuple_GET_ITEM(tmp, i);
+		Py_INCREF(item);
+		PyTuple_SET_ITEM(new, i, item);
+	}
+	Py_DECREF(tmp);
+	return new;
 }
 
 static char tuple_doc[] =
@@ -529,7 +556,8 @@ PyTypeObject PyTuple_Type = {
 	PyObject_GenericGetAttr,		/* tp_getattro */
 	0,					/* tp_setattro */
 	0,					/* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,/* tp_flags */
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+		Py_TPFLAGS_BASETYPE,		/* tp_flags */
 	tuple_doc,				/* tp_doc */
  	(traverseproc)tupletraverse,		/* tp_traverse */
 	0,					/* tp_clear */
