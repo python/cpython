@@ -2,9 +2,7 @@ import hotshot
 import hotshot.log
 import os
 import pprint
-import sys
 import unittest
-import warnings
 
 import test_support
 
@@ -21,14 +19,29 @@ def shortfilename(fn):
         return fn
 
 
+class UnlinkingLogReader(hotshot.log.LogReader):
+    """Extend the LogReader so the log file is unlinked when we're
+    done with it."""
+
+    def __init__(self, logfn):
+        self.__logfn = logfn
+        hotshot.log.LogReader.__init__(self, logfn)
+
+    def next(self, index=None):
+        try:
+            return hotshot.log.LogReader.next(self)
+        except (IndexError, StopIteration):
+            os.unlink(self.__logfn)
+            raise
+
+
 class HotShotTestCase(unittest.TestCase):
     def new_profiler(self, lineevents=0, linetimings=1):
         self.logfn = test_support.TESTFN
         return hotshot.Profile(self.logfn, lineevents, linetimings)
 
     def get_logreader(self):
-        log = hotshot.log.LogReader(self.logfn)
-        #XXX os.unlink(self.logfn)
+        log = UnlinkingLogReader(self.logfn)
         return log
 
     def get_events_wotime(self):
