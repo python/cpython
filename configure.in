@@ -868,7 +868,7 @@ ac_save_cxx="$CXX"
 
 if test "$ac_cv_kpthread" = "yes"
 then
-  CXX="$CXX -Kpthread"
+  CXX="$CXX -Kpthread"  
   ac_cv_cxx_thread=yes
 elif test "$ac_cv_kthread" = "yes"
 then
@@ -890,13 +890,11 @@ then
     ac_cv_cxx_thread=yes
   else
     ac_cv_cxx_thread=no
-    CXX="$ac_save_cxx"
   fi
   rm -fr conftest*
-else
- CXX="$ac_save_cxx"
 fi
 fi
+CXX="$ac_save_cxx"
 AC_MSG_RESULT($ac_cv_cxx_thread)
 
 dnl # check for ANSI or K&R ("traditional") preprocessor
@@ -1410,9 +1408,14 @@ AC_MSG_RESULT($SHLIBS)
 # checks for libraries
 AC_CHECK_LIB(dl, dlopen)	# Dynamic linking for SunOS/Solaris and SYSV
 AC_CHECK_LIB(dld, shl_load)	# Dynamic linking for HP-UX
-AC_SEARCH_LIBS(sem_init, pthread rt posix4) # 'Real Time' functions on Solaris
-					    # posix4 on Solaris 2.6
-					    # pthread (first!) on Linux
+
+# only check for sem_ini if thread support is requested
+if test "$with_threads" = "yes" -o -z "$with_threads"; then
+    AC_SEARCH_LIBS(sem_init, pthread rt posix4) # 'Real Time' functions on Solaris
+						# posix4 on Solaris 2.6
+						# pthread (first!) on Linux
+fi
+
 # check if we need libintl for locale functions
 AC_CHECK_LIB(intl, textdomain,
 	AC_DEFINE(WITH_LIBINTL, 1,
@@ -1530,18 +1533,27 @@ then
 elif test "$ac_cv_kpthread" = "yes"
 then
     CC="$CC -Kpthread"
+    if test "$ac_cv_cxx_thread" = "yes"; then
+        CXX="$CXX -Kpthread"
+    fi
     AC_DEFINE(WITH_THREAD)
     posix_threads=yes
     THREADOBJ="Python/thread.o"
 elif test "$ac_cv_kthread" = "yes"
 then
     CC="$CC -Kthread"
+    if test "$ac_cv_cxx_thread" = "yes"; then
+        CXX="$CXX -Kthread"
+    fi
     AC_DEFINE(WITH_THREAD)
     posix_threads=yes
     THREADOBJ="Python/thread.o"
 elif test "$ac_cv_pthread" = "yes"
 then
     CC="$CC -pthread"
+    if test "$ac_cv_cxx_thread" = "yes"; then
+        CXX="$CXX -pthread"
+    fi
     AC_DEFINE(WITH_THREAD)
     posix_threads=yes
     THREADOBJ="Python/thread.o"
