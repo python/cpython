@@ -14,6 +14,9 @@ MARGIN=2
 ICONSIZE=16
 TEXTWIDTH=4096 # More-or-less random value
 
+TEXTFONT=4
+TEXTSIZE=9
+
 PIC_BREAK=513
 picture_cache={}
 
@@ -26,8 +29,8 @@ class MT_TextWidget:
 				right-(MARGIN+SCROLLBAR), bottom-(MARGIN+SCROLLBAR)
 		dr = self.terect[0], self.terect[1], TEXTWIDTH, self.terect[3]
 		Qd.SetPort(wid)
-		Qd.TextFont(4)
-		Qd.TextSize(9)
+		Qd.TextFont(TEXTFONT)
+		Qd.TextSize(TEXTSIZE)
 		self.ted = TE.TENew(dr, self.terect)
 		self.ted.TEAutoView(1)
 		self.activate(1)
@@ -130,7 +133,10 @@ class MT_TextWidget:
 			return None, 0
 		off = self.ted.TEGetOffset(where)
 		inborder = where[0] < self.terect[0]
-		return self.offsettoline(off), inborder
+		l, t, r, b = self.terect
+		if l <= where[0] <= r and t <= where[1] <= b or inborder:
+			return self.offsettoline(off), inborder
+		return None, 0	# In the grow box or something.
 		
 	def offsettoline(self, offset):
 		for i in range(len(self.line_index)):
@@ -233,7 +239,6 @@ class MT_IconTextWidget(MT_TextWidget):
 		rect = self.rect[0]+2, boty-self.ted.lineHeight, \
 			self.rect[0]+ICONSIZE-2, boty
 		if not picture_cache.has_key(which):
-			print 'Get picture', which
 			picture_cache[which] = Qd.GetPicture(which)
 		self.drawicon(rect, picture_cache[which])
 		

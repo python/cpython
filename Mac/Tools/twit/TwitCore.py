@@ -3,6 +3,7 @@ import sys
 import types
 import bdb
 import types
+import os
 
 SIMPLE_TYPES=(
 	types.NoneType,
@@ -20,9 +21,6 @@ ICON_CALL=516
 ICON_ZERO=517
 ICON_DEAD=518
 
-def Initialize():
-	pass
-
 class DebuggerStuff(bdb.Bdb):
 
 	def __init__(self, parent):
@@ -38,15 +36,19 @@ class DebuggerStuff(bdb.Bdb):
 		self.forget()
 	
 	def forget(self):
-		print 'FORGET'
 		self.lineno = None
 		self.stack = []
 		self.curindex = 0
 		self.curframe = None
+		
+	def run(self, cmd, locals, globals):
+		self.reason = 'Running'
+		bdb.Bdb.run(self, cmd, locals, globals)
+		print 'RETURN from run'
+		self.reason = 'Not running'
 	
 	def setup(self, f, t):
 		self.forget()
-		print 'SETUP', f, t
 		self.stack, self.curindex = self.get_stack(f, t)
 		self.curframe = self.stack[self.curindex][0]
 		
@@ -55,10 +57,10 @@ class DebuggerStuff(bdb.Bdb):
 		self.parent.interact()
 		self.exception_info = (None, None)
 
-	def user_call(self, frame, argument_list):
-		self.reason = 'Calling'
-		self.icon = ICON_CALL
-		self.interaction(frame, None)
+#	def user_call(self, frame, argument_list):
+#		self.reason = 'Calling'
+#		self.icon = ICON_CALL
+#		self.interaction(frame, None)
 			
 	def user_line(self, frame):
 		self.reason = 'Stopped'
@@ -73,6 +75,7 @@ class DebuggerStuff(bdb.Bdb):
 	def user_exception(self, frame, (exc_type, exc_value, exc_traceback)):
 		self.reason = 'Exception occurred'
 		self.icon = ICON_DEAD
+		self.parent.setstate('tb')
 		self.exception_info = (exc_type, exc_value)
 		self.interaction(frame, exc_traceback)
 
@@ -85,7 +88,6 @@ class DebuggerStuff(bdb.Bdb):
 		return tp, value
 		
 	def getstacktrace(self):
-		print 'DBG GETSTACKTRACE', self.stack
 		names, locations = [], []
 		for frame, lineno in self.stack:
 			name = frame.f_code.co_name
@@ -104,7 +106,6 @@ class DebuggerStuff(bdb.Bdb):
 			if not modname: modname = "<unknown>"	
 
 			locations.append("%s:%d" % (modname, lineno))
-		print 'DBG RETURNS', names, locations
 		return names, locations
 		
 	def getframe(self, number):
@@ -138,35 +139,41 @@ class DebuggerStuff(bdb.Bdb):
 class Application:
 	"""Base code for the application"""
 	
-	def mi_init(self, run_args, pm_args):
+	def mi_init(self, sessiontype, arg):
 		self.dbg = DebuggerStuff(self)
 		self.run_dialog = self.new_stack_browser(self)
 		self.run_dialog.open()
 		self.module_dialog = None
 		self.initial_cmd = None
 		self.cur_string_name = None
-		if pm_args:
-			while pm_args.tb_next <> None:
-				pm_args = pm_args.tb_next
-			self.dbg.setup(pm_args.tb_frame, pm_args)
-			self.run_dialog.setsession_pm()
-			self.run_dialog.update_views()
-		elif run_args:
-			self.run_dialog.setsession_run()
-			self.initial_cmd = run_args
-		else:
-			self.run_dialog.setsession_none()
-		
+		if sessiontype == 'tb':
+			while arg.tb_next <> None:
+				arg = arg.tb_next
+			self.dbg.setup(arg.tb_frame, arg)
+			self.run_dialog.setup()
+		elif sessiontype == 'run':
+			self.initial_cmd = arg
+			
 	def breaks_changed(self, filename):
 		self.run_dialog.breaks_changed(filename)
 		if self.module_dialog:
 			self.module_dialog.breaks_changed(filename)
 	
 	def to_debugger(self):
-		apply(self.dbg.run, self.initial_cmd)
+		cmd = self.initial_cmd
+		self.initial_cmd = None
+		self.setstate('run')
+		self.switch_to_app()
+		apply(self.dbg.run, cmd)
+		self.setstate('none')
+		self.switch_to_dbg()
+		self.run_dialog.update_views()
+		if self.module_dialog:
+			self.module_dialog.update_views()
 		
 	def interact(self):
 		# Interact with user. First, display correct info
+		self.switch_to_dbg()
 		self.run_dialog.update_views()
 		if self.module_dialog:
 			self.module_dialog.update_views()
@@ -175,21 +182,35 @@ class Application:
 		self.one_mainloop()
 		
 		# Finally (before we start the debuggee again) show state
+		self.switch_to_app()
 		self.run_dialog.show_it_running()
 		
 	def quit_bdb(self):
 		self.dbg.set_quit()
 		
 	def run(self):
-		cmd = AskString('Statement to execute:')
+		cmd = self.AskString('Statement to execute:')
+		self.runstring(cmd)
+		
+	def runfile(self, path):
+		dir, file = os.path.split(path)
+		try:
+			os.chdir(dir)
+		except os.error, arg:
+			self.Message("%s: %s"%(dir, arg))
+			return
+		ns = {'__name__':'__main__', '__file__':path}
+		cmd = "execfile('%s')"%file
+		self.runstring(cmd, ns, ns)
+		
+	def runstring(self, cmd, globals={}, locals={}):
 		self.cur_string_name = '<string: "%s">'%cmd
 		try:
 			cmd = compile(cmd, self.cur_string_name, 'exec')
 		except SyntaxError, arg:
-			ShowMessage('Syntax error: %s'%`arg`)
+			self.Message('Syntax error: %s'%`arg`)
 			return
-		self.initial_cmd = (cmd, None, None)
-		self.run_dialog.setsession_run()
+		self.initial_cmd = (cmd, globals, locals)
 		self.exit_mainloop()
 
 	def cont(self):
@@ -206,6 +227,10 @@ class Application:
 		
 	def step_out(self, frame):
 		self.dbg.set_return(frame)
+		self.exit_mainloop()
+		
+	def kill(self):
+		self.dbg.set_quit()
 		self.exit_mainloop()
 		
 	def quit(self):
@@ -237,7 +262,7 @@ class StackBrowser:
 	# create_items(self) should create self.modules, self.vars and self.source
 	
 	def setup(self):
-		SetWatch()
+		self.parent.SetWatch()
 		"""Fill the various widgets with values"""
 		name, value = self.parent.dbg.getexception()
 		self.setexception(name, value)
@@ -251,7 +276,7 @@ class StackBrowser:
 		
 	def setup_frame(self):
 		"""Setup frame-dependent widget data"""
-		SetWatch()
+		self.parent.SetWatch()
 		self.cont_varnames, self.cont_varvalues = \
 			self.parent.dbg.getframevars(self.cur_stackitem, 
 			self.show_complex, self.show_system)
@@ -276,8 +301,6 @@ class StackBrowser:
 						self.cur_source[:8] == '<string:':
 				msg = "Executing from "+self.cur_source
 				self.cur_source = None
-			print 'SOURCE', self.cur_source
-			print 'LINE', self.cur_line
 				
 		self.setsource(msg)
 		if not self.cur_line:
@@ -287,7 +310,7 @@ class StackBrowser:
 		self.breaks_changed(self.cur_source)
 		
 		
-		SetCursor()
+		self.parent.SetCursor()
 		
 	# setsource(msg) should display cur_source+content, or msg if None
 	
@@ -349,6 +372,9 @@ class StackBrowser:
 			self.parent.step_out(frame)
 		else:
 			self.parent.step_in()
+			
+	def click_kill(self):
+		self.parent.kill()
 		
 	def click_browse(self):
 		self.parent.browse(self.cur_modname)
@@ -377,7 +403,7 @@ class ModuleBrowser:
 	
 	def setup(self):
 		"""Fill the various widgets with values"""
-		SetWatch()
+		self.parent.SetWatch()
 		modnames = getmodulenames()
 		if not self.cur_module in modnames:
 			self.cur_module = None
@@ -392,7 +418,7 @@ class ModuleBrowser:
 		
 	def setup_module(self):
 		"""Setup module-dependent widget data"""
-		SetWatch()
+		self.parent.SetWatch()
 		if not self.cur_module:
 			self.vars.setcontent([], [])
 		else:
@@ -415,7 +441,7 @@ class ModuleBrowser:
 		self.source.select(self.cur_line)
 		self.breaks_changed(self.cur_source)
 		
-		SetCursor()
+		self.parent.SetCursor()
 
 	# setsource(msg) should display cur_source+content, or msg if None
 	
