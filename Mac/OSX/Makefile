@@ -10,10 +10,12 @@ LIBDEST=$(prefix)/lib/python$(VERSION)
 BUILDPYTHON=$(builddir)/python.exe
 DESTDIR=
 
-# For 10.2:
-#PBXBUILD=pbxbuild
-# For 10.3:
+# Test whether to use xcodebuild (preferred) or pbxbuild:
+ifeq ($(shell ls /usr/bin/xcodebuild),/usr/bin/xcodebuild)
 PBXBUILD=xcodebuild
+else
+PBXBUILD=pbxbuild
+endif
 
 # These are normally glimpsed from the previous set
 bindir=/usr/local/bin
