@@ -308,6 +308,10 @@ distribution, to create or maintain whole documents or sections.
 
   \subsection{Inline Markup}
 
+    The macros described in this section are used to mark just about
+    anything interesting in the document text.  They may be used in
+    headings (though anything involving hyperlinks should be avoided
+    there) as well as in the body text.
 
     \begin{macrodesc}{bfcode}{\p{text}}
       Like \macro{code}, but also makes the font bold-face.
@@ -501,13 +505,17 @@ distribution, to create or maintain whole documents or sections.
 \end{verbatim}
 
   \begin{macrodesc}{declaremodule}{\op{key}\p{type}\p{name}}
-    Requires two parameters: module type (standard, builtin,
-    extension), and the module name.  An optional parameter should be
-    given as the basis for the module's ``key'' used for linking to or
-    referencing the section.  The ``key'' should only be given if the
-    module's name contains any underscores, and should be the name
-    with the underscores stripped.  This should be the first thing
-    after the \macro{section} used to introduce the module.
+    Requires two parameters: module type (\samp{standard},
+    \samp{builtin}, \samp{extension}, or \samp{}), and the module
+    name.  An optional parameter should be given as the basis for the
+    module's ``key'' used for linking to or referencing the section.
+    The ``key'' should only be given if the module's name contains any
+    underscores, and should be the name with the underscores stripped.
+    Note that the \var{type} parameter must be one of the values
+    listed above or an error will be printed.  For modules which are
+    contained in packages, the fully-qualified name should be given as
+    \var{name} parameter.  This should be the first thing after the
+    \macro{section} used to introduce the module.
   \end{macrodesc}
 
   \begin{macrodesc}{platform}{\p{specifier}}
@@ -894,6 +902,16 @@ distribution, to create or maintain whole documents or sections.
 
     \begin{description}
       \item[\program{mkhowto}]
+        This is the primary script used to format third-party
+	documents.  It contains all the logic needed to ``get it
+	right.''  The proper way to use this script is to make a
+	symbolic link to it or run it in place; the actual script file 
+	must be stored as part of the documentation source tree,
+	though it may be used to format documents outside the
+	tree.  Use \program{mkhowto --help} for a list of command line 
+	options.
+
+	XXX  Need more here.
     \end{description}
 
 
