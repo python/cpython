@@ -11,6 +11,8 @@ from distutils.util import copy_tree
 
 class InstallExt (Command):
 
+    description = "install C/C++ extension modules"
+    
     options = [('install-dir=', 'd', "directory to install to"),
                ('build-dir=','b', "build directory (where to install from)"),
               ]

@@ -12,6 +12,8 @@ from distutils.core import Command
 
 class Build (Command):
 
+    description = "build everything needed to install"
+
     options = [('build-base=', 'b',
                 "base directory for build library"),
                ('build-lib=', 'l',

@@ -8,6 +8,8 @@ from distutils.util import copy_tree
 
 class InstallPy (Command):
 
+    description = "install pure Python modules"
+
     options = [('install-dir=', 'd', "directory to install to"),
                ('build-dir=','b', "build directory (where to install from)"),
                ('compile', 'c', "compile .py to .pyc"),
