@@ -834,7 +834,7 @@ The conversion types are:
   \lineiii{r}{String (converts any python object using
               \function{repr()}).}{(3)}
   \lineiii{s}{String (converts any python object using
-              \function{str()}).}{}
+              \function{str()}).}{(4)}
   \lineiii{\%}{No argument is converted, results in a \character{\%}
                character in the result.}{}
 \end{tableiii}
@@ -855,6 +855,9 @@ Notes:
     not already a zero.
   \item[(3)]
     The \code{\%r} conversion was added in Python 2.0.
+  \item[(4)]
+    If the object or format provided is a \class{unicode} string,
+    the resulting string will also be \class{unicode}.
 \end{description}
 
 % XXX Examples?
