@@ -4,6 +4,7 @@ import urllib
 import urlparse
 import plistlib
 import distutils.util
+import md5
 
 _scriptExc_NotInstalled = "pimp._scriptExc_NotInstalled"
 _scriptExc_OldInstalled = "pimp._scriptExc_OldInstalled"
@@ -24,6 +25,11 @@ ARCHIVE_FORMATS = [
 	(".tgz", "zcat \"%s\" | tar xf -"),
 	(".tar.bz", "bzcat \"%s\" | tar xf -"),
 ]
+
+class MyURLopener(urllib.FancyURLopener):
+	"""Like FancyURLOpener, but we do want to get errors as exceptions"""
+	def http_error_default(self, url, fp, errcode, errmsg, headers):
+		urllib.URLopener.http_error_default(self, url, fp, errcode, errmsg, headers)
 
 class PimpPreferences:
 	def __init__(self, 
@@ -178,7 +184,8 @@ class PimpPackage:
 			installTest=None,
 			prerequisites=None,
 			preInstall=None,
-			postInstall=None):
+			postInstall=None,
+			MD5Sum=None):
 		self._db = db
 		self.name = name
 		self.version = version
@@ -190,6 +197,7 @@ class PimpPackage:
 		self._prerequisites = prerequisites
 		self._preInstall = preInstall
 		self._postInstall = postInstall
+		self._MD5Sum = MD5Sum
 		
 	def dump(self):
 		dict = {
@@ -213,6 +221,8 @@ class PimpPackage:
 			dict['preInstall'] = self._preInstall
 		if self._postInstall:
 			dict['postInstall'] = self._postInstall
+		if self._MD5Sum:
+			dict['MD5Sum'] = self._MD5Sum
 		return dict
 		
 	def __cmp__(self, other):
@@ -287,13 +297,27 @@ class PimpPackage:
 		scheme, loc, path, query, frag = urlparse.urlsplit(self.downloadURL)
 		path = urllib.url2pathname(path)
 		filename = os.path.split(path)[1]
-		self.archiveFilename = os.path.join(self._db.preferences.downloadDir, filename)
-		if self._cmd(output, self._db.preferences.downloadDir, "curl",
-				"--output", self.archiveFilename,
-				self.downloadURL):
-			return "download command failed"
+		self.archiveFilename = os.path.join(self._db.preferences.downloadDir, filename)			
+		if not self._archiveOK():
+			if self._cmd(output, self._db.preferences.downloadDir,
+					"curl",
+					"--output", self.archiveFilename,
+					self.downloadURL):
+				return "download command failed"
 		if not os.path.exists(self.archiveFilename) and not NO_EXECUTE:
 			return "archive not found after download"
+		if not self._archiveOK():
+			return "archive does not have correct MD5 checksum"
+			
+	def _archiveOK(self):
+		if not os.path.exists(self.archiveFilename):
+			return 0
+		if not self._MD5Sum:
+			sys.stderr.write("Warning: no MD5Sum for %s\n" % _fmtpackagename(self))
+			return 1
+		data = open(self.archiveFilename, 'rb').read()
+		checksum = md5.new(data).hexdigest()
+		return checksum == self._MD5Sum
 			
 	def unpackSinglePackage(self, output):
 		filename = os.path.split(self.archiveFilename)[1]
@@ -402,7 +426,9 @@ def _run(mode, verbose, force, args):
 	db = PimpDatabase(prefs)
 	db.appendURL(prefs.pimpDatabase)
 	
-	if mode =='list':
+	if mode == 'dump':
+		db.dump(sys.stdout)
+	elif mode =='list':
 		if not args:
 			args = db.listnames()
 		print "%-20.20s\t%s" % ("Package", "Description")
@@ -418,7 +444,7 @@ def _run(mode, verbose, force, args):
 			if verbose:
 				print "\tHome page:\t", pkg.longdesc
 				print "\tDownload URL:\t", pkg.downloadURL
-	if mode =='status':
+	elif mode =='status':
 		if not args:
 			args = db.listnames()
 			print "%-20.20s\t%s\t%s" % ("Package", "Installed", "Message")
@@ -472,13 +498,14 @@ def main():
 		print "Usage: pimp [-v] -s [package ...]  List installed status"
 		print "       pimp [-v] -l [package ...]  Show package information"
 		print "       pimp [-vf] -i package ...   Install packages"
+		print "       pimp -d                     Dump database to stdout"
 		print "Options:"
 		print "       -v  Verbose"
 		print "       -f  Force installation"
 		sys.exit(1)
 		
 	try:
-		opts, args = getopt.getopt(sys.argv[1:], "slifv")
+		opts, args = getopt.getopt(sys.argv[1:], "slifvd")
 	except getopt.Error:
 		_help()
 	if not opts and not args:
@@ -495,10 +522,10 @@ def main():
 			if mode:
 				_help()
 			mode = 'list'
-		if o == '-L':
+		if o == '-d':
 			if mode:
 				_help()
-			mode = 'longlist'
+			mode = 'dump'
 		if o == '-i':
 			mode = 'install'
 		if o == '-f':
