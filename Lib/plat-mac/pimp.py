@@ -104,7 +104,7 @@ class PimpDatabase:
 		if url in self._urllist:
 			return
 		self._urllist.append(url)
-		fp = urllib.urlopen(url).fp
+		fp = MyURLopener().open(url).fp
 		dict = plistlib.Plist.fromFile(fp)
 		# Test here for Pimp version, etc
 		if not included:
@@ -299,6 +299,8 @@ class PimpPackage:
 		filename = os.path.split(path)[1]
 		self.archiveFilename = os.path.join(self._db.preferences.downloadDir, filename)			
 		if not self._archiveOK():
+			if scheme == 'manual':
+				return "Please download package manually and save as %s" % self.archiveFilename
 			if self._cmd(output, self._db.preferences.downloadDir,
 					"curl",
 					"--output", self.archiveFilename,
