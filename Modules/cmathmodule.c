@@ -28,10 +28,6 @@ static Py_complex c_1 = {1., 0.};
 static Py_complex c_half = {0.5, 0.};
 static Py_complex c_i = {0., 1.};
 static Py_complex c_i2 = {0., 0.5};
-#if 0
-static Py_complex c_mi = {0., -1.};
-static Py_complex c_pi2 = {M_PI/2., 0.};
-#endif
 
 /* forward declarations */
 staticforward Py_complex c_log(Py_complex);
@@ -39,19 +35,21 @@ staticforward Py_complex c_prodi(Py_complex);
 staticforward Py_complex c_sqrt(Py_complex);
 
 
-static Py_complex c_acos(Py_complex x)
+static Py_complex
+c_acos(Py_complex x)
 {
 	return c_neg(c_prodi(c_log(c_sum(x,c_prod(c_i,
 		    c_sqrt(c_diff(c_1,c_prod(x,x))))))));
 }
 
-static char c_acos_doc [] =
-"acos(x)\n\
-\n\
-Return the arc cosine of x.";
+static char c_acos_doc[] =
+"acos(x)\n"
+"\n"
+"Return the arc cosine of x.";
 
 
-static Py_complex c_acosh(Py_complex x)
+static Py_complex
+c_acosh(Py_complex x)
 {
 	Py_complex z;
 	z = c_sqrt(c_half);
@@ -60,28 +58,30 @@ static Py_complex c_acosh(Py_complex x)
 	return c_sum(z, z);
 }
 
-static char c_acosh_doc [] =
-"acosh(x)\n\
-\n\
-Return the hyperbolic arccosine of x.";
+static char c_acosh_doc[] =
+"acosh(x)\n"
+"\n"
+"Return the hyperbolic arccosine of x.";
 
 
-static Py_complex c_asin(Py_complex x)
+static Py_complex
+c_asin(Py_complex x)
 {
 	Py_complex z;
 	z = c_sqrt(c_half);
-	z = c_log(c_prod(z, c_sum(c_sqrt(c_sum(x,c_i)),
-				  c_sqrt(c_diff(x,c_i)))));
+	z = c_log(c_prod(z, c_sum(c_sqrt(c_sum(x, c_i)),
+				  c_sqrt(c_diff(x, c_i)))));
 	return c_sum(z, z);
 }
 
-static char c_asin_doc [] =
-"asin(x)\n\
-\n\
-Return the arc sine of x.";
+static char c_asin_doc[] =
+"asin(x)\n"
+"\n"
+"Return the arc sine of x.";
 
 
-static Py_complex c_asinh(Py_complex x)
+static Py_complex
+c_asinh(Py_complex x)
 {
 	/* Break up long expression for WATCOM */
 	Py_complex z;
@@ -89,35 +89,38 @@ static Py_complex c_asinh(Py_complex x)
 	return c_log(c_sum(c_sqrt(z), x));
 }
 
-static char c_asinh_doc [] =
-"asinh(x)\n\
-\n\
-Return the hyperbolic arc sine of x.";
+static char c_asinh_doc[] =
+"asinh(x)\n"
+"\n"
+"Return the hyperbolic arc sine of x.";
 
 
-static Py_complex c_atan(Py_complex x)
+static Py_complex
+c_atan(Py_complex x)
 {
 	return c_prod(c_i2,c_log(c_quot(c_sum(c_i,x),c_diff(c_i,x))));
 }
 
-static char c_atan_doc [] =
-"atan(x)\n\
-\n\
-Return the arc tangent of x.";
+static char c_atan_doc[] =
+"atan(x)\n"
+"\n"
+"Return the arc tangent of x.";
 
 
-static Py_complex c_atanh(Py_complex x)
+static Py_complex
+c_atanh(Py_complex x)
 {
 	return c_prod(c_half,c_log(c_quot(c_sum(c_1,x),c_diff(c_1,x))));
 }
 
-static char c_atanh_doc [] =
-"atanh(x)\n\
-\n\
-Return the hyperbolic arc tangent of x.";
+static char c_atanh_doc[] =
+"atanh(x)\n"
+"\n"
+"Return the hyperbolic arc tangent of x.";
 
 
-static Py_complex c_cos(Py_complex x)
+static Py_complex
+c_cos(Py_complex x)
 {
 	Py_complex r;
 	r.real = cos(x.real)*cosh(x.imag);
@@ -125,13 +128,14 @@ static Py_complex c_cos(Py_complex x)
 	return r;
 }
 
-static char c_cos_doc [] =
-"cos(x)\n\
-\n\
-Return the cosine of x.";
+static char c_cos_doc[] =
+"cos(x)\n"
+"n"
+"Return the cosine of x.";
 
 
-static Py_complex c_cosh(Py_complex x)
+static Py_complex
+c_cosh(Py_complex x)
 {
 	Py_complex r;
 	r.real = cos(x.imag)*cosh(x.real);
@@ -139,13 +143,14 @@ static Py_complex c_cosh(Py_complex x)
 	return r;
 }
 
-static char c_cosh_doc [] =
-"cosh(x)\n\
-\n\
-Return the hyperbolic cosine of x.";
+static char c_cosh_doc[] =
+"cosh(x)\n"
+"n"
+"Return the hyperbolic cosine of x.";
 
 
-static Py_complex c_exp(Py_complex x)
+static Py_complex
+c_exp(Py_complex x)
 {
 	Py_complex r;
 	double l = exp(x.real);
@@ -154,13 +159,14 @@ static Py_complex c_exp(Py_complex x)
 	return r;
 }
 
-static char c_exp_doc [] =
-"exp(x)\n\
-\n\
-Return the exponential value e**x.";
+static char c_exp_doc[] =
+"exp(x)\n"
+"\n"
+"Return the exponential value e**x.";
 
 
-static Py_complex c_log(Py_complex x)
+static Py_complex
+c_log(Py_complex x)
 {
 	Py_complex r;
 	double l = hypot(x.real,x.imag);
@@ -169,13 +175,14 @@ static Py_complex c_log(Py_complex x)
 	return r;
 }
 
-static char c_log_doc [] =
-"log(x)\n\
-\n\
-Return the natural logarithm of x.";
+static char c_log_doc[] =
+"log(x)\n"
+"\n"
+"Return the natural logarithm of x.";
 
 
-static Py_complex c_log10(Py_complex x)
+static Py_complex
+c_log10(Py_complex x)
 {
 	Py_complex r;
 	double l = hypot(x.real,x.imag);
@@ -184,14 +191,15 @@ static Py_complex c_log10(Py_complex x)
 	return r;
 }
 
-static char c_log10_doc [] =
-"log10(x)\n\
-\n\
-Return the base-10 logarithm of x.";
+static char c_log10_doc[] =
+"log10(x)\n"
+"\n"
+"Return the base-10 logarithm of x.";
 
 
 /* internal function not available from Python */
-static Py_complex c_prodi(Py_complex x)
+static Py_complex
+c_prodi(Py_complex x)
 {
 	Py_complex r;
 	r.real = -x.imag;
@@ -200,35 +208,38 @@ static Py_complex c_prodi(Py_complex x)
 }
 
 
-static Py_complex c_sin(Py_complex x)
+static Py_complex
+c_sin(Py_complex x)
 {
 	Py_complex r;
-	r.real = sin(x.real)*cosh(x.imag);
-	r.imag = cos(x.real)*sinh(x.imag);
+	r.real = sin(x.real) * cosh(x.imag);
+	r.imag = cos(x.real) * sinh(x.imag);
 	return r;
 }
 
-static char c_sin_doc [] =
-"sin(x)\n\
-\n\
-Return the sine of x.";
+static char c_sin_doc[] =
+"sin(x)\n"
+"\n"
+"Return the sine of x.";
 
 
-static Py_complex c_sinh(Py_complex x)
+static Py_complex
+c_sinh(Py_complex x)
 {
 	Py_complex r;
-	r.real = cos(x.imag)*sinh(x.real);
-	r.imag = sin(x.imag)*cosh(x.real);
+	r.real = cos(x.imag) * sinh(x.real);
+	r.imag = sin(x.imag) * cosh(x.real);
 	return r;
 }
 
-static char c_sinh_doc [] =
-"sinh(x)\n\
-\n\
-Return the hyperbolic sine of x.";
+static char c_sinh_doc[] =
+"sinh(x)\n"
+"\n"
+"Return the hyperbolic sine of x.";
 
 
-static Py_complex c_sqrt(Py_complex x)
+static Py_complex
+c_sqrt(Py_complex x)
 {
 	Py_complex r;
 	double s,d;
@@ -253,13 +264,14 @@ static Py_complex c_sqrt(Py_complex x)
 	return r;
 }
 
-static char c_sqrt_doc [] =
-"sqrt(x)\n\
-\n\
-Return the square root of x.";
+static char c_sqrt_doc[] =
+"sqrt(x)\n"
+"\n"
+"Return the square root of x.";
 
 
-static Py_complex c_tan(Py_complex x)
+static Py_complex
+c_tan(Py_complex x)
 {
 	Py_complex r;
 	double sr,cr,shi,chi;
@@ -269,23 +281,24 @@ static Py_complex c_tan(Py_complex x)
 	cr = cos(x.real);
 	shi = sinh(x.imag);
 	chi = cosh(x.imag);
-	rs = sr*chi;
-	is = cr*shi;
-	rc = cr*chi;
-	ic = -sr*shi;
-	d = rc*rc + ic*ic;
-	r.real = (rs*rc+is*ic)/d;
-	r.imag = (is*rc-rs*ic)/d;
+	rs = sr * chi;
+	is = cr * shi;
+	rc = cr * chi;
+	ic = -sr * shi;
+	d = rc*rc + ic * ic;
+	r.real = (rs*rc + is*ic) / d;
+	r.imag = (is*rc - rs*ic) / d;
 	return r;
 }
 
-static char c_tan_doc [] =
-"tan(x)\n\
-\n\
-Return the tangent of x.";
+static char c_tan_doc[] =
+"tan(x)\n"
+"\n"
+"Return the tangent of x.";
 
 
-static Py_complex c_tanh(Py_complex x)
+static Py_complex
+c_tanh(Py_complex x)
 {
 	Py_complex r;
 	double si,ci,shr,chr;
@@ -295,20 +308,20 @@ static Py_complex c_tanh(Py_complex x)
 	ci = cos(x.imag);
 	shr = sinh(x.real);
 	chr = cosh(x.real);
-	rs = ci*shr;
-	is = si*chr;
-	rc = ci*chr;
-	ic = si*shr;
+	rs = ci * shr;
+	is = si * chr;
+	rc = ci * chr;
+	ic = si * shr;
 	d = rc*rc + ic*ic;
-	r.real = (rs*rc+is*ic)/d;
-	r.imag = (is*rc-rs*ic)/d;
+	r.real = (rs*rc + is*ic) / d;
+	r.imag = (is*rc - rs*ic) / d;
 	return r;
 }
 
-static char c_tanh_doc [] =
-"tanh(x)\n\
-\n\
-Return the hyperbolic tangent of x.";
+static char c_tanh_doc[] =
+"tanh(x)\n"
+"\n"
+"Return the hyperbolic tangent of x.";
 
 
 /* And now the glue to make them available from Python: */
@@ -321,7 +334,7 @@ math_error(void)
 	else if (errno == ERANGE)
 		PyErr_SetString(PyExc_OverflowError, "math range error");
 	else    /* Unexpected math error */
-		PyErr_SetFromErrno(PyExc_ValueError); 
+		PyErr_SetFromErrno(PyExc_ValueError);
 	return NULL;
 }
 
@@ -366,44 +379,27 @@ FUNC1(cmath_tan, c_tan)
 FUNC1(cmath_tanh, c_tanh)
 
 
-static char module_doc [] =
-"This module is always available. It provides access to mathematical\n\
-functions for complex numbers.";
-
+static char module_doc[] =
+"This module is always available. It provides access to mathematical\n"
+"functions for complex numbers.";
 
 static PyMethodDef cmath_methods[] = {
-	{"acos", cmath_acos, 
-	 METH_VARARGS, c_acos_doc},
-	{"acosh", cmath_acosh, 
-	 METH_VARARGS, c_acosh_doc},
-	{"asin", cmath_asin, 
-	 METH_VARARGS, c_asin_doc},
-	{"asinh", cmath_asinh, 
-	 METH_VARARGS, c_asinh_doc},
-	{"atan", cmath_atan, 
-	 METH_VARARGS, c_atan_doc},
-	{"atanh", cmath_atanh, 
-	 METH_VARARGS, c_atanh_doc},
-	{"cos", cmath_cos, 
-	 METH_VARARGS, c_cos_doc},
-	{"cosh", cmath_cosh, 
-	 METH_VARARGS, c_cosh_doc},
-	{"exp", cmath_exp, 
-	 METH_VARARGS, c_exp_doc},
-	{"log", cmath_log, 
-	 METH_VARARGS, c_log_doc},
-	{"log10", cmath_log10, 
-	 METH_VARARGS, c_log10_doc},
-	{"sin", cmath_sin, 
-	 METH_VARARGS, c_sin_doc},
-	{"sinh", cmath_sinh, 
-	 METH_VARARGS, c_sinh_doc},
-	{"sqrt", cmath_sqrt, 
-	 METH_VARARGS, c_sqrt_doc},
-	{"tan", cmath_tan, 
-	 METH_VARARGS, c_tan_doc},
-	{"tanh", cmath_tanh, 
-	 METH_VARARGS, c_tanh_doc},
+	{"acos",   cmath_acos,  METH_VARARGS, c_acos_doc},
+	{"acosh",  cmath_acosh, METH_VARARGS, c_acosh_doc},
+	{"asin",   cmath_asin,  METH_VARARGS, c_asin_doc},
+	{"asinh",  cmath_asinh, METH_VARARGS, c_asinh_doc},
+	{"atan",   cmath_atan,  METH_VARARGS, c_atan_doc},
+	{"atanh",  cmath_atanh, METH_VARARGS, c_atanh_doc},
+	{"cos",    cmath_cos,   METH_VARARGS, c_cos_doc},
+	{"cosh",   cmath_cosh,  METH_VARARGS, c_cosh_doc},
+	{"exp",    cmath_exp,   METH_VARARGS, c_exp_doc},
+	{"log",    cmath_log,   METH_VARARGS, c_log_doc},
+	{"log10",  cmath_log10, METH_VARARGS, c_log10_doc},
+	{"sin",    cmath_sin,   METH_VARARGS, c_sin_doc},
+	{"sinh",   cmath_sinh,  METH_VARARGS, c_sinh_doc},
+	{"sqrt",   cmath_sqrt,  METH_VARARGS, c_sqrt_doc},
+	{"tan",    cmath_tan,   METH_VARARGS, c_tan_doc},
+	{"tanh",   cmath_tanh,  METH_VARARGS, c_tanh_doc},
 	{NULL,		NULL}		/* sentinel */
 };
 
@@ -411,7 +407,7 @@ DL_EXPORT(void)
 initcmath(void)
 {
 	PyObject *m, *d, *v;
-	
+
 	m = Py_InitModule3("cmath", cmath_methods, module_doc);
 	d = PyModule_GetDict(m);
 	PyDict_SetItemString(d, "pi",
