@@ -1,10 +1,8 @@
-Changes in 2.2a2 since 2.1.1
+Changes in 2.2a3 since 2.1.1
 ----------------------------
 
 These release notes refer to Mac-specific changes only. See NEWS (in the Misc folder)
-for machine-independent changes. But note that more things may have changed: MacPython
-2.2a2 is built from newer sources than unix/windows 2.2a2 (for CVS users: the r22a2-mac
-tag is what you are looking for).
+for machine-independent changes.
 
 - The main change is that all toolbox modules have moved to a package called Carbon.
   So things like "import Res" should be changed to "from Carbon import Res", and
@@ -13,7 +11,8 @@ tag is what you are looking for).
   to contribute. Aside from reducing clutter this change will also benefit the
   port to Mach-O/OSX Python later.
 - On input MacPython now accepts either \n (unix style) or \r (mac style) newlines
-  for text files. This is an experimental feature; again: feedback is requested.
+  for text files. This behaviour can be turned off with a preference.
+  This is an experimental feature; again: feedback is requested.
 - There is a new module macresource which makes it easier to open a resource file
   accompanying your script when the script is not (yet) converted to an applet.
   This module will later also do the right thing in Mach-O/OSX Python.
@@ -22,6 +21,9 @@ tag is what you are looking for).
 - Garbage collection and the gc module have (finally) been enabled.
 - EasyDialogs.ProgressBar now has indeterminate progressbars if you specify maxval=0.
   This is also the new default. Patch supplied by Dean Draayer.
+- There are new preferences for enabling old-style division warnings and for
+  accepting unix-style newlines in text input files. These can also be set during
+  startup, and in addition you can select very verbose import tracing.
 - Various outdated scripts have been moved to :Mac:Unsupported.
 - Various outdated items from :Mac:Lib:test have been removed.
 
@@ -38,7 +40,7 @@ Known problems
 This list is probably incomplete, more problems may be listed on the MacPython homepage,
 http://www.cwi.nl/~jack/macpython.html.
 
-- MacPython 2.2a2 (and MacPython 2.1) will not run correctly on a multiprocessor MacOS X
+- MacPython 2.2a3 (and MacPython 2.1) will not run correctly on a multiprocessor MacOS X
   machine, it will quickly deadlock during I/O operations. The GUSI I/O library is suspected,
   hints/clues/workarounds are solicited.
 - Tkinter does not work under Carbon.

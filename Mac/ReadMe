@@ -1,4 +1,4 @@
-How to install Python 2.2a2 on your Macintosh
+How to install Python 2.2a3 on your Macintosh
 ---------------------------------------------
 
 This is a MacPython that can run on classic MacOS (from 8.1
@@ -12,9 +12,9 @@ A special note about the active installer: do not background it, it may hang
 your machine. This is a general problem with Vise active installers, MindVision
 are working on it.
 
-Aside from the general new Python 2.2a2 listed in the general relnotes file
+Aside from the general new Python 2.2a3 listed in the general relnotes file
 there is some other new machine-independent stuff in this release as well, as
-it was built from newer sources than unix/windows 2.2a2.
+it was built from newer sources than unix/windows 2.2a3.
 ------
 
 If this is your first encounter with Python: you definitely need the
@@ -101,13 +101,11 @@ A feature that I am not sure about (so: feedback!) is that if you open a textfil
 for reading MacPython will now accept either unix linefeeds (LF, '\n') or
 Macintosh linefeeds (CR, '\r') and present both of them as '\n'. This is done on
 a low level, so it works for files opened by scripts as well as for your scripts
-and modules itself.
+and modules itself. This can be turned off with a preference/startup option.
 
 But:
 - this works only for input, and there's no way to find out what the original
   linefeed convention of the file was.
-- this is unconditional, so there's no way to turn it off, either on a file-by-file
-  basis or globally (but opening binary files works as it always has, of course).
 - Windows \r\n linefeeds are not supported and get turned into \n\n.
 
 What to install
@@ -150,9 +148,14 @@ After installing
 ----------------
 
 It is probably a good idea to run the automatic tests. Start
-Python and "import test.autotest". 
+Python and "import test.regrtest ; test.regrtest.main()". 
 
-Three tests will fail on MacOS9, all with MemoryErrors:
+test_time will fail because MacPython accepts bogus values for mktime(), this
+will be fixed later.
+
+test_descrtut will fail because of a problem with the test itself.
+
+Three tests will fail on MacOS9 with MemoryErrors:
 test_longexp, test_sha and test_zlib (on MacOSX nothing should fail).
 
 If you increase the PythonInterpreter memory
@@ -178,7 +181,7 @@ Uninstalling
 
 Two items are installed in the system folder: the interpreter shared
 libraries PythonCore and PythonCoreCarbon lives in the Extensions folder and the
-"Python 2.2a2 Preferences" file in the Python subfolder in the
+"Python 2.2a3 Preferences" file in the Python subfolder in the
 Preferences folder. All the rest of Python lives in the folder you
 installed in.
 
@@ -227,9 +230,9 @@ that this means you can keep your older version around if you are unsure
 whether to upgrade. The bad news is that your old preference settings
 are lost and you have to set them again.
 
-After you are satisfied that 2.2a2 works as expected you can trash
+After you are satisfied that 2.2a3 works as expected you can trash
 anything in the system folder that has "python" in the name and not
-"2.2a2".
+"2.2a3".
 
 The ConfigurePython... applets will try to detect incompatible preferences
 files and offer to remove them. This means that re-running ConfigurePython after
@@ -261,7 +264,8 @@ course. Mac-specific thanks go to the pythonmac-sig, Just van Rossum,
 Corran Webster, Tony Ingraldi, Erik van Blokland, Bill Bedford, Chris
 Stern, Gordon Worley, Oliver Steele, M. Papillon, Steven Majewski, David
 Goodger, Chris Barker, Luc Lefebvre, Tattoo Mabonzo K., Russell Finn,
-Tom Bridgman, Russel Owen, Pascal Oberndoerfer, Dean Draayer
+Tom Bridgman, Russel Owen, Pascal Oberndoerfer, Dean Draayer,
+Alexandre Parenteau,
 and all the other people who provided feedback, code or both!
 
 MacPython includes waste, a TextEdit replacement which is (c) 1998 Marco Piovanelli.
