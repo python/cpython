@@ -1469,14 +1469,15 @@ SelectPythonDlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 								    (LPARAM)pbuf);
 						result = sscanf(pbuf, "Python Version %d.%d",
 								 &py_major, &py_minor);
-						if (result == 2)
+						if (result == 2) {
 #ifdef _DEBUG
 							wsprintf(pythondll, "python%d%d_d.dll",
-								  py_major, py_minor);
+								 py_major, py_minor);
 #else
-						wsprintf(pythondll, "python%d%d.dll",
-							  py_major, py_minor);
+							wsprintf(pythondll, "python%d%d.dll",
+								 py_major, py_minor);
 #endif
+						}
 						free(pbuf);
 					} else
 						strcpy(pythondll, "");
