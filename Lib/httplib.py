@@ -645,6 +645,9 @@ class FakeSocket:
     def send(self, stuff, flags = 0):
         return self.__ssl.write(stuff)
 
+    def sendall(self, stuff, flags = 0):
+        return self.__ssl.write(stuff)
+
     def recv(self, len = 1024, flags = 0):
         return self.__ssl.read(len)
 
