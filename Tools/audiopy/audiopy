@@ -48,6 +48,7 @@ Other options are:
 import sys
 import os
 import string
+import errno
 import sunaudiodev
 from SUNAUDIODEV import *
 
@@ -490,7 +491,12 @@ Version: %s''' % __version__
         else:
             usage(1, msg='Invalid option: ' + arg)
     # now set the values
-    device.setinfo(info)
+    try:
+        device.setinfo(info)
+    except sunaudiodev.error, (code, msg):
+        if code == errno.EINVAL:
+            pass
+        raise
     device.close()
             
 
