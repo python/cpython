@@ -10,18 +10,19 @@ BUGS found in 1.0.3 and not yet fixed
 -------------------------------------
 
 (-) print_error raises and then masks an error if softspace is not
-    defined
+    defined (can't reproduce this one?)
 
-(-) Syntax errors are reported in a silly way if multi-line tokens are
+(*) Syntax errors are reported in a silly way if multi-line tokens are
 involved.
 
-(-) SyntaxError exception for compile('...') are reported wrongly
+(*) SyntaxError exception for compile('...') are reported wrongly
 (lineno is always zero and offset is offset into the whole string).
 
-(-) freeze script needs major rewrite to cope with multiple extensions
+(*) freeze script needs major rewrite to cope with multiple extensions
 (Jack seems to have fixed it now -- where is it?)
 
-(?) various memory leaks (see purify report from anthony.baxter@aaii.oz.au)
+(*) various memory leaks (see purify report from anthony.baxter@aaii.oz.au)
+(several leaks fixed anyway :-)
 
 BUGS found in 1.0.3 and fixed in 1.1
 ------------------------------------
