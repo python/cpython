@@ -1,4 +1,13 @@
 #!/usr/local/bin/python
+
+# XXX TODO
+# - proper doc strings instead of this rambling dialogue style
+# - more utilities, e.g.
+#   - print_header(type="test/html", blankline=1) -- print MIME header
+#   - utility to format a nice error message in HTML
+#   - utility to format a Location: ... response, including HTML
+#   - utility to catch errors and display traceback
+
 #
 # A class for wrapping the WWW Forms Common Gateway Interface (CGI) 
 # Michael McLay, NIST  mclay@eeel.nist.gov  6/14/94
@@ -47,8 +56,10 @@ def parse():
 	if environ['REQUEST_METHOD'] == 'POST':
 		qs = sys.stdin.read(string.atoi(environ['CONTENT_LENGTH']))
 		environ['QUERY_STRING'] = qs
-	else:
+	elif environ.has_key('QUERY_STRING'):
 		qs = environ['QUERY_STRING']
+	else:
+		environ['QUERY_STRING'] = qs = ''
 	return parse_qs(qs)
 
 
