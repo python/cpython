@@ -85,87 +85,7 @@ if struct.pack("h", 1) == "\000\001":
 else:
 	big_endian = 0
 
-def _read_long(file):
-	x = 0L
-	for i in range(4):
-		byte = file.read(1)
-		if byte == '':
-			raise EOFError
-		x = x + (ord(byte) << (8 * i))
-	if x >= 0x80000000L:
-		x = x - 0x100000000L
-	return int(x)
-
-def _read_ulong(file):
-	x = 0L
-	for i in range(4):
-		byte = file.read(1)
-		if byte == '':
-			raise EOFError
-		x = x + (ord(byte) << (8 * i))
-	return x
-
-def _read_short(file):
-	x = 0
-	for i in range(2):
-		byte = file.read(1)
-		if byte == '':
-			raise EOFError
-		x = x + (ord(byte) << (8 * i))
-	if x >= 0x8000:
-		x = x - 0x10000
-	return x
-
-def _write_short(f, x):
-	d, m = divmod(x, 256)
-	f.write(chr(m))
-	f.write(chr(d))
-
-def _write_long(f, x):
-	if x < 0:
-		x = x + 0x100000000L
-	for i in range(4):
-		d, m = divmod(x, 256)
-		f.write(chr(int(m)))
-		x = d
-
-class Chunk:
-	def __init__(self, file):
-		self.file = file
-		self.chunkname = self.file.read(4)
-		if len(self.chunkname) < 4:
-			raise EOFError
-		self.chunksize = _read_long(self.file)
-		self.size_read = 0
-		self.offset = self.file.tell()
-
-	def rewind(self):
-		self.file.seek(self.offset, 0)
-		self.size_read = 0
-
-	def setpos(self, pos):
-		if pos < 0 or pos > self.chunksize:
-			raise RuntimeError
-		self.file.seek(self.offset + pos, 0)
-		self.size_read = pos
-		
-	def read(self, length):
-		if self.size_read >= self.chunksize:
-			return ''
-		if length > self.chunksize - self.size_read:
- 			length = self.chunksize - self.size_read
-		data = self.file.read(length)
-		self.size_read = self.size_read + len(data)
-		return data
-
-	def skip(self):
-		try:
-			self.file.seek(self.chunksize - self.size_read, 1)
-		except RuntimeError:
-			while self.size_read < self.chunksize:
-				dummy = self.read(8192)
-				if not dummy:
-					raise EOFError
+from chunk import Chunk
 
 class Wave_read:
 	# Variables used in this class:
@@ -197,41 +117,34 @@ class Wave_read:
 	# _data_chunk -- instantiation of a chunk class for the DATA chunk
 	# _framesize -- size of one frame in the file
 
-## 	access _file, _nchannels, _nframes, _sampwidth, _framerate, \
-## 		  _comptype, _compname, _soundpos, \
-## 		  _fmt_chunk_read, _data_seek_needed, \
-## 		  _data_chunk, _framesize: private
-
 	def initfp(self, file):
-		self._file = file
 		self._convert = None
 		self._soundpos = 0
-		form = self._file.read(4)
-		if form != 'RIFF':
+		self._file = Chunk(file, bigendian = 0)
+		if self._file.getname() != 'RIFF':
 			raise Error, 'file does not start with RIFF id'
-		formlength = _read_long(self._file)
-		if formlength <= 0:
-			raise Error, 'invalid FORM chunk data size'
-		formdata = self._file.read(4)
-		formlength = formlength - 4
-		if formdata != 'WAVE':
+		if self._file.read(4) != 'WAVE':
 			raise Error, 'not a WAVE file'
 		self._fmt_chunk_read = 0
-		while formlength > 0:
+		self._data_chunk = None
+		while 1:
 			self._data_seek_needed = 1
-			chunk = Chunk(self._file)
-			if chunk.chunkname == 'fmt ':
+			try:
+				chunk = Chunk(self._file, bigendian = 0)
+			except EOFError:
+				break
+			chunkname = chunk.getname()
+			if chunkname == 'fmt ':
 				self._read_fmt_chunk(chunk)
 				self._fmt_chunk_read = 1
-			elif chunk.chunkname == 'data':
+			elif chunkname == 'data':
 				if not self._fmt_chunk_read:
 					raise Error, 'data chunk before fmt chunk'
 				self._data_chunk = chunk
 				self._nframes = chunk.chunksize / self._framesize
 				self._data_seek_needed = 0
-			formlength = formlength - 8 - chunk.chunksize
-			if formlength > 0:
-				chunk.skip()
+				break
+			chunk.skip()
 		if not self._fmt_chunk_read or not self._data_chunk:
 			raise Error, 'fmt chunk and/or data chunk missing'
 
@@ -240,10 +153,6 @@ class Wave_read:
 			f = __builtin__.open(f, 'rb')
 		# else, assume it is an open file object already
 		self.initfp(f)
-
-	def __del__(self):
-		if self._file:
-			self.close()
 
 	#
 	# User visible methods.
@@ -298,10 +207,10 @@ class Wave_read:
 
 	def readframes(self, nframes):
 		if self._data_seek_needed:
-			self._data_chunk.rewind()
+			self._data_chunk.seek(0, 0)
 			pos = self._soundpos * self._framesize
 			if pos:
-				self._data_chunk.setpos(pos)
+				self._data_chunk.seek(pos, 0)
 			self._data_seek_needed = 0
 		if nframes == 0:
 			return ''
@@ -310,12 +219,17 @@ class Wave_read:
 			# something that only looks like a file object, so
 			# we have to reach into the innards of the chunk object
 			import array
+			chunk = self._data_chunk
 			data = array.array(_array_fmts[self._sampwidth])
 			nitems = nframes * self._nchannels
-			if nitems * self._sampwidth > self._data_chunk.chunksize - self._data_chunk.size_read:
-				nitems = (self._data_chunk.chunksize - self._data_chunk.size_read) / self._sampwidth
-			data.fromfile(self._data_chunk.file, nitems)
-			self._data_chunk.size_read = self._data_chunk.size_read + nitems * self._sampwidth
+			if nitems * self._sampwidth > chunk.chunksize - chunk.size_read:
+				nitems = (chunk.chunksize - chunk.size_read) / self._sampwidth
+			data.fromfile(chunk.file.file, nitems)
+			# "tell" data chunk how much was read
+			chunk.size_read = chunk.size_read + nitems * self._sampwidth
+			# do the same for the outermost chunk
+			chunk = chunk.file
+			chunk.size_read = chunk.size_read + nitems * self._sampwidth
 			data.byteswap()
 			data = data.tostring()
 		else:
@@ -328,16 +242,12 @@ class Wave_read:
 	#
 	# Internal methods.
 	#
-## 	access *: private
 
 	def _read_fmt_chunk(self, chunk):
-		wFormatTag = _read_short(chunk)
-		self._nchannels = _read_short(chunk)
-		self._framerate = _read_long(chunk)
-		dwAvgBytesPerSec = _read_long(chunk)
-		wBlockAlign = _read_short(chunk)
+		wFormatTag, self._nchannels, self._framerate, dwAvgBytesPerSec, wBlockAlign = struct.unpack('<hhllh', chunk.read(14))
 		if wFormatTag == WAVE_FORMAT_PCM:
-			self._sampwidth = (_read_short(chunk) + 7) / 8
+			sampwidth = struct.unpack('<h', chunk.read(2))[0]
+			self._sampwidth = (sampwidth + 7) / 8
 		else:
 			raise Error, 'unknown format: ' + `wFormatTag`
 		self._framesize = self._nchannels * self._sampwidth
@@ -368,10 +278,6 @@ class Wave_write:
 	# _datalength -- the size of the audio samples written to the header
 	# _nframeswritten -- the number of frames actually written
 	# _datawritten -- the size of the audio samples actually written
-
-## 	access _file, _comptype, _compname, _nchannels, _sampwidth, \
-## 		  _framerate, _nframes, _nframeswritten, \
-## 		  _datalength, _datawritten: private
 
 	def __init__(self, f):
 		if type(f) == type(''):
@@ -512,7 +418,6 @@ class Wave_write:
 	#
 	# Internal methods.
 	#
-## 	access *: private
 
 	def _ensure_header_written(self, datasize):
 		if not self._datawritten:
@@ -530,28 +435,23 @@ class Wave_write:
 			self._nframes = initlength / (self._nchannels * self._sampwidth)
 		self._datalength = self._nframes * self._nchannels * self._sampwidth
 		self._form_length_pos = self._file.tell()
-		_write_long(self._file, 36 + self._datalength)
-		self._file.write('WAVE')
-		self._file.write('fmt ')
-		_write_long(self._file, 16)
-		_write_short(self._file, WAVE_FORMAT_PCM)
-		_write_short(self._file, self._nchannels)
-		_write_long(self._file, self._framerate)
-		_write_long(self._file, self._nchannels * self._framerate * self._sampwidth)
-		_write_short(self._file, self._nchannels * self._sampwidth)
-		_write_short(self._file, self._sampwidth * 8)
-		self._file.write('data')
+		self._file.write(struct.pack('<lsslhhllhhs',
+			36 + self._datalength, 'WAVE', 'fmt ', 16,
+			WAVE_FORMAT_PCM, self._nchannels, self._framerate,
+			self._nchannels * self._framerate * self._sampwidth,
+			self._nchannels * self._sampwidth,
+			self._sampwidth * 8, 'data'))
 		self._data_length_pos = self._file.tell()
-		_write_long(self._file, self._datalength)
+		self._file.write(struct.pack('<l', self._datalength))
 
 	def _patchheader(self):
 		if self._datawritten == self._datalength:
 			return
 		curpos = self._file.tell()
 		self._file.seek(self._form_length_pos, 0)
-		_write_long(self._file, 36 + self._datawritten)
+		self._file.write(struct.pack('<l', 36 + self._datawritten))
 		self._file.seek(self._data_length_pos, 0)
-		_write_long(self._file, self._datawritten)
+		self._file.write(struct.pack('<l', self._datawritten))
 		self._file.seek(curpos, 0)
 		self._datalength = self._datawritten
 
