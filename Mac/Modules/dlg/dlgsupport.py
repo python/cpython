@@ -129,6 +129,20 @@ execfile("dlggen.py")
 for f in functions: module.add(f)
 for f in methods: object.add(f)
 
+# Some methods that are currently macro's in C, but will be real routines
+# in MacOS 8.
+
+f = Method(ExistingDialogPtr, 'GetDialogWindow', (DialogRef, 'dialog', InMode))
+object.add(f)
+f = Method(SInt16, 'GetDialogDefaultItem', (DialogRef, 'dialog', InMode))
+object.add(f)
+f = Method(SInt16, 'GetDialogCancelItem', (DialogRef, 'dialog', InMode))
+object.add(f)
+f = Method(SInt16, 'GetDialogKeyboardFocusItem', (DialogRef, 'dialog', InMode))
+object.add(f)
+f = Method(void, 'SetGrafPortOfDialog', (DialogRef, 'dialog', InMode))
+object.add(f)
+
 # generate output
 SetOutputFileName('Dlgmodule.c')
 module.generate()

@@ -479,6 +479,75 @@ static PyObject *DlgObj_SetDialogTracksCursor(_self, _args)
 	return _res;
 }
 
+static PyObject *DlgObj_GetDialogWindow(_self, _args)
+	DialogObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	DialogPtr _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = GetDialogWindow(_self->ob_itself);
+	_res = Py_BuildValue("O&",
+	                     WinObj_WhichWindow, _rv);
+	return _res;
+}
+
+static PyObject *DlgObj_GetDialogDefaultItem(_self, _args)
+	DialogObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	SInt16 _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = GetDialogDefaultItem(_self->ob_itself);
+	_res = Py_BuildValue("h",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *DlgObj_GetDialogCancelItem(_self, _args)
+	DialogObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	SInt16 _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = GetDialogCancelItem(_self->ob_itself);
+	_res = Py_BuildValue("h",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *DlgObj_GetDialogKeyboardFocusItem(_self, _args)
+	DialogObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	SInt16 _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = GetDialogKeyboardFocusItem(_self->ob_itself);
+	_res = Py_BuildValue("h",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *DlgObj_SetGrafPortOfDialog(_self, _args)
+	DialogObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	SetGrafPortOfDialog(_self->ob_itself);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
 static PyMethodDef DlgObj_methods[] = {
 	{"DrawDialog", (PyCFunction)DlgObj_DrawDialog, 1,
 	 "() -> None"},
@@ -518,6 +587,16 @@ static PyMethodDef DlgObj_methods[] = {
 	 "(short newItem) -> None"},
 	{"SetDialogTracksCursor", (PyCFunction)DlgObj_SetDialogTracksCursor, 1,
 	 "(Boolean tracks) -> None"},
+	{"GetDialogWindow", (PyCFunction)DlgObj_GetDialogWindow, 1,
+	 "() -> (DialogPtr _rv)"},
+	{"GetDialogDefaultItem", (PyCFunction)DlgObj_GetDialogDefaultItem, 1,
+	 "() -> (SInt16 _rv)"},
+	{"GetDialogCancelItem", (PyCFunction)DlgObj_GetDialogCancelItem, 1,
+	 "() -> (SInt16 _rv)"},
+	{"GetDialogKeyboardFocusItem", (PyCFunction)DlgObj_GetDialogKeyboardFocusItem, 1,
+	 "() -> (SInt16 _rv)"},
+	{"SetGrafPortOfDialog", (PyCFunction)DlgObj_SetGrafPortOfDialog, 1,
+	 "() -> None"},
 	{NULL, NULL, 0}
 };
 
