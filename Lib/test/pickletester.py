@@ -739,6 +739,58 @@ class AbstractPickleTests(unittest.TestCase):
         self.assertEqual(x.foo, y.foo)
         self.assertEqual(x.bar, y.bar)
 
+    def test_reduce_overrides_default_reduce_ex(self):
+        for proto in 0, 1, 2:
+            x = REX_one()
+            self.assertEqual(x._reduce_called, 0)
+            s = self.dumps(x, proto)
+            self.assertEqual(x._reduce_called, 1)
+            y = self.loads(s)
+            self.assertEqual(y._reduce_called, 0)
+
+    def test_reduce_ex_called(self):
+        for proto in 0, 1, 2:
+            x = REX_two()
+            self.assertEqual(x._proto, None)
+            s = self.dumps(x, proto)
+            self.assertEqual(x._proto, proto)
+            y = self.loads(s)
+            self.assertEqual(y._proto, None)
+
+    def test_reduce_ex_overrides_reduce(self):
+        for proto in 0, 1, 2:
+            x = REX_three()
+            self.assertEqual(x._proto, None)
+            s = self.dumps(x, proto)
+            self.assertEqual(x._proto, proto)
+            y = self.loads(s)
+            self.assertEqual(y._proto, None)
+
+# Test classes for reduce_ex
+
+class REX_one(object):
+    _reduce_called = 0
+    def __reduce__(self):
+        self._reduce_called = 1
+        return REX_one, ()
+    # No __reduce_ex__ here, but inheriting it from object
+
+class REX_two(object):
+    _proto = None
+    def __reduce_ex__(self, proto):
+        self._proto = proto
+        return REX_two, ()
+    # No __reduce__ here, but inheriting it from object
+
+class REX_three(object):
+    _proto = None
+    def __reduce_ex__(self, proto):
+        self._proto = proto
+        return REX_two, ()
+    def __reduce__(self):
+        raise TestFailed, "This __reduce__ shouldn't be called"
+
+# Test classes for newobj
 
 class MyInt(int):
     sample = 1
