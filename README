@@ -47,22 +47,7 @@ What is Python anyway?
 
 Python is an interpreted object-oriented programming language, and is
 often compared to Tcl, Perl, Java or Scheme.  To find out more, point
-your browser to http://www.python.org/.
-
-
-A modest plug
--------------
-
-************************************************************************
-* Without your support, I won't be able to continue to work on Python! *
-************************************************************************
-
-If you use Python, please consider joining the Python Software
-Activity (PSA).  See http://www.python.org/psa/.
-
-Organizations that make heavy use of Python are especially encouraged
-to become corporate members -- or better still, to join the Python
-Consortium (see http://www.python.org/consortium/).
+your browser to http://www.pythonlabs.com/.
 
 
 How do I learn Python?
@@ -659,7 +644,7 @@ development, join the PythonMac Special Interest Group
 pythonmac-sig-request@python.org).
 
 Of course, there are also binary distributions available for these
-platforms -- see http://www.python.org/python/.
+platforms -- see http://www.pythonlabs.com/downloads.html
 
 To port Python to a new non-UNIX system, you will have to fake the
 effect of running the configure script manually (for Mac and PC, this
@@ -687,7 +672,7 @@ Python's power (including the built-in data types and functions!) is
 described there.
 
 All documentation is also available online via the Python web site
-(http://www.python.org/, see below).  It is available online for
+(http://www.python.org/doc/, see below).  It is available online for
 occaissional reference, or can be downloaded in many formats for
 faster access.  The documents are available in HTML, PostScript, PDF,
 HTML Help, and LaTeX; the LaTeX version is primarily for documentation
@@ -700,28 +685,21 @@ Emacs mode
 There's an excellent Emacs editing mode for Python code; see the file
 Misc/python-mode.el.  Originally written by the famous Tim Peters, it
 is now maintained by the equally famous Barry Warsaw
-<bwarsaw@python.org>.  The latest version, along with various
-other contributed Python-related Emacs goodies, is online at
+<bwarsaw@python.org>.  The latest version, along with various other
+contributed Python-related Emacs goodies, is online at
 <http://www.python.org/emacs/python-mode>.  And if you are planning to
 edit the Python C code, please pick up the latest version of CC Mode
 <http://www.python.org/emacs/cc-mode>; it contains a "python" style
-used throughout most of the Python C source files.
+used throughout most of the Python C source files.  (Newer versions of
+Emacs or XEmacs may already come with the latest version of
+python-mode.)
 
 
 Web site
 --------
 
-Python's own web site has URL http://www.python.org/.  Come visit us!
-There are a number of mirrors, and a list of mirrors is accessible
-from the home page -- try a mirror that's close you you.
-
-
-Ftp site
---------
-
-Python's own ftp site is ftp://ftp.python.org/pub/python/.  There are
-numerous mirrors; the list of mirrors is accessible from
-http://www.python.org/.
+Python's own web site has URL http://www.pythonlabs.com/.  Come visit
+us!
 
 
 Newsgroups
@@ -746,11 +724,8 @@ many Python related mailing lists.
 Bug reports
 -----------
 
-Bugs are best reported to the comp.lang.python newsgroup (or the
-Python mailing list) -- see the section "Newsgroups" above.  Before
-posting, check the newsgroup archives (see above) to see if your bug
-has already been reported!  If you don't want to go public, send them
-to me: <guido@python.org>.
+To report or search for bugs, please use the Python Bugs List at
+http://www.python.org/search/search_bugs.html
 
 
 Questions
@@ -759,7 +734,7 @@ Questions
 For help, if you can't find it in the manuals or on the web site, it's
 best to post to the comp.lang.python or the Python mailing list (see
 above).  If you specifically don't want to involve the newsgroup or
-mailing list, send questions to <python-help@python.org> (a group of
+mailing list, send questions to <help@python.org> (a group of
 volunteers which does *not* include me).  Because of my work and email
 volume, I'm often be slow in answering questions sent to me directly;
 I prefer to answer questions posted to the newsgroup.
@@ -771,13 +746,10 @@ The Tk interface
 Tk (the user interface component of John Ousterhout's Tcl language) is
 also usable from Python.  Since this requires that you first build and
 install Tcl/Tk, the Tk interface is not enabled by default.  Python
-supports all Tcl/Tk versions from version 7.5/4.1 through 8.0 (and it
-is expected that it will also work with newer versions).  Tcl/Tk
-7.4/4.0 is no longer supported.  8.0 or any later non-alpha non-beta
-release is recommended.
+supports Tcl/Tk starting with version 8.0.
 
-See http://sunscript.sun.com/ for more info on Tcl/Tk, including the
-on-line manual pages.
+See http://dev.ajubasolutions.com/ for more info on Tcl/Tk, including
+the on-line manual pages.
 
 
 To enable the Python/Tk interface, once you've built and installed
@@ -787,17 +759,8 @@ there.  If you have installed Tcl/Tk or X11 in unusual places, you
 will have to edit the first line to fix or add -I and -L options.
 (Also see the general instructions at the top of that file.)
 
-There is little documentation on how to use Tkinter; however most of
-the Tk manual pages apply quite straightforwardly.  Begin with
-fetching the "Tk Lifesaver" document,
-e.g. ftp://ftp.python.org/pub/python/doc/tkinter-doc.tar.gz (a gzipped
-tar file containing a PostScript file) or the on-line version
-http://www.python.org/doc/life-preserver/index.html.  Reading the
-Tkinter.py source will reveal most details on how Tkinter calls are
-translated into Tcl code.
-
-A more recent introduction to Tkinter programming, by Fredrik Lundh,
-is at http://www.pythonware.com/library/tkinter/introduction/index.htm.
+For more Tkinter information, see the Tkinter Resource page:
+http://www.python.org/topics/tkinter/
 
 There are demos in the Demo/tkinter directory, in the subdirectories
 guido, matt and www (the matt and guido subdirectories have been
