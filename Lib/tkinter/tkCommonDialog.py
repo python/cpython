@@ -42,7 +42,7 @@ class Dialog:
 
         self._fixoptions()
 
-        # we need a stub widget to properly process the options
+        # we need a dummy widget to properly process the options
         # (at least as long as we use Tkinter 1.63)
         w = Frame(self.master)
 
@@ -61,3 +61,4 @@ class Dialog:
                 pass
 
         return s
+
