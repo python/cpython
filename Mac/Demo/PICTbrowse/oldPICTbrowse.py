@@ -1,15 +1,13 @@
-"""browsepict - Display all "cicn" resources found"""
+"""browsepict - Display all "PICT" resources found"""
 
 import FrameWork
 import EasyDialogs
 import Res
 import Qd
 import Win
-import Controls
 import List
 import sys
 import struct
-import Icn
 
 #
 # Resource definitions
@@ -20,30 +18,26 @@ MAIN_SHOW=2
 # Where is the picture window?
 LEFT=200
 TOP=64
-MINWIDTH=32
-MINHEIGHT=32
-MAXWIDTH=320
-MAXHEIGHT=320
 
 def main():
 	try:
 		dummy = Res.GetResource('DLOG', ID_MAIN)
 	except Res.Error:
 		try:
-			Res.OpenResFile("PICTbrowse.rsrc")
+			Res.OpenResFile("oldPICTbrowse.rsrc")
 		except Res.Error, arg:
 			EasyDialogs.Message("Cannot open PICTbrowse.rsrc: "+arg[1])
 			sys.exit(1)	
-	CIconbrowse()
+	PICTbrowse()
 
-class CIconbrowse(FrameWork.Application):
+class PICTbrowse(FrameWork.Application):
 	def __init__(self):
 		# First init menus, etc.
 		FrameWork.Application.__init__(self)
 		# Next create our dialog
 		self.main_dialog = MyDialog(self)
 		# Now open the dialog
-		contents = self.findcicnresources()
+		contents = self.findPICTresources()
 		self.main_dialog.open(ID_MAIN, contents)
 		# Finally, go into the event loop
 		self.mainloop()
@@ -55,76 +49,59 @@ class CIconbrowse(FrameWork.Application):
 	def quit(self, *args):
 		self._quit()
 		
-	def showCIcon(self, resid):
-		w = CIconwindow(self)
+	def showPICT(self, resid):
+		w = PICTwindow(self)
 		w.open(resid)
-		#EasyDialogs.Message('Show cicn '+`resid`)
+		#EasyDialogs.Message('Show PICT '+`resid`)
 		
-	def findcicnresources(self):
-		num = Res.CountResources('cicn')
+	def findPICTresources(self):
+		num = Res.CountResources('PICT')
 		rv = []
 		for i in range(1, num+1):
 			Res.SetResLoad(0)
 			try:
-				r = Res.GetIndResource('cicn', i)
+				r = Res.GetIndResource('PICT', i)
 			finally:
 				Res.SetResLoad(1)
 			id, type, name = r.GetResInfo()
 			rv.append(id, name)
 		return rv
 		
-class CIconwindow(FrameWork.Window):
+class PICTwindow(FrameWork.Window):
 	def open(self, (resid, resname)):
 		if not resname:
 			resname = '#'+`resid`
 		self.resid = resid
-		self.picture = Icn.GetCIcon(self.resid)
-		l, t, r, b = 0, 0, 32, 32
-		self.pictrect = (l, t, r, b)
+		picture = Qd.GetPicture(self.resid)
+		# Get rect for picture
+		print `picture.data[:16]`
+		sz, t, l, b, r = struct.unpack('hhhhh', picture.data[:10])
+		print 'pict:', t, l, b, r
 		width = r-l
 		height = b-t
-		if width < MINWIDTH: width = MINWIDTH
-		elif width > MAXWIDTH: width = MAXWIDTH
-		if height < MINHEIGHT: height = MINHEIGHT
-		elif height > MAXHEIGHT: height = MAXHEIGHT
+		if width < 64: width = 64
+		elif width > 480: width = 480
+		if height < 64: height = 64
+		elif height > 320: height = 320
 		bounds = (LEFT, TOP, LEFT+width, TOP+height)
+		print 'bounds:', bounds
 		
 		self.wid = Win.NewWindow(bounds, resname, 1, 0, -1, 1, 0)
+		self.wid.SetWindowPic(picture)
 		self.do_postopen()
 		
-	def do_update(self, *args):
-		currect = self.fitrect()
-		Icn.PlotCIcon(currect, self.picture)
-		
-	def fitrect(self):
-		"""Return self.pictrect scaled to fit in window"""
-		graf = self.wid.GetWindowPort()
-		screenrect = graf.portRect
-		picwidth = self.pictrect[2] - self.pictrect[0]
-		picheight = self.pictrect[3] - self.pictrect[1]
-		if picwidth > screenrect[2] - screenrect[0]:
-			factor = float(picwidth) / float(screenrect[2]-screenrect[0])
-			picwidth = picwidth / factor
-			picheight = picheight / factor
-		if picheight > screenrect[3] - screenrect[1]:
-			factor = float(picheight) / float(screenrect[3]-screenrect[1])
-			picwidth = picwidth / factor
-			picheight = picheight / factor
-		return (screenrect[0], screenrect[1], screenrect[0]+int(picwidth),
-				screenrect[1]+int(picheight))
-		
 class MyDialog(FrameWork.DialogWindow):
-	"Main dialog window for cicnbrowse"
+	"Main dialog window for PICTbrowse"
 
 	def open(self, id, contents):
 		self.id = id
 		FrameWork.DialogWindow.open(self, ID_MAIN)
 		self.wid.SetDialogDefaultItem(MAIN_SHOW)
+		tp, h, rect = self.wid.GetDialogItem(MAIN_LIST)
+		rect2 = rect[0]+1, rect[1]+1, rect[2]-17, rect[3]-17	# Scroll bar space
+		self.list = List.LNew(rect2, (0, 0, 1, len(contents)), (0,0), 0, self.wid,
+				0, 1, 1, 1)
 		self.contents = contents
-		self.ctl = self.wid.GetDialogItemAsControl(MAIN_LIST)
-		h = self.ctl.GetControlDataHandle(Controls.kControlListBoxPart, 
-				Controls.kControlListBoxListHandleTag)
-		self.list = List.as_List(h)
 		self.setlist()
 
 	def setlist(self):
@@ -139,6 +116,14 @@ class MyDialog(FrameWork.DialogWindow):
 				self.list.LSetCell(v, (0, i))
 		self.list.LSetDrawingMode(1)
 		self.list.LUpdate(self.wid.GetWindowPort().visRgn)
+		
+	def do_listhit(self, event):
+		(what, message, when, where, modifiers) = event
+		Qd.SetPort(self.wid)
+		where = Qd.GlobalToLocal(where)
+		print 'LISTHIT', where
+		if self.list.LClick(where, modifiers):
+			self.do_show()
 		
 	def getselection(self):
 		items = []
@@ -157,12 +142,23 @@ class MyDialog(FrameWork.DialogWindow):
 	def do_show(self, *args):
 		selection = self.getselection()
 		for resid in selection:
-			self.parent.showCIcon(resid)
+			self.parent.showPICT(resid)
+		
+	def do_rawupdate(self, window, event):
+		tp, h, rect = self.wid.GetDialogItem(MAIN_LIST)
+		Qd.SetPort(self.wid)
+		Qd.FrameRect(rect)
+		self.list.LUpdate(self.wid.GetWindowPort().visRgn)
+		
+	def do_activate(self, activate, event):
+		self.list.LActivate(activate)
 		
 	def do_close(self):
 		self.close()
 		
 	def do_itemhit(self, item, event):
+		if item == MAIN_LIST:
+			self.do_listhit(event)
 		if item == MAIN_SHOW:
 			self.do_show()
 
