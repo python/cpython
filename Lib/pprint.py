@@ -153,16 +153,13 @@ class PrettyPrinter:
 	return _safe_repr(object, context, self.__depth, level)
 
 
-def _safe_repr(object, context=None, maxlevels=None, level=0):
+def _safe_repr(object, context, maxlevels=None, level=0):
     level = level + 1
     typ = type(object)
     if not (typ in (DictType, ListType, TupleType) and object):
 	return `object`
-    if context is None:
-	context = {}
-    else:
-	if context.has_key(id(object)):
-	    return `_Recursion(object)`
+    if context.has_key(id(object)):
+	return `_Recursion(object)`
     objid = id(object)
     context[objid] = 1
     if typ is DictType:
@@ -171,19 +168,21 @@ def _safe_repr(object, context=None, maxlevels=None, level=0):
 	else:
 	    items = object.items()
 	    k, v = items[0]
-	    s = "{%s: %s" % (_safe_repr(k, context), _safe_repr(v, context))
+	    s = "{%s: %s" % (_safe_repr(k, context, maxlevels, level),
+			     _safe_repr(v, context, maxlevels, level))
 	    for k, v in items[1:]:
 		s = "%s, %s: %s" \
-		    % (s, _safe_repr(k, context), _safe_repr(v, context))
+		    % (s, _safe_repr(k, context, maxlevels, level),
+		       _safe_repr(v, context, maxlevels, level))
 	    s = s + "}"
     else:
 	s, term = (typ is ListType) and ('[', ']') or ('(', ')')
 	if maxlevels and level >= maxlevels:
 	    s = s + "..."
 	else:
-	    s = s + _safe_repr(object[0], context)
+	    s = s + _safe_repr(object[0], context, maxlevels, level)
 	    for ent in object[1:]:
-		s = "%s, %s" % (s, _safe_repr(ent, context))
+		s = "%s, %s" % (s, _safe_repr(ent, context, maxlevels, level))
 	s = s + term
     del context[objid]
     return s
