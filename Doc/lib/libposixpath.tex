@@ -17,7 +17,11 @@ On most platforms, this is equivalent to
 
 \begin{funcdesc}{basename}{path}
 Return the base name of pathname \var{path}.  This is the second half
-of the pair returned by \code{split(\var{path})}.
+of the pair returned by \code{split(\var{path})}.  Note that the
+result of this function is different from the
+\UNIX{} \program{basename} program; where \program{basename} for
+\code{'/foo/bar/'} returns \code{'bar'}, the \function{basename()}
+function returns an empty string (\code{''}).
 \end{funcdesc}
 
 \begin{funcdesc}{commonprefix}{list}
