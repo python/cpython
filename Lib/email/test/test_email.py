@@ -1670,6 +1670,11 @@ class TestMiscellaneous(unittest.TestCase):
     def test_parsedate_none(self):
         self.assertEqual(Utils.parsedate(''), None)
 
+    def test_parsedate_compact(self):
+        # The FWS after the comma is optional
+        self.assertEqual(Utils.parsedate('Wed,3 Apr 2002 14:58:26 +0800'),
+                         Utils.parsedate('Wed, 3 Apr 2002 14:58:26 +0800'))
+
     def test_parseaddr_empty(self):
         self.assertEqual(Utils.parseaddr('<>'), ('', ''))
         self.assertEqual(Utils.formataddr(Utils.parseaddr('<>')), '')
