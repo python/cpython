@@ -1469,11 +1469,12 @@ validate_raise_stmt(tree)
 {
     int nch = NCH(tree);
     int res = (validate_ntype(tree, raise_stmt)
-	       && ((nch == 2) || (nch == 4) || (nch == 6)));
+	       && ((nch == 1) || (nch == 2) || (nch == 4) || (nch == 6)));
 
     if (res) {
-	res = (validate_name(CHILD(tree, 0), "raise")
-	       && validate_test(CHILD(tree, 1)));
+	res = validate_name(CHILD(tree, 0), "raise");
+	if (res && (nch >= 2))
+	    res = validate_test(CHILD(tree, 1));
 	if (res && nch > 2) {
 	    res = (validate_comma(CHILD(tree, 2))
 		   && validate_test(CHILD(tree, 3)));
