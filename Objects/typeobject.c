@@ -3281,7 +3281,7 @@ slot_tp_descr_set(PyObject *self, PyObject *target, PyObject *value)
 	static PyObject *del_str, *set_str;
 
 	if (value == NULL)
-		res = call_method(self, "__del__", &del_str,
+		res = call_method(self, "__delete__", &del_str,
 				  "(O)", target);
 	else
 		res = call_method(self, "__set__", &set_str,
