@@ -70,7 +70,7 @@ Core and builtins
   exceptions (which could mask bugs in a __getattr__ hook, for
   example).
 
-- Weak reference objects are now part of the core and offers a C API.
+- Weak reference objects are now part of the core and offer a C API.
   A bug which could allow a core dump when binary operations involved
   proxy reference has been fixed.  weakref.ReferenceError is now a
   built-in exception.
@@ -130,6 +130,11 @@ Library
 - doctest now excludes functions and classes not defined by the module
   being tested, thanks to Tim Hochberg.
 
+- HotShot, a new profiler implemented using a C-based callback, has
+  been added.  This substantially reduces the overhead of profiling,
+  but it is still quite preliminary.  Support modules and
+  documentation will be added in upcoming releases (before 2.2 final).
+
 - profile now produces correct output in situations where an exception
   raised in Python is cleared by C code (e.g. hasattr()).  This used
   to cause wrong output, including spurious claims of recursive
@@ -176,6 +181,9 @@ Library
 
 - ConfigParser.getboolean() now also interprets TRUE, FALSE, YES, NO,
   ON, and OFF.
+
+- xml.dom.minidom NodeList objects now support the length attribute
+  and item() method as required by the DOM specifications.
 
 Tools/Demos
 
