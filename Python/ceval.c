@@ -68,7 +68,7 @@ static object *add PROTO((object *, object *));
 static object *sub PROTO((object *, object *));
 static object *mul PROTO((object *, object *));
 static object *divide PROTO((object *, object *));
-static object *rem PROTO((object *, object *));
+static object *mod PROTO((object *, object *));
 static object *neg PROTO((object *));
 static object *pos PROTO((object *));
 static object *not PROTO((object *));
@@ -571,7 +571,7 @@ eval_code(co, globals, locals, owner, arg)
 		case BINARY_MODULO:
 			w = POP();
 			v = POP();
-			x = rem(v, w);
+			x = mod(v, w);
 			DECREF(v);
 			DECREF(w);
 			PUSH(x);
@@ -1742,18 +1742,18 @@ flushline()
 }
 
 
-#define BINOP(opname, ropname) \
-	do { \
-		if (is_instanceobject(v) || is_instanceobject(w)) \
-			return instancebinop(v, w, opname, ropname); \
-	} while (0)
+#define BINOP(opname, ropname, thisfunc) \
+	if (!is_instanceobject(v) && !is_instanceobject(w)) \
+		; \
+	else \
+		return instancebinop(v, w, opname, ropname, thisfunc)
 
 
 static object *
 or(v, w)
 	object *v, *w;
 {
-	BINOP("__or__", "__ror__");
+	BINOP("__or__", "__ror__", or);
 	if (v->ob_type->tp_as_number != NULL) {
 		object *x;
 		object * (*f) FPROTO((object *, object *));
@@ -1774,7 +1774,7 @@ static object *
 xor(v, w)
 	object *v, *w;
 {
-	BINOP("__xor__", "__rxor__");
+	BINOP("__xor__", "__rxor__", xor);
 	if (v->ob_type->tp_as_number != NULL) {
 		object *x;
 		object * (*f) FPROTO((object *, object *));
@@ -1795,7 +1795,7 @@ static object *
 and(v, w)
 	object *v, *w;
 {
-	BINOP("__and__", "__rand__");
+	BINOP("__and__", "__rand__", and);
 	if (v->ob_type->tp_as_number != NULL) {
 		object *x;
 		object * (*f) FPROTO((object *, object *));
@@ -1816,7 +1816,7 @@ static object *
 lshift(v, w)
 	object *v, *w;
 {
-	BINOP("__lshift__", "__rlshift__");
+	BINOP("__lshift__", "__rlshift__", lshift);
 	if (v->ob_type->tp_as_number != NULL) {
 		object *x;
 		object * (*f) FPROTO((object *, object *));
@@ -1837,7 +1837,7 @@ static object *
 rshift(v, w)
 	object *v, *w;
 {
-	BINOP("__rshift__", "__rrshift__");
+	BINOP("__rshift__", "__rrshift__", rshift);
 	if (v->ob_type->tp_as_number != NULL) {
 		object *x;
 		object * (*f) FPROTO((object *, object *));
@@ -1858,7 +1858,7 @@ static object *
 add(v, w)
 	object *v, *w;
 {
-	BINOP("__add__", "__radd__");
+	BINOP("__add__", "__radd__", add);
 	if (v->ob_type->tp_as_sequence != NULL)
 		return (*v->ob_type->tp_as_sequence->sq_concat)(v, w);
 	else if (v->ob_type->tp_as_number != NULL) {
@@ -1878,7 +1878,7 @@ static object *
 sub(v, w)
 	object *v, *w;
 {
-	BINOP("__sub__", "__rsub__");
+	BINOP("__sub__", "__rsub__", sub);
 	if (v->ob_type->tp_as_number != NULL) {
 		object *x;
 		if (coerce(&v, &w) != 0)
@@ -1898,7 +1898,7 @@ mul(v, w)
 {
 	typeobject *tp;
 	tp = v->ob_type;
-	BINOP("__mul__", "__rmul__");
+	BINOP("__mul__", "__rmul__", mul);
 	if (tp->tp_as_number != NULL &&
 	    w->ob_type->tp_as_sequence != NULL &&
 	    !is_instanceobject(v)) {
@@ -1942,7 +1942,7 @@ static object *
 divide(v, w)
 	object *v, *w;
 {
-	BINOP("__div__", "__rdiv__");
+	BINOP("__div__", "__rdiv__", divide);
 	if (v->ob_type->tp_as_number != NULL) {
 		object *x;
 		if (coerce(&v, &w) != 0)
@@ -1957,13 +1957,13 @@ divide(v, w)
 }
 
 static object *
-rem(v, w)
+mod(v, w)
 	object *v, *w;
 {
 	if (is_stringobject(v)) {
 		return formatstring(v, w);
 	}
-	BINOP("__mod__", "__rmod__");
+	BINOP("__mod__", "__rmod__", mod);
 	if (v->ob_type->tp_as_number != NULL) {
 		object *x;
 		if (coerce(&v, &w) != 0)
