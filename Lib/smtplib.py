@@ -168,14 +168,14 @@ def quoteaddr(addr):
 
     Should be able to handle anything rfc822.parseaddr can handle.
     """
-    m=None
+    m = (None, None)
     try:
         m=rfc822.parseaddr(addr)[1]
     except AttributeError:
         pass
-    if not m:
+    if m == (None, None): # Indicates parse failure or AttributeError
         #something weird here.. punt -ddm
-        return addr
+        return "<%s>" % addr
     else:
         return "<%s>" % m
 
