@@ -24,7 +24,8 @@ Here are some of the useful functions provided by this module:
 
 # This module is in the public domain.  No warranties.
 
-__version__ = 'Ka-Ping Yee <ping@lfw.org>, 1 Jan 2001'
+__author__ = 'Ka-Ping Yee <ping@lfw.org>'
+__date__ = '1 Jan 2001'
 
 import sys, types, string, dis, imp, tokenize
 
@@ -196,7 +197,7 @@ modulesbyfile = {}
 def getmodule(object):
     """Try to guess which module an object was defined in."""
     if isclass(object):
-        return sys.modules[object.__module__]
+        return sys.modules.get(object.__module__)
     try:
         file = getsourcefile(object)
     except TypeError:
@@ -630,3 +631,5 @@ def stack(context=1):
 def trace(context=1):
     """Return a list of records for the stack below the current exception."""
     return getinnerframes(sys.exc_traceback, context)
+
+
