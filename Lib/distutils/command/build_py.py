@@ -53,11 +53,11 @@ class build_py (Command):
         self.packages = self.distribution.packages
         self.py_modules = self.distribution.py_modules
         self.package_data = self.distribution.package_data
-        self.data_files = self.get_data_files()
         self.package_dir = {}
         if self.distribution.package_dir:
             for name, path in self.distribution.package_dir.items():
                 self.package_dir[name] = convert_path(path)
+        self.data_files = self.get_data_files()
 
         # Ick, copied straight from install_lib.py (fancy_getopt needs a
         # type system!  Hell, *everything* needs a type system!!!)
