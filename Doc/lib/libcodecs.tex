@@ -65,40 +65,41 @@ tuple is stored in the cache and returned to the caller.
 To simplify working with encoded files or stream, the module
 also defines these utility functions:
 
-\begin{funcdesc}{open}{filename, mode\optional{, encoding=None\optional{, errors='strict'\optional{, buffering=1}}}}
+\begin{funcdesc}{open}{filename, mode\optional{, encoding\optional{,
+                       errors\optional{, buffering}}}}
 Open an encoded file using the given \var{mode} and return
 a wrapped version providing transparent encoding/decoding.
 
 \strong{Note:} The wrapped version will only accept the object format
-defined by the codecs, i.e. Unicode objects for most builtin
-codecs. Output is also codec dependent and will usually by Unicode as
+defined by the codecs, i.e.\ Unicode objects for most built-in
+codecs.  Output is also codec-dependent and will usually be Unicode as
 well.
 
 \var{encoding} specifies the encoding which is to be used for the
 the file.
 
 \var{errors} may be given to define the error handling. It defaults
-to 'strict' which causes a \exception{ValueError} to be raised in case
-an encoding error occurs.
+to \code{'strict'} which causes a \exception{ValueError} to be raised
+in case an encoding error occurs.
 
 \var{buffering} has the same meaning as for the built-in
 \function{open()} function.  It defaults to line buffered.
 \end{funcdesc}
 
-\begin{funcdesc}{EncodedFile}{file, input\optional{, output=None\optional{, errors='strict'}}}
-
+\begin{funcdesc}{EncodedFile}{file, input\optional{,
+                              output\optional{, errors}}}
 Return a wrapped version of file which provides transparent
 encoding translation.
 
 Strings written to the wrapped file are interpreted according to the
 given \var{input} encoding and then written to the original file as
-string using the \var{output} encoding. The intermediate encoding will
+strings using the \var{output} encoding. The intermediate encoding will
 usually be Unicode but depends on the specified codecs.
 
-If \var{output} is not given, it defaults to input.
+If \var{output} is not given, it defaults to \var{input}.
 
 \var{errors} may be given to define the error handling. It defaults to
-'strict' which causes \exception{ValueError} to be raised in case
+\code{'strict'}, which causes \exception{ValueError} to be raised in case
 an encoding error occurs.
 \end{funcdesc}
 

@@ -21,7 +21,7 @@ Unix.
                            characters, regardless of your locale
                            settings.}
   \seemodule{curses.textbox}{Editable text widget for curses supporting 
-			   Emacs-like bindings.}
+			     Emacs-like bindings.}
   \seetext{Tutorial material on using curses with Python is available
            on the Python Web site as Andrew Kuchling's
 \citetitle[http://www.python.org/doc/howto/curses/curses.html]{Curses
@@ -349,10 +349,10 @@ Leave echo mode.  Echoing of input characters is turned off,
 Leave newline mode.  Disable translation of return into newline on
 input, and disable low-level translation of newline into
 newline/return on output (but this does not change the behavior of
-addch('\n') which always does the equivalent of return and line feed
-on the virtual screen).  With translation off, curses can sometimes speed
-up vertical motion a little; also, it will be able to detect the
-return key on input
+\code{addch('\e n')}, which always does the equivalent of return and
+line feed on the virtual screen).  With translation off, curses can
+sometimes speed up vertical motion a little; also, it will be able to
+detect the return key on input.
 \end{funcdesc}
 
 \begin{funcdesc}{noqiflush}{}
