@@ -1,6 +1,4 @@
 /***********************************************************
-Copyright 1992 by Lance Ellinghouse (lance@markv.com).
-
 Copyright 1991, 1992 by Stichting Mathematisch Centrum, Amsterdam, The
 Netherlands.
 
@@ -23,6 +21,19 @@ ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT
 OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 ******************************************************************/
+/******************************************************************
+Copyright 1992 by Lance Ellinghouse (lance@markv.com)
+
+All Rights Reserved
+
+Permission to use, copy, distribute for any purpose and without fee
+is hereby granted, provided that this copyright notice appear in
+all copies and that both this copyright notice and this permission
+notice appear in supporting documentation.
+Permission to make any changes is granted on the basis that all
+changes and improvements are also forwarded to Lance Ellinghouse
+before distribution.
+******************************************************************/
 
 /* This creates an encryption and decryption engine I am calling
    a rotor due to the original design was a harware rotor with
@@ -35,8 +46,18 @@ Rotor Module:
 
 Rotor Objects:
 
+-  ro.setkey('string') -> None (resets the key as defined in newrotor().
 -  ro.encrypt('string') -> encrypted string
 -  ro.decrypt('encrypted string') -> unencrypted string
+
+-  ro.encryptmore('string') -> encrypted string
+-  ro.decryptmore('encrypted string') -> unencrypted string
+
+NOTE: the {en,de}cryptmore() methods use the setup that was
+      established via the {en,de}crypt calls. They will NOT
+      re-initalize the rotors unless: 1) They have not been
+      initalized with {en,de}crypt since the last setkey() call;
+      2) {en,de}crypt has not been called for this rotor yet.
 
 NOTE: you MUST use the SAME key in rotor.newrotor()
       if you wish to decrypt an encrypted string.
@@ -51,11 +72,14 @@ NOTE: you MUST use the SAME key in rotor.newrotor()
 #include "modsupport.h"
 #include <stdio.h>
 #include <math.h>
+#define TRUE	1
+#define FALSE	0
 
 typedef struct {
 	OB_HEAD
 	int seed[3];
     	short key[5];
+	int  isinited;
 	int  size;
 	int  size_mask;
     	int  rotors;
@@ -79,6 +103,7 @@ rotorobject *r;
 	r->seed[0] = r->key[0];
 	r->seed[1] = r->key[1];
 	r->seed[2] = r->key[2];
+	r->isinited = FALSE;
 }
 	
 /* Return the next random number in the range [0.0 .. 1.0) */
@@ -120,6 +145,7 @@ static short r_rand(r,s)
 rotorobject *r;
 short s;
 {
+	/*short tmp = (short)((int)(r_random(r) * (float)32768.0) % 32768);*/
 	short tmp = (short)((short)(r_random(r) * (float)s) % s);
 	return tmp;
 }
@@ -360,6 +386,7 @@ static void RTR_init(r)
 		r->advances[i] = (1+(2*(r_rand(r,r->size/2))));
 		RTR_permute_rotor(r,&(r->e_rotor[(i*r->size)]),&(r->d_rotor[(i*r->size)]));
 	}
+	r->isinited = TRUE;
 }
 
 /*(defun RTR-advance ()
@@ -497,13 +524,15 @@ static unsigned char RTR_d_char(r, c)
 	(let ((fc (following-char)))
 	  (insert-char (RTR-e-char fc) 1)
 	  (delete-char 1))))))*/
-static void RTR_e_region(r, beg, len)
+static void RTR_e_region(r, beg, len, doinit)
 	rotorobject *r;
 	unsigned char *beg;
 	int len;
+	int doinit;
 {
 	register int i;
-	RTR_init(r);
+	if (doinit || r->isinited == FALSE)
+		RTR_init(r);
 	for (i=0;i<len;i++) {
 		beg[i]=RTR_e_char(r,beg[i]);
 	}
@@ -519,13 +548,15 @@ static void RTR_e_region(r, beg, len)
 	(let ((fc (following-char)))
 	  (insert-char (RTR-d-char fc) 1)
 	  (delete-char 1))))))*/
-void static RTR_d_region(r, beg, len)
+void static RTR_d_region(r, beg, len, doinit)
 	rotorobject *r;
 	unsigned char *beg;
 	int len;
+	int doinit;
 {
 	register int i;
-	RTR_init(r);
+	if (doinit || r->isinited == FALSE)
+		RTR_init(r);
 	for (i=0;i<len;i++) {
 		beg[i]=RTR_d_char(r,beg[i]);
 	}
@@ -605,7 +636,31 @@ rotor_encrypt(self, args)
 	}
 	memset(tmp,'\0',len+1);
 	memcpy(tmp,string,len);
-	RTR_e_region(self,tmp,len);
+	RTR_e_region(self,tmp,len, TRUE);
+	rtn = newsizedstringobject(tmp,len);
+	free(tmp);
+	return(rtn);
+}
+
+static object *
+rotor_encryptmore(self, args)
+	rotorobject *self;
+	object *args;
+{
+	char *string = (char *)NULL;
+	int len = 0;
+	object *rtn = (object *)NULL;
+	char *tmp;
+
+	if (!getargs(args,"s#",&string, &len))
+		return NULL;
+	if (!(tmp = (char *)malloc(len+5))) {
+		err_nomem();
+		return NULL;
+	}
+	memset(tmp,'\0',len+1);
+	memcpy(tmp,string,len);
+	RTR_e_region(self,tmp,len, FALSE);
 	rtn = newsizedstringobject(tmp,len);
 	free(tmp);
 	return(rtn);
@@ -629,7 +684,31 @@ rotor_decrypt(self, args)
 	}
 	memset(tmp,'\0',len+1);
 	memcpy(tmp,string,len);
-	RTR_d_region(self,tmp,len);
+	RTR_d_region(self,tmp,len, TRUE);
+	rtn = newsizedstringobject(tmp,len);
+	free(tmp);
+	return(rtn);
+}
+
+static object *
+rotor_decryptmore(self, args)
+	rotorobject *self;
+	object *args;
+{
+	char *string = (char *)NULL;
+	int len = 0;
+	object *rtn = (object *)NULL;
+	char *tmp;
+
+	if (!getargs(args,"s#",&string, &len))
+		return NULL;
+	if (!(tmp = (char *)malloc(len+5))) {
+		err_nomem();
+		return NULL;
+	}
+	memset(tmp,'\0',len+1);
+	memcpy(tmp,string,len);
+	RTR_d_region(self,tmp,len, FALSE);
 	rtn = newsizedstringobject(tmp,len);
 	free(tmp);
 	return(rtn);
@@ -651,7 +730,9 @@ rotor_setkey(self, args)
 
 static struct methodlist rotor_methods[] = {
 	{"encrypt",	rotor_encrypt},
+	{"encryptmore",	rotor_encryptmore},
 	{"decrypt",	rotor_decrypt},
+	{"decryptmore",	rotor_decryptmore},
 	{"setkey",	rotor_setkey},
 	{NULL,		NULL}		/* sentinel */
 };
