@@ -65,7 +65,7 @@ builtin___import__(self, args)
 	if (!PyArg_ParseTuple(args, "s|OOO:__import__",
 			&name, &globals, &locals, &fromlist))
 		return NULL;
-	return PyImport_ImportModule(name);
+	return PyImport_ImportModuleEx(name, globals, locals, fromlist);
 }
 
 

@@ -1408,16 +1408,10 @@ eval_code2(co, globals, locals,
 						"__import__ not found");
 				break;
 			}
-			if (PyCFunction_Check(x)) {
-				u = Py_None;
-				Py_INCREF(u);
-			}
-			else {
-				u = find_from_args(f, INSTR_OFFSET());
-				if (u == NULL) {
-					x = u;
-					break;
-				}
+			u = find_from_args(f, INSTR_OFFSET());
+			if (u == NULL) {
+				x = u;
+				break;
 			}
 			w = Py_BuildValue("(OOOO)",
 				    w,
