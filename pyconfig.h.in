@@ -611,6 +611,9 @@
 /* Define if you have the <ndir.h> header file.  */
 #undef HAVE_NDIR_H
 
+/* Define if you have the <netpacket/packet.h> header file.  */
+#undef HAVE_NETPACKET_PACKET_H
+
 /* Define if you have the <poll.h> header file.  */
 #undef HAVE_POLL_H
 
