@@ -11,7 +11,6 @@ __version__ = "0.6"
 __all__ = ["SimpleHTTPRequestHandler"]
 
 import os
-import string
 import posixpath
 import BaseHTTPServer
 import urllib
@@ -131,7 +130,7 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
         """
         path = posixpath.normpath(urllib.unquote(path))
-        words = string.splitfields(path, '/')
+        words = path.splitfields('/')
         words = filter(None, words)
         path = os.getcwd()
         for word in words:
@@ -175,7 +174,7 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         base, ext = posixpath.splitext(path)
         if self.extensions_map.has_key(ext):
             return self.extensions_map[ext]
-        ext = string.lower(ext)
+        ext = ext.lower()
         if self.extensions_map.has_key(ext):
             return self.extensions_map[ext]
         else:
