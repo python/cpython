@@ -79,6 +79,7 @@ if sys.platform.lower().startswith("win"):
     errorTab[10063] = "The name is too long."
     errorTab[10064] = "The host is down."
     errorTab[10065] = "The host is unreachable."
+    __all__.append("errorTab")
 del os, sys
 
 
