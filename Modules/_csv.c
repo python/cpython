@@ -7,7 +7,7 @@ module.  Users should not use this module directly, but import the csv.py
 module instead.
 
 **** For people modifying this code, please note that as of this writing
-**** (2003-03-23), it is intended that this code should work with Python
+**** (2003-03-23), it is intended t hat this code should work with Python
 **** 2.2.
 
 */
@@ -270,7 +270,6 @@ static void
 Dialect_dealloc(DialectObj *self)
 {
         Py_XDECREF(self->lineterminator);
-	/*PyMem_DEL(self);*/
         self->ob_type->tp_free((PyObject *)self);
 }
 
