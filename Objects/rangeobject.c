@@ -22,9 +22,7 @@ typedef struct {
 
 
 PyObject *
-PyRange_New(start, len, step, reps)
-	long start, len, step;
-	int reps;
+PyRange_New(long start, long len, long step, int reps)
 {
 	rangeobject *obj = PyObject_NEW(rangeobject, &PyRange_Type);
 
@@ -37,16 +35,13 @@ PyRange_New(start, len, step, reps)
 }
 
 static void
-range_dealloc(r)
-	rangeobject *r;
+range_dealloc(rangeobject *r)
 {
 	PyObject_DEL(r);
 }
 
 static PyObject *
-range_item(r, i)
-	rangeobject *r;
-	int i;
+range_item(rangeobject *r, int i)
 {
 	if (i < 0 || i >= r->len * r->reps) {
 		PyErr_SetString(PyExc_IndexError,
@@ -58,17 +53,13 @@ range_item(r, i)
 }
 
 static int
-range_length(r)
-	rangeobject *r;
+range_length(rangeobject *r)
 {
 	return r->len * r->reps;
 }
 
 static int
-range_print(r, fp, flags)
-	rangeobject *r;
-	FILE *fp;
-	int flags;
+range_print(rangeobject *r, FILE *fp, int flags)
 {
 	int i, j;
 
@@ -88,8 +79,7 @@ range_print(r, fp, flags)
 }
 
 static PyObject *
-range_repr(r)
-	rangeobject *r;
+range_repr(rangeobject *r)
 {
 	char buf[80];
 	sprintf(buf, "(xrange(%ld, %ld, %ld) * %d)",
@@ -101,18 +91,14 @@ range_repr(r)
 }
 
 static PyObject *
-range_concat(r, obj)
-	rangeobject *r;
-	PyObject *obj;
+range_concat(rangeobject *r, PyObject *obj)
 {
 	PyErr_SetString(PyExc_TypeError, "cannot concatenate xrange objects");
 	return NULL;
 }
 
 static PyObject *
-range_repeat(r, n)
-	rangeobject *r;
-	int n;
+range_repeat(rangeobject *r, int n)
 {
 	if (n < 0)
 		return (PyObject *) PyRange_New(0, 0, 1, 1);
@@ -131,8 +117,7 @@ range_repeat(r, n)
 }
 
 static int
-range_compare(r1, r2)
-	rangeobject *r1, *r2;
+range_compare(rangeobject *r1, rangeobject *r2)
 {
 	if (r1->start != r2->start)
 		return r1->start - r2->start;
@@ -148,9 +133,7 @@ range_compare(r1, r2)
 }
 
 static PyObject *
-range_slice(r, low, high)
-	rangeobject *r;
-	int low, high;
+range_slice(rangeobject *r, int low, int high)
 {
 	if (r->reps != 1) {
 		PyErr_SetString(PyExc_TypeError,
@@ -181,9 +164,7 @@ range_slice(r, low, high)
 }
 
 static PyObject *
-range_tolist(self, args)
-rangeobject *self;
-PyObject *args;
+range_tolist(rangeobject *self, PyObject *args)
 {
 	PyObject *thelist;
 	int j;
@@ -204,9 +185,7 @@ PyObject *args;
 }
 
 static PyObject *
-range_getattr(r, name)
-	rangeobject *r;
-	char *name;
+range_getattr(rangeobject *r, char *name)
 {
 	static PyMethodDef range_methods[] = {
 		{"tolist",	(PyCFunction)range_tolist},
@@ -217,9 +196,7 @@ range_getattr(r, name)
 }
 
 static int
-range_contains(r, obj)
-	rangeobject * r;
-	PyObject * obj;
+range_contains(rangeobject *r, PyObject *obj)
 {
 	long num = PyInt_AsLong(obj);
 	
