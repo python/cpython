@@ -1,7 +1,8 @@
 \section{Standard Module \sectcode{user}}
 \label{module-user}
 \stmodindex{user}
-\kwindex{.pythonrc.py}
+\indexii{.pythonrc.py}{file}
+\indexiii{user}{configuration}{file}
 
 As a policy, Python doesn't run user-specified code on startup of
 Python programs.  (Only interactive sessions execute the script
@@ -57,5 +58,7 @@ arbitrary code in the \file{.pythonrc.py} file.
 Modules for general use should \emph{not} import this module; it may
 interfere with the operation of the importing program.
 
-For a site-wide customization mechanism, see module \code{site}.
+\begin{seealso}
+\seemodule{site}{site-wide customization mechanism}
 \refstmodindex{site}
+\end{seealso}
