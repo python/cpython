@@ -3,19 +3,25 @@
 __all__ = ["Repr","repr"]
 
 import __builtin__
+from itertools import islice
 
 class Repr:
+
     def __init__(self):
         self.maxlevel = 6
         self.maxtuple = 6
         self.maxlist = 6
         self.maxarray = 5
         self.maxdict = 4
+        self.maxset = 6
+        self.maxfrozenset = 6
         self.maxstring = 30
         self.maxlong = 40
         self.maxother = 20
+
     def repr(self, x):
         return self.repr1(x, self.maxlevel)
+
     def repr1(self, x, level):
         typename = type(x).__name__
         if ' ' in typename:
@@ -30,58 +36,52 @@ class Repr:
                 j = max(0, self.maxother-3-i)
                 s = s[:i] + '...' + s[len(s)-j:]
             return s
+
+    def _repr_iterable(self, x, level, left, right, maxiter, final=''):
+        n = len(x)
+        if level <= 0 and n:
+            s = '...'
+        else:
+            newlevel = level - 1
+            repr1 = self.repr1
+            pieces = [repr1(elem, newlevel) for elem in islice(x, maxiter)]
+            if n > maxiter:  pieces.append('...')
+            s = ', '.join(pieces)
+            if n == 1 and final:  s += final
+        return '%s%s%s' % (left, s, right)
+
     def repr_tuple(self, x, level):
-        n = len(x)
-        if n == 0: return '()'
-        if level <= 0: return '(...)'
-        s = ''
-        for i in range(min(n, self.maxtuple)):
-            if s: s = s + ', '
-            s = s + self.repr1(x[i], level-1)
-        if n > self.maxtuple: s = s + ', ...'
-        elif n == 1: s = s + ','
-        return '(' + s + ')'
+        return self._repr_iterable(x, level, '(', ')', self.maxlist, ',')
+
     def repr_list(self, x, level):
-        n = len(x)
-        if n == 0: return '[]'
-        if level <= 0: return '[...]'
-        s = ''
-        for i in range(min(n, self.maxlist)):
-            if s: s = s + ', '
-            s = s + self.repr1(x[i], level-1)
-        if n > self.maxlist: s = s + ', ...'
-        return '[' + s + ']'
+        return self._repr_iterable(x, level, '[', ']', self.maxlist)
 
     def repr_array(self, x, level):
-        n = len(x)
         header = "array('%s', [" % x.typecode
-        if n == 0:
-            return header + "])"
-        if level <= 0:
-            return header + "...])"
-        s = ''
-        for i in range(min(n, self.maxarray)):
-            if s:
-                s += ', '
-            s += self.repr1(x[i], level-1)
-        if n > self.maxarray:
-            s += ', ...'
-        return header + s + "])"
+        return self._repr_iterable(x, level, header, '])', self.maxarray)
+
+    def repr_set(self, x, level):
+        return self._repr_iterable(x, level, 'set([', '])', self.maxset)
+
+    def repr_frozenset(self, x, level):
+        return self._repr_iterable(x, level, 'frozenset([', '])',
+                                   self.maxfrozenset)
 
     def repr_dict(self, x, level):
         n = len(x)
         if n == 0: return '{}'
         if level <= 0: return '{...}'
-        s = ''
-        keys = x.keys()
-        keys.sort()
-        for i in range(min(n, self.maxdict)):
-            if s: s = s + ', '
-            key = keys[i]
-            s = s + self.repr1(key, level-1)
-            s = s + ': ' + self.repr1(x[key], level-1)
-        if n > self.maxdict: s = s + ', ...'
-        return '{' + s + '}'
+        newlevel = level - 1
+        repr1 = self.repr1
+        pieces = []
+        for key in islice(sorted(x), self.maxdict):
+            keyrepr = repr1(key, newlevel)
+            valrepr = repr1(x[key], newlevel)
+            pieces.append('%s: %s' % (keyrepr, valrepr))
+        if n > self.maxdict: pieces.append('...')
+        s = ', '.join(pieces)
+        return '{%s}' % (s,)
+
     def repr_str(self, x, level):
         s = __builtin__.repr(x[:self.maxstring])
         if len(s) > self.maxstring:
@@ -90,6 +90,7 @@ class Repr:
             s = __builtin__.repr(x[:i] + x[len(x)-j:])
             s = s[:i] + '...' + s[len(s)-j:]
         return s
+
     def repr_long(self, x, level):
         s = __builtin__.repr(x) # XXX Hope this isn't too slow...
         if len(s) > self.maxlong:
@@ -97,6 +98,7 @@ class Repr:
             j = max(0, self.maxlong-3-i)
             s = s[:i] + '...' + s[len(s)-j:]
         return s
+
     def repr_instance(self, x, level):
         try:
             s = __builtin__.repr(x)
