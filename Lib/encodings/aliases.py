@@ -36,6 +36,7 @@ aliases = {
     # ASCII
     'us_ascii': 'ascii',
     'ansi_x3.4_1968': 'ascii', # used on Linux
+    'ansi-x3-4-1968': 'ascii', # used on BSD?
     '646': 'ascii',            # used on Solaris
 
     # EBCDIC
