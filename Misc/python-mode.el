@@ -1209,6 +1209,7 @@ zero argument, toggles the shell."
 	    msg "JPython"
 	    mode-name "JPython"))
      )
+    (message "Using the %s shell" msg)
     (setq py-output-buffer (format "*%s Output*" py-which-bufname))))
 
 ;;;###autoload
