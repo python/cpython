@@ -56,13 +56,15 @@ by \code{\e 777}.
 
 Unicode strings, just like regular strings, are an immutable sequence
 type, so they can be indexed and sliced.  They also have an
-\method{encode( \optional{\var{encoding}} )} method that returns an 8-bit
-string in the desired encoding.  Encodings are named by strings, such
-as \code{'ascii'}, \code{'utf-8'}, \code{'iso-8859-1'}, or whatever.
-A codec API is defined for implementing and registering new encodings
-that are then available throughout a Python program.  If an encoding
-isn't specified, the default encoding is always 7-bit ASCII.  (XXX is
-that the current default encoding?)
+\method{encode( \optional{\var{encoding}} )} method that returns an
+8-bit string in the desired encoding.  Encodings are named by strings,
+such as \code{'ascii'}, \code{'utf-8'}, \code{'iso-8859-1'}, or
+whatever.  A codec API is defined for implementing and registering new
+encodings that are then available throughout a Python program.  If an
+encoding isn't specified, the default encoding is usually 7-bit ASCII,
+though it can be changed for your Python installation by calling the
+\function{sys.setdefaultencoding(\var{encoding})} function in a
+customized version of \file{site.py}.
 
 Combining 8-bit and Unicode strings always coerces to Unicode, using
 the default ASCII encoding; the result of \code{'a' + u'bc'} is
@@ -154,10 +156,11 @@ Unicode-aware regular expressions are available through the
 \module{re} module, which has a new underlying implementation called
 SRE written by Fredrik Lundh of Secret Labs AB. 
 
-(XXX M.A. Lemburg added a -U command line option, which causes the
-Python compiler to interpret all "..."  strings as u"..." (same with
-r"..." and ur"...").  Is this just for experimenting/testing, or is it
-actually a new feature?)
+A \code{-U} command line option was added which causes the Python
+compiler to interpret all string literals as Unicode string literals.
+This is intended to be used in testing and future-proofing your Python
+code, since some future version of Python may drop support for 8-bit
+strings and provide only Unicode strings.
 
 % ======================================================================
 \section{Distutils: Making Modules Easy to Install}
@@ -560,7 +563,7 @@ particular module.
 
 \item{\module{filecmp}:} Supersedes the old \module{cmp} and
 \module{dircmp} modules, which have now become deprecated.
-(Contributed by Moshe Zadka.)
+(Contributed by Gordon MacMillan and Moshe Zadka.)
 
 \item{\module{linuxaudio}:} Support for the \file{/dev/audio} device on Linux,
 a twin to the existing \module{sunaudiodev} module.
@@ -599,7 +602,6 @@ archives.  These are archives produced by \program{PKZIP} on
 DOS/Windows or \program{zip} on Unix, not to be confused with
 \program{gzip}-format files (which are supported by the \module{gzip}
 module)
-
 (Contributed by James C. Ahlstrom.)
 
 \end{itemize}
@@ -607,8 +609,36 @@ module)
 % ======================================================================
 \section{IDLE Improvements}
 
-XXX IDLE -- complete overhaul.  I don't use IDLE; can anyone tell me
-what the changes are?
+IDLE is the official Python cross-platform IDE, written using Tkinter.
+Python 1.6 includes IDLE 0.6, which adds a number of new features and
+improvements.  A partial list:
+
+\begin{itemize}
+\item  UI improvements and optimizations,
+especially in the area of syntax highlighting and auto-indentation.
+
+\item The class browser now shows more information, such as the top
+level functions in a module (XXX did I interpret that right?).
+
+\item Tab width is now a user settable option. When opening an existing Python
+file, IDLE automatically detects the indentation conventions, and adapts.
+
+\item There is now support for calling browsers on various platforms,
+used to open the Python documentation in a browser.
+
+\item IDLE now has a command line, which is largely similar to 
+the vanilla Python interpreter.
+
+\item Call tips were added in many places.
+
+\item IDLE can now be installed as a package.
+
+\item In the editor window, there is now a line/column bar at the bottom.
+
+\item Three new keystroke commands: Check module (Alt-F5), Import
+module (F5) and Run script (Ctrl-F5)
+
+\end{itemize}
 
 % ======================================================================
 \section{Deleted and Deprecated Modules}
