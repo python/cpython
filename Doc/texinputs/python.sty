@@ -175,24 +175,30 @@
 \let\py@OldVerbatim=\verbatim
 \let\py@OldEndVerbatim=\endverbatim
 \RequirePackage{verbatim}
+\let\py@OldVerbatimInput=\verbatiminput
 
 % Variable used by begin code command
 \newlength{\py@codewidth}
 
 \renewcommand{\verbatim}{%
-  \setlength{\parindent}{1cm}%
-  % Calculate the text width for the minipage:
-  \setlength{\py@codewidth}{\linewidth}%
-  \addtolength{\py@codewidth}{-\parindent}%
-  %
-  \par\indent%
-  \begin{minipage}[t]{\py@codewidth}%
-    \small%
+  \begingroup%
+  \small%
+  \begin{list}{}{\setlength{\leftmargin}{1cm}}
+    \item%
     \py@OldVerbatim%
 }
 \renewcommand{\endverbatim}{%
     \py@OldEndVerbatim%
-  \end{minipage}%
+  \end{list}%
+  \endgroup
+}
+\renewcommand{\verbatiminput}[1]{%
+  {\small%
+   \begin{list}{}{\setlength{\leftmargin}{1cm}}
+     \item%
+     \py@OldVerbatimInput{#1}%
+   \end{list}
+  }%
 }
 
 % This does a similar thing for the {alltt} environment:
@@ -796,6 +802,7 @@
 % but only if we actually used hyperref:
 \ifpdf
   \newcommand{\url}[1]{{%
+    \noindent%
     \pdfstartlink attr{/Border [0 0 0]} user{/S /URI /URI (#1)}%
     \py@LinkColor%                              color of the link text
     \small\sf #1%
