@@ -283,7 +283,7 @@ class Module(Node):
         return "Module(%s, %s)" % (repr(self.doc), repr(self.node))
 
 class Expression(Node):
-    # Expression is an artifical node class to support "eval"
+    # Expression is an artificial node class to support "eval"
     nodes["expression"] = "Expression"
     def __init__(self, node):
         self.node = node

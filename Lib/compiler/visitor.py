@@ -66,7 +66,7 @@ class ExampleASTVisitor(ASTVisitor):
     """Prints examples of the nodes that aren't visited
 
     This visitor-driver is only useful for development, when it's
-    helpful to develop a visitor incremently, and get feedback on what
+    helpful to develop a visitor incrementally, and get feedback on what
     you still have to do.
     """
     examples = {}
