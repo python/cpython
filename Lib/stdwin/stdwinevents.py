@@ -44,3 +44,18 @@ WC_RETURN     =  9	# return or enter key
 WS_CLIPBOARD   = 0
 WS_PRIMARY     = 1
 WS_SECONDARY   = 2
+
+# Modifier masks in key and mouse events
+
+WM_SHIFT       = (1 << 0)
+WM_LOCK 	= (1 << 1)
+WM_CONTROL 	= (1 << 2)
+WM_META 	= (1 << 3)
+WM_OPTION 	= (1 << 4)
+WM_NUM 		= (1 << 5)
+
+WM_BUTTON1 	= (1 << 8)
+WM_BUTTON2 	= (1 << 9)
+WM_BUTTON3 	= (1 << 10)
+WM_BUTTON4 	= (1 << 11)
+WM_BUTTON5 	= (1 << 12)

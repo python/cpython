@@ -4,7 +4,7 @@
 
 # Example:
 #
-# >>> from nntp import NNTP
+# >>> from nntplib import NNTP
 # >>> s = NNTP().init('charon')
 # >>> resp, count, first, last, name = s.group('nlnet.misc')
 # >>> print 'Group', name, 'has', count, 'articles, range', first, 'to', last
@@ -32,12 +32,12 @@ import socket
 import string
 
 
-# Exception raiseds when an error or invalid response is received
+# Exception raised when an error or invalid response is received
 
-error_reply = 'nntp.error_reply'	# unexpected [123]xx reply
-error_function = 'nntp.error_function'	# 4xx errors
-error_form = 'nntp.error_form'		# 5xx errors
-error_protocol = 'nntp.error_protocol'	# response does not begin with [1-5]
+error_reply = 'nntplib.error_reply'	# unexpected [123]xx reply
+error_temp = 'nntplib.error_temp'	# 4xx errors
+error_perm = 'nntplib.error_perm'	# 5xx errors
+error_proto = 'nntplib.error_proto'	# response does not begin with [1-5]
 
 
 # Standard port used by NNTP servers
@@ -119,11 +119,11 @@ class NNTP:
 		if self.debugging: print '*resp*', `resp`
 		c = resp[:1]
 		if c == '4':
-			raise error_function, resp
+			raise error_temp, resp
 		if c == '5':
-			raise error_form, resp
+			raise error_perm, resp
 		if c not in '123':
-			raise error_protocol, resp
+			raise error_proto, resp
 		return resp
 
 	# Internal: get a response plus following text from the server.
@@ -342,7 +342,7 @@ class NNTP:
 
 	def ihave(self, id, f):
 		resp = self.shortcmd('IHAVE ' + id)
-		# Raises error_function if the server already has it
+		# Raises error_??? if the server already has it
 		if resp[0] <> '3':
 			raise error_reply, resp
 		while 1:
