@@ -1,34 +1,58 @@
-# Automatic Python regression test.
-#
-# Some essential parts of the Python interpreter are tested by the module
-# 'testall'.  (Despite its name, it doesn't test everything -- that would
-# be a truly Herculean task!)  When a test fails, 'testall' raises an
-# exception.  When all tests succeed, it produces quite a lot of output.
-#
-# For a normal regression test, this output is never looked at unless
-# something goes wrong.  Thus, it would be wise to suppress the output
-# normally.  This module does that, but it doesn't just throw the output
-# from 'testall' away -- it compares it with the output from a previous
-# run.  If a difference is noticed it raises an exception; if all is well,
-# it prints nothing except 'All tests OK.' at the very end.
-#
-# The output from a previous run is supposed to be in a file 'testall.out'
-# somewhere on the search path for modules (sys.path, initialized from
-# $PYTHONPATH plus some default places).
-#
-# Of course, if the normal output of the tests is changed because the
-# tests have been changed (rather than a test producing the wrong output),
-# 'autotest' will fail as well.  In this case, run 'testall' manually
-# and direct its output to 'testall.out'.
-#
-# The comparison uses (and demonstrates!) a rather new Python feature:
-# program output that normally goes to stdout (by 'print' statements
-# or by writing directly to sys.stdout) can be redirected to an
-# arbitrary class instance as long as it has a 'write' method.
+"""
+Automatic Python regression test.
+
+The list of individual tests is contained in the `testall' module.
+These test some (but not all) essential parts of the Python
+interpreter and built-in modules.  When a test fails, an exception is
+raised and testing halts.  When a test succeeds, it can produce quite
+a lot of output, which is compared against the output from a previous
+run.  If a difference is noticed it raises an exception; if all is
+well, it prints nothing except 'All tests OK.' at the very end.
+
+The output from a previous run is supposed to be contained in separate
+files (one per test) in the `Output' subdirectory somewhere on the
+search path for modules (sys.path, initialized from $PYTHONPATH plus
+some default places).
+
+Of course, if the normal output of the tests is changed because the
+tests have been changed (rather than a test producing the wrong
+output), 'autotest' will fail as well.  In this case, run 'autotest'
+with the -g option.
+
+Usage:
+
+    %s [-g] [-w] [-h] [test1 [test2 ...]]
+
+Options:
+
+    -g, --generate : generate the output files instead of verifying
+                     the results
+
+    -w, --warn     : warn about un-importable tests
+
+    -h, --help     : print this message
+
+If individual tests are provided on the command line, only those tests
+will be performed or generated.  Otherwise, all tests (as contained in
+testall.py) will be performed.
+
+"""
 
 import os
 import sys
+import getopt
+import traceback
+from test_support import *
 
+# Exception raised when the test failed (not the same as in test_support)
+TestFailed = 'autotest.TestFailed'
+
+# defaults
+generate = 0
+warn = 0
+
+
+
 # Function to find a file somewhere on sys.path
 def findfile(filename):
 	for dirname in sys.path:
@@ -37,9 +61,8 @@ def findfile(filename):
 			return fullname
 	return filename # Will cause exception later
 
-# Exception raised when the test failed (not the same as in test_support)
-TestFailed = 'autotest.TestFailed'
 
+
 # Class substituted for sys.stdout, to compare it with the given file
 class Compare:
 	def __init__(self, filename):
@@ -50,18 +73,73 @@ class Compare:
 			raise TestFailed, \
 				'Writing: '+`data`+', expected: '+`expected`
 	def close(self):
+		leftover = self.fp.read()
+		if leftover:
+			raise TestFailed, 'Unread: '+`leftover`
 		self.fp.close()
 
+
 # The main program
-def main():
-	import sys
-	filename = findfile('testall.out')
+def usage(status):
+	print __doc__ % sys.argv[0]
+	sys.exit(status)
+
+
+
+def do_one_test(t, outdir):
+	filename = os.path.join(outdir, t)
 	real_stdout = sys.stdout
 	try:
-		sys.stdout = Compare(filename)
-		import testall
+		if generate:
+			print 'Generating:', filename
+			sys.stdout = open(filename, 'w')
+		else:
+			sys.stdout = Compare(filename)
+		print t
+		unload(t)
+		try:
+			__import__(t, globals(), locals())
+		except ImportError, msg:
+			if warn:
+				sys.stderr.write(msg+': Un-installed'
+						 ' optional module?\n')
 	finally:
+		sys.stdout.close()
 		sys.stdout = real_stdout
+
+
+
+def main():
+	global generate
+	global warn
+	try:
+		opts, args = getopt.getopt(
+			sys.argv[1:], 'ghw',
+			['generate', 'help', 'warn'])
+	except getopt.error, msg:
+		print msg
+		usage(1)
+	for opt, val in opts:
+		if opt in ['-h', '--help']:
+			usage(0)
+		elif opt in ['-g', '--generate']:
+			generate = 1
+		elif opt in ['-w', '--warn']:
+			warn = 1
+
+	# find the output directory
+	outdir = findfile('Output')
+	if args:
+	    tests = args
+	else:
+	    import testall
+	    tests = testall.tests
+	for test in tests:
+		try:
+			do_one_test(test, outdir)
+		except TestFailed, msg:
+			print 'Failure of test:', test
+			traceback.print_exc()
 	print 'All tests OK.'
 
 main()
