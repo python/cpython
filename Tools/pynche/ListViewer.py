@@ -18,6 +18,8 @@ given name, without selecting the color.
 from Tkinter import *
 import ColorDB
 
+ADDTOVIEW = 'Color %List Window...'
+
 class ListViewer:
     def __init__(self, switchboard, master=None):
         self.__sb = switchboard
@@ -169,6 +171,6 @@ class ListViewer:
     def save_options(self, optiondb):
         optiondb['UPONCLICK'] = self.__uoc.get()
 
-    def flush(self):
+    def colordb_changed(self, colordb):
         self.__canvas.delete('all')
         self.__populate()
