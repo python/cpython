@@ -1,3 +1,16 @@
+What's New in Python 2.2.1 final?
+Release date: XX-Apr-2002
+=================================
+
+Core
+
+- Fixed two bugs reported as SF #535905: under certain conditions,
+  deallocating a deeply nested structure could cause a segfault in the
+  garbage collector, due to interaction with the "trashcan" code;
+  access to the current frame during destruction of a local variable
+  could access a pointer to freed memory.
+
+
 What's New in Python 2.2.1c2?
 Release date: 26-Mar-2002
 =============================
