@@ -215,6 +215,7 @@ static PyMethodDef PySignal_methods[] = {
 	{"signal",	PySignal_Signal},
 	{"getsignal",	PySignal_GetSignal},
 	{"pause",	PySignal_Pause},
+	{"default_int_handler", PySignal_CDefaultIntHandler},
 	{NULL,		NULL}		/* sentinel */
 };
 
@@ -240,11 +241,8 @@ initsignal()
 	PySignal_SignalIgnoreHandler = PyInt_FromLong((long)SIG_IGN);
 	PyDict_SetItemString(d, "SIG_IGN", PySignal_SignalIgnoreHandler);
 	PyDict_SetItemString(d, "NSIG", PyInt_FromLong((long)NSIG));
-	PySignal_DefaultIntHandler = PyCFunction_New("default_int_handler",
-						     PySignal_CDefaultIntHandler,
-						     (PyObject *)NULL,
-						     0);
-	PyDict_SetItemString(d, "default_int_handler", PySignal_DefaultIntHandler);
+	PySignal_DefaultIntHandler =
+		PyDict_GetItemString(d, "default_int_handler");
 
 	PySignal_SignalHandlerArray[0].tripped = 0;
 	for (i = 1; i < NSIG; i++) {
