@@ -1962,8 +1962,8 @@ int re_match(regexp_t bufp,
 		if (text == textstart || text == textend)
 			goto fail;
 		if (!((SYNTAX(text[-1]) & Sword) ^ (SYNTAX(*text) & Sword)))
-			goto fail;
-		goto continue_matching;
+      		        goto continue_matching;
+		goto fail;
 	}
 	case Csyntaxspec:
 	{
