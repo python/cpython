@@ -2,6 +2,26 @@ sSuffices
 GUSISetupConfig
 GUSISetupDevices
 GUSISetupFactories
+__vt__15GUSISIOUXDevice		# GUSISIOUXDevice::__vt
+__vt__15GUSISIOUXSocket		# GUSISIOUXSocket::__vt
+sInstance__15GUSISIOUXDevice		# GUSISIOUXDevice::sInstance
+sInstance__15GUSISIOUXSocket		# GUSISIOUXSocket::sInstance
+__dt__15GUSISIOUXDeviceFv		# GUSISIOUXDevice::~GUSISIOUXDevice()
+GUSISetupConsoleDescriptors
+open__15GUSISIOUXDeviceFR13GUSIFileTokeni		# GUSISIOUXDevice::open(GUSIFileToken&,int)
+Want__15GUSISIOUXDeviceFR13GUSIFileToken		# GUSISIOUXDevice::Want(GUSIFileToken&)
+__dt__10GUSIDeviceFv		# GUSIDevice::~GUSIDevice()
+Instance__15GUSISIOUXDeviceFv		# GUSISIOUXDevice::Instance()
+select__15GUSISIOUXSocketFPbPbPb		# GUSISIOUXSocket::select(bool*,bool*,bool*)
+isatty__15GUSISIOUXSocketFv		# GUSISIOUXSocket::isatty()
+fstat__15GUSISIOUXSocketFP4stat		# GUSISIOUXSocket::fstat(stat*)
+ioctl__15GUSISIOUXSocketFUiPc		# GUSISIOUXSocket::ioctl(unsigned int,char*)
+write__15GUSISIOUXSocketFRC12GUSIGatherer		# GUSISIOUXSocket::write(const GUSIGatherer&)
+read__15GUSISIOUXSocketFRC13GUSIScatterer		# GUSISIOUXSocket::read(const GUSIScatterer&)
+__dt__15GUSISIOUXSocketFv		# GUSISIOUXSocket::~GUSISIOUXSocket()
+Initialize__15GUSISIOUXSocketFv		# GUSISIOUXSocket::Initialize()
+__ct__15GUSISIOUXSocketFv		# GUSISIOUXSocket::GUSISIOUXSocket()
+Instance__15GUSISIOUXSocketFv		# GUSISIOUXSocket::Instance()
 _PyBuiltin_Init
 _PyEval_SliceIndex
 PyEval_CallObjectWithKeywords
@@ -95,6 +115,7 @@ PyMarshal_Init
 PyMarshal_WriteObjectToString
 PyMarshal_ReadObjectFromString
 PyMarshal_ReadObjectFromFile
+PyMarshal_ReadLastObjectFromFile
 PyMarshal_ReadLongFromFile
 PyMarshal_WriteObjectToFile
 PyMarshal_WriteLongToFile
@@ -125,6 +146,7 @@ Py_AtExit
 Py_FatalError
 PyParser_SimpleParseString
 PyParser_SimpleParseFile
+Py_SymtableString
 Py_CompileString
 PyRun_FileEx
 PyRun_File
@@ -151,6 +173,7 @@ _PyThreadState_Current
 PyThreadState_GetDict
 PyThreadState_Swap
 PyThreadState_Get
+PyThreadState_DeleteCurrent
 PyThreadState_Delete
 PyThreadState_Clear
 PyThreadState_New
@@ -174,8 +197,11 @@ PyTraceBack_Print
 PyTraceBack_Here
 PyCode_Type
 Py_OptimizeFlag
+PySymtable_Free
 PyCode_Addr2Line
+PyNode_CompileSymtable
 PyNode_Compile
+is_free
 PyCode_New
 PyObject_CallMethod
 PyObject_CallFunction
@@ -257,6 +283,7 @@ PyMethod_Self
 PyMethod_Function
 PyMethod_New
 PyInstance_New
+PyInstance_NewRaw
 PyClass_IsSubclass
 PyClass_New
 PyCObject_Type
@@ -320,6 +347,8 @@ PyFrame_BlockPop
 PyFrame_BlockSetup
 PyFrame_New
 PyFunction_Type
+PyFunction_SetClosure
+PyFunction_GetClosure
 PyFunction_SetDefaults
 PyFunction_GetDefaults
 PyFunction_GetGlobals
@@ -376,6 +405,7 @@ _Py_NoneStruct
 _Py_NotImplementedStruct
 _Py_cobject_hack
 _Py_abstract_hack
+PyObject_ClearWeakRefs
 _PyTrash_delete_later
 _PyTrash_delete_nesting
 _PyTrash_destroy_chain
@@ -402,9 +432,13 @@ PyObject_GetAttrString
 PyObject_Hash
 _Py_HashPointer
 _Py_HashDouble
+PyObject_RichCompareBool
+PyObject_RichCompare
 PyObject_Compare
+PyObject_Unicode
 PyObject_Str
 PyObject_Repr
+_PyObject_Dump
 PyObject_Print
 _PyGC_Remove
 _PyGC_Insert
@@ -569,11 +603,14 @@ SpinCursor
 PyMac_getscript
 PyMac_AppRefNum
 PyMac_options
+console_output_state
+PyMac_GetDelayConsoleFlag
 Py_GetExecPrefix
 Py_GetPrefix
 Py_GetArgcArgv
 Py_GetProgramFullPath
 PyMac_Exit
+PyMac_OutputNotSeen
 PyMac_OutputSeen
 PyMac_InitApplication
 PyMac_Initialize
@@ -626,6 +663,7 @@ initDlg
 DlgObj_ConvertToWindow
 DlgObj_Convert
 DlgObj_New
+DlgObj_WhichDialog
 MenuObj_chain
 Menu_Type
 initMenu
@@ -637,6 +675,7 @@ BMObj_chain
 BitMap_Type
 QDGlobalsAccess_Type
 initQd
+BMObj_NewCopied
 BMObj_Convert
 BMObj_New
 GrafObj_Convert
@@ -665,10 +704,10 @@ PyBuffer_FromObject
 _PyImport_DynLoadFiletab
 _PyImport_GetDynLoadFunc
 init_codecs
-initunicodedata
 _PyUnicode_Database_Records
 _PyUnicode_CategoryNames
 _PyUnicode_BidirectionalNames
+initunicodedata
 _PyCodecRegistry_Fini
 _PyCodecRegistry_Init
 PyCodec_Decode
@@ -820,91 +859,15 @@ dragglue_SendDataUPP
 initDrag
 DragObj_Convert
 DragObj_New
-__dc_arr
-__del_arr
-__new_arr
-__init_arr
-__copy
-__som_check_ev
-__som_check_new
-__vt__Q23std13bad_exception		# std::bad_exception::__vt
-__vt__Q23std9exception		# std::exception::__vt
-what__Q23std9exceptionCFv		# std::exception::what() const
-what__Q23std13bad_exceptionCFv		# std::bad_exception::what() const
-__end__catch
-__throw
-__dt__Q23std9exceptionFv		# std::exception::~exception()
-__unexpected
-__dt__Q23std13bad_exceptionFv		# std::bad_exception::~bad_exception()
-__unregister_fragment
-__register_fragment
-__global_destructor_chain
-__destroy_global_chain
-__register_global_object
-__destroy_new_array3
-__destroy_new_array2
-__destroy_new_array
-__destroy_arr
-__construct_array
-__dt__26__partial_array_destructorFv		# __partial_array_destructor::~__partial_array_destructor()
-__construct_new_array
-__throw_catch_compare
-unexpected__3stdFv		# std::unexpected()
-set_unexpected__3stdFPFv_v		# std::set_unexpected(void (*)(void))
-terminate__3stdFv		# std::terminate()
-set_terminate__3stdFPFv_v		# std::set_terminate(void (*)(void))
-__vt__Q23std8bad_cast		# std::bad_cast::__vt
-__vt__Q23std10bad_typeid		# std::bad_typeid::__vt
-what__Q23std10bad_typeidCFv		# std::bad_typeid::what() const
-what__Q23std8bad_castCFv		# std::bad_cast::what() const
-__dynamic_cast
-__dt__Q23std8bad_castFv		# std::bad_cast::~bad_cast()
-__get_typeid
-__dt__Q23std10bad_typeidFv		# std::bad_typeid::~bad_typeid()
-nothrow__3std		# std::nothrow
-__dla__FPvRCQ23std9nothrow_t		# operator delete[](void*,const std::nothrow_t&)
-__dl__FPvRCQ23std9nothrow_t		# operator delete(void*,const std::nothrow_t&)
-__dla__FPv		# operator delete[](void*)
-__nwa__FUlRCQ23std9nothrow_t		# operator new[](unsigned long,const std::nothrow_t&)
-__nwa__FUl		# operator new[](unsigned long)
-__dl__FPv		# operator delete(void*)
-__nw__FUlRCQ23std9nothrow_t		# operator new(unsigned long,const std::nothrow_t&)
-__nw__FUl		# operator new(unsigned long)
-__throws_bad_alloc__3std		# std::__throws_bad_alloc
-__vt__Q23std9bad_alloc		# std::bad_alloc::__vt
-__new_handler__3std		# std::__new_handler
-what__Q23std9bad_allocCFv		# std::bad_alloc::what() const
-__del_hdl
-__new_hdl
-set_new_handler__3stdFPFv_v		# std::set_new_handler(void (*)(void))
-__throw_bad_alloc__3stdFv		# std::__throw_bad_alloc()
-__dt__Q23std9bad_allocFv		# std::bad_alloc::~bad_alloc()
-qd
-exit
-abort
-__vt__15GUSISIOUXDevice		# GUSISIOUXDevice::__vt
-__vt__15GUSISIOUXSocket		# GUSISIOUXSocket::__vt
-sInstance__15GUSISIOUXDevice		# GUSISIOUXDevice::sInstance
-sInstance__15GUSISIOUXSocket		# GUSISIOUXSocket::sInstance
-__dt__15GUSISIOUXDeviceFv		# GUSISIOUXDevice::~GUSISIOUXDevice()
-GUSISetupConsoleDescriptors
-open__15GUSISIOUXDeviceFR13GUSIFileTokeni		# GUSISIOUXDevice::open(GUSIFileToken&,int)
-Want__15GUSISIOUXDeviceFR13GUSIFileToken		# GUSISIOUXDevice::Want(GUSIFileToken&)
-__dt__10GUSIDeviceFv		# GUSIDevice::~GUSIDevice()
-Instance__15GUSISIOUXDeviceFv		# GUSISIOUXDevice::Instance()
-select__15GUSISIOUXSocketFPbPbPb		# GUSISIOUXSocket::select(bool*,bool*,bool*)
-isatty__15GUSISIOUXSocketFv		# GUSISIOUXSocket::isatty()
-fstat__15GUSISIOUXSocketFP4stat		# GUSISIOUXSocket::fstat(stat*)
-ioctl__15GUSISIOUXSocketFUiPc		# GUSISIOUXSocket::ioctl(unsigned int,char*)
-write__15GUSISIOUXSocketFRC12GUSIGatherer		# GUSISIOUXSocket::write(const GUSIGatherer&)
-read__15GUSISIOUXSocketFRC13GUSIScatterer		# GUSISIOUXSocket::read(const GUSIScatterer&)
-__dt__15GUSISIOUXSocketFv		# GUSISIOUXSocket::~GUSISIOUXSocket()
-__ct__15GUSISIOUXSocketFv		# GUSISIOUXSocket::GUSISIOUXSocket()
-Instance__15GUSISIOUXSocketFv		# GUSISIOUXSocket::Instance()
+initxreadlines
+PyCell_Type
+PyCell_Set
+PyCell_Get
+PyCell_New
 GUSISetupConsoleStdio
 GUSIStdioFlush
 GUSIStdioClose
-fdopen__FiPCc		# fdopen(int,const char*)
+_fdopen
 __close_console
 __close_file
 __position_file
@@ -1057,6 +1020,7 @@ __dt__19GUSIDescriptorTableFv		# GUSIDescriptorTable::~GUSIDescriptorTable()
 CloseAllDescriptors__19GUSIDescriptorTableFv		# GUSIDescriptorTable::CloseAllDescriptors()
 SetInstance__19GUSIDescriptorTableFP19GUSIDescriptorTable		# GUSIDescriptorTable::SetInstance(GUSIDescriptorTable*)
 Instance__19GUSIDescriptorTableFv		# GUSIDescriptorTable::Instance()
+Instance__14GUSINullDeviceFv		# GUSINullDevice::Instance()
 GUSIDefaultSetupConsole
 GUSISetupConsole
 __ct__19GUSIDescriptorTableFv		# GUSIDescriptorTable::GUSIDescriptorTable()
@@ -1130,6 +1094,8 @@ socketpair__17GUSISocketFactoryFiiiPP10GUSISocket		# GUSISocketFactory::socketpa
 sID__16GUSITempFileSpec		# GUSITempFileSpec::sID
 sScratchSize__12GUSIFileSpec		# GUSIFileSpec::sScratchSize
 sScratch__12GUSIFileSpec		# GUSIFileSpec::sScratch
+GUSIFSpGetCatInfo
+GUSIFSpTouchFolder
 GUSIFSp2Encoding
 GUSIFSp2DirRelPath
 GUSIFSp2RelPath
@@ -1138,6 +1104,7 @@ GUSIFSpResolve
 GUSIFSpIndex
 GUSIFSpDown
 GUSIFSpUp
+GUSIMakeTempFSp
 GUSISpecial2FSp
 GUSIPath2FSp
 GUSIWD2FSp
@@ -1343,7 +1310,7 @@ GUSIwithLocalSockets
 __vt__12GUSIGatherer		# GUSIGatherer::__vt
 __vt__13GUSIScatterer		# GUSIScatterer::__vt
 get__40GUSISpecificData<Q23std2tm,&.GUSIKillTM>FP17GUSISpecificTable		# GUSISpecificData<std::tm, &.GUSIKillTM>::get(GUSISpecificTable*)
-faccess
+faccess__FPCcPUiPv		# faccess(const char*,unsigned int*,void*)
 fsetfileinfo
 fgetfileinfo
 getservent
@@ -1549,7 +1516,7 @@ alarm
 Restart__9GUSIAlarmFl		# GUSIAlarm::Restart(long)
 Wakeup__9GUSIAlarmFv		# GUSIAlarm::Wakeup()
 _exit
-abort
+abort__Fv		# abort()
 sigwait
 pause
 sigsuspend
@@ -1601,17 +1568,6 @@ __vt__21GUSIOTDatagramFactory		# GUSIOTDatagramFactory::__vt
 __vt__13GUSIOTFactory		# GUSIOTFactory::__vt
 __vt__19GUSIOTStreamFactory		# GUSIOTStreamFactory::__vt
 sOK__13GUSIOTFactory		# GUSIOTFactory::sOK
-__dl__18GUSIOT<7TDiscon,4>FPv		# GUSIOT<TDiscon, 4>::operator delete(void*)
-__nw__18GUSIOT<7TDiscon,4>FUlP9TEndpoint		# GUSIOT<TDiscon, 4>::operator new(unsigned long,TEndpoint*)
-__dl__17GUSIOT<6TUDErr,6>FPv		# GUSIOT<TUDErr, 6>::operator delete(void*)
-__nw__17GUSIOT<6TUDErr,6>FUlP9TEndpoint		# GUSIOT<TUDErr, 6>::operator new(unsigned long,TEndpoint*)
-__dl__16GUSIOT<5TCall,3>FPv		# GUSIOT<TCall, 3>::operator delete(void*)
-__nw__16GUSIOT<5TCall,3>FUlP9TEndpointi		# GUSIOT<TCall, 3>::operator new(unsigned long,TEndpoint*,int)
-__nw__16GUSIOT<5TCall,3>FUlP9TEndpoint		# GUSIOT<TCall, 3>::operator new(unsigned long,TEndpoint*)
-__dl__16GUSIOT<5TBind,1>FPv		# GUSIOT<TBind, 1>::operator delete(void*)
-__nw__16GUSIOT<5TBind,1>FUlP9TEndpoint		# GUSIOT<TBind, 1>::operator new(unsigned long,TEndpoint*)
-__dl__20GUSIOT<9TUnitData,5>FPv		# GUSIOT<TUnitData, 5>::operator delete(void*)
-__nw__20GUSIOT<9TUnitData,5>FUlP9TEndpointi		# GUSIOT<TUnitData, 5>::operator new(unsigned long,TEndpoint*,int)
 __dt__19GUSIOTStreamFactoryFv		# GUSIOTStreamFactory::~GUSIOTStreamFactory()
 __dt__13GUSIOTFactoryFv		# GUSIOTFactory::~GUSIOTFactory()
 __dt__21GUSIOTDatagramFactoryFv		# GUSIOTDatagramFactory::~GUSIOTDatagramFactory()
@@ -1683,10 +1639,12 @@ GUSIwithOTTcpSockets
 ioctl__15GUSIOTUdpSocketFUiPc		# GUSIOTUdpSocket::ioctl(unsigned int,char*)
 setsockopt__15GUSIOTUdpSocketFiiPvUi		# GUSIOTUdpSocket::setsockopt(int,int,void*,unsigned int)
 getsockopt__15GUSIOTUdpSocketFiiPvPUi		# GUSIOTUdpSocket::getsockopt(int,int,void*,unsigned int*)
+Clone__15GUSIOTUdpSocketFv		# GUSIOTUdpSocket::Clone()
 ConfigPath__17GUSIOTUdpStrategyFv		# GUSIOTUdpStrategy::ConfigPath()
 ioctl__15GUSIOTTcpSocketFUiPc		# GUSIOTTcpSocket::ioctl(unsigned int,char*)
 setsockopt__15GUSIOTTcpSocketFiiPvUi		# GUSIOTTcpSocket::setsockopt(int,int,void*,unsigned int)
 getsockopt__15GUSIOTTcpSocketFiiPvPUi		# GUSIOTTcpSocket::getsockopt(int,int,void*,unsigned int*)
+Clone__15GUSIOTTcpSocketFv		# GUSIOTTcpSocket::Clone()
 ConfigPath__17GUSIOTTcpStrategyFv		# GUSIOTTcpStrategy::ConfigPath()
 DoIoctl__18GUSIOTMInetOptionsFPiUiPc		# GUSIOTMInetOptions::DoIoctl(int*,unsigned int,char*)
 DoSetSockOpt__18GUSIOTMInetOptionsFPiP9TEndpointiiPvUi		# GUSIOTMInetOptions::DoSetSockOpt(int*,TEndpoint*,int,int,void*,unsigned int)
@@ -1712,6 +1670,68 @@ Instantiate__11GUSIOTNetDBFv		# GUSIOTNetDB::Instantiate()
 __dt__49GUSISpecificData<11GUSIhostent,&.GUSIKillHostEnt>Fv		# GUSISpecificData<GUSIhostent, &.GUSIKillHostEnt>::~GUSISpecificData()
 __ct__11GUSIOTNetDBFv		# GUSIOTNetDB::GUSIOTNetDB()
 GUSIOTNetDBNotify
+__dc_arr
+__del_arr
+__new_arr
+__init_arr
+__copy
+__som_check_ev
+__som_check_new
+__vt__Q23std13bad_exception		# std::bad_exception::__vt
+__vt__Q23std9exception		# std::exception::__vt
+what__Q23std9exceptionCFv		# std::exception::what() const
+what__Q23std13bad_exceptionCFv		# std::bad_exception::what() const
+__end__catch
+__throw
+__dt__Q23std9exceptionFv		# std::exception::~exception()
+__unexpected
+__dt__Q23std13bad_exceptionFv		# std::bad_exception::~bad_exception()
+__unregister_fragment
+__register_fragment
+__global_destructor_chain
+__destroy_global_chain
+__register_global_object
+__destroy_new_array3
+__destroy_new_array2
+__destroy_new_array
+__destroy_arr
+__construct_array
+__dt__26__partial_array_destructorFv		# __partial_array_destructor::~__partial_array_destructor()
+__construct_new_array
+__throw_catch_compare
+unexpected__3stdFv		# std::unexpected()
+set_unexpected__3stdFPFv_v		# std::set_unexpected(void (*)(void))
+terminate__3stdFv		# std::terminate()
+set_terminate__3stdFPFv_v		# std::set_terminate(void (*)(void))
+__vt__Q23std8bad_cast		# std::bad_cast::__vt
+__vt__Q23std10bad_typeid		# std::bad_typeid::__vt
+what__Q23std10bad_typeidCFv		# std::bad_typeid::what() const
+what__Q23std8bad_castCFv		# std::bad_cast::what() const
+__dynamic_cast
+__dt__Q23std8bad_castFv		# std::bad_cast::~bad_cast()
+__get_typeid
+__dt__Q23std10bad_typeidFv		# std::bad_typeid::~bad_typeid()
+nothrow__3std		# std::nothrow
+__dla__FPvRCQ23std9nothrow_t		# operator delete[](void*,const std::nothrow_t&)
+__dl__FPvRCQ23std9nothrow_t		# operator delete(void*,const std::nothrow_t&)
+__dla__FPv		# operator delete[](void*)
+__nwa__FUlRCQ23std9nothrow_t		# operator new[](unsigned long,const std::nothrow_t&)
+__nwa__FUl		# operator new[](unsigned long)
+__dl__FPv		# operator delete(void*)
+__nw__FUlRCQ23std9nothrow_t		# operator new(unsigned long,const std::nothrow_t&)
+__nw__FUl		# operator new(unsigned long)
+__throws_bad_alloc__3std		# std::__throws_bad_alloc
+__vt__Q23std9bad_alloc		# std::bad_alloc::__vt
+__new_handler__3std		# std::__new_handler
+what__Q23std9bad_allocCFv		# std::bad_alloc::what() const
+__del_hdl
+__new_hdl
+set_new_handler__3stdFPFv_v		# std::set_new_handler(void (*)(void))
+__throw_bad_alloc__3stdFv		# std::__throw_bad_alloc()
+__dt__Q23std9bad_allocFv		# std::bad_alloc::~bad_alloc()
+qd
+exit
+abort
 clrscr
 getch
 kbhit
@@ -1761,6 +1781,7 @@ __exit
 exit
 __atexit
 atexit
+abort
 fix_start
 vec_free
 vec_realloc
@@ -1993,7 +2014,6 @@ _umask
 _ftype
 _fcreator
 _chmod
-_fdopen
 __gettype
 __getcreator
 __ctopstring
