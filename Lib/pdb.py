@@ -346,6 +346,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 				if len(line) >= 3:
 					if (line[:3] == '"""'
 					    or line[:3] == "'''"):
+						if line[-3:] == line[:3]:
+							# one-line string
+							continue
 						incomment = line[:3]
 						continue
 				if line[0] != '#': break
