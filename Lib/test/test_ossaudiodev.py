@@ -13,6 +13,17 @@ import sunaudio
 import time
 import audioop
 
+# Arggh, AFMT_S16_NE not defined on all platforms -- seems to be a
+# fairly recent addition to OSS.
+try:
+    from ossaudiodev import AFMT_S16_NE
+except ImportError:
+    if sys.byteorder == "little":
+        AFMT_S16_NE = ossaudiodev.AFMT_S16_LE
+    else:
+        AFMT_S16_NE = ossaudiodev.AFMT_S16_BE
+
+
 SND_FORMAT_MULAW_8 = 1
 
 def read_sound_file(path):
@@ -38,12 +49,6 @@ def play_sound_file(data, rate, ssize, nchannels):
             raise TestSkipped, msg
         raise TestFailed, msg
 
-    # set the data format
-    if sys.byteorder == 'little':
-        fmt = ossaudiodev.AFMT_S16_LE
-    else:
-        fmt = ossaudiodev.AFMT_S16_BE
-
     # at least check that these methods can be invoked
     dsp.bufsize()
     dsp.obufcount()
@@ -52,7 +57,7 @@ def play_sound_file(data, rate, ssize, nchannels):
     dsp.fileno()
 
     # set parameters based on .au file headers
-    dsp.setparameters(fmt, nchannels, rate)
+    dsp.setparameters(AFMT_S16_NE, nchannels, rate)
     t1 = time.time()
     print "playing test sound file..."
     dsp.write(data)
