@@ -1619,9 +1619,10 @@ the C API pointer array:
 void
 initspam()
 {
-    PyObject *m, *d;
+    PyObject *m;
     static void *PySpam_API[PySpam_API_pointers];
     PyObject *c_api_object;
+
     m = Py_InitModule("spam", SpamMethods);
 
     /* Initialize the C API pointer array */
@@ -1630,9 +1631,13 @@ initspam()
     /* Create a CObject containing the API pointer array's address */
     c_api_object = PyCObject_FromVoidPtr((void *)PySpam_API, NULL);
 
-    /* Create a name for this object in the module's namespace */
-    d = PyModule_GetDict(m);
-    PyDict_SetItemString(d, "_C_API", c_api_object);
+    if (c_api_object != NULL) {
+        /* Create a name for this object in the module's namespace */
+        PyObject *d = PyModule_GetDict(m);
+
+        PyDict_SetItemString(d, "_C_API", c_api_object);
+        Py_DECREF(c_api_object);
+    }
 }
 \end{verbatim}
 
