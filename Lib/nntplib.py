@@ -239,7 +239,7 @@ class NNTP:
 		if n > 1:
 			nr = words[1]
 			if n > 2:
-				id = string.lower(words[2])
+				id = words[2]
 		return resp, nr, id
 
 	# Internal: process a STAT, NEXT or LAST command
