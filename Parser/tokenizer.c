@@ -128,8 +128,10 @@ tok_new(void)
 	tok->read_coding_spec = 0;
 	tok->issued_encoding_warning = 0;
 	tok->encoding = NULL;
+#ifndef PGEN
 	tok->decoding_readline = NULL;
 	tok->decoding_buffer = NULL;
+#endif
 	return tok;
 }
 
@@ -225,8 +227,8 @@ get_coding_spec(const char *s, int size)
 				char* r = new_string(begin, t - begin);
 				char* q = get_normal_name(r);
 				if (r != q) {
-					assert(strlen(r) >= strlen(q));
-					strcpy(r, q);
+					PyMem_DEL(r);
+					r = new_string(q, strlen(q));
 				}
 				return r;
 			}
@@ -584,8 +586,10 @@ PyTokenizer_Free(struct tok_state *tok)
 {
 	if (tok->encoding != NULL)
 		PyMem_DEL(tok->encoding);
+#ifndef PGEN
 	Py_XDECREF(tok->decoding_readline);
 	Py_XDECREF(tok->decoding_buffer);
+#endif
 	if (tok->fp != NULL && tok->buf != NULL)
 		PyMem_DEL(tok->buf);
 	PyMem_DEL(tok);

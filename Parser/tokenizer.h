@@ -45,8 +45,10 @@ struct tok_state {
 	int read_coding_spec;	/* whether 'coding:...' has been read  */
 	int issued_encoding_warning; /* whether non-ASCII warning was issued */
 	char *encoding;
+#ifndef PGEN
 	PyObject *decoding_readline; /* codecs.open(...).readline */
 	PyObject *decoding_buffer;
+#endif
 	const char* enc;
 	const char* str;
 };
