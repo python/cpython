@@ -1207,6 +1207,9 @@ interaction between undo and process filters; the same problem exists in
 non-Python process buffers using the default (Emacs-supplied) process
 filter."
   (interactive "P")
+  ;; Set the default shell if not already set
+  (when (null py-which-shell)
+    (py-toggle-shells py-default-interpreter))
   (let ((args py-which-args))
     (when (and argprompt
 	       (interactive-p)
