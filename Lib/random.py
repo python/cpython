@@ -116,7 +116,6 @@ class Random:
         """
 
         self.seed(x)
-        self.gauss_next = None
 
 ## -------------------- core generator -------------------
 
@@ -149,6 +148,8 @@ class Random:
         a, y = divmod(a, 30306)
         a, z = divmod(a, 30322)
         self._seed = int(x)+1, int(y)+1, int(z)+1
+
+        self.gauss_next = None
 
     def random(self):
         """Get the next random number in the range [0.0, 1.0)."""
@@ -237,6 +238,8 @@ class Random:
             t, z = divmod(t, 256)
         # Zero is a poor seed, so substitute 1
         self._seed = (x or 1, y or 1, z or 1)
+
+        self.gauss_next = None
 
     def whseed(self, a=None):
         """Seed from hashable object's hash code.
