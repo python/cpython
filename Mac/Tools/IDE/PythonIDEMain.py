@@ -46,7 +46,7 @@ class PythonIDE(Wapplication.Application):
 		# With -D option (OSX command line only) keep stderr, for debugging the IDE
 		# itself.
 		debug_stderr = None
-		if sys.argv[1] == '-D':
+		if len(sys.argv) >= 2 and sys.argv[1] == '-D':
 			debug_stderr = sys.stderr
 			del sys.argv[1]
 		PyConsole.installoutput()
