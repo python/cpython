@@ -414,6 +414,12 @@ given type object has a specified feature.
 /* Set if the type's __dict__ may change */
 #define Py_TPFLAGS_DYNAMICTYPE (1L<<11)
 
+/* Set if the type is 'ready' -- fully initialized */
+#define Py_TPFLAGS_READY (1L<<12)
+
+/* Set while the type is being 'readied', to prevent recursive ready calls */
+#define Py_TPFLAGS_READYING (1L<<13)
+
 #define Py_TPFLAGS_DEFAULT  ( \
                              Py_TPFLAGS_HAVE_GETCHARBUFFER | \
                              Py_TPFLAGS_HAVE_SEQUENCE_IN | \
