@@ -9,7 +9,7 @@
 #ifdef __DATE__
 #define DATE __DATE__
 #else
-#define DATE "August 1 1995"
+#define DATE "October 13 1995"
 #endif
 
 extern const char *getcompiler();
