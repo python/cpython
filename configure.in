@@ -493,7 +493,11 @@ then
 	IRIX/5*) LDSHARED="ld -shared";;
 	IRIX*/6*) LDSHARED="ld ${SGI_ABI} -shared -all";;
 	SunOS/4*) LDSHARED="ld";;
-	SunOS/5*) LDSHARED="ld -G";;
+	SunOS/5*) 
+		if test "$GCC" = "yes"
+		then LDSHARED='$(CC) -G'
+		else LDSHARED="ld -G";
+		fi ;;
 	hp*|HP*) LDSHARED="ld -b";;
 	OSF*) LDSHARED="ld -shared -expect_unresolved \"*\"";;
 	DYNIX/ptx*) LDSHARED="ld -G";;
