@@ -34,7 +34,7 @@ item: Global
   Variable Flags4=00001001
   Variable Name5=_TCLMINOR_
   Variable Description5=Tcl/Tk Minor Version (e.g. the "3" in "8.3.1")
-  Variable Default5=2
+  Variable Default5=3
   Variable Flags5=00001000
 end
 remarked item: Open/Close INSTALL.LOG
@@ -1145,7 +1145,7 @@ item: Install File
   Flags=0000000000000010
 end
 item: Install File
-  Source=%_SRC_%\..\tcl8.2\lib\*.*
+  Source=%_SRC_%\..\tcl\lib\*.*
   Destination=%MAINDIR%\tcl
   Flags=0000000100000010
 end
