@@ -1065,16 +1065,16 @@ PyObject *PyUnicode_DecodeUTF16(const char *s,
 	    errmsg = "unexpected end of data";
 	    goto utf16Error;
 	}
-	if (0xDC00 <= *q && *q <= 0xDFFF) {
+	if (0xD800 <= ch && ch <= 0xDBFF) {
 	    Py_UCS2 ch2 = *q++;
 #ifdef BYTEORDER_IS_LITTLE_ENDIAN
 	    if (bo == 1)
-		    ch = (ch >> 8) | (ch << 8);
+		    ch2 = (ch2 >> 8) | (ch2 << 8);
 #else    
 	    if (bo == -1)
-		    ch = (ch >> 8) | (ch << 8);
+		    ch2 = (ch2 >> 8) | (ch2 << 8);
 #endif
-	    if (0xD800 <= ch && ch <= 0xDBFF) {
+	    if (0xDC00 <= ch2 && ch2 <= 0xDFFF) {
 #if Py_UNICODE_SIZE == 2
 		/* This is valid data (a UTF-16 surrogate pair), but
 		   we are not able to store this information since our
