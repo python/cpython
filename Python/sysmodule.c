@@ -947,7 +947,16 @@ _PySys_Init(void)
 	m = Py_InitModule3("sys", sys_methods, sys_doc);
 	sysdict = PyModule_GetDict(m);
 
-	sysin = PyFile_FromFile(stdin, "<stdin>", "r", _check_and_flush);
+	/* Closing the standard FILE* if sys.std* goes aways causes problems
+	 * for embedded Python usages. Closing them when somebody explicitly
+	 * invokes .close() might be possible, but the FAQ promises they get
+	 * never closed. However, we still need to get write errors when
+	 * writing fails (e.g. because stdout is redirected), so we flush the
+	 * streams and check for errors before the file objects are deleted.
+	 * On OS X, fflush()ing stdin causes an error, so we exempt stdin
+	 * from that procedure.
+	 */
+	sysin = PyFile_FromFile(stdin, "<stdin>", "r", NULL);
 	sysout = PyFile_FromFile(stdout, "<stdout>", "w", _check_and_flush);
 	syserr = PyFile_FromFile(stderr, "<stderr>", "w", _check_and_flush);
 	if (PyErr_Occurred())
