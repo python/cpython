@@ -29,6 +29,7 @@ __all__ = ["IMAP4", "Internaldate2tuple",
 CRLF = '\r\n'
 Debug = 0
 IMAP4_PORT = 143
+IMAP4_SSL_PORT = 993
 AllowedVersions = ('IMAP4REV1', 'IMAP4')        # Most recent first
 
 #       Commands
@@ -987,7 +988,7 @@ class IMAP4_SSL(IMAP4):
 
     """IMAP4 client class over SSL connection
 
-    Instantiate with: IMAP4_SSL([, host[, port[, keyfile[, certfile]]]])
+    Instantiate with: IMAP4_SSL([host[, port[, keyfile[, certfile]]]])
 
             host - host's name (default: localhost);
             port - port number (default: standard IMAP4 SSL port).
