@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# From configure.in Revision: 1.9 
+# From configure.in Revision: 1.12 
 
 # Guess values for system-dependent variables and create Makefiles.
 # Generated automatically using autoconf version 2.0 
@@ -2535,6 +2535,58 @@ else { echo "configure: error: proper usage is --with-libc=STRING" 1>&2; exit 1;
 fi
 fi
 
+
+# check for hypot() in math library
+LIBS_SAVE=$LIBS
+LIBS="$LIBS $LIBM"
+for ac_func in hypot
+do
+echo $ac_n "checking for $ac_func""... $ac_c" 1>&4
+if eval "test \"`echo '${'ac_cv_func_$ac_func'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&4
+else
+  cat > conftest.$ac_ext <<EOF
+#line 2550 "configure"
+#include "confdefs.h"
+#include <ctype.h> /* Arbitrary system header to define __stub macros. */
+int main() { return 0; }
+int t() {
+
+/* The GNU C library defines this for functions which it implements
+    to always fail with ENOSYS.  Some functions are actually named
+    something starting with __ and the normal name is an alias.  */
+#if defined (__stub_$ac_func) || defined (__stub___$ac_func)
+choke me
+#else
+/* Override any gcc2 internal prototype to avoid an error.  */
+char $ac_func(); $ac_func();
+#endif
+
+; return 0; }
+EOF
+if eval $ac_link; then
+  rm -rf conftest*
+  eval "ac_cv_func_$ac_func=yes"
+else
+  rm -rf conftest*
+  eval "ac_cv_func_$ac_func=no"
+fi
+rm -f conftest*
+
+fi
+if eval "test \"`echo '$ac_cv_func_'$ac_func`\" = yes"; then
+  echo "$ac_t""yes" 1>&4
+    ac_tr_func=HAVE_`echo $ac_func | tr '[a-z]' '[A-Z]'`
+  cat >> confdefs.h <<EOF
+#define $ac_tr_func 1
+EOF
+ 
+else
+  echo "$ac_t""no" 1>&4
+fi
+done
+
+LIBS=$LIBS_SAVE
 
 # generate output files
 trap '' 1 2 15

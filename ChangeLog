@@ -1,3 +1,66 @@
+Wed Jan  4 18:23:09 1995  Guido van Rossum  <guido@voorn.cwi.nl>
+
+	* Python/modsupport.c (initmodule2), Include/methodobject.h,
+	Objects/methodobject.c: introduced METH_FREENAME bit passed to
+	newmethodobject to indicate that if the object is freed the name
+	pointer must also be freed (this saves a long standing memory leak
+	in initmodule2)
+
+	* Modules/structmodule.c (struct_pack, struct_unpack): use memcpy
+	instead of double precision assignment (since a string isn't
+	always double-aligned, e.g. when debug fields are present in the
+	object header)
+
+	* Objects/floatobject.c (float_hash): changed a constant to avoid
+	float->long conversion overflow
+
+	* Python/bltinmodule.c (builtin_pow): fix coerce() ref count
+	nightmare (core dumps on Linux)
+
+	* Python/pythonrun.c: call flushline() in print_error(), after
+	fetching the exception info, since flushline() can mask an
+	exception; move flushline() calls around so they are not between
+	the detection and printing of the exception
+
+Tue Jan  3 12:55:28 1995  Guido van Rossum  <guido@voorn.cwi.nl>
+
+	* Modules/config.c.in (getcopyright): Change copyright to include
+	1995
+
+Mon Jan  2 20:15:39 1995  Guido van Rossum  <guido@voorn.cwi.nl>
+
+	* Objects/mappingobject.c (mappingremove): don't call
+	lookmapping() for empty dictionary
+
+	* Doc/libsocket.tex (section{Built-in Module \sectcode{socket}}):
+	documented gethostbyaddr()
+
+	* Modules/mpzmodule.c (mpz_power): made it ternary
+
+	* Modules/mathmodule.c: only use hypot() if it exists
+
+	* Modules/Makefile.pre.in (sharedinstall): fix bug (sh can't loop
+	over empty list) when $(SHAREDMODS) is empty
+
+sMon Jan  2 19:35:49 1995  Guido van Rossum  <guido@voorn.cwi.nl>
+
+	* Python/errors.c: added hook for better mac error messages
+
+	* Python/pythonrun.c (run_script): removed extraneous fclose() in
+        case of .pyc file argument
+
+	* Include/{object.h,stringobject.h}: changed refcnt and sizes from
+        unsigned to int (i.e. signed)
+
+	* Objects/fileobject.c (newfileobject): use HAVE_FOPENRF instead
+	of USE_FOPENRF
+
+	* Lib/test/test_b1.py: test eval() and execfile() with globals,
+	locals arguments
+
+	* Lib/mhlib.py: added movemessage(), copymessage(), added copy
+	fallback for refilemessages(), and updated the docs
+
 Fri Dec 30 16:19:17 1994  Guido van Rossum  <guido@voorn.cwi.nl>
 
 	* Parser/tokenizer.c (tok_nextc): zap tok->buf after freeing
@@ -58,7 +121,7 @@ Tue Dec 13 11:46:03 1994  Guido Van Rossum  <guido@tesla>
 	instead of going through ceval.c:printtraceback()
 
 	* Python/modsupport.c: fix vmkvalue() for systems where va_list is
-	an array; add support for creating lists and dcitionaries; added
+	an array; add support for creating lists and dictionaries; added
 	convenience functions for calling functions/methods with format
 	and argument list
 
@@ -123,7 +186,7 @@ Tue Dec 13 11:46:03 1994  Guido Van Rossum  <guido@tesla>
 	(for QNX); use gethostbyname_r if it exists (since it is
 	re-entrant); use h_error and hstrerror when they exist; other
 	changes for re-entrancy; make printable representation more
-	useful; cosmetic changes in argument lists
+	useful; cosmetic changes in argument lists; add gethostbyaddr()
 
 	* Modules/signalmodule.c: if NSIG undefined, use _SIGMAX + 1
 

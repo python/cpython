@@ -295,5 +295,11 @@ then LIBC=$withval
 else AC_ERROR(proper usage is --with-libc=STRING)
 fi])
 
+# check for hypot() in math library
+LIBS_SAVE=$LIBS
+LIBS="$LIBS $LIBM"
+AC_CHECK_FUNCS(hypot)
+LIBS=$LIBS_SAVE
+
 # generate output files
 AC_OUTPUT(Makefile Objects/Makefile Parser/Makefile Python/Makefile Modules/Makefile.pre)
