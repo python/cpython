@@ -56,7 +56,7 @@
 
   This class can be used to create an HTML table (or a complete HTML file
   containing the table) showing a side by side, line by line comparison
-  of text with inter-line and intra-line change highlights.  The table can 
+  of text with inter-line and intra-line change highlights.  The table can
   be generated in either full or contextual difference mode.
 
   The constructor for this class is:
@@ -67,20 +67,21 @@
     \optional{, linejunk
     \optional{, charjunk}}}}}
 
-    Initializes instance of \class{HtmlDiff}.  
+    Initializes instance of \class{HtmlDiff}.
 
-    \var{tabsize} is an optional keyword argument to specify tab stop spacing 
+    \var{tabsize} is an optional keyword argument to specify tab stop spacing
     and defaults to \code{8}.
 
-    \var{wrapcolumn} is an optional keyword to specify column number where 
-    lines are broken and wrapped, defaults to \code{None} where lines are not 
+    \var{wrapcolumn} is an optional keyword to specify column number where
+    lines are broken and wrapped, defaults to \code{None} where lines are not
     wrapped.
 
-    \var{linejunk} and \var{charjunk} are optional keyword arguments passed 
-    into \code{ndiff()} (used to by \class{HtmlDiff} to generate the 
-    side by side HTML differences).  See \code{ndiff()} documentation for 
+    \var{linejunk} and \var{charjunk} are optional keyword arguments passed
+    into \code{ndiff()} (used by \class{HtmlDiff} to generate the
+    side by side HTML differences).  See \code{ndiff()} documentation for
     argument default values and descriptions.
-  \end{funcdesc}  
+
+  \end{funcdesc}
 
   The following methods are public:
 
@@ -92,21 +93,21 @@
     Compares \var{fromlines} and \var{tolines} (lists of strings) and returns
     a string which is a complete HTML file containing a table showing line by
     line differences with inter-line and intra-line changes highlighted.
-    
-    \var{fromdesc} and \var{todesc} are optional keyword arguments to specify 
-    from/to file column header strings (both default to an empty string).  
-    
+
+    \var{fromdesc} and \var{todesc} are optional keyword arguments to specify
+    from/to file column header strings (both default to an empty string).
+
     \var{context} and \var{numlines} are both optional keyword arguments.
-    Set \var{context} to \code{True} when contextual differences are to be 
-    shown, else the default is \code{False} to show the full files.  
+    Set \var{context} to \code{True} when contextual differences are to be
+    shown, else the default is \code{False} to show the full files.
     \var{numlines} defaults to \code{5}.  When \var{context} is \code{True}
-    \var{numlines} controls the number of context lines which surround the 
+    \var{numlines} controls the number of context lines which surround the
     difference highlights.  When \var{context} is \code{False} \var{numlines}
-    controls the number of lines which are shown before a difference 
+    controls the number of lines which are shown before a difference
     highlight when using the "next" hyperlinks (setting to zero would cause
     the "next" hyperlinks to place the next difference highlight at the top of
     the browser without any leading context).
-  \end{funcdesc}  
+  \end{funcdesc}
 
   \begin{funcdesc}{make_table}{fromlines, tolines
     \optional{, fromdesc
@@ -115,14 +116,16 @@
     Compares \var{fromlines} and \var{tolines} (lists of strings) and returns
     a string which is a complete HTML table showing line by line differences
     with inter-line and intra-line changes highlighted.
-    
-    The arguments of this method are a subset of those for the 
-    \code{make_file} method.  Refer to the \code{make_file} method 
-    documentation.
-  \end{funcdesc}  
 
-  \file{Tools/scripts/ndiff.py} is a command-line front-end to this class
+    The arguments of this method are a subset of those for the
+    \code{make_file} method.  Refer to the \code{make_file} method
+    documentation.
+  \end{funcdesc}
+
+  \file{Tools/scripts/diff.py} is a command-line front-end to this class
   and contains a good example of its use.
+
+  \versionadded{2.4}
 \end{classdesc*}
 
 \begin{funcdesc}{context_diff}{a, b\optional{, fromfile\optional{, tofile
@@ -131,7 +134,7 @@
   Compare \var{a} and \var{b} (lists of strings); return a
   delta (a generator generating the delta lines) in context diff
   format.
-  
+
   Context diffs are a compact way of showing just the lines that have
   changed plus a few lines of context.  The changes are shown in a
   before/after style.  The number of context lines is set by \var{n}
@@ -156,7 +159,7 @@
   function.
 
   \versionadded{2.3}
-\end{funcdesc}  
+\end{funcdesc}
 
 \begin{funcdesc}{get_close_matches}{word, possibilities\optional{,
                  n\optional{, cutoff}}}
@@ -263,7 +266,7 @@ emu
   Compare \var{a} and \var{b} (lists of strings); return a
   delta (a generator generating the delta lines) in unified diff
   format.
-  
+
   Unified diffs are a compact way of showing just the lines that have
   changed plus a few lines of context.  The changes are shown in a
   inline style (instead of separate before/after blocks).  The number
@@ -287,8 +290,8 @@ emu
   \file{Tools/scripts/diff.py} is a command-line front-end for this
   function.
 
-  \versionadded{2.3}  
-\end{funcdesc} 
+  \versionadded{2.3}
+\end{funcdesc}
 
 \begin{funcdesc}{IS_LINE_JUNK}{line}
   Return true for ignorable lines.  The line \var{line} is ignorable
@@ -481,7 +484,7 @@ replace a[3:4] (x) b[2:3] (y)
   intervening ranges which have no changes.
 
   The groups are returned in the same format as \method{get_opcodes()}.
-  \versionadded{2.3}			    
+  \versionadded{2.3}
 \end{methoddesc}
 
 \begin{methoddesc}{ratio}{}
