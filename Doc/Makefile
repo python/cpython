@@ -324,12 +324,12 @@ l2htut: $(COMMONPERL)
 
 # webchecker needs an extra flag to process the huge index from the libref
 webcheck:
-	$(WEBCHECKER) file:`pwd`/api/
-	$(WEBCHECKER) file:`pwd`/ext/
-	$(WEBCHECKER) -m290000 file:`pwd`/lib/
-	$(WEBCHECKER) file:`pwd`/mac/
-	$(WEBCHECKER) file:`pwd`/ref/
-	$(WEBCHECKER) file:`pwd`/tut/
+	$(WEBCHECKER) file:`pwd`/$(HTMLDIR)/api/
+	$(WEBCHECKER) file:`pwd`/$(HTMLDIR)/ext/
+	$(WEBCHECKER) -m290000 file:`pwd`/$(HTMLDIR)/lib/
+	$(WEBCHECKER) file:`pwd`/$(HTMLDIR)/mac/
+	$(WEBCHECKER) file:`pwd`/$(HTMLDIR)/ref/
+	$(WEBCHECKER) file:`pwd`/$(HTMLDIR)/tut/
 
 lib-info-$(RELEASE).tgz: info
 	(cd $(INFODIR); tar cf - python-???.info*) | gzip -9 >$@
