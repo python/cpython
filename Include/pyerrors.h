@@ -75,7 +75,10 @@ extern PyObject *PyErr_SetFromErrno Py_PROTO((PyObject *));
 
 extern void PyErr_BadInternalCall Py_PROTO((void));
 
-extern int PyErr_CheckSignals Py_PROTO((void)); /* In sigcheck.c or signalmodule.c */
+/* In sigcheck.c or signalmodule.c */
+extern int PyErr_CheckSignals Py_PROTO((void));
+extern void PyErr_SetInterrupt Py_PROTO((void));
+	
 
 #ifdef __cplusplus
 }
