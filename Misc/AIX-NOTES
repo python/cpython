@@ -137,4 +137,20 @@ NOTE:  If the extension module is written in C++ and contains templates,
        known whether makeC++SharedLib can be used as a complete substitute
        for ld_so_aix.
 
+According to Gary Hook from IBM, the format of the export file changed
+in AIX 4.2.  For AIX 4.2 and later, a period "." is required on the
+first line after "#!".  If python crashes while importing a shared
+library, you can try modifying the LINKCC variable in the Makefile.
+It probably looks like this:
+
+	LINKCC=     $(srcdir)/Modules/makexp_aix Modules/python.exp \"\" $(LIBRARY); $(PURIFY) $(CXX)
+
+You should modify the \"\" to be a period:
+
+	LINKCC=     $(srcdir)/Modules/makexp_aix Modules/python.exp . $(LIBRARY); $(PURIFY) $(CXX)
+
+Using a period fixed the problem in the snake farm.  YMMV.
+After testing with different versions of AIX, a fix should
+be checked in.  Hopefully, this fix be incorporated into Python 2.3.
+
 ==============================================================================
