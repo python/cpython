@@ -320,6 +320,7 @@ class ConfigParser:
     def has_option(self, section, option):
         """Check for the existence of a given option in a given section."""
         if not section or section == "DEFAULT":
+            option = self.optionxform(option)
             return self.__defaults.has_key(option)
         elif not self.has_section(section):
             return 0
