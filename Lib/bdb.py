@@ -17,6 +17,12 @@ class Bdb:
 
 	def __init__(self):
 		self.breaks = {}
+		# We want to have a method self.canonic() which
+		# canonicalizes filenames before comparing them
+		# but we want the default to be a very fast no-op.
+		# Solution: the built-in str function.
+		if not hasattr(self, "canonic"):
+			self.canonic = str
 	
 	def reset(self):
 		import linecache
@@ -86,10 +92,10 @@ class Bdb:
 		return 0
 
 	def break_here(self, frame):
-		filename=frame.f_code.co_filename
+		filename = self.canonic(frame.f_code.co_filename)
 		if not self.breaks.has_key(filename):
 			return 0
-		lineno=frame.f_lineno
+		lineno = frame.f_lineno
 		if not lineno in self.breaks[filename]:
 			return 0
 		# flag says ok to delete temp. bp
@@ -103,7 +109,8 @@ class Bdb:
 			return 0
 	
 	def break_anywhere(self, frame):
-		return self.breaks.has_key(frame.f_code.co_filename)
+		return self.breaks.has_key(
+		    self.canonic(frame.f_code.co_filename))
 	
 	# Derived classes should override the user_* methods
 	# to gain control.
@@ -191,6 +198,7 @@ class Bdb:
 	# for bp in Breakpoint.bpbynumber: if bp: bp.bpprint().
 	
 	def set_break(self, filename, lineno, temporary=0, cond = None):
+		filename = self.canonic(filename)
 		import linecache # Import as late as possible
 		line = linecache.getline(filename, lineno)
 		if not line:
@@ -202,8 +210,10 @@ class Bdb:
 		if not lineno in list:
 			list.append(lineno)
 		bp = Breakpoint(filename, lineno, temporary, cond)
+		print "Breakpoint in", filename, "at", lineno
 
 	def clear_break(self, filename, lineno):
+		filename = self.canonic(filename)
 		if not self.breaks.has_key(filename):
 			return 'There are no breakpoints in %s' % filename
 		if lineno not in self.breaks[filename]:
@@ -232,6 +242,7 @@ class Bdb:
 		self.clear_break(bp.file, bp.line)
 
 	def clear_all_file_breaks(self, filename):
+		filename = self.canonic(filename)
 		if not self.breaks.has_key(filename):
 			return 'There are no breakpoints in %s' % filename
 		for line in self.breaks[filename]:
@@ -249,15 +260,18 @@ class Bdb:
 		self.breaks = {}
 	
 	def get_break(self, filename, lineno):
+		filename = self.canonic(filename)
 		return self.breaks.has_key(filename) and \
 			lineno in self.breaks[filename]
 	
 	def get_breaks(self, filename, lineno):
+		filename = self.canonic(filename)
 		return self.breaks.has_key(filename) and \
 			lineno in self.breaks[filename] and \
 			Breakpoint.bplist[filename, lineno] or []
 	
 	def get_file_breaks(self, filename):
+		filename = self.canonic(filename)
 		if self.breaks.has_key(filename):
 			return self.breaks[filename]
 		else:
@@ -290,7 +304,7 @@ class Bdb:
 	def format_stack_entry(self, frame_lineno, lprefix=': '):
 		import linecache, repr, string
 		frame, lineno = frame_lineno
-		filename = frame.f_code.co_filename
+		filename = self.canonic(frame.f_code.co_filename)
 		s = filename + '(' + `lineno` + ')'
 		if frame.f_code.co_name:
 			s = s + frame.f_code.co_name
@@ -403,7 +417,7 @@ class Breakpoint:
 				# effective break .... see effective()
 
 	def __init__(self, file, line, temporary=0, cond = None):
-		self.file = file
+		self.file = file	# This better be in canonical form!
 		self.line = line
 		self.temporary = temporary
 		self.cond = cond
@@ -519,7 +533,7 @@ class Tdb(Bdb):
 		import linecache, string
 		name = frame.f_code.co_name
 		if not name: name = '???'
-		fn = frame.f_code.co_filename
+		fn = self.canonic(frame.f_code.co_filename)
 		line = linecache.getline(fn, frame.f_lineno)
 		print '+++', fn, frame.f_lineno, name, ':', string.strip(line)
 	def user_return(self, frame, retval):
