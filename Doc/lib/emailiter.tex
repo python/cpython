@@ -1,11 +1,5 @@
-\section{\module{email.Iterators} ---
-         Message object tree iterators}
-
 \declaremodule{standard}{email.Iterators}
 \modulesynopsis{Iterate over a  message object tree.}
-\sectionauthor{Barry A. Warsaw}{barry@zope.com}
-
-\versionadded{2.2}
 
 Iterating over a message object tree is fairly easy with the
 \method{Message.walk()} method.  The \module{email.Iterators} module
@@ -29,9 +23,9 @@ subparts that match the MIME type specified by \var{maintype} and
 
 Note that \var{subtype} is optional; if omitted, then subpart MIME
 type matching is done only with the main type.  \var{maintype} is
-optional too; it defaults to \code{text}.
+optional too; it defaults to \mimetype{text}.
 
 Thus, by default \function{typed_subpart_iterator()} returns each
-subpart that has a MIME type of \code{text/*}.
+subpart that has a MIME type of \mimetype{text/*}.
 \end{funcdesc}
 

@@ -1,11 +1,5 @@
-\section{\module{email.Utils} ---
-         Miscellaneous email package utilities}
-
 \declaremodule{standard}{email.Utils}
 \modulesynopsis{Miscellaneous email package utilities.}
-\sectionauthor{Barry A. Warsaw}{barry@zope.com}
-
-\versionadded{2.2}
 
 There are several useful utilities provided with the \module{email}
 package.
@@ -24,8 +18,8 @@ are stripped off.
 
 \begin{funcdesc}{parseaddr}{address}
 Parse address -- which should be the value of some address-containing
-field such as \code{To:} or \code{Cc:} -- into its constituent
-``realname'' and ``email address'' parts.  Returns a tuple of that
+field such as \mailheader{To} or \mailheader{Cc} -- into its constituent
+\emph{realname} and \emph{email address} parts.  Returns a tuple of that
 information, unless the parse fails, in which case a 2-tuple of
 \code{(None, None)} is returned.
 \end{funcdesc}
@@ -33,7 +27,7 @@ information, unless the parse fails, in which case a 2-tuple of
 \begin{funcdesc}{dump_address_pair}{pair}
 The inverse of \method{parseaddr()}, this takes a 2-tuple of the form
 \code{(realname, email_address)} and returns the string value suitable
-for a \code{To:} or \code{Cc:} header.  If the first element of
+for a \mailheader{To} or \mailheader{Cc} header.  If the first element of
 \var{pair} is false, then the second element is returned unmodified.
 \end{funcdesc}
 
@@ -68,9 +62,9 @@ in the \var{charset} character set (Python can't reliably guess what
 character set a string might be encoded in).  The default
 \var{charset} is \samp{iso-8859-1}.
 
-\var{encoding} must be either the letter \samp{q} for
-Quoted-Printable or \samp{b} for Base64 encoding.  If
-neither, a \code{ValueError} is raised.  Both the \var{charset} and
+\var{encoding} must be either the letter \character{q} for
+Quoted-Printable or \character{b} for Base64 encoding.  If
+neither, a \exception{ValueError} is raised.  Both the \var{charset} and
 the \var{encoding} strings are case-insensitive, and coerced to lower
 case in the returned string.
 \end{funcdesc}

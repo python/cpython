@@ -1,24 +1,30 @@
-\section{\module{email.Parser} ---
-         Parsing flat text email messages}
-
 \declaremodule{standard}{email.Parser}
 \modulesynopsis{Parse flat text email messages to produce a message
 	        object tree.}
-\sectionauthor{Barry A. Warsaw}{barry@zope.com}
 
-\versionadded{2.2}
+Message object trees can be created in one of two ways: they can be
+created from whole cloth by instantiating \class{Message} objects and
+stringing them together via \method{add_payload()} and
+\method{set_payload()} calls, or they can be created by parsing a flat text
+representation of the email message.
 
-The \module{Parser} module provides a single class, the \class{Parser}
-class, which is used to take a message in flat text form and create
-the associated object model.  The resulting object tree can then be
-manipulated using the \class{Message} class interface as described in
-\refmodule{email.Message}, and turned over
-to a generator (as described in \refmodule{emamil.Generator}) to
-return the textual representation of the message.  It is intended that
-the \class{Parser} to \class{Generator} path be idempotent if the
-object model isn't modified in between.
+The \module{email} package provides a standard parser that understands
+most email document structures, including MIME documents.  You can
+pass the parser a string or a file object, and the parser will return
+to you the root \class{Message} instance of the object tree.  For
+simple, non-MIME messages the payload of this root object will likely
+be a string (e.g. containing the text of the message).  For MIME
+messages, the root object will return 1 from its
+\method{is_multipart()} method, and the subparts can be accessed via
+the \method{get_payload()} and \method{walk()} methods.
 
-\subsection{Parser class API}
+Note that the parser can be extended in limited ways, and of course
+you can implement your own parser completely from scratch.  There is
+no magical connection between the \module{email} package's bundled
+parser and the \class{Message} class, so your custom parser can create
+message object trees in any way it find necessary.
+
+\subsubsection{Parser class API}
 
 \begin{classdesc}{Parser}{\optional{_class}}
 The constructor for the \class{Parser} class takes a single optional
@@ -75,22 +81,22 @@ prompt:
 >>> msg = email.message_from_string(myString)
 \end{verbatim}
 
-\subsection{Additional notes}
+\subsubsection{Additional notes}
 
 Here are some notes on the parsing semantics:
 
 \begin{itemize}
-\item Most non-\code{multipart} type messages are parsed as a single
+\item Most non-\mimetype{multipart} type messages are parsed as a single
       message object with a string payload.  These objects will return
       0 for \method{is_multipart()}.
-\item One exception is for \code{message/delivery-status} type
-      messages.  Because such the body of such messages consist of
+\item One exception is for \mimetype{message/delivery-status} type
+      messages.  Because the body of such messages consist of
       blocks of headers, \class{Parser} will create a non-multipart
       object containing non-multipart subobjects for each header
       block.
-\item Another exception is for \code{message/*} types (i.e. more
-      general than \code{message/delivery-status}.  These are
-      typically \code{message/rfc822} type messages, represented as a
+\item Another exception is for \mimetype{message/*} types (i.e. more
+      general than \mimetype{message/delivery-status}).  These are
+      typically \mimetype{message/rfc822} type messages, represented as a
       non-multipart object containing a singleton payload, another
       non-multipart \class{Message} instance.
 \end{itemize}
