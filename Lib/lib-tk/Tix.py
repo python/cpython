@@ -1047,16 +1047,28 @@ class ListNoteBook(TixWidget):
     choosing the name of the desired page in the hlist subwidget."""
 
     def __init__(self, master, cnf={}, **kw):
-        TixWidget.__init__(self, master, 'tixDirList', ['options'], cnf, kw)
-        self.subwidget_list['hlist'] = _dummyHList(self, 'hlist')
-        self.subwidget_list['shlist'] = _dummyScrolledHList(self, 'vsb')
-
+       TixWidget.__init__(self, master, 'tixListNoteBook', ['options'], cnf, kw)
+       self.subwidget_list['pane'] = _dummyPanedWindow(self, 'pane',
+                                                destroy_physically=0)
+       self.subwidget_list['hlist'] = _dummyHList(self, 'hlist')
+       self.subwidget_list['shlist'] = _dummyScrolledHList(self, 'vsb')
 
     def add(self, name, cnf={}, **kw):
         apply(self.tk.call,
               (self._w, 'add', name) + self._options(cnf, kw))
         self.subwidget_list[name] = TixSubWidget(self, name)
         return self.subwidget_list[name]
+
+    def page(self, name):
+       return self.subwidget(name)
+
+    def pages(self):
+       # Can't call subwidgets_all directly because we don't want .nbframe
+       names = self.tk.split(self.tk.call(self._w, 'pages'))
+       ret = []
+       for x in names:
+           ret.append(self.subwidget(x))
+       return ret
 
     def raise_page(self, name):              # raise is a python keyword
         self.tk.call(self._w, 'raise', name)
@@ -1593,6 +1605,10 @@ class _dummyStdButtonBox(StdButtonBox, TixSubWidget):
 class _dummyNoteBookFrame(NoteBookFrame, TixSubWidget):
     def __init__(self, master, name, destroy_physically=0):
         TixSubWidget.__init__(self, master, name, destroy_physically)
+
+class _dummyPanedWindow(PanedWindow, TixSubWidget):
+    def __init__(self, master, name, destroy_physically=1):
+       TixSubWidget.__init__(self, master, name, destroy_physically)
 
 ########################
 ### Utility Routines ###
