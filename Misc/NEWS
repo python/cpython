@@ -12,6 +12,9 @@ What's New in Python 2.4 alpha 2?
 Core and builtins
 -----------------
 
+- u'%s' % obj will now try obj.__unicode__() first and fallback to
+  obj.__str__() if no __unicode__ method can be found.
+
 - Patch #550732: Add PyArg_VaParseTupleAndKeywords().  Analogous to
   PyArg_VaParse().  Both are now documented.  Thanks Greg Chapman.
 
