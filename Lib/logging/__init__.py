@@ -36,8 +36,8 @@ except ImportError:
 
 __author__  = "Vinay Sajip <vinay_sajip@red-dove.com>"
 __status__  = "beta"
-__version__ = "0.4.9.3"
-__date__    = "08 July 2004"
+__version__ = "0.4.9.4"
+__date__    = "22 September 2004"
 
 #---------------------------------------------------------------------------
 #   Miscellaneous module data
@@ -689,13 +689,14 @@ class StreamHandler(Handler):
         """
         try:
             msg = self.format(record)
+            fs = "%s\n"
             if not hasattr(types, "UnicodeType"): #if no unicode support...
-                self.stream.write("%s\n" % msg)
+                self.stream.write(fs % msg)
             else:
                 try:
-                    self.stream.write("%s\n" % msg)
+                    self.stream.write(fs % msg)
                 except UnicodeError:
-                    self.stream.write("%s\n" % msg.encode("UTF-8"))
+                    self.stream.write(fs % msg.encode("UTF-8"))
             self.flush()
         except:
             self.handleError(record)
@@ -763,6 +764,13 @@ def setLoggerClass(klass):
     global _loggerClass
     _loggerClass = klass
 
+def getLoggerClass():
+    """
+    Return the class to be used when instantiating a logger.
+    """
+
+    return _loggerClass
+
 class Manager:
     """
     There is [under normal circumstances] just one Manager instance, which
@@ -780,7 +788,8 @@ class Manager:
     def getLogger(self, name):
         """
         Get a logger with the specified name (channel name), creating it
-        if it doesn't yet exist.
+        if it doesn't yet exist. This name is a dot-separated hierarchical
+        name, such as "a", "a.b", "a.b.c" or similar.
 
         If a PlaceHolder existed for the specified name [i.e. the logger
         didn't exist but a child of it did], replace it with the created
@@ -878,12 +887,6 @@ class Logger(Filterer):
         Set the logging level of this logger.
         """
         self.level = level
-
-#   def getRoot(self):
-#       """
-#       Get the root of the logger hierarchy.
-#       """
-#       return Logger.root
 
     def debug(self, msg, *args, **kwargs):
         """
