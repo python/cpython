@@ -214,6 +214,8 @@ Core and builtins
 Extension modules
 -----------------
 
+- fcntl.ioctl now warns if the mutate flag is not specified.
+
 - nt now properly allows to refer to UNC roots, e.g. in nt.stat().
 
 - the weakref module now supports additional objects:  array.array,
