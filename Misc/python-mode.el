@@ -1187,14 +1187,14 @@ It is added to `interpreter-mode-alist' and `py-choose-shell'.
 		  (backward-to-indentation 1))
 		(not (looking-at py-no-outdent-re)))
 	 )))
-      
+
 (defun py-electric-colon (arg)
   "Insert a colon.
 In certain cases the line is dedented appropriately.  If a numeric
 argument ARG is provided, that many colons are inserted
 non-electrically.  Electric behavior is inhibited inside a string or
 comment."
-  (interactive "P")
+  (interactive "*P")
   (self-insert-command (prefix-numeric-value arg))
   ;; are we in a string or comment?
   (if (save-excursion
@@ -1947,6 +1947,8 @@ number of characters to delete (default is 1)."
     (py-electric-backspace arg)))
 
 ;; required for pending-del and delsel modes
+(put 'py-electric-colon 'delete-selection t) ;delsel
+(put 'py-electric-colon 'pending-delete   t) ;pending-del
 (put 'py-electric-backspace 'delete-selection 'supersede) ;delsel
 (put 'py-electric-backspace 'pending-delete   'supersede) ;pending-del
 (put 'py-electric-delete    'delete-selection 'supersede) ;delsel
