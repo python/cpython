@@ -4,6 +4,7 @@
 
 import os
 import unittest
+import warnings
 
 from test_support import TESTFN, run_unittest
 
@@ -29,6 +30,8 @@ class TemporaryFileTests(unittest.TestCase):
     def test_tempnam(self):
         if not hasattr(os, "tempnam"):
             return
+        warnings.filterwarnings("ignore", "tempnam", RuntimeWarning,
+                                "test_os")
         self.check_tempfile(os.tempnam())
 
         name = os.tempnam(TESTFN)
@@ -51,6 +54,8 @@ class TemporaryFileTests(unittest.TestCase):
     def test_tmpnam(self):
         if not hasattr(os, "tmpnam"):
             return
+        warnings.filterwarnings("ignore", "tmpnam", RuntimeWarning,
+                                "test_os")
         self.check_tempfile(os.tmpnam())
 
 
