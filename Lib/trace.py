@@ -42,17 +42,23 @@ Sample use, programmatically
    trace.run(coverage.globaltrace, 'main()')
    # make a report, telling it where you want output
    r = trace.results()
-   r.write_results(show_missing=1)
+   r.write_results(show_missing=True)
 """
 
-import sys, os, tempfile, types, copy, operator, inspect, exceptions, marshal
+import linecache
+import marshal
+import os
+import re
+import sys
+import token
+import tokenize
+import types
+
 try:
     import cPickle
     pickle = cPickle
 except ImportError:
     import pickle
-
-# DEBUG_MODE=1  # make this true to get printouts which help you understand what's going on
 
 def usage(outfile):
     outfile.write("""Usage: %s [OPTIONS] <file> [ARGS]
@@ -90,6 +96,11 @@ Filters, may be repeated multiple times:
 --ignore-dir=<dir>    Ignore files in the given directory (multiple
                       directories can be joined by os.pathsep).
 """ % sys.argv[0])
+
+PRAGMA_NOCOVER = "#pragma NO COVER"
+
+# Simple rx to find lines with no code.
+rx_blank = re.compile(r'^\s*(#.*)?$')
 
 class Ignore:
     def __init__(self, modules = None, dirs = None):
@@ -144,6 +155,12 @@ class Ignore:
         self._ignore[modulename] = 0
         return 0
 
+def modname(path):
+    """Return a plausible module name for the patch."""
+    base = os.path.basename(path)
+    filename, ext = os.path.splitext(base)
+    return filename
+
 class CoverageResults:
     def __init__(self, counts=None, calledfuncs=None, infile=None,
                  outfile=None):
@@ -158,22 +175,19 @@ class CoverageResults:
         self.infile = infile
         self.outfile = outfile
         if self.infile:
-            # try and merge existing counts file
+            # Try and merge existing counts file.
+            # This code understand a couple of old trace.py formats.
             try:
                 thingie = pickle.load(open(self.infile, 'r'))
-                if type(thingie) is types.DictType:
-                    # backwards compatibility for old trace.py after
-                    # Zooko touched it but before calledfuncs  --Zooko
-                    # 2001-10-24
+                if isinstance(thingie, dict):
                     self.update(self.__class__(thingie))
-                elif type(thingie) is types.TupleType and len(thingie) == 2:
+                elif isinstance(thingie, tuple) and len(thingie) == 2:
                     counts, calledfuncs = thingie
                     self.update(self.__class__(counts, calledfuncs))
-            except (IOError, EOFError):
-                pass
+            except (IOError, EOFError), err:
+                print >> sys.stderr, ("Skipping counts file %r: %s"
+                                      % (self.infile, err))
             except pickle.UnpicklingError:
-                # backwards compatibility for old trace.py before
-                # Zooko touched it  --Zooko 2001-10-24
                 self.update(self.__class__(marshal.load(open(self.infile))))
 
     def update(self, other):
@@ -184,16 +198,12 @@ class CoverageResults:
         other_calledfuncs = other.calledfuncs
 
         for key in other_counts.keys():
-            if key != 'calledfuncs':
-                # backwards compatibility for abortive attempt to
-                # stuff calledfuncs into self.counts, by Zooko
-                # --Zooko 2001-10-24
-                counts[key] = counts.get(key, 0) + other_counts[key]
+            counts[key] = counts.get(key, 0) + other_counts[key]
 
         for key in other_calledfuncs.keys():
             calledfuncs[key] = 1
 
-    def write_results(self, show_missing = 1, summary = 0, coverdir = None):
+    def write_results(self, show_missing=True, summary=False, coverdir=None):
         """
         @param coverdir
         """
@@ -201,125 +211,44 @@ class CoverageResults:
             print ("filename: %s, modulename: %s, funcname: %s"
                    % (filename, modulename, funcname))
 
-        import re
         # turn the counts data ("(filename, lineno) = count") into something
         # accessible on a per-file basis
         per_file = {}
-        for thingie in self.counts.keys():
-            if thingie != "calledfuncs":
-                # backwards compatibility for abortive attempt to
-                # stuff calledfuncs into self.counts, by Zooko --Zooko
-                # 2001-10-24
-                filename, lineno = thingie
-                lines_hit = per_file[filename] = per_file.get(filename, {})
-                lines_hit[lineno] = self.counts[(filename, lineno)]
-
-        # there are many places where this is insufficient, like a blank
-        # line embedded in a multiline string.
-        blank = re.compile(r'^\s*(#.*)?$')
+        for filename, lineno in self.counts.keys():
+            lines_hit = per_file[filename] = per_file.get(filename, {})
+            lines_hit[lineno] = self.counts[(filename, lineno)]
 
         # accumulate summary info, if needed
         sums = {}
 
-        # generate file paths for the coverage files we are going to write...
-        fnlist = []
-        tfdir = tempfile.gettempdir()
-        for key in per_file.keys():
-            filename = key
-
+        for filename, count in per_file.iteritems():
             # skip some "files" we don't care about...
             if filename == "<string>":
                 continue
-            # are these caused by code compiled using exec or something?
-            if filename.startswith(tfdir):
-                continue
-
-            modulename = inspect.getmodulename(filename)
+            modulename = modname(filename)
 
             if filename.endswith(".pyc") or filename.endswith(".pyo"):
                 filename = filename[:-1]
 
-            if coverdir:
-                thiscoverdir = coverdir
+            if coverdir is None:
+                dir = os.path.dirname(os.path.abspath(filename))
             else:
-                thiscoverdir = os.path.dirname(os.path.abspath(filename))
-
-            # the code from here to "<<<" is the contents of the `fileutil.make_dirs()' function in the Mojo Nation project.  --Zooko 2001-10-14
-            # http://cvs.sourceforge.net/cgi-bin/viewcvs.cgi/mojonation/evil/common/fileutil.py?rev=HEAD&content-type=text/vnd.viewcvs-markup
-            tx = None
-            try:
-                os.makedirs(thiscoverdir)
-            except OSError, x:
-                tx = x
-
-            if not os.path.isdir(thiscoverdir):
-                if tx:
-                    raise tx
-                raise exceptions.IOError, "unknown error prevented creation of directory: %s" % thiscoverdir # careful not to construct an IOError with a 2-tuple, as that has a special meaning...
-            # <<<
-
-            # build list file name by appending a ".cover" to the module name
-            # and sticking it into the specified directory
-            if "." in modulename:
-                # A module in a package
-                finalname = modulename.split(".")[-1]
-                listfilename = os.path.join(thiscoverdir, finalname + ".cover")
-            else:
-                listfilename = os.path.join(thiscoverdir, modulename + ".cover")
-
-            # Get the original lines from the .py file
-            try:
-                lines = open(filename, 'r').readlines()
-            except IOError, err:
-                sys.stderr.write("trace: Could not open %s for reading because: %s - skipping\n" % (`filename`, err))
-                continue
-
-            try:
-                outfile = open(listfilename, 'w')
-            except IOError, err:
-                sys.stderr.write(
-                    '%s: Could not open %s for writing because: %s" \
-                    "- skipping\n' % ("trace", `listfilename`, err))
-                continue
+                dir = coverdir
+                if not os.path.exists(dir):
+                    os.makedirs(dir)
 
             # If desired, get a list of the line numbers which represent
             # executable content (returned as a dict for better lookup speed)
             if show_missing:
-                executable_linenos = find_executable_linenos(filename)
+                lnotab = find_executable_linenos(filename)
             else:
-                executable_linenos = {}
+                lnotab = {}
 
-            n_lines = 0
-            n_hits = 0
-            lines_hit = per_file[key]
-            for i in range(len(lines)):
-                line = lines[i]
-
-                # do the blank/comment match to try to mark more lines
-                # (help the reader find stuff that hasn't been covered)
-                if lines_hit.has_key(i+1):
-                    # count precedes the lines that we captured
-                    outfile.write('%5d: ' % lines_hit[i+1])
-                    n_hits = n_hits + 1
-                    n_lines = n_lines + 1
-                elif blank.match(line):
-                    # blank lines and comments are preceded by dots
-                    outfile.write('    . ')
-                else:
-                    # lines preceded by no marks weren't hit
-                    # Highlight them if so indicated, unless the line contains
-                    # '#pragma: NO COVER' (it is possible to embed this into
-                    # the text as a non-comment; no easy fix)
-                    if executable_linenos.has_key(i+1) and \
-                       lines[i].find(' '.join(['#pragma', 'NO COVER'])) == -1:
-                        outfile.write('>>>>>> ')
-                    else:
-                        outfile.write(' '*7)
-                    n_lines = n_lines + 1
-                outfile.write(lines[i].expandtabs(8))
-
-            outfile.close()
-
+            source = linecache.getlines(filename)
+            coverpath = os.path.join(dir, modulename + ".cover")
+            n_hits, n_lines = self.write_results_file(coverpath, source,
+                                                      lnotab, count)
+            
             if summary and n_lines:
                 percent = int(100 * n_hits / n_lines)
                 sums[modulename] = n_lines, percent, modulename, filename
@@ -338,68 +267,107 @@ class CoverageResults:
                 pickle.dump((self.counts, self.calledfuncs),
                             open(self.outfile, 'w'), 1)
             except IOError, err:
-                sys.stderr.write("cannot save counts files because %s" % err)
+                print >> sys.stderr, "Can't save counts files because %s" % err
 
-def _find_LINENO_from_code(code):
-    """return the numbers of the lines containing the source code that
-    was compiled into code"""
+    def write_results_file(self, path, lines, lnotab, lines_hit):
+        """Return a coverage results file in path."""
+
+        try:
+            outfile = open(path, "w")
+        except IOError, err:
+            print >> sys.stderr, ("trace: Could not open %r for writing: %s"
+                                  "- skipping" % (path, err))
+            return
+
+        n_lines = 0
+        n_hits = 0
+        for i, line in enumerate(lines):
+            lineno = i + 1
+            # do the blank/comment match to try to mark more lines
+            # (help the reader find stuff that hasn't been covered)
+            if lineno in lines_hit:
+                outfile.write("%5d: " % lines_hit[lineno])
+                n_hits += 1
+                n_lines += 1
+            elif rx_blank.match(line):
+                outfile.write("      ")
+            else:
+                # lines preceded by no marks weren't hit
+                # Highlight them if so indicated, unless the line contains
+                # #pragma: NO COVER
+                if lineno in lnotab and not PRAGMA_NOCOVER in lines[i]:
+                    outfile.write(">>>>>> ")
+                else:
+                    outfile.write("       ")
+                n_lines += 1
+            outfile.write(lines[i].expandtabs(8))
+        outfile.close()
+
+        return n_hits, n_lines
+
+def find_lines_from_code(code, strs):
+    """Return dict where keys are lines in the line number table."""
     linenos = {}
 
     line_increments = [ord(c) for c in code.co_lnotab[1::2]]
     table_length = len(line_increments)
+    docstring = False
 
     lineno = code.co_firstlineno
-
     for li in line_increments:
-        linenos[lineno] = 1
         lineno += li
-    linenos[lineno] = 1
+        if lineno not in strs:
+            linenos[lineno] = 1
 
     return linenos
 
-def _find_LINENO(code):
-    """return all of the lineno information from a code object"""
-    import types
-
+def find_lines(code, strs):
+    """Return lineno dict for all code objects reachable from code."""
     # get all of the lineno information from the code of this scope level
-    linenos = _find_LINENO_from_code(code)
+    linenos = find_lines_from_code(code, strs)
 
     # and check the constants for references to other code objects
     for c in code.co_consts:
-        if type(c) == types.CodeType:
+        if isinstance(c, types.CodeType):
             # find another code object, so recurse into it
-            linenos.update(_find_LINENO(c))
+            linenos.update(find_lines(c, strs))
     return linenos
 
-def find_executable_linenos(filename):
-    """return a dict of the line numbers from executable statements in a file
+def find_strings(filename):
+    """Return a dict of possible docstring positions.
 
+    The dict maps line numbers to strings.  There is an entry for
+    line that contains only a string or a part of a triple-quoted
+    string.
     """
-    import parser
+    d = {}
+    # If the first token is a string, then it's the module docstring.
+    # Add this special case so that the test in the loop passes.
+    prev_ttype = token.INDENT
+    f = open(filename)
+    for ttype, tstr, start, end, line in tokenize.generate_tokens(f.readline):
+        if ttype == token.STRING:
+            if prev_ttype == token.INDENT:
+                sline, scol = start
+                eline, ecol = end
+                for i in range(sline, eline + 1):
+                    d[i] = 1
+        prev_ttype = ttype
+    f.close()
+    return d
 
+def find_executable_linenos(filename):
+    """Return dict where keys are line numbers in the line number table."""
     assert filename.endswith('.py')
-
-    prog = open(filename).read()
-    ast = parser.suite(prog)
-    code = parser.compileast(ast, filename)
-
-    return _find_LINENO(code)
-
-### XXX because os.path.commonprefix seems broken by my way of thinking...
-def commonprefix(dirs):
-    "Given a list of pathnames, returns the longest common leading component"
-    if not dirs: return ''
-    n = copy.copy(dirs)
-    for i in range(len(n)):
-        n[i] = n[i].split(os.sep)
-    prefix = n[0]
-    for item in n:
-        for i in range(len(prefix)):
-            if prefix[:i+1] <> item[:i+1]:
-                prefix = prefix[:i]
-                if i == 0: return ''
-                break
-    return os.sep.join(prefix)
+    try:
+        prog = open(filename).read()
+    except IOError, err:
+        print >> sys.stderr, ("Not printing coverage data for %r: %s"
+                              % (filename, err))
+        return {}
+    code = compile(prog, filename, "exec")
+    strs = find_strings(filename)
+    return find_lines(code, strs)
 
 class Trace:
     def __init__(self, count=1, trace=1, countfuncs=0, ignoremods=(),
@@ -478,102 +446,67 @@ class Trace:
         return result
 
     def globaltrace_countfuncs(self, frame, why, arg):
-        """
-        Handles `call' events (why == 'call') and adds the (filename, modulename, funcname,) to the self._calledfuncs dict.
+        """Handler for call events.
+        
+        Adds (filename, modulename, funcname) to the self._calledfuncs dict.
         """
         if why == 'call':
-            filename, lineno, funcname, context, lineindex = \
-                      inspect.getframeinfo(frame, 0)
+            code = frame.f_code
+            filename = code.co_filename
+            funcname = code.co_name
             if filename:
-                modulename = inspect.getmodulename(filename)
+                modulename = modname(filename)
             else:
                 modulename = None
-            self._calledfuncs[(filename, modulename, funcname,)] = 1
+            self._calledfuncs[(filename, modulename, funcname)] = 1
 
     def globaltrace_lt(self, frame, why, arg):
-        """
-        Handles `call' events (why == 'call') and if the code block being entered is to be ignored then it returns `None', else it returns `self.localtrace'.
+        """Handler for call events.
+
+        If the code block being entered is to be ignored, returns `None',
+        else returns self.localtrace.
         """
         if why == 'call':
-            filename, lineno, funcname, context, lineindex = \
-                      inspect.getframeinfo(frame, 0)
+            code = frame.f_code
+            filename = code.co_filename
             if filename:
-                modulename = inspect.getmodulename(filename)
+                modulename = modname(filename)
                 if modulename is not None:
                     ignore_it = self.ignore.names(filename, modulename)
                     if not ignore_it:
                         if self.trace:
                             print (" --- modulename: %s, funcname: %s"
-                                   % (modulename, funcname))
+                                   % (modulename, code.co_name))
                         return self.localtrace
             else:
-                # XXX why no filename?
                 return None
 
     def localtrace_trace_and_count(self, frame, why, arg):
-        if why == 'line':
+        if why == "line":
             # record the file name and line number of every trace
-            # XXX I wish inspect offered me an optimized
-            # `getfilename(frame)' to use in place of the presumably
-            # heavier `getframeinfo()'.  --Zooko 2001-10-14
-
-            filename, lineno, funcname, context, lineindex = \
-                      inspect.getframeinfo(frame, 1)
+            filename = frame.f_code.co_filename
+            lineno = frame.f_lineno
             key = filename, lineno
             self.counts[key] = self.counts.get(key, 0) + 1
 
-            # XXX not convinced that this memoizing is a performance
-            # win -- I don't know enough about Python guts to tell.
-            # --Zooko 2001-10-14
-
-            bname = self.pathtobasename.get(filename)
-            if bname is None:
-
-                # Using setdefault faster than two separate lines?
-                # --Zooko 2001-10-14
-                bname = self.pathtobasename.setdefault(filename,
-                                       os.path.basename(filename))
-            try:
-                print "%s(%d): %s" % (bname, lineno, context[lineindex]),
-            except IndexError:
-                # Uh.. sometimes getframeinfo gives me a context of
-                # length 1 and a lineindex of -2.  Oh well.
-                pass
+            bname = os.path.basename(filename)
+            print "%s(%d): %s" % (bname, lineno,
+                                  linecache.getline(filename, lineno)),
         return self.localtrace
 
     def localtrace_trace(self, frame, why, arg):
-        if why == 'line':
-            # XXX shouldn't do the count increment when arg is
-            # exception?  But be careful to return self.localtrace
-            # when arg is exception! ?  --Zooko 2001-10-14
+        if why == "line":
+            # record the file name and line number of every trace
+            filename = frame.f_code.co_filename
+            lineno = frame.f_lineno
 
-            # record the file name and line number of every trace XXX
-            # I wish inspect offered me an optimized
-            # `getfilename(frame)' to use in place of the presumably
-            # heavier `getframeinfo()'.  --Zooko 2001-10-14
-            filename, lineno, funcname, context, lineindex = \
-                      inspect.getframeinfo(frame)
-
-            # XXX not convinced that this memoizing is a performance
-            # win -- I don't know enough about Python guts to tell.
-            # --Zooko 2001-10-14
-            bname = self.pathtobasename.get(filename)
-            if bname is None:
-                # Using setdefault faster than two separate lines?
-                # --Zooko 2001-10-14
-                bname = self.pathtobasename.setdefault(filename, os.path.basename(filename))
-            if context is not None:
-                try:
-                    print "%s(%d): %s" % (bname, lineno, context[lineindex]),
-                except IndexError:
-                    # Uh.. sometimes getframeinfo gives me a context of length 1 and a lineindex of -2.  Oh well.
-                    pass
-            else:
-                print "%s(???): ???" % bname
+            bname = os.path.basename(filename)
+            print "%s(%d): %s" % (bname, lineno,
+                                  linecache.getline(filename, lineno)),
         return self.localtrace
 
     def localtrace_count(self, frame, why, arg):
-        if why == 'line':
+        if why == "line":
             filename = frame.f_code.co_filename
             lineno = frame.f_lineno
             key = filename, lineno
@@ -690,7 +623,8 @@ def main(argv=None):
         _err_exit("cannot specify both --listfuncs and (--trace or --count)")
 
     if not count and not trace and not report and not listfuncs:
-        _err_exit("must specify one of --trace, --count, --report or --listfuncs")
+        _err_exit("must specify one of --trace, --count, --report or "
+                  "--listfuncs")
 
     if report and no_report:
         _err_exit("cannot specify both --report and --no-report")
@@ -716,7 +650,7 @@ def main(argv=None):
         try:
             t.run('execfile(' + `progname` + ')')
         except IOError, err:
-            _err_exit("Cannot run file %s because: %s" % (`sys.argv[0]`, err))
+            _err_exit("Cannot run file %r because: %s" % (sys.argv[0], err))
         except SystemExit:
             pass
 
