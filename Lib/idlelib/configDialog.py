@@ -1,5 +1,13 @@
-"""
-configuration dialog
+"""IDLE Configuration Dialog: support user customization of IDLE by GUI
+
+Customize font faces, sizes, and colorization attributes.  Set indentation
+defaults.  Customize keybindings.  Colorization and keybindings can be
+saved as user defined sets.  Select startup options including shell/editor
+and default window size.  Define additional help sources.
+
+Note that tab width in IDLE is currently fixed at eight due to Tk issues.
+Refer to comment in EditorWindow autoindent code for details.
+
 """
 from Tkinter import *
 import tkMessageBox, tkColorChooser, tkFont
@@ -11,6 +19,7 @@ from tabpage import TabPageSet
 from keybindingDialog import GetKeysDialog
 from configSectionNameDialog import GetCfgSectionNameDialog
 from configHelpSourceEdit import GetHelpSourceDialog
+
 class ConfigDialog(Toplevel):
     """
     configuration dialog for idle
@@ -336,11 +345,11 @@ class ConfigDialog(Toplevel):
         frameHelp=Frame(frame,borderwidth=2,relief=GROOVE)
         #frameRun
         labelRunTitle=Label(frameRun,text='Startup Preferences')
-        labelRunChoiceTitle=Label(frameRun,text='On startup : ')
+        labelRunChoiceTitle=Label(frameRun,text='On Startup : ')
         radioStartupEdit=Radiobutton(frameRun,variable=self.startupEdit,
-            value=1,command=self.SetKeysType,text="open Edit Window")
+            value=1,command=self.SetKeysType,text="Open Edit Window")
         radioStartupShell=Radiobutton(frameRun,variable=self.startupEdit,
-            value=0,command=self.SetKeysType,text='open Shell Window')
+            value=0,command=self.SetKeysType,text='Open Shell Window')
         #frameWinSize
         labelWinSizeTitle=Label(frameWinSize,text='Initial Window Size'+
                 '  (in characters)')
@@ -354,7 +363,7 @@ class ConfigDialog(Toplevel):
         labelHelpTitle=Label(frameHelp,text='Help Options')
         frameHelpList=Frame(frameHelp)
         frameHelpListButtons=Frame(frameHelpList)
-        labelHelpListTitle=Label(frameHelpList,text='Additional (html) Help Sources:')
+        labelHelpListTitle=Label(frameHelpList,text='Additional Help Sources:')
         scrollHelpList=Scrollbar(frameHelpList)
         self.listHelp=Listbox(frameHelpList,height=5,takefocus=FALSE,
                 exportselection=FALSE)
@@ -840,11 +849,11 @@ class ConfigDialog(Toplevel):
             apply(self.textHighlightSample.tag_config,(element,),colours)
         self.SetColourSample()
 
-    def OnCheckUserHelpBrowser(self):
-        if self.userHelpBrowser.get():
-            self.entryHelpBrowser.config(state=NORMAL)
-        else:
-            self.entryHelpBrowser.config(state=DISABLED)
+##     def OnCheckUserHelpBrowser(self):
+##         if self.userHelpBrowser.get():
+##             self.entryHelpBrowser.config(state=NORMAL)
+##         else:
+##             self.entryHelpBrowser.config(state=DISABLED)
 
     def HelpSourceSelected(self,event):
         self.SetHelpListButtonStates()
@@ -890,7 +899,7 @@ class ConfigDialog(Toplevel):
         self.SetHelpListButtonStates()
 
     def UpdateUserHelpChangedItems(self):
-        #clear and rebuild the HelpFiles secion in self.changedItems
+        #clear and rebuild the HelpFiles section in self.changedItems
         if self.changedItems['main'].has_key('HelpFiles'):
             del(self.changedItems['main']['HelpFiles'])
         for num in range(1,len(self.userHelpList)+1):
@@ -1069,19 +1078,18 @@ class ConfigDialog(Toplevel):
         return idleConf.userCfg[configType].SetOption(section,item,value)
 
     def SaveAllChangedConfigs(self):
-        """
-        save all configuration changes to user config files.
-        """
-        #this section gets completely replaced
-        idleConf.userCfg['main'].remove_section('HelpFiles')
+        "Save configuration changes to the user config file."
         idleConf.userCfg['main'].Save()
         for configType in self.changedItems.keys():
-            cfgTypeHasChanges=0
+            cfgTypeHasChanges = False
             for section in self.changedItems[configType].keys():
+                if section == 'HelpFiles':
+                    #this section gets completely replaced
+                    idleConf.userCfg['main'].remove_section('HelpFiles')
                 for item in self.changedItems[configType][section].keys():
-                    value=self.changedItems[configType][section][item]
+                    value = self.changedItems[configType][section][item]
                     if self.SetUserValue(configType,section,item,value):
-                        cfgTypeHasChanges=1
+                        cfgTypeHasChanges = True
             if cfgTypeHasChanges:
                 idleConf.userCfg[configType].Save()
         self.ResetChangedItems() #clear the changed items dict
