@@ -22,6 +22,8 @@ Core and builtins
 Library
 -------
 
+- Bug #1103844: fix distutils.install.dump_dirs() with negated options.
+
 - Bug #1067732: wininst --install-script doesn't leave residual files anymore.
 
 - StringIO.truncate() now correctly adjusts the size attribute.
