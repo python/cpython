@@ -4,8 +4,29 @@ from IOCTL import *
 import sys
 import struct
 import select
+import posix
 
 DEVICE='/dev/ttyd2'
+
+class UnixFile:
+	def open(self, name, mode):
+		self.fd = posix.open(name, mode)
+		return self
+
+	def read(self, len):
+		return posix.read(self.fd, len)
+
+	def write(self, data):
+		dummy = posix.write(self.fd, data)
+
+	def flush(self):
+		pass
+
+	def fileno(self):
+		return self.fd
+
+	def close(self):
+		dummy = posix.close(self.fd)
 
 def packttyargs(*args):
 	if type(args) <> type(()):
@@ -39,8 +60,8 @@ def unpackttyargs(str):
 	return (iflag, oflag, cflag, lflag, line, chars)
 
 def initline(name):
-	fp = open(name, 'r')
-	ofp = open(name, 'w')
+	fp = UnixFile().open(name, 2)
+	ofp = fp
 	fd = fp.fileno()
 	rv = fcntl.ioctl(fd, IOCTL.TCGETA, nullttyargs())
 	iflag, oflag, cflag, lflag, line, chars = unpackttyargs(rv)
@@ -92,13 +113,31 @@ EJECT='\x2a'
 FF   ='\xab'
 REW  ='\xac'
 STILL='\x4f'
-STEP_FWD ='\xad'
+STEP_FWD ='\x2b'    # Was: '\xad'
 FM_SELECT=EXP_8 + '\xc8'
 FM_STILL=EXP_8 + '\xcd'
 DM_OFF=EXP_8 + '\xc9'
 DM_SET=EXP_8 + '\xc4'
 FWD_SHUTTLE='\xb5'
 REV_SHUTTLE='\xb6'
+EM_SELECT=EXP_8 + '\xc0'
+N_FRAME_REC=EXP_8 + '\x92'
+
+IN_ENTRY=EXP_7 + '\x90'
+IN_ENTRY_RESET=EXP_7 + '\x91'
+IN_ENTRY_SET=EXP_7 + '\x98'
+IN_ENTRY_INC=EXP_7 + '\x94'
+IN_ENTRY_DEC=EXP_7 + '\x95'
+IN_ENTRY_SENSE=EXP_7 + '\x9a'
+
+OUT_ENTRY=EXP_7 + '\x92'
+OUT_ENTRY_RESET=EXP_7 + '\x93'
+OUT_ENTRY_SET=EXP_7 + '\x99'
+OUT_ENTRY_INC=EXP_7 + '\x96'
+OUT_ENTRY_DEC=EXP_7 + '\x98'
+OUT_ENTRY_SENSE=EXP_7 + '\x9b'
+
+DEBUG=0
 
 class VCR:
 	def init(self):
@@ -106,7 +145,8 @@ class VCR:
 		return self
 
 	def _cmd(self, cmd):
-##		print '>>>',`cmd`
+		if DEBUG:
+			print '>>>',`cmd`
 		self.ofp.write(cmd)
 		self.ofp.flush()
 
@@ -118,8 +158,10 @@ class VCR:
 ##				if rep:
 ##					print 'FLUSHED:', `rep`
 				return None
+			# XXXX Niet goed: er is meer gebufferd!
 			data = self.ifp.read(1)
-##			print '<<<',`data`
+			if DEBUG:
+				print '<<<',`data`
 			if data == NAK:
 				return NAK
 			rep = rep + data
@@ -143,11 +185,12 @@ class VCR:
 		return number
 
 	def _iflush(self):
-		dummy = self._waitdata(10000, 1)
+		dummy = self._waitdata(10000, 0)
 ##		if dummy:
 ##			print 'IFLUSH:', dummy
 
 	def simplecmd(self,cmd):
+		self._iflush()
 		for ch in cmd:
 			self._cmd(ch)
 			rep = self._reply(1)
@@ -156,6 +199,11 @@ class VCR:
 			elif rep <> ACK:
 				raise error, 'Unexpected reply:' + `rep`
 		return 1
+
+	def replycmd(self, cmd):
+		if not self.simplecmd(cmd[:-1]):
+			return 0
+		self._cmd(cmd[-1])
 
 	def _number(self, number, digits):
 		if number < 0:
@@ -258,6 +306,41 @@ class VCR:
 			return 0
 		return 1
 
+	def editmode(self, mode):
+		if mode == 'off':
+			a0 = a1 = a2 = 0
+		elif mode == 'format':
+			a0 = 4
+			a1 = 7
+			a2 = 4
+		elif mode == 'asmbl':
+			a0 = 1
+			a1 = 7
+			a2 = 4
+		elif mode == 'insert-video':
+			a0 = 2
+			a1 = 4
+			a2 = 0
+		else:
+			raise 'editmode should be off,format,asmbl or insert-video'
+		if not self.simplecmd(EM_SELECT):
+			return 0
+		self._number(a0, 1)
+		self._number(a1, 1)
+		self._number(a2, 1)
+		if not self.simplecmd(ENTER):
+			return 0
+		return 1
+
+	def nframerec(self, num):
+		if not self.simplecmd(N_FRAME_REC):
+			return 0
+		self._number(num, 4)
+		if not self.simplecmd(ENTER):
+			return 0
+		self.waitready()
+		return 1
+
 	def fmstill(self):
 		if not self.simplecmd(FM_STILL):
 			return 0
@@ -295,3 +378,51 @@ class VCR:
 			return 0
 		self._number(num, 1)
 		return 1
+
+	def getentry(self, which):
+		if which == 'in':
+			cmd = IN_ENTRY_SENSE
+		elif which == 'out':
+			cmd = OUT_ENTRY_SENSE
+		self.replycmd(cmd)
+		h = self._getnumber(2)
+		print 'h=',h
+		m = self._getnumber(2)
+		print 'm=',m
+		s = self._getnumber(2)
+		print 's=',s
+		f = self._getnumber(2)
+		print 'f=',f
+		return (h, m, s, f)
+
+	def inentry(self, arg):
+		return self.ioentry(arg, (IN_ENTRY, IN_ENTRY_RESET, \
+			  IN_ENTRY_SET, IN_ENTRY_INC, IN_ENTRY_DEC))
+
+	def outentry(self, arg):
+		return self.ioentry(arg, (OUT_ENTRY, OUT_ENTRY_RESET, \
+			  OUT_ENTRY_SET, OUT_ENTRY_INC, OUT_ENTRY_DEC))
+
+	def ioentry(self, arg, (Load, Clear, Set, Inc, Dec)):
+		if type(arg) == type(()):
+			h, m, s, f = arg
+			if not self.simplecmd(Set):
+				return 0
+			self._number(h,2)
+			self._number(m,2)
+			self._number(s,2)
+			self._number(f,2)
+			if not self.simplecmd(ENTER):
+				return 0
+			return 1
+		elif arg == 'reset':
+			cmd = Clear
+		elif arg == 'load':
+			cmd = Load
+		elif arg == '+':
+			cmd = Inc
+		elif arg == '-':
+			cmd = Dec
+		else:
+			raise error, 'Arg should be +,-,reset,load or (h,m,s,f)'
+		return self.simplecmd(cmd)
