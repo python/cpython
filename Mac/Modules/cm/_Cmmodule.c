@@ -109,6 +109,9 @@ static PyObject *CmpInstObj_CloseComponent(ComponentInstanceObject *_self, PyObj
 {
 	PyObject *_res = NULL;
 	OSErr _err;
+#ifndef CloseComponent
+	PyMac_PRECHECK(CloseComponent);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_err = CloseComponent(_self->ob_itself);
@@ -122,6 +125,9 @@ static PyObject *CmpInstObj_GetComponentInstanceError(ComponentInstanceObject *_
 {
 	PyObject *_res = NULL;
 	OSErr _err;
+#ifndef GetComponentInstanceError
+	PyMac_PRECHECK(GetComponentInstanceError);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_err = GetComponentInstanceError(_self->ob_itself);
@@ -135,6 +141,9 @@ static PyObject *CmpInstObj_SetComponentInstanceError(ComponentInstanceObject *_
 {
 	PyObject *_res = NULL;
 	OSErr theError;
+#ifndef SetComponentInstanceError
+	PyMac_PRECHECK(SetComponentInstanceError);
+#endif
 	if (!PyArg_ParseTuple(_args, "h",
 	                      &theError))
 		return NULL;
@@ -149,6 +158,9 @@ static PyObject *CmpInstObj_GetComponentInstanceStorage(ComponentInstanceObject 
 {
 	PyObject *_res = NULL;
 	Handle _rv;
+#ifndef GetComponentInstanceStorage
+	PyMac_PRECHECK(GetComponentInstanceStorage);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetComponentInstanceStorage(_self->ob_itself);
@@ -161,6 +173,9 @@ static PyObject *CmpInstObj_SetComponentInstanceStorage(ComponentInstanceObject 
 {
 	PyObject *_res = NULL;
 	Handle theStorage;
+#ifndef SetComponentInstanceStorage
+	PyMac_PRECHECK(SetComponentInstanceStorage);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      ResObj_Convert, &theStorage))
 		return NULL;
@@ -177,6 +192,9 @@ static PyObject *CmpInstObj_GetComponentInstanceA5(ComponentInstanceObject *_sel
 {
 	PyObject *_res = NULL;
 	long _rv;
+#ifndef GetComponentInstanceA5
+	PyMac_PRECHECK(GetComponentInstanceA5);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetComponentInstanceA5(_self->ob_itself);
@@ -192,6 +210,9 @@ static PyObject *CmpInstObj_SetComponentInstanceA5(ComponentInstanceObject *_sel
 {
 	PyObject *_res = NULL;
 	long theA5;
+#ifndef SetComponentInstanceA5
+	PyMac_PRECHECK(SetComponentInstanceA5);
+#endif
 	if (!PyArg_ParseTuple(_args, "l",
 	                      &theA5))
 		return NULL;
@@ -208,6 +229,9 @@ static PyObject *CmpInstObj_ComponentFunctionImplemented(ComponentInstanceObject
 	PyObject *_res = NULL;
 	long _rv;
 	short ftnNumber;
+#ifndef ComponentFunctionImplemented
+	PyMac_PRECHECK(ComponentFunctionImplemented);
+#endif
 	if (!PyArg_ParseTuple(_args, "h",
 	                      &ftnNumber))
 		return NULL;
@@ -222,6 +246,9 @@ static PyObject *CmpInstObj_GetComponentVersion(ComponentInstanceObject *_self, 
 {
 	PyObject *_res = NULL;
 	long _rv;
+#ifndef GetComponentVersion
+	PyMac_PRECHECK(GetComponentVersion);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetComponentVersion(_self->ob_itself);
@@ -235,6 +262,9 @@ static PyObject *CmpInstObj_ComponentSetTarget(ComponentInstanceObject *_self, P
 	PyObject *_res = NULL;
 	long _rv;
 	ComponentInstance target;
+#ifndef ComponentSetTarget
+	PyMac_PRECHECK(ComponentSetTarget);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      CmpInstObj_Convert, &target))
 		return NULL;
@@ -361,6 +391,9 @@ static PyObject *CmpObj_UnregisterComponent(ComponentObject *_self, PyObject *_a
 {
 	PyObject *_res = NULL;
 	OSErr _err;
+#ifndef UnregisterComponent
+	PyMac_PRECHECK(UnregisterComponent);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_err = UnregisterComponent(_self->ob_itself);
@@ -378,6 +411,9 @@ static PyObject *CmpObj_GetComponentInfo(ComponentObject *_self, PyObject *_args
 	Handle componentName;
 	Handle componentInfo;
 	Handle componentIcon;
+#ifndef GetComponentInfo
+	PyMac_PRECHECK(GetComponentInfo);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O&O&",
 	                      ResObj_Convert, &componentName,
 	                      ResObj_Convert, &componentInfo,
@@ -398,6 +434,9 @@ static PyObject *CmpObj_OpenComponent(ComponentObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ComponentInstance _rv;
+#ifndef OpenComponent
+	PyMac_PRECHECK(OpenComponent);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = OpenComponent(_self->ob_itself);
@@ -410,6 +449,9 @@ static PyObject *CmpObj_ResolveComponentAlias(ComponentObject *_self, PyObject *
 {
 	PyObject *_res = NULL;
 	Component _rv;
+#ifndef ResolveComponentAlias
+	PyMac_PRECHECK(ResolveComponentAlias);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = ResolveComponentAlias(_self->ob_itself);
@@ -425,6 +467,9 @@ static PyObject *CmpObj_GetComponentPublicIndString(ComponentObject *_self, PyOb
 	Str255 theString;
 	short strListID;
 	short index;
+#ifndef GetComponentPublicIndString
+	PyMac_PRECHECK(GetComponentPublicIndString);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&hh",
 	                      PyMac_GetStr255, theString,
 	                      &strListID,
@@ -444,6 +489,9 @@ static PyObject *CmpObj_GetComponentRefcon(ComponentObject *_self, PyObject *_ar
 {
 	PyObject *_res = NULL;
 	long _rv;
+#ifndef GetComponentRefcon
+	PyMac_PRECHECK(GetComponentRefcon);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetComponentRefcon(_self->ob_itself);
@@ -456,6 +504,9 @@ static PyObject *CmpObj_SetComponentRefcon(ComponentObject *_self, PyObject *_ar
 {
 	PyObject *_res = NULL;
 	long theRefcon;
+#ifndef SetComponentRefcon
+	PyMac_PRECHECK(SetComponentRefcon);
+#endif
 	if (!PyArg_ParseTuple(_args, "l",
 	                      &theRefcon))
 		return NULL;
@@ -470,6 +521,9 @@ static PyObject *CmpObj_OpenComponentResFile(ComponentObject *_self, PyObject *_
 {
 	PyObject *_res = NULL;
 	short _rv;
+#ifndef OpenComponentResFile
+	PyMac_PRECHECK(OpenComponentResFile);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = OpenComponentResFile(_self->ob_itself);
@@ -485,6 +539,9 @@ static PyObject *CmpObj_GetComponentResource(ComponentObject *_self, PyObject *_
 	OSType resType;
 	short resID;
 	Handle theResource;
+#ifndef GetComponentResource
+	PyMac_PRECHECK(GetComponentResource);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&h",
 	                      PyMac_GetOSType, &resType,
 	                      &resID))
@@ -506,6 +563,9 @@ static PyObject *CmpObj_GetComponentIndString(ComponentObject *_self, PyObject *
 	Str255 theString;
 	short strListID;
 	short index;
+#ifndef GetComponentIndString
+	PyMac_PRECHECK(GetComponentIndString);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&hh",
 	                      PyMac_GetStr255, theString,
 	                      &strListID,
@@ -525,6 +585,9 @@ static PyObject *CmpObj_CountComponentInstances(ComponentObject *_self, PyObject
 {
 	PyObject *_res = NULL;
 	long _rv;
+#ifndef CountComponentInstances
+	PyMac_PRECHECK(CountComponentInstances);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = CountComponentInstances(_self->ob_itself);
@@ -538,6 +601,9 @@ static PyObject *CmpObj_SetDefaultComponent(ComponentObject *_self, PyObject *_a
 	PyObject *_res = NULL;
 	OSErr _err;
 	short flags;
+#ifndef SetDefaultComponent
+	PyMac_PRECHECK(SetDefaultComponent);
+#endif
 	if (!PyArg_ParseTuple(_args, "h",
 	                      &flags))
 		return NULL;
@@ -554,6 +620,9 @@ static PyObject *CmpObj_CaptureComponent(ComponentObject *_self, PyObject *_args
 	PyObject *_res = NULL;
 	Component _rv;
 	Component capturingComponent;
+#ifndef CaptureComponent
+	PyMac_PRECHECK(CaptureComponent);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      CmpObj_Convert, &capturingComponent))
 		return NULL;
@@ -568,6 +637,9 @@ static PyObject *CmpObj_UncaptureComponent(ComponentObject *_self, PyObject *_ar
 {
 	PyObject *_res = NULL;
 	OSErr _err;
+#ifndef UncaptureComponent
+	PyMac_PRECHECK(UncaptureComponent);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_err = UncaptureComponent(_self->ob_itself);
@@ -582,6 +654,9 @@ static PyObject *CmpObj_GetComponentIconSuite(ComponentObject *_self, PyObject *
 	PyObject *_res = NULL;
 	OSErr _err;
 	Handle iconSuite;
+#ifndef GetComponentIconSuite
+	PyMac_PRECHECK(GetComponentIconSuite);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_err = GetComponentIconSuite(_self->ob_itself,
@@ -669,6 +744,9 @@ static PyObject *Cm_RegisterComponentResource(PyObject *_self, PyObject *_args)
 	Component _rv;
 	ComponentResourceHandle cr;
 	short global;
+#ifndef RegisterComponentResource
+	PyMac_PRECHECK(RegisterComponentResource);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&h",
 	                      ResObj_Convert, &cr,
 	                      &global))
@@ -686,6 +764,9 @@ static PyObject *Cm_FindNextComponent(PyObject *_self, PyObject *_args)
 	Component _rv;
 	Component aComponent;
 	ComponentDescription looking;
+#ifndef FindNextComponent
+	PyMac_PRECHECK(FindNextComponent);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
 	                      CmpObj_Convert, &aComponent,
 	                      CmpDesc_Convert, &looking))
@@ -702,6 +783,9 @@ static PyObject *Cm_CountComponents(PyObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	long _rv;
 	ComponentDescription looking;
+#ifndef CountComponents
+	PyMac_PRECHECK(CountComponents);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      CmpDesc_Convert, &looking))
 		return NULL;
@@ -715,6 +799,9 @@ static PyObject *Cm_GetComponentListModSeed(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	long _rv;
+#ifndef GetComponentListModSeed
+	PyMac_PRECHECK(GetComponentListModSeed);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetComponentListModSeed();
@@ -728,6 +815,9 @@ static PyObject *Cm_CloseComponentResFile(PyObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	OSErr _err;
 	short refnum;
+#ifndef CloseComponentResFile
+	PyMac_PRECHECK(CloseComponentResFile);
+#endif
 	if (!PyArg_ParseTuple(_args, "h",
 	                      &refnum))
 		return NULL;
@@ -744,6 +834,9 @@ static PyObject *Cm_OpenDefaultComponent(PyObject *_self, PyObject *_args)
 	ComponentInstance _rv;
 	OSType componentType;
 	OSType componentSubType;
+#ifndef OpenDefaultComponent
+	PyMac_PRECHECK(OpenDefaultComponent);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
 	                      PyMac_GetOSType, &componentType,
 	                      PyMac_GetOSType, &componentSubType))
@@ -761,6 +854,9 @@ static PyObject *Cm_RegisterComponentResourceFile(PyObject *_self, PyObject *_ar
 	long _rv;
 	short resRefNum;
 	short global;
+#ifndef RegisterComponentResourceFile
+	PyMac_PRECHECK(RegisterComponentResourceFile);
+#endif
 	if (!PyArg_ParseTuple(_args, "hh",
 	                      &resRefNum,
 	                      &global))
