@@ -567,7 +567,11 @@ builtin_execfile(PyObject *self, PyObject *args)
 #ifndef RISCOS
 	if (!stat(filename, &s)) {
 		if (S_ISDIR(s.st_mode))
+#if defined(PYOS_OS2) && defined(PYCC_VACPP)
+			errno = EOS2ERR;
+#else
 			errno = EISDIR;
+#endif
 		else
 			exists = 1;
 	}

@@ -34,7 +34,6 @@ extern void initrotor(void);
 extern void initsignal(void);
 extern void initselect(void);
 extern void init_socket(void);
-extern void initsoundex(void);
 extern void initstrop(void);
 extern void initstruct(void);
 extern void inittime(void);
@@ -82,7 +81,6 @@ struct _inittab _PyImport_Inittab[] = {
         {"_socket", init_socket},
         {"select", initselect},
 #endif
-        {"soundex", initsoundex},
         {"strop", initstrop},
         {"struct", initstruct},
         {"time", inittime},
