@@ -26,7 +26,7 @@ class GroupDatabaseTestCase(unittest.TestCase):
             # The following won't work, because of duplicate entries
             # for one gid
             #    self.assertEqual(grp.getgrgid(e.gr_gid), e)
-            # instead of this collect all entries for one uid
+            # instead of this collect all entries for one gid
             # and check afterwards
             entriesbygid.setdefault(e.gr_gid, []).append(e)
 
