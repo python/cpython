@@ -104,6 +104,9 @@ setup(name="IDLEfork",
       description = "IDLEfork, the Developmental Python IDE",
       author = "Guido van Rossum et. al.",
       author_email = "idle-dev@python.org",
+      maintainer = "Kurt B. Kaiser",
+      maintainer_email = "kbk@shore.net",
+      license = "PSF: www.python.org",
       url = "https://sourceforge.net/projects/idlefork/",
       long_description =
 """IDLE is a Tkinter based IDE for Python. It is written in 100% pure Python
