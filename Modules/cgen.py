@@ -103,7 +103,7 @@ def checkarg(type, arg):
 	#
 	# Turn "char *x" into "string x".
 	#
-	if type = 'char' and arg[0] = '*':
+	if type == 'char' and arg[0] == '*':
 		type = 'string'
 		arg = arg[1:]
 	#
@@ -148,12 +148,12 @@ def checkarg(type, arg):
 		if not sub:
 			# The subscript is just a number
 			return type, mode, num, ''
-		if sub[:1] = '*':
+		if sub[:1] == '*':
 			# There is a factor prefix
 			sub = sub[1:]
 		else:
 			raise arg_error, ('\'*\' expected', sub)
-	if sub = 'retval':
+	if sub == 'retval':
 		# size is retval -- must be a reply argument
 		if mode <> 'r':
 			raise arg_error, ('non-r mode with [retval]', mode)
@@ -180,14 +180,14 @@ def generate(type, func, database):
 	n_out_args = 0
 	#
 	for a_type, a_mode, a_factor, a_sub in database:
-		if a_mode = 's':
+		if a_mode == 's':
 			n_in_args = n_in_args + 1
-		elif a_mode = 'r':
+		elif a_mode == 'r':
 			n_out_args = n_out_args + 1
 		else:
 			# Can't happen
 			raise arg_error, ('bad a_mode', a_mode)
-		if (a_mode = 'r' and a_sub) or a_sub = 'retval':
+		if (a_mode == 'r' and a_sub) or a_sub == 'retval':
 			e = 'Function', func, 'too complicated:'
 			err(e + (a_type, a_mode, a_factor, a_sub))
 			print '/* XXX Too complicated to generate code for */'
@@ -225,12 +225,12 @@ def generate(type, func, database):
 	#
 	for i in range(len(database)):
 		a_type, a_mode, a_factor, a_sub = database[i]
-		if a_mode = 's' and a_sub[:3] = 'arg' and isnum(a_sub[3:]):
+		if a_mode == 's' and a_sub[:3] == 'arg' and isnum(a_sub[3:]):
 			# Sending a variable-length array
 			n = eval(a_sub[3:])
 			if 1 <= n <= len(database):
 			    b_type, b_mode, b_factor, b_sub = database[n-1]
-			    if b_mode = 's':
+			    if b_mode == 's':
 			        database[n-1] = b_type, 'i', a_factor, `i`
 			        n_in_args = n_in_args - 1
 	#
@@ -240,7 +240,7 @@ def generate(type, func, database):
 	i_in = 0
 	for i in range(len(database)):
 		a_type, a_mode, a_factor, a_sub = database[i]
-		if a_mode = 's':
+		if a_mode == 's':
 			in_pos.append(i_in)
 			i_in = i_in + 1
 		else:
@@ -250,7 +250,7 @@ def generate(type, func, database):
 	#
 	for i in range(len(database)):
 		a_type, a_mode, a_factor, a_sub = database[i]
-		if a_mode = 'i':
+		if a_mode == 'i':
 			#
 			# Implicit argument;
 			# a_factor is divisor if present,
@@ -267,7 +267,7 @@ def generate(type, func, database):
 				print '\targ' + `i+1`,
 				print '= arg' + `i+1`,
 				print '/', a_factor + ';'
-		elif a_mode = 's':
+		elif a_mode == 's':
 			if a_sub: # Allocate memory for varsize array
 				print '\tif ((arg' + `i+1`, '=',
 				print 'NEW(' + a_type + ',',
@@ -302,7 +302,7 @@ def generate(type, func, database):
 	for i in range(len(database)):
 		if i > 0: print ',',
 		a_type, a_mode, a_factor, a_sub = database[i]
-		if a_mode = 'r' and not a_factor:
+		if a_mode == 'r' and not a_factor:
 			print '&',
 		print 'arg' + `i+1`,
 	#
@@ -314,7 +314,7 @@ def generate(type, func, database):
 	#
 	for i in range(len(database)):
 		a_type, a_mode, a_factor, a_sub = database[i]
-		if a_mode = 's' and a_sub:
+		if a_mode == 's' and a_sub:
 			print '\tDEL(arg' + `i+1` + ');'
 	#
 	# Return
@@ -325,10 +325,10 @@ def generate(type, func, database):
 		#
 		if type <> 'void':
 			n_out_args = n_out_args + 1
-		if n_out_args = 1:
+		if n_out_args == 1:
 			for i in range(len(database)):
 				a_type, a_mode, a_factor, a_sub = database[i]
-				if a_mode = 'r':
+				if a_mode == 'r':
 					break
 			else:
 				raise arg_error, 'expected r arg not found'
@@ -346,7 +346,7 @@ def generate(type, func, database):
 				i_out = i_out + 1
 			for i in range(len(database)):
 				a_type, a_mode, a_factor, a_sub = database[i]
-				if a_mode = 'r':
+				if a_mode == 'r':
 					print '\t  settupleitem(v,',
 					print `i_out` + ',',
 					s = mkobject(a_type, 'arg' + `i+1`)
@@ -359,7 +359,7 @@ def generate(type, func, database):
 		# Simple function return
 		# Return None or return value
 		#
-		if type = 'void':
+		if type == 'void':
 			print '\tINCREF(None);'
 			print '\treturn None;'
 		else:
@@ -399,12 +399,12 @@ while 1:
 	lno = lno+1
 	words = string.split(line)
 	#
-	if part = 1:
+	if part == 1:
 		#
 		# In part 1, copy everything literally
 		# except look for a line of just '%%'
 		#
-		if words = ['%%']:
+		if words == ['%%']:
 			part = part + 1
 		else:
 			#
@@ -413,7 +413,7 @@ while 1:
 			# of the function in Python.
 			# The stub name is derived by prefixing 'gl_'.
 			#
-			if words and words[0][0] = '%':
+			if words and words[0][0] == '%':
 				func = words[0][1:]
 				if (not func) and words[1:]:
 					func = words[1]
@@ -423,9 +423,9 @@ while 1:
 				print line
 	elif not words:
 		pass			# skip empty line
-	elif words[0] = '#include':
+	elif words[0] == '#include':
 		print line
-	elif words[0][:1] = '#':
+	elif words[0][:1] == '#':
 		pass			# ignore comment
 	elif words[0] not in return_types:
 		err('Line', lno, ': bad return type :', words[0])
