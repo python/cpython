@@ -114,6 +114,10 @@ Core and builtins
   When comparing containers with cyclic references to themselves it
   will now just hit the recursion limit.  See SF patch 825639.
 
+- str and unicode builtin types now have s.rsplit() method that is
+  same as s.split() except that it scans the string from the end
+  working forward.  See SF feature request 801847.
+
 Extension modules
 -----------------
 
