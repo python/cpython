@@ -28,12 +28,8 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include "node.h"
 #include "graminit.h"
-#include "sysmodule.h"
 #include "bltinmodule.h"
 #include "import.h"
-#include "pythonrun.h"
-#include "ceval.h"
-#include "modsupport.h"
 #include "compile.h"
 #include "eval.h"
 
@@ -356,7 +352,11 @@ builtin_dir(self, args)
 		}
 	}
 	else {
-		v = newlistobject(0);
+		v = PyObject_CallMethod(d, "keys", NULL);
+		if (v == NULL) {
+			PyErr_Clear();
+			v = newlistobject(0);
+		}
 	}
 	DECREF(d);
 	return v;
