@@ -77,7 +77,8 @@ extern DL_IMPORT(int) PyErr_BadArgument(void);
 extern DL_IMPORT(PyObject *) PyErr_NoMemory(void);
 extern DL_IMPORT(PyObject *) PyErr_SetFromErrno(PyObject *);
 extern DL_IMPORT(PyObject *) PyErr_SetFromErrnoWithFilename(PyObject *, char *);
-extern DL_IMPORT(PyObject *) PyErr_Format(PyObject *, const char *, ...);
+extern DL_IMPORT(PyObject *) PyErr_Format(PyObject *, const char *, ...)
+			__attribute__((format(printf, 2, 3)));
 #ifdef MS_WINDOWS
 extern DL_IMPORT(PyObject *) PyErr_SetFromWindowsErrWithFilename(int, const char *);
 extern DL_IMPORT(PyObject *) PyErr_SetFromWindowsErr(int);
@@ -126,8 +127,10 @@ extern DL_IMPORT(PyObject *) PyErr_ProgramText(char *, int);
 
 #ifndef HAVE_SNPRINTF
 #include <stdarg.h>
-extern DL_IMPORT(int) PyOS_snprintf(char *str, size_t size, const char  *format, ...);
-extern DL_IMPORT(int) PyOS_vsnprintf(char *str, size_t size, const char  *format, va_list va);
+extern DL_IMPORT(int) PyOS_snprintf(char *str, size_t size, const char  *format, ...)
+			__attribute__((format(printf, 3, 4)));
+extern DL_IMPORT(int) PyOS_vsnprintf(char *str, size_t size, const char  *format, va_list va)
+			__attribute__((format(printf, 3, 0)));
 #else
 # define PyOS_vsnprintf	vsnprintf
 # define PyOS_snprintf	snprintf
