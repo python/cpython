@@ -137,7 +137,7 @@ testit('pow(2,-1)', math.pow(2,-1), 0.5)
 print 'radians'
 testit('radians(180)', math.radians(180), math.pi)
 testit('radians(90)', math.radians(90), math.pi/2)
-testit('radians(-45)', math.radians(-45), -math.pi/4)     
+testit('radians(-45)', math.radians(-45), -math.pi/4)
 
 print 'sin'
 testit('sin(0)', math.sin(0), 0)

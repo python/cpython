@@ -39,20 +39,20 @@ MISC_LEN = 7
 # Helpers
 def base64_len(s):
     """Return the length of s when it is encoded with base64."""
-    groups_of_3, leftover = divmod(len(s), 3) 
-    # 4 bytes out for each 3 bytes (or nonzero fraction thereof) in. 
+    groups_of_3, leftover = divmod(len(s), 3)
+    # 4 bytes out for each 3 bytes (or nonzero fraction thereof) in.
     # Thanks, Tim!
-    n = groups_of_3 * 4 
-    if leftover: 
-        n += 4 
-    return n 
+    n = groups_of_3 * 4
+    if leftover:
+        n += 4
+    return n
 
 
 
 def header_encode(header, charset='iso-8859-1', keep_eols=0, maxlinelen=76,
                   eol=NL):
     """Encode a single header line with Base64 encoding in a given charset.
-    
+
     Defined in RFC 2045, this Base64 encoding is identical to normal Base64
     encoding, except that each line must be intelligently wrapped (respecting
     the Base64 encoding), and subsequent lines must start with a space.
@@ -72,7 +72,7 @@ def header_encode(header, charset='iso-8859-1', keep_eols=0, maxlinelen=76,
 
     "=?charset?b?WW/5ciBtYXp66XLrIHf8eiBhIGhhbXBzdGHuciBBIFlv+XIgbWF6euly?=\\n
       =?charset?b?6yB3/HogYSBoYW1wc3Rh7nIgQkMgWW/5ciBtYXp66XLrIHf8eiBhIGhh?="
-      
+
     with each line wrapped at, at most, maxlinelen characters (defaults to 76
     characters).
     """
@@ -82,7 +82,7 @@ def header_encode(header, charset='iso-8859-1', keep_eols=0, maxlinelen=76,
 
     if not keep_eols:
         header = fix_eols(header)
-    
+
     # Base64 encode each line, in encoded chunks no greater than maxlinelen in
     # length, after the RFC chrome is added in.
     base64ed = []
@@ -91,7 +91,7 @@ def header_encode(header, charset='iso-8859-1', keep_eols=0, maxlinelen=76,
 
     # BAW: Ben's original code used a step of max_unencoded, but I think it
     # ought to be max_encoded.  Otherwise, where's max_encoded used?  I'm
-    # still not sure what the 
+    # still not sure what the
     for i in range(0, len(header), max_unencoded):
         base64ed.append(b2a_base64(header[i:i+max_unencoded]))
 
@@ -126,10 +126,10 @@ def encode(s, binary=1, maxlinelen=76, eol=NL):
     """
     if not s:
         return s
-    
+
     if not binary:
         s = fix_eols(s)
-        
+
     encvec = []
     max_unencoded = maxlinelen * 3 / 4
     for i in range(0, len(s), max_unencoded):
@@ -162,7 +162,7 @@ def decode(s, convert_eols=None):
     """
     if not s:
         return s
-    
+
     dec = a2b_base64(s)
     if convert_eols:
         return dec.replace(CRLF, convert_eols)

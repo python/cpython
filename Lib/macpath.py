@@ -238,16 +238,16 @@ def abspath(path):
 
 # realpath is a no-op on systems without islink support
 def realpath(path):
-	path = abspath(path)
-	try:
-		import macfs
-	except ImportError:
-		return path
-	if not path:
-		return path
-	components = path.split(':')
-	path = components[0] + ':'
-	for c in components[1:]:
-		path = join(path, c)
-		path = macfs.ResolveAliasFile(path)[0].as_pathname()
-	return path
+    path = abspath(path)
+    try:
+        import macfs
+    except ImportError:
+        return path
+    if not path:
+        return path
+    components = path.split(':')
+    path = components[0] + ':'
+    for c in components[1:]:
+        path = join(path, c)
+        path = macfs.ResolveAliasFile(path)[0].as_pathname()
+    return path

@@ -88,7 +88,7 @@ def formataddr(pair):
     """The inverse of parseaddr(), this takes a 2-tuple of the form
     (realname, email_address) and returns the string value suitable
     for an RFC 2822 From:, To: or Cc:.
-    
+
     If the first element of pair is false, then the second element is
     returned unmodified.
     """

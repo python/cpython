@@ -68,7 +68,7 @@ def test(method, input, output, *args):
                 exc = sys.exc_info()[:2]
             if value is input:
                 if verbose:
-                   print 'no'
+                    print 'no'
                 print '*',f, `input`, `output`, `value`
                 return
     if value != output or type(value) is not type(output):

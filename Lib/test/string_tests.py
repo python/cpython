@@ -177,13 +177,13 @@ def run_method_tests(test):
 
     # strip/lstrip/rstrip with unicode arg
     if have_unicode:
-        test('strip', 'xyzzyhelloxyzzy', 
+        test('strip', 'xyzzyhelloxyzzy',
              unicode('hello', 'ascii'), unicode('xyz', 'ascii'))
-        test('lstrip', 'xyzzyhelloxyzzy', 
+        test('lstrip', 'xyzzyhelloxyzzy',
              unicode('helloxyzzy', 'ascii'), unicode('xyz', 'ascii'))
         test('rstrip', 'xyzzyhelloxyzzy',
              unicode('xyzzyhello', 'ascii'), unicode('xyz', 'ascii'))
-        test('strip', 'hello', 
+        test('strip', 'hello',
              unicode('hello', 'ascii'), unicode('xyz', 'ascii'))
 
     test('swapcase', 'HeLLo cOmpUteRs', 'hEllO CoMPuTErS')

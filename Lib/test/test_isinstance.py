@@ -104,7 +104,7 @@ class TestIsSubclassExceptions(unittest.TestCase):
             __bases__ = property(getbases)
 
         class S(C): pass
-        
+
         self.assertRaises(TypeError, issubclass, C(), S())
 
     # Like above, but test the second branch, where the __bases__ of the
@@ -176,7 +176,7 @@ class TestIsInstanceIsSubclass(unittest.TestCase):
     # combinations.
 
     def test_isinstance_normal(self):
-        # normal instances   
+        # normal instances
         self.assertEqual(True, isinstance(Super(), Super))
         self.assertEqual(False, isinstance(Super(), Child))
         self.assertEqual(False, isinstance(Super(), AbstractSuper))
@@ -186,7 +186,7 @@ class TestIsInstanceIsSubclass(unittest.TestCase):
         self.assertEqual(False, isinstance(Child(), AbstractSuper))
 
     def test_isinstance_abstract(self):
-        # abstract instances   
+        # abstract instances
         self.assertEqual(True, isinstance(AbstractSuper(), AbstractSuper))
         self.assertEqual(False, isinstance(AbstractSuper(), AbstractChild))
         self.assertEqual(False, isinstance(AbstractSuper(), Super))
@@ -196,7 +196,7 @@ class TestIsInstanceIsSubclass(unittest.TestCase):
         self.assertEqual(True, isinstance(AbstractChild(), AbstractSuper))
         self.assertEqual(False, isinstance(AbstractChild(), Super))
         self.assertEqual(False, isinstance(AbstractChild(), Child))
-    
+
     def test_subclass_normal(self):
         # normal classes
         self.assertEqual(True, issubclass(Super, Super))
@@ -217,7 +217,7 @@ class TestIsInstanceIsSubclass(unittest.TestCase):
         self.assertEqual(True, issubclass(AbstractChild, AbstractSuper))
         self.assertEqual(False, issubclass(AbstractChild, Super))
         self.assertEqual(False, issubclass(AbstractChild, Child))
- 
+
 
 
 
