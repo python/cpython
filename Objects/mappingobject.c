@@ -761,7 +761,7 @@ typeobject Mappingtype = {
 /* For backward compatibility with old dictionary interface */
 
 static object *last_name_object;
-static char *last_name_char;
+static char *last_name_char; /* NULL or == getstringvalue(last_name_object) */
 
 object *
 getattro(v, name)
@@ -797,15 +797,14 @@ dictlookup(v, key)
 	object *v;
 	char *key;
 {
-	if (key != last_name_char ||
-	    strcmp(key, getstringvalue(last_name_object)) != 0) {
+	if (key != last_name_char) {
 		XDECREF(last_name_object);
 		last_name_object = newstringobject(key);
 		if (last_name_object == NULL) {
 			last_name_char = NULL;
 			return NULL;
 		}
-		last_name_char = key;
+		last_name_char = getstringvalue(last_name_object);
 	}
 	return mappinglookup(v, last_name_object);
 }
@@ -816,15 +815,14 @@ dictinsert(v, key, item)
 	char *key;
 	object *item;
 {
-	if (key != last_name_char ||
-	    strcmp(key, getstringvalue(last_name_object)) != 0) {
+	if (key != last_name_char) {
 		XDECREF(last_name_object);
 		last_name_object = newstringobject(key);
 		if (last_name_object == NULL) {
 			last_name_char = NULL;
 			return -1;
 		}
-		last_name_char = key;
+		last_name_char = getstringvalue(last_name_object);
 	}
 	return mappinginsert(v, last_name_object, item);
 }
@@ -834,15 +832,14 @@ dictremove(v, key)
 	object *v;
 	char *key;
 {
-	if (key != last_name_char ||
-	    strcmp(key, getstringvalue(last_name_object)) != 0) {
+	if (key != last_name_char) {
 		XDECREF(last_name_object);
 		last_name_object = newstringobject(key);
 		if (last_name_object == NULL) {
 			last_name_char = NULL;
 			return -1;
 		}
-		last_name_char = key;
+		last_name_char = getstringvalue(last_name_object);
 	}
 	return mappingremove(v, last_name_object);
 }
