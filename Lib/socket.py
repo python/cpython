@@ -38,37 +38,42 @@ Many other constants may be defined; these may be used in calls to
 the setsockopt() and getsockopt() methods.
 """
 
+import _socket
 from _socket import *
+
+SSL_EXISTS = 1
 try:
+    import _ssl
     from _ssl import *
 except ImportError:
-    pass
+    SSL_EXISTS = 0
 
 import os, sys
 
 __all__ = ["getfqdn"]
-import _socket
 __all__.extend(os._get_exports_list(_socket))
+# XXX shouldn't there be something similar to the above for _ssl exports?
 
 if (sys.platform.lower().startswith("win")
     or (hasattr(os, 'uname') and os.uname()[0] == "BeOS")
-    or (sys.platform=="riscos")):
+    or sys.platform=="riscos"):
 
     _realsocketcall = _socket.socket
 
     def socket(family, type, proto=0):
         return _socketobject(_realsocketcall(family, type, proto))
 
-    try:
+    if SSL_EXISTS:
         _realsslcall = _ssl.ssl
-    except AttributeError:
-        pass # No ssl
-    else:
         def ssl(sock, keyfile=None, certfile=None):
             if hasattr(sock, "_sock"):
                 sock = sock._sock
             return _realsslcall(sock, keyfile, certfile)
 
+del _socket
+if SSL_EXISTS:
+    del _ssl
+del SSL_EXISTS
 
 # WSA error codes
 if sys.platform.lower().startswith("win"):
