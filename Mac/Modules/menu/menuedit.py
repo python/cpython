@@ -41,6 +41,20 @@ f = Method(void, 'InsertMenuItem',
 )
 methods.append(f)
 
+f = Method(void, 'EnableMenuItem',
+    (MenuHandle, 'theMenu', InMode),
+    (UInt16, 'item', InMode),
+)
+methods.append(f)
+
+f = Method(void, 'CheckMenuItem',
+    (MenuRef, 'theMenu', InMode),
+    (short, 'item', InMode),
+    (Boolean, 'checked', InMode),
+)
+methods.append(f)
+
+
 f = Function(void, 'DrawMenuBar',
 )
 functions.append(f)
