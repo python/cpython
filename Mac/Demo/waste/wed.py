@@ -413,7 +413,7 @@ class Wed(Application):
 			self.active.do_idle(event)
 
 def main():
-	App = Ped()
+	App = Wed()
 	App.mainloop()
 	
 if __name__ == '__main__':
