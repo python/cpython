@@ -81,7 +81,7 @@ def main():
     b.pack()
     root.update()
     tip = ListboxToolTip(b, ["Hello", "world"])
-    
+
     # root.mainloop() # not in idle
 
 main()
