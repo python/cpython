@@ -882,8 +882,8 @@ You need not increment its reference count.
 
 \begin{cfuncdesc}{PyObject*}{PyErr_Format}{PyObject *exception,
                                            const char *format, \moreargs}
-This function sets the error indicator.
-\var{exception} should be a Python object.
+This function sets the error indicator.  \var{exception} should be a
+Python exception (string or class, not an instance).
 \var{fmt} should be a string, containing format codes, similar to 
 \cfunction{printf}. The \code{width.precision} before a format code
 is parsed, but the width part is ignored.
