@@ -29,7 +29,7 @@ PERFORMANCE OF THIS SOFTWARE.
 
 ******************************************************************/
 
-/* Dictionaru object implementation using a hash table */
+/* Dictionary object implementation using a hash table */
 
 #include "Python.h"
 
@@ -81,8 +81,8 @@ static long polys[] = {
 static PyObject *dummy; /* Initialized by first call to newdictobject() */
 
 /*
-Invariant for entries: when in use, de_value is not NULL and de_key is
-not NULL and not dummy; when not in use, de_value is NULL and de_key
+Invariant for entries: when in use, me_value is not NULL and me_key is
+not NULL and not dummy; when not in use, me_value is NULL and me_key
 is either NULL or dummy.  A dummy key value cannot be replaced by
 NULL, since otherwise other keys may be lost.
 */
@@ -141,14 +141,11 @@ However, instead of going through the table at constant steps, we cycle
 through the values of GF(2^n)-{0}. This avoids modulo computations, being
 much cheaper on RISC machines, without leading to clustering.
 
-First a 32-bit hash value, 'sum', is computed from the key string.
-The first character is added an extra time shifted by 8 to avoid hashing
-single-character keys (often heavily used variables) too close together.
-All arithmetic on sum should ignore overflow.
-
-The initial probe index is then computed as sum mod the table size.
+The initial probe index is computed as hash mod the table size.
 Subsequent probe indices use the values of x^i in GF(2^n) as an offset,
-where x is a root. The initial value is derived from sum, too.
+where x is a root. The initial value is derived from hash, too.
+
+All arithmetic on hash should ignore overflow.
 
 (This version is due to Reimer Behrends, some ideas are also due to
 Jyrki Alakuijala and Vladimir Marangozov.)
@@ -186,7 +183,7 @@ lookdict(mp, key, hash)
 		freeslot = NULL;
 	}
 	/* XXX What if PyObject_Compare returned an exception? */
-	/* Derive incr from sum, just to make it more arbitrary. Note that
+	/* Derive incr from hash, just to make it more arbitrary. Note that
 	   incr must not be 0, or we will get into an infinite loop.*/
 	incr = (hash ^ ((unsigned long)hash >> 3)) & mask;
 	if (!incr)
