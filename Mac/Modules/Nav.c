@@ -316,10 +316,12 @@ static PyObject *
 navrr_getattr(navrrobject *self, char *name)
 {
 	FSSpec fss;
+	FSRef fsr;
 	
 	if( strcmp(name, "__members__") == 0 )
-		return Py_BuildValue("sssssss", "version", "validRecord", "replacing",
-			"isStationery", "translationNeeded", "selection", "fileTranslation");
+		return Py_BuildValue("ssssssssss", "version", "validRecord", "replacing",
+			"isStationery", "translationNeeded", "selection", "selection_fsr",
+			"fileTranslation", "keyScript", "saveFileName");
 	if( strcmp(name, "version") == 0 )
 		return Py_BuildValue("h", self->itself.version);
 	if( strcmp(name, "validRecord") == 0 )
@@ -364,8 +366,42 @@ navrr_getattr(navrrobject *self, char *name)
 		}
 		return rv;
 	}
+	if( strcmp(name, "selection_fsr") == 0 ) {
+		SInt32 i, count;
+		OSErr err;
+		PyObject *rv, *rvitem;
+		AEDesc desc;
+		
+		if (err=AECountItems(&self->itself.selection, &count)) {
+			PyErr_Mac(ErrorObject, err);
+			return NULL;
+		}
+		if ( (rv=PyList_New(count)) == NULL )
+			return NULL;
+		for(i=0; i<count; i++) {
+			desc.dataHandle = NULL;
+			if (err=AEGetNthDesc(&self->itself.selection, i+1, typeFSRef, NULL, &desc)) {
+				Py_DECREF(rv);
+				PyErr_Mac(ErrorObject, err);
+				return NULL;
+			}
+			if (err=AEGetDescData(&desc, &fsr, sizeof(FSRef))) {
+				Py_DECREF(rv);
+				PyErr_Mac(ErrorObject, err);
+				return NULL;
+			}
+			rvitem = PyMac_BuildFSRef(&fsr);
+			PyList_SetItem(rv, i, rvitem);
+			AEDisposeDesc(&desc);
+		}
+		return rv;
+	}
 	if( strcmp(name, "fileTranslation") == 0 )
 		return ResObj_New((Handle)self->itself.fileTranslation);
+	if( strcmp(name, "keyScript") == 0 )
+		return Py_BuildValue("h", (short)self->itself.keyScript);
+	if( strcmp(name, "saveFileName") == 0 )
+		return Py_BuildValue("O&", CFStringRefObj_New, self->itself.saveFileName);
 
 
 	return Py_FindMethod(navrr_methods, (PyObject *)self, name);
