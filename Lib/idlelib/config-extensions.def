@@ -42,17 +42,17 @@ enable=1
 [ZoomHeight_cfgBindings]
 zoom-height=<Alt-Key-F2>
 
-[ExecBinding]
-enable=1
-[ExecBinding_cfgBindings]
-run-complete-script=<Key-F5>
-stop-execution=<Key-Cancel>
+#[ExecBinding]  # Revert to ScriptBinding
+#enable=1
+#[ExecBinding_cfgBindings]
+#run-complete-script=<Key-F5>
+#stop-execution=<Key-Cancel>
 
-#[ScriptBinding] #currently ExecBinding has replaced ScriptBinding 
-#enable=0
-#[ScriptBinding_cfgBindings]
-#run-script=<Key-F5>
-#check-module=<Alt-Key-F5> <Meta-Key-F5>
+[ScriptBinding]
+enable=1
+[ScriptBinding_cfgBindings]
+run-script=<Key-F5>
+#check-module=<Alt-Key-F5>
 #import-module=<Control-Key-F5>
 
 [CallTips]

@@ -1,17 +1,16 @@
 """Extension to execute code outside the Python shell window.
 
-This adds the following commands (to the Edit menu, until there's a
-separate Python menu):
+This adds the following commands:
 
-- Check module (Alt-F5) does a full syntax check of the current module.
+- Check module does a full syntax check of the current module.
 It also runs the tabnanny to catch any inconsistent tabs.
 
-- Import module (F5) is equivalent to either import or reload of the
+- Import module is equivalent to either import or reload of the
 current module.  The window must have been saved previously. The
 module is added to sys.modules, and is also added to the __main__
 namespace.  Output goes to the shell window.
 
-- Run module (Control-F5) does the same but executes the module's
+- Run module does the same but executes the module's
 code in the __main__ namespace.
 
 XXX Redesign this interface (yet again) as follows:
@@ -41,12 +40,14 @@ how many spaces a tab is worth.
 To fix case 2, change all tabs to spaces by using Select All followed \
 by Untabify Region (both in the Edit menu)."""
 
+
+# XXX TBD Implement stop-execution  KBK 11Jun02
 class ScriptBinding:
 
     menudefs = [
-        ('edit', [None,
-                  ('Check module', '<<check-module>>'),
-                  ('Import module', '<<import-module>>'),
+        ('run', [None,
+#                 ('Check module', '<<check-module>>'),
+#                 ('Import module', '<<import-module>>'),
                   ('Run script', '<<run-script>>'),
                  ]
         ),

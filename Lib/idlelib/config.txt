@@ -51,9 +51,7 @@ cursor-background= black
 
 #[ZoomHeight]
 
-#[ScriptBinding]    # disabled in favor of ExecBinding
-
-[ExecBinding]
+[ScriptBinding]
 
 [CallTips]
 

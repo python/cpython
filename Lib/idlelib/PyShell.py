@@ -1,34 +1,10 @@
 #! /usr/bin/env python
 
-# changes by dscherer@cmu.edu
-
-#     The main() function has been replaced by a whole class, in order to
-#     address the constraint that only one process can sit on the port
-#     hard-coded into the loader.
-
-#     It attempts to load the RPC protocol server and publish itself.  If
-#     that fails, it assumes that some other copy of IDLE is already running
-#     on the port and attempts to contact it.  It then uses the RPC mechanism
-#     to ask that copy to do whatever it was instructed (via the command
-#     line) to do.  (Think netscape -remote).  The handling of command line
-#     arguments for remotes is still very incomplete.
-
-#     Default behavior (no command line options) is to open an editor window
-#     instead of starting the Python Shell.  However, if called as
-#     Pyshell.main(0), the Shell will be started instead of the editor window.
-
-#     In the default editor mode, if files are specified, they are opened.
-
-#     If any command line options are specified, a shell does appear, and if
-#     the -e option is used, both a shell and an editor window open.
-
 import os
-import spawn
 import sys
 import string
 import getopt
 import re
-import protocol
 import socket
 import time
 import warnings
@@ -44,13 +20,14 @@ from EditorWindow import EditorWindow, fixwordbreaks
 from FileList import FileList
 from ColorDelegator import ColorDelegator
 from UndoDelegator import UndoDelegator
-from OutputWindow import OutputWindow, OnDemandOutputWindow
+from OutputWindow import OutputWindow
 from configHandler import idleConf
 import idlever
 
 import rpc
 
-use_subprocess = 0 # Set to 1 to spawn subprocess for command execution
+# XX hardwire this for now, remove later  KBK 09Jun02
+use_subprocess = 1 # Set to 1 to spawn subprocess for command execution
 
 # Change warnings module to write to sys.__stderr__
 try:
@@ -204,9 +181,6 @@ class ModifiedInterpreter(InteractiveInterpreter):
         InteractiveInterpreter.__init__(self, locals=locals)
         self.save_warnings_filters = None
 
-        global flist
-        self.output = OnDemandOutputWindow(flist)
-
     rpcclt = None
     rpcpid = None
 
@@ -226,14 +200,14 @@ class ModifiedInterpreter(InteractiveInterpreter):
                 if i > 3:
                     print >>sys.__stderr__, "Socket error:", err, "; retry..."
         else:
-            # XXX Make this a dialog?
+            # XXX Make this a dialog?  #GvR
             print >>sys.__stderr__, "Can't spawn subprocess!"
+            # XXX Add Stephen's error msg, resolve the two later... KBK 09Jun02
+            display_port_binding_error()
             return
-        self.output.stdout=PseudoFile(self.output, "stdout")
-        self.output.stderr=PseudoFile(self.output, "stderr")
-        self.rpcclt.register("stdin", self.output)
-        self.rpcclt.register("stdout", self.output.stdout)
-        self.rpcclt.register("stderr", self.output.stderr)
+        self.rpcclt.register("stdin", self.tkconsole)
+        self.rpcclt.register("stdout", self.tkconsole.stdout)
+        self.rpcclt.register("stderr", self.tkconsole.stderr)
         self.rpcclt.register("flist", self.tkconsole.flist)
         self.poll_subprocess()
 
@@ -629,7 +603,7 @@ class PyShell(OutputWindow):
 
     def begin(self):
         self.resetoutput()
-        self.write("Python %s on %s\n%s\nIDLE Fork %s -- press F1 for help\n" %
+        self.write("Python %s on %s\n%s\nGRPC IDLE Fork %s\n" %
                    (sys.version, sys.platform, self.COPYRIGHT,
                     idlever.IDLE_VERSION))
         try:
@@ -795,8 +769,9 @@ class PyShell(OutputWindow):
             i = i-1
         line = line[:i]
         more = self.interp.runsource(line)
-        if not more:
-            self.showprompt()
+        # XXX This was causing extra prompt with shell  KBK
+#       if not more:
+#           self.showprompt()
 
     def cancel_check(self, frame, what, args,
                      dooneevent=tkinter.dooneevent,
@@ -876,6 +851,7 @@ class PseudoFile:
     def isatty(self):
         return 1
 
+
 usage_msg = """\
 usage: idle.py [-c command] [-d] [-i] [-r script] [-s] [-t title] [arg] ...
 
@@ -886,194 +862,115 @@ idle file(s)    (without options) edit the file(s)
 -e         edit mode; arguments are files to be edited
 -i         open an interactive shell
 -i file(s) open a shell and also an editor window for each file
--r script  use experimental remote (subprocess) execution feature 
+-r
 -s         run $IDLESTARTUP or $PYTHONSTARTUP before anything else
 -t title   set title of shell window
 
 Remaining arguments are applied to the command (-c) or script (-r).
 """
 
-class usageError:
-    def __init__(self, string): self.string = string
-    def __repr__(self): return self.string
+def main():
+    cmd = None
+    edit = 0
+    debug = 0
+    script = None
+    startup = 0
 
-class main:
-    def __init__(self, noshell=1):
-        
-        global flist, root
-        root = Tk(className="Idle")
-        fixwordbreaks(root)
-        root.withdraw()
-        flist = PyShellFileList(root)
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], "c:deir:st:")
+    except getopt.error, msg:
+        sys.stderr.write("Error: %s\n" % str(msg))
+        sys.stderr.write(usage_msg)
+        sys.exit(2)
 
-        # the following causes lockups and silent failures when debugging
-        # changes to EditorWindow.__init__  ; the console works fine for idle
-        # debugging in any case, so disable this unnescesary stuff.
-        #dbg=OnDemandOutputWindow(flist)
-        #dbg.set_title('IDLE Debugging Messages')
-        #sys.stdout = PseudoFile(dbg,['stdout'])
-        #sys.stderr = PseudoFile(dbg,['stderr'])
-        
-        try:
-            self.server = protocol.Server(connection_hook = self.address_ok)
-            protocol.publish( 'IDLE', self.connect )
-            self.main(sys.argv[1:], noshell)
-            return
-        except protocol.connectionLost:
-            try:
-                client = protocol.Client()
-                IDLE = client.getobject('IDLE')
-                if IDLE:
-                    try:
-                        IDLE.remote( sys.argv[1:] )
-                    except usageError, msg:
-                        sys.stderr.write("Error: %s\n" % str(msg))
-                        sys.stderr.write(usage_msg)
-                    return
-            except protocol.connectionLost:
-                pass
+    for o, a in opts:
+        if o == '-c':
+            cmd = a
+        if o == '-d':
+            debug = 1
+        if o == '-e':
+            edit = 1
+        if o == '-r':
+            script = a
+        if o == '-s':
+            startup = 1
+        if o == '-t':
+            PyShell.shell_title = a
 
-        #maybe the following should be handled by a tkmessagebox for 
-        #users who don't start idle from a console??
-        print """\
+    if args and args[0] != "-": edit = 1
+
+    for i in range(len(sys.path)):
+        sys.path[i] = os.path.abspath(sys.path[i])
+
+    pathx = []
+    if edit:
+        for filename in args:
+            pathx.append(os.path.dirname(filename))
+    elif args and args[0] != "-":
+        pathx.append(os.path.dirname(args[0]))
+    else:
+        pathx.append(os.curdir)
+    for dir in pathx:
+        dir = os.path.abspath(dir)
+        if not dir in sys.path:
+            sys.path.insert(0, dir)
+
+    global flist, root
+    root = Tk(className="Idle")
+    fixwordbreaks(root)
+    root.withdraw()
+    flist = PyShellFileList(root)
+
+    if edit:
+        for filename in args:
+            flist.open(filename)
+        if not args:
+            flist.new()
+    else:
+        if cmd:
+            sys.argv = ["-c"] + args
+        else:
+            sys.argv = args or [""]
+
+    shell = PyShell(flist)
+    interp = shell.interp
+    flist.pyshell = shell
+
+    if startup:
+        filename = os.environ.get("IDLESTARTUP") or \
+                   os.environ.get("PYTHONSTARTUP")
+        if filename and os.path.isfile(filename):
+            interp.execfile(filename)
+
+    if debug:
+        shell.open_debugger()
+    if cmd:
+        interp.execsource(cmd)
+    elif script:
+        if os.path.isfile(script):
+            interp.execfile(script)
+        else:
+            print "No script file: ", script
+    shell.begin()
+    root.mainloop()
+    root.destroy()
+
+def display_port_binding_error():
+    print """\
 IDLE cannot run.
 
-IDLE needs to use a specific TCP/IP port (7454) in order to execute and
+IDLE needs to use a specific TCP/IP port (8833) in order to execute and
 debug programs. IDLE is unable to bind to this port, and so cannot
 start. Here are some possible causes of this problem:
 
   1. TCP/IP networking is not installed or not working on this computer
   2. Another program is running that uses this port
-  3. Another copy of IDLE stopped responding but is still bound to the port
-  4. Personal firewall software is preventing IDLE from using this port
+  3. Personal firewall software is preventing IDLE from using this port
 
 IDLE makes and accepts connections only with this computer, and does not
-communicate over the internet in any way. It's use of port 7454 should not 
+communicate over the internet in any way. Its use of port 8833 should not 
 be a security risk on a single-user machine.
 """
-        dbg.owin.gotoline(1)
-        dbg.owin.remove_selection()
-        root.mainloop() # wait for user to read message
-
-    def idle(self):
-        spawn.kill_zombies()
-        self.server.rpc_loop()
-        root.after(25, self.idle)
-
-    # We permit connections from localhost only
-    def address_ok(self, addr):
-        return addr[0] == '127.0.0.1'
-
-    def connect(self, client, addr):
-        return self
-
-    def remote( self, argv ):
-        # xxx Should make this behavior match the behavior in main, or redo
-        #     command line options entirely.
-
-        try:
-            opts, args = getopt.getopt(argv, "c:deist:")
-        except getopt.error, msg:
-            raise usageError(msg)
-
-        for filename in args:
-            flist.open(filename)
-        if not args:
-            flist.new()
-
-    def main(self, argv, noshell):
-        cmd = None
-        edit = 0
-        debug = 0
-        interactive = 0
-        script = None
-        startup = 0
-        global use_subprocess
-    
-        try:
-            opts, args = getopt.getopt(sys.argv[1:], "c:deir:st:")
-        except getopt.error, msg:
-            sys.stderr.write("Error: %s\n" % str(msg))
-            sys.stderr.write(usage_msg)
-            sys.exit(2)
-    
-        for o, a in opts:
-            noshell = 0    # There are options, bring up a shell
-            if o == '-c':
-                cmd = a
-            if o == '-d':
-                debug = 1
-            if o == '-e':
-                edit = 1
-            if o == '-i':
-                interactive = 1
-            if o == '-r':
-                edit = 1
-                script = a
-                use_subprocess = 1
-            if o == '-s':
-                startup = 1
-            if o == '-t':
-                PyShell.shell_title = a
-    
-        if noshell: edit=1
-        if interactive and args and args[0] != "-": edit = 1
-    
-        for i in range(len(sys.path)):
-            sys.path[i] = os.path.abspath(sys.path[i])
-    
-        pathx = []
-        if edit:
-            for filename in args:
-                pathx.append(os.path.dirname(filename))
-        elif args and args[0] != "-":
-            pathx.append(os.path.dirname(args[0]))
-        else:
-            pathx.append(os.curdir)
-        for dir in pathx:
-            dir = os.path.abspath(dir)
-            if not dir in sys.path:
-                sys.path.insert(0, dir)
-
-        if edit:
-            for filename in args:
-                flist.open(filename)
-            if not args:
-                flist.new()
-        else:
-            if cmd:
-                sys.argv = ["-c"] + args
-            else:
-                sys.argv = args or [""]
-
-        if noshell:
-          flist.pyshell = None
-        else:
-          shell = PyShell(flist)
-          interp = shell.interp
-          flist.pyshell = shell
-      
-          if startup:
-              filename = os.environ.get("IDLESTARTUP") or \
-                         os.environ.get("PYTHONSTARTUP")
-              if filename and os.path.isfile(filename):
-                  interp.execfile(filename)
-      
-          if debug:
-              shell.open_debugger()
-          if cmd:
-              interp.execsource(cmd)
-          elif script:
-             if os.path.isfile(script):
-                 interp.execfile(script)
-             else:
-                 print "No script file: ", script
-          shell.begin()
-
-        self.idle()
-        root.mainloop()
-        root.destroy()
-
 
 if __name__ == "__main__":
     main()
