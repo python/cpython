@@ -411,6 +411,28 @@ class MappingTestCase(TestBase):
         self.check_update(weakref.WeakKeyDictionary,
                           {C(): 1, C(): 2, C(): 3})
 
+    def test_weak_keyed_delitem(self):
+        d = weakref.WeakKeyDictionary()
+        o1 = Object('1')
+        o2 = Object('2')
+        d[o1] = 'something'
+        d[o2] = 'something'
+        self.assert_(len(d) == 2)
+        del d[o1]
+        self.assert_(len(d) == 1)
+        self.assert_(d.keys() == [o2])
+
+    def test_weak_valued_delitem(self):
+        d = weakref.WeakValueDictionary()
+        o1 = Object('1')
+        o2 = Object('2')
+        d['something'] = o1
+        d['something else'] = o2
+        self.assert_(len(d) == 2)
+        del d['something']
+        self.assert_(len(d) == 1)
+        self.assert_(d.items() == [('something else', o2)])
+
 
 run_unittest(ReferencesTestCase)
 run_unittest(MappingTestCase)
