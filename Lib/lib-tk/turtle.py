@@ -259,7 +259,7 @@ class RawPen:
         dx = distance * cos(self._angle*self._invradian)
         dy = distance * sin(self._angle*self._invradian)
         self._delete_turtle()
-        self._arrow = _canvas.create_line(x-dx,y+dy,x,y,
+        self._arrow = self._canvas.create_line(x-dx,y+dy,x,y,
                                           width=self._width,
                                           arrow="last",
                                           capstyle="round",
