@@ -723,6 +723,16 @@
   \end{center}%
 }
 
+\newenvironment{tableiv}[6]{%
+  \begin{center}%
+    \def\lineiv##1##2##3##4{\csname#2\endcsname{##1}&##2&##3&##4\\}%
+    \begin{tabular}{#1}\strong{#3}&\strong{#4}&\strong{#5}&\strong{#6} \\%
+      \hline%
+}{%
+    \end{tabular}%
+  \end{center}%
+}
+
 \newcommand{\itemnewline}[1]{%
   \@tempdima\linewidth%
   \advance\@tempdima \leftmargin\makebox[\@tempdima][l]{#1}%
