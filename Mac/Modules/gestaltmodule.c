@@ -35,9 +35,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #endif
 
 static PyObject *
-gestalt_gestalt(self, args)
-	PyObject *self;
-	PyObject *args;
+gestalt_gestalt(PyObject *self, PyObject *args)
 {
 	OSErr iErr;
 	char *str;
@@ -63,7 +61,7 @@ static struct PyMethodDef gestalt_methods[] = {
 };
 
 void
-initgestalt()
+initgestalt(void)
 {
 	Py_InitModule("gestalt", gestalt_methods);
 }
