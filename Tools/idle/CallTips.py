@@ -2,6 +2,18 @@ import string
 import sys
 import types
 
+# These keys check if cancellation is nesessary.
+_check_cancel_keys = ["Left", "Right"]
+
+# These keys (with the modifiers) call cancel unconditionally.
+_cancel_keys_base = ["Up", "Down", "Next", "Prior", "Home"]
+_cancel_keys_modifiers = ['Key-', 'Control-', 'Shift-', 'Control-Shift-']
+
+_cancel_keys = []
+for key in _cancel_keys_base:
+    for mod in _cancel_keys_modifiers:
+        _cancel_keys.append(mod+key)
+
 class CallTips:
 
     menudefs = [
@@ -10,8 +22,10 @@ class CallTips:
     keydefs = {
         '<<paren-open>>': ['<Key-parenleft>'],
         '<<paren-close>>': ['<Key-parenright>'],
-        '<<check-calltip-cancel>>': ['<KeyRelease>', '<ButtonRelease>']
+        '<<check-calltip-cancel>>': map(lambda key: "<Key-%s>" % key, _check_cancel_keys),
+        '<<calltip-cancel>>': map(lambda key: "<%s>" % key, _cancel_keys),
     }
+
     windows_keydefs = {
     }
 
@@ -43,13 +57,13 @@ class CallTips:
             self.calltip_start = self.text.index("insert")
             self.calltip = self._make_calltip_window()
             self.calltip.showtip(arg_text)
-        # dont return "break" so the key is inserted.
+        return "" #so the event is handled normally.
 
     def paren_close_event(self, event):
         # Now just hides, but later we should check if other
         # paren'd expressions remain open.
-        # dont return "break" so the key is inserted.
         self._remove_calltip_window()
+        return "" #so the event is handled normally.
 
     def check_calltip_cancel_event(self, event):
         # This doesnt quite work correctly as it is processed
@@ -63,27 +77,24 @@ class CallTips:
             if self.text.compare("insert", "<=", self.calltip_start) or \
                self.text.compare("insert", ">", self.calltip_start + " lineend"):
                 self._remove_calltip_window()
-        
-        # dont return "break" so the event is handled normally.
-        
+        return "" #so the event is handled normally.
+
+    def calltip_cancel_event(self, event):
+        self._remove_calltip_window()
+        return "" #so the event is handled normally.
+
     def get_object_at_cursor(self,
                              wordchars="._" + string.uppercase + string.lowercase + string.digits):
         # XXX - This need to be moved to a better place
         # as the "." attribute lookup code can also use it.
         text = self.text
-        index = 0
-        while 1:
-            index = index + 1
-            indexspec = "insert-%dc" % index
-            ch = text.get(indexspec)
-            if ch not in wordchars:
-                break
-            if text.compare(indexspec, "<=", "1.0"):
-                break
-        # Now attempt to locate the object.
-	# How is this for a hack!
-	word = text.get("insert-%dc" % (index-1,), "insert")
-	if word:
+        chars = text.get("insert linestart", "insert")
+        i = len(chars)
+        while i and chars[i-1] in wordchars:
+            i = i-1
+        word = chars[i:]
+        if word:
+            # How is this for a hack!
             import sys, __main__
             namespace = sys.modules.copy()
             namespace.update(__main__.__dict__)
@@ -92,7 +103,7 @@ class CallTips:
             except:
                     pass
         return None # Can't find an object.
-		
+
 def get_arg_text(ob):
     # Get a string describing the arguments for the given object.
     argText = ""
@@ -118,10 +129,11 @@ def get_arg_text(ob):
             except:
                 pass
         # Can't build an argument list - see if we can use a docstring.
-        if not argText and hasattr(ob, "__doc__") and ob.__doc__:
+        if hasattr(ob, "__doc__") and ob.__doc__:
             pos = string.find(ob.__doc__, "\n")
             if pos<0 or pos>70: pos=70
-            argText = ob.__doc__[:pos]
+            if argText: argText = argText + "\n"
+            argText = argText + ob.__doc__[:pos]
 
     return argText
 
@@ -146,17 +158,16 @@ if __name__=='__main__':
         def t5(self, a, *args): "(a, ...)"
         def t6(self, a, b=None, *args, **kw): "(a, b=None, ...)"
 
-
     def test( tests ):
         failed=[]
         for t in tests:
-            if get_arg_text(t) != t.__doc__:
+            if get_arg_text(t) != t.__doc__ + "\n" + t.__doc__:
                 failed.append(t)
                 print "%s - expected %s, but got %s" % (t, `t.__doc__`, `get_arg_text(t)`)
         print "%d of %d tests failed" % (len(failed), len(tests))
 
-        tc = TC()
-        tests = t1, t2, t3, t4, t5, t6, \
-                tc.t1, tc.t2, tc.t3, tc.t4, tc.t5, tc.t6
+    tc = TC()
+    tests = t1, t2, t3, t4, t5, t6, \
+            tc.t1, tc.t2, tc.t3, tc.t4, tc.t5, tc.t6
 
     test(tests)
