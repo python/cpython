@@ -58,6 +58,7 @@ LIBFILES= $(MANSTYLES) $(COMMONTEX) \
 	../lib/libshelve.tex \
 	../lib/libcopy.tex \
 	../lib/libmarshal.tex \
+	../lib/libwarnings.tex \
 	../lib/libimp.tex \
 	../lib/libparser.tex \
 	../lib/libbltin.tex \

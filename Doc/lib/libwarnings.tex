@@ -1,0 +1,191 @@
+\section{\module{warnings} ---
+         Warning control}
+
+\declaremodule{standard}{warnings}
+\modulesynopsis{Issue warning messages and control their disposition.}
+
+\index{warnings}
+
+
+Warning messages are typically issued in situations where it is useful
+to alert the user of some condition in a program, where that condition
+(normally) doesn't warrant raising an exception and terminating the
+program.  For example, one might want to issue a warning when a
+program uses an obsolete module.
+
+Python programmers issue warnings by calling the \function{warn()}
+function defined in this module.  (C programmers use
+\code{PyErr_Warn()}).
+
+Warning messages are normally written to \code{sys.stderr}, but their
+disposition can be changed flexibly, from ignoring all warnings to
+turning them into exceptions.  The disposition of warnings can vary
+based on the warning category (see below), the text of the warning
+message, and the source location where it is issued.  Repetitions of a
+particular warning for the same source location are typically
+suppressed.
+
+There are two stages in warning control: first, each time a warning is
+issued, a determination is made whether a message should be issued or
+not; next, if a message is to be issued, it is formatted and printed
+using a user-settable hook.
+
+The determination whether to issue a warning message is controlled by
+the warning filter, which is a sequence of matching rules and actions.
+Rules can be added to the filter by calling
+\function{filterwarnings()} and reset to its default state by calling
+\function{resetwarnings()}.
+
+The printing of warning messages is done by calling
+\function{showwarning()}, which may be overidden; the default
+implementation of this function formats the message by calling
+\function{formatwarning()}, which is also available for use by custom
+implementations.
+
+
+\subsection{Warning Categories}
+
+There are a number of built-in exceptions that represent warning
+categories.  This categorization is useful to be able to filter out
+groups of warnings.  The following warnings category classes are
+currently defined:
+
+\begin{tableii}{l|l}{code}{Class}{Description}
+
+\lineii{Warning}{This is the base class of all warning category
+classes.  It itself a subclass of Exception.}
+
+\lineii{UserWarning}{The default category for \function{warn()}.}
+
+\lineii{DeprecationWarning}{Base category for warnings about
+deprecated features.}
+
+\lineii{SyntaxWarning}{Base category for warnings about dubious
+syntactic features.}
+
+\lineii{RuntimeWarning}{Base category for warnings about dubious
+runtime features.}
+
+\end{tableii}
+
+While these are technically built-in exceptions, they are documented
+here, because conceptually they belong to the warnings mechanism.
+
+User code can define additional warning categories by subclassing one
+of the standard warning categories.  A warning category must always be
+a subclass of the \exception{Warning} class.
+
+
+\subsection{The Warnings Filter}
+
+The warnings filter controls whether warnings are ignored, displayed,
+or turned into errors (raising an exception).
+
+Conceptually, the warnings filter maintains an ordered list of filter
+specifications; any specific warning is matched against each filter
+specification in the list in turn until a match is found; the match
+determines the disposition of the match.  Each entry is a tuple of the
+form (\var{action}, \var{message}, \var{category}, \var{module},
+\var{lineno}), where:
+
+\begin{itemize}
+
+\item \var{action} is one of the following strings:
+
+    \begin{tableii}{l|l}{code}{value}{disposition}
+
+    \lineii{\code{"error"}}{turn matching warnings into exceptions}
+
+    \lineii{\code{"ignore"}}{never print matching warnings}
+
+    \lineii{\code{"always"}}{always print matching warnings}
+
+    \lineii{\code{"default"}}{print the first occurrence of matching
+    warnings for each location where the warning is issued}
+
+    \lineii{\code{"module"}}{print the first occurrence of matching
+    warnings for each module where the warning is issued}
+
+    \lineii{\code{"once"}}{print only the first occurrence of matching
+    warnings, regardless of location}
+
+    \end{tableii}
+
+\item \var{message} is a compiled regular expression that the warning
+message must match (the match is case-insensitive)
+
+\item \var{category} is a class (a subclass of \exception{Warning}) of
+      which the warning category must be a subclass in order to match
+
+\item \var{module} is a compiled regular expression that the module
+      name must match
+
+\item \var{lineno} is an integer that the line number where the
+      warning occurred must match, or \code{0} to match all line
+      numbers
+
+\end{itemize}
+
+Since the \exception{Warning} class is derived from the built-in
+\exception{Exception} class, to turn a warning into an error we simply
+raise \code{category(message)}.
+
+The warnings filter is initialized by \samp{-W} options passed to the
+Python interpreter command line.  The interpreter saves the arguments
+for all \samp{-W} options without interpretation in
+\code{sys.warnoptions}; the \module{warnings} module parses these when
+it is first imported (invalid options are ignored, after printing a
+message to \code{sys.stderr}).
+
+
+\subsection{Available Functions}
+
+\begin{funcdesc}{warn}{message\optional{, category\optional{, stacklevel}}}
+Issue a warning, or maybe ignore it or raise an exception.  The
+\var{category} argument, if given, must be a warning category class
+(see above); it defaults to \exception{UserWarning}.  This function
+raises an exception if the particular warning issued is changed
+into an error by the warnings filter see above.  The \var{stacklevel}
+argument can be used by wrapper functions written in Python, like
+this:
+
+\begin{verbatim}
+def deprecation(message):
+    warnings.warn(message, DeprecationWarning, level=2)
+\end{verbatim}
+
+This makes the warning refer to \function{deprecation()}'s caller,
+rather than to the source of \function{deprecation()} itself (since
+the latter would defeat the purpose of the warning message).
+\end{funcdesc}
+
+\begin{funcdesc}{showwarning}{message, category, filename,
+			     lineno\optional{, file}}
+Write a warning to a file.  The default implementation calls
+\code{showwarning(\var{message}, \var{category}, \var{filename},
+\var{lineno})} and writes the resulting string to \var{file}, which
+defaults to \code{sys.stderr}.  You may replace this function with an
+alternative implementation by assigning to
+\code{warnings.showwarning}.
+\end{funcdesc}
+
+\begin{funcdesc}{formatwarning}{message, category, filename, lineno}
+Format a warning the standard way.  This returns a string  which may
+contain embedded newlines and ends in a newline.
+\end{funcdesc}
+
+\begin{funcdesc}{filterwarnings}{action\optional{,
+message\optional{, category\optional{, module\optional{, lineno}}}}}
+Insert an entry into the list of warnings filters (at the front).
+This checks the types of the arguments, compiles the message and
+module regular expressions, and inserts them as a tuple in front
+of the warnings filter.  Entries inserted later override entries
+inserted earlier, if both match a particular warning.  Omitted
+arguments default to a value that matches everything.
+\end{funcdesc}
+
+\begin{funcdesc}{resetwarnings}{}
+Reset the warnings filter.  This discards the effect of all previous
+calls to \function{filterwarnings()}, including that of the \samp{-W}
+command line options.
+\end{funcdesc}
