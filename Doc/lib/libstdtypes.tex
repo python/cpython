@@ -501,10 +501,11 @@ In Python 2.3 and beyond, \var{x} may be a string of any length.
 [[3], [3], [3]]
 \end{verbatim}
 
-  What has happened is that \code{lists} is a list containing three
-  copies of the list \code{[[]]} (a one-element list containing an
-  empty list), but the contained list is shared by each copy.  You can
-  create a list of different lists this way:
+  What has happened is that \code{[[]]} is a one-element list containing
+  an empty list, so all three elements of \code{[[]] * 3} are (pointers to)
+  this single empty list.  Modifying any of the elements of \code{lists}
+  modifies this single list.  You can create a list of different lists this
+  way:
 
 \begin{verbatim}
 >>> lists = [[] for i in range(3)]
@@ -529,8 +530,10 @@ In Python 2.3 and beyond, \var{x} may be a string of any length.
 
 \item[(5)] The slice of \var{s} from \var{i} to \var{j} with step
   \var{k} is defined as the sequence of items with index 
-  \code{\var{x} = \var{i} + \var{n}*\var{k}} such that \code{0}
-  \code{<=} \var{n} \code{<} \code{abs(i-j)}.  If \var{i} or \var{j}
+  \code{\var{x} = \var{i} + \var{n}*\var{k}} such that
+  $0 \leq n < \frac{j-i}{k}$.  In other words, the indices
+  are \code{i}, \code{i+k}, \code{i+2*k}, \code{i+3*k} and so on, stopping when
+  \var{j} is reached (but never including \var{j}).  If \var{i} or \var{j}
   is greater than \code{len(\var{s})}, use \code{len(\var{s})}.  If
   \var{i} or \var{j} are omitted then they become ``end'' values
   (which end depends on the sign of \var{k}).  Note, \var{k} cannot
