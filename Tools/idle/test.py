@@ -1,19 +1,31 @@
+import string
 
-def f(): a = b = c = d = e = 0; g()
+def f():
+    a = 0
+    b = 1
+    c = 2
+    d = 3
+    e = 4
+    g()
 
-def g(): h()
+def g():
+    h()
 
-def h(): i()
+def h():
+    i()
 
-def i(): j()
+def i():
+    j()
 
-def j(): k()
+def j():
+    k()
 
-def k(): l()
+def k():
+    l()
 
 l = lambda: test()
 
 def test():
-    exec "import string; string.capwords(None)" in {}
+    string.capwords(1)
 
-k()
+f()
