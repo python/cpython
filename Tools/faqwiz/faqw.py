@@ -31,6 +31,3 @@ except:
     print
     import cgi
     cgi.print_exception(t, v, tb)
-t2 = os.times() # If this doesn't work, get rid of this and what follows!
-fmt = "<BR>(times: user %.3g, sys %.3g, ch-user %.3g, ch-sys %.3g, real %.3g)"
-print fmt % tuple(map(operator.sub, t2, t1))
