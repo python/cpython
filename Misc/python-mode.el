@@ -1529,7 +1529,12 @@ the new line indented."
 		  (while (and (< (point) startpos)
 			      (looking-at "[ \t]*[#\n\\\\]")) ; skip noise
 		    (forward-line 1))
-		  (if (< (point) startpos)
+		  (if (and (< (point) startpos)
+			   (/= startpos
+			       (save-excursion
+				 (goto-char (1+ open-bracket-pos))
+				 (skip-chars-forward " \t\n")
+				 (point))))
 		      ;; again mimic the first list item
 		      (current-indentation)
 		    ;; else they're about to enter the first item
