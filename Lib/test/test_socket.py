@@ -267,7 +267,7 @@ class GeneralModuleTests(unittest.TestCase):
         except socket.error:
             # Probably a similar problem as above; skip this test
             return
-        all_host_names = [hname] + aliases
+        all_host_names = [hostname, hname] + aliases
         fqhn = socket.getfqdn()
         if not fqhn in all_host_names:
             self.fail("Error testing host resolution mechanisms.")
