@@ -195,6 +195,33 @@ class CommonTest(unittest.TestCase):
         self.checkequal('   hello', '   hello   ', 'rstrip')
         self.checkequal('hello', 'hello', 'strip')
 
+        # strip/lstrip/rstrip with None arg
+        self.checkequal('hello', '   hello   ', 'strip', None)
+        self.checkequal('hello   ', '   hello   ', 'lstrip', None)
+        self.checkequal('   hello', '   hello   ', 'rstrip', None)
+        self.checkequal('hello', 'hello', 'strip', None)
+
+        # strip/lstrip/rstrip with str arg
+        self.checkequal('hello', 'xyzzyhelloxyzzy', 'strip', 'xyz')
+        self.checkequal('helloxyzzy', 'xyzzyhelloxyzzy', 'lstrip', 'xyz')
+        self.checkequal('xyzzyhello', 'xyzzyhelloxyzzy', 'rstrip', 'xyz')
+        self.checkequal('hello', 'hello', 'strip', 'xyz')
+
+        # strip/lstrip/rstrip with unicode arg
+        if test_support.have_unicode:
+            self.checkequal(unicode('hello', 'ascii'), 'xyzzyhelloxyzzy',
+                 'strip', unicode('xyz', 'ascii'))
+            self.checkequal(unicode('helloxyzzy', 'ascii'), 'xyzzyhelloxyzzy',
+                 'lstrip', unicode('xyz', 'ascii'))
+            self.checkequal(unicode('xyzzyhello', 'ascii'), 'xyzzyhelloxyzzy',
+                 'rstrip', unicode('xyz', 'ascii'))
+            self.checkequal(unicode('hello', 'ascii'), 'hello',
+                 'strip', unicode('xyz', 'ascii'))
+
+        self.checkraises(TypeError, 'hello', 'strip', 42, 42)
+        self.checkraises(TypeError, 'hello', 'lstrip', 42, 42)
+        self.checkraises(TypeError, 'hello', 'rstrip', 42, 42)
+
     def test_ljust(self):
         self.checkequal('abc       ', 'abc', 'ljust', 10)
         self.checkequal('abc   ', 'abc', 'ljust', 6)
@@ -431,34 +458,6 @@ class MixinStrUnicodeUserStringTest:
 
         self.checkraises(TypeError, 'hello', 'endswith')
         self.checkraises(TypeError, 'hello', 'endswith', 42)
-
-    def test_strip_args(self):
-        # strip/lstrip/rstrip with None arg
-        self.checkequal('hello', '   hello   ', 'strip', None)
-        self.checkequal('hello   ', '   hello   ', 'lstrip', None)
-        self.checkequal('   hello', '   hello   ', 'rstrip', None)
-        self.checkequal('hello', 'hello', 'strip', None)
-
-        # strip/lstrip/rstrip with str arg
-        self.checkequal('hello', 'xyzzyhelloxyzzy', 'strip', 'xyz')
-        self.checkequal('helloxyzzy', 'xyzzyhelloxyzzy', 'lstrip', 'xyz')
-        self.checkequal('xyzzyhello', 'xyzzyhelloxyzzy', 'rstrip', 'xyz')
-        self.checkequal('hello', 'hello', 'strip', 'xyz')
-
-        # strip/lstrip/rstrip with unicode arg
-        if test_support.have_unicode:
-            self.checkequal(unicode('hello', 'ascii'), 'xyzzyhelloxyzzy',
-                 'strip', unicode('xyz', 'ascii'))
-            self.checkequal(unicode('helloxyzzy', 'ascii'), 'xyzzyhelloxyzzy',
-                 'lstrip', unicode('xyz', 'ascii'))
-            self.checkequal(unicode('xyzzyhello', 'ascii'), 'xyzzyhelloxyzzy',
-                 'rstrip', unicode('xyz', 'ascii'))
-            self.checkequal(unicode('hello', 'ascii'), 'hello',
-                 'strip', unicode('xyz', 'ascii'))
-
-        self.checkraises(TypeError, 'hello', 'strip', 42, 42)
-        self.checkraises(TypeError, 'hello', 'lstrip', 42, 42)
-        self.checkraises(TypeError, 'hello', 'rstrip', 42, 42)
 
     def test___contains__(self):
         self.checkequal(True, '', '__contains__', '')         # vereq('' in '', True)

@@ -243,6 +243,8 @@ Return a copy of the string with leading characters removed.  If
 removed.  If given and not \code{None}, \var{chars} must be a string;
 the characters in the string will be stripped from the beginning of
 the string this method is called on.
+\versionchanged[The \var{chars} parameter was added.  The \var{chars}
+parameter cannot be passed in earlier 2.2 versions]{2.2.3}
 \end{funcdesc}
 
 \begin{funcdesc}{rstrip}{s\optional{, chars}}
@@ -251,6 +253,8 @@ Return a copy of the string with trailing characters removed.  If
 removed.  If given and not \code{None}, \var{chars} must be a string;
 the characters in the string will be stripped from the end of the
 string this method is called on.
+\versionchanged[The \var{chars} parameter was added.  The \var{chars}
+parameter cannot be passed in 2.2 versions]{2.2.3}
 \end{funcdesc}
 
 \begin{funcdesc}{strip}{s\optional{, chars}}
@@ -259,6 +263,8 @@ removed.  If \var{chars} is omitted or \code{None}, whitespace
 characters are removed.  If given and not \code{None}, \var{chars}
 must be a string; the characters in the string will be stripped from
 the both ends of the string this method is called on.
+\versionchanged[The \var{chars} parameter was added.  The \var{chars}
+parameter cannot be passed in 2.2 or 2.2.1]{2.2.2}
 \end{funcdesc}
 
 \begin{funcdesc}{swapcase}{s}
