@@ -116,4 +116,10 @@ class NamespaceErr(DOMException):
 class InvalidAccessErr(DOMException):
     code = INVALID_ACCESS_ERR
 
+
+XML_NAMESPACE = "http://www.w3.org/XML/1998/namespace"
+XMLNS_NAMESPACE = "http://www.w3.org/2000/xmlns/"
+XHTML_NAMESPACE = "http://www.w3.org/1999/xhtml"
+EMPTY_NAMESPACE = None
+
 from domreg import getDOMImplementation,registerDOMImplementation
