@@ -14,6 +14,7 @@ distribution when I'm fed up with it. They were last updated for 2.1b2.
 - fullbuild everything with increase-buildno
 - Update Numeric and build/install it both with Classic and with Carbon python
 - Run configurepython
+- Recompile OSAm and possibly other Contrib stuff
 - mkdistr binary.include
 - mkdistr dev.include
 - make distribution archive with Installer Vise
