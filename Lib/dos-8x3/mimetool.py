@@ -131,9 +131,16 @@ def choose_boundary():
 
 # Subroutines for decoding some common content-transfer-types
 
-# XXX This requires that uudecode and mmencode are in $PATH
-
 def decode(input, output, encoding):
+	if encoding == 'base64':
+		import base64
+		return base64.decode(input, output)
+	if encoding == 'quoted-printable':
+		import quopri
+		return quopri.decode(input, output)
+	if encoding in ('uuencode', 'x-uuencode'):
+		import uu
+		return uu.decode(input, output)
 	if decodetab.has_key(encoding):
 		pipethrough(input, decodetab[encoding], output)
 	else:
@@ -141,11 +148,24 @@ def decode(input, output, encoding):
 		      'unknown Content-Transfer-Encoding: %s' % encoding
 
 def encode(input, output, encoding):
+	if encoding == 'base64':
+		import base64
+		return base64.encode(input, output)
+	if encoding == 'quoted-printable':
+		import quopri
+		return quopri.encode(input, output, 0)
+	if encoding in ('uuencode', 'x-uuencode'):
+		import uu
+		return uu.encode(input, output)
 	if encodetab.has_key(encoding):
 		pipethrough(input, encodetab[encoding], output)
 	else:
 		raise ValueError, \
 		      'unknown Content-Transfer-Encoding: %s' % encoding
+
+# The following is no longer used for standard encodings
+
+# XXX This requires that uudecode and mmencode are in $PATH
 
 uudecode_pipe = '''(
 TEMP=/tmp/@uu.$$

@@ -183,9 +183,9 @@ if d <> {'a': 4, 'c': 3}: raise TestFailed, 'dict item deletion'
 d = {1:1, 2:2, 3:3}
 d.clear()
 if d != {}: raise TestFailed, 'dict clear'
-d.absorb({1:100})
-d.absorb({2:20})
-d.absorb({1:1, 2:2, 3:3})
-if d != {1:1, 2:2, 3:3}: raise TestFailed, 'dict absorb'
+d.update({1:100})
+d.update({2:20})
+d.update({1:1, 2:2, 3:3})
+if d != {1:1, 2:2, 3:3}: raise TestFailed, 'dict update'
 if d.copy() != {1:1, 2:2, 3:3}: raise TestFailed, 'dict copy'
 if {}.copy() != {}: raise TestFailed, 'empty dict copy'

@@ -57,3 +57,38 @@ except AClass, v:
 
 try:  raise BClass, a
 except TypeError: pass
+
+
+print '2.3 comparing function objects'
+
+f = eval('lambda: None')
+g = eval('lambda: None')
+if f != g: raise TestFailed
+
+f = eval('lambda a: a')
+g = eval('lambda a: a')
+if f != g: raise TestFailed
+
+f = eval('lambda a=1: a')
+g = eval('lambda a=1: a')
+if f != g: raise TestFailed
+
+f = eval('lambda: 0')
+g = eval('lambda: 1')
+if f == g: raise TestFailed
+
+f = eval('lambda: None')
+g = eval('lambda a: None')
+if f == g: raise TestFailed
+
+f = eval('lambda a: None')
+g = eval('lambda b: None')
+if f == g: raise TestFailed
+
+f = eval('lambda a: None')
+g = eval('lambda a=None: None')
+if f == g: raise TestFailed
+
+f = eval('lambda a=0: None')
+g = eval('lambda a=1: None')
+if f == g: raise TestFailed

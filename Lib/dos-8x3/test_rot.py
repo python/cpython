@@ -7,7 +7,7 @@ A = 'spam and eggs'
 B = 'cheese shop'
 
 a = r.encrypt(A)
-print a
+print `a`
 b = r.encryptmore(B)
 print b
 
