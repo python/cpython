@@ -387,7 +387,7 @@ def compileaete(aete, resinfo, fname, output=None, basepkgname=None,
 	
 	# Generate property dicts and element dicts for all types declared in this module
 	fp.write("\ndef getbaseclasses(v):\n")
-	fp.write("\tif not v._propdict:\n")
+	fp.write("\tif not getattr(v, '_propdict', None):\n")
 	fp.write("\t\tv._propdict = {}\n")
 	fp.write("\t\tv._elemdict = {}\n")
 	fp.write("\t\tfor superclassname in getattr(v, '_superclassnames', []):\n")
@@ -395,8 +395,8 @@ def compileaete(aete, resinfo, fname, output=None, basepkgname=None,
 	fp.write("\t\t\tgetbaseclasses(superclass)\n")
 	fp.write("\t\t\tv._propdict.update(getattr(superclass, '_propdict', {}))\n")
 	fp.write("\t\t\tv._elemdict.update(getattr(superclass, '_elemdict', {}))\n")
-	fp.write("\t\tv._propdict.update(v._privpropdict)\n")
-	fp.write("\t\tv._elemdict.update(v._privelemdict)\n")
+	fp.write("\t\tv._propdict.update(getattr(v, '_privpropdict', {}))\n")
+	fp.write("\t\tv._elemdict.update(getattr(v, '_privelemdict', {}))\n")
 	fp.write("\n")
 	fp.write("import StdSuites\n")
 	if allprecompinfo:
