@@ -1,28 +1,12 @@
-\chapter{Expressions and conditions}
+\chapter{Expressions}
 \index{expression}
-\index{condition}
 
-\strong{Note:} In this and the following chapters, extended BNF
-notation will be used to describe syntax, not lexical analysis.
-\index{BNF}
+This chapter explains the meaning of the elements of expressions in
+Python.
 
-This chapter explains the meaning of the elements of expressions and
-conditions.  Conditions are a superset of expressions, and a condition
-may be used wherever an expression is required by enclosing it in
-parentheses.  The only places where expressions are used in the syntax
-instead of conditions is in expression statements and on the
-right-hand side of assignment statements; this catches some nasty bugs
-like accidentally writing \code{x == 1} instead of \code{x = 1}.
-\indexii{assignment}{statement}
-
-The comma plays several roles in Python's syntax.  It is usually an
-operator with a lower precedence than all others, but occasionally
-serves other purposes as well; e.g. it separates function arguments,
-is used in list and dictionary constructors, and has special semantics
-in \keyword{print} statements.
-\index{comma}
-
-When (one alternative of) a syntax rule has the form
+\strong{Syntax Notes:} In this and the following chapters, extended
+BNF\index{BNF} notation will be used to describe syntax, not lexical
+analysis.  When (one alternative of) a syntax rule has the form
 
 \begin{verbatim}
 name:           othername
@@ -36,28 +20,30 @@ are the same as for \code{othername}.
 \indexii{arithmetic}{conversion}
 
 When a description of an arithmetic operator below uses the phrase
-``the numeric arguments are converted to a common type'',
-this both means that if either argument is not a number, a
-\exception{TypeError} exception is raised, and that otherwise
-the following conversions are applied:
-\exindex{TypeError}
-\indexii{floating point}{number}
-\indexii{long}{integer}
-\indexii{plain}{integer}
+``the numeric arguments are converted to a common type,'' the
+arguments are coerced using the coercion rules listed at the end of
+chapter 3.  If both arguments are standard numeric types, the
+following coercions are applied:
 
 \begin{itemize}
-\item	first, if either argument is a floating point number,
+\item	If either argument is a complex number, the other is converted
+	to complex;
+\item	otherwise, if either argument is a floating point number,
 	the other is converted to floating point;
-\item	else, if either argument is a long integer,
+\item	otherwise, if either argument is a long integer,
 	the other is converted to long integer;
 \item	otherwise, both must be plain integers and no conversion
 	is necessary.
 \end{itemize}
 
+Some additional rules apply for certain operators (e.g. a string left
+argument to the `\%' operator). Extensions can define their own
+coercions.
 \section{Atoms}
 \index{atom}
 
-Atoms are the most basic elements of expressions.  Forms enclosed in
+Atoms are the most basic elements of expressions.  The simplest atoms
+are identifiers or literals.  Forms enclosed in
 reverse quotes or in parentheses, brackets or braces are also
 categorized syntactically as atoms.  The syntax for atoms is:
 
@@ -89,19 +75,37 @@ that object.  When a name is not bound, an attempt to evaluate it
 raises a \exception{NameError} exception.
 \exindex{NameError}
 
+\strong{Private name mangling:}%
+\indexii{name}{mangling}%
+\indexii{private}{names}%
+when an identifier that textually occurs in a class definition begins
+with two or more underscore characters and does not end in two or more
+underscores, it is considered a ``private name'' of that class.
+Private names are transformed to a longer form before code is
+generated for them.  The transformation inserts the class name in
+front of the name, with leading underscores removed, and a single
+underscore inserted in front of the class name.  For example, the
+identifier \code{__spam} occurring in a class named \code{Ham} will be
+transformed to \code{_Ham__spam}.  This transformation is independent
+of the syntactical context in which the identifier is used.  If the
+transformed name is extremely long (longer than 255 characters),
+implementation defined truncation may happen.  If the class name
+consists only of underscores, no transformation is done.
+
 \subsection{Literals}
 \index{literal}
 
-Python knows string and numeric literals:
+Python supports string literals and various numeric literals:
 
 \begin{verbatim}
-literal:        stringliteral | integer | longinteger | floatnumber
+literal: stringliteral | integer | longinteger | floatnumber | imagnumber
 \end{verbatim}
 
 Evaluation of a literal yields an object of the given type (string,
-integer, long integer, floating point number) with the given value.
-The value may be approximated in the case of floating point literals.
-See section \ref{literals} for details.
+integer, long integer, floating point number, complex number) with the
+given value.  The value may be approximated in the case of floating
+point and imaginary (complex) literals.  See section \ref{literals}
+for details.
 
 All literals correspond to immutable data types, and hence the
 object's identity is less important than its value.  Multiple
@@ -109,51 +113,51 @@ evaluations of literals with the same value (either the same
 occurrence in the program text or a different occurrence) may obtain
 the same object or a different object with the same value.
 \indexiii{immutable}{data}{type}
-
-(In the original implementation, all literals in the same code block
-with the same type and value yield the same object.)
+\indexii{immutable}{objects}
 
 \subsection{Parenthesized forms}
 \index{parenthesized form}
 
-A parenthesized form is an optional condition list enclosed in
+A parenthesized form is an optional expression list enclosed in
 parentheses:
 
 \begin{verbatim}
-parenth_form:      "(" [condition_list] ")"
+parenth_form:      "(" [expression_list] ")"
 \end{verbatim}
 
-A parenthesized condition list yields whatever that condition list
-yields.
+A parenthesized expression list yields whatever that expression list
+yields: if the list contains at least one comma, it yields a tuple;
+otherwise, it yields the single expression that makes up the
+expression list.
 
 An empty pair of parentheses yields an empty tuple object.  Since
-tuples are immutable, the rules for literals apply here.
+tuples are immutable, the rules for literals apply (i.e., two
+occurrences of the empty tuple may or may not yield the same object).
 \indexii{empty}{tuple}
 
-(Note that tuples are not formed by the parentheses, but rather by use
+Note that tuples are not formed by the parentheses, but rather by use
 of the comma operator.  The exception is the empty tuple, for which
 parentheses {\em are} required --- allowing unparenthesized ``nothing''
 in expressions would cause ambiguities and allow common typos to
-pass uncaught.)
+pass uncaught.
 \index{comma}
 \indexii{tuple}{display}
 
 \subsection{List displays}
 \indexii{list}{display}
 
-A list display is a possibly empty series of conditions enclosed in
+A list display is a possibly empty series of expressions enclosed in
 square brackets:
 
 \begin{verbatim}
-list_display:   "[" [condition_list] "]"
+list_display:   "[" [expression_list] "]"
 \end{verbatim}
 
-A list display yields a new list object.
+A list display yields a new list object.  If it has no expression
+list, the list object has no items.  Otherwise, the elements of the
+expression list are evaluated from left to right and inserted in the
+list object in that order.
 \obindex{list}
-
-If it has no condition list, the list object has no items.  Otherwise,
-the elements of the condition list are evaluated from left to right
-and inserted in the list object in that order.
 \indexii{empty}{list}
 
 \subsection{Dictionary displays} \label{dict}
@@ -168,7 +172,7 @@ enclosed in curly braces:
 \begin{verbatim}
 dict_display:   "{" [key_datum_list] "}"
 key_datum_list: key_datum ("," key_datum)* [","]
-key_datum:      condition ":" condition
+key_datum:      expression ":" expression
 \end{verbatim}
 
 A dictionary display yields a new dictionary object.
@@ -179,11 +183,11 @@ entries of the dictionary: each key object is used as a key into the
 dictionary to store the corresponding datum.
 
 Restrictions on the types of the key values are listed earlier in
-section \ref{types}.
-Clashes between duplicate keys are not detected; the last
-datum (textually rightmost in the display) stored for a given key
-value prevails.
-\exindex{TypeError}
+section \ref{types}.  (To summarize,the key type should be hashable,
+which excludes all mutable objects.)  Clashes between duplicate keys
+are not detected; the last datum (textually rightmost in the display)
+stored for a given key value prevails.
+\indexii{immutable}{objects}
 
 \subsection{String conversions}
 \indexii{string}{conversion}
@@ -191,14 +195,14 @@ value prevails.
 \indexii{backward}{quotes}
 \index{back-quotes}
 
-A string conversion is a condition list enclosed in reverse (or
+A string conversion is an expression list enclosed in reverse (a.k.a.
 backward) quotes:
 
 \begin{verbatim}
-string_conversion: "`" condition_list "`"
+string_conversion: "`" expression_list "`"
 \end{verbatim}
 
-A string conversion evaluates the contained condition list and
+A string conversion evaluates the contained expression list and
 converts the resulting object into a string according to rules
 specific to its type.
 
@@ -218,9 +222,9 @@ indirectly.)
 \obindex{recursive}
 
 The built-in function \function{repr()} performs exactly the same
-conversion in its argument as enclosing it it reverse quotes does.
-The built-in function \function{str()} performs a similar but more
-user-friendly conversion.
+conversion in its argument as enclosing it in parentheses and reverse
+quotes does.  The built-in function \function{str()} performs a
+similar but more user-friendly conversion.
 \bifuncindex{repr}
 \bifuncindex{str}
 
@@ -268,21 +272,23 @@ or mapping (dictionary) object:
 \indexii{sequence}{item}
 
 \begin{verbatim}
-subscription:   primary "[" condition "]"
+subscription:   primary "[" expression_list "]"
 \end{verbatim}
 
 The primary must evaluate to an object of a sequence or mapping type.
 
-If it is a mapping, the condition must evaluate to an object whose
-value is one of the keys of the mapping, and the subscription selects
-the value in the mapping that corresponds to that key.
+If the primary is a mapping, the expression list must evaluate to an
+object whose value is one of the keys of the mapping, and the
+subscription selects the value in the mapping that corresponds to that
+key.  (The expression list is a tuple except if it has exactly one
+item.)
 
-If it is a sequence, the condition must evaluate to a plain integer.
-If this value is negative, the length of the sequence is added to it
-(so that, e.g. \code{x[-1]} selects the last item of \code{x}.)
-The resulting value must be a nonnegative integer smaller than the
-number of items in the sequence, and the subscription selects the item
-whose index is that value (counting from zero).
+If the primary is a sequence, the expression (list) must evaluate to a
+plain integer.  If this value is negative, the length of the sequence
+is added to it (so that, e.g., \code{x[-1]} selects the last item of
+\code{x}.)  The resulting value must be a nonnegative integer less
+than the number of items in the sequence, and the subscription selects
+the item whose index is that value (counting from zero).
 
 A string's items are characters.  A character is not a separate data
 type but a string of exactly one character.
@@ -293,53 +299,144 @@ type but a string of exactly one character.
 \index{slicing}
 \index{slice}
 
-A slicing (or slice) selects a range of items in a sequence (string,
-tuple or list) object:
+A slicing selects a range of items in a sequence object (e.g., a
+string, tuple or list).  Slicings may be used as expressions or as
+targets in assignment or del statements.  The syntax for a slicing:
 \obindex{sequence}
 \obindex{string}
 \obindex{tuple}
 \obindex{list}
 
 \begin{verbatim}
-slicing:        primary "[" [condition] ":" [condition] "]"
+slicing:          simple_slicing | extended_slicing
+simple_slicing:   primary "[" short_slice "]"
+extended_slicing: primary "[" slice_list "]" 
+slice_list:       slice_item ("," slice_item)* [","]
+slice_item:       expression | proper_slice | ellipsis
+proper_slice:     short_slice | long_slice
+short_slice:      [lower_bound] ":" [upper_bound]
+long_slice:       short_slice ":" [stride]
+lower_bound:      expression
+upper_bound:      expression
+stride:           expression
+ellipsis:         "..."
 \end{verbatim}
 
-The primary must evaluate to a sequence object.  The lower and upper
-bound expressions, if present, must evaluate to plain integers;
-defaults are zero and the sequence's length, respectively.  If either
-bound is negative, the sequence's length is added to it.  The slicing
-now selects all items with index \var{k} such that
+There is ambiguity in the formal syntax here: anything that looks like
+an expression list also looks like a slice list, so any subscription
+can be interpreted as a slicing.  Rather than further complicating the
+syntax, this is disambiguated by defining that in this case the
+interpretation as a subscription takes priority over the
+interpretation as a slicing (this is the case if the slice list
+contains no proper slice nor ellipses).  Similarly, when the slice
+list has exactly one short slice and no trailing comma, the
+interpretation as a simple slicing takes priority over that as an
+extended slicing.\indexii{extended}{slicing}
+
+The semantics for a simple slicing are as follows.  The primary must
+evaluate to a sequence object.  The lower and upper bound expressions,
+if present, must evaluate to plain integers; defaults are zero and the
+sequence's length, respectively.  If either bound is negative, the
+sequence's length is added to it.  The slicing now selects all items
+with index \var{k} such that
 \code{\var{i} <= \var{k} < \var{j}} where \var{i}
 and \var{j} are the specified lower and upper bounds.  This may be an
 empty sequence.  It is not an error if \var{i} or \var{j} lie outside the
 range of valid indexes (such items don't exist so they aren't
 selected).
 
+The semantics for an extended slicing are as follows.  The primary
+must evaluate to a mapping object, and it is indexed with a key that
+is constructed from the slice list, as follows.  If the slice list
+contains at least one comma, the key is a tuple containing the
+conversion of the slice items; otherwise, the conversion of the lone
+slice item is the key.  The conversion of a slice item that is an
+expression is that expression.  The conversion of an ellipsis slice
+item is the built-in \code{Ellipsis} object.  The conversion of a
+proper slice is a slice object (see section \ref{types}) whose
+\code{start}, \code{stop} and \code{step} attributes are the values of
+the expressions given as lower bound, upper bound and stride,
+respectively, substituting \code{None} for missing expressions.
+
 \subsection{Calls} \label{calls}
 \index{call}
 
 A call calls a callable object (e.g. a function) with a possibly empty
-series of arguments:\footnote{The new syntax for keyword arguments is
-not yet documented in this manual.  See chapter 12 of the Tutorial.}
+series of arguments:
 \obindex{callable}
 
 \begin{verbatim}
-call:           primary "(" [condition_list] ")"
+call:                   primary "(" [argument_list [","]] ")"
+argument_list:          positional_arguments ["," keyword_arguments]
+                      | keyword_arguments
+positional_arguments:   expression ("," expression)*
+keyword_arguments:      keyword_item ("," keyword_item)*
+keyword_item:           identifier "=" expression
 \end{verbatim}
+
+A trailing comma may be present after an argument list but does not
+affect the semantics.
 
 The primary must evaluate to a callable object (user-defined
 functions, built-in functions, methods of built-in objects, class
-objects, and methods of class instances are callable).  If it is a
-class, the argument list must be empty; otherwise, the arguments are
-evaluated.
+objects, methods of class instances, and certain class instances
+themselves are callable; extensions may define additional callable
+object types).  All argument expressions are evaluated before the call
+is attempted.  Please refer to section \ref{function} for the syntax
+of formal parameter lists.
+
+If keyword arguments are present, they are first converted to
+positional arguments, as follows.  First, a list of unfilled slots is
+created for the formal parameters.  If there are N positional
+arguments, they are placed in the first N slots.  Next, for each
+keyword argument, the identifier is used to determine the
+corresponding slot (if the identifier is the same as the first formal
+parameter name, the first slot is used, and so on).  If the slot is
+already filled, a \exception{TypeError} exception is raised.
+Otherwise, the value of the argument is placed in the slot, filling it
+(even if the expression is \code{None}, it fills the slot).  When all
+arguments have been processed, the slots that are still unfilled are
+filled with the corresponding default value from the function
+definition.  (Default values are calculated, once, when the function
+is defined; thus, a mutable object such as a list or dictionary used
+as default value will be shared by all calls that don't specify an
+argument value for the corresponding slot; this should usually be
+avoided.)  If there are any unfilled slots for which no default value
+is specified, a \exception{TypeError} exception is raised.  Otherwise,
+the list of filled slots is used as the argument list for the call.
+
+If there are more positional arguments than there are formal parameter
+slots, a \exception{TypeError} exception is raised, unless a formal
+parameter using the syntax ``\code{*identifier}'' is present; in this
+case, that formal parameter receives a tuple containing the excess
+positional arguments (or an empty tuple if there were no excess
+positional arguments).
+
+If any keyword argument does not correspond to a formal parameter
+name, a \exception{TypeError} exception is raised, unless a formal
+parameter using the syntax ``\code{**identifier}'' is present; in this
+case, that formal parameter receives a dictionary containing the
+excess keyword arguments (using the keywords as keys and the argument
+values as corresponding values), or a (new) empty dictionary if there
+were no excess keyword arguments.
+
+Formal parameters using the syntax ``\code{*identifier}'' or
+``\code{**identifier}'' cannot be used as positional argument slots or
+as keyword argument names.  Formal parameters using the syntax
+``\code{(sublist)}'' cannot be used as keyword argument names; the
+outermost sublist corresponds to a single unnamed argument slot, and
+the argument value is assigned to the sublist using the usual tuple
+assignment rules after all other parameter processing is done.
 
 A call always returns some value, possibly \code{None}, unless it
 raises an exception.  How this value is computed depends on the type
-of the callable object.  If it is:
+of the callable object.
+
+If it is---
 
 \begin{description}
 
-\item[a user-defined function:] the code block for the function is
+\item[a user-defined function:] The code block for the function is
 executed, passing it the argument list.  The first thing the code
 block will do is bind the formal parameters to the arguments; this is
 described in section \ref{function}.  When the code block executes a
@@ -350,7 +447,7 @@ function call.
 \obindex{user-defined function}
 \obindex{function}
 
-\item[a built-in function or method:] the result is up to the
+\item[a built-in function or method:] The result is up to the
 interpreter; see the library reference manual for the descriptions of
 built-in functions and methods.
 \indexii{function}{call}
@@ -362,19 +459,48 @@ built-in functions and methods.
 \obindex{method}
 \obindex{function}
 
-\item[a class object:] a new instance of that class is returned.
+\item[a class object:] A new instance of that class is returned.
 \obindex{class}
 \indexii{class object}{call}
 
-\item[a class instance method:] the corresponding user-defined
+\item[a class instance method:] The corresponding user-defined
 function is called, with an argument list that is one longer than the
 argument list of the call: the instance becomes the first argument.
 \obindex{class instance}
 \obindex{instance}
-\indexii{instance}{call}
 \indexii{class instance}{call}
 
+\item[a class instance:] The class must define a \method{__call__()}
+method; the effect is then the same as if that method was called.
+\indexii{instance}{call}
+\ttindex{__call__}
+
 \end{description}
+
+
+\section{The power operator}
+
+The power operator binds more tightly than unary operators on its
+left; it binds less tightly than unary operators on its right.  The
+syntax is:
+
+\begin{verbatim}
+power:         primary ["**" u_expr]
+\end{verbatim}
+
+Thus, in an unparenthesized sequence of power and unary operators, the
+operators are evaluated from right to left (this does not constrain
+the evaluation order for the operands).
+
+The power operator has the same semantics as the built-in
+\function{pow()} function, when called with two arguments: it yields
+its left argument raised to the power of its right argument.  The
+numeric arguments are first converted to a common type.  The result
+type is that of the arguments after coercion; if the result is not
+expressible in that type (as in raising an integer to a negative
+power, or a negative floating point number to a broken power), a
+\exception{TypeError} exception is raised.
+
 
 \section{Unary arithmetic operations}
 \indexiii{unary}{arithmetic}{operation}
@@ -383,7 +509,7 @@ argument list of the call: the instance becomes the first argument.
 All unary arithmetic (and bit-wise) operations have the same priority:
 
 \begin{verbatim}
-u_expr:         primary | "-" u_expr | "+" u_expr | "~" u_expr
+u_expr:         power | "-" u_expr | "+" u_expr | "~" u_expr
 \end{verbatim}
 
 The unary \code{-} (minus) operator yields the negation of its
@@ -397,7 +523,8 @@ unchanged.
 
 The unary \code{~} (invert) operator yields the bit-wise inversion
 of its plain or long integer argument.  The bit-wise inversion of
-\code{x} is defined as \code{-(x+1)}.
+\code{x} is defined as \code{-(x+1)}.  It only applies to integral
+numbers.
 \index{inversion}
 
 In all three cases, if the argument does not have the proper type,
@@ -409,8 +536,8 @@ a \exception{TypeError} exception is raised.
 
 The binary arithmetic operations have the conventional priority
 levels.  Note that some of these operations also apply to certain
-non-numeric types.  There is no ``power'' operator, so there are only
-two levels, one for multiplicative operators and one for additive
+non-numeric types.  Apart from the power operator, there are only two
+levels, one for multiplicative operators and one for additive
 operators:
 
 \begin{verbatim}
@@ -440,21 +567,23 @@ The \code{\%} (modulo) operator yields the remainder from the
 division of the first argument by the second.  The numeric arguments
 are first converted to a common type.  A zero right argument raises
 the \exception{ZeroDivisionError} exception.  The arguments may be floating
-point numbers, e.g. \code{3.14 \% 0.7} equals \code{0.34}.  The modulo
-operator always yields a result with the same sign as its second
-operand (or zero); the absolute value of the result is strictly
-smaller than the second operand.
+point numbers, e.g. \code{3.14\%0.7} equals \code{0.34} (since
+\code{3.14} equals \code{4*0.7 + 0.34}.)  The modulo operator always
+yields a result with the same sign as its second operand (or zero);
+the absolute value of the result is strictly smaller than the second
+operand.
 \index{modulo}
 
 The integer division and modulo operators are connected by the
 following identity: \code{x == (x/y)*y + (x\%y)}.  Integer division and
 modulo are also connected with the built-in function \function{divmod()}:
 \code{divmod(x, y) == (x/y, x\%y)}.  These identities don't hold for
-floating point numbers; there a similar identity holds where
-\code{x/y} is replaced by \code{floor(x/y)}).
+floating point and complex numbers; there a similar identity holds where
+\code{x/y} is replaced by \code{floor(x/y)}) or
+\code{floor((x/y).real)}, respectively.
 
 The \code{+} (addition) operator yields the sum of its arguments.
-The arguments must either both be numbers, or both sequences of the
+The arguments must either both be numbers or both sequences of the
 same type.  In the former case, the numbers are converted to a common
 type and then added together.  In the latter case, the sequences are
 concatenated.
@@ -483,10 +612,10 @@ second argument.
 A right shift by \var{n} bits is defined as division by
 \code{pow(2,\var{n})}.  A left shift by \var{n} bits is defined as
 multiplication with \code{pow(2,\var{n})}; for plain integers there is
-no overflow check so this drops bits and flips the sign if the result
-is not less than \code{pow(2,31)} in absolute value.
-
-Negative shift counts raise a \exception{ValueError} exception.
+no overflow check so in that case the operation drops bits and flips
+the sign if the result is not less than \code{pow(2,31)} in absolute
+value.  Negative shift counts raise a \exception{ValueError}
+exception.
 \exindex{ValueError}
 
 \section{Binary bit-wise operations}
@@ -543,16 +672,17 @@ when \code{x < y} is found to be false).
 Formally, if \var{a}, \var{b}, \var{c}, \ldots, \var{y}, \var{z} are
 expressions and \var{opa}, \var{opb}, \ldots, \var{opy} are comparison
 operators, then \var{a opa b opb c} \ldots \var{y opy z} is equivalent
-to \var{a opa b} \keyword{and} \var{b opb c} \keyword{and} \ldots \keyword{and}
+to \var{a opa b} \keyword{and} \var{b opb c} \keyword{and} \ldots
 \var{y opy z}, except that each expression is evaluated at most once.
 
 Note that \var{a opa b opb c} doesn't imply any kind of comparison
-between \var{a} and \var{c}, so that e.g.\ \code{x < y > z} is
+between \var{a} and \var{c}, so that, e.g., \code{x < y > z} is
 perfectly legal (though perhaps not pretty).
 
 The forms \code{<>} and \code{!=} are equivalent; for consistency with
 C, \code{!=} is preferred; where \code{!=} is mentioned below
-\code{<>} is also implied.
+\code{<>} is also acceptable.  At some point in the (far) future,
+\code{<>} may become obsolete.
 
 The operators {\tt "<", ">", "==", ">=", "<="}, and {\tt "!="} compare
 the values of two objects.  The objects needn't have the same type.
@@ -560,9 +690,10 @@ If both are numbers, they are coverted to a common type.  Otherwise,
 objects of different types {\em always} compare unequal, and are
 ordered consistently but arbitrarily.
 
-(This unusual definition of comparison is done to simplify the
+(This unusual definition of comparison was used to simplify the
 definition of operations like sorting and the \keyword{in} and
-\keyword{not in} operators.)
+\keyword{not in} operators.  In the future, the comparison rules for
+objects of different types are likely to change.)
 
 Comparison of objects of the same type depends on the type:
 
@@ -584,10 +715,10 @@ corresponding items.
 Mappings (dictionaries) are compared through lexicographic
 comparison of their sorted (key, value) lists.%
 \footnote{This is expensive since it requires sorting the keys first,
-but about the only sensible definition.  An earlier version of Python
-compared dictionaries by identity only, but this caused surprises
-because people expected to be able to test a dictionary for emptiness
-by comparing it to \code{\{\}}.}
+but it is about the only sensible definition.  An earlier version of
+Python compared dictionaries by identity only, but this caused
+surprises because people expected to be able to test a dictionary for
+emptiness by comparing it to \code{\{\}}.}
 
 \item
 Most other types compare unequal unless they are the same object;
@@ -624,14 +755,14 @@ truth value.
 Boolean operations have the lowest priority of all Python operations:
 
 \begin{verbatim}
-condition:      or_test | lambda_form
+expression:     or_test | lambda_form
 or_test:        and_test | or_test "or" and_test
 and_test:       not_test | and_test "and" not_test
 not_test:       comparison | "not" not_test
-lambda_form:	"lambda" [parameter_list]: condition
+lambda_form:	"lambda" [parameter_list]: expression
 \end{verbatim}
 
-In the context of Boolean operations, and also when conditions are
+In the context of Boolean operations, and also when expressions are
 used by control flow statements, the following values are interpreted
 as false: \code{None}, numeric zero of all types, empty sequences
 (strings, tuples and lists), and empty mappings (dictionaries).  All
@@ -641,20 +772,20 @@ The operator \keyword{not} yields \code{1} if its argument is false,
 \code{0} otherwise.
 \opindex{not}
 
-The condition \code{\var{x} and \var{y}} first evaluates \var{x}; if
+The expression \code{\var{x} and \var{y}} first evaluates \var{x}; if
 \var{x} is false, its value is returned; otherwise, \var{y} is
 evaluated and the resulting value is returned.
 \opindex{and}
 
-The condition \code{\var{x} or \var{y}} first evaluates \var{x}; if
+The expression \code{\var{x} or \var{y}} first evaluates \var{x}; if
 \var{x} is true, its value is returned; otherwise, \var{y} is
 evaluated and the resulting value is returned.
 \opindex{or}
 
-(Note that \keyword{and} and \keyword{or} do not restrict the value
+(Note that neither \keyword{and} nor \keyword{or} restrict the value
 and type they return to \code{0} and \code{1}, but rather return the
 last evaluated argument.
-This is sometimes useful, e.g.\ if \code{s} is a string that should be
+This is sometimes useful, e.g., if \code{s} is a string that should be
 replaced by a default value if it is empty, the expression
 \code{s or 'foo'} yields the desired value.  Because \keyword{not} has to
 invent a value anyway, it does not bother to return a value of the
@@ -662,54 +793,53 @@ same type as its argument, so e.g. \code{not 'foo'} yields \code{0},
 not \code{''}.)
 
 Lambda forms (lambda expressions) have the same syntactic position as
-conditions.  They are a shorthand to create anonymous functions; the
-expression \code{lambda \var{arguments}: \var{condition}}
+expressions.  They are a shorthand to create anonymous functions; the
+expression \code{lambda \var{arguments}: \var{expression}}
 yields a function object that behaves virtually identical to one
 defined with
-\code{def \var{name}(\var{arguments}): return \var{condition}}.
-See section \ref{function} for the syntax of
-parameter lists.  Note that functions created with lambda forms cannot
-contain statements.
+
+\begin{verbatim}
+def name(arguments):
+    return expression
+\end{verbatim}
+
+See section \ref{function} for the syntax of parameter lists.  Note
+that functions created with lambda forms cannot contain statements.
 \label{lambda}
 \indexii{lambda}{expression}
 \indexii{lambda}{form}
 \indexii{anonmymous}{function}
 
-\section{Expression lists and condition lists}
-\indexii{expression}{list}
-\indexii{condition}{list}
+\strong{Programmer's note:} a lambda form defined inside a function
+has no access to names defined in the function's namespace.  This is
+because Python has only two scopes: local and global.  A common
+work-around is to use default argument values to pass selected
+variables into the lambda's namespace, e.g.:
 
 \begin{verbatim}
-expression_list:      or_expr ("," or_expr)* [","]
-condintion_list:      condition ("," condition)* [","]
+def make_incrementor(increment):
+    return lambda x, n=increment: x+n
 \end{verbatim}
 
-The only difference between expression lists and condition lists is
-the lowest priority of operators that can be used in them without
-being enclosed in parentheses; condition lists allow all operators,
-while expression lists don't allow comparisons and Boolean operators
-(they do allow bitwise and shift operators though).
+\section{Expression lists and expression lists}
+\indexii{expression}{list}
 
-Expression lists are used in expression statements and assignments;
-condition lists are used everywhere else where a list of
-comma-separated values is required.
+\begin{verbatim}
+expression_list:      expression ("," expression)* [","]
+\end{verbatim}
 
-An expression (condition) list containing at least one comma yields a
-tuple.  The length of the tuple is the number of expressions
-(conditions) in the list.  The expressions (conditions) are evaluated
-from left to right.  (Condition lists are used syntactically is a few
-places where no tuple is constructed but a list of values is needed
-nevertheless.)
+An expression (expression) list containing at least one comma yields a
+tuple.  The length of the tuple is the number of expressions in the
+list.  The expressions are evaluated from left to right.
 \obindex{tuple}
 
 The trailing comma is required only to create a single tuple (a.k.a. a
 {\em singleton}); it is optional in all other cases.  A single
-expression (condition) without a trailing comma doesn't create a
-tuple, but rather yields the value of that expression (condition).
-\indexii{trailing}{comma}
-
+expression (expression) without a trailing comma doesn't create a
+tuple, but rather yields the value of that expression (expression).
 (To create an empty tuple, use an empty pair of parentheses:
 \code{()}.)
+\indexii{trailing}{comma}
 
 \section{Summary}
 
@@ -746,6 +876,8 @@ chain from left to right --- see above).
 \hline
 \code{*}, \code{/}, \code{\%} & Multiplication, division, remainder \\
 \hline
+\code{**} & Power \\
+\hline
 \code{+\var{x}}, \code{-\var{x}} & Positive, negative \\
 \code{\~\var{x}} & Bitwise not \\
 \hline
@@ -757,7 +889,7 @@ chain from left to right --- see above).
 \code{(\var{expressions}\ldots)} & Binding or tuple display \\
 \code{[\var{expressions}\ldots]} & List display \\
 \code{\{\var{key}:\var{datum}\ldots\}} & Dictionary display \\
-\code{`\var{expression}\ldots`} & String conversion \\
+\code{`\var{expressions}\ldots`} & String conversion \\
 \hline
 \end{tabular}
 \end{center}
