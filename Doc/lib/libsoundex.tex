@@ -16,7 +16,8 @@ misspellings together.
 \begin{funcdesc}{get_soundex}{string}
 Return the soundex hash value for a word; it will always be a
 6-character string.  \var{string} must contain the word to be hashed,
-with no leading whitespace; the case of the word is ignored.
+with no leading whitespace; the case of the word is ignored.  (Note
+that the original algorithm produces a 4-character result.)
 \end{funcdesc}
 
 \begin{funcdesc}{sound_similar}{string1, string2}
@@ -25,3 +26,16 @@ is equivalent to
 \code{get_soundex(\var{string1})} \code{==}
 \code{get_soundex(\var{string2})}.
 \end{funcdesc}
+
+
+\begin{seealso}
+
+\seetext{Donald E. Knuth, \emph{Sorting and Searching,} vol. 3 in
+``The Art of Computer Programming.'' Addison-Wesley Publishing
+Company:  Reading, MA: 1973. pp.\ 391-392.  Discusses the origin and
+usefulness of the algorithm, as well as the algorithm itself.  Knuth
+gives his sources as \emph{U.S. Patents 1261167} (1918) and
+\emph{1435663} (1922), attributing the algorithm to Margaret K. Odell
+and Robert C. Russel.  Additional references are provided.}
+
+\end{seealso}
