@@ -130,9 +130,27 @@ int sample;
     }
 /* End of code taken from sox */
 
-/* ADPCM step variation table */
+/* ADPCM-3 step variation table */
 static float newstep[5] = { 0.8, 0.9, 1.0, 1.75, 1.75 };
 
+/* Intel ADPCM step variation table */
+static int indexTable[16] = {
+    -1, -1, -1, -1, 2, 4, 6, 8,
+    -1, -1, -1, -1, 2, 4, 6, 8,
+};
+
+static int stepsizeTable[89] = {
+    7, 8, 9, 10, 11, 12, 13, 14, 16, 17,
+    19, 21, 23, 25, 28, 31, 34, 37, 41, 45,
+    50, 55, 60, 66, 73, 80, 88, 97, 107, 118,
+    130, 143, 157, 173, 190, 209, 230, 253, 279, 307,
+    337, 371, 408, 449, 494, 544, 598, 658, 724, 796,
+    876, 963, 1060, 1166, 1282, 1411, 1552, 1707, 1878, 2066,
+    2272, 2499, 2749, 3024, 3327, 3660, 4026, 4428, 4871, 5358,
+    5894, 6484, 7132, 7845, 8630, 9493, 10442, 11487, 12635, 13899,
+    15289, 16818, 18500, 20350, 22385, 24623, 27086, 29794, 32767
+};
+    
 #define CHARP(cp, i) ((signed char *)(cp+i))
 #define SHORTP(cp, i) ((short *)(cp+i))
 #define LONGP(cp, i) ((long *)(cp+i))
@@ -550,7 +568,7 @@ audioop_ulaw2lin(self, args)
 }
 
 static object *
-audioop_lin2adpcm(self, args)
+audioop_lin2adpcm3(self, args)
     object *self;
     object *args;
 {
@@ -619,7 +637,7 @@ audioop_lin2adpcm(self, args)
 }
 
 static object *
-audioop_adpcm2lin(self, args)
+audioop_adpcm32lin(self, args)
     object *self;
     object *args;
 {
@@ -679,6 +697,175 @@ audioop_adpcm2lin(self, args)
     return rv;
 }
 
+static object *
+audioop_lin2adpcm(self, args)
+    object *self;
+    object *args;
+{
+    signed char *cp;
+    signed char *ncp;
+    int len, size, val, step, valprev, delta, index, sign;
+    object *rv, *state, *str;
+    int i, outputbuffer, bufferstep;
+
+    if ( !getargs(args, "(s#iO)",
+		  &cp, &len, &size, &state) )
+      return 0;
+    
+
+    if ( size != 1 && size != 2 && size != 4) {
+	err_setstr(AudioopError, "Size should be 1, 2 or 4");
+	return 0;
+    }
+    
+    str = newsizedstringobject(NULL, len/(size*2));
+    if ( str == 0 )
+      return 0;
+    ncp = (signed char *)getstringvalue(str);
+
+    /* Decode state, should have (value, step) */
+    if ( state == None ) {
+	/* First time, it seems. Set defaults */
+	valprev = 0;
+	step = 7;
+	index = 0;
+    } else if ( !getargs(state, "(iii)", &valprev, &step, &index) )
+      return 0;
+
+    bufferstep = 1;
+
+    for ( i=0; i < len; i += size ) {
+	if ( size == 1 )      val = ((int)*CHARP(cp, i)) << 8;
+	else if ( size == 2 ) val = (int)*SHORTP(cp, i);
+	else if ( size == 4 ) val = ((int)*LONGP(cp, i)) >> 16;
+
+	/* Step 1 - compute difference with previous value */
+	delta = val - valprev;
+	sign = (delta < 0) ? 8 : 0;
+	if ( sign ) delta = (-delta);
+
+	/* Step 2 - Divide and clamp */
+#ifdef NODIVIDE
+	Program using shifts and subtracts;
+#else
+	delta = (delta<<2) / step;
+	if ( delta > 7 ) delta = 7;
+#endif
+	  
+	/* Step 3 - Update previous value */
+	if ( sign )
+	  valprev -= (delta*step)>>2;
+	else
+	  valprev += (delta*step)>>2;
+
+	/* Step 4 - Clamp previous value to 16 bits */
+	if ( valprev > 32767 )
+	  valprev = 32767;
+	else if ( valprev < -32768 )
+	  valprev = -32768;
+
+	/* Step 5 - Assemble value, update index and step values */
+	delta |= sign;
+	
+	index += indexTable[delta];
+	if ( index < 0 ) index = 0;
+	if ( index > 88 ) index = 88;
+	step = stepsizeTable[index];
+
+	/* Step 6 - Output value (as a whole byte, currently) */
+	if ( bufferstep ) {
+	    outputbuffer = (delta << 4);
+	} else {
+	    *ncp++ = delta | outputbuffer;
+	}
+	bufferstep = !bufferstep;
+    }
+    rv = mkvalue("(O(iii))", str, valprev, step, index);
+    DECREF(str);
+    return rv;
+}
+
+static object *
+audioop_adpcm2lin(self, args)
+    object *self;
+    object *args;
+{
+    signed char *cp;
+    signed char *ncp;
+    int len, size, val, valprev, step, delta, index, sign;
+    object *rv, *str, *state;
+    int i, inputbuffer, bufferstep;
+
+    if ( !getargs(args, "(s#iO)",
+		  &cp, &len, &size, &state) )
+      return 0;
+
+    if ( size != 1 && size != 2 && size != 4) {
+	err_setstr(AudioopError, "Size should be 1, 2 or 4");
+	return 0;
+    }
+    
+    /* Decode state, should have (value, step) */
+    if ( state == None ) {
+	/* First time, it seems. Set defaults */
+	valprev = 0;
+	step = 7;
+	index = 0;
+    } else if ( !getargs(state, "(iii)", &valprev, &step, &index) )
+      return 0;
+    
+    str = newsizedstringobject(NULL, len*size*2);
+    if ( str == 0 )
+      return 0;
+    ncp = (signed char *)getstringvalue(str);
+
+    bufferstep = 0;
+    
+    for ( i=0; i < len*size*2; i += size ) {
+	/* Step 1 - get the delta value and compute next index */
+	if ( bufferstep ) {
+	    delta = inputbuffer & 0xf;
+	} else {
+	    inputbuffer = *cp++;
+	    delta = (inputbuffer >> 4) & 0xf;
+	}
+
+	bufferstep = !bufferstep;
+
+	index += indexTable[delta];
+	if ( index < 0 ) index = 0;
+	if ( index > 88 ) index = 88;
+
+	/* Step 2 - Separate sign and magnitude */
+	sign = delta & 8;
+	delta = delta & 7;
+
+	/* Step 3 - update output value */
+	if ( sign )
+	  valprev -= (delta*step) >> 2;
+	else
+	  valprev += (delta*step) >> 2;
+
+	/* Step 4 - clamp output value */
+	if ( valprev > 32767 )
+	  valprev = 32767;
+	else if ( valprev < -32768 )
+	  valprev = -32768;
+
+	/* Step 5 - Update step value */
+	step = stepsizeTable[index];
+
+	/* Step 6 - Output value */
+	if ( size == 1 )      *CHARP(ncp, i) = (signed char)(valprev >> 8);
+	else if ( size == 2 ) *SHORTP(ncp, i) = (short)(valprev);
+	else if ( size == 4 ) *LONGP(ncp, i) = (long)(valprev<<16);
+    }
+
+    rv = mkvalue("(O(iii))", str, valprev, step, index);
+    DECREF(str);
+    return rv;
+}
+
 static struct methodlist audioop_methods[] = {
     { "max", audioop_max },
     { "avg", audioop_avg },
@@ -690,6 +877,8 @@ static struct methodlist audioop_methods[] = {
     { "lin2ulaw", audioop_lin2ulaw },
     { "adpcm2lin", audioop_adpcm2lin },
     { "lin2adpcm", audioop_lin2adpcm },
+    { "adpcm32lin", audioop_adpcm32lin },
+    { "lin2adpcm3", audioop_lin2adpcm3 },
     { "tomono", audioop_tomono },
     { "tostereo", audioop_tostereo },
     { "getsample", audioop_getsample },
