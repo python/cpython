@@ -56,7 +56,7 @@ def whichdb(filename):
 
     # BSD hash v2 has a 12-byte NULL pad in front of the file type
     try:
-	(magic,) = struct.unpack("=l", s16[-4:])
+        (magic,) = struct.unpack("=l", s16[-4:])
     except struct.error:
         return ""
 

@@ -30,8 +30,8 @@ import urllib
 knownfiles = [
     "/usr/local/etc/httpd/conf/mime.types",
     "/usr/local/lib/netscape/mime.types",
-    "/usr/local/etc/httpd/conf/mime.types",	# Apache 1.2
-    "/usr/local/etc/mime.types",		# Apache 1.3
+    "/usr/local/etc/httpd/conf/mime.types",     # Apache 1.2
+    "/usr/local/etc/mime.types",                # Apache 1.3
     ]
 
 inited = 0
@@ -56,24 +56,24 @@ def guess_type(url):
         init()
     scheme, url = urllib.splittype(url)
     if scheme == 'data':
-	# syntax of data URLs:
-	# dataurl   := "data:" [ mediatype ] [ ";base64" ] "," data
-	# mediatype := [ type "/" subtype ] *( ";" parameter )
-	# data      := *urlchar
-	# parameter := attribute "=" value
-	# type/subtype defaults to "text/plain"
-	comma = string.find(url, ',')
-	if comma < 0:
-	    # bad data URL
-	    return None, None
-	semi = string.find(url, ';', 0, comma)
-	if semi >= 0:
-	    type = url[:semi]
-	else:
-	    type = url[:comma]
-	if '=' in type or '/' not in type:
-	    type = 'text/plain'
-	return type, None		# never compressed, so encoding is None
+        # syntax of data URLs:
+        # dataurl   := "data:" [ mediatype ] [ ";base64" ] "," data
+        # mediatype := [ type "/" subtype ] *( ";" parameter )
+        # data      := *urlchar
+        # parameter := attribute "=" value
+        # type/subtype defaults to "text/plain"
+        comma = string.find(url, ',')
+        if comma < 0:
+            # bad data URL
+            return None, None
+        semi = string.find(url, ';', 0, comma)
+        if semi >= 0:
+            type = url[:semi]
+        else:
+            type = url[:comma]
+        if '=' in type or '/' not in type:
+            type = 'text/plain'
+        return type, None               # never compressed, so encoding is None
     base, ext = posixpath.splitext(url)
     while suffix_map.has_key(ext):
         base, ext = posixpath.splitext(base + suffix_map[ext])

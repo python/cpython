@@ -44,27 +44,27 @@ HTTPS_PORT = 443
 
 class FakeSocket:
     def __init__(self, sock, ssl):
-	self.__sock = sock
-	self.__ssl = ssl
-	return
+        self.__sock = sock
+        self.__ssl = ssl
+        return
 
-    def makefile(self, mode):		# hopefully, never have to write
-	msgbuf = ""
-	while 1:
-	    try:
-		msgbuf = msgbuf + self.__ssl.read()
-	    except socket.sslerror, msg:
-		break
-	return StringIO(msgbuf)
+    def makefile(self, mode):           # hopefully, never have to write
+        msgbuf = ""
+        while 1:
+            try:
+                msgbuf = msgbuf + self.__ssl.read()
+            except socket.sslerror, msg:
+                break
+        return StringIO(msgbuf)
 
     def send(self, stuff, flags = 0):
-	return self.__ssl.write(stuff)
+        return self.__ssl.write(stuff)
 
     def recv(self, len = 1024, flags = 0):
-	return self.__ssl.read(len)
+        return self.__ssl.read(len)
 
     def __getattr__(self, attr):
-	return getattr(self.__sock, attr)
+        return getattr(self.__sock, attr)
 
 class HTTP:
     """This class manages a connection to an HTTP server."""
