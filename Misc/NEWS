@@ -348,6 +348,8 @@ Extension modules
 Library
 -------
 
+- Various features of Tk 8.4 are exposed in Tkinter.py.
+
 - Various configure methods of Tkinter have been stream-lined, so
   that tag_configure, image_configure, window_configure now return
   a dictionary when invoked with no argument.
