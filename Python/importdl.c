@@ -577,7 +577,7 @@ _PyImport_LoadDynamicModule(name, pathname, fp)
 #endif
 	if (p == NULL) {
 		PyErr_Format(PyExc_ImportError,
-		   "dynamic module does not define init function (%s)",
+		   "dynamic module does not define init function (%.200s)",
 			     funcname);
 		return NULL;
 	}
