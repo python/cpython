@@ -73,6 +73,10 @@ extern long sys_milli();
 #define millitimer sys_milli
 #endif /* AMOEBA */
 
+#ifdef BSD_TIME
+#define DO_MILLI
+#endif /* BSD_TIME */
+
 #ifdef DO_MILLI
 
 static object *
@@ -169,3 +173,33 @@ millitimer()
 }
 
 #endif /* THINK_C */
+
+
+#ifdef BSD_TIME
+
+#include <sys/types.h>
+#include <sys/time.h>
+
+static long
+millitimer()
+{
+	struct timeval t;
+	struct timezone tz;
+	if (gettimeofday(&t, &tz) != 0)
+		return -1;
+	return t.tv_sec*1000 + t.tv_usec/1000;
+	
+}
+
+static
+millisleep(msecs)
+	long msecs;
+{
+	struct timeval t;
+	t.tv_sec = msecs/1000;
+	t.tv_usec = (msecs%1000)*1000;
+	(void) select(0, (fd_set *)0, (fd_set *)0, (fd_set *)0, &t);
+}
+
+#endif /* BSD_TIME */
+
