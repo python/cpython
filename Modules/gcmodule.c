@@ -277,8 +277,7 @@ debug_instance(PyObject *output, char *msg, PyInstanceObject *inst)
 		cname = PyString_AsString(classname);
 	else
 		cname = "?";
-	sprintf(buf, "gc: %s<%.100s instance at %lx>\n", 
-			msg, cname, (long)inst);
+	sprintf(buf, "gc: %s<%.100s instance at %p>\n", msg, cname, inst);
 	PyFile_WriteString(buf, output);
 }
 
@@ -289,10 +288,8 @@ debug_cycle(PyObject *output, char *msg, PyObject *op)
 		debug_instance(output, msg, (PyInstanceObject *)op);
 	} else if (debug & DEBUG_OBJECTS) {
 		char buf[200];
-		sprintf(buf, "gc: %s<%.100s 0x%p>\n",
-				msg,
-				op->ob_type->tp_name,
-				op);
+		sprintf(buf, "gc: %s<%.100s %p>\n", msg,
+			op->ob_type->tp_name, op);
 		PyFile_WriteString(buf, output);
 	}
 }
