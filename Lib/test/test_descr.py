@@ -550,7 +550,7 @@ def dynamics():
     verify(S1.__dynamic__ == 0)
     class S(object):
         pass
-    verify(C.__dynamic__ == 0)
+    verify(S.__dynamic__ == 0)
     class D(object):
         __dynamic__ = 1
     verify(D.__dynamic__ == 1)
@@ -581,6 +581,25 @@ def dynamics():
         pass
     else:
         verify(0, "assignment to SS.foo should be illegal")
+    # Test dynamic instances
+    class C(object):
+        __dynamic__ = 1
+        foobar = 1
+        def __repr__(self):
+            return "<C object>"
+    a = C()
+    verify(not hasattr(a, "spam"))
+    verify(a.foobar == 1)
+    C.foobar = 2
+    verify(a.foobar == 2)
+    C.method = lambda self: 42
+    verify(a.method() == 42)
+    verify(repr(a) == "<C object>")
+    C.__repr__ = lambda self: "C()"
+    verify(repr(a) == "C()")
+    # The following test should succeed, but doesn't yet
+##    C.__int__ = lambda self: 100
+##    verify(int(a) == 100)
 
 def errors():
     if verbose: print "Testing errors..."
