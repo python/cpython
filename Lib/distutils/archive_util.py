@@ -102,6 +102,20 @@ def make_zipfile (base_name, base_dir, verbose=0, dry_run=0):
 # make_zipfile ()
 
 
+ARCHIVE_FORMATS = {
+    'gztar': (make_tarball, [('compress', 'gzip')]),
+    'ztar':  (make_tarball, [('compress', 'compress')]),
+    'tar':   (make_tarball, [('compress', None)]),
+    'zip':   (make_zipfile, [])
+    }
+
+def check_archive_formats (formats):
+    for format in formats:
+        if not ARCHIVE_FORMATS.has_key(format):
+            return format
+    else:
+        return None
+
 def make_archive (base_name, format,
                   root_dir=None, base_dir=None,
                   verbose=0, dry_run=0):
@@ -130,18 +144,14 @@ def make_archive (base_name, format,
     kwargs = { 'verbose': verbose,
                'dry_run': dry_run }
     
-    if format == 'gztar':
-        func = make_tarball
-        kwargs['compress'] = 'gzip'
-    elif format == 'ztar':
-        func = make_tarball
-        kwargs['compress'] = 'compress'
-    elif format == 'tar':
-        func = make_tarball
-        kwargs['compress'] = None
-    elif format == 'zip':
-        func = make_zipfile
+    try:
+        format_info = ARCHIVE_FORMATS[format]
+    except KeyError:
+        raise ValueError, "unknown archive format '%s'" % format
 
+    func = format_info[0]
+    for (arg,val) in format_info[1]:
+        kwargs[arg] = val
     apply (func, (base_name, base_dir), kwargs)
 
     if root_dir is not None:
