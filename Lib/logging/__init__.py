@@ -35,20 +35,13 @@ except ImportError:
     thread = None
 
 __author__  = "Vinay Sajip <vinay_sajip@red-dove.com>"
-__status__  = "alpha"
+__status__  = "beta"
 __version__ = "0.4.8"
-__date__    = "16 February 2003"
+__date__    = "22 April 2003"
 
 #---------------------------------------------------------------------------
 #   Miscellaneous module data
 #---------------------------------------------------------------------------
-
-#
-# _verinfo is used for when behaviour needs to be adjusted to the version
-# of Python
-#
-
-_verinfo = getattr(sys, "version_info", None)
 
 #
 #_srcfile is used when walking the stack to check when we've got the first
