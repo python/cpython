@@ -59,7 +59,7 @@ def receiver():
 # Open a UDP socket, bind it to a port and select a multicast group
 def openmcastsock(group, port):
 	# Import modules used only here
-	import regsub
+	import string
 	import struct
 	#
 	# Create a socket
@@ -77,13 +77,13 @@ def openmcastsock(group, port):
 	group = gethostbyname(group)
 	#
 	# Construct binary group address
-	bytes = eval(regsub.gsub('\.', ',', group))
+	bytes = map(int, string.split(group, "."))
 	grpaddr = 0
 	for byte in bytes: grpaddr = (grpaddr << 8) | byte
 	#
 	# Construct struct mreq from grpaddr and ifaddr
 	ifaddr = INADDR_ANY
-	mreq = struct.pack('ll', grpaddr, ifaddr)
+	mreq = struct.pack('ll', htonl(grpaddr), htonl(ifaddr))
 	#
 	# Add group membership
 	s.setsockopt(IPPROTO_IP, IP_ADD_MEMBERSHIP, mreq)
