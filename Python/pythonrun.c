@@ -459,24 +459,22 @@ PyRun_InteractiveOne(fp, filename)
 	PyObject *m, *d, *v, *w;
 	node *n;
 	perrdetail err;
-	char *ps1, *ps2;
+	char *ps1 = "", *ps2 = "";
 	v = PySys_GetObject("ps1");
+	if (v != NULL) {
+		v = PyObject_Str(v);
+		if (v == NULL)
+			PyErr_Clear();
+		else if (PyString_Check(v))
+			ps1 = PyString_AsString(v);
+	}
 	w = PySys_GetObject("ps2");
-	if (v != NULL && PyString_Check(v)) {
-		Py_INCREF(v);
-		ps1 = PyString_AsString(v);
-	}
-	else {
-		v = NULL;
-		ps1 = "";
-	}
-	if (w != NULL && PyString_Check(w)) {
-		Py_INCREF(w);
-		ps2 = PyString_AsString(w);
-	}
-	else {
-		w = NULL;
-		ps2 = "";
+	if (w != NULL) {
+		w = PyObject_Str(w);
+		if (w == NULL)
+			PyErr_Clear();
+		else if (PyString_Check(w))
+			ps2 = PyString_AsString(w);
 	}
 	Py_BEGIN_ALLOW_THREADS
 	n = PyParser_ParseFile(fp, filename, &_PyParser_Grammar,
