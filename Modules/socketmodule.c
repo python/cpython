@@ -471,27 +471,6 @@ BUILD_FUNC_DEF_2(PySocketSock_accept,PySocketSockObject *,s, PyObject *,args)
 }
 
 
-#if 0
-/* s.allowbroadcast() method */
-/* XXX obsolete -- will disappear in next release */
-
-static PyObject *
-BUILD_FUNC_DEF_2(PySocketSock_allowbroadcast,PySocketSockObject *,s, PyObject *,args)
-{
-	int flag;
-	int res;
-	if (!PyArg_Parse(args, "i", &flag))
-		return NULL;
-	res = setsockopt(s->sock_fd, SOL_SOCKET, SO_BROADCAST,
-			 (ANY *)&flag, sizeof flag);
-	if (res < 0)
-		return PySocket_Err();
-	Py_INCREF(Py_None);
-	return Py_None;
-}
-#endif
-
-
 /* s.setblocking(1 | 0) method */
 
 static PyObject *
@@ -789,7 +768,7 @@ BUILD_FUNC_DEF_2(PySocketSock_recv,PySocketSockObject *,s, PyObject *,args)
 		Py_DECREF(buf);
 		return PySocket_Err();
 	}
-	if (_PyString_Resize(&buf, n) < 0)
+	if (n != len && _PyString_Resize(&buf, n) < 0)
 		return NULL;
 	return buf;
 }
@@ -826,7 +805,7 @@ BUILD_FUNC_DEF_2(PySocketSock_recvfrom,PySocketSockObject *,s, PyObject *,args)
 		Py_DECREF(buf);
 		return PySocket_Err();
 	}
-	if (_PyString_Resize(&buf, n) < 0)
+	if (n != len && _PyString_Resize(&buf, n) < 0)
 		return NULL;
 	addr = makesockaddr((struct sockaddr *)addrbuf, addrlen);
 	ret = Py_BuildValue("OO", buf, addr);
