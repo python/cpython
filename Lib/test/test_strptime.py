@@ -303,14 +303,14 @@ class StrptimeTests(unittest.TestCase):
         strf_output = time.strftime("%Z")  #UTC does not have a timezone
         strp_output = _strptime.strptime(strf_output, "%Z")
         locale_time = _strptime.LocaleTime()
-        if time.tzname[0] != time.tzname[1]:
+        if time.tzname[0] != time.tzname[1] or not time.daylight:
             self.failUnless(strp_output[8] == time_tuple[8],
                             "timezone check failed; '%s' -> %s != %s" %
                              (strf_output, strp_output[8], time_tuple[8]))
         else:
             self.failUnless(strp_output[8] == -1,
-                            "LocaleTime().timezone has duplicate values but "
-                             "timezone value not set to -1")
+                            "LocaleTime().timezone has duplicate values and "
+                             "time.daylight but timezone value not set to -1")
 
     def test_date_time(self):
         # Test %c directive
