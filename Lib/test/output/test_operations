@@ -1,3 +1,6 @@
 test_operations
 3. Operations
-XXX Not yet implemented
+XXX Mostly not yet implemented
+3.1 Dictionary lookups succeed even if __cmp__() raises an exception
+raising error
+No exception passed through.
