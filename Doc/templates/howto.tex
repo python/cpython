@@ -76,85 +76,9 @@ implements ActiveSprockets in Python.
 % The preceding sections will have been written in a gentler,
 % introductory style.  You may also wish to include a reference
 % section, documenting all the functions/exceptions/constants.
-% The following is a model for such a reference section, for
-% an extension module written in C.
+% Often, these will be placed in separate files and input like this:
 
-\section{Extension Module \module{spamsprock}}
-\exmodindex{spamsprock}		% Set the module name for the index
-\label{module-spamsprock}       % Create a label for cross-references
-
-A \C{} module is provided to perform spammification operations very
-quickly.  It exports a function, an exception, and some constants.
-
-% A function definition
-\begin{funcdesc}{spammify}{sprocket\optional{, options}}
-Spammify the sprocket given as \var{sprocket}.  Flags my be
-bitwise-ORed together and passed as \var{options}.
-\end{funcdesc}
-
-% An exception definition
-\begin{excdesc}{SpamError}
-The exception that is raised when spammification fails, or just takes
-too long.
-\end{excdesc}
-
-% A definition of two constants
-\begin{datadesc}{FROBNICATE}
-Value to be used for the \var{options} parameter to
-\function{spammify()} to indicate that the \var{sprocket} parameter to 
-that function should be frobnicated as well as spammified.
-\end{datadesc}
-
-\begin{datadesc}{NO_FROBNICATE}
-As with \constant{FROBNICATE}, but indicates that frobnication should
-not be performed.  The default is to frobnicate randomly.
-\end{datadesc}
-
-
-% The following section is a model for documenting modules written in
-% Python. 
-
-\section{Module \module{sprunkit}}
-\modindex{ezspam}
-\label{module-sprunkit}
-
-This module provides a high level interface to spammification
-operations.  It provides an interesting base class and an exception.
-
-% A class definition
-\begin{classdesc}{SprunkSprocket}{\optional{path}}
-A Python-only implementation of a persistent sprocket.  The \var{path} 
-parameter should refer to a spocket definition file.  If omitted, a
-new sprocket is created.
-\end{classdesc}
-
-% An exception definition
-\begin{excdesc}{PersistenceError}
-Exception raised when the \method{save()} method of a
-\class{SprunkSprockit} instance fails.
-\end{excdesc}
-
-
-\subsection{\class{SprunkSprocket} Objects}
-
-\class{SprunkSprocket} objects have the following methods:
-
-\begin{funcdesc}{save}{\optional{path}}
-Save the sprocket in the file specified by \var{path}.  If \var{path}
-is omitted, the \var{path} specified to the constructor is used.  If
-neither was specified, raises the \exception{PersistenceError}
-exception.
-\end{funcdesc}
-
-
-\begin{funcdesc}{persist}{path}
-Set the default file name that the \method{save()} method will use.
-\end{funcdesc}
-
-
-\begin{funcdesc}{insist}{}
-Make the sprocket assert itself.  This method cannot fail.
-\end{funcdesc}
+\input{module}
 
 
 \appendix
