@@ -565,7 +565,7 @@ file_isatty(PyFileObject *f)
 	Py_BEGIN_ALLOW_THREADS
 	res = isatty((int)fileno(f->f_fp));
 	Py_END_ALLOW_THREADS
-	return PyInt_FromLong(res);
+	return PyBool_FromLong(res);
 }
 
 
