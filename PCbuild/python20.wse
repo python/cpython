@@ -1,7 +1,7 @@
 Document Type: WSE
 item: Global
   Version=9.0
-  Title=Python 2.3.2c1
+  Title=Python 2.3.2
   Flags=00010100
   Languages=65 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
   Japanese Font Name=MS Gothic
@@ -20,9 +20,9 @@ item: Global
   Patch Memory=4000
   MIF PDF Version=1.0
   MIF SMS Version=2.0
-  EXE Filename=Python-2.3.2c1.exe
+  EXE Filename=Python-2.3.2.exe
   Dialogs Version=8
-  Version File=2.3.2c1
+  Version File=2.3.2
   Version Description=Python Programming Language
   Version Copyright=©2001-2003 Python Software Foundation
   Version Company=PythonLabs at Zope Corporation
@@ -76,7 +76,7 @@ item: Global
 end
 item: Set Variable
   Variable=PYVER_STRING
-  Value=2.3.2c1
+  Value=2.3.2
 end
 item: Remark
 end
@@ -3028,25 +3028,6 @@ item: If/While Statement
   Variable=TASKS
   Value=C
   Flags=00000010
-end
-item: Custom Script Item
-  Filename=Display Progress Message.wse
-  Variable Name1=_CENTER_
-  Variable Value1=AB
-  Variable Name2=_WIDTH_
-  Variable Value2=320
-  Variable Name3=_MSG_TITLE_
-  Variable Value3=Compiling Python files
-  Variable Name4=HELPFILE
-  Variable Value4=C:\Programme\Wise for Windows Installer\HELP\Express.chm
-  Variable Name5=_OPTION_
-  Variable Value5=B
-  Variable Name6=_HEIGHT_
-  Variable Value6=80
-  Variable Name7=_MSG_TEXT_
-  Variable Value7=Please wait while Python modules are compiled
-  Variable Name8=_Y_POS_
-  Variable Name9=_X_POS_
 end
 item: Execute Program
   Pathname=%MAINDIR%\Python.exe
