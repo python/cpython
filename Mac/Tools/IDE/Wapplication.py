@@ -245,8 +245,13 @@ class Application(FrameWork.Application):
 		self.menubar = MenuBar(self)
 		FrameWork.AppleMenu(self.menubar, self.getabouttext(), self.do_about)
 		self.makeusermenus()
-
-	def scriptswalk(self, top, menu):
+	
+	def scriptswalk(self, top, menu, done=None):
+		if done is None:
+			done = {}
+		if done.has_key(top):
+			return
+		done[top] = 1
 		import os, macfs, string
 		try:
 			names = os.listdir(top)
@@ -258,12 +263,14 @@ class Application(FrameWork.Application):
 		for name in names:
 			fss, isdir, isalias = macfs.ResolveAliasFile(name)
 			path = fss.as_pathname()
+			if done.has_key(path):
+				continue
 			name = string.strip(name)
 			if name[-3:] == '---':
 				menu.addseparator()
 			elif isdir:
 				submenu = FrameWork.SubMenu(menu, name)
-				self.scriptswalk(path, submenu)
+				self.scriptswalk(path, submenu, done)
 			else:
 				creator, type = fss.GetCreatorType()
 				if type == 'TEXT':
@@ -271,6 +278,7 @@ class Application(FrameWork.Application):
 						name = name[:-3]
 					item = FrameWork.MenuItem(menu, name, None, self.domenu_script)
 					self._scripts[(menu.id, item.item)] = path
+			done[path] = 1
 		os.chdir(savedir)
 	
 	def domenu_script(self, id, item, window, event):
@@ -352,7 +360,8 @@ class Application(FrameWork.Application):
 		import string
 		lowpath = string.lower(filename)
 		for wid, window in self._windows.items():
-			if hasattr(window, "path") and lowpath == string.lower(window.path):
+			if hasattr(window, "path") and type(window.path) == StringType and \
+					lowpath == string.lower(window.path):
 				return window
 			elif hasattr(window, "path") and filename == wid.GetWTitle():
 				return window
