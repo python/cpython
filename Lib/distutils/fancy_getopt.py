@@ -93,6 +93,7 @@ class FancyGetopt:
     
 
     def _build_index (self):
+        self.option_index.clear()
         for option in self.option_table:
             self.option_index[option[0]] = option
 
@@ -152,6 +153,10 @@ class FancyGetopt:
         """Populate the various data structures that keep tabs on
            the option table.  Called by 'getopt()' before it can do
            anything worthwhile."""
+
+        self.long_opts = []
+        self.short_opts = []
+        self.short2long.clear()
 
         for option in self.option_table:
             try:
