@@ -448,6 +448,7 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern, int level)
     int i, count;
     SRE_REPEAT* rp;
     int lastmark;
+    SRE_CODE chr;
 
     SRE_REPEAT rep; /* FIXME: <fl> allocate in STATE instead */
 
@@ -525,8 +526,17 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern, int level)
             break;
 
         case SRE_OP_ANY:
-            /* match anything */
+            /* match anything (except a newline) */
             /* <ANY> */
+            TRACE(("%8d: anything (except newline)\n", PTR(ptr)));
+            if (ptr >= end || SRE_IS_LINEBREAK(ptr[0]))
+                return 0;
+            ptr++;
+            break;
+
+        case SRE_OP_ANY_ALL:
+            /* match anything */
+            /* <ANY_ALL> */
             TRACE(("%8d: anything\n", PTR(ptr)));
             if (ptr >= end)
                 return 0;
@@ -695,60 +705,79 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern, int level)
             TRACE(("%8d: max repeat one {%d,%d}\n", PTR(ptr),
                    pattern[1], pattern[2]));
 
+            if (ptr + pattern[1] > end)
+                return 0; /* cannot match */
+
             count = 0;
 
-            if (pattern[3] == SRE_OP_ANY) {
+            switch (pattern[3]) {
+
+            case SRE_OP_ANY:
+                /* repeated wildcard. */
+                while (count < (int) pattern[2]) {
+                    if (ptr >= end || SRE_IS_LINEBREAK(ptr[0]))
+                        break;
+                    ptr++;
+                    count++;
+                }
+                break;
+
+            case SRE_OP_ANY_ALL:
                 /* repeated wildcard.  skip to the end of the target
                    string, and backtrack from there */
-                /* FIXME: must look for line endings */
                 if (ptr + pattern[1] > end)
                     return 0; /* cannot match */
                 count = pattern[2];
                 if (count > end - ptr)
                     count = end - ptr;
                 ptr += count;
+                break;
 
-            } else if (pattern[3] == SRE_OP_LITERAL) {
+            case SRE_OP_LITERAL:
                 /* repeated literal */
-                SRE_CODE chr = pattern[4];
+                chr = pattern[4];
                 while (count < (int) pattern[2]) {
                     if (ptr >= end || (SRE_CODE) ptr[0] != chr)
                         break;
                     ptr++;
                     count++;
                 }
+                break;
 
-            } else if (pattern[3] == SRE_OP_LITERAL_IGNORE) {
+            case SRE_OP_LITERAL_IGNORE:
                 /* repeated literal */
-                SRE_CODE chr = pattern[4];
+                chr = pattern[4];
                 while (count < (int) pattern[2]) {
                     if (ptr >= end || (SRE_CODE) state->lower(*ptr) != chr)
                         break;
                     ptr++;
                     count++;
                 }
+                break;
 
-            } else if (pattern[3] == SRE_OP_NOT_LITERAL) {
+            case SRE_OP_NOT_LITERAL:
                 /* repeated non-literal */
-                SRE_CODE chr = pattern[4];
+                chr = pattern[4];
                 while (count < (int) pattern[2]) {
                     if (ptr >= end || (SRE_CODE) ptr[0] == chr)
                         break;
                     ptr++;
                     count++;
                 }
-
-            } else if (pattern[3] == SRE_OP_NOT_LITERAL_IGNORE) {
+                break;
+                
+            case SRE_OP_NOT_LITERAL_IGNORE:
                 /* repeated non-literal */
-                SRE_CODE chr = pattern[4];
+                chr = pattern[4];
                 while (count < (int) pattern[2]) {
                     if (ptr >= end || (SRE_CODE) state->lower(ptr[0]) == chr)
                         break;
                     ptr++;
                     count++;
                 }
+                break;
 
-            } else if (pattern[3] == SRE_OP_IN) {
+            case SRE_OP_IN:
                 /* repeated set */
                 while (count < (int) pattern[2]) {
                     if (ptr >= end || !SRE_MEMBER(pattern + 5, *ptr))
@@ -756,8 +785,9 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern, int level)
                     ptr++;
                     count++;
                 }
+                break;
 
-            } else {
+            default:
                 /* repeated single character pattern */
                 state->ptr = ptr;
                 while (count < (int) pattern[2]) {
@@ -770,6 +800,7 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern, int level)
                 }
                 state->ptr = ptr;
                 ptr += count;
+                break;
             }
 
             /* when we arrive here, count contains the number of
@@ -791,7 +822,7 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern, int level)
             } else if (pattern[pattern[0]] == SRE_OP_LITERAL) {
                 /* tail starts with a literal. skip positions where
                    the rest of the pattern cannot possibly match */
-                SRE_CODE chr = pattern[pattern[0]+1];
+                chr = pattern[pattern[0]+1];
                 TRACE(("%8d: tail is literal %d\n", PTR(ptr), chr));
                 for (;;) {
                     TRACE(("%8d: scan for tail match\n", PTR(ptr)));
