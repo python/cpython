@@ -1,5 +1,5 @@
 /***********************************************************
-Copyright 1991-1995 by Stichting Mathematisch Centrum, Amsterdam,
+Copyright 1991-1996 by Stichting Mathematisch Centrum, Amsterdam,
 The Netherlands.
 
                         All Rights Reserved
@@ -29,5 +29,5 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 const char *
 Py_GetCopyright()
 {
-	return "Copyright 1991-1995 Stichting Mathematisch Centrum, Amsterdam";
+	return "Copyright 1991-1996 Stichting Mathematisch Centrum, Amsterdam";
 }
