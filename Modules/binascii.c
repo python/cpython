@@ -384,6 +384,8 @@ binascii_a2b_base64(self, args)
 	}
 	/* and remove any padding */
 	bin_len -= npad;
+	if (bin_len < 0)
+		bin_len = 0;
 	/* and set string size correctly */
 	_PyString_Resize(&rv, bin_len);
 	return rv;
