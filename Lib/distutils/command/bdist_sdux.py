@@ -1,7 +1,8 @@
 """distutils.command.bdist_pkgtool
 
 Implements the Distutils 'bdist_sdux' command to create HP-UX 
-swinstall depot"""
+swinstall depot.
+"""
 
 # Mark Alexander <slash@dotnetslash.net>
 
@@ -265,11 +266,11 @@ class bdist_sdux(bdist_packager.bdist_packager):
             #psf_file.extend([self.long_description])
         if self.copyright:
             # XX make a copyright file XXX
-            write_script('copyright')
+            self.write_script('copyright')
             psf_file.extend(['    copyright         <copyright'])
         if self.readme:
             # XX make a readme file XXX
-            write_script('readme')
+            self.write_script('readme')
             psf_file.extend(['    readme            <readme'])
 
         psf_file.extend(['    fileset'])    # start fileset
