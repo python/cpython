@@ -15,23 +15,35 @@ import types
 import StringIO
 import keyword
 import macresource
-from aetools import unpack
-
+import aetools
+import distutils.sysconfig
+import OSATerminology
 from Carbon.Res import *
+import MacOS
 
-DEFAULT_PACKAGEFOLDER=os.path.join(sys.prefix, 'Lib', 'plat-mac', 'lib-scriptpackages')
+_MAC_LIB_FOLDER=os.path.dirname(aetools.__file__)
+DEFAULT_STANDARD_PACKAGEFOLDER=os.path.join(_MAC_LIB_FOLDER, 'lib-scriptpackages')
+DEFAULT_USER_PACKAGEFOLDER=distutils.sysconfig.get_python_lib()
 
 def main():
 	if len(sys.argv) > 1:
 		for filename in sys.argv[1:]:
 			processfile(filename)
 	else:
-		filename = EasyDialogs.AskFileForOpen(message='Select file with aeut/aete resource:')
+		# The dialogOptionFlags below allows selection of .app bundles.
+		filename = EasyDialogs.AskFileForOpen(
+			message='Select scriptable application',
+			dialogOptionFlags=0x1056)
 		if not filename:
 			sys.exit(0)
-		processfile(filename)
+		try:
+			processfile(filename)
+		except MacOS.Error, arg:
+			print "Error getting terminology:", arg
+			print "Retry, manually parsing resources"
+			processfile_fromresource(filename)
 
-def processfile(fullname):
+def processfile_fromresource(fullname):
 	"""Process all resources in a single file"""
 	cur = CurResFile()
 	print "Processing", fullname
@@ -59,6 +71,22 @@ def processfile(fullname):
 	# switch back (needed for dialogs in Python)
 	UseResFile(cur)
 	compileaetelist(aetelist, fullname)
+
+def processfile(fullname):
+	"""Ask an application for its terminology and process that"""
+	aedescobj, launched = OSATerminology.GetSysTerminology(fullname)
+	if launched:
+		print "Launched", fullname
+	raw = aetools.unpack(aedescobj)
+	if not raw: 
+		print 'Unpack returned empty value:', raw
+		return
+	if not raw[0].data: 
+		print 'Unpack returned value without data:', raw
+		return
+	aedata = raw[0]
+	aete = decode(aedata.data)
+	compileaete(aete, None, fullname)
 
 def compileaetelist(aetelist, fullname):
 	for aete, resinfo in aetelist:
@@ -240,12 +268,12 @@ def compileaete(aete, resinfo, fname):
 	if len(packagename) > 27:
 		packagename = packagename[:27]
 	pathname = EasyDialogs.AskFolder(message='Create and select package folder for %s'%packagename,
-		defaultLocation=DEFAULT_PACKAGEFOLDER)
+		defaultLocation=DEFAULT_USER_PACKAGEFOLDER)
 	if not pathname:
 		return
 	packagename = os.path.split(os.path.normpath(pathname))[1]
 	basepkgname = EasyDialogs.AskFolder(message='Package folder for base suite (usually StdSuites)',
-		defaultLocation=DEFAULT_PACKAGEFOLDER)
+		defaultLocation=DEFAULT_STANDARD_PACKAGEFOLDER)
 	if basepkgname:
 		dirname, basepkgname = os.path.split(os.path.normpath(basepkgname))
 		if not dirname in sys.path:
@@ -907,4 +935,3 @@ def identify(str):
 if __name__ == '__main__':
 	main()
 	sys.exit(1)
-print identify('for')
