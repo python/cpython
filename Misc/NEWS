@@ -4,6 +4,8 @@ Release date: XX-Apr-2002
 
 Core
 
+- Fixed super() to work correctly with class methods.  [SF bug #535444]
+
 - Fixed two bugs reported as SF #535905: under certain conditions,
   deallocating a deeply nested structure could cause a segfault in the
   garbage collector, due to interaction with the "trashcan" code;
@@ -21,6 +23,8 @@ C API
 - PyType_Ready() accidentally did not inherit tp_is_gc; now it does.
 
 Windows
+
+- Fixed a bug in urllib's proxy handling in Windows.  [SF bug #503031]
 
 - The installer now installs Start menu shortcuts under (the local
   equivalent of) "All Users" when doing an Admin install.
