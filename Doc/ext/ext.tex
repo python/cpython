@@ -1006,6 +1006,16 @@ Same as \samp{s}.
 \item[\samp{z\#} (string or \code{None}) {[char *, int]}]
 Same as \samp{s\#}.
 
+\item[\samp{u} (Unicode string) {[Py_UNICODE *]}]
+Convert a null-terminated buffer of Unicode (UCS-2) data to a Python
+Unicode object.  If the Unicode buffer pointer is \NULL,
+\code{None} is returned.
+
+\item[\samp{u\#} (Unicode string) {[Py_UNICODE *, int]}]
+Convert a Unicode (UCS-2) data buffer and its length to a Python
+Unicode object.   If the Unicode buffer pointer is \NULL, the length
+is ignored and \code{None} is returned.
+
 \item[\samp{i} (integer) {[int]}]
 Convert a plain C \ctype{int} to a Python integer object.
 
