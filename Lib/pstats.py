@@ -576,12 +576,12 @@ if __name__ == '__main__':
             print "Add profile info from given file to current stastics object."
 
         def do_callees(self, line):
-            return self.generic('callees', line)
+            return self.generic('print_callees', line)
         def help_callees(self):
             print "Print callees statistics from the current stat object."
 
         def do_callers(self, line):
-            return self.generic('callers', line)
+            return self.generic('print_callers', line)
         def help_callers(self):
             print "Print callers statistics from the current stat object."
 
@@ -630,7 +630,7 @@ if __name__ == '__main__':
             print "Print statistics from the current stat object."
 
         def do_strip(self, line):
-            self.stats.strip_order()
+            self.stats.strip_dirs()
             return 0
         def help_strip(self):
             print "Strip leading path information from filenames in the report."
