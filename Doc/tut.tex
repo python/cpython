@@ -66,7 +66,8 @@ modules described in the \emph{Python Library Reference}.
 
 \chapter{Whetting Your Appetite}
 
-\section{Introduction}
+%\section{Introduction}
+\label{intro}
 
 If you ever wrote a large shell script, you probably know this
 feeling: you'd love to add yet another feature, but it's already so
@@ -138,6 +139,7 @@ references to Monty Python skits in documentation is not only allowed,
 it is encouraged!
 
 \section{Where From Here}
+\label{where}
 
 Now that you are all excited about Python, you'll want to examine it
 in some more detail.  Since the best way to learn a language is
@@ -154,8 +156,10 @@ and finally touching upon advanced concepts like exceptions
 and user-defined classes.
 
 \chapter{Using the Python Interpreter}
+\label{using}
 
 \section{Invoking the Interpreter}
+\label{invoking}
 
 The Python interpreter is usually installed as \file{/usr/local/bin/python}
 on those machines where it is available; putting \file{/usr/local/bin} in
@@ -165,7 +169,7 @@ typing the command
 \begin{verbatim}
 python
 \end{verbatim}
-%
+
 to the shell.  Since the choice of the directory where the interpreter
 lives is an installation option, other places are possible; check with
 your local Python guru or system administrator.  (E.g.,
@@ -217,6 +221,7 @@ is read from standard input, for the same reason as explained in the
 previous paragraph.)
 
 \subsection{Argument Passing}
+\label{argPassing}
 
 When known to the interpreter, the script name and additional
 arguments thereafter are passed to the script in the variable
@@ -230,6 +235,7 @@ interpreter's option processing but left in \code{sys.argv} for the
 command to handle.
 
 \subsection{Interactive Mode}
+\label{interactive}
 
 When commands are read from a tty, the interpreter is said to be in
 \emph{interactive mode}.  In this mode it prompts for the next command
@@ -249,8 +255,10 @@ Copyright 1991-1995 Stichting Mathematisch Centrum, Amsterdam
 \end{verbatim}
 
 \section{The Interpreter and its Environment}
+\label{interp}
 
 \subsection{Error Handling}
+\label{error}
 
 When an error occurs, the interpreter prints an error
 message and a stack trace.  In interactive mode, it then returns to
@@ -275,6 +283,7 @@ Typing an interrupt while a command is executing raises the
 \code{try} statement.
 
 \subsection{Executable Python scripts}
+\label{scripts}
 
 On BSD'ish \UNIX{} systems, Python scripts can be made directly
 executable, like shell scripts, by putting the line
@@ -282,12 +291,13 @@ executable, like shell scripts, by putting the line
 \begin{verbatim}
 #! /usr/bin/env python
 \end{verbatim}
-%
+
 (assuming that the interpreter is on the user's PATH) at the beginning
 of the script and giving the file an executable mode.  The \samp{\#!}
 must be the first two characters of the file.
 
 \subsection{The Interactive Startup File}
+\label{startup}
 
 % XXX This should probably be dumped in an appendix, since most people
 % don't use Python interactively in non-trivial ways.
@@ -319,6 +329,7 @@ execfile(os.environ['PYTHONSTARTUP'])
 \end{verbatim}
 
 \chapter{An Informal Introduction to Python}
+\label{informal}
 
 In the following examples, input and output are distinguished by the
 presence or absence of prompts (\samp{>>> } and \samp{... }): to repeat
@@ -334,11 +345,13 @@ Note that a secondary prompt on a line by itself in an example means
 you must type a blank line; this is used to end a multi-line command.
 
 \section{Using Python as a Calculator}
+\label{calculator}
 
 Let's try some simple Python commands.  Start the interpreter and wait
 for the primary prompt, \samp{>>> }.  (It shouldn't take long.)
 
 \subsection{Numbers}
+\label{numbers}
 
 The interpreter acts as a simple calculator: you can type an
 expression at it and it will write the value.  Expression syntax is
@@ -362,7 +375,7 @@ can be used for grouping.  For example:
 >>> 7/-3
 -3
 \end{verbatim}
-%
+
 Like in \C{}, the equal sign (\code{=}) is used to assign a value to a
 variable.  The value of an assignment is not written:
 
@@ -465,6 +478,7 @@ local variable with the same name masking the built-in variable with
 its magic behavior.
 
 \subsection{Strings}
+\label{strings}
 
 Besides numbers, Python can also manipulate strings, which can be
 expressed in several ways.  They can be enclosed in single quotes or
@@ -484,7 +498,7 @@ double quotes:
 >>> '"Isn\'t," she said.'
 '"Isn\'t," she said.'
 \end{verbatim}
-%
+
 String literals can span multiple lines in several ways.  Newlines can
 be escaped with backslashes, e.g.:
 
@@ -523,7 +537,7 @@ Usage: thingy [OPTIONS]
      -h                        Display this usage message
      -H hostname               Hostname to connect to
 \end{verbatim}
-%
+
 The interpreter prints the result of string operations in the same way
 as they are typed for input: inside quotes, and with quotes and other
 funny characters escaped by backslashes, to show the precise
@@ -542,7 +556,7 @@ operator, and repeated with \code{*}:
 >>> '<' + word*5 + '>'
 '<HelpAHelpAHelpAHelpAHelpA>'
 \end{verbatim}
-%
+
 Two string literals next to each other are automatically concatenated;
 the first line above could also have been written \samp{word = 'Help'
 'A'}; this only works with two literals, not with arbitrary string expressions.
@@ -561,7 +575,7 @@ separated by a colon.
 >>> word[2:4]
 'lp'
 \end{verbatim}
-%
+
 Slice indices have useful defaults; an omitted first index defaults to
 zero, an omitted second index defaults to the size of the string being
 sliced.
@@ -572,7 +586,7 @@ sliced.
 >>> word[2:]    # All but the first two characters
 'lpA'
 \end{verbatim}
-%
+
 Here's a useful invariant of slice operations: \code{s[:i] + s[i:]}
 equals \code{s}.
 
@@ -582,7 +596,7 @@ equals \code{s}.
 >>> word[:3] + word[3:]
 'HelpA'
 \end{verbatim}
-%
+
 Degenerate slice indices are handled gracefully: an index that is too
 large is replaced by the string size, an upper bound smaller than the
 lower bound returns an empty string.
@@ -595,7 +609,7 @@ lower bound returns an empty string.
 >>> word[2:1]
 ''
 \end{verbatim}
-%
+
 Indices may be negative numbers, to start counting from the right.
 For example:
 
@@ -609,7 +623,7 @@ For example:
 >>> word[:-2]    # All but the last two characters
 'Hel'
 \end{verbatim}
-%
+
 But note that -0 is really the same as 0, so it does not count from
 the right!
 
@@ -617,7 +631,7 @@ the right!
 >>> word[-0]     # (since -0 equals 0)
 'H'
 \end{verbatim}
-%
+
 Out-of-range negative slice indices are truncated, but don't try this
 for single-element (non-slice) indices:
 
@@ -629,7 +643,7 @@ Traceback (innermost last):
   File "<stdin>", line 1
 IndexError: string index out of range
 \end{verbatim}
-%
+
 The best way to remember how slices work is to think of the indices as
 pointing \emph{between} characters, with the left edge of the first
 character numbered 0.  Then the right edge of the last character of a
@@ -642,7 +656,7 @@ string of \var{n} characters has index \var{n}, for example:
  0   1   2   3   4   5 
 -5  -4  -3  -2  -1
 \end{verbatim}
-%
+
 The first row of numbers gives the position of the indices 0...5 in
 the string; the second row gives the corresponding negative indices.
 The slice from \var{i} to \var{j} consists of all characters between
@@ -661,6 +675,7 @@ The built-in function \function{len()} returns the length of a string:
 \end{verbatim}
 
 \subsection{Lists}
+\label{lists}
 
 Python knows a number of \emph{compound} data types, used to group
 together other values.  The most versatile is the \emph{list}, which
@@ -672,7 +687,7 @@ square brackets.  List items need not all have the same type.
 >>> a
 ['spam', 'eggs', 100, 1234]
 \end{verbatim}
-%
+
 Like string indices, list indices start at 0, and lists can be sliced,
 concatenated and so on:
 
@@ -690,7 +705,7 @@ concatenated and so on:
 >>> 3*a[:3] + ['Boe!']
 ['spam', 'eggs', 100, 'spam', 'eggs', 100, 'spam', 'eggs', 100, 'Boe!']
 \end{verbatim}
-%
+
 Unlike strings, which are \emph{immutable}, it is possible to change
 individual elements of a list:
 
@@ -701,7 +716,7 @@ individual elements of a list:
 >>> a
 ['spam', 'eggs', 123, 1234]
 \end{verbatim}
-%
+
 Assignment to slices is also possible, and this can even change the size
 of the list:
 
@@ -722,14 +737,14 @@ of the list:
 >>> a
 [123, 'bletch', 'xyzzy', 1234, 123, 'bletch', 'xyzzy', 1234]
 \end{verbatim}
-%
+
 The built-in function \function{len()} also applies to lists:
 
 \begin{verbatim}
 >>> len(a)
 8
 \end{verbatim}
-%
+
 It is possible to nest lists (create lists containing other lists),
 for example:
 
@@ -748,11 +763,12 @@ for example:
 >>> q
 [2, 3, 'xtra']
 \end{verbatim}
-%
+
 Note that in the last example, \code{p[1]} and \code{q} really refer to
 the same object!  We'll come back to \emph{object semantics} later.
 
 \section{First Steps Towards Programming}
+\label{firstSteps}
 
 Of course, we can use Python for more complicated tasks than adding
 two and two together.  For instance, we can write an initial
@@ -773,7 +789,7 @@ subsequence of the \emph{Fibonacci} series as follows:
 5
 8
 \end{verbatim}
-%
+
 This example introduces several new features.
 
 \begin{itemize}
@@ -819,7 +835,7 @@ like this:
 >>> print 'The value of i is', i
 The value of i is 65536
 \end{verbatim}
-%
+
 A trailing comma avoids the newline after the output:
 
 \begin{verbatim}
@@ -830,7 +846,7 @@ A trailing comma avoids the newline after the output:
 ... 
 1 1 2 3 5 8 13 21 34 55 89 144 233 377 610 987
 \end{verbatim}
-%
+
 Note that the interpreter inserts a newline before it prints the next
 prompt if the last line was not completed.
 
@@ -838,12 +854,14 @@ prompt if the last line was not completed.
 
 
 \chapter{More Control Flow Tools}
+\label{moreControl}
 
 Besides the \keyword{while} statement just introduced, Python knows
 the usual control flow statements known from other languages, with
 some twists.
 
 \section{If Statements}
+\label{if}
 
 Perhaps the most well-known statement type is the \keyword{if}
 statement.  For example:
@@ -860,7 +878,7 @@ statement.  For example:
 ...      print 'More'
 ... 
 \end{verbatim}
-%
+
 There can be zero or more \keyword{elif} parts, and the \keyword{else}
 part is optional.  The keyword `\keyword{elif}' is short for `else
 if', and is useful to avoid excessive indentation.  An
@@ -872,6 +890,7 @@ if', and is useful to avoid excessive indentation.  An
 \emph{case} statements found in other languages.
 
 \section{For Statements}
+\label{for}
 
 The \keyword{for} statement in Python differs a bit from what you may be
 used to in \C{} or Pascal.  Rather than always iterating over an
@@ -891,7 +910,7 @@ cat 3
 window 6
 defenestrate 12
 \end{verbatim}
-%
+
 It is not safe to modify the sequence being iterated over in the loop
 (this can only happen for mutable sequence types, i.e., lists).  If
 you need to modify the list you are iterating over, e.g., duplicate
@@ -907,6 +926,7 @@ makes this particularly convenient:
 \end{verbatim}
 
 \section{The \sectcode{range()} Function}
+\label{range}
 
 If you do need to iterate over a sequence of numbers, the built-in
 function \function{range()} comes in handy.  It generates lists
@@ -916,7 +936,7 @@ containing arithmetic progressions, e.g.:
 >>> range(10)
 [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 \end{verbatim}
-%
+
 The given end point is never part of the generated list;
 \code{range(10)} generates a list of 10 values, exactly the legal
 indices for items of a sequence of length 10.  It is possible to let
@@ -931,7 +951,7 @@ the range start at another number, or to specify a different increment
 >>> range(-10, -100, -30)
 [-10, -40, -70]
 \end{verbatim}
-%
+
 To iterate over the indices of a sequence, combine \function{range()}
 and \function{len()} as follows:
 
@@ -948,6 +968,7 @@ and \function{len()} as follows:
 \end{verbatim}
 
 \section{Break and Continue Statements, and Else Clauses on Loops}
+\label{break}
 
 The \keyword{break} statement, like in \C{}, breaks out of the smallest
 enclosing \keyword{for} or \keyword{while} loop.
@@ -982,6 +1003,7 @@ which searches for prime numbers:
 \end{verbatim}
 
 \section{Pass Statements}
+\label{pass}
 
 The \keyword{pass} statement does nothing.
 It can be used when a statement is required syntactically but the
@@ -995,6 +1017,7 @@ For example:
 \end{verbatim}
 
 \section{Defining Functions}
+\label{functions}
 
 We can create a function that writes the Fibonacci series to an
 arbitrary boundary:
@@ -1011,7 +1034,7 @@ arbitrary boundary:
 ... fib(2000)
 1 1 2 3 5 8 13 21 34 55 89 144 233 377 610 987 1597
 \end{verbatim}
-%
+
 The keyword \keyword{def} introduces a function \emph{definition}.  It
 must be followed by the function name and the parenthesized list of
 formal parameters.  The statements that form the body of the function
@@ -1058,7 +1081,7 @@ mechanism:
 >>> f(100)
 1 1 2 3 5 8 13 21 34 55 89
 \end{verbatim}
-%
+
 You might object that \code{fib} is not a function but a procedure.  In
 Python, like in \C{}, procedures are just functions that don't return a
 value.  In fact, technically speaking, procedures do return a value,
@@ -1071,7 +1094,7 @@ if you really want to:
 >>> print fib(0)
 None
 \end{verbatim}
-%
+
 It is simple to write a function that returns a list of the numbers of
 the Fibonacci series, instead of printing it:
 
@@ -1118,11 +1141,13 @@ efficient.
 \end{itemize}
 
 \section{More on Defining Functions}
+\label{defining}
 
 It is also possible to define functions with a variable number of
 arguments.  There are three forms, which can be combined.
 
 \subsection{Default Argument Values}
+\label{defaultArgs}
 
 The most useful form is to specify a default value for one or more
 arguments.  This creates a function that can be called with fewer
@@ -1156,6 +1181,7 @@ f()
 will print \code{5}.
 
 \subsection{Keyword Arguments}
+\label{keywordArgs}
 
 Functions can also be called using
 keyword arguments of the form \samp{\var{keyword} = \var{value}}.  For
@@ -1236,6 +1262,7 @@ sketch : Cheese Shop Sketch
 \end{verbatim}
 
 \subsection{Arbitrary Argument Lists}
+\label{arbitraryArgs}
 
 Finally, the least frequently used option is to specify that a
 function can be called with an arbitrary number of arguments.  These
@@ -1248,11 +1275,13 @@ def fprintf(file, format, *args):
 \end{verbatim}
 
 \chapter{Data Structures}
+\label{structures}
 
 This chapter describes some things you've learned about already in
 more detail, and adds some new things as well.
 
 \section{More on Lists}
+\label{moreLists}
 
 The list data type has some more methods.  Here are all of the methods
 of list objects:
@@ -1311,6 +1340,7 @@ An example that uses all list methods:
 \end{verbatim}
 
 \subsection{Functional Programming Tools}
+\label{functional}
 
 There are three built-in functions that are very useful when used with
 lists: \function{filter()}, \function{map()}, and \function{reduce()}.
@@ -1389,6 +1419,7 @@ item, then to the result and the next item, and so on.  For example,
 \end{verbatim}
 
 \section{The \sectcode{del} statement}
+\label{del}
 
 There is a way to remove an item from a list given its index instead
 of its value: the \code{del} statement.  This can also be used to
@@ -1405,18 +1436,19 @@ empty list to the slice).  For example:
 >>> a
 [1, 66.6, 1234.5]
 \end{verbatim}
-%
-\code{del} can also be used to delete entire variables:
+
+\keyword{del} can also be used to delete entire variables:
 
 \begin{verbatim}
 >>> del a
 \end{verbatim}
-%
+
 Referencing the name \code{a} hereafter is an error (at least until
-another value is assigned to it).  We'll find other uses for \code{del}
-later.
+another value is assigned to it).  We'll find other uses for
+\keyword{del} later.
 
 \section{Tuples and Sequences}
+\label{tuples}
 
 We saw that lists and strings have many common properties, e.g.,
 indexing and slicing operations.  They are two examples of
@@ -1438,7 +1470,7 @@ instance:
 >>> u
 ((12345, 54321, 'hello!'), (1, 2, 3, 4, 5))
 \end{verbatim}
-%
+
 As you see, on output tuples are alway enclosed in parentheses, so
 that nested tuples are interpreted correctly; they may be input with
 or without surrounding parentheses, although often parentheses are
@@ -1467,7 +1499,7 @@ Ugly, but effective.  For example:
 >>> singleton
 ('hello',)
 \end{verbatim}
-%
+
 The statement \code{t = 12345, 54321, 'hello!'} is an example of
 \emph{tuple packing}: the values \code{12345}, \code{54321} and
 \code{'hello!'} are packed together in a tuple.  The reverse operation
@@ -1476,7 +1508,7 @@ is also possible, e.g.:
 \begin{verbatim}
 >>> x, y, z = t
 \end{verbatim}
-%
+
 This is called, appropriately enough, \emph{tuple unpacking}.  Tuple
 unpacking requires that the list of variables on the left has the same
 number of elements as the length of the tuple.  Note that multiple
@@ -1493,6 +1525,7 @@ square brackets:
 \end{verbatim}
 
 \section{Dictionaries}
+\label{dictionaries}
 
 Another useful data type built into Python is the \emph{dictionary}.
 Dictionaries are sometimes found in other languages as ``associative
@@ -1545,6 +1578,7 @@ Here is a small example using a dictionary:
 \end{verbatim}
 
 \section{More on Conditions}
+\label{conditions}
 
 The conditions used in \code{while} and \code{if} statements above can
 contain other operators besides comparisons.
@@ -1584,10 +1618,11 @@ expression to a variable.  For example,
 >>> non_null
 'Trondheim'
 \end{verbatim}
-%
+
 Note that in Python, unlike \C{}, assignment cannot occur inside expressions.
 
 \section{Comparing Sequences and Other Types}
+\label{comparing}
 
 Sequence objects may be compared to other objects with the same
 sequence type.  The comparison uses \emph{lexicographical} ordering:
@@ -1611,7 +1646,7 @@ examples of comparisons between sequences with the same types:
 (1, 2, 3)              = (1.0, 2.0, 3.0)
 (1, 2, ('aa', 'ab'))   < (1, 2, ('abc', 'a'), 4)
 \end{verbatim}
-%
+
 Note that comparing objects of different types is legal.  The outcome
 is deterministic but arbitrary: the types are ordered by their name.
 Thus, a list is always smaller than a string, a string is always
@@ -1625,6 +1660,7 @@ to their numeric value, so 0 equals 0.0, etc.%
 
 
 \chapter{Modules}
+\label{modules}
 
 If you quit from the Python interpreter and enter it again, the
 definitions you have made (functions and variables) are lost.
@@ -1668,14 +1704,14 @@ def fib2(n): # return Fibonacci series up to n
         a, b = b, a+b
     return result
 \end{verbatim}
-%
+
 Now enter the Python interpreter and import this module with the
 following command:
 
 \begin{verbatim}
 >>> import fibo
 \end{verbatim}
-%
+
 This does not enter the names of the functions defined in
 \code{fibo}
 directly in the current symbol table; it only enters the module name
@@ -1702,6 +1738,7 @@ If you intend to use a function often you can assign it to a local name:
 
 
 \section{More on Modules}
+\label{moreModules}
 
 A module can contain executable statements as well as function
 definitions.
@@ -1743,7 +1780,7 @@ For example:
 >>> fib(500)
 1 1 2 3 5 8 13 21 34 55 89 144 233 377
 \end{verbatim}
-%
+
 This does not introduce the module name from which the imports are taken
 in the local symbol table (so in the example, \code{fibo} is not
 defined).
@@ -1755,11 +1792,12 @@ There is even a variant to import all names that a module defines:
 >>> fib(500)
 1 1 2 3 5 8 13 21 34 55 89 144 233 377
 \end{verbatim}
-%
+
 This imports all names except those beginning with an underscore
 (\code{_}).
 
 \subsection{The Module Search Path}
+\label{searchPath}
 
 When a module named \module{spam} is imported, the interpreter searches
 for a file named \file{spam.py} in the current directory,
@@ -1801,6 +1839,7 @@ modules.)
 % XXX Should optimization with -O be covered here?
 
 \section{Standard Modules}
+\label{standardModules}
 
 Python comes with a library of standard modules, described in a separate
 document, the \emph{Python Library Reference} (``Library Reference''
@@ -1826,7 +1865,7 @@ C> print 'Yuck!'
 Yuck!
 C> 
 \end{verbatim}
-%
+
 These two variables are only defined if the interpreter is in
 interactive mode.
 
@@ -1847,6 +1886,7 @@ You can modify it using standard list operations, e.g.:
 \end{verbatim}
 
 \section{The \sectcode{dir()} function}
+\label{dir}
 
 The built-in function \function{dir()} is used to find out which names
 a module defines.  It returns a sorted list of strings:
@@ -1860,7 +1900,7 @@ a module defines.  It returns a sorted list of strings:
 'maxint', 'modules', 'path', 'ps1', 'ps2', 'setprofile', 'settrace',
 'stderr', 'stdin', 'stdout', 'version']
 \end{verbatim}
-%
+
 Without arguments, \function{dir()} lists the names you have defined
 currently:
 
@@ -1871,7 +1911,7 @@ currently:
 >>> dir()
 ['__name__', 'a', 'fib', 'fibo', 'sys']
 \end{verbatim}
-%
+
 Note that it lists all types of names: variables, modules, functions, etc.
 
 \function{dir()} does not list the names of built-in functions and
@@ -1894,6 +1934,7 @@ standard module \module{__builtin__}:
 
 
 \chapter{Input and Output}
+\label{io}
 
 There are several ways to present the output of a program; data can be
 printed in a human-readable form, or written to a file for future use.
@@ -1943,7 +1984,7 @@ The value of x is 31.4, and y is 40000...
 ... `x, y, ('spam', 'eggs')`
 "(31.4, 40000, ('spam', 'eggs'))"
 \end{verbatim}
-%
+
 Here are two ways to write a table of squares and cubes:
 
 \begin{verbatim}
@@ -1977,7 +2018,7 @@ Here are two ways to write a table of squares and cubes:
  9  81  729
 10 100 1000
 \end{verbatim}
-%
+
 (Note that one space between each column was added by the way
 \keyword{print} works: it always adds spaces between its arguments.)
 
@@ -2050,6 +2091,8 @@ This is particularly useful in combination with the new built-in
 local variables.
 
 \section{Reading and Writing Files}
+\label{files}
+
 % Opening files 
 \function{open()} returns a file object, and is most commonly used with
 two arguments: \samp{open(\var{filename}, \var{mode})}.
@@ -2059,7 +2102,7 @@ two arguments: \samp{open(\var{filename}, \var{mode})}.
 >>> print f
 <open file '/tmp/workfile', mode 'w' at 80a0960>
 \end{verbatim}
-%
+
 The first argument is a string containing the filename.  The second
 argument is another string containing a few characters describing the
 way in which the file will be used.  \var{mode} can be \code{'r'} when
@@ -2081,6 +2124,7 @@ written.  This behind-the-scenes modification to file data is fine for
 writing such files.
 
 \subsection{Methods of file objects}
+\label{fileMethods}
 
 The rest of the examples in this section will assume that a file
 object called \code{f} has already been created.
@@ -2099,7 +2143,7 @@ string (\code {""}).
 >>> f.read()
 ''
 \end{verbatim}
-%
+
 \code{f.readline()} reads a single line from the file; a newline
 character (\code{\e n}) is left at the end of the string, and is only
 omitted on the last line of the file if the file doesn't end in a
@@ -2116,7 +2160,7 @@ string containing only a single newline.
 >>> f.readline()
 ''
 \end{verbatim}
-%
+
 \code{f.readlines()} uses \code{f.readline()} repeatedly, and returns
 a list containing all the lines of data in the file.
 
@@ -2124,14 +2168,14 @@ a list containing all the lines of data in the file.
 >>> f.readlines()
 ['This is the first line of the file.\012', 'Second line of the file\012']
 \end{verbatim}
-%
+
 \code{f.write(\var{string})} writes the contents of \var{string} to
 the file, returning \code{None}.  
 
 \begin{verbatim}
 >>> f.write('This is a test\n')
 \end{verbatim}
-%
+
 \code{f.tell()} returns an integer giving the file object's current
 position in the file, measured in bytes from the beginning of the
 file.  To change the file object's position, use
@@ -2153,7 +2197,7 @@ of the file as the reference point.
 >>> f.read(1)
 'd'
 \end{verbatim}
-%
+
 When you're done with a file, call \code{f.close()} to close it and
 free up any system resources taken up by the open file.  After calling
 \code{f.close()}, attempts to use the file object will automatically fail.
@@ -2165,12 +2209,13 @@ Traceback (innermost last):
   File "<stdin>", line 1, in ?
 ValueError: I/O operation on closed file
 \end{verbatim}
-%
+
 File objects have some additional methods, such as \method{isatty()}
 and \method{truncate()} which are less frequently used; consult the
 Library Reference for a complete guide to file objects.
 
 \subsection{The pickle module}
+\label{pickle}
 
 Strings can easily be written to and read from a file. Numbers take a
 bit more effort, since the \method{read()} method only returns
@@ -2197,14 +2242,14 @@ one line of code:
 \begin{verbatim}
 pickle.dump(x, f)
 \end{verbatim}
-%
+
 To unpickle the object again, if \code{f} is a file object which has
 been opened for reading:
 
 \begin{verbatim}
 x = pickle.load(f)
 \end{verbatim}
-%
+
 (There are other variants of this, used when pickling many objects or
 when you don't want to write the pickled data to a file; consult the
 complete documentation for \module{pickle} in the Library Reference.)
@@ -2220,6 +2265,7 @@ unpickled.
 
 
 \chapter{Errors and Exceptions}
+\label{errors}
 
 Until now error messages haven't been more than mentioned, but if you
 have tried out the examples you have probably seen some.  There are
@@ -2227,6 +2273,7 @@ have tried out the examples you have probably seen some.  There are
 and \emph{exceptions}.
 
 \section{Syntax Errors}
+\label{syntaxErrors}
 
 Syntax errors, also known as parsing errors, are perhaps the most common
 kind of complaint you get while you are still learning Python:
@@ -2238,7 +2285,7 @@ kind of complaint you get while you are still learning Python:
                 ^
 SyntaxError: invalid syntax
 \end{verbatim}
-%
+
 The parser repeats the offending line and displays a little `arrow'
 pointing at the earliest point in the line where the error was detected.
 The error is caused by (or at least detected at) the token
@@ -2249,6 +2296,7 @@ File name and line number are printed so you know where to look in case
 the input came from a script.
 
 \section{Exceptions}
+\label{exceptions}
 
 Even if a statement or expression is syntactically correct, it may
 cause an error when an attempt is made to execute it.
@@ -2271,7 +2319,7 @@ Traceback (innermost last):
   File "<stdin>", line 1
 TypeError: illegal argument type for built-in operation
 \end{verbatim}
-%
+
 The last line of the error message indicates what happened.
 Exceptions come in different types, and the type is printed as part of
 the message: the types in the example are
@@ -2298,6 +2346,7 @@ The Library Reference lists the built-in exceptions and their
 meanings.
 
 \section{Handling Exceptions}
+\label{handling}
 
 It is possible to write programs that handle selected exceptions.
 Look at the following example, which prints a table of inverses of
@@ -2317,7 +2366,7 @@ some floating point numbers:
 0 *** has no inverse ***
 10 0.1
 \end{verbatim}
-%
+
 The \keyword{try} statement works as follows.
 \begin{itemize}
 \item
@@ -2352,7 +2401,7 @@ e.g.:
 ... except (RuntimeError, TypeError, NameError):
 ...     pass
 \end{verbatim}
-%
+
 The last except clause may omit the exception name(s), to serve as a
 wildcard.
 Use this with extreme caution, since it is easy to mask a real
@@ -2390,7 +2439,7 @@ argument's value, as follows:
 ... 
 name spam undefined
 \end{verbatim}
-%
+
 If an exception has an argument, it is printed as the last part
 (`detail') of the message for unhandled exceptions.
 
@@ -2410,9 +2459,10 @@ For example:
 ... 
 Handling run-time error: integer division or modulo
 \end{verbatim}
-%
+
 
 \section{Raising Exceptions}
+\label{raising}
 
 The \keyword{raise} statement allows the programmer to force a
 specified exception to occur.
@@ -2424,14 +2474,14 @@ Traceback (innermost last):
   File "<stdin>", line 1
 NameError: HiThere
 \end{verbatim}
-%
+
 The first argument to \keyword{raise} names the exception to be
 raised.  The optional second argument specifies the exception's
 argument.
 
-%
 
 \section{User-defined Exceptions}
+\label{userExceptions}
 
 Programs may name their own exceptions by assigning a string to a
 variable.
@@ -2450,13 +2500,13 @@ Traceback (innermost last):
   File "<stdin>", line 1
 my_exc: 1
 \end{verbatim}
-%
+
 Many standard modules use this to report errors that may occur in
 functions they define.
 
-%
 
 \section{Defining Clean-up Actions}
+\label{cleanup}
 
 The \keyword{try} statement has another optional clause which is
 intended to define clean-up actions that must be executed under all
@@ -2473,7 +2523,7 @@ Traceback (innermost last):
   File "<stdin>", line 2
 KeyboardInterrupt
 \end{verbatim}
-%
+
 A \emph{finally clause} is executed whether or not an exception has
 occurred in the try clause.  When an exception has occurred, it is
 re-raised after the finally clause is executed.  The finally clause is
@@ -2484,6 +2534,7 @@ A \keyword{try} statement must either have one or more except clauses
 or one finally clause, but not both.
 
 \chapter{Classes}
+\label{classes}
 
 Python's class mechanism adds classes to the language with a minimum
 of new syntax and semantics.  It is a mixture of the class mechanisms
@@ -2511,6 +2562,7 @@ built-in operators with special syntax (arithmetic operators,
 subscripting etc.) can be redefined for class members.
 
 \section{A word about terminology}
+\label{terminology}
 
 Lacking universally accepted terminology to talk about classes, I'll
 make occasional use of Smalltalk and \Cpp{} terms.  (I'd use Modula-3
@@ -2543,6 +2595,7 @@ Pascal.
 
 
 \section{Python scopes and name spaces}
+\label{scopes}
 
 Before introducing classes, I first have to tell you something about
 Python's scope rules.  Class definitions play some neat tricks with
@@ -2646,12 +2699,14 @@ variables live in the global scope.)
 
 
 \section{A first look at classes}
+\label{firstClasses}
 
 Classes introduce a little bit of new syntax, three new object types,
 and some new semantics.
 
 
 \subsection{Class definition syntax}
+\label{classDefinition}
 
 The simplest form of class definition looks like this:
 
@@ -2691,6 +2746,7 @@ the class definition header (\code{ClassName} in the example).
 
 
 \subsection{Class objects}
+\label{classObjects}
 
 Class objects support two kinds of operations: attribute references
 and instantiation.
@@ -2729,6 +2785,7 @@ the local variable \code{x}.
 
 
 \subsection{Instance objects}
+\label{instanceObjects}
 
 Now what can we do with instance objects?  The only operations
 understood by instance objects are attribute references.  There are
@@ -2769,6 +2826,7 @@ object.
 
 
 \subsection{Method objects}
+\label{methodObjects}
 
 Usually, a method is called immediately, e.g.:
 
@@ -2817,7 +2875,7 @@ list, and the function object is called with this new argument list.
 
 
 \section{Random remarks}
-
+\label{remarks}
 
 [These should perhaps be placed more carefully...]
 
@@ -2951,6 +3009,7 @@ reasons why a method would want to reference its own class!
 
 
 \section{Inheritance}
+\label{inheritance}
 
 Of course, a language feature would not be worthy of the name ``class''
 without supporting inheritance.  The syntax for a derived class
@@ -3003,6 +3062,7 @@ the base class is defined or imported directly in the global scope.)
 
 
 \subsection{Multiple inheritance}
+\label{multiple}
 
 Python supports a limited form of multiple inheritance as well.  A
 class definition with multiple base classes looks as follows:
@@ -3043,6 +3103,7 @@ not clear that these semantics are in any way useful.
 
 
 \section{Private variables through name mangling}
+\label{private}
 
 There is now limited support for class-private
 identifiers.  Any identifier of the form \code{__spam} (at least two
@@ -3112,6 +3173,7 @@ class VirtualAttributes:
 %be removed without providing a better solution and a migration path.
 
 \section{Odds and ends}
+\label{odds}
 
 Sometimes it is useful to have a data type similar to the Pascal
 ``record'' or \C{} ``struct'', bundling together a couple of named data
@@ -3148,6 +3210,7 @@ object of which the method is an instance, and \code{m.im_func} is the
 function object corresponding to the method.
 
 \subsection{Exceptions Can Be Classes}
+\label{exceptionClasses}
 
 User-defined exceptions are no longer limited to being string objects
 --- they can be identified by classes as well.  Using this mechanism it
@@ -3206,6 +3269,7 @@ finally the instance converted to a string using the built-in function
 In this release, the built-in exceptions are still strings.
 
 \chapter{What Now?}
+\label{whatNow}
 
 Hopefully reading this tutorial has reinforced your interest in using
 Python.  Now what should you do?
@@ -3254,6 +3318,7 @@ information on how to join.
 % found or it elsewhere in the Tutorial?
 
 \section{Lambda Forms}
+\label{lambda}
 
 % XXX Where to put this?  Or just leave it out?
 
@@ -3274,6 +3339,7 @@ def make_incrementor(n):
 \end{verbatim}
 
 \section{Documentation Strings}
+\label{docstrings}
 
 % XXX Where to put this?  Or just leave it out?
 
@@ -3310,6 +3376,7 @@ tested after expansion of tabs (to 8 spaces, normally).
 
 
 \appendix\chapter{Interactive Input Editing and History Substitution}
+\label{interacting}
 
 Some versions of the Python interpreter support editing of the current
 input line and history substitution, similar to facilities found in
@@ -3319,6 +3386,7 @@ editing.  This library has its own documentation which I won't
 duplicate here; however, the basics are easily explained.
 
 \section{Line Editing}
+\label{lineEditing}
 
 If supported, input line editing is active whenever the interpreter
 prints a primary or secondary prompt.  The current line can be edited
@@ -3332,6 +3400,7 @@ string.  C-underscore undoes the last change you made; it can be
 repeated for cumulative effect.
 
 \section{History Substitution}
+\label{history}
 
 History substitution works as follows.  All non-empty input lines
 issued are saved in a history buffer, and when a new prompt is given
@@ -3343,6 +3412,7 @@ key passes the current line to the interpreter.  C-R starts an
 incremental reverse search; C-S starts a forward search.
 
 \section{Key Bindings}
+\label{keyBindings}
 
 The key bindings and some other parameters of the Readline library can
 be customized by placing commands in an initialization file called
@@ -3389,6 +3459,7 @@ in your \file{\$HOME/.inputrc}.  (Of course, this makes it hard to type
 indented continuation lines...)
 
 \section{Commentary}
+\label{commentary}
 
 This facility is an enormous step forward compared to previous
 versions of the interpreter; however, some wishes are left: It would
