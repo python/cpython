@@ -822,6 +822,45 @@ audioop_bias(self, args)
 }
 
 static object *
+audioop_reverse(self, args)
+    object *self;
+    object *args;
+{
+    signed char *cp;
+    unsigned char *ncp;
+    int len, size, val;
+    object *rv;
+    int i, j;
+
+    if ( !getargs(args, "(s#i)",
+		  &cp, &len, &size) )
+      return 0;
+
+    if ( size != 1 && size != 2 && size != 4 ) {
+	err_setstr(AudioopError, "Size should be 1, 2 or 4");
+	return 0;
+    }
+    
+    rv = newsizedstringobject(NULL, len);
+    if ( rv == 0 )
+      return 0;
+    ncp = (unsigned char *)getstringvalue(rv);
+    
+    for ( i=0; i < len; i += size ) {
+	if ( size == 1 )      val = ((int)*CHARP(cp, i)) << 8;
+	else if ( size == 2 ) val = (int)*SHORTP(cp, i);
+	else if ( size == 4 ) val = ((int)*LONGP(cp, i)) >> 16;
+
+	j = len - i - size;
+	
+	if ( size == 1 )      *CHARP(ncp, j) = (signed char)(val >> 8);
+	else if ( size == 2 ) *SHORTP(ncp, j) = (short)(val);
+	else if ( size == 4 ) *LONGP(ncp, j) = (long)(val<<16);
+    }
+    return rv;
+}
+
+static object *
 audioop_lin2lin(self, args)
     object *self;
     object *args;
@@ -1286,6 +1325,7 @@ static struct methodlist audioop_methods[] = {
     { "tomono", audioop_tomono },
     { "tostereo", audioop_tostereo },
     { "getsample", audioop_getsample },
+    { "reverse", audioop_reverse },
     { 0,          0 }
 };
 
