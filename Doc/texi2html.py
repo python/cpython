@@ -147,7 +147,7 @@ class HTML3Node(HTMLNode):
     DOCTYPE = '<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML Level 3//EN//3.0">'
 
     def open_links(self):
-	self.write('<DIV>\n <HR>\n')
+	self.write('<DIV CLASS=Navigation>\n <HR>\n')
 
     def close_links(self):
 	self.write(' <HR>\n</DIV>\n')
@@ -163,7 +163,7 @@ class TexinfoParser:
     FN_TARGET_PATTERN = '<A NAME=footnotetext%(id)s' \
 			' HREF="#footnoteref%(id)s">' \
 			+ FN_ID_PATTERN + '</A>\n%(text)s<P>\n'
-    FN_HEADER = '\n<HR NOSHADE SIZE=1 WIDTH=200>\n' \
+    FN_HEADER = '\n<P>\n<HR NOSHADE SIZE=1 WIDTH=200>\n' \
 		'<STRONG><EM>Footnotes</EM></STRONG>\n<P>'
 
 
