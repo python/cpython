@@ -27,7 +27,7 @@ PyObject *
 PyTuple_New(register int size)
 {
 	register PyTupleObject *op;
-	int i;
+
 	if (size < 0) {
 		PyErr_BadInternalCall();
 		return NULL;
