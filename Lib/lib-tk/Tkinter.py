@@ -651,10 +651,14 @@ class Misc:
 				   self.tk.call(
 					   'place', 'slaves', self._w)))
 	# Grid methods that apply to the master
-	def grid_bbox(self, column, row):
-		return self._getints(
-			self.tk.call(
-				'grid', 'bbox', self._w, column, row)) or None
+	def grid_bbox(self, column=None, row=None, col2=None, row2=None):
+		args = ('grid', 'bbox', self._w)
+		if column is not None and row is not None:
+			args = args + (column, row)
+		if col2 is not None and row2 is not None:
+			args = args + (col2, row2)
+		return self._getints(apply(self.tk.call, args)) or None
+
 	bbox = grid_bbox
 	def _grid_configure(self, command, index, cnf, kw):
 		if type(cnf) is StringType and not kw:
