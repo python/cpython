@@ -11,7 +11,7 @@ LIBDEST=$(prefix)/lib/python$(VERSION)
 
 # These are normally glimpsed from the previous set
 bindir=$(dstroot)/usr/local/bin
-PYTHONAPPSPATH=/Applications/Python
+PYTHONAPPSPATH=/Applications/MacPython-$(VERSION)
 PYTHONAPPSDIR=$(dstroot)$(PYTHONAPPSPATH)
 APPINSTALLDIR=$(prefix)/Resources/Python.app
 PTHFILE=$(srcdir)/Mac/OSX/Mac.pth

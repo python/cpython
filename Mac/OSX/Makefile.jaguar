@@ -6,7 +6,7 @@ VERSION=2.2
 builddir = ../..
 srcdir = ../..
 dstroot=/.
-PYTHONAPPSPATH=/Applications/MacPython-OSX
+PYTHONAPPSPATH=/Applications/MacPython-OSX-$(VERSION)
 PYTHONAPPSDIR=$(dstroot)$(PYTHONAPPSPATH)
 prefix=/usr
 
