@@ -12,8 +12,6 @@ except ImportError:
     # For earlier Pythons w/distutils pybsddb
     from bsddb3 import db, dbshelve
 
-from test.test_support import verbose
-
 #----------------------------------------------------------------------
 
 class MiscTestCase(unittest.TestCase):
