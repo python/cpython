@@ -72,7 +72,6 @@ import getopt
 import os
 import string
 import sys
-import addpack
 
 
 # Import the freeze-private modules
