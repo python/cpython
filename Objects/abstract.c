@@ -308,7 +308,9 @@ int PyObject_AsWriteBuffer(PyObject *obj,
 int
 PyNumber_Check(PyObject *o)
 {
-	return o && o->ob_type->tp_as_number;
+	return o && o->ob_type->tp_as_number &&
+	       (o->ob_type->tp_as_number->nb_int ||
+		o->ob_type->tp_as_number->nb_float);
 }
 
 /* Binary operators */
