@@ -19,12 +19,13 @@ import addpack
 import aetools
 import AppleEvents
 from Metrowerks_Shell_Suite import Metrowerks_Shell_Suite
+from CodeWarrior_Standard_Suite import CodeWarrior_Standard_Suite
 from Required_Suite import Required_Suite
 
 import Res
 import Dlg
 
-import mkapplet
+import BuildApplet
 import cfmfile
 
 # Dialog resource. Note that the item numbers should correspond
@@ -35,22 +36,21 @@ DIALOG_ID = 512
 I_OK=1
 I_CANCEL=2
 
-I_PPC_CORE=3
+I_CORE=3
 I_PPC_PLUGINS=4
 I_PPC_EXTENSIONS=5
-I_68K_CORE=6
-I_68K_PLUGINS=7
-I_68K_EXTENSIONS=8
-I_PPC_FULL=9
-I_PPC_SMALL=10
-I_68K_FULL=11
-I_68K_SMALL=12
-I_FAT=13
-I_APPLETS=14
+I_68K_PLUGINS=6
+I_68K_EXTENSIONS=7
+I_PPC_FULL=8
+I_PPC_SMALL=9
+I_68K_FULL=10
+I_68K_SMALL=11
+I_APPLETS=12
 
-N_BUTTONS=15
+N_BUTTONS=13
 
-class MwShell(aetools.TalkTo, Metrowerks_Shell_Suite, Required_Suite):
+class MwShell(Metrowerks_Shell_Suite, CodeWarrior_Standard_Suite,
+				Required_Suite, aetools.TalkTo):
 	pass
 
 RUNNING=[]
@@ -61,20 +61,29 @@ def buildmwproject(top, creator, projects):
 	mgr.send_timeout = AppleEvents.kNoTimeOut
 	
 	for file in projects:
+		if type(file) == type(()):
+			file, target = file
+		else:
+			target = ''
 		file = os.path.join(top, file)
 		fss = macfs.FSSpec(file)
-		print 'Building', file
+		print 'Building', file, target
 		mgr.open(fss)
+		if target:
+			try:
+				mgr.Set_Current_Target(target)
+			except aetools.Error, arg:
+				print '**', file, target, 'Cannot select:', arg
 		try:
 			mgr.Make_Project()
 		except aetools.Error, arg:
-			print '** Failed:', arg
+			print '**', file, target, 'Failed:', arg
 		mgr.Close_Project()
 ##	mgr.quit()
 	
 def buildapplet(top, dummy, list):
 	"""Create python applets"""
-	template = mkapplet.findtemplate()
+	template = BuildApplet.findtemplate()
 	for src in list:
 		if src[-3:] != '.py':
 			raise 'Should end in .py', src
@@ -86,7 +95,7 @@ def buildapplet(top, dummy, list):
 		except os.error:
 			pass
 		print 'Building applet', dst
-		mkapplet.process(template, src, dst)
+		BuildApplet.process(template, src, dst)
 		
 def buildfat(top, dummy, list):
 	"""Build fat binaries"""
@@ -123,84 +132,53 @@ def handle_dialog():
 # The build instructions. Entries are (routine, arg, list-of-files)
 # XXXX We could also include the builds for stdwin and such here...
 BUILD_DICT = {
-I_PPC_CORE : (buildmwproject, "CWIE", [
-		":build.macppc.shared:PythonCorePPC.µ",
-		":build.macppc.shared:PythonPPC.µ",
-		":build.macppc.shared:PythonAppletPPC.µ",
-	]),
-
-I_68K_CORE : (buildmwproject, "CWIE", [
-		":build.mac68k.shared:PythonCoreCFM68K.µ",
-		":build.mac68k.shared:PythonCFM68K.µ",
-		":build.mac68k.shared:PythonAppletCFM68K.µ",
+I_CORE : (buildmwproject, "CWIE", [
+		(":build.mac:PythonCore.prj", "PythonCore"),
+		(":build.mac:Python.prj", "PythonFAT"),
+		(":build.mac:PythonApplet.prj", "PythonAppletFAT"),
 	]),
 
 I_PPC_PLUGINS : (buildmwproject, "CWIE", [
-		":PlugIns:toolboxmodules.ppc.µ",	# First: used by others
-		":PlugIns:qtmodules.ppc.µ",
-		":PlugIns:ctb.ppc.µ",
-		":PlugIns:gdbm.ppc.µ",
-		":PlugIns:icglue.ppc.µ",
-		":PlugIns:imgmodules.ppc.µ",
-		":PlugIns:macspeech.ppc.µ",
-		":PlugIns:waste.ppc.µ",
-		":PlugIns:_tkinter.ppc.µ",
-		":PlugIns:calldll.ppc.µ",
-		":PlugIns:zlib.ppc.µ",
+		(":PlugIns:PlugIns.prj",	"PlugIns.ppc"),
 	]),
 
 I_68K_PLUGINS : (buildmwproject, "CWIE", [
-		":PlugIns:toolboxmodules.CFM68K.µ",	# First: used by others
-		":PlugIns:qtmodules.CFM68K.µ",
-		":PlugIns:ctb.CFM68K.µ",
-		":PlugIns:gdbm.CFM68K.µ",
-		":PlugIns:icglue.CFM68K.µ",
-		":PlugIns:imgmodules.CFM68K.µ",
-		":PlugIns:waste.CFM68K.µ",
-		":PlugIns:_tkinter.CFM68K.µ",
-		":PlugIns:zlib.CFM68K.µ",
+		(":PlugIns:PlugIns.prj",	"PlugIns.CFM68K"),
 	]),
 
 I_68K_FULL : (buildmwproject, "CWIE", [
-		":build.mac68k.stand:Python68K.µ",
+		(":build.macstand:PythonStandalone.prj", "Python68K"),
 	]),
 	
 I_68K_SMALL : (buildmwproject, "CWIE", [
-		":build.mac68k.stand:Python68Ksmall.µ",
+		(":build.macstand:PythonStandSmall.prj", "PythonSmall68K"),
 	]),
 
 I_PPC_FULL : (buildmwproject, "CWIE", [
-		":build.macppc.stand:PythonStandalone.µ",
+		(":build.macstand:PythonStandalone.prj", "PythonStandalone"),
 	]),
 
 I_PPC_SMALL : (buildmwproject, "CWIE", [
-		":build.macppc.stand:PythonStandSmall.µ",
+		(":build.macstand:PythonStandSmall.prj", "PythonStandSmall"),
 	]),
 
 I_PPC_EXTENSIONS : (buildmwproject, "CWIE", [
-		":Extensions:Imaging:_imaging.ppc.µ",
-		":Extensions:Imaging:_tkinter.ppc.µ",
-		":Extensions:NumPy:numpymodules.ppc.µ",
+		(":Extensions:Imaging:_imaging.prj", "_imaging.ppc"),
+		(":Extensions:Imaging:_tkinter.prj", "_tkinter.ppc"),
+		(":Extensions:NumPy:numpymodules.prj", "numpymodules.ppc"),
 	]),
 
 I_68K_EXTENSIONS : (buildmwproject, "CWIE", [
-		":Extensions:Imaging:_imaging.CFM68K.µ",
-		":Extensions:Imaging:_tkinter.CFM68K.µ",
-		":Extensions:NumPy:numpymodules.CFM68K.µ",
+		(":Extensions:Imaging:_imaging.prj", "_imaging.CFM68K"),
+		(":Extensions:Imaging:_tkinter.prj", "_tkinter.CFM68K"),
+		(":Extensions:NumPy:numpymodules.prj", "numpymodules.CFM68K"),
 	]),
 
 I_APPLETS : (buildapplet, None, [
 		":Mac:scripts:EditPythonPrefs.py",
-		":Mac:scripts:mkapplet.py",
-		":Mac:scripts:MkPluginAliases.py"
+		":Mac:scripts:BuildApplet.py",
+		":Mac:scripts:ConfigurePython.py"
 	]),
-
-I_FAT : (buildfat, None, [
-			(":PythonFAT", ":build.macppc.shared:PythonPPC", 
-						":build.mac68k.shared:PythonCFM68K"),
-			(":PythonApplet", ":build.macppc.shared:PythonAppletPPC",
-							  ":build.mac68k.shared:PythonAppletCFM68K")
-	])
 }
 				
 def main():
