@@ -18,7 +18,7 @@ except ImportError:
 import unittest
 from test.test_support import verbose
 
-from bsddb import db
+from bsddb import db, dbutils
 
 
 #----------------------------------------------------------------------
@@ -31,6 +31,9 @@ class BaseThreadedTestCase(unittest.TestCase):
 
 
     def setUp(self):
+        if verbose:
+            dbutils._deadlock_VerboseFile = sys.stdout
+
         homeDir = os.path.join(os.path.dirname(sys.argv[0]), 'db_home')
         self.homeDir = homeDir
         try: os.mkdir(homeDir)
@@ -109,7 +112,7 @@ class ConcurrentDataStoreBase(BaseThreadedTestCase):
 
         for x in range(start, stop):
             key = '%04d' % x
-            d.put(key, self.makeData(key))
+            dbutils.DeadlockWrap(d.put, key, self.makeData(key), max_retries=12)
             if verbose and x % 100 == 0:
                 print "%s: records %d - %d finished" % (name, start, x)
 
@@ -212,7 +215,7 @@ class SimpleThreadedBase(BaseThreadedTestCase):
         # create a bunch of records
         for x in xrange(start, stop):
             key = '%04d' % x
-            d.put(key, self.makeData(key))
+            dbutils.DeadlockWrap(d.put, key, self.makeData(key), max_retries=12)
 
             if verbose and x % 100 == 0:
                 print "%s: records %d - %d finished" % (name, start, x)
@@ -221,12 +224,12 @@ class SimpleThreadedBase(BaseThreadedTestCase):
             if random() <= 0.05:
                 for y in xrange(start, x):
                     key = '%04d' % x
-                    data = d.get(key)
+                    data = dbutils.DeadlockWrap(d.get, key, max_retries=12)
                     assert data == self.makeData(key)
 
         # flush them
         try:
-            d.sync()
+            dbutils.DeadlockWrap(d.sync, max_retries=12)
         except db.DBIncompleteError, val:
             if verbose:
                 print "could not complete sync()..."
@@ -234,12 +237,12 @@ class SimpleThreadedBase(BaseThreadedTestCase):
         # read them back, deleting a few
         for x in xrange(start, stop):
             key = '%04d' % x
-            data = d.get(key)
+            data = dbutils.DeadlockWrap(d.get, key, max_retries=12)
             if verbose and x % 100 == 0:
                 print "%s: fetched record (%s, %s)" % (name, key, data)
-            assert data == self.makeData(key)
+            assert data == self.makeData(key), (key, data, self.makeData(key))
             if random() <= 0.10:
-                d.delete(key)
+                dbutils.DeadlockWrap(d.delete, key, max_retries=12)
                 if verbose:
                     print "%s: deleted record %s" % (name, key)
 
@@ -273,7 +276,7 @@ class BTreeSimpleThreaded(SimpleThreadedBase):
 
 
 class HashSimpleThreaded(SimpleThreadedBase):
-    dbtype = db.DB_BTREE
+    dbtype = db.DB_HASH
 
 
 #----------------------------------------------------------------------

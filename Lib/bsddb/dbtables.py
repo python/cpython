@@ -1,6 +1,7 @@
 #-----------------------------------------------------------------------
 #
 # Copyright (C) 2000, 2001 by Autonomous Zone Industries
+# Copyright (C) 2002 Gregory P. Smith
 #
 # License:      This is free software.  You may use this software for any
 #               purpose including modification/redistribution, so long as
@@ -53,6 +54,13 @@ class PrefixCond(Cond):
         self.prefix = prefix
     def __call__(self, s):
         return s[:len(self.prefix)] == self.prefix
+
+class PostfixCond(Cond):
+    """Acts as a condition function for matching a string postfix"""
+    def __init__(self, postfix):
+        self.postfix = postfix
+    def __call__(self, s):
+        return s[-len(self.postfix):] == self.postfix
 
 class LikeCond(Cond):
     """
@@ -523,17 +531,10 @@ class bsdTableDB :
                         # if no condition was specified or the condition
                         # succeeds, add row to our match list.
                         if not condition or condition(data) :
-                            # only create new entries in matcing_rowids on
-                            # the first pass, otherwise reject the
-                            # rowid as it must not have matched
-                            # the previous passes
-                            if column_num == 0 :
-                                if not matching_rowids.has_key(rowid) :
-                                    matching_rowids[rowid] = {}
-                                if savethiscolumndata :
-                                    matching_rowids[rowid][column] = data
-                            else :
-                                rejected_rowids[rowid] = rowid
+                            if not matching_rowids.has_key(rowid) :
+                                matching_rowids[rowid] = {}
+                            if savethiscolumndata :
+                                matching_rowids[rowid][column] = data
                         else :
                             if matching_rowids.has_key(rowid) :
                                 del matching_rowids[rowid]
