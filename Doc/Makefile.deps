@@ -198,6 +198,7 @@ LIBFILES= ../lib/lib.tex \
 	../lib/libmutex.tex \
 	../lib/libnis.tex \
 	../lib/libpipes.tex \
+	../lib/libpty.tex \
 	../lib/librlcompleter.tex \
 	../lib/libsched.tex \
 	../lib/libstatvfs.tex \
