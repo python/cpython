@@ -238,7 +238,7 @@ reversed_next(reversedobject *ro)
 }
 
 PyDoc_STRVAR(reversed_doc,
-"reverse(sequence) -> reverse iterator over values of the sequence\n"
+"reversed(sequence) -> reverse iterator over values of the sequence\n"
 "\n"
 "Return a reverse iterator");
 
