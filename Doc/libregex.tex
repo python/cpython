@@ -11,20 +11,22 @@ a way to change the syntax to match that of several well-known
 This module is 8-bit clean: both patterns and strings may contain null
 bytes and characters whose high bit is set.
 
-\strong{Please note:} There is a little-known fact about Python string literals
-which means that you don't usually have to worry about doubling
-backslashes, even though they are used to escape special characters in
-string literals as well as in regular expressions.  This is because
-Python doesn't remove backslashes from string literals if they are
-followed by an unrecognized escape character.  \emph{However}, if you
-want to include a literal \dfn{backslash} in a regular expression
-represented as a string literal, you have to \emph{quadruple} it.  E.g.
-to extract LaTeX \samp{\e section\{{\rm \ldots}\}} headers from a document, you can
-use this pattern: \code{'\e \e \e\e section\{\e (.*\e )\}'}.
+\strong{Please note:} There is a little-known fact about Python string
+literals which means that you don't usually have to worry about
+doubling backslashes, even though they are used to escape special
+characters in string literals as well as in regular expressions.  This
+is because Python doesn't remove backslashes from string literals if
+they are followed by an unrecognized escape character.
+\emph{However}, if you want to include a literal \dfn{backslash} in a
+regular expression represented as a string literal, you have to
+\emph{quadruple} it.  E.g.  to extract LaTeX \samp{\e section\{{\rm
+\ldots}\}} headers from a document, you can use this pattern:
+\code{'\e \e \e\e section\{\e (.*\e )\}'}.
 
 The module defines these functions, and an exception:
 
 \renewcommand{\indexsubitem}{(in module regex)}
+
 \begin{funcdesc}{match}{pattern\, string}
   Return how many characters at the beginning of \var{string} match
   the regular expression \var{pattern}.  Return \code{-1} if the
@@ -80,6 +82,15 @@ expressions.)
   more information.
 \end{funcdesc}
 
+\begin{funcdesc}{symcomp}{pattern\, translate}
+This is like \code{compile}, but supports symbolic group names: if a
+parentheses-enclosed group begins with a group name in angular
+brackets, e.g. \code{'\e(<id>[a-z][a-z0-9]*\e)'}, the group can
+be referenced by its name in arguments to the \code{group} method of
+the resulting compiled regular expression object, like this:
+\code{p.group('id')}.
+\end{funcdesc}
+
 \begin{excdesc}{error}
   Exception raised when a string passed to one of the functions here
   is not a valid regular expression (e.g., unmatched parentheses) or
@@ -128,16 +139,21 @@ groups of the match.  If there is a single \var{index} argument,
 the result is a single string; if there are multiple arguments, the
 result is a tuple with one item per argument.  If the \var{index} is
 zero, the corresponding return value is the entire matching string; if
-it is in the inclusive range [1..9], it is the string matching the
+it is in the inclusive range [1..99], it is the string matching the
 the corresponding parenthesized group (using the default syntax,
 groups are parenthesized using \code{\\(} and \code{\\)}).  If no
 such group exists, the corresponding result is \code{None}.
+
+If the regular expression was compiled by \code{symcomp} instead of
+\code{compile}, the \var{index} arguments may also be strings
+identifying groups by their group name.
 \end{funcdesc}
 
 \noindent
 Compiled regular expressions support these data attributes:
 
 \renewcommand{\indexsubitem}{(regex attribute)}
+
 \begin{datadesc}{regs}
 When the last call to the \code{match} or \code{search} method found a
 match, this is a tuple of pairs of indices corresponding to the
@@ -159,4 +175,21 @@ This is the value of the \var{translate} argument to
 \code{regex.compile} that created this regular expression object.  If
 the \var{translate} argument was omitted in the \code{regex.compile}
 call, this is \code{None}.
+\end{datadesc}
+
+\begin{datadesc}{givenpat}
+The regular expression pattern as passed to \code{compile} or
+\code{symcomp}.
+\end{datadesc}
+
+\begin{datadesc}{realpat}
+The regular expression after stripping the group names for regular
+expressions compiled with \code{symcomp}.  Same as \code{givenpat}
+otherwise.
+\end{datadesc}
+
+\begin{datadesc}{groupindex}
+A dictionary giving the mapping from symbolic group names to numerical
+group indices for regular expressions compiled with \code{symcomp}.
+\code{None} otherwise.
 \end{datadesc}
