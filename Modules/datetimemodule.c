@@ -1399,10 +1399,8 @@ static PyObject *seconds_per_day = NULL; /* 3600*24 as Python int */
 
 /* Callables to support unpickling. */
 static PyObject *date_unpickler_object = NULL;
-static PyObject *datetime_unpickler_object = NULL;
 static PyObject *datetimetz_unpickler_object = NULL;
 static PyObject *tzinfo_unpickler_object = NULL;
-static PyObject *time_unpickler_object = NULL;
 static PyObject *timetz_unpickler_object = NULL;
 
 /* ---------------------------------------------------------------------------
@@ -3380,52 +3378,6 @@ datetime_setstate(PyDateTime_DateTime *self, PyObject *state)
 	return Py_None;
 }
 
-/* XXX This seems a ridiculously inefficient way to pickle a short string. */
-static PyObject *
-datetime_pickler(PyObject *module, PyDateTime_DateTime *datetime)
-{
-	PyObject *state;
-	PyObject *result = NULL;
-
-	if (! PyDateTime_CheckExact(datetime)) {
-		PyErr_Format(PyExc_TypeError,
-			     "bad type passed to datetime pickler: %s",
-			     datetime->ob_type->tp_name);
-		return NULL;
-	}
-	state = datetime_getstate(datetime);
-	if (state) {
-		result = Py_BuildValue("O(O)",
-				       datetime_unpickler_object,
-				       state);
-		Py_DECREF(state);
-	}
-	return result;
-}
-
-static PyObject *
-datetime_unpickler(PyObject *module, PyObject *arg)
-{
-	PyDateTime_DateTime *self;
-
-	if (! PyString_CheckExact(arg)) {
-		PyErr_Format(PyExc_TypeError,
-			     "bad type passed to datetime unpickler: %s",
-			     arg->ob_type->tp_name);
-		return NULL;
-	}
-	self = PyObject_New(PyDateTime_DateTime, &PyDateTime_DateTimeType);
-	if (self != NULL) {
-		PyObject *res = datetime_setstate(self, arg);
-		if (res == NULL) {
-			Py_DECREF(self);
-			return NULL;
-		}
-		Py_DECREF(res);
-	}
-	return (PyObject *)self;
-}
-
 static PyMethodDef datetime_methods[] = {
 	/* Class methods: */
 	{"now",         (PyCFunction)datetime_now,
@@ -3847,52 +3799,6 @@ time_setstate(PyDateTime_Time *self, PyObject *state)
 
 	Py_INCREF(Py_None);
 	return Py_None;
-}
-
-/* XXX This seems a ridiculously inefficient way to pickle a short string. */
-static PyObject *
-time_pickler(PyObject *module, PyDateTime_Time *time)
-{
-	PyObject *state;
-	PyObject *result = NULL;
-
-	if (! PyTime_CheckExact(time)) {
-		PyErr_Format(PyExc_TypeError,
-			     "bad type passed to time pickler: %s",
-			     time->ob_type->tp_name);
-		return NULL;
-	}
-	state = time_getstate(time);
-	if (state) {
-		result = Py_BuildValue("O(O)",
-				       time_unpickler_object,
-				       state);
-		Py_DECREF(state);
-	}
-	return result;
-}
-
-static PyObject *
-time_unpickler(PyObject *module, PyObject *arg)
-{
-	PyDateTime_Time *self;
-
-	if (! PyString_CheckExact(arg)) {
-		PyErr_Format(PyExc_TypeError,
-			     "bad type passed to time unpickler: %s",
-			     arg->ob_type->tp_name);
-		return NULL;
-	}
-	self = PyObject_New(PyDateTime_Time, &PyDateTime_TimeType);
-	if (self != NULL) {
-		PyObject *res = time_setstate(self, arg);
-		if (res == NULL) {
-			Py_DECREF(self);
-			return NULL;
-		}
-		Py_DECREF(res);
-	}
-	return (PyObject *)self;
 }
 
 static PyMethodDef time_methods[] = {
@@ -5170,12 +5076,8 @@ static PyMethodDef module_methods[] = {
 	 */
 	{"_date_pickler",	(PyCFunction)date_pickler,	METH_O, NULL},
 	{"_date_unpickler",	(PyCFunction)date_unpickler, 	METH_O, NULL},
-	{"_datetime_pickler",	(PyCFunction)datetime_pickler,	METH_O, NULL},
-	{"_datetime_unpickler",	(PyCFunction)datetime_unpickler,METH_O, NULL},
 	{"_datetimetz_pickler",	(PyCFunction)datetimetz_pickler,METH_O, NULL},
 	{"_datetimetz_unpickler",(PyCFunction)datetimetz_unpickler,METH_O, NULL},
-	{"_time_pickler",	(PyCFunction)time_pickler,	METH_O, NULL},
-	{"_time_unpickler",	(PyCFunction)time_unpickler,	METH_O, NULL},
 	{"_timetz_pickler",	(PyCFunction)timetz_pickler,	METH_O, NULL},
 	{"_timetz_unpickler",	(PyCFunction)timetz_unpickler,	METH_O, NULL},
 	{"_tzinfo_pickler",	(PyCFunction)tzinfo_pickler,	METH_O, NULL},
@@ -5232,32 +5134,6 @@ initdatetime(void)
 	    				&PyDateTime_DateType,
 	    				pickler,
 		                    	date_unpickler_object);
-		if (x == NULL) return;
-		Py_DECREF(x);
-		Py_DECREF(pickler);
-
-		pickler = PyObject_GetAttrString(m, "_datetime_pickler");
-		if (pickler == NULL) return;
-		datetime_unpickler_object = PyObject_GetAttrString(m,
-						"_datetime_unpickler");
-		if (datetime_unpickler_object == NULL) return;
-	    	x = PyObject_CallMethod(copyreg, "pickle", "OOO",
-	    				&PyDateTime_DateTimeType,
-	    				pickler,
-		                    	datetime_unpickler_object);
-		if (x == NULL) return;
-		Py_DECREF(x);
-		Py_DECREF(pickler);
-
-		pickler = PyObject_GetAttrString(m, "_time_pickler");
-		if (pickler == NULL) return;
-		time_unpickler_object = PyObject_GetAttrString(m,
-						"_time_unpickler");
-		if (time_unpickler_object == NULL) return;
-	    	x = PyObject_CallMethod(copyreg, "pickle", "OOO",
-	    				&PyDateTime_TimeType,
-	    				pickler,
-		                	time_unpickler_object);
 		if (x == NULL) return;
 		Py_DECREF(x);
 		Py_DECREF(pickler);
@@ -5339,42 +5215,6 @@ initdatetime(void)
 	Py_DECREF(x);
 
 	x = new_delta(1, 0, 0, 0);
-	if (x == NULL || PyDict_SetItemString(d, "resolution", x) < 0)
-		return;
-	Py_DECREF(x);
-
-	/* datetime values */
-	d = PyDateTime_DateTimeType.tp_dict;
-
-	x = new_datetime(1, 1, 1, 0, 0, 0, 0);
-	if (x == NULL || PyDict_SetItemString(d, "min", x) < 0)
-		return;
-	Py_DECREF(x);
-
-	x = new_datetime(MAXYEAR, 12, 31, 23, 59, 59, 999999);
-	if (x == NULL || PyDict_SetItemString(d, "max", x) < 0)
-		return;
-	Py_DECREF(x);
-
-	x = new_delta(0, 0, 1, 0);
-	if (x == NULL || PyDict_SetItemString(d, "resolution", x) < 0)
-		return;
-	Py_DECREF(x);
-
-	/* time values */
-	d = PyDateTime_TimeType.tp_dict;
-
-	x = new_time(0, 0, 0, 0);
-	if (x == NULL || PyDict_SetItemString(d, "min", x) < 0)
-		return;
-	Py_DECREF(x);
-
-	x = new_time(23, 59, 59, 999999);
-	if (x == NULL || PyDict_SetItemString(d, "max", x) < 0)
-		return;
-	Py_DECREF(x);
-
-	x = new_delta(0, 0, 1, 0);
 	if (x == NULL || PyDict_SetItemString(d, "resolution", x) < 0)
 		return;
 	Py_DECREF(x);
