@@ -72,6 +72,7 @@ typedef int pid_t;
 #include <stdio.h>
 #define HAVE_CLOCK
 #define HAVE_STRFTIME
+#define HAVE_STRERROR
 #define NT_THREADS
 #define WITH_THREAD
 #ifndef NETSCAPE_PI
