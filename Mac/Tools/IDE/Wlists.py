@@ -269,8 +269,8 @@ class List(Wbase.SelectableWidget):
 		self._activated = onoff
 		if self._visible:
 			self._list.LActivate(onoff)
-			state = [kThemeStateActive, kThemeStateInactive][not onoff]
-			App.DrawThemeListBoxFrame(Qd.InsetRect(self._bounds, 1, 1), state)
+			#state = [kThemeStateActive, kThemeStateInactive][not onoff]
+			#App.DrawThemeListBoxFrame(Qd.InsetRect(self._bounds, 1, 1), state)
 			if self._selected:
 				self.drawselframe(onoff)
 	
