@@ -1040,8 +1040,8 @@ comint believe the user typed this string so that
 (defun py-comint-output-filter-function (string)
   "Watch output for Python prompt and exec next file waiting in queue.
 This function is appropriate for `comint-output-filter-functions'."
+  ;; TBD: this should probably use split-string
   (when (and (or (string-equal string ">>> ")
-		 ;; NT XEmacs 21.0 kludge
 		 (and (>= (length string) 5)
 		      (string-equal (substring string -5) "\n>>> ")))
 	     py-file-queue)
@@ -1200,7 +1200,7 @@ is inserted at the end.  See also the command `py-clear-queue'."
   (interactive "r\nP")
   (or (< start end)
       (error "Region is empty"))
-  (let* ((proc (get-process "Python"))
+  (let* ((proc (get-process py-which-bufname))
 	 (temp (if (memq 'broken-temp-names py-emacs-features)
 		   (let
 		       ((sn py-serial-number)
@@ -1216,7 +1216,7 @@ is inserted at the end.  See also the command `py-clear-queue'."
      ;; always run the code in its own asynchronous subprocess
      (async
       (let* ((buf (generate-new-buffer-name py-output-buffer)))
-	(start-process "Python" buf py-python-command "-u" file)
+	(start-process py-which-bufname buf py-which-shell "-u" file)
 	(pop-to-buffer buf)
 	(py-postprocess-output-buffer buf)
 	))
@@ -1231,7 +1231,7 @@ is inserted at the end.  See also the command `py-clear-queue'."
       (setq py-exception-buffer (cons file (current-buffer))))
      (t
       ;; otherwise either run it synchronously in a subprocess
-      (shell-command-on-region start end py-python-command py-output-buffer)
+      (shell-command-on-region start end py-which-shell py-output-buffer)
       ;; shell-command-on-region kills the output buffer if it never
       ;; existed and there's no output from the command
       (if (not (get-buffer py-output-buffer))
