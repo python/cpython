@@ -116,13 +116,16 @@ CLEAN :
 	-@erase "$(INTDIR)\operator.obj"
 	-@erase "$(INTDIR)\parser.obj"
 	-@erase "$(INTDIR)\parsetok.obj"
+	-@erase "$(INTDIR)\pcremodule.obj"
 	-@erase "$(INTDIR)\posixmodule.obj"
+	-@erase "$(INTDIR)\pypcre.obj"
 	-@erase "$(INTDIR)\pystate.obj"
 	-@erase "$(INTDIR)\python_nt.res"
 	-@erase "$(INTDIR)\pythonrun.obj"
 	-@erase "$(INTDIR)\rangeobject.obj"
 	-@erase "$(INTDIR)\regexmodule.obj"
 	-@erase "$(INTDIR)\regexpr.obj"
+	-@erase "$(INTDIR)\reopmodule.obj"
 	-@erase "$(INTDIR)\rgbimgmodule.obj"
 	-@erase "$(INTDIR)\rotormodule.obj"
 	-@erase "$(INTDIR)\selectmodule.obj"
@@ -265,13 +268,16 @@ LINK32_OBJS= \
 	"$(INTDIR)\operator.obj" \
 	"$(INTDIR)\parser.obj" \
 	"$(INTDIR)\parsetok.obj" \
+	"$(INTDIR)\pcremodule.obj" \
 	"$(INTDIR)\posixmodule.obj" \
+	"$(INTDIR)\pypcre.obj" \
 	"$(INTDIR)\pystate.obj" \
 	"$(INTDIR)\python_nt.res" \
 	"$(INTDIR)\pythonrun.obj" \
 	"$(INTDIR)\rangeobject.obj" \
 	"$(INTDIR)\regexmodule.obj" \
 	"$(INTDIR)\regexpr.obj" \
+	"$(INTDIR)\reopmodule.obj" \
 	"$(INTDIR)\rgbimgmodule.obj" \
 	"$(INTDIR)\rotormodule.obj" \
 	"$(INTDIR)\selectmodule.obj" \
@@ -543,13 +549,16 @@ CLEAN :
 	-@erase "$(INTDIR)\operator.obj"
 	-@erase "$(INTDIR)\parser.obj"
 	-@erase "$(INTDIR)\parsetok.obj"
+	-@erase "$(INTDIR)\pcremodule.obj"
 	-@erase "$(INTDIR)\posixmodule.obj"
 	-@erase "$(INTDIR)\pystate.obj"
+	-@erase "$(INTDIR)\pypcre.obj"
 	-@erase "$(INTDIR)\python_nt.res"
 	-@erase "$(INTDIR)\pythonrun.obj"
 	-@erase "$(INTDIR)\rangeobject.obj"
 	-@erase "$(INTDIR)\regexmodule.obj"
 	-@erase "$(INTDIR)\regexpr.obj"
+	-@erase "$(INTDIR)\reopmodule.obj"
 	-@erase "$(INTDIR)\rgbimgmodule.obj"
 	-@erase "$(INTDIR)\rotormodule.obj"
 	-@erase "$(INTDIR)\selectmodule.obj"
@@ -691,13 +700,16 @@ LINK32_OBJS= \
 	"$(INTDIR)\operator.obj" \
 	"$(INTDIR)\parser.obj" \
 	"$(INTDIR)\parsetok.obj" \
+	"$(INTDIR)\pcremodule.obj" \
 	"$(INTDIR)\posixmodule.obj" \
+	"$(INTDIR)\pypcre.obj" \
 	"$(INTDIR)\pystate.obj" \
 	"$(INTDIR)\python_nt.res" \
 	"$(INTDIR)\pythonrun.obj" \
 	"$(INTDIR)\rangeobject.obj" \
 	"$(INTDIR)\regexmodule.obj" \
 	"$(INTDIR)\regexpr.obj" \
+	"$(INTDIR)\reopmodule.obj" \
 	"$(INTDIR)\rgbimgmodule.obj" \
 	"$(INTDIR)\rotormodule.obj" \
 	"$(INTDIR)\selectmodule.obj" \
@@ -4330,6 +4342,151 @@ DEP_CPP_GETPA=\
 	
 
 "$(INTDIR)\getpathp.obj" : $(SOURCE) $(DEP_CPP_GETPA) "$(INTDIR)"
+   $(CPP) $(CPP_PROJ) $(SOURCE)
+
+
+# End Source File
+################################################################################
+# Begin Source File
+
+SOURCE=.\Modules\pcremodule.c
+DEP_CPP_PCREM=\
+	".\Include\abstract.h"\
+	".\Include\ceval.h"\
+	".\Include\classobject.h"\
+	".\Include\cobject.h"\
+	".\Include\complexobject.h"\
+	".\Include\dictobject.h"\
+	".\Include\fileobject.h"\
+	".\Include\floatobject.h"\
+	".\Include\funcobject.h"\
+	".\Include\graminit.h"\
+	".\Include\import.h"\
+	".\Include\intobject.h"\
+	".\Include\intrcheck.h"\
+	".\Include\listobject.h"\
+	".\Include\longobject.h"\
+	".\Include\methodobject.h"\
+	".\Include\modsupport.h"\
+	".\Include\moduleobject.h"\
+	".\Include\mymalloc.h"\
+	".\Include\myproto.h"\
+	".\Include\object.h"\
+	".\Include\objimpl.h"\
+	".\Include\pydebug.h"\
+	".\Include\pyerrors.h"\
+	".\Include\pyfpe.h"\
+	".\Include\pystate.h"\
+	".\Include\Python.h"\
+	".\Include\pythonrun.h"\
+	".\Include\rangeobject.h"\
+	".\Include\sliceobject.h"\
+	".\Include\stringobject.h"\
+	".\Include\sysmodule.h"\
+	".\Include\traceback.h"\
+	".\Include\tupleobject.h"\
+	".\Modules\pcre-internal.h"\
+	".\Modules\pcre.h"\
+	".\PC\config.h"\
+	
+
+"$(INTDIR)\pcremodule.obj" : $(SOURCE) $(DEP_CPP_PCREM) "$(INTDIR)"
+   $(CPP) $(CPP_PROJ) $(SOURCE)
+
+
+# End Source File
+################################################################################
+# Begin Source File
+
+SOURCE=.\Modules\pypcre.c
+DEP_CPP_PYPCR=\
+	".\Include\abstract.h"\
+	".\Include\ceval.h"\
+	".\Include\classobject.h"\
+	".\Include\cobject.h"\
+	".\Include\complexobject.h"\
+	".\Include\dictobject.h"\
+	".\Include\fileobject.h"\
+	".\Include\floatobject.h"\
+	".\Include\funcobject.h"\
+	".\Include\graminit.h"\
+	".\Include\import.h"\
+	".\Include\intobject.h"\
+	".\Include\intrcheck.h"\
+	".\Include\listobject.h"\
+	".\Include\longobject.h"\
+	".\Include\methodobject.h"\
+	".\Include\modsupport.h"\
+	".\Include\moduleobject.h"\
+	".\Include\mymalloc.h"\
+	".\Include\myproto.h"\
+	".\Include\object.h"\
+	".\Include\objimpl.h"\
+	".\Include\pydebug.h"\
+	".\Include\pyerrors.h"\
+	".\Include\pyfpe.h"\
+	".\Include\pystate.h"\
+	".\Include\Python.h"\
+	".\Include\pythonrun.h"\
+	".\Include\rangeobject.h"\
+	".\Include\sliceobject.h"\
+	".\Include\stringobject.h"\
+	".\Include\sysmodule.h"\
+	".\Include\traceback.h"\
+	".\Include\tupleobject.h"\
+	".\Modules\pcre-internal.h"\
+	".\Modules\pcre.h"\
+	".\PC\config.h"\
+	
+
+"$(INTDIR)\pypcre.obj" : $(SOURCE) $(DEP_CPP_PYPCR) "$(INTDIR)"
+   $(CPP) $(CPP_PROJ) $(SOURCE)
+
+
+# End Source File
+################################################################################
+# Begin Source File
+
+SOURCE=.\Modules\reopmodule.c
+DEP_CPP_REOPM=\
+	".\Include\abstract.h"\
+	".\Include\ceval.h"\
+	".\Include\classobject.h"\
+	".\Include\cobject.h"\
+	".\Include\complexobject.h"\
+	".\Include\dictobject.h"\
+	".\Include\fileobject.h"\
+	".\Include\floatobject.h"\
+	".\Include\funcobject.h"\
+	".\Include\import.h"\
+	".\Include\intobject.h"\
+	".\Include\intrcheck.h"\
+	".\Include\listobject.h"\
+	".\Include\longobject.h"\
+	".\Include\methodobject.h"\
+	".\Include\modsupport.h"\
+	".\Include\moduleobject.h"\
+	".\Include\mymalloc.h"\
+	".\Include\myproto.h"\
+	".\Include\object.h"\
+	".\Include\objimpl.h"\
+	".\Include\pydebug.h"\
+	".\Include\pyerrors.h"\
+	".\Include\pyfpe.h"\
+	".\Include\pystate.h"\
+	".\Include\Python.h"\
+	".\Include\pythonrun.h"\
+	".\Include\rangeobject.h"\
+	".\Include\sliceobject.h"\
+	".\Include\stringobject.h"\
+	".\Include\sysmodule.h"\
+	".\Include\traceback.h"\
+	".\Include\tupleobject.h"\
+	".\Modules\regexpr.h"\
+	".\PC\config.h"\
+	
+
+"$(INTDIR)\reopmodule.obj" : $(SOURCE) $(DEP_CPP_REOPM) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
 
