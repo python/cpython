@@ -361,6 +361,9 @@ new newmodule.c
 # (See http://www.jenkon-dev.com/~rd/python/ for an interface to
 # BSD DB 2.1.0.)
 
+# Note: If a db.h file is found by configure, bsddb will be enabled
+# automatically via Setup.config.in
+
 #DB=/depot/sundry/src/berkeley-db/db.1.85
 #DBPORT=$(DB)/PORT/irix.5.3
 #bsddb bsddbmodule.c -I$(DBPORT)/include -I$(DBPORT) $(DBPORT)/libdb.a

@@ -369,7 +369,7 @@ dnl AC_MSG_RESULT($cpp_type)
 AC_HEADER_STDC
 AC_CHECK_HEADERS(dlfcn.h fcntl.h limits.h locale.h ncurses.h poll.h pthread.h \
 signal.h stdarg.h stddef.h stdlib.h thread.h unistd.h utime.h \
-sys/audioio.h sys/file.h sys/lock.h \
+sys/audioio.h sys/file.h sys/lock.h db_185.h db.h \
 sys/param.h sys/select.h sys/socket.h sys/time.h sys/times.h \
 sys/un.h sys/utsname.h sys/wait.h pty.h libutil.h)
 AC_HEADER_DIRENT
@@ -811,6 +811,30 @@ else
     AC_DEFINE(WITH_CYCLE_GC)
 fi
 AC_MSG_RESULT($with_cycle_gc)
+
+# Check for LIBDB support
+# either --with-libdb or, in its absence, the presence of db.h
+AC_SUBST(USE_BSDDB_MODULE)
+USE_BSDDB_MODULE=""
+AC_MSG_CHECKING(for --with-libdb)
+AC_ARG_WITH(libdb,
+[  --with(out)-libdb               disable/enable bsddb module])
+
+# default is enabled
+if test -z "$with_libdb"
+then with_libdb="yes"
+fi
+# if we found db.h, enable, unless with_libdb is expressly set to "no"
+if test "$ac_cv_header_db_h" = "yes" -a "$with_libdb" != "no"
+then with_libdb="yes"
+fi
+if test "$with_libdb" = "no"
+then
+    USE_BSDDB_MODULE="#"
+else
+    AC_DEFINE(WITH_LIBDB)
+fi
+AC_MSG_RESULT($with_libdb)
 
 # Check for --with-wctype-functions
 AC_MSG_CHECKING(for --with-wctype-functions)
