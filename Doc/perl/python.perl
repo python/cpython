@@ -28,41 +28,56 @@ $PYTHON_VERSION = '';
 sub do_cmd_version{ $PYTHON_VERSION . @_[0]; }
 sub do_cmd_release{
     local($_) = @_;
-    s/$any_next_pair_pr_rx//;
+    s/$next_pair_pr_rx//;
     $PYTHON_VERSION = "$2";
     $_;
 }
 
 sub do_cmd_authoraddress{
     local($_) = @_;
-    s/$any_next_pair_pr_rx//;
+    s/$next_pair_pr_rx//;
     $AUTHOR_ADDRESS = "$2";
     $_;
 }
 
 sub do_cmd_hackscore{
     local($_) = @_;
-    s/$any_next_pair_pr_rx/_/;
+    s/$next_pair_pr_rx/_/;
     $_;
 }
 
 sub do_cmd_optional{
     local($_) = @_;
-    s/$any_next_pair_pr_rx/<\/var><big>\[<\/big><var>\2<\/var><big>\]<\/big><var>/;
+    s|$next_pair_pr_rx|</var><big>\[</big><var>\2</var><big>\]</big><var>|;
     $_;
 }
 
 sub do_cmd_varvars{
     local($_) = @_;
-    s/$any_next_pair_pr_rx/<var>\2<\/var>/;
+    s|$next_pair_pr_rx|<var>\2</var>|;
     $_;
 }
 
-# texinfo-like formatting commands: \code{...} etc.
+# Logical formatting (some based on texinfo), needs to be converted to
+# minimalist HTML.  The "minimalist" is primarily to reduce the size of
+# output files for users that read them over the network rather than
+# from local repositories.
 
 sub do_cmd_code{
     local($_) = @_;
-    s/$any_next_pair_pr_rx/<tt>\2<\/tt>/;
+    s|$next_pair_pr_rx|<tt>\2</tt>|;
+    $_;
+}
+
+sub use_sans_serif{
+    local($_) = @_;
+    s|$next_pair_pr_rx|<font face=sans-serif>\2</font>|;
+    $_;
+}
+
+sub use_italics{
+    local($_) = @_;
+    s|$next_pair_pr_rx|<i>\2</i>|;
     $_;
 }
 
@@ -75,19 +90,23 @@ sub do_cmd_function{ &do_cmd_code(@_); }
 sub do_cmd_constant{ &do_cmd_code(@_); }
 sub do_cmd_member{ &do_cmd_code(@_); }
 sub do_cmd_method{ &do_cmd_code(@_); }
-sub do_cmd_email{ &do_cmd_code(@_); }
-sub do_cmd_program{ &do_cmd_code(@_); }
 sub do_cmd_cfunction{ &do_cmd_code(@_); }
 sub do_cmd_cdata{ &do_cmd_code(@_); }
 sub do_cmd_ctype{ &do_cmd_code(@_); }
+sub do_cmd_regexp{ &do_cmd_code(@_); }
+sub do_cmd_key{ &do_cmd_code(@_); }
 
 sub do_cmd_character{ &do_cmd_samp(@_); }
 
-sub do_cmd_regexp{
-    local($_) = @_;
-    s|$next_pair_pr_rx|<tt>\2</tt>|;
-    $_;
-}
+sub do_cmd_program{ &do_cmd_strong(@_); }
+
+sub do_cmd_email{ &use_sans_serif(@_); }
+sub do_cmd_mimetype{ &use_sans_serif(@_); }
+
+sub do_cmd_var{ &use_italics(@_); }
+sub do_cmd_dfn{ &use_italics(@_); }
+sub do_cmd_emph{ &use_italics(@_); }
+
 
 sub do_cmd_envvar{
     local($_) = @_;
@@ -95,87 +114,51 @@ sub do_cmd_envvar{
     $_;
 }
 
-sub do_cmd_mimetype{
-    local($_) = @_;
-    s|$next_pair_pr_rx|<font face=sans-serif>\2</font>|;
-    $_;
-}
-
-sub do_cmd_email{
-    local($_) = @_;
-    s|$any_next_pair_pr_rx|<tt><font face=sans-serif>\2</font></tt>|;
-    $_;
-}
-
 sub do_cmd_url{
     # use the URL as both text and hyperlink
     local($_) = @_;
-    s/$any_next_pair_pr_rx//;
-    local($url) = $2;
+    s/$next_pair_pr_rx//;
+    my $url = $2;
     $url =~ s/~/&#126;/g;
-    "<tt><font face=sans-serif><a href=\"$url\">$url</a></font></tt>" . $_;
+    "<a href=\"$url\"><font face=sans-serif>$url</font></a>" . $_;
 }
 
 sub do_cmd_manpage{
     # two parameters:  \manpage{name}{section}
     local($_) = @_;
-    local($any_next_pair_pr_rx3) = "$OP(\\d+)$CP([\\s\\S]*)$OP\\3$CP";
-    s/$next_pair_pr_rx$any_next_pair_pr_rx3/<i>\2<\/i>(\4)/;
+    my $any_next_pair_pr_rx3 = "$OP(\\d+)$CP([\\s\\S]*)$OP\\3$CP";
+    s|$pair_pr_rx$any_next_pair_pr_rx3|<i>\2</i>(\4)|;
     $_;
 }
 
 sub do_cmd_rfc{
     local($_) = @_;
     s/$next_pair_pr_rx//;
-    local($br_id,$rfcnumber) = ($1, $2);
+    my($br_id,$rfcnumber) = ($1, $2);
 
     # Save the reference
-    local($nstr) = &gen_index_id("RFC!RFC $rfcnumber", '');
+    my $nstr = &gen_index_id("RFC!RFC $rfcnumber", '');
     $index{$nstr} .= &make_half_href("$CURRENT_FILE#$br_id");
-    "<a name=\"$br_id\">RFC $rfcnumber<\/a>" .$_;
+    "<a name=$br_id>RFC $rfcnumber</a>" .$_;
 }
 
 sub do_cmd_kbd{
     local($_) = @_;
-    s/$any_next_pair_pr_rx/<kbd>\2<\/kbd>/;
-    $_;
-}
-
-sub do_cmd_key{
-    local($_) = @_;
-    s/$any_next_pair_pr_rx/<tt>\2<\/tt>/;
-    $_;
-}
-
-sub do_cmd_var{
-    local($_) = @_;
-    s/$any_next_pair_pr_rx/<i>\2<\/i>/;
-    $_;
-}
-
-sub do_cmd_dfn{
-    local($_) = @_;
-    s/$any_next_pair_pr_rx/<i>\2<\/i>/;
-    $_;
-}
-
-sub do_cmd_emph{
-    local($_) = @_;
-    s/$any_next_pair_pr_rx/<i>\2<\/i>/;
+    s|$next_pair_pr_rx|<kbd>\2</kbd>|;
     $_;
 }
 
 sub do_cmd_strong{
     local($_) = @_;
-    s/$any_next_pair_pr_rx/<b>\2<\/b>/;
+    s|$next_pair_pr_rx|<b>\2</b>|;
     $_;
 }
 
 sub do_cmd_deprecated{
     # two parameters:  \deprecated{version}{whattodo}
     local($_) = @_;
-    local($any_next_pair_pr_rx3) = "$OP(\\d+)$CP([\\s\\S]*)$OP\\3$CP";
-    local($release,$action) = ($2, $4);
+    my $any_next_pair_pr_rx3 = "$OP(\\d+)$CP([\\s\\S]*)$OP\\3$CP";
+    my($release,$action) = ($2, $4);
     s/$next_pair_pr_rx$any_next_pair_pr_rx3//;
     "<b>Deprecated since release $release.</b>"
       . "\n$action<p>"
@@ -195,7 +178,7 @@ sub get_indexsubitem{
 
 sub do_cmd_setindexsubitem{
     local($_) = @_;
-    s/$any_next_pair_pr_rx//;
+    s/$next_pair_pr_rx//;
     $INDEX_SUBITEM = $2;
     $_;
 }
@@ -206,6 +189,7 @@ sub do_cmd_withsubitem{
     # out, and leave anything that the second argument expanded out to.
     #
     local($_) = @_;
+    my $any_next_pair_pr_rx3 = "$OP(\\d+)$CP([\\s\\S]*)$OP\\3$CP";
     s/$next_pair_pr_rx$any_next_pair_pr_rx3/\4/;
     $_;
 }
@@ -215,9 +199,9 @@ sub do_cmd_makemodindex{ @_[0]; }
 sub do_cmd_indexii{
     local($_) = @_;
     s/$next_pair_pr_rx//o;
-    local($br_id1, $str1) = ($1, $2);
+    my($br_id1,$str1) = ($1, $2);
     s/$next_pair_pr_rx//o;
-    local($br_id2, $str2) = ($1, $2);
+    my($br_id2,$str2) = ($1, $2);
     join('', &make_index_entry($br_id1, "$str1 $str2"),
 	 &make_index_entry($br_id2, "$str2, $str1"), $_);
 }
@@ -225,11 +209,11 @@ sub do_cmd_indexii{
 sub do_cmd_indexiii{
     local($_) = @_;
     s/$next_pair_pr_rx//o;
-    local($br_id1, $str1) = ($1, $2);
+    my($br_id1,$str1) = ($1, $2);
     s/$next_pair_pr_rx//o;
-    local($br_id2, $str2) = ($1, $2);
+    my($br_id2,$str2) = ($1, $2);
     s/$next_pair_pr_rx//o;
-    local($br_id3, $str3) = ($1, $2);
+    my($br_id3,$str3) = ($1, $2);
     join('', &make_index_entry($br_id1, "$str1 $str2 $str3"),
 	 &make_index_entry($br_id2, "$str2 $str3, $str1"),
 	 &make_index_entry($br_id3, "$str3, $str1 $str2"),
@@ -239,13 +223,13 @@ sub do_cmd_indexiii{
 sub do_cmd_indexiv{
     local($_) = @_;
     s/$next_pair_pr_rx//o;
-    local($br_id1, $str1) = ($1, $2);
+    my($br_id1,$str1) = ($1, $2);
     s/$next_pair_pr_rx//o;
-    local($br_id2, $str2) = ($1, $2);
+    my($br_id2,$str2) = ($1, $2);
     s/$next_pair_pr_rx//o;
-    local($br_id3, $str3) = ($1, $2);
+    my($br_id3,$str3) = ($1, $2);
     s/$next_pair_pr_rx//o;
-    local($br_id4, $str4) = ($1, $2);
+    my($br_id4,$str4) = ($1, $2);
     join('', &make_index_entry($br_id1, "$str1 $str2 $str3 $str4"),
 	 &make_index_entry($br_id2, "$str2 $str3 $str4, $str1"),
 	 &make_index_entry($br_id3, "$str3 $str4, $str1 $str2"),
@@ -253,12 +237,17 @@ sub do_cmd_indexiv{
 	 $_);
 }
 
-sub do_cmd_ttindex{ &do_cmd_index(@_); }
+sub do_cmd_ttindex{
+    local($_) = @_;
+    s/$next_pair_pr_rx//;
+    my($br_id,$str) = ($1, $2);
+    &make_index_entry($br_id, $str . &get_indexsubitem) . $_;
+}
 
 sub my_typed_index_helper{
-    local($word, $_) = @_;
+    local($word,$_) = @_;
     s/$next_pair_pr_rx//o;
-    local($br_id, $str) = ($1, $2);
+    my($br_id,$str) = ($1, $2);
     join('', &make_index_entry($br_id, "$str $word"),
 	 &make_index_entry($br_id, "$word, $str"), $_);
 }
@@ -269,9 +258,9 @@ sub do_cmd_exindex{ &my_typed_index_helper('exception', @_); }
 sub do_cmd_obindex{ &my_typed_index_helper('object', @_); }
 
 sub my_parword_index_helper{
-    local($word, $_) = @_;
+    local($word,$_) = @_;
     s/$next_pair_pr_rx//o;
-    local($br_id, $str) = ($1, $2);
+    my($br_id,$str) = ($1, $2);
     &make_index_entry($br_id, "$str ($word)") . $_;
 }
 
@@ -285,30 +274,33 @@ sub my_parword_index_helper{
 $STRIP_INDEX_TT = 0;
 
 sub make_mod_index_entry{
-    local($br_id,$str,$define) = @_;
-    local($halfref) = &make_half_href("$CURRENT_FILE#$br_id");
+    my($br_id,$str,$define) = @_;
+    my $halfref = &make_half_href("$CURRENT_FILE#$br_id");
     # If TITLE is not yet available (i.e the \index command is in the title
     # of the current section), use $ref_before.
     $TITLE = $ref_before unless $TITLE;
     # Save the reference
-    if ($define eq "DEF") {
-	local($nstr,$garbage) = split / /, $str, 2;
+    if ($define eq 'DEF') {
+	my($nstr,$garbage) = split / /, $str, 2;
 	$Modules{$nstr} .= $halfref;
     }
     $str = &gen_index_id($str, $define);
     if ($STRIP_INDEX_TT) {
-        $str =~ s/<tt>(.*)<\/tt>/\1/;
+        $str =~ s|<tt>(.*)</tt>|\1|;
     }
     $index{$str} .= $halfref;
-    "<a name=\"$br_id\">$anchor_invisible_mark<\/a>";
+    "<a name=$br_id>$anchor_invisible_mark</a>";
 }
+
+$THIS_MODULE = '';
 
 sub my_module_index_helper{
     local($word, $_) = @_;
     s/$next_pair_pr_rx[\n]*//o;
-    local($br_id, $str) = ($1, $2);
-    local($section_tag) = join('', @curr_sec_id);
+    my($br_id, $str) = ($1, $2);
+    my $section_tag = join('', @curr_sec_id);
     $word = "$word " if $word;
+    $THIS_MODULE = "$str";
     &make_mod_index_entry("SECTION$section_tag",
 			  "<tt>$str</tt> (${word}module)", 'DEF');
     $_;
@@ -317,12 +309,20 @@ sub my_module_index_helper{
 sub ref_module_index_helper{
     local($word, $_) = @_;
     s/$next_pair_pr_rx//o;
-    local($br_id, $str) = ($1, $2);
+    my($br_id, $str) = ($1, $2);
     $word = "$word " if $word;
     &make_mod_index_entry($br_id, "<tt>$str</tt> (${word}module)", 'REF') . $_;
 }
 
-sub do_cmd_bifuncindex{ &my_parword_index_helper('built-in function', @_); }
+sub do_cmd_bifuncindex{
+    local($_) = @_;
+    s/$next_pair_pr_rx//o;
+    my($br_id,$str,$fname) = ($1, $2, "<tt>$2()</tt>");
+    $fname = "$str()"
+      if $STRIP_INDEX_TT;
+    &make_index_entry($br_id, "$fname (built-in function)") . $_;
+}
+
 sub do_cmd_modindex{ &my_module_index_helper('', @_); }
 sub do_cmd_bimodindex{ &my_module_index_helper('built-in', @_); }
 sub do_cmd_exmodindex{ &my_module_index_helper('extension', @_); }
@@ -380,17 +380,17 @@ sub init_myformat{
 # instead of the dummy filler.
 #
 sub make_str_index_entry{
-    local($br_id,$str) = @_;
+    my($br_id,$str) = @_;
     # If TITLE is not yet available (i.e the \index command is in the title
     # of the current section), use $ref_before.
     $TITLE = $ref_before unless $TITLE;
     # Save the reference
-    local($nstr) = &gen_index_id($str, '');
+    my $nstr = &gen_index_id($str, '');
     if ($STRIP_INDEX_TT) {
-        $nstr =~ s/<tt>(.*)<\/tt>/\1/;
+        $nstr =~ s|<tt>(.*)</tt>|\1|;
     }
     $index{$nstr} .= &make_half_href("$CURRENT_FILE#$br_id");
-    "<a name=\"$br_id\">$str<\/a>";
+    "<a name=\"$br_id\">$str</a>";
 }
 
 # Changed from the stock version to indent {verbatim} sections,
@@ -399,7 +399,7 @@ sub make_str_index_entry{
 # (Used with LaTeX2HTML 96.1*)
 sub replace_verbatim {
     # Modifies $_
-    local($prefix,$suffix) = ("\n<p><dl><dd><pre>\n", "</pre></dl>");
+    my($prefix,$suffix) = ("\n<p><dl><dd><pre>\n", "</pre></dl>");
     s/$verbatim_mark(verbatim)(\d+)/$prefix$verbatim{$2}$suffix/go;
     s/$verbatim_mark(rawhtml)(\d+)/$verbatim{$2}/ego;	# Raw HTML
 }
@@ -407,7 +407,7 @@ sub replace_verbatim {
 # (Used with LaTeX2HTML 98.1)
 sub replace_verbatim_hook{
     # Modifies $_
-    local($prefix,$suffix) = ("\n<p><dl><dd>", "</dl>");
+    my($prefix,$suffix) = ("\n<p><dl><dd>", "</dl>");
     s/$math_verbatim_rx/&put_comment("MATH: ".$verbatim{$1})/eg;
     s/$verbatim_mark(\w*[vV]erbatim\*?)(\d+)\#/$prefix$verbatim{$2}$suffix/go;
     # Raw HTML, but replacements may have protected characters
@@ -418,18 +418,18 @@ sub replace_verbatim_hook{
 
 sub do_env_cfuncdesc{
     local($_) = @_;
-    local($return_type,$function_name,$arg_list,$idx) = ('', '', '', '');
-    local($any_next_pair_rx3) = "$O(\\d+)$C([\\s\\S]*)$O\\3$C";
-    local($any_next_pair_rx5) = "$O(\\d+)$C([\\s\\S]*)$O\\5$C";
-    local($cfuncdesc_rx) =
-      "$next_pair_rx$any_next_pair_rx3$any_next_pair_rx5";
+    my($return_type,$function_name,$arg_list,$idx) = ('', '', '', '');
+    my $any_next_pair_rx3 = "$O(\\d+)$C([\\s\\S]*)$O\\3$C";
+    my $any_next_pair_rx5 = "$O(\\d+)$C([\\s\\S]*)$O\\5$C";
+    my $cfuncdesc_rx = "$next_pair_rx$any_next_pair_rx3$any_next_pair_rx5";
     if (/$cfuncdesc_rx/o) {
 	$return_type = "$2";
 	$function_name = "$4";
 	$arg_list = "$6";
 	$idx = &make_str_index_entry($3,
-			"<tt>$function_name</tt>" . &get_indexsubitem);
+			"<tt>$function_name()</tt>" . &get_indexsubitem);
 	$idx =~ s/ \(.*\)//;
+	$idx =~ s/\(\)//;
     }
     "<dl><dt>$return_type <b>$idx</b>"
       . "(<var>$arg_list</var>)\n<dd>$'\n</dl>"
@@ -437,8 +437,8 @@ sub do_env_cfuncdesc{
 
 sub do_env_ctypedesc{
     local($_) = @_;
-    local($type_name) = ('');
-    local($cfuncdesc_rx) = "$next_pair_rx";
+    my $type_name = ('');
+    my $cfuncdesc_rx = "$next_pair_rx";
     if (/$cfuncdesc_rx/o) {
 	$type_name = "$2";
 	$idx = &make_str_index_entry($1,
@@ -450,8 +450,8 @@ sub do_env_ctypedesc{
 
 sub do_env_cvardesc{
     local($_) = @_;
-    local($var_type,$var_name,$idx) = ('', '', '');
-    local($cfuncdesc_rx) = "$next_pair_rx$any_next_pair_rx3";
+    my($var_type,$var_name,$idx) = ('', '', '');
+    my $cfuncdesc_rx = "$next_pair_rx$any_next_pair_rx3";
     if (/$cfuncdesc_rx/o) {
 	$var_type = "$2";
 	$var_name = "$4";
@@ -465,27 +465,28 @@ sub do_env_cvardesc{
 
 sub do_env_funcdesc{
     local($_) = @_;
-    local($function_name,$arg_list,$idx) = ('', '', '');
-    local($funcdesc_rx) = "$next_pair_rx$any_next_pair_rx3";
+    my($function_name,$arg_list,$idx) = ('', '', '');
+    my $funcdesc_rx = "$next_pair_rx$any_next_pair_rx3";
     if (/$funcdesc_rx/o) {
 	$function_name = "$2";
 	$arg_list = "$4";
-	$idx = &make_str_index_entry($3,
-			"<tt>$function_name</tt>" . &get_indexsubitem);
+	$idx = &make_str_index_entry($3, "<tt>$function_name()</tt>"
+				     . &get_indexsubitem);
 	$idx =~ s/ \(.*\)//;
+	$idx =~ s/\(\)//;
     }
     "<dl><dt><b>$idx</b> (<var>$arg_list</var>)\n<dd>$'\n</dl>";
 }
 
 sub do_env_funcdescni{
     local($_) = @_;
-    local($function_name,$arg_list,$idx) = ('', '', '');
-    local($funcdesc_rx) = "$next_pair_rx$any_next_pair_rx3";
+    my($function_name,$arg_list,$idx) = ('', '', '');
+    my $funcdesc_rx = "$next_pair_rx$any_next_pair_rx3";
     if (/$funcdesc_rx/o) {
 	$function_name = "$2";
 	$arg_list = "$4";
 	if ($STRIP_INDEX_TT) {
-	    $idx = $function_name; }
+	    $idx = "$function_name"; }
 	else {
 	    $idx = "<tt>$function_name</tt>"; }
     }
@@ -494,11 +495,15 @@ sub do_env_funcdescni{
 
 sub do_cmd_funcline{
     local($_) = @_;
-    local($funcdesc_rx) = "$next_pair_pr_rx$OP(\\d+)$CP([\\s\\S]*)$OP\\3$CP";
+    my $any_next_pair_pr_rx3 = "$OP(\\d+)$CP([\\s\\S]*)$OP\\3$CP";
 
-    s/$funcdesc_rx//o;
-    local($br_id, $function_name, $arg_list) = ($3, $2, $4);
-    local($idx) = &make_str_index_entry($br_id, "<tt>$function_name</tt>");
+    s/$next_pair_pr_rx//o;
+    my $function_name = $2;
+    s/$next_pair_pr_rx//o;
+    my($br_id,$arg_list) = ($1, $2);
+    my $idx = &make_str_index_entry($br_id, "<tt>$function_name()</tt>"
+				    . &get_indexsubitem);
+    $idx =~ s/\(\)//;
 
     "<dt><b>$idx</b> (<var>$arg_list</var>)\n<dd>" . $_;
 }
@@ -511,8 +516,9 @@ $INDEX_OPCODES = 0;
 
 sub do_env_opcodedesc{
     local($_) = @_;
-    local($opcode_name,$arg_list,$stuff,$idx) = ('', '', '', '');
-    local($opcodedesc_rx) = "$next_pair_rx$any_next_pair_rx3";
+    my($opcode_name,$arg_list,$stuff,$idx) = ('', '', '', '');
+    my $any_next_pair_pr_rx3 = "$OP(\\d+)$CP([\\s\\S]*)$OP\\3$CP";
+    my $opcodedesc_rx = "$next_pair_rx$any_next_pair_rx3";
     if (/$opcodedesc_rx/o) {
 	$opcode_name = "$2";
 	$arg_list = "$4";
@@ -534,7 +540,7 @@ sub do_env_opcodedesc{
 
 sub do_env_datadesc{
     local($_) = @_;
-    local($idx) = '';
+    my $idx = '';
     if (/$next_pair_rx/o) {
 	$idx = &make_str_index_entry($1, "<tt>$2</tt>" . &get_indexsubitem);
 	$idx =~ s/ \(.*\)//;
@@ -544,7 +550,7 @@ sub do_env_datadesc{
 
 sub do_env_datadescni{
     local($_) = @_;
-    local($idx) = '';
+    my $idx = '';
     if (/$next_pair_rx/o) {
 	if ($STRING_INDEX_TT) {
 	    $idx = "$2"; }
@@ -558,25 +564,39 @@ sub do_cmd_dataline{
     local($_) = @_;
 
     s/$next_pair_pr_rx//o;
-    local($br_id, $data_name) = ($1, $2);
-    local($idx) = &make_str_index_entry($br_id, "<tt>$data_name</tt>"
-				       . &get_indexsubitem);
+    my($br_id, $data_name) = ($1, $2);
+    my $idx = &make_str_index_entry($br_id, "<tt>$data_name</tt>"
+				    . &get_indexsubitem);
     $idx =~ s/ \(.*\)//;
 
     "<dt><b>$idx</b>\n<dd>" . $_;
 }
 
 sub do_env_excdesc{ &do_env_datadesc(@_); }
-sub do_env_classdesc{ &do_env_funcdesc(@_); }
+#sub do_env_classdesc{ &do_env_funcdesc(@_); }
 sub do_env_fulllineitems{ &do_env_itemize(@_); }
 
+
+sub do_env_classdesc{
+    local($_) = @_;
+    my($function_name,$arg_list,$idx) = ('', '', '');
+    my $funcdesc_rx = "$next_pair_rx$any_next_pair_rx3";
+    if (/$funcdesc_rx/o) {
+	$function_name = "$2";
+	$arg_list = "$4";
+	$idx = &make_str_index_entry($3,
+			"<tt>$function_name</tt> (class in $THIS_MODULE)" );
+	$idx =~ s/ \(.*\)//;
+    }
+    "<dl><dt><b>$idx</b> (<var>$arg_list</var>)\n<dd>$'\n</dl>";
+}
 
 @col_aligns = ("<td>", "<td>", "<td>");
 
 sub setup_column_alignments{
     local($_) = @_;
-    local($j1,$a1,$a2,$a3,$j4) = split(/[|]/,$_);
-    local($th1,$th2,$th3) = ('<th>', '<th>', '<th>');
+    my($j1,$a1,$a2,$a3,$j4) = split(/[|]/,$_);
+    my($th1,$th2,$th3) = ('<th>', '<th>', '<th>');
     $col_aligns[0] = (($a1 eq "c") ? "<td align=center>" : "<td>");
     $col_aligns[1] = (($a2 eq "c") ? "<td align=center>" : "<td>");
     $col_aligns[2] = (($a3 eq "c") ? "<td align=center>" : "<td>");
@@ -592,15 +612,15 @@ sub setup_column_alignments{
 
 sub do_env_tableii{
     local($_) = @_;
-    local($font,$h1,$h2) = ('', '', '');
-    local($tableiii_rx) =
+    my($font,$h1,$h2) = ('', '', '');
+    my $tableiii_rx =
       "$next_pair_rx$any_next_pair_rx3$any_next_pair_rx5$any_next_pair_rx7";
     if (/$tableiii_rx/o) {
 	$font = $4;
 	$h1 = $6;
 	$h2 = $8;
     }
-    local($th1,$th2,$th3) = &setup_column_alignments($2);
+    my($th1,$th2,$th3) = &setup_column_alignments($2);
     $globals{"lineifont"} = $font;
     "<table border align=center>"
       . "\n  <tr>$th1<b>$h1</b></th>"
@@ -611,20 +631,20 @@ sub do_env_tableii{
 sub do_cmd_lineii{
     local($_) = @_;
     s/$next_pair_pr_rx//o;
-    local($c1) = $2;
+    my $c1 = $2;
     s/$next_pair_pr_rx//o;
-    local($c2) = $2;
-    local($font) = $globals{"lineifont"};
-    local($c1align, $c2align) = @col_aligns[0,1];
+    my $c2 = $2;
+    my $font = $globals{"lineifont"};
+    my($c1align,$c2align) = @col_aligns[0,1];
     "<tr>$c1align<$font>$c1</$font></td>\n"
       . "      $c2align$c2</td>$'";
 }
 
 sub do_env_tableiii{
     local($_) = @_;
-    local($font,$h1,$h2,$h3) = ('', '', '', '');
+    my($font,$h1,$h2,$h3) = ('', '', '', '');
   
-    local($tableiii_rx) =
+    my $tableiii_rx =
       "$next_pair_rx$any_next_pair_rx3$any_next_pair_rx5$any_next_pair_rx7"
 	. "$any_next_pair_rx9";
     if (/$tableiii_rx/o) {
@@ -633,7 +653,7 @@ sub do_env_tableiii{
 	$h2 = $8;
 	$h3 = $10;
     }
-    local($th1,$th2,$th3) = &setup_column_alignments($2);
+    my($th1,$th2,$th3) = &setup_column_alignments($2);
     $globals{"lineifont"} = $font;
     "<table border align=center>"
       . "\n  <tr>$th1<b>$h1</b></th>"
@@ -645,13 +665,13 @@ sub do_env_tableiii{
 sub do_cmd_lineiii{
     local($_) = @_;
     s/$next_pair_pr_rx//o;
-    local($c1) = $2;
+    my $c1 = $2;
     s/$next_pair_pr_rx//o;
-    local($c2) = $2;
+    my $c2 = $2;
     s/$next_pair_pr_rx//o;
-    local($c3) = $2;
-    local($font) = $globals{"lineifont"};
-    local($c1align, $c2align, $c3align) = @col_aligns;
+    my $c3 = $2;
+    my $font = $globals{"lineifont"};
+    my($c1align, $c2align, $c3align) = @col_aligns;
     "<tr>$c1align<$font>$c1</$font></td>\n"
       . "      $c2align$c2</td>\n"
       . "      $c3align$c3</td>$'";
@@ -665,12 +685,14 @@ sub do_cmd_seemodule{
     # Insert the right magic to jump to the module definition.  This should
     # work most of the time, at least for repeat builds....
     local($_) = @_;
-    local($opt_arg) = "(\\[([^\\]]*)])?";
-#    local($any_next_pair_pr_rx3) = "$OP(\\d+)$CP([\\s\\S]*)$OP\\3$CP";
-#    local($any_next_pair_pr_rx5) = "$OP(\\d+)$CP([\\s\\S]*)$OP\\5$CP";
-    s/$opt_arg$any_next_pair_pr_rx3$any_next_pair_pr_rx5//;
-    local($module,$text,$key) = ($4, $6, $2);
-    $key = $module if not $key;
+    my $any_next_pair_pr_rx3 = "$OP(\\d+)$CP([\\s\\S]*)$OP\\3$CP";
+    my $any_next_pair_pr_rx5 = "$OP(\\d+)$CP([\\s\\S]*)$OP\\5$CP";
+    # Predefined $opt_arg_rx & $optional_arg_rx don't work because they
+    # require the argument to be there.
+    my $opt_arg_rx = "^\\s*(\\[([^]]*)\\])?";
+    s/$opt_arg_rx$any_next_pair_pr_rx3$any_next_pair_pr_rx5//;
+    my($key,$module,$text) = ($2, $4, $6);
+    $key = $module unless $key;
     "<p>Module <tt><b><a href=\"module-$key.html\">$module</a></b></tt>"
       . "&nbsp;&nbsp;&nbsp;($text)</p>"
       . $_;
@@ -683,39 +705,40 @@ sub do_cmd_seetext{
 
 sub do_cmd_maketitle {
     local($_) = @_;
-    local($the_title) = '';
+    my $the_title = '';
     if ($t_title) {
-	$the_title .= "<h1 align=\"center\">$t_title</h1>";
+	$the_title .= "<h1 align=center>$t_title</h1>";
     } else { &write_warnings("\nThis document has no title."); }
+    $the_title .= "\n<center>";
     if ($t_author) {
 	if ($t_authorURL) {
-	    local($href) = &translate_commands($t_authorURL);
+	    my $href = &translate_commands($t_authorURL);
 	    $href = &make_named_href('author', $href, "<strong>${t_author}</strong>");
-	    $the_title .= "\n<p align=\"center\">$href</p>";
+	    $the_title .= "\n<p>$href</p>";
 	} else {
-	    $the_title .= "\n<p align=\"center\"><strong>$t_author</strong></p>";
+	    $the_title .= "\n<p><strong>$t_author</strong></p>";
 	}
     } else { &write_warnings("\nThere is no author for this document."); }
     if ($t_institute) {
-        $the_title .= "\n<p align=\"center\"><small>$t_institute</small></p>";}
+        $the_title .= "\n<p>$t_institute</p>";}
     if ($AUTHOR_ADDRESS) {
-        $the_title .= "\n<p align=\"center\"><small>$AUTHOR_ADDRESS";
-	$the_title .= "</small></p>";}
+        $the_title .= "\n<p>$AUTHOR_ADDRESS</p>";}
     if ($t_affil) {
-	$the_title .= "\n<p align=\"center\"><i>$t_affil</i></p>";}
+	$the_title .= "\n<p><i>$t_affil</i></p>";}
     if ($t_date) {
-	$the_title .= "\n<p align=\"center\"><strong>$t_date</strong>";
+	$the_title .= "\n<p><strong>$t_date</strong>";
 	if ($PYTHON_VERSION) {
 	    $the_title .= "<br><strong>Release $PYTHON_VERSION</strong>";}
 	$the_title .= "</p>"
     }
+    $the_title .= "\n</center>";
     if ($t_address) {
-	$the_title .= "<br>\n<p align=\"left\"><small>$t_address</small></p>";
-    } else { $the_title .= "\n<p align=\"left\">"}
+	$the_title .= "\n<p>$t_address</p>";
+    } else { $the_title .= "\n<p>"}
     if ($t_email) {
-	$the_title .= "\n<p align=\"left\"><small>$t_email</small></p>";
-    } else { $the_title .= "</p>" }
-    $the_title . "<p><hr>\n" . $_ ;
+	$the_title .= "\n<p>$t_email</p>";
+    }# else { $the_title .= "</p>" }
+    $the_title . "<hr>\n" . $_ ;
 }
 
 
@@ -723,6 +746,10 @@ sub do_cmd_inputindex{
     local($_) = @_;
     s/$next_pair_pr_rx//;
     &do_cmd_input($2);
+}
+
+sub do_cmd_indexlabel{
+    "genindex" . @_[0];
 }
 
 
@@ -735,13 +762,13 @@ sub do_cmd_file{
     # understand "<font face=...>" markup will use courier (or whatever
     # the font is for <tt>).
     local($_) = @_;
-    s/$any_next_pair_pr_rx/\"<tt>\2<\/tt>\"/;
+    s|$next_pair_pr_rx|\"<tt>\2</tt>\"|;
     $_;
 }
 
 sub do_cmd_samp{
     local($_) = @_;
-    s/$any_next_pair_pr_rx/\"<tt>\2<\/tt>\"/;
+    s|$next_pair_pr_rx|\"<tt>\2</tt>\"|;
     $_;
 }
 
