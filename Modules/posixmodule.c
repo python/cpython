@@ -1510,7 +1510,7 @@ posix_execv(PyObject *self, PyObject *args)
 
 	argvlist = PyMem_NEW(char *, argc+1);
 	if (argvlist == NULL)
-		return NULL;
+		return PyErr_NoMemory();
 	for (i = 0; i < argc; i++) {
 		if (!PyArg_Parse((*getitem)(argv, i), "s", &argvlist[i])) {
 			PyMem_DEL(argvlist);
@@ -1706,7 +1706,7 @@ posix_spawnv(PyObject *self, PyObject *args)
 
 	argvlist = PyMem_NEW(char *, argc+1);
 	if (argvlist == NULL)
-		return NULL;
+		return PyErr_NoMemory();
 	for (i = 0; i < argc; i++) {
 		if (!PyArg_Parse((*getitem)(argv, i), "s", &argvlist[i])) {
 			PyMem_DEL(argvlist);

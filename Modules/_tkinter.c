@@ -1346,7 +1346,7 @@ Tkapp_CreateCommand(PyObject *self, PyObject *args)
 
 	data = PyMem_NEW(PythonCmd_ClientData, 1);
 	if (!data)
-		return NULL;
+		return PyErr_NoMemory();
 	Py_XINCREF(self);
 	Py_XINCREF(func);
 	data->self = self;

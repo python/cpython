@@ -5876,7 +5876,7 @@ unicode_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	if (pnew->str == NULL) {
 		_Py_ForgetReference((PyObject *)pnew);
 		PyObject_DEL(pnew);
-		return NULL;
+		return PyErr_NoMemory();
 	}
 	Py_UNICODE_COPY(pnew->str, tmp->str, n+1);
 	pnew->length = n;
