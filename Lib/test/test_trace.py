@@ -125,6 +125,22 @@ settrace_and_raise.events = [(2, 'exception'),
                              (4, 'line'),
                              (4, 'return')]
 
+# implicit return example
+def ireturn_example():
+    a = 5
+    b = 5
+    if a == b:
+        b = a+1
+    else:
+        pass
+
+ireturn_example.events = [(0, 'call'),
+                          (1, 'line'),
+                          (2, 'line'),
+                          (3, 'line'),
+                          (4, 'line'),
+                          (4, 'return')]
+
 class Tracer:
     def __init__(self):
         self.events = []
@@ -157,25 +173,27 @@ class TraceTestCase(unittest.TestCase):
         self.compare_events(func.func_code.co_firstlineno,
                             tracer.events, func.events)
 
-    def test_1_basic(self):
+    def test_01_basic(self):
         self.run_test(basic)
-    def test_2_arigo(self):
+    def test_02_arigo(self):
         self.run_test(arigo_example)
-    def test_3_one_instr(self):
+    def test_03_one_instr(self):
         self.run_test(one_instr_line)
-    def test_4_no_pop_blocks(self):
+    def test_04_no_pop_blocks(self):
         self.run_test(no_pop_blocks)
-    def test_5_no_pop_tops(self):
+    def test_05_no_pop_tops(self):
         self.run_test(no_pop_tops)
-    def test_6_call(self):
+    def test_06_call(self):
         self.run_test(call)
-    def test_7_raise(self):
+    def test_07_raise(self):
         self.run_test(test_raise)
 
-    def test_8_settrace_and_return(self):
+    def test_08_settrace_and_return(self):
         self.run_test2(settrace_and_return)
-    def test_9_settrace_and_raise(self):
+    def test_09_settrace_and_raise(self):
         self.run_test2(settrace_and_raise)
+    def test_10_ireturn(self):
+        self.run_test(ireturn_example)
 
 class RaisingTraceFuncTestCase(unittest.TestCase):
     def trace(self, frame, event, arg):
