@@ -11169,8 +11169,8 @@ if test "$ipv6" = "yes" -a "$ipv6lib" != "none"; then
 fi
 
 # Check for universal newline support
-echo "$as_me:$LINENO: checking for --with-universal-newline" >&5
-echo $ECHO_N "checking for --with-universal-newline... $ECHO_C" >&6
+echo "$as_me:$LINENO: checking for --with-universal-newlines" >&5
+echo $ECHO_N "checking for --with-universal-newlines... $ECHO_C" >&6
 
 # Check whether --with-universal-newlines or --without-universal-newlines was given.
 if test "${with_universal_newlines+set}" = set; then

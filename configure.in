@@ -1484,7 +1484,7 @@ if test "$ipv6" = "yes" -a "$ipv6lib" != "none"; then
 fi
 
 # Check for universal newline support
-AC_MSG_CHECKING(for --with-universal-newline)
+AC_MSG_CHECKING(for --with-universal-newlines)
 AC_ARG_WITH(universal-newlines,
 [  --with(out)-universal-newlines            disable/enable foreign newlines])
 
