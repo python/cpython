@@ -1208,7 +1208,7 @@ _PyMalloc_DebugDumpStats(void)
 	/* # of free blocks per class index */
 	ulong numfreeblocks[SMALL_REQUEST_THRESHOLD >> ALIGNMENT_SHIFT];
 	ulong grandtotal;	/* total # of allocated bytes */
-	ulong freegrandtotal;	/* total # of available bytes in used blocks */
+	ulong freegrandtotal;	/* total # of available bytes in used pools */
 
 	fprintf(stderr, "%u arenas * %d bytes/arena = %lu total bytes.\n",
 		narenas, ARENA_SIZE, narenas * (ulong)ARENA_SIZE);
@@ -1220,8 +1220,9 @@ _PyMalloc_DebugDumpStats(void)
 	for (i = 0; i < numclasses; ++i)
 		numpools[i] = numblocks[i] = numfreeblocks[i] = 0;
 
-	/* Because empty pools aren't linked to from anything, it's easiest
-	 * to march over all the arenas.
+	/* Because full pools aren't linked to from anything, it's easiest
+	 * to march over all the arenas.  If we're lucky, most of the memory
+	 * will be living in full pools -- would be a shame to miss them.
 	 */
 	for (i = 0; i < narenas; ++i) {
 		uint poolsinarena;
