@@ -16,7 +16,7 @@ extern DL_IMPORT(int) Py_TabcheckFlag;
 extern DL_IMPORT(int) Py_UnicodeFlag;
 extern DL_IMPORT(int) Py_IgnoreEnvironmentFlag;
 
-/* this is a wrapper around getenv() the pays attention to
+/* this is a wrapper around getenv() that pays attention to
    Py_IgnoreEnvironmentFlag.  It should be used for getting variables like
    PYTHONPATH and PYTHONHOME from the environment */
 #define Py_GETENV(s) (Py_IgnoreEnvironmentFlag ? NULL : getenv(s))
