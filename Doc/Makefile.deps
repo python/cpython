@@ -226,6 +226,7 @@ LIBFILES= $(MANSTYLES) $(COMMONTEX) \
 	../lib/libnis.tex \
 	../lib/libpipes.tex \
 	../lib/libpty.tex \
+	../lib/libreadline.tex \
 	../lib/librlcompleter.tex \
 	../lib/libsched.tex \
 	../lib/libstatvfs.tex \
