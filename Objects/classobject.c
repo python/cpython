@@ -68,7 +68,6 @@ static void
 class_dealloc(op)
 	classobject *op;
 {
-	int i;
 	DECREF(op->cl_bases);
 	DECREF(op->cl_methods);
 	XDECREF(op->cl_name);
@@ -106,7 +105,8 @@ class_getattr(op, name)
 		int n = gettuplesize(op->cl_bases);
 		int i;
 		for (i = 0; i < n; i++) {
-			v = class_getattr(gettupleitem(op->cl_bases, i), name);
+			v = class_getattr((classobject *)
+					  gettupleitem(op->cl_bases, i), name);
 			if (v != NULL)
 				return v;
 			err_clear();
