@@ -18,7 +18,7 @@
 #define USE_MSL			/* Use Mw Standard Library (as opposed to Plaugher C libraries) */
 #define USE_TOOLBOX		/* Include toolbox modules in core Python */
 #define USE_QT			/* Include quicktime modules in core Python */
-/* #define USE_WASTE		/* Include waste module in core Python */
+#define USE_WASTE		/* Include waste module in core Python */
 /* #define USE_MACSPEECH		/* Include macspeech module in core Python */
 #define USE_IMG	       		/* Include img modules in core Python */
 /* #define USE_MACCTB		/* Include ctb module in core Python */
