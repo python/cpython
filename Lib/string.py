@@ -253,6 +253,14 @@ def expandtabs(s, tabsize=8):
 			line = ''
 	return res + line
 
+# Character translation through look-up table.
+def translate(s, table):
+    if type(table) != type('') or len(table) != 256:
+	raise TypeError, "translation table must be 256-char string"
+    res = ""
+    for c in s:
+	res = res + table[ord(c)]
+    return res
 
 # Try importing optional built-in module "strop" -- if it exists,
 # it redefines some string operations that are 100-1000 times faster.
