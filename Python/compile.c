@@ -625,7 +625,8 @@ PyCode_New(int argcount, int nlocals, int stacksize, int flags,
 		co->co_nlocals = nlocals;
 		co->co_stacksize = stacksize;
 		co->co_flags = flags;
-		co->co_code = optimize_code(code, consts, names);
+		Py_INCREF(code);
+		co->co_code = code;
 		Py_INCREF(consts);
 		co->co_consts = consts;
 		Py_INCREF(names);
@@ -4791,7 +4792,7 @@ jcompile(node *n, const char *filename, struct compiling *base,
 	com_done(&sc);
 	if (sc.c_errors == 0) {
 		PyObject *consts, *names, *varnames, *filename, *name,
-			*freevars, *cellvars;
+			*freevars, *cellvars, *code;
 		consts = PyList_AsTuple(sc.c_consts);
 		names = PyList_AsTuple(sc.c_names);
 		varnames = PyList_AsTuple(sc.c_varnames);
@@ -4800,12 +4801,13 @@ jcompile(node *n, const char *filename, struct compiling *base,
 					     PyTuple_GET_SIZE(cellvars));
 		filename = PyString_InternFromString(sc.c_filename);
 		name = PyString_InternFromString(sc.c_name);
+		code = optimize_code(sc.c_code, consts, names);
 		if (!PyErr_Occurred())
 			co = PyCode_New(sc.c_argcount,
 					sc.c_nlocals,
 					sc.c_maxstacklevel,
 					sc.c_flags,
-					sc.c_code,
+					code,
 					consts,
 					names,
 					varnames,
@@ -4822,6 +4824,7 @@ jcompile(node *n, const char *filename, struct compiling *base,
 		Py_XDECREF(cellvars);
 		Py_XDECREF(filename);
 		Py_XDECREF(name);
+		Py_XDECREF(code);
 	}
 	else if (!PyErr_Occurred()) {
 		/* This could happen if someone called PyErr_Clear() after an
