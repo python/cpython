@@ -200,13 +200,13 @@ class Application(FrameWork.Application):
 	
 	def checkopenwindowsmenu(self):
 		if self._openwindowscheckmark:
-			self.openwindowsmenu.menu.CheckItem(self._openwindowscheckmark, 0)
+			self.openwindowsmenu.menu.CheckMenuItem(self._openwindowscheckmark, 0)
 		window = Win.FrontWindow()
 		if window:
 			for item, wid in self._openwindows.items():
 				if wid == window:
 					#self.pythonwindowsmenuitem.check(1)
-					self.openwindowsmenu.menu.CheckItem(item, 1)
+					self.openwindowsmenu.menu.CheckMenuItem(item, 1)
 					self._openwindowscheckmark = item
 					break
 		else:
@@ -236,9 +236,9 @@ class Application(FrameWork.Application):
 	def enablemenubar(self, onoff):
 		for m in self.menubar.menus.values():
 			if onoff:
-				m.menu.EnableItem(0)
+				m.menu.EnableMenuItem(0)
 			elif m.menu.GetMenuItemText(3) <> 'Cut': # ew...
-				m.menu.DisableItem(0)
+				m.menu.DisableMenuItem(0)
 		MenuToolbox.DrawMenuBar()
 	
 	def makemenubar(self):

@@ -101,7 +101,7 @@ class PopupWidget(Wbase.ClickableWidget):
 		l, t, r, b = self._bounds
 		l, t = Qd.LocalToGlobal((l+1, t+1))
 		Wbase.SetCursor("arrow")
-		self.menu.menu.EnableItem(0)
+		self.menu.menu.EnableMenuItem(0)
 		reply = self.menu.menu.PopUpMenuSelect(t, l, 1)
 		if reply:
 			id = (reply & 0xffff0000) >> 16
@@ -190,7 +190,7 @@ class PopupMenu(PopupWidget):
 		l, t, r, b = self._bounds
 		l, t = Qd.LocalToGlobal((l+1, t+1))
 		Wbase.SetCursor("arrow")
-		self.menu.menu.EnableItem(0)
+		self.menu.menu.EnableMenuItem(0)
 		reply = self.menu.menu.PopUpMenuSelect(t, l, 1)
 		if reply:
 			id = (reply & 0xffff0000) >> 16
