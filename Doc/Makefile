@@ -48,13 +48,14 @@
 # Where are the various programs?
 LATEX=		TEXINPUTS=$(TEXINPUTS) latex
 PDFLATEX=	TEXINPUTS=$(TEXINPUTS) pdflatex
-TEXINPUTS=	texinputs:
+TEXINPUTS=	.:$(srcdir):$(srcdir)/texinputs:
 DVIPS=		dvips -f -N0
 DISTILL=	distill
-MAKEINDEX=	makeindex -s texinputs/myindex.ist
-L2H=		TEXINPUTS=$(TEXINPUTS) latex2html -init_file perl/l2hinit.perl
+MAKEINDEX=	makeindex -s $(srcdir)/texinputs/myindex.ist
+L2H=		TEXINPUTS=$(TEXINPUTS) latex2html -init_file $(L2HINIT)
 L2HARGS=
-WEBCHECKER=	$(PYTHON) ../Tools/webchecker/webchecker.py
+L2HINIT=	$(srcdir)/perl/l2hinit.perl
+WEBCHECKER=	$(PYTHON) $(srcdir)/../Tools/webchecker/webchecker.py
 
 # Install destination -- not used now but might be useful some time...
 DESTDIR=	/usr/local
@@ -66,7 +67,10 @@ DOCDESTDIR=	$LIBDEST/doc
 EMACS=		emacs
 PYTHON=		python
 MAKEINFO=	makeinfo
-PARTPARSE=	$(PYTHON) tools/partparse.py
+PARTPARSE=	$(PYTHON) $(srcdir)/tools/partparse.py
+
+srcdir=.
+VPATH=.
 
 # Ideally, you shouldn't need to edit beyond this point
 
@@ -78,8 +82,8 @@ INFOFILES=	python-lib.info
 PDFFILES=	api.pdf ext.pdf lib.pdf tut.pdf
 PSFILES=	api.ps ext.ps lib.ps tut.ps
 
-MANSTYLES=texinputs/fncychap.sty texinputs/manual.cls texinputs/python.sty \
-	  texinputs/myindex.ist
+MANSTYLES=$(srcdir)/texinputs/fncychap.sty $(srcdir)/texinputs/manual.cls \
+	$(srcdir)/texinputs/python.sty $(srcdir)/texinputs/myindex.ist
 
 # Main target
 all:	all-ps
@@ -126,10 +130,10 @@ tut-all:  tut.dvi tut.pdf tut.ps l2htut
 # This rule avoids creation of the intermediate PostScript files and uses
 # only free software.
 #
-$(PDFFILES): tools/toc2bkm.py
-.dvi.pdf: $*.bkm
+$(PDFFILES): $(srcdir)/tools/toc2bkm.py
+.dvi.pdf:
 	$(PDFLATEX) $*
-	$(PYTHON) tools/toc2bkm.py $*
+	$(PYTHON) $(srcdir)/tools/toc2bkm.py $*
 	$(PDFLATEX) $*
 
 # Dependencies
@@ -168,7 +172,7 @@ LIBFILES = lib.tex \
     libuserdict.tex libdis.tex libxmllib.tex libqueue.tex \
     liblocale.tex libbasehttp.tex libcopyreg.tex libsymbol.tex libtoken.tex \
     libframework.tex libminiae.tex libbinhex.tex libuu.tex libsunaudio.tex \
-    libfileinput.tex libimaplib.tex
+    libfileinput.tex libimaplib.tex libpoplib.tex
 
 MACLIBFILES = mac.tex libmac.tex libctb.tex libmacconsole.tex \
     libmacdnr.tex libmacfs.tex libmacos.tex libmacostools.tex \
@@ -176,13 +180,13 @@ MACLIBFILES = mac.tex libmac.tex libctb.tex libmacconsole.tex \
 
 # Library document
 lib.dvi: tools/indfix.py $(LIBFILES)
-	tools/newind.py >$*.ind
-	tools/newind.py modindex >mod$*.ind
+	$(srcdir)/tools/newind.py >$*.ind
+	$(srcdir)/tools/newind.py modindex >mod$*.ind
 	$(LATEX) $*
 	$(MAKEINDEX) mod$*.idx
-	tools/fix_hack $*.idx
+	$(srcdir)/tools/fix_hack $*.idx
 	$(MAKEINDEX) $*.idx
-	tools/indfix.py $*.ind
+	$(srcdir)/tools/indfix.py $*.ind
 	$(LATEX) $*
 
 # Tutorial document
@@ -193,9 +197,9 @@ tut.dvi: tut.tex
 # Extending & Embedding, Python/C API documents.
 # Done this way to avoid repeated command sets.
 .tex.dvi:
-	tools/newind.py >$*.ind
+	$(srcdir)/tools/newind.py >$*.ind
 	$(LATEX) $*
-	tools/fix_hack $*.idx
+	$(srcdir)/tools/fix_hack $*.idx
 	$(MAKEINDEX) $*.idx
 	$(LATEX) $*
 
