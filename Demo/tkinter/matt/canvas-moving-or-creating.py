@@ -19,8 +19,8 @@ class Test(Frame):
 		event.x - 10, event.y -10, event.x +10, event.y + 10,
 		fill="green", tags=CURRENT)
 
-	    self.draw.bind(fred, "<Any-Enter>", self.mouseEnter)
-	    self.draw.bind(fred, "<Any-Leave>", self.mouseLeave)
+	    self.draw.tag_bind(fred, "<Any-Enter>", self.mouseEnter)
+	    self.draw.tag_bind(fred, "<Any-Leave>", self.mouseLeave)
 
 	self.lastx = event.x
 	self.lasty = event.y
