@@ -88,7 +88,7 @@ static char ConnectRegistry_doc[] =
 "key is the predefined handle to connect to.\n"
 "\n"
 "The return value is the handle of the opened key.\n"
-"If the function fails, an exception is raised.";
+"If the function fails, an EnvironmentError exception is raised.";
 
 static char CreateKey_doc[] =
 "key = CreateKey(key, sub_key) - Creates or opens the specified key.\n"
@@ -113,7 +113,7 @@ static char DeleteKey_doc[] =
 "This method can not delete keys with subkeys.\n"
 "\n"
 "If the method succeeds, the entire key, including all of its values,\n"
-"is removed.  If the method fails, and exception is raised.";
+"is removed.  If the method fails, an EnvironmentError exception is raised.";
 
 static char DeleteValue_doc[] =
 "DeleteValue(key, value) - Removes a named value from a registry key.\n"
@@ -128,8 +128,8 @@ static char EnumKey_doc[] =
 "index is an integer that identifies the index of the key to retrieve.\n"
 "\n"
 "The function retrieves the name of one subkey each time it is called.\n"
-"It is typically called repeatedly until an exception is raised, indicating\n"
-"no more values are available.\n";
+"It is typically called repeatedly until an EnvironmentError exception is\n"
+"raised, indicating no more values are available.\n";
 
 static char EnumValue_doc[] =
 "tuple = EnumValue(key, index) - Enumerates values of an open registry key.\n"
@@ -137,8 +137,8 @@ static char EnumValue_doc[] =
 "index is an integer that identifies the index of the value to retrieve.\n"
 "\n"
 "The function retrieves the name of one subkey each time it is called.\n"
-"It is typically called repeatedly, until an exception is raised,\n"
-"indicating no more values.\n"
+"It is typically called repeatedly, until an EnvironmentError exception\n"
+"is raised, indicating no more values.\n"
 "\n"
 "The result is a tuple of 3 items:\n"
 "value_name is a string that identifies the value.\n"
@@ -160,7 +160,7 @@ static char FlushKey_doc[] =
 "If you don't know whether a FlushKey() call is required, it probably isn't.\n";
 
 static char LoadKey_doc[] =
-"RegLoadKey(key, sub_key, file_name) - Creates a subkey under the specified key.\n"
+"LoadKey(key, sub_key, file_name) - Creates a subkey under the specified key\n"
 "and stores registration information from a specified file into that subkey.\n"
 "\n"
 "key is an already open key, or any one of the predefined HKEY_* constants.\n"
@@ -188,7 +188,7 @@ static char OpenKey_doc[] =
 " security access for the key.  Default is KEY_READ\n"
 "\n"
 "The result is a new handle to the specified key\n"
-"If the function fails, an exception is raised.\n";
+"If the function fails, an EnvironmentError exception is raised.\n";
 
 static char OpenKeyEx_doc[] =
 "See OpenKey()";
@@ -208,7 +208,7 @@ static char QueryValue_doc[] =
 "string = QueryValue(key, sub_key) - retrieves the unnamed value for a key.\n"
 "\n"
 "key is an already open key, or any one of the predefined HKEY_* constants.\n"
-"sub_key is a string that holds The name of the subkey with which the value\n"
+"sub_key is a string that holds the name of the subkey with which the value\n"
 " is associated.  If this parameter is None or empty, the function retrieves\n"
 " the value set by the SetValue() method for the key identified by key."
 "\n"
@@ -268,8 +268,9 @@ static char SetValueEx_doc[] =
 "  REG_EXPAND_SZ -- A null-terminated string that contains unexpanded references\n"
 "                   to environment variables (for example, %PATH%).\n"
 "  REG_LINK -- A Unicode symbolic link.\n"
-"  REG_MULTI_SZ -- An array of null-terminated strings, terminated by\n"
-"                  two null characters.\n"
+"  REG_MULTI_SZ -- An sequence of null-terminated strings, terminated by\n"
+"                  two null characters.  Note that Python handles this\n"
+"                  termination automatically.\n"
 "  REG_NONE -- No defined value type.\n"
 "  REG_RESOURCE_LIST -- A device-driver resource list.\n"
 "  REG_SZ -- A null-terminated string.\n"
@@ -290,7 +291,7 @@ static char SetValueEx_doc[] =
 static char PyHKEY_doc[] =
 "PyHKEY Object - A Python object, representing a win32 registry key.\n"
 "\n"
-"This object wraps a win32 HANDLE object, automatically closing it when\n"
+"This object wraps a Windows HKEY object, automatically closing it when\n"
 "the object is destroyed.  To guarantee cleanup, you can call either\n"
 "the Close() method on the PyHKEY, or the CloseKey() method.\n"
 "\n"
@@ -311,12 +312,12 @@ static char PyHKEY_doc[] =
 
 
 static char PyHKEY_Close_doc[] =
-"key.Close() - Closes the underlying Win32 handle.\n"
+"key.Close() - Closes the underlying Windows handle.\n"
 "\n"
 "If the handle is already closed, no error is raised.";
 
 static char PyHKEY_Detach_doc[] =
-"int = key.Detach() - Detaches the Win32 handle from the handle object.\n"
+"int = key.Detach() - Detaches the Windows handle from the handle object.\n"
 "\n"
 "The result is the value of the handle before it is detached.  If the\n"
 "handle is already detached, this will return zero.\n"
@@ -324,7 +325,8 @@ static char PyHKEY_Detach_doc[] =
 "After calling this function, the handle is effectively invalidated,\n"
 "but the handle is not closed.  You would call this function when you\n"
 "need the underlying win32 handle to exist beyond the lifetime of the\n"
-"handle object.";
+"handle object.\n"
+"On 64 bit windows, the result of this function is a long integer\n";
 
 
 /************************************************************************
