@@ -322,6 +322,7 @@ for cmd in _tryorder:
         if _iscommand(cmd.lower()):
             register(cmd.lower(), None, GenericBrowser(
                 "%s '%%s'" % cmd.lower()))
+cmd = None # to make del work if _tryorder was empty
 del cmd
 
 _tryorder = filter(lambda x: _browsers.has_key(x.lower())
