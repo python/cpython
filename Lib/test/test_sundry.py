@@ -51,7 +51,6 @@ import imaplib
 import imghdr
 import imputil
 import keyword
-#import knee
 import macpath
 import macurl2path
 import mailcap
@@ -70,7 +69,6 @@ import pre
 import profile
 import pstats
 import py_compile
-import pyclbr
 #import reconvert
 import repr
 try:
