@@ -152,6 +152,11 @@ show_counts(void)
 	INIT_NONZERO_DICT_SLOTS(mp);					\
     } while(0)
 
+/* Dictionary reuse scheme to save calls to malloc, free, and memset */
+#define MAXFREEDICTS 80
+static PyDictObject *free_dicts[MAXFREEDICTS];
+static int num_free_dicts = 0;
+
 PyObject *
 PyDict_New(void)
 {
@@ -164,10 +169,23 @@ PyDict_New(void)
 		Py_AtExit(show_counts);
 #endif
 	}
-	mp = PyObject_GC_New(dictobject, &PyDict_Type);
-	if (mp == NULL)
-		return NULL;
-	EMPTY_TO_MINSIZE(mp);
+	if (num_free_dicts) {
+		mp = free_dicts[--num_free_dicts];
+		assert (mp != NULL);
+		assert (mp->ob_type == &PyDict_Type);
+		_Py_NewReference((PyObject *)mp);
+		if (mp->ma_fill) {
+			EMPTY_TO_MINSIZE(mp);
+		}
+		assert (mp->ma_used == 0);
+		assert (mp->ma_table == mp->ma_smalltable);
+		assert (mp->ma_mask == PyDict_MINSIZE - 1);
+	} else {
+		mp = PyObject_GC_New(dictobject, &PyDict_Type);
+		if (mp == NULL)
+			return NULL;
+		EMPTY_TO_MINSIZE(mp);
+	}
 	mp->ma_lookup = lookdict_string;
 #ifdef SHOW_CONVERSION_COUNTS
 	++created;
@@ -672,23 +690,25 @@ PyDict_Clear(PyObject *op)
 int
 PyDict_Next(PyObject *op, int *ppos, PyObject **pkey, PyObject **pvalue)
 {
-	int i;
-	register dictobject *mp;
+	register int i, mask;
+	register dictentry *ep;
+
 	if (!PyDict_Check(op))
 		return 0;
-	mp = (dictobject *)op;
 	i = *ppos;
 	if (i < 0)
 		return 0;
-	while (i <= mp->ma_mask && mp->ma_table[i].me_value == NULL)
+	ep = ((dictobject *)op)->ma_table;
+	mask = ((dictobject *)op)->ma_mask;
+	while (i <= mask && ep[i].me_value == NULL)
 		i++;
 	*ppos = i+1;
-	if (i > mp->ma_mask)
+	if (i > mask)
 		return 0;
 	if (pkey)
-		*pkey = mp->ma_table[i].me_key;
+		*pkey = ep[i].me_key;
 	if (pvalue)
-		*pvalue = mp->ma_table[i].me_value;
+		*pvalue = ep[i].me_value;
 	return 1;
 }
 
@@ -710,7 +730,10 @@ dict_dealloc(register dictobject *mp)
 	}
 	if (mp->ma_table != mp->ma_smalltable)
 		PyMem_DEL(mp->ma_table);
-	mp->ob_type->tp_free((PyObject *)mp);
+	if (num_free_dicts < MAXFREEDICTS && mp->ob_type == &PyDict_Type)
+		free_dicts[num_free_dicts++] = mp;
+	else 
+		mp->ob_type->tp_free((PyObject *)mp);
 	Py_TRASHCAN_SAFE_END(mp)
 }
 
@@ -882,7 +905,9 @@ static PyObject *
 dict_keys(register dictobject *mp)
 {
 	register PyObject *v;
-	register int i, j, n;
+	register int i, j;
+	dictentry *ep;
+	int mask, n;
 
   again:
 	n = mp->ma_used;
@@ -896,14 +921,17 @@ dict_keys(register dictobject *mp)
 		Py_DECREF(v);
 		goto again;
 	}
-	for (i = 0, j = 0; i <= mp->ma_mask; i++) {
-		if (mp->ma_table[i].me_value != NULL) {
-			PyObject *key = mp->ma_table[i].me_key;
+	ep = mp->ma_table;
+	mask = mp->ma_mask;
+	for (i = 0, j = 0; i <= mask; i++) {
+		if (ep[i].me_value != NULL) {
+			PyObject *key = ep[i].me_key;
 			Py_INCREF(key);
 			PyList_SET_ITEM(v, j, key);
 			j++;
 		}
 	}
+	assert(j == n);
 	return v;
 }
 
@@ -911,7 +939,9 @@ static PyObject *
 dict_values(register dictobject *mp)
 {
 	register PyObject *v;
-	register int i, j, n;
+	register int i, j;
+	dictentry *ep;
+	int mask, n;
 
   again:
 	n = mp->ma_used;
@@ -925,14 +955,17 @@ dict_values(register dictobject *mp)
 		Py_DECREF(v);
 		goto again;
 	}
-	for (i = 0, j = 0; i <= mp->ma_mask; i++) {
-		if (mp->ma_table[i].me_value != NULL) {
-			PyObject *value = mp->ma_table[i].me_value;
+	ep = mp->ma_table;
+	mask = mp->ma_mask;
+	for (i = 0, j = 0; i <= mask; i++) {
+		if (ep[i].me_value != NULL) {
+			PyObject *value = ep[i].me_value;
 			Py_INCREF(value);
 			PyList_SET_ITEM(v, j, value);
 			j++;
 		}
 	}
+	assert(j == n);
 	return v;
 }
 
@@ -941,7 +974,9 @@ dict_items(register dictobject *mp)
 {
 	register PyObject *v;
 	register int i, j, n;
+	int mask;
 	PyObject *item, *key, *value;
+	dictentry *ep;
 
 	/* Preallocate the list of tuples, to avoid allocations during
 	 * the loop over the items, which could trigger GC, which
@@ -968,10 +1003,12 @@ dict_items(register dictobject *mp)
 		goto again;
 	}
 	/* Nothing we do below makes any function calls. */
-	for (i = 0, j = 0; i <= mp->ma_mask; i++) {
-		if (mp->ma_table[i].me_value != NULL) {
-			key = mp->ma_table[i].me_key;
-			value = mp->ma_table[i].me_value;
+	ep = mp->ma_table;
+	mask = mp->ma_mask;
+	for (i = 0, j = 0; i <= mask; i++) {
+		if (ep[i].me_value != NULL) {
+			key = ep[i].me_key;
+			value = ep[i].me_value;
 			item = PyList_GET_ITEM(v, j);
 			Py_INCREF(key);
 			PyTuple_SET_ITEM(item, 0, key);
