@@ -11,7 +11,11 @@ audio hardware is capable of recording and playing back audio data
 in u-LAW\index{u-LAW} format with a sample rate of 8K per second. A
 full description can be found in the \manpage{audio}{7I} manual page.
 
-The module defines the following variables and functions:
+The module
+\refmodule[sunaudiodev-constants]{SUNAUDIODEV}\refstmodindex{SUNAUDIODEV} 
+defines constants which may be used with this module.
+
+This module defines the following variables and functions:
 
 \begin{excdesc}{error}
 This exception is raised on all errors. The argument is a string
@@ -34,8 +38,7 @@ calculated by appending ``ctl'' to the base audio device.
 \end{funcdesc}
 
 
-\subsection{Audio Device Objects}
-\label{audio-device-objects}
+\subsection{Audio Device Objects \label{audio-device-objects}}
 
 The audio device objects are returned by \function{open()} define the
 following methods (except \code{control} objects which only provide
@@ -111,15 +114,8 @@ If there is enough buffer space free it will immediately return,
 otherwise it will block.
 \end{methoddesc}
 
-There is a companion module,
-\module{SUNAUDIODEV}\refstmodindex{SUNAUDIODEV}, which defines useful
-symbolic constants like \constant{MIN_GAIN}, \constant{MAX_GAIN},
-\constant{SPEAKER}, etc. The names of the constants are the same names
-as used in the C include file \code{<sun/audioio.h>}, with the
-leading string \samp{AUDIO_} stripped.
-
 The audio device supports asynchronous notification of various events,
-through the SIGPOLL signal.  Here's an example of how you might enable 
+through the SIGPOLL signal.  Here's an example of how you might enable
 this in Python:
 
 \begin{verbatim}
@@ -131,3 +127,20 @@ import fcntl, signal, STROPTS
 signal.signal(signal.SIGPOLL, handle_sigpoll)
 fcntl.ioctl(audio_obj.fileno(), STROPTS.I_SETSIG, STROPTS.S_MSG)
 \end{verbatim}
+
+
+\section{\module{SUNAUDIODEV} ---
+         Constants used with \module{sunaudiodev}}
+
+\declaremodule[sunaudiodev-constants]{standard}{SUNAUDIODEV}
+  \platform{SunOS}
+\modulesynopsis{Constants for use with \refmodule{sunaudiodev}.}
+
+
+This is a companion module to
+\refmodule{sunaudiodev}\refbimodindex{sunaudiodev} which defines
+useful symbolic constants like \constant{MIN_GAIN},
+\constant{MAX_GAIN}, \constant{SPEAKER}, etc. The names of the
+constants are the same names as used in the C include file
+\code{<sun/audioio.h>}, with the leading string \samp{AUDIO_}
+stripped.
