@@ -152,7 +152,10 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 			srcs)	srcs="$srcs $arg"; skip=; continue;;
 			esac
 			case $arg in
-			-[IDUCf]*)	cpps="$cpps $arg";;
+			-framework)	libs="$libs $arg"; skip=libs;
+				        # OSX/OSXS/Darwin framework link cmd
+					;;
+			-[IDUCfF]*)	cpps="$cpps $arg";;
 			-Xlinker)	libs="$libs $arg"; skip=libs;;
 			-rpath)		libs="$libs $arg"; skip=libs;;
 			--rpath)	libs="$libs $arg"; skip=libs;;
@@ -164,6 +167,7 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 			*.def)		libs="$libs $arg";;
 			*.o)		srcs="$srcs `basename $arg .o`.c";;
 			*.[cC])		srcs="$srcs $arg";;
+			*.m)		srcs="$srcs $arg";; # Objective-C src
 			*.cc)		srcs="$srcs $arg";;
 			*.c++)		srcs="$srcs $arg";;
 			*.cxx)		srcs="$srcs $arg";;
@@ -197,6 +201,7 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 			*.C)   obj=`basename $src .C`.o; cc='$(CXX)';;
 			*.cxx) obj=`basename $src .cxx`.o; cc='$(CXX)';;
 			*.cpp) obj=`basename $src .cpp`.o; cc='$(CXX)';;
+			*.m)   obj=`basename $src .m`.o; cc='$(CXX)';; # Obj-C
 			*)     continue;;
 			esac
 			objs="$objs $obj"
