@@ -1,4 +1,5 @@
-This program will install MacPython 2.3b1+ for Mac OS X.
+This program will install MacPython 2.3b2 for Mac OS X 10.2. Installation
+on 10.0, 10.1 or the 10.3 seed is explicitly discouraged.
 
 MacPython consists of the Python programming language interpreter, plus
 a set of programs to allow easy access to it for Mac users (an
