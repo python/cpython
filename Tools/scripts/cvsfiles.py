@@ -17,7 +17,6 @@ def main():
 def process(dir):
     cvsdir = 0
     subdirs = []
-    files = []
     names = os.listdir(dir)
     for name in names:
 	fullname = os.path.join(dir, name)
@@ -25,9 +24,8 @@ def process(dir):
 	    cvsdir = fullname
 	else:
 	    if os.path.isdir(fullname):
-		subdirs.append(fullname)
-	    else:
-		files.append(fullname)
+		if not os.path.islink(fullname):
+		    subdirs.append(fullname)
     if cvsdir:
 	entries = os.path.join(cvsdir, "Entries")
 	for e in open(entries).readlines():
@@ -39,4 +37,3 @@ def process(dir):
 	process(sub)
 
 main()
-
