@@ -4,8 +4,10 @@ Python News
 
 (editors: check NEWS.help for information about editing NEWS using ReST.)
 
-What's New in Python 2.3.3c2?
-=============================
+What's New in Python 2.3.3 (final)?
+===================================
+
+*Release date: 19-Dec-2003*
 
 Core and builtins
 -----------------
