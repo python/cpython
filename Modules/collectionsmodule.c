@@ -34,7 +34,7 @@ typedef struct {
 	int len;
 } dequeobject;
 
-PyTypeObject deque_type;
+static PyTypeObject deque_type;
 
 static PyObject *
 deque_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
@@ -641,7 +641,7 @@ PyDoc_STRVAR(deque_doc,
 \n\
 Build an ordered collection accessible from endpoints only.");
 
-PyTypeObject deque_type = {
+static PyTypeObject deque_type = {
 	PyObject_HEAD_INIT(NULL)
 	0,				/* ob_size */
 	"collections.deque",		/* tp_name */
