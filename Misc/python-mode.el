@@ -156,12 +156,12 @@ lines are aligned to column zero."
 		 (const :tag "Align to column zero" nil))
   :group 'python)
 
-(defcustom py-block-comment-prefix "## "
+(defcustom py-block-comment-prefix "##"
   "*String used by \\[comment-region] to comment out a block of code.
 This should follow the convention for non-indenting comment lines so
 that the indentation commands won't get confused (i.e., the string
 should be of the form `#x...' where `x' is not a blank or a tab, and
-`...' is arbitrary)."
+`...' is arbitrary).  However, this string should not end in whitespace."
   :type 'string
   :group 'python)
 
@@ -1710,14 +1710,15 @@ dedenting."
 	(if (and (eq py-honor-comment-indentation nil)
 		 (fboundp 'forward-comment))
 	    (forward-comment (- (point-max)))
-	  (let (done)
+	  (let ((prefix-re (concat py-block-comment-prefix "[ \t]*"))
+		done)
 	    (while (not done)
 	      (re-search-backward "^[ \t]*\\([^ \t\n#]\\|#\\)" nil 'move)
 	      (setq done (or (bobp)
 			     (and (eq py-honor-comment-indentation t)
 				  (save-excursion
 				    (back-to-indentation)
-				    (not (looking-at py-block-comment-prefix))
+				    (not (looking-at prefix-re))
 				    ))
 			     (and (not (eq py-honor-comment-indentation t))
 				  (save-excursion
