@@ -1,1 +1,77 @@
 test_winreg2
+Test Passed: testKeyDict_Values
+Test Passed: testKeyDict_Items
+Test Passed: testGetValueNames
+Test Passed: testSetDwordBigEndian
+Test Passed: testGetSubkeyNames
+Test Passed: testResourceRequirementsListType
+Test Passed: testLoad
+Test Passed: testDeleteKey
+Test Passed: testValueDict_Length
+Test Passed: testResourceDescriptionType
+Test Passed: testSetMultiSz
+Test Passed: testSetFullResourceDescription
+HKEY_CLASSES_ROOT
+HKEY_CURRENT_USER
+HKEY_LOCAL_MACHINE
+HKEY_USERS
+HKEY_CURRENT_CONFIG
+HKEY_DYN_DATA
+HKEY_PERFORMANCE_DATA
+Test Passed: testHives
+Test Passed: testDWordType
+Test Passed: testRemote
+Test Passed: testKeyDict_DelItem
+Test Passed: testSetIntValue
+Test Passed: testResourceLinkType
+Test Passed: testNoneType
+Test Passed: testValueDict_Map
+Test Passed: testSetResourceList
+Test Passed: testKeyDict_Length
+Test Passed: testKeyDict_ClearKeys
+Test Passed: testDWordBigEndianType
+Test Passed: testOpen
+Test Passed: testSetBinaryData
+Test Passed: testGetValueNameDataAndType
+Test Passed: testSetBinaryValue
+Test Passed: testSetResourceRequirementsList
+Test Passed: testUnicodeValueName
+Test Passed: testGetValueDataFromEnum
+Test Passed: testValueDict_Get
+Test Passed: testValueDict_GetItem
+Test Passed: testValueDict_Keys
+Test Passed: testKeyDict_HasKey
+Test Passed: testExpandStringType
+Test Passed: testValueDict_HasKey
+Test Passed: testCreateKey
+Test Passed: testGetBinaryData
+Test Passed: testKeyDict_Get
+Test Passed: testSave
+Test Passed: testValueDict_ClearKeys
+Test Passed: testCmp
+Test Passed: testLinkType
+Test Passed: testSetExpandString
+Test Passed: testKeyDict_GetItem
+Test Passed: testRepr
+Test Passed: testClose
+Test Passed: testSetLink
+Test Passed: testGetValueDataFromName
+Test Passed: testUnicodeKeyName
+Test Passed: testShortcuts
+Test Passed: testKeyDict_Map
+Test Passed: testStringType
+Test Passed: testOpenFailure
+Test Passed: testSetDword
+Test Passed: testOpenKeyWithFlags
+Test Passed: testSetNone
+Test Passed: testKeyDict_Keys
+Test Passed: testMultiStringType
+Test Passed: testSetStringValue
+Test Passed: testValueDict_Items
+Test Passed: testValueDict_DelItem
+Test Passed: testNonZero
+Test Passed: testFlush
+Test Passed: testGetSubkeys
+Test Passed: testDeleteValue
+Test Passed: testSetString
+Test Passed: testValueDict_Values
