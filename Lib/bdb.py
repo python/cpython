@@ -113,6 +113,9 @@ class Bdb:
         else:
             return 0
 
+    def do_clear(self, arg):
+        raise NotImplementedError, "subclass of bdb must implement do_clear()"
+
     def break_anywhere(self, frame):
         return self.breaks.has_key(
             self.canonic(frame.f_code.co_filename))
