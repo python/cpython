@@ -24,12 +24,13 @@ editor, not in this directory but in /ufs/guido/mm/.)
 When we got our own Indigo entry-level video board (in June 1992) and
 a version of the Irix video library that supported capturing PAL
 format (in August 1992), Sjoerd added an interface to the video
-library to Python (sv) and Guido wrote Vrec.py (based upon a
-still frame grabber by Sjoerd, in turn based upon SGI demo code in C)
-to record a movie using it.  Vrec was soon followed by modernized
+library to Python (sv) and Guido wrote Vrec.py (based upon a still
+frame grabber by Sjoerd, in turn based upon SGI demo code in C) to
+record a movie using it.  Vrec was soon followed by modernized
 versions of the other programs (Vinfo, Vplay, Vtime) and an
 interactive editor (Vedit).  Finally, VFile was rewritten for more
-modularity, functionality and robustness.
+modularity, functionality and robustness, and various other tools were
+added as needed.
 
 	Guido van Rossum
 	Jack Jansen
@@ -39,7 +40,8 @@ modularity, functionality and robustness.
 Overview of files
 -----------------
 
-cmif-film.ms	description of the CMIF video file format
+cmif-film.ms	description of the CMIF video file format (a little
+		out of date)
 
 
 These are programs with a command line interface:
@@ -54,6 +56,10 @@ Vinfo.py	show statistics on movies
 Vtime.py	(unrelated to vtime!!!) Copy a video file,
 		manipulating the time codes (e.g. faster/slower, or
 		regenerate time codes, or drop frames too close apart)
+
+Vmkjpeg.py	compress an rgb or grey video file to jpeg[grey] format
+
+Vunjpeg.py	expand a jpeg[grey] video file to rgb or grey format
 
 Vedit.py	interactive video editing program
 
