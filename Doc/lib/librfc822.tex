@@ -1,15 +1,20 @@
 \section{\module{rfc822} ---
-         Parse RFC 822 mail headers}
+         Parse RFC 2822 mail headers}
 
 \declaremodule{standard}{rfc822}
-\modulesynopsis{Parse \rfc{822} style mail headers.}
+\modulesynopsis{Parse \rfc{2822} style mail messages.}
 
-This module defines a class, \class{Message}, which represents a
-collection of ``email headers'' as defined by the Internet standard
-\rfc{822}.  It is used in various contexts, usually to read such
-headers from a file.  This module also defines a helper class 
-\class{AddressList} for parsing \rfc{822} addresses.  Please refer to
-the RFC for information on the specific syntax of \rfc{822} headers.
+This module defines a class, \class{Message}, which represents an
+``email message'' as defined by the Internet standard
+\rfc{2822}\footnote{This module originally conformed to \rfc{822},
+hence the name.  Since then, \rfc{2822} has been released as an
+update to \rfc{822}.  This module should be considered
+\rfc{2822}-conformant, especially in cases where the
+syntax or semantics have changed since \rfc{822}.}.  Such messages
+consist of a collection of message headers, and a message body.  This
+module also defines a helper class
+\class{AddressList} for parsing \rfc{2822} addresses.  Please refer to
+the RFC for information on the specific syntax of \rfc{2822} messages.
 
 The \refmodule{mailbox}\refstmodindex{mailbox} module provides classes 
 to read mailboxes produced by various end-user mail programs.
@@ -50,15 +55,42 @@ e.g.\ \code{\var{m}['From']}, \code{\var{m}['from']} and
 
 \begin{classdesc}{AddressList}{field}
 You may instantiate the \class{AddressList} helper class using a single
-string parameter, a comma-separated list of \rfc{822} addresses to be
+string parameter, a comma-separated list of \rfc{2822} addresses to be
 parsed.  (The parameter \code{None} yields an empty list.)
 \end{classdesc}
 
+\begin{funcdesc}{quote}{str}
+Return a new string with backslashes in \var{str} replaced by two
+backslashes and double quotes replaced by backslash-double quote.
+\end{funcdesc}
+
+\begin{funcdesc}{unquote}{str}
+Return a new string which is an \emph{unquoted} version of \var{str}.
+If \var{str} ends and begins with double quotes, they are stripped
+off.  Likewise if \var{str} ends and begins with angle brackets, they
+are stripped off.
+\end{funcdesc}
+
+\begin{funcdesc}{parseaddr}{address}
+Parse address -- which should be the value of some address-containing
+field such as \code{To:} or \code{Cc:} -- into its constituent
+``realname'' and ``email address'' parts.  Returns a tuple of that
+information, unless the parse fails, in which case a 2-tuple of
+\code{(None, None)} is returned.
+\end{funcdesc}
+
+\begin{funcdesc}{dump_address_pair}{pair}
+The inverse of \method{parseaddr()}, this takes a 2-tuple of the form
+\code{(realname, email_address)} and returns the string value suitable
+for a \code{To:} or \code{Cc:} header.  If the first element of
+\var{pair} is false, then the second element is returned unmodified.
+\end{funcdesc}
+
 \begin{funcdesc}{parsedate}{date}
-Attempts to parse a date according to the rules in \rfc{822}.
+Attempts to parse a date according to the rules in \rfc{2822}.
 however, some mailers don't follow that format as specified, so
 \function{parsedate()} tries to guess correctly in such cases. 
-\var{date} is a string containing an \rfc{822} date, such as 
+\var{date} is a string containing an \rfc{2822} date, such as 
 \code{'Mon, 20 Nov 1995 19:12:08 -0500'}.  If it succeeds in parsing
 the date, \function{parsedate()} returns a 9-tuple that can be passed
 directly to \function{time.mktime()}; otherwise \code{None} will be
@@ -74,7 +106,7 @@ is the offset of the date's timezone from UTC (which is the official
 term for Greenwich Mean Time).  (Note that the sign of the timezone
 offset is the opposite of the sign of the \code{time.timezone}
 variable for the same timezone; the latter variable follows the
-\POSIX{} standard while this module follows \rfc{822}.)  If the input
+\POSIX{} standard while this module follows \rfc{2822}.)  If the input
 string has no timezone, the last element of the tuple returned is
 \code{None}.  Note that fields 6, 7, and 8 of the result tuple are not
 usable.
@@ -109,7 +141,7 @@ object is seekable.
 
 \begin{methoddesc}{isheader}{line}
 Returns a line's canonicalized fieldname (the dictionary key that will
-be used to index it) if the line is a legal \rfc{822} header; otherwise
+be used to index it) if the line is a legal \rfc{2822} header; otherwise
 returns None (implying that parsing should stop here and the line be
 pushed back on the input stream).  It is sometimes useful to override
 this method in a subclass.
