@@ -2381,9 +2381,9 @@ string_replace(PyStringObject *self, PyObject *args)
 PyDoc_STRVAR(startswith__doc__,
 "S.startswith(prefix[, start[, end]]) -> bool\n\
 \n\
-Return True if S starts with the specified prefix, False otherwise.  With\n\
-optional start, test S beginning at that position.  With optional end, stop\n\
-comparing S at that position.");
+Return True if S starts with the specified prefix, False otherwise.\n\
+With optional start, test S beginning at that position.\n\
+With optional end, stop comparing S at that position.");
 
 static PyObject *
 string_startswith(PyStringObject *self, PyObject *args)
@@ -2432,9 +2432,9 @@ string_startswith(PyStringObject *self, PyObject *args)
 PyDoc_STRVAR(endswith__doc__,
 "S.endswith(suffix[, start[, end]]) -> bool\n\
 \n\
-Return True if S ends with the specified suffix, False otherwise.  With\n\
-optional start, test S beginning at that position.  With optional end, stop\n\
-comparing S at that position.");
+Return True if S ends with the specified suffix, False otherwise.\n\
+With optional start, test S beginning at that position.\n\
+With optional end, stop comparing S at that position.");
 
 static PyObject *
 string_endswith(PyStringObject *self, PyObject *args)

@@ -5693,9 +5693,9 @@ unicode_freelistsize(PyUnicodeObject *self)
 PyDoc_STRVAR(startswith__doc__,
 "S.startswith(prefix[, start[, end]]) -> bool\n\
 \n\
-Return True if S starts with the specified prefix, False otherwise.  With\n\
-optional start, test S beginning at that position.  With optional end, stop\n\
-comparing S at that position.");
+Return True if S starts with the specified prefix, False otherwise.\n\
+With optional start, test S beginning at that position.\n\
+With optional end, stop comparing S at that position.");
 
 static PyObject *
 unicode_startswith(PyUnicodeObject *self,
@@ -5724,9 +5724,9 @@ unicode_startswith(PyUnicodeObject *self,
 PyDoc_STRVAR(endswith__doc__,
 "S.endswith(suffix[, start[, end]]) -> bool\n\
 \n\
-Return True if S ends with the specified suffix, False otherwise.  With\n\
-optional start, test S beginning at that position.  With optional end, stop\n\
-comparing S at that position.");
+Return True if S ends with the specified suffix, False otherwise.\n\
+With optional start, test S beginning at that position.\n\
+With optional end, stop comparing S at that position.");
 
 static PyObject *
 unicode_endswith(PyUnicodeObject *self,
