@@ -1628,7 +1628,7 @@ builtin_isinstance(self, args)
 	if (!PyArg_ParseTuple(args, "OO", &inst, &cls))
 		return NULL;
 	if (PyType_Check(cls)) {
-		retval = (inst->ob_type == cls);
+		retval = ((PyObject *)(inst->ob_type) == cls);
 	}
 	else {
 		if (!PyClass_Check(cls)) {
