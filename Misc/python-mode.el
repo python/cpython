@@ -65,11 +65,11 @@
 ;; - Better integration with gud-mode for debugging.
 ;; - Rewrite according to GNU Emacs Lisp standards.
 ;; - py-delete-char should obey numeric arguments.
-;; - even better support for outdenting.  Guido suggests outdents of
-;;   at least one level after a return, raise, break, or continue
-;;   statement.  I also suggest trying to match up try/finally's and
-;;   the like.
 ;; - de-electrify colon inside literals (e.g. comments and strings)
+;; - possibly force indent-tabs-mode == nil, and add a
+;;   write-file-hooks that runs untabify on the whole buffer (to work
+;;   around potential tab/space mismatch problems).  In practice this
+;;   hasn't been a problem... yet.
 
 ;; If you can think of more things you'd like to see, drop me a line.
 ;; If you want to report bugs, use py-submit-bug-report (C-c C-b).
