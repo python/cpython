@@ -176,27 +176,26 @@ def parse_qs(qs, keep_blank_values=0, strict_parsing=0):
 def parse_qsl(qs, keep_blank_values=0, strict_parsing=0):
     """Parse a query given as a string argument.
 
-        Arguments:
+    Arguments:
 
-        qs: URL-encoded query string to be parsed
+    qs: URL-encoded query string to be parsed
 
-        keep_blank_values: flag indicating whether blank values in
-            URL encoded queries should be treated as blank strings.  
-            A true value indicates that blanks should be retained as 
-            blank strings.  The default false value indicates that
-            blank values are to be ignored and treated as if they were
-            not included.
+    keep_blank_values: flag indicating whether blank values in
+        URL encoded queries should be treated as blank strings.  A
+        true value indicates that blanks should be retained as blank
+        strings.  The default false value indicates that blank values
+        are to be ignored and treated as if they were  not included.
 
-        strict_parsing: flag indicating what to do with parsing errors.
-            If false (the default), errors are silently ignored.
-            If true, errors raise a ValueError exception.
+    strict_parsing: flag indicating what to do with parsing errors. If
+        false (the default), errors are silently ignored. If true,
+        errors raise a ValueError exception. 
 
-       Returns a list, as God intended.
+    Returns a list, as G-d intended.
     """
-    name_value_pairs = string.splitfields(qs, '&')
-    r=[]
-    for name_value in name_value_pairs:
-        nv = string.splitfields(name_value, '=', 1)
+    pairs = [s2 for s1 in qs.split('&') for s2 in s1.split(';')]
+    r = []
+    for name_value in pairs:
+        nv = name_value.split('=', 1)
         if len(nv) != 2:
             if strict_parsing:
                 raise ValueError, "bad query field: %s" % `name_value`
