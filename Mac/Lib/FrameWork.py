@@ -13,7 +13,7 @@ from Carbon.Dlg import *
 from Carbon.Dialogs import *
 from Carbon.Evt import *
 from Carbon.Events import *
-from Carbon.AH import *
+from Carbon.Help import *
 from Carbon.Menu import *
 from Carbon.Menus import *
 from Carbon.Qd import *
