@@ -197,7 +197,7 @@ builtin_filter(PyObject *self, PyObject *args)
 			break;
 		}
 
-		if (func == Py_None) {
+		if (func == (PyObject *)&PyBool_Type || func == Py_None) {
 			ok = PyObject_IsTrue(item);
 		}
 		else {
