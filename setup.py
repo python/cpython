@@ -302,7 +302,12 @@ class PyBuildExt(build_ext):
         if have_unicode:
             exts.append( Extension('unicodedata', ['unicodedata.c']) )
         # access to ISO C locale support
-        exts.append( Extension('_locale', ['_localemodule.c']) )
+        if platform in ['cygwin']:
+            locale_libs = ['intl']
+        else:
+            locale_libs = []
+        exts.append( Extension('_locale', ['_localemodule.c'],
+                               libraries=locale_libs ) )
 
         # Modules with some UNIX dependencies -- on by default:
         # (If you have a really backward UNIX, select and socket may not be
