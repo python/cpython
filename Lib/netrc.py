@@ -4,6 +4,8 @@
 
 import os, shlex
 
+__all__ = ["netrc"]
+
 class netrc:
     def __init__(self, file=None):
         if not file:

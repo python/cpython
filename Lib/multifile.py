@@ -30,6 +30,8 @@ seekable stream object.
 import sys
 import string
 
+__all__ = ["MultiFile","Error"]
+
 class Error(Exception):
     pass
 

@@ -1,5 +1,7 @@
 """Convert a NT pathname to a file URL and vice versa."""
 
+__all__ = ["url2pathname"]
+
 def url2pathname(url):
     r"""Convert a URL to a DOS path.
 

@@ -33,7 +33,10 @@ import re
 import socket
 import string
 
-
+__all__ = ["NNTP","NNTPReplyError","NNTPTemporaryError",
+           "NNTPPermanentError","NNTPProtocolError","NNTPDataError",
+           "error_reply","error_temp","error_perm","error_proto",
+           "error_data",]
 
 # Exceptions raised when an error or invalid response is received
 class NNTPError(Exception):
