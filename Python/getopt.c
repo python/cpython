@@ -55,7 +55,8 @@ int getopt( int argc, char *const *argv, const char *optstring )
 
 	if (*opt_ptr == '\0') {
 
-		if (optind >= argc || argv[optind][0] != '-')
+		if (optind >= argc || argv[optind][0] != '-' ||
+		    argv[optind][1] == '\0' /* lone dash */ )
 			return -1;
 
 		else if (strcmp(argv[optind], "--") == 0) {
