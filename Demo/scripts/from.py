@@ -4,15 +4,14 @@
 # Extension to multiple mailboxes and other bells & whistles are left
 # as exercises for the reader.
 
-import sys, posix
+import sys, os
 
 # Open mailbox file.  Exits with exception when this fails.
 
 try:
-	mailbox = posix.environ['MAIL']
-except RuntimeError:
-	sys.stderr.write \
-		('Please set environment variable MAIL to your mailbox\n')
+	mailbox = os.environ['MAIL']
+except (AttributeError, KeyError):
+	sys.stderr.write('No environment variable $MAIL\n')
 	sys.exit(2)
 
 try:
