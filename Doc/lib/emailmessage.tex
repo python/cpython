@@ -37,9 +37,10 @@ Return the entire message flatten as a string.  When optional
 \var{unixfrom} is \code{True}, the envelope header is included in the
 returned string.  \var{unixfrom} defaults to \code{False}.
 
-Note that this method is provided as a convenience and may not always
-format the message the way you want.  For more flexibility,
-instantiate a \class{Generator} instance and use its
+Note that this method is provided as a convenience and may not always format
+the message the way you want.  For example, by default it mangels lines that
+begin with \code{From }.  For more flexibility, instantiate a
+\class{Generator} instance and use its
 \method{flatten()} method directly.  For example:
 
 \begin{verbatim}
