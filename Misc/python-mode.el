@@ -590,6 +590,10 @@ needed so that only a single column position is deleted."
       (if base-found-p
 	  (message "Closes block: %s" base-text)))))
 
+;; required for pending-del and delsel modes
+(put 'py-delete-char 'delete-selection 'supersede)
+(put 'py-delete-char 'pending-delete   'supersede)
+
 (defun py-indent-line ()
   "Fix the indentation of the current line according to Python rules."
   (interactive)
