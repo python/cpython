@@ -1222,7 +1222,7 @@ com_call_function(c, n)
 				  "more than 255 arguments");
 		}
 		if (star_flag || starstar_flag)
-		    opcode = CALL_FUNCTION_STAR - 1 + 
+		    opcode = CALL_FUNCTION_VAR - 1 + 
 			star_flag + (starstar_flag << 1);
 		else
 		    opcode = CALL_FUNCTION;
