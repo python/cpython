@@ -137,16 +137,20 @@ needed is good practice.  This only needs to be called on the
 children of that node.
 \end{methoddesc}
 
-\begin{methoddesc}[Node]{writexml}{writer}
+\begin{methoddesc}[Node]{writexml}{writer\optional{,indent=""\optional{,addindent=""\optional{,newl=""}}}}
 Write XML to the writer object.  The writer should have a
 \method{write()} method which matches that of the file object
-interface.
+interface.  The \var{indent} parameter is the indentation of the current
+node.  The \var{addindent} parameter is the incremental indentation to use
+for subnodes of the current one.  The \var{newl} parameter specifies the
+string to use to terminate newlines.
 
-\versionchanged[To support pretty output, new keyword parameters
-\var{indent}, \var{addindent}, and \var{newl} have been added]{2.1}
+\versionchanged[The optional keyword parameters
+\var{indent}, \var{addindent}, and \var{newl} were added to support pretty
+output]{2.1}
 
 \versionchanged[For the \class{Document} node, an additional keyword
-argument encoding can be used to specify the encoding field of the XML
+argument \var{encoding} can be used to specify the encoding field of the XML
 header]{2.3}
 \end{methoddesc}
 
