@@ -4595,6 +4595,12 @@ symtable_init()
 	if (st == NULL)
 		return NULL;
 	st->st_pass = 1;
+
+	/* XXX Tim: Jeremy deleted the next line and everything went to hell.
+	   XXX It should probably get fixed by getting rid of st_nested_scopes
+	   XXX entirely. */
+ 	st->st_nested_scopes = 1;
+
 	st->st_filename = NULL;
 	if ((st->st_stack = PyList_New(0)) == NULL)
 		goto fail;
