@@ -411,43 +411,52 @@ Mac OS X 10: One of the regular expression tests fails
         want to manually install a symlink in /usr/local/bin/python to the
         executable deep down in the framework.
 
-Cygwin: Cygwin Python builds OOTB when configured as follows:
+Cygwin: With recent (relative to the time of writing, 2001-12-11)
+        Cygwin installations, Python builds and passes all tests on
+        NT/2000 if the _socket module is linked statically.  If the
+        _socket module is linked dynamically (the default), then
+        failures can occur under certain conditions related to fork().
+        This is a known Cygwin problem that may be resolved by rebasing
+        the necessary DLLs to prevent base address conflicts.
 
-            configure --with-threads=no
+        Threads support should still be disable due to a known bug in
+        Cygwin pthreads that causes test_threadedtempfile to hang.
 
-        assuming Cygwin 1.1.8-2 and gcc 2.95.3-1 or later.  At the time
-        of this writing, Cygwin pthread support is being significantly
-        enhanced.  Hopefully, there will be a Cygwin Python with thread
-        support soon.
+        To workaround the above, run "./configure --with-threads=no" and
+        include any other options you need (--prefix, etc.).  Then in
+        Modules/Setup uncomment the lines:
 
-        Cygwin Python supports the building of shared extensions via the
-        traditional Misc/Makefile.pre.in and the newer distutils methods.
+        #SSL=/usr/local/ssl
+        #_socket socketmodule.c \
+        #	-DUSE_SSL -I$(SSL)/include -I$(SSL)/include/openssl \
+        #	-L$(SSL)/lib -lssl -lcrypto
 
-        On NT/2000, the following regression tests fail:
+        and remove "local/" from the SSL variable.  And finally, just
+        run "make"!
 
-            test_poll (hang)
-            test_strftime
+        The _curses module does not build.  This is an known Cygwin
+        ncurses problem that should be resolved the next time that this
+        package is released.
 
-        Due to the test_poll hang on NT/2000, one should run the
-        regression test using the following:
+        On older versions of Cygwin, test_poll may hang and test_strftime
+        may fail.
 
-            PYTHONPATH= ./python.exe -tt ./Lib/test/regrtest.py -l -x test_poll
-
-        On 9X/Me, in addition the above NT/2000 failures, it has been
-        reported that the following regression tests also fail:
+        The situation on 9X/Me/XP is not accurately known at present.
+        However, it is expected that XP should be the same (or at least
+        very similar to) NT/2000.  Some time ago, there were reports that
+        the following regression tests failed on 9X/Me:
 
             test_pwd
             test_select (hang)
             test_socket
 
-        Due to the test_poll and test_select hang on 9X/Me, one should
-        run the regression test using the following:
+        Due to the test_select hang on 9X/Me, one should run the regression
+        test using the following:
 
-            PYTHONPATH= ./python.exe -tt ./Lib/test/regrtest.py -l -x test_poll -x test_select
+            make TESTOPTS='-l -x test_select' test
 
-        Help trying to track down the root causes for these known problems
-        will be greatly appreciated.
-
+        News regarding these platforms with more recent Cygwin verions would
+        be appreciated!
 
 Configuring threads
 -------------------
