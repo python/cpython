@@ -44,6 +44,9 @@ Extension modules
 
 Library
 
+- The BaseHTTPServer implements now optionally HTTP/1.1 persistent
+  connections.
+
 - socket module: the SSL support was broken out of the main
   _socket module C helper and placed into a new _ssl helper
   which now gets imported by socket.py if available and working.
