@@ -411,9 +411,10 @@ extern double hypot(double, double);
 */
 
 /*
-All windows ports, except cygwin, are handled in PC/pyconfig.h
-BeOS is only other autoconf platform requiring special linkage handling
-and both these use __declspec()
+  All windows ports, except cygwin, are handled in PC/pyconfig.h.
+
+  BeOS and cygwin are the only other autoconf platform requiring special
+  linkage handling and both of these use __declspec().
 */
 #if defined(__CYGWIN__) || defined(__BEOS__)
 #	define HAVE_DECLSPEC_DLL
