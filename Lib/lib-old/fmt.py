@@ -1,4 +1,5 @@
 # Text formatting abstractions
+# Note -- this module is obsolete, it's too slow anyway
 
 
 import string
