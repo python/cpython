@@ -29,13 +29,14 @@ EXEC_PREFIX = os.path.normpath(sys.exec_prefix)
 python_build = 0
 
 def set_python_build():
-    """Set the python_build flag to true; this means that we're
-    building Python itself.  Only called from the setup.py script
-    shipped with Python.
+    """Set the python_build flag to true.
+
+    This means that we're building Python itself.  Only called from
+    the setup.py script shipped with Python.
     """
-    
     global python_build
     python_build = 1
+
 
 def get_python_inc(plat_specific=0, prefix=None):
     """Return the directory containing installed Python header files.
@@ -55,7 +56,7 @@ def get_python_inc(plat_specific=0, prefix=None):
             return "Include/"
         return os.path.join(prefix, "include", "python" + sys.version[:3])
     elif os.name == "nt":
-        return os.path.join(prefix, "Include") # include or Include?
+        return os.path.join(prefix, "include")
     elif os.name == "mac":
         return os.path.join(prefix, "Include")
     else:
@@ -80,7 +81,7 @@ def get_python_lib(plat_specific=0, standard_lib=0, prefix=None):
     """
     if prefix is None:
         prefix = plat_specific and EXEC_PREFIX or PREFIX
-       
+
     if os.name == "posix":
         libpython = os.path.join(prefix,
                                  "lib", "python" + sys.version[:3])
@@ -91,20 +92,20 @@ def get_python_lib(plat_specific=0, standard_lib=0, prefix=None):
 
     elif os.name == "nt":
         if standard_lib:
-            return os.path.join(PREFIX, "Lib")
+            return os.path.join(prefix, "Lib")
         else:
             return prefix
 
     elif os.name == "mac":
         if plat_specific:
             if standard_lib:
-                return os.path.join(EXEC_PREFIX, "Mac", "Plugins")
+                return os.path.join(prefix, "Mac", "Plugins")
             else:
                 raise DistutilsPlatformError(
                     "OK, where DO site-specific extensions go on the Mac?")
         else:
             if standard_lib:
-                return os.path.join(PREFIX, "Lib")
+                return os.path.join(prefix, "Lib")
             else:
                 raise DistutilsPlatformError(
                     "OK, where DO site-specific modules go on the Mac?")
@@ -113,13 +114,12 @@ def get_python_lib(plat_specific=0, standard_lib=0, prefix=None):
             "I don't know where Python installs its library "
             "on platform '%s'" % os.name)
 
-# get_python_lib()
-        
 
 def customize_compiler(compiler):
-    """Do any platform-specific customization of the CCompiler instance
-    'compiler'.  Mainly needed on Unix, so we can plug in the information
-    that varies across Unices and is stored in Python's Makefile.
+    """Do any platform-specific customization of a CCompiler instance.
+
+    Mainly needed on Unix, so we can plug in the information that
+    varies across Unices and is stored in Python's Makefile.
     """
     if compiler.compiler_type == "unix":
         (cc, opt, ccshared, ldshared, so_ext) = \
@@ -138,8 +138,10 @@ def customize_compiler(compiler):
 
 def get_config_h_filename():
     """Return full pathname of installed pyconfig.h file."""
-    if python_build: inc_dir = '.'
-    else:            inc_dir = get_python_inc(plat_specific=1)
+    if python_build:
+        inc_dir = os.curdir
+    else:
+        inc_dir = get_python_inc(plat_specific=1)
     if sys.version < '2.2':
         config_h = 'config.h'
     else:
@@ -197,7 +199,6 @@ def parse_makefile(fn, g=None):
     A dictionary containing name/value pairs is returned.  If an
     optional dictionary is passed in as the second argument, it is
     used instead of a new dictionary.
-
     """
     from distutils.text_file import TextFile
     fp = TextFile(fn, strip_comments=1, skip_blanks=1, join_lines=1)
@@ -309,8 +310,8 @@ def _init_posix():
             my_msg = my_msg + " (%s)" % msg.strerror
 
         raise DistutilsPlatformError(my_msg)
-              
-    
+
+
     # On AIX, there are wrong paths to the linker scripts in the Makefile
     # -- these paths are relative to the Python source, but when installed
     # the scripts are in another directory.
@@ -397,6 +398,6 @@ def get_config_vars(*args):
 def get_config_var(name):
     """Return the value of a single variable using the dictionary
     returned by 'get_config_vars()'.  Equivalent to
-      get_config_vars().get(name)
+    get_config_vars().get(name)
     """
     return get_config_vars().get(name)
