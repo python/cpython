@@ -189,7 +189,7 @@ class TestCase:
             try:
                 self.setUp()
             except:
-                result.addError(self,self.__exc_info())
+                result.addError(self,sys.exc_info())
                 return
 
             ok = 0
@@ -197,14 +197,14 @@ class TestCase:
                 testMethod()
                 ok = 1
             except AssertionError, e:
-                result.addFailure(self,self.__exc_info())
+                result.addFailure(self,sys.exc_info())
             except:
-                result.addError(self,self.__exc_info())
+                result.addError(self,sys.exc_info())
 
             try:
                 self.tearDown()
             except:
-                result.addError(self,self.__exc_info())
+                result.addError(self,sys.exc_info())
                 ok = 0
             if ok: result.addSuccess(self)
         finally:
@@ -265,17 +265,6 @@ class TestCase:
     def fail(self, msg=None):
         """Fail immediately, with the given message."""
         raise AssertionError, msg
-
-    def __exc_info(self):
-        """Return a version of sys.exc_info() with the traceback frame
-           minimised; usually the top level of the traceback frame is not
-           needed.
-        """
-        exctype, excvalue, tb = sys.exc_info()
-        newtb = tb.tb_next
-        if newtb is None:
-            return (exctype, excvalue, tb)
-        return (exctype, excvalue, newtb)
 
 
 class TestSuite:
@@ -400,7 +389,14 @@ class TestLoader:
             if not parts:
                 raise ValueError, "incomplete test name: %s" % name
             else:
-                module = __import__(parts)
+                parts_copy = parts[:]
+                while parts_copy:
+                    try:
+                        module = __import__(string.join(parts_copy,'.'))
+                        break
+                    except ImportError:
+                        del parts_copy[-1]
+                        if not parts_copy: raise
                 parts = parts[1:]
         obj = module
         for part in parts:
@@ -599,7 +595,7 @@ class TestProgram:
        for making test modules conveniently executable.
     """
     USAGE = """\
-Usage: %(progName)s [options] [test[:(casename|prefix-)]] [...]
+Usage: %(progName)s [options] [test] [...]
 
 Options:
   -h, --help       Show this message
