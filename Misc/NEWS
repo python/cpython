@@ -6,6 +6,9 @@ Type/class unification and new-style classes
 
 Core and builtins
 
+- Cycles going through the __class__ link of a new-style instance are
+  now detected by the garbage collector.
+
 - Classes using __slots__ are now properly garbage collected.
   [SF bug 519621]
 
@@ -129,6 +132,12 @@ Extension modules
   been added where available.
 
 Library
+
+- Some fixes in the copy module: when an object is copied through its
+  __reduce__ method, there was no check for a __setstate__ method on
+  the result [SF patch 565085]; deepcopy should treat instances of
+  custom metaclasses the same way it treats instances of type 'type'
+  [SF patch 560794].
 
 - Sockets now support timeout mode.  After s.settimeout(T), where T is
   a float expressing seconds, subsequent operations raise an exception
