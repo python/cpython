@@ -1916,7 +1916,7 @@ extern PyTypeObject PyDictIter_Type; /* Forward */
 
 typedef struct {
 	PyObject_HEAD
-	dictobject *di_dict;
+	dictobject *di_dict; /* Set to NULL when iterator is exhausted */
 	int di_used;
 	int di_pos;
 	binaryfunc di_select;
@@ -1940,25 +1940,8 @@ dictiter_new(dictobject *dict, binaryfunc select)
 static void
 dictiter_dealloc(dictiterobject *di)
 {
-	Py_DECREF(di->di_dict);
+	Py_XDECREF(di->di_dict);
 	PyObject_Del(di);
-}
-
-static PyObject *
-dictiter_next(dictiterobject *di, PyObject *args)
-{
-	PyObject *key, *value;
-
-	if (di->di_used != di->di_dict->ma_used) {
-		PyErr_SetString(PyExc_RuntimeError,
-				"dictionary changed size during iteration");
-		return NULL;
-	}
-	if (PyDict_Next((PyObject *)(di->di_dict), &di->di_pos, &key, &value)) {
-		return (*di->di_select)(key, value);
-	}
-	PyErr_SetObject(PyExc_StopIteration, Py_None);
-	return NULL;
 }
 
 static PyObject *
@@ -1968,24 +1951,24 @@ dictiter_getiter(PyObject *it)
 	return it;
 }
 
-static PyMethodDef dictiter_methods[] = {
-	{"next",	(PyCFunction)dictiter_next,	METH_VARARGS,
-	 "it.next() -- get the next value, or raise StopIteration"},
-	{NULL,		NULL}		/* sentinel */
-};
-
 static PyObject *dictiter_iternext(dictiterobject *di)
 {
 	PyObject *key, *value;
 
+	if (di->di_dict == NULL)
+		return NULL;
+
 	if (di->di_used != di->di_dict->ma_used) {
 		PyErr_SetString(PyExc_RuntimeError,
 				"dictionary changed size during iteration");
+		di->di_used = -1; /* Make this state sticky */
 		return NULL;
 	}
-	if (PyDict_Next((PyObject *)(di->di_dict), &di->di_pos, &key, &value)) {
+	if (PyDict_Next((PyObject *)(di->di_dict), &di->di_pos, &key, &value))
 		return (*di->di_select)(key, value);
-	}
+
+	Py_DECREF(di->di_dict);
+	di->di_dict = NULL;
 	return NULL;
 }
 
@@ -2019,7 +2002,7 @@ PyTypeObject PyDictIter_Type = {
 	0,					/* tp_weaklistoffset */
 	(getiterfunc)dictiter_getiter,		/* tp_iter */
 	(iternextfunc)dictiter_iternext,	/* tp_iternext */
-	dictiter_methods,			/* tp_methods */
+	0,					/* tp_methods */
 	0,					/* tp_members */
 	0,					/* tp_getset */
 	0,					/* tp_base */
