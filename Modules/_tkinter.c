@@ -221,7 +221,7 @@ static PyTypeObject Tkapp_Type;
 typedef struct {
 	PyObject_HEAD
 	Tcl_Interp *interp;
-	int want_objects;
+	int wantobjects;
 } TkappObject;
 
 #define Tkapp_Check(v) ((v)->ob_type == &Tkapp_Type)
@@ -523,7 +523,7 @@ static void DisableEventHook(void); /* Forward */
 
 static TkappObject *
 Tkapp_New(char *screenName, char *baseName, char *className, 
-	  int interactive, int want_objects)
+	  int interactive, int wantobjects)
 {
 	TkappObject *v;
 	char *argv0;
@@ -533,7 +533,7 @@ Tkapp_New(char *screenName, char *baseName, char *className,
 		return NULL;
 
 	v->interp = Tcl_CreateInterp();
-	v->want_objects = want_objects;
+	v->wantobjects = wantobjects;
 
 #if defined(macintosh)
 	/* This seems to be needed */
@@ -901,7 +901,7 @@ Tkapp_Call(PyObject *self, PyObject *args)
 	ENTER_OVERLAP
 	if (i == TCL_ERROR)
 		Tkinter_Error(self);
-	else if(((TkappObject*)self)->want_objects) {
+	else if(((TkappObject*)self)->wantobjects) {
 		Tcl_Obj *value = Tcl_GetObjResult(interp);
 		/* Not sure whether the IncrRef is necessary, but something
 		   may overwrite the interpreter result while we are
@@ -1967,10 +1967,10 @@ static PyObject *
 Tkapp_WantObjects(PyObject *self, PyObject *args)
 {
 
-	int want_objects;
-	if (!PyArg_ParseTuple(args, "i:wantobjects", &want_objects))
+	int wantobjects;
+	if (!PyArg_ParseTuple(args, "i:wantobjects", &wantobjects))
 		return NULL;
-	((TkappObject*)self)->want_objects = want_objects;
+	((TkappObject*)self)->wantobjects = wantobjects;
 
 	Py_INCREF(Py_None);
 	return Py_None;
@@ -2179,7 +2179,7 @@ Tkinter_Create(PyObject *self, PyObject *args)
 	char *baseName = NULL;
 	char *className = NULL;
 	int interactive = 0;
-	int want_objects = 0;
+	int wantobjects = 0;
 
 	baseName = strrchr(Py_GetProgramName(), '/');
 	if (baseName != NULL)
@@ -2190,11 +2190,11 @@ Tkinter_Create(PyObject *self, PyObject *args)
   
 	if (!PyArg_ParseTuple(args, "|zssi:create",
 			      &screenName, &baseName, &className,
-			      &interactive, &want_objects))
+			      &interactive, &wantobjects))
 		return NULL;
 
 	return (PyObject *) Tkapp_New(screenName, baseName, className, 
-				      interactive, want_objects);
+				      interactive, wantobjects);
 }
 
 static PyMethodDef moduleMethods[] =
