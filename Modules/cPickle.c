@@ -53,12 +53,19 @@
 */
 
 static char cPickle_module_documentation[] = 
-""
+"C implementation and optimization of the Python pickle module\n"
+"\n"
+"$Id$\n"
 ;
 
 #include "Python.h"
 #include "cStringIO.h"
 #include "mymath.h"
+
+#ifndef Py_eval_input
+#include <graminit.h>
+#define Py_eval_input eval_input
+#endif Py_eval_input
 
 #include <errno.h>
 
@@ -127,7 +134,7 @@ static PyObject *empty_tuple;
 static PyObject *__class___str, *__getinitargs___str, *__dict___str,
   *__getstate___str, *__setstate___str, *__name___str, *__reduce___str,
   *write_str, *__safe_for_unpickling___str, *append_str,
-  *read_str, *readline_str;
+  *read_str, *readline_str, *__main___str;
 
 /* __builtins__ module */
 static PyObject *builtins;
@@ -183,7 +190,7 @@ cPickle_PyMapping_HasKey(o, key)
 {
     PyObject *v;
 
-    if (v = PyObject_GetItem(o,key))
+    if((v = PyObject_GetItem(o,key)))
     {
         Py_DECREF(v);
         return 1;
@@ -271,6 +278,13 @@ write_cStringIO(Picklerobject *self, char *s, int  n) {
         return -1;
     }
 
+    return n;
+}
+
+
+static int 
+write_none(Picklerobject *self, char *s, int  n) {
+    if (s == NULL) return 0;
     return n;
 }
 
@@ -490,7 +504,7 @@ readline_other(Unpicklerobject *self, char **s) {
 
 
 static char *
-my_strndup(char *s, int l)
+strndup(char *s, int l)
 {
   char *r;
   UNLESS(r=malloc((l+1)*sizeof(char))) return (char*)PyErr_NoMemory();
@@ -618,7 +632,7 @@ whichmodule(PyObject *global, PyObject *global_name) {
     PyObject *module = 0, *modules_dict = 0,
         *global_name_attr = 0, *name = 0;
 
-    if (module = PyDict_GetItem(class_map, global)) {
+    if ((module = PyDict_GetItem(class_map, global))) {
         Py_INCREF(module);
         return module;
     }
@@ -630,7 +644,10 @@ whichmodule(PyObject *global, PyObject *global_name) {
         return NULL;
 
     i = 0;
-    while (j = PyDict_Next(modules_dict, &i, &name, &module)) {
+    while ((j = PyDict_Next(modules_dict, &i, &name, &module))) {
+
+        if(PyObject_Compare(name, __main___str)==0) continue;
+      
         UNLESS(global_name_attr = PyObject_GetAttr(module, global_name)) {
             PyErr_Clear();
             continue;
@@ -645,12 +662,23 @@ whichmodule(PyObject *global, PyObject *global_name) {
 
         break;
     }
+
+    /* The following implements the rule in pickle.py added in 1.5
+       that used __main__ if no module is found.  I don't actually
+       like this rule. jlf
+     */
+    if(!j) {
+        j=1;
+        name=__main___str;
+    }
     
+    /*
     if (!j) {
         PyErr_Format(PicklingError, "Could not find module for %s.", 
             "O", global_name);
         return NULL;
     }
+    */
 
     PyDict_SetItem(class_map, global, name);
 
@@ -755,7 +783,7 @@ save_float(Picklerobject *self, PyObject *args) {
 
 #ifdef FORMAT_1_3
     if (self->bin) {
-        int s, e, i = -1;
+        int s, e;
         double f;
         long fhi, flo;
         char str[9], *p = str;
@@ -859,7 +887,7 @@ save_float(Picklerobject *self, PyObject *args) {
 
 
 static int
-save_string(Picklerobject *self, PyObject *args) {
+save_string(Picklerobject *self, PyObject *args, int doput) {
     int size, len;
 
     size = PyString_Size(args);
@@ -913,9 +941,9 @@ save_string(Picklerobject *self, PyObject *args) {
             return -1;
     }
 
-    if (size > 1)
-        if (put(self, args) < 0)
-            return -1;
+    if (doput)
+      if (put(self, args) < 0)
+	return -1;
 
     return 0;
 }
@@ -946,7 +974,7 @@ save_tuple(Picklerobject *self, PyObject *args) {
         goto finally;
 
     if (len) {
-        if (has_key = cPickle_PyMapping_HasKey(self->memo, py_tuple_id) < 0)
+        if ((has_key = cPickle_PyMapping_HasKey(self->memo, py_tuple_id)) < 0)
             goto finally;
 
         if (has_key) {
@@ -1031,7 +1059,7 @@ save_list(Picklerobject *self, PyObject *args) {
             goto finally;
     }
 
-    if (using_appends = (self->bin && (len > 1)))
+    if ((using_appends = (self->bin && (len > 1))))
         if ((*self->write_func)(self, &MARKv, 1) < 0)
             goto finally;
 
@@ -1096,7 +1124,7 @@ save_dict(Picklerobject *self, PyObject *args) {
             goto finally;
     }
 
-    if (using_setitems = (self->bin && (PyDict_Size(args) > 1)))
+    if ((using_setitems = (self->bin && (PyDict_Size(args) > 1))))
         if ((*self->write_func)(self, &MARKv, 1) < 0)
             goto finally;
 
@@ -1147,7 +1175,7 @@ save_inst(Picklerobject *self, PyObject *args) {
             goto finally;
     }
 
-    if (getinitargs_func = PyObject_GetAttr(args, __getinitargs___str)) {
+    if ((getinitargs_func = PyObject_GetAttr(args, __getinitargs___str))) {
         PyObject *element = 0;
         int i, len;
 
@@ -1207,7 +1235,7 @@ save_inst(Picklerobject *self, PyObject *args) {
         goto finally;
     }
 
-    if (getstate_func = PyObject_GetAttr(args, __getstate___str)) {
+    if ((getstate_func = PyObject_GetAttr(args, __getstate___str))) {
         UNLESS(state = PyObject_CallObject(getstate_func, empty_tuple))
             goto finally;
     }
@@ -1403,12 +1431,11 @@ save_reduce(Picklerobject *self, PyObject *callable,
     return 0;
 }
 
-
 static int
 save(Picklerobject *self, PyObject *args, int  pers_save) {
     PyTypeObject *type;
     PyObject *py_ob_id = 0, *__reduce__ = 0, *t = 0, *arg_tup = 0,
-             *callable = 0, *state = 0, *junk = 0;
+             *callable = 0, *state = 0;
     int res = -1, tmp, size;
 
     if (!pers_save && self->pers_func) {
@@ -1456,7 +1483,7 @@ save(Picklerobject *self, PyObject *args, int  pers_save) {
 
         case 's':
             if ((type == &PyString_Type) && (PyString_Size(args) < 2)) {
-                res = save_string(self, args);
+                res = save_string(self, args, 0);
                 goto finally;
             }
     }
@@ -1485,7 +1512,7 @@ save(Picklerobject *self, PyObject *args, int  pers_save) {
     switch (type->tp_name[0]) {
         case 's':
             if (type == &PyString_Type) {
-                res = save_string(self, args);
+                res = save_string(self, args, 1);
                 goto finally;
             }
 
@@ -1539,7 +1566,7 @@ save(Picklerobject *self, PyObject *args, int  pers_save) {
         }
     }
 
-    if (__reduce__ = PyDict_GetItem(dispatch_table, (PyObject *)type)) {
+    if ((__reduce__ = PyDict_GetItem(dispatch_table, (PyObject *)type))) {
         Py_INCREF(__reduce__);
 
         UNLESS(self->arg)
@@ -1556,7 +1583,7 @@ save(Picklerobject *self, PyObject *args, int  pers_save) {
     else {
         PyErr_Clear();
 
-        if (__reduce__ = PyObject_GetAttr(args, __reduce___str)) {
+        if ((__reduce__ = PyObject_GetAttr(args, __reduce___str))) {
             UNLESS(t = PyObject_CallObject(__reduce__, empty_tuple))
                 goto finally;
         }
@@ -1586,6 +1613,7 @@ save(Picklerobject *self, PyObject *args, int  pers_save) {
         }
         
         callable = PyTuple_GET_ITEM(t, 0);
+
         arg_tup = PyTuple_GET_ITEM(t, 1);
 
         if (size > 2) {
@@ -1680,10 +1708,20 @@ dump_special(Picklerobject *self, PyObject *args) {
     return Py_None;
 }
 
+static PyObject *
+Pickle_clear_memo(Picklerobject *self, PyObject *args) {
+  if(self->memo) PyDict_Clear(self->memo);
+  Py_INCREF(Py_None);
+  return Py_None;
+}
 
 static struct PyMethodDef Pickler_methods[] = {
-  {"dump",          (PyCFunction)Pickler_dump,  1, ""},
-  {"dump_special",  (PyCFunction)dump_special,  1, ""},
+  {"dump",          (PyCFunction)Pickler_dump,  1,
+   "dump(object) -- Write an object in pickle format"},
+  {"dump_special",  (PyCFunction)dump_special,  1,
+   ""},
+  {"clear_memo",  (PyCFunction)Pickle_clear_memo,  1,
+   "clear_memo() -- Clear the picklers memp"},
   {NULL,                NULL}           /* sentinel */
 };
 
@@ -1719,6 +1757,9 @@ newPicklerobject(PyObject *file, int bin) {
     }
     else if (PycStringIO_OutputCheck(file)) {
         self->write_func = write_cStringIO;
+    }
+    else if (file == Py_None) {
+        self->write_func = write_none;
     }
     else {
         self->write_func = write_other;
@@ -1903,8 +1944,6 @@ find_class(PyObject *py_module_name, PyObject *py_class_name) {
     char *module_name, *class_name;
     PyObject *res = NULL;
 
-    static PyObject *eval_dict = 0;
-
     module_name = PyString_AS_STRING((PyStringObject *)py_module_name);
     class_name  = PyString_AS_STRING((PyStringObject *)py_class_name);
 
@@ -1917,7 +1956,7 @@ find_class(PyObject *py_module_name, PyObject *py_class_name) {
     PyTuple_SET_ITEM((PyTupleObject *)t, 1, py_class_name);
     Py_INCREF(py_class_name);
 
-    if (class = PyDict_GetItem(class_map, t)) {
+    if ((class = PyDict_GetItem(class_map, t))) {
         res = class;
 	Py_INCREF(class);
         goto finally;
@@ -1974,7 +2013,7 @@ load_int(Unpicklerobject *self) {
     long l;
 
     if ((len = (*self->readline_func)(self, &s)) < 0) return -1;
-    UNLESS(s=my_strndup(s,len)) return -1;
+    UNLESS(s=strndup(s,len)) return -1;
 
     errno = 0;
     l = strtol(s, &endptr, 0);
@@ -2081,10 +2120,8 @@ load_long(Unpicklerobject *self) {
     char *end, *s;
     int len, res = -1;
 
-    static PyObject *arg = 0;
-
     if ((len = (*self->readline_func)(self, &s)) < 0) return -1;
-    UNLESS(s=my_strndup(s,len)) return -1;
+    UNLESS(s=strndup(s,len)) return -1;
 
     UNLESS(l = PyLong_FromString(s, &end, 0))
         goto finally;
@@ -2110,7 +2147,7 @@ load_float(Unpicklerobject *self) {
     double d;
 
     if ((len = (*self->readline_func)(self, &s)) < 0) return -1;
-    UNLESS(s=my_strndup(s,len)) return -1;
+    UNLESS(s=strndup(s,len)) return -1;
 
     errno = 0;
     d = strtod(s, &endptr);
@@ -2220,7 +2257,7 @@ load_string(Unpicklerobject *self) {
     static PyObject *eval_dict = 0;
 
     if ((len = (*self->readline_func)(self, &s)) < 0) return -1;
-    UNLESS(s=my_strndup(s,len)) return -1;
+    UNLESS(s=strndup(s,len)) return -1;
 
     UNLESS(eval_dict)
         UNLESS(eval_dict = Py_BuildValue("{s{}}", "__builtins__"))
@@ -2471,7 +2508,7 @@ Instance_New(PyObject *cls, PyObject *args)
   PyObject *safe=0, *r=0;
 
   if (PyClass_Check(cls))
-    if(r=PyInstance_New(cls, args, NULL)) return r;
+    if((r=PyInstance_New(cls, args, NULL))) return r;
     else goto err;
        
   
@@ -2486,13 +2523,14 @@ Instance_New(PyObject *cls, PyObject *args)
       return NULL;
   }
 
-  if(r=PyObject_CallObject(cls, args)) return r;
+  if((r=PyObject_CallObject(cls, args))) return r;
+
 err:
   {
     PyObject *tp, *v, *tb;
 
     PyErr_Fetch(&tp, &v, &tb);
-    if(r=Py_BuildValue("OOO",v,cls,args))
+    if((r=Py_BuildValue("OOO",v,cls,args)))
       {
 	Py_XDECREF(v);
 	v=r;
@@ -3207,7 +3245,7 @@ finally:
 static PyObject *
 load(Unpicklerobject *self)
 {
-    PyObject *stack = 0, *err = 0, *exc = 0, *val = 0, *tb = 0;
+    PyObject *stack = 0, *err = 0, *val = 0;
     int len;
     char *s;
 
@@ -3777,6 +3815,7 @@ init_stuff(PyObject *module, PyObject *module_dict) {
     INIT_STR(__getstate__);
     INIT_STR(__setstate__);
     INIT_STR(__name__);
+    INIT_STR(__main__);
     INIT_STR(__reduce__);
     INIT_STR(write);
     INIT_STR(__safe_for_unpickling__);
@@ -3873,22 +3912,36 @@ initcPickle() {
 
 /****************************************************************************
  $Log$
- Revision 2.7  1997/05/16 16:36:52  guido
- Renamed strndup to my_strndup to avoid conflict witth GNU libc.
+ Revision 2.8  1997/08/13 03:14:37  guido
+ cPickle release 0.3 from Jim Fulton
 
- Revision 2.6  1997/05/13 18:00:44  guido
- Use compile-time test for 64-bit hardware instead of run-time test.
- This silences some compilers.
+ Revision 1.41  1997/06/20 19:45:10  jim
+ Fixed dumb bug in __main__ fix. :-(
 
- Revision 2.5  1997/05/07 17:46:13  guido
- Instead of importing graminit.h whenever one of the three grammar 'root'
- symbols is needed, define these in Python.h with a Py_ prefix.
+ Revision 1.40  1997/06/19 18:57:36  jim
+ Added ident string.
 
- Revision 2.4  1997/04/09 17:47:47  guido
- Give PyErr_Format a new name and make it static.
+ Revision 1.39  1997/06/13 19:40:44  jim
+ - Various changes to make gcc -Wall -pedantic happy, including
+   extra parens elimination of unused vars.
 
- Revision 2.3  1997/04/09 17:36:32  guido
- Jim Fulton's version 2.2.
+ - Added check to avoid pickling module __main__ for classes that are
+   defined in other modules, in whichmodule
+
+ - Changed to use Py_eval_input rather than eval_input.
+
+ - Changed to use SIZEOF_LONG macro to avoid warnings on 32-bit machines.
+
+ - Added option of supplying None to pickler, which cases no data to be
+   written during pickling.  This is slightly useful, in conjunction
+   with persistent_id attribute to find persistent sub-objects without
+   writing a pickle.
+
+ Revision 1.38  1997/05/07 17:06:43  jim
+ Added clear_memo method to pickler.
+
+ Revision 1.37  1997/05/06 20:21:01  jim
+ Changed to only add strings to memo that have length greater than one.
 
  Revision 1.36  1997/03/11 22:05:02  chris
  write POP rather than POPMARK in non-binary mode

@@ -70,12 +70,12 @@
   This would typically be done in your init function.
 
   $Log$
-  Revision 2.4  1997/04/09 18:04:08  guido
-  Got rid of the static decl of PyCObject_Import, which was a 1.4
-  compatibility hack.
+  Revision 2.5  1997/08/13 03:14:08  guido
+  cPickle release 0.3 from Jim Fulton
 
-  Revision 2.3  1997/04/09 17:34:28  guido
-  Changed the way the C API was exported.  Jim Fulton.
+  Revision 1.3  1997/06/13 19:44:02  jim
+  - changed to avoid warning of multiple declarations in 1.5 and
+    our 1.4.
 
   Revision 1.2  1997/01/27 14:13:05  jim
   Changed the way the C API was exported.
@@ -121,7 +121,26 @@ static struct PycStringIO_CAPI {
 #define PycStringIO_OutputCheck(O) \
   ((O)->ob_type==PycStringIO->OutputType)
 
+static void *
+xxxPyCObject_Import(char *module_name, char *name)
+{
+  PyObject *m, *c;
+  void *r=NULL;
+  
+  if((m=PyImport_ImportModule(module_name)))
+    {
+      if((c=PyObject_GetAttrString(m,name)))
+	{
+	  r=PyCObject_AsVoidPtr(c);
+	  Py_DECREF(c);
+	}
+      Py_DECREF(m);
+    }
+
+  return r;
+}
+
 #define PycString_IMPORT \
-  PycStringIO=PyCObject_Import("cStringIO", "cStringIO_CAPI")
+  PycStringIO=xxxPyCObject_Import("cStringIO", "cStringIO_CAPI")
 
 #endif /* CSTRINGIO_INCLUDED */
