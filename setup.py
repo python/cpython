@@ -653,12 +653,15 @@ class PyBuildExt(build_ext):
 
         # Interface to the Expat XML parser
         #
-        # Expat is written by James Clark and must be downloaded separately
-        # (see below).  The pyexpat module was written by Paul Prescod after a
-        # prototype by Jack Jansen. Source of Expat 1.95.2 is included
-        # in Modules/expat. Usage of a system shared libexpat.so/expat.dll
-        # is only advised if that has the same or newer version and was
-        # build using the same defines.
+        # Expat was written by James Clark and is now maintained by a
+        # group of developers on SourceForge; see www.libexpat.org for
+        # more information.  The pyexpat module was written by Paul
+        # Prescod after a prototype by Jack Jansen.  Source of Expat
+        # 1.95.2 is included in Modules/expat/.  Usage of a system
+        # shared libexpat.so/expat.dll is not advised.
+        #
+        # More information on Expat can be found at www.libexpat.org.
+        #
         if sys.byteorder == "little":
             xmlbo = "12"
         else:
