@@ -187,8 +187,12 @@ makeargvobject(argc, argv)
 	char **argv;
 {
 	object *av;
-	if (argc < 0 || argv == NULL)
-		argc = 0;
+	if (argc <= 0 || argv == NULL) {
+		/* Ensure at least one (empty) argument is seen */
+		static char *empty_argv[1] = {""};
+		argv = empty_argv;
+		argc = 1;
+	}
 	av = newlistobject(argc);
 	if (av != NULL) {
 		int i;
