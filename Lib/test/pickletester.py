@@ -1,5 +1,6 @@
 import unittest
 import pickle
+import pickletools
 
 from test.test_support import TestFailed, have_unicode, TESTFN
 
@@ -253,6 +254,12 @@ class AbstractPickleTests(unittest.TestCase):
     def setUp(self):
         pass
 
+    def ensure_opcode_in_pickle(self, code, pickle):
+        for op, dummy, dummy in pickletools.genops(pickle):
+            if op.code == code:
+                return
+        self.fail("didn't find opcode %r in pickle %r" % (code, pickle))
+
     def test_misc(self):
         # test various datatypes not tested by testdata
         for proto in protocols:
@@ -476,12 +483,14 @@ class AbstractPickleTests(unittest.TestCase):
         s = self.dumps(x, 2)
         y = self.loads(s)
         self.assertEqual(x, y)
+        self.ensure_opcode_in_pickle(pickle.LONG1, s)
 
     def test_long4(self):
         x = 12345678910111213141516178920L << (256*8)
         s = self.dumps(x, 2)
         y = self.loads(s)
         self.assertEqual(x, y)
+        self.ensure_opcode_in_pickle(pickle.LONG4, s)
 
     def test_short_tuples(self):
         # Map (proto, len(tuple)) to expected opcode.
@@ -503,8 +512,6 @@ class AbstractPickleTests(unittest.TestCase):
                            (2, 3): pickle.TUPLE3,
                            (2, 4): pickle.TUPLE,
                           }
-        all_tuple_opcodes = (pickle.TUPLE, pickle.EMPTY_TUPLE,
-                             pickle.TUPLE1, pickle.TUPLE2, pickle.TUPLE3)
         a = ()
         b = (1,)
         c = (1, 2)
@@ -515,16 +522,8 @@ class AbstractPickleTests(unittest.TestCase):
                 s = self.dumps(x, proto)
                 y = self.loads(s)
                 self.assertEqual(x, y, (proto, x, s, y))
-
-                # Verify that the protocol-correct tuple-building opcode
-                # was generated.
                 expected = expected_opcode[proto, len(x)]
-                for opcode in s:
-                    if opcode in all_tuple_opcodes:
-                        self.assertEqual(expected, opcode)
-                        break
-                else:
-                    self.fail("didn't find a tuple-building opcode in pickle")
+                self.ensure_opcode_in_pickle(expected, s)
 
     def test_singletons(self):
         for proto in protocols:
