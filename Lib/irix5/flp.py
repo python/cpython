@@ -59,7 +59,11 @@ def parse_forms(filename):
 # Internal: see if a cached version of the file exists
 #
 MAGIC = '.fdc'
+_internal_cache = {}			# Used by frozen scripts only
 def checkcache(filename):
+    if _internal_cache.has_key(filename):
+	altforms = _internal_cache[filename]
+	return _unpack_cache(altforms)
     import marshal
     fp, filename = _open_formfile2(filename)
     fp.close()
@@ -80,6 +84,11 @@ def checkcache(filename):
 	    return None
 	#print 'flp: valid cache file', cachename
 	altforms = marshal.load(fp)
+	return _unpack_cache(altforms)
+    finally:
+	fp.close()
+
+def _unpack_cache(altforms):
 	forms = {}
 	for name in altforms.keys():
 	    altobj, altlist = altforms[name]
@@ -92,8 +101,6 @@ def checkcache(filename):
 		list.append(nobj)
 	    forms[name] = obj, list
 	return forms
-    finally:
-	fp.close()
 
 def rdlong(fp):
     s = fp.read(4)
@@ -128,6 +135,32 @@ def writecache(filename, forms):
 	return # Never mind
     fp.write('\0\0\0\0') # Seek back and write MAGIC when done
     wrlong(fp, getmtime(filename))
+    altforms = _pack_cache(forms)
+    marshal.dump(altforms, fp)
+    fp.seek(0)
+    fp.write(MAGIC)
+    fp.close()
+    #print 'flp: wrote cache file', cachename
+
+#
+# External: print some statements that set up the internal cache.
+# This is for use with the "freeze" script.  You should call
+# flp.freeze(filename) for all forms used by the script, and collect
+# the output on a file in a module file named "frozenforms.py".  Then
+# in the main program of the script import frozenforms.
+# (Don't forget to take this out when using the unfrozen version of
+# the script!)
+#
+def freeze(filename):
+    forms = parse_forms(filename)
+    altforms = _pack_cache(forms)
+    print 'import flp'
+    print 'flp._internal_cache[', `filename`, '] =', altforms
+
+#
+# Internal: create the data structure to be placed in the cache
+#
+def _pack_cache(forms):
     altforms = {}
     for name in forms.keys():
 	obj, list = forms[name]
@@ -135,12 +168,8 @@ def writecache(filename, forms):
 	altlist = []
 	for obj in list: altlist.append(obj.__dict__)
 	altforms[name] = altobj, altlist
-    marshal.dump(altforms, fp)
-    fp.seek(0)
-    fp.write(MAGIC)
-    fp.close()
-    #print 'flp: wrote cache file', cachename
-    
+    return altforms
+
 #
 # Internal: Locate form file (using PYTHONPATH) and open file
 #

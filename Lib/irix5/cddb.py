@@ -25,7 +25,7 @@ def _dbid(v):
 	else:
 		return _dbid_map[v]
 
-class Cddb():
+class Cddb:
 	def init(self, tracklist):
 		self.artist = ''
 		self.title = ''

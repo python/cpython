@@ -32,6 +32,10 @@ import socket
 import string
 
 
+# Magic number from <socket.h>
+MSG_OOB = 0x1				# Process data out of band
+
+
 # The standard FTP server control port
 FTP_PORT = 21
 
@@ -52,6 +56,10 @@ all_errors = (error_reply, error_temp, error_perm, error_proto, \
 # Line terminators (we always output CRLF, but accept any of CRLF, CR, LF)
 CRLF = '\r\n'
 
+
+# Telnet special characters
+DM = chr(242)				# Data Mark
+IP = chr(244)				# Interrupt Process
 
 # Next port to be used by makeport(), with PORT_OFFSET added
 # (This is now only used when the python interpreter doesn't support
@@ -151,6 +159,18 @@ class FTP:
 		resp = self.getresp()
 		if resp[0] <> '2':
 			raise error_reply, resp
+
+	# Abort a file transfer.  Uses out-of-band data.
+	# This does not follow the procedure from the RFC to send Telnet
+	# IP and Synch; that doesn't seem to work with the servers I've
+	# tried.  Instead, just send the ABOR command as OOB data.
+	def abort(self):
+		line = 'ABOR' + CRLF
+		if self.debugging > 1: print '*put urgent*', `line`
+		self.sock.send(line, MSG_OOB)
+		resp = self.getmultiline()
+		if resp[:3] not in ('426', '226'):
+			raise error_proto, resp
 
 	# Send a command and return the response
 	def sendcmd(self, cmd):

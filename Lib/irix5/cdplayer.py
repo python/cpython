@@ -16,7 +16,7 @@
 
 cdplayerrc = '.cdplayerrc'
 
-class Cdplayer():
+class Cdplayer:
 	def init(self, tracklist):
 		import string
 		self.artist = ''

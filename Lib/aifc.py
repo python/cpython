@@ -281,7 +281,7 @@ def _write_float(f, x):
 	_write_long(f, himant)
 	_write_long(f, lomant)
 
-class Chunk():
+class Chunk:
 	def init(self, file):
 		self.file = file
 		self.chunkname = self.file.read(4)
@@ -322,7 +322,7 @@ class Chunk():
 		if self.chunksize & 1:
 			dummy = self.read(1)
 
-class Aifc_read():
+class Aifc_read:
 	# Variables used in this class:
 	#
 	# These variables are available to the user though appropriate
@@ -568,7 +568,7 @@ class Aifc_read():
 			name = _read_string(chunk)
 			self._markers.append((id, pos, name))
 
-class Aifc_write():
+class Aifc_write:
 	# Variables used in this class:
 	#
 	# These variables are user settable through appropriate methods

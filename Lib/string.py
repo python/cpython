@@ -93,7 +93,7 @@ def joinfields(words, sep):
 		res = res + (sep + w)
 	return res[len(sep):]
 
-# Find substring
+# Find substring, raise exception if not found
 index_error = 'substring not found in string.index'
 def index(s, sub, *args):
 	if args:
@@ -107,7 +107,14 @@ def index(s, sub, *args):
 	while i < m:
 		if sub == s[i:i+n]: return i
 		i = i+1
-	raise index_error, (s, sub)
+	raise index_error, (s, sub) + args
+
+# Find substring, return -1 if not found
+def find(*args):
+	try:
+		return apply(index, args)
+	except index_error:
+		return -1
 
 # Convert string to integer
 atoi_error = 'non-numeric argument to string.atoi'
