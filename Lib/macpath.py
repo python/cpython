@@ -20,10 +20,6 @@ def isabs(s):
 	return ':' in s and s[0] <> ':'
 
 
-# Join pathnames.
-# Ignore the previous parts if a part is absolute.
-# Insert a '/' unless the first part is empty or already ends in '/'.
-
 def join(s, *p):
 	path = s
 	for t in p:
