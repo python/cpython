@@ -181,6 +181,10 @@ class DecimalTest(unittest.TestCase):
     def eval_equation(self, s):
         #global DEFAULT_PRECISION
         #print DEFAULT_PRECISION
+
+        if not TEST_ALL and random.random() < 0.90:
+            return
+
         try:
             Sides = s.split('->')
             L = Sides[0].strip().split()
@@ -997,9 +1001,13 @@ class ContextAPItests(unittest.TestCase):
 def test_main(arith=False, verbose=None):
     """ Execute the tests.
 
-    Runs arithmetic tests if arith is True or if the "decimal" resource
-    is enables in regrtest.py
+    Runs all arithmetic tests if arith is True or if the "decimal" resource
+    is enabled in regrtest.py
     """
+
+    global TEST_ALL
+    TEST_ALL = arith or is_resource_enabled('decimal')
+
     test_classes = [
         DecimalExplicitConstructionTest,
         DecimalImplicitConstructionTest,
@@ -1008,20 +1016,17 @@ def test_main(arith=False, verbose=None):
         DecimalUsabilityTest,
         DecimalPythonAPItests,
         ContextAPItests,
+        DecimalTest,
     ]
-
-    if arith or is_resource_enabled('decimal'):
-        test_classes.extend([DecimalTest])
 
     run_unittest(*test_classes)
     import decimal as DecimalModule
     run_doctest(DecimalModule, verbose)
-    return
 
 
 if __name__ == '__main__':
     # Calling with no arguments runs all tests.
-    # Calling with "Skip" will skipover the arithmetic tests.
+    # Calling with "Skip" will skip over 90% of the arithmetic tests.
     if len(sys.argv) == 1:
         test_main(arith=True, verbose=True)
     elif len(sys.argv) == 2:
