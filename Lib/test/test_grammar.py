@@ -76,7 +76,7 @@ x = eval('1, 0 or 1')
 print 'funcdef'
 ### 'def' NAME parameters ':' suite
 ### parameters: '(' [varargslist] ')'
-### varargslist: (fpdef ',')* ('+'|'*') NAME | fpdef (',' fpdef)* [',']
+### varargslist: (fpdef ',')* '*' NAME | fpdef (',' fpdef)* [',']
 ### fpdef: NAME | '(' fplist ')'
 ### fplist: fpdef (',' fpdef)* [',']
 def f1(): pass
