@@ -23,6 +23,7 @@ def normcase(s):
 			res = res + c
 	return string.lower(res)
 
+
 # Return wheter a path is absolute.
 # Trivial in Posix, harder on the Mac or MS-DOS.
 # For DOS it is absolute if it starts with a slash or backslash (current
@@ -33,6 +34,8 @@ def isabs(s):
 	s = splitdrive(s)[1]
 	return s != '' and s[:1] in '/\\'
 
+
+# Join two (or more) paths.
 
 def join(a, *p):
 	path = a
@@ -244,13 +247,16 @@ def expanduser(path):
 	while i < n and path[i] not in '/\\':
 		i = i+1
 	if i == 1:
-		try:
-			drive=os.environ['HOMEDRIVE']
-		except KeyError:
-			drive = ''
-		if not os.environ.has_key('HOMEPATH'):
+		if os.environ.has_key('HOME'):
+			userhome = os.environ['HOME']
+		elif not os.environ.has_key('HOMEPATH'):
 			return path
-		userhome = join(drive, os.environ['HOMEPATH'])
+		else:
+			try:
+				drive=os.environ['HOMEDRIVE']
+			except KeyError:
+				drive = ''
+			userhome = join(drive, os.environ['HOMEPATH'])
 	else:
 		return path
 	return userhome + path[i:]
