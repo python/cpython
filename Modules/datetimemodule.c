@@ -549,6 +549,40 @@ normalize_datetime(int *year, int *month, int *day,
  * tzinfo helpers.
  */
 
+/* Ensure that p is None or of a tzinfo subclass.  Return 0 if OK; if not
+ * raise TypeError and return -1.
+ */
+static int
+check_tzinfo_subclass(PyObject *p)
+{
+	if (p == Py_None || PyTZInfo_Check(p))
+		return 0;
+	PyErr_Format(PyExc_TypeError,
+		     "tzinfo argument must be None or of a tzinfo subclass, "
+		     "not type '%s'",
+		     p->ob_type->tp_name);
+	return -1;
+}
+
+/* Return tzinfo.methname(self), without any checking of results.
+ * If tzinfo is None, returns None.
+ */
+static PyObject *
+call_tzinfo_method(PyObject *self, PyObject *tzinfo, char *methname)
+{
+	PyObject *result;
+
+	assert(self && tzinfo && methname);
+	assert(check_tzinfo_subclass(tzinfo) >= 0);
+	if (tzinfo == Py_None) {
+		result = Py_None;
+		Py_INCREF(result);
+	}
+	else
+		result = PyObject_CallMethod(tzinfo, methname, "O", self);
+	return result;
+}
+
 /* If self has a tzinfo member, return a BORROWED reference to it.  Else
  * return NULL, which is NOT AN ERROR.  There are no error returns here,
  * and the caller must not decref the result.
@@ -566,28 +600,15 @@ get_tzinfo_member(PyObject *self)
 	return tzinfo;
 }
 
-/* Ensure that p is None or of a tzinfo subclass.  Return 0 if OK; if not
- * raise TypeError and return -1.
- */
-static int
-check_tzinfo_subclass(PyObject *p)
-{
-	if (p == Py_None || PyTZInfo_Check(p))
-		return 0;
-	PyErr_Format(PyExc_TypeError,
-		     "tzinfo argument must be None or of a tzinfo subclass, "
-		     "not type '%s'",
-		     p->ob_type->tp_name);
-	return -1;
-}
-
 /* Internal helper.
  * Call getattr(tzinfo, name)(tzinfoarg), and extract an int from the
  * result.  tzinfo must be an instance of the tzinfo class.  If the method
  * returns None, this returns 0 and sets *none to 1.  If the method doesn't
- * return a Python int or long, TypeError is raised and this returns -1.
- * If it does return an int or long, but is outside the valid range for
- * a UTC minute offset, ValueError is raised and this returns -1.
+ * return a Python int or long or timedelta, TypeError is raised and this
+ * returns -1.  If it returns an int or long, but is outside the valid
+ * range for a UTC minute offset, or it returns a timedelta and the value is
+ * out of range or isn't a whole number of minutes, ValueError is raised and
+ * this returns -1.
  * Else *none is set to 0 and the integer method result is returned.
  */
 static int
@@ -602,7 +623,7 @@ call_utc_tzinfo_method(PyObject *tzinfo, char *name, PyObject *tzinfoarg,
 	assert(tzinfoarg != NULL);
 
 	*none = 0;
-	u = PyObject_CallMethod(tzinfo, name, "O", tzinfoarg);
+	u = call_tzinfo_method(tzinfoarg, tzinfo, name);
 	if (u == NULL)
 		return -1;
 
@@ -614,12 +635,35 @@ call_utc_tzinfo_method(PyObject *tzinfo, char *name, PyObject *tzinfoarg,
 
 	if (PyInt_Check(u))
 		result = PyInt_AS_LONG(u);
+
 	else if (PyLong_Check(u))
 		result = PyLong_AsLong(u);
+
+	else if (PyDelta_Check(u)) {
+		const int days = GET_TD_DAYS(u);
+		if (days < -1 || days > 0)
+			result = 24*60;	/* trigger ValueError below */
+		else {
+			/* next line can't overflow because we know days
+			 * is -1 or 0 now
+			 */
+			int ss = days * 24 * 3600 + GET_TD_SECONDS(u);
+			result = divmod(ss, 60, &ss);
+			if (ss || GET_TD_MICROSECONDS(u)) {
+				PyErr_Format(PyExc_ValueError,
+					     "tzinfo.%s() must return a "
+					     "whole number of minutes",
+					     name);
+				result = -1;
+				goto Done;
+			}
+		}
+	}
 	else {
 		PyErr_Format(PyExc_TypeError,
-			     "tzinfo.%s() must return None or int or long",
-			     name);
+			     "tzinfo.%s() must return None, integer or "
+			     "timedelta, not '%s'",
+			     name, u->ob_type->tp_name);
 		goto Done;
 	}
 
@@ -649,6 +693,32 @@ call_utcoffset(PyObject *tzinfo, PyObject *tzinfoarg, int *none)
 	return call_utc_tzinfo_method(tzinfo, "utcoffset", tzinfoarg, none);
 }
 
+static PyObject *new_delta(int d, int sec, int usec, int normalize);
+
+/* Call tzinfo.name(self) and return the offset as a timedelta or None. */
+static PyObject *
+offset_as_timedelta(PyObject *self, PyObject *tzinfo, char *name) {
+	PyObject *result;
+
+	if (tzinfo == Py_None) {
+		result = Py_None;
+		Py_INCREF(result);
+	}
+	else {
+		int none;
+		int offset = call_utc_tzinfo_method(tzinfo, name, self, &none);
+		if (offset < 0 && PyErr_Occurred())
+			return NULL;
+		if (none) {
+			result = Py_None;
+			Py_INCREF(result);
+		}
+		else
+			result = new_delta(0, offset * 60, 0, 1);
+	}
+	return result;
+}
+
 /* Call tzinfo.dst(tzinfoarg), and extract an integer from the
  * result.  tzinfo must be an instance of the tzinfo class.  If dst()
  * returns None, call_dst returns 0 and sets *none to 1.  If dst()
@@ -663,22 +733,29 @@ call_dst(PyObject *tzinfo, PyObject *tzinfoarg, int *none)
 	return call_utc_tzinfo_method(tzinfo, "dst", tzinfoarg, none);
 }
 
-/* Call tzinfo.tzname(tzinfoarg), and return the result.  tzinfo must be
- * an instance of the tzinfo class.  If tzname() doesn't return None or
- * a string, TypeError is raised and this returns NULL.
+/* Call tzinfo.tzname(self), and return the result.  tzinfo must be
+ * an instance of the tzinfo class or None.  If tzinfo isn't None, and
+ * tzname() doesn't return None ora string, TypeError is raised and this
+ * returns NULL.
  */
 static PyObject *
-call_tzname(PyObject *tzinfo, PyObject *tzinfoarg)
+call_tzname(PyObject *self, PyObject *tzinfo)
 {
 	PyObject *result;
 
+	assert(self != NULL);
 	assert(tzinfo != NULL);
-	assert(PyTZInfo_Check(tzinfo));
-	assert(tzinfoarg != NULL);
+	assert(check_tzinfo_subclass(tzinfo) >= 0);
 
-	result = PyObject_CallMethod(tzinfo, "tzname", "O", tzinfoarg);
-	if (result != NULL && result != Py_None && !PyString_Check(result)) {
-		PyErr_Format(PyExc_TypeError, ".tzinfo.tzname() must "
+	if (tzinfo == Py_None) {
+		result = Py_None;
+		Py_INCREF(result);
+	}
+	else
+		result = PyObject_CallMethod(tzinfo, "tzname", "O", self);
+
+	if (result != NULL && result != Py_None && ! PyString_Check(result)) {
+		PyErr_Format(PyExc_TypeError, "tzinfo.tzname() must "
 			     "return None or a string, not '%s'",
 			     result->ob_type->tp_name);
 		Py_DECREF(result);
@@ -699,7 +776,7 @@ typedef enum {
 	      /* date,
 	       * datetime,
 	       * datetimetz with None tzinfo,
-	       * datetimetz where utcoffset() return None
+	       * datetimetz where utcoffset() returns None
 	       * time,
 	       * timetz with None tzinfo,
 	       * timetz where utcoffset() returns None
@@ -919,8 +996,8 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple)
 				Zreplacement = PyString_FromString("");
 				if (Zreplacement == NULL) goto Done;
 				if (tzinfo != Py_None && tzinfo != NULL) {
-					PyObject *temp = call_tzname(tzinfo,
-								     object);
+					PyObject *temp = call_tzname(object,
+								     tzinfo);
 					if (temp == NULL) goto Done;
 					if (temp != Py_None) {
 						assert(PyString_Check(temp));
@@ -3917,38 +3994,24 @@ timetz_dealloc(PyDateTime_TimeTZ *self)
 }
 
 /*
- * Indirect access to tzinfo methods.  One more "convenience function" and
- * it won't be possible to find the useful methods anymore <0.5 wink>.
+ * Indirect access to tzinfo methods.
  */
-
-static PyObject *
-timetz_convienience(PyDateTime_TimeTZ *self, char *name)
-{
-	PyObject *result;
-
-	if (self->tzinfo == Py_None) {
-		result = Py_None;
-		Py_INCREF(result);
-	}
-	else
-		result = PyObject_CallMethod(self->tzinfo, name, "O", self);
-	return result;
-}
 
 /* These are all METH_NOARGS, so don't need to check the arglist. */
 static PyObject *
 timetz_utcoffset(PyDateTime_TimeTZ *self, PyObject *unused) {
-	return timetz_convienience(self, "utcoffset");
-}
-
-static PyObject *
-timetz_tzname(PyDateTime_TimeTZ *self, PyObject *unused) {
-	return timetz_convienience(self, "tzname");
+	return offset_as_timedelta((PyObject *)self, self->tzinfo,
+				   "utcoffset");
 }
 
 static PyObject *
 timetz_dst(PyDateTime_TimeTZ *self, PyObject *unused) {
-	return timetz_convienience(self, "dst");
+	return offset_as_timedelta((PyObject *)self, self->tzinfo, "dst");
+}
+
+static PyObject *
+timetz_tzname(PyDateTime_TimeTZ *self, PyObject *unused) {
+	return call_tzname((PyObject *)self, self->tzinfo);
 }
 
 /*
@@ -4325,37 +4388,21 @@ datetimetz_dealloc(PyDateTime_DateTimeTZ *self)
  * Indirect access to tzinfo methods.
  */
 
-/* Internal helper.
- * Call a tzinfo object's method, or return None if tzinfo is None.
- */
-static PyObject *
-datetimetz_convienience(PyDateTime_DateTimeTZ *self, char *name)
-{
-	PyObject *result;
-
-	if (self->tzinfo == Py_None) {
-		result = Py_None;
-		Py_INCREF(result);
-	}
-	else
-		result = PyObject_CallMethod(self->tzinfo, name, "O", self);
-	return result;
-}
-
 /* These are all METH_NOARGS, so don't need to check the arglist. */
 static PyObject *
 datetimetz_utcoffset(PyDateTime_DateTimeTZ *self, PyObject *unused) {
-	return datetimetz_convienience(self, "utcoffset");
-}
-
-static PyObject *
-datetimetz_tzname(PyDateTime_DateTimeTZ *self, PyObject *unused) {
-	return datetimetz_convienience(self, "tzname");
+	return offset_as_timedelta((PyObject *)self, self->tzinfo,
+				   "utcoffset");
 }
 
 static PyObject *
 datetimetz_dst(PyDateTime_DateTimeTZ *self, PyObject *unused) {
-	return datetimetz_convienience(self, "dst");
+	return offset_as_timedelta((PyObject *)self, self->tzinfo, "dst");
+}
+
+static PyObject *
+datetimetz_tzname(PyDateTime_DateTimeTZ *self, PyObject *unused) {
+	return call_tzname((PyObject *)self, self->tzinfo);
 }
 
 /*
