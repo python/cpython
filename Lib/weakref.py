@@ -16,10 +16,12 @@ from _weakref import \
      getweakrefs, \
      ref, \
      proxy, \
-     ReferenceError, \
      CallableProxyType, \
      ProxyType, \
      ReferenceType
+
+from exceptions import ReferenceError
+
 
 ProxyTypes = (ProxyType, CallableProxyType)
 
