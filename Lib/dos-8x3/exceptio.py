@@ -60,6 +60,7 @@ Exception(*)
 """
 
 class Exception:
+    """Proposed base class for all exceptions."""
     def __init__(self, *args):
         self.args = args
 
@@ -75,9 +76,11 @@ class Exception:
         return self.args[i]
 
 class StandardError(Exception):
+    """Base class for all standard Python exceptions."""
     pass
 
 class SyntaxError(StandardError):
+    """Invalid syntax."""
     filename = lineno = offset = text = None
     msg = ""
     def __init__(self, *args):
@@ -94,8 +97,7 @@ class SyntaxError(StandardError):
         return str(self.msg)
 
 class EnvironmentError(StandardError):
-    """Base class for exceptions that occur outside the Python system.
-    Primarily used as a base class for OSError and IOError."""
+    """Base class for I/O related errors."""
     def __init__(self, *args):
         self.args = args
         self.errno = None
@@ -126,70 +128,94 @@ class EnvironmentError(StandardError):
             return StandardError.__str__(self)
 
 class IOError(EnvironmentError):
+    """I/O operation failed."""
     pass
 
 class OSError(EnvironmentError):
-    """Used by the posix module."""
+    """OS system call failed."""
     pass
 
 class RuntimeError(StandardError):
+    """Unspecified run-time error."""
     pass
 
 class NotImplementedError(RuntimeError):
+    """Method or function hasn't been implemented yet."""
     pass
 
 class SystemError(StandardError):
+    """Internal error in the Python interpreter.
+
+    Please report this to the Python maintainer, along with the traceback,
+    the Python version, and the hardware/OS platform and version."""
     pass
 
 class EOFError(StandardError):
+    """Read beyond end of file."""
     pass
 
 class ImportError(StandardError):
+    """Import can't find module, or can't find name in module."""
     pass
 
 class TypeError(StandardError):
+    """Inappropriate argument type."""
     pass
 
 class ValueError(StandardError):
+    """Inappropriate argument value (of correct type)."""
     pass
 
 class KeyboardInterrupt(StandardError):
+    """Program interrupted by user."""
     pass
 
 class AssertionError(StandardError):
+    """Assertion failed."""
     pass
 
 class ArithmeticError(StandardError):
+    """Base class for arithmetic errors."""
     pass
 
 class OverflowError(ArithmeticError):
+    """Result too large to be represented."""
     pass
 
 class FloatingPointError(ArithmeticError):
+    """Floating point operation failed."""
     pass
 
 class ZeroDivisionError(ArithmeticError):
+    """Second argument to a division or modulo operation was zero."""
     pass
 
 class LookupError(StandardError):
+    """Base class for lookup errors."""
     pass
 
 class IndexError(LookupError):
+    """Sequence index out of range."""
     pass
 
 class KeyError(LookupError):
+    """Mapping key not found."""
     pass
 
 class AttributeError(StandardError):
+    """Attribute not found."""
     pass
 
 class NameError(StandardError):
+    """Name not found locally or globally."""
     pass
 
 class MemoryError(StandardError):
+    """Out of memory."""
     pass
 
 class SystemExit(Exception):
+    """Request to exit from the interpreter."""
     def __init__(self, *args):
         self.args = args
         if len(args) == 0:
