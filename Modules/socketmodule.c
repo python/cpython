@@ -7,7 +7,7 @@ This module provides an interface to Berkeley socket IPC.
 
 Limitations:
 
-- only AF_INET and AF_UNIX address families are supported in a
+- only AF_INET, AF_INET6 and AF_UNIX address families are supported in a
   portable manner, though AF_PACKET is supported under Linux.
 - no read/write operations (use send/recv or makefile instead)
 - additional restrictions apply on Windows
@@ -15,6 +15,10 @@ Limitations:
 Module interface:
 
 - socket.error: exception raised for socket specific errors
+- socket.gaierror: exception raised for getaddrinfo/getnameinfo errors,
+	a subclass of socket.error
+- socket.herror: exception raised for gethostby* errors,
+	a subclass of socket.error
 - socket.gethostbyname(hostname) --> host IP address (string: 'dd.dd.dd.dd')
 - socket.gethostbyaddr(IP address) --> (hostname, [alias, ...], [IP addr, ...])
 - socket.gethostname() --> host name (string: 'spam' or 'spam.domain.com')
@@ -25,6 +29,9 @@ Module interface:
 - socket.ntohl(32 bit value) --> new int object
 - socket.htons(16 bit value) --> new int object
 - socket.htonl(32 bit value) --> new int object
+- socket.getaddrinfo(host, port [, family, socktype, proto, flags])
+	--> List of (family, socktype, proto, canonname, sockaddr)
+- socket.getnameinfo(sockaddr, flags) --> (host, port)
 - socket.AF_INET, socket.SOCK_STREAM, etc.: constants from <socket.h>
 - socket.inet_aton(IP address) -> 32-bit packed IP representation
 - socket.inet_ntoa(packed IP) -> IP address string
@@ -239,6 +246,10 @@ typedef int SOCKET_T;
 #	define SIZEOF_SOCKET_T SIZEOF_INT
 #endif
 
+#ifdef MS_WIN32
+#	define EAFNOSUPPORT            WSAEAFNOSUPPORT
+#	define snprintf _snprintf
+#endif
 
 #if defined(PYOS_OS2)
 #define SOCKETCLOSE soclose
@@ -253,6 +264,8 @@ typedef int SOCKET_T;
    by this module (but not argument type or memory errors, etc.). */
 
 static PyObject *PySocket_Error;
+static PyObject *PyH_Error;
+static PyObject *PyGAI_Error;
 
 #ifdef USE_SSL
 static PyObject *SSLErrorObject;
@@ -393,6 +406,43 @@ PySocket_Err(void)
 }
 
 
+static PyObject *
+PyH_Err(int h_error)
+{
+	PyObject *v;
+
+#ifdef HAVE_HSTRERROR
+	v = Py_BuildValue("(is)", h_error, (char *)hstrerror(h_error));
+#else
+	v = Py_BuildValue("(is)", h_error, "host not found");
+#endif
+	if (v != NULL) {
+		PyErr_SetObject(PyGAI_Error, v);
+		Py_DECREF(v);
+	}
+
+	return NULL;
+}
+
+
+static PyObject *
+PyGAI_Err(int error)
+{
+	PyObject *v;
+
+	if (error == EAI_SYSTEM)
+		return PySocket_Err();
+
+	v = Py_BuildValue("(is)", error, gai_strerror(error));
+	if (v != NULL) {
+		PyErr_SetObject(PyGAI_Error, v);
+		Py_DECREF(v);
+	}
+
+	return NULL;
+}
+
+
 /* The object holding a socket.  It holds some extra information,
    like the address family, which is used to decode socket address
    arguments properly. */
@@ -407,6 +457,10 @@ typedef struct {
 		struct sockaddr_in in;
 #ifdef AF_UNIX
 		struct sockaddr_un un;
+#endif
+#ifdef INET6
+		struct sockaddr_in6 in6;
+		struct sockaddr_storage storage;
 #endif
 #if defined(linux) && defined(AF_PACKET)
 		struct sockaddr_ll ll;
@@ -484,85 +538,87 @@ PyThread_type_lock gethostbyname_lock;
 /* Convert a string specifying a host name or one of a few symbolic
    names to a numeric IP address.  This usually calls gethostbyname()
    to do the work; the names "" and "<broadcast>" are special.
-   Return the length (should always be 4 bytes), or negative if
+   Return the length (IPv4 should be 4 bytes), or negative if
    an error occurred; then an exception is raised. */
 
 static int
-setipaddr(char* name, struct sockaddr_in * addr_ret)
+setipaddr(char* name, struct sockaddr * addr_ret, int af)
 {
-	struct hostent *hp;
-	int d1, d2, d3, d4;
-	int h_length;
-	char ch;
-#ifdef HAVE_GETHOSTBYNAME_R
-	struct hostent hp_allocated;
-#ifdef HAVE_GETHOSTBYNAME_R_3_ARG
-	struct hostent_data data;
-#else
-	char buf[1001];
-	int buf_len = (sizeof buf) - 1;
-	int errnop;
-#endif
-#if defined(HAVE_GETHOSTBYNAME_R_3_ARG) || defined(HAVE_GETHOSTBYNAME_R_6_ARG)
-	int result;
-#endif
-#endif /* HAVE_GETHOSTBYNAME_R */
+	struct addrinfo hints, *res;
+	int error;
 
 	memset((void *) addr_ret, '\0', sizeof(*addr_ret));
 	if (name[0] == '\0') {
-		addr_ret->sin_addr.s_addr = INADDR_ANY;
-		return 4;
+		int siz;
+		memset(&hints, 0, sizeof(hints));
+		hints.ai_family = af;
+		hints.ai_socktype = SOCK_DGRAM;	/*dummy*/
+		hints.ai_flags = AI_PASSIVE;
+		error = getaddrinfo(NULL, "0", &hints, &res);
+		if (error) {
+			PyGAI_Err(error);
+			return -1;
+		}
+		switch (res->ai_family) {
+		case AF_INET:
+			siz = 4;
+			break;
+#ifdef INET6
+		case AF_INET6:
+			siz = 16;
+			break;
+#endif
+		default:
+			freeaddrinfo(res);
+			PyErr_SetString(PySocket_Error,
+				"unsupported address family");
+			return -1;
+		}
+		if (res->ai_next) {
+			PyErr_SetString(PySocket_Error,
+				"wildcard resolved to multiple address");
+			return -1;
+		}
+		memcpy(addr_ret, res->ai_addr, res->ai_addrlen);
+		freeaddrinfo(res);
+		return siz;
 	}
 	if (name[0] == '<' && strcmp(name, "<broadcast>") == 0) {
-		addr_ret->sin_addr.s_addr = INADDR_BROADCAST;
-		return 4;
+		struct sockaddr_in *sin;
+		if (af != PF_INET && af != PF_UNSPEC) {
+			PyErr_SetString(PySocket_Error,
+				"address family mismatched");
+			return -1;
+		}
+		sin = (struct sockaddr_in *)addr_ret;
+		memset((void *) sin, '\0', sizeof(*sin));
+		sin->sin_family = AF_INET;
+#ifdef HAVE_SOCKADDR_SA_LEN
+		sin->sin_len = sizeof(*sin);
+#endif
+		sin->sin_addr.s_addr = INADDR_BROADCAST;
+		return sizeof(sin->sin_addr);
 	}
-	if (sscanf(name, "%d.%d.%d.%d%c", &d1, &d2, &d3, &d4, &ch) == 4 &&
-	    0 <= d1 && d1 <= 255 && 0 <= d2 && d2 <= 255 &&
-	    0 <= d3 && d3 <= 255 && 0 <= d4 && d4 <= 255) {
-		addr_ret->sin_addr.s_addr = htonl(
-			((long) d1 << 24) | ((long) d2 << 16) |
-			((long) d3 << 8) | ((long) d4 << 0));
-		return 4;
-	}
-	Py_BEGIN_ALLOW_THREADS
-#ifdef HAVE_GETHOSTBYNAME_R
-#if    defined(HAVE_GETHOSTBYNAME_R_6_ARG)
-	result = gethostbyname_r(name, &hp_allocated, buf, buf_len, &hp, &errnop);
-#elif  defined(HAVE_GETHOSTBYNAME_R_5_ARG)
-	hp = gethostbyname_r(name, &hp_allocated, buf, buf_len, &errnop);
-#else  /* HAVE_GETHOSTBYNAME_R_3_ARG */
-	memset((void *) &data, '\0', sizeof(data));
-	result = gethostbyname_r(name, &hp_allocated, &data);
-	hp = (result != 0) ? NULL : &hp_allocated;
-#endif
-#else /* not HAVE_GETHOSTBYNAME_R */
-#ifdef USE_GETHOSTBYNAME_LOCK
-	PyThread_acquire_lock(gethostbyname_lock, 1);
-#endif
-	hp = gethostbyname(name);
-#endif /* HAVE_GETHOSTBYNAME_R */
-	Py_END_ALLOW_THREADS
-
-	if (hp == NULL) {
-#ifdef HAVE_HSTRERROR
-		/* Let's get real error message to return */
-		extern int h_errno;
-		PyErr_SetString(PySocket_Error, (char *)hstrerror(h_errno));
-#else
-		PyErr_SetString(PySocket_Error, "host not found");
-#endif
-#ifdef USE_GETHOSTBYNAME_LOCK
-		PyThread_release_lock(gethostbyname_lock);
-#endif
+	memset(&hints, 0, sizeof(hints));
+	hints.ai_family = af;
+	error = getaddrinfo(name, NULL, &hints, &res);
+	if (error) {
+		PyGAI_Err(error);
 		return -1;
 	}
-	memcpy((char *) &addr_ret->sin_addr, hp->h_addr, hp->h_length);
-	h_length = hp->h_length;
-#ifdef USE_GETHOSTBYNAME_LOCK
-	PyThread_release_lock(gethostbyname_lock);
+	memcpy((char *) addr_ret, res->ai_addr, res->ai_addrlen);
+	freeaddrinfo(res);
+	switch (addr_ret->sa_family) {
+	case AF_INET:
+		return 4;
+#ifdef INET6
+	case AF_INET6:
+		return 16;
 #endif
-	return h_length;
+	default:
+		PyErr_SetString(PySocket_Error, "unknown address family");
+		return -1;
+	}
 }
 
 
@@ -571,13 +627,17 @@ setipaddr(char* name, struct sockaddr_in * addr_ret)
    size numbers). */
 
 static PyObject *
-makeipaddr(struct sockaddr_in *addr)
+makeipaddr(struct sockaddr *addr, int addrlen)
 {
-	unsigned long x = ntohl(addr->sin_addr.s_addr);
-	char buf[100];
-	sprintf(buf, "%d.%d.%d.%d",
-		(int) (x>>24) & 0xff, (int) (x>>16) & 0xff,
-		(int) (x>> 8) & 0xff, (int) (x>> 0) & 0xff);
+	char buf[NI_MAXHOST];
+	int error;
+
+	error = getnameinfo(addr, addrlen, buf, sizeof(buf), NULL, 0,
+		NI_NUMERICHOST);
+	if (error) {
+		PyGAI_Err(error);
+		return NULL;
+	}
 	return PyString_FromString(buf);
 }
 
@@ -606,10 +666,11 @@ makesockaddr(int sockfd, struct sockaddr *addr, int addrlen)
 
 	case AF_INET:
 	{
-		struct sockaddr_in *a = (struct sockaddr_in *) addr;
-		PyObject *addrobj = makeipaddr(a);
+		struct sockaddr_in *a;
+		PyObject *addrobj = makeipaddr(addr, sizeof(*a));
 		PyObject *ret = NULL;
 		if (addrobj) {
+			a = (struct sockaddr_in *)addr;
 			ret = Py_BuildValue("Oi", addrobj, ntohs(a->sin_port));
 			Py_DECREF(addrobj);
 		}
@@ -621,6 +682,22 @@ makesockaddr(int sockfd, struct sockaddr *addr, int addrlen)
 	{
 		struct sockaddr_un *a = (struct sockaddr_un *) addr;
 		return PyString_FromString(a->sun_path);
+	}
+#endif /* AF_UNIX */
+
+#ifdef INET6
+	case AF_INET6:
+	{
+		struct sockaddr_in6 *a;
+		PyObject *addrobj = makeipaddr(addr, sizeof(*a));
+		PyObject *ret = NULL;
+		if (addrobj) {
+			a = (struct sockaddr_in6 *)addr;
+			ret = Py_BuildValue("Oiii", addrobj, ntohs(a->sin6_port),
+				a->sin6_flowinfo, a->sin6_scope_id);
+			Py_DECREF(addrobj);
+		}
+		return ret;
 	}
 #endif
 
@@ -681,7 +758,7 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
 					"AF_UNIX path too long");
 			return 0;
 		}
-		addr->sun_family = AF_UNIX;
+		addr->sun_family = s->sock_family;
 		memcpy(addr->sun_path, path, len);
 		addr->sun_path[len] = 0;
 		*addr_ret = (struct sockaddr *) addr;
@@ -704,7 +781,7 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
 		}
 		if (!PyArg_ParseTuple(args, "si:getsockaddrarg", &host, &port))
 			return 0;
-		if (setipaddr(host, addr) < 0)
+		if (setipaddr(host, (struct sockaddr *)addr, AF_INET) < 0)
 			return 0;
 		addr->sin_family = AF_INET;
 		addr->sin_port = htons((short)port);
@@ -712,6 +789,30 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
 		*len_ret = sizeof *addr;
 		return 1;
 	}
+
+#ifdef INET6
+	case AF_INET6:
+	{
+		struct sockaddr_in6* addr;
+		char *host;
+		int port, flowinfo, scope_id;
+ 		addr = (struct sockaddr_in6*)&(s->sock_addr).in6;
+		flowinfo = scope_id = 0;
+		if (!PyArg_ParseTuple(args, "si|ii", &host, &port, &flowinfo,
+				&scope_id)) {
+			return 0;
+		}
+		if (setipaddr(host, (struct sockaddr *)addr, AF_INET6) < 0)
+			return 0;
+		addr->sin6_family = s->sock_family;
+		addr->sin6_port = htons((short)port);
+		addr->sin6_flowinfo = flowinfo;
+		addr->sin6_scope_id = scope_id;
+		*addr_ret = (struct sockaddr *) addr;
+		*len_ret = sizeof *addr;
+		return 1;
+	}
+#endif
 
 #if defined(linux) && defined(AF_PACKET)
 	case AF_PACKET:
@@ -745,7 +846,6 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
 	}
 #endif
 
-
 	/* More cases here... */
 
 	default:
@@ -778,6 +878,14 @@ getsockaddrlen(PySocketSockObject *s, socklen_t *len_ret)
 		*len_ret = sizeof (struct sockaddr_in);
 		return 1;
 	}
+
+#ifdef INET6
+	case AF_INET6:
+	{
+		*len_ret = sizeof (struct sockaddr_in6);
+		return 1;
+	}
+#endif
 
 #if defined(linux) && defined(AF_PACKET)
 	case AF_PACKET:
@@ -1652,12 +1760,14 @@ static PyObject *
 PySocket_gethostbyname(PyObject *self, PyObject *args)
 {
 	char *name;
-	struct sockaddr_in addrbuf;
+	struct sockaddr_storage addrbuf;
+
 	if (!PyArg_ParseTuple(args, "s:gethostbyname", &name))
 		return NULL;
-	if (setipaddr(name, &addrbuf) < 0)
+	if (setipaddr(name, (struct sockaddr *)&addrbuf, AF_INET) < 0)
 		return NULL;
-	return makeipaddr(&addrbuf);
+	return makeipaddr((struct sockaddr *)&addrbuf,
+		sizeof(struct sockaddr_in));
 }
 
 static char gethostbyname_doc[] =
@@ -1669,22 +1779,43 @@ Return the IP address (a string of the form '255.255.255.255') for a host.";
 /* Convenience function common to gethostbyname_ex and gethostbyaddr */
 
 static PyObject *
-gethost_common(struct hostent *h, struct sockaddr_in *addr)
+gethost_common(struct hostent *h, struct sockaddr *addr, int alen, int af)
 {
 	char **pch;
 	PyObject *rtn_tuple = (PyObject *)NULL;
 	PyObject *name_list = (PyObject *)NULL;
 	PyObject *addr_list = (PyObject *)NULL;
 	PyObject *tmp;
+
 	if (h == NULL) {
-#ifdef HAVE_HSTRERROR
 		/* Let's get real error message to return */
+#ifndef MS_WIN32
 		extern int h_errno;
-		PyErr_SetString(PySocket_Error, (char *)hstrerror(h_errno));
+#endif
+		PyH_Err(h_errno);
+		return NULL;
+	}
+	if (h->h_addrtype != af) {
+#ifdef HAVE_STRERROR
+	        /* Let's get real error message to return */
+		PyErr_SetString(PySocket_Error, (char *)strerror(EAFNOSUPPORT));
 #else
-		PyErr_SetString(PySocket_Error, "host not found");
+		PyErr_SetString(PySocket_Error,
+		    "Address family not supported by protocol family");
 #endif
 		return NULL;
+	}
+	switch (af) {
+	case AF_INET:
+		if (alen < sizeof(struct sockaddr_in))
+			return NULL;
+		break;
+#ifdef INET6
+	case AF_INET6:
+		if (alen < sizeof(struct sockaddr_in6))
+			return NULL;
+		break;
+#endif
 	}
 	if ((name_list = PyList_New(0)) == NULL)
 		goto err;
@@ -1702,8 +1833,43 @@ gethost_common(struct hostent *h, struct sockaddr_in *addr)
 	}
 	for (pch = h->h_addr_list; *pch != NULL; pch++) {
 		int status;
-		memcpy((char *) &addr->sin_addr, *pch, h->h_length);
-		tmp = makeipaddr(addr);
+		switch (af) {
+		case AF_INET:
+		    {
+			struct sockaddr_in sin;
+			memset(&sin, 0, sizeof(sin));
+			sin.sin_family = af;
+#ifdef HAVE_SOCKADDR_SA_LEN
+			sin.sin_len = sizeof(sin);
+#endif
+			memcpy(&sin.sin_addr, *pch, sizeof(sin.sin_addr));
+			tmp = makeipaddr((struct sockaddr *)&sin, sizeof(sin));
+			if (pch == h->h_addr_list && alen >= sizeof(sin))
+				memcpy((char *) addr, &sin, sizeof(sin));
+			break;
+		    }
+#ifdef INET6
+		case AF_INET6:
+		    {
+			struct sockaddr_in6 sin6;
+			memset(&sin6, 0, sizeof(sin6));
+			sin6.sin6_family = af;
+#ifdef HAVE_SOCKADDR_SA_LEN
+			sin6.sin6_len = sizeof(sin6);
+#endif
+			memcpy(&sin6.sin6_addr, *pch, sizeof(sin6.sin6_addr));
+			tmp = makeipaddr((struct sockaddr *)&sin6,
+				sizeof(sin6));
+			if (pch == h->h_addr_list && alen >= sizeof(sin6))
+				memcpy((char *) addr, &sin6, sizeof(sin6));
+			break;
+		    }
+#endif
+		default:	/* can't happen */
+			PyErr_SetString(PySocket_Error,
+				"unsupported address family");
+			return NULL;
+		}
 		if (tmp == NULL)
 			goto err;
 		status = PyList_Append(addr_list, tmp);
@@ -1727,7 +1893,7 @@ PySocket_gethostbyname_ex(PyObject *self, PyObject *args)
 {
 	char *name;
 	struct hostent *h;
-	struct sockaddr_in addr;
+	struct sockaddr_storage addr;
 	PyObject *ret;
 #ifdef HAVE_GETHOSTBYNAME_R
 	struct hostent hp_allocated;
@@ -1742,9 +1908,10 @@ PySocket_gethostbyname_ex(PyObject *self, PyObject *args)
 	int result;
 #endif
 #endif /* HAVE_GETHOSTBYNAME_R */
+
 	if (!PyArg_ParseTuple(args, "s:gethostbyname_ex", &name))
 		return NULL;
-	if (setipaddr(name, &addr) < 0)
+	if (setipaddr(name, (struct sockaddr *)&addr, PF_INET) < 0)
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
 #ifdef HAVE_GETHOSTBYNAME_R
@@ -1764,7 +1931,7 @@ PySocket_gethostbyname_ex(PyObject *self, PyObject *args)
 	h = gethostbyname(name);
 #endif /* HAVE_GETHOSTBYNAME_R */
 	Py_END_ALLOW_THREADS
-	ret = gethost_common(h, &addr);
+	ret = gethost_common(h, (struct sockaddr *)&addr, sizeof(addr), addr.ss_family);
 #ifdef USE_GETHOSTBYNAME_LOCK
 	PyThread_release_lock(gethostbyname_lock);
 #endif
@@ -1784,7 +1951,12 @@ for a host.  The host argument is a string giving a host name or IP number.";
 static PyObject *
 PySocket_gethostbyaddr(PyObject *self, PyObject *args)
 {
+#ifdef INET6
+        struct sockaddr_storage addr;
+#else
 	struct sockaddr_in addr;
+#endif
+	struct sockaddr *sa = (struct sockaddr *)&addr;
 	char *ip_num;
 	struct hostent *h;
 	PyObject *ret;
@@ -1801,40 +1973,55 @@ PySocket_gethostbyaddr(PyObject *self, PyObject *args)
 	int result;
 #endif
 #endif /* HAVE_GETHOSTBYNAME_R */
+	char *ap;
+	int al;
+	int af;
 
 	if (!PyArg_ParseTuple(args, "s:gethostbyaddr", &ip_num))
 		return NULL;
-	if (setipaddr(ip_num, &addr) < 0)
+	af = PF_UNSPEC;
+	if (setipaddr(ip_num, sa, af) < 0)
 		return NULL;
+	af = sa->sa_family;
+	ap = NULL;
+	al = 0;
+	switch (af) {
+	case AF_INET:
+		ap = (char *)&((struct sockaddr_in *)sa)->sin_addr;
+		al = sizeof(((struct sockaddr_in *)sa)->sin_addr);
+		break;
+#ifdef INET6
+	case AF_INET6:
+		ap = (char *)&((struct sockaddr_in6 *)sa)->sin6_addr;
+		al = sizeof(((struct sockaddr_in6 *)sa)->sin6_addr);
+		break;
+#endif
+	default:
+		PyErr_SetString(PySocket_Error, "unsupported address family");
+		return NULL;
+	}
 	Py_BEGIN_ALLOW_THREADS
 #ifdef HAVE_GETHOSTBYNAME_R
 #if   defined(HAVE_GETHOSTBYNAME_R_6_ARG)
-	result = gethostbyaddr_r((char *)&addr.sin_addr,
-		sizeof(addr.sin_addr),
-		AF_INET, &hp_allocated, buf, buf_len,
+	result = gethostbyaddr_r(ap, al, af,
+		&hp_allocated, buf, buf_len,
 		&h, &errnop);
 #elif defined(HAVE_GETHOSTBYNAME_R_5_ARG)
-	h = gethostbyaddr_r((char *)&addr.sin_addr,
-			    sizeof(addr.sin_addr),
-			    AF_INET,
+	h = gethostbyaddr_r(ap, al, af,
 			    &hp_allocated, buf, buf_len, &errnop);
 #else /* HAVE_GETHOSTBYNAME_R_3_ARG */
 	memset((void *) &data, '\0', sizeof(data));
-	result = gethostbyaddr_r((char *)&addr.sin_addr,
-		sizeof(addr.sin_addr),
-		AF_INET, &hp_allocated, &data);
+	result = gethostbyaddr_r(ap, al, af, &hp_allocated, &data);
 	h = (result != 0) ? NULL : &hp_allocated;
 #endif
 #else /* not HAVE_GETHOSTBYNAME_R */
 #ifdef USE_GETHOSTBYNAME_LOCK
 	PyThread_acquire_lock(gethostbyname_lock, 1);
 #endif
-	h = gethostbyaddr((char *)&addr.sin_addr,
-			  sizeof(addr.sin_addr),
-			  AF_INET);
+	h = gethostbyaddr(ap, al, af);
 #endif /* HAVE_GETHOSTBYNAME_R */
 	Py_END_ALLOW_THREADS
-	ret = gethost_common(h, &addr);
+	ret = gethost_common(h, (struct sockaddr *)&addr, sizeof(addr), af);
 #ifdef USE_GETHOSTBYNAME_LOCK
 	PyThread_release_lock(gethostbyname_lock);
 #endif
@@ -2134,6 +2321,156 @@ PySocket_inet_ntoa(PyObject *self, PyObject *args)
 	return PyString_FromString(inet_ntoa(packed_addr));
 }
 
+/* Python interface to getaddrinfo(host, port). */
+
+/*ARGSUSED*/
+static PyObject *
+PySocket_getaddrinfo(PyObject *self, PyObject *args)
+{
+	struct addrinfo hints, *res0, *res;
+	PyObject *pobj = (PyObject *)NULL;
+	char pbuf[10];
+	char *hptr, *pptr;
+	int family, socktype, protocol, flags;
+	int error;
+	PyObject *all = (PyObject *)NULL;
+	PyObject *single = (PyObject *)NULL;
+
+	family = socktype = protocol = flags = 0;
+	family = PF_UNSPEC;
+	if (!PyArg_ParseTuple(args, "zO|iiii:getaddrinfo",
+	    &hptr, &pobj, &family, &socktype,
+			&protocol, &flags)) {
+		return NULL;
+	}
+	if (PyInt_Check(pobj)) {
+		snprintf(pbuf, sizeof(pbuf), "%ld", PyInt_AsLong(pobj));
+		pptr = pbuf;
+	} else if (PyString_Check(pobj)) {
+		pptr = PyString_AsString(pobj);
+	} else if (pobj == Py_None) {
+		pptr = (char *)NULL;
+	} else {
+		PyErr_SetString(PySocket_Error, "Int or String expected");
+		return NULL;
+	}
+	memset(&hints, 0, sizeof(hints));
+	hints.ai_family = family;
+	hints.ai_socktype = socktype;
+	hints.ai_protocol = protocol;
+	hints.ai_flags = flags;
+	error = getaddrinfo(hptr, pptr, &hints, &res0);
+	if (error) {
+		PyGAI_Err(error);
+		return NULL;
+	}
+
+	if ((all = PyList_New(0)) == NULL)
+		goto err;
+	for (res = res0; res; res = res->ai_next) {
+		single = Py_BuildValue("iiisO", res->ai_family,
+			res->ai_socktype, res->ai_protocol,
+			res->ai_canonname ? res->ai_canonname : "",
+			makesockaddr(-1, res->ai_addr, res->ai_addrlen));
+		if (single == NULL)
+			goto err;
+
+		if (PyList_Append(all, single))
+			goto err;
+		Py_XDECREF(single);
+	}
+	Py_XDECREF(pobj);
+	return all;
+ err:
+	Py_XDECREF(single);
+	Py_XDECREF(all);
+	Py_XDECREF(pobj);
+	return (PyObject *)NULL;
+}
+
+static char getaddrinfo_doc[] =
+"socket.getaddrinfo(host, port [, family, socktype, proto, flags])\n\
+	--> List of (family, socktype, proto, canonname, sockaddr)\n\
+\n\
+Resolve host and port into addrinfo struct.";
+
+/* Python interface to getnameinfo(sa, flags). */
+
+/*ARGSUSED*/
+static PyObject *
+PySocket_getnameinfo(PyObject *self, PyObject *args)
+{
+	PyObject *sa = (PyObject *)NULL;
+	int flags;
+	char *hostp;
+	int n, port, flowinfo, scope_id;
+	char hbuf[NI_MAXHOST], pbuf[NI_MAXSERV];
+	struct addrinfo hints, *res = NULL;
+	int error;
+	PyObject *ret = (PyObject *)NULL;
+
+	flags = flowinfo = scope_id = 0;
+	if (PyArg_ParseTuple(args, "Oi:getnameinfo", &sa, &flags) == 0)
+		return NULL;
+	n = PyArg_ParseTuple(sa, "si|ii", &hostp, &port, &flowinfo, scope_id);
+	if (n == 0)
+		goto fail;
+	snprintf(pbuf, sizeof(pbuf), "%d", port);
+	memset(&hints, 0, sizeof(hints));
+	hints.ai_family = PF_UNSPEC;
+	error = getaddrinfo(hostp, pbuf, &hints, &res);
+	if (error) {
+		PyGAI_Err(error);
+		goto fail;
+	}
+	if (res->ai_next) {
+		PyErr_SetString(PySocket_Error,
+			"sockaddr resolved to multiple addresses");
+		goto fail;
+	}
+	switch (res->ai_family) {
+	case AF_INET:
+	    {
+		char *t1;
+		int t2;
+		if (PyArg_ParseTuple(sa, "si", &t1, &t2) == 0) {
+			PyErr_SetString(PySocket_Error,
+				"IPv4 sockaddr must be 2 tuple");
+			goto fail;
+		}
+		break;
+	    }
+#ifdef INET6
+	case AF_INET6:
+	    {
+		struct sockaddr_in6 *sin6;
+		sin6 = (struct sockaddr_in6 *)res->ai_addr;
+		sin6->sin6_flowinfo = flowinfo;
+		sin6->sin6_scope_id = scope_id;
+		break;
+	    }
+#endif
+	}
+	error = getnameinfo(res->ai_addr, res->ai_addrlen,
+			hbuf, sizeof(hbuf), pbuf, sizeof(pbuf), flags);
+	if (error) {
+		PyGAI_Err(error);
+		goto fail;
+	}
+	ret = Py_BuildValue("ss", hbuf, pbuf);
+
+fail:
+	if (res)
+		freeaddrinfo(res);
+	Py_XDECREF(sa);
+	return ret;
+}
+
+static char getnameinfo_doc[] =
+"socket.getnameinfo(sockaddr, flags) --> (host, port)\n\
+\n\
+Get host and port for a sockaddr.";
+
 
 #ifdef USE_SSL
 
@@ -2389,6 +2726,10 @@ static PyMethodDef PySocket_methods[] = {
 	 METH_VARARGS, inet_aton_doc},
 	{"inet_ntoa",		PySocket_inet_ntoa,
 	 METH_VARARGS, inet_ntoa_doc},
+	{"getaddrinfo",		PySocket_getaddrinfo,
+	 METH_VARARGS, getaddrinfo_doc},
+	{"getnameinfo",		PySocket_getnameinfo,
+	 METH_VARARGS, getnameinfo_doc},
 #ifdef USE_SSL
 	{"ssl",			PySocket_ssl,
 	 METH_VARARGS, ssl_doc},
@@ -2559,6 +2900,13 @@ init_socket(void)
 	PySocket_Error = PyErr_NewException("socket.error", NULL, NULL);
 	if (PySocket_Error == NULL)
 		return;
+	PyH_Error = PyErr_NewException("socket.herror", PySocket_Error, NULL);
+	if (PyH_Error == NULL)
+		return;
+	PyGAI_Error = PyErr_NewException("socket.gaierror", PySocket_Error,
+	    NULL);
+	if (PyGAI_Error == NULL)
+		return;
 #ifdef USE_SSL
 	SSL_load_error_strings();
 	SSLeay_add_ssl_algorithms();
@@ -2584,6 +2932,9 @@ init_socket(void)
 	insint(d, "AF_UNSPEC", AF_UNSPEC);
 #endif
 	insint(d, "AF_INET", AF_INET);
+#ifdef AF_INET6
+	insint(d, "AF_INET6", AF_INET6);
+#endif /* AF_INET6 */
 #ifdef AF_UNIX
 	insint(d, "AF_UNIX", AF_UNIX);
 #endif /* AF_UNIX */
@@ -2937,6 +3288,98 @@ init_socket(void)
 	/* IPX options */
 #ifdef	IPX_TYPE
 	insint(d, "IPX_TYPE", IPX_TYPE);
+#endif
+
+	/* get{addr,name}info parameters */
+#ifdef EAI_ADDRFAMILY
+	insint(d, "EAI_ADDRFAMILY", EAI_ADDRFAMILY);
+#endif
+#ifdef EAI_AGAIN
+	insint(d, "EAI_AGAIN", EAI_AGAIN);
+#endif
+#ifdef EAI_BADFLAGS
+	insint(d, "EAI_BADFLAGS", EAI_BADFLAGS);
+#endif
+#ifdef EAI_FAIL
+	insint(d, "EAI_FAIL", EAI_FAIL);
+#endif
+#ifdef EAI_FAMILY
+	insint(d, "EAI_FAMILY", EAI_FAMILY);
+#endif
+#ifdef EAI_MEMORY
+	insint(d, "EAI_MEMORY", EAI_MEMORY);
+#endif
+#ifdef EAI_NODATA
+	insint(d, "EAI_NODATA", EAI_NODATA);
+#endif
+#ifdef EAI_NONAME
+	insint(d, "EAI_NONAME", EAI_NONAME);
+#endif
+#ifdef EAI_SERVICE
+	insint(d, "EAI_SERVICE", EAI_SERVICE);
+#endif
+#ifdef EAI_SOCKTYPE
+	insint(d, "EAI_SOCKTYPE", EAI_SOCKTYPE);
+#endif
+#ifdef EAI_SYSTEM
+	insint(d, "EAI_SYSTEM", EAI_SYSTEM);
+#endif
+#ifdef EAI_BADHINTS
+	insint(d, "EAI_BADHINTS", EAI_BADHINTS);
+#endif
+#ifdef EAI_PROTOCOL
+	insint(d, "EAI_PROTOCOL", EAI_PROTOCOL);
+#endif
+#ifdef EAI_MAX
+	insint(d, "EAI_MAX", EAI_MAX);
+#endif
+#ifdef AI_PASSIVE
+	insint(d, "AI_PASSIVE", AI_PASSIVE);
+#endif
+#ifdef AI_CANONNAME
+	insint(d, "AI_CANONNAME", AI_CANONNAME);
+#endif
+#ifdef AI_NUMERICHOST
+	insint(d, "AI_NUMERICHOST", AI_NUMERICHOST);
+#endif
+#ifdef AI_MASK
+	insint(d, "AI_MASK", AI_MASK);
+#endif
+#ifdef AI_ALL
+	insint(d, "AI_ALL", AI_ALL);
+#endif
+#ifdef AI_V4MAPPED_CFG
+	insint(d, "AI_V4MAPPED_CFG", AI_V4MAPPED_CFG);
+#endif
+#ifdef AI_ADDRCONFIG
+	insint(d, "AI_ADDRCONFIG", AI_ADDRCONFIG);
+#endif
+#ifdef AI_V4MAPPED
+	insint(d, "AI_V4MAPPED", AI_V4MAPPED);
+#endif
+#ifdef AI_DEFAULT
+	insint(d, "AI_DEFAULT", AI_DEFAULT);
+#endif
+#ifdef NI_MAXHOST
+	insint(d, "NI_MAXHOST", NI_MAXHOST);
+#endif
+#ifdef NI_MAXSERV
+	insint(d, "NI_MAXSERV", NI_MAXSERV);
+#endif
+#ifdef NI_NOFQDN
+	insint(d, "NI_NOFQDN", NI_NOFQDN);
+#endif
+#ifdef NI_NUMERICHOST
+	insint(d, "NI_NUMERICHOST", NI_NUMERICHOST);
+#endif
+#ifdef NI_NAMEREQD
+	insint(d, "NI_NAMEREQD", NI_NAMEREQD);
+#endif
+#ifdef NI_NUMERICSERV
+	insint(d, "NI_NUMERICSERV", NI_NUMERICSERV);
+#endif
+#ifdef NI_DGRAM
+	insint(d, "NI_DGRAM", NI_DGRAM);
 #endif
 
 	/* Initialize gethostbyname lock */
