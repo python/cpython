@@ -36,7 +36,6 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "grammar.h"
 #include "node.h"
 #include "parsetok.h"
-#undef argument /* Avoid conflict on Mac */
 #include "errcode.h"
 #include "compile.h"
 #include "eval.h"
@@ -52,7 +51,6 @@ PERFORMANCE OF THIS SOFTWARE.
 
 #ifdef MS_WIN32
 #undef BYTE
-#undef arglist
 #include "windows.h"
 #endif
 
@@ -70,47 +68,38 @@ static PyObject *run_pyc_file Py_PROTO((FILE *fp, char *filename,
 				   PyObject *globals, PyObject *locals));
 static void err_input Py_PROTO((perrdetail *));
 static void initsigs Py_PROTO((void));
+static void finisigs Py_PROTO((void));
 
 int Py_DebugFlag; /* Needed by parser.c */
 int Py_VerboseFlag; /* Needed by import.c */
 int Py_InteractiveFlag; /* Needed by Py_FdIsInteractive() below */
 
-/* Initialize the current interpreter; pass in the Python path. */
+static int initialized = 0;
 
-void
-Py_Setup()
-{
-	PyImport_Init();
-	
-	/* Modules '__builtin__' and 'sys' are initialized here,
-	   they are needed by random bits of the interpreter.
-	   All other modules are optional and are initialized
-	   when they are first imported. */
-	
-	PyBuiltin_Init(); /* Also initializes builtin exceptions */
-	PySys_Init();
+/* Global initializations.  Can be undone by Py_Finalize().  Don't
+   call this twice without an intervening Py_Finalize() call.  When
+   initializations fail, a fatal error is issued and the function does
+   not return.  On return, the first thread and interpreter state have
+   been created.
 
-	PySys_SetPath(Py_GetPath());
+   Locking: you must hold the interpreter lock while calling this.
+   (If the lock has not yet been initialized, that's equivalent to
+   having the lock, but you cannot use multiple threads.)
 
-	initsigs(); /* Signal handling stuff, including initintr() */
-
-	initmain();
-}
-
-/* Create and interpreter and thread state and initialize them;
-   if we already have an interpreter and thread, do nothing.
-   Fatal error if the creation fails. */
+*/
 
 void
 Py_Initialize()
 {
-	PyThreadState *tstate;
 	PyInterpreterState *interp;
+	PyThreadState *tstate;
+	PyObject *bimod, *sysmod;
 	char *p;
-	
-	if (PyThreadState_Get())
-		return;
 
+	if (initialized)
+		Py_FatalError("Py_Initialize: already initialized");
+	initialized = 1;
+	
 	if ((p = getenv("PYTHONDEBUG")) && *p != '\0')
 		Py_DebugFlag = 1;
 	if ((p = getenv("PYTHONVERBOSE")) && *p != '\0')
@@ -118,17 +107,178 @@ Py_Initialize()
 
 	interp = PyInterpreterState_New();
 	if (interp == NULL)
-		Py_FatalError("PyInterpreterState_New() failed");
+		Py_FatalError("Py_Initialize: can't make first interpreter");
 
 	tstate = PyThreadState_New(interp);
 	if (tstate == NULL)
-		Py_FatalError("PyThreadState_New() failed");
+		Py_FatalError("Py_Initialize: can't make first thread");
 	(void) PyThreadState_Swap(tstate);
 
-	Py_Setup();
+	interp->modules = PyDict_New();
+	if (interp->modules == NULL)
+		Py_FatalError("Py_Initialize: can't make modules dictionary");
 
+	bimod = _PyBuiltin_Init();
+	if (bimod == NULL)
+		Py_FatalError("Py_Initialize: can't initialize __builtin__");
+	interp->builtins = PyModule_GetDict(bimod);
+	Py_INCREF(interp->builtins);
+	_PyImport_FixupExtension("__builtin__", "__builtin__");
+
+	sysmod = _PySys_Init();
+	if (sysmod == NULL)
+		Py_FatalError("Py_Initialize: can't initialize sys");
+	interp->sysdict = PyModule_GetDict(sysmod);
+	Py_INCREF(interp->sysdict);
+	_PyImport_FixupExtension("sys", "sys");
 	PySys_SetPath(Py_GetPath());
-	/* XXX Who should set the path -- Setup or Initialize? */
+	PyDict_SetItemString(interp->sysdict, "modules",
+			     interp->modules);
+
+	_PyImport_Init();
+
+	initsigs(); /* Signal handling stuff, including initintr() */
+
+	initmain(); /* Module __main__ */
+}
+
+/* Undo the effect of Py_Initialize().
+
+   Beware: if multiple interpreter and/or thread states exist, these
+   are not wiped out; only the current thread and interpreter state
+   are deleted.  But since everything else is deleted, those other
+   interpreter and thread states should no longer be used.
+
+   (XXX We should do better, e.g. wipe out all interpreters and
+   threads.)
+
+   Locking: as above.
+
+*/
+
+void
+Py_Finalize()
+{
+	PyInterpreterState *interp;
+	PyThreadState *tstate;
+
+	if (!initialized)
+		Py_FatalError("Py_Finalize: not initialized");
+	initialized = 0;
+
+	tstate = PyThreadState_Get();
+	interp = tstate->interp;
+
+	PyImport_Cleanup();
+	PyInterpreterState_Clear(interp);
+	PyThreadState_Swap(NULL);
+	PyInterpreterState_Delete(interp);
+
+	finisigs();
+	_PyImport_Fini();
+	_PyBuiltin_Fini();
+	PyString_Fini();
+
+	PyGrammar_RemoveAccelerators(&_PyParser_Grammar);
+}
+
+/* Create and initialize a new interpreter and thread, and return the
+   new thread.  This requires that Py_Initialize() has been called
+   first.
+
+   Unsuccessful initialization yields a NULL pointer.  Note that *no*
+   exception information is available even in this case -- the
+   exception information is held in the thread, and there is no
+   thread.
+
+   Locking: as above.
+
+*/
+
+PyThreadState *
+Py_NewInterpreter()
+{
+	PyInterpreterState *interp;
+	PyThreadState *tstate, *save_tstate;
+	PyObject *bimod, *sysmod;
+
+	if (!initialized)
+		Py_FatalError("Py_NewInterpreter: call Py_Initialize first");
+
+	interp = PyInterpreterState_New();
+	if (interp == NULL)
+		return NULL;
+
+	tstate = PyThreadState_New(interp);
+	if (tstate == NULL) {
+		PyInterpreterState_Delete(interp);
+		return NULL;
+	}
+
+	save_tstate = PyThreadState_Swap(tstate);
+
+	/* XXX The following is lax in error checking */
+
+	interp->modules = PyDict_New();
+
+	bimod = _PyImport_FindExtension("__builtin__", "__builtin__");
+	if (bimod != NULL) {
+		interp->builtins = PyModule_GetDict(bimod);
+		Py_INCREF(interp->builtins);
+	}
+	sysmod = _PyImport_FindExtension("sys", "sys");
+	if (bimod != NULL && sysmod != NULL) {
+		interp->sysdict = PyModule_GetDict(sysmod);
+		Py_INCREF(interp->sysdict);
+		PySys_SetPath(Py_GetPath());
+		PyDict_SetItemString(interp->sysdict, "modules",
+				     interp->modules);
+		initmain();
+	}
+
+	if (!PyErr_Occurred())
+		return tstate;
+
+	/* Oops, it didn't work.  Undo it all. */
+
+	PyErr_Print();
+	PyThreadState_Clear(tstate);
+	PyThreadState_Swap(save_tstate);
+	PyThreadState_Delete(tstate);
+	PyInterpreterState_Delete(interp);
+
+	return NULL;
+}
+
+/* Delete an interpreter and its last thread.  This requires that the
+   given thread state is current, that the thread has no remaining
+   frames, and that it is its interpreter's only remaining thread.
+   It is a fatal error to violate these constraints.
+
+   (Py_Finalize() doesn't have these constraints -- it zaps
+   everything, regardless.)
+
+   Locking: as above.
+
+*/
+
+void
+Py_EndInterpreter(tstate)
+	PyThreadState *tstate;
+{
+	PyInterpreterState *interp = tstate->interp;
+
+	if (tstate != PyThreadState_Get())
+		Py_FatalError("Py_EndInterpreter: thread is not current");
+	if (tstate->frame != NULL)
+		Py_FatalError("Py_EndInterpreter: thread still has a frame");
+	if (tstate != interp->tstate_head || tstate->next != NULL)
+		Py_FatalError("Py_EndInterpreter: not the last thread");
+
+	PyImport_Cleanup();
+	PyInterpreterState_Clear(interp);
+	PyThreadState_Swap(NULL);
+	PyInterpreterState_Delete(interp);
 }
 
 static char *progname = "python";
@@ -700,8 +850,13 @@ Py_Cleanup()
 
 	Py_FlushLine();
 
+	Py_Finalize();
+
 	while (nexitfuncs > 0)
 		(*exitfuncs[--nexitfuncs])();
+
+	fflush(stdout);
+	fflush(stderr);
 }
 
 #ifdef COUNT_ALLOCS
@@ -718,31 +873,6 @@ Py_Exit(sts)
 	dump_counts();
 #endif
 
-#ifdef WITH_THREAD
-
-	/* Other threads may still be active, so skip most of the
-	   cleanup actions usually done (these are mostly for
-	   debugging anyway). */
-	
-	(void) PyEval_SaveThread();
-#ifndef NO_EXIT_PROG
-	if (_PyThread_Started)
-		_exit_prog(sts);
-	else
-		exit_prog(sts);
-#else /* !NO_EXIT_PROG */
-	if (_PyThread_Started)
-		_exit(sts);
-	else
-		exit(sts);
-#endif /* !NO_EXIT_PROG */
-	
-#else /* WITH_THREAD */
-	
-	PyImport_Cleanup();
-	
-	PyErr_Clear();
-
 #ifdef Py_REF_DEBUG
 	fprintf(stderr, "[%ld refs]\n", _Py_RefTotal);
 #endif
@@ -758,8 +888,6 @@ Py_Exit(sts)
 #else
 	exit(sts);
 #endif
-#endif /* WITH_THREAD */
-	/*NOTREACHED*/
 }
 
 #ifdef HAVE_SIGNAL_H
@@ -802,6 +930,12 @@ initsigs()
 #endif
 #endif /* HAVE_SIGNAL_H */
 	PyOS_InitInterrupts(); /* May imply initsignal() */
+}
+
+static void
+finisigs()
+{
+	PyOS_FiniInterrupts(); /* May imply finisignal() */
 }
 
 #ifdef Py_TRACE_REFS

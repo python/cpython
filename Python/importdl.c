@@ -246,6 +246,10 @@ _PyImport_LoadDynamicModule(name, pathname, fp)
 		pathname = pathbuf;
 	}
 #endif
+	if ((m = _PyImport_FindExtension(name, pathname)) != NULL) {
+		Py_INCREF(m);
+		return m;
+	}
 	sprintf(funcname, FUNCNAME_PATTERN, name);
 #ifdef USE_SHLIB
 	if (fp != NULL) {
@@ -518,13 +522,15 @@ _PyImport_LoadDynamicModule(name, pathname, fp)
 		return NULL;
 	}
 	(*p)();
-	/* XXX Need check for err_occurred() here */
+	if (PyErr_Occurred())
+		return NULL;
+	if (_PyImport_FixupExtension(name, pathname) == NULL)
+		return NULL;
 
 	m = PyDict_GetItemString(PyImport_GetModuleDict(), name);
 	if (m == NULL) {
-		if (PyErr_Occurred() == NULL)
-			PyErr_SetString(PyExc_SystemError,
-				   "dynamic module not initialized properly");
+		PyErr_SetString(PyExc_SystemError,
+				"dynamic module not initialized properly");
 		return NULL;
 	}
 	/* Remember the filename as the __file__ attribute */

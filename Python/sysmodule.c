@@ -52,8 +52,6 @@ Data members:
 #include <unistd.h>
 #endif
 
-static PyObject *sysdict;
-
 #ifdef MS_COREDLL
 extern void *PyWin_DLLhModule;
 #endif
@@ -62,7 +60,9 @@ PyObject *
 PySys_GetObject(name)
 	char *name;
 {
-	return PyDict_GetItemString(sysdict, name);
+	PyThreadState *tstate = PyThreadState_Get();
+	PyObject *sd = tstate->interp->sysdict;
+	return PyDict_GetItemString(sd, name);
 }
 
 FILE *
@@ -84,14 +84,16 @@ PySys_SetObject(name, v)
 	char *name;
 	PyObject *v;
 {
+	PyThreadState *tstate = PyThreadState_Get();
+	PyObject *sd = tstate->interp->sysdict;
 	if (v == NULL) {
-		if (PyDict_GetItemString(sysdict, name) == NULL)
+		if (PyDict_GetItemString(sd, name) == NULL)
 			return 0;
 		else
-			return PyDict_DelItemString(sysdict, name);
+			return PyDict_DelItemString(sd, name);
 	}
 	else
-		return PyDict_SetItemString(sysdict, name, v);
+		return PyDict_SetItemString(sd, name, v);
 }
 
 static PyObject *
@@ -103,8 +105,6 @@ sys_exc_info(self, args)
 	if (!PyArg_Parse(args, ""))
 		return NULL;
 	tstate = PyThreadState_Get();
-	if (tstate == NULL)
-		Py_FatalError("sys.exc_info(): no thread state");
 	return Py_BuildValue(
 		"(OOO)",
 		tstate->exc_type != NULL ? tstate->exc_type : Py_None,
@@ -161,7 +161,7 @@ sys_setcheckinterval(self, args)
 	PyObject *args;
 {
 	PyThreadState *tstate = PyThreadState_Get();
-	if (!PyArg_ParseTuple(args, "i", &tstate->sys_checkinterval))
+	if (!PyArg_ParseTuple(args, "i", &tstate->interp->checkinterval))
 		return NULL;
 	Py_INCREF(Py_None);
 	return Py_None;
@@ -242,8 +242,6 @@ static PyMethodDef sys_methods[] = {
 	{NULL,		NULL}		/* sentinel */
 };
 
-static PyObject *sysin, *sysout, *syserr;
-
 static PyObject *
 list_builtin_module_names()
 {
@@ -271,24 +269,28 @@ list_builtin_module_names()
 	return list;
 }
 
-void
-PySys_Init()
+PyObject *
+_PySys_Init()
 {
 	extern int fclose Py_PROTO((FILE *));
-	PyObject *m = Py_InitModule("sys", sys_methods);
-	PyObject *v;
+	PyThreadState *tstate;
+	PyObject *m, *v, *sysdict;
+	PyObject *sysin, *sysout, *syserr;
+
+	m = Py_InitModule("sys", sys_methods);
 	sysdict = PyModule_GetDict(m);
-	Py_INCREF(sysdict);
-	/* NB keep an extra ref to the std files to avoid closing them
-	   when the user deletes them */
-	sysin = PyFile_FromFile(stdin, "<stdin>", "r", fclose);
-	sysout = PyFile_FromFile(stdout, "<stdout>", "w", fclose);
-	syserr = PyFile_FromFile(stderr, "<stderr>", "w", fclose);
+
+	sysin = PyFile_FromFile(stdin, "<stdin>", "r", NULL);
+	sysout = PyFile_FromFile(stdout, "<stdout>", "w", NULL);
+	syserr = PyFile_FromFile(stderr, "<stderr>", "w", NULL);
 	if (PyErr_Occurred())
-		Py_FatalError("can't initialize sys.std{in,out,err}");
+		return NULL;
 	PyDict_SetItemString(sysdict, "stdin", sysin);
 	PyDict_SetItemString(sysdict, "stdout", sysout);
 	PyDict_SetItemString(sysdict, "stderr", syserr);
+	Py_XDECREF(sysin);
+	Py_XDECREF(sysout);
+	Py_XDECREF(syserr);
 	PyDict_SetItemString(sysdict, "version",
 			     v = PyString_FromString(Py_GetVersion()));
 	Py_XDECREF(v);
@@ -310,7 +312,6 @@ PySys_Init()
 	PyDict_SetItemString(sysdict, "maxint",
 			     v = PyInt_FromLong(PyInt_GetMax()));
 	Py_XDECREF(v);
-	PyDict_SetItemString(sysdict, "modules", PyImport_GetModuleDict());
 	PyDict_SetItemString(sysdict, "builtin_module_names",
 		   v = list_builtin_module_names());
 	Py_XDECREF(v);
@@ -323,7 +324,8 @@ PySys_Init()
 	Py_XDECREF(v);
 #endif
 	if (PyErr_Occurred())
-		Py_FatalError("can't insert sys.* objects in sys dict");
+		return NULL;
+	return m;
 }
 
 static PyObject *
