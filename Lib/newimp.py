@@ -68,9 +68,9 @@ also denoted in the module by '__package__'.  Additionally, modules have
 associated with them a '__pkgpath__', a path by which sibling modules are
 found."""
 
-__version__ = "$Revision$"
+__version__ = "Revision: 1.13"
 
-# $Id$ First release:
+# Id: newimp.py,v 1.13 1995/04/13 23:23:33 klm Exp First release:
 # Ken.Manheimer@nist.gov, 5-Apr-1995, for python 1.2
 
 # Developers Notes:
@@ -250,10 +250,16 @@ def import_module(name,
 	return (container or theMod)
     else:
 	# Implement 'from': Populate immediate env with module defs:
-	if froms == '*':
-	    froms = theMod.__dict__.keys()	# resolve '*'
-	for item in froms:
-	    (envLocals or envGlobals)[item] = theMod.__dict__[item]
+	while froms:
+	    item = froms[0]; del froms[0]
+	    if item == '*':
+		froms = theMod.__dict__.keys() + froms
+	    else:
+		try:
+		    (envLocals or envGlobals)[item] = theMod.__dict__[item]
+		except KeyError:
+		    raise ImportError, ("name '%s' not found in module %s" %
+					(item, theMod.__name__))
 	return theMod
 
 def unload(module):
