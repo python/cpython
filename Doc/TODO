@@ -17,9 +17,18 @@ PYTHON DOCUMENTATION TO-DO LIST			-*- indented-text -*-
   Also noted by Albert Hofkamp <a.hofkamp@wtb.tue.nl>.
 
 * Update the pickle documentation to describe all of the current
-  behavior; only a subset is described.  __reduce__, etc.
+  behavior; only a subset is described.  __reduce__, etc.  Partial
+  update submitted by Jim Kerr <jbkerr@sr.hp.com>.
 
 * Update the code/codeop module documentation.
+
+* Figure out HTMLHelp generation for the Windows world.
+
+* Straighten out random/whrandom.
+
+
+NOT WORTH THE TROUBLE
+---------------------
 
 * In the indexes, some subitem entries are separated from the item
   entries by column- or page-breaks.  Reported by Lorenzo M. Catucci
@@ -30,19 +39,4 @@ PYTHON DOCUMENTATION TO-DO LIST			-*- indented-text -*-
 
 * Fix problem with howto documents getting the last module synopsis
   twice (in \localmoduletable) so we can get rid of the ugly 'uniq'
-  hack in tools/mkhowto.sh.  (Probably not worth the trouble of
-  fixing.)
-
-* Figure out HTMLHelp generation for the Windows world.
-
-* Straighten out random/whrandom.
-
-
-BEFORE NEXT PYTHON RELEASE, BUT NOT UNTIL THEN:
-
-* Document that the mode parameter to wave.open() may be omitted, and
-  how it is determined if omitted.  (Same of aifc, sunau open()
-  functions.)
-
-* Document that fpformat.NotANumber is a subclass of ValueError, has
-  the string that failed as the "exception value".
+  hack in tools/mkhowto.  (Probably not worth the trouble of fixing.)
