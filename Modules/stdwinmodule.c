@@ -628,8 +628,7 @@ drawing_setfont(self, args)
 		err_badarg();
 		return NULL;
 	}
-	if (getstringsize(font) != 0)
-		wsetfont(getstringvalue(font));
+	wsetfont(getstringvalue(font));
 	if (style != NULL) {
 		switch (*getstringvalue(style)) {
 		case 'b':
@@ -1640,53 +1639,16 @@ stdwin_open(sw, args)
 }
 
 static object *
-stdwin_get_poll_event(poll, args)
-	int poll;
-	object *args;
+window2object(win)
+	WINDOW *win;
 {
-	EVENT e;
-	object *v, *w;
-	if (!getnoarg(args))
-		return NULL;
-	if (Drawing != NULL) {
-		err_setstr(RuntimeError, "cannot getevent() while drawing");
-		return NULL;
-	}
-/* again: */
-	if (poll) {
-		if (!wpollevent(&e)) {
-			INCREF(None);
-			return None;
-		}
-	}
-	else
-		wgetevent(&e);
-	if (e.type == WE_COMMAND && e.u.command == WC_CANCEL) {
-		/* Turn keyboard interrupts into exceptions */
-		err_set(KeyboardInterrupt);
-		return NULL;
-	}
-/*
-	if (e.window == NULL && (e.type == WE_COMMAND || e.type == WE_CHAR))
-		goto again;
-*/
-	if (e.type == WE_COMMAND && e.u.command == WC_CLOSE) {
-		/* Turn WC_CLOSE commands into WE_CLOSE events */
-		e.type = WE_CLOSE;
-	}
-	v = newtupleobject(3);
-	if (v == NULL)
-		return NULL;
-	if ((w = newintobject((long)e.type)) == NULL) {
-		DECREF(v);
-		return NULL;
-	}
-	settupleitem(v, 0, w);
-	if (e.window == NULL)
+	object *w;
+	if (win == NULL)
 		w = None;
 	else {
-		int tag = wgettag(e.window);
-		if (tag < 0 || tag >= MAXNWIN || windowlist[tag] == NULL)
+		int tag = wgettag(win);
+		if (tag < 0 || tag >= MAXNWIN || windowlist[tag] == NULL ||
+			windowlist[tag]->w_win != win)
 			w = None;
 		else
 			w = (object *)windowlist[tag];
@@ -1700,7 +1662,49 @@ stdwin_get_poll_event(poll, args)
 #endif
 	}
 	INCREF(w);
-	settupleitem(v, 1, w);
+	return w;
+}
+
+static object *
+stdwin_get_poll_event(poll, args)
+	int poll;
+	object *args;
+{
+	EVENT e;
+	object *v, *w;
+	if (!getnoarg(args))
+		return NULL;
+	if (Drawing != NULL) {
+		err_setstr(RuntimeError, "cannot getevent() while drawing");
+		return NULL;
+	}
+ again:
+	if (poll) {
+		if (!wpollevent(&e)) {
+			INCREF(None);
+			return None;
+		}
+	}
+	else
+		wgetevent(&e);
+	if (e.type == WE_COMMAND && e.u.command == WC_CANCEL) {
+		/* Turn keyboard interrupts into exceptions */
+		err_set(KeyboardInterrupt);
+		return NULL;
+	}
+	if (e.type == WE_COMMAND && e.u.command == WC_CLOSE) {
+		/* Turn WC_CLOSE commands into WE_CLOSE events */
+		e.type = WE_CLOSE;
+	}
+	v = newtupleobject(3);
+	if (v == NULL)
+		return NULL;
+	if ((w = newintobject((long)e.type)) == NULL) {
+		DECREF(v);
+		return NULL;
+	}
+	settupleitem(v, 0, w);
+	settupleitem(v, 1, window2object(e.window));
 	switch (e.type) {
 	case WE_CHAR:
 		{
@@ -1728,8 +1732,14 @@ stdwin_get_poll_event(poll, args)
 		if (e.u.m.id >= IDOFFSET && e.u.m.id < IDOFFSET+MAXNMENU &&
 				menulist[e.u.m.id - IDOFFSET] != NULL)
 			w = (object *)menulist[e.u.m.id - IDOFFSET];
-		else
-			w = None;
+		else {
+			/* Ghost menu event.
+			   Can occur only on the Mac if another part
+			   of the aplication has installed a menu;
+			   like the THINK C console library. */
+			DECREF(v);
+			goto again;
+		}
 		w = makemenu(w, e.u.m.item);
 		break;
 	case WE_LOST_SEL:
@@ -1948,6 +1958,14 @@ stdwin_setcutbuffer(self, args)
 }
 
 static object *
+stdwin_getactive(self, args)
+	object *self;
+	object *args;
+{
+	return window2object(wgetactive());
+}
+
+static object *
 stdwin_getcutbuffer(self, args)
 	object *self;
 	object *args;
@@ -2050,6 +2068,7 @@ static struct methodlist stdwin_methods[] = {
 	{"askync",		stdwin_askync},
 	{"fetchcolor",		stdwin_fetchcolor},
 	{"fleep",		stdwin_fleep},
+	{"getactive",		stdwin_getactive},
 	{"getcutbuffer",	stdwin_getcutbuffer},
 	{"getdefscrollbars",	stdwin_getdefscrollbars},
 	{"getdefwinpos",	stdwin_getdefwinpos},
