@@ -483,9 +483,6 @@ Currently-active file is at the head of the list.")
   ;; information
   (define-key py-mode-map "\C-c\C-b" 'py-submit-bug-report)
   (define-key py-mode-map "\C-c\C-v" 'py-version)
-  ;; py-newline-and-indent mappings
-  (define-key py-mode-map "\n"   'py-newline-and-indent)
-  (define-key py-mode-map "\C-m" 'py-newline-and-indent)
   ;; shadow global bindings for newline-and-indent w/ the py- version.
   ;; BAW - this is extremely bad form, but I'm not going to change it
   ;; for now.
