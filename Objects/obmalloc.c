@@ -261,8 +261,65 @@ SIMPLELOCK_DECL(_malloc_lock);
 #define LOCK_FINI()	SIMPLELOCK_FINI(_malloc_lock)
 
 /*
- * Pool table -- doubly linked lists of partially used pools
- */
+ * Pool table -- headed, circular, doubly-linked lists of partially used pools.
+
+This is involved.  For an index i, usedpools[i+i] is the header for a list of
+all partially used pools holding small blocks with "size class idx" i. So
+usedpools[0] corresponds to blocks of size 8, usedpools[2] to blocks of size
+16, and so on:  index 2*i <-> blocks of size (i+1)<<ALIGNMENT_SHIFT.
+
+The partially used pools for a given index are linked together via their
+pool_header's prevpool and nextpool members.  "Partially used" means at least
+one block in the pool is currently allocated, *and* at least one block in the
+pool is not currently allocated.
+
+When all blocks in a pool are allocated, the pool is unlinked from the list,
+and isn't linked to from anything anymore (you can't find it then from
+anything obmalloc.c knows about); the pool's own prevpool and nextpool
+pointers are set to point to itself.  The comments say the pool "is full" then.
+
+When a small block is returned to pymalloc, there are two cases.  If its pool
+was full, its pool is relinked into the appropriate usedpools[] list, at the
+front (so the next allocation of the same size class will be taken from this
+pool).  Else its pool was not full, the pool is already in a usedpools[]
+list, and isn't moved.  Instead the block is just linked to the front of the
+pool's own freeblock singly-linked list.  However, if that makes the pool
+entirely free of allocated blocks (the comments say the pool "is empty" then),
+the pool is unlinked from usedpools[], and inserted at the front of the
+(file static) singly-linked freepools list, via the pool header's nextpool
+member; prevpool is meaningless in this case.  Pools put on the freepools
+list can be changed to belong to a different size class.
+
+Major obscurity:  While the usedpools vector is declared to have poolp
+entries, it doesn't really.  It really contains two pointers per (conceptual)
+poolp entry, the nextpool and prevpool members of a pool_header.  The
+excruciating initialization code below fools C so that
+
+    usedpool[i+i]
+
+"acts like" a genuine poolp, but only so long as you only reference its
+nextpool and prevpool members.  The "- 2*sizeof(block *)" gibberish is
+compensating for that a pool_header's nextpool and prevpool members
+immediately follow a pool_header's first two members:
+
+	union { block *_padding;
+		uint count; } ref;
+	block *freeblock;
+
+each of which consume sizeof(block *) bytes.  So what usedpools[i+i] really
+contains is a fudged-up pointer p such that *if* C believes it's a poolp
+pointer, then p->nextpool and p->prevpool are both p (meaning that the headed
+circular list is empty).
+
+It's unclear why the usedpools setup is so convoluted.  It could be to
+minimize the amount of cache required to hold this heavily-referenced table
+(which only *needs* the two interpool pointer members of a pool_header). OTOH,
+referencing code has to remember to "double the index" and doing so isn't
+free, usedpools[0] isn't a strictly legal pointer, and we're crucially relying
+on that C doesn't insert any padding anywhere in a pool_header at or before
+the prevpool member.
+**************************************************************************** */
+
 #define PTA(x)	((poolp )((uchar *)&(usedpools[2*(x)]) - 2*sizeof(block *)))
 #define PT(x)	PTA(x), PTA(x)
 
@@ -619,8 +676,8 @@ _PyMalloc_Free(void *p)
 	pool = POOL_ADDR(p);
 	if (ADDRESS_IN_RANGE(p, pool->arenaindex)) {
 		/* We allocated this address. */
-		INCMINE;
 		LOCK();
+		INCMINE;
 		/*
 		 * At this point, the pool is not empty
 		 */
