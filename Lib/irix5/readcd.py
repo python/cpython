@@ -172,9 +172,9 @@ class Readcd():
 
 	def cachestatus(self):
 		self.status = self.player.getstatus()
-		if self.status[0] == CD.NODISK:
+		if self.status[0] == CD.NODISC:
 			self.status = None
-			raise Error, 'no disk in player'
+			raise Error, 'no disc in player'
 
 	def getstatus(self):
 		return self.player.getstatus()
