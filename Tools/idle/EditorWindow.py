@@ -89,6 +89,7 @@ class EditorWindow:
     vars = {}
 
     def __init__(self, flist=None, filename=None, key=None, root=None):
+        cprefs = self.ColorDelegator.cprefs
         self.flist = flist
         root = root or flist.root
         self.root = root
@@ -98,7 +99,12 @@ class EditorWindow:
         self.top = top = self.Toplevel(root, menu=self.menubar)
         self.vbar = vbar = Scrollbar(top, name='vbar')
         self.text = text = Text(top, name='text', padx=5,
-                                background="white", wrap="none")
+                                foreground=cprefs.CNormal[0],
+                                background=cprefs.CNormal[1], 
+                                highlightcolor=cprefs.CHilite[0],
+                                highlightbackground=cprefs.CHilite[1],
+                                insertbackground=cprefs.CCursor[1],
+                                wrap="none")
 
         self.createmenubar()
         self.apply_bindings()

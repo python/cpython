@@ -113,14 +113,21 @@ class ModifiedColorDelegator(ColorDelegator):
         ColorDelegator.recolorize_main(self)
 
     tagdefs = ColorDelegator.tagdefs.copy()
+    cprefs = ColorDelegator.cprefs
 
     tagdefs.update({
-        ##"stdin":   {"background": "yellow"},
-        "stdout":  {"foreground": "blue"},
-        "stderr":  {"foreground": "#007700"},
-        "console": {"foreground": "#770000"},
-        "ERROR":   {"background": "#FF7777"},
-        None:      {"foreground": "purple"}, # default
+        "stdin":   {"foreground": cprefs.CStdIn[0],
+                    "background": cprefs.CStdIn[1]},
+        "stdout":  {"foreground": cprefs.CStdOut[0],
+                    "background": cprefs.CStdOut[1]},
+        "stderr":  {"foreground": cprefs.CStdErr[0],
+                    "background": cprefs.CStdErr[1]},
+        "console": {"foreground": cprefs.CConsole[0],
+                    "background": cprefs.CConsole[1]},
+        "ERROR":   {"background": cprefs.CError[0],
+                    "background": cprefs.CError[1]},
+        None:      {"foreground": cprefs.CNormal[0],
+                    "background": cprefs.CNormal[1]},
     })
 
 
