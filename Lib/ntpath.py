@@ -457,8 +457,18 @@ def normpath(path):
 # Return an absolute path.
 def abspath(path):
     """Return the absolute version of a path"""
-    if path: # Empty path must return current working directory.
+    try:
         from nt import _getfullpathname
+    except ImportError: # Not running on Windows - mock up something sensible.
+        global abspath
+        def _abspath(path):
+            if not isabs(path):
+                path = join(os.getcwd(), path)
+            return normpath(path)
+        abspath = _abspath
+        return _abspath(path)
+
+    if path: # Empty path must return current working directory.
         try:
             path = _getfullpathname(path)
         except WindowsError:
