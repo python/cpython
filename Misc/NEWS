@@ -4,7 +4,7 @@ What's New in Python 2.2a1?
 Core
 
 - Generators were added; this is a new way to create an iterator (see
-  below) using what looks like a simple function containing one of
+  below) using what looks like a simple function containing one or
   more 'yield' statements.  See PEP 255.  Since this adds a new
   keyword to the language, this feature must be enabled by including a
   future statement: "from __future__ import generators" (see PEP 236).
