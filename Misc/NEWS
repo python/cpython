@@ -18,6 +18,8 @@ Core and builtins
 Extension modules
 -----------------
 
+- Bug #703198: Ignore "b" and "t" in os.popen on Unix.
+
 - Patch #803998: Deal with errors in SSL_write correctly.
 
 - The xml.parsers.expat module now provides Expat 1.95.7.
