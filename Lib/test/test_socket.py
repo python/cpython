@@ -22,13 +22,13 @@ def missing_ok(str):
 
 print socket.error
 
-print socket.AF_INET
+socket.AF_INET
 
-print socket.SOCK_STREAM
-print socket.SOCK_DGRAM
-print socket.SOCK_RAW
-print socket.SOCK_RDM
-print socket.SOCK_SEQPACKET
+socket.SOCK_STREAM
+socket.SOCK_DGRAM
+socket.SOCK_RAW
+socket.SOCK_RDM
+socket.SOCK_SEQPACKET
 
 for optional in ("AF_UNIX",
 
