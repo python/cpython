@@ -416,8 +416,11 @@ def abspath(path):
             return normpath(path)
         abspath = _abspath
         return _abspath(path)
-    try:
-        path = win32api.GetFullPathName(path)
-    except win32api.error:
-        pass # Bad path - return unchanged.
+    if path: # Empty path must return current working directory.
+        try:
+            path = win32api.GetFullPathName(path)
+        except win32api.error:
+            pass # Bad path - return unchanged.
+    else:
+        path = os.getcwd()
     return normpath(path)
