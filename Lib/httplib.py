@@ -596,18 +596,21 @@ class HTTPConnection:
         del self._buffer[:]
         self.send(msg)
 
-    def putrequest(self, method, url, skip_host=0):
+    def putrequest(self, method, url, skip_host=0, skip_accept_encoding=0):
         """Send a request to the server.
 
         `method' specifies an HTTP request method, e.g. 'GET'.
         `url' specifies the object being requested, e.g. '/index.html'.
+        `skip_host' if True does not add automatically a 'Host:' header
+        `skip_accept_encoding' if True does not add automatically an
+           'Accept-Encoding:' header
         """
 
         # if a prior response has been completed, then forget about it.
         if self.__response and self.__response.isclosed():
             self.__response = None
 
-        #
+       
         # in certain cases, we cannot issue another request on this connection.
         # this occurs when:
         #   1) we are in the process of sending a request.   (_CS_REQ_STARTED)
@@ -676,7 +679,8 @@ class HTTPConnection:
 
             # we only want a Content-Encoding of "identity" since we don't
             # support encodings such as x-gzip or x-deflate.
-            self.putheader('Accept-Encoding', 'identity')
+            if not skip_accept_encoding:
+                self.putheader('Accept-Encoding', 'identity')
 
             # we can accept "chunked" Transfer-Encodings, but no others
             # NOTE: no TE header implies *only* "chunked"

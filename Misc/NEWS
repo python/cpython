@@ -116,6 +116,8 @@ Extension modules
 Library
 -------
 
+- httplib.HTTP.putrequest now offers to omit the implicit Accept-Encoding.
+
 - Patch #841977: modulefinder didn't find extension modules in packages
 
 - imaplib.IMAP4.thread was added.
