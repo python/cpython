@@ -1333,6 +1333,7 @@ class OpFinder:
         elif self.op != node.flags:
             raise ValueError, "mixed ops in stmt"
     visitAssAttr = visitAssName
+    visitSubscript = visitAssName
 
 class Delegator:
     """Base class to support delegation for augmented assignment nodes
