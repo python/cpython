@@ -25,26 +25,30 @@ from distutils.extension import Extension
 # runs the setup script with no arguments at all.  More useful help
 # is generated with various --help options: global help, list commands,
 # and per-command help.
-usage = """\
-usage: %s [global_opts] cmd1 [cmd1_opts] [cmd2 [cmd2_opts] ...]
-   or: %s --help [cmd1 cmd2 ...]
-   or: %s --help-commands
-   or: %s cmd --help
-""" % ((os.path.basename(sys.argv[0]),) * 4)
+USAGE = """\
+usage: %(script)s [global_opts] cmd1 [cmd1_opts] [cmd2 [cmd2_opts] ...]
+   or: %(script)s --help [cmd1 cmd2 ...]
+   or: %(script)s --help-commands
+   or: %(script)s cmd --help
+"""
 
 
 # If DISTUTILS_DEBUG is anything other than the empty string, we run in
 # debug mode.
 DEBUG = os.environ.get('DISTUTILS_DEBUG')
 
+def gen_usage (script_name):
+    script = os.path.basename(script_name)
+    return USAGE % vars()
+
 
 def setup (**attrs):
     """The gateway to the Distutils: do everything your setup script needs
     to do, in a highly flexible and user-driven way.  Briefly: create a
     Distribution instance; find and parse config files; parse the command
-    line; run each of those commands using the options supplied to
-    'setup()' (as keyword arguments), in config files, and on the command
-    line.
+    line; run each Distutils command found there, customized by the options
+    supplied to 'setup()' (as keyword arguments), in config files, and on
+    the command line.
 
     The Distribution instance might be an instance of a class supplied via
     the 'distclass' keyword argument to 'setup'; if no such class is
@@ -79,6 +83,11 @@ def setup (**attrs):
     else:
         klass = Distribution
 
+    if not attrs.has_key('script_name'):
+        attrs['script_name'] = sys.argv[0]
+    if not attrs.has_key('script_args'):
+        attrs['script_args'] = sys.argv[1:]
+
     # Create the Distribution instance, using the remaining arguments
     # (ie. everything except distclass) to initialize it
     try:
@@ -97,10 +106,11 @@ def setup (**attrs):
     # Parse the command line; any command-line errors are the end user's
     # fault, so turn them into SystemExit to suppress tracebacks.
     try:
-        ok = dist.parse_command_line (sys.argv[1:])
+        ok = dist.parse_command_line()
     except DistutilsArgError, msg:
-        sys.stderr.write (usage + "\n")
-        raise SystemExit, "error: %s" % msg
+        script = os.path.basename(dist.script_name)
+        raise SystemExit, \
+              gen_usage(dist.script_name) + "\nerror: %s" % msg
 
     if DEBUG:
         print "options (after parsing command line):"

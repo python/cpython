@@ -202,7 +202,10 @@ class sdist (Command):
         # manifest, but there's no template -- which will happen if the
         # developer elects to generate a manifest some other way -- then we
         # can't regenerate the manifest, so we don't.)
-        setup_newer = dep_util.newer(sys.argv[0], self.manifest)
+        self.debug_print("checking if %s newer than %s" %
+                         (self.distribution.script_name, self.manifest))
+        setup_newer = dep_util.newer(self.distribution.script_name,
+                                     self.manifest)
 
         # cases:
         #   1) no manifest, template exists: generate manifest
