@@ -4,7 +4,7 @@ By Greg Ward <gward@python.net>
 
 Originally distributed as Optik; see http://optik.sourceforge.net/ .
 
-If you have problems with this module, please do not files bugs,
+If you have problems with this module, please do not file bugs,
 patches, or feature requests with Python; instead, use Optik's
 SourceForge project page:
   http://sourceforge.net/projects/optik
@@ -16,8 +16,25 @@ For support, use the optik-users@lists.sourceforge.net mailing list
 # Python developers: please do not make changes to this file, since
 # it is automatically generated from the Optik source code.
 
+__version__ = "1.4.1+"
 
-__version__ = "1.4.1"
+__all__ = ['Option',
+           'SUPPRESS_HELP',
+           'SUPPRESS_USAGE',
+           'STD_HELP_OPTION',
+           'STD_VERSION_OPTION',
+           'Values',
+           'OptionContainer',
+           'OptionGroup',
+           'OptionParser',
+           'HelpFormatter',
+           'IndentedHelpFormatter',
+           'TitledHelpFormatter',
+           'OptParseError',
+           'OptionError',
+           'OptionConflictError',
+           'OptionValueError',
+           'BadOptionError']
 
 __copyright__ = """
 Copyright (c) 2001-2003 Gregory P. Ward.  All rights reserved.
