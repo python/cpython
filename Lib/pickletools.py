@@ -1902,8 +1902,8 @@ def dis(pickle, out=None, indentlevel=4):
 _dis_test = """
 >>> import pickle
 >>> x = [1, 2, (3, 4), {'abc': u"def"}]
->>> pik = pickle.dumps(x, 0)
->>> dis(pik)
+>>> pkl = pickle.dumps(x, 0)
+>>> dis(pkl)
     0: ( MARK
     1: l     LIST       (MARK at 0)
     2: p PUT        0
@@ -1930,8 +1930,8 @@ _dis_test = """
 
 Try again with a "binary" pickle.
 
->>> pik = pickle.dumps(x, 1)
->>> dis(pik)
+>>> pkl = pickle.dumps(x, 1)
+>>> dis(pkl)
     0: ] EMPTY_LIST
     1: q BINPUT     0
     3: ( MARK
@@ -1975,13 +1975,12 @@ Exercise the INST/OBJ/BUILD family.
    44: p PUT        3
    47: ( MARK
    48: t     TUPLE      (MARK at 47)
-   49: p PUT        4
-   52: s SETITEM
-   53: b BUILD
-   54: a APPEND
-   55: g GET        1
-   58: a APPEND
-   59: . STOP
+   49: s SETITEM
+   50: b BUILD
+   51: a APPEND
+   52: g GET        1
+   55: a APPEND
+   56: . STOP
 
 >>> dis(pickle.dumps(x, 1))
     0: ] EMPTY_LIST
@@ -2071,7 +2070,7 @@ pickle would require the disassembler to emulate the stack.
    14: . STOP
 """
 
-__test__ = {'dissassembler_test': _dis_test,
+__test__ = {'disassembler_test': _dis_test,
            }
 
 def _test():
