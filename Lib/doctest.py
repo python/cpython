@@ -167,6 +167,7 @@ output as appeared in the initial ">>>" line that triggered it.
 If you execute this very file, the examples above will be found and
 executed.
 """
+__docformat__ = 'reStructuredText en'
 
 __all__ = [
     'is_private',
@@ -330,6 +331,17 @@ def _tag_msg(tag, msg, indent='    '):
         msg = '\n'.join([indent+l for l in msg[:-1].split('\n')])
         return '%s:\n%s\n' % (tag, msg)
 
+def _exception_traceback(exc_info):
+    """
+    Return a string containing a traceback message for the given
+    exc_info tuple (as returned by sys.exc_info()).
+    """
+    # Get a traceback message.
+    excout = StringIO()
+    exc_type, exc_val, exc_tb = exc_info
+    traceback.print_exception(exc_type, exc_val, exc_tb, file=excout)
+    return excout.getvalue()
+
 # Override some StringIO methods.
 class _SpoofOut(StringIO):
     def getvalue(self):
@@ -467,6 +479,11 @@ class DocTestParser:
     """
     A class used to parse strings containing doctest examples.
     """
+    # This regular expression is used to find doctest examples in a
+    # string.  It defines three groups: `source` is the source code
+    # (including leading indentation and prompts); `indent` is the
+    # indentation of the first (PS1) line of the source code; and
+    # `want` is the expected output (including leading indentation).
     _EXAMPLE_RE = re.compile(r'''
         # Source consists of a PS1 line followed by zero or more PS2 lines.
         (?P<source>
@@ -479,7 +496,10 @@ class DocTestParser:
                      .*$\n?       # But any other line
                   )*)
         ''', re.MULTILINE | re.VERBOSE)
-    _IS_BLANK_OR_COMMENT = re.compile('^[ ]*(#.*)?$').match
+
+    # This regular expression matcher checks if a given string is a
+    # blank line or contains a single comment.
+    _IS_BLANK_OR_COMMENT = re.compile(r'^[ ]*(#.*)?$').match
 
     def get_doctest(self, string, globs, name, filename, lineno):
         """
@@ -1125,7 +1145,7 @@ class DocTestRunner:
         Report that the given example failed.
         """
         # Print an error message.
-        out(self.__failure_header(test, example) +
+        out(self._failure_header(test, example) +
             self._checker.output_difference(example.want, got,
                                             self.optionflags))
 
@@ -1133,16 +1153,10 @@ class DocTestRunner:
         """
         Report that the given example raised an unexpected exception.
         """
-        # Get a traceback message.
-        excout = StringIO()
-        exc_type, exc_val, exc_tb = exc_info
-        traceback.print_exception(exc_type, exc_val, exc_tb, file=excout)
-        exception_tb = excout.getvalue()
-        # Print an error message.
-        out(self.__failure_header(test, example) +
-            _tag_msg("Exception raised", exception_tb))
+        out(self._failure_header(test, example) +
+            _tag_msg("Exception raised", _exception_traceback(exc_info)))
 
-    def __failure_header(self, test, example):
+    def _failure_header(self, test, example):
         s = (self.DIVIDER + "\n" +
              _tag_msg("Failure in example", example.source))
         if test.filename is None:
@@ -1256,10 +1270,10 @@ class DocTestRunner:
                                                    self.optionflags)):
                         # Is +exc_msg the right thing here??
                         self.report_success(out, test, example,
-                                            got+exc_hdr+exc_msg)
+                                       got+_exception_traceback(exc_info))
                     else:
                         self.report_failure(out, test, example,
-                                            got+exc_hdr+exc_msg)
+                                       got+_exception_traceback(exc_info))
                         failures += 1
 
         # Restore the option flags (in case they were modified)
