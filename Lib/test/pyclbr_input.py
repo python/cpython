@@ -10,11 +10,11 @@ class Other(object):
 
 class B (object):
     def bm(self): pass
-    
+
 class C (B):
     foo = Other().foo
     om = Other.om
-    
+
     d = 10
 
     # XXX: This causes test_pyclbr.py to fail, but only because the
@@ -23,9 +23,9 @@ class C (B):
     #      The pyclbr.py module gets this right as it parses the text.
     #
     #f = f
-    
+
     def m(self): pass
-    
+
     @staticmethod
     def sm(self): pass
 
