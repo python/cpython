@@ -1080,7 +1080,7 @@ def do_funcdesc(length, buf, pp, i):
 	idxsi = hist.indexsubitem	# words
 	command = ''
 	cat_class = ''
-	if idxsi and idxsi[-1] == 'method':
+	if idxsi and idxsi[-1] in ('method', 'attribute'):
 		command = 'defmethod'
 		cat_class = string.join(idxsi[:-1])
 	elif len(idxsi) == 2 and idxsi[1] == 'function':
@@ -1170,10 +1170,10 @@ def do_datadesc(length, buf, pp, i):
 	command = ''
 	cat_class = ''
 	class_class = ''
-	if len(idxsi) == 2 and idxsi[1] == 'attribute':
+	if idxsi[-1] == 'attribute':
 		command = 'defcv'
 		cat_class = 'attribute'
-		class_class = idxsi[0]
+		class_class = string.join(idxsi[:-1])
 	elif len(idxsi) == 3 and idxsi[:2] == ['in', 'module']:
 		command = 'defcv'
 		cat_class = 'data'
