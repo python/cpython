@@ -78,7 +78,8 @@ Socket methods:
 #include <sys/un.h>
 #include <netdb.h>
 #ifdef _AIX /* I *think* this works */
-#include <select.h> /* Needed for fd_set */
+/* AIX defines fd_set in a separate file.  Sigh... */
+#include <sys/select.h>
 #endif
 
 
