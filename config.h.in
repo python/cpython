@@ -404,6 +404,9 @@
 /* Define if you have the plock function.  */
 #undef HAVE_PLOCK
 
+/* Define if you have the poll function.  */
+#undef HAVE_POLL
+
 /* Define if you have the pthread_init function.  */
 #undef HAVE_PTHREAD_INIT
 
@@ -535,6 +538,9 @@
 
 /* Define if you have the <ndir.h> header file.  */
 #undef HAVE_NDIR_H
+
+/* Define if you have the <poll.h> header file.  */
+#undef HAVE_POLL_H
 
 /* Define if you have the <pthread.h> header file.  */
 #undef HAVE_PTHREAD_H

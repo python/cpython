@@ -367,7 +367,7 @@ dnl AC_MSG_RESULT($cpp_type)
 
 # checks for header files
 AC_HEADER_STDC
-AC_CHECK_HEADERS(dlfcn.h fcntl.h limits.h locale.h ncurses.h pthread.h \
+AC_CHECK_HEADERS(dlfcn.h fcntl.h limits.h locale.h ncurses.h poll.h pthread.h \
 signal.h stdarg.h stddef.h stdlib.h thread.h unistd.h utime.h \
 sys/audioio.h sys/file.h sys/lock.h \
 sys/param.h sys/select.h sys/socket.h sys/time.h sys/times.h \
@@ -872,7 +872,7 @@ AC_CHECK_FUNCS(alarm chown clock confstr ctermid ctermid_r execv \
  flock fork fsync fdatasync fpathconf ftime ftruncate \
  getgroups getlogin getpeername getpid getpwent getwd \
  kill link lstat mkfifo mktime mremap \
- nice pathconf pause plock pthread_init \
+ nice pathconf pause plock poll pthread_init \
  putenv readlink \
  select setegid seteuid setgid \
  setlocale setregid setreuid setsid setpgid setuid setvbuf \
