@@ -43,18 +43,16 @@ typedef struct {
 	object	*cl_bases;	/* A tuple of class objects */
 	object	*cl_dict;	/* A dictionary */
 	object	*cl_name;	/* A string */
+	/* The following three are functions or NULL */
+	object	*cl_getattr;
+	object	*cl_setattr;
+	object	*cl_delattr;
 } classobject;
 
 typedef struct {
 	OB_HEAD
 	classobject	*in_class;	/* The class object */
 	object		*in_dict;	/* A dictionary */
-	object		*in_getattr;	/* A method or NULL */
-	object		*in_setattr;	/* A method or NULL */
-	long		in_ident;	/* A thread ident or 0 */
-#ifdef WITH_THREAD
-	type_lock	*in_lock;	/* A lock or NULL */
-#endif
 } instanceobject;
 
 extern DL_IMPORT typeobject Classtype, Instancetype, Instancemethodtype;
