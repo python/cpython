@@ -78,7 +78,13 @@ without having to run a single setup script or compile a line of code.
 \label{simple-example}
 
 The setup script is usually quite simple, although since it's written in
-Python, there are no arbitrary limits to what you can do with it.  If
+Python, there are no arbitrary limits to what you can do with
+it.\footnote{But be careful about putting arbitrarily expensive
+  operations in your setup script; unlike, say, Autoconf-style configure
+  scripts, the setup script may be run multiple times in the course of
+  building and installing your module distribution.  If you need to
+  insert potentially expensive processing steps into the Distutils
+  chain, see section~\ref{extending} on extending the Distutils.}  If
 all you want to do is distribute a module called \module{foo}, contained
 in a file \file{foo.py}, then your setup script can be as little as
 this:
@@ -100,6 +106,7 @@ Some observations:
   hold true for packages and extensions)
 \item it's recommended that you supply a little more meta-data, in
   particular your name, email address and a URL for the project
+  (see section~\ref{setup-script} for an example)
 \end{itemize}
 
 To create a source distribution for this module, you would create a
@@ -153,7 +160,7 @@ medium-sized module collections.  You'll need to have version XXX of
 Wise installed on your system for the \command{bdist\_wise} command to
 work; it's available from \url{http://foo/bar/baz}.)
 
-Currently (Distutils 0.9.1), the are only other useful built
+Currently (Distutils 0.9.2), the are only other useful built
 distribution format is RPM, implemented by the \command{bdist\_rpm}
 command.  For example, the following command will create an RPM file
 called \file{Foo-1.0.noarch.rpm}:
@@ -552,24 +559,125 @@ intend to distribute your code.)
 \label{setup-config}
 
 Often, it's not possible to write down everything needed to build a
-distribution \emph{a priori}.  You need to get some information from the
-user, or from the user's system, in order to proceed.  For example, you
-might include an optional extension module that provides an interface to
-a particular C library.  If that library is installed on the user's
-system, then you can build your optional extension---but you need to
-know where to find the header and library file.  If it's not installed,
-you need to know this so you can omit your optional extension.
+distribution \emph{a priori}: you may need to get some information from
+the user, or from the user's system, in order to proceed.  As long as
+that information is fairly simple---a list of directories to search for
+C header files or libraries, for example---then providing a
+configuration file, \file{setup.cfg}, for users to edit is a cheap and
+easy way to solicit it.  Configuration files also let you provide
+default values for any command option, which the installer can then
+override either on the command-line or by editing the config file.
 
-The preferred way to do this, of course, would be for you to tell the
-Distutils which optional features (C libraries, system calls, external
-utilities, etc.) you're looking for, and it would inspect the user's
-system and try to find them.  This functionality may appear in a future
-version of the Distutils, but it isn't there now.  So, for the time
-being, we rely on the user building and installing your software to
-provide the necessary information.  The vehicle for doing so is the
-setup configuration file, \file{setup.cfg}.
+(If you have more advanced needs, such as determining which extensions
+to build based on what capabilities are present on the target system,
+then you need the Distutils ``auto-configuration'' facility.  This
+started to appear in Distutils 0.9 but, as of this writing, isn't mature 
+or stable enough yet for real-world use.)
 
-\XXX{need more here!}
+\XXX{should reference description of distutils config files in
+  ``Installing'' manual here}
+
+The setup configuration file is a useful middle-ground between the setup
+script---which, ideally, would be opaque to installers\footnote{This
+  ideal probably won't be achieved until auto-configuration is fully
+  supported by the Distutils.}---and the command-line to the setup
+script, which is outside of your control and entirely up to the
+installer.  In fact, \file{setup.cfg} (and any other Distutils
+configuration files present on the target system) are processed after
+the contents of the setup script, but before the command-line.  This has 
+several useful consequences:
+\begin{itemize}
+\item installers can override some of what you put in \file{setup.py} by
+  editing \file{setup.cfg}
+\item you can provide non-standard defaults for options that are not
+  easily set in \file{setup.py}
+\item installers can override anything in \file{setup.cfg} using the
+  command-line options to \file{setup.py}
+\end{itemize}
+
+The basic syntax of the configuration file is simple:
+\begin{verbatim}
+[command]
+option=value
+...
+\end{verbatim}
+where \var{command} is one of the Distutils commands (e.g.
+\command{build\_py}, \command{install}), and \var{option} is one of the
+options that command supports.  Any number of options can be supplied
+for each command, and any number of command sections can be included in
+the file.  Blank lines are ignored, as are comments (from a \verb+#+
+character to end-of-line).  Long option values can be split across
+multiple lines simply by indenting the continuation lines.
+
+You can find out the list of options supported by a particular command
+with the universal \longprogramopt{help} option, e.g.
+\begin{verbatim}
+> python setup.py --help build_ext
+[...]
+Options for 'build_ext' command:
+  --build-lib (-b)     directory for compiled extension modules
+  --build-temp (-t)    directory for temporary files (build by-products)
+  --inplace (-i)       ignore build-lib and put compiled extensions into the
+                       source directory alongside your pure Python modules
+  --include-dirs (-I)  list of directories to search for header files
+  --define (-D)        C preprocessor macros to define
+  --undef (-U)         C preprocessor macros to undefine
+[...]
+\end{verbatim}
+Or consult section \ref{reference} of this document (the command
+reference).
+
+Note that an option spelled \longprogramopt{foo-bar} on the command-line 
+is spelled \option{foo\_bar} in configuration files.
+
+For example, say you want your extensions to be built
+``in-place''---that is, you have an extension \module{pkg.ext}, and you
+want the compiled extension file (\file{ext.so} on Unix, say) to be put
+in the same source directory as your pure Python modules
+\module{pkg.mod1} and \module{pkg.mod2}.  You can always use the
+\longprogramopt{inplace} option on the command-line to ensure this:
+\begin{verbatim}
+python setup.py build_ext --inplace
+\end{verbatim}
+But this requires that you always specify the \command{build\_ext}
+command explicitly, and remember to provide \longprogramopt{inplace}.
+An easier way is to ``set and forget'' this option, by encoding it in
+\file{setup.cfg}, the configuration file for this distribution:
+\begin{verbatim}
+[build_ext]
+inplace=1
+\end{verbatim}
+This will affect all builds of this module distribution, whether or not
+you explcitly specify \command{build\_ext}.  If you include
+\file{setup.cfg} in your source distribution, it will also affect
+end-user builds---which is probably a bad idea for this option, since
+always building extensions in-place would break installation of the
+module distribution.  In certain peculiar cases, though, modules are
+built right in their installation directory, so this is conceivably a
+useful ability.  (Distributing extensions that expect to be built in
+their installation directory is almost always a bad idea, though.)
+
+Another example: certain commands take a lot of options that don't
+change from run-to-run; for example, \command{bdist\_rpm} needs to know
+everything required to generate a ``spec'' file for creating an RPM
+distribution.  Some of this information comes from the setup script, and
+some is automatically generated by the Distutils (such as the list of
+files installed).  But some of it has to be supplied as options to
+\command{bdist\_rpm}, which would be very tedious to do on the
+command-line for every run.  Hence, here is a snippet from the
+Distutils' own \file{setup.cfg}:
+\begin{verbatim}
+[bdist_rpm]
+release = 1
+packager = Greg Ward <gward@python.net>
+doc_files = CHANGES.txt
+            README.txt
+            USAGE.txt
+            doc/
+            examples/
+\end{verbatim}
+Note that the \option{doc\_files} option is simply a
+whitespace-separated string split across multiple lines for readability.
 
 
 \section{Creating a Source Distribution}
@@ -597,16 +705,21 @@ python setup.py sdist --formats=gztar,zip
 to create a gzipped tarball and a zip file.  The available formats are:
 \begin{tableiii}{l|l|c}{code}%
   {Format}{Description}{Notes}
-  \lineiii{zip}{zip file (\file{.zip})}{(1)}
-  \lineiii{gztar}{gzipped tar file (\file{.tar.gz})}{(2)}
-  \lineiii{ztar}{compressed tar file (\file{.tar.Z})}{}
+  \lineiii{zip}{zip file (\file{.zip})}{(1),(2)}
+  \lineiii{gztar}{gzip'ed tar file (\file{.tar.gz})}{(3),(4)}
+  \lineiii{bztar}{bzip2'ed tar file (\file{.tar.gz})}{(4)}
+  \lineiii{ztar}{compressed tar file (\file{.tar.Z})}{(4)}
   \lineiii{tar}{tar file (\file{.tar})}{}
 \end{tableiii}
 
 \noindent Notes:
 \begin{description}
 \item[(1)] default on Windows
-\item[(2)] default on Unix
+\item[(2)] under both Unix and Windows, requires either external
+  Info-ZIP utility \emph{or} the \module{zipfile} module
+\item[(3)] default on Unix
+\item[(4)] requires external utilities: \program{tar} and possibly one
+  of \program{gzip}, \program{bzip2}, or \program{compress}
 \end{description}
 
 
@@ -659,7 +772,7 @@ list of files.  This list is written to the manifest for future
 reference, and then used to build the source distribution archive(s).
 
 Following the Distutils' own manifest template, let's trace how the
-\command{sdist} command will build the list of files to include in the
+\command{sdist} command builds the list of files to include in the
 Distutils source distribution:
 \begin{enumerate}
 \item include all Python source files in the \file{distutils} and
@@ -869,7 +982,7 @@ each, are:
 
 
 \section{Reference}
-\label{ref}
+\label{reference}
 
 
 \subsection{Building modules: the \protect\command{build} command family}
