@@ -1506,7 +1506,7 @@ PySequence_Fast(PyObject *v, const char *m)
 		return NULL;
 	}
 
-	v = PySequence_Tuple(it);
+	v = PySequence_List(it);
 	Py_DECREF(it);
 
 	return v;
