@@ -359,6 +359,13 @@ deque_item(dequeobject *deque, int i)
 	return item;
 }
 
+/* delitem() implemented in terms of rotate for simplicity and reasonable
+   performance near the end points.  If for some reason this method becomes
+   popular, it is not hard to re-implement this using direct data movement 
+   (similar to code in list slice assignment) and achieve a two or threefold
+   performance boost.
+*/
+
 static int
 deque_del_item(dequeobject *deque, int i)
 {
