@@ -40,7 +40,7 @@ flow_stmt: break_stmt | continue_stmt | return_stmt | raise_stmt
 break_stmt: 'break'
 continue_stmt: 'continue'
 return_stmt: 'return' [testlist]
-raise_stmt: 'raise' test [',' test [',' test]]
+raise_stmt: 'raise' [test [',' test [',' test]]]
 import_stmt: 'import' dotted_name (',' dotted_name)* | 'from' dotted_name 'import' ('*' | NAME (',' NAME)*)
 dotted_name: NAME ('.' NAME)*
 global_stmt: 'global' NAME (',' NAME)*

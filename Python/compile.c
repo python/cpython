@@ -659,6 +659,8 @@ com_add(c, list, v)
 {
 	int n = PyList_Size(list);
 	int i;
+	/* XXX This is quadratic in the number of names per compilation unit.
+	   XXX Should use a dictionary. */
 	for (i = n; --i >= 0; ) {
 		PyObject *w = PyList_GetItem(list, i);
 		if (v->ob_type == w->ob_type && PyObject_Compare(v, w) == 0)
@@ -2050,12 +2052,14 @@ com_raise_stmt(c, n)
 	node *n;
 {
 	int i;
-	REQ(n, raise_stmt); /* 'raise' test [',' test [',' test]] */
-	com_node(c, CHILD(n, 1));
-	if (NCH(n) > 3) {
-		com_node(c, CHILD(n, 3));
-		if (NCH(n) > 5)
-			com_node(c, CHILD(n, 5));
+	REQ(n, raise_stmt); /* 'raise' [test [',' test [',' test]]] */
+	if (NCH(n) > 1) {
+		com_node(c, CHILD(n, 1));
+		if (NCH(n) > 3) {
+			com_node(c, CHILD(n, 3));
+			if (NCH(n) > 5)
+				com_node(c, CHILD(n, 5));
+		}
 	}
 	i = NCH(n)/2;
 	com_addoparg(c, RAISE_VARARGS, i);
