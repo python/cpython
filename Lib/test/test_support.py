@@ -1,6 +1,7 @@
 # Python test set -- supporting definitions.
 
-TestFailed = 'test_support -- test failed'	# Exception
+class TestFailed(Exception):
+	pass
 
 verbose = 1				# Flag set to 0 by regrtest.py
 
