@@ -176,6 +176,14 @@ static object *modules;
 /* Forward */
 static int init_builtin PROTO((char *));
 
+/* Helper for reading .pyc files */
+
+long
+get_pyc_magic()
+{
+	return MAGIC;
+}
+
 /* Initialization */
 
 void
@@ -482,6 +490,9 @@ get_module(m, name, m_ret)
 		/* Now write the code object to the ".pyc" file */
 		strcpy(namebuf + len, "c");
 		fpc = fopen(namebuf, "wb");
+#ifdef macintosh
+		setfiletype(namebuf, 'PYTH', 'PYC ');
+#endif
 		if (fpc == NULL) {
 			if (verbose)
 				fprintf(stderr,

@@ -37,6 +37,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "ceval.h"
 #include "pythonrun.h"
 #include "import.h"
+#include "marshal.h"
 
 #ifdef HAVE_SIGNAL_H
 #include <signal.h>
@@ -192,11 +193,24 @@ run_script(fp, filename)
 	char *filename;
 {
 	object *m, *d, *v;
+	char *ext;
+
 	m = add_module("__main__");
 	if (m == NULL)
 		return -1;
 	d = getmoduledict(m);
-	v = run_file(fp, filename, file_input, d, d);
+	ext = filename + strlen(filename) - 4;
+	if ( strcmp(ext, ".pyc") == 0 ) {
+		/* Try to run a pyc file. First, re-open in binary */
+		fclose(fp);
+		if( (fp = fopen(filename, "rb")) == NULL ) {
+			fprintf(stderr, "python: Can't reopen .pyc file\n");
+			return -1;
+		}
+		v = run_pyc_file(fp, filename, d, d);
+	} else {
+		v = run_file(fp, filename, file_input, d, d);
+	}
 	flushline();
 	if (v == NULL) {
 		print_error();
@@ -351,6 +365,38 @@ run_node(n, filename, globals, locals)
 	freetree(n);
 	if (co == NULL)
 		return NULL;
+	v = eval_code(co, globals, locals, (object *)NULL, (object *)NULL);
+	DECREF(co);
+	return v;
+}
+
+object *
+run_pyc_file(fp, filename, globals, locals)
+	FILE *fp;
+	char *filename;
+	object *globals, *locals;
+{
+	codeobject *co;
+	object *v;
+	long magic;
+	long get_pyc_magic();
+
+	magic = rd_long(fp);
+	if (magic != get_pyc_magic()) {
+		err_setstr(RuntimeError,
+			   "Bad magic number in .pyc file");
+		return NULL;
+	}
+	(void) rd_long(fp);
+	v = rd_object(fp);
+	fclose(fp);
+	if (v == NULL || !is_codeobject(v)) {
+		XDECREF(v);
+		err_setstr(RuntimeError,
+			   "Bad code object in .pyc file");
+		return NULL;
+	}
+	co = (codeobject *)v;
 	v = eval_code(co, globals, locals, (object *)NULL, (object *)NULL);
 	DECREF(co);
 	return v;
