@@ -8,6 +8,8 @@
 
 package main;
 
+use File::Basename;
+
 
 sub next_argument{
     my $param;
@@ -23,6 +25,30 @@ sub next_optional_argument{
     return $param;
 }
 
+sub make_icon_filename($){
+    my($myname, $mydir, $myext) = fileparse(@_[0], '\..*');
+    chop $mydir;
+    if ($mydir eq '.') {
+        $mydir = $ICONSERVER;
+    }
+    $myext = ".$IMAGE_TYPE"
+      unless $myext;
+    return "$mydir$dd$myname$myext";
+}
+
+$OFF_SITE_LINK_ICON = '';
+
+sub get_link_icon($){
+    my $url = @_[0];
+    if ($OFF_SITE_LINK_ICON && ($url =~ /^[-a-zA-Z0-9.]+:/)) {
+        # absolute URL; assume it points off-site
+        my $icon = make_icon_filename($OFF_SITE_LINK_ICON);
+        return (" <img src='$icon'\n"
+                . "  height='12' width='15' border='0' alt='[off-site link]'\n"
+                . "  >");
+    }
+    return '';
+}
 
 # This is a fairly simple hack; it supports \let when it is used to create
 # (or redefine) a macro to exactly be some other macro: \let\newname=\oldname.
@@ -211,8 +237,9 @@ sub do_cmd_refmodule{
 sub do_cmd_newsgroup{
     local($_) = @_;
     my $newsgroup = next_argument();
+    my $icon = get_link_icon("news:$newsgroup");
     my $stuff = "<span class='newsgroup'><a href='news:$newsgroup'>"
-      . "$newsgroup</a></span>";
+      . "$newsgroup$icon</a></span>";
     return $stuff . $_;
 }
 
@@ -233,8 +260,9 @@ sub do_cmd_url{
     # use the URL as both text and hyperlink
     local($_) = @_;
     my $url = next_argument();
+    my $icon = get_link_icon($url);
     $url =~ s/~/&#126;/g;
-    return "<a class=\"url\" href=\"$url\">$url</a>" . $_;
+    return "<a class=\"url\" href=\"$url\">$url$icon</a>" . $_;
 }
 
 sub do_cmd_manpage{
@@ -255,11 +283,12 @@ sub do_cmd_pep{
     my $rfcnumber = next_argument();
     my $id = "rfcref-" . ++$global{'max_id'};
     my $href = get_pep_url($rfcnumber);
+    my $icon = get_link_icon($href);
     # Save the reference
     my $nstr = gen_index_id("Python Enhancement Proposals!PEP $rfcnumber", '');
     $index{$nstr} .= make_half_href("$CURRENT_FILE#$id");
-    return ("<a class=\"rfc\" name=\"$id\"\nhref=\"$href\">PEP $rfcnumber</a>"
-            . $_);
+    return ("<a class=\"rfc\" name=\"$id\"\nhref=\"$href\">PEP $rfcnumber"
+            . "$icon</a>" . $_);
 }
 
 sub get_rfc_url{
@@ -272,23 +301,25 @@ sub do_cmd_rfc{
     my $rfcnumber = next_argument();
     my $id = "rfcref-" . ++$global{'max_id'};
     my $href = get_rfc_url($rfcnumber);
+    my $icon = get_link_icon($href);
     # Save the reference
     my $nstr = gen_index_id("RFC!RFC $rfcnumber", '');
     $index{$nstr} .= make_half_href("$CURRENT_FILE#$id");
-    return ("<a class=\"rfc\" name=\"$id\"\nhref=\"$href\">RFC $rfcnumber</a>"
-            . $_);
+    return ("<a class=\"rfc\" name=\"$id\"\nhref=\"$href\">RFC $rfcnumber"
+            . "$icon</a>" . $_);
 }
 
 sub do_cmd_citetitle{
     local($_) = @_;
     my $url = next_optional_argument();
     my $title = next_argument();
+    my $icon = get_link_icon($url);
     my $repl = '';
     if ($url) {
         $repl = ("<em class='citetitle'><a\n"
                  . " href='$url'\n"
                  . " title='$title'\n"
-                 . " >$title</a></em>");
+                 . " >$title$icon</a></em>");
     }
     else {
         $repl = "<em class='citetitle'\n >$title</em>";
@@ -632,7 +663,6 @@ $REFCOUNTS_LOADED = 0;
 sub load_refcounts{
     $REFCOUNTS_LOADED = 1;
 
-    use File::Basename;
     my $myname, $mydir, $myext;
     ($myname, $mydir, $myext) = fileparse(__FILE__, '\..*');
     chop $mydir;			# remove trailing '/'
@@ -1253,16 +1283,8 @@ sub make_my_titlepage() {
     return $the_title;
 }
 
-use File::Basename;
-
 sub make_my_titlegraphic() {
-    my($myname, $mydir, $myext) = fileparse($TITLE_PAGE_GRAPHIC, '\..*');
-    chop $mydir;
-    if ($mydir eq '.') {
-        $mydir = $ICONSERVER;
-    }
-    $myext = ".$IMAGE_TYPE"
-      unless $myext;
+    my $filename = make_icon_filename($TITLE_PAGE_GRAPHIC);
     my $graphic = "<td class=\"titlegraphic\"";
     $graphic .= " width=\"$TITLE_PAGE_GRAPHIC_COLWIDTH\""
       if ($TITLE_PAGE_GRAPHIC_COLWIDTH);
@@ -1454,10 +1476,11 @@ sub handle_rfclike_reference{
     my $title = next_argument();
     my $text = next_argument();
     my $url = get_rfc_url($rfcnum);
+    my $icon = get_link_icon($url);
     return '<dl compact class="seerfc">'
       . "\n    <dt><a href=\"$url\""
       . "\n        title=\"$title\""
-      . "\n        >$what $rfcnum, <em>$title</em></a>:"
+      . "\n        >$what $rfcnum, <em>$title</em>$icon</a>:"
       . "\n    <dd>$text\n  </dl>"
       . $_;
 }
@@ -1475,10 +1498,11 @@ sub do_cmd_seetitle{
     my $url = next_optional_argument();
     my $title = next_argument();
     my $text = next_argument();
+    my $icon = get_link_icon($url);
     if ($url) {
         return '<dl compact class="seetitle">'
           . "\n    <dt><em class=\"citetitle\"><a href=\"$url\""
-          . "\n        class=\"url\">$title</a></em>"
+          . "\n        >$title$icon</a></em>"
           . "\n    <dd>$text\n  </dl>"
           . $_;
     }
@@ -1493,9 +1517,10 @@ sub do_cmd_seeurl{
     local($_) = @_;
     my $url = next_argument();
     my $text = next_argument();
+    my $icon = get_link_icon($url);
     return '<dl compact class="seeurl">'
       . "\n    <dt><a href=\"$url\""
-      . "\n        class=\"url\">$url</a>"
+      . "\n        class=\"url\">$url$icon</a>"
       . "\n    <dd>$text\n  </dl>"
       . $_;
 }
