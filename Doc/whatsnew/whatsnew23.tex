@@ -1253,9 +1253,80 @@ per-use basis.
 
 
 %======================================================================
-\subsection{Optik: The \module{optparse} Module}
+\subsection{The \module{optparse} Module}
 
-XXX write this section
+The \module{getopt} module provides simple parsing of command-line
+arguments.  The new \module{optparse} module (originally named Optik)
+provides more elaborate command-line parsing that follows the Unix
+conventions, automatically creates the output for \longprogramopt{help},
+and can perform different actions
+
+You start by creating an instance of \class{OptionParser} and telling
+it what your program's options are.
+
+\begin{verbatim}
+from optparse import OptionParser
+
+op = OptionParser()
+op.add_option('-i', '--input',
+              action='store', type='string', dest='input',
+              help='set input filename')
+op.add_option('-l', '--length',
+              action='store', type='int', dest='length',
+              help='set maximum length of output')
+\end{verbatim}
+
+Parsing a command line is then done by calling the \method{parse_args()}
+method.
+
+\begin{verbatim}
+options, args = op.parse_args(sys.argv[1:])
+print options
+print args
+\end{verbatim}
+
+This returns an object containing all of the option values, 
+and a list of strings containing the remaining arguments. 
+
+Invoking the script with the various arguments now works as you'd
+expect it to.  Note that the length argument is automatically
+converted to an integer.
+
+\begin{verbatim}
+$ ./python opt.py -i data arg1
+<Values at 0x400cad4c: {'input': 'data', 'length': None}>
+['arg1']
+$ ./python opt.py --input=data --length=4
+<Values at 0x400cad2c: {'input': 'data', 'length': 4}>
+['arg1']
+$
+\end{verbatim}
+
+The help message is automatically generated for you:
+
+\begin{verbatim}
+$ ./python opt.py --help
+usage: opt.py [options]
+
+options:
+  -h, --help            show this help message and exit
+  -iINPUT, --input=INPUT
+                        set input filename
+  -lLENGTH, --length=LENGTH
+                        set maximum length of output
+$ 
+\end{verbatim}
+
+Optik was written by Greg Ward, with suggestions from the readers of
+the Getopt SIG.
+
+\begin{seealso}
+\seeurl{http://optik.sourceforge.net}
+{The Optik site has tutorial and reference documentation for 
+\module{optparse}.
+% XXX change to point to Python docs, when those docs get written.
+}
+\end{seealso}
 
 
 %======================================================================
