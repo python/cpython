@@ -419,7 +419,6 @@ class BuiltinTest(unittest.TestCase):
     def test_filter_subclasses(self):
         # test, that filter() never returns tuple, str or unicode subclasses
         # and that the result always go's through __getitem__
-        # FIXME: For tuple currently it doesn't go through __getitem__
         funcs = (None, lambda x: True)
         class tuple2(tuple):
             def __getitem__(self, index):
@@ -428,7 +427,7 @@ class BuiltinTest(unittest.TestCase):
             def __getitem__(self, index):
                 return 2*str.__getitem__(self, index)
         inputs = {
-            tuple2: {(): (), (1, 2, 3): (1, 2, 3)}, # FIXME
+            tuple2: {(): (), (1, 2, 3): (2, 4, 6)},
             str2:   {"": "", "123": "112233"}
         }
         if have_unicode:

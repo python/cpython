@@ -1888,8 +1888,13 @@ filtertuple(PyObject *func, PyObject *tuple)
 		PyObject *item, *good;
 		int ok;
 
-		if ((item = PyTuple_GetItem(tuple, i)) == NULL)
+		if (tuple->ob_type->tp_as_sequence &&
+		    tuple->ob_type->tp_as_sequence->sq_item) {
+			item = tuple->ob_type->tp_as_sequence->sq_item(tuple, i);
+		} else {
+			PyErr_SetString(PyExc_TypeError, "unsubscriptable object");
 			goto Fail_1;
+		}
 		if (func == Py_None) {
 			Py_INCREF(item);
 			good = item;
