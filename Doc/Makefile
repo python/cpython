@@ -109,12 +109,6 @@ lib:	lib.ps
 ext:	ext.ps
 api:	api.ps
 
-# All formats for a single document
-api-all:  api.dvi api.pdf api.ps l2hapi
-ext-all:  ext.dvi ext.pdf ext.ps l2hext
-lib-all:  lib.dvi lib.pdf lib.ps l2hlib
-tut-all:  tut.dvi tut.pdf tut.ps l2htut
-
 
 # Rules to build PostScript and PDF formats
 .SUFFIXES: .dvi .ps .pdf .tex
