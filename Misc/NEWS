@@ -151,6 +151,14 @@ Tools/Demos
 
 - pygettext.py: Generate POT-Creation-Date header in ISO format.
 
+Macintosh
+---------
+
+- Bug #1091468: make frameworkinstall now works with DESTROOT builds
+
+- Bug #1076490 (MacOS9 only): fixed a BuildApplication crash when it tried
+  to actually save the application
+  
 Build
 -----
 
