@@ -157,12 +157,13 @@ What if Times fonts are not available?
 
 As distributed, the LaTeX documents use PostScript Times fonts.  This
 is done since they are much better looking and produce smaller
-PostScript files.  If, however, your TeX installation does not support 
+PostScript files.  If, however, your TeX installation does not support
 them, they may be easily disabled.  Edit the file
-texiinputs/manual.cls and comment out the line that starts
+texinputs/pypaper.sty and comment out the line that starts
 "\RequirePackage{times}" by inserting a "%" character at the beginning
-of the line.  An alternative is to install the right fonts and LaTeX
-style file.
+of the line.  If you're formatting the docs for A4 paper instead of
+US-Letter paper, change paper-a4/pypaper.sty instead.  An alternative
+is to install the right fonts and LaTeX style file.
 
 
 What if I want to use A4 paper?
