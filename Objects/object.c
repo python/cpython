@@ -1784,8 +1784,6 @@ static PyObject refchain = {&refchain, &refchain};
 void
 _Py_ResetReferences(void)
 {
-	refchain._ob_prev = refchain._ob_next = &refchain;
-	_Py_RefTotal = 0;
 }
 
 void
