@@ -42,6 +42,7 @@ kwlist = [
         'return',
         'try',
         'while',
+        'yield',
 #--end keywords--
         ]
 
