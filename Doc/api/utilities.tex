@@ -487,19 +487,41 @@ whose address should be passed.
   \item[\samp{b} (integer) {[char]}]
   Convert a Python integer to a tiny int, stored in a C \ctype{char}.
 
+  \item[\samp{B} (integer) {[unsigned char]}]
+  Convert a Python integer to a tiny int without overflow checking,
+  stored in a C \ctype{unsigned char}. \versionadded{2.3}
+
   \item[\samp{h} (integer) {[short int]}]
   Convert a Python integer to a C \ctype{short int}.
+
+  \item[\samp{H} (integer) {[unsigned short int]}]
+  Convert a Python integer to a C \ctype{unsigned short int}, without
+  overflow checking.  \versionadded{2.3}
 
   \item[\samp{i} (integer) {[int]}]
   Convert a Python integer to a plain C \ctype{int}.
 
+  \item[\samp{I} (integer) {[unsigned int]}]
+  Convert a Python integer to a C \ctype{unsigned int}, without
+  overflow checking.  \versionadded{2.3}
+
   \item[\samp{l} (integer) {[long int]}]
   Convert a Python integer to a C \ctype{long int}.
+
+  \item[\samp{k} (integer) {[unsigned long]}]
+  Convert a Python integer to a C \ctype{unsigned long} without
+  overflow checking.  \versionadded{2.3}
 
   \item[\samp{L} (integer) {[PY_LONG_LONG]}]
   Convert a Python integer to a C \ctype{long long}.  This format is
   only available on platforms that support \ctype{long long} (or
   \ctype{_int64} on Windows).
+
+  \item[\samp{K} (integer) {[unsigned PY_LONG_LONG]}]
+  Convert a Python integer to a C \ctype{unsigned long long}
+  without overflow checking.  This format is only available on
+  platforms that support \ctype{unsigned long long} (or
+  \ctype{unsigned _int64} on Windows).  \versionadded{2.3}
 
   \item[\samp{c} (string of length 1) {[char]}]
   Convert a Python character, represented as a string of length 1, to
