@@ -59,7 +59,7 @@ redirected URL.
 If the \var{url} uses the \file{http:} scheme identifier, the optional
 \var{data} argument may be given to specify a \code{POST} request
 (normally the request type is \code{GET}).  The \var{data} argument
-must in standard \file{application/x-www-form-urlencoded} format;
+must in standard \mimetype{application/x-www-form-urlencoded} format;
 see the \function{urlencode()} function below.
 
 The \function{urlopen()} function works transparently with proxies
@@ -83,7 +83,8 @@ Proxies which require authentication for use are not currently
 supported; this is considered an implementation limitation.
 \end{funcdesc}
 
-\begin{funcdesc}{urlretrieve}{url\optional{, filename\optional{, hook}}}
+\begin{funcdesc}{urlretrieve}{url\optional{, filename\optional{,
+                              reporthook\optional{, data}}}}
 Copy a network object denoted by a URL to a local file, if necessary.
 If the URL points to a local file, or a valid cached copy of the
 object exists, the object is not copied.  Return a tuple
@@ -107,7 +108,7 @@ request.
 If the \var{url} uses the \file{http:} scheme identifier, the optional
 \var{data} argument may be given to specify a \code{POST} request
 (normally the request type is \code{GET}).  The \var{data} argument
-must in standard \file{application/x-www-form-urlencoded} format;
+must in standard \mimetype{application/x-www-form-urlencoded} format;
 see the \function{urlencode()} function below.
 \end{funcdesc}
 
@@ -294,7 +295,7 @@ local URLs.
 If the \var{url} uses the \file{http:} scheme identifier, the optional
 \var{data} argument may be given to specify a \code{POST} request
 (normally the request type is \code{GET}).  The \var{data} argument
-must in standard \file{application/x-www-form-urlencoded} format;
+must in standard \mimetype{application/x-www-form-urlencoded} format;
 see the \function{urlencode()} function below.
 \end{methoddesc}
 
