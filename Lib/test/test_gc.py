@@ -4,7 +4,7 @@ import gc
 
 def expect(actual, expected, name):
     if actual != expected:
-        raise TestFailed, "test_%s: actual %d, expected %d" % (
+        raise TestFailed, "test_%s: actual %r, expected %r" % (
             name, actual, expected)
 
 def expect_nonzero(actual, name):
@@ -304,6 +304,29 @@ def test_boom2():
     expect(gc.collect(), 4, "boom2")
     expect(len(gc.garbage), garbagelen, "boom2")
 
+def test_get_referrents():
+    alist = [1, 3, 5]
+    got = gc.get_referrents(alist)
+    got.sort()
+    expect(got, alist, "get_referrents")
+
+    atuple = tuple(alist)
+    got = gc.get_referrents(atuple)
+    got.sort()
+    expect(got, alist, "get_referrents")
+
+    adict = {1: 3, 5: 7}
+    expected = [1, 3, 5, 7]
+    got = gc.get_referrents(adict)
+    got.sort()
+    expect(got, expected, "get_referrents")
+
+    got = gc.get_referrents([1, 2], {3: 4}, (0, 0, 0))
+    got.sort()
+    expect(got, [0, 0] + range(5), "get_referrents")
+
+    expect(gc.get_referrents(1, 'a', 4j), [], "get_referrents")
+
 def test_all():
     gc.collect() # Delete 2nd generation garbage
     run_test("lists", test_list)
@@ -324,6 +347,7 @@ def test_all():
     run_test("trashcan", test_trashcan)
     run_test("boom", test_boom)
     run_test("boom2", test_boom2)
+    run_test("get_referrents", test_get_referrents)
 
 def test():
     if verbose:

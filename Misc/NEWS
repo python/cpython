@@ -49,6 +49,11 @@ Core and builtins
 Extension modules
 -----------------
 
+- New function gc.get_referrents(obj) returns a list of objects
+  directly referenced by obj.  In effect, it exposes what the object's
+  tp_traverse slot does, and can be helpful when debugging memory
+  leaks.
+
 - The iconv module has been removed from this release.
 
 - The platform-independent routines for packing floats in IEEE formats
