@@ -1,3 +1,42 @@
+Tue Aug 30 10:53:50 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Python/getmtime.c: Remove mac specifics (Mac subdirectory has
+	its own version now)
+
+	* Modules/Setup.in: uses .c instead of .o now; added curses
+
+	* Modules/{rotormodule,syslogmodule}.c: new naming conventions
+
+	* Modules/cursesmodule.c: new, interface to curses
+
+	* Modules/makesetup: bugfix: add objects from sources to OBJS
+
+	* Modules/cursesmodule.c: new contribution from Lance
+
+	* Python/bltinmodule.c (builtin_tuple): use pre-existing
+	listtuple(v) for lists
+
+Mon Aug 29 15:41:02 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Various places: merged THINK C 6.0 and MPW 3.2 mods: Python 1.1
+	should build flawlessly on the Mac using either compiler
+
+Fri Aug 26 10:18:05 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Doc/tut.tex (subsection{Lambda Forms}): fix typo in lambda
+	example
+
+Thu Aug 25 12:30:11 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Lib/importall.py: obsolete.
+
+	* Lib/{compileall,py_compile}.py: new modules for compiling .py
+	files.
+
+	* Modules/timemodule.c (floattime), Objects/longobject.c
+	(dgetlongvalue): add (double) casts for the benefit of the SCO C
+	compiler
+
 Tue Aug 23 00:52:32 1994  Guido van Rossum  (guido@voorn.cwi.nl)
 
 	* Modules/Setup.*: removed all except Setup.in (huh?  I thought
