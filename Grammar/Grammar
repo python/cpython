@@ -1,4 +1,8 @@
-# Grammar for Python, version 5
+# Grammar for Python, version 6
+
+# Changes since version 5:
+#	Comparison operators '<=' '>' '<>' are now 1 token
+#	Also support '!=' and '==' as alternatives for '<>' and '='
 
 # Changes compared to version 4:
 #	Blank lines and lines only containing a comment are now eaten
@@ -68,7 +72,7 @@ test: and_test ('or' and_test)*
 and_test: not_test ('and' not_test)*
 not_test: 'not' not_test | comparison
 comparison: expr (comp_op expr)*
-comp_op: '<'|'>'|'='|'>' '='|'<' '='|'<' '>'|'in'|'not' 'in'|'is'|'is' 'not'
+comp_op: '<'|'>'|'='|'>='|'<='|'<>'|'!='|'=='|'in'|'not' 'in'|'is'|'is' 'not'
 expr: term (('+'|'-') term)*
 term: factor (('*'|'/'|'%') factor)*
 factor: ('+'|'-') factor | atom trailer*
