@@ -91,6 +91,13 @@ getversion()
 {
 	static char version[80];
 	sprintf(version, VERSION, PATCHLEVEL, DATE);
+#ifdef __MWERKS__
+#ifdef __powerc
+	strcat(version, " [MW PPC compiler]");
+#else
+	strcat(version, " [MW 68K compiler]");
+#endif
+#endif
 	return version;
 }
 
@@ -113,7 +120,8 @@ getcopyright()
 
 #ifndef PYTHONPATH
 #ifdef macintosh
-#define PYTHONPATH ": :Lib :Lib:stdwin :Lib:test :Lib:mac"
+/* Mod by Jack: \n is now separator. */
+#define PYTHONPATH ":\n:Lib\n:Lib:stdwin\n:Lib:test\n:Lib:mac"
 #endif /* macintosh */
 #endif /* !PYTHONPATH */
 
@@ -133,7 +141,58 @@ char *
 getpythonpath()
 {
 #ifdef macintosh
-	return PYTHONPATH;
+	/* Modified by Jack to do something a bit more sensible:
+	** - Prepend the current directory (which is presumably where python lives)
+	** - Add :
+	** - Chdir to where the source file (if any) lives
+	*/
+	static char *pythonpath;
+	extern char *fileargument;
+	char curwd[256];
+	char *p, *endp;
+	int newlen;
+	
+	if ( pythonpath ) return pythonpath;
+	if (getwd(curwd) < 0 ) {
+		return PYTHONPATH;
+	}
+	p = PYTHONPATH;
+	endp = p;
+	pythonpath = malloc(2);
+	if ( pythonpath == NULL ) return PYTHONPATH;
+	strcpy(pythonpath, ":");
+	while (*endp) {
+		endp = strchr(p, '\n');
+		if ( endp == NULL )
+			endp = p + strlen(p);
+		newlen = strlen(pythonpath) + 1 + strlen(curwd) + (endp-p);
+		pythonpath = realloc(pythonpath, newlen+1);
+		if ( pythonpath == NULL ) return PYTHONPATH;
+		strcat(pythonpath, "\n");
+		if ( *p == ':' ) {
+			p++;
+			strcat(pythonpath, curwd);
+			strncat(pythonpath, p, (endp-p));
+			newlen--;   /* Ok, ok, we've allocated one byte too much */
+		} else {
+			/* We've allocated too much in this case */
+			newlen -= strlen(curwd);
+			pythonpath = realloc(pythonpath, newlen+1);
+			if ( pythonpath == NULL ) return PYTHONPATH;
+			strncat(pythonpath, p, (endp-p));
+		}
+		pythonpath[newlen] = '\0';
+		p = endp + 1;
+	}
+	if ( fileargument ) {
+		strcpy(curwd, fileargument);
+		endp = strrchr(curwd, ':');
+		if ( endp && endp > curwd ) {
+			*endp = '\0';
+			chdir(curwd);
+		}
+	}
+	return pythonpath;
 #else /* !macintosh */
 	char *path = getenv("PYTHONPATH");
 	char *defpath = PYTHONPATH;
@@ -202,6 +261,13 @@ extern void initnew();
 extern void initdl();
 extern void initsyslog();
 extern void initgestalt();
+#ifdef THINK
+extern void initmacconsole();
+#endif
+extern void initctb();
+extern void initmacspeech();
+extern void initmacdnr();
+extern void initmactcp();
 
 /* -- ADDMODULE MARKER 1 -- */
 
@@ -231,7 +297,14 @@ struct {
 	{"rotor", initrotor},
 	{"new", initnew},
 	{"gestalt", initgestalt},
+#ifdef THINK
+	{"macconsole", initmacconsole},
+#endif
+	{"ctb", initctb},
+	{"macspeech", initmacspeech},
 	{"imgformat", initimgformat},
+	{"macdnr", initmacdnr},
+	{"mactcp", initmactcp},
 
 /* -- ADDMODULE MARKER 2 -- */
 
