@@ -372,19 +372,19 @@ important to note that the escape sequences marked as ``(Unicode
 only)'' in the table above fall into the category of unrecognized
 escapes for non-Unicode string literals.
 
-When an `r' or `R' prefix is present, backslashes are still used to
-quote the following character, but \emph{all backslashes are left in
-the string}.  For example, the string literal \code{r"\e n"} consists
-of two characters: a backslash and a lowercase `n'.  String quotes can
-be escaped with a backslash, but the backslash remains in the string;
-for example, \code{r"\e""} is a valid string literal consisting of two
-characters: a backslash and a double quote; \code{r"\e"} is not a value
-string literal (even a raw string cannot end in an odd number of
-backslashes).  Specifically, \emph{a raw string cannot end in a single
-backslash} (since the backslash would escape the following quote
-character).  Note also that a single backslash followed by a newline
-is interpreted as those two characters as part of the string,
-\emph{not} as a line continuation.
+When an `r' or `R' prefix is present, a character following a
+backslash is included in the string without change, and \emph{all
+backslashes are left in the string}.  For example, the string literal
+\code{r"\e n"} consists of two characters: a backslash and a lowercase
+`n'.  String quotes can be escaped with a backslash, but the backslash
+remains in the string; for example, \code{r"\e""} is a valid string
+literal consisting of two characters: a backslash and a double quote;
+\code{r"\e"} is not a value string literal (even a raw string cannot
+end in an odd number of backslashes).  Specifically, \emph{a raw
+string cannot end in a single backslash} (since the backslash would
+escape the following quote character).  Note also that a single
+backslash followed by a newline is interpreted as those two characters
+as part of the string, \emph{not} as a line continuation.
 
 \subsection{String literal concatenation\label{string-catenation}}
 
