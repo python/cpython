@@ -691,7 +691,7 @@ Rename the file or directory \var{src} to \var{dst}.  If \var{dst} is
 a directory, \exception{OSError} will be raised.  On \UNIX, if
 \var{dst} exists and is a file, it will be removed silently if the
 user has permission.  The operation may fail on some \UNIX{} flavors
-is \var{src} and \var{dst} are on different filesystems.  If
+if \var{src} and \var{dst} are on different filesystems.  If
 successful, the renaming will be an atomic operation (this is a
 \POSIX{} requirement).  On Windows, if \var{dst} already exists,
 \exception{OSError} will be raised even if it is a file; there may be
