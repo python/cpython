@@ -577,7 +577,8 @@ Library
 
 - gettext.translation has an optional fallback argument, and
   gettext.find an optional all argument. Translations will now fallback
-  on a per-message basis.
+  on a per-message basis. The module supports plural forms, by means
+  of gettext.[d]ngettext and Translation.[u]ngettext.
 
 - distutils bdist commands now offer a --skip-build option.
 
