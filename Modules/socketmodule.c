@@ -1800,10 +1800,8 @@ PySocketSock_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	PyObject *new;
 
 	new = type->tp_alloc(type, 0);
-	if (new != NULL) {
+	if (new != NULL)
 		((PySocketSockObject *)new)->sock_fd = -1;
-		((PySocketSockObject *)new)->errorhandler = &PySocket_Err;
-	}
 	return new;
 }
 
