@@ -2,7 +2,6 @@ import minidom
 import types
 import string
 import sys
-import pyexpat
 from xml.sax import ExpatParser
 
 #todo: SAX2/namespace handling
@@ -140,12 +139,8 @@ class DOMEventStream:
             if cur_node is node: return
             
             if token !=END_ELEMENT:
-                cur_node.parentNode.childNodes.append( cur_node )
+                cur_node.parentNode.appendChild( cur_node )
             event=self.getEvent()
-        if node.nodeType==minidom.Node.DOCUMENT_NODE:
-            for child in node.childNodes:
-                if child.nodeType==minidom.Node.ELEMENT_NODE:
-                    node.documentElement=child
 
     def getEvent( self ):
         if not self.pulldom.firstEvent[1]:
@@ -193,75 +188,7 @@ def parseString( string, parser=None ):
         stringio=StringIO.StringIO
         
     bufsize=len( string )
-    stringio( string )
+    buf=stringio( string )
     parser=_getParser()
     return DOMEventStream( buf, parser, bufsize )
 
-#FIXME: Use Lars' instead!!!
-class SAX_expat:
-    "SAX driver for the Pyexpat C module."
-
-    def __init__(self):
-        self.parser=pyexpat.ParserCreate()
-        self.started=0
-
-    def setDocumentHandler( self, handler ):
-        self.parser.StartElementHandler = handler.startElement
-        self.parser.EndElementHandler = handler.endElement
-        self.parser.CharacterDataHandler = handler.datachars
-        self.parser.ProcessingInstructionHandler = handler.processingInstruction
-        self.doc_handler=handler
-
-    def setErrorHandler( self, handler ):
-        self.err_handler=handler
-
-    # --- Locator methods. Only usable after errors.
-
-    def getLineNumber(self):
-        return self.parser.ErrorLineNumber
-
-    def getColumnNumber(self):
-        return self.parser.ErrorColumnNumber    
-
-    # --- Internal
-
-    def __report_error(self):
-        msg=pyexpat.ErrorString(self.parser.ErrorCode)
-        self.err_handler.fatalError(msg)
-
-    # --- EXPERIMENTAL PYTHON SAX EXTENSIONS
-        
-    def get_parser_name(self):
-        return "pyexpat"
-
-    def get_parser_version(self):
-        return "Unknown"
-
-    def get_driver_version(self):
-        return version
-    
-    def is_validating(self):
-        return 0
-
-    def is_dtd_reading(self):
-        return 0
-
-    def reset(self):
-        self.parser=pyexpat.ParserCreate()
-        self.parser.StartElementHandler = self.startElement
-        self.parser.EndElementHandler = self.endElement
-        self.parser.CharacterDataHandler = self.characters
-        self.parser.ProcessingInstructionHandler = self.processingInstruction
-    
-    def feed(self,data):
-        if not self.started:
-            self.doc_handler.startDocument()
-            self.started=1  
-        if not self.parser.Parse(data):
-            self.__report_error()
-
-    def close(self):
-        if not self.parser.Parse("",1):
-            self.__report_error()
-        self.doc_handler.endDocument()
-        self.parser = None

@@ -23,3 +23,27 @@ from _exceptions import *
 from saxutils import *
 from _exceptions import SAXParseException
 import xmlreader
+
+def parse( filename_or_stream, handler, errorHandler=ErrorHandler() ):
+    parser=ExpatParser()
+    parser.setContentHandler( handler )
+    parse.setErrorHandler( errorHandler )
+    parser.parse( filename_or_stream )
+
+# this may not work yet...Expat doesn't handle buffer inputs
+def parseString( string, handler, errorHandler=ErrorHandler() ):
+    try:
+        import cStringIO
+        stringio=cStringIO.StringIO
+    except ImportError:
+        import StringIO
+        stringio=StringIO.StringIO
+        
+    bufsize=len( string )
+    buf=stringio( string )
+ 
+    parser=ExpatParser()
+    parser.setContentHandler( handler )
+    parse.setErrorHandler( errorHandler )
+    parser.parse( buf )
+
