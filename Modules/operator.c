@@ -10,9 +10,7 @@ is equivalent to the expression x+y.  The function names are those\n\
 used for special class methods; variants without leading and trailing\n\
 '__' are also provided for convenience.");
 
-#define spam1(OP,AOP) static PyObject *OP(PyObject *s, PyObject *a) { \
-  PyObject *a1; \
-  if(! PyArg_UnpackTuple(a,#OP,1,1,&a1)) return NULL; \
+#define spam1(OP,AOP) static PyObject *OP(PyObject *s, PyObject *a1) { \
   return AOP(a1); }
 
 #define spam2(OP,AOP) static PyObject *OP(PyObject *s, PyObject *a) { \
@@ -39,9 +37,8 @@ used for special class methods; variants without leading and trailing\n\
   Py_INCREF(Py_None); \
   return Py_None; }
 
-#define spami(OP,AOP) static PyObject *OP(PyObject *s, PyObject *a) { \
-  PyObject *a1; long r; \
-  if(! PyArg_UnpackTuple(a,#OP,1,1,&a1)) return NULL; \
+#define spami(OP,AOP) static PyObject *OP(PyObject *s, PyObject *a1) { \
+  long r; \
   if(-1 == (r=AOP(a1))) return NULL; \
   return PyBool_FromLong(r); }
 
@@ -155,19 +152,24 @@ op_delslice(PyObject *s, PyObject *a)
 
 #undef spam1
 #undef spam2
+#undef spam1o
+#undef spam1o
 #define spam1(OP,DOC) {#OP, OP, METH_VARARGS, PyDoc_STR(DOC)},
 #define spam2(OP,ALTOP,DOC) {#OP, op_##OP, METH_VARARGS, DOC}, \
 			   {#ALTOP, op_##OP, METH_VARARGS, PyDoc_STR(DOC)}, 
+#define spam1o(OP,DOC) {#OP, OP, METH_O, PyDoc_STR(DOC)},
+#define spam2o(OP,ALTOP,DOC) {#OP, op_##OP, METH_O, DOC}, \
+			   {#ALTOP, op_##OP, METH_O, PyDoc_STR(DOC)}, 
 
 static struct PyMethodDef operator_methods[] = {
 
-spam1(isCallable,
+spam1o(isCallable,
  "isCallable(a) -- Same as callable(a).")
-spam1(isNumberType,
+spam1o(isNumberType,
  "isNumberType(a) -- Return True if a has a numeric type, False otherwise.")
-spam1(isSequenceType,
+spam1o(isSequenceType,
  "isSequenceType(a) -- Return True if a has a sequence type, False otherwise.")
-spam1(truth,
+spam1o(truth,
  "truth(a) -- Return True if a is true, False otherwise.")
 spam2(contains,__contains__,
  "contains(a, b) -- Same as b in a (note reversed operands).")
@@ -177,7 +179,7 @@ spam1(indexOf,
  "indexOf(a, b) -- Return the first index of b in a.")
 spam1(countOf,
  "countOf(a, b) -- Return the number of times b occurs in a.")
-spam1(isMappingType,
+spam1o(isMappingType,
  "isMappingType(a) -- Return True if a has a mapping type, False otherwise.")
 
 spam2(add,__add__, "add(a, b) -- Same as a + b.")
@@ -187,14 +189,14 @@ spam2(div,__div__, "div(a, b) -- Same as a / b when __future__.division is not i
 spam2(floordiv,__floordiv__, "floordiv(a, b) -- Same as a // b.")
 spam2(truediv,__truediv__, "truediv(a, b) -- Same as a / b when __future__.division is in effect.")
 spam2(mod,__mod__, "mod(a, b) -- Same as a % b.")
-spam2(neg,__neg__, "neg(a) -- Same as -a.")
-spam2(pos,__pos__, "pos(a) -- Same as +a.")
-spam2(abs,__abs__, "abs(a) -- Same as abs(a).")
-spam2(inv,__inv__, "inv(a) -- Same as ~a.")
-spam2(invert,__invert__, "invert(a) -- Same as ~a.")
+spam2o(neg,__neg__, "neg(a) -- Same as -a.")
+spam2o(pos,__pos__, "pos(a) -- Same as +a.")
+spam2o(abs,__abs__, "abs(a) -- Same as abs(a).")
+spam2o(inv,__inv__, "inv(a) -- Same as ~a.")
+spam2o(invert,__invert__, "invert(a) -- Same as ~a.")
 spam2(lshift,__lshift__, "lshift(a, b) -- Same as a << b.")
 spam2(rshift,__rshift__, "rshift(a, b) -- Same as a >> b.")
-spam2(not_,__not__, "not_(a) -- Same as not a.")
+spam2o(not_,__not__, "not_(a) -- Same as not a.")
 spam2(and_,__and__, "and_(a, b) -- Same as a & b.")
 spam2(xor,__xor__, "xor(a, b) -- Same as a ^ b.")
 spam2(or_,__or__, "or_(a, b) -- Same as a | b.")

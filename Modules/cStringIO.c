@@ -87,10 +87,9 @@ IO__opencheck(IOobject *self) {
 }
 
 static PyObject *
-IO_flush(IOobject *self, PyObject *args) {
+IO_flush(IOobject *self, PyObject *unused) {
 
         UNLESS (IO__opencheck(self)) return NULL;
-        UNLESS (PyArg_ParseTuple(args, ":flush")) return NULL;
 
         Py_INCREF(Py_None);
         return Py_None;
@@ -115,7 +114,7 @@ IO_getval(IOobject *self, PyObject *args) {
         int s;
 
         UNLESS (IO__opencheck(self)) return NULL;
-        UNLESS (PyArg_ParseTuple(args,"|O:getval",&use_pos)) return NULL;
+        UNLESS (PyArg_UnpackTuple(args,"getval", 0, 1,&use_pos)) return NULL;
 
         if (PyObject_IsTrue(use_pos)) {
                   s=self->pos;
@@ -129,10 +128,7 @@ IO_getval(IOobject *self, PyObject *args) {
 PyDoc_STRVAR(IO_isatty__doc__, "isatty(): always returns 0");
 
 static PyObject *
-IO_isatty(IOobject *self, PyObject *args) {
-
-        UNLESS (PyArg_ParseTuple(args, ":isatty")) return NULL;
-
+IO_isatty(IOobject *self, PyObject *unused) {
 	Py_INCREF(Py_False);
         return Py_False;
 }
@@ -243,10 +239,9 @@ PyDoc_STRVAR(IO_reset__doc__,
 "reset() -- Reset the file position to the beginning");
 
 static PyObject *
-IO_reset(IOobject *self, PyObject *args) {
+IO_reset(IOobject *self, PyObject *unused) {
 
         UNLESS (IO__opencheck(self)) return NULL;
-        UNLESS (PyArg_ParseTuple(args, ":reset")) return NULL;
 
         self->pos = 0;
 
@@ -257,10 +252,9 @@ IO_reset(IOobject *self, PyObject *args) {
 PyDoc_STRVAR(IO_tell__doc__, "tell() -- get the current position.");
 
 static PyObject *
-IO_tell(IOobject *self, PyObject *args) {
+IO_tell(IOobject *self, PyObject *unused) {
 
         UNLESS (IO__opencheck(self)) return NULL;
-        UNLESS (PyArg_ParseTuple(args, ":tell")) return NULL;
 
         return PyInt_FromLong(self->pos);
 }
@@ -379,10 +373,7 @@ O_write(Oobject *self, PyObject *args) {
 PyDoc_STRVAR(O_close__doc__, "close(): explicitly release resources held.");
 
 static PyObject *
-O_close(Oobject *self, PyObject *args) {
-
-        UNLESS (PyArg_ParseTuple(args, ":close")) return NULL;
-
+O_close(Oobject *self, PyObject *unused) {
         if (self->buf != NULL) free(self->buf);
         self->buf = NULL;
 
@@ -399,8 +390,6 @@ static PyObject *
 O_writelines(Oobject *self, PyObject *args) {
         PyObject *tmp = 0;
 	static PyObject *joiner = NULL;
-
-        UNLESS (PyArg_ParseTuple(args, "O:writelines", &args)) return NULL;
 
 	if (!joiner) {
 		PyObject *empty_string = PyString_FromString("");
@@ -428,21 +417,21 @@ O_writelines(Oobject *self, PyObject *args) {
 
 static struct PyMethodDef O_methods[] = {
   /* Common methods: */
-  {"flush",     (PyCFunction)IO_flush,    METH_VARARGS, IO_flush__doc__},
+  {"flush",     (PyCFunction)IO_flush,    METH_NOARGS,  IO_flush__doc__},
   {"getvalue",  (PyCFunction)IO_getval,   METH_VARARGS, IO_getval__doc__},
-  {"isatty",    (PyCFunction)IO_isatty,   METH_VARARGS, IO_isatty__doc__},
+  {"isatty",    (PyCFunction)IO_isatty,   METH_NOARGS,  IO_isatty__doc__},
   {"read",	(PyCFunction)IO_read,     METH_VARARGS, IO_read__doc__},
   {"readline",	(PyCFunction)IO_readline, METH_VARARGS, IO_readline__doc__},
   {"readlines",	(PyCFunction)IO_readlines,METH_VARARGS, IO_readlines__doc__},
-  {"reset",	(PyCFunction)IO_reset,	  METH_VARARGS, IO_reset__doc__},
-  {"tell",      (PyCFunction)IO_tell,     METH_VARARGS, IO_tell__doc__},
+  {"reset",	(PyCFunction)IO_reset,	  METH_NOARGS,  IO_reset__doc__},
+  {"tell",      (PyCFunction)IO_tell,     METH_NOARGS,  IO_tell__doc__},
   {"truncate",  (PyCFunction)IO_truncate, METH_VARARGS, IO_truncate__doc__},
 
   /* Read-write StringIO specific  methods: */
-  {"close",      (PyCFunction)O_close,      METH_VARARGS, O_close__doc__},
+  {"close",      (PyCFunction)O_close,      METH_NOARGS,  O_close__doc__},
   {"seek",       (PyCFunction)O_seek,       METH_VARARGS, O_seek__doc__},
   {"write",	 (PyCFunction)O_write,      METH_VARARGS, O_write__doc__},
-  {"writelines", (PyCFunction)O_writelines, METH_VARARGS, O_writelines__doc__},
+  {"writelines", (PyCFunction)O_writelines, METH_O,	  O_writelines__doc__},
   {NULL,	 NULL}		/* sentinel */
 };
 
@@ -527,10 +516,7 @@ newOobject(int  size) {
 /* -------------------------------------------------------- */
 
 static PyObject *
-I_close(Iobject *self, PyObject *args) {
-
-        UNLESS (PyArg_ParseTuple(args, ":close")) return NULL;
-
+I_close(Iobject *self, PyObject *unused) {
         Py_XDECREF(self->pbuf);
         self->pbuf = NULL;
         self->buf = NULL;
@@ -562,18 +548,18 @@ I_seek(Iobject *self, PyObject *args) {
 
 static struct PyMethodDef I_methods[] = {
   /* Common methods: */
-  {"flush",     (PyCFunction)IO_flush,    METH_VARARGS, IO_flush__doc__},
+  {"flush",     (PyCFunction)IO_flush,    METH_NOARGS,  IO_flush__doc__},
   {"getvalue",  (PyCFunction)IO_getval,   METH_VARARGS, IO_getval__doc__},
-  {"isatty",    (PyCFunction)IO_isatty,   METH_VARARGS, IO_isatty__doc__},
+  {"isatty",    (PyCFunction)IO_isatty,   METH_NOARGS,  IO_isatty__doc__},
   {"read",	(PyCFunction)IO_read,     METH_VARARGS, IO_read__doc__},
   {"readline",	(PyCFunction)IO_readline, METH_VARARGS, IO_readline__doc__},
   {"readlines",	(PyCFunction)IO_readlines,METH_VARARGS, IO_readlines__doc__},
-  {"reset",	(PyCFunction)IO_reset,	  METH_VARARGS, IO_reset__doc__},
-  {"tell",      (PyCFunction)IO_tell,     METH_VARARGS, IO_tell__doc__},
+  {"reset",	(PyCFunction)IO_reset,	  METH_NOARGS,  IO_reset__doc__},
+  {"tell",      (PyCFunction)IO_tell,     METH_NOARGS,  IO_tell__doc__},
   {"truncate",  (PyCFunction)IO_truncate, METH_VARARGS, IO_truncate__doc__},
 
   /* Read-only StringIO specific  methods: */
-  {"close",     (PyCFunction)I_close,    METH_VARARGS, O_close__doc__},
+  {"close",     (PyCFunction)I_close,    METH_NOARGS,  O_close__doc__},
   {"seek",      (PyCFunction)I_seek,     METH_VARARGS, O_seek__doc__},  
   {NULL,	NULL}
 };
@@ -674,7 +660,7 @@ static PyObject *
 IO_StringIO(PyObject *self, PyObject *args) {
   PyObject *s=0;
 
-  if (!PyArg_ParseTuple(args, "|O:StringIO", &s)) return NULL;
+  if (!PyArg_UnpackTuple(args, "StringIO", 0, 1, &s)) return NULL;
 
   if (s) return newIobject(s);
   return newOobject(128);
