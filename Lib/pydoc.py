@@ -675,7 +675,10 @@ TT { font-family: lucidatypewriter, lucida console, courier }
                 push(msg)
                 for name, kind, homecls, value in ok:
                     base = self.docother(getattr(object, name), name, mod)
-                    doc = getattr(value, "__doc__", None)
+                    if callable(value):
+                        doc = getattr(value, "__doc__", None)
+                    else:
+                        doc = None
                     if doc is None:
                         push('<dl><dt>%s</dl>\n' % base)
                     else:
@@ -1067,7 +1070,10 @@ class TextDoc(Doc):
                 hr.maybe()
                 push(msg)
                 for name, kind, homecls, value in ok:
-                    doc = getattr(value, "__doc__", None)
+                    if callable(value):
+                        doc = getattr(value, "__doc__", None)
+                    else:
+                        doc = None
                     push(self.docother(getattr(object, name),
                                        name, mod, 70, doc) + '\n')
             return attrs
