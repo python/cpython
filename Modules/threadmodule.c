@@ -47,6 +47,16 @@ extern typeobject Locktype;	/* Really static, forward */
 
 #define is_lockobject(v)		((v)->ob_type == &Locktype)
 
+type_lock
+getlocklock(lock)
+	object *lock;
+{
+	if (lock == NULL || !is_lockobject(lock))
+		return NULL;
+	else
+		return ((lockobject *) lock)->lock_lock;
+}
+
 static lockobject *
 newlockobject()
 {
@@ -204,6 +214,8 @@ thread_start_new_thread(self, args)
 	if (!getargs(args, "(OO)", &func, &arg))
 		return NULL;
 	INCREF(args);
+	/* Initialize the interpreter's stack save/restore mechanism */
+	init_save_thread();
 	if (!start_new_thread(t_bootstrap, (void*) args)) {
 		DECREF(args);
 		err_setstr(ThreadError, "can't start new thread\n");
@@ -282,7 +294,4 @@ initthread()
 
 	/* Initialize the C thread library */
 	init_thread();
-
-	/* Initialize the interpreter's stack save/restore mechanism */
-	init_save_thread();
 }
