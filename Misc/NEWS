@@ -86,6 +86,9 @@ New platforms
 - We've finally confirmed that this release builds on HP-UX 11.00,
   *with* threads, and passes the test suite.
 
+- Thanks to a series of patches from Michael Muller, Python may build
+  again under OS/2 Visual Age C++.
+
 - Updated RISCOS port by Dietmar Schwertberger.
 
 Tests
