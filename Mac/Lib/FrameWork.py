@@ -803,15 +803,18 @@ class ControlsWindow(Window):
 		(what, message, when, where, modifiers) = event
 		SetPort(window)  # XXXX Needed?
 		local = GlobalToLocal(where)
-		ctltype, control = FindControl(local, window)
-		if ctltype and control:
-			pcode = control.TrackControl(local)
-			if pcode:
-				self.do_controlhit(window, control, pcode, event)
+		pcode, control = FindControl(local, window)
+		if pcode and control:
+			self.do_rawcontrolhit(window, control, pcode, local, event)
 		else:
 			if DEBUG: print "FindControl(%s, %s) -> (%s, %s)" % \
-				(local, window, ctltype, control)
+				(local, window, pcode, control)
 			self.do_contentclick(local, modifiers, event)
+			
+	def do_rawcontrolhit(self, window, control, pcode, local, event):
+		pcode = control.TrackControl(local)
+		if pcode:
+			self.do_controlhit(window, control, pcode, event)
 			
 class ScrolledWindow(ControlsWindow):
 	def __init__(self, parent):
@@ -878,16 +881,37 @@ class ScrolledWindow(ControlsWindow):
 			ValidRect((r - SCROLLBARWIDTH + 1, t, r, b - SCROLLBARWIDTH + 2))	# jvr
 		InvalRect((r - SCROLLBARWIDTH + 1, b - SCROLLBARWIDTH + 1, r, b))	# jvr, growicon
 
-	def do_controlhit(self, window, control, pcode, event):
+			
+	def do_rawcontrolhit(self, window, control, pcode, local, event):
 		if control == self.barx:
-			bar = self.barx
 			which = 'x'
 		elif control == self.bary:
-			bar = self.bary
 			which = 'y'
 		else:
 			return 0
-		value = None
+		if pcode in (inUpButton, inDownButton, inPageUp, inPageDown):
+			# We do the work for the buttons and grey area in the tracker
+			dummy = control.TrackControl(local, self.do_controltrack)
+		else:
+			# but the thumb is handled here
+			pcode = control.TrackControl(local)
+			if pcode == inThumb:
+				value = control.GetControlValue()
+				print 'setbars', which, value #DBG
+				self.scrollbar_callback(which, 'set', value)
+				self.updatescrollbars()
+			else:
+				print 'funny part', pcode #DBG
+		return 1
+		
+	def do_controltrack(self, control, pcode):
+		if control == self.barx:
+			which = 'x'
+		elif control == self.bary:
+			which = 'y'
+		else:
+			return
+
 		if pcode == inUpButton:
 			what = '-'
 		elif pcode == inDownButton:
@@ -897,11 +921,9 @@ class ScrolledWindow(ControlsWindow):
 		elif pcode == inPageDown:
 			what = '++'
 		else:
-			what = 'set'
-			value = bar.GetControlValue()
-		self.scrollbar_callback(which, what, value)
+			return
+		self.scrollbar_callback(which, what, None)
 		self.updatescrollbars()
-		return 1
 		
 	def updatescrollbars(self):
 		SetPort(self.wid)
