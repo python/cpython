@@ -18,6 +18,6 @@ EOF
 
 for PART in api ext lib mac ref tut ; do
     FILE=paper-$PAPER/$PART.ps
-    PAGECOUNT=`grep '^%%Page:' $FILE | wc -l | cut -f 1 | tr -d ' 	'`
+    PAGECOUNT=`grep -c '^%%Page:' $FILE`
     echo "	$PART.ps -- $PAGECOUNT pages"
 done
