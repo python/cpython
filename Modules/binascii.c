@@ -492,9 +492,13 @@ binascii_a2b_hqx(self, args)
 		Py_DECREF(rv);
 		return NULL;
 	}
-	_PyString_Resize(&rv, (bin_data - (unsigned char *)PyString_AsString(rv)));
-	if ( rv )
-		return Py_BuildValue("Oi", rv, done);
+	_PyString_Resize(
+		&rv, (bin_data - (unsigned char *)PyString_AsString(rv)));
+	if (rv) {
+		PyObject *rrv = Py_BuildValue("Oi", rv, done);
+		Py_DECREF(rv);
+		return rrv;
+	}
 	return NULL;
 }
 
