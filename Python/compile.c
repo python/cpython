@@ -364,23 +364,35 @@ optimize_code(PyObject *code, PyObject* consts)
 			break;
 
 		/* Replace BUILD_SEQN 2 UNPACK_SEQN 2 with ROT2 JMP+2.
+		   Replace BUILD_SEQN 3 UNPACK_SEQN 3 with ROT3 ROT2 JMP+1.
 		   Note, these opcodes occur together only in assignment
 		   statements.  Accordingly, the unpack opcode is never
 		   a jump target.  */
 		case BUILD_TUPLE:
 		case BUILD_LIST:
-			if (codestr[i+3] != UNPACK_SEQUENCE  ||
-			    GETARG(codestr, i) != 2  ||
-			    GETARG(codestr, i+3) != 2)
+			if (codestr[i+3] != UNPACK_SEQUENCE)
 				continue;
-			codestr[i] = ROT_TWO;
-			codestr[i+1] = JUMP_FORWARD;
-			SETARG(codestr, i+1, 2);
-			codestr[i+4] = DUP_TOP;	 /* Filler codes used as NOPs */	
-			codestr[i+5] = POP_TOP;
+			if (GETARG(codestr, i) == 2 && \
+			    GETARG(codestr, i+3) == 2) {
+				codestr[i] = ROT_TWO;
+				codestr[i+1] = JUMP_FORWARD;
+				SETARG(codestr, i+1, 2);
+				codestr[i+4] = DUP_TOP;	 /* Filler codes used as NOPs */
+				codestr[i+5] = POP_TOP;
+				continue;
+			} 
+			if (GETARG(codestr, i) == 3 && \
+			    GETARG(codestr, i+3) == 3) {
+				codestr[i] = ROT_THREE;
+				codestr[i+1] = ROT_TWO;
+				codestr[i+2] = JUMP_FORWARD;
+				SETARG(codestr, i+2, 1);	
+				codestr[i+5] = DUP_TOP;
+			}
 			break;
 
 		/* Replace jumps to unconditional jumps */
+		case FOR_ITER:
 		case JUMP_FORWARD:
 		case JUMP_IF_FALSE:
 		case JUMP_IF_TRUE:
