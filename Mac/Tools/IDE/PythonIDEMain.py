@@ -414,10 +414,10 @@ class PythonIDE(Wapplication.Application):
 			W.Message("AppleHelp Error: %s" % `arg`)
 			
 	def _getsearchstring(self):
-		import PyEdit
-		editor = PyEdit.findeditor(None, fromtop=1)
-		if editor:
-			text = editor.getselectedtext()
+		# First we get the frontmost window
+		front = self.getfrontwindow()
+		if front and hasattr(front, 'getselectedtext'):
+			text = front.getselectedtext()
 			if text:
 				return text
 		# This is a cop-out. We should have disabled the menus

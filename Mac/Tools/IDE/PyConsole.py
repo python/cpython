@@ -236,7 +236,9 @@ class PyConsole(W.Window):
 		prefs.console.tabsettings = self.consoletext.gettabsettings()
 		prefs.save()
 
-
+	def getselectedtext(self):
+		return self.consoletext.getselectedtext()
+	
 class OutputTextWidget(W.EditText):
 	
 	def domenu_save_as(self, *args):

@@ -168,6 +168,9 @@ class Editor(W.Window):
 	
 	def setselection(self, selstart, selend):
 		self.editgroup.editor.setselection(selstart, selend)
+		
+	def getselectedtext(self):
+		return self.editgroup.editor.getselectedtext()
 	
 	def getfilename(self):
 		if self.path:
