@@ -291,7 +291,7 @@ drawing_line(dp, args)
 	drawingobject *dp;
 	object *args;
 {
-	drawing_generic(dp, args, wdrawline);
+	return drawing_generic(dp, args, wdrawline);
 }
 
 static object *
@@ -299,7 +299,7 @@ drawing_xorline(dp, args)
 	drawingobject *dp;
 	object *args;
 {
-	drawing_generic(dp, args, wxorline);
+	return drawing_generic(dp, args, wxorline);
 }
 
 static object *
@@ -333,7 +333,7 @@ drawing_box(dp, args)
 	drawingobject *dp;
 	object *args;
 {
-	drawing_generic(dp, args, wdrawbox);
+	return drawing_generic(dp, args, wdrawbox);
 }
 
 static object *
@@ -341,7 +341,7 @@ drawing_erase(dp, args)
 	drawingobject *dp;
 	object *args;
 {
-	drawing_generic(dp, args, werase);
+	return drawing_generic(dp, args, werase);
 }
 
 static object *
@@ -349,7 +349,7 @@ drawing_paint(dp, args)
 	drawingobject *dp;
 	object *args;
 {
-	drawing_generic(dp, args, wpaint);
+	return drawing_generic(dp, args, wpaint);
 }
 
 static object *
@@ -357,7 +357,7 @@ drawing_invert(dp, args)
 	drawingobject *dp;
 	object *args;
 {
-	drawing_generic(dp, args, winvert);
+	return drawing_generic(dp, args, winvert);
 }
 
 static object *
@@ -365,7 +365,7 @@ drawing_cliprect(dp, args)
 	drawingobject *dp;
 	object *args;
 {
-	drawing_generic(dp, args, wcliprect);
+	return drawing_generic(dp, args, wcliprect);
 }
 
 static object *
