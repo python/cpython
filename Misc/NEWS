@@ -331,9 +331,9 @@ Core and builtins
 - sys.exit() inadvertently allowed more than one argument.
   An exception will now be raised if more than one argument is used.
 
-- Changed evaluation order of dictionaries to conform to the general
-  left to right evaluation order rule. Now {f1(): f2()} will evaluate
-  f1 first.
+- Changed evaluation order of dictionary literals to conform to the
+  general left to right evaluation order rule. Now {f1(): f2()} will
+  evaluate f1 first.
 
 Extension modules
 -----------------
