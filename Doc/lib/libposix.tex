@@ -300,9 +300,11 @@ value is the exit status of the process as returned by Standard C
 \end{funcdesc}
 
 \begin{funcdesc}{times}{}
-Return a 4-tuple of floating point numbers indicating accumulated CPU
+Return a 5-tuple of floating point numbers indicating accumulated (CPU
+or other)
 times, in seconds.  The items are: user time, system time, children's
-user time, and children's system time, in that order.  See the \UNIX{}
+user time, children's system time, and elapsed real time since a fixed
+point in the past, in that order.  See the \UNIX{}
 manual page {\it times}(2).  (Not on MS-DOS.)
 \end{funcdesc}
 
