@@ -12,6 +12,12 @@ What's New in Python 2.3 beta 1?
 Core and builtins
 -----------------
 
+
+- New function sys.exc_clear() clears the current exception.  This is
+  rarely needed, but can sometimes be useful to release objects
+  referenced by the traceback held in sys.exc_info()[2].  (SF patch
+  #693195.)
+
 - On 64-bit systems, a dictionary could contain duplicate long/int keys
   if the key value was larger than 2**32.  See SF bug #689659.
 
