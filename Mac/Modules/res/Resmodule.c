@@ -14,6 +14,7 @@
 #include <Controls.h>
 
 extern PyObject *ResObj_New(Handle);
+extern PyObject *ResObj_OptNew(Handle);
 extern int ResObj_Convert(PyObject *, Handle *);
 
 extern PyObject *WinObj_New(WindowPtr);
@@ -1329,6 +1330,19 @@ static PyMethodDef Res_methods[] = {
 };
 
 
+
+
+/* Alternative version of ResObj_New, which returns None for null argument */
+PyObject *ResObj_OptNew(itself)
+	Handle itself;
+{
+	ResourceObject *it;
+	if (itself == NULL) {
+		Py_INCREF(Py_None);
+		return Py_None;
+	}
+	return ResObj_New(itself);
+}
 
 
 

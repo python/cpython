@@ -1,4 +1,4 @@
-# Generated from 'Moes:CodeWarrior6:Metrowerks C/C++:Headers:Universal Headers 2.0.1f:QuickDraw.h'
+# Generated from 'Sap:CodeWarrior6:Metrowerks C/C++:Headers:Universal Headers 2.0.1f:QuickDraw.h'
 
 invalColReq = -1
 srcCopy = 0
@@ -82,7 +82,7 @@ allDevices = 1 << allDevicesBit
 kNoConstraint = 0
 kVerticalConstraint = 1
 kHorizontalConstraint = 2
-# Generated from 'Moes:CodeWarrior6:Metrowerks C/C++:Headers:Universal Headers 2.0.1f:QuickDrawText.h'
+# Generated from 'Sap:CodeWarrior6:Metrowerks C/C++:Headers:Universal Headers 2.0.1f:QuickDrawText.h'
 
 leftCaret = 0
 rightCaret = -1

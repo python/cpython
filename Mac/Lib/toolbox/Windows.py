@@ -1,4 +1,4 @@
-# Generated from 'Moes:CodeWarrior6:Metrowerks C/C++:Headers:Universal Headers 2.0.1f:Windows.h'
+# Generated from 'Sap:CodeWarrior6:Metrowerks C/C++:Headers:Universal Headers 2.0.1f:Windows.h'
 
 kStandardWindowDefinition = 0
 kRoundWindowDefinition = 1
