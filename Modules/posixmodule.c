@@ -4325,27 +4325,26 @@ setup_confname_table(table, tablesize, tablename, moddict)
      PyObject *moddict;
 {
     PyObject *d = NULL;
+    size_t i;
+    int status;
 
     qsort(table, tablesize, sizeof(struct constdef), cmp_constdefs);
     d = PyDict_New();
-    if (d != NULL) {
-        PyObject *o;
-        size_t i = 0;
+    if (d == NULL)
+	    return -1;
 
-        for (; i < tablesize; ++i) {
-            o = PyInt_FromLong(table[i].value);
-            if (o == NULL
-                || PyDict_SetItemString(d, table[i].name, o) == -1) {
-                Py_DECREF(d);
-                d = NULL;
-                return -1;
+    for (i=0; i < tablesize; ++i) {
+            PyObject *o = PyInt_FromLong(table[i].value);
+            if (o == NULL || PyDict_SetItemString(d, table[i].name, o) == -1) {
+		    Py_XDECREF(o);
+		    Py_DECREF(d);
+		    return -1;
             }
-        }
-        if (PyDict_SetItemString(moddict, tablename, d) == -1)
-            return -1;
-        return 0;
+	    Py_DECREF(o);
     }
-    return -1;
+    status = PyDict_SetItemString(moddict, tablename, d);
+    Py_DECREF(d);
+    return status;
 }
 
 /* Return -1 on failure, 0 on success. */
