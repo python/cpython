@@ -231,13 +231,17 @@ removed.
 \begin{funcdesc}{float}{x}
   Convert a string or a number to floating point.  If the argument is a
   string, it must contain a possibly signed decimal or floating point
-  number, possibly embedded in whitespace, or be \code{'NaN'} (case
-  insensitive); this behaves identical to
-  \code{string.atof(\var{x})}.  If the string is \code{'NaN'}, the
-  IEEE ``Not a Number'' value is returned.  Otherwise, the argument
-  may be a plain or long integer or a floating point number, and a
-  floating point number with the same value (within Python's floating
-  point precision) is returned.
+  number, possibly embedded in whitespace; this behaves identical to
+  \code{string.atof(\var{x})}.  Otherwise, the argument may be a plain
+  or long integer or a floating point number, and a floating point
+  number with the same value (within Python's floating point
+  precision) is returned.
+
+  \strong{Note:} When passing in a string, values for NaN\index{NaN}
+  and Infinity\index{Infinity} may be returned, depending on the
+  underlying C library.  The specific set of strings accepted which
+  cause these values to be returned depends entirely on the C library
+  and is known to vary.
 \end{funcdesc}
 
 \begin{funcdesc}{getattr}{object, name}
