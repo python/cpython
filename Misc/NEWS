@@ -365,6 +365,9 @@ Library
 - refactored site.py into functions.  Also wrote regression tests for the
   module.
 
+- The distutils install command now supports the --home option and
+  installation scheme for all platforms.
+
 - The distutils sdist command now ignores all .svn directories, in
   addition to CVS and RCS directories.  .svn directories hold
   administrative files for the Subversion source control system.

@@ -384,26 +384,26 @@ install files.  The details differ across platforms, so read whichever
 of the following sections applies to you.
 
 
-\subsection{Alternate installation: \UNIX{} (the home scheme)}
+\subsection{Alternate installation: the home scheme}
 \label{alt-install-prefix}
 
-Under \UNIX, there are two ways to perform an alternate installation.
-The ``prefix scheme'' is similar to how alternate installation works
-under Windows and Mac OS, but is not necessarily the most useful way to
-maintain a personal Python library.  Hence, we document the more
-convenient and commonly useful ``home scheme'' first.
-
 The idea behind the ``home scheme'' is that you build and maintain a
-personal stash of Python modules, probably under your home directory.
+personal stash of Python modules.  This scheme's name is derived from
+the idea of a ``home'' directory on \UNIX, since it's not unusual for
+a \UNIX{} user to make their home directory have a layout similar to
+\file{/usr/} or \file{/usr/local/}.  This scheme can be used by
+anyone, regardless of the operating system their installing for.
+
 Installing a new module distribution is as simple as
 
 \begin{verbatim}
 python setup.py install --home=<dir>
 \end{verbatim}
 
-where you can supply any directory you like for the \longprogramopt{home}
-option.  Lazy typists can just type a tilde (\code{\textasciitilde}); the
-\command{install} command will expand this to your home directory:
+where you can supply any directory you like for the
+\longprogramopt{home} option.  On \UNIX, lazy typists can just type a
+tilde (\code{\textasciitilde}); the \command{install} command will
+expand this to your home directory:
 
 \begin{verbatim}
 python setup.py install --home=~
@@ -416,6 +416,11 @@ installation base as follows:
               {home}{/lib/python}
               {home}{/bin}
               {home}{/share}
+
+
+\versionchanged[The \longprogramopt{home} option used to be supported
+                only on \UNIX]{2.4}
+
 
 \subsection{Alternate installation: \UNIX{} (the prefix scheme)}
 \label{alt-install-home}
@@ -491,14 +496,13 @@ your \longprogramopt{prefix} and \longprogramopt{exec-prefix} don't even
 point to an alternate Python installation, this is immaterial.)
 
 
-\subsection{Alternate installation: Windows}
+\subsection{Alternate installation: Windows (the prefix scheme)}
 \label{alt-install-windows}
 
-Since Windows has no conception of a user's home directory, and since
-the standard Python installation under Windows is simpler than that
-under \UNIX, there's no point in having separate \longprogramopt{prefix}
-and \longprogramopt{home} options.  Just use the \longprogramopt{prefix}
-option to specify a base directory, e.g.
+Windows has no concept of a user's home directory, and since the
+standard Python installation under Windows is simpler than under
+\UNIX, the \longprogramopt{prefix} option has traditionally been used
+to install additional packages in separate locations on Windows.
 
 \begin{verbatim}
 python setup.py install --prefix="\Temp\Python"
