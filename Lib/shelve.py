@@ -19,7 +19,7 @@ object):
                         # such key)
         del d[key]      # delete data stored at key (raises KeyError
                         # if no such key)
-        flag = d.has_key(key)   # true if the key exists
+        flag = d.has_key(key)   # true if the key exists; same as "key in d"
         list = d.keys() # a list of all existing keys (slow!)
 
         d.close()       # close it
@@ -59,6 +59,9 @@ class Shelf:
         return len(self.dict)
 
     def has_key(self, key):
+        return self.dict.has_key(key)
+
+    def __contains__(self, key):
         return self.dict.has_key(key)
 
     def get(self, key, default=None):
