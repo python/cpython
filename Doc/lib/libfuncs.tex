@@ -248,9 +248,9 @@ def my_import(name):
 \end{funcdesc}
 
 \begin{funcdesc}{divmod}{a, b}
-  Take two numbers as arguments and return a pair of numbers consisting
-  of their quotient and remainder when using long division.  With mixed
-  operand types, the rules for binary arithmetic operators apply.  For
+  Take two (non complex) numbers as arguments and return a pair of numbers
+  consisting of their quotient and remainder when using long division.  With
+  mixed operand types, the rules for binary arithmetic operators apply.  For
   plain and long integers, the result is the same as
   \code{(\var{a} / \var{b}, \var{a} \%{} \var{b})}.
   For floating point numbers the result is \code{(\var{q}, \var{a} \%{}
