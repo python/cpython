@@ -1943,6 +1943,11 @@ item: Install File
   Flags=0000000000000010
 end
 item: Install File
+  Source=..\lib\distutils\command\wininst.exe
+  Destination=%MAINDIR%\Lib\distutils\command\wininst.exe
+  Flags=0000000000000010
+end
+item: Install File
   Source=..\lib\distutils\command\command_template
   Destination=%MAINDIR%\Lib\distutils\command\command_template
   Flags=0000000000000010
