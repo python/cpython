@@ -997,6 +997,18 @@ initossaudiodev(void)
 #ifdef AFMT_S16_NE
     _EXPORT_INT(m, AFMT_S16_NE);
 #endif
+#ifdef AFMT_U16_NE
+    _EXPORT_INT(m, AFMT_U16_NE);
+#endif
+#ifdef AFMT_S32_LE
+    _EXPORT_INT(m, AFMT_S32_LE);
+#endif
+#ifdef AFMT_S32_BE
+    _EXPORT_INT(m, AFMT_S32_BE);
+#endif
+#ifdef AFMT_MPEG
+    _EXPORT_INT(m, AFMT_MPEG);
+#endif
 
     /* Expose the sound mixer device numbers. */
     _EXPORT_INT(m, SOUND_MIXER_NRDEVICES);
