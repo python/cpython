@@ -137,6 +137,8 @@ class ScriptBinding:
             return
         flist = self.editwin.flist
         shell = flist.open_shell()
+        if not shell:
+            return  # couldn't open the shell
         interp = shell.interp
         if PyShell.use_subprocess:
             shell.restart_shell()
