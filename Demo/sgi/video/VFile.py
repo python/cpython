@@ -11,6 +11,9 @@
 # BasicVoutFile: write a CMIF video file
 # VinFile: BasicVinFile + Displayer
 # VoutFile: BasicVoutFile + Displayer + Grabber
+#
+# XXX Future extension:
+# BasicVinoutFile: supports overwriting of individual frames
 
 
 # Imported modules
@@ -25,6 +28,7 @@ import colorsys
 
 Error = 'VFile.Error'			# file format errors
 CallError = 'VFile.CallError'		# bad call
+AssertError = 'VFile.AssertError'	# internal malfunction
 
 
 # Constants returned by gl.getdisplaymode(), from <gl/get.h>
@@ -75,6 +79,61 @@ def choose_conversion(format):
 		raise Error, 'Unknown color system: ' + `format`
 
 
+# Inverses of the above
+
+def inv_grey(r, g, b):
+	y, i, q = colorsys.rgb_to_yiq(r, g, b)
+	return y, 0, 0
+
+def inv_yiq(r, g, b):
+	y, i, q = colorsys.rgb_to_yiq(r, g, b)
+	return y, i/1.2 + 0.5, q + 0.5
+
+def inv_hls(r, g, b):
+	h, l, s = colorsys.rgb_to_hls(r, g, b)
+	return l, h, s
+
+def inv_hsv(r, g, b):
+	h, s, v = colorsys.rgb_to_hsv(r, g, b)
+	return v, h, s
+
+def inv_rgb(r, g, b):
+	raise Error, 'Attempt to invert RGB colormap'
+
+def inv_rgb8(r, g, b):
+	r = int(r*7.0)
+	g = int(g*7.0)
+	b = int(b*7.0)
+	rgb = ((r&7) << 5) | ((b&3) << 3) | (g&7)
+	return rgb / 255.0, 0, 0
+
+
+# Choose one of the above based upon a color system name
+
+def choose_inverse(format):
+	try:
+		return eval('inv_' + format)
+	except:
+		raise Error, 'Unknown color system: ' + `format`
+
+
+# Predicate to see whether this is an entry level (non-XS) Indigo.
+# If so we can lrectwrite 8-bit wide pixels into a window in RGB mode
+
+def is_entry_indigo():
+	# XXX hack, hack.  We should call gl.gversion() but that doesn't
+	# exist in earlier Python versions.  Therefore we check the number
+	# of bitplanes *and* the size of the monitor.
+	xmax = gl.getgdesc(GL.GD_XPMAX)
+	if xmax <> 1024: return 0
+	ymax = gl.getgdesc(GL.GD_YPMAX)
+	if ymax != 768: return 0
+	r = gl.getgdesc(GL.GD_BITS_NORM_SNG_RED)
+	g = gl.getgdesc(GL.GD_BITS_NORM_SNG_GREEN)
+	b = gl.getgdesc(GL.GD_BITS_NORM_SNG_BLUE)
+	return (r, g, b) == (3, 3, 2)
+
+
 # Routines to grab data, per color system (only a few really supported).
 # (These functions are used via eval with a constructed argument!)
 
@@ -90,14 +149,10 @@ def grab_rgb8(w, h, pf):
 		raise Error, 'Sorry, can only grab rgb8 in single-buf rgbmode'
 	if pf <> 1 and pf <> 0:
 		raise Error, 'Sorry, can only grab rgb8 with packfactor 1'
-	r = gl.getgdesc(GL.GD_BITS_NORM_SNG_RED)
-	g = gl.getgdesc(GL.GD_BITS_NORM_SNG_GREEN)
-	b = gl.getgdesc(GL.GD_BITS_NORM_SNG_BLUE)
-	if (r, g, b) <> (3, 3, 2):
-		raise Error, 'Sorry, can only grab rgb8 on 8-bit Indigo'
+	if not is_entry_indigo():
+		raise Error, 'Sorry, can only grab rgb8 on entry level Indigo'
 	# XXX Dirty Dirty here.
 	# XXX Set buffer to cmap mode, grab image and set it back.
-	# XXX (Shouldn't be necessary???)
 	gl.cmode()
 	gl.gconfig()
 	gl.pixmode(GL.PM_SIZE, 8)
@@ -193,7 +248,7 @@ class VideoParams:
 
 # Class to display video frames in a window.
 # It is the caller's responsibility to ensure that the correct window
-# is current when using showframe(), initcolormap() and clear()
+# is current when using showframe(), initcolormap(), clear() and clearto()
 
 class Displayer(VideoParams):
 
@@ -211,6 +266,8 @@ class Displayer(VideoParams):
 		# Internal flags
 		self.colormapinited = 0	# must initialize window
 		self.skipchrom = 0	# don't skip chrominance data
+		self.color0 = None	# magic, used by clearto()
+		self.fixcolor0 = 0	# don't need to fix color0
 		return self
 
 	# setinfo() must reset some internal flags
@@ -219,12 +276,17 @@ class Displayer(VideoParams):
 		VideoParams.setinfo(values)
 		self.colormapinited = 0
 		self.skipchrom = 0
+		self.color0 = None
+		self.fixcolor0 = 0
 
 	# Show one frame, initializing the window if necessary
 
 	def showframe(self, data, chromdata):
 		if not self.colormapinited:
 			self.initcolormap()
+		if self.fixcolor0:
+			gl.mapcolor(self.color0)
+			self.fixcolor0 = 0
 		w, h, pf = self.width, self.height, self.packfactor
 		factor = self.magnify
 		if pf: factor = factor * pf
@@ -247,17 +309,27 @@ class Displayer(VideoParams):
 		gl.rectzoom(factor, factor)
 		gl.lrectwrite(self.xorigin, self.yorigin, \
 			self.xorigin + w - 1, self.yorigin + h - 1, data)
+		gl.gflush()
 
 	# Initialize the window: set RGB or colormap mode as required,
 	# fill in the colormap, and clear the window
 
 	def initcolormap(self):
+		self.colormapinited = 1
+		self.color0 = None
+		self.fixcolor0 = 0
 		if self.format == 'rgb':
 			gl.RGBmode()
 			gl.gconfig()
-			self.colormapinited = 1
 			gl.RGBcolor(200, 200, 200) # XXX rather light grey
 			gl.clear()
+			return
+		if self.format == 'rgb8' and is_entry_indigo():
+			gl.RGBmode()
+			gl.gconfig()
+			gl.RGBcolor(200, 200, 200) # XXX rather light grey
+			gl.clear()
+			gl.pixmode(GL.PM_SIZE, 8)
 			return
 		gl.cmode()
 		gl.gconfig()
@@ -269,29 +341,51 @@ class Displayer(VideoParams):
 		if not self.quiet:
 			sys.stderr.write('Initializing color map...')
 		self._initcmap()
-		self.colormapinited = 1
-		self.clear()
+		gl.clear()
 		if not self.quiet:
 			sys.stderr.write(' Done.\n')
 
-	# Clear the window
+	# Clear the window to a default color
 
 	def clear(self):
 		if not self.colormapinited: raise CallError
-		if self.offset == 0:
-			gl.color(0x800)
+		if gl.getdisplaymode() in (DMRGB, DMRGBDOUBLE):
+			gl.RGBcolor(200, 200, 200) # XXX rather light grey
 			gl.clear()
-		else:
-			gl.clear()
+			return
+		gl.writemask(0xffffffff)
+		gl.clear()
 
-	# Do the hard work for initializing the colormap
+	# Clear the window to a given RGB color.
+	# This may steal the first color index used; the next call to
+	# showframe() will restore the intended mapping for that index
+
+	def clearto(self, r, g, b):
+		if not self.colormapinited: raise CallError
+		if gl.getdisplaymode() in (DMRGB, DMRGBDOUBLE):
+			gl.RGBcolor(r, g, b)
+			gl.clear()
+			return
+		index = self.color0[0]
+		self.fixcolor0 = 1
+		gl.mapcolor(index, r, g, b)
+		gl.writemask(0xffffffff)
+		gl.clear()
+		gl.gflush()
+
+	# Do the hard work for initializing the colormap (internal).
+	# This also sets the current color to the first color index
+	# used -- the caller should never change this since it is used
+	# by clear() and clearto()
 
 	def _initcmap(self):
 		convcolor = choose_conversion(self.format)
 		maxbits = gl.getgdesc(GL.GD_BITS_NORM_SNG_CMODE)
 		if maxbits > 11:
 			maxbits = 11
-		c0bits, c1bits, c2bits = self.c0bits, self.c1bits, self.c2bits
+		c0bits = self.c0bits
+		c1bits = self.c1bits
+		c2bits = self.c2bits
 		if c0bits+c1bits+c2bits > maxbits:
 			if self.fallback and c0bits < maxbits:
 				# Cannot display frames in this mode, use grey
@@ -310,10 +404,8 @@ class Displayer(VideoParams):
 			offset = self.offset
 		if maxbits <> 11:
 			offset = offset & ((1<<maxbits)-1)
-		# XXX why is this here?
-		# for i in range(512, MAXMAP):
-		#	gl.mapcolor(i, 0, 0, 0)
-		# gl.gflush()
+		self.color0 = None
+		self.fixcolor0 = 0
 		for c0 in range(maxc0):
 			c0v = c0/float(maxc0-1)
 			for c1 in range(maxc1):
@@ -335,6 +427,11 @@ class Displayer(VideoParams):
 							  int(gv*255.0), \
 							  int(bv*255.0)
 						gl.mapcolor(index, r, g, b)
+						if self.color0 == None:
+							self.color0 = \
+								index, r, g, b
+		# Permanently make the first color index current
+		gl.color(self.color0[0])
 		gl.gflush() # send the colormap changes to the X server
 
 
@@ -379,6 +476,7 @@ def readfileheader(fp, filename):
 			filename + ': Unrecognized file header: ' + `line`[:20]
 	#
 	# Get color encoding info
+	# (The format may change to 'rgb' later when packfactor == 0)
 	#
 	if version <= 1.0:
 		format = 'grey'
@@ -412,6 +510,7 @@ def readfileheader(fp, filename):
 			chrompack = 0
 			offset = 0
 		else:
+			# XXX ought to check that the format is valid
 			try:
 			    c0bits, c1bits, c2bits, chrompack, offset = rest
 			except:
@@ -424,10 +523,13 @@ def readfileheader(fp, filename):
 		x = eval(line[:-1])
 	except:
 		raise Error, filename + ': Bad (w,h,pf) info'
+	if type(x) <> type(()):
+		raise Error, filename + ': Bad (w,h,pf) info'
 	if len(x) == 3:
 		width, height, packfactor = x
 		if packfactor == 0 and version < 3.0:
 			format = 'rgb'
+			c0bits = 0
 	elif len(x) == 2 and version <= 1.0:
 		width, height = x
 		packfactor = 2
@@ -548,6 +650,8 @@ class BasicVinFile(VideoParams):
 				filename + ': Bad version: ' + `self.version`
 		self.framecount = 0
 		self.atframeheader = 1
+		self.eofseen = 0
+		self.errorseen = 0
 		try:
 			self.startpos = self.fp.tell()
 			self.canseek = 1
@@ -578,9 +682,11 @@ class BasicVinFile(VideoParams):
 		self.fp.seek(self.startpos)
 		self.framecount = 0
 		self.atframeheader = 1
+		self.eofseen = 0
+		self.errorseen = 0
 
 	def warmcache(self):
-		pass
+		print '[BasicVinFile.warmcache() not implemented]'
 
 	def printinfo(self):
 		print 'File:    ', self.filename
@@ -598,24 +704,36 @@ class BasicVinFile(VideoParams):
 		return t
 
 	def getnextframeheader(self):
+		if self.eofseen: raise EOFError
+		if self.errorseen: raise CallError
 		if not self.atframeheader: raise CallError
 		self.atframeheader = 0
 		try:
 			return self._readframeheader(self.fp)
 		except Error, msg:
+			self.errorseen = 1
 			# Patch up the error message
 			raise Error, self.filename + ': ' + msg
+		except EOFError:
+			self.eofseen = 1
+			raise EOFError
 
 	def getnextframedata(self, ds, cs):
+		if self.eofseen: raise EOFError
+		if self.errorseen: raise CallError
 		if self.atframeheader: raise CallError
 		if ds:
 			data = self.fp.read(ds)
-			if len(data) < ds: raise EOFError
+			if len(data) < ds:
+				self.eofseen = 1
+				raise EOFError
 		else:
 			data = ''
 		if cs:
 			cdata = self.fp.read(cs)
-			if len(cdata) < cs: raise EOFerror
+			if len(cdata) < cs:
+				self.eofseen = 1
+				raise EOFError
 		else:
 			cdata = ''
 		self.atframeheader = 1
@@ -623,6 +741,8 @@ class BasicVinFile(VideoParams):
 		return (data, cdata)
 
 	def skipnextframedata(self, ds, cs):
+		if self.eofseen: raise EOFError
+		if self.errorseen: raise CallError
 		if self.atframeheader: raise CallError
 		# Note that this won't raise EOFError for a partial frame
 		# since there is no easy way to tell whether a seek
@@ -635,6 +755,70 @@ class BasicVinFile(VideoParams):
 		self.atframeheader = 1
 		self.framecount = self.framecount + 1
 
+
+# Derived class implementing random access
+
+class RandomVinFile(BasicVinFile):
+
+	def initfp(self, fp, filename):
+		self = BasicVinFile.initfp(self, fp, filename)
+		self.index = []
+		return self
+
+	def warmcache(self):
+		if len(self.index) == 0:
+			self.rewind()
+			while 1:
+				try: dummy = self.skipnextframe()
+				except EOFError: break
+		else:
+			print '[RandomVinFile.warmcache(): too late]'
+		self.rewind()
+
+	def getnextframeheader(self):
+		if self.framecount < len(self.index):
+			return self._getindexframeheader(self.framecount)
+		if self.framecount > len(self.index):
+			raise AssertError, \
+				'managed to bypass index?!?'
+		rv = BasicVinFile.getnextframeheader(self)
+		if self.canseek:
+			pos = self.fp.tell()
+			self.index.append(rv, pos)
+		return rv
+
+	def getrandomframe(self, i):
+		t, ds, cs = self.getrandomframeheader(i)
+		data, cdata = self.getnextframedata()
+		return t, ds, cs
+
+	def getrandomframeheader(self, i):
+		if i < 0: raise ValueError, 'negative frame index'
+		if not self.canseek:
+			raise Error, self.filename + ': can\'t seek'
+		if i < len(self.index):
+			return self._getindexframeheader(i)
+		if len(self.index) > 0:
+			rv = self.getrandomframeheader(len(self.index)-1)
+		else:
+			self.rewind()
+			rv = self.getnextframeheader()
+		while i > self.framecount:
+			self.skipnextframedata()
+			rv = self.getnextframeheader()
+		return rv
+
+	def _getindexframeheader(self, i):
+		(rv, pos) = self.index[i]
+		self.fp.seek(pos)
+		self.framecount = i
+		self.atframeheader = 0
+		self.eofseen = 0
+		self.errorseen = 0
+		return rv
+
+
+# Basic class for writing CMIF video files
 
 class BasicVoutFile(VideoParams):
 
@@ -649,7 +833,7 @@ class BasicVoutFile(VideoParams):
 		self = VideoParams.init(self)
 		self.fp = fp
 		self.filename = filename
-		self.version = 3.0 # In case anyone inquires
+		self.version = 3.0 # In case anyone inquries
 		self.headerwritten = 0
 		return self
 
@@ -692,7 +876,10 @@ class BasicVoutFile(VideoParams):
 	def writeframeheader(self, t, ds, cs):
 		if not self.headerwritten: self.writeheader()
 		if not self.atheader: raise CallError
-		self.fp.write(`(t, ds, cs)` + '\n')
+		data = `(t, ds, cs)`
+		n = len(data)
+		if n < 63: data = data + ' '*(63-n)
+		self.fp.write(data + '\n')
 		self.atheader = 0
 
 	def writeframedata(self, data, cdata):
@@ -705,11 +892,11 @@ class BasicVoutFile(VideoParams):
 
 # Classes that combine files with displayers and/or grabbers:
 
-class VinFile(BasicVinFile, Displayer):
+class VinFile(RandomVinFile, Displayer):
 
 	def initfp(self, fp, filename):
 		self = Displayer.init(self)
-		return BasicVinFile.initfp(self, fp, filename)
+		return RandomVinFile.initfp(self, fp, filename)
 
 	def shownextframe(self):
 		t, data, cdata = self.getnextframe()
@@ -739,8 +926,9 @@ def test():
 	vin.initcolormap()
 	t0 = time.millitimer()
 	while 1:
-		try: t = vin.shownextframe()
+		try: t, data, cdata = vin.getnextframe()
 		except EOFError: break
 		dt = t0 + t - time.millitimer()
 		if dt > 0: time.millisleep(dt)
+		vin.showframe(data, cdata)
 	time.sleep(2)
