@@ -69,6 +69,7 @@ Req-sent-unread-response       _CS_REQ_SENT       <response_class>
 import errno
 import mimetools
 import socket
+from urlparse import urlsplit
 
 try:
     from cStringIO import StringIO
@@ -467,9 +468,15 @@ class HTTPConnection:
             # themselves. we should NOT issue it twice; some web servers (such
             # as Apache) barf when they see two Host: headers
 
-            # if we need a non-standard port,include it in the header
-            if self.port == HTTP_PORT:
-                self.putheader('Host', self.host)
+            # If we need a non-standard port,include it in the header.
+            # If the request is going through a proxy, but the host of
+            # the actual URL, not the host of the proxy.
+
+            if url.startswith('http:'):
+                nil, netloc, nil, nil, nil = urlsplit(url)
+                self.putheader('Host', netloc)
+            elif self.port == HTTP_PORT:
+                self.putheader('Host', netloc)
             else:
                 self.putheader('Host', "%s:%s" % (self.host, self.port))
 
@@ -855,6 +862,17 @@ def test():
         for header in headers.headers: print header.strip()
     print
     print h.getfile().read()
+
+    # minimal test that code to extract host from url works
+    class HTTP11(HTTP):
+        _http_vsn = 11
+        _http_vsn_str = 'HTTP/1.1'
+
+    h = HTTP11('www.python.org')
+    h.putrequest('GET', 'http://www.python.org/~jeremy/')
+    h.endheaders()
+    h.getreply()
+    h.close()
 
     if hasattr(socket, 'ssl'):
         host = 'sourceforge.net'
