@@ -6,7 +6,6 @@ import dis
 import imp
 import marshal
 import os
-import re
 import sys
 import new
 
@@ -122,6 +121,7 @@ class ModuleFinder:
             return q
         if m.__path__:
             self.ensure_fromlist(m, fromlist)
+        return None
 
     def determine_parent(self, caller):
         self.msgin(4, "determine_parent", caller)
