@@ -1496,9 +1496,6 @@ ins_string(d, name, val)
 void
 init_tkinter()
 {
-#ifndef WIN32
-	extern int (*PyOS_InputHook) ();
-#endif
 	PyObject *m, *d;
 
 	Tkapp_Type.ob_type = &PyType_Type;
