@@ -83,7 +83,6 @@ newfileobject(name, mode)
 {
 	extern int fclose PROTO((FILE *));
 	fileobject *f;
-	FILE *fp;
 	f = (fileobject *) newopenfileobject((FILE *)NULL, name, mode, fclose);
 	if (f == NULL)
 		return NULL;
@@ -250,7 +249,7 @@ file_isatty(f, args)
 		err_badarg();
 		return NULL;
 	}
-	return newintobject((long)isatty(fileno(f->f_fp)));
+	return newintobject((long)isatty((int)fileno(f->f_fp)));
 }
 
 static object *
@@ -403,7 +402,7 @@ file_readline(f, args)
 		}
 	}
 
-	return getline((object *)f, n);
+	return getline(f, n);
 }
 
 static object *
