@@ -20,6 +20,11 @@ Core and builtins
 
 Extension modules
 
+- A security hole ("double free") was found in zlib-1.1.3, a popular
+  third party compression library used by some Python modules.  The
+  hole was quickly plugged in zlib-1.1.4, and the Windows build of
+  Python now ships with zlib-1.1.4.
+
 - pwd and grp return enhanced tuples now, with symbolic field names.
 
 - array.array is now a type object. A new format character
