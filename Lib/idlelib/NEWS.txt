@@ -1,7 +1,10 @@
 What's New in IDLE 1.0.4?
 =========================
 
-*Release date: XX-Dec-2004*
+*Release date: XX-Jan-2005*
+
+- Improve error handling when .idlerc can't be created.  This is a partial
+  backport of configHandler.py, Revision 1.36,  11Jan05.
 
 - The GUI was hanging if the shell window was closed while a raw_input() 
   was pending.  Restored the quit() of the readline() mainloop().

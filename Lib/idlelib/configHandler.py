@@ -209,10 +209,11 @@ class IdleConf:
         if not os.path.exists(userDir):
             try: #make the config dir if it doesn't exist yet
                 os.mkdir(userDir)
-            except IOError:
+            except (OSError, IOError):
                 warn=('\n Warning: unable to create user config directory\n '+
                         userDir+'\n')
                 sys.stderr.write(warn)
+                raise SystemExit
         return userDir
 
     def GetOption(self, configType, section, option, default=None, type=None):
