@@ -265,3 +265,9 @@ if d['key'][0] <> 3:
 d.setdefault('key', []).append(4)
 if len(d['key']) <> 2:
     raise TestFailed, 'present {} setdefault, w/ 2nd arg'
+if d.keys()[0] != d.firstkey():
+    raise TestFailed, 'first key is not first in keys'
+if d.values()[0] != d.firstvalue():
+    raise TestFailed, 'first value is not first in values'
+if d.items()[0] != d.firstitem():
+    raise TestFailed, 'first item is not first in items'
