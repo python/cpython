@@ -38,7 +38,7 @@ class Node(_Node):
     _makeParentNodes = 1
     debug = None
     childNodeTypes = ()
-    
+
     def __init__(self):
         self.childNodes = []
         self.parentNode = None
@@ -168,9 +168,9 @@ class Node(_Node):
         if oldChild.nextSibling is not None:
             oldChild.nextSibling.previousSibling = oldChild.previousSibling
         if oldChild.previousSibling is not None:
-            oldChild.previousSibling.nextSibling = oldChild.nextSibling            
+            oldChild.previousSibling.nextSibling = oldChild.nextSibling
         oldChild.nextSibling = oldChild.previousSibling = None
-        
+
         if self._makeParentNodes:
             oldChild.parentNode = None
         return oldChild
@@ -261,7 +261,7 @@ class Attr(Node):
     attributes = None
     ownerElement = None
     childNodeTypes = (Node.TEXT_NODE, Node.ENTITY_REFERENCE_NODE)
-    
+
     def __init__(self, qName, namespaceURI="", localName=None, prefix=None):
         # skip setattr for performance
         d = self.__dict__
@@ -391,7 +391,7 @@ class Element(Node):
     childNodeTypes = (Node.ELEMENT_NODE, Node.PROCESSING_INSTRUCTION_NODE,
                       Node.COMMENT_NODE, Node.TEXT_NODE,
                       Node.CDATA_SECTION_NODE, Node.ENTITY_REFERENCE_NODE)
-    
+
     def __init__(self, tagName, namespaceURI="", prefix="",
                  localName=None):
         Node.__init__(self)
@@ -486,10 +486,10 @@ class Element(Node):
 
     def hasAttribute(self, name):
         return self._attrs.has_key(name)
-                     
+
     def hasAttributeNS(self, namespaceURI, localName):
-        return self._attrsNS.has_key((namespaceURI, localName))    
-        
+        return self._attrsNS.has_key((namespaceURI, localName))
+
     def getElementsByTagName(self, name):
         return _getElementsByTagNameHelper(self, name, [])
 
@@ -526,7 +526,7 @@ class Comment(Node):
     nodeName = "#comment"
     attributes = None
     childNodeTypes = ()
-    
+
     def __init__(self, data):
         Node.__init__(self)
         self.data = self.nodeValue = data
@@ -538,7 +538,7 @@ class ProcessingInstruction(Node):
     nodeType = Node.PROCESSING_INSTRUCTION_NODE
     attributes = None
     childNodeTypes = ()
-    
+
     def __init__(self, target, data):
         Node.__init__(self)
         self.target = self.nodeName = target
@@ -552,7 +552,7 @@ class Text(Node):
     nodeName = "#text"
     attributes = None
     childNodeTypes = ()
-    
+
     def __init__(self, data):
         if type(data) not in _StringTypes:
             raise TypeError, "node contents must be a string"
@@ -670,7 +670,7 @@ class Document(Node):
         oldChild.parentNode = None
         if self.documentElement is oldChild:
             self.documentElement = None
-             
+
         return oldChild
 
     def _get_documentElement(self):
