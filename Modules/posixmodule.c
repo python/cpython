@@ -2295,9 +2295,9 @@ win32_popen4(PyObject *self, PyObject  *args)
 
 static int
 _PyPopenCreateProcess(char *cmdstring,
-					  HANDLE hStdin,
-					  HANDLE hStdout,
-					  HANDLE hStderr)
+		      HANDLE hStdin,
+		      HANDLE hStdout,
+		      HANDLE hStderr)
 {
 	PROCESS_INFORMATION piProcInfo;
 	STARTUPINFO siStartInfo;
@@ -2360,15 +2360,15 @@ _PyPopenCreateProcess(char *cmdstring,
 	siStartInfo.wShowWindow = SW_HIDE;
 
 	if (CreateProcess(NULL,
-					  s2,
-					  NULL,
-					  NULL,
-					  TRUE,
-					  CREATE_NEW_CONSOLE,
-					  NULL,
-					  NULL,
-					  &siStartInfo,
-					  &piProcInfo) ) {
+			  s2,
+			  NULL,
+			  NULL,
+			  TRUE,
+			  CREATE_NEW_CONSOLE,
+			  NULL,
+			  NULL,
+			  &siStartInfo,
+			  &piProcInfo) ) {
 		/* Close the handles now so anyone waiting is woken. */
 		CloseHandle(piProcInfo.hProcess);
 		CloseHandle(piProcInfo.hThread);
@@ -2404,9 +2404,9 @@ _PyPopen(char *cmdstring, int mode, int n)
 	 * the these handles; resulting in non-closeable handles to the pipes
 	 * being created. */
 	 fSuccess = DuplicateHandle(GetCurrentProcess(), hChildStdinWr,
-								GetCurrentProcess(), &hChildStdinWrDup, 0,
-								FALSE,
-								DUPLICATE_SAME_ACCESS);
+				    GetCurrentProcess(), &hChildStdinWrDup, 0,
+				    FALSE,
+				    DUPLICATE_SAME_ACCESS);
 	 if (!fSuccess)
 		 return win32_error("DuplicateHandle", NULL);
 
@@ -2418,9 +2418,8 @@ _PyPopen(char *cmdstring, int mode, int n)
 		 return win32_error("CreatePipe", NULL);
 
 	 fSuccess = DuplicateHandle(GetCurrentProcess(), hChildStdoutRd,
-								GetCurrentProcess(), &hChildStdoutRdDup, 0,
-								FALSE,
-								DUPLICATE_SAME_ACCESS);
+				    GetCurrentProcess(), &hChildStdoutRdDup, 0,
+				    FALSE, DUPLICATE_SAME_ACCESS);
 	 if (!fSuccess)
 		 return win32_error("DuplicateHandle", NULL);
 
@@ -2431,10 +2430,11 @@ _PyPopen(char *cmdstring, int mode, int n)
 	 if (n != POPEN_4) {
 		 if (!CreatePipe(&hChildStderrRd, &hChildStderrWr, &saAttr, 0))
 			 return win32_error("CreatePipe", NULL);
-		 fSuccess = DuplicateHandle(GetCurrentProcess(), hChildStderrRd,
-									GetCurrentProcess(), &hChildStderrRdDup, 0,
-									FALSE,
-									DUPLICATE_SAME_ACCESS);
+		 fSuccess = DuplicateHandle(GetCurrentProcess(),
+					    hChildStderrRd,
+					    GetCurrentProcess(),
+					    &hChildStderrRdDup, 0,
+					    FALSE, DUPLICATE_SAME_ACCESS);
 		 if (!fSuccess)
 			 return win32_error("DuplicateHandle", NULL);
 		 /* Close the inheritable version of ChildStdErr that we're using. */
@@ -2516,7 +2516,7 @@ _PyPopen(char *cmdstring, int mode, int n)
 		 if (n != 4)
 			 CloseHandle(hChildStderrRdDup);
 
-		 f = Py_BuildValue("OO",p2,p1);
+		 f = Py_BuildValue("OO",p1,p2);
 		 break;
 	 }
 	
@@ -2545,23 +2545,23 @@ _PyPopen(char *cmdstring, int mode, int n)
 		 PyFile_SetBufSize(p1, 0);
 		 PyFile_SetBufSize(p2, 0);
 		 PyFile_SetBufSize(p3, 0);
-		 f = Py_BuildValue("OOO",p2,p1,p3);
+		 f = Py_BuildValue("OOO",p1,p2,p3);
 		 break;
 	 }
 	 }
 
 	 if (n == POPEN_4) {
 		 if (!_PyPopenCreateProcess(cmdstring,
-									hChildStdinRd,
-									hChildStdoutWr,
-									hChildStdoutWr))
+					    hChildStdinRd,
+					    hChildStdoutWr,
+					    hChildStdoutWr))
 			 return win32_error("CreateProcess", NULL);
 	 }
 	 else {
 		 if (!_PyPopenCreateProcess(cmdstring,
-									hChildStdinRd,
-									hChildStdoutWr,
-									hChildStderrWr))
+					    hChildStdinRd,
+					    hChildStdoutWr,
+					    hChildStderrWr))
 			 return win32_error("CreateProcess", NULL);
 	 }
 
