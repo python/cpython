@@ -1,12 +1,1 @@
 test_re
-=== Failed incorrectly ('^(.+)?B', 'AB', 0, 'g1', 'A')
-=== Fails on case-insensitive match ('^(.+)?B', 'AB', 0, 'g1', 'A')
-=== Fails on locale-sensitive match ('^(.+)?B', 'AB', 0, 'g1', 'A')
-=== Failed incorrectly ('(a+)+\\1', 'aa', 0, 'found+"-"+g1', 'aa-a')
-=== Fails on case-insensitive match ('(a+)+\\1', 'aa', 0, 'found+"-"+g1', 'aa-a')
-=== Fails on locale-sensitive match ('(a+)+\\1', 'aa', 0, 'found+"-"+g1', 'aa-a')
-=== grouping error ('(a)(b)c|ab', 'ab', 0, 'found+"-"+g1+"-"+g2', 'ab-None-None') 'ab-None-b' should be 'ab-None-None'
-=== grouping error ('(a)+b|aac', 'aac', 0, 'found+"-"+g1', 'aac-None') 'aac-a' should be 'aac-None'
-=== Failed incorrectly ('^(.+)?B', 'AB', 0, 'g1', 'A')
-=== Fails on case-insensitive match ('^(.+)?B', 'AB', 0, 'g1', 'A')
-=== Fails on locale-sensitive match ('^(.+)?B', 'AB', 0, 'g1', 'A')
