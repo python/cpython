@@ -8,7 +8,6 @@
 # - if the remote file is deleted, "rcvs update" will fail
 #
 # Functionality:
-# - cvs log
 # - cvs rm
 # - descend into directories (alraedy done for update)
 # - conflict resolution
@@ -460,7 +459,7 @@ class rcvs(CommandFrameWork):
 	def do_log(self, opts, files):
 		"""log [rlog-options] [file] ..."""
 		self.cvs.log(files, opts)
-	flags_log = 'bhLNRtd:s:V:'
+	flags_log = 'bhLNRtd:s:V:r:'
 
 
 def remove(fn):
