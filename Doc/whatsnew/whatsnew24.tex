@@ -1,4 +1,3 @@
-
 \documentclass{howto}
 \usepackage{distutils}
 % $Id$
@@ -444,6 +443,44 @@ Rexx language.}
 
 
 %======================================================================
+\section{PEP 331: Locale-Independent Float/String Conversions}
+
+The \module{locale} modules lets Python software select various
+conversions and display conventions that are localized to a particular
+country or language.  However, the module was careful to not change
+the numeric locale because various functions in Python's
+implementation required that the numeric locale remain set to the
+\code{'C'} locale.  Often this was because the code was using the C library's
+\cfunction{atof()} function.  
+
+Not setting the numeric locale caused trouble for extensions that used
+third-party C libraries, however, because they wouldn't have the
+correct locale set.  The motivating example was GTK+, whose user
+interface widgets weren't displaying numbers in the current locale.
+
+The solution described in the PEP is to add three new functions to the
+Python API that perform ASCII-only conversions, ignoring the locale
+setting:
+
+\begin{itemize}
+ \item \cfunction{PyOS_ascii_strtod(\var{str}, \var{ptr})} 
+and \cfunction{PyOS_ascii_atof(\var{str}, \var{ptr})} 
+both convert a string to a C \ctype{double}.
+ \item \cfunction{PyOS_ascii_formatd(\var{buffer}, \var{buf_len}, \var{format}, \var{d})} converts a \ctype{double} to an ASCII string.
+\end{itemize}
+
+The code for these functions came from the GLib library
+(\url{http://developer.gnome.org/arch/gtk/glib.html}), whose
+developers kindly relicensed the relevant functions and donated them
+to the Python Software Foundation.  The \module{locale} module 
+can now change the numeric locale, letting extensions such as GTK+ 
+produce the correct results.
+
+\begin{seealso}
+\seepep{331}{Locale-Independent Float/String Conversions}{Written by Christian R. Reis, and implemented by Gustavo Carneiro.}
+\end{seealso}      
+
+%======================================================================
 \section{Other Language Changes}
 
 Here are all of the changes that Python 2.4 makes to the core Python
@@ -578,6 +615,9 @@ Previously this had to be a regular Python dictionary.
 []
 \end{verbatim}
 
+\item \constant{None} is now a constant; code that binds a new value to 
+the name \samp{None} is now a syntax error.
+
 \end{itemize}
 
 
@@ -587,10 +627,10 @@ Previously this had to be a regular Python dictionary.
 \begin{itemize}
 
 \item The inner loops for list and tuple slicing
- were optimized and now run about one-third faster.  The inner
- loops were also optimized for dictionaries with performance
- boosts to \method{keys()}, \method{values()}, \method{items()},
-\method{iterkeys()}, \method{itervalues()}, and \method{iteritems()}.
+ were optimized and now run about one-third faster.  The inner loops
+ were also optimized for dictionaries, resulting in performance boosts for
+ \method{keys()}, \method{values()}, \method{items()},
+ \method{iterkeys()}, \method{itervalues()}, and \method{iteritems()}.
 
 \item The machinery for growing and shrinking lists was optimized for
  speed and for space efficiency.  Appending and popping from lists now
