@@ -28,8 +28,6 @@ PyOSA_GetAppTerminology(PyObject* self, PyObject* args)
 	defaultComponent = OpenDefaultComponent (kOSAComponentType, 'ascr');
 	err = GetComponentInstanceError (defaultComponent);
 	if (err) return PyMac_Error(err);
-	err = OSAGetCurrentDialect(defaultComponent, &defaultTerminology);
-	if (err) return PyMac_Error(err);	
 	err = OSAGetAppTerminology (
     	defaultComponent, 
     	modeFlags,
@@ -59,8 +57,6 @@ PyOSA_GetSysTerminology(PyObject* self, PyObject* args)
 	defaultComponent = OpenDefaultComponent (kOSAComponentType, 'ascr');
 	err = GetComponentInstanceError (defaultComponent);
 	if (err) return PyMac_Error(err);
-	err = OSAGetCurrentDialect(defaultComponent, &defaultTerminology);
-	if (err) return PyMac_Error(err);	
 	err = OSAGetAppTerminology (
     	defaultComponent, 
     	modeFlags,
