@@ -1,0 +1,71 @@
+\section{\module{SimpleHTTPServer} ---
+         A Do-Something Request Handler}
+
+\declaremodule{standard}{SimpleHTTPServer}
+\sectionauthor{Moshe Zadka}{mzadka@geocities.com}
+\modulesynopsis{This module provides a request handler for HTTP servers.}
+
+
+The \module{SimpleHTTPServer} module defines a request-handler class,
+interface compatible with \class{BaseHTTPServer.BaseHTTPRequestHandler}
+which serves files only from a base directory.
+
+The \module{SimpleHTTPServer} module defines the following class:
+
+\begin{classdesc}{SimpleHTTPRequestHandler}{request, client_address, server}
+This class is used, to serve files from current directory and below,
+directly mapping the directory structure to HTTP requests.
+
+A lot of the work is done by the base class
+\class{BaseHTTPServer.BaseHTTPRequestHandler}, such as parsing the
+request.  This class implements the \function{do_GET()} and
+\function{do_HEAD()} functions.
+\end{classdesc}
+
+The \class{SimpleHTTPRequestHandler} defines the following member
+variables:
+
+\begin{memberdesc}{server_version}
+This will be \code{"SimpleHTTP/" + __version__}, where \code{__version__}
+is defined in the module.
+\end{memberdesc}
+
+\begin{memberdesc}{extensions_map}
+A dictionary mapping suffixes into MIME types. Default is signified
+by an empty string, and is considered to be \code{text/plain}.
+The mapping is used case-insensitively, and so should contain only
+lower-cased keys.
+\end{memberdesc}
+
+The \class{SimpleHTTPRequestHandler} defines the following methods:
+
+\begin{methoddesc}{do_HEAD}{}
+This method serves the \code{'HEAD'} request type: it sends the
+headers it would send for the equivalent \code{GET} request. See the
+\method{do_GET()} method for more complete explanation of the possible
+headers.
+\end{methoddesc}
+
+\begin{methoddesc}{do_GET}{}
+The request is mapped to a local file by interpreting the request as
+a path relative to the current working directory.
+
+If the request was mapped to a directory, a \code{403} respond is output,
+followed by the explanation \code{'Directory listing not supported'}.
+Any \exception{IOError} exception in opening the requested file, is mapped
+to a \code{404}, \code{'File not found'} error. Otherwise, the content
+type is guessed using the \var{extensions_map} variable.
+
+A \code{'Content-type:'} with the guessed content type is output, and
+then a blank line, signifying end of headers, and then the contents of
+the file. The file is always opened in binary mode.
+
+For example usage, see the implementation of the \function{test()}
+function.
+\end{methoddesc}
+
+
+\begin{seealso}
+  \seemodule{BaseHTTPServer}{Base class implementation for Web server
+                             and request handler.}
+\end{seealso}
