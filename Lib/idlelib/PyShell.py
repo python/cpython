@@ -319,9 +319,15 @@ class ModifiedInterpreter(InteractiveInterpreter):
             # XXX what about warnoptions?
             return [sys.executable, '-p', str(self.port)]
         else:
-            w = ['-W' + s for s in sys.warnoptions]        
-            return [sys.executable] + w \
-                 + ["-c", "__import__('run').main()", str(self.port)]
+            w = ['-W' + s for s in sys.warnoptions]
+            # Maybe IDLE is installed and is being accessed via sys.path,
+            # or maybe it's not installed and the idle.py script is being
+            # run from the IDLE source directory.
+            if __name__ == 'idlelib.PyShell':
+                command = "__import__('idlelib.run').run.main()"
+            else:
+                command = "__import__('run').main()"
+            return [sys.executable] + w + ["-c", command, str(self.port)]
 
     def start_subprocess(self):
         addr = ("localhost", self.port)

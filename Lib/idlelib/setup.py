@@ -46,14 +46,14 @@ class IDLE_Builder(build_py):
         # Copies all .py files, then also copies the txt and gif files
         build_py.run(self)
         for name in txt_files:
-            outfile = self.get_plain_outfile(self.build_lib, [], name)
+            outfile = self.get_plain_outfile(self.build_lib, [pkgname], name)
             dir = os.path.dirname(outfile)
             self.mkpath(dir)
             self.copy_file(os.path.join(pkg_dir, name), outfile,
                            preserve_mode = 0)
         for name in Icons:
             outfile = self.get_plain_outfile(self.build_lib,
-                                             ["Icons"], name)
+                                             [pkgname, "Icons"], name)
             dir = os.path.dirname(outfile)
             self.mkpath(dir)
             self.copy_file(os.path.join("Icons", name),
@@ -71,11 +71,11 @@ class IDLE_Builder(build_py):
         if not include_bytecode:
             return outputs
         for name in txt_files:
-            filename = self.get_plain_outfile(self.build_lib, [], name)
+            filename = self.get_plain_outfile(self.build_lib, [pkgname], name)
             outputs.append(filename)
         for name in Icons:
             filename = self.get_plain_outfile(self.build_lib,
-                                              ["Icons"], name)
+                                              [pkgname, "Icons"], name)
             outputs.append(filename)
         return outputs
 
@@ -111,7 +111,6 @@ For further details, refer to idlefork.sourceforge.net.
       cmdclass = {'build_py':IDLE_Builder,
                   'install_lib':IDLE_Installer},
       package_dir = {pkgname: pkg_dir},
-      extra_path = pkgname,
-      py_modules = [f.split('.')[0] for f in glob.glob("*.py")],
+      packages = [pkgname],
       scripts = [os.path.join(pkg_dir, idle_name)]
       )
