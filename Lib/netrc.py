@@ -22,7 +22,10 @@ class NetrcParseError(Exception):
 class netrc:
     def __init__(self, file=None):
         if not file:
-            file = os.path.join(os.environ['HOME'], ".netrc")
+            try:
+                file = os.path.join(os.environ['HOME'], ".netrc")
+            except KeyError:
+                raise IOError("Could not find .netrc: $HOME is not set")
         fp = open(file)
         self.hosts = {}
         self.macros = {}
