@@ -650,12 +650,13 @@ listappend(PyListObject *self, PyObject *v)
 static int
 listextend_internal(PyListObject *self, PyObject *b)
 {
-	register int selflen = PyList_GET_SIZE(self);
+	int selflen = PyList_GET_SIZE(self);
 	int blen;
 	register int i;
 	PyObject **src, **dest;
 
-	if (PyObject_Size(b) == 0) {
+	blen = PyObject_Size(b);
+	if (blen == 0) {
 		/* short circuit when b is empty */
 		Py_DECREF(b);
 		return 0;
@@ -679,7 +680,6 @@ listextend_internal(PyListObject *self, PyObject *b)
 		}
 	}
 
-	blen = PyObject_Size(b);
 	if (list_resize(self, selflen + blen) == -1) {
 		Py_DECREF(b);
 		return -1;
