@@ -71,6 +71,30 @@ func()
 verify(g['c'] == 3,
        'Could not create a proper function object')
 
+# test the various extended flavors of function.new
+def f(x):
+    def g(y):
+        return x + y
+    return g
+g = f(4)
+new.function(f.func_code, {}, "blah")
+g2 = new.function(g.func_code, {}, "blah", (2,), g.func_closure)
+verify(g2() == 6)
+g3 = new.function(g.func_code, {}, "blah", None, g.func_closure)
+verify(g3(5) == 9)
+def test_closure(func, closure, exc):
+    try:
+        new.function(func.func_code, {}, "", None, closure)
+    except exc:
+        pass
+    else:
+        print "corrupt closure accepted"
+
+test_closure(g, None, TypeError) # invalid closure
+test_closure(g, (1,), TypeError) # non-cell in closure
+test_closure(g, (1, 1), ValueError) # closure is wrong size
+test_closure(f, g.func_closure, ValueError) # no closure needed
+
 print 'new.code()'
 # bogus test of new.code()
 # Note: Jython will never have new.code()
