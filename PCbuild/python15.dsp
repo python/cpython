@@ -173,6 +173,10 @@ SOURCE=..\PC\dl_nt.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\Python\dynload_win.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\Modules\errnomodule.c
 # End Source File
 # Begin Source File
@@ -379,13 +383,6 @@ SOURCE=..\Python\pystate.c
 # Begin Source File
 
 SOURCE=..\PC\python_nt.rc
-
-!IF  "$(CFG)" == "python15 - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
-
-!ENDIF 
-
 # End Source File
 # Begin Source File
 
