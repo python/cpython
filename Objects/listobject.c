@@ -519,6 +519,12 @@ list_clear(PyListObject *a)
 	return 0;
 }
 
+/* a[ilow:ihigh] = v if v != NULL.
+ * del a[ilow:ihigh] if v == NULL.
+ *
+ * Special speed gimmick:  when v is NULL and ihigh - ilow <= 8, it's
+ * guaranteed the call cannot fail.
+ */
 static int
 list_ass_slice(PyListObject *a, int ilow, int ihigh, PyObject *v)
 {
@@ -823,6 +829,7 @@ listpop(PyListObject *self, PyObject *args)
 {
 	int i = -1;
 	PyObject *v, *arg = NULL;
+	int status;
 
 	if (!PyArg_UnpackTuple(args, "pop", 0, 1, &arg))
 		return NULL;
@@ -845,16 +852,17 @@ listpop(PyListObject *self, PyObject *args)
 	}
 	v = self->ob_item[i];
 	if (i == self->ob_size - 1) {
-		if (list_resize(self, self->ob_size - 1) == -1)
-			return NULL;
-		return v;
+		status = list_resize(self, self->ob_size - 1);
+		assert(status >= 0);
+		return v; /* and v now owns the reference the list had */
 	}
 	Py_INCREF(v);
-	if (list_ass_slice(self, i, i+1, (PyObject *)NULL) != 0) {
-		Py_DECREF(v);
-		return NULL;
-	}
-	return v;
+	status = list_ass_slice(self, i, i+1, (PyObject *)NULL);
+	assert(status >= 0);
+	/* Use status, so that in a release build compilers don't
+	 * complain about the unused name.
+	 */
+	return status, v;
 }
 
 /* Reverse a slice of a list in place, from lo up to (exclusive) hi. */
