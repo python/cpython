@@ -1,4 +1,5 @@
 What's New in Python 2.2a4?
+Release date: 28-Sep-2001
 ===========================
 
 Type/class unification and new-style classes
@@ -68,6 +69,8 @@ Type/class unification and new-style classes
   instance instead a value of the base type.  For example, if s was of
   a str sublass type, s[:] returned s as-is.  Now it returns a str
   with the same value as s.
+
+- Provisional support for pickling new-style objects has been added.
 
 Core
 
@@ -191,6 +194,7 @@ Windows
 
 
 What's New in Python 2.2a3?
+Release Date: 07-Sep-2001
 ===========================
 
 Core
@@ -379,6 +383,7 @@ Windows
 
 
 What's New in Python 2.2a2?
+Release Date: 22-Aug-2001
 ===========================
 
 Build
