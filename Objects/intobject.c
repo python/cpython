@@ -26,11 +26,18 @@ err_ovf(char *msg)
 /* Integers are quite normal objects, to make object handling uniform.
    (Using odd pointers to represent integers would save much space
    but require extra checks for this special case throughout the code.)
-   Since, a typical Python program spends much of its time allocating
+   Since a typical Python program spends much of its time allocating
    and deallocating integers, these operations should be very fast.
    Therefore we use a dedicated allocation scheme with a much lower
    overhead (in space and time) than straight malloc(): a simple
    dedicated free list, filled when necessary with memory from malloc().
+
+   block_list is a singly-linked list of all PyIntBlocks ever allocated,
+   linked via their next members.  PyIntBlocks are never returned to the
+   system before shutdown (PyInt_Fini).
+
+   free_list is a singly-linked list of available PyIntObjects, linked
+   via abuse of their ob_type members.
 */
 
 #define BLOCK_SIZE	1000	/* 1K less typical malloc overhead */
@@ -51,12 +58,14 @@ static PyIntObject *
 fill_free_list(void)
 {
 	PyIntObject *p, *q;
-	/* XXX Int blocks escape the object heap. Use PyObject_MALLOC ??? */
+	/* Python's object allocator isn't appropriate for large blocks. */
 	p = (PyIntObject *) PyMem_MALLOC(sizeof(PyIntBlock));
 	if (p == NULL)
 		return (PyIntObject *) PyErr_NoMemory();
 	((PyIntBlock *)p)->next = block_list;
 	block_list = (PyIntBlock *)p;
+	/* Link the int objects together, from rear to front, then return
+	   the address of the last int object in the block. */
 	p = &((PyIntBlock *)p)->objects[0];
 	q = p + N_INTOBJECTS;
 	while (--q > p)
@@ -975,7 +984,7 @@ PyInt_Fini(void)
 			}
 		}
 		else {
-			PyMem_FREE(list); /* XXX PyObject_FREE ??? */
+			PyMem_FREE(list);
 			bf++;
 		}
 		isum += irem;
