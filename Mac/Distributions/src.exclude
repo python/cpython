@@ -18,3 +18,4 @@ CVS
 Makefile.pre.in
 PyIDE-src
 [(]*[)]
+*~[0-9]
