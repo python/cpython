@@ -34,6 +34,16 @@ def warn(message, category=None, stacklevel=1):
             filename = module
     # Quick test for common case
     registry = globals.setdefault("__warningregistry__", {})
+    warn_explicit(message, category, filename, lineno, module, registry)
+
+def warn_explicit(message, category, filename, lineno,
+                  module=None, registry=None):
+    if module is None:
+        module = filename
+        if module[-3:].lower() == ".py":
+            module = module[:-3] # XXX What about leading pathname?
+    if registry is None:
+        registry = {}
     key = (message, category, lineno)
     if registry.get(key):
         return
