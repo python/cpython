@@ -1,15 +1,20 @@
 What's new in this release?
 ===========================
 
-Below is a list of all relevant changes since the release 1.4, up till
-the release of 1.5a3.  At the end is a list of changes made since
-1.5a3 up to the release of 1.5a4.
+Below is a list of all relevant changes since the release 1.4.  The
+most recent changes (from 1.5a3 to 1.5a4 and from 1.5a4 to 1.5b1) are
+listed in separate sections at the end.
 
 A note on attributions: while I have sprinkled some names throughout
-here, I'm grateful to many more people who remain anonymous.  You may
+here, I'm grateful to many more people who remain unnamed.  You may
 find your name in the ACKS file.  If you believe you deserve more
 credit, let me know and I'll add you to the list!
 
+
+======================================================================
+
+From 1.4 to 1.5a3
+=================
 
 Security
 --------
@@ -973,13 +978,8 @@ binary distribution(s) when these are ready.
 ======================================================================
 
 
-Fixed after 1.5a3 was released
-------------------------------
-
-The following changes have been made to the source base after the
-release of 1.5a3.  They still need to be sorted.  They also need to be
-merged into their respective categories for the final release, but
-it's useful to have them separately during the alpha test cycle.
+From 1.5a3 to 1.5a4
+===================
 
 - faqwiz.py: version 0.8; Recognize https:// as URL; <html>...</html>
 feature; better install instructions; removed faqmain.py (which was an
@@ -1427,3 +1427,208 @@ it is always "200 OK") rather than swallowing it.
 - Changes to configure.in, the configure script, and both
 Makefile.pre.in files, to support SGI's SGI_ABI platform selection
 environment variable.
+
+
+======================================================================
+
+
+From 1.5a4 to 1.5b1
+===================
+
+- The Windows NT/95 installer now includes full HTML of all manuals.
+It also has a checkbox that lets you decide whether to install the
+interpreter and library.  The WISE installer script for the installer
+is included in the source tree as PC/python15.wse, and so are the
+icons used for Python files.  The config.c file for the Windows build
+is now complete with the pcre module.
+
+- sys.ps1 and sys.ps2 can now arbitrary objects; their str() is
+evaluated for the prompt.
+
+- The reference manual is brought up to date (more or less -- it still
+needs work, e.g. in the area of package import).
+
+- The icons used by latex2html are now included in the Doc
+subdirectory (mostly so that tarring up the HTML files can be fully
+automated).  A simple index.html is also added to Doc (it only works
+after you have successfully run latex2html).
+
+- For all you would-be proselytizers out there: a new version of
+Misc/BLURB describes Python more concisely, and Misc/comparisons
+compares Python to several other languages.  Misc/BLURB.WINDOWS
+contains a blurb specifically aimed at Windows programmers (by Mark
+Hammond).
+
+- A new version of the Python mode for Emacs is included as
+Misc/python-mode.el.  There are too many new features to list here.
+See http://www.python.org/ftp/emacs/pmdetails.html for more info.
+
+- New module fileinput makes iterating over the lines of a list of
+files easier.  (This still needs some more thinking to make it more
+extensible.)
+
+- There's full OS/2 support, courtesy Jeff Rush.  To build the OS/2
+version, see PC/readme.txt and PC/os2vacpp.  This is for IBM's Visual
+Age C++ compiler.  I expect that Jeff will also provide a binary
+release for this platform.
+
+- On Linux, the configure script now uses '-Xlinker -export-dynamic'
+instead of '-rdynamic' to link the main program so that it exports its
+symbols to shared libraries it loads dynamically.  I hope this doesn't
+break on older Linux versions; it is needed for mklinux and appears to
+work on Linux 2.0.30.
+
+- Some Tkinter resstructuring: the geometry methods that apply to a
+master are now properly usable on toplevel master widgets.  There's a
+new (internal) widget class, BaseWidget.  New, longer "official" names
+for the geometry manager methods have been added,
+e.g. "grid_columnconfigure()" instead of "columnconfigure()".  The old
+shorter names still work, and where there's ambiguity, pack wins over
+place wins over grid.  Also, the bind_class method now returns its
+value.
+
+- New, RFC-822 conformant parsing of email addresses and address lists
+in the rfc822 module, courtesy Ben Escoto.
+
+- New, revamped tkappinit.c with support for popular packages (PIL,
+TIX, BLT, TOGL).  For the last three, you need to execute the Tcl
+command "load {} Tix" (or Blt, or Togl) to gain access to them.
+The Modules/Setup line for the _tkinter module has been rewritten
+using the cool line-breaking feature of most Bourne shells.
+
+- New socket method connect_ex() returns the error code from connect()
+instead of raising an exception on errors; this makes the logic
+required for asynchronous connects simpler and more efficient.
+
+- New "locale" module with (still experimental) interface to the
+standard C library locale interface, courtesy Martin von Loewis.  This
+does not repeat my mistake in 1.5a4 of always calling
+setlocale(LC_ALL, "").  In fact, we've pretty much decided that
+Python's standard numerical formatting operations should always use
+the conventions for the C locale; the locale module contains utility
+functions to format numbers according to the user specified locale.
+(All this is accomplished by an explicit call to setlocale(LC_NUMERIC,
+"C") after locale-changing calls.)  See the library manual. (Alas, the
+promised changes to the "re" module for locale support have not been
+materialized yet.  If you care, volunteer!)
+
+- Memory leak plugged in Py_BuildValue when building a dictionary.
+
+- Shared modules can now live inside packages (hierarchical module
+namespaces).  No changes to the shared module itself are needed.
+
+- Improved policy for __builtins__: this is a module in __main__ and a
+dictionary everywhere else.
+
+- Python no longer catches SIGHUP and SIGTERM by default.  This was
+impossible to get right in the light of thread contexts.  If you want
+your program to clean up when a signal happens, use the signal module
+to set up your own signal handler.
+
+- New Python/C API PyNumber_CoerceEx() does not return an exception
+when no coercion is possible.  This is used to fix a problem where
+comparing incompatible numbers for equality would raise an exception
+rather than return false as in Python 1.4 -- it once again will return
+false.
+
+- The errno module is changed again -- the table of error messages
+(errorstr) is removed.  Instead, you can use os.strerror().  This
+removes redundance and a potential locale dependency.
+
+- New module xmllib, to parse XML files.  By Sjoerd Mullender.
+
+- New C API PyOS_AfterFork() is called after fork() in posixmodule.c.
+It resets the signal module's notion of what the current process ID
+and thread are, so that signal handlers will work after (and across)
+calls to os.fork().
+
+- Fixed most occurrences of fatal errors due to missing thread state.
+
+- For vgrind (a flexible source pretty printer) fans, there's a simple
+Python definition in Misc/vgrindefs, courtesy Neale Pickett.
+
+- Fixed memory leak in exec statement.
+
+- The test.pystone module has a new function, pystones(loops=LOOPS),
+which returns a (benchtime, stones) tuple.  The main() function now
+calls this and prints the report.
+
+- Package directories now *require* the presence of an __init__.py (or
+__init__.pyc) file before they are considered as packages.  This is
+done to prevent accidental subdirectories with common names from
+overriding modules with the same name.
+
+- Fixed some strange exceptions in __del__ methods in library modules
+(e.g. urllib).  This happens because the builtin names are already
+deleted by the time __del__ is called.  The solution (a hack, but it
+works) is to set some instance variables to 0 instead of None.
+
+- The table of built-in module initializers is replaced by a pointer
+variable.  This makes it possible to switch to a different table at
+run time, e.g. when a collection of modules is loaded from a shared
+library.  (No example code of how to do this is given, but it is
+possible.)  The table is still there of course, its name prefixed with
+an underscore and used to initialize the pointer.
+
+- The warning about a thread still having a frame now only happens in
+verbose mode.
+
+- Change the signal finialization so that it also resets the signal
+handlers.  After this has been called, our signal handlers are no
+longer active!
+
+- New version of tokenize.py (by Ka-Ping Yee) recognizes raw string
+literals.  There's now also a test fort this module.
+
+- The copy module now also uses __dict__.update(state) instead of
+going through individual attribute assignments, for class instances
+without a __setstate__ method.
+
+- New module reconvert translates old-style (regex module) regular
+expressions to new-style (re module, Perl-style) regular expressions.
+
+- Most modules that used to use the regex module now use the re
+module.  The grep module has a new pgrep() function which uses
+Perl-style regular expressions.
+
+- The (very old, backwards compatibility) regexp.py module has been
+deleted.
+
+- Restricted execution (rexec): added the pcre module (support for the
+re module) to the list of trusted extension modules.
+
+- New version of Jim Fulton's CObject object type, adds
+PyCObject_FromVoidPtrAndDesc() and PyCObject_GetDesc() APIs.
+
+- Some patches to Lee Busby's fpectl mods that accidentally didn't
+make it into 1.5a4.
+
+- In the string module, add an optional 4th argument to count(),
+matching find() etc.
+
+- Patch for the nntplib module by Charles Waldman to add optional user
+and password arguments to NNTP.__init__(), for nntp servers that need
+them.
+
+- The str() function for class objects now returns
+"modulename.classname" instead of returning the same as repr().
+
+- The parsing of \xXX escapes no longer relies on sscanf().
+
+- The "sharedmodules" subdirectory of the installation is renamed to
+"lib-dynload".  (You may have to edit your Modules/Setup file to fix
+this in an existing installation!)
+
+- Fixed Don Beaudry's mess-up with the OPT test in the configure
+script.  Certain SGI platforms will still issue a warning for each
+compile; there's not much I can do about this since the compiler's
+exit status doesn't indicate that I was using an obsolete option.
+
+- Fixed Barry's mess-up with {}.get(), and added test cases for it.
+
+- Shared libraries didn't quite work under AIX because of the change
+in status of the GNU readline interface.  Fix due to by Vladimir
+Marangozov.
+
+
+======================================================================
