@@ -109,11 +109,13 @@ class Window(FrameWork.Window, Wbase.SelectableWidget):
 		for w in self._widgets:
 			w.forall_frombottom("open")
 		self._maketabchain()
-		if self._tabchain:
-			self._tabchain[0].select(1)
 		if self._tabbable:
 			self.bind('tab', self.nextwidget)
 			self.bind('shifttab', self.previouswidget)
+		else:
+			self._hasselframes = 0
+		if self._tabchain:
+			self._tabchain[0].select(1)
 		self.do_postopen()
 	
 	def close(self):
@@ -581,14 +583,19 @@ def getnextwindowpos():
 	_windowcounter = _windowcounter + 1
 	return l, t
 
-def windowbounds(preferredsize, minsize = None):
+def windowbounds(preferredsize, minsize=None):
 	"Return sensible window bounds"
 	
 	global _windowcounter
 	if len(preferredsize) == 4:
 		bounds = l, t, r, b = preferredsize
-		union = Qd.UnionRect(bounds, Qd.qd.screenBits.bounds)
-		if union == Qd.qd.screenBits.bounds:
+		desktopRgn = Win.GetGrayRgn()
+		tempRgn = Qd.NewRgn()
+		Qd.RectRgn(tempRgn, bounds)
+		union = Qd.UnionRgn(tempRgn, desktopRgn, tempRgn)
+		equal = Qd.EqualRgn(tempRgn, desktopRgn)
+		Qd.DisposeRgn(tempRgn)
+		if equal:
 			return bounds
 		else:
 			preferredsize = r - l, b - t
