@@ -303,26 +303,29 @@ class SpbObjectDefinition(ObjectDefinition):
 
 	def outputSetattrBody(self):
 		Output("""
-			if (strcmp(name, "inRefNum") == 0)
-				return PyArg_Parse(value, "l", &self->ob_spb.inRefNum);
-			else if (strcmp(name, "count") == 0)
-				return PyArg_Parse(value, "l", &self->ob_spb.count);
-			else if (strcmp(name, "milliseconds") == 0)
-				return PyArg_Parse(value, "l", &self->ob_spb.milliseconds);
-			else if (strcmp(name, "buffer") == 0)
-				return PyArg_Parse(value, "w#", &self->ob_spb.bufferPtr, &self->ob_spb.bufferLength);
-			else if (strcmp(name, "completionRoutine") == 0) {
-				self->ob_spb.completionRoutine = NewSICompletionProc(SPB_completion);
-				self->ob_completion = value;
-				Py_INCREF(value);
-				return 0;
-			} else if (strcmp(name, "interruptRoutine") == 0) {
-				self->ob_spb.completionRoutine = NewSIInterruptProc(SPB_interrupt);
-				self->ob_interrupt = value;
-				Py_INCREF(value);
-				return 0;
-			}
-			return -1;""")
+	int rv = 0;
+	
+	if (strcmp(name, "inRefNum") == 0)
+		rv = PyArg_Parse(value, "l", &self->ob_spb.inRefNum);
+	else if (strcmp(name, "count") == 0)
+		rv = PyArg_Parse(value, "l", &self->ob_spb.count);
+	else if (strcmp(name, "milliseconds") == 0)
+		rv = PyArg_Parse(value, "l", &self->ob_spb.milliseconds);
+	else if (strcmp(name, "buffer") == 0)
+		rv = PyArg_Parse(value, "w#", &self->ob_spb.bufferPtr, &self->ob_spb.bufferLength);
+	else if (strcmp(name, "completionRoutine") == 0) {
+		self->ob_spb.completionRoutine = NewSICompletionProc(SPB_completion);
+		self->ob_completion = value;
+		Py_INCREF(value);
+		rv = 1;
+	} else if (strcmp(name, "interruptRoutine") == 0) {
+		self->ob_spb.completionRoutine = NewSIInterruptProc(SPB_interrupt);
+		self->ob_interrupt = value;
+		Py_INCREF(value);
+		rv = 1;
+	}
+	if ( rv ) return 0;
+	else return -1;""")
 			
 	def outputGetattrHook(self):
 		Output("""
