@@ -70,34 +70,35 @@ staticforward struct HandlerInfo handler_info[64];
 
 /* Convert an array of attributes and their values into a Python dict */
 
-static PyObject *conv_atts_using_string( XML_Char **atts){
-	PyObject *attrs_obj=NULL;
-	XML_Char **attrs_p, **attrs_k;
+static PyObject *conv_atts_using_string(XML_Char **atts)
+{
+	PyObject *attrs_obj = NULL;
+	XML_Char **attrs_p, **attrs_k = NULL;
 	int attrs_len;
 	PyObject *rv;
 
-	if( (attrs_obj = PyDict_New()) == NULL ) 
+	if ((attrs_obj = PyDict_New()) == NULL) 
 		goto finally;
-	for(attrs_len=0, attrs_p = atts; 
-	    *attrs_p;
-	    attrs_p++, attrs_len++) {
-		if (attrs_len%2) {
-			rv=PyString_FromString(*attrs_p);  
+	for (attrs_len = 0, attrs_p = atts; 
+	     *attrs_p;
+	     attrs_p++, attrs_len++) {
+		if (attrs_len % 2) {
+			rv = PyString_FromString(*attrs_p);  
 			if (! rv) {
 				Py_DECREF(attrs_obj);
-				attrs_obj=NULL;
+				attrs_obj = NULL;
 				goto finally;
 			}
-			if (PyDict_SetItemString(
-			       attrs_obj,
-			       (char*)*attrs_k, rv) < 0){
+			if (PyDict_SetItemString(attrs_obj,
+						 (char*)*attrs_k, rv) < 0) {
 				Py_DECREF(attrs_obj);
-				attrs_obj=NULL;
+				attrs_obj = NULL;
 				goto finally;
 			}
 			Py_DECREF(rv);
 		}
-		else attrs_k=attrs_p;
+		else 
+			attrs_k = attrs_p;
 	}
 	finally:
 	return attrs_obj;
@@ -106,7 +107,7 @@ static PyObject *conv_atts_using_string( XML_Char **atts){
 #if !(PY_MAJOR_VERSION == 1 && PY_MINOR_VERSION < 6)
 static PyObject *conv_atts_using_unicode( XML_Char **atts){
         PyObject *attrs_obj=NULL;
-        XML_Char **attrs_p, **attrs_k;
+        XML_Char **attrs_p, **attrs_k = NULL;
         int attrs_len;
 
         if( (attrs_obj = PyDict_New()) == NULL ) 
@@ -445,11 +446,11 @@ int readinst(char *buf, int buf_size, PyObject *meth){
 	PyObject *arg=NULL;
 	PyObject *bytes=NULL;
 	PyObject *str=NULL;
-	int len;
+	int len = 0;
 
 	UNLESS(bytes = PyInt_FromLong(buf_size)) {
 		if (!PyErr_Occurred())
-		PyErr_SetNone(PyExc_EOFError);
+			PyErr_SetNone(PyExc_EOFError);
 		goto finally;
 	}
 
@@ -467,9 +468,9 @@ int readinst(char *buf, int buf_size, PyObject *meth){
 	UNLESS(PyString_Check( str ))
 		goto finally;
 
-	len=PyString_GET_SIZE( str );
-	strncpy( buf, PyString_AsString(str), len );
-	Py_XDECREF( str );
+	len = PyString_GET_SIZE(str);
+	strncpy(buf, PyString_AsString(str), len);
+	Py_XDECREF(str);
 finally:
 	return len;
 }
