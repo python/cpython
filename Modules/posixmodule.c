@@ -1596,6 +1596,30 @@ posix_ftruncate(self, args)
 }
 #endif
 
+#ifdef HAVE_PUTENV
+static object * 
+posix_putenv(self,args)
+	object *self;
+	object *args;
+{
+        char *s1, *s2;
+        char *new;
+
+	if (!newgetargs(args, "ss", &s1, &s2))
+		return NULL;
+	/* XXX This leaks memory -- not easy to fix :-( */
+	if ((new = malloc(strlen(s1) + strlen(s2) + 2)) == NULL)
+                return err_nomem();
+	(void) sprintf(new, "%s=%s", s1, s2);
+	if (putenv(new)) {
+                posix_error();
+                return NULL;
+	}
+	INCREF(None);
+        return None;
+}
+#endif
+
 static struct methodlist posix_methods[] = {
 	{"chdir",	posix_chdir},
 	{"chmod",	posix_chmod},
@@ -1716,6 +1740,9 @@ static struct methodlist posix_methods[] = {
 #endif
 #ifdef HAVE_FTRUNCATE
 	{"ftruncate",	posix_ftruncate, 1},
+#endif
+#ifdef HAVE_PUTENV
+	{"putenv",	posix_putenv, 1},
 #endif
 	{NULL,		NULL}		 /* Sentinel */
 };
