@@ -287,9 +287,6 @@ extern DL_IMPORT(int) PyNumber_CoerceEx(PyObject **, PyObject **);
 extern DL_IMPORT(int) Py_ReprEnter(PyObject *);
 extern DL_IMPORT(void) Py_ReprLeave(PyObject *);
 
-/* tstate dict key for PyObject_Compare helper */
-extern PyObject *_PyCompareState_Key;
-
 /* Helpers for hash functions */
 extern DL_IMPORT(long) _Py_HashDouble(double);
 extern DL_IMPORT(long) _Py_HashPointer(void*);
