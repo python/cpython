@@ -2196,8 +2196,8 @@ eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 			if (b->b_type == SETUP_LOOP && why == WHY_CONTINUE) {
 				/* For a continue inside a try block,
 				   don't pop the block for the loop. */
-				PyFrame_BlockSetup(f, b->b_type, b->b_level,
-						   b->b_handler);
+				PyFrame_BlockSetup(f, b->b_type, b->b_handler,
+						   b->b_level);
 				why = WHY_NOT;
 				JUMPTO(PyInt_AS_LONG(retval));
 				Py_DECREF(retval);
