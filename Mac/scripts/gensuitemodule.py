@@ -816,9 +816,11 @@ def compiledataflags(flags):
 				bits.append(`i`)
 	return '[%s]' % string.join(bits)
 	
-# XXXX Do we have a set of python keywords somewhere?
-illegal_ids = [ "for", "in", "from", "and", "or", "not", "print", "class", "return",
-	"def" ]
+# Set of Python keywords (as of Python 2.2)
+illegal_ids = ["and", "elif", "global", "or", "assert", "else", "if", "pass", 
+	"break", "except", "import", "print", "class", "exec", "in", "raise", 
+	"continue", "finally", "is", "return", "def", "for", "lambda", "try", 
+	"del", "from", "not", "while"]
 
 def identify(str):
 	"""Turn any string into an identifier:
