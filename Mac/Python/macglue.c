@@ -203,7 +203,7 @@ get_folder_parent (FSSpec * fss, FSSpec * parent)
 /* Given an FSSpec return a full, colon-separated pathname */
 
 OSErr
-PyMac_GetFullPath (FSSpec *fss, char *buf)
+PyMac_GetFullPathname (FSSpec *fss, char *buf, int length)
 {
 	short err;
 	FSSpec fss_parent, fss_current;
@@ -212,6 +212,10 @@ PyMac_GetFullPath (FSSpec *fss, char *buf)
 
 	fss_current = *fss;
 	plen = fss_current.name[0];
+	if ( plen+2 > length ) {
+		*buf = 0;
+		return errFSNameTooLong;
+	}
 	memcpy(buf, &fss_current.name[1], plen);
 	buf[plen] = 0;
 	/* Special case for disk names */
@@ -222,19 +226,25 @@ PyMac_GetFullPath (FSSpec *fss, char *buf)
 	}
 	while (fss_current.parID > 1) {
     		/* Get parent folder name */
-                if (err = get_folder_parent(&fss_current, &fss_parent))
+                if (err = get_folder_parent(&fss_current, &fss_parent)) {
+                	*buf = 0;
              		return err;
+             	}
                 fss_current = fss_parent;
                 /* Prepend path component just found to buf */
     			plen = fss_current.name[0];
     			if (strlen(buf) + plen + 1 > 1024) {
     				/* Oops... Not enough space (shouldn't happen) */
     				*buf = 0;
-    				return -1;
+    				return errFSNameTooLong;
     			}
     			memcpy(tmpbuf, &fss_current.name[1], plen);
     			tmpbuf[plen] = ':';
     			strcpy(&tmpbuf[plen+1], buf);
+    			if ( strlen(tmpbuf) > length ) {
+    				*buf = 0;
+    				return errFSNameTooLong;
+    			}
     			strcpy(buf, tmpbuf);
         }
         return 0;
