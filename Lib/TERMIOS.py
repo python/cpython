@@ -6,9 +6,6 @@ import warnings
 warnings.warn("the TERMIOS module is deprecated; please use termios",
               DeprecationWarning)
 
-# Ignore further deprecation warnings about this module
-warnings.filterwarnings("ignore", "", DeprecationWarning, __name__)
-
 
 # Export the constants known to the termios module:
 from termios import *
