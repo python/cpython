@@ -9,7 +9,7 @@ __revision__ = "$Id$"
 
 import os, string, re
 from types import *
-from distutils.core import Command
+from distutils.core import Command, DEBUG
 from distutils.util import get_platform, write_file
 from distutils.errors import *
 
@@ -247,11 +247,12 @@ class bdist_rpm (Command):
 
     def run (self):
 
-        print "before _get_package_data():"
-        print "vendor =", self.vendor
-        print "packager =", self.packager
-        print "doc_files =", self.doc_files
-        print "changelog =", self.changelog
+        if DEBUG:
+            print "before _get_package_data():"
+            print "vendor =", self.vendor
+            print "packager =", self.packager
+            print "doc_files =", self.doc_files
+            print "changelog =", self.changelog
 
         # make directories
         if self.spec_only:
