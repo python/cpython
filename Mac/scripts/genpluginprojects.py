@@ -118,7 +118,9 @@ def	genallprojects(force=0):
 			'WETabs.c',
 			'WETabHooks.c'],
 		libraries=['DragLib'],
-		extradirs=['::::Waste 1.3 Distribution:*']
+		extradirs=[
+			'::::Waste 1.3 Distribution:*',
+			'::::ICProgKit1.4:APIs']
 		)
 	genpluginproject("ctb")
 	genpluginproject("icglue", sources=["icgluemodule.c"], 
