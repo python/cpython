@@ -428,47 +428,48 @@ Objects/unicodectype.o:	$(srcdir)/Objects/unicodectype.c \
 
 PYTHON_HEADERS= \
 		Include/Python.h \
-		pyconfig.h \
-		Include/patchlevel.h \
-		Include/pyport.h \
-		Include/pymem.h \
-		Include/object.h \
-		Include/objimpl.h \
-		Include/compile.h \
-		Include/symtable.h \
-		Include/pydebug.h \
-		Include/unicodeobject.h \
-		Include/intobject.h \
-		Include/longobject.h \
-		Include/floatobject.h \
-		Include/complexobject.h \
-		Include/rangeobject.h \
-		Include/stringobject.h \
+		Include/abstract.h \
 		Include/bufferobject.h \
-		Include/tupleobject.h \
-		Include/listobject.h \
-		Include/iterobject.h \
+		Include/ceval.h \
+		Include/classobject.h \
+		Include/cobject.h \
+		Include/codecs.h \
+		Include/compile.h \
+		Include/complexobject.h \
 		Include/descrobject.h \
 		Include/dictobject.h \
-		Include/methodobject.h \
-		Include/moduleobject.h \
-		Include/funcobject.h \
-		Include/classobject.h \
 		Include/fileobject.h \
-		Include/cobject.h \
-		Include/traceback.h \
-		Include/sliceobject.h \
-		Include/codecs.h \
-		Include/pyerrors.h \
-		Include/pystate.h \
-		Include/modsupport.h \
-		Include/ceval.h \
-		Include/pythonrun.h \
-		Include/sysmodule.h \
-		Include/intrcheck.h \
+		Include/floatobject.h \
+		Include/funcobject.h \
 		Include/import.h \
-		Include/abstract.h \
-		Include/pyfpe.h
+		Include/intobject.h \
+		Include/intrcheck.h \
+		Include/iterobject.h \
+		Include/listobject.h \
+		Include/longobject.h \
+		Include/methodobject.h \
+		Include/modsupport.h \
+		Include/moduleobject.h \
+		Include/object.h \
+		Include/objimpl.h \
+		Include/patchlevel.h \
+		Include/pydebug.h \
+		Include/pyerrors.h \
+		Include/pyfpe.h \
+		Include/pymem.h \
+		Include/pyport.h \
+		Include/pystate.h \
+		Include/pythonrun.h \
+		Include/rangeobject.h \
+		Include/sliceobject.h \
+		Include/stringobject.h \
+		Include/structmember.h \
+		Include/symtable.h \
+		Include/sysmodule.h \
+		Include/traceback.h \
+		Include/tupleobject.h \
+		Include/unicodeobject.h \
+		pyconfig.h
 
 $(LIBRARY_OBJS) $(MODOBJS) Modules/$(MAINOBJ): $(PYTHON_HEADERS)
 
