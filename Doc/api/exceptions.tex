@@ -102,15 +102,15 @@ for each thread.
   indicator is already set, it is cleared first.  If the objects are
   \NULL, the error indicator is cleared.  Do not pass a \NULL{} type
   and non-\NULL{} value or traceback.  The exception type should be a
-  string or class; if it is a class, the value should be an instance
-  of that class.  Do not pass an invalid exception type or value.
+  string or class.  Do not pass an invalid exception type or value.
   (Violating these rules will cause subtle problems later.)  This call
   takes away a reference to each object: you must own a reference to
   each object before the call and after the call you no longer own
   these references.  (If you don't understand this, don't use this
   function.  I warned you.)  \note{This function is normally only used
   by code that needs to save and restore the error indicator
-  temporarily.}
+  temporarily; use \cfunction{PyErr_Fetch()} to save the current
+  exception state.}
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{void}{PyErr_SetString}{PyObject *type, char *message}
