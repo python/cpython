@@ -22,9 +22,9 @@
 *Icon
 *xMAP
 .#*
+.cvsignore
 @*
 CVS
 Makefile*
 Setup.in
 [(]*[)]
-.cvsignore
