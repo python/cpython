@@ -93,6 +93,23 @@ PyComplex_ImagAsDouble:PyObject*:op:0:
 PyComplex_RealAsDouble:double:::
 PyComplex_RealAsDouble:PyObject*:op:0:
 
+PyDescr_NewGetSet:PyObject*::+1:
+PyDescr_NewGetSet:PyTypeObject*:type::
+PyDescr_NewGetSet:PyGetSetDef*:getset::
+
+PyDescr_NewMember:PyObject*::+1:
+PyDescr_NewMember:PyTypeObject*:type::
+PyDescr_NewMember:PyMemberDef*:member::
+
+PyDescr_NewMethod:PyObject*::+1:
+PyDescr_NewMethod:PyTypeObject*:type::
+PyDescr_NewMethod:PyMethodDef*:meth::
+
+PyDescr_NewWrapper:PyObject*::+1:
+PyDescr_NewWrapper:PyTypeObject*:type::
+PyDescr_NewWrapper:struct wrapperbase*:base::
+PyDescr_NewWrapper:void*:wrapped::
+
 PyDict_Check:int:::
 PyDict_Check:PyObject*:p:0:
 
@@ -147,6 +164,9 @@ PyDict_Size:PyObject*:p::
 
 PyDict_Values:PyObject*::+1:
 PyDict_Values:PyObject*:p:0:
+
+PyDictProxy_New:PyObject*::+1:
+PyDictProxy_New:PyObject*:dict:0:
 
 PyErr_BadArgument:int:::
 
@@ -925,6 +945,14 @@ PySequence_List:PyObject*:o:0:
 
 PySequence_Tuple:PyObject*::+1:
 PySequence_Tuple:PyObject*:o:0:
+
+PySlice_Check:int:::
+PySlice_Check:PyObject*:ob:0:
+
+PySlice_New:PyObject*::+1:
+PySlice_New:PyObject*:start:0:
+PySlice_New:PyObject*:stop:0:
+PySlice_New:PyObject*:step:0:
 
 PyString_AS_STRING:char*:::
 PyString_AS_STRING:PyObject*:string:0:
