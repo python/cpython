@@ -49,6 +49,9 @@ Core and builtins
 Extension modules
 -----------------
 
+- New function sys.call_tracing() allows pdb to debug code
+  recursively.
+
 - New function gc.get_referents(obj) returns a list of objects
   directly referenced by obj.  In effect, it exposes what the object's
   tp_traverse slot does, and can be helpful when debugging memory
@@ -85,6 +88,9 @@ Extension modules
 
 Library
 -------
+
+- pdb has a new command, "debug", which lets you step through
+  arbitrary code from the debugger's (pdb) prompt.
 
 - unittest.failUnlessEqual and its equivalent unittest.assertEqual now
   return 'not a == b' rather than 'a != b'.  This gives the desired
