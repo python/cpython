@@ -54,6 +54,21 @@ static int FInfo_Convert(PyObject *v, FInfo *p_itself);
 static int Alias_Convert(PyObject *v, AliasHandle *p_itself);
 
 /*
+** UTCDateTime records
+*/
+static int
+UTCDateTime_Convert(PyObject *v, UTCDateTime *ptr)
+{
+	return PyArg_Parse(v, "(HlH)", &ptr->highSeconds, &ptr->lowSeconds, &ptr->fraction);
+}
+
+static PyObject *
+UTCDateTime_New(UTCDateTime *ptr)
+{
+	return Py_BuildValue("(HlH)", ptr->highSeconds, ptr->lowSeconds, ptr->fraction);
+}
+
+/*
 ** Optional fsspec and fsref pointers. None will pass NULL
 */
 static int
@@ -86,8 +101,371 @@ PyMac_BuildHFSUniStr255(HFSUniStr255 *itself)
 	return Py_BuildValue("u#", itself->unicode, itself->length);
 }
 
-
 static PyObject *File_Error;
+
+/* ------------------- Object type FSCatalogInfo -------------------- */
+
+static PyTypeObject FSCatalogInfo_Type;
+
+#define FSCatalogInfo_Check(x) ((x)->ob_type == &FSCatalogInfo_Type || PyObject_TypeCheck((x), &FSCatalogInfo_Type))
+
+typedef struct FSCatalogInfoObject {
+	PyObject_HEAD
+	FSCatalogInfo ob_itself;
+} FSCatalogInfoObject;
+
+static PyObject *FSCatalogInfo_New(FSCatalogInfo *itself)
+{
+	FSCatalogInfoObject *it;
+	if (itself == NULL) return Py_None;
+	it = PyObject_NEW(FSCatalogInfoObject, &FSCatalogInfo_Type);
+	if (it == NULL) return NULL;
+	it->ob_itself = *itself;
+	return (PyObject *)it;
+}
+static int FSCatalogInfo_Convert(PyObject *v, FSCatalogInfo *p_itself)
+{
+	if (!FSCatalogInfo_Check(v))
+	{
+		PyErr_SetString(PyExc_TypeError, "FSCatalogInfo required");
+		return 0;
+	}
+	*p_itself = ((FSCatalogInfoObject *)v)->ob_itself;
+	return 1;
+}
+
+static void FSCatalogInfo_dealloc(FSCatalogInfoObject *self)
+{
+	/* Cleanup of self->ob_itself goes here */
+	self->ob_type->tp_free((PyObject *)self);
+}
+
+static PyMethodDef FSCatalogInfo_methods[] = {
+	{NULL, NULL, 0}
+};
+
+static PyObject *FSCatalogInfo_get_nodeFlags(FSCatalogInfoObject *self, void *closure)
+{
+	return Py_BuildValue("H", self->ob_itself.nodeFlags);
+}
+
+static int FSCatalogInfo_set_nodeFlags(FSCatalogInfoObject *self, PyObject *v, void *closure)
+{
+	return PyArg_Parse(v, "H", &self->ob_itself.nodeFlags)-1;
+	return 0;
+}
+
+static PyObject *FSCatalogInfo_get_volume(FSCatalogInfoObject *self, void *closure)
+{
+	return Py_BuildValue("h", self->ob_itself.volume);
+}
+
+static int FSCatalogInfo_set_volume(FSCatalogInfoObject *self, PyObject *v, void *closure)
+{
+	return PyArg_Parse(v, "h", &self->ob_itself.volume)-1;
+	return 0;
+}
+
+static PyObject *FSCatalogInfo_get_parentDirID(FSCatalogInfoObject *self, void *closure)
+{
+	return Py_BuildValue("l", self->ob_itself.parentDirID);
+}
+
+static int FSCatalogInfo_set_parentDirID(FSCatalogInfoObject *self, PyObject *v, void *closure)
+{
+	return PyArg_Parse(v, "l", &self->ob_itself.parentDirID)-1;
+	return 0;
+}
+
+static PyObject *FSCatalogInfo_get_nodeID(FSCatalogInfoObject *self, void *closure)
+{
+	return Py_BuildValue("l", self->ob_itself.nodeID);
+}
+
+static int FSCatalogInfo_set_nodeID(FSCatalogInfoObject *self, PyObject *v, void *closure)
+{
+	return PyArg_Parse(v, "l", &self->ob_itself.nodeID)-1;
+	return 0;
+}
+
+static PyObject *FSCatalogInfo_get_createDate(FSCatalogInfoObject *self, void *closure)
+{
+	return Py_BuildValue("O&", UTCDateTime_New, &self->ob_itself.createDate);
+}
+
+static int FSCatalogInfo_set_createDate(FSCatalogInfoObject *self, PyObject *v, void *closure)
+{
+	return PyArg_Parse(v, "O&", UTCDateTime_Convert, &self->ob_itself.createDate)-1;
+	return 0;
+}
+
+static PyObject *FSCatalogInfo_get_contentModDate(FSCatalogInfoObject *self, void *closure)
+{
+	return Py_BuildValue("O&", UTCDateTime_New, &self->ob_itself.contentModDate);
+}
+
+static int FSCatalogInfo_set_contentModDate(FSCatalogInfoObject *self, PyObject *v, void *closure)
+{
+	return PyArg_Parse(v, "O&", UTCDateTime_Convert, &self->ob_itself.contentModDate)-1;
+	return 0;
+}
+
+static PyObject *FSCatalogInfo_get_attributeModDate(FSCatalogInfoObject *self, void *closure)
+{
+	return Py_BuildValue("O&", UTCDateTime_New, &self->ob_itself.attributeModDate);
+}
+
+static int FSCatalogInfo_set_attributeModDate(FSCatalogInfoObject *self, PyObject *v, void *closure)
+{
+	return PyArg_Parse(v, "O&", UTCDateTime_Convert, &self->ob_itself.attributeModDate)-1;
+	return 0;
+}
+
+static PyObject *FSCatalogInfo_get_accessDate(FSCatalogInfoObject *self, void *closure)
+{
+	return Py_BuildValue("O&", UTCDateTime_New, &self->ob_itself.accessDate);
+}
+
+static int FSCatalogInfo_set_accessDate(FSCatalogInfoObject *self, PyObject *v, void *closure)
+{
+	return PyArg_Parse(v, "O&", UTCDateTime_Convert, &self->ob_itself.accessDate)-1;
+	return 0;
+}
+
+static PyObject *FSCatalogInfo_get_backupDate(FSCatalogInfoObject *self, void *closure)
+{
+	return Py_BuildValue("O&", UTCDateTime_New, &self->ob_itself.backupDate);
+}
+
+static int FSCatalogInfo_set_backupDate(FSCatalogInfoObject *self, PyObject *v, void *closure)
+{
+	return PyArg_Parse(v, "O&", UTCDateTime_Convert, &self->ob_itself.backupDate)-1;
+	return 0;
+}
+
+static PyObject *FSCatalogInfo_get_permissions(FSCatalogInfoObject *self, void *closure)
+{
+	return Py_BuildValue("(llll)", self->ob_itself.permissions[0], self->ob_itself.permissions[1], self->ob_itself.permissions[2], self->ob_itself.permissions[3]);
+}
+
+static int FSCatalogInfo_set_permissions(FSCatalogInfoObject *self, PyObject *v, void *closure)
+{
+	return PyArg_Parse(v, "(llll)", &self->ob_itself.permissions[0], &self->ob_itself.permissions[1], &self->ob_itself.permissions[2], &self->ob_itself.permissions[3])-1;
+	return 0;
+}
+
+static PyObject *FSCatalogInfo_get_valence(FSCatalogInfoObject *self, void *closure)
+{
+	return Py_BuildValue("l", self->ob_itself.valence);
+}
+
+static int FSCatalogInfo_set_valence(FSCatalogInfoObject *self, PyObject *v, void *closure)
+{
+	return PyArg_Parse(v, "l", &self->ob_itself.valence)-1;
+	return 0;
+}
+
+static PyObject *FSCatalogInfo_get_dataLogicalSize(FSCatalogInfoObject *self, void *closure)
+{
+	return Py_BuildValue("l", self->ob_itself.dataLogicalSize);
+}
+
+static int FSCatalogInfo_set_dataLogicalSize(FSCatalogInfoObject *self, PyObject *v, void *closure)
+{
+	return PyArg_Parse(v, "l", &self->ob_itself.dataLogicalSize)-1;
+	return 0;
+}
+
+static PyObject *FSCatalogInfo_get_dataPhysicalSize(FSCatalogInfoObject *self, void *closure)
+{
+	return Py_BuildValue("l", self->ob_itself.dataPhysicalSize);
+}
+
+static int FSCatalogInfo_set_dataPhysicalSize(FSCatalogInfoObject *self, PyObject *v, void *closure)
+{
+	return PyArg_Parse(v, "l", &self->ob_itself.dataPhysicalSize)-1;
+	return 0;
+}
+
+static PyObject *FSCatalogInfo_get_rsrcLogicalSize(FSCatalogInfoObject *self, void *closure)
+{
+	return Py_BuildValue("l", self->ob_itself.rsrcLogicalSize);
+}
+
+static int FSCatalogInfo_set_rsrcLogicalSize(FSCatalogInfoObject *self, PyObject *v, void *closure)
+{
+	return PyArg_Parse(v, "l", &self->ob_itself.rsrcLogicalSize)-1;
+	return 0;
+}
+
+static PyObject *FSCatalogInfo_get_rsrcPhysicalSize(FSCatalogInfoObject *self, void *closure)
+{
+	return Py_BuildValue("l", self->ob_itself.rsrcPhysicalSize);
+}
+
+static int FSCatalogInfo_set_rsrcPhysicalSize(FSCatalogInfoObject *self, PyObject *v, void *closure)
+{
+	return PyArg_Parse(v, "l", &self->ob_itself.rsrcPhysicalSize)-1;
+	return 0;
+}
+
+static PyObject *FSCatalogInfo_get_sharingFlags(FSCatalogInfoObject *self, void *closure)
+{
+	return Py_BuildValue("l", self->ob_itself.sharingFlags);
+}
+
+static int FSCatalogInfo_set_sharingFlags(FSCatalogInfoObject *self, PyObject *v, void *closure)
+{
+	return PyArg_Parse(v, "l", &self->ob_itself.sharingFlags)-1;
+	return 0;
+}
+
+static PyObject *FSCatalogInfo_get_userPrivileges(FSCatalogInfoObject *self, void *closure)
+{
+	return Py_BuildValue("b", self->ob_itself.userPrivileges);
+}
+
+static int FSCatalogInfo_set_userPrivileges(FSCatalogInfoObject *self, PyObject *v, void *closure)
+{
+	return PyArg_Parse(v, "b", &self->ob_itself.userPrivileges)-1;
+	return 0;
+}
+
+static PyGetSetDef FSCatalogInfo_getsetlist[] = {
+	{"nodeFlags", (getter)FSCatalogInfo_get_nodeFlags, (setter)FSCatalogInfo_set_nodeFlags, NULL},
+	{"volume", (getter)FSCatalogInfo_get_volume, (setter)FSCatalogInfo_set_volume, NULL},
+	{"parentDirID", (getter)FSCatalogInfo_get_parentDirID, (setter)FSCatalogInfo_set_parentDirID, NULL},
+	{"nodeID", (getter)FSCatalogInfo_get_nodeID, (setter)FSCatalogInfo_set_nodeID, NULL},
+	{"createDate", (getter)FSCatalogInfo_get_createDate, (setter)FSCatalogInfo_set_createDate, NULL},
+	{"contentModDate", (getter)FSCatalogInfo_get_contentModDate, (setter)FSCatalogInfo_set_contentModDate, NULL},
+	{"attributeModDate", (getter)FSCatalogInfo_get_attributeModDate, (setter)FSCatalogInfo_set_attributeModDate, NULL},
+	{"accessDate", (getter)FSCatalogInfo_get_accessDate, (setter)FSCatalogInfo_set_accessDate, NULL},
+	{"backupDate", (getter)FSCatalogInfo_get_backupDate, (setter)FSCatalogInfo_set_backupDate, NULL},
+	{"permissions", (getter)FSCatalogInfo_get_permissions, (setter)FSCatalogInfo_set_permissions, NULL},
+	{"valence", (getter)FSCatalogInfo_get_valence, (setter)FSCatalogInfo_set_valence, NULL},
+	{"dataLogicalSize", (getter)FSCatalogInfo_get_dataLogicalSize, (setter)FSCatalogInfo_set_dataLogicalSize, NULL},
+	{"dataPhysicalSize", (getter)FSCatalogInfo_get_dataPhysicalSize, (setter)FSCatalogInfo_set_dataPhysicalSize, NULL},
+	{"rsrcLogicalSize", (getter)FSCatalogInfo_get_rsrcLogicalSize, (setter)FSCatalogInfo_set_rsrcLogicalSize, NULL},
+	{"rsrcPhysicalSize", (getter)FSCatalogInfo_get_rsrcPhysicalSize, (setter)FSCatalogInfo_set_rsrcPhysicalSize, NULL},
+	{"sharingFlags", (getter)FSCatalogInfo_get_sharingFlags, (setter)FSCatalogInfo_set_sharingFlags, NULL},
+	{"userPrivileges", (getter)FSCatalogInfo_get_userPrivileges, (setter)FSCatalogInfo_set_userPrivileges, NULL},
+	{NULL, NULL, NULL, NULL},
+};
+
+
+#define FSCatalogInfo_compare NULL
+
+#define FSCatalogInfo_repr NULL
+
+#define FSCatalogInfo_hash NULL
+static int FSCatalogInfo_tp_init(PyObject *self, PyObject *args, PyObject *kwds)
+{
+	static char *kw[] = {
+			"nodeFlags",
+			"volume",
+			"parentDirID",
+			"nodeID",
+			"createDate",
+			"contentModDate",
+			"atributeModDate",
+			"accessDate",
+			"backupDate",
+			"permissions",
+			"valence",
+			"dataLogicalSize",
+			"dataPhysicalSize",
+			"rsrcLogicalSize",
+			"rsrcPhysicalSize",
+			"sharingFlags",
+			"userPrivileges"
+			, 0};
+
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "|HhllO&O&O&O&O&(llll)llllllb", kw, &((FSCatalogInfoObject *)self)->ob_itself.nodeFlags,
+			&((FSCatalogInfoObject *)self)->ob_itself.volume,
+			&((FSCatalogInfoObject *)self)->ob_itself.parentDirID,
+			&((FSCatalogInfoObject *)self)->ob_itself.nodeID,
+			UTCDateTime_Convert, &((FSCatalogInfoObject *)self)->ob_itself.createDate,
+			UTCDateTime_Convert, &((FSCatalogInfoObject *)self)->ob_itself.contentModDate,
+			UTCDateTime_Convert, &((FSCatalogInfoObject *)self)->ob_itself.attributeModDate,
+			UTCDateTime_Convert, &((FSCatalogInfoObject *)self)->ob_itself.accessDate,
+			UTCDateTime_Convert, &((FSCatalogInfoObject *)self)->ob_itself.backupDate,
+			&((FSCatalogInfoObject *)self)->ob_itself.permissions[0],
+			&((FSCatalogInfoObject *)self)->ob_itself.permissions[1],
+			&((FSCatalogInfoObject *)self)->ob_itself.permissions[2],
+			&((FSCatalogInfoObject *)self)->ob_itself.permissions[3],
+			&((FSCatalogInfoObject *)self)->ob_itself.valence,
+			&((FSCatalogInfoObject *)self)->ob_itself.dataLogicalSize,
+			&((FSCatalogInfoObject *)self)->ob_itself.dataPhysicalSize,
+			&((FSCatalogInfoObject *)self)->ob_itself.rsrcLogicalSize,
+			&((FSCatalogInfoObject *)self)->ob_itself.rsrcPhysicalSize,
+			&((FSCatalogInfoObject *)self)->ob_itself.sharingFlags,
+			&((FSCatalogInfoObject *)self)->ob_itself.userPrivileges))
+	{
+		return -1;
+	}
+	return 0;
+}
+
+#define FSCatalogInfo_tp_alloc PyType_GenericAlloc
+
+static PyObject *FSCatalogInfo_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+	PyObject *self;
+
+	if ((self = type->tp_alloc(type, 0)) == NULL) return NULL;
+	memset(&((FSCatalogInfoObject *)self)->ob_itself, 0, sizeof(FSCatalogInfo));
+	return self;
+}
+
+#define FSCatalogInfo_tp_free PyObject_Del
+
+
+static PyTypeObject FSCatalogInfo_Type = {
+	PyObject_HEAD_INIT(NULL)
+	0, /*ob_size*/
+	"Carbon.File.FSCatalogInfo", /*tp_name*/
+	sizeof(FSCatalogInfoObject), /*tp_basicsize*/
+	0, /*tp_itemsize*/
+	/* methods */
+	(destructor) FSCatalogInfo_dealloc, /*tp_dealloc*/
+	0, /*tp_print*/
+	(getattrfunc)0, /*tp_getattr*/
+	(setattrfunc)0, /*tp_setattr*/
+	(cmpfunc) FSCatalogInfo_compare, /*tp_compare*/
+	(reprfunc) FSCatalogInfo_repr, /*tp_repr*/
+	(PyNumberMethods *)0, /* tp_as_number */
+	(PySequenceMethods *)0, /* tp_as_sequence */
+	(PyMappingMethods *)0, /* tp_as_mapping */
+	(hashfunc) FSCatalogInfo_hash, /*tp_hash*/
+	0, /*tp_call*/
+	0, /*tp_str*/
+	PyObject_GenericGetAttr, /*tp_getattro*/
+	PyObject_GenericSetAttr, /*tp_setattro */
+	0, /*tp_as_buffer*/
+	Py_TPFLAGS_DEFAULT|Py_TPFLAGS_BASETYPE, /* tp_flags */
+	0, /*tp_doc*/
+	0, /*tp_traverse*/
+	0, /*tp_clear*/
+	0, /*tp_richcompare*/
+	0, /*tp_weaklistoffset*/
+	0, /*tp_iter*/
+	0, /*tp_iternext*/
+	FSCatalogInfo_methods, /* tp_methods */
+	0, /*tp_members*/
+	FSCatalogInfo_getsetlist, /*tp_getset*/
+	0, /*tp_base*/
+	0, /*tp_dict*/
+	0, /*tp_descr_get*/
+	0, /*tp_descr_set*/
+	0, /*tp_dictoffset*/
+	FSCatalogInfo_tp_init, /* tp_init */
+	FSCatalogInfo_tp_alloc, /* tp_alloc */
+	FSCatalogInfo_tp_new, /* tp_new */
+	FSCatalogInfo_tp_free, /* tp_free */
+};
+
+/* ----------------- End object type FSCatalogInfo ------------------ */
+
 
 /* ----------------------- Object type FInfo ------------------------ */
 
@@ -203,7 +581,7 @@ static PyGetSetDef FInfo_getsetlist[] = {
 static int FInfo_tp_init(PyObject *self, PyObject *args, PyObject *kwds)
 {
 	FInfo *itself = NULL;
-	char *kw[] = {"itself", 0};
+	static char *kw[] = {"itself", 0};
 
 	if (PyArg_ParseTupleAndKeywords(args, kwds, "|O&", kw, FInfo_Convert, &itself))
 	{
@@ -528,7 +906,7 @@ static int Alias_tp_init(PyObject *self, PyObject *args, PyObject *kwds)
 	char *rawdata = NULL;
 	int rawdatalen = 0;
 	Handle h;
-	char *kw[] = {"itself", "rawdata", 0};
+	static char *kw[] = {"itself", "rawdata", 0};
 
 	if (!PyArg_ParseTupleAndKeywords(args, kwds, "|O&s#", kw, Alias_Convert, &itself, &rawdata, &rawdatalen))
 	return -1;
@@ -990,7 +1368,7 @@ static int FSSpec_tp_init(PyObject *self, PyObject *args, PyObject *kwds)
 	PyObject *v = NULL;
 	char *rawdata = NULL;
 	int rawdatalen = 0;
-	char *kw[] = {"itself", "rawdata", 0};
+	static char *kw[] = {"itself", "rawdata", 0};
 
 	if (!PyArg_ParseTupleAndKeywords(args, kwds, "|Os#", kw, &v, &rawdata, &rawdatalen))
 	return -1;
@@ -1146,6 +1524,69 @@ static PyObject *FSRef_FSCompareFSRefs(FSRefObject *_self, PyObject *_args)
 	return _res;
 }
 
+static PyObject *FSRef_FSCreateFileUnicode(FSRefObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	UniChar *nameLength__in__;
+	UniCharCount nameLength__len__;
+	int nameLength__in_len__;
+	FSCatalogInfoBitmap whichInfo;
+	FSCatalogInfo catalogInfo;
+	FSRef newRef;
+	FSSpec newSpec;
+	if (!PyArg_ParseTuple(_args, "u#lO&",
+	                      &nameLength__in__, &nameLength__in_len__,
+	                      &whichInfo,
+	                      FSCatalogInfo_Convert, &catalogInfo))
+		return NULL;
+	nameLength__len__ = nameLength__in_len__;
+	_err = FSCreateFileUnicode(&_self->ob_itself,
+	                           nameLength__len__, nameLength__in__,
+	                           whichInfo,
+	                           &catalogInfo,
+	                           &newRef,
+	                           &newSpec);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("O&O&",
+	                     FSRef_New, &newRef,
+	                     FSSpec_New, &newSpec);
+	return _res;
+}
+
+static PyObject *FSRef_FSCreateDirectoryUnicode(FSRefObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	UniChar *nameLength__in__;
+	UniCharCount nameLength__len__;
+	int nameLength__in_len__;
+	FSCatalogInfoBitmap whichInfo;
+	FSCatalogInfo catalogInfo;
+	FSRef newRef;
+	FSSpec newSpec;
+	UInt32 newDirID;
+	if (!PyArg_ParseTuple(_args, "u#lO&",
+	                      &nameLength__in__, &nameLength__in_len__,
+	                      &whichInfo,
+	                      FSCatalogInfo_Convert, &catalogInfo))
+		return NULL;
+	nameLength__len__ = nameLength__in_len__;
+	_err = FSCreateDirectoryUnicode(&_self->ob_itself,
+	                                nameLength__len__, nameLength__in__,
+	                                whichInfo,
+	                                &catalogInfo,
+	                                &newRef,
+	                                &newSpec,
+	                                &newDirID);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("O&O&l",
+	                     FSRef_New, &newRef,
+	                     FSSpec_New, &newSpec,
+	                     newDirID);
+	return _res;
+}
+
 static PyObject *FSRef_FSDeleteObject(FSRefObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -1214,6 +1655,52 @@ static PyObject *FSRef_FSRenameUnicode(FSRefObject *_self, PyObject *_args)
 	if (_err != noErr) return PyMac_Error(_err);
 	_res = Py_BuildValue("O&",
 	                     FSRef_New, &newRef);
+	return _res;
+}
+
+static PyObject *FSRef_FSGetCatalogInfo(FSRefObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	FSCatalogInfoBitmap whichInfo;
+	FSCatalogInfo catalogInfo;
+	HFSUniStr255 outName;
+	FSSpec fsSpec;
+	FSRef parentRef;
+	if (!PyArg_ParseTuple(_args, "l",
+	                      &whichInfo))
+		return NULL;
+	_err = FSGetCatalogInfo(&_self->ob_itself,
+	                        whichInfo,
+	                        &catalogInfo,
+	                        &outName,
+	                        &fsSpec,
+	                        &parentRef);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("O&O&O&O&",
+	                     FSCatalogInfo_New, &catalogInfo,
+	                     PyMac_BuildHFSUniStr255, &outName,
+	                     FSSpec_New, &fsSpec,
+	                     FSRef_New, &parentRef);
+	return _res;
+}
+
+static PyObject *FSRef_FSSetCatalogInfo(FSRefObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	FSCatalogInfoBitmap whichInfo;
+	FSCatalogInfo catalogInfo;
+	if (!PyArg_ParseTuple(_args, "lO&",
+	                      &whichInfo,
+	                      FSCatalogInfo_Convert, &catalogInfo))
+		return NULL;
+	_err = FSSetCatalogInfo(&_self->ob_itself,
+	                        whichInfo,
+	                        &catalogInfo);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
 	return _res;
 }
 
@@ -1368,6 +1855,10 @@ static PyMethodDef FSRef_methods[] = {
 	 PyDoc_STR("(Buffer nameLength, TextEncoding textEncodingHint) -> (FSRef newRef)")},
 	{"FSCompareFSRefs", (PyCFunction)FSRef_FSCompareFSRefs, 1,
 	 PyDoc_STR("(FSRef ref2) -> None")},
+	{"FSCreateFileUnicode", (PyCFunction)FSRef_FSCreateFileUnicode, 1,
+	 PyDoc_STR("(Buffer nameLength, FSCatalogInfoBitmap whichInfo, FSCatalogInfo catalogInfo) -> (FSRef newRef, FSSpec newSpec)")},
+	{"FSCreateDirectoryUnicode", (PyCFunction)FSRef_FSCreateDirectoryUnicode, 1,
+	 PyDoc_STR("(Buffer nameLength, FSCatalogInfoBitmap whichInfo, FSCatalogInfo catalogInfo) -> (FSRef newRef, FSSpec newSpec, UInt32 newDirID)")},
 	{"FSDeleteObject", (PyCFunction)FSRef_FSDeleteObject, 1,
 	 PyDoc_STR("() -> None")},
 	{"FSMoveObject", (PyCFunction)FSRef_FSMoveObject, 1,
@@ -1376,6 +1867,10 @@ static PyMethodDef FSRef_methods[] = {
 	 PyDoc_STR("(FSRef destRef) -> None")},
 	{"FSRenameUnicode", (PyCFunction)FSRef_FSRenameUnicode, 1,
 	 PyDoc_STR("(Buffer nameLength, TextEncoding textEncodingHint) -> (FSRef newRef)")},
+	{"FSGetCatalogInfo", (PyCFunction)FSRef_FSGetCatalogInfo, 1,
+	 PyDoc_STR("(FSCatalogInfoBitmap whichInfo) -> (FSCatalogInfo catalogInfo, HFSUniStr255 outName, FSSpec fsSpec, FSRef parentRef)")},
+	{"FSSetCatalogInfo", (PyCFunction)FSRef_FSSetCatalogInfo, 1,
+	 PyDoc_STR("(FSCatalogInfoBitmap whichInfo, FSCatalogInfo catalogInfo) -> None")},
 	{"FSCreateFork", (PyCFunction)FSRef_FSCreateFork, 1,
 	 PyDoc_STR("(Buffer forkNameLength) -> None")},
 	{"FSDeleteFork", (PyCFunction)FSRef_FSDeleteFork, 1,
@@ -1421,7 +1916,7 @@ static int FSRef_tp_init(PyObject *self, PyObject *args, PyObject *kwds)
 	PyObject *v = NULL;
 	char *rawdata = NULL;
 	int rawdatalen = 0;
-	char *kw[] = {"itself", "rawdata", 0};
+	static char *kw[] = {"itself", "rawdata", 0};
 
 	if (!PyArg_ParseTupleAndKeywords(args, kwds, "|Os#", kw, &v, &rawdata, &rawdatalen))
 	return -1;
@@ -2741,6 +3236,13 @@ void init_File(void)
 	if (File_Error == NULL ||
 	    PyDict_SetItemString(d, "Error", File_Error) != 0)
 		return;
+	FSCatalogInfo_Type.ob_type = &PyType_Type;
+	if (PyType_Ready(&FSCatalogInfo_Type) < 0) return;
+	Py_INCREF(&FSCatalogInfo_Type);
+	PyModule_AddObject(m, "FSCatalogInfo", (PyObject *)&FSCatalogInfo_Type);
+	/* Backward-compatible name */
+	Py_INCREF(&FSCatalogInfo_Type);
+	PyModule_AddObject(m, "FSCatalogInfoType", (PyObject *)&FSCatalogInfo_Type);
 	FInfo_Type.ob_type = &PyType_Type;
 	if (PyType_Ready(&FInfo_Type) < 0) return;
 	Py_INCREF(&FInfo_Type);

@@ -179,16 +179,16 @@ class MyScanner(Scanner_OSX):
 			([('FSRef_ptr', 'fromFile', 'InMode')],
     		 [('OptFSRefPtr', 'fromFile', 'InMode')]),
     		 
-    		# FSCatalogInfo input handling
-			([('FSCatalogInfoBitmap', 'whichInfo', 'InMode'),
-    		  ('FSCatalogInfo_ptr', 'catalogInfo', 'InMode')],
-    		 [('FSCatalogInfoAndBitmap_in', 'catalogInfo', 'InMode')]),
-    		
-    		# FSCatalogInfo output handling
-			([('FSCatalogInfoBitmap', 'whichInfo', 'InMode'),
-    		  ('FSCatalogInfo', 'catalogInfo', 'OutMode')],
-    		 [('FSCatalogInfoAndBitmap_out', 'catalogInfo', 'InOutMode')]),
-    		
+##    		# FSCatalogInfo input handling
+##			([('FSCatalogInfoBitmap', 'whichInfo', 'InMode'),
+##    		  ('FSCatalogInfo_ptr', 'catalogInfo', 'InMode')],
+##    		 [('FSCatalogInfoAndBitmap_in', 'catalogInfo', 'InMode')]),
+##    		
+##    		# FSCatalogInfo output handling
+##			([('FSCatalogInfoBitmap', 'whichInfo', 'InMode'),
+##    		  ('FSCatalogInfo', 'catalogInfo', 'OutMode')],
+##    		 [('FSCatalogInfoAndBitmap_out', 'catalogInfo', 'InOutMode')]),
+##    		
 
 		]
 		
