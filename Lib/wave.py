@@ -190,10 +190,10 @@ class Wave_read:
 	# _data_chunk -- instantiation of a chunk class for the DATA chunk
 	# _framesize -- size of one frame in the file
 
-	access _file, _nchannels, _nframes, _sampwidth, _framerate, \
-		  _comptype, _compname, _soundpos, \
-		  _fmt_chunk_read, _data_seek_needed, \
-		  _data_chunk, _framesize: private
+## 	access _file, _nchannels, _nframes, _sampwidth, _framerate, \
+## 		  _comptype, _compname, _soundpos, \
+## 		  _fmt_chunk_read, _data_seek_needed, \
+## 		  _data_chunk, _framesize: private
 
 	def initfp(self, file):
 		self._file = file
@@ -321,7 +321,7 @@ class Wave_read:
 	#
 	# Internal methods.
 	#
-	access *: private
+## 	access *: private
 
 	def _read_fmt_chunk(self, chunk):
 		wFormatTag = _read_short(chunk)
@@ -362,9 +362,9 @@ class Wave_write:
 	# _nframeswritten -- the number of frames actually written
 	# _datawritten -- the size of the audio samples actually written
 
-	access _file, _comptype, _compname, _nchannels, _sampwidth, \
-		  _framerate, _nframes, _nframeswritten, \
-		  _datalength, _datawritten: private
+## 	access _file, _comptype, _compname, _nchannels, _sampwidth, \
+## 		  _framerate, _nframes, _nframeswritten, \
+## 		  _datalength, _datawritten: private
 
 	def __init__(self, f):
 		if type(f) == type(''):
@@ -505,7 +505,7 @@ class Wave_write:
 	#
 	# Internal methods.
 	#
-	access *: private
+## 	access *: private
 
 	def _ensure_header_written(self, datasize):
 		if not self._datawritten:
