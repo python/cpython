@@ -32,6 +32,9 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 extern void initarray();
 extern void initmath();
+#ifndef WITHOUT_COMPLEX
+extern void initcmath();
+#endif
 extern void initparser();
 extern void initmac();
 extern void MacOS_Init();
@@ -133,6 +136,9 @@ struct {
 #ifndef SYMANTEC__CFM68K__
 /* The math library seems mostly broken... */
 	{"math", initmath},
+#endif
+#ifndef WITHOUT_COMPLEX
+	{"cmath", initcmath},
 #endif
 	{"parser", initparser},
 	{"mac", initmac},
