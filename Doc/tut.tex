@@ -1605,15 +1605,19 @@ Note that it lists all types of names: variables, modules, functions, etc.
 
 {\tt dir()} does not list the names of built-in functions and variables.
 If you want a list of those, they are defined in the standard module
-{\tt builtin}:
+{\tt __builtin__}:
 
 \bcode\begin{verbatim}
->>> import builtin
->>> dir(builtin)
-['EOFError', 'KeyboardInterrupt', 'MemoryError', 'NameError', 'None', 'Runti
-meError', 'SystemError', 'TypeError', 'abs', 'chr', 'dir', 'divmod', 'eval',
- 'exec', 'float', 'input', 'int', 'len', 'long', 'max', 'min', 'open', 'ord'
-, 'pow', 'range', 'raw_input', 'reload', 'type']
+>>> import __builtin__
+>>> dir(__builtin__)
+['AccessError', 'AttributeError', 'ConflictError', 'EOFError', 'IOError', 'I
+mportError', 'IndexError', 'KeyError', 'KeyboardInterrupt', 'MemoryError', '
+NameError', 'None', 'OverflowError', 'RuntimeError', 'SyntaxError', 'SystemE
+rror', 'SystemExit', 'TypeError', 'ValueError', 'ZeroDivisionError', 'abs', 
+'apply', 'chr', 'cmp', 'coerce', 'compile', 'dir', 'divmod', 'eval', 'execfi
+le', 'float', 'getattr', 'hasattr', 'hash', 'hex', 'id', 'input', 'int', 'le
+n', 'long', 'max', 'min', 'oct', 'open', 'ord', 'pow', 'range', 'raw_input',
+ 'reload', 'repr', 'round', 'setattr', 'str', 'type']
 >>>
 \end{verbatim}\ecode
 
@@ -2083,8 +2087,7 @@ interpreter quits.  The statements executed by the top-level
 invocation of the interpreter, either read from a script file or
 interactively, are considered part of a module called \verb\__main__\,
 so they have their own global name space.  (The built-in names
-actually also live in a module; this is called \verb\builtin\,
-although it should really have been called \verb\__builtin__\.)
+actually also live in a module; this is called \verb\__builtin__\.)
 
 The local name space for a function is created when the function is
 called, and deleted when the function returns or raises an exception

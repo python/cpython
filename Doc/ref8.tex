@@ -14,13 +14,13 @@ interpreter is invoked, it is useful to have a notion of a complete
 Python program.  A complete Python program is executed in a minimally
 initialized environment: all built-in and standard modules are
 available, but none have been initialized, except for \verb\sys\
-(various system services), \verb\builtin\ (built-in functions,
+(various system services), \verb\__builtin__\ (built-in functions,
 exceptions and \verb\None\) and \verb\__main__\.  The latter is used
 to provide the local and global name space for execution of the
 complete program.
 \bimodindex{sys}
 \bimodindex{__main__}
-\bimodindex{builtin}
+\bimodindex{__builtin__}
 
 The syntax for a complete Python program is that for file input,
 described in the next section.
@@ -58,11 +58,7 @@ This syntax is used in the following situations:
 
 \item when parsing a module;
 
-\item when parsing a string passed to \verb\exec()\;
-\bifuncindex{exec}
-
-\item when parsing a file passed to \verb\execfile()\;
-\bifuncindex{execfile}
+\item when parsing a string passed to the \verb\exec\ statement;
 
 \end{itemize}
 
