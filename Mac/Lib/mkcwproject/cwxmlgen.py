@@ -39,7 +39,7 @@ class ProjectBuilder:
 		self.dict = dict
 		if not dict.has_key('prefixname'):
 			if hasattr(MacOS, 'runtimemodel') and MacOS.runtimemodel == "carbon":
-				dict['prefixname'] = 'mwerks_carbonplugin_config.h'
+				dict['prefixname'] = 'mwerks_shcarbon_pch'
 			else:
 				dict['prefixname'] = 'mwerks_plugin_config.h'
 		self.templatelist = templatelist
