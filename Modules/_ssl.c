@@ -373,10 +373,11 @@ static PyObject *PySSL_SSLwrite(PySSLObject *self, PyObject *args)
 {
 	char *data;
 	int len;
+	int count;
 	int timedout;
 	int err;
 
-	if (!PyArg_ParseTuple(args, "s#:write", &data, &len))
+	if (!PyArg_ParseTuple(args, "s#:write", &data, &count))
 		return NULL;
 
 	timedout = wait_for_timeout(self->Socket, 1);
@@ -387,7 +388,7 @@ static PyObject *PySSL_SSLwrite(PySSLObject *self, PyObject *args)
 	do {
 		err = 0;
 		Py_BEGIN_ALLOW_THREADS
-		len = SSL_write(self->ssl, data, len);
+		len = SSL_write(self->ssl, data, count);
 		err = SSL_get_error(self->ssl, len);
 		Py_END_ALLOW_THREADS
 		if(PyErr_CheckSignals()) {
