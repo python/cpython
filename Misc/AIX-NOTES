@@ -113,7 +113,7 @@ that the "python.exp" file is an "import" file for the shared module.
 A default python.exp file is provided with the distribution.  It will be
 overwritten (by the action of the makexp_aix script) if you build with shared
 libraries.  The python.exp file which comes with the distribution contains
-all extern symbols of a completely statically build python executable.
+all extern symbols of a completely statically built python executable.
 Any python.exp file which is created from a build of python with some of the
 modules linked as shared modules will obviously not list symbols from the now
 dynamic modules.  The distributed python.exp is provided so that, with
