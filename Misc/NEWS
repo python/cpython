@@ -10,7 +10,7 @@ What's New in Python 2.3 alpha 2?
 *Release date: XX-XXX-2003*
 
 Core and builtins
------------------
+----------------
 
 - Through a bytecode optimizer bug (and I bet you didn't even know
   Python *had* a bytecode optimizer :-), "unsigned" hex/oct constants
@@ -23,6 +23,13 @@ Core and builtins
   2.2.2 and 2.3a1, and in Python 2.4 it will once again have that
   value, but according to PEP 237 it really needs to be 1 now.  This
   will be backported to Python 2.2.3 a well.  (SF #660455)
+
+- int(s, base) sometimes sign-folds hex and oct constants; it only
+  does this when base is 0 and s.strip() starts with a '0'.  When the
+  sign is actually folded, as in int("0xffffffff", 0) on a 32-bit
+  machine, which returns -1, a FutureWarning is now issued; in Python
+  2.4, this will return 4294967295L, as do int("+0xffffffff", 0) and
+  int("0xffffffff", 16) right now.  (PEP 347)
 
 - super(X, x): x may now be a proxy for an X instance, i.e.
   issubclass(x.__class__, X) but not issubclass(type(x), X).
