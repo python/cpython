@@ -911,10 +911,10 @@ PyWrapper_New(PyObject *d, PyObject *self)
             self.__doc__ = doc
 
         def __get__(self, inst, type=None):
-            if self.__get is None:
-                raise AttributeError, "unreadable attribute"
             if inst is None:
                 return self
+            if self.__get is None:
+                raise AttributeError, "unreadable attribute"
             return self.__get(inst)
 
         def __set__(self, inst, value):
