@@ -786,13 +786,6 @@ eval_code(co, globals, locals, arg)
 			break;
 		
 		case UNPACK_ARG:
-			/* Implement various compatibility hacks:
-			   (a) f(a,b,...) should accept f((1,2,...))
-			   (b) f((a,b,...)) should accept f(1,2,...)
-			   (c) f(self,(a,b,...)) should accept f(x,1,2,...)
-			   Actually, (c) is dangerous, and (b) seems
-			   unnecessary, but (a) can't be missed...
-			*/
 			{
 				int n;
 				if (EMPTY()) {
@@ -809,6 +802,12 @@ eval_code(co, globals, locals, arg)
 					break;
 				}
 				n = gettuplesize(v);
+#ifdef COMPAT_HACKS
+/* Implement various compatibility hacks (for 0.9.4 or earlier):
+   (a) f(a,b,...) accepts f((1,2,...))
+   (b) f((a,b,...)) accepts f(1,2,...)
+   (c) f(self,(a,b,...)) accepts f(x,1,2,...)
+*/
 				if (n == 1 && oparg != 1) {
 					/* Rule (a) */
 					w = gettupleitem(v, 0);
@@ -819,7 +818,6 @@ eval_code(co, globals, locals, arg)
 						n = gettuplesize(v);
 					}
 				}
-#ifdef COMPAT_HACKS /* Compatibility hacks no longer needed (I think) */
 				else if (n != 1 && oparg == 1) {
 					/* Rule (b) */
 					PUSH(v);

@@ -126,7 +126,7 @@ svc_GetFields(self, args)
 	captureobject *self;
 	object *args;
 {
-	object *f1, *f2;
+	object *f1, *f2, *ret;
 	int fieldsize;
 
 	if (self->ob_info.format != SV_RGB8_FRAMES) {
@@ -136,14 +136,11 @@ svc_GetFields(self, args)
 
 	fieldsize = self->ob_info.width * self->ob_info.height / 2;
 	f1 = newsizedstringobject((char *) self->ob_capture, fieldsize);
-	if (f1 == NULL)
-		return NULL;
 	f2 = newsizedstringobject((char *) self->ob_capture + fieldsize, fieldsize);
-	if (f2 == NULL) {
-		DECREF(f1);
-		return NULL;
-	}
-	return mkvalue("(OO)", f1, f2);
+	ret = mkvalue("(OO)", f1, f2);
+	XDECREF(f1);
+	XDECREF(f2);
+	return ret;
 }
 	
 static object *

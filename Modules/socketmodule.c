@@ -223,7 +223,10 @@ makesockaddr(addr, addrlen)
 	case AF_INET:
 	{
 		struct sockaddr_in *a = (struct sockaddr_in *) addr;
-		return mkvalue("Oi", makeipaddr(a), ntohs(a->sin_port));
+		object *addr = makeipaddr(a);
+		object *ret = mkvalue("Oi", addr, ntohs(a->sin_port));
+		XDECREF(addr);
+		return ret;
 	}
 
 	case AF_UNIX:
@@ -342,7 +345,7 @@ sock_accept(s, args)
 {
 	char addrbuf[256];
 	int addrlen, newfd;
-	object *res;
+	object *sock, *addr, *res;
 	if (!getnoarg(args))
 		return NULL;
 	if (!getsockaddrlen(s, &addrlen))
@@ -354,13 +357,16 @@ sock_accept(s, args)
 		return socket_error();
 	/* Create the new object with unspecified family,
 	   to avoid calls to bind() etc. on it. */
-	res = mkvalue("OO", (object *) newsockobject(newfd,
-						s->sock_family,
-						s->sock_type,
-						s->sock_proto),
-		       makesockaddr((struct sockaddr *) addrbuf, addrlen));
-	if (res == NULL)
+	sock = (object *) newsockobject(newfd,
+					s->sock_family,
+					s->sock_type,
+					s->sock_proto);
+	if (sock == NULL)
 		close(newfd);
+	addr = makesockaddr((struct sockaddr *) addrbuf, addrlen);
+	res = mkvalue("OO", sock, addr);
+	XDECREF(sock);
+	XDECREF(addr);
 	return res;
 }
 
@@ -693,7 +699,7 @@ sock_recvfrom(s, args)
 	object *args;
 {
 	char addrbuf[256];
-	object *buf;
+	object *buf, *addr, *ret;
 	int addrlen, len, n;
 	if (!getintarg(args, &len))
 		return NULL;
@@ -708,8 +714,11 @@ sock_recvfrom(s, args)
 		return socket_error();
 	if (resizestring(&buf, n) < 0)
 		return NULL;
-	return mkvalue("OO", buf,
-			makesockaddr((struct sockaddr *)addrbuf, addrlen));
+	addr = makesockaddr((struct sockaddr *)addrbuf, addrlen);
+	ret = mkvalue("OO", buf, addr);
+	XDECREF(addr);
+	XDECREF(buf);
+	return ret;
 }
 
 

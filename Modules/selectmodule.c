@@ -112,6 +112,7 @@ select_select(self, args)
 {
     object *fd2obj[FD_SETSIZE];
     object *ifdlist, *ofdlist, *efdlist;
+    object *ret;
     fd_set ifdset, ofdset, efdset;
     double timeout;
     struct timeval tv, *tvp;
@@ -168,8 +169,11 @@ select_select(self, args)
     ifdlist = set2list(&ifdset, imax, fd2obj);
     ofdlist = set2list(&ofdset, omax, fd2obj);
     efdlist = set2list(&efdset, emax, fd2obj);
-
-    return mkvalue("OOO", ifdlist, ofdlist, efdlist);
+    ret = mkvalue("OOO", ifdlist, ofdlist, efdlist);
+    XDECREF(ifdlist);
+    XDECREF(ofdlist);
+    XDECREF(efdlist);
+    return ret;
 }
 
 
