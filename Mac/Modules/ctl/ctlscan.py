@@ -45,6 +45,7 @@ class MyScanner(Scanner):
 
 	def makeblacklistnames(self):
 		return [
+			'FindControlUnderMouse', # Generated manually, returns an existing control, not a new one.
 			'DisposeControl', # Generated manually
 			'KillControls', # Implied by close of dialog
 			'SetCtlAction',
