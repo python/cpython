@@ -17,6 +17,9 @@
 #   Make board updates faster
 #
 
+import random, string, traceback
+import curses
+
 class LifeBoard:
     """Encapsulates a Life board
 
@@ -118,11 +121,10 @@ class LifeBoard:
 
     def makeRandom(self):
 	"Fill the board with a random pattern"
-	import whrandom
 	self.state={}
 	for i in range(0, self.X): 
             for j in range(0, self.Y):
-		if whrandom.random()*10>5.0: self.set(j,i)
+                if random.random() > 0.5: self.set(j,i)
 
 
 def erase_menu(stdscr, menu_y):
@@ -139,7 +141,6 @@ def display_menu(stdscr, menu_y):
                   'E)rase the board, R)andom fill, S)tep once or C)ontinuously, Q)uit')
 
 def main(stdscr):
-    import string, curses
 
     # Clear the screen and display the menu of keys
     stdscr.clear()
@@ -196,7 +197,6 @@ def main(stdscr):
         else: pass			# Ignore incorrect keys
 
 if __name__=='__main__':
-    import curses, traceback
     try:
 	# Initialize curses
 	stdscr=curses.initscr()
