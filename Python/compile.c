@@ -4496,7 +4496,8 @@ static int
 symtable_cellvar_offsets(PyObject **cellvars, int argcount, 
 			 PyObject *varnames, int flags) 
 {
-	PyObject *v, *w, *d, *list = NULL;
+	PyObject *v = NULL;
+	PyObject *w, *d, *list = NULL;
 	int i, pos;
 
 	if (flags & CO_VARARGS)
@@ -4530,6 +4531,7 @@ symtable_cellvar_offsets(PyObject **cellvars, int argcount,
 			goto fail;
 		if (PyDict_DelItem(*cellvars, PyList_GET_ITEM(list, i)) < 0)
 			goto fail;
+		Py_DECREF(v);
 	}
 	pos = 0;
 	i = PyList_GET_SIZE(list);
@@ -4538,6 +4540,7 @@ symtable_cellvar_offsets(PyObject **cellvars, int argcount,
 		w = PyInt_FromLong(i++);  /* don't care about the old key */
 		if (PyDict_SetItem(d, v, w) < 0) {
 			Py_DECREF(w);
+			v = NULL;
 			goto fail;
 		}
 		Py_DECREF(w);
@@ -4547,6 +4550,7 @@ symtable_cellvar_offsets(PyObject **cellvars, int argcount,
 	return 1;
  fail:
 	Py_DECREF(d);
+	Py_XDECREF(v);
 	return -1;
 }
 
