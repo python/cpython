@@ -35,7 +35,7 @@ def main():
     except getopt.error, msg:
 	print msg
 	print __doc__
-	sys.exit(2)
+	return 2
     verbose = 0
     quiet = 0
     generate = 0
@@ -47,7 +47,7 @@ def main():
 	if o == '-x': exclude = 1
     if generate and verbose>1:
 	print "-g and more than one -v don't go together!"
-	sys.exit(2)
+	return 2
     good = []
     bad = []
     skipped = []
@@ -79,7 +79,7 @@ def main():
     if skipped and not quiet:
 	print count(len(skipped), "test"), "skipped:",
 	print string.join(skipped)
-    sys.exit(len(bad) > 0)
+    return len(bad) > 0
 
 stdtests = [
     'test_grammar',
@@ -184,4 +184,4 @@ class Compare:
 	return 0
 
 if __name__ == '__main__':
-    main()
+    sys.exit(main())
