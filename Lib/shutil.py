@@ -93,3 +93,35 @@ def copytree(src, dst, symlinks=0):
 	    # XXX What about devices, sockets etc.?
 	except (IOError, os.error), why:
 	    print "Can't copy %s to %s: %s" % (`srcname`, `dstname`, str(why))
+
+def rmtree(path, ignore_errors=0, onerror=None):
+    """Recursively delete a directory tree.
+
+    If ignore_errors is set, errors are ignored; otherwise, if
+    onerror is set, it is called to handle the error; otherwise, an
+    exception is raised.
+
+    """
+    cmdtuples = []
+    _build_cmdtuple(path, cmdtuples)
+    for cmd in cmdtuples:
+	try:
+	    apply(cmd[0], (cmd[1],))
+	except:
+	    exc = sys.exc_info()
+	    if ignore_errors:
+		pass
+	    elif onerror:
+		onerror(cmd[0], cmd[1], exc)
+	    else:
+		raise exc[0], (exc[1][0], exc[1][1] + ' removing '+cmd[1])
+
+# Helper for rmtree()
+def _build_cmdtuple(path, cmdtuples):
+    for f in os.listdir(path):
+	real_f = os.path.join(path,f)
+	if os.path.isdir(real_f) and not os.path.islink(real_f):
+	    _build_cmdtuple(real_f, cmdtuples)
+	else:
+	    cmdtuples.append(os.remove, real_f)
+    cmdtuples.append(os.rmdir, path)
