@@ -13,6 +13,7 @@ import img
 import imgformat
 import macfs
 import struct
+import mac_image
 
 
 # Where is the picture window?
@@ -23,44 +24,6 @@ MINHEIGHT=64
 MAXWIDTH=320
 MAXHEIGHT=320
 
-def dumppixmap(data):
-	baseAddr, \
-		rowBytes, \
-		t, l, b, r, \
-		pmVersion, \
-		packType, packSize, \
-		hRes, vRes, \
-		pixelType, pixelSize, \
-		cmpCount, cmpSize, \
-		planeBytes, pmTable, pmReserved \
-			= struct.unpack("lhhhhhhhlllhhhhlll", data)
-	print 'Base:       0x%x'%baseAddr
-	print 'rowBytes:   %d (0x%x)'%(rowBytes&0x3fff, rowBytes)
-	print 'rect:       %d, %d, %d, %d'%(t, l, b, r)
-	print 'pmVersion:  0x%x'%pmVersion
-	print 'packing:    %d %d'%(packType, packSize)
-	print 'resolution: %f x %f'%(float(hRes)/0x10000, float(vRes)/0x10000)
-	print 'pixeltype:  %d, size %d'%(pixelType, pixelSize)
-	print 'components: %d, size %d'%(cmpCount, cmpSize)
-	print 'planeBytes: %d (0x%x)'%(planeBytes, planeBytes)
-	print 'pmTable:    0x%x'%pmTable
-	print 'pmReserved: 0x%x'%pmReserved
-
-def mk16pixmap(w, h, data):
-	"""kludge a pixmap together"""
-	rv = struct.pack("lhhhhhhhlllhhhhlll",
-		id(data)+12,
-		w*2 + 0x8000,
-		0, 0, h, w,
-		0,
-		0, 0, # XXXX?
-		72<<16, 72<<16,
-		16, 16, # XXXX
-		3, 5,
-		0, 0, 0)
-	print 'Our pixmap, size %d:'%len(rv)
-	dumppixmap(rv)
-	return Qd.RawBitMap(rv)
 
 def main():
 	print 'hello world'
@@ -98,12 +61,12 @@ class imgbrowse(FrameWork.Application):
 		bar.set(10)
 		data = rdr.read()
 		del bar
-		pixmap = mk16pixmap(w, h, data)
-		self.showimg(w, h, pixmap)
+		pixmap = mac_image.mkpixmap(w, h, imgformat.macrgb16, data)
+		self.showimg(w, h, pixmap, data)
 			
-	def showimg(self, w, h, pixmap):
+	def showimg(self, w, h, pixmap, data):
 		win = imgwindow(self)
-		win.open(w, h, pixmap)
+		win.open(w, h, pixmap, data)
 		self.lastwin = win
 
 	def info(self, *args):
@@ -111,8 +74,9 @@ class imgbrowse(FrameWork.Application):
 			self.lastwin.info()		
 		
 class imgwindow(FrameWork.Window):
-	def open(self, width, height, pixmap):
+	def open(self, width, height, pixmap, data):
 		self.pixmap = pixmap
+		self.data = data
 		self.pictrect = (0, 0, width, height)
 		bounds = (LEFT, TOP, LEFT+width, TOP+height)
 		
@@ -128,8 +92,7 @@ class imgwindow(FrameWork.Window):
 				currect, QuickDraw.srcCopy, None)
 		self.info()
 		Qd.CopyBits(self.pixmap, self.wid.GetWindowPort().portBits, self.pictrect,
-				currect, QuickDraw.srcCopy+QuickDraw.ditherCopy, None)
-##		Qd.DrawPicture(self.picture, currect)
+				currect, QuickDraw.srcCopy, None)
 		
 	def fitrect(self):
 		"""Return self.pictrect scaled to fit in window"""
@@ -151,6 +114,6 @@ class imgwindow(FrameWork.Window):
 	def info(self):
 		graf = self.wid.GetWindowPort()
 		bits = graf.portBits
-		dumppixmap(bits.pixmap_data)
+		mac_image.dumppixmap(bits.pixmap_data)
 
 main()
