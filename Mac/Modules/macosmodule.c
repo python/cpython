@@ -495,6 +495,25 @@ MacOS_GetErrorString(PyObject *self, PyObject *args)
 	return Py_BuildValue("s", PyMac_StrError(errn));
 }
 
+static char splash_doc[] = "Open a splash-screen dialog by resource-id (0=close)";
+
+static PyObject *
+MacOS_splash(PyObject *self, PyObject *args)
+{
+	int resid;
+	static DialogPtr curdialog;
+	
+	if (!PyArg_ParseTuple(args, "i", &resid))
+		return NULL;
+	if (curdialog)
+		DisposeDialog(curdialog);
+		
+	curdialog = GetNewDialog(resid, NULL, (WindowPtr)-1);
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
+
 static char openrf_doc[] = "Open resource fork of a file";
 
 static PyObject *
@@ -567,6 +586,7 @@ static PyMethodDef MacOS_Methods[] = {
 	{"HandleEvent",			MacOS_HandleEvent, 1},
 	{"GetErrorString",		MacOS_GetErrorString, 1},
 	{"openrf",				MacOS_openrf, 1, 	openrf_doc},
+	{"splash",				MacOS_splash, 1, 	splash_doc},
 	{NULL,				NULL}		 /* Sentinel */
 };
 
