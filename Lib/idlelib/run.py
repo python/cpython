@@ -1,6 +1,7 @@
 import sys
 import time
 import socket
+import traceback
 
 import boolcheck
 
@@ -69,7 +70,50 @@ class Executive:
         self.calltip = CallTips.CallTips()
 
     def runcode(self, code):
-        exec code in self.locals
+        try:
+            exec code in self.locals
+        except:
+            efile = sys.stderr
+            typ, val, tb = info = sys.exc_info()
+            sys.last_type, sys.last_value, sys.last_traceback = info
+            tbe = traceback.extract_tb(tb)
+            print >>efile, '\nTraceback (most recent call last):'
+            exclude = ("run.py", "rpc.py", "RemoteDebugger.py", "bdb.py")
+            self.cleanup_traceback(tbe, exclude)
+            traceback.print_list(tbe, file=efile)
+            lines = traceback.format_exception_only(typ, val)
+            for line in lines:
+                print>>efile, line,
+
+    def cleanup_traceback(self, tb, exclude):
+        "Remove excluded traces from beginning/end of tb; get cached lines"
+        orig_tb = tb[:]
+        while tb:
+            for rpcfile in exclude:
+                if tb[0][0].count(rpcfile):
+                    break    # found an exclude, break for: and delete tb[0]
+            else:
+                break        # no excludes, have left RPC code, break while:
+            del tb[0]
+        while tb:
+            for rpcfile in exclude:
+                if tb[-1][0].count(rpcfile):
+                    break
+            else:
+                break
+            del tb[-1]
+        if len(tb) == 0:
+            # exception was in IDLE internals, don't prune!
+            tb[:] = orig_tb[:]
+            print>>sys.stderr, "** IDLE Internal Exception: "
+        for i in range(len(tb)):
+            fn, ln, nm, line = tb[i]
+            if nm == '?':
+                nm = "-toplevel-"
+            if not line and fn.startswith("<pyshell#"):
+                line = self.rpchandler.remotecall('linecache', 'getline',
+                                                  (fn, ln), {})
+            tb[i] = fn, ln, nm, line
 
     def interrupt_the_server(self):
         # XXX KBK 05Feb03 Windows requires this be done with messages and
