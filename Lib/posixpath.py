@@ -398,5 +398,5 @@ symbolic links encountered in the path."""
             resolved = normpath(join(dir, resolved))
             newpath = join(*([resolved] + bits[i:]))
             return realpath(newpath)
-        
+
     return filename

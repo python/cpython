@@ -9,12 +9,12 @@ def _strxor(s1, s2):
     """Utility method. XOR the two strings s1 and s2 (must have same length).
     """
     return "".join(map(lambda x, y: chr(ord(x) ^ ord(y)), s1, s2))
-        
+
 class HMAC:
     """RFC2104 HMAC class.
 
     This (mostly) supports the API for Cryptographic Hash Functions (PEP 247).
-    """ 
+    """
 
     def __init__(self, key, msg = None, digestmod = None):
         """Create a new HMAC object.
@@ -80,7 +80,7 @@ def new(key, msg = None, digestmod = None):
 
     key: The starting key for the hash.
     msg: if available, will immediately be hashed into the object's starting
-    state.  
+    state.
 
     You can now feed arbitrary strings into the object using its update()
     method, and can ask for the hash value at any time by calling its digest()

@@ -19,6 +19,3 @@ try:
     marshal.loads(u"\222")
 except UnicodeError:
     pass
-
-
-

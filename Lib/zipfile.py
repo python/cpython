@@ -417,7 +417,7 @@ class ZipFile:
         zinfo.CRC = CRC
         zinfo.file_size = file_size
         # Seek backwards and write CRC and file sizes
-        position = self.fp.tell()	# Preserve current position in file
+        position = self.fp.tell()       # Preserve current position in file
         self.fp.seek(zinfo.header_offset + 14, 0)
         self.fp.write(struct.pack("<lll", zinfo.CRC, zinfo.compress_size,
               zinfo.file_size))

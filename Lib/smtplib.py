@@ -126,7 +126,7 @@ class SMTPAuthenticationError(SMTPResponseException):
 
 class SSLFakeSocket:
     """A fake socket object that really wraps a SSLObject.
-    
+
     It only supports what is needed in smtplib.
     """
     def __init__(self, realsock, sslobj):
@@ -142,7 +142,7 @@ class SSLFakeSocket:
 
 class SSLFakeFile:
     """A fake file like object that really wraps a SSLObject.
-    
+
     It only supports what is needed in smtplib.
     """
     def __init__( self, sslobj):
@@ -524,7 +524,7 @@ class SMTP:
                 authmethod = method
                 break
         if self.debuglevel > 0: print "AuthMethod:", authmethod
-         
+
         if authmethod == AUTH_CRAM_MD5:
             (code, resp) = self.docmd("AUTH", AUTH_CRAM_MD5)
             if code == 503:
@@ -532,7 +532,7 @@ class SMTP:
                 return (code, resp)
             (code, resp) = self.docmd(encode_cram_md5(resp, user, password))
         elif authmethod == AUTH_PLAIN:
-            (code, resp) = self.docmd("AUTH", 
+            (code, resp) = self.docmd("AUTH",
                 AUTH_PLAIN + " " + encode_plain(user, password))
         elif authmethod == None:
             raise SMTPError("No suitable authentication method found.")
@@ -544,20 +544,20 @@ class SMTP:
 
     def starttls(self, keyfile = None, certfile = None):
         """Puts the connection to the SMTP server into TLS mode.
-        
+
         If the server supports TLS, this will encrypt the rest of the SMTP
         session. If you provide the keyfile and certfile parameters,
         the identity of the SMTP server and client can be checked. This,
         however, depends on whether the socket module really checks the
         certificates.
         """
-        (resp, reply) = self.docmd("STARTTLS") 
+        (resp, reply) = self.docmd("STARTTLS")
         if resp == 220:
             sslobj = socket.ssl(self.sock, keyfile, certfile)
             self.sock = SSLFakeSocket(self.sock, sslobj)
             self.file = SSLFakeFile(sslobj)
         return (resp, reply)
-    
+
     def sendmail(self, from_addr, to_addrs, msg, mail_options=[],
                  rcpt_options=[]):
         """This command performs an entire mail transaction.

@@ -439,7 +439,7 @@ class HTMLParser:
             if c == '>':
                 # all done
                 return j + 1
-                
+
     def parse_doctype_notation(self, i, declstartpos):
         name, j = self.scan_name(i, declstartpos)
         if j < 0:
