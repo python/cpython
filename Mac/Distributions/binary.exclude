@@ -4,6 +4,7 @@
 *.MAP
 *.SYM
 *.c
+*.cp
 *.cpp
 *.dbg
 *.dsp
@@ -22,11 +23,10 @@
 *Icon
 *xMAP
 .#*
+.DS_Store
 .cvsignore
 @*
 CVS
 Makefile*
 Setup.in
 [(]*[)]
-.DS_Store
-*.cp
