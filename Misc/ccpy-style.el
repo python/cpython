@@ -7,6 +7,10 @@
 ;; Keywords: c python languages oop
 
 ;;; Commentary
+;;
+;; NOTE: This file is obsolete!  All current versions of CC Mode
+;; include a "python" style by default.
+
 ;; This file defines the standard C coding style for Python C files
 ;; and modules.  It is compatible with cc-mode.el which should be a
 ;; standard part of your Emacs distribution (or see
