@@ -35,14 +35,26 @@ newfuncobject(code, globals)
 {
 	funcobject *op = NEWOBJ(funcobject, &Functype);
 	if (op != NULL) {
+		object *doc;
+		object *consts;
 		INCREF(code);
 		op->func_code = code;
 		INCREF(globals);
 		op->func_globals = globals;
-		op->func_name = ((codeobject*)(op->func_code))->co_name;
+		op->func_name = ((codeobject *)code)->co_name;
 		INCREF(op->func_name);
 		op->func_argcount = -1; /* Unknown */
 		op->func_argdefs = NULL; /* No default arguments */
+		consts = ((codeobject *)code)->co_consts;
+		if (gettuplesize(consts) >= 1) {
+			doc = gettupleitem(consts, 0);
+			if (!is_stringobject(doc))
+				doc = None;
+		}
+		else
+			doc = None;
+		INCREF(doc);
+		op->func_doc = doc;
 	}
 	return (object *)op;
 }
@@ -117,6 +129,8 @@ static struct memberlist func_memberlist[] = {
 	{"func_name",	T_OBJECT,	OFF(func_name),		READONLY},
 	{"func_argcount",T_INT,		OFF(func_argcount),	READONLY},
 	{"func_argdefs",T_OBJECT,	OFF(func_argdefs),	READONLY},
+	{"func_doc",	T_OBJECT,	OFF(func_doc)},
+	{"__doc__",	T_OBJECT,	OFF(func_doc)},
 	{NULL}	/* Sentinel */
 };
 
@@ -135,6 +149,7 @@ func_dealloc(op)
 	DECREF(op->func_code);
 	DECREF(op->func_globals);
 	XDECREF(op->func_argdefs);
+	XDECREF(op->func_doc);
 	DEL(op);
 }
 
