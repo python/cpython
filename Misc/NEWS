@@ -6,6 +6,11 @@ Type/class unification and new-style classes
 
 Core and builtins
 
+- When x is an object whose class implements __mul__ and __rmul__,
+  1.0*x would correctly invoke __rmul__, but 1*x would erroneously
+  invoke __mul__.  This was due to the sequence-repeat code in the int
+  type.  This has been fixed now.
+
 - Previously, "str1 in str2" required str1 to be a string of length 1.
   This restriction has been relaxed to allow str1 to be a string of
   any length.  Thus "'el' in 'hello world'" returns True now.
