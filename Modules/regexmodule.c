@@ -80,6 +80,7 @@ makeresult(regs)
 	PyObject *v;
 	int i;
 	static PyObject *filler = NULL;
+
 	if (filler == NULL) {
 		filler = Py_BuildValue("(ii)", -1, -1);
 		if (filler == NULL)
@@ -88,6 +89,7 @@ makeresult(regs)
 	v = PyTuple_New(RE_NREGS);
 	if (v == NULL)
 		return NULL;
+
 	for (i = 0; i < RE_NREGS; i++) {
 		int lo = regs->start[i];
 		int hi = regs->end[i];
@@ -98,35 +100,27 @@ makeresult(regs)
 		}
 		else
 			w = Py_BuildValue("(ii)", lo, hi);
-		if (w == NULL) {
-			Py_XDECREF(v);
+		if (w == NULL || PyTuple_SetItem(v, i, w) < 0) {
+			Py_DECREF(v);
 			return NULL;
 		}
-		PyTuple_SetItem(v, i, w);
 	}
 	return v;
 }
 
 static PyObject *
-reg_match(re, args)
+regobj_match(re, args)
 	regexobject *re;
 	PyObject *args;
 {
-	PyObject *argstring;
 	char *buffer;
 	int size;
-	int offset;
+	int offset = 0;
 	int result;
-	if (PyArg_Parse(args, "S", &argstring)) {
-		offset = 0;
-	}
-	else {
-		PyErr_Clear();
-		if (!PyArg_Parse(args, "(Si)", &argstring, &offset))
-			return NULL;
-	}
-	buffer = PyString_AsString(argstring);
-	size = PyString_Size(argstring);
+
+	if (!PyArg_ParseTuple(args, "s#|i", &buffer, &size, &offset))
+		return NULL;
+
 	if (offset < 0 || offset > size) {
 		PyErr_SetString(RegexError, "match offset out of range");
 		return NULL;
@@ -140,34 +134,28 @@ reg_match(re, args)
 		return NULL;
 	}
 	if (result >= 0) {
-		Py_INCREF(argstring);
-		re->re_lastok = argstring;
+		PyObject* str = PyString_FromStringAndSize(buffer, size);
+		if (!str)
+			return NULL;
+		re->re_lastok = str;
 	}
 	return PyInt_FromLong((long)result); /* Length of the match or -1 */
 }
 
 static PyObject *
-reg_search(re, args)
+regobj_search(re, args)
 	regexobject *re;
 	PyObject *args;
 {
-	PyObject *argstring;
 	char *buffer;
 	int size;
-	int offset;
+	int offset = 0;
 	int range;
 	int result;
 	
-	if (PyArg_Parse(args, "S", &argstring)) {
-		offset = 0;
-	}
-	else {
-		PyErr_Clear();
-		if (!PyArg_Parse(args, "(Si)", &argstring, &offset))
-			return NULL;
-	}
-	buffer = PyString_AsString(argstring);
-	size = PyString_Size(argstring);
+	if (!PyArg_ParseTuple(args, "s#|i", &buffer, &size, &offset))
+		return NULL;
+
 	if (offset < 0 || offset > size) {
 		PyErr_SetString(RegexError, "search offset out of range");
 		return NULL;
@@ -187,58 +175,45 @@ reg_search(re, args)
 		return NULL;
 	}
 	if (result >= 0) {
-		Py_INCREF(argstring);
-		re->re_lastok = argstring;
+		PyObject* str = PyString_FromStringAndSize(buffer, size);
+		if (!str)
+			return NULL;
+		re->re_lastok = str;
 	}
 	return PyInt_FromLong((long)result); /* Position of the match or -1 */
 }
 
-static PyObject *
-reg_group(re, args)
+/* get the group from the regex where index can be a string (group name) or
+   an integer index [0 .. 99]
+ */
+static PyObject*
+group_from_index(re, index)
 	regexobject *re;
-	PyObject *args;
+	PyObject *index;
 {
 	int i, a, b;
-	if (args != NULL && PyTuple_Check(args)) {
-		int n = PyTuple_Size(args);
-		PyObject *res = PyTuple_New(n);
-		if (res == NULL)
+	char *v;
+
+	if (PyString_Check(index))
+		if (re->re_groupindex == NULL ||
+		    !(index = PyDict_GetItem(re->re_groupindex, index)))
+		{
+			PyErr_SetString(RegexError,
+					"group() group name doesn't exist");
 			return NULL;
-		for (i = 0; i < n; i++) {
-			PyObject *v = reg_group(re, PyTuple_GetItem(args, i));
-			if (v == NULL) {
-				Py_DECREF(res);
-				return NULL;
-			}
-			PyTuple_SetItem(res, i, v);
 		}
-		return res;
-	}
-	if (!PyArg_Parse(args, "i", &i)) {
-		PyObject *n;
-		PyErr_Clear();
-		if (!PyArg_Parse(args, "S", &n))
-			return NULL;
-		else {
-			PyObject *index;
-			if (re->re_groupindex == NULL)
-				index = NULL;
-			else
-				index = PyDict_GetItem(re->re_groupindex, n);
-			if (index == NULL) {
-				PyErr_SetString(RegexError, "group() group name doesn't exist");
-				return NULL;
-			}
-			i = PyInt_AsLong(index);
-		}
-	}
+
+	i = PyInt_AsLong(index);
+	if (i == -1 && PyErr_Occurred())
+		return NULL;
+
 	if (i < 0 || i >= RE_NREGS) {
 		PyErr_SetString(RegexError, "group() index out of range");
 		return NULL;
 	}
 	if (re->re_lastok == NULL) {
 		PyErr_SetString(RegexError,
-		    "group() only valid after successful match/search");
+			   "group() only valid after successful match/search");
 		return NULL;
 	}
 	a = re->re_regs.start[i];
@@ -247,18 +222,79 @@ reg_group(re, args)
 		Py_INCREF(Py_None);
 		return Py_None;
 	}
-	return PyString_FromStringAndSize(PyString_AsString(re->re_lastok)+a, b-a);
+	
+	if (!(v = PyString_AsString(re->re_lastok)))
+		return NULL;
+
+	return PyString_FromStringAndSize(v+a, b-a);
 }
 
+
+static PyObject *
+regobj_group(re, args)
+	regexobject *re;
+	PyObject *args;
+{
+	int n = PyTuple_Size(args);
+	int i;
+	PyObject *res = NULL;
+
+	if (n < 0)
+		return NULL;
+	if (n == 0) {
+		PyErr_SetString(PyExc_TypeError, "not enough arguments");
+		return NULL;
+	}
+	if (n == 1) {
+		/* return value is a single string */
+		PyObject *index = PyTuple_GetItem(args, 0);
+		if (!index)
+			return NULL;
+		
+		return group_from_index(re, index);
+	}
+
+	/* return value is a tuple */
+	if (!(res = PyTuple_New(n)))
+		return NULL;
+
+	for (i = 0; i < n; i++) {
+		PyObject *index = PyTuple_GetItem(args, i);
+		PyObject *group = NULL;
+
+		if (!index)
+			goto finally;
+		if (!(group = group_from_index(re, index)))
+			goto finally;
+		if (PyTuple_SetItem(res, i, group) < 0)
+			goto finally;
+	}
+	return res;
+
+  finally:
+	Py_DECREF(res);
+	return NULL;
+}
+
+
 static struct PyMethodDef reg_methods[] = {
-	{"match",	(PyCFunction)reg_match},
-	{"search",	(PyCFunction)reg_search},
-	{"group",	(PyCFunction)reg_group},
+	{"match",	(PyCFunction)regobj_match, 1},
+	{"search",	(PyCFunction)regobj_search, 1},
+	{"group",	(PyCFunction)regobj_group, 1},
 	{NULL,		NULL}		/* sentinel */
 };
 
+
+
+static char* members[] = {
+	"last", "regs", "translate",
+	"groupindex", "realpat", "givenpat",
+	NULL
+};
+
+
 static PyObject *
-reg_getattr(re, name)
+regobj_getattr(re, name)
 	regexobject *re;
 	char *name;
 {
@@ -310,18 +346,25 @@ reg_getattr(re, name)
 		return re->re_givenpat;
 	}
 	if (strcmp(name, "__members__") == 0) {
-		PyObject *list = PyList_New(6);
-		if (list) {
-			PyList_SetItem(list, 0, PyString_FromString("last"));
-			PyList_SetItem(list, 1, PyString_FromString("regs"));
-			PyList_SetItem(list, 2, PyString_FromString("translate"));
-			PyList_SetItem(list, 3, PyString_FromString("groupindex"));
-			PyList_SetItem(list, 4, PyString_FromString("realpat"));
-			PyList_SetItem(list, 5, PyString_FromString("givenpat"));
-			if (PyErr_Occurred()) {
+		int i = 0;
+		PyObject *list = NULL;
+
+		/* okay, so it's unlikely this list will change that often.
+		   still, it's easier to change it in just one place.
+		 */
+		while (members[i])
+			i++;
+		if (!(list = PyList_New(i)))
+			return NULL;
+
+		i = 0;
+		while (members[i]) {
+			PyObject* v = PyString_FromString(members[i]);
+			if (!v || PyList_SetItem(list, i, v) < 0) {
 				Py_DECREF(list);
-				list = NULL;
+				return NULL;
 			}
+			i++;
 		}
 		return list;
 	}
@@ -330,19 +373,25 @@ reg_getattr(re, name)
 
 static PyTypeObject Regextype = {
 	PyObject_HEAD_INIT(&PyType_Type)
-	0,			/*ob_size*/
-	"regex",		/*tp_name*/
-	sizeof(regexobject),	/*tp_size*/
-	0,			/*tp_itemsize*/
+	0,				     /*ob_size*/
+	"regex",			     /*tp_name*/
+	sizeof(regexobject),		     /*tp_size*/
+	0,				     /*tp_itemsize*/
 	/* methods */
-	(destructor)reg_dealloc, /*tp_dealloc*/
-	0,			/*tp_print*/
-	(getattrfunc)reg_getattr, /*tp_getattr*/
-	0,			/*tp_setattr*/
-	0,			/*tp_compare*/
-	0,			/*tp_repr*/
+	(destructor)reg_dealloc,	     /*tp_dealloc*/
+	0,				     /*tp_print*/
+	(getattrfunc)regobj_getattr,	     /*tp_getattr*/
+	0,				     /*tp_setattr*/
+	0,				     /*tp_compare*/
+	0,				     /*tp_repr*/
 };
 
+/* reference counting invariants:
+   pattern: borrowed
+   translate: borrowed
+   givenpat: borrowed
+   groupindex: transferred
+*/
 static PyObject *
 newregexobject(pattern, translate, givenpat, groupindex)
 	PyObject *pattern;
@@ -351,12 +400,15 @@ newregexobject(pattern, translate, givenpat, groupindex)
 	PyObject *groupindex;
 {
 	regexobject *re;
-	char *pat = PyString_AsString(pattern);
-	int size = PyString_Size(pattern);
+	char *pat;
+	int size;
 
+	if (!PyArg_Parse(pattern, "s#", &pat, &size))
+		return NULL;
+	
 	if (translate != NULL && PyString_Size(translate) != 256) {
 		PyErr_SetString(RegexError,
-			   "translation table must be 256 bytes");
+				"translation table must be 256 bytes");
 		return NULL;
 	}
 	re = PyObject_NEW(regexobject, &Regextype);
@@ -365,11 +417,14 @@ newregexobject(pattern, translate, givenpat, groupindex)
 		re->re_patbuf.buffer = NULL;
 		re->re_patbuf.allocated = 0;
 		re->re_patbuf.fastmap = re->re_fastmap;
-		if (translate)
+		if (translate) {
 			re->re_patbuf.translate = PyString_AsString(translate);
+			if (!re->re_patbuf.translate)
+				goto finally;
+			Py_INCREF(translate);
+		}
 		else
 			re->re_patbuf.translate = NULL;
-		Py_XINCREF(translate);
 		re->re_translate = translate;
 		re->re_lastok = NULL;
 		re->re_groupindex = groupindex;
@@ -380,11 +435,13 @@ newregexobject(pattern, translate, givenpat, groupindex)
 		error = re_compile_pattern(pat, size, &re->re_patbuf);
 		if (error != NULL) {
 			PyErr_SetString(RegexError, error);
-			Py_DECREF(re);
-			re = NULL;
+			goto finally;
 		}
 	}
 	return (PyObject *)re;
+  finally:
+	Py_DECREF(re);
+	return NULL;
 }
 
 static PyObject *
@@ -394,11 +451,9 @@ regex_compile(self, args)
 {
 	PyObject *pat = NULL;
 	PyObject *tran = NULL;
-	if (!PyArg_Parse(args, "S", &pat)) {
-		PyErr_Clear();
-		if (!PyArg_Parse(args, "(SS)", &pat, &tran))
-			return NULL;
-	}
+
+	if (!PyArg_ParseTuple(args, "S|S", &pat, &tran))
+		return NULL;
 	return newregexobject(pat, tran, pat, NULL);
 }
 
@@ -407,26 +462,31 @@ symcomp(pattern, gdict)
 	PyObject *pattern;
 	PyObject *gdict;
 {
-	char *opat = PyString_AsString(pattern);
-	char *oend = opat + PyString_Size(pattern);
+	char *opat, *oend, *o, *n, *g, *v;
 	int group_count = 0;
+	int sz;
 	int escaped = 0;
-	char *o = opat;
-	char *n;
 	char name_buf[128];
-	char *g;
 	PyObject *npattern;
 	int require_escape = re_syntax & RE_NO_BK_PARENS ? 0 : 1;
+
+	if (!(opat = PyString_AsString(pattern)))
+		return NULL;
+
+	if ((sz = PyString_Size(pattern)) < 0)
+		return NULL;
+
+	oend = opat + sz;
+	o = opat;
 
 	if (oend == opat) {
 		Py_INCREF(pattern);
 		return pattern;
 	}
 
-	npattern = PyString_FromStringAndSize((char*)NULL, PyString_Size(pattern));
-	if (npattern == NULL)
+	if (!(npattern = PyString_FromStringAndSize((char*)NULL, sz)) ||
+	    !(n = PyString_AsString(npattern)))
 		return NULL;
-	n = PyString_AsString(npattern);
 
 	while (o < oend) {
 		if (*o == '(' && escaped == require_escape) {
@@ -443,20 +503,23 @@ symcomp(pattern, gdict)
 			g = name_buf;
 			for (++o; o < oend;) {
 				if (*o == '>') {
-					PyObject *group_name = NULL;
-					PyObject *group_index = NULL;
-					*g++ = '\0';
-					group_name = PyString_FromString(name_buf);
-					group_index = PyInt_FromLong(group_count);
-					if (group_name == NULL || group_index == NULL
-					    || PyDict_SetItem(gdict, group_name, group_index) != 0) {
-						Py_XDECREF(group_name);
-						Py_XDECREF(group_index);
-						Py_XDECREF(npattern);
-						return NULL;
-					}
-					++o; /* eat the '>' */
-					break;
+				    PyObject *group_name = NULL;
+				    PyObject *group_index = NULL;
+				    *g++ = '\0';
+				    group_name = PyString_FromString(name_buf);
+				    group_index = PyInt_FromLong(group_count);
+				    if (group_name == NULL ||
+					group_index == NULL ||
+					PyDict_SetItem(gdict, group_name,
+						       group_index) != 0)
+				    {
+					    Py_XDECREF(group_name);
+					    Py_XDECREF(group_index);
+					    Py_XDECREF(npattern);
+					    return NULL;
+				    }
+				    ++o;     /* eat the '>' */
+				    break;
 				}
 				if (!isalnum(Py_CHARMASK(*o)) && *o != '_') {
 					o = backtrack;
@@ -467,7 +530,7 @@ symcomp(pattern, gdict)
 		}
 		else if (*o == '[' && !escaped) {
 			*n++ = *o;
-			++o;	/* eat the char following '[' */
+			++o;		     /* eat the char following '[' */
 			*n++ = *o;
 			while (o < oend && *o != ']') {
 				++o;
@@ -488,7 +551,12 @@ symcomp(pattern, gdict)
 		}
 	}
 
-	if (_PyString_Resize(&npattern, n - PyString_AsString(npattern)) == 0)
+	if (!(v = PyString_AsString(npattern))) {
+		Py_DECREF(npattern);
+		return NULL;
+	}
+	/* _PyString_Resize() decrements npattern on failure */
+	if (_PyString_Resize(&npattern, n - v) == 0)
 		return npattern;
 	else {
 		return NULL;
@@ -505,14 +573,12 @@ regex_symcomp(self, args)
 	PyObject *tran = NULL;
 	PyObject *gdict = NULL;
 	PyObject *npattern;
-	if (!PyArg_Parse(args, "S", &pattern)) {
-		PyErr_Clear();
-		if (!PyArg_Parse(args, "(SS)", &pattern, &tran))
-			return NULL;
-	}
+
+	if (!PyArg_ParseTuple(args, "S|S", &pattern, &tran))
+		return NULL;
+
 	gdict = PyDict_New();
-	if (gdict == NULL
-	    || (npattern = symcomp(pattern, gdict)) == NULL) {
+	if (gdict == NULL || (npattern = symcomp(pattern, gdict)) == NULL) {
 		Py_DECREF(gdict);
 		Py_DECREF(pattern);
 		return NULL;
@@ -528,17 +594,27 @@ static int
 update_cache(pat)
 	PyObject *pat;
 {
+	PyObject *tuple = Py_BuildValue("(O)", pat);
+	int status = 0;
+
+	if (!tuple)
+		return -1;
+
 	if (pat != cache_pat) {
 		Py_XDECREF(cache_pat);
 		cache_pat = NULL;
 		Py_XDECREF(cache_prog);
-		cache_prog = regex_compile((PyObject *)NULL, pat);
-		if (cache_prog == NULL)
-			return -1;
+		cache_prog = regex_compile((PyObject *)NULL, tuple);
+		if (cache_prog == NULL) {
+			status = -1;
+			goto finally;
+		}
 		cache_pat = pat;
 		Py_INCREF(cache_pat);
 	}
-	return 0;
+  finally:
+	Py_DECREF(tuple);
+	return status;
 }
 
 static PyObject *
@@ -547,11 +623,18 @@ regex_match(self, args)
 	PyObject *args;
 {
 	PyObject *pat, *string;
+	PyObject *tuple, *v;
+
 	if (!PyArg_Parse(args, "(SS)", &pat, &string))
 		return NULL;
 	if (update_cache(pat) < 0)
 		return NULL;
-	return reg_match((regexobject *)cache_prog, string);
+
+	if (!(tuple = Py_BuildValue("(S)", string)))
+		return NULL;
+	v = regobj_match((regexobject *)cache_prog, tuple);
+	Py_DECREF(tuple);
+	return v;
 }
 
 static PyObject *
@@ -560,58 +643,80 @@ regex_search(self, args)
 	PyObject *args;
 {
 	PyObject *pat, *string;
+	PyObject *tuple, *v;
+
 	if (!PyArg_Parse(args, "(SS)", &pat, &string))
 		return NULL;
 	if (update_cache(pat) < 0)
 		return NULL;
-	return reg_search((regexobject *)cache_prog, string);
+
+	if (!(tuple = Py_BuildValue("(S)", string)))
+		return NULL;
+	v = regobj_search((regexobject *)cache_prog, tuple);
+	Py_DECREF(tuple);
+	return v;
 }
 
 static PyObject *
 regex_set_syntax(self, args)
-	PyObject *self, *args;
+	PyObject *self;
+	PyObject *args;
 {
 	int syntax;
 	if (!PyArg_Parse(args, "i", &syntax))
 		return NULL;
 	syntax = re_set_syntax(syntax);
+	/* wipe the global pattern cache */
+	Py_XDECREF(cache_pat);
+	cache_pat = NULL;
+	Py_XDECREF(cache_prog);
+	cache_prog = NULL;
 	return PyInt_FromLong((long)syntax);
 }
 
 static struct PyMethodDef regex_global_methods[] = {
-	{"compile",	regex_compile, 0},
-	{"symcomp",	regex_symcomp, 0},
+	{"compile",	regex_compile, 1},
+	{"symcomp",	regex_symcomp, 1},
 	{"match",	regex_match, 0},
 	{"search",	regex_search, 0},
 	{"set_syntax",	regex_set_syntax, 0},
-	{NULL,		NULL}		/* sentinel */
+	{NULL,		NULL}		     /* sentinel */
 };
 
 void
 initregex()
 {
 	PyObject *m, *d, *v;
+	int i;
+	char *s;
 	
 	m = Py_InitModule("regex", regex_global_methods);
 	d = PyModule_GetDict(m);
 	
 	/* Initialize regex.error exception */
-	RegexError = PyString_FromString("regex.error");
-	if (RegexError == NULL || PyDict_SetItemString(d, "error", RegexError) != 0)
-		Py_FatalError("can't define regex.error");
-
+	v = RegexError = PyString_FromString("regex.error");
+	if (v == NULL || PyDict_SetItemString(d, "error", v) != 0)
+		goto finally;
+	
 	/* Initialize regex.casefold constant */
-	v = PyString_FromStringAndSize((char *)NULL, 256);
-	if (v != NULL) {
-		int i;
-		char *s = PyString_AsString(v);
-		for (i = 0; i < 256; i++) {
-			if (isupper(i))
-				s[i] = tolower(i);
-			else
-				s[i] = i;
-		}
-		PyDict_SetItemString(d, "casefold", v);
-		Py_DECREF(v);
+	if (!(v = PyString_FromStringAndSize((char *)NULL, 256)))
+		goto finally;
+	
+	if (!(s = PyString_AsString(v)))
+		goto finally;
+
+	for (i = 0; i < 256; i++) {
+		if (isupper(i))
+			s[i] = tolower(i);
+		else
+			s[i] = i;
 	}
+	if (PyDict_SetItemString(d, "casefold", v) < 0)
+		goto finally;
+	Py_DECREF(v);
+
+	if (!PyErr_Occurred())
+		return;
+  finally:
+	Py_FatalError("can't initialize regex module");
 }
