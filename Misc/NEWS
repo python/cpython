@@ -21,6 +21,8 @@ Extension Modules
 Library
 -------
 
+- the deprecated whrandom module was removed.  Use the random module instead.
+
 - heapq.nsmallest() and heapq.nlargest() now support key= arguments with
   the same meaning as in list.sort().
 
