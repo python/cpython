@@ -1,4 +1,4 @@
-# Created by kip Montanaro <skip@mojam.com>.
+# Created by Skip Montanaro <skip@mojam.com>.
 
 # Format:
 #	function ':' type ':' [param name] ':' [refcount effect] ':' [comment]
@@ -87,6 +87,9 @@ PyDict_Keys:PyObject*::+1:
 PyDict_Keys:PyDictObject*:p:0:
 
 PyDict_New:PyObject*::+1:
+
+PyDict_Copy:PyObject*::+1:
+PyDict_Copy:PyObject*:p:0:
 
 PyDict_Next:int:::
 PyDict_Next:PyDictObject*:p:0:

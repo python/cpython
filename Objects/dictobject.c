@@ -738,11 +738,25 @@ dict_copy(mp, args)
       register dictobject *mp;
       PyObject *args;
 {
+	if (!PyArg_Parse(args, ""))
+		return NULL;
+	return PyDict_Copy((PyObject*)mp);
+}
+
+PyObject *
+PyDict_Copy(o)
+	PyObject *o;
+{
+	register dictobject *mp;
 	register int i;
 	dictobject *copy;
         dictentry *entry;
-	if (!PyArg_Parse(args, ""))
+
+	if (o == NULL || !PyDict_Check(o)) {
+		PyErr_BadInternalCall();
 		return NULL;
+	}
+	mp = (dictobject *)o;
 	copy = (dictobject *)PyDict_New();
 	if (copy == NULL)
 		return NULL;
