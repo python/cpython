@@ -148,7 +148,8 @@ class config (Command):
         prog = os.path.splitext(os.path.basename(src))[0]
         self.compiler.link_executable([obj], prog,
                                       libraries=libraries,
-                                      library_dirs=library_dirs)
+                                      library_dirs=library_dirs,
+                                      target_lang=lang)
 
         prog = prog + self.compiler.exe_extension
         self.temp_files.append(prog)

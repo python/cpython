@@ -74,6 +74,19 @@ class CCompiler:
     shared_lib_format = None            # prob. same as static_lib_format
     exe_extension = None                # string
 
+    # Default language settings. language_map is used to detect a source
+    # file or Extension target language, checking source filenames.
+    # language_order is used to detect the language precedence, when deciding
+    # what language to use when mixing source types. For example, if some
+    # extension has two files with ".c" extension, and one with ".cpp", it
+    # is still linked as c++.
+    language_map = {".c"   : "c",
+                    ".cc"  : "c++",
+                    ".cpp" : "c++",
+                    ".cxx" : "c++",
+                    ".m"   : "objc",
+                   }
+    language_order = ["c++", "objc", "c"]
 
     def __init__ (self,
                   verbose=0,
@@ -572,6 +585,27 @@ class CCompiler:
 
     # _need_link ()
 
+    def detect_language (self, sources):
+        """Detect the language of a given file, or list of files. Uses
+        language_map, and language_order to do the job.
+        """
+	if type(sources) is not ListType:
+            sources = [sources]
+        lang = None
+        index = len(self.language_order)
+        for source in sources:
+            base, ext = os.path.splitext(source)
+            extlang = self.language_map.get(ext)
+            try:
+                extindex = self.language_order.index(extlang)
+                if extindex < index:
+                    lang = extlang
+                    index = extindex
+            except ValueError:
+                pass
+        return lang
+
+    # detect_language ()
 
     # -- Worker methods ------------------------------------------------
     # (must be implemented by subclasses)
@@ -671,7 +705,8 @@ class CCompiler:
                            objects,
                            output_libname,
                            output_dir=None,
-                           debug=0):
+                           debug=0,
+                           target_lang=None):
         """Link a bunch of stuff together to create a static library file.
         The "bunch of stuff" consists of the list of object files supplied
         as 'objects', the extra object files supplied to
@@ -687,6 +722,10 @@ class CCompiler:
         included in the library (note that on most platforms, it is the
         compile step where this matters: the 'debug' flag is included here
         just for consistency).
+
+        'target_lang' is the target language for which the given objects
+        are being compiled. This allows specific linkage time treatment of
+        certain languages.
 
         Raises LibError on failure.
         """
@@ -710,7 +749,8 @@ class CCompiler:
               debug=0,
               extra_preargs=None,
               extra_postargs=None,
-              build_temp=None):
+              build_temp=None,
+              target_lang=None):
         """Link a bunch of stuff together to create an executable or
         shared library file.
 
@@ -748,6 +788,10 @@ class CCompiler:
         of course that they supply command-line arguments for the
         particular linker being used).
 
+        'target_lang' is the target language for which the given objects
+        are being compiled. This allows specific linkage time treatment of
+        certain languages.
+
         Raises LinkError on failure.
         """
         raise NotImplementedError
@@ -766,13 +810,14 @@ class CCompiler:
                          debug=0,
                          extra_preargs=None,
                          extra_postargs=None,
-                         build_temp=None):
+                         build_temp=None,
+                         target_lang=None):
         self.link(CCompiler.SHARED_LIBRARY, objects,
                   self.library_filename(output_libname, lib_type='shared'),
                   output_dir,
                   libraries, library_dirs, runtime_library_dirs,
                   export_symbols, debug,
-                  extra_preargs, extra_postargs, build_temp)
+                  extra_preargs, extra_postargs, build_temp, target_lang)
 
 
     def link_shared_object (self,
@@ -786,12 +831,13 @@ class CCompiler:
                             debug=0,
                             extra_preargs=None,
                             extra_postargs=None,
-                            build_temp=None):
+                            build_temp=None,
+                            target_lang=None):
         self.link(CCompiler.SHARED_OBJECT, objects,
                   output_filename, output_dir,
                   libraries, library_dirs, runtime_library_dirs,
                   export_symbols, debug,
-                  extra_preargs, extra_postargs, build_temp)
+                  extra_preargs, extra_postargs, build_temp, target_lang)
 
 
     def link_executable (self,
@@ -803,11 +849,12 @@ class CCompiler:
                          runtime_library_dirs=None,
                          debug=0,
                          extra_preargs=None,
-                         extra_postargs=None):
+                         extra_postargs=None,
+                         target_lang=None):
         self.link(CCompiler.EXECUTABLE, objects,
                   self.executable_filename(output_progname), output_dir,
                   libraries, library_dirs, runtime_library_dirs, None,
-                  debug, extra_preargs, extra_postargs, None)
+                  debug, extra_preargs, extra_postargs, None, target_lang)
 
 
     # -- Miscellaneous methods -----------------------------------------

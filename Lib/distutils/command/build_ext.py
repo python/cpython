@@ -477,6 +477,9 @@ class build_ext (Command):
             objects.extend(ext.extra_objects)
         extra_args = ext.extra_link_args or []
 
+        # Detect target language, if not provided
+        language = ext.language or self.compiler.detect_language(sources)
+
         self.compiler.link_shared_object(
             objects, ext_filename,
             libraries=self.get_libraries(ext),
@@ -485,7 +488,8 @@ class build_ext (Command):
             extra_postargs=extra_args,
             export_symbols=self.get_export_symbols(ext),
             debug=self.debug,
-            build_temp=self.build_temp)
+            build_temp=self.build_temp,
+            target_lang=language)
 
 
     def swig_sources (self, sources):

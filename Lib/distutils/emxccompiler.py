@@ -102,7 +102,8 @@ class EMXCCompiler (UnixCCompiler):
               debug=0,
               extra_preargs=None,
               extra_postargs=None,
-              build_temp=None):
+              build_temp=None,
+              target_lang=None):
 
         # use separate copies, so we can modify the lists
         extra_preargs = copy.copy(extra_preargs or [])
@@ -171,7 +172,8 @@ class EMXCCompiler (UnixCCompiler):
                            debug,
                            extra_preargs,
                            extra_postargs,
-                           build_temp)
+                           build_temp,
+                           target_lang)
 
     # link ()
 
