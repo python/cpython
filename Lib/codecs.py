@@ -334,7 +334,7 @@ class StreamReader(Codec):
 
         """
         data = self.read()
-        return self.splitlines(keepends)
+        return data.splitlines(keepends)
 
     def reset(self):
 

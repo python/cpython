@@ -458,6 +458,16 @@ class CodecsModuleTest(unittest.TestCase):
         self.assertEquals(codecs.encode(u'\xe4\xf6\xfc', 'latin-1'),
                           '\xe4\xf6\xfc')
 
+class StreamReaderTest(unittest.TestCase):
+
+    def setUp(self):
+        self.reader = codecs.getreader('utf-8')
+        self.stream = StringIO.StringIO('\xed\x95\x9c\n\xea\xb8\x80')
+
+    def test_readlines(self):
+        f = self.reader(self.stream)
+        self.assertEquals(f.readlines(), [u'\ud55c\n', u'\uae00'])
+
 def test_main():
     test_support.run_unittest(
         UTF16Test,
@@ -469,7 +479,8 @@ def test_main():
         PunycodeTest,
         NameprepTest,
         CodecTest,
-        CodecsModuleTest
+        CodecsModuleTest,
+        StreamReaderTest
     )
 
 
