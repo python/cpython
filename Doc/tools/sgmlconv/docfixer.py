@@ -165,18 +165,20 @@ def handle_appendix(doc):
 
 
 def handle_labels(doc):
-    labels = doc.getElementsByTagName("label")
-    for label in labels:
-        id = label.getAttribute("id")
-        if not id:
-            continue
-        parent = label.parentNode
-        if parent.tagName == "title":
-            parent.parentNode.setAttribute("id", id)
-        else:
-            parent.setAttribute("id", id)
-        # now, remove <label id="..."/> from parent:
-        parent.removeChild(label)
+    for node in doc.childNodes:
+        if node.nodeType == xml.dom.core.ELEMENT:
+            labels = node.getElementsByTagName("label")
+            for label in labels:
+                id = label.getAttribute("id")
+                if not id:
+                    continue
+                parent = label.parentNode
+                if parent.tagName == "title":
+                    parent.parentNode.setAttribute("id", id)
+                else:
+                    parent.setAttribute("id", id)
+                # now, remove <label id="..."/> from parent:
+                parent.removeChild(label)
 
 
 def fixup_trailing_whitespace(doc, wsmap):
