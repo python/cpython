@@ -820,6 +820,8 @@
 % This weird definition of \var{} allows it to always appear in roman
 % italics, and won't get funky in code fragments when we play around
 % with fonts.  This also works directly in math mode.
+% XXX \normalsize is bad in footnotes, though; we need a way to
+% determine when we're in a footnote.
 \newcommand{\var}[1]{%
   \ifmmode%
     \hbox{\normalsize\textrm{\textit{#1\/}}}%
@@ -890,7 +892,7 @@
 % The \! is a "negative thin space" in math mode.
 \newcommand{\regexp}[1]{%
   {\tiny$^{^\lceil}\!\!$%
-   {\normalsize\code{#1}}%
+   {\normalsize\code{#1}}% XXX should use \footnotesize in footnotes
    $\!\rfloor\!$%
   }}
 \newcommand{\envvar}[1]{%
