@@ -979,6 +979,7 @@ _expectations = {
         test_winsound
         """,
 }
+_expectations['freebsd5'] = _expectations['freebsd4']
 
 class _ExpectedSkips:
     def __init__(self):
