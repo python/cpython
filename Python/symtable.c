@@ -1,4 +1,5 @@
 #include "Python.h"
+#include "compile.h"
 #include "symtable.h"
 #include "graminit.h"
 #include "structmember.h"

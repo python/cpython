@@ -55,9 +55,6 @@ int Py_OptimizeFlag = 0;
 #define ILLEGAL_DYNAMIC_SCOPE \
 "%.100s: exec or 'import *' makes names ambiguous in nested scope"
 
-#define UNDEFINED_FUTURE_FEATURE \
-"future feature %.100s is not defined"
-
 #define GLOBAL_AFTER_ASSIGN \
 "name '%.400s' is assigned to before global declaration"
 
@@ -368,6 +365,7 @@ struct compiling {
 	int c_nested;		/* Is block nested funcdef or lamdef? */
 	int c_closure;		/* Is nested w/freevars? */
 	struct symtable *c_symtable; /* pointer to module symbol table */
+        PyFutureFeatures *c_future; /* pointer to module's __future__ */
 };
 
 int is_free(int v)
@@ -3864,7 +3862,8 @@ jcompile(node *n, char *filename, struct compiling *base)
 			sc.c_nested = 1;
 	} else {
 		sc.c_private = NULL;
-		if (symtable_build(&sc, n) < 0) {
+		sc.c_future = PyNode_Future(n, filename);
+		if (sc.c_future == NULL || symtable_build(&sc, n) < 0) {
 			com_free(&sc);
 			return NULL;
 		}
@@ -3996,6 +3995,8 @@ symtable_build(struct compiling *c, node *n)
 {
 	if ((c->c_symtable = symtable_init()) == NULL)
 		return -1;
+	if (c->c_future->ff_nested_scopes)
+		c->c_symtable->st_nested_scopes = 1;
 	c->c_symtable->st_filename = c->c_filename;
 	symtable_enter_scope(c->c_symtable, TOP, TYPE(n), n->n_lineno);
 	if (c->c_symtable->st_errors > 0)
@@ -4278,44 +4279,6 @@ PySymtable_Free(struct symtable *st)
 	Py_XDECREF(st->st_stack);
 	Py_XDECREF(st->st_cur);
 	PyMem_Free((void *)st);
-}
-
-/* XXX this code is a placeholder for correct code.
-   from __future__ import name set language options */
-
-static int
-symtable_check_future(struct symtable *st, node *n)
-{
-	int i;
-	node *name = CHILD(n, 1);
-
-	if (strcmp(STR(CHILD(name, 0)), "__future__") != 0)
-		return 0;
-	/* It is only legal to define __future__ features at the top
-	   of a module.  If the current scope is not the module level
-	   or if there are any symbols defined, it is too late. */
-	if (st->st_cur->ste_symbols != st->st_global
-	    || PyDict_Size(st->st_cur->ste_symbols) != 0) {
-		PyErr_SetString(PyExc_SyntaxError, 
-	"imports from __future__ are only legal at the beginning of a module");
-		return -1;
-	}
-	for (i = 3; i < NCH(n); ++i) {
-		char *feature = STR(CHILD(CHILD(n, i), 0));
-		/* Do a linear search through the defined features,
-		   assuming there aren't very many of them. */ 
-		if (strcmp(feature, FUTURE_NESTED_SCOPES) == 0) {
-			st->st_nested_scopes = 1;
-		} else {
-			PyErr_Format(PyExc_SyntaxError,
-				     UNDEFINED_FUTURE_FEATURE, feature);
-			set_error_location(st->st_filename,
-					   st->st_cur->ste_lineno);
-			st->st_errors++;
-			return -1;
-		}
-	}
-	return 1;
 }
 
 /* When the compiler exits a scope, it must should update the scope's
@@ -4910,7 +4873,6 @@ symtable_import(struct symtable *st, node *n)
 	   import_as_name: NAME [NAME NAME]
 	*/
 	if (STR(CHILD(n, 0))[0] == 'f') {  /* from */
-		symtable_check_future(st, n);
 		if (TYPE(CHILD(n, 3)) == STAR) {
 			st->st_cur->ste_optimized |= OPT_IMPORT_STAR;
 		} else {

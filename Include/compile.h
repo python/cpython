@@ -7,9 +7,6 @@
 extern "C" {
 #endif
 
-#define NESTED_SCOPES_DEFAULT 0
-#define FUTURE_NESTED_SCOPES "nested_scopes"
-
 /* Bytecode object */
 typedef struct {
     PyObject_HEAD
@@ -50,6 +47,19 @@ DL_IMPORT(PyCodeObject *) PyCode_New(
 	PyObject *, PyObject *, PyObject *, PyObject *, int, PyObject *); 
         /* same as struct above */
 DL_IMPORT(int) PyCode_Addr2Line(PyCodeObject *, int);
+
+/* Future feature support */
+
+typedef struct {
+    int ff_last_lineno;
+    int ff_n_simple_stmt;
+    int ff_nested_scopes;
+} PyFutureFeatures;
+
+DL_IMPORT(PyFutureFeatures *) PyNode_Future(struct _node *, char *);
+
+#define NESTED_SCOPES_DEFAULT 0
+#define FUTURE_NESTED_SCOPES "nested_scopes"
 
 /* for internal use only */
 #define _PyCode_GETCODEPTR(co, pp) \
