@@ -101,8 +101,8 @@ TUPLE           = 't'
 EMPTY_TUPLE     = ')'
 SETITEMS        = 'u'
 BINFLOAT        = 'G'
-TRUE            = 'Z'
-FALSE           = 'z'
+TRUE            = 'I01\n'
+FALSE           = 'I00\n'
 
 
 __all__.extend([x for x in dir() if re.match("[A-Z][A-Z0-9_]+$",x)])
@@ -639,20 +639,18 @@ class Unpickler:
         self.append(None)
     dispatch[NONE] = load_none
 
-    def load_false(self):
-        self.append(False)
-    dispatch[FALSE] = load_false
-
-    def load_true(self):
-        self.append(True)
-    dispatch[TRUE] = load_true
-
     def load_int(self):
         data = self.readline()
-        try:
-            self.append(int(data))
-        except ValueError:
-            self.append(long(data))
+        if data == FALSE[1:]:
+            val = False
+        elif data == TRUE[1:]:
+            val = True
+        else:
+            try:
+                val = int(data)
+            except ValueError:
+                val = long(data)
+        self.append(val)
     dispatch[INT] = load_int
 
     def load_binint(self):

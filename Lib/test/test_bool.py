@@ -224,5 +224,11 @@ veris(pickle.loads(cPickle.dumps(False)), False)
 veris(cPickle.loads(pickle.dumps(True)), True)
 veris(cPickle.loads(pickle.dumps(False)), False)
 
+# Test for specific backwards-compatible pickle values
+vereq(pickle.dumps(True), "I01\n.")
+vereq(pickle.dumps(False), "I00\n.")
+vereq(cPickle.dumps(True), "I01\n.")
+vereq(cPickle.dumps(False), "I00\n.")
+
 if verbose:
     print "All OK"
