@@ -3049,7 +3049,6 @@ fast_cfunction(PyObject *func, PyObject ***pp_stack, int na)
 			Py_DECREF(args);
 			return result;
 		}
-		break;
 	case METH_NOARGS:
 		if (na == 0)
 			return (*meth)(self, NULL);
@@ -3057,7 +3056,6 @@ fast_cfunction(PyObject *func, PyObject ***pp_stack, int na)
 			     "%.200s() takes no arguments (%d given)",
 			     ((PyCFunctionObject*)func)->m_ml->ml_name, na);
 		return NULL;
-		break;
 	case METH_O:
 		if (na == 1) {
 			PyObject *arg = EXT_POP(*pp_stack);
@@ -3069,7 +3067,6 @@ fast_cfunction(PyObject *func, PyObject ***pp_stack, int na)
 			     "%.200s() takes exactly one argument (%d given)",
 			     ((PyCFunctionObject*)func)->m_ml->ml_name, na);
 		return NULL;
-		break;
 	default:
 		fprintf(stderr, "%.200s() flags = %d\n", 
 			((PyCFunctionObject*)func)->m_ml->ml_name, flags);
