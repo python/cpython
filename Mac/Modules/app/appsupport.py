@@ -27,6 +27,8 @@ from macsupport import *
 #WindowPeek = OpaqueByValueType("WindowPeek", OBJECTPREFIX)
 
 RgnHandle = FakeType("(RgnHandle)0")
+NULL = FakeType("NULL")
+
 # XXXX Should be next, but this will break a lot of code...
 # RgnHandle = OpaqueByValueType("RgnHandle", "OptResObj")
 
