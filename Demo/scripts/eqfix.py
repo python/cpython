@@ -14,6 +14,9 @@
 # Symbolic links are always ignored (except as explicit directory
 # arguments).  Of course, the original file is kept as a back-up
 # (with a "~" attached to its name).
+# It complains about binaries (files containing null bytes)
+# and about files that are ostensibly not Python files: if the first
+# line starts with '#!' and does not contain the string 'python'.
 #
 # Changes made are reported to stdout in a diff-like format.
 #
@@ -31,6 +34,7 @@ import regex
 import posix
 import path
 from stat import *
+import string
 
 err = sys.stderr.write
 dbg = err
@@ -94,6 +98,20 @@ def fix(filename):
 		line = f.readline()
 		if not line: break
 		lineno = lineno + 1
+		if g is None and '\0' in line:
+			# Check for binary files
+			err(filename + ': contains null bytes; not fixed\n')
+			f.close()
+			return 1
+		if lineno == 1 and g is None and line[:2] == '#!':
+			# Check for non-Python scripts
+			words = string.split(line[2:])
+			if words and regex.search('[pP]ython', words[0]) < 0:
+				msg = filename + ': ' + words[0]
+				msg = msg + ' script; not fixed\n'
+				err(msg)
+				f.close()
+				return 1
 		while line[-2:] == '\\\n':
 			nextline = f.readline()
 			if not nextline: break
