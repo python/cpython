@@ -31,8 +31,7 @@ PERFORMANCE OF THIS SOFTWARE.
 
 /* dl module */
 
-#include "allobjects.h"
-#include "modsupport.h"
+#include "Python.h"
 
 #include <dlfcn.h>
 
@@ -40,25 +39,26 @@ PERFORMANCE OF THIS SOFTWARE.
 #define RTLD_LAZY 1
 #endif
 
+typedef ANY *PyUnivPtr;
 typedef struct {
-	OB_HEAD
-	ANY *dl_handle;
+	PyObject_HEAD
+	PyUnivPtr *dl_handle;
 } dlobject;
 
-staticforward typeobject Dltype;
+staticforward PyTypeObject Dltype;
 
-static object *Dlerror;
+static PyObject *Dlerror;
 
-static object *
+static PyObject *
 newdlobject(handle)
-	ANY *handle;
+	PyUnivPtr *handle;
 {
 	dlobject *xp;
-	xp = NEWOBJ(dlobject, &Dltype);
+	xp = PyObject_NEW(dlobject, &Dltype);
 	if (xp == NULL)
 		return NULL;
 	xp->dl_handle = handle;
-	return (object *)xp;
+	return (PyObject *)xp;
 }
 
 static void
@@ -67,80 +67,82 @@ dl_dealloc(xp)
 {
 	if (xp->dl_handle != NULL)
 		dlclose(xp->dl_handle);
-	DEL(xp);
+	PyMem_DEL(xp);
 }
 
-static object *
+static PyObject *
 dl_close(xp, args)
 	dlobject *xp;
-	object *args;
+	PyObject *args;
 {
-	if (!getargs(args, ""))
+	if (!PyArg_Parse(args, ""))
 		return NULL;
 	if (xp->dl_handle != NULL) {
 		dlclose(xp->dl_handle);
 		xp->dl_handle = NULL;
 	}
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
-static object *
+static PyObject *
 dl_sym(xp, args)
 	dlobject *xp;
-	object *args;
+	PyObject *args;
 {
 	char *name;
-	ANY *func;
-	if (!getargs(args, "s", &name))
+	PyUnivPtr *func;
+	if (!PyArg_Parse(args, "s", &name))
 		return NULL;
 	func = dlsym(xp->dl_handle, name);
 	if (func == NULL) {
-		INCREF(None);
-		return None;
+		Py_INCREF(Py_None);
+		return Py_None;
 	}
-	return newintobject((long)func);
+	return PyInt_FromLong((long)func);
 }
 
-static object *
+static PyObject *
 dl_call(xp, args)
 	dlobject *xp;
-	object *args; /* (varargs) */
+	PyObject *args; /* (varargs) */
 {
-	object *name;
+	PyObject *name;
 	long (*func)();
 	long alist[10];
 	long res;
 	int i;
-	int n = gettuplesize(args);
+	int n = PyTuple_Size(args);
 	if (n < 1) {
-		err_setstr(TypeError, "at least a name is needed");
+		PyErr_SetString(PyExc_TypeError, "at least a name is needed");
 		return NULL;
 	}
-	name = gettupleitem(args, 0);
-	if (!is_stringobject(name)) {
-		err_setstr(TypeError, "function name must be a string");
+	name = PyTuple_GetItem(args, 0);
+	if (!PyString_Check(name)) {
+		PyErr_SetString(PyExc_TypeError,
+				"function name must be a string");
 		return NULL;
 	}
-	func = dlsym(xp->dl_handle, getstringvalue(name));
+	func = dlsym(xp->dl_handle, PyString_AsString(name));
 	if (func == NULL) {
-		err_setstr(ValueError, dlerror());
+		PyErr_SetString(PyExc_ValueError, dlerror());
 		return NULL;
 	}
 	if (n-1 > 10) {
-		err_setstr(TypeError, "too many arguments (max 10)");
+		PyErr_SetString(PyExc_TypeError,
+				"too many arguments (max 10)");
 		return NULL;
 	}
 	for (i = 1; i < n; i++) {
-		object *v = gettupleitem(args, i);
-		if (is_intobject(v))
-			alist[i-1] = getintvalue(v);
-		else if (is_stringobject(v))
-			alist[i-1] = (long)getstringvalue(v);
-		else if (v == None)
+		PyObject *v = PyTuple_GetItem(args, i);
+		if (PyInt_Check(v))
+			alist[i-1] = PyInt_AsLong(v);
+		else if (PyString_Check(v))
+			alist[i-1] = (long)PyString_AsString(v);
+		else if (v == Py_None)
 			alist[i-1] = (long) ((char *)NULL);
 		else {
-			err_setstr(TypeError,
+			PyErr_SetString(PyExc_TypeError,
 				   "arguments must be int, string or None");
 			return NULL;
 		}
@@ -149,27 +151,27 @@ dl_call(xp, args)
 		alist[i-1] = 0;
 	res = (*func)(alist[0], alist[1], alist[2], alist[3], alist[4],
 		      alist[5], alist[6], alist[7], alist[8], alist[9]);
-	return newintobject(res);
+	return PyInt_FromLong(res);
 }
 
-static struct methodlist dlobject_methods[] = {
-	{"call",	(method)dl_call,	1 /* varargs */},
-	{"sym", 	(method)dl_sym},
-	{"close",	(method)dl_close},
-	{NULL,  	NULL}			/* Sentinel */
+static PyMethodDef dlobject_methods[] = {
+	{"call",	(PyCFunction)dl_call,	1 /* varargs */},
+	{"sym", 	(PyCFunction)dl_sym},
+	{"close",	(PyCFunction)dl_close},
+	{NULL,  	NULL}			 /* Sentinel */
 };
 
-static object *
+static PyObject *
 dl_getattr(xp, name)
 	dlobject *xp;
 	char *name;
 {
-	return findmethod(dlobject_methods, (object *)xp, name);
+	return Py_FindMethod(dlobject_methods, (PyObject *)xp, name);
 }
 
 
-static typeobject Dltype = {
-	OB_HEAD_INIT(&Typetype)
+static PyTypeObject Dltype = {
+	PyObject_HEAD_INIT(&PyType_Type)
 	0,			/*ob_size*/
 	"dl",			/*tp_name*/
 	sizeof(dlobject),	/*tp_basicsize*/
@@ -187,36 +189,36 @@ static typeobject Dltype = {
 	0,			/*tp_hash*/
 };
 
-static object *
+static PyObject *
 dl_open(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
 	char *name;
 	int mode;
-	ANY *handle;
-	if (getargs(args, "z", &name))
+	PyUnivPtr *handle;
+	if (PyArg_Parse(args, "z", &name))
 		mode = RTLD_LAZY;
 	else {
-		err_clear();
-		if (!getargs(args, "(zi)", &name, &mode))
+		PyErr_Clear();
+		if (!PyArg_Parse(args, "(zi)", &name, &mode))
 			return NULL;
 #ifndef RTLD_NOW
 		if (mode != RTLD_LAZY) {
-			err_setstr(ValueError, "mode must be 1");
+			PyErr_SetString(PyExc_ValueError, "mode must be 1");
 			return NULL;
 		}
 #endif
 	}
 	handle = dlopen(name, mode);
 	if (handle == NULL) {
-		err_setstr(Dlerror, dlerror());
+		PyErr_SetString(Dlerror, dlerror());
 		return NULL;
 	}
 	return newdlobject(handle);
 }
 
-static struct methodlist dl_methods[] = {
+static PyMethodDef dl_methods[] = {
 	{"open",	dl_open},
 	{NULL,		NULL}		/* sentinel */
 };
@@ -224,28 +226,28 @@ static struct methodlist dl_methods[] = {
 void
 initdl()
 {
-	object *m, *d, *x;
+	PyObject *m, *d, *x;
 
 	if (sizeof(int) != sizeof(long) ||
 	    sizeof(long) != sizeof(char *))
-		fatal(
+		Py_FatalError(
  "module dl requires sizeof(int) == sizeof(long) == sizeof(char*)");
 
 	/* Create the module and add the functions */
-	m = initmodule("dl", dl_methods);
+	m = Py_InitModule("dl", dl_methods);
 
 	/* Add some symbolic constants to the module */
-	d = getmoduledict(m);
-	Dlerror = x = newstringobject("dl.error");
-	dictinsert(d, "error", x);
-	x = newintobject((long)RTLD_LAZY);
-	dictinsert(d, "RTLD_LAZY", x);
+	d = PyModule_GetDict(m);
+	Dlerror = x = PyString_FromString("dl.error");
+	PyDict_SetItemString(d, "error", x);
+	x = PyInt_FromLong((long)RTLD_LAZY);
+	PyDict_SetItemString(d, "RTLD_LAZY", x);
 #ifdef RTLD_NOW
-	x = newintobject((long)RTLD_NOW);
-	dictinsert(d, "RTLD_NOW", x);
+	x = PyInt_FromLong((long)RTLD_NOW);
+	PyDict_SetItemString(d, "RTLD_NOW", x);
 #endif
 
 	/* Check for errors */
-	if (err_occurred())
-		fatal("can't initialize module dl");
+	if (PyErr_Occurred())
+		Py_FatalError("can't initialize module dl");
 }
