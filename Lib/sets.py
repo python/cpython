@@ -319,26 +319,32 @@ class BaseSet(object):
             data.update(iterable)
             return
 
-        # If the mere process of iterating may raise TypeError, materialize
-        # the iterable into a tuple first.  Then the TypeError will get
-        # raised here and propagated back to the caller.  Once we get into
-        # the loop following, TypeError is assumed to mean that element
-        # can't be used as a dict key.
-        if type(iterable) not in (list, tuple, dict, file, xrange, str):
-            iterable = tuple(iterable)
-
-        it = iter(iterable)
         value = True
-        while True:
-            try:
-                for element in it:
+
+        if type(iterable) in (list, tuple, xrange):
+            # Optimized: we know that __iter__() and next() can't
+            # raise TypeError, so we can move 'try:' out of the loop.
+            it = iter(iterable)
+            while True:
+                try:
+                    for element in it:
+                        data[element] = value
+                    return
+                except TypeError:
+                    transform = getattr(element, "_as_immutable", None)
+                    if transform is None:
+                        raise # re-raise the TypeError exception we caught
+                    data[transform()] = value
+        else:
+            # Safe: only catch TypeError where intended
+            for element in iterable:
+                try:
                     data[element] = value
-                return
-            except TypeError:
-                transform = getattr(element, "_as_immutable", None)
-                if transform is None:
-                    raise # re-raise the TypeError exception we caught
-                data[transform()] = value
+                except TypeError:
+                    transform = getattr(element, "_as_immutable", None)
+                    if transform is None:
+                        raise # re-raise the TypeError exception we caught
+                    data[transform()] = value
 
 
 class ImmutableSet(BaseSet):
