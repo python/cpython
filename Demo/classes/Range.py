@@ -57,15 +57,15 @@ def test():
 	print range(10), range(-10, 10), range(0, 10, 2)
 	for i in range(100, -100, -10): print i,
 	print
-	t1 = time.millitimer()
+	t1 = time.time()
 	for i in range(1000):
 		pass
-	t2 = time.millitimer()
+	t2 = time.time()
 	for i in __builtin__.range(1000):
 		pass
-	t3 = time.millitimer()
-	print t2-t1, 'msec (class)'
-	print t3-t2, 'msec (built-in)'
+	t3 = time.time()
+	print t2-t1, 'sec (class)'
+	print t3-t2, 'sec (built-in)'
 
 
 test()

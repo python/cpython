@@ -110,11 +110,11 @@ def main():
 	for dir in args:
 		wq.addwork(find, (dir, selector, wq))
 
-	t1 = time.millitimer()
+	t1 = time.time()
 	wq.run(nworkers)
-	t2 = time.millitimer()
+	t2 = time.time()
 
-	sys.stderr.write('Total time ' + `t2-t1` + ' msec.\n')
+	sys.stderr.write('Total time ' + `t2-t1` + ' sec.\n')
 
 
 # The predicate -- defines what files we look for.
