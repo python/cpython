@@ -364,7 +364,7 @@ eval_code2(co, globals, locals,
 	register PyObject *t;
 	register PyFrameObject *f; /* Current frame */
 	register PyObject **fastlocals;
-	PyObject *retval;	/* Return value */
+	PyObject *retval = NULL;	/* Return value */
 	PyThreadState *tstate = PyThreadState_Get();
 	unsigned char *first_instr;
 #ifdef LLTRACE
@@ -1769,7 +1769,7 @@ eval_code2(co, globals, locals,
 			if (tstate->sys_profilefunc)
 				call_exc_trace(&tstate->sys_profilefunc,
 					       (PyObject**)0, f);
-}
+		}
 		
 		/* For the rest, treat WHY_RERAISE as WHY_EXCEPTION */
 		
