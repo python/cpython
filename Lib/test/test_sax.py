@@ -7,7 +7,7 @@ from xml.sax.expatreader import create_parser
 from xml.sax.xmlreader import InputSource, AttributesImpl, AttributesNSImpl
 from xml.sax.handler import ContentHandler
 from cStringIO import StringIO
-from test_support import verbose, TestFailed
+from test_support import verbose, TestFailed, findfile
 
 # ===== Utilities
 
@@ -260,7 +260,7 @@ def test_expat_nsattrs_wattr():
 
 # ===== InputSource support
 
-xml_test_out = open("test.xml.out").read()
+xml_test_out = open(findfile("test.xml.out")).read()
 
 def test_expat_inpsource_filename():
     parser = create_parser()
@@ -268,7 +268,7 @@ def test_expat_inpsource_filename():
     xmlgen = XMLGenerator(result)
 
     parser.setContentHandler(xmlgen)
-    parser.parse("test.xml")
+    parser.parse(findfile("test.xml"))
 
     return result.getvalue() == xml_test_out
 
@@ -278,7 +278,7 @@ def test_expat_inpsource_sysid():
     xmlgen = XMLGenerator(result)
 
     parser.setContentHandler(xmlgen)
-    parser.parse(InputSource("test.xml"))
+    parser.parse(InputSource(findfile("test.xml")))
 
     return result.getvalue() == xml_test_out
 
@@ -289,7 +289,7 @@ def test_expat_inpsource_stream():
 
     parser.setContentHandler(xmlgen)
     inpsrc = InputSource()
-    inpsrc.setByteStream(open("test.xml"))
+    inpsrc.setByteStream(open(findfile("test.xml")))
     parser.parse(inpsrc)
 
     return result.getvalue() == xml_test_out
@@ -445,9 +445,9 @@ def make_test_output():
     xmlgen = XMLGenerator(result)
 
     parser.setContentHandler(xmlgen)
-    parser.parse("test.xml")
+    parser.parse(findfile("test.xml"))
 
-    outf = open("test.xml.out", "w")
+    outf = open(findfile("test.xml.out"), "w")
     outf.write(result.getvalue())
     outf.close()
 
