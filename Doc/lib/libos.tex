@@ -1050,10 +1050,9 @@ which is used to set the access and modified times, respectively.
 Availability: Macintosh, \UNIX, Windows.
 \end{funcdesc}
 
-\begin{funcdesc}{walk}{top\optional{, topdown=True}}
+\begin{funcdesc}{walk}{top\optional{, topdown\code{=True}}}
 \index{directory!walking}
 \index{directory!traversal}
-
 \function{walk()} generates the file names in a directory tree.
 For each directory in the tree rooted at directory \var{top} (including
 \var{top} itself), it yields a 3-tuple
@@ -1064,7 +1063,7 @@ a list of the names of the subdirectories in \var{dirpath}
 (excluding \code{'.'} and \code{'..'}).  \var{filenames} is a list of
 the names of the non-directory files in \var{dirpath}.  Note that the
 names in the lists contain no path components.  To get a full
-path (which begins with \var{top)) to a file or directory in
+path (which begins with \var{top}) to a file or directory in
 \var{dirpath}, do \code{os.path.join(\var{dirpath}, \var{name})}.
 
 If optional argument \var{topdown} is true or not specified, the triple
@@ -1085,7 +1084,7 @@ false is ineffective, because in bottom-up mode the directories in
 
 \begin{notice}
 If you pass a relative pathname, don't change the current working
-directory between resumptions of \function{walk}.  \function{walk}
+directory between resumptions of \function{walk()}.  \function{walk()}
 never changes the current directory, and assumes that its caller
 doesn't either.
 \end{notice}
@@ -1095,7 +1094,7 @@ On systems that support symbolic links, links to subdirectories appear
 in \var{dirnames} lists, but \function{walk()} will not visit them
 (infinite loops are hard to avoid when following symbolic links).
 To visit linked directories, you can identify them with
-\code{os.path.islink(\var{path})}, and invoke \function{walk(\var{path})}
+\code{os.path.islink(\var{path})}, and invoke \code{walk(\var{path})}
 on each directly.
 \end{notice}
 
