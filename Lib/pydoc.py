@@ -268,7 +268,7 @@ class Doc:
         args = (object, name) + args
         if inspect.ismodule(object): return self.docmodule(*args)
         if inspect.isclass(object): return self.docclass(*args)
-        if inspect.isroutine(object): returnself.docroutine(*args)
+        if inspect.isroutine(object): return self.docroutine(*args)
         return self.docother(*args)
 
     def fail(self, object, name=None, *args):
