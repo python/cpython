@@ -1,4 +1,4 @@
-import unittest, os
+import unittest, os, math
 from test import test_support
 
 import warnings
@@ -55,8 +55,16 @@ class ComplexTest(unittest.TestCase):
         if x != 0:
             q = z / x
             self.assertClose(q, y)
+            q = z.__div__(x)
+            self.assertClose(q, y)
+            q = z.__truediv__(x)
+            self.assertClose(q, y)
         if y != 0:
             q = z / y
+            self.assertClose(q, x)
+            q = z.__div__(y)
+            self.assertClose(q, x)
+            q = z.__truediv__(y)
             self.assertClose(q, x)
 
     def test_div(self):
