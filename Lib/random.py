@@ -15,8 +15,54 @@
 
 # Translated from anonymously contributed C/C++ source.
 
+import whrandom
 from whrandom import random, uniform, randint, choice # Also for export!
 from math import log, exp, pi, e, sqrt, acos, cos, sin
+
+# Interfaces to replace remaining needs for importing whrandom
+# XXX TO DO: make the distribution functions below into methods.
+
+def makeseed(a=None):
+	"""Turn a hashable value into three seed values for whrandom.seed().
+
+	None or no argument returns (0, 0, 0), to seed from current time.
+
+	"""
+	if a is None:
+		return (0, 0, 0)
+	a = hash(a)
+	a, x = divmod(a, 256)
+	a, y = divmod(a, 256)
+	a, z = divmod(a, 256)
+	x = (x + a) % 256 or 1
+	y = (y + a) % 256 or 1
+	z = (z + a) % 256 or 1
+	return (x, y, z)
+
+def seed(a=None):
+	"""Seed the default generator from any hashable value.
+
+	None or no argument returns (0, 0, 0) to seed from current time.
+
+	"""
+	x, y, z = makeseed(a)
+	whrandom.seed(x, y, z)
+
+class generator(whrandom.whrandom):
+	"""Random generator class."""
+
+	def __init__(self, a=None):
+		"""Constructor.  Seed from current time or hashable value."""
+		self.seed(a)
+
+	def seed(self, a=None):
+		"""Seed the generator from current time or hashable value."""
+		x, y, z = makeseed(a)
+		whrandom.whrandom.seed(self, x, y, z)
+
+def new_generator(a=None):
+	"""Return a new random generator instance."""
+	return generator(a)
 
 # Housekeeping function to verify that magic constants have been
 # computed correctly
