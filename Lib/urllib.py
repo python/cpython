@@ -214,9 +214,11 @@ class URLopener:
 	# Use HTTP protocol
 	def open_http(self, url, data=None):
 		import httplib
+		user_passwd = None
 		if type(url) is type(""):
 			host, selector = splithost(url)
-			user_passwd, host = splituser(host)
+			if host:
+				user_passwd, host = splituser(host)
 			realhost = host
 		else:
 			host, selector = url
@@ -226,7 +228,9 @@ class URLopener:
 				realhost = None
 			else:
 				realhost, rest = splithost(rest)
-				user_passwd, realhost = splituser(realhost)
+				if realhost:
+					user_passwd, realhost = \
+						     splituser(realhost)
 				if user_passwd:
 					selector = "%s://%s%s" % (urltype,
 								  realhost,
