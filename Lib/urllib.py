@@ -27,7 +27,7 @@ import os
 import sys
 
 
-__version__ = '1.11'    # XXX This version is not always updated :-(
+__version__ = '1.12'    # XXX This version is not always updated :-(
 
 MAXFTPCACHE = 10        # Trim the ftp cache beyond this size
 
@@ -81,11 +81,13 @@ class URLopener:
     __tempfiles = None
 
     # Constructor
-    def __init__(self, proxies=None):
+    def __init__(self, proxies=None, **x509):
         if proxies is None:
             proxies = getproxies()
         assert hasattr(proxies, 'has_key'), "proxies must be a mapping"
         self.proxies = proxies
+        self.key_file = x509.get('key_file')
+        self.cert_file = x509.get('cert_file')
         server_version = "Python-urllib/%s" % __version__
         self.addheaders = [('User-agent', server_version)]
         self.__tempfiles = []
@@ -144,6 +146,7 @@ class URLopener:
             host, selector = splithost(proxy)
             url = (host, fullurl) # Signal special case to open_*()
         name = 'open_' + type
+        self.type = type
         if '-' in name:
             # replace - with _
             name = string.join(string.split(name, '-'), '_')
@@ -294,6 +297,42 @@ class URLopener:
         fp.close()
         raise IOError, ('http error', errcode, errmsg, headers)
 
+    # Use HTTPS protocol
+    if hasattr(socket, "ssl"):
+        def open_https(self, url):
+            import httplib
+            if type(url) is type(""):
+                host, selector = splithost(url)
+                user_passwd, host = splituser(host)
+            else:
+                host, selector = url
+                urltype, rest = splittype(selector)
+                if string.lower(urltype) == 'https':
+                    realhost, rest = splithost(rest)
+                    user_passwd, realhost = splituser(realhost)
+                    if user_passwd:
+                        selector = "%s://%s%s" % (urltype, realhost, rest)
+                print "proxy via https:", host, selector
+            if not host: raise IOError, ('https error', 'no host given')
+            if user_passwd:
+                import base64
+                auth = string.strip(base64.encodestring(user_passwd))
+            else:
+                auth = None
+            h = httplib.HTTPS(host, 0,
+                              key_file=self.key_file,
+                              cert_file=self.cert_file)
+            h.putrequest('GET', selector)
+            if auth: h.putheader('Authorization: Basic %s' % auth)
+            for args in self.addheaders: apply(h.putheader, args)
+            h.endheaders()
+            errcode, errmsg, headers = h.getreply()
+            fp = h.getfile()
+            if errcode == 200:
+                return addinfourl(fp, headers, url)
+            else:
+                return self.http_error(url, fp, errcode, errmsg, headers)
+  
     # Use Gopher protocol
     def open_gopher(self, url):
         import gopherlib
@@ -477,7 +516,8 @@ class FancyURLopener(URLopener):
             if match:
                 scheme, realm = match.groups()
                 if string.lower(scheme) == 'basic':
-                    return self.retry_http_basic_auth(url, realm, data)
+                   name = 'retry_' + self.type + '_basic_auth'
+                   return getattr(self,name)(url, realm)
 
     def retry_http_basic_auth(self, url, realm, data):
         host, selector = splithost(url)
@@ -488,6 +528,16 @@ class FancyURLopener(URLopener):
         host = user + ':' + passwd + '@' + host
         newurl = 'http://' + host + selector
         return self.open(newurl, data)
+   
+    def retry_https_basic_auth(self, url, realm):
+            host, selector = splithost(url)
+            i = string.find(host, '@') + 1
+            host = host[i:]
+            user, passwd = self.get_user_passwd(host, realm, i)
+            if not (user or passwd): return None
+            host = user + ':' + passwd + '@' + host
+            newurl = '//' + host + selector
+            return self.open_https(newurl)
 
     def get_user_passwd(self, host, realm, clear_cache = 0):
         key = realm + '@' + string.lower(host)
@@ -630,8 +680,8 @@ class addbase:
         self.fp = fp
         self.read = self.fp.read
         self.readline = self.fp.readline
-        self.readlines = self.fp.readlines
-        self.fileno = self.fp.fileno
+        if hasattr(self.fp, "readlines"): self.readlines = self.fp.readlines
+        if hasattr(self.fp, "fileno"): self.fileno = self.fp.fileno
     def __repr__(self):
         return '<%s at %s whose fp = %s>' % (self.__class__.__name__,
                                              `id(self)`, `self.fp`) 
@@ -1015,6 +1065,8 @@ def test(args=[]):
 ##          'gopher://gopher.micro.umn.edu/1/',
             'http://www.python.org/index.html',
             ]
+        if hasattr(URLopener, "open_https"):
+            args.append('https://synergy.as.cmu.edu/~geek/')
     try:
         for url in args:
             print '-'*10, url, '-'*10
