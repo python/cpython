@@ -233,6 +233,13 @@ PyErr_SetFromErrnoWithFilename:PyObject*::null:
 PyErr_SetFromErrnoWithFilename:PyObject*:type:0:
 PyErr_SetFromErrnoWithFilename:char*:filename::
 
+PyErr_SetFromWindowsErr:PyObject*::null:
+PyErr_SetFromWindowsErr:int:ierr::
+
+PyErr_SetFromWindowsErrWithFilename:PyObject*::null:
+PyErr_SetFromWindowsErrWithFilename:int:ierr::
+PyErr_SetFromWindowsErrWithFilename:char*:filename::
+
 PyErr_SetInterrupt:void:::
 
 PyErr_SetNone:void:::
