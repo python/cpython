@@ -191,9 +191,6 @@ lookdict(mp, key, hash)
 	incr = (hash ^ ((unsigned long)hash >> 3)) & mask;
 	if (!incr)
 		incr = mask;
-	else if (incr > mask) /* Cycle through GF(2^n)-{0} */
-		incr ^= mp->ma_poly; /* This will implicitly clear the
-					highest bit */
 	for (;;) {
 		ep = &ep0[(i+incr)&mask];
 		if (ep->me_key == NULL) {
@@ -215,7 +212,8 @@ lookdict(mp, key, hash)
 		/* Cycle through GF(2^n)-{0} */
 		incr = incr << 1;
 		if (incr > mask)
-			incr ^= mp->ma_poly;
+			incr ^= mp->ma_poly; /* This will implicitely clear
+						the highest bit */
 	}
 }
 
