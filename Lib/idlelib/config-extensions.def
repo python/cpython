@@ -1,5 +1,5 @@
-# IDLE reads several config files to determine user preferences.  This 
-# file is the default config file for idle extensions settings.  
+# IDLE reads several config files to determine user preferences.  This
+# file is the default config file for idle extensions settings.
 #
 # Each extension must have at least one section, named after the extension
 # module. This section must contain an 'enable' item (=1 to enable the

@@ -1,5 +1,5 @@
-# IDLE reads several config files to determine user preferences.  This 
-# file is the default config file for idle key binding settings.  
+# IDLE reads several config files to determine user preferences.  This
+# file is the default config file for idle key binding settings.
 # Where multiple keys are specified for an action: if they are separated
 # by a space (eg. action=<key1> <key2>) then the keys are altenatives, if
 # there is no space (eg. action=<key1><key2>) then the keys comprise a
@@ -18,7 +18,7 @@ close-window=<Alt-Key-F4> <Meta-Key-F4>
 do-nothing=<Control-Key-F12>
 end-of-file=<Control-Key-d>
 python-docs=<Key-F1>
-python-context-help=<Shift-Key-F1> 
+python-context-help=<Shift-Key-F1>
 history-next=<Alt-Key-n> <Meta-Key-n>
 history-previous=<Alt-Key-p> <Meta-Key-p>
 interrupt-execution=<Control-Key-c>
@@ -77,8 +77,8 @@ open-new-window=<Control-Key-x><Control-Key-n>
 open-window-from-file=<Control-Key-x><Control-Key-f>
 plain-newline-and-indent=<Control-Key-j>
 print-window=<Control-x><Control-Key-p>
-python-docs=<Control-Key-h> 
-python-context-help=<Control-Shift-Key-h> 
+python-docs=<Control-Key-h>
+python-context-help=<Control-Shift-Key-h>
 redo=<Alt-Key-z> <Meta-Key-z>
 remove-selection=<Key-Escape>
 save-copy-of-window-as-file=<Control-Key-x><Control-Key-y>
@@ -116,7 +116,7 @@ close-window=<Command-Key-w>
 do-nothing=<Control-Key-F12>
 end-of-file=<Control-Key-d>
 python-docs=<Key-F1>
-python-context-help=<Shift-Key-F1> 
+python-context-help=<Shift-Key-F1>
 history-next=<Control-Key-n>
 history-previous=<Control-Key-p>
 interrupt-execution=<Control-Key-c>
@@ -128,7 +128,7 @@ open-new-window=<Command-Key-n>
 open-window-from-file=<Command-Key-o>
 plain-newline-and-indent=<Control-Key-j>
 print-window=<Command-Key-p>
-redo=<Shift-Command-Key-z> 
+redo=<Shift-Command-Key-z>
 remove-selection=<Key-Escape>
 save-window-as-file=<Shift-Command-Key-s>
 save-window=<Command-Key-s>
