@@ -842,7 +842,7 @@ posix_execve(self, args)
 	PyObject *argv, *env;
 	char **argvlist;
 	char **envlist;
-	PyObject *key, *val;
+	PyObject *key, *val, *keys=NULL, *vals=NULL;
 	int i, pos, argc, envc;
 	PyObject *(*getitem) Py_PROTO((PyObject *, int));
 
@@ -864,8 +864,8 @@ posix_execve(self, args)
 		PyErr_SetString(PyExc_TypeError, "argv must be tuple or list");
 		return NULL;
 	}
-	if (!PyDict_Check(env)) {
-		PyErr_SetString(PyExc_TypeError, "env must be dictionary");
+	if (!PyMapping_Check(env)) {
+		PyErr_SetString(PyExc_TypeError, "env must be mapping object");
 		return NULL;
 	}
 
@@ -884,16 +884,26 @@ posix_execve(self, args)
 	}
 	argvlist[argc] = NULL;
 
-	i = PyDict_Size(env);
+	i = PyMapping_Length(env);
 	envlist = PyMem_NEW(char *, i + 1);
 	if (envlist == NULL) {
 		PyErr_NoMemory();
 		goto fail_1;
 	}
-	pos = 0;
 	envc = 0;
-	while (PyDict_Next(env, &pos, &key, &val)) {
+	keys = PyMapping_Keys(env);
+	vals = PyMapping_Values(env);
+	if (!keys || !vals)
+		goto fail_2;
+	
+	for (pos = 0; pos < i; pos++) {
 		char *p, *k, *v;
+
+		key = PyList_GetItem(keys, pos);
+		val = PyList_GetItem(vals, pos);
+		if (!key || !val)
+			goto fail_2;
+		
 		if (!PyArg_Parse(key, "s;non-string key in env", &k) ||
 		    !PyArg_Parse(val, "s;non-string value in env", &v))
 		{
@@ -926,7 +936,8 @@ posix_execve(self, args)
 	PyMem_DEL(envlist);
  fail_1:
 	PyMem_DEL(argvlist);
-
+	Py_XDECREF(vals);
+	Py_XDECREF(keys);
 	return NULL;
 }
 #endif /* HAVE_EXECV */
