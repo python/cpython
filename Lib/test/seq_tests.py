@@ -48,16 +48,27 @@ class CommonTest(unittest.TestCase):
         u = self.type2test([0, 1, 2, 3, 4])
         for i in xrange(len(u)):
             self.assertEqual(u[i], i)
+            self.assertEqual(u[long(i)], i)
         for i in xrange(-len(u), -1):
             self.assertEqual(u[i], len(u)+i)
+            self.assertEqual(u[long(i)], len(u)+i)
         self.assertRaises(IndexError, u.__getitem__, -len(u)-1)
         self.assertRaises(IndexError, u.__getitem__, len(u))
+        self.assertRaises(ValueError, u.__getitem__, slice(0,10,0))
 
         u = self.type2test()
         self.assertRaises(IndexError, u.__getitem__, 0)
         self.assertRaises(IndexError, u.__getitem__, -1)
 
         self.assertRaises(TypeError, u.__getitem__)
+
+        a = self.type2test([10, 11])
+        self.assertEqual(a[0], 10)
+        self.assertEqual(a[1], 11)
+        self.assertEqual(a[-2], 10)
+        self.assertEqual(a[-1], 11)
+        self.assertRaises(IndexError, a.__getitem__, -3)
+        self.assertRaises(IndexError, a.__getitem__, 3)
 
     def test_getslice(self):
         l = [0, 1, 2, 3, 4]
@@ -169,3 +180,27 @@ class CommonTest(unittest.TestCase):
             def __getitem__(self, key):
                 return str(key) + '!!!'
         self.assertEqual(iter(T((1,2))).next(), 1)
+
+    def test_repeat(self):
+        for m in xrange(4):
+            s = tuple(range(m))
+            for n in xrange(-3, 5):
+                self.assertEqual(self.type2test(s*n), self.type2test(s)*n)
+            self.assertEqual(self.type2test(s)*(-4), self.type2test([]))
+            self.assertEqual(id(s), id(s*1))
+
+    def test_subscript(self):
+        a = self.type2test([10, 11])
+        self.assertEqual(a.__getitem__(0L), 10)
+        self.assertEqual(a.__getitem__(1L), 11)
+        self.assertEqual(a.__getitem__(-2L), 10)
+        self.assertEqual(a.__getitem__(-1L), 11)
+        self.assertRaises(IndexError, a.__getitem__, -3)
+        self.assertRaises(IndexError, a.__getitem__, 3)
+        self.assertEqual(a.__getitem__(slice(0,1)), self.type2test([10]))
+        self.assertEqual(a.__getitem__(slice(1,2)), self.type2test([11]))
+        self.assertEqual(a.__getitem__(slice(0,2)), self.type2test([10, 11]))
+        self.assertEqual(a.__getitem__(slice(0,3)), self.type2test([10, 11]))
+        self.assertEqual(a.__getitem__(slice(3,5)), self.type2test([]))
+        self.assertRaises(ValueError, a.__getitem__, slice(0, 10, 0))
+        self.assertRaises(TypeError, a.__getitem__, 'x')

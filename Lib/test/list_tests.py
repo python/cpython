@@ -29,14 +29,6 @@ class CommonTest(seq_tests.CommonTest):
         self.assertNotEqual(id(a), id(b))
         self.assertEqual(a, b)
 
-    def test_mul(self):
-        for m in xrange(4):
-            s = tuple(range(m))
-            for n in xrange(-3, 5):
-                self.assertEqual(self.type2test(s*n), self.type2test(s)*n)
-            self.assertEqual(self.type2test(s)*(-4), self.type2test([]))
-            self.assertEqual(id(s), id(s*1))
-
     def test_repr(self):
         l0 = []
         l2 = [0, 1, 2]
@@ -69,31 +61,6 @@ class CommonTest(seq_tests.CommonTest):
         finally:
             fo.close()
             os.remove(test_support.TESTFN)
-
-    def test_getitem(self):
-        a = self.type2test([10, 11])
-        self.assertEqual(a[0], 10)
-        self.assertEqual(a[1], 11)
-        self.assertEqual(a[-2], 10)
-        self.assertEqual(a[-1], 11)
-        self.assertRaises(IndexError, a.__getitem__, -3)
-        self.assertRaises(IndexError, a.__getitem__, 3)
-
-    def test_subscript(self):
-        a = self.type2test([10, 11])
-        self.assertEqual(a.__getitem__(0L), 10)
-        self.assertEqual(a.__getitem__(1L), 11)
-        self.assertEqual(a.__getitem__(-2L), 10)
-        self.assertEqual(a.__getitem__(-1L), 11)
-        self.assertRaises(IndexError, a.__getitem__, -3)
-        self.assertRaises(IndexError, a.__getitem__, 3)
-        self.assertEqual(a.__getitem__(slice(0,1)), self.type2test([10]))
-        self.assertEqual(a.__getitem__(slice(1,2)), self.type2test([11]))
-        self.assertEqual(a.__getitem__(slice(0,2)), self.type2test([10, 11]))
-        self.assertEqual(a.__getitem__(slice(0,3)), self.type2test([10, 11]))
-        self.assertEqual(a.__getitem__(slice(3,5)), self.type2test([]))
-        self.assertRaises(ValueError, a.__getitem__, slice(0, 10, 0))
-        self.assertRaises(TypeError, a.__getitem__, 'x')
 
     def test_set_subscript(self):
         a = self.type2test(range(20))

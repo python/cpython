@@ -65,6 +65,17 @@ class TupleTest(seq_tests.CommonTest):
         collisions = len(inps) - len(set(map(hash, inps)))
         self.assert_(collisions <= 15)
 
+    def test_repr(self):
+        l0 = tuple()
+        l2 = (0, 1, 2)
+        a0 = self.type2test(l0)
+        a2 = self.type2test(l2)
+
+        self.assertEqual(str(a0), repr(l0))
+        self.assertEqual(str(a2), repr(l2))
+        self.assertEqual(repr(a0), "()")
+        self.assertEqual(repr(a2), "(0, 1, 2)")
+
 def test_main():
     test_support.run_unittest(TupleTest)
 
