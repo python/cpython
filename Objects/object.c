@@ -1435,7 +1435,7 @@ PyObject_IsTrue(PyObject *v)
 {
 	int res;
 	if (v == Py_None)
-		res = 0;
+		return 0;
 	else if (v->ob_type->tp_as_number != NULL &&
 		 v->ob_type->tp_as_number->nb_nonzero != NULL)
 		res = (*v->ob_type->tp_as_number->nb_nonzero)(v);
@@ -1446,10 +1446,8 @@ PyObject_IsTrue(PyObject *v)
 		 v->ob_type->tp_as_sequence->sq_length != NULL)
 		res = (*v->ob_type->tp_as_sequence->sq_length)(v);
 	else
-		res = 1;
-	if (res > 0)
-		res = 1;
-	return res;
+		return 1;
+	return (res > 0) ? 1 : res;
 }
 
 /* equivalent of 'not v' 
