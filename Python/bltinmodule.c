@@ -1642,21 +1642,32 @@ builtin_ord(self, args)
 {
 	PyObject *obj;
 	long ord;
+	int size;
 
 	if (!PyArg_ParseTuple(args, "O:ord", &obj))
 		return NULL;
 
-	if (PyString_Check(obj) && PyString_GET_SIZE(obj) == 1)
-		ord = (long)((unsigned char)*PyString_AS_STRING(obj));
-	else if (PyUnicode_Check(obj) && PyUnicode_GET_SIZE(obj) == 1)
-		ord = (long)*PyUnicode_AS_UNICODE(obj);
-	else {
-		PyErr_SetString(PyExc_TypeError,
-				"expected a string or unicode character");
+	if (PyString_Check(obj)) {
+		size = PyString_GET_SIZE(obj);
+		if (size == 1)
+			ord = (long)((unsigned char)*PyString_AS_STRING(obj));
+	} else if (PyUnicode_Check(obj)) {
+		size = PyUnicode_GET_SIZE(obj);
+		if (size == 1)
+			ord = (long)*PyUnicode_AS_UNICODE(obj);
+	} else {
+		PyErr_Format(PyExc_TypeError,
+			     "expected string or unicode character, " \
+			     "%.200s found", obj->ob_type->tp_name);
 		return NULL;
 	}
+	if (size == 1)
+		return PyInt_FromLong(ord);
 
-	return PyInt_FromLong(ord);
+	PyErr_Format(PyExc_TypeError, 
+		     "expected a character, length-%d string found",
+		     size);
+	return NULL;
 }
 
 static char ord_doc[] =
