@@ -58,6 +58,23 @@ def _formatparam(param, value=None, quote=True):
     else:
         return param
 
+def _parseparam(s):
+    plist = []
+    while s[:1] == ';':
+        s = s[1:]
+        end = s.find(';')
+        while end > 0 and s.count('"', 0, end) % 2:
+            end = s.find(';', end + 1)
+        if end < 0:
+            end = len(s)
+        f = s[:end]
+        if '=' in f:
+            i = f.index('=')
+            f = f[:i].strip().lower() + '=' + f[i+1:].strip()
+        plist.append(f.strip())
+        s = s[end:]
+    return plist
+
 
 def _unquotevalue(value):
     if isinstance(value, TupleType):
@@ -525,7 +542,7 @@ class Message:
         if value is missing:
             return failobj
         params = []
-        for p in paramre.split(value):
+        for p in _parseparam(';' + value):
             try:
                 name, val = p.split('=', 1)
                 name = name.strip()
