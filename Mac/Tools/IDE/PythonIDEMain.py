@@ -43,6 +43,11 @@ class PythonIDE(Wapplication.Application):
 				self.quitevent)
 		import PyConsole, PyEdit
 		Splash.wait()
+		if sys.platform == "darwin":
+			if sys.argv and sys.argv[0].startswith("-psn"):
+				home = os.getenv("HOME")
+				if home:
+					os.chdir(home)
 		# With -D option (OSX command line only) keep stderr, for debugging the IDE
 		# itself.
 		debug_stderr = None
