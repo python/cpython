@@ -1010,6 +1010,10 @@ class DialogWindow(Window):
 	def close(self):
 		self.do_postclose()
 		
+	def do_postclose(self):
+		self.dlg = None
+		Window.do_postclose(self)
+		
 	def do_itemhit(self, item, event):
 		print 'Dialog %s, item %d hit'%(self.dlg, item)
 		
