@@ -922,7 +922,7 @@ save_float(Picklerobject *self, PyObject *args) {
     {
         char c_str[250];
         c_str[0] = FLOAT;
-        sprintf(c_str + 1, "%f\n", x);
+        sprintf(c_str + 1, "%.17g\n", x);
 
         if ((*self->write_func)(self, c_str, strlen(c_str)) < 0)
             return -1;
