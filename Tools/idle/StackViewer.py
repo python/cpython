@@ -5,156 +5,27 @@ from Tkinter import *
 import linecache
 from repr import Repr
 
+from ScrolledList import ScrolledList
+
 
 class StackViewer:
-
-    def __init__(self, root=None, flist=None):
-        self.flist = flist
-        # Create root and/or toplevel window
-        if not root:
-            import Tkinter
-            root = Tkinter._default_root
-        if not root:
-            root = top = Tk()
-        else:
-            top = Toplevel(root)
-        self.root = root
-        self.top = top
-        self.top.protocol("WM_DELETE_WINDOW", self.close)
+    
+    def __init__(self, root, flist):
+        self.top = top = Toplevel(root)
+        top.protocol("WM_DELETE_WINDOW", self.close)
         top.wm_title("Stack viewer")
         # Create help label
         self.helplabel = Label(top,
             text="Click once to view variables; twice for source",
             borderwidth=2, relief="groove")
         self.helplabel.pack(fill="x")
-        # Create top frame, with scrollbar and listbox
-        self.topframe = Frame(top)
-        self.topframe.pack(fill="both", expand=1)
-        self.vbar = Scrollbar(self.topframe, name="vbar")
-        self.vbar.pack(side="right", fill="y")
-        self.listbox = Listbox(self.topframe, exportselection=0, 
-                               takefocus=1, width=60)
-        self.listbox.pack(expand=1, fill="both")
-        # Tie listbox and scrollbar together
-        self.vbar["command"] = self.listbox.yview
-        self.listbox["yscrollcommand"] = self.vbar.set
-        # Bind events to the list box
-        self.listbox.bind("<ButtonRelease-1>", self.click_event)
-	self.listbox.bind("<Double-ButtonRelease-1>", self.double_click_event)
-        self.listbox.bind("<ButtonPress-3>", self.popup_event)
-        self.listbox.bind("<Key-Up>", self.up_event)
-        self.listbox.bind("<Key-Down>", self.down_event)
-        # Create status label
-        self.statuslabel = Label(top, text="status")
-        self.statuslabel.pack(fill="x")
-        # Load the stack
-        linecache.checkcache()
-        stack = getstack()
-        self.load_stack(stack)
-        self.statuslabel.config(text=getexception())
+        #
+        self.sv = StackViewer1(top, flist, self)
+        self.sv.load_stack(get_stack())
     
     def close(self):
         self.top.destroy()
 
-    def load_stack(self, stack):
-        self.stack = stack
-        l = self.listbox
-        l.delete(0, END)
-        if len(stack) > 10:
-            l["height"] = 10
-            self.topframe.pack(expand=1)
-        else:
-            l["height"] = len(stack)
-            self.topframe.pack(expand=0)
-        for frame, lineno in stack:
-            try:
-                modname = frame.f_globals["__name__"]
-            except:
-                modname = "?"
-            code = frame.f_code
-            filename = code.co_filename
-            funcname = code.co_name
-            sourceline = linecache.getline(filename, lineno)
-            sourceline = string.strip(sourceline)
-            if funcname in ("?", "", None):
-                item = "%s, line %d: %s" % (modname, lineno, sourceline)
-            else:
-                item = "%s.%s(), line %d: %s" % (modname, funcname,
-                                                 lineno, sourceline)
-            l.insert(END, item)
-        l.focus_set()
-        l.selection_clear(0, "end")
-        l.activate("end")
-        l.see("end")
-
-    rmenu = None
-
-    def click_event(self, event):
-        self.listbox.activate("@%d,%d" % (event.x, event.y))
-        self.show_stack_frame()
-        return "break"
-
-    def popup_event(self, event):
-        if not self.rmenu:
-            self.make_menu()
-        rmenu = self.rmenu
-        self.event = event
-        self.listbox.activate("@%d,%d" % (event.x, event.y))
-        rmenu.tk_popup(event.x_root, event.y_root)
-
-    def make_menu(self):
-        rmenu = Menu(self.top, tearoff=0)
-        rmenu.add_command(label="Go to source line",
-                          command=self.goto_source_line)
-        rmenu.add_command(label="Show stack frame",
-                          command=self.show_stack_frame)
-        self.rmenu = rmenu
-
-    def goto_source_line(self):
-        index = self.listbox.index("active")
-        self.show_source(index)
-    
-    def show_stack_frame(self):
-        index = self.listbox.index("active")
-        self.show_frame(index)
-
-    def double_click_event(self, event):
-        index = self.listbox.index("active")
-        self.show_source(index)
-        return "break"
-    
-    def up_event(self, event):
-        index = self.listbox.index("active") - 1
-        if index < 0:
-            self.top.bell()
-            return "break"
-        self.show_frame(index)
-        return "break"
-        
-    def down_event(self, event):
-        index = self.listbox.index("active") + 1
-        if index >= len(self.stack):
-            self.top.bell()
-            return "break"
-        self.show_frame(index)
-        return "break"
-    
-    def show_source(self, index):
-        if not 0 <= index < len(self.stack):
-            self.top.bell()
-            return
-        frame, lineno = self.stack[index]
-        code = frame.f_code
-        filename = code.co_filename
-        if not self.flist:
-	    self.top.bell()
-	    return
-        if not os.path.exists(filename):
-	    self.top.bell()
-	    return
-        edit = self.flist.open(filename)
-        edit.gotoline(lineno)
-    
     localsframe = None
     localsviewer = None
     localsdict = None
@@ -163,16 +34,7 @@ class StackViewer:
     globalsdict = None
     curframe = None
 
-    def show_frame(self, index):
-        if not 0 <= index < len(self.stack):
-            self.top.bell()
-            return
-        self.listbox.selection_clear(0, "end")
-        self.listbox.selection_set(index)
-        self.listbox.activate(index)
-        self.listbox.see(index)
-        self.listbox.focus_set()
-        frame, lineno = self.stack[index]
+    def show_frame(self, (frame, lineno)):
         if frame is self.curframe:
             return
         self.curframe = None
@@ -227,7 +89,71 @@ class StackViewer:
                 self.localsframe.forget()
 
 
-def getstack(t=None, f=None):
+class StackViewer1(ScrolledList):
+    
+    def __init__(self, master, flist, browser):
+        ScrolledList.__init__(self, master)
+        self.flist = flist
+        self.browser = browser
+
+    def load_stack(self, stack):
+        self.stack = stack
+        self.clear()
+##        if len(stack) > 10:
+##            l["height"] = 10
+##            self.topframe.pack(expand=1)
+##        else:
+##            l["height"] = len(stack)
+##            self.topframe.pack(expand=0)
+        for frame, lineno in stack:
+            try:
+                modname = frame.f_globals["__name__"]
+            except:
+                modname = "?"
+            code = frame.f_code
+            filename = code.co_filename
+            funcname = code.co_name
+            sourceline = linecache.getline(filename, lineno)
+            sourceline = string.strip(sourceline)
+            if funcname in ("?", "", None):
+                item = "%s, line %d: %s" % (modname, lineno, sourceline)
+            else:
+                item = "%s.%s(), line %d: %s" % (modname, funcname,
+                                                 lineno, sourceline)
+            self.append(item)
+
+    def fill_menu(self):
+        menu = self.menu
+        menu.add_command(label="Go to source line",
+                         command=self.goto_source_line)
+        menu.add_command(label="Show stack frame",
+                         command=self.show_stack_frame)
+
+    def on_select(self, index):
+        self.browser.show_frame(self.stack[index])
+
+    def on_double(self, index):
+        self.show_source(index)
+
+    def goto_source_line(self):
+        index = self.listbox.index("active")
+        self.show_source(index)
+
+    def show_stack_frame(self):
+        index = self.listbox.index("active")
+        self.browser.show_frame(self.stack[index])
+    
+    def show_source(self, index):
+        frame, lineno = self.stack[index]
+        code = frame.f_code
+        filename = code.co_filename
+        if os.path.isfile(filename):
+            edit = self.flist.open(filename)
+            if edit:
+                edit.gotoline(lineno)
+
+
+def get_stack(t=None, f=None):
     if t is None:
         t = sys.last_traceback
     stack = []
@@ -259,20 +185,20 @@ def getexception(type=None, value=None):
 
 class NamespaceViewer:
     
-    def __init__(self, frame, title, dict):
+    def __init__(self, master, title, dict):
         width = 0
         height = 20*len(dict) # XXX 20 == observed height of Entry widget
-        self.frame = frame
+        self.master = master
         self.title = title
         self.dict = dict
         self.repr = Repr()
         self.repr.maxstring = 60
         self.repr.maxother = 60
-        self.label = Label(frame, text=title, borderwidth=2, relief="groove")
+        self.label = Label(master, text=title, borderwidth=2, relief="groove")
         self.label.pack(fill="x")
-        self.vbar = vbar = Scrollbar(frame, name="vbar")
+        self.vbar = vbar = Scrollbar(master, name="vbar")
         vbar.pack(side="right", fill="y")
-        self.canvas = canvas = Canvas(frame,
+        self.canvas = canvas = Canvas(master,
                                       height=min(300, max(40, height)),
                                       scrollregion=(0, 0, width, height))
         canvas.pack(side="left", fill="both", expand=1)
@@ -294,16 +220,16 @@ class NamespaceViewer:
 ##            l["state"] = "disabled"
             l.grid(row=row, column=1, sticky="nw")
             row = row+1
-        frame.update_idletasks() # Alas!
+        subframe.update_idletasks() # Alas!
         width = subframe.winfo_reqwidth()
         height = subframe.winfo_reqheight()
         canvas["scrollregion"] = (0, 0, width, height)
-        if height > 300:
-            canvas["height"] = 300
-            frame.pack(expand=1)
-        else:
-            canvas["height"] = height
-            frame.pack(expand=0)
+##        if height > 300:
+##            canvas["height"] = 300
+##            master.pack(expand=1)
+##        else:
+##            canvas["height"] = height
+##            master.pack(expand=0)
 
     def close(self):
         for c in self.subframe, self.label, self.vbar, self.canvas:
