@@ -705,3 +705,54 @@ tuple, but rather yields the value of that expression (condition).
 
 (To create an empty tuple, use an empty pair of parentheses:
 \verb@()@.)
+
+\section{Summary}
+
+The following table summarizes the operator precedences in Python,
+from lowest precedence (least binding) to highest precedence (most
+binding).  Operators in the same box have the same precedence.  Unless
+the syntax is explicitly given, operators are binary.  Operators in
+the same box group left to right (except for comparisons, which
+chain from left to right --- see above).
+
+\begin{center}
+\begin{tabular}{|c|c|}
+\hline
+\code{or} & Boolean OR \\
+\hline
+\code{and} & Boolean AND \\
+\hline
+\code{not} \var{x} & Boolean NOT \\
+\hline
+\code{in}, \code{not} \code{in} & Membership tests \\
+\code{is}, \code{is} \code{not} & Identity tests \\
+\code{<}, \code{<=}, \code{>}, \code{>=}, \code{<>}, \code{!=}, \code{=} &
+	Comparisons \\
+\hline
+\code{|} & Bitwise OR \\
+\hline
+\code{\^} & Bitwise XOR \\
+\hline
+\code{\&} & Bitwise AND \\
+\hline
+\code{<<}, \code{>>} & Shifts \\
+\hline
+\code{+}, \code{-} & Addition and subtraction \\
+\hline
+\code{*}, \code{/}, \code{\%} & Multiplication, division, remainder \\
+\hline
+\code{+\var{x}}, \code{-\var{x}} & Positive, negative \\
+\code{\~\var{x}} & Bitwise not \\
+\hline
+\code{\var{x}.\var{attribute}} & Attribute reference \\
+\code{\var{x}[\var{index}]} &  Subscription \\
+\code{\var{x}[\var{index}:\var{index}]} &  Slicing \\
+\code{\var{f}(\var{arguments}...)} & Function call \\
+\hline
+\code{(\var{expressions}\ldots)} & Binding or tuple display \\
+\code{[\var{expressions}\ldots]} & List display \\
+\code{\{\var{key}:\var{datum}\ldots\}} & Dictionary display \\
+\code{`\var{expression}\ldots`} & String conversion \\
+\hline
+\end{tabular}
+\end{center}
