@@ -79,6 +79,16 @@ class Misc:
 		apply(self.tk.call, ('tk_menuBar', self._w) + args)
 	def waitvar(self, name='PY_VAR'):
 		self.tk.call('tkwait', 'variable', name)
+	wait_variable = waitvar
+	def wait_window(self, window=None):
+		if window == None:
+			window = self
+		self.tk.call('tkwait', 'window', window._w)
+	def wait_visibility(self, window=None):
+		if window == None:
+			window = self
+		self.tk.call('tkwait', 'visibility', window._w)
+
 	def setvar(self, name='PY_VAR', value='1'):
 		self.tk.setvar(name, value)
 	def getvar(self, name='PY_VAR'):
@@ -331,6 +341,7 @@ class Misc:
 			name = name + func.func_name
 		self.tk.createcommand(name, f)
 		return name
+	register = _register
 	def _root(self):
 		w = self
 		while w.master: w = w.master
