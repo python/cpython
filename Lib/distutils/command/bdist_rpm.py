@@ -7,7 +7,7 @@ distributions)."""
 
 __revision__ = "$Id$"
 
-import os, string
+import sys, os, string
 import glob
 from types import *
 from distutils.core import Command, DEBUG
@@ -28,6 +28,12 @@ class bdist_rpm (Command):
         ('dist-dir=', 'd',
          "directory to put final RPM files in "
          "(and .spec files if --spec-only)"),
+        ('python=', None,
+         "path to Python interpreter to hard-code in the .spec file "
+         "(default: \"python\")"),
+        ('fix-python', None,
+         "hard-code the exact path to the current Python interpreter in "
+         "the .spec file"),
         ('spec-only', None,
          "only regenerate spec file"),
         ('source-only', None,
@@ -114,6 +120,8 @@ class bdist_rpm (Command):
         self.bdist_base = None
         self.rpm_base = None
         self.dist_dir = None
+        self.python = None
+        self.fix_python = None
         self.spec_only = None
         self.binary_only = None
         self.source_only = None
@@ -158,6 +166,15 @@ class bdist_rpm (Command):
                 raise DistutilsOptionError, \
                       "you must specify --rpm-base in RPM 2 mode"
             self.rpm_base = os.path.join(self.bdist_base, "rpm")
+
+        if self.python is None:
+            if self.fix_python:
+                self.python = sys.executable
+            else:
+                self.python = "python"
+        elif self.fix_python:
+            raise DistutilsOptionError, \
+                  "--python and --fix-python are mutually exclusive options"
 
         if os.name != 'posix':
             raise DistutilsPlatformError, \
@@ -275,21 +292,21 @@ class bdist_rpm (Command):
         
 
         # build package
-        self.announce('Building RPMs')
-        rpm_args = ['rpm',]
+        self.announce('building RPMs')
+        rpm_cmd = ['rpm']
         if self.source_only: # what kind of RPMs?
-            rpm_args.append('-bs')
+            rpm_cmd.append('-bs')
         elif self.binary_only:
-            rpm_args.append('-bb')
+            rpm_cmd.append('-bb')
         else:
-            rpm_args.append('-ba')
+            rpm_cmd.append('-ba')
         if self.rpm3_mode:
-            rpm_args.extend(['--define',
+            rpm_cmd.extend(['--define',
                              '_topdir %s/%s' % (os.getcwd(), self.rpm_base),])
         if self.clean:
-            rpm_args.append('--clean')
-        rpm_args.append(spec_path)
-        self.spawn(rpm_args)
+            rpm_cmd.append('--clean')
+        rpm_cmd.append(spec_path)
+        self.spawn(rpm_cmd)
 
         # XXX this is a nasty hack -- we really should have a proper way to
         # find out the names of the RPM files created; also, this assumes
@@ -398,10 +415,10 @@ class bdist_rpm (Command):
 
         # rpm scripts
         # figure out default build script
+        def_build = "%s setup.py build" % self.python
         if self.use_rpm_opt_flags:
-            def_build = 'env CFLAGS="$RPM_OPT_FLAGS" python setup.py build'
-        else:
-            def_build = 'python setup.py build'
+            def_build = 'env CFLAGS="$RPM_OPT_FLAGS" ' + def_build
+
         # insert contents of files
 
         # XXX this is kind of misleading: user-supplied options are files
@@ -412,9 +429,9 @@ class bdist_rpm (Command):
             ('prep', 'prep_script', "%setup"),
             ('build', 'build_script', def_build),
             ('install', 'install_script',
-             "python setup.py install "
-             "--root=$RPM_BUILD_ROOT "
-             "--record=INSTALLED_FILES"),
+             ("%s setup.py install "
+              "--root=$RPM_BUILD_ROOT "
+              "--record=INSTALLED_FILES") % self.python),
             ('clean', 'clean_script', "rm -rf $RPM_BUILD_ROOT"),
             ('pre', 'pre_install', None),
             ('post', 'post_install', None),
