@@ -25,6 +25,9 @@
 #define WITH_THREAD
 #define OS2_THREADS
 
+/* Define if you want to read files with foreign newlines. */
+#define WITH_UNIVERSAL_NEWLINES 1
+
 /* We want sockets */
 #define USE_SOCKET
 #define socklen_t int
