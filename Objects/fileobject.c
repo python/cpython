@@ -1368,7 +1368,7 @@ static char readlines_doc[] =
 static char xreadlines_doc[] =
 "xreadlines() -> next line from the file, as a string.\n"
 "\n"
-"Equivalent to xreadlines.xreadlines(file).  This is like readline(), but\n"
+"Equivalent to xreadlines.xreadlines(file).  This is like readlines(), but\n"
 "often quicker, due to reading ahead internally.";
 
 static char writelines_doc[] =
