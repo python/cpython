@@ -47,6 +47,9 @@ class MiniApplication:
 	def mainloop(self, mask = everyEvent, timeout = 60*60):
 		while not self.quitting:
 			self.dooneevent(mask, timeout)
+			
+	def _quit(self):
+		self.quitting = 1
 	
 	def dooneevent(self, mask = everyEvent, timeout = 60*60):
 			got, event = Evt.WaitNextEvent(mask, timeout)
@@ -154,7 +157,7 @@ class _Test(AEServer, MiniApplication):
 		self.mainloop()
 
 	def quit(self, **args):
-		self.quitting = 1
+		self._quit()
 		
 	def open_app(self, **args):
 		pass
