@@ -416,7 +416,7 @@ item: Custom Dialog Set
     Font Name=Helv
     Font Size=8
     item: Push Button
-      Rectangle=150 185 192 199
+      Rectangle=150 187 195 201
       Variable=DIRECTION
       Value=N
       Create Flags=01010000000000010000000000000001
@@ -432,7 +432,7 @@ item: Custom Dialog Set
       Text Swedish=&Nästa >
     end
     item: Push Button
-      Rectangle=105 185 147 199
+      Rectangle=105 187 150 201
       Variable=DIRECTION
       Value=B
       Create Flags=01010000000000010000000000000000
@@ -448,7 +448,7 @@ item: Custom Dialog Set
       Text Swedish=< &Tillbaka
     end
     item: Push Button
-      Rectangle=222 185 264 199
+      Rectangle=222 187 264 201
       Action=3
       Create Flags=01010000000000010000000000000000
       Text=Cancel
@@ -533,7 +533,7 @@ item: Custom Dialog Set
     end
     item: Static
       Control Name=BACK2
-      Rectangle=90 134 260 162
+      Rectangle=90 138 260 166
       Action=1
       Create Flags=01010000000000000000000000000111
       Text=Backup File Destination Directory
@@ -568,7 +568,7 @@ item: Custom Dialog Set
     end
     item: Static
       Control Name=BACK4
-      Rectangle=95 146 211 157
+      Rectangle=95 150 211 161
       Destination Dialog=2
       Create Flags=01010000000000000000000000000000
       Text=%BACKUP%
