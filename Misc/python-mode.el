@@ -2772,9 +2772,9 @@ A `nomenclature' is a fancy way of saying AWordWithMixedCaseNotUnderscores."
      (list
       (read-shell-command "Run pychecker like this: "
                           default
-                          py-pychecker-history))))
+                          'py-pychecker-history))))
   (save-some-buffers (not py-ask-about-save) nil)
-  (compile command))
+  (compile-internal command "No more errors"))
 
 
 
