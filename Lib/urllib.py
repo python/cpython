@@ -334,13 +334,13 @@ class URLopener:
 		if not host:
 			return addinfourl(
 				open(url2pathname(file), 'rb'),
-				headers, 'file:'+file)
+				headers, 'file:'+pathname2url(file))
 		host, port = splitport(host)
 		if not port and socket.gethostbyname(host) in (
 			  localhost(), thishost()):
 			return addinfourl(
 				open(url2pathname(file), 'rb'),
-				headers, 'file:'+file)
+				headers, 'file:'+pathname2url(file))
 		raise IOError, ('local file error', 'not on local host')
 
 	# Use FTP protocol
