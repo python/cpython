@@ -64,7 +64,7 @@ static Py_complex c_acosh(x)
 static char c_acosh_doc [] =
 "acosh(x)\n\
 \n\
-Return the hyperbolic cosine of x.";
+Return the hyperbolic arccosine of x.";
 
 
 static Py_complex c_asin(x)
