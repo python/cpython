@@ -537,7 +537,7 @@ and assign them to the \member{tp_methods} slot:
     Noddy_methods,             /* tp_methods */
 \end{verbatim}
 
-Note that used the \constant{METH_NOARGS} flag to indicate that the
+Note that we used the \constant{METH_NOARGS} flag to indicate that the
 method is passed no arguments.
 
 Finally, we'll make our type usable as a base class.  We've written
@@ -683,7 +683,7 @@ when objects are involved in cycles.  For example, consider:
 \end{verbatim}
 
 In this example, we create a list that contains itself. When we delete
-it, it still has a reference from itself. It's reference count doesn't
+it, it still has a reference from itself. Its reference count doesn't
 drop to zero.  Fortunately, Python's cyclic-garbage collector will
 eventually figure out that the list is garbage and free it.
 

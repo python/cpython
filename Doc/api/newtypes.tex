@@ -166,7 +166,7 @@ These macros are used in the definition of \ctype{PyObject} and
   This is a macro which expands to the declarations of the fields of
   the \ctype{PyObject} type; it is used when declaring new types which
   represent objects without a varying length.  The specific fields it
-  expands to depends on the definition of
+  expands to depend on the definition of
   \csimplemacro{Py_TRACE_REFS}.  By default, that macro is not
   defined, and \csimplemacro{PyObject_HEAD} expands to:
   \begin{verbatim}
@@ -397,7 +397,7 @@ Foo_Type.ob_type = &PyType_Type;
   This should be done before any instances of the type are created.
   \cfunction{PyType_Ready()} checks if \member{ob_type} is \NULL, and
   if so, initializes it: in Python 2.2, it is set to
-  \code{\&PyType_Type}; in Python 2.2.1 and later it will be
+  \code{\&PyType_Type}; in Python 2.2.1 and later it is
   initialized to the \member{ob_type} field of the base class.
   \cfunction{PyType_Ready()} will not change this field if it is
   non-zero.
@@ -704,7 +704,7 @@ PyMappingMethods *tp_as_mapping;
 \end{cmemberdesc}
 
 \begin{cmemberdesc}{PyTypeObject}{PyBufferProcs*}{tp_as_buffer}
-  Pointer to an additional structure contains fields relevant only to
+  Pointer to an additional structure that contains fields relevant only to
   objects which implement the buffer interface.  These fields are
   documented in ``Buffer Object Structures'' (section
   \ref{buffer-structs}).
