@@ -62,6 +62,8 @@ PERFORMANCE OF THIS SOFTWARE.
 #if TKMAJORMINOR >= 8000 && defined(macintosh)
 /* Sigh, we have to include this to get at the tcl qd pointer */
 #include <tkMac.h>
+/* And this one we need to clear the menu bar */
+#include <Menus.h>
 #endif
 
 #if TKMAJORMINOR < 4001
@@ -96,6 +98,16 @@ int TkMacConvertEvent Py_PROTO((EventRecord *eventPtr));
 
 staticforward int PyMacConvertEvent Py_PROTO((EventRecord *eventPtr));
 
+#if defined(__CFM68K__) && !defined(__USING_STATIC_LIBS__)
+	#pragma import on
+#endif
+
+#include <SIOUX.h>
+extern int SIOUXIsAppWindow(WindowPtr);
+
+#if defined(__CFM68K__) && !defined(__USING_STATIC_LIBS__)
+	#pragma import reset
+#endif
 #endif /* macintosh */
 
 #ifndef FREECAST
@@ -337,6 +349,11 @@ Tkapp_New(screenName, baseName, className, interactive)
 
 	v->interp = Tcl_CreateInterp();
 
+#if defined(macintosh) && TKMAJORMINOR >= 8000
+	/* This seems to be needed since Tk 8.0 */
+	ClearMenuBar();
+	TkMacInitMenus(v->interp);
+#endif
 	/* Delete the 'exit' command, which can screw things up */
 	Tcl_DeleteCommand(v->interp, "exit");
 
@@ -1600,8 +1617,20 @@ static int
 PyMacConvertEvent(eventPtr)
 	EventRecord *eventPtr;
 {
-	if (SIOUXHandleOneEvent(eventPtr))
-		return 0; /* Nothing happened to the Tcl event queue */
+	WindowPtr frontwin;
+	/*
+	** Sioux eats too many events, so we don't pass it everything.
+	** We always pass update events to Sioux, and we only pass other events if
+	** the Sioux window is frontmost. This means that Tk menus don't work
+	** in that case, but at least we can scroll the sioux window.
+	** Note that the SIOUXIsAppWindow() routine we use here is not really
+	** part of the external interface of Sioux...
+	*/
+	frontwin = FrontWindow();
+	if ( eventPtr->what == updateEvt || SIOUXIsAppWindow(frontwin) ) {
+		if (SIOUXHandleOneEvent(eventPtr))
+			return 0; /* Nothing happened to the Tcl event queue */
+	}
 	return TkMacConvertEvent(eventPtr);
 }
 
