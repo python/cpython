@@ -349,6 +349,20 @@ length, \exception{socket.error} will be raised.
 support.
 \end{funcdesc}
 
+\begin{funcdesc}{getdefaulttimeout}{}
+Return the default timeout in floating seconds for new socket objects.
+A value of \code{None} indicates that new socket objects have no timeout.
+When the socket module is first imported, the default is \code{None}.
+\versionadded{2.3}
+\end{funcdesc}
+
+\begin{funcdesc}{setdefaulttimeout}{timeout}
+Set the default timeout in floating seconds for new socket objects.
+A value of \code{None} indicates that new socket objects have no timeout.
+When the socket module is first imported, the default is \code{None}.
+\versionadded{2.3}
+\end{funcdesc}
+
 \begin{datadesc}{SocketType}
 This is a Python type object that represents the socket object type.
 It is the same as \code{type(socket(...))}.
