@@ -3,23 +3,6 @@
 
 #include "Python.h"
 
-#ifdef macintosh
-#define MAC_TCL
-
-#include <CodeFragments.h>
-static int loaded_from_shlib = 0;
-static FSSpec library_fss;
-#endif
-
-#ifdef MAC_TCL
-#define WITH_APPINIT
-#ifdef __MWERKS__
-void		GUSISetup (void (*socketfamily)());
-void		GUSIwithInternetSockets (void);
-void		GUSIwithSIOUXSockets (void);
-#endif
-#endif
-
 #include <tcl.h>
 #include <tk.h>
 
@@ -31,6 +14,7 @@ extern int Tk_GetNumMainWindows();
 #else
 extern int tk_NumMainWindows;
 #define Tk_GetNumMainWindows() (tk_NumMainWindows)
+#define NEED_TKCREATEMAINWINDOW 1
 #endif
 
 #if TK_MAJOR_VERSION < 4
@@ -45,12 +29,16 @@ typedef struct
   {
     PyObject_HEAD
     Tcl_Interp *interp;
+#ifdef NEED_TKCREATEMAINWINDOW
     Tk_Window tkwin;
+#endif
   }
 TkappObject;
 
 #define Tkapp_Check(v) ((v)->ob_type == &Tkapp_Type)
+#ifdef NEED_TKCREATEMAINWINDOW
 #define Tkapp_Tkwin(v)  (((TkappObject *) (v))->tkwin)
+#endif
 #define Tkapp_Interp(v) (((TkappObject *) (v))->interp)
 #define Tkapp_Result(v) (((TkappObject *) (v))->interp->result)
 
@@ -217,8 +205,6 @@ int
 Tcl_AppInit (interp)
      Tcl_Interp *interp;
 {
-    Tk_Window main;
-    main = Tk_MainWindow(interp);
   if (Tcl_Init (interp) == TCL_ERROR) {
     fprintf(stderr, "Tcl_Init error: %s\n", interp->result);
     return TCL_ERROR;
@@ -229,6 +215,13 @@ Tcl_AppInit (interp)
   }
   return TCL_OK;
 }
+
+char *
+TkDefaultAppName()
+{
+    return "Python";
+}
+
 #endif /* !WITH_APPINIT */
 
 /* Initialize the Tk application; see the `main' function in
@@ -247,12 +240,15 @@ Tkapp_New (screenName, baseName, className, interactive)
     return NULL;
 
   v->interp = Tcl_CreateInterp ();
+
+#ifdef NEED_TKCREATEMAINWINDOW
   v->tkwin = Tk_CreateMainWindow (v->interp, screenName, 
 				  baseName, className);
   if (v->tkwin == NULL)
     return (TkappObject *) Tkinter_Error ((PyObject *) v);
 
   Tk_GeometryRequest (v->tkwin, 200, 200);
+#endif
 
   if (screenName != NULL)
     Tcl_SetVar2 (v->interp, "env", "DISPLAY", screenName, TCL_GLOBAL_ONLY);
@@ -850,7 +846,7 @@ Tkapp_CreateFileHandler (self, args)
   /* ClientData is: (func, file) */
   data = Py_BuildValue ("(OO)", func, file);
 
-  Tk_CreateFileHandler (id, mask, FileHandler, (ClientData) data);
+  Tk_CreateFileHandler ((ClientData) id, mask, FileHandler, (ClientData) data);
   /* XXX fileHandlerDict */
 
   Py_INCREF (Py_None);
@@ -871,7 +867,7 @@ Tkapp_DeleteFileHandler (self, args)
   if (id < 0)
     return NULL;
 
-  Tk_DeleteFileHandler (id);
+  Tk_DeleteFileHandler ((ClientData) id);
   /* XXX fileHandlerDict */
   Py_INCREF (Py_None);
   return Py_None;
@@ -1125,7 +1121,9 @@ static void
 Tkapp_Dealloc (self)
      PyObject *self;
 {
+#ifdef NEED_TKCREATEMAINWINDOW
   Tk_DestroyWindow (Tkapp_Tkwin (self));
+#endif
   Tcl_DeleteInterp (Tkapp_Interp (self));
   PyMem_DEL (self);
 }
@@ -1275,7 +1273,7 @@ init_tkinter ()
 	fprintf(stderr,
 		"Tkinter: warning: cleanup procedure not registered\n");
 #ifdef __MWERKS__
-	  PyTk_InitGUSI();
+//	  PyTk_InitGUSI();
 #endif
     }
 
@@ -1287,6 +1285,11 @@ init_tkinter ()
 }
 
 #ifdef macintosh
+
+/*
+** Three functions that anyone who embeds Tcl/Tk on the Mac must export.
+*/
+
 void
 panic(char * format, ...)
 {
@@ -1301,19 +1304,31 @@ panic(char * format, ...)
 
     Py_FatalError("Tcl/Tk panic");
 }
-#ifdef __MWERKS__
-void
-PyTk_InitGUSI()
-{
-	static int is_inited;
-	
-	if ( is_inited ) return;
-    GUSISetup(GUSIwithInternetSockets);
-    GUSISetup(GUSIwithSIOUXSockets);
-    is_inited = 1;
-}
-#endif /* __MWERKS__ */
 
+#include <Events.h>
+
+int
+TclMacConvertEvent(eventPtr)
+    EventRecord *eventPtr;
+{
+    return TkMacConvertEvent(eventPtr);
+}
+
+int
+TclGeneratePollingEvents()
+{
+    return TkGeneratePollingEvents();
+}
+
+/*
+** Additional Mac specific code for dealing with shared libraries.
+*/
+
+#include <Resources.h>
+#include <CodeFragments.h>
+
+static int loaded_from_shlib = 0;
+static FSSpec library_fss;
 
 /*
 ** If this module is dynamically loaded the following routine should
@@ -1339,7 +1354,7 @@ init_tkinter_shlib(InitBlockPtr data)
 ** Insert the library resources into the search path. Put them after
 ** the resources from the application. Again, we ignore errors.
 */
-void
+static
 mac_addlibresources()
 {
 	if ( !loaded_from_shlib ) 
