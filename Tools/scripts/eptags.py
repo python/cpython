@@ -18,7 +18,8 @@ def main():
 	for file in args:
 		treat_file(file, outfp)
 
-matcher = regexp.compile('^[ \t]*(def|class)[ \t]+([a-zA-Z0-9_]+)[ \t]*\(')
+expr = '^[ \t]*(def|class)[ \t]+([a-zA-Z0-9_]+)[ \t]*[:(]'
+matcher = regexp.compile(expr).match
 
 def treat_file(file, outfp):
 	try:
@@ -34,7 +35,7 @@ def treat_file(file, outfp):
 		line = fp.readline()
 		if not line: break
 		lineno = lineno + 1
-		res = matcher.exec(line)
+		res = matcher(line)
 		if res:
 			(a, b), (a1, b1), (a2, b2) = res
 			name = line[a2:b2]
