@@ -87,6 +87,7 @@ class BufferedSubFile(object):
 
     def unreadline(self, line):
         # Let the consumer push a line back into the buffer.
+        assert line is not NeedMoreData
         self._lines.append(line)
 
     def push(self, data):
@@ -242,8 +243,18 @@ class FeedParser:
                 # EOF.  We want to see if we're at the end of this subpart, so
                 # first consume the blank line, then test the next line to see
                 # if we're at this subpart's EOF.
-                line = self._input.readline()
-                line = self._input.readline()
+                while True:
+                    line = self._input.readline()
+                    if line is NeedMoreData:
+                        yield NeedMoreData
+                        continue
+                    break
+                while True:
+                    line = self._input.readline()
+                    if line is NeedMoreData:
+                        yield NeedMoreData
+                        continue
+                    break
                 if line == '':
                     break
                 # Not at EOF so this is a line we're going to need.
