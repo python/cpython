@@ -37,7 +37,7 @@ regular expression represented as a string literal, you have to
 \emph{quadruple} it or enclose it in a singleton character class.
 E.g.\  to extract \LaTeX\ \samp{\e section\{{\rm
 \ldots}\}} headers from a document, you can use this pattern:
-\code{'[\e ] section\{\e (.*\e )\}'}.  \emph{Another exception:}
+\code{'[\e ]section\{\e (.*\e )\}'}.  \emph{Another exception:}
 the escape sequece \samp{\e b} is significant in string literals
 (where it means the ASCII bell character) as well as in Emacs regular
 expressions (where it stands for a word boundary), so in order to
@@ -125,7 +125,7 @@ The special sequences consist of '\code{\e}' and a character
 from the list below.  If the ordinary character is not on the list,
 then the resulting RE will match the second character.  For example,
 \code{\e\$} matches the character '\$'.  Ones where the backslash
-should be doubled are indicated.
+should be doubled in string literals are indicated.
 
 \begin{itemize}
 \item[\code{\e|}]\code{A\e|B}, where A and B can be arbitrary REs,

@@ -148,17 +148,17 @@ Return a string representing the current working directory.
 \end{funcdesc}
 
 \begin{funcdesc}{getegid}{}
-Return the current process's effective group id.
+Return the current process' effective group id.
 (Not on MS-DOS.)
 \end{funcdesc}
 
 \begin{funcdesc}{geteuid}{}
-Return the current process's effective user id.
+Return the current process' effective user id.
 (Not on MS-DOS.)
 \end{funcdesc}
 
 \begin{funcdesc}{getgid}{}
-Return the current process's group id.
+Return the current process' group id.
 (Not on MS-DOS.)
 \end{funcdesc}
 
@@ -178,7 +178,7 @@ Return the parent's process id.
 \end{funcdesc}
 
 \begin{funcdesc}{getuid}{}
-Return the current process's user id.
+Return the current process' user id.
 (Not on MS-DOS.)
 \end{funcdesc}
 
@@ -326,7 +326,7 @@ Remove the directory \var{path}.
 \end{funcdesc}
 
 \begin{funcdesc}{setgid}{gid}
-Set the current process's group id.
+Set the current process' group id.
 (Not on MS-DOS.)
 \end{funcdesc}
 
@@ -350,7 +350,7 @@ semantics.
 \end{funcdesc}
 
 \begin{funcdesc}{setuid}{uid}
-Set the current process's user id.
+Set the current process' user id.
 (Not on MS-DOS.)
 \end{funcdesc}
 
@@ -424,8 +424,9 @@ operating system.  The tuple contains 5 strings:
 \code{(\var{sysname}, \var{nodename}, \var{release}, \var{version}, \var{machine})}.
 Some systems truncate the nodename to 8
 characters or to the leading component; a better way to get the
-hostname is \code{socket.gethostname()}.  (Not on MS-DOS, nor on older
-\UNIX{} systems.)
+hostname is \code{socket.gethostname()} or even
+\code{socket.gethostbyaddr(socket.gethostname())}.
+(Not on MS-DOS, nor on older \UNIX{} systems.)
 \end{funcdesc}
 
 \begin{funcdesc}{unlink}{path}

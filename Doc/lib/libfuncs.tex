@@ -126,14 +126,14 @@ class instances are callable if they have an attribute \code{__call__}.
 \end{funcdesc}
 
 \begin{funcdesc}{dir}{}
-XXX New functionality takes anything and looks in __dict__,
-__methods__, __members__.
-
   Without arguments, return the list of names in the current local
-  symbol table.  With a module, class or class instance object as
-  argument (or anything else that has a \code{__dict__} attribute),
-  returns the list of names in that object's attribute dictionary.
-  The resulting list is sorted.  For example:
+  symbol table.  With an argument, attempts to return a list of valid
+  attribute for that object.  This information is gleaned from the
+  object's \code{__dict__}, \code{__methods__} and \code{__members__}
+  attributes, if defined.  The list is not necessarily complete; e.g.,
+  for classes, attributes defined in base classes are not included,
+  and for class instances, methods are not included.
+  The resulting list is sorted alphabetically.  For example:
 
 \bcode\begin{verbatim}
 >>> import sys
@@ -146,8 +146,8 @@ __methods__, __members__.
 \end{funcdesc}
 
 \begin{funcdesc}{divmod}{a\, b}
-  Take two numbers as arguments and return a pair of integers
-  consisting of their integer quotient and remainder.  With mixed
+  Take two numbers as arguments and return a pair of numbers consisting
+  of their quotient and remainder when using long division.  With mixed
   operand types, the rules for binary arithmetic operators apply.  For
   plain and long integers, the result is the same as
   \code{(\var{a} / \var{b}, \var{a} \%{} \var{b})}.
@@ -249,7 +249,7 @@ module from which it is called).
 
 \begin{funcdesc}{hash}{object}
   Return the hash value of the object (if it has one).  Hash values
-  are 32-bit integers.  They are used to quickly compare dictionary
+  are integers.  They are used to quickly compare dictionary
   keys during a dictionary lookup.  Numeric values that compare equal
   have the same hash value (even if they are of different types, e.g.
   1 and 1.0).
@@ -275,8 +275,8 @@ module from which it is called).
 
 \begin{funcdesc}{input}{\optional{prompt}}
   Almost equivalent to \code{eval(raw_input(\var{prompt}))}.  Like
-  \code{raw_input()}, the \var{prompt} argument is optional, and GNU
-  readline is used when configured.  The difference
+  \code{raw_input()}, the \var{prompt} argument is optional, and the
+  \code{readline} module is used when loaded.  The difference
   is that a long input expression may be broken over multiple lines using
   the backslash convention.
 \end{funcdesc}
@@ -348,7 +348,7 @@ desired effect.
   arbitrary size, possibly embedded in whitespace;
   this behaves identical to \code{string.atol(\var{x})}.
   Otherwise, the argument may be a plain or
-  long integer or a floating point number, and a long interger with
+  long integer or a floating point number, and a long integer with
   the same value is returned.    Conversion of floating
   point numbers to integers is defined by the C semantics;
   see the description of \code{int()}.
@@ -481,7 +481,7 @@ there's no reliable way to determine whether this is the case.}
 >>> 
 \end{verbatim}\ecode
 
-If the interpreter was built to use the GNU readline library, then
+If the \code{readline} module was loaded, then
 \code{raw_input()} will use it to provide elaborate
 line editing and history features.
 \end{funcdesc}
