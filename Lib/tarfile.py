@@ -174,39 +174,46 @@ def copyfileobj(src, dst, length=None):
     return
 
 filemode_table = (
-    (S_IFLNK, "l",
-     S_IFREG, "-",
-     S_IFBLK, "b",
-     S_IFDIR, "d",
-     S_IFCHR, "c",
-     S_IFIFO, "p"),
-    (TUREAD,  "r"),
-    (TUWRITE, "w"),
-    (TUEXEC,  "x", TSUID, "S", TUEXEC|TSUID, "s"),
-    (TGREAD,  "r"),
-    (TGWRITE, "w"),
-    (TGEXEC,  "x", TSGID, "S", TGEXEC|TSGID, "s"),
-    (TOREAD,  "r"),
-    (TOWRITE, "w"),
-    (TOEXEC,  "x", TSVTX, "T", TOEXEC|TSVTX, "t"))
+    ((S_IFLNK,      "l"),
+     (S_IFREG,      "-"),
+     (S_IFBLK,      "b"),
+     (S_IFDIR,      "d"),
+     (S_IFCHR,      "c"),
+     (S_IFIFO,      "p")),
+
+    ((TUREAD,       "r"),),
+    ((TUWRITE,      "w"),),
+    ((TUEXEC|TSUID, "s"),
+     (TSUID,        "S"),
+     (TUEXEC,       "x")),
+
+    ((TGREAD,       "r"),),
+    ((TGWRITE,      "w"),),
+    ((TGEXEC|TSGID, "s"),
+     (TSGID,        "S"),
+     (TGEXEC,       "x")),
+
+    ((TOREAD,       "r"),),
+    ((TOWRITE,      "w"),),
+    ((TOEXEC|TSVTX, "t"),
+     (TSVTX,        "T"),
+     (TOEXEC,       "x"))
+)
 
 def filemode(mode):
     """Convert a file's mode to a string of the form
        -rwxrwxrwx.
        Used by TarFile.list()
     """
-    s = ""
-    for t in filemode_table:
-        while True:
-            if mode & t[0] == t[0]:
-                s += t[1]
-            elif len(t) > 2:
-                t = t[2:]
-                continue
-            else:
-                s += "-"
-            break
-    return s
+    perm = []
+    for table in filemode_table:
+        for bit, char in table:
+            if mode & bit == bit:
+                perm.append(char)
+                break
+        else:
+            perm.append("-")
+    return "".join(perm)
 
 if os.sep != "/":
     normpath = lambda path: os.path.normpath(path).replace(os.sep, "/")
