@@ -14,7 +14,7 @@ import string
 uses_relative = ['ftp', 'http', 'gopher', 'nntp', 'wais', 'file',
 		 'prospero', '']
 uses_netloc = ['ftp', 'http', 'gopher', 'nntp', 'telnet', 'wais',
-	       'file', 'prospero', '']
+	       'prospero', '']
 non_hierarchical = ['gopher', 'mailto', 'news', 'telnet', 'wais']
 uses_params = ['ftp', 'prospero', '']
 uses_query = ['http', 'wais', '']
