@@ -464,7 +464,7 @@ posix_int(PyObject *args, char *format, int (*func)(int))
 {
 	int fd;
 	int res;
-	if (!PyArg_ParseTuple(args,  format, &fd))
+	if (!PyArg_ParseTuple(args, format, &fd))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
 	res = (*func)(fd);
@@ -475,6 +475,22 @@ posix_int(PyObject *args, char *format, int (*func)(int))
 	return Py_None;
 }
 
+static PyObject *
+posix_fildes(PyObject *fdobj, int (*func)(int))
+{
+	int fd;
+	int res;
+	fd = PyObject_AsFileDescriptor(fdobj);
+	if (fd < 0)
+		return NULL;
+	Py_BEGIN_ALLOW_THREADS
+	res = (*func)(fd);
+	Py_END_ALLOW_THREADS
+	if (res < 0)
+		return posix_error();
+	Py_INCREF(Py_None);
+	return Py_None;
+}
 
 static PyObject *
 posix_1str(PyObject *args, char *format, int (*func)(const char*))
@@ -823,6 +839,19 @@ posix_chdir(PyObject *self, PyObject *args)
 #endif
 }
 
+#ifdef HAVE_FCHDIR
+static char posix_fchdir__doc__[] =
+"fchdir(fildes) -> None\n\
+Change to the directory of the given file descriptor.  fildes must be\n\
+opened on a directory, not a file.";
+
+static PyObject *
+posix_fchdir(PyObject *self, PyObject *fdobj)
+{
+	return posix_fildes(fdobj, fchdir);
+}
+#endif /* HAVE_FCHDIR */
+
 
 static char posix_chmod__doc__[] =
 "chmod(path, mode) -> None\n\
@@ -866,9 +895,9 @@ static char posix_fsync__doc__[] =
 force write of file with filedescriptor to disk.";
 
 static PyObject *
-posix_fsync(PyObject *self, PyObject *args)
+posix_fsync(PyObject *self, PyObject *fdobj)
 {
-       return posix_int(args, "i:fsync", fsync);
+       return posix_fildes(fdobj, fsync);
 }
 #endif /* HAVE_FSYNC */
 
@@ -884,9 +913,9 @@ force write of file with filedescriptor to disk.\n\
  does not force update of metadata.";
 
 static PyObject *
-posix_fdatasync(PyObject *self, PyObject *args)
+posix_fdatasync(PyObject *self, PyObject *fdobj)
 {
-       return posix_int(args, "i:fdatasync", fdatasync);
+       return posix_fildes(fdobj, fdatasync);
 }
 #endif /* HAVE_FDATASYNC */
 
@@ -6088,11 +6117,10 @@ cmp_constdefs(const void *v1,  const void *v2)
 
 static int
 setup_confname_table(struct constdef *table, size_t tablesize,
-		     char *tablename, PyObject *moddict)
+		     char *tablename, PyObject *module)
 {
     PyObject *d = NULL;
     size_t i;
-    int status;
 
     qsort(table, tablesize, sizeof(struct constdef), cmp_constdefs);
     d = PyDict_New();
@@ -6108,34 +6136,32 @@ setup_confname_table(struct constdef *table, size_t tablesize,
             }
 	    Py_DECREF(o);
     }
-    status = PyDict_SetItemString(moddict, tablename, d);
-    Py_DECREF(d);
-    return status;
+    return PyModule_AddObject(module, tablename, d);
 }
 
 /* Return -1 on failure, 0 on success. */
 static int
-setup_confname_tables(PyObject *moddict)
+setup_confname_tables(PyObject *module)
 {
 #if defined(HAVE_FPATHCONF) || defined(HAVE_PATHCONF)
     if (setup_confname_table(posix_constants_pathconf,
                              sizeof(posix_constants_pathconf)
                                / sizeof(struct constdef),
-                             "pathconf_names", moddict))
+                             "pathconf_names", module))
         return -1;
 #endif
 #ifdef HAVE_CONFSTR
     if (setup_confname_table(posix_constants_confstr,
                              sizeof(posix_constants_confstr)
                                / sizeof(struct constdef),
-                             "confstr_names", moddict))
+                             "confstr_names", module))
         return -1;
 #endif
 #ifdef HAVE_SYSCONF
     if (setup_confname_table(posix_constants_sysconf,
                              sizeof(posix_constants_sysconf)
                                / sizeof(struct constdef),
-                             "sysconf_names", moddict))
+                             "sysconf_names", module))
         return -1;
 #endif
     return 0;
@@ -6384,11 +6410,14 @@ static PyMethodDef posix_methods[] = {
 #ifdef HAVE_STRERROR
 	{"strerror",	posix_strerror, METH_VARARGS, posix_strerror__doc__},
 #endif
+#ifdef HAVE_FCHDIR
+	{"fchdir",	posix_fchdir, METH_O, posix_fchdir__doc__},
+#endif
 #ifdef HAVE_FSYNC
-	{"fsync",       posix_fsync, METH_VARARGS, posix_fsync__doc__},
+	{"fsync",       posix_fsync, METH_O, posix_fsync__doc__},
 #endif
 #ifdef HAVE_FDATASYNC
-	{"fdatasync",   posix_fdatasync,  METH_VARARGS, posix_fdatasync__doc__},
+	{"fdatasync",   posix_fdatasync,  METH_O, posix_fdatasync__doc__},
 #endif
 #ifdef HAVE_SYS_WAIT_H
 #ifdef WIFSTOPPED
@@ -6446,19 +6475,14 @@ static PyMethodDef posix_methods[] = {
 
 
 static int
-ins(PyObject *d, char *symbol, long value)
+ins(PyObject *module, char *symbol, long value)
 {
-        PyObject* v = PyInt_FromLong(value);
-        if (!v || PyDict_SetItemString(d, symbol, v) < 0)
-                return -1;                   /* triggers fatal error */
-
-        Py_DECREF(v);
-        return 0;
+        return PyModule_AddIntConstant(module, symbol, value);
 }
 
 #if defined(PYOS_OS2)
 /* Insert Platform-Specific Constant Values (Strings & Numbers) of Common Use */
-static int insertvalues(PyObject *d)
+static int insertvalues(PyObject *module)
 {
     APIRET    rc;
     ULONG     values[QSV_MAX+1];
@@ -6474,13 +6498,13 @@ static int insertvalues(PyObject *d)
         return -1;
     }
 
-    if (ins(d, "meminstalled", values[QSV_TOTPHYSMEM])) return -1;
-    if (ins(d, "memkernel",    values[QSV_TOTRESMEM])) return -1;
-    if (ins(d, "memvirtual",   values[QSV_TOTAVAILMEM])) return -1;
-    if (ins(d, "maxpathlen",   values[QSV_MAX_PATH_LENGTH])) return -1;
-    if (ins(d, "maxnamelen",   values[QSV_MAX_COMP_LENGTH])) return -1;
-    if (ins(d, "revision",     values[QSV_VERSION_REVISION])) return -1;
-    if (ins(d, "timeslice",    values[QSV_MIN_SLICE])) return -1;
+    if (ins(module, "meminstalled", values[QSV_TOTPHYSMEM])) return -1;
+    if (ins(module, "memkernel",    values[QSV_TOTRESMEM])) return -1;
+    if (ins(module, "memvirtual",   values[QSV_TOTAVAILMEM])) return -1;
+    if (ins(module, "maxpathlen",   values[QSV_MAX_PATH_LENGTH])) return -1;
+    if (ins(module, "maxnamelen",   values[QSV_MAX_COMP_LENGTH])) return -1;
+    if (ins(module, "revision",     values[QSV_VERSION_REVISION])) return -1;
+    if (ins(module, "timeslice",    values[QSV_MIN_SLICE])) return -1;
 
     switch (values[QSV_VERSION_MINOR]) {
     case 0:  ver = "2.00"; break;
@@ -6497,22 +6521,15 @@ static int insertvalues(PyObject *d)
     }
 
     /* Add Indicator of the Version of the Operating System */
-    v = PyString_FromString(ver);
-    if (!v || PyDict_SetItemString(d, "version", v) < 0)
+    if (PyModule_AddStringConstant(module, "version", tmp) < 0)
         return -1;
-    Py_DECREF(v);
 
     /* Add Indicator of Which Drive was Used to Boot the System */
     tmp[0] = 'A' + values[QSV_BOOT_DRIVE] - 1;
     tmp[1] = ':';
     tmp[2] = '\0';
 
-    v = PyString_FromString(tmp);
-    if (!v || PyDict_SetItemString(d, "bootdrive", v) < 0)
-        return -1;
-    Py_DECREF(v);
-
-    return 0;
+    return PyModule_AddStringConstant(module, "bootdrive", tmp);
 }
 #endif
 
@@ -6680,28 +6697,27 @@ all_ins(PyObject *d)
 DL_EXPORT(void)
 INITFUNC(void)
 {
-	PyObject *m, *d, *v;
+	PyObject *m, *v;
 
-	m = Py_InitModule4(MODNAME,
+	m = Py_InitModule3(MODNAME,
 			   posix_methods,
-			   posix__doc__,
-			   (PyObject *)NULL,
-			   PYTHON_API_VERSION);
-	d = PyModule_GetDict(m);
+			   posix__doc__);
 
 	/* Initialize environ dictionary */
 	v = convertenviron();
-	if (v == NULL || PyDict_SetItemString(d, "environ", v) != 0)
+	Py_XINCREF(v);
+	if (v == NULL || PyModule_AddObject(m, "environ", v) != 0)
 		return;
 	Py_DECREF(v);
 
-        if (all_ins(d))
+        if (all_ins(m))
                 return;
 
-        if (setup_confname_tables(d))
+        if (setup_confname_tables(m))
                 return;
 
-	PyDict_SetItemString(d, "error", PyExc_OSError);
+	Py_INCREF(PyExc_OSError);
+	PyModule_AddObject(m, "error", PyExc_OSError);
 
 #ifdef HAVE_PUTENV
 	if (posix_putenv_garbage == NULL)
@@ -6710,9 +6726,12 @@ INITFUNC(void)
 
 	stat_result_desc.name = MODNAME ".stat_result";
 	PyStructSequence_InitType(&StatResultType, &stat_result_desc);
-	PyDict_SetItemString(d, "stat_result", (PyObject*) &StatResultType);
+	Py_INCREF((PyObject*) &StatResultType);
+	PyModule_AddObject(m, "stat_result", (PyObject*) &StatResultType);
 
 	statvfs_result_desc.name = MODNAME ".statvfs_result";
 	PyStructSequence_InitType(&StatVFSResultType, &statvfs_result_desc);
-	PyDict_SetItemString(d, "statvfs_result", (PyObject*) &StatVFSResultType);
+	Py_INCREF((PyObject*) &StatVFSResultType);
+	PyModule_AddObject(m, "statvfs_result",
+			   (PyObject*) &StatVFSResultType);
 }
