@@ -8,17 +8,17 @@
 
 \versionadded{2.0}
 
-These functions exposes the Windows registry API to Python.  Instead of
-using an integer as the registry handle, a handle object is used to ensure
-that the handles are closed correctly, even if the programmer
+These functions expose the Windows registry API to Python.  Instead of
+using an integer as the registry handle, a handle object is used to
+ensure that the handles are closed correctly, even if the programmer
 neglects to explicitly close them.
 
 This module exposes a very low-level interface to the Windows
 registry; for a more object-oriented interface, use the
 \module{winreg} module.
 
+This module offers the following functions:
 
-\subsection{Registry Operations \label{registry-operations}}
 
 \begin{funcdesc}{CloseKey}{hkey}
  Closes a previously opened registry key.
@@ -35,8 +35,8 @@ registry; for a more object-oriented interface, use the
   another computer, and returns a \dfn{handle object}
 
  \var{computer_name} is the name of the remote computer, of the 
- form \code{'\\\\computername.'}.  If \code{None}, the local computer is 
- used.
+ form \samp{\e\e computername}.  If \code{None}, the local computer
+ is used.
  
  \var{key} is the predefined handle to connect to.
 
@@ -65,7 +65,6 @@ registry; for a more object-oriented interface, use the
  If the function fails, an \exception{EnvironmentError} exception is 
  raised.
 \end{funcdesc}
-
 
 \begin{funcdesc}{DeleteKey}{key, sub_key}
  Deletes the specified key.
@@ -372,21 +371,21 @@ registry; for a more object-oriented interface, use the
  the object is destroyed.  To guarantee cleanup, you can call either
  the \method{Close()} method on the object, or the 
  \function{CloseKey()} function.
- 
+
  All registry functions in this module return one of these objects.
 
  All registry functions in this module which accept a handle object 
  also accept an integer, however, use of the handle object is 
  encouraged.
  
- Handle objects provide semantics for __nonzero__ - thus
- \begin{verbatim}
-  if handle:
-    print "Yes"
- \end{verbatim}
- will print \code{Yes} if the handle is currently valid (ie,
+ Handle objects provide semantics for \method{__nonzero__()} - thus
+\begin{verbatim}
+    if handle:
+        print "Yes"
+\end{verbatim}
+ will print \code{Yes} if the handle is currently valid (i.e.,
  has not been closed or detached).
- 
+
  The object also support comparison semantics, so handle
  objects will compare true if they both reference the same
  underlying Windows handle value.
@@ -397,14 +396,14 @@ registry; for a more object-oriented interface, use the
  \method{Detach()} method to return the integer handle, and
  also disconnect the Windows handle from the handle object.
 
-\begin{methoddesc}{Close}
+\begin{methoddesc}{Close}{}
   Closes the underlying Windows handle.
 
   If the handle is already closed, no error is raised.
 \end{methoddesc}
 
 
-\begin{methoddesc}{Detach}
+\begin{methoddesc}{Detach}{}
   Detaches the Windows handle from the handle object.
 
  The result is an integer (or long on 64 bit Windows) that holds
