@@ -33,6 +33,11 @@ PERFORMANCE OF THIS SOFTWARE.
 
 #include "Python.h"
 
+#ifdef MS_WIN32
+extern void PyWinFreeze_ExeInit();
+extern void PyWinFreeze_ExeTerm();
+#endif
+
 #ifdef HAVE_UNISTD_H
 #include <unistd.h> /* For isatty() */
 #endif
@@ -64,6 +69,9 @@ Py_FrozenMain(argc, argv)
 
 	Py_SetProgramName(argv[0]);
 	Py_Initialize();
+#ifdef MS_WIN32
+	PyWinFreeze_ExeInit();
+#endif
 
 	if (Py_VerboseFlag)
 		fprintf(stderr, "Python %s\n%s\n",
@@ -84,6 +92,9 @@ Py_FrozenMain(argc, argv)
 	if (inspect && isatty((int)fileno(stdin)))
 		sts = PyRun_AnyFile(stdin, "<stdin>") != 0;
 
+#ifdef MS_WIN32
+	PyWinFreeze_ExeTerm();
+#endif
 	Py_Finalize();
 	return sts;
 }
