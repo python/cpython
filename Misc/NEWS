@@ -335,6 +335,9 @@ Core and builtins
   general left to right evaluation order rule. Now {f1(): f2()} will
   evaluate f1 first.
 
+- Fixed bug #521782: when a file was in non-blocking mode, file.read()
+  could silently lose data or wrongly throw an unknown error.
+
 Extension modules
 -----------------
 

@@ -1205,7 +1205,9 @@ flush the read-ahead buffer.
   certain files, like ttys, it makes sense to continue reading after
   an \EOF{} is hit.)  Note that this method may call the underlying
   C function \cfunction{fread()} more than once in an effort to
-  acquire as close to \var{size} bytes as possible.
+  acquire as close to \var{size} bytes as possible. Also note that
+  when in non-blocking mode, less data than what was requested may
+  be returned, even if no \var{size} parameter was given.
 \end{methoddesc}
 
 \begin{methoddesc}[file]{readline}{\optional{size}}
