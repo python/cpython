@@ -61,6 +61,7 @@ LIBFILES= $(MANSTYLES) $(COMMONTEX) \
 	../lib/libstrings.tex \
 	../lib/libstring.tex \
 	../lib/libcodecs.tex \
+	../lib/libunicodedata.tex \
 	../lib/libregex.tex \
 	../lib/libregsub.tex \
 	../lib/libstruct.tex \
