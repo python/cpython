@@ -55,7 +55,7 @@ def printsum(file, out = sys.stdout):
     return sts
 
 def printsumfp(fp, file, out = sys.stdout):
-    m = md5.md5()
+    m = md5.new()
     try:
         while 1:
             data = fp.read(bufsize)

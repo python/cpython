@@ -70,7 +70,7 @@ class File:
 		except os.error:
 			self.lmtime = self.lctime = self.lsum = None
 		else:
-			self.lsum = md5.md5(open(self.file).read()).digest()
+			self.lsum = md5.new(open(self.file).read()).digest()
 		self.lseen = 1
 
 	def getentry(self, line):
