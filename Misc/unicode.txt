@@ -1,5 +1,5 @@
 =============================================================================
- Python Unicode Integration                            Proposal Version: 1.6
+ Python Unicode Integration                            Proposal Version: 1.7
 -----------------------------------------------------------------------------
 
 
@@ -738,15 +738,25 @@ type).
 Buffer Interface:
 -----------------
 
-Implement the buffer interface using the <defenc> Python string
-object as basis for bf_getcharbuf (corresponds to the "t#" argument
-parsing marker) and the internal buffer for bf_getreadbuf (corresponds
-to the "s#" argument parsing marker). If bf_getcharbuf is requested
-and the <defenc> object does not yet exist, it is created first.
+Implement the buffer interface using the <defenc> Python string object
+as basis for bf_getcharbuf and the internal buffer for
+bf_getreadbuf. If bf_getcharbuf is requested and the <defenc> object
+does not yet exist, it is created first.
+
+Note that as special case, the parser marker "s#" will not return raw
+Unicode UTF-16 data (which the bf_getreadbuf returns), but instead
+tries to encode the Unicode object using the default encoding and then
+returns a pointer to the resulting string object (or raises an
+exception in case the conversion fails). This was done in order to
+prevent accidentely writing binary data to an output stream which the
+other end might not recognize.
 
 This has the advantage of being able to write to output streams (which
 typically use this interface) without additional specification of the
 encoding to use.
+
+If you need to access the read buffer interface of Unicode objects,
+use the PyObject_AsReadBuffer() interface.
 
 The internal format can also be accessed using the 'unicode-internal'
 codec, e.g. via u.encode('unicode-internal').
@@ -815,14 +825,11 @@ These markers are used by the PyArg_ParseTuple() APIs:
   "s":  For Unicode objects: return a pointer to the object's
 	<defenc> buffer (which uses the <default encoding>).
 
-  "s#": Access to the Unicode object via the bf_getreadbuf buffer interface 
-        (see Buffer Interface); note that the length relates to the buffer
-        length, not the Unicode string length (this may be different
-        depending on the Internal Format).
+  "s#": Access to the default encoded version of the Unicode object
+        (see Buffer Interface); note that the length relates to the length
+	of the default encoded string rather than the Unicode object length.
 
-  "t#": Access to the Unicode object via the bf_getcharbuf buffer interface
-        (see Buffer Interface); note that the length relates to the buffer
-        length, not necessarily to the Unicode string length.
+  "t#": Same as "s#".
 
   "es": 
 	Takes two parameters: encoding (const char *) and
@@ -934,14 +941,13 @@ Using "es#" with a pre-allocated buffer:
 File/Stream Output:
 -------------------
 
-Since file.write(object) and most other stream writers use the "s#"
-argument parsing marker for binary files and "t#" for text files, the
-buffer interface implementation determines the encoding to use (see
-Buffer Interface).
+Since file.write(object) and most other stream writers use the "s#" or
+"t#" argument parsing marker for querying the data to write, the
+default encoded string version of the Unicode object will be written
+to the streams (see Buffer Interface).
 
-For explicit handling of files using Unicode, the standard
-stream codecs as available through the codecs module should 
-be used.
+For explicit handling of files using Unicode, the standard stream
+codecs as available through the codecs module should be used.
 
 The codecs module should provide a short-cut open(filename,mode,encoding)
 available which also assures that mode contains the 'b' character when
@@ -1043,6 +1049,7 @@ Encodings:
 
 History of this Proposal:
 -------------------------
+1.7: Added note about the changed behaviour of "s#".
 1.6: Changed <defencstr> to <defenc> since this is the name used in the
      implementation. Added notes about the usage of <defenc> in the
      buffer protocol implementation.
