@@ -7,7 +7,8 @@ PYTHONBUILDDIR = ../..
 PYTHONSRCDIR = ../..
 
 INSTALLDIR=/Library/Frameworks/Python.framework/Versions/Current
-APPINSTALLDIR=/Applications/Python.app
+PYTHONAPPSDIR=/Applications/Python
+APPINSTALLDIR=$(PYTHONAPPSDIR)/Python.app
 
 # Variables for installing the "normal" unix binaries
 UNIXBINDIR=/usr/local/bin
@@ -30,7 +31,7 @@ INCLUDES=-I$(PYTHONBUILDDIR) -I$(PYTHONSRCDIR)/Include \
 DEFINES=-DHAVE_CONFIG_H
 
 CFLAGS=$(OPT) $(DEFINES) $(INCLUDES)
-LDFLAGS=-framework System -framework Python -framework Carbon \
+LDFLAGS=-F$(PYTHONBUILDDIR) -framework System -framework Python -framework Carbon \
 	-framework Foundation
 CC=cc
 LD=cc
@@ -40,17 +41,21 @@ DEREZ=/Developer/Tools/DeRez
 OBJECTS=$(PYTHONBUILDDIR)/Mac/Python/macmain.o \
 	$(PYTHONBUILDDIR)/Mac/Python/macgetargv.o
 
-pythonforbundle: $(OBJECTS)
-	$(LD) $(LDFLAGS) $(OBJECTS) -o pythonforbundle
-
 PYTHON=$(PYTHONBUILDDIR)/python.exe
 APPTEMPLATE=$(PYTHONSRCDIR)/Mac/OSXResources/app
 APPSUBDIRS=MacOS Resources Resources/English.lproj
 RESOURCEDIR=$(PYTHONSRCDIR)/Mac/Resources
 RESOURCEFILE=python.rsrc
 RFCONVERTER=$(PYTHONSRCDIR)/Mac/Lib/applesingle.py
-install: pythonforbundle
-	@for i in $(APPINSTALLDIR) $(APPINSTALLDIR)/Contents; do \
+
+install_all: install_PythonLauncher install_Python install_IDE
+
+install_PythonLauncher:
+	cd $(PYTHONSRCDIR)/Mac/OSX/PythonLauncher/PythonLauncher.pbproj ; \
+	pbxbuild -target PythonLauncher -buildstyle Deployment DSTROOT=/ install
+	
+install_Python: pythonforbundle
+	@for i in $(PYTHONAPPSDIR) $(APPINSTALLDIR) $(APPINSTALLDIR)/Contents; do \
 		if test ! -d $$i; then \
 			echo "Creating directory $$i"; \
 			$(INSTALL) -d -m $(DIRMODE) $$i; \
@@ -95,6 +100,11 @@ install: pythonforbundle
 	$(DEREZ) -useDF -skip ckid errors.rsrc > errors.r
 	$(REZ) -useDF -o $(RESOURCEFILE) dialogs.r errors.r 
 	$(INSTALL_DATA) $(RESOURCEFILE) $(APPINSTALLDIR)/Contents/Resources/$(RESOURCEFILE)
+	
+install_IDE: $(INSTALLED_PYTHONW)
+	$(INSTALLED_PYTHONW) $(PYTHONSRCDIR)/Mac/scripts/BuildApplet.py \
+		--output $(PYTHONAPPSDIR)/PythonIDE.app --noargv \
+		$(PYTHONSRCDIR)/Mac/Tools/IDE/PythonIDE.py
 		
 LIBDEST=$(INSTALLDIR)/Mac/Lib
 LIBSRC=$(PYTHONSRCDIR)/Mac/Lib
@@ -208,7 +218,10 @@ installmacsubtree:
 	$(INSTALL_DATA) $(PYTHONSRCDIR)/Mac/OSX/Mac.pth $(INSTALLDIR)/lib/python$(VERSION)/site-packages/
 	
 # Put symlinks "python" and "pythonw" in the standard place
-installunixprograms: $(INSTALLED_PYTHON) pythonw.sh
+$(INSTALLED_PYTHONW): install_Python
+# $(INSTALLED_PYTHON) has to be done by the main Makefile, we cannot do that here.
+
+installunixprograms: $(INSTALLED_PYTHON) $(INSTALLED_PYTHONW) pythonw.sh
 	$(INSTALL) -d $(UNIXBINDIR)
 	$(INSTALL_SYMLINK) $(INSTALLED_PYTHON) $(UNIXBINDIR)/python
 	$(INSTALL) pythonw.sh $(UNIXBINDIR)/pythonw
@@ -220,6 +233,8 @@ dontinstallmacsubtree:
 	echo $$l > $(INSTALLDIR)/lib/python$(VERSION)/site-packages/Mac.pth ; \
 	echo $$l/lib-scriptpackages >> $(INSTALLDIR)/lib/python$(VERSION)/site-packages/Mac.pth
 
+pythonforbundle: $(OBJECTS)
+	$(LD) $(LDFLAGS) $(OBJECTS) -o pythonforbundle
 
 # Rules to build each file in OBJECTS - is there a better way?
 $(PYTHONBUILDDIR)/Mac/Python/macmain.o: $(PYTHONSRCDIR)/Mac/Python/macmain.c
