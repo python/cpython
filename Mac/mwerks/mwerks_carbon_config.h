@@ -38,6 +38,7 @@
 #define USE_CACHE_ALIGNED 8		/* Align on 32-byte boundaries for 604 */
 #endif
 #endif
+#define WITHOUT_FRAMEWORKS /* Use old-style Universal Header includes, not Carbon/Carbon.h */
 
 #ifdef USE_MSL
 #define MSL_USE_PRECOMPILED_HEADERS 0	/* Don't use precomp headers: we include our own */

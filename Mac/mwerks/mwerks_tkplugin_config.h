@@ -10,3 +10,4 @@
 #define WITH_THREAD		/* Use thread support (needs GUSI 2, not GUSI 1) */
 #define USE_TK			/* Include _tkinter module in core Python */
 #define MAC_TCL			/* This *must* be on if USE_TK is on */
+#define WITHOUT_FRAMEWORKS	/* Use old-style Universal Header includes, not Carbon/Carbon.h */
