@@ -1,3 +1,13 @@
+What's New in Python 2.2a0?
+===========================
+
+Core
+
+- The following functions were generalized to work nicely with iterator
+  arguments:
+  list()
+
+
 What's New in Python 2.1 (final)?
 =================================
 

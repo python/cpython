@@ -243,4 +243,36 @@ class TestCase(unittest.TestCase):
             except OSError:
                 pass
 
+    # Test list()'s use of iterators.
+    def test_builtin_list(self):
+        self.assertEqual(list(SequenceClass(5)), range(5))
+        self.assertEqual(list(SequenceClass(0)), [])
+        self.assertEqual(list(()), [])
+        self.assertEqual(list(range(10, -1, -1)), range(10, -1, -1))
+
+        d = {"one": 1, "two": 2, "three": 3}
+        self.assertEqual(list(d), d.keys())
+
+        self.assertRaises(TypeError, list, list)
+        self.assertRaises(TypeError, list, 42)
+
+        f = open(TESTFN, "w")
+        try:
+            for i in range(5):
+                f.write("%d\n" % i)
+        finally:
+            f.close()
+        f = open(TESTFN, "r")
+        try:
+            self.assertEqual(list(f), ["0\n", "1\n", "2\n", "3\n", "4\n"])
+            f.seek(0, 0)
+            self.assertEqual(list(f.xreadlines()),
+                             ["0\n", "1\n", "2\n", "3\n", "4\n"])
+        finally:
+            f.close()
+            try:
+                unlink(TESTFN)
+            except OSError:
+                pass
+
 run_unittest(TestCase)
