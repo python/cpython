@@ -22,7 +22,7 @@ def rgb2jpeg(img, x, y):
 def jpeggrey2grey(img, width, height):
 	import jpeg
 	data, width, height, bytesperpixel = jpeg.decompress(img)
-	if bytesperpixel <> 1: raise RuntimeError, 'not grayscale jpeg'
+	if bytesperpixel <> 1: raise RuntimeError, 'not greyscale jpeg'
 	return data
 
 def jpeg2rgb(img, width, height):

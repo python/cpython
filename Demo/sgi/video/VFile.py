@@ -6,11 +6,10 @@
 #
 # VideoParams: maintain essential parameters of a video file
 # Displayer: display a frame in a window (with some extra parameters)
-# Grabber: grab a frame from a window
 # BasicVinFile: read a CMIF video file
 # BasicVoutFile: write a CMIF video file
 # VinFile: BasicVinFile + Displayer
-# VoutFile: BasicVoutFile + Displayer + Grabber
+# VoutFile: BasicVoutFile + Displayer
 #
 # XXX Future extension:
 # BasicVinoutFile: supports overwriting of individual frames
@@ -21,6 +20,7 @@
 import sys
 import gl
 import GL
+import GET
 import colorsys
 import imageop
 
@@ -30,14 +30,6 @@ import imageop
 Error = 'VFile.Error'			# file format errors
 CallError = 'VFile.CallError'		# bad call
 AssertError = 'VFile.AssertError'	# internal malfunction
-
-
-# Constants returned by gl.getdisplaymode(), from <gl/get.h>
-
-DMRGB = 0
-DMSINGLE = 1
-DMDOUBLE = 2
-DMRGBDOUBLE = 5
 
 
 # Max nr. of colormap entries to use
@@ -151,9 +143,9 @@ def is_entry_indigo():
 	b = gl.getgdesc(GL.GD_BITS_NORM_SNG_BLUE)
 	return (r, g, b) == (3, 3, 2)
 
-#
-# Predicate function to see whether this machine supports pixmode(PM_SIZE)
-# with values 1 or 4.
+
+# Predicate to see whether this machine supports pixmode(PM_SIZE) with
+# values 1 or 4.
 #
 # XXX Temporarily disabled, since it is unclear which machines support
 # XXX which pixelsizes.
@@ -161,66 +153,24 @@ def is_entry_indigo():
 # XXX The XS appears to support 4 bit pixels, but (looking at osview) it
 # XXX seems as if the conversion is done by the kernel (unpacking ourselves
 # XXX is faster than using PM_SIZE=4)
-#
+
 def support_packed_pixels():
 	return 0   # To be architecture-dependent
 
-# Routines to grab data, per color system (only a few really supported).
-# (These functions are used via eval with a constructed argument!)
-
-def grab_rgb(w, h, pf):
-	if gl.getdisplaymode() <> DMRGB:
-		raise Error, 'Sorry, can only grab rgb in single-buf rgbmode'
-	if pf <> 1 and pf <> 0:
-		raise Error, 'Sorry, only grab rgb with packfactor 1'
-	return gl.lrectread(0, 0, w-1, h-1), None
-
-def grab_rgb8(w, h, pf):
-	if gl.getdisplaymode() <> DMRGB:
-		raise Error, 'Sorry, can only grab rgb8 in single-buf rgbmode'
-	if pf <> 1 and pf <> 0:
-		raise Error, 'Sorry, can only grab rgb8 with packfactor 1'
-	if not is_entry_indigo():
-		raise Error, 'Sorry, can only grab rgb8 on entry level Indigo'
-	# XXX Dirty Dirty here.
-	# XXX Set buffer to cmap mode, grab image and set it back.
-	gl.cmode()
-	gl.gconfig()
-	gl.pixmode(GL.PM_SIZE, 8)
-	data = gl.lrectread(0, 0, w-1, h-1)
-	data = data[:w*h]	# BUG FIX for python lrectread
-	gl.RGBmode()
-	gl.gconfig()
-	gl.pixmode(GL.PM_SIZE, 32)
-	return data, None
-
-def grab_grey(w, h, pf):
-	raise Error, 'Sorry, grabbing grey not implemented'
-
-def grab_yiq(w, h, pf):
-	raise Error, 'Sorry, grabbing yiq not implemented'
-
-def grab_hls(w, h, pf):
-	raise Error, 'Sorry, grabbing hls not implemented'
-
-def grab_hsv(w, h, pf):
-	raise Error, 'Sorry, grabbing hsv not implemented'
-
-def grab_jpeg(w, h, pf):
-	# XXX Ought to grab rgb and compress it
-	raise Error, 'sorry, grabbing jpeg not implemented'
-
-def grab_jpeggrey(w, h, pf):
-	raise Error, 'sorry, grabbing jpeggrey not implemented'
 
 
-# Choose one of the above based upon a color system name
+# Tables listing bits per pixel for some formats
 
-def choose_grabber(format):
-	try:
-		return eval('grab_' + format)
-	except:
-		raise Error, 'Unknown color system: ' + `format`
+bitsperpixel = { \
+	  'rgb': 32, \
+	  'rgb8': 8, \
+	  'grey': 8, \
+	  'grey4': 4, \
+	  'grey2': 2, \
+	  'mono': 1, \
+}
+
+bppafterdecomp = {'jpeg': 32, 'jpeggrey': 8}
 
 
 # Base class to manage video format parameters
@@ -233,39 +183,102 @@ class VideoParams:
 
 	def init(self):
 		# Essential parameters
+		self.frozen = 0		# if set, can't change parameters
 		self.format = 'grey'	# color system used
 		# Choose from: grey, rgb, rgb8, hsv, yiq, hls, jpeg, jpeggrey,
 		#              mono, grey2, grey4
 		self.width = 0		# width of frame
 		self.height = 0		# height of frame
-		self.packfactor = 1	# expansion using rectzoom
-		# if packfactor == 0, data is one 32-bit word/pixel;
-		# otherwise, data is one byte/pixel
+		self.packfactor = 1, 1	# expansion using rectzoom
 		self.c0bits = 8		# bits in first color dimension
 		self.c1bits = 0		# bits in second color dimension
 		self.c2bits = 0		# bits in third color dimension
 		self.offset = 0		# colormap index offset (XXX ???)
 		self.chrompack = 0	# set if separate chrominance data
+		self.setderived()
 		return self
+
+	# Freeze the parameters (disallow changes)
+
+	def freeze(self):
+		self.frozen = 1
+
+	# Unfreeze the parameters (allow changes)
+
+	def unfreeze(self):
+		self.frozen = 0
+
+	# Set some values derived from the standard info values
+
+	def setderived(self):
+		if self.frozen: raise AssertError
+		if bitsperpixel.has_key(self.format):
+			self.bpp = bitsperpixel[self.format]
+		else:
+			self.bpp = 0
+		xpf, ypf = self.packfactor
+		self.xpf = abs(xpf)
+		self.ypf = abs(ypf)
+		self.mirror_image = (xpf < 0)
+		self.upside_down = (ypf < 0)
+		self.realwidth = self.width / self.xpf
+		self.realheight = self.height / self.ypf
 
 	# Set the frame width and height (e.g. from gl.getsize())
 
 	def setsize(self, width, height):
+		if self.frozen: raise CallError
+		width = (width/self.xpf)*self.xpf
+		height = (height/self.ypf)*self.ypf
 		self.width, self.height = width, height
+		self.setderived()
 
 	# Retrieve the frame width and height (e.g. for gl.prefsize())
 
 	def getsize(self):
 		return (self.width, self.height)
 
-	# Set all parameters.
-	# This does limited validity checking;
-	# if the check fails no parameters are changed
+	# Set the format
+
+	def setformat(self, format):
+		if self.frozen: raise CallError
+		if format <> self.format:
+			self.format = format
+			self.setderived()
+
+	# Get the format
+
+	def getformat(self):
+		return self.format
+
+	# Set the packfactor
+
+	def setpf(self, pf):
+		if self.frozen: raise CallError
+##		if type(pf) is type(0):
+##			if pf == 0:
+##				pf = (1, 1)
+##			else:
+##				pf = (pf, pf)
+		if type(pf) is not type(()) or len(pf) <> 2: raise CallError
+		self.packfactor = pf
+		self.setderived()
+
+	# Get the packfactor
+
+	def getpf(self):
+		return self.packfactor
+
+	# Set all parameters
 
 	def setinfo(self, values):
-		(self.format, self.width, self.height, self.packfactor,\
-			self.c0bits, self.c1bits, self.c2bits, self.offset, \
-			self.chrompack) = values
+		if self.frozen: raise CallError
+		self.setformat(values[0])
+		self.setpf(values[3])
+		self.setsize(values[1], values[2])
+		(self.c0bits, self.c1bits, self.c2bits, \
+			  self.offset, self.chrompack) = values[4:]
+		self.setderived()
 
 	# Retrieve all parameters in a format suitable for a subsequent
 	# call to setinfo()
@@ -281,27 +294,17 @@ class VideoParams:
 		print 'Format:  ', self.format
 		print 'Size:    ', self.width, 'x', self.height
 		print 'Pack:    ', self.packfactor, '; chrom:', self.chrompack
+		print 'Bpp:     ', self.bpp
 		print 'Bits:    ', self.c0bits, self.c1bits, self.c2bits
 		print 'Offset:  ', self.offset
 
 	# Calculate data size, if possible
+	# (Not counting frame header or cdata size)
+
 	def calcframesize(self):
-		if self.format == 'rgb':
-			return self.width*self.height*4
-		if self.format in ('jpeg', 'jpeggrey'):
-			raise CallError
-		if type(self.packfactor) == type(()):
-			xpf, ypf = self.packfactor
-		else:
-			xpf = ypf = self.packfactor
-		if ypf < 0: ypf = -ypf
-		size = (self.width/xpf)*(self.height/ypf)
-		if self.format == 'grey4':
-			size = (size+1)/2
-		elif self.format == 'grey2':
-			size = (size+3)/4
-		elif self.format == 'mono':
-			size = (size+7)/8
+		if not self.bpp: raise CallError
+		size = self.width/self.xpf * self.height/self.ypf
+		size = (size * self.bpp + 7) / 8
 		return size
 
 
@@ -346,33 +349,16 @@ class Displayer(VideoParams):
 			  (0,0,self.width,self.height))
 
 	def showpartframe(self, data, chromdata, (x,y,w,h)):
-		pf = self.packfactor
-		pmsize = 8
-		if pf:
-			if type(pf) == type(()):
-				xpf, ypf = pf
-			else:
-				xpf = ypf = pf
-			if ypf < 0:
-				gl.pixmode(GL.PM_TTOB, 1)
-				ypf = -ypf
-			if xpf < 0:
-				gl.pixmode(GL.PM_RTOL, 1)
-				xpf = -xpf
-		else:
-			xpf = ypf = 1
+		pmsize = self.bpp
+		xpf, ypf = self.xpf, self.ypf
+		if self.upside_down:
+			gl.pixmode(GL.PM_TTOB, 1)
+		if self.mirror_image:
+			gp.pixmode(GL.PM_RTOL, 1)
 		if self.format in ('jpeg', 'jpeggrey'):
 			import jpeg
 			data, width, height, bytes = jpeg.decompress(data)
-			if self.format == 'jpeg':
-				b = 4
-				xp = yp = 1
-			else:
-				b = 1
-				xp = xpf
-				yp = ypf
-			if (width, height, bytes) <> (w/xp, h/yp, b):
-				raise Error, 'jpeg data has wrong size'
+			pmsize = bytes*8
 		elif self.format in ('mono', 'grey4'):
 			if self.mustunpack:
 				if self.format == 'mono':
@@ -381,24 +367,18 @@ class Displayer(VideoParams):
 				elif self.format == 'grey4':
 					data = imageop.grey42grey(data, \
 						  w/xpf, h/ypf)
-			else:
-				# We don't need to unpack, the hardware
-				# can do it.
-				if self.format == 'mono':
-					pmsize = 1
-				else:
-					pmsize = 4
+				pmsize = 8
 		elif self.format == 'grey2':
 			data = imageop.grey22grey(data, w/xpf, h/ypf)
+			pmsize = 8
 		if not self.colormapinited:
 			self.initcolormap()
 		if self.fixcolor0:
 			gl.mapcolor(self.color0)
 			self.fixcolor0 = 0
 		xfactor = yfactor = self.magnify
-		if pf:
-			xfactor = xfactor * xpf
-			yfactor = yfactor * ypf
+		xfactor = xfactor * xpf
+		yfactor = yfactor * ypf
 		if chromdata and not self.skipchrom:
 			cp = self.chrompack
 			cx = int(x*xfactor*cp) + self.xorigin
@@ -411,13 +391,13 @@ class Displayer(VideoParams):
 			gl.lrectwrite(cx, cy, cx + cw - 1, cy + ch - 1, \
 				  chromdata)
 		#
-		if pf:
+		if pmsize < 32:
 			gl.writemask((1 << self.c0bits) - 1)
-			gl.pixmode(GL.PM_SIZE, pmsize)
-			w = w/xpf
-			h = h/ypf
-			x = x/xpf
-			y = y/ypf
+		gl.pixmode(GL.PM_SIZE, pmsize)
+		w = w/xpf
+		h = h/ypf
+		x = x/xpf
+		y = y/ypf
 		gl.rectzoom(xfactor, yfactor)
 		x = int(x*xfactor)+self.xorigin
 		y = int(y*yfactor)+self.yorigin
@@ -464,7 +444,7 @@ class Displayer(VideoParams):
 
 	def clear(self):
 		if not self.colormapinited: raise CallError
-		if gl.getdisplaymode() in (DMRGB, DMRGBDOUBLE):
+		if gl.getdisplaymode() in (GET.DMRGB, GET.DMRGBDOUBLE):
 			gl.RGBcolor(200, 200, 200) # XXX rather light grey
 			gl.clear()
 			return
@@ -477,7 +457,7 @@ class Displayer(VideoParams):
 
 	def clearto(self, r, g, b):
 		if not self.colormapinited: raise CallError
-		if gl.getdisplaymode() in (DMRGB, DMRGBDOUBLE):
+		if gl.getdisplaymode() in (GET.DMRGB, GET.DMRGBDOUBLE):
 			gl.RGBcolor(r, g, b)
 			gl.clear()
 			return
@@ -553,23 +533,6 @@ class Displayer(VideoParams):
 		gl.gflush() # send the colormap changes to the X server
 
 
-# Class to grab frames from a window.
-# (This has fewer user-settable parameters than Displayer.)
-# It is the caller's responsibility to initialize the window and to
-# ensure that it is current when using grabframe()
-
-class Grabber(VideoParams):
-
-	# XXX The init() method of VideoParams is just fine, for now
-
-	# Grab a frame.
-	# Return (data, chromdata) just like getnextframe().
-
-	def grabframe(self):
-		grabber = choose_grabber(self.format)
-		return grabber(self.width, self.height, self.packfactor)
-
-
 # Read a CMIF video file header.
 # Return (version, values) where version is 0.0, 1.0, 2.0 or 3.[01],
 # and values is ready for setinfo().
@@ -620,8 +583,6 @@ def readfileheader(fp, filename):
 			format, rest = eval(line[:-1])
 		except:
 			raise Error, filename + ': Bad 3.[01] color info'
-		if format == 'xrgb8':
-			format = 'rgb8' # rgb8 upside-down, for X
 		if format in ('rgb', 'jpeg'):
 			c0bits = c1bits = c2bits = 0
 			chrompack = 0
@@ -637,6 +598,11 @@ def readfileheader(fp, filename):
 			    c0bits, c1bits, c2bits, chrompack, offset = rest
 			except:
 			    raise Error, filename + ': Bad 3.[01] color info'
+	if format == 'xrgb8':
+		format = 'rgb8' # rgb8 upside-down, for X
+		upside_down = 1
+	else:
+		upside_down = 0
 	#
 	# Get frame geometry info
 	#
@@ -657,15 +623,18 @@ def readfileheader(fp, filename):
 		packfactor = 2
 	else:
 		raise Error, filename + ': Bad (w,h,pf) info'
-	if type(packfactor) == type(()):
+	if type(packfactor) is type(0):
+		if packfactor == 0: packfactor = 1
+		xpf = ypf = packfactor
+	else:
 		xpf, ypf = packfactor
-		xpf = abs(xpf)
-		ypf = abs(ypf)
-		width = (width/xpf) * xpf
-		height = (height/ypf) * ypf
-	elif packfactor > 1:
-		width = (width / packfactor) * packfactor
-		height = (height / packfactor) * packfactor
+	if upside_down:
+		ypf = -ypf
+	packfactor = (xpf, ypf)
+	xpf = abs(xpf)
+	ypf = abs(ypf)
+	width = (width/xpf) * xpf
+	height = (height/ypf) * ypf
 	#
 	# Return (version, values)
 	#
@@ -762,7 +731,8 @@ class BasicVinFile(VideoParams):
 		self.fp = fp
 		self.filename = filename
 		self.version, values = readfileheader(fp, filename)
-		VideoParams.setinfo(self, values)
+		self.setinfo(values)
+		self.freeze()
 		if self.version == 0.0:
 			w, h, pf = self.width, self.height, self.packfactor
 			if pf == 0:
@@ -800,12 +770,6 @@ class BasicVinFile(VideoParams):
 		self.fp.close()
 		del self.fp
 		del self._readframeheader
-
-	def setinfo(self, values):
-		raise CallError # Can't change info of input file!
-
-	def setsize(self, width, height):
-		raise CallError # Can't change info of input file!
 
 	def rewind(self):
 		if not self.canseek:
@@ -1022,8 +986,7 @@ class BasicVoutFile(VideoParams):
 		self = VideoParams.init(self)
 		self.fp = fp
 		self.filename = filename
-		self.version = 3.0 # In case anyone inquries
-		self.headerwritten = 0
+		self.version = 3.1 # In case anyone inquries
 		return self
 
 	def flush(self):
@@ -1034,27 +997,23 @@ class BasicVoutFile(VideoParams):
 		del self.fp
 
 	def prealloc(self, nframes):
-		if not self.headerwritten: raise CallError
-		data = '\xff' * self.calcframesize()
+		if not self.frozen: raise CallError
+		data = '\xff' * (self.calcframesize() + 64)
 		pos = self.fp.tell()
 		for i in range(nframes):
 			self.fp.write(data)
 		self.fp.seek(pos)
 
-	def setinfo(self, values):
-		if self.headerwritten: raise CallError
-		VideoParams.setinfo(self, values)
-
 	def writeheader(self):
-		if self.headerwritten: raise CallError
+		if self.frozen: raise CallError
 		writefileheader(self.fp, self.getinfo())
-		self.headerwritten = 1
+		self.freeze()
 		self.atheader = 1
 		self.framecount = 0
 
 	def rewind(self):
 		self.fp.seek(0)
-		self.headerwritten = 0
+		self.unfreeze()
 		self.atheader = 1
 		self.framecount = 0
 
@@ -1071,7 +1030,7 @@ class BasicVoutFile(VideoParams):
 		self.writeframedata(data, cdata)
 
 	def writeframeheader(self, t, ds, cs):
-		if not self.headerwritten: self.writeheader()
+		if not self.frozen: self.writeheader()
 		if not self.atheader: raise CallError
 		data = `(t, ds, cs)`
 		n = len(data)
@@ -1080,14 +1039,14 @@ class BasicVoutFile(VideoParams):
 		self.atheader = 0
 
 	def writeframedata(self, data, cdata):
-		if not self.headerwritten or self.atheader: raise CallError
+		if not self.frozen or self.atheader: raise CallError
 		if data: self.fp.write(data)
 		if cdata: self.fp.write(cdata)
 		self.atheader = 1
 		self.framecount = self.framecount + 1
 
 
-# Classes that combine files with displayers and/or grabbers:
+# Classes that combine files with displayers:
 
 class VinFile(RandomVinFile, Displayer):
 
@@ -1101,7 +1060,7 @@ class VinFile(RandomVinFile, Displayer):
 		return t
 
 
-class VoutFile(BasicVoutFile, Displayer, Grabber):
+class VoutFile(BasicVoutFile, Displayer):
 
 	def initfp(self, fp, filename):
 		self = Displayer.init(self)

@@ -1,134 +1,269 @@
-# Copy a video file, interactively, frame-by-frame.
+#! /ufs/guido/bin/sgi/python
 
-import sys
-import getopt
-from gl import *
-from DEVICE import *
-import VFile
-import string
-import imageop
+# Universal (non-interactive) CMIF video file copier.
 
-def report(time, iframe):
-	print 'Frame', iframe, ': t =', time
+
+# Possibilities:
+#
+# - Manipulate the time base:
+#   = resample at a fixed rate
+#   = divide the time codes by a speed factor (to make it go faster/slower)
+#   = drop frames that are less than n msec apart (to accomodate slow players)
+# - Convert to a different format
+# - Magnify (scale) the image
+
+
+# Usage function (keep this up-to-date if you change the program!)
 
 def usage():
-	sys.stderr.write('usage: Vcopy [-t type] [-m treshold] [-a] infile outfile\n')
-	sys.stderr.write('-t Convert to other type\n')
-	sys.stderr.write('-a Automatic\n')
-	sys.stderr.write('-m Convert grey to mono with treshold\n')
-	sys.stderr.write('-d Convert grey to mono with dithering\n')
-	sys.exit(2)
+	print 'Usage: Vcopy [options] [infile [outfile]]'
+	print
+	print 'Options:'
+	print
+	print '-t type    : new image type (default unchanged)'
+	print
+	print '-M magnify : image magnification factor (default unchanged)'
+	print '-w width   : output image width (default height*4/3 if -h used)'
+	print '-h height  : output image height (default width*3/4 if -w used)'
+	print
+	print '-p pf      : new x and y packfactor (default unchanged)'
+	print '-x xpf     : new x packfactor (default 1 if -y used)'
+	print '-y ypf     : new y packfactor (default 1 if -x used)'
+	print
+	print '-m delta   : drop frames closer than delta msec (default 0)'
+	print '-r delta   : regenerate input time base delta msec apart'
+	print '-s speed   : speed change factor (default unchanged)'
+	print
+	print 'infile     : input file (default film.video)'
+	print 'outfile    : output file (default out.video)'
 
-def help():
-	print 'Command summary:'
-	print 'n   get next image from input'
-	print 'w   write current image to output'
+
+import sys
+sys.path.append('/ufs/guido/src/video')
+
+import VFile
+import imgconv
+import imageop
+import getopt
+import string
+
+
+# Global options
+
+speed = 1.0
+mindelta = 0
+regen = None
+newpf = None
+newtype = None
+magnify = None
+newwidth = None
+newheight = None
+
+
+# Function to turn a string into a float
+
+atof_error = 'atof_error' # Exception if it fails
+
+def atof(s):
+	try:
+		return float(eval(s))
+	except:
+		raise atof_error
+
+
+# Main program -- mostly command line parsing
 
 def main():
-	foreground()
-	opts, args = getopt.getopt(sys.argv[1:], 't:am:d')
-	if len(args) <> 2:
+	global speed, mindelta, regen, newpf, newtype, \
+	       magnify, newwidth, newheight
+
+	# Parse command line
+	try:
+		opts, args = getopt.getopt(sys.argv[1:], \
+			  'M:h:m:p:r:s:t:w:x:y:')
+	except getopt.error, msg:
+		sys.stdout = sys.stderr
+		print 'Error:', msg, '\n'
 		usage()
-	[ifile, ofile] = args
-	print 'open film ', ifile
-	ifilm = VFile.VinFile().init(ifile)
-	print 'open output ', ofile
-	ofilm = VFile.VoutFile().init(ofile)
+		sys.exit(2)
+
+	xpf = ypf = None
 	
-	ofilm.setinfo(ifilm.getinfo())
+	# Interpret options
+	try:
+		for opt, arg in opts:
+			if opt == '-M': magnify = atof(arg)
+			if opt == '-h': height = string.atoi(arg)
+			if opt == '-m': mindelta = string.atoi(arg)
+			if opt == '-p': xpf = ypf = string.atoi(arg)
+			if opt == '-r': regen = string.atoi(arg)
+			if opt == '-s': speed = atof(arg)
+			if opt == '-t': newtype = arg
+			if opt == '-w': newwidth = string.atoi(arg)
+			if opt == '-x': xpf = string.atoi(arg)
+			if opt == '-y': ypf = string.atoi(arg)
+	except string.atoi_error:
+		sys.stdout = sys.stderr
+		print 'Option', opt, 'requires integer argument'
+		sys.exit(2)
+	except atof_error:
+		sys.stdout = sys.stderr
+		print 'Option', opt, 'requires float argument'
+		sys.exit(2)
 
-	use_grabber = 0
-	continuous = 0
-	tomono = 0
-	tomonodither = 0
-	for o, a in opts:
-		if o == '-t':
-			ofilm.format = a
-			use_grabber = 1
-		if o == '-a':
-			continuous = 1
-		if o == '-m':
-			if ifilm.format <> 'grey':
-				print '-m only supported for greyscale'
-				sys.exit(1)
-			tomono = 1
-			treshold = string.atoi(a)
-			ofilm.format = 'mono'
-		if o == '-d':
-			if ifilm.format <> 'grey':
-				print '-m only supported for greyscale'
-				sys.exit(1)
-			tomonodither = 1
-			ofilm.format = 'mono'
-			
-	ofilm.writeheader()
-	#
-	prefsize(ifilm.width, ifilm.height)
-	w = winopen(ifile)
-	qdevice(KEYBD)
-	qdevice(ESCKEY)
-	qdevice(WINQUIT)
-	qdevice(WINSHUT)
-	print 'qdevice calls done'
-	#
-	help()
-	#
-	time, data, cdata = ifilm.getnextframe()
-	ifilm.showframe(data, cdata)
-	iframe = 1
-	report(time, iframe)
-	#
+	if xpf or ypf:
+		if not xpf: xpf = 1
+		if not ypf: ypf = 1
+		newpf = (xpf, ypf)
+
+	if newwidth or newheight:
+		if magnify:
+			sys.stdout = sys.stderr
+			print 'Options -w or -h are incompatible with -M'
+			sys.exit(2)
+		if not newheight:
+			newheight = newwidth * 3 / 4
+		elif not newwidth:
+			newwidth = newheight * 4 / 3
+
+	# Check filename arguments
+	if len(args) < 1:
+		args.append('film.video')
+	if len(args) < 2:
+		args.append('out.video')
+	if len(args) > 2:
+		usage()
+		sys.exit(2)
+	if args[0] == args[1]:
+		sys.stderr.write('Input file can\'t be output file\n')
+		sys.exit(2)
+
+	# Do the right thing
+	sts = process(args[0], args[1])
+
+	# Exit
+	sys.exit(sts)
+
+
+# Copy one file to another
+
+def process(infilename, outfilename):
+	global newwidth, newheight
+
+	try:
+		vin = VFile.BasicVinFile().init(infilename)
+	except IOError, msg:
+		sys.stderr.write(infilename + ': I/O error: ' + `msg` + '\n')
+		return 1
+	except VFile.Error, msg:
+		sys.stderr.write(msg + '\n')
+		return 1
+	except EOFError:
+		sys.stderr.write(infilename + ': EOF in video file\n')
+		return 1
+
+	try:
+		vout = VFile.BasicVoutFile().init(outfilename)
+	except IOError, msg:
+		sys.stderr.write(outfilename + ': I/O error: ' + `msg` + '\n')
+		return 1
+
+	vout.setinfo(vin.getinfo())
+
+	scale = 0
+	flip = 0
+
+	if newtype:
+		vout.setformat(newtype)
+		try:
+			convert = imgconv.getconverter(vin.format, vout.format)
+		except imgconv.error, msg:
+			sys.stderr.write(str(msg) + '\n')
+			return 1
+
+	if newpf:
+		vout.setpf(newpf)
+		scale = 1
+
+	if newwidth and newheight:
+		scale = 1
+
+	if vin.upside_down <> vout.upside_down or \
+		  vin.mirror_image <> vout.mirror_image:
+		flip = 1
+
+	inwidth, inheight = vin.getsize()
+	inwidth = inwidth / vin.xpf
+	inheight = inheight / vin.ypf
+
+	if magnify:
+		newwidth = int(vout.width * magnify)
+		newheight = int(vout.height * magnify)
+		scale = 1
+
+	if scale:
+		vout.setsize(newwidth, newheight)
+	else:
+		newwidth, newheight = vout.getsize()
+
+	if vin.packfactor <> vout.packfactor:
+		scale = 1
+
+	if scale or flip:
+		if vout.bpp not in (8, 32):
+			sys.stderr.write('Can\'t scale or flip this type\n')
+			return 1
+
+	newwidth = newwidth / vout.xpf
+	newheight = newheight / vout.ypf
+
+	vout.writeheader()
+
+	told = 0
+	nin = 0
+	nout = 0
+	tin = 0
+	tout = 0
+
 	while 1:
-		if continuous:
-			dev = KEYBD
-		else:
-			dev, val = qread()
-		if dev in (ESCKEY, WINQUIT, WINSHUT):
+		try:
+			tin, data, cdata = vin.getnextframe()
+		except EOFError:
 			break
-		if dev == REDRAW:
-			reshapeviewport()
-		elif dev == KEYBD:
-			if continuous:
-				c = '0'
-			else:
-				c = chr(val)
-			#XXX Debug
-			if c == 'R':
-				c3i(255,0,0)
-				clear()
-			if c == 'G':
-				c3i(0,255,0)
-				clear()
-			if c == 'B':
-				c3i(0,0,255)
-				clear()
-			if c == 'w' or continuous:
-				if use_grabber:
-					data, cdata = ofilm.grabframe()
-				if tomono:
-					data = imageop.grey2mono(data, \
-						  ifilm.width, ifilm.height, \
-						  treshold)
-				if tomonodither:
-					data = imageop.dither2mono(data, \
-						  ifilm.width, ifilm.height)
-				ofilm.writeframe(time, data, cdata)
-				print 'Frame', iframe, 'written.'
-			if c == 'n' or continuous:
-				try:
-					time,data,cdata = ifilm.getnextframe()
-					ifilm.showframe(data, cdata)
-					iframe = iframe+1
-					report(time, iframe)
-				except EOFError:
-					print 'EOF'
-					if continuous:
-						break
-					ringbell()
-		elif dev == INPUTCHANGE:
-			pass
+		nin = nin + 1
+		if regen:
+			tout = nin * regen
 		else:
-			print '(dev, val) =', (dev, val)
-	ofilm.close()
+			tout = tin
+		tout = int(tout / speed)
+		if tout - told < mindelta:
+			continue
+		told = tout
+		if newtype:
+			data = convert(data, inwidth, inheight)
+		if newwidth and newheight:
+			data = imageop.scale(data, vout.bpp/8, \
+				  inwidth, inheight, newwidth, newheight)
+		if vin.upside_down <> vout.upside_down or \
+			  vin.mirror_image <> vout.mirror_image:
+			x0, y0 = 0, 0
+			x1, y1 = newwidth-1, neheight-1
+			if vin.upside_down <> vout.upside_down:
+				y1, y0 = y0, y1
+			if vin.mirror_image <> vout.mirror_image:
+				x1, x0 = x0, x1
+			data = imageop.crop(data, vout.bpp/8, \
+				  newwidth, newheight, x0, y0, x1, y1)
+		vout.writeframe(tout, data, cdata)
+		nout = nout + 1
 
-main()
+	vout.close()
+	vin.close()
+
+
+# Don't forget to call the main program
+
+try:
+	main()
+except KeyboardInterrupt:
+	print '[Interrupt]'
