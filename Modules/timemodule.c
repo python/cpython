@@ -147,28 +147,26 @@ time_clock(PyObject *self, PyObject *args)
 static PyObject *
 time_clock(PyObject *self, PyObject *args)
 {
-	static LONG_LONG ctrStart;
+	static LARGE_INTEGER ctrStart;
 	static double divisor = 0.0;
-	LONG_LONG now;
+	LARGE_INTEGER now;
 	double diff;
 
-	assert(sizeof(LONG_LONG) == sizeof(LARGE_INTEGER));
 	if (!PyArg_ParseTuple(args, ":clock"))
 		return NULL;
 
 	if (divisor == 0.0) {
-		LONG_LONG freq;
-		QueryPerformanceCounter((LARGE_INTEGER*)&ctrStart);
-		if (!QueryPerformanceFrequency((LARGE_INTEGER*)&freq) ||
-		    freq == 0) {
+		LARGE_INTEGER freq;
+		QueryPerformanceCounter(&ctrStart);
+		if (!QueryPerformanceFrequency(&freq) || freq.QuadPart == 0) {
 			/* Unlikely to happen - this works on all intel
 			   machines at least!  Revert to clock() */
 			return PyFloat_FromDouble(clock());
 		}
-		divisor = (double)freq;
+		divisor = (double)freq.QuadPart;
 	}
-	QueryPerformanceCounter((LARGE_INTEGER*)&now);
-	diff = (double)(now - ctrStart);
+	QueryPerformanceCounter(&now);
+	diff = (double)(now.QuadPart - ctrStart.QuadPart);
 	return PyFloat_FromDouble(diff / divisor);
 }
 
@@ -220,7 +218,7 @@ static PyStructSequence_Desc struct_time_type_desc = {
 	struct_time_type_fields,
 	9,
 };
-	
+
 static PyTypeObject StructTimeType;
 
 static PyObject *
@@ -229,7 +227,7 @@ tmtotuple(struct tm *p)
 	PyObject *v = PyStructSequence_New(&StructTimeType);
 	if (v == NULL)
 		return NULL;
-	
+
 #define SET(i,val) PyStructSequence_SET_ITEM(v, i, PyInt_FromLong((long) val))
 
 	SET(0, p->tm_year + 1900);
