@@ -21,6 +21,7 @@ tests = ['test_grammar',
 	 'test_rgbimg',
 	 'test_select',
 	 'test_strftime',
+	 'test_struct',
 	 ]
 
 if __name__ == '__main__':
