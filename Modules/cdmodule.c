@@ -854,7 +854,7 @@ initcd()
 	m = Py_InitModule("cd", CD_methods);
 	d = PyModule_GetDict(m);
 
-	CdError = PyString_FromString("cd.error");
+	CdError = PyErr_NewException("cd.error", NULL, NULL);
 	PyDict_SetItemString(d, "error", CdError);
 
 	/* Identifiers for the different types of callbacks from the parser */
