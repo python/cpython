@@ -1,5 +1,5 @@
 What's New in Python 2.2.2 (final) ?
-Release date: dd-Mmm-yyyy
+Release date: 14-Oct-2002
 ====================================
 
 Almost everything in this release is a pure bugfix and is backported
@@ -13,36 +13,72 @@ about.  Documentation fixes are not listed.
 Tip: to quickly find SourceForge bug or patch NNNNNN, use an URL of
 the form www.python.org/sf/NNNNNN.
 
-Here are the changes since the 2.2.2b1 release.  Below are the changes
-since 2.2.1.
+Here are all the changes since the 2.2.2b1 release last week, except
+for documentation changes.  Below it are the (much more numerous!)
+changes since the 2.2.1 release in April.
 
 Core and builtins
 
-- XXX
+- In listobject.c and tupleobject.c: added overflow checks for
+  list*int, list+list, and tuple+tuple.
 
-Extension modules
+- In object.c: changed misleading SystemError exceptions raised in
+  PyObject_Init() and PyObject_InitVar() to MemoryError.
 
-- XXX
+- In stringobject.c: added an overflow check to string formatting;
+  this example could segfault: '%2147483647d' % -1.  [SF bug 618623]
+
+- In typeobject.c: removed COPYSLOT(tp_dictoffset) from
+  inherit_slots().  For more info, read this python-dev thread:
+  http://mail.python.org/pipermail/python-dev/2002-October/029502.html
+
+- In stringobject.c: fixed another string formatting nit: "%r" % u"..."
+  would return a Unicode string, even though repr(u"...")  returns an
+  8-bit string.  Now "%r" also returns an 8-bit string.
+
+- In pystate.c: initialize the tick_counter to zero.
 
 Library
 
-- XXX
+- This release includes the email package version 2.4.3, which fixes
+  some minor bugs found in email 2.4.1 since its release.
+
+- In re.py: the finditer() function was accidentally not defined.  [SF
+  bug 585882]
+
+- In webbrowser.py: fixed Konqueror support.  [SF patch 539360]
+
+- In xml/sax/expatreader.py: fixed a bug in the expat-based SAX reader
+  that allows it to work with arbitrary versions of Expat.
+
+- In distutils/sysconfig.py: added a no-op version of
+  set_python_build() back, to avoid breaking code that might call
+  this.  (It remains no longer needed and hence deprecated, though.)
 
 Build
 
-- XXX
+- In configure[.in]: expand AC_CHECK_SIZEOF inline to overcome a
+  autoconf 2.13 weakness.  [SF bug 620791]
 
-C API
+- In setup.py: Be more conservative about adding a -R flag for the SSL
+  code; it is needed on Solaris 8 and broke on Mac OSX 10.2.  The -R
+  flag is now only added for Solaris.
 
-- XXX
+Tests
+
+- The test list(xrange(sys.maxint / 4)) test in test_b1.py was changed
+  to use sys.maxint / 2 instead.  This means that the test will not
+  attempt to allocate any memory, but merely check that the overflow
+  detection code works correctly (as was intended).
 
 Windows
 
-- XXX
+- Fixed the "File version" field in the DLL.  This has apparently been
+  broken forever.
 
 Other
 
-- XXX
+- Updated the Misc/ACKS file to acknowledge many new contributors.
 
 
 What's New in Python 2.2.2b1?
