@@ -28,6 +28,8 @@ Core and builtins
 Extension modules
 -----------------
 
+- Patch #914291: Set locale while getting a line from readline.
+
 - Bug #1005308: Define _BSD_TYPES.
 
 - Patch #1005568: Use _SC_PAGESIZE on Irix in resourcemoudle.
