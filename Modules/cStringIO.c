@@ -600,7 +600,7 @@ static struct PycStringIO_CAPI CAPI = {
 
 void
 initcStringIO() {
-  PyObject *m, *d;
+  PyObject *m, *d, *v;
 
 
   /* Create the module and add the functions */
@@ -614,7 +614,9 @@ initcStringIO() {
   /* Export C API */
   Itype.ob_type=&PyType_Type;
   Otype.ob_type=&PyType_Type;
-  PyDict_SetItemString(d,"cStringIO_CAPI", PyCObject_FromVoidPtr(&CAPI,NULL));
+  PyDict_SetItemString(d,"cStringIO_CAPI",
+		       v = PyCObject_FromVoidPtr(&CAPI,NULL));
+  Py_XDECREF(v);
 
   /* Export Types */
   PyDict_SetItemString(d,"InputType",  (PyObject*)&Itype);
@@ -631,6 +633,9 @@ initcStringIO() {
 /******************************************************************************
 
   $Log$
+  Revision 2.8  1997/09/03 18:19:38  guido
+  #Plug small memory leaks in constructors.
+
   Revision 2.7  1997/09/03 00:09:26  guido
   Fix the bug Jeremy was experiencing: both the close() and the
   dealloc() functions contained code to free/DECREF the buffer

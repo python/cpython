@@ -256,7 +256,7 @@ spam2(delslice,__delslice__,
 void
 initoperator()
 {
-        PyObject *m, *d;
+        PyObject *m, *d, *v;
   
         /* Create the module and add the functions */
         m = Py_InitModule4("operator", operator_methods,
@@ -266,7 +266,8 @@ initoperator()
         /* Add some symbolic constants to the module */
         d = PyModule_GetDict(m);
         PyDict_SetItemString(d, "__version__",
-                             PyString_FromString("$Rev$"));
+                             v = PyString_FromString("$Rev$"));
+	Py_XDECREF(v);
   
         /* Check for errors */
         if (PyErr_Occurred())
