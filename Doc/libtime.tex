@@ -1,7 +1,7 @@
 \section{Built-in Module \sectcode{time}}
 \label{module-time}
-
 \bimodindex{time}
+
 This module provides various time-related functions.
 It is always available.
 
@@ -10,19 +10,24 @@ An explanation of some terminology and conventions is in order.
 \begin{itemize}
 
 \item
-The ``epoch'' is the point where the time starts.  On January 1st of that
+\index{epoch}
+The \dfn{epoch} is the point where the time starts.  On January 1st of that
 year, at 0 hours, the ``time since the epoch'' is zero.  For \UNIX{}, the
 epoch is 1970.  To find out what the epoch is, look at \code{gmtime(0)}.
 
 \item
+\index{UTC}
+\index{Coordinated Universal Time}
+\index{Greenwich Mean Time}
 UTC is Coordinated Universal Time (formerly known as Greenwich Mean
 Time).  The acronym UTC is not a mistake but a compromise between
 English and French.
 
 \item
+\index{Daylight Saving Time}
 DST is Daylight Saving Time, an adjustment of the timezone by
 (usually) one hour during part of the year.  DST rules are magic
-(determined by local law) and can change from year to year.  The C
+(determined by local law) and can change from year to year.  The \C{}
 library has a table containing the local rules (often it is read from
 a system file for flexibility) and is the only source of True Wisdom
 in this respect.
@@ -34,31 +39,30 @@ E.g.\ on most \UNIX{} systems, the clock ``ticks'' only 50 or 100 times a
 second, and on the Mac, times are only accurate to whole seconds.
 
 \item
-On the other hand, the precision of \code{time()} and \code{sleep()}
-is better than their \UNIX{} equivalents: times are expressed as floating
-point numbers, \code{time()} returns the most accurate time available
-(using \UNIX{} \code{gettimeofday()} where available), and \code{sleep()}
-will accept a time with a nonzero fraction (\UNIX{} \code{select()} is
-used to implement this, where available).
+On the other hand, the precision of \function{time()} and
+\function{sleep()} is better than their \UNIX{} equivalents: times are
+expressed as floating point numbers, \function{time()} returns the
+most accurate time available (using \UNIX{} \cfunction{gettimeofday()}
+where available), and \function{sleep()} will accept a time with a
+nonzero fraction (\UNIX{} \cfunction{select()} is used to implement
+this, where available).
 
 \item
-The time tuple as returned by \code{gmtime()} and \code{localtime()},
-or as accpted by \code{mktime()} is a tuple of 9
-integers: year (e.g.\ 1993), month (1--12), day (1--31), hour
-(0--23), minute (0--59), second (0--59), weekday (0--6, monday is 0),
-Julian day (1--366) and daylight savings flag (-1, 0  or 1).
-Note that unlike the C structure, the month value is a range of 1-12, not
+The time tuple as returned by \function{gmtime()} and
+\function{localtime()}, or as accpted by \function{mktime()} is a
+tuple of 9 integers: year (e.g.\ 1993), month (1--12), day (1--31),
+hour (0--23), minute (0--59), second (0--59), weekday (0--6, monday is
+0), Julian day (1--366) and daylight savings flag (-1, 0  or 1).
+Note that unlike the \C{} structure, the month value is a range of 1-12, not
 0-11.  A year value less than 100 will typically be silently converted to
-1900 plus the year value.  A -1 argument as daylight savings flag, passed to
-\code{mktime()} will usually result in the correct daylight savings
-state to be filled in.
-
+1900 plus the year value.  A \code{-1} argument as daylight savings
+flag, passed to \function{mktime()} will usually result in the correct
+daylight savings state to be filled in.
 
 \end{itemize}
 
 The module defines the following functions and data items:
 
-\setindexsubitem{(in module time)}
 
 \begin{datadesc}{altzone}
 The offset of the local DST timezone, in seconds west of the 0th
@@ -77,15 +81,15 @@ the same name, there is no trailing newline.
 \begin{funcdesc}{clock}{}
 Return the current CPU time as a floating point number expressed in
 seconds.  The precision, and in fact the very definiton of the meaning
-of ``CPU time'', depends on that of the C function of the same name,
-but in any case, this is the function to use for benchmarking Python
-or timing algorithms.
+of ``CPU time''\index{CPU time}, depends on that of the \C{} function
+of the same name, but in any case, this is the function to use for
+benchmarking\index{benchmarking} Python or timing algorithms.
 \end{funcdesc}
 
 \begin{funcdesc}{ctime}{secs}
 Convert a time expressed in seconds since the epoch to a string
-representing local time.  \code{ctime(t)} is equivalent to
-\code{asctime(localtime(t))}.
+representing local time.  \code{ctime(\var{secs})} is equivalent to
+\code{asctime(localtime(\var{secs}))}.
 \end{funcdesc}
 
 \begin{datadesc}{daylight}
@@ -99,17 +103,18 @@ ignored.
 \end{funcdesc}
 
 \begin{funcdesc}{localtime}{secs}
-Like \code{gmtime} but converts to local time.  The dst flag is set
-to 1 when DST applies to the given time.
+Like \function{gmtime()} but converts to local time.  The dst flag is
+set to \code{1} when DST applies to the given time.
 \end{funcdesc}
 
 \begin{funcdesc}{mktime}{tuple}
 This is the inverse function of \code{localtime}.  Its argument is the
-full 9-tuple (since the dst flag is needed --- pass -1 as the dst flag if
-it is unknown) which expresses the time
+full 9-tuple (since the dst flag is needed --- pass \code{-1} as the
+dst flag if it is unknown) which expresses the time
 in \emph{local} time, not UTC.  It returns a floating
-point number, for compatibility with \code{time.time()}.  If the input
-value can't be represented as a valid time, OverflowError is raised.
+point number, for compatibility with \function{time()}.  If the input
+value cannot be represented as a valid time, \exception{OverflowError}
+is raised.
 \end{funcdesc}
 
 \begin{funcdesc}{sleep}{secs}
@@ -125,41 +130,41 @@ The following directives, shown without the optional field width and
 precision specification, are replaced by the indicated characters:
 
 \begin{tableii}{|c|p{24em}|}{code}{Directive}{Meaning}
-\lineii{\%a}{Locale's abbreviated weekday name.}
-\lineii{\%A}{Locale's full weekday name.}
-\lineii{\%b}{Locale's abbreviated month name.}
-\lineii{\%B}{Locale's full month name.}
-\lineii{\%c}{Locale's appropriate date and time representation.}
-\lineii{\%d}{Day of the month as a decimal number [01,31].}
-\lineii{\%H}{Hour (24-hour clock) as a decimal number [00,23].}
-\lineii{\%I}{Hour (12-hour clock) as a decimal number [01,12].}
-\lineii{\%j}{Day of the year as a decimal number [001,366].}
-\lineii{\%m}{Month as a decimal number [01,12].}
-\lineii{\%M}{Minute as a decimal number [00,59].}
-\lineii{\%p}{Locale's equivalent of either AM or PM.}
-\lineii{\%S}{Second as a decimal number [00,61].}
-\lineii{\%U}{Week number of the year (Sunday as the first day of the
-             week) as a decimal number [00,53].  All days in a new year
-             preceding the first Sunday are considered to be in week 0.}
-\lineii{\%w}{Weekday as a decimal number [0(Sunday),6].}
-\lineii{\%W}{Week number of the year (Monday as the first day of the
-             week) as a decimal number [00,53].  All days in a new year
-             preceding the first Sunday are considered to be in week 0.}
-\lineii{\%x}{Locale's appropriate date representation.}
-\lineii{\%X}{Locale's appropriate time representation.}
-\lineii{\%y}{Year without century as a decimal number [00,99].}
-\lineii{\%Y}{Year with century as a decimal number.}
-\lineii{\%Z}{Time zone name (or by no characters if no time zone exists).}
-\lineii{\%\%}{\%}
+  \lineii{\%a}{Locale's abbreviated weekday name.}
+  \lineii{\%A}{Locale's full weekday name.}
+  \lineii{\%b}{Locale's abbreviated month name.}
+  \lineii{\%B}{Locale's full month name.}
+  \lineii{\%c}{Locale's appropriate date and time representation.}
+  \lineii{\%d}{Day of the month as a decimal number [01,31].}
+  \lineii{\%H}{Hour (24-hour clock) as a decimal number [00,23].}
+  \lineii{\%I}{Hour (12-hour clock) as a decimal number [01,12].}
+  \lineii{\%j}{Day of the year as a decimal number [001,366].}
+  \lineii{\%m}{Month as a decimal number [01,12].}
+  \lineii{\%M}{Minute as a decimal number [00,59].}
+  \lineii{\%p}{Locale's equivalent of either AM or PM.}
+  \lineii{\%S}{Second as a decimal number [00,61].}
+  \lineii{\%U}{Week number of the year (Sunday as the first day of the
+               week) as a decimal number [00,53].  All days in a new year
+               preceding the first Sunday are considered to be in week 0.}
+  \lineii{\%w}{Weekday as a decimal number [0(Sunday),6].}
+  \lineii{\%W}{Week number of the year (Monday as the first day of the
+               week) as a decimal number [00,53].  All days in a new year
+               preceding the first Sunday are considered to be in week 0.}
+  \lineii{\%x}{Locale's appropriate date representation.}
+  \lineii{\%X}{Locale's appropriate time representation.}
+  \lineii{\%y}{Year without century as a decimal number [00,99].}
+  \lineii{\%Y}{Year with century as a decimal number.}
+  \lineii{\%Z}{Time zone name (or by no characters if no time zone exists).}
+  \lineii{\%\%}{\%}
 \end{tableii}
 
 Additional directives may be supported on certain platforms, but
 only the ones listed here have a meaning standardized by ANSI C.
 
 On some platforms, an optional field width and precision
-specification can immediately follow the initial \% of a
+specification can immediately follow the initial \code{\%} of a
 directive in the following order; this is also not portable.
-The field width is normally 2 except for \%j where it is 3.
+The field width is normally 2 except for \code{\%j} where it is 3.
 
 \end{funcdesc}
 
