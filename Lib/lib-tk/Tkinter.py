@@ -181,6 +181,14 @@ class Misc:
 		return status
 	def lower(self, belowThis=None):
 		self.tk.call('lower', self._w, belowThis)
+	def option_add(self, pattern, value, priority = None):
+		self.tk.call('option', 'add', pattern, priority)
+	def option_clear(self):
+		self.tk.call('option', 'clear')
+	def option_get(self, name, className):
+		return self.tk.call('option', 'get', self._w, name, className)
+	def option_readfile(self, fileName, priority = None):
+		self.tk.call('option', 'readfile', fileName, priority)
 	def selection_clear(self):
 		self.tk.call('selection', 'clear', self._w)
 	def selection_get(self, type=None):
