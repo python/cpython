@@ -21,7 +21,7 @@ NUM_THREADS = 20        # change w/ -t option
 FILES_PER_THREAD = 50   # change w/ -f option
 
 import threading
-from test.test_support import TestFailed
+from test_support import TestFailed
 import StringIO
 from traceback import print_exc
 
