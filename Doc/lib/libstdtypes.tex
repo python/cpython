@@ -122,10 +122,10 @@ Notes:
 
 \item[(1)]
 \code{<>} and \code{!=} are alternate spellings for the same operator.
-(I couldn't choose between \ABC{} and \C{}! :-)
+(I couldn't choose between \ABC{} and C! :-)
 \index{ABC language@\ABC{} language}
 \index{language!ABC@\ABC{}}
-\indexii{C@\C{}}{language}
+\indexii{C}{language}
 \code{!=} is the preferred spelling; \code{<>} is obsolescent.
 
 \end{description}
@@ -254,11 +254,12 @@ the numeric value.
 
 \item[(2)]
 Conversion from floating point to (long or plain) integer may round or
-truncate as in \C{}; see functions \function{floor()} and \function{ceil()} in
-module \refmodule{math}\refbimodindex{math} for well-defined conversions.
+truncate as in C; see functions \function{floor()} and
+\function{ceil()} in the \refmodule{math}\refbimodindex{math} module
+for well-defined conversions.
 \withsubitem{(in module math)}{\ttindex{floor()}\ttindex{ceil()}}
 \indexii{numeric}{conversions}
-\indexii{C@\C{}}{language}
+\indexii{C}{language}
 
 \item[(3)]
 See section \ref{built-in-funcs}, ``Built-in Functions,'' for a full
@@ -311,19 +312,26 @@ division by \code{pow(2, \var{n})} without overflow check.
 
 \subsection{Sequence Types \label{typesseq}}
 
-There are three sequence types: strings, lists and tuples.
+There are five sequence types: strings, Unicode strings, lists,
+tuples, and buffers.
 
 Strings literals are written in single or double quotes:
 \code{'xyzzy'}, \code{"frobozz"}.  See chapter 2 of the
-\citetitle[../ref/ref.html]{Python Reference Manual} for more about
-string literals.  Lists are constructed with square brackets,
+\citetitle[../ref/strings.html]{Python Reference Manual} for more about
+string literals.  Unicode strings are much like strings, but are
+specified in the syntax using a preceeding \character{u} character:
+\code{u'abc'}, \code{u"def"}.  Lists are constructed with square brackets,
 separating items with commas: \code{[a, b, c]}.  Tuples are
 constructed by the comma operator (not within square brackets), with
 or without enclosing parentheses, but an empty tuple must have the
 enclosing parentheses, e.g., \code{a, b, c} or \code{()}.  A single
-item tuple must have a trailing comma, e.g., \code{(d,)}.
+item tuple must have a trailing comma, e.g., \code{(d,)}.  Buffers are
+not directly support by Python syntax, but can created by calling the
+builtin function \function{buffer()}.\bifuncindex{buffer}
 \indexii{sequence}{types}
 \indexii{string}{type}
+\indexii{Unicode}{type}
+\indexii{buffer}{type}
 \indexii{tuple}{type}
 \indexii{list}{type}
 
@@ -386,19 +394,204 @@ Notes:
 \end{description}
 
 
-\subsubsection{More String Operations \label{typesseq-strings}}
+\subsubsection{String Methods \label{string-methods}}
+
+These are the string methods which both 8-bit strings and Unicode
+objects support:
+
+\begin{methoddesc}[string]{capitalize}{}
+Return a copy of the string with only its first character capitalized.
+\end{methoddesc}
+
+\begin{methoddesc}[string]{center}{width}
+Return centered in a string of length \var{width}. Padding is done
+using spaces.
+\end{methoddesc}
+
+\begin{methoddesc}[string]{count}{sub\optional{, start\optional{, end}}}
+Return the number of occurrences of substring \var{sub} in string
+S\code{[\var{start}:\var{end}]}.  Optional arguments \var{start} and
+\var{end} are interpreted as in slice notation.
+\end{methoddesc}
+
+\begin{methoddesc}[string]{encode}{\optional{encoding\optional{,errors}}}
+Return an encoded version of the string.  Default encoding is the current
+default string encoding.  \var{errors} may be given to set a different
+error handling scheme.  The default for \var{errors} is
+\code{'strict'}, meaning that encoding errors raise a
+\exception{ValueError}.  Other possible values are \code{'ignore'} and
+\code{'replace'}.
+\end{methoddesc}
+
+\begin{methoddesc}[string]{endswith}{suffix\optional{, start\optional{, end}}}
+Return true if the string ends with the specified \var{suffix},
+otherwise return false.  With optional \var{start}, test beginning at
+that position.  With optional \var{end}, stop comparing at that position.
+\end{methoddesc}
+
+\begin{methoddesc}[string]{expandtabs}{\optional{tabsize}}
+Return a copy of the string where all tab characters are expanded
+using spaces.  If \var{tabsize} is not given, a tab size of \code{8}
+characters is assumed.
+\end{methoddesc}
+
+\begin{methoddesc}[string]{find}{sub\optional{, start\optional{, end}}}
+Return the lowest index in the string where substring \var{sub} is
+found, such that \var{sub} is contained in the range [\var{start},
+\var{end}).  Optional arguments \var{start} and \var{end} are
+interpreted as in slice notation.  Return \code{-1} if \var{sub} is
+not found.
+\end{methoddesc}
+
+\begin{methoddesc}[string]{index}{sub\optional{, start\optional{, end}}}
+Like \method{find()}, but raise \exception{ValueError} when the
+substring is not found.
+\end{methoddesc}
+
+\begin{methoddesc}[string]{isalnum}{}
+Return true if all characters in the string are alphanumeric and there
+is at least one character, false otherwise.
+\end{methoddesc}
+
+\begin{methoddesc}[string]{isalpha}{}
+Return true if all characters in the string are alphabetic and there
+is at least one character, false otherwise.
+\end{methoddesc}
+
+\begin{methoddesc}[string]{isdigit}{}
+Return true if there are only digit characters, false otherwise.
+\end{methoddesc}
+
+\begin{methoddesc}[string]{islower}{}
+Return true if all cased characters in the string are lowercase and
+there is at least one cased character, false otherwise.
+\end{methoddesc}
+
+\begin{methoddesc}[string]{isspace}{}
+Return true if there are only whitespace characters in the string and
+the string is not empty, false otherwise.
+\end{methoddesc}
+
+\begin{methoddesc}[string]{istitle}{}
+Return true if the string is a titlecased string, i.e.\ uppercase
+characters may only follow uncased characters and lowercase characters
+only cased ones.  Return false otherwise.
+\end{methoddesc}
+
+\begin{methoddesc}[string]{isupper}{}
+Return true if all cased characters in the string are uppercase and
+there is at least one cased character, false otherwise.
+\end{methoddesc}
+
+\begin{methoddesc}[string]{join}{seq}
+Return a string which is the concatenation of the strings in the
+sequence \var{seq}.  The separator between elements is the string
+providing this method.
+\end{methoddesc}
+
+\begin{methoddesc}[string]{ljust}{width}
+Return the string left justified in a string of length \var{width}.
+Padding is done using spaces.  The original string is returned if
+\var{width} is less than \code{len(\var{s})}.
+\end{methoddesc}
+
+\begin{methoddesc}[string]{lower}{}
+Return a copy of the string converted to lowercase.
+\end{methoddesc}
+
+\begin{methoddesc}[string]{lstrip}{}
+Return a copy of the string with leading whitespace removed.
+\end{methoddesc}
+
+\begin{methoddesc}[string]{replace}{old, new\optional{, maxsplit}}
+Return a copy of the string with all occurrences of substring
+\var{old} replaced by \var{new}.  If the optional argument
+\var{maxsplit} is given, only the first \var{maxsplit} occurrences are
+replaced.
+\end{methoddesc}
+
+\begin{methoddesc}[string]{rfind}{sub \optional{,start \optional{,end}}}
+Return the highest index in the string where substring \var{sub} is
+found, such that \var{sub} is contained within s[start,end].  Optional
+arguments \var{start} and \var{end} are interpreted as in slice
+notation.  Return \code{-1} on failure.
+\end{methoddesc}
+
+\begin{methoddesc}[string]{rindex}{sub\optional{, start\optional{, end}}}
+Like \method{rfind()} but raises \exception{ValueError} when the
+substring \var{sub} is not found.
+\end{methoddesc}
+
+\begin{methoddesc}[string]{rjust}{width}
+Return the string right justified in a string of length \var{width}.
+Padding is done using spaces.  The original string is returned if
+\var{width} is less than \code{len(\var{s})}.
+\end{methoddesc}
+
+\begin{methoddesc}[string]{rstrip}{}
+Return a copy of the string with trailing whitespace removed.
+\end{methoddesc}
+
+\begin{methoddesc}[string]{split}{\optional{sep \optional{,maxsplit}}}
+Return a list of the words in the string, using \var{sep} as the
+delimiter string.  If \var{maxsplit} is given, at most \var{maxsplit}
+splits are done.  If \var{sep} is not specified or \code{None}, any
+whitespace string is a separator.
+\end{methoddesc}
+
+\begin{methoddesc}[string]{splitlines}{\optional{keepends}}
+Return a list of the lines in the string, breaking at line
+boundaries.  Line breaks are not included in the resulting list unless
+\var{keepends} is given and true.
+\end{methoddesc}
+
+\begin{methoddesc}[string]{startswith}{prefix\optional{, start\optional{, end}}}
+Return true if string starts with the \var{prefix}, otherwise
+return false.  With optional \var{start}, test string beginning at
+that position.  With optional \var{end}, stop comparing string at that
+position.
+\end{methoddesc}
+
+\begin{methoddesc}[string]{strip}{}
+Return a copy of the string with leading and trailing whitespace
+removed.
+\end{methoddesc}
+
+\begin{methoddesc}[string]{swapcase}{}
+Return a copy of the string with uppercase characters converted to
+lowercase and vice versa.
+\end{methoddesc}
+
+\begin{methoddesc}[string]{title}{}
+Return a titlecased version of, i.e.\ words start with uppercase
+characters, all remaining cased characters are lowercase.
+\end{methoddesc}
+
+\begin{methoddesc}[string]{translate}{table\optional{, deletechars}}
+Return a copy of the string where all characters occurring in the
+optional argument \var{deletechars} are removed, and the remaining
+characters have been mapped through the given translation table, which
+must be a string of length 256.
+\end{methoddesc}
+
+\begin{methoddesc}[string]{upper}{}
+Return a copy of the string converted to uppercase.
+\end{methoddesc}
+
+
+\subsubsection{String Formatting Operations \label{typesseq-strings}}
 
 String objects have one unique built-in operation: the \code{\%}
 operator (modulo) with a string left argument interprets this string
-as a \C{} \cfunction{sprintf()} format string to be applied to the
+as a C \cfunction{sprintf()} format string to be applied to the
 right argument, and returns the string resulting from this formatting
 operation.
 
 The right argument should be a tuple with one item for each argument
 required by the format string; if the string requires a single
 argument, the right argument may also be a single non-tuple
-object.\footnote{A tuple object in this case should be a singleton.}
-The following format characters are understood:
+object.\footnote{A tuple object in this case should be a singleton.
+}  The following format characters are understood:
 \code{\%}, \code{c}, \code{s}, \code{i}, \code{d}, \code{u}, \code{o},
 \code{x}, \code{X}, \code{e}, \code{E}, \code{f}, \code{g}, \code{G}. 
 Width and precision may be a \code{*} to specify that an integer argument
@@ -417,8 +610,8 @@ are replaced by \code{\%g} conversions.\footnote{
   These numbers are fairly arbitrary.  They are intended to
   avoid printing endless strings of meaningless digits without hampering
   correct use and without having to know the exact precision of floating
-  point values on a particular machine.}
-All other errors raise exceptions.
+  point values on a particular machine.
+}  All other errors raise exceptions.
 
 If the right argument is a dictionary (or any kind of mapping), then
 the formats in the string must have a parenthesized key into that
@@ -754,14 +947,14 @@ It is written as \code{Ellipsis}.
 \subsubsection{File Objects\obindex{file}
                \label{bltin-file-objects}}
 
-File objects are implemented using \C{}'s \code{stdio}
-package and can be created with the built-in function
-\function{open()}\bifuncindex{open} described in section
+File objects are implemented using C's \code{stdio} package and can be
+created with the built-in function
+\function{open()}\bifuncindex{open} described in section 
 \ref{built-in-funcs}, ``Built-in Functions.''  They are also returned
 by some other built-in functions and methods, e.g.,
-\function{posix.popen()} and \function{posix.fdopen()} and the
+\function{os.popen()} and \function{os.fdopen()} and the
 \method{makefile()} method of socket objects.
-\refbimodindex{posix}
+\refstmodindex{os}
 \refbimodindex{socket}
 
 When a file operation fails for an I/O-related reason, the exception
@@ -813,8 +1006,8 @@ descriptors, e.g. module \module{fcntl} or \function{os.read()} and friends.
 	advantage is that (in cases where it might matter, e.g. if you 
 	want to make an exact copy of a file while scanning its lines) 
 	you can tell whether the last line of a file ended in a newline
-	or not (yes this happens!).}
-  (but may be absent when a file ends with an
+	or not (yes this happens!).
+  } (but may be absent when a file ends with an
   incomplete line).  If the \var{size} argument is present and
   non-negative, it is a maximum byte count (including the trailing
   newline) and an incomplete line may be returned.
@@ -892,7 +1085,7 @@ before another value when using the \keyword{print} statement.
 Classes that are trying to simulate a file object should also have a
 writable \member{softspace} attribute, which should be initialized to
 zero.  This will be automatic for classes implemented in Python; types
-implemented in \C{} will have to provide a writable \member{softspace}
+implemented in C will have to provide a writable \member{softspace}
 attribute.
 \end{memberdesc}
 
