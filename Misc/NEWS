@@ -33,6 +33,9 @@ Library
   which don't restrict the return types (unlike the unicode and
   string methods of the same name).
 
+- asyncore's dispatcher.set_reuse_addr() now works correctly on Windows.
+  SF patch 982681.
+
 Tools/Demos
 -----------
 
