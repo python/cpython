@@ -223,6 +223,9 @@
 /* Define if you have the mkfifo function.  */
 #undef HAVE_MKFIFO
 
+/* Define if you have the mktime function.  */
+#undef HAVE_MKTIME
+
 /* Define if you have the nice function.  */
 #undef HAVE_NICE
 
