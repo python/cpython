@@ -39,6 +39,9 @@ Used in:  LONG_LONG
 #else
 #define Py_PROTO(x) ()
 #endif
+#ifndef Py_FPROTO
+#define Py_FPROTO(x) Py_PROTO(x)
+#endif
 
 /* typedefs for some C9X-defined synonyms for integral types.
  *
