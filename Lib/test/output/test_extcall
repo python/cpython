@@ -16,6 +16,10 @@ TypeError: not enough arguments; expected 1, got 0
 1 (2,) {}
 1 (2, 3) {}
 1 (2, 3, 4, 5) {}
+0 (1, 2) {}
+1 () {'d': 4, 'b': 2, 'c': 3, 'a': 1}
+{'b': 2, 'c': 3, 'a': 1}
+{'b': 2, 'c': 3, 'a': 1}
 keyword parameter redefined: x
 keyword parameter redefined: b
 keywords must be strings

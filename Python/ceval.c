@@ -1635,7 +1635,18 @@ eval_code2(co, globals, locals,
 				x = NULL;
 				break;
 			    }
-			    nstar = PySequence_Length(stararg);
+			    /* Convert abstract sequence to concrete tuple */
+			    if (!PyTuple_Check(stararg)) {
+				PyObject *t = NULL;
+				t = PySequence_Tuple(stararg);
+				if (t == NULL) {
+				    x = NULL;
+				    break;
+				}
+				Py_DECREF(stararg);
+				stararg = t;
+			    }
+			    nstar = PyTuple_GET_SIZE(stararg);
 			    if (nstar < 0) {
 				x = NULL;
 				break;
@@ -1648,6 +1659,15 @@ eval_code2(co, globals, locals,
 				    x = NULL;
 				    break;
 				}
+			    }
+			    else {
+				    PyObject *d = PyDict_Copy(kwdict);
+				    if (d == NULL) {
+					    x = NULL;
+					    break;
+				    }
+				    Py_DECREF(kwdict);
+				    kwdict = d;
 			    }
 			    err = 0;
 			    while (--nk >= 0) {
@@ -1678,18 +1698,7 @@ eval_code2(co, globals, locals,
 			    break;
 			}
 			if (stararg) {
-			    PyObject *t = NULL;
 			    int i;
-			    if (!PyTuple_Check(stararg)) {
-				/* must be sequence to pass earlier test */
-				t = PySequence_Tuple(stararg);
-				if (t == NULL) {
-				    x = NULL;
-				    break;
-				}
-				Py_DECREF(stararg);
-				stararg = t;
-			    }
 			    for (i = 0; i < nstar; i++) {
 				PyObject *a = PyTuple_GET_ITEM(stararg, i);
 				Py_INCREF(a);
