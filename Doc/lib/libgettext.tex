@@ -118,8 +118,8 @@ API.  It is the recommended way of localizing your Python applications and
 modules.  \module{gettext} defines a ``translations'' class which
 implements the parsing of GNU \file{.mo} format files, and has methods
 for returning either standard 8-bit strings or Unicode strings.
-Translations instances can also install themselves in the built-in
-namespace as the function \function{_()}.
+Instances of this ``translations'' class can also install themselves 
+in the built-in namespace as the function \function{_()}.
 
 \begin{funcdesc}{find}{domain\optional{, localedir\optional{, 
                         languages\optional{, all}}}}
@@ -365,7 +365,7 @@ cat = GNUTranslations(somefile)
 message = cat.ungettext(
     'There is %(num)d file in this directory',
     'There are %(num)d files in this directory',
-    n) % {'n': n}
+    n) % {'num': n}
 \end{verbatim}
 
 \versionadded{2.3}
