@@ -55,6 +55,7 @@ iter_iternext(PyObject *iterator)
 {
 	seqiterobject *it;
 	PyObject *seq;
+	PyObject *result;
 
 	assert(PySeqIter_Check(iterator));
 	it = (seqiterobject *)iterator;
@@ -62,33 +63,19 @@ iter_iternext(PyObject *iterator)
 	if (seq == NULL)
 		return NULL;
 
-	if (PyTuple_CheckExact(seq)) {
-		if (it->it_index < PyTuple_GET_SIZE(seq)) {
-			PyObject *item;
-			item = PyTuple_GET_ITEM(seq, it->it_index);
-			it->it_index++;
-			Py_INCREF(item);
-			return item;
-		}
+	result = PySequence_GetItem(seq, it->it_index);
+	if (result != NULL) {
+		it->it_index++;
+		return result;
+	}
+	if (PyErr_ExceptionMatches(PyExc_IndexError) ||
+	    PyErr_ExceptionMatches(PyExc_StopIteration))
+	{
+		PyErr_Clear();
 		Py_DECREF(seq);
 		it->it_seq = NULL;
-		return NULL;
 	}
-	else {
-		PyObject *result = PySequence_GetItem(seq, it->it_index);
-		if (result != NULL) {
-			it->it_index++;
-			return result;
-		}
-		if (PyErr_ExceptionMatches(PyExc_IndexError) ||
-		    PyErr_ExceptionMatches(PyExc_StopIteration))
-		{
-			PyErr_Clear();
-			Py_DECREF(seq);
-			it->it_seq = NULL;
-		}
-		return NULL;
-	}
+	return NULL;
 }
 
 PyTypeObject PySeqIter_Type = {
