@@ -98,6 +98,7 @@ sub make_index_entry {
 
 # use this instead with the buildindex.py tool
 sub add_idx{
+    print "\nDoing the index ...";
     close(IDXFILE);
     my $index = `$myrootdir/tools/buildindex.py index.dat`;
     s/$idx_mark/$index/;
