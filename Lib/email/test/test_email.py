@@ -1089,6 +1089,7 @@ From: bperson@dom.ain
 ''')
 
     def test_one_part_in_a_multipart(self):
+        eq = self.ndiffAssertEqual
         outer = MIMEBase('multipart', 'mixed')
         outer['Subject'] = 'A subject'
         outer['To'] = 'aperson@dom.ain'
@@ -1098,7 +1099,7 @@ From: bperson@dom.ain
         outer.set_boundary('BOUNDARY')
         msg = MIMEText('hello world')
         outer.attach(msg)
-        self.assertEqual(outer.as_string(), '''\
+        eq(outer.as_string(), '''\
 Content-Type: multipart/mixed; boundary="BOUNDARY"
 MIME-Version: 1.0
 Subject: A subject
@@ -1116,6 +1117,7 @@ hello world
 ''')
 
     def test_seq_parts_in_a_multipart(self):
+        eq = self.ndiffAssertEqual
         outer = MIMEBase('multipart', 'mixed')
         outer['Subject'] = 'A subject'
         outer['To'] = 'aperson@dom.ain'
@@ -1125,7 +1127,7 @@ hello world
         msg = MIMEText('hello world')
         outer.attach(msg)
         outer.set_boundary('BOUNDARY')
-        self.assertEqual(outer.as_string(), '''\
+        eq(outer.as_string(), '''\
 Content-Type: multipart/mixed; boundary="BOUNDARY"
 MIME-Version: 1.0
 Subject: A subject
@@ -1410,6 +1412,7 @@ Your message cannot be delivered to the following recipients:
            '<002001c144a6$8752e060$56104586@oxy.edu>')
 
     def test_epilogue(self):
+        eq = self.ndiffAssertEqual
         fp = openfile('msg_21.txt')
         try:
             text = fp.read()
@@ -1429,7 +1432,7 @@ Your message cannot be delivered to the following recipients:
         sfp = StringIO()
         g = Generator(sfp)
         g.flatten(msg)
-        self.assertEqual(sfp.getvalue(), text)
+        eq(sfp.getvalue(), text)
 
     def test_no_nl_preamble(self):
         eq = self.ndiffAssertEqual
