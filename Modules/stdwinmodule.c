@@ -101,6 +101,9 @@ static type_lock StdwinLock; /* Lock held when interpreter not locked */
 
 #endif
 
+#define getintarg(v,a) PyArg_Parse(v, "i", a)
+#define getlongarg(v,a) PyArg_Parse(v, "l", a)
+#define getstrarg(v,a) PyArg_Parse(v, "s", a)
 #define getpointarg(v, a) PyArg_Parse(v, "(ii)", a, (a)+1)
 #define get3pointarg(v, a) PyArg_Parse(v, "((ii)(ii)(ii))", \
                                        a, a+1, a+2, a+3, a+4, a+5)
