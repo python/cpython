@@ -247,8 +247,8 @@ class EditorWindow:
             menudict[name] = menu = Menu(mbar, name=name)
             mbar.add_cascade(label=label, menu=menu, underline=underline)
         self.fill_menus()
-        #create the ExtraHelp menu, if required
-        self.ResetExtraHelpMenu()
+        self.base_helpmenu_length = self.menudict['help'].index(END)
+        self.reset_help_menu_entries()
 
     def postwindowsmenu(self):
         # Only called when Windows menu exists
@@ -315,7 +315,8 @@ class EditorWindow:
             return "break"
 
     def display_docs(self, url):
-        url = os.path.normpath(url)
+        if not (url.startswith('www') or url.startswith('http')):
+            url = os.path.normpath(url)
         if sys.platform.count('win') or sys.platform.count('nt'):
             os.startfile(url)
         else:
@@ -530,29 +531,28 @@ class EditorWindow:
                             menu.entryconfig(index,accelerator=accel)
                             #print 'accel now:',accel,'\n'
 
-    def ResetExtraHelpMenu(self):
-        "Load or update the Extra Help menu if required"
-        menuList=idleConf.GetAllExtraHelpSourcesList()
-        helpMenu=self.menudict['help']
-        cascadeIndex=helpMenu.index(END)-1
-        if menuList:
-            if not hasattr(self,'menuExtraHelp'):
-                self.menuExtraHelp=Menu(self.menubar)
-                helpMenu.insert_cascade(cascadeIndex,label='Extra Help',
-                        underline=1,menu=self.menuExtraHelp)
-            self.menuExtraHelp.delete(1,END)
-            for menuItem in menuList:
-                self.menuExtraHelp.add_command(label=menuItem[0],
-                        command=self.__DisplayExtraHelpCallback(menuItem[1]))
-        else: #no extra help items
-            if hasattr(self,'menuExtraHelp'):
-                helpMenu.delete(cascadeIndex-1)
-                del(self.menuExtraHelp)
+    def reset_help_menu_entries(self):
+        "Update the additional help entries on the Help menu"
+        help_list = idleConf.GetAllExtraHelpSourcesList()
+        helpmenu = self.menudict['help']
+        # first delete the extra help entries, if any
+        helpmenu_length = helpmenu.index(END)
+        if helpmenu_length > self.base_helpmenu_length:
+            helpmenu.delete((self.base_helpmenu_length + 1), helpmenu_length)
+        # then rebuild them
+        if help_list:
+            helpmenu.add_separator()
+            for entry in help_list:
+                cmd = self.__extra_help_callback(entry[1])
+                helpmenu.add_command(label=entry[0], command=cmd)
+        # and update the menu dictionary
+        self.menudict['help'] = helpmenu
 
-    def __DisplayExtraHelpCallback(self,helpFile):
-        def DisplayExtraHelp(helpFile=helpFile):
-            self.display_docs(helpFile)
-        return DisplayExtraHelp
+    def __extra_help_callback(self, helpfile):
+        "Create a callback with the helpfile value frozen at definition time"
+        def display_extra_help(helpfile=helpfile):
+            self.display_docs(helpfile)
+        return display_extra_help
 
     def UpdateRecentFilesList(self,newFile=None):
         "Load or update the recent files list, and menu if required"

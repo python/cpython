@@ -25,9 +25,21 @@
 # retained unless specifically deleted within the config dialog. Choosing
 # one of the default themes or keysets just applies the relevant settings 
 # from the default file. 
+#
+# Additional help sources are listed in the [HelpFiles] section and must be
+# viewable by a web browser (or the Windows Help viewer in the case of .chm
+# files). These sources will be listed on the Help menu.  The pattern is 
+# <sequence_number = menu item;/path/to/help/source> 
+# You can't use a semi-colon in a menu item or path.  The path will be platform
+# specific because of path separators, drive specs etc.
+#
+# It is best to use the Configuration GUI to set up additional help sources!
+# Example:
+#1 = My Extra Help Source;/usr/share/doc/foo/index.html
+#2 = Another Help Source;/path/to/another.pdf
 
 [General]
-editor-on-startup= 1
+editor-on-startup= 0
 print-command-posix=lpr %s
 print-command-win=start /min notepad /p %s
 
@@ -51,22 +63,3 @@ default= 1
 name= IDLE Classic Windows
 
 [HelpFiles]
-#additional help sources, must be viewable by an html browser
-#will be listed on the Help/Other Help menu
-#option names are the sequence number of the option
-#values take the form: menu item;/path/to/help/source
-#obviously you can't use a semi-colon in a menu item or path and the path will 
-#be platform specific because of path separators, drive specs etc. 
-#eg.:
-#1= My Extra Help Source;/usr/share/doc/foo/index.html
-#2= Another Help Source;/path/to/another.html
-
-#[RecentFiles]
-#this section will only be present in the user config file idle-main.cfg
-#where it will record the most recently openned files in the form
-#IndexNum= /full/path/of/file  , for display on the File/Recent Files menu
-#it is present here for reference only
-#eg.:
-#1=/most/recently/openned/file
-#2=/next/most/recently/openned/file
-#etc.

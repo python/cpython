@@ -7,6 +7,27 @@ What's New in IDLEfork 0.9 Alpha 2?
 
 *Release date: XX-XXX-2003*
 
+- Change default: IDLE now starts with Python Shell.
+
+- Removed the File Path from the Additional Help Sources scrolled list.
+
+- Add capability to access Additional Help Sources on the web if the 
+  Help File Path begins with //http or www.  (Otherwise local path is
+  validated, as before.)
+
+- Additional Help Sources were not being posted on the Help menu in the
+  order entered.  Implement sorting the list by [HelpFiles] 'option' 
+  number.
+
+- Add Browse button to New Help Source dialog.  Arrange to start in 
+  Python/Doc if platform is Windows, otherwise start in current directory.
+
+- Put the Additional Help Sources directly on the Help menu instead of in
+  an Extra Help cascade menu.  Rearrange the Help menu so the Additional
+  Help Sources come last.  Update help.txt appropriately.
+
+- Fix Tk root pop-ups in configSectionNameDialog.py  and configDialog.py
+
 - Uniform capitalization in General tab of ConfigDialog, update the doc string.
 
 - Fix bug in ConfigDialog where SaveAllChangedConfig() was unexpectedly

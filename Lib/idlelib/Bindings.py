@@ -65,16 +65,16 @@ menudefs = [
    ('!_Auto-open Stack Viewer', '<<toggle-jit-stack-viewer>>' ),
   ]),
  ('options', [
-   ('_Configure Idle...', '<<open-config-dialog>>'),
+   ('_Configure IDLE...', '<<open-config-dialog>>'),
    None,
    ('Revert to _Default Settings', '<<revert-all-settings>>'),
   ]),
  ('help', [
-   ('_IDLE Help...', '<<help>>'),
-   ('Python _Documentation...', '<<python-docs>>'),
-   ('View IDLE _Readme...', '<<view-readme>>'),
+   ('_About IDLE', '<<about-idle>>'),
+   ('IDLE _Readme', '<<view-readme>>'),   
    None,
-   ('_About IDLE...', '<<about-idle>>'),
+   ('_IDLE Help', '<<help>>'),
+   ('Python _Docs', '<<python-docs>>'),
   ]),
 ]
 
