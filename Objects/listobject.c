@@ -1640,7 +1640,7 @@ list_nohash(PyObject *self)
 static char append_doc[] =
 "L.append(object) -- append object to end";
 static char extend_doc[] =
-"L.extend(list) -- extend list by appending list elements";
+"L.extend(iterable) -- extend list by appending elements from the iterable";
 static char insert_doc[] =
 "L.insert(index, object) -- insert object before index";
 static char pop_doc[] =
