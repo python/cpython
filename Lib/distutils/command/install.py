@@ -365,9 +365,9 @@ class install (Command):
 
         # Run all sub-commands: currently this just means install all
         # Python modules using 'install_lib'.
-        for (func, cmd) in self.sub_commands:
+        for (func, cmd_name) in self.sub_commands:
             if func is None or func():
-                self.run_peer (cmd)
+                self.run_peer (cmd_name)
 
         if self.path_file:
             self.create_path_file ()
@@ -387,11 +387,23 @@ class install (Command):
         # This command doesn't have any outputs of its own, so just
         # get the outputs of all its sub-commands.
         outputs = []
-        for (func, cmd) in self.sub_commands:
+        for (func, cmd_name) in self.sub_commands:
             if func is None or func():
-                outputs.extend (self.run_peer (cmd))
+                cmd = self.find_peer (cmd_name)
+                outputs.extend (cmd.get_outputs())
 
         return outputs
+
+
+    def get_inputs (self):
+        # XXX gee, this looks familiar ;-(
+        inputs = []
+        for (func, cmd_name) in self.sub_commands:
+            if func is None or func():
+                cmd = self.find_peer (cmd_name)
+                inputs.extend (cmd.get_inputs())
+
+        return inputs
 
 
     def create_path_file (self):
