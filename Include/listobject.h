@@ -22,6 +22,7 @@ extern "C" {
 typedef struct {
     PyObject_VAR_HEAD
     PyObject **ob_item;
+    int allocated;
 } PyListObject;
 
 PyAPI_DATA(PyTypeObject) PyList_Type;
