@@ -120,4 +120,5 @@
   }%
   \pagenumbering{arabic}%
   \@ifundefined{fancyhf}{}{\pagestyle{normal}}%
+  \@doing@page@targetstrue%
 }
