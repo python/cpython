@@ -49,6 +49,8 @@ object *compile_string PROTO((char *, char *, int));
 
 void print_error PROTO((void));
 
+int Py_AtExit PROTO((void (*func) PROTO((void))));
+
 void goaway PROTO((int));
 
 void cleanup PROTO((void));
