@@ -631,6 +631,7 @@ static formatdef native_table[] = {
 	{'B',	sizeof(char),	0,		nu_ubyte,	np_byte},
 	{'c',	sizeof(char),	0,		nu_char,	np_char},
 	{'s',	sizeof(char),	0,		NULL},
+	{'p',	sizeof(char),	0,		NULL},
 	{'h',	sizeof(short),	SHORT_ALIGN,	nu_short,	np_short},
 	{'H',	sizeof(short),	SHORT_ALIGN,	nu_ushort,	np_short},
 	{'i',	sizeof(int),	INT_ALIGN,	nu_int,		np_int},
@@ -761,6 +762,7 @@ static formatdef bigendian_table[] = {
 	{'B',	1,		0,		bu_uint,	bp_int},
 	{'c',	1,		0,		nu_char,	np_char},
 	{'s',	1,		0,		NULL},
+	{'p',	1,		0,		NULL},
 	{'h',	2,		0,		bu_int,		bp_int},
 	{'H',	2,		0,		bu_uint,	bp_uint},
 	{'i',	4,		0,		bu_int,		bp_int},
@@ -891,6 +893,7 @@ static formatdef lilendian_table[] = {
 	{'B',	1,		0,		lu_uint,	lp_int},
 	{'c',	1,		0,		nu_char,	np_char},
 	{'s',	1,		0,		NULL},
+	{'p',	1,		0,		NULL},
 	{'h',	2,		0,		lu_int,		lp_int},
 	{'H',	2,		0,		lu_uint,	lp_uint},
 	{'i',	4,		0,		lu_int,		lp_int},
@@ -1132,6 +1135,28 @@ struct_pack(self, args)
 				res += num;
 				break;
 			}
+			else if (c == 'p') {
+				/* num is string size + 1,
+				   to fit in the count byte */
+				int n;
+				num--; /* now num is max string size */
+				if (!PyString_Check(v)) {
+					PyErr_SetString(StructError,
+					  "argument for 'p' must be a string");
+					goto fail;
+				}
+				n = PyString_Size(v);
+				if (n > num)
+					n = num;
+				if (n > 0)
+					memcpy(res+1, PyString_AsString(v), n);
+				if (n < num)
+					/* no real need, just to be nice */
+					memset(res+1+n, '\0', num-n);
+				*res++ = n; /* store the length byte */
+				res += num;
+				break;
+			}
 			else {
 				if (e->pack(res, v, e) < 0)
 					goto fail;
@@ -1211,6 +1236,19 @@ struct_unpack(self, args)
 			if (c == 's') {
 				/* num is string size, not repeat count */
 				v = PyString_FromStringAndSize(str, num);
+				if (v == NULL)
+					goto fail;
+				str += num;
+				num = 0;
+			}
+			else if (c == 'p') {
+				/* num is string buffer size,
+				   not repeat count */
+				int n = *(unsigned char*)str;
+				/* first byte (unsigned) is string size */
+				if (n >= num)
+					n = num-1;
+				v = PyString_FromStringAndSize(str+1, n);
 				if (v == NULL)
 					goto fail;
 				str += num;
