@@ -123,6 +123,11 @@ def main():
 	print x, 'x', y
 
 	v.SetSize(x, y)
+
+	# VERY IMPORTANT (for PAL at least): don't drop fields!
+	param = [SV.FIELDDROP, 0]
+	v.SetParam(param)
+
 	v.BindGLWindow(win, SV.IN_REPLACE)
 
 	gl.qdevice(DEVICE.LEFTMOUSE)

@@ -74,7 +74,7 @@ def main():
 		hosts.append(gethostbyname(DEFMCAST))
 
 	if not LiveVideoIn.have_video:
-		print 'Sorry, no video available (use python-405 on roos)'
+		print 'Sorry, no video available (use python-405)'
 		sys.exit(1)
 
 	gl.foreground()
