@@ -144,6 +144,7 @@ Py_Initialize(void)
 
 	/* initialize builtin exceptions */
 	init_exceptions();
+	_PyImport_FixupExtension("exceptions", "exceptions");
 
 	/* phase 2 of builtins */
 	_PyImport_FixupExtension("__builtin__", "__builtin__");
