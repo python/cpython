@@ -8,3 +8,7 @@ find.py		Parallelized "find(1)" (looks for directories).
 sync.py		Condition variables primitives by Tim Peters.
 telnet.py	Version of ../sockets/telnet.py using threads.
 wpi.py		Version of ../scripts/pi.py using threads (needs stdwin).
+
+Coroutine.py	Coroutines using threads, by Tim Peters (22 May 94)
+fcmp.py		Example of above, by Tim
+squasher.py	Another example of above, also by Tim
