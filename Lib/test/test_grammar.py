@@ -37,7 +37,9 @@ try:
 except ImportError:
     maxint = 2147483647
 if maxint == 2147483647:
-    if -2147483647-1 != -020000000000: raise TestFailed, 'max negative int'
+    # The following test will start to fail in Python 2.4;
+    # change the 020000000000 to -020000000000
+    if -2147483647-1 != 020000000000: raise TestFailed, 'max negative int'
     # XXX -2147483648
     if 037777777777 != -1: raise TestFailed, 'oct -1'
     if 0xffffffff != -1: raise TestFailed, 'hex -1'

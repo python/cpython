@@ -133,9 +133,12 @@ expect_same("000000000000007", 7)
 expect_same("000000000000008.", 8.)
 expect_same("000000000000009.", 9.)
 
-## # Verify treatment of unary minus on negative numbers SF bug #660455
-## import warnings
-## warnings.filterwarnings("ignore", "hex/oct constants", FutureWarning)
-## # XXX Of course the following test will have to be changed in Python 2.4
-## expect_same("0xffffffff", -1)
-## expect_same("-0xffffffff", 1)
+# Verify treatment of unary minus on negative numbers SF bug #660455
+import warnings
+warnings.filterwarnings("ignore", "hex/oct constants", FutureWarning)
+# XXX Of course the following test will have to be changed in Python 2.4
+# This test is in a <string> so the filterwarnings() can affect it
+exec """
+expect_same("0xffffffff", -1)
+expect_same("-0xffffffff", 1)
+"""

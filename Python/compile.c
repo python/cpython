@@ -2069,7 +2069,8 @@ com_factor(struct compiling *c, node *n)
  	    && NCH(ppower) == 1
 	    && TYPE((patom = CHILD(ppower, 0))) == atom
 	    && TYPE((pnum = CHILD(patom, 0))) == NUMBER
-	    && !(childtype == MINUS && is_float_zero(STR(pnum)))) {
+	    && !(childtype == MINUS &&
+		 (STR(pnum)[0] == '0' || is_float_zero(STR(pnum))))) {
 		if (childtype == TILDE) {
 			com_invert_constant(c, pnum);
 			return;
