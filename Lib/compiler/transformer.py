@@ -222,6 +222,11 @@ class Transformer:
         # code for class
         code = self.com_node(nodelist[-1])
 
+        if doc is not None:
+            assert isinstance(code, Stmt)
+            assert isinstance(code.nodes[0], Discard)
+            del code.nodes[0]
+
         n = Class(name, bases, doc, code)
         n.lineno = nodelist[1][2]
         return n
