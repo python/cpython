@@ -10,6 +10,10 @@ Extension modules
 
 Library
 
+- ftplib: to safeguard the user's privacy, anonymous login will use
+  "anonymous@" as default password, rather than the real user and host
+  name.
+
 Tools/Demos
 
 Build
