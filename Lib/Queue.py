@@ -1,18 +1,12 @@
 """A multi-producer, multi-consumer queue."""
 
-# define this exception to be compatible with Python 1.5's class
-# exceptions, but also when -X option is used.
-try:
-    class Empty(Exception):
-        pass
-    class Full(Exception):
-        pass
-except TypeError:
-    # string based exceptions
-    # exception raised by get(block=0)/get_nowait()
-    Empty = 'Queue.Empty'
-    # exception raised by put(block=0)/put_nowait()
-    Full = 'Queue.Full'
+class Empty(Exception):
+    "Exception raised by Queue.get(block=0)/get_nowait()."
+    pass
+
+class Full(Exception):
+    "Exception raised by Queue.put(block=0)/put_nowait()."
+    pass
 
 class Queue:
     def __init__(self, maxsize=0):
