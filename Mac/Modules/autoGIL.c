@@ -108,9 +108,9 @@ autoGIL_installAutoGIL(PyObject *self)
 PyDoc_STRVAR(autoGIL_installAutoGIL_doc,
 "installAutoGIL() -> None\n\
 Install an observer callback in the event loop (CFRunLoop) for the\n\
-current thread that will lock and unlock the Global Interpreter Lock\n\
+current thread, that will lock and unlock the Global Interpreter Lock\n\
 (GIL) at appropriate times, allowing other Python threads to run while\n\
-the event loop is running."
+the event loop is idle."
 );
 
 static PyMethodDef autoGIL_methods[] = {
