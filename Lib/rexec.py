@@ -173,7 +173,7 @@ class RExec(ihooks._Verbose):
 	if name not in self.ok_dynamic_modules:
 	    raise ImportError, "untrusted dynamic module: %s" % name
 	if sys.modules.has_key(name):
-	    src = sys.modules[key]
+	    src = sys.modules[name]
 	else:
 	    import imp
 	    src = imp.load_dynamic(name, filename, file)
