@@ -46,8 +46,7 @@ def unescape(data, entities={}):
     if entities:
         data = __dict_replace(data, entities)
     # must do ampersand last
-    data = data.replace("&amp;", "&")
-    return data
+    return data.replace("&amp;", "&")
 
 def quoteattr(data, entities={}):
     """Escape and quote an attribute value.
