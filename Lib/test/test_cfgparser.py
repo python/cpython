@@ -70,6 +70,13 @@ def case_sensitivity():
     cf.remove_option("a", "B")
     verify(cf.options("a") == [])
 
+    # SF bug #432369:
+    cf = ConfigParser.ConfigParser()
+    sio = StringIO.StringIO("[MySection]\nOption: first line\n\tsecond line\n")
+    cf.readfp(sio)
+    verify(cf.options("MySection") == ["option"])
+    verify(cf.get("MySection", "Option") == "first line\nsecond line")
+
 
 def interpolation(src):
     print "Testing value interpolation..."
