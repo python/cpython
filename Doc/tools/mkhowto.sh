@@ -15,11 +15,6 @@ DISCARD_TEMPS=true
 
 L2H_INIT_FILE=$TOPDIR/perl/l2hinit.perl
 
-# This is needed to support kpathsea based TeX installations.  Others are
-# not supported.  ;-)
-TEXINPUTS=$TOPDIR/texinputs:$TEXINPUTS
-export TEXINPUTS
-
 LOGFILE=/usr/tmp/mkhowto-$LOGNAME-$$.how
 LOGGING=''
 
@@ -107,7 +102,7 @@ use_latex() {
 	$MYDIR/fix_hack $MYFILE.idx || exit $?
 	makeindex -s $TOPDIR/texinputs/myindex.ist $MYFILE.idx || exit $?
     fi
-    if [ -f $MYFILE.toc ] ; then
+    if [ -f $MYFILE.toc -a $MYLATEX = pdflatex ] ; then
 	$MYDIR/toc2bkm.py -c section $MYFILE
     fi
     $MYLATEX $MYFILE || exit $?
@@ -222,8 +217,18 @@ if [ "$QUIET" ] ; then
     exec >/dev/null
 fi
 
+COMMONTEXINPUTS=$TOPDIR/texinputs:$TEXINPUTS
+
 for FILE in $@ ; do
     FILE=`basename ${FILE%.tex}`
+    #
+    # Put the directory the .tex file is in is also the first directory in
+    # TEXINPUTS, to allow files there to override files in the common area.
+    #
+    FILEDIR=`dirname $FILE`
+    TEXINPUTS=$FILEDIR:$COMMONTEXINPUTS
+    export TEXINPUTS
+    #
     if [ "$BUILD_DVI" -o "$BUILD_PS" ] ; then
 	build_dvi $FILE 2>&1 | tee -a $LOGFILE
     fi
