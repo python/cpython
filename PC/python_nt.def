@@ -247,7 +247,9 @@ EXPORTS
 	PyObject_CallFunction
 	PyObject_CallMethod
 	PyObject_CallObject
+	PyObject_Cmp
 	PyObject_Compare
+	PyObject_DelItem
 	PyObject_GetAttr
 	PyObject_GetAttrString
 	PyObject_GetItem
@@ -280,6 +282,8 @@ EXPORTS
 	PySequence_Check
 	PySequence_Concat
 	PySequence_Count
+	PySequence_DelItem
+	PySequence_DelSlice
 	PySequence_GetItem
 	PySequence_GetSlice
 	PySequence_In
