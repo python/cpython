@@ -68,6 +68,13 @@ PyParser_ParseString(s, g, start, err_ret)
 		return NULL;
 	}
 
+	if (Py_TabcheckFlag || Py_VerboseFlag) {
+		tok->filename = "<string>";
+		tok->altwarning = (tok->filename != NULL);
+		if (Py_TabcheckFlag >= 2)
+			tok->alterror++;
+	}
+
 	return parsetok(tok, g, start, err_ret);
 }
 
