@@ -95,6 +95,15 @@ unsigned integer \code{1} is packed first, followed by the data value
 from the list.  \var{pack_item} is the function that is called to pack
 the individual item.  At the end of the list, an unsigned integer
 \code{0} is packed.
+
+For example, to pack a list of integers, the code might appear like
+this:
+
+\begin{verbatim}
+import xdrlib
+p = xdrlib.Packer()
+p.pack_list([1, 2, 3], p.pack_int)
+\end{verbatim}
 \end{methoddesc}
 
 \begin{methoddesc}[Packer]{pack_farray}{n, array, pack_item}
