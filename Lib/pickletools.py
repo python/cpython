@@ -125,7 +125,8 @@ UP_TO_NEWLINE = -1
 
 # Represents the number of bytes consumed by a two-argument opcode where
 # the first argument gives the number of bytes in the second argument.
-TAKEN_FROM_ARGUMENT = -2
+TAKEN_FROM_ARGUMENT1 = -2   # num bytes is 1-byte unsigned int
+TAKEN_FROM_ARGUMENT4 = -3   # num bytes is 4-byte signed little-endian int
 
 class ArgumentDescriptor(object):
     __slots__ = (
@@ -133,7 +134,8 @@ class ArgumentDescriptor(object):
         'name',
 
         # length of argument, in bytes; an int; UP_TO_NEWLINE and
-        # TAKEN_FROM_ARGUMENT are negative values for variable-length cases
+        # TAKEN_FROM_ARGUMENT{1,4} are negative values for variable-length
+        # cases
         'n',
 
         # a function taking a file-like object, reading this kind of argument
@@ -150,8 +152,9 @@ class ArgumentDescriptor(object):
         self.name = name
 
         assert isinstance(n, int) and (n >= 0 or
-                                       n is UP_TO_NEWLINE or
-                                       n is TAKEN_FROM_ARGUMENT)
+                                       n in (UP_TO_NEWLINE,
+                                             TAKEN_FROM_ARGUMENT1,
+                                             TAKEN_FROM_ARGUMENT4))
         self.n = n
 
         self.reader = reader
@@ -341,7 +344,7 @@ def read_string4(f):
 
 string4 = ArgumentDescriptor(
               name="string4",
-              n=TAKEN_FROM_ARGUMENT,
+              n=TAKEN_FROM_ARGUMENT4,
               reader=read_string4,
               doc="""A counted string.
 
@@ -370,7 +373,7 @@ def read_string1(f):
 
 string1 = ArgumentDescriptor(
               name="string1",
-              n=TAKEN_FROM_ARGUMENT,
+              n=TAKEN_FROM_ARGUMENT1,
               reader=read_string1,
               doc="""A counted string.
 
@@ -434,7 +437,7 @@ def read_unicodestring4(f):
 
 unicodestring4 = ArgumentDescriptor(
                     name="unicodestring4",
-                    n=TAKEN_FROM_ARGUMENT,
+                    n=TAKEN_FROM_ARGUMENT4,
                     reader=read_unicodestring4,
                     doc="""A counted Unicode string.
 
@@ -626,41 +629,11 @@ def read_long1(f):
 
 long1 = ArgumentDescriptor(
     name="long1",
-    n=TAKEN_FROM_ARGUMENT,
+    n=TAKEN_FROM_ARGUMENT1,
     reader=read_long1,
     doc="""A binary long, little-endian, using 1-byte size.
 
     This first reads one byte as an unsigned size, then reads that
-    many bytes and interprets them as a little-endian 2's-complement long.
-    """)
-
-def read_long2(f):
-    r"""
-    >>> import StringIO
-    >>> read_long2(StringIO.StringIO("\x02\x00\xff\x00"))
-    255L
-    >>> read_long2(StringIO.StringIO("\x02\x00\xff\x7f"))
-    32767L
-    >>> read_long2(StringIO.StringIO("\x02\x00\x00\xff"))
-    -256L
-    >>> read_long2(StringIO.StringIO("\x02\x00\x00\x80"))
-    -32768L
-    >>>
-    """
-
-    n = read_uint2(f)
-    data = f.read(n)
-    if len(data) != n:
-        raise ValueError("not enough data in stream to read long2")
-    return decode_long(data)
-
-long2 = ArgumentDescriptor(
-    name="long2",
-    n=TAKEN_FROM_ARGUMENT,
-    reader=read_long2,
-    doc="""A binary long, little-endian, using 2-byte size.
-
-    This first reads two byte as an unsigned size, then reads that
     many bytes and interprets them as a little-endian 2's-complement long.
     """)
 
@@ -688,7 +661,7 @@ def read_long4(f):
 
 long4 = ArgumentDescriptor(
     name="long4",
-    n=TAKEN_FROM_ARGUMENT,
+    n=TAKEN_FROM_ARGUMENT4,
     reader=read_long4,
     doc="""A binary representation of a long, little-endian.
 
@@ -1705,19 +1678,8 @@ opcodes = [
       A more efficient encoding of a Python long; the long1 encoding
       says it all."""),
 
-    I(name="LONG2",
-      code='\x8b',
-      arg=long2,
-      stack_before=[],
-      stack_after=[pylong],
-      proto=2,
-      doc="""Long integer using two-byte length.
-
-      A more efficient encoding of a Python long; the long2 encoding
-      says it all."""),
-
     I(name="LONG4",
-      code='\x8c',
+      code='\x8b',
       arg=long4,
       stack_before=[],
       stack_after=[pylong],

@@ -135,19 +135,18 @@ FALSE           = 'I00\n'  # not an opcode; see INT docs in pickletools.py
 
 # Protocol 2 (not yet implemented) (XXX comments will be added later)
 
-NEWOBJ          = '\x81'
 PROTO           = '\x80'
-EXT2            = '\x83'
+NEWOBJ          = '\x81'
 EXT1            = '\x82'
-TUPLE1          = '\x85'
+EXT2            = '\x83'
 EXT4            = '\x84'
-TUPLE3          = '\x87'
+TUPLE1          = '\x85'
 TUPLE2          = '\x86'
-NEWFALSE        = '\x89'
+TUPLE3          = '\x87'
 NEWTRUE         = '\x88'
-LONG2           = '\x8b'
+NEWFALSE        = '\x89'
 LONG1           = '\x8a'
-LONG4           = '\x8c'
+LONG4           = '\x8b'
 
 
 __all__.extend([x for x in dir() if re.match("[A-Z][A-Z0-9_]+$",x)])
