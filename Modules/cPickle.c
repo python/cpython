@@ -2864,46 +2864,35 @@ static int
 load_string(Unpicklerobject *self) 
 {
 	PyObject *str = 0;
-	int len, res = -1, nslash;
-	char *s, q, *p;
-
-	static PyObject *eval_dict = 0;
+	int len, res = -1;
+	char *s, *p;
 
 	if ((len = (*self->readline_func)(self, &s)) < 0) return -1;
 	if (len < 2) return bad_readline();
 	if (!( s=pystrndup(s,len)))  return -1;
 
-	/* Check for unquoted quotes (evil strings) */
-	q=*s;
-	if (q != '"' && q != '\'') goto insecure;
-	for (p=s+1, nslash=0; *p; p++) {
-		if (*p==q && nslash%2==0) break;
-		if (*p=='\\') nslash++;
-		else nslash=0;
-	}
-	if (*p == q) {
-		for (p++; *p; p++)
-			if (*(unsigned char *)p > ' ')
-				goto insecure;
-	}
-	else
+
+	/* Strip outermost quotes */
+	while (s[len-1] <= ' ')
+		len--;
+	if(s[0]=='"' && s[len-1]=='"'){
+		s[len-1] = '\0';
+		p = s + 1 ;
+		len -= 2;
+	} else if(s[0]=='\'' && s[len-1]=='\''){
+		s[len-1] = '\0';
+		p = s + 1 ;
+		len -= 2;
+	} else
 		goto insecure;
 	/********************************************/
 
-	if (!( eval_dict )) 
-		if (!( eval_dict = Py_BuildValue("{s{}}", "__builtins__"))) 
-			goto finally;
-
-	if (!( str = PyRun_String(s, Py_eval_input, eval_dict, eval_dict))) 
-		goto finally;
-
+	str = PyString_DecodeEscape(p, len, NULL, 0, NULL);
+	if (str) {
+		PDATA_PUSH(self->stack, str, -1);
+		res = 0;
+	}
 	free(s);
-	PDATA_PUSH(self->stack, str, -1);
-	return 0;
-
-  finally:
-	free(s);
-
 	return res;
 
   insecure:

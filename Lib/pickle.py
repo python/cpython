@@ -126,6 +126,8 @@ FALSE           = 'I00\n'
 __all__.extend([x for x in dir() if re.match("[A-Z][A-Z0-9_]+$",x)])
 del x
 
+_quotes = ["'", '"']
+
 class Pickler:
 
     def __init__(self, file, bin = 0):
@@ -740,10 +742,15 @@ class Unpickler:
 
     def load_string(self):
         rep = self.readline()[:-1]
-        if not self._is_string_secure(rep):
+        for q in _quotes:
+            if rep.startswith(q):
+                if not rep.endswith(q):
+                    raise ValueError, "insecure string pickle"
+                rep = rep[len(q):-len(q)]
+                break
+        else:
             raise ValueError, "insecure string pickle"
-        self.append(eval(rep,
-                         {'__builtins__': {}})) # Let's be careful
+        self.append(rep.decode("string-escape"))
     dispatch[STRING] = load_string
 
     def _is_string_secure(self, s):

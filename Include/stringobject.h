@@ -53,6 +53,7 @@ PyAPI_FUNC(PyObject *) PyString_FromFormat(const char*, ...)
 				__attribute__((format(printf, 1, 2)));
 PyAPI_FUNC(int) PyString_Size(PyObject *);
 PyAPI_FUNC(char *) PyString_AsString(PyObject *);
+PyAPI_FUNC(PyObject *) PyString_Repr(PyObject *, int);
 PyAPI_FUNC(void) PyString_Concat(PyObject **, PyObject *);
 PyAPI_FUNC(void) PyString_ConcatAndDel(PyObject **, PyObject *);
 PyAPI_FUNC(int) _PyString_Resize(PyObject **, int);
@@ -60,6 +61,9 @@ PyAPI_FUNC(int) _PyString_Eq(PyObject *, PyObject*);
 PyAPI_FUNC(PyObject *) PyString_Format(PyObject *, PyObject *);
 PyAPI_FUNC(PyObject *) _PyString_FormatLong(PyObject*, int, int,
 						  int, char**, int*);
+extern DL_IMPORT(PyObject *) PyString_DecodeEscape(const char *, int, 
+						   const char *, int,
+						   const char *);
 
 PyAPI_FUNC(void) PyString_InternInPlace(PyObject **);
 PyAPI_FUNC(PyObject *) PyString_InternFromString(const char *);

@@ -71,7 +71,6 @@ PyObject *codeclookup(PyObject *self, PyObject *args)
     return NULL;
 }
 
-#ifdef Py_USING_UNICODE
 /* --- Helpers ------------------------------------------------------------ */
 
 static
@@ -97,6 +96,49 @@ PyObject *codec_tuple(PyObject *unicode,
     return v;
 }
 
+/* --- String codecs ------------------------------------------------------ */
+static PyObject *
+escape_decode(PyObject *self,
+	      PyObject *args)
+{
+    const char *errors = NULL;
+    const char *data;
+    int size;
+    
+    if (!PyArg_ParseTuple(args, "s#|z:escape_decode",
+			  &data, &size, &errors))
+	return NULL;
+    return codec_tuple(PyString_DecodeEscape(data, size, errors, 0, NULL), 
+		       size);
+}
+
+static PyObject *
+escape_encode(PyObject *self,
+	      PyObject *args)
+{
+	PyObject *str;
+	const char *errors = NULL;
+	char *buf;
+	int len;
+
+	if (!PyArg_ParseTuple(args, "O!|z:escape_encode",
+			      &PyString_Type, &str, &errors))
+		return NULL;
+
+	str = PyString_Repr(str, 0);
+	if (!str)
+		return NULL;
+
+	/* The string will be quoted. Unquote, similar to unicode-escape. */
+	buf = PyString_AS_STRING (str);
+	len = PyString_GET_SIZE (str);
+	memmove(buf, buf+1, len-2);
+	_PyString_Resize(&str, len-2);
+	
+	return codec_tuple(str, PyString_Size(str));
+}
+
+#ifdef Py_USING_UNICODE
 /* --- Decoder ------------------------------------------------------------ */
 
 static PyObject *
@@ -669,6 +711,8 @@ mbcs_encode(PyObject *self,
 static PyMethodDef _codecs_functions[] = {
     {"register",		codecregister,			METH_VARARGS},
     {"lookup",			codeclookup, 			METH_VARARGS},
+    {"escape_encode",		escape_encode,			METH_VARARGS},
+    {"escape_decode",		escape_decode,			METH_VARARGS},
 #ifdef Py_USING_UNICODE
     {"utf_8_encode",		utf_8_encode,			METH_VARARGS},
     {"utf_8_decode",		utf_8_decode,			METH_VARARGS},

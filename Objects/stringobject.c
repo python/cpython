@@ -489,6 +489,152 @@ string_dealloc(PyObject *op)
 	op->ob_type->tp_free(op);
 }
 
+/* Unescape a backslash-escaped string. If unicode is non-zero,
+   the string is a u-literal. If recode_encoding is non-zero,
+   the string is UTF-8 encoded and should be re-encoded in the
+   specified encoding.  */
+
+PyObject *PyString_DecodeEscape(const char *s,
+				int len,
+				const char *errors,
+				int unicode,
+				const char *recode_encoding)
+{
+	int c;
+	char *p, *buf;
+	const char *end;
+	PyObject *v;
+	v = PyString_FromStringAndSize((char *)NULL, 
+				       recode_encoding ? 4*len:len);
+	if (v == NULL)
+		return NULL;
+	p = buf = PyString_AsString(v);
+	end = s + len;
+	while (s < end) {
+		if (*s != '\\') {
+#ifdef Py_USING_UNICODE
+			if (recode_encoding && (*s & 0x80)) {
+				PyObject *u, *w;
+				char *r;
+				const char* t;
+				int rn;
+				t = s;
+				/* Decode non-ASCII bytes as UTF-8. */
+				while (t < end && (*t & 0x80)) t++;
+				u = PyUnicode_DecodeUTF8(s, t - s, errors);
+				if(!u) goto failed;
+
+				/* Recode them in target encoding. */
+				w = PyUnicode_AsEncodedString(
+					u, recode_encoding, errors);
+				Py_DECREF(u);
+				if (!w)	goto failed;
+
+				/* Append bytes to output buffer. */
+				r = PyString_AsString(w);
+				rn = PyString_Size(w);
+				memcpy(p, r, rn);
+				p += rn;
+				Py_DECREF(w);
+				s = t;
+			} else {
+				*p++ = *s++;
+			}
+#else
+			*p++ = *s++;
+#endif
+			continue;
+		}
+		s++;
+		switch (*s++) {
+		/* XXX This assumes ASCII! */
+		case '\n': break;
+		case '\\': *p++ = '\\'; break;
+		case '\'': *p++ = '\''; break;
+		case '\"': *p++ = '\"'; break;
+		case 'b': *p++ = '\b'; break;
+		case 'f': *p++ = '\014'; break; /* FF */
+		case 't': *p++ = '\t'; break;
+		case 'n': *p++ = '\n'; break;
+		case 'r': *p++ = '\r'; break;
+		case 'v': *p++ = '\013'; break; /* VT */
+		case 'a': *p++ = '\007'; break; /* BEL, not classic C */
+		case '0': case '1': case '2': case '3':
+		case '4': case '5': case '6': case '7':
+			c = s[-1] - '0';
+			if ('0' <= *s && *s <= '7') {
+				c = (c<<3) + *s++ - '0';
+				if ('0' <= *s && *s <= '7')
+					c = (c<<3) + *s++ - '0';
+			}
+			*p++ = c;
+			break;
+		case 'x':
+			if (isxdigit(Py_CHARMASK(s[0])) 
+			    && isxdigit(Py_CHARMASK(s[1]))) {
+				unsigned int x = 0;
+				c = Py_CHARMASK(*s);
+				s++;
+				if (isdigit(c))
+					x = c - '0';
+				else if (islower(c))
+					x = 10 + c - 'a';
+				else
+					x = 10 + c - 'A';
+				x = x << 4;
+				c = Py_CHARMASK(*s);
+				s++;
+				if (isdigit(c))
+					x += c - '0';
+				else if (islower(c))
+					x += 10 + c - 'a';
+				else
+					x += 10 + c - 'A';
+				*p++ = x;
+				break;
+			}
+			if (!errors || strcmp(errors, "strict") == 0) {
+				Py_DECREF(v);
+				PyErr_SetString(PyExc_ValueError, 
+						"invalid \\x escape");
+				return NULL;
+			}
+			if (strcmp(errors, "replace") == 0) {
+				*p++ = '?';
+			} else if (strcmp(errors, "ignore") == 0)
+				/* do nothing */;
+			else {
+				PyErr_Format(PyExc_ValueError,
+					     "decoding error; "
+					     "unknown error handling code: %.400s",
+					     errors);
+				return NULL;
+			}
+#ifndef Py_USING_UNICODE
+		case 'u':
+		case 'U':
+		case 'N':
+			if (unicode) {
+				Py_DECREF(v);
+				com_error(com, PyExc_ValueError,
+					  "Unicode escapes not legal "
+					  "when Unicode disabled");
+				return NULL;
+			}
+#endif
+		default:
+			*p++ = '\\';
+			*p++ = s[-1];
+			break;
+		}
+	}
+	_PyString_Resize(&v, (int)(p - buf));
+	return v;
+  failed:
+	Py_DECREF(v);
+	return NULL;
+}
+
 static int
 string_getsize(register PyObject *op)
 {
@@ -614,9 +760,10 @@ string_print(PyStringObject *op, FILE *fp, int flags)
 	return 0;
 }
 
-static PyObject *
-string_repr(register PyStringObject *op)
+PyObject *
+PyString_Repr(PyObject *obj, int smartquotes)
 {
+	register PyStringObject* op = (PyStringObject*) obj;
 	size_t newsize = 2 + 4 * op->ob_size * sizeof(char);
 	PyObject *v;
 	if (newsize > INT_MAX) {
@@ -635,7 +782,8 @@ string_repr(register PyStringObject *op)
 
 		/* figure out which quote to use; single is preferred */
 		quote = '\'';
-		if (memchr(op->ob_sval, '\'', op->ob_size) &&
+		if (smartquotes && 
+		    memchr(op->ob_sval, '\'', op->ob_size) &&
 		    !memchr(op->ob_sval, '"', op->ob_size))
 			quote = '"';
 
@@ -671,6 +819,12 @@ string_repr(register PyStringObject *op)
 			&v, (int) (p - PyString_AS_STRING(v)));
 		return v;
 	}
+}
+
+static PyObject *
+string_repr(PyObject *op)
+{
+	return PyString_Repr(op, 1);
 }
 
 static PyObject *
