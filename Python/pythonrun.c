@@ -75,6 +75,7 @@ static void call_ll_exitfuncs Py_PROTO((void));
 int Py_DebugFlag; /* Needed by parser.c */
 int Py_VerboseFlag; /* Needed by import.c */
 int Py_InteractiveFlag; /* Needed by Py_FdIsInteractive() below */
+int Py_UseClassExceptionsFlag; /* Needed by bltinmodule.c */
 
 static int initialized = 0;
 
@@ -127,7 +128,7 @@ Py_Initialize()
 	if (interp->modules == NULL)
 		Py_FatalError("Py_Initialize: can't make modules dictionary");
 
-	bimod = _PyBuiltin_Init();
+	bimod = _PyBuiltin_Init_1();
 	if (bimod == NULL)
 		Py_FatalError("Py_Initialize: can't initialize __builtin__");
 	interp->builtins = PyModule_GetDict(bimod);
@@ -143,6 +144,9 @@ Py_Initialize()
 	PySys_SetPath(Py_GetPath());
 	PyDict_SetItemString(interp->sysdict, "modules",
 			     interp->modules);
+
+	/* phase 2 of builtins */
+	_PyBuiltin_Init_2(interp->builtins);
 
 	_PyImport_Init();
 
@@ -178,6 +182,12 @@ Py_Finalize()
 	if (initialized < 0)
 		Py_FatalError("Py_Finalize: not initialized");
 
+	/* We must call this before the current thread gets removed because
+	   it decrefs class instances, which in turn save and restore the
+	   current error state, which is a per thread data structure.
+	*/
+	_PyBuiltin_Fini_1();
+
 	tstate = PyThreadState_Get();
 	interp = tstate->interp;
 
@@ -188,7 +198,13 @@ Py_Finalize()
 
 	finisigs();
 	_PyImport_Fini();
-	_PyBuiltin_Fini();
+
+	/* Now we decref the exception classes.  After this point nothing
+	   can raise an exception.  That's okay, because each Fini() method
+	   below has been checked to make sure no exceptions are ever
+	   raised.
+	*/
+	_PyBuiltin_Fini_2();
 	PyMethod_Fini();
 	PyFrame_Fini();
 	PyCFunction_Fini();
@@ -522,19 +538,99 @@ PyRun_SimpleString(command)
 	return 0;
 }
 
+static int
+parse_syntax_error(err, message, filename, lineno, offset, text)
+     PyObject* err;
+     PyObject** message;
+     char** filename;
+     int* lineno;
+     int* offset;
+     char** text;
+{
+	long hold;
+	PyObject *v;
+
+	/* old style errors */
+	if (PyTuple_Check(err))
+		return PyArg_Parse(err, "(O(ziiz))", message, filename,
+				   lineno, offset, text);
+
+	/* new style errors.  `err' is an instance */
+
+	if (! (v = PyObject_GetAttrString(err, "msg")))
+		goto finally;
+	*message = v;
+
+	if (!(v = PyObject_GetAttrString(err, "filename")))
+		goto finally;
+	if (v == Py_None)
+		*filename = NULL;
+	else if (! (*filename = PyString_AsString(v)))
+		goto finally;
+
+	Py_DECREF(v);
+	if (!(v = PyObject_GetAttrString(err, "lineno")))
+		goto finally;
+	hold = PyInt_AsLong(v);
+	Py_DECREF(v);
+	v = NULL;
+	if (hold < 0 && PyErr_Occurred())
+		goto finally;
+	*lineno = (int)hold;
+
+	if (!(v = PyObject_GetAttrString(err, "offset")))
+		goto finally;
+	hold = PyInt_AsLong(v);
+	Py_DECREF(v);
+	v = NULL;
+	if (hold < 0 && PyErr_Occurred())
+		goto finally;
+	*offset = (int)hold;
+
+	if (!(v = PyObject_GetAttrString(err, "text")))
+		goto finally;
+	if (v == Py_None)
+		*text = NULL;
+	else if (! (*text = PyString_AsString(v)))
+		goto finally;
+	Py_DECREF(v);
+	return 1;
+
+finally:
+	Py_XDECREF(v);
+	return 0;
+}
+
 void
 PyErr_Print()
 {
 	int err = 0;
 	PyObject *exception, *v, *tb, *f;
 	PyErr_Fetch(&exception, &v, &tb);
+	PyErr_NormalizeException(&exception, &v, &tb);
+
 	if (exception == NULL)
 		return;
+
 	if (PyErr_GivenExceptionMatches(exception, PyExc_SystemExit)) {
 		err = Py_FlushLine();
 		fflush(stdout);
 		if (v == NULL || v == Py_None)
 			Py_Exit(0);
+		if (PyInstance_Check(v)) {
+			/* we expect the error code to be store in the
+			   `code' attribute
+			*/
+			PyObject *code = PyObject_GetAttrString(v, "code");
+			if (code) {
+				Py_DECREF(v);
+				v = code;
+			}
+			/* if we failed to dig out the "code" attribute,
+			   then just let the else clause below print the
+			   error
+			*/
+		}
 		if (PyInt_Check(v))
 			Py_Exit((int)PyInt_AsLong(v));
 		else {
@@ -561,8 +657,8 @@ PyErr_Print()
 			PyObject *message;
 			char *filename, *text;
 			int lineno, offset;
-			if (!PyArg_Parse(v, "(O(ziiz))", &message,
-				     &filename, &lineno, &offset, &text))
+			if (!parse_syntax_error(v, &message, &filename,
+						&lineno, &offset, &text))
 				PyErr_Clear();
 			else {
 				char buf[10];
@@ -630,7 +726,12 @@ PyErr_Print()
 			err = PyFile_WriteObject(exception, f, Py_PRINT_RAW);
 		if (err == 0) {
 			if (v != NULL && v != Py_None) {
-				err = PyFile_WriteString(": ", f);
+				PyObject *s = PyObject_Str(v);
+				/* only print colon if the str() of the
+				   object is not the empty string
+				*/
+				if (s && strcmp(PyString_AsString(s), ""))
+					err = PyFile_WriteString(": ", f);
 				if (err == 0)
 				  err = PyFile_WriteObject(v, f, Py_PRINT_RAW);
 			}
