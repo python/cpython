@@ -148,8 +148,11 @@ clear_carefully(d)
 	while (PyDict_Next(d, &pos, &key, &value)) {
 		if (value != Py_None && PyString_Check(key)) {
 			char *s = PyString_AsString(key);
-			if (s[0] == '_' && s[1] != '_')
+			if (s[0] == '_' && s[1] != '_') {
+				if (Py_VerboseFlag > 1)
+				    fprintf(stderr, "#   clear[1] %s\n", s);
 				PyDict_SetItem(d, key, Py_None);
+			}
 		}
 	}
 
@@ -158,8 +161,11 @@ clear_carefully(d)
 	while (PyDict_Next(d, &pos, &key, &value)) {
 		if (value != Py_None && PyString_Check(key)) {
 			char *s = PyString_AsString(key);
-			if (s[0] != '_' || s[1] != '_')
+			if (s[0] != '_' || s[1] != '_') {
+				if (Py_VerboseFlag > 1)
+				    fprintf(stderr, "#   clear[2] %s\n", s);
 				PyDict_SetItem(d, key, Py_None);
+			}
 		}
 	}
 
@@ -167,6 +173,14 @@ clear_carefully(d)
 
 	Py_DECREF(d); /* Match INCREF at top */
 }
+
+
+/* List of names to clear in sys */
+static char* sys_deletes[] = {
+	"exc_type", "exc_value", "exc_traceback",
+	"last_type", "last_value", "last_traceback",
+	NULL
+};
 
 
 /* Un-initialize things, as good as we can */
@@ -182,6 +196,30 @@ PyImport_Cleanup()
 
 	if (modules == NULL)
 		return; /* Already done */
+
+	/* Delete some special variables first.  These are common
+	   places where user values hide and people complain when their
+	   destructors fail.  Since the modules containing them are
+	   deleted *last* of all, they would come too late in the normal
+	   destruction order.  Sigh. */
+
+	value = PyDict_GetItemString(modules, "__builtin__");
+	if (value != NULL && PyModule_Check(value)) {
+		dict = PyModule_GetDict(value);
+		if (Py_VerboseFlag)
+			fprintf(stderr, "# clear __builtin__._\n");
+		PyDict_SetItemString(dict, "_", Py_None);
+	}
+	value = PyDict_GetItemString(modules, "sys");
+	if (value != NULL && PyModule_Check(value)) {
+		char **p;
+		dict = PyModule_GetDict(value);
+		for (p = sys_deletes; *p != NULL; p++) {
+			if (Py_VerboseFlag)
+				fprintf(stderr, "# clear sys.%s\n", *p);
+			PyDict_SetItemString(dict, *p, Py_None);
+		}
+	}
 
 	/* The special treatment of __builtin__ here is because even
 	   when it's not referenced as a module, its dictionary is
@@ -212,6 +250,9 @@ PyImport_Cleanup()
 					continue;
 				if (strcmp(name, "sys") == 0)
 					continue;
+				if (Py_VerboseFlag)
+					fprintf(stderr,
+						"# cleanup[1] %s\n", name);
 				clear_carefully(dict);
 				PyDict_SetItem(modules, key, Py_None);
 				ndone++;
@@ -223,6 +264,8 @@ PyImport_Cleanup()
 	value = PyDict_GetItemString(modules, "__main__");
 	if (value != NULL && PyModule_Check(value)) {
 		dict = PyModule_GetDict(value);
+		if (Py_VerboseFlag)
+			fprintf(stderr, "# cleanup __main__\n");
 		clear_carefully(dict);
 		PyDict_SetItemString(modules, "__main__", Py_None);
 	}
@@ -237,6 +280,8 @@ PyImport_Cleanup()
 				continue;
 			if (strcmp(name, "sys") == 0)
 				continue;
+			if (Py_VerboseFlag)
+				fprintf(stderr, "# cleanup[2] %s\n", name);
 			clear_carefully(dict);
 			PyDict_SetItem(modules, key, Py_None);
 		}
@@ -246,13 +291,17 @@ PyImport_Cleanup()
 	value = PyDict_GetItemString(modules, "sys");
 	if (value != NULL && PyModule_Check(value)) {
 		dict = PyModule_GetDict(value);
+		if (Py_VerboseFlag)
+			fprintf(stderr, "# cleanup sys\n");
 		clear_carefully(dict);
 		PyDict_SetItemString(modules, "sys", Py_None);
 	}
 	value = PyDict_GetItemString(modules, "__builtin__");
 	if (value != NULL && PyModule_Check(value)) {
 		dict = PyModule_GetDict(value);
-		clear_carefully(dict);
+		if (Py_VerboseFlag)
+			fprintf(stderr, "# cleanup __builtin__\n");
+		clear_carefully(dict); /* XXX Is this necessary? */
 		PyDict_SetItemString(modules, "__builtin__", Py_None);
 	}
 
