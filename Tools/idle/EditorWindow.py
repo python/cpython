@@ -147,6 +147,8 @@ class EditorWindow:
         self.undo = undo = self.UndoDelegator(); per.insertfilter(undo)
         self.io = io = self.IOBinding(self)
 
+        text.undo_block_start = undo.undo_block_start
+        text.undo_block_stop = undo.undo_block_stop
         undo.set_saved_change_hook(self.saved_change_hook)
         io.set_filename_change_hook(self.filename_change_hook)
 

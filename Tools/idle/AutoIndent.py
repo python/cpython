@@ -142,20 +142,24 @@ class AutoIndent:
             last = text.index("sel.last")
         except TclError:
             first = last = None
-        if first and last:
-            if index2line(first) != index2line(last):
-                return self.indent_region_event(event)
-            text.delete(first, last)
-            text.mark_set("insert", first)
-        if self.prefertabs:
-            pad = '\t'
-        else:
-            n = len(self.spaceindent)
-            prefix = text.get("insert linestart", "insert")
-            pad = ' ' * (n - len(prefix) % n)
-        text.insert("insert", pad)
-        text.see("insert")
-        return "break"
+        text.undo_block_start()
+        try:
+            if first and last:
+                if index2line(first) != index2line(last):
+                    return self.indent_region_event(event)
+                text.delete(first, last)
+                text.mark_set("insert", first)
+            if self.prefertabs:
+                pad = '\t'
+            else:
+                n = len(self.spaceindent)
+                prefix = text.get("insert linestart", "insert")
+                pad = ' ' * (n - len(prefix) % n)
+            text.insert("insert", pad)
+            text.see("insert")
+            return "break"
+        finally:
+            text.undo_block_stop()
 
     def newline_and_indent_event(self, event):
         text = self.text
@@ -164,28 +168,32 @@ class AutoIndent:
             last = text.index("sel.last")
         except TclError:
             first = last = None
-        if first and last:
-            text.delete(first, last)
-            text.mark_set("insert", first)
-        line = text.get("insert linestart", "insert")
-        i, n = 0, len(line)
-        while i < n and line[i] in " \t":
-            i = i+1
-        indent = line[:i]
-        # strip trailing whitespace
-        i = 0
-        while line and line[-1] in " \t":
-            line = line[:-1]
-            i = i + 1
-        if i:
-            text.delete("insert - %d chars" % i, "insert")
-        text.insert("insert", "\n" + indent)
-        if _is_block_opener(line):
-            self.smart_indent_event(event)
-        elif indent and _is_block_closer(line) and line[-1:] != "\\":
-            self.smart_backspace_event(event)
-        text.see("insert")
-        return "break"
+        text.undo_block_start()
+        try:
+            if first and last:
+                text.delete(first, last)
+                text.mark_set("insert", first)
+            line = text.get("insert linestart", "insert")
+            i, n = 0, len(line)
+            while i < n and line[i] in " \t":
+                i = i+1
+            indent = line[:i]
+            # strip trailing whitespace
+            i = 0
+            while line and line[-1] in " \t":
+                line = line[:-1]
+                i = i + 1
+            if i:
+                text.delete("insert - %d chars" % i, "insert")
+            text.insert("insert", "\n" + indent)
+            if _is_block_opener(line):
+                self.smart_indent_event(event)
+            elif indent and _is_block_closer(line) and line[-1:] != "\\":
+                self.smart_backspace_event(event)
+            text.see("insert")
+            return "break"
+        finally:
+            text.undo_block_stop()
 
     auto_indent = newline_and_indent_event
 
@@ -275,8 +283,10 @@ class AutoIndent:
             return
         text.tag_remove("sel", "1.0", "end")
         text.mark_set("insert", head)
+        text.undo_block_start()
         text.delete(head, tail)
         text.insert(head, newchars)
+        text.undo_block_stop()
         text.tag_add("sel", head, "insert")
 
 def tabify(line, tabsize=8):

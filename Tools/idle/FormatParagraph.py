@@ -37,8 +37,10 @@ class FormatParagraph:
         text.tag_remove("sel", "1.0", "end")
         if newdata != data:
             text.mark_set("insert", first)
+            text.undo_block_start()
             text.delete(first, last)
             text.insert(first, newdata)
+            text.undo_block_stop()
         else:
             text.mark_set("insert", last)
         text.see("insert")
