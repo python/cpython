@@ -36,6 +36,7 @@
  * 2001-10-21 fl  added sub/subn primitive
  * 2001-10-22 fl  check for literal sub/subn templates
  * 2001-10-24 fl  added finditer primitive (for 2.2 only)
+ * 2001-12-07 fl  fixed memory leak in sub/subn (Guido van Rossum)
  *
  * Copyright (c) 1997-2001 by Secret Labs AB.  All rights reserved.
  *
@@ -1116,21 +1117,9 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern, int level)
 
             /* see if the tail matches */
             state->repeat = rp->prev;
-            /* FIXME: the following fix doesn't always work (#133283) */
-            if (rp->pattern[2] == 65535) {
-                /* unbounded repeat */
-                for (;;) {
-                    i = SRE_MATCH(state, pattern, level + 1);
-                    if (i || ptr >= end)
-                        break;
-                    state->ptr = ++ptr;
-                }
-            } else
-                i = SRE_MATCH(state, pattern, level + 1);
-            if (i) {
-                /* free(rp); */
+            i = SRE_MATCH(state, pattern, level + 1);
+            if (i)
                 return i;
-            }
 
             state->ptr = ptr;
             state->repeat = rp;
@@ -2143,11 +2132,14 @@ pattern_subx(PatternObject* self, PyObject* template, PyObject* string,
     }
 
     string = state_init(&state, self, string, 0, INT_MAX);
-    if (!string)
+    if (!string) {
+        Py_DECREF(filter);
         return NULL;
+    }
 
     list = PyList_New(0);
     if (!list) {
+        Py_DECREF(filter);
         state_fini(&state);
         return NULL;
     }
@@ -2260,9 +2252,9 @@ next:
     return item;
 
 error:
-    Py_DECREF(filter);
     Py_DECREF(list);
     state_fini(&state);
+    Py_DECREF(filter);
     return NULL;
     
 }
@@ -2403,7 +2395,7 @@ pattern_getattr(PatternObject* self, char* name)
 
 statichere PyTypeObject Pattern_Type = {
     PyObject_HEAD_INIT(NULL)
-    0, "_sre.SRE_Pattern",
+    0, "_" SRE_MODULE ".SRE_Pattern",
     sizeof(PatternObject), sizeof(SRE_CODE),
     (destructor)pattern_dealloc, /*tp_dealloc*/
     0, /*tp_print*/
@@ -2866,7 +2858,7 @@ match_getattr(MatchObject* self, char* name)
 
 statichere PyTypeObject Match_Type = {
     PyObject_HEAD_INIT(NULL)
-    0, "_sre.SRE_Match",
+    0, "_" SRE_MODULE ".SRE_Match",
     sizeof(MatchObject), sizeof(int),
     (destructor)match_dealloc, /*tp_dealloc*/
     0, /*tp_print*/
@@ -2974,7 +2966,7 @@ scanner_getattr(ScannerObject* self, char* name)
 
 statichere PyTypeObject Scanner_Type = {
     PyObject_HEAD_INIT(NULL)
-    0, "_sre.SRE_Scanner",
+    0, "_" SRE_MODULE ".SRE_Scanner",
     sizeof(ScannerObject), 0,
     (destructor)scanner_dealloc, /*tp_dealloc*/
     0, /*tp_print*/

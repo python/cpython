@@ -83,8 +83,8 @@ class Pattern:
         if name:
             ogid = self.groupdict.get(name, None)
             if ogid is not None:
-                raise error, ("redefinition of group name %s as group %d; " +
-                              "was group %d") % (`name`, gid,  ogid)
+                raise error, ("redefinition of group name %s as group %d; "
+                              "was group %d" % (repr(name), gid,  ogid))
             self.groupdict[name] = gid
         self.open.append(gid)
         return gid
