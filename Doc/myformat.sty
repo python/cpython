@@ -313,14 +313,18 @@
 \newcommand{\strong}[1]{{\bf #1}}
 % let's experiment with a new font:
 \newcommand{\file}[1]{\mbox{`\small\textsf{#1}'}}
-%\@ifundefined{pdfannotlink}{%
+\@ifundefined{pdfannotlink}{%
   \newcommand{\url}[1]{\mbox{\small\textsf{#1}}}%
-%}{
-%  \newcommand{\url}[1]{{%
-%    \pdfannotlink user{/S /URI /URI (#1)}%
-%    \mbox{\small\textsf{#1}}}}%
-%}
-\let\email=\url
+}{
+  \input{pdfcolor}%			this really isn't a package
+  \newcommand{\url}[1]{{%
+    \pdfannotlink user{/C [1 1 1] /S /URI /URI (#1)}%
+    \NavyBlue%				color of the link text
+    \mbox{\small\textsf{#1}}%
+    \Black%				Turn it back off; these are declarative
+    \pdfendlink}}%			and don't appear bound to the current
+}%					formatting "box".
+\let\email=\code
 
 \newcommand{\varvars}[1]{{\def\,{\/{\char`\,}}\var{#1}}}
 
