@@ -59,6 +59,13 @@ def get_size(prefix, ext):
     fn = "%s-%s%s" % (prefix, release, ext)
     return int(round(os.path.getsize(fn) / 1024.0))
 
+def get_file_cell(prefix, ext, have):
+    if have:
+        kb = get_size(prefix, ext)
+        return FILE_TEMPLATE % (release, prefix, release, ext, kb)
+    else:
+        return NO_FILE_TEMPLATE
+
 for name, prefix in PKG_TYPES:
     zip_fn = "%s-%s.zip" % (prefix, release)
     tgz_fn = "%s-%s.tgz" % (prefix, release)
@@ -71,23 +78,9 @@ for name, prefix in PKG_TYPES:
     if have_zip or have_tgz or have_bz2:
         print "    <tr><td>%s</td>" % name
 
-        if have_zip:
-            kb = get_size(prefix, ".zip")
-            print FILE_TEMPLATE % (release, prefix, release, ".zip", kb)
-        else:
-            print NO_FILE_TEMPLATE
-
-        if have_tgz:
-            kb = get_size(prefix, ".tgz")
-            print FILE_TEMPLATE % (release, prefix, release, ".tgz", kb)
-        else:
-            print NO_FILE_TEMPLATE
-
-        if have_bz2:
-            kb = get_size(prefix, ".tar.bz2")
-            print FILE_TEMPLATE % (release, prefix, release, ".tar.bz2", kb)
-        else:
-            print NO_FILE_TEMPLATE
+        print get_file_cell(prefix, ".zip", have_zip)
+        print get_file_cell(prefix, ".tgz", have_tgz)
+        print get_file_cell(prefix, ".tar.bz2", have_bz2)
 
         print "      </tr>"
 
