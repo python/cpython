@@ -43,8 +43,11 @@ def main():
 			short = 1
 	if not args:
 		args = ['film.video']
+	sts = 0
 	for filename in args:
-		process(filename)
+		if process(filename):
+			sts = 1
+	sys.exit(sts)
 
 
 # Process one file
@@ -54,13 +57,14 @@ def process(filename):
 		vin = VFile.VinFile().init(filename)
 	except IOError, msg:
 		sys.stderr.write(filename + ': I/O error: ' + `msg` + '\n')
-		return
+		return 1
 	except VFile.Error, msg:
 		sys.stderr.write(msg + '\n')
-		return
+		return 1
 	except EOFError:
 		sys.stderr.write(filename + ': EOF in video file\n')
-		return
+		return 1
+
 	print 'File:    ', filename
 	print 'Version: ', vin.version
 	print 'Size:    ', vin.width, 'x', vin.height
@@ -68,24 +72,28 @@ def process(filename):
 	print 'Bits:    ', vin.c0bits, vin.c1bits, vin.c2bits
 	print 'Format:  ', vin.format
 	print 'Offset:  ', vin.offset
+
 	if quick:
 		vin.close()
 		return
+
 	if not short:
 		if delta:
 			print 'Frame time deltas:',
 		else:
 			print 'Frame times:',
+
 	n = 0
 	t = 0
 	told = 0
+	datasize = 0
 	while 1:
 		try:
 			t, data, cdata = vin.getnextframe()
 		except EOFError:
-			if not short:
-				print
 			break
+		datasize = datasize + len(data)
+		if cdata: datasize = datasize + len(cdata)
 		if not short:
 			if n%8 == 0:
 				sys.stdout.write('\n')
@@ -95,10 +103,18 @@ def process(filename):
 			else:
 				sys.stdout.write('\t' + `t`)
 		n = n+1
+
+	if not short: print
+
 	print 'Total', n, 'frames in', t*0.001, 'sec.',
-	if t:
-		print '-- average', int(n*10000.0/t)*0.1, 'frames/sec',
+	if t: print '-- average', int(n*10000.0/t)*0.1, 'frames/sec',
 	print
+	print 'Total data', 0.1 * int(datasize / 102.4), 'Kbytes',
+	if t:
+		print '-- average',
+		print 0.1 * int(datasize / 0.1024 / t), 'Kbytes/sec',
+	print
+
 	vin.close()
 
 
