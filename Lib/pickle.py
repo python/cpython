@@ -126,7 +126,7 @@ the old value, not the modified one.  (XXX There are two problems here:
 I have no answers.  Garbage Collection may also become a problem here.)
 """
 
-__version__ = "1.5"			# Code version
+__version__ = "1.6"			# Code version
 
 from types import *
 import string
@@ -200,8 +200,11 @@ class Pickler:
 		try:
 			f = self.dispatch[t]
 		except KeyError:
-			raise PicklingError, \
-			      "can't pickle %s objects" % `t.__name__`
+		        if hasattr(object, '__class__'):
+			        f = self.dispatch[InstanceType]
+			else:
+			        raise PicklingError, \
+				"can't pickle %s objects" % `t.__name__`
 		f(self, object)
 
 	def persistent_id(self, object):
@@ -234,66 +237,75 @@ class Pickler:
 
 	def save_tuple(self, object):
 		d = id(object)
-		self.write(MARK)
+		write = self.write
+		save = self.save
+		has_key = self.memo.has_key
+		write(MARK)
 		n = len(object)
 		for k in range(n):
-			self.save(object[k])
-			if self.memo.has_key(d):
+			save(object[k])
+			if has_key(d):
 				# Saving object[k] has saved us!
 				while k >= 0:
-					self.write(POP)
+					write(POP)
 					k = k-1
-				self.write(GET + `d` + '\n')
+				write(GET + `d` + '\n')
 				break
 		else:
-			self.write(TUPLE + PUT + `d` + '\n')
+			write(TUPLE + PUT + `d` + '\n')
 			self.memo[d] = object
 	dispatch[TupleType] = save_tuple
 
 	def save_list(self, object):
 		d = id(object)
-		self.write(MARK)
+		write = self.write
+		save = self.save
+		write(MARK)
 		n = len(object)
 		for k in range(n):
 			item = object[k]
 			if not safe(item):
 				break
-			self.save(item)
+			save(item)
 		else:
 			k = n
-		self.write(LIST + PUT + `d` + '\n')
+		write(LIST + PUT + `d` + '\n')
 		self.memo[d] = object
 		for k in range(k, n):
 			item = object[k]
-			self.save(item)
-			self.write(APPEND)
+			save(item)
+			write(APPEND)
 	dispatch[ListType] = save_list
 
 	def save_dict(self, object):
 		d = id(object)
-		self.write(MARK)
+		write = self.write
+		save = self.save
+		write(MARK)
 		items = object.items()
 		n = len(items)
 		for k in range(n):
 			key, value = items[k]
 			if not safe(key) or not safe(value):
 				break
-			self.save(key)
-			self.save(value)
+			save(key)
+			save(value)
 		else:
 			k = n
 		self.write(DICT + PUT + `d` + '\n')
 		self.memo[d] = object
 		for k in range(k, n):
 			key, value = items[k]
-			self.save(key)
-			self.save(value)
-			self.write(SETITEM)
+			save(key)
+			save(value)
+			write(SETITEM)
 	dispatch[DictionaryType] = save_dict
 
 	def save_inst(self, object):
 		d = id(object)
 		cls = object.__class__
+		write = self.write
+		save = self.save
 		module = whichmodule(cls)
 		name = cls.__name__
 		if hasattr(object, '__getinitargs__'):
@@ -301,11 +313,11 @@ class Pickler:
 			len(args) # XXX Assert it's a sequence
 		else:
 			args = ()
-		self.write(MARK)
+		write(MARK)
 		for arg in args:
-			self.save(arg)
-		self.write(INST + module + '\n' + name + '\n' +
-			   PUT + `d` + '\n')
+			save(arg)
+		write(INST + module + '\n' + name + '\n' +
+		      PUT + `d` + '\n')
 		self.memo[d] = object
 		try:
 			getstate = object.__getstate__
@@ -313,8 +325,8 @@ class Pickler:
 			stuff = object.__dict__
 		else:
 			stuff = getstate()
-		self.save(stuff)
-		self.write(BUILD)
+		save(stuff)
+		write(BUILD)
 	dispatch[InstanceType] = save_inst
 
 	def save_class(self, object):
@@ -361,16 +373,21 @@ class Unpickler:
 	def load(self):
 		self.mark = ['spam'] # Any new unique object
 		self.stack = []
+		self.append = self.stack.append
+		read = self.read
+		dispatch = self.dispatch
 		try:
 			while 1:
-				key = self.read(1)
-				self.dispatch[key](self)
+				key = read(1)
+				dispatch[key](self)
 		except STOP, value:
 			return value
 
 	def marker(self):
-		k = len(self.stack)-1
-		while self.stack[k] != self.mark: k = k-1
+	        stack = self.stack
+		mark = self.mark
+		k = len(stack)-1
+		while stack[k] is not mark: k = k-1
 		return k
 
 	dispatch = {}
@@ -381,27 +398,28 @@ class Unpickler:
 
 	def load_persid(self):
 		pid = self.readline()[:-1]
-		self.stack.append(self.persistent_load(pid))
+		self.append(self.persistent_load(pid))
 	dispatch[PERSID] = load_persid
 
 	def load_none(self):
-		self.stack.append(None)
+		self.append(None)
 	dispatch[NONE] = load_none
 
 	def load_int(self):
-		self.stack.append(string.atoi(self.readline()[:-1], 0))
+		self.append(string.atoi(self.readline()[:-1], 0))
 	dispatch[INT] = load_int
 
 	def load_long(self):
-		self.stack.append(string.atol(self.readline()[:-1], 0))
+		self.append(string.atol(self.readline()[:-1], 0))
 	dispatch[LONG] = load_long
 
 	def load_float(self):
-		self.stack.append(string.atof(self.readline()[:-1]))
+		self.append(string.atof(self.readline()[:-1]))
 	dispatch[FLOAT] = load_float
 
 	def load_string(self):
-		self.stack.append(eval(self.readline()[:-1]))
+		self.append(eval(self.readline()[:-1],
+				 {'__builtins__': {}})) # Let's be careful
 	dispatch[STRING] = load_string
 
 	def load_tuple(self):
@@ -433,14 +451,14 @@ class Unpickler:
 		name = self.readline()[:-1]
 		klass = self.find_class(module, name)
 		value = apply(klass, args)
-		self.stack.append(value)
+		self.append(value)
 	dispatch[INST] = load_inst
 
 	def load_class(self):
 		module = self.readline()[:-1]
 		name = self.readline()[:-1]
 		klass = self.find_class(module, name)
-		self.stack.append(klass)
+		self.append(klass)
 		return klass
 	dispatch[CLASS] = load_class
 
@@ -453,7 +471,9 @@ class Unpickler:
 			      "Failed to import class %s from module %s" % \
 			      (name, module)
 		klass = env[name]
-		if type(klass) != ClassType:
+		# if type(klass) != ClassType:
+		if (type(klass) is FunctionType or
+		    type(klass) is BuiltinFunctionType):
 			raise SystemError, \
 			 "Imported object %s from module %s is not a class" % \
 			 (name, module)
@@ -464,11 +484,11 @@ class Unpickler:
 	dispatch[POP] = load_pop
 
 	def load_dup(self):
-		stack.append(stack[-1])
+		self.append(stack[-1])
 	dispatch[DUP] = load_dup
 
 	def load_get(self):
-		self.stack.append(self.memo[self.readline()[:-1]])
+		self.append(self.memo[self.readline()[:-1]])
 	dispatch[GET] = load_get
 
 	def load_put(self):
@@ -476,35 +496,39 @@ class Unpickler:
 	dispatch[PUT] = load_put
 
 	def load_append(self):
-		value = self.stack[-1]
-		del self.stack[-1]
-		list = self.stack[-1]
+	        stack = self.stack
+		value = stack[-1]
+		del stack[-1]
+		list = stack[-1]
 		list.append(value)
 	dispatch[APPEND] = load_append
 
 	def load_setitem(self):
-		value = self.stack[-1]
-		key = self.stack[-2]
-		del self.stack[-2:]
-		dict = self.stack[-1]
+	        stack = self.stack
+		value = stack[-1]
+		key = stack[-2]
+		del stack[-2:]
+		dict = stack[-1]
 		dict[key] = value
 	dispatch[SETITEM] = load_setitem
 
 	def load_build(self):
-		value = self.stack[-1]
-		del self.stack[-1]
-		inst = self.stack[-1]
+	        stack = self.stack
+		value = stack[-1]
+		del stack[-1]
+		inst = stack[-1]
 		try:
 			setstate = inst.__setstate__
 		except AttributeError:
+		        instdict = inst.__dict__
 			for key in value.keys():
-				inst.__dict__[key] = value[key]
+				instdict[key] = value[key]
 		else:
 			setstate(value)
 	dispatch[BUILD] = load_build
 
 	def load_mark(self):
-		self.stack.append(self.mark)
+		self.append(self.mark)
 	dispatch[MARK] = load_mark
 
 	def load_stop(self):
@@ -516,12 +540,13 @@ class Unpickler:
 
 # Shorthands
 
+from StringIO import StringIO
+
 def dump(object, file):
 	Pickler(file).dump(object)
 
 def dumps(object):
-	import StringIO
-	file = StringIO.StringIO()
+	file = StringIO()
 	Pickler(file).dump(object)
 	return file.getvalue()
 
@@ -529,8 +554,7 @@ def load(file):
 	return Unpickler(file).load()
 
 def loads(str):
-	import StringIO
-	file = StringIO.StringIO(str)
+	file = StringIO(str)
 	return Unpickler(file).load()
 
 
@@ -545,7 +569,7 @@ def test():
 	c = C()
 	c.foo = 1
 	c.bar = 2L
-	x = [0,1,2,3]
+	x = [0, 1, 2, 3]
 	y = ('abc', 'abc', c, c)
 	x.append(y)
 	x.append(y)
