@@ -31,6 +31,8 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include "thread.h"
 
+int threads_started = 0;
+
 object *ThreadError;
 
 
@@ -177,6 +179,8 @@ t_bootstrap(args_raw)
 	object *args = (object *) args_raw;
 	object *func, *arg, *res;
 
+	threads_started++;
+
 	restore_thread((void *)NULL);
 	func = gettupleitem(args, 0);
 	arg = gettupleitem(args, 1);
@@ -230,7 +234,7 @@ thread_exit_prog(self, args)
 	int sts;
 	if (!getargs(args, "i", &sts))
 		return NULL;
-	goaway(sts);
+	goaway(sts); /* Calls exit_prog(sts) or _exit_prog(sts) */
 	for (;;) { } /* Should not be reached */
 }
 
