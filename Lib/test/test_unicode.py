@@ -429,6 +429,7 @@ verify(unicode('hello','utf-8') == u'hello')
 verify(unicode('hello','utf8') == u'hello')
 verify(unicode('hello','latin-1') == u'hello')
 
+# Compatibility to str():
 class String:
     x = ''
     def __str__(self):
@@ -444,6 +445,10 @@ o.x = u'abc'
 verify(unicode(o) == u'abc')
 verify(str(o) == 'abc')
 
+for obj in (123, 123.45, 123L):
+    verify(unicode(obj) == unicode(str(obj)))
+
+# Error handling
 try:
     u'Andr\202 x'.encode('ascii')
     u'Andr\202 x'.encode('ascii','strict')
