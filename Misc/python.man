@@ -1,0 +1,247 @@
+.TH PYTHON "3 January 1994"
+.SH NAME
+python \- an interpreted, interactive, object-oriented programming language
+.SH SYNOPSIS
+.B python
+[
+.I X11-options
+]
+[
+.B \-d
+]
+[
+.B \-i
+]
+[
+.B \-k
+]
+[
+.B \-v
+]
+[
+.B \-c
+.I command
+|
+.I script
+|
+\-
+]
+[
+.I arguments
+]
+.SH DESCRIPTION
+Python is an interpreted, interactive, object-oriented programming
+language that combines remarkable power with very clear syntax.
+For an introduction to programming in Python you are referred to the
+Python Tutorial.
+The Python Library Reference documents built-in and standard types,
+constants, functions and modules.
+Finally, the Python Reference Manual describes the syntax and
+semantics of the core language in (perhaps too) much detail.
+.PP
+Python's basic power can be extended with your own modules written in
+C or C++.
+On some (most?) systems such modules may be dynamically loaded.
+Python is also adaptable as an extension language for existing
+applications.
+See the internal documentation for hints.
+.SH COMMAND LINE OPTIONS
+.TP
+.TP
+.B \-d
+Turn on parser debugging output (for wizards only, depending on
+compilation options).
+.B \-i
+When a script is passed as first argument or the \fB\-c\fP option is
+used, enter interactive mode after executing the script or the
+command.  This can be useful to inspect global variables or a stack
+trace when a script raises an exception.
+.TP
+.B \-i
+When executing a program from a file, this option enters interactive
+mode after the program has completed.  It does not read the
+$PYTHONSTARTUP file.
+.TP
+.B \-k
+This hack, eh, feature is intended to help you to find expression
+statements that print a value.  Although a feature of the language, it
+can sometimes be annoying that when a function is called which returns
+a value that is not
+.IR None ,
+the value is printed to standard output, and it is not always easy to
+find which statement is the cause of an unwanted `1', for instance.
+When this option is set, if an expression statement prints its value,
+the exception
+.I RuntimeError
+is raised.  The resulting stack trace will help you to track down the
+culprit.
+.TP
+.B \-v
+Print a message each time a module is initialized, showing the place
+(filename or built-in module) from which it is loaded.
+.TP
+.BI "\-c " command
+Specify the command to execute (see next section).
+This terminates the option list (following options are passed as
+arguments to the command).
+.PP
+When the interpreter is configured to contain the
+.I stdwin
+built-in module for use with the X window system, additional command
+line options common to most X applications are recognized (by STDWIN),
+e.g.
+.B \-display
+.I displayname
+and
+.B \-geometry
+.I widthxheight+x+y.
+The complete set of options is described in the STDWIN documentation.
+.SH INTERPRETER INTERFACE
+The interpreter interface resembles that of the UNIX shell: when
+called with standard input connected to a tty device, it prompts for
+commands and executes them until an EOF is read; when called with a
+file name argument or with a file as standard input, it reads and
+executes a
+.I script
+from that file;
+when called with
+.B \-c
+.I command,
+it executes the Python statement(s) given as
+.I command.
+Here
+.I command
+may contain multiple statements separated by newlines.
+Leading whitespace is significant in Python statements!
+In non-interactive mode, the entire input is parsed befored it is
+executed.
+.PP
+If available, the script name and additional arguments thereafter are
+passed to the script in the Python variable
+.I sys.argv ,
+which is a list of strings (you must first
+.I import sys
+to be able to access it).
+If no script name is given,
+.I sys.argv
+is empty; if
+.B \-c
+is used,
+.I sys.argv[0]
+contains the string
+.I '-c'.
+Note that options interpreter by the Python interpreter or by STDWIN
+are not placed in
+.I sys.argv.
+.PP
+In interactive mode, the primary prompt is `>>>'; the second prompt
+(which appears when a command is not complete) is `...'.
+The prompts can be changed by assignment to
+.I sys.ps1
+or
+.I sys.ps2.
+The interpreter quits when it reads an EOF at a prompt.
+When an unhandled exception occurs, a stack trace is printed and
+control returns to the primary prompt; in non-interactive mode, the
+interpreter exits after printing the stack trace.
+The interrupt signal raises the
+.I Keyboard\%Interrupt
+exception; other UNIX signals are not caught (except that SIGPIPE is
+sometimes ignored, in favor of the
+.I IOError
+exception).  Error messages are written to stderr.
+.SH FILES AND DIRECTORIES
+These are subject to difference depending on local installation
+conventions:
+.IP /usr/local/bin/python
+Recommended location of the interpreter.
+.IP /usr/local/lib/python
+Recommended location of the directory containing the standard modules.
+.SH ENVIRONMENT VARIABLES
+.IP PYTHONPATH
+Augments the default search path for module files.
+The format is the same as the shell's $PATH: one or more directory
+pathnames separated by colons.
+Non-existant directories are silently ignored.
+The default search path is installation dependent, but always begins
+with `.', (for example,
+.I .:/usr/local/lib/python ).
+The default search path is appended to $PYTHONPATH.
+The search path can be manipulated from within a Python program as the
+variable
+.I sys.path .
+.IP PYTHONSTARTUP
+If this is the name of a readable file, the Python commands in that
+file are executed before the first prompt is displayed in interactive
+mode.
+The file is executed in the same name space where interactive commands
+are executed so that objects defined or imported in it can be used
+without qualification in the interactive session.
+You can also change the prompts
+.I sys.ps1
+and
+.I sys.ps2
+in this file.
+.IP PYTHONDEBUG
+If this is set to a non-empty string it is equivalent to specifying
+the \fB\-d\fP option.
+.IP PYTHONINSPECT
+If this is set to a non-empty string it is equivalent to specifying
+the \fB\-i\fP option.
+.IP PYTHONKILLPRINT
+If this is set to a non-empty string it is equivalent to specifying
+the \fB\-k\fP option.
+.IP PYTHONVERBOSE
+If this is set to a non-empty string it is equivalent to specifying
+the \fB\-v\fP option.
+.SH SEE ALSO
+Python Tutorial
+.br
+Python Library Reference
+.br
+Python Reference Manual
+.br
+STDWIN under X11
+.SH BUGS AND CAVEATS
+The first time
+.I stdwin
+is imported, it initializes the STDWIN library.
+If this initialization fails, e.g. because the display connection
+fails, the interpreter aborts immediately.
+.SH AUTHOR
+.nf
+Guido van Rossum
+CWI (Centrum voor Wiskunde en Informatica)
+P.O. Box 4079
+1009 AB  Amsterdam
+The Netherlands
+.PP
+E-mail: Guido.van.Rossum@cwi.nl
+.fi
+.SH MAILING LIST
+There is a mailing list devoted to Python programming, bugs and
+design.
+To subscribe, send mail containing your real name and e-mail address
+in Internet form to
+.I python-list-request@cwi.nl.
+.SH COPYRIGHT
+Copyright 1991, 1992, 1993, 1994 by Stichting Mathematisch Centrum,
+Amsterdam, The Netherlands.
+.IP " "
+All Rights Reserved
+.PP
+Permission to use, copy, modify, and distribute this software and its 
+documentation for any purpose and without fee is hereby granted, 
+provided that the above copyright notice appear in all copies and that
+both that copyright notice and this permission notice appear in 
+supporting documentation, and that the names of Stichting Mathematisch
+Centrum or CWI not be used in advertising or publicity pertaining to
+distribution of the software without specific, written prior permission.
+
+STICHTING MATHEMATISCH CENTRUM DISCLAIMS ALL WARRANTIES WITH REGARD TO
+THIS SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS, IN NO EVENT SHALL STICHTING MATHEMATISCH CENTRUM BE LIABLE
+FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT
+OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.

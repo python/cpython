@@ -1,0 +1,45 @@
+What is Python?
+---------------
+
+Python is an interpreted, interactive, object-oriented programming
+language.  It incorporates modules, exceptions, dynamic typing, very
+high level dynamic data types, and classes.  Python combines
+remarkable power with very clear syntax.  It has interfaces to many
+system calls and libraries, as well as to various window systems, and
+is extensible in C or C++.  It is also usable as an extension language
+for applications that need a programmable interface.  Finally, Python
+is portable: it runs on many brands of UNIX, on the Mac, and on
+MS-DOS.
+
+As a short example of what Python looks like, here's a script to
+print prime numbers (not blazingly fast, but readable!).  When this
+file is made executable, it is callable directly from the UNIX shell
+(if your system supports #! in scripts and the python interpreter is
+installed at the indicated place).
+
+#!/usr/local/bin/python
+
+# Print prime numbers in a given range
+
+def main():
+	import sys
+	min, max = 2, 0x7fffffff
+	if sys.argv[1:]:
+		min = int(eval(sys.argv[1]))
+		if sys.argv[2:]:
+			max = int(eval(sys.argv[2]))
+	primes(min, max)
+
+def primes(min, max):
+	if 2 >= min: print 2
+	primes = [2]
+	i = 3
+	while i <= max:
+		for p in primes:
+			if i%p == 0 or p*p > i: break
+		if i%p <> 0:
+			primes.append(i)
+			if i >= min: print i
+		i = i+2
+
+main()

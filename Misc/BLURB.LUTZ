@@ -1,0 +1,122 @@
+Newsgroups: comp.lang.perl,comp.lang.tcl
+From: lutz@xvt.com (Mark Lutz)
+Subject: Python (was Re: Has anyone done a tk addition to perl?)
+Organization: XVT Software Inc.
+Date: Thu, 14 Oct 1993 17:10:37 GMT
+X-Disclaimer: The views expressed in this message are those of an
+	individual at XVT Software Inc., and do not necessarily
+	reflect those of the company.
+
+
+I've gotten a number of requests for information about Python,
+since my post here earlier this week.  Since this appears to be 
+of general interest, and since there's no python news group yet, 
+I'm posting a description here.  I'm not the best authority on 
+the language, but here's my take on it.  
+
+[TCL/Perl zealots: this is informational only; I'm not trying to
+'convert' anybody, and don't have time for a language war :-)
+There is a paper comparing TCL/Perl/Python/Emacs-Lisp, which is
+referenced in the comp.lang.misc faq, I beleive.]
+
+
+What is Python?...
+
+Python is a relatively new very-high-level language developed 
+in Amsterdam.  Python is a simple, procedural language, with 
+features taken from ABC, Icon, Modula-3, and C/C++.
+
+It's central goal is to provide the best of both worlds: 
+the dynamic nature of scripting languages like Perl/TCL/REXX, 
+but also support for general programming found in the more 
+traditional languages like Icon, C, Modula,...
+
+As such, it can function as a scripting/extension language,
+as a rapid prototyping language, and as a serious software
+development language.  Python is suitable for fast development
+of large programs, but also does well at throw-away shell coding.
+
+Python resembles other scripting languages a number of ways:
+    - dynamic, interpretive, interactive nature
+    - no explicit compile or link steps needed
+    - no type declarations (it's dynamically typed)
+    - high-level operators ('in', concatenation, etc)
+    - automatic memory allocation/deallocation (no 'pointers')
+    - high level objects: lists, tuples, strings, associative arrays
+    - programs can construct and execute program code using strings
+    - very fast edit/compile/run cycle; no static linking
+    - well-defined interface to and from C functions and data
+    - well-defined ways to add C modules to the system and language
+
+Python's features that make it useful for serious programming:
+    - it's object-oriented;  it has a simplified subset of 
+      C++'s 'class' facility, made more useful by python's
+      dynamic typing;  the language is object-oriented from
+      the ground up (rather than being an add-on, as in C++)
+
+    - it supports modules (imported packages, as in Modula-3);
+      modules replace C's 'include' files and linking, and allow
+      for multiple-module systems, code sharing, etc.;
+
+    - it has a good exception handling system (a 'try' statement,
+      and a 'raise' statement, with user-defined exceptions);
+
+    - it's orthogonal;  everything is a first-class object in the
+      language (functions, modules, classes, class instance methods...)
+      and can be assigned/passed and used generically;
+
+    - it's fairly run-time secure;  it does many run-time checks
+      like index-out-of-bounds, etc., that C usually doesn't;
+
+    - it has general data structuring support;  Python lists are
+      heterogeneous, variable length, nestable, support slicing, 
+      concatenation, etc., and come into existance and are reclaimed 
+      automatically;  strings and dictionaries are similarly general;
+
+    - it's got a symbolic debugger and profiler (written in python, 
+      of course..), and an interactive command-line interface;
+      as in Lisp, you can enter code and test functions in isolation,
+      from the interactive command line (even linked C functions);
+
+    - it has a large library of built-in modules;  it has support
+      for sockets, regular expressions, posix bindings, etc.
+
+    - it supports dynamic loading of C modules on many platforms;
+
+    - it has a _readable_ syntax;  python code looks like normal
+      programming languages;  tcl and perl can be very unreadable
+      (IMHO; what was that joke about Perl looking the same after
+      rot13..);  python's syntax is simple, and statement based;
+
+
+Of course, Python isn't perfect, but it's a good compromise betweem
+scripting languages and traditional ones, and so is widely applicable. 
+'Perfect' languages aren't always useful for real-world tasks (Prolog, 
+for example), and languages at either extreme are not useful in the other 
+domain (C is poor for shell coding and prototyping, and awk is useless 
+for large systems design; Python does both well).  
+
+For example, I've used Python successfully for a 4K line expert system 
+shell project; it would have been at least twice as large in C, and would 
+have been very difficult in TCL or Perl.
+
+Python uses an indentation-based syntax which may seem unusual at first
+to C coders, but after using it I have found it to be _very_ handy, since 
+there's less to type.  [I now forget to type '}' in my C code, and am 
+busy calculating how much time I wasted typing all those '}', 'END', etc., 
+just to pander to 'brain-dead' C/Pascal compilers :-)].
+
+Python's currently at release 0.9.9.  It seems suprisingly stable.
+The first 'official' 1.0 release is due out by the end of this year.
+Python runs on most popular machines/systems (mac, dos, unix, etc.)
+It's public domain and distributable, and can be had via ftp.  The 
+distribution includes examples, tutorials, and documentation.   The 
+latest ftp address I have (I got it on a cd-rom):
+    pub/python/*  at  ftp.cwi.nl
+    pub/?         at  wuarchive.wustl.edu   (in america)
+
+There's a python mailing list maintained by the language's creator.  
+Mail 'python-list-request@cwi.nl' to get on it.  
+
+Mark Lutz
+lutz@xvt.com
