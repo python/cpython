@@ -1176,6 +1176,21 @@ hello world
 --BOUNDARY--
 ''')
 
+    def test_boundary_in_non_multipart(self):
+        msg = self._msgobj('msg_40.txt')
+        self.assertEqual(msg.as_string(), '''\
+MIME-Version: 1.0
+Content-Type: text/html; boundary="--961284236552522269"
+
+----961284236552522269
+Content-Type: text/html;
+Content-Transfer-Encoding: 7Bit
+
+<html></html>
+
+----961284236552522269--
+''')
+
 
 
 # Test some badly formatted messages
