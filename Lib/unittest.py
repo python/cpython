@@ -46,7 +46,7 @@ SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
 __author__ = "Steve Purcell"
 __email__ = "stephen_purcell at yahoo dot com"
-__version__ = "#Revision: 1.43 $"[11:-2]
+__version__ = "#Revision: 1.45 $"[11:-2]
 
 import time
 import sys
@@ -58,6 +58,9 @@ import types
 ##############################################################################
 # Test framework core
 ##############################################################################
+
+# All classes defined herein are 'new-style' classes, allowing use of 'super()'
+__metaclass__ = type
 
 class TestResult:
     """Holder for test result information.
