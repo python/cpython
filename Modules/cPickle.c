@@ -2213,13 +2213,22 @@ dump(Picklerobject *self, PyObject *args)
 {
 	static char stop = STOP;
 
+	if (self->proto >= 2) {
+		char bytes[2];
+
+		bytes[0] = PROTO;
+		bytes[1] = CURRENT_PROTOCOL_NUMBER;
+		if (self->write_func(self, bytes, 2) < 0)
+			return -1;
+	}
+
 	if (save(self, args, 0) < 0)
 		return -1;
 
-	if ((*self->write_func)(self, &stop, 1) < 0)
+	if (self->write_func(self, &stop, 1) < 0)
 		return -1;
 
-	if ((*self->write_func)(self, NULL, 0) < 0)
+	if (self->write_func(self, NULL, 0) < 0)
 		return -1;
 
 	return 0;
@@ -3870,6 +3879,31 @@ load_reduce(Unpicklerobject *self)
 	return 0;
 }
 
+/* Just raises an error if we don't know the protocol specified.  PROTO
+ * is the first opcode for protocols >= 2.
+ */
+static int
+load_proto(Unpicklerobject *self)
+{
+	int i;
+	char *protobyte;
+
+	i = self->read_func(self, &protobyte, 1);
+	if (i < 0)
+		return -1;
+
+	i = calc_binint(protobyte, 1);
+	/* No point checking for < 0, since calc_binint returns an unsigned
+	 * int when chewing on 1 byte.
+	 */
+	assert(i >= 0);
+	if (i <= CURRENT_PROTOCOL_NUMBER)
+		return 0;
+
+	PyErr_Format(PyExc_ValueError, "unsupported pickle protocol: %d", i);
+	return -1;
+}
+
 static PyObject *
 load(Unpicklerobject *self)
 {
@@ -4099,6 +4133,11 @@ load(Unpicklerobject *self)
 				break;
 			continue;
 
+		case PROTO:
+			if (load_proto(self) < 0)
+				break;
+			continue;
+
 		case '\0':
 			/* end of file */
 			PyErr_SetNone(PyExc_EOFError);
@@ -4224,6 +4263,16 @@ noload(Unpicklerobject *self)
 
 		case LONG:
 			if (load_long(self) < 0)
+				break;
+			continue;
+
+		case LONG1:
+			if (load_counted_long(self, 1) < 0)
+				break;
+			continue;
+
+		case LONG4:
+			if (load_counted_long(self, 4) < 0)
 				break;
 			continue;
 
@@ -4399,6 +4448,11 @@ noload(Unpicklerobject *self)
 
 		case REDUCE:
 			if (noload_reduce(self) < 0)
+				break;
+			continue;
+
+		case PROTO:
+			if (load_proto(self) < 0)
 				break;
 			continue;
 
