@@ -24,7 +24,7 @@ except SyntaxError:
 print "testing complex args"
 
 def comp_args((a, b)):
-    print a,b  
+    print a,b
 
 comp_args((1, 2))
 

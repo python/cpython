@@ -87,4 +87,3 @@ def check_syntax(statement):
         pass
     else:
         print 'Missing SyntaxError: "%s"' % statement
-
