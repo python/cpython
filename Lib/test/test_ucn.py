@@ -10,6 +10,10 @@ from test_support import verify, verbose
 print 'Testing General Unicode Character Name, and case insensitivity...',
 
 # General and case insensitivity test:
+try:
+    # put all \N escapes inside exec'd raw strings, to make sure this
+    # script runs even if the compiler chokes on \N escapes
+    exec r"""
 s = u"\N{LATIN CAPITAL LETTER T}" \
     u"\N{LATIN SMALL LETTER H}" \
     u"\N{LATIN SMALL LETTER E}" \
@@ -37,6 +41,9 @@ s = u"\N{LATIN CAPITAL LETTER T}" \
     u"\N{LATIN SMALL LETTER P}" \
     u"\N{FULL STOP}"
 verify(s == u"The rEd fOx ate the sheep.", s)
+"""
+except UnicodeError, v:
+    print v
 print "done."
 
 import ucnhash
@@ -63,10 +70,12 @@ print "Found", count, "characters in the unicode name database"
 
 # misc. symbol testing
 print "Testing misc. symbols for unicode character name expansion....",
+exec r"""
 verify(u"\N{PILCROW SIGN}" == u"\u00b6")
 verify(u"\N{REPLACEMENT CHARACTER}" == u"\uFFFD")
 verify(u"\N{HALFWIDTH KATAKANA SEMI-VOICED SOUND MARK}" == u"\uFF9F")
 verify(u"\N{FULLWIDTH LATIN SMALL LETTER A}" == u"\uFF41")
+"""
 print "done."
 
 

@@ -1240,15 +1240,15 @@ PyObject *PyUnicode_DecodeUnicodeEscape(const char *s,
                 PyObject *mod = 0, *v = 0;
                 mod = PyImport_ImportModule("ucnhash");
                 if (mod == NULL)
-                    goto onError;
+                    goto ucnhashError;
                 v = PyObject_GetAttrString(mod,"Unicode_Names_CAPI");
                 Py_DECREF(mod);
                 if (v == NULL)
-                    goto onError;
+                    goto ucnhashError;
                 unicode_names = PyCObject_AsVoidPtr(v);
                 Py_DECREF(v);
                 if (unicode_names == NULL)
-                    goto onError;
+                    goto ucnhashError;
             }
                 
             if (*s == '{') {
@@ -1311,6 +1311,11 @@ store:
 		goto onError;
     return (PyObject *)v;
     
+ ucnhashError:
+    PyErr_SetString(PyExc_UnicodeError,
+                    "\\N escapes not supported (can't load ucnhash module)");
+    return NULL;
+
  onError:
     Py_XDECREF(v);
     return NULL;
