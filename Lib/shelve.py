@@ -11,7 +11,7 @@ To summarize the interface (key is a string, data is an arbitrary
 object):
 
 	import shelve
-	d = shelve.open(filename)	# open, with (g)dbm filename
+	d = shelve.open(filename) # open, with (g)dbm filename -- no suffix
 
 	d[key] = data	# store data at key (overwrites old data if
 			# using an existing key)

@@ -84,7 +84,7 @@ that suitable conversions can be made by the class's __setstate__ method.
 
 The interface is as follows:
 
-To pickle an object x onto a file f. open for writing:
+To pickle an object x onto a file f, open for writing:
 
 	p = pickle.Pickler(f)
 	p.dump(x)
@@ -106,7 +106,7 @@ The following types can be pickled:
 - None
 - integers, long integers, floating point numbers
 - strings
-- tuples, lists and dictionaries containing picklable objects
+- tuples, lists and dictionaries containing only picklable objects
 - class instances whose __dict__ or __setstate__() is picklable
 
 Attempts to pickle unpicklable objects will raise an exception
@@ -114,7 +114,7 @@ after having written an unspecified number of bytes to the file argument.
 
 It is possible to make multiple calls to Pickler.dump() or to
 Unpickler.load(), as long as there is a one-to-one correspondence
-betwee pickler and Unpickler objects and between dump and load calls
+between pickler and Unpickler objects and between dump and load calls
 for any pair of corresponding Pickler and Unpicklers.  WARNING: this
 is intended for pickleing multiple objects without intervening modifications
 to the objects or their parts.  If you modify an object and then pickle
