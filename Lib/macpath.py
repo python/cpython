@@ -46,48 +46,20 @@ def split(s):
 	return s[:colon-1], s[colon:]
 
 
+# Split a pathname into a drive specification and the rest of the
+# path.  Useful on DOS/Windows/NT; on the Mac, the drive is always
+# empty (don't use the volume name -- it doesn't have the same
+# syntactic and semantic oddities as DOS drive letters, such as there
+# being a separate current directory per drive).
+
+def splitdrive(p):
+	return '', p
+
+
 # Short interfaces to split()
 
 def dirname(s): return split(s)[0]
 def basename(s): return split(s)[1]
-
-
-# XXX This is undocumented and may go away!
-# Normalize a pathname: get rid of '::' sequences by backing up,
-# e.g., 'foo:bar::bletch' becomes 'foo:bletch'.
-# Raise the exception norm_error below if backing up is impossible,
-# e.g., for '::foo'.
-
-norm_error = 'macpath.norm_error: path cannot be normalized'
-
-def norm(s):
-	import string
-	if ':' not in s:
-		return ':' + s
-	f = string.splitfields(s, ':')
-	pre = []
-	post = []
-	if not f[0]:
-		pre = f[:1]
-		f = f[1:]
-	if not f[len(f)-1]:
-		post = f[-1:]
-		f = f[:-1]
-	res = []
-	for seg in f:
-		if seg:
-			res.append(seg)
-		else:
-			if not res: raise norm_error, 'path starts with ::'
-			del res[len(res)-1]
-			if not (pre or res):
-				raise norm_error, 'path starts with volume::'
-	if pre: res = pre + res
-	if post: res = res + post
-	s = res[0]
-	for seg in res[1:]:
-		s = s + ':' + seg
-	return s
 
 
 # Return true if the pathname refers to an existing directory.
@@ -127,10 +99,44 @@ def exists(s):
 	return 1
 
 
-# Normalize path, removing things like ...:A:..:... (yet to be written)
+# Normalize a pathname: get rid of '::' sequences by backing up,
+# e.g., 'foo:bar::bletch' becomes 'foo:bletch'.
+# Raise the exception norm_error below if backing up is impossible,
+# e.g., for '::foo'.
+# XXX The Unix version doesn't raise an exception but simply
+# returns an unnormalized path.  Should do so here too.
+
+norm_error = 'macpath.norm_error: path cannot be normalized'
 
 def normpath(s):
+	import string
+	if ':' not in s:
+		return ':' + s
+	f = string.splitfields(s, ':')
+	pre = []
+	post = []
+	if not f[0]:
+		pre = f[:1]
+		f = f[1:]
+	if not f[len(f)-1]:
+		post = f[-1:]
+		f = f[:-1]
+	res = []
+	for seg in f:
+		if seg:
+			res.append(seg)
+		else:
+			if not res: raise norm_error, 'path starts with ::'
+			del res[len(res)-1]
+			if not (pre or res):
+				raise norm_error, 'path starts with volume::'
+	if pre: res = pre + res
+	if post: res = res + post
+	s = res[0]
+	for seg in res[1:]:
+		s = s + ':' + seg
 	return s
+
 
 # Directory tree walk.
 # For each directory under top (including top itself),
