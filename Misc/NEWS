@@ -15,6 +15,10 @@ notable fixes:
 - SF bug #422004: Py_Initialise fix that allows reload(exceptions) to 
   work - this is apparently very important for embedded python.
 
+- SF patch #500401: webbrowser: tightened up the command passed to
+  os.system() so that arbitrary shell code can't be executed because a
+  bogus URL was passed in.
+
 - The Python compiler package was updated to correctly calculate stack
   depth in some cases. This was affecting Zope Python Scripts rather badly.
 
