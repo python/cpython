@@ -1,4 +1,16 @@
+/* Use this file as a template to start implementing a new object type.
+   If your objects will be called foobar, start by copying this file to
+   foobarobject.c, changing all occurrences of xx to foobar and all
+   occurrences of Xx by Foobar.  You will probably want to delete all
+   references to 'x_attr' and add your own types of attributes
+   instead.  Maybe you want to name your local variables other than
+   'xp'.  If your object type is needed in other files, you'll have to
+   create a file "foobarobject.h"; see intobject.h for an example. */
+
+
 /* Xx objects */
+
+#include "allobjects.h"
 
 typedef struct {
 	OB_HEAD
@@ -6,6 +18,8 @@ typedef struct {
 } xxobject;
 
 extern typeobject Xxtype;	/* Really static, forward */
+
+#define is_xxobject(v)		((v)->ob_type == &Xxtype)
 
 static xxobject *
 newxxobject(arg)
@@ -25,8 +39,7 @@ static void
 xx_dealloc(xp)
 	xxobject *xp;
 {
-	if (xp->x_attr != NULL)
-		DECREF(xp->x_attr);
+	XDECREF(xp->x_attr);
 	DEL(xp);
 }
 
@@ -70,7 +83,7 @@ xx_setattr(xp, name, v)
 	if (xp->x_attr == NULL) {
 		xp->x_attr = newdictobject();
 		if (xp->x_attr == NULL)
-			return errno;
+			return -1;
 	}
 	if (v == NULL)
 		return dictremove(xp->x_attr, name);
