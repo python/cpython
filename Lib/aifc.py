@@ -404,7 +404,7 @@ class Aifc_read:
             dummy = self._ssnd_chunk.read(8)
             pos = self._soundpos * self._framesize
             if pos:
-                self._ssnd_chunk.setpos(pos + 8)
+                self._ssnd_chunk.seek(pos + 8)
             self._ssnd_seek_needed = 0
         if nframes == 0:
             return ''
