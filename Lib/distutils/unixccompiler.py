@@ -59,7 +59,14 @@ class UnixCCompiler (CCompiler):
     _exe_ext = ''
     _shared_lib_ext = SO
     _static_lib_ext = '.a'
-    
+
+    # Command to create a static library: seems to be pretty consistent
+    # across the major Unices.  Might have to move down into the
+    # constructor if we need platform-specific guesswork.
+    archiver = "ar"
+    archiver_options = "-cr"
+
+
     def __init__ (self,
                   verbose=0,
                   dry_run=0,
@@ -86,6 +93,8 @@ class UnixCCompiler (CCompiler):
 
         (self.ld_shared, self.ldflags_shared) = \
             _split_command (LDSHARED)
+
+        self.ld_exec = self.cc
 
 
     def compile (self,
@@ -122,7 +131,7 @@ class UnixCCompiler (CCompiler):
         # don't have to recompile.  (Simplistic check -- we just compare the
         # source and object file, no deep dependency checking involving
         # header files.  Hmmm.)
-        objects = self.object_filenames (sources, output_dir)
+        objects = self.object_filenames (sources, output_dir=output_dir)
         if not self.force:
             skipped = newer_pairwise (sources, objects)
             for skipped_pair in skipped:
@@ -161,13 +170,70 @@ class UnixCCompiler (CCompiler):
         # return *all* of them, including those that weren't recompiled on
         # this call!
         return self.object_filenames (orig_sources, output_dir)
-    
 
-    # XXX punting on 'link_static_lib()' for now -- it might be better for
-    # CCompiler to mandate just 'link_binary()' or some such to build a new
-    # Python binary; it would then take care of linking in everything
-    # needed for the new Python without messing with an intermediate static
-    # library.
+
+    def _fix_link_args (self, output_dir, libraries, library_dirs):
+        """Fixes up the arguments supplied to the 'link_*' methods:
+           if output_dir is None, use self.output_dir; ensure that
+           libraries and library_dirs are both lists (could be None or
+           tuples on input -- both are converted to lists).  Return
+           a tuple of the three input arguments."""
+
+        if output_dir is None:
+            output_dir = self.output_dir
+        if libraries is None:
+            libraries = []
+        if library_dirs is None:
+            library_dirs = []
+        
+        if type (libraries) not in (ListType, TupleType):
+            raise TypeError, \
+                  "'libraries' (if supplied) must be a list of strings"
+        if type (library_dirs) not in (ListType, TupleType):
+            raise TypeError, \
+                  "'library_dirs' (if supplied) must be a list of strings"
+        libraries = list (libraries)
+        library_dirs = list (library_dirs)
+
+        return (output_dir, libraries, library_dirs)
+
+
+    def link_static_lib (self,
+                         objects,
+                         output_libname,
+                         output_dir=None):
+
+        if type (objects) not in (ListType, TupleType):
+            raise TypeError, \
+                  "'objects' must be a list or tuple of strings"
+        objects = list (objects)
+            
+        if output_dir is None:
+            output_dir = self.output_dir
+
+        output_filename = self.library_filename (output_libname)
+        if output_dir is not None:
+            output_filename = os.path.join (output_dir, output_filename)
+
+        # Check timestamps: if any of the object files are newer than
+        # the library file, *or* if "force" is true, then we'll
+        # recreate the library.
+        if not self.force:
+            if self.dry_run:
+                newer = newer_group (objects, output_filename, missing='newer')
+            else:
+                newer = newer_group (objects, output_filename)
+
+        if self.force or newer:
+            self.spawn ([self.archiver,
+                         self.archiver_options,
+                         output_filename] +
+                        objects)
+        else:
+            self.announce ("skipping %s (up-to-date)" % output_filename)
+
+    # link_static_lib ()
+
 
     def link_shared_lib (self,
                          objects,
@@ -198,21 +264,8 @@ class UnixCCompiler (CCompiler):
                             extra_preargs=None,
                             extra_postargs=None):
 
-        if output_dir is None:
-            output_dir = self.output_dir
-        if libraries is None:
-            libraries = []
-        if library_dirs is None:
-            library_dirs = []
-        
-        if type (libraries) not in (ListType, TupleType):
-            raise TypeError, \
-                  "'libraries' (if supplied) must be a list of strings"
-        if type (library_dirs) not in (ListType, TupleType):
-            raise TypeError, \
-                  "'library_dirs' (if supplied) must be a list of strings"
-        libraries = list (libraries)
-        library_dirs = list (library_dirs)
+        (output_dir, libraries, library_dirs) = \
+            self._fix_link_args (output_dir, libraries, library_dirs)
 
         lib_opts = gen_lib_options (self,
                                     self.library_dirs + library_dirs,
@@ -223,16 +276,12 @@ class UnixCCompiler (CCompiler):
         # If any of the input object files are newer than the output shared
         # object, relink.  Again, this is a simplistic dependency check:
         # doesn't look at any of the libraries we might be linking with.
-        # Note that we have to dance around errors comparing timestamps if
-        # we're in dry-run mode (yuck).
+
         if not self.force:
-            try:
+            if self.dry_run:
+                newer = newer_group (objects, output_filename, missing='newer')
+            else:
                 newer = newer_group (objects, output_filename)
-            except OSError:
-                if self.dry_run:
-                    newer = 1
-                else:
-                    raise
 
         if self.force or newer:
             ld_args = self.ldflags_shared + objects + \
@@ -248,31 +297,78 @@ class UnixCCompiler (CCompiler):
     # link_shared_object ()
 
 
+    def link_executable (self,
+                         objects,
+                         output_progname,
+                         output_dir=None,
+                         libraries=None,
+                         library_dirs=None,
+                         extra_preargs=None,
+                         extra_postargs=None):
+    
+        (output_dir, libraries, library_dirs) = \
+            self._fix_link_args (output_dir, libraries, library_dirs)
+
+        lib_opts = gen_lib_options (self,
+                                    self.library_dirs + library_dirs,
+                                    self.libraries + libraries)
+        output_filename = output_progname # Unix-ism!
+        if output_dir is not None:
+            output_filename = os.path.join (output_dir, output_filename)
+
+        # Same ol' simplistic-but-still-useful dependency check.
+        if not self.force:
+            if self.dry_run:
+                newer = newer_group (objects, output_filename, missing='newer')
+            else:
+                newer = newer_group (objects, output_filename)
+
+        if self.force or newer:
+            ld_args = objects + lib_opts + ['-o', output_filename]
+            if extra_preargs:
+                ld_args[:0] = extra_preargs
+            if extra_postargs:
+                ld_args.extend (extra_postargs)
+            self.spawn ([self.ld_exec] + ld_args)
+        else:
+            self.announce ("skipping %s (up-to-date)" % output_filename)
+
+    # link_executable ()
+
+
     # -- Filename-mangling (etc.) methods ------------------------------
 
-    def object_filenames (self, source_filenames, output_dir=None):
+    def object_filenames (self, source_filenames,
+                          keep_dir=0, output_dir=None):
         outnames = []
         for inname in source_filenames:
             outname = re.sub (r'\.(c|C|cc|cxx|cpp)$', self._obj_ext, inname)
-            outname = os.path.basename (outname)
+            if not keep_dir:
+                outname = os.path.basename (outname)
             if output_dir is not None:
                 outname = os.path.join (output_dir, outname)
             outnames.append (outname)
         return outnames
 
-    def shared_object_filename (self, source_filename, output_dir=None):
+    def shared_object_filename (self, source_filename,
+                                keep_dir=0, output_dir=None):
         outname = re.sub (r'\.(c|C|cc|cxx|cpp)$', self._shared_lib_ext)
-        outname = os.path.basename (outname)
+        if not keep_dir:
+            outname = os.path.basename (outname)
         if output_dir is not None:
             outname = os.path.join (output_dir, outname)
         return outname
 
 
     def library_filename (self, libname):
-        return "lib%s%s" % (libname, self._static_lib_ext)
+        (dirname, basename) = os.path.split (libname)
+        return os.path.join (dirname,
+                             "lib%s%s" % (basename, self._static_lib_ext))
 
     def shared_library_filename (self, libname):
-        return "lib%s%s" % (libname, self._shared_lib_ext)
+        (dirname, basename) = os.path.split (libname)
+        return os.path.join (dirname,
+                             "lib%s%s" % (basename, self._shared_lib_ext))
 
 
     def library_dir_option (self, dir):
