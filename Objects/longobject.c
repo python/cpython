@@ -1508,17 +1508,6 @@ long_sub(PyLongObject *v, PyLongObject *w)
 	return (PyObject *)z;
 }
 
-static PyObject *
-long_repeat(PyObject *v, PyLongObject *w)
-{
-	/* sequence * long */
-	long n = PyLong_AsLong((PyObject *) w);
-	if (n == -1 && PyErr_Occurred())
-		return NULL;
-	else
-		return (*v->ob_type->tp_as_sequence->sq_repeat)(v, n);
-}
-
 /* Grade school multiplication, ignoring the signs.
  * Returns the absolute value of the product, or NULL if error.
  */
@@ -1868,14 +1857,6 @@ long_mul(PyLongObject *v, PyLongObject *w)
 	PyLongObject *a, *b, *z;
 
 	if (!convert_binop((PyObject *)v, (PyObject *)w, &a, &b)) {
-		if (!PyLong_Check(v) &&
-		    v->ob_type->tp_as_sequence &&
-		    v->ob_type->tp_as_sequence->sq_repeat)
-			return long_repeat((PyObject *)v, w);
-		if (!PyLong_Check(w) &&
-		    w->ob_type->tp_as_sequence &&
-		    w->ob_type->tp_as_sequence->sq_repeat)
-			return long_repeat((PyObject *)w, v);
 		Py_INCREF(Py_NotImplemented);
 		return Py_NotImplemented;
 	}
