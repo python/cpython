@@ -40,6 +40,9 @@ Extension modules
 Library
 -------
 
+- New module timeit provides a simple framework for timing the
+  execution speed of expressions and statements.
+
 - sets.Set objects now support mixed-type __eq__ and __ne__, instead
   of raising TypeError.  If x is a Set object and y is a non-Set object,
   x == y is False, and x != y is True.  This is akin to the change made
