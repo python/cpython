@@ -1,6 +1,7 @@
 # Read CD audio data from the SCSI bus and play it back over the
 # built-in speaker or audio jack.
 
+import sys
 import al
 import AL
 import cd
@@ -15,27 +16,36 @@ callbacks = ['audio', 'pnum', 'index', 'ptime', 'atime', 'catalog', 'ident', 'co
 def callback(port, type, data):
 	print 'type', callbacks[type], 'data', `data`
 
+Error = 'playcd.error'
+
 def main():
 	player = cd.open()
 	parser = cd.createparser()
 
-	state, track, min, sec, frame, abs_min, abs_sec, abs_frame, \
-		  total_min, total_sec, total_frame, first, last, scsi_audio, \
-		  cur_block, dum1, dum2, dum3 = player.getstatus()
-	print `state, track, min, sec, frame, abs_min, abs_sec, abs_frame, \
-		  total_min, total_sec, total_frame, first, last, scsi_audio, \
-		  cur_block, dum1, dum2, dum3`
+	state, track, (min, sec, frame), (abs_min, abs_sec, abs_frame), \
+		  (total_min, total_sec, total_frame), \
+		  first, last, scsi_audio, \
+		  cur_block, (dum1, dum2, dum3) = player.getstatus()
+	print state, track, (min, sec, frame), \
+		  (abs_min, abs_sec, abs_frame), \
+		  (total_min, total_sec, total_frame), \
+		  first, last, scsi_audio, \
+		  cur_block, (dum1, dum2, dum3)
 
 	if state <> CD.READY:
 		player.close()
-		raise 'playcd.Error', 'CD not ready'
+		raise Error, 'CD not ready'
 	if not scsi_audio:
 		player.close()
-		raise 'playcd.Error', 'not an audio-capable CD-ROM player'
+		raise Error, 'not an audio-capable CD-ROM player'
 
 	for i in range(first, last+1):
 		trackinfo = player.gettrackinfo(i)
-		print `trackinfo`
+		print 'Track', i, trackinfo
+
+	if sys.argv[1:]:
+		print 'Start at track', sys.argv[1]
+		player.seektrack(eval(sys.argv[1]))
 
 	size = player.bestreadsize()
 
