@@ -599,16 +599,17 @@ PyErr_WriteUnraisable(PyObject *obj)
 	Py_XDECREF(tb);
 }
 
-extern PyObject *PyModule_WarningsModule;
+extern PyObject *PyModule_GetWarningsModule();
 
 /* Function to issue a warning message; may raise an exception. */
 int
 PyErr_Warn(PyObject *category, char *message)
 {
 	PyObject *dict, *func = NULL;
+	PyObject *warnings_module = PyModule_GetWarningsModule();
 
-	if (PyModule_WarningsModule != NULL) {
-		dict = PyModule_GetDict(PyModule_WarningsModule);
+	if (warnings_module != NULL) {
+		dict = PyModule_GetDict(warnings_module);
 		func = PyDict_GetItemString(dict, "warn");
 	}
 	if (func == NULL) {
