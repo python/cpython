@@ -412,7 +412,7 @@ backwards compatible and debugging classes and functions?
 
 # " <== Emacs font-lock de-bogo-kludgificocity
 
-__version__ = "2.1"
+__version__ = "2.2"
 
 
 # Imports
@@ -556,7 +556,7 @@ def parse_qs(qs, keep_blank_values=0, strict_parsing=0):
 	    if strict_parsing:
 		raise ValueError, "bad query field: %s" % `name_value`
 	    continue
-	name = nv[0]
+	name = urllib.unquote(regsub.gsub('+', ' ', nv[0]))
 	value = urllib.unquote(regsub.gsub('+', ' ', nv[1]))
         if len(value) or keep_blank_values:
 	    if dict.has_key (name):
