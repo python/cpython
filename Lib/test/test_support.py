@@ -1,5 +1,7 @@
 """Supporting definitions for the Python regression test."""
 
+import sys
+
 
 class Error(Exception):
     """Base class for regression test exceptions."""
@@ -21,7 +23,6 @@ verbose = 1                             # Flag set to 0 by regrtest.py
 use_large_resources = 1 # Flag set to 0 by regrtest.py
 
 def unload(name):
-    import sys
     try:
         del sys.modules[name]
     except KeyError:
@@ -29,7 +30,7 @@ def unload(name):
 
 def forget(modname):
     unload(modname)
-    import sys, os
+    import os
     for dirname in sys.path:
         try:
             os.unlink(os.path.join(dirname, modname + '.pyc'))
@@ -68,7 +69,6 @@ def findfile(file, here=__file__):
     import os
     if os.path.isabs(file):
         return file
-    import sys
     path = sys.path
     path = [os.path.dirname(here)] + path
     for dn in path:
@@ -93,3 +93,35 @@ def check_syntax(statement):
         pass
     else:
         print 'Missing SyntaxError: "%s"' % statement
+
+
+
+#=======================================================================
+# Preliminary PyUNIT integration.
+
+import unittest
+
+
+class BasicTestRunner(unittest.VerboseTextTestRunner):
+    def __init__(self, stream=sys.stderr):
+        unittest.VerboseTextTestRunner.__init__(self, stream, descriptions=0)
+
+    def run(self, test):
+        result = unittest._VerboseTextTestResult(self.stream, descriptions=0)
+        test(result)
+        return result
+
+
+def run_unittest(testclass):
+    """Run tests from a unittest.TestCase-derived class."""
+    if verbose:
+        f = sys.stdout
+    else:
+        import StringIO
+        f = StringIO.StringIO()
+
+    suite = unittest.makeSuite(testclass)
+    result = BasicTestRunner(stream=f).run(suite)
+    if result.errors or result.failures:
+        raise TestFailed("errors occurred in %s.%s"
+                         % (testclass.__module__, testclass.__name__))
