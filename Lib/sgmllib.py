@@ -227,7 +227,7 @@ class SGMLParser:
                 return -1
             tag, data = match.group(1, 2)
             self.__starttag_text = '<%s/' % tag
-            tag = string.lower(tag)
+            tag = tag.lower()
             k = match.end(0)
             self.finish_shorttag(tag, data)
             self.__starttag_text = rawdata[start_pos:match.end(1) + 1]
@@ -248,7 +248,7 @@ class SGMLParser:
             if not match:
                 raise RuntimeError, 'unexpected call to parse_starttag'
             k = match.end(0)
-            tag = string.lower(rawdata[i+1:k])
+            tag = rawdata[i+1:k].lower()
             self.lasttag = tag
         while k < j:
             match = attrfind.match(rawdata, k)
@@ -259,7 +259,7 @@ class SGMLParser:
             elif attrvalue[:1] == '\'' == attrvalue[-1:] or \
                  attrvalue[:1] == '"' == attrvalue[-1:]:
                 attrvalue = attrvalue[1:-1]
-            attrs.append((string.lower(attrname), attrvalue))
+            attrs.append((attrname.lower(), attrvalue))
             k = match.end(0)
         if rawdata[j] == '>':
             j = j+1
@@ -274,7 +274,7 @@ class SGMLParser:
         if not match:
             return -1
         j = match.start(0)
-        tag = string.lower(string.strip(rawdata[i+2:j]))
+        tag = rawdata[i+2:j].strip().lower()
         if rawdata[j] == '>':
             j = j+1
         self.finish_endtag(tag)
@@ -353,7 +353,7 @@ class SGMLParser:
     # Example -- handle character reference, no need to override
     def handle_charref(self, name):
         try:
-            n = string.atoi(name)
+            n = int(name)
         except string.atoi_error:
             self.unknown_charref(name)
             return
