@@ -1317,7 +1317,7 @@ static state states_59[4] = {
 	{1, arcs_59_3},
 };
 static arc arcs_60_0[2] = {
-	{128, 1},
+	{120, 1},
 	{129, 1},
 };
 static arc arcs_60_1[1] = {
@@ -1340,7 +1340,7 @@ static arc arcs_61_3[1] = {
 	{9, 4},
 };
 static arc arcs_61_4[2] = {
-	{120, 5},
+	{128, 5},
 	{0, 4},
 };
 static arc arcs_61_5[1] = {
@@ -1361,7 +1361,7 @@ static arc arcs_62_1[1] = {
 	{21, 2},
 };
 static arc arcs_62_2[2] = {
-	{120, 3},
+	{128, 3},
 	{0, 2},
 };
 static arc arcs_62_3[1] = {
@@ -1622,7 +1622,7 @@ static label labels[130] = {
 	{25, 0},
 	{2, 0},
 	{3, 0},
-	{316, 0},
+	{317, 0},
 	{1, "lambda"},
 	{314, 0},
 	{307, 0},
@@ -1630,7 +1630,7 @@ static label labels[130] = {
 	{309, 0},
 	{1, "class"},
 	{315, 0},
-	{317, 0},
+	{316, 0},
 	{318, 0},
 };
 grammar _PyParser_Grammar = {

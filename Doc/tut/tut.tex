@@ -1755,10 +1755,15 @@ item, then to the result and the next item, and so on.  For example,
 
 \subsection{List Comprehensions}
 
-List comprehensions provide a concise way to create lists without
-resorting to use of the \function{map()} or \function{filter()}
-functions.  The resulting construct tends often to be clearer than use
-of those functions.
+List comprehensions provide a concise way to create lists without resorting
+to use of \function{map()}, \function{filter()} and/or \keyword{lambda}.
+The resulting list definition tends often to be clearer than lists built
+using those constructs.  Each list comprehension consists of an expression
+following by a \keyword{for} clause, then zero or more \keyword{for} or
+\keyword{if} clauses.  The result will be a list resulting from evaluating
+the expression in the context of the \keyword{for} and \keyword{if} clauses
+which follow it.  If the expression would evaluate to a tuple, it must be
+parenthesized.
 
 \begin{verbatim}
 >>> freshfruit = ['  banana', '  loganberry ', 'passion fruit  ']
@@ -1771,6 +1776,17 @@ of those functions.
 [12, 18]
 >>> [3*x for x in vec if x < 2]
 []
+>>> [{x: x**2} for x in vec]
+[{2: 4}, {4: 16}, {6: 36}]
+>>> [[x,x**2] for x in vec]
+[[2, 4], [4, 16], [6, 36]]
+>>> [x, x**2 for x in vec]	# error - parens required for tuples
+  File "<stdin>", line 1
+    [x, x**2 for x in vec]
+               ^
+SyntaxError: invalid syntax
+>>> [(x, x**2) for x in vec]
+[(2, 4), (4, 16), (6, 36)]
 >>> vec1 = [2, 4, 6]
 >>> vec2 = [4, 3, -9]
 >>> [x*y for x in vec1 for y in vec2]

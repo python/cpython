@@ -1043,7 +1043,7 @@ com_list_iter(struct compiling *c,
 static void
 com_list_comprehension(struct compiling *c, node *n)
 {
-	/* listmaker: test list_iter */
+	/* listmaker: test list_for */
 	char tmpname[12];
 	sprintf(tmpname, "__%d__", ++c->c_tmpname);
 	com_addoparg(c, BUILD_LIST, 0);
@@ -1052,7 +1052,7 @@ com_list_comprehension(struct compiling *c, node *n)
 	com_addopnamestr(c, LOAD_ATTR, "append");
 	com_addopnamestr(c, STORE_NAME, tmpname);
 	com_pop(c, 1);
-	com_list_iter(c, n, CHILD(n, 0), tmpname);
+	com_list_for(c, CHILD(n, 1), CHILD(n, 0), tmpname);
 	com_addopnamestr(c, DELETE_NAME, tmpname);
 	--c->c_tmpname;
 }
@@ -1060,8 +1060,8 @@ com_list_comprehension(struct compiling *c, node *n)
 static void
 com_listmaker(struct compiling *c, node *n)
 {
-	/* listmaker: test ( list_iter | (',' test)* [','] ) */
-	if (NCH(n) > 1 && TYPE(CHILD(n, 1)) == list_iter)
+	/* listmaker: test ( list_for | (',' test)* [','] ) */
+	if (NCH(n) > 1 && TYPE(CHILD(n, 1)) == list_for)
 		com_list_comprehension(c, n);
 	else {
 		int len = 0;
