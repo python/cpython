@@ -183,92 +183,6 @@ In any case, \function{testmod()} returns a 2-tuple of ints \code{(\var{f},
 failed and \var{t} is the total number of docstring examples
 attempted.
 
-\begin{funcdesc}{testmod}{\optional{m}\optional{, name}\optional{,
-                          globs}\optional{, verbose}\optional{,
-                          isprivate}\optional{, report}\optional{,
-                          optionflags}\optional{, extraglobs}\optional{,
-                          raise_on_error}}
-
-  All arguments are optional, and all except for \var{m} should be
-  specified in keyword form.
-
-  Test examples in docstrings in functions and classes reachable
-  from module \var{m} (or the current module if \var{m} is not supplied
-  or is \code{None}), starting with \code{\var{m}.__doc__}.
-
-  Also test examples reachable from dict \code{\var{m}.__test__}, if it
-  exists and is not \code{None}.  \code{\var{m}.__test__} maps
-  names (strings) to functions, classes and strings; function and class
-  docstrings are searched for examples; strings are searched directly,
-  as if they were docstrings.
-
-  Only docstrings attached to objects belonging to module \var{m} are
-  searched.
-
-  Return \samp{(\var{failure_count}, \var{test_count})}.
-
-  Optional argument \var{name} gives the name of the module; by default,
-  or if \code{None}, \code{\var{m}.__name__} is used.
-
-  Optional argument \var{globs} gives a dict to be used as the globals
-  when executing examples; by default, or if \code{None},
-  \code{\var{m}.__dict__} is used.  A new shallow copy of this dict is
-  created for each docstring with examples, so that each docstring's
-  examples start with a clean slate.
-
-  Optional argument \var{extraglobs} gives a dict merged into the
-  globals used to execute examples.  This works like
-  \method{dict.update()}:  if \var{globs} and \var{extraglobs} have a
-  common key, the associated value in \var{extraglobs} appears in the
-  combined dict.  By default, or if \code{None}, no extra globals are
-  used.  This is an advanced feature that allows parameterization of
-  doctests.  For example, a doctest can be written for a base class, using
-  a generic name for the class, then reused to test any number of
-  subclasses by passing an \var{extraglobs} dict mapping the generic
-  name to the subclass to be tested.
-
-  Optional argument \var{verbose} prints lots of stuff if true, and prints
-  only failures if false; by default, or if \code{None}, it's true
-  if and only if \code{'-v'} is in \code{sys.argv}.
-
-  Optional argument \var{report} prints a summary at the end when true,
-  else prints nothing at the end.  In verbose mode, the summary is
-  detailed, else the summary is very brief (in fact, empty if all tests
-  passed).
-
-  Optional argument \var{optionflags} or's together option flags.  See
-  see section \ref{doctest-options}.
-
-  Optional argument \var{raise_on_error} defaults to false.  If true,
-  an exception is raised upon the first failure or unexpected exception
-  in an example.  This allows failures to be post-mortem debugged.
-  Default behavior is to continue running examples.
-
-  Optional argument \var{isprivate} specifies a function used to
-  determine whether a name is private.  The default function treats
-  all names as public.  \var{isprivate} can be set to
-  \code{doctest.is_private} to skip over names that are
-  private according to Python's underscore naming convention.
-  \deprecated{2.4}{\var{isprivate} was a stupid idea -- don't use it.
-  If you need to skip tests based on name, filter the list returned by
-  \code{DocTestFinder.find()} instead.}
-
-%  """ [XX] This is no longer true:
-%  Advanced tomfoolery:  testmod runs methods of a local instance of
-%  class doctest.Tester, then merges the results into (or creates)
-%  global Tester instance doctest.master.  Methods of doctest.master
-%  can be called directly too, if you want to do something unusual.
-%  Passing report=0 to testmod is especially useful then, to delay
-%  displaying a summary.  Invoke doctest.master.summarize(verbose)
-%  when you're done fiddling.
-
-  \versionchanged[The parameter \var{optionflags} was added]{2.3}
-
-  \versionchanged[The parameters \var{extraglobs} and \var{raise_on_error}
-                  were added]{2.4}
-\end{funcdesc}
-
-
 \subsection{Which Docstrings Are Examined?}
 
 The module docstring, and all function, class and method docstrings are
@@ -386,10 +300,10 @@ be left out, or could just as well be three (or three hundred) commas.
 
 \subsection{Option Flags and Directive Names\label{doctest-options}}
 
-A number of option flags control various aspects of doctest's behavior.
-Symbolic names for the flags are supplied as module constants, which
-can be or'ed together and passed to various functions.  The names can
-also be used in doctest directives.
+A number of option flags control various aspects of doctest's comparison
+behavior. Symbolic names for the flags are supplied as module constants,
+which can be or'ed together and passed to various functions.  The names
+can also be used in doctest directives.
 
 \begin{datadesc}{DONT_ACCEPT_TRUE_FOR_1}
     By default, if an expected output block contains just \code{1},
@@ -445,8 +359,8 @@ also be used in doctest directives.
 \versionchanged[Constants \constant{DONT_ACCEPT_BLANKLINE},
     \constant{NORMALIZE_WHITESPACE}, \constant{ELLIPSIS},
     \constant{UNIFIED_DIFF}, and \constant{CONTEXT_DIFF}
-    were added, and \code{<BLANKLINE>} in expected output matches
-    an empty line in actual output by default]{2.4}
+    were added, and by default \code{<BLANKLINE>} in expected output
+    matches an empty line in actual output]{2.4}
 
 \subsection{Advanced Usage}
 
@@ -466,15 +380,80 @@ are run.
   \versionadded{2.3}
 \end{funcdesc}
 
-\begin{funcdesc}{testmod}{}
-  This function provides the most basic interface to the doctests.
-  It creates a local instance of class \class{Tester}, runs appropriate
-  methods of that class, and merges the results into the global \class{Tester}
-  instance, \code{master}.
+\begin{funcdesc}{testmod}{\optional{m}\optional{, name}\optional{,
+                          globs}\optional{, verbose}\optional{,
+                          isprivate}\optional{, report}\optional{,
+                          optionflags}\optional{, extraglobs}\optional{,
+                          raise_on_error}}
 
-  To get finer control than \function{testmod()} offers, create an instance
-  of \class{Tester} with custom policies, or run methods of \code{master}
-  directly.  See \code{Tester.__doc__} for details.
+  All arguments are optional, and all except for \var{m} should be
+  specified in keyword form.
+
+  Test examples in docstrings in functions and classes reachable
+  from module \var{m} (or the current module if \var{m} is not supplied
+  or is \code{None}), starting with \code{\var{m}.__doc__}.
+
+  Also test examples reachable from dict \code{\var{m}.__test__}, if it
+  exists and is not \code{None}.  \code{\var{m}.__test__} maps
+  names (strings) to functions, classes and strings; function and class
+  docstrings are searched for examples; strings are searched directly,
+  as if they were docstrings.
+
+  Only docstrings attached to objects belonging to module \var{m} are
+  searched.
+
+  Return \samp{(\var{failure_count}, \var{test_count})}.
+
+  Optional argument \var{name} gives the name of the module; by default,
+  or if \code{None}, \code{\var{m}.__name__} is used.
+
+  Optional argument \var{globs} gives a dict to be used as the globals
+  when executing examples; by default, or if \code{None},
+  \code{\var{m}.__dict__} is used.  A new shallow copy of this dict is
+  created for each docstring with examples, so that each docstring's
+  examples start with a clean slate.
+
+  Optional argument \var{extraglobs} gives a dict merged into the
+  globals used to execute examples.  This works like
+  \method{dict.update()}:  if \var{globs} and \var{extraglobs} have a
+  common key, the associated value in \var{extraglobs} appears in the
+  combined dict.  By default, or if \code{None}, no extra globals are
+  used.  This is an advanced feature that allows parameterization of
+  doctests.  For example, a doctest can be written for a base class, using
+  a generic name for the class, then reused to test any number of
+  subclasses by passing an \var{extraglobs} dict mapping the generic
+  name to the subclass to be tested.
+
+  Optional argument \var{verbose} prints lots of stuff if true, and prints
+  only failures if false; by default, or if \code{None}, it's true
+  if and only if \code{'-v'} is in \code{sys.argv}.
+
+  Optional argument \var{report} prints a summary at the end when true,
+  else prints nothing at the end.  In verbose mode, the summary is
+  detailed, else the summary is very brief (in fact, empty if all tests
+  passed).
+
+  Optional argument \var{optionflags} or's together option flags.  See
+  see section \ref{doctest-options}.
+
+  Optional argument \var{raise_on_error} defaults to false.  If true,
+  an exception is raised upon the first failure or unexpected exception
+  in an example.  This allows failures to be post-mortem debugged.
+  Default behavior is to continue running examples.
+
+  Optional argument \var{isprivate} specifies a function used to
+  determine whether a name is private.  The default function treats
+  all names as public.  \var{isprivate} can be set to
+  \code{doctest.is_private} to skip over names that are
+  private according to Python's underscore naming convention.
+  \deprecated{2.4}{\var{isprivate} was a stupid idea -- don't use it.
+  If you need to skip tests based on name, filter the list returned by
+  \code{DocTestFinder.find()} instead.}
+
+  \versionchanged[The parameter \var{optionflags} was added]{2.3}
+
+  \versionchanged[The parameters \var{extraglobs} and \var{raise_on_error}
+                  were added]{2.4}
 \end{funcdesc}
 
 \begin{funcdesc}{testsource}{module, name}
@@ -527,10 +506,14 @@ are run.
 \subsection{How are Docstring Examples Recognized?}
 
 In most cases a copy-and-paste of an interactive console session works
-fine---just make sure the leading whitespace is rigidly consistent
-(you can mix tabs and spaces if you're too lazy to do it right, but
-\module{doctest} is not in the business of guessing what you think a tab
-means).
+fine, but doctest isn't trying to do an exact emulation of any specific
+Python shell.  All hard tab characters are expanded to spaces, using
+8-column tab stops.  If you don't believe tabs should mean that, too
+bad:  don't use hard tabs, or write your own \class{DocTestParser}
+class.
+
+\versionchanged[Expanding tabs to spaces is new; previous versions
+                tried to preserve hard tabs, with confusing results]{2.4}
 
 \begin{verbatim}
 >>> # comments are ignored
@@ -560,7 +543,12 @@ The fine print:
 \begin{itemize}
 
 \item Expected output cannot contain an all-whitespace line, since such a
-  line is taken to signal the end of expected output.
+  line is taken to signal the end of expected output.  If expected
+  output does contain a blank line, put \code{<BLANKLINE>} in your
+  doctest example each place a blank line is expected.
+  \versionchanged[\code{<BLANKLINE>} was added; there was no way to
+                  use expected output containing empty lines in
+                  previous versions]{2.4}
 
 \item Output to stdout is captured, but not output to stderr (exception
   tracebacks are captured via a different means).
@@ -600,7 +588,7 @@ Backslashes in a raw docstring: m\n
 
 and as many leading whitespace characters are stripped from the
 expected output as appeared in the initial \code{'>\code{>}>~'} line
-that triggered it.
+that started the example.
 \end{itemize}
 
 \subsection{Warnings}
