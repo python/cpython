@@ -68,10 +68,18 @@ class MyObjectDefinition(PEP253Mixin, GlobalObjectDefinition):
 					PyErr_SetString(OSA_Error,"NULL ComponentInstance");
 					return NULL;
 				}""")
+				
+	def outputCheckConvertArg(self):
+		Output("""
+			if (CmpInstObj_Convert(v, p_itself))
+				return 1;
+			PyErr_Clear();
+			""")
+					
 
 # Create the generator groups and link them
 module = MacModule(MODNAME, MODPREFIX, includestuff, finalstuff, initstuff)
-object = MyObjectDefinition('ComponentInstance', OBJECTPREFIX,
+object = MyObjectDefinition('OSAComponentInstance', OBJECTPREFIX,
 		'ComponentInstance')
 module.addobject(object)
 

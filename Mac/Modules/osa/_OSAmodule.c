@@ -30,47 +30,52 @@ extern int _OSAObj_Convert(PyObject *, ComponentInstance *);
 
 static PyObject *OSA_Error;
 
-/* ----------------- Object type ComponentInstance ------------------ */
+/* ---------------- Object type OSAComponentInstance ---------------- */
 
-PyTypeObject ComponentInstance_Type;
+PyTypeObject OSAComponentInstance_Type;
 
-#define OSAObj_Check(x) ((x)->ob_type == &ComponentInstance_Type || PyObject_TypeCheck((x), &ComponentInstance_Type))
+#define OSAObj_Check(x) ((x)->ob_type == &OSAComponentInstance_Type || PyObject_TypeCheck((x), &OSAComponentInstance_Type))
 
-typedef struct ComponentInstanceObject {
+typedef struct OSAComponentInstanceObject {
 	PyObject_HEAD
 	ComponentInstance ob_itself;
-} ComponentInstanceObject;
+} OSAComponentInstanceObject;
 
 PyObject *OSAObj_New(ComponentInstance itself)
 {
-	ComponentInstanceObject *it;
+	OSAComponentInstanceObject *it;
 	if (itself == NULL) {
 						PyErr_SetString(OSA_Error,"NULL ComponentInstance");
 						return NULL;
 					}
-	it = PyObject_NEW(ComponentInstanceObject, &ComponentInstance_Type);
+	it = PyObject_NEW(OSAComponentInstanceObject, &OSAComponentInstance_Type);
 	if (it == NULL) return NULL;
 	it->ob_itself = itself;
 	return (PyObject *)it;
 }
 int OSAObj_Convert(PyObject *v, ComponentInstance *p_itself)
 {
+
+				if (CmpInstObj_Convert(v, p_itself))
+					return 1;
+				PyErr_Clear();
+				
 	if (!OSAObj_Check(v))
 	{
-		PyErr_SetString(PyExc_TypeError, "ComponentInstance required");
+		PyErr_SetString(PyExc_TypeError, "OSAComponentInstance required");
 		return 0;
 	}
-	*p_itself = ((ComponentInstanceObject *)v)->ob_itself;
+	*p_itself = ((OSAComponentInstanceObject *)v)->ob_itself;
 	return 1;
 }
 
-static void OSAObj_dealloc(ComponentInstanceObject *self)
+static void OSAObj_dealloc(OSAComponentInstanceObject *self)
 {
 	/* Cleanup of self->ob_itself goes here */
 	self->ob_type->tp_free((PyObject *)self);
 }
 
-static PyObject *OSAObj_OSALoad(ComponentInstanceObject *_self, PyObject *_args)
+static PyObject *OSAObj_OSALoad(OSAComponentInstanceObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSAError _err;
@@ -94,7 +99,7 @@ static PyObject *OSAObj_OSALoad(ComponentInstanceObject *_self, PyObject *_args)
 	return _res;
 }
 
-static PyObject *OSAObj_OSAStore(ComponentInstanceObject *_self, PyObject *_args)
+static PyObject *OSAObj_OSAStore(OSAComponentInstanceObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSAError _err;
@@ -121,7 +126,7 @@ static PyObject *OSAObj_OSAStore(ComponentInstanceObject *_self, PyObject *_args
 	return _res;
 }
 
-static PyObject *OSAObj_OSAExecute(ComponentInstanceObject *_self, PyObject *_args)
+static PyObject *OSAObj_OSAExecute(OSAComponentInstanceObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSAError _err;
@@ -148,7 +153,7 @@ static PyObject *OSAObj_OSAExecute(ComponentInstanceObject *_self, PyObject *_ar
 	return _res;
 }
 
-static PyObject *OSAObj_OSADisplay(ComponentInstanceObject *_self, PyObject *_args)
+static PyObject *OSAObj_OSADisplay(OSAComponentInstanceObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSAError _err;
@@ -175,7 +180,7 @@ static PyObject *OSAObj_OSADisplay(ComponentInstanceObject *_self, PyObject *_ar
 	return _res;
 }
 
-static PyObject *OSAObj_OSAScriptError(ComponentInstanceObject *_self, PyObject *_args)
+static PyObject *OSAObj_OSAScriptError(OSAComponentInstanceObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSAError _err;
@@ -199,7 +204,7 @@ static PyObject *OSAObj_OSAScriptError(ComponentInstanceObject *_self, PyObject 
 	return _res;
 }
 
-static PyObject *OSAObj_OSADispose(ComponentInstanceObject *_self, PyObject *_args)
+static PyObject *OSAObj_OSADispose(OSAComponentInstanceObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSAError _err;
@@ -218,7 +223,7 @@ static PyObject *OSAObj_OSADispose(ComponentInstanceObject *_self, PyObject *_ar
 	return _res;
 }
 
-static PyObject *OSAObj_OSASetScriptInfo(ComponentInstanceObject *_self, PyObject *_args)
+static PyObject *OSAObj_OSASetScriptInfo(OSAComponentInstanceObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSAError _err;
@@ -243,7 +248,7 @@ static PyObject *OSAObj_OSASetScriptInfo(ComponentInstanceObject *_self, PyObjec
 	return _res;
 }
 
-static PyObject *OSAObj_OSAGetScriptInfo(ComponentInstanceObject *_self, PyObject *_args)
+static PyObject *OSAObj_OSAGetScriptInfo(OSAComponentInstanceObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSAError _err;
@@ -267,7 +272,7 @@ static PyObject *OSAObj_OSAGetScriptInfo(ComponentInstanceObject *_self, PyObjec
 	return _res;
 }
 
-static PyObject *OSAObj_OSAScriptingComponentName(ComponentInstanceObject *_self, PyObject *_args)
+static PyObject *OSAObj_OSAScriptingComponentName(OSAComponentInstanceObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSAError _err;
@@ -285,7 +290,7 @@ static PyObject *OSAObj_OSAScriptingComponentName(ComponentInstanceObject *_self
 	return _res;
 }
 
-static PyObject *OSAObj_OSACompile(ComponentInstanceObject *_self, PyObject *_args)
+static PyObject *OSAObj_OSACompile(OSAComponentInstanceObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSAError _err;
@@ -309,7 +314,7 @@ static PyObject *OSAObj_OSACompile(ComponentInstanceObject *_self, PyObject *_ar
 	return _res;
 }
 
-static PyObject *OSAObj_OSACopyID(ComponentInstanceObject *_self, PyObject *_args)
+static PyObject *OSAObj_OSACopyID(OSAComponentInstanceObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSAError _err;
@@ -330,7 +335,7 @@ static PyObject *OSAObj_OSACopyID(ComponentInstanceObject *_self, PyObject *_arg
 	return _res;
 }
 
-static PyObject *OSAObj_OSAGetSource(ComponentInstanceObject *_self, PyObject *_args)
+static PyObject *OSAObj_OSAGetSource(OSAComponentInstanceObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSAError _err;
@@ -354,7 +359,7 @@ static PyObject *OSAObj_OSAGetSource(ComponentInstanceObject *_self, PyObject *_
 	return _res;
 }
 
-static PyObject *OSAObj_OSACoerceFromDesc(ComponentInstanceObject *_self, PyObject *_args)
+static PyObject *OSAObj_OSACoerceFromDesc(OSAComponentInstanceObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSAError _err;
@@ -378,7 +383,7 @@ static PyObject *OSAObj_OSACoerceFromDesc(ComponentInstanceObject *_self, PyObje
 	return _res;
 }
 
-static PyObject *OSAObj_OSACoerceToDesc(ComponentInstanceObject *_self, PyObject *_args)
+static PyObject *OSAObj_OSACoerceToDesc(OSAComponentInstanceObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSAError _err;
@@ -405,7 +410,7 @@ static PyObject *OSAObj_OSACoerceToDesc(ComponentInstanceObject *_self, PyObject
 	return _res;
 }
 
-static PyObject *OSAObj_OSASetDefaultTarget(ComponentInstanceObject *_self, PyObject *_args)
+static PyObject *OSAObj_OSASetDefaultTarget(OSAComponentInstanceObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSAError _err;
@@ -424,7 +429,7 @@ static PyObject *OSAObj_OSASetDefaultTarget(ComponentInstanceObject *_self, PyOb
 	return _res;
 }
 
-static PyObject *OSAObj_OSAStartRecording(ComponentInstanceObject *_self, PyObject *_args)
+static PyObject *OSAObj_OSAStartRecording(OSAComponentInstanceObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSAError _err;
@@ -442,7 +447,7 @@ static PyObject *OSAObj_OSAStartRecording(ComponentInstanceObject *_self, PyObje
 	return _res;
 }
 
-static PyObject *OSAObj_OSAStopRecording(ComponentInstanceObject *_self, PyObject *_args)
+static PyObject *OSAObj_OSAStopRecording(OSAComponentInstanceObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSAError _err;
@@ -461,7 +466,7 @@ static PyObject *OSAObj_OSAStopRecording(ComponentInstanceObject *_self, PyObjec
 	return _res;
 }
 
-static PyObject *OSAObj_OSALoadExecute(ComponentInstanceObject *_self, PyObject *_args)
+static PyObject *OSAObj_OSALoadExecute(OSAComponentInstanceObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSAError _err;
@@ -488,7 +493,7 @@ static PyObject *OSAObj_OSALoadExecute(ComponentInstanceObject *_self, PyObject 
 	return _res;
 }
 
-static PyObject *OSAObj_OSACompileExecute(ComponentInstanceObject *_self, PyObject *_args)
+static PyObject *OSAObj_OSACompileExecute(OSAComponentInstanceObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSAError _err;
@@ -515,7 +520,7 @@ static PyObject *OSAObj_OSACompileExecute(ComponentInstanceObject *_self, PyObje
 	return _res;
 }
 
-static PyObject *OSAObj_OSADoScript(ComponentInstanceObject *_self, PyObject *_args)
+static PyObject *OSAObj_OSADoScript(OSAComponentInstanceObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSAError _err;
@@ -545,7 +550,7 @@ static PyObject *OSAObj_OSADoScript(ComponentInstanceObject *_self, PyObject *_a
 	return _res;
 }
 
-static PyObject *OSAObj_OSASetCurrentDialect(ComponentInstanceObject *_self, PyObject *_args)
+static PyObject *OSAObj_OSASetCurrentDialect(OSAComponentInstanceObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSAError _err;
@@ -564,7 +569,7 @@ static PyObject *OSAObj_OSASetCurrentDialect(ComponentInstanceObject *_self, PyO
 	return _res;
 }
 
-static PyObject *OSAObj_OSAGetCurrentDialect(ComponentInstanceObject *_self, PyObject *_args)
+static PyObject *OSAObj_OSAGetCurrentDialect(OSAComponentInstanceObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSAError _err;
@@ -582,7 +587,7 @@ static PyObject *OSAObj_OSAGetCurrentDialect(ComponentInstanceObject *_self, PyO
 	return _res;
 }
 
-static PyObject *OSAObj_OSAAvailableDialects(ComponentInstanceObject *_self, PyObject *_args)
+static PyObject *OSAObj_OSAAvailableDialects(OSAComponentInstanceObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSAError _err;
@@ -600,7 +605,7 @@ static PyObject *OSAObj_OSAAvailableDialects(ComponentInstanceObject *_self, PyO
 	return _res;
 }
 
-static PyObject *OSAObj_OSAGetDialectInfo(ComponentInstanceObject *_self, PyObject *_args)
+static PyObject *OSAObj_OSAGetDialectInfo(OSAComponentInstanceObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSAError _err;
@@ -624,7 +629,7 @@ static PyObject *OSAObj_OSAGetDialectInfo(ComponentInstanceObject *_self, PyObje
 	return _res;
 }
 
-static PyObject *OSAObj_OSAAvailableDialectCodeList(ComponentInstanceObject *_self, PyObject *_args)
+static PyObject *OSAObj_OSAAvailableDialectCodeList(OSAComponentInstanceObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSAError _err;
@@ -642,7 +647,7 @@ static PyObject *OSAObj_OSAAvailableDialectCodeList(ComponentInstanceObject *_se
 	return _res;
 }
 
-static PyObject *OSAObj_OSAExecuteEvent(ComponentInstanceObject *_self, PyObject *_args)
+static PyObject *OSAObj_OSAExecuteEvent(OSAComponentInstanceObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSAError _err;
@@ -669,7 +674,7 @@ static PyObject *OSAObj_OSAExecuteEvent(ComponentInstanceObject *_self, PyObject
 	return _res;
 }
 
-static PyObject *OSAObj_OSADoEvent(ComponentInstanceObject *_self, PyObject *_args)
+static PyObject *OSAObj_OSADoEvent(OSAComponentInstanceObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSAError _err;
@@ -696,7 +701,7 @@ static PyObject *OSAObj_OSADoEvent(ComponentInstanceObject *_self, PyObject *_ar
 	return _res;
 }
 
-static PyObject *OSAObj_OSAMakeContext(ComponentInstanceObject *_self, PyObject *_args)
+static PyObject *OSAObj_OSAMakeContext(OSAComponentInstanceObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSAError _err;
@@ -720,7 +725,7 @@ static PyObject *OSAObj_OSAMakeContext(ComponentInstanceObject *_self, PyObject 
 	return _res;
 }
 
-static PyObject *OSAObj_OSADebuggerCreateSession(ComponentInstanceObject *_self, PyObject *_args)
+static PyObject *OSAObj_OSADebuggerCreateSession(OSAComponentInstanceObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSAError _err;
@@ -744,7 +749,7 @@ static PyObject *OSAObj_OSADebuggerCreateSession(ComponentInstanceObject *_self,
 	return _res;
 }
 
-static PyObject *OSAObj_OSADebuggerGetSessionState(ComponentInstanceObject *_self, PyObject *_args)
+static PyObject *OSAObj_OSADebuggerGetSessionState(OSAComponentInstanceObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSAError _err;
@@ -765,7 +770,7 @@ static PyObject *OSAObj_OSADebuggerGetSessionState(ComponentInstanceObject *_sel
 	return _res;
 }
 
-static PyObject *OSAObj_OSADebuggerSessionStep(ComponentInstanceObject *_self, PyObject *_args)
+static PyObject *OSAObj_OSADebuggerSessionStep(OSAComponentInstanceObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSAError _err;
@@ -787,7 +792,7 @@ static PyObject *OSAObj_OSADebuggerSessionStep(ComponentInstanceObject *_self, P
 	return _res;
 }
 
-static PyObject *OSAObj_OSADebuggerDisposeSession(ComponentInstanceObject *_self, PyObject *_args)
+static PyObject *OSAObj_OSADebuggerDisposeSession(OSAComponentInstanceObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSAError _err;
@@ -806,7 +811,7 @@ static PyObject *OSAObj_OSADebuggerDisposeSession(ComponentInstanceObject *_self
 	return _res;
 }
 
-static PyObject *OSAObj_OSADebuggerGetStatementRanges(ComponentInstanceObject *_self, PyObject *_args)
+static PyObject *OSAObj_OSADebuggerGetStatementRanges(OSAComponentInstanceObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSAError _err;
@@ -827,7 +832,7 @@ static PyObject *OSAObj_OSADebuggerGetStatementRanges(ComponentInstanceObject *_
 	return _res;
 }
 
-static PyObject *OSAObj_OSADebuggerGetBreakpoint(ComponentInstanceObject *_self, PyObject *_args)
+static PyObject *OSAObj_OSADebuggerGetBreakpoint(OSAComponentInstanceObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSAError _err;
@@ -851,7 +856,7 @@ static PyObject *OSAObj_OSADebuggerGetBreakpoint(ComponentInstanceObject *_self,
 	return _res;
 }
 
-static PyObject *OSAObj_OSADebuggerSetBreakpoint(ComponentInstanceObject *_self, PyObject *_args)
+static PyObject *OSAObj_OSADebuggerSetBreakpoint(OSAComponentInstanceObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSAError _err;
@@ -876,7 +881,7 @@ static PyObject *OSAObj_OSADebuggerSetBreakpoint(ComponentInstanceObject *_self,
 	return _res;
 }
 
-static PyObject *OSAObj_OSADebuggerGetDefaultBreakpoint(ComponentInstanceObject *_self, PyObject *_args)
+static PyObject *OSAObj_OSADebuggerGetDefaultBreakpoint(OSAComponentInstanceObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSAError _err;
@@ -897,7 +902,7 @@ static PyObject *OSAObj_OSADebuggerGetDefaultBreakpoint(ComponentInstanceObject 
 	return _res;
 }
 
-static PyObject *OSAObj_OSADebuggerGetCurrentCallFrame(ComponentInstanceObject *_self, PyObject *_args)
+static PyObject *OSAObj_OSADebuggerGetCurrentCallFrame(OSAComponentInstanceObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSAError _err;
@@ -918,7 +923,7 @@ static PyObject *OSAObj_OSADebuggerGetCurrentCallFrame(ComponentInstanceObject *
 	return _res;
 }
 
-static PyObject *OSAObj_OSADebuggerGetCallFrameState(ComponentInstanceObject *_self, PyObject *_args)
+static PyObject *OSAObj_OSADebuggerGetCallFrameState(OSAComponentInstanceObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSAError _err;
@@ -939,7 +944,7 @@ static PyObject *OSAObj_OSADebuggerGetCallFrameState(ComponentInstanceObject *_s
 	return _res;
 }
 
-static PyObject *OSAObj_OSADebuggerGetVariable(ComponentInstanceObject *_self, PyObject *_args)
+static PyObject *OSAObj_OSADebuggerGetVariable(OSAComponentInstanceObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSAError _err;
@@ -963,7 +968,7 @@ static PyObject *OSAObj_OSADebuggerGetVariable(ComponentInstanceObject *_self, P
 	return _res;
 }
 
-static PyObject *OSAObj_OSADebuggerSetVariable(ComponentInstanceObject *_self, PyObject *_args)
+static PyObject *OSAObj_OSADebuggerSetVariable(OSAComponentInstanceObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSAError _err;
@@ -988,7 +993,7 @@ static PyObject *OSAObj_OSADebuggerSetVariable(ComponentInstanceObject *_self, P
 	return _res;
 }
 
-static PyObject *OSAObj_OSADebuggerGetPreviousCallFrame(ComponentInstanceObject *_self, PyObject *_args)
+static PyObject *OSAObj_OSADebuggerGetPreviousCallFrame(OSAComponentInstanceObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSAError _err;
@@ -1009,7 +1014,7 @@ static PyObject *OSAObj_OSADebuggerGetPreviousCallFrame(ComponentInstanceObject 
 	return _res;
 }
 
-static PyObject *OSAObj_OSADebuggerDisposeCallFrame(ComponentInstanceObject *_self, PyObject *_args)
+static PyObject *OSAObj_OSADebuggerDisposeCallFrame(OSAComponentInstanceObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSAError _err;
@@ -1136,18 +1141,18 @@ static PyObject *OSAObj_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwd
 
 	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&", kw, OSAObj_Convert, &itself)) return NULL;
 	if ((self = type->tp_alloc(type, 0)) == NULL) return NULL;
-	((ComponentInstanceObject *)self)->ob_itself = itself;
+	((OSAComponentInstanceObject *)self)->ob_itself = itself;
 	return self;
 }
 
 #define OSAObj_tp_free PyObject_Del
 
 
-PyTypeObject ComponentInstance_Type = {
+PyTypeObject OSAComponentInstance_Type = {
 	PyObject_HEAD_INIT(NULL)
 	0, /*ob_size*/
-	"_OSA.ComponentInstance", /*tp_name*/
-	sizeof(ComponentInstanceObject), /*tp_basicsize*/
+	"_OSA.OSAComponentInstance", /*tp_name*/
+	sizeof(OSAComponentInstanceObject), /*tp_basicsize*/
 	0, /*tp_itemsize*/
 	/* methods */
 	(destructor) OSAObj_dealloc, /*tp_dealloc*/
@@ -1187,7 +1192,7 @@ PyTypeObject ComponentInstance_Type = {
 	OSAObj_tp_free, /* tp_free */
 };
 
-/* --------------- End object type ComponentInstance ---------------- */
+/* -------------- End object type OSAComponentInstance -------------- */
 
 
 static PyMethodDef OSA_methods[] = {
@@ -1216,13 +1221,13 @@ void init_OSA(void)
 	if (OSA_Error == NULL ||
 	    PyDict_SetItemString(d, "Error", OSA_Error) != 0)
 		return;
-	ComponentInstance_Type.ob_type = &PyType_Type;
-	if (PyType_Ready(&ComponentInstance_Type) < 0) return;
-	Py_INCREF(&ComponentInstance_Type);
-	PyModule_AddObject(m, "ComponentInstance", (PyObject *)&ComponentInstance_Type);
+	OSAComponentInstance_Type.ob_type = &PyType_Type;
+	if (PyType_Ready(&OSAComponentInstance_Type) < 0) return;
+	Py_INCREF(&OSAComponentInstance_Type);
+	PyModule_AddObject(m, "OSAComponentInstance", (PyObject *)&OSAComponentInstance_Type);
 	/* Backward-compatible name */
-	Py_INCREF(&ComponentInstance_Type);
-	PyModule_AddObject(m, "ComponentInstanceType", (PyObject *)&ComponentInstance_Type);
+	Py_INCREF(&OSAComponentInstance_Type);
+	PyModule_AddObject(m, "OSAComponentInstanceType", (PyObject *)&OSAComponentInstance_Type);
 }
 
 /* ======================== End module _OSA ========================= */
