@@ -22,6 +22,7 @@
 /* #define USE_MAC_DYNAMIC_LOADING		/* Enable dynamically loaded modules */
 #define USE_MALLOC_DEBUG			/* Enable range checking and other malloc debugging */
 /* #define USE_GDBM		/* Include the gdbm module */
+/* #define USE_ZLIB		/* Include the zlib module */
 #ifdef __powerc
 #define USE_CACHE_ALIGNED 8		/* Align on 32-byte boundaries for 604 */
 #endif
