@@ -48,6 +48,7 @@ static char *usage_mid = "\
 -x     : skip first line of source, allowing use of non-Unix forms of #!cmd\n\
 -h     : print this help message and exit\n\
 -V     : print the Python version number and exit\n\
+-W arg : warning control (arg is action:message:category:module:lineno)\n\
 -c cmd : program passed in as string (terminates option list)\n\
 file   : program read from script file\n\
 -      : program read from stdin (default; interactive mode if a tty)\n\
@@ -101,7 +102,9 @@ Py_Main(int argc, char **argv)
 	if ((p = getenv("PYTHONUNBUFFERED")) && *p != '\0')
 		unbuffered = 1;
 
-	while ((c = _PyOS_GetOpt(argc, argv, "c:diOStuUvxXhV")) != EOF) {
+	PySys_ResetWarnOptions();
+
+	while ((c = _PyOS_GetOpt(argc, argv, "c:diOStuUvxXhVW:")) != EOF) {
 		if (c == 'c') {
 			/* -c is the last option; following arguments
 			   that look like options are left for the
@@ -158,6 +161,10 @@ Py_Main(int argc, char **argv)
 			break;
 		case 'V':
 			version++;
+			break;
+
+		case 'W':
+			PySys_AddWarnOption(_PyOS_optarg);
 			break;
 
 		/* This space reserved for other options */
