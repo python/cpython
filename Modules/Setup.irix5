@@ -30,7 +30,7 @@
 DESTLIB=$(prefix)/lib/python
 ARCHPATH=:$(DESTLIB)/sgi
 #ARCHPATH=:$(DESTLIB)/sun4
-STDWINPATH=:$(DESTLIB)/stdwin
+#STDWINPATH=:$(DESTLIB)/stdwin
 
 PYTHONPATH=.:$(DESTLIB)$(ARCHPATH)$(STDWINPATH)
 
@@ -75,9 +75,9 @@ rgbimg rgbimgmodule.o   # Read SGI RGB image files (but coded portably)
 # with the gl module on an SGI machine, you should replace "-lX11" with
 # "-lX11_s".
 
-STDWIN=/ufs/guido/src/stdwin
-ARCH=sgi
-stdwin stdwinmodule.o -I$(STDWIN)/H $(STDWIN)/Build/$(ARCH)/x11/lib/lib.a -lX11_s
+#STDWIN=/ufs/guido/src/stdwin
+#ARCH=sgi
+#stdwin stdwinmodule.o -I$(STDWIN)/H $(STDWIN)/Build/$(ARCH)/x11/lib/lib.a -lX11_s
 
 
 # The md5 module implements the RSA Data Security, Inc. MD5
@@ -93,8 +93,8 @@ md5 md5module.o md5c.o
 # likely need some work for more recent versions.  The GMP variable
 # must point to the GMP source directory.
 
-GMP=/ufs/guido/src/gmp
-mpz mpzmodule.o -I$(GMP) $(GMP)/libgmp.a
+#GMP=/ufs/guido/src/gmp
+#mpz mpzmodule.o -I$(GMP) $(GMP)/libgmp.a
 
 
 # The rotor module (contributed by Lance Ellinghouse) implements a
@@ -109,14 +109,14 @@ rotor rotormodule.o
 # installed; you may be better off switching on only 'fm' and 'gl'
 # (Font Manager and Graphics Library).
 
-al almodule.o -laudio		# audio
-cd cdmodule.o -lcdaudio -lds	#
-cl clmodule.o -lcl
+#al almodule.o -laudio		# audio
+#cd cdmodule.o -lcdaudio -lds	#
+#cl clmodule.o -lcl
 fm fmmodule.o -lfm_s -lgl_s
 gl glmodule.o -lgl_s
-imgfile imgfilemodule.o -limage -lgutil -lm
+#imgfile imgfilemodule.o -limage -lgutil -lm
 sgi sgimodule.o
-sv svmodule.o yuvconvert.o -lsvideo -lXext -lX11_s
+#sv svmodule.o yuvconvert.o -lsvideo -lXext -lX11_s
 
 # The FORMS library, by Mark Overmars, implements user interface
 # components such as dialogs and buttons using SGI's GL and FM
@@ -125,8 +125,8 @@ sv svmodule.o yuvconvert.o -lsvideo -lXext -lX11_s
 # The FORMS variable must point to the FORMS subdirectory of the forms
 # toplevel directory.
 
-FORMS=/ufs/guido/src/forms/FORMS
-fl flmodule.o -I$(FORMS) $(FORMS)/libforms.a
+#FORMS=/ufs/guido/src/forms/FORMS
+#fl flmodule.o -I$(FORMS) $(FORMS)/libforms.a
 
 
 # SunOS specific modules -- off by default
