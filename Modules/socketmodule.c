@@ -251,6 +251,11 @@ static PyObject *PyGAI_Error;
 static int taskwindow;
 #endif
 
+/* A forward reference to the socket type object.
+   The PySocketSock_Type variable contains pointers to various functions,
+   some of which call PySocketSock_New(), which uses PySocketSock_Type, so
+   there has to be a circular reference. */
+staticforward PyTypeObject PySocketSock_Type;
 
 /* Convenience function to raise an error according to errno
    and return a NULL pointer from a function. */

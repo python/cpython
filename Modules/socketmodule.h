@@ -75,13 +75,6 @@ typedef struct {
 					    sets a Python exception */
 } PySocketSockObject;
 
-/* A forward reference to the Socktype type object.
-   The Socktype variable contains pointers to various functions,
-   some of which call newsockobject(), which uses Socktype, so
-   there has to be a circular reference. */
-
-extern DL_IMPORT(PyTypeObject) PySocketSock_Type;
-
 /* --- C API ----------------------------------------------------*/
 
 /* C API for usage by other Python modules */
