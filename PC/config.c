@@ -37,18 +37,24 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "Python.h"
 
 extern void initarray();
+#ifndef MS_WIN64
 extern void initaudioop();
 extern void initbinascii();
+#endif
 extern void initcmath();
 extern void initerrno();
+#ifndef MS_WIN64
 extern void initimageop();
+#endif
 extern void initmath();
 extern void initmd5();
 extern void initnew();
 extern void initnt();
 extern void initoperator();
 extern void initregex();
+#ifndef MS_WIN64
 extern void initrgbimg();
+#endif
 extern void initrotor();
 extern void initsignal();
 extern void initsha();
@@ -74,19 +80,27 @@ struct _inittab _PyImport_Inittab[] = {
 
         {"array", initarray},
 #ifdef MS_WINDOWS
+#ifndef MS_WIN64
         {"audioop", initaudioop},
 #endif
+#endif
+#ifndef MS_WIN64
         {"binascii", initbinascii},
+#endif
         {"cmath", initcmath},
         {"errno", initerrno},
+#ifndef MS_WIN64
         {"imageop", initimageop},
+#endif
         {"math", initmath},
         {"md5", initmd5},
         {"new", initnew},
         {"nt", initnt}, /* Use the NT os functions, not posix */
         {"operator", initoperator},
         {"regex", initregex},
+#ifndef MS_WIN64
         {"rgbimg", initrgbimg},
+#endif
         {"rotor", initrotor},
         {"signal", initsignal},
         {"sha", initsha},
@@ -100,11 +114,11 @@ struct _inittab _PyImport_Inittab[] = {
         {"cPickle", initcPickle},
         {"pcre", initpcre},
 #ifdef WIN32
-	{"msvcrt", initmsvcrt},
-	{"_locale", init_locale},
+        {"msvcrt", initmsvcrt},
+        {"_locale", init_locale},
 #endif
 
-	{"_codecs", init_codecs},
+        {"_codecs", init_codecs},
 
 /* -- ADDMODULE MARKER 2 -- */
 
