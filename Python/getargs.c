@@ -261,7 +261,7 @@ vgetargs1(args, format, p_va, compat)
 	    *format != '(' &&
 	    *format != '|' && *format != ':' && *format != ';') {
 		PyErr_Format(PyExc_SystemError,
-			     "bad format string: %s", formatsave);
+			     "bad format string: %.200s", formatsave);
 		return 0;
 	}
 	
