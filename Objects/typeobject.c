@@ -667,7 +667,8 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 	}
 
 	/* Override slots that deserve it */
-	override_slots(type, type->tp_defined);
+	if (!PyType_HasFeature(type, Py_TPFLAGS_DYNAMICTYPE))
+		override_slots(type, type->tp_defined);
 
 	return (PyObject *)type;
 }
@@ -849,6 +850,23 @@ object_dealloc(PyObject *self)
 {
 	self->ob_type->tp_free(self);
 }
+
+#if 0
+static PyObject *
+object_repr(PyObject *self)
+{
+	char buf[120];
+
+	sprintf(buf, "<%.80s object at %p>", self->ob_type->tp_name, self);
+	return PyString_FromString(buf);
+}
+
+static long
+object_hash(PyObject *self)
+{
+	return _Py_HashPointer(self);
+}
+#endif
 
 static void
 object_free(PyObject *self)
@@ -1245,9 +1263,8 @@ PyType_Ready(PyTypeObject *type)
 
 	/* Initialize tp_dict properly */
 	if (PyType_HasFeature(type, Py_TPFLAGS_DYNAMICTYPE)) {
-		/* XXX This is not enough -- see checkin msg 2.30. */
-		if (type->tp_base != NULL)
-			inherit_slots(type, type->tp_base);
+		/* For a dynamic type, all slots are overridden */
+		override_slots(type, NULL);
 	}
 	else {
 		/* For a static type, tp_dict is the consolidation
@@ -2311,22 +2328,17 @@ static PyObject *
 slot_tp_getattro(PyObject *self, PyObject *name)
 {
 	PyTypeObject *tp = self->ob_type;
-	PyObject *dict = NULL;
 	PyObject *getattr;
+	static PyObject *getattr_str = NULL;
 
-	if (tp->tp_flags & Py_TPFLAGS_HEAPTYPE)
-		dict = tp->tp_dict;
-	if (dict == NULL) {
-		PyErr_Format(PyExc_SystemError,
-			     "'%.100s' type object has no __dict__???",
-			     tp->tp_name);
-		return NULL;
+	if (getattr_str == NULL) {
+		getattr_str = PyString_InternFromString("__getattr__");
+		if (getattr_str == NULL)
+			return NULL;
 	}
-	getattr = PyDict_GetItemString(dict, "__getattr__");
-	if (getattr == NULL) {
-		PyErr_SetString(PyExc_AttributeError, "__getattr__");
-		return NULL;
-	}
+	getattr = _PyType_Lookup(tp, getattr_str);
+	if (getattr == NULL)
+		return PyObject_GenericGetAttr(self, name);
 	return PyObject_CallFunction(getattr, "OO", self, name);
 }
 
@@ -2456,22 +2468,22 @@ override_slots(PyTypeObject *type, PyObject *dict)
 	PyNumberMethods *nb = type->tp_as_number;
 
 #define SQSLOT(OPNAME, SLOTNAME, FUNCNAME) \
-	if (PyDict_GetItemString(dict, OPNAME)) { \
+	if (dict == NULL || PyDict_GetItemString(dict, OPNAME)) { \
 		sq->SLOTNAME = FUNCNAME; \
 	}
 
 #define MPSLOT(OPNAME, SLOTNAME, FUNCNAME) \
-	if (PyDict_GetItemString(dict, OPNAME)) { \
+	if (dict == NULL || PyDict_GetItemString(dict, OPNAME)) { \
 		mp->SLOTNAME = FUNCNAME; \
 	}
 
 #define NBSLOT(OPNAME, SLOTNAME, FUNCNAME) \
-	if (PyDict_GetItemString(dict, OPNAME)) { \
+	if (dict == NULL || PyDict_GetItemString(dict, OPNAME)) { \
 		nb->SLOTNAME = FUNCNAME; \
 	}
 
 #define TPSLOT(OPNAME, SLOTNAME, FUNCNAME) \
-	if (PyDict_GetItemString(dict, OPNAME)) { \
+	if (dict == NULL || PyDict_GetItemString(dict, OPNAME)) { \
 		type->SLOTNAME = FUNCNAME; \
 	}
 
@@ -2534,7 +2546,8 @@ override_slots(PyTypeObject *type, PyObject *dict)
 	NBSLOT("__itruediv__", nb_inplace_true_divide,
 	       slot_nb_inplace_true_divide);
 
-	if (PyDict_GetItemString(dict, "__str__") ||
+	if (dict == NULL ||
+	    PyDict_GetItemString(dict, "__str__") ||
 	    PyDict_GetItemString(dict, "__repr__"))
 		type->tp_print = NULL;
 
