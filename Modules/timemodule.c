@@ -89,6 +89,37 @@ extern int ftime();
 static int floatsleep Py_PROTO((double));
 static double floattime Py_PROTO(());
 
+#ifdef macintosh
+/* Our own timezone. We have enough information to deduce whether
+** DST is on currently, but unfortunately we cannot put it to good
+** use because we don't know the rules (and that is needed to have
+** localtime() return correct tm_isdst values for times other than
+** the current time. So, we cop out and only tell the user the current
+** timezone.
+*/
+static long timezone;
+
+static void 
+initmactimezone()
+{
+	MachineLocation	loc;
+	long		delta;
+
+	ReadLocation(&loc);
+	
+	if (loc.latitude == 0 && loc.longitude == 0 && loc.u.gmtDelta == 0)
+		return;
+	
+	delta = loc.u.gmtDelta & 0x00FFFFFF;
+	
+	if (delta & 0x00800000)
+		delta |= 0xFF000000;
+	
+	timezone = -delta;
+}
+#endif /* macintosh */
+
+
 static PyObject *
 time_time(self, args)
 	PyObject *self;
@@ -430,6 +461,11 @@ inittime()
 		ins(d, "tzname",
                     Py_BuildValue("(zz)", wintername, summername));
 	}
+#else
+#ifdef macintosh
+	initmactimezone();
+	ins(d, "timezone", PyInt_FromLong(timezone));
+#endif /* macintosh */
 #endif /* HAVE_TM_ZONE */
 #endif /* !HAVE_TZNAME */
 	if (PyErr_Occurred())
