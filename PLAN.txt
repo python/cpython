@@ -33,10 +33,10 @@ this.)
 Done (mostly)
 -------------
 
-Add __del__ handlers?  I asked for a motivation on python-dev and
-nobody piped up.  Yet I expect it will be asked for later.  *** Are
-there GC issues?  Doesn't the GC make an exception for classic classes
-with a __del__ handler?  This part is *not* yet dealt with. ***
+Add __del__ handlers.  I asked for a motivation on python-dev and
+nobody piped up.  Yet I expect it will be asked for later.  There
+were some GC issues, but these have now also been dealt with, thanks
+to Neil Schemenauer.
 
 Assignment to __dict__.
 
