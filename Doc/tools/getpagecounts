@@ -3,13 +3,10 @@
 #
 # Generate a page count report of the PostScript version of the manuals.
 
-cd `dirname $0`/..
-
-PAPER=${PAPER:-letter}
 TOTAL=0
 
 getpagecount() {
-    PAGECOUNT=`grep -c '^%%Page:' paper-$PAPER/$1.ps`
+    PAGECOUNT=`grep -c '^%%Page:' $1.ps`
     echo "$2    $1.ps ($PAGECOUNT pages)"
     TOTAL=`expr $TOTAL + $PAGECOUNT`
 }
@@ -27,6 +24,7 @@ getpagecount lib "Python Library Reference                      "
 getpagecount mac "Macintosh Module Reference                    "
 getpagecount ref "Python Reference Manual                       "
 getpagecount tut "Python Tutorial                               "
+getpagecount doc "Documenting Python                            "
 
 echo
 echo "  Total page count:   $TOTAL"
