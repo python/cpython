@@ -957,18 +957,29 @@ class AbstractHTTPHandler(BaseHandler):
 
         headers = dict(req.headers)
         headers.update(req.unredirected_hdrs)
+        # We want to make an HTTP/1.1 request, but the addinfourl
+        # class isn't prepared to deal with a persistent connection.
+        # It will try to read all remaining data from the socket,
+        # which will block while the server waits for the next request.
+        # So make sure the connection gets closed after the (only)
+        # request.
+        headers["Connection"] = "close"
         try:
             h.request(req.get_method(), req.get_selector(), req.data, headers)
             r = h.getresponse()
         except socket.error, err: # XXX what error?
             raise URLError(err)
 
-        # Pick apart the HTTPResponse object to get the various pieces
-        # of the
-        resp = addinfourl(r.fp, r.msg, req.get_full_url())
-        resp.code = r.status
-        resp.msg = r.reason
-        return resp
+        if r.status == 200:
+            # Pick apart the HTTPResponse object to get the addinfourl
+            # object initialized properly
+            resp = addinfourl(r.fp, r.msg, req.get_full_url())
+            resp.code = r.status
+            resp.msg = r.reason
+            return resp
+        else:
+            return self.parent.error("http", req, r.fp, r.status, r.msg,
+                                     r.msg.dict)
 
 
 class HTTPHandler(AbstractHTTPHandler):
