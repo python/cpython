@@ -30,62 +30,71 @@ provided as convenient choices for the second argument to
 \function{getmembers()}.  They also help you determine when
 you can expect to find the following special attributes:
 
-\begin{tableiii}{c|l|l}{}{Type}{Attribute}{Description}
-  \lineiii{module}{__doc__}{documentation string}
-  \lineiii{}{__file__}{filename (missing for built-in modules)}
+\begin{tableiv}{c|l|l|c}{}{Type}{Attribute}{Description}{Notes}
+  \lineiv{module}{__doc__}{documentation string}{}
+  \lineiv{}{__file__}{filename (missing for built-in modules)}{}
   \hline
-  \lineiii{class}{__doc__}{documentation string}
-  \lineiii{}{__module__}{name of module in which this class was defined}
+  \lineiv{class}{__doc__}{documentation string}{}
+  \lineiv{}{__module__}{name of module in which this class was defined}{}
   \hline
-  \lineiii{method}{__doc__}{documentation string}
-  \lineiii{}{__name__}{name with which this method was defined}
-  \lineiii{}{im_class}{class object that asked for this method}
-  \lineiii{}{im_func}{function object containing implementation of method}
-  \lineiii{}{im_self}{instance to which this method is bound, or \code{None}}
+  \lineiv{method}{__doc__}{documentation string}{}
+  \lineiv{}{__name__}{name with which this method was defined}{}
+  \lineiv{}{im_class}{class object that asked for this method}{(1)}
+  \lineiv{}{im_func}{function object containing implementation of method}{}
+  \lineiv{}{im_self}{instance to which this method is bound, or \code{None}}{}
   \hline
-  \lineiii{function}{__doc__}{documentation string}
-  \lineiii{}{__name__}{name with which this function was defined}
-  \lineiii{}{func_code}{code object containing compiled function bytecode}
-  \lineiii{}{func_defaults}{tuple of any default values for arguments}
-  \lineiii{}{func_doc}{(same as __doc__)}
-  \lineiii{}{func_globals}{global namespace in which this function was defined}
-  \lineiii{}{func_name}{(same as __name__)}
+  \lineiv{function}{__doc__}{documentation string}{}
+  \lineiv{}{__name__}{name with which this function was defined}{}
+  \lineiv{}{func_code}{code object containing compiled function bytecode}{}
+  \lineiv{}{func_defaults}{tuple of any default values for arguments}{}
+  \lineiv{}{func_doc}{(same as __doc__)}{}
+  \lineiv{}{func_globals}{global namespace in which this function was defined}{}
+  \lineiv{}{func_name}{(same as __name__)}{}
   \hline
-  \lineiii{traceback}{tb_frame}{frame object at this level}
-  \lineiii{}{tb_lasti}{index of last attempted instruction in bytecode}
-  \lineiii{}{tb_lineno}{current line number in Python source code}
-  \lineiii{}{tb_next}{next inner traceback object (called by this level)}
+  \lineiv{traceback}{tb_frame}{frame object at this level}{}
+  \lineiv{}{tb_lasti}{index of last attempted instruction in bytecode}{}
+  \lineiv{}{tb_lineno}{current line number in Python source code}{}
+  \lineiv{}{tb_next}{next inner traceback object (called by this level)}{}
   \hline
-  \lineiii{frame}{f_back}{next outer frame object (this frame's caller)}
-  \lineiii{}{f_builtins}{built-in namespace seen by this frame}
-  \lineiii{}{f_code}{code object being executed in this frame}
-  \lineiii{}{f_exc_traceback}{traceback if raised in this frame, or \code{None}}
-  \lineiii{}{f_exc_type}{exception type if raised in this frame, or \code{None}}
-  \lineiii{}{f_exc_value}{exception value if raised in this frame, or \code{None}}
-  \lineiii{}{f_globals}{global namespace seen by this frame}
-  \lineiii{}{f_lasti}{index of last attempted instruction in bytecode}
-  \lineiii{}{f_lineno}{current line number in Python source code}
-  \lineiii{}{f_locals}{local namespace seen by this frame}
-  \lineiii{}{f_restricted}{0 or 1 if frame is in restricted execution mode}
-  \lineiii{}{f_trace}{tracing function for this frame, or \code{None}}
+  \lineiv{frame}{f_back}{next outer frame object (this frame's caller)}{}
+  \lineiv{}{f_builtins}{built-in namespace seen by this frame}{}
+  \lineiv{}{f_code}{code object being executed in this frame}{}
+  \lineiv{}{f_exc_traceback}{traceback if raised in this frame, or \code{None}}{}
+  \lineiv{}{f_exc_type}{exception type if raised in this frame, or \code{None}}{}
+  \lineiv{}{f_exc_value}{exception value if raised in this frame, or \code{None}}{}
+  \lineiv{}{f_globals}{global namespace seen by this frame}{}
+  \lineiv{}{f_lasti}{index of last attempted instruction in bytecode}{}
+  \lineiv{}{f_lineno}{current line number in Python source code}{}
+  \lineiv{}{f_locals}{local namespace seen by this frame}{}
+  \lineiv{}{f_restricted}{0 or 1 if frame is in restricted execution mode}{}
+  \lineiv{}{f_trace}{tracing function for this frame, or \code{None}}{}
   \hline
-  \lineiii{code}{co_argcount}{number of arguments (not including * or ** args)}
-  \lineiii{}{co_code}{string of raw compiled bytecode}
-  \lineiii{}{co_consts}{tuple of constants used in the bytecode}
-  \lineiii{}{co_filename}{name of file in which this code object was created}
-  \lineiii{}{co_firstlineno}{number of first line in Python source code}
-  \lineiii{}{co_flags}{bitmap: 1=optimized \code{|} 2=newlocals \code{|} 4=*arg \code{|} 8=**arg}
-  \lineiii{}{co_lnotab}{encoded mapping of line numbers to bytecode indices}
-  \lineiii{}{co_name}{name with which this code object was defined}
-  \lineiii{}{co_names}{tuple of names of local variables}
-  \lineiii{}{co_nlocals}{number of local variables}
-  \lineiii{}{co_stacksize}{virtual machine stack space required}
-  \lineiii{}{co_varnames}{tuple of names of arguments and local variables}
+  \lineiv{code}{co_argcount}{number of arguments (not including * or ** args)}{}
+  \lineiv{}{co_code}{string of raw compiled bytecode}{}
+  \lineiv{}{co_consts}{tuple of constants used in the bytecode}{}
+  \lineiv{}{co_filename}{name of file in which this code object was created}{}
+  \lineiv{}{co_firstlineno}{number of first line in Python source code}{}
+  \lineiv{}{co_flags}{bitmap: 1=optimized \code{|} 2=newlocals \code{|} 4=*arg \code{|} 8=**arg}{}
+  \lineiv{}{co_lnotab}{encoded mapping of line numbers to bytecode indices}{}
+  \lineiv{}{co_name}{name with which this code object was defined}{}
+  \lineiv{}{co_names}{tuple of names of local variables}{}
+  \lineiv{}{co_nlocals}{number of local variables}{}
+  \lineiv{}{co_stacksize}{virtual machine stack space required}{}
+  \lineiv{}{co_varnames}{tuple of names of arguments and local variables}{}
   \hline
-  \lineiii{builtin}{__doc__}{documentation string}
-  \lineiii{}{__name__}{original name of this function or method}
-  \lineiii{}{__self__}{instance to which a method is bound, or \code{None}}
-\end{tableiii}
+  \lineiv{builtin}{__doc__}{documentation string}{}
+  \lineiv{}{__name__}{original name of this function or method}{}
+  \lineiv{}{__self__}{instance to which a method is bound, or \code{None}}{}
+\end{tableiv}
+
+\noindent
+Note:
+\begin{description}
+\item[(1)]
+\versionchanged[\member{im_class} used to refer to the class that
+                defined the method]{2.2}
+\end{description}
+
 
 \begin{funcdesc}{getmembers}{object\optional{, predicate}}
   Return all the members of an object in a list of (name, value) pairs
