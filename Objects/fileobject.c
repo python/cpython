@@ -271,7 +271,7 @@ err_closed(void)
 	return NULL;
 }
 
-void drop_readahead(PyFileObject *);
+static void drop_readahead(PyFileObject *);
 
 /* Methods */
 
@@ -1608,7 +1608,7 @@ static PyGetSetDef file_getsetlist[] = {
 	{0},
 };
 
-void
+static void
 drop_readahead(PyFileObject *f)
 {
 	if (f->f_buf != NULL) {
@@ -1620,7 +1620,9 @@ drop_readahead(PyFileObject *f)
 /* Make sure that file has a readahead buffer with at least one byte 
    (unless at EOF) and no more than bufsize.  Returns negative value on 
    error */
-int readahead(PyFileObject *f, int bufsize) {
+static int
+readahead(PyFileObject *f, int bufsize)
+{
 	int chunksize;
 
 	if (f->f_buf != NULL) {
@@ -1655,8 +1657,9 @@ int readahead(PyFileObject *f, int bufsize) {
    horrified by the recursive call: maximum recursion depth is limited by 
    logarithmic buffer growth to about 50 even when reading a 1gb line. */
 
-PyStringObject *
-readahead_get_line_skip(PyFileObject *f, int skip, int bufsize) {
+static PyStringObject *
+readahead_get_line_skip(PyFileObject *f, int skip, int bufsize)
+{
 	PyStringObject* s;
 	char *bufptr;
 	char *buf;
