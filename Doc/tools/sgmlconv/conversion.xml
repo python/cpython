@@ -52,14 +52,14 @@
     <content/>
     </macro>
   <macro name="shortversion"/>
+  <!-- These are broken:  we need to re-order the optional and required
+       parameters, making the optional parameter the content for the
+       element.  latex2esis.py is not powerful enough to handle this.
+    -->
   <macro name="versionadded">
     <attribute name="info" optional="yes"/>
     <attribute name="version"/>
     </macro>
-  <!-- This is broken:  we need to re-order the optional and required
-       parameters, making the optional parameter the content for the
-       element.  The processor is not powerful enough to handle this.
-    -->
   <macro name="versionchanged">
     <attribute name="info" optional="yes"/>
     <attribute name="version"/>
@@ -695,6 +695,14 @@
     </macro>
   <macro name="email">
     <content/>
+    </macro>
+  <macro name="ulink">
+    <!-- order of the parameters makes this difficult;
+         we'll need to fix it up tp <ulink href="...">...</ulink>
+         in docfixer.py.
+      -->
+    <child name="text"/>
+    <child name="href"/>
     </macro>
   <macro name="url">
     <content/>
