@@ -437,8 +437,8 @@ nav_NavGetFile(self, args, kw)
 	NavTypeListHandle typeList = NULL;
 	OSErr err;
 
-	if ( kw ) {
-		if (!PyArg_ParseTuple(args, ""))
+	if ( kw && PyObject_IsTrue(kw) ) {
+		if (!PyArg_ParseTuple(args, ";either keyword arguments or dictionary expected"))
 			return NULL;
 		dict = kw;
 	} else if (!PyArg_ParseTuple(args, "O!", &PyDict_Type, &dict))
@@ -474,8 +474,8 @@ nav_NavPutFile(self, args, kw)
 	OSType fileCreator;
 	OSErr err;
 
-	if ( kw ) {
-		if (!PyArg_ParseTuple(args, ""))
+	if ( kw && PyObject_IsTrue(kw) ) {
+		if (!PyArg_ParseTuple(args, ";either keyword arguments or dictionary expected"))
 			return NULL;
 		dict = kw;
 	} else if (!PyArg_ParseTuple(args, "O!", &PyDict_Type, &dict))
@@ -510,7 +510,7 @@ nav_NavAskSaveChanges(self, args, kw)
 	NavEventUPP eventProc = NULL;
 	OSErr err;
 
-	if ( kw ) {
+	if ( kw && PyObject_IsTrue(kw) ) {
 		if (!PyArg_ParseTuple(args, "l", &action))
 			return NULL;
 		dict = kw;
@@ -542,8 +542,8 @@ nav_NavCustomAskSaveChanges(self, args, kw)
 	NavEventUPP eventProc = NULL;
 	OSErr err;
 
-	if ( kw ) {
-		if (!PyArg_ParseTuple(args, ""))
+	if ( kw && PyObject_IsTrue(kw) ) {
+		if (!PyArg_ParseTuple(args, ";either keyword arguments or dictionary expected"))
 			return NULL;
 		dict = kw;
 	} else if (!PyArg_ParseTuple(args, "O!", &PyDict_Type, &dict))
@@ -574,8 +574,8 @@ nav_NavAskDiscardChanges(self, args, kw)
 	NavEventUPP eventProc = NULL;
 	OSErr err;
 
-	if ( kw ) {
-		if (!PyArg_ParseTuple(args, ""))
+	if ( kw && PyObject_IsTrue(kw) ) {
+		if (!PyArg_ParseTuple(args, ";either keyword arguments or dictionary expected"))
 			return NULL;
 		dict = kw;
 	} else if (!PyArg_ParseTuple(args, "O!", &PyDict_Type, &dict))
@@ -610,8 +610,8 @@ nav_NavChooseFile(self, args, kw)
 	NavTypeListHandle typeList = NULL;
 	OSErr err;
 
-	if ( kw ) {
-		if (!PyArg_ParseTuple(args, ""))
+	if ( kw && PyObject_IsTrue(kw) ) {
+		if (!PyArg_ParseTuple(args, ";either keyword arguments or dictionary expected"))
 			return NULL;
 		dict = kw;
 	} else if (!PyArg_ParseTuple(args, "O!", &PyDict_Type, &dict))
@@ -646,8 +646,8 @@ nav_NavChooseFolder(self, args, kw)
 	NavObjectFilterUPP filterProc = NULL;
 	OSErr err;
 
-	if ( kw ) {
-		if (!PyArg_ParseTuple(args, ""))
+	if ( kw && PyObject_IsTrue(kw) ) {
+		if (!PyArg_ParseTuple(args, ";either keyword arguments or dictionary expected"))
 			return NULL;
 		dict = kw;
 	} else if (!PyArg_ParseTuple(args, "O!", &PyDict_Type, &dict))
@@ -682,8 +682,8 @@ nav_NavChooseVolume(self, args, kw)
 	NavObjectFilterUPP filterProc = NULL;
 	OSErr err;
 
-	if ( kw ) {
-		if (!PyArg_ParseTuple(args, ""))
+	if ( kw && PyObject_IsTrue(kw) ) {
+		if (!PyArg_ParseTuple(args, ";either keyword arguments or dictionary expected"))
 			return NULL;
 		dict = kw;
 	} else if (!PyArg_ParseTuple(args, "O!", &PyDict_Type, &dict))
@@ -718,8 +718,8 @@ nav_NavChooseObject(self, args, kw)
 	NavObjectFilterUPP filterProc = NULL;
 	OSErr err;
 
-	if ( kw ) {
-		if (!PyArg_ParseTuple(args, ""))
+	if ( kw && PyObject_IsTrue(kw) ) {
+		if (!PyArg_ParseTuple(args, ";either keyword arguments or dictionary expected"))
 			return NULL;
 		dict = kw;
 	} else if (!PyArg_ParseTuple(args, "O!", &PyDict_Type, &dict))
@@ -753,8 +753,8 @@ nav_NavNewFolder(self, args, kw)
 	NavEventUPP eventProc = NULL;
 	OSErr err;
 
-	if ( kw ) {
-		if (!PyArg_ParseTuple(args, ""))
+	if ( kw && PyObject_IsTrue(kw) ) {
+		if (!PyArg_ParseTuple(args, ";either keyword arguments or dictionary expected"))
 			return NULL;
 		dict = kw;
 	} else if (!PyArg_ParseTuple(args, "O!", &PyDict_Type, &dict))
@@ -771,7 +771,7 @@ nav_NavNewFolder(self, args, kw)
 }
 
 #if 0
-XXXX I don't know what to do with the void * argument
+/* XXXX I don't know what to do with the void * argument */
 static char nav_NavCustomControl__doc__[] =
 ""
 ;
