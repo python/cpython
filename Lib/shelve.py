@@ -228,4 +228,4 @@ def open(filename, flag='c', protocol=None, writeback=False, binary=None):
     See the module's __doc__ string for an overview of the interface.
     """
 
-    return DbfilenameShelf(filename, flag, binary, writeback)
+    return DbfilenameShelf(filename, flag, protocol, writeback, binary)
