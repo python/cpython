@@ -163,6 +163,18 @@ def run_method_tests(test):
     test('rstrip', '   hello   ', '   hello')
     test('strip', 'hello', 'hello')
 
+    # strip/lstrip/rstrip with None arg
+    test('strip', '   hello   ', 'hello', None)
+    test('lstrip', '   hello   ', 'hello   ', None)
+    test('rstrip', '   hello   ', '   hello', None)
+    test('strip', 'hello', 'hello', None)
+
+    # strip/lstrip/rstrip with real arg
+    test('strip', 'xyzzyhelloxyzzy', 'hello', 'xyz')
+    test('lstrip', 'xyzzyhelloxyzzy', 'helloxyzzy', 'xyz')
+    test('rstrip', 'xyzzyhelloxyzzy', 'xyzzyhello', 'xyz')
+    test('strip', 'hello', 'hello', 'xyz')
+
     test('swapcase', 'HeLLo cOmpUteRs', 'hEllO CoMPuTErS')
     test('translate', 'xyzabcdef', 'xyzxyz', transtable, 'def')
 
