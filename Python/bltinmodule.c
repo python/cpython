@@ -322,11 +322,11 @@ builtin_coerce(PyObject *self, PyObject *args)
 }
 
 PyDoc_STRVAR(coerce_doc,
-"coerce(x, y) -> None or (x1, y1)\n\
+"coerce(x, y) -> (x1, y1)\n\
 \n\
-When x and y can be coerced to values of the same type, return a tuple\n\
-containing the coerced values.  When they can't be coerced, return None.");
-
+Return a tuple consisting of the two numeric arguments converted to\n\
+a common type, using the same rules as used by arithmetic operations.\n\
+If coercion is not possible, raise TypeError.");
 
 static PyObject *
 builtin_compile(PyObject *self, PyObject *args)

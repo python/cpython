@@ -1180,7 +1180,7 @@ bypass these functions without concerns about missing something important.
 \begin{funcdesc}{coerce}{x, y}
   Return a tuple consisting of the two numeric arguments converted to
   a common type, using the same rules as used by arithmetic
-  operations.
+  operations. If coercion is not possible, raise \exception{TypeError}.
 \end{funcdesc}
 
 \begin{funcdesc}{intern}{string}
