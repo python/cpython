@@ -45,7 +45,7 @@ LIB=		libParser.a
 
 all:		$(LIB) $(PGEN)
 
-$(LIB):		$(PARSEROBJS)
+$(LIB):		$& $(PARSEROBJS)
 		-rm -f $(LIB)
 		$(AR) cr $(LIB) $(PARSEROBJS)
 		$(RANLIB) $(LIB)
