@@ -90,19 +90,27 @@ err_ovf(msg)
 */
 
 #define BLOCK_SIZE	1000	/* 1K less typical malloc overhead */
-#define N_INTOBJECTS	(BLOCK_SIZE / sizeof(PyIntObject))
+#define N_INTOBJECTS	((BLOCK_SIZE - sizeof(PyIntObject *)) / \
+			 sizeof(PyIntObject))
+
+#define PyMem_MALLOC	malloc
+#define PyMem_FREE	free
+static PyIntObject *block_list = NULL;
 
 static PyIntObject *
 fill_free_list()
 {
 	PyIntObject *p, *q;
-	p = PyMem_NEW(PyIntObject, N_INTOBJECTS);
+	p = (PyIntObject *)PyMem_MALLOC(BLOCK_SIZE);
 	if (p == NULL)
 		return (PyIntObject *)PyErr_NoMemory();
+	*(PyIntObject **)p = block_list;
+	block_list = p;
+	p = (PyIntObject *)((char *)p + sizeof(PyIntObject *));
 	q = p + N_INTOBJECTS;
 	while (--q > p)
-		*(PyIntObject **)q = q-1;
-	*(PyIntObject **)q = NULL;
+		q->ob_type = (struct _typeobject *)(q-1);
+	q->ob_type = NULL;
 	return p + N_INTOBJECTS - 1;
 }
 
@@ -148,7 +156,7 @@ PyInt_FromLong(ival)
 			return NULL;
 	}
 	v = free_list;
-	free_list = *(PyIntObject **)free_list;
+	free_list = (PyIntObject *)v->ob_type;
 	v->ob_type = &PyInt_Type;
 	v->ob_ival = ival;
 	_Py_NewReference(v);
@@ -166,7 +174,7 @@ static void
 int_dealloc(v)
 	PyIntObject *v;
 {
-	*(PyIntObject **)v = free_list;
+	v->ob_type = (struct _typeobject *)free_list;
 	free_list = v;
 }
 
@@ -794,16 +802,57 @@ PyTypeObject PyInt_Type = {
 void
 PyInt_Fini()
 {
-#if NSMALLNEGINTS + NSMALLPOSINTS > 0
+	PyIntObject *p, *list;
 	int i;
-	PyIntObject **p;
+	int bc, bf;	/* block count, number of freed blocks */
+	int irem, isum;	/* remaining unfreed ints per block, total */
 
-	i = NSMALLNEGINTS + NSMALLPOSINTS;
-	p = small_ints;
-	while (--i >= 0) {
-		Py_XDECREF(*p);
-		*p++ = NULL;
-	}
+#if NSMALLNEGINTS + NSMALLPOSINTS > 0
+        PyIntObject **q;
+
+        i = NSMALLNEGINTS + NSMALLPOSINTS;
+        q = small_ints;
+        while (--i >= 0) {
+                Py_XDECREF(*q);
+                *q++ = NULL;
+        }
 #endif
-	/* XXX Alas, the free list is not easily and safely freeable */
+	bc = 0;
+	bf = 0;
+	isum = 0;
+	list = block_list;
+	block_list = NULL;
+	while (list != NULL) {
+		p = list;
+		p = (PyIntObject *)((char *)p + sizeof(PyIntObject *));
+		bc++;
+		irem = 0;
+		for (i = 0; i < N_INTOBJECTS; i++, p++) {
+			if (PyInt_Check(p) && p->ob_refcnt != 0)
+				irem++;
+		}
+		p = list;
+		list = *(PyIntObject **)p;
+		if (irem) {
+			*(PyIntObject **)p = block_list;
+			block_list = p;
+		}
+		else {
+			PyMem_FREE(p);
+			bf++;
+		}
+		isum += irem;
+	}
+	if (Py_VerboseFlag) {
+		fprintf(stderr, "# cleanup ints");
+		if (!isum) {
+			fprintf(stderr, "\n");
+		}
+		else {
+			fprintf(stderr,
+				": %d unfreed int%s in %d out of %d block%s\n",
+				isum, isum == 1 ? "" : "s",
+				bc - bf, bc, bc == 1 ? "" : "s");
+		}
+	}
 }
