@@ -478,8 +478,6 @@ class Pickler:
         self.write(EMPTY_TUPLE)
 
     def save_list(self, object):
-        d = id(object)
-
         write = self.write
         save  = self.save
 
