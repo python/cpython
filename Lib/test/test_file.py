@@ -1,4 +1,5 @@
 import os
+from array import array
 
 from test_support import verify, TESTFN
 from UserList import UserList
@@ -12,6 +13,13 @@ f = open(TESTFN, 'rb')
 buf = f.read()
 f.close()
 verify(buf == '12')
+
+# verify readinto
+a = array('c', 'x'*10)
+f = open(TESTFN, 'rb')
+n = f.readinto(a)
+f.close()
+verify(buf == a.tostring()[:n])
 
 # verify writelines with integers
 f = open(TESTFN, 'wb')
@@ -68,6 +76,13 @@ if f.isatty():
 
 if f.closed:
     raise TestError, 'file.closed should be false'
+
+try:
+    f.readinto("")
+except TypeError:
+    pass
+else:
+    raise TestError, 'file.readinto("") should raise a TypeError'
 
 f.close()
 if not f.closed:
