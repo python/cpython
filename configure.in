@@ -82,7 +82,6 @@ then
 fi
 AC_MSG_RESULT($MACHDEP)
 
-
 # checks for alternative programs
 AC_MSG_CHECKING(for --without-gcc)
 AC_ARG_WITH(gcc, [  --without-gcc                   never use gcc], [
@@ -131,7 +130,7 @@ AC_MSG_RESULT($without_gcc)
 
 AC_SUBST(CXX)
 AC_SUBST(MAINOBJ)
-MAINOBJ=python.o
+MAINOBJ=Modules/python.o
 AC_MSG_CHECKING(for --with-cxx=<compiler>)
 AC_ARG_WITH(cxx, [  --with-cxx=<compiler>           enable C++ support],[
 	check_cxx=no
@@ -139,7 +138,7 @@ AC_ARG_WITH(cxx, [  --with-cxx=<compiler>           enable C++ support],[
 	no)	CXX=
 		with_cxx=no;;
 	*)	CXX=$withval
-		MAINOBJ=ccpython.o
+		MAINOBJ=Modules/ccpython.o
 		with_cxx=$withval;;
 	esac], [
 	with_cxx=no
@@ -163,7 +162,6 @@ then
 	fi
 fi
 
-
 # If the user switches compilers, we can't believe the cache
 if test ! -z "$ac_cv_prog_CC" -a ! -z "$CC" -a "$CC" != "$ac_cv_prog_CC"
 then
@@ -172,15 +170,7 @@ then
 fi
 
 AC_PROG_CC
-AC_SUBST(EXE)
-AC_MSG_CHECKING(for --with-suffix)
-AC_ARG_WITH(suffix, [  --with-suffix=.exe              set executable suffix],[
-	case $withval in
-	no)	EXE=;;
-	yes)	EXE=.exe;;
-	*)	EXE=$withval;;
-	esac])
-AC_MSG_RESULT($EXE)
+AC_EXEEXT
 
 case $MACHDEP in
 bsdos*)
@@ -205,10 +195,9 @@ esac
 # without shared libraries, LDLIBRARY is the same as LIBRARY (defined in
 # the Makefiles). On Cygwin LDLIBRARY is the import library, DLLLIBRARY is the
 # shared (i.e., DLL) library.
-AC_SUBST(MAKE_LDLIBRARY)
 AC_SUBST(LDLIBRARY)
 AC_SUBST(DLLLIBRARY)
-LDLIBRARY=''
+LDLIBRARY='$(LIBRARY)'
 DLLLIBRARY=''
 
 # LINKCC is the command that links the python executable -- default is $(CC).
@@ -254,39 +243,15 @@ beos*)
       ;;
 cygwin*)
       LDLIBRARY='libpython$(VERSION).dll.a'
-      DLLLIBRARY='$(basename $(LDLIBRARY))'
+      DLLLIBRARY='libpython$(VERSION).dll'
       ;;
 esac
 AC_MSG_RESULT($LDLIBRARY)
 
-# If LDLIBRARY is different from LIBRARY, emit a rule to build it.
-if test -z "$LDLIBRARY"
-then
-  LDLIBRARY='libpython$(VERSION).a'
-  MAKE_LDLIBRARY="true"
-else
-  case $MACHDEP in
-    cygwin*) MAKE_LDLIBRARY='$(MAKE) -C Modules ../$(DLLLIBRARY)';;
-    *)       MAKE_LDLIBRARY='$(MAKE) $(LDLIBRARY)';;
-  esac
-fi
-
 AC_PROG_RANLIB
 AC_SUBST(AR)
 AC_CHECK_PROGS(AR, ar aal, ar)
-AC_SUBST(INSTALL)
-AC_SUBST(INSTALL_PROGRAM)
-AC_SUBST(INSTALL_DATA)
-# Install just never works :-(
-if test -z "$INSTALL"
-then
-	INSTALL=cp
-	INSTALL_PROGRAM=cp
-	INSTALL_DATA=cp
-else
-	INSTALL_PROGRAM="$INSTALL"
-	INSTALL_DATA="$INSTALL -m 644"
-fi
+AC_PROG_INSTALL
 
 # Not every filesystem supports hard links
 AC_SUBST(LN)
@@ -298,7 +263,7 @@ if test -z "$LN" ; then
 	esac
 fi
 
-# Optimizer/debugger flags passed between Makefiles
+# Optimizer/debugger flags
 AC_SUBST(OPT)
 if test -z "$OPT"
 then
@@ -756,6 +721,27 @@ AC_CHECK_LIB(crypt, crypt,
 	[USE_CRYPT_MODULE="#"
 	HAVE_LIBCRYPT=""])
 
+
+# Determine if signalmodule should be used.
+AC_SUBST(USE_SIGNAL_MODULE)
+AC_SUBST(SIGNAL_OBJS)
+AC_MSG_CHECKING(for --with-signal-module)
+AC_ARG_WITH(signal-module,
+[  --with-signal-module            disable/enable signal module])
+
+if test -z "$with_signal_module"
+then with_signal_module="yes"
+fi
+AC_MSG_RESULT($with_signal_module)
+
+if test "${with_signal_module}" = "yes"; then
+	USE_SIGNAL_MODULE=""
+	SIGNAL_OBJS=""
+else
+	USE_SIGNAL_MODULE="#"
+	SIGNAL_OBJS="Parser/intrcheck.o Python/sigcheck.o"
+fi
+
 # This is used to generate Setup.config
 AC_SUBST(USE_THREAD_MODULE)
 USE_THREAD_MODULE=""
@@ -798,7 +784,7 @@ else
     AC_DEFINE(_REENTRANT)
     AC_CHECK_HEADER(mach/cthreads.h, [AC_DEFINE(WITH_THREAD)
     AC_DEFINE(C_THREADS)
-    LIBOBJS="$LIBOBJS thread.o"],[
+    LIBOBJS="$LIBOBJS Python/thread.o"],[
     AC_MSG_CHECKING(for --with-pth)
     AC_ARG_WITH(pth,
     [  --with-pth                      use GNU pth threading libraries], [
@@ -806,51 +792,51 @@ else
     AC_DEFINE(WITH_THREAD)
     AC_DEFINE(HAVE_PTH)
     LIBS="-lpth $LIBS"
-    LIBOBJS="$LIBOBJS thread.o"],[
+    LIBOBJS="$LIBOBJS Python/thread.o"],[
     AC_MSG_RESULT(no)
     AC_CHECK_LIB(pthread, pthread_create, [AC_DEFINE(WITH_THREAD)
     AC_DEFINE(_POSIX_THREADS)
     LIBS="-lpthread $LIBS"
-    LIBOBJS="$LIBOBJS thread.o"],[
+    LIBOBJS="$LIBOBJS Python/thread.o"],[
     AC_CHECK_FUNC(pthread_detach, [AC_DEFINE(WITH_THREAD)
     case $ac_sys_system in
       Darwin*) ;;
       *) AC_DEFINE(_POSIX_THREADS);;
     esac
-    LIBOBJS="$LIBOBJS thread.o"],[
+    LIBOBJS="$LIBOBJS Python/thread.o"],[
     AC_CHECK_HEADER(kernel/OS.h, [AC_DEFINE(WITH_THREAD)
     AC_DEFINE(BEOS_THREADS)
-    LIBOBJS="$LIBOBJS thread.o"],[
+    LIBOBJS="$LIBOBJS Python/thread.o"],[
     AC_CHECK_LIB(pthreads, pthread_create, [AC_DEFINE(WITH_THREAD)
     AC_DEFINE(_POSIX_THREADS)
     LIBS="$LIBS -lpthreads"
-    LIBOBJS="$LIBOBJS thread.o"], [
+    LIBOBJS="$LIBOBJS Python/thread.o"], [
     AC_CHECK_LIB(c_r, pthread_create, [AC_DEFINE(WITH_THREAD)
     AC_DEFINE(_POSIX_THREADS)
     LIBS="$LIBS -lc_r"
-    LIBOBJS="$LIBOBJS thread.o"], [
+    LIBOBJS="$LIBOBJS Python/thread.o"], [
     AC_CHECK_LIB(thread, __d6_pthread_create, [AC_DEFINE(WITH_THREAD)
     AC_DEFINE(_POSIX_THREADS)
     LIBS="$LIBS -lthread"
-    LIBOBJS="$LIBOBJS thread.o"], [
+    LIBOBJS="$LIBOBJS Python/thread.o"], [
     AC_CHECK_LIB(pthread, __pthread_create_system, [AC_DEFINE(WITH_THREAD)
     AC_DEFINE(_POSIX_THREADS)
     LIBS="$LIBS -lpthread"
-    LIBOBJS="$LIBOBJS thread.o"], [
+    LIBOBJS="$LIBOBJS Python/thread.o"], [
     AC_CHECK_LIB(cma, pthread_create, [AC_DEFINE(WITH_THREAD)
     AC_DEFINE(_POSIX_THREADS)
     LIBS="$LIBS -lcma"
-    LIBOBJS="$LIBOBJS thread.o"],[
+    LIBOBJS="$LIBOBJS Python/thread.o"],[
     USE_THREAD_MODULE="#"])
     ])])])])])])])])])
 
     AC_CHECK_LIB(mpc, usconfig, [AC_DEFINE(WITH_THREAD)
     LIBS="$LIBS -lmpc"
-    LIBOBJS="$LIBOBJS thread.o"
+    LIBOBJS="$LIBOBJS Python/thread.o"
     USE_THREAD_MODULE=""])
     AC_CHECK_LIB(thread, thr_create, [AC_DEFINE(WITH_THREAD)
     LIBS="$LIBS -lthread"
-    LIBOBJS="$LIBOBJS thread.o"
+    LIBOBJS="$LIBOBJS Python/thread.o"
     USE_THREAD_MODULE=""])
 
     if test "$USE_THREAD_MODULE" != "#"
@@ -1387,22 +1373,35 @@ cat >> confdefs.h <<\EOF
 EOF
 AC_CHECK_TYPE(socklen_t, int)
 
-AC_MSG_CHECKING(for Modules/Setup)
-if test ! -f Modules/Setup ; then
-    if test ! -d Modules ; then
-        mkdir Modules
+#AC_MSG_CHECKING(for Modules/Setup)
+#if test ! -f Modules/Setup ; then
+#    if test ! -d Modules ; then
+#        mkdir Modules
+#    fi
+#    cp "$srcdir/Modules/Setup.dist" Modules/Setup
+#    AC_MSG_RESULT(creating)
+#else
+#    AC_MSG_RESULT(already exists)
+#fi
+
+AC_SUBST(SRCDIRS)
+SRCDIRS="Parser Grammar Objects Python Modules"
+AC_MSG_CHECKING(for build directoris)
+for dir in $SRCDIRS; do
+    if test ! -d $dir; then
+        mkdir $dir
     fi
-    cp "$srcdir/Modules/Setup.dist" Modules/Setup
-    AC_MSG_RESULT(creating)
-else
-    AC_MSG_RESULT(already exists)
-fi
+done
+AC_MSG_RESULT(done)
 
 # generate output files
-AC_OUTPUT(Makefile setup.cfg \
- Objects/Makefile \
- Parser/Makefile \
- Grammar/Makefile \
- Python/Makefile \
- Modules/Makefile.pre \
- Modules/Setup.config)
+echo "creating Makefile"
+
+# "boot" Makefile
+cat >Makefile <<\EOF
+# This file is automaticly generated by configure.
+all:
+	\$(MAKE) -f Makefile.pre Makefile
+EOF
+
+AC_OUTPUT(Makefile.pre Modules/Setup.config setup.cfg)
