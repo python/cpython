@@ -60,7 +60,9 @@ Return the floor of \var{x} as a real.
 \end{funcdesc}
 
 \begin{funcdesc}{fmod}{x, y}
-Return \code{\var{x} \%\ \var{y}}.
+Return \code{fmod(\var{x}, \var{y})}, as defined by the platform C library.
+Note that the Python expression \code{\var{x} \%\ \var{y}} may not return
+the same result.
 \end{funcdesc}
 
 \begin{funcdesc}{frexp}{x}

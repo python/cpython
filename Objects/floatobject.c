@@ -399,7 +399,7 @@ float_divmod(PyFloatObject *v, PyFloatObject *w)
 	PyFPE_START_PROTECT("divmod", return 0)
 	vx = v->ob_fval;
 	mod = fmod(vx, wx);
-	/* fmod is typically exact, so vx-mod is *mathemtically* an
+	/* fmod is typically exact, so vx-mod is *mathematically* an
 	   exact multiple of wx.  But this is fp arithmetic, and fp
 	   vx - mod is an approximation; the result is that div may
 	   not be an exact integral value after the division, although
