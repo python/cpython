@@ -1321,6 +1321,47 @@ class TarFile(object):
 
         self.members.append(tarinfo)
 
+    def extractall(self, path=".", members=None):
+        """Extract all members from the archive to the current working
+           directory and set owner, modification time and permissions on
+           directories afterwards. `path' specifies a different directory
+           to extract to. `members' is optional and must be a subset of the
+           list returned by getmembers().
+        """
+        directories = []
+
+        if members is None:
+            members = self
+
+        for tarinfo in members:
+            if tarinfo.isdir():
+                # Extract directory with a safe mode, so that
+                # all files below can be extracted as well.
+                try:
+                    os.makedirs(os.path.join(path, tarinfo.name), 0777)
+                except EnvironmentError:
+                    pass
+                directories.append(tarinfo)
+            else:
+                self.extract(tarinfo, path)
+
+        # Reverse sort directories.
+        directories.sort(lambda a, b: cmp(a.name, b.name))
+        directories.reverse()
+
+        # Set correct owner, mtime and filemode on directories.
+        for tarinfo in directories:
+            path = os.path.join(path, tarinfo.name)
+            try:
+                self.chown(tarinfo, path)
+                self.utime(tarinfo, path)
+                self.chmod(tarinfo, path)
+            except ExtractError, e:
+                if self.errorlevel > 1:
+                    raise
+                else:
+                    self._dbg(1, "tarfile: %s" % e)
+
     def extract(self, member, path=""):
         """Extract a member from the archive to the current working directory,
            using its full name. Its file information is extracted as accurately

@@ -75,6 +75,8 @@ Extension Modules
 Library
 -------
 
+- Patch #1043890: Add extractall method to tarfile.
+
 - Patch #1075887: Don't require MSVC in distutils if there is nothing
   to build.
 
