@@ -10,7 +10,7 @@ __all__ = ["netrc", "NetrcParseError"]
 class NetrcParseError(Exception):
     """Exception raised on syntax errors in the .netrc file."""
     def __init__(self, msg, filename=None, lineno=None):
-        self.filename = file
+        self.filename = filename
         self.lineno = lineno
         self.msg = msg
         Exception.__init__(self, msg)
