@@ -12,8 +12,8 @@ for url, expected in [('http://www.python.org',
                        ('http', 'www.python.org', '/', '', '', 'abc')),
                       (RFC1808_BASE,
                        ('http', 'a', '/b/c/d', 'p', 'q', 'f')),
-		      ('file:///tmp/junk.txt',
-		       ('file', '', '/tmp/junk.txt', '', '', '')),
+                      ('file:///tmp/junk.txt',
+                       ('file', '', '/tmp/junk.txt', '', '', '')),
                       ]:
     result = urlparse.urlparse(url)
     print "%-13s = %r" % (url, result)

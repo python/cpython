@@ -253,7 +253,7 @@ class AbstractPickleTests(unittest.TestCase):
         t = time.localtime()
         s = self.dumps(t)
         u = self.loads(s)
-        self.assertEqual(t, u)        
+        self.assertEqual(t, u)
         import os
         if hasattr(os, "stat"):
             t = os.stat(os.curdir)

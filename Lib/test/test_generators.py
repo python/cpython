@@ -816,7 +816,7 @@ This one caused a crash (see SF bug 567538):
 ...             continue
 ...         finally:
 ...             yield i
-... 
+...
 >>> g = f()
 >>> print g.next()
 0

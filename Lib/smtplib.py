@@ -408,7 +408,7 @@ class SMTP:
                 self.esmtp_features["auth"] = self.esmtp_features.get("auth", "") \
                         + " " + auth_match.groups(0)[0]
                 continue
- 
+
             # RFC 1869 requires a space between ehlo keyword and parameters.
             # It's actually stricter, in that only spaces are allowed between
             # parameters, but were not going to check for that here.  Note
@@ -524,7 +524,7 @@ class SMTP:
 
         def encode_plain(user, password):
             return encode_base64("%s\0%s\0%s" % (user, user, password), eol="")
- 
+
 
         AUTH_PLAIN = "PLAIN"
         AUTH_CRAM_MD5 = "CRAM-MD5"

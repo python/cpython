@@ -458,7 +458,7 @@ class ProxyHandler(BaseHandler):
             user_pass, host = host.split('@', 1)
             if ':' in user_pass:
                 user, password = user_pass.split(':', 1)
-                user_pass = base64.encodestring('%s:%s' % (unquote(user), 
+                user_pass = base64.encodestring('%s:%s' % (unquote(user),
                                                            unquote(password)))
                 req.add_header('Proxy-Authorization', 'Basic ' + user_pass)
         host = unquote(host)
