@@ -253,7 +253,6 @@ will raise a ValueError:
 
 """
 
-# [XX] test that it's getting line numbers right.
 def test_DocTestFinder(): r"""
 Unit tests for the `DocTestFinder` class.
 
@@ -450,6 +449,30 @@ using the `recurse` flag:
     >>> for t in tests:
     ...     print '%2s  %s' % (len(t.examples), t.name)
      1  SampleClass
+
+Line numbers
+~~~~~~~~~~~~
+DocTestFinder finds the line number of each example:
+
+    >>> def f(x):
+    ...     '''
+    ...     >>> x = 12
+    ...
+    ...     some text
+    ...
+    ...     >>> # examples are not created for comments & bare prompts.
+    ...     >>>
+    ...     ...
+    ...
+    ...     >>> for x in range(10):
+    ...     ...     print x,
+    ...     0 1 2 3 4 5 6 7 8 9
+    ...     >>> x/2
+    ...     6
+    ...     '''
+    >>> test = doctest.DocTestFinder().find(f)[0]
+    >>> [e.lineno for e in test.examples]
+    [1, 9, 12]
 """
 
 class test_DocTestRunner:
@@ -892,7 +915,7 @@ comment of the form ``# doctest: -OPTION``:
     ...                       optionflags=doctest.ELLIPSIS).run(test)
     **********************************************************************
     Failure in example: print range(10)       # doctest: -ELLIPSIS
-    from line #6 of f
+    from line #5 of f
     Expected: [0, 1, ..., 9]
     Got: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
     (1, 2)
