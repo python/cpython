@@ -68,7 +68,8 @@ elem2
 \begin{methoddesc}{Parse}{data \optional{, isfinal}}
 Parses the contents of the string \var{data}, calling the appropriate
 handler functions to process the parsed data.  \var{isfinal} must be
-true on the final call to this method.    \var{data} can be the empty string at any time.
+true on the final call to this method.    \var{data} can be the empty
+string at any time.
 \end{methoddesc}
 
 \begin{methoddesc}{ParseFile}{file}
@@ -116,7 +117,11 @@ Line number at which an error occurred.
 \end{datadesc}
 
 Here is the list of handlers that can be set.  To set a handler on an
-\class{xmlparser} object \var{o}, use \code{\var{o}.\var{handlername} = \var{func}}.    \var{handlername} must be taken from the following list, and \var{func} must be a callable object accepting the correct number of arguments.  The arguments are all strings, unless otherwise stated.
+\class{xmlparser} object \var{o}, use
+\code{\var{o}.\var{handlername} = \var{func}}.  \var{handlername} must
+be taken from the following list, and \var{func} must be a callable
+object accepting the correct number of arguments.  The arguments are
+all strings, unless otherwise stated.
 
 \begin{methoddesc}{StartElementHandler}{name, attributes}
 Called for the start of every element.  \var{name} is a string
@@ -187,39 +192,9 @@ Called for references to external entities.
 \end{methoddesc}
 
 
+\subsection{Example \label{pyexpat-example}}
 
-
-
-\subsection{\module{pyexpat.errors} -- Error constants}
-
-The following table lists the error constants in the
-\module{pyexpat.errors} submodule, available once the \module{pyexpat} module has been imported.
-
-\begin{tableii}{l|l}{code}{Constants}{}{}
-  \lineii        {XML_ERROR_ASYNC_ENTITY}
-        {XML_ERROR_ATTRIBUTE_EXTERNAL_ENTITY_REF}
-  \lineii        {XML_ERROR_BAD_CHAR_REF}
-        {XML_ERROR_BINARY_ENTITY_REF}
-  \lineii        {XML_ERROR_DUPLICATE_ATTRIBUTE}
-        {XML_ERROR_INCORRECT_ENCODING}
-  \lineii        {XML_ERROR_INVALID_TOKEN}
-        {XML_ERROR_JUNK_AFTER_DOC_ELEMENT}
-  \lineii        {XML_ERROR_MISPLACED_XML_PI}
-        {XML_ERROR_NO_ELEMENTS} 
-  \lineii        {XML_ERROR_NO_MEMORY}
-        {XML_ERROR_PARAM_ENTITY_REF}
-  \lineii        {XML_ERROR_PARTIAL_CHAR}
-        {XML_ERROR_RECURSIVE_ENTITY_REF}
-  \lineii        {XML_ERROR_SYNTAX} 
-	{XML_ERROR_TAG_MISMATCH}
-  \lineii        {XML_ERROR_UNCLOSED_TOKEN}
-        {XML_ERROR_UNDEFINED_ENTITY}
-  \lineii        {XML_ERROR_UNKNOWN_ENCODING}{}
-\end{tableii}
-
-\subsection{Example}
-
-The following program defines 3 handlers that just print out their
+The following program defines three handlers that just print out their
 arguments.
 
 \begin{verbatim}
@@ -260,3 +235,42 @@ End element: child2
 Character data: '\012'
 End element: parent
 \end{verbatim}
+
+
+\section{\module{pyexpat.errors} --- Error constants}
+
+\declaremodule{builtin}{pyexpat.errors}
+\modulesynopsis{Error constants defined for the Expat parser}
+\moduleauthor{Paul Prescod}{paul@prescod.net}
+\sectionauthor{A.M. Kuchling}{amk1@bigfoot.com}
+
+The following table lists the error constants in the
+\module{pyexpat.errors} submodule, available once the
+\refmodule{pyexpat} module has been imported.
+
+Note that this module cannot be imported directly until
+\refmodule{pyexpat} has been imported.
+
+The following constants are defined:
+
+\begin{tableii}{l|l}{code}{Constants}{}
+  \lineii{XML_ERROR_ASYNC_ENTITY}
+        {XML_ERROR_ATTRIBUTE_EXTERNAL_ENTITY_REF}
+  \lineii{XML_ERROR_BAD_CHAR_REF}
+        {XML_ERROR_BINARY_ENTITY_REF}
+  \lineii{XML_ERROR_DUPLICATE_ATTRIBUTE}
+        {XML_ERROR_INCORRECT_ENCODING}
+  \lineii{XML_ERROR_INVALID_TOKEN}
+        {XML_ERROR_JUNK_AFTER_DOC_ELEMENT}
+  \lineii{XML_ERROR_MISPLACED_XML_PI}
+        {XML_ERROR_NO_ELEMENTS} 
+  \lineii{XML_ERROR_NO_MEMORY}
+        {XML_ERROR_PARAM_ENTITY_REF}
+  \lineii{XML_ERROR_PARTIAL_CHAR}
+        {XML_ERROR_RECURSIVE_ENTITY_REF}
+  \lineii{XML_ERROR_SYNTAX} 
+	{XML_ERROR_TAG_MISMATCH}
+  \lineii{XML_ERROR_UNCLOSED_TOKEN}
+        {XML_ERROR_UNDEFINED_ENTITY}
+  \lineii{XML_ERROR_UNKNOWN_ENCODING}{}
+\end{tableii}
