@@ -141,9 +141,11 @@ PyMac_FixGUSIcd()
 	if (PBHSetVol(&pb, 0) != noErr)
 		return;
 
+#if 0
 	/* Set standard-file working directory */
 	LMSetSFSaveDisk(-curdirfss.vRefNum);
 	LMSetCurDirStore(curdirfss.parID);
+#endif
 }
 #endif
 
