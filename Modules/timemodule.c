@@ -321,7 +321,12 @@ time_strftime(self, args)
 	buf.tm_mon--;
 	buf.tm_wday = (buf.tm_wday + 1) % 7;
 	buf.tm_yday--;
+#ifdef HAVE_MKTIME
+	/* This call is only there to adjust the numbers to be within
+	   bounds.  When we don't have mktime(), we say the caller is
+	   responsible for that... */
 	(void) mktime(&buf);
+#endif
 	/* I hate these functions that presume you know how big the output
 	 * will be ahead of time...
 	 */
@@ -380,6 +385,7 @@ time_ctime(self, args)
 	return PyString_FromString(p);
 }
 
+#ifdef HAVE_MKTIME
 static PyObject *
 time_mktime(self, args)
 	PyObject *self;
@@ -399,6 +405,7 @@ time_mktime(self, args)
 	}
 	return PyFloat_FromDouble((double)tt);
 }
+#endif /* HAVE_MKTIME */
 
 static PyMethodDef time_methods[] = {
 	{"time",	time_time},
@@ -410,7 +417,9 @@ static PyMethodDef time_methods[] = {
 	{"localtime",	time_localtime},
 	{"asctime",	time_asctime},
 	{"ctime",	time_ctime},
+#ifdef HAVE_MKTIME
 	{"mktime",	time_mktime},
+#endif
 #ifdef HAVE_STRFTIME
 	{"strftime",	time_strftime, 1},
 #endif
