@@ -20,8 +20,28 @@
 #endif
 
 /* Nothing below this should need to be changed except for copyright
- * notices and company name.
+ * notices, company name, and FIELD3.  Unfortunately, all attempts
+ * to get the resource compiler to do arithmetic in macros have
+ * failed miserably -- it gives syntax errors, ignores operators,
+ * or does stuff that's simply bizarre.
  */
+
+
+/* This is what we'd like FIELD3 to be:
+ *
+ * #define FIELD3 (PY_MICRO_VERSION*1000 + PY_RELEASE_LEVEL*10 + PY_RELEASE_SERIAL)
+ *
+ * but that neither gives an error nor comes anywhere close to working.  The
+ * following comment and #define are output from PCbuild\field3.py:
+ *
+ * For 2.2.2b1,
+ * PY_MICRO_VERSION = 2
+ * PY_RELEASE_LEVEL = 'beta' = 0xb
+ * PY_RELEASE_SERIAL = 1
+ *
+ * and 2*1000 + 11*10 + 1 = 2111
+ */
+#define FIELD3 2111
 
 /* e.g., 2.1a2
  * PY_VERSION comes from patchevel.h
@@ -38,7 +58,6 @@
 #if PY_RELEASE_SERIAL > 9
 #   error "PY_RELEASE_SERIAL > 9"
 #endif
-#define FIELD3 (PY_MICRO_VERSION*1000 + PY_RELEASE_LEVEL*10 + PY_RELEASE_SERIAL)
 #define PYVERSION64 PY_MAJOR_VERSION, PY_MINOR_VERSION, FIELD3, PYTHON_API_VERSION
 
 // String Tables
