@@ -284,9 +284,9 @@ def test():
 			action = PythonIndenter.complete
 		elif o == '-r':
 			action = PythonIndenter.reformat
-		elif p == '-s':
+		elif o == '-s':
 			stepsize = string.atoi(a)
-		elif p == '-t':
+		elif o == '-t':
 			tabsize = string.atoi(a)
 		# end if
 	# end for
