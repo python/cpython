@@ -149,7 +149,8 @@ static PyMethodDef pwd_methods[] = {
 	{"getpwuid",	pwd_getpwuid, METH_OLDARGS, pwd_getpwuid__doc__},
 	{"getpwnam",	pwd_getpwnam, METH_OLDARGS, pwd_getpwnam__doc__},
 #ifdef HAVE_GETPWENT
-	{"getpwall",	pwd_getpwall, METH_NOARGS,  pwd_getpwall__doc__},
+	{"getpwall",	(PyCFunction)pwd_getpwall,
+		METH_NOARGS,  pwd_getpwall__doc__},
 #endif
 	{NULL,		NULL}		/* sentinel */
 };
