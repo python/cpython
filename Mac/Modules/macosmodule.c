@@ -306,6 +306,8 @@ static PyTypeObject Rftype = {
 /*----------------------------------------------------------------------*/
 /* Miscellaneous File System Operations */
 
+static char getcrtp_doc[] = "Obsolete, use macfs module";
+
 static PyObject *
 MacOS_GetCreatorAndType(PyObject *self, PyObject *args)
 {
@@ -325,6 +327,8 @@ MacOS_GetCreatorAndType(PyObject *self, PyObject *args)
 	Py_DECREF(type);
 	return res;
 }
+
+static char setcrtp_doc[] = "Obsolete, use macfs module";
 
 static PyObject *
 MacOS_SetCreatorAndType(PyObject *self, PyObject *args)
@@ -408,6 +412,8 @@ MacOS_SetHighLevelEventHandler(self, args)
 
 #endif /* USE_STDWIN */
 
+static char accepthle_doc[] = "Get arguments of pending high-level event";
+
 static PyObject *
 MacOS_AcceptHighLevelEvent(self, args)
 	PyObject *self;
@@ -441,50 +447,84 @@ MacOS_AcceptHighLevelEvent(self, args)
 	return res;
 }
 
+static char schedparams_doc[] = "Set/return mainloop interrupt check flag, etc";
+
 /*
-** Set poll frequency and cpu-yield-time
+** Set scheduler parameters
 */
 static PyObject *
-MacOS_SetScheduleTimes(PyObject *self, PyObject *args)
+MacOS_SchedParams(PyObject *self, PyObject *args)
 {
-	long fgi, fgy, bgi, bgy;
+	PyMacSchedParams old, new;
 	
-	bgi = bgy = -2;	
-	if (!PyArg_ParseTuple(args, "ll|ll", &fgi, &fgy, &bgi, &bgy))
+	PyMac_GetSchedParams(&old);
+	new = old;
+	if (!PyArg_ParseTuple(args, "|iiidd", &new.check_interrupt, &new.process_events,
+			&new.besocial, &new.check_interval, &new.bg_yield))
 		return NULL;
-	if ( bgi == -2 || bgy == -2 ) {
-		bgi = fgi;
-		bgy = fgy;
-	}
-	PyMac_SetYield(fgi, fgy, bgi, bgy);
-	Py_INCREF(Py_None);
-	return Py_None;
+	PyMac_SetSchedParams(&new);
+	return Py_BuildValue("iiidd", old.check_interrupt, old.process_events,
+			old.besocial, old.check_interval, old.bg_yield);
 }
 
+static char appswitch_doc[] = "Obsolete, use SchedParams";
+
+/* Obsolete, for backward compatability */
 static PyObject *
 MacOS_EnableAppswitch(PyObject *self, PyObject *args)
 {
-	int old, new;
+	int new, old;
+	PyMacSchedParams schp;
 	
 	if (!PyArg_ParseTuple(args, "i", &new))
 		return NULL;
-	old = PyMac_DoYieldEnabled;
-	PyMac_DoYieldEnabled = new;
+	PyMac_GetSchedParams(&schp);
+	if ( schp.process_events )
+		old = 1;
+	else if ( schp.check_interrupt )
+		old = -1;
+	else
+		old = 0;
+	if ( new > 0 ) {
+		schp.process_events = mDownMask|keyDownMask|osMask;
+		schp.check_interrupt = 1;
+	} else if ( new < 0 ) {
+		schp.process_events = 0;
+		schp.check_interrupt = 1;
+	} else {
+		schp.process_events = 0;
+		schp.check_interrupt = 0;
+	}
+	PyMac_SetSchedParams(&schp);
 	return Py_BuildValue("i", old);
 }
 
+static char handleev_doc[] = "Pass event to other interested parties like sioux";
 
 static PyObject *
 MacOS_HandleEvent(PyObject *self, PyObject *args)
 {
 	EventRecord ev;
+	static int inhere;
 	
+	/*
+	** With HandleEvent and SetEventHandler we have a chance of recursive
+	** calls. We check that here (for lack of a better place)
+	*/
+	if ( inhere ) {
+		PyErr_SetString(PyExc_RuntimeError, "Recursive call to MacOS.HandleEvent");
+		return NULL;
+	}
 	if (!PyArg_ParseTuple(args, "O&", PyMac_GetEventRecord, &ev))
 		return NULL;
-	PyMac_HandleEvent(&ev);
+	inhere = 1;
+	PyMac_HandleEvent(&ev, 1);
+	inhere = 0;
 	Py_INCREF(Py_None);
 	return Py_None;
 }
+
+static char geterr_doc[] = "Convert OSErr number to string";
 
 static PyObject *
 MacOS_GetErrorString(PyObject *self, PyObject *args)
@@ -610,19 +650,19 @@ MacOS_openrf(PyObject *self, PyObject *args)
 }
 
 static PyMethodDef MacOS_Methods[] = {
-	{"AcceptHighLevelEvent",	MacOS_AcceptHighLevelEvent, 1},
-	{"GetCreatorAndType",		MacOS_GetCreatorAndType, 1},
-	{"SetCreatorAndType",		MacOS_SetCreatorAndType, 1},
+	{"AcceptHighLevelEvent",	MacOS_AcceptHighLevelEvent, 1,	accepthle_doc},
+	{"GetCreatorAndType",		MacOS_GetCreatorAndType, 1,	getcrtp_doc},
+	{"SetCreatorAndType",		MacOS_SetCreatorAndType, 1,	setcrtp_doc},
 #ifdef USE_STDWIN
 	{"SetHighLevelEventHandler",	MacOS_SetHighLevelEventHandler, 1},
 #endif
-	{"SetScheduleTimes",	MacOS_SetScheduleTimes, 1},
-	{"EnableAppswitch",		MacOS_EnableAppswitch, 1},
-	{"HandleEvent",			MacOS_HandleEvent, 1},
-	{"GetErrorString",		MacOS_GetErrorString, 1},
-	{"openrf",				MacOS_openrf, 1, 	openrf_doc},
-	{"splash",				MacOS_splash, 1, 	splash_doc},
-	{"DebugStr",			MacOS_DebugStr,	1,	DebugStr_doc},
+	{"SchedParams",			MacOS_SchedParams,	1,	schedparams_doc},
+	{"EnableAppswitch",		MacOS_EnableAppswitch,	1,	appswitch_doc},
+	{"HandleEvent",			MacOS_HandleEvent,	1,	handleev_doc},
+	{"GetErrorString",		MacOS_GetErrorString,	1,	geterr_doc},
+	{"openrf",			MacOS_openrf, 		1, 	openrf_doc},
+	{"splash",			MacOS_splash,		1, 	splash_doc},
+	{"DebugStr",			MacOS_DebugStr,		1,	DebugStr_doc},
 	{NULL,				NULL}		 /* Sentinel */
 };
 
