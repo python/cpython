@@ -1,3 +1,5 @@
+# Play CD audio on speaker or headphones.
+
 def playaudio(port, type, audio):
 	port.writesamps(audio)
 
@@ -70,7 +72,5 @@ def main():
 	except KeyboardInterrupt:
 		pass
 	al.setparams(AL.DEFAULT_DEVICE, oldparams)
-	r.player.close()
-	r.parser.deleteparser()
 
 main()
