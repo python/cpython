@@ -199,7 +199,7 @@ class Pickler:
             raise ValueError, "can't specify both 'protocol' and 'bin'"
         if bin is not None:
             warnings.warn("The 'bin' argument to Pickler() is deprecated",
-                          PendingDeprecationWarning)
+                          DeprecationWarning)
             protocol = bin
         if protocol is None:
             protocol = 0
