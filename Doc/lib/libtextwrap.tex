@@ -64,10 +64,10 @@ The \class{TextWrapper} instance attributes (and keyword arguments to
 the constructor) are as follows:
 
 \begin{memberdesc}{width}
-(default: 70) The maximum length of wrapped lines.  As long as there are
-no individual words in the input text longer than \var{width},
-\class{TextWrapper} guarantees that no output line will be longer than
-\var{width} characters.
+(default: \code{70}) The maximum length of wrapped lines.  As long as
+there are no individual words in the input text longer than
+\member{width}, \class{TextWrapper} guarantees that no output line
+will be longer than \member{width} characters.
 \end{memberdesc}
 
 \begin{memberdesc}{expand_tabs}
@@ -77,11 +77,12 @@ will be expanded to spaces using the \method{expand_tabs()} method of
 \end{memberdesc}
 
 \begin{memberdesc}{replace_whitespace}
-(default: \code{True}) If true, each whitespace character (as defined by
-\var{string.whitespace}) remaining after tab expansion will be replaced
-by a single space.  \note{If \var{expand_tabs} is false and
-\var{replace_whitespace} is true, each tab character will be replaced by
-a single space, which is \emph{not} the same as tab expansion.}
+(default: \code{True}) If true, each whitespace character (as defined
+by \code{string.whitespace}) remaining after tab expansion will be
+replaced by a single space.  \note{If \member{expand_tabs} is false
+and \member{replace_whitespace} is true, each tab character will be
+replaced by a single space, which is \emph{not} the same as tab
+expansion.}
 \end{memberdesc}
 
 \begin{memberdesc}{initial_indent}
@@ -106,35 +107,42 @@ by one of \character{.},
 \character{"} or \character{'}, followed by a space.  One problem
 with this is algorithm is that it is unable to detect the difference
 between ``Dr.'' in
+
 \begin{verbatim}
 [...] Dr. Frankenstein's monster [...]
 \end{verbatim}
+
 and ``Spot.'' in
+
 \begin{verbatim}
 [...] See Spot. See Spot run [...]
 \end{verbatim}
-Furthermore, since it relies on \var{string.lowercase} for the
-definition of ``lowercase letter'', it is specific to English-language
-texts.  Thus, \var{fix_sentence_endings} is false by default.
+
+\member{fix_sentence_endings} is false by default.
+
+Since the sentence detection algorithm relies on
+\code{string.lowercase} for the definition of ``lowercase letter,''
+and a convention of using two spaces after a period to separate
+sentences on the same line, it is specific to English-language texts.
 \end{memberdesc}
 
 \begin{memberdesc}{break_long_words}
 (default: \code{True}) If true, then words longer than
-\var{width} will be broken in order to ensure that no lines are longer
-than \var{width}.  If it is false, long words will not be broken, and
-some lines may be longer than
-\var{width}.  (Long words will be put on a line by themselves, in order
-to minimize the amount by which \var{width} is exceeded.)
+\member{width} will be broken in order to ensure that no lines are
+longer than \member{width}.  If it is false, long words will not be
+broken, and some lines may be longer than \member{width}.  (Long words
+will be put on a line by themselves, in order to minimize the amount
+by which \member{width} is exceeded.)
 \end{memberdesc}
 
 \class{TextWrapper} also provides two public methods, analogous to the
 module-level convenience functions:
 
 \begin{methoddesc}{wrap}{text}
-Wraps the single paragraph in \var{text} (a string) so every line is at
-most \var{width} characters long.  All wrapping options are taken from
-instance attributes of the \class{TextWrapper} instance.  Returns a list
-of output lines, without final newlines.
+Wraps the single paragraph in \var{text} (a string) so every line is
+at most \member{width} characters long.  All wrapping options are
+taken from instance attributes of the \class{TextWrapper} instance.
+Returns a list of output lines, without final newlines.
 \end{methoddesc}
 
 \begin{methoddesc}{fill}{text}
