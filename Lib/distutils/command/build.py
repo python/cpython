@@ -90,7 +90,8 @@ class build (Command):
             self.build_temp = os.path.join(self.build_base,
                                            'temp' + plat_specifier)
         if self.build_scripts is None:
-            self.build_scripts = os.path.join(self.build_base, 'scripts')
+            self.build_scripts = os.path.join(self.build_base,
+                                              'scripts-' + sys.version[0:3])
 
     # finalize_options ()
 
