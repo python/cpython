@@ -97,7 +97,9 @@ Notes:
 ``Konqueror'' is the file manager for the KDE desktop environment for
 UNIX, and only makes sense to use if KDE is running.  Some way of
 reliably detecting KDE would be nice; the \envvar{KDEDIR} variable is
-not sufficient.
+not sufficient.  Note also that the name ``kfm'' is used even when
+using the \program{konqueror} command with KDE 2 --- the
+implementation selects the best strategy for running Konqueror.
 
 \item[(2)]
 Only on Windows platforms; requires the common
