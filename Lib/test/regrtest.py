@@ -693,7 +693,6 @@ _expectations = {
         test_largefile
         test_linuxaudiodev
         test_mhlib
-        test_mpz
         test_nis
         test_openpty
         test_ossaudiodev
@@ -750,7 +749,6 @@ _expectations = {
         test_linuxaudiodev
         test_locale
         test_mmap
-        test_mpz
         test_nis
         test_ntpath
         test_openpty
@@ -901,7 +899,6 @@ _expectations = {
         test_linuxaudiodev
         test_locale
         test_minidom
-        test_mpz
         test_nis
         test_ntpath
         test_ossaudiodev
@@ -923,7 +920,6 @@ _expectations = {
         test_gzip
         test_imgfile
         test_linuxaudiodev
-        test_mpz
         test_openpty
         test_zipfile
         test_zlib
