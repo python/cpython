@@ -152,7 +152,7 @@ class TestExceptionPropagation(unittest.TestCase):
         self.assertRaises(TypeError, Set, baditer())
 
     def test_instancesWithoutException(self):
-        """All of these iterables should load without exception."""
+        # All of these iterables should load without exception.
         Set([1,2,3])
         Set((1,2,3))
         Set({'one':1, 'two':2, 'three':3})
@@ -392,15 +392,15 @@ class TestMutate(unittest.TestCase):
             self.failUnless(v in popped)
 
     def test_update_empty_tuple(self):
-        self.set.update(())
+        self.set.union_update(())
         self.assertEqual(self.set, Set(self.values))
 
     def test_update_unit_tuple_overlap(self):
-        self.set.update(("a",))
+        self.set.union_update(("a",))
         self.assertEqual(self.set, Set(self.values))
 
     def test_update_unit_tuple_non_overlap(self):
-        self.set.update(("a", "z"))
+        self.set.union_update(("a", "z"))
         self.assertEqual(self.set, Set(self.values + ["z"]))
 
 #==============================================================================
@@ -503,7 +503,7 @@ class TestOnlySetsInBinaryOps(unittest.TestCase):
         self.assertRaises(TypeError, lambda: self.other > self.set)
         self.assertRaises(TypeError, lambda: self.other >= self.set)
 
-    def test_union_update(self):
+    def test_union_update_operator(self):
         try:
             self.set |= self.other
         except TypeError:
@@ -511,11 +511,21 @@ class TestOnlySetsInBinaryOps(unittest.TestCase):
         else:
             self.fail("expected TypeError")
 
+    def test_union_update(self):
+        if self.otherIsIterable:
+            self.set.union_update(self.other)
+        else:
+            self.assertRaises(TypeError, self.set.union_update, self.other)
+
     def test_union(self):
         self.assertRaises(TypeError, lambda: self.set | self.other)
         self.assertRaises(TypeError, lambda: self.other | self.set)
+        if self.otherIsIterable:
+            self.set.union(self.other)
+        else:
+            self.assertRaises(TypeError, self.set.union, self.other)
 
-    def test_intersection_update(self):
+    def test_intersection_update_operator(self):
         try:
             self.set &= self.other
         except TypeError:
@@ -523,11 +533,23 @@ class TestOnlySetsInBinaryOps(unittest.TestCase):
         else:
             self.fail("expected TypeError")
 
+    def test_intersection_update(self):
+        if self.otherIsIterable:
+            self.set.intersection_update(self.other)
+        else:
+            self.assertRaises(TypeError,
+                              self.set.intersection_update,
+                              self.other)
+
     def test_intersection(self):
         self.assertRaises(TypeError, lambda: self.set & self.other)
         self.assertRaises(TypeError, lambda: self.other & self.set)
+        if self.otherIsIterable:
+            self.set.intersection(self.other)
+        else:
+            self.assertRaises(TypeError, self.set.intersection, self.other)
 
-    def test_sym_difference_update(self):
+    def test_sym_difference_update_operator(self):
         try:
             self.set ^= self.other
         except TypeError:
@@ -535,11 +557,23 @@ class TestOnlySetsInBinaryOps(unittest.TestCase):
         else:
             self.fail("expected TypeError")
 
+    def test_sym_difference_update(self):
+        if self.otherIsIterable:
+            self.set.symmetric_difference_update(self.other)
+        else:
+            self.assertRaises(TypeError,
+                              self.set.symmetric_difference_update,
+                              self.other)
+
     def test_sym_difference(self):
         self.assertRaises(TypeError, lambda: self.set ^ self.other)
         self.assertRaises(TypeError, lambda: self.other ^ self.set)
+        if self.otherIsIterable:
+            self.set.symmetric_difference(self.other)
+        else:
+            self.assertRaises(TypeError, self.set.symmetric_difference, self.other)
 
-    def test_difference_update(self):
+    def test_difference_update_operator(self):
         try:
             self.set -= self.other
         except TypeError:
@@ -547,16 +581,28 @@ class TestOnlySetsInBinaryOps(unittest.TestCase):
         else:
             self.fail("expected TypeError")
 
+    def test_difference_update(self):
+        if self.otherIsIterable:
+            self.set.difference_update(self.other)
+        else:
+            self.assertRaises(TypeError,
+                              self.set.difference_update,
+                              self.other)
+
     def test_difference(self):
         self.assertRaises(TypeError, lambda: self.set - self.other)
         self.assertRaises(TypeError, lambda: self.other - self.set)
-
+        if self.otherIsIterable:
+            self.set.difference(self.other)
+        else:
+            self.assertRaises(TypeError, self.set.difference, self.other)
 #------------------------------------------------------------------------------
 
 class TestOnlySetsNumeric(TestOnlySetsInBinaryOps):
     def setUp(self):
         self.set   = Set((1, 2, 3))
         self.other = 19
+        self.otherIsIterable = False
 
 #------------------------------------------------------------------------------
 
@@ -564,6 +610,7 @@ class TestOnlySetsDict(TestOnlySetsInBinaryOps):
     def setUp(self):
         self.set   = Set((1, 2, 3))
         self.other = {1:2, 3:4}
+        self.otherIsIterable = True
 
 #------------------------------------------------------------------------------
 
@@ -571,6 +618,34 @@ class TestOnlySetsOperator(TestOnlySetsInBinaryOps):
     def setUp(self):
         self.set   = Set((1, 2, 3))
         self.other = operator.add
+        self.otherIsIterable = False
+
+#------------------------------------------------------------------------------
+
+class TestOnlySetsTuple(TestOnlySetsInBinaryOps):
+    def setUp(self):
+        self.set   = Set((1, 2, 3))
+        self.other = (2, 4, 6)
+        self.otherIsIterable = True
+
+#------------------------------------------------------------------------------
+
+class TestOnlySetsString(TestOnlySetsInBinaryOps):
+    def setUp(self):
+        self.set   = Set((1, 2, 3))
+        self.other = 'abc'
+        self.otherIsIterable = True
+
+#------------------------------------------------------------------------------
+
+class TestOnlySetsGenerator(TestOnlySetsInBinaryOps):
+    def setUp(self):
+        def gen():
+            for i in xrange(0, 10, 2):
+                yield i
+        self.set   = Set((1, 2, 3))
+        self.other = gen()
+        self.otherIsIterable = True
 
 #==============================================================================
 
@@ -625,6 +700,49 @@ class TestCopyingNested(TestCopying):
 
 #==============================================================================
 
+class TestIdentities(unittest.TestCase):
+    def setUp(self):
+        self.a = Set('abracadabra')
+        self.b = Set('alacazam')
+
+    def test_binopsVsSubsets(self):
+        a, b = self.a, self.b
+        self.assert_(a - b < a)
+        self.assert_(b - a < b)
+        self.assert_(a & b < a)
+        self.assert_(a & b < b)
+        self.assert_(a | b > a)
+        self.assert_(a | b > b)
+        self.assert_(a ^ b < a | b)
+
+    def test_commutativity(self):
+        a, b = self.a, self.b
+        self.assertEqual(a&b, b&a)
+        self.assertEqual(a|b, b|a)
+        self.assertEqual(a^b, b^a)
+        if a != b:
+            self.assertNotEqual(a-b, b-a)
+
+    def test_summations(self):
+        # check that sums of parts equal the whole
+        a, b = self.a, self.b
+        self.assertEqual((a-b)|(a&b)|(b-a), a|b)
+        self.assertEqual((a&b)|(a^b), a|b)
+        self.assertEqual(a|(b-a), a|b)
+        self.assertEqual((a-b)|b, a|b)
+        self.assertEqual((a-b)|(a&b), a)
+        self.assertEqual((b-a)|(a&b), b)
+        self.assertEqual((a-b)|(b-a), a^b)
+
+    def test_exclusion(self):
+        # check that inverse operations show non-overlap
+        a, b, zero = self.a, self.b, Set()
+        self.assertEqual((a-b)&b, zero)
+        self.assertEqual((b-a)&a, zero)
+        self.assertEqual((a&b)&(a^b), zero)
+
+#==============================================================================
+
 libreftest = """
 Example from the Library Reference:  Doc/lib/libsets.tex
 
@@ -643,7 +761,7 @@ Example from the Library Reference:  Doc/lib/libsets.tex
 Set(['Jack', 'Jane', 'Janice', 'John', 'Marvin'])
 >>> employees.issuperset(engineers)           # superset test
 False
->>> employees.update(engineers)               # update from another set
+>>> employees.union_update(engineers)         # update from another set
 >>> employees.issuperset(engineers)
 True
 >>> for group in [engineers, programmers, managers, employees]:
@@ -680,11 +798,15 @@ def test_main(verbose=None):
         TestOnlySetsNumeric,
         TestOnlySetsDict,
         TestOnlySetsOperator,
+        TestOnlySetsTuple,
+        TestOnlySetsString,
+        TestOnlySetsGenerator,
         TestCopyingEmpty,
         TestCopyingSingleton,
         TestCopyingTriple,
         TestCopyingTuple,
-        TestCopyingNested
+        TestCopyingNested,
+        TestIdentities,
     )
     test_support.run_doctest(test_sets, verbose)
 
