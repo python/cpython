@@ -987,11 +987,11 @@ Run the debugger on the docstring, and then restore sys.stdin.
 def test_pdb_set_trace():
     r"""Using pdb.set_trace from a doctest
 
-    You can use pdb.set_trace from a doctest. To do so, you must
+    You can use pdb.set_trace from a doctest.  To do so, you must
     retrieve the set_trace function from the pdb module at the time
-    you use it. The doctest module changes sys,stdout so that it can
-    capture program output. It also temporarily replaces pdb.set_trace
-    with a version that restores stdout. This is necessary for you to
+    you use it.  The doctest module changes sys.stdout so that it can
+    capture program output.  It also temporarily replaces pdb.set_trace
+    with a version that restores stdout.  This is necessary for you to
     see debugger output.
 
       >>> doc = '''
@@ -1041,8 +1041,7 @@ def test_pdb_set_trace():
       ... >>> calls_set_trace()
       ... '''
       >>> test = doctest.DocTest(doc, globals(), "foo", "foo.py", 0)
-      
-      >>> import tempfile
+
       >>> fake_stdin = tempfile.TemporaryFile(mode='w+')
       >>> fake_stdin.write('\n'.join([
       ...    'up',       # up out of pdb.set_trace
