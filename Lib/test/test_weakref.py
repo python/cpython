@@ -168,7 +168,8 @@ class ReferencesTestCase(TestBase):
         p[:] = [2, 3]
         self.assertEqual(len(L), 2)
         self.assertEqual(len(p), 2)
-        self.failUnless(3 in p, "proxy didn't support __contains__() properly")
+        self.failUnless(3 in p,
+                        "proxy didn't support __contains__() properly")
         p[1] = 5
         self.assertEqual(L[1], 5)
         self.assertEqual(p[1], 5)
@@ -398,7 +399,8 @@ class MappingTestCase(TestBase):
         values = dict.values()
         for v in dict.itervalues():
             values.remove(v)
-        self.assert_(len(values) == 0, "itervalues() did not touch all values")
+        self.assert_(len(values) == 0,
+                     "itervalues() did not touch all values")
 
     def test_make_weak_keyed_dict_from_dict(self):
         o = Object(3)
@@ -589,14 +591,14 @@ class MappingTestCase(TestBase):
 from test_userdict import TestMappingProtocol
 
 class WeakValueDictionaryTestCase(TestMappingProtocol):
-    """Check that WeakValueDictionary class conforms to the mapping protocol"""
+    """Check that WeakValueDictionary conforms to the mapping protocol"""
     __ref = {"key1":Object(1), "key2":Object(2), "key3":Object(3)}
     _tested_class = weakref.WeakValueDictionary
     def _reference(self):
         return self.__ref.copy()
 
 class WeakKeyDictionaryTestCase(TestMappingProtocol):
-    """Check that WeakKeyDictionary class conforms to the mapping protocol"""
+    """Check that WeakKeyDictionary conforms to the mapping protocol"""
     __ref = {Object("key1"):1, Object("key2"):2, Object("key3"):3}
     _tested_class = weakref.WeakKeyDictionary
     def _reference(self):
@@ -607,8 +609,8 @@ def test_main():
         ReferencesTestCase,
         MappingTestCase,
         WeakValueDictionaryTestCase,
-        WeakKeyDictionaryTestCase
-    )
+        WeakKeyDictionaryTestCase,
+        )
 
 
 if __name__ == "__main__":
