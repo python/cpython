@@ -260,8 +260,8 @@ yellow 5
 \begin{itemize}
 
 \item The machinery for growing and shrinking lists was optimized
- for speed and for space efficiency.  Small lists (under six elements)
- never over-allocate by more than one element.  Large lists do not
+ for speed and for space efficiency.  Small lists (under eight elements)
+ never over-allocate by more than three elements.  Large lists do not
  over-allocate by more than 1/8th.  Appending and popping from lists
  now runs faster due to more efficient code paths and less frequent
  use of the underlying system realloc().  List comprehensions also

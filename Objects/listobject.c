@@ -30,13 +30,10 @@ list_resize(PyListObject *self, int newsize)
 	 * for additional growth.  The over-allocation is mild, but is
 	 * enough to give linear-time amortized behavior over a long
 	 * sequence of appends() in the presence of a poorly-performing
-	 * system realloc() (which is a reality, e.g., across all flavors
-	 * of Windows, with Win9x behavior being particularly bad -- and
-	 * we've still got address space fragmentation problems on Win9x
-	 * even with this scheme, although it requires much longer lists to
-	 * provoke them than it used to).
+	 * system realloc().
+	 * The growth pattern is:  0, 4, 8, 16, 25, 35, 46, 58, 72, 88, ...
 	 */
-	_new_size = (newsize >> 3) + (self->ob_size < 3 ? 1 : 6) + newsize;
+	_new_size = (newsize >> 3) + (self->ob_size < 8 ? 3 : 6) + newsize;
 	items = self->ob_item;
 	if (_new_size <= ((~(size_t)0) / sizeof(PyObject *)))
 		PyMem_RESIZE(items, PyObject *, _new_size);
@@ -315,8 +312,6 @@ list_length(PyListObject *a)
 {
 	return a->ob_size;
 }
-
-
 
 static int
 list_contains(PyListObject *a, PyObject *el)
