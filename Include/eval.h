@@ -1,9 +1,3 @@
-#ifndef Py_EVAL_H
-#define Py_EVAL_H
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /***********************************************************
 Copyright (c) 2000, BeOpen.com.
 Copyright (c) 1995-2000, Corporation for National Research Initiatives.
@@ -16,7 +10,13 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 /* Interface to execute compiled code */
 
-DL_IMPORT(PyObject *) PyEval_EvalCode Py_PROTO((PyCodeObject *, PyObject *, PyObject *));
+#ifndef Py_EVAL_H
+#define Py_EVAL_H
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+DL_IMPORT(PyObject *) PyEval_EvalCode(PyCodeObject *, PyObject *, PyObject *);
 
 #ifdef __cplusplus
 }
