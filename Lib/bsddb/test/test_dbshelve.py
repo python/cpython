@@ -10,7 +10,7 @@ import unittest
 
 from bsddb import dbshelve, db
 
-from test.test_support import verbose
+from test_all import verbose
 
 
 #----------------------------------------------------------------------
@@ -143,6 +143,7 @@ class DBShelveTestCase(unittest.TestCase):
             key, value = rec
             self.checkrec(key, value)
             rec = c.next()
+        del c
 
         assert count == len(d)
 
@@ -162,9 +163,7 @@ class DBShelveTestCase(unittest.TestCase):
         c.set('SS')
         key, value = c.current()
         self.checkrec(key, value)
-
-        c.close()
-
+        del c
 
 
 
@@ -202,8 +201,6 @@ class BasicShelveTestCase(DBShelveTestCase):
         self.d.close()
 
 
-
-
 class BTreeShelveTestCase(BasicShelveTestCase):
     dbtype = db.DB_BTREE
     dbflags = db.DB_CREATE
@@ -228,7 +225,8 @@ class ThreadHashShelveTestCase(BasicShelveTestCase):
 
 class BasicEnvShelveTestCase(DBShelveTestCase):
     def do_open(self):
-        self.homeDir = homeDir = os.path.join(os.path.dirname(sys.argv[0]), 'db_home')
+        self.homeDir = homeDir = os.path.join(
+            os.path.dirname(sys.argv[0]), 'db_home')
         try: os.mkdir(homeDir)
         except os.error: pass
         self.env = db.DBEnv()
@@ -283,21 +281,21 @@ class EnvThreadHashShelveTestCase(BasicEnvShelveTestCase):
 
 #----------------------------------------------------------------------
 
-def suite():
-    theSuite = unittest.TestSuite()
+def test_suite():
+    suite = unittest.TestSuite()
 
-    theSuite.addTest(unittest.makeSuite(DBShelveTestCase))
-    theSuite.addTest(unittest.makeSuite(BTreeShelveTestCase))
-    theSuite.addTest(unittest.makeSuite(HashShelveTestCase))
-    theSuite.addTest(unittest.makeSuite(ThreadBTreeShelveTestCase))
-    theSuite.addTest(unittest.makeSuite(ThreadHashShelveTestCase))
-    theSuite.addTest(unittest.makeSuite(EnvBTreeShelveTestCase))
-    theSuite.addTest(unittest.makeSuite(EnvHashShelveTestCase))
-    theSuite.addTest(unittest.makeSuite(EnvThreadBTreeShelveTestCase))
-    theSuite.addTest(unittest.makeSuite(EnvThreadHashShelveTestCase))
+    suite.addTest(unittest.makeSuite(DBShelveTestCase))
+    suite.addTest(unittest.makeSuite(BTreeShelveTestCase))
+    suite.addTest(unittest.makeSuite(HashShelveTestCase))
+    suite.addTest(unittest.makeSuite(ThreadBTreeShelveTestCase))
+    suite.addTest(unittest.makeSuite(ThreadHashShelveTestCase))
+    suite.addTest(unittest.makeSuite(EnvBTreeShelveTestCase))
+    suite.addTest(unittest.makeSuite(EnvHashShelveTestCase))
+    suite.addTest(unittest.makeSuite(EnvThreadBTreeShelveTestCase))
+    suite.addTest(unittest.makeSuite(EnvThreadHashShelveTestCase))
 
-    return theSuite
+    return suite
 
 
 if __name__ == '__main__':
-    unittest.main( defaultTest='suite' )
+    unittest.main(defaultTest='test_suite')

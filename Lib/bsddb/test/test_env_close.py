@@ -1,17 +1,27 @@
-"""
-TestCases for checking that it does not segfault when a DBEnv object
+"""TestCases for checking that it does not segfault when a DBEnv object
 is closed before its DB objects.
 """
 
-import sys, os, string
-from pprint import pprint
+import os
+import sys
 import tempfile
 import glob
 import unittest
 
 from bsddb import db
 
-from test.test_support import verbose
+from test_all import verbose
+
+# We're going to get warnings in this module about trying to close the db when
+# its env is already closed.  Let's just ignore those.
+try:
+    import warnings
+except ImportError:
+    pass
+else:
+    warnings.filterwarnings('ignore',
+                            message='DB could not be closed in',
+                            category=RuntimeWarning)
 
 
 #----------------------------------------------------------------------
@@ -33,7 +43,9 @@ class DBEnvClosedEarlyCrash(unittest.TestCase):
 
     def test01_close_dbenv_before_db(self):
         dbenv = db.DBEnv()
-        dbenv.open(self.homeDir,db.DB_INIT_CDB| db.DB_CREATE |db.DB_THREAD|db.DB_INIT_MPOOL, 0666)
+        dbenv.open(self.homeDir,
+                   db.DB_INIT_CDB| db.DB_CREATE |db.DB_THREAD|db.DB_INIT_MPOOL,
+                   0666)
 
         d = db.DB(dbenv)
         d.open(self.filename, db.DB_BTREE, db.DB_CREATE | db.DB_THREAD, 0666)
@@ -45,14 +57,18 @@ class DBEnvClosedEarlyCrash(unittest.TestCase):
                 d.close()
             except db.DBError:
                 return
-            assert 0, "DB close did not raise an exception about its DBEnv being trashed"
+            assert 0, \
+                   "DB close did not raise an exception about its "\
+                   "DBEnv being trashed"
 
         assert 0, "dbenv did not raise an exception about its DB being open"
 
 
     def test02_close_dbenv_delete_db_success(self):
         dbenv = db.DBEnv()
-        dbenv.open(self.homeDir,db.DB_INIT_CDB| db.DB_CREATE |db.DB_THREAD|db.DB_INIT_MPOOL, 0666)
+        dbenv.open(self.homeDir,
+                   db.DB_INIT_CDB| db.DB_CREATE |db.DB_THREAD|db.DB_INIT_MPOOL,
+                   0666)
 
         d = db.DB(dbenv)
         d.open(self.filename, db.DB_BTREE, db.DB_CREATE | db.DB_THREAD, 0666)
@@ -62,8 +78,6 @@ class DBEnvClosedEarlyCrash(unittest.TestCase):
         except db.DBError:
             pass  # good, it should raise an exception
 
-        # this should not raise an exception, it should silently skip
-        # the db->close() call as it can't be done safely.
         del d
         try:
             import gc
@@ -76,9 +90,11 @@ class DBEnvClosedEarlyCrash(unittest.TestCase):
 
 #----------------------------------------------------------------------
 
-def suite():
-    return unittest.makeSuite(DBEnvClosedEarlyCrash)
+def test_suite():
+    suite = unittest.TestSuite()
+    suite.addTest(unittest.makeSuite(DBEnvClosedEarlyCrash))
+    return suite
 
 
 if __name__ == '__main__':
-    unittest.main( defaultTest='suite' )
+    unittest.main(defaultTest='test_suite')

@@ -33,14 +33,7 @@
 #----------------------------------------------------------------------
 
 
-"""
-This package initialization module provides a compatibility interface
-that should enable bsddb3 to be a near drop-in replacement for the original
-old bsddb module.  The functions and classes provided here are all
-wrappers around the new functionality provided in the bsddb3.db module.
-
-People interested in the more advanced capabilites of Berkeley DB 3.x
-should use the bsddb3.db module directly.
+"""Support for BerkeleyDB 3.1 through 4.1.
 """
 
 try:
@@ -55,7 +48,7 @@ except ImportError:
 _db = _bsddb
 __version__ = _db.__version__
 
-error = _db.DBError  # So bsddb3.error will mean something...
+error = _db.DBError  # So bsddb.error will mean something...
 
 #----------------------------------------------------------------------
 

@@ -16,7 +16,7 @@ except ImportError:
 
 
 import unittest
-from test.test_support import verbose
+from test_all import verbose
 
 from bsddb import db
 
@@ -68,15 +68,24 @@ class LockingTestCase(unittest.TestCase):
             print "Running %s.test02_threaded..." % self.__class__.__name__
 
         threads = []
-        threads.append(Thread(target = self.theThread, args=(5, db.DB_LOCK_WRITE)))
-        threads.append(Thread(target = self.theThread, args=(1, db.DB_LOCK_READ)))
-        threads.append(Thread(target = self.theThread, args=(1, db.DB_LOCK_READ)))
-        threads.append(Thread(target = self.theThread, args=(1, db.DB_LOCK_WRITE)))
-        threads.append(Thread(target = self.theThread, args=(1, db.DB_LOCK_READ)))
-        threads.append(Thread(target = self.theThread, args=(1, db.DB_LOCK_READ)))
-        threads.append(Thread(target = self.theThread, args=(1, db.DB_LOCK_WRITE)))
-        threads.append(Thread(target = self.theThread, args=(1, db.DB_LOCK_WRITE)))
-        threads.append(Thread(target = self.theThread, args=(1, db.DB_LOCK_WRITE)))
+        threads.append(Thread(target = self.theThread,
+                              args=(5, db.DB_LOCK_WRITE)))
+        threads.append(Thread(target = self.theThread,
+                              args=(1, db.DB_LOCK_READ)))
+        threads.append(Thread(target = self.theThread,
+                              args=(1, db.DB_LOCK_READ)))
+        threads.append(Thread(target = self.theThread,
+                              args=(1, db.DB_LOCK_WRITE)))
+        threads.append(Thread(target = self.theThread,
+                              args=(1, db.DB_LOCK_READ)))
+        threads.append(Thread(target = self.theThread,
+                              args=(1, db.DB_LOCK_READ)))
+        threads.append(Thread(target = self.theThread,
+                              args=(1, db.DB_LOCK_WRITE)))
+        threads.append(Thread(target = self.theThread,
+                              args=(1, db.DB_LOCK_WRITE)))
+        threads.append(Thread(target = self.theThread,
+                              args=(1, db.DB_LOCK_WRITE)))
 
         for t in threads:
             t.start()
@@ -109,16 +118,16 @@ class LockingTestCase(unittest.TestCase):
 
 #----------------------------------------------------------------------
 
-def suite():
-    theSuite = unittest.TestSuite()
+def test_suite():
+    suite = unittest.TestSuite()
 
     if have_threads:
-        theSuite.addTest(unittest.makeSuite(LockingTestCase))
+        suite.addTest(unittest.makeSuite(LockingTestCase))
     else:
-        theSuite.addTest(unittest.makeSuite(LockingTestCase, 'test01'))
+        suite.addTest(unittest.makeSuite(LockingTestCase, 'test01'))
 
-    return theSuite
+    return suite
 
 
 if __name__ == '__main__':
-    unittest.main( defaultTest='suite' )
+    unittest.main(defaultTest='test_suite')

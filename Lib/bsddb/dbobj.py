@@ -17,7 +17,6 @@
 
 import db
 
-
 class DBEnv:
     def __init__(self, *args, **kwargs):
         self._cobj = apply(db.DBEnv, args, kwargs)
@@ -76,6 +75,14 @@ class DBEnv:
         return apply(self._cobj.log_archive, args, kwargs)
     def set_get_returns_none(self, *args, **kwargs):
         return apply(self._cobj.set_get_returns_none, args, kwargs)
+
+    if db.version() >= (4,1):
+        def dbremove(self, *args, **kwargs):
+            return apply(self._cobj.dbremove, args, kwargs)
+        def dbrename(self, *args, **kwargs):
+            return apply(self._cobj.dbrename, args, kwargs)
+        def set_encrypt(self, *args, **kwargs):
+            return apply(self._cobj.set_encrypt, args, kwargs)
 
 
 class DB:
@@ -175,3 +182,8 @@ class DB:
         return apply(self._cobj.verify, args, kwargs)
     def set_get_returns_none(self, *args, **kwargs):
         return apply(self._cobj.set_get_returns_none, args, kwargs)
+
+    if db.version() >= (4,1):
+        def set_encrypt(self, *args, **kwargs):
+            return apply(self._cobj.set_encrypt, args, kwargs)
+
