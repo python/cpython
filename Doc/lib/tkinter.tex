@@ -99,6 +99,7 @@ The \class{Tk} class is instantiated without arguments.
 This creates a toplevel widget of Tk which usually is the main window
 of an appliation. Each instance has its own associated Tcl interpreter.
 % FIXME: The following keyword arguments are currently recognized:
+\versionchanged[The \var{useTk} parameter was added]{2.4}
 \end{classdesc}
 
 \begin{funcdesc}{Tcl}{screenName=None, baseName=None, className='Tk', useTk=0}
@@ -110,6 +111,7 @@ toplevel windows, or where one cannot (i.e. Unix/Linux systems without an X
 server).  An object created by the \function{Tcl} object can have a Toplevel
 window created (and the Tk subsystem initialized) by calling its
 \method{loadtk} method.
+\versionadded{2.4}
 \end{funcdesc}
 
 Other modules that provide Tk support include:
