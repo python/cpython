@@ -65,6 +65,9 @@ Extension modules
 Library
 -------
 
+- Bastion.py and rexec.py are disabled.  These modules are not safe in
+  Python 2.2. or 2.3.
+
 - realpath is now exported when doing from poxixpath import *.
   It is also exported for ntpath, macpath, and os2emxpath.
   See SF bug #659228.
