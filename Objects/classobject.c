@@ -619,9 +619,9 @@ instance_nonzero(self)
 	object *func, *res;
 	long outcome;
 
-	if ((func = instance_getattr(self, "__len__")) == NULL) {
+	if ((func = instance_getattr(self, "__nonzero__")) == NULL) {
 		err_clear();
-		if ((func = instance_getattr(self, "__nonzero__")) == NULL) {
+		if ((func = instance_getattr(self, "__len__")) == NULL) {
 			err_clear();
 			/* Fall back to the default behavior:
 			   all instances are nonzero */

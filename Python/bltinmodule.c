@@ -616,6 +616,34 @@ builtin_repr(self, v)
 }
 
 static object *
+builtin_round(self, args)
+	object *self;
+	object *args;
+{
+	extern double floor PROTO((double));
+	extern double ceil PROTO((double));
+	double x;
+	double f;
+	int ndigits = 0;
+	int sign = 1;
+	int i;
+	if (!getargs(args, "d", &x)) {
+		err_clear();
+		if (!getargs(args, "(di)", &x, &ndigits))
+			return NULL;
+	}
+	f = 1.0;
+	for (i = ndigits; --i >= 0; )
+		f = f*10.0;
+	for (i = ndigits; ++i <= 0; )
+		f = f*0.1;
+	if (x >= 0.0)
+		return newfloatobject(floor(x*f + 0.5) / f);
+	else
+		return newfloatobject(ceil(x*f - 0.5) / f);
+}
+
+static object *
 builtin_str(self, v)
 	object *self;
 	object *v;
@@ -674,6 +702,7 @@ static struct methodlist builtin_methods[] = {
 	{"raw_input",	builtin_raw_input},
 	{"reload",	builtin_reload},
 	{"repr",	builtin_repr},
+	{"round",	builtin_round},
 	{"setattr",	builtin_setattr},
 	{"str",		builtin_str},
 	{"type",	builtin_type},
@@ -766,7 +795,7 @@ coerce(pv, pw)
 	register object *w = *pw;
 	int res;
 
-	if (v->ob_type == w->ob_type) {
+	if (v->ob_type == w->ob_type && !is_instanceobject(v)) {
 		INCREF(v);
 		INCREF(w);
 		return 0;
