@@ -82,7 +82,6 @@ _PyBuffer_FromObject(base, offset, size, proc, readonly)
 	PyBufferProcs *pb = base->ob_type->tp_as_buffer;
 	void *p;
 	int count;
-	PyBufferObject *b;
 
 	if ( (*pb->bf_getsegcount)(base, NULL) != 1 )
 	{
@@ -221,18 +220,18 @@ buffer_repr(self)
 
 	if ( self->b_base == NULL )
 	{
-		sprintf(buf, "<%s buffer ptr %lx, size %ld at %lx>",
+		sprintf(buf, "<%s buffer ptr %lx, size %d at %lx>",
 			status,
-			self->b_ptr,
+			(long)self->b_ptr,
 			self->b_size,
 			(long)self);
 	}
 	else
 	{
-		sprintf(buf, "<%s buffer for %lx, ptr %lx, size %ld at %lx>",
+		sprintf(buf, "<%s buffer for %lx, ptr %lx, size %d at %lx>",
 			status,
 			(long)self->b_base,
-			self->b_ptr,
+			(long)self->b_ptr,
 			self->b_size,
 			(long)self);
 	}
