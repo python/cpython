@@ -19,7 +19,7 @@ __all__ = ["cmp","dircmp","cmpfiles"]
 _cache = {}
 BUFSIZE=8*1024
 
-def cmp(f1, f2, shallow=1, use_statcache=None):
+def cmp(f1, f2, shallow=1):
     """Compare two files.
 
     Arguments:
@@ -31,8 +31,6 @@ def cmp(f1, f2, shallow=1, use_statcache=None):
     shallow -- Just check stat signature (do not read the files).
                defaults to 1.
 
-    use_statcache -- obsolete argument.
-
     Return value:
 
     True if the files are the same, False otherwise.
@@ -41,9 +39,6 @@ def cmp(f1, f2, shallow=1, use_statcache=None):
     with a cache invalidation mechanism relying on stale signatures.
 
     """
-    if use_statcache is not None:
-        warnings.warn("use_statcache argument is deprecated",
-                      DeprecationWarning)
 
     s1 = _sig(os.stat(f1))
     s2 = _sig(os.stat(f2))
@@ -244,13 +239,12 @@ class dircmp:
         self.methodmap[attr](self)
         return getattr(self, attr)
 
-def cmpfiles(a, b, common, shallow=1, use_statcache=None):
+def cmpfiles(a, b, common, shallow=1):
     """Compare common files in two directories.
 
     a, b -- directory names
     common -- list of file names found in both directories
     shallow -- if true, do comparison based solely on stat() information
-    use_statcache -- obsolete argument
 
     Returns a tuple of three lists:
       files that compare equal
@@ -258,9 +252,6 @@ def cmpfiles(a, b, common, shallow=1, use_statcache=None):
       filenames that aren't regular files.
 
     """
-    if use_statcache is not None:
-        warnings.warn("use_statcache argument is deprecated",
-                      DeprecationWarning)
     res = ([], [], [])
     for x in common:
         ax = os.path.join(a, x)
