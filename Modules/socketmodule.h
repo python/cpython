@@ -9,7 +9,17 @@
 # endif
 
 #else /* MS_WINDOWS */
+#if _MSC_VER >= 1300
+# include <winsock2.h>
+# include <ws2tcpip.h>
+# define HAVE_ADDRINFO
+# define HAVE_SOCKADDR_STORAGE
+# define HAVE_GETADDRINFO
+# define HAVE_GETNAMEINFO
+# define ENABLE_IPV6
+#else
 # include <winsock.h>
+#endif
 #endif
 
 #ifdef HAVE_SYS_UN_H

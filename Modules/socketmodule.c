@@ -409,8 +409,11 @@ PyGAI_Err(int error)
 {
 	PyObject *v;
 
+#ifdef EAI_SYSTEM
+	/* EAI_SYSTEM is not available on Windows XP. */
 	if (error == EAI_SYSTEM)
 		return PySocket_Err();
+#endif
 
 #ifdef HAVE_GAI_STRERROR
 	v = Py_BuildValue("(is)", error, gai_strerror(error));
