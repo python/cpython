@@ -182,7 +182,7 @@ Library
   big endian systems were added to the codecs module. The old names
   BOM32_* and BOM64_* were off by a factor of 2.
 
-- added degree/radian conversion functions to the math module.
+- Added conversion functions math.degrees() and math.radians().
 
 - ftplib.retrlines() now tests for callback is None rather than testing
   for False.  Was causing an error when given a callback object which
@@ -221,10 +221,10 @@ Library
   people to submit more packagers, e.g. for Debian, FreeBSD
   and other systems.
 
-- The UTF-16, -LE and -BE now raise a NotImplementedError
-  for all calls to .readline(). Previously, they used to just
-  produce garbage or fail with an encoding error -- UTF-16 is
-  a 2-byte encoding and the C lib's line reading APIs don't
+- The UTF-16, -LE and -BE stream readers now raise a
+  NotImplementedError for all calls to .readline(). Previously, they
+  used to just produce garbage or fail with an encoding error --
+  UTF-16 is a 2-byte encoding and the C lib's line reading APIs don't
   work well with these.
 
 - compileall now supports quiet operation.
