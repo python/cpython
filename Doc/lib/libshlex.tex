@@ -13,12 +13,15 @@ simple syntaxes resembling that of the \UNIX{} shell.  This will often
 be useful for writing minilanguages, e.g.\ in run control files for
 Python applications.
 
-\begin{classdesc}{shlex}{\optional{stream}}
+\begin{classdesc}{shlex}{\optional{stream}, \optional{file}}
 A \class{shlex} instance or subclass instance is a lexical analyzer
 object.  The initialization argument, if present, specifies where to
 read characters from. It must be a file- or stream-like object with
 \method{read()} and \method{readline()} methods.  If no argument is given,
-input will be taken from \code{sys.stdin}.
+input will be taken from \code{sys.stdin}.  The second optional 
+argument is a filename string, which sets the initial value of the
+\member{infile} member.  If the stream argument is omitted or
+equal to \code{sys.stdin}, this second argument defauilts to ``stdin''.
 \end{classdesc}
 
 
@@ -41,6 +44,38 @@ end-of-file, an empty string is returned.
 
 \begin{methoddesc}{push_token}{str}
 Push the argument onto the token stack.
+\end{methoddesc}
+
+\begin{methoddesc}{read_token}{}
+Read a raw token.  Ignore the pushback stack, and do not interpret source
+requests.  (This is not ordinarily a useful entry point, and is
+documented here only for the sake of completeness.)
+\end{methoddesc}
+
+\begin{methoddesc}{openhook}{filename}
+When shlex detects a source request (see \member{source} below)
+this method is given the following token as argument, and expected to 
+return a tuple consisting of a filename and an opened stream object. 
+
+Normally, this method just strips any quotes off the argument and
+treats it as a filename, calling \code{open()} on it.  It is exposed so that
+you can use it to implement directory search paths, addition of
+file extensions, and other namespace hacks.
+
+There is no corresponding `close' hook, but a shlex instance will call
+the \code{close()} method of the sourced input stream when it returns EOF.
+\end{methoddesc}
+
+\begin{methoddesc}{error_leader}{\optional{file}, \optional{line}}
+This method generates an error message leader in the format of a
+Unix C compiler error label; the format is '"\%s", line \%d: ',
+where the \%s is replaced with the name of the current source file and
+the \%d with the current input line number (the optional arguments
+can be used to override these).
+
+This convenience is provided to encourage shlex users to generate
+error messages in the standard, parseable format understood by Emacs
+and other Unix tools.
 \end{methoddesc}
 
 Instances of \class{shlex} subclasses have some public instance
@@ -70,6 +105,33 @@ Characters that will be considered string quotes.  The token
 accumulates until the same quote is encountered again (thus, different
 quote types protect each other as in the shell.)  By default, includes
 \ASCII{} single and double quotes.
+\end{memberdesc}
+
+\begin{memberdesc}{infile}
+The name of the current input file, as initially set at class
+instantiation time or stacked by later source requests.  It may
+be useful to examine this when constructing error messages.
+\end{memberdesc}
+
+\begin{memberdesc}{instream}
+The input stream from which this shlex instance is reading characters.
+\end{memberdesc}
+
+\begin{memberdesc}{source}
+This member is None by default.  If you assign a string to it, that
+string will be recognized as a lexical-level inclusion request similar
+to the `source' keyword in various shells.  That is, the immediately
+following token will opened as a filename and input taken from that
+stream until EOF, at which point the \code{close()} method of that
+stream will be called and the input source will again become the
+original input stream. Source requests may be stacked any number of
+levels deep.
+\end{memberdesc}
+
+\begin{memberdesc}{debug}
+If this member is numeric and 1 or more, a shlex instance will print
+verbose progress output on its behavior.  If you need to use this,
+you can read the module source code to learn the details.
 \end{memberdesc}
 
 Note that any character not declared to be a word character,
