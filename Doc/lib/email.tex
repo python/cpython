@@ -289,15 +289,14 @@ First, let's see how to create and send a simple text message:
 # Import smtplib for the actual sending function
 import smtplib
 
-# Here are the email pacakge modules we'll need
-from email import Encoders
+# Import the email modules we'll need
 from email.MIMEText import MIMEText
 
-# Open a plain text file for reading
-fp = open(textfile)
-# Create a text/plain message, using Quoted-Printable encoding for non-ASCII
-# characters.
-msg = MIMEText(fp.read(), _encoder=Encoders.encode_quopri)
+# Open a plain text file for reading.  For this example, assume that
+# the text file contains only ASCII characters.
+fp = open(textfile, 'rb')
+# Create a text/plain message
+msg = MIMEText(fp.read())
 fp.close()
 
 # me == the sender's email address
@@ -306,16 +305,16 @@ msg['Subject'] = 'The contents of %s' % textfile
 msg['From'] = me
 msg['To'] = you
 
-# Send the message via our own SMTP server.  Use msg.as_string() with
-# unixfrom=0 so as not to confuse SMTP.
+# Send the message via our own SMTP server, but don't include the
+# envelope header.
 s = smtplib.SMTP()
 s.connect()
-s.sendmail(me, [you], msg.as_string(0))
+s.sendmail(me, [you], msg.as_string())
 s.close()
 \end{verbatim}
 
 Here's an example of how to send a MIME message containing a bunch of
-family pictures:
+family pictures that may be residing in a directory:
 
 \begin{verbatim}
 # Import smtplib for the actual sending function
@@ -323,15 +322,15 @@ import smtplib
 
 # Here are the email pacakge modules we'll need
 from email.MIMEImage import MIMEImage
-from email.MIMEBase import MIMEBase
+from email.MIMEMultipart import MIMEMultipart
 
 COMMASPACE = ', '
 
 # Create the container (outer) email message.
+msg = MIMEMultipart()
+msg['Subject'] = 'Our family reunion'
 # me == the sender's email address
 # family = the list of all recipients' email addresses
-msg = MIMEBase('multipart', 'mixed')
-msg['Subject'] = 'Our family reunion'
 msg['From'] = me
 msg['To'] = COMMASPACE.join(family)
 msg.preamble = 'Our family reunion'
@@ -340,7 +339,7 @@ msg.epilogue = ''
 
 # Assume we know that the image files are all in PNG format
 for file in pngfiles:
-    # Open the files in binary mode.  Let the MIMEIMage class automatically
+    # Open the files in binary mode.  Let the MIMEImage class automatically
     # guess the specific image type.
     fp = open(file, 'rb')
     img = MIMEImage(fp.read())
@@ -350,7 +349,7 @@ for file in pngfiles:
 # Send the email via our own SMTP server.
 s = smtplib.SMTP()
 s.connect()
-s.sendmail(me, family, msg.as_string(unixfrom=0))
+s.sendmail(me, family, msg.as_string())
 s.close()
 \end{verbatim}
 
@@ -394,7 +393,7 @@ import mimetypes
 from email import Encoders
 from email.Message import Message
 from email.MIMEAudio import MIMEAudio
-from email.MIMEBase import MIMEBase
+from email.MIMEMultipart import MIMEMultipart
 from email.MIMEImage import MIMEImage
 from email.MIMEText import MIMEText
 
@@ -428,7 +427,7 @@ def main():
     recips = args[1:]
     
     # Create the enclosing (outer) message
-    outer = MIMEBase('multipart', 'mixed')
+    outer = MIMEMultipart()
     outer['Subject'] = 'Contents of directory %s' % os.path.abspath(dir)
     outer['To'] = COMMASPACE.join(recips)
     outer['From'] = sender
@@ -440,9 +439,9 @@ def main():
         path = os.path.join(dir, filename)
         if not os.path.isfile(path):
             continue
-        # Guess the Content-Type: based on the file's extension.  Encoding
+        # Guess the content type based on the file's extension.  Encoding
         # will be ignored, although we should check for simple things like
-        # gzip'd or compressed files
+        # gzip'd or compressed files.
         ctype, encoding = mimetypes.guess_type(path)
         if ctype is None or encoding is not None:
             # No guess could be made, or the file is encoded (compressed), so
@@ -465,7 +464,7 @@ def main():
         else:
             fp = open(path, 'rb')
             msg = MIMEBase(maintype, subtype)
-            msg.add_payload(fp.read())
+            msg.set_payload(fp.read())
             fp.close()
             # Encode the payload using Base64
             Encoders.encode_base64(msg)
@@ -473,14 +472,10 @@ def main():
         msg.add_header('Content-Disposition', 'attachment', filename=filename)
         outer.attach(msg)
 
-    fp = open('/tmp/debug.pck', 'w')
-    import cPickle
-    cPickle.dump(outer, fp)
-    fp.close()
     # Now send the message
     s = smtplib.SMTP()
     s.connect()
-    s.sendmail(sender, recips, outer.as_string(0))
+    s.sendmail(sender, recips, outer.as_string())
     s.close()
 
 
@@ -556,7 +551,7 @@ def main():
     counter = 1
     for part in msg.walk():
         # multipart/* are just containers
-        if part.get_main_type() == 'multipart':
+        if part.get_content_maintype() == 'multipart':
             continue
         # Applications should really sanitize the given filename so that an
         # email message can't be used to overwrite important files
