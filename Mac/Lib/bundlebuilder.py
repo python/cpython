@@ -35,77 +35,93 @@ __all__ = ["BundleBuilder", "AppBuilder", "buildapp"]
 
 import sys
 import os, errno, shutil
+from copy import deepcopy
 import getopt
 from plistlib import Plist
+from types import FunctionType as function
 
 
-plistDefaults = Plist(
-	CFBundleDevelopmentRegion = "English",
-	CFBundleInfoDictionaryVersion = "6.0",
-)
+class Defaults:
+
+	"""Class attributes that don't start with an underscore and are
+	not functions or classmethods are (deep)copied to self.__dict__.
+	This allows for mutable default values.
+	"""
+
+	def __init__(self, **kwargs):
+		defaults = self._getDefaults()
+		defaults.update(kwargs)
+		self.__dict__.update(defaults)
+
+	def _getDefaults(cls):
+		defaults = {}
+		for name, value in cls.__dict__.items():
+			if name[0] != "_" and not isinstance(value,
+					(function, classmethod)):
+				defaults[name] = deepcopy(value)
+		for base in cls.__bases__:
+			if hasattr(base, "_getDefaults"):
+				defaults.update(base._getDefaults())
+		return defaults
+	_getDefaults = classmethod(_getDefaults)
 
 
-class BundleBuilder:
+class BundleBuilder(Defaults):
 
 	"""BundleBuilder is a barebones class for assembling bundles. It
 	knows nothing about executables or icons, it only copies files
 	and creates the PkgInfo and Info.plist files.
-
-	Constructor arguments:
-
-		name: Name of the bundle, with or without extension.
-		plist: A plistlib.Plist object.
-		type: The type of the bundle. Defaults to "APPL".
-		creator: The creator code of the bundle. Defaults to "????".
-		resources: List of files that have to be copied to
-			<bundle>/Contents/Resources. Defaults to an empty list.
-		files: List of (src, dest) tuples; dest should be a path relative
-			to the bundle (eg. "Contents/Resources/MyStuff/SomeFile.ext.
-			Defaults to an empty list.
-		builddir: Directory where the bundle will be assembled. Defaults
-			to "build" (in the current directory).
-		symlink: Make symlinks instead copying files. This is handy during
-			debugging, but makes the bundle non-distributable. Defaults to
-			False.
-		verbosity: verbosity level, defaults to 1
 	"""
 
-	def __init__(self, name=None, plist=None, type="APPL", creator="????",
-			resources=None, files=None, builddir="build", platform="MacOS",
-			symlink=0, verbosity=1):
-		"""See the class doc string for a description of the arguments."""
-		if plist is None:
-			plist = Plist()
-		if resources is None:
-			resources = []
-		if files is None:
-			files = []
-		self.name = name
-		self.plist = plist
-		self.type = type
-		self.creator = creator
-		self.resources = resources
-		self.files = files
-		self.builddir = builddir
-		self.platform = platform
-		self.symlink = symlink
-		self.verbosity = verbosity
+	# (Note that Defaults.__init__ (deep)copies these values to
+	# instance variables. Mutable defaults are therefore safe.)
+
+	# Name of the bundle, with or without extension.
+	name = None
+
+	# The property list ("plist")
+	plist = Plist(CFBundleDevelopmentRegion = "English",
+	              CFBundleInfoDictionaryVersion = "6.0")
+
+	# The type of the bundle.
+	type = "APPL"
+	# The creator code of the bundle.
+	creator = "????"
+
+	# List of files that have to be copied to <bundle>/Contents/Resources.
+	resources = []
+
+	# List of (src, dest) tuples; dest should be a path relative to the bundle
+	# (eg. "Contents/Resources/MyStuff/SomeFile.ext).
+	files = []
+
+	# Directory where the bundle will be assembled.
+	builddir = "build"
+
+	# platform, name of the subfolder of Contents that contains the executable.
+	platform = "MacOS"
+
+	# Make symlinks instead copying files. This is handy during debugging, but
+	# makes the bundle non-distributable.
+	symlink = 0
+
+	# Verbosity level.
+	verbosity = 1
 
 	def setup(self):
+		# XXX rethink self.name munging, this is brittle.
 		self.name, ext = os.path.splitext(self.name)
 		if not ext:
 			ext = ".bundle"
-		self.bundleextension = ext
+		bundleextension = ext
 		# misc (derived) attributes
-		self.bundlepath = pathjoin(self.builddir, self.name + self.bundleextension)
+		self.bundlepath = pathjoin(self.builddir, self.name + bundleextension)
 		self.execdir = pathjoin("Contents", self.platform)
 
-		plist = plistDefaults.copy()
+		plist = self.plist
 		plist.CFBundleName = self.name
 		plist.CFBundlePackageType = self.type
 		plist.CFBundleSignature = self.creator
-		plist.update(self.plist)
-		self.plist = plist
 
 	def build(self):
 		"""Build the bundle."""
@@ -200,31 +216,23 @@ pythonhomeSnippet = """os.environ["home"] = resources"""
 
 class AppBuilder(BundleBuilder):
 
-	"""This class extends the BundleBuilder constructor with these
-	arguments:
+	# A Python main program. If this argument is given, the main
+	# executable in the bundle will be a small wrapper that invokes
+	# the main program. (XXX Discuss why.)
+	mainprogram = None
 
-		mainprogram: A Python main program. If this argument is given,
-			the main executable in the bundle will be a small wrapper
-			that invokes the main program. (XXX Discuss why.)
-		executable: The main executable. If a Python main program is
-			specified the executable will be copied to Resources and
-			be invoked by the wrapper program mentioned above. Else
-			it will simply be used as the main executable.
-		nibname: The name of the main nib, for Cocoa apps. Defaults
-			to None, but must be specified when building a Cocoa app.
-		symlink_exec: Symlink the executable instead of copying it.
+	# The main executable. If a Python main program is specified
+	# the executable will be copied to Resources and be invoked
+	# by the wrapper program mentioned above. Otherwise it will
+	# simply be used as the main executable.
+	executable = None
 
-	For the other keyword arguments see the BundleBuilder doc string.
-	"""
+	# The name of the main nib, for Cocoa apps. *Must* be specified
+	# when building a Cocoa app.
+	nibname = None
 
-	def __init__(self, name=None, mainprogram=None, executable=None,
-			nibname=None, symlink_exec=0, **kwargs):
-		"""See the class doc string for a description of the arguments."""
-		self.mainprogram = mainprogram
-		self.executable = executable
-		self.nibname = nibname
-		self.symlink_exec = symlink_exec
-		BundleBuilder.__init__(self, name=name, **kwargs)
+	# Symlink the executable instead of copying it.
+	symlink_exec = 0
 
 	def setup(self):
 		if self.mainprogram is None and self.executable is None:
@@ -258,8 +266,7 @@ class AppBuilder(BundleBuilder):
 				execpath = pathjoin(resdir, os.path.basename(self.executable))
 			if not self.symlink_exec:
 				self.files.append((self.executable, execpath))
-			else:
-				self.execpath = execpath
+			self.execpath = execpath
 			# For execve wrapper
 			setexecutable = setExecutableTemplate % os.path.basename(self.executable)
 		else:
