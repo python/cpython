@@ -1592,7 +1592,7 @@ assign_subscript(w, key, v) /* w[key] = v */
 		else {
 			int i = getintvalue(key);
 			if (i < 0)
-				i += (*sq->sq_length)(v);
+				i += (*sq->sq_length)(w);
 			return (*func)(w, i, v);
 		}
 	}
