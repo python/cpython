@@ -1805,27 +1805,42 @@ delta_str(PyDateTime_Delta *self)
 	int us = GET_TD_MICROSECONDS(self);
 	int hours;
 	int minutes;
-	char buf[500];
-	int i = 0;
+	char buf[100];
+	char *pbuf = buf;
+	size_t buflen = sizeof(buf);
+	int n;
 
 	minutes = divmod(seconds, 60, &seconds);
 	hours = divmod(minutes, 60, &minutes);
 
 	if (days) {
-		i += sprintf(buf + i, "%d day%s, ", days,
-			     (days == 1 || days == -1) ? "" : "s");
-		assert(i < sizeof(buf));
+		n = PyOS_snprintf(pbuf, buflen, "%d day%s, ", days,
+				  (days == 1 || days == -1) ? "" : "s");
+		if (n < 0 || (size_t)n >= buflen)
+			goto Fail;
+		pbuf += n;
+		buflen -= (size_t)n;
 	}
 
-	i += sprintf(buf + i, "%d:%02d:%02d", hours, minutes, seconds);
-	assert(i < sizeof(buf));
+	n = PyOS_snprintf(pbuf, buflen, "%d:%02d:%02d",
+			  hours, minutes, seconds);
+	if (n < 0 || (size_t)n >= buflen)
+		goto Fail;
+	pbuf += n;
+	buflen -= (size_t)n;
 
 	if (us) {
-		i += sprintf(buf + i, ".%06d", us);
-		assert(i < sizeof(buf));
+		n = PyOS_snprintf(pbuf, buflen, ".%06d", us);
+		if (n < 0 || (size_t)n >= buflen)
+			goto Fail;
+		pbuf += n;
 	}
 
-	return PyString_FromStringAndSize(buf, i);
+	return PyString_FromStringAndSize(buf, pbuf - buf);
+
+ Fail:
+	PyErr_SetString(PyExc_SystemError, "goofy result from PyOS_snprintf");
+	return NULL;
 }
 
 /* Pickle support.  Quite a maze!  While __getstate__/__setstate__ sufficed
