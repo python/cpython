@@ -48,7 +48,7 @@ sets that can't be modified, and can be used as dictionary keys.  Sets
 are built on top of dictionaries, so the elements within a set must be
 hashable.
 
-As a simple example, 
+As a simple example,
 
 \begin{verbatim}
 >>> import sets
@@ -63,12 +63,12 @@ False
 >>> S.remove(3)
 >>> S
 Set([1, 2, 5])
->>> 
+>>>
 \end{verbatim}
 
 The union and intersection of sets can be computed with the
 \method{union()} and \method{intersection()} methods, or,
-alternatively, using the bitwise operators \samp{\&} and \samp{|}.
+alternatively, using the bitwise operators \code{\&} and \code{|}.
 Mutable sets also have in-place versions of these methods,
 \method{union_update()} and \method{intersection_update()}.
 
@@ -79,7 +79,7 @@ Mutable sets also have in-place versions of these methods,
 Set([1, 2, 3, 4, 5, 6])
 >>> S1 | S2                  # Alternative notation
 Set([1, 2, 3, 4, 5, 6])
->>> S1.intersection(S2)  
+>>> S1.intersection(S2)
 Set([])
 >>> S1 & S2                  # Alternative notation
 Set([])
@@ -87,7 +87,7 @@ Set([])
 Set([1, 2, 3, 4, 5, 6])
 >>> S1
 Set([1, 2, 3, 4, 5, 6])
->>> 
+>>>
 \end{verbatim}
 
 It's also possible to take the symmetric difference of two sets.  This
@@ -165,7 +165,7 @@ def generate_ints(N):
 A new keyword, \keyword{yield}, was introduced for generators.  Any
 function containing a \keyword{yield} statement is a generator
 function; this is detected by Python's bytecode compiler which
-compiles the function specially as a result.  
+compiles the function specially as a result.
 
 When you call a generator function, it doesn't return a single value;
 instead it returns a generator object that supports the iterator
@@ -239,7 +239,7 @@ Two other examples in \file{Lib/test/test_generators.py} produce
 solutions for the N-Queens problem (placing $N$ queens on an $NxN$
 chess board so that no queen threatens another) and the Knight's Tour
 (a route that takes a knight to every square of an $NxN$ chessboard
-without visiting any square twice). 
+without visiting any square twice).
 
 The idea of generators comes from other programming languages,
 especially Icon (\url{http://www.cs.arizona.edu/icon/}), where the
@@ -293,7 +293,7 @@ file.  For example, a UTF-8 file can be declared with:
 \end{verbatim}
 
 Without such an encoding declaration, the default encoding used is
-ISO-8859-1, also known as Latin1.  
+ISO-8859-1, also known as Latin1.
 
 The encoding declaration only affects Unicode string literals; the
 text in the source code will be converted to Unicode using the
@@ -356,24 +356,24 @@ plus a newline.
 
 Python's file objects can now support end of line conventions other
 than the one followed by the platform on which Python is running.
-Opening a file with the mode \samp{U} or \samp{rU} will open a file
+Opening a file with the mode \code{'U'} or \code{'rU'} will open a file
 for reading in universal newline mode.  All three line ending
-conventions will be translated to a \samp{\e n} in the strings
+conventions will be translated to a \character{\e n} in the strings
 returned by the various file methods such as \method{read()} and
-\method{readline()}. 
+\method{readline()}.
 
 Universal newline support is also used when importing modules and when
 executing a file with the \function{execfile()} function.  This means
 that Python modules can be shared between all three operating systems
 without needing to convert the line-endings.
 
-This feature can be disabled at compile-time by specifying 
+This feature can be disabled at compile-time by specifying
 \longprogramopt{without-universal-newlines} when running Python's
-\file{configure} script.
+\program{configure} script.
 
 \begin{seealso}
 
-\seepep{278}{Universal Newline Support}{Written 
+\seepep{278}{Universal Newline Support}{Written
 and implemented by Jack Jansen.}
 
 \end{seealso}
@@ -408,7 +408,7 @@ for i, item in enumerate(L):
 
 \begin{seealso}
 
-\seepep{279}{The enumerate() built-in function}{Written 
+\seepep{279}{The enumerate() built-in function}{Written
 by Raymond D. Hettinger.}
 
 \end{seealso}
@@ -449,7 +449,7 @@ False
 
 Python's Booleans were added with the primary goal of making code
 clearer.  For example, if you're reading a function and encounter the
-statement \code{return 1}, you might wonder whether the \samp{1}
+statement \code{return 1}, you might wonder whether the \code{1}
 represents a truth value, or whether it's an index, or whether it's a
 coefficient that multiplies some other quantity.  If the statement is
 \code{return True}, however, the meaning of the return value is quite
@@ -479,7 +479,8 @@ random object, and the Boolean type is a subclass of the
 To sum up \constant{True} and \constant{False} in a sentence: they're
 alternative ways to spell the integer values 1 and 0, with the single
 difference that \function{str()} and \function{repr()} return the
-strings \samp{True} and \samp{False} instead of \samp{1} and \samp{0}.
+strings \code{'True'} and \code{'False'} instead of \code{'1'} and
+\code{'0'}.
 
 \begin{seealso}
 
@@ -517,7 +518,7 @@ XML character references.
 
 \begin{seealso}
 
-\seepep{293}{Codec Error Handling Callbacks}{Written and implemented by 
+\seepep{293}{Codec Error Handling Callbacks}{Written and implemented by
 Walter D\"orwald.}
 
 \end{seealso}
@@ -533,7 +534,7 @@ legal Python syntax: \code{L[1:10:2]}, \code{L[:-1:1]},
 the developers of Numerical Python.  However, the built-in sequence
 types of lists, tuples, and strings have never supported this feature,
 and you got a \exception{TypeError} if you tried it.  Michael Hudson
-contributed a patch that was applied to Python 2.3 and fixed this 
+contributed a patch that was applied to Python 2.3 and fixed this
 shortcoming.
 
 For example, you can now easily extract the elements of a list that
@@ -638,9 +639,9 @@ class FakeSeq:
         ...
     def __getitem__(self, item):
         if isinstance(item, slice):
-            return FakeSeq([self.calc_item(i) 
+            return FakeSeq([self.calc_item(i)
                             in range(*item.indices(len(self)))])
-	else:
+        else:
             return self.calc_item(i)
 \end{verbatim}
 
@@ -660,7 +661,7 @@ language.
 \item The \keyword{yield} statement is now always a keyword, as
 described in section~\ref{section-generators} of this document.
 
-\item A new built-in function \function{enumerate()} 
+\item A new built-in function \function{enumerate()}
 was added, as described in section~\ref{section-enumerate} of this
 document.
 
@@ -668,7 +669,7 @@ document.
 added along with the built-in \class{bool} type, as described in
 section~\ref{section-bool} of this document.
 
-\item Built-in types now support the extended slicing syntax, 
+\item Built-in types now support the extended slicing syntax,
 as described in section~\ref{section-slices} of this document.
 
 \item Dictionaries have a new method, \method{pop(\var{key})}, that
@@ -700,7 +701,7 @@ KeyError: pop(): dictionary is empty
 
 \item The \keyword{assert} statement no longer checks the \code{__debug__}
 flag, so you can no longer disable assertions by assigning to \code{__debug__}.
-Running Python with the \programopt{-O} switch will still generate 
+Running Python with the \programopt{-O} switch will still generate
 code that doesn't execute any assertions.
 
 \item Most type objects are now callable, so you can use them
@@ -720,7 +721,7 @@ For example, you can create a new module object with the following code:
 'docstring'
 \end{verbatim}
 
-\item 
+\item
 A new warning, \exception{PendingDeprecationWarning} was added to
 indicate features which are in the process of being
 deprecated.  The warning will \emph{not} be printed by default.  To
@@ -742,7 +743,7 @@ by setting the limit back to a lower number by calling
 
 \item One minor but far-reaching change is that the names of extension
 types defined by the modules included with Python now contain the
-module and a \samp{.} in front of the type name.  For example, in
+module and a \character{.} in front of the type name.  For example, in
 Python 2.2, if you created a socket and printed its
 \member{__class__}, you'd get this output:
 
@@ -825,7 +826,7 @@ than \method{zfill()}.
 
 (Contributed by Walter D\"orwald.)
 
-\item A new type object, \class{basestring}, has been added.  
+\item A new type object, \class{basestring}, has been added.
    Both 8-bit strings and Unicode strings inherit from this type, so
    \code{isinstance(obj, basestring)} will return \constant{True} for
    either kind of string.  It's a completely abstract type, so you
@@ -878,16 +879,16 @@ details.
 \begin{itemize}
 
 \item The \module{array} module now supports arrays of Unicode
-characters using the \samp{u} format character.  Arrays also now
+characters using the \character{u} format character.  Arrays also now
 support using the \code{+=} assignment operator to add another array's
 contents, and the \code{*=} assignment operator to repeat an array.
 (Contributed by Jason Orendorff.)
 
-\item The Distutils \class{Extension} class now supports 
-an extra constructor argument named \samp{depends} for listing
+\item The Distutils \class{Extension} class now supports
+an extra constructor argument named \var{depends} for listing
 additional source files that an extension depends on.  This lets
 Distutils recompile the module if any of the dependency files are
-modified.  For example, if \samp{sampmodule.c} includes the header
+modified.  For example, if \file{sampmodule.c} includes the header
 file \file{sample.h}, you would create the \class{Extension} object like
 this:
 
@@ -909,7 +910,7 @@ recently-added extensions to Distutils.
 
 \item The \module{getopt} module gained a new function,
 \function{gnu_getopt()}, that supports the same arguments as the existing
-\function{getopt()} function but uses GNU-style scanning mode. 
+\function{getopt()} function but uses GNU-style scanning mode.
 The existing \function{getopt()} stops processing options as soon as a
 non-option argument is encountered, but in GNU-style mode processing
 continues, meaning that options and arguments can be mixed.  For
@@ -925,7 +926,7 @@ example:
 (Contributed by Peter \AA{strand}.)
 
 \item The \module{grp}, \module{pwd}, and \module{resource} modules
-now return enhanced tuples: 
+now return enhanced tuples:
 
 \begin{verbatim}
 >>> import grp
@@ -981,9 +982,9 @@ sequence type.  For example:
 
 (Contributed by Kevin O'Connor.)
 
-\item Two new functions in the \module{math} module, 
+\item Two new functions in the \module{math} module,
 \function{degrees(\var{rads})} and \function{radians(\var{degs})},
-convert between radians and degrees.  Other functions in the 
+convert between radians and degrees.  Other functions in the
 \module{math} module such as
 \function{math.sin()} and \function{math.cos()} have always required
 input values measured in radians. (Contributed by Raymond Hettinger.)
@@ -994,10 +995,10 @@ input values measured in radians. (Contributed by Raymond Hettinger.)
 \module{posix} module that underlies the \module{os} module.
 (Contributed by Gustavo Niemeyer and Geert Jansen.)
 
-\item The parser objects provided by the \module{pyexpat} module 
+\item The parser objects provided by the \module{pyexpat} module
 can now optionally buffer character data, resulting in fewer calls to
 your character data handler and therefore faster performance.  Setting
-the parser object's \member{buffer_text} attribute to \constant{True} 
+the parser object's \member{buffer_text} attribute to \constant{True}
 will enable buffering.
 
 \item The \function{sample(\var{population}, \var{k})} function was
@@ -1039,7 +1040,7 @@ unavoidable race conditions.
 can call the \method{settimeout(\var{t})} method on a socket object to
 set a timeout of \var{t} seconds.  Subsequent socket operations that
 take longer than \var{t} seconds to complete will abort and raise a
-\exception{socket.error} exception.  
+\exception{socket.error} exception.
 
 The original timeout implementation was by Tim O'Malley.  Michael
 Gilfix integrated it into the Python \module{socket} module, after the
@@ -1047,7 +1048,7 @@ patch had undergone a lengthy review.  After it was checked in, Guido
 van~Rossum rewrote parts of it.  This is a good example of the free
 software development process in action.
 
-\item The value of the C \constant{PYTHON_API_VERSION} macro is now exposed 
+\item The value of the C \constant{PYTHON_API_VERSION} macro is now exposed
 at the Python level as \code{sys.api_version}.
 
 \item The new \module{textwrap} module contains functions for wrapping
@@ -1063,8 +1064,8 @@ string, reformatted to fit into lines no longer than the chosen width.
 >>> import textwrap
 >>> paragraph = "Not a whit, we defy augury: ... more text ..."
 >>> textwrap.wrap(paragraph, 60)
-["Not a whit, we defy augury: there's a special providence in", 
- "the fall of a sparrow. If it be now, 'tis not to come; if it", 
+["Not a whit, we defy augury: there's a special providence in",
+ "the fall of a sparrow. If it be now, 'tis not to come; if it",
  ...]
 >>> print textwrap.fill(paragraph, 35)
 Not a whit, we defy augury: there's
@@ -1073,20 +1074,20 @@ a sparrow. If it be now, 'tis not
 to come; if it be not to come, it
 will be now; if it be not now, yet
 it will come: the readiness is all.
->>> 
+>>>
 \end{verbatim}
 
 The module also contains a \class{TextWrapper} class that actually
-implements the text wrapping strategy.   Both the 
+implements the text wrapping strategy.   Both the
 \class{TextWrapper} class and the \function{wrap()} and
 \function{fill()} functions support a number of additional keyword
 arguments for fine-tuning the formatting; consult the module's
-documentation for details. 
+documentation for details.
 % XXX add a link to the module docs?
 (Contributed by Greg Ward.)
 
 \item The \module{time} module's \function{strptime()} function has
-long been an annoyance because it uses the platform C library's 
+long been an annoyance because it uses the platform C library's
 \function{strptime()} implementation, and different platforms
 sometimes have odd bugs.  Brett Cannon contributed a portable
 implementation that's written in pure Python, which should behave
@@ -1190,7 +1191,7 @@ Thanks to lots of work by Tim Peters, pymalloc in 2.3 also provides
 debugging features to catch memory overwrites and doubled frees in
 both extension modules and in the interpreter itself.  To enable this
 support, turn on the Python interpreter's debugging code by running
-\program{configure} with \longprogramopt{with-pydebug}.  
+\program{configure} with \longprogramopt{with-pydebug}.
 
 To aid extension writers, a header file \file{Misc/pymemcompat.h} is
 distributed with the source to Python 2.3 that allows Python
@@ -1246,7 +1247,7 @@ allocate objects, and \cfunction{PyObject_GC_Del} to deallocate them.
 
 \item Python can now optionally be built as a shared library
 (\file{libpython2.3.so}) by supplying \longprogramopt{enable-shared}
-when running Python's \file{configure} script.  (Contributed by Ondrej
+when running Python's \program{configure} script.  (Contributed by Ondrej
 Palkovsky.)
 
 \item The \csimplemacro{DL_EXPORT} and \csimplemacro{DL_IMPORT} macros
@@ -1256,9 +1257,9 @@ modules should now be declared using the new macro
 use the \csimplemacro{PyAPI_FUNC} and \csimplemacro{PyAPI_DATA}
 macros.
 
-\item The interpreter can be compiled without any docstrings for 
+\item The interpreter can be compiled without any docstrings for
 the built-in functions and modules by supplying
-\longprogramopt{without-doc-strings} to the \file{configure} script.
+\longprogramopt{without-doc-strings} to the \program{configure} script.
 This makes the Python executable about 10\% smaller, but will also
 mean that you can't get help for Python's built-ins.  (Contributed by
 Gustavo Niemeyer.)
@@ -1266,25 +1267,25 @@ Gustavo Niemeyer.)
 \item The cycle detection implementation used by the garbage collection
 has proven to be stable, so it's now being made mandatory; you can no
 longer compile Python without it, and the
-\longprogramopt{with-cycle-gc} switch to \file{configure} has been removed.
+\longprogramopt{with-cycle-gc} switch to \program{configure} has been removed.
 
 \item The \cfunction{PyArg_NoArgs()} macro is now deprecated, and code
 that uses it should be changed.  For Python 2.2 and later, the method
 definition table can specify the
-\constant{METH_NOARGS} flag, signalling that there are no arguments, and 
+\constant{METH_NOARGS} flag, signalling that there are no arguments, and
 the argument checking can then be removed.  If compatibility with
 pre-2.2 versions of Python is important, the code could use
-\code{PyArg_ParseTuple(args, "")} instead, but this will be slower 
+\code{PyArg_ParseTuple(args, "")} instead, but this will be slower
 than using \constant{METH_NOARGS}.
 
 \item A new function, \cfunction{PyObject_DelItemString(\var{mapping},
 char *\var{key})} was added
-as shorthand for 
+as shorthand for
 \code{PyObject_DelItem(\var{mapping}, PyString_New(\var{key})}.
 
 \item File objects now manage their internal string buffer
-differently by increasing it exponentially when needed.  
-This results in the benchmark tests in \file{Lib/test/test_bufio.py} 
+differently by increasing it exponentially when needed.
+This results in the benchmark tests in \file{Lib/test/test_bufio.py}
 speeding up from 57 seconds to 1.7 seconds, according to one
 measurement.
 
@@ -1295,7 +1296,7 @@ structure.
 
 \item Python now includes a copy of the Expat XML parser's source code,
 removing any dependence on a system version or local installation of
-Expat.  
+Expat.
 
 \end{itemize}
 
@@ -1373,17 +1374,17 @@ variable name in your code, a different name must be chosen.
 \item You can no longer disable assertions by assigning to \code{__debug__}.
 
 \item Using \code{None} as a variable name will now result in a
-\exception{SyntaxWarning} warning. 
+\exception{SyntaxWarning} warning.
 
 \item Names of extension types defined by the modules included with
-Python now contain the module and a \samp{.} in front of the type
-name.  
+Python now contain the module and a \character{.} in front of the type
+name.
 
 \item For strings \var{X} and \var{Y}, \code{\var{X} in \var{Y}} now works
 if \var{X} is more than one character long.
 
 \item The Distutils \function{setup()} function has gained various new
-keyword arguments such as \samp{depends}.  Old versions of the
+keyword arguments such as \var{depends}.  Old versions of the
 Distutils will abort if passed unknown keywords.  The fix is to check
 for the presence of the new \function{get_distutil_options()} function
 in your \file{setup.py} if you want to only support the new keywords
@@ -1395,7 +1396,7 @@ from distutils import core
 kw = {'sources': 'foo.c', ...}
 if hasattr(core, 'get_distutil_options'):
     kw['depends'] = ['foo.h']
-ext = Extension(**kw) 
+ext = Extension(**kw)
 \end{verbatim}
 
 \end{itemize}
