@@ -1,0 +1,373 @@
+Tue Feb 16 22:34:17 1999  Guido van Rossum  <guido@eric.cnri.reston.va.us>
+
+	* ScriptBinding.py:
+	Only pop up the stack viewer when requested in the Debug menu.
+
+Mon Feb  8 22:27:49 1999  Guido van Rossum  <guido@eric.cnri.reston.va.us>
+
+	* WindowList.py: Don't crash if a window no longer exists.
+
+	* TODO.txt: Restructured a bit.
+
+Mon Feb  1 23:06:17 1999  Guido van Rossum  <guido@eric.cnri.reston.va.us>
+
+	* PyShell.py: Add current dir or paths of file args to sys.path.
+
+	* Debugger.py: Add canonic() function -- for brand new bdb.py feature.
+
+	* StackViewer.py: Protect against accessing an empty stack.
+
+Fri Jan 29 20:44:45 1999  Guido van Rossum  <guido@eric.cnri.reston.va.us>
+
+	* ZoomHeight.py:
+	Use only the height to decide whether to zoom in or out.
+
+Thu Jan 28 22:24:30 1999  Guido van Rossum  <guido@eric.cnri.reston.va.us>
+
+	* EditorWindow.py, FileList.py:
+	Make sure the Tcl variables are shared between windows.
+
+	* PyShell.py, EditorWindow.py, Bindings.py:
+	Move menu/key binding code from Bindings.py to EditorWindow.py,
+	with changed APIs -- it makes much more sense there.
+	Also add a new feature: if the first character of a menu label is
+	a '!', it gets a checkbox.  Checkboxes are bound to Boolean Tcl variables
+	that can be accessed through the new getvar/setvar/getrawvar API;
+	the variable is named after the event to which the menu is bound.
+
+	* Debugger.py: Add Quit button to the debugger window.
+
+	* SearchDialog.py:
+	When find_again() finds exactly the current selection, it's a failure.
+
+	* idle.py, Attic/idle: Rename idle -> idle.py
+
+Mon Jan 18 15:18:57 1999  Guido van Rossum  <guido@eric.cnri.reston.va.us>
+
+	* EditorWindow.py, WindowList.py: Only deiconify when iconic.
+
+	* TODO.txt: Misc
+
+Tue Jan 12 22:14:34 1999  Guido van Rossum  <guido@eric.cnri.reston.va.us>
+
+	* testcode.py, Attic/test.py:
+	Renamed test.py to testcode.py so one can import Python's
+	test package from inside IDLE.  (Suggested by Jack Jansen.)
+
+	* EditorWindow.py, ColorDelegator.py:
+	Hack to close a window that is colorizing.
+
+	* Separator.py: Vladimir Marangozov's patch:
+	The separator dances too much and seems to jump by arbitrary amounts
+	in arbitrary directions when I try to move it for resizing the frames.
+	This patch makes it more quiet.
+
+Mon Jan 11 14:52:40 1999  Guido van Rossum  <guido@eric.cnri.reston.va.us>
+
+	* TODO.txt: Some requests have been fulfilled.
+
+	* EditorWindow.py:
+	Set the cursor to a watch when opening the class browser (which may
+	take quite a while, browsing multiple files).
+
+	Newer, better center() -- but assumes no wrapping.
+
+	* SearchBinding.py:
+	Got rid of debug print statement in goto_line_event().
+
+	* ScriptBinding.py:
+	I think I like it better if it prints the traceback even when it displays
+	the stack viewer.
+
+	* Debugger.py: Bind ESC to close-window.
+
+	* ClassBrowser.py: Use a HSeparator between the classes and the items.
+	Make the list of classes wider by default (40 chars).
+	Bind ESC to close-window.
+
+	* Separator.py:
+	Separator classes (draggable divider between two panes).
+
+Sat Jan  9 22:01:33 1999  Guido van Rossum  <guido@eric.cnri.reston.va.us>
+
+	* WindowList.py:
+	Don't traceback when wakeup() is called when the window has been destroyed.
+	This can happen when a torn-of Windows menu references closed windows.
+	And Tim Peters claims that the Windows menu is his favorite to tear off...
+
+	* EditorWindow.py: Allow tearing off of the Windows menu.
+
+	* StackViewer.py: Close on ESC.
+
+	* help.txt: Updated a bunch of things (it was mostly still 0.1!)
+
+	* extend.py: Added ScriptBinding to standard bindings.
+
+	* ScriptBinding.py:
+	This now actually works.  See doc string.  It can run a module (i.e.
+	import or reload) or debug it (same with debugger control).  Output
+	goes to a fresh output window, only created when needed.
+
+
+======================================================================
+	Python release 1.5.2b1, IDLE version 0.2
+======================================================================
+	
+Fri Jan  8 17:26:02 1999  Guido van Rossum  <guido@eric.cnri.reston.va.us>
+
+	* README.txt, NEWS.txt: What's new in this release.
+
+	* Bindings.py, PyShell.py:
+	Paul Prescod's patches to allow the stack viewer to pop up when a
+	traceback is printed.
+
+Thu Jan  7 00:12:15 1999  Guido van Rossum  <guido@eric.cnri.reston.va.us>
+
+	* FormatParagraph.py:
+	Change paragraph width limit to 70 (like Emacs M-Q).
+
+	* README.txt:
+	Separating TODO from README.  Slight reformulation of features.  No
+	exact release date.
+
+	* TODO.txt: Separating TODO from README.
+
+Mon Jan  4 21:19:09 1999  Guido van Rossum  <guido@eric.cnri.reston.va.us>
+
+	* FormatParagraph.py:
+	Hm.  There was a boundary condition error at the end of the file too.
+
+	* SearchBinding.py: Hm.  Add Unix binding for replace, too.
+
+	* keydefs.py: Ran eventparse.py again.
+
+	* FormatParagraph.py: Added Unix Meta-q key binding;
+	fix find_paragraph when at start of file.
+
+	* AutoExpand.py: Added Meta-/ binding for Unix as alt for Alt-/.
+
+	* SearchBinding.py:
+	Add unix binding for grep (otherwise the menu entry doesn't work!)
+
+	* ZoomHeight.py: Adjusted Unix height to work with fvwm96. :=(
+
+	* GrepDialog.py: Need to import sys!
+
+	* help.txt, extend.txt, README.txt: Formatted some paragraphs
+
+	* extend.py, FormatParagraph.py:
+	Add new extension to reformat a (text) paragraph.
+
+	* ZoomHeight.py: Typo in Win specific height setting.
+
+Sun Jan  3 00:47:35 1999  Guido van Rossum  <guido@eric.cnri.reston.va.us>
+
+	* AutoIndent.py: Added something like Tim Peters' backspace patch.
+
+	* ZoomHeight.py: Adapted to Unix (i.e., more hardcoded constants).
+
+Sat Jan  2 21:28:54 1999  Guido van Rossum  <guido@eric.cnri.reston.va.us>
+
+	* keydefs.py, idlever.py, idle.pyw, idle.bat, help.txt, extend.txt, extend.py, eventparse.py, ZoomHeight.py, WindowList.py, UndoDelegator.py, StackViewer.py, SearchEngine.py, SearchDialogBase.py, SearchDialog.py, ScrolledList.py, SearchBinding.py, ScriptBinding.py, ReplaceDialog.py, Attic/README, README.txt, PyShell.py, Attic/PopupMenu.py, OutputWindow.py, IOBinding.py, Attic/HelpWindow.py, History.py, GrepDialog.py, FileList.py, FrameViewer.py, EditorWindow.py, Debugger.py, Delegator.py, ColorDelegator.py, Bindings.py, ClassBrowser.py, AutoExpand.py, AutoIndent.py:
+	Checking in IDLE 0.2.
+
+	Much has changed -- too much, in fact, to write down.
+	The big news is that there's a standard way to write IDLE extensions;
+	see extend.txt.  Some sample extensions have been provided, and
+	some existing code has been converted to extensions.  Probably the
+	biggest new user feature is a new search dialog with more options,
+	search and replace, and even search in files (grep).
+
+	This is exactly as downloaded from my laptop after returning
+	from the holidays -- it hasn't even been tested on Unix yet.
+
+Fri Dec 18 15:52:54 1998  Guido van Rossum  <guido@eric.cnri.reston.va.us>
+
+	* FileList.py, ClassBrowser.py:
+	Fix the class browser to work even when the file is not on sys.path.
+
+Tue Dec  8 20:39:36 1998  Guido van Rossum  <guido@eric.cnri.reston.va.us>
+
+	* Attic/turtle.py: Moved to Python 1.5.2/Lib
+
+Fri Nov 27 03:19:20 1998  Guido van Rossum  <guido@eric.cnri.reston.va.us>
+
+	* help.txt: Typo
+
+	* EditorWindow.py, FileList.py: Support underlining of menu labels
+
+	* Bindings.py:
+	New approach, separate tables for menus (platform-independent) and key
+	definitions (platform-specific), and generating accelerator strings
+	automatically from the key definitions.
+
+Mon Nov 16 18:37:42 1998  Guido van Rossum  <guido@eric.cnri.reston.va.us>
+
+	* Attic/README: Clarify portability and main program.
+
+	* Attic/README: Added intro for 0.1 release and append Grail notes.
+
+Mon Oct 26 18:49:00 1998  Guido van Rossum  <guido@eric.cnri.reston.va.us>
+
+	* Attic/turtle.py: root is now a global called _root
+
+Sat Oct 24 16:38:38 1998  Guido van Rossum  <guido@eric.cnri.reston.va.us>
+
+	* Attic/turtle.py: Raise the root window on reset().
+	Different action on WM_DELETE_WINDOW is more likely to do the right thing,
+	allowing us to destroy old windows.
+
+	* Attic/turtle.py:
+	Split the goto() function in two: _goto() is the internal one,
+	using Canvas coordinates, and goto() uses turtle coordinates
+	and accepts variable argument lists.
+
+	* Attic/turtle.py: Cope with destruction of the window
+
+	* Attic/turtle.py: Turtle graphics
+
+	* Debugger.py: Use of Breakpoint class should be bdb.Breakpoint.
+
+Mon Oct 19 03:33:40 1998  Guido van Rossum  <guido@eric.cnri.reston.va.us>
+
+	* SearchBinding.py:
+	Speed up the search a bit -- don't drag a mark around...
+
+	* PyShell.py:
+	Change our special entries from <console#N> to <pyshell#N>.
+	Patch linecache.checkcache() to keep our special entries alive.
+	Add popup menu to all editor windows to set a breakpoint.
+
+	* Debugger.py:
+	Use and pass through the 'force' flag to set_dict() where appropriate.
+	Default source and globals checkboxes to false.
+	Don't interact in user_return().
+	Add primitive set_breakpoint() method.
+
+	* ColorDelegator.py:
+	Raise priority of 'sel' tag so its foreground (on Windows) will take
+	priority over text colorization (which on Windows is almost the
+	same color as the selection background).
+
+	Define a tag and color for breakpoints ("BREAK").
+
+	* Attic/PopupMenu.py: Disable "Open stack viewer" and "help" commands.
+
+	* StackViewer.py:
+	Add optional 'force' argument (default 0) to load_dict().
+	If set, redo the display even if it's the same dict.
+
+Fri Oct 16 21:10:12 1998  Guido van Rossum  <guido@eric.cnri.reston.va.us>
+
+	* StackViewer.py: Do nothing when loading the same dict as before.
+
+	* PyShell.py: Details for debugger interface.
+
+	* Debugger.py:
+	Restructured and more consistent.  Save checkboxes across instantiations.
+
+	* EditorWindow.py, Attic/README, Bindings.py:
+	Get rid of conflicting ^X binding.  Use ^W.
+
+	* Debugger.py, StackViewer.py:
+	Debugger can now show local and global variables.
+
+	* Debugger.py: Oops
+
+	* Debugger.py, PyShell.py: Better debugger support (show stack etc).
+
+	* Attic/PopupMenu.py: Follow renames in StackViewer module
+
+	* StackViewer.py:
+	Rename classes to StackViewer (the widget) and StackBrowser (the toplevel).
+
+	* ScrolledList.py: Add close() method
+
+	* EditorWindow.py: Clarify 'Open Module' dialog text
+
+	* StackViewer.py: Restructured into a browser and a widget.
+
+Thu Oct 15 23:27:08 1998  Guido van Rossum  <guido@eric.cnri.reston.va.us>
+
+	* ClassBrowser.py, ScrolledList.py:
+	Generalized the scrolled list which is the base for the class and
+	method browser into a separate class in its own module.
+
+	* Attic/test.py: Cosmetic change
+
+	* Debugger.py: Don't show function name if there is none
+
+Wed Oct 14 03:43:05 1998  Guido van Rossum  <guido@eric.cnri.reston.va.us>
+
+	* Debugger.py, PyShell.py: Polish the Debugger GUI a bit.
+	Closing it now also does the right thing.
+
+Tue Oct 13 23:51:13 1998  Guido van Rossum  <guido@eric.cnri.reston.va.us>
+
+	* Debugger.py, PyShell.py, Bindings.py:
+	Ad primitive debugger interface (so far it will step and show you the
+	source, but it doesn't yet show the stack).
+
+	* Attic/README: Misc
+
+	* StackViewer.py: Whoops -- referenced self.top before it was set.
+
+	* help.txt: Added history and completion commands.
+
+	* help.txt: Updated
+
+	* FileList.py: Add class browser functionality.
+
+	* StackViewer.py:
+	Add a close() method and bind to WM_DELETE_WINDOW protocol
+
+	* PyShell.py: Clear the linecache before printing a traceback
+
+	* Bindings.py: Added class browser binding.
+
+	* ClassBrowser.py: Much improved, much left to do.
+
+	* PyShell.py: Make the return key do what I mean more often.
+
+	* ClassBrowser.py:
+	Adding the beginnings of a Class browser.  Incomplete, yet.
+
+	* EditorWindow.py, Bindings.py:
+	Add new command, "Open module".  You select or type a module name,
+	and it opens the source.
+
+Mon Oct 12 23:59:27 1998  Guido van Rossum  <guido@eric.cnri.reston.va.us>
+
+	* PyShell.py: Subsume functionality from Popup menu in Debug menu.
+	Other stuff so the PyShell window can be resurrected from the Windows menu.
+
+	* FileList.py: Get rid of PopUp menu.
+	Create a simple Windows menu.  (Imperfect when Untitled windows exist.)
+	Add wakeup() method: deiconify, raise, focus.
+
+	* EditorWindow.py: Generalize menu creation.
+
+	* Bindings.py: Add Debug and Help menu items.
+
+	* EditorWindow.py: Added a menu bar to every window.
+
+	* Bindings.py: Add menu configuration to the event configuration.
+
+	* Attic/PopupMenu.py: Pass a root to the help window.
+
+	* SearchBinding.py:
+	Add parent argument to 'to to line number' dialog box.
+
+Sat Oct 10 19:15:32 1998  Guido van Rossum  <guido@eric.cnri.reston.va.us>
+
+	* StackViewer.py:
+	Add a label at the top showing (very basic) help for the stack viewer.
+	Add a label at the bottom showing the exception info.
+
+	* Attic/test.py, Attic/idle: Add Unix main script and test program.
+
+	* idle.pyw, help.txt, WidgetRedirector.py, UndoDelegator.py, StackViewer.py, SearchBinding.py, Attic/README, PyShell.py, Attic/PopupMenu.py, Percolator.py, Outline.py, IOBinding.py, History.py, Attic/HelpWindow.py, FrameViewer.py, FileList.py, EditorWindow.py, Delegator.py, ColorDelegator.py, Bindings.py, AutoIndent.py, AutoExpand.py:
+	Initial checking of Tk-based Python IDE.
+	Features: text editor with syntax coloring and undo;
+	subclassed into interactive Python shell which adds history.
+
