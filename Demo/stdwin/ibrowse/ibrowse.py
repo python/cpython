@@ -111,6 +111,8 @@ def makewindow(file, ref):
 	win.last = []
 	win.pat = ''
 	win.dispatch = idispatch
+	win.nodemenu = None
+	win.footmenu = None
 	windows.append(win)
 	imove(win, ref)
 
@@ -213,6 +215,7 @@ def idispatch(event):
 			return
 		if detail in '0123456789':
 			i = eval(detail) - 1
+			if i < 0: i = len(win.menu) + i
 			if 0 <= i < len(win.menu):
 				topic, ref = win.menu[i]
 				imove(win, ref)
@@ -500,6 +503,8 @@ def imove(win, ref):
 	(left, top), (right, bottom) = win.textobj.getrect()
 	win.setdocsize(0, bottom)
 	#
+	if win.footmenu: win.footmenu.close()
+	if win.nodemenu: win.nodemenu.close()
 	win.footmenu = None
 	win.nodemenu = None
 	#
