@@ -157,7 +157,7 @@ def poll2(timeout=0.0, map=None):
 
 poll3 = poll2                           # Alias for backward compatibility
 
-def loop(timeout=30.0, use_poll=0, map=None):
+def loop(timeout=30.0, use_poll=False, map=None):
     if map is None:
         map = socket_map
 
@@ -171,10 +171,10 @@ def loop(timeout=30.0, use_poll=0, map=None):
 
 class dispatcher:
 
-    debug = 0
-    connected = 0
-    accepting = 0
-    closing = 0
+    debug = False
+    connected = False
+    accepting = False
+    closing = False
     addr = None
 
     def __init__(self, sock=None, map=None):
@@ -187,7 +187,7 @@ class dispatcher:
             self.set_socket(sock, map)
             # I think it should inherit this anyway
             self.socket.setblocking(0)
-            self.connected = 1
+            self.connected = True
             # XXX Does the constructor require that the socket passed
             # be connected?
             try:
@@ -273,7 +273,7 @@ class dispatcher:
     # ==================================================
 
     def listen(self, num):
-        self.accepting = 1
+        self.accepting = True
         if os.name == 'nt' and num > 5:
             num = 1
         return self.socket.listen(num)
@@ -283,14 +283,14 @@ class dispatcher:
         return self.socket.bind(addr)
 
     def connect(self, address):
-        self.connected = 0
+        self.connected = False
         err = self.socket.connect_ex(address)
         # XXX Should interpret Winsock return values
         if err in (EINPROGRESS, EALREADY, EWOULDBLOCK):
             return
         if err in (0, EISCONN):
             self.addr = address
-            self.connected = 1
+            self.connected = True
             self.handle_connect()
         else:
             raise socket.error, err
@@ -360,11 +360,11 @@ class dispatcher:
             # for an accepting socket, getting a read implies
             # that we are connected
             if not self.connected:
-                self.connected = 1
+                self.connected = True
             self.handle_accept()
         elif not self.connected:
             self.handle_connect()
-            self.connected = 1
+            self.connected = True
             self.handle_read()
         else:
             self.handle_read()
@@ -373,7 +373,7 @@ class dispatcher:
         # getting a write implies that we are connected
         if not self.connected:
             self.handle_connect()
-            self.connected = 1
+            self.connected = True
         self.handle_write()
 
     def handle_expt_event(self):
@@ -518,7 +518,7 @@ if os.name == 'posix':
 
         def __init__(self, fd):
             dispatcher.__init__(self)
-            self.connected = 1
+            self.connected = True
             # set it to non-blocking mode
             flags = fcntl.fcntl(fd, fcntl.F_GETFL, 0)
             flags = flags | os.O_NONBLOCK
