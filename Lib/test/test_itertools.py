@@ -746,15 +746,21 @@ Samuele
 
 >>> def all(seq, pred=bool):
 ...     "Returns True if pred(x) is True for every element in the iterable"
-...     return False not in imap(pred, seq)
+...     for elem in ifilterfalse(pred, seq):
+...         return False
+...     return True
 
 >>> def any(seq, pred=bool):
 ...     "Returns True if pred(x) is True for at least one element in the iterable"
-...     return True in imap(pred, seq)
+...     for elem in ifilter(pred, seq):
+...         return True
+...     return False
 
 >>> def no(seq, pred=bool):
 ...     "Returns True if pred(x) is False for every element in the iterable"
-...     return True not in imap(pred, seq)
+...     for elem in ifilter(pred, seq):
+...         return False
+...     return True
 
 >>> def quantify(seq, pred=bool):
 ...     "Count how many times the predicate is True in the sequence"
