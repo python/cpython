@@ -108,21 +108,19 @@ extern DL_IMPORT(void) PyErr_SetInterrupt(void);
 /* Support for adding program text to SyntaxErrors */
 extern DL_IMPORT(void) PyErr_SyntaxLocation(char *, int);
 extern DL_IMPORT(PyObject *) PyErr_ProgramText(char *, int);
-	
+
 /* These APIs aren't really part of the error implementation, but
    often needed to format error messages; the native C lib APIs are
    not available on all platforms, which is why we provide emulations
-   for those platforms in Python/mysnprintf.c */
+   for those platforms in Python/mysnprintf.c,
+   WARNING:  The return value of snprintf varies across platforms; do
+   not rely on any particular behavior; eventually the C99 defn may
+   be reliable.
+*/
 #if defined(MS_WIN32) && !defined(HAVE_SNPRINTF)
 # define HAVE_SNPRINTF
 # define snprintf _snprintf
 # define vsnprintf _vsnprintf
-#endif
-
-/* Always enable the fallback solution during the 2.2.0 alpha cycle
-   for enhanced testing */
-#if PY_VERSION_HEX < 0x020200B0
-# undef HAVE_SNPRINTF
 #endif
 
 #ifndef HAVE_SNPRINTF
