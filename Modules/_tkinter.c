@@ -1286,17 +1286,16 @@ Tktt_Dealloc(self)
 	PyMem_DEL(self);
 }
 
-static int
-Tktt_Print(self, fp, flags)
+static PyObject *
+Tktt_Repr(self)
 	PyObject *self;
-	FILE *fp;
-	int flags;
 {
 	TkttObject *v = (TkttObject *)self;
+	char buf[100];
 
-	fprintf(fp, "<tktimertoken at 0x%lx%s>", (long)v,
+	sprintf(buf, "<tktimertoken at 0x%lx%s>", (long)v,
 		v->func == NULL ? ", handler deleted" : "");
-	return 0;
+	return PyString_FromString(buf);
 }
 
 static PyObject *
@@ -1315,11 +1314,11 @@ static PyTypeObject Tktt_Type =
 	sizeof(TkttObject),		     /*tp_basicsize */
 	0,				     /*tp_itemsize */
 	Tktt_Dealloc,			     /*tp_dealloc */
-	Tktt_Print,			     /*tp_print */
+	0,				     /*tp_print */
 	Tktt_GetAttr,			     /*tp_getattr */
 	0,				     /*tp_setattr */
 	0,				     /*tp_compare */
-	0,				     /*tp_repr */
+	Tktt_Repr,			     /*tp_repr */
 	0,				     /*tp_as_number */
 	0,				     /*tp_as_sequence */
 	0,				     /*tp_as_mapping */
