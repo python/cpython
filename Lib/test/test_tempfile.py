@@ -10,6 +10,10 @@ import warnings
 import unittest
 from test import test_support
 
+warnings.filterwarnings("ignore",
+                        category=RuntimeWarning,
+                        message="mktemp", module=__name__)
+
 if hasattr(os, 'stat'):
     import stat
     has_stat = 1
@@ -478,16 +482,11 @@ class test_mktemp(TC):
     # We must also suppress the RuntimeWarning it generates.
     def setUp(self):
         self.dir = tempfile.mkdtemp()
-        warnings.filterwarnings("ignore",
-                                category=RuntimeWarning,
-                                message="mktemp")
 
     def tearDown(self):
         if self.dir:
             os.rmdir(self.dir)
             self.dir = None
-        # XXX This clobbers any -W options.
-        warnings.resetwarnings()
 
     class mktemped:
         _unlink = os.unlink
