@@ -793,11 +793,22 @@ PyObject_Realloc(void *p, size_t nbytes)
 	if (ADDRESS_IN_RANGE(p, pool->arenaindex)) {
 		/* We're in charge of this block */
 		size = INDEX2SIZE(pool->szidx);
-		if (size >= nbytes)
-			/* Don't bother if a smaller size was requested. */
-			return p;
-		/* We need more memory. */
-		assert(nbytes != 0);
+		if (nbytes <= size) {
+			/* The block is staying the same or shrinking.  If
+			 * it's shrinking, there's a tradeoff:  it costs
+			 * cycles to copy the block to a smaller size class,
+			 * but it wastes memory not to copy it.  The
+			 * compromise here is to copy on shrink only if at
+			 * least 25% of size can be shaved off.
+			 */
+			if (4 * nbytes > 3 * size) {
+				/* It's the same,
+				 * or shrinking and new/old > 3/4.
+				 */
+				return p;
+			}
+			size = nbytes;
+		}
 		bp = PyObject_Malloc(nbytes);
 		if (bp != NULL) {
 			memcpy(bp, p, size);
