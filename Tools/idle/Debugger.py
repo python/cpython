@@ -10,6 +10,8 @@ class Debugger(bdb.Bdb):
     
     interacting = 0
     
+    vstack = vsource = vlocals = vglobals = None
+    
     def __init__(self, pyshell):
         bdb.Bdb.__init__(self)
         self.pyshell = pyshell
@@ -52,7 +54,7 @@ class Debugger(bdb.Bdb):
         #
         self.bcont = b = Button(bframe, text="Go", command=self.cont)
         bl.append(b)
-        self.bstep = b = Button(bframe, text="Into", command=self.step)
+        self.bstep = b = Button(bframe, text="Step", command=self.step)
         bl.append(b)
         self.bnext = b = Button(bframe, text="Over", command=self.next)
         bl.append(b)
@@ -66,19 +68,27 @@ class Debugger(bdb.Bdb):
         self.cframe = cframe = Frame(bframe)
         self.cframe.pack(side="left")
         #
-        self.vstack = BooleanVar(top)
+        if not self.vstack:
+            self.__class__.vstack = BooleanVar(top)
+            self.vstack.set(1)
         self.bstack = Checkbutton(cframe,
             text="Stack", command=self.show_stack, variable=self.vstack)
         self.bstack.grid(row=0, column=0)
-        self.vsource = BooleanVar(top)
+        if not self.vsource:
+            self.__class__.vsource = BooleanVar(top)
+            self.vsource.set(1)
         self.bsource = Checkbutton(cframe,
             text="Source", command=self.show_source, variable=self.vsource)
         self.bsource.grid(row=0, column=1)
-        self.vlocals = BooleanVar(top)
+        if not self.vlocals:
+            self.__class__.vlocals = BooleanVar(top)
+            self.vlocals.set(1)
         self.blocals = Checkbutton(cframe,
             text="Locals", command=self.show_locals, variable=self.vlocals)
         self.blocals.grid(row=1, column=0)
-        self.vglobals = BooleanVar(top)
+        if not self.vglobals:
+            self.__class__.vglobals = BooleanVar(top)
+            self.vglobals.set(1)
         self.bglobals = Checkbutton(cframe,
             text="Globals", command=self.show_globals, variable=self.vglobals)
         self.bglobals.grid(row=1, column=1)
@@ -87,6 +97,7 @@ class Debugger(bdb.Bdb):
         self.status.pack(anchor="w")
         self.error = Label(top, anchor="w")
         self.error.pack(anchor="w")
+        self.errorbg = self.error.cget("background")
         #
         self.fstack = Frame(top, height=1)
         self.fstack.pack(expand=1, fill="both")
@@ -94,6 +105,15 @@ class Debugger(bdb.Bdb):
         self.flocals.pack(expand=1, fill="both")
         self.fglobals = Frame(top, height=1)
         self.fglobals.pack(expand=1, fill="both")
+        #
+        if self.vstack.get():
+            self.show_stack()
+        if self.vlocals.get():
+            self.show_locals()
+        if self.vglobals.get():
+            self.show_globals()
+    
+    frame = None
     
     def interaction(self, frame, info=None):
         self.frame = frame
@@ -101,10 +121,12 @@ class Debugger(bdb.Bdb):
         file = code.co_filename
         base = os.path.basename(file)
         lineno = frame.f_lineno
+        #
         message = "%s:%s" % (base, lineno)
         if code.co_name != "?":
             message = "%s: %s()" % (message, code.co_name)
         self.status.configure(text=message)
+        #
         if info:
             type, value, tb = info
             try:
@@ -116,33 +138,33 @@ class Debugger(bdb.Bdb):
                     m1 = "%s: %s" % (m1, str(value))
                 except:
                     pass
+            bg = "yellow"
         else:
             m1 = ""
             tb = None
-        self.error.configure(text=m1)
+            bg = self.errorbg
+        self.error.configure(text=m1, background=bg)
+        #
         sv = self.stackviewer
         if sv:
             stack, i = self.get_stack(self.frame, tb)
             sv.load_stack(stack, i)
-        lv = self.localsviewer
-        gv = self.globalsviewer
-        if lv:
-            if not gv or self.frame.f_locals is not self.frame.f_globals:
-                lv.load_dict(self.frame.f_locals)
-            else:
-                lv.load_dict(None)
-        if gv:
-            gv.load_dict(self.frame.f_globals)
+        #
+        self.show_variables()
+        #
         if self.vsource.get():
             self.sync_source_line()
+        #
         for b in self.buttons:
             b.configure(state="normal")
+        #
         self.top.tkraise()
         self.root.mainloop()
+        #
         for b in self.buttons:
             b.configure(state="disabled")
         self.status.configure(text="")
-        self.error.configure(text="")
+        self.error.configure(text="", background=self.errorbg)
         self.frame = None
     
     def sync_source_line(self):
@@ -194,30 +216,50 @@ class Debugger(bdb.Bdb):
             self.sync_source_line()
 
     def show_frame(self, (frame, lineno)):
-        pass
+        self.frame = frame
+        self.show_variables()
 
     localsviewer = None
+    globalsviewer = None
 
     def show_locals(self):
         lv = self.localsviewer
-        if not lv and self.vlocals.get():
-            self.localsviewer = lv = StackViewer.NamespaceViewer(
-                self.flocals, "Locals")
-            if self.frame:
-                lv.load_dict(self.frame.f_locals)
-        elif lv and not self.vlocals.get():
-            self.localsviewer = None
-            lv.close()
-
-    globalsviewer = None
+        if self.vlocals.get():
+            if not lv:
+                self.localsviewer = StackViewer.NamespaceViewer(
+                    self.flocals, "Locals")
+        else:
+            if lv:
+                self.localsviewer = None
+                lv.close()
+                self.flocals['height'] = 1
+        self.show_variables()
 
     def show_globals(self):
-        lv = self.globalsviewer
-        if not lv and self.vglobals.get():
-            self.globalsviewer = lv = StackViewer.NamespaceViewer(
-                self.fglobals, "Locals")
-            if self.frame:
-                lv.load_dict(self.frame.f_globals)
-        elif lv and not self.vglobals.get():
-            self.globalsviewer = None
-            lv.close()
+        gv = self.globalsviewer
+        if self.vglobals.get():
+            if not gv:
+                self.globalsviewer = StackViewer.NamespaceViewer(
+                    self.fglobals, "Globals")
+        else:
+            if gv:
+                self.globalsviewer = None
+                gv.close()
+                self.fglobals['height'] = 1
+        self.show_variables()
+
+    def show_variables(self):
+        lv = self.localsviewer
+        gv = self.globalsviewer
+        frame = self.frame
+        if not frame:
+            ldict = gdict = None
+        else:
+            ldict = frame.f_locals
+            gdict = frame.f_globals
+            if lv and gv and ldict is gdict:
+                ldict = None
+        if lv:
+            lv.load_dict(ldict)
+        if gv:
+            gv.load_dict(gdict)
