@@ -1,7 +1,7 @@
 #  pprint.py
 #
 #  Author:	Fred L. Drake, Jr.
-#		fdrake@vt.edu
+#		fdrake@cnri.reston.va.us, fdrake@intr.net
 #
 #  This is a simple little module I wrote to make life easier.  I didn't
 #  see anything quite like it in the library, though I may have overlooked
@@ -9,34 +9,28 @@
 #  tuples with fairly non-descriptive content.  This is modelled very much
 #  after Lisp/Scheme - style pretty-printing of lists.  If you find it
 #  useful, thank small children who sleep at night.
-#
 
 """Support to pretty-print lists, tuples, & dictionaries recursively.
-Very simple, but at least somewhat useful, especially in debugging
-data structures.
+Very simple, but useful, especially in debugging data structures.
 
-INDENT_PER_LEVEL	--  Amount of indentation to use for each new
-			    recursive level.  The default is 1.  This
-			    must be a non-negative integer, and may be
-			    set by the caller before calling pprint().
+Constants
+---------
 
-MAX_WIDTH		--  Maximum width of the display.  This is only
-			    used if the representation *can* be kept
-			    less than MAX_WIDTH characters wide.  May
-			    be set by the user before calling pprint().
+INDENT_PER_LEVEL
+    Amount of indentation to use for each new recursive level.  The
+    default is 1.  This must be a non-negative integer, and may be set
+    by the caller before calling pprint().
 
-TAB_WIDTH		--  The width represented by a single tab.  This
-			    value is typically 8, but 4 is the default
-			    under MacOS.  Can be changed by the user if
-			    desired, but is probably not a good idea.
+MAX_WIDTH
+    Maximum width of the display.  This is only used if the
+    representation *can* be kept less than MAX_WIDTH characters wide.
+    May be set by the user before calling pprint().
 
-pprint(seq [, stream])	--  The pretty-printer.  This takes a Python
-			    object (presumably a sequence, but that
-			    doesn't matter) and an optional output
-			    stream.  See the function documentation
-			    for details.
+TAB_WIDTH
+    The width represented by a single tab.  This value is typically 8,
+    but 4 is the default under MacOS.  Can be changed by the user if
+    desired, but is probably not a good idea.
 """
-
 
 INDENT_PER_LEVEL = 1
 
@@ -46,45 +40,44 @@ import os
 TAB_WIDTH = (os.name == 'mac' and 4) or 8
 del os
 
+from types import DictType, ListType, TupleType
 
 
 def _indentation(cols):
-    "Create tabbed indentation string COLS columns wide."
+    """Create tabbed indentation string.
 
-    #  This is used to reduce the byte-count for the output, allowing
-    #  files created using this module to use as little external storage
-    #  as possible.  This is primarily intended to minimize impact on
-    #  a user's quota when storing resource files, or for creating output
-    #  intended for transmission.
-
+    cols
+	Width of the indentation, in columns.
+    """
     return ((cols / TAB_WIDTH) * '\t') + ((cols % TAB_WIDTH) * ' ')
-
 
 
 def pprint(seq, stream = None, indent = 0, allowance = 0):
     """Pretty-print a list, tuple, or dictionary.
 
-    pprint(seq [, stream]) ==> None
+    seq
+	List, tuple, or dictionary object to be pretty-printed.  Other
+	object types are permitted by are not specially interpreted.
 
-    If STREAM is provided, output is written to that stream, otherwise
-    sys.stdout is used.  Indentation is done according to
-    INDENT_PER_LEVEL, which may be set to any non-negative integer
-    before calling this function.  The output written on the stream is
-    a perfectly valid representation of the Python object passed in,
-    with indentation to suite human-readable interpretation.  The
-    output can be used as input without error, given readable
-    representations of all sequence elements are available via repr().
-    Output is restricted to MAX_WIDTH columns where possible.  The
-    STREAM parameter must support the write() method with a single
-    parameter, which will always be a string.  The output stream may be
-    a StringIO.StringIO object if the result is needed as a string.
+    stream
+	Output stream.  If not provided, `sys.stdout' is used.  This
+	parameter must support the `write()' method with a single
+	parameter, which will always be a string.  It may be a
+	`StringIO.StringIO' object if the result is needed as a
+	string.
+
+    Indentation is done according to `INDENT_PER_LEVEL', which may be
+    set to any non-negative integer before calling this function.  The
+    output written on the stream is a perfectly valid representation
+    of the Python object passed in, with indentation to assist
+    human-readable interpretation.  The output can be used as input
+    without error, given readable representations of all elements are
+    available via `repr()'.  Output is restricted to `MAX_WIDTH'
+    columns where possible.
     """
-
     if stream is None:
 	import sys
 	stream = sys.stdout
-
-    from types import DictType, ListType, TupleType
 
     rep = `seq`
     typ = type(seq)
@@ -140,4 +133,4 @@ def pprint(seq, stream = None, indent = 0, allowance = 0):
 
 
 #
-#  end of pprint.py
+#  end of file

@@ -4,12 +4,29 @@ to the Python Library Reference for more information.
 Files:
 ------
 
+	FILES	     -- list of files associated with the parser module.
+
+	README	     -- this file.
+
 	example.py   --	module that uses the `parser' module to extract
 			information from the parse tree of Python source
 			code.
 
+	docstring.py -- sample source file containing only a module docstring.
+
+	simple.py    -- sample source containing a "short form" definition.
+
 	source.py    --	sample source code used to demonstrate ability to
 			handle nested constructs easily using the functions
 			and classes in example.py.
+
+	pprint.py    -- function to pretty-print Python values.
+
+	test_parser.py  program to put the parser module through it's paces.
+
+	parser.tex   -- LaTex driver file for formatting the parser module
+			documentation separately from the library reference.
+
+	Makefile     -- `make' rule set to format the parser module manual.
 
 Enjoy!
