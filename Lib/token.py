@@ -56,12 +56,11 @@ N_TOKENS = 39
 NT_OFFSET = 256
 #--end constants--
 
-names = dir()
 tok_name = {}
-for name in names:
-    number = eval(name)
-    if type(number) is type(0):
-	tok_name[number] = name
+for _name, _value in globals().items():
+    if type(_value) is type(0):
+	tok_name[_value] = _name
+
 
 def ISTERMINAL(x):
     return x < NT_OFFSET
