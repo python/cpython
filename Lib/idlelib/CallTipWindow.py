@@ -28,7 +28,7 @@ class CallTip:
                       background="#ffffe0", relief=SOLID, borderwidth=1,
                       font = self.widget['font'])
         label.pack()
-                      
+
     def hidetip(self):
         tw = self.tipwindow
         self.tipwindow = None
@@ -53,7 +53,7 @@ class container: # Conceptually an editor_window
         text.event_add("<<calltip-hide>>", ")")
         text.bind("<<calltip-show>>", self.calltip_show)
         text.bind("<<calltip-hide>>", self.calltip_hide)
-        
+
         text.focus_set()
         # root.mainloop() # not in idle
 
