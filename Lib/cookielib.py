@@ -34,7 +34,6 @@ except ImportError:
 import httplib  # only for the default HTTP port
 from calendar import timegm
 
-logging.getLogger("cookielib").addHandler(logging.StreamHandler())
 debug = logging.getLogger("cookielib").debug
 
 DEFAULT_HTTP_PORT = str(httplib.HTTP_PORT)
