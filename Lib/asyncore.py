@@ -146,7 +146,6 @@ def poll3 (timeout=0.0, map=None):
     timeout = int(timeout*1000)
     pollster = select.poll()
     if map:
-        l = []
         for fd, obj in map.items():
             flags = 0
             if obj.readable():
