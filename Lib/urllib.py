@@ -393,7 +393,7 @@ class FancyURLopener(URLopener):
 			match = re.match(
 			    '[ \t]*([^ \t]+)[ \t]+realm="([^"]*)"', stuff)
 			if match:
-			        scheme, realm = match.group()
+			        scheme, realm = match.groups()
 				if string.lower(scheme) == 'basic':
 					return self.retry_http_basic_auth(
 						url, realm)
@@ -436,11 +436,15 @@ class FancyURLopener(URLopener):
 			return None, None
 
 	def echo_off(self):
-		os.system("stty -echo")
+		# XXX Is this sufficient???
+		if hasattr(os, "system"):
+			os.system("stty -echo")
 
 	def echo_on(self):
-		print
-		os.system("stty echo")
+		# XXX Is this sufficient???
+		if hasattr(os, "system"):
+			print
+			os.system("stty echo")
 
 
 # Utility functions
