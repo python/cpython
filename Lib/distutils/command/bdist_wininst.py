@@ -116,20 +116,21 @@ class bdist_wininst (Command):
         install_lib.compile = 0
         install_lib.optimize = 0
 
-        # If we are building an installer for a Python version other
-        # than the one we are currently running, then we need to ensure
-        # our build_lib reflects the other Python version rather than ours.
-        # Note that for target_version!=sys.version, we must have skipped the
-        # build step, so there is no issue with enforcing the build of this
-        # version.
-        target_version = self.target_version
-        if not target_version:
-            assert self.skip_build, "Should have already checked this"
-            target_version = sys.version[0:3]
-        plat_specifier = ".%s-%s" % (get_platform(), target_version)
-        build = self.get_finalized_command('build')
-        build.build_lib = os.path.join(build.build_base,
-                                       'lib' + plat_specifier)
+        if self.distribution.has_ext_modules():
+            # If we are building an installer for a Python version other
+            # than the one we are currently running, then we need to ensure
+            # our build_lib reflects the other Python version rather than ours.
+            # Note that for target_version!=sys.version, we must have skipped the
+            # build step, so there is no issue with enforcing the build of this
+            # version.
+            target_version = self.target_version
+            if not target_version:
+                assert self.skip_build, "Should have already checked this"
+                target_version = sys.version[0:3]
+            plat_specifier = ".%s-%s" % (get_platform(), target_version)
+            build = self.get_finalized_command('build')
+            build.build_lib = os.path.join(build.build_base,
+                                           'lib' + plat_specifier)
 
         # Use a custom scheme for the zip-file, because we have to decide
         # at installation time which scheme to use.
