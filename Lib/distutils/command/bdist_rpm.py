@@ -313,10 +313,15 @@ class bdist_rpm (Command):
 
             if not self.source_only:
                 rpms = glob.glob(os.path.join(rpm_dir['RPMS'], "*/*.rpm"))
+                debuginfo = glob.glob(os.path.join(rpm_dir['RPMS'], \
+                                                   "*/*debuginfo*.rpm"))
+                if debuginfo:
+                    rpms.remove(debuginfo[0])
                 assert len(rpms) == 1, \
                        "unexpected number of RPM files found: %s" % rpms
                 self.move_file(rpms[0], self.dist_dir)
-
+                if debuginfo:
+                    self.move_file(debuginfo[0], self.dist_dir)
     # run()
 
 
