@@ -504,6 +504,7 @@ class Browser:
 SIMPLE_TYPES = (
 	type(None),
 	int,
+	bool,
 	long,
 	float,
 	complex,
