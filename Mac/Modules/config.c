@@ -31,8 +31,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #ifdef macintosh
 /* The Macintosh main program is in macmain.c */
 #define NO_MAIN
-/* Comment this out if you're not interested in STDWIN */
-#define USE_STDWIN
 #endif
 
 #include <stdio.h>

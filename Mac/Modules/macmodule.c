@@ -23,8 +23,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 ******************************************************************/
 
 /* Mac module implementation */
-/* Richard J. Walker April 7, 1994 Island Graphics Corp. */
-/* Thanks to Guido's unix emulation routines */
 
 #include "allobjects.h"
 #include "modsupport.h"
@@ -33,7 +31,19 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
-#include <stat.h>
+
+#ifdef THINK_C
+#include "unix.h"
+#undef S_IFMT
+#undef S_IFDIR
+#undef S_IFCHR
+#undef S_IFBLK
+#undef S_IFREG
+#undef S_ISDIR
+#undef S_ISREG
+#endif
+
+#include "macstat.h"
 
 #include <fcntl.h>
 
@@ -54,9 +64,12 @@ DIR * opendir PROTO((char *));
 void closedir PROTO((DIR *));
 struct dirent * readdir PROTO((DIR *));
 int rmdir PROTO((const char *path));
-int stat PROTO((const char *path, struct stat *buf));
 int sync PROTO((void));
+#ifdef THINK_C
+int unlink PROTO((char *));
+#else
 int unlink PROTO((const char *));
+#endif
 
 
 
@@ -357,13 +370,13 @@ mac_stat(self, args)
 	object *self;
 	object *args;
 {
-	struct stat st;
+	struct macstat st;
 	char *path;
 	int res;
 	if (!getargs(args, "s", &path))
 		return NULL;
 	BGN_SAVE
-	res = stat(path, &st);
+	res = macstat(path, &st);
 	END_SAVE
 	if (res != 0)
 		return mac_error();
@@ -402,7 +415,7 @@ mac_unlink(self, args)
 	object *self;
 	object *args;
 {
-	return mac_1str(args, unlink);
+	return mac_1str(args, (int (*)(const char *))unlink);
 }
 
 static object *

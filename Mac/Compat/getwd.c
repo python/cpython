@@ -27,10 +27,10 @@
    Public domain by Guido van Rossum, CWI, Amsterdam (July 1987).
 */
 
+#include "macdefs.h"
 #ifdef MPW
 #include <Strings.h>
 #endif
-#include "macdefs.h"
 
 #define ROOTID 2 /* Root directory ID */
 

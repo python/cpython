@@ -7,16 +7,12 @@
 #include <Files.h>
 #include <OSUtils.h>
 
-#ifndef MPW
+#ifdef THINK_C
 #include <pascal.h>
 #endif
 
 #include <errno.h>
 #include <string.h>
-
-/* Difference in origin between Mac and Unix clocks: */
-#define TIMEDIFF ((unsigned long) \
-	(((1970-1904)*365 + (1970-1904)/4) * 24 * 3600))
 
 /* Macro to find out whether we can do HFS-only calls: */
 #define FSFCBLen (* (short *) 0x3f6)
@@ -31,8 +27,3 @@
 #endif
 #define EOS '\0'
 #define SEP ':'
-
-#if 0 // doesn't work
-/* Call Macsbug: */
-pascal void Debugger() extern 0xA9FF;
-#endif
