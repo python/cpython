@@ -478,29 +478,27 @@ static object *
 complex_int(v)
 	object *v;
 {
-	double x = ((complexobject *)v)->cval.real;
-	if (x < 0 ? (x = ceil(x)) < (double)LONG_MIN
-	          : (x = floor(x)) > (double)LONG_MAX) {
-		err_setstr(OverflowError, "float too large to convert");
-		return NULL;
-	}
-	return newintobject((long)x);
+	err_setstr(TypeError,
+		   "can't convert complex to int; use e.g. int(abs(z))");
+	return NULL;
 }
 
 static object *
 complex_long(v)
 	object *v;
 {
-	double x = ((complexobject *)v)->cval.real;
-	return dnewlongobject(x);
+	err_setstr(TypeError,
+		   "can't convert complex to long; use e.g. long(abs(z))");
+	return NULL;
 }
 
 static object *
 complex_float(v)
 	object *v;
 {
-	double x = ((complexobject *)v)->cval.real;
-	return newfloatobject(x);
+	err_setstr(TypeError,
+		   "can't convert complex to float; use e.g. abs(z)");
+	return NULL;
 }
 
 
