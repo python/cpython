@@ -123,6 +123,9 @@ Extension modules
 Library
 -------
 
+- shelve now supports the optional writeback argument, and exposes
+  pickle protocol versions.
+
 - Several methods of nntplib.NNTP have grown an optional file argument
   which specifies a file where to divert the command's output
   (already supported by the body() method).  (SF patch #720468)
