@@ -25,7 +25,8 @@ Core and builtins
 Extension Modules
 -----------------
 
-- The spwd has been added, allowing access to the shadow password database.
+- The spwd module has been added, allowing access to the shadow password
+  database.
 
 - stat_float_times is now True.
 
