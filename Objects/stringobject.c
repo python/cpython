@@ -26,10 +26,11 @@ static PyStringObject *nullstring;
 static PyObject *interned;
 
 
-#if defined(HAVE_MBTOWC) && defined(HAVE_WCHAR_H)
+#if defined(HAVE_MBTOWC) && defined(HAVE_WCHAR_H) && defined(HAVE_WCTYPE_H)
 #  define PRINT_MULTIBYTE_STRING
 #  include <locale.h>
 #  include <wchar.h>
+#  include <wctype.h>
 #  if defined(HAVE_ISWPRINT)
 #    define _isprint iswprint
 #  else
