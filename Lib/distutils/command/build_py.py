@@ -19,19 +19,19 @@ class build_py (Command):
     description = "\"build\" pure Python modules (copy to build directory)"
 
     user_options = [
-        ('build-dir=', 'd', "directory for platform-shared files"),
+        ('build-lib=', 'd', "directory to \"build\" (copy) to"),
         ]
 
 
     def initialize_options (self):
-        self.build_dir = None
+        self.build_lib = None
         self.modules = None
         self.package = None
         self.package_dir = None
 
     def finalize_options (self):
         self.set_undefined_options ('build',
-                                    ('build_lib', 'build_dir'))
+                                    ('build_lib', 'build_lib'))
 
         # Get the distribution options that are aliases for build_py
         # options -- list of packages and list of modules.
@@ -259,11 +259,11 @@ class build_py (Command):
                   "'package' must be a string (dot-separated), list, or tuple"
 
         # Now put the module source file into the "build" area -- this is
-        # easy, we just copy it somewhere under self.build_dir (the build
+        # easy, we just copy it somewhere under self.build_lib (the build
         # directory for Python source).
         outfile_path = list (package)
         outfile_path.append (module + ".py")
-        outfile_path.insert (0, self.build_dir)
+        outfile_path.insert (0, self.build_lib)
         outfile = apply (os.path.join, outfile_path)
 
         dir = os.path.dirname (outfile)
@@ -277,9 +277,9 @@ class build_py (Command):
         for (module, package, module_file) in modules:
 
             # Now "build" the module -- ie. copy the source file to
-            # self.build_dir (the build directory for Python source).
+            # self.build_lib (the build directory for Python source).
             # (Actually, it gets copied to the directory for this package
-            # under self.build_dir.)
+            # under self.build_lib.)
             self.build_module (module, module_file, package)
 
     # build_modules ()
@@ -300,7 +300,7 @@ class build_py (Command):
             modules = self.find_package_modules (package, package_dir)
 
             # Now loop over the modules we found, "building" each one (just
-            # copy it to self.build_dir).
+            # copy it to self.build_lib).
             for (module, module_file) in modules:
                 self.build_module (module, module_file, package)
 
