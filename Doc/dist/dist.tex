@@ -505,23 +505,27 @@ Extension("foo", ["foo.c"], include_dirs=["/usr/include/X11"])
 \end{verbatim}
 
 You should avoid this sort of non-portable usage if you plan to
-distribute your code: it's probably better to write your code to include
-(e.g.) \code{<X11/Xlib.h>}.
+distribute your code: it's probably better to write C code like
+\begin{verbatim}
+#include <X11/Xlib.h>
+\end{verbatim}
 
 If you need to include header files from some other Python extension,
-you can take advantage of the fact that the Distutils installs
-extension header files in a consistent way.  For example, on a
-standard \UNIX{} installation the Numerical Python header files are
-installed to \file{/usr/local/include/python1.5/Numerical}.  (The
-exact location will differ according to your platform and Python
+you can take advantage of the fact that header files are installed in a
+consistent way by the Distutils \command{install\_header} command.  For
+example, the Numerical Python header files are installed (on a standard
+Unix installation) to \file{/usr/local/include/python1.5/Numerical}.
+(The exact location will differ according to your platform and Python
 installation.)  Since the Python include
-directory---\file{/usr/local/include/python1.5} in this case---is
-always included in the search path when building Python extensions,
-the best approach is to include (e.g.)
-\code{<Numerical/arrayobject.h>}.  If you insist on putting the
-\file{Numerical} include directory right into your header search path,
-though, you can find that directory using the Distutils
-\module{sysconfig} module:
+directory---\file{/usr/local/include/python1.5} in this case---is always
+included in the search path when building Python extensions, the best
+approach is to write C code like
+\begin{verbatim}
+#include <Numerical/arrayobject.h>
+\end{verbatim}
+If you must put the \file{Numerical} include directory right into your
+header search path, though, you can find that directory using the
+Distutils \module{sysconfig} module:
 
 \begin{verbatim}
 from distutils.sysconfig import get_python_inc
