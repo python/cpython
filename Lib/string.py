@@ -82,10 +82,7 @@ def splitfields(s, sep):
 
 # Join words with spaces between them
 def join(words):
-	res = ''
-	for w in words:
-		res = res + (' ' + w)
-	return res[1:]
+	return joinfields(words, ' ')
 
 # Join fields with separator
 def joinfields(words, sep):
