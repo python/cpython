@@ -1366,24 +1366,24 @@ handle_range_longs(PyObject *self, PyObject *args)
 		Py_INCREF(istep);
 	}
 
-	/* XXX What reason do we have to believe that if an arg isn't an
-	 * XXX int, it must be a float?
-	 */
 	if (!PyInt_Check(ilow) && !PyLong_Check(ilow)) {
-		PyErr_SetString(PyExc_ValueError,
-				"integer start argument expected, got float.");
+		PyErr_Format(PyExc_ValueError,
+			     "integer start argument expected, got %s.",
+			     ilow->ob_type->tp_name);
 		goto Fail;
 	}
 
 	if (!PyInt_Check(ihigh) && !PyLong_Check(ihigh)) {
-		PyErr_SetString(PyExc_ValueError,
-				"integer end argument expected, got float.");
+		PyErr_Format(PyExc_ValueError,
+			     "integer end argument expected, got %s.",
+			     ihigh->ob_type->tp_name);
 		goto Fail;
 	}
 
 	if (!PyInt_Check(istep) && !PyLong_Check(istep)) {
-		PyErr_SetString(PyExc_ValueError,
-			"integer step argument expected, got float.");
+		PyErr_Format(PyExc_ValueError,
+			     "integer step argument expected, got %s.",
+			     istep->ob_type->tp_name);
 		goto Fail;
 	}
 
