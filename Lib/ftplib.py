@@ -591,7 +591,7 @@ def parse229(resp, peer):
         raise error_proto, resp # should contain '(|||port|)'
     if resp[left + 1] <> resp[right - 1]:
         raise error_proto, resp
-    parts = resp[left+1].split(resp[left + 1:right])
+    parts = resp[left + 1:right].split(resp[left+1])
     if len(parts) <> 5:
         raise error_proto, resp
     host = peer[0]
