@@ -93,6 +93,29 @@ you can expect to find the following special attributes:
   only members for which the predicate returns a true value are included.
 \end{funcdesc}
 
+\begin{funcdesc}{getmoduleinfo}{path}
+  Return a tuple of values that describe how Python will interpret the
+  file identified by \var{path} if it is a module, or \code{None} if
+  it would not be identified as a module.  The return tuple is
+  \code{(\var{name}, \var{suffix}, \var{mode}, \var{mtype})}, where
+  \var{name} is the name of the module without the name of any
+  enclosing package, \var{suffix} is the trailing part of the file
+  name (which may not be a dot-delimited extension), \var{mode} is the
+  \function{open()} mode that would be used (\code{'r'} or
+  \code{'rb'}), and \var{mtype} is an integer giving the type of the
+  module.  \var{mtype} will have a value which can be compared to the
+  constants defined in the \refmodule{imp} module; see the
+  documentation for that module for more information on module types.
+\end{funcdesc}
+
+\begin{funcdesc}{getmodulename}{path}
+  Return the name of the module named by the file \var{path}, without
+  including the names of enclosing packages.  This uses the same
+  algortihm as the interpreter uses when searching for modules.  If
+  the name cannot be matched according to the interpreter's rules,
+  \code{None} is returned.
+\end{funcdesc}
+
 \begin{funcdesc}{ismodule}{object}
   Return true if the object is a module.
 \end{funcdesc}
