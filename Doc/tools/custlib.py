@@ -12,19 +12,19 @@ for dir in sys.path:
     # Look for *.py files
     filelist=glob.glob(os.path.join(dir, '*.py'))
     for file in filelist: 
-	path, file = os.path.split(file)
-	base, ext=os.path.splitext(file)
-	modules[string.lower(base)]=base
+        path, file = os.path.split(file)
+        base, ext=os.path.splitext(file)
+        modules[string.lower(base)]=base
 
     # Look for shared library files
     filelist=(glob.glob(os.path.join(dir, '*.so')) + 
-	      glob.glob(os.path.join(dir, '*.sl')) +
-	      glob.glob(os.path.join(dir, '*.o')) )
+              glob.glob(os.path.join(dir, '*.sl')) +
+              glob.glob(os.path.join(dir, '*.o')) )
     for file in filelist: 
-	path, file = os.path.split(file)
-	base, ext=os.path.splitext(file)
-	if base[-6:]=='module': base=base[:-6]
-	modules[string.lower(base)]=base
+        path, file = os.path.split(file)
+        base, ext=os.path.splitext(file)
+        if base[-6:]=='module': base=base[:-6]
+        modules[string.lower(base)]=base
 
 # Minor oddity: the types module is documented in libtypes2.tex
 if modules.has_key('types'):
@@ -53,7 +53,7 @@ modules=mlist
 print """\documentstyle[twoside,11pt,myformat]{report}
 \\title{Python Library Reference}
 \\input{boilerplate}
-\\makeindex			% tell \\index to actually write the .idx file
+\\makeindex                     % tell \\index to actually write the .idx file
 \\begin{document}
 \\pagenumbering{roman}
 \\maketitle
@@ -69,5 +69,5 @@ for modname in mlist:
     print "\\input{lib%s}" % (modname,)
     
 # Write the end
-print """\\input{custlib.ind}			% Index
+print """\\input{custlib.ind}                   % Index
 \\end{document}"""
