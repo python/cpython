@@ -385,7 +385,7 @@ class MSVCCompiler (CCompiler) :
                            debug=0,
                            target_lang=None):
 
-	if not self.initialized: self.initialize()
+        if not self.initialized: self.initialize()
         (objects, output_dir) = self._fix_object_args (objects, output_dir)
         output_filename = \
             self.library_filename (output_libname, output_dir=output_dir)
@@ -419,7 +419,7 @@ class MSVCCompiler (CCompiler) :
               build_temp=None,
               target_lang=None):
 
-	if not self.initialized: self.initialize()
+        if not self.initialized: self.initialize()
         (objects, output_dir) = self._fix_object_args (objects, output_dir)
         (libraries, library_dirs, runtime_library_dirs) = \
             self._fix_lib_args (libraries, library_dirs, runtime_library_dirs)
