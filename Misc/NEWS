@@ -118,6 +118,10 @@ Extension modules
 Library
 -------
 
+- Several methods of nntplib.NNTP have grown an optional file argument
+  which specifies a file where to divert the command's output
+  (already supported by the body() method).  (SF patch #720468)
+
 - The self-documenting XML server library DocXMLRPCServer was added.
 
 - Support for internationalized domain names has been added through

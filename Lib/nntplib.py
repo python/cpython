@@ -264,7 +264,7 @@ class NNTP:
         self.putcmd(line)
         return self.getlongresp(file)
 
-    def newgroups(self, date, time):
+    def newgroups(self, date, time, file=None):
         """Process a NEWGROUPS command.  Arguments:
         - date: string 'yymmdd' indicating the date
         - time: string 'hhmmss' indicating the time
@@ -272,9 +272,9 @@ class NNTP:
         - resp: server response if successful
         - list: list of newsgroup names"""
 
-        return self.longcmd('NEWGROUPS ' + date + ' ' + time)
+        return self.longcmd('NEWGROUPS ' + date + ' ' + time, file)
 
-    def newnews(self, group, date, time):
+    def newnews(self, group, date, time, file=None):
         """Process a NEWNEWS command.  Arguments:
         - group: group name or '*'
         - date: string 'yymmdd' indicating the date
@@ -284,14 +284,14 @@ class NNTP:
         - list: list of article ids"""
 
         cmd = 'NEWNEWS ' + group + ' ' + date + ' ' + time
-        return self.longcmd(cmd)
+        return self.longcmd(cmd, file)
 
-    def list(self):
+    def list(self, file=None):
         """Process a LIST command.  Return:
         - resp: server response if successful
         - list: list of (group, last, first, flag) (strings)"""
 
-        resp, list = self.longcmd('LIST')
+        resp, list = self.longcmd('LIST', file)
         for i in range(len(list)):
             # Parse lines into "group last first flag"
             list[i] = tuple(list[i].split())
@@ -323,12 +323,12 @@ class NNTP:
                         name = words[4].lower()
         return resp, count, first, last, name
 
-    def help(self):
+    def help(self, file=None):
         """Process a HELP command.  Returns:
         - resp: server response if successful
         - list: list of strings"""
 
-        return self.longcmd('HELP')
+        return self.longcmd('HELP',file)
 
     def statparse(self, resp):
         """Internal: parse the response of a STAT, NEXT or LAST command."""
@@ -414,7 +414,7 @@ class NNTP:
 
         return self.shortcmd('SLAVE')
 
-    def xhdr(self, hdr, str):
+    def xhdr(self, hdr, str, file=None):
         """Process an XHDR command (optional server extension).  Arguments:
         - hdr: the header type (e.g. 'subject')
         - str: an article nr, a message id, or a range nr1-nr2
@@ -423,7 +423,7 @@ class NNTP:
         - list: list of (nr, value) strings"""
 
         pat = re.compile('^([0-9]+) ?(.*)\n?')
-        resp, lines = self.longcmd('XHDR ' + hdr + ' ' + str)
+        resp, lines = self.longcmd('XHDR ' + hdr + ' ' + str, file)
         for i in range(len(lines)):
             line = lines[i]
             m = pat.match(line)
@@ -431,7 +431,7 @@ class NNTP:
                 lines[i] = m.group(1, 2)
         return resp, lines
 
-    def xover(self,start,end):
+    def xover(self, start, end, file=None):
         """Process an XOVER command (optional server extension) Arguments:
         - start: start of range
         - end: end of range
@@ -440,7 +440,7 @@ class NNTP:
         - list: list of (art-nr, subject, poster, date,
                          id, references, size, lines)"""
 
-        resp, lines = self.longcmd('XOVER ' + start + '-' + end)
+        resp, lines = self.longcmd('XOVER ' + start + '-' + end, file)
         xover_lines = []
         for line in lines:
             elem = line.split("\t")
@@ -457,7 +457,7 @@ class NNTP:
                 raise NNTPDataError(line)
         return resp,xover_lines
 
-    def xgtitle(self, group):
+    def xgtitle(self, group, file=None):
         """Process an XGTITLE command (optional server extension) Arguments:
         - group: group name wildcard (i.e. news.*)
         Returns:
@@ -465,7 +465,7 @@ class NNTP:
         - list: list of (name,title) strings"""
 
         line_pat = re.compile("^([^ \t]+)[ \t]+(.*)$")
-        resp, raw_lines = self.longcmd('XGTITLE ' + group)
+        resp, raw_lines = self.longcmd('XGTITLE ' + group, file)
         lines = []
         for raw_line in raw_lines:
             match = line_pat.search(raw_line.strip())
