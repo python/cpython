@@ -9,6 +9,7 @@ from test_support import verbose,TestSkipped
 sharedlibs = [
     ('/usr/lib/libc.so', 'getpid'),
     ('/lib/libc.so.6', 'getpid'),
+    ('/usr/bin/cygwin1.dll', 'getpid'),
     ]
 
 for s, func in sharedlibs:

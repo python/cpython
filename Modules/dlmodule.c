@@ -134,7 +134,7 @@ dl_getattr(dlobject *xp, char *name)
 
 
 static PyTypeObject Dltype = {
-	PyObject_HEAD_INIT(&PyType_Type)
+	PyObject_HEAD_INIT(NULL)
 	0,			/*ob_size*/
 	"dl",			/*tp_name*/
 	sizeof(dlobject),	/*tp_basicsize*/
@@ -199,7 +199,7 @@ insint(PyObject *d, char *name, int value)
 	Py_XDECREF(v);
 }
 
-void
+DL_EXPORT(void)
 initdl(void)
 {
 	PyObject *m, *d, *x;
@@ -210,6 +210,9 @@ initdl(void)
  "module dl requires sizeof(int) == sizeof(long) == sizeof(char*)");
 		return;
 	}
+
+	/* Initialize object type */
+	Dltype.ob_type = &PyType_Type;
 
 	/* Create the module and add the functions */
 	m = Py_InitModule("dl", dl_methods);
