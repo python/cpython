@@ -193,6 +193,7 @@ static int com_add PROTO((struct compiling *, object *, object *));
 static int com_addconst PROTO((struct compiling *, object *));
 static int com_addname PROTO((struct compiling *, object *));
 static void com_addopname PROTO((struct compiling *, int, node *));
+static void com_list PROTO((struct compiling *, node *, int));
 
 static int
 com_init(c, filename)
@@ -655,10 +656,13 @@ com_call_function(c, n)
 	node *n; /* EITHER testlist OR ')' */
 {
 	if (TYPE(n) == RPAR) {
-		com_addbyte(c, UNARY_CALL);
+		com_addoparg(c, BUILD_TUPLE, 0);
+		com_addbyte(c, BINARY_CALL);
 	}
 	else {
-		com_node(c, n);
+		int i;
+		REQ(n, testlist);
+		com_list(c, n, 1);
 		com_addbyte(c, BINARY_CALL);
 	}
 }
@@ -1047,12 +1051,13 @@ com_test(c, n)
 }
 
 static void
-com_list(c, n)
+com_list(c, n, toplevel)
 	struct compiling *c;
 	node *n;
+	int toplevel; /* If nonzero, *always* build a tuple */
 {
 	/* exprlist: expr (',' expr)* [',']; likewise for testlist */
-	if (NCH(n) == 1) {
+	if (NCH(n) == 1 && !toplevel) {
 		com_node(c, CHILD(n, 0));
 	}
 	else {
@@ -1864,7 +1869,7 @@ com_node(c, n)
 	/* Expression nodes */
 	
 	case testlist:
-		com_list(c, n);
+		com_list(c, n, 0);
 		break;
 	case test:
 		com_test(c, n);
@@ -1879,7 +1884,7 @@ com_node(c, n)
 		com_comparison(c, n);
 		break;
 	case exprlist:
-		com_list(c, n);
+		com_list(c, n, 0);
 		break;
 	case expr:
 		com_expr(c, n);
@@ -1970,10 +1975,13 @@ compile_funcdef(c, n)
 	ch = CHILD(n, 2); /* parameters: '(' [fplist] ')' */
 	ch = CHILD(ch, 1); /* ')' | fplist */
 	if (TYPE(ch) == RPAR)
-		com_addbyte(c, REFUSE_ARGS);
+		com_addoparg(c, UNPACK_ARG, 0);
 	else {
-		com_addbyte(c, REQUIRE_ARGS);
-		com_fplist(c, ch);
+		int i;
+		REQ(ch, fplist); /* fplist: fpdef (',' fpdef)* */
+		com_addoparg(c, UNPACK_ARG, (NCH(ch)+1)/2);
+		for (i = 0; i < NCH(ch); i += 2)
+			com_fpdef(c, CHILD(ch, i));
 	}
 	c->c_infunction = 1;
 	com_node(c, CHILD(n, 4));
@@ -1993,7 +2001,6 @@ compile_node(c, n)
 	
 	case single_input: /* One interactive command */
 		/* NEWLINE | simple_stmt | compound_stmt NEWLINE */
-		com_addbyte(c, REFUSE_ARGS);
 		n = CHILD(n, 0);
 		if (TYPE(n) != NEWLINE)
 			com_node(c, n);
@@ -2002,20 +2009,17 @@ compile_node(c, n)
 		break;
 	
 	case file_input: /* A whole file, or built-in function exec() */
-		com_addbyte(c, REFUSE_ARGS);
 		com_file_input(c, n);
 		com_addoparg(c, LOAD_CONST, com_addconst(c, None));
 		com_addbyte(c, RETURN_VALUE);
 		break;
 	
 	case expr_input: /* Built-in function eval() */
-		com_addbyte(c, REFUSE_ARGS);
 		com_node(c, CHILD(n, 0));
 		com_addbyte(c, RETURN_VALUE);
 		break;
 	
 	case eval_input: /* Built-in function input() */
-		com_addbyte(c, REFUSE_ARGS);
 		com_node(c, CHILD(n, 0));
 		com_addbyte(c, RETURN_VALUE);
 		break;
@@ -2028,7 +2032,6 @@ compile_node(c, n)
 		/* classdef: 'class' NAME
 			['(' testlist ')' |'(' ')' ['=' baselist]]
 			':' suite */
-		com_addbyte(c, REFUSE_ARGS);
 		com_node(c, CHILD(n, NCH(n)-1)); /* The suite */
 		com_addbyte(c, LOAD_LOCALS);
 		com_addbyte(c, RETURN_VALUE);
