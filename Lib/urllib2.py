@@ -416,14 +416,25 @@ class HTTPRedirectHandler(BaseHandler):
         Request to allow http_error_30x to perform the redirect.  Otherwise,
         raise HTTPError if no-one else should try to handle this url.  Return
         None if you can't but another Handler might.
-
         """
-        if (code in (301, 302, 303, 307) and req.method() in ("GET", "HEAD") or
-            code in (302, 303) and req.method() == "POST"):
-            # Strictly (according to RFC 2616), 302 in response to a POST
-            # MUST NOT cause a redirection without confirmation from the user
-           # (of urllib2, in this case).  In practice, essentially all clients
-            # do redirect in this case, so we do the same.
+        # XXX 301 and 302 errors must have a location or uri header.
+        # Not sure about the other error codes.
+        if "location" in headers:
+            newurl = headers["location"]
+        elif "uri" in headers:
+            newurl = headers["uri"]
+        else:
+            return
+        newurl = urlparse.urljoin(req.get_full_url(), newurl)
+        
+        m = req.get_method()
+        if (code in (301, 302, 303, 307) and m in ("GET", "HEAD")
+            or code in (302, 303) and m == "POST"):
+            # Strictly (according to RFC 2616), 302 in response to a
+            # POST MUST NOT cause a redirection without confirmation
+            # from the user (of urllib2, in this case).  In practice,
+            # essentially all clients do redirect in this case, so we
+            # do the same.
             return Request(newurl, headers=req.headers)
         else:
             raise HTTPError(req.get_full_url(), code, msg, hdrs, fp)
@@ -777,25 +788,25 @@ def encode_digest(digest):
 
 class AbstractHTTPHandler(BaseHandler):
 
+    # XXX Should rewrite do_open() to use the new httplib interface,
+    # would would be a little simpler.
+
     def do_open(self, http_class, req):
         host = req.get_host()
         if not host:
             raise URLError('no host given')
 
-        try:
-            h = http_class(host) # will parse host:port
-            if req.has_data():
-                data = req.get_data()
-                h.putrequest('POST', req.get_selector())
-                if not 'Content-type' in req.headers:
-                    h.putheader('Content-type',
-                                'application/x-www-form-urlencoded')
-                if not 'Content-length' in req.headers:
-                    h.putheader('Content-length', '%d' % len(data))
-            else:
-                h.putrequest('GET', req.get_selector())
-        except socket.error, err:
-            raise URLError(err)
+        h = http_class(host) # will parse host:port
+        if req.has_data():
+            data = req.get_data()
+            h.putrequest('POST', req.get_selector())
+            if not 'Content-type' in req.headers:
+                h.putheader('Content-type',
+                            'application/x-www-form-urlencoded')
+            if not 'Content-length' in req.headers:
+                h.putheader('Content-length', '%d' % len(data))
+        else:
+            h.putrequest('GET', req.get_selector())
 
         scheme, sel = splittype(req.get_selector())
         sel_host, sel_path = splithost(sel)
@@ -806,7 +817,10 @@ class AbstractHTTPHandler(BaseHandler):
                 h.putheader(*args)
         for k, v in req.headers.items():
             h.putheader(k, v)
-        h.endheaders()
+        try:
+            h.endheaders()
+        except socket.error, err:
+            raise URLError(err)
         if req.has_data():
             h.send(data)
 
