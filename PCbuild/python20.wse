@@ -30,7 +30,7 @@ item: Global
   Variable Flags3=00001001
   Variable Name4=_DOC_
   Variable Description4=HTML documentation tree directory
-  Variable Default4=C:\python16\doc
+  Variable Default4=C:\Code\python\dist\src\html
   Variable Flags4=00001001
   Variable Name5=_TCLMINOR_
   Variable Description5=Tcl/Tk Minor Version (e.g. the "3" in "8.3.1")
@@ -1171,6 +1171,7 @@ end
 item: Install File
   Source=%_SRC_%\..\tcl\bin\tcl8%_TCLMINOR_%.dll
   Destination=%MAINDIR%\DLLs\tcl8%_TCLMINOR_%.dll
+  Description=Tcl/Tk binaries and libraries
   Flags=0000000000000010
 end
 item: Install File
