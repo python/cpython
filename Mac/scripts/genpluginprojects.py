@@ -198,7 +198,7 @@ def	genallprojects(force=0):
 	genpluginproject("ppc", "_Win", libraries=["CarbonAccessors.o", "WindowsLib", "AppearanceLib"],
 			libraryflags="Debug, WeakImport", outputdir="::Lib:Carbon")
 	# Carbon Only?
-	genpluginproject("carbon", "_CF", sources=[":cf:_CFmodule.c", ":cf:pycfbridge.c"], outputdir="::Lib:Carbon")
+	genpluginproject("carbon", "_CF", sources=["_CFmodule.c", "pycfbridge.c"], outputdir="::Lib:Carbon")
 	genpluginproject("carbon", "_CarbonEvt", outputdir="::Lib:Carbon")
 	genpluginproject("carbon", "hfsplus")
 	
