@@ -300,7 +300,11 @@ class Job:
         #
         if os.path.isfile(self.doc + ".toc") and binary == PDFLATEX_BINARY:
             import toc2bkm
-            toc2bkm.process(self.doc + ".toc", self.doc + ".bkm", "section")
+            if self.doctype == "manual":
+                bigpart = "chapter"
+            else:
+                bigpart = "section"
+            toc2bkm.process(self.doc + ".toc", self.doc + ".bkm", bigpart)
         if self.use_bibtex:
             self.run("%s %s" % (BIBTEX_BINARY, self.doc))
         self.run("%s %s" % (binary, self.doc))
