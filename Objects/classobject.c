@@ -437,7 +437,6 @@ PyInstance_New(PyObject *class, PyObject *arg, PyObject *kw)
 	if (inst == NULL)
 		return NULL;
 	inst->in_dict = PyDict_New();
-	PyObject_GC_Init(inst);
 	if (inst->in_dict == NULL) {
 		inst = (PyInstanceObject *) PyObject_AS_GC(inst);
 		PyObject_DEL(inst);
@@ -445,6 +444,7 @@ PyInstance_New(PyObject *class, PyObject *arg, PyObject *kw)
 	}
 	Py_INCREF(class);
 	inst->in_class = (PyClassObject *)class;
+	PyObject_GC_Init(inst);
 	if (initstr == NULL)
 		initstr = PyString_InternFromString("__init__");
 	init = instance_getattr2(inst, initstr);
