@@ -1,0 +1,57 @@
+\section{\module{new} ---
+         Runtime implementation object creation}
+
+\declaremodule{builtin}{new}
+\sectionauthor{Moshe Zadka}{mzadka@geocities.com}
+\modulesynopsis{Interface to the creation of runtime implementation objects.}
+
+
+The \module{new} module allows an interface to the interpreter object
+creation functions. This is for use primarily in marshal-type functions,
+when a new object needs to be created ``magically'' and not by using the
+regular creation functions. This module provides a low-level interface
+to the interpreter, so care must be exercised when using this module.
+
+The \module{new} module defines the following functions:
+
+\begin{funcdesc}{instance}{class, dict}
+This function creates an instance of \class{class} with dictionary
+\var{dict} without calling the \method{__init__()} constructor. Note that
+this means that there are no guarantees that the object will be in a
+consistent state.
+
+Arguments are \emph{not} type-checked, and an incorrectly typed argument
+will result in undefined behaviour.
+\end{funcdesc}
+
+\begin{funcdesc}{instancemethod}{function, instance, class}
+This function will return a method object, bound to \var{instance}, or
+unbound if \var{instance} is \code{None}. It is checked that
+\var{function} is callable, and that \var{instance} is an instance
+object or \code{None}.
+\end{funcdesc}
+
+\begin{funcdesc}{function}{code, globals\optional{, name\optional{argdefs}}}
+Returns a (Python) function with the given code and globals. If
+\var{name} is given, the function will have the given name. If
+\var{argdefs} is given, they will be the function defaults.
+\end{funcdesc}
+
+\begin{funcdesc}{code}{argcount, nlocals, stacksize, flags, codestring,
+                       constants, names, varnames, filename, name, firstlineno,
+                       lnotab}
+This function is an interface to the \cfunction{PyCode_New()} internal
+function.
+XXX This is still undocumented!!!!!!!!!!!
+\end{funcdesc}
+
+\begin{funcdesc}{module}{name}
+This function returns a new module object with name \var{name}.
+\var{name} should be a string.
+\end{funcdesc}
+
+\begin{funcdesc}{classobj}{name, baseclasses, dict}
+This function returns a new class object, with name \var{name}, derived
+from \var{baseclasses} (which should be a tuple of classes) and with
+namespace \var{dict}. All parameters are type checked.
+\end{funcdesc}
