@@ -89,8 +89,13 @@ _tkinter
 
     XXX Should we compile with OPTS=threads?
 
-    XXX Some tests failed in "nmake -f makefile.vc test".  On Win2K:
-    XXX all.tcl   Total 10480   Passed 9781    Skipped 698     Failed  1
+    Optional:  run tests, via
+        nmake -f makefile.vc test
+
+        On WinXP Pro, wholly up to date as of 11-Apr-2004:
+        all.tcl:        Total   10564   Passed  9855    Skipped 708     Failed  1
+        Sourced 129 Test Files.
+        Files with failing tests: httpold.test
 
     Build Tk
     --------
@@ -100,12 +105,17 @@ _tkinter
 
     XXX Should we compile with OPTS=threads?
 
-    XXX I have no idea whether "nmake -f makefile.vc test" passed or
-    XXX failed.  It popped up tons of little windows, and did lots of
-    XXX stuff, and nothing blew up.
-
     XXX Our installer copies a lot of stuff out of the Tcl/Tk install
     XXX directory.  Is all of that really needed for Python use of Tcl/Tk?
+
+    Optional:  run tests, via
+        nmake -f makefile.vc TCLDIR=..\..\tcl8.4.5 test
+
+        On WinXP Pro, wholly up to date as of 11-Apr-2004:
+        all.tcl:        Total   8327    Passed  6717    Skipped 1579    Failed  31
+        Sourced 182 Test Files.
+        Files with failing tests: canvImg.test scale.test scrollbar.test textWind.test winWm.test
+
 
     Make sure the installer matches
     -------------------------------
@@ -159,21 +169,21 @@ _bsddb
         http://www.sleepycat.com/download/
 
     and download version 4.2.52.
-    
-    With or without strong cryptography? You can choose either with or 
-    without strong cryptography, as per the instructions below.  By 
+
+    With or without strong cryptography? You can choose either with or
+    without strong cryptography, as per the instructions below.  By
     default, Python is built and distributed WITHOUT strong crypto
     XXX - is the above correct?
-    
+
     Unpack into the dist\. directory, ensuring you expand with folder names.
-    
+
     If you downloaded with strong crypto, this will create a dist\db-4.2.52
     directory, and is ready to use.
-    
-    If you downloaded WITHOUT strong crypto, this will create a 
+
+    If you downloaded WITHOUT strong crypto, this will create a
     dist\db-4.2.52.NC directory - this directory should be renamed to
     dist\db-4.2.52 before use.
-      
+
     Open
         dist\db-4.2.52\docs\index.html
 
