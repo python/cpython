@@ -19,10 +19,10 @@ def any(name, list):
 def make_pat():
     kw = r"\b" + any("KEYWORD", keyword.kwlist) + r"\b"
     comment = any("COMMENT", [r"#[^\n]*"])
-    sqstring = r"(\b[rR])?'([^'\\\n]|\\.)*'?"
-    dqstring = r'(\b[rR])?"([^"\\\n]|\\.)*"?'
-    sq3string = r"(\b[rR])?'''([^'\\]|\\.|'(?!''))*(''')?"
-    dq3string = r'(\b[rR])?"""([^"\\]|\\.|"(?!""))*(""")?'
+    sqstring = r"(\b[rR])?'[^'\\\n]*(\\.[^'\\\n]*)*'?"
+    dqstring = r'(\b[rR])?"[^"\\\n]*(\\.[^"\\\n]*)*"?'
+    sq3string = r"(\b[rR])?'''[^'\\]*((\\.|'(?!''))[^'\\]*)*(''')?"
+    dq3string = r'(\b[rR])?"""[^"\\]*((\\.|"(?!""))[^"\\]*)*(""")?'
     string = any("STRING", [sq3string, dq3string, sqstring, dqstring])
     return kw + "|" + comment + "|" + string + "|" + any("SYNC", [r"\n"])
 
