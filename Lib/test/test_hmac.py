@@ -1,15 +1,16 @@
 import hmac
+import sha
 import unittest
 from test import test_support
 
 class TestVectorsTestCase(unittest.TestCase):
 
-    def test_vectors(self):
+    def test_md5_vectors(self):
         # Test the HMAC module against test vectors from the RFC.
 
         def md5test(key, data, digest):
             h = hmac.HMAC(key, data)
-            self.failUnless(h.hexdigest().upper() == digest.upper())
+            self.assertEqual(h.hexdigest().upper(), digest.upper())
 
         md5test(chr(0x0b) * 16,
                 "Hi There",
@@ -22,6 +23,58 @@ class TestVectorsTestCase(unittest.TestCase):
         md5test(chr(0xAA)*16,
                 chr(0xDD)*50,
                 "56be34521d144c88dbb8c733f0e8b3f6")
+
+        md5test("".join([chr(i) for i in range(1, 26)]),
+                chr(0xCD) * 50,
+                "697eaf0aca3a3aea3a75164746ffaa79")
+
+        md5test(chr(0x0C) * 16,
+                "Test With Truncation",
+                "56461ef2342edc00f9bab995690efd4c")
+
+        md5test(chr(0xAA) * 80,
+                "Test Using Larger Than Block-Size Key - Hash Key First",
+                "6b1ab7fe4bd7bf8f0b62e6ce61b9d0cd")
+
+        md5test(chr(0xAA) * 80,
+                ("Test Using Larger Than Block-Size Key "
+                 "and Larger Than One Block-Size Data"),
+                "6f630fad67cda0ee1fb1f562db3aa53e")
+
+    def test_sha_vectors(self):
+        def shatest(key, data, digest):
+            h = hmac.HMAC(key, data, digestmod=sha)
+            self.assertEqual(h.hexdigest().upper(), digest.upper())
+
+        shatest(chr(0x0b) * 20,
+                "Hi There",
+                "b617318655057264e28bc0b6fb378c8ef146be00")
+
+        shatest("Jefe",
+                "what do ya want for nothing?",
+                "effcdf6ae5eb2fa2d27416d5f184df9c259a7c79")
+
+        shatest(chr(0xAA)*20,
+                chr(0xDD)*50,
+                "125d7342b9ac11cd91a39af48aa17b4f63f175d3")
+
+        shatest("".join([chr(i) for i in range(1, 26)]),
+                chr(0xCD) * 50,
+                "4c9007f4026250c6bc8414f9bf50c86c2d7235da")
+
+        shatest(chr(0x0C) * 20,
+                "Test With Truncation",
+                "4c1a03424b55e07fe7f27be1d58bb9324a9a5a04")
+
+        shatest(chr(0xAA) * 80,
+                "Test Using Larger Than Block-Size Key - Hash Key First",
+                "aa4ae5e15272d00e95705637ce8a3b55ed402112")
+
+        shatest(chr(0xAA) * 80,
+                ("Test Using Larger Than Block-Size Key "
+                 "and Larger Than One Block-Size Data"),
+                "e8e99d0f45237d786d6bbaa7965c7808bbff1a91")
+
 
 class ConstructorTestCase(unittest.TestCase):
 
