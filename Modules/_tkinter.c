@@ -805,8 +805,8 @@ static PyObject *
 PyTclObject_repr(PyTclObject *self)
 {
 	char buf[50];
-	PyOS_snprintf(buf, 50, "<%s object at 0x%.8x>",
-		      self->value->typePtr->name, (int)self->value);
+	PyOS_snprintf(buf, 50, "<%s object at %p>",
+		      self->value->typePtr->name, self->value);
 	return PyString_FromString(buf);
 }
 
