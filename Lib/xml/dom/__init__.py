@@ -55,6 +55,7 @@ SYNTAX_ERR                     = 12
 INVALID_MODIFICATION_ERR       = 13
 NAMESPACE_ERR                  = 14
 INVALID_ACCESS_ERR             = 15
+VALIDATION_ERR                 = 16
 
 
 class DOMException(Exception):
@@ -116,10 +117,14 @@ class NamespaceErr(DOMException):
 class InvalidAccessErr(DOMException):
     code = INVALID_ACCESS_ERR
 
+class ValidationErr(DOMException):
+    code = VALIDATION_ERR
+
 
 XML_NAMESPACE = "http://www.w3.org/XML/1998/namespace"
 XMLNS_NAMESPACE = "http://www.w3.org/2000/xmlns/"
 XHTML_NAMESPACE = "http://www.w3.org/1999/xhtml"
 EMPTY_NAMESPACE = None
+EMPTY_PREFIX = None
 
 from domreg import getDOMImplementation,registerDOMImplementation
