@@ -210,7 +210,6 @@ def buildcarbonplugins(top, dummy1, dummy2):
 		(":Mac:Build:ColorPicker.carbon.mcp", "ColorPicker.carbon"),
 		(":Mac:Build:_AE.carbon.mcp", "_AE.carbon"),
 		(":Mac:Build:_AH.carbon.mcp", "_AH.carbon"),
-		(":Mac:Build:_Alias.carbon.mcp", "_Alias.carbon"),
 		(":Mac:Build:_App.carbon.mcp", "_App.carbon"),
 		(":Mac:Build:_CF.carbon.mcp", "_CF.carbon"),
 		(":Mac:Build:_CG.carbon.mcp", "_CG.carbon"),

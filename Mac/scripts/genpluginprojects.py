@@ -120,7 +120,6 @@ def	genallprojects(force=0):
 	# bgen-generated Toolbox modules
 	genpluginproject("carbon", "_AE", outputdir="::Lib:Carbon")
 	genpluginproject("carbon", "_AH", outputdir="::Lib:Carbon")
-	genpluginproject("carbon", "_Alias", outputdir="::Lib:Carbon")
 	genpluginproject("carbon", "_App", outputdir="::Lib:Carbon")
 	genpluginproject("carbon", "_Cm", outputdir="::Lib:Carbon")
 	# XXX can't work properly because we need to set a custom fragment initializer
