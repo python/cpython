@@ -12,6 +12,7 @@ Example:
 >>> from ftplib import FTP
 >>> ftp = FTP('ftp.python.org') # connect to host, default port
 >>> ftp.login() # default, i.e.: user anonymous, passwd user@hostname
+'230 Guest login ok, access restrictions apply.'
 >>> ftp.retrlines('LIST') # list directory contents
 total 9
 drwxr-xr-x   8 root     wheel        1024 Jan  3  1994 .
@@ -23,7 +24,9 @@ drwxr-xr-x   2 root     wheel        1024 Nov 17  1993 lib
 drwxr-xr-x   6 1094     wheel        1024 Sep 13 19:07 pub
 drwxr-xr-x   3 root     wheel        1024 Jan  3  1994 usr
 -rw-r--r--   1 root     root          312 Aug  1  1994 welcome.msg
+'226 Transfer complete.'
 >>> ftp.quit()
+'221 Goodbye.'
 >>> 
 
 A nice test that reveals some of the network dialogue would be:
@@ -98,9 +101,11 @@ class FTP:
 		self.sock = None
 		self.file = None
 		self.welcome = None
+		resp = None
 		if host:
-			self.connect(host)
-			if user: self.login(user, passwd, acct)
+			resp = self.connect(host)
+			if user: resp = self.login(user, passwd, acct)
+		return resp
 
 	def connect(self, host = '', port = 0):
 		'''Connect to host.  Arguments are:
@@ -113,6 +118,7 @@ class FTP:
 		self.sock.connect(self.host, self.port)
 		self.file = self.sock.makefile('rb')
 		self.welcome = self.getresp()
+		return self.welcome
 
 	def getwelcome(self):
 		'''Get the welcome message from the server.
@@ -203,6 +209,7 @@ class FTP:
 		resp = self.getresp()
 		if resp[0] <> '2':
 			raise error_reply, resp
+		return resp
 
 	def abort(self):
 		'''Abort a file transfer.  Uses out-of-band data.
@@ -224,7 +231,7 @@ class FTP:
 	def voidcmd(self, cmd):
 		"""Send a command and expect a response beginning with '2'."""
 		self.putcmd(cmd)
-		self.voidresp()
+		return self.voidresp()
 
 	def sendport(self, host, port):
 		'''Send a PORT command with the current host and the given port number.'''
@@ -232,7 +239,7 @@ class FTP:
 		pbytes = [`port/256`, `port%256`]
 		bytes = hbytes + pbytes
 		cmd = 'PORT ' + string.joinfields(bytes, ',')
-		self.voidcmd(cmd)
+		return self.voidcmd(cmd)
 
 	def makeport(self):
 		'''Create a new socket and send a PORT command for it.'''
@@ -309,6 +316,7 @@ class FTP:
 		if resp[0] == '3': resp = self.sendcmd('ACCT ' + acct)
 		if resp[0] <> '2':
 			raise error_reply, resp
+		return resp
 
 	def retrbinary(self, cmd, callback, blocksize):
 		'''Retrieve data in binary mode.
@@ -323,7 +331,7 @@ class FTP:
 				break
 			callback(data)
 		conn.close()
-		self.voidresp()
+		return self.voidresp()
 
 	def retrlines(self, cmd, callback = None):
 		'''Retrieve data in line mode.
@@ -347,7 +355,7 @@ class FTP:
 			callback(line)
 		fp.close()
 		conn.close()
-		self.voidresp()
+		return self.voidresp()
 
 	def storbinary(self, cmd, fp, blocksize):
 		'''Store a file in binary mode.'''
@@ -358,7 +366,7 @@ class FTP:
 			if not buf: break
 			conn.send(buf)
 		conn.close()
-		self.voidresp()
+		return self.voidresp()
 
 	def storlines(self, cmd, fp):
 		'''Store a file in line mode.'''
@@ -372,12 +380,12 @@ class FTP:
 				buf = buf + CRLF
 			conn.send(buf)
 		conn.close()
-		self.voidresp()
+		return self.voidresp()
 
 	def acct(self, password):
 		'''Send new account name.'''
 		cmd = 'ACCT ' + password
-		self.voidcmd(cmd)
+		return self.voidcmd(cmd)
 
 	def nlst(self, *args):
 		'''Return a list of files in a given directory (default the current).'''
@@ -408,13 +416,13 @@ class FTP:
 		resp = self.sendcmd('RNFR ' + fromname)
 		if resp[0] <> '3':
 			raise error_reply, resp
-		self.voidcmd('RNTO ' + toname)
+		return self.voidcmd('RNTO ' + toname)
 
         def delete(self, filename):
 		'''Delete a file.'''
                 resp = self.sendcmd('DELE ' + filename)
                 if resp[:3] == '250':
-                        return
+                        return resp
                 elif resp[:1] == '5':
                         raise error_perm, resp
                 else:
@@ -424,13 +432,12 @@ class FTP:
 		'''Change to a directory.'''
 		if dirname == '..':
 			try:
-				self.voidcmd('CDUP')
-				return
+				return self.voidcmd('CDUP')
 			except error_perm, msg:
 				if msg[:3] != '500':
 					raise error_perm, msg
 		cmd = 'CWD ' + dirname
-		self.voidcmd(cmd)
+		return self.voidcmd(cmd)
 
 	def size(self, filename):
 		'''Retrieve the size of a file.'''
@@ -451,8 +458,9 @@ class FTP:
 
 	def quit(self):
 		'''Quit, and close the connection.'''
-		self.voidcmd('QUIT')
+		resp = self.voidcmd('QUIT')
 		self.close()
+		return resp
 
 	def close(self):
 		'''Close the connection without assuming anything about it.'''
@@ -495,7 +503,6 @@ def parse227(resp):
 	host = string.join(numbers[:4], '.')
 	port = (string.atoi(numbers[4]) << 8) + string.atoi(numbers[5])
 	return host, port
-# end parse227
 
 
 def parse257(resp):
@@ -520,9 +527,11 @@ def parse257(resp):
 		dirname = dirname + c
 	return dirname
 
+
 def print_line(line):
 	'''Default retrlines callback to print a line.'''
 	print line
+
 
 def ftpcp(source, sourcename, target, targetname = '', type = 'I'):
 	'''Copy file from one FTP-instance to another.'''
