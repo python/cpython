@@ -6,7 +6,7 @@ try:
 	import posix
 	os = posix
 	import path
-except NameError:
+except ImportError:
 	import mac
 	os = mac
 	import macpath
