@@ -41,11 +41,9 @@ Library
   about the rationale is in the NEWS entry for that.  See also SF bug
   report <http://www.python.org/sf/693121>.
 
-- os.listdir() now returns Unicode strings on platforms that set
-  Py_FileSystemDefaultEncoding, for file names that are not representable
-  in ASCII.  (This currently only affects MacOS X; on Windows versions
-  with wide file name support os.listdir() already returned Unicode
-  strings.)
+- On Unix platforms, if os.listdir() is called with a Unicode argument,
+  it now returns Unicode strings.  (This behavior was added earlier
+  to the Windows NT/2k/XP version of os.listdir().)
 
 - Distutils: both 'py_modules' and 'packages' keywords can now be specified
   in core.setup().  Previously you could supply one or the other, but
@@ -88,8 +86,8 @@ TBD
 Mac
 ---
 
-- os.listdir() now may return Unicode strings on MacOS X. See the general
-  news item under "Library".
+- os.listdir() now returns Unicode strings on MacOS X when called with
+  a Unicode argument. See the general news item under "Library".
 
 - A new method MacOS.WMAvailable() returns true if it is safe to access
   the window manager, false otherwise.
