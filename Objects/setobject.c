@@ -9,12 +9,6 @@
    All rights reserved.
 */
 
-/* Fast access macros */ 
-
-#define DICT_CONTAINS(d, k)  (d->ob_type->tp_as_sequence->sq_contains(d, k))
-
-/* set object **********************************************************/
-
 static PyObject *
 make_new_set(PyTypeObject *type, PyObject *iterable)
 {
@@ -112,7 +106,7 @@ set_len(PySetObject *so)
 static int
 set_contains(PySetObject *so, PyObject *key)
 {
-	return DICT_CONTAINS(so->data, key);
+	return PySequence_Contains(so->data, key);
 }
 
 static PyObject *
@@ -247,7 +241,7 @@ set_intersection(PySetObject *so, PyObject *other)
 	selfdata = so->data;
 	tgtdata = result->data;
 	while ((item = PyIter_Next(it)) != NULL) {
-		if (DICT_CONTAINS(selfdata, item)) {
+		if (PySequence_Contains(selfdata, item)) {
 			if (PyDict_SetItem(tgtdata, item, Py_True) == -1) {
 				Py_DECREF(it);
 				Py_DECREF(result);
@@ -287,7 +281,7 @@ set_intersection_update(PySetObject *so, PyObject *other)
 
 	selfdata = so->data;
 	while ((item = PyIter_Next(it)) != NULL) {
-		if (DICT_CONTAINS(selfdata, item)) {
+		if (PySequence_Contains(selfdata, item)) {
 			if (PyDict_SetItem(newdict, item, Py_True) == -1) {
 				Py_DECREF(newdict);
 				Py_DECREF(it);
@@ -517,7 +511,7 @@ set_symmetric_difference_update(PySetObject *so, PyObject *other)
 		return NULL;
 
 	while ((item = PyIter_Next(it)) != NULL) {
-		if (DICT_CONTAINS(selfdata, item)) {
+		if (PySequence_Contains(selfdata, item)) {
 			if (PyDict_DelItem(selfdata, item) == -1) {
 				Py_XDECREF(otherset);
 				Py_DECREF(it);
@@ -589,7 +583,7 @@ set_issubset(PySetObject *so, PyObject *other)
 
 	otherdata = ((PySetObject *)other)->data;
 	while ((item = PyIter_Next(it)) != NULL) {
-		if (!DICT_CONTAINS(otherdata, item)) {
+		if (!PySequence_Contains(otherdata, item)) {
 			Py_DECREF(it);
 			Py_DECREF(item);
 			Py_RETURN_FALSE;
