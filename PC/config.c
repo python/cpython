@@ -34,11 +34,13 @@ extern void initaudioop();
 extern void initbinascii();
 extern void initcmath();
 extern void initenvironment();
+extern void initerrno();
 extern void initimageop();
 extern void initmath();
 extern void initmd5();
 extern void initnew();
 extern void initnt();
+extern void initoperator();
 extern void initregex();
 extern void initrgbimg();
 extern void initrotor();
@@ -64,11 +66,13 @@ struct _inittab inittab[] = {
         {"binascii", initbinascii},
         {"cmath", initcmath},
         {"environment", initenvironment},
+        {"errno", initerrno},
         {"imageop", initimageop},
         {"math", initmath},
         {"md5", initmd5},
         {"new", initnew},
         {"nt", initnt},	/* Use the NT os functions, not posix */
+        {"operator", initoperator},
         {"regex", initregex},
         {"rgbimg", initrgbimg},
         {"rotor", initrotor},
