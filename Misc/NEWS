@@ -32,6 +32,8 @@ Library
 
 - Bug #1048816: fix bug in Ctrl-K at start of line in curses.textpad.Textbox
 
+- Bug #1017553: fix bug in tarfile.filemode()
+
 Build
 -----
 
