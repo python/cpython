@@ -274,8 +274,8 @@ mind that the \emph{absence} of a leading slash indicates a relative
 path, the opposite of the Mac OS convention with colons).
 
 
-\subsection{Package directories}
-\label{package-dirs}
+\subsection{Listing whole packages}
+\label{listing-packages}
 
 The \option{packages} option tells the Distutils to process (build,
 distribute, install, etc.) all pure Python modules found in each package
@@ -340,13 +340,202 @@ This describes two modules, one of them in the ``root'' package, the
 other in the \module{pkg} package.  Again, the default package/directory
 layout implies that these two modules can be found in \file{mod1.py} and
 \file{pkg/mod2.py}, and that \file{pkg/\_\_init\_\_.py} exists as well.
-And again, you can override the package/directory layout using the
-\option{package\_dir} option.
+And again, you can override the package/directory correspondence using
+the \option{package\_dir} option.
 
 
 \subsection{Describing extension modules}
 \label{sec:describing-extensions}
 
+Just as writing Python extension modules is a bit more complicated than
+writing pure Python modules, describing them to the Distutils is a bit
+more complicated.  Unlike pure modules, it's not enough just to list
+modules or packages and expect the Distutils to go out and find the
+right files; you have to specify the extension name, source file(s), and
+any compile/link requirements (include directories, libraries to link
+with, etc.).
+
+All of this is done through another keyword argument to
+\function{setup()}, the \option{extensions} option.  \option{extensions}
+is just a list of \class{Extension} instances, each of which describes a
+single extension module.  Suppose your distribution includes a single
+extension, called \module{foo} and implemented by \file{foo.c}.  If no
+additional instructions to the compiler/linker are needed, describing
+this extension is quite simple:
+\begin{verbatim}
+Extension("foo", ["foo.c"])
+\end{verbatim}
+The \class{Extension} class can be imported from
+\module{distutils.core}, along with \function{setup()}.  Thus, the setup
+script for a module distribution that contains only this one extension
+and nothing else might be:
+\begin{verbatim}
+from distutils.core import setup, Extension
+setup(name = "foo", version = "1.0",
+      extensions = [Extension("foo", ["foo.c"])])
+\end{verbatim}
+
+The \class{Extension} class (actually, the underlying extension-building
+machinery implemented by the \command{built\_ext} command) supports a
+great deal of flexibility in describing Python extensions, which is
+explained in the following sections.  
+
+
+\subsubsection{Extension names and packages}
+
+The first argument to the \class{Extension} constructor is always the
+name of the extension, including any package names.  For example,
+\begin{verbatim}
+Extension("foo", ["src/foo1.c", "src/foo2.c"])
+\end{verbatim}
+describes an extension that lives in the root package, while
+\begin{verbatim}
+Extension("pkg.foo", ["src/foo1.c", "src/foo2.c"])
+\end{verbatim}
+describes the same extension in the \module{pkg} package.  The source
+files and resulting object code are identical in both cases; the only
+difference is where in the filesystem (and therefore where in Python's
+namespace hierarchy) the resulting extension lives.
+
+If you have a number of extensions all in the same package (or all under
+the same base package), use the \option{ext\_package} keyword argument
+to \function{setup()}.  For example,
+\begin{verbatim}
+setup(...
+      ext_package = "pkg",
+      extensions = [Extension("foo", ["foo.c"]),
+                    Extension("subpkg.bar", ["bar.c"])]
+     )
+\end{verbatim}
+will compile \file{foo.c} to the extension \module{pkg.foo}, and
+\file{bar.c} to \module{pkg.subpkg.bar}.
+
+
+\subsubsection{Extension source files}
+
+The second argument to the \class{Extension} constructor is a list of
+source files.  Since the Distutils currently only support C/C++
+extensions, these are normally C/C++ source files.  (Be sure to use
+appropriate extensions to distinguish C++ source files: \file{.cc} and
+\file{.cpp} seem to be recognized by both Unix and Windows compilers.)
+
+However, you can also include SWIG interface (\file{.i}) files in the
+list; the \command{build\_ext} command knows how to deal with SWIG
+extensions: it will run SWIG on the interface file and compile the
+resulting C/C++ file into your extension.
+
+\XXX{SWIG support is rough around the edges and largely untested;
+  especially SWIG support of C++ extensions!  Explain in more detail
+  here when the interface firms up.}
+
+On some platforms, you can include non-source files that are processed
+by the compiler and included in your extension.  Currently, this just
+means Windows resource files for Visual C++.  \XXX{get more detail on
+  this feature from Thomas Heller!}
+
+
+\subsubsection{Preprocessor options}
+
+Three optional arguments to \class{Extension} will help if you need to
+specify include directories to search or preprocessor macros to
+define/undefine: \code{include\_dirs}, \code{define\_macros}, and
+\code{undef\_macros}.
+
+For example, if your extension requires header files in the
+\file{include} directory under your distribution root, use the
+\code{include\_dirs} option:
+\begin{verbatim}
+Extension("foo", ["foo.c"], include_dirs=["include"])
+\end{verbatim}
+
+You can specify absolute directories there; if you know that your
+extension will only be built on Unix systems with X11R6 installed to
+\file{/usr}, you can get away with
+\begin{verbatim}
+Extension("foo", ["foo.c"], include_dirs=["/usr/include/X11"])
+\end{verbatim}
+You should avoid this sort of non-portable usage if you plan to
+distribute your code: it's probably better to write your code to include
+(e.g.) \code{<X11/Xlib.h>}.
+
+If you need to include header files from some other Python extension,
+you can take advantage of the fact that the Distutils install extension
+header files in a consistent way.  For example, the Numerical Python
+header files are installed (on a standard Unix installation) to
+\file{/usr/local/include/python1.5/Numerical}.  (The exact location will
+differ according to your platform and Python installation.)  Since the
+Python include directory---\file{/usr/local/include/python1.5} in this
+case---is always included in the search path when building Python
+extensions, the best approach is to include (e.g.)
+\code{<Numerical/arrayobject.h>}.  If you insist on putting the
+\file{Numerical} include directory right into your header search path,
+though, you can find that directory using the Distutils
+\module{sysconfig} module:
+\begin{verbatim}
+from distutils.sysconfig import get_python_inc
+incdir = os.path.join(get_python_inc(plat_specific=1), "Numerical")
+setup(...,
+      Extension(..., include_dirs=[incdir]))
+\end{verbatim}
+Even though this is quite portable---it will work on any Python
+installation, regardless of platform---it's probably easier to just
+write your C code in the sensible way.
+
+You can define and undefine pre-processor macros with the
+\code{define\_macros} and \code{undef\_macros} options.
+\code{define\_macros} takes a list of \code{(name, value)} tuples, where
+\code{name} is the name of the macro to define (a string) and
+\code{value} is its value: either a string or \code{None}.  (Defining a
+macro \code{FOO} to \code{None} is the equivalent of a bare
+\code{\#define FOO} in your C source: with most compilers, this sets
+\code{FOO} to the string \code{1}.)  \code{undef\_macros} is just
+a list of macros to undefine.
+
+For example:
+\begin{verbatim}
+Extension(...,
+          define_macros=[('NDEBUG', '1')],
+                         ('HAVE_STRFTIME', None),
+          undef_macros=['HAVE_FOO', 'HAVE_BAR'])
+\end{verbatim}
+is the equivalent of having this at the top of every C source file:
+\begin{verbatim}
+#define NDEBUG 1
+#define HAVE_STRFTIME
+#undef HAVE_FOO
+#undef HAVE_BAR
+\end{verbatim}
+
+
+\subsubsection{Library options}
+
+You can also specify the libraries to link against when building your
+extension, and the directories to search for those libraries.  The
+\code{libraries} option is a list of libraries to link against,
+\code{library\_dirs} is a list of directories to search for libraries at 
+link-time, and \code{runtime\_library\_dirs} is a list of directories to 
+search for shared (dynamically loaded) libraries at run-time.
+
+For example, if you need to link against libraries known to be in the
+standard library search path on target systems
+\begin{verbatim}
+Extension(...,
+          libraries=["gdbm", "readline"])
+\end{verbatim}
+
+If you need to link with libraries in a non-standard location, you'll
+have to include the location in \code{library\_dirs}:
+\begin{verbatim}
+Extension(...,
+          library_dirs=["/usr/X11R6/lib"],
+          libraries=["X11", "Xt"])
+\end{verbatim}
+(Again, this sort of non-portable construct should be avoided if you
+intend to distribute your code.)
+
+\XXX{still undocumented: extra\_objects, extra\_compile\_args,
+  extra\_link\_args, export\_symbols---none of which are frequently
+  needed, some of which might be completely unnecessary!}
 
 
 \section{Writing the Setup Configuration File}
