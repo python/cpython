@@ -13,7 +13,6 @@
 /*
 ** Helper routines for error codes and such.
 */
-char *PyMac_getscript(void);				/* Get the default encoding for our 8bit character set */
 char *PyMac_StrError(int);					/* strerror with mac errors */
 extern PyObject *PyMac_OSErrException;		/* Exception for OSErr */
 PyObject *PyMac_GetOSErrException(void);	/* Initialize & return it */
