@@ -7,6 +7,7 @@ from Carbon import Events
 import traceback
 from types import *
 from Carbon import Menu; MenuToolbox = Menu; del Menu
+import macresource
 
 if hasattr(Win, "FrontNonFloatingWindow"):
 	MyFrontWindow = Win.FrontNonFloatingWindow
@@ -19,6 +20,8 @@ KILLUNKNOWNWINDOWS = 0  # Set to 0 for debugging.
 class Application(FrameWork.Application):
 	
 	def __init__(self, signature='Pyth'):
+		# Open our resource file, if it is not open yet
+		macresource.need('CURS', 468, "Widgets.rsrc")
 		import W
 		W.setapplication(self, signature)
 		FrameWork.Application.__init__(self)
