@@ -330,6 +330,8 @@ Extension modules
 
 - datetime changes:
 
+  The date class is now properly subclassable.  (SF bug #720908)
+
   The datetime and datetimetz classes have been collapsed into a single
   datetime class, and likewise the time and timetz classes into a single
   time class.  Previously, a datetimetz object with tzinfo=None acted

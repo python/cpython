@@ -1291,15 +1291,18 @@ set_date_fields(PyDateTime_Date *self, int y, int m, int d)
 
 /* Create a date instance with no range checking. */
 static PyObject *
-new_date(int year, int month, int day)
+new_date_ex(int year, int month, int day, PyTypeObject *type)
 {
 	PyDateTime_Date *self;
 
-	self = PyObject_New(PyDateTime_Date, &PyDateTime_DateType);
+	self = (PyDateTime_Date *) (type->tp_alloc(type, 0));
 	if (self != NULL)
 		set_date_fields(self, year, month, day);
 	return (PyObject *) self;
 }
+
+#define new_date(year, month, day) \
+	(new_date_ex(year, month, day, &PyDateTime_DateType))
 
 /* Create a datetime instance with no range checking. */
 static PyObject *
@@ -2168,7 +2171,7 @@ date_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 	{
 	    	PyDateTime_Date *me;
 
-		me = PyObject_New(PyDateTime_Date, &PyDateTime_DateType);
+		me = PyObject_New(PyDateTime_Date, type);
 		if (me != NULL) {
 			char *pdata = PyString_AS_STRING(state);
 			memcpy(me->data, pdata, _PyDateTime_DATE_DATASIZE);
@@ -2181,7 +2184,7 @@ date_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 					&year, &month, &day)) {
 		if (check_date_args(year, month, day) < 0)
 			return NULL;
-		self = new_date(year, month, day);
+		self = new_date_ex(year, month, day, type);
 	}
 	return self;
 }
@@ -2632,7 +2635,7 @@ static PyTypeObject PyDateTime_DateType = {
 	"datetime.date",				/* tp_name */
 	sizeof(PyDateTime_Date),			/* tp_basicsize */
 	0,						/* tp_itemsize */
-	(destructor)PyObject_Del,			/* tp_dealloc */
+	0,						/* tp_dealloc */
 	0,						/* tp_print */
 	0,						/* tp_getattr */
 	0,						/* tp_setattr */
