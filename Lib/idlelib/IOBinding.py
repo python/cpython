@@ -459,9 +459,12 @@ class IOBinding:
 
     def print_window(self, event):
         tempfilename = None
-        if self.get_saved():
+        saved = self.get_saved()
+        if saved:
             filename = self.filename
-        else:
+        # shell undo is reset after every prompt, looks saved, probably isn't
+        if not saved or filename is None:
+            # XXX KBK 08Jun03 Wouldn't it be better to ask the user to save?
             filename = tempfilename = tempfile.mktemp()
             if not self.writefile(filename):
                 os.unlink(tempfilename)
@@ -479,6 +482,7 @@ class IOBinding:
         if printPlatform:  #we can try to print for this platform
             command = command % filename
             pipe = os.popen(command, "r")
+            # things can get ugly on NT if there is no printer available.
             output = pipe.read().strip()
             status = pipe.close()
             if status:
