@@ -575,14 +575,20 @@ then
 	Linux*) LDSHARED="gcc -shared";;
 	dgux*) LDSHARED="ld -G";;
 	BSD/OS*/4*) LDSHARED="gcc -shared";;
-	FreeBSD*/[[34]]*) LDSHARED="gcc -shared";;
-	FreeBSD*|OpenBSD*) LDSHARED="ld -Bshareable";;
+	OpenBSD*) LDSHARED="ld -Bshareable";;
 	NetBSD*)
 		if [[ "`$CC -dM -E - </dev/null | grep __ELF__`" != "" ]]
 		then
 			LDSHARED="cc -shared"
 		else
 			LDSHARED="ld -Bshareable"
+		fi;;
+	FreeBSD*)
+		if [ "`$CC -dM -E - </dev/null | grep __ELF__`" != "" ]
+		then
+			LDSHARED="cc -shared ${LDFLAGS}"
+		else
+			LDSHARED="ld -Bshareable ${LDFLAGS}"
 		fi;;
 	SCO_SV*) LDSHARED="cc -G -KPIC -Ki486 -belf -Wl,-Bexport";;
 	Monterey*) LDSHARED="cc -G -dy -Bdynamic -Bexport -L/usr/lib/ia64l64";;
@@ -602,8 +608,8 @@ then
 		 fi;;
 	Linux*) CCSHARED="-fpic";;
 	BSD/OS*/4*) CCSHARED="-fpic";;
-	FreeBSD*|OpenBSD*) CCSHARED="-fpic";;
-	NetBSD*) CCSHARED="-fPIC";;
+	OpenBSD*) CCSHARED="-fpic";;
+	FreeBSD*|NetBSD*) CCSHARED="-fPIC";;
 	SCO_SV*) CCSHARED="-KPIC -dy -Bdynamic";;
 	Monterey*) CCSHARED="-G";;
 	IRIX*/6*)  case $CC in
@@ -623,7 +629,6 @@ then
 	hp*|HP*)
 	    LINKFORSHARED="-Wl,-E -Wl,+s -Wl,+b\$(BINLIBDEST)/lib-dynload";;
 	BSD/OS/4*) LINKFORSHARED="-Xlinker -export-dynamic";;
-	FreeBSD/[[34]]*) LINKFORSHARED="-Xlinker -export-dynamic";;
 	Linux*) LINKFORSHARED="-Xlinker -export-dynamic";;
 	# -u libsys_s pulls in all symbols in libsys
 	next/2*|next/3*) LINKFORSHARED="-u libsys_s";;
@@ -633,7 +638,7 @@ then
 	# loading of any modules which reference it in System.framework
 	next/4*|next/5*) LINKFORSHARED="-u __dummy -framework System" ;;
 	SCO_SV*) LINKFORSHARED="-Bdynamic -dy -Wl,-Bexport";;
-	NetBSD*) 
+	FreeBSD*|NetBSD*) 
 		if [[ "`$CC -dM -E - </dev/null | grep __ELF__`" != "" ]]
 		then
 			LINKFORSHARED="-Wl,--export-dynamic"
