@@ -80,44 +80,50 @@ vgetargs1(PyObject *args, char *format, va_list *p_va, int compat)
 	int min = -1;
 	int max = 0;
 	int level = 0;
+	int endfmt = 0;
 	char *formatsave = format;
 	int i, len;
 	char *msg;
 	
 	assert(compat || (args != (PyObject*)NULL));
 
-	for (;;) {
+	while (endfmt == 0) {
 		int c = *format++;
-		if (c == '(' /* ')' */) {
+		switch (c) {
+		case '(':
 			if (level == 0)
 				max++;
 			level++;
-		}
-		else if (/* '(' */ c == ')') {
+			break;
+		case ')':
 			if (level == 0)
-				Py_FatalError(/* '(' */
-				      "excess ')' in getargs format");
+				Py_FatalError("excess ')' in getargs format");
 			else
 				level--;
-		}
-		else if (c == '\0')
 			break;
-		else if (c == ':') {
+		case '\0':
+			endfmt = 1;
+			break;
+		case ':':
 			fname = format;
+			endfmt = 1;
 			break;
-		}
-		else if (c == ';') {
+		case ';':
 			message = format;
+			endfmt = 1;
+			break;
+		default:
+			if (level == 0) {
+				if (c == 'O')
+					max++;
+				else if (isalpha(c)) {
+					if (c != 'e') /* skip encoded */
+						max++;
+				} else if (c == '|')
+					min = max;
+			}
 			break;
 		}
-		else if (level != 0)
-			; /* Pass */
-		else if (c == 'e')
-			; /* Pass */
-		else if (isalpha(c))
-			max++;
-		else if (c == '|')
-			min = max;
 	}
 	
 	if (level != 0)
