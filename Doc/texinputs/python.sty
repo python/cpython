@@ -293,14 +293,8 @@
 }
 \newcommand{\withsubitem}[2]{%
   \begingroup%
-    \def\index@subitem{#1}%
-    \ifpy@usingsubitem%
-      #2%
-    \else%
-      \py@usingsubitemtrue%
-      #2%
-      \py@usingsubitemfalse%
-    \fi
+    \def\ttindex##1{\index{##1@{\py@idxcode{##1}} #1}}%
+    #2%
   \endgroup%
 }
 
@@ -583,8 +577,9 @@
 
 % simple functions (not methods) -----------------------------------------
 % \begin{funcdesc}{name}{args}
-\newcommand{\funcline}[2]{\funclineni{#1}{#2}%
-                          \index{#1@{\py@idxcode{#1()}} (in \py@thismodule)}}
+\newcommand{\funcline}[2]{%
+  \funclineni{#1}{#2}%
+  \index{#1@{\py@idxcode{#1()}} (in module \py@thismodule)}}
 \newenvironment{funcdesc}[2]{
   \begin{fulllineitems}
     \funcline{#1}{#2}
