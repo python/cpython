@@ -87,7 +87,6 @@ struct _dictobject {
 PyAPI_DATA(PyTypeObject) PyDict_Type;
 
 #define PyDict_Check(op) PyObject_TypeCheck(op, &PyDict_Type)
-#define PyList_CheckExact(op) ((op)->ob_type == &PyDict_Type)
 
 PyAPI_FUNC(PyObject *) PyDict_New(void);
 PyAPI_FUNC(PyObject *) PyDict_GetItem(PyObject *mp, PyObject *key);
