@@ -1,7 +1,7 @@
 """Suite Standard Suite: Common terms for most applications
 Level 1, version 1
 
-Generated from flap:Systeemmap:Extensies:Script-extra's:Dialecten:Engels dialect
+Generated from flap:System Folder:Extensions:Scripting Additions:Dialects:English Dialect
 AETE/AEUT resource version 1/0, language 0, script 0
 """
 
@@ -9,36 +9,6 @@ import aetools
 import MacOS
 
 _code = 'core'
-
-_Enum_savo = {
-	'yes' : 'yes ',	# Save objects now
-	'no' : 'no  ',	# Do not save objects
-	'ask' : 'ask ',	# Ask the user whether to save
-}
-
-_Enum_kfrm = {
-	'index' : 'indx',	# keyform designating indexed access
-	'named' : 'name',	# keyform designating named access
-	'id' : 'ID  ',	# keyform designating access by unique identifier
-}
-
-_Enum_styl = {
-	'plain' : 'plan',	# Plain
-	'bold' : 'bold',	# Bold
-	'italic' : 'ital',	# Italic
-	'outline' : 'outl',	# Outline
-	'shadow' : 'shad',	# Shadow
-	'underline' : 'undl',	# Underline
-	'superscript' : 'spsc',	# Superscript
-	'subscript' : 'sbsc',	# Subscript
-	'strikethrough' : 'strk',	# Strikethrough
-	'small_caps' : 'smcp',	# Small caps
-	'all_caps' : 'alcp',	# All capital letters
-	'all_lowercase' : 'lowc',	# Lowercase
-	'condensed' : 'cond',	# Condensed
-	'expanded' : 'pexp',	# Expanded
-	'hidden' : 'hidn',	# Hidden
-}
 
 class Standard_Suite:
 
@@ -417,77 +387,327 @@ class Standard_Suite:
 			return _arguments['----']
 
 
-#    Class 'application' ('capp') -- 'An application program'
-#        property 'clipboard' ('pcli') '****' -- 'the clipboard' [mutable list]
-#        property 'frontmost' ('pisf') 'bool' -- 'Is this the frontmost application?' []
-#        property 'name' ('pnam') 'itxt' -- 'the name' []
-#        property 'selection' ('sele') 'csel' -- 'the selection visible to the user' [mutable]
-#        property 'version' ('vers') 'vers' -- 'the version of the application' []
+class application(aetools.ComponentItem):
+	"""application - An application program"""
+	want = 'capp'
+class clipboard(aetools.NProperty):
+	"""clipboard - the clipboard"""
+	which = 'pcli'
+	want = '****'
+class frontmost(aetools.NProperty):
+	"""frontmost - Is this the frontmost application?"""
+	which = 'pisf'
+	want = 'bool'
+class name(aetools.NProperty):
+	"""name - the name"""
+	which = 'pnam'
+	want = 'itxt'
+class selection(aetools.NProperty):
+	"""selection - the selection visible to the user"""
+	which = 'sele'
+	want = 'csel'
+class version(aetools.NProperty):
+	"""version - the version of the application"""
+	which = 'vers'
+	want = 'vers'
 
-#    Class 'applications' ('capp') -- 'Every application'
-#        property '' ('c@#!') 'type' -- '' [0]
+applications = application
 
-#    Class 'character' ('cha ') -- 'A character'
-#        property 'color' ('colr') 'cRGB' -- 'the color' [mutable]
-#        property 'font' ('font') 'ctxt' -- 'the name of the font' [mutable]
-#        property 'size' ('ptsz') 'fixd' -- 'the size in points' [mutable]
-#        property 'writing code' ('psct') 'intl' -- 'the script system and language' []
-#        property 'style' ('txst') 'tsty' -- 'the text style' [mutable]
-#        property 'uniform styles' ('ustl') 'tsty' -- 'the text style' []
+class character(aetools.ComponentItem):
+	"""character - A character"""
+	want = 'cha '
+class color(aetools.NProperty):
+	"""color - the color"""
+	which = 'colr'
+	want = 'cRGB'
+class font(aetools.NProperty):
+	"""font - the name of the font"""
+	which = 'font'
+	want = 'ctxt'
+class size(aetools.NProperty):
+	"""size - the size in points"""
+	which = 'ptsz'
+	want = 'fixd'
+class writing_code(aetools.NProperty):
+	"""writing code - the script system and language"""
+	which = 'psct'
+	want = 'intl'
+class style(aetools.NProperty):
+	"""style - the text style"""
+	which = 'txst'
+	want = 'tsty'
+class uniform_styles(aetools.NProperty):
+	"""uniform styles - the text style"""
+	which = 'ustl'
+	want = 'tsty'
 
-#    Class 'characters' ('cha ') -- 'Every character'
-#        property '' ('c@#!') 'type' -- '' [0]
+characters = character
 
-#    Class 'document' ('docu') -- 'A document'
-#        property 'modified' ('imod') 'bool' -- 'Has the document been modified since the last save?' []
+class document(aetools.ComponentItem):
+	"""document - A document"""
+	want = 'docu'
+class modified(aetools.NProperty):
+	"""modified - Has the document been modified since the last save?"""
+	which = 'imod'
+	want = 'bool'
 
-#    Class 'documents' ('docu') -- 'Every document'
-#        property '' ('c@#!') 'type' -- '' [0]
+documents = document
 
-#    Class 'file' ('file') -- 'A file'
-#        property 'stationery' ('pspd') 'bool' -- 'Is the file a stationery file?' [mutable]
+class file(aetools.ComponentItem):
+	"""file - A file"""
+	want = 'file'
+class stationery(aetools.NProperty):
+	"""stationery - Is the file a stationery file?"""
+	which = 'pspd'
+	want = 'bool'
 
-#    Class 'files' ('file') -- 'Every file'
-#        property '' ('c@#!') 'type' -- '' [0]
+files = file
 
-#    Class 'selection-object' ('csel') -- 'the selection visible to the user'
-#        property 'contents' ('pcnt') 'type' -- 'the contents of the selection' []
+class selection_2d_object(aetools.ComponentItem):
+	"""selection-object - the selection visible to the user"""
+	want = 'csel'
+class contents(aetools.NProperty):
+	"""contents - the contents of the selection"""
+	which = 'pcnt'
+	want = 'type'
 
-#    Class 'text' ('ctxt') -- 'Text'
-#        property '' ('c@#!') 'type' -- '' [0]
-#        property 'font' ('font') 'ctxt' -- 'the name of the font of the first character' [mutable]
+class text(aetools.ComponentItem):
+	"""text - Text"""
+	want = 'ctxt'
+# repeated property font the name of the font of the first character
 
-#    Class 'text style info' ('tsty') -- 'On and Off styles of text run'
-#        property 'on styles' ('onst') 'styl' -- 'the styles that are on for the text' [enum list]
-#        property 'off styles' ('ofst') 'styl' -- 'the styles that are off for the text' [enum list]
+class text_style_info(aetools.ComponentItem):
+	"""text style info - On and Off styles of text run"""
+	want = 'tsty'
+class on_styles(aetools.NProperty):
+	"""on styles - the styles that are on for the text"""
+	which = 'onst'
+	want = 'styl'
+class off_styles(aetools.NProperty):
+	"""off styles - the styles that are off for the text"""
+	which = 'ofst'
+	want = 'styl'
 
-#    Class 'text style infos' ('tsty') -- 'every text style info'
-#        property '' ('c@#!') 'type' -- '' [0]
+text_style_infos = text_style_info
 
-#    Class 'window' ('cwin') -- 'A window'
-#        property 'bounds' ('pbnd') 'qdrt' -- 'the boundary rectangle for the window' [mutable]
-#        property 'closeable' ('hclb') 'bool' -- 'Does the window have a close box?' []
-#        property 'titled' ('ptit') 'bool' -- 'Does the window have a title bar?' []
-#        property 'index' ('pidx') 'long' -- 'the number of the window' [mutable]
-#        property 'floating' ('isfl') 'bool' -- 'Does the window float?' []
-#        property 'modal' ('pmod') 'bool' -- 'Is the window modal?' []
-#        property 'resizable' ('prsz') 'bool' -- 'Is the window resizable?' []
-#        property 'zoomable' ('iszm') 'bool' -- 'Is the window zoomable?' []
-#        property 'zoomed' ('pzum') 'bool' -- 'Is the window zoomed?' [mutable]
-#        property 'visible' ('pvis') 'bool' -- 'Is the window visible?' [mutable]
+class window(aetools.ComponentItem):
+	"""window - A window"""
+	want = 'cwin'
+class bounds(aetools.NProperty):
+	"""bounds - the boundary rectangle for the window"""
+	which = 'pbnd'
+	want = 'qdrt'
+class closeable(aetools.NProperty):
+	"""closeable - Does the window have a close box?"""
+	which = 'hclb'
+	want = 'bool'
+class titled(aetools.NProperty):
+	"""titled - Does the window have a title bar?"""
+	which = 'ptit'
+	want = 'bool'
+class index(aetools.NProperty):
+	"""index - the number of the window"""
+	which = 'pidx'
+	want = 'long'
+class floating(aetools.NProperty):
+	"""floating - Does the window float?"""
+	which = 'isfl'
+	want = 'bool'
+class modal(aetools.NProperty):
+	"""modal - Is the window modal?"""
+	which = 'pmod'
+	want = 'bool'
+class resizable(aetools.NProperty):
+	"""resizable - Is the window resizable?"""
+	which = 'prsz'
+	want = 'bool'
+class zoomable(aetools.NProperty):
+	"""zoomable - Is the window zoomable?"""
+	which = 'iszm'
+	want = 'bool'
+class zoomed(aetools.NProperty):
+	"""zoomed - Is the window zoomed?"""
+	which = 'pzum'
+	want = 'bool'
+class visible(aetools.NProperty):
+	"""visible - Is the window visible?"""
+	which = 'pvis'
+	want = 'bool'
 
-#    Class 'windows' ('cwin') -- 'Every window'
-#        property '' ('c@#!') 'type' -- '' [0]
+windows = window
 
-#    Class 'insertion point' ('cins') -- 'An insertion location between two objects'
+class insertion_point(aetools.ComponentItem):
+	"""insertion point - An insertion location between two objects"""
+	want = 'cins'
 
-#    Class 'insertion points' ('cins') -- 'Every insertion location'
-#        property '' ('c@#!') 'type' -- '' [0]
-#    comparison  'starts with' ('bgwt') -- Starts with
-#    comparison  'contains' ('cont') -- Contains
-#    comparison  'ends with' ('ends') -- Ends with
-#    comparison  '=' ('=   ') -- Equal
-#    comparison  '>' ('>   ') -- Greater than
-#    comparison  '\263' ('>=  ') -- Greater than or equal to
-#    comparison  '<' ('<   ') -- Less than
-#    comparison  '\262' ('<=  ') -- Less than or equal to
+insertion_points = insertion_point
+application._propdict = {
+	'clipboard' : clipboard,
+	'frontmost' : frontmost,
+	'name' : name,
+	'selection' : selection,
+	'version' : version,
+}
+application._elemdict = {
+}
+character._propdict = {
+	'color' : color,
+	'font' : font,
+	'size' : size,
+	'writing_code' : writing_code,
+	'style' : style,
+	'uniform_styles' : uniform_styles,
+}
+character._elemdict = {
+}
+document._propdict = {
+	'modified' : modified,
+}
+document._elemdict = {
+}
+file._propdict = {
+	'stationery' : stationery,
+}
+file._elemdict = {
+}
+selection_2d_object._propdict = {
+	'contents' : contents,
+}
+selection_2d_object._elemdict = {
+}
+text._propdict = {
+	'font' : font,
+}
+text._elemdict = {
+}
+text_style_info._propdict = {
+	'on_styles' : on_styles,
+	'off_styles' : off_styles,
+}
+text_style_info._elemdict = {
+}
+window._propdict = {
+	'bounds' : bounds,
+	'closeable' : closeable,
+	'titled' : titled,
+	'index' : index,
+	'floating' : floating,
+	'modal' : modal,
+	'resizable' : resizable,
+	'zoomable' : zoomable,
+	'zoomed' : zoomed,
+	'visible' : visible,
+}
+window._elemdict = {
+}
+insertion_point._propdict = {
+}
+insertion_point._elemdict = {
+}
+class starts_with(aetools.NComparison):
+	"""starts with - Starts with"""
+class contains(aetools.NComparison):
+	"""contains - Contains"""
+class ends_with(aetools.NComparison):
+	"""ends with - Ends with"""
+class _3d_(aetools.NComparison):
+	"""= - Equal"""
+class _3e_(aetools.NComparison):
+	"""> - Greater than"""
+class _b3_(aetools.NComparison):
+	"""„ - Greater than or equal to"""
+class _3c_(aetools.NComparison):
+	"""< - Less than"""
+class _b2_(aetools.NComparison):
+	"""¾ - Less than or equal to"""
+_Enum_savo = {
+	'yes' : 'yes ',	# Save objects now
+	'no' : 'no  ',	# Do not save objects
+	'ask' : 'ask ',	# Ask the user whether to save
+}
+
+_Enum_kfrm = {
+	'index' : 'indx',	# keyform designating indexed access
+	'named' : 'name',	# keyform designating named access
+	'id' : 'ID  ',	# keyform designating access by unique identifier
+}
+
+_Enum_styl = {
+	'plain' : 'plan',	# Plain
+	'bold' : 'bold',	# Bold
+	'italic' : 'ital',	# Italic
+	'outline' : 'outl',	# Outline
+	'shadow' : 'shad',	# Shadow
+	'underline' : 'undl',	# Underline
+	'superscript' : 'spsc',	# Superscript
+	'subscript' : 'sbsc',	# Subscript
+	'strikethrough' : 'strk',	# Strikethrough
+	'small_caps' : 'smcp',	# Small caps
+	'all_caps' : 'alcp',	# All capital letters
+	'all_lowercase' : 'lowc',	# Lowercase
+	'condensed' : 'cond',	# Condensed
+	'expanded' : 'pexp',	# Expanded
+	'hidden' : 'hidn',	# Hidden
+}
+
+
+#
+# Indices of types declared in this module
+#
+_classdeclarations = {
+	'docu' : document,
+	'tsty' : text_style_info,
+	'ctxt' : text,
+	'capp' : application,
+	'csel' : selection_2d_object,
+	'file' : file,
+	'cwin' : window,
+	'cha ' : character,
+	'cins' : insertion_point,
+}
+
+_propdeclarations = {
+	'ptit' : titled,
+	'onst' : on_styles,
+	'pnam' : name,
+	'pcli' : clipboard,
+	'ustl' : uniform_styles,
+	'psct' : writing_code,
+	'txst' : style,
+	'pvis' : visible,
+	'pspd' : stationery,
+	'pisf' : frontmost,
+	'sele' : selection,
+	'pmod' : modal,
+	'imod' : modified,
+	'ofst' : off_styles,
+	'ptsz' : size,
+	'pzum' : zoomed,
+	'hclb' : closeable,
+	'font' : font,
+	'pcnt' : contents,
+	'isfl' : floating,
+	'pidx' : index,
+	'iszm' : zoomable,
+	'colr' : color,
+	'pbnd' : bounds,
+	'vers' : version,
+	'prsz' : resizable,
+}
+
+_compdeclarations = {
+	'>   ' : _3e_,
+	'bgwt' : starts_with,
+	'>=  ' : _b3_,
+	'=   ' : _3d_,
+	'<=  ' : _b2_,
+	'cont' : contains,
+	'ends' : ends_with,
+	'<   ' : _3c_,
+}
+
+_enumdeclarations = {
+	'styl' : _Enum_styl,
+	'savo' : _Enum_savo,
+	'kfrm' : _Enum_kfrm,
+}

@@ -4,7 +4,7 @@
 
 Level 1, version 1
 
-Generated from flap:Programma's:Netscape Navigator Folder:Netscape Navigator 3.0
+Generated from flap:Programma's:Netscape Navigator Folder:Netscape Navigator 3.01
 AETE/AEUT resource version 1/0, language 0, script 0
 """
 
@@ -45,3 +45,18 @@ class Standard_URL_suite:
 		if _arguments.has_key('----'):
 			return _arguments['----']
 
+
+#
+# Indices of types declared in this module
+#
+_classdeclarations = {
+}
+
+_propdeclarations = {
+}
+
+_compdeclarations = {
+}
+
+_enumdeclarations = {
+}

@@ -1,7 +1,7 @@
 """Suite Required Suite: Terms that every application should support
 Level 1, version 1
 
-Generated from flap:Systeemmap:Extensies:Script-extra's:Dialecten:Engels dialect
+Generated from flap:System Folder:Extensions:Scripting Additions:Dialects:English Dialect
 AETE/AEUT resource version 1/0, language 0, script 0
 """
 
@@ -90,3 +90,18 @@ class Required_Suite:
 		if _arguments.has_key('----'):
 			return _arguments['----']
 
+
+#
+# Indices of types declared in this module
+#
+_classdeclarations = {
+}
+
+_propdeclarations = {
+}
+
+_compdeclarations = {
+}
+
+_enumdeclarations = {
+}
