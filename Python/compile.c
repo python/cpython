@@ -286,11 +286,7 @@ PyCode_New(int argcount, int nlocals, int stacksize, int flags,
 	}
 	intern_strings(names);
 	intern_strings(varnames);
-	if (freevars == NULL)
-		freevars = PyTuple_New(0);
 	intern_strings(freevars);
-	if (cellvars == NULL)
-		cellvars = PyTuple_New(0);
 	intern_strings(cellvars);
 	/* Intern selected string constants */
 	for (i = PyTuple_Size(consts); --i >= 0; ) {
