@@ -2055,6 +2055,9 @@ com_print_stmt(struct compiling *c, node *n)
 	/* are we using the extended print form? */
 	if (NCH(n) >= 2 && TYPE(CHILD(n, 1)) == RIGHTSHIFT) {
 		stream = CHILD(n, 2);
+		com_node(c, stream);
+		/* stack: [...] => [... stream] */
+		com_push(c, 1);
 		if (NCH(n) > 3 && TYPE(CHILD(n, 3)) == COMMA)
 			i = 4;
 		else
@@ -2062,24 +2065,38 @@ com_print_stmt(struct compiling *c, node *n)
 	}
 	for (; i < NCH(n); i += 2) {
 		if (stream != NULL) {
-			/* stack: [...] => [... obj stream] */
+			com_addbyte(c, DUP_TOP);
+			/* stack: [stream] => [stream stream] */
+			com_push(c, 1);
 			com_node(c, CHILD(n, i));
-			com_node(c, stream);
+			/* stack: [stream stream] => [stream stream obj] */
+			com_addbyte(c, ROT_TWO);
+			/* stack: [stream stream obj] => [stream obj stream] */
 			com_addbyte(c, PRINT_ITEM_TO);
+			/* stack: [stream obj stream] => [stream] */
 			com_pop(c, 2);
 		}
 		else {
-			/* stack: [...] => [... obj] */
 			com_node(c, CHILD(n, i));
+			/* stack: [...] => [... obj] */
 			com_addbyte(c, PRINT_ITEM);
 			com_pop(c, 1);
 		}
 	}
 	/* XXX Alternatively, LOAD_CONST '\n' and then PRINT_ITEM */
-	if (TYPE(CHILD(n, NCH(n)-1)) != COMMA) {
+	if (TYPE(CHILD(n, NCH(n)-1)) == COMMA) {
 		if (stream != NULL) {
-			com_node(c, stream);
+			/* must pop the extra stream object off the stack */
+			com_addbyte(c, POP_TOP);
+			/* stack: [... stream] => [...] */
+			com_pop(c, 1);
+		}
+	}
+	else {
+		if (stream != NULL) {
+			/* this consumes the last stream object on stack */
 			com_addbyte(c, PRINT_NEWLINE_TO);
+			/* stack: [... stream] => [...] */
 			com_pop(c, 1);
 		}
 		else
