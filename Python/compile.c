@@ -1244,9 +1244,6 @@ parsestr(struct compiling *c, char *s)
 {
 	PyObject *v;
 	size_t len;
-	char *buf;
-	char *p;
-	char *end;
 	int quote = *s;
 	int rawmode = 0;
 	char* encoding = ((c == NULL) ? NULL : c->c_encoding);
@@ -1289,6 +1286,9 @@ parsestr(struct compiling *c, char *s)
 #ifdef Py_USING_UNICODE
 	if (unicode || Py_UnicodeFlag) {
 		PyObject *u, *w;
+		char *buf;
+		char *p;
+		char *end;
 		if (encoding == NULL) {
 			buf = s;
 			u = NULL;
