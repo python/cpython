@@ -2,7 +2,6 @@
 
 import os
 import stat
-import string
 
 
 def normcase(s):
@@ -15,7 +14,7 @@ def normcase(s):
     single '_', but this has been removed.  This functionality should 
     possibly be added as a new function."""
 
-    return string.lower(string.replace(s, "/", "\\"))
+    return s.replace("/", "\\").lower()
 
 
 def isabs(s):
@@ -39,7 +38,7 @@ def join(a, *p):
         elif path == '' or path[-1:] in '/\\:':
             path = path + b
         else:
-            path = path + os.sep + b
+            path = path + "\\" + b
     return path
 
 
@@ -225,8 +224,6 @@ def expanduser(path):
     return userhome + path[i:]
 
 
-varchars = string.letters + string.digits + '_-'
-
 def expandvars(path):
     """Expand paths containing shell variable substitutions.
     The following rules apply:
@@ -239,6 +236,8 @@ def expandvars(path):
 
     if '$' not in path:
         return path
+    import string
+    varchars = string.letters + string.digits + '_-'
     res = ''
     index = 0
     pathlen = len(path)
@@ -248,9 +247,9 @@ def expandvars(path):
             path = path[index + 1:]
             pathlen = len(path)
             try:
-                index = string.index(path, '\'')
+                index = path.index('\'')
                 res = res + '\'' + path[:index + 1]
-            except string.index_error:
+            except ValueError:
                 res = res + path
                 index = pathlen -1
         elif c == '$':  # variable or '$$'
@@ -261,11 +260,11 @@ def expandvars(path):
                 path = path[index+2:]
                 pathlen = len(path)
                 try:
-                    index = string.index(path, '}')
+                    index = path.index('}')
                     var = path[:index]
                     if os.environ.has_key(var):
                         res = res + os.environ[var]
-                except string.index_error:
+                except ValueError:
                     res = res + path
                     index = pathlen - 1
             else:
@@ -290,12 +289,12 @@ def normpath(path):
     """Normalize a path, e.g. A//B, A/./B and A/foo/../B all become A/B.
     Also, components of the path are silently truncated to 8+3 notation."""
 
-    path = string.replace(path, "/", "\\")
+    path = path.replace("/", "\\")
     prefix, path = splitdrive(path)
-    while path[:1] == os.sep:
-        prefix = prefix + os.sep
+    while path[:1] == "\\":
+        prefix = prefix + "\\"
         path = path[1:]
-    comps = string.splitfields(path, os.sep)
+    comps = path.split("\\")
     i = 0
     while i < len(comps):
         if comps[i] == '.':
@@ -303,22 +302,22 @@ def normpath(path):
         elif comps[i] == '..' and i > 0 and \
                       comps[i-1] not in ('', '..'):
             del comps[i-1:i+1]
-            i = i-1
+            i = i - 1
         elif comps[i] == '' and i > 0 and comps[i-1] <> '':
             del comps[i]
         elif '.' in comps[i]:
-            comp = string.splitfields(comps[i], '.')
+            comp = comps[i].split('.')
             comps[i] = comp[0][:8] + '.' + comp[1][:3]
-            i = i+1
+            i = i + 1
         elif len(comps[i]) > 8:
             comps[i] = comps[i][:8]
-            i = i+1
+            i = i + 1
         else:
-            i = i+1
+            i = i + 1
     # If the path is now empty, substitute '.'
     if not prefix and not comps:
         comps.append('.')
-    return prefix + string.joinfields(comps, os.sep)
+    return prefix + "\\".join(comps)
 
 
 

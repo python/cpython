@@ -1,13 +1,13 @@
 """Pathname and path-related operations for the Macintosh."""
 
-import string
 import os
 from stat import *
 
 
-# Normalize the case of a pathname.  Dummy in Posix, but string.lower here.
+# Normalize the case of a pathname.  Dummy in Posix, but <s>.lower() here.
 
-normcase = string.lower
+def normcase(path):
+    return path.lower()
 
 
 def isabs(s):
@@ -44,7 +44,7 @@ def split(s):
     if ':' not in s: return '', s
     colon = 0
     for i in range(len(s)):
-        if s[i] == ':': colon = i+1
+        if s[i] == ':': colon = i + 1
     path, file = s[:colon-1], s[colon:]
     if path and not ':' in path:
         path = path + ':'
@@ -175,20 +175,20 @@ def normpath(s):
     if ":" not in s:
         return ":"+s
 
-    comps = string.splitfields(s, ":")
+    comps = s.split(":")
     i = 1
     while i < len(comps)-1:
         if comps[i] == "" and comps[i-1] != "":
             if i > 1:
                 del comps[i-1:i+1]
-                i = i-1
+                i = i - 1
             else:
                 # best way to handle this is to raise an exception
                 raise norm_error, 'Cannot use :: immedeately after volume name'
         else:
             i = i + 1
 
-    s = string.join(comps, ":")
+    s = ":".join(comps)
 
     # remove trailing ":" except for ":" and "Volume:"
     if s[-1] == ":" and len(comps) > 2 and s != ":"*len(s):
