@@ -163,6 +163,17 @@ class build_ext (Command):
                 self.build_temp = os.path.join(self.build_temp, "Debug")
             else:
                 self.build_temp = os.path.join(self.build_temp, "Release")
+
+        # for extensions under Cygwin Python's library directory must be
+        # appended to library_dirs
+        if sys.platform[:6] == 'cygwin':
+            if string.find(sys.executable, sys.exec_prefix) != -1:
+                # building third party extensions
+                self.library_dirs.append(os.path.join(sys.prefix, "lib", "python" + sys.version[:3], "config"))
+            else:
+                # building python standard extensions
+                self.library_dirs.append('.')
+
     # finalize_options ()
     
 
@@ -571,6 +582,13 @@ class build_ext (Command):
             template = "python%d%d"
             if self.debug:
                 template = template + '_d'
+            pythonlib = (template %
+                   (sys.hexversion >> 24, (sys.hexversion >> 16) & 0xff))
+            # don't extend ext.libraries, it may be shared with other
+            # extensions, it is a reference to the original list
+            return ext.libraries + [pythonlib]
+        elif sys.platform[:6] == "cygwin":
+            template = "python%d.%d"
             pythonlib = (template %
                    (sys.hexversion >> 24, (sys.hexversion >> 16) & 0xff))
             # don't extend ext.libraries, it may be shared with other
