@@ -12,6 +12,9 @@ Python is not something to be undertaken lightly, you need a reasonable
 working knowledge of the CodeWarrior development environment, a good net
 connection and probably quite some time too. <p>
 
+Note that if you only want to build new extension modules you don't need to
+build Python from source, see the <a href="#extending">note on extending Python</a>.<p>
+
 The information density in this file is high, so you should probably
 print it and read it at your leasure. Most things are explained only
 once (and probably in the wrong place:-). <p>
@@ -20,7 +23,7 @@ once (and probably in the wrong place:-). <p>
 First a warning: this information may become outdated if a new CodeWarrior is
 released after MacPython. The 
 <a href="http://www.cwi.nl/~jack/macpython.html">MacPython homepage</a> will
-hopefully have updated instructions in that case.
+hopefully have updated instructions in that case. These instructions are for CW7.
 </blockquote>
 
 I am very interested in feedback on this document, send your
@@ -47,7 +50,7 @@ available through CVS. Check the section on <a href="#cvs">CVS
 repository use</a> below.
 
 <LI> You need MetroWerks CodeWarrior. The current distribution has
-been built with CodeWarrior Pro 6.1. Ordering information is
+been built with CodeWarrior Pro 7.1. Ordering information is
 available on the <A HREF="http://www.metrowerks.com/">MetroWerks
 homepage</A>. Building Python with MPW, Think/Symantec C or the OSX
 developer tools is impossible without major surgery.
@@ -56,8 +59,8 @@ developer tools is impossible without major surgery.
 Matthias Neeracher. The original GUSI is obtainable from <A
 HREF="ftp://gusi.sourceforge.net/pub/gusi/">
 ftp://gusi.sourceforge.net/pub/gusi/</A>. At
-the moment Python is built with a slightly modified version of GUSI
-2.1.1, so it may be better to check the <A
+the moment Python is built with a modified version of GUSI
+with Carbon adaptations, so it may be better to check the <A
 HREF="http://www.cwi.nl/~jack/macpython.html">MacPython homepage</A>
 for a GUSI that is most easily used for building Python. 
 
@@ -74,9 +77,8 @@ you need:
 
 <UL>
 
-<LI> Tcl and Tk are in a sad state on the Mac, the standard source distributions
-simply don't compile, so I have created a distribution especially for use
-with MacPython. 
+<LI> Tcl and Tk are somewhat less supported on the Mac than on Unix
+or Windows.
 See the section on <A HREF="#tcltk">building Tcl/Tk Python</A>
 below.
 
@@ -116,7 +118,6 @@ access paths try to set things up as follows:
 <PRE>
 Top-level-folder:
 	GUSI2
-	GUSI2Carbon
 	imglibs
 		jpeg
 		netpbm
@@ -131,10 +132,7 @@ Top-level-folder:
 			Modules
 			Build
 			...
-	Tcl/Tk Folder
-		tcl8.0
-		tk8.0
-		MoreFiles 1.4.3
+	Tcl/Tk Folder 8.3.4
 </PRE>
 
 If your setup of the libraries is exactly the same as mine (which is
@@ -144,7 +142,7 @@ repository) you can use the project <code>buildlibs.prj</code> in the
 fell swoop, otherwise you will have to build the libraries one by
 one. <p>
 
-First build GUSI, both the norla one and the Carbon variant.
+First build GUSI, both the normal one and the Carbon variant.
  <p>
 
 Next, in
@@ -156,22 +154,22 @@ case, see below.
 
 <H2><A NAME="tcltk">Building Tcl/Tk</H2>
 
-The Tcl/Tk 8.3.0 source distribution does not work on the Mac. I have created
-an archive of the sources that I used to build _tkinter for MacPython,
-you can obtain this from <a 
-href="ftp://ftp.cwi.nl/pub/jack/python/mac/tcltk830src-for-python.sit">
-ftp://ftp.cwi.nl/pub/jack/python/mac/tcltk830src-for-python.sit</a>. Only the
-libraries needed to build _tkinter for PPC have been fixed. <P>
+Tkinter has been built with Tcl/Tk 8.3.4. Load the Mac source distribution
+from the tcl sourceforge site and build it. Build with CW7, but you will
+need CW6 to build the MDEF resource (or copy it from a binary
+installation). As of this writing the projects are CW6, so they need
+massaging to build with CW7, but this is a lot less work than applying
+all the workarounds for CW6 that the build instructions give. <P>
 
 Note that if you use a different release of Tcl and Tk than the ones
 I have used you may have to adapt the Python <code>tkresources.rsrc</code> file.
-This is easiest done by building <code>SimpleTk</code> and copying the TEXT, ICON
+This is easiest done by building <code>Tk8.3.shlb</code> and copying the TEXT, ICON
 and CRSR resources from it to <code>tkresources.rsrc</code>. This allows
 the <code>_tkinter</code> module to work without an installed Tk/Tcl on your
 machine. <P>
 
 Also note that the <code>_tkinter.ppc.slb</code> that is normally distributed
-in the <code>PlugIns</code> folder is the one from the Imaging extension,
+in the <code>lib-dynload</code> folder is the one from the Imaging extension,
 which has some extra features needed by PIL (and which features should not
 hinder normal operation).
 
@@ -215,6 +213,12 @@ the parser on a Mac.
 <DD> Machine-independent optional modules. Not all of these will work
 on the Mac.
 
+<DT> Lib
+<DD> Machine-independent modules in Python.
+
+<DT> Lib:lib-dynload
+<DD> This is where the Classic and Carbon dynamically-loaded plugin modules live.
+
 <DT> Objects
 <DD> Machine-independent code for various object types. Most of these are
 not really optional: the interpreter will not function without them.
@@ -256,9 +260,9 @@ these if you are trying to build a non-GUSI python.
 <DD> Mac-specific but compiler-independent include files. 
 
 <DT> Lib
-<DD> Mac-specific standard modules. The <code>toolbox</code> folder
+<DD> Mac-specific standard modules. The <code>Carbon</code> package
 contains modules specifically needed with various MacOS toolbox
-interface modules.
+interface modules, both for Carbon and classic PPC, despite the name.
 
 <DT> Modules
 <DD> Mac-specific builtin modules. Theoretically these are all
@@ -285,8 +289,13 @@ various other things are accomplished by modifying these files (and
 possibly changing the list of files included in the project window, of
 course).
 
-<DT> PlugIns
-<DD> This is where the Classic and Carbon dynamically-loaded plugin modules live.
+<DT> OSX
+<DD> Specific to unix-Python (also known as MachoPython) on OSX, not used
+by MacPython.
+
+<DT> OSXResources
+<DD> Specific to unix-Python (also known as MachoPython) on OSX, not used
+by MacPython.
 
 <DT> Python
 <DD> Mac-specific parts of the core interpreter.
@@ -312,7 +321,7 @@ but for more control over the freezing process you can run the main script here.
 </DL>
 
 <H2>Building the PPC interpreter</H2>
-<em>This is different under 2.1. You are best off using the fullbuild.py
+<em>This is different since 2.1. You are best off using the fullbuild.py
 script, see <a href="#fullbuild">below</a>. </em><p>
 
 First you optionally build the external libraries with buildlibs.prj. Next, 
@@ -345,7 +354,10 @@ will also do this. <br>
 <DT> PythonInterpeter
 <DD> The interpreter. This is basically a routine to call out to the
 shared library. Unlike in previous releases the same program is used for
-creating applets (for which formerly PythonApplet was used). <p>
+creating applets (for which formerly PythonApplet was used). There are 4 targets
+in here: two for the classic and carbon templates (which are normally used, and
+converted to PythonInterpreter by the ConfigurePython* applets) and two
+for PythonInterpreter in it's classic and carbon version.<p>
 
 <DT> Plugin projects
 <DD> Each plugin module has a separate project, and these can be rebuilt on
@@ -382,28 +394,7 @@ in handy if you need to debug things (which is easier in a static program). <p>
 You are all set now, and should read the release notes and
 <code>ReadMe</code> file from the <code>Mac</code> folder.
 
-<H2>Rebuilding <code>.exp</code> files</H2>
-
-Occasionally it may be necessary to rebuild your PythonCore <code>.exp</code>
-file, a file that controls which symbols are exported by your PythonCore
-shared library. Rebuild it if you get unexpected undefined symbols when you
-are building a plugin module. <p>
-
-Rebuilding the .exp file is done by first both removing the file and removing the
-reference to it in the project (in the "config" section). Next, build PythonCore or
-PythonCoreCarbon.
-This will create a new .exp file, with the name <code>PythonCore.mcp.exp</code>.
-Rename this file to either <code>PythonCore.exp</code> or <code>PythonCoreCarbon.exp</code>
-and add this file back to the project. Next, edit ot to remove the references to
-the symbols <code>__initialize</code>, <code>__terminate</code>, <code>setjmp</code>,
-<code>longjmp</code>, <code>vec_longjmp</code>, <code>main</code> and <code>__ptmf_null</code>.
-They are all close together about halfway the file.
-
-Finally rebuild again. <p>
-
-This rather convoluted procedure is needed to ensure that plugin modules don't
-accidentally link with those entrypoints from PythonCore, which will not work because
-those routines have to be in the same code fragment as they are used from.
+Rebuilding .exp files is no longer needed since CodeWarrior 7.
 
 <H2><a name="cvs">Using the CVS source archive</a></H2>
 
@@ -458,9 +449,10 @@ library to embed Python in another program, if your program can live
 with using GUSI for I/O. Use PythonCore in stead of your MSL C library
 (or, at the very least, link it before the normal C library).
 
-<LI> It is possible to build PPC extension modules without building a
-complete Python. The binary distribution installer can optionally install
-all the needed folders (the develop option). A template for a dynamic module can be found in
+<LI> <a name="extending"></a>It is possible to build PPC extension
+modules without building a complete Python. The binary distribution
+installer can optionally install all the needed folders (the develop
+option). A template for a dynamic module can be found in
 <code>xx.prj</code>.
 
 <LI> The Python shared library architecture is a variant of the architecture
