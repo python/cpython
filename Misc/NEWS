@@ -348,11 +348,12 @@ Extension modules
 Library
 -------
 
-- Various features of Tk 8.4 are exposed in Tkinter.py.
+- Various features of Tk 8.4 are exposed in Tkinter.py. The multiple
+  option of tkFileDialog is exposed as function askopenfile{,name}s.
 
-- Various configure methods of Tkinter have been stream-lined, so
-  that tag_configure, image_configure, window_configure now return
-  a dictionary when invoked with no argument.
+- Various configure methods of Tkinter have been stream-lined, so that
+  tag_configure, image_configure, window_configure now return a
+  dictionary when invoked with no argument. 
 
 - Importing the readline module now no longer has the side effect of
   calling setlocale(LC_CTYPE, "").  The initial "C" locale, or
