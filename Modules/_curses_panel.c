@@ -355,14 +355,12 @@ PyTypeObject PyCursesPanel_Type = {
    panel.above() *requires* a panel object in the first place which
    may be undesirable. */
 static PyObject *
-PyCurses_bottom_panel(PyObject *self, PyObject *args)
+PyCurses_bottom_panel(PyObject *self)
 {
     PANEL *pan;
     PyCursesPanelObject *po;
 
     PyCursesInitialised;
-	
-    if (!PyArg_NoArgs(args)) return NULL;
 
     pan = panel_above(NULL);
 
@@ -403,14 +401,12 @@ PyCurses_new_panel(PyObject *self, PyObject *args)
    *requires* a panel object in the first place which may be
    undesirable. */
 static PyObject *
-PyCurses_top_panel(PyObject *self, PyObject *args)
+PyCurses_top_panel(PyObject *self)
 {
     PANEL *pan;
     PyCursesPanelObject *po;
     
     PyCursesInitialised;
-	
-    if (!PyArg_NoArgs(args)) return NULL;
 
     pan = panel_below(NULL);
 
@@ -429,10 +425,9 @@ PyCurses_top_panel(PyObject *self, PyObject *args)
     return (PyObject *)po;
 }
 
-static PyObject *PyCurses_update_panels(PyObject *self, PyObject *args)
+static PyObject *PyCurses_update_panels(PyObject *self)
 { 
     PyCursesInitialised;
-    if (!PyArg_NoArgs(args)) return NULL;
     update_panels();
     Py_INCREF(Py_None);
     return Py_None;
@@ -442,10 +437,10 @@ static PyObject *PyCurses_update_panels(PyObject *self, PyObject *args)
 /* List of functions defined in the module */
 
 static PyMethodDef PyCurses_methods[] = {
-    {"bottom_panel",        (PyCFunction)PyCurses_bottom_panel},
-    {"new_panel",           (PyCFunction)PyCurses_new_panel, METH_VARARGS},
-    {"top_panel",           (PyCFunction)PyCurses_top_panel},
-    {"update_panels",       (PyCFunction)PyCurses_update_panels},
+    {"bottom_panel",        (PyCFunction)PyCurses_bottom_panel,  METH_NOARGS},
+    {"new_panel",           (PyCFunction)PyCurses_new_panel,     METH_VARARGS},
+    {"top_panel",           (PyCFunction)PyCurses_top_panel,     METH_NOARGS},
+    {"update_panels",       (PyCFunction)PyCurses_update_panels, METH_NOARGS},
     {NULL,		NULL}		/* sentinel */
 };
 

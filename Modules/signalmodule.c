@@ -163,11 +163,8 @@ Arrange for SIGALRM to arrive after the given number of seconds.";
 
 #ifdef HAVE_PAUSE
 static PyObject *
-signal_pause(PyObject *self, PyObject *args)
+signal_pause(PyObject *self)
 {
-	if (!PyArg_NoArgs(args))
-		return NULL;
-
 	Py_BEGIN_ALLOW_THREADS
 	(void)pause();
 	Py_END_ALLOW_THREADS
@@ -282,7 +279,7 @@ static PyMethodDef signal_methods[] = {
 	{"signal",	        signal_signal, METH_OLDARGS, signal_doc},
 	{"getsignal",	        signal_getsignal, METH_OLDARGS, getsignal_doc},
 #ifdef HAVE_PAUSE
-	{"pause",	        signal_pause, METH_OLDARGS, pause_doc},
+	{"pause",	        signal_pause, METH_NOARGS, pause_doc},
 #endif
 	{"default_int_handler", signal_default_int_handler, 
 	 METH_OLDARGS, default_int_handler_doc},

@@ -237,11 +237,8 @@ static PyObject *endidx = NULL;
 
 /* get the beginning index for the scope of the tab-completion */
 static PyObject *
-get_begidx(PyObject *self, PyObject *args)
+get_begidx(PyObject *self)
 {
-	if(!PyArg_NoArgs(args)) {
-		return NULL;
-	} 
 	Py_INCREF(begidx);
 	return begidx;
 }
@@ -252,11 +249,8 @@ get the beginning index of the readline tab-completion scope";
 
 /* get the ending index for the scope of the tab-completion */
 static PyObject *
-get_endidx(PyObject *self, PyObject *args)
+get_endidx(PyObject *self)
 {
- 	if(!PyArg_NoArgs(args)) {
-		return NULL;
-	} 
 	Py_INCREF(endidx);
 	return endidx;
 }
@@ -307,11 +301,8 @@ add a line to the history buffer";
 /* get the tab-completion word-delimiters that readline uses */
 
 static PyObject *
-get_completer_delims(PyObject *self, PyObject *args)
+get_completer_delims(PyObject *self)
 {
-	if(!PyArg_NoArgs(args)) {
-		return NULL;
-	}
 	return PyString_FromString(rl_completer_word_break_characters);
 }
 	
@@ -359,12 +350,10 @@ return the current contents of history item at index.\
 /* Exported function to get current length of history */
 
 static PyObject *
-get_current_history_length(PyObject *self, PyObject *args)
+get_current_history_length(PyObject *self)
 {
 	HISTORY_STATE *hist_st;
 
-	if (!PyArg_NoArgs(args))
-		return NULL;
 	hist_st = history_get_history_state();
 	return PyInt_FromLong(hist_st ? (long) hist_st->length : (long) 0);
 }
@@ -377,10 +366,8 @@ return the current (not the maximum) length of history.\
 /* Exported function to read the current line buffer */
 
 static PyObject *
-get_line_buffer(PyObject *self, PyObject *args)
+get_line_buffer(PyObject *self)
 {
-	if (!PyArg_NoArgs(args))
-		return NULL;
 	return PyString_FromString(rl_line_buffer);
 }
 
@@ -427,7 +414,7 @@ static struct PyMethodDef readline_methods[] =
 {
 	{"parse_and_bind", parse_and_bind, METH_VARARGS, doc_parse_and_bind},
 	{"get_line_buffer", get_line_buffer, 
-	 METH_OLDARGS, doc_get_line_buffer},
+	 METH_NOARGS, doc_get_line_buffer},
 	{"insert_text", insert_text, METH_VARARGS, doc_insert_text},
 	{"redisplay", (PyCFunction)redisplay, METH_NOARGS, doc_redisplay},
 	{"read_init_file", read_init_file, METH_VARARGS, doc_read_init_file},
@@ -438,20 +425,20 @@ static struct PyMethodDef readline_methods[] =
 	{"get_history_item", get_history_item,
 	 METH_VARARGS, doc_get_history_item},
 	{"get_current_history_length", get_current_history_length,
-	 METH_OLDARGS, doc_get_current_history_length},
+	 METH_NOARGS, doc_get_current_history_length},
  	{"set_history_length", set_history_length, 
 	 METH_VARARGS, set_history_length_doc},
  	{"get_history_length", get_history_length, 
 	 METH_VARARGS, get_history_length_doc},
 	{"set_completer", set_completer, METH_VARARGS, doc_set_completer},
-	{"get_begidx", get_begidx, METH_OLDARGS, doc_get_begidx},
-	{"get_endidx", get_endidx, METH_OLDARGS, doc_get_endidx},
+	{"get_begidx", get_begidx, METH_NOARGS, doc_get_begidx},
+	{"get_endidx", get_endidx, METH_NOARGS, doc_get_endidx},
 
 	{"set_completer_delims", set_completer_delims, 
 	 METH_VARARGS, doc_set_completer_delims},
 	{"add_history", py_add_history, METH_VARARGS, doc_add_history},
 	{"get_completer_delims", get_completer_delims, 
-	 METH_OLDARGS, doc_get_completer_delims},
+	 METH_NOARGS, doc_get_completer_delims},
 	
 	{"set_startup_hook", set_startup_hook, METH_VARARGS, doc_set_startup_hook},
 #ifdef HAVE_RL_PRE_INPUT_HOOK

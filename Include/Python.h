@@ -118,6 +118,9 @@
 #include "abstract.h"
 
 #define PyArg_GetInt(v, a)	PyArg_Parse((v), "i", (a))
+
+/* PyArg_NoArgs should not be necessary.
+   Set ml_flags in the PyMethodDef to METH_NOARGS. */
 #define PyArg_NoArgs(v)		PyArg_Parse(v, "")
 
 /* Convert a possibly signed character to a nonnegative int */
