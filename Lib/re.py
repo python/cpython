@@ -8,7 +8,7 @@
 # report what went wrong.  You can either use the following web
 # page:
 #
-#    http://www.python.org/search/search_bugs.html
+#    http://sourceforge.net/bugs/?group_id=5470
 #
 # or send a mail to SRE's author:
 #
@@ -20,8 +20,8 @@
 # thanks /F
 #
 
-engine = "sre"
-# engine = "pre"
+# engine = "sre"
+engine = "pre"
 
 if engine == "sre":
     # New unicode-aware engine
