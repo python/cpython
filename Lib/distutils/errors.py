@@ -16,64 +16,65 @@ import types
 
 if type (RuntimeError) is types.ClassType:
 
-    # DistutilsError is the root of all Distutils evil.
     class DistutilsError (Exception):
+        """The root of all Distutils evil."""
         pass
 
-    # DistutilsModuleError is raised if we are unable to load an expected
-    # module, or find an expected class within some module
     class DistutilsModuleError (DistutilsError):
+        """Unable to load an expected module, or to find an expected class
+        within some module (in particular, command modules and classes)."""
         pass
 
-    # DistutilsClassError is raised if we encounter a distribution or command
-    # class that's not holding up its end of the bargain.
     class DistutilsClassError (DistutilsError):
+        """Some command class (or possibly distribution class, if anyone
+        feels a need to subclass Distribution) is found not to be holding
+        up its end of the bargain, ie. implementing some part of the
+        "command "interface."""
         pass
 
-    # DistutilsGetoptError (help me -- I have JavaProgrammersDisease!) is
-    # raised if the option table provided to fancy_getopt is bogus.
     class DistutilsGetoptError (DistutilsError):
+        """The option table provided to 'fancy_getopt()' is bogus."""
         pass
 
-    # DistutilsArgError is raised by fancy_getopt in response to getopt.error;
-    # distutils.core then turns around and raises SystemExit from that.  (Thus
-    # client code should never see DistutilsArgError.)
     class DistutilsArgError (DistutilsError):
+        """Raised by fancy_getopt in response to getopt.error -- ie. an
+        error in the command line usage."""
         pass
 
-    # DistutilsFileError is raised for any problems in the filesystem:
-    # expected file not found, etc.
     class DistutilsFileError (DistutilsError):
+        """Any problems in the filesystem: expected file not found, etc.
+        Typically this is for problems that we detect before IOError or
+        OSError could be raised."""
         pass
 
-    # DistutilsOptionError is raised for syntactic/semantic errors in
-    # command options, such as use of mutually conflicting options, or
-    # inconsistent options, badly-spelled values, etc.  No distinction is
-    # made between option values originating in the setup script, the
-    # command line, config files, or what-have-you.
     class DistutilsOptionError (DistutilsError):
+        """Syntactic/semantic errors in command options, such as use of
+        mutually conflicting options, or inconsistent options,
+        badly-spelled values, etc.  No distinction is made between option
+        values originating in the setup script, the command line, config
+        files, or what-have-you -- but if we *know* something originated in
+        the setup script, we'll raise DistutilsSetupError instead."""
         pass
 
-    # DistutilsSetupError is raised for errors that can be definitely
-    # blamed on the setup script, such as invalid keyword arguments to
-    # 'setup()'.
     class DistutilsSetupError (DistutilsError):
+        """For errors that can be definitely blamed on the setup script,
+        such as invalid keyword arguments to 'setup()'."""
         pass
 
-    # DistutilsPlatformError is raised when we find that we don't
-    # know how to do something on the current platform (but we do
-    # know how to do it on some platform).
     class DistutilsPlatformError (DistutilsError):
+        """We don't know how to do something on the current platform (but
+        we do know how to do it on some platform) -- eg. trying to compile
+        C files on a platform not supported by a CCompiler subclass."""
         pass
 
-    # DistutilsExecError is raised if there are any problems executing
-    # an external program
     class DistutilsExecError (DistutilsError):
+        """Any problems executing an external program (such as the C
+        compiler, when compiling C files)."""
         pass
 
-    # DistutilsInternalError is raised on internal inconsistencies
-    # or impossibilities
     class DistutilsInternalError (DistutilsError):
+        """Internal inconsistencies or impossibilities (obviously, this
+        should never be seen if the code is working!)."""
         pass
 
 # String-based exceptions
