@@ -476,7 +476,7 @@ enum why_code {
 };
 
 static enum why_code do_raise(PyObject *, PyObject *, PyObject *);
-static int unpack_sequence(PyObject *, int, PyObject **);
+static int unpack_iterable(PyObject *, int, PyObject **);
 
 
 PyObject *
@@ -1488,18 +1488,11 @@ eval_frame(PyFrameObject *f)
 					}
 				}
 			}
-			else if (PySequence_Check(v)) {
-				if (unpack_sequence(v, oparg,
-						    stack_pointer + oparg))
-					stack_pointer += oparg;
-				else
-					why = WHY_EXCEPTION;
-			}
-			else {
-				PyErr_SetString(PyExc_TypeError,
-						"unpack non-sequence");
+			else if (unpack_iterable(v, oparg,
+						 stack_pointer + oparg))
+				stack_pointer += oparg;
+			else
 				why = WHY_EXCEPTION;
-			}
 			Py_DECREF(v);
 			break;
 
@@ -2694,37 +2687,50 @@ do_raise(PyObject *type, PyObject *value, PyObject *tb)
 	return WHY_EXCEPTION;
 }
 
+/* Iterate v argcnt times and store the results on the stack (via decreasing
+   sp).  Return 1 for success, 0 if error. */
+
 static int
-unpack_sequence(PyObject *v, int argcnt, PyObject **sp)
+unpack_iterable(PyObject *v, int argcnt, PyObject **sp)
 {
-	int i;
+	int i = 0;
+	PyObject *it;  /* iter(v) */
 	PyObject *w;
 
-	for (i = 0; i < argcnt; i++) {
-		if (! (w = PySequence_GetItem(v, i))) {
-			if (PyErr_ExceptionMatches(PyExc_IndexError))
-				PyErr_SetString(PyExc_ValueError,
-					      "unpack sequence of wrong size");
-			goto finally;
+	assert(v != NULL);
+
+	it = PyObject_GetIter(v);
+	if (it == NULL)
+		goto Error;
+
+	for (; i < argcnt; i++) {
+		w = PyIter_Next(it);
+		if (w == NULL) {
+			/* Iterator done, via error or exhaustion. */
+			if (!PyErr_Occurred()) {
+				PyErr_Format(PyExc_ValueError,
+					"need more than %d value%s to unpack",
+					i, i == 1 ? "" : "s");
+			}
+			goto Error;
 		}
 		*--sp = w;
 	}
-	/* we better get an IndexError now */
-	if (PySequence_GetItem(v, i) == NULL) {
-		if (PyErr_ExceptionMatches(PyExc_IndexError)) {
-			PyErr_Clear();
-			return 1;
-		}
-		/* some other exception occurred. fall through to finally */
+
+	/* We better have exhausted the iterator now. */
+	w = PyIter_Next(it);
+	if (w == NULL) {
+		if (PyErr_Occurred())
+			goto Error;
+		Py_DECREF(it);
+		return 1;
 	}
-	else
-		PyErr_SetString(PyExc_ValueError,
-				"unpack sequence of wrong size");
+	PyErr_SetString(PyExc_ValueError, "too many values to unpack");
 	/* fall through */
-finally:
+Error:
 	for (; i > 0; i--, sp++)
 		Py_DECREF(*sp);
-
+	Py_XDECREF(it);
 	return 0;
 }
 

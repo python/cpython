@@ -108,6 +108,8 @@ Core
     extend() method of lists
     'x in y' and 'x not in y' (PySequence_Contains() in C API)
     operator.countOf() (PySequence_Count() in C API)
+    right-hand side of assignment statements with multiple targets, such as
+        x, y, z = some_iterable_object_returning_exactly_3_values
 
 - Accessing module attributes is significantly faster (for example,
   random.random or os.path or yourPythonModule.yourAttribute).
