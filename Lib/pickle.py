@@ -64,6 +64,8 @@ REDUCE          = 'R'
 STRING          = 'S'
 BINSTRING       = 'T'
 SHORT_BINSTRING = 'U'
+UNICODE         = 'V'
+BINUNICODE      = 'X'
 APPEND          = 'a'
 BUILD           = 'b'
 GLOBAL          = 'c'
@@ -274,6 +276,23 @@ class Pickler:
         self.write(self.put(memo_len))
         memo[d] = (memo_len, object)
     dispatch[StringType] = save_string
+
+    def save_unicode(self, object):
+        d = id(object)
+        memo = self.memo
+
+        if (self.bin):
+            encoding = object.encode('utf-8')
+            l = len(encoding)
+            s = mdumps(l)[1:]
+            self.write(BINUNICODE + s + encoding)
+        else:
+            self.write(UNICODE + object.encode('raw-unicode-escape') + '\n')
+
+        memo_len = len(memo)
+        self.write(self.put(memo_len))
+        memo[d] = (memo_len, object)
+    dispatch[UnicodeType] = save_unicode
 
     def save_tuple(self, object):
 
@@ -565,6 +584,15 @@ class Unpickler:
         len = mloads('i' + self.read(4))
         self.append(self.read(len))
     dispatch[BINSTRING] = load_binstring
+
+    def load_unicode(self):
+        self.append(unicode(self.readline()[:-1],'raw-unicode-escape'))
+    dispatch[UNICODE] = load_unicode
+
+    def load_binunicode(self):
+        len = mloads('i' + self.read(4))
+        self.append(unicode(self.read(len),'utf-8'))
+    dispatch[BINUNICODE] = load_binunicode
 
     def load_short_binstring(self):
         len = mloads('i' + self.read(1) + '\000\000\000')
