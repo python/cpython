@@ -248,6 +248,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 		print self.format_stack_entry(frame_lineno)
 
 
+# Simplified interface
+
 def run(statement):
 	Pdb().init().run(statement)
 
@@ -256,6 +258,22 @@ def runctx(statement, globals, locals):
 
 def runcall(*args):
 	apply(Pdb().init().runcall, args)
+
+
+# Post-Mortem interface
+
+def post_mortem(t):
+	p = Pdb().init()
+	p.reset()
+	while t.tb_next <> None: t = t.tb_next
+	p.interaction(t.tb_frame, t)
+
+def pm():
+	import sys
+	post_mortem(sys.last_traceback)
+
+
+# Main program for testing
 
 TESTCMD = 'import x; x.main()'
 
