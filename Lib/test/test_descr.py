@@ -17,6 +17,8 @@ def testunop(a, res, expr="len(a)", meth="__len__"):
     vereq(eval(expr, dict), res)
     t = type(a)
     m = getattr(t, meth)
+    while meth not in t.__dict__:
+        t = t.__bases__[0]
     vereq(m, t.__dict__[meth])
     vereq(m(a), res)
     bm = getattr(a, meth)
@@ -28,6 +30,8 @@ def testbinop(a, b, res, expr="a+b", meth="__add__"):
     vereq(eval(expr, dict), res)
     t = type(a)
     m = getattr(t, meth)
+    while meth not in t.__dict__:
+        t = t.__bases__[0]
     vereq(m, t.__dict__[meth])
     vereq(m(a, b), res)
     bm = getattr(a, meth)
@@ -39,6 +43,8 @@ def testternop(a, b, c, res, expr="a[b:c]", meth="__getslice__"):
     vereq(eval(expr, dict), res)
     t = type(a)
     m = getattr(t, meth)
+    while meth not in t.__dict__:
+        t = t.__bases__[0]
     vereq(m, t.__dict__[meth])
     vereq(m(a, b, c), res)
     bm = getattr(a, meth)
@@ -51,6 +57,8 @@ def testsetop(a, b, res, stmt="a+=b", meth="__iadd__"):
     vereq(dict['a'], res)
     t = type(a)
     m = getattr(t, meth)
+    while meth not in t.__dict__:
+        t = t.__bases__[0]
     vereq(m, t.__dict__[meth])
     dict['a'] = deepcopy(a)
     m(dict['a'], b)
@@ -67,6 +75,8 @@ def testset2op(a, b, c, res, stmt="a[b]=c", meth="__setitem__"):
     vereq(dict['a'], res)
     t = type(a)
     m = getattr(t, meth)
+    while meth not in t.__dict__:
+        t = t.__bases__[0]
     vereq(m, t.__dict__[meth])
     dict['a'] = deepcopy(a)
     m(dict['a'], b, c)
@@ -82,6 +92,8 @@ def testset3op(a, b, c, d, res, stmt="a[b:c]=d", meth="__setslice__"):
     exec stmt in dict
     vereq(dict['a'], res)
     t = type(a)
+    while meth not in t.__dict__:
+        t = t.__bases__[0]
     m = getattr(t, meth)
     vereq(m, t.__dict__[meth])
     dict['a'] = deepcopy(a)
@@ -104,23 +116,19 @@ def class_docstrings():
 
     class NewStatic(object):
         "Another docstring."
-        __dynamic__ = 0
     vereq(NewStatic.__doc__, "Another docstring.")
     vereq(NewStatic.__dict__['__doc__'], "Another docstring.")
 
     class NewStatic2(object):
-        __dynamic__ = 0
         pass
     verify(NewStatic2.__doc__ is None)
 
     class NewDynamic(object):
         "Another docstring."
-        __dynamic__ = 1
     vereq(NewDynamic.__doc__, "Another docstring.")
     vereq(NewDynamic.__dict__['__doc__'], "Another docstring.")
 
     class NewDynamic2(object):
-        __dynamic__ = 1
         pass
     verify(NewDynamic2.__doc__ is None)
 
@@ -628,7 +636,6 @@ def metaclass():
         # Automatically add __super to the class
         # This trick only works for dynamic classes
         def __new__(metaclass, name, bases, dict):
-            assert dict.get("__dynamic__", 1)
             cls = super(autosuper, metaclass).__new__(metaclass,
                                                       name, bases, dict)
             # Name mangling for __super removes leading underscores
@@ -863,54 +870,21 @@ def slots():
     vereq(x.c, 3)
 
 def dynamics():
-    if verbose: print "Testing __dynamic__..."
-    vereq(object.__dynamic__, 0)
-    vereq(list.__dynamic__, 0)
-    class S1:
-        __metaclass__ = type
-        __dynamic__ = 0
-    vereq(S1.__dynamic__, 0)
-    class S(object):
-        __dynamic__ = 0
-    vereq(S.__dynamic__, 0)
+    if verbose: print "Testing class attribute propagation..."
     class D(object):
-        __dynamic__ = 1
-    vereq(D.__dynamic__, 1)
-    class E(D, S):
         pass
-    vereq(E.__dynamic__, 1)
-    class F(S, D):
+    class E(D):
         pass
-    vereq(F.__dynamic__, 1)
-    try:
-        S.foo = 1
-    except (AttributeError, TypeError):
+    class F(D):
         pass
-    else:
-        verify(0, "assignment to a static class attribute should be illegal")
     D.foo = 1
     vereq(D.foo, 1)
     # Test that dynamic attributes are inherited
     vereq(E.foo, 1)
     vereq(F.foo, 1)
-    class SS(D):
-        __dynamic__ = 0
-    vereq(SS.__dynamic__, 0)
-    vereq(SS.foo, 1)
-    try:
-        SS.foo = 1
-    except (AttributeError, TypeError):
-        pass
-    else:
-        verify(0, "assignment to SS.foo should be illegal")
     # Test dynamic instances
     class C(object):
-        __dynamic__ = 1
-        # XXX Ideally the following def shouldn't be necessary,
-        # but it's too much of a performance burden.
-        # See XXX comment in slot_tp_getattr_hook.
-        def __getattr__(self, name):
-            raise AttributeError, name
+        pass
     a = C()
     verify(not hasattr(a, "foobar"))
     C.foobar = 2
@@ -951,7 +925,7 @@ def dynamics():
 
     # Test handling of int*seq and seq*int
     class I(int):
-        __dynamic__ = 1 # XXX why?
+        pass
     vereq("a"*I(2), "aa")
     vereq(I(2)*"a", "aa")
     vereq(2*I(3), 6)
@@ -960,7 +934,7 @@ def dynamics():
 
     # Test handling of long*seq and seq*long
     class L(long):
-        __dynamic__ = 1 # XXX why?
+        pass
     vereq("a"*L(2L), "aa")
     vereq(L(2L)*"a", "aa")
     vereq(2*L(3), 6)
@@ -969,7 +943,7 @@ def dynamics():
 
     # Test comparison of classes with dynamic metaclasses
     class dynamicmetaclass(type):
-        __dynamic__ = 1 # XXX ???
+        pass
     class someclass:
         __metaclass__ = dynamicmetaclass
     verify(someclass != object)
@@ -1255,7 +1229,6 @@ def specials():
     verify(10 not in c1)
     # Test the default behavior for dynamic classes
     class D(object):
-        __dynamic__ = 1 # XXX why?
         def __getitem__(self, i):
             if 0 <= i < 10: return i
             raise IndexError
@@ -1318,7 +1291,6 @@ def specials():
     verify(10 not in p10)
     # Test overridden behavior for dynamic classes
     class DProxy(object):
-        __dynamic__ = 1
         def __init__(self, x):
             self.x = x
         def __nonzero__(self):
@@ -1469,7 +1441,6 @@ def supers():
     vereq(B().meth(2), "B(2)A(2)")
 
     class C(A):
-        __dynamic__ = 1
         def meth(self, a):
             return "C(%r)" % a + self.__super.meth(a)
     C._C__super = super(C)
@@ -1565,7 +1536,6 @@ def inherits():
     verify((+a).__class__ is float)
 
     class madcomplex(complex):
-        __dynamic__ = 0 # XXX Shouldn't be necessary
         def __repr__(self):
             return "%.17gj%+.17g" % (self.imag, self.real)
     a = madcomplex(-3, 4)
@@ -1967,12 +1937,11 @@ def rich_comparisons():
     if verbose:
         print "Testing rich comparisons..."
     class Z(complex):
-        __dynamic__ = 0
+        pass
     z = Z(1)
     vereq(z, 1+0j)
     vereq(1+0j, z)
     class ZZ(complex):
-        __dynamic__ = 0
         def __eq__(self, other):
             try:
                 return abs(self - other) <= 1e-6
@@ -2059,8 +2028,7 @@ def coercions():
     coerce(0, F(0))
     coerce(0L, F(0))
     coerce(0., F(0))
-    class C(complex):
-        __dynamic__ = 0
+    class C(complex): pass
     coerce(C(0), 0)
     coerce(C(0), 0L)
     coerce(C(0), 0.)

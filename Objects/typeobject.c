@@ -56,7 +56,7 @@ type_module(PyTypeObject *type, void *context)
 static int
 type_set_module(PyTypeObject *type, PyObject *value, void *context)
 {
-	if (!(type->tp_flags & Py_TPFLAGS_DYNAMICTYPE) ||
+	if (!(type->tp_flags & Py_TPFLAGS_HEAPTYPE) ||
 	    strrchr(type->tp_name, '.')) {
 		PyErr_Format(PyExc_TypeError,
 			     "can't set %s.__module__", type->tp_name);
@@ -77,10 +77,6 @@ type_dict(PyTypeObject *type, void *context)
 		Py_INCREF(Py_None);
 		return Py_None;
 	}
- 	if (type->tp_flags & Py_TPFLAGS_DYNAMICTYPE) {
-		Py_INCREF(type->tp_dict);
-		return type->tp_dict;
-	}
 	return PyDictProxy_New(type->tp_dict);
 }
 
@@ -91,21 +87,7 @@ type_defined(PyTypeObject *type, void *context)
 		Py_INCREF(Py_None);
 		return Py_None;
 	}
-	if (type->tp_flags & Py_TPFLAGS_DYNAMICTYPE) {
-		Py_INCREF(type->tp_defined);
-		return type->tp_defined;
-	}
 	return PyDictProxy_New(type->tp_defined);
-}
-
-static PyObject *
-type_dynamic(PyTypeObject *type, void *context)
-{
-	PyObject *res;
-
-	res = (type->tp_flags & Py_TPFLAGS_DYNAMICTYPE) ? Py_True : Py_False;
-	Py_INCREF(res);
-	return res;
 }
 
 PyGetSetDef type_getsets[] = {
@@ -113,7 +95,6 @@ PyGetSetDef type_getsets[] = {
 	{"__module__", (getter)type_module, (setter)type_set_module, NULL},
 	{"__dict__",  (getter)type_dict,  NULL, NULL},
 	{"__defined__",  (getter)type_defined,  NULL, NULL},
-	{"__dynamic__", (getter)type_dynamic, NULL, NULL},
 	{0}
 };
 
@@ -711,7 +692,7 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 	PyTypeObject *type, *base, *tmptype, *winner;
 	etype *et;
 	PyMemberDef *mp;
-	int i, nbases, nslots, slotoffset, dynamic, add_dict, add_weak;
+	int i, nbases, nslots, slotoffset, add_dict, add_weak;
 
 	/* Special case: type(x) should return x->ob_type */
 	if (metatype == &PyType_Type &&
@@ -777,38 +758,6 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 		return NULL;
 	}
 
-	/* Should this be a dynamic class (i.e. modifiable __dict__)?
-	   Look in two places for a variable named __dynamic__:
-	   1) in the class dict
-	   2) in the module dict (globals)
-	   The first variable that is an int >= 0 is used.
-	   Otherwise, the default is dynamic. */
-	dynamic = -1; /* Not yet determined */
-	/* Look in the class */
-	tmp = PyDict_GetItemString(dict, "__dynamic__");
-	if (tmp != NULL) {
-		dynamic = PyInt_AsLong(tmp);
-		if (dynamic < 0)
-			PyErr_Clear();
-	}
-	if (dynamic < 0) {
-		/* Look in the module globals */
-		tmp = PyEval_GetGlobals();
-		if (tmp != NULL) {
-			tmp = PyDict_GetItemString(tmp, "__dynamic__");
-			if (tmp != NULL) {
-				dynamic = PyInt_AsLong(tmp);
-				if (dynamic < 0)
-					PyErr_Clear();
-			}
-		}
-	}
-	if (dynamic < 0) {
-		/* Default to dynamic */
-		dynamic = 1;
-
-	}
-
 	/* Check for a __slots__ sequence variable in dict, and count it */
 	slots = PyDict_GetItemString(dict, "__slots__");
 	nslots = 0;
@@ -868,8 +817,6 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 	/* Initialize tp_flags */
 	type->tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HEAPTYPE |
 		Py_TPFLAGS_BASETYPE;
-	if (dynamic)
-		type->tp_flags |= Py_TPFLAGS_DYNAMICTYPE;
 	if (base->tp_flags & Py_TPFLAGS_HAVE_GC)
 		type->tp_flags |= Py_TPFLAGS_HAVE_GC;
 
@@ -1026,14 +973,7 @@ _PyType_Lookup(PyTypeObject *type, PyObject *name)
 	int i, n;
 	PyObject *mro, *res, *dict;
 
-	/* For static types, look in tp_dict */
-	if (!(type->tp_flags & Py_TPFLAGS_DYNAMICTYPE)) {
-		dict = type->tp_dict;
-		assert(dict && PyDict_Check(dict));
-		return PyDict_GetItem(dict, name);
-	}
-
-	/* For dynamic types, look in tp_defined of types in MRO */
+	/* Look in tp_defined of types in MRO */
 	mro = type->tp_mro;
 	assert(PyTuple_Check(mro));
 	n = PyTuple_GET_SIZE(mro);
@@ -1104,13 +1044,16 @@ type_getattro(PyTypeObject *type, PyObject *name)
 static int
 type_setattro(PyTypeObject *type, PyObject *name, PyObject *value)
 {
-	if (type->tp_flags & Py_TPFLAGS_DYNAMICTYPE) {
-		if (PyObject_GenericSetAttr((PyObject *)type, name, value) < 0)
-			return -1;
-		return update_slot(type, name);
+	if (!(type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
+		PyErr_Format(
+			PyExc_TypeError,
+			"can't set attributes of built-in/extension type '%s'",
+			type->tp_name);
+		return -1;
 	}
-	PyErr_SetString(PyExc_TypeError, "can't set static type attributes");
-	return -1;
+	if (PyObject_GenericSetAttr((PyObject *)type, name, value) < 0)
+		return -1;
+	return update_slot(type, name);
 }
 
 static void
@@ -1794,7 +1737,7 @@ staticforward int add_subclass(PyTypeObject *base, PyTypeObject *type);
 int
 PyType_Ready(PyTypeObject *type)
 {
-	PyObject *dict, *bases, *x;
+	PyObject *dict, *bases;
 	PyTypeObject *base;
 	int i, n;
 
@@ -1871,37 +1814,14 @@ PyType_Ready(PyTypeObject *type)
 		inherit_special(type, type->tp_base);
 
 	/* Initialize tp_dict properly */
-	if (!PyType_HasFeature(type, Py_TPFLAGS_DYNAMICTYPE)) {
-		/* For a static type, tp_dict is the consolidation
-		   of the tp_defined of its bases in MRO. */
-		Py_DECREF(type->tp_dict);
-		type->tp_dict = PyDict_Copy(type->tp_defined);
-		if (type->tp_dict == NULL)
-			goto error;
-		bases = type->tp_mro;
-		assert(bases != NULL);
-		assert(PyTuple_Check(bases));
-		n = PyTuple_GET_SIZE(bases);
-		for (i = 1; i < n; i++) {
-			base = (PyTypeObject *)PyTuple_GET_ITEM(bases, i);
-			assert(PyType_Check(base));
-			x = base->tp_defined;
-			if (x != NULL && PyDict_Merge(type->tp_dict, x, 0) < 0)
-				goto error;
-			inherit_slots(type, base);
-		}
-	}
-	else {
-		/* For a dynamic type, we simply inherit the base slots. */
-		bases = type->tp_mro;
-		assert(bases != NULL);
-		assert(PyTuple_Check(bases));
-		n = PyTuple_GET_SIZE(bases);
-		for (i = 1; i < n; i++) {
-			base = (PyTypeObject *)PyTuple_GET_ITEM(bases, i);
-			assert(PyType_Check(base));
-			inherit_slots(type, base);
-		}
+	bases = type->tp_mro;
+	assert(bases != NULL);
+	assert(PyTuple_Check(bases));
+	n = PyTuple_GET_SIZE(bases);
+	for (i = 1; i < n; i++) {
+		base = (PyTypeObject *)PyTuple_GET_ITEM(bases, i);
+		assert(PyType_Check(base));
+		inherit_slots(type, base);
 	}
 
 	/* Some more special stuff */
