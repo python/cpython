@@ -626,8 +626,14 @@
 \newcommand{\samp}[1]{`\code{#1}'}
 % This weird definition of \var{} allows it to always appear in roman
 % italics, and won't get funky in code fragments when we play around
-% with fonts.
-\newcommand{\var}[1]{\normalsize\textrm{\textit{#1\/}}}
+% with fonts.  This also works directly in math mode.
+\newcommand{\var}[1]{%
+  \ifmmode%
+    \hbox{\normalsize\textrm{\textit{#1\/}}}%
+  \else%
+    \normalsize\textrm{\textit{#1\/}}%
+  \fi%
+}
 \renewcommand{\emph}[1]{{\em #1}}
 \newcommand{\dfn}[1]{\emph{#1}}
 \newcommand{\strong}[1]{{\bf #1}}
