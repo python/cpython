@@ -291,7 +291,6 @@ call_with_frame(PyCodeObject *c, PyObject* func, PyObject* args)
 			c,			/*code*/
 			tstate->frame->f_globals,	/*globals*/
 			NULL,			/*locals*/
-			0,
 			NULL);                  /* closure */
 	if (f == NULL)
 		return NULL;
