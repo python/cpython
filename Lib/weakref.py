@@ -122,10 +122,15 @@ class WeakValueDictionary(UserDict.UserDict):
         else:
             return wr()
 
-    def update(self, dict):
+    def update(self, dict=None, **kwargs):
         d = self.data
-        for key, o in dict.items():
-            d[key] = ref(o, self.__makeremove(key))
+        if dict is not None:
+            if not hasattr(dict, "items"):
+                dict = type({})(dict)
+            for key, o in dict.items():
+                d[key] = ref(o, self.__makeremove(key))
+        if len(kwargs):
+            self.update(kwargs)
 
     def values(self):
         L = []
@@ -239,10 +244,15 @@ class WeakKeyDictionary(UserDict.UserDict):
     def setdefault(self, key, default):
         return self.data.setdefault(ref(key, self._remove),default)
 
-    def update(self, dict):
+    def update(self, dict=None, **kwargs):
         d = self.data
-        for key, value in dict.items():
-            d[ref(key, self._remove)] = value
+        if dict is not None:
+            if not hasattr(dict, "items"):
+                dict = type({})(dict)
+            for key, value in dict.items():
+                d[ref(key, self._remove)] = value
+        if len(kwargs):
+            self.update(kwargs)
 
 
 class BaseIter:

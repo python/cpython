@@ -253,7 +253,7 @@ d.update({1:1, 2:2, 3:3})
 if d != {1:1, 2:2, 3:3}: raise TestFailed, 'dict update'
 d.clear()
 try: d.update(None)
-except AttributeError: pass
+except (TypeError, AttributeError): pass
 else: raise TestFailed, 'dict.update(None), AttributeError expected'
 class SimpleUserDict:
     def __init__(self):

@@ -86,41 +86,41 @@ class CFunctionCalls(unittest.TestCase):
         self.assertRaises(TypeError, {}.keys, x=2, y=2)
 
     def test_oldargs1_0(self):
-        self.assertRaises(TypeError, {}.update)
+        self.assertRaises(TypeError, [].count)
 
     def test_oldargs1_1(self):
-        {}.update({})
+        [].count(1)
 
     def test_oldargs1_2(self):
-        self.assertRaises(TypeError, {}.update, {}, 1)
+        self.assertRaises(TypeError, [].count, 1, 2)
 
     def test_oldargs1_0_ext(self):
         try:
-            {}.update(*())
+            [].count(*())
         except TypeError:
             pass
         else:
             raise RuntimeError
 
     def test_oldargs1_1_ext(self):
-        {}.update(*({},))
+        [].count(*(1,))
 
     def test_oldargs1_2_ext(self):
         try:
-            {}.update(*({}, 2))
+            [].count(*(1, 2))
         except TypeError:
             pass
         else:
             raise RuntimeError
 
     def test_oldargs1_0_kw(self):
-        self.assertRaises(TypeError, {}.update, x=2)
+        self.assertRaises(TypeError, [].count, x=2)
 
     def test_oldargs1_1_kw(self):
-        self.assertRaises(TypeError, {}.update, {}, x=2)
+        self.assertRaises(TypeError, [].count, {}, x=2)
 
     def test_oldargs1_2_kw(self):
-        self.assertRaises(TypeError, {}.update, x=2, y=2)
+        self.assertRaises(TypeError, [].count, x=2, y=2)
 
 
 def test_main():

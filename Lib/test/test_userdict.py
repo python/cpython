@@ -93,8 +93,12 @@ class TestMappingProtocol(unittest.TestCase):
         #update
         p.update(self.reference)
         self.assertEqual(dict(p), self.reference)
+        items = p.items()
+        p = self._empty_mapping()
+        p.update(items)
+        self.assertEqual(dict(p), self.reference)
         d = self._full_mapping(self.reference)
-        #setdefaullt
+        #setdefault
         key, value = d.iteritems().next()
         knownkey, knownvalue = self.other.iteritems().next()
         self.assertEqual(d.setdefault(key, knownvalue), value)
