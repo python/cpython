@@ -1,0 +1,35 @@
+% Template for a library manual section.
+
+\section{Standard module \sectcode{code}}
+\label{module-code}
+\stmodindex{code}
+
+The \code{code} module defines operations pertaining to Python code
+objects.
+
+The \code{code} module defines the following functions:
+
+\renewcommand{\indexsubitem}{(in module code)}
+
+\begin{funcdesc}{compile_command}{source\,
+\optional{filename\optional{\, symbol}}}
+This function is useful for programs that want to emulate Python's
+interpreter main loop (a.k.a. the read-eval-print loop).  The tricky
+part is to determine when the user has entered an incomplete command
+that can be completed by entering more text (as opposed to a complete
+command or a syntax error).  This function \emph{almost} always makes
+the same decision as the real interpreter main loop.
+
+Arguments: \var{source} is the source string; \var{filename} is the
+optional filename from which source was read, defaulting to
+\code{"<input>"}; and \var{symbol} is the optional grammar start
+symbol, which should be either \code{"single"} (the default) or
+\code{"eval"}.
+
+Return a code object (the same as \code{compile(\var{source},
+\var{filename}, \var{symbol})}) if the command is complete and valid;
+return \code{None} if the command is incomplete; raise
+\code{SyntaxError} if the command is a syntax error.
+
+
+\end{funcdesc}
