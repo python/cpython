@@ -599,7 +599,7 @@ gc_collect(PyObject *self, PyObject *args)
 	gc_list_merge(&generation1, &generation2);
 	n = collect(&generation2, &generation2);
 
-	return Py_BuildValue("i", n);
+	return Py_BuildValue("l", n);
 }
 
 static char gc_set_debug__doc__[] = 
@@ -622,7 +622,7 @@ static char gc_set_debug__doc__[] =
 static PyObject *
 gc_set_debug(PyObject *self, PyObject *args)
 {
-	if (!PyArg_ParseTuple(args, "l:get_debug", &debug))
+	if (!PyArg_ParseTuple(args, "i:set_debug", &debug))
 		return NULL;
 
 	Py_INCREF(Py_None);
