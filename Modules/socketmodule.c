@@ -487,11 +487,12 @@ internal_setblocking(PySocketSockObject *s, int block)
 }
 
 /* For access to the select module to poll the socket for timeout
- * functionality. If reading is: 1 poll as read, 0, poll as write.
+ * functionality. writing is 1 for writing, 0 for reading.
  * Return value: -1 if error, 0 if not ready, >= 1 if ready.
+ * An exception is set when the return value is <= 0 (!).
  */
 static int
-internal_select(PySocketSockObject *s, int reading)
+internal_select(PySocketSockObject *s, int writing)
 {
 	fd_set fds;
 	struct timeval tv;
@@ -499,15 +500,15 @@ internal_select(PySocketSockObject *s, int reading)
 
 	/* Construct the arguments to select */
 	tv.tv_sec = (int)s->sock_timeout;
-	tv.tv_usec = (int)(s->sock_timeout/1e6);
+	tv.tv_usec = (int)((s->sock_timeout - tv.tv_sec) * 1e6);
 	FD_ZERO(&fds);
 	FD_SET(s->sock_fd, &fds);
 
 	/* See if the socket is ready */
-	if (reading)
-		count = select(s->sock_fd, &fds, NULL, NULL, &tv);
+	if (writing)
+		count = select(s->sock_fd+1, NULL, &fds, NULL, &tv);
 	else
-		count = select(s->sock_fd, NULL, &fds, NULL, &tv);
+		count = select(s->sock_fd+1, &fds, NULL, NULL, &tv);
 
 	/* Check for errors */
 	if (count < 0) {
@@ -1075,9 +1076,9 @@ static char setblocking_doc[] =
 Set the socket to blocking (flag is true) or non-blocking (false).\n\
 This uses the FIONBIO ioctl with the O_NDELAY flag.";
 
-/* s.settimeout (float | int | long) method.
- * Causes an exception to be raised when the integer number of seconds
- * has elapsed when performing a blocking socket operation.
+/* s.settimeout(float | None) method.
+ * Causes an exception to be raised when the given time has
+ * elapsed when performing a blocking socket operation.
  */
 static PyObject *
 PySocketSock_settimeout(PySocketSockObject *s, PyObject *arg)
@@ -1110,10 +1111,7 @@ PySocketSock_settimeout(PySocketSockObject *s, PyObject *arg)
 	 *     non-blocking stuff. This makes sense because timeout stuff is
 	 *     blocking by nature.
 	 */
-	if (value < 0.0)
-		internal_setblocking(s, 0);
-	else
-		internal_setblocking(s, 1);
+	internal_setblocking(s, value < 0.0);
 
 	s->sock_blocking = 1; /* Always negate setblocking() */
 
@@ -1819,7 +1817,7 @@ PySocketSock_sendall(PySocketSockObject *s, PyObject *args)
 
 	if (s->sock_timeout >= 0.0) {
 		if (s->sock_blocking) {
-			if (internal_select(s, 1) < 0)
+			if (internal_select(s, 1) <= 0)
 				return NULL;
 		}
 	}
