@@ -10,9 +10,9 @@
 This file describes the built-in types, exceptions and functions and the
 standard modules that come with the Python system.  It assumes basic
 knowledge about the Python language.  For an informal introduction to
-the language, see the Python Tutorial.  The Python Reference Manual
-gives a more formal definition of the language.  (These manuals are not
-available in INFO or Texinfo format.)
+the language, see the @cite{Python Tutorial}.
+The @cite{Python Reference Manual} gives a more formal definition of the
+language.  (These manuals are not  available in INFO or Texinfo format.)
 
 Copyright 1991-1995 by Stichting Mathematisch Centrum, Amsterdam,
 The Netherlands.
