@@ -5,12 +5,8 @@
 
 
 
-#ifdef _WIN32
-#include "pywintoolbox.h"
-#else
 #include "macglue.h"
 #include "pymactoolbox.h"
-#endif
 
 /* Macro to test whether a weak-loaded CFM function exists */
 #define PyMac_PRECHECK(rtn) do { if ( &rtn == NULL )  {\
@@ -348,7 +344,7 @@ static PyObject *WEOObj_getattr(WEOObject *self, char *name)
 #define WEOObj_hash NULL
 
 PyTypeObject WEO_Type = {
-	PyObject_HEAD_INIT(&PyType_Type)
+	PyObject_HEAD_INIT(NULL)
 	0, /*ob_size*/
 	"WEO", /*tp_name*/
 	sizeof(WEOObject), /*tp_basicsize*/
@@ -1713,7 +1709,7 @@ static PyObject *wasteObj_getattr(wasteObject *self, char *name)
 #define wasteObj_hash NULL
 
 PyTypeObject waste_Type = {
-	PyObject_HEAD_INIT(&PyType_Type)
+	PyObject_HEAD_INIT(NULL)
 	0, /*ob_size*/
 	"waste", /*tp_name*/
 	sizeof(wasteObject), /*tp_basicsize*/

@@ -647,7 +647,7 @@ ListObj_setattr(ListObject *self, char *name, PyObject *value)
 #define ListObj_hash NULL
 
 PyTypeObject List_Type = {
-	PyObject_HEAD_INIT(&PyType_Type)
+	PyObject_HEAD_INIT(NULL)
 	0, /*ob_size*/
 	"List", /*tp_name*/
 	sizeof(ListObject), /*tp_basicsize*/

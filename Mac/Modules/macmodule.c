@@ -114,14 +114,12 @@ char *getwd(char *);
 char *getbootvol(void);
 
 
-static PyObject *MacError; /* Exception mac.error */
-
 /* Set a MAC-specific error from errno, and return NULL */
 
 static PyObject * 
 mac_error() 
 {
-	return PyErr_SetFromErrno(MacError);
+	return PyErr_SetFromErrno(PyExc_OSError);
 }
 
 /* MAC generic methods */
@@ -295,8 +293,7 @@ mac_getcwd(self, args)
 #endif
 	Py_END_ALLOW_THREADS
 	if (res == NULL) {
-		PyErr_SetString(MacError, path);
-		return NULL;
+		return mac_error();
 	}
 	return PyString_FromString(res);
 }
@@ -839,8 +836,7 @@ initmac()
                 return;
 
 	/* Initialize mac.error exception */
-	MacError = PyErr_NewException("mac.error", NULL, NULL);
-	PyDict_SetItemString(d, "error", MacError);
+	PyDict_SetItemString(d, "error", PyExc_OSError);
 
 	PyStructSequence_InitType(&StatResultType, &stat_result_desc);
 	PyDict_SetItemString(d, "stat_result", (PyObject*) &StatResultType);

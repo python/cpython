@@ -18,6 +18,10 @@ def mkproject(outputfile, modulename, settings, force=0, templatename=None):
 	dictcopy['mac_exportname'] = os.path.split(outputfile)[1] + '.exp'
 	if not dictcopy.has_key('mac_outputdir'):
 		dictcopy['mac_outputdir'] = ':lib:'
+	if not dictcopy.has_key('stdlibraryflags'):
+		dictcopy['stdlibraryflags'] = 'Debug'
+	if not dictcopy.has_key('libraryflags'):
+		dictcopy['libraryflags'] = 'Debug'
 	if not dictcopy.has_key('mac_dllname'):
 		dictcopy['mac_dllname'] = modulename + '.ppc.slb'
 	if not dictcopy.has_key('mac_targetname'):

@@ -101,7 +101,7 @@
                 <SETTING><NAME>SystemSearchPaths</NAME>
                     <SETTING>
                         <SETTING><NAME>SearchPath</NAME>
-                            <SETTING><NAME>Path</NAME><VALUE>%(sysprefix)s:GUSI2Carbon:include:</VALUE></SETTING>
+                            <SETTING><NAME>Path</NAME><VALUE>%(sysprefix)s:GUSI2:include:</VALUE></SETTING>
                             <SETTING><NAME>PathFormat</NAME><VALUE>MacOS</VALUE></SETTING>
                             <SETTING><NAME>PathRoot</NAME><VALUE>%(mac_sysprefixtype)s</VALUE></SETTING>
                         </SETTING>
@@ -977,17 +977,10 @@
                 </FILE>
                 <FILE>
                     <PATHTYPE>Name</PATHTYPE>
-                    <PATH>MSL C.Carbon.Lib</PATH>
-                    <PATHFORMAT>MacOS</PATHFORMAT>
-                    <FILEKIND>Library</FILEKIND>
-                    <FILEFLAGS></FILEFLAGS>
-                </FILE>
-                <FILE>
-                    <PATHTYPE>Name</PATHTYPE>
                     <PATH>CarbonLib</PATH>
                     <PATHFORMAT>MacOS</PATHFORMAT>
                     <FILEKIND>Library</FILEKIND>
-                    <FILEFLAGS></FILEFLAGS>
+                    <FILEFLAGS>%(stdlibraryflags)s</FILEFLAGS>
                 </FILE>
             </FILELIST>
             <LINKORDER>
@@ -1011,11 +1004,6 @@
                 <FILEREF>
                     <PATHTYPE>Name</PATHTYPE>
                     <PATH>PythonCoreCarbon</PATH>
-                    <PATHFORMAT>MacOS</PATHFORMAT>
-                </FILEREF>
-                 <FILEREF>
-                    <PATHTYPE>Name</PATHTYPE>
-                    <PATH>MSL C.Carbon.Lib</PATH>
                     <PATHFORMAT>MacOS</PATHFORMAT>
                 </FILEREF>
            </LINKORDER>
@@ -1048,12 +1036,6 @@
                 <TARGETNAME>%(mac_targetname)s</TARGETNAME>
                 <PATHTYPE>Name</PATHTYPE>
                 <PATH>PythonCoreCarbon</PATH>
-                <PATHFORMAT>MacOS</PATHFORMAT>
-            </FILEREF>
-            <FILEREF>
-                <TARGETNAME>%(mac_targetname)s</TARGETNAME>
-                <PATHTYPE>Name</PATHTYPE>
-                <PATH>MSL C.Carbon.Lib</PATH>
                 <PATHFORMAT>MacOS</PATHFORMAT>
             </FILEREF>
             <FILEREF>

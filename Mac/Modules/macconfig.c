@@ -158,6 +158,9 @@ extern void initzlib();
 #ifdef WITH_THREAD
 extern void initthread();
 #endif
+#ifdef WITH_HOTSHOT
+extern void init_hotshot();
+#endif
 #ifdef USE_PYEXPAT
 extern void initpyexpat();
 #endif
@@ -287,6 +290,9 @@ struct _inittab _PyImport_Inittab[] = {
 #endif
 #ifdef WITH_THREAD
 	{"thread",	initthread},
+#endif
+#ifdef WITH_HOTSHOT
+	{"_hotshot",	init_hotshot},
 #endif
 #ifdef USE_PYEXPAT
 	{"pyexpat", initpyexpat},

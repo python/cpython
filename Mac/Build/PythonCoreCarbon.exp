@@ -313,6 +313,7 @@ PyNumber_Or
 PyNumber_Check
 PyObject_AsWriteBuffer
 PyObject_AsReadBuffer
+PyObject_CheckReadBuffer
 PyObject_AsCharBuffer
 PyObject_DelItem
 PyObject_SetItem
@@ -1077,7 +1078,6 @@ PyStructSequence_New
 GUSISetupConsoleStdio
 GUSIStdioFlush
 GUSIStdioClose
-_fdopen
 __close_console
 __close_file
 __position_file
@@ -1146,6 +1146,7 @@ __vt__18GUSIContextFactory		# GUSIContextFactory::__vt
 __vt__11GUSIContext		# GUSIContext::__vt
 sError__11GUSIContext		# GUSIContext::sError
 sHasThreading__11GUSIContext		# GUSIContext::sHasThreading
+sCreatingCurrentContext__11GUSIContext		# GUSIContext::sCreatingCurrentContext
 sCurrentContext__11GUSIContext		# GUSIContext::sCurrentContext
 sContexts__11GUSIContext		# GUSIContext::sContexts
 sInstance__11GUSIProcess		# GUSIProcess::sInstance
@@ -1154,9 +1155,9 @@ MakeInstance__22GUSIThreadManagerProxyFv		# GUSIThreadManagerProxy::MakeInstance
 __dt__22GUSIThreadManagerProxyFv		# GUSIThreadManagerProxy::~GUSIThreadManagerProxy()
 __dt__Q23std76auto_ptr<22GUSIThreadManagerProxy,Q23std33_Single<22GUSIThreadManagerProxy>>Fv		# std::auto_ptr<GUSIThreadManagerProxy, std::_Single<GUSIThreadManagerProxy>>::~auto_ptr()
 Instance__22GUSIThreadManagerProxyFv		# GUSIThreadManagerProxy::Instance()
-SetThreadTerminator__22GUSIThreadManagerProxyFUlPFUlPv_vPv		# GUSIThreadManagerProxy::SetThreadTerminator(unsigned long,void (*)(unsigned long, void*),void*)
-SetThreadSwitcher__22GUSIThreadManagerProxyFUlPFUlPv_vPvUc		# GUSIThreadManagerProxy::SetThreadSwitcher(unsigned long,void (*)(unsigned long, void*),void*,unsigned char)
-NewThread__22GUSIThreadManagerProxyFUlPFPv_PvPvlUlPPvPUl		# GUSIThreadManagerProxy::NewThread(unsigned long,void* (*)(void*),void*,long,unsigned long,void**,unsigned long*)
+SetThreadTerminator__22GUSIThreadManagerProxyFUlP30OpaqueThreadTerminationProcPtrPv		# GUSIThreadManagerProxy::SetThreadTerminator(unsigned long,OpaqueThreadTerminationProcPtr*,void*)
+SetThreadSwitcher__22GUSIThreadManagerProxyFUlP25OpaqueThreadSwitchProcPtrPvUc		# GUSIThreadManagerProxy::SetThreadSwitcher(unsigned long,OpaqueThreadSwitchProcPtr*,void*,unsigned char)
+NewThread__22GUSIThreadManagerProxyFUlP24OpaqueThreadEntryProcPtrPvlUlPPvPUl		# GUSIThreadManagerProxy::NewThread(unsigned long,OpaqueThreadEntryProcPtr*,void*,long,unsigned long,void**,unsigned long*)
 GUSIControl__FP7IOParam		# GUSIControl(IOParam*)
 GUSIFinishIO__FP7IOParam		# GUSIFinishIO(IOParam*)
 GUSIStartIO__FP7IOParam		# GUSIStartIO(IOParam*)
@@ -1171,18 +1172,19 @@ Done__11GUSIContextFb		# GUSIContext::Done(bool)
 Terminate__11GUSIContextFv		# GUSIContext::Terminate()
 SwitchOut__11GUSIContextFv		# GUSIContext::SwitchOut()
 SwitchIn__11GUSIContextFv		# GUSIContext::SwitchIn()
-SetTerminator__11GUSIContextFPFUlPv_vPv		# GUSIContext::SetTerminator(void (*)(unsigned long, void*),void*)
+SetTerminator__11GUSIContextFP30OpaqueThreadTerminationProcPtrPv		# GUSIContext::SetTerminator(OpaqueThreadTerminationProcPtr*,void*)
 GUSISetThreadTerminator
-SetSwitchOut__11GUSIContextFPFUlPv_vPv		# GUSIContext::SetSwitchOut(void (*)(unsigned long, void*),void*)
-SetSwitchIn__11GUSIContextFPFUlPv_vPv		# GUSIContext::SetSwitchIn(void (*)(unsigned long, void*),void*)
+SetSwitchOut__11GUSIContextFP25OpaqueThreadSwitchProcPtrPv		# GUSIContext::SetSwitchOut(OpaqueThreadSwitchProcPtr*,void*)
+SetSwitchIn__11GUSIContextFP25OpaqueThreadSwitchProcPtrPv		# GUSIContext::SetSwitchIn(OpaqueThreadSwitchProcPtr*,void*)
 GUSISetThreadSwitcher
 CreateContext__18GUSIContextFactoryFUl		# GUSIContextFactory::CreateContext(unsigned long)
-CreateContext__18GUSIContextFactoryFPFPv_PvPvlUlPPvPUl		# GUSIContextFactory::CreateContext(void* (*)(void*),void*,long,unsigned long,void**,unsigned long*)
+CreateContext__18GUSIContextFactoryFP24OpaqueThreadEntryProcPtrPvlUlPPvPUl		# GUSIContextFactory::CreateContext(OpaqueThreadEntryProcPtr*,void*,long,unsigned long,void**,unsigned long*)
 __dt__18GUSIContextFactoryFv		# GUSIContextFactory::~GUSIContextFactory()
 __ct__18GUSIContextFactoryFv		# GUSIContextFactory::GUSIContextFactory()
-__dt__Q23std68auto_ptr<18GUSIContextFactory,Q23std29_Single<18GUSIContextFactory>>Fv		# std::auto_ptr<GUSIContextFactory, std::_Single<GUSIContextFactory>>::~auto_ptr()
+DeleteInstance__18GUSIContextFactoryFv		# GUSIContextFactory::DeleteInstance()
 SetInstance__18GUSIContextFactoryFP18GUSIContextFactory		# GUSIContextFactory::SetInstance(GUSIContextFactory*)
 Instance__18GUSIContextFactoryFv		# GUSIContextFactory::Instance()
+GUSISetupContextFactory
 GUSINewThread
 Wakeup__11GUSIProcessFv		# GUSIProcess::Wakeup()
 Wakeup__11GUSIContextFv		# GUSIContext::Wakeup()
@@ -1190,7 +1192,7 @@ Liquidate__11GUSIContextFv		# GUSIContext::Liquidate()
 LiquidateAll__Q211GUSIContext5QueueFv		# GUSIContext::Queue::LiquidateAll()
 __dt__11GUSIContextFv		# GUSIContext::~GUSIContext()
 Lookup__11GUSIContextFUl		# GUSIContext::Lookup(unsigned long)
-__ct__11GUSIContextFPFPv_PvPvlUlPPvPUl		# GUSIContext::GUSIContext(void* (*)(void*),void*,long,unsigned long,void**,unsigned long*)
+__ct__11GUSIContextFP24OpaqueThreadEntryProcPtrPvlUlPPvPUl		# GUSIContext::GUSIContext(OpaqueThreadEntryProcPtr*,void*,long,unsigned long,void**,unsigned long*)
 __ct__11GUSIContextFUl		# GUSIContext::GUSIContext(unsigned long)
 FinishSetup__11GUSIContextFv		# GUSIContext::FinishSetup()
 GUSIThreadTerminator
@@ -1231,6 +1233,9 @@ __dt__19GUSIDescriptorTableFv		# GUSIDescriptorTable::~GUSIDescriptorTable()
 CloseAllDescriptors__19GUSIDescriptorTableFv		# GUSIDescriptorTable::CloseAllDescriptors()
 SetInstance__19GUSIDescriptorTableFP19GUSIDescriptorTable		# GUSIDescriptorTable::SetInstance(GUSIDescriptorTable*)
 Instance__19GUSIDescriptorTableFv		# GUSIDescriptorTable::Instance()
+GUSISetupDescriptorTable
+__ct__10GUSIDeviceFv		# GUSIDevice::GUSIDevice()
+__ct__14GUSINullDeviceFv		# GUSINullDevice::GUSINullDevice()
 Instance__14GUSINullDeviceFv		# GUSINullDevice::Instance()
 GUSIDefaultSetupConsole
 GUSISetupConsole
@@ -1360,6 +1365,7 @@ __ct__12GUSIFileSpecFRC6FSSpecb		# GUSIFileSpec::GUSIFileSpec(const FSSpec&,bool
 __ct__12GUSIFileSpecFRC12GUSIFileSpec		# GUSIFileSpec::GUSIFileSpec(const GUSIFileSpec&)
 CScratch__12GUSIFileSpecFb		# GUSIFileSpec::CScratch(bool)
 ReadHex__FPCciPc		# ReadHex(const char*,int,char*)
+GUSIFSXGetVolInfo__FP31GUSIIOPBWrapper<12XVolumeParam>		# GUSIFSXGetVolInfo(GUSIIOPBWrapper<XVolumeParam>*)
 GUSIFSMoveRename
 GUSIFSCatMove
 GUSIFSCatMove__FPC6FSSpecl		# GUSIFSCatMove(const FSSpec*,long)
@@ -1521,7 +1527,7 @@ GUSIwithLocalSockets
 __vt__12GUSIGatherer		# GUSIGatherer::__vt
 __vt__13GUSIScatterer		# GUSIScatterer::__vt
 get__40GUSISpecificData<Q23std2tm,&.GUSIKillTM>FP17GUSISpecificTable		# GUSISpecificData<std::tm, &.GUSIKillTM>::get(GUSISpecificTable*)
-faccess__FPCcPUiPv		# faccess(const char*,unsigned int*,void*)
+faccess
 fsetfileinfo
 fgetfileinfo
 getservent
@@ -1811,6 +1817,7 @@ __ct__18GUSIOTStreamSocketFP14GUSIOTStrategy		# GUSIOTStreamSocket::GUSIOTStream
 Supports__12GUSIOTSocketFQ210GUSISocket12ConfigOption		# GUSIOTSocket::Supports(GUSISocket::ConfigOption)
 setsockopt__12GUSIOTSocketFiiPvUi		# GUSIOTSocket::setsockopt(int,int,void*,unsigned int)
 getsockopt__12GUSIOTSocketFiiPvPUi		# GUSIOTSocket::getsockopt(int,int,void*,unsigned int*)
+pre_select__12GUSIOTSocketFbbb		# GUSIOTSocket::pre_select(bool,bool,bool)
 ioctl__12GUSIOTSocketFUiPc		# GUSIOTSocket::ioctl(unsigned int,char*)
 fcntl__12GUSIOTSocketFiPc		# GUSIOTSocket::fcntl(int,char*)
 shutdown__12GUSIOTSocketFi		# GUSIOTSocket::shutdown(int)
@@ -2223,6 +2230,7 @@ _umask
 _ftype
 _fcreator
 _chmod
+_fdopen
 __gettype
 __getcreator
 __ctopstring

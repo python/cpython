@@ -5,12 +5,8 @@
 
 
 
-#ifdef _WIN32
-#include "pywintoolbox.h"
-#else
 #include "macglue.h"
 #include "pymactoolbox.h"
-#endif
 
 /* Macro to test whether a weak-loaded CFM function exists */
 #define PyMac_PRECHECK(rtn) do { if ( &rtn == NULL )  {\
@@ -170,7 +166,9 @@ static PyObject *CFTypeRefObj_CFGetTypeID(CFTypeRefObject *_self, PyObject *_arg
 {
 	PyObject *_res = NULL;
 	CFTypeID _rv;
+#ifndef CFGetTypeID
 	PyMac_PRECHECK(CFGetTypeID);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = CFGetTypeID(_self->ob_itself);
@@ -183,7 +181,9 @@ static PyObject *CFTypeRefObj_CFRetain(CFTypeRefObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	CFTypeRef _rv;
+#ifndef CFRetain
 	PyMac_PRECHECK(CFRetain);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = CFRetain(_self->ob_itself);
@@ -195,7 +195,9 @@ static PyObject *CFTypeRefObj_CFRetain(CFTypeRefObject *_self, PyObject *_args)
 static PyObject *CFTypeRefObj_CFRelease(CFTypeRefObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
+#ifndef CFRelease
 	PyMac_PRECHECK(CFRelease);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	CFRelease(_self->ob_itself);
@@ -208,7 +210,9 @@ static PyObject *CFTypeRefObj_CFGetRetainCount(CFTypeRefObject *_self, PyObject 
 {
 	PyObject *_res = NULL;
 	CFIndex _rv;
+#ifndef CFGetRetainCount
 	PyMac_PRECHECK(CFGetRetainCount);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = CFGetRetainCount(_self->ob_itself);
@@ -222,7 +226,9 @@ static PyObject *CFTypeRefObj_CFEqual(CFTypeRefObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	Boolean _rv;
 	CFTypeRef cf2;
+#ifndef CFEqual
 	PyMac_PRECHECK(CFEqual);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      CFTypeRefObj_Convert, &cf2))
 		return NULL;
@@ -237,7 +243,9 @@ static PyObject *CFTypeRefObj_CFHash(CFTypeRefObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	CFHashCode _rv;
+#ifndef CFHash
 	PyMac_PRECHECK(CFHash);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = CFHash(_self->ob_itself);
@@ -250,7 +258,9 @@ static PyObject *CFTypeRefObj_CFCopyDescription(CFTypeRefObject *_self, PyObject
 {
 	PyObject *_res = NULL;
 	CFStringRef _rv;
+#ifndef CFCopyDescription
 	PyMac_PRECHECK(CFCopyDescription);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = CFCopyDescription(_self->ob_itself);
@@ -262,7 +272,9 @@ static PyObject *CFTypeRefObj_CFCopyDescription(CFTypeRefObject *_self, PyObject
 static PyObject *CFTypeRefObj_CFShow(CFTypeRefObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
+#ifndef CFShow
 	PyMac_PRECHECK(CFShow);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	CFShow(_self->ob_itself);
@@ -322,7 +334,7 @@ static int CFTypeRefObj_hash(CFTypeRefObject *self)
 }
 
 PyTypeObject CFTypeRef_Type = {
-	PyObject_HEAD_INIT(&PyType_Type)
+	PyObject_HEAD_INIT(NULL)
 	0, /*ob_size*/
 	"CFTypeRef", /*tp_name*/
 	sizeof(CFTypeRefObject), /*tp_basicsize*/
@@ -406,7 +418,9 @@ static PyObject *CFArrayRefObj_CFArrayGetCount(CFArrayRefObject *_self, PyObject
 {
 	PyObject *_res = NULL;
 	CFIndex _rv;
+#ifndef CFArrayGetCount
 	PyMac_PRECHECK(CFArrayGetCount);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = CFArrayGetCount(_self->ob_itself);
@@ -472,7 +486,7 @@ static int CFArrayRefObj_hash(CFArrayRefObject *self)
 }
 
 PyTypeObject CFArrayRef_Type = {
-	PyObject_HEAD_INIT(&PyType_Type)
+	PyObject_HEAD_INIT(NULL)
 	0, /*ob_size*/
 	"CFArrayRef", /*tp_name*/
 	sizeof(CFArrayRefObject), /*tp_basicsize*/
@@ -543,7 +557,9 @@ static PyObject *CFMutableArrayRefObj_CFArrayRemoveValueAtIndex(CFMutableArrayRe
 {
 	PyObject *_res = NULL;
 	CFIndex idx;
+#ifndef CFArrayRemoveValueAtIndex
 	PyMac_PRECHECK(CFArrayRemoveValueAtIndex);
+#endif
 	if (!PyArg_ParseTuple(_args, "l",
 	                      &idx))
 		return NULL;
@@ -557,7 +573,9 @@ static PyObject *CFMutableArrayRefObj_CFArrayRemoveValueAtIndex(CFMutableArrayRe
 static PyObject *CFMutableArrayRefObj_CFArrayRemoveAllValues(CFMutableArrayRefObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
+#ifndef CFArrayRemoveAllValues
 	PyMac_PRECHECK(CFArrayRemoveAllValues);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	CFArrayRemoveAllValues(_self->ob_itself);
@@ -571,7 +589,9 @@ static PyObject *CFMutableArrayRefObj_CFArrayExchangeValuesAtIndices(CFMutableAr
 	PyObject *_res = NULL;
 	CFIndex idx1;
 	CFIndex idx2;
+#ifndef CFArrayExchangeValuesAtIndices
 	PyMac_PRECHECK(CFArrayExchangeValuesAtIndices);
+#endif
 	if (!PyArg_ParseTuple(_args, "ll",
 	                      &idx1,
 	                      &idx2))
@@ -625,7 +645,7 @@ static int CFMutableArrayRefObj_hash(CFMutableArrayRefObject *self)
 }
 
 PyTypeObject CFMutableArrayRef_Type = {
-	PyObject_HEAD_INIT(&PyType_Type)
+	PyObject_HEAD_INIT(NULL)
 	0, /*ob_size*/
 	"CFMutableArrayRef", /*tp_name*/
 	sizeof(CFMutableArrayRefObject), /*tp_basicsize*/
@@ -709,7 +729,9 @@ static PyObject *CFDictionaryRefObj_CFDictionaryGetCount(CFDictionaryRefObject *
 {
 	PyObject *_res = NULL;
 	CFIndex _rv;
+#ifndef CFDictionaryGetCount
 	PyMac_PRECHECK(CFDictionaryGetCount);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = CFDictionaryGetCount(_self->ob_itself);
@@ -757,7 +779,7 @@ static int CFDictionaryRefObj_hash(CFDictionaryRefObject *self)
 }
 
 PyTypeObject CFDictionaryRef_Type = {
-	PyObject_HEAD_INIT(&PyType_Type)
+	PyObject_HEAD_INIT(NULL)
 	0, /*ob_size*/
 	"CFDictionaryRef", /*tp_name*/
 	sizeof(CFDictionaryRefObject), /*tp_basicsize*/
@@ -827,7 +849,9 @@ static void CFMutableDictionaryRefObj_dealloc(CFMutableDictionaryRefObject *self
 static PyObject *CFMutableDictionaryRefObj_CFDictionaryRemoveAllValues(CFMutableDictionaryRefObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
+#ifndef CFDictionaryRemoveAllValues
 	PyMac_PRECHECK(CFDictionaryRemoveAllValues);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	CFDictionaryRemoveAllValues(_self->ob_itself);
@@ -873,7 +897,7 @@ static int CFMutableDictionaryRefObj_hash(CFMutableDictionaryRefObject *self)
 }
 
 PyTypeObject CFMutableDictionaryRef_Type = {
-	PyObject_HEAD_INIT(&PyType_Type)
+	PyObject_HEAD_INIT(NULL)
 	0, /*ob_size*/
 	"CFMutableDictionaryRef", /*tp_name*/
 	sizeof(CFMutableDictionaryRefObject), /*tp_basicsize*/
@@ -957,7 +981,9 @@ static PyObject *CFDataRefObj_CFDataGetLength(CFDataRefObject *_self, PyObject *
 {
 	PyObject *_res = NULL;
 	CFIndex _rv;
+#ifndef CFDataGetLength
 	PyMac_PRECHECK(CFDataGetLength);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = CFDataGetLength(_self->ob_itself);
@@ -1023,7 +1049,7 @@ static int CFDataRefObj_hash(CFDataRefObject *self)
 }
 
 PyTypeObject CFDataRef_Type = {
-	PyObject_HEAD_INIT(&PyType_Type)
+	PyObject_HEAD_INIT(NULL)
 	0, /*ob_size*/
 	"CFDataRef", /*tp_name*/
 	sizeof(CFDataRefObject), /*tp_basicsize*/
@@ -1094,7 +1120,9 @@ static PyObject *CFMutableDataRefObj_CFDataSetLength(CFMutableDataRefObject *_se
 {
 	PyObject *_res = NULL;
 	CFIndex length;
+#ifndef CFDataSetLength
 	PyMac_PRECHECK(CFDataSetLength);
+#endif
 	if (!PyArg_ParseTuple(_args, "l",
 	                      &length))
 		return NULL;
@@ -1109,7 +1137,9 @@ static PyObject *CFMutableDataRefObj_CFDataIncreaseLength(CFMutableDataRefObject
 {
 	PyObject *_res = NULL;
 	CFIndex extraLength;
+#ifndef CFDataIncreaseLength
 	PyMac_PRECHECK(CFDataIncreaseLength);
+#endif
 	if (!PyArg_ParseTuple(_args, "l",
 	                      &extraLength))
 		return NULL;
@@ -1126,7 +1156,9 @@ static PyObject *CFMutableDataRefObj_CFDataAppendBytes(CFMutableDataRefObject *_
 	unsigned char *bytes__in__;
 	long bytes__len__;
 	int bytes__in_len__;
+#ifndef CFDataAppendBytes
 	PyMac_PRECHECK(CFDataAppendBytes);
+#endif
 	if (!PyArg_ParseTuple(_args, "s#",
 	                      &bytes__in__, &bytes__in_len__))
 		return NULL;
@@ -1145,7 +1177,9 @@ static PyObject *CFMutableDataRefObj_CFDataReplaceBytes(CFMutableDataRefObject *
 	unsigned char *newBytes__in__;
 	long newBytes__len__;
 	int newBytes__in_len__;
+#ifndef CFDataReplaceBytes
 	PyMac_PRECHECK(CFDataReplaceBytes);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&s#",
 	                      CFRange_Convert, &range,
 	                      &newBytes__in__, &newBytes__in_len__))
@@ -1163,7 +1197,9 @@ static PyObject *CFMutableDataRefObj_CFDataDeleteBytes(CFMutableDataRefObject *_
 {
 	PyObject *_res = NULL;
 	CFRange range;
+#ifndef CFDataDeleteBytes
 	PyMac_PRECHECK(CFDataDeleteBytes);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      CFRange_Convert, &range))
 		return NULL;
@@ -1219,7 +1255,7 @@ static int CFMutableDataRefObj_hash(CFMutableDataRefObject *self)
 }
 
 PyTypeObject CFMutableDataRef_Type = {
-	PyObject_HEAD_INIT(&PyType_Type)
+	PyObject_HEAD_INIT(NULL)
 	0, /*ob_size*/
 	"CFMutableDataRef", /*tp_name*/
 	sizeof(CFMutableDataRefObject), /*tp_basicsize*/
@@ -1332,7 +1368,9 @@ static PyObject *CFStringRefObj_CFStringGetLength(CFStringRefObject *_self, PyOb
 {
 	PyObject *_res = NULL;
 	CFIndex _rv;
+#ifndef CFStringGetLength
 	PyMac_PRECHECK(CFStringGetLength);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = CFStringGetLength(_self->ob_itself);
@@ -1352,7 +1390,9 @@ static PyObject *CFStringRefObj_CFStringGetBytes(CFStringRefObject *_self, PyObj
 	UInt8 buffer;
 	CFIndex maxBufLen;
 	CFIndex usedBufLen;
+#ifndef CFStringGetBytes
 	PyMac_PRECHECK(CFStringGetBytes);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&lbll",
 	                      CFRange_Convert, &range,
 	                      &encoding,
@@ -1398,7 +1438,9 @@ static PyObject *CFStringRefObj_CFStringGetSmallestEncoding(CFStringRefObject *_
 {
 	PyObject *_res = NULL;
 	CFStringEncoding _rv;
+#ifndef CFStringGetSmallestEncoding
 	PyMac_PRECHECK(CFStringGetSmallestEncoding);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = CFStringGetSmallestEncoding(_self->ob_itself);
@@ -1411,7 +1453,9 @@ static PyObject *CFStringRefObj_CFStringGetFastestEncoding(CFStringRefObject *_s
 {
 	PyObject *_res = NULL;
 	CFStringEncoding _rv;
+#ifndef CFStringGetFastestEncoding
 	PyMac_PRECHECK(CFStringGetFastestEncoding);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = CFStringGetFastestEncoding(_self->ob_itself);
@@ -1427,7 +1471,9 @@ static PyObject *CFStringRefObj_CFStringCompareWithOptions(CFStringRefObject *_s
 	CFStringRef string2;
 	CFRange rangeToCompare;
 	CFOptionFlags compareOptions;
+#ifndef CFStringCompareWithOptions
 	PyMac_PRECHECK(CFStringCompareWithOptions);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O&l",
 	                      CFStringRefObj_Convert, &string2,
 	                      CFRange_Convert, &rangeToCompare,
@@ -1448,7 +1494,9 @@ static PyObject *CFStringRefObj_CFStringCompare(CFStringRefObject *_self, PyObje
 	CFComparisonResult _rv;
 	CFStringRef string2;
 	CFOptionFlags compareOptions;
+#ifndef CFStringCompare
 	PyMac_PRECHECK(CFStringCompare);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&l",
 	                      CFStringRefObj_Convert, &string2,
 	                      &compareOptions))
@@ -1469,7 +1517,9 @@ static PyObject *CFStringRefObj_CFStringFindWithOptions(CFStringRefObject *_self
 	CFRange rangeToSearch;
 	CFOptionFlags searchOptions;
 	CFRange result;
+#ifndef CFStringFindWithOptions
 	PyMac_PRECHECK(CFStringFindWithOptions);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O&l",
 	                      CFStringRefObj_Convert, &stringToFind,
 	                      CFRange_Convert, &rangeToSearch,
@@ -1514,7 +1564,9 @@ static PyObject *CFStringRefObj_CFStringFind(CFStringRefObject *_self, PyObject 
 	CFRange _rv;
 	CFStringRef stringToFind;
 	CFOptionFlags compareOptions;
+#ifndef CFStringFind
 	PyMac_PRECHECK(CFStringFind);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&l",
 	                      CFStringRefObj_Convert, &stringToFind,
 	                      &compareOptions))
@@ -1532,7 +1584,9 @@ static PyObject *CFStringRefObj_CFStringHasPrefix(CFStringRefObject *_self, PyOb
 	PyObject *_res = NULL;
 	Boolean _rv;
 	CFStringRef prefix;
+#ifndef CFStringHasPrefix
 	PyMac_PRECHECK(CFStringHasPrefix);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      CFStringRefObj_Convert, &prefix))
 		return NULL;
@@ -1548,7 +1602,9 @@ static PyObject *CFStringRefObj_CFStringHasSuffix(CFStringRefObject *_self, PyOb
 	PyObject *_res = NULL;
 	Boolean _rv;
 	CFStringRef suffix;
+#ifndef CFStringHasSuffix
 	PyMac_PRECHECK(CFStringHasSuffix);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      CFStringRefObj_Convert, &suffix))
 		return NULL;
@@ -1566,7 +1622,9 @@ static PyObject *CFStringRefObj_CFStringGetLineBounds(CFStringRefObject *_self, 
 	CFIndex lineBeginIndex;
 	CFIndex lineEndIndex;
 	CFIndex contentsEndIndex;
+#ifndef CFStringGetLineBounds
 	PyMac_PRECHECK(CFStringGetLineBounds);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      CFRange_Convert, &range))
 		return NULL;
@@ -1602,7 +1660,9 @@ static PyObject *CFStringRefObj_CFStringGetIntValue(CFStringRefObject *_self, Py
 {
 	PyObject *_res = NULL;
 	SInt32 _rv;
+#ifndef CFStringGetIntValue
 	PyMac_PRECHECK(CFStringGetIntValue);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = CFStringGetIntValue(_self->ob_itself);
@@ -1615,7 +1675,9 @@ static PyObject *CFStringRefObj_CFStringGetDoubleValue(CFStringRefObject *_self,
 {
 	PyObject *_res = NULL;
 	double _rv;
+#ifndef CFStringGetDoubleValue
 	PyMac_PRECHECK(CFStringGetDoubleValue);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = CFStringGetDoubleValue(_self->ob_itself);
@@ -1628,7 +1690,9 @@ static PyObject *CFStringRefObj_CFStringConvertIANACharSetNameToEncoding(CFStrin
 {
 	PyObject *_res = NULL;
 	CFStringEncoding _rv;
+#ifndef CFStringConvertIANACharSetNameToEncoding
 	PyMac_PRECHECK(CFStringConvertIANACharSetNameToEncoding);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = CFStringConvertIANACharSetNameToEncoding(_self->ob_itself);
@@ -1640,7 +1704,9 @@ static PyObject *CFStringRefObj_CFStringConvertIANACharSetNameToEncoding(CFStrin
 static PyObject *CFStringRefObj_CFShowStr(CFStringRefObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
+#ifndef CFShowStr
 	PyMac_PRECHECK(CFShowStr);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	CFShowStr(_self->ob_itself);
@@ -1822,7 +1888,7 @@ static int CFStringRefObj_hash(CFStringRefObject *self)
 }
 
 PyTypeObject CFStringRef_Type = {
-	PyObject_HEAD_INIT(&PyType_Type)
+	PyObject_HEAD_INIT(NULL)
 	0, /*ob_size*/
 	"CFStringRef", /*tp_name*/
 	sizeof(CFStringRefObject), /*tp_basicsize*/
@@ -1893,7 +1959,9 @@ static PyObject *CFMutableStringRefObj_CFStringAppend(CFMutableStringRefObject *
 {
 	PyObject *_res = NULL;
 	CFStringRef appendedString;
+#ifndef CFStringAppend
 	PyMac_PRECHECK(CFStringAppend);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      CFStringRefObj_Convert, &appendedString))
 		return NULL;
@@ -1909,7 +1977,9 @@ static PyObject *CFMutableStringRefObj_CFStringAppendPascalString(CFMutableStrin
 	PyObject *_res = NULL;
 	StringPtr pStr;
 	CFStringEncoding encoding;
+#ifndef CFStringAppendPascalString
 	PyMac_PRECHECK(CFStringAppendPascalString);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&l",
 	                      PyMac_GetStr255, &pStr,
 	                      &encoding))
@@ -1927,7 +1997,9 @@ static PyObject *CFMutableStringRefObj_CFStringAppendCString(CFMutableStringRefO
 	PyObject *_res = NULL;
 	char* cStr;
 	CFStringEncoding encoding;
+#ifndef CFStringAppendCString
 	PyMac_PRECHECK(CFStringAppendCString);
+#endif
 	if (!PyArg_ParseTuple(_args, "sl",
 	                      &cStr,
 	                      &encoding))
@@ -1945,7 +2017,9 @@ static PyObject *CFMutableStringRefObj_CFStringInsert(CFMutableStringRefObject *
 	PyObject *_res = NULL;
 	CFIndex idx;
 	CFStringRef insertedStr;
+#ifndef CFStringInsert
 	PyMac_PRECHECK(CFStringInsert);
+#endif
 	if (!PyArg_ParseTuple(_args, "lO&",
 	                      &idx,
 	                      CFStringRefObj_Convert, &insertedStr))
@@ -1962,7 +2036,9 @@ static PyObject *CFMutableStringRefObj_CFStringDelete(CFMutableStringRefObject *
 {
 	PyObject *_res = NULL;
 	CFRange range;
+#ifndef CFStringDelete
 	PyMac_PRECHECK(CFStringDelete);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      CFRange_Convert, &range))
 		return NULL;
@@ -1978,7 +2054,9 @@ static PyObject *CFMutableStringRefObj_CFStringReplace(CFMutableStringRefObject 
 	PyObject *_res = NULL;
 	CFRange range;
 	CFStringRef replacement;
+#ifndef CFStringReplace
 	PyMac_PRECHECK(CFStringReplace);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
 	                      CFRange_Convert, &range,
 	                      CFStringRefObj_Convert, &replacement))
@@ -1995,7 +2073,9 @@ static PyObject *CFMutableStringRefObj_CFStringReplaceAll(CFMutableStringRefObje
 {
 	PyObject *_res = NULL;
 	CFStringRef replacement;
+#ifndef CFStringReplaceAll
 	PyMac_PRECHECK(CFStringReplaceAll);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      CFStringRefObj_Convert, &replacement))
 		return NULL;
@@ -2012,7 +2092,9 @@ static PyObject *CFMutableStringRefObj_CFStringPad(CFMutableStringRefObject *_se
 	CFStringRef padString;
 	CFIndex length;
 	CFIndex indexIntoPad;
+#ifndef CFStringPad
 	PyMac_PRECHECK(CFStringPad);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&ll",
 	                      CFStringRefObj_Convert, &padString,
 	                      &length,
@@ -2031,7 +2113,9 @@ static PyObject *CFMutableStringRefObj_CFStringTrim(CFMutableStringRefObject *_s
 {
 	PyObject *_res = NULL;
 	CFStringRef trimString;
+#ifndef CFStringTrim
 	PyMac_PRECHECK(CFStringTrim);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      CFStringRefObj_Convert, &trimString))
 		return NULL;
@@ -2045,7 +2129,9 @@ static PyObject *CFMutableStringRefObj_CFStringTrim(CFMutableStringRefObject *_s
 static PyObject *CFMutableStringRefObj_CFStringTrimWhitespace(CFMutableStringRefObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
+#ifndef CFStringTrimWhitespace
 	PyMac_PRECHECK(CFStringTrimWhitespace);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	CFStringTrimWhitespace(_self->ob_itself);
@@ -2109,7 +2195,7 @@ static int CFMutableStringRefObj_hash(CFMutableStringRefObject *self)
 }
 
 PyTypeObject CFMutableStringRef_Type = {
-	PyObject_HEAD_INIT(&PyType_Type)
+	PyObject_HEAD_INIT(NULL)
 	0, /*ob_size*/
 	"CFMutableStringRef", /*tp_name*/
 	sizeof(CFMutableStringRefObject), /*tp_basicsize*/
@@ -2199,7 +2285,9 @@ static PyObject *CFURLRefObj_CFURLCopyAbsoluteURL(CFURLRefObject *_self, PyObjec
 {
 	PyObject *_res = NULL;
 	CFURLRef _rv;
+#ifndef CFURLCopyAbsoluteURL
 	PyMac_PRECHECK(CFURLCopyAbsoluteURL);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = CFURLCopyAbsoluteURL(_self->ob_itself);
@@ -2212,7 +2300,9 @@ static PyObject *CFURLRefObj_CFURLGetString(CFURLRefObject *_self, PyObject *_ar
 {
 	PyObject *_res = NULL;
 	CFStringRef _rv;
+#ifndef CFURLGetString
 	PyMac_PRECHECK(CFURLGetString);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = CFURLGetString(_self->ob_itself);
@@ -2225,7 +2315,9 @@ static PyObject *CFURLRefObj_CFURLGetBaseURL(CFURLRefObject *_self, PyObject *_a
 {
 	PyObject *_res = NULL;
 	CFURLRef _rv;
+#ifndef CFURLGetBaseURL
 	PyMac_PRECHECK(CFURLGetBaseURL);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = CFURLGetBaseURL(_self->ob_itself);
@@ -2238,7 +2330,9 @@ static PyObject *CFURLRefObj_CFURLCanBeDecomposed(CFURLRefObject *_self, PyObjec
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
+#ifndef CFURLCanBeDecomposed
 	PyMac_PRECHECK(CFURLCanBeDecomposed);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = CFURLCanBeDecomposed(_self->ob_itself);
@@ -2251,7 +2345,9 @@ static PyObject *CFURLRefObj_CFURLCopyScheme(CFURLRefObject *_self, PyObject *_a
 {
 	PyObject *_res = NULL;
 	CFStringRef _rv;
+#ifndef CFURLCopyScheme
 	PyMac_PRECHECK(CFURLCopyScheme);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = CFURLCopyScheme(_self->ob_itself);
@@ -2264,7 +2360,9 @@ static PyObject *CFURLRefObj_CFURLCopyNetLocation(CFURLRefObject *_self, PyObjec
 {
 	PyObject *_res = NULL;
 	CFStringRef _rv;
+#ifndef CFURLCopyNetLocation
 	PyMac_PRECHECK(CFURLCopyNetLocation);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = CFURLCopyNetLocation(_self->ob_itself);
@@ -2277,7 +2375,9 @@ static PyObject *CFURLRefObj_CFURLCopyPath(CFURLRefObject *_self, PyObject *_arg
 {
 	PyObject *_res = NULL;
 	CFStringRef _rv;
+#ifndef CFURLCopyPath
 	PyMac_PRECHECK(CFURLCopyPath);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = CFURLCopyPath(_self->ob_itself);
@@ -2290,7 +2390,9 @@ static PyObject *CFURLRefObj_CFURLHasDirectoryPath(CFURLRefObject *_self, PyObje
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
+#ifndef CFURLHasDirectoryPath
 	PyMac_PRECHECK(CFURLHasDirectoryPath);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = CFURLHasDirectoryPath(_self->ob_itself);
@@ -2303,7 +2405,9 @@ static PyObject *CFURLRefObj_CFURLCopyResourceSpecifier(CFURLRefObject *_self, P
 {
 	PyObject *_res = NULL;
 	CFStringRef _rv;
+#ifndef CFURLCopyResourceSpecifier
 	PyMac_PRECHECK(CFURLCopyResourceSpecifier);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = CFURLCopyResourceSpecifier(_self->ob_itself);
@@ -2316,7 +2420,9 @@ static PyObject *CFURLRefObj_CFURLCopyHostName(CFURLRefObject *_self, PyObject *
 {
 	PyObject *_res = NULL;
 	CFStringRef _rv;
+#ifndef CFURLCopyHostName
 	PyMac_PRECHECK(CFURLCopyHostName);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = CFURLCopyHostName(_self->ob_itself);
@@ -2329,7 +2435,9 @@ static PyObject *CFURLRefObj_CFURLGetPortNumber(CFURLRefObject *_self, PyObject 
 {
 	PyObject *_res = NULL;
 	SInt32 _rv;
+#ifndef CFURLGetPortNumber
 	PyMac_PRECHECK(CFURLGetPortNumber);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = CFURLGetPortNumber(_self->ob_itself);
@@ -2342,7 +2450,9 @@ static PyObject *CFURLRefObj_CFURLCopyUserName(CFURLRefObject *_self, PyObject *
 {
 	PyObject *_res = NULL;
 	CFStringRef _rv;
+#ifndef CFURLCopyUserName
 	PyMac_PRECHECK(CFURLCopyUserName);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = CFURLCopyUserName(_self->ob_itself);
@@ -2355,7 +2465,9 @@ static PyObject *CFURLRefObj_CFURLCopyPassword(CFURLRefObject *_self, PyObject *
 {
 	PyObject *_res = NULL;
 	CFStringRef _rv;
+#ifndef CFURLCopyPassword
 	PyMac_PRECHECK(CFURLCopyPassword);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = CFURLCopyPassword(_self->ob_itself);
@@ -2369,7 +2481,9 @@ static PyObject *CFURLRefObj_CFURLCopyParameterString(CFURLRefObject *_self, PyO
 	PyObject *_res = NULL;
 	CFStringRef _rv;
 	CFStringRef charactersToLeaveEscaped;
+#ifndef CFURLCopyParameterString
 	PyMac_PRECHECK(CFURLCopyParameterString);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      CFStringRefObj_Convert, &charactersToLeaveEscaped))
 		return NULL;
@@ -2385,7 +2499,9 @@ static PyObject *CFURLRefObj_CFURLCopyQueryString(CFURLRefObject *_self, PyObjec
 	PyObject *_res = NULL;
 	CFStringRef _rv;
 	CFStringRef charactersToLeaveEscaped;
+#ifndef CFURLCopyQueryString
 	PyMac_PRECHECK(CFURLCopyQueryString);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      CFStringRefObj_Convert, &charactersToLeaveEscaped))
 		return NULL;
@@ -2401,7 +2517,9 @@ static PyObject *CFURLRefObj_CFURLCopyFragment(CFURLRefObject *_self, PyObject *
 	PyObject *_res = NULL;
 	CFStringRef _rv;
 	CFStringRef charactersToLeaveEscaped;
+#ifndef CFURLCopyFragment
 	PyMac_PRECHECK(CFURLCopyFragment);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      CFStringRefObj_Convert, &charactersToLeaveEscaped))
 		return NULL;
@@ -2481,7 +2599,7 @@ static int CFURLRefObj_hash(CFURLRefObject *self)
 }
 
 PyTypeObject CFURLRef_Type = {
-	PyObject_HEAD_INIT(&PyType_Type)
+	PyObject_HEAD_INIT(NULL)
 	0, /*ob_size*/
 	"CFURLRef", /*tp_name*/
 	sizeof(CFURLRefObject), /*tp_basicsize*/
@@ -2506,7 +2624,9 @@ static PyObject *CF_CFAllocatorGetTypeID(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	CFTypeID _rv;
+#ifndef CFAllocatorGetTypeID
 	PyMac_PRECHECK(CFAllocatorGetTypeID);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = CFAllocatorGetTypeID();
@@ -2521,7 +2641,9 @@ static PyObject *CF_CFAllocatorGetPreferredSizeForSize(PyObject *_self, PyObject
 	CFIndex _rv;
 	CFIndex size;
 	CFOptionFlags hint;
+#ifndef CFAllocatorGetPreferredSizeForSize
 	PyMac_PRECHECK(CFAllocatorGetPreferredSizeForSize);
+#endif
 	if (!PyArg_ParseTuple(_args, "ll",
 	                      &size,
 	                      &hint))
@@ -2539,7 +2661,9 @@ static PyObject *CF_CFCopyTypeIDDescription(PyObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	CFStringRef _rv;
 	CFTypeID theType;
+#ifndef CFCopyTypeIDDescription
 	PyMac_PRECHECK(CFCopyTypeIDDescription);
+#endif
 	if (!PyArg_ParseTuple(_args, "l",
 	                      &theType))
 		return NULL;
@@ -2553,7 +2677,9 @@ static PyObject *CF_CFArrayGetTypeID(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	CFTypeID _rv;
+#ifndef CFArrayGetTypeID
 	PyMac_PRECHECK(CFArrayGetTypeID);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = CFArrayGetTypeID();
@@ -2567,7 +2693,9 @@ static PyObject *CF_CFArrayCreateMutable(PyObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	CFMutableArrayRef _rv;
 	CFIndex capacity;
+#ifndef CFArrayCreateMutable
 	PyMac_PRECHECK(CFArrayCreateMutable);
+#endif
 	if (!PyArg_ParseTuple(_args, "l",
 	                      &capacity))
 		return NULL;
@@ -2585,7 +2713,9 @@ static PyObject *CF_CFArrayCreateMutableCopy(PyObject *_self, PyObject *_args)
 	CFMutableArrayRef _rv;
 	CFIndex capacity;
 	CFArrayRef srcArray;
+#ifndef CFArrayCreateMutableCopy
 	PyMac_PRECHECK(CFArrayCreateMutableCopy);
+#endif
 	if (!PyArg_ParseTuple(_args, "lO&",
 	                      &capacity,
 	                      CFArrayRefObj_Convert, &srcArray))
@@ -2602,7 +2732,9 @@ static PyObject *CF_CFDataGetTypeID(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	CFTypeID _rv;
+#ifndef CFDataGetTypeID
 	PyMac_PRECHECK(CFDataGetTypeID);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = CFDataGetTypeID();
@@ -2618,7 +2750,9 @@ static PyObject *CF_CFDataCreate(PyObject *_self, PyObject *_args)
 	unsigned char *bytes__in__;
 	long bytes__len__;
 	int bytes__in_len__;
+#ifndef CFDataCreate
 	PyMac_PRECHECK(CFDataCreate);
+#endif
 	if (!PyArg_ParseTuple(_args, "s#",
 	                      &bytes__in__, &bytes__in_len__))
 		return NULL;
@@ -2637,7 +2771,9 @@ static PyObject *CF_CFDataCreateWithBytesNoCopy(PyObject *_self, PyObject *_args
 	unsigned char *bytes__in__;
 	long bytes__len__;
 	int bytes__in_len__;
+#ifndef CFDataCreateWithBytesNoCopy
 	PyMac_PRECHECK(CFDataCreateWithBytesNoCopy);
+#endif
 	if (!PyArg_ParseTuple(_args, "s#",
 	                      &bytes__in__, &bytes__in_len__))
 		return NULL;
@@ -2655,7 +2791,9 @@ static PyObject *CF_CFDataCreateMutable(PyObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	CFMutableDataRef _rv;
 	CFIndex capacity;
+#ifndef CFDataCreateMutable
 	PyMac_PRECHECK(CFDataCreateMutable);
+#endif
 	if (!PyArg_ParseTuple(_args, "l",
 	                      &capacity))
 		return NULL;
@@ -2672,7 +2810,9 @@ static PyObject *CF_CFDataCreateMutableCopy(PyObject *_self, PyObject *_args)
 	CFMutableDataRef _rv;
 	CFIndex capacity;
 	CFDataRef data;
+#ifndef CFDataCreateMutableCopy
 	PyMac_PRECHECK(CFDataCreateMutableCopy);
+#endif
 	if (!PyArg_ParseTuple(_args, "lO&",
 	                      &capacity,
 	                      CFDataRefObj_Convert, &data))
@@ -2689,7 +2829,9 @@ static PyObject *CF_CFDictionaryGetTypeID(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	CFTypeID _rv;
+#ifndef CFDictionaryGetTypeID
 	PyMac_PRECHECK(CFDictionaryGetTypeID);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = CFDictionaryGetTypeID();
@@ -2703,7 +2845,9 @@ static PyObject *CF_CFDictionaryCreateMutable(PyObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	CFMutableDictionaryRef _rv;
 	CFIndex capacity;
+#ifndef CFDictionaryCreateMutable
 	PyMac_PRECHECK(CFDictionaryCreateMutable);
+#endif
 	if (!PyArg_ParseTuple(_args, "l",
 	                      &capacity))
 		return NULL;
@@ -2722,7 +2866,9 @@ static PyObject *CF_CFDictionaryCreateMutableCopy(PyObject *_self, PyObject *_ar
 	CFMutableDictionaryRef _rv;
 	CFIndex capacity;
 	CFDictionaryRef dict;
+#ifndef CFDictionaryCreateMutableCopy
 	PyMac_PRECHECK(CFDictionaryCreateMutableCopy);
+#endif
 	if (!PyArg_ParseTuple(_args, "lO&",
 	                      &capacity,
 	                      CFDictionaryRefObj_Convert, &dict))
@@ -2739,7 +2885,9 @@ static PyObject *CF_CFStringGetTypeID(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	CFTypeID _rv;
+#ifndef CFStringGetTypeID
 	PyMac_PRECHECK(CFStringGetTypeID);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = CFStringGetTypeID();
@@ -2754,7 +2902,9 @@ static PyObject *CF_CFStringCreateWithPascalString(PyObject *_self, PyObject *_a
 	CFStringRef _rv;
 	StringPtr pStr;
 	CFStringEncoding encoding;
+#ifndef CFStringCreateWithPascalString
 	PyMac_PRECHECK(CFStringCreateWithPascalString);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&l",
 	                      PyMac_GetStr255, &pStr,
 	                      &encoding))
@@ -2773,7 +2923,9 @@ static PyObject *CF_CFStringCreateWithCString(PyObject *_self, PyObject *_args)
 	CFStringRef _rv;
 	char* cStr;
 	CFStringEncoding encoding;
+#ifndef CFStringCreateWithCString
 	PyMac_PRECHECK(CFStringCreateWithCString);
+#endif
 	if (!PyArg_ParseTuple(_args, "sl",
 	                      &cStr,
 	                      &encoding))
@@ -2792,7 +2944,9 @@ static PyObject *CF_CFStringCreateWithPascalStringNoCopy(PyObject *_self, PyObje
 	CFStringRef _rv;
 	StringPtr pStr;
 	CFStringEncoding encoding;
+#ifndef CFStringCreateWithPascalStringNoCopy
 	PyMac_PRECHECK(CFStringCreateWithPascalStringNoCopy);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&l",
 	                      PyMac_GetStr255, &pStr,
 	                      &encoding))
@@ -2812,7 +2966,9 @@ static PyObject *CF_CFStringCreateWithCStringNoCopy(PyObject *_self, PyObject *_
 	CFStringRef _rv;
 	char* cStr;
 	CFStringEncoding encoding;
+#ifndef CFStringCreateWithCStringNoCopy
 	PyMac_PRECHECK(CFStringCreateWithCStringNoCopy);
+#endif
 	if (!PyArg_ParseTuple(_args, "sl",
 	                      &cStr,
 	                      &encoding))
@@ -2831,7 +2987,9 @@ static PyObject *CF_CFStringCreateMutable(PyObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	CFMutableStringRef _rv;
 	CFIndex maxLength;
+#ifndef CFStringCreateMutable
 	PyMac_PRECHECK(CFStringCreateMutable);
+#endif
 	if (!PyArg_ParseTuple(_args, "l",
 	                      &maxLength))
 		return NULL;
@@ -2848,7 +3006,9 @@ static PyObject *CF_CFStringCreateMutableCopy(PyObject *_self, PyObject *_args)
 	CFMutableStringRef _rv;
 	CFIndex maxLength;
 	CFStringRef theString;
+#ifndef CFStringCreateMutableCopy
 	PyMac_PRECHECK(CFStringCreateMutableCopy);
+#endif
 	if (!PyArg_ParseTuple(_args, "lO&",
 	                      &maxLength,
 	                      CFStringRefObj_Convert, &theString))
@@ -2870,7 +3030,9 @@ static PyObject *CF_CFStringCreateWithBytes(PyObject *_self, PyObject *_args)
 	int bytes__in_len__;
 	CFStringEncoding encoding;
 	Boolean isExternalRepresentation;
+#ifndef CFStringCreateWithBytes
 	PyMac_PRECHECK(CFStringCreateWithBytes);
+#endif
 	if (!PyArg_ParseTuple(_args, "s#ll",
 	                      &bytes__in__, &bytes__in_len__,
 	                      &encoding,
@@ -2890,7 +3052,9 @@ static PyObject *CF_CFStringGetSystemEncoding(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	CFStringEncoding _rv;
+#ifndef CFStringGetSystemEncoding
 	PyMac_PRECHECK(CFStringGetSystemEncoding);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = CFStringGetSystemEncoding();
@@ -2905,7 +3069,9 @@ static PyObject *CF_CFStringGetMaximumSizeForEncoding(PyObject *_self, PyObject 
 	CFIndex _rv;
 	CFIndex length;
 	CFStringEncoding encoding;
+#ifndef CFStringGetMaximumSizeForEncoding
 	PyMac_PRECHECK(CFStringGetMaximumSizeForEncoding);
+#endif
 	if (!PyArg_ParseTuple(_args, "ll",
 	                      &length,
 	                      &encoding))
@@ -2922,7 +3088,9 @@ static PyObject *CF_CFStringIsEncodingAvailable(PyObject *_self, PyObject *_args
 	PyObject *_res = NULL;
 	Boolean _rv;
 	CFStringEncoding encoding;
+#ifndef CFStringIsEncodingAvailable
 	PyMac_PRECHECK(CFStringIsEncodingAvailable);
+#endif
 	if (!PyArg_ParseTuple(_args, "l",
 	                      &encoding))
 		return NULL;
@@ -2937,7 +3105,9 @@ static PyObject *CF_CFStringGetNameOfEncoding(PyObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	CFStringRef _rv;
 	CFStringEncoding encoding;
+#ifndef CFStringGetNameOfEncoding
 	PyMac_PRECHECK(CFStringGetNameOfEncoding);
+#endif
 	if (!PyArg_ParseTuple(_args, "l",
 	                      &encoding))
 		return NULL;
@@ -2952,7 +3122,9 @@ static PyObject *CF_CFStringConvertEncodingToNSStringEncoding(PyObject *_self, P
 	PyObject *_res = NULL;
 	UInt32 _rv;
 	CFStringEncoding encoding;
+#ifndef CFStringConvertEncodingToNSStringEncoding
 	PyMac_PRECHECK(CFStringConvertEncodingToNSStringEncoding);
+#endif
 	if (!PyArg_ParseTuple(_args, "l",
 	                      &encoding))
 		return NULL;
@@ -2967,7 +3139,9 @@ static PyObject *CF_CFStringConvertNSStringEncodingToEncoding(PyObject *_self, P
 	PyObject *_res = NULL;
 	CFStringEncoding _rv;
 	UInt32 encoding;
+#ifndef CFStringConvertNSStringEncodingToEncoding
 	PyMac_PRECHECK(CFStringConvertNSStringEncodingToEncoding);
+#endif
 	if (!PyArg_ParseTuple(_args, "l",
 	                      &encoding))
 		return NULL;
@@ -2982,7 +3156,9 @@ static PyObject *CF_CFStringConvertEncodingToWindowsCodepage(PyObject *_self, Py
 	PyObject *_res = NULL;
 	UInt32 _rv;
 	CFStringEncoding encoding;
+#ifndef CFStringConvertEncodingToWindowsCodepage
 	PyMac_PRECHECK(CFStringConvertEncodingToWindowsCodepage);
+#endif
 	if (!PyArg_ParseTuple(_args, "l",
 	                      &encoding))
 		return NULL;
@@ -2997,7 +3173,9 @@ static PyObject *CF_CFStringConvertWindowsCodepageToEncoding(PyObject *_self, Py
 	PyObject *_res = NULL;
 	CFStringEncoding _rv;
 	UInt32 codepage;
+#ifndef CFStringConvertWindowsCodepageToEncoding
 	PyMac_PRECHECK(CFStringConvertWindowsCodepageToEncoding);
+#endif
 	if (!PyArg_ParseTuple(_args, "l",
 	                      &codepage))
 		return NULL;
@@ -3012,7 +3190,9 @@ static PyObject *CF_CFStringConvertEncodingToIANACharSetName(PyObject *_self, Py
 	PyObject *_res = NULL;
 	CFStringRef _rv;
 	CFStringEncoding encoding;
+#ifndef CFStringConvertEncodingToIANACharSetName
 	PyMac_PRECHECK(CFStringConvertEncodingToIANACharSetName);
+#endif
 	if (!PyArg_ParseTuple(_args, "l",
 	                      &encoding))
 		return NULL;
@@ -3027,7 +3207,9 @@ static PyObject *CF___CFStringMakeConstantString(PyObject *_self, PyObject *_arg
 	PyObject *_res = NULL;
 	CFStringRef _rv;
 	char* cStr;
+#ifndef __CFStringMakeConstantString
 	PyMac_PRECHECK(__CFStringMakeConstantString);
+#endif
 	if (!PyArg_ParseTuple(_args, "s",
 	                      &cStr))
 		return NULL;
@@ -3041,7 +3223,9 @@ static PyObject *CF_CFURLGetTypeID(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	CFTypeID _rv;
+#ifndef CFURLGetTypeID
 	PyMac_PRECHECK(CFURLGetTypeID);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = CFURLGetTypeID();
@@ -3059,7 +3243,9 @@ static PyObject *CF_CFURLCreateWithBytes(PyObject *_self, PyObject *_args)
 	int URLBytes__in_len__;
 	CFStringEncoding encoding;
 	CFURLRef baseURL;
+#ifndef CFURLCreateWithBytes
 	PyMac_PRECHECK(CFURLCreateWithBytes);
+#endif
 	if (!PyArg_ParseTuple(_args, "s#lO&",
 	                      &URLBytes__in__, &URLBytes__in_len__,
 	                      &encoding,

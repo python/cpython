@@ -1,8 +1,8 @@
-Changes in 2.2b1 since 2.1.1
+Changes in 2.2b2 since 2.1.1
 ----------------------------
 
 These release notes refer to Mac-specific changes only. See NEWS (in the Misc folder)
-for machine-independent changes. Changes that were already in 2.2a3 are flagged as such.
+for machine-independent changes. Changes that are new in 2.2b2 are flagged as such.
 
 
 - The main change is that all toolbox modules have moved to a package called Carbon.
@@ -10,23 +10,33 @@ for machine-independent changes. Changes that were already in 2.2a3 are flagged 
   "from Res import *" to "from Carbon.Res import *". Please see the readme file for
   some open questions and join the discussions on pythonmac-sig if you have anything
   to contribute. Aside from reducing clutter this change will also benefit the
-  port to Mach-O/OSX Python later. [2.2a3]
+  port to Mach-O/OSX Python later.
 - On input MacPython now accepts either \n (unix style) or \r (mac style) newlines
   for text files. This behaviour can be turned off with a preference.
-  This is an experimental feature; again: feedback is requested. [2.2a3]
+  This is an experimental feature; again: feedback is requested.
+- Command-dot handling has been improved a lot: scripts are now much easier to interrupt,
+  and they only scan for cmd-. while in the foreground. [2.2b2]
+- "Copy" from the MacPython console window was always disabled. Fixed. [2.2b2]
+- This release should run on MacOS 8.1 again. [2.2b2 build 116]
+- A new, rather different GUSI I/O library is used. Please report any strange behaviour
+  with I/O to the pythonmac-sig mailing list! [2.2b2]
 - There is a new module macresource which makes it easier to open a resource file
   accompanying your script when the script is not (yet) converted to an applet.
-  This module will later also do the right thing in Mach-O/OSX Python. [2.2a3]
+  This module will later also do the right thing in Mach-O/OSX Python.
+- A new, experimental module hfsplus is included, which gives access to some of the
+  functionality of the HFS+ API. [2.2b2]
 - Threads had a stack that was too small for many serious Python applications (20K).
-  They now get 64K. There is still no overflow check, though. [2.2a3]
-- Garbage collection and the gc module have (finally) been enabled. [2.2a3]
+  They now get 64K. There is still no overflow check, though.
+- Garbage collection and the gc module have (finally) been enabled.
 - EasyDialogs.ProgressBar now has indeterminate progressbars if you specify maxval=0.
-  This is also the new default. Patch supplied by Dean Draayer. [2.2a3]
+  This is also the new default. Patch supplied by Dean Draayer.
 - There are new preferences for enabling old-style division warnings and for
   accepting unix-style newlines in text input files. These can also be set during
-  startup, and in addition you can select very verbose import tracing. [2.2a3]
-- Various outdated scripts have been moved to :Mac:Unsupported. [2.2a3]
-- Various outdated items from :Mac:Lib:test have been removed. [2.2a3]
+  startup, and in addition you can select very verbose import tracing.
+- The NavServices override for StandardFile has moved from early startup to the
+  time you import macfs. This speeds up MacPython startup.
+- Various outdated scripts have been moved to :Mac:Unsupported.
+- Various outdated items from :Mac:Lib:test have been removed.
 - C Developers: you know have control over the Python console if you are embedding
   MacPython in another application, thanks to Alexandre Parenteau. :Mac:Demo:embed.html
   has very minimal documentation.
@@ -48,7 +58,7 @@ Known problems
 This list is probably incomplete, more problems may be listed on the MacPython homepage,
 http://www.cwi.nl/~jack/macpython.html.
 
-- MacPython 2.2a3 (and MacPython 2.1) will not run correctly on a multiprocessor MacOS X
+- MacPython 2.2b2 (and MacPython 2.1) will not run correctly on a multiprocessor MacOS X
   machine, it will quickly deadlock during I/O operations. The GUSI I/O library is suspected,
   hints/clues/workarounds are solicited.
 - Tkinter does not work under Carbon.
@@ -56,8 +66,6 @@ http://www.cwi.nl/~jack/macpython.html.
 - Tkinter file events do not work, unless you have opened the file through Tcl (but then
   you cannot access it from Python).
 - Aliases may not work in sys.path entries.
-- Under Carbon on OS9 only you may occasionally see a spurious KeyboardInterrupt. I have absolutely
-  no clue as to what is causing this.
 - PythonInterpreter used interactively will eat a lot of processor cycles. You should use
   PythonIDE for interactive work and PythonInterpreter for scripts only. This is especially
   true under OSX.

@@ -5,12 +5,8 @@
 
 
 
-#ifdef _WIN32
-#include "pywintoolbox.h"
-#else
 #include "macglue.h"
 #include "pymactoolbox.h"
-#endif
 
 /* Macro to test whether a weak-loaded CFM function exists */
 #define PyMac_PRECHECK(rtn) do { if ( &rtn == NULL )  {\
@@ -291,7 +287,7 @@ static PyObject *CmpInstObj_getattr(ComponentInstanceObject *self, char *name)
 #define CmpInstObj_hash NULL
 
 PyTypeObject ComponentInstance_Type = {
-	PyObject_HEAD_INIT(&PyType_Type)
+	PyObject_HEAD_INIT(NULL)
 	0, /*ob_size*/
 	"ComponentInstance", /*tp_name*/
 	sizeof(ComponentInstanceObject), /*tp_basicsize*/
@@ -618,7 +614,7 @@ static PyObject *CmpObj_getattr(ComponentObject *self, char *name)
 #define CmpObj_hash NULL
 
 PyTypeObject Component_Type = {
-	PyObject_HEAD_INIT(&PyType_Type)
+	PyObject_HEAD_INIT(NULL)
 	0, /*ob_size*/
 	"Component", /*tp_name*/
 	sizeof(ComponentObject), /*tp_basicsize*/

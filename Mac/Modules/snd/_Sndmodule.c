@@ -5,12 +5,8 @@
 
 
 
-#ifdef _WIN32
-#include "pywintoolbox.h"
-#else
 #include "macglue.h"
 #include "pymactoolbox.h"
-#endif
 
 /* Macro to test whether a weak-loaded CFM function exists */
 #define PyMac_PRECHECK(rtn) do { if ( &rtn == NULL )  {\
@@ -316,7 +312,7 @@ static PyObject *SndCh_getattr(SndChannelObject *self, char *name)
 #define SndCh_hash NULL
 
 staticforward PyTypeObject SndChannel_Type = {
-	PyObject_HEAD_INIT(&PyType_Type)
+	PyObject_HEAD_INIT(NULL)
 	0, /*ob_size*/
 	"SndChannel", /*tp_name*/
 	sizeof(SndChannelObject), /*tp_basicsize*/
@@ -444,7 +440,7 @@ static int SPBObj_setattr(SPBObject *self, char *name, PyObject *value)
 #define SPBObj_hash NULL
 
 staticforward PyTypeObject SPB_Type = {
-	PyObject_HEAD_INIT(&PyType_Type)
+	PyObject_HEAD_INIT(NULL)
 	0, /*ob_size*/
 	"SPB", /*tp_name*/
 	sizeof(SPBObject), /*tp_basicsize*/

@@ -5,12 +5,8 @@
 
 
 
-#ifdef _WIN32
-#include "pywintoolbox.h"
-#else
 #include "macglue.h"
 #include "pymactoolbox.h"
-#endif
 
 /* Macro to test whether a weak-loaded CFM function exists */
 #define PyMac_PRECHECK(rtn) do { if ( &rtn == NULL )  {\
@@ -144,6 +140,9 @@ static PyObject *CtlObj_HiliteControl(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ControlPartCode hiliteState;
+#ifndef HiliteControl
+	PyMac_PRECHECK(HiliteControl);
+#endif
 	if (!PyArg_ParseTuple(_args, "h",
 	                      &hiliteState))
 		return NULL;
@@ -157,6 +156,9 @@ static PyObject *CtlObj_HiliteControl(ControlObject *_self, PyObject *_args)
 static PyObject *CtlObj_ShowControl(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
+#ifndef ShowControl
+	PyMac_PRECHECK(ShowControl);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	ShowControl(_self->ob_itself);
@@ -168,6 +170,9 @@ static PyObject *CtlObj_ShowControl(ControlObject *_self, PyObject *_args)
 static PyObject *CtlObj_HideControl(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
+#ifndef HideControl
+	PyMac_PRECHECK(HideControl);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	HideControl(_self->ob_itself);
@@ -180,6 +185,9 @@ static PyObject *CtlObj_IsControlActive(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
+#ifndef IsControlActive
+	PyMac_PRECHECK(IsControlActive);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = IsControlActive(_self->ob_itself);
@@ -192,6 +200,9 @@ static PyObject *CtlObj_IsControlVisible(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
+#ifndef IsControlVisible
+	PyMac_PRECHECK(IsControlVisible);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = IsControlVisible(_self->ob_itself);
@@ -204,6 +215,9 @@ static PyObject *CtlObj_ActivateControl(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
+#ifndef ActivateControl
+	PyMac_PRECHECK(ActivateControl);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_err = ActivateControl(_self->ob_itself);
@@ -217,6 +231,9 @@ static PyObject *CtlObj_DeactivateControl(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
+#ifndef DeactivateControl
+	PyMac_PRECHECK(DeactivateControl);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_err = DeactivateControl(_self->ob_itself);
@@ -232,6 +249,9 @@ static PyObject *CtlObj_SetControlVisibility(ControlObject *_self, PyObject *_ar
 	OSErr _err;
 	Boolean inIsVisible;
 	Boolean inDoDraw;
+#ifndef SetControlVisibility
+	PyMac_PRECHECK(SetControlVisibility);
+#endif
 	if (!PyArg_ParseTuple(_args, "bb",
 	                      &inIsVisible,
 	                      &inDoDraw))
@@ -248,6 +268,9 @@ static PyObject *CtlObj_SetControlVisibility(ControlObject *_self, PyObject *_ar
 static PyObject *CtlObj_Draw1Control(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
+#ifndef Draw1Control
+	PyMac_PRECHECK(Draw1Control);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	Draw1Control(_self->ob_itself);
@@ -262,6 +285,9 @@ static PyObject *CtlObj_GetBestControlRect(ControlObject *_self, PyObject *_args
 	OSErr _err;
 	Rect outRect;
 	SInt16 outBaseLineOffset;
+#ifndef GetBestControlRect
+	PyMac_PRECHECK(GetBestControlRect);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_err = GetBestControlRect(_self->ob_itself,
@@ -279,6 +305,9 @@ static PyObject *CtlObj_SetControlFontStyle(ControlObject *_self, PyObject *_arg
 	PyObject *_res = NULL;
 	OSErr _err;
 	ControlFontStyleRec inStyle;
+#ifndef SetControlFontStyle
+	PyMac_PRECHECK(SetControlFontStyle);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      ControlFontStyle_Convert, &inStyle))
 		return NULL;
@@ -293,6 +322,9 @@ static PyObject *CtlObj_SetControlFontStyle(ControlObject *_self, PyObject *_arg
 static PyObject *CtlObj_DrawControlInCurrentPort(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
+#ifndef DrawControlInCurrentPort
+	PyMac_PRECHECK(DrawControlInCurrentPort);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	DrawControlInCurrentPort(_self->ob_itself);
@@ -307,6 +339,9 @@ static PyObject *CtlObj_SetUpControlBackground(ControlObject *_self, PyObject *_
 	OSErr _err;
 	SInt16 inDepth;
 	Boolean inIsColorDevice;
+#ifndef SetUpControlBackground
+	PyMac_PRECHECK(SetUpControlBackground);
+#endif
 	if (!PyArg_ParseTuple(_args, "hb",
 	                      &inDepth,
 	                      &inIsColorDevice))
@@ -326,6 +361,9 @@ static PyObject *CtlObj_SetUpControlTextColor(ControlObject *_self, PyObject *_a
 	OSErr _err;
 	SInt16 inDepth;
 	Boolean inIsColorDevice;
+#ifndef SetUpControlTextColor
+	PyMac_PRECHECK(SetUpControlTextColor);
+#endif
 	if (!PyArg_ParseTuple(_args, "hb",
 	                      &inDepth,
 	                      &inIsColorDevice))
@@ -346,6 +384,9 @@ static PyObject *CtlObj_DragControl(ControlObject *_self, PyObject *_args)
 	Rect limitRect;
 	Rect slopRect;
 	DragConstraint axis;
+#ifndef DragControl
+	PyMac_PRECHECK(DragControl);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O&O&H",
 	                      PyMac_GetPoint, &startPoint,
 	                      PyMac_GetRect, &limitRect,
@@ -367,6 +408,9 @@ static PyObject *CtlObj_TestControl(ControlObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	ControlPartCode _rv;
 	Point testPoint;
+#ifndef TestControl
+	PyMac_PRECHECK(TestControl);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      PyMac_GetPoint, &testPoint))
 		return NULL;
@@ -385,6 +429,9 @@ static PyObject *CtlObj_HandleControlContextualMenuClick(ControlObject *_self, P
 	OSStatus _err;
 	Point inWhere;
 	Boolean menuDisplayed;
+#ifndef HandleControlContextualMenuClick
+	PyMac_PRECHECK(HandleControlContextualMenuClick);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      PyMac_GetPoint, &inWhere))
 		return NULL;
@@ -407,6 +454,9 @@ static PyObject *CtlObj_GetControlClickActivation(ControlObject *_self, PyObject
 	Point inWhere;
 	EventModifiers inModifiers;
 	ClickActivationResult outResult;
+#ifndef GetControlClickActivation
+	PyMac_PRECHECK(GetControlClickActivation);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&H",
 	                      PyMac_GetPoint, &inWhere,
 	                      &inModifiers))
@@ -429,6 +479,9 @@ static PyObject *CtlObj_HandleControlKey(ControlObject *_self, PyObject *_args)
 	SInt16 inKeyCode;
 	SInt16 inCharCode;
 	EventModifiers inModifiers;
+#ifndef HandleControlKey
+	PyMac_PRECHECK(HandleControlKey);
+#endif
 	if (!PyArg_ParseTuple(_args, "hhH",
 	                      &inKeyCode,
 	                      &inCharCode,
@@ -452,6 +505,9 @@ static PyObject *CtlObj_HandleControlSetCursor(ControlObject *_self, PyObject *_
 	Point localPoint;
 	EventModifiers modifiers;
 	Boolean cursorWasSet;
+#ifndef HandleControlSetCursor
+	PyMac_PRECHECK(HandleControlSetCursor);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&H",
 	                      PyMac_GetPoint, &localPoint,
 	                      &modifiers))
@@ -472,6 +528,9 @@ static PyObject *CtlObj_MoveControl(ControlObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	SInt16 h;
 	SInt16 v;
+#ifndef MoveControl
+	PyMac_PRECHECK(MoveControl);
+#endif
 	if (!PyArg_ParseTuple(_args, "hh",
 	                      &h,
 	                      &v))
@@ -489,6 +548,9 @@ static PyObject *CtlObj_SizeControl(ControlObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	SInt16 w;
 	SInt16 h;
+#ifndef SizeControl
+	PyMac_PRECHECK(SizeControl);
+#endif
 	if (!PyArg_ParseTuple(_args, "hh",
 	                      &w,
 	                      &h))
@@ -505,6 +567,9 @@ static PyObject *CtlObj_SetControlTitle(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Str255 title;
+#ifndef SetControlTitle
+	PyMac_PRECHECK(SetControlTitle);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      PyMac_GetStr255, title))
 		return NULL;
@@ -519,6 +584,9 @@ static PyObject *CtlObj_GetControlTitle(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Str255 title;
+#ifndef GetControlTitle
+	PyMac_PRECHECK(GetControlTitle);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	GetControlTitle(_self->ob_itself,
@@ -532,6 +600,9 @@ static PyObject *CtlObj_GetControlValue(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	SInt16 _rv;
+#ifndef GetControlValue
+	PyMac_PRECHECK(GetControlValue);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetControlValue(_self->ob_itself);
@@ -544,6 +615,9 @@ static PyObject *CtlObj_SetControlValue(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	SInt16 newValue;
+#ifndef SetControlValue
+	PyMac_PRECHECK(SetControlValue);
+#endif
 	if (!PyArg_ParseTuple(_args, "h",
 	                      &newValue))
 		return NULL;
@@ -558,6 +632,9 @@ static PyObject *CtlObj_GetControlMinimum(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	SInt16 _rv;
+#ifndef GetControlMinimum
+	PyMac_PRECHECK(GetControlMinimum);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetControlMinimum(_self->ob_itself);
@@ -570,6 +647,9 @@ static PyObject *CtlObj_SetControlMinimum(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	SInt16 newMinimum;
+#ifndef SetControlMinimum
+	PyMac_PRECHECK(SetControlMinimum);
+#endif
 	if (!PyArg_ParseTuple(_args, "h",
 	                      &newMinimum))
 		return NULL;
@@ -584,6 +664,9 @@ static PyObject *CtlObj_GetControlMaximum(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	SInt16 _rv;
+#ifndef GetControlMaximum
+	PyMac_PRECHECK(GetControlMaximum);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetControlMaximum(_self->ob_itself);
@@ -596,6 +679,9 @@ static PyObject *CtlObj_SetControlMaximum(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	SInt16 newMaximum;
+#ifndef SetControlMaximum
+	PyMac_PRECHECK(SetControlMaximum);
+#endif
 	if (!PyArg_ParseTuple(_args, "h",
 	                      &newMaximum))
 		return NULL;
@@ -610,6 +696,9 @@ static PyObject *CtlObj_GetControlViewSize(ControlObject *_self, PyObject *_args
 {
 	PyObject *_res = NULL;
 	SInt32 _rv;
+#ifndef GetControlViewSize
+	PyMac_PRECHECK(GetControlViewSize);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetControlViewSize(_self->ob_itself);
@@ -622,6 +711,9 @@ static PyObject *CtlObj_SetControlViewSize(ControlObject *_self, PyObject *_args
 {
 	PyObject *_res = NULL;
 	SInt32 newViewSize;
+#ifndef SetControlViewSize
+	PyMac_PRECHECK(SetControlViewSize);
+#endif
 	if (!PyArg_ParseTuple(_args, "l",
 	                      &newViewSize))
 		return NULL;
@@ -636,6 +728,9 @@ static PyObject *CtlObj_GetControl32BitValue(ControlObject *_self, PyObject *_ar
 {
 	PyObject *_res = NULL;
 	SInt32 _rv;
+#ifndef GetControl32BitValue
+	PyMac_PRECHECK(GetControl32BitValue);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetControl32BitValue(_self->ob_itself);
@@ -648,6 +743,9 @@ static PyObject *CtlObj_SetControl32BitValue(ControlObject *_self, PyObject *_ar
 {
 	PyObject *_res = NULL;
 	SInt32 newValue;
+#ifndef SetControl32BitValue
+	PyMac_PRECHECK(SetControl32BitValue);
+#endif
 	if (!PyArg_ParseTuple(_args, "l",
 	                      &newValue))
 		return NULL;
@@ -662,6 +760,9 @@ static PyObject *CtlObj_GetControl32BitMaximum(ControlObject *_self, PyObject *_
 {
 	PyObject *_res = NULL;
 	SInt32 _rv;
+#ifndef GetControl32BitMaximum
+	PyMac_PRECHECK(GetControl32BitMaximum);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetControl32BitMaximum(_self->ob_itself);
@@ -674,6 +775,9 @@ static PyObject *CtlObj_SetControl32BitMaximum(ControlObject *_self, PyObject *_
 {
 	PyObject *_res = NULL;
 	SInt32 newMaximum;
+#ifndef SetControl32BitMaximum
+	PyMac_PRECHECK(SetControl32BitMaximum);
+#endif
 	if (!PyArg_ParseTuple(_args, "l",
 	                      &newMaximum))
 		return NULL;
@@ -688,6 +792,9 @@ static PyObject *CtlObj_GetControl32BitMinimum(ControlObject *_self, PyObject *_
 {
 	PyObject *_res = NULL;
 	SInt32 _rv;
+#ifndef GetControl32BitMinimum
+	PyMac_PRECHECK(GetControl32BitMinimum);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetControl32BitMinimum(_self->ob_itself);
@@ -700,6 +807,9 @@ static PyObject *CtlObj_SetControl32BitMinimum(ControlObject *_self, PyObject *_
 {
 	PyObject *_res = NULL;
 	SInt32 newMinimum;
+#ifndef SetControl32BitMinimum
+	PyMac_PRECHECK(SetControl32BitMinimum);
+#endif
 	if (!PyArg_ParseTuple(_args, "l",
 	                      &newMinimum))
 		return NULL;
@@ -714,6 +824,9 @@ static PyObject *CtlObj_IsValidControlHandle(ControlObject *_self, PyObject *_ar
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
+#ifndef IsValidControlHandle
+	PyMac_PRECHECK(IsValidControlHandle);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = IsValidControlHandle(_self->ob_itself);
@@ -729,6 +842,9 @@ static PyObject *CtlObj_SetControlID(ControlObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	OSStatus _err;
 	ControlID inID;
+#ifndef SetControlID
+	PyMac_PRECHECK(SetControlID);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      PyControlID_Convert, &inID))
 		return NULL;
@@ -748,6 +864,9 @@ static PyObject *CtlObj_GetControlID(ControlObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	OSStatus _err;
 	ControlID outID;
+#ifndef GetControlID
+	PyMac_PRECHECK(GetControlID);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_err = GetControlID(_self->ob_itself,
@@ -765,6 +884,9 @@ static PyObject *CtlObj_RemoveControlProperty(ControlObject *_self, PyObject *_a
 	OSStatus _err;
 	OSType propertyCreator;
 	OSType propertyTag;
+#ifndef RemoveControlProperty
+	PyMac_PRECHECK(RemoveControlProperty);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
 	                      PyMac_GetOSType, &propertyCreator,
 	                      PyMac_GetOSType, &propertyTag))
@@ -787,6 +909,9 @@ static PyObject *CtlObj_GetControlPropertyAttributes(ControlObject *_self, PyObj
 	OSType propertyCreator;
 	OSType propertyTag;
 	UInt32 attributes;
+#ifndef GetControlPropertyAttributes
+	PyMac_PRECHECK(GetControlPropertyAttributes);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
 	                      PyMac_GetOSType, &propertyCreator,
 	                      PyMac_GetOSType, &propertyTag))
@@ -812,6 +937,9 @@ static PyObject *CtlObj_ChangeControlPropertyAttributes(ControlObject *_self, Py
 	OSType propertyTag;
 	UInt32 attributesToSet;
 	UInt32 attributesToClear;
+#ifndef ChangeControlPropertyAttributes
+	PyMac_PRECHECK(ChangeControlPropertyAttributes);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O&ll",
 	                      PyMac_GetOSType, &propertyCreator,
 	                      PyMac_GetOSType, &propertyTag,
@@ -836,6 +964,9 @@ static PyObject *CtlObj_GetControlRegion(ControlObject *_self, PyObject *_args)
 	OSStatus _err;
 	ControlPartCode inPart;
 	RgnHandle outRegion;
+#ifndef GetControlRegion
+	PyMac_PRECHECK(GetControlRegion);
+#endif
 	if (!PyArg_ParseTuple(_args, "hO&",
 	                      &inPart,
 	                      ResObj_Convert, &outRegion))
@@ -853,6 +984,9 @@ static PyObject *CtlObj_GetControlVariant(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	ControlVariant _rv;
+#ifndef GetControlVariant
+	PyMac_PRECHECK(GetControlVariant);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetControlVariant(_self->ob_itself);
@@ -865,6 +999,9 @@ static PyObject *CtlObj_SetControlReference(ControlObject *_self, PyObject *_arg
 {
 	PyObject *_res = NULL;
 	SInt32 data;
+#ifndef SetControlReference
+	PyMac_PRECHECK(SetControlReference);
+#endif
 	if (!PyArg_ParseTuple(_args, "l",
 	                      &data))
 		return NULL;
@@ -879,6 +1016,9 @@ static PyObject *CtlObj_GetControlReference(ControlObject *_self, PyObject *_arg
 {
 	PyObject *_res = NULL;
 	SInt32 _rv;
+#ifndef GetControlReference
+	PyMac_PRECHECK(GetControlReference);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetControlReference(_self->ob_itself);
@@ -894,6 +1034,9 @@ static PyObject *CtlObj_GetAuxiliaryControlRecord(ControlObject *_self, PyObject
 	PyObject *_res = NULL;
 	Boolean _rv;
 	AuxCtlHandle acHndl;
+#ifndef GetAuxiliaryControlRecord
+	PyMac_PRECHECK(GetAuxiliaryControlRecord);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetAuxiliaryControlRecord(_self->ob_itself,
@@ -911,6 +1054,9 @@ static PyObject *CtlObj_SetControlColor(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	CCTabHandle newColorTable;
+#ifndef SetControlColor
+	PyMac_PRECHECK(SetControlColor);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      ResObj_Convert, &newColorTable))
 		return NULL;
@@ -927,6 +1073,9 @@ static PyObject *CtlObj_EmbedControl(ControlObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	OSErr _err;
 	ControlHandle inContainer;
+#ifndef EmbedControl
+	PyMac_PRECHECK(EmbedControl);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      CtlObj_Convert, &inContainer))
 		return NULL;
@@ -943,6 +1092,9 @@ static PyObject *CtlObj_AutoEmbedControl(ControlObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	OSErr _err;
 	WindowPtr inWindow;
+#ifndef AutoEmbedControl
+	PyMac_PRECHECK(AutoEmbedControl);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      WinObj_Convert, &inWindow))
 		return NULL;
@@ -959,6 +1111,9 @@ static PyObject *CtlObj_GetSuperControl(ControlObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	OSErr _err;
 	ControlHandle outParent;
+#ifndef GetSuperControl
+	PyMac_PRECHECK(GetSuperControl);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_err = GetSuperControl(_self->ob_itself,
@@ -974,6 +1129,9 @@ static PyObject *CtlObj_CountSubControls(ControlObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	OSErr _err;
 	UInt16 outNumChildren;
+#ifndef CountSubControls
+	PyMac_PRECHECK(CountSubControls);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_err = CountSubControls(_self->ob_itself,
@@ -990,6 +1148,9 @@ static PyObject *CtlObj_GetIndexedSubControl(ControlObject *_self, PyObject *_ar
 	OSErr _err;
 	UInt16 inIndex;
 	ControlHandle outSubControl;
+#ifndef GetIndexedSubControl
+	PyMac_PRECHECK(GetIndexedSubControl);
+#endif
 	if (!PyArg_ParseTuple(_args, "H",
 	                      &inIndex))
 		return NULL;
@@ -1007,6 +1168,9 @@ static PyObject *CtlObj_SetControlSupervisor(ControlObject *_self, PyObject *_ar
 	PyObject *_res = NULL;
 	OSErr _err;
 	ControlHandle inBoss;
+#ifndef SetControlSupervisor
+	PyMac_PRECHECK(SetControlSupervisor);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      CtlObj_Convert, &inBoss))
 		return NULL;
@@ -1023,6 +1187,9 @@ static PyObject *CtlObj_GetControlFeatures(ControlObject *_self, PyObject *_args
 	PyObject *_res = NULL;
 	OSErr _err;
 	UInt32 outFeatures;
+#ifndef GetControlFeatures
+	PyMac_PRECHECK(GetControlFeatures);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_err = GetControlFeatures(_self->ob_itself,
@@ -1040,6 +1207,9 @@ static PyObject *CtlObj_GetControlDataSize(ControlObject *_self, PyObject *_args
 	ControlPartCode inPart;
 	ResType inTagName;
 	Size outMaxSize;
+#ifndef GetControlDataSize
+	PyMac_PRECHECK(GetControlDataSize);
+#endif
 	if (!PyArg_ParseTuple(_args, "hO&",
 	                      &inPart,
 	                      PyMac_GetOSType, &inTagName))
@@ -1063,6 +1233,9 @@ static PyObject *CtlObj_HandleControlDragTracking(ControlObject *_self, PyObject
 	DragTrackingMessage inMessage;
 	DragReference inDrag;
 	Boolean outLikesDrag;
+#ifndef HandleControlDragTracking
+	PyMac_PRECHECK(HandleControlDragTracking);
+#endif
 	if (!PyArg_ParseTuple(_args, "hO&",
 	                      &inMessage,
 	                      DragObj_Convert, &inDrag))
@@ -1085,6 +1258,9 @@ static PyObject *CtlObj_HandleControlDragReceive(ControlObject *_self, PyObject 
 	PyObject *_res = NULL;
 	OSStatus _err;
 	DragReference inDrag;
+#ifndef HandleControlDragReceive
+	PyMac_PRECHECK(HandleControlDragReceive);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      DragObj_Convert, &inDrag))
 		return NULL;
@@ -1104,6 +1280,9 @@ static PyObject *CtlObj_SetControlDragTrackingEnabled(ControlObject *_self, PyOb
 	PyObject *_res = NULL;
 	OSStatus _err;
 	Boolean tracks;
+#ifndef SetControlDragTrackingEnabled
+	PyMac_PRECHECK(SetControlDragTrackingEnabled);
+#endif
 	if (!PyArg_ParseTuple(_args, "b",
 	                      &tracks))
 		return NULL;
@@ -1123,6 +1302,9 @@ static PyObject *CtlObj_IsControlDragTrackingEnabled(ControlObject *_self, PyObj
 	PyObject *_res = NULL;
 	OSStatus _err;
 	Boolean tracks;
+#ifndef IsControlDragTrackingEnabled
+	PyMac_PRECHECK(IsControlDragTrackingEnabled);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_err = IsControlDragTrackingEnabled(_self->ob_itself,
@@ -1140,6 +1322,9 @@ static PyObject *CtlObj_GetControlBounds(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Rect bounds;
+#ifndef GetControlBounds
+	PyMac_PRECHECK(GetControlBounds);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	GetControlBounds(_self->ob_itself,
@@ -1156,6 +1341,9 @@ static PyObject *CtlObj_IsControlHilited(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
+#ifndef IsControlHilited
+	PyMac_PRECHECK(IsControlHilited);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = IsControlHilited(_self->ob_itself);
@@ -1171,6 +1359,9 @@ static PyObject *CtlObj_GetControlHilite(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	UInt16 _rv;
+#ifndef GetControlHilite
+	PyMac_PRECHECK(GetControlHilite);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetControlHilite(_self->ob_itself);
@@ -1186,6 +1377,9 @@ static PyObject *CtlObj_GetControlOwner(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	WindowPtr _rv;
+#ifndef GetControlOwner
+	PyMac_PRECHECK(GetControlOwner);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetControlOwner(_self->ob_itself);
@@ -1201,6 +1395,9 @@ static PyObject *CtlObj_GetControlDataHandle(ControlObject *_self, PyObject *_ar
 {
 	PyObject *_res = NULL;
 	Handle _rv;
+#ifndef GetControlDataHandle
+	PyMac_PRECHECK(GetControlDataHandle);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetControlDataHandle(_self->ob_itself);
@@ -1216,6 +1413,9 @@ static PyObject *CtlObj_GetControlPopupMenuHandle(ControlObject *_self, PyObject
 {
 	PyObject *_res = NULL;
 	MenuHandle _rv;
+#ifndef GetControlPopupMenuHandle
+	PyMac_PRECHECK(GetControlPopupMenuHandle);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetControlPopupMenuHandle(_self->ob_itself);
@@ -1231,6 +1431,9 @@ static PyObject *CtlObj_GetControlPopupMenuID(ControlObject *_self, PyObject *_a
 {
 	PyObject *_res = NULL;
 	short _rv;
+#ifndef GetControlPopupMenuID
+	PyMac_PRECHECK(GetControlPopupMenuID);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetControlPopupMenuID(_self->ob_itself);
@@ -1246,6 +1449,9 @@ static PyObject *CtlObj_SetControlDataHandle(ControlObject *_self, PyObject *_ar
 {
 	PyObject *_res = NULL;
 	Handle dataHandle;
+#ifndef SetControlDataHandle
+	PyMac_PRECHECK(SetControlDataHandle);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      ResObj_Convert, &dataHandle))
 		return NULL;
@@ -1263,6 +1469,9 @@ static PyObject *CtlObj_SetControlBounds(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Rect bounds;
+#ifndef SetControlBounds
+	PyMac_PRECHECK(SetControlBounds);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      PyMac_GetRect, &bounds))
 		return NULL;
@@ -1280,6 +1489,9 @@ static PyObject *CtlObj_SetControlPopupMenuHandle(ControlObject *_self, PyObject
 {
 	PyObject *_res = NULL;
 	MenuHandle popupMenu;
+#ifndef SetControlPopupMenuHandle
+	PyMac_PRECHECK(SetControlPopupMenuHandle);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      MenuObj_Convert, &popupMenu))
 		return NULL;
@@ -1297,6 +1509,9 @@ static PyObject *CtlObj_SetControlPopupMenuID(ControlObject *_self, PyObject *_a
 {
 	PyObject *_res = NULL;
 	short menuID;
+#ifndef SetControlPopupMenuID
+	PyMac_PRECHECK(SetControlPopupMenuID);
+#endif
 	if (!PyArg_ParseTuple(_args, "h",
 	                      &menuID))
 		return NULL;
@@ -1313,6 +1528,9 @@ static PyObject *CtlObj_GetBevelButtonMenuValue(ControlObject *_self, PyObject *
 	PyObject *_res = NULL;
 	OSErr _err;
 	SInt16 outValue;
+#ifndef GetBevelButtonMenuValue
+	PyMac_PRECHECK(GetBevelButtonMenuValue);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_err = GetBevelButtonMenuValue(_self->ob_itself,
@@ -1328,6 +1546,9 @@ static PyObject *CtlObj_SetBevelButtonMenuValue(ControlObject *_self, PyObject *
 	PyObject *_res = NULL;
 	OSErr _err;
 	SInt16 inValue;
+#ifndef SetBevelButtonMenuValue
+	PyMac_PRECHECK(SetBevelButtonMenuValue);
+#endif
 	if (!PyArg_ParseTuple(_args, "h",
 	                      &inValue))
 		return NULL;
@@ -1344,6 +1565,9 @@ static PyObject *CtlObj_GetBevelButtonMenuHandle(ControlObject *_self, PyObject 
 	PyObject *_res = NULL;
 	OSErr _err;
 	MenuHandle outHandle;
+#ifndef GetBevelButtonMenuHandle
+	PyMac_PRECHECK(GetBevelButtonMenuHandle);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_err = GetBevelButtonMenuHandle(_self->ob_itself,
@@ -1359,6 +1583,9 @@ static PyObject *CtlObj_SetBevelButtonTransform(ControlObject *_self, PyObject *
 	PyObject *_res = NULL;
 	OSErr _err;
 	IconTransformType transform;
+#ifndef SetBevelButtonTransform
+	PyMac_PRECHECK(SetBevelButtonTransform);
+#endif
 	if (!PyArg_ParseTuple(_args, "h",
 	                      &transform))
 		return NULL;
@@ -1375,6 +1602,9 @@ static PyObject *CtlObj_SetDisclosureTriangleLastValue(ControlObject *_self, PyO
 	PyObject *_res = NULL;
 	OSErr _err;
 	SInt16 inValue;
+#ifndef SetDisclosureTriangleLastValue
+	PyMac_PRECHECK(SetDisclosureTriangleLastValue);
+#endif
 	if (!PyArg_ParseTuple(_args, "h",
 	                      &inValue))
 		return NULL;
@@ -1391,6 +1621,9 @@ static PyObject *CtlObj_GetTabContentRect(ControlObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	OSErr _err;
 	Rect outContentRect;
+#ifndef GetTabContentRect
+	PyMac_PRECHECK(GetTabContentRect);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_err = GetTabContentRect(_self->ob_itself,
@@ -1407,6 +1640,9 @@ static PyObject *CtlObj_SetTabEnabled(ControlObject *_self, PyObject *_args)
 	OSErr _err;
 	SInt16 inTabToHilite;
 	Boolean inEnabled;
+#ifndef SetTabEnabled
+	PyMac_PRECHECK(SetTabEnabled);
+#endif
 	if (!PyArg_ParseTuple(_args, "hb",
 	                      &inTabToHilite,
 	                      &inEnabled))
@@ -1425,6 +1661,9 @@ static PyObject *CtlObj_SetImageWellTransform(ControlObject *_self, PyObject *_a
 	PyObject *_res = NULL;
 	OSErr _err;
 	IconTransformType inTransform;
+#ifndef SetImageWellTransform
+	PyMac_PRECHECK(SetImageWellTransform);
+#endif
 	if (!PyArg_ParseTuple(_args, "h",
 	                      &inTransform))
 		return NULL;
@@ -1440,6 +1679,9 @@ static PyObject *CtlObj_as_Resource(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Handle _rv;
+#ifndef as_Resource
+	PyMac_PRECHECK(as_Resource);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = as_Resource(_self->ob_itself);
@@ -1452,6 +1694,9 @@ static PyObject *CtlObj_GetControlRect(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Rect rect;
+#ifndef GetControlRect
+	PyMac_PRECHECK(GetControlRect);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	GetControlRect(_self->ob_itself,
@@ -2066,7 +2311,7 @@ static long CtlObj_hash(ControlObject *self)
 }
 
 PyTypeObject Control_Type = {
-	PyObject_HEAD_INIT(&PyType_Type)
+	PyObject_HEAD_INIT(NULL)
 	0, /*ob_size*/
 	"Control", /*tp_name*/
 	sizeof(ControlObject), /*tp_basicsize*/
@@ -2100,6 +2345,9 @@ static PyObject *Ctl_NewControl(PyObject *_self, PyObject *_args)
 	SInt16 maximumValue;
 	SInt16 procID;
 	SInt32 controlReference;
+#ifndef NewControl
+	PyMac_PRECHECK(NewControl);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O&O&bhhhhl",
 	                      WinObj_Convert, &owningWindow,
 	                      PyMac_GetRect, &boundsRect,
@@ -2131,6 +2379,9 @@ static PyObject *Ctl_GetNewControl(PyObject *_self, PyObject *_args)
 	ControlHandle _rv;
 	SInt16 resourceID;
 	WindowPtr owningWindow;
+#ifndef GetNewControl
+	PyMac_PRECHECK(GetNewControl);
+#endif
 	if (!PyArg_ParseTuple(_args, "hO&",
 	                      &resourceID,
 	                      WinObj_Convert, &owningWindow))
@@ -2146,6 +2397,9 @@ static PyObject *Ctl_DrawControls(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	WindowPtr theWindow;
+#ifndef DrawControls
+	PyMac_PRECHECK(DrawControls);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      WinObj_Convert, &theWindow))
 		return NULL;
@@ -2160,6 +2414,9 @@ static PyObject *Ctl_UpdateControls(PyObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	WindowPtr theWindow;
 	RgnHandle updateRegion;
+#ifndef UpdateControls
+	PyMac_PRECHECK(UpdateControls);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
 	                      WinObj_Convert, &theWindow,
 	                      ResObj_Convert, &updateRegion))
@@ -2178,6 +2435,9 @@ static PyObject *Ctl_FindControl(PyObject *_self, PyObject *_args)
 	Point testPoint;
 	WindowPtr theWindow;
 	ControlHandle theControl;
+#ifndef FindControl
+	PyMac_PRECHECK(FindControl);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
 	                      PyMac_GetPoint, &testPoint,
 	                      WinObj_Convert, &theWindow))
@@ -2198,6 +2458,9 @@ static PyObject *Ctl_FindControlUnderMouse(PyObject *_self, PyObject *_args)
 	Point inWhere;
 	WindowPtr inWindow;
 	SInt16 outPart;
+#ifndef FindControlUnderMouse
+	PyMac_PRECHECK(FindControlUnderMouse);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
 	                      PyMac_GetPoint, &inWhere,
 	                      WinObj_Convert, &inWindow))
@@ -2215,6 +2478,9 @@ static PyObject *Ctl_IdleControls(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	WindowPtr inWindow;
+#ifndef IdleControls
+	PyMac_PRECHECK(IdleControls);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      WinObj_Convert, &inWindow))
 		return NULL;
@@ -2233,6 +2499,9 @@ static PyObject *Ctl_GetControlByID(PyObject *_self, PyObject *_args)
 	WindowPtr inWindow;
 	ControlID inID;
 	ControlHandle outControl;
+#ifndef GetControlByID
+	PyMac_PRECHECK(GetControlByID);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
 	                      WinObj_Convert, &inWindow,
 	                      PyControlID_Convert, &inID))
@@ -2253,6 +2522,9 @@ static PyObject *Ctl_DumpControlHierarchy(PyObject *_self, PyObject *_args)
 	OSErr _err;
 	WindowPtr inWindow;
 	FSSpec inDumpFile;
+#ifndef DumpControlHierarchy
+	PyMac_PRECHECK(DumpControlHierarchy);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
 	                      WinObj_Convert, &inWindow,
 	                      PyMac_GetFSSpec, &inDumpFile))
@@ -2271,6 +2543,9 @@ static PyObject *Ctl_CreateRootControl(PyObject *_self, PyObject *_args)
 	OSErr _err;
 	WindowPtr inWindow;
 	ControlHandle outControl;
+#ifndef CreateRootControl
+	PyMac_PRECHECK(CreateRootControl);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      WinObj_Convert, &inWindow))
 		return NULL;
@@ -2288,6 +2563,9 @@ static PyObject *Ctl_GetRootControl(PyObject *_self, PyObject *_args)
 	OSErr _err;
 	WindowPtr inWindow;
 	ControlHandle outControl;
+#ifndef GetRootControl
+	PyMac_PRECHECK(GetRootControl);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      WinObj_Convert, &inWindow))
 		return NULL;
@@ -2305,6 +2583,9 @@ static PyObject *Ctl_GetKeyboardFocus(PyObject *_self, PyObject *_args)
 	OSErr _err;
 	WindowPtr inWindow;
 	ControlHandle outControl;
+#ifndef GetKeyboardFocus
+	PyMac_PRECHECK(GetKeyboardFocus);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      WinObj_Convert, &inWindow))
 		return NULL;
@@ -2323,6 +2604,9 @@ static PyObject *Ctl_SetKeyboardFocus(PyObject *_self, PyObject *_args)
 	WindowPtr inWindow;
 	ControlHandle inControl;
 	ControlFocusPart inPart;
+#ifndef SetKeyboardFocus
+	PyMac_PRECHECK(SetKeyboardFocus);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O&h",
 	                      WinObj_Convert, &inWindow,
 	                      CtlObj_Convert, &inControl,
@@ -2342,6 +2626,9 @@ static PyObject *Ctl_AdvanceKeyboardFocus(PyObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	OSErr _err;
 	WindowPtr inWindow;
+#ifndef AdvanceKeyboardFocus
+	PyMac_PRECHECK(AdvanceKeyboardFocus);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      WinObj_Convert, &inWindow))
 		return NULL;
@@ -2357,6 +2644,9 @@ static PyObject *Ctl_ReverseKeyboardFocus(PyObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	OSErr _err;
 	WindowPtr inWindow;
+#ifndef ReverseKeyboardFocus
+	PyMac_PRECHECK(ReverseKeyboardFocus);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      WinObj_Convert, &inWindow))
 		return NULL;
@@ -2372,6 +2662,9 @@ static PyObject *Ctl_ClearKeyboardFocus(PyObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	OSErr _err;
 	WindowPtr inWindow;
+#ifndef ClearKeyboardFocus
+	PyMac_PRECHECK(ClearKeyboardFocus);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      WinObj_Convert, &inWindow))
 		return NULL;
@@ -2390,6 +2683,9 @@ static PyObject *Ctl_SetAutomaticControlDragTrackingEnabledForWindow(PyObject *_
 	OSStatus _err;
 	WindowPtr theWindow;
 	Boolean tracks;
+#ifndef SetAutomaticControlDragTrackingEnabledForWindow
+	PyMac_PRECHECK(SetAutomaticControlDragTrackingEnabledForWindow);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&b",
 	                      WinObj_Convert, &theWindow,
 	                      &tracks))
@@ -2411,6 +2707,9 @@ static PyObject *Ctl_IsAutomaticControlDragTrackingEnabledForWindow(PyObject *_s
 	OSStatus _err;
 	WindowPtr theWindow;
 	Boolean tracks;
+#ifndef IsAutomaticControlDragTrackingEnabledForWindow
+	PyMac_PRECHECK(IsAutomaticControlDragTrackingEnabledForWindow);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      WinObj_Convert, &theWindow))
 		return NULL;
@@ -2428,6 +2727,9 @@ static PyObject *Ctl_as_Control(PyObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	ControlHandle _rv;
 	Handle h;
+#ifndef as_Control
+	PyMac_PRECHECK(as_Control);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      ResObj_Convert, &h))
 		return NULL;

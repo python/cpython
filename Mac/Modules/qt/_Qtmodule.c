@@ -5,12 +5,8 @@
 
 
 
-#ifdef _WIN32
-#include "pywintoolbox.h"
-#else
 #include "macglue.h"
 #include "pymactoolbox.h"
-#endif
 
 /* Macro to test whether a weak-loaded CFM function exists */
 #define PyMac_PRECHECK(rtn) do { if ( &rtn == NULL )  {\
@@ -934,7 +930,7 @@ static PyObject *MovieCtlObj_getattr(MovieControllerObject *self, char *name)
 #define MovieCtlObj_hash NULL
 
 PyTypeObject MovieController_Type = {
-	PyObject_HEAD_INIT(&PyType_Type)
+	PyObject_HEAD_INIT(NULL)
 	0, /*ob_size*/
 	"MovieController", /*tp_name*/
 	sizeof(MovieControllerObject), /*tp_basicsize*/
@@ -1328,7 +1324,7 @@ static PyObject *TimeBaseObj_getattr(TimeBaseObject *self, char *name)
 #define TimeBaseObj_hash NULL
 
 PyTypeObject TimeBase_Type = {
-	PyObject_HEAD_INIT(&PyType_Type)
+	PyObject_HEAD_INIT(NULL)
 	0, /*ob_size*/
 	"TimeBase", /*tp_name*/
 	sizeof(TimeBaseObject), /*tp_basicsize*/
@@ -1605,7 +1601,7 @@ static PyObject *UserDataObj_getattr(UserDataObject *self, char *name)
 #define UserDataObj_hash NULL
 
 PyTypeObject UserData_Type = {
-	PyObject_HEAD_INIT(&PyType_Type)
+	PyObject_HEAD_INIT(NULL)
 	0, /*ob_size*/
 	"UserData", /*tp_name*/
 	sizeof(UserDataObject), /*tp_basicsize*/
@@ -2639,7 +2635,7 @@ static PyObject *MediaObj_getattr(MediaObject *self, char *name)
 #define MediaObj_hash NULL
 
 PyTypeObject Media_Type = {
-	PyObject_HEAD_INIT(&PyType_Type)
+	PyObject_HEAD_INIT(NULL)
 	0, /*ob_size*/
 	"Media", /*tp_name*/
 	sizeof(MediaObject), /*tp_basicsize*/
@@ -3726,7 +3722,7 @@ static PyObject *TrackObj_getattr(TrackObject *self, char *name)
 #define TrackObj_hash NULL
 
 PyTypeObject Track_Type = {
-	PyObject_HEAD_INIT(&PyType_Type)
+	PyObject_HEAD_INIT(NULL)
 	0, /*ob_size*/
 	"Track", /*tp_name*/
 	sizeof(TrackObject), /*tp_basicsize*/
@@ -5798,7 +5794,7 @@ static PyObject *MovieObj_getattr(MovieObject *self, char *name)
 #define MovieObj_hash NULL
 
 PyTypeObject Movie_Type = {
-	PyObject_HEAD_INIT(&PyType_Type)
+	PyObject_HEAD_INIT(NULL)
 	0, /*ob_size*/
 	"Movie", /*tp_name*/
 	sizeof(MovieObject), /*tp_basicsize*/
