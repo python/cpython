@@ -31,6 +31,7 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 #include "patchlevel.h"
 #include "config.h"
+#include "pyport.h"
 
 /* config.h may or may not define DL_IMPORT */
 #ifndef DL_IMPORT	/* declarations for DLL import/export */

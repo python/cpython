@@ -18,7 +18,7 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 /* Parameters of the long integer representation.
    These shouldn't have to be changed as C should guarantee that a short
-   contains at least 16 bits, but it's made changeable any way.
+   contains at least 16 bits, but it's made changeable anyway.
    Note: 'digit' should be able to hold 2*MASK+1, and 'twodigits'
    should be able to hold the intermediate results in 'mul'
    (at most MASK << SHIFT).
@@ -28,8 +28,9 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 typedef unsigned short digit;
 typedef unsigned int wdigit; /* digit widened to parameter size */
-typedef unsigned long twodigits;
-typedef long stwodigits; /* signed variant of twodigits */
+#define BASE_TWODIGITS_TYPE long
+typedef unsigned BASE_TWODIGITS_TYPE twodigits;
+typedef BASE_TWODIGITS_TYPE stwodigits; /* signed variant of twodigits */
 
 #define SHIFT	15
 #define BASE	((digit)1 << SHIFT)
