@@ -4,7 +4,7 @@
 '''
 from test.test_support import run_unittest
 import unittest, sys
-from types import ClassType, FunctionType, MethodType
+from types import ClassType, FunctionType, MethodType, BuiltinFunctionType
 import pyclbr
 from unittest import TestCase
 
@@ -92,7 +92,7 @@ class PyclbrTest(TestCase):
             self.assertHasattr(module, name, ignore)
             py_item = getattr(module, name)
             if isinstance(value, pyclbr.Function):
-                self.assertEquals(type(py_item), FunctionType)
+                self.assert_(isinstance(py_item, (FunctionType, BuiltinFunctionType)))
             else:
                 self.failUnless(isinstance(py_item, (ClassType, type)))
                 real_bases = [base.__name__ for base in py_item.__bases__]
