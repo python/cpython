@@ -135,10 +135,6 @@ msilib.reset()
 # b) it is NT, the user is privileged, and has chosen per-machine installation
 sys32cond = "(Windows9x or (Privileged and ALLUSERS))"
 
-# Install extensions if the feature goes into
-# INSTALLSTATE_ADVERTISED or INSTALLSTATE_LOCAL
-want_extensions = "(&Extensions = 1) or (&Extensions = 3)"
-
 def build_database():
     """Generate an empty database, with just the schema and the
     Summary information stream."""
@@ -164,15 +160,6 @@ def build_database():
     # back in case the installation is interrupted
     msilib.change_sequence(sequence.InstallExecuteSequence,
                            "RemoveExistingProducts", 1510)
-    # Conditionalize Extension information
-    msilib.change_sequence(sequence.InstallExecuteSequence,
-                            "RegisterClassInfo", cond=want_extensions)
-    msilib.change_sequence(sequence.InstallExecuteSequence,
-                            "RegisterExtensionInfo", cond=want_extensions)
-    msilib.change_sequence(sequence.InstallExecuteSequence,
-                            "RegisterProgIdInfo", cond=want_extensions)
-    msilib.change_sequence(sequence.InstallExecuteSequence,
-                            "RegisterMIMEInfo", cond=want_extensions)
     msilib.add_tables(db, sequence)
     # We cannot set ALLUSERS in the property table, as this cannot be
     # reset if the user choses a per-user installation. Instead, we
@@ -825,6 +812,8 @@ def add_files(db):
     root.add_file("PCBuild/python.exe")
     root.start_component("pythonw.exe", keyfile="pythonw.exe")
     root.add_file("PCBuild/pythonw.exe")
+    root.start_component("launcher.exe", feature=ext_feature, keyfile="launcher.exe")
+    root.add_file("PCBuild/launcher.exe")
 
     # msidbComponentAttributesSharedDllRefCount = 8, see "Component Table"
     dlldir = PyDirectory(db, cab, root, srcdir, "DLLDIR", ".")
@@ -998,7 +987,8 @@ def add_registry(db):
     if have_tcl:
         tcldata = [
             ("REGISTRY.tcl", msilib.gen_uuid(), "TARGETDIR", 4,
-               "&%s <> 2" % ext_feature.id, "py.IDLE")]
+               "&%s <> 2" % ext_feature.id, 
+               "py.IDLE")]
     add_data(db, "Component",
              # msidbComponentAttributesRegistryKeyPath = 4
              [("REGISTRY", msilib.gen_uuid(), "TARGETDIR", 4, None,
@@ -1027,16 +1017,16 @@ def add_registry(db):
     pat3 = r"Software\Classes\%sPython.%sFile"
     # Advertised extensions
     add_data(db, "Extension",
-            [("py", "python.exe", "Python.File", None, default_feature.id),
-            ("pyw", "pythonw.exe", "Python.NoConFile", None, default_feature.id),
-            ("pyc", "python.exe", "Python.CompiledFile", None, default_feature.id),
-            ("pyo", "python.exe", "Python.CompiledFile", None, default_feature.id)])
+            [("py", "launcher.exe", "Python.File", None, ext_feature.id),
+            ("pyw", "launcher.exe", "Python.NoConFile", None, ext_feature.id),
+            ("pyc", "launcher.exe", "Python.CompiledFile", None, ext_feature.id),
+            ("pyo", "launcher.exe", "Python.CompiledFile", None, ext_feature.id)])
     # add_data(db, "MIME") XXX
     add_data(db, "Verb",
-            [("py", "open", 1, None, r'"%1"'),
+            [("py", "open", 1, None, r'-console "%1"'),
             ("pyw", "open", 1, None, r'"%1"'),
-            ("pyc", "open", 1, None, r'"%1"'),
-            ("pyo", "open", 1, None, r'"%1"')])
+            ("pyc", "open", 1, None, r'-console "%1"'),
+            ("pyo", "open", 1, None, r'-console "%1"')])
     add_data(db, "ProgId",
             [("Python.File", None, None, "Python File", "python_icon.exe", 0),
              ("Python.NoConFile", None, None, "Python File (no console)", "python_icon.exe", 0),
