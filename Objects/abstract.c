@@ -636,7 +636,7 @@ sequence_repeat(intargfunc repeatfunc, PyObject *seq, PyObject *n)
 	}
 	else {
 		return type_error(
-			"can't multiply sequence to non-int");
+			"can't multiply sequence by non-int");
 	}
 #if LONG_MAX != INT_MAX
 	if (count > INT_MAX) {
