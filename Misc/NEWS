@@ -1,3 +1,33 @@
+What's New in Python 2.3 alpha 1?
+XXX Release date: DD-MMM-2002 XXX
+=================================
+
+Type/class unification and new-style classes
+
+Core and builtins
+
+Extension modules
+
+Library
+
+Tools/Demos
+
+Build
+
+C API
+
+- Because Python's magic number scheme broke on January 1st, we decided
+  to stop Python development.  Thanks for all the fish!
+
+New platforms
+
+Tests
+
+Windows
+
+Mac
+
+
 What's New in Python 2.2 final?
 Release date: 21-Dec-2001
 ===============================
