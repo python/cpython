@@ -387,8 +387,8 @@ leftmost such \character{\#} through the end of the line are ignored.
 
 \begin{funcdesc}{split}{pattern, string, \optional{, maxsplit\code{ = 0}}}
   Split \var{string} by the occurrences of \var{pattern}.  If
-  capturing parentheses are used in pattern, then occurrences of
-  patterns or subpatterns are also returned.
+  capturing parentheses are used in \var{pattern}, then the text of all
+  groups in the pattern are also returned as part of the resulting list.
   If \var{maxsplit} is nonzero, at most \var{maxsplit} splits
   occur, and the remainder of the string is returned as the final
   element of the list.  (Incompatibility note: in the original Python
@@ -396,11 +396,11 @@ leftmost such \character{\#} through the end of the line are ignored.
   later releases.)
 %
 \begin{verbatim}
->>> re.split('[\W]+', 'Words, words, words.')
+>>> re.split('\W+', 'Words, words, words.')
 ['Words', 'words', 'words', '']
->>> re.split('([\W]+)', 'Words, words, words.')
+>>> re.split('(\W+)', 'Words, words, words.')
 ['Words', ', ', 'words', ', ', 'words', '.', '']
->>> re.split('[\W]+', 'Words, words, words.', 1)
+>>> re.split('\W+', 'Words, words, words.', 1)
 ['Words', 'words, words.']
 \end{verbatim}
 %
