@@ -2855,7 +2855,10 @@ initparser(void)
     PyDict_SetItemString(dict, "__version__",
                          PyString_FromString(parser_version_string));
 
-    /* register to support pickling */
+    /* Register to support pickling.
+     * If this fails, the import of this module will fail because an
+     * exception will be raised here; should we clear the exception?
+     */
     module = PyImport_ImportModule("copy_reg");
     if (module != NULL) {
         PyObject *func, *pickler;
