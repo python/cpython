@@ -46,7 +46,7 @@ Py_ReturnMethodError(name)
   return 0;
 }
 
-PyObject *
+static PyObject *
 Py_ReturnNullError()
 {
   if(! PyErr_Occurred())
