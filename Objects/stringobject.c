@@ -1016,14 +1016,16 @@ PyString_Format(format, args)
 				"not all arguments converted");
 		goto error;
 	}
-	if (args_owned)
+	if (args_owned) {
 		Py_DECREF(args);
+	}
 	_PyString_Resize(&result, reslen - rescnt);
 	return result;
  error:
 	Py_DECREF(result);
-	if (args_owned)
+	if (args_owned) {
 		Py_DECREF(args);
+	}
 	return NULL;
 }
 
