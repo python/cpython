@@ -18,16 +18,22 @@ IDLEfork-0.9xx-1.noarch.rpm
 	python2 and python2-tkinter rpms.  It installs as idlefork to avoid
 	conflict with Python IDLE.
 
+	The Python2 rpm is designed to work with Redhat systems prior to Rev 8.
+	It is available at http://www.python.org/2.2.2/rpms.html and
+	http://www.python.org/2.2.1/rpms.html .  See the warning/explanation
+	on the latter web page, which discusses the reason for python2.
+
 IDLEfork-0.9xx.tar.gz
 	This is a distutils sdist (source) tarfile which can be used to make 
 	installations on platforms not supported by the above files.
-	It remains configured to install as IDLE, not IDLEfork.
+	** It remains configured to install as idlelib, not idleforklib. **
 
 	Unpack in ..../Tools/, cd to the IDLEfork directory created, and
-	<python setup.py install> to install in ....site-packages/idlelib.  
+	<python setup.py install> to install in ....site-packages/idlelib.
+	This will overwrite the Python IDLE installation.  
 
         If you don't want to overwrite Python IDLE, it is also possible to
-	simply run <python idle.py> to test in the IDLEfork source directory
+	simply call <python idle.py> to run from the IDLEfork source directory
 	without making an installation.  In this case, IDLE will not be on
 	your PATH unless you are in the source directory.  Also, it is then
 	advisable to remove any Python IDLE installation by removing
