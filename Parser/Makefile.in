@@ -17,7 +17,7 @@ DEFS=		@DEFS@
 # === Other things that are customizable but not by configure ===
 
 INCLDIR=	$(srcdir)/../Include
-OPT=		-O
+OPT=		@OPT@
 CFLAGS=		$(OPT) -I$(INCLDIR) -I.. $(DEFS)
 
 MKDEP=		mkdep
@@ -46,6 +46,7 @@ LIB=		libParser.a
 all:		$(LIB) $(PGEN)
 
 $(LIB):		$(PARSEROBJS)
+		-rm -f $(LIB)
 		$(AR) cr $(LIB) $(PARSEROBJS)
 		$(RANLIB) $(LIB)
 
