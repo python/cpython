@@ -211,6 +211,7 @@ Both BEGIN and END are evaled.  Moreover, you can reference arguments through
     ("authoraddress" 1
      (progn (setq author-address (match-string 1 string)) ""))
     ("b" 1 "@w{\\1}")
+    ("backslash" 0 "@backslash{}")
     ("bf" 0 "@destroy")
     ("bifuncindex" 1 (progn (setq findex t) "@findex{\\1}"))
     ("C" 0 "C")
