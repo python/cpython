@@ -8,7 +8,13 @@ from scantools import Scanner
 
 LONG = "QuickTime"
 SHORT = "qt"
-HEADERFILES= ("Movies.h", "ImageCompression.h", "QuickTimeComponents.h")
+HEADERFILES= (
+	"Movies.h", 
+	"ImageCompression.h", 
+	"QuickTimeComponents.h",
+#	"ImageCodec.h"  -- seems not too useful, and difficult.
+	"MediaHandlers.h"
+	)
 OBJECTS = ("Movie", "Track", "Media", "UserData", "TimeBase", "MovieController", 
 	"IdleManager", "SGOutput")
 
@@ -90,6 +96,10 @@ class MyScanner(Scanner):
 			"VDCompressDone",
 			"VDReleaseCompressBuffer",
 			"QTVideoOutputGetGWorldParameters", # How useful is this?
+			
+			# MediaHandlers
+			"MediaMakeMediaTimeTable", # just lazy
+			"MediaGetSampleDataPointer", # funny output pointer
 			]
 
 	def makeblacklisttypes(self):
@@ -205,6 +215,14 @@ class MyScanner(Scanner):
             "XMLDoc",
             "UInt64", 	# XXXX lazy
             "UInt64_ptr", # XXXX lazy
+            
+            # From MediaHandlers
+            "ActionsUPP",
+            "PrePrerollCompleteUPP",
+            "CodecComponentHandle", # Difficult: handle containing list of components.
+            "GetMovieCompleteParams", # Immense struct
+            "LevelMeterInfoPtr", # Lazy. Also: can be an output parameter!!
+            "MediaEQSpectrumBandsRecordPtr", # ditto
 			]
 
 	def makerepairinstructions(self):
