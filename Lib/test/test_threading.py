@@ -7,6 +7,8 @@ import random
 import threading
 import time
 
+# This takes about n/3 seconds to run (about n/3 clumps of tasks, times
+# about 1 second per clump).
 numtasks = 10
 
 # no more than 3 of the 10 can run at once
@@ -17,9 +19,9 @@ running = 0
 class TestThread(threading.Thread):
     def run(self):
         global running
-        delay = random.random() * numtasks
+        delay = random.random() * 2
         if verbose:
-            print 'task', self.getName(), 'will run for', round(delay, 1), 'sec'
+            print 'task', self.getName(), 'will run for', delay, 'sec'
         sema.acquire()
         mutex.acquire()
         running = running + 1
@@ -45,8 +47,9 @@ def starttasks():
 
 starttasks()
 
-print 'waiting for all tasks to complete'
+if verbose:
+    print 'waiting for all tasks to complete'
 for t in threads:
     t.join()
-print 'all tasks done'
-
+if verbose:
+    print 'all tasks done'
