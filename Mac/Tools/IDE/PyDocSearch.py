@@ -101,7 +101,7 @@ class Results:
 class Status:
 	
 	def __init__(self):
-		self.w = W.Dialog((440, 64), "SearchingŠ")
+		self.w = W.Dialog((440, 64), "Searchingƒ")
 		self.w.searching = W.TextBox((4, 4, -4, 16), "DevDev:PyPyDoc 1.5.1:ext:parseTupleAndKeywords.html")
 		self.w.hits = W.TextBox((4, 24, -4, 16), "Hits: 0")
 		self.w.canceltip = W.TextBox((4, 44, -4, 16), "Type cmd-period (.) to cancel.")

@@ -71,7 +71,7 @@ import sys
 
 _keepsplashscreenopen = 0
 
-abouttext1 = """The Python Integrated Development Environment for the MacintoshÅ
+abouttext1 = """The Python Integrated Development Environment for the Macintoshé
 Version: %s
 Copyright 1997-2000 Just van Rossum, Letterror. <just@letterror.com>
 Python %s
@@ -79,11 +79,11 @@ Python %s
 See: <http://www.python.org/> for information and documentation."""
 
 flauwekul = [	'Goodday, Bruce.', 
-			'Whatπs new?', 
+			'What’s new?', 
 			'Nudge, nudge, say no more!', 
-			'No, no sir, itπs not dead. Itπs resting.',
+			'No, no sir, it’s not dead. It’s resting.',
 			'Albatros!',
-			'Itπs . . .',
+			'It’s . . .',
 			'Is your name not Bruce, then?',
 			"""But Mr F.G. Superman has a secret identity . . . 
 when trouble strikes at any time . . . 
