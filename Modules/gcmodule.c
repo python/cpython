@@ -31,20 +31,27 @@
 
 /*** Global GC state ***/
 
+struct gc_generation {
+	PyGC_Head head;
+	int threshold; /* collection threshold */
+	int count; /* count of allocations or collections of younger
+		      generations */
+};
+
+#define NUM_GENERATIONS 3
+#define GEN_HEAD(n) (&generations[n].head)
+
 /* linked lists of container objects */
-PyGC_Head _PyGC_generation0 = {{&_PyGC_generation0, &_PyGC_generation0, 0}};
-static PyGC_Head generation1 = {{&generation1, &generation1, 0}};
-static PyGC_Head generation2 = {{&generation2, &generation2, 0}};
-static int generation = 0; /* current generation being collected */
+static struct gc_generation generations[NUM_GENERATIONS] = {
+	/* PyGC_Head,				threshold,	count */
+	{{{GEN_HEAD(0), GEN_HEAD(0), 0}},	700,		0},
+	{{{GEN_HEAD(1), GEN_HEAD(1), 0}},	10,		0},
+	{{{GEN_HEAD(2), GEN_HEAD(2), 0}},	10,		0},
+};
 
-/* collection frequencies, XXX tune these */
+PyGC_Head *_PyGC_generation0 = GEN_HEAD(0);
+
 static int enabled = 1; /* automatic collection enabled? */
-static int threshold0 = 700; /* net new containers before collection */
-static int threshold1 = 10;  /* generation0 collections before collecting 1 */
-static int threshold2 = 10;  /* generation1 collections before collecting 2 */
-
-/* net new objects allocated since last collection */
-static int allocated;
 
 /* true if we are currently running the collector */
 static int collecting;
@@ -81,6 +88,12 @@ gc_list_init(PyGC_Head *list)
 	list->gc.gc_next = list;
 }
 
+static int
+gc_list_is_empty(PyGC_Head *list)
+{
+	return (list->gc.gc_next == list);
+}
+
 static void
 gc_list_append(PyGC_Head *node, PyGC_Head *list)
 {
@@ -101,8 +114,7 @@ gc_list_remove(PyGC_Head *node)
 static void 
 gc_list_move(PyGC_Head *from, PyGC_Head *to)
 {
-	if (from->gc.gc_next == from) {
-		/* empty from list */
+	if (gc_list_is_empty(from)) {
 		gc_list_init(to);
 	}
 	else {
@@ -119,7 +131,7 @@ static void
 gc_list_merge(PyGC_Head *from, PyGC_Head *to)
 {
 	PyGC_Head *tail;
-	if (from->gc.gc_next != from) {
+	if (!gc_list_is_empty(from)) {
 		tail = to->gc.gc_prev;
 		tail->gc.gc_next = from->gc.gc_next;
 		tail->gc.gc_next->gc.gc_prev = tail;
@@ -330,7 +342,7 @@ delete_garbage(PyGC_Head *unreachable, PyGC_Head *old)
 {
 	inquiry clear;
 
-	while (unreachable->gc.gc_next != unreachable) {
+	while (!gc_list_is_empty(unreachable)) {
 		PyGC_Head *gc = unreachable->gc.gc_next;
 		PyObject *op = FROM_GC(gc);
 		if (debug & DEBUG_SAVEALL) {
@@ -354,23 +366,45 @@ delete_garbage(PyGC_Head *unreachable, PyGC_Head *old)
 /* This is the main function.  Read this to understand how the
  * collection process works. */
 static long
-collect(PyGC_Head *young, PyGC_Head *old)
+collect(int generation)
 {
+	int i;
 	long n = 0;
 	long m = 0;
+	PyGC_Head *young; /* the generation we are examining */
+	PyGC_Head *old; /* next older generation */
 	PyGC_Head reachable;
 	PyGC_Head unreachable;
 	PyGC_Head finalizers;
 	PyGC_Head *gc;
 
 	if (debug & DEBUG_STATS) {
-		PySys_WriteStderr(
-			"gc: collecting generation %d...\n"
-			"gc: objects in each generation: %ld %ld %ld\n",
-			generation,
-			gc_list_size(&_PyGC_generation0),
-			gc_list_size(&generation1),
-			gc_list_size(&generation2));
+		PySys_WriteStderr("gc: collecting generation %d...\n",
+				  generation);
+		PySys_WriteStderr("gc: objects in each generation:");
+		for (i = 0; i < NUM_GENERATIONS; i++) {
+			PySys_WriteStderr(" %ld", gc_list_size(GEN_HEAD(i)));
+		}
+		PySys_WriteStderr("\n");
+	}
+
+	/* update collection and allocation counters */
+	if (generation+1 < NUM_GENERATIONS)
+		generations[generation+1].count += 1;
+	for (i = 0; i <= generation; i++)
+		generations[generation].count = 0;
+
+	/* merge younger generations with one we are currently collecting */
+	for (i = 0; i < generation; i++) {
+		gc_list_merge(GEN_HEAD(i), GEN_HEAD(generation));
+	}
+
+	/* handy references */
+	young = GEN_HEAD(generation);
+	if (generation < NUM_GENERATIONS-1) {
+		old = GEN_HEAD(generation+1);
+	} else {
+		old = GEN_HEAD(NUM_GENERATIONS-1);
 	}
 
 	/* Using ob_refcnt and gc_refs, calculate which objects in the
@@ -449,41 +483,22 @@ collect(PyGC_Head *young, PyGC_Head *old)
 		PyErr_WriteUnraisable(gc_str);
 		Py_FatalError("unexpected exception during garbage collection");
 	}
-	allocated = 0;
 	return n+m;
 }
 
 static long
 collect_generations(void)
 {
-	static long collections0 = 0;
-	static long collections1 = 0;
+	int i;
 	long n = 0;
 
-
-	if (collections1 > threshold2) {
-		generation = 2;
-		gc_list_merge(&_PyGC_generation0, &generation2);
-		gc_list_merge(&generation1, &generation2);
-		if (generation2.gc.gc_next != &generation2) {
-			n = collect(&generation2, &generation2);
-		}
-		collections1 = 0;
-	}
-	else if (collections0 > threshold1) {
-		generation = 1;
-		collections1++;
-		gc_list_merge(&_PyGC_generation0, &generation1);
-		if (generation1.gc.gc_next != &generation1) {
-			n = collect(&generation1, &generation2);
-		}
-		collections0 = 0;
-	}
-	else {
-		generation = 0;
-		collections0++;
-		if (_PyGC_generation0.gc.gc_next != &_PyGC_generation0) {
-			n = collect(&_PyGC_generation0, &generation1);
+	/* Find the oldest generation (higest numbered) where the count
+	 * exceeds the threshold.  Objects in the that generation and
+	 * generations younger than it will be collected. */
+	for (i = NUM_GENERATIONS-1; i >= 0; i--) {
+		if (generations[i].count > generations[i].threshold) {
+			n = collect(i);
+			break;
 		}
 	}
 	return n;
@@ -562,10 +577,7 @@ gc_collect(PyObject *self, PyObject *args)
 	}
 	else {
 		collecting = 1;
-		generation = 2;
-		gc_list_merge(&_PyGC_generation0, &generation2);
-		gc_list_merge(&generation1, &generation2);
-		n = collect(&generation2, &generation2);
+		n = collect(NUM_GENERATIONS - 1);
 		collecting = 0;
 	}
 
@@ -624,9 +636,16 @@ static char gc_set_thresh__doc__[] =
 static PyObject *
 gc_set_thresh(PyObject *self, PyObject *args)
 {
-	if (!PyArg_ParseTuple(args, "i|ii:set_threshold", &threshold0, 
-				&threshold1, &threshold2))
+	int i;
+	if (!PyArg_ParseTuple(args, "i|ii:set_threshold",
+			      &generations[0].threshold,
+			      &generations[1].threshold,
+			      &generations[2].threshold))
 		return NULL;
+	for (i = 2; i < NUM_GENERATIONS; i++) {
+ 		/* generations higher than 2 get the same threshold */
+		generations[i].threshold = generations[2].threshold;
+	}
 
 	Py_INCREF(Py_None);
 	return Py_None;
@@ -644,7 +663,10 @@ gc_get_thresh(PyObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, ":get_threshold"))	/* no args */
 		return NULL;
 
-	return Py_BuildValue("(iii)", threshold0, threshold1, threshold2);
+	return Py_BuildValue("(iii)",
+			     generations[0].threshold,
+			     generations[1].threshold,
+			     generations[2].threshold);
 }
 
 static int
@@ -683,12 +705,13 @@ Return the list of objects that directly refer to any of objs.";
 static PyObject *
 gc_get_referrers(PyObject *self, PyObject *args)
 {
+	int i;
 	PyObject *result = PyList_New(0);
-	if (!(gc_referrers_for(args, &_PyGC_generation0, result) &&
-	      gc_referrers_for(args, &generation1, result) &&
-	      gc_referrers_for(args, &generation2, result))) {
-		Py_DECREF(result);
-		return NULL;
+	for (i = 0; i < NUM_GENERATIONS; i++) {
+		if (!(gc_referrers_for(args, GEN_HEAD(i), result))) {
+			Py_DECREF(result);
+			return NULL;
+		}
 	}
 	return result;
 }
@@ -719,6 +742,7 @@ append_objects(PyObject *py_list, PyGC_Head *gc_list)
 static PyObject *
 gc_get_objects(PyObject *self, PyObject *args)
 {
+	int i;
 	PyObject* result;
 
 	if (!PyArg_ParseTuple(args, ":get_objects")) /* check no args */
@@ -727,11 +751,11 @@ gc_get_objects(PyObject *self, PyObject *args)
 	if (result == NULL) {
 		return NULL;
 	}
-	if (append_objects(result, &_PyGC_generation0) ||
-	    append_objects(result, &generation1) ||
-	    append_objects(result, &generation2)) {
-		Py_DECREF(result);
-		return NULL;
+	for (i = 0; i < NUM_GENERATIONS; i++) {
+		if (append_objects(result, GEN_HEAD(i))) {
+			Py_DECREF(result);
+			return NULL;
+		}
 	}
 	return result;
 }
@@ -854,14 +878,14 @@ _PyObject_GC_Malloc(size_t basicsize)
 	if (g == NULL)
 		return (PyObject *)PyErr_NoMemory();
 	g->gc.gc_next = NULL;
-	allocated++;
- 	if (allocated > threshold0 &&
+	generations[0].count++; /* number of allocated GC objects */
+ 	if (generations[0].count > generations[0].threshold &&
  	    enabled &&
- 	    threshold0 &&
+ 	    generations[0].threshold &&
  	    !collecting &&
  	    !PyErr_Occurred()) {
 		collecting = 1;
- 		collect_generations();
+		collect_generations();
 		collecting = 0;
 	}
 	op = FROM_GC(g);
@@ -919,8 +943,8 @@ PyObject_GC_Del(void *op)
 	PyGC_Head *g = AS_GC(op);
 	if (g->gc.gc_next != NULL)
 		gc_list_remove(g);
-	if (allocated > 0) {
-		allocated--;
+	if (generations[0].count > 0) {
+		generations[0].count--;
 	}
 	PyObject_FREE(g);
 #else
