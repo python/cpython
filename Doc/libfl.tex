@@ -7,39 +7,41 @@ Overmars.  The source for the library can be retrieved by anonymous
 ftp from host \samp{ftp.cs.ruu.nl}, directory \file{SGI/FORMS}.  It
 was last tested with version 2.0b.
 
-Most functions are literal translations of their C equivalents,
+Most functions are literal translations of their \C{} equivalents,
 dropping the initial \samp{fl_} from their name.  Constants used by
-the library are defined in module \code{FL} described below.
+the library are defined in module \module{FL} described below.
 
 The creation of objects is a little different in Python than in C:
 instead of the `current form' maintained by the library to which new
 FORMS objects are added, all functions that add a FORMS object to a
 form are methods of the Python object representing the form.
 Consequently, there are no Python equivalents for the C functions
-\code{fl_addto_form} and \code{fl_end_form}, and the equivalent of
-\code{fl_bgn_form} is called \code{fl.make_form}.
+\cfunction{fl_addto_form()} and \cfunction{fl_end_form()}, and the
+equivalent of \cfunction{fl_bgn_form()} is called
+\function{fl.make_form()}.
 
 Watch out for the somewhat confusing terminology: FORMS uses the word
 \dfn{object} for the buttons, sliders etc. that you can place in a form.
 In Python, `object' means any value.  The Python interface to FORMS
 introduces two new Python object types: form objects (representing an
 entire form) and FORMS objects (representing one button, slider etc.).
-Hopefully this isn't too confusing...
+Hopefully this isn't too confusing.
 
 There are no `free objects' in the Python interface to FORMS, nor is
 there an easy way to add object classes written in Python.  The FORMS
 interface to GL event handling is available, though, so you can mix
 FORMS with pure GL windows.
 
-\strong{Please note:} importing \code{fl} implies a call to the GL function
-\code{foreground()} and to the FORMS routine \code{fl_init()}.
+\strong{Please note:} importing \module{fl} implies a call to the GL
+function \cfunction{foreground()} and to the FORMS routine
+\cfunction{fl_init()}.
 
 \subsection{Functions Defined in Module \sectcode{fl}}
 \nodename{FL Functions}
 
-Module \code{fl} defines the following functions.  For more information
-about what they do, see the description of the equivalent C function
-in the FORMS documentation:
+Module \module{fl} defines the following functions.  For more
+information about what they do, see the description of the equivalent
+\C{} function in the FORMS documentation:
 
 \setindexsubitem{(in module fl)}
 \begin{funcdesc}{make_form}{type\, width\, height}
@@ -50,12 +52,12 @@ Create a form with given type, width and height.  This returns a
 \begin{funcdesc}{do_forms}{}
 The standard FORMS main loop.  Returns a Python object representing
 the FORMS object needing interaction, or the special value
-\code{FL.EVENT}.
+\constant{FL.EVENT}.
 \end{funcdesc}
 
 \begin{funcdesc}{check_forms}{}
-Check for FORMS events.  Returns what \code{do_forms} above returns,
-or \code{None} if there is no event that immediately needs
+Check for FORMS events.  Returns what \function{do_forms()} above
+returns, or \code{None} if there is no event that immediately needs
 interaction.
 \end{funcdesc}
 
@@ -69,7 +71,7 @@ Set the graphics modes.
 
 \begin{funcdesc}{get_rgbmode}{}
 Return the current rgb mode.  This is the value of the C global
-variable \code{fl_rgbmode}.
+variable \cdata{fl_rgbmode}.
 \end{funcdesc}
 
 \begin{funcdesc}{show_message}{str1\, str2\, str3}
@@ -103,8 +105,8 @@ presses Cancel.
 \funcline{get_pattern}{}
 \funcline{get_filename}{}
 These functions return the directory, pattern and filename (the tail
-part only) selected by the user in the last \code{show_file_selector}
-call.
+part only) selected by the user in the last
+\function{show_file_selector()} call.
 \end{funcdesc}
 
 \begin{funcdesc}{qdevice}{dev}
@@ -119,31 +121,32 @@ call.
 \funcline{tie}{button\, valuator1\, valuator2}
 These functions are the FORMS interfaces to the corresponding GL
 functions.  Use these if you want to handle some GL events yourself
-when using \code{fl.do_events}.  When a GL event is detected that
-FORMS cannot handle, \code{fl.do_forms()} returns the special value
-\code{FL.EVENT} and you should call \code{fl.qread()} to read the
-event from the queue.  Don't use the equivalent GL functions!
+when using \function{fl.do_events()}.  When a GL event is detected that
+FORMS cannot handle, \function{fl.do_forms()} returns the special value
+\constant{FL.EVENT} and you should call \function{fl.qread()} to read
+the event from the queue.  Don't use the equivalent GL functions!
 \end{funcdesc}
 
 \begin{funcdesc}{color}{}
 \funcline{mapcolor}{}
 \funcline{getmcolor}{}
-See the description in the FORMS documentation of \code{fl_color},
-\code{fl_mapcolor} and \code{fl_getmcolor}.
+See the description in the FORMS documentation of
+\cfunction{fl_color()}, \cfunction{fl_mapcolor()} and
+\cfunction{fl_getmcolor()}.
 \end{funcdesc}
 
 \subsection{Form Objects}
 
-Form objects (returned by \code{fl.make_form()} above) have the
-following methods.  Each method corresponds to a C function whose name
-is prefixed with \samp{fl_}; and whose first argument is a form
+Form objects (returned by \function{fl.make_form()} above) have the
+following methods.  Each method corresponds to a \C{} function whose
+name is prefixed with \samp{fl_}; and whose first argument is a form
 pointer; please refer to the official FORMS documentation for
 descriptions.
 
-All the \samp{add_{\rm \ldots}} functions return a Python object representing
-the FORMS object.  Methods of FORMS objects are described below.  Most
-kinds of FORMS object also have some methods specific to that kind;
-these methods are listed here.
+All the \samp{add_{\rm \ldots}} functions return a Python object
+representing the FORMS object.  Methods of FORMS objects are described
+below.  Most kinds of FORMS object also have some methods specific to
+that kind; these methods are listed here.
 
 \begin{flushleft}
 \setindexsubitem{(form object method)}
@@ -214,7 +217,7 @@ No extra methods.
 \begin{funcdesc}{add_clock}{type\, x\, y\, w\, h\, name}
 Add a clock object to the form. \\
 Method:
-\code{get_clock}.
+\method{get_clock()}.
 \end{funcdesc}
 
 %---
@@ -222,22 +225,22 @@ Method:
 \begin{funcdesc}{add_button}{type\, x\, y\, w\, h\,  name}
 Add a button object to the form. \\
 Methods:
-\code{get_button},
-\code{set_button}.
+\method{get_button()},
+\method{set_button()}.
 \end{funcdesc}
 
 \begin{funcdesc}{add_lightbutton}{type\, x\, y\, w\, h\, name}
 Add a lightbutton object to the form. \\
 Methods:
-\code{get_button},
-\code{set_button}.
+\method{get_button()},
+\method{set_button()}.
 \end{funcdesc}
 
 \begin{funcdesc}{add_roundbutton}{type\, x\, y\, w\, h\, name}
 Add a roundbutton object to the form. \\
 Methods:
-\code{get_button},
-\code{set_button}.
+\method{get_button()},
+\method{set_button()}.
 \end{funcdesc}
 
 %---
@@ -245,60 +248,60 @@ Methods:
 \begin{funcdesc}{add_slider}{type\, x\, y\, w\, h\, name}
 Add a slider object to the form. \\
 Methods:
-\code{set_slider_value},
-\code{get_slider_value},
-\code{set_slider_bounds},
-\code{get_slider_bounds},
-\code{set_slider_return},
-\code{set_slider_size},
-\code{set_slider_precision},
-\code{set_slider_step}.
+\method{set_slider_value()},
+\method{get_slider_value()},
+\method{set_slider_bounds()},
+\method{get_slider_bounds()},
+\method{set_slider_return()},
+\method{set_slider_size()},
+\method{set_slider_precision()},
+\method{set_slider_step()}.
 \end{funcdesc}
 
 \begin{funcdesc}{add_valslider}{type\, x\, y\, w\, h\, name}
 Add a valslider object to the form. \\
 Methods:
-\code{set_slider_value},
-\code{get_slider_value},
-\code{set_slider_bounds},
-\code{get_slider_bounds},
-\code{set_slider_return},
-\code{set_slider_size},
-\code{set_slider_precision},
-\code{set_slider_step}.
+\method{set_slider_value()},
+\method{get_slider_value()},
+\method{set_slider_bounds()},
+\method{get_slider_bounds()},
+\method{set_slider_return()},
+\method{set_slider_size()},
+\method{set_slider_precision()},
+\method{set_slider_step()}.
 \end{funcdesc}
 
 \begin{funcdesc}{add_dial}{type\, x\, y\, w\, h\, name}
 Add a dial object to the form. \\
 Methods:
-\code{set_dial_value},
-\code{get_dial_value},
-\code{set_dial_bounds},
-\code{get_dial_bounds}.
+\method{set_dial_value()},
+\method{get_dial_value()},
+\method{set_dial_bounds()},
+\method{get_dial_bounds()}.
 \end{funcdesc}
 
 \begin{funcdesc}{add_positioner}{type\, x\, y\, w\, h\, name}
 Add a positioner object to the form. \\
 Methods:
-\code{set_positioner_xvalue},
-\code{set_positioner_yvalue},
-\code{set_positioner_xbounds},
-\code{set_positioner_ybounds},
-\code{get_positioner_xvalue},
-\code{get_positioner_yvalue},
-\code{get_positioner_xbounds},
-\code{get_positioner_ybounds}.
+\method{set_positioner_xvalue()},
+\method{set_positioner_yvalue()},
+\method{set_positioner_xbounds()},
+\method{set_positioner_ybounds()},
+\method{get_positioner_xvalue()},
+\method{get_positioner_yvalue()},
+\method{get_positioner_xbounds()},
+\method{get_positioner_ybounds()}.
 \end{funcdesc}
 
 \begin{funcdesc}{add_counter}{type\, x\, y\, w\, h\, name}
 Add a counter object to the form. \\
 Methods:
-\code{set_counter_value},
-\code{get_counter_value},
-\code{set_counter_bounds},
-\code{set_counter_step},
-\code{set_counter_precision},
-\code{set_counter_return}.
+\method{set_counter_value()},
+\method{get_counter_value()},
+\method{set_counter_bounds()},
+\method{set_counter_step()},
+\method{set_counter_precision()},
+\method{set_counter_return()}.
 \end{funcdesc}
 
 %---
@@ -306,10 +309,10 @@ Methods:
 \begin{funcdesc}{add_input}{type\, x\, y\, w\, h\, name}
 Add a input object to the form. \\
 Methods:
-\code{set_input},
-\code{get_input},
-\code{set_input_color},
-\code{set_input_return}.
+\method{set_input()},
+\method{get_input()},
+\method{set_input_color()},
+\method{set_input_return()}.
 \end{funcdesc}
 
 %---
@@ -317,46 +320,46 @@ Methods:
 \begin{funcdesc}{add_menu}{type\, x\, y\, w\, h\, name}
 Add a menu object to the form. \\
 Methods:
-\code{set_menu},
-\code{get_menu},
-\code{addto_menu}.
+\method{set_menu()},
+\method{get_menu()},
+\method{addto_menu()}.
 \end{funcdesc}
 
 \begin{funcdesc}{add_choice}{type\, x\, y\, w\, h\, name}
 Add a choice object to the form. \\
 Methods:
-\code{set_choice},
-\code{get_choice},
-\code{clear_choice},
-\code{addto_choice},
-\code{replace_choice},
-\code{delete_choice},
-\code{get_choice_text},
-\code{set_choice_fontsize},
-\code{set_choice_fontstyle}.
+\method{set_choice()},
+\method{get_choice()},
+\method{clear_choice()},
+\method{addto_choice()},
+\method{replace_choice()},
+\method{delete_choice()},
+\method{get_choice_text()},
+\method{set_choice_fontsize()},
+\method{set_choice_fontstyle()}.
 \end{funcdesc}
 
 \begin{funcdesc}{add_browser}{type\, x\, y\, w\, h\, name}
 Add a browser object to the form. \\
 Methods:
-\code{set_browser_topline},
-\code{clear_browser},
-\code{add_browser_line},
-\code{addto_browser},
-\code{insert_browser_line},
-\code{delete_browser_line},
-\code{replace_browser_line},
-\code{get_browser_line},
-\code{load_browser},
-\code{get_browser_maxline},
-\code{select_browser_line},
-\code{deselect_browser_line},
-\code{deselect_browser},
-\code{isselected_browser_line},
-\code{get_browser},
-\code{set_browser_fontsize},
-\code{set_browser_fontstyle},
-\code{set_browser_specialkey}.
+\method{set_browser_topline()},
+\method{clear_browser()},
+\method{add_browser_line()},
+\method{addto_browser()},
+\method{insert_browser_line()},
+\method{delete_browser_line()},
+\method{replace_browser_line()},
+\method{get_browser_line()},
+\method{load_browser()},
+\method{get_browser_maxline()},
+\method{select_browser_line()},
+\method{deselect_browser_line()},
+\method{deselect_browser()},
+\method{isselected_browser_line()},
+\method{get_browser()},
+\method{set_browser_fontsize()},
+\method{set_browser_fontstyle()},
+\method{set_browser_specialkey()}.
 \end{funcdesc}
 
 %---
@@ -364,15 +367,15 @@ Methods:
 \begin{funcdesc}{add_timer}{type\, x\, y\, w\, h\, name}
 Add a timer object to the form. \\
 Methods:
-\code{set_timer},
-\code{get_timer}.
+\method{set_timer()},
+\method{get_timer()}.
 \end{funcdesc}
 \end{flushleft}
 
 Form objects have the following data attributes; see the FORMS
 documentation:
 
-\begin{tableiii}{|l|c|l|}{code}{Name}{Type}{Meaning}
+\begin{tableiii}{|l|c|l|}{member}{Name}{Type}{Meaning}
   \lineiii{window}{int (read-only)}{GL window id}
   \lineiii{w}{float}{form width}
   \lineiii{h}{float}{form height}
@@ -394,9 +397,9 @@ FORMS objects also have the following methods:
 Set the object's callback function and argument.  When the object
 needs interaction, the callback function will be called with two
 arguments: the object, and the callback argument.  (FORMS objects
-without a callback function are returned by \code{fl.do_forms()} or
-\code{fl.check_forms()} when they need interaction.)  Call this method
-without arguments to remove the callback function.
+without a callback function are returned by \function{fl.do_forms()}
+or \function{fl.check_forms()} when they need interaction.)  Call this
+method without arguments to remove the callback function.
 \end{funcdesc}
 
 \begin{funcdesc}{delete_object}{}
@@ -431,7 +434,7 @@ without arguments to remove the callback function.
 
 FORMS objects have these data attributes; see the FORMS documentation:
 
-\begin{tableiii}{|l|c|l|}{code}{Name}{Type}{Meaning}
+\begin{tableiii}{|l|c|l|}{member}{Name}{Type}{Meaning}
   \lineiii{objclass}{int (read-only)}{object class}
   \lineiii{type}{int (read-only)}{object type}
   \lineiii{boxtype}{int}{box type}
@@ -458,13 +461,12 @@ FORMS objects have these data attributes; see the FORMS documentation:
 \end{tableiii}
 
 \section{Standard Module \sectcode{FL}}
-\nodename{FL (uppercase)}
-\label{module-FL}
+\label{module-FLuppercase}
 \stmodindex{FL}
 
 This module defines symbolic constants needed to use the built-in
-module \code{fl} (see above); they are equivalent to those defined in
-the C header file \file{<forms.h>} except that the name prefix
+module \module{fl} (see above); they are equivalent to those defined in
+the \C{} header file \code{<forms.h>} except that the name prefix
 \samp{FL_} is omitted.  Read the module source for a complete list of
 the defined names.  Suggested use:
 
@@ -472,14 +474,14 @@ the defined names.  Suggested use:
 import fl
 from FL import *
 \end{verbatim}
-%
+
 \section{Standard Module \sectcode{flp}}
 \label{module-flp}
 \stmodindex{flp}
 
 This module defines functions that can read form definitions created
-by the `form designer' (\code{fdesign}) program that comes with the
-FORMS library (see module \code{fl} above).
+by the `form designer' (\program{fdesign}) program that comes with the
+FORMS library (see module \module{fl} above).
 
 For now, see the file \file{flp.doc} in the Python library source
 directory for a description.
