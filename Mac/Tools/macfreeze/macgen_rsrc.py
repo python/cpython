@@ -6,9 +6,10 @@ import sys
 
 def generate(output, module_dict, debug=0, preload=1):
 	fsid = py_resource.create(output)
-
+	
 	for name, module in module_dict.items():
-		if module.gettype() != 'module':
+		mtype = module.gettype()
+		if mtype not in ['module', 'package']:
 			continue
 		location = module.__file__
 		
@@ -19,10 +20,11 @@ def generate(output, module_dict, debug=0, preload=1):
 			print '*** skipping', location
 			continue
 			
-		id, name = py_resource.frompyfile(location, name, preload=preload)
+		id, name = py_resource.frompyfile(location, name, preload=preload, 
+				ispackage=mtype=='package')
 		if debug > 0:
 			print 'PYC resource %5d\t%s\t%s'%(id, name, location)
-
+	
 	Res.CloseResFile(fsid)
 	
 def warnings(module_dict):

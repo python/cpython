@@ -128,10 +128,12 @@ def getfragname(path, dynamicfiles):
 
 
 def addpythonmodules(module_dict):
+	# XXX should really use macgen_rsrc.generate(), this does the same, but skips __main__
 	items = module_dict.items()
 	items.sort()
 	for name, module in items:
-		if module.gettype() != 'module' or name == "__main__":
+		mtype = module.gettype()
+		if mtype not in ['module', 'package'] or name == "__main__":
 			continue
 		location = module.__file__
 		
@@ -143,7 +145,8 @@ def addpythonmodules(module_dict):
 			continue
 		
 		print 'Adding module ³%s²' % name
-		id, name = py_resource.frompyfile(location, name, preload=0)
+		id, name = py_resource.frompyfile(location, name, preload=0, 
+				ispackage=mtype=='package')
 
 def Pstring(str):
 	if len(str) > 255:

@@ -332,14 +332,45 @@ char *filename;
 			co = NULL;
 		} else {
 			co = PyMarshal_ReadObjectFromString((*h)+8, size-8);
+			/*
+			** Normally, byte 4-7 are the time stamp, but that is not used
+			** for 'PYC ' resources. We abuse byte 4 as a flag to indicate
+			** that it is a package rather than an ordinary module. 
+			** See also py_resource.py. (jvr)
+			*/
+			if ((*h)[4] & 0xff) {
+				/* it's a package */
+				/* Set __path__ to the package name */
+				PyObject *d, *s;
+				int err;
+				
+				m = PyImport_AddModule(module);
+				if (m == NULL) {
+					co = NULL;
+					goto packageerror;
+				}
+				d = PyModule_GetDict(m);
+				s = PyString_InternFromString(module);
+				if (s == NULL) {
+					co = NULL;
+					goto packageerror;
+				}
+				err = PyDict_SetItemString(d, "__path__", s);
+				Py_DECREF(s);
+				if (err != 0) {
+					co = NULL;
+					goto packageerror;
+				}
+			}
 		}
 	}
+packageerror:
 	HUnlock(h);
 	if ( filerh != -1 )
 		CloseResFile(filerh);
 	UseResFile(oldrh);
 	if ( co ) {
-		m = PyImport_ExecCodeModule(module, co);
+		m = PyImport_ExecCodeModuleEx(module, co, "<pyc resource>");
 		Py_DECREF(co);
 	} else {
 		m = NULL;
