@@ -362,10 +362,10 @@ class HTMLParser(SGMLParser):
                 src = value
             if attrname == 'width':
                 try: width = int(value)
-                except: pass
+                except ValueError: pass
             if attrname == 'height':
                 try: height = int(value)
-                except: pass
+                except ValueError: pass
         self.handle_image(src, alt, ismap, align, width, height)
 
     # --- Really Old Unofficial Deprecated Stuff
