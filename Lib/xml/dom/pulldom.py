@@ -22,7 +22,7 @@ class PullDOM:
 
     def setDocumentLocator( self, locator ): pass
 
-    def startElement( self, tagName , attrs  ):
+    def startElement( self, name, tagName , attrs  ):
         if not hasattr( self, "curNode" ):
             # FIXME: hack!
             self.startDocument( )
@@ -42,7 +42,7 @@ class PullDOM:
         self.lastEvent=self.lastEvent[1]
         #self.events.append( (START_ELEMENT, node) )
 
-    def endElement( self, name ):
+    def endElement( self, name, tagName ):
         node = self.curNode
         self.lastEvent[1]=[(END_ELEMENT, node), None ]
         self.lastEvent=self.lastEvent[1]

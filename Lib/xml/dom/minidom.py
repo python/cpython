@@ -41,7 +41,7 @@ class Node:
             Node.allnodes[index]=repr( self.__dict__ )
             if Node.debug==None:
                 Node.debug=StringIO()
-		#open( "debug4.out", "w" )
+                #open( "debug4.out", "w" )
             Node.debug.write( "create %s\n"%index )
 
     def __getattr__( self, key ):
@@ -230,7 +230,7 @@ dictionary"""
         else:
             assert isinstance( value, Attr ) or type( value )==types.StringType
             node=value
-	old=self._attrs.get( attname, None)
+        old=self._attrs.get( attname, None)
         if old:
             old.unlink()
         self._attrs[node.name]=node
