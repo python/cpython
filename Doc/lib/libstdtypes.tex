@@ -697,7 +697,7 @@ The original string is returned if
 \begin{methoddesc}[string]{rsplit}{\optional{sep \optional{,maxsplit}}}
 Return a list of the words in the string, using \var{sep} as the
 delimiter string.  If \var{maxsplit} is given, at most \var{maxsplit}
-splits are done, the \em{rightmost} ones.  If \var{sep} is not specified
+splits are done, the \emph{rightmost} ones.  If \var{sep} is not specified
 or \code{None}, any whitespace string is a separator.
 \versionadded{2.4}
 \end{methoddesc}
@@ -803,7 +803,7 @@ converted using the \code{\%s} conversion are Unicode objects, the
 result will also be a Unicode object.
 
 If \var{format} requires a single argument, \var{values} may be a
-single non-tuple object. \footnote{To format only a tuple you
+single non-tuple object.\footnote{To format only a tuple you
 should therefore provide a singleton tuple whose only element
 is the tuple to be formatted.}  Otherwise, \var{values} must be a tuple with
 exactly the number of items specified by the format string, or a
@@ -928,17 +928,17 @@ are replaced by \code{\%g} conversions.\footnote{
 }  All other errors raise exceptions.
 
 Additional string operations are defined in standard modules
-\refmodule{string}\refstmodindex{string} and
+\refmodule{string}\refstmodindex{string}\ and
 \refmodule{re}.\refstmodindex{re}
 
 
 \subsubsection{XRange Type \label{typesseq-xrange}}
 
-The xrange\obindex{xrange} type is an immutable sequence which is
-commonly used for looping.  The advantage of the xrange type is that an
-xrange object will always take the same amount of memory, no matter the
-size of the range it represents.  There are no consistent performance
-advantages.
+The \class{xrange}\obindex{xrange} type is an immutable sequence which
+is commonly used for looping.  The advantage of the \class{xrange}
+type is that an \class{xrange} object will always take the same amount
+of memory, no matter the size of the range it represents.  There are
+no consistent performance advantages.
 
 XRange objects have very little behavior: they only support indexing,
 iteration, and the \function{len()} function.
@@ -985,8 +985,8 @@ The following operations are defined on mutable sequence types (where
 	{same as \code{del \var{s}[\var{s}.index(\var{x})]}}{(4)}
   \lineiii{\var{s}.reverse()}
 	{reverses the items of \var{s} in place}{(7)}
-  \lineiii{\var{s}.sort(\optional{\var{cmp}=None\optional{, \var{key}=None
-                        \optional{, \var{reverse}=False}}})}
+  \lineiii{\var{s}.sort(\optional{\var{cmp}\optional{,
+                        \var{key}\optional{, \var{reverse}}}})}
 	{sort the items of \var{s} in place}{(7), (8), (9), (10)}
 \end{tableiii}
 \indexiv{operations on}{mutable}{sequence}{types}
@@ -1060,21 +1060,21 @@ Notes:
   \var{key} and \var{reverse} touch each element only once.
 
   \versionchanged[Support for \code{None} as an equivalent to omitting
-  \var{cmpfunc} was added]{2.3}
+  \var{cmp} was added]{2.3}
 
   \versionchanged[Support for \var{key} and \var{reverse} was added]{2.4}
 
-\item[(9)]  Starting with Python 2.3, the \method{sort()} method is
+\item[(9)] Starting with Python 2.3, the \method{sort()} method is
   guaranteed to be stable.  A sort is stable if it guarantees not to
   change the relative order of elements that compare equal --- this is
   helpful for sorting in multiple passes (for example, sort by
   department, then by salary grade).
 
 \item[(10)] While a list is being sorted, the effect of attempting to
-  mutate, or even inspect, the list is undefined.  The C implementation
-  of Python 2.3 makes the list appear empty for the duration, and raises
-  \exception{ValueError} if it can detect that the list has been
-  mutated during a sort.
+  mutate, or even inspect, the list is undefined.  The C
+  implementation of Python 2.3 and newer makes the list appear empty
+  for the duration, and raises \exception{ValueError} if it can detect
+  that the list has been mutated during a sort.
 \end{description}
 
 \subsection{Set Types \label{types-set}}
@@ -1347,8 +1347,7 @@ package and can be created with the built-in constructor
 \function{file()}\bifuncindex{file} described in section
 \ref{built-in-funcs}, ``Built-in Functions.''\footnote{\function{file()}
 is new in Python 2.2.  The older built-in \function{open()} is an
-alias for \function{file()}.}
-File objects are also returned
+alias for \function{file()}.}  File objects are also returned
 by some other built-in functions and methods, such as
 \function{os.popen()} and \function{os.fdopen()} and the
 \method{makefile()} method of socket objects.
@@ -1428,7 +1427,8 @@ flush the read-ahead buffer.
 
 \begin{methoddesc}[file]{readline}{\optional{size}}
   Read one entire line from the file.  A trailing newline character is
-  kept in the string\footnote{
+  kept in the string (but may be absent when a file ends with an
+  incomplete line).\footnote{
 	The advantage of leaving the newline on is that
 	returning an empty string is then an unambiguous \EOF{}
 	indication.  It is also possible (in cases where it might
@@ -1436,8 +1436,7 @@ flush the read-ahead buffer.
 	want to make an exact copy of a file while scanning its lines)
 	to tell whether the last line of a file ended in a newline
 	or not (yes this happens!).
-  } (but may be absent when a file ends with an
-  incomplete line).  If the \var{size} argument is present and
+  }  If the \var{size} argument is present and
   non-negative, it is a maximum byte count (including the trailing
   newline) and an incomplete line may be returned.
   An empty string is returned \emph{only} when \EOF{} is encountered
@@ -1459,7 +1458,7 @@ flush the read-ahead buffer.
 \begin{methoddesc}[file]{xreadlines}{}
   This method returns the same thing as \code{iter(f)}.
   \versionadded{2.1}
-  \deprecated{2.3}{Use \code{for line in file} instead.}
+  \deprecated{2.3}{Use \samp{for \var{line} in \var{file}} instead.}
 \end{methoddesc}
 
 \begin{methoddesc}[file]{seek}{offset\optional{, whence}}
@@ -1606,7 +1605,8 @@ Modifying this dictionary will actually change the module's symbol
 table, but direct assignment to the \member{__dict__} attribute is not
 possible (you can write \code{\var{m}.__dict__['a'] = 1}, which
 defines \code{\var{m}.a} to be \code{1}, but you can't write
-\code{\var{m}.__dict__ = \{\}}).
+\code{\var{m}.__dict__ = \{\}}).  Modifying \member{__dict__} directly
+is not recommended.
 
 Modules built into the interpreter are written like this:
 \code{<module 'sys' (built-in)>}.  If loaded from a file, they are
@@ -1724,7 +1724,7 @@ information.
 
 Type objects represent the various object types.  An object's type is
 accessed by the built-in function \function{type()}.  There are no special
-operations on types.  The standard module \module{types} defines names
+operations on types.  The standard module \refmodule{types} defines names
 for all standard built-in types.
 \bifuncindex{type}
 \refstmodindex{types}
