@@ -272,6 +272,7 @@ mainprogram = os.path.join(resdir, "%(mainprogram)s")
 
 sys.argv.insert(1, mainprogram)
 os.environ["PYTHONPATH"] = resdir
+os.environ["PYTHONHOME"] = resdir
 os.environ["PYTHONEXECUTABLE"] = executable
 os.execve(executable, sys.argv, os.environ)
 """
