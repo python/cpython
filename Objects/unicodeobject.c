@@ -3256,6 +3256,7 @@ PyObject *PyUnicode_TranslateCharmap(const Py_UNICODE *p,
 	    Py_XDECREF(x);
 	    goto onError;
 	}
+	Py_XDECREF(x);
 	if (x!=Py_None) /* it worked => adjust input pointer */
 	    ++p;
 	else { /* untranslatable character */
@@ -3268,7 +3269,6 @@ PyObject *PyUnicode_TranslateCharmap(const Py_UNICODE *p,
 	    const Py_UNICODE *collend = p+1;
 	    const Py_UNICODE *coll;
 
-	    Py_XDECREF(x);
 	    /* find all untranslatable characters */
 	    while (collend < endp) {
 	    	if (charmaptranslate_lookup(*collend, mapping, &x))
@@ -5398,8 +5398,10 @@ unicode_replace(PyUnicodeObject *self, PyObject *args)
     if (str1 == NULL)
 	return NULL;
     str2 = (PyUnicodeObject *)PyUnicode_FromObject((PyObject *)str2);
-    if (str2 == NULL)
+    if (str2 == NULL) {
+	Py_DECREF(str1);
 	return NULL;
+    }
 
     result = replace(self, str1, str2, maxcount);
 
