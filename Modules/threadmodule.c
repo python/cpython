@@ -421,7 +421,6 @@ static char lock_doc[] =
 "A lock object is a synchronization primitive.  To create a lock,\n\
 call the allocate_lock() function.  Methods are:\n\
 \n\
-\n\
 acquire() -- lock the lock, possibly blocking until it can be obtained\n\
 release() -- unlock of the lock\n\
 locked() -- test whether the lock is currently locked\n\
