@@ -77,17 +77,23 @@ within the constrained width, a best effort will be made.
 
 The \class{PrettyPrinter} class supports several derivative functions:
 
-\begin{funcdesc}{pformat}{object}
-Return the formatted representation of \var{object} as a string.  The
-default parameters for formatting are used.
+\begin{funcdesc}{pformat}{object\optional{, indent\optional{,
+width\optional{, depth}}}}
+Return the formatted representation of \var{object} as a string.  \var{indent},
+\var{width} and \var{depth} will be passed to the \class{PrettyPrinter}
+constructor as formatting parameters.
+\versionchanged[The parameters \var{indent}, \var{width} and \var{depth}
+were added]{2.4}
 \end{funcdesc}
 
-\begin{funcdesc}{pprint}{object\optional{, stream}}
+\begin{funcdesc}{pprint}{object\optional{, stream\optional{,
+indent\optional{, width\optional{, depth}}}}}
 Prints the formatted representation of \var{object} on \var{stream},
 followed by a newline.  If \var{stream} is omitted, \code{sys.stdout}
 is used.  This may be used in the interactive interpreter instead of a
-\keyword{print} statement for inspecting values.  The default
-parameters for formatting are used.
+\keyword{print} statement for inspecting values.    \var{indent},
+\var{width} and \var{depth} will be passed to the \class{PrettyPrinter}
+constructor as formatting parameters.
 
 \begin{verbatim}
 >>> stuff = sys.path[:]
@@ -101,6 +107,8 @@ parameters for formatting are used.
  '/usr/local/lib/python1.5/sharedmodules',
  '/usr/local/lib/python1.5/tkinter']
 \end{verbatim}
+\versionchanged[The parameters \var{indent}, \var{width} and \var{depth}
+were added]{2.4}
 \end{funcdesc}
 
 \begin{funcdesc}{isreadable}{object}
