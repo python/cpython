@@ -32,7 +32,6 @@ def warn(message, category=None, stacklevel=1):
             filename = sys.argv[0]
         if not filename:
             filename = module
-    # Quick test for common case
     registry = globals.setdefault("__warningregistry__", {})
     warn_explicit(message, category, filename, lineno, module, registry)
 
@@ -45,6 +44,7 @@ def warn_explicit(message, category, filename, lineno,
     if registry is None:
         registry = {}
     key = (message, category, lineno)
+    # Quick test for common case
     if registry.get(key):
         return
     # Search the filters
