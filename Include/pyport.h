@@ -27,6 +27,10 @@ RETSIGTYPE
 Meaning:  Expands to void or int, depending on what the platform wants
           signal handlers to return.  Note that only void is ANSI!
 Used in:  Py_RETURN_FROM_SIGNAL_HANDLER
+
+Py_DEBUG
+Meaning:  Extra checks compiled in for debug mode.
+Used in:  Py_SAFE_DOWNCAST
 **************************************************************************/
 
 
@@ -73,6 +77,19 @@ extern "C" {
 #define void_PySIGRETURN(VALUE)
 #define Py_RETURN_FROM_SIGNAL_HANDLER(VALUE) \
         Py_FORCE_EXPANSION(RETSIGTYPE) ## _PySIGRETURN(VALUE)
+
+/* Py_SAFE_DOWNCAST(VALUE, WIDE, NARROW)
+ * Cast VALUE to type NARROW from type WIDE.  In Py_DEBUG mode, this
+ * assert-fails if any information is lost.
+ * Caution:
+ *    VALUE may be evaluated more than once.
+ */
+#ifdef Py_DEBUG
+#define Py_SAFE_DOWNCAST(VALUE, WIDE, NARROW) \
+	(assert((WIDE)(NARROW)(VALUE) == (VALUE)), (NARROW)(VALUE))
+#else
+#define Py_SAFE_DOWNCAST(VALUE, WIDE, NARROW) (NARROW)(VALUE)
+#endif
 
 #ifdef __cplusplus
 }
