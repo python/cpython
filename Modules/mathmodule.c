@@ -12,22 +12,6 @@ extern double modf (double, double *);
 #endif /* __STDC__ */
 #endif /* _MSC_VER */
 
-#ifdef SCO_ATAN2_BUG
-/*
- * UnixWare 7+ is known to have a bug in atan2 that will return PI instead
- * of ZERO (0) if the first argument is ZERO(0).
- */
-static double atan2_sco(double x, double y)
-{
- 	if (x == 0.0)
-		return (double)0.0;
-	return atan2(x, y);
-}
-#define ATAN2	atan2_sco
-#else
-#define ATAN2	atan2
-#endif
-
 /* Call is_error when errno != 0, and where x is the result libm
  * returned.  is_error will usually set up an exception and return
  * true (1), but may return false (0) without setting up an exception.
@@ -115,7 +99,7 @@ FUNC1(asin, asin,
       "asin(x)\n\nReturn the arc sine (measured in radians) of x.")
 FUNC1(atan, atan,
       "atan(x)\n\nReturn the arc tangent (measured in radians) of x.")
-FUNC2(atan2, ATAN2,
+FUNC2(atan2, atan2,
       "atan2(y, x)\n\nReturn the arc tangent (measured in radians) of y/x.\n"
       "Unlike atan(y/x), the signs of both x and y are considered.")
 FUNC1(ceil, ceil,
