@@ -215,9 +215,9 @@ typedef int pid_t;
 #ifndef USE_DL_EXPORT
 /* So nobody needs to specify the .lib in their Makefile any more */
 #ifdef _DEBUG
-#pragma comment(lib,"python15_d.lib")
+#pragma comment(lib,"python16_d.lib")
 #else
-#pragma comment(lib,"python15.lib")
+#pragma comment(lib,"python16.lib")
 #endif
 #endif /* USE_DL_EXPORT */
 
