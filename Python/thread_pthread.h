@@ -178,14 +178,14 @@ int PyThread_start_new_thread _P2(func, void (*func) _P((void *)), arg, void *ar
 #endif
 				 );
 
-	if (success >= 0) {
+	if (success == 0) {
 #if defined(PY_PTHREAD_D4) || defined(PY_PTHREAD_D6) || defined(PY_PTHREAD_D7)
 		pthread_detach(&th);
 #elif defined(PY_PTHREAD_STD)
 		pthread_detach(th);
 #endif
 	}
-	return success < 0 ? 0 : 1;
+	return success != 0 ? 0 : 1;
 }
 
 long PyThread_get_thread_ident _P0()
