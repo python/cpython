@@ -102,6 +102,13 @@ class Node:
             newChild.parentNode = self
 
     def appendChild(self, node):
+        if self.childNodes:
+            last = self.lastChild
+            node.previousSibling = last
+            last.nextSibling = node
+        else:
+            node.previousSibling = None
+        node.nextSibling = None
         self.childNodes.append(node)
         return node
 
