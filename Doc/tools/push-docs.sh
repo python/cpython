@@ -7,9 +7,6 @@ TARGET=python.sourceforge.net:/home/users/fdrake/tmp
 
 ADDRESSES='python-dev@python.org doc-sig@python.org python-list@python.org'
 
-
-set -x
-
 EXPLANATION=''
 
 if [ "$1" = '-m' ] ; then
