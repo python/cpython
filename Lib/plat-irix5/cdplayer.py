@@ -21,6 +21,13 @@ class Cdplayer():
 		import string
 		self.artist = ''
 		self.title = ''
+		if type(tracklist) == type(''):
+			t = []
+			for i in range(2, len(tracklist), 4):
+				t.append((None, \
+					  (string.atoi(tracklist[i:i+2]), \
+					   string.atoi(tracklist[i+2:i+4]))))
+			tracklist = t
 		self.track = [None] + [''] * len(tracklist)
 		self.id = 'd' + string.zfill(len(tracklist), 2)
 		for track in tracklist:
