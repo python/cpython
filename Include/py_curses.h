@@ -3,6 +3,15 @@
 #define Py_CURSES_H
 
 #ifdef HAVE_NCURSES_H
+#ifdef __APPLE__
+/*
+** On Mac OS X 10.2 [n]curses.h and stdlib.h use different guards
+** against multiple definition of wchar_t.
+*/
+#ifdef	_BSD_WCHAR_T_DEFINED_
+#define _WCHAR_T
+#endif
+#endif
 #include <ncurses.h>
 #else
 #include <curses.h>
