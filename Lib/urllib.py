@@ -281,10 +281,10 @@ class URLopener:
 
 	# Use local file or FTP depending on form of URL
 	def open_file(self, url):
-		if url[:2] == '//':
-			return self.open_ftp(url)
-		else:
-			return self.open_local_file(url)
+	    if url[:2] == '//' and url[2:3] != '/':
+		return self.open_ftp(url)
+	    else:
+		return self.open_local_file(url)
 
 	# Use local file
 	def open_local_file(self, url):
