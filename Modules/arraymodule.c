@@ -13,8 +13,6 @@
 #endif /* DONT_HAVE_SYS_TYPES_H */
 #endif /* !STDC_HEADERS */
 
-#define DELAYED(X)	0
-
 struct arrayobject; /* Forward */
 
 /* All possible arraydescr values are defined in the vector "descriptors"
@@ -1842,7 +1840,7 @@ static PyTypeObject Arraytype = {
 	0, 					/* tp_hash */
 	0,					/* tp_call */
 	0,					/* tp_str */
-	DELAYED(PyObject_GenericGetAttr),	/* tp_getattro */
+	PyObject_GenericGetAttr,		/* tp_getattro */
 	0,					/* tp_setattro */
 	&array_as_buffer,			/* tp_as_buffer*/
 	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,  /* tp_flags */
@@ -1862,9 +1860,9 @@ static PyTypeObject Arraytype = {
 	0,					/* tp_descr_set */
 	0,					/* tp_dictoffset */
 	0,					/* tp_init */
-	DELAYED(PyType_GenericAlloc),		/* tp_alloc */
+	PyType_GenericAlloc,			/* tp_alloc */
 	array_new,				/* tp_new */
-	DELAYED(PyObject_Del),			/* tp_free */
+	PyObject_Del,				/* tp_free */
 };
 
 /* No functions in array module. */
@@ -1879,9 +1877,6 @@ initarray(void)
 	PyObject *m;
 
 	Arraytype.ob_type = &PyType_Type;
-	Arraytype.tp_getattro = PyObject_GenericGetAttr;
-	Arraytype.tp_alloc = PyType_GenericAlloc;
-	Arraytype.tp_free = PyObject_Del;
 	m = Py_InitModule3("array", a_methods, module_doc);
 
         Py_INCREF((PyObject *)&Arraytype);

@@ -2115,7 +2115,7 @@ static PyTypeObject sock_type = {
 	0,					/* tp_hash */
 	0,					/* tp_call */
 	0,					/* tp_str */
-	0,	/* set below */			/* tp_getattro */
+	PyObject_GenericGetAttr,		/* tp_getattro */
 	0,					/* tp_setattro */
 	0,					/* tp_as_buffer */
 	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
@@ -2135,9 +2135,9 @@ static PyTypeObject sock_type = {
 	0,					/* tp_descr_set */
 	0,					/* tp_dictoffset */
 	sock_initobj,				/* tp_init */
-	0,	/* set below */			/* tp_alloc */
+	PyType_GenericAlloc,			/* tp_alloc */
 	sock_new,				/* tp_new */
-	0,	/* set below */			/* tp_free */
+	PyObject_Del,				/* tp_free */
 };
 
 
@@ -3147,9 +3147,6 @@ init_socket(void)
 		return;
 
 	sock_type.ob_type = &PyType_Type;
-	sock_type.tp_getattro = PyObject_GenericGetAttr;
-	sock_type.tp_alloc = PyType_GenericAlloc;
-	sock_type.tp_free = PyObject_Del;
 	m = Py_InitModule3(PySocket_MODULE_NAME,
 			   socket_methods,
 			   socket_doc);

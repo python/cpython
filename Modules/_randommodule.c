@@ -486,7 +486,7 @@ static PyTypeObject Random_Type = {
 	0,				/*tp_hash*/
 	0,				/*tp_call*/
 	0,				/*tp_str*/
-	0,				/*tp_getattro*/
+	PyObject_GenericGetAttr,	/*tp_getattro*/
 	0,				/*tp_setattro*/
 	0,				/*tp_as_buffer*/
 	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,	/*tp_flags*/
@@ -506,9 +506,9 @@ static PyTypeObject Random_Type = {
 	0,				/*tp_descr_set*/
 	0,				/*tp_dictoffset*/
 	0,				/*tp_init*/
-	0,				/*tp_alloc*/
+	PyType_GenericAlloc,		/*tp_alloc*/
 	random_new,			/*tp_new*/
-	0,				/*tp_free*/
+	_PyObject_Del,			/*tp_free*/
 	0,				/*tp_is_gc*/
 };
 
@@ -520,9 +520,6 @@ init_random(void)
 {
 	PyObject *m;
 
-	Random_Type.tp_getattro = PyObject_GenericGetAttr;
-	Random_Type.tp_alloc = PyType_GenericAlloc;
-	Random_Type.tp_free = _PyObject_Del;
 	if (PyType_Ready(&Random_Type) < 0)
 		return;
 	m = Py_InitModule3("_random", NULL, module_doc);
