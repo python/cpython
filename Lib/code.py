@@ -1,7 +1,8 @@
 """Utilities needed to emulate Python's interactive interpreter.
 
-Inspired by similar code by Jeff Epler and Fredrik Lundh.
 """
+
+# Inspired by similar code by Jeff Epler and Fredrik Lundh.
 
 
 import sys

@@ -3,11 +3,6 @@
 Based on RFC 959: File Transfer Protocol
 (FTP), by J. Postel and J. Reynolds
 
-Changes and improvements suggested by Steve Majewski.
-Modified by Jack to work on the mac.
-Modified by Siebren to support docstrings and PASV.
-
-
 Example:
 
 >>> from ftplib import FTP
@@ -34,6 +29,11 @@ A nice test that reveals some of the network dialogue would be:
 python ftplib.py -d localhost -l -p -l
 """
 
+# 
+# Changes and improvements suggested by Steve Majewski.
+# Modified by Jack to work on the mac.
+# Modified by Siebren to support docstrings and PASV.
+#
 
 import os
 import sys

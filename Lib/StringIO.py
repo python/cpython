@@ -19,6 +19,8 @@ f.getvalue()        # return whole file's contents as a string
 
 Notes:
 - Using a real file is often faster (but less convenient).
+- There's also a much faster implementation in C, called cStringIO, but
+  it's not subclassable.
 - fileno() is left unimplemented so that code which uses it triggers
   an exception early.
 - Seeking far beyond EOF and then writing will insert real null

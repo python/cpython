@@ -399,22 +399,21 @@ or written by every user on the system.
 - Don't try to give a CGI script a set-uid mode.  This doesn't work on
 most systems, and is a security liability as well.
 
-
-History
--------
-
-Michael McLay started this module.  Steve Majewski changed the
-interface to SvFormContentDict and FormContentDict.  The multipart
-parsing was inspired by code submitted by Andreas Paepcke.  Guido van
-Rossum rewrote, reformatted and documented the module and is currently
-responsible for its maintenance.
-
-
-XXX The module is getting pretty heavy with all those docstrings.
-Perhaps there should be a slimmed version that doesn't contain all those 
-backwards compatible and debugging classes and functions?
-
 """
+
+# XXX The module is getting pretty heavy with all those docstrings.
+# Perhaps there should be a slimmed version that doesn't contain all those 
+# backwards compatible and debugging classes and functions?
+
+# History
+# -------
+# 
+# Michael McLay started this module.  Steve Majewski changed the
+# interface to SvFormContentDict and FormContentDict.  The multipart
+# parsing was inspired by code submitted by Andreas Paepcke.  Guido van
+# Rossum rewrote, reformatted and documented the module and is currently
+# responsible for its maintenance.
+# 
 
 __version__ = "2.2"
 

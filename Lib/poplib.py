@@ -1,11 +1,11 @@
 """A POP3 client class.
 
 Based on the J. Myers POP3 draft, Jan. 96
-
-Author: David Ascher <david_ascher@brown.edu>
-        [heavily stealing from nntplib.py]
-Updated: Piers Lauder <piers@cs.su.oz.au> [Jul '97]
 """
+
+# Author: David Ascher <david_ascher@brown.edu>
+#         [heavily stealing from nntplib.py]
+# Updated: Piers Lauder <piers@cs.su.oz.au> [Jul '97]
 
 # Example (see the test function at the end of this file)
 

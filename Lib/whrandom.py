@@ -25,10 +25,6 @@ There is also an interface to create multiple independent
 random generators, and to choose from other ranges.
 
 
-Translated by Guido van Rossum from C source provided by
-Adrian Baddeley.
-
-
 
 Multi-threading note: the random number generator used here is not
 thread-safe; it is possible that nearly simultaneous calls in
@@ -36,6 +32,10 @@ different theads return the same random value.  To avoid this, you
 have to use a lock around all calls.  (I didn't want to slow this
 down in the serial case by using a lock here.)
 """
+
+# Translated by Guido van Rossum from C source provided by
+# Adrian Baddeley.
+
 
 class whrandom:
 	def __init__(self, x = 0, y = 0, z = 0):
