@@ -1335,12 +1335,16 @@ AC_MSG_RESULT($with_cycle_gc)
 # Check for Python-specific malloc support
 AC_MSG_CHECKING(for --with-pymalloc)
 AC_ARG_WITH(pymalloc,
-[  --with(out)-pymalloc            disable/enable specialized mallocs], [
-if test "$withval" != no
-then AC_DEFINE(WITH_PYMALLOC) AC_MSG_RESULT(yes)
-else AC_MSG_RESULT(no)
-fi],
-[AC_MSG_RESULT(no)])
+[  --with(out)-pymalloc            disable/enable specialized mallocs])
+
+if test -z "$with_pymalloc"
+then with_pymalloc="yes"
+fi
+if test "$with_pymalloc" != "no"
+then
+    AC_DEFINE(WITH_PYMALLOC)
+fi
+AC_MSG_RESULT($with_pymalloc)
 
 # Check for --with-wctype-functions
 AC_MSG_CHECKING(for --with-wctype-functions)
