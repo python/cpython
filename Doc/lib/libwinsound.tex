@@ -17,15 +17,14 @@ two functions and several constants.
 \begin{funcdesc}{Beep}{frequency, duration}
   Beep the PC's speaker.
   The \var{frequency} parameter specifies frequency, in hertz, of the
-  sound, and must be in the range 37 through 32,767 (\code{0x25}
-  through \code{0x7fff}).  The \var{duration} parameter specifies the
-  number of milliseconds the sound should last.  If the system is not
+  sound, and must be in the range 37 through 32,767.
+  The \var{duration} parameter specifies the number of milliseconds the
+  sound should last.  If the system is not
   able to beep the speaker, \exception{RuntimeError} is raised.
-  \strong{Note:}  Under Windows 95 and 98, the arguments are ignored;
-  if the system has a sound card, the system default sound is played
-  (typically \file{ding.wav}, or whatever is registered as the default
-  sound via Control Panel -> Sounds); else (no sound card) the
-  standard system beep.
+  \strong{Note:}  Under Windows 95 and 98, the Windows \cfunction{Beep()}
+  function exists but is useless (it ignores its arguments).  In rhat
+  case Python simulates it via direct port manipulation (added in version
+  2.1).  It's unknown whether that will work on all systems.
   \versionadded{1.6}
 \end{funcdesc}
 

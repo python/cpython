@@ -9,6 +9,13 @@ Windows changes
 
 - Build:  Subproject _test (effectively) renamed to _testcapi.
 
+- winsound module:  Under Win9x, winsound.Beep() now attempts to simulate
+  what it's supposed to do (and does do under NT and 2000) via direct
+  port manipulation.  It's unknown whether this will work on all systems,
+  but it does work on my Win98SE system now and was known to be useless on
+  all Win9x systems before.
+
+
 What's New in Python 2.1 alpha 2?
 =================================
 
