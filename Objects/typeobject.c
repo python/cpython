@@ -3044,8 +3044,25 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
 		COPYSLOT(tp_dictoffset);
 		COPYSLOT(tp_init);
 		COPYSLOT(tp_alloc);
-		COPYSLOT(tp_free);
 		COPYSLOT(tp_is_gc);
+		if ((type->tp_flags & Py_TPFLAGS_HAVE_GC) ==
+		    (base->tp_flags & Py_TPFLAGS_HAVE_GC)) {
+			/* They agree about gc. */
+			COPYSLOT(tp_free);
+		}
+		else if ((type->tp_flags & Py_TPFLAGS_HAVE_GC) &&
+			 type->tp_free == NULL &&
+			 base->tp_free == _PyObject_Del) {
+			/* A bit of magic to plug in the correct default
+			 * tp_free function when a derived class adds gc,
+			 * didn't define tp_free, and the base uses the
+			 * default non-gc tp_free.
+			 */
+			type->tp_free = PyObject_GC_Del;
+		}
+		/* else they didn't agree about gc, and there isn't something
+		 * obvious to be done -- the type is on its own.
+		 */
 	}
 }
 
@@ -3147,6 +3164,19 @@ PyType_Ready(PyTypeObject *type)
 		PyObject *b = PyTuple_GET_ITEM(bases, i);
 		if (PyType_Check(b))
 			inherit_slots(type, (PyTypeObject *)b);
+	}
+
+	/* Sanity check for tp_free. */
+	if (PyType_IS_GC(type) && (type->tp_flags & Py_TPFLAGS_BASETYPE) &&
+	    (type->tp_free == NULL || type->tp_free == PyObject_Del)) {
+	    	/* This base class needs to call tp_free, but doesn't have
+	    	 * one, or its tp_free is for non-gc'ed objects.
+	    	 */
+		PyErr_Format(PyExc_TypeError, "type '%.100s' participates in "
+			     "gc and is a base type but has inappropriate "
+			     "tp_free slot",
+			     type->tp_name);
+		goto error;
 	}
 
 	/* if the type dictionary doesn't contain a __doc__, set it from
