@@ -12,7 +12,13 @@ def get_file():
     return __file__
 """
 
+reload_src = test_src+"""\
+reloaded = True
+"""
+
 test_co = compile(test_src, "<???>", "exec")
+reload_co = compile(reload_src, "<???>", "exec")
+
 test_path = "!!!_test_!!!"
 
 
@@ -32,6 +38,7 @@ class TestImporter:
         "hooktestpackage": (True, test_co),
         "hooktestpackage.sub": (True, test_co),
         "hooktestpackage.sub.subber": (False, test_co),
+        "reloadmodule": (False, test_co),
     }
 
     def __init__(self, path=test_path):
@@ -52,8 +59,7 @@ class TestImporter:
 
     def load_module(self, fullname):
         ispkg, code = self.modules[fullname]
-        mod = imp.new_module(fullname)
-        sys.modules[fullname] = mod
+        mod = sys.modules.setdefault(fullname,imp.new_module(fullname))
         mod.__file__ = "<%s>" % self.__class__.__name__
         mod.__loader__ = self
         if ispkg:
@@ -163,6 +169,14 @@ class ImportHooksTestCase(ImportHooksBaseTestCase):
             self.assertEqual(hooktestpackage.sub.__loader__, importer)
             self.assertEqual(hooktestpackage.sub.subber.__loader__, importer)
 
+        TestImporter.modules['reloadmodule'] = (False, test_co)
+        import reloadmodule
+        self.failIf(hasattr(reloadmodule,'reloaded'))
+
+        TestImporter.modules['reloadmodule'] = (False, reload_co)
+        reload(reloadmodule)
+        self.failUnless(hasattr(reloadmodule,'reloaded'))
+       
     def testMetaPath(self):
         i = MetaImporter()
         sys.meta_path.append(i)
