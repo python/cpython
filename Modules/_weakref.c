@@ -34,7 +34,7 @@ new_weakref(void)
         result = free_list;
         free_list = result->wr_next;
         result->ob_type = &PyWeakReference_Type;
-        _Py_NewReference(result);
+        _Py_NewReference((PyObject *)result);
     }
     else {
         result = PyObject_NEW(PyWeakReference, &PyWeakReference_Type);
