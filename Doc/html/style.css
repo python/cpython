@@ -140,3 +140,11 @@ div.note .label         { margin-right: 0.5em;
  * the top of modules.
  */
 .availability .platform { font-weight: bold; }
+
+
+/*
+ * Some specialization for printed output.
+ */
+@media print {
+  #bottom-navigation-panel { display: none; }
+  }
