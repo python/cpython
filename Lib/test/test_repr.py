@@ -51,6 +51,20 @@ class ReprTests(unittest.TestCase):
         eq(r([1, 2, 3, 4, 5, 6]), "[1, 2, 3, 4, 5, 6]")
         eq(r([1, 2, 3, 4, 5, 6, 7]), "[1, 2, 3, 4, 5, 6, ...]")
 
+        # Sets give up after 6 as well
+        eq(r(set([])), "set([])")
+        eq(r(set([1])), "set([1])")
+        eq(r(set([1, 2, 3])), "set([1, 2, 3])")
+        eq(r(set([1, 2, 3, 4, 5, 6])), "set([1, 2, 3, 4, 5, 6])")
+        eq(r(set([1, 2, 3, 4, 5, 6, 7])), "set([1, 2, 3, 4, 5, 6, ...])")
+
+        # Frozensets give up after 6 as well
+        eq(r(frozenset([])), "frozenset([])")
+        eq(r(frozenset([1])), "frozenset([1])")
+        eq(r(frozenset([1, 2, 3])), "frozenset([1, 2, 3])")
+        eq(r(frozenset([1, 2, 3, 4, 5, 6])), "frozenset([1, 2, 3, 4, 5, 6])")
+        eq(r(frozenset([1, 2, 3, 4, 5, 6, 7])), "frozenset([1, 2, 3, 4, 5, 6, ...])")
+
         # Dictionaries give up after 4.
         eq(r({}), "{}")
         d = {'alice': 1, 'bob': 2, 'charles': 3, 'dave': 4}
