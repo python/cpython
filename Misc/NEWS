@@ -64,6 +64,9 @@ Extension Modules
 Library
 -------
 
+- Patch #645894: Use getrusage for computing the time consumption in 
+  profile.py if available.
+
 - Patch #1046831: Use get_python_version where appropriate in sysconfig.py.
 
 - Patch #1117454: Remove code to special-case cookies without values

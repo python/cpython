@@ -107,6 +107,20 @@ if hasattr(os, "times"):
         t = timer()
         return t[0] + t[1]
 
+# Using getrusage(3) is better than clock(3) if available:
+# on some systems (e.g. FreeBSD), getrusage has a higher resolution
+# Furthermore, on a POSIX system, returns microseconds, which
+# wrap around after 36min.
+_has_res = 0
+try:
+    import resource
+    resgetrusage = lambda: resource.getrusage(resource.RUSAGE_SELF)
+    def _get_time_resource(timer=resgetrusage):
+        t = timer()
+        return t[0] + t[1]
+    _has_res = 1
+except ImportError:
+    pass
 
 class Profile:
     """Profiler class.
@@ -159,8 +173,12 @@ class Profile:
             bias = self.bias
         self.bias = bias     # Materialize in local dict for lookup speed.
 
-        if timer is None:
-            if os.name == 'mac':
+        if not timer:
+            if _has_res:
+                self.timer = resgetrusage
+                self.dispatcher = self.trace_dispatch
+                self.get_time = _get_time_resource
+            elif os.name == 'mac':
                 self.timer = MacOS.GetTicks
                 self.dispatcher = self.trace_dispatch_mac
                 self.get_time = _get_time_mac
