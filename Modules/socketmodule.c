@@ -282,6 +282,20 @@ static PyObject *PyGAI_Error;
 
 #ifdef USE_SSL
 static PyObject *PySSLErrorObject;
+enum py_ssl_error {
+	/* these mirror ssl.h */
+	PY_SSL_ERROR_NONE,                 
+	PY_SSL_ERROR_SSL,                   
+	PY_SSL_ERROR_WANT_READ,             
+	PY_SSL_ERROR_WANT_WRITE,            
+	PY_SSL_ERROR_WANT_X509_LOOKUP,      
+	PY_SSL_ERROR_SYSCALL,     /* look at error stack/return value/errno */
+	PY_SSL_ERROR_ZERO_RETURN,           
+	PY_SSL_ERROR_WANT_CONNECT,
+	/* start of non ssl.h errorcodes */ 
+	PY_SSL_ERROR_EOF,         /* special case of SSL_ERROR_SYSCALL */
+	PY_SSL_ERROR_INVALID_ERROR_CODE
+};
 #endif /* USE_SSL */
 
 
@@ -2631,11 +2645,71 @@ PySSL_SetError(SSL *ssl, int ret)
 	PyObject *v, *n, *s;
 	char *errstr;
 	int err;
+	enum py_ssl_error p;
 
 	assert(ret <= 0);
     
 	err = SSL_get_error(ssl, ret);
-	n = PyInt_FromLong(err);
+
+	switch (err) {
+	case SSL_ERROR_ZERO_RETURN:
+		errstr = "TLS/SSL connection has been closed";
+		p=PY_SSL_ERROR_ZERO_RETURN;
+		break;
+	case SSL_ERROR_WANT_READ:
+		errstr = "The operation did not complete (read)";
+		p=PY_SSL_ERROR_WANT_READ;
+		break;
+	case SSL_ERROR_WANT_WRITE:
+		p=PY_SSL_ERROR_WANT_WRITE;
+		errstr = "The operation did not complete (write)";
+		break;
+	case SSL_ERROR_WANT_X509_LOOKUP:
+		p=PY_SSL_ERROR_WANT_X509_LOOKUP;
+		errstr = "The operation did not complete (X509 lookup)";
+		break;
+	case SSL_ERROR_WANT_CONNECT:
+		p=PY_SSL_ERROR_WANT_CONNECT;
+		errstr = "The operation did not complete (connect)";
+		break;
+	case SSL_ERROR_SYSCALL:
+	{
+		unsigned long e = ERR_get_error();
+		if(e==0){
+			if(ret==0){
+				p=PY_SSL_ERROR_EOF;
+				errstr = "EOF occurred in violation of protocol";
+			}else if(ret==-1){
+				/* the underlying BIO reported an I/O error */
+				return PySocket_Err();
+			}else{  /* possible? */
+				p=PY_SSL_ERROR_SYSCALL;
+				errstr = "Some I/O error occurred";
+			}
+		} else {
+			p=PY_SSL_ERROR_SYSCALL;
+			/* XXX Protected by global interpreter lock */
+			errstr = ERR_error_string(e, NULL);
+		}
+		break;
+	}   
+	case SSL_ERROR_SSL:
+	{
+		unsigned long e = ERR_get_error();
+		p=PY_SSL_ERROR_SSL;
+		if (e !=0) {
+			/* XXX Protected by global interpreter lock */
+			errstr = ERR_error_string(e, NULL);
+		} else { /* possible? */
+			errstr="A failure in the SSL library occurred";
+		}
+		break;
+	}
+	default:
+		p=PY_SSL_ERROR_INVALID_ERROR_CODE;
+		errstr = "Invalid error code";
+	}
+	n = PyInt_FromLong((long) p);
 	if (n == NULL)
 		return NULL;
 	v = PyTuple_New(2);
@@ -2644,40 +2718,6 @@ PySSL_SetError(SSL *ssl, int ret)
 		return NULL;
 	}
 
-	switch (SSL_get_error(ssl, ret)) {
-	case SSL_ERROR_ZERO_RETURN:
-		errstr = "TLS/SSL connection has been closed";
-		break;
-	case SSL_ERROR_WANT_READ:
-		errstr = "The operation did not complete (read)";
-		break;
-	case SSL_ERROR_WANT_WRITE:
-		errstr = "The operation did not complete (write)";
-		break;
-	case SSL_ERROR_WANT_X509_LOOKUP:
-		errstr = "The operation did not complete (X509 lookup)";
-		break;
-	case SSL_ERROR_SYSCALL:
-	case SSL_ERROR_SSL:
-	{
-		unsigned long e = ERR_get_error();
-		if (e == 0) {
-			/* an EOF was observed that violates the protocol */
-			errstr = "EOF occurred in violation of protocol";
-		} else if (e == -1) {
-			/* the underlying BIO reported an I/O error */
-			Py_DECREF(v);
-			Py_DECREF(n);
-			return PySocket_Err();
-		} else {
-			/* XXX Protected by global interpreter lock */
-			errstr = ERR_error_string(e, NULL);
-		}
-		break;
-	}
-	default:
-		errstr = "Invalid error code";
-	}
 	s = PyString_FromString(errstr);
 	if (s == NULL) {
 		Py_DECREF(v);
@@ -3175,17 +3215,25 @@ init_socket(void)
 				 (PyObject *)&PySSL_Type) != 0)
 		return;
 	PyModule_AddIntConstant(m, "SSL_ERROR_ZERO_RETURN",
-				SSL_ERROR_ZERO_RETURN);
+				PY_SSL_ERROR_ZERO_RETURN);
 	PyModule_AddIntConstant(m, "SSL_ERROR_WANT_READ",
-				SSL_ERROR_WANT_READ);
+				PY_SSL_ERROR_WANT_READ);
 	PyModule_AddIntConstant(m, "SSL_ERROR_WANT_WRITE",
-				SSL_ERROR_WANT_WRITE);
+				PY_SSL_ERROR_WANT_WRITE);
 	PyModule_AddIntConstant(m, "SSL_ERROR_WANT_X509_LOOKUP",
-				SSL_ERROR_WANT_X509_LOOKUP);
+				PY_SSL_ERROR_WANT_X509_LOOKUP);
 	PyModule_AddIntConstant(m, "SSL_ERROR_SYSCALL",
-				SSL_ERROR_SYSCALL);
+				PY_SSL_ERROR_SYSCALL);
 	PyModule_AddIntConstant(m, "SSL_ERROR_SSL",
-				SSL_ERROR_SSL);
+				PY_SSL_ERROR_SSL);
+	PyModule_AddIntConstant(m, "SSL_ERROR_WANT_CONNECT",
+				PY_SSL_ERROR_WANT_CONNECT);
+	/* non ssl.h errorcodes */
+	PyModule_AddIntConstant(m, "SSL_ERROR_EOF",
+				PY_SSL_ERROR_EOF);
+	PyModule_AddIntConstant(m, "SSL_ERROR_INVALID_ERROR_CODE",
+				PY_SSL_ERROR_INVALID_ERROR_CODE);
+
 #endif /* USE_SSL */
 	if (PyDict_SetItemString(d, "SocketType",
 				 (PyObject *)&PySocketSock_Type) != 0)
