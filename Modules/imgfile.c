@@ -130,6 +130,7 @@ imgfile_read(self, args)
 		         ((bs[x] & 0xff)<<16);
 	}
     }
+    iclose(image);
     if ( error_called ) {
 	DECREF(rv);
 	return NULL;
@@ -231,11 +232,78 @@ imgfile_getsizes(self, args)
     return rv;
 }
 
+static object *
+imgfile_write(self, args)
+    object *self;
+    object *args;
+{
+    IMAGE *image;
+    char *fname;
+    int xsize, ysize, zsize, len;
+    char *cdatap;
+    long *idatap;
+    short rs[8192], gs[8192], bs[8192];
+    short r, g, b;
+    long rgb;
+    int x, y;
+
+    if ( !getargs(args, "(ss#iii)",
+		  &fname, &cdatap, &len, &xsize, &ysize, &zsize) )
+      return 0;
+    
+    if ( zsize != 1 && zsize != 3 ) {
+	err_setstr(ImgfileError, "Can only handle 1 or 3 byte pixels");
+	return 0;
+    }
+    if ( (zsize == 1 && len != xsize*ysize) ||
+	 (zsize == 3 && len != xsize*ysize*4) ) {
+	err_setstr(ImgfileError, "Data does not match sizes");
+	return 0;
+    }
+
+    printf("Opening %s, %d %d %d\n", fname, xsize, ysize, zsize);
+    image =iopen(fname, "w", RLE(1), 3, xsize, ysize, zsize);
+    if ( image == 0 ) {
+	if ( ! error_called )
+	  err_setstr(ImgfileError, "Cannot create image file");
+	return 0;
+    }
+
+    idatap = (long *)cdatap;
+    
+    for( y=0; y<ysize && !error_called; y++ ) {
+	if ( zsize == 1 ) {
+	    for( x=0; x<xsize; x++ )
+	      rs[x] = *cdatap++;
+	    putrow(image, rs, y, 0);
+	} else {
+	    for( x=0; x<xsize; x++ ) {
+		rgb = *idatap++;
+		r = rgb & 0xff;
+		g = (rgb >> 8 ) & 0xff;
+		b = (rgb >> 16 ) & 0xff;
+		rs[x] = r;
+		gs[x] = g;
+		bs[x] = b;
+	    }
+	    putrow(image, rs, y, 0);
+	    putrow(image, gs, y, 1);
+	    putrow(image, bs, y, 2);
+	}
+    }
+    iclose(image);
+    if ( error_called )
+      return 0;
+    INCREF(None);
+    return None;
+    
+}
 
 static struct methodlist imgfile_methods[] = {
     { "getsizes",	imgfile_getsizes },
     { "read",		imgfile_read },
     { "readscaled",	imgfile_readscaled },
+    { "write",		imgfile_write },
     { 0,          0 }
 };
 
