@@ -69,10 +69,10 @@ clattrs = ['ADDED_ALGORITHM_ERROR', 'ALAW', 'ALGORITHM_ID',
 def main():
     # touch all the attributes of al without doing anything
     if verbose:
-	print 'Touching cl module attributes...'
+        print 'Touching cl module attributes...'
     for attr in clattrs:
-	if verbose:
-	    print 'touching: ', attr
-	getattr(cl, attr)
+        if verbose:
+            print 'touching: ', attr
+        getattr(cl, attr)
 
 main()

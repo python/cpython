@@ -4,7 +4,7 @@ import new
 
 class Eggs:
     def get_yolks(self):
-	return self.yolks
+        return self.yolks
 
 print 'new.module()'
 m = new.module('Spam')

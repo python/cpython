@@ -1,7 +1,7 @@
 # Test packages (dotted-name import)
 
 import sys, os, string, tempfile, traceback
-from os import mkdir, rmdir		# Can't test if these fail
+from os import mkdir, rmdir             # Can't test if these fail
 del mkdir, rmdir
 from test_support import verbose
 
@@ -10,19 +10,19 @@ from test_support import verbose
 def mkhier(root, descr):
     mkdir(root)
     for name, contents in descr:
-	comps = string.split(name)
-	fullname = root
-	for c in comps:
-	    fullname = os.path.join(fullname, c)
-	if contents is None:
-	    mkdir(fullname)
-	else:
-	    if verbose: print "write", fullname
-	    f = open(fullname, "w")
-	    f.write(contents)
-	    if contents and contents[-1] != '\n':
-		f.write('\n')
-	    f.close()
+        comps = string.split(name)
+        fullname = root
+        for c in comps:
+            fullname = os.path.join(fullname, c)
+        if contents is None:
+            mkdir(fullname)
+        else:
+            if verbose: print "write", fullname
+            f = open(fullname, "w")
+            f.write(contents)
+            if contents and contents[-1] != '\n':
+                f.write('\n')
+            f.close()
 
 def mkdir(x):
     if verbose: print "mkdir", x
@@ -31,11 +31,11 @@ def mkdir(x):
 def cleanout(root):
     names = os.listdir(root)
     for name in names:
-	fullname = os.path.join(root, name)
-	if os.path.isdir(fullname) and not os.path.islink(fullname):
-	    cleanout(fullname)
-	else:
-	    os.remove(fullname)
+        fullname = os.path.join(root, name)
+        if os.path.isdir(fullname) and not os.path.islink(fullname):
+            cleanout(fullname)
+        else:
+            os.remove(fullname)
     rmdir(root)
 
 def rmdir(x):
@@ -53,19 +53,19 @@ def runtest(hier, code):
     f.write(code)
     f.close()
     try:
-	sys.path.insert(0, root)
-	if verbose: print "sys.path =", sys.path
-	try:
-	    execfile(codefile, globals(), {})
-	except:
-	    traceback.print_exc(file=sys.stdout)
+        sys.path.insert(0, root)
+        if verbose: print "sys.path =", sys.path
+        try:
+            execfile(codefile, globals(), {})
+        except:
+            traceback.print_exc(file=sys.stdout)
     finally:
-	sys.path[:] = savepath
-	try:
-	    cleanout(root)
-	except (os.error, IOError):
-	    pass
-	os.remove(codefile)
+        sys.path[:] = savepath
+        try:
+            cleanout(root)
+        except (os.error, IOError):
+            pass
+        os.remove(codefile)
 
 # Test descriptions
 
@@ -203,12 +203,12 @@ args = []
 if __name__ == '__main__':
     args = sys.argv[1:]
     if args and args[0] == '-q':
-	verbose = 0
-	del args[0]
+        verbose = 0
+        del args[0]
 
 for name, hier, code in tests:
     if args and name not in args:
-	print "skipping test", name
-	continue
+        print "skipping test", name
+        continue
     print "running test", name
     runtest(hier, code)

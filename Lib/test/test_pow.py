@@ -13,16 +13,16 @@ def powtest(type):
                 raise ValueError, 'pow(0,'+str(i)+') != 0'
             if (pow(type(1),1)!=type(1)):
                 raise ValueError, 'pow(1,'+str(i)+') != 1'
-	    
+            
         for i in range(-100, 100):
             if (pow(type(i),3)!=i*i*i):
                 raise ValueError, 'pow('+str(i)+',3) != '+str(i*i*i)
     
         pow2=1
         for i in range(0,31):
-    	    if (pow(2,i)!=pow2):
+            if (pow(2,i)!=pow2):
                 raise ValueError, 'pow(2,'+str(i)+') != '+str(pow2)
-    	    if (i!=30): pow2=pow2*2
+            if (i!=30): pow2=pow2*2
 
     print "    Testing 3-argument pow() function..."
     il, ih = -20, 20
@@ -31,7 +31,7 @@ def powtest(type):
     compare = cmp
     if (type==float):
         il=1
-	compare = test_support.fcmp
+        compare = test_support.fcmp
     elif (type==int):
         jl=0
     elif (type==long):
@@ -39,11 +39,11 @@ def powtest(type):
     for i in range(il, ih+1):
          for j in range(jl,jh+1):
              for k in range(kl, kh+1):
-      	         if (k!=0):
-		     if compare(pow(type(i),j,k), pow(type(i),j)% type(k)):
+                 if (k!=0):
+                     if compare(pow(type(i),j,k), pow(type(i),j)% type(k)):
                          raise ValueError, "pow(" +str(i)+ "," +str(j)+ \
-			      "," +str(k)+ ") != pow(" +str(i)+ "," + \
-			      str(j)+ ") % " +str(k)
+                              "," +str(k)+ ") != pow(" +str(i)+ "," + \
+                              str(j)+ ") % " +str(k)
 
 
 print 'Testing integer mode...'
