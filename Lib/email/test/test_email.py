@@ -1689,6 +1689,40 @@ class TestMiscellaneous(unittest.TestCase):
                        filename='foo\\wacky"name')
         eq(msg.get_filename(), 'foo\\wacky"name')
 
+    def test_get_body_encoding_with_bogus_charset(self):
+        charset = Charset('not a charset')
+        self.assertEqual(charset.get_body_encoding(), 'base64')
+
+    def test_get_body_encoding_with_uppercase_charset(self):
+        eq = self.assertEqual
+        msg = Message()
+        msg['Content-Type'] = 'text/plain; charset=UTF-8'
+        eq(msg['content-type'], 'text/plain; charset=UTF-8')
+        charsets = msg.get_charsets()
+        eq(len(charsets), 1)
+        eq(charsets[0], 'utf-8')
+        charset = Charset(charsets[0])
+        eq(charset.get_body_encoding(), 'base64')
+        msg.set_payload('hello world', charset=charset)
+        eq(msg.get_payload(), 'hello world')
+        eq(msg['content-transfer-encoding'], 'base64')
+        # Try another one
+        msg = Message()
+        msg['Content-Type'] = 'text/plain; charset="US-ASCII"'
+        charsets = msg.get_charsets()
+        eq(len(charsets), 1)
+        eq(charsets[0], 'us-ascii')
+        charset = Charset(charsets[0])
+        eq(charset.get_body_encoding(), Encoders.encode_7or8bit)
+        msg.set_payload('hello world', charset=charset)
+        eq(msg.get_payload(), 'hello world')
+        eq(msg['content-transfer-encoding'], '7bit')
+
+    def test_charsets_case_insensitive(self):
+        lc = Charset('us-ascii')
+        uc = Charset('US-ASCII')
+        self.assertEqual(lc.get_body_encoding(), uc.get_body_encoding())
+
 
 
 # Test the iterator/generators
