@@ -15,7 +15,9 @@ functions or class instances.
 
 
 \begin{funcdesc}{constructor}{object}
-  Declares \var{object} to be a valid constructor.
+  Declares \var{object} to be a valid constructor.  If \var{object} is
+  not callable (and hence not valid as a constructor), raises
+  \exception{TypeError}.
 \end{funcdesc}
 
 \begin{funcdesc}{pickle}{type, function\optional{, constructor}}
@@ -25,5 +27,6 @@ functions or class instances.
   tuple.  The optional \var{constructor} parameter, if provided, is a
   callable object which can be used to reconstruct the object when
   called with the tuple of arguments returned by \var{function} at
-  pickling time.
+  pickling time.  \exception{TypeError} will be raised if
+  \var{object} is a class or \var{constructor} is not callable.
 \end{funcdesc}
