@@ -201,6 +201,68 @@ root:*:0:0:System Administrator:/var/root:/bin/tcsh
 
 
 %======================================================================
+\section{PEP 327: Decimal Data Type}
+
+A new module, \module{decimal}, offers a \class{Decimal} data type for
+decimal floating point arithmetic.  Compared to the built-in \class{float}
+type implemented with binary floating point, the new class is especially
+useful for financial applications and other uses which require exact
+decimal representation, control over precision, control over rounding
+to meet legal or regulatory requirements, tracking of significant
+decimal places, or for applications where the user expects the results
+to match hand calculations done the way they were taught in school.
+
+For example, calculating a 5% tax on a 70 cent phone charge gives
+different results in decimal floating point and binary floating point
+with the difference being significant when rounding to the nearest
+cent:
+
+\begin{verbatim}
+>>> from decimal import *       
+>>> Decimal('0.70') * Decimal('1.05')
+Decimal("0.7350")
+>>> .70 * 1.05
+0.73499999999999999       
+\end{verbatim}
+
+Note that the \class{Decimal} result keeps a trailing zero, automatically
+inferring four place significance from two digit mulitiplicands.  A key
+goal is to reproduce the mathematics we do by hand and avoid the tricky
+issues that arise when decimal numbers cannot be represented exactly in
+binary floating point.
+
+Exact representation enables the \class{Decimal} class to perform
+modulo calculations and equality tests that would fail in binary
+floating point:
+
+\begin{verbatim}
+>>> Decimal('1.00') % Decimal('.10')
+Decimal("0.00")
+>>> 1.00 % 0.10
+0.09999999999999995
+       
+>>> sum([Decimal('0.1')]*10) == Decimal('1.0')
+True
+>>> sum([0.1]*10) == 1.0
+False      
+\end{verbatim}
+
+The \module{decimal} module also allows arbitrarily large precisions to be
+set for calculation:
+
+\begin{verbatim}
+>>> getcontext().prec = 24
+>>> Decimal(1) / Decimal(7)
+Decimal("0.142857142857142857142857")
+\end{verbatim}
+       
+\begin{seealso}
+\seepep{327}{Decimal Data Type}{Written by Facundo Batista and implemented
+  by Eric Price, Facundo Bastista, Raymond Hettinger, Aahz, and Tim Peters.}
+\end{seealso}      
+
+
+%======================================================================
 \section{Other Language Changes}
 
 Here are all of the changes that Python 2.4 makes to the core Python
