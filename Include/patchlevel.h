@@ -1,1 +1,1 @@
-#define PATCHLEVEL "1.2--"
+#define PATCHLEVEL "1.2-beta-2"
