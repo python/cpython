@@ -360,6 +360,9 @@ Extension modules
 Library
 -------
 
+- Bug #754449: threading.Thread objects will now print out a traceback even
+  when an exception is raised in a thread during interpreter shutdown.
+
 - Added Decimal.py per PEP 327.
 
 - Bug #981299: rsync is now a recognized protocol in urlparse that uses a

@@ -367,6 +367,11 @@ _limbo = {}
 class Thread(_Verbose):
 
     __initialized = False
+    # Need to store a reference to sys.exc_info for printing
+    # out exceptions when a thread tries to use a global var. during interp.
+    # shutdown and thus raises an exception about trying to perform some
+    # operation on/with a NoneType
+    __exc_info = _sys.exc_info
 
     def __init__(self, group=None, target=None, name=None,
                  args=(), kwargs={}, verbose=None):
@@ -381,6 +386,9 @@ class Thread(_Verbose):
         self.__stopped = False
         self.__block = Condition(Lock())
         self.__initialized = True
+        # sys.stderr is not stored in the class like
+        # sys.exc_info since it can be changed between instances
+        self.__stderr = _sys.stderr
 
     def _set_daemon(self):
         # Overridden in _MainThread and _DummyThread
@@ -438,8 +446,36 @@ class Thread(_Verbose):
             except:
                 if __debug__:
                     self._note("%s.__bootstrap(): unhandled exception", self)
-                _sys.stderr.write("Exception in thread %s:\n%s\n" %
-                                  (self.getName(), _format_exc()))
+                # If sys.stderr is no more (most likely from interpreter
+                # shutdown) use self.__stderr.  Otherwise still use sys (as in
+                # _sys) in case sys.stderr was redefined since the creation of
+                # self.
+                if _sys:
+                    _sys.stderr.write("Exception in thread %s:\n%s\n" %
+                                      (self.getName(), _format_exc()))
+                else:
+                    # Do the best job possible w/o a huge amt. of code to
+                    # approximate a traceback (code ideas from
+                    # Lib/traceback.py)
+                    exc_type, exc_value, exc_tb = self.__exc_info()
+                    try:
+                        print>>self.__stderr, (
+                            "Exception in thread " + self.getName() +
+                            " (most likely raised during interpreter shutdown):")
+                        print>>self.__stderr, (
+                            "Traceback (most recent call last):")
+                        while exc_tb:
+                            print>>self.__stderr, (
+                                '  File "%s", line %s, in %s' %
+                                (exc_tb.tb_frame.f_code.co_filename,
+                                    exc_tb.tb_lineno,
+                                    exc_tb.tb_frame.f_code.co_name))
+                            exc_tb = exc_tb.tb_next
+                        print>>self.__stderr, ("%s: %s" % (exc_type, exc_value))
+                    # Make sure that exc_tb gets deleted since it is a memory
+                    # hog; deleting everything else is just for thoroughness
+                    finally:
+                        del exc_type, exc_value, exc_tb
             else:
                 if __debug__:
                     self._note("%s.__bootstrap(): normal return", self)
