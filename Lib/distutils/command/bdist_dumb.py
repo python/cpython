@@ -11,7 +11,7 @@ __revision__ = "$Id$"
 import os
 from distutils.core import Command
 from distutils.util import get_platform
-from distutils.dir_util import create_tree, remove_tree
+from distutils.dir_util import create_tree, remove_tree, ensure_relative
 from distutils.errors import *
 from distutils import log
 
@@ -33,9 +33,12 @@ class bdist_dumb (Command):
                      "directory to put final built distributions in"),
                     ('skip-build', None,
                      "skip rebuilding everything (for testing/debugging)"),
+                    ('relative', None,
+                     "build the archive using relative paths"
+                     "(default: false)"),
                    ]
 
-    boolean_options = ['keep-temp', 'skip-build']
+    boolean_options = ['keep-temp', 'skip-build', 'relative']
 
     default_format = { 'posix': 'gztar',
                        'nt': 'zip',
@@ -49,7 +52,8 @@ class bdist_dumb (Command):
         self.keep_temp = 0
         self.dist_dir = None
         self.skip_build = 0
-
+        self.relative = 0
+        
     # initialize_options()
 
 
@@ -97,9 +101,24 @@ class bdist_dumb (Command):
         if os.name == "os2":
             archive_basename = archive_basename.replace(":", "-")
 
-        self.make_archive(os.path.join(self.dist_dir, archive_basename),
-                          self.format,
-                          root_dir=self.bdist_dir)
+        pseudoinstall_root = os.path.join(self.dist_dir, archive_basename)
+        if not self.relative:
+            archive_root = self.bdist_dir
+        else:
+            if (self.distribution.has_ext_modules() and
+                (install.install_base != install.install_platbase)):
+                raise DistutilsPlatformError, \
+                      ("can't make a dumb built distribution where "
+                       "base and platbase are different (%s, %s)"
+                       % (repr(install.install_base),
+                          repr(install.install_platbase)))
+            else:
+                archive_root = os.path.join(self.bdist_dir,
+                                   ensure_relative(install.install_base))
+
+        # Make the archive
+        self.make_archive(pseudoinstall_root,
+                          self.format, root_dir=archive_root)
 
         if not self.keep_temp:
             remove_tree(self.bdist_dir, dry_run=self.dry_run)
