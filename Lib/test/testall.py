@@ -11,7 +11,7 @@ import test_grammar
 
 for t in ['test_opcodes', 'test_operations', 'test_builtin',
 	  'test_exceptions', 'test_types', 'test_math', 'test_time',
-	  'test_array', 'test_strop', 'test_md5',
+	  'test_array', 'test_strop', 'test_md5', 'test_cmath',
 	  ]:
     print t
     unload(t)
