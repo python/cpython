@@ -644,23 +644,23 @@ sub do_env_cfuncdesc{
     my $idx = make_str_index_entry(
         "<tt class='cfunction'>$function_name()</tt>" . get_indexsubitem());
     $idx =~ s/ \(.*\)//;
-    $idx =~ s/\(\)//;		# ????
+    $idx =~ s/\(\)//;		# ???? - why both of these?
     my $result_rc = get_refcount($function_name, '');
     my $rcinfo = '';
     if ($result_rc eq '+1') {
-        $rcinfo = '<span class="label">Return value:</span>'
-                  . "\n  <span class=\"value\">New reference.</span>";
+        $rcinfo = 'New reference';
     }
     elsif ($result_rc eq '0') {
-        $rcinfo = '<span class="label">Return value:</span>'
-                  . "\n  <span class=\"value\">Borrowed reference.</span>";
+        $rcinfo = 'Borrowed reference';
     }
     elsif ($result_rc eq 'null') {
-        $rcinfo = '<span class="label">Return value:</span>'
-                  . "\n  <span class=\"value\">Always NULL.</span>";
+        $rcinfo = 'Always <tt class="constant">NULL</tt>';
     }
     if ($rcinfo ne '') {
-        $rcinfo = "\n<div class=\"refcount-info\">\n  $rcinfo\n</div>";
+        $rcinfo = (  "\n<div class=\"refcount-info\">"
+                   . "\n  <span class=\"label\">Return value:</span>"
+                   . "\n  <span class=\"value\">$rcinfo.</span>"
+                   . "\n</div>");
     }
     return "<dl><dt>$return_type <b>$idx</b> (<var>$arg_list</var>)\n<dd>"
            . $rcinfo
