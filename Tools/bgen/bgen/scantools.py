@@ -219,7 +219,7 @@ if missing: raise "Missing Types"
 	
 	def openrepairfile(self, filename = "REPAIR"):
 		try:
-			return open(filename, "r")
+			return open(filename, "rU")
 		except IOError, msg:
 			print `filename`, ":", msg
 			print "Cannot open repair file -- assume no repair needed"
@@ -359,12 +359,12 @@ if missing: raise "Missing Types"
 				fullname = os.path.join(dir, filename)
 				#self.report("trying full name %s", `fullname`)
 				try:
-					return open(fullname, 'r')
+					return open(fullname, 'rU')
 				except IOError:
 					pass
 		# If not on the path, or absolute, try default open()
 		try:
-			return open(filename, 'r')
+			return open(filename, 'rU')
 		except IOError, arg:
 			raise IOError, (arg, filename)
 
