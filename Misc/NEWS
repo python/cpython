@@ -3,6 +3,12 @@ What's New in Python 2.2a4?
 
 Core
 
+- PyUnicode_FromEncodedObject() now works very much like
+  PyObject_Str(obj) in that it tries to use __str__/tp_str
+  on the object if the object is not a string or buffer. This
+  makes unicode() behave like str() when applied to non-string/buffer
+  objects.
+
 - PyFile_WriteObject now passes Unicode object to the file's write
   method. As a result, all file-like object which may be the target
   of a print statement must support Unicode objects, i.e. they must
