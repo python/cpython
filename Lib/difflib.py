@@ -1603,7 +1603,7 @@ class HtmlDiff(object):
     """For producing HTML side by side comparison with change highlights.
 
     This class can be used to create an HTML table (or a complete HTML file
-    containing the table) showing a side by side, line by line comparision
+    containing the table) showing a side by side, line by line comparison
     of text with inter-line and intra-line change highlights.  The table can
     be generated in either full or contextual difference mode.
 

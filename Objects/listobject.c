@@ -1759,7 +1759,7 @@ merge_compute_minrun(int n)
 }
 
 /* Special wrapper to support stable sorting using the decorate-sort-undecorate
-   pattern.  Holds a key which is used for comparisions and the original record
+   pattern.  Holds a key which is used for comparisons and the original record
    which is returned during the undecorate phase.  By exposing only the key
    during comparisons, the underlying sort stability characteristics are left
    unchanged.  Also, if a custom comparison function is used, it will only see
