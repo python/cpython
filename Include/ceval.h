@@ -99,12 +99,12 @@ int Py_MakePendingCalls Py_PROTO((void));
    mechanism!
 */
 
-extern void PyEval_InitThreads Py_PROTO((void));
 extern PyThreadState *PyEval_SaveThread Py_PROTO((void));
 extern void PyEval_RestoreThread Py_PROTO((PyThreadState *));
 
 #ifdef WITH_THREAD
 
+extern void PyEval_InitThreads Py_PROTO((void));
 extern void PyEval_AcquireThread Py_PROTO((PyThreadState *tstate));
 extern void PyEval_ReleaseThread Py_PROTO((PyThreadState *tstate));
 
