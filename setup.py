@@ -3,6 +3,7 @@
 
 import sys, os, string, getopt
 from distutils import sysconfig
+from distutils.errors import *
 from distutils.core import Extension, setup
 from distutils.command.build_ext import build_ext
 
@@ -98,6 +99,14 @@ class PyBuildExt(build_ext):
         self.compiler.set_executables(**args)
 
         build_ext.build_extensions(self)
+
+    def build_extension(self, ext):
+
+        try:
+            build_ext.build_extension(self, ext)
+        except (CCompilerError, DistutilsError), why:
+            self.announce('WARNING: building of extension "%s" failed: %s' %
+                          (ext.name, sys.exc_info()[1]))
 
     def get_platform (self):
         # Get value of sys.platform
@@ -235,6 +244,7 @@ class PyBuildExt(build_ext):
         # readline
         if (self.compiler.find_library_file(lib_dirs, 'readline')):
             exts.append( Extension('readline', ['readline.c'],
+                                   library_dirs=['/usr/lib/termcap'],
                                    libraries=['readline', 'termcap']) )
 
         # The crypt module is now disabled by default because it breaks builds
