@@ -13,7 +13,7 @@
 #define HAVE_FOPENRF
 #endif
 
-#ifdef __SC__
+#ifdef __CFM68K__
 #define atof Py_AtoF
 #define strtod Py_StrToD
 #endif

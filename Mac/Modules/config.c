@@ -309,8 +309,8 @@ struct {
 } inittab[] = {
 
 	{"array", initarray},
-#ifndef __SC__
-/* Do this one later... */
+#ifndef __CFM68K__
+/* The math library seems mostly broken... */
 	{"math", initmath},
 #endif
 	{"parser", initparser},
@@ -331,34 +331,28 @@ struct {
 	{"new", initnew},
 	{"gestalt", initgestalt},
 #ifdef THINK_C
+/* This is an interface to the Think runtime */
 	{"macconsole", initmacconsole},
 #endif
-#ifndef __SC__
+#ifndef MPW
 /* Do this one later... */
 	{"ctb", initctb},
 #endif
 	{"macfs", initmacfs},
 #ifdef __MWERKS__
-/* This is really "Jack Jansen" specific for now :-) */
+/* This could probably be made to work on other compilers... */
 	{"macspeech", initmacspeech},
 	{"macdnr", initmacdnr},
 	{"mactcp", initmactcp},
 #endif
-/* This is really "Guido van Rossum" specific... :-) */
 	{"AE", initAE},
-#ifndef __MWERKS__
 	{"Ctl", initCtl},
 	{"Dlg", initDlg},
-#endif
 	{"Evt", initEvt},
 	{"Menu", initMenu},
-#ifdef THINK_C
 	{"Qd", initQd},
-#endif
-#ifndef __MWERKS__
 	{"Snd", initSnd},
 	{"Win", initWin},
-#endif
 	{"Res", initRes},
 
 /* -- ADDMODULE MARKER 2 -- */
