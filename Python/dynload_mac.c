@@ -10,6 +10,7 @@
 #include "TFileSpec.h"		/* for Path2FSSpec() */
 #endif
 #include <Files.h>
+#include <TextUtils.h>
 #include "macdefs.h"
 #include "macglue.h"
 
@@ -56,12 +57,12 @@ dl_funcptr _PyImport_GetDynLoadFunc(const char *fqname, const char *shortname,
 #ifdef USE_GUSI1
 	err = Path2FSSpec(pathname, &libspec);
 #else
-	(void)FSMakeFSSpec(0, 0, Pstring(pathname), &libspec);
+	c2pstrcpy((unsigned char *)buf, pathname);
+	(void)FSMakeFSSpec(0, 0, (unsigned char *)buf, &libspec);
 	err = ResolveAliasFile(&libspec, 1, &isfolder, &didsomething);
 #endif
 	if ( err ) {
-		sprintf(buf, "%.255s: %.200s",
-			pathname, PyMac_StrError(err));
+		sprintf(buf, "%.200s: %.200s", pathname, PyMac_StrError(err));
 		PyErr_SetString(PyExc_ImportError, buf);
 		return NULL;
 	}
