@@ -13,6 +13,9 @@
 # 2000-11-03 fl   expand first/last ranges
 # 2001-01-19 fl   added character name tables (2.1)
 # 2001-01-21 fl   added decomp compression; dynamic phrasebook threshold
+# 2002-09-11 wd   use string methods
+# 2002-10-18 mvl  update to Unicode 3.2
+# 2002-10-22 mvl  generate NFC tables
 #
 # written by Fredrik Lundh (fredrik@pythonware.com)
 #
@@ -22,7 +25,8 @@ import sys
 SCRIPT = sys.argv[0]
 VERSION = "2.1"
 
-UNICODE_DATA = "UnicodeData-Latest.txt"
+UNICODE_DATA = "UnicodeData.txt"
+COMPOSITION_EXCLUSIONS = "CompositionExclusions.txt"
 
 CATEGORY_NAMES = [ "Cn", "Lu", "Ll", "Lt", "Mn", "Mc", "Me", "Nd",
     "Nl", "No", "Zs", "Zl", "Zp", "Cc", "Cf", "Cs", "Co", "Cn", "Lm",
@@ -47,7 +51,7 @@ def maketables(trace=0):
 
     print "--- Reading", UNICODE_DATA, "..."
 
-    unicode = UnicodeData(UNICODE_DATA)
+    unicode = UnicodeData(UNICODE_DATA, COMPOSITION_EXCLUSIONS)
 
     print len(filter(None, unicode.table)), "characters"
 
@@ -96,6 +100,10 @@ def makeunicodedata(unicode, trace):
     decomp_index = [0] * len(unicode.chars)
     decomp_size = 0
 
+    comp_pairs = []
+    comp_first = [None] * len(unicode.chars)
+    comp_last = [None] * len(unicode.chars)
+
     for char in unicode.chars:
         record = unicode.table[char]
         if record:
@@ -116,6 +124,14 @@ def makeunicodedata(unicode, trace):
                 # content
                 decomp = [prefix + (len(decomp)<<8)] +\
                          map(lambda s: int(s, 16), decomp)
+                # Collect NFC pairs
+                if not prefix and len(decomp) == 3 and \
+                   char not in unicode.exclusions and \
+                   unicode.table[decomp[1]][3] == "0":
+                    p, l, r = decomp
+                    comp_first[l] = 1
+                    comp_last[r] = 1
+                    comp_pairs.append((l,r,char))
                 try:
                     i = decomp_data.index(decomp)
                 except ValueError:
@@ -126,10 +142,49 @@ def makeunicodedata(unicode, trace):
                 i = 0
             decomp_index[char] = i
 
+    f = l = 0
+    comp_first_ranges = []
+    comp_last_ranges = []
+    prev_f = prev_l = None
+    for i in unicode.chars:
+        if comp_first[i] is not None:
+            comp_first[i] = f
+            f += 1
+            if prev_f is None:
+                prev_f = (i,i)
+            elif prev_f[1]+1 == i:
+                prev_f = prev_f[0],i
+            else:
+                comp_first_ranges.append(prev_f)
+                prev_f = (i,i)
+        if comp_last[i] is not None:
+            comp_last[i] = l
+            l += 1
+            if prev_l is None:
+                prev_l = (i,i)
+            elif prev_l[1]+1 == i:
+                prev_l = prev_l[0],i
+            else:
+                comp_last_ranges.append(prev_l)
+                prev_l = (i,i)
+    comp_first_ranges.append(prev_f)
+    comp_last_ranges.append(prev_l)
+    total_first = f
+    total_last = l
+
+    comp_data = [0]*(total_first*total_last)
+    for f,l,char in comp_pairs:
+        f = comp_first[f]
+        l = comp_last[l]
+        comp_data[f*total_last+l] = char
+
     print len(table), "unique properties"
     print len(decomp_prefix), "unique decomposition prefixes"
     print len(decomp_data), "unique decomposition entries:",
     print decomp_size, "bytes"
+    print total_first, "first characters in NFC"
+    print total_last, "last characters in NFC"
+    print len(comp_pairs), "NFC pairs"
 
     print "--- Writing", FILE, "..."
 
@@ -143,6 +198,21 @@ def makeunicodedata(unicode, trace):
         print >>fp, "    {%d, %d, %d, %d}," % item
     print >>fp, "};"
     print >>fp
+
+    print >>fp, "/* Reindexing of NFC first characters. */"
+    print >>fp, "#define TOTAL_FIRST",total_first
+    print >>fp, "#define TOTAL_LAST",total_last
+    print >>fp, "struct reindex{int start;short count,index;};"
+    print >>fp, "struct reindex nfc_first[] = {"
+    for start,end in comp_first_ranges:
+        print >>fp,"  { %d, %d, %d}," % (start,end-start,comp_first[start])
+    print >>fp,"  {0,0,0}"
+    print >>fp,"};\n"
+    print >>fp, "struct reindex nfc_last[] = {"
+    for start,end in comp_last_ranges:
+        print >>fp,"  { %d, %d, %d}," % (start,end-start,comp_last[start])
+    print >>fp,"  {0,0,0}"
+    print >>fp,"};\n"
 
     # FIXME: <fl> the following tables could be made static, and
     # the support code moved into unicodedatabase.c
@@ -184,6 +254,12 @@ def makeunicodedata(unicode, trace):
     print >>fp, "#define DECOMP_SHIFT", shift
     Array("decomp_index1", index1).dump(fp, trace)
     Array("decomp_index2", index2).dump(fp, trace)
+
+    index, index2, shift = splitbins(comp_data, trace)
+    print >>fp, "/* NFC pairs */"
+    print >>fp, "#define COMP_SHIFT", shift
+    Array("comp_index", index).dump(fp, trace)
+    Array("comp_data", index2).dump(fp, trace)
 
     fp.close()
 
@@ -454,7 +530,7 @@ import sys
 
 class UnicodeData:
 
-    def __init__(self, filename, expand=1):
+    def __init__(self, filename, exclusions, expand=1):
         file = open(filename)
         table = [None] * 0x110000
         while 1:
@@ -485,6 +561,17 @@ class UnicodeData:
         self.filename = filename
         self.table = table
         self.chars = range(0x110000) # unicode 3.2
+
+        file = open(exclusions)
+        self.exclusions = {}
+        for s in file:
+            s = s.strip()
+            if not s:
+                continue
+            if s[0] == '#':
+                continue
+            char = int(s.split()[0],16)
+            self.exclusions[char] = 1
 
     def uselatin1(self):
         # restrict character range to ISO Latin 1
