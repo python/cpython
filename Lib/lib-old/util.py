@@ -1,15 +1,16 @@
 # Module 'util' -- some useful functions that don't fit elsewhere
 
+# NB: These are now built-in functions, but this module is provided
+# for compatibility.  Don't use in new programs unless you need backward
+# compatibility (with old interpreters).
+
 
 # Remove an item from a list.
 # No complaints if it isn't in the list at all.
 # If it occurs more than once, remove the first occurrence.
 #
 def remove(item, list):
-	for i in range(len(list)):
-		if list[i] = item:
-			del list[i]
-			break
+	if item in list: list.remove(item)
 
 
 # Return a string containing a file's contents.
@@ -21,10 +22,4 @@ def readfile(fn):
 # Read an open file until EOF.
 #
 def readopenfile(fp):
-	BUFSIZE = 512*8
-	data = ''
-	while 1:
-		buf = fp.read(BUFSIZE)
-		if not buf: break
-		data = data + buf
-	return data
+	return fp.read()
