@@ -60,7 +60,7 @@ string.uppercase
 
 # Float formatting
 for prec in range(100):
-    formatstring = u'%%.%if' % prec
+    formatstring = '%%.%if' % prec
     value = 0.01
     for x in range(60):
         value = value * 3.141592655 / 3.0 * 10.0
