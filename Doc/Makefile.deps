@@ -48,6 +48,7 @@ LIBFILES= $(MANSTYLES) $(COMMONTEX) \
 	../lib/libfuncs.tex \
 	../lib/libpython.tex \
 	../lib/libsys.tex \
+	../lib/libgc.tex \
 	../lib/libtypes.tex \
 	../lib/libtraceback.tex \
 	../lib/libpickle.tex \
