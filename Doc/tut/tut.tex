@@ -1926,6 +1926,15 @@ files are ignored and \code{.py} files are compiled to optimized
 bytecode.
 
 \item
+Passing two \code{-O} flags to the Python interpreter (\code{-OO})
+will cause the bytecode compiler to perform optimizations that could
+in some rare cases result in malfunctioning programs.  Currently only
+\code{__doc__} strings are removed from the bytecode, resulting in more 
+compact \file{.pyo} files.  Since some programs may rely on having
+these available, you should only use this option if you know what
+you're doing.
+
+\item
 A program doesn't run any faster when it is read from a
 \file{.pyc} or \file{.pyo} file than when it is read from a \file{.py}
 file; the only thing that's faster about \file{.pyc} or \file{.pyo}
