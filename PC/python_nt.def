@@ -373,6 +373,7 @@ EXPORTS
 	_PyObject_New
 	_PyObject_NewVar
 	_PyString_Resize
+	_PyTuple_Resize
 	_Py_c_diff
 	_Py_c_neg
 	_Py_c_pow
