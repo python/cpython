@@ -261,14 +261,18 @@
 \newcommand{\refstmodindex}[1]{\refmodule{#1}{standard }}
 
 % support for the module index
-\newwrite\modindexfile
-\openout\modindexfile=mod\jobname.idx
+\if@usemoduleindex
+  \newwrite\modindexfile
+  \openout\modindexfile=mod\jobname.idx
+\fi
 
 % Add the defining entry for a module
 \newcommand{\defmodindex}[2]{%
   \index{#1@{\idxcode{#1}} (#2module)|textbf}%
   \setindexsubitem{(in module #1)}%
-  \write\modindexfile{#1 \thepage}}
+  \if@usemoduleindex%
+    \write\modindexfile{#1 \thepage}%
+  \fi}
 
 % built-in & Python modules in the main distribution
 \newcommand{\bimodindex}[1]{\defmodindex{#1}{built-in }}
