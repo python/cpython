@@ -4,11 +4,11 @@
 Synopsis: %(prog)s [-h|-b|-r|-a|-d] dbfile [ picklefile ]
 
 Read the given picklefile as a series of key/value pairs and write to a new
-bsddb database.  If the database already exists, any contents are deleted.
-The optional flags indicate the type of the database (bsddb hash, bsddb
-btree, bsddb recno, anydbm, dbm).  The default is hash.  If a pickle file is
-named it is opened for read access.  If no pickle file is named, the pickle
-input is read from standard input.
+database.  If the database already exists, any contents are deleted.  The
+optional flags indicate the type of the database (bsddb hash, bsddb btree,
+bsddb recno, anydbm, dbm).  The default is hash.  If a pickle file is named
+it is opened for read access.  If no pickle file is named, the pickle input
+is read from standard input.
 
 Note that recno databases can only contain numeric keys, so you can't dump a
 hash or btree database using db2pickle.py and reconstitute it to a recno
