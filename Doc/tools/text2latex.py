@@ -52,5 +52,4 @@ def process(fi, fo):
 				  '\\\\code{\\0}', line)
 		fo.write(line)
 
-#main()
-process(open('ext.tex', 'r'), sys.stdout)
+main()
