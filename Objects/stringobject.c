@@ -26,6 +26,19 @@ static PyStringObject *nullstring;
 static PyObject *interned;
 
 
+#if defined(HAVE_MBTOWC) && defined(HAVE_WCHAR_H)
+#  define PRINT_MULTIBYTE_STRING
+#  include <locale.h>
+#  include <wchar.h>
+#  if defined(HAVE_ISWPRINT)
+#    define _isprint iswprint
+#  else
+#    define _isprint isprint
+#  endif
+#endif
+
+static const char *hexchars = "0123456789abcdef";
+
 /*
    For both PyString_FromString() and PyString_FromStringAndSize(), the
    parameter `size' denotes number of characters to allocate, not counting any
@@ -749,8 +762,14 @@ PyString_AsStringAndSize(register PyObject *obj,
 static int
 string_print(PyStringObject *op, FILE *fp, int flags)
 {
+#ifndef PRINT_MULTIBYTE_STRING
 	int i;
 	char c;
+#else
+        char *scur, *send;
+	wchar_t c;
+	int cr;
+#endif
 	int quote;
 
 	/* XXX Ought to check for interrupts when writing long strings */
@@ -776,20 +795,36 @@ string_print(PyStringObject *op, FILE *fp, int flags)
 		quote = '"';
 
 	fputc(quote, fp);
+#ifndef PRINT_MULTIBYTE_STRING
 	for (i = 0; i < op->ob_size; i++) {
 		c = op->ob_sval[i];
+#else
+	for (scur = op->ob_sval, send = op->ob_sval + op->ob_size;
+	     scur < send; scur += cr) {
+		if ((cr = mbtowc(&c, scur, send - scur)) <= 0)
+			goto non_printable;
+#endif
 		if (c == quote || c == '\\')
-			fprintf(fp, "\\%c", c);
+			fputc('\\', fp), fputc(c, fp);
                 else if (c == '\t')
-                        fprintf(fp, "\\t");
+                        fputs("\\t", fp);
                 else if (c == '\n')
-                        fprintf(fp, "\\n");
+                        fputs("\\n", fp);
                 else if (c == '\r')
-                        fprintf(fp, "\\r");
-		else if (c < ' ' || c >= 0x7f)
-			fprintf(fp, "\\x%02x", c & 0xff);
-		else
+                        fputs("\\r", fp);
+#ifndef PRINT_MULTIBYTE_STRING
+		else if (' ' <= c && c < 0x7f)
 			fputc(c, fp);
+		else
+                        fprintf(fp, "\\x%02x", c & 0xff);
+#else
+		else if (_isprint(c))
+			fwrite(scur, cr, 1, fp);
+		else {
+non_printable:		cr = 1; /* unit to move cursor */
+                        fprintf(fp, "\\x%02x", *scur & 0xff);
+		}
+#endif
 	}
 	fputc(quote, fp);
 	return 0;
@@ -810,8 +845,14 @@ PyString_Repr(PyObject *obj, int smartquotes)
 		return NULL;
 	}
 	else {
+#ifndef PRINT_MULTIBYTE_STRING
 		register int i;
 		register char c;
+#else
+		register char *scur, *send;
+		wchar_t c;
+		int cr;
+#endif
 		register char *p;
 		int quote;
 
@@ -824,11 +865,18 @@ PyString_Repr(PyObject *obj, int smartquotes)
 
 		p = PyString_AS_STRING(v);
 		*p++ = quote;
+#ifndef PRINT_MULTIBYTE_STRING
 		for (i = 0; i < op->ob_size; i++) {
 			/* There's at least enough room for a hex escape
 			   and a closing quote. */
 			assert(newsize - (p - PyString_AS_STRING(v)) >= 5);
 			c = op->ob_sval[i];
+#else
+		for (scur = op->ob_sval, send = op->ob_sval + op->ob_size;
+		     scur < send; scur += cr) {
+			if ((cr = mbtowc(&c, scur, send - scur)) <= 0)
+				goto non_printable;
+#endif
 			if (c == quote || c == '\\')
 				*p++ = '\\', *p++ = c;
 			else if (c == '\t')
@@ -837,15 +885,20 @@ PyString_Repr(PyObject *obj, int smartquotes)
 				*p++ = '\\', *p++ = 'n';
 			else if (c == '\r')
 				*p++ = '\\', *p++ = 'r';
-			else if (c < ' ' || c >= 0x7f) {
-				/* For performance, we don't want to call
-				   PyOS_snprintf here (extra layers of
-				   function call). */
-				sprintf(p, "\\x%02x", c & 0xff);
-                                p += 4;
-			}
-			else
+#ifndef PRINT_MULTIBYTE_STRING
+			else if (' ' <= c && c < 0x7f)
 				*p++ = c;
+			else {
+#else
+			else if (_isprint(c))
+				memcpy(p, scur, cr), p += cr;
+			else {
+non_printable:			cr = 1; c = *scur;
+#endif
+				*p++ = '\\'; *p++ = 'x';
+				*p++ = hexchars[(c >> 4) & 0x0f];
+				*p++ = hexchars[c & 0x0f];
+			}
 		}
 		assert(newsize - (p - PyString_AS_STRING(v)) >= 1);
 		*p++ = quote;
