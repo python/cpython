@@ -162,53 +162,65 @@ Note that classes are callable, as are instances with a __call__() method.";
 static PyObject *
 builtin_filter(PyObject *self, PyObject *args)
 {
-	PyObject *func, *seq, *result;
-	PySequenceMethods *sqf;
-	int len;
+	PyObject *func, *seq, *result, *it;
+	int len;   /* guess for result list size */
 	register int i, j;
 
 	if (!PyArg_ParseTuple(args, "OO:filter", &func, &seq))
 		return NULL;
 
-	if (PyString_Check(seq)) {
-		PyObject *r = filterstring(func, seq);
-		return r;
+	/* Strings and tuples return a result of the same type. */
+	if (PyString_Check(seq))
+		return filterstring(func, seq);
+	if (PyTuple_Check(seq))
+		return filtertuple(func, seq);
+
+	/* Get iterator. */
+	it = PyObject_GetIter(seq);
+	if (it == NULL)
+		return NULL;
+
+	/* Guess a result list size. */
+	len = -1;   /* unknown */
+	if (PySequence_Check(seq) &&
+	    seq->ob_type->tp_as_sequence->sq_length) {
+		len = PySequence_Size(seq);
+		if (len < 0)
+			PyErr_Clear();
 	}
+	if (len < 0)
+		len = 8;  /* arbitrary */
 
-	if (PyTuple_Check(seq)) {
-		PyObject *r = filtertuple(func, seq);
-		return r;
-	}
-
-	sqf = seq->ob_type->tp_as_sequence;
-	if (sqf == NULL || sqf->sq_length == NULL || sqf->sq_item == NULL) {
-		PyErr_SetString(PyExc_TypeError,
-			   "filter() arg 2 must be a sequence");
-		goto Fail_2;
-	}
-
-	if ((len = (*sqf->sq_length)(seq)) < 0)
-		goto Fail_2;
-
+	/* Get a result list. */
 	if (PyList_Check(seq) && seq->ob_refcnt == 1) {
+		/* Eww - can modify the list in-place. */
 		Py_INCREF(seq);
 		result = seq;
 	}
 	else {
-		if ((result = PyList_New(len)) == NULL)
-			goto Fail_2;
+		result = PyList_New(len);
+		if (result == NULL)
+			goto Fail_it;
 	}
 
+	/* Build the result list. */
 	for (i = j = 0; ; ++i) {
 		PyObject *item, *good;
 		int ok;
 
-		if ((item = (*sqf->sq_item)(seq, i)) == NULL) {
-			if (PyErr_ExceptionMatches(PyExc_IndexError)) {
-				PyErr_Clear();
-				break;
+		item = PyIter_Next(it);
+		if (item == NULL) {
+			/* We're out of here in any case, but if this is a
+			 * StopIteration exception it's expected, but if
+			 * any other kind of exception it's an error.
+			 */
+			if (PyErr_Occurred()) {
+				if (PyErr_ExceptionMatches(PyExc_StopIteration))
+					PyErr_Clear();
+				else
+					goto Fail_result_it;
 			}
-			goto Fail_1;
+			break;
 		}
 
 		if (func == Py_None) {
@@ -217,43 +229,45 @@ builtin_filter(PyObject *self, PyObject *args)
 		}
 		else {
 			PyObject *arg = Py_BuildValue("(O)", item);
-			if (arg == NULL)
-				goto Fail_1;
+			if (arg == NULL) {
+				Py_DECREF(item);
+				goto Fail_result_it;
+			}
 			good = PyEval_CallObject(func, arg);
 			Py_DECREF(arg);
 			if (good == NULL) {
 				Py_DECREF(item);
-				goto Fail_1;
+				goto Fail_result_it;
 			}
 		}
 		ok = PyObject_IsTrue(good);
 		Py_DECREF(good);
 		if (ok) {
-			if (j < len) {
-				if (PyList_SetItem(result, j++, item) < 0)
-					goto Fail_1;
-			}
+			if (j < len)
+				PyList_SET_ITEM(result, j, item);
 			else {
 				int status = PyList_Append(result, item);
-				j++;
 				Py_DECREF(item);
 				if (status < 0)
-					goto Fail_1;
+					goto Fail_result_it;
 			}
-		} else {
-			Py_DECREF(item);
+			++j;
 		}
+		else
+			Py_DECREF(item);
 	}
 
 
+	/* Cut back result list if len is too big. */
 	if (j < len && PyList_SetSlice(result, j, len, NULL) < 0)
-		goto Fail_1;
+		goto Fail_result_it;
 
 	return result;
 
-Fail_1:
+Fail_result_it:
 	Py_DECREF(result);
-Fail_2:
+Fail_it:
+	Py_DECREF(it);
 	return NULL;
 }
 

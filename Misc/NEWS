@@ -17,7 +17,8 @@ Core
 
 - The following functions were generalized to work nicely with iterator
   arguments:
-  list()
+    filter()
+    list()
 
 
 What's New in Python 2.1 (final)?
@@ -236,7 +237,7 @@ Tools
 - IDLE: syntax warnings in interactive mode are changed into errors.
 
 - Some improvements to Tools/webchecker (ignore some more URL types,
-  follow some more links). 
+  follow some more links).
 
 - Brought the Tools/compiler package up to date.
 
@@ -324,23 +325,23 @@ Python/C API
   in Flags and take an extra argument, a PyCompilerFlags *; examples:
   PyRun_AnyFileExFlags(), PyRun_InteractiveLoopFlags().  These
   variants may be removed in Python 2.2, when nested scopes are
-  mandatory. 
+  mandatory.
 
 Distutils
 
 - the sdist command now writes a PKG-INFO file, as described in PEP 241,
   into the release tree.
 
-- several enhancements to the bdist_wininst command from Thomas Heller 
+- several enhancements to the bdist_wininst command from Thomas Heller
   (an uninstaller, more customization of the installer's display)
 
 - from Jack Jansen: added Mac-specific code to generate a dialog for
   users to specify the command-line (because providing a command-line with
-  MacPython is awkward).  Jack also made various fixes for the Mac 
+  MacPython is awkward).  Jack also made various fixes for the Mac
   and the Metrowerks compiler.
-  
-- added 'platforms' and 'keywords' to the set of metadata that can be 
-  specified for a distribution.  
+
+- added 'platforms' and 'keywords' to the set of metadata that can be
+  specified for a distribution.
 
 - applied patches from Jason Tishler to make the compiler class work with
   Cygwin.
