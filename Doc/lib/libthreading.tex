@@ -82,6 +82,10 @@ semaphore is released too many times it's a sign of a bug.  If not given,
 A class that represents a thread of control.  This class can be safely subclassed in a limited fashion.
 \end{classdesc*}
 
+\begin{classdesc*}{Timer}{}
+A thread that executes a function after a specified interval has passed.
+\end{classdesc*}
+
 Detailed interfaces for the objects are documented below.  
 
 The design of this module is loosely based on Java's threading model.
@@ -594,4 +598,36 @@ The initial value is inherited from the creating thread.
 
 The entire Python program exits when no active non-daemon
 threads are left.
+\end{methoddesc}
+
+
+\subsection{Timer Objects \label{timer-objects}}
+
+This class represents an action that should be run only after a certain amount
+of time has passed --- a timer. \class{Timer} is a subclass of \class{Thread} and
+as such also functions as an example of creating custom threads.
+
+Timers are started, as with threads, by calling their \method{start()} method. The
+timer can be stopped (before its action has begun) by calling the
+\method{cancel()} method. The interval the timer will wait before executing
+its action may not be exactly the same as the interval specified by the
+user.
+
+For example:
+\begin{verbatim}
+def hello():
+    print "hello, world"
+
+t = Timer(30.0, hello)
+t.start() # after 30 seconds, "hello, world" will be printed
+\end{verbatim}
+
+\begin{classdesc}{Timer}{interval, function, args=[], kwargs=\{\}}
+Create a timer that will run \var{function} with arguments \var{args} and 
+keyword arguments \var{kwargs}, after \var{interval} seconds have passed.
+\end{classdesc}
+
+\begin{methoddesc}{cancel}{}
+Stop the timer, and cancel the execution of the timer's action. This will only
+work if the timer is still in its waiting stage.
 \end{methoddesc}

@@ -331,7 +331,6 @@ class _Event(_Verbose):
             self.__cond.wait(timeout)
         self.__cond.release()
 
-
 # Helper to generate new thread names
 _counter = 0
 def _newname(template="Thread-%d"):
@@ -483,6 +482,36 @@ class Thread(_Verbose):
         assert not self.__started, "cannot set daemon status of active thread"
         self.__daemonic = daemonic
 
+# The timer class was contributed by Itamar Shtull-Trauring
+
+def Timer(*args, **kwargs):
+    return _Timer(*args, **kwargs)
+
+class _Timer(Thread):
+    """Call a function after a specified number of seconds:
+    
+    t = Timer(30.0, f, args=[], kwargs={})
+    t.start()
+    t.cancel() # stop the timer's action if it's still waiting
+    """
+    
+    def __init__(self, interval, function, args=[], kwargs={}):
+        Thread.__init__(self)
+        self.interval = interval
+        self.function = function
+        self.args = args
+        self.kwargs = kwargs
+        self.finished = Event()
+    
+    def cancel(self):
+        """Stop the timer if it hasn't finished yet"""
+        self.finished.set()
+    
+    def run(self):
+        self.finished.wait(self.interval)
+        if not self.finished.isSet():
+            self.function(*self.args, **self.kwargs)
+        self.finished.set()
 
 # Special thread class to represent the main thread
 # This is garbage collected through an exit handler
