@@ -2,8 +2,6 @@
 
 import sys
 
-sys.save_stdout = sys.stdout
-
 class Error(Exception):
     """Base class for regression test exceptions."""
 
@@ -22,26 +20,6 @@ class TestSkipped(Error):
 
 verbose = 1              # Flag set to 0 by regrtest.py
 use_resources = None       # Flag set to [] by regrtest.py
-
-# _output_comparison controls whether regrtest will try to compare stdout
-# with an expected-output file.  For straight regrtests, it should.
-# The doctest driver resets this flag by calling deny_output_comparison().
-# Note that this control is in addition to verbose mode:  output will be
-# compared if and only if _output_comparison is true and verbose mode is
-# not in effect.
-_output_comparison = 1
-
-def deny_output_comparison():
-    global _output_comparison
-    _output_comparison = 0
-    sys.stdout = sys.save_stdout
-
-# regrtest's interface to _output_comparison.
-def output_comparison_denied():
-    global _output_comparison
-    denied = not _output_comparison
-    _output_comparison = 1
-    return denied
 
 def unload(name):
     try:
@@ -201,7 +179,13 @@ def run_doctest(module, verbosity=None):
     else:
         verbosity = None
 
-    deny_output_comparison()
-    f, t = doctest.testmod(module, verbose=verbosity)
-    if f:
-        raise TestFailed("%d of %d doctests failed" % (f, t))
+    # Direct doctest output (normally just errors) to real stdout; doctest
+    # output shouldn't be compared by regrtest.
+    save_stdout = sys.stdout
+    sys.stdout = sys.__stdout__
+    try:
+        f, t = doctest.testmod(module, verbose=verbosity)
+        if f:
+            raise TestFailed("%d of %d doctests failed" % (f, t))
+    finally:
+        sys.stdout = save_stdout

@@ -287,7 +287,7 @@ def runtest(test, generate, verbose, quiet, testdir = None):
     else:
         cfp =  StringIO.StringIO()
     try:
-        sys.save_stdout = sys.stdout
+        save_stdout = sys.stdout
         try:
             if cfp:
                 sys.stdout = cfp
@@ -301,7 +301,7 @@ def runtest(test, generate, verbose, quiet, testdir = None):
             if indirect_test is not None:
                 indirect_test()
         finally:
-            sys.stdout = sys.save_stdout
+            sys.stdout = save_stdout
     except (ImportError, test_support.TestSkipped), msg:
         if not quiet:
             print "test", test, "skipped --", msg
