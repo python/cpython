@@ -391,9 +391,6 @@ class Aifc_read:
 					formlength = 0
 					break
 				raise EOFError # different error, raise exception
-			formlength = formlength - 8 - chunk.chunksize
-			if chunk.chunksize & 1:
-				formlength = formlength - 1
 			if chunk.chunkname == 'COMM':
 				self._read_comm_chunk(chunk)
 				self._comm_chunk_read = 1
@@ -409,6 +406,9 @@ class Aifc_read:
 				pass
 			else:
 				raise Error, 'unrecognized chunk type '+chunk.chunkname
+			formlength = formlength - 8 - chunk.chunksize
+			if chunk.chunksize & 1:
+				formlength = formlength - 1
 			if formlength > 0:
 				chunk.skip()
 		if not self._comm_chunk_read or not self._ssnd_chunk:
