@@ -55,22 +55,25 @@ def linknames(old, new, link):
 		print old + ': warning: cannot listdir:', msg
 		return
 	for name in names:
-	    if name not in (os.curdir, os.pardir):
-		oldname = os.path.join(old, name)
-		linkname = os.path.join(link, name)
-		newname = os.path.join(new, name)
-		if debug > 1: print oldname, newname, linkname
-		if os.path.isdir(oldname) and not os.path.islink(oldname):
-			try:
-				os.mkdir(newname, 0777)
-				ok = 1
-			except:
-				print newname + ': warning: cannot mkdir:', msg
-				ok = 0
-			if ok:
-				linkname = os.path.join(os.pardir, linkname)
-				linknames(oldname, newname, linkname)
-		else:
-			os.symlink(linkname, newname)
+		if name not in (os.curdir, os.pardir):
+			oldname = os.path.join(old, name)
+			linkname = os.path.join(link, name)
+			newname = os.path.join(new, name)
+			if debug > 1: print oldname, newname, linkname
+			if os.path.isdir(oldname) and \
+			   not os.path.islink(oldname):
+				try:
+					os.mkdir(newname, 0777)
+					ok = 1
+				except:
+					print newname + \
+					      ': warning: cannot mkdir:', msg
+					ok = 0
+				if ok:
+					linkname = os.path.join(os.pardir,
+								linkname)
+					linknames(oldname, newname, linkname)
+			else:
+				os.symlink(linkname, newname)
 
 sys.exit(main())
