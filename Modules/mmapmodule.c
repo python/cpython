@@ -897,7 +897,8 @@ new_mmap_object(PyObject *self, PyObject *args, PyObject *kwdict)
 	}
 
 #ifdef HAVE_FSTAT
-	if (fstat(fd, &st) == 0 && (size_t)map_size > st.st_size) {
+	if (fstat(fd, &st) == 0 && S_ISREG(st.st_mode) &&
+	    (size_t)map_size > st.st_size) {
 		PyErr_SetString(PyExc_ValueError, 
 				"mmap length is greater than file size");
 		return NULL;
