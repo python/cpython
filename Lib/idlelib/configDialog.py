@@ -226,7 +226,8 @@ class ConfigDialog(Toplevel):
             self.builtinTheme,None,command=None)
         self.optMenuThemeCustom=DynOptionMenu(frameTheme,
             self.customTheme,None,command=None)
-        self.buttonDeleteCustomTheme=Button(frameTheme,text='Delete Custom Theme')
+        self.buttonDeleteCustomTheme=Button(frameTheme,text='Delete Custom Theme',
+                command=self.DeleteCustomTheme)
         ##widget packing
         #body
         frameCustom.pack(side=LEFT,padx=5,pady=10,expand=TRUE,fill=BOTH)
@@ -293,7 +294,8 @@ class ConfigDialog(Toplevel):
             self.builtinKeys,None,command=None)
         self.optMenuKeysCustom=DynOptionMenu(frameKeySets,
             self.customKeys,None,command=None)
-        self.buttonDeleteCustomKeys=Button(frameKeySets,text='Delete Custom Key Set')
+        self.buttonDeleteCustomKeys=Button(frameKeySets,text='Delete Custom Key Set',
+                command=self.DeleteCustomKeys)
         ##widget packing
         #body
         frameCustom.pack(side=LEFT,padx=5,pady=5,expand=TRUE,fill=BOTH)
@@ -456,8 +458,9 @@ class ConfigDialog(Toplevel):
 
     def VarChanged_customTheme(self,*params):
         value=self.customTheme.get()
-        self.AddChangedItem('main','Theme','name',value)
-        self.PaintThemeSample()
+        if value != '- no custom themes -':
+            self.AddChangedItem('main','Theme','name',value)
+            self.PaintThemeSample()
 
     def VarChanged_themeIsBuiltin(self,*params):
         value=self.themeIsBuiltin.get()
@@ -486,8 +489,9 @@ class ConfigDialog(Toplevel):
 
     def VarChanged_customKeys(self,*params):
         value=self.customKeys.get()
-        self.AddChangedItem('main','Keys','name',value)
-        self.LoadKeysList(value)
+        if value != '- no custom keys -':
+            self.AddChangedItem('main','Keys','name',value)
+            self.LoadKeysList(value)
 
     def VarChanged_keysAreBuiltin(self,*params):
         value=self.keysAreBuiltin.get() 
@@ -594,7 +598,8 @@ class ConfigDialog(Toplevel):
             self.listBindings.select_anchor(listIndex)
 
     def GetNewKeysName(self,message):
-        usedNames=idleConf.GetSectionList('user','keys')
+        usedNames=(idleConf.GetSectionList('user','keys')+
+                idleConf.GetSectionList('default','keys'))
         newKeySet=GetCfgSectionNameDialog(self,'New Custom Key Set',
                 message,usedNames).result
         return newKeySet
@@ -657,6 +662,58 @@ class ConfigDialog(Toplevel):
             self.listBindings.select_set(listIndex)
             self.listBindings.select_anchor(listIndex)
 
+    def DeleteCustomKeys(self):
+        keySetName=self.customKeys.get()
+        if not tkMessageBox.askyesno('Delete Key Set','Are you sure you wish '+
+                'to delete the key set '+`keySetName`+' ?'):
+            return
+        #remove key set from config
+        idleConf.userCfg['keys'].remove_section(keySetName)
+        if self.changedItems['keys'].has_key(keySetName):
+            del(self.changedItems['keys'][keySetName])
+        #write changes
+        idleConf.userCfg['keys'].Save()
+        #reload user key set list
+        itemList=idleConf.GetSectionList('user','keys')
+        itemList.sort()
+        if not itemList:
+            self.radioKeysCustom.config(state=DISABLED)
+            self.optMenuKeysCustom.SetMenu(itemList,'- no custom keys -')
+        else:
+            self.optMenuKeysCustom.SetMenu(itemList,itemList[0])
+        #revert to default key set
+        self.keysAreBuiltin.set(idleConf.defaultCfg['main'].Get('Keys','default'))
+        self.builtinKeys.set(idleConf.defaultCfg['main'].Get('Keys','name'))
+        #user can't back out of these changes, they must be applied now
+        self.Apply()
+        self.SetKeysType()
+    
+    def DeleteCustomTheme(self):
+        themeName=self.customTheme.get()
+        if not tkMessageBox.askyesno('Delete Theme','Are you sure you wish '+
+                'to delete the theme '+`themeName`+' ?'):
+            return
+        #remove theme from config
+        idleConf.userCfg['highlight'].remove_section(themeName)
+        if self.changedItems['highlight'].has_key(themeName):
+            del(self.changedItems['highlight'][themeName])
+        #write changes
+        idleConf.userCfg['highlight'].Save()
+        #reload user theme list
+        itemList=idleConf.GetSectionList('user','highlight')
+        itemList.sort()
+        if not itemList:
+            self.radioThemeCustom.config(state=DISABLED)
+            self.optMenuThemeCustom.SetMenu(itemList,'- no custom themes -')
+        else:
+            self.optMenuThemeCustom.SetMenu(itemList,itemList[0])
+        #revert to default theme
+        self.themeIsBuiltin.set(idleConf.defaultCfg['main'].Get('Theme','default'))
+        self.builtinTheme.set(idleConf.defaultCfg['main'].Get('Theme','name'))
+        #user can't back out of these changes, they must be applied now
+        self.Apply()
+        self.SetThemeType()
+
     def GetColour(self):
         target=self.highlightTarget.get()
         prevColour=self.frameColourSet.cget('bg')
@@ -689,7 +746,8 @@ class ConfigDialog(Toplevel):
         self.AddChangedItem('highlight',theme,themeElement,newColour)
 
     def GetNewThemeName(self,message):
-        usedNames=idleConf.GetSectionList('user','highlight')
+        usedNames=(idleConf.GetSectionList('user','highlight')+
+                idleConf.GetSectionList('default','highlight'))
         newTheme=GetCfgSectionNameDialog(self,'New Custom Theme',
                 message,usedNames).result
         return newTheme
@@ -1025,6 +1083,17 @@ class ConfigDialog(Toplevel):
                 idleConf.userCfg[configType].Save()                
         self.ResetChangedItems() #clear the changed items dict
          
+    def ActivateConfigChanges(self):
+        #things that need to be done to make 
+        #applied config changes dynamic:
+        #    
+        #update editor/shell font and repaint
+        #dynamically update indentation setttings
+        #update theme and repaint
+        #update keybindings and re-bind
+        #update user help sources menu
+        pass
+    
     def Cancel(self):
         self.destroy()
 
@@ -1034,6 +1103,7 @@ class ConfigDialog(Toplevel):
 
     def Apply(self):
         self.SaveAllChangedConfigs()
+        self.ActivateConfigChanges()
 
     def Help(self):
         pass

@@ -10,7 +10,7 @@
 [IDLE Classic Windows]
 copy=<Control-Key-c>
 cut=<Control-Key-x>
-paste=<Control-Key-v>
+paste=<Control-Key-m>
 beginning-of-line= <Key-Home>
 center-insert=<Control-Key-l>
 close-all-windows=<Control-Key-q>
