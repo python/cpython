@@ -84,6 +84,28 @@ tempdir = None
 
 _once_lock = _allocate_lock()
 
+if hasattr(_os, "lstat"):
+    _stat = _os.lstat
+elif hasattr(_os, "stat"):
+    _stat = _os.stat
+else:
+    # Fallback.  All we need is something that raises os.error if the
+    # file doesn't exist.
+    def _stat(fn):
+        try:
+            f = open(fn)
+        except IOError:
+            raise _os.error
+        f.close()
+
+def _exists(fn):
+    try:
+        _stat(fn)
+    except _os.error:
+        return False
+    else:
+        return True
+
 class _RandomNameSequence:
     """An instance of _RandomNameSequence generates an endless
     sequence of unpredictable strings which can safely be incorporated
@@ -339,7 +361,7 @@ def mktemp(suffix="", prefix=template, dir=None):
     for seq in xrange(TMP_MAX):
         name = names.next()
         file = _os.path.join(dir, prefix + name + suffix)
-        if not _os.path.exists(file):
+        if not _exists(file):
             return file
 
     raise IOError, (_errno.EEXIST, "No usable temporary filename found")
