@@ -7,6 +7,14 @@ Python News
 What's New in Python 2.4.2a
 ===========================
 
+*Release date: XX-XXX-2005*
+
+Core and builtins
+-----------------
+
+- Bug #1165306: instancemethod_new allowed the creation of a method
+  with im_class == im_self == NULL, which caused a crash when called.
+
 Extension Modules
 -----------------
 
