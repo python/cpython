@@ -102,6 +102,10 @@ class Message:
         """Return the entire formatted message as a string.
         Optional `unixfrom' when True, means include the Unix From_ envelope
         header.
+
+        This is a convenience method and may not generate the message exactly
+        as you intend.  For more flexibility, use the flatten() method of a
+        Generator instance.
         """
         from email.Generator import Generator
         fp = StringIO()
