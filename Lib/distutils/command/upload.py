@@ -67,7 +67,7 @@ class upload(Command):
     def upload_file(self, command, filename):
         # Sign if requested
         if self.sign:
-            spawn(("gpg", "--sign",  "-a", filename),
+            spawn(("gpg", "--detach-sign", "-a", filename),
                   dry_run=self.dry_run)
 
         # Fill in the data
