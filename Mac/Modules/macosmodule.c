@@ -482,13 +482,13 @@ MacOS_EnableAppswitch(PyObject *self, PyObject *args)
 	if ( schp.process_events )
 		old = 1;
 	else if ( schp.check_interrupt )
-		old = -1;
-	else
 		old = 0;
+	else
+		old = -1;
 	if ( new > 0 ) {
 		schp.process_events = mDownMask|keyDownMask|osMask;
 		schp.check_interrupt = 1;
-	} else if ( new < 0 ) {
+	} else if ( new == 0 ) {
 		schp.process_events = 0;
 		schp.check_interrupt = 1;
 	} else {
@@ -555,16 +555,14 @@ MacOS_splash(PyObject *self, PyObject *args)
 {
 	int resid = -1;
 	static DialogPtr curdialog = NULL;
+	DialogPtr olddialog;
 	WindowRef theWindow;
 	CGrafPtr thePort;
 	short xpos, ypos, width, height, swidth, sheight;
 	
 	if (!PyArg_ParseTuple(args, "|i", &resid))
 		return NULL;
-	if (curdialog) {
-		DisposeDialog(curdialog);
-		curdialog = NULL;
-	}
+	olddialog = curdialog;
 		
 	if ( resid != -1 ) {
 		curdialog = GetNewDialog(resid, NULL, (WindowPtr)-1);
@@ -582,6 +580,8 @@ MacOS_splash(PyObject *self, PyObject *args)
 			DrawDialog(curdialog);
 		}
 	}
+	if (olddialog)
+		DisposeDialog(olddialog);
 	Py_INCREF(Py_None);
 	return Py_None;
 }
@@ -597,6 +597,20 @@ MacOS_DebugStr(PyObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, "O&|O", PyMac_GetStr255, message, &object))
 		return NULL;
 	DebugStr(message);
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
+static char SysBeep_doc[] = "BEEEEEP!!!";
+
+static PyObject *
+MacOS_SysBeep(PyObject *self, PyObject *args)
+{
+	int duration = 6;
+	
+	if (!PyArg_ParseTuple(args, "|i", &duration))
+		return NULL;
+	SysBeep(duration);
 	Py_INCREF(Py_None);
 	return Py_None;
 }
@@ -685,6 +699,7 @@ static PyMethodDef MacOS_Methods[] = {
 	{"splash",			MacOS_splash,		1, 	splash_doc},
 	{"DebugStr",			MacOS_DebugStr,		1,	DebugStr_doc},
 	{"GetTicks",			MacOS_GetTicks,		1,	GetTicks_doc},
+	{"SysBeep",			MacOS_SysBeep,		1,	SysBeep_doc},
 	{NULL,				NULL}		 /* Sentinel */
 };
 
