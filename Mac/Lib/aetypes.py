@@ -9,9 +9,9 @@ import string
 # convoluted, since there are cyclic dependencies between this file and
 # aetools_convert.
 #
-def pack(*args):
+def pack(*args, **kwargs):
 	from aepack import pack
-	return apply(pack, args)
+	return apply(pack, args, kwargs)
 	
 def IsSubclass(cls, base):
 	"""Test whether CLASS1 is the same as or a subclass of CLASS2"""
@@ -68,6 +68,26 @@ def IsEnum(x):
 def mkenum(enum):
 	if IsEnum(enum): return enum
 	return Enum(enum)
+
+# Jack changed the way this is done
+class InsertionLoc:
+	def __init__(self, of, pos):
+		self.of = of
+		self.pos = pos
+	
+	def __repr__(self):
+		return "InsertionLoc(%s, %s)" % (`self.of`, `self.pos`)
+		
+	def __aepack__(self):
+		rec = {'kobj': self.of, 'kpos': self.pos}
+		return pack(rec, forcetype='insl')
+		
+# Convenience functions for dsp:
+def beginning(of):
+	return InsertionLoc(of, Enum('bgng'))
+	
+def end(of):
+	return InsertionLoc(of, Enum('end '))
 
 class Boolean:
 	"""An AE boolean value"""
