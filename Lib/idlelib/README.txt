@@ -21,6 +21,11 @@ This enhancement has often been requested, and is now finally available.  The
 magic "reload/import *" incantations are no longer required when editing and
 testing a module two or three steps down the import chain.
 
+(Personal firewall software may warn about the connection IDLE makes to its
+subprocess using this computer's internal loopback interface.  This connection
+is not visible on any external interface and no data is sent to or received
+from the Internet.)
+
 It is possible to interrupt tightly looping user code, even on Windows.
 
 Applications which cannot support subprocesses and/or sockets can still run

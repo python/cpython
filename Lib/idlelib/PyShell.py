@@ -864,15 +864,24 @@ class PyShell(OutputWindow):
     COPYRIGHT = \
           'Type "copyright", "credits" or "license()" for more information.'
 
+    firewallmessage = """
+    ****************************************************************
+    Personal firewall software may warn about the connection IDLE
+    makes to its subprocess using this computer's internal loopback
+    interface.  This connection is not visible on any external
+    interface and no data is sent to or received from the Internet.
+    ****************************************************************
+    """
+
     def begin(self):
         self.resetoutput()
         if use_subprocess:
             nosub = ''
         else:
             nosub = "==== No Subprocess ===="
-        self.write("Python %s on %s\n%s\nIDLE %s      %s\n" %
+        self.write("Python %s on %s\n%s\n%s\nIDLE %s      %s\n" %
                    (sys.version, sys.platform, self.COPYRIGHT,
-                    idlever.IDLE_VERSION, nosub))
+                    self.firewallmessage, idlever.IDLE_VERSION, nosub))
         self.showprompt()
         import Tkinter
         Tkinter._default_root = None

@@ -1,9 +1,19 @@
+What's New in IDLE 1.0?
+===================================
+
+*Release date: 29-Jul-2003*
+
+- Added a banner to the shell discussimg warnings possibly raised by personal
+  firewall software.  Added same comment to README.txt.
+
+
 What's New in IDLE 1.0 release candidate 2?
 ===================================
 
 *Release date: 24-Jul-2003*
 
 - Calltip error when docstring was None  Python Bug 775541
+
 
 What's New in IDLE 1.0 release candidate 1?
 ===================================
