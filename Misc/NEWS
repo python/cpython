@@ -47,6 +47,8 @@ Core and builtins
 Extension modules
 -----------------
 
+- difflib now supports HTML side-by-side diff.
+
 - os.urandom has been added for systems that support sources of random
   data.
 
@@ -62,6 +64,8 @@ Extension modules
 
 Library
 -------
+
+- difflib and diff.py can now generate HTML.
 
 - bdist_rpm now includes version and release in the BuildRoot, and
   replaces - by ``_`` in version and release.
