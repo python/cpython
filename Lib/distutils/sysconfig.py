@@ -154,7 +154,7 @@ def parse_config_h(fp, g=None):
                 g[m.group(1)] = 0
     return g
 
-def parse_makefile(fp, g=None):
+def parse_makefile(fn, g=None):
     """Parse a Makefile-style file.
 
     A dictionary containing name/value pairs is returned.  If an
@@ -162,15 +162,18 @@ def parse_makefile(fp, g=None):
     used instead of a new dictionary.
 
     """
+    from distutils.text_file import TextFile
+    fp = TextFile(fn, strip_comments=1, join_lines=1)
+
     if g is None:
         g = {}
-    variable_rx = re.compile("([a-zA-Z][a-zA-Z0-9_]+)\s*=\s*(.*)\n")
+    variable_rx = re.compile("([a-zA-Z][a-zA-Z0-9_]+)\s*=\s*(.*)")
     done = {}
     notdone = {}
-    #
+
     while 1:
         line = fp.readline()
-        if not line:
+        if line is None:
             break
         m = variable_rx.match(line)
         if m:
@@ -233,7 +236,7 @@ def _init_posix():
     # load the installed Makefile:
     try:
         filename = get_makefile_filename()
-        file = open(filename)
+        parse_makefile(filename, g)
     except IOError, msg:
         my_msg = "invalid Python installation: unable to open %s" % filename
         if hasattr(msg, "strerror"):
@@ -241,7 +244,6 @@ def _init_posix():
 
         raise DistutilsPlatformError, my_msg
               
-    parse_makefile(file, g)
     
     # On AIX, there are wrong paths to the linker scripts in the Makefile
     # -- these paths are relative to the Python source, but when installed
