@@ -238,7 +238,7 @@ select_select(self, args)
 	fd_set ifdset, ofdset, efdset;
 	double timeout;
 	struct timeval tv, *tvp;
-	int seconds;
+	long seconds;
 	int imax, omax, emax, max;
 	int n;
 
@@ -255,10 +255,14 @@ select_select(self, args)
 		return NULL;
 	}
 	else {
-		seconds = (int)timeout;
+		if (timeout > (double)LONG_MAX) {
+			PyErr_SetString(PyExc_OverflowError, "timeout period too long");
+			return NULL;
+		}
+		seconds = (long)timeout;
 		timeout = timeout - (double)seconds;
 		tv.tv_sec = seconds;
-		tv.tv_usec = (int)(timeout*1000000.0);
+		tv.tv_usec = (long)(timeout*1000000.0);
 		tvp = &tv;
 	}
 
