@@ -64,7 +64,8 @@ DOCDESTDIR=	$LIBDEST/doc
 EMACS=		emacs
 PYTHON=		python
 MAKEINFO=	makeinfo
-PARTPARSE=	$(PYTHON) ./partparse.pyc
+PARTPARSEOBJ=	partparse.pyc
+PARTPARSE=	$(PYTHON) $(PARTPARSEOBJ)
 
 # Ideally, you shouldn't need to edit beyond this point
 
@@ -170,7 +171,10 @@ api.dvi: api.tex
 # The remaining part of the Makefile is concerned with various
 # conversions, as described above.  See also the README file.
 
-.SUFFIXES: .py .pyc
+.SUFFIXES: .py .pyc .pyo
+
+.py.pyo:
+	$(PYTHON) -O -c "import $*"
 
 .py.pyc:
 	$(PYTHON) -c "import $*"
@@ -182,7 +186,7 @@ api.dvi: api.tex
 # and makeinfo can't handle a group with a leading @command.  But at least
 # the info file gets generated.
 
-lib1.texi: lib*.tex texipre.dat texipost.dat partparse.pyc
+lib1.texi: lib*.tex texipre.dat texipost.dat $(PARTPARSEOBJ)
 	$(PARTPARSE) -o lib1.texi `./whichlibs`
 	sed 's/"{\\}n{\\}n/"\\n\\n/' lib1.texi >lib2.texi
 	mv lib2.texi lib1.texi
@@ -274,7 +278,7 @@ tarballs:  tarpdf tarps tarhtml
 # - sources: .tex, .bib, .sty
 # - useful results: .dvi, .pdf, .ps, .texi, .info
 clean:	l2hclean
-	rm -f @* *~ *.aux *.idx *.ilg *.ind *.log *.toc *.blg *.bbl *.pyc
+	rm -f @* *~ *.aux *.idx *.ilg *.ind *.log *.toc *.blg *.bbl *.py[co]
 	rm -f *.bak *.orig lib1.texi
 	rm -f html-$(VERSION).tar.gz postscript-$(VERSION).tar.gz
 	rm -f pdf-$(VERSION).tar.gz
