@@ -155,6 +155,10 @@ Library
 
 - New csv package makes it easy to read/write CSV files.
 
+- Module shlex has been extended to allow posix-like shell parsings,
+  including a split() function for easy spliting of quoted strings and
+  commands. An iterator interface was also implemented.
+
 Tools/Demos
 -----------
 
