@@ -94,7 +94,7 @@ rooturl   -- URL to start checking
 """
 
 
-__version__ = "0.5"
+__version__ = "$Revision$"
 
 
 import sys
@@ -112,9 +112,17 @@ import sgmllib
 import mimetypes
 import robotparser
 
+# Extract real version number if necessary
+if __version__[0] == '$':
+    _v = string.split(__version__)
+    if len(_v) == 3:
+	__version__ = _v[1]
+
 
 # Tunable parameters
 DEFROOT = "file:/usr/local/etc/httpd/htdocs/"	# Default root URL
+CHECKEXT = 1				# Check external references (1 deep)
+VERBOSE = 1				# Verbosity level (0-3)
 MAXPAGE = 150000			# Ignore files bigger than this
 ROUNDSIZE = 50				# Number of links processed per round
 DUMPFILE = "@webchecker.pickle"		# Pickled checkpoint
@@ -122,16 +130,15 @@ AGENTNAME = "webchecker"		# Agent name for robots.txt parser
 
 
 # Global variables
-verbose = 1
-maxpage = MAXPAGE
-roundsize = ROUNDSIZE
 
 
 def main():
-    global verbose, maxpage, roundsize
+    checkext = CHECKEXT
+    verbose = VERBOSE
+    maxpage = MAXPAGE
+    roundsize = ROUNDSIZE
     dumpfile = DUMPFILE
     restart = 0
-    checkext = 1
     norun = 0
 
     try:
@@ -163,18 +170,15 @@ def main():
 	print AGENTNAME, "version", __version__
 
     if restart:
-	if verbose > 0:
-	    print "Loading checkpoint from %s ..." % dumpfile
-	f = open(dumpfile, "rb")
-	c = pickle.load(f)
-	f.close()
-	if verbose > 0:
-	    print "Done."
-	    print "Root:", string.join(c.roots, "\n      ")
+	c = load_pickle(dumpfile=dumpfile, verbose=verbose)
     else:
-	c = Checker(checkext)
-	if not args:
-	    args.append(DEFROOT)
+	c = Checker()
+
+    c.setflags(checkext=checkext, verbose=verbose,
+	       maxpage=maxpage, roundsize=roundsize)
+
+    if not restart and not args:
+	args.append(DEFROOT)
 
     for arg in args:
 	c.addroot(arg)
@@ -192,40 +196,43 @@ def main():
 	if verbose > 0:
 	    print "[report interrupted]"
 
-    if not c.changed:
-	if verbose > 0:
-	    print
-	    print "No need to save checkpoint"
-    elif not dumpfile:
-	if verbose > 0:
-	    print "No dumpfile, won't save checkpoint"
-    else:
-	if verbose > 0:
-	    print
-	    print "Saving checkpoint to %s ..." % dumpfile
-	newfile = dumpfile + ".new"
-	f = open(newfile, "wb")
-	pickle.dump(c, f)
-	f.close()
-	try:
-	    os.unlink(dumpfile)
-	except os.error:
-	    pass
-	os.rename(newfile, dumpfile)
-	if verbose > 0:
-	    print "Done."
-	    if dumpfile == DUMPFILE:
-		print "Use ``%s -R'' to restart." % sys.argv[0]
-	    else:
-		print "Use ``%s -R -d %s'' to restart." % (sys.argv[0],
-							   dumpfile)
+    if c.save_pickle(dumpfile):
+	if dumpfile == DUMPFILE:
+	    print "Use ``%s -R'' to restart." % sys.argv[0]
+	else:
+	    print "Use ``%s -R -d %s'' to restart." % (sys.argv[0], dumpfile)
+
+
+def load_pickle(dumpfile=DUMPFILE, verbose=VERBOSE):
+    if verbose > 0:
+	print "Loading checkpoint from %s ..." % dumpfile
+    f = open(dumpfile, "rb")
+    c = pickle.load(f)
+    f.close()
+    if verbose > 0:
+	print "Done."
+	print "Root:", string.join(c.roots, "\n      ")
+    return c
 
 
 class Checker:
 
-    def __init__(self, checkext=1):
+    checkext = CHECKEXT
+    verbose = VERBOSE
+    maxpage = MAXPAGE
+    roundsize = ROUNDSIZE
+
+    validflags = tuple(dir())
+
+    def __init__(self):
 	self.reset()
-	self.checkext = checkext
+
+    def setflags(self, **kw):
+	for key in kw.keys():
+	    if key not in self.validflags:
+		raise NameError, "invalid keyword argument: %s" % str(key)
+	for key, value in kw.items():
+	    setattr(self, key, value)
 
     def reset(self):
 	self.roots = []
@@ -243,6 +250,7 @@ class Checker:
 	return (self.roots, self.todo, self.done, self.bad, self.round)
 
     def __setstate__(self, state):
+	self.reset()
 	(self.roots, self.todo, self.done, self.bad, self.round) = state
 	for root in self.roots:
 	    self.addrobot(root)
@@ -268,24 +276,24 @@ class Checker:
 	if self.robots.has_key(root): return
 	url = urlparse.urljoin(root, "/robots.txt")
 	self.robots[root] = rp = robotparser.RobotFileParser()
-	if verbose > 2:
+	if self.verbose > 2:
 	    print "Parsing", url
-	    rp.debug = verbose > 3
+	    rp.debug = self.verbose > 3
 	rp.set_url(url)
 	try:
 	    rp.read()
 	except IOError, msg:
-	    if verbose > 1:
+	    if self.verbose > 1:
 		print "I/O error parsing", url, ":", msg
 
     def run(self):
 	while self.todo:
 	    self.round = self.round + 1
-	    if verbose > 0:
+	    if self.verbose > 0:
 		print
 		print "Round %d (%s)" % (self.round, self.status())
 		print 
-	    urls = self.todo.keys()[:roundsize]
+	    urls = self.todo.keys()[:self.roundsize]
 	    for url in urls:
 		self.dopage(url)
 
@@ -325,9 +333,9 @@ class Checker:
 		print "   msg", msg
 
     def dopage(self, url):
-	if verbose > 1:
-	    if verbose > 2:
-		show("Check ", url, "  from", self.todo[url])
+	if self.verbose > 1:
+	    if self.verbose > 2:
+		self.show("Check ", url, "  from", self.todo[url])
 	    else:
 		print "Check ", url
 	page = self.getpage(url)
@@ -346,17 +354,17 @@ class Checker:
 
     def newdonelink(self, url, origin):
 	self.done[url].append(origin)
-	if verbose > 3:
+	if self.verbose > 3:
 	    print "  Done link", url
 
     def newtodolink(self, url, origin):
 	if self.todo.has_key(url):
 	    self.todo[url].append(origin)
-	    if verbose > 3:
+	    if self.verbose > 3:
 		print "  Seen todo link", url
 	else:
 	    self.todo[url] = [origin]
-	    if verbose > 3:
+	    if self.verbose > 3:
 		print "  New todo link", url
 
     def markdone(self, url):
@@ -373,56 +381,79 @@ class Checker:
 
     def getpage(self, url):
 	if url[:7] == 'mailto:' or url[:5] == 'news:':
-	    if verbose > 1: print " Not checking mailto/news URL"
+	    if self.verbose > 1: print " Not checking mailto/news URL"
 	    return None
 	isint = self.inroots(url)
-	if not isint and not self.checkext:
-	    if verbose > 1: print " Not checking ext link"
+	if not isint:
+	    if not self.checkext:
+		if self.verbose > 1: print " Not checking ext link"
+		return None
+	    f = self.openpage(url)
+	    if f:
+		self.safeclose(f)
 	    return None
+	text, nurl = self.readhtml(url)
+	if nurl != url:
+	    if self.verbose > 1:
+		print " Redirected to", nurl
+	    url = nurl
+	if text:
+	    return Page(text, url, verbose=self.verbose, maxpage=self.maxpage)
+
+    def readhtml(self, url):
+	text = None
+	f, url = self.openhtml(url)
+	if f:
+	    text = f.read()
+	    f.close()
+	return text, url
+
+    def openhtml(self, url):
+	f = self.openpage(url)
+	if f:
+	    url = f.geturl()
+	    info = f.info()
+	    if not self.checkforhtml(info, url):
+		self.safeclose(f)
+		f = None
+	return f, url
+
+    def openpage(self, url):
 	try:
-	    f = self.urlopener.open(url)
+	    return self.urlopener.open(url)
 	except IOError, msg:
-	    msg = sanitize(msg)
-	    if verbose > 0:
+	    msg = self.sanitize(msg)
+	    if self.verbose > 0:
 		print "Error ", msg
-	    if verbose > 0:
-		show(" HREF ", url, "  from", self.todo[url])
+	    if self.verbose > 0:
+		self.show(" HREF ", url, "  from", self.todo[url])
 	    self.setbad(url, msg)
 	    return None
-	if not isint:
-	    if verbose > 1: print " Not gathering links from ext URL"
-	    safeclose(f)
-	    return None
-	nurl = f.geturl()
-	info = f.info()
+
+    def checkforhtml(self, info, url):
 	if info.has_key('content-type'):
 	    ctype = string.lower(info['content-type'])
 	else:
-	    ctype = None
-	if nurl != url:
-	    if verbose > 1:
-		print " Redirected to", nurl
-	if not ctype:
-	    ctype, encoding = mimetypes.guess_type(nurl)
-	if ctype != 'text/html':
-	    safeclose(f)
-	    if verbose > 1:
+	    if url[-1:] == "/":
+		return 1
+	    ctype, encoding = mimetypes.guess_type(url)
+	if ctype == 'text/html':
+	    return 1
+	else:
+	    if self.verbose > 1:
 		print " Not HTML, mime type", ctype
-	    return None
-	text = f.read()
-	f.close()
-	return Page(text, nurl)
+	    return 0
 
     def setgood(self, url):
 	if self.bad.has_key(url):
 	    del self.bad[url]
 	    self.changed = 1
-	    if verbose > 0:
+	    if self.verbose > 0:
 		print "(Clear previously seen error)"
 
     def setbad(self, url, msg):
 	if self.bad.has_key(url) and self.bad[url] == msg:
-	    if verbose > 0:
+	    if self.verbose > 0:
 		print "(Seen this error before)"
 	    return
 	self.bad[url] = msg
@@ -444,23 +475,88 @@ class Checker:
 	except KeyError:
 	    self.errors[url] = [triple]
 
+    # The following used to be toplevel functions; they have been
+    # changed into methods so they can be overridden in subclasses.
+
+    def show(self, p1, link, p2, origins):
+	print p1, link
+	i = 0
+	for source, rawlink in origins:
+	    i = i+1
+	    if i == 2:
+		p2 = ' '*len(p2)
+	    print p2, source,
+	    if rawlink != link: print "(%s)" % rawlink,
+	    print
+
+    def sanitize(self, msg):
+	if isinstance(IOError, ClassType) and isinstance(msg, IOError):
+	    # Do the other branch recursively
+	    msg.args = self.sanitize(msg.args)
+	elif isinstance(msg, TupleType):
+	    if len(msg) >= 4 and msg[0] == 'http error' and \
+	       isinstance(msg[3], InstanceType):
+		# Remove the Message instance -- it may contain
+		# a file object which prevents pickling.
+		msg = msg[:3] + msg[4:]
+	return msg
+
+    def safeclose(self, f):
+	try:
+	    url = f.geturl()
+	except AttributeError:
+	    pass
+	else:
+	    if url[:4] == 'ftp:' or url[:7] == 'file://':
+		# Apparently ftp connections don't like to be closed
+		# prematurely...
+		text = f.read()
+	f.close()
+
+    def save_pickle(self, dumpfile=DUMPFILE):
+	if not self.changed:
+	    if self.verbose > 0:
+		print
+		print "No need to save checkpoint"
+	elif not dumpfile:
+	    if self.verbose > 0:
+		print "No dumpfile, won't save checkpoint"
+	else:
+	    if self.verbose > 0:
+		print
+		print "Saving checkpoint to %s ..." % dumpfile
+	    newfile = dumpfile + ".new"
+	    f = open(newfile, "wb")
+	    pickle.dump(self, f)
+	    f.close()
+	    try:
+		os.unlink(dumpfile)
+	    except os.error:
+		pass
+	    os.rename(newfile, dumpfile)
+	    if self.verbose > 0:
+		print "Done."
+	    return 1
+
 
 class Page:
 
-    def __init__(self, text, url):
+    def __init__(self, text, url, verbose=VERBOSE, maxpage=MAXPAGE):
 	self.text = text
 	self.url = url
+	self.verbose = verbose
+	self.maxpage = maxpage
 
     def getlinkinfos(self):
 	size = len(self.text)
-	if size > maxpage:
-	    if verbose > 0:
+	if size > self.maxpage:
+	    if self.verbose > 0:
 		print "Skip huge file", self.url
 		print "  (%.0f Kbytes)" % (size*0.001)
 	    return []
-	if verbose > 2:
+	if self.verbose > 2:
 	    print "  Parsing", self.url, "(%d bytes)" % size
-	parser = MyHTMLParser()
+	parser = MyHTMLParser(verbose=self.verbose)
 	parser.feed(self.text)
 	parser.close()
 	rawlinks = parser.getlinks()
@@ -529,10 +625,11 @@ class MyURLopener(urllib.FancyURLopener):
 
 class MyHTMLParser(sgmllib.SGMLParser):
 
-    def __init__(self):
+    def __init__(self, verbose=VERBOSE):
 	self.base = None
 	self.links = {}
-	sgmllib.SGMLParser.__init__ (self)
+	self.myverbose = verbose
+	sgmllib.SGMLParser.__init__(self)
 
     def start_a(self, attributes):
 	self.link_attr(attributes, 'href')
@@ -559,7 +656,7 @@ class MyHTMLParser(sgmllib.SGMLParser):
 	    if name == 'href':
 		if value: value = string.strip(value)
 		if value:
-		    if verbose > 1:
+		    if self.myverbose > 1:
 			print "  Base", value
 		    self.base = value
 
@@ -568,42 +665,6 @@ class MyHTMLParser(sgmllib.SGMLParser):
 
     def getbase(self):
 	return self.base
-
-
-def show(p1, link, p2, origins):
-    print p1, link
-    i = 0
-    for source, rawlink in origins:
-	i = i+1
-	if i == 2:
-	    p2 = ' '*len(p2)
-	print p2, source,
-	if rawlink != link: print "(%s)" % rawlink,
-	print
-
-
-def sanitize(msg):
-    if (type(msg) == TupleType and
-	len(msg) >= 4 and
-	msg[0] == 'http error' and
-	type(msg[3]) == InstanceType):
-	# Remove the Message instance -- it may contain
-	# a file object which prevents pickling.
-	msg = msg[:3] + msg[4:]
-    return msg
-
-
-def safeclose(f):
-    try:
-	url = f.geturl()
-    except AttributeError:
-	pass
-    else:
-	if url[:4] == 'ftp:' or url[:7] == 'file://':
-	    # Apparently ftp connections don't like to be closed
-	    # prematurely...
-	    text = f.read()
-    f.close()
 
 
 if __name__ == '__main__':
