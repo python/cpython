@@ -1052,12 +1052,14 @@ call_sys_exitfunc()
 	PyObject *exitfunc = PySys_GetObject("exitfunc");
 
 	if (exitfunc) {
-		PyObject *res;
+		PyObject *res, *f;
 		Py_INCREF(exitfunc);
 		PySys_SetObject("exitfunc", (PyObject *)NULL);
+		f = PySys_GetObject("stderr");
 		res = PyEval_CallObject(exitfunc, (PyObject *)NULL);
 		if (res == NULL) {
-			fprintf(stderr, "Error in sys.exitfunc:\n");
+			if (f)
+			    PyFile_WriteString("Error in sys.exitfunc:\n", f);
 			PyErr_Print();
 		}
 		Py_DECREF(exitfunc);
