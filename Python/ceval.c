@@ -578,6 +578,7 @@ eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 	why = WHY_NOT;
 	err = 0;
 	x = Py_None;	/* Not a reference, just anything non-NULL */
+	w = NULL;
 	
 	for (;;) {
 		/* Do periodic things.  Doing this every time through
