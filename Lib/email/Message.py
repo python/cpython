@@ -17,7 +17,7 @@ import Errors
 import Utils
 
 SEMISPACE = '; '
-paramre = re.compile(r';\s*')
+paramre = re.compile(r'\s*;\s*')
 
 
 

@@ -218,6 +218,10 @@ class TestMessageAPI(TestEmailBase):
         eq(msg.get_param('bar', header='x-header'), 'one')
         eq(msg.get_param('baz', header='x-header'), 'two')
 
+    def test_get_param_funky_continuation_lines(self):
+        msg = self._msgobj('msg_22.txt')
+        self.assertEqual(msg.get_payload(1).get_param('name'), 'wibble.JPG')
+
     def test_has_key(self):
         msg = email.message_from_string('Header: exists')
         self.failUnless(msg.has_key('header'))
