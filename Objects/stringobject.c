@@ -296,24 +296,31 @@ resizestring(pv, newsize)
 	object **pv;
 	int newsize;
 {
-	register stringobject *v;
-	v = (stringobject *) *pv;
+	register object *v;
+	register stringobject *sv;
+	v = *pv;
 	if (!is_stringobject(v) || v->ob_refcnt != 1) {
 		*pv = 0;
 		DECREF(v);
 		err_badcall();
 		return -1;
 	}
+	/* XXX UNREF/NEWREF interface should be more symmetrical */
+#ifdef TRACE_REFS
+	--ref_total;
+#endif
+	UNREF(v);
 	*pv = (object *)
 		realloc((char *)v,
 			sizeof(stringobject) + newsize * sizeof(char));
 	if (*pv == NULL) {
-		DECREF(v);
+		DEL(v);
 		err_nomem();
 		return -1;
 	}
-	v = (stringobject *) *pv;
-	v->ob_size = newsize;
-	v->ob_sval[newsize] = '\0';
+	NEWREF(*pv);
+	sv = (stringobject *) *pv;
+	sv->ob_size = newsize;
+	sv->ob_sval[newsize] = '\0';
 	return 0;
 }
