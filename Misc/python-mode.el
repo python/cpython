@@ -142,8 +142,18 @@ See the Python Mode home page for details:
   :type 'string
   :group 'python)
 
+(defcustom py-jpython-command "jpython"
+  "*Shell command used to start the JPython interpreter."
+  :type 'string
+  :group 'python)
+
 (defcustom py-python-command-args '("-i")
   "*List of string arguments to be used when starting a Python shell."
+  :type '(repeat string)
+  :group 'python)
+
+(defcustom py-jpython-command-args '("-i")
+  "*List of string arguments to be used when starting a JPython shell."
   :type '(repeat string)
   :group 'python)
 
@@ -565,6 +575,7 @@ Currently-active file is at the head of the list.")
   (define-key py-mode-map "\C-c\C-c"  'py-execute-buffer)
   (define-key py-mode-map "\C-c|"     'py-execute-region)
   (define-key py-mode-map "\C-c!"     'py-shell)
+  (define-key py-mode-map "\C-c\C-t"  'py-toggle-shells)
   ;; Caution!  Enter here at your own risk.  We are trying to support
   ;; several behaviors and it gets disgusting. :-( This logic ripped
   ;; largely from CC Mode.
@@ -1158,6 +1169,47 @@ Electric behavior is inhibited inside a string or comment."
 (defvar py-serial-number 0)
 (defvar py-exception-buffer nil)
 (defconst py-output-buffer "*Python Output*")
+(make-variable-buffer-local 'py-output-buffer)
+
+;; for toggling between CPython and JPython
+(defvar py-which-shell py-python-command)
+(defvar py-which-args  py-python-command-args)
+(defvar py-which-bufname "Python")
+(make-variable-buffer-local 'py-which-shell)
+(make-variable-buffer-local 'py-which-args)
+(make-variable-buffer-local 'py-which-bufname)
+
+(defun py-toggle-shells (arg)
+  "Toggles between the CPython and JPython shells.
+With positive \\[universal-argument], uses the CPython shell, with
+negative \\[universal-argument] uses the JPython shell, and with a
+zero argument, toggles the shell."
+  (interactive "P")
+  ;; default is to toggle
+  (if (null arg)
+      (setq arg 0))
+  ;; toggle if zero
+  (if (= arg 0)
+      (if (string-equal py-which-bufname "Python")
+	  (setq arg -1)
+	(setq arg 1)))
+  (let (msg)
+    (cond
+     ((< 0 arg)
+      ;; set to CPython
+      (setq py-which-shell py-python-command
+	    py-which-args py-python-command-args
+	    py-which-bufname "Python"
+	    msg "CPython"
+	    mode-name "Python"))
+     ((> 0 arg)
+      (setq py-which-shell py-jpython-command
+	    py-which-args py-jpython-command-args
+	    py-which-bufname "JPython"
+	    msg "JPython"
+	    mode-name "JPython"))
+     )
+    (setq py-output-buffer (format "*%s Output*" py-which-bufname))))
 
 ;;;###autoload
 (defun py-shell ()
@@ -1169,6 +1221,12 @@ bindings active in the `*Python*' buffer.
 
 See the docs for variable `py-scroll-buffer' for info on scrolling
 behavior in the process window.
+
+Note: You can toggle between using the CPython interpreter and the
+JPython interpreter by hitting \\[py-toggle-shells].  This toggles
+buffer local variables which control whether all your subshell
+interactions happen to the `*JPython*' or `*Python*' buffers (the
+latter is the name used for the CPython buffer).
 
 Warning: Don't use an interactive Python if you change sys.ps1 or
 sys.ps2 from their default values, or if you're running code that
@@ -1191,7 +1249,7 @@ filter."
   (interactive)
   (require 'comint)
   (switch-to-buffer-other-window
-   (apply 'make-comint "Python" py-python-command nil py-python-command-args))
+   (apply 'make-comint py-which-bufname py-which-shell nil py-which-args))
   (make-local-variable 'comint-prompt-regexp)
   (setq comint-prompt-regexp "^>>> \\|^[.][.][.] ")
   (set-process-filter (get-buffer-process (current-buffer)) 'py-process-filter)
