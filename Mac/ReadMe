@@ -1,11 +1,12 @@
-How to install Python 2.2.1 on your Macintosh
+How to install Python 2.2.2 on your Macintosh
 ---------------------------------------------
 
 This is a MacPython that can run on classic MacOS (from 8.1
 onwards) and natively on MacOSX. The installer tries to work out whether you can
 use the Carbon version or not. For Mac OS X users: this version of Python
 does not run from the command line, it is a pure "Mac only" app. Use the standard
-unix Python from the commandline, the two Pythons will be merged in the future.
+unix Python from the commandline, the two Pythons will be merged in the future, see
+the note on "What is in a name" below.
 
 You should definitely read the Relnotes file too, and the section below about
 toolbox module reorganization. You should also read :Misc:NEWS, which lists
@@ -33,7 +34,7 @@ This installer installs MacPython for classic PPC MacOS, MacPython for Carbon
 configuration. By selecting custom install you can bypass these tests and
 install what you want.
 
-If you want 68k support you will have get MacPython 1.5.2.
+If you want 68k support you will have to get MacPython 1.5.2.
 
 What to install
 ---------------
@@ -42,7 +43,7 @@ The optional parts in this distribution are
 - TK+PIL: Tkinter and support modules, plus Imaging, the Python image
   manipulation package (allows you to read, write and display images and
   do lots of operations on them). 
-  For Carbon MacPython you only get PIL: there is no Tcl/Tk for Carbon yet.
+  For Carbon MacPython you only get PIL: there is no Tcl/Tk for Carbon.
   This is the reason Classic MacPython is also installed on MacOSX: it
   allows you to run Tkinter applications, albeit in the Classic box.
 - img: another imaging package. Has more file format support and is faster
@@ -83,14 +84,7 @@ Python and "import test.regrtest ; test.regrtest.main()".
 test_frozen will fail in MacPython because of different handling on
 frozen modules. This should not be a problem in normal use.
 
-test_time will fail because MacPython accepts bogus values for
-mktime(), this will be fixed later (it is not a very serious problem).
-
-test_email will fail during summer (no kidding:-). Actually, it will fail
-when DST is active, because the date parsing test is GMT-centric
-and does not handle the Macintosh's localtime very well.
-
-Three tests will fail on MacOS9 with MemoryErrors:
+Three tests may fail on MacOS9 with MemoryErrors:
 test_longexp, test_sha and test_zlib (on MacOSX these should pass).
 
 If you increase the PythonInterpreter memory partition size they will
@@ -112,6 +106,34 @@ If your program uses Tkinter you MUST run it under PythonInterpreter,
 Tkinter and IDE are incompatible and your program will fail in strange
 ways.
 
+What is in a name?
+------------------
+
+A lot, actually:-) Especially if you are looking for "a Python for a Macintosh"
+and assume that MacPython will fit that bill. Traditionally, MacPython was the
+only solution, but with the appearance of MacOSX there are more possibilities.
+MacPython 2.2.X is meant primarily for "old MacOS", but as unix-Python 2.2.X
+misses a lot of the mac-specific functionality for some applications it is
+still the best choice on MacOSX as well. For unix-related tasks you are better
+off with unix-Python 2.2.X, and as of OSX 10.2 Apple ships a Python (version 2.2)
+standard.
+
+Another possibility on OSX is to use a framework-based build of unix-Python 2.2.X,
+which does include most of the mac goodies. This python is colloquially known
+as MachoPython, and you will need it to run Tkinter programs natively, or use
+wxWindows. See the MacPython homepage for details.
+
+The current expectation is that by the time 2.3 comes out (early 2003) MacOSX
+will be so well established that we will use the name "MacPython 2.3" to refer
+to the OSX-only framework build of unix-Python, which by then will include all
+the mac goodies. The OS9 version will probably be called something like
+MacOS9Python 2.3.
+
+The distinction between these versions and there names is especially important
+if you join the discussions on the MacPython mailing list, and it is a good idea
+to clearly state your Python and MacOS version when asking for advice or submitting
+bug reports.
+
 OSX Multiple users note
 -----------------------
 
@@ -126,8 +148,15 @@ If you install as a privileged user and then try to run
 Python as another (non-privileged) user you may encounter a problem with
 not having a preference file: the symptom is failing to import all sorts
 of standard modules. If you remove your per-user Python preference files
-(in ~/Library/Preferences) and then run PythonIntpreter once everything should
+(in ~/Library/Preferences) and then run PythonInterpreter once everything should
 be fine.
+
+MacOS 8.1 note
+--------------
+
+The distribution is fully functional as far back as MacOS 8.1, with one exception:
+the IDE as installed is not compatible with 8.1. There is a separate path for running
+the IDE on 8.1 available at http://www.cwi.nl/~jack/macpython.html .
 
 Uninstalling
 ------------
@@ -182,9 +211,9 @@ this means you can keep your older version around if you are unsure
 whether to upgrade. The bad news is that your old preference settings
 are lost and you have to set them again.
 
-After you are satisfied that 2.2.1 works as expected you can trash
+After you are satisfied that 2.2.2 works as expected you can trash
 anything in the system folder that has "python" in the name and not
-"2.2.1".
+"2.2.2".
 
 The ConfigurePython... applets will try to detect incompatible
 preferences files and offer to remove them. This means that re-running
@@ -235,7 +264,8 @@ Feedback
 Send bug reports, suggestions, contributions and fanmail to
 <jack@cwi.nl>. However, a better way to discuss MacPython is to join the
 <pythonmac-sig@python.org> mailing list, which is explicitly meant for
-this purpose.
+this purpose. And please remember what's said in the note on "what's in
+a name" above.
 
 
 Jack Jansen
