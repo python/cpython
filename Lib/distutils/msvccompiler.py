@@ -114,10 +114,6 @@ class MSVCCompiler (CCompiler) :
 
         CCompiler.__init__ (self, verbose, dry_run, force)
 
-        # XXX This is a nasty dependency to add on something otherwise
-        # pretty clean.  move it to build_ext under an nt specific part.
-        # shared libraries need to link against python15.lib
-        self.add_library ( "python" + sys.version[0] + sys.version[2] )
         self.add_library_dir( os.path.join( sys.exec_prefix, 'libs' ) )
         
         self.cc   = _find_exe("cl.exe")
@@ -133,8 +129,14 @@ class MSVCCompiler (CCompiler) :
         os.environ['path'] = string.join(path,';')
         self.preprocess_options = None
         self.compile_options = [ '/nologo', '/Ox', '/MD' ]
+        self.compile_options_debug = [
+            '/nologo', '/Od', '/MDd', '/Z7', '/D_DEBUG'
+            ]
 
         self.ldflags_shared = ['/DLL', '/nologo', '/INCREMENTAL:NO']
+        self.ldflags_shared_debug = [
+            '/DLL', '/nologo', '/INCREMENTAL:no', '/pdb:None', '/DEBUG'
+            ]
         self.ldflags_static = [ '/nologo']
 
 
@@ -175,6 +177,11 @@ class MSVCCompiler (CCompiler) :
                                     self.include_dirs + include_dirs)
 
         base_pp_opts.append('/c')
+
+        if debug:
+            compile_options = self.compile_options_debug
+        else:
+            compile_options = self.compile_options
         
         for srcFile in sources:
             base,ext = os.path.splitext(srcFile)
@@ -188,11 +195,10 @@ class MSVCCompiler (CCompiler) :
             inputOpt  = fileOpt + srcFile
             outputOpt = "/Fo"   + objFile
 
-            cc_args = self.compile_options + \
+            cc_args = compile_options + \
                       base_pp_opts + \
                       [outputOpt, inputOpt]
-            if debug:
-                pass                    # XXX what goes here?
+
             if extra_preargs:
                 cc_args[:0] = extra_preargs
             if extra_postargs:
@@ -251,7 +257,14 @@ class MSVCCompiler (CCompiler) :
         # XXX should we sanity check the library name? (eg. no
         # slashes)
         self.link_shared_object (objects,
-                                 self.shared_library_name(output_libname))
+                                 self.shared_library_name(output_libname),
+                                 output_dir=output_dir,
+                                 libraries=libraries,
+                                 library_dirs=library_dirs,
+                                 debug=debug,
+                                 extra_preargs=extra_preargs,
+                                 extra_postargs=extra_postargs)
+                    
     
     def link_shared_object (self,
                             objects,
@@ -259,6 +272,7 @@ class MSVCCompiler (CCompiler) :
                             output_dir=None,
                             libraries=None,
                             library_dirs=None,
+                            debug=0,
                             extra_preargs=None,
                             extra_postargs=None):
         """Link a bunch of stuff together to create a shared object
@@ -273,10 +287,18 @@ class MSVCCompiler (CCompiler) :
                                     self.library_dirs + library_dirs,
                                     self.libraries + libraries)
 
-        ld_args = self.ldflags_shared + lib_opts + \
-                  objects + ['/OUT:' + output_filename]
         if debug:
-            pass                        # XXX what goes here?
+            ldflags = self.ldflags_shared_debug
+            basename, ext = os.path.splitext (output_filename)
+            #XXX not sure this belongs here
+            # extensions in debug_mode are named 'module_d.pyd'
+            output_filename = basename + '_d' + ext
+        else:
+            ldflags = self.ldflags_shared
+
+        ld_args = ldflags + lib_opts + \
+                  objects + ['/OUT:' + output_filename]
+
         if extra_preargs:
             ld_args[:0] = extra_preargs
         if extra_postargs:
