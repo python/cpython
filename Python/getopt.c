@@ -27,48 +27,35 @@
 #include <stdio.h>
 #include <string.h>
 
-#define bool	int
-#ifndef TRUE
-#define TRUE	1
-#endif
-#ifndef FALSE
-#define FALSE	0
-#endif
+int _PyOS_opterr = 1;          /* generate error messages */
+int _PyOS_optind = 1;          /* index into argv array   */
+char *_PyOS_optarg = NULL;     /* optional argument       */
 
-bool    opterr = TRUE;          /* generate error messages */
-int     optind = 1;             /* index into argv array   */
-char *  optarg = NULL;          /* optional argument       */
-
-
-#ifndef __BEOS__
-int getopt(int argc, char *argv[], char optstring[])
-#else
-int getopt(int argc, char *const *argv, const char *optstring)
-#endif
+int _PyOS_GetOpt(int argc, char **argv, char *optstring)
 {
-	static   char *opt_ptr = "";
-	register char *ptr;
-			 int   option;
+	static char *opt_ptr = "";
+	char *ptr;
+	int option;
 
 	if (*opt_ptr == '\0') {
 
-		if (optind >= argc || argv[optind][0] != '-' ||
-		    argv[optind][1] == '\0' /* lone dash */ )
+		if (_PyOS_optind >= argc || argv[_PyOS_optind][0] != '-' ||
+		    argv[_PyOS_optind][1] == '\0' /* lone dash */ )
 			return -1;
 
-		else if (strcmp(argv[optind], "--") == 0) {
-			++optind;
+		else if (strcmp(argv[_PyOS_optind], "--") == 0) {
+			++_PyOS_optind;
 			return -1;
 		}
 
-		opt_ptr = &argv[optind++][1]; 
+		opt_ptr = &argv[_PyOS_optind++][1]; 
 	}
 
 	if ( (option = *opt_ptr++) == '\0')
-	  return -1;
+		return -1;
 	
 	if ((ptr = strchr(optstring, option)) == NULL) {
-		if (opterr)
+		if (_PyOS_opterr)
 			fprintf(stderr, "Unknown option: -%c\n", option);
 
 		return '?';
@@ -76,19 +63,19 @@ int getopt(int argc, char *const *argv, const char *optstring)
 
 	if (*(ptr + 1) == ':') {
 		if (*opt_ptr != '\0') {
-			optarg  = opt_ptr;
+			_PyOS_optarg  = opt_ptr;
 			opt_ptr = "";
 		}
 
 		else {
-			if (optind >= argc) {
-				if (opterr)
+			if (_PyOS_optind >= argc) {
+				if (_PyOS_opterr)
 					fprintf(stderr,
 			    "Argument expected for the -%c option\n", option);
 				return '?';
 			}
 
-			optarg = argv[optind++];
+			_PyOS_optarg = argv[_PyOS_optind++];
 		}
 	}
 

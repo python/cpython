@@ -46,7 +46,7 @@ AROBJS=		\
 		marshal.o modsupport.o mystrtoul.o \
 		pyfpe.o pystate.o pythonrun.o \
 		structmember.o sysmodule.o \
-		traceback.o \
+		traceback.o getopt.o \
 		$(DYNLOADFILE) \
 		$(LIBOBJS)
 OBJS=		$(AROBJS) sigcheck.o
