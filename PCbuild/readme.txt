@@ -83,11 +83,11 @@ _tkinter
         tk841-src.zip
     Unzip into
         dist\tcl8.4.1\
-        dist\tk\8.4.1\
+        dist\tk8.4.1\
     respectively.
 
-    Build Tcl first (done here w/ MSVC 6 on Win2K)
-    ----------------------------------------------
+    Build Tcl first (done here w/ MSVC 6 on Win2K; also Win98SE)
+    ---------------
     cd dist\tcl8.4.1\win
     run vcvars32.bat [necessary even on Win2K]
     nmake -f makefile.vc
@@ -98,15 +98,14 @@ _tkinter
     XXX Some tests failed in "nmake -f makefile.vc test".
 
     XXX Should rename destination directory to something more generic
-    XXX then tcl84.  But unless I can backport 8.3.4 to the 2.2 line
-    XXX too, I've got to be able to build using more than oneX Tcl/Tk
+    XXX then tcl84.  But unless I can backport 8.4.1 to the 2.2 line
+    XXX too, I've got to be able to build using more than one Tcl/Tk
     XXX release, and that effectively reserves the "tcl" directory name
     XXX for the duration.  Nothing that requires thought is going to
     XXX work when it comes to release crunch times.
 
-
     Build Tk
-    -------
+    --------
     cd dist\tk8.4.1\win
     nmake -f makefile.vc TCLDIR=..\..\tcl8.4.1
     nmake -f makefile.vc TCLDIR=..\..\tcl8.4.1 INSTALLDIR=..\..\tcl84 install
