@@ -60,6 +60,13 @@ newstringobject(str)
 	return (object *) op;
 }
 
+void
+stringdealloc(op)
+	object *op;
+{
+	DEL(op);
+}
+
 unsigned int
 getstringsize(op)
 	register object *op;
@@ -305,7 +312,7 @@ typeobject Stringtype = {
 	"string",
 	sizeof(stringobject),
 	sizeof(char),
-	free,		/*tp_dealloc*/
+	stringdealloc,	/*tp_dealloc*/
 	stringprint,	/*tp_print*/
 	0,		/*tp_getattr*/
 	0,		/*tp_setattr*/

@@ -114,11 +114,12 @@ getintvalue(op)
 
 /* Methods */
 
+/* ARGSUSED */
 static int
 int_print(v, fp, flags)
 	intobject *v;
 	FILE *fp;
-	int flags;
+	int flags; /* Not used but required by interface */
 {
 	fprintf(fp, "%ld", v->ob_ival);
 	return 0;
@@ -239,7 +240,7 @@ int_mod(x, y)
 	long d, m;
 	if (i_divmod(x, y, &d, &m) < 0)
 		return NULL;
-	newintobject(m);
+	return newintobject(m);
 }
 
 static object *
