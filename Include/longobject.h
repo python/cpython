@@ -50,9 +50,6 @@ extern DL_IMPORT(void *) PyLong_AsVoidPtr(PyObject *);
 #ifndef ULONGLONG_MAX
 #define ULONGLONG_MAX 0xffffffffffffffffULL
 #endif
-#ifndef LONG_LONG
-#define LONG_LONG long long
-#endif
 
 extern DL_IMPORT(PyObject *) PyLong_FromLongLong(LONG_LONG);
 extern DL_IMPORT(PyObject *) PyLong_FromUnsignedLongLong(unsigned LONG_LONG);
