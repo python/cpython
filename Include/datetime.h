@@ -27,6 +27,11 @@
 /* # of bytes for year, month, day, hour, minute, second, and usecond. */
 #define _PyDateTime_DATETIME_DATASIZE 10
 
+#define _PyTZINFO_HEAD		\
+	PyObject_HEAD		\
+	long hashcode;		\
+	char hastzinfo;		/* boolean flag */
+
 typedef struct
 {
 	PyObject_HEAD
@@ -49,20 +54,23 @@ typedef struct
 	PyObject *tzinfo;
 } PyDateTime_DateTimeTZ;
 
-typedef struct
-{
-	PyObject_HEAD
-	long hashcode;
+
+
+#define _PyDateTime_TIMEHEAD	\
+	_PyTZINFO_HEAD		\
 	unsigned char data[_PyDateTime_TIME_DATASIZE];
-} PyDateTime_Time;
 
 typedef struct
 {
-	PyObject_HEAD
-	long hashcode;
-	unsigned char data[_PyDateTime_TIME_DATASIZE];
+	_PyDateTime_TIMEHEAD
+} _PyDateTime_BaseTime;		/* hastzinfo false */
+
+typedef struct
+{
+	_PyDateTime_TIMEHEAD
 	PyObject *tzinfo;
-} PyDateTime_TimeTZ;
+} PyDateTime_Time;		/* hastzinfo true */
+
 
 typedef struct
 {
@@ -92,7 +100,7 @@ typedef struct
          (((PyDateTime_DateTime*)o)->data[8] << 8)  |	\
           ((PyDateTime_DateTime*)o)->data[9])
 
-/* Apply for time and timetz instances. */
+/* Apply for time instances. */
 #define PyDateTime_TIME_GET_HOUR(o)        (((PyDateTime_Time*)o)->data[0])
 #define PyDateTime_TIME_GET_MINUTE(o)      (((PyDateTime_Time*)o)->data[1])
 #define PyDateTime_TIME_GET_SECOND(o)      (((PyDateTime_Time*)o)->data[2])
@@ -112,9 +120,6 @@ typedef struct
 
 #define PyTime_Check(op) PyObject_TypeCheck(op, &PyDateTime_TimeType)
 #define PyTime_CheckExact(op) ((op)->ob_type == &PyDateTime_TimeType)
-
-#define PyTimeTZ_Check(op) PyObject_TypeCheck(op, &PyDateTime_TimeTZType)
-#define PyTimeTZ_CheckExact(op) ((op)->ob_type == &PyDateTime_TimeTZType)
 
 #define PyDelta_Check(op) PyObject_TypeCheck(op, &PyDateTime_DeltaType)
 #define PyDelta_CheckExact(op) ((op)->ob_type == &PyDateTime_DeltaType)
