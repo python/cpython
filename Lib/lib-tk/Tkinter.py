@@ -679,8 +679,8 @@ class Misc:
 		return self._getints(
 			self.tk.call('grid', 'size', self._w)) or None
 	size = grid_size
-	def grid_slaves(self, master, row=None, column=None):
-		args = (master,)
+	def grid_slaves(self, row=None, column=None):
+		args = ()
 		if row:
 			args = args + ('-row', row)
 		if column:
@@ -1431,7 +1431,7 @@ class Menu(Widget):
 	def delete(self, index1, index2=None):
 		self.tk.call(self._w, 'delete', index1, index2)
 	def entrycget(self, index, option):
-		return self.tk.call(self._w, 'entrycget', '-' + option)
+		return self.tk.call(self._w, 'entrycget', index, '-' + option)
 	def entryconfigure(self, index, cnf=None, **kw):
 		if cnf is None and not kw:
 			cnf = {}
