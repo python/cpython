@@ -159,7 +159,7 @@ static PyMemberDef func_memberlist[] = {
 	 RESTRICTED|READONLY},
         {"func_name",     T_OBJECT,     OFF(func_name),         READONLY},
         {"__name__",      T_OBJECT,     OFF(func_name),         READONLY},
-	{"__module__",    T_OBJECT,     OFF(func_module)},
+        {"__module__",    T_OBJECT,     OFF(func_module), WRITE_RESTRICTED},
         {NULL}  /* Sentinel */
 };
 
