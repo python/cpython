@@ -207,6 +207,9 @@
 			RelativePath="..\Modules\cjkcodecs\_gbk.c">
 		</File>
 		<File
+			RelativePath="..\Modules\_heapmodule.c">
+		</File>
+		<File
 			RelativePath="..\Modules\_hotshot.c">
 			<FileConfiguration
 				Name="Release|Win32">
@@ -1181,25 +1184,6 @@
 		</File>
 		<File
 			RelativePath="..\Parser\grammar1.c">
-			<FileConfiguration
-				Name="Release|Win32">
-				<Tool
-					Name="VCCLCompilerTool"
-					Optimization="2"
-					AdditionalIncludeDirectories=""
-					PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;USE_DL_EXPORT;$(NoInherit)"/>
-			</FileConfiguration>
-			<FileConfiguration
-				Name="Debug|Win32">
-				<Tool
-					Name="VCCLCompilerTool"
-					Optimization="0"
-					AdditionalIncludeDirectories=""
-					PreprocessorDefinitions="_DEBUG;USE_DL_EXPORT;WIN32;_WINDOWS;$(NoInherit)"/>
-			</FileConfiguration>
-		</File>
-		<File
-			RelativePath="..\Modules\heapqmodule.c">
 			<FileConfiguration
 				Name="Release|Win32">
 				<Tool
