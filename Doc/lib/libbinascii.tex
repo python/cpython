@@ -92,7 +92,9 @@ Compute the binhex4 crc value of \var{data}, starting with an initial
 
 \begin{funcdesc}{crc32}{data\optional{, crc}}
 Compute CRC-32, the 32-bit checksum of data, starting with an initial
-crc.  This is consistent with the ZIP file checksum.  Use as follows:
+crc.  This is consistent with the ZIP file checksum.  Since the
+algorithm is designed for use as a checksum algorithm, it is not
+suitable for use as a general hash algorithm.  Use as follows:
 \begin{verbatim}
     print binascii.crc32("hello world")
     # Or, in two pieces:
