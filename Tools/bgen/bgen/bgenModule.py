@@ -78,9 +78,9 @@ class Module(GeneratorGroup):
 
 
 def _test():
-	from bgenGenerator import Generator
+	from bgenGenerator import FunctionGenerator
 	m = Module("spam", "", "#include <stdio.h>")
-	g = Generator(None, "bacon")
+	g = FunctionGenerator(None, "bacon")
 	m.add(g)
 	m.generate()
 
