@@ -57,21 +57,34 @@ _PyLong_New(int size)
 PyObject *
 PyLong_FromLong(long ival)
 {
-	/* Assume a C long fits in at most 5 'digits' */
-	/* Works on both 32- and 64-bit machines */
-	PyLongObject *v = _PyLong_New(5);
+	PyLongObject *v;
+	unsigned long t;  /* unsigned so >> doesn't propagate sign bit */
+	int ndigits = 0;
+	int negative = 0;
+
+	if (ival < 0) {
+		ival = -ival;
+		negative = 1;
+	}
+
+	/* Count the number of Python digits.
+	   We used to pick 5 ("big enough for anything"), but that's a
+	   waste of time and space given that 5*15 = 75 bits are rarely
+	   needed. */
+	t = (unsigned long)ival;
+	while (t) {
+		++ndigits;
+		t >>= SHIFT;
+	}
+	v = _PyLong_New(ndigits);
 	if (v != NULL) {
-		unsigned long t = ival;
-		int i;
-		if (ival < 0) {
-			t = -ival;
-			v->ob_size = -(v->ob_size);
-  		}
-		for (i = 0; i < 5; i++) {
-			v->ob_digit[i] = (digit) (t & MASK);
+		digit *p = v->ob_digit;
+		v->ob_size = negative ? -ndigits : ndigits;
+		t = (unsigned long)ival;
+		while (t) {
+			*p++ = (digit)(t & MASK);
 			t >>= SHIFT;
 		}
-		v = long_normalize(v);
 	}
 	return (PyObject *)v;
 }
@@ -81,17 +94,24 @@ PyLong_FromLong(long ival)
 PyObject *
 PyLong_FromUnsignedLong(unsigned long ival)
 {
-	/* Assume a C long fits in at most 5 'digits' */
-	/* Works on both 32- and 64-bit machines */
-	PyLongObject *v = _PyLong_New(5);
+	PyLongObject *v;
+	unsigned long t;
+	int ndigits = 0;
+
+	/* Count the number of Python digits. */
+	t = (unsigned long)ival;
+	while (t) {
+		++ndigits;
+		t >>= SHIFT;
+	}
+	v = _PyLong_New(ndigits);
 	if (v != NULL) {
-		unsigned long t = ival;
-		int i;
-		for (i = 0; i < 5; i++) {
-			v->ob_digit[i] = (digit) (t & MASK);
-			t >>= SHIFT;
+		digit *p = v->ob_digit;
+		v->ob_size = ndigits;
+		while (ival) {
+			*p++ = (digit)(ival & MASK);
+			ival >>= SHIFT;
 		}
-		v = long_normalize(v);
 	}
 	return (PyObject *)v;
 }
