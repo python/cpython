@@ -101,15 +101,15 @@ Exception\n\
 
 /* Helper function for populating a dictionary with method wrappers. */
 static int
-populate_methods(PyObject* klass, PyObject* dict, PyMethodDef* methods) 
+populate_methods(PyObject *klass, PyObject *dict, PyMethodDef *methods)
 {
     if (!methods)
 	return 0;
 
     while (methods->ml_name) {
 	/* get a wrapper for the built-in function */
-	PyObject* func = PyCFunction_New(methods, NULL);
-	PyObject* meth;
+	PyObject *func = PyCFunction_New(methods, NULL);
+	PyObject *meth;
 	int status;
 
 	if (!func)
@@ -139,12 +139,12 @@ populate_methods(PyObject* klass, PyObject* dict, PyMethodDef* methods)
 
 /* This function is used to create all subsequent exception classes. */
 static int
-make_class(PyObject** klass, PyObject* base,
-	   char* name, PyMethodDef* methods,
-	   char* docstr)
+make_class(PyObject **klass, PyObject *base,
+	   char *name, PyMethodDef *methods,
+	   char *docstr)
 {
-    PyObject* dict = PyDict_New();
-    PyObject* str = NULL;
+    PyObject *dict = PyDict_New();
+    PyObject *str = NULL;
     int status = -1;
 
     if (!dict)
@@ -179,9 +179,10 @@ make_class(PyObject** klass, PyObject* base,
 
 
 /* Use this for *args signatures, otherwise just use PyArg_ParseTuple() */
-static PyObject* get_self(PyObject* args)
+static PyObject *
+get_self(PyObject *args)
 {
-    PyObject* self = PyTuple_GetItem(args, 0);
+    PyObject *self = PyTuple_GetItem(args, 0);
     if (!self) {
 	/* Watch out for being called to early in the bootstrapping process */
 	if (PyExc_TypeError) {
@@ -215,8 +216,8 @@ static char
 Exception__doc__[] = "Common base class for all exceptions.";
 
 
-static PyObject*
-Exception__init__(PyObject* self, PyObject* args)
+static PyObject *
+Exception__init__(PyObject *self, PyObject *args)
 {
     int status;
 
@@ -238,10 +239,10 @@ Exception__init__(PyObject* self, PyObject* args)
 }
 
 
-static PyObject*
-Exception__str__(PyObject* self, PyObject* args)
+static PyObject *
+Exception__str__(PyObject *self, PyObject *args)
 {
-    PyObject* out;
+    PyObject *out;
 
     if (!PyArg_ParseTuple(args, "O", &self))
         return NULL;
@@ -256,7 +257,7 @@ Exception__str__(PyObject* self, PyObject* args)
         break;
     case 1:
     {
-	PyObject* tmp = PySequence_GetItem(args, 0);
+	PyObject *tmp = PySequence_GetItem(args, 0);
 	if (tmp) {
 	    out = PyObject_Str(tmp);
 	    Py_DECREF(tmp);
@@ -275,11 +276,11 @@ Exception__str__(PyObject* self, PyObject* args)
 }
 
 
-static PyObject*
-Exception__getitem__(PyObject* self, PyObject* args)
+static PyObject *
+Exception__getitem__(PyObject *self, PyObject *args)
 {
-    PyObject* out;
-    PyObject* index;
+    PyObject *out;
+    PyObject *index;
 
     if (!PyArg_ParseTuple(args, "OO", &self, &index))
         return NULL;
@@ -305,11 +306,11 @@ Exception_methods[] = {
 
 
 static int
-make_Exception(char* modulename)
+make_Exception(char *modulename)
 {
-    PyObject* dict = PyDict_New();
-    PyObject* str = NULL;
-    PyObject* name = NULL;
+    PyObject *dict = PyDict_New();
+    PyObject *str = NULL;
+    PyObject *name = NULL;
     int status = -1;
 
     if (!dict)
@@ -365,10 +366,10 @@ static char
 SystemExit__doc__[] = "Request to exit from the interpreter.";
 
 
-static PyObject*
-SystemExit__init__(PyObject* self, PyObject* args)
+static PyObject *
+SystemExit__init__(PyObject *self, PyObject *args)
 {
-    PyObject* code;
+    PyObject *code;
     int status;
 
     if (!(self = get_self(args)))
@@ -430,14 +431,14 @@ static char
 EnvironmentError__doc__[] = "Base class for I/O related errors.";
 
 
-static PyObject*
-EnvironmentError__init__(PyObject* self, PyObject* args) 
+static PyObject *
+EnvironmentError__init__(PyObject *self, PyObject *args)
 {
-    PyObject* item0 = NULL;
-    PyObject* item1 = NULL;
-    PyObject* item2 = NULL;
-    PyObject* subslice = NULL;
-    PyObject* rtnval = NULL;
+    PyObject *item0 = NULL;
+    PyObject *item1 = NULL;
+    PyObject *item2 = NULL;
+    PyObject *subslice = NULL;
+    PyObject *rtnval = NULL;
 
     if (!(self = get_self(args)))
 	return NULL;
@@ -514,14 +515,14 @@ EnvironmentError__init__(PyObject* self, PyObject* args)
 }
 
 
-static PyObject*
-EnvironmentError__str__(PyObject* self, PyObject* args) 
+static PyObject *
+EnvironmentError__str__(PyObject *self, PyObject *args)
 {
-    PyObject* originalself = self;
-    PyObject* filename;
-    PyObject* serrno;
-    PyObject* strerror;
-    PyObject* rtnval = NULL;
+    PyObject *originalself = self;
+    PyObject *filename;
+    PyObject *serrno;
+    PyObject *strerror;
+    PyObject *rtnval = NULL;
 
     if (!PyArg_ParseTuple(args, "O", &self))
 	return NULL;
@@ -533,9 +534,9 @@ EnvironmentError__str__(PyObject* self, PyObject* args)
 	goto finally;
 
     if (filename != Py_None) {
-	PyObject* fmt = PyString_FromString("[Errno %s] %s: %s");
-	PyObject* repr = PyObject_Repr(filename);
-	PyObject* tuple = PyTuple_New(3);
+	PyObject *fmt = PyString_FromString("[Errno %s] %s: %s");
+	PyObject *repr = PyObject_Repr(filename);
+	PyObject *tuple = PyTuple_New(3);
 
 	if (!fmt || !repr || !tuple) {
 	    Py_XDECREF(fmt);
@@ -557,8 +558,8 @@ EnvironmentError__str__(PyObject* self, PyObject* args)
 	strerror = NULL;
     }
     else if (PyObject_IsTrue(serrno) && PyObject_IsTrue(strerror)) {
-	PyObject* fmt = PyString_FromString("[Errno %s] %s");
-	PyObject* tuple = PyTuple_New(2);
+	PyObject *fmt = PyString_FromString("[Errno %s] %s");
+	PyObject *tuple = PyTuple_New(2);
 
 	if (!fmt || !tuple) {
 	    Py_XDECREF(fmt);
@@ -643,9 +644,9 @@ SyntaxError__doc__[] = "Invalid syntax.";
 
 
 static int
-SyntaxError__classinit__(PyObject* klass)
+SyntaxError__classinit__(PyObject *klass)
 {
-    PyObject* emptystring = PyString_FromString("");
+    PyObject *emptystring = PyString_FromString("");
 
     /* Additional class-creation time initializations */
     if (!emptystring ||
@@ -663,10 +664,10 @@ SyntaxError__classinit__(PyObject* klass)
 }
 
 
-static PyObject*
-SyntaxError__init__(PyObject* self, PyObject* args)
+static PyObject *
+SyntaxError__init__(PyObject *self, PyObject *args)
 {
-    PyObject* rtnval = NULL;
+    PyObject *rtnval = NULL;
     int lenargs;
 
     if (!(self = get_self(args)))
@@ -680,7 +681,7 @@ SyntaxError__init__(PyObject* self, PyObject* args)
 
     lenargs = PySequence_Size(args);
     if (lenargs >= 1) {
-	PyObject* item0 = PySequence_GetItem(args, 0);
+	PyObject *item0 = PySequence_GetItem(args, 0);
 	int status;
 
 	if (!item0)
@@ -691,7 +692,7 @@ SyntaxError__init__(PyObject* self, PyObject* args)
 	    goto finally;
     }
     if (lenargs == 2) {
-	PyObject* info = PySequence_GetItem(args, 1);
+	PyObject *info = PySequence_GetItem(args, 1);
 	PyObject *filename, *lineno, *offset, *text;
 	int status = 1;
 
@@ -728,11 +729,11 @@ SyntaxError__init__(PyObject* self, PyObject* args)
 }
 
 
-static PyObject*
-SyntaxError__str__(PyObject* self, PyObject* args)
+static PyObject *
+SyntaxError__str__(PyObject *self, PyObject *args)
 {
-    PyObject* msg;
-    PyObject* str;
+    PyObject *msg;
+    PyObject *str;
 
     if (!PyArg_ParseTuple(args, "O", &self))
 	return NULL;
@@ -854,17 +855,15 @@ PyObject *PyExc_MemoryErrorInst;
 
 
 
-/* mapping between exception names and their PyObject** */
-static struct
-{
-    char* name;
-    PyObject** exc;
-    PyObject** base;			     /* NULL == PyExc_StandardError */
-    char* docstr;
-    PyMethodDef* methods;
-    int (*classinit)(PyObject*);
-}
-exctable[] = {
+/* mapping between exception names and their PyObject ** */
+static struct {
+    char *name;
+    PyObject **exc;
+    PyObject **base;			     /* NULL == PyExc_StandardError */
+    char *docstr;
+    PyMethodDef *methods;
+    int (*classinit)(PyObject *);
+} exctable[] = {
  /*
   * The first three classes MUST appear in exactly this order
   */
@@ -928,18 +927,18 @@ void
 #ifdef WIN32
 __declspec(dllexport)
 #endif /* WIN32 */
-init_exceptions()
+init_exceptions(void)
 {
-    char* modulename = "exceptions";
+    char *modulename = "exceptions";
     int modnamesz = strlen(modulename);
     int i;
 
-    PyObject* me = Py_InitModule(modulename, functions);
-    PyObject* mydict = PyModule_GetDict(me);
-    PyObject* bltinmod = PyImport_ImportModule("__builtin__");
-    PyObject* bdict = PyModule_GetDict(bltinmod);
-    PyObject* doc = PyString_FromString(module__doc__);
-    PyObject* args;
+    PyObject *me = Py_InitModule(modulename, functions);
+    PyObject *mydict = PyModule_GetDict(me);
+    PyObject *bltinmod = PyImport_ImportModule("__builtin__");
+    PyObject *bdict = PyModule_GetDict(bltinmod);
+    PyObject *doc = PyString_FromString(module__doc__);
+    PyObject *args;
 
     PyDict_SetItemString(mydict, "__doc__", doc);
     Py_DECREF(doc);
@@ -959,8 +958,8 @@ init_exceptions()
      */
     for (i=1; exctable[i].name; i++) {
 	int status;
-	char* cname = PyMem_NEW(char, modnamesz+strlen(exctable[i].name)+2);
-	PyObject* base;
+	char *cname = PyMem_NEW(char, modnamesz+strlen(exctable[i].name)+2);
+	PyObject *base;
 
 	(void)strcpy(cname, modulename);
 	(void)strcat(cname, ".");
@@ -1014,7 +1013,7 @@ void
 #ifdef WIN32
 __declspec(dllexport)
 #endif /* WIN32 */
-fini_exceptions()
+fini_exceptions(void)
 {
     int i;
 
