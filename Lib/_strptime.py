@@ -292,7 +292,7 @@ class LocaleTime(object):
 class TimeRE(dict):
     """Handle conversion from format directives to regexes."""
 
-    def __init__(self, locale_time=LocaleTime()):
+    def __init__(self, locale_time=None):
         """Init inst with non-locale regexes and store LocaleTime object."""
         #XXX: Does 'Y' need to worry about having less or more than 4 digits?
         base = super(TimeRE, self)
@@ -311,7 +311,10 @@ class TimeRE(dict):
             'y': r"(?P<y>\d\d)",
             'Y': r"(?P<Y>\d\d\d\d)"})
         base.__setitem__('W', base.__getitem__('U'))
-        self.locale_time = locale_time
+        if locale_time:
+            self.locale_time = locale_time
+        else:
+            self.locale_time = LocaleTime()
 
     def __getitem__(self, fetch):
         """Try to fetch regex; if it does not exist, construct it."""
