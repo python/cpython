@@ -34,7 +34,7 @@ class OutputWindow(EditorWindow):
     # Act as output file
 
     def write(self, s, tags=(), mark="insert"):
-        self.text.insert(mark, str(s), tags)
+        self.text.insert(mark, s, tags)
         self.text.see(mark)
         self.text.update()
 
