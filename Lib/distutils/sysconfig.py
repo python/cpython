@@ -15,7 +15,7 @@ import sys
 
 from errors import DistutilsPlatformError
 
-
+# These are needed in a couple of spots, so just compute them once.
 PREFIX = os.path.normpath(sys.prefix)
 EXEC_PREFIX = os.path.normpath(sys.exec_prefix)
 
@@ -103,15 +103,18 @@ def customize_compiler (compiler):
     that varies across Unices and is stored in Python's Makefile.
     """
     if compiler.compiler_type == "unix":
-        cc_cmd = CC + ' ' + OPT
-        compiler.set_executables(
-            preprocessor=CC + " -E",    # not always!
-            compiler=cc_cmd,
-            compiler_so=cc_cmd + ' ' + CCSHARED,
-            linker_so=LDSHARED,
-            linker_exe=CC)
+        (cc, opt, ccshared, ldshared, so_ext) = \
+            get_config_vars('CC', 'OPT', 'CCSHARED', 'LDSHARED', 'SO')
 
-        compiler.shared_lib_extension = SO
+        cc_cmd = cc + ' ' + opt
+        compiler.set_executables(
+            preprocessor=cc + " -E",    # not always!
+            compiler=cc_cmd,
+            compiler_so=cc_cmd + ' ' + ccshared,
+            linker_so=ldshared,
+            linker_exe=cc)
+
+        compiler.shared_lib_extension = so_ext
 
 
 def get_config_h_filename():
@@ -230,9 +233,11 @@ def parse_makefile(fn, g=None):
     return g
 
 
+_config_vars = None
+
 def _init_posix():
     """Initialize the module as appropriate for POSIX systems."""
-    g = globals()
+    g = {}
     # load the installed Makefile:
     try:
         filename = get_makefile_filename()
@@ -257,7 +262,7 @@ def _init_posix():
 
         g['LDSHARED'] = "%s %s -bI:%s" % (ld_so_aix, g['CC'], python_exp)
 
-    if sys.platform == 'beos':
+    elif sys.platform == 'beos':
 
         # Linker script is in the config directory.  In the Makefile it is
         # relative to the srcdir, which after installation no longer makes
@@ -272,12 +277,15 @@ def _init_posix():
         # it's taken care of for them by the 'build_ext.get_libraries()'
         # method.)
         g['LDSHARED'] = ("%s -L%s/lib -lpython%s" %
-                         (linkerscript, sys.prefix, sys.version[0:3]))
+                         (linkerscript, PREFIX, sys.version[0:3]))
+
+    global _config_vars
+    _config_vars = g
 
 
 def _init_nt():
     """Initialize the module as appropriate for NT"""
-    g = globals()
+    g = {}
     # set basic install directories
     g['LIBDEST'] = get_python_lib(plat_specific=0, standard_lib=1)
     g['BINLIBDEST'] = get_python_lib(plat_specific=1, standard_lib=1)
@@ -287,12 +295,14 @@ def _init_nt():
 
     g['SO'] = '.pyd'
     g['EXE'] = ".exe"
-    g['exec_prefix'] = EXEC_PREFIX
+
+    global _config_vars
+    _config_vars = g
 
 
 def _init_mac():
     """Initialize the module as appropriate for Macintosh systems"""
-    g = globals()
+    g = {}
     # set basic install directories
     g['LIBDEST'] = get_python_lib(plat_specific=0, standard_lib=1)
     g['BINLIBDEST'] = get_python_lib(plat_specific=1, standard_lib=1)
@@ -301,23 +311,51 @@ def _init_mac():
     g['INCLUDEPY'] = get_python_inc(plat_specific=0)
 
     g['SO'] = '.ppc.slb'
-    g['exec_prefix'] = EXEC_PREFIX
-    print sys.prefix, PREFIX
 
     # XXX are these used anywhere?
     g['install_lib'] = os.path.join(EXEC_PREFIX, "Lib")
     g['install_platlib'] = os.path.join(EXEC_PREFIX, "Mac", "Lib")
 
-
-try:
-    exec "_init_" + os.name
-except NameError:
-    # not needed for this platform
-    pass
-else:
-    exec "_init_%s()" % os.name
+    global _config_vars
+    _config_vars = g
 
 
-del _init_posix
-del _init_nt
-del _init_mac
+def get_config_vars(*args):
+    """With no arguments, return a dictionary of all configuration
+    variables relevant for the current platform.  Generally this includes
+    everything needed to build extensions and install both pure modules and
+    extensions.  On Unix, this means every variable defined in Python's
+    installed Makefile; on Windows and Mac OS it's a much smaller set.
+
+    With arguments, return a list of values that result from looking up
+    each argument in the configuration variable dictionary.
+    """
+    global _config_vars
+    if _config_vars is None:
+        from pprint import pprint
+        func = globals().get("_init_" + os.name)
+        if func:
+            func()
+        else:
+            _config_vars = {}
+
+        # Normalized versions of prefix and exec_prefix are handy to have;
+        # in fact, these are the standard versions used most places in the
+        # Distutils.
+        _config_vars['prefix'] = PREFIX
+        _config_vars['exec_prefix'] = EXEC_PREFIX
+
+    if args:
+        vals = []
+        for name in args:
+            vals.append(_config_vars.get(name))
+        return vals
+    else:
+        return _config_vars
+
+def get_config_var(name):
+    """Return the value of a single variable using the dictionary
+    returned by 'get_config_vars()'.  Equivalent to
+      get_config_vars().get(name)
+    """
+    return get_config_vars().get(name)
