@@ -17,39 +17,45 @@ for Python 2.2 alpha 1.  Please send any comments, bug reports, or
 questions, no matter how minor, to \email{akuchlin@mems-exchange.org}.
 }
 
-This article explains the new features in Python 2.2.  Python 2.2
-includes some significant changes that go far toward cleaning up the
-language's darkest corners, and some exciting new features.
+This article explains the new features in Python 2.2.
+
+Python 2.2 can be thought of as the "cleanup release".  There are some
+features such as generators and iterators that are completely new, but
+most of the changes, significant and far-reaching though they may be,
+are aimed at cleaning up irregularities and dark corners of the
+language design.
 
 This article doesn't attempt to provide a complete specification for
-the new features, but instead provides a convenient overview of the
-new features.  For full details, you should refer to 2.2 documentation
+the new features, but instead provides a convenient overview.  For
+full details, you should refer to the documentation for Python 2.2,
 such as the
 \citetitle[http://python.sourceforge.net/devel-docs/lib/lib.html]{Python
 Library Reference} and the
 \citetitle[http://python.sourceforge.net/devel-docs/ref/ref.html]{Python
-Reference Manual}, or to the PEP for a particular new feature.
-% These \citetitle marks should get the python.org URLs for the final
+Reference Manual}.   
+% XXX These \citetitle marks should get the python.org URLs for the final
 % release, just as soon as the docs are published there.
+If you want to understand the complete implementation and design
+rationale for a change, refer to the PEP for a particular new feature.
 
 The final release of Python 2.2 is planned for October 2001.
 
 
 %======================================================================
-% It looks like this set of changes will likely get into 2.2,
-% so I need to read and digest the relevant PEPs.
-%\section{PEP 252: Type and Class Changes}
+\section{PEP 252: Type and Class Changes}
 
-%XXX
+XXX
 
-% GvR's description at http://www.python.org/2.2/descrintro.html
+I need to read and digest the relevant PEPs.
 
-%\begin{seealso}
+GvR's description at http://www.python.org/2.2/descrintro.html
 
-%\seepep{252}{Making Types Look More Like Classes}{Written and implemented 
-%by GvR.}
+\begin{seealso}
 
-%\end{seealso}
+\seepep{252}{Making Types Look More Like Classes}{Written and implemented 
+by Guido van Rossum.}
+
+\end{seealso}
 
 
 %======================================================================
@@ -341,8 +347,47 @@ and Tim Peters, with other fixes from the Python Labs crew.}
 %======================================================================
 \section{PEP 237: Unifying Long Integers and Integers}
 
-XXX write this section
+In recent versions, the distinction between regular integers, which
+are 32-bit values on most machines, and long integers, which can be of
+arbitrary size, was becoming an annoyance.  For example, on platforms
+that support large files (files larger than \code{2**32} bytes), the
+\method{tell()} method of file objects has to return a long integer.
+However, there were various bits of Python that expected plain
+integers and would raise an error if a long integer was provided
+instead.  For example, in version XXX of Python, only regular integers
+could be used as a slice index, and \code{'abc'[1L:]} would raise a
+\exception{TypeError} exception with the message 'slice index must be
+int'.
 
+Python 2.2 will shift values from short to long integers as required.
+The 'L' suffix is no longer needed to indicate a long integer literal,
+as now the compiler will choose the appropriate type.  (Using the 'L'
+suffix will be discouraged in future 2.x versions of Python,
+triggering a warning in Python 2.4, and probably dropped in Python
+3.0.)  Many operations that used to raise an \exception{OverflowError}
+will now return a long integer as their result.  For example:
+
+\begin{verbatim}
+>>> 1234567890123
+XXX
+>>> 2 ** 32
+XXX put output here
+\end{verbatim}
+
+In most cases, integers and long integers will now be treated
+identically.  You can still distinguish them with the
+\function{type()} built-in function, but that's rarely needed.  The
+\function{int()} function will now return a long integer if the value
+is large enough.  
+
+% XXX is there a warning-enabling command-line option for this?
+
+\begin{seealso}
+
+\seepep{237}{Unifying Long Integers and Integers}{Written by
+Moshe Zadka and Guido van Rossum.  Implemented mostly by Guido van Rossum.}
+
+\end{seealso}
 
 %======================================================================
 \section{PEP 238: Changing the Division Operator}
@@ -858,7 +903,13 @@ to experiment with these modules can uncomment them manually.
   by \cfunction{dlopen()} using the \function{sys.getdlopenflags()} and
   \function{sys.setdlopenflags()} functions.    (Contributed by Bram Stolk.)
 
-  \item XXX 3-argument float pow() is gone
+  \item The \function{pow()} built-in function no longer supports 3
+  arguments when floating-point numbers are supplied.
+  \code{pow(\var{x}, \var{y}, \var{z})} returns \code{(x**y) % z}, but
+  this is never useful for floating point numbers, and the final
+  result varies unpredictably depending on the platform.  A call such
+  as \code{pow(2.0, 8.0, 7.0)} will now raise a \exception{XXX}
+  exception.
   
 \end{itemize}
 
