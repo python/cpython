@@ -119,7 +119,6 @@ OptionalCFURLRef  = OpaqueByValueType("CFURLRef", "OptionalCFURLRefObj")
 class MyGlobalObjectDefinition(GlobalObjectDefinition):
 	def outputCheckNewArg(self):
 		Output("if (itself == NULL) return PyMac_Error(resNotFound);")
-		Output("CFRetain(itself);")
 	def outputStructMembers(self):
 		GlobalObjectDefinition.outputStructMembers(self)
 		Output("void (*ob_freeit)(CFTypeRef ptr);")
@@ -243,6 +242,16 @@ class CFMutableDataRefObjectDefinition(MyGlobalObjectDefinition):
 class CFStringRefObjectDefinition(MyGlobalObjectDefinition):
 	basechain = "&CFTypeRefObj_chain"
 	
+	def outputCheckConvertArg(self):
+		Out("""
+		if (v == Py_None) { *p_itself = NULL; return 1; }
+		if (PyString_Check(v)) {
+		    char *cStr = PyString_AsString(v);
+			*p_itself = CFStringCreateWithCString((CFAllocatorRef)NULL, cStr, 0);
+			return 1;
+		}
+		""")
+
 	def outputRepr(self):
 		Output()
 		Output("static PyObject * %s_repr(%s *self)", self.prefix, self.objecttype)
@@ -255,6 +264,10 @@ class CFStringRefObjectDefinition(MyGlobalObjectDefinition):
 class CFMutableStringRefObjectDefinition(CFStringRefObjectDefinition):
 	basechain = "&CFStringRefObj_chain"
 	
+	def outputCheckConvertArg(self):
+		# Mutable, don't allow Python strings
+		return MyGlobalObjectDefinition.outputCheckConvertArg(self)
+		
 	def outputRepr(self):
 		Output()
 		Output("static PyObject * %s_repr(%s *self)", self.prefix, self.objecttype)
@@ -309,8 +322,8 @@ module.addobject(CFURLRef_object)
 # ADD addobject call here
 
 # Create the generator classes used to populate the lists
-Function = OSErrFunctionGenerator
-Method = OSErrMethodGenerator
+Function = OSErrWeakLinkFunctionGenerator
+Method = OSErrWeakLinkMethodGenerator
 
 # Create and populate the lists
 functions = []
@@ -342,6 +355,27 @@ for f in CFMutableDataRef_methods: CFMutableDataRef_object.add(f)
 for f in CFStringRef_methods: CFStringRef_object.add(f)
 for f in CFMutableStringRef_methods: CFMutableStringRef_object.add(f)
 for f in CFURLRef_methods: CFURLRef_object.add(f)
+
+# Manual generators for getting data out of strings
+
+getasstring_body = """
+int size = CFStringGetLength(_self->ob_itself)+1;
+char *data = malloc(size);
+
+if( data == NULL ) return PyErr_NoMemory();
+if ( CFStringGetCString(_self->ob_itself, data, size, 0) ) {
+	_res = (PyObject *)PyString_FromString(data);
+} else {
+	PyErr_SetString(PyExc_RuntimeError, "CFStringGetCString could not fit the string");
+	_res = NULL;
+}
+free(data);
+return _res;
+"""
+
+f = ManualGenerator("CFStringGetString", getasstring_body);
+f.docstring = lambda: "() -> (string _rv)"
+CFStringRef_object.add(f)
 
 # ADD add forloop here
 
