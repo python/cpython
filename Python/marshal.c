@@ -569,7 +569,13 @@ r_object(RFILE *p)
 		return v;
 
 	case TYPE_CODE:
-		{
+		if (PyEval_GetRestricted()) {
+			PyErr_SetString(PyExc_RuntimeError,
+				"cannot unmarshal code objects in "
+				"restricted execution mode");
+			return NULL;
+		}
+		else {
 			int argcount = r_short(p);
 			int nlocals = r_short(p);
 			int stacksize = r_short(p);
