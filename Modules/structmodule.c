@@ -31,10 +31,9 @@ PERFORMANCE OF THIS SOFTWARE.
 
 /* struct module -- pack values into and (out of) strings */
 
-#include "allobjects.h"
-#include "modsupport.h"
+#include "Python.h"
 
-static object *StructError;
+static PyObject *StructError;
 
 
 /* Define various structs to figure out the alignments of types */
@@ -105,8 +104,8 @@ calcsize(fmt)
 			while ('0' <= (c = *s++) && c <= '9') {
 				x = num*10 + (c - '0');
 				if (x/10 != num) {
-					err_setstr(StructError,
-						   "int overflow in fmt");
+					PyErr_SetString(StructError,
+                                                        "int overflow in fmt");
 					return -1;
 				}
 				num = x;
@@ -148,7 +147,7 @@ calcsize(fmt)
 			break;
 
 		default:
-			err_setstr(StructError, "bad char in fmt");
+			PyErr_SetString(StructError, "bad char in fmt");
 			return -1;
 
 		}
@@ -156,7 +155,8 @@ calcsize(fmt)
 		x = num * itemsize;
 		size += x;
 		if (x/itemsize != num || size < 0) {
-			err_setstr(StructError, "total struct size too long");
+			PyErr_SetString(StructError,
+                                        "total struct size too long");
 			return -1;
 		}
 			
@@ -168,31 +168,31 @@ calcsize(fmt)
 
 /* pack(fmt, v1, v2, ...) --> string */
 
-static object *
+static PyObject *
 struct_calcsize(self, args)
-	object *self; /* Not used */
-	object *args;
+	PyObject *self; /* Not used */
+	PyObject *args;
 {
 	char *fmt;
 	int size;
 
-	if (!getargs(args, "s", &fmt))
+	if (!PyArg_Parse(args, "s", &fmt))
 		return NULL;
 	size = calcsize(fmt);
 	if (size < 0)
 		return NULL;
-	return newintobject((long)size);
+	return PyInt_FromLong((long)size);
 }
 
 
 /* pack(fmt, v1, v2, ...) --> string */
 
-static object *
+static PyObject *
 struct_pack(self, args)
-	object *self; /* Not used */
-	object *args;
+	PyObject *self; /* Not used */
+	PyObject *args;
 {
-	object *format, *result, *v;
+	PyObject *format, *result, *v;
 	char *fmt;
 	int size, num;
 	int i, n;
@@ -201,24 +201,25 @@ struct_pack(self, args)
 	long ival;
 	double fval;
 
-	if (args == NULL || !is_tupleobject(args) ||
-	    (n = gettuplesize(args)) < 1) {
-		err_badarg();
+	if (args == NULL || !PyTuple_Check(args) ||
+	    (n = PyTuple_Size(args)) < 1)
+        {
+		PyErr_BadArgument();
 		return NULL;
 	}
-	format = gettupleitem(args, 0);
-	if (!getargs(format, "s", &fmt))
+	format = PyTuple_GetItem(args, 0);
+	if (!PyArg_Parse(format, "s", &fmt))
 		return NULL;
 	size = calcsize(fmt);
 	if (size < 0)
 		return NULL;
-	result = newsizedstringobject((char *)NULL, size);
+	result = PyString_FromStringAndSize((char *)NULL, size);
 	if (result == NULL)
 		return NULL;
 
 	s = fmt;
 	i = 1;
-	res = restart = getstringvalue(result);
+	res = restart = PyString_AsString(result);
 
 	while ((c = *s++) != '\0') {
 		if ('0' <= c && c <= '9') {
@@ -245,17 +246,17 @@ struct_pack(self, args)
 			case 'h':
 			case 'b':
 				if (i >= n) {
-					err_setstr(StructError,
-					   "insufficient arguments to pack");
+					PyErr_SetString(StructError,
+					     "insufficient arguments to pack");
 					goto fail;
 				}
-				v = gettupleitem(args, i++);
-				if (!is_intobject(v)) {
-					err_setstr(StructError,
-					   "bad argument type to pack");
+				v = PyTuple_GetItem(args, i++);
+				if (!PyInt_Check(v)) {
+					PyErr_SetString(StructError,
+					          "bad argument type to pack");
 					goto fail;
 				}
-				ival = getintvalue(v);
+				ival = PyInt_AsLong(v);
 				switch (c) {
 				case 'b':
 					*res++ = ival;
@@ -277,34 +278,35 @@ struct_pack(self, args)
 
 			case 'c':
 				if (i >= n) {
-					err_setstr(StructError,
-					   "insufficient arguments to pack");
+					PyErr_SetString(StructError,
+					     "insufficient arguments to pack");
 					goto fail;
 				}
-				v = gettupleitem(args, i++);
-				if (!is_stringobject(v) ||
-				    getstringsize(v) != 1) {
-					err_setstr(StructError,
-					   "bad argument type to pack");
+				v = PyTuple_GetItem(args, i++);
+				if (!PyString_Check(v) ||
+				    PyString_Size(v) != 1)
+				{
+					PyErr_SetString(StructError,
+					          "bad argument type to pack");
 					goto fail;
 				}
-				*res++ = getstringvalue(v)[0];
+				*res++ = PyString_AsString(v)[0];
 				break;
 
 			case 'd':
 			case 'f':
 				if (i >= n) {
-					err_setstr(StructError,
-					   "insufficient arguments to pack");
+					PyErr_SetString(StructError,
+					     "insufficient arguments to pack");
 					goto fail;
 				}
-				v = gettupleitem(args, i++);
-				if (!is_floatobject(v)) {
-					err_setstr(StructError,
-					   "bad argument type to pack");
+				v = PyTuple_GetItem(args, i++);
+				if (!PyFloat_Check(v)) {
+					PyErr_SetString(StructError,
+					          "bad argument type to pack");
 					goto fail;
 				}
-				fval = getfloatvalue(v);
+				fval = PyFloat_AsDouble(v);
 				switch (c) {
 				case 'f':
 					*(float*)res = (float)fval;
@@ -318,7 +320,8 @@ struct_pack(self, args)
 				break;
 
 			default:
-				err_setstr(StructError, "bad char in fmt");
+				PyErr_SetString(StructError,
+						"bad char in fmt");
 				goto fail;
 
 			}
@@ -326,59 +329,61 @@ struct_pack(self, args)
 	}
 
 	if (i < n) {
-		err_setstr(StructError, "too many arguments for pack fmt");
+		PyErr_SetString(StructError,
+				"too many arguments for pack fmt");
 		goto fail;
 	}
 
 	return result;
 
  fail:
-	DECREF(result);
+	Py_DECREF(result);
 	return NULL;
 }
 
 
 /* Helper to convert a list to a tuple */
 
-static object *
+static PyObject *
 totuple(list)
-	object *list;
+	PyObject *list;
 {
-	int len = getlistsize(list);
-	object *tuple = newtupleobject(len);
+	int len = PyList_Size(list);
+	PyObject *tuple = PyTuple_New(len);
 	if (tuple != NULL) {
 		int i;
 		for (i = 0; i < len; i++) {
-			object *v = getlistitem(list, i);
-			INCREF(v);
-			settupleitem(tuple, i, v);
+			PyObject *v = PyList_GetItem(list, i);
+			Py_INCREF(v);
+			PyTuple_SetItem(tuple, i, v);
 		}
 	}
-	DECREF(list);
+	Py_DECREF(list);
 	return tuple;
 }
 
 
 /* unpack(fmt, string) --> (v1, v2, ...) */
 
-static object *
+static PyObject *
 struct_unpack(self, args)
-	object *self; /* Not used */
-	object *args;
+	PyObject *self; /* Not used */
+	PyObject *args;
 {
 	char *str, *start, *fmt, *s;
 	char c;
 	int len, size, num, x;
-	object *res, *v;
+	PyObject *res, *v;
 
-	if (!getargs(args, "(ss#)", &fmt, &start, &len))
+	if (!PyArg_Parse(args, "(ss#)", &fmt, &start, &len))
 		return NULL;
 	size = calcsize(fmt);
 	if (size != len) {
-		err_setstr(StructError, "unpack str size does not match fmt");
+		PyErr_SetString(StructError,
+				"unpack str size does not match fmt");
 		return NULL;
 	}
-	res = newlistobject(0);
+	res = PyList_New(0);
 	if (res == NULL)
 		return NULL;
 	str = start;
@@ -407,31 +412,31 @@ struct_unpack(self, args)
 				x = *str++;
 				if (x >= 128)
 					x -= 256;
-				v = newintobject((long)x);
+				v = PyInt_FromLong((long)x);
 				break;
 
 			case 'c':
-				v = newsizedstringobject(str, 1);
+				v = PyString_FromStringAndSize(str, 1);
 				str++;
 				break;
 
 			case 'h':
-				v = newintobject((long)*(short*)str);
+				v = PyInt_FromLong((long)*(short*)str);
 				str += sizeof(short);
 				break;
 
 			case 'i':
-				v = newintobject((long)*(int*)str);
+				v = PyInt_FromLong((long)*(int*)str);
 				str += sizeof(int);
 				break;
 
 			case 'l':
-				v = newintobject(*(long*)str);
+				v = PyInt_FromLong(*(long*)str);
 				str += sizeof(long);
 				break;
 
 			case 'f':
-				v = newfloatobject((double)*(float*)str);
+				v = PyFloat_FromDouble((double)*(float*)str);
 				str += sizeof(float);
 				break;
 
@@ -439,33 +444,34 @@ struct_unpack(self, args)
 			    {
 				double d;
 				memcpy((char *)&d, str, sizeof d);
-				v = newfloatobject(d);
+				v = PyFloat_FromDouble(d);
 				str += sizeof(double);
 				break;
 			    }
 
 			default:
-				err_setstr(StructError, "bad char in fmt");
+				PyErr_SetString(StructError,
+						"bad char in fmt");
 				goto fail;
 
 			}
-			if (v == NULL || addlistitem(res, v) < 0)
+			if (v == NULL || PyList_Append(res, v) < 0)
 				goto fail;
-			DECREF(v);
+			Py_DECREF(v);
 		}
 	}
 
 	return totuple(res);
 
  fail:
-	DECREF(res);
+	Py_DECREF(res);
 	return NULL;
 }
 
 
 /* List of functions */
 
-static struct methodlist struct_methods[] = {
+static PyMethodDef struct_methods[] = {
 	{"calcsize",	struct_calcsize},
 	{"pack",	struct_pack,	1/*varargs*/},
 	{"unpack",	struct_unpack},
@@ -478,17 +484,17 @@ static struct methodlist struct_methods[] = {
 void
 initstruct()
 {
-	object *m, *d;
+	PyObject *m, *d;
 
 	/* Create the module and add the functions */
-	m = initmodule("struct", struct_methods);
+	m = Py_InitModule("struct", struct_methods);
 
 	/* Add some symbolic constants to the module */
-	d = getmoduledict(m);
-	StructError = newstringobject("struct.error");
-	dictinsert(d, "error", StructError);
+	d = PyModule_GetDict(m);
+	StructError = PyString_FromString("struct.error");
+	PyDict_SetItemString(d, "error", StructError);
 
 	/* Check for errors */
-	if (err_occurred())
-		fatal("can't initialize module struct");
+	if (PyErr_Occurred())
+		Py_FatalError("can't initialize module struct");
 }
