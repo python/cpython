@@ -203,7 +203,7 @@ def _parse_fd_header(file):
     return datum[1]
 #
 # Internal: parse fd form, or skip if name doesn't match.
-# the special value None means 'allways parse it'.
+# the special value None means 'always parse it'.
 #
 def _parse_fd_form(file, name):
     datum = _parse_1_line(file)
@@ -222,7 +222,7 @@ def _parse_fd_form(file, name):
     return None
 
 #
-# Internal class: a convient place to store object info fields
+# Internal class: a convenient place to store object info fields
 #
 class _newobj:
     def add(self, name, value):

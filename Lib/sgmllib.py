@@ -47,7 +47,7 @@ attrfind = re.compile(
 # <foo> and </foo>, respectively, or do_foo to handle <foo> by itself.
 # (Tags are converted to lower case for this purpose.)  The data
 # between tags is passed to the parser by calling self.handle_data()
-# with some data as argument (the data may be split up in arbutrary
+# with some data as argument (the data may be split up in arbitrary
 # chunks).  Entity references are passed by calling
 # self.handle_entityref() with the entity reference as argument.
 

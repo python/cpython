@@ -122,7 +122,7 @@ del exit
 #
 # Set the string encoding used by the Unicode implementation to the
 # encoding used by the default locale of this system. If the default
-# encoding cannot be determined or is unkown, it defaults to 'ascii'.
+# encoding cannot be determined or is unknown, it defaults to 'ascii'.
 #
 def locale_aware_defaultencoding():
     import locale

@@ -119,7 +119,7 @@ class Queue:
     def _qsize(self):
         return len(self.queue)
 
-    # Check wheter the queue is empty
+    # Check whether the queue is empty
     def _empty(self):
         return not self.queue
 

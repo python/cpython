@@ -1,6 +1,6 @@
 """Calendar printing functions"""
 
-# Revision 2: uses funtions from built-in time module
+# Revision 2: uses functions from built-in time module
 
 # Import functions and variables from time module
 from time import localtime, mktime

@@ -28,7 +28,7 @@ else:
         return os.path.normpath(path)
 
 
-# More backwards compatability hacks
+# More backwards compatibility hacks
 def extend (list, new_list):
     """Appends the list 'new_list' to 'list', just like the 'extend()'
        list method does in Python 1.5.2 -- but this works on earlier

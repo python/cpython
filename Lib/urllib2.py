@@ -141,7 +141,7 @@ def install_opener(opener):
     _opener = opener
 
 # do these error classes make sense?
-# make sure all of the IOError stuff is overriden.  we just want to be 
+# make sure all of the IOError stuff is overridden.  we just want to be 
  # subtypes.
 
 class URLError(IOError):

@@ -13,7 +13,7 @@ hexbin(inputfilename, outputfilename)
 # XXXX Note: currently, textfiles appear in mac-form on all platforms.
 # We seem to lack a simple character-translate in python.
 # (we should probably use ISO-Latin-1 on all but the mac platform).
-# XXXX The simeple routines are too simple: they expect to hold the complete
+# XXXX The simple routines are too simple: they expect to hold the complete
 # files in-core. Should be fixed.
 # XXXX It would be nice to handle AppleDouble format on unix
 # (for servers serving macs).
@@ -48,7 +48,7 @@ if os.name == 'mac':
     try:
         openrf = MacOS.openrf
     except AttributeError:
-        # Backward compatability
+        # Backward compatibility
         openrf = open
     
     def FInfo():

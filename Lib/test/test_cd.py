@@ -10,7 +10,7 @@ cdattrs = ['BLOCKSIZE', 'CDROM', 'DATASIZE', 'ERROR', 'NODISC', 'PAUSED', 'PLAYI
            'ident', 'index', 'msftoframe', 'open', 'pnum', 'ptime']
 
 
-# This is a very inobstrusive test for the existance of the cd module and all it's
+# This is a very inobtrusive test for the existence of the cd module and all it's
 # attributes.  More comprehensive examples can be found in Demo/cd and
 # require that you have a CD and a CD ROM drive
 

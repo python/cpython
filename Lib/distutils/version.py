@@ -207,7 +207,7 @@ class StrictVersion (Version):
 # provides enough benefit to be worth using, and will submit their
 # version numbering scheme to its domination.  The free-thinking
 # anarchists in the lot will never give in, though, and something needs
-# to be done to accomodate them.
+# to be done to accommodate them.
 # 
 # Perhaps a "moderately strict" version class could be implemented that
 # lets almost anything slide (syntactically), and makes some heuristic
