@@ -2235,7 +2235,7 @@ There are only a few functions special to module objects.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyModule_AddIntConstant}{PyObject *module,
-                                                char *name, int value}
+                                                char *name, long value}
   Add an integer constant to \var{module} as \var{name}.  This
   convenience function can be used from the module's initialization
   function. Returns \code{-1} on error, \code{0} on success.
