@@ -79,30 +79,31 @@ def strip(s, chars=None):
 
     Return a copy of the string s with leading and trailing
     whitespace removed.
-    If chars is given and not None, remove characters in sep instead.
+    If chars is given and not None, remove characters in chars instead.
     If chars is unicode, S will be converted to unicode before stripping.
 
     """
     return s.strip(chars)
 
 # Strip leading tabs and spaces
-def lstrip(s):
-    """lstrip(s) -> string
+def lstrip(s, chars=None):
+    """lstrip(s [,chars]) -> string
 
     Return a copy of the string s with leading whitespace removed.
+    If chars is given and not None, remove characters in chars instead.
 
     """
-    return s.lstrip()
+    return s.lstrip(chars)
 
 # Strip trailing tabs and spaces
-def rstrip(s):
-    """rstrip(s) -> string
+def rstrip(s, chars=None):
+    """rstrip(s [,chars]) -> string
 
-    Return a copy of the string s with trailing whitespace
-    removed.
+    Return a copy of the string s with trailing whitespace removed.
+    If chars is given and not None, remove characters in chars instead.
 
     """
-    return s.rstrip()
+    return s.rstrip(chars)
 
 
 # Split a string into a list of space/tab-separated words
