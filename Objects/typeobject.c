@@ -3113,26 +3113,29 @@ SLOT0(slot_nb_absolute, "__abs__")
 static int
 slot_nb_nonzero(PyObject *self)
 {
-	PyObject *func, *res;
+	PyObject *func, *args;
 	static PyObject *nonzero_str, *len_str;
+	int result = -1;
 
 	func = lookup_maybe(self, "__nonzero__", &nonzero_str);
 	if (func == NULL) {
 		if (PyErr_Occurred())
 			return -1;
 		func = lookup_maybe(self, "__len__", &len_str);
-		if (func == NULL) {
-			if (PyErr_Occurred())
-				return -1;
-			else
-				return 1;
+		if (func == NULL)
+			return PyErr_Occurred() ? -1 : 1;
+	}
+	args = PyTuple_New(0);
+	if (args != NULL) {
+		PyObject *temp = PyObject_Call(func, args, NULL);
+		Py_DECREF(args);
+		if (temp != NULL) {
+			result = PyObject_IsTrue(temp);
+			Py_DECREF(temp);
 		}
 	}
-	res = PyObject_CallObject(func, NULL);
 	Py_DECREF(func);
-	if (res == NULL)
-		return -1;
-	return PyObject_IsTrue(res);
+	return result;
 }
 
 SLOT0(slot_nb_invert, "__invert__")
