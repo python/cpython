@@ -230,10 +230,10 @@ def process(file, list):
                     print "*** Bad warning for line %d:" % row, bad
                     print "*", line
                 elif intlong and not floatcomplex:
-                        print "%dc%d" % (row, row)
-                        print "<", line
-                        print "---"
-                        print ">", line[:col] + "/" + line[col:]
+                    print "%dc%d" % (row, row)
+                    print "<", line
+                    print "---"
+                    print ">", line[:col] + "/" + line[col:]
                 elif floatcomplex and not intlong:
                     print "True division / operator at line %d:" % row
                     print "=", line

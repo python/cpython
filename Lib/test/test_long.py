@@ -357,7 +357,7 @@ def test_float_overflow():
                  "math.sqrt(huge)", "math.sqrt(mhuge)", # should do better
                  "math.log10(huge)", "math.log10(mhuge)", # should do better
                  "math.floor(huge)", "math.floor(mhuge)"]:
-                 
+
         try:
             eval(test, namespace)
         except OverflowError:

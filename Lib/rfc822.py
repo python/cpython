@@ -967,7 +967,7 @@ def formatdate(timeval=None):
             timeval[2],
             ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
              "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][timeval[1]-1],
-				timeval[0], timeval[3], timeval[4], timeval[5])
+                                timeval[0], timeval[3], timeval[4], timeval[5])
 
 
 # When used as script, run a small test program.
