@@ -1,22 +1,22 @@
-\section{Standard Module \sectcode{dis}}
+\section{Standard Module \module{dis}}
 \stmodindex{dis}
-
 \label{module-dis}
 
-The \code{dis} module supports the analysis of Python byte code by
+The \module{dis} module supports the analysis of Python byte code by
 disassembling it.  Since there is no Python assembler, this module
 defines the Python assembly language.  The Python byte code which
 this module takes as an input is defined in the file 
 \file{Include/opcode.h} and used by the compiler and the interpreter.
 
-Example: Given the function myfunc
+Example: Given the function \function{myfunc}:
 
 \begin{verbatim}
 def myfunc(alist):
-  return len(alist)
+    return len(alist)
 \end{verbatim}
 
-the following command can be used to get the disassembly of \code{myfunc()}:
+the following command can be used to get the disassembly of
+\function{myfunc()}:
 
 \begin{verbatim}
 >>> dis.dis(myfunc)
@@ -31,9 +31,7 @@ the following command can be used to get the disassembly of \code{myfunc()}:
          19 RETURN_VALUE   
 \end{verbatim}
 
-The \code{dis} module defines the following functions:
-
-\setindexsubitem{(in module dis)}
+The \module{dis} module defines the following functions:
 
 \begin{funcdesc}{dis}{\optional{bytesource}}
 Disassemble the \var{bytesource} object. \var{bytesource} can denote
@@ -53,8 +51,8 @@ is indicated.
 Disassembles a code object, indicating the last instruction if \var{lasti}
 was provided.  The output is divided in the following columns:
 \begin{itemize}
-\item the current instruction, indicated as \code{-->},
-\item a labelled instruction, indicated with \code{>>},
+\item the current instruction, indicated as \samp{-->},
+\item a labelled instruction, indicated with \samp{>>},
 \item the address of the instruction,
 \item the operation code name,
 \item operation parameters, and
@@ -324,14 +322,14 @@ bytes, with the more significant byte last.
 
 \begin{opcodedesc}{STORE_NAME}{namei}
 Implements \code{name = TOS}. \var{namei} is the index of \var{name}
-in the attribute \code{co_names} of the code object.
+in the attribute \member{co_names} of the code object.
 The compiler tries to use \code{STORE_LOCAL} or \code{STORE_GLOBAL}
 if possible.
 \end{opcodedesc}
 
 \begin{opcodedesc}{DELETE_NAME}{namei}
 Implements \code{del name}, where \var{namei} is the index into
-\code{co_names} attribute of the code object.
+\member{co_names} attribute of the code object.
 \end{opcodedesc}
 
 \begin{opcodedesc}{UNPACK_TUPLE}{count}
@@ -349,12 +347,12 @@ Unpacks TOS into \var{count} individual values.
 
 \begin{opcodedesc}{STORE_ATTR}{namei}
 Implements \code{TOS.name = TOS1}, where \var{namei} is the index
-of name in \code{co_names}.
+of name in \member{co_names}.
 \end{opcodedesc}
 
 \begin{opcodedesc}{DELETE_ATTR}{namei}
 Implements \code{del TOS.name}, using \var{namei} as index into
-\code{co_names}.
+\member{co_names}.
 \end{opcodedesc}
 
 \begin{opcodedesc}{STORE_GLOBAL}{namei}
@@ -370,11 +368,11 @@ Works as \code{DELETE_NAME}, but deletes a global name.
 %\end{opcodedesc}
 
 \begin{opcodedesc}{LOAD_CONST}{consti}
-Pushes \code{co_consts[\var{consti}]} onto the stack.
+Pushes \samp{co_consts[\var{consti}]} onto the stack.
 \end{opcodedesc}
 
 \begin{opcodedesc}{LOAD_NAME}{namei}
-Pushes the value associated with \code{co_names[\var{namei}]} onto the stack.
+Pushes the value associated with \samp{co_names[\var{namei}]} onto the stack.
 \end{opcodedesc}
 
 \begin{opcodedesc}{BUILD_TUPLE}{count}
