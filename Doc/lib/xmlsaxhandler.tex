@@ -193,25 +193,27 @@ appropriate events in the input document:
   
   There are cases, however, when applications need to use prefixes in
   character data or in attribute values, where they cannot safely be
-  expanded automatically; the start/endPrefixMapping event supplies
-  the information to the application to expand prefixes in those
-  contexts itself, if necessary.
+  expanded automatically; the \method{startPrefixMapping()} and
+  \method{endPrefixMapping()} events supply the information to the
+  application to expand prefixes in those contexts itself, if
+  necessary.
   
-  Note that start/endPrefixMapping events are not guaranteed to be
-  properly nested relative to each-other: all
-  \method{startPrefixMapping()} events will occur before the
-  corresponding \method{startElement()} event, and all
-  \method{endPrefixMapping()} events will occur after the
-  corresponding \method{endElement()} event, but their order is not
-  guaranteed.
+  Note that \method{startPrefixMapping()} and
+  \method{endPrefixMapping()} events are not guaranteed to be properly
+  nested relative to each-other: all \method{startPrefixMapping()}
+  events will occur before the corresponding \method{startElement()}
+  event, and all \method{endPrefixMapping()} events will occur after
+  the corresponding \method{endElement()} event, but their order is
+  not guaranteed.
 \end{methoddesc}
 
 \begin{methoddesc}[ContentHandler]{endPrefixMapping}{prefix}
   End the scope of a prefix-URI mapping.
-        
-  See \method{startPrefixMapping()} for details. This event will always
-  occur after the corresponding endElement event, but the order of
-  endPrefixMapping events is not otherwise guaranteed.
+
+  See \method{startPrefixMapping()} for details. This event will
+  always occur after the corresponding \method{endElement()} event,
+  but the order of \method{endPrefixMapping()} events is not otherwise
+  guaranteed.
 \end{methoddesc}
 
 \begin{methoddesc}[ContentHandler]{startElement}{name, attrs}
@@ -219,9 +221,10 @@ appropriate events in the input document:
 
   The \var{name} parameter contains the raw XML 1.0 name of the
   element type as a string and the \var{attrs} parameter holds an
-  instance of the \class{Attributes} class containing the attributes
-  of the element.  The object passed as \var{attrs} may be re-used by
-  the parser; holding on to a reference to it is not a reliable way to
+  object of the \ulink{\class{Attributes}
+  interface}{attributes-objects.html} containing the attributes of the
+  element.  The object passed as \var{attrs} may be re-used by the
+  parser; holding on to a reference to it is not a reliable way to
   keep a copy of the attributes.  To keep a copy of the attributes,
   use the \method{copy()} method of the \var{attrs} object.
 \end{methoddesc}
@@ -230,7 +233,7 @@ appropriate events in the input document:
   Signals the end of an element in non-namespace mode.
 
   The \var{name} parameter contains the name of the element type, just
-  as with the startElement event.
+  as with the \method{startElement()} event.
 \end{methoddesc}
 
 \begin{methoddesc}[ContentHandler]{startElementNS}{name, qname, attrs}
@@ -239,8 +242,9 @@ appropriate events in the input document:
   The \var{name} parameter contains the name of the element type as a
   \code{(\var{uri}, \var{localname})} tuple, the \var{qname} parameter
   contains the raw XML 1.0 name used in the source document, and the
-  \var{attrs} parameter holds an instance of the \class{AttributesNS}
-  class containing the attributes of the element.  If no namespace is
+  \var{attrs} parameter holds an instance of the
+  \ulink{\class{AttributesNS} interface}{attributes-ns-objects.html}
+  containing the attributes of the element.  If no namespace is
   associated with the element, the \var{uri} component of \var{name}
   will be \code{None}.  The object passed as \var{attrs} may be
   re-used by the parser; holding on to a reference to it is not a
