@@ -108,7 +108,9 @@ static long dxp[256];
 
 #ifdef WITH_THREAD
 
+#ifndef DONT_HAVE_ERRNO_H
 #include <errno.h>
+#endif
 #include "pythread.h"
 
 extern int _PyThread_Started; /* Flag for Py_Exit */

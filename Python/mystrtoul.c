@@ -60,7 +60,9 @@ PERFORMANCE OF THIS SOFTWARE.
 */
 
 #include <ctype.h>
+#ifndef DONT_HAVE_ERRNO_H
 #include <errno.h>
+#endif
 
 unsigned long
 PyOS_strtoul(str, ptr, base)
