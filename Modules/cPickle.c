@@ -1990,6 +1990,11 @@ save(Picklerobject *self, PyObject *args, int  pers_save) {
             }
     }
 
+    if (PyType_IsSubtype(type, &PyType_Type)) {
+	res = save_global(self, args, NULL);
+	goto finally;
+    }
+
     if (!pers_save && self->inst_pers_func) {
         if ((tmp = save_pers(self, args, self->inst_pers_func)) != 0) {
             res = tmp;
