@@ -618,7 +618,7 @@ Py_FatalError(msg)
 	for (;;);
 #endif
 #ifdef MS_WIN32
-	OutputDebugString("Fatal Python error:");
+	OutputDebugString("Fatal Python error: ");
 	OutputDebugString(msg);
 	OutputDebugString("\n");
 #endif
