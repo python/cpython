@@ -483,7 +483,6 @@ com_addopname(c, op, n)
 	int op;
 	node *n;
 {
-	object *v;
 	char *name;
 	char buffer[1000];
 	/* XXX it is possible to write this code without the 1000
@@ -1868,18 +1867,27 @@ static object *
 get_docstring(n)
 	node *n;
 {
+	int i;
+
 	switch (TYPE(n)) {
 
 	case suite:
 		if (NCH(n) == 1)
 			return get_docstring(CHILD(n, 0));
 		else {
-			int i;
 			for (i = 0; i < NCH(n); i++) {
 				node *ch = CHILD(n, i);
 				if (TYPE(ch) == stmt)
 					return get_docstring(ch);
 			}
+		}
+		break;
+
+	case file_input:
+		for (i = 0; i < NCH(n); i++) {
+			node *ch = CHILD(n, i);
+			if (TYPE(ch) == stmt)
+				return get_docstring(ch);
 		}
 		break;
 
