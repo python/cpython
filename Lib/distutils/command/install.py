@@ -82,6 +82,14 @@ class install (Command):
         ]
 
 
+    # 'sub_commands': a list of commands this command might have to run
+    # to get its work done.  Each command is represented as a tuple
+    # (func, command) where 'func' is a function to call that returns
+    # true if 'command' (the sub-command name, a string) needs to be
+    # run.  If 'func' is None, assume that 'command' must always be run.
+    sub_commands = [(None, 'install_lib')]
+
+
     def initialize_options (self):
 
         # High-level options: these select both an installation base
@@ -355,10 +363,11 @@ class install (Command):
         # Obviously have to build before we can install
         self.run_peer ('build')
 
-        # Now install all Python modules -- don't bother to make this
-        # conditional; why would someone distribute a Python module
-        # distribution without Python modules?
-        self.run_peer ('install_lib')
+        # Run all sub-commands: currently this just means install all
+        # Python modules using 'install_lib'.
+        for (func, cmd) in self.sub_commands:
+            if func is None or func():
+                self.run_peer (cmd)
 
         if self.path_file:
             self.create_path_file ()
@@ -372,6 +381,17 @@ class install (Command):
                        self.install_lib)
 
     # run ()
+
+
+    def get_outputs (self):
+        # This command doesn't have any outputs of its own, so just
+        # get the outputs of all its sub-commands.
+        outputs = []
+        for (func, cmd) in self.sub_commands:
+            if func is None or func():
+                outputs.extend (self.run_peer (cmd))
+
+        return outputs
 
 
     def create_path_file (self):
