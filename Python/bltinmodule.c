@@ -1,4 +1,4 @@
-
+fo
 /* Built-in functions */
 
 #include "Python.h"
@@ -1512,20 +1512,22 @@ builtin_ord(PyObject *self, PyObject *args)
 
 	if (PyString_Check(obj)) {
 		size = PyString_GET_SIZE(obj);
-		if (size == 1)
+		if (size == 1) {
 			ord = (long)((unsigned char)*PyString_AS_STRING(obj));
+			return PyInt_FromLong(ord);
+		}
 	} else if (PyUnicode_Check(obj)) {
 		size = PyUnicode_GET_SIZE(obj);
-		if (size == 1)
+		if (size == 1) {
 			ord = (long)*PyUnicode_AS_UNICODE(obj);
+			return PyInt_FromLong(ord);
+		}
 	} else {
 		PyErr_Format(PyExc_TypeError,
 			     "ord() expected string or Unicode character, " \
 			     "%.200s found", obj->ob_type->tp_name);
 		return NULL;
 	}
-	if (size == 1)
-		return PyInt_FromLong(ord);
 
 	PyErr_Format(PyExc_TypeError, 
 		     "ord() expected a character, length-%d string found",
