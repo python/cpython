@@ -2513,7 +2513,7 @@ call_function(func, arg, kw)
 	else {
 		if (!PyFunction_Check(func)) {
 			PyErr_Format(PyExc_TypeError,
-				     "call of non-function (type %s)",
+				     "call of non-function (type %.200s)",
 				     func->ob_type->tp_name);
 			return NULL;
 		}
