@@ -23,9 +23,9 @@ class EditableManPage(ScrolledText):
 		ScrolledText.__init__(self, master, cnf)
 
 		# Define tags for formatting styles
-		self.text.tag_config('bold', {'font': BOLDFONT})
-		self.text.tag_config('italic', {'font': ITALICFONT})
-		self.text.tag_config('underline', {'underline': 1})
+		self.tag_config('bold', {'font': BOLDFONT})
+		self.tag_config('italic', {'font': ITALICFONT})
+		self.tag_config('underline', {'underline': 1})
 
 		# Create mapping from characters to tags
 		self.tagmap = {
@@ -37,9 +37,9 @@ class EditableManPage(ScrolledText):
 	# Parse nroff output piped through ul -i and append it to the
 	# text widget
 	def parsefile(self, fp):
-		save_cursor = self.text['cursor']
-		self.text['cursor'] = 'watch'
-		self.text.update()
+		save_cursor = self['cursor']
+		self['cursor'] = 'watch'
+		self.update()
 		ok = 0
 		empty = 0
 		nextline = None
@@ -80,15 +80,15 @@ class EditableManPage(ScrolledText):
 						j = i
 					p = propline[i]
 			self.insert_prop(line[j:])
-		self.text['cursor'] = save_cursor
+		self['cursor'] = save_cursor
 
 	def insert_prop(self, str, prop = ' '):
-		here = self.text.index(AtInsert())
-		self.text.insert(AtInsert(), str)
+		here = self.index(AtInsert())
+		self.insert(AtInsert(), str)
 		for tag in self.tagmap.values():
-			self.text.tag_remove(tag, here, AtInsert())
+			self.tag_remove(tag, here, AtInsert())
 		if self.tagmap.has_key(prop):
-			self.text.tag_add(self.tagmap[prop], here, AtInsert())
+			self.tag_add(self.tagmap[prop], here, AtInsert())
 
 # Readonly Man Page class -- disables editing, otherwise the same
 class ReadonlyManPage(EditableManPage):
@@ -98,13 +98,13 @@ class ReadonlyManPage(EditableManPage):
 		EditableManPage.__init__(self, master, cnf)
 
 		# Make the text readonly
-		self.text.bind('<Any-KeyPress>', self.modify_cb)
-		self.text.bind('<Return>', self.modify_cb)
-		self.text.bind('<BackSpace>', self.modify_cb)
-		self.text.bind('<Delete>', self.modify_cb)
-		self.text.bind('<Control-h>', self.modify_cb)
-		self.text.bind('<Control-d>', self.modify_cb)
-		self.text.bind('<Control-v>', self.modify_cb)
+		self.bind('<Any-KeyPress>', self.modify_cb)
+		self.bind('<Return>', self.modify_cb)
+		self.bind('<BackSpace>', self.modify_cb)
+		self.bind('<Delete>', self.modify_cb)
+		self.bind('<Control-h>', self.modify_cb)
+		self.bind('<Control-d>', self.modify_cb)
+		self.bind('<Control-v>', self.modify_cb)
 
 	def modify_cb(self, e):
 		pass
