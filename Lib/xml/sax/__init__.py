@@ -27,10 +27,9 @@ import saxutils
 def parse( filename_or_stream, handler, errorHandler=ErrorHandler() ):
     parser=ExpatParser()
     parser.setContentHandler( handler )
-    parse.setErrorHandler( errorHandler )
+    parser.setErrorHandler( errorHandler )
     parser.parse( filename_or_stream )
 
-# this may not work yet...Expat doesn't handle buffer inputs
 def parseString( string, handler, errorHandler=ErrorHandler() ):
     try:
         import cStringIO
@@ -44,6 +43,6 @@ def parseString( string, handler, errorHandler=ErrorHandler() ):
  
     parser=ExpatParser()
     parser.setContentHandler( handler )
-    parse.setErrorHandler( errorHandler )
+    parser.setErrorHandler( errorHandler )
     parser.parse( buf )
 
