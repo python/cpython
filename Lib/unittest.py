@@ -46,7 +46,7 @@ SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
 __author__ = "Steve Purcell"
 __email__ = "stephen_purcell at yahoo dot com"
-__version__ = "#Revision: 1.56 $"[11:-2]
+__version__ = "#Revision: 1.57 $"[11:-2]
 
 import time
 import sys
@@ -540,7 +540,7 @@ class TestLoader:
         """Return a sorted sequence of method names found within testCaseClass
         """
         def isTestMethod(attrname, testCaseClass=testCaseClass, prefix=self.testMethodPrefix):
-            return attrname[:len(prefix)] == prefix and callable(getattr(testCaseClass, attrname))
+            return attrname.startswith(prefix) and callable(getattr(testCaseClass, attrname))
         testFnNames = filter(isTestMethod, dir(testCaseClass))
         for baseclass in testCaseClass.__bases__:
             for testFnName in self.getTestCaseNames(baseclass):
