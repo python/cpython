@@ -177,7 +177,6 @@ dbm_close(dp, args)
         if ( dp->di_dbm )
 		gdbm_close(dp->di_dbm);
 	dp->di_dbm = NULL;
-	DEL(dp);
 	INCREF(None);
 	return None;
 }
@@ -189,6 +188,7 @@ dbm_keys(dp, args)
 {
 	register object *v, *item;
 	datum key, okey={ (char *)NULL, 0};
+	int err;
 
 	if (dp == NULL || !is_dbmobject(dp)) {
 		err_badcall();
@@ -202,10 +202,17 @@ dbm_keys(dp, args)
 	for (key = gdbm_firstkey(dp->di_dbm); key.dptr;
 				key = gdbm_nextkey(dp->di_dbm,okey) ) {
 	    item = newsizedstringobject(key.dptr, key.dsize);
-	    if ( item == 0 )
-	      return NULL;
-	    addlistitem(v, item);
+	    if (item == 0) {
+		    DECREF(v);
+		    return NULL;
+	    }
+	    err = addlistitem(v, item);
+	    DECREF(item);
     	    if(okey.dsize) free(okey.dptr);
+	    if (err != 0) {
+		    DECREF(v);
+		    return NULL;
+	    }
     	    okey=key;
 	}
 	return v;
