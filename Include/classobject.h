@@ -24,6 +24,7 @@ typedef struct {
     PyObject_HEAD
     PyClassObject *in_class;	/* The class object */
     PyObject	  *in_dict;	/* A dictionary */
+    PyObject	  *in_weakreflist; /* List of weak references */
 } PyInstanceObject;
 
 typedef struct {

@@ -160,7 +160,11 @@ extern DL_IMPORT(void) _PyObject_Del(PyObject *);
 /* Macros trading binary compatibility for speed. See also pymem.h.
    Note that these macros expect non-NULL object pointers.*/
 #define PyObject_INIT(op, typeobj) \
-	( (op)->ob_type = (typeobj), _Py_NewReference((PyObject *)(op)), (op) )
+	((op)->ob_type = (typeobj), _Py_NewReference((PyObject *)(op)), \
+	 (PyType_SUPPORTS_WEAKREFS((typeobj)) \
+	      ? *(PyObject_GET_WEAKREFS_LISTPTR(op)) = NULL \
+              : NULL), \
+         (op))
 #define PyObject_INIT_VAR(op, typeobj, size) \
 	( (op)->ob_size = (size), PyObject_INIT((op), (typeobj)) )
 
@@ -265,6 +269,12 @@ typedef struct _gc_head {
 extern DL_IMPORT(void) _PyGC_Dump(PyGC_Head *);
 
 #endif /* WITH_CYCLE_GC */
+
+/* Test if a type supports weak references */
+#define PyType_SUPPORTS_WEAKREFS(t) ((t)->tp_weaklistoffset > 0)
+
+#define PyObject_GET_WEAKREFS_LISTPTR(o) \
+	((PyObject **) (((char *) (o)) + (o)->ob_type->tp_weaklistoffset))
 
 #ifdef __cplusplus
 }
