@@ -34,10 +34,7 @@ staticforward PyTypeObject Dbmtype;
 static PyObject *DbmError;
 
 static PyObject *
-newdbmobject(file, flags, mode)
-	char *file;
-int flags;
-int mode;
+newdbmobject(char *file, int flags, int mode)
 {
         dbmobject *dp;
 
@@ -56,8 +53,7 @@ int mode;
 /* Methods */
 
 static void
-dbm_dealloc(dp)
-	register dbmobject *dp;
+dbm_dealloc(register dbmobject *dp)
 {
         if ( dp->di_dbm )
 		dbm_close(dp->di_dbm);
@@ -65,8 +61,7 @@ dbm_dealloc(dp)
 }
 
 static int
-dbm_length(dp)
-	dbmobject *dp;
+dbm_length(dbmobject *dp)
 {
         if (dp->di_dbm == NULL) {
                  PyErr_SetString(DbmError, "DBM object has already been closed"); 
@@ -86,9 +81,7 @@ dbm_length(dp)
 }
 
 static PyObject *
-dbm_subscript(dp, key)
-	dbmobject *dp;
-register PyObject *key;
+dbm_subscript(dbmobject *dp, register PyObject *key)
 {
 	datum drec, krec;
 	
@@ -111,9 +104,7 @@ register PyObject *key;
 }
 
 static int
-dbm_ass_sub(dp, v, w)
-	dbmobject *dp;
-PyObject *v, *w;
+dbm_ass_sub(dbmobject *dp, PyObject *v, PyObject *w)
 {
         datum krec, drec;
 	
@@ -162,9 +153,7 @@ static PyMappingMethods dbm_as_mapping = {
 };
 
 static PyObject *
-dbm__close(dp, args)
-	register dbmobject *dp;
-PyObject *args;
+dbm__close(register dbmobject *dp, PyObject *args)
 {
 	if ( !PyArg_NoArgs(args) )
 		return NULL;
@@ -176,9 +165,7 @@ PyObject *args;
 }
 
 static PyObject *
-dbm_keys(dp, args)
-	register dbmobject *dp;
-PyObject *args;
+dbm_keys(register dbmobject *dp, PyObject *args)
 {
 	register PyObject *v, *item;
 	datum key;
@@ -208,9 +195,7 @@ PyObject *args;
 }
 
 static PyObject *
-dbm_has_key(dp, args)
-	register dbmobject *dp;
-PyObject *args;
+dbm_has_key(register dbmobject *dp, PyObject *args)
 {
 	datum key, val;
 	
@@ -229,9 +214,7 @@ static PyMethodDef dbm_methods[] = {
 };
 
 static PyObject *
-dbm_getattr(dp, name)
-	dbmobject *dp;
-char *name;
+dbm_getattr(dbmobject *dp, char *name)
 {
 	return Py_FindMethod(dbm_methods, (PyObject *)dp, name);
 }
@@ -256,9 +239,7 @@ static PyTypeObject Dbmtype = {
 /* ----------------------------------------------------------------- */
 
 static PyObject *
-dbmopen(self, args)
-	PyObject *self;
-PyObject *args;
+dbmopen(PyObject *self, PyObject *args)
 {
 	char *name;
 	char *flags = "r";
