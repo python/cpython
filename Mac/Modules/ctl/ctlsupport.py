@@ -350,7 +350,7 @@ _err = SetControlData(_self->ob_itself,
 	              inPart,
 	              inTagName,
 	              sizeof(buffer),
-                      (Ptr)buffer);
+                      (Ptr)&buffer);
 
 if (_err != noErr)
 	return PyMac_Error(_err);

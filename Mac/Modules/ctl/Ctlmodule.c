@@ -1203,7 +1203,7 @@ static PyObject *CtlObj_SetControlDataHandle(_self, _args)
 		              inPart,
 		              inTagName,
 		              sizeof(buffer),
-	                      (Ptr)buffer);
+	                      (Ptr)&buffer);
 
 	if (_err != noErr)
 		return PyMac_Error(_err);
