@@ -27,7 +27,7 @@ Misc variables:
 __version__ = "$Revision$"       # Code version
 
 from types import *
-from copy_reg import dispatch_table, safe_constructors, _reconstructor
+from copy_reg import dispatch_table, _reconstructor
 import marshal
 import sys
 import struct
@@ -375,8 +375,8 @@ class Pickler:
         if getnewargs:
             args = getnewargs()         # This bette not reference obj
         else:
-            for cls in int, long, float, complex, str, unicode, tuple:
-                if isinstance(obj, cls):
+            for cls in int, long, float, complex, str, UnicodeType, tuple:
+                if cls and isinstance(obj, cls):
                     args = (cls(obj),)
                     break
             else:
@@ -1030,10 +1030,7 @@ class Unpickler:
                 pass
         if not instantiated:
             try:
-                if not hasattr(klass, '__safe_for_unpickling__'):
-                    raise UnpicklingError('%s is not safe for unpickling' %
-                                          klass)
-                value = apply(klass, args)
+                value = klass(*args)
             except TypeError, err:
                 raise TypeError, "in constructor for %s: %s" % (
                     klass.__name__, str(err)), sys.exc_info()[2]
@@ -1059,7 +1056,7 @@ class Unpickler:
                 # prohibited
                 pass
         if not instantiated:
-            value = apply(klass, args)
+            value = klass(*args)
         self.append(value)
     dispatch[OBJ] = load_obj
 
@@ -1078,6 +1075,7 @@ class Unpickler:
     dispatch[GLOBAL] = load_global
 
     def find_class(self, module, name):
+        # Subclasses may override this
         __import__(module)
         mod = sys.modules[module]
         klass = getattr(mod, name)
@@ -1085,30 +1083,16 @@ class Unpickler:
 
     def load_reduce(self):
         stack = self.stack
-
-        callable = stack[-2]
-        arg_tup  = stack[-1]
-        del stack[-2:]
-
-        if type(callable) is not ClassType:
-            if not callable in safe_constructors:
-                try:
-                    safe = callable.__safe_for_unpickling__
-                except AttributeError:
-                    safe = None
-
-                if not safe:
-                    raise UnpicklingError, "%s is not safe for " \
-                                           "unpickling" % callable
-
-        if arg_tup is None:
+        args = stack.pop()
+        func = stack[-1]
+        if args is None:
             # A hack for Jim Fulton's ExtensionClass, now deprecated
             warnings.warn("__basicnew__ special case is deprecated",
                           DeprecationWarning)
-            value = callable.__basicnew__()
+            value = func.__basicnew__()
         else:
-            value = apply(callable, arg_tup)
-        self.append(value)
+            value = func(*args)
+        stack[-1] = value
     dispatch[REDUCE] = load_reduce
 
     def load_pop(self):
