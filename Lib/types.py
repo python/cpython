@@ -42,7 +42,7 @@ BuiltinMethodType = type([].append)     # Same as BuiltinFunctionType
 ModuleType = type(sys)
 
 try:
-    FileType = type(sys.stdin)          # XXX what if it was assigned to?
+    FileType = type(sys.__stdin__)
 except:
     pass
 XRangeType = type(xrange(0))
