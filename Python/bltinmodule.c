@@ -1311,8 +1311,9 @@ builtin_raw_input(PyObject *self, PyObject *args)
 		if (PyFile_WriteString(" ", fout) != 0)
 			return NULL;
 	}
-	if (PyFile_AsFile(fin) == stdin && PyFile_AsFile(fout) == stdout &&
-	    isatty(fileno(stdin)) && isatty(fileno(stdout))) {
+	if (PyFile_Check (fin) && PyFile_Check (fout)
+            && isatty(fileno(PyFile_AsFile(fin)))
+            && isatty(fileno(PyFile_AsFile(fout)))) {
 		PyObject *po;
 		char *prompt;
 		char *s;
@@ -1329,7 +1330,8 @@ builtin_raw_input(PyObject *self, PyObject *args)
 			po = NULL;
 			prompt = "";
 		}
-		s = PyOS_Readline(prompt);
+		s = PyOS_Readline(PyFile_AsFile (fin), PyFile_AsFile (fout),
+                                  prompt);
 		Py_XDECREF(po);
 		if (s == NULL) {
 			PyErr_SetNone(PyExc_KeyboardInterrupt);

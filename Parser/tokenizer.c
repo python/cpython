@@ -18,7 +18,7 @@
 #include "abstract.h"
 #endif /* PGEN */
 
-extern char *PyOS_Readline(char *);
+extern char *PyOS_Readline(FILE *, FILE *, char *);
 /* Return malloc'ed string including trailing \n;
    empty malloc'ed string for EOF;
    NULL if interrupted */
@@ -671,7 +671,7 @@ tok_nextc(register struct tok_state *tok)
 			return Py_CHARMASK(*tok->cur++);
 		}
 		if (tok->prompt != NULL) {
-			char *new = PyOS_Readline(tok->prompt);
+			char *new = PyOS_Readline(stdin, stdout, tok->prompt);
 			if (tok->nextprompt != NULL)
 				tok->prompt = tok->nextprompt;
 			if (new == NULL)

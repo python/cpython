@@ -32,7 +32,7 @@
 
 /* Pointers needed from outside (but not declared in a header file). */
 extern DL_IMPORT(int) (*PyOS_InputHook)(void);
-extern DL_IMPORT(char) *(*PyOS_ReadlineFunctionPointer)(char *);
+extern DL_IMPORT(char) *(*PyOS_ReadlineFunctionPointer)(FILE *, FILE *,char *);
 
 
 /* Exported function to send one line to readline's init file parser */
@@ -606,12 +606,12 @@ onintr(int sig)
 /* Wrapper around GNU readline that handles signals differently. */
 
 static char *
-call_readline(char *prompt)
+call_readline(FILE *sys_stdin, FILE *sys_stdout, char *prompt)
 {
 	size_t n;
 	char *p, *q;
 	PyOS_sighandler_t old_inthandler;
-	
+        
 	old_inthandler = PyOS_setsig(SIGINT, onintr);
 	if (setjmp(jbuf)) {
 #ifdef HAVE_SIGRELSE
@@ -622,6 +622,13 @@ call_readline(char *prompt)
 		return NULL;
 	}
 	rl_event_hook = PyOS_InputHook;
+
+        if (sys_stdin != rl_instream || sys_stdout != rl_outstream) {
+                rl_instream = sys_stdin;
+                rl_outstream = sys_stdout;
+                rl_prep_terminal (1);
+        }
+        
 	p = readline(prompt);
 	PyOS_setsig(SIGINT, old_inthandler);
 
@@ -676,8 +683,7 @@ initreadline(void)
 
 	m = Py_InitModule4("readline", readline_methods, doc_module,
 			   (PyObject *)NULL, PYTHON_API_VERSION);
-	if (isatty(fileno(stdin))) {
-		PyOS_ReadlineFunctionPointer = call_readline;
-		setup_readline();
-	}
+
+        PyOS_ReadlineFunctionPointer = call_readline;
+        setup_readline();
 }
