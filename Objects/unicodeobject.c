@@ -6157,14 +6157,14 @@ formatchar(Py_UNICODE *buf,
 	    goto onError;
 #ifdef Py_UNICODE_WIDE
 	if (x < 0 || x > 0x10ffff) {
-	    PyErr_SetString(PyExc_ValueError,
+	    PyErr_SetString(PyExc_OverflowError,
 			    "%c arg not in range(0x110000) "
 			    "(wide Python build)");
 	    return -1;
 	}
 #else
 	if (x < 0 || x > 0xffff) {
-	    PyErr_SetString(PyExc_ValueError,
+	    PyErr_SetString(PyExc_OverflowError,
 			    "%c arg not in range(0x10000) "
 			    "(narrow Python build)");
 	    return -1;
