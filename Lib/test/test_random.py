@@ -1,4 +1,4 @@
-from test import test_support
+import test_support
 import random
 
 # Ensure that the seed() method initializes all the hidden state.  In
