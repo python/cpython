@@ -8,7 +8,7 @@ from Carbon import Events
 import Wbase
 from Carbon import Dlg
 import MacOS
-import Menu
+from Carbon import Menu
 import struct
 import traceback
 

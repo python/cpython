@@ -9,7 +9,7 @@ from Carbon import Events
 from Carbon import Scrap
 import string
 
-import Win
+from Carbon import Win
 import Wbase
 import Wkeys
 import Wcontrols
