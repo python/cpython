@@ -30,6 +30,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <Windows.h>
 #include <Files.h>
 #include <LowMem.h>
+#include <Sound.h>
 
 static PyObject *MacOS_Error; /* Exception MacOS.Error */
 
@@ -563,6 +564,7 @@ MacOS_splash(PyObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, "|i", &resid))
 		return NULL;
 	olddialog = curdialog;
+	curdialog = NULL;
 		
 	if ( resid != -1 ) {
 		curdialog = GetNewDialog(resid, NULL, (WindowPtr)-1);
