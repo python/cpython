@@ -427,6 +427,36 @@ class TestVariousIteratorArgs(unittest.TestCase):
             self.assertRaises(TypeError, list, dropwhile(isOdd, N(s)))
             self.assertRaises(ZeroDivisionError, list, dropwhile(isOdd, E(s)))
 
+class RegressionTests(unittest.TestCase):
+
+    def test_sf_793826(self):
+        # Fix Armin Rigo's successful efforts to wreak havoc
+
+        def mutatingtuple(tuple1, f, tuple2):
+            # this builds a tuple t which is a copy of tuple1,
+            # then calls f(t), then mutates t to be equal to tuple2
+            # (needs len(tuple1) == len(tuple2)).
+            def g(value, first=[1]):
+                if first:
+                    del first[:]
+                    f(z.next())
+                return value
+            items = list(tuple2)
+            items[1:1] = list(tuple1)
+            gen = imap(g, items)
+            z = izip(*[gen]*len(tuple1))
+            z.next()
+
+        def f(t):
+            global T
+            T = t
+            first[:] = list(T)
+
+        first = []
+        mutatingtuple((1,2,3), f, (4,5,6))
+        second = list(T)
+        self.assertEqual(first, second)
+
 
 libreftest = """ Doctest for examples in the library reference: libitertools.tex
 
@@ -568,7 +598,8 @@ False
 __test__ = {'libreftest' : libreftest}
 
 def test_main(verbose=None):
-    test_classes = (TestBasicOps, TestVariousIteratorArgs, TestGC)
+    test_classes = (TestBasicOps, TestVariousIteratorArgs, TestGC,
+                    RegressionTests)
     test_support.run_unittest(*test_classes)
 
     # verify reference counting

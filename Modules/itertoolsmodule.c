@@ -1595,16 +1595,18 @@ izip_next(izipobject *lz)
 	if (tuplesize == 0)
 		return NULL;
 	if (result->ob_refcnt == 1) {
+		Py_INCREF(result);
 		for (i=0 ; i < tuplesize ; i++) {
 			it = PyTuple_GET_ITEM(lz->ittuple, i);
 			assert(PyIter_Check(it));
 			item = (*it->ob_type->tp_iternext)(it);
-			if (item == NULL)
+			if (item == NULL) {
+				Py_DECREF(result);
 				return NULL;
+			}
 			Py_DECREF(PyTuple_GET_ITEM(result, i));
 			PyTuple_SET_ITEM(result, i, item);
 		}
-		Py_INCREF(result);
 	} else {
 		result = PyTuple_New(tuplesize);
 		if (result == NULL)
