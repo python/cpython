@@ -31,6 +31,10 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <Events.h>
 #include <StandardFile.h>
 
+#ifdef __cplusplus
+	extern "C" {
+#endif
+
 /* Scheduler parameters */
 typedef struct {
 	int		check_interrupt;	/* if true check for command-dot */
@@ -124,3 +128,6 @@ void PyMac_Initialize(void);			/* Initialize function for embedding Python */
 
 long getfiletype(char *);			/* Get file type */
 int setfiletype(char *, long, long);		/* Set file creator and type */
+#ifdef __cplusplus
+	}
+#endif
