@@ -91,7 +91,7 @@ char *PyMac_StrError(int err)
 		HUnlock(h);
 		ReleaseResource(h);
 	} else {
-		sprintf(buf, "Mac OS error code %d", err);
+		PyOS_snprintf(buf, sizeof(buf), "Mac OS error code %d", err);
 	}
 	return buf;
 }
