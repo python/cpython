@@ -1,4 +1,7 @@
 #include "Python.h"
+#if PY_VERSION_HEX < 0x020000B1
+#include <assert.h>
+#endif
 #include <ctype.h>
 
 #include "compile.h"
