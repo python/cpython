@@ -405,7 +405,7 @@ class Dist (Command):
         # on Redmond's archaic CP/M knockoff is nowadays), but I'll let
         # someone who can actually test it do that.
 
-        self.spawn (["zip", "-r", base_dir, base_dir])
+        self.spawn (["zip", "-r", base_dir + ".zip", base_dir])
 
 
     def make_distribution (self):
