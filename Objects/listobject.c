@@ -707,7 +707,7 @@ docompare(x, y, compare)
 	if (!PyInt_Check(res)) {
 		Py_DECREF(res);
 		PyErr_SetString(PyExc_TypeError,
-				"comparison function should return int");
+				"comparison function must return int");
 		return CMPERROR;
 	}
 	i = PyInt_AsLong(res);
@@ -1340,7 +1340,8 @@ listcount(self, args)
 	int i;
 	
 	if (args == NULL) {
-		PyErr_BadArgument();
+		PyErr_SetString(PyExc_TypeError,
+				"list.count(x): argument missing");
 		return NULL;
 	}
 	for (i = 0; i < self->ob_size; i++) {
