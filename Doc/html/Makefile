@@ -66,8 +66,8 @@ api/api.html:  $(PAPERDIR)/api.aux $(BUILDINDEX) $(TOOLSDIR)/mkhtml.sh
 	$(MKHTML) api $(L2HARGS)
 
 doc/doc.html:  $(DOCFILES) $(BUILDINDEX) $(TOPDIR)/perl/ltxmarkup.perl
-	$(TOOLSDIR)/mkhowto --address $(PYTHONDOCS) --html \
-		$(TOPDIR)/doc/doc.tex
+	$(TOOLSDIR)/mkhowto --about stdabout.dat --address $(PYTHONDOCS) \
+		--html $(TOPDIR)/doc/doc.tex
 
 ext/ext.html:  $(PAPERDIR)/ext.aux $(TOOLSDIR)/mkhtml.sh
 	$(MKHTML) ext $(L2HARGS)
@@ -78,8 +78,8 @@ lib/lib.html:  $(PAPERDIR)/lib.aux $(BUILDINDEX) $(TOOLSDIR)/mkhtml.sh
 	$(MKHTML) lib $(L2HARGS)
 
 mac/mac.html:  $(MACFILES) $(BUILDINDEX)
-	$(TOOLSDIR)/mkhowto --address $(PYTHONDOCS) --html \
-		$(TOPDIR)/mac/mac.tex
+	$(TOOLSDIR)/mkhowto --about stdabout.dat --address $(PYTHONDOCS) \
+		--html $(TOPDIR)/mac/mac.tex
 
 ref/ref.html:  $(PAPERDIR)/ref.aux $(BUILDINDEX) $(TOOLSDIR)/mkhtml.sh
 	$(MKHTML) ref $(L2HARGS)
