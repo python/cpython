@@ -2,6 +2,8 @@
 #
 # For more information about this module, see PEP 324.
 #
+# This module should remain compatible with Python 2.2, see PEP 291.
+#
 # Copyright (c) 2003-2004 by Peter Astrand <astrand@lysator.liu.se>
 #
 # Licensed to PSF under a Contributor Agreement.
@@ -374,6 +376,7 @@ import sys
 mswindows = (sys.platform == "win32")
 
 import os
+import types
 import traceback
 
 # Exception classes used by this module.
@@ -712,7 +715,7 @@ class Popen(object):
                            errread, errwrite):
             """Execute program (MS Windows version)"""
 
-            if not isinstance(args, basestring):
+            if not isinstance(args, types.StringTypes):
                 args = list2cmdline(args)
 
             # Process startup details
@@ -938,7 +941,7 @@ class Popen(object):
                            errread, errwrite):
             """Execute program (POSIX version)"""
 
-            if isinstance(args, basestring):
+            if isinstance(args, types.StringTypes):
                 args = [args]
 
             if shell:
