@@ -155,9 +155,23 @@ sub do_cmd_hackscore{
     return '_' . $_;
 }
 
+# Helper used in many places that arbitrary code-like text appears:
+
+sub codetext($){
+    my $text = "$_[0]";
+    $text =~ s/--/-\&#45;/go;
+    return $text;
+}
+
 sub use_wrappers($$$){
     local($_,$before,$after) = @_;
     my $stuff = next_argument();
+    return $before . $stuff . $after . $_;
+}
+
+sub use_code_wrappers($$$){
+    local($_,$before,$after) = @_;
+    my $stuff = codetext(next_argument());
     return $before . $stuff . $after . $_;
 }
 
@@ -181,7 +195,7 @@ sub do_cmd_pytype{ return $_[0]; }
 sub do_cmd_makevar{
     return use_wrappers($_[0], '<span class="makevar">', '</span>'); }
 sub do_cmd_code{
-    return use_wrappers($_[0], '<code>', '</code>'); }
+    return use_code_wrappers($_[0], '<code>', '</code>'); }
 sub do_cmd_module{
     return use_wrappers($_[0], '<tt class="module">', '</tt>'); }
 sub do_cmd_keyword{
@@ -205,9 +219,9 @@ sub do_cmd_cdata{
 sub do_cmd_ctype{
     return use_wrappers($_[0], '<tt class="ctype">', '</tt>'); }
 sub do_cmd_regexp{
-    return use_wrappers($_[0], '<tt class="regexp">', '</tt>'); }
+    return use_code_wrappers($_[0], '<tt class="regexp">', '</tt>'); }
 sub do_cmd_character{
-    return use_wrappers($_[0], '"<tt class="character">', '</tt>"'); }
+    return use_code_wrappers($_[0], '"<tt class="character">', '</tt>"'); }
 sub do_cmd_program{
     return use_wrappers($_[0], '<b class="program">', '</b>'); }
 sub do_cmd_programopt{
@@ -232,7 +246,7 @@ sub do_cmd_file{
 sub do_cmd_filenq{
     return do_cmd_file($_[0]); }
 sub do_cmd_samp{
-    return use_wrappers($_[0], '"<tt class="samp">', '</tt>"'); }
+    return use_code_wrappers($_[0], '"<tt class="samp">', '</tt>"'); }
 sub do_cmd_kbd{
     return use_wrappers($_[0], '<kbd>', '</kbd>'); }
 sub do_cmd_strong{
@@ -611,7 +625,7 @@ sub idx_cmd_indexiv($){
 
 define_indexing_macro('ttindex');
 sub idx_cmd_ttindex($){
-    my $str = next_argument();
+    my $str = codetext(next_argument());
     my $entry = $str . get_indexsubitem();
     add_index_entry($entry, $_[0]);
 }
@@ -2027,10 +2041,10 @@ sub do_env_alltt{
 	undef $open_tags_R; undef @save_open_tags;
     };
     $open_tags_R = [ @keep_open_tags ];
-    $_;
+    return codetext($_);
 }
 
-# List of all filenames produced ny do_cmd_verbatiminput()
+# List of all filenames produced by do_cmd_verbatiminput()
 %VerbatimFiles = ();
 @VerbatimOutputs = ();
 
