@@ -8,11 +8,19 @@ thread) of the last error that occurred.  Most functions don't clear
 this on success, but will set it to indicate the cause of the error on
 failure.  Most functions also return an error indicator, usually
 \NULL{} if they are supposed to return a pointer, or \code{-1} if they
-return an integer (exception: the \cfunction{PyArg_Parse*()} functions
-return \code{1} for success and \code{0} for failure).  When a
-function must fail because some function it called failed, it
+return an integer (exception: the \cfunction{PyArg_*()} functions
+return \code{1} for success and \code{0} for failure).
+
+When a function must fail because some function it called failed, it
 generally doesn't set the error indicator; the function it called
-already set it.
+already set it.  It is responsible for either handling the error and
+clearing the exception or returning after cleaning up any resources it
+holds (such as object references or memory allocations); it should
+\emph{not} continue normally if it is not prepared to handle the
+error.  If returning due to an error, it is important to indicate to
+the caller that an error has been set.  If the error is not handled or
+carefully propogated, additional calls into the Python/C API may not
+behave as intended and may fail in mysterious ways.
 
 The error indicator consists of three Python objects corresponding to
 \withsubitem{(in module sys)}{
