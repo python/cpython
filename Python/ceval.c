@@ -129,6 +129,28 @@ PyEval_InitThreads()
 	main_thread = get_thread_ident();
 }
 
+void
+PyEval_AcquireThread(tstate)
+	PyThreadState *tstate;
+{
+	if (tstate == NULL)
+		Py_FatalError("PyEval_AcquireThread: NULL new thread state");
+	acquire_lock(interpreter_lock, 1);
+	if (PyThreadState_Swap(tstate) != NULL)
+		Py_FatalError(
+			"PyEval_AcquireThread: non-NULL old thread state");
+}
+
+void
+PyEval_ReleaseThread(tstate)
+	PyThreadState *tstate;
+{
+	if (tstate == NULL)
+		Py_FatalError("PyEval_ReleaseThread: NULL thread state");
+	if (PyThreadState_Swap(NULL) != tstate)
+		Py_FatalError("PyEval_ReleaseThread: wrong thread state");
+	release_lock(interpreter_lock);
+}
 #endif
 
 /* Functions save_thread and restore_thread are always defined so
@@ -167,25 +189,6 @@ PyEval_RestoreThread(tstate)
 #endif
 }
 
-#ifdef WITH_THREAD
-void
-PyEval_AcquireThread(tstate)
-	PyThreadState *tstate;
-{
-	acquire_lock(interpreter_lock, 1);
-	if (PyThreadState_Swap(tstate) != NULL)
-		Py_FatalError("PyEval_AcquireThread: non-NULL old state");
-}
-
-void
-PyEval_ReleaseThread(tstate)
-	PyThreadState *tstate;
-{
-	if (PyThreadState_Swap(NULL) != tstate)
-		Py_FatalError("PyEval_ReleaseThread: wrong thread state");
-	release_lock(interpreter_lock);
-}
-#endif
 
 /* Mechanism whereby asynchronously executing callbacks (e.g. UNIX
    signal handlers or Mac I/O completion routines) can schedule calls
@@ -1000,8 +1003,7 @@ eval_code2(co, globals, locals,
 			/* Before printing, also assign to '_' */
 			if (v != Py_None &&
 			    (err = PyDict_SetItemString(
-				    f->f_builtins, "_", v)) == 0 &&
-			    !Py_SuppressPrintingFlag) {
+				    f->f_builtins, "_", v)) == 0) {
 				err = Py_FlushLine();
 				if (err == 0) {
 					x = PySys_GetObject("stdout");
