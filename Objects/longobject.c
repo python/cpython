@@ -1584,7 +1584,38 @@ long_classic_div(PyObject *v, PyObject *w)
 static PyObject *
 long_true_divide(PyObject *v, PyObject *w)
 {
-	return PyFloat_Type.tp_as_number->nb_divide(v, w);
+	PyLongObject *a, *b;
+	double ad, bd;
+	int aexp, bexp;
+
+	CONVERT_BINOP(v, w, &a, &b);
+	ad = _PyLong_AsScaledDouble((PyObject *)a, &aexp);
+	bd = _PyLong_AsScaledDouble((PyObject *)b, &bexp);
+	if ((ad == -1.0 || bd == -1.0) && PyErr_Occurred())
+		return NULL;
+
+	if (bd == 0.0) {
+		PyErr_SetString(PyExc_ZeroDivisionError,
+			"long division or modulo by zero");
+		return NULL;
+	}
+
+	/* True value is very close to ad/bd * 2**(SHIFT*(aexp-bexp)) */
+	ad /= bd;	/* overflow/underflow impossible here */
+	aexp -= bexp;
+	if (aexp > INT_MAX / SHIFT)
+		goto overflow;
+	errno = 0;
+	ad = ldexp(ad, aexp * SHIFT);
+	if (ad != 0 && errno == ERANGE) /* ignore underflow to 0.0 */
+		goto overflow;
+	return PyFloat_FromDouble(ad);
+
+overflow:
+	PyErr_SetString(PyExc_OverflowError,
+		"long/long too large for a float");
+	return NULL;
+	
 }
 
 static PyObject *

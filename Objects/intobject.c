@@ -535,7 +535,14 @@ int_classic_div(PyIntObject *x, PyIntObject *y)
 static PyObject *
 int_true_divide(PyObject *v, PyObject *w)
 {
-	return PyFloat_Type.tp_as_number->nb_true_divide(v, w);
+	/* If they aren't both ints, give someone else a chance.  In
+	   particular, this lets int/long get handled by longs, which
+	   underflows to 0 gracefully if the long is too big to convert
+	   to float. */
+	if (PyInt_Check(v) && PyInt_Check(w))
+		return PyFloat_Type.tp_as_number->nb_true_divide(v, w);
+	Py_INCREF(Py_NotImplemented);
+	return Py_NotImplemented;
 }
 
 static PyObject *
