@@ -332,7 +332,7 @@ class Misc:
 		return getint(
 			self.tk.call('winfo', 'height', self._w))
 	def winfo_id(self):
-		return getint(
+		return self.tk.getint(
 			self.tk.call('winfo', 'id', self._w))
 	def winfo_interps(self, displayof=0):
 		args = ('winfo', 'interps') + self._displayof(displayof)
