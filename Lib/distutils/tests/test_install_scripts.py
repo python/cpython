@@ -70,6 +70,8 @@ class InstallScriptsTestCase(support.TempdirManager, unittest.TestCase):
             self.assert_(name in installed)
 
 
-
 def test_suite():
     return unittest.makeSuite(InstallScriptsTestCase)
+
+if __name__ == "__main__":
+    unittest.main(defaultTest="test_suite")

@@ -48,3 +48,6 @@ class BuildPyTestCase(support.TempdirManager, unittest.TestCase):
 
 def test_suite():
     return unittest.makeSuite(BuildPyTestCase)
+
+if __name__ == "__main__":
+    unittest.main(defaultTest="test_suite")
