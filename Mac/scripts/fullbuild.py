@@ -48,19 +48,25 @@ I_CANCEL=2
 # label 3
 I_PPC_EXTLIBS=4
 I_GEN_PROJECTS=5
-I_GEN_IMGPROJECTS=6
-I_INC_BUILDNO=7
-# label 8
-I_CORE=9
-I_PPC_PLUGINS=10
-I_PPC_EXTENSIONS=11
-# label 12
-I_PPC_FULL=13
-I_PPC_SMALL=14
-# label 15
-I_APPLETS=16
+I_GEN_PROJECTS_FORCE=6
+I_GEN_IMGPROJECTS=7
+I_GEN_IMGPROJECTS_FORCE=8
+I_INC_BUILDNO=9
+# label 10
+I_PPC_CORE=11
+I_PPC_PLUGINS=12
+I_PPC_EXTENSIONS=13
+# label 14
+I_CARBON_CORE=15
+I_CARBON_PLUGINS=16
+I_CARBON_EXTENSIONS=17
+# label 18
+I_PPC_FULL=19
+I_PPC_SMALL=20
+# label 21
+I_APPLETS=22
 
-N_BUTTONS=17
+N_BUTTONS=23
 
 if OLDAESUPPORT:
 	class MwShell(Metrowerks_Shell_Suite, CodeWarrior_suite, Metrowerks_Standard_Suite,
@@ -130,15 +136,18 @@ def buildapplet(top, dummy, list):
 		print 'Building applet', dst
 		buildtools.process(template, src, dst, 1)
 		
-def buildprojectfile(top, dummy, list):
+def buildprojectfile(top, arg, list):
 	"""Create CodeWarrior project files with a script"""
 	for folder, module, routine in list:
 		print "Generating project files with", module
 		sys.path.insert(0, os.path.join(top, folder))
 		m = __import__(module)
 		r = getattr(m, routine)
-		r()
+		r(arg)
 		del sys.path[0]
+		
+def buildcarbonnotyet(top, arg, list):
+	print "No carbon builds yet"
 		
 def buildfat(top, dummy, list):
 	"""Build fat binaries"""
@@ -178,17 +187,30 @@ def handle_dialog(filename):
 # The build instructions. Entries are (routine, arg, list-of-files)
 # XXXX We could also include the builds for stdwin and such here...
 BUILD_DICT = {
-I_GEN_PROJECTS : (buildprojectfile, None, [
+I_GEN_PROJECTS : (buildprojectfile, 0, [
 	(":Mac:scripts", "genpluginprojects", "genallprojects")
 	]),
 	
-I_GEN_IMGPROJECTS : (buildprojectfile, None, [
+I_GEN_PROJECTS_FORCE : (buildprojectfile, 1, [
+	(":Mac:scripts", "genpluginprojects", "genallprojects")
+	]),
+	
+I_GEN_IMGPROJECTS : (buildprojectfile, 0, [
 	(":Extensions:img:Mac", "genimgprojects", "genallprojects")
 	]),
 	
-I_CORE : (buildmwproject, "CWIE", [
+I_GEN_IMGPROJECTS_FORCE : (buildprojectfile, 1, [
+	(":Extensions:img:Mac", "genimgprojects", "genallprojects")
+	]),
+	
+I_PPC_CORE : (buildmwproject, "CWIE", [
 		(":Mac:Build:PythonCore.mcp", "PythonCore"),
 		(":Mac:Build:PythonInterpreter.mcp", "PythonInterpreter"),
+	]),
+
+I_CARBON_CORE : (buildmwproject, "CWIE", [
+		(":Mac:Build:PythonCore.mcp", "PythonCoreCarbon"),
+		(":Mac:Build:PythonInterpreter.mcp", "PythonInterpreterCarbon"),
 	]),
 
 I_PPC_EXTLIBS : (buildmwproject, "CWIE", [
@@ -224,6 +246,7 @@ I_PPC_PLUGINS : (buildmwproject, "CWIE", [
 	(":Mac:Build:TE.mcp", "TE.ppc"),
 	]),
 
+I_CARBON_PLUGINS : (buildcarbonnotyet, None, [()]),
 
 I_PPC_SMALL : (buildmwproject, "CWIE", [
 		(":Mac:Build:PythonStandSmall.mcp", "PythonStandSmall"),
@@ -242,6 +265,8 @@ I_PPC_EXTENSIONS : (buildmwproject, "CWIE", [
 ##		(":Extensions:Numerical:Packages:RANLIB:Mac:ranlib.mcp", "ranlib.ppc"),
 ##		(":Extensions:Numerical:Packages:RNG:Mac:RNG.mcp", "RNG.ppc"),
 	]),
+
+I_CARBON_EXTENSIONS : (buildcarbonnotyet, None, [()]),
 
 I_APPLETS : (buildapplet, None, [
 		(":Mac:scripts:EditPythonPrefs.py", "EditPythonPrefs"),
