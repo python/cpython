@@ -47,7 +47,7 @@ Options specifying formats to build:
 HTML options:
     --address, -a	Specify an address for page footers.
     --link		Specify the number of levels to include on each page.
-    --split, -s		Specify a section level for page splitting.
+    --split, -s		Specify a section level for page splitting, default: $MAX_SPLIT_DEPTH.
     --iconserver, -i	Specify location of icons (default: ../).
 
 Other options:
@@ -74,7 +74,7 @@ EOF
 #
 ADDRESS=''
 MAX_LINK_DEPTH=3
-MAX_SPLIT_DEPTH=8
+MAX_SPLIT_DEPTH=6
 
 build_html() {
     TEXFILE=`kpsewhich $1.tex`
