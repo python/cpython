@@ -39,7 +39,7 @@ import sys
 
 __all__ = ['Message', 'AskString', 'AskPassword', 'AskYesNoCancel',
         'GetArgv', 'AskFileForOpen', 'AskFileForSave', 'AskFolder',
-        'Progress']
+        'ProgressBar']
 
 _initialized = 0
 
