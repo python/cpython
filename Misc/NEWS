@@ -741,6 +741,9 @@ Tools/Demos
 Build
 -----
 
+- Makefile.pre.in now adds @CFLAGS@ and @CPPFLAGS@ to their respective
+  variable definitions.
+
 - On Unix, IDLE is now installed automatically.
 
 - The fpectl module is not built by default; it's dangerous or useless

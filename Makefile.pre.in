@@ -54,8 +54,8 @@ MAKESETUP=      $(srcdir)/Modules/makesetup
 
 # Compiler options
 OPT=		@OPT@
-CFLAGS=		$(OPT)
-CPPFLAGS=	-I. -I$(srcdir)/Include
+CFLAGS=		$(OPT) @CFLAGS@
+CPPFLAGS=	-I. -I$(srcdir)/Include @CPPFLAGS@
 LDFLAGS=	@LDFLAGS@
 LDLAST=		@LDLAST@
 SGI_ABI=	@SGI_ABI@
@@ -427,7 +427,7 @@ $(GRAMMAR_H) $(GRAMMAR_C): $(PGEN) $(GRAMMAR_INPUT)
 		-$(PGEN) $(GRAMMAR_INPUT) $(GRAMMAR_H) $(GRAMMAR_C)
 
 $(PGEN):	$(PGENOBJS)
-		$(CC) $(OPT) $(PGENOBJS) $(LIBS) -o $(PGEN)
+		$(CC) $(OPT) $(PGENOBJS) $(LDFLAGS) $(LIBS) -o $(PGEN)
 
 Parser/grammar.o:	$(srcdir)/Parser/grammar.c \
 				$(srcdir)/Include/token.h \
