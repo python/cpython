@@ -136,10 +136,11 @@ file_repr(f)
 	fileobject *f;
 {
 	char buf[300];
-	sprintf(buf, "<%s file '%.256s', mode '%.10s'>",
+	sprintf(buf, "<%s file '%.256s', mode '%.10s' at %lx>",
 		f->f_fp == NULL ? "closed" : "open",
 		getstringvalue(f->f_name),
-		getstringvalue(f->f_mode));
+		getstringvalue(f->f_mode),
+		(long)f);
 	return newstringobject(buf);
 }
 
