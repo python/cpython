@@ -76,6 +76,7 @@ elif 'os2' in _names:
         import ntpath as path
     else:
         import os2emxpath as path
+        from _emx_link import link
 
     import os2
     __all__.extend(_get_exports_list(os2))
