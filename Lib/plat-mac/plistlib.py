@@ -88,7 +88,7 @@ class DumbXMLWriter:
         self.writeln("</%s>" % element)
 
     def simpleElement(self, element, value=None):
-        if value:
+        if value is not None:
             value = _encode(value)
             self.writeln("<%s>%s</%s>" % (element, value, element))
         else:
