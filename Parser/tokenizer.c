@@ -128,6 +128,7 @@ tok_new(void)
 	tok->read_coding_spec = 0;
 	tok->issued_encoding_warning = 0;
 	tok->encoding = NULL;
+        tok->cont_line = 0;
 #ifndef PGEN
 	tok->decoding_readline = NULL;
 	tok->decoding_buffer = NULL;
@@ -207,7 +208,15 @@ static char *
 get_coding_spec(const char *s, int size)
 {
 	int i;
-	for (i = 0; i < size - 6; i++) { /* XXX inefficient search */
+	/* Coding spec must be in a comment, and that comment must be
+         * the only statement on the source code line. */
+        for (i = 0; i < size - 6; i++) {
+		if (s[i] == '#')
+			break;
+		if (s[i] != ' ' && s[i] != '\t' && s[i] != '\014')
+			return NULL;
+	}
+	for (; i < size - 6; i++) { /* XXX inefficient search */
 		const char* t = s + i;
 		if (strncmp(t, "coding", 6) == 0) {
 			const char* begin = NULL;
@@ -247,6 +256,9 @@ check_coding_spec(const char* line, int size, struct tok_state *tok,
 		  int set_readline(struct tok_state *, const char *))
 {
 	int r = 1;
+        if (tok->cont_line)
+		/* It's a continuation line, so it can't be a coding spec. */
+		return 1;
 	char* cs = get_coding_spec(line, size);
 	if (cs != NULL) {
 		tok->read_coding_spec = 1;
@@ -1158,6 +1170,7 @@ tok_get(register struct tok_state *tok, char **p_start, char **p_end)
 			goto nextline;
 		*p_start = tok->start;
 		*p_end = tok->cur - 1; /* Leave '\n' out of the string */
+                tok->cont_line = 0;
 		return NEWLINE;
 	}
 	
@@ -1292,6 +1305,7 @@ tok_get(register struct tok_state *tok, char **p_start, char **p_end)
 					return ERRORTOKEN;
 				}
 				tripcount = 0;
+                                tok->cont_line = 1; /* multiline string. */
 			}
 			else if (c == EOF) {
 				if (triple)
@@ -1340,6 +1354,7 @@ tok_get(register struct tok_state *tok, char **p_start, char **p_end)
 			tok->cur = tok->inp;
 			return ERRORTOKEN;
 		}
+                tok->cont_line = 1;
 		goto again; /* Read next line */
 	}
 	
