@@ -97,6 +97,8 @@ def Bastion(object, filter = lambda name: name[:1] != '_',
 
     """
 
+    raise RuntimeError, "This code is not secure in Python 2.2 and 2.3"
+
     # Note: we define *two* ad-hoc functions here, get1 and get2.
     # Both are intended to be called in the same way: get(name).
     # It is clear that the real work (getting the attribute
