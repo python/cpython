@@ -193,7 +193,7 @@ sub img_tag {
 			,'" src="', $icon, '">' );
 	}
 	return join('', '<img ', $iconsizes{$1}, $align
-		    ,'border=', $nav_border, ' alt="', $alt, '"\n'
+		    ,'border=', $nav_border, ' alt="', $alt, "\"\n"
 		    ,' src="', $ICONSERVER, "/$icon", '">' );
     }
     else {
