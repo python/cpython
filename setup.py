@@ -429,8 +429,7 @@ class PyBuildExt(build_ext):
             # Steen Lumholt's termios module
             exts.append( Extension('termios', ['termios.c']) )
             # Jeremy Hylton's rlimit interface
-            if platform not in ['cygwin']:
-                exts.append( Extension('resource', ['resource.c']) )
+            exts.append( Extension('resource', ['resource.c']) )
 
             # Sun yellow pages. Some systems have the functions in libc.
             if platform not in ['cygwin']:
