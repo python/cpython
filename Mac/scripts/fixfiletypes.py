@@ -39,7 +39,7 @@ def walktree(name, change):
 			walktree(os.path.join(name, f), change)
 			
 def run(change):
-	fss, ok = macfs.GetDirectory()
+	fss, ok = macfs.GetDirectory('Folder to search:')
 	if not ok:
 		sys.exit(0)
 	walktree(fss.as_pathname(), change)

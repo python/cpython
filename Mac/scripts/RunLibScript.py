@@ -9,7 +9,7 @@ import string
 import Dlg
 import macfs
 
-DIALOG_ID = 140
+DIALOG_ID = 512
 OK = 1
 CANCEL = 2
 SCRIPTNAME=3

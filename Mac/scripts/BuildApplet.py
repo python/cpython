@@ -57,7 +57,7 @@ def main():
 	# Ask for source text if not specified in sys.argv[1:]
 	
 	if not sys.argv[1:]:
-		srcfss, ok = macfs.StandardGetFile('TEXT')
+		srcfss, ok = macfs.PromptGetFile('Select Python source file:', 'TEXT')
 		if not ok:
 			return
 		filename = srcfss.as_pathname()
