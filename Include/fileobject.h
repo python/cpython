@@ -19,6 +19,7 @@ typedef struct {
 	char* f_buf;		/* Allocated readahead buffer */
 	char* f_bufend;		/* Points after last occupied position */
 	char* f_bufptr;		/* Current buffer position */
+	char *f_setbuf;		/* Buffer for setbuf(3) and setvbuf(3) */
 #ifdef WITH_UNIVERSAL_NEWLINES
 	int f_univ_newline;	/* Handle any newline convention */
 	int f_newlinetypes;	/* Types of newlines seen */
