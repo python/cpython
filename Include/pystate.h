@@ -22,6 +22,10 @@ typedef struct _is {
     PyObject *sysdict;
     PyObject *builtins;
 
+    PyObject *codec_search_path;
+    PyObject *codec_search_cache;
+    PyObject *codec_error_registry;
+
 #ifdef HAVE_DLOPEN
     int dlopenflags;
 #endif

@@ -29,6 +29,11 @@ Core and builtins
 - On 64-bit systems, a dictionary could contain duplicate long/int keys
   if the key value was larger than 2**32.  See SF bug #689659.
 
+- Fixed SF bug #663074. The codec system was using global static
+  variables to store internal data. As a result, any atempts to use the
+  unicode system with multiple active interpreters, or successive
+  interpreter executions, would fail.
+
 Extension modules
 -----------------
 
