@@ -1013,7 +1013,7 @@ binascii_a2b_qp(PyObject *self, PyObject *args, PyObject *kwargs)
 		return NULL;
 
 	/* We allocate the output same size as input, this is overkill */
-	odata = (char *) calloc(1, datalen);
+	odata = (unsigned char *) calloc(1, datalen);
 
 	if (odata == NULL) {
 		PyErr_NoMemory();
@@ -1065,7 +1065,7 @@ binascii_a2b_qp(PyObject *self, PyObject *args, PyObject *kwargs)
 			out++;
 		}
 	}
-	if ((rv = PyString_FromStringAndSize(odata, out)) == NULL) {
+	if ((rv = PyString_FromStringAndSize((char *)odata, out)) == NULL) {
 		free (odata);
 		return NULL;
 	}
@@ -1119,7 +1119,7 @@ binascii_b2a_qp (PyObject *self, PyObject *args, PyObject *kwargs)
 	/* XXX: this function has the side effect of converting all of
 	 * the end of lines to be the same depending on this detection
 	 * here */
-	p = strchr(data, '\n');
+	p = (unsigned char *) strchr((char *)data, '\n');
 	if ((p != NULL) && (p > data) && (*(p-1) == '\r'))
 		crlf = 1;
 
@@ -1183,7 +1183,7 @@ binascii_b2a_qp (PyObject *self, PyObject *args, PyObject *kwargs)
 		}
 	}
 
-	odata = (char *) calloc(1, odatalen);
+	odata = (unsigned char *) calloc(1, odatalen);
 
 	if (odata == NULL) {
 		PyErr_NoMemory();
@@ -1256,7 +1256,7 @@ binascii_b2a_qp (PyObject *self, PyObject *args, PyObject *kwargs)
 			}
 		}
 	}
-	if ((rv = PyString_FromStringAndSize(odata, out)) == NULL) {
+	if ((rv = PyString_FromStringAndSize((char *)odata, out)) == NULL) {
 		free (odata);
 		return NULL;
 	}
