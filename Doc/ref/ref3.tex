@@ -1145,9 +1145,10 @@ multiplication (meaning repetition) by defining the methods
 \method{__mul__()}, \method{__rmul__()} and \method{__imul__()} described
 below; they should not define \method{__coerce__()} or other numerical
 operators.  It is recommended that both mappings and sequences
-implement the \method{__contains__}, to allow efficient use of the
-\code{in} operator; for mappings, \code{in} should be equivalent of
-\method{has_key()}; for sequences, it should search through the values.
+implement the \method{__contains__()} method to allow efficient use of
+the \code{in} operator; for mappings, \code{in} should be equivalent
+of \method{has_key()}; for sequences, it should search through the
+values.
 \withsubitem{(mapping object method)}{
   \ttindex{keys()}
   \ttindex{values()}
@@ -1310,7 +1311,7 @@ the \method{__*item__()} methods.
 Calling \code{max(0, i)} conveniently returns the proper value.
 
 The membership test operators (\keyword{in} and \keyword{not in}) are
-normally implemented as iteration loop through the sequence.  However,
+normally implemented as an iteration through the sequence.  However,
 sequence objects can supply the following special method with a more
 efficient implementation:
 
