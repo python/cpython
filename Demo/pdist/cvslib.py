@@ -155,6 +155,8 @@ class File:
 			r("lmtime", gmctime)
 		if self.eseen:
 			r("erev")
+			r("enew")
+			r("edeleted")
 			r("ectime", gmctime)
 			r("emtime", gmctime)
 		if self.rseen:
