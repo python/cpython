@@ -2310,14 +2310,14 @@ PyCurses_tparm(PyObject *self, PyObject *args)
 		return NULL;
 	}
 	
-#ifdef __hpux
-        /* tparm is declared with 10 arguments on HP/UX 11.
-           If this is a problem on other platforms as well,
-           an autoconf test should be added to determine
-           whether tparm can be called with a variable number
-           of arguments. Perhaps the other arguments should
-           be initialized in this case also. */
-        result = tparm(fmt,i1,i2,i3,i4,i5,i6,i7,i8,i9);
+#if defined(__hpux) || defined(_AIX)
+	/* tparm is declared with 10 arguments on a few platforms
+	   (HP-UX, AIX). If this proves to be a problem on other 
+	   platforms as well, perhaps an autoconf test should be 
+	   added to determine whether tparm can be called with a 
+	   variable number of arguments. Perhaps the other arguments 
+	   should be initialized in this case also. */
+	result = tparm(fmt,i1,i2,i3,i4,i5,i6,i7,i8,i9);
 #else
 	switch (PyTuple_GET_SIZE(args)) {
 	case 1:
@@ -2351,7 +2351,7 @@ PyCurses_tparm(PyObject *self, PyObject *args)
 		result = tparm(fmt,i1,i2,i3,i4,i5,i6,i7,i8,i9);
 		break;
 	}
-#endif /* __hpux */
+#endif /* defined(__hpux) || defined(_AIX) */
 	return PyString_FromString(result);
 }
 
