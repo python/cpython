@@ -105,7 +105,7 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         f.write("<hr>\n<ul>\n")
         for name in list:
             fullname = os.path.join(path, name)
-            displayname = linkname = name = cgi.escape(name)
+            displayname = linkname = name
             # Append / for directories or @ for symbolic links
             if os.path.isdir(fullname):
                 displayname = name + "/"
@@ -113,7 +113,8 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             if os.path.islink(fullname):
                 displayname = name + "@"
                 # Note: a link to a directory displays with @ and links with /
-            f.write('<li><a href="%s">%s</a>\n' % (linkname, displayname))
+            f.write('<li><a href="%s">%s</a>\n'
+                    % (urllib.quote(linkname), cgi.escape(displayname)))
         f.write("</ul>\n<hr>\n")
         length = f.tell()
         f.seek(0)
