@@ -101,6 +101,16 @@ those symbols that are defined in the \UNIX{} header files are defined;
 for a few symbols, default values are provided.
 \end{datadesc}
 
+\begin{funcdesc}{getfqdn}{\optional{name}}
+Return a fully qualified domain name for \var{name}.
+If \var{name} is omitted or empty, it is interpreted as the local
+host.  To find the fully qualified name, the hostname returned by
+\function{gethostbyaddr()} is checked, then aliases for the host, if
+available.  The first name which includes a period is selected.  In
+case no fully qualified domain name is available, the hostname is
+returned.
+\end{funcdesc}
+
 \begin{funcdesc}{gethostbyname}{hostname}
 Translate a host name to IP address format.  The IP address is
 returned as a string, e.g.,  \code{'100.50.200.5'}.  If the host name
@@ -134,10 +144,8 @@ responding to the given \var{ip_address}, \var{aliaslist} is a
 (possibly empty) list of alternative host names for the same address,
 and \var{ipaddrlist} is a list of IP addresses for the same interface
 on the same host (most likely containing only a single address).
-To find the fully qualified domain name, check \var{hostname} and the
-items of \var{aliaslist} for an entry containing at least one period.
-An implementation of this algorithm can be found in the module
-\module{smtplib} in form of the \function{make_fqdn()} function.
+To find the fully qualified domain name, use the function
+\function{getfqdn()}.
 \end{funcdesc}
 
 \begin{funcdesc}{getprotobyname}{protocolname}
