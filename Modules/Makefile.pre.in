@@ -149,7 +149,7 @@ getpath.o:	getpath.c Makefile
 config.c Makefile: Makefile.pre config.c.in $(MAKESETUP)
 config.c Makefile: Setup.config Setup Setup.local
 config.c Makefile:
-		-rm -f $(LIBRARY)
+		-rm -rf $(LIBRARY)
 		$(SHELL) $(MAKESETUP) Setup.config Setup.local Setup
 
 hassignal:
