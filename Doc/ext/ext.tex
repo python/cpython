@@ -1605,7 +1605,9 @@ begin:
 \end{verbatim}
 
 to indicate that the modules defined in \file{Setup} are to be built
-as dynamically-linked linked modules.
+as dynamically-linked linked modules.  A line containing only
+\samp{*static*} can be used to indicate the subsequently listed
+modules should be statically linked.
 
 Here is a complete \file{Setup} file for building a
 \module{cPersistent} module:
