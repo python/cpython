@@ -113,3 +113,10 @@ test('''To: (Comment stuff) "Quoted name"@somewhere.com
 
 test''', [('Comment stuff', '"Quoted name"@somewhere.com'),
           ])
+
+test('''To: :
+Cc: goit@lip.com
+Date:    Wed, 13 Jan 1999 23:57:35 -0500
+
+test''', [('', 'goit@lip.com')])
+
