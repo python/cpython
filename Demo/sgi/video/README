@@ -1,7 +1,22 @@
-This directory contains Python and C code we wrote while we had a
-framegrabber board on loan from SGI.
+This directory contains Python and C code for video stuff.
 
-	--Guido and Jack
+History:
+
+We started this in October 1991, when we had a large framegrabber
+board on loan from SGI for a few weeks.
+
+Later, when we started processing the recorded film fragments, the
+"CMIF video format" was revised several times, and we finally created
+an object-oriented interface for reading and writing various
+incarnations of these files, called VFile.
+
+When we finally got our own Indigo entry-level video board (in June
+1992) and a version of the Irix video library that supported capturing
+PAL format (August 1992) Sjoerd added an interface to the video
+library to Python (sv) and Guido wrote makemovie.py (based upon a
+still frame grabber by Sjoerd) to record a movie using it.
+
+	--Guido, Jack and Sjoerd
 
 
 cam.py		network real-time tv broadcast; see tv.py
@@ -23,6 +38,9 @@ camcorder.py	record video movies or make snapshots (in movie format)
 		ESC	quit
 
 colorsys.py	color conversions, used by video
+
+makemovie.py	record video movies using the Indigo video library and
+		board
 
 statit.py	various statistics operations on movie files
 
@@ -49,9 +67,13 @@ video.py	player for movies recorded by camcorder.py
 		soundfile	default is none (no sound)
 		skipbytes	byte offset in soundfile where sound starts
 
+Vplay.py	same but using VFile.py
+
 vinfo.py	print summary of movie file(s)
 		usage: vinfo [-d] moviefile ...
 		-d		print delta times (default: print abs times)
+
+Vinfo.py	same but using VFile.py
 
 vpregs.py	definition of VP registers
 
