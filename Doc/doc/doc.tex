@@ -840,12 +840,15 @@ This \UNIX\ is also followed by a space.
       \macro{shortversion} macro.
     \end{macrodesc}
 
-    \begin{macrodesc}{versionadded}{\p{version}}
+    \begin{macrodesc}{versionadded}{\op{explanation}\p{version}}
       The version of Python which added the described feature to the
-      library or C API.  This is typically added to the end of the
-      first paragraph of the description before any availability
-      notes.  The location should be selected so the explanation makes
-      sense and may vary as needed.
+      library or C API.  \var{explanation} should be a \emph{brief}
+      explanation of the change consisting of a capitalized sentence
+      fragment; a period will be appended by the formatting process.
+      This is typically added to the end of the first paragraph of the
+      description before any availability notes.  The location should
+      be selected so the explanation makes sense and may vary as
+      needed.
     \end{macrodesc}
 
     \begin{macrodesc}{versionchanged}{\op{explanation}\p{version}}
