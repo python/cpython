@@ -154,7 +154,7 @@ def test(n):
 test(100)
 
 ##########################################################################
-# Another segfault bug, distilled by Micheal Hundson from a c.l.py post.
+# Another segfault bug, distilled by Michael Hudson from a c.l.py post.
 
 class Child:
     def __init__(self, parent):
