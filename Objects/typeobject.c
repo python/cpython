@@ -2468,11 +2468,8 @@ add_subclass(PyTypeObject *base, PyTypeObject *type)
 	while (--i >= 0) {
 		ref = PyList_GET_ITEM(list, i);
 		assert(PyWeakref_CheckRef(ref));
-		if (PyWeakref_GET_OBJECT(ref) == Py_None) {
-			i = PyList_SetItem(list, i, new);
-			Py_DECREF(new);
-			return i;
-		}
+		if (PyWeakref_GET_OBJECT(ref) == Py_None)
+			return PyList_SetItem(list, i, new);
 	}
 	i = PyList_Append(list, new);
 	Py_DECREF(new);
