@@ -466,7 +466,6 @@ class DisplayStyle:
  
     def delete(self):
        self.tk.call(self.stylename, 'delete')
-       del(self)
  
     def __setitem__(self,key,value):
        self.tk.call(self.stylename, 'configure', '-%s'%key, value)
@@ -1093,6 +1092,8 @@ class NoteBook(TixWidget):
 
     def delete(self, name):
        self.tk.call(self._w, 'delete', name)
+       self.subwidget_list[name].destroy()
+       del self.subwidget_list[name]
 
     def page(self, name):
        return self.subwidget(name)
