@@ -331,45 +331,47 @@ class TokenEater:
         for k, v in self.__messages.items():
             keys = v.keys()
             keys.sort()
-            reverse[tuple(keys)] = (k, v)
+            reverse.setdefault(tuple(keys), []).append((k, v))
         rkeys = reverse.keys()
         rkeys.sort()
         for rkey in rkeys:
-            k, v = reverse[rkey]
-            # If the entry was gleaned out of a docstring, then add a comment
-            # stating so.  This is to aid translators who may wish to skip
-            # translating some unimportant docstrings.
-            if reduce(operator.__add__, v.values()):
-                print >> fp, '#. docstring'
-            # k is the message string, v is a dictionary-set of (filename,
-            # lineno) tuples.  We want to sort the entries in v first by file
-            # name and then by line number.
-            v = v.keys()
-            v.sort()
-            if not options.writelocations:
-                pass
-            # location comments are different b/w Solaris and GNU:
-            elif options.locationstyle == options.SOLARIS:
-                for filename, lineno in v:
-                    d = {'filename': filename, 'lineno': lineno}
-                    print >>fp, _('# File: %(filename)s, line: %(lineno)d') % d
-            elif options.locationstyle == options.GNU:
-                # fit as many locations on one line, as long as the
-                # resulting line length doesn't exceeds 'options.width'
-                locline = '#:'
-                for filename, lineno in v:
-                    d = {'filename': filename, 'lineno': lineno}
-                    s = _(' %(filename)s:%(lineno)d') % d
-                    if len(locline) + len(s) <= options.width:
-                        locline = locline + s
-                    else:
+            rentries = reverse[rkey]
+            rentries.sort()
+            for k, v in rentries:
+                # If the entry was gleaned out of a docstring, then add a
+                # comment stating so.  This is to aid translators who may wish
+                # to skip translating some unimportant docstrings.
+                if reduce(operator.__add__, v.values()):
+                    print >> fp, '#. docstring'
+                # k is the message string, v is a dictionary-set of (filename,
+                # lineno) tuples.  We want to sort the entries in v first by
+                # file name and then by line number.
+                v = v.keys()
+                v.sort()
+                if not options.writelocations:
+                    pass
+                # location comments are different b/w Solaris and GNU:
+                elif options.locationstyle == options.SOLARIS:
+                    for filename, lineno in v:
+                        d = {'filename': filename, 'lineno': lineno}
+                        print >>fp, _(
+                            '# File: %(filename)s, line: %(lineno)d') % d
+                elif options.locationstyle == options.GNU:
+                    # fit as many locations on one line, as long as the
+                    # resulting line length doesn't exceeds 'options.width'
+                    locline = '#:'
+                    for filename, lineno in v:
+                        d = {'filename': filename, 'lineno': lineno}
+                        s = _(' %(filename)s:%(lineno)d') % d
+                        if len(locline) + len(s) <= options.width:
+                            locline = locline + s
+                        else:
+                            print >> fp, locline
+                            locline = "#:" + s
+                    if len(locline) > 2:
                         print >> fp, locline
-                        locline = "#:" + s
-                if len(locline) > 2:
-                    print >> fp, locline
-            # TBD: sorting, normalizing
-            print >> fp, 'msgid', normalize(k)
-            print >> fp, 'msgstr ""\n'
+                print >> fp, 'msgid', normalize(k)
+                print >> fp, 'msgstr ""\n'
 
 
 
