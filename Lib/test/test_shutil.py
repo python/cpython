@@ -1,4 +1,3 @@
-
 # Copyright (C) 2003 Python Software Foundation
 
 import unittest
@@ -20,21 +19,28 @@ class TestShutil(unittest.TestCase):
         def test_on_error(self):
             self.errorState = 0
             os.mkdir(TESTFN)
-            f = open(os.path.join(TESTFN, 'a'), 'w')
+            self.childpath = os.path.join(TESTFN, 'a')
+            f = open(self.childpath, 'w')
             f.close()
-            # Make TESTFN unwritable.
-            os.chmod(TESTFN, stat.S_IRUSR)
+            old_dir_mode = os.stat(TESTFN).st_mode
+            old_child_mode = os.stat(self.childpath).st_mode
+            # Make unwritable.
+            os.chmod(self.childpath, stat.S_IREAD)
+            os.chmod(TESTFN, stat.S_IREAD)
 
             shutil.rmtree(TESTFN, onerror=self.check_args_to_onerror)
 
-            # Make TESTFN writable again.
-            os.chmod(TESTFN, stat.S_IRWXU)
+            # Make writable again.
+            os.chmod(TESTFN, old_dir_mode)
+            os.chmod(self.childpath, old_child_mode)
+
+            # Clean up.
             shutil.rmtree(TESTFN)
 
     def check_args_to_onerror(self, func, arg, exc):
         if self.errorState == 0:
             self.assertEqual(func, os.remove)
-            self.assertEqual(arg, os.path.join(TESTFN, 'a'))
+            self.assertEqual(arg, self.childpath)
             self.assertEqual(exc[0], OSError)
             self.errorState = 1
         else:
