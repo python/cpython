@@ -464,10 +464,10 @@ eval_frame(PyFrameObject *f)
 #ifdef DXPAIRS
 	int lastopcode = 0;
 #endif
-	PyObject **stack_pointer; /* Next free slot in value stack */
+	register PyObject **stack_pointer;   /* Next free slot in value stack */
 	register unsigned char *next_instr;
-	register int opcode=0;	/* Current opcode */
-	register int oparg=0;	/* Current opcode argument, if any */
+	register int opcode;	/* Current opcode */
+	register int oparg;	/* Current opcode argument, if any */
 	register enum why_code why; /* Reason for block stack unwind */
 	register int err;	/* Error status -- nonzero if error */
 	register PyObject *x;	/* Result object -- NULL if error */
@@ -807,6 +807,8 @@ eval_frame(PyFrameObject *f)
 		/* Extract opcode and argument */
 
 		opcode = NEXTOP();
+		oparg = 0;   /* allows oparg to be stored in a register because
+			it doesn't have to be remembered across a full loop */
 		if (HAS_ARG(opcode))
 			oparg = NEXTARG();
 	  dispatch_opcode:
@@ -2095,16 +2097,21 @@ eval_frame(PyFrameObject *f)
 			continue;
 
 		case CALL_FUNCTION:
+		{
+			PyObject **sp;
 			PCALL(PCALL_ALL);
+			sp = stack_pointer;
 #ifdef WITH_TSC
-			x = call_function(&stack_pointer, oparg, &intr0, &intr1);
+			x = call_function(&sp, oparg, &intr0, &intr1);
 #else
-			x = call_function(&stack_pointer, oparg);
+			x = call_function(&sp, oparg);
 #endif
+			stack_pointer = sp;
 			PUSH(x);
 			if (x != NULL)
 				continue;
 			break;
+		}
 
 		case CALL_FUNCTION_VAR:
 		case CALL_FUNCTION_KW:
@@ -2114,7 +2121,7 @@ eval_frame(PyFrameObject *f)
 		    int nk = (oparg>>8) & 0xff;
 		    int flags = (opcode - CALL_FUNCTION) & 3;
 		    int n = na + 2 * nk;
-		    PyObject **pfunc, *func;
+		    PyObject **pfunc, *func, **sp;
 		    PCALL(PCALL_ALL);
 		    if (flags & CALL_FLAG_VAR)
 			    n++;
@@ -2135,13 +2142,15 @@ eval_frame(PyFrameObject *f)
 			    n++;
 		    } else
 			    Py_INCREF(func);
+		    sp = stack_pointer;
 #ifdef WITH_TSC
 		    rdtscll(intr0);
 #endif
-		    x = ext_do_call(func, &stack_pointer, flags, na, nk);
+		    x = ext_do_call(func, &sp, flags, na, nk);
 #ifdef WITH_TSC
 		    rdtscll(intr1);
 #endif
+		    stack_pointer = sp;
 		    Py_DECREF(func);
 
 		    while (stack_pointer > pfunc) {
