@@ -2261,12 +2261,7 @@ def setdict():
     cant(a, None)
     cant(a, [])
     cant(a, 1)
-    try:
-        del a.__dict__
-    except TypeError:
-        pass
-    else:
-        raise TestFailed, "shouldn't allow del %r.__dict__" % (a)
+    del a.__dict__ # Deleting __dict__ is allowed
     # Classes don't allow __dict__ assignment
     cant(C, {})
 
