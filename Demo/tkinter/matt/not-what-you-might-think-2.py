@@ -4,25 +4,18 @@ from Tkinter import *
 class Test(Frame):
     def createWidgets(self):
 
-	self.Gpanel = Frame(self, {'width': '1i', 
-				   'height' : '1i',
-				   'bg' : 'green'})
+	self.Gpanel = Frame(self, width='1i', height='1i',
+			    background='green')
 
 	# this line turns off the recalculation of geometry by masters.
-	self.Gpanel.tk.call('pack', 'propagate', str(self.Gpanel), "0")
+	self.Gpanel.propagate(0)
 
-	self.Gpanel.pack({'side' : 'left'})
-
-
+	self.Gpanel.pack(side=LEFT)
 
 	# a QUIT button
-	self.Gpanel.QUIT = Button(self.Gpanel, {'text': 'QUIT', 
-						'fg': 'red',
-						'command': self.quit})
-	self.Gpanel.QUIT.pack( {'side': 'left'})
-
-	
-
+	self.Gpanel.QUIT = Button(self.Gpanel, text='QUIT', foreground='red',
+				  command=self.quit)
+	self.Gpanel.QUIT.pack(side=LEFT)
 
     def __init__(self, master=None):
 	Frame.__init__(self, master)

@@ -15,9 +15,8 @@ class Test(Frame):
 
     def createWidgets(self):
 	# a hello button
-	self.hi_there = Button(self, {'text': 'Hello'})
-	self.hi_there.pack({'side': 'left'})
-
+	self.hi_there = Button(self, text='Hello')
+	self.hi_there.pack(side=LEFT)
 
     def __init__(self, master=None):
 	Frame.__init__(self, master)

@@ -10,11 +10,10 @@ class Test(Frame):
 	# remember where the mouse went down
 	self.lastx = event.x
 	self.lasty = event.y
-		
-	
+
     def mouseMove(self, event):
-	# whatever the mouse is over gets tagged as "current" for free by tk.
-	self.draw.move("current", event.x - self.lastx, event.y - self.lasty)
+	# whatever the mouse is over gets tagged as CURRENT for free by tk.
+	self.draw.move(CURRENT, event.x - self.lastx, event.y - self.lasty)
 	self.lastx = event.x
 	self.lasty = event.y
 
@@ -22,27 +21,24 @@ class Test(Frame):
     ###### Event callbacks for canvas ITEMS (stuff drawn on the canvas)
     ###################################################################
     def mouseEnter(self, event):
-        # the "current" tag is applied to the object the cursor is over.
+        # the CURRENT tag is applied to the object the cursor is over.
 	# this happens automatically.
-	self.draw.itemconfig("current", {"fill" : "red"})
+	self.draw.itemconfig(CURRENT, fill="red")
 	
     def mouseLeave(self, event):
-	# the "current" tag is applied to the object the cursor is over.
+	# the CURRENT tag is applied to the object the cursor is over.
 	# this happens automatically.
-	self.draw.itemconfig("current", {"fill" : "blue"})
-
+	self.draw.itemconfig(CURRENT, fill="blue")
 
     def createWidgets(self):
-	self.QUIT = Button(self, {'text': 'QUIT', 
-				  'fg': 'red', 
-				  'command': self.quit})
-	self.QUIT.pack({'side': 'left', 'fill': 'both'})	
-	self.draw = Canvas(self, {"width" : "5i", "height" : "5i"})
-	self.draw.pack({'side': 'left'})
-	
+	self.QUIT = Button(self, text='QUIT', foreground='red', 
+			   command=self.quit)
+	self.QUIT.pack(side=LEFT, fill=BOTH)
+	self.draw = Canvas(self, width="5i", height="5i")
+	self.draw.pack(side=LEFT)
 
 	fred = self.draw.create_oval(0, 0, 20, 20,
-				     {"fill" : "green", "tag" : "selected"})
+				     fill="green", tags="selected")
 
 	self.draw.tag_bind(fred, "<Any-Enter>", self.mouseEnter)
 	self.draw.tag_bind(fred, "<Any-Leave>", self.mouseLeave)

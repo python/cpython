@@ -15,10 +15,10 @@ import os
 user = os.environ['LOGNAME']
 
 class BarButton(Menubutton):
-	def __init__(self, master=None, cnf={}):
-		Menubutton.__init__(self, master, cnf)
-		self.pack(side='left')
-		self.menu = Menu(self, {'name': 'menu'})
+	def __init__(self, master=None, **cnf):
+		apply(Menubutton.__init__, (self, master), cnf)
+		self.pack(side=LEFT)
+		self.menu = Menu(self, name='menu')
 		self['menu'] = self.menu		
 
 class Kill(Frame):
@@ -41,7 +41,7 @@ class Kill(Frame):
 	def kill(self, selected):
 		c = self.format_list[self.format.get()][2]
 		pid = split(selected)[c]
-		os.system('kill' + ' -9 ' + pid)
+		os.system('kill -9 ' + pid)
 		self.do_update()
 	def do_update(self):
 		format = self.format_list[self.format.get()][1]
@@ -60,21 +60,17 @@ class Kill(Frame):
 		e.widget.select_clear('0', 'end')
 	def do_1(self, e):
 		self.kill(e.widget.get(e.widget.nearest(e.y)))
-	def __init__(self, master=None, cnf={}):
-		Frame.__init__(self, master, cnf)
-		self.pack({'expand': 'yes', 'fill': 'both'})
-		self.bar = Frame(
-			self,
-			{'name': 'bar',
-			 'relief': 'raised',
-			 'bd': 2,
-			 Pack: {'side': 'top',
-				'fill': 'x'}})
-		self.bar.file = BarButton(self.bar, {'text': 'File'})
+	def __init__(self, master=None, **cnf):
+		apply(Frame.__init__, (self, master), cnf)
+		self.pack(expand=1, fill=BOTH)
+		self.bar = Frame(self, name='bar', relief=RAISED,
+				 borderwidth=2)
+		self.bar.pack(fill=X)
+		self.bar.file = BarButton(self.bar, text='File')
 		self.bar.file.menu.add_command(
-			{'label': 'Quit', 'command': self.quit})
-		self.bar.view = BarButton(self.bar, {'text': 'View'})
-		self.bar.format = BarButton(self.bar, {'text': 'Format'})
+			label='Quit', command=self.quit)
+		self.bar.view = BarButton(self.bar, text='View')
+		self.bar.format = BarButton(self.bar, text='Format')
 		self.view = IntVar(self)
 		self.view.set(0)
 		self.format = IntVar(self)
@@ -82,68 +78,51 @@ class Kill(Frame):
 		for num in range(len(self.view_list)):
 			label, option = self.view_list[num]
 			self.bar.view.menu.add_radiobutton(
-				{'label': label,
-				 'command': self.do_update,
-				 'variable': self.view,
-				 'value': num})
+				label=label,
+				command=self.do_update,
+				variable=self.view,
+				value=num)
 		for num in range(len(self.format_list)):
 			label, option, col = self.format_list[num]
 			self.bar.format.menu.add_radiobutton(
-				{'label': label,
-				 'command': self.do_update,
-				 'variable': self.format,
-				 'value': num})
+				label=label,
+				command=self.do_update,
+				variable=self.format,
+				value=num)
 		self.bar.tk_menuBar(self.bar.file,
 				    self.bar.view,
 				    self.bar.format)
-		self.frame = Frame(
-			self, 
-			{'relief': 'raised', 'bd': 2,
-			 Pack: {'side': 'top',
-				'expand': 'yes',
-				'fill': 'both'}})
+		self.frame = Frame(self, relief=RAISED, borderwidth=2)
+		self.frame.pack(expand=1, fill=BOTH)
 		self.header = StringVar(self)
 		self.frame.label = Label(
-			self.frame, 
-			{'relief': 'flat',
-			 'anchor': 'nw',
-			 'borderwidth': 0,
-			 'font': '*-Courier-Bold-R-Normal-*-120-*',
-			 'textvariable': self.header,
-			 Pack: {'side': 'top', 
-			 	'fill': 'y',
-				'anchor': 'w'}})
-		self.frame.vscroll = Scrollbar(
-			self.frame,
-			{'orient': 'vertical'})
+			self.frame, relief=FLAT, anchor=NW, borderwidth=0,
+			font='*-Courier-Bold-R-Normal-*-120-*',
+			textvariable=self.header)
+		self.frame.label.pack(fill=Y, anchor=W)
+		self.frame.vscroll = Scrollbar(self.frame, orient=VERTICAL)
 		self.frame.list = Listbox(
 			self.frame, 
-			{'relief': 'sunken',
-			 'font': '*-Courier-Medium-R-Normal-*-120-*',
-			 'width': 40, 'height': 10,
-			 'selectbackground': '#eed5b7',
-			 'selectborderwidth': 0,
-			 'selectmode': 'browse',
-			 'yscroll': self.frame.vscroll.set})
+			relief=SUNKEN,
+			font='*-Courier-Medium-R-Normal-*-120-*',
+			width=40, height=10,
+			selectbackground='#eed5b7',
+			selectborderwidth=0,
+			selectmode=BROWSE,
+			yscroll=self.frame.vscroll.set)
 		self.frame.vscroll['command'] = self.frame.list.yview
-		self.frame.vscroll.pack({'side': 'right', 'fill': 'y'})
-		self.frame.list.pack(
-			{'side': 'top',
-			 'expand': 'yes',
-			 'fill': 'both'})
-		self.update = Button(
-			self,
-			{'text': 'Update',
-			 'command': self.do_update,
-			 Pack: {'expand': 'no',
-				'fill': 'x'}})
+		self.frame.vscroll.pack(side=RIGHT, fill=Y)
+		self.frame.list.pack(expand=1, fill=BOTH)
+		self.update = Button(self, text='Update',
+				     command=self.do_update)
+		self.update.pack(fill=X)
 		self.frame.list.bind('<Motion>', self.do_motion)
 		self.frame.list.bind('<Leave>', self.do_leave)
 		self.frame.list.bind('<1>', self.do_1)
 		self.do_update()
 
 if __name__ == '__main__':
-	kill = Kill(None, {'bd': 5})
+	kill = Kill(None, borderwidth=5)
 	kill.winfo_toplevel().title('Tkinter Process Killer (SYSV)')
 	kill.winfo_toplevel().minsize(1, 1)
 	kill.mainloop()

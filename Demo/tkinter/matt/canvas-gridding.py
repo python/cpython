@@ -10,15 +10,15 @@ class Test(Frame):
 	print "hi"
 
     def createWidgets(self):
-	self.QUIT = Button(self, {'text': 'QUIT', 
-				  'bg': 'red', 
-				  'fg': 'white', 
-				  'height' : 3, 
-				  'command': self.quit})
-	self.QUIT.pack({'side': 'bottom', 'fill': 'both'})	
+	self.QUIT = Button(self, text='QUIT', 
+				  background='red', 
+				  foreground='white', 
+				  height=3, 
+				  command=self.quit)
+	self.QUIT.pack(side=BOTTOM, fill=BOTH)	
 
-	self.canvasObject = Canvas(self, {"width" : "5i", "height" : "5i"})
-	self.canvasObject.pack({'side': 'left'})
+	self.canvasObject = Canvas(self, width="5i", height="5i")
+	self.canvasObject.pack(side=LEFT)
 
     def mouseDown(self, event):
 	# canvas x and y take the screen coords from the event and translate
@@ -29,12 +29,13 @@ class Test(Frame):
     def mouseMotion(self, event):
 	# canvas x and y take the screen coords from the event and translate
 	# them into the coordinate system of the canvas object
-	x = self.canvasObject.canvasx(event.x, self.griddingsize)
-	y = self.canvasObject.canvasy(event.y, self.griddingsize)
+	x = self.canvasObject.canvasx(event.x, self.griddingSize)
+	y = self.canvasObject.canvasy(event.y, self.griddingSize)
 
 	if (self.startx != event.x)  and (self.starty != event.y) : 
 	    self.canvasObject.delete(self.rubberbandBox)
-	    self.rubberbandBox = self.canvasObject.create_rectangle(self.startx, self.starty, x, y)
+	    self.rubberbandBox = self.canvasObject.create_rectangle(
+		self.startx, self.starty, x, y)
 	    # this flushes the output, making sure that 
 	    # the rectangle makes it to the screen 
 	    # before the next event is handled

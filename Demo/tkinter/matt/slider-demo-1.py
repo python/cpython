@@ -11,25 +11,21 @@ class Test(Frame):
 	self.slider.set(0)
 
     def createWidgets(self):
-	self.slider = Scale(self, {"from" : 0,
-				   'to': 100, 
-				   "orient" : "horizontal", 
-				   "length" : "3i", 
-				   "label" : "happy slider", 
-				   'command' : self.print_value})
+	self.slider = Scale(self, from_=0, to=100, 
+			    orient=HORIZONTAL, 
+			    length="3i", 
+			    label="happy slider", 
+			    command=self.print_value)
 
-	self.reset = Button(self, {'text': 'reset slider', 
-				  'command': self.reset})
-	
+	self.reset = Button(self, text='reset slider', 
+			    command=self.reset)
 
-	self.QUIT = Button(self, {'text': 'QUIT', 
-				  'fg': 'red', 
-				  'command': self.quit})
-	
+	self.QUIT = Button(self, text='QUIT', foreground='red', 
+			   command=self.quit)
 
-	self.slider.pack({'side': 'left'})
-	self.reset.pack({'side': 'left'})
-	self.QUIT.pack({'side': 'left', 'fill': 'both'})
+	self.slider.pack(side=LEFT)
+	self.reset.pack(side=LEFT)
+	self.QUIT.pack(side=LEFT, fill=BOTH)
 
     def __init__(self, master=None):
 	Frame.__init__(self, master)

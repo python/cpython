@@ -19,29 +19,27 @@ from Tkinter import *
 
 
 
-def makePoliticalParties():
+def makePoliticalParties(var):
     # make menu button 
-    Radiobutton_button = Menubutton(mBar, {'text': 'Political Party', 
-					   'underline': 0,
-					   Pack: {'side': 'left', 
-						  'padx': '2m'}})
+    Radiobutton_button = Menubutton(mBar, text='Political Party', 
+				    underline=0)
+    Radiobutton_button.pack(side=LEFT, padx='2m')
     
     # the primary pulldown
     Radiobutton_button.menu = Menu(Radiobutton_button)
 
-    Radiobutton_button.menu.add('radiobutton', {'label': 'Republican', 
-						'variable' : party, 
-						'value' : 1})
+    Radiobutton_button.menu.add_radiobutton(label='Republican', 
+					    variable=var, value=1)
 
     Radiobutton_button.menu.add('radiobutton', {'label': 'Democrat', 
-						'variable' : party, 
+						'variable' : var, 
 						'value' : 2})
 
     Radiobutton_button.menu.add('radiobutton', {'label': 'Libertarian', 
-						'variable' : party, 
+						'variable' : var, 
 						'value' : 3})
     
-    party.set(2)
+    var.set(2)
 
     # set up a pointer from the file menubutton back to the file menu
     Radiobutton_button['menu'] = Radiobutton_button.menu
@@ -49,29 +47,26 @@ def makePoliticalParties():
     return Radiobutton_button
 
 
-def makeFlavors():
+def makeFlavors(var):
     # make menu button 
-    Radiobutton_button = Menubutton(mBar, {'text': 'Flavors', 
-					   'underline': 0,
-					   Pack: {'side': 'left', 
-						  'padx': '2m'}})
+    Radiobutton_button = Menubutton(mBar, text='Flavors', 
+				    underline=0)
+    Radiobutton_button.pack(side=LEFT, padx='2m')
+
     # the primary pulldown
     Radiobutton_button.menu = Menu(Radiobutton_button)
 
-    Radiobutton_button.menu.add('radiobutton', {'label': 'Strawberry', 
-						'variable' : flavor, 
-						'value' : 'Strawberry'})
+    Radiobutton_button.menu.add_radiobutton(label='Strawberry',
+					    variable=var, value='Strawberry')
 
-    Radiobutton_button.menu.add('radiobutton', {'label': 'Chocolate', 
-						'variable' : flavor, 
-						'value' : 'Chocolate'})
+    Radiobutton_button.menu.add_radiobutton(label='Chocolate',
+					    variable=var, value='Chocolate')
 
-    Radiobutton_button.menu.add('radiobutton', {'label': 'Rocky Road', 
-						'variable' : flavor, 
-						'value' : 'Rocky Road'})
+    Radiobutton_button.menu.add_radiobutton(label='Rocky Road',
+					    variable=var, value='Rocky Road')
 
     # choose a default
-    flavor.set("Chocolate")
+    var.set("Chocolate")
 
     # set up a pointer from the file menubutton back to the file menu
     Radiobutton_button['menu'] = Radiobutton_button.menu
@@ -82,7 +77,7 @@ def makeFlavors():
 def printStuff():
     print "party is", party.get()
     print "flavor is", flavor.get()
-    print ""
+    print
 
 #################################################
 #### Main starts here ...
@@ -90,27 +85,24 @@ root = Tk()
 
 
 # make a menu bar
-mBar = Frame(root, {'relief': 'raised', 
-		    'bd': 2,
-		    Pack: {'side': 'top', 
-			   'fill': 'x'}})
+mBar = Frame(root, relief=RAISED, borderwidth=2)
+mBar.pack(fill=X)
 
 # make two application variables, 
 # one to control each radio button set
 party = IntVar()
 flavor = StringVar()
 
-Radiobutton_button = makePoliticalParties()
-Radiobutton_button2 = makeFlavors()
+Radiobutton_button = makePoliticalParties(party)
+Radiobutton_button2 = makeFlavors(flavor)
 
 # finally, install the buttons in the menu bar. 
 # This allows for scanning from one menubutton to the next.
 mBar.tk_menuBar(Radiobutton_button, Radiobutton_button2)
 
-b = Button(root, {"text": "print party and flavor", 
-		  "command" : printStuff, 
-		  "fg":  "red"})
-b.pack({"side" : "top"})
+b = Button(root, text="print party and flavor", foreground="red",
+	   command=printStuff)
+b.pack(side=TOP)
 
 root.title('menu demo')
 root.iconname('menu demo')

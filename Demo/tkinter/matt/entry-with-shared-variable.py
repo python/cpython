@@ -11,10 +11,10 @@ class App(Frame):
 	self.entrythingy = Entry()
 	self.entrythingy.pack()
 
-	self.button = Button(self, {"text" : "Uppercase The Entry", "command" : self.upper})
+	self.button = Button(self, text="Uppercase The Entry",
+			     command=self.upper)
 	self.button.pack()
 
-	
 	# here we have the text in the entry widget tied to a variable.
 	# changes in the variable are echoed in the widget and vice versa. 
 	# Very handy.
@@ -22,7 +22,7 @@ class App(Frame):
 	# the other variable types that can be shadowed
 	self.contents = StringVar()
 	self.contents.set("this is a variable")
-	self.entrythingy.config({"textvariable":self.contents})
+	self.entrythingy.config(textvariable=self.contents)
 
 	# and here we get a callback when the user hits return. we could
 	# make the key that triggers the callback anything we wanted to.

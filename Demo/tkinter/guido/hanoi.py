@@ -36,8 +36,8 @@ class Tkhanoi:
 		# Add background bitmap
 		if bitmap:
 			self.bitmap = c.create_bitmap(width/2, height/2,
-						      {'bitmap': bitmap,
-						       'foreground': 'blue'})
+						      bitmap=bitmap,
+						      foreground='blue')
 
 		# Generate pegs
 		pegwidth = 10
@@ -46,13 +46,13 @@ class Tkhanoi:
 		x1, y1 = (pegdist-pegwidth)/2, height*1/3
 		x2, y2 = x1+pegwidth, y1+pegheight
 		self.pegs = []
-		p = c.create_rectangle(x1, y1, x2, y2, {'fill': 'black'})
+		p = c.create_rectangle(x1, y1, x2, y2, fill='black')
 		self.pegs.append(p)
 		x1, x2 = x1+pegdist, x2+pegdist
-		p = c.create_rectangle(x1, y1, x2, y2, {'fill': 'black'})
+		p = c.create_rectangle(x1, y1, x2, y2, fill='black')
 		self.pegs.append(p)
 		x1, x2 = x1+pegdist, x2+pegdist
-		p = c.create_rectangle(x1, y1, x2, y2, {'fill': 'black'})
+		p = c.create_rectangle(x1, y1, x2, y2, fill='black')
 		self.pegs.append(p)
 		self.tk.update()
 
@@ -66,8 +66,7 @@ class Tkhanoi:
 		x2, y2 = x1+maxpiecewidth, y1+pieceheight
 		dx = (maxpiecewidth-minpiecewidth) / (2*max(1, n-1))
 		for i in range(n, 0, -1):
-			p = c.create_rectangle(x1, y1, x2, y2,
-					       {'fill': 'red'})
+			p = c.create_rectangle(x1, y1, x2, y2, fill='red')
 			self.pieces[i] = p
 			self.pegstate[0].append(i)
 			x1, x2 = x1 + dx, x2-dx

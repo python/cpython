@@ -18,8 +18,9 @@ class App(Frame):
 
 	# Note that here is where we bind a completely different callback to 
 	# the same event. We pass "+" here to indicate that we wish to ADD 
-	# this callback to the list associated with this event type. Not specifying "+" would 
-	# simply override whatever callback was defined on this event. 
+	# this callback to the list associated with this event type.
+	# Not specifying "+" would simply override whatever callback was
+	# defined on this event.
 	self.entrythingy.bind('<Key-Return>', self.print_something_else, "+")
 
     def print_contents(self, event):

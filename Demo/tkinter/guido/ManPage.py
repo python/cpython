@@ -20,14 +20,14 @@ ulprog = regex.compile('^[ \t]*[Xv!_][Xv!_ \t]*\n')
 class EditableManPage(ScrolledText):
 
 	# Initialize instance
-	def __init__(self, master=None, cnf={}):
+	def __init__(self, master=None, **cnf):
 		# Initialize base class
-		ScrolledText.__init__(self, master, cnf)
+		apply(ScrolledText.__init__, (self, master), cnf)
 
 		# Define tags for formatting styles
-		self.tag_config('X', {'underline': 1})
-		self.tag_config('!', {'font': BOLDFONT})
-		self.tag_config('_', {'font': ITALICFONT})
+		self.tag_config('X', underline=1)
+		self.tag_config('!', font=BOLDFONT)
+		self.tag_config('_', font=ITALICFONT)
 
 		# Set state to idle
 		self.fp = None
@@ -83,8 +83,8 @@ class EditableManPage(ScrolledText):
 		self.empty = 0
 		self.buffer = None
 		savestate = self['state']
-		self['state'] = 'normal'
-		self.delete('1.0', 'end')
+		self['state'] = NORMAL
+		self.delete('1.0', END)
 		self['state'] = savestate
 
 	# End parsing -- must be busy, need not be at EOF
@@ -133,11 +133,11 @@ class EditableManPage(ScrolledText):
 			self.empty = 0
 			return
 		savestate = self['state']
-		self['state'] = 'normal'
+		self['state'] = NORMAL
 		if TkVersion >= 4.0:
 			self.mark_set('insert', 'end-1c')
 		else:
-			self.mark_set('insert', 'end')
+			self.mark_set('insert', END)
 		if self.empty:
 			# One or more previous lines were empty
 			# -- insert one blank line in the text
@@ -176,9 +176,9 @@ class EditableManPage(ScrolledText):
 class ReadonlyManPage(EditableManPage):
 
 	# Initialize instance
-	def __init__(self, master=None, cnf={}):
-		EditableManPage.__init__(self, master,
-					 (cnf, {'state': 'disabled'}))
+	def __init__(self, master=None, **cnf):
+		cnf['state'] = DISABLED
+		apply(EditableManPage.__init__, (self, master), cnf)
 
 # Alias
 ManPage = ReadonlyManPage
@@ -206,8 +206,8 @@ def test():
 		name = os.path.join(MANDIR, name)
 	root = Tk()
 	root.minsize(1, 1)
-	manpage = ManPage(root, {'relief': 'sunken', 'bd': 2,
-				 Pack: {'expand': 1, 'fill': 'both'}})
+	manpage = ManPage(root, relief=SUNKEN, borderwidth=2)
+	manpage.pack(expand=1, fill=BOTH)
 	if formatted:
 		fp = open(name, 'r')
 	else:
