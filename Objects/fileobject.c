@@ -741,6 +741,20 @@ new_buffersize(PyFileObject *f, size_t currentsize)
 	return currentsize + SMALLCHUNK;
 }
 
+#if defined(EWOULDBLOCK) && defined(EAGAIN) && EWOULDBLOCK != EAGAIN
+#define BLOCKED_ERRNO(x) ((x) == EWOULDBLOCK || (x) == EAGAIN)
+#else
+#ifdef EWOULDBLOCK
+#define BLOCKED_ERRNO(x) ((x) == EWOULDBLOCK)
+#else
+#ifdef EAGAIN
+#define BLOCKED_ERRNO(x) ((x) == EAGAIN)
+#else
+#define BLOCKED_ERRNO(x) 0
+#endif
+#endif
+#endif
+
 static PyObject *
 file_read(PyFileObject *f, PyObject *args)
 {
@@ -774,18 +788,29 @@ file_read(PyFileObject *f, PyObject *args)
 		if (chunksize == 0) {
 			if (!ferror(f->f_fp))
 				break;
-			PyErr_SetFromErrno(PyExc_IOError);
 			clearerr(f->f_fp);
+			/* When in non-blocking mode, data shouldn't
+			 * be discarded if a blocking signal was
+			 * received. That will also happen if
+			 * chunksize != 0, but bytesread < buffersize. */
+			if (bytesread > 0 && BLOCKED_ERRNO(errno))
+				break;
+			PyErr_SetFromErrno(PyExc_IOError);
 			Py_DECREF(v);
 			return NULL;
 		}
 		bytesread += chunksize;
-		if (bytesread < buffersize)
+		if (bytesread < buffersize) {
+			clearerr(f->f_fp);
 			break;
+		}
 		if (bytesrequested < 0) {
 			buffersize = new_buffersize(f, buffersize);
 			if (_PyString_Resize(&v, buffersize) < 0)
 				return NULL;
+		} else {
+			assert(bytesread == bytesrequested);
+			break;
 		}
 	}
 	if (bytesread != buffersize)
@@ -1518,7 +1543,9 @@ PyDoc_STRVAR(readline_doc,
 PyDoc_STRVAR(read_doc,
 "read([size]) -> read at most size bytes, returned as a string.\n"
 "\n"
-"If the size argument is negative or omitted, read until EOF is reached.");
+"If the size argument is negative or omitted, read until EOF is reached.\n"
+"Notice that when in non-blocking mode, less data than what was requested\n"
+"may be returned, even if no size parameter was given.");
 
 PyDoc_STRVAR(write_doc,
 "write(str) -> None.  Write string str to file.\n"
