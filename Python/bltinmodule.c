@@ -1621,6 +1621,7 @@ object *AccessError;
 object *AttributeError;
 object *ConflictError;
 object *EOFError;
+object *FloatingPointError;
 object *IOError;
 object *ImportError;
 object *IndexError;
@@ -1654,6 +1655,7 @@ initerrors()
 	AttributeError = newstdexception("AttributeError");
 	ConflictError = newstdexception("ConflictError");
 	EOFError = newstdexception("EOFError");
+	FloatingPointError = newstdexception("FloatingPointError");
 	IOError = newstdexception("IOError");
 	ImportError = newstdexception("ImportError");
 	IndexError = newstdexception("IndexError");
