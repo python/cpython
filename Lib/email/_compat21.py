@@ -7,6 +7,9 @@
 from cStringIO import StringIO
 from types import StringType, UnicodeType
 
+False = 0
+True = 1
+
 
 
 # This function will become a method of the Message class
