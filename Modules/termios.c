@@ -19,6 +19,10 @@
 #ifdef HAVE_SYS_MODEM_H
 #include <sys/modem.h>
 #endif
+/* HP-UX requires that this be included to pick up TIOCGPGRP and friends */
+#ifdef HAVE_SYS_BSDTTY_H
+#include <sys/bsdtty.h>
+#endif
 
 PyDoc_STRVAR(termios__doc__,
 "This module provides an interface to the Posix calls for tty I/O control.\n\
