@@ -40,7 +40,6 @@ OBJS=		\
 		pythonmain.o pythonrun.o \
 		sigcheck.o structmember.o sysmodule.o \
 		traceback.o \
-		version.o \
 		$(LIBOBJS)
 
 LIB=		libPython.a
