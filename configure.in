@@ -221,10 +221,6 @@ DLLLIBRARY=''
 # linking.
 AC_SUBST(LINKCC)
 AC_MSG_CHECKING(LINKCC)
-if test -z "$LINKCC" -a ! -z "$CXX"
-then
-    LINKCC="$CXX"
-fi
 if test -z "$LINKCC"
 then
 	case $ac_sys_system in
@@ -647,7 +643,14 @@ AC_SUBST(CFLAGSFORSHARED)
 AC_MSG_CHECKING(CFLAGSFORSHARED)
 if test ! "$LIBRARY" = "$LDLIBRARY"
 then
-	CFLAGSFORSHARED='$(CCSHARED)'
+	case $ac_sys_system in
+	CYGWIN*)
+		# Cygwin needs CCSHARED when building extension DLLs
+		# but not when building the interpreter DLL.
+		CFLAGSFORSHARED='';;
+	*)
+		CFLAGSFORSHARED='$(CCSHARED)'
+	esac
 fi
 AC_MSG_RESULT($CFLAGSFORSHARED)
 
