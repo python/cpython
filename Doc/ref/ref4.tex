@@ -19,8 +19,9 @@ part of their execution, e.g. by invoking (calling) a function.
 The following are code blocks:  A module is a code block.  A function
 body is a code block.  A class definition is a code block.  Each
 command typed interactively is a separate code block; a script file is
-a code block.  The string argument passed to the built-in functions
-\verb\eval\ and \verb\exec\ are code blocks.  And finally, the
+a code block.  The string argument passed to the built-in function
+\verb\eval\ and to the \verb\exec\ statement are code blocks.
+And finally, the
 expression read and evaluated by the built-in function \verb\input\ is
 a code block.
 
@@ -66,7 +67,7 @@ assignment, \verb\for\ loop header, or \verb\except\ clause header.
 
 When a global name is not found in the global name space, it is
 searched in the list of ``built-in'' names (which is actually the
-global name space of the module \verb\builtin\).  When a name is not
+global name space of the module \verb\__builtin__\).  When a name is not
 found at all, the \verb\NameError\ exception is raised.
 
 The following table lists the meaning of the local and global name
