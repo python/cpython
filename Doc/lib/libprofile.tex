@@ -655,12 +655,40 @@ Be warned that you \emph{should} calibrate the profiler class for the
 timer function that you choose.  For most machines, a timer that
 returns a lone integer value will provide the best results in terms of
 low overhead during profiling.  (\function{os.times()} is
-\emph{pretty} bad, 'cause it returns a tuple of floating point values,
+\emph{pretty} bad, as it returns a tuple of floating point values,
 so all arithmetic is floating point in the profiler!).  If you want to
 substitute a better timer in the cleanest fashion, you should derive a
 class, and simply put in the replacement dispatch method that better
 handles your timer call, along with the appropriate calibration
-constant :-).
+constant.
+
+Note that subclasses which override any of the
+\method{trace_dispatch_call()}, \method{trace_dispatch_exception()},
+or \method{trace_dispatch_return()} methods also need to specify a
+dispatch table as well.  The table, named \member{dispatch}, should
+have the three keys \code{'call'}, \code{'exception'}, and
+\code{'return'}, each giving the function of the corresponding
+handler.  Note that best performance is achieved by using the
+\emph{function} objects for the handlers and not bound methods.  This
+is preferred since calling a simple function object executes less code
+in the runtime than calling either bound or unbound methods.  For
+example, if the derived profiler overrides only one method, the
+\member{dispatch} table can be built like this:
+
+\begin{verbatim}
+from profile import Profile
+
+class MyProfiler(Profile):
+    def trace_dispath_call(self, frame, t):
+        # do something interesting here
+        ...
+
+    dispatch = {
+        'call': trace_dispatch_call,
+        'exception': Profile.__dict__['trace_dispatch_exception'],
+        'return': Profile.__dict__['trace_dispatch_return'],
+    }
+\end{verbatim}
 
 
 \subsection{OldProfile Class \label{profile-old}}
@@ -684,7 +712,7 @@ class OldProfile(Profile):
 
     def trace_dispatch_call(self, frame, t):
         fn = `frame.f_code`
-        
+
         self.cur = (t, 0, 0, fn, frame, self.cur)
         if self.timings.has_key(fn):
             tt, ct, callers = self.timings[fn]
@@ -710,20 +738,23 @@ class OldProfile(Profile):
 
         return 1
 
+    dispatch = {
+        "call": trace_dispatch_call,
+        "exception": trace_dispatch_exception,
+        "return": trace_dispatch_return,
+        }
 
     def snapshot_stats(self):
         self.stats = {}
         for func in self.timings.keys():
             tt, ct, callers = self.timings[func]
-            nor_func = self.func_normalize(func)
-            nor_callers = {}
+            callers = callers.copy()
             nc = 0
             for func_caller in callers.keys():
-                nor_callers[self.func_normalize(func_caller)] = \
-                    callers[func_caller]
                 nc = nc + callers[func_caller]
-            self.stats[nor_func] = nc, nc, tt, ct, nor_callers
+            self.stats[func] = nc, nc, tt, ct, callers
 \end{verbatim}
+
 
 \subsection{HotProfile Class \label{profile-HotProfile}}
 
@@ -763,11 +794,15 @@ class HotProfile(Profile):
 
         return 1
 
+    dispatch = {
+        "call": trace_dispatch_call,
+        "exception": trace_dispatch_exception,
+        "return": trace_dispatch_return,
+        }
 
     def snapshot_stats(self):
         self.stats = {}
         for func in self.timings.keys():
             nc, tt = self.timings[func]
-            nor_func = self.func_normalize(func)
-            self.stats[nor_func] = nc, nc, tt, 0, {}
+            self.stats[func] = nc, nc, tt, 0, {}
 \end{verbatim}
