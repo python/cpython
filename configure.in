@@ -357,7 +357,7 @@ AC_CHECK_HEADERS(dlfcn.h fcntl.h limits.h locale.h ncurses.h pthread.h \
 signal.h stdarg.h stddef.h stdlib.h thread.h unistd.h utime.h \
 sys/audioio.h sys/file.h sys/lock.h \
 sys/param.h sys/select.h sys/socket.h sys/time.h sys/times.h \
-sys/un.h sys/utsname.h sys/wait.h)
+sys/un.h sys/utsname.h sys/wait.h pty.h libutil.h)
 AC_HEADER_DIRENT
 
 # checks for typedefs
@@ -770,6 +770,11 @@ AC_CHECK_FUNCS(alarm chown clock confstr ctermid ctermid_r dlopen execv \
  sigaction siginterrupt sigrelse strftime strptime symlink sysconf \
  tcgetpgrp tcsetpgrp tempnam timegm times tmpfile tmpnam tmpnam_r \
  truncate uname waitpid)
+
+# check for openpty and forkpty
+
+AC_CHECK_FUNCS(openpty,, AC_CHECK_LIB(util,openpty, [AC_DEFINE(HAVE_OPENPTY)] [LIBS="$LIBS -lutil"]))
+AC_CHECK_FUNCS(forkpty,, AC_CHECK_LIB(util,forkpty, [AC_DEFINE(HAVE_FORKPTY)] [LIBS="$LIBS -lutil"]))
 
 # check for long file support functions
 AC_CHECK_FUNCS(fseek64 fseeko fstatvfs ftell64 ftello statvfs)

@@ -1731,6 +1731,64 @@ posix_fork(self, args)
 }
 #endif
 
+#if defined(HAVE_OPENPTY) || defined(HAVE_FORKPTY)
+#ifdef HAVE_PTY_H
+#include <pty.h>
+#else
+#ifdef HAVE_LIBUTIL_H
+#include <libutil.h>
+#else
+/* BSDI does not supply a prototype for the 'openpty' and 'forkpty'
+   functions, eventhough they are included in libutil. */
+#include <termios.h>
+extern int openpty(int *, int *, char *, struct termios *, struct winsize *);
+extern int forkpty(int *, char *, struct termios *, struct winsize *);
+#endif /* HAVE_LIBUTIL_H */
+#endif /* HAVE_PTY_H */
+#endif /* defined(HAVE_OPENPTY) or defined(HAVE_FORKPTY) */
+
+#ifdef HAVE_OPENPTY
+static char posix_openpty__doc__[] =
+"openpty() -> (master_fd, slave_fd)\n\
+Open a pseudo-terminal, returning open fd's for both master and slave end.\n";
+
+static PyObject *
+posix_openpty(self, args)
+	PyObject *self;
+	PyObject *args;
+{
+	int master_fd, slave_fd;
+	if (!PyArg_ParseTuple(args, ":openpty"))
+		return NULL;
+	if (openpty(&master_fd, &slave_fd, NULL, NULL, NULL) != 0)
+		return posix_error();
+	return Py_BuildValue("(ii)", master_fd, slave_fd);
+}
+#endif
+
+#ifdef HAVE_FORKPTY
+static char posix_forkpty__doc__[] =
+"forkpty() -> (pid, master_fd)\n\
+Fork a new process with a new pseudo-terminal as controlling tty.\n\n\
+Like fork(), return 0 as pid to child process, and PID of child to parent.\n\
+To both, return fd of newly opened pseudo-terminal.\n";
+
+static PyObject *
+posix_forkpty(self, args)
+	PyObject *self;
+	PyObject *args;
+{
+	int master_fd, pid;
+	
+	if (!PyArg_ParseTuple(args, ":forkpty"))
+		return NULL;
+	pid = forkpty(&master_fd, NULL, NULL, NULL);
+	if (pid == -1)
+		return posix_error();
+	PyOS_AfterFork();
+	return Py_BuildValue("(ii)", pid, master_fd);
+}
+#endif
 
 #ifdef HAVE_GETEGID
 static char posix_getegid__doc__[] =
@@ -4514,6 +4572,12 @@ static PyMethodDef posix_methods[] = {
 #ifdef HAVE_FORK
 	{"fork",	posix_fork, METH_VARARGS, posix_fork__doc__},
 #endif /* HAVE_FORK */
+#ifdef HAVE_OPENPTY
+	{"openpty",	posix_openpty, METH_VARARGS, posix_openpty__doc__},
+#endif /* HAVE_OPENPTY */
+#ifdef HAVE_FORKPTY
+	{"forkpty",	posix_forkpty, METH_VARARGS, posix_forkpty__doc__},
+#endif /* HAVE_FORKPTY */
 #ifdef HAVE_GETEGID
 	{"getegid",	posix_getegid, METH_VARARGS, posix_getegid__doc__},
 #endif /* HAVE_GETEGID */
