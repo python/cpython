@@ -13,6 +13,7 @@ import email
 from email.Parser import Parser
 from email.Generator import Generator, DecodedGenerator
 from email.Message import Message
+from email.MIMEAudio import MIMEAudio
 from email.MIMEText import MIMEText
 from email.MIMEImage import MIMEImage
 from email.MIMEBase import MIMEBase
@@ -22,7 +23,8 @@ from email import Errors
 from email import Encoders
 from email import Iterators
 
-import test.regrtest
+import test_email
+from test_support import findfile
 
 NL = '\n'
 EMPTYSTRING = ''
@@ -30,8 +32,7 @@ EMPTYSTRING = ''
 
 
 def openfile(filename):
-    path = os.path.join(os.path.dirname(test.regrtest.__file__),
-                        'data', filename)
+    path = os.path.join(os.path.dirname(test_email.__file__), 'data', filename)
     return open(path)
 
 
@@ -308,6 +309,60 @@ From: aaa@bbb.org
 From the desk of A.A.A.:
 Blah blah blah
 """)
+
+
+
+# Test the basic MIMEAudio class
+class TestMIMEAudio(unittest.TestCase):
+    def setUp(self):
+        # In Python, audiotest.au lives in Lib/test not Lib/test/data
+        fp = open(findfile('audiotest.au'))
+        try:
+            self._audiodata = fp.read()
+        finally:
+            fp.close()
+        self._au = MIMEAudio(self._audiodata)
+
+    def test_guess_minor_type(self):
+        self.assertEqual(self._au.get_type(), 'audio/basic')
+
+    def test_encoding(self):
+        payload = self._au.get_payload()
+        self.assertEqual(base64.decodestring(payload), self._audiodata)
+
+    def checkSetMinor(self):
+        au = MIMEAudio(self._audiodata, 'fish')
+        self.assertEqual(im.get_type(), 'audio/fish')
+
+    def test_custom_encoder(self):
+        eq = self.assertEqual
+        def encoder(msg):
+            orig = msg.get_payload()
+            msg.set_payload(0)
+            msg['Content-Transfer-Encoding'] = 'broken64'
+        au = MIMEAudio(self._audiodata, _encoder=encoder)
+        eq(au.get_payload(), 0)
+        eq(au['content-transfer-encoding'], 'broken64')
+
+    def test_add_header(self):
+        eq = self.assertEqual
+        unless = self.failUnless
+        self._au.add_header('Content-Disposition', 'attachment',
+                            filename='audiotest.au')
+        eq(self._au['content-disposition'],
+           'attachment; filename="audiotest.au"')
+        eq(self._au.get_params(header='content-disposition'),
+           [('attachment', ''), ('filename', 'audiotest.au')])
+        eq(self._au.get_param('filename', header='content-disposition'),
+           'audiotest.au')
+        missing = []
+        eq(self._au.get_param('attachment', header='content-disposition'), '')
+        unless(self._au.get_param('foo', failobj=missing,
+                                  header='content-disposition') is missing)
+        # Try some missing stuff
+        unless(self._au.get_param('foobar', missing) is missing)
+        unless(self._au.get_param('attachment', missing,
+                                  header='foobar') is missing)
 
 
 
@@ -768,7 +823,6 @@ class TestMiscellaneous(unittest.TestCase):
         for subpart in msg.walk():
             unless(isinstance(subpart, MyMessage))
 
-
     def test_message_from_file_with_class(self):
         unless = self.failUnless
         # Create a subclass
@@ -789,6 +843,16 @@ class TestMiscellaneous(unittest.TestCase):
             fp.close()
         for subpart in msg.walk():
             unless(isinstance(subpart, MyMessage))
+
+    def test__all__(self):
+        module = __import__('email')
+        all = module.__all__
+        all.sort()
+        self.assertEqual(all, ['Encoders', 'Errors', 'Generator', 'Iterators',
+                               'MIMEAudio', 'MIMEBase', 'MIMEImage',
+                               'MIMEMessage', 'MIMEText', 'Message', 'Parser',
+                               'Utils',
+                               'message_from_file', 'message_from_string'])
 
 
 
@@ -830,6 +894,7 @@ def suite():
     suite.addTest(unittest.makeSuite(TestEncoders))
     suite.addTest(unittest.makeSuite(TestLongHeaders))
     suite.addTest(unittest.makeSuite(TestFromMangling))
+    suite.addTest(unittest.makeSuite(TestMIMEAudio))
     suite.addTest(unittest.makeSuite(TestMIMEImage))
     suite.addTest(unittest.makeSuite(TestMIMEText))
     suite.addTest(unittest.makeSuite(TestMultipartMixed))
