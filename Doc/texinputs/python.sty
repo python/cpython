@@ -979,11 +979,39 @@
   \end{tabular}
 }
 
+\newlength{\py@noticelength}
+
+\newcommand{\py@heavybox}{
+  \setlength{\fboxrule}{2pt}
+  \setlength{\fboxsep}{7pt}
+  \setlength{\py@noticelength}{\linewidth}
+  \addtolength{\py@noticelength}{-2\fboxsep}
+  \addtolength{\py@noticelength}{-2\fboxrule}
+  \setlength{\shadowsize}{3pt}
+  \Sbox
+  \minipage{\py@noticelength}
+}
+\newcommand{\py@endheavybox}{
+  \endminipage
+  \endSbox
+  \fbox{\TheSbox}
+}
+
+% a 'note' is as plain as it gets:
 \newcommand{\py@noticelabel@note}{Note:}
+\newcommand{\py@noticestart@note}{}
+\newcommand{\py@noticeend@note}{}
+
+% a 'warning' gets more visible distinction:
 \newcommand{\py@noticelabel@warning}{Warning:}
+\newcommand{\py@noticestart@warning}{\py@heavybox}
+\newcommand{\py@noticeend@warning}{\py@endheavybox}
+
 \newenvironment{notice}[1][note]{
+  \def\py@noticetype{#1}
+  \csname py@noticestart@#1\endcsname
   \par\strong{\csname py@noticelabel@#1\endcsname}
-}{}
+}{\csname py@noticeend@\py@noticetype\endcsname}
 \newcommand{\note}[1]{\strong{\py@noticelabel@note} #1}
 \newcommand{\warning}[1]{\strong{\py@noticelabel@warning} #1}
 
