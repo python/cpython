@@ -315,7 +315,7 @@ free(cp)
 #ifdef MSTATS
 		nmalloc[NBUCKETS]--;
 #endif
-  		DisposPtr((Ptr)op);
+  		DisposePtr((Ptr)op);
   		return;
   	}
   	ASSERT(size < NBUCKETS);
