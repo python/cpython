@@ -1,7 +1,10 @@
 import Wbase
 import Wkeys
 import string
-from Carbon import Evt, Events, Lists, Qd, Scrap, Win
+from Carbon import Evt, Events, Fm, Lists, Qd, Scrap, Win
+from Carbon.List import LNew, CreateCustomList, GetListPort
+from Carbon.Lists import kListDefUserProcType, lInitMsg, lDrawMsg, lHiliteMsg, lCloseMsg
+from Carbon.QuickDraw import hilitetransfermode
 
 
 class List(Wbase.SelectableWidget):
@@ -34,12 +37,11 @@ class List(Wbase.SelectableWidget):
 		self.setdrawingmode(1)
 	
 	def createlist(self):
-		from Carbon import List
 		self._calcbounds()
 		self.SetPort()
 		rect = self._bounds
 		rect = rect[0]+1, rect[1]+1, rect[2]-16, rect[3]-1
-		self._list = List.LNew(rect, (0, 0, self._cols, 0), (0, 0), self.LDEF_ID, self._parentwindow.wid,
+		self._list = LNew(rect, (0, 0, self._cols, 0), (0, 0), self.LDEF_ID, self._parentwindow.wid,
 					0, 1, 0, 1)
 		if self.drawingmode:
 			self._list.LSetDrawingMode(0)
@@ -361,19 +363,120 @@ class List(Wbase.SelectableWidget):
 			self.drawingmode = self.drawingmode + 1
 
 
-class TwoLineList(List):
+class CustomList(List):
 	
-	LDEF_ID = 468
+	"""Base class for writing custom list definitions."""
+	
+	_cellHeight = 0
 	
 	def createlist(self):
-		from Carbon import List
 		self._calcbounds()
 		self.SetPort()
 		rect = self._bounds
 		rect = rect[0]+1, rect[1]+1, rect[2]-16, rect[3]-1
-		self._list = List.LNew(rect, (0, 0, 1, 0), (0, 28), self.LDEF_ID, self._parentwindow.wid,
-					0, 1, 0, 1)
-		self.set(self.items)
+		self._list = CreateCustomList(
+				rect,
+				(0, 0, 1, 0),
+				(0, self._cellHeight),
+				(kListDefUserProcType, self.listDefinitionFunc),
+				self._parentwindow.wid,
+				0, 1, 0, 1)
+		if self.drawingmode:
+			self._list.LSetDrawingMode(0)
+		self._list.selFlags = self._flags
+		self.setitems(self.items)
+		if hasattr(self, "_sel"):
+			self.setselection(self._sel)
+			del self._sel
+	
+	def listDefinitionFunc(self, message, selected, cellRect, theCell,
+			dataOffset, dataLen, theList):
+		"""The LDEF message dispatcher routine, no need to override."""
+		if message == lInitMsg:
+			self.listDefInit(theList)
+		elif message == lDrawMsg:
+			self.listDefDraw(selected, cellRect, theCell,
+					dataOffset, dataLen, theList)
+		elif message == lHiliteMsg:
+			self.listDefHighlight(selected, cellRect, theCell,
+					dataOffset, dataLen, theList)
+		elif message == lCloseMsg:
+			self.listDefClose(theList)
+	
+	def listDefInit(self, theList):
+		pass
+	def listDefClose(self, theList):
+		pass
+	def listDefDraw(self, selected, cellRect, theCell, 
+			dataOffset, dataLen, theList):
+		pass
+	def listDefHighlight(self, selected, cellRect, theCell, 
+			dataOffset, dataLen, theList):
+		pass
+
+
+class TwoLineList(CustomList):
+	
+	_cellHeight = 28
+	
+	def listDefDraw(self, selected, cellRect, theCell,
+			dataOffset, dataLen, theList):
+		savedPort = Qd.GetPort()
+		Qd.SetPort(GetListPort(theList))
+		savedClip = Qd.NewRgn()
+		Qd.GetClip(savedClip)
+		Qd.ClipRect(cellRect)
+		savedPenState = Qd.GetPenState()
+		Qd.PenNormal()
+		Qd.EraseRect(cellRect)
+		
+		#draw the cell if it contains data
+		ascent, descent, leading, size, hm = Fm.FontMetrics()
+		linefeed = ascent + descent + leading
+		
+		if dataLen:
+			left, top, right, bottom = cellRect
+			data = theList.LGetCell(dataLen, theCell)
+			lines = data.split("\r")
+			line1 = lines[0]
+			if len(lines) > 1:
+				line2 = lines[1]
+			else:
+				line2 = ""
+			Qd.MoveTo(left + 4, top + ascent)
+			Qd.DrawText(line1, 0, len(line1))
+			if line2:
+				Qd.MoveTo(left + 4, top + ascent + linefeed)
+				Qd.DrawText(line2, 0, len(line2))
+			Qd.PenPat("\x11\x11\x11\x11\x11\x11\x11\x11")
+			Qd.MoveTo(left, bottom - 1)
+			Qd.LineTo(right, bottom - 1)
+		if selected:
+			self.listDefHighlight(selected, cellRect, theCell,
+					dataOffset, dataLen, theList)
+		#restore graphics environment
+		Qd.SetPort(savedPort)
+		Qd.SetClip(savedClip)
+		Qd.DisposeRgn(savedClip)
+		Qd.SetPenState(savedPenState)
+	
+	def listDefHighlight(self, selected, cellRect, theCell,
+			dataOffset, dataLen, theList):
+		savedPort = Qd.GetPort()
+		Qd.SetPort(GetListPort(theList))
+		savedClip = Qd.NewRgn()
+		Qd.GetClip(savedClip)
+		Qd.ClipRect(cellRect)
+		savedPenState = Qd.GetPenState()
+		Qd.PenNormal()
+		Qd.PenMode(hilitetransfermode)
+		Qd.PaintRect(cellRect)
+		
+		#restore graphics environment
+		Qd.SetPort(savedPort)
+		Qd.SetClip(savedClip)
+		Qd.DisposeRgn(savedClip)
+		Qd.SetPenState(savedPenState)
 	
 
 class ResultsWindow:
