@@ -210,11 +210,14 @@ have a few attributes of their own:
 
 \item \member{__doc__} is the attribute's docstring.
 
-\item \method{__get__(\var{object})} is a method that retrieves the attribute value from \var{object}.
+\item \method{__get__(\var{object})} is a method that retrieves the
+attribute value from \var{object}. 
 
 \item \method{__set__(\var{object}, \var{value})} sets the attribute
 on \var{object} to \var{value}.
 
+\item \method{__delete__(\var{object})} deletes the \var{value} 
+attribute of \var{object}.
 \end{itemize}
 
 For example, when you write \code{obj.x}, the steps that Python
