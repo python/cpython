@@ -33,6 +33,10 @@ Extension modules
 
 - Bug #814613: INET_ADDRSTRLEN fix needed for all compilers on SGI
 
+- The sre module (which underlies the re module) now uses a non-recursive
+  algorithm for matching. A bunch of ugly REs that used to fail with a 
+  RuntimeError will now work.
+
 Library
 -------
 
@@ -42,8 +46,10 @@ Library
 
 - Bug #780461: platform.mac_ver() raised MacOSError exception under OS X.
 
-- Bug #812202:  random.randrange() returned only even numbers
+- Bug #812202: random.randrange() returned only even numbers
   for range lengths above 2**53.
+
+- Bug #823328: urllib2's HTTP Digest Auth support works again.
 
 What's New in Python 2.3.2 (final)?
 ===================================
