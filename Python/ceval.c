@@ -523,6 +523,12 @@ eval_code(co, globals, locals, arg)
 		case RAISE_EXCEPTION:
 			v = POP();
 			w = POP();
+			/* A tuple is equivalent to its first element here */
+			while (is_tupleobject(w)) {
+				u = w;
+				w = gettupleitem(u, 0);
+				DECREF(u);
+			}
 			if (!is_stringobject(w))
 				err_setstr(TypeError,
 					"exceptions must be strings");
@@ -630,7 +636,7 @@ eval_code(co, globals, locals, arg)
 				why = WHY_EXCEPTION;
 			}
 			else if (gettuplesize(v) != oparg) {
-				err_setstr(RuntimeError,
+				err_setstr(ValueError,
 					"unpack tuple of wrong size");
 				why = WHY_EXCEPTION;
 			}
@@ -651,7 +657,7 @@ eval_code(co, globals, locals, arg)
 				why = WHY_EXCEPTION;
 			}
 			else if (getlistsize(v) != oparg) {
-				err_setstr(RuntimeError,
+				err_setstr(ValueError,
 					"unpack list of wrong size");
 				why = WHY_EXCEPTION;
 			}
@@ -680,6 +686,19 @@ eval_code(co, globals, locals, arg)
 			err = setattr(v, name, (object *)NULL);
 							/* del v.name */
 			DECREF(v);
+			break;
+		
+		case STORE_GLOBAL:
+			w = GETNAMEV(oparg);
+			v = POP();
+			err = dict2insert(f->f_globals, w, v);
+			DECREF(v);
+			break;
+		
+		case DELETE_GLOBAL:
+			w = GETNAMEV(oparg);
+			if ((err = dict2remove(f->f_globals, w)) != 0)
+				err_setstr(NameError, getstringvalue(w));
 			break;
 		
 		case LOAD_CONST:
@@ -941,7 +960,7 @@ eval_code(co, globals, locals, arg)
 					   Python main loop.  Don't do
 					   this for 'finally'. */
 					if (b->b_type == SETUP_EXCEPT) {
-#if 0 /* Oops, this breaks too many things */
+#if 1 /* Oops, this breaks too many things */
 						sysset("exc_traceback", v);
 #endif
 						sysset("exc_value", val);
@@ -1539,7 +1558,8 @@ cmp_exception(err, v)
 		int i, n;
 		n = gettuplesize(v);
 		for (i = 0; i < n; i++) {
-			if (err == gettupleitem(v, i))
+			/* Test recursively */
+			if (cmp_exception(err, gettupleitem(v, i)))
 				return 1;
 		}
 		return 0;
