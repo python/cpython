@@ -319,4 +319,39 @@ class TestCase(unittest.TestCase):
         self.assertEqual(filter(lambda x: not x, seq), [False]*25)
         self.assertEqual(filter(lambda x: not x, iter(seq)), [False]*25)
 
+    # Test max() and min()'s use of iterators.
+    def test_builtin_max_min(self):
+        self.assertEqual(max(SequenceClass(5)), 4)
+        self.assertEqual(min(SequenceClass(5)), 0)
+        self.assertEqual(max(8, -1), 8)
+        self.assertEqual(min(8, -1), -1)
+
+        d = {"one": 1, "two": 2, "three": 3}
+        self.assertEqual(max(d), "two")
+        self.assertEqual(min(d), "one")
+        self.assertEqual(max(d.itervalues()), 3)
+        self.assertEqual(min(iter(d.itervalues())), 1)
+
+        self.assertRaises(TypeError, list, list)
+        self.assertRaises(TypeError, list, 42)
+
+        f = open(TESTFN, "w")
+        try:
+            f.write("medium line\n")
+            f.write("xtra large line\n")
+            f.write("itty-bitty line\n")
+        finally:
+            f.close()
+        f = open(TESTFN, "r")
+        try:
+            self.assertEqual(min(f), "itty-bitty line\n")
+            f.seek(0, 0)
+            self.assertEqual(max(f), "xtra large line\n")
+        finally:
+            f.close()
+            try:
+                unlink(TESTFN)
+            except OSError:
+                pass
+
 run_unittest(TestCase)
