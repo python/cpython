@@ -40,7 +40,7 @@ typedef unsigned long Py_UInt32;
                         else if ( x > MAXLIN ) x = MAXLIN; \
                       } while ( 0 )
 
-static unsigned char st_linear_to_ulaw( /* int sample */ );
+static unsigned char st_linear_to_ulaw(int sample);
 
 /*
 ** This macro converts from ulaw to 16 bit linear, faster.
