@@ -2,135 +2,236 @@ Pynche - The PYthonically Natural Color and Hue Editor
 Copyright (C) 1998 CNRI
 Author: Barry A. Warsaw <bwarsaw@python.org>
 
-Pynche is a color editor based largely on a similar program that I
-originally back in 1987 for the Sunview window system.  That editor
-was called ICE, the Interactive Color Editor.  I'd always wanted to
-port this program to X but didn't feel like hacking X and C code to do
-it.  Fast forward many years, to where Python + Tkinter provides such
-a nice programming environment, with enough power, that I finally
-buckled down and implemented it.  I changed the name because these
-days, too many other systems have the acronym `ICE'.
+Introduction
 
-Pynche has been tested with Python 1.5.1 using Tk 8.0.  It probably
-works with Python 1.5.  I've tested it on both Solaris 2.6 and Windows 
-NT.  There are some funky things that happen on Windows but I think
-they are primarily Tk problems.  You'll want to be sure to have Tk
-8.0.3 for Windows.  Also, Pynche is very colormap intensive, so it
-doesn't work very well on 8-bit graphics cards.  I'll probably fix
-that in the future.
+    Pynche is a color editor based largely on a similar program that I
+    originally wrote back in 1987 for the Sunview window system.  That
+    editor was called ICE, the Interactive Color Editor.  I'd always
+    wanted to port this program to X but didn't feel like hacking X
+    and C code to do it.  Fast forward many years, to where Python +
+    Tkinter provides such a nice programming environment, with enough
+    power, that I finally buckled down and re-implemented it.  I
+    changed the name because these days, too many other systems have
+    the acronym `ICE'.
 
-Pynche must find a text database of colors, in the X11 format.  Pynche
-is distributed with an rgb.txt file from the X11R6.4 distribution for
-this reason, but you can use a different file with the -d option.  The
-file xlicense.txt contains the license only for rgb.txt.
+    Pynche has been tested with Python 1.5.1 using Tk 8.0.  It
+    probably works with Python 1.5.  I've tested it on both Solaris
+    2.6 and Windows NT.  There are some funky things that happen on
+    Windows but I think they are primarily Tk problems.  You'll want
+    to be sure to have Tk 8.0.3 for Windows.  Also, Pynche is very
+    colormap intensive, so it doesn't work very well on 8-bit graphics
+    cards.  I'll probably fix that in the future.
 
-Pynche is pronounced `Pinch-ee'.  Start it by running the `pynche'
-script.  On Windows, run pynche.pyw to inhibit the console window.
+    Pynche must find a text database of colors, in the X11 format.
+    Pynche is distributed with an rgb.txt file from the X11R6.4
+    distribution for this reason, but you can use a different file
+    with the -d option.  The file xlicense.txt contains the license
+    only for rgb.txt and both files are in the X/ subdirectory.
 
-The top part of the main Pynche window contains the "variation
-strips".  Each strip contains a number of "color chips".  The strips
-always indicate the currently selected color by a highlight rectangle
-around the selected color chip, with an arrow pointing to the chip.
-Each arrow has an associated number giving you the color value along
-the variation's axis.  Each variation strip shows you the colors that
-are reachable from the selected color by varying just one axis of the
-color solid.
+    Pynche is pronounced `Pinch-ee'.
 
-For example, when the selected color is (in Red/Green/Blue notation)
-127/127/127, the Red Variations strip shows you every color in the
-range 0/127/127 to 255/127/127.  Similarly for the green and blue
-axes.  You can select any color by clicking on its chip.  This will
-update the highlight rectangle and the arrow, as well as other
-displays in Pynche.
+Running Standalone
 
-Click on "Update while dragging" if you want Pynche to update the
-selected color while you drag along any variation strip (this will be
-slower).  Click on "Hexadecimal" to display the arrow numbers in hex.
+    On Unix, start it by running the `pynche' script.  On Windows, run
+    pynche.pyw to inhibit the console window.  When run from the
+    command line, the following options are recognized:
 
-In the lower left corner of the main window you see two larger color
-chips.  The Selected chip shows you a larger version of the color
-selected in the variation strips, along with its X11 color
-specification.  The Nearest chip shows you the closest color in the
-X11 database to the selected color, giving its X11 color name.
-Clicking on the Nearest color chip selects that color.  Color distance 
-is calculated in the 3D space of the RGB color solid and if more than
-one color name is the same distance from the selected color, the first 
-one found will be chosen.
+    --database file
+    -d file
+        Alternate location of the color database file.  Without this
+        option, the first of /usr/openwin/lib/rgb.txt or X/rgb.txt
+        will be used.
 
-Note that there may be more than one X11 color name for the same RGB
-value.  In that case, the first one found in the text database is
-designated the "primary" name, and this is shown under the Nearest
-chip.  The other names are "aliases" and they are visible in other
-Pynche windows.
+    --initfile file
+    -i file
+        Alternate location of the persistent initialization file.  See 
+        the section on Persistency below.
 
-At the lower right of the main window are three entry fields.  Here
-you can type numeric values for any of the three color axes.  Legal
-values are between 0 and 255, and these fields do not allow you to
-enter illegal values.  You must hit Enter or Tab to select the new
-color.
+    --ignore
+    -X
+        Ignore the persistent initialization file when starting up.
+        Pynche will still write the current option settings to the
+        persistent init file when it quits.
 
-Click on "Update while typing" if you want Pynche to select the color
-on every keystroke (well, every one that produces a legal value!).
-Click on "Hexadecimal" to display and enter color values in hex.
+    --help
+    -h
+	Print the help message.
 
-There are three secondary windows which are not displayed by default.
-You can bring these up via the "View" menu on the main Pynche window.
+    initialcolor
+	a Tk color name or #rrggbb color spec to be used as the
+	initially selected color.  This overrides any color saved in
+	the persistent init file.  Since `#' needs to be escaped in
+	many shells, it is optional in the spec (e.g. #45dd1f is the
+	same as 45dd1f).
 
-The "Text Window" allows you to see what effects various colors have
-on the standard Tk text widget elements.  In the upper part of the
-window is a plain Tk text widget and here you can edit the text,
-select a region of text, etc.  Below this is a button "Track color
-changes".  When this is turned on, any colors selected in the other
-windows will change the text widget element specified in the radio
-buttons below.  When this is turned off, text widget elements are not
-affected by color selection.
+Running as a Modal Dialog
 
-You can choose which element gets changed by color selection by
-clicking on one of the radio buttons in the bottom part of this
-window.  Text foreground and background affect the text in the upper
-part of the window.  Selection foreground and background affect the
-colors of the primary selection which is what you see when you click
-the middle button (depending on window system) and drag it through
-some text.
+    Pynche can be run as a modal dialog, inside another application.
+    It supports the API implemented by the Tkinter standard
+    tkColorChooser module, with a few changes.  By importing
+    pyColorChooser from the Pynche package, you can run
 
-The Insertion is the insertion cursor in the text window, where new
-text will be inserted as you type.  The insertion cursor only has a
-background.
+        pyColorChooser.askcolor(master=window)
 
-The "Color List" window shows every color in the text database.  This
-is the primary reason why Pynche doesn't work so well on 8-bit
-screens.  In the upper part of the window you see a scrolling list of
-all the color names in the database, in alphabetical order.  Click on
-any color to select it.  In the bottom part of the window is displayed 
-any aliases for the selected color (those color names that have the
-same RGB value, but were found later in the text database).  For
-example, find the color "Black" and you'll see that its aliases are
-"gray0" and "grey0".
+    where `window' is an Tkinter parent window object.  Without the
+    `master' keyword argument, Pynche runs standalone.
 
-If the color has no aliases you'll see "<no aliases>" here.  If you
-just want to see if a color has an alias, and do not want to select a
-color when you click on it, turn off "Update on Click".
+    There are some UI differences when running as a modal
+    vs. standalone.  When running as a modal, there is no "File" menu,
+    but instead there are "Okay" and "Cancel" buttons.
 
-Note that the color list is always updated when a color is selected
-from the main window.  There's no way to turn this feature off.  If
-the selected color has no matching color name you'll see
-"<no matching color>" in the Aliases window.
+    When "Okay" is hit, askcolor() returns the tuple
 
-The "Details" window gives you more control over color selection than
-just clicking on a color chip in the main window.  The row of buttons
-along the top apply the specified increment and decrement amounts to
-the selected color.  These delta amounts are applied to the variation
-strips specified by the check boxes labeled "Move Sliders".  Thus if
-just Red and Green are selected, hitting -10 will subtract 10 from the 
-color value along the red and green variation only.  Note the message
-under the checkboxes; this indicates the primary color level being
-changed when more than one slider is tied together.  For example, if
-Red and Green are selected, you will be changing the Yellow level of
-the selected color.
+	((r, g, b), "name")
 
-The "At Boundary" behavior determines what happens when any color
-variation hits either the lower or upper boundaries (0 or 255) as a
-result of clicking on the top row buttons:
+    where r, g, and b are red, green, and blue color values
+    respectively (in the range 0 to 255).  "name" will be a color name
+    from the color database if there is an exact match, otherwise it
+    will be an X11 color spec of the form "#rrggbb".  Note that this
+    is different than tkColorChooser, which doesn't know anything
+    about color names.
+
+    When the optional keyword `wantspec' is true, a #rrggbb color spec 
+    will always be returned instead of a color name.
+
+    askcolor() also supports the following optional keyword arguments
+    which parallel the command line options described above:
+
+	initialcolor
+
+	databasefile
+	    similar to the --database option, the value must be a
+	    file name
+
+	initfile
+	    similar to the --initfile option, the value must be a
+	    file name
+
+	ignore
+	    similar to the --ignore flag, the value is a boolean
+
+The Colorstrip Window
+
+    The top part of the main Pynche window contains the "variation
+    strips".  Each strip contains a number of "color chips".  The
+    strips always indicate the currently selected color by a highlight
+    rectangle around the selected color chip, with an arrow pointing
+    to the chip.  Each arrow has an associated number giving you the
+    color value along the variation's axis.  Each variation strip
+    shows you the colors that are reachable from the selected color by
+    varying just one axis of the color solid.
+
+    For example, when the selected color is (in Red/Green/Blue
+    notation) 127/127/127, the Red Variations strip shows you every
+    color in the range 0/127/127 to 255/127/127.  Similarly for the
+    green and blue axes.  You can select any color by clicking on its
+    chip.  This will update the highlight rectangle and the arrow, as
+    well as other displays in Pynche.
+
+    Click on "Update while dragging" if you want Pynche to update the
+    selected color while you drag along any variation strip (this will
+    be slower).  Click on "Hexadecimal" to display the arrow numbers
+    in hex.
+
+The Proof Window
+
+    In the lower left corner of the main window you see two larger
+    color chips.  The Selected chip shows you a larger version of the
+    color selected in the variation strips, along with its X11 color
+    specification.  The Nearest chip shows you the closest color in
+    the X11 database to the selected color, giving its X11 color name.
+    Clicking on the Nearest color chip selects that color.  Color
+    distance is calculated in the 3D space of the RGB color solid and
+    if more than one color name is the same distance from the selected
+    color, the first one found will be chosen.
+
+    Note that there may be more than one X11 color name for the same
+    RGB value.  In that case, the first one found in the text database
+    is designated the "primary" name, and this is shown under the
+    Nearest chip.  The other names are "aliases" and they are visible
+    in other Pynche windows.
+
+The Type-in Window
+
+    At the lower right of the main window are three entry fields.
+    Here you can type numeric values for any of the three color axes.
+    Legal values are between 0 and 255, and these fields do not allow
+    you to enter illegal values.  You must hit Enter or Tab to select
+    the new color.
+
+    Click on "Update while typing" if you want Pynche to select the
+    color on every keystroke (well, every one that produces a legal
+    value!)  Click on "Hexadecimal" to display and enter color values
+    in hex.
+
+Other Views
+
+    There are three secondary windows which are not displayed by
+    default.  You can bring these up via the "View" menu on the main
+    Pynche window.
+
+The Text Window
+
+    The "Text Window" allows you to see what effects various colors
+    have on the standard Tk text widget elements.  In the upper part
+    of the window is a plain Tk text widget and here you can edit the
+    text, select a region of text, etc.  Below this is a button "Track
+    color changes".  When this is turned on, any colors selected in
+    the other windows will change the text widget element specified in
+    the radio buttons below.  When this is turned off, text widget
+    elements are not affected by color selection.
+
+    You can choose which element gets changed by color selection by
+    clicking on one of the radio buttons in the bottom part of this
+    window.  Text foreground and background affect the text in the
+    upper part of the window.  Selection foreground and background
+    affect the colors of the primary selection which is what you see
+    when you click the middle button (depending on window system) and
+    drag it through some text.
+
+    The Insertion is the insertion cursor in the text window, where
+    new text will be inserted as you type.  The insertion cursor only
+    has a background.
+
+The Color List Window
+
+    The "Color List" window shows every color in the text database
+    (this window may take a while to come up).  In the upper part of
+    the window you see a scrolling list of all the color names in the
+    database, in alphabetical order.  Click on any color to select it.
+    In the bottom part of the window is displayed any aliases for the
+    selected color (those color names that have the same RGB value,
+    but were found later in the text database).  For example, find the
+    color "Black" and you'll see that its aliases are "gray0" and
+    "grey0".
+
+    If the color has no aliases you'll see "<no aliases>" here.  If you
+    just want to see if a color has an alias, and do not want to select a
+    color when you click on it, turn off "Update on Click".
+
+    Note that the color list is always updated when a color is selected
+    from the main window.  There's no way to turn this feature off.  If
+    the selected color has no matching color name you'll see
+    "<no matching color>" in the Aliases window.
+
+The Details Window
+
+    The "Details" window gives you more control over color selection
+    than just clicking on a color chip in the main window.  The row of
+    buttons along the top apply the specified increment and decrement
+    amounts to the selected color.  These delta amounts are applied to
+    the variation strips specified by the check boxes labeled "Move
+    Sliders".  Thus if just Red and Green are selected, hitting -10
+    will subtract 10 from the color value along the red and green
+    variation only.  Note the message under the checkboxes; this
+    indicates the primary color level being changed when more than one
+    slider is tied together.  For example, if Red and Green are
+    selected, you will be changing the Yellow level of the selected
+    color.
+
+    The "At Boundary" behavior determines what happens when any color
+    variation hits either the lower or upper boundaries (0 or 255) as
+    a result of clicking on the top row buttons:
 
     Stop
         When the increment or decrement would send any of the tied
@@ -157,7 +258,7 @@ result of clicking on the top row buttons:
         way, all tied variations are squashed to one edge or the
         other.
 
-The top row buttons have the following keyboard accelerators:
+    The top row buttons have the following keyboard accelerators:
 
     -25 == Shift Left Arrow
     -10 == Control Left Arrow
@@ -166,9 +267,37 @@ The top row buttons have the following keyboard accelerators:
     +10 == Control Right Arrow
     +25 == Shift Right Arrow
 
-Other keyboard accelerators:
+Keyboard Accelerators
 
     Alt-w in any secondary window dismisses the window.  In the main
-    window it exits Pynche.
+    window it exits Pynche (except when running as a modal).
 
-    Alt-q in any window exits Pynche.
+    Alt-q in any window exits Pynche (except when running as a modal).
+
+Persistency
+
+    Pynche remembers various settings of options and colors between
+    invocations, storing these values in a `persistent initialization
+    file'.  The actual location of this file is specified by the
+    --initfile option (see above), and defaults to ~/.pynche.
+
+    When Pynche exits, it saves these values in the init file, and
+    re-reads them when it starts up.  There is no locking on this
+    file, so if you run multiple instances of Pynche at a time, you
+    will override the init file.
+
+    The actual options stored include
+
+    - the currently selected color
+
+    - all settings of checkbox and radio button options in all windows
+
+    - the contents of the text window, the current text selection and
+      insertion point, and all current text widget element color
+      settings.
+
+    You can inhibit Pynche from reading the init file by supplying the
+    --ignore option on the command line.  However, you cannot suppress
+    the storing of the settings in the init file on Pynche exit.  If
+    you really want to do this, use /dev/null as the init file, using
+    --initfile.
