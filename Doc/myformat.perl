@@ -153,13 +153,32 @@ sub my_parword_index_helper{
 	&make_index_entry($br_id, "$str ($word)") . $_;
 }
 
+sub make_mod_index_entry {
+    local($br_id,$str,$define) = @_;
+    # If TITLE is not yet available (i.e the \index command is in the title of the
+    # current section), use $ref_before.
+    $TITLE = $ref_before unless $TITLE;
+    # Save the reference
+    $str = &gen_index_id($str, $define);
+    $index{$str} .= &make_half_href("$CURRENT_FILE#$br_id");
+    "<A NAME=\"$br_id\">$anchor_invisible_mark<\/A>";
+}
+
+sub my_module_index_helper{
+	local($word, $_, $define) = @_;
+	s/$next_pair_pr_rx//o;
+	local($br_id, $str) = ($1, $2);
+	&make_mod_index_entry($br_id, "<tt>$str</tt> ($word module)",
+			      $define) . $_;
+}
+
 sub do_cmd_bifuncindex{ &my_parword_index_helper('built-in function', @_); }
-sub do_cmd_bimodindex{ &my_parword_index_helper('built-in module', @_); }
-sub do_cmd_stmodindex{ &my_parword_index_helper('standard module', @_); }
+sub do_cmd_bimodindex{ &my_module_index_helper('built-in', @_, 'DEF'); }
+sub do_cmd_stmodindex{ &my_module_index_helper('standard', @_, 'DEF'); }
 sub do_cmd_bifuncindex{ &my_parword_index_helper('standard module', @_); }
 
-sub do_cmd_refbimodindex{ &my_parword_index_helper('built-in module', @_); }
-sub do_cmd_refstmodindex{ &my_parword_index_helper('standard module', @_); }
+sub do_cmd_refbimodindex{ &my_module_index_helper('built-in', @_, 'REF'); }
+sub do_cmd_refstmodindex{ &my_module_index_helper('standard', @_, 'REF'); }
 
 sub do_cmd_nodename{ &do_cmd_label(@_); }
 
@@ -170,6 +189,20 @@ sub get_indexsubitem{
   local($result) = $new_command{"indexsubitem"};
   #print "\nget_indexsubitem ==> $result\n";
   $result;
+}
+
+# similar to make_index_entry(), but includes the string in the result
+# instead of the dummy filler.
+#
+sub make_str_index_entry {
+    local($br_id,$str) = @_;
+    # If TITLE is not yet available (i.e the \index command is in the title
+    # of the current section), use $ref_before.
+    $TITLE = $ref_before unless $TITLE;
+    # Save the reference
+    local($nstr) = &gen_index_id($str, '');
+    $index{$nstr} .= &make_half_href("$CURRENT_FILE#$br_id");
+    "<a name=\"$br_id\">$str<\/a>";
 }
 
 sub do_env_cfuncdesc{
