@@ -9,9 +9,8 @@ import sys
 
 def parse_line(input):
     lineno = string.split(input)[-1]
-    module = input[:len(input)-(len(lineno)+1)]
+    module = string.strip(input[:len(input)-(len(lineno)+1)])
     return module, lineno
-    return 
 
 
 def cmp_items((s1, line1), (s2, line2)):
@@ -54,7 +53,7 @@ def main():
 	if string.lower(module[0]) != prev_letter:
 	    ofp.write("\n  \\indexspace\n\n")
 	    prev_letter = string.lower(module[0])
-	ofp.write("  \\item {\\tt %s} %s\n" % (module, lineno))
+	ofp.write("  \\item {\\tt %s}, %s\n" % (module, lineno))
     ofp.write("\n\\end{theindex}\n")
 
 
