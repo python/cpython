@@ -1380,7 +1380,7 @@ PySequence_Tuple(PyObject *v)
 		return NULL;
 
 	/* Guess result size and allocate space. */
-	n = PySequence_Size(v);
+	n = PyObject_Size(v);
 	if (n < 0) {
 		PyErr_Clear();
 		n = 10;  /* arbitrary */
