@@ -1120,6 +1120,79 @@ def supers():
 
     verify (D().meth(4) == "D(4)C(4)B(4)A(4)")
 
+def inherits():
+    if verbose: print "Testing inheritance from basic types..."
+
+    class hexint(int):
+        def __repr__(self):
+            return hex(self)
+        def __add__(self, other):
+            return hexint(int.__add__(self, other))
+        # (Note that overriding __radd__ doesn't work,
+        # because the int type gets first dibs.)
+    verify(repr(hexint(7) + 9) == "0x10")
+    verify(repr(hexint(1000) + 7) == "0x3ef")
+
+    class octlong(long):
+        __slots__ = []
+        def __str__(self):
+            s = oct(self)
+            if s[-1] == 'L':
+                s = s[:-1]
+            return s
+        def __add__(self, other):
+            return self.__class__(super(octlong, self).__add__(other))
+        __radd__ = __add__
+    verify(str(octlong(3) + 5) == "010")
+    # (Note that overriding __radd__ here only seems to work
+    # because the example uses a short int left argument.)
+    verify(str(5 + octlong(3000)) == "05675")
+
+    class precfloat(float):
+        __slots__ = ['prec']
+        def __init__(self, value=0.0, prec=12):
+            self.prec = int(prec)
+            float.__init__(value)
+        def __repr__(self):
+            return "%.*g" % (self.prec, self)
+    verify(repr(precfloat(1.1)) == "1.1")
+
+    class madtuple(tuple):
+        _rev = None
+        def rev(self):
+            if self._rev is not None:
+                return self._rev
+            L = list(self)
+            L.reverse()
+            self._rev = self.__class__(L)
+            return self._rev
+    a = madtuple((1,2,3,4,5,6,7,8,9,0))
+    verify(a.rev() == madtuple((0,9,8,7,6,5,4,3,2,1)))
+    verify(a.rev().rev() == madtuple((1,2,3,4,5,6,7,8,9,0)))
+    for i in range(512):
+        t = madtuple(range(i))
+        u = t.rev()
+        v = u.rev()
+        verify(v == t)
+
+    class madstring(str):
+        _rev = None
+        def rev(self):
+            if self._rev is not None:
+                return self._rev
+            L = list(self)
+            L.reverse()
+            self._rev = self.__class__("".join(L))
+            return self._rev
+    s = madstring("abcdefghijklmnopqrstuvwxyz")
+    verify(s.rev() == madstring("zyxwvutsrqponmlkjihgfedcba"))
+    verify(s.rev().rev() == madstring("abcdefghijklmnopqrstuvwxyz"))
+    for i in range(256):
+        s = madstring("".join(map(chr, range(i))))
+        t = s.rev()
+        u = t.rev()
+        verify(u == s)
+
 def all():
     lists()
     dicts()
@@ -1151,6 +1224,7 @@ def all():
     weakrefs()
     getsets()
     supers()
+    inherits()
 
 all()
 
