@@ -1294,16 +1294,21 @@ class Canvas(Widget):
 		self.tk.call((self._w, 'itemconfigure', tagOrId) +
 			     self._options(cnf, kw))
 	itemconfig = itemconfigure
-	def lower(self, *args):
+	# lower, tkraise/lift hide Misc.lower, Misc.tkraise/lift,
+	# so the preferred name for them is tag_lower, tag_raise
+	# (similar to tag_bind, and similar to the Text widget);
+	# unfortunately can't delete the old ones yet (maybe in 1.6)
+	def tag_lower(self, *args):
 		self.tk.call((self._w, 'lower') + args)
+	lower = tag_lower
 	def move(self, *args):
 		self.tk.call((self._w, 'move') + args)
 	def postscript(self, cnf={}, **kw):
 		return self.tk.call((self._w, 'postscript') +
 				    self._options(cnf, kw))
-	def tkraise(self, *args):
+	def tag_raise(self, *args):
 		self.tk.call((self._w, 'raise') + args)
-	lift = tkraise
+	lift = tkraise = tag_raise
 	def scale(self, *args):
 		self.tk.call((self._w, 'scale') + args)
 	def scan_mark(self, x, y):
