@@ -29,24 +29,33 @@ PERFORMANCE OF THIS SOFTWARE.
 
 ******************************************************************/
 
+/*
+** There are various sources of unix-like error numbers: GUSI headers,
+** MSL headers and Carbon-specific MSL headers. The later are triggered,
+** apparently, by the _POSIX define.
+*/
 #ifndef USE_GUSI2
 #define ENOTDIR		(-120)
 #ifndef __MSL__
 #define EACCES		(-54)
 #endif
+#ifndef _POSIX
 #define EEXIST		(-48)
-#define EBUSY		(-47)
-#define EROFS		(-44)
 #define ENOENT		(-43)
 #define ENFILE		(-42)
-#define	EIO			(-36)
 #define ENOSPC		(-34)
+#define	EIO			(-36)
+#endif
+#define EBUSY		(-47)
+#define EROFS		(-44)
 #endif
 
 #define ESRCH		3
 #define EINTR		4
-#define EBADF		9
 #define ENODEV		19
+#ifndef _POSIX
+#define EBADF		9
 #define EINVAL		22
 #define EMFILE		24
+#endif
 
