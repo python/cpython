@@ -113,9 +113,7 @@ typedef struct {
 /* A forward reference to the Socktype type object.
    The Socktype variable contains pointers to various functions,
    some of which call newsocobject(), which uses Socktype, so
-   there has to be a circular reference.  If your compiler complains
-   that it is first declared 'extern' and later 'static', remove the
-   'static' keyword from the actual definition. */
+   there has to be a circular reference. */
 
 extern typeobject Socktype; /* Forward */
 
@@ -622,10 +620,10 @@ sock_getattr(s, name)
 
 
 /* Type object for socket objects.
-   If your compiler complains that it is first declared 'extern'
-   and later 'static', remove the 'static' keyword here. */
+   XXX This should be static, but some compilers don't grok the
+   XXX forward reference to it in that case... */
 
-static typeobject Socktype = {
+typeobject Socktype = {
 	OB_HEAD_INIT(&Typetype)
 	0,
 	"socket",
