@@ -5410,18 +5410,12 @@ posix_putenv(PyObject *self, PyObject *args)
     if (stricmp(s1, "BEGINLIBPATH") == 0) {
         APIRET rc;
 
-        if (strlen(s2) == 0)  /* If New Value is an Empty String */
-            s2 = NULL;        /* Then OS/2 API Wants a NULL to Undefine It */
-
         rc = DosSetExtLIBPATH(s2, BEGIN_LIBPATH);
         if (rc != NO_ERROR)
             return os2_error(rc);
 
     } else if (stricmp(s1, "ENDLIBPATH") == 0) {
         APIRET rc;
-
-        if (strlen(s2) == 0)  /* If New Value is an Empty String */
-            s2 = NULL;        /* Then OS/2 API Wants a NULL to Undefine It */
 
         rc = DosSetExtLIBPATH(s2, END_LIBPATH);
         if (rc != NO_ERROR)
@@ -7265,7 +7259,7 @@ static int insertvalues(PyObject *module)
     char     *ver, tmp[50];
 
     Py_BEGIN_ALLOW_THREADS
-    rc = DosQuerySysInfo(1, QSV_MAX, &values[1], sizeof(values));
+    rc = DosQuerySysInfo(1L, QSV_MAX, &values[1], sizeof(ULONG) * QSV_MAX);
     Py_END_ALLOW_THREADS
 
     if (rc != NO_ERROR) {
