@@ -2,27 +2,22 @@
 
 
 def vec(*v):
-    return apply(Vec, v)
+    return Vec(*v)
 
 
 class Vec:
 
     def __init__(self, *v):
-        self.v = []
-        for x in v:
-            self.v.append(x)
-
+        self.v = list(v)
 
     def fromlist(self, v):
-        self.v = []
-        if type(v) <> type([]):
+        if not isinstance(v, list):
             raise TypeError
         self.v = v[:]
         return self
 
-
     def __repr__(self):
-        return 'vec(' + `self.v`[1:-1] + ')'
+        return 'vec(' + repr(self.v)[1:-1] + ')'
 
     def __len__(self):
         return len(self.v)
@@ -30,25 +25,19 @@ class Vec:
     def __getitem__(self, i):
         return self.v[i]
 
-    def __add__(a, b):
+    def __add__(self, other):
         # Element-wise addition
-        v = []
-        for i in range(len(a)):
-            v.append(a[i] + b[i])
+        v = map(lambda x, y: x+y, self, other)
         return Vec().fromlist(v)
 
-    def __sub__(a, b):
+    def __sub__(self, other):
         # Element-wise subtraction
-        v = []
-        for i in range(len(a)):
-            v.append(a[i] - b[i])
+        v = map(lambda x, y: x-y, self, other)
         return Vec().fromlist(v)
 
     def __mul__(self, scalar):
         # Multiply by scalar
-        v = []
-        for i in range(len(self.v)):
-            v.append(self.v[i]*scalar)
+        v = map(lambda x: x*scalar, self.v)
         return Vec().fromlist(v)
 
 
@@ -59,6 +48,7 @@ def test():
     print a
     print b
     print a+b
+    print a-b
     print a*3.0
 
 test()
