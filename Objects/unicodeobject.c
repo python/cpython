@@ -1191,8 +1191,8 @@ PyObject *PyUnicode_EncodeUTF8(const Py_UNICODE *s,
         }
 
         else if (ch < 0x0800) {
-            *p++ = 0xc0 | (ch >> 6);
-            *p++ = 0x80 | (ch & 0x3f);
+            *p++ = (char)(0xc0 | (ch >> 6));
+            *p++ = (char)(0x80 | (ch & 0x3f));
             cbWritten += 2;
         }
                         
@@ -1230,10 +1230,10 @@ PyObject *PyUnicode_EncodeUTF8(const Py_UNICODE *s,
 		cbWritten += 3;
     
 	    } else {
-		*p++ = 0xf0 | (ch>>18);
-		*p++ = 0x80 | ((ch>>12) & 0x3f);
-		*p++ = 0x80 | ((ch>>6) & 0x3f);
-		*p++ = 0x80 | (ch & 0x3f);
+		*p++ = (char)(0xf0 | (ch>>18));
+		*p++ = (char)(0x80 | ((ch>>12) & 0x3f));
+		*p++ = (char)(0x80 | ((ch>>6) & 0x3f));
+		*p++ = (char)(0x80 | (ch & 0x3f));
 		cbWritten += 4;
 	    }
 	}
