@@ -154,7 +154,7 @@ mul(v, w)
 }
 
 static object *
-div(v, w)
+divide(v, w)
 	object *v, *w;
 {
 	if (v->ob_type->tp_as_number != NULL)
@@ -797,7 +797,7 @@ eval_code(co, globals, locals, arg)
 		case BINARY_DIVIDE:
 			w = POP();
 			v = POP();
-			x = div(v, w);
+			x = divide(v, w);
 			DECREF(v);
 			DECREF(w);
 			PUSH(x);
