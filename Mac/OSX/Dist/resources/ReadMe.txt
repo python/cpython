@@ -1,4 +1,4 @@
-This package will install MacPython 2.3 for Mac OS X
+This package will install MacPython 2.3.2 for Mac OS X
 10.2. Installation on the Panther preview may work, on
 10.1 or earlier will not work.
 

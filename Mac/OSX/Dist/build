@@ -5,7 +5,7 @@
 # TODO:  Parameterize the versions, builddirs, etc...
 
 # Script configs
-PYVERSION=2.3
+PYVERSION=2.3.2
 PYVER=2.3
 BUILDNUM=1
 DOCLEANUP=no
