@@ -31,12 +31,10 @@ All implementations of Mailbox objects have one externally visible
 method:
 
 \begin{funcdesc}{next}{}
-Return the next message in the mailbox, as a \code{rfc822.Message} object=
-=2E
+Return the next message in the mailbox, as a \code{rfc822.Message} object.
 Depending on the mailbox implementation the \var{fp} attribute of this
-object may be a true file object or a class instance simulating a file ob=
-ject,
-taking care of things like message boundaries if multiple mail messages a=
-re
+object may be a true file object or a class instance simulating a file object,
+taking care of things like message boundaries if multiple mail messages are
 contained in a single file, etc.
 \end{funcdesc}
+

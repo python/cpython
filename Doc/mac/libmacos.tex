@@ -20,48 +20,35 @@ Symbolic names for all known error codes are defined in the standard
 module \var{macerrors}.
 \end{excdesc}
 
-\begin{funcdesc}{SetHighLevelEventHandler}{handler}
-Pass a python function that will be called upon reception of a
-high-level event. The previous handler is returned. The handler
-function is called with the event as argument.
+\begin{funcdesc}{SetEventHandler}{handler}
+In the inner interpreter loop Python will occasionally check for events,
+unless disabled with \var{ScheduleParams}. With this function you
+can pass a Python event-handler function that will be called if an event
+is available. The event is passed as parameter and the function should return
+non-zero if the event has been fully processed, otherwise event processing
+continues (by passing the event to the console window package, for instance).
 
-Note that your event handler is currently only called dependably if
-your main event loop is in \var{stdwin}.
+Call SetEventHandler without parameter to clear the event handler. Setting
+an eventhandler while one is already set is an error.
 \end{funcdesc}
 
-\begin{funcdesc}{AcceptHighLevelEvent}{}
-Read a high-level event. The return value is a tuple \code{(sender,
-refcon, data)}.
-\end{funcdesc}
+\begin{funcdesc}{SchedParams}{\optional{doint\, evtmask\, besocial\, 
+				interval\, bgyield}}
+Influence the interpreter inner loop event handling. \var{Interval}
+specifies how often (in seconds, floating point) the interpreter
+should enter the event processing code. When true, \var{doint} causes
+interrupt (command-dot) checking to be done. \var{Evtmask} tells the
+interpreter to do event processing for events in the mask (redraws,
+mouseclicks to switch to other applications, etc). \bar{Besocial}
+gives other processes a chance to run. They are granted minimal
+runtime when Python is in the foreground and \var{bgyield} seconds per
+\var{interval} when Python runs in the background.
 
-\begin{funcdesc}{SetScheduleTimes}{fgi\, fgy \optional{\, bgi\, bgy}}
-Controls how often the interpreter checks the event queue and how
-long it will yield the processor to other processes. \var{fgi}
-specifies after how many clicks (one click is one 60th of a second)
-the interpreter should check the event queue, and \var{fgy} specifies
-for how many clicks the CPU should be yielded when in the
-foreground. The optional \var{bgi} and \var{bgy} allow you to specify
-different values to use when python runs in the background, otherwise
-the background values will be set the the same as the foreground
-values. The function returns nothing.
-
-The default values, which are based on minimal empirical testing, are 12, 1, 6
-and 2 respectively.
-\end{funcdesc}
-
-\begin{funcdesc}{EnableAppswitch}{onoff}
-Enable or disable the python event loop, based on the value of
-\var{onoff}. The old value is returned. If the event loop is disabled
-no time is granted to other applications, checking for command-period
-is not performed and it is impossible to switch applications. This
-should only be used by programs providing their own complete event
-loop.
-
-Note that based on the compiler used to build python it is still
-possible to loose events even with the python event loop disabled. If
-you have a \code{sys.stdout} window its handler will often also look
-in the event queue. Making sure nothing is ever printed works around
-this.
+All parameters are optional, and default to the current value. The return
+value of this function is a tuple with the old values of these options.
+Initial defaults are that all processing is enabled, checking is done every
+quarter second and the CPU is given up for a quarter second when in the
+background.
 \end{funcdesc}
 
 \begin{funcdesc}{HandleEvent}{ev}
@@ -70,6 +57,9 @@ possibly to the handler for the \code{sys.stdout} window (based on the
 compiler used to build python). This allows python programs that do
 their own event handling to still have some command-period and
 window-switching capability.
+
+If you attempt to call this function from an event handler set through
+\code{SetEventHandler} you will get an exception.
 \end{funcdesc}
 
 \begin{funcdesc}{GetErrorString}{errno}

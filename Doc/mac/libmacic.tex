@@ -1,0 +1,120 @@
+\section{Standard Module \sectcode{ic}}
+\bimodindex{ic}
+
+\renewcommand{\indexsubitem}{(in module ic)}
+
+This module provides access to macintosh Internet Config package,
+which stores preferences for Internet programs such as mail address,
+default homepage, etc. Also, Internet Config contains an elaborate set
+of mappings from Macintosh creator/type codes to foreign filename
+extensions plus information on how to transfer files (binary, ascii,
+etc). 
+
+There is a low-level companion module \code{icglue} which provides the
+basic ic access functionality. This low-level module is not
+documented, but the docstrings of the routines document the parameters
+and the routine names are the same as for the Pascal or C API to
+Internet Config, so the standard IC programmers documentation can be
+used if this module is needed.
+
+The \code{ic} module defines the \code{error} exception and symbolic
+names for all error codes IC can produce, see the source for details.
+
+The \code{ic} module defines the following functions:
+
+\begin{funcdesc}{IC}{\optional{signature\, ic}}
+Create an internet config object. The signature is a 4-char creator
+code of the current application (default \code{'Pyth'}) which may
+influence some of ICs settings. The optional \var{ic} argument is a
+low-level \code{icinstance} created beforehand, this may be useful if
+you want to get preferences from a different config file, etc.
+\end{funcdesc}
+
+\begin{funcdesc}{launchurl}{url \optional{\, hint}}
+\end{funcdesc}
+\begin{funcdesc}{parseurl}{data \optional{\, start\, end\, hint}}
+\end{funcdesc}
+\begin{funcdesc}{mapfile}{file}
+\end{funcdesc}
+\begin{funcdesc}{maptypecreator}{type\, creator \optional{\,
+	filename}}
+\end{funcdesc}
+\begin{funcdesc}{settypecreator}{file}
+These functions are ``shortcuts'' to the methods of the same name,
+described below.
+\end{funcdesc}
+
+
+\subsection{IC objects}
+
+IC objects have a mapping interface, hence to obtain the mail address
+you simply get \code{ic['MailAddress']}. Assignment also works, and
+changes the option in the configuration file.
+
+The module knows about various datatypes, and converts the internal IC
+representation to a ``logical'' python datastructure. Running the
+\code{ic} module standalone will run a test program that lists all
+keys and values in your IC database, this will have to server as
+documentation.
+
+If the module does not know how to represent the data it returns an
+instance of the \var{ICOpaqueData} type, with the raw data in its
+\var{data} attribute. Objects of this type are also acceptable values
+for assignment.
+
+Besides the dictionary interface IC objects have the following methods:
+
+\renewcommand{\indexsubitem}{(IC object attribute)}
+
+\begin{funcdesc}{launchurl}{url \optional{\, hint}}
+Parse the given URL, lauch the correct application and pass it the
+URL. The optional \var{hint} can be a scheme name such as
+\code{mailto:}, in which case incomplete URLs are completed with this
+scheme (otherwise incomplete URLs are invalid). 
+\end{funcdesc}
+
+\begin{funcdesc}{parseurl}{data \optional{\, start\, end\, hint}}
+Find an URL somewhere in \var{data} and return start position, end
+position and the URL. The optional \var{start} and \var{end} can be
+used to limit the search, so for instance if a user clicks in a long
+textfield you can pass the whole textfield and the click-position in
+\var{start} and this routine will return the whole URL in which the
+user clicked. \var{Hint} is again an optional scheme used to complete
+incomplete URLs.
+\end{funcdesc}
+
+\begin{funcdesc}{mapfile}{file}
+Return the mapping entry for the given \var{file}, which can be passed
+as either a filename or an \var{FSSpec} object, and which need not
+exist.
+
+The mapping entry is returned as a tuple \code{(version\, type\,
+creator\, postcreator\, flags\, extension\, appname\, postappname\,
+mimetype\, entryname)}, where \var{version} is the entry version
+number, \var{type} is the 4-char filetype, \var{creator} is the 4-char
+creator type, \var{postcreator} is the 4-char creator code of an
+optional application to post-process the file after downloading,
+\var{flags} are various bits specifying whether to transfer in binary
+or ascii and such, \var{extension} is the filename extension for this
+file type, \var{appname} is the printable name of the application to
+which this file belongs, \var{postappname} is the name of the
+postprocessing application, \var{mimetype} is the MIME type of this
+file and \var{entryname} is the name of this entry.
+\end{funcdesc}
+
+\begin{funcdesc}{maptypecreator}{type\, creator \optional{\,
+	filename}}
+Return the mapping entry for files with given 4-char \var{type} and
+\var{creator} codes. The optional \var{filename} may be specified to
+further help finding the correct entry (if the creator code is
+\code{'????'}, for instance).
+
+The mapping entry is returned in the same format as for \var{mapfile}.
+\end{funcdesc}
+
+\begin{funcdesc}{settypecreator}{file}
+Given an existing \var{file}, specified either as a filename or as an
+\var{FSSpec} record, set its creator and type correctly based on its
+extension. The finder is told about the change, so the finder icon
+will be updated quickly.
+\end{funcdesc}
