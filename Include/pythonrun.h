@@ -7,14 +7,9 @@
 extern "C" {
 #endif
 
-/* These flags are named after the __future__ statements that introduced
-   them.  May not remain true for later additions, so fiddle this comment
-   accordingly then. */
-#define PyCF_NESTED_SCOPES	(0x00000001UL)
-#define PyCF_GENERATORS		(0x00000002UL)
-#define PyCF_DIVISION		(0x00000004UL)
+#define PyCF_MASK (CO_GENERATOR_ALLOWED | CO_FUTURE_DIVISION)
 typedef struct {
-	unsigned long cf_flags;  /* bitmask of PyCF_xxx flags */
+	int cf_flags;  /* bitmask of CO_xxx flags relevant to future */
 } PyCompilerFlags;
 
 DL_IMPORT(void) Py_SetProgramName(char *);
