@@ -189,9 +189,9 @@ def isname(name):
 def _group(escape, groups):
     # check if the escape string represents a valid group
     try:
-        group = int(escape[1:])
-        if group and group < groups:
-            return group
+        gid = int(escape[1:])
+        if gid and gid < groups:
+            return gid
     except ValueError:
         pass
     return None # not a valid group
@@ -442,7 +442,20 @@ def _parse(source, state, flags=0):
                             raise error, "illegal character in group name"
                     elif source.match("="):
                         # named backreference
-                        raise error, "not yet implemented"
+                        name = ""
+                        while 1:
+                            char = source.get()
+                            if char is None:
+                                raise error, "unterminated name"
+                            if char == ")":
+                                break
+                            name = name + char
+                        if not isname(name):
+                            raise error, "illegal character in group name"
+                        gid = state.groupdict.get(name)
+                        if gid is None:
+                            raise error, "unknown group name"
+                        subpattern.append((GROUP, gid))
                     else:
                         char = source.get()
                         if char is None:
