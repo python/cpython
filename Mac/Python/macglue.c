@@ -1175,3 +1175,26 @@ PyMac_BuildFixed(Fixed f)
 	return Py_BuildValue("d", d);
 }
 
+/* Convert wide to/from Python int or (hi, lo) tuple. XXXX Should use Python longs */
+int
+PyMac_Getwide(PyObject *v, wide *rv)
+{
+	if (PyInt_Check(v)) {
+		rv->hi = 0;
+		rv->lo = PyInt_AsLong(v);
+		if( rv->lo & 0x80000000 )
+			rv->hi = -1;
+		return 1;
+	}
+	return PyArg_Parse(v, "(ll)", &rv->hi, &rv->lo);
+}
+
+
+PyObject *
+PyMac_Buildwide(wide w)
+{
+	if ( (w.hi == 0 && (w.lo & 0x80000000) == 0) ||
+	     (w.hi == -1 && (w.lo & 0x80000000) ) )
+		return PyInt_FromLong(w.lo);
+	return Py_BuildValue("(ll)", w.hi, w.lo);
+}
