@@ -52,6 +52,11 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <SIOUX.h>
 #endif
 
+#ifdef NT
+#undef BYTE
+#include "windows.h"
+#endif
+
 extern char *getpythonpath();
 
 extern grammar gram; /* From graminit.c */
@@ -562,6 +567,11 @@ fatal(msg)
 	fprintf(stderr, "Fatal Python error: %s\n", msg);
 #ifdef macintosh
 	for (;;);
+#endif
+#ifdef NT
+	OutputDebugString("Fatal Python error:");
+	OutputDebugString(msg);
+	OutputDebugString("\n");
 #endif
 	abort();
 }
