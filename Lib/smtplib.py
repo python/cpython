@@ -636,7 +636,7 @@ class SMTP:
             self.rset()
             raise SMTPSenderRefused(code, resp, from_addr)
         senderrs={}
-        if type(to_addrs) == types.StringType:
+        if isinstance(to_addrs, types.StringTypes):
             to_addrs = [to_addrs]
         for each in to_addrs:
             (code,resp)=self.rcpt(each, rcpt_options)
