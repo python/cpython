@@ -593,7 +593,6 @@ _expectations = {
         test_largefile
         test_nis
         test_ntpath
-        test_ossaudiodev
         test_socketserver
         test_sunaudiodev
         test_unicode_file
