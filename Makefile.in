@@ -60,6 +60,11 @@
 # different betas of the same version will overwrite each other in
 # installation unless you override the VERSION Make variable.)
 # 
+# In fact, "make install" or "make bininstall" installs the binary
+# as python<version> and makes a hard link to python, so when
+# installing a new version in the future, nothing of the current
+# version will be lost (except for the man page).
+# 
 # If recursive makes fail, try invoking make as "make MAKE=make".
 # 
 # See also the section "Build instructions" in the README file.
@@ -145,26 +150,21 @@ test:		python
 		PYTHONPATH=$(TESTPATH) ./python -c 'import autotest'
 
 # Install everything
-install:	bininstall maninstall libinstall inclinstall \
-		libainstall sharedinstall
+install:	altintall bininstall maninstall
 
-# Install most things with $(VERSION) affixed
+# Install almost everything without disturbing previous versions
 altinstall:	altbininstall libinstall inclinstall libainstall sharedinstall
 
-# Install the interpreter
-bininstall:	python
-		@for i in $(BINDIR); \
-		do \
-			if test ! -d $$i; then \
-				echo "Creating directory $$i"; \
-				mkdir $$i; \
-				chmod 755 $$i; \
-			else	true; \
-			fi; \
-		done
-		$(INSTALL_PROGRAM) python $(BINDIR)/python
+# Install the interpreter (by creating a hard link to python$(VERSION))
+bininstall:	altbininstall
+		-if test -f $(BINDIR)/python; \
+		then rm -f $(BINDIR)/python; \
+		else true; \
+		fi
+		(cd $(BINDIR); ln python$(VERSION) python)
 
 # Install the interpreter with $(VERSION) affixed
+# This goes into $(exec_prefix)
 altbininstall:	python
 		@for i in $(BINDIR); \
 		do \
@@ -194,7 +194,7 @@ maninstall:
 # Install the library
 LIBDEST=	$(SCRIPTDIR)/python$(VERSION)
 LIBSUBDIRS=	stdwin tkinter test $(MACHDEP)
-libinstall:	python
+libinstall:	python $(srcdir)/Lib/$(MACHDEP)
 		@for i in $(SCRIPTDIR) $(LIBDEST); \
 		do \
 			if test ! -d $$i; then \
@@ -251,6 +251,14 @@ libinstall:	python
 		PYTHONPATH=$(LIBDEST) \
 			./python $(LIBDEST)/compileall.py $(LIBDEST)
 
+# Create the MACHDEP source directory, if one wasn't distributed..
+# XXX This requires Tools/scripts/h2py.py which requires /usr/local/bin/python.
+# Oh well, it's a hint that something should be done.
+$(srcdir)/Lib/$(MACHDEP):
+		mkdir $(srcdir)/Lib/$(MACHDEP)
+		cp $(srcdir)/Lib/generic/regen $(srcdir)/Lib/$(MACHDEP)/regen
+		(cd $(srcdir)/Lib/$(MACHDEP); ./regen)
+
 # Install the include files
 INCLUDEPY=	$(INCLUDEDIR)/python$(VERSION)
 inclinstall:
@@ -270,6 +278,7 @@ inclinstall:
 		done
 
 # Install the lib*.a files and miscellaneous stuff needed by extensions
+# This goes into $(exec_prefix)
 LIBP=		$(LIBDIR)/python$(VERSION)
 LIBPL=		$(LIBP)/config
 libainstall:	all
@@ -298,6 +307,7 @@ libainstall:	all
 		$(INSTALL_DATA) Modules/main.o $(LIBPL)/main.o
 
 # Install the dynamically loadable modules
+# This goes into $(exec_prefix)
 sharedinstall:
 		cd Modules; $(MAKE) \
 			OPT="$(OPT)" \
