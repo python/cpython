@@ -98,8 +98,10 @@ EXPORTS
 	PyErr_BadInternalCall
 	PyErr_CheckSignals
 	PyErr_Clear
+	PyErr_ExceptionMatches
 	PyErr_Fetch
 	PyErr_Format
+	PyErr_GivenExceptionMatches
 	PyErr_NewException
 	PyErr_NoMemory
 	PyErr_Occurred
