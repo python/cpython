@@ -532,6 +532,13 @@ See the \code{slice()}\bifuncindex{slice} built-in function for more
 information.
 \end{opcodedesc}
 
+\begin{opcodedesc}{EXTENDED_ARG}{ext}
+Prefixes any opcode which has an argument too big to fit into the
+default two bytes.  \var{ext} holds two additional bytes which, taken
+together with the subsequent opcode's argument, comprise a four-byte
+argument, \var {ext} being the two most-significant bytes.
+\end{opcodedesc}
+
 \begin{opcodedesc}{CALL_FUNCTION_VAR}{argc}
 Calls a function. \var{argc} is interpreted as in \code{CALL_FUNCTION}.
 The top element on the stack contains the variable argument list, followed
