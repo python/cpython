@@ -112,7 +112,7 @@ newnfa(name)
 	char *name;
 {
 	nfa *nf;
-	static type = NT_OFFSET; /* All types will be disjunct */
+	static int type = NT_OFFSET; /* All types will be disjunct */
 	
 	nf = PyMem_NEW(nfa, 1);
 	if (nf == NULL)
