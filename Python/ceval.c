@@ -2856,8 +2856,9 @@ find_from_args(PyFrameObject *f, int nexti)
 		if (!name)
 			Py_DECREF(list);
 		else {
-			if (PyList_Append(list, name) < 0)
+			if (PyList_Append(list, name) < 0) {
 				Py_DECREF(list);
+			}
 			Py_DECREF(name);
 		}
 	} else {
