@@ -15,21 +15,15 @@ from distutils.util import mkpath, newer, make_file, copy_file
 class BuildPy (Command):
 
     options = [('dir=', 'd', "directory for platform-shared files"),
-               ('compile', 'c', "compile .py to .pyc"),
-               ('optimize', 'o', "compile .py to .pyo (optimized)"),
               ]
 
 
     def set_default_options (self):
         self.dir = None
-        self.compile = 1
-        self.optimize = 1
 
     def set_final_options (self):
         self.set_undefined_options ('build',
-                                    ('libdir', 'dir'),
-                                    ('compile_py', 'compile'),
-                                    ('optimize_py', 'optimize'))
+                                    ('libdir', 'dir'))
 
 
     def run (self):
@@ -88,25 +82,5 @@ class BuildPy (Command):
                 created[outdir] = 1
 
             self.copy_file (infiles[i], outfiles[i])
-
-        # (Optionally) compile .py to .pyc
-        # XXX hey! we can't control whether we optimize or not; that's up
-        # to the invocation of the current Python interpreter (at least
-        # according to the py_compile docs).  That sucks.
-
-        if self.compile:
-            from py_compile import compile
-
-            for f in outfiles:
-                # XXX can't assume this filename mapping!
-                out_fn = string.replace (f, '.py', '.pyc')
-                
-                self.make_file (f, out_fn, compile, (f,),
-                                "compiling %s -> %s" % (f, out_fn),
-                                "compilation of %s skipped" % f)
-
-        # XXX ignore self.optimize for now, since we don't really know if
-        # we're compiling optimally or not, and couldn't pick what to do
-        # even if we did know.  ;-(
                        
 # end class BuildPy
