@@ -50,9 +50,7 @@ Module interface:
   specifying the ethernet interface and an integer specifying
   the Ethernet protocol number to be received. For example:
   ("eth0",0x1234).  Optional 3rd,4th,5th elements in the tuple
-  specify packet-type and ha-type/addr -- these are ignored by
-  networking code, but accepted since they are returned by the
-  getsockname() method.
+  specify packet-type and ha-type/addr.
 
 Local naming conventions:
 
@@ -1223,10 +1221,12 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
 		int protoNumber;
 		int hatype = 0;
 		int pkttype = 0;
-		char *haddr;
+		char *haddr = NULL;
+		unsigned int halen = 0;
 
-		if (!PyArg_ParseTuple(args, "si|iis", &interfaceName,
-				      &protoNumber, &pkttype, &hatype, &haddr))
+		if (!PyArg_ParseTuple(args, "si|iis#", &interfaceName,
+				      &protoNumber, &pkttype, &hatype,
+				      &haddr, &halen))
 			return 0;
 		strncpy(ifr.ifr_name, interfaceName, sizeof(ifr.ifr_name));
 		ifr.ifr_name[(sizeof(ifr.ifr_name))-1] = '\0';
@@ -1240,6 +1240,15 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
 		addr->sll_ifindex = ifr.ifr_ifindex;
 		addr->sll_pkttype = pkttype;
 		addr->sll_hatype = hatype;
+		if (halen > 8) {
+		  PyErr_SetString(PyExc_ValueError,
+				  "Hardware address must be 8 bytes or less");
+		  return 0;
+		}
+		if (halen != 0) {
+		  memcpy(&addr->sll_addr, haddr, halen);
+		}
+		addr->sll_halen = halen;
 		*addr_ret = (struct sockaddr *) addr;
 		*len_ret = sizeof *addr;
 		return 1;
