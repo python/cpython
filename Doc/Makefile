@@ -51,7 +51,7 @@ PDFLATEX=	TEXINPUTS=$(TEXINPUTS) pdflatex
 TEXINPUTS=	texinputs:
 DVIPS=		dvips -f -N0
 DISTILL=	distill
-MAKEINDEX=	makeindex
+MAKEINDEX=	makeindex -s texinputs/myindex.ist
 L2H=		TEXINPUTS=$(TEXINPUTS) latex2html -init_file perl/l2hinit.perl
 L2HARGS=	-address $$LOGNAME@`domainname`
 WEBCHECKER=	$(PYTHON) ../Tools/webchecker/webchecker.py
@@ -77,7 +77,8 @@ INFOFILES=	python-lib.info
 PDFFILES=	api.pdf ext.pdf lib.pdf tut.pdf
 PSFILES=	api.ps ext.ps lib.ps tut.ps
 
-MANSTYLES=texinputs/fncychap.sty texinputs/manual.cls texinputs/python.sty
+MANSTYLES=texinputs/fncychap.sty texinputs/manual.cls texinputs/python.sty \
+	  texinputs/myindex.ist
 
 # Main target
 all:	all-ps
@@ -166,7 +167,8 @@ LIBFILES = lib.tex \
     libpprint.tex libcode.tex libmimify.tex libre.tex libmacic.tex \
     libuserdict.tex libdis.tex libxmllib.tex libqueue.tex \
     liblocale.tex libbasehttp.tex libcopyreg.tex libsymbol.tex libtoken.tex \
-    libframework.tex libminiae.tex libbinhex.tex libuu.tex libsunaudio.tex
+    libframework.tex libminiae.tex libbinhex.tex libuu.tex libsunaudio.tex \
+    libfileinput.tex
 
 # Library document
 lib.dvi: tools/indfix.py $(LIBFILES)
