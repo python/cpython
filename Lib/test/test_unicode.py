@@ -695,7 +695,10 @@ for encoding in ('utf-8',
     verify(unicode(u.encode(encoding),encoding) == u)
 
 # UTF-8 must be roundtrip safe for all UCS-2 code points
-u = u''.join(map(unichr, range(0x10000)))
+# This excludes surrogates: in the full range, there would be
+# a surrogate pair (\udbff\udc00), which gets converted back
+# to a non-BMP character (\U0010fc00)
+u = u''.join(map(unichr, range(0,0xd800)+range(0xe000,0x10000)))
 for encoding in ('utf-8',):
     verify(unicode(u.encode(encoding),encoding) == u)
 
