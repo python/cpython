@@ -15,14 +15,13 @@
 # with the three-letter designations above as the directory names.
 #
 # The main target creates DVI and PostScript for the main each of the
-# documents.  You can also do "make lib" (etc.) to process individual
-# documents.
+# documents.  You can also do "make lib" (etc.) to create the DVI and
+# PostScript versions of individual documents.
 #
 # The document classes and styles are in the texinputs/ directory.
 # These define a number of macros that are similar in name and intent
 # as macros in Texinfo (e.g. \code{...} and \emph{...}), as well as a
-# number of environments for formatting function and data definitions,
-# also in the style of Texinfo.
+# number of environments for formatting function and data definitions.
 #
 # Everything is processed by LaTeX.  See the file `README' for more
 # information on the tools needed for processing.
@@ -36,8 +35,10 @@
 # the tools used are all but universal.  These targets are:
 #
 #   html -- convert all documents from LaTeX to HTML
+#   pdf  -- convert all documents from LaTeX to the
+#		Portable Document Format
 #
-# See the README file for more info on these targets.
+# See the README file for more information on these targets.
 #
 # The formatted output is located in subdirectories.  For PDF and
 # PostScript, look in the paper-$(PAPER)/ directory.  For HTML, look in
@@ -196,7 +197,8 @@ $(HOWTOPDFFILES): tools/mkhowto.sh $(HOWTOSTYLES)
 
 
 REFFILES = ref/ref1.tex ref/ref2.tex ref/ref3.tex ref/ref4.tex \
-	   ref/ref5.tex ref/ref6.tex ref/ref7.tex ref/ref8.tex
+	   ref/ref5.tex ref/ref6.tex ref/ref7.tex ref/ref8.tex \
+	   ref/ref.tex
 
 # LaTeX source files for the Python Library Reference
 LIBFILES = lib/lib.tex \
@@ -386,7 +388,7 @@ tarpdf:	pdf-$(PAPER)-$(RELEASE).tgz
 
 tarlatex: latex-$(RELEASE).tgz
 
-tarballs:  tarpdf tarps tarhtml tarinfo tarlatex
+tarballs:  tarpdf tarps tarhtml tarlatex
 
 
 # Housekeeping targets
