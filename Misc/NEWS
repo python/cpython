@@ -1200,12 +1200,12 @@ The test suite is now a package -- to run a test, you must now use
 "import test.test_foo".
 
 - A completely new re.py module is provided (thanks to Andrew
-Kuchling) which uses Philip Hazel's "pcre" re compiler and engine.
-For a while, the "old" re.py (which was new in 1.5a3!) will be kept
-around as re1.py.  The "old" regex module and underlying parser and
-engine are still present -- while regex is now officially obsolete, it
-will probably take several major release cycles before it can be
-removed.
+Kuchling, Tim Peters and Jeffrey Ollie) which uses Philip Hazel's
+"pcre" re compiler and engine.  For a while, the "old" re.py (which
+was new in 1.5a3!) will be kept around as re1.py.  The "old" regex
+module and underlying parser and engine are still present -- while
+regex is now officially obsolete, it will probably take several major
+release cycles before it can be removed.
 
 - The posix module now has a strerror() function which translates an
 error code to a string.
