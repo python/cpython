@@ -22,20 +22,23 @@ class TextWrapper:
 
     Several instance attributes control various aspects of
     wrapping:
-      expand_tabs
-        if true (default), tabs in input text will be expanded
-        to spaces before further processing.  Each tab will
-        become 1 .. 8 spaces, depending on its position in its line.
-        If false, each tab is treated as a single character.
-      replace_whitespace
-        if true (default), all whitespace characters in the input
-        text are replaced by spaces after tab expansion.  Note
-        that expand_tabs is false and replace_whitespace is true,
-        every tab will be converted to a single space!
-      break_long_words
-        if true (default), words longer than the line width constraint
-        will be broken.  If false, those words will not be broken,
-        and some lines might be longer than the width constraint.
+      expand_tabs (default: true)
+        Expand tabs in input text to spaces before further processing.
+        Each tab will become 1 .. 8 spaces, depending on its position in
+        its line.  If false, each tab is treated as a single character.
+      replace_whitespace (default: true)
+        Replace all whitespace characters in the input text by spaces
+        after tab expansion.  Note that if expand_tabs is false and
+        replace_whitespace is true, every tab will be converted to a
+        single space!
+      fix_sentence_endings (default: false)
+        Ensure that sentence-ending punctuation is always followed
+        by two spaces.  Off by default becaus the algorithm is
+        (unavoidably) imperfect.
+      break_long_words (default: true)
+        Break words longer than the line width constraint.  If false,
+        those words will not be broken, and some lines might be longer
+        than the width constraint.
     """
 
     whitespace_trans = string.maketrans(string.whitespace,
@@ -51,10 +54,14 @@ class TextWrapper:
                             r'\w{2,}-(?=\w{2,})|'     # hyphenated words
                             r'(?<=\w)-{2,}(?=\w))')   # em-dash
 
+    # Punctuation characters found at the end of a sentence.
+    sentence_end = ".?!"
+
 
     def __init__ (self):
         self.expand_tabs = 1
         self.replace_whitespace = 1
+        self.fix_sentence_endings = 0
         self.break_long_words = 1
         
 
@@ -100,10 +107,11 @@ class TextWrapper:
         space to two.
         """
         i = 0
+        punct = self.sentence_end
         while i < len(chunks)-1:
             # chunks[i] looks like the last word of a sentence,
             # and it's followed by a single space.
-            if (chunks[i][-1] == "." and
+            if (chunks[i][-1] in punct and
                   chunks[i+1] == " " and
                   islower(chunks[i][-2])):
                 chunks[i+1] = "  "
@@ -207,7 +215,8 @@ class TextWrapper:
         if len(text) <= width:
             return [text]
         chunks = self._split(text)
-        self._fix_sentence_endings(chunks)
+        if self.fix_sentence_endings:
+            self._fix_sentence_endings(chunks)
         return self._wrap_chunks(chunks, width)
 
     def fill (self, text, width, initial_tab="", subsequent_tab=""):
