@@ -376,7 +376,7 @@ class RawBroadcastUDPClient(RawUDPClient):
 
 	def connsocket(self):
 		# Don't connect -- use sendto
-		self.sock.allowbroadcast(1)
+		self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
 
 	def set_reply_handler(self, reply_handler):
 		self.reply_handler = reply_handler
