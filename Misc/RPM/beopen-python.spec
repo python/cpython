@@ -15,8 +15,8 @@ Patch0: %{name}-%{version}-Setup.patch
 BuildRoot: /var/tmp/%{name}-%{version}-root
 Prefix: %{__prefix}
 URL: http://www.pythonlabs.com/
-Vendor: BeOpen PythonLabs
-Packager: Jeremy Hylton <jeremy@beopen.com>
+Vendor: PythonLabs
+Packager: Jeremy Hylton <jeremy@zope.com>
 
 %description
 Python is an interpreted, interactive, object-oriented programming
