@@ -39,7 +39,7 @@ def mkpath (name, mode=0777, verbose=0, dry_run=0):
 
     name = os.path.normpath (name)
 
-    if os.path.isdir (name):
+    if os.path.isdir (name) or name == '':
         return
     if PATH_CREATED.get (name):
         return
@@ -71,7 +71,7 @@ def mkpath (name, mode=0777, verbose=0, dry_run=0):
             try:
                 os.mkdir (head)
             except os.error, (errno, errstr):
-                raise DistutilsFileError, "%s: %s" % (head, errstr)
+                raise DistutilsFileError, "'%s': %s" % (head, errstr)
 
         PATH_CREATED[head] = 1
 
@@ -197,19 +197,21 @@ def _copy_file_contents (src, dst, buffer_size=16*1024):
         try:
             fsrc = open(src, 'rb')
         except os.error, (errno, errstr):
-            raise DistutilsFileError, "could not open %s: %s" % (src, errstr)
+            raise DistutilsFileError, \
+                  "could not open '%s': %s" % (src, errstr)
         
         try:
             fdst = open(dst, 'wb')
         except os.error, (errno, errstr):
-            raise DistutilsFileError, "could not create %s: %s" % (dst, errstr)
+            raise DistutilsFileError, \
+                  "could not create '%s': %s" % (dst, errstr)
         
         while 1:
             try:
                 buf = fsrc.read (buffer_size)
             except os.error, (errno, errstr):
                 raise DistutilsFileError, \
-                      "could not read from %s: %s" % (src, errstr)
+                      "could not read from '%s': %s" % (src, errstr)
             
             if not buf:
                 break
@@ -218,7 +220,7 @@ def _copy_file_contents (src, dst, buffer_size=16*1024):
                 fdst.write(buf)
             except os.error, (errno, errstr):
                 raise DistutilsFileError, \
-                      "could not write to %s: %s" % (dst, errstr)
+                      "could not write to '%s': %s" % (dst, errstr)
             
     finally:
         if fdst:
@@ -258,7 +260,7 @@ def copy_file (src, dst,
 
     if not os.path.isfile (src):
         raise DistutilsFileError, \
-              "can't copy %s: not a regular file" % src
+              "can't copy '%s': not a regular file" % src
 
     if os.path.isdir (dst):
         dir = dst
@@ -321,7 +323,7 @@ def copy_tree (src, dst,
 
     if not dry_run and not os.path.isdir (src):
         raise DistutilsFileError, \
-              "cannot copy tree %s: not a directory" % src    
+              "cannot copy tree '%s': not a directory" % src    
     try:
         names = os.listdir (src)
     except os.error, (errno, errstr):
@@ -329,7 +331,7 @@ def copy_tree (src, dst,
             names = []
         else:
             raise DistutilsFileError, \
-                  "error listing files in %s: %s" % (src, errstr)
+                  "error listing files in '%s': %s" % (src, errstr)
 
     if not dry_run:
         mkpath (dst, verbose=verbose)
