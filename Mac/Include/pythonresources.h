@@ -72,11 +72,11 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 /* Dialog for 'No preferences directory' */
 #define NOPREFDIR_ID	133
 
-/* Dialog for 'Create preferences file?' */
-#define NOPREFFILE_ID	134
-#define NOPREFFILE_YES	1
-#define NOPREFFILE_NO	2
-
+/* Dialog for 'Bad or outdated preferences' */
+#define BADPREFERENCES_ID	134
+#define BADPREF_DELETE		1
+#define BADPREF_CONTINUE	2
+#define BADPREF_QUIT		3
 /* Dialog for 'Bad preference file' */
 #define BADPREFFILE_ID	135
 
@@ -128,18 +128,19 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define PYTHONOPTIONSOVERRIDE_ID 129
 #define POPT_INSPECT	0
 #define POPT_VERBOSE	1
-#define POPT_SUPPRESS	2
+#define POPT_OPTIMIZE	2
 #define POPT_UNBUFFERED	3
 #define POPT_DEBUGGING	4
 #define POPT_KEEPNORM	5
 #define POPT_KEEPERR	6
-#define POPT_NOINTOPT	7	/* Not settable interactively */
-#define POPT_NOARGS		8	/* Not settable interactively */
+
+#define POPT_VERSION_CURRENT	3	/* Current version number */
 
 typedef struct PyMac_PrefRecord {
+	unsigned char	version;
 	unsigned char	inspect;
 	unsigned char	verbose;
-	unsigned char	suppress_print;
+	unsigned char	optimize;
 	unsigned char	unbuffered;
 	unsigned char	debugging;
 	unsigned char	keep_normal;
@@ -154,5 +155,4 @@ typedef struct PyMac_PrefRecord {
 
 /* From macgetpath.c: */
 void PyMac_PreferenceOptions Py_PROTO((PyMac_PrefRecord *));
-
- 
+char * PyMac_GetPythonDir Py_PROTO((void));
