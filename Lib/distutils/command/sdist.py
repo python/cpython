@@ -128,8 +128,9 @@ class sdist (Command):
 
     def run (self):
 
-        # 'files' is the list of files that will make up the manifest
-        self.files = []
+        # 'filelist' contains the list of files that will make up the
+        # manifest
+        self.filelist = FileList()
         
         # Ensure that all required meta-data is given; warn if not (but
         # don't die, it's not *that* serious!)
@@ -137,7 +138,7 @@ class sdist (Command):
 
         # Do whatever it takes to get the list of files to process
         # (process the manifest template, read an existing manifest,
-        # whatever).  File list is put into 'self.files'.
+        # whatever).  File list is accumulated in 'self.filelist'.
         self.get_file_list ()
 
         # If user just wanted us to regenerate the manifest, stop now.
@@ -184,7 +185,7 @@ class sdist (Command):
 
     def get_file_list (self):
         """Figure out the list of files to include in the source
-        distribution, and put it in 'self.files'.  This might involve
+        distribution, and put it in 'self.filelist'.  This might involve
         reading the manifest template (and writing the manifest), or just
         reading the manifest, or just using the default file set -- it all
         depends on the user's options and the state of the filesystem.
@@ -192,9 +193,9 @@ class sdist (Command):
 
         # If we have a manifest template, see if it's newer than the
         # manifest; if so, we'll regenerate the manifest.
-        template_exists = os.path.isfile (self.template)
+        template_exists = os.path.isfile(self.template)
         if template_exists:
-            template_newer = newer (self.template, self.manifest)
+            template_newer = newer(self.template, self.manifest)
 
         # The contents of the manifest file almost certainly depend on the
         # setup script as well as the manifest template -- so if the setup
@@ -222,17 +223,17 @@ class sdist (Command):
             self.force_manifest or self.manifest_only):
 
             if not template_exists:
-                self.warn (("manifest template '%s' does not exist " +
-                            "(using default file list)") %
-                           self.template)
+                self.warn(("manifest template '%s' does not exist " +
+                           "(using default file list)") %
+                          self.template)
 
             # Add default file set to 'files'
             if self.use_defaults:
-                self.add_defaults ()
+                self.add_defaults()
 
             # Read manifest template if it exists
             if template_exists:
-                self.read_template ()
+                self.read_template()
 
             # Prune away any directories that don't belong in the source
             # distribution
@@ -241,30 +242,24 @@ class sdist (Command):
 
             # File list now complete -- sort it so that higher-level files
             # come first
-            sortable_files = map (os.path.split, self.files)
-            sortable_files.sort ()
-            self.files = []
-            for sort_tuple in sortable_files:
-                self.files.append (apply (os.path.join, sort_tuple))
+            self.filelist.sort()
 
             # Remove duplicates from the file list
-            for i in range (len(self.files)-1, 0, -1):
-                if self.files[i] == self.files[i-1]:
-                    del self.files[i]
+            self.filelist.remove_duplicates()
 
             # And write complete file list (including default file set) to
             # the manifest.
-            self.write_manifest ()
+            self.write_manifest()
 
         # Don't regenerate the manifest, just read it in.
         else:
-            self.read_manifest ()
+            self.read_manifest()
 
     # get_file_list ()
 
 
     def add_defaults (self):
-        """Add all the default files to self.files:
+        """Add all the default files to self.filelist:
           - README or README.txt
           - setup.py
           - test/test*.py
@@ -286,7 +281,7 @@ class sdist (Command):
                 for fn in alts:
                     if os.path.exists (fn):
                         got_it = 1
-                        self.files.append (fn)
+                        self.filelist.append (fn)
                         break
 
                 if not got_it:
@@ -294,7 +289,7 @@ class sdist (Command):
                                string.join (alts, ', '))
             else:
                 if os.path.exists (fn):
-                    self.files.append (fn)
+                    self.filelist.append (fn)
                 else:
                     self.warn ("standard file '%s' not found" % fn)
 
@@ -302,33 +297,31 @@ class sdist (Command):
         for pattern in optional:
             files = filter (os.path.isfile, glob (pattern))
             if files:
-                self.files.extend (files)
+                self.filelist.extend (files)
 
         if self.distribution.has_pure_modules():
             build_py = self.get_finalized_command ('build_py')
-            self.files.extend (build_py.get_source_files ())
+            self.filelist.extend (build_py.get_source_files ())
 
         if self.distribution.has_ext_modules():
             build_ext = self.get_finalized_command ('build_ext')
-            self.files.extend (build_ext.get_source_files ())
+            self.filelist.extend (build_ext.get_source_files ())
 
         if self.distribution.has_c_libraries():
             build_clib = self.get_finalized_command ('build_clib')
-            self.files.extend (build_clib.get_source_files ())
+            self.filelist.extend (build_clib.get_source_files ())
 
     # add_defaults ()
     
 
     def read_template (self):
-        """Read and parse the manifest template file named by
-        'self.template' (usually "MANIFEST.in").  Process all file
-        specifications (include and exclude) in the manifest template and
-        update 'self.files' accordingly (filenames may be added to
-        or removed from 'self.files' based on the manifest template).
-        """
-        assert self.files is not None and type (self.files) is ListType
-        self.announce("reading manifest template '%s'" % self.template)
 
+        """Read and parse the manifest template file named by
+        'self.template' (usually "MANIFEST.in").  The parsing and
+        processing is done by 'self.filelist', which updates itself
+        accordingly.
+        """
+        self.announce("reading manifest template '%s'" % self.template)
         template = TextFile (self.template,
                              strip_comments=1,
                              skip_blanks=1,
@@ -337,17 +330,12 @@ class sdist (Command):
                              rstrip_ws=1,
                              collapse_ws=1)
 
-        # if we give Template() a list, it modifies this list
-        filelist = FileList(files=self.files,
-                            warn=self.warn,
-                            debug_print=self.debug_print)
-
         while 1:
             line = template.readline()
             if line is None:            # end of file
                 break
 
-            filelist.process_template_line(line)
+            self.filelist.process_template_line(line)
 
     # read_template ()
 
@@ -363,22 +351,18 @@ class sdist (Command):
         build = self.get_finalized_command('build')
         base_dir = self.distribution.get_fullname()
 
-        # if we give FileList a list, it modifies this list
-        filelist = FileList(files=self.files,
-                            warn=self.warn,
-                            debug_print=self.debug_print)
-        filelist.exclude_pattern(None, prefix=build.build_base)
-        filelist.exclude_pattern(None, prefix=base_dir)
-        filelist.exclude_pattern(r'/(RCS|CVS)/.*', is_regex=1)
+        self.filelist.exclude_pattern(None, prefix=build.build_base)
+        self.filelist.exclude_pattern(None, prefix=base_dir)
+        self.filelist.exclude_pattern(r'/(RCS|CVS)/.*', is_regex=1)
 
 
     def write_manifest (self):
-        """Write the file list in 'self.files' (presumably as filled in by
-        'add_defaults()' and 'read_template()') to the manifest file named
-        by 'self.manifest'.
+        """Write the file list in 'self.filelist' (presumably as filled in
+        by 'add_defaults()' and 'read_template()') to the manifest file
+        named by 'self.manifest'.
         """
         self.execute(write_file,
-                     (self.manifest, self.files),
+                     (self.manifest, self.filelist.files),
                      "writing manifest file '%s'" % self.manifest)
 
     # write_manifest ()
@@ -386,7 +370,7 @@ class sdist (Command):
 
     def read_manifest (self):
         """Read the manifest file (named by 'self.manifest') and use it to
-        fill in 'self.files', the list of files to include in the source
+        fill in 'self.filelist', the list of files to include in the source
         distribution.
         """
         self.announce("reading manifest file '%s'" % self.manifest)
@@ -397,7 +381,7 @@ class sdist (Command):
                 break
             if line[-1] == '\n':
                 line = line[0:-1]
-            self.files.append (line)
+            self.filelist.append (line)
 
     # read_manifest ()
             
@@ -451,7 +435,7 @@ class sdist (Command):
         base_dir = self.distribution.get_fullname()
         base_name = os.path.join(self.dist_dir, base_dir)
 
-        self.make_release_tree (base_dir, self.files)
+        self.make_release_tree (base_dir, self.filelist.files)
         archive_files = []              # remember names of files we create
         if self.dist_dir:
             self.mkpath(self.dist_dir)
