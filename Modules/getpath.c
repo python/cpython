@@ -407,6 +407,7 @@ calculate_path(void)
 	if (progpath[0] != SEP)
 		absolutize(progpath);
 	strncpy(argv0_path, progpath, MAXPATHLEN);
+	argv0_path[MAXPATHLEN] = '\0';
 
 #ifdef WITH_NEXT_FRAMEWORK
 	/* On Mac OS X we have a special case if we're running from a framework.
