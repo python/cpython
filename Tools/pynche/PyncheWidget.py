@@ -19,6 +19,7 @@ class PyncheWidget:
         self.__version = version
         self.__textwin = None
         self.__listwin = None
+        self.__detailswin = None
         # create the first and top window
         root = self.__root = Tk(className='Pynche')
         root.protocol('WM_DELETE_WINDOW', self.__quit)
@@ -58,7 +59,9 @@ class PyncheWidget:
         viewmenu.add_command(label='Color List Window...',
                              command=self.__popup_listwin,
                              underline=0)
-        #
+        viewmenu.add_command(label='Details Window...',
+                             command=self.__popup_details,
+                             underline=0)        #
         # Help menu
         #
         helpbtn = Menubutton(menubar, text='Help',
@@ -112,3 +115,10 @@ email:   bwarsaw@python.org''')
             self.__listwin = ListViewer(self.__sb, self.__root)
             self.__sb.add_view(self.__listwin)
         self.__listwin.deiconify()
+
+    def __popup_details(self, event=None):
+        if not self.__detailswin:
+            from DetailsViewer import DetailsViewer
+            self.__detailswin = DetailsViewer(self.__sb, self.__root)
+            self.__sb.add_view(self.__detailswin)
+        self.__detailswin.deiconify()
