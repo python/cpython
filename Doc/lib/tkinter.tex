@@ -1403,6 +1403,107 @@ geometry manager based on attachment rules for all Tk widgets.
 %\end{figure}
 %end{latexonly}
 
+\subsection{Tix Commands}
+
+\begin{classdesc}{tixCommand}{}
+The \ulink{tix commands}
+{http://tix.sourceforge.net/dist/current/man/html/TixCmd/tix.htm}
+provide access to miscellaneous elements of \refmodule{Tix}'s internal
+state and the  \refmodule{Tix} application context.  Most of the information
+manipulated by these methods pertains to the application as a whole,
+or to a screen or display, rather than to a particular window.
+
+To view the current settings, the common usage is:
+\begin{verbatim}
+import Tix
+root = Tix.Tk()
+print root.tix_configure()
+\end{verbatim}
+\end{classdesc}
+
+\begin{methoddesc}{tix_configure}{\optional{cnf,} **kw}
+Query or modify the configuration options of the Tix application
+context. If no option is specified, returns a dictionary all of the
+available options.  If option is specified with no value, then the
+method returns a list describing the one named option (this list will
+be identical to the corresponding sublist of the value returned if no
+option is specified).  If one or more option-value pairs are
+specified, then the method modifies the given option(s) to have the
+given value(s); in this case the method returns an empty string.
+Option may be any of the configuration options.
+\end{methoddesc}
+
+\begin{methoddesc}{tix_cget}{option}
+Returns the current value of the configuration option given by
+\var{option}. Option may be any of the configuration options.
+\end{methoddesc}
+
+\begin{methoddesc}{tix_getbitmap}{name}
+Locates a bitmap file of the name \code{name.xpm} or \code{name} in
+one of the bitmap directories (see the \method{tix_addbitmapdir()}
+method).  By using \method{tix_getbitmap()}, you can avoid hard
+coding the pathnames of the bitmap files in your application. When
+successful, it returns the complete pathname of the bitmap file,
+prefixed with the character \samp{@}.  The returned value can be used to
+configure the \code{bitmap} option of the Tk and Tix widgets.
+\end{methoddesc}
+
+\begin{methoddesc}{tix_addbitmapdir}{directory}
+Tix maintains a list of directories under which the
+\method{tix_getimage()} and \method{tix_getbitmap()} methods will
+search for image files.  The standard bitmap directory is
+\file{\$TIX_LIBRARY/bitmaps}. The \method{tix_addbitmapdir()} method
+adds \var{directory} into this list. By using this method, the image
+files of an applications can also be located using the
+\method{tix_getimage()} or \method{tix_getbitmap()} method.
+\end{methoddesc}
+
+\begin{methoddesc}{tix_filedialog}{\optional{dlgclass}}
+Returns the file selection dialog that may be shared among different
+calls from this application.  This method will create a file selection
+dialog widget when it is called the first time. This dialog will be
+returned by all subsequent calls to \method{tix_filedialog()}.  An
+optional dlgclass parameter can be passed as a string to specified
+what type of file selection dialog widget is desired.  Possible
+options are \code{tix}, \code{FileSelectDialog} or
+\code{tixExFileSelectDialog}.
+\end{methoddesc}
+
+
+\begin{methoddesc}{tix_getimage}{self, name}
+Locates an image file of the name \file{name.xpm}, \file{name.xbm} or
+\file{name.ppm} in one of the bitmap directories (see the
+\method{tix_addbitmapdir()} method above). If more than one file with
+the same name (but different extensions) exist, then the image type is
+chosen according to the depth of the X display: xbm images are chosen
+on monochrome displays and color images are chosen on color
+displays. By using \method{tix_getimage()}, you can avoid hard coding
+the pathnames of the image files in your application. When successful,
+this method returns the name of the newly created image, which can be
+used to configure the \code{image} option of the Tk and Tix widgets.
+\end{methoddesc}
+
+\begin{methoddesc}{tix_option_get}{name}
+Gets the options manitained by the Tix scheme mechanism.
+\end{methoddesc}
+
+\begin{methoddesc}{tix_resetoptions}{newScheme, newFontSet\optional{,
+                                     newScmPrio}}
+Resets the scheme and fontset of the Tix application to
+\var{newScheme} and \var{newFontSet}, respectively.  This affects only
+those widgets created after this call.  Therefore, it is best to call
+the resetoptions method before the creation of any widgets in a Tix
+application.
+
+The optional parameter \var{newScmPrio} can be given to reset the
+priority level of the Tk options set by the Tix schemes.
+
+Because of the way Tk handles the X option database, after Tix has
+been has imported and inited, it is not possible to reset the color
+schemes and font sets using the \method{tix_config()} method.
+Instead, the \method{tix_resetoptions()} method must be used.
+\end{methoddesc}
+
 
 \input{libturtle}
 
