@@ -141,10 +141,7 @@ class PyBuildExt(build_ext):
             (ccshared,opt) = sysconfig.get_config_vars('CCSHARED','OPT')
             args['compiler_so'] = compiler + ' ' + opt + ' ' + ccshared
         if linker_so is not None:
-            if platform == 'darwin1':
-                args['linker_so'] = linker_so
-            else:
-                args['linker_so'] = linker_so + ' -shared'
+            args['linker_so'] = linker_so
         self.compiler.set_executables(**args)
 
         build_ext.build_extensions(self)
