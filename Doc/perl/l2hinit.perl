@@ -6,6 +6,13 @@
 #  New name to avoid distributing "dot" files with the Python documentation.
 #
 
+package Override;
+
+use Cwd qw(getcwd);
+
+
+package main;
+
 $INFO = 1;              # 0 = do not make a "About this document..." section
 $MAX_LINK_DEPTH = 3;
 $ADDRESS = '';
@@ -23,6 +30,21 @@ $CHILDLINE = "\n<p><hr>\n";
 $VERBOSITY = 0;
 $TEXINPUTS = '';		# avoid bogus l2h setting it to ':' !!!
 
+
+sub absolutize_path{
+    my $path = @_[0];
+    my $npath = '';
+    foreach $dir (split $envkey, $path) {
+	$npath .= make_directory_absolute($dir) . $envkey;
+    }
+    $npath =~ s/$envkey$//;
+    $npath;
+}
+# This is done because latex2html doesn't do this for us, but does change the
+# directory out from under us.
+if (defined $ENV{'TEXINPUTS'}) {
+    $ENV{'TEXINPUTS'} = absolutize_path($ENV{'TEXINPUTS'});
+}
 
 # Locate a file that's been "require"d.  Assumes that the file name of interest
 # is unique within the set of loaded files, after directory names have been
