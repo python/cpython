@@ -53,22 +53,22 @@
 	<string>python</string>
 
 	<key>CFBundleGetInfoString</key>
-	<string>Python Interpreter version 2.2, (c) 2001 Python Software Foundation.</string>
+	<string>Python Interpreter version 2.3, (c) 2002 Python Software Foundation.</string>
 	<key>CFBundleLongVersionString</key>
-	<string>2.2, (c) 2001 Python Software Foundation.</string>
+	<string>2.3, (c) 2002 Python Software Foundation.</string>
 	<key>NSHumanReadableCopyright</key>
-	<string>Copyright 2001 Python Software Foundation.</string>
+	<string>Copyright 2002 Python Software Foundation.</string>
 	<key>CFBundleShortVersionString</key>
-	<string>6.5</string>
+	<string>2.3</string>
 
 	<key>CFBundleIconFile</key>
 	<string>PythonInterpreter.icns</string>
 	<key>CFBundleIdentifier</key>
-	<string>org.python.interpreter</string>
+	<string>org.python.pythonw</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>PythonInterpreter</string>
+	<string>PythonW</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleSignature</key>
