@@ -13,7 +13,7 @@
 
 {\large This document is a draft, and is subject to change until
 the final version of Python 2.1 is released.  Currently it is up to date
-for Python 2.1 alpha 2.  Please send any comments, bug reports, or
+for Python 2.1 beta 1.  Please send any comments, bug reports, or
 questions, no matter how minor, to \email{amk1@bigfoot.com}.  }
 
 It's that time again... time for a new Python release, version 2.1.
@@ -136,44 +136,9 @@ Jeremy Hylton.}
 
 
 %======================================================================
-\section{PEP 232: Function Attributes}
+\section{PEP 236: \module{__future__} Directives}
 
-In Python 2.1, functions can now have arbitrary information attached
-to them.  People were often using docstrings to hold information about
-functions and methods, because the \code{__doc__} attribute was the
-only way of attaching any information to a function.  For example, in
-the Zope Web application server, functions are marked as safe for
-public access by having a docstring, and in John Aycock's SPARK
-parsing framework, docstrings hold parts of the BNF grammar to be
-parsed.  This overloading is unfortunate, since docstrings are really
-intended to hold a function's documentation, and it means you can't
-properly document functions intended for private use in Zope.
-
-Attributes can now be set and retrieved on functions, using the
-regular Python syntax:
-
-\begin{verbatim}
-def f(): pass
-
-f.publish = 1
-f.secure = 1
-f.grammar = "A ::= B (C D)*"
-\end{verbatim}
-
-The dictionary containing attributes can be accessed as
-\member{__dict__}. Unlike the \member{__dict__} attribute of class
-instances, in functions you can actually assign a new dictionary to
-\member{__dict__}, though the new value is restricted to a regular
-Python dictionary; you can't be tricky and set it to a
-\class{UserDict} instance, a DBM file, or any other random mapping
-object.
-
-\begin{seealso}
-
-\seepep{232}{Function Attributes}{Written and implemented by Barry
-Warsaw.}
-
-\end{seealso}
+XXX
 
 %======================================================================
 \section{PEP 207: Rich Comparisons}
@@ -462,6 +427,11 @@ Fred~L. Drake,~Jr.}
 \end{seealso}
 
 %======================================================================
+\section{PEP 235: Case-Insensitive Platforms and \keyword{import}}
+
+XXX
+
+%======================================================================
 \section{PEP 217: Interactive Display Hook}
 
 When using the Python interpreter interactively, the output of
@@ -529,6 +499,32 @@ operations will now be processed at the C level.}
 
 \begin{itemize}
 
+\item Ka-Ping Yee contributed two new modules: \module{inspect.py}, a module for
+getting information about live Python code, and \module{pydoc.py}, a
+module for interactively converting docstrings to HTML or text.
+As a bonus, \file{Tools/scripts/pydoc}, which is now automatically
+installed, uses \module{pydoc.py} to display documentation given a Python module, package, or class name.  For example,
+\samp{pydoc xml.dom} displays the following:
+
+\begin{verbatim}
+Python Library Documentation: package xml.dom in xml
+ 
+NAME
+    xml.dom - W3C Document Object Model implementation for Python.
+ 
+FILE
+    /usr/local/lib/python2.1/xml/dom/__init__.pyc
+ 
+DESCRIPTION
+    The Python mapping of the Document Object Model is documented in the
+    Python Library Reference in the section on the xml.dom package.
+ 
+    This package contains the following modules:
+      ...
+\end{verbatim}
+
+\file{pydoc} quickly becomes addictive; try it out!
+
 \item The \module{doctest} module provides a testing framework based
 on running embedded examples in docstrings and comparing the results
 against the expected output.  Contributed by Tim Peters.
@@ -549,10 +545,10 @@ visible.
 
 \item The PyXML package has gone through a few releases since Python
 2.0, and Python 2.1 includes an updated version of the \module{xml}
-package.  Some of the noteworthy changes include support for Expat
-1.2, the ability for Expat parsers to handle files in any encoding
-supported by Python, and various bugfixes for SAX, DOM, and the
-\module{minidom} module.
+package.  Some of the noteworthy changes include support for Expat 1.2
+and later versions, the ability for Expat parsers to handle files in
+any encoding supported by Python, and various bugfixes for SAX, DOM,
+and the \module{minidom} module.
 
 \item Various functions in the \module{time} module, such as
 \function{asctime()} and \function{localtime()}, require a floating
@@ -596,7 +592,7 @@ put it into production code.
 \end{itemize}
 
 %======================================================================
-\section{Minor Changes and Fixes}
+\section{Other Changes and Fixes}
 
 There were relatively few smaller changes made in Python 2.1 due to
 the shorter release cycle.  A search through the CVS change logs turns
@@ -611,8 +607,8 @@ should be faster than the system \function{malloc()} and have less
 memory overhead.  The allocator uses C's \function{malloc()} function
 to get large pools of memory, and then fulfills smaller memory
 requests from these pools.  It can be enabled by providing the
-"--with-pymalloc" option to the \filename{configure} script; see
-\filename{Objects/obmalloc.c} for the implementation details.
+"--with-pymalloc" option to the \file{configure} script; see
+\file{Objects/obmalloc.c} for the implementation details.
 Contributed by Vladimir Marangozov.
 
 \item The speed of line-oriented file I/O has been improved because
@@ -690,9 +686,9 @@ code.
 
 \end{itemize}
 
-And there's the usual list of bugfixes, minor memory leaks, docstring
-edits, and other tweaks, too lengthy to be worth itemizing; see the
-CVS logs for the full details if you want them.
+And there's the usual list of minor bugfixes, minor memory leaks,
+docstring edits, and other tweaks, too lengthy to be worth itemizing;
+see the CVS logs for the full details if you want them.
 
 
 %======================================================================
