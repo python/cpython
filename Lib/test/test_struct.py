@@ -128,7 +128,7 @@ simple_err(struct.pack, "Q", -1)   # can't pack -1 as unsigned regardless
 simple_err(struct.pack, "q", "a")  # can't pack string as 'q' regardless
 simple_err(struct.pack, "Q", "a")  # ditto, but 'Q'
 
-def force_bigendian(value):
+def bigendian_to_native(value):
     if isbigendian:
         return value
     chars = list(value)
@@ -148,10 +148,10 @@ if has_native_qQ:
             ('Q', (1L << (8*bytes))-1, '\xff' * bytes),
             ('q', (1L << (8*bytes-1))-1, '\x7f' + '\xff' * (bytes - 1))):
         got = struct.pack(format, input)
-        bigexpected = force_bigendian(expected)
-        verify(got == bigexpected,
+        native_expected = bigendian_to_native(expected)
+        verify(got == native_expected,
                "%r-pack of %r gave %r, not %r" %
-                    (format, input, got, bigexpected))
+                    (format, input, got, native_expected))
         retrieved = struct.unpack(format, got)[0]
         verify(retrieved == input,
                "%r-unpack of %r gave %r, not %r" %
