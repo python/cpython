@@ -20,7 +20,7 @@ M = MULTILINE = sre_compile.SRE_FLAG_MULTILINE
 S = DOTALL = sre_compile.SRE_FLAG_DOTALL
 X = VERBOSE = sre_compile.SRE_FLAG_VERBOSE
 
-# sre extensions (may or may not be in 1.6 final)
+# sre extensions (may or may not be in 2.0 final)
 T = TEMPLATE = sre_compile.SRE_FLAG_TEMPLATE
 U = UNICODE = sre_compile.SRE_FLAG_UNICODE
 
