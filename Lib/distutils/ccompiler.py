@@ -17,18 +17,17 @@ from distutils.util import move_file, mkpath, newer_pairwise, newer_group
 
 class CCompiler:
     """Abstract base class to define the interface that must be implemented
-       by real compiler abstraction classes.  Might have some use as a
-       place for shared code, but it's not yet clear what code can be
-       shared between compiler abstraction models for different platforms.
+    by real compiler classes.  Also has some utility methods used by
+    several compiler classes.
 
-       The basic idea behind a compiler abstraction class is that each
-       instance can be used for all the compile/link steps in building
-       a single project.  Thus, attributes common to all of those compile
-       and link steps -- include directories, macros to define, libraries
-       to link against, etc. -- are attributes of the compiler instance.
-       To allow for variability in how individual files are treated,
-       most (all?) of those attributes may be varied on a per-compilation
-       or per-link basis."""
+    The basic idea behind a compiler abstraction class is that each
+    instance can be used for all the compile/link steps in building a
+    single project.  Thus, attributes common to all of those compile and
+    link steps -- include directories, macros to define, libraries to link
+    against, etc. -- are attributes of the compiler instance.  To allow for
+    variability in how individual files are treated, most of those
+    attributes may be varied on a per-compilation or per-link basis.
+    """
 
     # 'compiler_type' is a class attribute that identifies this class.  It
     # keeps code that wants to know what kind of compiler it's dealing with
@@ -46,10 +45,6 @@ class CCompiler:
     #     should be the domain of concrete compiler abstraction classes
     #     (UnixCCompiler, MSVCCompiler, etc.) -- or perhaps the base
     #     class should have methods for the common ones.
-    #   * can't put output files (object files, libraries, whatever)
-    #     into a separate directory from their inputs.  Should this be
-    #     handled by an 'output_dir' attribute of the whole object, or a
-    #     parameter to the compile/link_* methods, or both?
     #   * can't completely override the include or library searchg
     #     path, ie. no "cc -I -Idir1 -Idir2" or "cc -L -Ldir1 -Ldir2".
     #     I'm not sure how widely supported this is even by Unix
@@ -129,10 +124,9 @@ class CCompiler:
 
     def _check_macro_definitions (self, definitions):
         """Ensures that every element of 'definitions' is a valid macro
-           definition, ie. either (name,value) 2-tuple or a (name,)
-           tuple.  Do nothing if all definitions are OK, raise 
-           TypeError otherwise."""
-
+        definition, ie. either (name,value) 2-tuple or a (name,) tuple.  Do
+        nothing if all definitions are OK, raise TypeError otherwise.
+        """
         for defn in definitions:
             if not (type (defn) is TupleType and
                     (len (defn) == 1 or
@@ -148,12 +142,12 @@ class CCompiler:
     # -- Bookkeeping methods -------------------------------------------
 
     def define_macro (self, name, value=None):
-        """Define a preprocessor macro for all compilations driven by
-           this compiler object.  The optional parameter 'value' should be
-           a string; if it is not supplied, then the macro will be defined
-           without an explicit value and the exact outcome depends on the
-           compiler used (XXX true? does ANSI say anything about this?)"""
-
+        """Define a preprocessor macro for all compilations driven by this
+        compiler object.  The optional parameter 'value' should be a
+        string; if it is not supplied, then the macro will be defined
+        without an explicit value and the exact outcome depends on the
+        compiler used (XXX true? does ANSI say anything about this?)
+        """
         # Delete from the list of macro definitions/undefinitions if
         # already there (so that this one will take precedence).
         i = self._find_macro (name)
@@ -166,13 +160,13 @@ class CCompiler:
 
     def undefine_macro (self, name):
         """Undefine a preprocessor macro for all compilations driven by
-           this compiler object.  If the same macro is defined by
-           'define_macro()' and undefined by 'undefine_macro()' the last
-           call takes precedence (including multiple redefinitions or
-           undefinitions).  If the macro is redefined/undefined on a
-           per-compilation basis (ie. in the call to 'compile()'), then
-           that takes precedence."""
-
+        this compiler object.  If the same macro is defined by
+        'define_macro()' and undefined by 'undefine_macro()' the last call
+        takes precedence (including multiple redefinitions or
+        undefinitions).  If the macro is redefined/undefined on a
+        per-compilation basis (ie. in the call to 'compile()'), then that
+        takes precedence.
+        """
         # Delete from the list of macro definitions/undefinitions if
         # already there (so that this one will take precedence).
         i = self._find_macro (name)
@@ -184,86 +178,94 @@ class CCompiler:
 
 
     def add_include_dir (self, dir):
-        """Add 'dir' to the list of directories that will be searched
-           for header files.  The compiler is instructed to search
-           directories in the order in which they are supplied by
-           successive calls to 'add_include_dir()'."""
+        """Add 'dir' to the list of directories that will be searched for
+        header files.  The compiler is instructed to search directories in
+        the order in which they are supplied by successive calls to
+        'add_include_dir()'.
+        """
         self.include_dirs.append (dir)
 
     def set_include_dirs (self, dirs):
-        """Set the list of directories that will be searched to 'dirs'
-           (a list of strings).  Overrides any preceding calls to
-           'add_include_dir()'; subsequence calls to 'add_include_dir()'
-           add to the list passed to 'set_include_dirs()'.  This does
-           not affect any list of standard include directories that
-           the compiler may search by default."""
+        """Set the list of directories that will be searched to 'dirs' (a
+        list of strings).  Overrides any preceding calls to
+        'add_include_dir()'; subsequence calls to 'add_include_dir()' add
+        to the list passed to 'set_include_dirs()'.  This does not affect
+        any list of standard include directories that the compiler may
+        search by default.
+        """
         self.include_dirs = copy (dirs)
 
 
     def add_library (self, libname):
-        """Add 'libname' to the list of libraries that will be included
-           in all links driven by this compiler object.  Note that
-           'libname' should *not* be the name of a file containing a
-           library, but the name of the library itself: the actual filename
-           will be inferred by the linker, the compiler, or the compiler
-           abstraction class (depending on the platform).
+        """Add 'libname' to the list of libraries that will be included in
+        all links driven by this compiler object.  Note that 'libname'
+        should *not* be the name of a file containing a library, but the
+        name of the library itself: the actual filename will be inferred by
+        the linker, the compiler, or the compiler class (depending on the
+        platform).
 
-           The linker will be instructed to link against libraries in the
-           order they were supplied to 'add_library()' and/or
-           'set_libraries()'.  It is perfectly valid to duplicate library
-           names; the linker will be instructed to link against libraries
-           as many times as they are mentioned."""
+        The linker will be instructed to link against libraries in the
+        order they were supplied to 'add_library()' and/or
+        'set_libraries()'.  It is perfectly valid to duplicate library
+        names; the linker will be instructed to link against libraries as
+        many times as they are mentioned.
+        """
         self.libraries.append (libname)
 
     def set_libraries (self, libnames):
-        """Set the list of libraries to be included in all links driven
-           by this compiler object to 'libnames' (a list of strings).
-           This does not affect any standard system libraries that the
-           linker may include by default."""
-
+        """Set the list of libraries to be included in all links driven by
+        this compiler object to 'libnames' (a list of strings).  This does
+        not affect any standard system libraries that the linker may
+        include by default.
+        """
         self.libraries = copy (libnames)
 
 
     def add_library_dir (self, dir):
         """Add 'dir' to the list of directories that will be searched for
-           libraries specified to 'add_library()' and 'set_libraries()'.
-           The linker will be instructed to search for libraries in the
-           order they are supplied to 'add_library_dir()' and/or
-           'set_library_dirs()'."""
+        libraries specified to 'add_library()' and 'set_libraries()'.  The
+        linker will be instructed to search for libraries in the order they
+        are supplied to 'add_library_dir()' and/or 'set_library_dirs()'.
+        """
         self.library_dirs.append (dir)
 
     def set_library_dirs (self, dirs):
-        """Set the list of library search directories to 'dirs' (a list
-           of strings).  This does not affect any standard library
-           search path that the linker may search by default."""
+        """Set the list of library search directories to 'dirs' (a list of
+        strings).  This does not affect any standard library search path
+        that the linker may search by default.
+        """
         self.library_dirs = copy (dirs)
 
 
     def add_runtime_library_dir (self, dir):
         """Add 'dir' to the list of directories that will be searched for
-           shared libraries at runtime."""
+        shared libraries at runtime.
+        """
         self.runtime_library_dirs.append (dir)
 
     def set_runtime_library_dirs (self, dirs):
-        """Set the list of directories to search for shared libraries
-           at runtime to 'dirs' (a list of strings).  This does not affect
-           any standard search path that the runtime linker may search by
-           default."""
+        """Set the list of directories to search for shared libraries at
+        runtime to 'dirs' (a list of strings).  This does not affect any
+        standard search path that the runtime linker may search by
+        default.
+        """
         self.runtime_library_dirs = copy (dirs)
 
 
     def add_link_object (self, object):
-        """Add 'object' to the list of object files (or analogues, such
-           as explictly named library files or the output of "resource
-           compilers") to be included in every link driven by this
-           compiler object."""
+        """Add 'object' to the list of object files (or analogues, such as
+        explictly named library files or the output of "resource
+        compilers") to be included in every link driven by this compiler
+        object.
+        """
         self.objects.append (object)
 
     def set_link_objects (self, objects):
-        """Set the list of object files (or analogues) to be included
-           in every link to 'objects'.  This does not affect any
-           standard object files that the linker may include by default
-           (such as system libraries)."""
+        """Set the list of object files (or analogues) to be included in
+        every link to 'objects'.  This does not affect any standard object
+        files that the linker may include by default (such as system
+        libraries).
+        """
         self.objects = copy (objects)
 
 
@@ -271,15 +273,15 @@ class CCompiler:
     # (here for the convenience of subclasses)
 
     def _fix_compile_args (self, output_dir, macros, include_dirs):
-        """Typecheck and fix-up some of the arguments to the 'compile()' method,
-           and return fixed-up values.  Specifically: if 'output_dir' is
-           None, replaces it with 'self.output_dir'; ensures that 'macros'
-           is a list, and augments it with 'self.macros'; ensures that
-           'include_dirs' is a list, and augments it with
-           'self.include_dirs'.  Guarantees that the returned values are of
-           the correct type, i.e. for 'output_dir' either string or None,
-           and for 'macros' and 'include_dirs' either list or None."""
-
+        """Typecheck and fix-up some of the arguments to the 'compile()'
+        method, and return fixed-up values.  Specifically: if 'output_dir'
+        is None, replaces it with 'self.output_dir'; ensures that 'macros'
+        is a list, and augments it with 'self.macros'; ensures that
+        'include_dirs' is a list, and augments it with 'self.include_dirs'.
+        Guarantees that the returned values are of the correct type,
+        i.e. for 'output_dir' either string or None, and for 'macros' and
+        'include_dirs' either list or None.
+        """
         if output_dir is None:
             output_dir = self.output_dir
         elif type (output_dir) is not StringType:
@@ -307,11 +309,11 @@ class CCompiler:
 
 
     def _prep_compile (self, sources, output_dir):
-        """Determine the list of object files corresponding to 'sources', and
-           figure out which ones really need to be recompiled.  Return a list
-           of all object files and a dictionary telling which source files can
-           be skipped."""
-
+        """Determine the list of object files corresponding to 'sources',
+        and figure out which ones really need to be recompiled.  Return a
+        list of all object files and a dictionary telling which source
+        files can be skipped.
+        """
         # Get the list of expected output (object) files 
         objects = self.object_filenames (sources,
                                          output_dir=output_dir)
@@ -330,8 +332,8 @@ class CCompiler:
                 skip_source[source] = 1
 
             (n_sources, n_objects) = newer_pairwise (sources, objects)
-            for source in n_sources:    # no really, only rebuild what's out-of-date
-                skip_source[source] = 0
+            for source in n_sources:    # no really, only rebuild what's
+                skip_source[source] = 0 # out-of-date
 
         return (objects, skip_source)
 
@@ -339,11 +341,11 @@ class CCompiler:
 
 
     def _fix_object_args (self, objects, output_dir):
-        """Typecheck and fix up some arguments supplied to various
-           methods.  Specifically: ensure that 'objects' is a list; if
-           output_dir is None, replace with self.output_dir.  Return fixed
-           versions of 'objects' and 'output_dir'."""
-
+        """Typecheck and fix up some arguments supplied to various methods.
+        Specifically: ensure that 'objects' is a list; if output_dir is
+        None, replace with self.output_dir.  Return fixed versions of
+        'objects' and 'output_dir'.
+        """
         if type (objects) not in (ListType, TupleType):
             raise TypeError, \
                   "'objects' must be a list or tuple of strings"
@@ -359,11 +361,11 @@ class CCompiler:
 
     def _fix_lib_args (self, libraries, library_dirs, runtime_library_dirs):
         """Typecheck and fix up some of the arguments supplied to the
-           'link_*' methods.  Specifically: ensure that all arguments are
-           lists, and augment them with their permanent versions
-           (eg. 'self.libraries' augments 'libraries').  Return a tuple
-           with fixed versions of all arguments."""
-
+        'link_*' methods.  Specifically: ensure that all arguments are
+        lists, and augment them with their permanent versions
+        (eg. 'self.libraries' augments 'libraries').  Return a tuple with
+        fixed versions of all arguments.
+        """
         if libraries is None:
             libraries = self.libraries
         elif type (libraries) in (ListType, TupleType):
@@ -396,9 +398,9 @@ class CCompiler:
 
 
     def _need_link (self, objects, output_file):
-        """Return true if we need to relink the files listed in 'objects' to
-           recreate 'output_file'."""
-
+        """Return true if we need to relink the files listed in 'objects'
+        to recreate 'output_file'.
+        """
         if self.force:
             return 1
         else:
@@ -438,44 +440,44 @@ class CCompiler:
                  debug=0,
                  extra_preargs=None,
                  extra_postargs=None):
-        """Compile one or more C/C++ source files.  'sources' must be
-           a list of strings, each one the name of a C/C++ source
-           file.  Return a list of object filenames, one per source
-           filename in 'sources'.  Depending on the implementation,
-           not all source files will necessarily be compiled, but
-           all corresponding object filenames will be returned.
+        """Compile one or more C/C++ source files.  'sources' must be a
+        list of strings, each one the name of a C/C++ source file.  Return
+        a list of object filenames, one per source filename in 'sources'.
+        Depending on the implementation, not all source files will
+        necessarily be compiled, but all corresponding object filenames
+        will be returned.
 
-           If 'output_dir' is given, object files will be put under it,
-           while retaining their original path component.  That is,
-           "foo/bar.c" normally compiles to "foo/bar.o" (for a Unix
-           implementation); if 'output_dir' is "build", then it would
-           compile to "build/foo/bar.o".
+        If 'output_dir' is given, object files will be put under it, while
+        retaining their original path component.  That is, "foo/bar.c"
+        normally compiles to "foo/bar.o" (for a Unix implementation); if
+        'output_dir' is "build", then it would compile to
+        "build/foo/bar.o".
 
-           'macros', if given, must be a list of macro definitions.  A
-           macro definition is either a (name, value) 2-tuple or a (name,)
-           1-tuple.  The former defines a macro; if the value is None, the
-           macro is defined without an explicit value.  The 1-tuple case
-           undefines a macro.  Later definitions/redefinitions/
-           undefinitions take precedence.
+        'macros', if given, must be a list of macro definitions.  A macro
+        definition is either a (name, value) 2-tuple or a (name,) 1-tuple.
+        The former defines a macro; if the value is None, the macro is
+        defined without an explicit value.  The 1-tuple case undefines a
+        macro.  Later definitions/redefinitions/ undefinitions take
+        precedence.
 
-           'include_dirs', if given, must be a list of strings, the
-           directories to add to the default include file search path for
-           this compilation only.
+        'include_dirs', if given, must be a list of strings, the
+        directories to add to the default include file search path for this
+        compilation only.
 
-           'debug' is a boolean; if true, the compiler will be instructed
-           to output debug symbols in (or alongside) the object file(s).
+        'debug' is a boolean; if true, the compiler will be instructed to
+        output debug symbols in (or alongside) the object file(s).
 
-           'extra_preargs' and 'extra_postargs' are implementation-
-           dependent.  On platforms that have the notion of a command-line
-           (e.g. Unix, DOS/Windows), they are most likely lists of strings:
-           extra command-line arguments to prepand/append to the compiler
-           command line.  On other platforms, consult the implementation
-           class documentation.  In any event, they are intended as an
-           escape hatch for those occasions when the abstract compiler
-           framework doesn't cut the mustard.
+        'extra_preargs' and 'extra_postargs' are implementation- dependent.
+        On platforms that have the notion of a command-line (e.g. Unix,
+        DOS/Windows), they are most likely lists of strings: extra
+        command-line arguments to prepand/append to the compiler command
+        line.  On other platforms, consult the implementation class
+        documentation.  In any event, they are intended as an escape hatch
+        for those occasions when the abstract compiler framework doesn't
+        cut the mustard.
 
-           Raises CompileError on failure."""
-           
+        Raises CompileError on failure.
+        """
         pass
 
 
@@ -484,25 +486,24 @@ class CCompiler:
                            output_libname,
                            output_dir=None,
                            debug=0):
-        """Link a bunch of stuff together to create a static library
-           file.  The "bunch of stuff" consists of the list of object
-           files supplied as 'objects', the extra object files supplied
-           to 'add_link_object()' and/or 'set_link_objects()', the
-           libraries supplied to 'add_library()' and/or
-           'set_libraries()', and the libraries supplied as 'libraries'
-           (if any).
+        """Link a bunch of stuff together to create a static library file.
+        The "bunch of stuff" consists of the list of object files supplied
+        as 'objects', the extra object files supplied to
+        'add_link_object()' and/or 'set_link_objects()', the libraries
+        supplied to 'add_library()' and/or 'set_libraries()', and the
+        libraries supplied as 'libraries' (if any).
 
-           'output_libname' should be a library name, not a filename; the
-           filename will be inferred from the library name.  'output_dir'
-           is the directory where the library file will be put.
+        'output_libname' should be a library name, not a filename; the
+        filename will be inferred from the library name.  'output_dir' is
+        the directory where the library file will be put.
 
-           'debug' is a boolean; if true, debugging information will be
-           included in the library (note that on most platforms, it is the
-           compile step where this matters: the 'debug' flag is included
-           here just for consistency).
+        'debug' is a boolean; if true, debugging information will be
+        included in the library (note that on most platforms, it is the
+        compile step where this matters: the 'debug' flag is included here
+        just for consistency).
 
-           Raises LibError on failure."""
-
+        Raises LibError on failure.
+        """
         pass
     
 
@@ -517,44 +518,44 @@ class CCompiler:
                          debug=0,
                          extra_preargs=None,
                          extra_postargs=None):
-        """Link a bunch of stuff together to create a shared library
-           file.  Similar semantics to 'create_static_lib()', with the
-           addition of other libraries to link against and directories to
-           search for them.  Also, of course, the type and name of
-           the generated file will almost certainly be different, as will
-           the program used to create it.
 
-           'libraries' is a list of libraries to link against.  These are
-           library names, not filenames, since they're translated into
-           filenames in a platform-specific way (eg. "foo" becomes
-           "libfoo.a" on Unix and "foo.lib" on DOS/Windows).  However, they
-           can include a directory component, which means the linker will
-           look in that specific directory rather than searching all the
-           normal locations.
+        """Link a bunch of stuff together to create a shared library file.
+        Similar semantics to 'create_static_lib()', with the addition of
+        other libraries to link against and directories to search for them.
+        Also, of course, the type and name of the generated file will
+        almost certainly be different, as will the program used to create
+        it.
 
-           'library_dirs', if supplied, should be a list of directories to
-           search for libraries that were specified as bare library names
-           (ie. no directory component).  These are on top of the system
-           default and those supplied to 'add_library_dir()' and/or
-           'set_library_dirs()'.  'runtime_library_dirs' is a list of
-           directories that will be embedded into the shared library and
-           used to search for other shared libraries that *it* depends on
-           at run-time.  (This may only be relevant on Unix.)
+        'libraries' is a list of libraries to link against.  These are
+        library names, not filenames, since they're translated into
+        filenames in a platform-specific way (eg. "foo" becomes "libfoo.a"
+        on Unix and "foo.lib" on DOS/Windows).  However, they can include a
+        directory component, which means the linker will look in that
+        specific directory rather than searching all the normal locations.
 
-           'export_symbols' is a list of symbols that the shared library
-           will export.  (This appears to be relevant only on Windows.)
+        'library_dirs', if supplied, should be a list of directories to
+        search for libraries that were specified as bare library names
+        (ie. no directory component).  These are on top of the system
+        default and those supplied to 'add_library_dir()' and/or
+        'set_library_dirs()'.  'runtime_library_dirs' is a list of
+        directories that will be embedded into the shared library and used
+        to search for other shared libraries that *it* depends on at
+        run-time.  (This may only be relevant on Unix.)
 
-           'debug' is as for 'compile()' and 'create_static_lib()', with the
-           slight distinction that it actually matters on most platforms
-           (as opposed to 'create_static_lib()', which includes a 'debug'
-           flag mostly for form's sake).
+        'export_symbols' is a list of symbols that the shared library will
+        export.  (This appears to be relevant only on Windows.)
 
-           'extra_preargs' and 'extra_postargs' are as for 'compile()'
-           (except of course that they supply command-line arguments
-           for the particular linker being used).
+        'debug' is as for 'compile()' and 'create_static_lib()', with the
+        slight distinction that it actually matters on most platforms (as
+        opposed to 'create_static_lib()', which includes a 'debug' flag
+        mostly for form's sake).
 
-           Raises LinkError on failure."""
+        'extra_preargs' and 'extra_postargs' are as for 'compile()' (except
+        of course that they supply command-line arguments for the
+        particular linker being used).
 
+        Raises LinkError on failure.
+        """
         pass
     
 
@@ -569,14 +570,15 @@ class CCompiler:
                             debug=0,
                             extra_preargs=None,
                             extra_postargs=None):
-        """Link a bunch of stuff together to create a shared object
-           file.  Much like 'link_shared_lib()', except the output filename
-           is explicitly supplied as 'output_filename'.  If 'output_dir' is
-           supplied, 'output_filename' is relative to it
-           (i.e. 'output_filename' can provide directory components if
-           needed).
+        """Link a bunch of stuff together to create a shared object file.
+        Much like 'link_shared_lib()', except the output filename is
+        explicitly supplied as 'output_filename'.  If 'output_dir' is
+        supplied, 'output_filename' is relative to it
+        (i.e. 'output_filename' can provide directory components if
+        needed).
 
-           Raises LinkError on failure."""
+        Raises LinkError on failure.
+        """
         pass
 
 
@@ -591,12 +593,13 @@ class CCompiler:
                          extra_preargs=None,
                          extra_postargs=None):
         """Link a bunch of stuff together to create a binary executable
-           file.  The "bunch of stuff" is as for 'link_shared_lib()'.
-           'output_progname' should be the base name of the executable
-           program--e.g. on Unix the same as the output filename, but
-           on DOS/Windows ".exe" will be appended.
+        file.  The "bunch of stuff" is as for 'link_shared_lib()'.
+        'output_progname' should be the base name of the executable
+        program--e.g. on Unix the same as the output filename, but on
+        DOS/Windows ".exe" will be appended.
 
-           Raises LinkError on failure."""
+        Raises LinkError on failure.
+        """
         pass
 
 
@@ -607,24 +610,28 @@ class CCompiler:
     # implement all of these.
 
     def library_dir_option (self, dir):
-        """Return the compiler option to add 'dir' to the list of directories
-           searched for libraries."""
+        """Return the compiler option to add 'dir' to the list of
+        directories searched for libraries.
+        """
         raise NotImplementedError
 
     def runtime_library_dir_option (self, dir):
-        """Return the compiler option to add 'dir' to the list of directories
-           searched for runtime libraries."""
+        """Return the compiler option to add 'dir' to the list of
+        directories searched for runtime libraries.
+        """
         raise NotImplementedError
 
     def library_option (self, lib):
         """Return the compiler option to add 'dir' to the list of libraries
-           linked into the shared library or executable."""
+        linked into the shared library or executable.
+        """
         raise NotImplementedError
 
     def find_library_file (self, dirs, lib):
         """Search the specified list of directories for a static or shared
-           library file 'lib' and return the full path to that file. Return
-           None if it wasn't found in any of the specified directories."""
+        library file 'lib' and return the full path to that file. Return
+        None if it wasn't found in any of the specified directories.
+        """
         raise NotImplementedError
 
 
@@ -776,18 +783,16 @@ def new_compiler (plat=None,
                   verbose=0,
                   dry_run=0,
                   force=0):
-
     """Generate an instance of some CCompiler subclass for the supplied
-       platform/compiler combination.  'plat' defaults to 'os.name'
-       (eg. 'posix', 'nt'), and 'compiler' defaults to the default
-       compiler for that platform.  Currently only 'posix' and 'nt'
-       are supported, and the default compilers are "traditional Unix
-       interface" (UnixCCompiler class) and Visual C++ (MSVCCompiler
-       class).  Note that it's perfectly possible to ask for a Unix
-       compiler object under Windows, and a Microsoft compiler object
-       under Unix -- if you supply a value for 'compiler', 'plat'
-       is ignored."""
-
+    platform/compiler combination.  'plat' defaults to 'os.name'
+    (eg. 'posix', 'nt'), and 'compiler' defaults to the default compiler
+    for that platform.  Currently only 'posix' and 'nt' are supported, and
+    the default compilers are "traditional Unix interface" (UnixCCompiler
+    class) and Visual C++ (MSVCCompiler class).  Note that it's perfectly
+    possible to ask for a Unix compiler object under Windows, and a
+    Microsoft compiler object under Unix -- if you supply a value for
+    'compiler', 'plat' is ignored.
+    """
     if plat is None:
         plat = os.name
 
@@ -820,15 +825,15 @@ def new_compiler (plat=None,
 
 
 def gen_preprocess_options (macros, include_dirs):
-    """Generate C pre-processor options (-D, -U, -I) as used by at
-       least two types of compilers: the typical Unix compiler and Visual
-       C++.  'macros' is the usual thing, a list of 1- or 2-tuples, where
-       (name,) means undefine (-U) macro 'name', and (name,value) means
-       define (-D) macro 'name' to 'value'.  'include_dirs' is just a list of
-       directory names to be added to the header file search path (-I).
-       Returns a list of command-line options suitable for either
-       Unix compilers or Visual C++."""
-    
+    """Generate C pre-processor options (-D, -U, -I) as used by at least
+    two types of compilers: the typical Unix compiler and Visual C++.
+    'macros' is the usual thing, a list of 1- or 2-tuples, where (name,)
+    means undefine (-U) macro 'name', and (name,value) means define (-D)
+    macro 'name' to 'value'.  'include_dirs' is just a list of directory
+    names to be added to the header file search path (-I).  Returns a list
+    of command-line options suitable for either Unix compilers or Visual
+    C++.
+    """
     # XXX it would be nice (mainly aesthetic, and so we don't generate
     # stupid-looking command lines) to go over 'macros' and eliminate
     # redundant definitions/undefinitions (ie. ensure that only the
@@ -872,12 +877,11 @@ def gen_preprocess_options (macros, include_dirs):
 
 def gen_lib_options (compiler, library_dirs, runtime_library_dirs, libraries):
     """Generate linker options for searching library directories and
-       linking with specific libraries.  'libraries' and 'library_dirs'
-       are, respectively, lists of library names (not filenames!) and
-       search directories.  Returns a list of command-line options suitable
-       for use with some compiler (depending on the two format strings
-       passed in)."""
-
+    linking with specific libraries.  'libraries' and 'library_dirs' are,
+    respectively, lists of library names (not filenames!) and search
+    directories.  Returns a list of command-line options suitable for use
+    with some compiler (depending on the two format strings passed in).
+    """
     lib_opts = []
 
     for dir in library_dirs:
