@@ -10,7 +10,7 @@ import sys
 import refcounts
 
 
-PREFIX = r"\begin{cfuncdesc}{PyObject*}{"
+PREFIX = r"\begin{cfuncdesc}{Py(Var|)Object*}{"
 
 
 def main():
@@ -48,14 +48,15 @@ def main():
                 except KeyError:
                     sys.stderr.write("No refcount data for %s\n" % s)
                 else:
-                    if info.result_type == "PyObject*":
+                    if info.result_type in ("PyObject*", "PyVarObject*"):
                         if info.result_refs is None:
                             rc = "Always \NULL{}"
                         else:
                             rc = info.result_refs and "New" or "Borrowed"
                             rc = rc + " reference"
-                        line = r"\begin{cfuncdesc}[%s]{PyObject*}{" % rc \
-                               + line[prefix_len:]
+                        line = (r"\begin{cfuncdesc}[%s]{%s}{"
+                                % (rc, info.result_type)) \
+                                + line[prefix_len:]
             output.write(line)
         if infile != "-":
             input.close()
