@@ -28,6 +28,8 @@ Core and builtins
 Extension modules
 -----------------
 
+- Bug #1005308: Define _BSD_TYPES.
+
 - Patch #1005568: Use _SC_PAGESIZE on Irix in resourcemoudle.
 
 - Patch #924294: Do no check for AF_INET6 if it is not defined.

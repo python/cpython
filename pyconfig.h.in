@@ -823,6 +823,9 @@
 # undef _ALL_SOURCE
 #endif
 
+/* Define on Irix to enable u_int */
+#undef _BSD_TYPES
+
 /* This must be set to 64 on some systems to enable large file support. */
 #undef _FILE_OFFSET_BITS
 
