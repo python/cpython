@@ -55,6 +55,7 @@ def main():
     port = 0
     if ':' in host:
         host, port = host.split(':', 1)
+        port = int(port)
     try:
         auth = netrc.netrc().authenticators(host)
         if auth is not None:
@@ -81,7 +82,8 @@ def main():
             if args[3:]: usage('too many arguments')
     #
     f = ftplib.FTP()
-    if verbose: print 'Connecting to %s...' % `host`
+    if verbose: print "Connecting to '%s%s'..." % (host,
+                                                   (port and ":%d"%port or ""))
     f.connect(host,port)
     if not nologin:
         if verbose:
