@@ -349,7 +349,7 @@ strop_find(self, args)
 	if (i < 0)
 		i = 0;
 
-	if (n == 0)
+	if (n == 0 && i <= last)
 		return PyInt_FromLong((long)i);
 
 	last -= n;
@@ -394,7 +394,7 @@ strop_rfind(self, args)
 	if (i < 0)
 		i = 0;
 
-	if (n == 0)
+	if (n == 0 && i <= last)
 		return PyInt_FromLong((long)last);
 
 	for (j = last-n; j >= i; --j)
