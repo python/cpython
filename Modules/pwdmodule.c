@@ -184,5 +184,7 @@ initpwd(void)
 
 	PyStructSequence_InitType(&StructPwdType, &struct_pwd_type_desc);
 	Py_INCREF((PyObject *) &StructPwdType);
+	PyModule_AddObject(m, "struct_passwd", (PyObject *) &StructPwdType);
+	/* And for b/w compatibility (this was defined by mistake): */
 	PyModule_AddObject(m, "struct_pwent", (PyObject *) &StructPwdType);
 }
