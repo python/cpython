@@ -938,31 +938,6 @@ py-beep-if-tab-change\t\tring the bell if tab-width is changed"
   ;; Emacs 19 requires this
   (if (boundp 'comment-multi-line)
       (setq comment-multi-line nil))
-  ;; hack to allow overriding the tabsize in the file (see tokenizer.c)
-  ;;
-  ;; not sure where the magic comment has to be; to save time
-  ;; searching for a rarity, we give up if it's not found prior to the
-  ;; first executable statement.
-  ;;
-  ;; BAW - on first glance, this seems like complete hackery.  Why was
-  ;; this necessary, and is it still necessary?
-  (let ((case-fold-search nil)
-	(start (point))
-	new-tab-width)
-    (if (re-search-forward
-	 "^[ \t]*#[ \t]*vi:set[ \t]+tabsize=\\([0-9]+\\):"
-	 (prog2 (py-next-statement 1) (point) (goto-char 1))
-	 t)
-	(progn
-	  (setq new-tab-width
-		(string-to-int
-		 (buffer-substring (match-beginning 1) (match-end 1))))
-	  (if (= tab-width new-tab-width)
-	      nil
-	    (setq tab-width new-tab-width)
-	    (message "Caution: tab-width changed to %d" new-tab-width)
-	    (if py-beep-if-tab-change (beep)))))
-    (goto-char start))
   ;; Install Imenu, only works for Emacs.
   (when (py-safe (require 'imenu))
     (make-variable-buffer-local 'imenu-create-index-function)
