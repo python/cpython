@@ -1,0 +1,9 @@
+This is an example of a multi-threaded C application embedding a
+Python interpreter.
+
+The particular application is a multi-threaded telnet-like server that
+provides you with a Python prompt (instead of a shell prompt).
+
+The file pysvr.py is a prototype in Python.
+
+THIS APPLICATION IS NOT SECURE -- ONLY USE IT FOR TESTING!
