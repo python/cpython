@@ -40,18 +40,14 @@ def compile(filename, display=0):
 
 class Module:
     def __init__(self, source, filename):
-        self.filename = filename
+        self.filename = os.path.abspath(filename)
         self.source = source
         self.code = None
 
     def compile(self, display=0):
         tree = parse(self.source)
-        root, filename = os.path.split(self.filename)
-        if "nested_scopes" in future.find_futures(tree):
-            gen = NestedScopeModuleCodeGenerator(filename)
-        else:
-            gen = ModuleCodeGenerator(filename)
-        walk(tree, gen, 1)
+        gen = NestedScopeModuleCodeGenerator(self.filename)
+        walk(tree, gen, verbose=1)
         if display:
             import pprint
             print pprint.pprint(tree)
@@ -114,6 +110,12 @@ class LocalNameFinder:
 
     def visitAssName(self, node):
         self.names.add(node.name)
+
+def is_constant_false(node):
+    if isinstance(node, ast.Const):
+        if not node.value:
+            return 1
+    return 0
 
 class CodeGenerator:
     """Defines basic code generator for Python bytecode
@@ -234,10 +236,11 @@ class CodeGenerator:
 
     def visitModule(self, node):
         self.emit('SET_LINENO', 0)
-        lnf = walk(node.node, self.NameFinder(), 0)
-        self.locals.push(lnf.getLocals())
         if node.doc:
-            self.fixDocstring(node.node)
+            self.emit('LOAD_CONST', node.doc)
+            self.storeName('__doc__')
+        lnf = walk(node.node, self.NameFinder(), verbose=0)
+        self.locals.push(lnf.getLocals())
         self.visit(node.node)
         self.emit('LOAD_CONST', None)
         self.emit('RETURN_VALUE')
@@ -264,7 +267,8 @@ class CodeGenerator:
     def visitClass(self, node):
         gen = self.ClassGen(node, self.filename, self.scopes)
         if node.doc:
-            self.fixDocstring(node.code)
+            self.emit('LOAD_CONST', node.doc)
+            self.storeName('__doc__')
         walk(node.code, gen)
         gen.finish()
         self.set_lineno(node)
@@ -278,19 +282,6 @@ class CodeGenerator:
         self.emit('BUILD_CLASS')
         self.storeName(node.name)
 
-    def fixDocstring(self, node):
-        """Rewrite the ast for a class with a docstring.
-
-        The AST includes a Discard(Const(docstring)) node.  Replace
-        this with an Assign([AssName('__doc__', ...])
-        """
-        assert isinstance(node, ast.Stmt)
-        stmts = node.nodes
-        discard = stmts[0]
-        assert isinstance(discard, ast.Discard)
-        stmts[0] = ast.Assign([ast.AssName('__doc__', 'OP_ASSIGN')],
-                              discard.expr)
-        stmts[0].lineno = discard.lineno
     # The rest are standard visitor methods
 
     # The next few implement control-flow statements
@@ -300,6 +291,9 @@ class CodeGenerator:
         numtests = len(node.tests)
         for i in range(numtests):
             test, suite = node.tests[i]
+            if is_constant_false(test):
+                # XXX will need to check generator stuff here
+                continue
             self.set_lineno(test)
             self.visit(test)
             nextTest = self.newBlock()
@@ -793,7 +787,7 @@ class CodeGenerator:
         opcode = callfunc_opcode_info[have_star, have_dstar]
         self.emit(opcode, kw << 8 | pos)
 
-    def visitPrint(self, node):
+    def visitPrint(self, node, newline=0):
         self.set_lineno(node)
         if node.dest:
             self.visit(node.dest)
@@ -806,9 +800,11 @@ class CodeGenerator:
                 self.emit('PRINT_ITEM_TO')
             else:
                 self.emit('PRINT_ITEM')
+        if node.dest and not newline:
+            self.emit('POP_TOP')
 
     def visitPrintnl(self, node):
-        self.visitPrint(node)
+        self.visitPrint(node, newline=1)
         if node.dest:
             self.emit('PRINT_NEWLINE_TO')
         else:
@@ -1021,7 +1017,8 @@ class NestedScopeCodeGenerator(CodeGenerator):
     def visitClass(self, node):
         gen = self.ClassGen(node, self.filename, self.scopes)
         if node.doc:
-            self.fixDocstring(node.code)
+            self.emit('LOAD_CONST', node.doc)
+            self.storeName('__doc__')
         walk(node.code, gen)
         gen.finish()
         self.set_lineno(node)
@@ -1072,7 +1069,7 @@ class NestedScopeModuleCodeGenerator(NestedScopeMixin,
     def __init__(self, filename):
         self.graph = pyassem.PyFlowGraph("<module>", filename)
         self.__super_init(filename)
-        self.graph.setFlag(CO_NESTED)
+##        self.graph.setFlag(CO_NESTED)
 
 class AbstractFunctionCode:
     optimized = 1
@@ -1094,7 +1091,7 @@ class AbstractFunctionCode:
         if not isLambda and func.doc:
             self.setDocstring(func.doc)
 
-        lnf = walk(func.code, self.NameFinder(args), 0)
+        lnf = walk(func.code, self.NameFinder(args), verbose=0)
         self.locals.push(lnf.getLocals())
         if func.varargs:
             self.graph.setFlag(CO_VARARGS)
@@ -1147,7 +1144,7 @@ class NestedFunctionCodeGenerator(AbstractFunctionCode,
         self.__super_init(func, filename, scopes, isLambda)
         self.graph.setFreeVars(self.scope.get_free_vars())
         self.graph.setCellVars(self.scope.get_cell_vars())
-        self.graph.setFlag(CO_NESTED)
+##        self.graph.setFlag(CO_NESTED)
 
 class AbstractClassCode:
 
@@ -1155,7 +1152,7 @@ class AbstractClassCode:
         self.graph = pyassem.PyFlowGraph(klass.name, filename,
                                            optimized=0)
         self.super_init(filename)
-        lnf = walk(klass.code, self.NameFinder(), 0)
+        lnf = walk(klass.code, self.NameFinder(), verbose=0)
         self.locals.push(lnf.getLocals())
         self.graph.setFlag(CO_NEWLOCALS)
         if klass.doc:
@@ -1186,7 +1183,7 @@ class NestedClassCodeGenerator(AbstractClassCode,
         self.__super_init(klass, filename, scopes)
         self.graph.setFreeVars(self.scope.get_free_vars())
         self.graph.setCellVars(self.scope.get_cell_vars())
-        self.graph.setFlag(CO_NESTED)
+##        self.graph.setFlag(CO_NESTED)
 
 def generateArgList(arglist):
     """Generate an arg list marking TupleArgs"""
@@ -1208,7 +1205,7 @@ def generateArgList(arglist):
 def findOp(node):
     """Find the op (DELETE, LOAD, STORE) in an AssTuple tree"""
     v = OpFinder()
-    walk(node, v, 0)
+    walk(node, v, verbose=0)
     return v.op
 
 class OpFinder:
