@@ -3993,6 +3993,8 @@ unicode_repeat(PyUnicodeObject *str, int len)
 {
     PyUnicodeObject *u;
     Py_UNICODE *p;
+    int nchars;
+    size_t nbytes;
 
     if (len < 0)
         len = 0;
@@ -4002,8 +4004,23 @@ unicode_repeat(PyUnicodeObject *str, int len)
         Py_INCREF(str);
         return (PyObject*) str;
     }
-        
-    u = _PyUnicode_New(len * str->length);
+
+    /* ensure # of chars needed doesn't overflow int and # of bytes
+     * needed doesn't overflow size_t
+     */
+    nchars = len * str->length;
+    if (len && nchars / len != str->length) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "repeated string is too long");
+        return NULL;
+    }
+    nbytes = (nchars + 1) * sizeof(Py_UNICODE);
+    if (nbytes / sizeof(Py_UNICODE) != (size_t)(nchars + 1)) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "repeated string is too long");
+        return NULL;
+    }
+    u = _PyUnicode_New(nchars);
     if (!u)
         return NULL;
 

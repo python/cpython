@@ -393,16 +393,31 @@ string_repeat(register PyStringObject *a, register int n)
 	register int i;
 	register int size;
 	register PyStringObject *op;
+	size_t nbytes;
 	if (n < 0)
 		n = 0;
+	/* watch out for overflows:  the size can overflow int,
+	 * and the # of bytes needed can overflow size_t
+	 */
 	size = a->ob_size * n;
+	if (n && size / n != a->ob_size) {
+		PyErr_SetString(PyExc_OverflowError,
+			"repeated string is too long");
+		return NULL;
+	}
 	if (size == a->ob_size) {
 		Py_INCREF(a);
 		return (PyObject *)a;
 	}
-	/* PyObject_NewVar is inlined */
+	nbytes = size * sizeof(char);
+	if (nbytes / sizeof(char) != (size_t)size ||
+	    nbytes + sizeof(PyStringObject) <= nbytes) {
+		PyErr_SetString(PyExc_OverflowError,
+			"repeated string is too long");
+		return NULL;
+	}
 	op = (PyStringObject *)
-		PyObject_MALLOC(sizeof(PyStringObject) + size * sizeof(char));
+		PyObject_MALLOC(sizeof(PyStringObject) + nbytes);
 	if (op == NULL)
 		return PyErr_NoMemory();
 	PyObject_INIT_VAR(op, &PyString_Type, size);
