@@ -57,8 +57,8 @@ struct pair_encodemap {
 	DBCHAR code;
 };
 
-static const MultibyteCodec codec_list[];
-static const struct dbcs_map mapping_list[];
+extern const MultibyteCodec codec_list[];
+extern const struct dbcs_map mapping_list[];
 
 #define CODEC_INIT(encoding)						\
 	static int encoding##_codec_init(const void *config)
