@@ -183,9 +183,6 @@ command-line arguments to the setup script:
   Modules}: just leave off the initial \code{python setup.py} and
   you'll be fine)
 \end{itemize}
-\XXX{this should change: every Distutils setup script will need
-  command-line arguments for every run (and should probably keep stdout
-  around), so all this should happen automatically for setup scripts}
 
 
 \subsection{Splitting the job up}
@@ -604,8 +601,10 @@ python setup.py install --install-purelib=Site --install-platlib=Site
 The specified installation directories are relative to \filevar{prefix}.
 Of course, you also have to ensure that these directories are in
 Python's module search path, e.g. by putting a \file{.pth} file in
-\filevar{prefix} (\XXX{should have a section describing \file{.pth} files and
-  cross-ref it here}).
+\filevar{prefix}.
+
+% \XXX should have a section describing \file{.pth} files and
+% cross-ref it here
 
 If you want to define an entire installation scheme, you just have to
 supply all of the installation directory options.  The recommended way
@@ -687,8 +686,8 @@ environment variables, such as Mac OS (\XXX{true?}), the configuration
 variables supplied by the Distutils are the only ones you can use.)
 See section~\ref{config-files} for details.
 
-\XXX{need some Windows and Mac OS examples---when would custom
-  installation schemes be needed on those platforms?}
+% XXX need some Windows and Mac OS examples---when would custom
+% installation schemes be needed on those platforms?
 
 
 \section{Distutils Configuration Files}
@@ -763,8 +762,7 @@ And on Mac OS, they are:
   directory on Windows.)
 \item[(6)] (See also notes (1) and (4).)  The default installation
   prefix is just \file{Python:}, so under Python 1.6 and later this is
-  normally\file{Python:Lib:distutils:distutils.cfg}.  (The Distutils
-  don't work very well with Python 1.5.2 under Mac OS.  \XXX{true?})
+  normally\file{Python:Lib:distutils:distutils.cfg}.  
 \end{description}
 
 
