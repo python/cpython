@@ -131,7 +131,7 @@ spam2(op_or_           , PyNumber_Or)
 spami(isSequenceType   , PySequence_Check)
 spam2(op_concat        , PySequence_Concat)
 spamoi(op_repeat       , PySequence_Repeat)
-spami2(sequenceIncludes, PySequence_Contains)
+spami2(op_contains     , PySequence_Contains)
 spami2(indexOf         , PySequence_Index)
 spami2(countOf         , PySequence_Count)
 spami(isMappingType    , PyMapping_Check)
@@ -200,53 +200,53 @@ op_delslice(s,a)
 static struct PyMethodDef operator_methods[] = {
 
 spam1(isCallable,
- "isCallable(o) -- Return 1 if o is callable, and zero otherwise.")
+ "isCallable(a) -- Same as callable(a).")
 spam1(isNumberType,
- "isNumberType(o) -- Return 1 if o has a numeric type, and zero otherwise.")
+ "isNumberType(a) -- Return 1 if a has a numeric type, and zero otherwise.")
 spam1(isSequenceType,
- "isSequenceType(o) -- Return 1 if o has a sequence type, and zero otherwise.")
+ "isSequenceType(a) -- Return 1 if a has a sequence type, and zero otherwise.")
 spam1(truth,
- "truth(o) -- Return 1 if o is true, and 0 otherwise.")
-spam1(sequenceIncludes,
- "sequenceIncludes(a, b) -- Return 1 is a includes b, and 0 otherwise.")
+ "truth(a) -- Return 1 if a is true, and 0 otherwise.")
+spam2(contains,sequenceIncludes,
+ "contains(a, b) -- Same as b in a (note reversed operands).")
 spam1(indexOf,
- "indexOf(a, b) -- Return the index of b in a.")
+ "indexOf(a, b) -- Return the first index of b in a.")
 spam1(countOf,
  "countOf(a, b) -- Return the number of times b occurs in a.")
 spam1(isMappingType,
- "isMappingType(o) -- Return 1 if o has a mapping type, and zero otherwise.")
+ "isMappingType(a) -- Return 1 if a has a mapping type, and zero otherwise.")
 
-spam2(add,__add__, "add(a, b) -- Return a + b, for a and b numbers.")
-spam2(sub,__sub__, "sub(a, b) -- Return a - b.")
-spam2(mul,__mul__, "mul(a, b) -- Return a * b, for a and b numbers.")
-spam2(div,__div__, "div(a, b) -- Return a / b.")
-spam2(mod,__mod__, "mod(a, b) -- Return a % b.")
-spam2(neg,__neg__, "neg(o) -- Return o negated.")
-spam2(pos,__pos__, "pos(o) -- Return o positive.")
-spam2(abs,__abs__, "abs(o) -- Return the absolute value of o.")
-spam2(inv,__inv__, "inv(o) -- Return the inverse of o.")
-spam2(lshift,__lshift__, "lshift(a, b) -- Return a shifted left by b.")
-spam2(rshift,__rshift__, "rshift(a, b) -- Return a shifted right by b.")
-spam2(not_,__not__, "not_(o) -- Return 0 if o is true, and 1 otherwise.")
-spam2(and_,__and__, "and_(a, b) -- Return the bitwise and of a and b.")
-spam2(xor,__xor__, "xor(a, b) -- Return the bitwise exclusive-or of a and b.")
-spam2(or_,__or__, "or_(a, b) -- Return the bitwise or of a and b.")
+spam2(add,__add__, "add(a, b) -- Same as a + b.")
+spam2(sub,__sub__, "sub(a, b) -- Same as a - b.")
+spam2(mul,__mul__, "mul(a, b) -- Same as a * b.")
+spam2(div,__div__, "div(a, b) -- Same as a / b.")
+spam2(mod,__mod__, "mod(a, b) -- Same as a % b.")
+spam2(neg,__neg__, "neg(a) -- Same as -a.")
+spam2(pos,__pos__, "pos(a) -- Same as +a.")
+spam2(abs,__abs__, "abs(a) -- Same as abs(a).")
+spam2(inv,__inv__, "inv(a) -- Same as ~a.")
+spam2(lshift,__lshift__, "lshift(a, b) -- Same as a << b.")
+spam2(rshift,__rshift__, "rshift(a, b) -- Same as a >> b.")
+spam2(not_,__not__, "not_(a) -- Same as not a.")
+spam2(and_,__and__, "and_(a, b) -- Same as a & b.")
+spam2(xor,__xor__, "xor(a, b) -- Same as a ^ b.")
+spam2(or_,__or__, "or_(a, b) -- Same as a | b.")
 spam2(concat,__concat__,
- "concat(a, b) -- Return a + b, for a and b sequences.")
+ "concat(a, b) -- Same as a + b, for a and b sequences.")
 spam2(repeat,__repeat__,
  "repeat(a, b) -- Return a * b, where a is a sequence, and b is an integer.")
 spam2(getitem,__getitem__,
- "getitem(a, b) -- Return the value of a at index b.")
+ "getitem(a, b) -- Same as a[b].")
 spam2(setitem,__setitem__,
- "setitem(a, b, c) -- Set the value of a at b to c.")
+ "setitem(a, b, c) -- Same as a[b] = c.")
 spam2(delitem,__delitem__,
- "delitem(a, b) -- Delete the value of a at b.")
+ "delitem(a, b) -- Same as del a[b].")
 spam2(getslice,__getslice__,
- "getslice(a, b, c) -- Return the slice of a from b to c-1.")
+ "getslice(a, b, c) -- Same as a[b:c].")
 spam2(setslice,__setslice__,
-"setslice(a, b, c, v) -- Set the slice of a from b to c-1 to the sequence v.")
+"setslice(a, b, c, d) -- Same as a[b:c] = d.")
 spam2(delslice,__delslice__,
-"delslice(a, b, c) -- Delete the slice of a from b to c-1.")
+"delslice(a, b, c) -- Same as del a[b:c].")
 
 	{NULL,		NULL}		/* sentinel */
 
@@ -258,20 +258,7 @@ spam2(delslice,__delslice__,
 void
 initoperator()
 {
-        PyObject *m, *d, *v;
-  
         /* Create the module and add the functions */
-        m = Py_InitModule4("operator", operator_methods,
-                           operator_doc,
-                           (PyObject*)NULL,PYTHON_API_VERSION);
-
-        /* Add some symbolic constants to the module */
-        d = PyModule_GetDict(m);
-        PyDict_SetItemString(d, "__version__",
-                             v = PyString_FromString("$Rev$"));
-	Py_XDECREF(v);
-  
-        /* Check for errors */
-        if (PyErr_Occurred())
-                Py_FatalError("can't initialize module operator");
+        Py_InitModule4("operator", operator_methods, operator_doc,
+		       (PyObject*)NULL, PYTHON_API_VERSION);
 }
