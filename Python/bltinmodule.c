@@ -2363,33 +2363,33 @@ filterunicode(PyObject *func, PyObject *strobj)
 		if (ok) {
 			int reslen;
 			if (!PyUnicode_Check(item)) {
-				PyErr_SetString(PyExc_TypeError, "can't filter unicode to unicode:"
-					" __getitem__ returned different type");
+				PyErr_SetString(PyExc_TypeError, 
+				"can't filter unicode to unicode:"
+				" __getitem__ returned different type");
 				Py_DECREF(item);
 				goto Fail_1;
 			}
 			reslen = PyUnicode_GET_SIZE(item);
-			if (reslen == 1) {
+			if (reslen == 1) 
 				PyUnicode_AS_UNICODE(result)[j++] =
 					PyUnicode_AS_UNICODE(item)[0];
-			} else {
+			else {
 				/* do we need more space? */
-				int need = j + reslen + len-i-1;
+				int need = j + reslen + len - i - 1;
 				if (need > outlen) {
-					/* overallocate, to avoid reallocations */
-					if (need<2*outlen)
-						need = 2*outlen;
+					/* overallocate, 
+					   to avoid reallocations */
+					if (need < 2 * outlen)
+						need = 2 * outlen;
 					if (PyUnicode_Resize(&result, need)) {
 						Py_DECREF(item);
 						goto Fail_1;
 					}
 					outlen = need;
 				}
-				memcpy(
-					PyUnicode_AS_UNICODE(result) + j,
-					PyUnicode_AS_UNICODE(item),
-					reslen*sizeof(Py_UNICODE)
-				);
+				memcpy(PyUnicode_AS_UNICODE(result) + j,
+				       PyUnicode_AS_UNICODE(item),
+				       reslen*sizeof(Py_UNICODE));
 				j += reslen;
 			}
 		}
