@@ -11,7 +11,7 @@ file causing it."""
 
 __revision__ = "$Id$"
 
-import os, string, shutil
+import os, string, re, shutil
 from distutils.errors import *
 
 
@@ -71,7 +71,8 @@ def mkpath (name, mode=0777, verbose=0, dry_run=0):
             try:
                 os.mkdir (head)
             except os.error, (errno, errstr):
-                raise DistutilsFileError, "'%s': %s" % (head, errstr)
+                raise DistutilsFileError, \
+                      "could not create '%s': %s" % (head, errstr)
 
         PATH_CREATED[head] = 1
 
@@ -504,11 +505,10 @@ def native_path (pathname):
         raise DistutilsValueError, "path '%s' cannot be absolute" % pathname
     if pathname[-1] == '/':
         raise DistutilsValueError, "path '%s' cannot end with '/'" % pathname
-    if os.sep != '/':
-        if os.sep in pathname:
-            raise DistutilsValueError, \
-                  "path '%s' cannot contain '%c' character" % \
-                  (pathname, os.sep)
+    if os.sep != '/' and os.sep in pathname:
+        raise DistutilsValueError, \
+              "path '%s' cannot contain '%c' character" % \
+              (pathname, os.sep)
 
         paths = string.split (pathname, '/')
         return apply (os.path.join, paths)
@@ -516,3 +516,43 @@ def native_path (pathname):
         return pathname
 
 # native_path ()
+
+
+def _check_environ ():
+    """Ensure that 'os.environ' has all the environment variables we
+       guarantee that users can use in config files, command-line
+       options, etc.  Currently this includes:
+         HOME - user's home directory (Unix only)
+         PLAT - desription of the current platform, including hardware
+                and OS (see 'get_platform()')
+    """
+
+    if os.name == 'posix' and not os.environ.has_key('HOME'):
+        import pwd
+        os.environ['HOME'] = pwd.getpwuid (os.getuid())[5]
+
+    if not os.environ.has_key('PLAT'):
+        os.environ['PLAT'] = get_platform ()
+
+
+def subst_vars (str, local_vars):
+    """Perform shell/Perl-style variable substitution on 'string'.
+       Every occurence of '$' followed by a name, or a name enclosed in
+       braces, is considered a variable.  Every variable is substituted by
+       the value found in the 'local_vars' dictionary, or in 'os.environ'
+       if it's not in 'local_vars'.  'os.environ' is first checked/
+       augmented to guarantee that it contains certain values: see
+       '_check_environ()'.  Raise ValueError for any variables not found in
+       either 'local_vars' or 'os.environ'."""
+
+    _check_environ ()
+    def _subst (match, local_vars=local_vars):
+        var_name = match.group(1)
+        if local_vars.has_key (var_name):
+            return str (local_vars[var_name])
+        else:
+            return os.environ[var_name]
+
+    return re.sub (r'\$([a-zA-Z_][a-zA-Z_0-9]*)', _subst, str)
+
+# subst_vars ()
