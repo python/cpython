@@ -26,19 +26,19 @@ import getopt
 
 short = 0
 quick = 0
-diffs = 0
+delta = 0
 
 
 # Main program -- mostly command line parsing
 
 def main():
-	global short, quick, diffs
+	global short, quick, delta
 	opts, args = getopt.getopt(sys.argv[1:], 'dqs')
 	for opt, arg in opts:
 		if opt == '-q':
 			quick = 1
 		elif opt == '-d':
-			diffs = 1
+			delta = 1
 		elif opt == '-s':
 			short = 1
 	if not args:
@@ -50,7 +50,17 @@ def main():
 # Process one file
 
 def process(filename):
-	vin = VFile.VinFile().init(filename)
+	try:
+		vin = VFile.VinFile().init(filename)
+	except IOError, msg:
+		sys.stderr.write(filename + ': I/O error: ' + `msg` + '\n')
+		return
+	except VFile.Error, msg:
+		sys.stderr.write(msg + '\n')
+		return
+	except EOFError:
+		sys.stderr.write(filename + ': EOF in video file\n')
+		return
 	print 'File:    ', filename
 	print 'Version: ', vin.version
 	print 'Size:    ', vin.width, 'x', vin.height
@@ -62,7 +72,10 @@ def process(filename):
 		vin.close()
 		return
 	if not short:
-		print 'Frame times:',
+		if delta:
+			print 'Frame time deltas:',
+		else:
+			print 'Frame times:',
 	n = 0
 	t = 0
 	told = 0

@@ -33,8 +33,9 @@ def conv_rgb8(rgb,d1,d2):
 # init(filename)
 # initfp(fp, filename)
 # rewind()
-# getframe()
-# skipframe()
+# getnextframe()
+# skipnextframe()
+# (and many more)
 #
 # The following read-only data members provide public information:
 # version
