@@ -182,6 +182,8 @@ sub do_cmd_refstmodindex{ &my_module_index_helper('standard', @_, 'REF'); }
 
 sub do_cmd_nodename{ &do_cmd_label(@_); }
 
+sub do_cmd_mytableofcontents{ &do_cmd_tableofcontents(@_); }
+
 $any_next_pair_rx3 = "$O(\\d+)$C([\\s\\S]*)$O\\3$C";
 $any_next_pair_rx5 = "$O(\\d+)$C([\\s\\S]*)$O\\5$C";
 $any_next_pair_rx7 = "$O(\\d+)$C([\\s\\S]*)$O\\7$C";
