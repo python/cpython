@@ -49,3 +49,10 @@ pattern uses any characters except letters, digits and underscores as
 word delimiters.  Capitalization is done by changing the first
 character of each word to upper case.
 \end{funcdesc}
+
+\begin{funcdesc}{clear_cache}{}
+The regsub module maintains a cache of compiled regular expressions,
+keyed on the regular expression string and the syntax of the regex
+module at the time the expression was compiled.  This function clears
+that cache.
+\end{funcdesc}
