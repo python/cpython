@@ -2093,7 +2093,7 @@ AC_TRY_COMPILE([#include <unistd.h>], void *x=fchdir,
 )
 AC_MSG_CHECKING(for fsync)
 AC_TRY_COMPILE([#include <unistd.h>], void *x=fsync,
-  AC_DEFINE(HAVE_SYNC, 1, Define if you have the 'fsync' function.)
+  AC_DEFINE(HAVE_FSYNC, 1, Define if you have the 'fsync' function.)
   AC_MSG_RESULT(yes),
   AC_MSG_RESULT(no)
 )

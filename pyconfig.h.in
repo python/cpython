@@ -486,7 +486,7 @@
 #undef HAVE_SYMLINK
 
 /* Define if you have the 'fsync' function. */
-#undef HAVE_SYNC
+#undef HAVE_FSYNC
 
 /* Define to 1 if you have the `sysconf' function. */
 #undef HAVE_SYSCONF
