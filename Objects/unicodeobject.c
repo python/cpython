@@ -1203,9 +1203,9 @@ PyObject *PyUnicode_EncodeUTF8(const Py_UNICODE *s,
 	    if (cbWritten >= cbAllocated) {
 		cbAllocated += 4 * 10;
 		if (_PyString_Resize(&v, cbAllocated + 4))
-				goto onError;
+		    goto onError;
 		p = PyString_AS_STRING(v) + cbWritten;
-                        }
+	    }
 
 	    if (ch < 0x10000) {
 		/* Check for high surrogate */
@@ -1225,18 +1225,18 @@ PyObject *PyUnicode_EncodeUTF8(const Py_UNICODE *s,
 		    /* Fall through: handles isolated high surrogates */
                 }
                 *p++ = (char)(0xe0 | (ch >> 12));
-            *p++ = (char)(0x80 | ((ch >> 6) & 0x3f));
-            *p++ = (char)(0x80 | (ch & 0x3f));
+		*p++ = (char)(0x80 | ((ch >> 6) & 0x3f));
+		*p++ = (char)(0x80 | (ch & 0x3f));
 		cbWritten += 3;
     
-        } else {
-            *p++ = 0xf0 | (ch>>18);
-            *p++ = 0x80 | ((ch>>12) & 0x3f);
-            *p++ = 0x80 | ((ch>>6) & 0x3f);
-            *p++ = 0x80 | (ch & 0x3f);
-            cbWritten += 4;
+	    } else {
+		*p++ = 0xf0 | (ch>>18);
+		*p++ = 0x80 | ((ch>>12) & 0x3f);
+		*p++ = 0x80 | ((ch>>6) & 0x3f);
+		*p++ = 0x80 | (ch & 0x3f);
+		cbWritten += 4;
+	    }
 	}
-    }
     }
     *p = '\0';
     if (_PyString_Resize(&v, cbWritten))
