@@ -16,7 +16,7 @@ import statcache
 _cache = {}
 BUFSIZE=8*1024
 
-def cmp(f1, f2, shallow=1,use_statcache=0):
+def cmp(f1, f2, shallow=1, use_statcache=0):
     """Compare two files.
 
     Arguments:
@@ -267,26 +267,25 @@ class dircmp:
             self.subdirs[x].report_full_closure()
 
 
-# Compare common files in two directories.
-# Return:
-#	- files that compare equal
-#	- files that compare different
-#	- funny cases (can't stat etc.)
-#
-def cmpfiles(a, b, common):
+def cmpfiles(a, b, common, shallow=1, use_statcache=0):
     """Compare common files in two directories.
 
-    cmpfiles(a,b,common)
-      A and B are directory names
-      COMMON is a list of file names
-    returns a tuple of three lists:
+    a, b -- directory names
+    common -- list of file names found in both directories
+    shallow -- if true, do comparison based solely on stat() information
+    use_statcache -- if true, use statcache.stat() instead of os.stat()
+
+    Returns a tuple of three lists:
       files that compare equal
       files that are different
-      filenames that aren't regular files."""
+      filenames that aren't regular files.
 
+    """
     res = ([], [], [])
     for x in common:
-        res[_cmp(os.path.join(a, x), os.path.join(b, x))].append(x)
+        ax = os.path.join(a, x)
+        bx = os.path.join(b, x)
+        res[_cmp(ax, bx, shallow, use_statcache)].append(x)
     return res
 
 
