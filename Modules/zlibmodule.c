@@ -212,8 +212,6 @@ PyZlib_decompress(self, args)
   do 
     {
       err=inflate(&zst, Z_FINISH);
-      fprintf(stderr, "err=%d avail_in=%d avail_out=%d\n", 
-	      err, zst.avail_in, zst.avail_out);
       switch(err) 
         {
         case(Z_STREAM_END):
