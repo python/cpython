@@ -60,7 +60,7 @@ redirected URL.
 If the \var{url} uses the \file{http:} scheme identifier, the optional
 \var{data} argument may be given to specify a \code{POST} request
 (normally the request type is \code{GET}).  The \var{data} argument
-must in standard \mimetype{application/x-www-form-urlencoded} format;
+must be in standard \mimetype{application/x-www-form-urlencoded} format;
 see the \function{urlencode()} function below.
 
 The \function{urlopen()} function works transparently with proxies
@@ -91,10 +91,9 @@ If the URL points to a local file, or a valid cached copy of the
 object exists, the object is not copied.  Return a tuple
 \code{(\var{filename}, \var{headers})} where \var{filename} is the
 local file name under which the object can be found, and \var{headers}
-is either \code{None} (for a local object) or whatever the
-\method{info()} method of the object returned by \function{urlopen()}
-returned (for a remote object, possibly cached).  Exceptions are the
-same as for \function{urlopen()}.
+is whatever the \method{info()} method of the object returned by
+\function{urlopen()} returned (for a remote object, possibly cached).
+Exceptions are the same as for \function{urlopen()}.
 
 The second argument, if present, specifies the file location to copy
 to (if absent, the location will be a tempfile with a generated name).
@@ -103,7 +102,7 @@ once on establishment of the network connection and once after each
 block read thereafter.  The hook will be passed three arguments; a
 count of blocks transferred so far, a block size in bytes, and the
 total size of the file.  The third argument may be \code{-1} on older
-FTP servers which do not return a file size in response to a retrieval 
+FTP servers which do not return a file size in response to a retrieval
 request.
 
 If the \var{url} uses the \file{http:} scheme identifier, the optional
@@ -144,7 +143,7 @@ Clear the cache that may have been built up by previous calls to
 
 \begin{funcdesc}{quote}{string\optional{, safe}}
 Replace special characters in \var{string} using the \samp{\%xx} escape.
-Letters, digits, and the characters \character{_,.-} are never quoted.
+Letters, digits, and the characters \character{_.-} are never quoted.
 The optional \var{safe} parameter specifies additional characters
 that should not be quoted --- its default value is \code{'/'}.
 
@@ -154,7 +153,8 @@ Example: \code{quote('/\~{}connolly/')} yields \code{'/\%7econnolly/'}.
 \begin{funcdesc}{quote_plus}{string\optional{, safe}}
 Like \function{quote()}, but also replaces spaces by plus signs, as
 required for quoting HTML form values.  Plus signs in the original
-string are escaped unless they are included in \var{safe}.
+string are escaped unless they are included in \var{safe}.  It also
+does not have \var{safe} default to \code{'/'}.
 \end{funcdesc}
 
 \begin{funcdesc}{unquote}{string}
@@ -170,7 +170,7 @@ required for unquoting HTML form values.
 
 \begin{funcdesc}{urlencode}{query\optional{, doseq}}
 Convert a mapping object or a sequence of two-element tuples  to a
-``url-encoded'' string, suitable to pass to 
+``url-encoded'' string, suitable to pass to
 \function{urlopen()} above as the optional \var{data} argument.  This
 is useful to pass a dictionary of form fields to a \code{POST}
 request.  The resulting string is a series of
@@ -300,10 +300,10 @@ manipulation is in module \refmodule{urlparse}\refstmodindex{urlparse}.
 following attributes.
 
 \begin{methoddesc}[URLopener]{open}{fullurl\optional{, data}}
-Open \var{fullurl} using the appropriate protocol.  This method sets 
+Open \var{fullurl} using the appropriate protocol.  This method sets
 up cache and proxy information, then calls the appropriate open method with
 its input arguments.  If the scheme is not recognized,
-\method{open_unknown()} is called.  The \var{data} argument 
+\method{open_unknown()} is called.  The \var{data} argument
 has the same meaning as the \var{data} argument of \function{urlopen()}.
 \end{methoddesc}
 
