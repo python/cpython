@@ -306,9 +306,18 @@ class FeedParser:
                         capturing_preamble = False
                         self._input.unreadline(line)
                         continue
-                    # We saw a boundary separating two parts.  Recurse to
-                    # parse this subpart; the input stream points at the
-                    # subpart's first line.
+                    # We saw a boundary separating two parts.  Consume any
+                    # multiple boundary lines that may be following.  Our
+                    # interpretation of RFC 2046 BNF grammar does not produce
+                    # body parts within such double boundaries.
+                    while True:
+                        line = self._input.readline()
+                        mo = boundaryre.match(line)
+                        if not mo:
+                            self._input.unreadline(line)
+                            break
+                    # Recurse to parse this subpart; the input stream points
+                    # at the subpart's first line.
                     self._input.push_eof_matcher(boundaryre.match)
                     for retval in self._parsegen():
                         if retval is NeedMoreData:
