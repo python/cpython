@@ -687,7 +687,6 @@ exc_traceback -- traceback of exception currently being handled\n\
   because it is thread-safe.\n\
 "
 )
-#ifndef MS_WIN16
 /* concatenating string here */
 PyDoc_STR(
 "\n\
@@ -737,7 +736,6 @@ setrecursionlimit() -- set the max recursion depth for the interpreter\n\
 settrace() -- set the global debug tracing function\n\
 "
 )
-#endif /* MS_WIN16 */
 /* end of sys_doc */ ;
 
 PyObject *

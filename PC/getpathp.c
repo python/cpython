@@ -57,7 +57,7 @@
 #include "Python.h"
 #include "osdefs.h"
 
-#ifdef MS_WIN32
+#ifdef MS_WINDOWS
 #include <windows.h>
 #include <tchar.h>
 #endif
@@ -182,7 +182,7 @@ search_for_prefix(char *argv0_path, char *landmark)
 	return 0;
 }
 
-#ifdef MS_WIN32
+#ifdef MS_WINDOWS
 
 /* a string loaded from the DLL at startup.*/
 extern const char *PyWin_DLLVersionString;
@@ -340,7 +340,7 @@ done:
 		free(keyBuf);
 	return retval;
 }
-#endif /* MS_WIN32 */
+#endif /* MS_WINDOWS */
 
 static void
 get_progpath(void)
@@ -349,7 +349,7 @@ get_progpath(void)
 	char *path = getenv("PATH");
 	char *prog = Py_GetProgramName();
 
-#ifdef MS_WIN32
+#ifdef MS_WINDOWS
 #ifdef UNICODE
 	WCHAR wprogpath[MAXPATHLEN+1];
 	/* Windows documents that GetModuleFileName() will "truncate",
@@ -423,7 +423,7 @@ calculate_path(void)
 	char *pythonhome = Py_GetPythonHome();
 	char *envpath = Py_GETENV("PYTHONPATH");
 
-#ifdef MS_WIN32
+#ifdef MS_WINDOWS
 	int skiphome, skipdefault;
 	char *machinepath = NULL;
 	char *userpath = NULL;
@@ -446,7 +446,7 @@ calculate_path(void)
 		envpath = NULL;
 
 
-#ifdef MS_WIN32
+#ifdef MS_WINDOWS
 	skiphome = pythonhome==NULL ? 0 : 1;
 	machinepath = getpythonregpath(HKEY_LOCAL_MACHINE, skiphome);
 	userpath = getpythonregpath(HKEY_CURRENT_USER, skiphome);
@@ -482,7 +482,7 @@ calculate_path(void)
 		bufsz = 0;
 	bufsz += strlen(PYTHONPATH) + 1;
 	bufsz += strlen(argv0_path) + 1;
-#ifdef MS_WIN32
+#ifdef MS_WINDOWS
 	if (userpath)
 		bufsz += strlen(userpath) + 1;
 	if (machinepath)
@@ -503,12 +503,12 @@ calculate_path(void)
 			fprintf(stderr, "Using default static path.\n");
 			module_search_path = PYTHONPATH;
 		}
-#ifdef MS_WIN32
+#ifdef MS_WINDOWS
 		if (machinepath)
 			free(machinepath);
 		if (userpath)
 			free(userpath);
-#endif /* MS_WIN32 */
+#endif /* MS_WINDOWS */
 		return;
 	}
 
@@ -517,7 +517,7 @@ calculate_path(void)
 		buf = strchr(buf, '\0');
 		*buf++ = DELIM;
 	}
-#ifdef MS_WIN32
+#ifdef MS_WINDOWS
 	if (userpath) {
 		strcpy(buf, userpath);
 		buf = strchr(buf, '\0');
@@ -541,7 +541,7 @@ calculate_path(void)
 		strcpy(buf, PYTHONPATH);
 		buf = strchr(buf, '\0');
 	}
-#endif /* MS_WIN32 */
+#endif /* MS_WINDOWS */
 	else {
 		char *p = PYTHONPATH;
 		char *q;

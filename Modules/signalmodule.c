@@ -6,7 +6,7 @@
 #include "Python.h"
 #include "intrcheck.h"
 
-#ifdef MS_WIN32
+#ifdef MS_WINDOWS
 #include <process.h>
 #endif
 

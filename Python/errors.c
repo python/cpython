@@ -15,7 +15,7 @@ extern char *strerror(int);
 #endif
 #endif
 
-#ifdef MS_WIN32
+#ifdef MS_WINDOWS
 #include "windows.h"
 #include "winbase.h"
 #endif
@@ -267,7 +267,7 @@ PyErr_SetFromErrnoWithFilename(PyObject *exc, char *filename)
 #ifdef PLAN9
 	char errbuf[ERRMAX];
 #endif
-#ifdef MS_WIN32
+#ifdef MS_WINDOWS
 	char *s_buf = NULL;
 #endif
 #ifdef EINTR
@@ -281,7 +281,7 @@ PyErr_SetFromErrnoWithFilename(PyObject *exc, char *filename)
 	if (i == 0)
 		s = "Error"; /* Sometimes errno didn't get set */
 	else
-#ifndef MS_WIN32
+#ifndef MS_WINDOWS
 		s = strerror(i);
 #else
 	{
@@ -322,7 +322,7 @@ PyErr_SetFromErrnoWithFilename(PyObject *exc, char *filename)
 		PyErr_SetObject(exc, v);
 		Py_DECREF(v);
 	}
-#ifdef MS_WIN32
+#ifdef MS_WINDOWS
 	LocalFree(s_buf);
 #endif
 	return NULL;

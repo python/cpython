@@ -17,7 +17,7 @@
 #include <signal.h>
 #endif
 
-#ifdef MS_WIN32
+#ifdef MS_WINDOWS
 #undef BYTE
 #include "windows.h"
 #endif
@@ -1272,14 +1272,14 @@ Py_FatalError(char *msg)
 #ifdef macintosh
 	for (;;);
 #endif
-#ifdef MS_WIN32
+#ifdef MS_WINDOWS
 	OutputDebugString("Fatal Python error: ");
 	OutputDebugString(msg);
 	OutputDebugString("\n");
 #ifdef _DEBUG
 	DebugBreak();
 #endif
-#endif /* MS_WIN32 */
+#endif /* MS_WINDOWS */
 	abort();
 }
 

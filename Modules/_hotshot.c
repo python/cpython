@@ -12,7 +12,7 @@
  * Which timer to use should be made more configurable, but that should not
  * be difficult.  This will do for now.
  */
-#ifdef MS_WIN32
+#ifdef MS_WINDOWS
 #include <windows.h>
 #include <direct.h>    /* for getcwd() */
 typedef __int64 hs_time;
@@ -90,7 +90,7 @@ typedef struct {
 static PyObject * ProfilerError = NULL;
 
 
-#ifndef MS_WIN32
+#ifndef MS_WINDOWS
 #ifdef GETTIMEOFDAY_NO_TZ
 #define GETTIMEOFDAY(ptv) gettimeofday((ptv))
 #else
@@ -818,7 +818,7 @@ static inline int
 get_tdelta(ProfilerObject *self)
 {
     int tdelta;
-#ifdef MS_WIN32
+#ifdef MS_WINDOWS
     hs_time tv;
     hs_time diff;
 
@@ -909,7 +909,7 @@ tracer_callback(ProfilerObject *self, PyFrameObject *frame, int what,
 
 /* A couple of useful helper functions. */
 
-#ifdef MS_WIN32
+#ifdef MS_WINDOWS
 static LARGE_INTEGER frequency = {0, 0};
 #endif
 
@@ -921,7 +921,7 @@ calibrate(void)
 {
     hs_time tv1, tv2;
 
-#ifdef MS_WIN32
+#ifdef MS_WINDOWS
     hs_time diff;
     QueryPerformanceFrequency(&frequency);
 #endif
@@ -929,7 +929,7 @@ calibrate(void)
     GETTIMEOFDAY(&tv1);
     while (1) {
         GETTIMEOFDAY(&tv2);
-#ifdef MS_WIN32
+#ifdef MS_WINDOWS
         diff = tv2 - tv1;
         if (diff != 0) {
             timeofday_diff = (unsigned long)diff;
@@ -945,7 +945,7 @@ calibrate(void)
         }
 #endif
     }
-#if defined(MS_WIN32) || defined(macintosh) || defined(PYOS_OS2)
+#if defined(MS_WINDOWS) || defined(macintosh) || defined(PYOS_OS2)
     rusage_diff = -1;
 #else
     {
@@ -1448,7 +1448,7 @@ write_header(ProfilerObject *self)
     else
         pack_add_info(self, "executable-version", buffer);
 
-#ifdef MS_WIN32
+#ifdef MS_WINDOWS
     PyOS_snprintf(cwdbuffer, sizeof(cwdbuffer), "%I64d", frequency.QuadPart);
     pack_add_info(self, "reported-performance-frequency", cwdbuffer);
 #else
@@ -1553,7 +1553,7 @@ hotshot_coverage(PyObject *unused, PyObject *args)
 }
 
 PyDoc_VAR(resolution__doc__) = 
-#ifdef MS_WIN32
+#ifdef MS_WINDOWS
 PyDoc_STR(
 "resolution() -> (performance-counter-ticks, update-frequency)\n"
 "Return the resolution of the timer provided by the QueryPerformanceCounter()\n"
@@ -1580,7 +1580,7 @@ hotshot_resolution(PyObject *unused, PyObject *args)
             calibrate();
             calibrate();
         }
-#ifdef MS_WIN32
+#ifdef MS_WINDOWS
         result = Py_BuildValue("ii", timeofday_diff, frequency.LowPart);
 #else
         result = Py_BuildValue("ii", timeofday_diff, rusage_diff);

@@ -41,7 +41,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "unicodeobject.h"
 #include "ucnhash.h"
 
-#ifdef MS_WIN32
+#ifdef MS_WINDOWS
 #include <windows.h>
 #endif
 
@@ -2243,7 +2243,7 @@ PyObject *PyUnicode_AsASCIIString(PyObject *unicode)
 				 NULL);
 }
 
-#if defined(MS_WIN32) && defined(HAVE_USABLE_WCHAR_T)
+#if defined(MS_WINDOWS) && defined(HAVE_USABLE_WCHAR_T)
 
 /* --- MBCS codecs for Windows -------------------------------------------- */
 
@@ -2305,7 +2305,7 @@ PyObject *PyUnicode_EncodeMBCS(const Py_UNICODE *p,
     return repr;
 }
 
-#endif /* MS_WIN32 */
+#endif /* MS_WINDOWS */
 
 /* --- Character Mapping Codec -------------------------------------------- */
 

@@ -29,23 +29,20 @@ extern int ftime(struct timeb *);
 #else
 #ifdef MS_WINDOWS
 #include <windows.h>
-#if defined(MS_WIN16) || defined(__BORLANDC__)
+#if defined(__BORLANDC__)
 /* These overrides not needed for Win32 */
 #define timezone _timezone
 #define tzname _tzname
 #define daylight _daylight
-#endif /* MS_WIN16 || __BORLANDC__ */
-#ifdef MS_WIN16
-#define altzone _altzone
-#endif /* MS_WIN16 */
+#endif /* __BORLANDC__ */
 #endif /* MS_WINDOWS */
 #endif /* !__WATCOMC__ || __QNX__ */
 
-#if defined(MS_WIN32) && !defined(MS_WIN64) && !defined(__BORLANDC__)
+#if defined(MS_WINDOWS) && !defined(MS_WIN64) && !defined(__BORLANDC__)
 /* Win32 has better clock replacement
    XXX Win64 does not yet, but might when the platform matures. */
 #undef HAVE_CLOCK /* We have our own version down below */
-#endif /* MS_WIN32 && !MS_WIN64 */
+#endif /* MS_WINDOWS && !MS_WIN64 */
 
 #if defined(PYOS_OS2)
 #define INCL_DOS
@@ -141,7 +138,7 @@ time_clock(PyObject *self, PyObject *args)
 }
 #endif /* HAVE_CLOCK */
 
-#if defined(MS_WIN32) && !defined(MS_WIN64) && !defined(__BORLANDC__)
+#if defined(MS_WINDOWS) && !defined(MS_WIN64) && !defined(__BORLANDC__)
 /* Due to Mark Hammond and Tim Peters */
 static PyObject *
 time_clock(PyObject *self, PyObject *args)
@@ -170,7 +167,7 @@ time_clock(PyObject *self, PyObject *args)
 }
 
 #define HAVE_CLOCK /* So it gets included in the methods */
-#endif /* MS_WIN32 && !MS_WIN64 */
+#endif /* MS_WINDOWS && !MS_WIN64 */
 
 #ifdef HAVE_CLOCK
 PyDoc_STRVAR(clock_doc,
@@ -736,7 +733,7 @@ floattime(void)
 static int
 floatsleep(double secs)
 {
-/* XXX Should test for MS_WIN32 first! */
+/* XXX Should test for MS_WINDOWS first! */
 #if defined(HAVE_SELECT) && !defined(__BEOS__) && !defined(__EMX__)
 	struct timeval t;
 	double frac;
@@ -771,36 +768,7 @@ floatsleep(double secs)
 	Py_BEGIN_ALLOW_THREADS
 	delay((int)(secs * 1000 + 0.5));  /* delay() uses milliseconds */
 	Py_END_ALLOW_THREADS
-#elif defined(MSDOS)
-	struct timeb t1, t2;
-	double frac;
-	extern double fmod(double, double);
-	extern double floor(double);
-	if (secs <= 0.0)
-		return;
-	frac = fmod(secs, 1.0);
-	secs = floor(secs);
-	ftime(&t1);
-	t2.time = t1.time + (int)secs;
-	t2.millitm = t1.millitm + (int)(frac*1000.0);
-	while (t2.millitm >= 1000) {
-		t2.time++;
-		t2.millitm -= 1000;
-	}
-	for (;;) {
-#ifdef QUICKWIN
-		Py_BEGIN_ALLOW_THREADS
-		_wyield();
-		Py_END_ALLOW_THREADS
-#endif
-		if (PyErr_CheckSignals())
-			return -1;
-		ftime(&t1);
-		if (t1.time > t2.time ||
-		    t1.time == t2.time && t1.millitm >= t2.millitm)
-			break;
-	}
-#elif defined(MS_WIN32)
+#elif defined(MS_WINDOWS)
 	{
 		double millisecs = secs * 1000.0;
 		if (millisecs > (double)ULONG_MAX) {

@@ -88,7 +88,7 @@ static const struct filedescr _PyImport_StandardFiletab[] = {
 #else
 static const struct filedescr _PyImport_StandardFiletab[] = {
 	{".py", "U", PY_SOURCE},
-#ifdef MS_WIN32
+#ifdef MS_WINDOWS
 	{".pyw", "U", PY_SOURCE},
 #endif
 	{".pyc", "rb", PY_COMPILED},
@@ -548,7 +548,7 @@ make_compiled_pathname(char *pathname, char *buf, size_t buflen)
 	if (len+2 > buflen)
 		return NULL;
 
-#ifdef MS_WIN32
+#ifdef MS_WINDOWS
 	/* Treat .pyw as if it were .py.  The case of ".pyw" must match
 	   that used in _PyImport_StandardFiletab. */
 	if (len >= 4 && strcmp(&pathname[len-4], ".pyw") == 0)
@@ -1156,7 +1156,7 @@ find_module(char *realname, PyObject *path, char *buf, size_t buflen,
 /* First we may need a pile of platform-specific header files; the sequence
  * of #if's here should match the sequence in the body of case_ok().
  */
-#if defined(MS_WIN32) || defined(__CYGWIN__)
+#if defined(MS_WINDOWS) || defined(__CYGWIN__)
 #include <windows.h>
 #ifdef __CYGWIN__
 #include <sys/cygwin.h>
@@ -1189,8 +1189,8 @@ case_ok(char *buf, int len, int namelen, char *name)
  * match the sequence just above.
  */
 
-/* MS_WIN32 || __CYGWIN__ */
-#if defined(MS_WIN32) || defined(__CYGWIN__)
+/* MS_WINDOWS || __CYGWIN__ */
+#if defined(MS_WINDOWS) || defined(__CYGWIN__)
 	WIN32_FIND_DATA data;
 	HANDLE h;
 #ifdef __CYGWIN__

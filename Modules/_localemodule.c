@@ -25,7 +25,7 @@ This software comes with no warranty. Use at your own risk.
 #include <libintl.h>
 #endif
 
-#if defined(MS_WIN32)
+#if defined(MS_WINDOWS)
 #define WINDOWS_LEAN_AND_MEAN
 #include <windows.h>
 #endif
@@ -363,7 +363,7 @@ PyLocale_strxfrm(PyObject* self, PyObject* args)
     return result;
 }
 
-#if defined(MS_WIN32)
+#if defined(MS_WINDOWS)
 static PyObject*
 PyLocale_getdefaultlocale(PyObject* self)
 {
@@ -627,7 +627,7 @@ static struct PyMethodDef PyLocale_Methods[] = {
    METH_VARARGS, strcoll__doc__},
   {"strxfrm", (PyCFunction) PyLocale_strxfrm, 
    METH_VARARGS, strxfrm__doc__},
-#if defined(MS_WIN32) || defined(macintosh)
+#if defined(MS_WINDOWS) || defined(macintosh)
   {"_getdefaultlocale", (PyCFunction) PyLocale_getdefaultlocale, METH_NOARGS},
 #endif
 #ifdef HAVE_LANGINFO_H
