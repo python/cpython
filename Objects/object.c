@@ -1410,7 +1410,7 @@ _Py_GetObjects(PyObject *self, PyObject *args)
 		return NULL;
 	for (i = 0; (n == 0 || i < n) && op != &refchain; i++) {
 		while (op == self || op == args || op == res || op == t ||
-		       t != NULL && op->ob_type != (PyTypeObject *) t) {
+		       (t != NULL && op->ob_type != (PyTypeObject *) t)) {
 			op = op->_ob_next;
 			if (op == &refchain)
 				return res;
