@@ -235,20 +235,10 @@ C API
   ``PyUnicode_DecodeUTF16Stateful`` have been added, which implement stateful
   decoding.
 
-Documentation
--------------
-
-...
-
 Tests
 -----
 
 - test__locale ported to unittest
-
-Windows
--------
-
-...
 
 Mac
 ---
@@ -256,11 +246,6 @@ Mac
 - ``plistlib`` now supports non-dict root objects.  There is also a new
   interface for reading and writing plist files: ``readPlist(pathOrFile)``
   and ``writePlist(rootObject, pathOrFile)``
-
-New platforms
--------------
-
-...
 
 Tools/Demos
 -----------
