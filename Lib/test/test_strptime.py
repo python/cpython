@@ -264,12 +264,24 @@ class FxnTests(unittest.TestCase):
         self.failUnless(strp_output[6] == self.time_tuple[6], "triggering of dayofweek() failed; %s != %s" % (strp_output[6], self.time_tuple[6]))
 
 
+class Strptime12AMPMTests(unittest.TestCase):
+    """Test a _strptime regression in '%I %p' at 12 noon (12 PM)"""
+
+    def test_twelve_noon_midnight(self):
+        eq = self.assertEqual
+        eq(time.strptime('12 PM', '%I %p')[3], 12)
+        eq(time.strptime('12 AM', '%I %p')[3], 0)
+        eq(_strptime.strptime('12 PM', '%I %p')[3], 12)
+        eq(_strptime.strptime('12 AM', '%I %p')[3], 0)
+
+
 def test_main():
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(LocaleTime_Tests))
     suite.addTest(unittest.makeSuite(TimeRETests))
     suite.addTest(unittest.makeSuite(StrptimeTests))
     suite.addTest(unittest.makeSuite(FxnTests))
+    suite.addTest(unittest.makeSuite(Strptime12AMPMTests))
     test_support.run_suite(suite)
 
 
