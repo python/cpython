@@ -150,6 +150,10 @@ class PosixTester(unittest.TestCase):
         if hasattr(posix, 'utime'):
             now = time.time()
             posix.utime(test_support.TESTFN, None)
+            self.assertRaises(TypeError, posix.utime, test_support.TESTFN, (None, None))
+            self.assertRaises(TypeError, posix.utime, test_support.TESTFN, (now, None))
+            self.assertRaises(TypeError, posix.utime, test_support.TESTFN, (None, now))
+            posix.utime(test_support.TESTFN, (int(now), int(now)))
             posix.utime(test_support.TESTFN, (now, now))
 
 def test_main():
