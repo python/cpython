@@ -1192,8 +1192,87 @@ object_free(PyObject *self)
 	PyObject_Del(self);
 }
 
-static PyMemberDef object_members[] = {
-	{"__class__", T_OBJECT, offsetof(PyObject, ob_type), READONLY},
+static PyObject *
+object_get_class(PyObject *self, void *closure)
+{
+	Py_INCREF(self->ob_type);
+	return (PyObject *)(self->ob_type);
+}
+
+static int
+equiv_structs(PyTypeObject *a, PyTypeObject *b)
+{
+	return a == b ||
+	       (a != NULL &&
+		b != NULL &&
+		a->tp_basicsize == b->tp_basicsize &&
+		a->tp_itemsize == b->tp_itemsize &&
+		a->tp_dictoffset == b->tp_dictoffset &&
+		a->tp_weaklistoffset == b->tp_weaklistoffset &&
+		((a->tp_flags & Py_TPFLAGS_HAVE_GC) ==
+		 (b->tp_flags & Py_TPFLAGS_HAVE_GC)));
+}
+
+static int
+same_slots_added(PyTypeObject *a, PyTypeObject *b)
+{
+	PyTypeObject *base = a->tp_base;
+	int size;
+
+	if (base != b->tp_base)
+		return 0;
+	if (equiv_structs(a, base) && equiv_structs(b, base))
+		return 1;
+	size = base->tp_basicsize;
+	if (a->tp_dictoffset == size && b->tp_dictoffset == size)
+		size += sizeof(PyObject *);
+	if (a->tp_weaklistoffset == size && b->tp_weaklistoffset == size)
+		size += sizeof(PyObject *);
+	return size == a->tp_basicsize && size == b->tp_basicsize;
+}
+
+static int
+object_set_class(PyObject *self, PyObject *value, void *closure)
+{
+	PyTypeObject *old = self->ob_type;
+	PyTypeObject *new, *newbase, *oldbase;
+
+	if (!PyType_Check(value)) {
+		PyErr_Format(PyExc_TypeError,
+		  "__class__ must be set to new-style class, not '%s' object",
+		  value->ob_type->tp_name);
+		return -1;
+	}
+	new = (PyTypeObject *)value;
+	newbase = new;
+	oldbase = old;
+	while (equiv_structs(newbase, newbase->tp_base))
+		newbase = newbase->tp_base;
+	while (equiv_structs(oldbase, oldbase->tp_base))
+		oldbase = oldbase->tp_base;
+	if (newbase != oldbase &&
+	    (newbase->tp_base != oldbase->tp_base ||
+	     !same_slots_added(newbase, oldbase))) {
+		PyErr_Format(PyExc_TypeError,
+			     "__class__ assignment: "
+			     "'%s' object layout differs from '%s'",
+			     new->tp_name, 
+			     old->tp_name);
+		return -1;
+	}
+	if (new->tp_flags & Py_TPFLAGS_HEAPTYPE) {
+		Py_INCREF(new);
+	}
+	self->ob_type = new;
+	if (old->tp_flags & Py_TPFLAGS_HEAPTYPE) {
+		Py_DECREF(old);
+	}
+	return 0;
+}
+
+static PyGetSetDef object_getsets[] = {
+	{"__class__", object_get_class, object_set_class,
+	 "the object's class"},
 	{0}
 };
 
@@ -1227,8 +1306,8 @@ PyTypeObject PyBaseObject_Type = {
 	0,					/* tp_iter */
 	0,					/* tp_iternext */
 	0,					/* tp_methods */
-	object_members,				/* tp_members */
-	0,					/* tp_getset */
+	0,					/* tp_members */
+	object_getsets,				/* tp_getset */
 	0,					/* tp_base */
 	0,					/* tp_dict */
 	0,					/* tp_descr_get */
