@@ -115,7 +115,7 @@ def _copy_inst(x):
 			state = x.__getstate__()
 	else:
 			state = x.__dict__
-	if y.hasattr('__setstate__'):
+	if hasattr(y, '__setstate__'):
 			y.__setstate__(state)
 	else:
 			for key in state.keys():
@@ -209,7 +209,7 @@ def _deepcopy_inst(x, memo):
 	else:
 			state = x.__dict__
 	state = deepcopy(state, memo)
-	if y.hasattr('__setstate__'):
+	if hasattr(y, '__setstate__'):
 			y.__setstate__(state)
 	else:
 			for key in state.keys():
