@@ -1792,7 +1792,7 @@ local bindings to py-newline-and-indent."))
 (defun py-parse-state ()
   (save-excursion
     (let ((here (point))
-	  pps done)
+	  pps done ci)
       (while (not done)
 	;; back up to the first preceding line (if any; else start of
 	;; buffer) that begins with a popular Python keyword, or a
@@ -1801,11 +1801,15 @@ local bindings to py-newline-and-indent."))
 	;; at a non-zero nesting level.  It may be slow for people who
 	;; write huge code blocks or huge lists ... tough beans.
 	(re-search-backward py-parse-state-re nil 'move)
+	(setq ci (current-indentation))
 	(beginning-of-line)
 	(save-excursion
 	  (setq pps (parse-partial-sexp (point) here)))
 	;; make sure we don't land inside a triple-quoted string
-	(setq done (or (not (nth 3 pps)) (bobp))))
+	(setq done (or (zerop ci)
+		       (not (nth 3 pps))
+		       (bobp)))
+	)
       pps)))
 
 ;; if point is at a non-zero nesting level, returns the number of the
