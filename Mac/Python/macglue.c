@@ -102,6 +102,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* Declared in macfsmodule.c: */
 extern FSSpec *mfs_GetFSSpecFSSpec();
+extern PyObject *newmfssobject Py_PROTO((FSSpec *));
 
 /* Interrupt code variables: */
 static int interrupted;			/* Set to true when cmd-. seen */
@@ -232,14 +233,14 @@ PyMac_StopGUSISpin() {
 ** Replacement routines for the PLstr... functions so we don't need
 ** StdCLib. Moreover, that implementation is broken under cfm68k...
 */
-void
+pascal void
 PLstrcpy(to, fr)
 	unsigned char *to, *fr;
 {
 	memcpy(to, fr, fr[0]+1);
 }
 
-int
+pascal int
 PLstrcmp(s1, s2)
 	unsigned char *s1, *s2;
 {
@@ -258,7 +259,7 @@ PLstrcmp(s1, s2)
 		return 0;
 }
 
-unsigned char *
+pascal unsigned char *
 PLstrrchr(str, chr)
 	unsigned char *str;
 	unsigned char chr;
@@ -873,6 +874,11 @@ PyMac_GetFSSpec(PyObject *v, FSSpec *fs)
 	return 1;
 }
 
+/* Convert FSSpec to PyObject */
+PyObject *PyMac_BuildFSSpec(FSSpec *v)
+{
+	return newmfssobject(v);
+}
 
 /* Convert a Python object to a Rect.
    The object must be a (left, top, right, bottom) tuple.
