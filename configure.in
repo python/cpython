@@ -82,25 +82,6 @@ then
 fi
 AC_MSG_RESULT($MACHDEP)
 
-#
-# CCC is the command that compiles C++ programs
-#
-# Not all make programs have this predefined.
-#
-#AC_SUBST(SET_CCC)
-#AC_MSG_CHECKING(CCC)
-#if test -z "$CCC"
-#then
-#	case $ac_sys_system in
-#	IRIX*)	SET_CCC="CCC= CC ${SGI_ABI}";;
-#	Linux*) SET_CCC="CCC= g++";;
-#	*)	SET_CCC=""
-#	esac
-#else
-#        SET_CCC="CCC= ${CCC}"
-#fi
-#AC_MSG_RESULT($SET_CCC)
-
 
 # checks for alternative programs
 AC_MSG_CHECKING(for --without-gcc)
@@ -148,7 +129,7 @@ AC_ARG_WITH(gcc, [  --without-gcc                   never use gcc], [
 	esac])
 AC_MSG_RESULT($without_gcc)
 
-AC_SUBST(SET_CXX)
+AC_SUBST(CXX)
 AC_SUBST(MAINOBJ)
 MAINOBJ=python.o
 AC_MSG_CHECKING(for --with-cxx=<compiler>)
@@ -182,21 +163,6 @@ then
 	fi
 fi
 
-SET_CXX="CXX=$CXX"
-
-
-#AC_MSG_CHECKING(CCC)
-#if test -z "$CCC"
-#then
-#	case $ac_sys_system in
-#	IRIX*)	SET_CCC="CCC= CC ${SGI_ABI}";;
-#	Linux*) SET_CCC="CCC= g++";;
-#	*)	SET_CCC=""
-#	esac
-#else
-#        SET_CCC="CCC= ${CCC}"
-#fi
-#AC_MSG_RESULT($SET_CCC)
 
 # If the user switches compilers, we can't believe the cache
 if test ! -z "$ac_cv_prog_CC" -a ! -z "$CC" -a "$CC" != "$ac_cv_prog_CC"
@@ -241,9 +207,9 @@ esac
 # shared (i.e., DLL) library.
 AC_SUBST(MAKE_LDLIBRARY)
 AC_SUBST(LDLIBRARY)
-AC_SUBST(SET_DLLLIBRARY)
+AC_SUBST(DLLLIBRARY)
 LDLIBRARY=''
-SET_DLLLIBRARY=''
+DLLLIBRARY=''
 
 # LINKCC is the command that links the python executable -- default is $(CC).
 # This is altered for AIX in order to build the export list before 
@@ -288,7 +254,7 @@ beos*)
       ;;
 cygwin*)
       LDLIBRARY='libpython$(VERSION).dll.a'
-      SET_DLLLIBRARY='DLLLIBRARY=	$(basename $(LDLIBRARY))'
+      DLLLIBRARY='$(basename $(LDLIBRARY))'
       ;;
 esac
 AC_MSG_RESULT($LDLIBRARY)
