@@ -253,7 +253,11 @@ AC_MSG_RESULT($EXEEXT)
 # case we give a warning if no ext is given
 AC_SUBST(BUILDEXEEXT)
 AC_MSG_CHECKING(for case-insensitive build directory)
-if test -d "${srcdir}/python"
+if test ! -d CaseSensitiveTestDir; then
+mkdir CaseSensitiveTestDir
+fi
+
+if test -d casesensitivetestdir
 then
     AC_MSG_RESULT(yes)
     BUILDEXEEXT=.exe
@@ -261,6 +265,7 @@ else
 	AC_MSG_RESULT(no)
 	BUILDEXEEXT=$EXEEXT
 fi
+rmdir CaseSensitiveTestDir
 
 case $MACHDEP in
 bsdos*)
