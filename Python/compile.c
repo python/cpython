@@ -2139,7 +2139,8 @@ com_import_stmt(struct compiling *c, node *n)
 			com_addopname(c, IMPORT_NAME, CHILD(subn, 0));
 			com_push(c, 1);
 			if (NCH(subn) > 1) {
-				if (strcmp(STR(CHILD(subn, 1)), "as") != 0) {
+				if (strcmp(STR(CHILD(subn, 1)), "as") != 0 ||
+				    NCH(CHILD(subn, 0)) > 1) {
 					com_error(c, PyExc_SyntaxError,
 						  "invalid syntax");
 					return;
