@@ -18,6 +18,9 @@ notable fixes:
 - The Python compiler package was updated to correctly calculate stack
   depth in some cases. This was affecting Zope Python Scripts rather badly.
 
+- Largefile support was added (but not on by default, you'll need to follow
+  the instructions in the documentation of the posix module).
+
 - SF bug #443120: Fix a cgi.py denial-of-service attack, 
 
 - socketmodule's SSL_read and SSL_write now release the global interpreter 
