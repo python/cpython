@@ -736,8 +736,9 @@ The Tk interface
 
 Tk (the user interface component of John Ousterhout's Tcl language) is
 also usable from Python.  Since this requires that you first build and
-install Tcl/Tk, the Tk interface is not enabled by default.  Python
-supports Tcl/Tk version 8.0 and higher.
+install Tcl/Tk, the Tk interface is not enabled by default when
+building Python from source.  Python supports Tcl/Tk version 8.0 and
+higher.
 
 See http://dev.ajubasolutions.com/ for more info on Tcl/Tk, including
 the on-line manual pages.
