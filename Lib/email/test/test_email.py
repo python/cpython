@@ -1207,6 +1207,14 @@ class TestRFC2047(unittest.TestCase):
            """Re: =?mac-iceland?q?r=8Aksm=9Arg=8Cs?= baz foo bar
  =?mac-iceland?q?r=8Aksm=9Arg=8Cs?=""")
 
+    def test_whitespace_eater_unicode(self):
+        eq = self.assertEqual
+        s = '=?ISO-8859-1?Q?Andr=E9?= Pirard <pirard@dom.ain>'
+        dh = decode_header(s)
+        eq(dh, [('Andr\xe9', 'iso-8859-1'), ('Pirard <pirard@dom.ain>', None)])
+        hu = unicode(make_header(dh)).encode('latin-1')
+        eq(hu, 'Andr\xe9 Pirard <pirard@dom.ain>')
+
 
 
 # Test the MIMEMessage class
