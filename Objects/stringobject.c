@@ -673,7 +673,6 @@ formatstring(format, args)
 			char *buf;
 			int sign;
 			int len;
-			args_owned = 0;
 			if (*fmt == '(') {
 				char *keystart;
 				int keylen;
