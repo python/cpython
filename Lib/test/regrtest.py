@@ -18,6 +18,7 @@ Command line options:
 -l: findleaks -- if GC is available detect tests that leak memory
 -u: use       -- specify which special resource intensive tests to run
 -h: help      -- print this text and exit
+-t: threshold -- call gc.set_threshold(N)
 
 If non-option arguments are present, they are names for tests to run,
 unless -x is given, in which case they are names for tests not to run.
@@ -25,34 +26,35 @@ If no test names are given, all tests are run.
 
 -v is incompatible with -g and does not compare test output files.
 
--s means to run only a single test and exit.  This is useful when doing memory
-analysis on the Python interpreter (which tend to consume too many resources to
-run the full regression test non-stop).  The file /tmp/pynexttest is read to
-find the next test to run.  If this file is missing, the first test_*.py file
-in testdir or on the command line is used.  (actually tempfile.gettempdir() is
-used instead of /tmp).
+-s means to run only a single test and exit.  This is useful when
+doing memory analysis on the Python interpreter (which tend to consume
+too many resources to run the full regression test non-stop).  The
+file /tmp/pynexttest is read to find the next test to run.  If this
+file is missing, the first test_*.py file in testdir or on the command
+line is used.  (actually tempfile.gettempdir() is used instead of
+/tmp).
 
--f reads the names of tests from the file given as f's argument, one or more
-test names per line.  Whitespace is ignored.  Blank lines and lines beginning
-with '#' are ignored.  This is especially useful for whittling down failures
-involving interactions among tests.
+-f reads the names of tests from the file given as f's argument, one
+or more test names per line.  Whitespace is ignored.  Blank lines and
+lines beginning with '#' are ignored.  This is especially useful for
+whittling down failures involving interactions among tests.
 
--u is used to specify which special resource intensive tests to run, such as
-those requiring large file support or network connectivity.  The argument is a
-comma-separated list of words indicating the resources to test.  Currently
-only the following are defined:
+-u is used to specify which special resource intensive tests to run,
+such as those requiring large file support or network connectivity.
+The argument is a comma-separated list of words indicating the
+resources to test.  Currently only the following are defined:
 
     all -       Enable all special resources.
 
     curses -    Tests that use curses and will modify the terminal's
                 state and output modes.
 
-    largefile - It is okay to run some test that may create huge files.  These
-                tests can take a long time and may consume >2GB of disk space
-                temporarily.
+    largefile - It is okay to run some test that may create huge
+                files.  These tests can take a long time and may
+                consume >2GB of disk space temporarily.
 
-    network -   It is okay to run tests that use external network resource,
-                e.g. testing SSL support for sockets.
+    network -   It is okay to run tests that use external network
+                resource, e.g. testing SSL support for sockets.
 """
 
 import sys
@@ -93,19 +95,19 @@ def main(tests=None, testdir=None, verbose=0, quiet=0, generate=0,
     command-line will be used.  If that's empty, too, then all *.py
     files beginning with test_ will be used.
 
-    The other default arguments (verbose, quiet, generate, exclude, single,
-    randomize, findleaks, and use_resources) allow programmers calling main()
-    directly to set the values that would normally be set by flags on the
-    command line.
+    The other default arguments (verbose, quiet, generate, exclude,
+    single, randomize, findleaks, and use_resources) allow programmers
+    calling main() directly to set the values that would normally be
+    set by flags on the command line.
 
     """
 
     test_support.record_original_stdout(sys.stdout)
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'hvgqxsrf:lu:',
+        opts, args = getopt.getopt(sys.argv[1:], 'hvgqxsrf:lu:t:',
                                    ['help', 'verbose', 'quiet', 'generate',
                                     'exclude', 'single', 'random', 'fromfile',
-                                    'findleaks', 'use='])
+                                    'findleaks', 'use=', 'threshold='])
     except getopt.error, msg:
         usage(2, msg)
 
@@ -132,6 +134,9 @@ def main(tests=None, testdir=None, verbose=0, quiet=0, generate=0,
             fromfile = a
         elif o in ('-l', '--findleaks'):
             findleaks = 1
+        elif o in ('-t', '--threshold'):
+            import gc
+            gc.set_threshold(int(a))
         elif o in ('-u', '--use'):
             u = [x.lower() for x in a.split(',')]
             for r in u:
