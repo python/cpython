@@ -25,6 +25,7 @@ class LeftArrow:
 	text = self._canvas.create_text(
 	    x + self._ARROWWIDTH + 13,
 	    self._ARROWHEIGHT - self._TEXTYOFFSET,
+	    tags=self._TAG,
 	    text='128')
 	return arrow, text
 
@@ -36,6 +37,9 @@ class LeftArrow:
     def move_to(self, x):
 	deltax = x - self._x()
 	self._canvas.move(self._TAG, deltax, 0)
+
+    def set_text(self, text):
+	self._canvas.itemconfigure(self.__text, text=text)
 
 
 class RightArrow(LeftArrow):
@@ -50,9 +54,10 @@ class RightArrow(LeftArrow):
 	    width=3.0,
 	    tags=self._TAG)
 	text = self._canvas.create_text(
-	    x - self._ARROWWIDTH - 20,		  # TBD: kludge
+	    x - self._ARROWWIDTH + 15,		  # TBD: kludge
 	    self._ARROWHEIGHT - self._TEXTYOFFSET,
-	    text='128')
+	    text='128',
+	    tags=self._TAG)
 	return arrow, text
 
     def _x(self):
@@ -74,6 +79,7 @@ class StripWidget(Pmw.MegaWidget):
 		   ('chipheight', self._CHIPHEIGHT, Pmw.INITOPT),
 		   ('numchips', self._NUMCHIPS, Pmw.INITOPT),
 		   ('generator', None, Pmw.INITOPT),
+		   ('axis', None, Pmw.INITOPT),
 		   )
 	self.defineoptions(kw, options)
 
@@ -115,18 +121,49 @@ class StripWidget(Pmw.MegaWidget):
 	self.__rightarrow = RightArrow(self.__canvas, chipx)
 
 	self.__generator = self['generator']
+	self.__axis = self['axis']
+	assert self.__axis in (0, 1, 2)
 	self.initialiseoptions(StripWidget)
 
     def __set_color(self):
 	rgbtuple = self['color']
+	red, green, blue = rgbtuple
 	if self.__generator:
 	    i = 0
+	    chip = 0
 	    for t in self.__generator(self.__numchips, rgbtuple):
 		rrggbb = ColorDB.triplet_to_rrggbb(t)
 		self.__canvas.itemconfigure(self.__chips[i],
 					    fill=rrggbb,
 					    outline=rrggbb)
+		tred, tgreen, tblue = t
+		if tred <= red and tgreen <= green and tblue <= blue:
+		    chip = i
 		i = i + 1
+	    # get the arrow's text
+	    coloraxis = rgbtuple[self.__axis]
+	    text = repr(coloraxis)
+
+	    # move the arrow, and set it's text
+	    if coloraxis <= 128:
+		# use the left chip
+		self.__leftarrow.set_text(text)
+		self.__leftarrow.move_to(self.__arrow_x(chip))
+		self.__rightarrow.move_to(-100)
+	    else:
+		# use the right chip
+		self.__rightarrow.set_text(text)
+		self.__rightarrow.move_to(self.__arrow_x(chip))
+		self.__leftarrow.move_to(-100)
+	    # and set the chip's outline
+	    pmwrgb = ColorDB.triplet_to_pmwrgb(rgbtuple)
+	    b = Pmw.Color.rgb2brightness(pmwrgb)
+	    if b <= 0.5:
+		outline = 'white'
+	    else:
+		outline = 'black'
+	    self.__canvas.itemconfigure(self.__chips[chip],
+					outline=outline)
 	
     def __arrow_x(self, chipnum):
 	coords = self.__canvas.coords(self.__chips[chipnum])
