@@ -32,10 +32,10 @@ for machine-independent changes.
 - Experimental: an Mlte module has been added, an interface to the Multi Lingual Text
   Engine. There is a minimal example in :Mac:Demos:mlte.
 - Experimental: some support for FSRef objects has been added. You can do little more that
-  convert them to/from FSSpecs.
+  convert them to/from FSSpecs. Carbon only.
 - Experimental: the CF module has some support for CoreFoundation types. CFString
   and CFURL work, to a degree, and can be converted to/from Python strings and Unicode
-  objects.
+  objects. Carbon only.
 
 What is not in this distribution
 --------------------------------
