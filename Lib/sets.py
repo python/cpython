@@ -420,7 +420,7 @@ class Set(BaseSet):
         except KeyError:
             pass
 
-    def popitem(self):
+    def pop(self):
         """Remove and return a randomly-chosen set element."""
         return self._data.popitem()[0]
 
