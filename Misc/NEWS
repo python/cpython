@@ -124,6 +124,9 @@ http://sourceforge.net/tracker/index.php?func=detail&aid=<id>&group_id=5470&atid
 - In site.py, the ".pth" code knew about the layout of Python trees on 
   unix and windows, but not on the mac. Fixed.
 
+- #121706 - config.c - _PyImport_Inittab: define the exceptions module's init 
+                       function.
+
 What's New in Python 2.0?
 =========================
 
