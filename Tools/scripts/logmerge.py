@@ -19,12 +19,21 @@ entry; this is useful when using something like the above cvs log
 command, which shows the revisions including the given tag, while you
 probably want everything *since* that tag.
 
+The -r option reverses the output (oldest first; the default is oldest
+last).
+
+The -b tag option restricts the output to *only* checkin messages
+belonging to the given branch tag.  The form -b HEAD restricts the
+output to checkin messages belonging to the CVS head (trunk).  (It
+produces some output if tag is a non-branch tag, but this output is
+not very useful.)
+
 XXX This code was created by reverse engineering CVS 1.9 and RCS 5.7
 from their output.
 
 """
 
-import os, sys, getopt, re
+import os, sys, getopt
 
 sep1 = '='*77 + '\n'                    # file separator
 sep2 = '-'*28 + '\n'                    # revision separator
@@ -33,18 +42,21 @@ def main():
     """Main program"""
     truncate_last = 0
     reverse = 0
-    opts, args = getopt.getopt(sys.argv[1:], "tr")
+    branch = None
+    opts, args = getopt.getopt(sys.argv[1:], "trb:")
     for o, a in opts:
         if o == '-t':
             truncate_last = 1
         elif o == '-r':
             reverse = 1
+        elif o == '-b':
+            branch = a
     database = []
     while 1:
         chunk = read_chunk(sys.stdin)
         if not chunk:
             break
-        records = digest_chunk(chunk)
+        records = digest_chunk(chunk, branch)
         if truncate_last:
             del records[-1]
         database[len(database):] = records
@@ -77,8 +89,8 @@ def read_chunk(fp):
             lines.append(line)
     return chunk
 
-def digest_chunk(chunk):
-    """Digest a chunk -- extrach working file name and revisions"""
+def digest_chunk(chunk, branch=None):
+    """Digest a chunk -- extract working file name and revisions"""
     lines = chunk[0]
     key = 'Working file:'
     keylen = len(key)
@@ -88,6 +100,26 @@ def digest_chunk(chunk):
             break
     else:
         working_file = None
+    if branch and branch != "HEAD":
+        revisions = {}
+        key = 'symbolic names:\n'
+        found = 0
+        for line in lines:
+            if line == key:
+                found = 1
+            elif found:
+                if line[0] in '\t ':
+                    tag, rev = line.split()
+                    if tag[-1] == ':':
+                        tag = tag[:-1]
+                    revisions[tag] = rev
+                else:
+                    found = 0
+        rev = revisions.get(branch)
+        if rev:
+            if rev.find('.0.') >= 0:
+                rev = rev.replace('.0.', '.') + '.'
+        branch = rev or "<>" # <> to force a mismatch
     records = []
     for lines in chunk[1:]:
         revline = lines[0]
@@ -114,6 +146,12 @@ def digest_chunk(chunk):
         else:
             rev = None
             text.insert(0, revline)
+        if branch:
+            if branch == "HEAD":
+                if rev is not None and rev.count('.') > 1:
+                    continue
+            elif rev is None or not rev.startswith(branch):
+                continue
         records.append((date, working_file, rev, author, text))
     return records
 
