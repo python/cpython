@@ -46,7 +46,7 @@ instantiate a \class{Generator} instance and use its
 from cStringIO import StringIO
 from email.Generator import Generator
 fp = StringIO()
-g = Generator(mangle_from_=False, maxheaderlen=60)
+g = Generator(fp, mangle_from_=False, maxheaderlen=60)
 g.flatten(msg)
 text = fp.getvalue()
 \end{verbatim}
