@@ -29,14 +29,15 @@ class ZoomHeight:
             top.bell()
             return
         width, height, x, y = map(int, m.groups())
-        height = top.winfo_screenheight()
+        newheight = top.winfo_screenheight()
         if sys.platform == 'win32':
-            y = 0
-            height = height - 72
+            newy = 0
+            newheight = newheight - 72
         else:
-            y = 24
-            height = height - 96
-        newgeom = "%dx%d+%d+%d" % (width, height, x, y)
-        if geom == newgeom:
+            newy = 24
+            newheight = newheight - 96
+        if height >= newheight:
             newgeom = ""
+        else:
+            newgeom = "%dx%d+%d+%d" % (width, newheight, x, newy)
         top.wm_geometry(newgeom)
