@@ -154,7 +154,7 @@ Implements \code{TOS = `TOS`}.
 \end{opcodedesc}
 
 \begin{opcodedesc}{UNARY_INVERT}{}
-Implements \code{TOS = \~TOS}.
+Implements \code{TOS = \~{}TOS}.
 \end{opcodedesc}
 
 Binary operations remove the top of the stack (TOS) and the second top-most
@@ -174,7 +174,7 @@ Implements \code{TOS = TOS1 / TOS}.
 \end{opcodedesc}
 
 \begin{opcodedesc}{BINARY_MODULO}{}
-Implements \code{TOS = TOS1 \% TOS}.
+Implements \code{TOS = TOS1 \%{} TOS}.
 \end{opcodedesc}
 
 \begin{opcodedesc}{BINARY_ADD}{}
@@ -198,7 +198,7 @@ Implements \code{TOS = TOS1 >> TOS}.
 \end{opcodedesc}
 
 \begin{opcodedesc}{BINARY_AND}{}
-Implements \code{TOS = TOS1 and TOS}.
+Implements \code{TOS = TOS1 \&\ TOS}.
 \end{opcodedesc}
 
 \begin{opcodedesc}{BINARY_XOR}{}
@@ -206,7 +206,7 @@ Implements \code{TOS = TOS1 \^\ TOS}.
 \end{opcodedesc}
 
 \begin{opcodedesc}{BINARY_OR}{}
-Implements \code{TOS = TOS1 or TOS}.
+Implements \code{TOS = TOS1 | TOS}.
 \end{opcodedesc}
 
 The slice opcodes take up to three parameters.
