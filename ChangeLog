@@ -1,5 +1,9 @@
 Tue Jan 17 11:24:23 1995  Guido van Rossum  <guido@zeus.cwi.nl>
 
+	* Include/patchlevel.h: set version to 1.2-beta-2
+
+	* Python/Makefile.in: added getopt to list of objects
+
 	* Makefile.pre.in: be more careful about building 
 	Modules/Makefile.pre
 
