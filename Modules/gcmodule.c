@@ -951,7 +951,7 @@ static PyMethodDef GcMethods[] = {
 	{NULL,	NULL}		/* Sentinel */
 };
 
-void
+PyMODINIT_FUNC
 initgc(void)
 {
 	PyObject *m;

@@ -428,7 +428,12 @@ extern double hypot(double, double);
 #			define PyAPI_FUNC(RTYPE) __declspec(dllexport) RTYPE
 #			define PyAPI_DATA(RTYPE) extern __declspec(dllexport) RTYPE
 			/* module init functions inside the core need no external linkage */
-#			define PyMODINIT_FUNC void
+			/* except for Cygwin to handle embedding (FIXME: BeOS too?) */
+#			if defined(__CYGWIN__)
+#				define PyMODINIT_FUNC __declspec(dllexport) void
+#			else /* __CYGWIN__ */
+#				define PyMODINIT_FUNC void
+#			endif /* __CYGWIN__ */
 #		else /* Py_BUILD_CORE */
 			/* Building an extension module, or an embedded situation */
 			/* public Python functions and data are imported */

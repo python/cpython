@@ -2841,7 +2841,7 @@ setint(PyObject *d, char *name, int value)
 	return err;
 }
 
-void
+PyMODINIT_FUNC
 initimp(void)
 {
 	PyObject *m, *d;
