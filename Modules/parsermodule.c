@@ -30,7 +30,9 @@
  *  All the "fudge" declarations are here:
  *
  *  This isn't part of the Python runtime, but it's in the library somewhere.
- *  Where it is varies a bit, so just declare it.
+ *  Where it is varies a bit, so just declare it.  Don't use any prototype;
+ *  different systems declare it a little differently, and we don't need the
+ *  extra warnings.
  */
 extern char* strdup();
 
@@ -40,10 +42,10 @@ extern char* strdup();
  */
 static char*
 parser_copyright_string
-= "Copyright 1995-1996 by Virginia Polytechnic Institute & State\n"
-  "University, Blacksburg, Virginia, USA, and Fred L. Drake, Jr., Reston,\n"
-  "Virginia, USA.  Portions copyright 1991-1995 by Stichting Mathematisch\n"
-  "Centrum, Amsterdam, The Netherlands.";
+= "Copyright 1995-1996 by Virginia Polytechnic Institute & State\n\
+University, Blacksburg, Virginia, USA, and Fred L. Drake, Jr., Reston,\n\
+Virginia, USA.  Portions copyright 1991-1995 by Stichting Mathematisch\n\
+Centrum, Amsterdam, The Netherlands.";
 
 
 static char*
@@ -54,15 +56,18 @@ static char*
 parser_version_string = "0.4";
 
 
-typedef PyObject* (*SeqMaker) (int length);
-typedef void (*SeqInserter) (PyObject* sequence, int index, PyObject* element);
+typedef PyObject* (*SeqMaker) Py_PROTO((int length));
+typedef void (*SeqInserter) Py_PROTO((PyObject* sequence,
+				      int index,
+				      PyObject* element));
 
 /*  The function below is copyrigthed by Stichting Mathematisch Centrum.  The
  *  original copyright statement is included below, and continues to apply
  *  in full to the function immediately following.  All other material is
  *  original, copyrighted by Fred L. Drake, Jr. and Virginia Polytechnic
  *  Institute and State University.  Changes were made to comply with the
- *  new naming conventions.
+ *  new naming conventions.  Added arguments to provide support for creating
+ *  lists as well as tuples, and optionally including the line numbers.
  */
 
 /***********************************************************
@@ -177,8 +182,9 @@ typedef struct _PyAST_Object {
 } PyAST_Object;
 
 
-staticforward void parser_free();
-staticforward int  parser_compare();
+staticforward void parser_free Py_PROTO((PyAST_Object *ast));
+staticforward int  parser_compare Py_PROTO((PyAST_Object *left,
+					    PyAST_Object *right));
 
 
 /* static */
@@ -526,9 +532,9 @@ parser_suite(self, args)
  */
 
 
-staticforward node* build_node_tree();
-staticforward int   validate_expr_tree();
-staticforward int   validate_file_input();
+staticforward node* build_node_tree Py_PROTO((PyObject *tuple));
+staticforward int   validate_expr_tree Py_PROTO((node *tree));
+staticforward int   validate_file_input Py_PROTO((node *tree));
 
 
 /*  PyObject* parser_tuple2ast(PyObject* self, PyObject* args)
@@ -821,23 +827,17 @@ build_node_tree(tuple)
 
 
 #ifdef HAVE_OLD_CPP
-#define VALIDATER(n)    static int validate_/**/n()
+#define VALIDATER(n)    static int validate_/**/n Py_PROTO((node *tree))
 #else
-#define	VALIDATER(n)	static int validate_##n()
+#define	VALIDATER(n)	static int validate_##n Py_PROTO((node *tree))
 #endif
-
-
-/*
- *  Validation for the code above:
- */
-VALIDATER(expr_tree);
-VALIDATER(suite_tree);
 
 
 /*
  *  Validation routines used within the validation section:
  */
-staticforward int validate_terminal();
+staticforward int validate_terminal Py_PROTO((node *terminal,
+					      int type, char *string));
 
 #define	validate_ampersand(ch)	validate_terminal(ch,	   AMPER, "&")
 #define	validate_circumflex(ch)	validate_terminal(ch, CIRCUMFLEX, "^")
@@ -866,7 +866,7 @@ VALIDATER(expr_stmt);		VALIDATER(power);
 VALIDATER(print_stmt);		VALIDATER(del_stmt);
 VALIDATER(return_stmt);
 VALIDATER(raise_stmt);		VALIDATER(import_stmt);
-VALIDATER(global_stmt);		VALIDATER(file_input);
+VALIDATER(global_stmt);
 VALIDATER(exec_stmt);		VALIDATER(compound_stmt);
 VALIDATER(while);		VALIDATER(for);
 VALIDATER(try);			VALIDATER(except_clause);
@@ -2550,7 +2550,7 @@ validate_file_input(tree)
 
     return (res);
 
-}   /* validate_suite_tree() */
+}   /* validate_file_input() */
 
 
 /*  Functions exported by this module.  Most of this should probably
