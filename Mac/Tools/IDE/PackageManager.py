@@ -12,10 +12,10 @@ import pimp
 
 ELIPSES = '...'
 		
-class InstallManager(Wapplication.Application):
+class PackageManagerMain(Wapplication.Application):
 	
 	def __init__(self):
-		self.preffilepath = os.path.join("Python", "Python Install Manager Prefs")
+		self.preffilepath = os.path.join("Python", "Package Install Manager Prefs")
 		Wapplication.Application.__init__(self, 'Pimp')
 		from Carbon import AE
 		from Carbon import AppleEvents
@@ -28,7 +28,7 @@ class InstallManager(Wapplication.Application):
 				self.ignoreevent)
 		AE.AEInstallEventHandler(AppleEvents.kCoreEventClass, AppleEvents.kAEQuitApplication, 
 				self.quitevent)
-		if 0:
+		if 1:
 			import PyConsole
 			# With -D option (OSX command line only) keep stderr, for debugging the IDE
 			# itself.
@@ -37,7 +37,6 @@ class InstallManager(Wapplication.Application):
 				debug_stderr = sys.stderr
 				del sys.argv[1]
 			PyConsole.installoutput()
-			PyConsole.installconsole()
 			if debug_stderr:
 				sys.stderr = debug_stderr
 		self.opendoc(None)
@@ -45,13 +44,13 @@ class InstallManager(Wapplication.Application):
 		
 	def makeusermenus(self):
 		m = Wapplication.Menu(self.menubar, "File")
-		newitem = FrameWork.MenuItem(m, "Open Standard Database", "N", 'openstandard')
+##		newitem = FrameWork.MenuItem(m, "Open Standard Database", "N", 'openstandard')
 ##		openitem = FrameWork.MenuItem(m, "Open"+ELIPSES, "O", 'open')
 ##		openbynameitem = FrameWork.MenuItem(m, "Open URL"+ELIPSES, "D", 'openbyname')
 		FrameWork.Separator(m)
 		closeitem = FrameWork.MenuItem(m, "Close", "W", 'close')
 ##		saveitem = FrameWork.MenuItem(m, "Save", "S", 'save')
-		saveasitem = FrameWork.MenuItem(m, "Save as"+ELIPSES, None, 'save_as')
+##		saveasitem = FrameWork.MenuItem(m, "Save as"+ELIPSES, None, 'save_as')
 		FrameWork.Separator(m)
 		
 		m = Wapplication.Menu(self.menubar, "Edit")
@@ -100,10 +99,10 @@ class InstallManager(Wapplication.Application):
 		PackageBrowser(url)
 	
 	def getabouttext(self):
-		return "About Python Install Manager"+ELIPSES
+		return "About Package Manager"+ELIPSES
 	
 	def do_about(self, id, item, window, event):
-		EasyDialogs.Message("Python Install Manager")
+		EasyDialogs.Message("Package Install Manager for Python")
 			
 	def domenu_open(self, *args):
 		filename = EasyDialogs.AskFileForOpen(typeList=("TEXT",))
@@ -172,6 +171,7 @@ class PimpInterface:
 	def setuppimp(self, url):
 		self.pimpprefs = pimp.PimpPreferences()
 		self.pimpdb = pimp.PimpDatabase(self.pimpprefs)
+		self.pimpinstaller = pimp.PimpInstaller(self.pimpdb)
 		if not url:
 			url = self.pimpprefs.pimpDatabase
 		self.pimpdb.appendURL(url)
@@ -189,6 +189,14 @@ class PimpInterface:
 	def getstatus(self, number):
 		pkg = self.packages[number]
 		return pkg.installed()
+		
+	def installpackage(self, sel, output, recursive, force):
+		pkg = self.packages[sel]
+		list, messages = self.pimpinstaller.prepareInstall(pkg, force, recursive)
+		if messages:
+			return messages
+		messages = self.pimpinstaller.install(list, output)
+		return messages
 			
 class PackageBrowser(PimpInterface):
 	
@@ -209,35 +217,52 @@ class PackageBrowser(PimpInterface):
 		self.w.message_l = W.TextBox((4, -48, 60, 12), 'Status:')
 		self.w.message = W.TextBox((64, -48, 0, 12), '')
 		self.w.homepage_button = W.Button((4, -28, 96, 18), 'View homepage', self.do_homepage)
-		self.w.verbose_button = W.CheckBox((-204, -26, 60, 18), 'Verbose')
+		self.w.verbose_button = W.CheckBox((-288, -26, 60, 18), 'Verbose')
+		self.w.recursive_button = W.CheckBox((-224, -26, 80, 18), 'Recursive', self.updatestatus)
+		self.w.recursive_button.set(1)
 		self.w.force_button = W.CheckBox((-140, -26, 60, 18), 'Force', self.updatestatus)
 		self.w.install_button = W.Button((-76, -28, 56, 18), 'Install', self.do_install)
 		self.w.open()
 		
 	def updatestatus(self):
 		sel = self.w.packagebrowser.getselection()
+		data = self.getbrowserdata()
+		self.w.packagebrowser.setitems(data)
 		if len(sel) != 1:
 			self.w.installed.set('')
 			self.w.message.set('')
 			self.w.install_button.enable(0)
 			self.w.homepage_button.enable(0)
 			self.w.verbose_button.enable(0)
+			self.w.recursive_button.enable(0)
 			self.w.force_button.enable(0)
 		else:
 			sel = sel[0]
+			self.w.packagebrowser.setselection([sel])
 			installed, message = self.getstatus(sel)
 			self.w.installed.set(installed)
 			self.w.message.set(message)
 			self.w.install_button.enable(installed != "yes" or self.w.force_button.get())
 			self.w.homepage_button.enable(not not self.packages[sel].homepage())
 			self.w.verbose_button.enable(1)
+			self.w.recursive_button.enable(1)
 			self.w.force_button.enable(1)
 		
 	def listhit(self, *args, **kwargs):
 		self.updatestatus()
 		
 	def do_install(self):
-		print "INSTALL"
+		sel = self.w.packagebrowser.getselection()[0]
+		if self.w.verbose_button.get():
+			output = sys.stdout
+		else:
+			output = None
+		recursive = self.w.recursive_button.get()
+		force = self.w.force_button.get()
+		messages = self.installpackage(sel, output, recursive, force)
+		self.updatestatus()
+		if messages:
+			EasyDialogs.Message('\n'.join(messages))
 		
 	def do_homepage(self):
 		sel = self.w.packagebrowser.getselection()[0]
@@ -248,4 +273,4 @@ class PackageBrowser(PimpInterface):
 		self.ic.launchurl(self.packages[sel].homepage())
 		
 if __name__ == '__main__':
-	InstallManager()
+	PackageManagerMain()
