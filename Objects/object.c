@@ -532,25 +532,65 @@ PyObject_Compare(PyObject *v, PyObject *w)
 long
 _Py_HashDouble(double v)
 {
-	/* Use frexp to get at the bits in the double.
+	double intpart, fractpart;
+	int expo;
+	long hipart;
+	long x;		/* the final hash value */
+	/* This is designed so that Python numbers of different types
+	 * that compare equal hash to the same value; otherwise comparisons
+	 * of mapping keys will turn out weird.
+	 */
+
+#ifdef MPW /* MPW C modf expects pointer to extended as second argument */
+{
+	extended e;
+	fractpart = modf(v, &e);
+	intpart = e;
+}
+#else
+	fractpart = modf(v, &intpart);
+#endif
+	if (fractpart == 0.0) {
+		/* This must return the same hash as an equal int or long. */
+		if (intpart > LONG_MAX || -intpart > LONG_MAX) {
+			/* Convert to long and use its hash. */
+			PyObject *plong;	/* converted to Python long */
+			if (Py_IS_INFINITY(intpart))
+				/* can't convert to long int -- arbitrary */
+				v = v < 0 ? -271828.0 : 314159.0;
+			plong = PyLong_FromDouble(v);
+			if (plong == NULL)
+				return -1;
+			x = PyObject_Hash(plong);
+			Py_DECREF(plong);
+			return x;
+		}
+		/* Fits in a C long == a Python int, so is its own hash. */
+		x = (long)intpart;
+		if (x == -1)
+			x = -2;
+		return x;
+	}
+	/* The fractional part is non-zero, so we don't have to worry about
+	 * making this match the hash of some other type.
+	 * Use frexp to get at the bits in the double.
 	 * Since the VAX D double format has 56 mantissa bits, which is the
 	 * most of any double format in use, each of these parts may have as
 	 * many as (but no more than) 56 significant bits.
-	 * So, assuming sizeof(long) >= 4, each part can be broken into two longs;
-	 * frexp and multiplication are used to do that.
-	 * Also, since the Cray double format has 15 exponent bits, which is the
-	 * most of any double format in use, shifting the exponent field left by
-	 * 15 won't overflow a long (again assuming sizeof(long) >= 4).
+	 * So, assuming sizeof(long) >= 4, each part can be broken into two
+	 * longs; frexp and multiplication are used to do that.
+	 * Also, since the Cray double format has 15 exponent bits, which is
+	 * the most of any double format in use, shifting the exponent field
+	 * left by 15 won't overflow a long (again assuming sizeof(long) >= 4).
 	 */
-    int expo;
-    long hipart;
-
-    v = frexp(v, &expo);
-    v = v * 2147483648.0; /* 2**31 */
-    hipart = (long)v; /* Take the top 32 bits */
-	v = (v - (double)hipart) * 2147483648.0; /* Get the next 32 bits */
-
-    return hipart + (long)v + (expo << 15); /* Combine everything */
+	v = frexp(v, &expo);
+	v *= 2147483648.0;	/* 2**31 */
+	hipart = (long)v;	/* take the top 32 bits */
+	v = (v - (double)hipart) * 2147483648.0; /* get the next 32 bits */
+	x = hipart + (long)v + (expo << 15);
+	if (x == -1)
+		x = -2;
+	return x;
 }
 
 long

@@ -242,52 +242,23 @@ complex_compare(PyComplexObject *v, PyComplexObject *w)
 static long
 complex_hash(PyComplexObject *v)
 {
-	double intpart, fractpart;
-	long x;
-	/* This is designed so that Python numbers with the same
-	   value hash to the same value, otherwise comparisons
-	   of mapping keys will turn out weird */
-
-#ifdef MPW /* MPW C modf expects pointer to extended as second argument */
-{
-	extended e;
-	fractpart = modf(v->cval.real, &e);
-	intpart = e;
-}
-#else
-	fractpart = modf(v->cval.real, &intpart);
-#endif
-
-	if (fractpart == 0.0 && v->cval.imag == 0.0) {
-		if (intpart > LONG_MAX || -intpart > LONG_MAX) {
-			/* Convert to long int and use its hash... */
-			PyObject *w = PyLong_FromDouble(v->cval.real);
-			if (w == NULL)
-				return -1;
-			x = PyObject_Hash(w);
-			Py_DECREF(w);
-			return x;
-		}
-		x = (long)intpart;
-	}
-	else {
-		x = _Py_HashDouble(v->cval.real);
-		if (x == -1)
-			return -1;
-
-		if (v->cval.imag != 0.0) { /* Hash the imaginary part */
-			/* XXX Note that this hashes complex(x, y)
-			   to the same value as complex(y, x).
-			   Still better than it used to be :-) */
-			long y = _Py_HashDouble(v->cval.imag);
-			if (y == -1)
-				return -1;
-			x += y;
-		}
-	}
-	if (x == -1)
-		x = -2;
-	return x;
+	long hashreal, hashimag, combined;
+	hashreal = _Py_HashDouble(v->cval.real);
+	if (hashreal == -1)
+		return -1;
+	hashimag = _Py_HashDouble(v->cval.imag);
+	if (hashimag == -1)
+		return -1;
+	/* Note:  if the imaginary part is 0, hashimag is 0 now,
+	 * so the following returns hashreal unchanged.  This is
+	 * important because numbers of different types that
+	 * compare equal must have the same hash value, so that
+	 * hash(x + 0*j) must equal hash(x).
+	 */
+	combined = hashreal + 1000003 * hashimag;
+	if (combined == -1)
+		combined = -2;
+	return combined;
 }
 
 static PyObject *
