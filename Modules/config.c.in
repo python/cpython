@@ -1,6 +1,6 @@
 /***********************************************************
-Copyright 1991, 1992 by Stichting Mathematisch Centrum, Amsterdam, The
-Netherlands.
+Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Amsterdam, The Netherlands.
 
                         All Rights Reserved
 
@@ -45,7 +45,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #ifdef __DATE__
 #define DATE __DATE__
 #else
-#define DATE ">= 1 Jan 1993"
+#define DATE ">= 8 Jan 1993"
 #endif
 
 #include <stdio.h>
