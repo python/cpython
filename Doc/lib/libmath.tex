@@ -64,8 +64,12 @@ Return \code{\var{x} \%\ \var{y}}.
 \end{funcdesc}
 
 \begin{funcdesc}{frexp}{x}
-Return the matissa and exponent for \var{x}.  The mantissa is
-positive.
+Convert a floating-point number to fractional and integral
+components.  If \var{x} is zero, returns \code{(0.0, 0)}, otherwise
+returns \code{(\var{frac}, \var{exp})} such that \code{\var{frac} *
+2**\var{exp}} will equal \var{x}.  \var{exp} will be an integer, and
+the absolute value of \var{frac} will be in the range [0.5, 1.0)
+(\var{frac} will share the sign of \var{x}).
 \end{funcdesc}
 
 \begin{funcdesc}{hypot}{x, y}
