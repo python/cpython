@@ -20,8 +20,8 @@ optional command sets.
 Note that POP3, though widely supported, is obsolescent.  The
 implementation quality of POP3 servers varies widely, and too many are
 quite poor. If your mailserver supports IMAP, you would be better off
-using the \refmodule{IMAP} class, as IMAP servers tend to be better
-implemented.
+using the \code{\refmodule{imaplib}.\class{IMAP4}} class, as IMAP
+servers tend to be better implemented.
 
 A single class is provided by the \module{poplib} module:
 
@@ -37,6 +37,14 @@ One exception is defined as an attribute of the \module{poplib} module:
 Exception raised on any errors.  The reason for the exception is
 passed to the constructor as a string.
 \end{excdesc}
+
+\begin{seealso}
+  \seemodule{imaplib}{The standard Python IMAP module.}
+  \seetitle{http://www.tuxedo.org/~esr/fetchail/fetchmail-FAQ.html}{
+	The FAQ for the fetchmail POP/IMAP client collects information
+	on POP3 server variations and RFC noncompliance that may be
+	useful if you need to write an application based on poplib.} 
+\end{seealso}
 
 
 \subsection{POP3 Objects \label{pop3-objects}}
@@ -125,13 +133,6 @@ otherwise result is list \code{(\var{response}, ['mesgnum uid', ...],
 \var{octets})}.
 \end{methoddesc}
 
-\begin{seealso}
-  \seemodule{imap}{The standard Python IMAP module.}
-  \seetitle{http://www.tuxedo.org/~esr/fetchail/fetchmail-FAQ.html}{
-	The FAQ for the fetchmail POP/IMAP client collects information
-	on POP3 server variations and RFC noncompliance that may be
-	useful if you need to write an application based on poplib.} 
-\end{seealso}
 
 \subsection{POP3 Example \label{pop3-example}}
 
