@@ -34,17 +34,13 @@ if not os.isatty(slave_fd):
 debug("Writing to slave_fd")
 os.write(slave_fd, TEST_STRING_1)
 s1 = os.read(master_fd, 1024)
-if s1[-2:] == "\r\n":
-    s1 = s1[:-2] + "\n"
-sys.stdout.write(s1)
+sys.stdout.write(s1.replace("\r\n", "\n"))
 
 debug("Writing chunked output")
 os.write(slave_fd, TEST_STRING_2[:5])
 os.write(slave_fd, TEST_STRING_2[5:])
 s2 = os.read(master_fd, 1024)
-if s2[-2:] == "\r\n":
-    s2 = s2[:-2] + "\n"
-sys.stdout.write(s2)
+sys.stdout.write(s2.replace("\r\n", "\n"))
 
 os.close(slave_fd)
 os.close(master_fd)
