@@ -1,4 +1,4 @@
-How to install Python 1.3 on your Macintosh
+How to install Python 1.3.3 on your Macintosh
 ------------------------------------------------
 
 Even if you don't usually read readme files: please read at least the
@@ -7,11 +7,17 @@ an unuseable python system. If this warning is too late and you already
 have an non-functional python: it is best to remove all traces and start
 with a fresh distribution. Especially don't forget to remove the
 "python preferences" file from the Preferences folder, and possibly
-"PythonCore" from the Extensions folder.
+"PythonCore" from the Extensions folder. Before you mail me for help *please*
+try the steps above (cleaning up and re-installing): it should fix most
+common mistakes.
 
-If this is your first encounter with python: you definitely need the common
+If this is your first encounter with Python: you definitely need the common
 user documentation (common to all platforms). You can find this (in various
 forms) on www.python.org and ftp.python.org.
+
+Mac-specific documentation is included in this distribution in folder Mac:Demo.
+The documentation is sparse, but it will have to serve for now. The documentation
+is in HTML format, start with index.html.
 
 If you have a pre-system 7 macintosh: sorry, this release will not work
 on your system. Too many sys7 features are used to make a sys6 python
@@ -36,9 +42,8 @@ PowerPC Macintosh instructions
 2. Run the MkPluginAliases applet. This will first ask you whether it should
    create an initial preferences file. Let it do so. Next, it will create a
    number of aliases in the PlugIns folder. If this fails in mysterious ways
-   try using the applescript in the PlugIns folder to create the aliases.
-   If that also fails: examine the script and create the aliases by hand
-   (and tell me what you did to make either of these two fail:-).
+   examine the script (in Mac:scripts:MkPluginAliases.py) and create the aliases
+   by hand (and tell me what you did to make the script fail:-).
 
 3. To make sure any applets you create can find the common interpreter code
    you should move PythonCore to the Extensions folder (drop it on the
@@ -77,12 +82,13 @@ PPC users have a couple of applets in the main folder they may want to try,
 - EditPythonPrefs allows you to edit the preferences file, to change the
   python home folder or modify the initial sys.path setting.
   The default settings are "liberal", you can remove stdwin and tkinter if
-  you don't use them, and Mac:Lib:... if you don't have a source distribution.
+  you don't use them and maybe others.
 - RunLibScript allows you to run any script as __main__ after setting arguments,
-  changing stdin/stdout/workdir, etc.
+  changing stdin/stdout/workdir, etc. Most of this functionality can also be
+  obtained nowadays by option-dragging a script to the interpreter.
 - For PPC only, mkapplet creates a python applet, a tiny application written
   in python. Drop a python source on it and out comes the application. More
-  information can be found in the "Read me files" folder.
+  information can be found in the "Mac:Demo" folder.
   
 PPC users will see one more files in the python folder: PythonApplet. This is
 the template for building applets, leave it alone.
@@ -91,19 +97,15 @@ Things to see
 -------------
 
 There are some readme files in the "Read me files" folder that may contain
-useful information. Especially the Relnotes-1.3 file contains some interesting
-tidbits.
+useful information. There is also a first stab at documentation (plus examples)
+in the Mac:Demo folder. The toplevel Demo folder has machine-independent demos.
+See the file Readme-mac for mac-specific notes. The Mac:Lib:test folder also
+has some programs that show simple capabilities of various modules.
 
 The "scripts" folder has some sample scripts. Some are useful, some are just
 interesting to look at to see how various things work. The MkDistr, mkapplet
 and fullbuild scripts (plus the ones mentioned above) may help you to understand
 how to use AppleEvents and various other toolboxes from python.
-
-The Tools folder has all the (automatically generated) interfaces to toolboxes
-available, and some simple test programs. See the scripts mentioned above for how
-to use them. NOTE: the organization of the toolbox stuff is likely to change,
-maybe even before the real 1.3 distribution. Until that time you will have to
-use addpack or imp to import these files in your program.
 
 The 'img' group of modules, which handles I/O of many different image formats
 (not pict yet, sigh:-) is included, but without documentation. You can find
