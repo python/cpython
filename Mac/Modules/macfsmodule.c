@@ -32,6 +32,10 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include "nfullpath.h"
 
+#ifdef THINK_C
+#define FileFilterUPP FileFilterProcPtr
+#endif
+
 static object *ErrorObject;
 
 /* ----------------------------------------------------- */

@@ -3,12 +3,9 @@
 ** (and only tested under MetroWerks, so far)
 */
 
-#if defined(MPW) || defined(__MWERKS__)
+#include <string.h>
+
 #include <Files.h>
-#endif
-#ifdef THINK_C_PRE_5_0
-#include <HFS.h>
-#endif
 
 #include "nfullpath.h"
 
