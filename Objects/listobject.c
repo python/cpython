@@ -2264,7 +2264,7 @@ list_fill(PyListObject *result, PyObject *v)
 	 * subclasses of list, there being nothing to copy.
 	 */
 	if (PyList_CheckExact(v)) {
-		i = ((PyListObject*)v)->ob_size;
+		i = PyList_GET_SIZE(v);
 		if (i == 0)
 			return 0;
 		if (i > LISTFILL_OPT_THRESHOLD)
