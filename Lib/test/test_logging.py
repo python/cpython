@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright 2001-2002 by Vinay Sajip. All Rights Reserved.
+# Copyright 2001-2004 by Vinay Sajip. All Rights Reserved.
 #
 # Permission to use, copy, modify, and distribute this software and its
 # documentation for any purpose and without fee is hereby granted,
