@@ -182,6 +182,24 @@ gc_list_size(PyGC_Head *list)
 	return n;
 }
 
+/* Append objects in a GC list to a Python list.
+ * Return 0 if all OK, < 0 if error (out of memory for list).
+ */
+static int
+append_objects(PyObject *py_list, PyGC_Head *gc_list)
+{
+	PyGC_Head *gc;
+	for (gc = gc_list->gc.gc_next; gc != gc_list; gc = gc->gc.gc_next) {
+		PyObject *op = FROM_GC(gc);
+		if (op != py_list) {
+			if (PyList_Append(py_list, op)) {
+				return -1; /* exception */
+			}
+		}
+	}
+	return 0;
+}
+
 /*** end of list stuff ***/
 
 
@@ -457,33 +475,26 @@ debug_cycle(char *msg, PyObject *op)
 
 /* Handle uncollectable garbage (cycles with finalizers, and stuff reachable
  * only from such cycles).
+ * If DEBUG_SAVEALL or hasfinalizer, the objects in finalizers are appended
+ * to the module garbage list (a Python list).  The objects in finalizers
+ * are merged into the old list regardless.
+ * Returns 0 if all OK, <0 on error (out of memory to grow the garbage list).
+ * The finalizers list is made empty on a successful return.
  */
-static void
+static int
 handle_finalizers(PyGC_Head *finalizers, PyGC_Head *old, int hasfinalizer)
 {
-	PyGC_Head *gc;
 	if (garbage == NULL) {
 		garbage = PyList_New(0);
 		if (garbage == NULL)
 			Py_FatalError("gc couldn't create gc.garbage list");
 	}
-	for (gc = finalizers->gc.gc_next;
-	     gc != finalizers;
-	     gc = finalizers->gc.gc_next) {
-		PyObject *op = FROM_GC(gc);
-
-		assert(IS_REACHABLE(op));
-		if ((debug & DEBUG_SAVEALL) || hasfinalizer) {
-			/* If SAVEALL is not set then just append objects with
-			 * finalizers to the list of garbage.  All objects in
-			 * the finalizers list are reachable from those
-			 * objects.
-			 */
-			PyList_Append(garbage, op);
-		}
-		gc_list_remove(gc);
-		gc_list_append(gc, old);
+	if ((debug & DEBUG_SAVEALL) || hasfinalizer) {
+		if (append_objects(garbage, finalizers) < 0)
+			return -1;
 	}
+	gc_list_merge(finalizers, old);
+	return 0;
 }
 
 /* Break reference cycles by clearing the containers involved.	This is
@@ -662,8 +673,8 @@ collect(int generation)
 	 * reachable list of garbage.  The programmer has to deal with
 	 * this if they insist on creating this type of structure.
 	 */
-	handle_finalizers(&finalizers, old, 1);
-	handle_finalizers(&reachable_from_finalizers, old, 0);
+	if (handle_finalizers(&finalizers, old, 1) == 0)
+		(void)handle_finalizers(&reachable_from_finalizers, old, 0);
 
 	if (PyErr_Occurred()) {
 		if (gc_str == NULL) {
@@ -906,22 +917,6 @@ PyDoc_STRVAR(gc_get_objects__doc__,
 "\n"
 "Return a list of objects tracked by the collector (excluding the list\n"
 "returned).\n");
-
-/* appending objects in a GC list to a Python list */
-static int
-append_objects(PyObject *py_list, PyGC_Head *gc_list)
-{
-	PyGC_Head *gc;
-	for (gc = gc_list->gc.gc_next; gc != gc_list; gc = gc->gc.gc_next) {
-		PyObject *op = FROM_GC(gc);
-		if (op != py_list) {
-			if (PyList_Append(py_list, op)) {
-				return -1; /* exception */
-			}
-		}
-	}
-	return 0;
-}
 
 static PyObject *
 gc_get_objects(PyObject *self, PyObject *noargs)
