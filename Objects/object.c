@@ -978,10 +978,6 @@ _Py_Dealloc(PyObject *op)
 {
 	destructor dealloc = op->ob_type->tp_dealloc;
 	_Py_ForgetReference(op);
-#ifndef WITH_CYCLE_GC
-	if (_PyTrash_delete_nesting < PyTrash_UNWIND_LEVEL-1)
-		op->ob_type = NULL;
-#endif
 	(*dealloc)(op);
 }
 
