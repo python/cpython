@@ -10,7 +10,7 @@ import sys, os, string
 from types import *
 from distutils.core import Command
 from distutils.util import write_file
-
+from distutils.errors import DistutilsOptionError
 
 class install (Command):
 
@@ -21,7 +21,15 @@ class install (Command):
         ('exec-prefix=', None,
          "prefix for platform-specific files"),
 
-        # Build directories: where to install from
+        # Installation directories: where to put modules and packages
+        ('install-lib=', None,
+         "base Python library directory"),
+        ('install-platlib=', None,
+         "platform-specific Python library directory"),
+        ('install-path=', None,
+         "extra intervening directories to put below install-lib"),
+
+        # Build directories: where to find the files to install
         ('build-base=', None,
          "base build directory"),
         ('build-lib=', None,
@@ -29,57 +37,35 @@ class install (Command):
         ('build-platlib=', None,
          "build directory for extension modules"),
 
-        # Installation directories: where to put modules and packages
-        ('install-lib=', None,
-         "base Python library directory"),
-        ('install-platlib=', None,
-         "platform-specific Python library directory"),
-        ('install-site-lib=', None,
-         "directory for site-specific packages and modules"),
-        ('install-site-platlib=', None,
-         "platform-specific site directory"),
-        ('install-scheme=', None,
-         "install to 'system' or 'site' library directory?"),
-        ('install-path=', None,
-         "extra intervening directories to put below install-lib"),
-
         # Where to install documentation (eventually!)
-        ('doc-format=', None, "format of documentation to generate"),
-        ('install-man=', None, "directory for Unix man pages"),
-        ('install-html=', None, "directory for HTML documentation"),
-        ('install-info=', None, "directory for GNU info files"),
+        #('doc-format=', None, "format of documentation to generate"),
+        #('install-man=', None, "directory for Unix man pages"),
+        #('install-html=', None, "directory for HTML documentation"),
+        #('install-info=', None, "directory for GNU info files"),
 
         # Flags for 'build_py'
-        ('compile-py', None, "compile .py to .pyc"),
-        ('optimize-py', None, "compile .py to .pyo (optimized)"),
+        #('compile-py', None, "compile .py to .pyc"),
+        #('optimize-py', None, "compile .py to .pyo (optimized)"),
         ]
 
 
     def initialize_options (self):
-
-        self.build_base = None
-        self.build_lib = None
-        self.build_platlib = None
 
         # Don't define 'prefix' or 'exec_prefix' so we can know when the
         # command is run whether the user supplied values
         self.prefix = None
         self.exec_prefix = None
 
-        # These two, we can supply real values for! (because they're
-        # not directories, and don't have a confusing multitude of
-        # possible derivations)
-        #self.install_scheme = 'site'
-        self.doc_format = None
-
         # The actual installation directories are determined only at
         # run-time, so the user can supply just prefix (and exec_prefix?)
         # as a base for everything else
         self.install_lib = None
         self.install_platlib = None
-        self.install_site_lib = None
-        self.install_site_platlib = None
         self.install_path = None
+
+        self.build_base = None
+        self.build_lib = None
+        self.build_platlib = None
 
         self.install_man = None
         self.install_html = None
@@ -114,75 +100,90 @@ class install (Command):
         # and assumes the Python 1.5 installation tree with no site.py
         # to fix things.
 
-        # Figure out the build directories, ie. where to install from
-        self.set_peer_option ('build', 'build_base', self.build_base)
-        self.set_undefined_options ('build',
-                                    ('build_base', 'build_base'),
-                                    ('build_lib', 'build_lib'),
-                                    ('build_platlib', 'build_platlib'))
-
         # Figure out actual installation directories; the basic principle
-        # is: if the user supplied nothing, then use the directories that
-        # Python was built and installed with (ie. the compiled-in prefix
-        # and exec_prefix, and the actual installation directories gleaned
-        # by sysconfig).  If the user supplied a prefix (and possibly
-        # exec_prefix), then we generate our own installation directories,
-        # following any pattern gleaned from sysconfig's findings.  If no
-        # such pattern can be gleaned, then we'll just make do and try to
-        # ape the behaviour of Python's configure script.
+        # is: ...
 
-        if self.prefix is None:         # user didn't override
-            self.prefix = os.path.normpath (sys.prefix)
-        if self.exec_prefix is None:
-            self.exec_prefix = os.path.normpath (sys.exec_prefix)
+        sys_prefix = os.path.normpath (sys.prefix)
+        sys_exec_prefix = os.path.normpath (sys.exec_prefix)
 
-        if self.install_lib is None:
-            self.install_lib = \
-                self.replace_sys_prefix ('LIBDEST', ('lib','python1.5'))
-        if self.install_platlib is None:
-            # XXX this should probably be DESTSHARED -- but why is there no
-            # equivalent to DESTSHARED for the "site-packages" dir"?
-            self.install_platlib = \
-                self.replace_sys_prefix ('BINLIBDEST', ('lib','python1.5'), 1)
-
-
-        # Here is where we decide where to install most library files: on
-        # POSIX systems, they go to 'site-packages' under the install_lib
-        # (determined above -- typically /usr/local/lib/python1.x).  Note
-        # that on POSIX systems, platform-specific files belong in
-        # 'site-packages' under install_platlib.  (The actual rule is that
-        # a module distribution that includes *any* platform-specific files
-        # -- ie. extension modules -- goes under install_platlib.  This
-        # solves the "can't find extension module in a package" problem.)
-        # On non-POSIX systems, install_lib and install_platlib are the
-        # same (eg. "C:\Program Files\Python\Lib" on Windows), as are
-        # install_site_lib and install_site_platlib (eg.
-        # "C:\Program Files\Python" on Windows) -- everything will be dumped
-        # right into one of the install_site directories.  (It doesn't
-        # really matter *which* one, of course, but I'll observe decorum
-        # and do it properly.)
-
-        # 'base' and 'platbase' are the base directories for installing
-        # site-local files, eg. "/usr/local/lib/python1.5/site-packages"
-        # or "C:\Program Files\Python"
-        if os.name == 'posix':
-            self.base = os.path.join (self.install_lib,
-                                      'site-packages')
-            self.platbase = os.path.join (self.install_platlib,
-                                          'site-packages')
+        if self.prefix is None:
+            if self.exec_prefix is not None:
+                raise DistutilsOptionError, \
+                      "you may not supply exec_prefix without prefix"
+            self.prefix = sys_prefix
         else:
-            self.base = self.prefix
-            self.platbase = self.exec_prefix
-        
-        # 'path_file' and 'extra_dirs' are how we handle distributions
-        # that need to be installed to their own directory, but aren't
+            # This is handy to guarantee that self.prefix is normalized --
+            # but it could be construed as rude to go normalizing a
+            # user-supplied path (they might like to see their "../" or
+            # symlinks in the installation feedback).
+            self.prefix = os.path.normpath (self.prefix)
+            
+        if self.exec_prefix is None:
+            if self.prefix == sys_prefix:
+                self.exec_prefix = sys_exec_prefix
+            else:
+                self.exec_prefix = self.prefix
+        else:
+            # Same as above about handy versus rude to normalize user's
+            # exec_prefix.
+            self.exec_prefix = os.path.normpath (self.exec_prefix)
+
+        if self.distribution.ext_modules: # any extensions to install?
+            effective_prefix = self.exec_prefix
+        else:
+            effective_prefix = self.prefix
+
+        if os.name == 'posix':
+            if self.install_lib is None:
+                if self.prefix == sys_prefix:
+                    self.install_lib = \
+                        os.path.join (effective_prefix,
+                                      "lib",
+                                      "python" + sys.version[:3],
+                                      "site-packages")
+                else:
+                    self.install_lib = \
+                        os.path.join (effective_prefix,
+                                      "lib",
+                                      "python")      # + sys.version[:3] ???
+            # end if self.install_lib ...
+
+            if self.install_platlib is None:
+                if self.exec_prefix == sys_exec_prefix:
+                    self.install_platlib = \
+                        os.path.join (effective_prefix,
+                                      "lib",
+                                      "python" + sys.version[:3],
+                                      "site-packages")
+                else:
+                    self.install_platlib = \
+                        os.path.join (effective_prefix,
+                                      "lib",
+                                      "python")      # + sys.version[:3] ???
+            # end if self.install_platlib ...
+
+        else:
+            raise DistutilsPlatformError, \
+                  "duh, I'm clueless (for now) about installing on %s" % os.name
+
+        # end if/else on os.name
+                    
+
+        # 'path_file' and 'extra_dirs' are how we handle distributions that
+        # want to be installed to their own directory, but aren't
         # package-ized yet.  'extra_dirs' is just a directory under
-        # 'base' or 'platbase' where toplevel modules will actually be
-        # installed; 'path_file' is the basename of a .pth file to drop
-        # in 'base' or 'platbase' (depending on the distribution).  Very
-        # often they will be the same, which is why we allow them to be
-        # supplied as a string or 1-tuple as well as a 2-element
-        # comma-separated string or a 2-tuple.
+        # 'install_lib' or 'install_platlib' where top-level modules will
+        # actually be installed; 'path_file' is the basename of a .pth file
+        # to drop in 'install_lib' or 'install_platlib' (depending on the
+        # distribution).  Very often they will be the same, which is why we
+        # allow them to be supplied as a string or 1-tuple as well as a
+        # 2-element comma-separated string or a 2-tuple.
+
+        # XXX this will drop a .pth file in install_{lib,platlib} even if
+        # they're not one of the site-packages directories: this is wrong!
+        # we need to suppress path_file in those cases, and warn if
+        # "install_lib/extra_dirs" is not in sys.path.
+
         if self.install_path is None:
             self.install_path = self.distribution.install_path
 
@@ -214,25 +215,12 @@ class install (Command):
         self.extra_dirs = extra_dirs
 
 
-        if self.install_site_lib is None:
-            self.install_site_lib = os.path.join (self.base,
-                                                  extra_dirs)
-
-        if self.install_site_platlib is None:
-            self.install_site_platlib = os.path.join (self.platbase,
-                                                      extra_dirs)
-
-        #if self.install_scheme == 'site':
-        #    install_lib = self.install_site_lib
-        #    install_platlib = self.install_site_platlib
-        #elif self.install_scheme == 'system':
-        #    install_lib = self.install_lib
-        #    install_platlib = self.install_platlib
-        #else:
-        #    # XXX new exception for this kind of misbehaviour?
-        #    raise DistutilsArgError, \
-        #          "invalid install scheme '%s'" % self.install_scheme
-            
+        # Figure out the build directories, ie. where to install from
+        self.set_peer_option ('build', 'build_base', self.build_base)
+        self.set_undefined_options ('build',
+                                    ('build_base', 'build_base'),
+                                    ('build_lib', 'build_lib'),
+                                    ('build_platlib', 'build_platlib'))
 
         # Punt on doc directories for now -- after all, we're punting on
         # documentation completely!
@@ -240,50 +228,13 @@ class install (Command):
     # finalize_options ()
 
 
-    def replace_sys_prefix (self, config_attr, fallback_postfix, use_exec=0):
-        """Attempts to glean a simple pattern from an installation
-           directory available as a 'sysconfig' attribute: if the
-           directory name starts with the "system prefix" (the one
-           hard-coded in the Makefile and compiled into Python),
-           then replace it with the current installation prefix and
-           return the "relocated" installation directory."""
-
-        from distutils import sysconfig
-
-        if use_exec:
-            sys_prefix = os.path.normpath (sys.exec_prefix)
-            my_prefix = self.exec_prefix
-        else:
-            sys_prefix = os.path.normpath (sys.prefix)
-            my_prefix = self.prefix
-
-        val = getattr (sysconfig, config_attr)
-        if string.find (val, sys_prefix) == 0:
-            # If the sysconfig directory starts with the system prefix,
-            # then we can "relocate" it to the user-supplied prefix --
-            # assuming, of course, it is different from the system prefix.
-
-            if sys_prefix == my_prefix:
-                return val
-            else:
-                return my_prefix + val[len(sys_prefix):]
-
-        else:
-            # Otherwise, just tack the "fallback postfix" onto the
-            # user-specified prefix.
-
-            return apply (os.path.join, (my_prefix,) + fallback_postfix)
-
-    # replace_sys_prefix ()
-    
-
     def run (self):
 
         # Obviously have to build before we can install
         self.run_peer ('build')
 
         # Install modules in two steps: "platform-shared" files (ie. pure
-        # python modules) and platform-specific files (compiled C
+        # Python modules) and platform-specific files (compiled C
         # extensions).  Note that 'install_py' is smart enough to install
         # pure Python modules in the "platlib" directory if we built any
         # extensions.
