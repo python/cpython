@@ -1225,6 +1225,15 @@ eval_frame(PyFrameObject *f)
 			if (x != NULL) continue;
 			break;
 
+		case LIST_APPEND:
+			w = POP();
+			v = POP();
+			err = PyList_Append(v, w);
+			Py_DECREF(v);
+			Py_DECREF(w);
+			if (err == 0) continue;
+			break;
+
 		case INPLACE_POWER:
 			w = POP();
 			v = TOP();

@@ -1552,8 +1552,7 @@ com_list_iter(struct compiling *c,
 		com_addop_varname(c, VAR_LOAD, t);
 		com_push(c, 1);
 		com_node(c, e);
-		com_addoparg(c, CALL_FUNCTION, 1);
-		com_addbyte(c, POP_TOP);
+		com_addbyte(c, LIST_APPEND);
 		com_pop(c, 2);
 	}
 }
@@ -1569,7 +1568,6 @@ com_list_comprehension(struct compiling *c, node *n)
 	com_addoparg(c, BUILD_LIST, 0);
 	com_addbyte(c, DUP_TOP); /* leave the result on the stack */
 	com_push(c, 2);
-	com_addop_name(c, LOAD_ATTR, "append");
 	com_addop_varname(c, VAR_STORE, tmpname);
 	com_pop(c, 1);
 	com_list_for(c, CHILD(n, 1), CHILD(n, 0), tmpname);
