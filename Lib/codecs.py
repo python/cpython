@@ -574,7 +574,7 @@ def make_encoding_map(decoding_map):
         else:
             m[v] = None
     return m
-    
+
 ### Tests
 
 if __name__ == '__main__':
