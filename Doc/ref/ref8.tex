@@ -16,7 +16,7 @@ initialized environment: all built-in and standard modules are
 available, but none have been initialized, except for \module{sys}
 (various system services), \module{__builtin__} (built-in functions,
 exceptions and \code{None}) and \module{__main__}.  The latter is used
-to provide the local and global name space for execution of the
+to provide the local and global namespace for execution of the
 complete program.
 \refbimodindex{sys}
 \refbimodindex{__main__}
@@ -28,8 +28,8 @@ described in the next section.
 The interpreter may also be invoked in interactive mode; in this case,
 it does not read and execute a complete program but reads and executes
 one statement (possibly compound) at a time.  The initial environment
-is identical to that of a complete program; each statement is executed
-in the name space of \module{__main__}.
+is identical to that of a coplete program; each statement is executed
+in the namespace of \module{__main__}.
 \index{interactive mode}
 \refbimodindex{__main__}
 
@@ -80,19 +80,18 @@ end of the input.
 
 There are two forms of expression input.  Both ignore leading
 whitespace.
- 
 The string argument to \function{eval()} must have the following form:
 \bifuncindex{eval}
 
 \begin{verbatim}
-eval_input:     condition_list NEWLINE*
+eval_input:     expression_list NEWLINE*
 \end{verbatim}
 
 The input line read by \function{input()} must have the following form:
 \bifuncindex{input}
 
 \begin{verbatim}
-input_input:    condition_list NEWLINE
+input_input:    expression_list NEWLINE
 \end{verbatim}
 
 Note: to read `raw' input line without interpretation, you can use the
