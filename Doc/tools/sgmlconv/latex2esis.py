@@ -326,7 +326,7 @@ def main():
         "cfuncdesc": (["type", "name", ("args",)], 0, 0, 1, 0),
         "chapter": ([("title",)], 0, 0, 0, 0),
         "chapter*": ([("title",)], 0, 0, 0, 0),
-        "classdesc": (["name", ("constructor-args",)], 0, 0, 1, 0),
+        "classdesc": (["name", ("args",)], 0, 0, 1, 0),
         "ctypedesc": (["name"], 0, 0, 1, 0),
         "cvardesc":  (["type", "name"], 0, 0, 1, 0),
         "datadesc":  (["name"], 0, 0, 1, 0),
