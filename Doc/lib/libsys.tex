@@ -340,12 +340,12 @@ else:
   \versionadded{2.0}
 \end{funcdesc}
 
-\begin{funcdesc}{sertdlopenflags}{n}
+\begin{funcdesc}{setdlopenflags}{n}
   Set the flags used by the interpreter for \cfunction{dlopen()}
   calls, such as when the interpreter loads extension modules.  Among
   other things, this will enable a lazy resolving of symbols when
-  imporing a module, if called as \code{sys.setdlopenflags(0)}.  To
-  share symols across extension modules, call as
+  importing a module, if called as \code{sys.setdlopenflags(0)}.  To
+  share symbols across extension modules, call as
   \code{sys.setdlopenflags(dl.RTLD_NOW | dl.RTLD_GLOBAL)}.  Symbolic
   names for the flag modules can be either found in the \refmodule{dl}
   module, or in the \module{DLFCN} module. If \module{DLFCN} is not
