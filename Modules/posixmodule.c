@@ -4981,7 +4981,7 @@ posix_dup(PyObject *self, PyObject *args)
 
 
 PyDoc_STRVAR(posix_dup2__doc__,
-"dup2(fd, fd2)\n\n\
+"dup2(old_fd, new_fd)\n\n\
 Duplicate file descriptor.");
 
 static PyObject *
