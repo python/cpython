@@ -72,7 +72,7 @@ _keepsplashscreenopen = 0
 
 abouttext1 = """The Python Integrated Developement Environment for the MacintoshÅ
 Version: %s
-Copyright 1997-98 Just van Rossum, Letterror. <just@letterror.com>
+Copyright 1997-2000 Just van Rossum, Letterror. <just@letterror.com>
 
 Python %s
 %s
