@@ -116,9 +116,9 @@ PyAPI_FUNC(int) PyDict_MergeFromSeq2(PyObject *d,
 					   PyObject *seq2,
 					   int override);
 
-PyAPI_FUNC(PyObject *) PyDict_GetItemString(PyObject *dp, char *key);
-PyAPI_FUNC(int) PyDict_SetItemString(PyObject *dp, char *key, PyObject *item);
-PyAPI_FUNC(int) PyDict_DelItemString(PyObject *dp, char *key);
+PyAPI_FUNC(PyObject *) PyDict_GetItemString(PyObject *dp, const char *key);
+PyAPI_FUNC(int) PyDict_SetItemString(PyObject *dp, const char *key, PyObject *item);
+PyAPI_FUNC(int) PyDict_DelItemString(PyObject *dp, const char *key);
 
 #ifdef __cplusplus
 }

@@ -1919,7 +1919,7 @@ PyTypeObject PyDict_Type = {
 /* For backward compatibility with old dictionary interface */
 
 PyObject *
-PyDict_GetItemString(PyObject *v, char *key)
+PyDict_GetItemString(PyObject *v, const char *key)
 {
 	PyObject *kv, *rv;
 	kv = PyString_FromString(key);
@@ -1931,7 +1931,7 @@ PyDict_GetItemString(PyObject *v, char *key)
 }
 
 int
-PyDict_SetItemString(PyObject *v, char *key, PyObject *item)
+PyDict_SetItemString(PyObject *v, const char *key, PyObject *item)
 {
 	PyObject *kv;
 	int err;
@@ -1945,7 +1945,7 @@ PyDict_SetItemString(PyObject *v, char *key, PyObject *item)
 }
 
 int
-PyDict_DelItemString(PyObject *v, char *key)
+PyDict_DelItemString(PyObject *v, const char *key)
 {
 	PyObject *kv;
 	int err;
