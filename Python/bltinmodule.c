@@ -1938,6 +1938,9 @@ _PyBuiltin_Init(void)
 		return NULL;
 	if (PyDict_SetItemString(dict, "str", (PyObject *) &PyString_Type) < 0)
 		return NULL;
+	if (PyDict_SetItemString(dict, "super",
+				 (PyObject *) &PySuper_Type) < 0)
+		return NULL;
 	if (PyDict_SetItemString(dict, "tuple",
 				 (PyObject *) &PyTuple_Type) < 0)
 		return NULL;
