@@ -131,7 +131,7 @@ Socket methods:
 #include <sys/types.h>
 #include <signal.h>
 
-/* Generic _socket.h definitions and includes */
+/* Generic socket object definitions and includes */
 #define PySocket_BUILDING_SOCKET
 #include "socketmodule.h"
 
