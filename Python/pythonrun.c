@@ -605,12 +605,14 @@ cleanup()
 
 	if (exitfunc) {
 		object *res;
+		INCREF(exitfunc);
 		sysset("exitfunc", (object *)NULL);
 		res = call_object(exitfunc, (object *)NULL);
 		if (res == NULL) {
 			fprintf(stderr, "Error in sys.exitfunc:\n");
 			print_error();
 		}
+		DECREF(exitfunc);
 	}
 
 	flushline();
