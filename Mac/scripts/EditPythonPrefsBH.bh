@@ -32,12 +32,12 @@ DIALOG 510
 12.1 The type code Python will create files with. TEXT is probably best.
 13.1 Press here when satisfied with your new settings in this dialog.
 14.1 Press here when you're not satisfied with your new settings.
-19.1 Select to use string-type values for standard exceptions.
-19.3 Deselect to use new class-based standard exceptions.
+19.1 Select to warn for inconsistent TAB usage in sources.
+19.3 Deselect to disable TAB consistency warnings.
 20.1 Selecting this disables the new package and site-python features.
 20.3 Deselecting this enables the new package and site-python features.
-21.1 Press here to turn help balloons off again.
-22.1 Select this to use old-style Standard File calls in macfs
-22.3 Deselect this to auto-import macfsn which replaces macfs StandardFile calls with Navigation Services wrappers
+21.1 Select this to use old-style Standard File calls in macfs
+21.3 Deselect this to auto-import macfsn which replaces macfs StandardFile calls with Navigation Services wrappers
+22.1 Press here to turn help balloons off again.
 END-DIALOG
 END

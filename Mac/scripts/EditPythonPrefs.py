@@ -50,8 +50,7 @@ opt_dialog_map = [
 	None, None, None, None, None, None, None, None, # 11-18 are different
 	"tabwarn",
 	"nosite",
-	None,
-	"nonavservices"]
+	"nonavservice"]
 opt_dialog_dict = {}
 for i in range(len(opt_dialog_map)):
 	if opt_dialog_map[i]:
