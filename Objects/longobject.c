@@ -284,7 +284,7 @@ _PyLong_FromByteArray(const unsigned char* bytes, size_t n,
 		const unsigned char* p = pstartbyte;
 
 		for (i = 0; i < numsignificantbytes; ++i, p += incr) {
-			unsigned int thisbyte = *p;
+			twodigits thisbyte = *p;
 			/* Compute correction for 2's comp, if needed. */
 			if (is_signed) {
 				thisbyte = (0xff ^ thisbyte) + carry;
@@ -364,17 +364,21 @@ _PyLong_AsByteArray(PyLongObject* v,
 	accumbits = 0;
 	carry = do_twos_comp ? 1 : 0;
 	for (i = 0; i < ndigits; ++i) {
-		unsigned int oldaccumbits = accumbits;
+		unsigned int numnewbits = SHIFT;
 		twodigits thisdigit = v->ob_digit[i];
 		if (do_twos_comp) {
 			thisdigit = (thisdigit ^ MASK) + carry;
 			carry = thisdigit >> SHIFT;
 			thisdigit &= MASK;
 		}
-		if (i < ndigits - 1)
-			accumbits += SHIFT;
-		else {
-			/* The most-significant digit may be partly empty. */
+		/* Because we're going LSB to MSB, thisdigit is more
+		   significant than what's already in accum, so needs to be
+		   prepended to accum. */
+		accum |= thisdigit << accumbits;
+
+		/* How many new bits did we add?  The most-significant digit
+		   may be (probably is) at least partly empty. */
+		if (i == ndigits - 1) {
 			twodigits bitmask = 1 << (SHIFT - 1);
 			twodigits signbit = do_twos_comp << (SHIFT - 1);
 			unsigned int nsignbits = 0;
@@ -383,12 +387,11 @@ _PyLong_AsByteArray(PyLongObject* v,
 				bitmask >>= 1;
 				signbit >>= 1;
 			}
-			accumbits += SHIFT - nsignbits;
+			assert(nsignbits <= SHIFT);
+			numnewbits -= nsignbits;
 		}
-		/* Because we're going LSB to MSB, thisdigit is more
-		   significant than what's already in accum, so needs to be
-		   prepended to accum. */
-		accum |= thisdigit << oldaccumbits;
+		accumbits += numnewbits;
+
 		/* Store as many bytes as possible. */
 		while (accumbits >= 8) {
 			if (j >= n)
