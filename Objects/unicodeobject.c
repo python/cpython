@@ -732,7 +732,6 @@ PyObject *PyUnicode_EncodeUTF8(const Py_UNICODE *s,
 	    /* These byte ranges are reserved for UTF-16 surrogate
 	       bytes which the Python implementation currently does
 	       not support. */
-	    printf("code range problem: U+%04x\n", ch);
 	    if (utf8_encoding_error(&s, &p, errors, 
 				    "unsupported code range"))
 		goto onError;
@@ -1734,7 +1733,7 @@ PyObject *PyUnicode_DecodeCharmap(const char *s,
 	    int value = PyInt_AS_LONG(x);
 	    if (value < 0 || value > 65535) {
 		PyErr_SetString(PyExc_TypeError,
-				"character mapping must be in range(65336)");
+				"character mapping must be in range(65536)");
 		Py_DECREF(x);
 		goto onError;
 	    }
