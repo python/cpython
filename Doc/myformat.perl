@@ -205,7 +205,7 @@ sub my_parword_index_helper{
 #
 $STRIP_INDEX_TT = 0;
 
-sub make_mod_index_entry {
+sub make_mod_index_entry{
     local($br_id,$str,$define) = @_;
     local($halfref) = &make_half_href("$CURRENT_FILE#$br_id");
     # If TITLE is not yet available (i.e the \index command is in the title
@@ -266,7 +266,7 @@ sub get_indexsubitem{
 # similar to make_index_entry(), but includes the string in the result
 # instead of the dummy filler.
 #
-sub make_str_index_entry {
+sub make_str_index_entry{
     local($br_id,$str) = @_;
     # If TITLE is not yet available (i.e the \index command is in the title
     # of the current section), use $ref_before.
@@ -339,6 +339,21 @@ sub do_env_funcdesc{
     "<dl><dt><b>$idx</b> (<var>$arg_list</var>)\n<dd>$'\n</dl>";
 }
 
+sub do_env_funcdescni{
+    local($_) = @_;
+    local($function_name,$arg_list,$idx) = ('', '', '');
+    local($funcdesc_rx) = "$next_pair_rx$any_next_pair_rx3";
+    if (/$funcdesc_rx/o) {
+	$function_name = "$2";
+	$arg_list = "$4";
+	if ($STRIP_INDEX_TT) {
+	    $idx = $function_name; }
+	else {
+	    $idx = "<tt>$function_name</tt>"; }
+    }
+    "<dl><dt><b>$idx</b> (<var>$arg_list</var>)\n<dd>$'\n</dl>";
+}
+
 sub do_cmd_funcline{
     local($_) = @_;
     local($funcdesc_rx) = "$next_pair_pr_rx$OP(\\d+)$CP([\\s\\S]*)$OP\\3$CP";
@@ -385,6 +400,18 @@ sub do_env_datadesc{
     if (/$next_pair_rx/o) {
 	$idx = &make_str_index_entry($1, "<tt>$2</tt>" . &get_indexsubitem);
 	$idx =~ s/ \(.*\)//;
+    }
+    "<dl><dt><b>$idx</b>\n<dd>$'\n</dl>"
+}
+
+sub do_env_datadescni{
+    local($_) = @_;
+    local($idx) = '';
+    if (/$next_pair_rx/o) {
+	if ($STRING_INDEX_TT) {
+	    $idx = "$2"; }
+	else {
+	    $idx = "<tt>$2</tt>"; }
     }
     "<dl><dt><b>$idx</b>\n<dd>$'\n</dl>"
 }
