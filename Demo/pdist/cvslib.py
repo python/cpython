@@ -214,7 +214,7 @@ class CVS:
 		"""Write CVS/Entries back"""
 		f = self.cvsopen("Entries", 'w')
 		for e in self.values():
-			f.write(e.unparse())
+			f.write(e.putentry())
 		f.close()
 
 	def getlocalfiles(self):
