@@ -229,7 +229,36 @@ PyType_GenericNew(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	return type->tp_alloc(type, 0);
 }
 
-/* Helper for subtyping */
+/* Helpers for subtyping */
+
+static int
+subtype_traverse(PyObject *self, visitproc visit, void *arg)
+{
+	PyTypeObject *type, *base;
+	traverseproc f;
+	int err;
+
+	/* Find the nearest base with a different tp_traverse */
+	type = self->ob_type;
+	base = type->tp_base;
+	while ((f = base->tp_traverse) == subtype_traverse) {
+		base = base->tp_base;
+		assert(base);
+	}
+
+	if (type->tp_dictoffset != base->tp_dictoffset) {
+		PyObject **dictptr = _PyObject_GetDictPtr(self);
+		if (dictptr && *dictptr) {
+			err = visit(*dictptr, arg);
+			if (err)
+				return err;
+		}
+	}
+
+	if (f)
+		return f(self, visit, arg);
+	return 0;
+}
 
 static void
 subtype_dealloc(PyObject *self)
@@ -968,11 +997,16 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 	}
 	type->tp_dealloc = subtype_dealloc;
 
+	/* Enable GC unless there are really no instance variables possible */
+	if (!(type->tp_basicsize == sizeof(PyObject) &&
+	      type->tp_itemsize == 0))
+		type->tp_flags |= Py_TPFLAGS_HAVE_GC;
+
 	/* Always override allocation strategy to use regular heap */
 	type->tp_alloc = PyType_GenericAlloc;
 	if (type->tp_flags & Py_TPFLAGS_HAVE_GC) {
 		type->tp_free = _PyObject_GC_Del;
-		type->tp_traverse = base->tp_traverse;
+		type->tp_traverse = subtype_traverse;
 		type->tp_clear = base->tp_clear;
 	}
 	else
@@ -1097,7 +1131,6 @@ type_dealloc(PyTypeObject *type)
 	Py_XDECREF(type->tp_bases);
 	Py_XDECREF(type->tp_mro);
 	Py_XDECREF(type->tp_defined);
-	/* XXX more? */
 	Py_XDECREF(et->name);
 	Py_XDECREF(et->slots);
 	type->ob_type->tp_free((PyObject *)type);
@@ -1291,12 +1324,6 @@ object_hash(PyObject *self)
 	return _Py_HashPointer(self);
 }
 
-static void
-object_free(PyObject *self)
-{
-	PyObject_Del(self);
-}
-
 static PyObject *
 object_get_class(PyObject *self, void *closure)
 {
@@ -1446,7 +1473,7 @@ PyTypeObject PyBaseObject_Type = {
 	object_init,				/* tp_init */
 	PyType_GenericAlloc,			/* tp_alloc */
 	PyType_GenericNew,			/* tp_new */
-	object_free,				/* tp_free */
+	_PyObject_Del,				/* tp_free */
 };
 
 

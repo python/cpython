@@ -151,7 +151,7 @@ module_dealloc(PyModuleObject *m)
 		_PyModule_Clear((PyObject *)m);
 		Py_DECREF(m->md_dict);
 	}
-	PyObject_GC_Del(m);
+	m->ob_type->tp_free((PyObject *)m);
 }
 
 static PyObject *
@@ -225,4 +225,5 @@ PyTypeObject PyModule_Type = {
 	(initproc)module_init,			/* tp_init */
 	PyType_GenericAlloc,			/* tp_alloc */
 	PyType_GenericNew,			/* tp_new */
+	_PyObject_GC_Del,			/* tp_free */
 };

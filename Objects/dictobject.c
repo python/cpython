@@ -705,7 +705,7 @@ dict_dealloc(register dictobject *mp)
 	}
 	if (mp->ma_table != mp->ma_smalltable)
 		PyMem_DEL(mp->ma_table);
-	PyObject_GC_Del(mp);
+	mp->ob_type->tp_free((PyObject *)mp);
 	Py_TRASHCAN_SAFE_END(mp)
 }
 
@@ -1769,6 +1769,7 @@ PyTypeObject PyDict_Type = {
 	(initproc)dict_init,			/* tp_init */
 	PyType_GenericAlloc,			/* tp_alloc */
 	dict_new,				/* tp_new */
+	_PyObject_GC_Del,			/* tp_free */
 };
 
 /* For backward compatibility with old dictionary interface */

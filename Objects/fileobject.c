@@ -208,7 +208,7 @@ file_dealloc(PyFileObject *f)
 	}
 	Py_XDECREF(f->f_name);
 	Py_XDECREF(f->f_mode);
-	PyObject_DEL(f);
+	f->ob_type->tp_free((PyObject *)f);
 }
 
 static PyObject *
@@ -1508,8 +1508,7 @@ PyTypeObject PyFile_Type = {
 	PyObject_GenericGetAttr,		/* tp_getattro */
 	0,					/* tp_setattro */
 	0,					/* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT |
-			Py_TPFLAGS_BASETYPE,	/* tp_flags */
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
 	file_doc,				/* tp_doc */
 	0,					/* tp_traverse */
 	0,					/* tp_clear */
@@ -1528,6 +1527,7 @@ PyTypeObject PyFile_Type = {
 	(initproc)file_init,			/* tp_init */
 	PyType_GenericAlloc,			/* tp_alloc */
 	file_new,				/* tp_new */
+	_PyObject_Del,				/* tp_free */
 };
 
 /* Interface for the 'soft space' between print items. */

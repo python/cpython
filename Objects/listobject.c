@@ -208,7 +208,7 @@ list_dealloc(PyListObject *op)
 		}
 		PyMem_FREE(op->ob_item);
 	}
-	PyObject_GC_Del(op);
+	op->ob_type->tp_free((PyObject *)op);
 	Py_TRASHCAN_SAFE_END(op)
 }
 
@@ -1707,6 +1707,7 @@ PyTypeObject PyList_Type = {
 	(initproc)list_init,			/* tp_init */
 	PyType_GenericAlloc,			/* tp_alloc */
 	PyType_GenericNew,			/* tp_new */
+	_PyObject_GC_Del,			/* tp_free */
 };
 
 
