@@ -26,6 +26,11 @@ class TestMacfs(unittest.TestCase):
     def test_fsref(self):
         fsr = macfs.FSRef(test_support.TESTFN)
         self.assertEqual(os.path.realpath(test_support.TESTFN), fsr.as_pathname())
+        
+    def test_fsref_unicode(self):
+        testfn_unicode = unicode(test_support.TESTFN)
+        fsr = macfs.FSRef(testfn_unicode)
+        self.assertEqual(os.path.realpath(test_support.TESTFN), fsr.as_pathname())
 
     def test_coercion(self):
         fss = macfs.FSSpec(test_support.TESTFN)
