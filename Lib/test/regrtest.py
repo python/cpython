@@ -566,11 +566,14 @@ _expectations = {
         test_imgfile
         test_largefile
         test_linuxaudiodev
+        test_macfs
+        test_macostools
         test_mhlib
         test_mpz
         test_nis
         test_openpty
         test_ossaudiodev
+        test_plistlib
         test_poll
         test_posix
         test_pty
@@ -593,9 +596,12 @@ _expectations = {
         test_imgfile
         test_largefile
         test_linuxaudiodev
+        test_macfs
+        test_macostools
         test_nis
         test_ntpath
         test_ossaudiodev
+        test_plistlib
         test_socketserver
         test_sunaudiodev
         test_unicode_file
@@ -655,10 +661,13 @@ _expectations = {
         test_imgfile
         test_largefile
         test_linuxaudiodev
+        test_macfs
+        test_macostools
         test_minidom
         test_nis
         test_ntpath
         test_openpty
+        test_plistlib
         test_pyexpat
         test_sax
         test_socketserver
@@ -677,10 +686,13 @@ _expectations = {
         test_imgfile
         test_largefile
         test_linuxaudiodev
+        test_macfs
+        test_macostools
         test_minidom
         test_nis
         test_ntpath
         test_openpty
+        test_plistlib
         test_pyexpat
         test_sax
         test_socketserver
@@ -703,10 +715,13 @@ _expectations = {
         test_largefile
         test_linuxaudiodev
         test_locale
+        test_macfs
+        test_macostools
         test_minidom
         test_nis
         test_ntpath
         test_openpty
+        test_plistlib
         test_pyexpat
         test_queue
         test_sax
@@ -739,10 +754,13 @@ _expectations = {
         test_largefile
         test_linuxaudiodev
         test_locale
+        test_macfs
+        test_macostools
         test_mmap
         test_nis
         test_ntpath
         test_openpty
+        test_plistlib
         test_poll
         test_popen2
         test_pty
@@ -799,8 +817,11 @@ _expectations = {
         test_gzip
         test_imgfile
         test_linuxaudiodev
+        test_macfs
+        test_macostools
         test_mpz
         test_openpty
+        test_plistlib
         test_socketserver
         test_zipfile
         test_zlib
@@ -820,10 +841,13 @@ _expectations = {
         test_largefile
         test_linuxaudiodev
         test_locale
+        test_macfs
+        test_macostools
         test_minidom
         test_nis
         test_ntpath
         test_openpty
+        test_plistlib
         test_pyexpat
         test_sax
         test_socketserver
@@ -846,10 +870,13 @@ _expectations = {
         test_largefile
         test_linuxaudiodev
         test_locale
+        test_macfs
+        test_macostools
         test_mhlib
         test_mmap
         test_mpz
         test_nis
+        test_plistlib
         test_poll
         test_popen2
         test_resource
@@ -871,9 +898,12 @@ _expectations = {
         test_largefile
         test_linuxaudiodev
         test_locale
+        test_macfs
+        test_macostools
         test_mpz
         test_nis
         test_ossaudiodev
+        test_plistlib
         test_socketserver
         test_sunaudiodev
         test_unicode_file
@@ -894,11 +924,14 @@ _expectations = {
         test_imgfile
         test_largefile
         test_linuxaudiodev
+        test_macfs
+        test_macostools
         test_mhlib
         test_mmap
         test_nis
         test_openpty
         test_ossaudiodev
+        test_plistlib
         test_pty
         test_resource
         test_signal
