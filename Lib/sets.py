@@ -366,6 +366,11 @@ class ImmutableSet(BaseSet):
             self._hashcode = self._compute_hash()
         return self._hashcode
 
+    def __getstate__(self):
+        return self._data, self._hashcode
+
+    def __setstate__(self, state):
+        self._data, self._hashcode = state
 
 class Set(BaseSet):
     """ Mutable set class."""
@@ -379,6 +384,13 @@ class Set(BaseSet):
         self._data = {}
         if iterable is not None:
             self._update(iterable)
+
+    def __getstate__(self):
+        # getstate's results are ignored if it is not
+        return self._data,
+
+    def __setstate__(self, data):
+        self._data, = data
 
     def __hash__(self):
         """A Set cannot be hashed."""
