@@ -468,12 +468,9 @@ fold_binops_on_constants(unsigned char *codestr, PyObject *consts)
 		newconst = PyNumber_Multiply(v, w);
 		break;
 	case BINARY_DIVIDE:
-		if (!_Py_QnewFlag) {
-			newconst = PyNumber_Divide(v, w);
-			break;
-		}
-		/* -Qnew is in effect:	fall through to
-		   BINARY_TRUE_DIVIDE */
+		/* XXX care is needed to fold this operation statically:
+		the result might depend on the run-time presence of the -Qnew flag */
+		return 0;
 	case BINARY_TRUE_DIVIDE:
 		newconst = PyNumber_TrueDivide(v, w);
 		break;
