@@ -1,21 +1,8 @@
 #
-# imputil.py
+# imputil.py: import utilities
 #
-# Written by Greg Stein. Public Domain.
-# No Copyright, no Rights Reserved, and no Warranties.
-#
-# Utilities to help out with custom import mechanisms.
-#
-# Additional modifications were contribed by Marc-Andre Lemburg and
-# Gordon McMillan.
-#
-# This module is maintained by Greg and is available at:
-#    http://www.lyra.org/greg/python/
-#
-# Since this isn't in the Python distribution yet, we'll use the CVS ID
-# for tracking:
-#   $Id$
-#
+
+### docco needed here and in Docs/ ...
 
 # note: avoid importing non-builtin modules
 import imp			### not available in JPython?
