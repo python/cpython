@@ -847,7 +847,8 @@ to create a gzipped tarball and a zip file.  The available formats are:
 \item[(1)] default on Windows
 \item[(2)] default on \UNIX
 \item[(3)] requires either external \program{zip} utility or
-  \module{zipfile} module (not part of the standard Python library)
+  \module{zipfile} module (part of the standard Python library since
+  Python~1.6)
 \item[(4)] requires external utilities: \program{tar} and possibly one
   of \program{gzip}, \program{bzip2}, or \program{compress}
 \end{description}
@@ -1098,7 +1099,8 @@ The available formats for built distributions are:
 \item[(3)] requires external utilities: \program{tar} and possibly one
   of \program{gzip}, \program{bzip2}, or \program{compress}
 \item[(4)] requires either external \program{zip} utility or
-  \module{zipfile} module (not part of the standard Python library)
+  \module{zipfile} module (part of the standard Python library since
+  Python~1.6)
 \item[(5)] requires external \program{rpm} utility, version 3.0.4 or
   better (use \code{rpm --version} to find out which version you have)
 \end{description}
