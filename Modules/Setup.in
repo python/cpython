@@ -97,7 +97,7 @@ signal signalmodule.c		# signal(2)
 
 # The SGI specific GL module:
 
-#gl glmodule.c -lgl -lX11	# Graphics Library -- SGI only
+#gl glmodule.c cgensupport.c -lgl -lX11	# Graphics Library -- SGI only
 
 # Thread module -- use only if Python has thread support for your OS.
 # Note that you must have configured (and built!) Python with the
@@ -343,6 +343,13 @@ cPickle cPickle.c
 
 # Test module for fpectl.  No extra libraries needed.
 #fpetest fpetestmodule.c
+
+# Andrew Kuchling's zlib module.
+# This require zlib 1.0.4.  See http://quest.jpl.nasa.gov/zlib/
+# Edit the ZLIBHOME variable to point to the place where you built zlib.
+# If you installed libzlib.a, replace the last argument with -lz
+#ZLIBHOME=..
+#zlib zlibmodule.c -I$(ZLIBHOME) -L$(ZLIBHOME) -lz
 
 
 # Example -- included for reference only:
