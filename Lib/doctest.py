@@ -178,6 +178,7 @@ __all__ = [
     'ELLIPSIS',
     'UNIFIED_DIFF',
     'CONTEXT_DIFF',
+    'NDIFF_DIFF',
     # 1. Utility Functions
     'is_private',
     # 2. Example & DocTest
@@ -253,6 +254,7 @@ NORMALIZE_WHITESPACE = register_optionflag('NORMALIZE_WHITESPACE')
 ELLIPSIS = register_optionflag('ELLIPSIS')
 UNIFIED_DIFF = register_optionflag('UNIFIED_DIFF')
 CONTEXT_DIFF = register_optionflag('CONTEXT_DIFF')
+NDIFF_DIFF = register_optionflag('NDIFF_DIFF')
 
 # Special string markers for use in `want` strings:
 BLANKLINE_MARKER = '<BLANKLINE>'
@@ -1569,6 +1571,24 @@ class OutputChecker:
         # We didn't find any match; return false.
         return False
 
+    # Should we do a fancy diff?
+    def _do_a_fancy_diff(self, want, got, optionflags):
+        # Not unless they asked for a fancy diff.
+        if not optionflags & (UNIFIED_DIFF |
+                              CONTEXT_DIFF |
+                              NDIFF_DIFF):
+            return False
+        # If expected output uses ellipsis, a meaningful fancy diff is
+        # too hard.
+        if optionflags & ELLIPSIS and ELLIPSIS_MARKER in want:
+            return False
+        # ndiff does intraline difference marking, so can be useful even
+        # for 1-line inputs.
+        if optionflags & NDIFF_DIFF:
+            return True
+        # The other diff types need at least a few lines to be helpful.
+        return want.count('\n') > 2 and got.count('\n') > 2
+
     def output_difference(self, want, got, optionflags):
         """
         Return a string describing the differences between the
@@ -1586,9 +1606,7 @@ class OutputChecker:
         # Check if we should use diff.  Don't use diff if the actual
         # or expected outputs are too short, or if the expected output
         # contains an ellipsis marker.
-        if ((optionflags & (UNIFIED_DIFF | CONTEXT_DIFF)) and
-            want.count('\n') > 2 and got.count('\n') > 2 and
-            not (optionflags & ELLIPSIS and '...' in want)):
+        if self._do_a_fancy_diff(want, got, optionflags):
             # Split want & got into lines.
             want_lines = [l+'\n' for l in want.split('\n')]
             got_lines = [l+'\n' for l in got.split('\n')]
@@ -1596,16 +1614,20 @@ class OutputChecker:
             if optionflags & UNIFIED_DIFF:
                 diff = difflib.unified_diff(want_lines, got_lines, n=2,
                                             fromfile='Expected', tofile='Got')
-                kind = 'unified'
+                kind = 'unified diff'
             elif optionflags & CONTEXT_DIFF:
                 diff = difflib.context_diff(want_lines, got_lines, n=2,
                                             fromfile='Expected', tofile='Got')
-                kind = 'context'
+                kind = 'context diff'
+            elif optionflags & NDIFF_DIFF:
+                engine = difflib.Differ(charjunk=difflib.IS_CHARACTER_JUNK)
+                diff = list(engine.compare(want_lines, got_lines))
+                kind = 'ndiff with -expected +actual'
             else:
                 assert 0, 'Bad diff option'
             # Remove trailing whitespace on diff output.
             diff = [line.rstrip() + '\n' for line in diff]
-            return _tag_msg("Differences (" + kind + " diff)",
+            return _tag_msg("Differences (" + kind + ")",
                             ''.join(diff))
 
         # If we're not using diff, then simply list the expected
