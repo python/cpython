@@ -143,6 +143,13 @@ is either a string, or a tuple. If a tuple, then the first part
 is the header of the response, and the second part contains
 the data (ie: 'literal' value).
 
+The \var{message_set} options to commands below is a string specifying one
+or more messages to be acted upon.  It may be a simple message number
+(\code{'1'}), a range of message numbers (\code{'2:4'}), or a group of
+non-contiguous ranges separated by commas (\code{'1:3,6:9'}).  A range
+can contain an asterisk to indicate an infinite upper bound
+(\code{'3:*'}).
+
 An \class{IMAP4} instance has the following methods:
 
 
@@ -389,7 +396,18 @@ msgnums = M.search(None, '(FROM "LDJ")')
 \end{methoddesc}
 
 \begin{methoddesc}{store}{message_set, command, flag_list}
-  Alters flag dispositions for messages in mailbox.
+  Alters flag dispositions for messages in mailbox.  \var{command} is
+  specified by section 6.4.6 of \rfc{2060} as being one of "FLAGS", "+FLAGS",
+  or "-FLAGS", optionally with a suffix of ".SILENT".
+
+  For example, to set the delete flag on all messages:
+
+\begin{verbatim}
+typ, data = M.search(None, 'ALL')
+for num in data[0].split():
+   M.store(num, '+FLAGS', '\\Deleted')
+M.expunge()
+\end{verbatim}
 \end{methoddesc}
 
 \begin{methoddesc}{subscribe}{mailbox}
@@ -473,5 +491,6 @@ typ, data = M.search(None, 'ALL')
 for num in data[0].split():
     typ, data = M.fetch(num, '(RFC822)')
     print 'Message %s\n%s\n' % (num, data[0][1])
+M.close()
 M.logout()
 \end{verbatim}
