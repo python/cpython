@@ -670,6 +670,97 @@ We also rename the module initialization function and module name in
 the initialization function, as we did before, and we add an extra
 definition to the \file{setup.py} file.
 
+\subsection{Supporting cyclic garbage collection}
+
+Python has a cyclic-garbage collector that can identify unneeded
+objects even when their reference counts are not zero. This can happen
+when objects are involved in cycles.  For example, consider:
+
+\begin{verbatim}
+>>> l = []
+>>> l.append(l)
+>>> del l
+\end{verbatim}
+
+In this example, we create a list that contains itself. When we delete
+it, it still has a reference from itself. It's reference count doesn't
+drop to zero.  Fortunately, Python's cyclic-garbage collector will
+eventually figure out that that the list is garbage and free it.
+
+In the second version of the \class{Noddy} example, we allowed any
+kind of object to be stored in the \member{first} or \member{last}
+attributes. This means that \class{Noddy} objects can participate in
+cycles:
+
+\begin{verbatim}
+>>> import noddy2
+>>> n = noddy2.Noddy()
+>>> l = [n]
+>>> n.first = l
+\end{verbatim}
+
+This is pretty silly, but it gives us an excuse to add support for the
+cyclic-garbage collector to the \class{Noddy} example.  To support
+cyclic garbage collection, types need to fill two slots and set a
+class flag that enables these slots:
+
+\verbatiminput{noddy4.c}
+
+The traversal method provides access to subobjects that
+could participate in cycles:
+
+\begin{verbatim}
+static int
+Noddy_traverse(Noddy *self, visitproc visit, void *arg)
+{
+    if (self->first && visit(self->first, arg) < 0)
+        return -1;
+    if (self->last && visit(self->last, arg) < 0)
+        return -1;
+
+    return 0;
+}
+\end{verbatim}
+
+For each subobject that can participate in cycles, we need to call the
+\cfunction{visit} function passed to the traversal method passing the
+subobject and the extra argument passed to the traversal method.
+
+We also need to provide a method for clearing any subobjects that can
+participate in cycles.  We implement the method and reimplement the
+deallocator to use it:
+
+\begin{verbatim}
+static int 
+Noddy_clear(Noddy *self)
+{
+    Py_XDECREF(self->first);
+    self->first = NULL;
+    Py_XDECREF(self->last);
+    self->last = NULL;
+
+    return 0;
+}
+
+static void
+Noddy_dealloc(Noddy* self)
+{
+    Noddy_clear(self);
+    self->ob_type->tp_free((PyObject*)self);
+}
+\end{verbatim}
+
+Finally, we add the \constant{Py_TPFLAGS_HAVE_GC} flag to the class flags:
+
+\begin{verbatim}
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC, /*tp_flags*/
+\end{verbatim}
+
+That's pretty much it.  If we had written custom \member{tp_alloc} or
+\member{tp_free} slots, we'd need to modify then for cyclic-garbage
+collection. Most extensions will use the versions automatically
+provided.
+
 \section{Type Methods
          \label{dnt-type-methods}}
 
@@ -1303,30 +1394,6 @@ one.  If the iteration has reached the end, it may return \NULL{}
 without setting an exception or it may set \exception{StopIteration};
 avoiding the exception can yield slightly better performance.  If an
 actual error occurs, it should set an exception and return \NULL.
-
-
-\subsection{Supporting the Cycle Collector
-            \label{example-cycle-support}}
-
-This example shows only enough of the implementation of an extension
-type to show how the garbage collector support needs to be added.  It
-shows the definition of the object structure, the
-\member{tp_traverse}, \member{tp_clear} and \member{tp_dealloc}
-implementations, the type structure, and a constructor --- the module
-initialization needed to export the constructor to Python is not shown
-as there are no special considerations there for the collector.  To
-make this interesting, assume that the module exposes ways for the
-\member{container} field of the object to be modified.  Note that
-since no checks are made on the type of the object used to initialize
-\member{container}, we have to assume that it may be a container.
-
-\verbatiminput{cycle-gc.c}
-
-Full details on the APIs related to the cycle detector are in
-\ulink{Supporting Cyclic Garbarge
-Collection}{../api/supporting-cycle-detection.html} in the
-\citetitle[../api/api.html]{Python/C API Reference Manual}.
-
 
 \subsection{More Suggestions}
 
