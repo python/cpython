@@ -42,21 +42,47 @@ PERFORMANCE OF THIS SOFTWARE.
 
 
 /*
-Table of primes suitable as keys, in ascending order.
-The first line are the largest primes less than some powers of two,
-the second line is the largest prime less than 6000,
-the third line is a selection from Knuth, Vol. 3, Sec. 6.1, Table 1,
-and the next three lines were suggested by Steve Kirsch.
-The final value is a sentinel.
+ * MINSIZE is the minimum size of a mapping.
+ */
+
+#define MINSIZE 4
+
+/*
+Table of irreducible polynomials to efficiently cycle through
+GF(2^n)-{0}, 2<=n<=30.
 */
-static long primes[] = {
-	3, 7, 13, 31, 61, 127, 251, 509, 1021, 2017, 4093,
-	5987,
-	9551, 15683, 19609, 31397,
-	65521L, 131071L, 262139L, 524287L, 1048573L, 2097143L,
-	4194301L, 8388593L, 16777213L, 33554393L, 67108859L,
-	134217689L, 268435399L, 536870909L, 1073741789L,
-	0
+static long polys[] = {
+  4 + 3,
+  8 + 3,
+  16 + 3,
+  32 + 5,
+  64 + 3,
+  128 + 3,
+  256 + 29,
+  512 + 17,
+  1024 + 9,
+  2048 + 5,
+  4096 + 83,
+  8192 + 27,
+  16384 + 43,
+  32768 + 3,
+  65536 + 45,
+  131072 + 9,
+  262144 + 39,
+  524288 + 39,
+  1048576 + 9,
+  2097152 + 5,
+  4194304 + 3,
+  8388608 + 33,
+  16777216 + 27,
+  33554432 + 9,
+  67108864 + 71,
+  134217728 + 39,
+  /* Not verified by Tim P: */
+  268435456 + 3,
+  536870912 + 5,
+  1073741824 + 3,
+  0
 };
 
 /* Object used as dummy key to fill deleted entries */
@@ -87,6 +113,7 @@ typedef struct {
 	int ma_fill;
 	int ma_used;
 	int ma_size;
+	int ma_poly;
 	mappingentry *ma_table;
 } mappingobject;
 
@@ -103,6 +130,7 @@ newmappingobject()
 	if (mp == NULL)
 		return NULL;
 	mp->ma_size = 0;
+	mp->ma_poly = 0;
 	mp->ma_table = NULL;
 	mp->ma_fill = 0;
 	mp->ma_used = 0;
@@ -111,9 +139,12 @@ newmappingobject()
 
 /*
 The basic lookup function used by all operations.
-This is essentially Algorithm D from Knuth Vol. 3, Sec. 6.4.
+This is based on Algorithm D from Knuth Vol. 3, Sec. 6.4.
 Open addressing is preferred over chaining since the link overhead for
 chaining would be substantial (100% with typical malloc overhead).
+However, instead of going through the table at constant steps, we cycle
+through the values of GF(2^n)-{0}. This avoids modulo computations, being
+much cheaper on RISC machines, without leading to clustering.
 
 First a 32-bit hash value, 'sum', is computed from the key string.
 The first character is added an extra time shifted by 8 to avoid hashing
@@ -121,10 +152,11 @@ single-character keys (often heavily used variables) too close together.
 All arithmetic on sum should ignore overflow.
 
 The initial probe index is then computed as sum mod the table size.
-Subsequent probe indices are incr apart (mod table size), where incr
-is also derived from sum, with the additional requirement that it is
-relative prime to the table size (i.e., 1 <= incr < size, since the size
-is a prime number).  My choice for incr is somewhat arbitrary.
+Subsequent probe indices use the values of x^i in GF(2^n) as an offset,
+where x is a root. The initial value is derived from sum, too.
+
+(This version is due to Reimer Behrends, some ideas are also due to
+Jyrki Alakuijala.)
 */
 static mappingentry *lookmapping PROTO((mappingobject *, object *, long));
 static mappingentry *
@@ -133,97 +165,56 @@ lookmapping(mp, key, hash)
 	object *key;
 	long hash;
 {
-	/* Optimizations based on observations by Jyrki Alakuijala
-	   (paraphrased):
-
-	   - This routine is very heavily used, so should be AFAP
-	   (As Fast As Possible).
-
-	   - Most of the time, the first try is a hit or a definite
-	   miss; so postpone the calculation of incr until we know the
-	   first try was a miss.
-
-	   - Write the loop twice, so we can move the test for
-	   freeslot==NULL out of the loop.
-
-	   - Write the loop using pointer increments and comparisons
-	   rather than using an integer loop index.
-
-	   Note that it behooves the compiler to calculate the values
-	   of incr*sizeof(*ep) outside the loops and use this in the
-	   increment of ep.  I've reduced the number of register
-	   variables to the two most obvious candidates.
-
-	   */
-
-	register mappingentry *ep;
-	mappingentry *end;
-	register object *ekey;
-	mappingentry *freeslot;
-	unsigned long sum;
-	int incr;
-	int size;
-
-	ep = &mp->ma_table[(unsigned long)hash%mp->ma_size];
-	ekey = ep->me_key;
-	if (ekey == NULL)
+	register int i;
+	register unsigned incr;
+	register unsigned long sum = (unsigned long) hash;
+	register mappingentry *freeslot = NULL;
+	register int mask = mp->ma_size-1;
+	register mappingentry *ep = &mp->ma_table[i];
+	/* We must come up with (i, incr) such that 0 <= i < ma_size
+	   and 0 < incr < ma_size and both are a function of hash */
+	i = (~sum) & mask;
+	/* We use ~sum instead if sum, as degenerate hash functions, such
+	   as for ints <sigh>, can have lots of leading zeros. It's not
+	   really a performance risk, but better safe than sorry. */
+	ep = &mp->ma_table[i];
+	if (ep->me_key == NULL)
 		return ep;
-#ifdef INTERN_STRINGS
-	{
-		object *ikey;
-		if (is_stringobject(key) &&
-		    (ikey = ((stringobject *)key)->ob_sinterned) != NULL)
-			key = ikey;
-	}
-#endif
-	if (ekey == dummy)
+	if (ep->me_key == dummy)
 		freeslot = ep;
-	else {
-		if (ekey == key)
-			return ep;
-		if (ep->me_hash == hash && cmpobject(ekey, key) == 0)
-			return ep;
-		freeslot = NULL;
+	else if (ep->me_key == key ||
+		 (ep->me_hash == hash && cmpobject(ep->me_key, key) == 0)) {
+		return ep;
 	}
-
-	size = mp->ma_size;
-	sum = hash;
-	do {
-		sum += sum + sum + 1;
-		incr = sum % size;
-	} while (incr == 0);
-
-	end = mp->ma_table + size;
-
-	if (freeslot == NULL) {
-		for (;;) {
-			ep += incr;
-			if (ep >= end)
-				ep -= size;
-			ekey = ep->me_key;
-			if (ekey == NULL)
-				return ep;
-			if (ekey == dummy) {
-				freeslot = ep;
-				break;
-			}
-			if (ekey == key || (ep->me_hash == hash &&
-					    cmpobject(ekey, key) == 0))
+	/* Derive incr from i, just to make it more arbitrary. Note that
+	   incr must not be 0, or we will get into an infinite loop.*/
+	incr = i << 1;
+	if (!incr)
+		incr = mask;
+	if (incr > mask) /* Cycle through GF(2^n)-{0} */
+		incr ^= mp->ma_poly; /* This will implicitly clear the
+					highest bit */
+	for (;;) {
+		ep = &mp->ma_table[(i+incr)&mask];
+		if (ep->me_key == NULL) {
+			if (freeslot != NULL)
+				return freeslot;
+			else
 				return ep;
 		}
-	}
-
-	for (;;) {
-		ep += incr;
-		if (ep >= end)
-			ep -= size;
-		ekey = ep->me_key;
-		if (ekey == NULL)
-			return freeslot;
-		if (ekey == key ||
-		    (ekey != dummy &&
-		     ep->me_hash == hash && cmpobject(ekey, key) == 0))
+		if (ep->me_key == dummy) {
+			if (freeslot == NULL)
+				freeslot = ep;
+		}
+		else if (ep->me_key == key ||
+			 (ep->me_hash == hash &&
+			  cmpobject(ep->me_key, key) == 0)) {
 			return ep;
+		}
+		/* Cycle through GF(2^n)-{0} */
+		incr = incr << 1;
+		if (incr > mask)
+			incr ^= mp->ma_poly;
 	}
 }
 
@@ -272,25 +263,20 @@ mappingresize(mp)
 	mappingobject *mp;
 {
 	register int oldsize = mp->ma_size;
-	register int newsize;
+	register int newsize, newpoly;
 	register mappingentry *oldtable = mp->ma_table;
 	register mappingentry *newtable;
 	register mappingentry *ep;
 	register int i;
 	newsize = mp->ma_size;
-	for (i = 0; ; i++) {
-		if (primes[i] <= 0) {
-			/* Ran out of primes */
+	for (i = 0, newsize = MINSIZE; ; i++, newsize <<= 1) {
+		if (i > sizeof(polys)/sizeof(polys[0])) {
+			/* Ran out of polynomials */
 			err_nomem();
 			return -1;
 		}
-		if (primes[i] > mp->ma_used*2) {
-			newsize = primes[i];
-			if (newsize != primes[i]) {
-				/* Integer truncation */
-				err_nomem();
-				return -1;
-			}
+		if (newsize > mp->ma_used*2) {
+			newpoly = polys[i];
 			break;
 		}
 	}
@@ -300,6 +286,7 @@ mappingresize(mp)
 		return -1;
 	}
 	mp->ma_size = newsize;
+	mp->ma_poly = newpoly;
 	mp->ma_table = newtable;
 	mp->ma_fill = 0;
 	mp->ma_used = 0;
