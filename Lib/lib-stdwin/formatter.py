@@ -7,7 +7,7 @@
 # formatting, along the lines of TeX; for now, a very simple model
 # is sufficient.
 #
-class formatter():
+class formatter:
 	#
 	# Initialize a formatter instance.
 	# Pass the window's drawing object, and left, top, right
@@ -160,7 +160,7 @@ def test():
 		# Mac font assignments:
 		font1 = 'times', '', 12
 		font2 = 'times', 'b', 14
-	except NameError:
+	except ImportError:
 		# X11R4 font assignments
 		font1 = '*times-medium-r-*-120-*'
 		font2 = '*times-bold-r-*-140-*'
