@@ -483,7 +483,7 @@ def test_main():
     try:
         test_main_inner()
     finally:
-        if original_locale:
+        if original_locale is not None:
             locale.setlocale(locale.LC_ALL, original_locale)
 
 if __name__ == "__main__":
