@@ -830,6 +830,13 @@ determination.
   and that \var{i} is within bounds.
 \end{cfuncdesc}
 
+\begin{cfuncdesc}{PyObject**}{PySequence_Fast_ITEMS}{PyObject *o}
+  Return the underlying array of PyObject pointers.  Assumes that
+  \var{o} was returned by \cfunction{PySequence_Fast()} and
+  \var{o} is not \NULL.
+  \versionadded{2.4}  
+\end{cfuncdesc}
+
 \begin{cfuncdesc}{PyObject*}{PySequence_ITEM}{PyObject *o, int i}
   Return the \var{i}th element of \var{o} or \NULL{} on failure.
   Macro form of \cfunction{PySequence_GetItem()} but without checking
