@@ -158,7 +158,7 @@ and \constant{METH_KEYWORDS} can be combined; the others can't.
 \begin{datadesc}{METH_VARARGS}
   This is the typical calling convention, where the methods have the
   type \ctype{PyMethodDef}. The function expects two
-  \ctype{PyObject*}.  The first one is the \var{self} object for
+  \ctype{PyObject*} values.  The first one is the \var{self} object for
   methods; for module functions, it has the value given to
   \cfunction{Py_InitModule4()} (or \NULL{} if
   \cfunction{Py_InitModule()} was used).  The second parameter
