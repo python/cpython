@@ -94,17 +94,45 @@ extern struct _inittab _PyImport_Inittab[];
 
 struct _inittab *PyImport_Inittab = _PyImport_Inittab;
 
+/* these tables define the module suffixes that Python recognizes */
+struct filedescr * _PyImport_Filetab = NULL;
+static const struct filedescr _PyImport_StandardFiletab[] = {
+	{".py", "r", PY_SOURCE},
+	{".pyc", "rb", PY_COMPILED},
+	{0, 0}
+};
+
 /* Initialize things */
 
 void
 _PyImport_Init()
 {
+	const struct filedescr *scan;
+	struct filedescr *filetab;
+	int countD = 0;
+	int countS = 0;
+
+	/* prepare _PyImport_Filetab: copy entries from
+	   _PyImport_DynLoadFiletab and _PyImport_StandardFiletab.
+	 */
+	for (scan = _PyImport_DynLoadFiletab; scan->suffix != NULL; ++scan)
+		++countD;
+	for (scan = _PyImport_StandardFiletab; scan->suffix != NULL; ++scan)
+		++countS;
+	filetab = malloc((countD + countS + 1) * sizeof(struct filedescr));
+	memcpy(filetab, _PyImport_DynLoadFiletab,
+	       countD * sizeof(struct filedescr));
+	memcpy(filetab + countD, _PyImport_StandardFiletab,
+	       countS * sizeof(struct filedescr));
+	filetab[countD + countS].suffix = NULL;
+
+	_PyImport_Filetab = filetab;
+
 	if (Py_OptimizeFlag) {
-		/* Replace ".pyc" with ".pyo" in import_filetab */
-		struct filedescr *p;
-		for (p = _PyImport_Filetab; p->suffix != NULL; p++) {
-			if (strcmp(p->suffix, ".pyc") == 0)
-				p->suffix = ".pyo";
+		/* Replace ".pyc" with ".pyo" in _PyImport_Filetab */
+		for (; filetab->suffix != NULL; filetab++) {
+			if (strcmp(filetab->suffix, ".pyc") == 0)
+				filetab->suffix = ".pyo";
 		}
 	}
 }
