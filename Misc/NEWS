@@ -26,6 +26,9 @@ Core and builtins
 
 - posix.killpg has been added where available.
 
+- sys.exit() inadvertantly allowed more than one argument.
+  An exception will now be raised if more than one argument is used.
+
 Extension modules
 
 - A security hole ("double free") was found in zlib-1.1.3, a popular

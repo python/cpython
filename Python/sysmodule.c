@@ -146,8 +146,11 @@ This should be called from inside an except clause only.";
 static PyObject *
 sys_exit(PyObject *self, PyObject *args)
 {
+	PyObject *exit_code = 0;
+	if (!PyArg_ParseTuple(args, "|O:exit", &exit_code))
+		return NULL;
 	/* Raise SystemExit so callers may catch it or clean up. */
-	PyErr_SetObject(PyExc_SystemExit, args);
+	PyErr_SetObject(PyExc_SystemExit, exit_code);
 	return NULL;
 }
 
@@ -528,7 +531,7 @@ static PyMethodDef sys_methods[] = {
 	{"displayhook",	sys_displayhook, METH_O, displayhook_doc},
 	{"exc_info",	(PyCFunction)sys_exc_info, METH_NOARGS, exc_info_doc},
 	{"excepthook",	sys_excepthook, METH_VARARGS, excepthook_doc},
-	{"exit",	sys_exit, METH_OLDARGS, exit_doc},
+	{"exit",	sys_exit, METH_VARARGS, exit_doc},
 #ifdef Py_USING_UNICODE
 	{"getdefaultencoding", (PyCFunction)sys_getdefaultencoding, METH_NOARGS,
 	 getdefaultencoding_doc}, 
