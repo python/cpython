@@ -32,7 +32,7 @@ parameters.
 
 There's a Makefile to call LaTeX and the other utilities in the right
 order and the right number of times.  By default, it will build the
-HTML version of the documnetation, but DVI, PDF, and PostScript can
+HTML version of the documentation, but DVI, PDF, and PostScript can
 also be made.  To view the generated HTML, point your favorite browser
 at the top-level index (html/index.html) after running "make".
 
