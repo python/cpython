@@ -851,6 +851,9 @@ Windows
   XXX     Python, what must they do to convert it?
   XXX I'm still not sure how to link this thing (see PCbuild/readme.txt).
   XXX The version # is likely to change before 2.3a1.
+  
+- The Windows distribution now ships with a Secure Sockets Library (SLL) 
+   module (_ssl.pyd)
 
 - The Windows distribution now ships with Tcl/Tk version 8.4.1 (it
   previously shipped with Tcl/Tk 8.3.2).
