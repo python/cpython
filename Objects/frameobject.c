@@ -167,11 +167,8 @@ PyFrame_New(tstate, code, globals, locals)
 	builtins = PyDict_GetItem(globals, builtin_object);
 	if (builtins != NULL && PyModule_Check(builtins))
 		builtins = PyModule_GetDict(builtins);
-	if (builtins == NULL || !PyDict_Check(builtins)) {
-		PyErr_SetString(PyExc_TypeError,
-				"bad __builtins__ dictionary");
-		return NULL;
-	}
+	if (builtins != NULL && !PyDict_Check(builtins))
+		builtins = NULL;
 	if (free_list == NULL) {
 		f = (PyFrameObject *)
 			malloc(sizeof(PyFrameObject) +
@@ -195,12 +192,18 @@ PyFrame_New(tstate, code, globals, locals)
 		f->ob_type = &PyFrame_Type;
 		_Py_NewReference(f);
 	}
+	if (builtins == NULL) {
+		builtins = PyDict_New();
+		if (builtins == NULL)
+			return NULL;
+	}
+	else
+		Py_XINCREF(builtins);
+	f->f_builtins = builtins;
 	Py_XINCREF(back);
 	f->f_back = back;
 	Py_INCREF(code);
 	f->f_code = code;
-	Py_XINCREF(builtins);
-	f->f_builtins = builtins;
 	Py_INCREF(globals);
 	f->f_globals = globals;
 	if (code->co_flags & CO_NEWLOCALS) {
@@ -351,4 +354,16 @@ PyFrame_LocalsToFast(f, clear)
 		}
 	}
 	PyErr_Restore(error_type, error_value, error_traceback);
+}
+
+/* Clear out the free list */
+
+void
+PyFrame_Fini()
+{
+	while (free_list != NULL) {
+		PyFrameObject *f = free_list;
+		free_list = free_list->f_back;
+		PyMem_DEL(f);
+	}
 }
