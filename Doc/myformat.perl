@@ -186,8 +186,6 @@ sub do_cmd_refstmodindex{ &my_module_index_helper('standard', @_, 'REF'); }
 
 sub do_cmd_nodename{ &do_cmd_label(@_); }
 
-sub do_cmd_mytableofcontents{ @_[0]; }
-
 sub init_myformat{
     # XXX need some way for this to be called after &initialise;
     # <<2>>...<<2>>
