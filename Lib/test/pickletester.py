@@ -301,43 +301,34 @@ class AbstractPickleTests(unittest.TestCase):
                 self.assert_(x is y, (proto, x, s, y))
 
     def test_newobj_tuple(self):
-        x = MyTuple([1, 2, 3], foo=42, bar="hello")
+        x = MyTuple([1, 2, 3])
+        x.foo = 42
+        x.bar = "hello"
         s = self.dumps(x, 2)
         y = self.loads(s)
         self.assertEqual(tuple(x), tuple(y))
         self.assertEqual(x.__dict__, y.__dict__)
+##         import pickletools
+##         print
+##         pickletools.dis(s)
 
     def test_newobj_list(self):
-        x = MyList([1, 2, 3], foo=42, bar="hello")
+        x = MyList([1, 2, 3])
+        x.foo = 42
+        x.bar = "hello"
         s = self.dumps(x, 2)
         y = self.loads(s)
         self.assertEqual(list(x), list(y))
         self.assertEqual(x.__dict__, y.__dict__)
+##         import pickletools
+##         print
+##         pickletools.dis(s)
 
 class MyTuple(tuple):
-    def __new__(cls, *args, **kwds):
-        # Ignore **kwds
-        return tuple.__new__(cls, *args)
-    def __getnewargs__(self):
-        return (tuple(self),)
-    def __init__(self, *args, **kwds):
-        for k, v in kwds.items():
-            setattr(self, k, v)
+    pass
 
 class MyList(list):
-    def __new__(cls, *args, **kwds):
-        # Ignore **kwds
-        return list.__new__(cls, *args)
-    def __init__(self, *args, **kwds):
-        for k, v in kwds.items():
-            setattr(self, k, v)
-    def __getstate__(self):
-        return list(self), self.__dict__
-    def __setstate__(self, arg):
-        lst, dct = arg
-        for x in lst:
-            self.append(x)
-        self.__init__(**dct)
+    pass
 
 class AbstractPickleModuleTests(unittest.TestCase):
 
