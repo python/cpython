@@ -221,6 +221,8 @@ print '6.6 Mappings == Dictionaries'
 d = {}
 if d.keys() != []: raise TestFailed, '{}.keys()'
 if d.has_key('a') != 0: raise TestFailed, '{}.has_key(\'a\')'
+if ('a' in d) != 0: raise TestFailed, "'a' in {}"
+if ('a' not in d) != 1: raise TestFailed, "'a' not in {}"
 if len(d) != 0: raise TestFailed, 'len({})'
 d = {'a': 1, 'b': 2}
 if len(d) != 2: raise TestFailed, 'len(dict)'
@@ -229,6 +231,8 @@ k.sort()
 if k != ['a', 'b']: raise TestFailed, 'dict keys()'
 if d.has_key('a') and d.has_key('b') and not d.has_key('c'): pass
 else: raise TestFailed, 'dict keys()'
+if 'a' in d and 'b' in d and 'c' not in d: pass
+else: raise TestFailed, 'dict keys() # in/not in version'
 if d['a'] != 1 or d['b'] != 2: raise TestFailed, 'dict item'
 d['c'] = 3
 d['a'] = 4

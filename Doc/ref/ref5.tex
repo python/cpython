@@ -768,7 +768,9 @@ not in \var{s}} returns the negation of \code{\var{x} in \var{s}}.
 The set membership test has traditionally been bound to sequences; an
 object is a member of a set if the set is a sequence and contains an
 element equal to that object.  However, it is possible for an object
-to support membership tests without being a sequence.
+to support membership tests without being a sequence.  In particular,
+dictionaries support memership testing as a nicer way of spelling
+\code{\var{key} in \var{dict}}; other mapping types may follow suit.
 
 For the list and tuple types, \code{\var{x} in \var{y}} is true if and
 only if there exists an index \var{i} such that
