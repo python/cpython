@@ -150,7 +150,7 @@ you're editing someone else's Python code."
 When this variable is non-nil, two things happen when a buffer is set
 to `python-mode':
 
-    1. `py-indent-offset' is guess from existing code in the buffer.
+    1. `py-indent-offset' is guessed from existing code in the buffer.
        Only guessed values between 2 and 8 are considered.  If a valid
        guess can't be made (perhaps because you are visiting a new
        file), then the value in `py-indent-offset' is used.
@@ -2929,8 +2929,8 @@ be at the start of a statement."
 I.e., if the line starts with `return', `raise', `break', `continue',
 and `pass'.  This doesn't catch embedded statements."
   (let ((here (point)))
-    (back-to-indentation)
     (py-goto-initial-line)
+    (back-to-indentation)
     (prog1
 	(looking-at (concat py-block-closing-keywords-re "\\>"))
       (goto-char here))))
