@@ -105,6 +105,7 @@ import socket
 import sys
 import time
 import urlparse
+import bisect
 
 try:
     from cStringIO import StringIO
@@ -192,6 +193,7 @@ class Request:
         self.headers = {}
         for key, value in headers.items():
             self.add_header(key, value)
+        self.unredirected_hdrs = {}
 
     def __getattr__(self, attr):
         # XXX this is a fallback mechanism to guard against these
@@ -248,6 +250,15 @@ class Request:
         # useful for something like authentication
         self.headers[key.capitalize()] = val
 
+    def add_unredirected_header(self, key, val):
+        # will not be added to a redirected request
+        self.unredirected_hdrs[key.capitalize()] = val
+
+    def has_header(self, header_name):
+        return bool(header_name in self.headers or
+                    header_name in self.unredirected_hdrs)
+
+
 class OpenerDirector:
     def __init__(self):
         server_version = "Python-urllib/%s" % __version__
@@ -256,40 +267,44 @@ class OpenerDirector:
         self.handlers = []
         self.handle_open = {}
         self.handle_error = {}
+        self.process_response = {}
+        self.process_request = {}
 
     def add_handler(self, handler):
-        added = 0
+        added = False
         for meth in dir(handler):
-            if meth[-5:] == '_open':
-                protocol = meth[:-5]
-                if protocol in self.handle_open:
-                    self.handle_open[protocol].append(handler)
-                    self.handle_open[protocol].sort()
-                else:
-                    self.handle_open[protocol] = [handler]
-                added = 1
-                continue
-            i = meth.find('_')
-            j = meth[i+1:].find('_') + i + 1
-            if j != -1 and meth[i+1:j] == 'error':
-                proto = meth[:i]
+            i = meth.find("_")
+            protocol = meth[:i]
+            condition = meth[i+1:]
+
+            if condition.startswith("error"):
+                j = meth[i+1:].find("_") + i + 1
                 kind = meth[j+1:]
                 try:
                     kind = int(kind)
                 except ValueError:
                     pass
-                dict = self.handle_error.get(proto, {})
-                if kind in dict:
-                    dict[kind].append(handler)
-                    dict[kind].sort()
-                else:
-                    dict[kind] = [handler]
-                self.handle_error[proto] = dict
-                added = 1
+                lookup = self.handle_error.get(protocol, {})
+                self.handle_error[protocol] = lookup
+            elif condition == "open":
+                kind = protocol
+                lookup = getattr(self, "handle_"+condition)
+            elif condition in ["response", "request"]:
+                kind = protocol
+                lookup = getattr(self, "process_"+condition)
+            else:
                 continue
+
+            handlers = lookup.setdefault(kind, [])
+            if handlers:
+                bisect.insort(handlers, handler)
+            else:
+                handlers.append(handler)
+            added = True
+
         if added:
-            self.handlers.append(handler)
-            self.handlers.sort()
+            # XXX why does self.handlers need to be sorted?
+            bisect.insort(self.handlers, handler)
             handler.add_parent(self)
 
     def __del__(self):
@@ -320,13 +335,32 @@ class OpenerDirector:
             if data is not None:
                 req.add_data(data)
 
+        protocol = req.get_type()
+
+        # pre-process request
+        meth_name = protocol+"_request"
+        for processor in self.process_request.get(protocol, []):
+            meth = getattr(processor, meth_name)
+            req = meth(req)
+
+        response = self._open(req, data)
+
+        # post-process response
+        meth_name = protocol+"_response"
+        for processor in self.process_response.get(protocol, []):
+            meth = getattr(processor, meth_name)
+            response = meth(req, response)
+
+        return response
+
+    def _open(self, req, data=None):
         result = self._call_chain(self.handle_open, 'default',
                                   'default_open', req)
         if result:
             return result
 
-        type_ = req.get_type()
-        result = self._call_chain(self.handle_open, type_, type_ + \
+        protocol = req.get_type()
+        result = self._call_chain(self.handle_open, protocol, protocol +
                                   '_open', req)
         if result:
             return result
@@ -339,7 +373,7 @@ class OpenerDirector:
             # XXX http[s] protocols are special-cased
             dict = self.handle_error['http'] # https is not different than http
             proto = args[2]  # YUCK!
-            meth_name = 'http_error_%d' % proto
+            meth_name = 'http_error_%s' % proto
             http_err = 1
             orig_args = args
         else:
@@ -372,7 +406,7 @@ def build_opener(*handlers):
     opener = OpenerDirector()
     default_classes = [ProxyHandler, UnknownHandler, HTTPHandler,
                        HTTPDefaultErrorHandler, HTTPRedirectHandler,
-                       FTPHandler, FileHandler]
+                       FTPHandler, FileHandler, HTTPErrorProcessor]
     if hasattr(httplib, 'HTTPS'):
         default_classes.append(HTTPSHandler)
     skip = []
@@ -400,8 +434,10 @@ class BaseHandler:
 
     def add_parent(self, parent):
         self.parent = parent
+        
     def close(self):
         self.parent = None
+        
     def __lt__(self, other):
         if not hasattr(other, "handler_order"):
             # Try to preserve the old behavior of having custom classes
@@ -411,11 +447,29 @@ class BaseHandler:
         return self.handler_order < other.handler_order
 
 
+class HTTPErrorProcessor(BaseHandler):
+    """Process HTTP error responses."""
+    handler_order = 1000  # after all other processing
+
+    def http_response(self, request, response):
+        code, msg, hdrs = response.code, response.msg, response.info()
+
+        if code != 200:
+            response = self.parent.error(
+                'http', request, response, code, msg, hdrs)
+
+        return response
+
+    https_response = http_response
+
 class HTTPDefaultErrorHandler(BaseHandler):
     def http_error_default(self, req, fp, code, msg, hdrs):
         raise HTTPError(req.get_full_url(), code, msg, hdrs, fp)
 
 class HTTPRedirectHandler(BaseHandler):
+    # maximum number of redirections before assuming we're in a loop
+    max_redirections = 10
+
     def redirect_request(self, req, fp, code, msg, headers, newurl):
         """Return a Request or None in response to a redirect.
 
@@ -459,14 +513,20 @@ class HTTPRedirectHandler(BaseHandler):
             return
 
         # loop detection
-        new.error_302_dict = {}
-        if hasattr(req, 'error_302_dict'):
-            if len(req.error_302_dict)>10 or \
-               newurl in req.error_302_dict:
+        # .redirect_dict has a key (url, code) if url was previously
+        # visited as a result of a redirection with that code.  The
+        # code is needed in addition to the URL because visiting a URL
+        # twice isn't necessarily a loop: there is more than one way
+        # to redirect (301, 302, 303, 307, refresh).
+        key = (newurl, code)
+        if hasattr(req, 'redirect_dict'):
+            visited = new.redirect_dict = req.redirect_dict
+            if key in visited or len(visited) >= self.max_redirections:
                 raise HTTPError(req.get_full_url(), code,
                                 self.inf_msg + msg, headers, fp)
-            new.error_302_dict.update(req.error_302_dict)
-        new.error_302_dict[newurl] = newurl
+        else:
+            visited = new.redirect_dict = req.redirect_dict = {}
+        visited[key] = None
 
         # Don't close the fp until we are sure that we won't use it
         # with HTTPError.
@@ -853,6 +913,38 @@ class ProxyDigestAuthHandler(BaseHandler, AbstractDigestAuthHandler):
 
 class AbstractHTTPHandler(BaseHandler):
 
+    def __init__(self, debuglevel=0):
+        self._debuglevel = debuglevel
+
+    def set_http_debuglevel(self, level):
+        self._debuglevel = level
+
+    def do_request(self, request):
+        host = request.get_host()
+        if not host:
+            raise URLError('no host given')
+
+        if request.has_data():  # POST
+            data = request.get_data()
+            if not request.has_header('Content-type'):
+                request.add_unredirected_header(
+                    'Content-type',
+                    'application/x-www-form-urlencoded')
+            if not request.has_header('Content-length'):
+                request.add_unredirected_header(
+                    'Content-length', '%d' % len(data))
+
+        scheme, sel = splittype(request.get_selector())
+        sel_host, sel_path = splithost(sel)
+        if not request.has_header('Host'):
+            request.add_unredirected_header('Host', sel_host or host)
+        for name, value in self.parent.addheaders:
+            name = name.capitalize()
+            if not request.has_header(name):
+                request.add_unredirected_header(name, value)
+
+        return request
+
     # XXX Should rewrite do_open() to use the new httplib interface,
     # would be a little simpler.
 
@@ -862,25 +954,12 @@ class AbstractHTTPHandler(BaseHandler):
             raise URLError('no host given')
 
         h = http_class(host) # will parse host:port
-        if req.has_data():
-            data = req.get_data()
-            h.putrequest('POST', req.get_selector())
-            if not 'Content-type' in req.headers:
-                h.putheader('Content-type',
-                            'application/x-www-form-urlencoded')
-            if not 'Content-length' in req.headers:
-                h.putheader('Content-length', '%d' % len(data))
-        else:
-            h.putrequest('GET', req.get_selector())
+        h.set_debuglevel(self._debuglevel)
 
-        scheme, sel = splittype(req.get_selector())
-        sel_host, sel_path = splithost(sel)
-        h.putheader('Host', sel_host or host)
-        for name, value in self.parent.addheaders:
-            name = name.capitalize()
-            if name not in req.headers:
-                h.putheader(name, value)
+        h.putrequest(req.get_method(), req.get_selector())
         for k, v in req.headers.items():
+            h.putheader(k, v)
+        for k, v in req.unredirected_hdrs.items():
             h.putheader(k, v)
         # httplib will attempt to connect() here.  be prepared
         # to convert a socket error to a URLError.
@@ -889,14 +968,15 @@ class AbstractHTTPHandler(BaseHandler):
         except socket.error, err:
             raise URLError(err)
         if req.has_data():
-            h.send(data)
+            h.send(req.get_data())
 
         code, msg, hdrs = h.getreply()
         fp = h.getfile()
-        if code == 200:
-            return addinfourl(fp, hdrs, req.get_full_url())
-        else:
-            return self.parent.error('http', req, fp, code, msg, hdrs)
+        response = addinfourl(fp, hdrs, req.get_full_url())
+        # XXXX should these be methods, for uniformity with rest of interface?
+        response.code = code
+        response.msg = msg
+        return response
 
 
 class HTTPHandler(AbstractHTTPHandler):
@@ -904,6 +984,7 @@ class HTTPHandler(AbstractHTTPHandler):
     def http_open(self, req):
         return self.do_open(httplib.HTTP, req)
 
+    http_request = AbstractHTTPHandler.do_request
 
 if hasattr(httplib, 'HTTPS'):
     class HTTPSHandler(AbstractHTTPHandler):
@@ -911,6 +992,7 @@ if hasattr(httplib, 'HTTPS'):
         def https_open(self, req):
             return self.do_open(httplib.HTTPS, req)
 
+        https_request = AbstractHTTPHandler.do_request
 
 class UnknownHandler(BaseHandler):
     def unknown_open(self, req):
