@@ -51,13 +51,13 @@ def search(pattern, string, flags=0):
     return compile(pattern, flags).search(string)
 
 def sub(pattern, repl, string, count=0):
-    pass
+    return compile(pattern).sub(repl, string, count)
 
 def subn(pattern, repl, string, count=0):
-    pass
+    return compile(pattern).subn(repl, string, count)
 
-def split(string, pattern, maxsplit=0):
-    pass
+def split(pattern, string, maxsplit=0):
+    return compile(pattern).subn(string, maxsplit)
 
 #
 #
@@ -79,21 +79,6 @@ class RegexObject:
 	else:
 	    self.anchor = 0
 	self.buffer = assemble(code)
-    def match(self, string, pos=0):
-	regs = reop.match(self.buffer,
-			  self.num_regs,
-			  self.flags,
-			  self.fastmap.can_be_null,
-			  self.fastmap.fastmap(),
-			  self.anchor,
-			  string,
-			  pos)
-	if regs is None:
-	    return None
-	return MatchObject(self,
-			   string,
-			   pos,
-			   regs)
     def search(self, string, pos=0):
 	regs = reop.search(self.buffer,
 			   self.num_regs,
@@ -109,6 +94,27 @@ class RegexObject:
 			   string,
 			   pos,
 			   regs)
+    def match(self, string, pos=0):
+	regs = reop.match(self.buffer,
+			  self.num_regs,
+			  self.flags,
+			  self.fastmap.can_be_null,
+			  self.fastmap.fastmap(),
+			  self.anchor,
+			  string,
+			  pos)
+	if regs is None:
+	    return None
+	return MatchObject(self,
+			   string,
+			   pos,
+			   regs)
+    def sub(self, repl, string, count=0):
+	pass
+    def subn(self, repl, string, count=0):
+	pass
+    def split(self, string, maxsplit=0):
+	pass
     
 class MatchObject:
     def __init__(self, re, string, pos, regs):
@@ -116,34 +122,49 @@ class MatchObject:
 	self.string = string
 	self.pos = pos
 	self.regs = regs
-    def start(self, i):
-	if type(i) == type(''):
+    def start(self, g):
+	if type(g) == type(''):
 	    try:
-		i = self.re.groupindex[i]
+		g = self.re.groupindex[g]
 	    except (KeyError, TypeError):
-		raise IndexError
-	return self.regs[i][0]
-    def end(self, i):
-	if type(i) == type(''):
+		raise IndexError, ('group "' + g + '" is undefined')
+	return self.regs[g][0]
+    def end(self, g):
+	if type(g) == type(''):
 	    try:
-		i = self.re.groupindex[i]
+		g = self.re.groupindex[g]
 	    except (KeyError, TypeError):
-		raise IndexError
-	return self.regs[i][1]
-    def span(self, i):
-	if type(i) == type(''):
+		raise IndexError, ('group "' + g + '" is undefined')
+	return self.regs[g][1]
+    def span(self, g):
+	if type(g) == type(''):
 	    try:
-		i = self.re.groupindex[i]
+		g = self.re.groupindex[g]
 	    except (KeyError, TypeError):
-		raise IndexError
-	return self.regs[i]
-    def group(self, i):
-	if type(i) == type(''):
-	    try:
-		i = self.re.groupindex[i]
-	    except (KeyError, TypeError):
-		raise IndexError
-	return self.string[self.regs[i][0]:self.regs[i][1]]
+		raise IndexError, ('group "' + g + '" is undefined')
+	return self.regs[g]
+    def group(self, *groups):
+	if len(groups) == 0:
+	    groups = range(1, self.re.num_regs)
+	result = []
+	for g in groups:
+	    if type(g) == type(''):
+		try:
+		    g = self.re.groupindex[g]
+		except (KeyError, TypeError):
+		    raise IndexError, ('group "' + g + '" is undefined')
+	    if g >= len(self.regs):
+		result.append(None)
+	    elif (self.regs[g][0] == -1) or (self.regs[g][1] == -1):
+		result.append(None)
+	    else:
+		result.append(self.string[self.regs[g][0]:self.regs[g][1]])
+	if len(result) > 1:
+	    return tuple(result)
+	elif len(result) == 1:
+	    return result[0]
+	else:
+	    return ()
 
 #
 # A set of classes to make assembly a bit easier, if a bit verbose.
@@ -331,7 +352,7 @@ class SyntaxSpec(Instruction):
     def assemble(self, postition, labels):
 	return self.opcode + chr(self.syntax)
 
-class SyntaxSpec(Instruction):
+class NotSyntaxSpec(Instruction):
     name = 'notsyntaxspec'
     def __init__(self, syntax):
 	self.syntax = syntax
@@ -382,13 +403,12 @@ def assemble(instructions):
 #
 
 def escape(pattern):
-    result = ''
+    result = []
     for char in pattern:
 	if 'word' not in syntax_table[char]:
-	    result = result + '\\' + char
-	else:
-	    result = result + char
-    return result
+	    result.append('\\')
+	result.append(char)
+    return string.join(result, '')
 
 #
 #
@@ -631,7 +651,7 @@ def compile(pattern, flags=0):
 			 expr + \
 			 [Jump(-1),
 			  Label(label)])
-	    stack.append([('|',)])
+	    stack.append([Alternation()])
 	    label = label + 1
 
 	elif char == '(':
@@ -693,12 +713,13 @@ def compile(pattern, flags=0):
 			stack.append([FunctionCallout(name)])
 
 		    else:
-			raise error, 'unknown Python extension'
+			raise error, ('unknown Python extension: ' + \
+				      pattern[index])
 		    
 		elif pattern[index] == ':':
 		    # grouping, but no registers
 		    index = index + 1
-		    stack.append([('(', -1)])
+		    stack.append([OpenParen(-1)])
 
 		elif pattern[index] == '#':
 		    # comment
