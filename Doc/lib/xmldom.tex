@@ -84,8 +84,8 @@ the strict mapping from IDL).  See section \ref{dom-conformance},
   \seetitle[http://pyxml.sourceforge.net]{PyXML}{Users that require a
             full-featured implementation of DOM should use the PyXML
             package.}
-  \seetitle[http://cgi.omg.org/cgi-bin/doc?orbos/99-08-02.pdf]{CORBA
-            Scripting with Python}
+  \seetitle[http://www.omg.org/docs/formal/02-11-05.pdf]{Python
+            Language Mapping Specification}
            {This specifies the mapping from OMG IDL to Python.}
 \end{seealso}
 
@@ -213,6 +213,24 @@ the DOM they are using.  DOM Level~2 added the ability to create new
 \class{DOMImplementation} as well.
 
 \begin{methoddesc}[DOMImplementation]{hasFeature}{feature, version}
+Return true if the feature identified by the pair of strings
+\var{feature} and \var{version} is implemented.
+\end{methoddesc}
+
+\begin{methoddesc}[DOMImplementation]{createDocument}{namespaceUri, qualifiedName, doctype}
+Return a new \class{Document} object (the root of the DOM), with a
+child \class{Element} object having the given \var{namespaceUri} and
+\var{qualifiedName}. The \var{doctype} must be a \class{DocumentType}
+object created by \method{createDocumentType()}, or \code{None}.
+In the Python DOM API, the first two arguments can also be \code{None}
+in order to indicate that no \class{Element} child is to be created.
+\end{methoddesc}
+
+\begin{methoddesc}[DOMImplementation]{createDocumentType}{qualifiedName, publicId, systemId}
+Return a new \class{DocumentType} object that encapsulates the given
+\var{qualifiedName}, \var{publicId}, and \var{systemId} strings,
+representing the information contained in an XML document type
+declaration.
 \end{methoddesc}
 
 
@@ -545,8 +563,19 @@ Same as equivalent method in the \class{Document} class.
 Same as equivalent method in the \class{Document} class.
 \end{methoddesc}
 
-\begin{methoddesc}[Element]{getAttribute}{attname}
-Return an attribute value as a string.
+\begin{methoddesc}[Element]{hasAttribute}{name}
+Returns true if the element has an attribute named by \var{name}.
+\end{methoddesc}
+
+\begin{methoddesc}[Element]{hasAttributeNS}{namespaceURI, localName}
+Returns true if the element has an attribute named by
+\var{namespaceURI} and \var{localName}.
+\end{methoddesc}
+
+\begin{methoddesc}[Element]{getAttribute}{name}
+Return the value of the attribute named by \var{name} as a
+string. If no such attribute exists, an empty string is returned,
+as if the attribute had no value.
 \end{methoddesc}
 
 \begin{methoddesc}[Element]{getAttributeNode}{attrname}
@@ -555,8 +584,9 @@ Return the \class{Attr} node for the attribute named by
 \end{methoddesc}
 
 \begin{methoddesc}[Element]{getAttributeNS}{namespaceURI, localName}
-Return an attribute value as a string, given a \var{namespaceURI} and
-\var{localName}.
+Return the value of the attribute named by \var{namespaceURI} and
+\var{localName} as a string. If no such attribute exists, an empty
+string is returned, as if the attribute had no value.
 \end{methoddesc}
 
 \begin{methoddesc}[Element]{getAttributeNodeNS}{namespaceURI, localName}
@@ -564,7 +594,7 @@ Return an attribute value as a node, given a \var{namespaceURI} and
 \var{localName}.
 \end{methoddesc}
 
-\begin{methoddesc}[Element]{removeAttribute}{attname}
+\begin{methoddesc}[Element]{removeAttribute}{name}
 Remove an attribute by name.  No exception is raised if there is no
 matching attribute.
 \end{methoddesc}
@@ -579,7 +609,7 @@ Remove an attribute by name.  Note that it uses a localName, not a
 qname.  No exception is raised if there is no matching attribute.
 \end{methoddesc}
 
-\begin{methoddesc}[Element]{setAttribute}{attname, value}
+\begin{methoddesc}[Element]{setAttribute}{name, value}
 Set an attribute value from a string.
 \end{methoddesc}
 
@@ -886,8 +916,13 @@ Python do not consider this a problem.  Attributes that are declared
 \keyword{readonly} may not restrict write access in all DOM
 implementations.
 
-Additionally, the accessor functions are not required.  If provided,
+In the Python DOM API, accessor functions are not required.  If provided,
 they should take the form defined by the Python IDL mapping, but
 these methods are considered unnecessary since the attributes are
 accessible directly from Python.  ``Set'' accessors should never be
 provided for \keyword{readonly} attributes.
+
+The IDL definitions do not fully embody the requirements of the W3C DOM
+API, such as the notion of certain objects, such as the return value of
+\method{getElementsByTagName()}, being ``live''.  The Python DOM API
+does not require implementations to enforce such requirements.
