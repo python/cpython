@@ -259,7 +259,7 @@ Guido's binary tree example.
     >>> # Show it off: create a tree.
     >>> t = tree("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
-    >>> # A recursive generator that generates Tree leaves in in-order.
+    >>> # A recursive generator that generates Tree labels in in-order.
     >>> def inorder(t):
     ...     if t:
     ...         for x in inorder(t.left):
