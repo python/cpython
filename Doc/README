@@ -77,11 +77,11 @@ README file in the Python distribution.
 The simplest way to get the rest of the tools in the configuration we
 used is to install the teTeX TeX distribution, version 0.4 or 0.9.  More
 information is available on teTeX at <http://www.tug.org/tetex/>.
-This is a UNIX-only TeX distribution at this time.  Note that the 0.9
+This is a Unix-only TeX distribution at this time.  Note that the 0.9
 release is still in testing; this documentation release was tested
-with the 21 Apr 1998 release.  We'll be upgrading to the final version 
-when it becomes available.  Except for the PDF generation, it also works
-with the (stable) teTeX 0.4 release.
+with the 9 Feb 1999 release.  We'll be upgrading to the final version 
+when it becomes available.  Except for the PDF generation, there are
+no known problems with using the ("stable") teTeX 0.4 release.
 
 If you don't want to get teTeX, here is what you'll need:
 
@@ -126,8 +126,8 @@ To create HTML files:
 	- LaTeX2HTML 98.2b6.  Older version will fail with the new
 	  directory layout.  Version 98.2b8 specifically does not
 	  work; it translates `` and '' to &ldquo; and &rdquo;, which
-	  are not supported by popular Web browsers.  Releases are
-	  available at:
+	  are not supported by popular Web browsers.  This also screws 
+	  up code fragments.  ;-(  Releases are available at:
 	  <http://cdc-server.cdc.informatik.tu-darmstadt.de/~latex2html/>.
 
 
@@ -139,9 +139,9 @@ is done since they are much better looking and produce smaller
 PostScript files.  If, however, your TeX installation does not support 
 them, they may be easily disabled.  Edit the file
 texiinputs/manual.cls and comment out the line that starts
-"\RequirePackage{times}" using a "%" character at the beginning of the
-line.  An alternative is to install the right fonts and LaTeX style
-file.
+"\RequirePackage{times}" by inserting a "%" character at the beginning
+of the line.  An alternative is to install the right fonts and LaTeX
+style file.
 
 
 What if I want to use A4 paper?
@@ -168,9 +168,9 @@ the new series of Python HOWTO documents which is being coordinated by
 Andrew Kuchling <amk@acm.org>.  The file templates/howto.tex is a
 commented example which may be used a template.  A script to "do the
 right thing" to format a howto document is included as
-tools/mkhowto.sh.  These documents can be formatted as HTML, PDF,
+tools/mkhowto.  These documents can be formatted as HTML, PDF,
 PostScript, or ASCII files.  Support for this document class is
-still new, but is expected to evolve rapidly.  Use "mkhowto.sh --help"
+still new, but is expected to evolve rapidly.  Use "mkhowto --help"
 for information on using the formatting tool.
 
 For authors of module documentation, there is a file
