@@ -365,6 +365,6 @@ ps(void)
 {
 	char buffer[100];
 	PyOS_snprintf(buffer, sizeof(buffer),
-		      "ps -l -p %d </dev/null | tail +2l\n", getpid());
+		      "ps -l -p %d </dev/null | sed 1d\n", getpid());
 	system(buffer);
 }
