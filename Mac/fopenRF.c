@@ -1,21 +1,19 @@
 
 /*
- *  fopenRF.c -- Clone of fopen.c to open Mac resource forks.
+ *  fopen.c
  *
- *  Copyright (c) 1989 Symantec Corporation.  All rights reserved.
+ *  Copyright (c) 1991 Symantec Corporation.  All rights reserved.
  *
  */
+
+#include <MacHeaders>
 
 #include "stdio.h"
 #include "errno.h"
 #include "string.h"
 #include "ansi_private.h"
 
-FILE *fopenRF(char *, char *);
-FILE *freopenRF(char *, char *, FILE *);
-FILE *__openRF(char *, int, int, FILE *);
-
-#include <Files.h>
+extern long _ftype, _fcreator;
 
 #define fcbVPtr(fcb)		(* (VCB **) (fcb + 20))
 #define fcbDirID(fcb)		(* (long *) (fcb + 58))
@@ -27,20 +25,18 @@ static int fileio(FILE *, int);
 static int close(FILE *);
 static void replace(unsigned char *, size_t, int, int);
 
+FILE *freopenRF();
+FILE *__openRF();
 
 FILE *
-fopenRF(filename, mode)
-char *filename, *mode;
+fopenRF(const char *filename, const char *mode)
 {
 	return(freopenRF(filename, mode, __getfile()));
 }
 
 
 FILE *
-freopenRF(filename, mode, fp)
-char *filename;
-register char *mode;
-register FILE *fp;
+freopenRF(const char *filename, const char *mode, FILE *fp)
 {
 	int omode, oflag;
 	
@@ -83,12 +79,9 @@ register FILE *fp;
 
 
 FILE *
-__openRF(filename, omode, oflag, fp)
-char *filename;
-int omode, oflag;
-register FILE *fp;
+__openRF(const char *filename, int omode, int oflag, FILE *fp)
 {
-	ioParam pb;
+	IOParam pb;
 	char pname[FILENAME_MAX];
 
 	if (fp == NULL)
@@ -106,10 +99,7 @@ register FILE *fp;
 		/*  create file  */
 
 	if (oflag & F_CREAT) {
-		asm {
-			lea		pb,a0
-			_PBCreate
-		}
+		PBCreateSync((ParmBlkPtr)&pb);
 		if (pb.ioResult == noErr)
 			oflag &= ~F_TRUNC;
 		else if (pb.ioResult == dupFNErr && !(oflag & F_EXCL))
@@ -120,32 +110,23 @@ register FILE *fp;
 		}
 	}
 	
-		/*  open resource file  */
+		/*  open file  */
 		
-	asm {
-		lea		pb,a0
-		_PBOpenRF
-	}
+	PBOpenRFSync((ParmBlkPtr)&pb);
 	if (pb.ioResult) {
 		errno = pb.ioResult;
-		if (oflag & F_CREAT) asm {
-			lea		pb,a0
-			_PBDelete
-		}
+		if (oflag & F_CREAT)
+			PBDeleteSync((ParmBlkPtr)&pb);
 		return(NULL);
 	}
 	fp->refnum = pb.ioRefNum;
 	
 		/*  get/set file length  */
 		
-	if (oflag & F_TRUNC) asm {
-		lea		pb,a0
-		_PBSetEOF
-	}
-	else if (!(oflag & F_CREAT)) asm {
-		lea		pb,a0
-		_PBGetEOF
-	}
+	if (oflag & F_TRUNC)
+		PBSetEOFSync((ParmBlkPtr)&pb);
+	else if (!(oflag & F_CREAT))
+		PBGetEOFSync((ParmBlkPtr)&pb);
 	fp->len = (fpos_t) pb.ioMisc;
 		
 		/*  initialize rest of FILE structure  */
@@ -177,28 +158,22 @@ register FILE *fp;
  */
 
 static void
-setfiletype(name, oflag)
-StringPtr name;
-int oflag;
+setfiletype(StringPtr name, int oflag)
 {
-	fileParam pb;
+	FileParam pb;
 	
 	pb.ioNamePtr = name;
 	pb.ioVRefNum = 0;
 	pb.ioFVersNum = 0;
 	pb.ioFDirIndex = 0;
-	asm {
-		lea		pb,a0
-		_PBGetFInfo
-		bmi.s	@1
+	if (PBGetFInfoSync((ParmBlkPtr)&pb) == noErr) {
+		if (oflag & F_BINARY)
+			pb.ioFlFndrInfo.fdType = _ftype;
+		else
+			pb.ioFlFndrInfo.fdType = 'TEXT';
+		pb.ioFlFndrInfo.fdCreator = _fcreator;
+		PBSetFInfoSync((ParmBlkPtr)&pb);
 	}
-	pb.ioFlFndrInfo.fdType = pb.ioFlFndrInfo.fdCreator = '????';
-	if (!(oflag & F_BINARY))
-		pb.ioFlFndrInfo.fdType = 'TEXT';
-	asm {
-		lea		pb,a0
-		_PBSetFInfo
-@1	}
 }
 
 
@@ -208,7 +183,7 @@ int oflag;
  */
 
 static void
-stdio_exit()
+stdio_exit(void)
 {
 	register FILE *fp;
 	int n;
@@ -224,11 +199,9 @@ stdio_exit()
  */
 
 static int
-fileio(fp, i)
-register FILE *fp;
-int i;
+fileio(FILE *fp, int i)
 {
-	ioParam pb;
+	IOParam pb;
 	
 	pb.ioRefNum = fp->refnum;
 	switch (i) {
@@ -240,10 +213,7 @@ int i;
 			pb.ioReqCount = fp->cnt;
 			pb.ioPosMode = fp->refnum > 0 ? fsFromStart : fsAtMark;
 			pb.ioPosOffset = fp->pos - fp->cnt;
-			asm {
-				lea		pb,a0
-				_PBRead
-			}
+			PBReadSync((ParmBlkPtr)&pb);
 			if (pb.ioResult == eofErr) {
 				fp->pos = pb.ioPosOffset;
 				if (fp->cnt = pb.ioActCount)
@@ -253,11 +223,7 @@ int i;
 					return(EOF);
 				}
 			}
-			if (pb.ioResult) {
-				fp->pos -= fp->cnt;
-				fp->cnt = 0;
-			}
-			else if (!fp->binary)
+			if (!pb.ioResult && !fp->binary)
 				replace(fp->ptr, fp->cnt, '\r', '\n');
 			break;
 			
@@ -269,23 +235,13 @@ int i;
 			pb.ioPosMode = fp->refnum > 0 ? fsFromStart : fsAtMark;
 			if ((pb.ioPosOffset = fp->pos - fp->cnt) > fp->len) {
 				pb.ioMisc = (Ptr) pb.ioPosOffset;
-				asm {
-					lea		pb,a0
-					_PBSetEOF
-					bmi.s	@1
-				}
+				if (PBSetEOFSync((ParmBlkPtr)&pb) != noErr)
+					break;
 			}
 			if (!fp->binary)
 				replace(fp->ptr, fp->cnt, '\n', '\r');
-			asm {
-				lea		pb,a0
-				_PBWrite
-@1			}
-			if (pb.ioResult) {
-				fp->pos -= fp->cnt;
-				fp->cnt = 0;
-			}
-			else if (pb.ioPosOffset > fp->len)
+			PBWriteSync((ParmBlkPtr)&pb);
+			if (!pb.ioResult && pb.ioPosOffset > fp->len)
 				fp->len = pb.ioPosOffset;
 			break;
 			
@@ -299,6 +255,10 @@ int i;
 		/*  done  */
 		
 	if (pb.ioResult) {
+		if (i < 2) {
+			fp->pos -= fp->cnt;
+			fp->cnt = 0;
+		}
 		fp->err = 1;
 		errno = pb.ioResult;
 		return(EOF);
@@ -308,73 +268,52 @@ int i;
 
 
 static int
-close(fp)
-register FILE *fp;
+close(FILE *fp)
 {
 	HFileParam pb;
 	Str255 buf;
 	register char *fcb = FCBSPtr + fp->refnum;
 	VCB *vcb = fcbVPtr(fcb);
 	register char *s;
+	enum { none, MFS, HFS } del = none;
 	
-	pb.ioNamePtr = buf;
-	pb.ioFRefNum = fp->refnum;
 	pb.ioVRefNum = vcb->vcbVRefNum;
-	pb.ioFVersNum = 0;
+	if (fp->remove) {
+		pb.ioNamePtr = buf;
+		pb.ioFVersNum = 0;
 	
-		/*  close temporary file - HFS  */
+			/*  close temporary file - HFS  */
+			
+		if (vcb->vcbSigWord == 0x4244) {
+			pb.ioDirID = fcbDirID(fcb);
+			s = fcbCName(fcb);
+			memcpy(buf, s, Length(s) + 1);
+			del = HFS;
+		}
 		
-	if (fp->delete && vcb->vcbSigWord == 0x4244) {
-		pb.ioDirID = fcbDirID(fcb);
-		s = fcbCName(fcb);
-		asm {
-			lea		buf,a0
-			moveq	#0,d0
-			move.b	(s),d0
-@1			move.b	(s)+,(a0)+
-			dbra	d0,@1
-			lea		pb,a0
-			_PBClose
-			bmi.s	@9
-			_PBHDelete
+			/*  close temporary file - MFS  */
+			
+		else if (vcb->vcbSigWord == 0xD2D7) {
+			for (pb.ioFDirIndex = 1; PBGetFInfoSync((ParmBlkPtr)&pb) == noErr; pb.ioFDirIndex++) {
+				if (pb.ioFRefNum == fp->refnum) {
+					del = MFS;
+					break;
+				}
+			}
 		}
 	}
 	
-		/*  close temporary file - MFS  */
-		
-	else if (fp->delete && vcb->vcbSigWord == 0xD2D7) {
-		pb.ioFDirIndex = 1;
-		do asm {
-			lea		pb,a0
-			_PBGetFInfo
-			bmi.s	@2
-			addq.w	#1,pb.ioFDirIndex
-		} while (pb.ioFRefNum != fp->refnum);
-		asm {
-			lea		pb,a0
-			_PBClose
-			bmi.s	@9
-			_PBDelete
-		}
-	}
+		/*  close file and flush volume buffer  */
 	
-		/*  normal case - just close file  */
-		
-	else {
-		asm {
-@2			lea		pb,a0
-			_PBClose
-			bmi.s	@9
-		}
+	pb.ioFRefNum = fp->refnum;
+	if (PBCloseSync((ParmBlkPtr)&pb) == noErr) {
+		if (del == MFS)
+			PBDeleteSync((ParmBlkPtr)&pb);
+		else if (del == HFS)
+			PBHDeleteSync((HParmBlkPtr)&pb);
+		pb.ioNamePtr = 0;
+		PBFlushVolSync((ParmBlkPtr)&pb);
 	}
-	
-		/*  flush volume buffer  */
-		
-	pb.ioNamePtr = 0;
-	asm {
-		lea		pb,a0
-		_PBFlshVol
-@9	}
 	return(pb.ioResult);
 }
 
@@ -385,11 +324,9 @@ register FILE *fp;
  */
 
 static void
-replace(s, n, c1, c2)
-register unsigned char *s;
-register size_t n;
-register int c1, c2;
+replace(register unsigned char *s, register size_t n, register int c1, register int c2)
 {
+#pragma options(honor_register)
 	register unsigned char *t;
 	
 	for (; n && (t = memchr(s, c1, n)); s = t) {
