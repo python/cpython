@@ -30,6 +30,10 @@ Core
   (as implemented by the base class) of an immutable subclass instance
   once it is created.
 
+- The dictionary constructor now takes an optional argument, a
+  mapping-like object, and initializes the dictionary from its
+  (key, value) pairs.
+
 - A new built-in type, super, has been added.  This facilitates making
   "cooperative super calls" in a multiple inheritance setting.  For an
   explanation, see http://www.python.org/2.2/descrintro.html#cooperation
