@@ -76,7 +76,6 @@ import os
 import sys
 from stat import ST_NLINK
 import re
-import string
 import mimetools
 import multifile
 import shutil
@@ -685,7 +684,7 @@ class Message(mimetools.Message):
         headers = []
         hit = 0
         for line in self.headers:
-            if line[0] not in string.whitespace:
+            if not line[0].isspace():
                 i = line.find(':')
                 if i > 0:
                     hit = pred(line[:i].lower())
@@ -885,7 +884,6 @@ class IntSet:
         self.normalize()
 
     def fromstring(self, data):
-        import string
         new = []
         for part in data.split(self.sep):
             list = []
@@ -918,7 +916,7 @@ def pickline(file, key, casefold = 1):
             text = line[len(key)+1:]
             while 1:
                 line = f.readline()
-                if not line or line[0] not in string.whitespace:
+                if not line or not line[0].isspace():
                     break
                 text = text + line
             return text.strip()

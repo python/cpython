@@ -104,7 +104,7 @@ def main():
         match = prog.match(line)
         if match:
             name, val = match.group(1, 2)
-            val = string.atoi(val)
+            val = int(val)
             tokens[val] = name          # reverse so we can sort them...
     keys = tokens.keys()
     keys.sort()

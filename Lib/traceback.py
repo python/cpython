@@ -1,7 +1,6 @@
 """Extract, format and print information about Python stack traces."""
 
 import linecache
-import string
 import sys
 import types
 
@@ -154,13 +153,12 @@ def format_exception_only(etype, value):
                 list.append('  File "%s", line %d\n' %
                             (filename, lineno))
                 i = 0
-                while i < len(line) and \
-                      line[i] in string.whitespace:
+                while i < len(line) and line[i].isspace():
                     i = i+1
                 list.append('    %s\n' % line.strip())
                 s = '    '
                 for c in line[i:offset-1]:
-                    if c in string.whitespace:
+                    if c.isspace():
                         s = s + c
                     else:
                         s = s + ' '
