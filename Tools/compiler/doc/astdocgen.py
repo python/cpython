@@ -20,7 +20,7 @@ def main():
             print "\\lineiii{%s}{}{}" % node.name
             
         for arg in node.argnames[1:]:
-            print "\\lineiii{}{%s}{}" % arg
+            print "\\lineiii{}{\\member{%s}}{}" % arg
         print "\\hline", "\n"
     print "\\end{longtableiii}"
 
