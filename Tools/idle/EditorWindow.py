@@ -6,7 +6,7 @@ import imp
 from Tkinter import *
 import tkSimpleDialog
 import tkMessageBox
-import browser
+import BrowserControl
 import idlever
 import WindowList
 from IdleConf import idleconf
@@ -298,7 +298,7 @@ class EditorWindow:
         del fn
 
     def python_docs(self, event=None):
-        browser.open(self.help_url)
+        BrowserControl.open(self.help_url)
 
     def select_all(self, event=None):
         self.text.tag_add("sel", "1.0", "end-1c")
