@@ -179,7 +179,7 @@ Socket methods:
 #undef AF_UNIX
 #endif
 
-#if defined(linux) && defined(AF_PACKET)
+#ifdef HAVE_NETPACKET_PACKET_H
 #include <sys/ioctl.h>
 #include <net/if.h>
 #include <netpacket/packet.h>
@@ -476,7 +476,7 @@ typedef struct {
 		struct sockaddr_in6 in6;
 		struct sockaddr_storage storage;
 #endif
-#if defined(linux) && defined(AF_PACKET)
+#ifdef HAVE_NETPACKET_PACKET_H
 		struct sockaddr_ll ll;
 #endif
 	} sock_addr;
@@ -715,7 +715,7 @@ makesockaddr(int sockfd, struct sockaddr *addr, int addrlen)
 	}
 #endif
 
-#if defined(linux) && defined(AF_PACKET)
+#ifdef HAVE_NETPACKET_PACKET_H
 	case AF_PACKET:
 	{
 		struct sockaddr_ll *a = (struct sockaddr_ll *)addr;
@@ -828,7 +828,7 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
 	}
 #endif
 
-#if defined(linux) && defined(AF_PACKET)
+#ifdef HAVE_NETPACKET_PACKET_H
 	case AF_PACKET:
 	{
 		struct sockaddr_ll* addr;
@@ -901,7 +901,7 @@ getsockaddrlen(PySocketSockObject *s, socklen_t *len_ret)
 	}
 #endif
 
-#if defined(linux) && defined(AF_PACKET)
+#ifdef HAVE_NETPACKET_PACKET_H
 	case AF_PACKET:
 	{
 		*len_ret = sizeof (struct sockaddr_ll);
@@ -2983,7 +2983,7 @@ init_socket(void)
 #ifdef AF_ROSE
 	insint(d, "AF_ROSE", AF_ROSE); /* Amateur Radio X.25 PLP */
 #endif
-#if defined(linux) && defined(AF_PACKET)
+#ifdef HAVE_NETPACKET_PACKET_H
 	insint(d, "AF_PACKET", AF_PACKET);
 	insint(d, "PF_PACKET", PF_PACKET);
 	insint(d, "PACKET_HOST", PACKET_HOST);
