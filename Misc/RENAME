@@ -347,7 +347,7 @@ setmember PyMember_Set
 mkvalue Py_BuildValue
 vmkvalue Py_VaBuildValue
 getargs PyArg_Parse
-vgetargs PyArgs_VaParse
+vgetargs PyArg_VaParse
 newgetargs PyArg_ParseTuple
 getichararg PyArg_GetChar
 getidoublearray PyArg_GetDoubleArray
