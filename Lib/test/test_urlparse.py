@@ -9,21 +9,33 @@ RFC2396_BASE = "http://a/b/c/d;p?q"
 
 class UrlParseTestCase(unittest.TestCase):
     def test_frags(self):
-        for url, expected in [('http://www.python.org',
-                               ('http', 'www.python.org', '', '', '', '')),
-                              ('http://www.python.org#abc',
-                               ('http', 'www.python.org', '', '', '', 'abc')),
-                              ('http://www.python.org/#abc',
-                               ('http', 'www.python.org', '/', '', '', 'abc')),
-                              (RFC1808_BASE,
-                               ('http', 'a', '/b/c/d', 'p', 'q', 'f')),
-                              ('file:///tmp/junk.txt',
-                               ('file', '', '/tmp/junk.txt', '', '', '')),
-                              ]:
+        for url, parsed, split in [
+            ('http://www.python.org',
+             ('http', 'www.python.org', '', '', '', ''),
+             ('http', 'www.python.org', '', '', '')),
+            ('http://www.python.org#abc',
+             ('http', 'www.python.org', '', '', '', 'abc'),
+             ('http', 'www.python.org', '', '', 'abc')),
+            ('http://www.python.org/#abc',
+             ('http', 'www.python.org', '/', '', '', 'abc'),
+             ('http', 'www.python.org', '/', '', 'abc')),
+            (RFC1808_BASE,
+             ('http', 'a', '/b/c/d', 'p', 'q', 'f'),
+             ('http', 'a', '/b/c/d;p', 'q', 'f')),
+            ('file:///tmp/junk.txt',
+             ('file', '', '/tmp/junk.txt', '', '', ''),
+             ('file', '', '/tmp/junk.txt', '', '')),
+            ]:
             result = urlparse.urlparse(url)
-            self.assertEqual(result, expected)
+            self.assertEqual(result, parsed)
             # put it back together and it should be the same
             result2 = urlparse.urlunparse(result)
+            self.assertEqual(result2, url)
+
+            # check the roundtrip using urlsplit() as well
+            result = urlparse.urlsplit(url)
+            self.assertEqual(result, split)
+            result2 = urlparse.urlunsplit(result)
             self.assertEqual(result2, url)
 
     def checkJoin(self, base, relurl, expected):
@@ -32,6 +44,7 @@ class UrlParseTestCase(unittest.TestCase):
 
     def test_unparse_parse(self):
         for u in ['Python', './Python']:
+            self.assertEqual(urlparse.urlunsplit(urlparse.urlsplit(u)), u)
             self.assertEqual(urlparse.urlunparse(urlparse.urlparse(u)), u)
 
     def test_RFC1808(self):
@@ -127,6 +140,21 @@ class UrlParseTestCase(unittest.TestCase):
         self.checkJoin(RFC2396_BASE, 'g?y/../x', 'http://a/b/c/g?y/../x')
         self.checkJoin(RFC2396_BASE, 'g#s/./x', 'http://a/b/c/g#s/./x')
         self.checkJoin(RFC2396_BASE, 'g#s/../x', 'http://a/b/c/g#s/../x')
+
+    def test_urldefrag(self):
+        for url, defrag, frag in [
+            ('http://python.org#frag', 'http://python.org', 'frag'),
+            ('http://python.org', 'http://python.org', ''),
+            ('http://python.org/#frag', 'http://python.org/', 'frag'),
+            ('http://python.org/', 'http://python.org/', ''),
+            ('http://python.org/?q#frag', 'http://python.org/?q', 'frag'),
+            ('http://python.org/?q', 'http://python.org/?q', ''),
+            ('http://python.org/p#frag', 'http://python.org/p', 'frag'),
+            ('http://python.org/p?q', 'http://python.org/p?q', ''),
+            (RFC1808_BASE, 'http://a/b/c/d;p?q', 'f'),
+            (RFC2396_BASE, 'http://a/b/c/d;p?q', ''),
+            ]:
+            self.assertEqual(urlparse.urldefrag(url), (defrag, frag))
 
 def test_main():
     test_support.run_unittest(UrlParseTestCase)
