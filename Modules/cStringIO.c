@@ -2,6 +2,7 @@
 #include "Python.h"
 #include "import.h"
 #include "cStringIO.h"
+#include "structmember.h"
 
 PyDoc_STRVAR(cStringIO_module_documentation,
 "A simple fast partial StringIO replacement.\n"
@@ -189,7 +190,8 @@ IO_readline(IOobject *self, PyObject *args) {
         int n, m=-1;
         char *output;
 
-        UNLESS (PyArg_ParseTuple(args, "|i:readline", &m)) return NULL;
+        if (args)
+                UNLESS (PyArg_ParseTuple(args, "|i:readline", &m)) return NULL;
 
         if( (n=IO_creadline((PyObject*)self,&output)) < 0) return NULL;
         if (m >= 0 && m < n) {
@@ -274,6 +276,21 @@ IO_truncate(IOobject *self, PyObject *args) {
 
         Py_INCREF(Py_None);
         return Py_None;
+}
+
+static PyObject *
+IO_iternext(Iobject *self)
+{
+	PyObject *next;
+	next = IO_readline((IOobject *)self, NULL);
+	if (!next)
+		return NULL;
+	if (!PyString_GET_SIZE(next)) {
+		Py_DECREF(next);
+		PyErr_SetNone(PyExc_StopIteration);
+		return NULL;
+	}
+	return next;
 }
 
 
@@ -435,6 +452,12 @@ static struct PyMethodDef O_methods[] = {
   {NULL,	 NULL}		/* sentinel */
 };
 
+static PyMemberDef O_memberlist[] = {
+	{"softspace",	T_INT,	offsetof(Oobject, softspace),	0,
+	 "flag indicating that a space needs to be printed; used by print"},
+	{NULL} /* Sentinel */
+};
+
 static void
 O_dealloc(Oobject *self) {
         if (self->buf != NULL)
@@ -442,53 +465,40 @@ O_dealloc(Oobject *self) {
         PyObject_Del(self);
 }
 
-static PyObject *
-O_getattr(Oobject *self, char *name) {
-        if (strcmp(name, "softspace") == 0) {
-                return PyInt_FromLong(self->softspace);
-        }
-        return Py_FindMethod(O_methods, (PyObject *)self, name);
-}
-
-static int
-O_setattr(Oobject *self, char *name, PyObject *value) {
-	long x;
-	if (strcmp(name, "softspace") != 0) {
-		PyErr_SetString(PyExc_AttributeError, name);
-		return -1;
-	}
-	x = PyInt_AsLong(value);
-	if (x < 0 && PyErr_Occurred())
-		return -1;
-	self->softspace = x;
-	return 0;
-}
-
 PyDoc_STRVAR(Otype__doc__, "Simple type for output to strings.");
 
 static PyTypeObject Otype = {
   PyObject_HEAD_INIT(NULL)
-  0,	       		/*ob_size*/
-  "cStringIO.StringO",   		/*tp_name*/
+  0,	       			/*ob_size*/
+  "cStringIO.StringO",   	/*tp_name*/
   sizeof(Oobject),       	/*tp_basicsize*/
-  0,	       		/*tp_itemsize*/
+  0,	       			/*tp_itemsize*/
   /* methods */
   (destructor)O_dealloc,	/*tp_dealloc*/
-  (printfunc)0,		/*tp_print*/
-  (getattrfunc)O_getattr,	/*tp_getattr*/
-  (setattrfunc)O_setattr,	/*tp_setattr*/
-  (cmpfunc)0,		/*tp_compare*/
-  (reprfunc)0,		/*tp_repr*/
-  0,			/*tp_as_number*/
-  0,			/*tp_as_sequence*/
-  0,			/*tp_as_mapping*/
-  (hashfunc)0,		/*tp_hash*/
+  (printfunc)0,			/*tp_print*/
+  0,		 		/*tp_getattr */
+  0,		 		/*tp_setattr */
+  (cmpfunc)0,			/*tp_compare*/
+  (reprfunc)0,			/*tp_repr*/
+  0,				/*tp_as_number*/
+  0,				/*tp_as_sequence*/
+  0,				/*tp_as_mapping*/
+  (hashfunc)0,			/*tp_hash*/
   (ternaryfunc)0,		/*tp_call*/
-  (reprfunc)0,		/*tp_str*/
-  
-  /* Space for future expansion */
-  0L,0L,0L,0L,
-  Otype__doc__ 		/* Documentation string */
+  (reprfunc)0,			/*tp_str*/
+  0,				/*tp_getattro */
+  0,				/*tp_setattro */
+  0,				/*tp_as_buffer */
+  Py_TPFLAGS_DEFAULT,		/*tp_flags*/
+  Otype__doc__, 		/*tp_doc */
+  0,				/*tp_traverse */
+  0,				/*tp_clear */
+  0,				/*tp_richcompare */
+  0,				/*tp_weaklistoffset */
+  PyObject_SelfIter,		/*tp_iter */
+  (iternextfunc)IO_iternext,	/*tp_iternext */
+  O_methods,			/*tp_methods */
+  O_memberlist			/*tp_members */
 };
 
 static PyObject *
@@ -570,28 +580,6 @@ I_dealloc(Iobject *self) {
   PyObject_Del(self);
 }
 
-static PyObject *
-I_getattr(Iobject *self, char *name) {
-  return Py_FindMethod(I_methods, (PyObject *)self, name);
-}
-
-static PyObject *
-I_getiter(Iobject *self)
-{
-	PyObject *myreadline = PyObject_GetAttrString((PyObject*)self,
-						      "readline");
-	PyObject *emptystring = PyString_FromString("");
-	PyObject *iter = NULL;
-	if (!myreadline || !emptystring)
-		goto finally;
-
-	iter = PyCallIter_New(myreadline, emptystring);
-  finally:
-	Py_XDECREF(myreadline);
-	Py_XDECREF(emptystring);
-	return iter;
-}
-
 
 PyDoc_STRVAR(Itype__doc__,
 "Simple type for treating strings as input file streams");
@@ -605,7 +593,7 @@ static PyTypeObject Itype = {
   /* methods */
   (destructor)I_dealloc,		/*tp_dealloc*/
   (printfunc)0,				/*tp_print*/
-  (getattrfunc)I_getattr,		/*tp_getattr*/
+  0,		 			/* tp_getattr */
   (setattrfunc)0,			/*tp_setattr*/
   (cmpfunc)0,				/*tp_compare*/
   (reprfunc)0,				/*tp_repr*/
@@ -624,8 +612,9 @@ static PyTypeObject Itype = {
   0,					/* tp_clear */
   0,					/* tp_richcompare */
   0,					/* tp_weaklistoffset */
-  (getiterfunc)I_getiter,		/* tp_iter */
-  0,					/* tp_iternext */
+  PyObject_SelfIter,			/* tp_iter */
+  (iternextfunc)IO_iternext,		/* tp_iternext */
+  I_methods				/* tp_methods */
 };
 
 static PyObject *
@@ -707,6 +696,8 @@ initcStringIO(void) {
   /* Export C API */
   Itype.ob_type=&PyType_Type;
   Otype.ob_type=&PyType_Type;
+  if (PyType_Ready(&Otype) < 0) return;
+  if (PyType_Ready(&Itype) < 0) return;
   PyDict_SetItemString(d,"cStringIO_CAPI",
 		       v = PyCObject_FromVoidPtr(&CAPI,NULL));
   Py_XDECREF(v);
