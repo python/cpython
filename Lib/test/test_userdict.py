@@ -210,9 +210,8 @@ else:
 s.update({10: 'ten', 20:'twenty'})                          # update
 verify(s[10]=='ten' and s[20]=='twenty')
 
-
-
-
-
-
-
+verify(s == {10: 'ten', 20:'twenty'})                       # cmp
+t = SeqDict()
+t[20] = 'twenty'
+t[10] = 'ten'
+verify(s == t)

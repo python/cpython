@@ -43,19 +43,20 @@ class.
 
 \begin{classdesc}{DictMixin}{}
 Mixin defining all dictionary methods for classes that already have
-a minimum dictionary interface including\method{__getitem__},
-\method{__setitem__}, \method{__delitem__}, and \method{keys}.
+a minimum dictionary interface including \method{__getitem__()},
+\method{__setitem__()}, \method{__delitem__()}, and \method{keys()}.
 
 This mixin should be used as a superclass.  Adding each of the
 above methods adds progressively more functionality.  For instance,
-the absence of \method{__delitem__} precludes only \method{pop}
-and \method{popitem}.
+defining all but \method{__delitem__} will preclude only \method{pop}
+and \method{popitem} from the full interface.
 
-While the four methods listed above are sufficient to support the
-entire dictionary interface, progessively more efficiency comes
-with defining \method{__contains__}, \method{__iter__}, and
-\method{iteritems}.
+In addition to the four base methods, progessively more efficiency
+comes with defining \method{__contains__()}, \method{__iter__()}, and
+\method{iteritems()}.
 
+Since the mixin has no knowledge of the subclass constructor, it
+does not define \method{__init__()} or \method{copy()}.
 \end{classdesc}
 
 
