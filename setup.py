@@ -1,6 +1,5 @@
 # To be fixed:
 #   Implement --disable-modules setting
-#   Don't install to site-packages, but to lib-dynload
             
 import sys, os, string, getopt
 from distutils import sysconfig
@@ -10,12 +9,40 @@ from distutils.command.build_ext import build_ext
 # This global variable is used to hold the list of modules to be disabled.
 disabled_module_list = []
 
-def find_file(path, filename):
-    for p in path:
-        fullpath = p + os.sep + filename
-        if os.path.exists(fullpath):
-            return fullpath
+def find_file(filename, std_dirs, paths):
+    """Searches for the directory where a given file is located,
+    and returns a possibly-empty list of additional directories, or None
+    if the file couldn't be found at all.
+    
+    'filename' is the name of a file, such as readline.h or libcrypto.a.
+    'std_dirs' is the list of standard system directories; if the
+        file is found in one of them, no additional directives are needed.
+    'paths' is a list of additional locations to check; if the file is
+        found in one of them, the resulting list will contain the directory.
+    """
+
+    # Check the standard locations
+    for dir in std_dirs:
+        f = os.path.join(dir, filename)
+        if os.path.exists(f): return []
+
+    # Check the additional directories
+    for dir in paths:
+        f = os.path.join(dir, filename)
+        if os.path.exists(f):
+            return [dir]
+
+    # Not found anywhere
     return None
+
+def find_library_file(compiler, libname, std_dirs, paths):
+    filename = compiler.library_filename(libname, lib_type='shared')
+    result = find_file(filename, std_dirs, paths)
+    if result is not None: return result
+    
+    filename = compiler.library_filename(libname, lib_type='static')
+    result = find_file(filename, std_dirs, paths)
+    return result
 
 def module_enabled(extlist, modname):
     """Returns whether the module 'modname' is present in the list
@@ -47,20 +74,34 @@ class PyBuildExt(build_ext):
         srcdir = os.path.normpath(srcdir)
         moddir = os.path.normpath(moddir)
 
-        for ext in self.extensions:
+        for ext in self.extensions[:]:
             ext.sources = [ os.path.join(moddir, filename)
                             for filename in ext.sources ]
             ext.include_dirs.append( '.' ) # to get config.h
-            ext.include_dirs.append( os.path.join(srcdir, './Include') )
+
+            # Try importing a module; if it's already been built statically,
+            # don't build it here
+            try:
+                __import__(ext.name)
+            except ImportError:
+                pass # Not built, so this is what we expect
+            else:
+                self.extensions.remove(ext)
             
         build_ext.build_extensions(self)
 
     def detect_modules(self):
-        # XXX this always gets an empty list -- hardwiring to
-        # a fixed list
-        lib_dirs = self.compiler.library_dirs[:]
-        lib_dirs += ['/lib', '/usr/lib', '/usr/local/lib']
-        inc_dirs = ['/usr/include', '/usr/local/include'] + self.include_dirs
+        # Ensure that /usr/local is always used 
+        if '/usr/local/lib' not in self.compiler.library_dirs:
+            self.compiler.library_dirs.append('/usr/local/lib')
+        if '/usr/local/include' not in self.compiler.include_dirs:
+            self.compiler.include_dirs.append( '/usr/local/include' )
+
+        # lib_dirs and inc_dirs are used to search for files;
+        # if a file is found in one of those directories, it can
+        # be assumed that no additional -I,-L directives are needed.
+        lib_dirs = self.compiler.library_dirs + ['/lib', '/usr/lib']
+        inc_dirs = ['/usr/include'] + self.compiler.include_dirs
         exts = []
 
         # XXX Omitted modules: gl, pure, dl, SGI-specific modules
@@ -180,9 +221,17 @@ class PyBuildExt(build_ext):
 
         # socket(2)
         # Detect SSL support for the socket module
-        if (self.compiler.find_library_file(lib_dirs, 'ssl') and
-            self.compiler.find_library_file(lib_dirs, 'crypto') ):
+        ssl_incs = find_file('openssl/ssl.h', inc_dirs,
+                             ['/usr/local/ssl/include']
+                             )
+        ssl_libs = find_library_file(self.compiler, 'ssl',lib_dirs,
+                                     ['/usr/local/ssl/lib'] )
+        
+        if (ssl_incs is not None and
+            ssl_libs is not None):
             exts.append( Extension('_socket', ['socketmodule.c'],
+                                   include_dirs = ssl_incs,
+                                   library_dirs = ssl_libs, 
                                    libraries = ['ssl', 'crypto'],
                                    define_macros = [('USE_SSL',1)] ) )
         else:
@@ -223,9 +272,11 @@ class PyBuildExt(build_ext):
         # if it is not automatically enabled there; check the generated
         # Setup.config before enabling it here.
 
-        if (self.compiler.find_library_file(lib_dirs, 'db') and
-            find_file(inc_dirs, 'db_185.h') ):
+        db_incs = find_file('db_185.h', inc_dirs, [])
+        if (db_incs is not None and
+            self.compiler.find_library_file(lib_dirs, 'db') ):
             exts.append( Extension('bsddb', ['bsddbmodule.c'],
+                                   include_dirs = db_incs,
                                    libraries = ['db'] ) )
 
         # The mpz module interfaces to the GNU Multiple Precision library.
@@ -293,7 +344,7 @@ class PyBuildExt(build_ext):
             # For SGI IRIX (tested on 5.3):
             exts.append( Extension('fpectl', ['fpectlmodule.c'],
                                    libraries=['fpe']) )
-        elif 0: # XXX
+        elif 0: # XXX how to detect SunPro?
             # For Solaris with SunPro compiler (tested on Solaris 2.5 with SunPro C 4.2):
             # (Without the compiler you don't have -lsunmath.)
             #fpectl fpectlmodule.c -R/opt/SUNWspro/lib -lsunmath -lm
@@ -330,16 +381,19 @@ class PyBuildExt(build_ext):
         #
         #    ar cr libexpat.a xmltok/*.o xmlparse/*.o
         #
-        if (self.compiler.find_library_file(lib_dirs, 'expat')):
-            defs = None
-            if find_file(inc_dirs, 'expat.h'):
-                defs = [('HAVE_EXPAT_H', 1)]
-            elif find_file(inc_dirs, 'xmlparse.h'):
-                defs = []
-            if defs is not None:
-                exts.append( Extension('pyexpat', ['pyexpat.c'],
-                                       define_macros = defs,
-                                       libraries = ['expat']) )
+        expat_defs = []
+        expat_incs = find_file('expat.h', inc_dirs, [])
+        if expat_incs is not None:
+            # expat.h was found
+            expat_defs = [('HAVE_EXPAT_H', 1)]
+        else:
+            expat_incs = find_file('xmlparse.h', inc_dirs, [])
+            
+        if (expat_incs and
+            self.compiler.find_library_file(lib_dirs, 'expat')):
+            exts.append( Extension('pyexpat', ['pyexpat.c'],
+                                   define_macros = expat_defs,
+                                   libraries = ['expat']) )
 
         # Platform-specific libraries
         plat = sys.platform
@@ -351,6 +405,13 @@ class PyBuildExt(build_ext):
             # SunOS specific modules 
             exts.append( Extension('sunaudiodev', ['sunaudiodev.c']) )
 
+        self.extensions.extend(exts)
+
+        # Call the method for detecting whether _tkinter can be compiled
+        self.detect_tkinter(inc_dirs, lib_dirs)
+        
+
+    def detect_tkinter(self, inc_dirs, lib_dirs):
         # The _tkinter module.
         #
         # The command for _tkinter is long and site specific.  Please
@@ -362,92 +423,92 @@ class PyBuildExt(build_ext):
         # done by the shell's "read" command and it may not be implemented on
         # every system.
 
+        # Assume we haven't found any of the libraries or include files
+        tcllib = tklib = tcl_includes = tk_includes = None
         for version in ['8.4', '8.3', '8.2', '8.1', '8.0']:
-            tklib = self.compiler.find_library_file(lib_dirs,
-                                                    'tk' + version )
-            tcllib = self.compiler.find_library_file(lib_dirs,
-                                                     'tcl' + version )
-            if tklib and tcllib:
+             tklib = self.compiler.find_library_file(lib_dirs,
+                                                     'tk' + version )
+             tcllib = self.compiler.find_library_file(lib_dirs,
+                                                      'tcl' + version )
+             if tklib and tcllib: 
                 # Exit the loop when we've found the Tcl/Tk libraries
                 break
-            
-        if (tcllib and tklib):
-            include_dirs = [] ; libs = [] ; defs = [] ; added_lib_dirs = []
 
-            # Determine the prefix where Tcl/Tk is installed by
-            # chopping off the 'lib' suffix.
-            prefix = os.path.dirname(tcllib)
-            L = string.split(prefix, os.sep)
-            if L[-1] == 'lib': del L[-1]
-            prefix = string.join(L, os.sep)
+        # Now check for the header files 
+        if tklib and tcllib:
+            # Check for the include files on Debian, where
+            # they're put in /usr/include/{tcl,tk}X.Y
+            debian_tcl_include = ( '/usr/include/tcl' + version )
+            debian_tk_include =  ( '/usr/include/tk'  + version )
+            tcl_includes = find_file('tcl.h', inc_dirs,
+                                     [debian_tcl_include]
+                                     )
+            tk_includes = find_file('tk.h', inc_dirs,
+                                     [debian_tk_include]
+                                     )
 
-            if prefix + os.sep + 'lib' not in lib_dirs:
-                added_lib_dirs.append( prefix + os.sep + 'lib')
+        if (tcllib is None or tklib is None and
+            tcl_includes is None or tk_includes is None):
+            # Something's missing, so give up
+            return
+        
+        # OK... everything seems to be present for Tcl/Tk.
 
-                # Check for the include files on Debian, where
-                # they're put in /usr/include/{tcl,tk}X.Y
-                debian_tcl_include = ( prefix + os.sep + 'include/tcl' +
-                                       version )
-                debian_tk_include = ( prefix + os.sep + 'include/tk' +
-                                       version )
-                if os.path.exists(debian_tcl_include):
-                    include_dirs = [debian_tcl_include, debian_tk_include]
-                else:
-                    # Fallback for non-Debian systems
-                    include_dirs = [prefix + os.sep + 'include']
+        include_dirs = [] ; libs = [] ; defs = [] ; added_lib_dirs = []
+        for dir in tcl_includes + tk_includes:
+            if dir not in include_dirs:
+                include_dirs.append(dir)
+                
+        # Check for various platform-specific directories
+        if sys.platform == 'sunos5':
+            include_dirs.append('/usr/openwin/include')
+            added_lib_dirs.append('/usr/openwin/lib')
+        elif os.path.exists('/usr/X11R6/include'):
+            include_dirs.append('/usr/X11R6/include')
+            added_lib_dirs.append('/usr/X11R6/lib')
+        elif os.path.exists('/usr/X11R5/include'):
+            include_dirs.append('/usr/X11R5/include')
+            added_lib_dirs.append('/usr/X11R5/lib')
+        else:
+            # Assume default location for X11 
+            include_dirs.append('/usr/X11/include')
+            added_lib_dirs.append('/usr/X11/lib')
 
-            # Check for various platform-specific directories
-            if sys.platform == 'sunos5':
-                include_dirs.append('/usr/openwin/include')
-                added_lib_dirs.append('/usr/openwin/lib')
-            elif os.path.exists('/usr/X11R6/include'):
-                include_dirs.append('/usr/X11R6/include')
-                added_lib_dirs.append('/usr/X11R6/lib')
-            elif os.path.exists('/usr/X11R5/include'):
-                include_dirs.append('/usr/X11R5/include')
-                added_lib_dirs.append('/usr/X11R5/lib')
-            else:
-                # Assume default form
-                include_dirs.append('/usr/X11/include')
-                added_lib_dirs.append('/usr/X11/lib')
+        # Check for Tix extension
+        if self.compiler.find_library_file(lib_dirs + added_lib_dirs, 'tix4.1.8.0'):
+            defs.append( ('WITH_TIX', 1) )
+            libs.append('tix4.1.8.0')
 
-            if self.compiler.find_library_file(lib_dirs + added_lib_dirs, 'tix4.1.8.0'):
-                defs.append( ('WITH_TIX', 1) )
-                libs.append('tix4.1.8.0')
+        # Check for BLT extension
+        if self.compiler.find_library_file(lib_dirs + added_lib_dirs, 'BLT8.0'):
+            defs.append( ('WITH_BLT', 1) )
+            libs.append('BLT8.0')
 
-            if self.compiler.find_library_file(lib_dirs + added_lib_dirs, 'BLT8.0'):
-                defs.append( ('WITH_BLT', 1) )
-                libs.append('BLT8.0')
+        # Add the Tcl/Tk libraries
+        libs.append('tk'+version)   
+        libs.append('tcl'+version)
+        
+        if sys.platform in ['aix3', 'aix4']:
+            libs.append('ld')
 
-            if sys.platform in ['aix3', 'aix4']:
-                libs.append('ld')
+        # Finally, link with the X11 libraries
+        libs.append('X11')
 
-            # X11 libraries to link with:
-            libs.append('X11')
-
-            tklib, ext = os.path.splitext(tklib)
-            tcllib, ext = os.path.splitext(tcllib)
-            tklib = os.path.basename(tklib)
-            tcllib = os.path.basename(tcllib)
-            libs.append( tklib[3:] )    # Chop off 'lib' prefix
-            libs.append( tcllib[3:] )
-            
-            exts.append( Extension('_tkinter', ['_tkinter.c', 'tkappinit.c'],
-                                   define_macros=[('WITH_APPINIT', 1)] + defs,
-                                   include_dirs = include_dirs,
-                                   libraries = libs,
-                                   library_dirs = added_lib_dirs,
-                                   )
-                         )
-        # XXX handle these
+        ext = Extension('_tkinter', ['_tkinter.c', 'tkappinit.c'],
+                        define_macros=[('WITH_APPINIT', 1)] + defs,
+                        include_dirs = include_dirs,
+                        libraries = libs,
+                        library_dirs = added_lib_dirs,
+                        )
+        self.extensions.append(ext)
+        
+        # XXX handle these, but how to detect?
         # *** Uncomment and edit for PIL (TkImaging) extension only:
         #	-DWITH_PIL -I../Extensions/Imaging/libImaging  tkImaging.c \
         # *** Uncomment and edit for TOGL extension only:
         #	-DWITH_TOGL togl.c \
         # *** Uncomment these for TOGL extension only:
         #	-lGL -lGLU -lXext -lXmu \
-
-        self.extensions.extend(exts)
 
 def main():
     setup(name = 'Python standard library',
