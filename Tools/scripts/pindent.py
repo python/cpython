@@ -73,6 +73,10 @@
 # - realign comments
 # - optionally do much more thorough reformatting, a la C indent
 
+# Defaults
+STEPSIZE = 8
+TABSIZE = 8
+
 import os
 import regex
 import string
@@ -90,7 +94,7 @@ start = 'if', 'while', 'for', 'try', 'def', 'class'
 class PythonIndenter:
 
 	def __init__(self, fpi = sys.stdin, fpo = sys.stdout,
-		     indentsize = 8, tabsize = 8):
+		     indentsize = STEPSIZE, tabsize = TABSIZE):
 		self.fpi = fpi
 		self.fpo = fpo
 		self.indentsize = indentsize
@@ -273,17 +277,141 @@ class PythonIndenter:
 
 # end class PythonIndenter
 
+# Simplified user interface
+# - xxx_filter(input, output): read and write file objects
+# - xxx_string(s): take and return string object
+# - xxx_file(filename): process file in place, return true iff changed
+
+def complete_filter(input= sys.stdin, output = sys.stdout,
+		    stepsize = STEPSIZE, tabsize = TABSIZE):
+	pi = PythonIndenter(input, output, stepsize, tabsize)
+	pi.complete()
+# end def complete_filter
+
+def reformat_filter(input = sys.stdin, output = sys.stdout,
+		    stepsize = STEPSIZE, tabsize = TABSIZE):
+	pi = PythonIndenter(input, output, stepsize, tabsize)
+	pi.reformat()
+# end def reformat
+
+class StringReader:
+	def __init__(self, buf):
+		self.buf = buf
+		self.pos = 0
+		self.len = len(self.buf)
+	# end def __init__
+	def read(self, n = 0):
+		if n <= 0:
+			n = self.len - self.pos
+		else:
+			n = min(n, self.len - self.pos)
+		# end if
+		r = self.buf[self.pos : self.pos + n]
+		self.pos = self.pos + n
+		return r
+	# end def read
+	def readline(self):
+		i = string.find(self.buf, '\n', self.pos)
+		return self.read(i + 1 - self.pos)
+	# end def readline
+	def readlines(self):
+		lines = []
+		line = self.readline()
+		while line:
+			lines.append(line)
+			line = self.readline()
+		# end while
+		return lines
+	# end def readlines
+	# seek/tell etc. are left as an exercise for the reader
+# end class StringReader
+
+class StringWriter:
+	def __init__(self):
+		self.buf = ''
+	# end def __init__
+	def write(self, s):
+		self.buf = self.buf + s
+	# end def write
+	def getvalue(self):
+		return self.buf
+	# end def getvalue
+# end class StringWriter
+
+def complete_string(source, stepsize = STEPSIZE, tabsize = TABSIZE):
+	input = StringReader(source)
+	output = StringWriter()
+	pi = PythonIndenter(input, output, stepsize, tabsize)
+	pi.complete()
+	return output.getvalue()
+# end def complete_string
+
+def reformat_string(source, stepsize = STEPSIZE, tabsize = TABSIZE):
+	input = StringReader(source)
+	output = StringWriter()
+	pi = PythonIndenter(input, output, stepsize, tabsize)
+	pi.reformat()
+	return output.getvalue()
+# end def reformat_string
+
+def complete_file(filename, stepsize = STEPSIZE, tabsize = TABSIZE):
+	source = open(filename, 'r').read()
+	result = complete_string(source, stepsize, tabsize)
+	if source == result: return 0
+	# end if
+	import os
+	try: os.rename(filename, filename + '~')
+	except os.error: pass
+	# end try
+	f = open(filename, 'w')
+	f.write(result)
+	f.close()
+	return 1
+# end def complete_file
+
+def reformat_file(filename, stepsize = STEPSIZE, tabsize = TABSIZE):
+	source = open(filename, 'r').read()
+	result = reformat_string(source, stepsize, tabsize)
+	if source == result: return 0
+	# end if
+	import os
+	os.rename(filename, filename + '~')
+	f = open(filename, 'w')
+	f.write(result)
+	f.close()
+	return 1
+# end def reformat_file
+
+# Test program when called as a script
+
+usage = """
+usage: pindent (-c|-r) [-s stepsize] [-t tabsize] [file] ...
+-c         : complete a correctly indented program (add #end directives)
+-r         : reformat a completed program (use #end directives)
+-s stepsize: indentation step (default %(STEPSIZE)d)
+-t tabsize : the worth in spaces of a tab (default %(TABSIZE)d)
+[file] ... : files are changed in place, with backups in file~
+If no files are specified or a single - is given,
+the program acts as a filter (reads stdin, writes stdout).
+""" % vars()
+
 def test():
 	import getopt
-	opts, args = getopt.getopt(sys.argv[1:], 'crs:t:')
+	try:
+		opts, args = getopt.getopt(sys.argv[1:], 'crs:t:')
+	except getopt.error, msg:
+		sys.stderr.write('Error: %s\n' % msg)
+		sys.stderr.write(usage)
+		sys.exit(2)
+	# end try
 	action = None
-	stepsize = 8
-	tabsize = 8
+	stepsize = STEPSIZE
+	tabsize = TABSIZE
 	for o, a in opts:
 		if o == '-c':
-			action = PythonIndenter.complete
+			action = 'complete'
 		elif o == '-r':
-			action = PythonIndenter.reformat
+			action = 'reformat'
 		elif o == '-s':
 			stepsize = string.atoi(a)
 		elif o == '-t':
@@ -291,22 +419,20 @@ def test():
 		# end if
 	# end for
 	if not action:
-		print 'You must specify -c(omplete) or -r(eformat)'
+		sys.stderr.write(
+			'You must specify -c(omplete) or -r(eformat)\n')
+		sys.stderr.write(usage)
 		sys.exit(2)
 	# end if
-	if not args: args = ['-']
+	if not args or args == ['-']:
+		action = eval(action + '_filter')
+		action(sys.stdin, sys.stdout, stepsize, tabsize)
+	else:
+		action = eval(action + '_file')
+		for file in args:
+			action(file, stepsize, tabsize)
+		# end for
 	# end if
-	for file in args:
-		if file == '-':
-			fp = sys.stdin
-		else:
-			fp = open(file, 'r')
-		# end if
-		pi = PythonIndenter(fp, sys.stdout, stepsize, tabsize)
-		action(pi)
-		if fp != sys.stdin: fp.close()
-		# end if
-	# end for
 # end def test
 
 if __name__ == '__main__':
