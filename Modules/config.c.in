@@ -1,0 +1,86 @@
+/* Configuration containing EVERYTHING */
+
+/* At CWI, this implies stdwin, audio, Amoeba and the NASA Panel Library */
+#define USE_AUDIO
+#define USE_AMOEBA
+#define USE_PANEL
+
+static int use_stdwin;
+
+/*ARGSUSED*/
+void
+initargs(p_argc, p_argv)
+	int *p_argc;
+	char ***p_argv;
+{
+	extern char *getenv();
+	char *display;
+	
+	/* Assume we have to initialize stdwin if either of the following
+	   conditions holds:
+	   - the environment variable $DISPLAY is set
+	   - there is an argument "-display" somewhere
+	*/
+	
+	display = getenv("DISPLAY");
+	if (display != 0)
+		use_stdwin = 1;
+	else {
+		int i;
+		/* Scan through the arguments looking for "-display" */
+		for (i = 1; i < *p_argc; i++) {
+			if (strcmp((*p_argv)[i], "-display") == 0) {
+				use_stdwin = 1;
+				break;
+			}
+		}
+	}
+	
+	if (use_stdwin)
+		winitargs(p_argc, p_argv);
+}
+
+void
+initcalls()
+{
+	inittime();
+	initmath();
+	initposix();
+#ifdef USE_AUDIO
+	initaudio();
+#endif
+#ifdef USE_AMOEBA
+	initamoeba();
+#endif
+	initgl();
+#ifdef USE_PANEL
+	initpanel();
+#endif
+	if (use_stdwin)
+		initstdwin();
+}
+
+void
+donecalls()
+{
+	if (use_stdwin)
+		wdone();
+#ifdef USE_AUDIO
+	asa_done();
+#endif
+}
+
+#ifndef PYTHONPATH
+#define PYTHONPATH ".:/usr/local/lib/python"
+#endif
+
+extern char *getenv();
+
+char *
+getpythonpath()
+{
+	char *path = getenv("PYTHONPATH");
+	if (path == 0)
+		path = PYTHONPATH;
+	return path;
+}
