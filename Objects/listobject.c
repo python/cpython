@@ -623,11 +623,8 @@ listinsert(PyListObject *self, PyObject *args)
 }
 
 static PyObject *
-listappend(PyListObject *self, PyObject *args)
+listappend(PyListObject *self, PyObject *v)
 {
-	PyObject *v;
-	if (!PyArg_ParseTuple(args, "O:append", &v))
-		return NULL;
 	return ins(self, (int) self->ob_size, v);
 }
 
@@ -702,13 +699,8 @@ list_inplace_concat(PyListObject *self, PyObject *other)
 }
 
 static PyObject *
-listextend(PyListObject *self, PyObject *args)
+listextend(PyListObject *self, PyObject *b)
 {
-
-	PyObject *b;
-	
-	if (!PyArg_ParseTuple(args, "O:extend", &b))
-		return NULL;
 
 	b = PySequence_Fast(b, "list.extend() argument must be iterable");
 	if (!b)
@@ -1344,10 +1336,8 @@ _listreverse(PyListObject *self)
 }
 
 static PyObject *
-listreverse(PyListObject *self, PyObject *args)
+listreverse(PyListObject *self)
 {
-	if (!PyArg_ParseTuple(args, ":reverse"))
-		return NULL;
 	_listreverse(self);
 	Py_INCREF(Py_None);
 	return Py_None;
@@ -1390,13 +1380,10 @@ PyList_AsTuple(PyObject *v)
 }
 
 static PyObject *
-listindex(PyListObject *self, PyObject *args)
+listindex(PyListObject *self, PyObject *v)
 {
 	int i;
-	PyObject *v;
 
-	if (!PyArg_ParseTuple(args, "O:index", &v))
-		return NULL;
 	for (i = 0; i < self->ob_size; i++) {
 		int cmp = PyObject_RichCompareBool(self->ob_item[i], v, Py_EQ);
 		if (cmp > 0)
@@ -1409,14 +1396,11 @@ listindex(PyListObject *self, PyObject *args)
 }
 
 static PyObject *
-listcount(PyListObject *self, PyObject *args)
+listcount(PyListObject *self, PyObject *v)
 {
 	int count = 0;
 	int i;
-	PyObject *v;
 
-	if (!PyArg_ParseTuple(args, "O:count", &v))
-		return NULL;
 	for (i = 0; i < self->ob_size; i++) {
 		int cmp = PyObject_RichCompareBool(self->ob_item[i], v, Py_EQ);
 		if (cmp > 0)
@@ -1428,13 +1412,10 @@ listcount(PyListObject *self, PyObject *args)
 }
 
 static PyObject *
-listremove(PyListObject *self, PyObject *args)
+listremove(PyListObject *self, PyObject *v)
 {
 	int i;
-	PyObject *v;
 
-	if (!PyArg_ParseTuple(args, "O:remove", &v))
-		return NULL;
 	for (i = 0; i < self->ob_size; i++) {
 		int cmp = PyObject_RichCompareBool(self->ob_item[i], v, Py_EQ);
 		if (cmp > 0) {
@@ -1661,14 +1642,14 @@ static char sort_doc[] =
 "L.sort([cmpfunc]) -- sort *IN PLACE*; if given, cmpfunc(x, y) -> -1, 0, 1";
 
 static PyMethodDef list_methods[] = {
-	{"append",	(PyCFunction)listappend,  METH_VARARGS, append_doc},
+	{"append",	(PyCFunction)listappend,  METH_O, append_doc},
 	{"insert",	(PyCFunction)listinsert,  METH_VARARGS, insert_doc},
-	{"extend",      (PyCFunction)listextend,  METH_VARARGS, extend_doc},
+	{"extend",      (PyCFunction)listextend,  METH_O, extend_doc},
 	{"pop",		(PyCFunction)listpop, 	  METH_VARARGS, pop_doc},
-	{"remove",	(PyCFunction)listremove,  METH_VARARGS, remove_doc},
-	{"index",	(PyCFunction)listindex,   METH_VARARGS, index_doc},
-	{"count",	(PyCFunction)listcount,   METH_VARARGS, count_doc},
-	{"reverse",	(PyCFunction)listreverse, METH_VARARGS, reverse_doc},
+	{"remove",	(PyCFunction)listremove,  METH_O, remove_doc},
+	{"index",	(PyCFunction)listindex,   METH_O, index_doc},
+	{"count",	(PyCFunction)listcount,   METH_O, count_doc},
+	{"reverse",	(PyCFunction)listreverse, METH_NOARGS, reverse_doc},
 	{"sort",	(PyCFunction)listsort, 	  METH_VARARGS, sort_doc},
 	{NULL,		NULL}		/* sentinel */
 };
@@ -1749,13 +1730,13 @@ immutable_list_op(void)
 }
 
 static PyMethodDef immutable_list_methods[] = {
-	{"append",	(PyCFunction)immutable_list_op},
-	{"insert",	(PyCFunction)immutable_list_op},
-	{"remove",	(PyCFunction)immutable_list_op},
-	{"index",	(PyCFunction)listindex},
-	{"count",	(PyCFunction)listcount},
-	{"reverse",	(PyCFunction)immutable_list_op},
-	{"sort",	(PyCFunction)immutable_list_op},
+	{"append",	(PyCFunction)immutable_list_op, METH_VARARGS},
+	{"insert",	(PyCFunction)immutable_list_op, METH_VARARGS},
+	{"remove",	(PyCFunction)immutable_list_op, METH_VARARGS},
+	{"index",	(PyCFunction)listindex,         METH_O},
+	{"count",	(PyCFunction)listcount,         METH_O},
+	{"reverse",	(PyCFunction)immutable_list_op, METH_VARARGS},
+	{"sort",	(PyCFunction)immutable_list_op, METH_VARARGS},
 	{NULL,		NULL}		/* sentinel */
 };
 

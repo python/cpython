@@ -189,11 +189,9 @@ file_repr(PyFileObject *f)
 }
 
 static PyObject *
-file_close(PyFileObject *f, PyObject *args)
+file_close(PyFileObject *f)
 {
 	int sts = 0;
-	if (!PyArg_NoArgs(args))
-		return NULL;
 	if (f->f_fp != NULL) {
 		if (f->f_close != NULL) {
 			Py_BEGIN_ALLOW_THREADS
@@ -386,14 +384,12 @@ onioerror:
 #endif /* HAVE_FTRUNCATE */
 
 static PyObject *
-file_tell(PyFileObject *f, PyObject *args)
+file_tell(PyFileObject *f)
 {
 	Py_off_t pos;
 
 	if (f->f_fp == NULL)
 		return err_closed();
-	if (!PyArg_NoArgs(args))
-		return NULL;
 	Py_BEGIN_ALLOW_THREADS
 	errno = 0;
 	pos = _portable_ftell(f->f_fp);
@@ -411,24 +407,20 @@ file_tell(PyFileObject *f, PyObject *args)
 }
 
 static PyObject *
-file_fileno(PyFileObject *f, PyObject *args)
+file_fileno(PyFileObject *f)
 {
 	if (f->f_fp == NULL)
 		return err_closed();
-	if (!PyArg_NoArgs(args))
-		return NULL;
 	return PyInt_FromLong((long) fileno(f->f_fp));
 }
 
 static PyObject *
-file_flush(PyFileObject *f, PyObject *args)
+file_flush(PyFileObject *f)
 {
 	int res;
 
 	if (f->f_fp == NULL)
 		return err_closed();
-	if (!PyArg_NoArgs(args))
-		return NULL;
 	Py_BEGIN_ALLOW_THREADS
 	errno = 0;
 	res = fflush(f->f_fp);
@@ -443,13 +435,11 @@ file_flush(PyFileObject *f, PyObject *args)
 }
 
 static PyObject *
-file_isatty(PyFileObject *f, PyObject *args)
+file_isatty(PyFileObject *f)
 {
 	long res;
 	if (f->f_fp == NULL)
 		return err_closed();
-	if (!PyArg_NoArgs(args))
-		return NULL;
 	Py_BEGIN_ALLOW_THREADS
 	res = isatty((int)fileno(f->f_fp));
 	Py_END_ALLOW_THREADS
@@ -968,12 +958,9 @@ file_readline(PyFileObject *f, PyObject *args)
 }
 
 static PyObject *
-file_xreadlines(PyFileObject *f, PyObject *args)
+file_xreadlines(PyFileObject *f)
 {
 	static PyObject* xreadlines_function = NULL;
-
-	if (!PyArg_ParseTuple(args, ":xreadlines"))
-		return NULL;
 
 	if (!xreadlines_function) {
 		PyObject *xreadlines_module =
@@ -1248,22 +1235,22 @@ file_writelines(PyFileObject *f, PyObject *args)
 }
 
 static PyMethodDef file_methods[] = {
-	{"readline",	(PyCFunction)file_readline, 1},
-	{"read",	(PyCFunction)file_read, 1},
-	{"write",	(PyCFunction)file_write, 0},
-	{"fileno",	(PyCFunction)file_fileno, 0},
-	{"seek",	(PyCFunction)file_seek, 1},
+	{"readline",	(PyCFunction)file_readline,   METH_VARARGS},
+	{"read",	(PyCFunction)file_read,       METH_VARARGS},
+	{"write",	(PyCFunction)file_write,      METH_OLDARGS},
+	{"fileno",	(PyCFunction)file_fileno,     METH_NOARGS},
+	{"seek",	(PyCFunction)file_seek,       METH_VARARGS},
 #ifdef HAVE_FTRUNCATE
-	{"truncate",	(PyCFunction)file_truncate, 1},
+	{"truncate",	(PyCFunction)file_truncate,   METH_VARARGS},
 #endif
-	{"tell",	(PyCFunction)file_tell, 0},
-	{"readinto",	(PyCFunction)file_readinto, 0},
-	{"readlines",	(PyCFunction)file_readlines, 1},
-	{"xreadlines",	(PyCFunction)file_xreadlines, 1},
-	{"writelines",	(PyCFunction)file_writelines, 0},
-	{"flush",	(PyCFunction)file_flush, 0},
-	{"close",	(PyCFunction)file_close, 0},
-	{"isatty",	(PyCFunction)file_isatty, 0},
+	{"tell",	(PyCFunction)file_tell,       METH_NOARGS},
+	{"readinto",	(PyCFunction)file_readinto,   METH_OLDARGS},
+	{"readlines",	(PyCFunction)file_readlines,  METH_VARARGS},
+	{"xreadlines",	(PyCFunction)file_xreadlines, METH_NOARGS},
+	{"writelines",	(PyCFunction)file_writelines, METH_O},
+	{"flush",	(PyCFunction)file_flush,      METH_NOARGS},
+	{"close",	(PyCFunction)file_close,      METH_NOARGS},
+	{"isatty",	(PyCFunction)file_isatty,     METH_NOARGS},
 	{NULL,		NULL}		/* sentinel */
 };
 

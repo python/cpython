@@ -875,13 +875,11 @@ static PyMappingMethods dict_as_mapping = {
 };
 
 static PyObject *
-dict_keys(register dictobject *mp, PyObject *args)
+dict_keys(register dictobject *mp)
 {
 	register PyObject *v;
 	register int i, j, n;
 
-	if (!PyArg_NoArgs(args))
-		return NULL;
   again:
 	n = mp->ma_used;
 	v = PyList_New(n);
@@ -906,13 +904,11 @@ dict_keys(register dictobject *mp, PyObject *args)
 }
 
 static PyObject *
-dict_values(register dictobject *mp, PyObject *args)
+dict_values(register dictobject *mp)
 {
 	register PyObject *v;
 	register int i, j, n;
 
-	if (!PyArg_NoArgs(args))
-		return NULL;
   again:
 	n = mp->ma_used;
 	v = PyList_New(n);
@@ -937,14 +933,12 @@ dict_values(register dictobject *mp, PyObject *args)
 }
 
 static PyObject *
-dict_items(register dictobject *mp, PyObject *args)
+dict_items(register dictobject *mp)
 {
 	register PyObject *v;
 	register int i, j, n;
 	PyObject *item, *key, *value;
 
-	if (!PyArg_NoArgs(args))
-		return NULL;
 	/* Preallocate the list of tuples, to avoid allocations during
 	 * the loop over the items, which could trigger GC, which
 	 * could resize the dict. :-(
@@ -987,12 +981,8 @@ dict_items(register dictobject *mp, PyObject *args)
 }
 
 static PyObject *
-dict_update(PyObject *mp, PyObject *args)
+dict_update(PyObject *mp, PyObject *other)
 {
-	PyObject *other;
-
-	if (!PyArg_ParseTuple(args, "O:update", &other))
-		return NULL;
 	if (PyDict_Update(mp, other) < 0)
 		return NULL;
 	Py_INCREF(Py_None);
@@ -1099,10 +1089,8 @@ PyDict_Merge(PyObject *a, PyObject *b, int override)
 }
 
 static PyObject *
-dict_copy(register dictobject *mp, PyObject *args)
+dict_copy(register dictobject *mp)
 {
-	if (!PyArg_Parse(args, ""))
-		return NULL;
 	return PyDict_Copy((PyObject*)mp);
 }
 
@@ -1155,7 +1143,7 @@ PyDict_Keys(PyObject *mp)
 		PyErr_BadInternalCall();
 		return NULL;
 	}
-	return dict_keys((dictobject *)mp, (PyObject *)NULL);
+	return dict_keys((dictobject *)mp);
 }
 
 PyObject *
@@ -1165,7 +1153,7 @@ PyDict_Values(PyObject *mp)
 		PyErr_BadInternalCall();
 		return NULL;
 	}
-	return dict_values((dictobject *)mp, (PyObject *)NULL);
+	return dict_values((dictobject *)mp);
 }
 
 PyObject *
@@ -1175,7 +1163,7 @@ PyDict_Items(PyObject *mp)
 		PyErr_BadInternalCall();
 		return NULL;
 	}
-	return dict_items((dictobject *)mp, (PyObject *)NULL);
+	return dict_items((dictobject *)mp);
 }
 
 /* Subroutine which returns the smallest key in a for which b's value
@@ -1366,13 +1354,10 @@ dict_richcompare(PyObject *v, PyObject *w, int op)
  }
 
 static PyObject *
-dict_has_key(register dictobject *mp, PyObject *args)
+dict_has_key(register dictobject *mp, PyObject *key)
 {
-	PyObject *key;
 	long hash;
 	register long ok;
-	if (!PyArg_ParseTuple(args, "O:has_key", &key))
-		return NULL;
 #ifdef CACHE_HASH
 	if (!PyString_Check(key) ||
 	    (hash = ((PyStringObject *) key)->ob_shash) == -1)
@@ -1447,24 +1432,20 @@ dict_setdefault(register dictobject *mp, PyObject *args)
 
 
 static PyObject *
-dict_clear(register dictobject *mp, PyObject *args)
+dict_clear(register dictobject *mp)
 {
-	if (!PyArg_NoArgs(args))
-		return NULL;
 	PyDict_Clear((PyObject *)mp);
 	Py_INCREF(Py_None);
 	return Py_None;
 }
 
 static PyObject *
-dict_popitem(dictobject *mp, PyObject *args)
+dict_popitem(dictobject *mp)
 {
 	int i = 0;
 	dictentry *ep;
 	PyObject *res;
 
-	if (!PyArg_NoArgs(args))
-		return NULL;
 	/* Allocate the result tuple before checking the size.  Believe it
 	 * or not, this allocation could trigger a garbage collection which
 	 * could empty the dict, so if we checked the size first and that
@@ -1573,26 +1554,20 @@ select_item(PyObject *key, PyObject *value)
 }
 
 static PyObject *
-dict_iterkeys(dictobject *dict, PyObject *args)
+dict_iterkeys(dictobject *dict)
 {
-	if (!PyArg_ParseTuple(args, ""))
-		return NULL;
 	return dictiter_new(dict, select_key);
 }
 
 static PyObject *
-dict_itervalues(dictobject *dict, PyObject *args)
+dict_itervalues(dictobject *dict)
 {
-	if (!PyArg_ParseTuple(args, ""))
-		return NULL;
 	return dictiter_new(dict, select_value);
 }
 
 static PyObject *
-dict_iteritems(dictobject *dict, PyObject *args)
+dict_iteritems(dictobject *dict)
 {
-	if (!PyArg_ParseTuple(args, ""))
-		return NULL;
 	return dictiter_new(dict, select_item);
 }
 
@@ -1638,31 +1613,31 @@ static char iteritems__doc__[] =
 "D.iteritems() -> an iterator over the (key, value) items of D";
 
 static PyMethodDef mapp_methods[] = {
-	{"has_key",	(PyCFunction)dict_has_key,      METH_VARARGS,
+	{"has_key",	(PyCFunction)dict_has_key,      METH_O,
 	 has_key__doc__},
 	{"get",         (PyCFunction)dict_get,          METH_VARARGS,
 	 get__doc__},
 	{"setdefault",  (PyCFunction)dict_setdefault,   METH_VARARGS,
 	 setdefault_doc__},
-	{"popitem",	(PyCFunction)dict_popitem,	METH_OLDARGS,
+	{"popitem",	(PyCFunction)dict_popitem,	METH_NOARGS,
 	 popitem__doc__},
-	{"keys",	(PyCFunction)dict_keys,		METH_OLDARGS,
+	{"keys",	(PyCFunction)dict_keys,		METH_NOARGS,
 	keys__doc__},
-	{"items",	(PyCFunction)dict_items,	METH_OLDARGS,
+	{"items",	(PyCFunction)dict_items,	METH_NOARGS,
 	 items__doc__},
-	{"values",	(PyCFunction)dict_values,	METH_OLDARGS,
+	{"values",	(PyCFunction)dict_values,	METH_NOARGS,
 	 values__doc__},
-	{"update",	(PyCFunction)dict_update,	METH_VARARGS,
+	{"update",	(PyCFunction)dict_update,	METH_O,
 	 update__doc__},
-	{"clear",	(PyCFunction)dict_clear,	METH_OLDARGS,
+	{"clear",	(PyCFunction)dict_clear,	METH_NOARGS,
 	 clear__doc__},
-	{"copy",	(PyCFunction)dict_copy,		METH_OLDARGS,
+	{"copy",	(PyCFunction)dict_copy,		METH_NOARGS,
 	 copy__doc__},
-	{"iterkeys",	(PyCFunction)dict_iterkeys,	METH_VARARGS,
+	{"iterkeys",	(PyCFunction)dict_iterkeys,	METH_NOARGS,
 	 iterkeys__doc__},
-	{"itervalues",	(PyCFunction)dict_itervalues,	METH_VARARGS,
+	{"itervalues",	(PyCFunction)dict_itervalues,	METH_NOARGS,
 	 itervalues__doc__},
-	{"iteritems",	(PyCFunction)dict_iteritems,	METH_VARARGS,
+	{"iteritems",	(PyCFunction)dict_iteritems,	METH_NOARGS,
 	 iteritems__doc__},
 	{NULL,		NULL}	/* sentinel */
 };

@@ -601,12 +601,8 @@ static PySequenceMethods proxy_as_sequence = {
 };
 
 static PyObject *
-proxy_has_key(proxyobject *pp, PyObject *args)
+proxy_has_key(proxyobject *pp, PyObject *key)
 {
-	PyObject *key;
-
-	if (!PyArg_ParseTuple(args, "O:has_key", &key))
-		return NULL;
 	return PyInt_FromLong(PySequence_Contains(pp->dict, key));
 }
 
@@ -621,44 +617,36 @@ proxy_get(proxyobject *pp, PyObject *args)
 }
 
 static PyObject *
-proxy_keys(proxyobject *pp, PyObject *args)
+proxy_keys(proxyobject *pp)
 {
-	if (!PyArg_ParseTuple(args, ":keys"))
-		return NULL;
 	return PyMapping_Keys(pp->dict);
 }
 
 static PyObject *
-proxy_values(proxyobject *pp, PyObject *args)
+proxy_values(proxyobject *pp)
 {
-	if (!PyArg_ParseTuple(args, ":values"))
-		return NULL;
 	return PyMapping_Values(pp->dict);
 }
 
 static PyObject *
-proxy_items(proxyobject *pp, PyObject *args)
+proxy_items(proxyobject *pp)
 {
-	if (!PyArg_ParseTuple(args, ":items"))
-		return NULL;
 	return PyMapping_Items(pp->dict);
 }
 
 static PyObject *
-proxy_copy(proxyobject *pp, PyObject *args)
+proxy_copy(proxyobject *pp)
 {
-	if (!PyArg_ParseTuple(args, ":copy"))
-		return NULL;
 	return PyObject_CallMethod(pp->dict, "copy", NULL);
 }
 
 static PyMethodDef proxy_methods[] = {
-	{"has_key", (PyCFunction)proxy_has_key, METH_VARARGS, "XXX"},
+	{"has_key", (PyCFunction)proxy_has_key, METH_O, "XXX"},
 	{"get",	    (PyCFunction)proxy_get,     METH_VARARGS, "XXX"},
-	{"keys",    (PyCFunction)proxy_keys,    METH_VARARGS, "XXX"},
-	{"values",  (PyCFunction)proxy_values,  METH_VARARGS, "XXX"},
-	{"items",   (PyCFunction)proxy_items,   METH_VARARGS, "XXX"},
-	{"copy",    (PyCFunction)proxy_copy,    METH_VARARGS, "XXX"},
+	{"keys",    (PyCFunction)proxy_keys,    METH_NOARGS, "XXX"},
+	{"values",  (PyCFunction)proxy_values,  METH_NOARGS, "XXX"},
+	{"items",   (PyCFunction)proxy_items,   METH_NOARGS, "XXX"},
+	{"copy",    (PyCFunction)proxy_copy,    METH_NOARGS, "XXX"},
 	{0}
 };
 

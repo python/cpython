@@ -68,9 +68,9 @@ PySys_SetObject(char *name, PyObject *v)
 }
 
 static PyObject *
-sys_displayhook(PyObject *self, PyObject *args)
+sys_displayhook(PyObject *self, PyObject *o)
 {
-	PyObject *o, *outf;
+	PyObject *outf;
 	PyInterpreterState *interp = PyThreadState_Get()->interp;
 	PyObject *modules = interp->modules;
 	PyObject *builtins = PyDict_GetItemString(modules, "__builtin__");
@@ -79,10 +79,6 @@ sys_displayhook(PyObject *self, PyObject *args)
 		PyErr_SetString(PyExc_RuntimeError, "lost __builtin__");
 		return NULL;
 	}
-
-	/* parse arguments */
-	if (!PyArg_ParseTuple(args, "O:displayhook", &o))
-		return NULL;
 
 	/* Print value except if None */
 	/* After printing, also assign to '_' */
@@ -133,11 +129,9 @@ static char excepthook_doc[] =
 "Handle an exception by displaying it with a traceback on sys.stderr.\n";
 
 static PyObject *
-sys_exc_info(PyObject *self, PyObject *args)
+sys_exc_info(PyObject *self)
 {
 	PyThreadState *tstate;
-	if (!PyArg_ParseTuple(args, ":exc_info"))
-		return NULL;
 	tstate = PyThreadState_Get();
 	return Py_BuildValue(
 		"(OOO)",
@@ -171,10 +165,8 @@ If it is another kind of object, it will be printed and the system\n\
 exit status will be one (i.e., failure).";
 
 static PyObject *
-sys_getdefaultencoding(PyObject *self, PyObject *args)
+sys_getdefaultencoding(PyObject *self)
 {
-	if (!PyArg_ParseTuple(args, ":getdefaultencoding"))
-		return NULL;
 	return PyString_FromString(PyUnicode_GetDefaultEncoding());
 }
 
@@ -385,10 +377,8 @@ stack and crashing Python.  The highest possible limit is platform-\n\
 dependent.";
 
 static PyObject *
-sys_getrecursionlimit(PyObject *self, PyObject *args)
+sys_getrecursionlimit(PyObject *self)
 {
-	if (!PyArg_ParseTuple(args, ":getrecursionlimit"))
-		return NULL;
 	return PyInt_FromLong(Py_GetRecursionLimit());
 }
 
@@ -427,8 +417,6 @@ static PyObject *
 sys_getdlopenflags(PyObject *self, PyObject *args)
 {
         PyThreadState *tstate = PyThreadState_Get();
-	if (!PyArg_ParseTuple(args, ":getdlopenflags"))
-		return NULL;
         if (!tstate)
 		return NULL;
         return PyInt_FromLong(tstate->interp->dlopenflags);
@@ -468,11 +456,9 @@ sys_getrefcount(PyObject *self, PyObject *args)
 
 #ifdef Py_TRACE_REFS
 static PyObject *
-sys_gettotalrefcount(PyObject *self, PyObject *args)
+sys_gettotalrefcount(PyObject *self)
 {
 	extern long _Py_RefTotal;
-	if (!PyArg_ParseTuple(args, ":gettotalrefcount"))
-		return NULL;
 	return PyInt_FromLong(_Py_RefTotal);
 }
 
@@ -486,12 +472,10 @@ temporary reference in the argument list, so it is at least 2.";
 
 #ifdef COUNT_ALLOCS
 static PyObject *
-sys_getcounts(PyObject *self, PyObject *args)
+sys_getcounts(PyObject *self)
 {
 	extern PyObject *get_counts(void);
 
-	if (!PyArg_ParseTuple(args, ":getcounts"))
-		return NULL;
 	return get_counts();
 }
 #endif
@@ -542,45 +526,45 @@ extern PyObject *_Py_GetDXProfile(PyObject *,  PyObject *);
 
 static PyMethodDef sys_methods[] = {
 	/* Might as well keep this in alphabetic order */
-	{"displayhook",	sys_displayhook, 1, displayhook_doc},
-	{"exc_info",	sys_exc_info, 1, exc_info_doc},
-	{"excepthook",	sys_excepthook, 1, excepthook_doc},
-	{"exit",	sys_exit, 0, exit_doc},
-	{"getdefaultencoding", sys_getdefaultencoding, 1,
+	{"displayhook",	sys_displayhook, METH_O, displayhook_doc},
+	{"exc_info",	(PyCFunction)sys_exc_info, METH_NOARGS, exc_info_doc},
+	{"excepthook",	sys_excepthook, METH_VARARGS, excepthook_doc},
+	{"exit",	sys_exit, METH_OLDARGS, exit_doc},
+	{"getdefaultencoding", (PyCFunction)sys_getdefaultencoding, METH_NOARGS,
 	 getdefaultencoding_doc}, 
 #ifdef HAVE_DLOPEN
-        {"getdlopenflags", sys_getdlopenflags, 1, 
-         getdlopenflags_doc},
+	{"getdlopenflags", (PyCFunction)sys_getdlopenflags, METH_NOARGS, 
+	 getdlopenflags_doc},
 #endif
 #ifdef COUNT_ALLOCS
-	{"getcounts",	sys_getcounts, 1},
+	{"getcounts",	(PyCFunction)sys_getcounts, METH_NOARGS},
 #endif
 #ifdef DYNAMIC_EXECUTION_PROFILE
-	{"getdxp",	_Py_GetDXProfile, 1},
+	{"getdxp",	_Py_GetDXProfile, METH_VARARGS},
 #endif
 #ifdef Py_TRACE_REFS
-	{"getobjects",	_Py_GetObjects, 1},
-	{"gettotalrefcount", sys_gettotalrefcount, 1},
+	{"getobjects",	_Py_GetObjects, METH_VARARGS},
+	{"gettotalrefcount", (PyCFunction)sys_gettotalrefcount, METH_NOARGS},
 #endif
-	{"getrefcount",	sys_getrefcount, 1, getrefcount_doc},
-	{"getrecursionlimit", sys_getrecursionlimit, 1,
+	{"getrefcount",	sys_getrefcount, METH_VARARGS, getrefcount_doc},
+	{"getrecursionlimit", (PyCFunction)sys_getrecursionlimit, METH_NOARGS,
 	 getrecursionlimit_doc},
-	{"_getframe", sys_getframe, 1, getframe_doc},
+	{"_getframe", sys_getframe, METH_VARARGS, getframe_doc},
 #ifdef USE_MALLOPT
-	{"mdebug",	sys_mdebug, 1},
+	{"mdebug",	sys_mdebug, METH_VARARGS},
 #endif
-	{"setdefaultencoding", sys_setdefaultencoding, 1,
+	{"setdefaultencoding", sys_setdefaultencoding, METH_VARARGS,
 	 setdefaultencoding_doc}, 
-	{"setcheckinterval",	sys_setcheckinterval, 1,
+	{"setcheckinterval",	sys_setcheckinterval, METH_VARARGS,
 	 setcheckinterval_doc}, 
 #ifdef HAVE_DLOPEN
-        {"setdlopenflags", sys_setdlopenflags, 1, 
-         setdlopenflags_doc},
+	{"setdlopenflags", sys_setdlopenflags, METH_VARARGS, 
+	 setdlopenflags_doc},
 #endif
-	{"setprofile",	sys_setprofile, 0, setprofile_doc},
-	{"setrecursionlimit", sys_setrecursionlimit, 1,
+	{"setprofile",	sys_setprofile, METH_OLDARGS, setprofile_doc},
+	{"setrecursionlimit", sys_setrecursionlimit, METH_VARARGS,
 	 setrecursionlimit_doc},
-	{"settrace",	sys_settrace, 0, settrace_doc},
+	{"settrace",	sys_settrace, METH_OLDARGS, settrace_doc},
 	{NULL,		NULL}		/* sentinel */
 };
 
