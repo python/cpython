@@ -68,11 +68,12 @@ class Queue:
         is immediately available, else raise the Full exception ('timeout'
         is ignored in that case).
         """
-        if not block:
-            return self.put_nowait(item)
         self.not_full.acquire()
         try:
-            if timeout is None:
+            if not block:
+                if self._full():
+                    raise Full
+            elif timeout is None:
                 while self._full():
                     self.not_full.wait()
             else:
@@ -81,7 +82,7 @@ class Queue:
                 endtime = _time() + timeout
                 while self._full():
                     remaining = endtime - _time()
-                    if remaining < 0.0:
+                    if remaining <= 0.0:
                         raise Full
                     self.not_full.wait(remaining)
             self._put(item)
@@ -95,15 +96,7 @@ class Queue:
         Only enqueue the item if a free slot is immediately available.
         Otherwise raise the Full exception.
         """
-        self.not_full.acquire()
-        try:
-            if self._full():
-                raise Full
-            else:
-                self._put(item)
-                self.not_empty.notify()
-        finally:
-            self.not_full.release()
+        return self.put(item, False)
 
     def get(self, block=True, timeout=None):
         """Remove and return an item from the queue.
@@ -116,11 +109,12 @@ class Queue:
         available, else raise the Empty exception ('timeout' is ignored
         in that case).
         """
-        if not block:
-            return self.get_nowait()
         self.not_empty.acquire()
         try:
-            if timeout is None:
+            if not block:
+                if self._empty():
+                    raise Empty
+            elif timeout is None:
                 while self._empty():
                     self.not_empty.wait()
             else:
@@ -129,7 +123,7 @@ class Queue:
                 endtime = _time() + timeout
                 while self._empty():
                     remaining = endtime - _time()
-                    if remaining < 0.0:
+                    if remaining <= 0.0:
                         raise Empty
                     self.not_empty.wait(remaining)
             item = self._get()
@@ -144,16 +138,7 @@ class Queue:
         Only get an item if one is immediately available. Otherwise
         raise the Empty exception.
         """
-        self.not_empty.acquire()
-        try:
-            if self._empty():
-                raise Empty
-            else:
-                item = self._get()
-                self.not_full.notify()
-                return item
-        finally:
-            self.not_empty.release()
+        return self.get(False)
 
     # Override these methods to implement other queue organizations
     # (e.g. stack or priority queue).
