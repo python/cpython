@@ -26,15 +26,6 @@ define pyg
 print _PyGC_Dump($arg0)
 end
 
-# If you are in an eval_frame() function, calling pyframe with no
-# arguments will print the filename, function name, and line number.
-# It assumes that f is the name of the current frame.
-define pyframe
-x/s ((PyStringObject*)f->f_code->co_filename)->ob_sval
-x/s ((PyStringObject*)f->f_code->co_name)->ob_sval
-p f->f_lineno
-end
-
 # Here's a somewhat fragile way to print the entire Python stack from gdb.
 # It's fragile because the tests for the value of $pc depend on the layout
 # of specific functions in the C source code.
@@ -45,6 +36,42 @@ end
 # Py_Main <= $pc <= Py_GetArgcArv is true $pc is in Py_Main(), so the while
 # tests succeeds as long as it's not true.  In a similar fashion the if
 # statement tests to see if we are in eval_frame().
+
+# print the local variables of the current frame
+define pylocals
+    set $_i = 0
+    while $_i < f->f_nlocals
+	if f->f_localsplus + $_i != 0
+	    set $_names = co->co_varnames
+	    set $_name = PyString_AsString(PyTuple_GetItem($_names, $_i))
+	    printf "%s:\n", $_name
+	    # side effect of calling _PyObject_Dump is to dump the object's
+	    # info - assigning just prevents gdb from printing the
+	    # NULL return value
+	    set $_val = _PyObject_Dump(f->f_localsplus[$_i])
+	end
+        set $_i = $_i + 1
+    end
+end
+
+# print the current frame
+define pyframe
+    set $__fn = PyString_AsString(co->co_filename)
+    set $__n = PyString_AsString(co->co_name)
+    printf "%s (%d): %s\n",  $__fn, f->f_lineno, $__n
+    pylocals
+end
+
+# print the entire Python call stack
+define pystack
+    while $pc < Py_Main || $pc > Py_GetArgcArgv
+        if $pc > eval_frame && $pc < PyEval_EvalCodeEx
+	    pyframe
+        end
+        up-silently 1
+    end
+    select-frame 0
+end
 
 define pystack
     while $pc < Py_Main || $pc > Py_GetArgcArgv
