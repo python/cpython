@@ -125,7 +125,9 @@ AC_MSG_RESULT($LINKFORSHARED)
 AC_CHECK_LIB(dl, dlopen)	# Dynamic linking for SunOS/Solaris and SYSV
 AC_CHECK_LIB(dld, shl_load)	# Dynamic linking for HP-UX
 AC_CHECK_LIB(sun, getpwnam)	# NIS (== YP) interface for IRIX 4
-AC_CHECK_LIB(socket, socket, [LIBS=-lsocket -linet -lnsl], [], [-linet -lnsl])
+AC_CHECK_LIB(nsl, gethostbyname, [LIBS="-lnsl $LIBS"]) # hosts db interface
+AC_CHECK_LIB(inet, ???, [LIBS="-linet $LIBS"]) # SVR4 internet???
+AC_CHECK_LIB(socket, socket, [LIBS="-lsocket $LIBS"]) # SVR4 sockets
 
 AC_CHECKING(for --with-readline)
 AC_ARG_WITH(readline, [--with-readline=DIRECTORY GNU readline], [
