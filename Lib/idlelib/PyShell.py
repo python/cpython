@@ -516,7 +516,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
         "Run the code without invoking the debugger"
         # The code better not raise an exception!
         if self.tkconsole.executing:
-            display_executing_dialog()
+            self.display_executing_dialog()
             return 0
         if self.rpcclt:
             self.rpcclt.remotecall("exec", "runcode", (code,), {})
@@ -527,7 +527,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
     def runcode(self, code):
         "Override base class method"
         if self.tkconsole.executing:
-            display_executing_dialog()
+            self.display_executing_dialog()
             return
         self.checklinecache()
         if self.save_warnings_filters is not None:
