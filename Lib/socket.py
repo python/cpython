@@ -43,12 +43,12 @@ the setsockopt() and getsockopt() methods.
 import _socket
 from _socket import *
 
-SSL_EXISTS = 1
+_have_ssl = False
 try:
-    import _ssl
     from _ssl import *
+    _have_ssl = True
 except ImportError:
-    SSL_EXISTS = 0
+    pass
 
 import os, sys
 
@@ -56,27 +56,20 @@ __all__ = ["getfqdn"]
 __all__.extend(os._get_exports_list(_socket))
 # XXX shouldn't there be something similar to the above for _ssl exports?
 
+_realsocket = socket
+_needwrapper = False
 if (sys.platform.lower().startswith("win")
     or (hasattr(os, 'uname') and os.uname()[0] == "BeOS")
     or sys.platform=="riscos"):
 
-    _realsocketcall = _socket.socket
+    _needwrapper = True
 
-    def socket(family=AF_INET, type=SOCK_STREAM, proto=0):
-        return _socketobject(_realsocketcall(family, type, proto))
-    socket.__doc__ = _realsocketcall.__doc__
-
-    if SSL_EXISTS:
-        _realsslcall = _ssl.ssl
+    if _have_ssl:
+        _realssl = ssl
         def ssl(sock, keyfile=None, certfile=None):
             if hasattr(sock, "_sock"):
                 sock = sock._sock
-            return _realsslcall(sock, keyfile, certfile)
-
-del _socket
-if SSL_EXISTS:
-    del _ssl
-del SSL_EXISTS
+            return _realssl(sock, keyfile, certfile)
 
 # WSA error codes
 if sys.platform.lower().startswith("win"):
@@ -140,47 +133,73 @@ _socketmethods = (
     'recv', 'recvfrom', 'send', 'sendall', 'sendto', 'setblocking',
     'settimeout', 'gettimeout', 'shutdown')
 
-class _socketobject:
+class _socketobject(object):
 
-    class _closedsocket:
+    __doc__ = _realsocket.__doc__
+
+    __slots__ = ["_sock"]
+
+    class _closedsocket(object):
+        __slots__ = []
         def __getattr__(self, name):
             raise error(9, 'Bad file descriptor')
 
-    def __init__(self, sock):
-        self._sock = sock
+    def __init__(self, family=AF_INET, type=SOCK_STREAM, proto=0, _sock=None):
+        if _sock is None:
+	    _sock = _realsocket(family, type, proto)
+        self._sock = _sock
 
     def close(self):
         # Avoid referencing globals here
         self._sock = self.__class__._closedsocket()
+    close.__doc__ = _realsocket.close.__doc__
 
     def __del__(self):
         self.close()
 
     def accept(self):
         sock, addr = self._sock.accept()
-        return _socketobject(sock), addr
+        return _socketobject(_sock=sock), addr
+    accept.__doc__ = _realsocket.accept.__doc__
 
     def dup(self):
-        return _socketobject(self._sock)
+        """dup() -> socket object
+
+        Return a new socket object connected to the same system resource."""
+        return _socketobject(_sock=self._sock)
 
     def makefile(self, mode='r', bufsize=-1):
+        """makefile([mode[, bufsize]]) -> file object
+
+        Return a regular file object corresponding to the socket.  The mode
+        and bufsize arguments are as for the built-in open() function."""
         return _fileobject(self._sock, mode, bufsize)
 
-    _s = "def %s(self, *args): return self._sock.%s(*args)\n\n"
+    _s = ("def %s(self, *args): return self._sock.%s(*args)\n\n"
+          "%s.__doc__ = _realsocket.%s.__doc__\n")
     for _m in _socketmethods:
-        exec _s % (_m, _m)
+        exec _s % (_m, _m, _m, _m)
 
+if _needwrapper:
+    socket = _socketobject
 
-class _fileobject:
+class _fileobject(object):
     """Faux file object attached to a socket object."""
 
     default_bufsize = 8192
+    name = "<socket>"
+
+    __slots__ = ["mode", "bufsize", "softspace",
+                 # "closed" is a property, see below
+                 "_sock", "_rbufsize", "_wbufsize", "_rbuf", "_wbuf"]
 
     def __init__(self, sock, mode='rb', bufsize=-1):
         self._sock = sock
-        self._mode = mode # Not actually used in this version
+        self.mode = mode # Not actually used in this version
         if bufsize < 0:
             bufsize = self.default_bufsize
+	self.bufsize = bufsize
+	self.softspace = False
         if bufsize == 0:
             self._rbufsize = 1
         elif bufsize == 1:
@@ -191,6 +210,10 @@ class _fileobject:
         # The buffers are lists of non-empty strings
         self._rbuf = []
         self._wbuf = []
+
+    def _getclosed(self):
+        return self._sock is not None
+    closed = property(_getclosed, doc="True if the file is closed")
 
     def close(self):
         try:
