@@ -48,11 +48,11 @@ import pimp
 ELIPSES = '...'
 		
 USER_INSTALL_DIR = os.path.join(os.environ.get('HOME', ''),
-        						'Library',
-        						'Python',
-        						sys.version[:3],
-        						'site-packages')
-        						
+								'Library',
+								'Python',
+								sys.version[:3],
+								'site-packages')
+								
 class PackageManagerMain(Wapplication.Application):
 	
 	def __init__(self):
@@ -204,7 +204,7 @@ class PackageManagerMain(Wapplication.Application):
 			try:
 				rv = window.close() # ignore any errors while quitting
 			except:
-				rv = 0   # (otherwise, we can get stuck!)
+				rv = 0	 # (otherwise, we can get stuck!)
 			if rv and rv > 0:
 				return
 ##		try:
@@ -270,12 +270,19 @@ class PimpInterface:
 		return self.pimpprefs.installDir == USER_INSTALL_DIR
 			
 	def getbrowserdata(self, show_hidden=1):
-		self.packages = self.pimpdb.list()
+		packages = self.pimpdb.list()
+		if show_hidden:
+			self.packages = packages
+		else:
+			self.packages = []
+			for pkg in packages:
+				name = pkg.fullname()
+				if name[0] == '(' and name[-1] == ')' and not show_hidden:
+					continue
+				self.packages.append(pkg)			
 		rv = []
 		for pkg in self.packages:
 			name = pkg.fullname()
-			if name[0] == '(' and name[-1] == ')' and not show_hidden:
-				continue
 			status, _ = pkg.installed()
 			description = pkg.description()
 			rv.append((status, name, description))
