@@ -1115,6 +1115,20 @@ static PyObject *CGContextRefObj_CGContextSetShouldAntialias(CGContextRefObject 
 	return _res;
 }
 
+static PyObject *CGContextRefObj_SyncCGContextOriginWithPort(CGContextRefObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	CGrafPtr port;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      GrafObj_Convert, &port))
+		return NULL;
+	SyncCGContextOriginWithPort(_self->ob_itself,
+	                            port);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
 static PyMethodDef CGContextRefObj_methods[] = {
 	{"CGContextSaveGState", (PyCFunction)CGContextRefObj_CGContextSaveGState, 1,
 	 "() -> None"},
@@ -1228,6 +1242,8 @@ static PyMethodDef CGContextRefObj_methods[] = {
 	 "() -> None"},
 	{"CGContextSetShouldAntialias", (PyCFunction)CGContextRefObj_CGContextSetShouldAntialias, 1,
 	 "(int shouldAntialias) -> None"},
+	{"SyncCGContextOriginWithPort", (PyCFunction)CGContextRefObj_SyncCGContextOriginWithPort, 1,
+	 "(CGrafPtr port) -> None"},
 	{NULL, NULL, 0}
 };
 
