@@ -510,29 +510,6 @@ Py_SetRecursionLimit(int new_limit)
 	recursion_limit = new_limit;
 }
 
-int
-_Py_CheckRecursiveCall(char *where)
-{
-	PyThreadState *tstate = PyThreadState_GET();
-
-#ifdef USE_STACKCHECK
-	if (PyOS_CheckStack()) {
-		--tstate->recursion_depth;
-		PyErr_SetString(PyExc_MemoryError, "Stack overflow");
-		return -1;
-	}
-#endif
-	if (tstate->recursion_depth > recursion_limit) {
-		--tstate->recursion_depth;
-		PyErr_Format(PyExc_RuntimeError,
-			     "maximum recursion depth exceeded%s",
-			     where);
-		return -1;
-	}
-	return 0;
-}
-
-
 /* Status code for main loop (reason for stack unwind) */
 
 enum why_code {
@@ -697,9 +674,21 @@ eval_frame(PyFrameObject *f)
 	if (f == NULL)
 		return NULL;
 
-	/* push frame */
-	if (Py_EnterRecursiveCall(""))
+#ifdef USE_STACKCHECK
+	if (tstate->recursion_depth%10 == 0 && PyOS_CheckStack()) {
+		PyErr_SetString(PyExc_MemoryError, "Stack overflow");
 		return NULL;
+	}
+#endif
+
+	/* push frame */
+	if (++tstate->recursion_depth > recursion_limit) {
+		--tstate->recursion_depth;
+		PyErr_SetString(PyExc_RuntimeError,
+				"maximum recursion depth exceeded");
+		tstate->frame = f->f_back;
+		return NULL;
+	}
 
 	tstate->frame = f;
 
@@ -721,7 +710,9 @@ eval_frame(PyFrameObject *f)
 			if (call_trace(tstate->c_tracefunc, tstate->c_traceobj,
 				       f, PyTrace_CALL, Py_None)) {
 				/* Trace function raised an error */
-				goto exit_eval_frame;
+				--tstate->recursion_depth;
+				tstate->frame = f->f_back;
+				return NULL;
 			}
 		}
 		if (tstate->c_profilefunc != NULL) {
@@ -731,7 +722,9 @@ eval_frame(PyFrameObject *f)
 				       tstate->c_profileobj,
 				       f, PyTrace_CALL, Py_None)) {
 				/* Profile function raised an error */
-				goto exit_eval_frame;
+				--tstate->recursion_depth;
+				tstate->frame = f->f_back;
+				return NULL;
 			}
 		}
 	}
@@ -2435,8 +2428,7 @@ eval_frame(PyFrameObject *f)
 	reset_exc_info(tstate);
 
 	/* pop frame */
-    exit_eval_frame:
-	Py_LeaveRecursiveCall();
+	--tstate->recursion_depth;
 	tstate->frame = f->f_back;
 
 	return retval;
