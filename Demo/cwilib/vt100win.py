@@ -9,16 +9,18 @@ class VT100win(VT100):
 	def __init__(self):
 		VT100.__init__(self)
 		self.window = None
-##		self.last_x = -1
-##		self.last_y = -1
+		self.last_x = -1
+		self.last_y = -1
 
 	def __del__(self):
 		self.close()
 
 	def open(self, title):
 		stdwin.setfont('7x14')
-		self.docwidth = self.width * stdwin.textwidth('m')
-		self.docheight = self.height * stdwin.lineheight()
+		self.charwidth = stdwin.textwidth('m')
+		self.lineheight = stdwin.lineheight()
+		self.docwidth = self.width * self.charwidth
+		self.docheight = self.height * self.lineheight
 		stdwin.setdefwinsize(self.docwidth + 2, self.docheight + 2)
 		stdwin.setdefscrollbars(0, 0)
 		self.window = stdwin.open(title)
@@ -31,7 +33,8 @@ class VT100win(VT100):
 
 	def show(self):
 		if not self.window: return
-		self.draw(((-10, -10), (self.docwidth+10, self.docheight+10)))
+		self.window.change(((-10, -10),
+			  (self.docwidth+10, self.docheight+10)))
 
 	def draw(self, detail):
 		d = self.window.begindrawing()
@@ -39,8 +42,8 @@ class VT100win(VT100):
 		red = stdwin.fetchcolor('red')
 		d.cliprect(detail)
 		d.erase(detail)
-		lh = d.lineheight()
-		cw = d.textwidth('m')
+		lh = self.lineheight
+		cw = self.charwidth
 		for y in range(self.height):
 			d.text((0, y*lh), self.lines[y].tostring())
 			if self.attrs[y] <> self.blankattr:
@@ -56,13 +59,20 @@ class VT100win(VT100):
 		d.setfgcolor(fg)
 		d.close()
 
-##	def move_to(self, x, y):
-##		VT100.move_to(self, x, y)
-##		if self.y != self.last_y:
-##			self.show()
-##		self.last_x = self.x
-##		self.last_y = y
+	def move_to(self, x, y):
+		VT100.move_to(self, x, y)
+		if not self.window: return
+		if self.y != self.last_y:
+			self.window.change((0, self.last_y * self.lineheight),
+				  (self.width*self.charwidth,
+				  (self.last_y+1) * self.lineheight))
+		self.last_x = self.x
+		self.last_y = y
+		self.window.change((0, self.y * self.lineheight),
+			  (self.width*self.charwidth,
+			  (self.y+1) * self.lineheight))
 
 	def send(self, str):
 		VT100.send(self, str)
-		self.show()
+##		self.show()
+
