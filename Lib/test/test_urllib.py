@@ -24,7 +24,7 @@ class urlopen_FileTests(unittest.TestCase):
     def setUp(self):
         """Setup of a temp file to use for testing"""
         self.text = "test_urllib: %s\n" % self.__class__.__name__
-        FILE = file(test_support.TESTFN, 'w')
+        FILE = file(test_support.TESTFN, 'wb')
         try:
             FILE.write(self.text)
         finally:
