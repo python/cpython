@@ -37,16 +37,16 @@ test_1 = """
 Here's the new type at work:
 
     >>> print defaultdict               # show our type
-    <type 'test.test_descrtut.defaultdict'>
+    <class 'test.test_descrtut.defaultdict'>
     >>> print type(defaultdict)         # its metatype
     <type 'type'>
     >>> a = defaultdict(default=0.0)    # create an instance
     >>> print a                         # show the instance
     {}
     >>> print type(a)                   # show its type
-    <type 'test.test_descrtut.defaultdict'>
+    <class 'test.test_descrtut.defaultdict'>
     >>> print a.__class__               # show its class
-    <type 'test.test_descrtut.defaultdict'>
+    <class 'test.test_descrtut.defaultdict'>
     >>> print type(a) is a.__class__    # its type is its class
     1
     >>> a[1] = 3.25                     # modify the instance
