@@ -379,6 +379,11 @@ optimize_code(PyObject *code, PyObject* consts, PyObject *names)
 	if (codestr == NULL)
 		goto exitUnchanged;
 	codestr = memcpy(codestr, PyString_AS_STRING(code), codelen);
+
+	/* Avoid situations where jump retargeting could overflow */
+	if (codelen > 65000)
+		goto exitUnchanged;
+
 	blocks = markblocks(codestr, codelen);
 	if (blocks == NULL) {
 		PyMem_Free(codestr);
