@@ -3,18 +3,31 @@
 import sys
 import string
 
-def dis():
-	tb = sys.last_traceback
-	while tb.tb_next: tb = tb.tb_next
-	distb(tb)
+def dis(x=None):
+	if not x:
+		distb()
+	else:
+		if hasattr(x, 'im_func'):
+			x = x.im_func
+		if hasattr(x, 'func_code'):
+			x = x.func_code
+		if hasattr(x, 'co_code'):
+			disassemble(x)
+		else:
+			raise ValueError, \
+			      "don't know how to disassemble %s objects" % \
+			      type(x).__name__
 
-def distb(tb):
+def distb(tb=None):
+	if not tb:
+		try:
+			tb = sys.last_traceback
+		except AttributeError:
+			raise RuntimeError, "no last traceback to disassemble"
+		while tb.tb_next: tb = tb.tb_next
 	disassemble(tb.tb_frame.f_code, tb.tb_lasti)
 
-def disco(co):
-	disassemble(co, -1)
-
-def disassemble(co, lasti):
+def disassemble(co, lasti=-1):
 	code = co.co_code
 	labels = findlabels(code)
 	n = len(code)
@@ -45,6 +58,8 @@ def disassemble(co, lasti):
 			elif op in hascompare:
 				print '(' + cmp_op[oparg] + ')',
 		print
+
+disco = disassemble
 
 def findlabels(code):
 	labels = []
