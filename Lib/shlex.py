@@ -10,8 +10,6 @@
 import os.path
 import sys
 
-from types import StringTypes
-
 try:
     from cStringIO import StringIO
 except ImportError:
@@ -22,7 +20,7 @@ __all__ = ["shlex", "split"]
 class shlex:
     "A lexical analyzer class for simple shell-like syntaxes."
     def __init__(self, instream=None, infile=None, posix=False):
-        if type(instream) in StringTypes:
+        if isinstance(instream, basestring):
             instream = StringIO(instream)
         if instream is not None:
             self.instream = instream
@@ -65,7 +63,7 @@ class shlex:
 
     def push_source(self, newstream, newfile=None):
         "Push an input source onto the lexer's input source stack."
-        if type(newstream) in StringTypes:
+        if isinstance(newstream, basestring):
             newstream = StringIO(newstream)
         self.filestack.insert(0, (self.infile, self.instream, self.lineno))
         self.infile = newfile
@@ -122,7 +120,7 @@ class shlex:
     def read_token(self):
         quoted = False
         escapedstate = ' '
-        while 1:
+        while True:
             nextchar = self.instream.read(1)
             if nextchar == '\n':
                 self.lineno = self.lineno + 1
@@ -252,7 +250,7 @@ class shlex:
         if newfile[0] == '"':
             newfile = newfile[1:-1]
         # This implements cpp-like semantics for relative-path inclusion.
-        if type(self.infile) in StringTypes and not os.path.isabs(newfile):
+        if isinstance(self.infile, basestring) and not os.path.isabs(newfile):
             newfile = os.path.join(os.path.dirname(self.infile), newfile)
         return (newfile, open(newfile, "r"))
 
@@ -273,7 +271,7 @@ class shlex:
             raise StopIteration
         return token
 
-def split(s, posix=1, spaces=1):
+def split(s, posix=True, spaces=True):
     lex = shlex(s, posix=posix)
     lex.whitespace_split = spaces
     return list(lex)
