@@ -12,8 +12,9 @@ Jack Jansen, CWI, August 1996."""
 
 import os
 if os.name == 'mac':
-	import MacOS
-	MacOS.splash(515)	# Try to show the splash screen
+# Not supported in distributed 1.4b3:
+##	import MacOS
+##	MacOS.splash(515)	# Try to show the splash screen
 	import mactwit_mod; twit_mod = mactwit_mod
 	import mactwit_stack; twit_stack = mactwit_stack
 	import mactwit_app; twit_app = mactwit_app
@@ -62,6 +63,7 @@ def TWIT_VarBrowser(parent, var):
 def Initialize():
 	# Gross...
 	TwitCore.AskString = twit_app.AskString
+	TwitCore.ShowMessage = twit_app.ShowMessage
 	TwitCore.SetWatch = twit_app.SetWatch
 	TwitCore.SetCursor = twit_app.SetCursor
 	
@@ -69,8 +71,8 @@ def main():
 	twit_app.Initialize()
 	TwitCore.Initialize()
 	Initialize()
-	if os.name == 'mac':
-		MacOS.splash()
+##	if os.name == 'mac':
+##		MacOS.splash()
 	Twit(None, None)
 	
 def run(statement, globals=None, locals=None):
