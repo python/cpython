@@ -4,10 +4,10 @@ Python News
 
 (editors: check NEWS.help for information about editing NEWS using ReST.)
 
-What's New in Python 2.4 release candidate 2
-=====================================================
+What's New in Python 2.4 final?
+===============================
 
-*Release date: XX-NOV-2004*
+*Release date: 30-NOV-2004*
 
 Core and builtins
 -----------------
@@ -29,11 +29,6 @@ Core and builtins
   the years-old thread shutdown race bug 225673.  Numeric history lesson
   aside, all bugs in all three reports are fixed now.
 
-
-Extension Modules
------------------
-
-...
 
 Library
 -------
@@ -69,37 +64,6 @@ C API
 -----
 
 - The PyRange_New() function is deprecated.
-
-
-Documentation
--------------
-
-...
-
-Tests
------
-
-...
-
-Windows
--------
-
-...
-
-Mac
----
-
-...
-
-New platforms
--------------
-
-...
-
-Tools/Demos
------------
-
-...
 
 
 What's New in Python 2.4 beta 2?
