@@ -58,7 +58,6 @@ class Command:
         # (etc.) will be handled by __getattr__, below.
         self._verbose = None
         self._dry_run = None
-        self._force = None
 
         # The 'help' flag is just used for command-line parsing, so
         # none of that complicated bureaucracy is needed.
@@ -74,7 +73,7 @@ class Command:
 
 
     def __getattr__ (self, attr):
-        if attr in ('verbose', 'dry_run', 'force'):
+        if attr in ('verbose', 'dry_run'):
             myval = getattr (self, "_" + attr)
             if myval is None:
                 return getattr (self.distribution, attr)
@@ -308,7 +307,8 @@ class Command:
 
     def copy_file (self, infile, outfile,
                    preserve_mode=1, preserve_times=1, link=None, level=1):
-        """Copy a file respecting verbose, dry-run and force flags."""
+        """Copy a file respecting verbose, dry-run and force flags (this
+        should only be used by commands that define 'self.force'!)."""
 
         return util.copy_file (infile, outfile,
                                preserve_mode, preserve_times,
@@ -322,7 +322,8 @@ class Command:
                    preserve_mode=1, preserve_times=1, preserve_symlinks=0,
                    level=1):
         """Copy an entire directory tree respecting verbose, dry-run,
-           and force flags."""
+           and force flags (again, should only be used by commands
+           that define 'self.force')."""
 
         return util.copy_tree (infile, outfile, 
                                preserve_mode,preserve_times,preserve_symlinks,
@@ -352,13 +353,15 @@ class Command:
 
 
     def make_file (self, infiles, outfile, func, args,
-                    exec_msg=None, skip_msg=None, level=1):
+                   exec_msg=None, skip_msg=None, level=1):
 
         """Special case of 'execute()' for operations that process one or
-           more input files and generate one output file.  Works just like
-           'execute()', except the operation is skipped and a different
-           message printed if 'outfile' already exists and is newer than
-           all files listed in 'infiles'."""
+        more input files and generate one output file.  Works just like
+        'execute()', except the operation is skipped and a different
+        message printed if 'outfile' already exists and is newer than all
+        files listed in 'infiles'.  If the command defined 'self.force',
+        and it is true, then the command is unconditionally run -- does no
+        timestamp checks."""
 
 
         if exec_msg is None:
@@ -378,7 +381,8 @@ class Command:
         # If 'outfile' must be regenerated (either because it doesn't
         # exist, is out-of-date, or the 'force' flag is true) then
         # perform the action that presumably regenerates it
-        if self.force or util.newer_group (infiles, outfile):
+        if ((hasattr(self,'force') and self.force) or
+            util.newer_group (infiles, outfile)):
             self.execute (func, args, exec_msg, level)
 
         # Otherwise, print the "skip" message
