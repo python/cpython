@@ -63,19 +63,20 @@ class MSVCCompiler (CCompiler) :
                  sources,
                  output_dir=None,
                  macros=None,
-                 includes=None,
+                 include_dirs=None,
                  extra_preargs=None,
                  extra_postargs=None):
 
         if macros is None:
             macros = []
-        if includes is None:
-            includes = []
+        if include_dirs is None:
+            include_dirs = []
 
         objectFiles = []
 
-        base_pp_opts = gen_preprocess_options (self.macros + macros,
-                                               self.include_dirs + includes)
+        base_pp_opts = \
+            gen_preprocess_options (self.macros + macros,
+                                    self.include_dirs + include_dirs)
 
         base_pp_opts.append('/c')
         

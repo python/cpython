@@ -262,7 +262,7 @@ class CCompiler:
                  sources,
                  output_dir=None,
                  macros=None,
-                 includes=None,
+                 include_dirs=None,
                  extra_preargs=None,
                  extra_postargs=None):
         """Compile one or more C/C++ source files.  'sources' must be
@@ -277,7 +277,7 @@ class CCompiler:
            undefines a macro.  Later definitions/redefinitions/
            undefinitions take precedence.
 
-           'includes', if given, must be a list of strings, the directories
+           'include_dirs', if given, must be a list of strings, the directories
            to add to the default include file search path for this
            compilation only.
 
@@ -489,12 +489,12 @@ def new_compiler (plat=None,
     return klass (verbose, dry_run, force)
 
 
-def gen_preprocess_options (macros, includes):
+def gen_preprocess_options (macros, include_dirs):
     """Generate C pre-processor options (-D, -U, -I) as used by at
        least two types of compilers: the typical Unix compiler and Visual
        C++.  'macros' is the usual thing, a list of 1- or 2-tuples, where
        (name,) means undefine (-U) macro 'name', and (name,value) means
-       define (-D) macro 'name' to 'value'.  'includes' is just a list of
+       define (-D) macro 'name' to 'value'.  'include_dirs' is just a list of
        directory names to be added to the header file search path (-I).
        Returns a list of command-line options suitable for either
        Unix compilers or Visual C++."""
@@ -506,7 +506,7 @@ def gen_preprocess_options (macros, includes):
     # line).  I don't think it's essential, though, since most (all?)
     # Unix C compilers only pay attention to the latest -D or -U
     # mention of a macro on their command line.  Similar situation for
-    # 'includes'.  I'm punting on both for now.  Anyways, weeding out
+    # 'include_dirs'.  I'm punting on both for now.  Anyways, weeding out
     # redundancies like this should probably be the province of
     # CCompiler, since the data structures used are inherited from it
     # and therefore common to all CCompiler classes.
@@ -532,7 +532,7 @@ def gen_preprocess_options (macros, includes):
                 # shell at all costs when we spawn the command!
                 pp_opts.append ("-D%s=%s" % macro)
 
-    for dir in includes:
+    for dir in include_dirs:
         pp_opts.append ("-I%s" % dir)
 
     return pp_opts
