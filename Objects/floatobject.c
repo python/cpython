@@ -464,17 +464,34 @@ float_divmod(PyObject *v, PyObject *w)
 	   it will always be very close to one.
 	*/
 	div = (vx - mod) / wx;
-	/* note: checking mod*wx < 0 is incorrect -- underflows to
-	   0 if wx < sqrt(smallest nonzero double) */
-	if (mod && ((wx < 0) != (mod < 0))) {
-		mod += wx;
-		div -= 1.0;
+	if (mod) {
+		/* ensure the remainder has the same sign as the denominator */
+		if ((wx < 0) != (mod < 0)) {
+			mod += wx;
+			div -= 1.0;
+		}
+	}
+	else {
+		/* the remainder is zero, and in the presence of signed zeroes
+		   fmod returns different results across platforms; ensure
+		   it has the same sign as the denominator; we'd like to do
+		   "mod = wx * 0.0", but that may get optimized away */
+		mod = 0.0;
+		if (wx < 0.0)
+			mod = -mod;
 	}
 	/* snap quotient to nearest integral value */
-	floordiv = floor(div);
-	if (div - floordiv > 0.5)
-		floordiv += 1.0;
-	PyFPE_END_PROTECT(div)
+	if (div) {
+		floordiv = floor(div);
+		if (div - floordiv > 0.5)
+			floordiv += 1.0;
+	}
+	else {
+		/* div is zero - get the same sign as the true quotient */
+		div *= div;	/* hide "div = +0" from optimizers */
+		floordiv = div * vx / wx; /* zero w/ sign of vx/wx */
+	}
+	PyFPE_END_PROTECT(floordiv)
 	return Py_BuildValue("(dd)", floordiv, mod);
 }
 
