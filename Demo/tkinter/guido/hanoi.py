@@ -111,7 +111,7 @@ class Tkhanoi:
 			self.tk.update()
 
 		# Move it down on top of the previous piece
-		pieceheight = y2-y1-2
+		pieceheight = y2-y1
 		newbottom = by2 - pieceheight*len(self.pegstate[b]) - 2
 		while 1:
 			x1, y1, x2, y2 = c.bbox(p)
