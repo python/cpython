@@ -19,7 +19,7 @@ MKHTML=	   $(MKHOWTO) --html
 
 BUILDINDEX=$(TOOLSDIR)/buildindex.py
 
-PYTHONDOCS='<hr>See <i><a href="about.html">About this document...</a></i> for information on suggesting changes.'
+PYTHONDOCS='See <i><a href="about.html">About this document...</a></i> for information on suggesting changes.'
 HTMLBASE=  file:`pwd`
 
 INDEXFILES=api/api.html \
