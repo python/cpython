@@ -22,9 +22,10 @@ Extension modules
 Library
 -------
 
-- bdist_rpm now supports command line options --force-arch, 
-  {pre,post}-install,  {pre,post}-uninstall, and 
+- bdist_rpm now supports command line options --force-arch,
+  {pre,post}-install,  {pre,post}-uninstall, and
   {prep,build,install,clean,verify}-script.
+
 - SF patch #998993: The UTF-8 and the UTF-16 stateful decoders now support
   decoding incomplete input (when the input stream is temporarily exhausted).
   ``codecs.StreamReader`` now implements buffering, which enables proper
@@ -33,6 +34,13 @@ Library
   return. ``codecs.StreamReader.readline()`` and
   ``codecs.StreamReader.readlines()`` have a new argument ``keepends``.
   Trailing "\n"s will be stripped from the lines if ``keepends`` is false.
+
+- ``doctest.master was`` put back in, and ``doctest.testmod()`` once again
+  updates it.  This isn't good, because every ``testmod()`` call
+  contributes to bloating the "hidden" state of ``doctest.master``, but
+  some old code apparently relies on it.  For now, all we can do is
+  encourage people to stitch doctests together via doctest's unittest
+  integration features instead.  It would help if those were documented.
 
 Build
 -----
@@ -85,7 +93,7 @@ What's New in Python 2.4 alpha 3?
 Core and builtins
 -----------------
 
-- SF patch #1007189: ``from ... import ...`` statements now allow the name 
+- SF patch #1007189: ``from ... import ...`` statements now allow the name
   list to be surrounded by parentheses.
 
 - Some speedups for long arithmetic, thanks to Trevor Perrin.  Gradeschool
@@ -152,14 +160,14 @@ Extension modules
 - Added CurrentByteIndex, CurrentColumnNumber, CurrentLineNumber
   members to xml.parsers.expat.XMLParser object.
 
-- The mpz, rotor, and xreadlines modules, all deprecated in earlier 
+- The mpz, rotor, and xreadlines modules, all deprecated in earlier
   versions of Python, have now been removed.
 
 Library
 -------
 
 - Patch #934356: if a module defines __all__, believe that rather than using
-  heuristics for filtering out imported names. 
+  heuristics for filtering out imported names.
 
 - Patch #941486: added os.path.lexists(), which returns True for broken
   symlinks, unlike os.path.exists().
@@ -330,10 +338,10 @@ Core and builtins
 
 - PEP-0318, Function Decorators have been added to the language. These are
   implemented using the Java-style @decorator syntax, like so::
-     
+
      @staticmethod
      def foo(bar):
-  
+
   (The PEP needs to be updated to reflect the current state)
 
 - When importing a module M raises an exception, Python no longer leaves M
