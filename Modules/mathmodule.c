@@ -1,4 +1,3 @@
-
 /* Math module -- standard C math library functions, pi and e */
 
 #include "Python.h"
@@ -18,6 +17,11 @@ extern double modf (double, double *);
 #undef HUGE_VAL
 #endif
 
+/* RED_FLAG 12-Oct-2000 Tim
+ * What CHECK does if errno != 0 and x is a NaN is a platform-dependent crap
+ * shoot.  Most (but not all!) platforms will end up setting errno to ERANGE
+ * then, but EDOM is probably better.
+ */
 #ifdef HUGE_VAL
 #define CHECK(x) if (errno != 0) ; \
 	else if (-HUGE_VAL <= (x) && (x) <= HUGE_VAL) ; \
@@ -26,17 +30,35 @@ extern double modf (double, double *);
 #define CHECK(x) /* Don't know how to check */
 #endif
 
-static PyObject *
-math_error(void)
+/* Call is_error when errno != 0, and where x is the result libm
+ * returned.  is_error will usually set up an exception and return
+ * true (1), but may return false (0) without setting up an exception.
+ */
+static int
+is_error(double x)
 {
+	int result = 1;	/* presumption of guilt */
 	if (errno == EDOM)
 		PyErr_SetString(PyExc_ValueError, "math domain error");
-	else if (errno == ERANGE)
-		PyErr_SetString(PyExc_OverflowError, "math range error");
+	else if (errno == ERANGE) {
+		/* ANSI C generally requires libm functions to set ERANGE
+		 * on overflow, but also generally *allows* them to set
+		 * ERANGE on underflow too.  There's no consistency about
+		 * the latter across platforms.  Here we suppress the
+		 * underflow errors (libm functions should return a zero
+		 * on underflow, and +- HUGE_VAL on overflow, so testing
+		 * the result for zero suffices to distinguish the cases).
+		 */
+		if (x)
+			PyErr_SetString(PyExc_OverflowError, 
+					"math range error");
+		else
+			result = 0;
+	}
 	else
                 /* Unexpected math error */
 		PyErr_SetFromErrno(PyExc_ValueError);
-	return NULL;
+	return result;
 }
 
 static PyObject *
@@ -50,8 +72,8 @@ math_1(PyObject *args, double (*func) (double), char *argsfmt)
 	x = (*func)(x);
 	PyFPE_END_PROTECT(x)
 	CHECK(x);
-	if (errno != 0)
-		return math_error();
+	if (errno && is_error(x))
+		return NULL;
 	else
 		return PyFloat_FromDouble(x);
 }
@@ -67,8 +89,8 @@ math_2(PyObject *args, double (*func) (double, double), char *argsfmt)
 	x = (*func)(x, y);
 	PyFPE_END_PROTECT(x)
 	CHECK(x);
-	if (errno != 0)
-		return math_error();
+	if (errno && is_error(x))
+		return NULL;
 	else
 		return PyFloat_FromDouble(x);
 }
@@ -143,9 +165,10 @@ math_frexp(PyObject *self, PyObject *args)
 	errno = 0;
 	x = frexp(x, &i);
 	CHECK(x);
-	if (errno != 0)
-		return math_error();
-	return Py_BuildValue("(di)", x, i);
+	if (errno && is_error(x))
+		return NULL;
+	else
+		return Py_BuildValue("(di)", x, i);
 }
 
 static char math_frexp_doc [] =
@@ -168,8 +191,8 @@ math_ldexp(PyObject *self, PyObject *args)
 	x = ldexp(x, exp);
 	PyFPE_END_PROTECT(x)
 	CHECK(x);
-	if (errno != 0)
-		return math_error();
+	if (errno && is_error(x))
+		return NULL;
 	else
 		return PyFloat_FromDouble(x);
 }
@@ -197,9 +220,10 @@ math_modf(PyObject *self, PyObject *args)
 	x = modf(x, &y);
 #endif
 	CHECK(x);
-	if (errno != 0)
-		return math_error();
-	return Py_BuildValue("(dd)", x, y);
+	if (errno && is_error(x))
+		return NULL;
+	else
+		return Py_BuildValue("(dd)", x, y);
 }
 
 static char math_modf_doc [] =
