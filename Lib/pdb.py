@@ -112,7 +112,6 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 			filename = self.curframe.f_code.co_filename
 		except:
 			# Try function name as the argument
-			import codehack
 			try:
 				func = arg
 				if hasattr(func, 'im_func'):
@@ -122,7 +121,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 				print '*** The specified object',
 				print 'is not a function', arg
 				return
-			lineno = codehack.getlineno(code)
+			lineno = code.co_firstlineno
 			filename = code.co_filename
 
 		# now set the break point
