@@ -266,6 +266,7 @@ extern DL_IMPORT(PyTypeObject) PyType_Type; /* The type of type objects */
 extern DL_IMPORT(int) PyObject_Print(PyObject *, FILE *, int);
 extern DL_IMPORT(PyObject *) PyObject_Repr(PyObject *);
 extern DL_IMPORT(PyObject *) PyObject_Str(PyObject *);
+extern DL_IMPORT(PyObject *) PyObject_Unicode(PyObject *);
 extern DL_IMPORT(int) PyObject_Compare(PyObject *, PyObject *);
 extern DL_IMPORT(PyObject *) PyObject_RichCompare(PyObject *, PyObject *, int);
 extern DL_IMPORT(int) PyObject_RichCompareBool(PyObject *, PyObject *, int);

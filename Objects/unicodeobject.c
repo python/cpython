@@ -413,6 +413,7 @@ PyObject *PyUnicode_FromEncodedObject(register PyObject *obj,
     }
     else 
 	v = PyUnicode_Decode(s, len, encoding, errors);
+
  done:
     if (owned) {
 	Py_DECREF(obj);

@@ -271,6 +271,18 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
        */
 
+     /* Implemented elsewhere:
+
+     PyObject *PyObject_Unicode(PyObject *o);
+
+	 Compute the unicode representation of object, o.  Returns the
+	 unicode representation on success, NULL on failure.  This is
+	 the equivalent of the Python expression: unistr(o).)
+
+	 Called by the unistr() built-in function.
+
+       */
+
      DL_IMPORT(int) PyCallable_Check(PyObject *o);
 
        /*
