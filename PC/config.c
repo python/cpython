@@ -58,6 +58,8 @@ extern void initstrop();
 extern void initstruct();
 extern void inittime();
 extern void initthread();
+extern void initcStringIO();
+extern void initcPickle();
 
 /* -- ADDMODULE MARKER 1 -- */
 
@@ -94,6 +96,8 @@ struct _inittab _PyImport_Inittab[] = {
 #ifdef WITH_THREAD
         {"thread", initthread},
 #endif
+		{"cStringIO", initcStringIO},
+		{"cPickle", initcPickle},
 
 /* -- ADDMODULE MARKER 2 -- */
 
