@@ -167,19 +167,19 @@ PyObject *
 PyType_GenericAlloc(PyTypeObject *type, int nitems)
 {
 	int size;
-	void *mem;
 	PyObject *obj;
 
 	/* Inline PyObject_New() so we can zero the memory */
 	size = _PyObject_VAR_SIZE(type, nitems);
-	mem = PyObject_MALLOC(size);
-	if (mem == NULL)
+	if (PyType_IS_GC(type)) {
+		obj = _PyObject_GC_Malloc(type, nitems);
+	}
+	else {
+		obj = PyObject_MALLOC(size);
+	}
+	if (obj == NULL)
 		return PyErr_NoMemory();
-	memset(mem, '\0', size);
-	if (PyType_IS_GC(type))
-		obj = PyObject_FROM_GC(mem);
-	else
-		obj = (PyObject *)mem;
+	memset(obj, '\0', size);
 	if (type->tp_flags & Py_TPFLAGS_HEAPTYPE)
 		Py_INCREF(type);
 	if (type->tp_itemsize == 0)
@@ -187,7 +187,7 @@ PyType_GenericAlloc(PyTypeObject *type, int nitems)
 	else
 		(void) PyObject_INIT_VAR((PyVarObject *)obj, type, nitems);
 	if (PyType_IS_GC(type))
-		PyObject_GC_Init(obj);
+		_PyObject_GC_TRACK(obj);
 	return obj;
 }
 
@@ -542,8 +542,8 @@ best_base(PyObject *bases)
 static int
 extra_ivars(PyTypeObject *type, PyTypeObject *base)
 {
-	size_t t_size = PyType_BASICSIZE(type);
-	size_t b_size = PyType_BASICSIZE(base);
+	size_t t_size = type->tp_basicsize;
+	size_t b_size = base->tp_basicsize;
 
 	assert(t_size >= b_size); /* Else type smaller than base! */
 	if (type->tp_itemsize || base->tp_itemsize) {
@@ -806,7 +806,7 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 
 	/* Add descriptors for custom slots from __slots__, or for __dict__ */
 	mp = et->members;
-	slotoffset = PyType_BASICSIZE(base);
+	slotoffset = base->tp_basicsize;
 	if (slots != NULL) {
 		for (i = 0; i < nslots; i++, mp++) {
 			mp->name = PyString_AS_STRING(
@@ -1241,13 +1241,13 @@ inherit_special(PyTypeObject *type, PyTypeObject *base)
 	}
 
 	/* Copying basicsize is connected to the GC flags */
-	oldsize = PyType_BASICSIZE(base);
-	newsize = type->tp_basicsize ? PyType_BASICSIZE(type) : oldsize;
-	if (!(type->tp_flags & Py_TPFLAGS_GC) &&
-	    (base->tp_flags & Py_TPFLAGS_GC) &&
+	oldsize = base->tp_basicsize;
+	newsize = type->tp_basicsize ? type->tp_basicsize : oldsize;
+	if (!(type->tp_flags & Py_TPFLAGS_HAVE_GC) &&
+	    (base->tp_flags & Py_TPFLAGS_HAVE_GC) &&
 	    (type->tp_flags & Py_TPFLAGS_HAVE_RICHCOMPARE/*GC slots exist*/) &&
 	    (!type->tp_traverse && !type->tp_clear)) {
-		type->tp_flags |= Py_TPFLAGS_GC;
+		type->tp_flags |= Py_TPFLAGS_HAVE_GC;
 		if (type->tp_traverse == NULL)
 			type->tp_traverse = base->tp_traverse;
 		if (type->tp_clear == NULL)
@@ -1260,7 +1260,7 @@ inherit_special(PyTypeObject *type, PyTypeObject *base)
 				type->tp_new = base->tp_new;
 		}
 	}
-	PyType_SET_BASICSIZE(type, newsize);
+	type->tp_basicsize = newsize;
 
 	/* Copy other non-function slots */
 
