@@ -94,6 +94,19 @@ def test_both():
     else:
         assert 0, 'expected a ValueError but did not get it'
 
+    # Try resizing map
+    print '  Attempting resize()'
+    try:
+	m.resize( 512 )
+    except SystemError:
+        # resize() not supported
+        # No messages are printed, since the output of this test suite
+        # would then be different across platforms.
+        pass
+    else:
+	# resize() is supported
+        pass
+    
     m.close()
     os.unlink("foo")
     print ' Test passed'
