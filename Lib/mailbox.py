@@ -276,7 +276,10 @@ def _test():
     if mbox[:1] == '+':
         mbox = os.environ['HOME'] + '/Mail/' + mbox[1:]
     elif not '/' in mbox:
-        mbox = '/usr/mail/' + mbox
+        if os.path.isfile('/var/mail/' + mbox):
+            mbox = '/var/mail/' + mbox
+        else:
+            mbox = '/usr/mail/' + mbox
     if os.path.isdir(mbox):
         if os.path.isdir(os.path.join(mbox, 'cur')):
             mb = Maildir(mbox)
