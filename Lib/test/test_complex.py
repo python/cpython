@@ -1,6 +1,9 @@
 from test_support import TestFailed
 from random import random
 
+# These tests ensure that complex math does the right thing; tests of
+# the complex() function/constructor are in test_b1.py.
+
 # XXX need many, many more tests here.
 
 nerrors = 0
