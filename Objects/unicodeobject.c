@@ -3023,7 +3023,8 @@ unicode_count(PyUnicodeObject *self, PyObject *args)
     int end = INT_MAX;
     PyObject *result;
 
-    if (!PyArg_ParseTuple(args, "O|ii:count", &substring, &start, &end))
+    if (!PyArg_ParseTuple(args, "O|O&O&:count", &substring,
+		_PyEval_SliceIndex, &start, _PyEval_SliceIndex, &end))
         return NULL;
 
     substring = (PyUnicodeObject *)PyUnicode_FromObject(
@@ -3150,7 +3151,8 @@ unicode_find(PyUnicodeObject *self, PyObject *args)
     int end = INT_MAX;
     PyObject *result;
 
-    if (!PyArg_ParseTuple(args, "O|ii:find", &substring, &start, &end))
+    if (!PyArg_ParseTuple(args, "O|O&O&:find", &substring,
+		_PyEval_SliceIndex, &start, _PyEval_SliceIndex, &end))
         return NULL;
     substring = (PyUnicodeObject *)PyUnicode_FromObject(
 						(PyObject *)substring);
@@ -3212,7 +3214,8 @@ unicode_index(PyUnicodeObject *self, PyObject *args)
     int start = 0;
     int end = INT_MAX;
 
-    if (!PyArg_ParseTuple(args, "O|ii:index", &substring, &start, &end))
+    if (!PyArg_ParseTuple(args, "O|O&O&:index", &substring,
+		_PyEval_SliceIndex, &start, _PyEval_SliceIndex, &end))
         return NULL;
     
     substring = (PyUnicodeObject *)PyUnicode_FromObject(
@@ -3642,7 +3645,8 @@ unicode_rfind(PyUnicodeObject *self, PyObject *args)
     int end = INT_MAX;
     PyObject *result;
 
-    if (!PyArg_ParseTuple(args, "O|ii:rfind", &substring, &start, &end))
+    if (!PyArg_ParseTuple(args, "O|O&O&:rfind", &substring,
+		_PyEval_SliceIndex, &start, _PyEval_SliceIndex, &end))
         return NULL;
     substring = (PyUnicodeObject *)PyUnicode_FromObject(
 						(PyObject *)substring);
@@ -3668,7 +3672,8 @@ unicode_rindex(PyUnicodeObject *self, PyObject *args)
     int start = 0;
     int end = INT_MAX;
 
-    if (!PyArg_ParseTuple(args, "O|ii:rindex", &substring, &start, &end))
+    if (!PyArg_ParseTuple(args, "O|O&O&:rindex", &substring,
+		_PyEval_SliceIndex, &start, _PyEval_SliceIndex, &end))
         return NULL;
     substring = (PyUnicodeObject *)PyUnicode_FromObject(
 						(PyObject *)substring);
@@ -3937,7 +3942,8 @@ unicode_startswith(PyUnicodeObject *self,
     int end = INT_MAX;
     PyObject *result;
 
-    if (!PyArg_ParseTuple(args, "O|ii:startswith", &substring, &start, &end))
+    if (!PyArg_ParseTuple(args, "O|O&O&:startswith", &substring,
+		_PyEval_SliceIndex, &start, _PyEval_SliceIndex, &end))
 	return NULL;
     substring = (PyUnicodeObject *)PyUnicode_FromObject(
 						(PyObject *)substring);
@@ -3967,7 +3973,8 @@ unicode_endswith(PyUnicodeObject *self,
     int end = INT_MAX;
     PyObject *result;
 
-    if (!PyArg_ParseTuple(args, "O|ii:endswith", &substring, &start, &end))
+    if (!PyArg_ParseTuple(args, "O|O&O&:endswith", &substring,
+		_PyEval_SliceIndex, &start, _PyEval_SliceIndex, &end))
 	return NULL;
     substring = (PyUnicodeObject *)PyUnicode_FromObject(
 						(PyObject *)substring);
