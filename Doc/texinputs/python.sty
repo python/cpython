@@ -228,16 +228,6 @@
 }
 \expandafter\endgroup\next
 
-%
-% This is the old hack, which didn't work with 2e.
-% You should not need this since the rest of the documentation is now
-% LaTeX2e-only.
-%
-%\def\_{\ifnum\fam=\ttfamily \char'137\else{\tt\char'137}\fi}
-%\catcode`\_=12
-%\catcode`\_=\active\def_{\ifnum\fam=\ttfamily \char'137 \else{\tt\char'137}\fi}
-
-
 
 %%  Lots of index-entry generation support.
 
@@ -327,6 +317,12 @@
   \def\index@subitem{#1}#2%
   \endgroup%
 }
+
+
+% Now for a lot of semantically-loaded environments that do a ton of magical
+% things to get the right formatting and index entries for the stuff in
+% Python modules and C API.
+
 
 % {fulllineitems} is used in one place in libregex.tex, but is really for
 % internal use in this file.
@@ -499,6 +495,8 @@
 \newcommand{\EOF}{{\sc eof}}
 \newcommand{\NULL}{\sectcode{NULL}}
 
+% Also for consistency: spell Python "Python", not "python"!
+
 % code is the most difficult one...
 \newcommand{\code}[1]{{\@vobeyspaces\@noligs\def\{{\char`\{}\def\}{\char`\}}\def\~{\char`\~}\def\^{\char`\^}\def\e{\char`\\}\def\${\char`\$}\def\#{\char`\#}\def\&{\char`\&}\def\%{\char`\%}%
 \mbox{\codefont{#1}}}}
@@ -553,6 +551,8 @@
 \let\function=\sectcode
 \let\member=\sectcode
 \let\method=\sectcode
+
+\newcommand{\pytype}[1]{#1}		% built-in Python type
 
 \let\cfunction=\sectcode
 \let\ctype=\sectcode
