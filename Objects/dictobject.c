@@ -498,6 +498,31 @@ PyDict_GetItem(PyObject *op, PyObject *key)
 	return (mp->ma_lookup)(mp, key, hash)->me_value;
 }
 
+static PyObject *
+dict_getitem(PyObject *op, PyObject *key)
+{
+	long hash;
+	dictobject *mp = (dictobject *)op;
+	PyObject *v;
+
+	if (!PyDict_Check(op)) {
+		return NULL;
+	}
+	if (!PyString_CheckExact(key) ||
+	    (hash = ((PyStringObject *) key)->ob_shash) == -1)
+	{
+		hash = PyObject_Hash(key);
+		if (hash == -1)
+			return NULL;
+	}
+	v = (mp->ma_lookup)(mp, key, hash) -> me_value;
+	if (v == NULL)
+		PyErr_SetObject(PyExc_KeyError, key);
+	else
+		Py_INCREF(v);
+	return v;
+}
+
 /* CAUTION: PyDict_SetItem() must guarantee that it won't resize the
  * dictionary if it is merely replacing the value for an existing key.
  * This is means that it's safe to loop over a dictionary with
@@ -1735,6 +1760,11 @@ dict_iteritems(dictobject *dict)
 PyDoc_STRVAR(has_key__doc__,
 "D.has_key(k) -> True if D has a key k, else False");
 
+PyDoc_STRVAR(contains__doc__,
+"D.__contains__(k) -> True if D has a key k, else False");
+
+PyDoc_STRVAR(getitem__doc__, "x.__getitem__(y) <==> x[y]");
+
 PyDoc_STRVAR(get__doc__,
 "D.get(k[,d]) -> D[k] if k in D, else d.  d defaults to None.");
 
@@ -1781,6 +1811,10 @@ PyDoc_STRVAR(iteritems__doc__,
 "D.iteritems() -> an iterator over the (key, value) items of D");
 
 static PyMethodDef mapp_methods[] = {
+	{"__contains__",(PyCFunction)dict_has_key,      METH_O | METH_COEXIST,
+	 contains__doc__},
+	{"__getitem__", (PyCFunction)dict_getitem,	METH_O | METH_COEXIST,
+	 getitem__doc__},
 	{"has_key",	(PyCFunction)dict_has_key,      METH_O,
 	 has_key__doc__},
 	{"get",         (PyCFunction)dict_get,          METH_VARARGS,

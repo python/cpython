@@ -156,6 +156,28 @@ set_contains(PySetObject *so, PyObject *key)
 }
 
 static PyObject *
+set_direct_contains(PySetObject *so, PyObject *key)
+{
+	PyObject *tmp;
+	long result;
+
+	result = PyDict_Contains(so->data, key);
+	if (result == -1 && PyAnySet_Check(key)) {
+		PyErr_Clear();
+		tmp = frozenset_dict_wrapper(((PySetObject *)(key))->data);
+		if (tmp == NULL)
+			return NULL;
+		result = PyDict_Contains(so->data, tmp);
+		Py_DECREF(tmp);
+	}
+	if (result == -1)
+		return NULL;
+	return PyBool_FromLong(result);
+}
+
+PyDoc_STRVAR(contains_doc, "x.__contains__(y) <==> y in x.");
+
+static PyObject *
 set_copy(PySetObject *so)
 {
 	return make_new_set(so->ob_type, (PyObject *)so);
@@ -968,6 +990,8 @@ static PyMethodDef set_methods[] = {
 	 add_doc},
 	{"clear",	(PyCFunction)set_clear,		METH_NOARGS,
 	 clear_doc},
+	{"__contains__",	(PyCFunction)set_direct_contains,	METH_O | METH_COEXIST,
+	 contains_doc},
 	{"copy",	(PyCFunction)set_copy,		METH_NOARGS,
 	 copy_doc},
 	{"__copy__",	(PyCFunction)set_copy,		METH_NOARGS,
@@ -1094,6 +1118,8 @@ PyTypeObject PySet_Type = {
 
 
 static PyMethodDef frozenset_methods[] = {
+	{"__contains__",	(PyCFunction)set_direct_contains,	METH_O | METH_COEXIST,
+	 contains_doc},
 	{"copy",	(PyCFunction)frozenset_copy,	METH_NOARGS,
 	 copy_doc},
 	{"__copy__",	(PyCFunction)frozenset_copy,	METH_NOARGS,

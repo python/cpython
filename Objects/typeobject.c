@@ -2792,8 +2792,9 @@ add_methods(PyTypeObject *type, PyMethodDef *meth)
 
 	for (; meth->ml_name != NULL; meth++) {
 		PyObject *descr;
-		if (PyDict_GetItemString(dict, meth->ml_name))
-			continue;
+		if (PyDict_GetItemString(dict, meth->ml_name) &&
+			!(meth->ml_flags & METH_COEXIST))
+				continue;
 		if (meth->ml_flags & METH_CLASS) {
 			if (meth->ml_flags & METH_STATIC) {
 				PyErr_SetString(PyExc_ValueError,
