@@ -227,7 +227,7 @@ will raise a \exception{KeyError}.  There's also a \method{safe_substitute}
 method that ignores missing keys:
 
 \begin{verbatim}
->>> t = string.SafeTemplate('$page: $title')
+>>> t = string.Template('$page: $title')
 >>> t.safe_substitute({'page':3})
 u'3: $title'
 \end{verbatim}
@@ -881,6 +881,7 @@ fill character other than a space.
 \item Strings also gained an \method{rsplit()} method that
 works like the \method{split()} method but splits from the end of
 the string.  
+(Contributed by Sean Reifschneider.)
 
 \begin{verbatim}
 >>> 'www.python.org'.split('.', 1)
@@ -1729,6 +1730,6 @@ the name \samp{None} is now a syntax error.
 The author would like to thank the following people for offering
 suggestions, corrections and assistance with various drafts of this
 article: Koray Can, Hye-Shik Chang, Michael Dyck, Raymond Hettinger, 
-Brian Hurt, Hamish Lawson, Fredrik Lundh.
+Brian Hurt, Hamish Lawson, Fredrik Lundh, Sean Reifschneider.
 
 \end{document}
