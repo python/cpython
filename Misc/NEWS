@@ -12,6 +12,9 @@ What's New in Python 2.4 alpha 1?
 Core and builtins
 -----------------
 
+- complex(obj) could leak a little memory if obj wasn't a string or
+  number.
+
 - zip() with no arguments now returns an empty list instead of raising
   a TypeError exception.
 
