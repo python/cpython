@@ -45,6 +45,10 @@ Core and builtins
   means all instances in library and 3rd-party modules, as well as in
   your own code.  As the PEP says, -Qnew is intended for use only in
   educational environments with control over the libraries in use.
+  Note that test_coercion.py in the standard Python test suite fails
+  under -Qnew; this is expected, and won't be repaired until true
+  division becomes the default (in the meantime, test_coercion is
+  testing the current rules).
 
 Extension modules
 
