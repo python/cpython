@@ -174,7 +174,7 @@ extern long sys_milli();
 #define DO_MILLI
 #endif /* BSD_TIME */
 
-#ifdef TURBO_C
+#ifdef MSDOS
 #define DO_MILLI
 #endif
 
@@ -469,7 +469,7 @@ floatsleep(secs)
 #endif /* unix */
 
 
-#ifdef TURBO_C
+#ifdef MSDOS
 
 #ifndef CLOCKS_PER_SEC
 #define CLOCKS_PER_SEC 55	/* 54.945 msec per tick (18.2 HZ clock) */
@@ -491,10 +491,6 @@ millitimer()
 	return ticks * CLOCKS_PER_SEC;/* XXX shouldn't this be different? */
 }
 
-#endif /* TURBO_C */
-
-#ifdef MSDOS
-
 floatsleep(secs)
       double secs;
 {
@@ -502,4 +498,5 @@ floatsleep(secs)
       while( (clock()-t)/CLOCKS_PER_SEC<secs )
               ;
 }
+
 #endif /* MSDOS */
