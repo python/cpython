@@ -44,10 +44,27 @@ class Scanner:
 		self.initpatterns()
 		self.compilepatterns()
 		self.initosspecifics()
+		self.initusedtypes()
 		if output:
 			self.setoutput(output, defsoutput)
 		if input:
 			self.setinput(input)
+	
+	def initusedtypes(self):
+		self.usedtypes = {}
+	
+	def typeused(self, type, mode):
+		if not self.usedtypes.has_key(type):
+			self.usedtypes[type] = {}
+		self.usedtypes[type][mode] = None
+	
+	def reportusedtypes(self):
+		types = self.usedtypes.keys()
+		types.sort()
+		for type in types:
+			modes = self.usedtypes[type].keys()
+			modes.sort()
+			print type, string.join(modes)
 
 	def initsilent(self):
 		self.silent = 0
@@ -330,6 +347,7 @@ class Scanner:
 					continue
 		except EOFError:
 			self.error("Uncaught EOF error")
+		self.reportusedtypes()
 
 	def dosymdef(self):
 		name, defn = self.sym.group('name', 'defn')
@@ -448,10 +466,12 @@ class Scanner:
 		return new
 
 	def generate(self, type, name, arglist):
+		self.typeused(type, 'return')
 		classname, listname = self.destination(type, name, arglist)
 		if not self.specfile: return
 		self.specfile.write("f = %s(%s, %s,\n" % (classname, type, `name`))
 		for atype, aname, amode in arglist:
+			self.typeused(atype, amode)
 			self.specfile.write("    (%s, %s, %s),\n" %
 			                    (atype, `aname`, amode))
 		self.specfile.write(")\n")
