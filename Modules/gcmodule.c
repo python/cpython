@@ -802,8 +802,9 @@ _PyObject_GC_Malloc(PyTypeObject *tp, int size)
 {
 	PyObject *op;
 #ifdef WITH_CYCLE_GC
-	PyGC_Head *g = PyObject_MALLOC(_PyObject_VAR_SIZE(tp, size) +
-						sizeof(PyGC_Head));
+	const size_t nbytes = sizeof(PyGC_Head) +
+			      (size_t)_PyObject_VAR_SIZE(tp, size);
+	PyGC_Head *g = PyObject_MALLOC(nbytes);						
 	if (g == NULL)
 		return (PyObject *)PyErr_NoMemory();
 	g->gc_next = NULL;
