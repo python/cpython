@@ -11,7 +11,7 @@ sub do_cmd_option {
 }
 
 sub do_cmd_filevar {
-    return use_wrappers(@_[0], '<font face="sans-serif"></i>', '</i></font>');
+    return use_wrappers(@_[0], '<font face="sans-serif"><i>', '</i></font>');
 }
 
 sub do_cmd_XXX {
