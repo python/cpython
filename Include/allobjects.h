@@ -47,11 +47,19 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "config.h"
 #endif
 
+#ifdef __CFM68K__
+#define UsingSharedLibs
+#endif
+
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
 
 #include "myproto.h"
+
+#ifdef __CFM68K__
+#pragma lib_export on
+#endif
 
 #include "object.h"
 #include "objimpl.h"
