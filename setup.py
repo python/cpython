@@ -310,7 +310,10 @@ class PyBuildExt(build_ext):
         # readline
         if self.compiler.find_library_file(lib_dirs, 'readline'):
             readline_libs = ['readline']
-            if self.compiler.find_library_file(lib_dirs +
+            if self.compiler.find_library_file(lib_dirs,
+                                                 'ncurses'):
+                readline_libs.append('ncurses')
+            elif self.compiler.find_library_file(lib_dirs +
                                                ['/usr/lib/termcap'],
                                                'termcap'):
                 readline_libs.append('termcap')
@@ -318,8 +321,7 @@ class PyBuildExt(build_ext):
                                    library_dirs=['/usr/lib/termcap'],
                                    libraries=readline_libs) )
 
-        # The crypt module is now disabled by default because it breaks builds
-        # on many systems (where -lcrypt is needed), e.g. Linux (I believe).
+        # crypt module.
 
         if self.compiler.find_library_file(lib_dirs, 'crypt'):
             libs = ['crypt']
