@@ -189,7 +189,7 @@ static PyGetSetDef meth_getsets [] = {
 #define OFF(x) offsetof(PyCFunctionObject, x)
 
 static PyMemberDef meth_members[] = {
-	{"__module__",    T_OBJECT,     OFF(m_module)},
+	{"__module__",    T_OBJECT,     OFF(m_module), WRITE_RESTRICTED},
 	{NULL}
 };
 
