@@ -1,0 +1,450 @@
+\section{\module{tarfile} --- Read and write tar archive files}
+
+\declaremodule{standard}{tarfile}
+\modulesynopsis{Read and write tar-format archive files.}
+\versionadded{2.3}
+
+\moduleauthor{Lars Gust\"abel}{lars@gustaebel.de}
+\sectionauthor{Lars Gust\"abel}{lars@gustaebel.de}
+
+The \module{tarfile} module makes it possible to read and create tar archives.
+Some facts and figures:
+
+\begin{itemize}
+\item reads and writes \module{gzip} and \module{bzip2} compressed archives.
+\item creates POSIX 1003.1-1990 compliant or GNU tar compatible archives.
+\item reads GNU tar extensions \emph{longname}, \emph{longlink} and
+      \emph{sparse}.
+\item stores pathnames of unlimited length using GNU tar extensions.
+\item handles directories, regular files, hardlinks, symbolic links, fifos,
+      character devices and block devices and is able to acquire and
+      restore file information like timestamp, access permissions and owner.
+\item can handle tape devices.
+\end{itemize}
+
+\begin{funcdesc}{open}{\optional{name\optional{, mode
+                       \optional{, fileobj\optional{, bufsize}}}}}
+    Return a \class{TarFile} object for the pathname \var{name}.
+    For detailed information on \class{TarFile} objects,
+    see \citetitle{TarFile Objects} (section \ref{tarfile-objects}).
+
+    \var{mode} has to be a string of the form \code{'filemode[:compression]'},
+    it defaults to \code{'r'}. Here is a full list of mode combinations:
+
+    \begin{tableii}{c|l}{code}{mode}{action}
+    \lineii{'r'}{Open for reading with transparent compression (recommended).}
+    \lineii{'r:'}{Open for reading exclusively without compression.}
+    \lineii{'r:gz'}{Open for reading with gzip compression.}
+    \lineii{'r:bz2'}{Open for reading with bzip2 compression.}
+    \lineii{'a' or 'a:'}{Open for appending with no compression.}
+    \lineii{'w' or 'w:'}{Open for uncompressed writing.}
+    \lineii{'w:gz'}{Open for gzip compressed writing.}
+    \lineii{'w:bz2'}{Open for bzip2 compressed writing.}
+    \end{tableii}
+
+    Note that \code{'a:gz'} or \code{'a:bz2'} is not possible.
+    If \var{mode} is not suitable to open a certain (compressed) file for
+    reading, \exception{ReadError} is raised. Use \var{mode} \code{'r'} to
+    avoid this.  If a compression method is not supported,
+    \exception{CompressionError} is raised.
+
+    If \var{fileobj} is specified, it is used as an alternative to
+    a file object opened for \var{name}.
+
+    For special purposes, there is a second format for \var{mode}:
+    \code{'filemode|[compression]'}.  \code{open} will return a \class{TarFile}
+    object that processes its data as a stream of blocks. No random
+    seeking will be done on the file. If given, \var{fileobj} may be any
+    object that has a \code{read()} resp. \code{write()} method.
+    \var{bufsize} specifies the blocksize and defaults to \code{20 * 512}
+    bytes. Use this variant in combination with e.g. \code{sys.stdin}, a socket
+    file object or a tape device.
+    However, such a \class{TarFile} object is limited in that it does not allow
+    to be accessed randomly, see \citetitle{Examples} (section
+    \ref{tar-examples}).
+    The currently possible modes:
+
+    \begin{tableii}{c|l}{code}{mode}{action}
+    \lineii{'r|'}{Open a \emph{stream} of uncompressed tar blocks for reading.}
+    \lineii{'r|gz'}{Open a gzip compressed \emph{stream} for reading.}
+    \lineii{'r|bz2'}{Open a bzip2 compressed \emph{stream} for reading.}
+    \lineii{'w|'}{Open an uncompressed \emph{stream} for writing.}
+    \lineii{'w|gz'}{Open an gzip compressed \emph{stream} for writing.}
+    \lineii{'w|bz2'}{Open an bzip2 compressed \emph{stream} for writing.}
+    \end{tableii}
+\end{funcdesc}
+
+\begin{classdesc*}{TarFile}
+    Class for reading and writing tar archives. Do not use this
+    class directly, better use \function{open()} instead.
+    See \citetitle{TarFile Objects} (section \ref{tarfile-objects}).
+\end{classdesc*}
+
+\begin{funcdesc}{is_tarfile}{name}
+    Return \code{True} if \var{name} is a tar archive file, that the
+    \module{tarfile} module can read.
+\end{funcdesc}
+
+\begin{classdesc}{TarFileCompat}{filename\optional{, mode\optional{,
+    compression}}}
+
+    Class for limited access to tar archives with a \code{zipfile}-like
+    interface. Please consult the documentation of \code{zipfile} for more
+    details.
+    \code{compression} must be one of the following constants:
+    \begin{datadesc}{TAR_PLAIN}
+        Constant for an uncompressed tar archive.
+    \end{datadesc}
+    \begin{datadesc}{TAR_GZIPPED}
+        Constant for a \code{gzip} compressed tar archive.
+    \end{datadesc}
+\end{classdesc}
+
+\begin{excdesc}{TarError}
+    Base class for all \module{tarfile} exceptions.
+\end{excdesc}
+
+\begin{excdesc}{ReadError}
+    Is raised when a tar archive is opened, that either cannot be handled by
+    the \module{tarfile} module or is somehow invalid.
+\end{excdesc}
+
+\begin{excdesc}{CompressionError}
+    Is raised when a compression method is not supported or when the data
+    cannot be decoded properly.
+\end{excdesc}
+
+\begin{excdesc}{StreamError}
+    Is raised for the limitations that are typical for stream-like
+    \class{TarFile} objects.
+\end{excdesc}
+
+\begin{excdesc}{ExtractError}
+    Is raised for \emph{non-fatal} errors when using \method{extract()}, but
+    only if \member{TarFile.errorlevel}\code{ == 2}.
+\end{excdesc}
+
+\begin{seealso}
+    \seemodule[module-zipfile]{zipfile}{Documentation of the \code{zipfile}
+    standard module.}
+
+    \seetitle[http://www.gnu.org/manual/tar/html_chapter/tar_8.html\#SEC118]
+    {GNU tar manual, Standard Section}{Documentation for tar archive files,
+    including GNU tar extensions.}
+\end{seealso}
+
+%-----------------
+% TarFile Objects
+%-----------------
+
+\subsection{TarFile Objects \label{tarfile-objects}}
+
+The \class{TarFile} object provides an interface to a tar archive. A tar
+archive is a sequence of blocks. An archive member (a stored file) is made up
+of a header block followed by data blocks. It is possible, to store a file in a
+tar archive several times. Each archive member is represented by a
+\class{TarInfo} object, see \citetitle{TarInfo Objects} (section
+\ref{tarinfo-objects}) for details.
+
+\begin{classdesc}{TarFile}{\optional{name
+                           \optional{, mode\optional{, fileobj}}}}
+    Open an \emph{(uncompressed)} tar archive \var{name}.
+    \var{mode} is either \code{'r'} to read from an existing archive,
+    \code{'a'} to append data to an existing file or \code{'w'} to create a new
+    file overwriting an existing one. \var{mode} defaults to \code{'r'}.
+
+    If \var{fileobj} is given, it is used for reading or writing data.
+    If it can be determined, \var{mode} is overridden by \var{fileobj}'s mode.
+    \begin{notice}
+        \var{fileobj} is not closed, when \class{TarFile} is closed.
+    \end{notice}
+\end{classdesc}
+
+\begin{methoddesc}{open}{...}
+    Alternative constructor. The \function{open()} function on module level is
+    actually a shortcut to this classmethod. See section \ref{module-tarfile}
+    for details.
+\end{methoddesc}
+
+\begin{methoddesc}{getmember}{name}
+    Return a \class{TarInfo} object for member \var{name}. If \var{name} can
+    not be found in the archive, \exception{KeyError} is raised.
+    \begin{notice}
+        If a member occurs more than once in the archive, its last
+        occurence is assumed to be the most up-to-date version.
+    \end{notice}
+\end{methoddesc}
+
+\begin{methoddesc}{getmembers}{}
+    Return the members of the archive as a list of \class{TarInfo} objects.
+    The list has the same order as the members in the archive.
+\end{methoddesc}
+
+\begin{methoddesc}{getnames}{}
+    Return the members as a list of their names. It has the same order as
+    the list returned by \method{getmembers()}.
+\end{methoddesc}
+
+\begin{methoddesc}{list}{verbose=True}
+    Print a table of contents to \code{sys.stdout}. If \var{verbose} is
+    \code{False}, only the names of the members are printed. If it is
+    \code{True}, an \code{"ls -l"}-like output is produced.
+\end{methoddesc}
+
+\begin{methoddesc}{next}{}
+    Return the next member of the archive as a \class{TarInfo} object, when
+    \class{TarFile} is opened for reading. Return \code{None} if there is no
+    more available.
+\end{methoddesc}
+
+\begin{methoddesc}{extract}{member\optional{, path}}
+    Extract a member from the archive to the current working directory,
+    using its full name. Its file information is extracted as accurately as
+    possible.
+    \var{member} may be a filename or a \class{TarInfo} object.
+    You can specify a different directory using \var{path}.
+\end{methoddesc}
+
+\begin{methoddesc}{extractfile}{member}
+    Extract a member from the archive as a file object.
+    \var{member} may be a filename or a \class{TarInfo} object.
+    If \var{member} is a regular file, a file-like object is returned.
+    If \var{member} is a link, a file-like object is constructed from the
+    link's target.
+    If \var{member} is none of the above, \code{None} is returned.
+    \begin{notice}
+        The file-like object is read-only and provides the following methods:
+        \method{read()}, \method{readline()}, \method{readlines()},
+        \method{seek()}, \method{tell()}.
+    \end{notice}
+\end{methoddesc}
+
+\begin{methoddesc}{add}{name\optional{, arcname\optional{, recursive=True}}}
+    Add the file \var{name} to the archive. \var{name} may be any type
+    of file (directory, fifo, symbolic link, etc.).
+    If given, \var{arcname} specifies an alternative name for the file in the
+    archive. Directories are added recursively by default.
+    This can be avoided by setting \var{recursive} to \code{False}.
+\end{methoddesc}
+
+\begin{methoddesc}{addfile}{tarinfo\optional{, fileobj}}
+    Add the \class{TarInfo} object \var{tarinfo} to the archive.
+    If \var{fileobj} is given, \code{tarinfo.size} bytes are read
+    from it and added to the archive.  You can create \class{TarInfo} objects
+    using \method{gettarinfo()}.
+    \begin{notice}
+    On Windows platforms, \var{fileobj} should always be opened with mode
+    \code{'rb'} to avoid irritation about the file size.
+    \end{notice}
+\end{methoddesc}
+
+\begin{methoddesc}{gettarinfo}{\optional{name\optional{, arcname
+                               \optional{, fileobj}}}}
+    Create a \class{TarInfo} object for either the file \var{name} or the
+    file object \var{fileobj} (using \code{os.fstat()} on its file descriptor).
+    You can modify some of the \class{TarInfo}'s attributes before you add it
+    using \method{addfile()}.
+    If given, \var{arcname} specifies an alternative name for the file in the
+    archive.
+\end{methoddesc}
+
+\begin{methoddesc}{close}{}
+    Close the \class{TarFile}. In write-mode, two finishing zero blocks are
+    appended to the archive.
+\end{methoddesc}
+
+\begin{memberdesc}{posix=True}
+    If \code{True}, create a POSIX 1003.1-1990 compliant archive. GNU
+    extensions are not used, because they are not part of the POSIX standard.
+    This limits the length of filenames to at most 256 and linknames to 100
+    characters. A \exception{ValueError} is raised, if a pathname exceeds this
+    limit.
+    If \code{False}, create a GNU tar compatible archive. It will not be POSIX
+    compliant, but can store pathnames of unlimited length.
+\end{memberdesc}
+
+\begin{memberdesc}{dereference=False}
+    If \code{False}, add symbolic and hard links to archive. If \code{True},
+    add the content of the target files to the archive. This has no effect on
+    systems that do not support links.
+\end{memberdesc}
+
+\begin{memberdesc}{ignore_zeros=False}
+    If \code{False}, treat an empty block as the end of the archive. If
+    \code{True}, skip empty (and invalid) blocks and try to get as many
+    members as possible. This is only useful for concatenated or damaged
+    archives.
+\end{memberdesc}
+
+\begin{memberdesc}{debug=0}
+    To be set from \code{0}(no debug messages) up to \code{3}(all debug
+    messages). The messages are written to \code{sys.stdout}.
+\end{memberdesc}
+
+\begin{memberdesc}{errorlevel=0}
+    If \code{0}, all errors are ignored when using \method{extract()}.
+    Nevertheless, they appear as error messages in the debug output, when
+    debugging is enabled.
+    If \code{1}, all \emph{fatal} errors are raised as \exception{OSError}
+    or \exception{IOError} exceptions.
+    If \code{2}, all \emph{non-fatal} errors are raised as \exception{TarError}
+    exceptions as well.
+\end{memberdesc}
+
+%-----------------
+% TarInfo Objects
+%-----------------
+
+\subsection{TarInfo Objects \label{tarinfo-objects}}
+
+A \class{TarInfo} object represents one member in a \class{TarFile}. Aside from
+storing all required attributes of a file (like file type, size, time,
+permissions, owner etc.), it provides some useful methods to determine its
+type. It does \emph{not} contain the file's data itself.
+
+\class{TarInfo} objects are returned by \code{TarFile}'s methods
+\code{getmember()}, \code{getmembers()} and \code{gettarinfo()}.
+
+\begin{classdesc}{TarInfo}{\optional{name}}
+    Create a \class{TarInfo} object.
+\end{classdesc}
+
+\begin{methoddesc}{frombuf}{}
+    Create and return a \class{TarInfo} object from a string buffer.
+\end{methoddesc}
+
+\begin{methoddesc}{tobuf}{}
+    Create a string buffer from a \class{TarInfo} object.
+\end{methoddesc}
+
+A \code{TarInfo} object has the following public data attributes:
+\begin{memberdesc}{name}
+    Name of the archive member.
+\end{memberdesc}
+
+\begin{memberdesc}{size}
+    Size in bytes.
+\end{memberdesc}
+
+\begin{memberdesc}{mtime}
+    Time of last modification.
+\end{memberdesc}
+
+\begin{memberdesc}{mode}
+    Permission bits.
+\end{memberdesc}
+
+\begin{memberdesc}{type}
+    File type.
+    \var{type} is usually one of these constants:
+    \code{REGTYPE, AREGTYPE, LNKTYPE, SYMTYPE, DIRTYPE, FIFOTYPE, CONTTYPE,
+    CHRTYPE, BLKTYPE, GNUTYPE_SPARSE}.
+    To determine the type of a \class{TarInfo} object more conveniently, use
+    the \code{is_*()} methods below.
+\end{memberdesc}
+
+\begin{memberdesc}{linkname}
+    Name of the target file name, which is only present in \class{TarInfo}
+    objects of type LNKTYPE and SYMTYPE.
+\end{memberdesc}
+
+\begin{memberdesc}{uid, gid}
+    User and group ID of who originally stored this member.
+\end{memberdesc}
+
+\begin{memberdesc}{uname, gname}
+    User and group name.
+\end{memberdesc}
+
+A \class{TarInfo} object also provides some convenient query methods:
+\begin{methoddesc}{isfile}{}
+    Return \code{True} if the \class{Tarinfo} object is a regular file.
+\end{methoddesc}
+
+\begin{methoddesc}{isreg}{}
+    Same as \method{isfile()}.
+\end{methoddesc}
+
+\begin{methoddesc}{isdir}{}
+    Return \code{True} if it is a directory.
+\end{methoddesc}
+
+\begin{methoddesc}{issym}{}
+    Return \code{True} if it is a symbolic link.
+\end{methoddesc}
+
+\begin{methoddesc}{islnk}{}
+    Return \code{True} if it is a hard link.
+\end{methoddesc}
+
+\begin{methoddesc}{ischr}{}
+    Return \code{True} if it is a character device.
+\end{methoddesc}
+
+\begin{methoddesc}{isblk}{}
+    Return \code{True} if it is a block device.
+\end{methoddesc}
+
+\begin{methoddesc}{isfifo}{}
+    Return \code{True} if it is a FIFO.
+\end{methoddesc}
+
+\begin{methoddesc}{isdev}{}
+    Return \code{True} if it is one of character device, block device or FIFO.
+\end{methoddesc}
+
+%------------------------
+% Examples
+%------------------------
+
+\subsection{Examples \label{tar-examples}}
+
+How to create an uncompressed tar archive from a list of filenames:
+\begin{verbatim}
+import tarfile
+tar = tarfile.open("sample.tar", "w")
+for name in ["foo", "bar", "quux"]:
+    tar.add(name)
+tar.close()
+\end{verbatim}
+
+How to read a gzip compressed tar archive and display some member information:
+\begin{verbatim}
+import tarfile
+tar = tarfile.open("sample.tar.gz", "r:gz")
+for tarinfo in tar:
+    print tarinfo.name, "is", tarinfo.size, "bytes in size and is",
+    if tarinfo.isreg():
+        print "a regular file."
+    elif tarinfo.isdir():
+        print "a directory."
+    else:
+        print "something else."
+tar.close()
+\end{verbatim}
+
+How to create a tar archive with faked information:
+\begin{verbatim}
+import tarfile
+tar = tarfile.open("sample.tar.gz", "w:gz")
+for name in namelist:
+    tarinfo = tar.gettarinfo(name, "fakeproj-1.0/" + name)
+    tarinfo.uid = 123
+    tarinfo.gid = 456
+    tarinfo.uname = "johndoe"
+    tarinfo.gname = "fake"
+    tar.addfile(tarinfo, file(name))
+tar.close()
+\end{verbatim}
+
+The \emph{only} way to extract an uncompressed tar stream from
+\code{sys.stdin}:
+\begin{verbatim}
+import sys
+import tarfile
+tar = tarfile.open(mode="r|", fileobj=sys.stdin)
+for tarinfo in tar:
+    tar.extract(tarinfo)
+tar.close()
+\end{verbatim}
+
