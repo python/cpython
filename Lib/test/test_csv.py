@@ -229,10 +229,17 @@ class Test_Csv(unittest.TestCase):
                         quoting=csv.QUOTE_NONE, escapechar='\\')
 
     def test_read_bigfield(self):
-        # This exercises the buffer realloc functionality
-        bigstring = 'X' * 50000
+        # This exercises the buffer realloc functionality and field size
+        # limits.
+        size = 50000
+        bigstring = 'X' * size
         bigline = '%s,%s' % (bigstring, bigstring)
         self._read_test([bigline], [[bigstring, bigstring]])
+        csv.set_field_limit(size)
+        self._read_test([bigline], [[bigstring, bigstring]])
+        self.assertEqual(csv.set_field_limit(), size)
+        csv.set_field_limit(size-1)
+        self.assertRaises(csv.Error, self._read_test, [bigline], [])
 
 class TestDialectRegistry(unittest.TestCase):
     def test_registry_badargs(self):
