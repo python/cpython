@@ -22,9 +22,4 @@ Files:
 
 	test_parser.py  program to put the parser module through it's paces.
 
-	parser.tex   -- LaTex driver file for formatting the parser module
-			documentation separately from the library reference.
-
-	Makefile     -- `make' rule set to format the parser module manual.
-
 Enjoy!
