@@ -388,14 +388,15 @@ Leave raw mode. Return to normal ``cooked'' mode with line buffering.
 \end{funcdesc}
 
 \begin{funcdesc}{pair_content}{pair_number}
-Returns a tuple \var{(fg,bg)} containing the colors for the requested
-color pair.  The value of \var{pair_number} must be between 0 and
-COLOR_PAIRS-1.
+Returns a tuple \code{(\var{fg}, \var{bg})} containing the colors for
+the requested color pair.  The value of \var{pair_number} must be
+between \code{0} and \code{\constant{COLOR_PAIRS} - 1}.
 \end{funcdesc}
 
 \begin{funcdesc}{pair_number}{attr}
-Returns the number of the color-pair set by the attribute value \var{attr}.
-\function{color_pair()} is the counterpart to this function.
+Returns the number of the color-pair set by the attribute value
+\var{attr}.  \function{color_pair()} is the counterpart to this
+function.
 \end{funcdesc}
 
 \begin{funcdesc}{putp}{string}
