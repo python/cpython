@@ -289,7 +289,7 @@ class GeneralModuleTests(unittest.TestCase):
         # Find one service that exists, then check all the related interfaces.
         # I've ordered this by protocols that have both a tcp and udp
         # protocol, at least for modern Linuxes.
-        for service in ('ssh', 'www', 'echo', 'imap2'):
+        for service in ('echo', 'daytime', 'domain'):
             try:
                 port = socket.getservbyname(service, 'tcp')
                 break
