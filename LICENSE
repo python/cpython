@@ -32,7 +32,7 @@ the various releases.
     1.3 thru 1.5.2  1.2         1995-1999   CNRI        yes
     1.6             1.5.2       2000        CNRI        no
     2.0             1.6         2000        BeOpen.com  no
-    1.6.1           1.6         2001        CNRI        no
+    1.6.1           1.6         2001        CNRI        yes (2)
     2.1             2.0+1.6.1   2001        PSF         no
     2.0.1           2.0+1.6.1   2001        PSF         yes
     2.1.1           2.1+2.0.1   2001        PSF         yes
@@ -48,6 +48,11 @@ Footnotes:
     a modified version without making your changes open source.  The
     GPL-compatible licenses make it possible to combine Python with
     other software that is released under the GPL; the others don't.
+
+(2) According to Richard Stallman, 1.6.1 is not GPL-compatible,
+    because its license has a choice of law clause.  According to
+    CNRI, however, Stallman's lawyer has told CNRI's lawyer that 1.6.1
+    is "not incompatible" with the GPL.
 
 Thanks to the many outside volunteers who have worked under Guido's
 direction to make these releases possible.
