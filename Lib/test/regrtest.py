@@ -590,8 +590,6 @@ _expectations = {
         test_socketserver
         test_sunaudiodev
         test_unicode_file
-        test_winreg
-        test_winsound
         """,
    'mac':
         """
@@ -635,8 +633,6 @@ _expectations = {
         test_sundry
         test_timing
         test_unicode_file
-        test_winreg
-        test_winsound
         """,
     'unixware7':
         """
@@ -659,8 +655,6 @@ _expectations = {
         test_sunaudiodev
         test_sundry
         test_unicode_file
-        test_winreg
-        test_winsound
         """,
     'openunix8':
         """
@@ -683,8 +677,6 @@ _expectations = {
         test_sunaudiodev
         test_sundry
         test_unicode_file
-        test_winreg
-        test_winsound
         """,
     'sco_sv3':
         """
@@ -716,8 +708,6 @@ _expectations = {
         test_threadedtempfile
         test_threading
         test_unicode_file
-        test_winreg
-        test_winsound
         """,
     'riscos':
         """
@@ -757,8 +747,6 @@ _expectations = {
         test_threading
         test_timing
         test_unicode_file
-        test_winreg
-        test_winsound
         """,
     'darwin':
         """
@@ -785,8 +773,6 @@ _expectations = {
         test_socketserver
         test_sunaudiodev
         test_unicode_file
-        test_winreg
-        test_winsound
         """,
     'sunos5':
         """
@@ -805,8 +791,6 @@ _expectations = {
         test_mpz
         test_openpty
         test_socketserver
-        test_winreg
-        test_winsound
         test_zipfile
         test_zlib
         """,
@@ -834,8 +818,6 @@ _expectations = {
         test_socketserver
         test_sunaudiodev
         test_unicode_file
-        test_winreg
-        test_winsound
         test_zipfile
         test_zlib
         """,
@@ -863,8 +845,6 @@ _expectations = {
         test_socketserver
         test_sunaudiodev
         test_unicode_file
-        test_winreg
-        test_winsound
         """,
     'cygwin':
         """
@@ -885,8 +865,6 @@ _expectations = {
         test_socketserver
         test_sunaudiodev
         test_unicode_file
-        test_winreg
-        test_winsound
         """,
     'os2emx':
         """
@@ -914,8 +892,6 @@ _expectations = {
         test_signal
         test_sunaudiodev
         test_unicode_file
-        test_winreg
-        test_winsound
         """,
 }
 
@@ -939,6 +915,14 @@ class _ExpectedSkips:
             if test_socket_ssl.skip_expected:
                 self.expected.add('test_socket_ssl')
 
+            if sys.platform != "mac":
+                self.expected.add("test_macostools")
+                self.expected.add("test_macfs")
+
+            if sys.platform != "win32":
+                self.expected.add("test_winreg")
+                self.expected.add("test_winsound")
+    
             self.valid = True
 
     def isvalid(self):
