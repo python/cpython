@@ -193,6 +193,51 @@ class TestDecorateSortUndecorate(unittest.TestCase):
         self.assertRaises(ZeroDivisionError, data.sort, None, lambda x: 1/x)
         self.assertEqual(data, dup)
 
+    def test_key_with_mutation(self):
+        data = range(10)
+        def k(x):
+            del data[:]
+            data[:] = range(20)
+            return x
+        self.assertRaises(ValueError, data.sort, key=k)
+
+    def test_key_with_mutating_del(self):
+        data = range(10)
+        class SortKiller(object):
+            def __init__(self, x):
+                pass
+            def __del__(self):
+                del data[:]
+                data[:] = range(20)
+        self.assertRaises(ValueError, data.sort, key=SortKiller)
+
+    def test_key_with_mutating_del_and_exception(self):
+        data = range(10)
+        ## dup = data[:]
+        class SortKiller(object):
+            def __init__(self, x):
+                if x > 2:
+                    raise RuntimeError
+            def __del__(self):
+                del data[:]
+                data[:] = range(20)
+        self.assertRaises(RuntimeError, data.sort, key=SortKiller)
+        ## major honking subtlety: we *can't* do:
+        ##
+        ## self.assertEqual(data, dup)
+        ##
+        ## because there is a reference to a SortKiller in the
+        ## traceback and by the time it dies we're outside the call to
+        ## .sort() and so the list protection gimmicks are out of
+        ## date (this cost some brain cells to figure out...).
+
+    def test_key_with_exception(self):
+        # Verify that the wrapper has been removed
+        data = range(-2,2)
+        dup = data[:]
+        self.assertRaises(ZeroDivisionError, data.sort, None, lambda x: 1/x)
+        self.assertEqual(data, dup)
+
     def test_reverse(self):
         data = range(100)
         random.shuffle(data)

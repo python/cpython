@@ -1848,7 +1848,7 @@ listsort(PyListObject *self, PyObject *args, PyObject *kwds)
 	PyObject *result = NULL;	/* guilty until proved innocent */
 	int reverse = 0;
 	PyObject *keyfunc = NULL;
-	int i, len = 0;
+	int i;
 	PyObject *key, *value, *kvpair;
 	static char *kwlist[] = {"cmp", "key", "reverse", 0};
 
@@ -1870,35 +1870,6 @@ listsort(PyListObject *self, PyObject *args, PyObject *kwds)
 	} else
 		Py_XINCREF(compare);
 
-	if (keyfunc != NULL) {
-		len = PyList_GET_SIZE(self);
-		for (i=0 ; i < len ; i++) {
-			value = PyList_GET_ITEM(self, i);
-			key = PyObject_CallFunctionObjArgs(keyfunc, value, 
-							   NULL);
-			if (key == NULL) {
-				for (i=i-1 ; i>=0 ; i--) {
-					kvpair = PyList_GET_ITEM(self, i);
-					value = sortwrapper_getvalue(kvpair);
-					PyList_SET_ITEM(self, i, value);
-					Py_DECREF(kvpair);
-				}
-				goto dsu_fail;
-			}
-			kvpair = build_sortwrapper(key, value);
-			if (kvpair == NULL)
-				goto dsu_fail;
-			PyList_SET_ITEM(self, i, kvpair);
-		}
-	}
-
-	/* Reverse sort stability achieved by initially reversing the list,
-	applying a stable forward sort, then reversing the final result. */
-	if (reverse && self->ob_size > 1)
-		reverse_slice(self->ob_item, self->ob_item + self->ob_size);
-
-	merge_init(&ms, compare);
-
 	/* The list is temporarily made empty, so that mutations performed
 	 * by comparison functions can't affect the slice of memory we're
 	 * sorting (allowing mutations during sorting is a core-dump
@@ -1908,6 +1879,46 @@ listsort(PyListObject *self, PyObject *args, PyObject *kwds)
 	saved_ob_item = self->ob_item;
 	self->ob_size = 0;
 	self->ob_item = empty_ob_item = PyMem_NEW(PyObject *, 0);
+
+	if (keyfunc != NULL) {
+		for (i=0 ; i < saved_ob_size ; i++) {
+			value = saved_ob_item[i];
+			key = PyObject_CallFunctionObjArgs(keyfunc, value, 
+							   NULL);
+			if (key == NULL) {
+				for (i=i-1 ; i>=0 ; i--) {
+					kvpair = saved_ob_item[i];
+					value = sortwrapper_getvalue(kvpair);
+					saved_ob_item[i] = value;
+					Py_DECREF(kvpair);
+				}
+				if (self->ob_item != empty_ob_item 
+				    || self->ob_size) {
+					/* If the list changed *as well* we
+					   have two errors.  We let the first
+					   one "win", but we shouldn't let
+					   what's in the list currently
+					   leak. */
+					(void)list_ass_slice(
+						self, 0, self->ob_size,
+						(PyObject *)NULL);
+				}
+				
+				goto dsu_fail;
+			}
+			kvpair = build_sortwrapper(key, value);
+			if (kvpair == NULL)
+				goto dsu_fail;
+			saved_ob_item[i] = kvpair;
+		}
+	}
+
+	/* Reverse sort stability achieved by initially reversing the list,
+	applying a stable forward sort, then reversing the final result. */
+	if (reverse && saved_ob_size > 1)
+		reverse_slice(saved_ob_item, saved_ob_item + saved_ob_size);
+
+	merge_init(&ms, compare);
 
 	nremaining = saved_ob_size;
 	if (nremaining < 2)
@@ -1959,6 +1970,15 @@ listsort(PyListObject *self, PyObject *args, PyObject *kwds)
 succeed:
 	result = Py_None;
 fail:
+	if (keyfunc != NULL) {
+		for (i=0 ; i < saved_ob_size ; i++) {
+			kvpair = saved_ob_item[i];
+			value = sortwrapper_getvalue(kvpair);
+			saved_ob_item[i] = value;
+			Py_DECREF(kvpair);
+		}
+	}
+
 	if (self->ob_item != empty_ob_item || self->ob_size) {
 		/* The user mucked with the list during the sort. */
 		(void)list_ass_slice(self, 0, self->ob_size, (PyObject *)NULL);
@@ -1968,26 +1988,17 @@ fail:
 			result = NULL;
 		}
 	}
+
+	if (reverse && saved_ob_size > 1)
+		reverse_slice(saved_ob_item, saved_ob_item + saved_ob_size);
+
+	merge_freemem(&ms);
+
+dsu_fail:
 	if (self->ob_item == empty_ob_item)
 		PyMem_FREE(empty_ob_item);
 	self->ob_size = saved_ob_size;
 	self->ob_item = saved_ob_item;
-	merge_freemem(&ms);
-
-	if (keyfunc != NULL) {
-		len = PyList_GET_SIZE(self);
-		for (i=0 ; i < len ; i++) {
-			kvpair = PyList_GET_ITEM(self, i);
-			value = sortwrapper_getvalue(kvpair);
-			PyList_SET_ITEM(self, i, value);
-			Py_DECREF(kvpair);
-		}
-	}
-
-	if (reverse && self->ob_size > 1)
-		reverse_slice(self->ob_item, self->ob_item + self->ob_size);
-
-dsu_fail:
 	Py_XDECREF(compare);
 	Py_XINCREF(result);
 	return result;
