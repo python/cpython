@@ -4,6 +4,42 @@ Python News
 
 (editors: check NEWS.help for information about editing NEWS using ReST.)
 
+
+What's New in Python 2.3.2?
+===========================
+
+*Release date: XX-XXX-XXXX*
+
+Core and builtins
+-----------------
+
+Extension modules
+-----------------
+
+Library
+-------
+
+IDLE
+----
+
+Tools/Demos
+-----------
+
+Build
+-----
+
+- A bug in the autoconf machinery meant that os.fsync was never available.
+
+C API
+-----
+
+Windows
+-------
+
+Mac
+---
+
+
 What's New in Python 2.3.1?
 ===========================
 
