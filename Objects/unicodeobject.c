@@ -5338,7 +5338,7 @@ formatint(Py_UNICODE *buf,
     if (x == -1 && PyErr_Occurred())
         return -1;
     if (x < 0 && type != 'd' && type != 'i') {
-	if (PyErr_Warn(PyExc_DeprecationWarning,
+	if (PyErr_Warn(PyExc_FutureWarning,
 		       "%u/%o/%x/%X of negative int will return "
 		       "a signed string in Python 2.4 and up") < 0)
 	    return -1;

@@ -2,7 +2,7 @@
 
 import warnings
 warnings.filterwarnings("ignore", "hex../oct.. of negative int",
-                        DeprecationWarning, __name__)
+                        FutureWarning, __name__)
 
 from test.test_support import TestFailed, fcmp, TESTFN, unlink, vereq
 

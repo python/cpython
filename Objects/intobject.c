@@ -671,7 +671,7 @@ int_lshift(PyIntObject *v, PyIntObject *w)
 	if (a == 0 || b == 0)
 		return int_pos(v);
 	if (b >= LONG_BIT) {
-		if (PyErr_Warn(PyExc_DeprecationWarning,
+		if (PyErr_Warn(PyExc_FutureWarning,
 			       "x<<y losing bits or changing sign "
 			       "will return a long in Python 2.4 and up") < 0)
 			return NULL;
@@ -679,7 +679,7 @@ int_lshift(PyIntObject *v, PyIntObject *w)
 	}
 	c = a << b;
 	if (a != Py_ARITHMETIC_RIGHT_SHIFT(long, c, b)) {
-		if (PyErr_Warn(PyExc_DeprecationWarning,
+		if (PyErr_Warn(PyExc_FutureWarning,
 			       "x<<y losing bits or changing sign "
 			       "will return a long in Python 2.4 and up") < 0)
 			return NULL;
@@ -774,7 +774,7 @@ int_oct(PyIntObject *v)
 	char buf[100];
 	long x = v -> ob_ival;
 	if (x < 0) {
-		if (PyErr_Warn(PyExc_DeprecationWarning,
+		if (PyErr_Warn(PyExc_FutureWarning,
 			       "hex()/oct() of negative int will return "
 			       "a signed string in Python 2.4 and up") < 0)
 			return NULL;
@@ -792,7 +792,7 @@ int_hex(PyIntObject *v)
 	char buf[100];
 	long x = v -> ob_ival;
 	if (x < 0) {
-		if (PyErr_Warn(PyExc_DeprecationWarning,
+		if (PyErr_Warn(PyExc_FutureWarning,
 			       "hex()/oct() of negative int will return "
 			       "a signed string in Python 2.4 and up") < 0)
 			return NULL;
