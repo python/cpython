@@ -5225,15 +5225,36 @@ previous versions.
   The type of the trace function registered using
   \cfunction{PyEval_SetProfile()} and \cfunction{PyEval_SetTrace()}.
   The first parameter is the object passed to the registration
-  function, 
+  function as \var{obj}, \var{frame} is the frame object to which the
+  event pertains, \var{what} is one of the constants
+  \constant{PyTrace_CALL}, \constant{PyTrace_EXCEPT},
+  \constant{PyTrace_LINE} or \constant{PyTrace_RETURN}, and \var{arg}
+  depends on the value of \var{what}:
+
+  \begin{tableii}{l|l}{constant}{Value of \var{what}}{Meaning of \var{arg}}
+    \lineii{PyTrace_CALL}{Always \NULL.}
+    \lineii{PyTrace_EXCEPT}{Exception information as returned by
+                            \function{sys.exc_info()}.}
+    \lineii{PyTrace_LINE}{Always \NULL.}
+    \lineii{PyTrace_RETURN}{Value being returned to the caller.}
+  \end{tableii}
 \end{ctypedesc}
 
 \begin{cvardesc}{int}{PyTrace_CALL}
   The value of the \var{what} parameter to a \ctype{Py_tracefunc}
-  function when a new function or method call is being reported.
+  function when a new call to a function or method is being reported,
+  or a new entry into a generator.  Note that the creation of the
+  iterator for a generator function is not reported as there is no
+  control transfer to the Python bytecode in the corresponding frame.
 \end{cvardesc}
 
 \begin{cvardesc}{int}{PyTrace_EXCEPT}
+  The value of the \var{what} parameter to a \ctype{Py_tracefunc}
+  function when an exception has been raised by Python code as the
+  result of an operation.  The operation may have explictly intended
+  to raise the operation (as with a \keyword{raise} statement), or may
+  have triggered an exception in the runtime as a result of the
+  specific operation.
 \end{cvardesc}
 
 \begin{cvardesc}{int}{PyTrace_LINE}
