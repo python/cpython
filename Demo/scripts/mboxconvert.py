@@ -120,4 +120,5 @@ def message(f, delimiter = ''):
     print
     return sts
 
-main()
+if __name__ == "__main__":
+    main()

@@ -23,4 +23,5 @@ def primes(min, max):
             if i >= min: print i
         i = i+2
 
-main()
+if __name__ == "__main__":
+    main()

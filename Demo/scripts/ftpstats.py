@@ -141,4 +141,5 @@ def add(dict, key, item):
     else:
         dict[key] = [item]
 
-main()
+if __name__ == "__main__":
+    main()

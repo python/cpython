@@ -359,8 +359,8 @@ def main():
     createpage(rootpage, tree, '')
     print 'Done'
 
-
-main()
+if __name__ == "__main__":
+    main()
 
 # That's all folks
 ######################################################################

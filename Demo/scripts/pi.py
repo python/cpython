@@ -30,4 +30,5 @@ def output(d):
     # Flush so the output is seen immediately
     sys.stdout.flush()
 
-main()
+if __name__ == "__main__":
+    main()

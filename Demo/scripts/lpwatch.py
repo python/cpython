@@ -103,7 +103,8 @@ def makestatus(name, thisuser):
         lines.append('lpq exit status %r' % (sts,))
     return string.joinfields(lines, ': ')
 
-try:
-    main()
-except KeyboardInterrupt:
-    pass
+if __name__ == "__main__":
+    try:
+        main()
+    except KeyboardInterrupt:
+        pass
