@@ -24,10 +24,23 @@ from types import *
 from Tkconstants import *
 import string; _string = string; del string
 
-TkVersion = eval(tkinter.TK_VERSION)
-TclVersion = eval(tkinter.TCL_VERSION)
+TkVersion = _string.atof(tkinter.TK_VERSION)
+TclVersion = _string.atof(tkinter.TCL_VERSION)
 
-
+######################################################################
+# Since the values of file event masks changed from Tk 4.0 to Tk 4.1,
+# they are defined here (and not in Tkconstants):
+######################################################################
+if TkVersion >= 4.1:
+    READABLE = 2
+    WRITABLE = 4
+    EXCEPTION = 8
+else:
+    READABLE = 1
+    WRITABLE = 2
+    EXCEPTION = 4
+    
+    
 def _flatten(tuple):
 	res = ()
 	for item in tuple:
@@ -249,7 +262,7 @@ class Misc:
 	def winfo_class(self):
 		return self.tk.call('winfo', 'class', self._w)
 	def winfo_containing(self, rootX, rootY):
-		return self.tk.call('winfo', 'containing', rootx, rootY)
+		return self.tk.call('winfo', 'containing', rootX, rootY)
 	def winfo_depth(self):
 		return self.tk.getint(self.tk.call('winfo', 'depth', self._w))
 	def winfo_exists(self):
@@ -451,7 +464,12 @@ class Misc:
 		except TclError: pass
 		e.height = tk.getint(h)
 		e.keycode = tk.getint(k)
-		e.state = tk.getint(s)
+		# For Visibility events, event state is a string and
+		# not an integer:
+		try:
+			e.state = tk.getint(s)
+		except TclError:
+			e.state = s
 		e.time = tk.getint(t)
 		e.width = tk.getint(w)
 		e.x = tk.getint(x)
@@ -865,6 +883,8 @@ class Button(Widget):
 		self.tk.call('tkButtonDown', self._w)
 	def tkButtonUp(self, *dummy):
 		self.tk.call('tkButtonUp', self._w)
+	def tkButtonInvoke(self, *dummy):
+		self.tk.call('tkButtonInvoke', self._w)
 	def flash(self):
 		self.tk.call(self._w, 'flash')
 	def invoke(self):
