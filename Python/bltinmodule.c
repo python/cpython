@@ -1527,6 +1527,11 @@ filtertuple(func, tuple)
 	register int i, j;
 	int len = gettuplesize(tuple);
 
+	if (len == 0) {
+		INCREF(tuple);
+		return tuple;
+	}
+
 	if ((result = newtupleobject(len)) == NULL)
 		return NULL;
 
