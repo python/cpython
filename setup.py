@@ -214,7 +214,6 @@ class PyBuildExt(build_ext):
 
         exts.append( Extension('_hotshot', ['_hotshot.c']) )
         exts.append( Extension('_weakref', ['_weakref.c']) )
-        exts.append( Extension('_symtable', ['symtablemodule.c']) )
         exts.append( Extension('xreadlines', ['xreadlinesmodule.c']) )
 
         # array objects

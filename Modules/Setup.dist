@@ -110,6 +110,9 @@ new newmodule.c			# Tommy Burnette's 'new' module
 
 # ======================================================================
 
+# The Python symtable module depends on .h files that setup.py doesn't track
+_symtable symtablemodule.c
+
 # The SGI specific GL module:
 
 GLHACK=-Dclear=__GLclear
