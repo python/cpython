@@ -30,10 +30,22 @@ extern time_t PyOS_GetLastModificationTime(char *, FILE *);
 /* Change for each incompatible change */
 /* The value of CR and LF is incorporated so if you ever read or write
    a .pyc file in text mode the magic number will be wrong; also, the
-   Apple MPW compiler swaps their values, botching string constants */
+   Apple MPW compiler swaps their values, botching string constants.
+   XXX That probably isn't important anymore.
+*/
 /* XXX Perhaps the magic number should be frozen and a version field
    added to the .pyc file header? */
-/* New way to come up with the magic number: (YEAR-1995), MONTH, DAY */
+/* New way to come up with the low 16 bits of the magic number:
+      (YEAR-1995) * 10000 +  MONTH * 100 + DAY
+   where MONTH and DAY are 1-based.
+   XXX Whatever the "old way" may have been isn't documented.
+   XXX This scheme breaks in 2002, as (2002-1995)*10000 = 70000 doesn't
+       fit in 16 bits.
+   XXX Later, sometimes 1 gets added to MAGIC in order to record that
+       the Unicode -U option is in use.  IMO (Tim's), that's a Bad Idea
+       (quite apart from that the -U option doesn't work so isn't used
+       anyway).
+*/
 #define MAGIC (60717 | ((long)'\r'<<16) | ((long)'\n'<<24))
 
 /* Magic word as global; note that _PyImport_Init() can change the
@@ -63,7 +75,7 @@ static const struct filedescr _PyImport_StandardFiletab[] = {
 	{".py", "r", PY_SOURCE},
 #ifdef MS_WIN32
 	{".pyw", "r", PY_SOURCE},
-#endif	
+#endif
 	{".pyc", "rb", PY_COMPILED},
 	{0, 0}
 };
@@ -739,7 +751,7 @@ load_source_module(char *name, char *pathname, FILE *fp)
 		return NULL;
 	}
 #endif
-	cpathname = make_compiled_pathname(pathname, buf, 
+	cpathname = make_compiled_pathname(pathname, buf,
 					   (size_t)MAXPATHLEN + 1);
 	if (cpathname != NULL &&
 	    (fpc = check_compiled_module(pathname, mtime, cpathname))) {
