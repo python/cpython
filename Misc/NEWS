@@ -1,4 +1,4 @@
-What's New in Python 2.0b2?
+What's New in Python 2.0c1?
 ===========================
 
 Below is a list of all relevant changes since release 1.6.  Older
@@ -14,6 +14,129 @@ http://starship.python.net/crew/amk/python/writing/new-python/.
 
 ======================================================================
 
+What's new in 2.0 release candidate 1 (since beta 2)?
+=====================================================
+
+All the changes since the last beta release are bug fixes or changes
+to build support for specific platforms.
+
+Core language, builtins, and interpreter
+
+- A bug that caused crashes when __coerce__ was used with augmented
+  assignment, e.g. +=, was fixed.
+
+- Raise ZeroDivisionError when raising zero to a negative number,
+  e.g. 0.0 ** -2.0.  Note that math.pow is unrelated to the builtin
+  power operator and the result of math.pow(0.0, -2.0) will vary by
+  platform.  On Linux, it raises a ValueError.
+
+- A bug in Unicode string interpolation was fixed that occasionally
+  caused errors with formats including "%%".  For example, the
+  following expression "%% %s" % u"abc" no longer raises a TypeError.
+
+- Compilation of deeply nested expressions raises MemoryError instead
+  of SyntaxError, e.g. eval("[" * 50 + "]" * 50).
+
+- In 2.0b2 on Windows, the interpreter wrote .pyc files in text mode,
+  rendering them useless.  They are now written in binary mode again.
+
+Standard library
+
+- Keyword arguments are now accepted for most pattern and match object
+  methods in SRE, the standard regular expression engine.
+
+- In SRE, fix error with negative lookahead and lookbehind that
+  manifested itself as a runtime error in patterns like "?<!abc)(def)".
+
+- Tkinter now supports Unicode strings and will set a Python exception
+  when an error occurs handling a specific Unicode string.  
+
+- Fix memory management errors in Merge() and Tkapp_Call() routines.
+
+- Several changes were made to cStringIO to make it compatible with
+  the file-like object interface and with StringIO.  If operations are
+  performed on a closed object, an exception is raised.  The truncate
+  method now accepts a position argument and readline accepts a size
+  argument. 
+
+- There were many changes made to the linuxaudiodev module and its
+  test suite; as a result, a short, unexpected audio sample should now
+  play when the regression test is run.  
+
+  Note that this module is named poorly, because it should work
+  correctly on any platform that supports the Open Sound System
+  (OSS). 
+
+  The module now raises exceptions when errors occur instead of
+  crashing.  It also defines the AFMT_A_LAW format (logarithmic A-law
+  audio) and defines a getptr() method that calls the
+  SNDCTL_DSP_GETxPTR ioctl defined in the OSS Programmer's Guide.
+
+- The library_version attribute, introduced in an earlier beta, was
+  removed because it can not be supported with early versions of the C
+  readline library, which provides no way to determine the version at
+  compile-time.
+
+- The binascii module is now enabled on Win64.
+
+Internals
+
+- Fix several buffer overflow vulnerabilities in calculate_path(),
+  which is called when the interpreter starts up to determine where
+  the standard library is installed.  These vulnerabilities affect all
+  previous versions of Python and can be exploited by setting very
+  long values for PYTHONHOME or argv[0].  The risk is greatest for a
+  setuid Python script, although use of the wrapper in
+  Misc/setuid-prog.c will eliminate the vulnerability.
+
+- Fixed garbage collection bugs in instance creation that were
+  triggered when errors occurred during initialization.  The solution,
+  applied in cPickle and in PyInstance_New(), is to call
+  PyObject_GC_Init() after the initialization of the object's
+  container attributes is complete.
+
+- pyexpat adds definitions of PyModule_AddStringConstant and
+  PyModule_AddObject if the Python version is less than 2.0, which
+  provides compatibility with PyXML on Python 1.5.2.
+
+- If the platform has a bogus definition for LONG_BIT (the number of
+  bits in a long), an error will be reported at compile time.
+
+- Fix bugs in _PyTuple_Resize() which caused hard-to-interpret garbage
+  collection crashes and possibly other, unreported crashes.
+
+- Fixed a memory leak in _PyUnicode_Fini().
+
+Build issues
+
+- configure now accepts a --with-suffix option that specifies the
+  executable.  This is useful for builds on Cygwin and Mac OS X, for
+  example. 
+
+- The mmap.PAGESIZE constant is now initialized using sysconf when
+  possible, which eliminates a dependency on -lucb for Reliant UNIX.
+
+- The md5 file should now compile on all platforms.
+
+- The select module now compiles on platforms that do not define
+  POLLRDNORM and related constants.
+
+- Darwin (Mac OS X):  Initial support for static builds on this
+  platform. 
+
+- BeOS: Many changes were made to support compilation on BeOS 4.5 and
+  5.0. 
+
+- Cygwin: Support for shared libraries, Tkinter, and sockets.
+
+- SunOS 4.1.4_JL: Fix test for directory existence in configure.
+
+Tools and other miscellany
+
+- Removed debugging prints from main used with freeze.
+
+- IDLE auto-indent internals no longer crashes when it encounters
+  Unicode characters in the range 128 to 255.
 
 What's new in 2.0 beta 2 (since beta 1)?
 ========================================
