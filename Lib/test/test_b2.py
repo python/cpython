@@ -275,7 +275,7 @@ if r.tolist() != range(10, 3, -1):
 if r.start != 10: raise TestFailed, 'xrange(10, 3, -1).start'
 if r.stop != 3: raise TestFailed, 'xrange(10, 3, -1).stop'
 if r.step != -1: raise TestFailed, 'xrange(10, 3, -1).step'
-# regression tests for SourceForge bug #121695
+# regression tests for SourceForge bug #221965
 def _range_test(r):
     verify(r.start != r.stop, 'Test not valid for passed-in xrange object.')
     if r.stop in r:
