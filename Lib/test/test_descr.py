@@ -684,12 +684,12 @@ def errors():
         verify(0, "inheritance from object and Classic should be illegal")
 
     try:
-        class C(int):
+        class C(type(len)):
             pass
     except TypeError:
         pass
     else:
-        verify(0, "inheritance from int should be illegal")
+        verify(0, "inheritance from CFunction should be illegal")
 
     try:
         class C(object):
