@@ -4841,26 +4841,26 @@ with group separators:
 The \ulink{\module{string}}{../lib/module-string.html} module includes a
 versatile \class{Template} class with a simplified syntax suitable for
 editing by end-users.  This allows users to customize their applications
-without having to alter the Python program.
+without having to alter the application.
 
-The format uses \samp{\$} for placeholder names that are valid Python
+The format uses placeholder names formed by \samp{\$} with valid Python
 identifiers (alphanumeric characters and underscores).  Surrounding the
 placeholder with braces allows it to be followed by more alphanumeric letters
-with no intervening spaces.  \samp{\$\$} is the way to create a single escaped
+with no intervening spaces.  Writing \samp{\$\$} creates a single escaped
 \samp{\$}:
 
 \begin{verbatim}
 >>> from string import Template
 >>> t = Template('${village}folk send $$10 to $cause.')
->>> t.substitute(village='nottingham', cause='the ditch fund')
-'nottinghamfolk send $10 to the ditch fund.'
+>>> t.substitute(village='Nottingham', cause='the ditch fund')
+'Nottinghamfolk send $10 to the ditch fund.'
 \end{verbatim}
 
 The \method{substitute} method raises a \exception{KeyError} when a
-placeholder is not supplied in a dictionary or a keyword argument.
-For mail-merge style applications, user supplied data may be incomplete
-and the \method{safe_substitute} method may be more appropriate --- it
-will leave placeholders unchanged if data is missing:
+placeholder is not supplied in a dictionary or a keyword argument. For
+mail-merge style applications, user supplied data may be incomplete and the
+\method{safe_substitute} method may be more appropriate --- it will leave
+placeholders unchanged if data is missing:
 
 \begin{verbatim}
 >>> t = Template('Return the $item to $owner.')
@@ -4875,7 +4875,7 @@ KeyError: 'owner'
 
 Template subclasses can specify a custom delimiter.  For example, a batch
 renaming utility for a photo browser may elect to use percent signs for
-metadata such as the current date, image sequence number, or file format:
+placeholders such as the current date, image sequence number, or file format:
 
 \begin{verbatim}
 >>> import time, os.path
@@ -4885,11 +4885,11 @@ metadata such as the current date, image sequence number, or file format:
 >>> fmt = raw_input('Enter rename style (%d-date %n-seqnum %f-format):  ')
 Enter rename style (%d-date %n-seqnum %f-format):  Ashley_%n%f
 
->>> rename = BatchRename(fmt)
+>>> t = BatchRename(fmt)
 >>> date = time.strftime('%d%b%y')
 >>> for i, filename in enumerate(photofiles):
 ...     base, ext = os.path.splitext(filename)
-...     newname = rename.substitute(d=date, n=i, f=ext)
+...     newname = t.substitute(d=date, n=i, f=ext)
 ...     print '%s --> %s' % (filename, newname)
 
 img_1074.jpg --> Ashley_0.jpg
@@ -4897,20 +4897,9 @@ img_1076.jpg --> Ashley_1.jpg
 img_1077.jpg --> Ashley_2.jpg
 \end{verbatim}
 
-For internationalization applications, it may be appropriate to coerce all
-templates to \class{unicode}.  This can be done with subclassing and
-overriding the \method{__init__} method:
-
-\begin{verbatim}
->>> class UnicodeTemplate(unicode, Template):
-...     def __init__(self, template):
-...         self.template = unicode(template)
->>> t = UnicodeTemplate('Knights who say $what')
->>> t.substitute(what='Ni')
-u'Knights who say Ni'
->>> t.capitalize()
-u'Knights who say $what'
-\end{verbatim}
+Another application for templating is separating program logic from the
+details of multiple output formats.  The makes it possible to substitute
+custom templates for XML files, plain text reports, and HMTL web reports.
 
 
 \section{Working with Binary Data Record Layouts\label{binary-formats}}
