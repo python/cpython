@@ -306,7 +306,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #undef WITH_DYLD
 
 /* Define if you want to compile in Python-specific mallocs */
-#undef WITH_PYMALLOC
+#define WITH_PYMALLOC
 
 /* Define if you want to produce an OpenStep/Rhapsody framework
    (shared library plus accessory files). */
