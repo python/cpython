@@ -124,7 +124,7 @@ tok_setups(str)
 }
 
 
-/* Set up tokenizer for string */
+/* Set up tokenizer for file */
 
 struct tok_state *
 tok_setupf(fp, ps1, ps2)
@@ -309,7 +309,11 @@ tok_get(tok, p_start, p_end)
 	char **p_start, **p_end; /* Out: point to start/end of token */
 {
 	register int c;
-	
+	int blankline;
+
+  nextline:
+	blankline = 0;
+
 	/* Get indentation level */
 	if (tok->atbol) {
 		register int col = 0;
@@ -325,30 +329,45 @@ tok_get(tok, p_start, p_end)
 				break;
 		}
 		tok_backup(tok, c);
-		if (col == tok->indstack[tok->indent]) {
-			/* No change */
+		if (c == '#' || c == '\n') {
+			/* Lines with only whitespace and/or comments
+			   shouldn't affect the indentation and are
+			   not passed to the parser as NEWLINE tokens,
+			   except *totally* empty lines in interactive
+			   mode, which signal the end of a command group. */
+			if (col == 0 && c == '\n' && tok->prompt != NULL)
+				blankline = 0; /* Let it through */
+			else
+				blankline = 1; /* Ignore completely */
+			/* We can't jump back right here since we still
+			   may need to skip to the end of a comment */
 		}
-		else if (col > tok->indstack[tok->indent]) {
-			/* Indent -- always one */
-			if (tok->indent+1 >= MAXINDENT) {
-				fprintf(stderr, "excessive indent\n");
-				tok->done = E_TOKEN;
-				return ERRORTOKEN;
+		if (!blankline) {
+			if (col == tok->indstack[tok->indent]) {
+				/* No change */
 			}
-			tok->pendin++;
-			tok->indstack[++tok->indent] = col;
-		}
-		else /* col < tok->indstack[tok->indent] */ {
-			/* Dedent -- any number, must be consistent */
-			while (tok->indent > 0 &&
-				col < tok->indstack[tok->indent]) {
-				tok->indent--;
-				tok->pendin--;
+			else if (col > tok->indstack[tok->indent]) {
+				/* Indent -- always one */
+				if (tok->indent+1 >= MAXINDENT) {
+					fprintf(stderr, "excessive indent\n");
+					tok->done = E_TOKEN;
+					return ERRORTOKEN;
+				}
+				tok->pendin++;
+				tok->indstack[++tok->indent] = col;
 			}
-			if (col != tok->indstack[tok->indent]) {
-				fprintf(stderr, "inconsistent dedent\n");
-				tok->done = E_TOKEN;
-				return ERRORTOKEN;
+			else /* col < tok->indstack[tok->indent] */ {
+				/* Dedent -- any number, must be consistent */
+				while (tok->indent > 0 &&
+					col < tok->indstack[tok->indent]) {
+					tok->indent--;
+					tok->pendin--;
+				}
+				if (col != tok->indstack[tok->indent]) {
+					fprintf(stderr, "inconsistent dedent\n");
+					tok->done = E_TOKEN;
+					return ERRORTOKEN;
+				}
 			}
 		}
 	}
@@ -380,13 +399,14 @@ tok_get(tok, p_start, p_end)
 	if (c == '#') {
 		/* Hack to allow overriding the tabsize in the file.
 		   This is also recognized by vi, when it occurs near the
-		   beginning or end of the file.  (Will vi never die...?) */
+		   beginning or end of the file.  (Will vi never die...?)
+		   For Python it must be at the beginning of the file! */
 		int x;
 		/* XXX The case to (unsigned char *) is needed by THINK C 3.0 */
 		if (sscanf(/*(unsigned char *)*/tok->cur,
 				" vi:set tabsize=%d:", &x) == 1 &&
 						x >= 1 && x <= 40) {
-			fprintf(stderr, "# vi:set tabsize=%d:\n", x);
+			/* fprintf(stderr, "# vi:set tabsize=%d:\n", x); */
 			tok->tabsize = x;
 		}
 		do {
@@ -411,6 +431,8 @@ tok_get(tok, p_start, p_end)
 	/* Newline */
 	if (c == '\n') {
 		tok->atbol = 1;
+		if (blankline)
+			goto nextline;
 		*p_end = tok->cur - 1; /* Leave '\n' out of the string */
 		return NEWLINE;
 	}
