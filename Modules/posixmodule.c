@@ -105,6 +105,7 @@ corresponding Unix manual entries for more information on calls.";
 #ifdef _MSC_VER		/* Microsoft compiler */
 #define HAVE_GETCWD     1
 #ifdef MS_WIN32
+#define HAVE_SPAWNV	1
 #define HAVE_EXECV      1
 #define HAVE_PIPE       1
 #define HAVE_POPEN      1
@@ -1390,6 +1391,179 @@ posix_execve(self, args)
 	return NULL;
 }
 #endif /* HAVE_EXECV */
+
+
+#ifdef HAVE_SPAWNV
+static char posix_spawnv__doc__[] =
+"spawnv(path, args)\n\
+Execute an executable path with arguments, replacing current process.\n\
+\n\
+	path: path of executable file\n\
+	args: tuple or list of strings";
+
+static PyObject *
+posix_spawnv(self, args)
+	PyObject *self;
+	PyObject *args;
+{
+	char *path;
+	PyObject *argv;
+	char **argvlist;
+	int mode, i, argc;
+	PyObject *(*getitem) Py_PROTO((PyObject *, int));
+
+	/* spawnv has three arguments: (mode, path, argv), where
+	   argv is a list or tuple of strings. */
+
+	if (!PyArg_Parse(args, "(isO)", &mode, &path, &argv))
+		return NULL;
+	if (PyList_Check(argv)) {
+		argc = PyList_Size(argv);
+		getitem = PyList_GetItem;
+	}
+	else if (PyTuple_Check(argv)) {
+		argc = PyTuple_Size(argv);
+		getitem = PyTuple_GetItem;
+	}
+	else {
+ badarg:
+		PyErr_BadArgument();
+		return NULL;
+	}
+
+	argvlist = PyMem_NEW(char *, argc+1);
+	if (argvlist == NULL)
+		return NULL;
+	for (i = 0; i < argc; i++) {
+		if (!PyArg_Parse((*getitem)(argv, i), "s", &argvlist[i])) {
+			PyMem_DEL(argvlist);
+			goto badarg;
+		}
+	}
+	argvlist[argc] = NULL;
+
+	i = _spawnv(mode, path, argvlist);
+
+	PyMem_DEL(argvlist);
+
+	if (i == -1)
+		return posix_error();
+	else
+		return Py_BuildValue("i", i);
+}
+
+
+static char posix_spawnve__doc__[] =
+"spawnve(path, args, env)\n\
+Execute a path with arguments and environment, replacing current process.\n\
+\n\
+	path: path of executable file\n\
+	args: tuple or list of arguments\n\
+	env: dictonary of strings mapping to strings";
+
+static PyObject *
+posix_spawnve(self, args)
+	PyObject *self;
+	PyObject *args;
+{
+	char *path;
+	PyObject *argv, *env;
+	char **argvlist;
+	char **envlist;
+	PyObject *key, *val, *keys=NULL, *vals=NULL, *res=NULL;
+	int mode, i, pos, argc, envc;
+	PyObject *(*getitem) Py_PROTO((PyObject *, int));
+
+	/* spawnve has four arguments: (mode, path, argv, env), where
+	   argv is a list or tuple of strings and env is a dictionary
+	   like posix.environ. */
+
+	if (!PyArg_Parse(args, "(isOO)", &mode, &path, &argv, &env))
+		return NULL;
+	if (PyList_Check(argv)) {
+		argc = PyList_Size(argv);
+		getitem = PyList_GetItem;
+	}
+	else if (PyTuple_Check(argv)) {
+		argc = PyTuple_Size(argv);
+		getitem = PyTuple_GetItem;
+	}
+	else {
+		PyErr_SetString(PyExc_TypeError, "argv must be tuple or list");
+		return NULL;
+	}
+	if (!PyMapping_Check(env)) {
+		PyErr_SetString(PyExc_TypeError, "env must be mapping object");
+		return NULL;
+	}
+
+	argvlist = PyMem_NEW(char *, argc+1);
+	if (argvlist == NULL) {
+		PyErr_NoMemory();
+		return NULL;
+	}
+	for (i = 0; i < argc; i++) {
+		if (!PyArg_Parse((*getitem)(argv, i),
+				 "s;argv must be list of strings",
+				 &argvlist[i]))
+		{
+			goto fail_1;
+		}
+	}
+	argvlist[argc] = NULL;
+
+	i = PyMapping_Length(env);
+	envlist = PyMem_NEW(char *, i + 1);
+	if (envlist == NULL) {
+		PyErr_NoMemory();
+		goto fail_1;
+	}
+	envc = 0;
+	keys = PyMapping_Keys(env);
+	vals = PyMapping_Values(env);
+	if (!keys || !vals)
+		goto fail_2;
+	
+	for (pos = 0; pos < i; pos++) {
+		char *p, *k, *v;
+
+		key = PyList_GetItem(keys, pos);
+		val = PyList_GetItem(vals, pos);
+		if (!key || !val)
+			goto fail_2;
+		
+		if (!PyArg_Parse(key, "s;non-string key in env", &k) ||
+		    !PyArg_Parse(val, "s;non-string value in env", &v))
+		{
+			goto fail_2;
+		}
+		p = PyMem_NEW(char, PyString_Size(key)+PyString_Size(val) + 2);
+		if (p == NULL) {
+			PyErr_NoMemory();
+			goto fail_2;
+		}
+		sprintf(p, "%s=%s", k, v);
+		envlist[envc++] = p;
+	}
+	envlist[envc] = 0;
+
+	i = _spawnve(mode, path, argvlist, envlist);
+	if (i == -1)
+		(void) posix_error();
+	else
+		res = Py_BuildValue("i", i);
+
+ fail_2:
+	while (--envc >= 0)
+		PyMem_DEL(envlist[envc]);
+	PyMem_DEL(envlist);
+ fail_1:
+	PyMem_DEL(argvlist);
+	Py_XDECREF(vals);
+	Py_XDECREF(keys);
+	return res;
+}
+#endif /* HAVE_SPAWNV */
 
 
 #ifdef HAVE_FORK
@@ -2922,6 +3096,10 @@ static PyMethodDef posix_methods[] = {
 	{"execv",	posix_execv, 0, posix_execv__doc__},
 	{"execve",	posix_execve, 0, posix_execve__doc__},
 #endif /* HAVE_EXECV */
+#ifdef HAVE_SPAWNV
+	{"spawnv",	posix_spawnv, 0, posix_spawnv__doc__},
+	{"spawnve",	posix_spawnve, 0, posix_spawnve__doc__},
+#endif /* HAVE_SPAWNV */
 #ifdef HAVE_FORK
 	{"fork",	posix_fork, 0, posix_fork__doc__},
 #endif /* HAVE_FORK */
