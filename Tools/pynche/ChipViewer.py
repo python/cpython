@@ -52,8 +52,8 @@ class ChipWidget:
 class ChipViewer:
     def __init__(self, switchboard, parent=None):
         self.__sb = switchboard
-        self.__frame = Frame(parent, relief=GROOVE, borderwidth=2)
-        self.__frame.pack()
+        self.__frame = Frame(parent) #, relief=GROOVE, borderwidth=2)
+        self.__frame.grid(row=3, column=0)
         # create the chip that will display the currently selected color
         # exactly
         self.__sframe = Frame(self.__frame)
@@ -66,6 +66,11 @@ class ChipViewer:
         self.__nearest = ChipWidget(self.__nframe, text='Nearest',
                                     presscmd = self.__buttonpress,
                                     releasecmd = self.__buttonrelease)
+        self.__div = Frame(self.__frame,
+                           width=2,
+                           borderwidth=2,
+                           relief=RAISED)
+        self.__div.grid(row=0, column=2, sticky='NS', padx=5)
 
     def update_yourself(self, red, green, blue):
         # TBD: should exactname default to X11 color name if their is an exact

@@ -265,8 +265,8 @@ class StripViewer:
     def __init__(self, switchboard, parent=None):
         self.__sb = switchboard
         # create a frame inside the parent
-        self.__frame = Frame(parent, relief=GROOVE, borderwidth=2)
-        self.__frame.pack()
+        self.__frame = Frame(parent) #, relief=GROOVE, borderwidth=2)
+        self.__frame.grid(row=1, column=0, columnspan=2, sticky='EW')
         uwd = BooleanVar()
         self.__reds = StripWidget(switchboard, self.__frame,
                                   generator=constant_cyan_generator,
@@ -289,6 +289,11 @@ class StripViewer:
                                  text='Update while dragging',
                                  variable=uwd)
         self.__uwd.pack()
+        self.__div = Frame(self.__frame,
+                           height=2,
+                           borderwidth=2,
+                           relief=RAISED)
+        self.__div.pack(expand=1, fill=X)
 
     def update_yourself(self, red, green, blue):
         self.__reds.update_yourself(red, green, blue)
