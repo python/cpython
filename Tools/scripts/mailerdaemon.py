@@ -218,7 +218,7 @@ def parsedir(dir, modify):
     print '--------------'
     list = []
     for e in errordict.keys():
-        list.append(errordict[e], errorfirst[e], errorlast[e], e)
+        list.append((errordict[e], errorfirst[e], errorlast[e], e))
     list.sort()
     for num, first, last, e in list:
         print '%d %s - %s\t%s' % (num, first, last, e)
