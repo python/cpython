@@ -12,6 +12,8 @@ __version__ = '$Revision$'
 
 
 import errno
+import esistools
+import re
 import string
 import sys
 import xml.dom.core
@@ -93,7 +95,7 @@ def cleanup_root_text(doc):
         skip = 0
         if n.nodeType == xml.dom.core.TEXT and not prevskip:
             discards.append(n)
-        elif n.nodeType == xml.dom.core.COMMENT:
+        elif n.nodeType == xml.dom.core.ELEMENT and n.tagName == "COMMENT":
             skip = 1
     for node in discards:
         doc.removeChild(node)
@@ -126,16 +128,33 @@ def handle_args(doc):
     rewrite_desc_entries(doc, "constructor-args")
 
 
-def handle_comments(doc, node=None):
-    if node is None:
-        node = doc
-    for n in node.childNodes:
-        if n.nodeType == xml.dom.core.ELEMENT:
-            if n.tagName == "COMMENT":
-                comment = doc.createComment(n.childNodes[0].data)
-                node.replaceChild(comment, n)
-            else:
-                handle_comments(doc, n)
+def handle_appendix(doc):
+    # must be called after simplfy() if document is multi-rooted to begin with
+    docelem = doc.documentElement
+    toplevel = docelem.tagName == "manual" and "chapter" or "section"
+    appendices = 0
+    nodes = []
+    for node in docelem.childNodes:
+        if appendices:
+            nodes.append(node)
+        elif node.nodeType == xml.dom.core.ELEMENT:
+            appnodes = node.getElementsByTagName("appendix")
+            if appnodes:
+                appendices = 1
+                parent = appnodes[0].parentNode
+                parent.removeChild(appnodes[0])
+                parent.normalize()
+    if nodes:
+        map(docelem.removeChild, nodes)
+        docelem.appendChild(doc.createTextNode("\n\n\n"))
+        back = doc.createElement("back-matter")
+        docelem.appendChild(back)
+        back.appendChild(doc.createTextNode("\n"))
+        while nodes and nodes[0].nodeType == xml.dom.core.TEXT \
+              and not string.strip(nodes[0].data):
+            del nodes[0]
+        map(back.appendChild, nodes)
+        docelem.appendChild(doc.createTextNode("\n"))
 
 
 def handle_labels(doc):
@@ -208,15 +227,42 @@ def cleanup_trailing_parens(doc, element_names):
                     queue.append(child)
 
 
+_token_rx = re.compile(r"[a-zA-Z][a-zA-Z0-9.-]*$")
+  
+def write_esis(doc, ofp, knownempty):
+    for node in doc.childNodes:
+        nodeType = node.nodeType
+        if nodeType == xml.dom.core.ELEMENT:
+            gi = node.tagName
+            if knownempty(gi):
+                if node.hasChildNodes():
+                    raise ValueError, "declared-empty node has children"
+                ofp.write("e\n")
+            for k, v in node.attributes.items():
+                value = v.value
+                if _token_rx.match(value):
+                    dtype = "TOKEN"
+                else:
+                    dtype = "CDATA"
+                ofp.write("A%s %s %s\n" % (k, dtype, esistools.encode(value)))
+            ofp.write("(%s\n" % gi)
+            write_esis(node, ofp, knownempty)
+            ofp.write(")%s\n" % gi)
+        elif nodeType == xml.dom.core.TEXT:
+            ofp.write("-%s\n" % esistools.encode(node.data))
+        else:
+            raise RuntimeError, "unsupported node type: %s" % nodeType
+
+
 def convert(ifp, ofp):
-    p = xml.dom.esis_builder.EsisBuilder()
+    p = esistools.ExtendedEsisBuilder()
     p.feed(ifp.read())
     doc = p.document
     normalize(doc)
     handle_args(doc)
-    handle_comments(doc)
     simplify(doc)
     handle_labels(doc)
+    handle_appendix(doc)
     fixup_trailing_whitespace(doc, {
         "abstract": "\n",
         "title": "",
@@ -229,9 +275,14 @@ def convert(ifp, ofp):
         })
     cleanup_root_text(doc)
     cleanup_trailing_parens(doc, ["function", "method", "cfunction"])
+    #
+    d = {}
+    for gi in p.get_empties():
+        d[gi] = gi
+    knownempty = d.has_key
+    #
     try:
-        ofp.write(doc.toxml())
-        ofp.write("\n")
+        write_esis(doc, ofp, knownempty)
     except IOError, (err, msg):
         # Ignore EPIPE; it just means that whoever we're writing to stopped
         # reading.  The rest of the output would be ignored.  All other errors
