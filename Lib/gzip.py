@@ -289,7 +289,7 @@ class GzipFile:
                 raise IOError('Negative seek in write mode')
             count = offset - self.offset
             for i in range(count/1024):
-                f.write(1024*'\0')
+                self.write(1024*'\0')
             self.write((count%1024)*'\0')
         elif self.mode == READ:
             if offset < self.offset:
