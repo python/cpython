@@ -365,7 +365,7 @@ def main():
         "par": ([], 0, 1, 0, 0),
         "paragraph": ([("title",)], 0, 0, 0, 0),
         "renewcommand": (["macro"], 0, 0, 0, 0),
-        "rfc": (["number"], 0, 1, 0, 0),
+        "rfc": (["num"], 0, 1, 0, 0),
         "section": ([("title",)], 0, 0, 0, 0),
         "sectionauthor": (["name", "email"], 0, 1, 0, 0),
         "seemodule": (["ref", "name"], 1, 0, 0, 0),
