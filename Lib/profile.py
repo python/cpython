@@ -216,7 +216,7 @@ class Profile:
         t = t[0] + t[1] - self.t - self.bias
 
         if event == "c_call":
-            self.c_func_name = repr(arg)
+            self.c_func_name = arg.__name__
 
         if self.dispatch[event](self, frame,t):
             t = timer()
@@ -233,7 +233,7 @@ class Profile:
         t = timer() - self.t - self.bias
 
         if event == "c_call":
-            self.c_func_name = repr(arg)
+            self.c_func_name = arg.__name__
 
         if self.dispatch[event](self, frame, t):
             self.t = timer()
@@ -248,7 +248,7 @@ class Profile:
         t = timer()/60.0 - self.t - self.bias
 
         if event == "c_call":
-            self.c_func_name = repr(arg)
+            self.c_func_name = arg.__name__
 
         if self.dispatch[event](self, frame, t):
             self.t = timer()/60.0
@@ -262,7 +262,7 @@ class Profile:
         t = get_time() - self.t - self.bias
 
         if event == "c_call":
-            self.c_func_name = repr(arg)
+            self.c_func_name = arg.__name__
 
         if self.dispatch[event](self, frame, t):
             self.t = get_time()
