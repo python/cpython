@@ -82,6 +82,7 @@ class Debugger:
         edit_windows = self.pyshell.flist.inversedict.keys()
         for window in edit_windows:
             window.text.tag_remove("BREAK", 1.0, END)
+            window.break_set = False
         # Clean up pyshell if user clicked debugger control close widget.
         # (Causes a harmless extra cycle through close_debugger() if user
         # toggled debugger from pyshell Debug menu)
@@ -323,6 +324,7 @@ class Debugger:
             text.bell()
             return
         text.tag_add("BREAK", "insert linestart", "insert lineend +1char")
+        edit.break_set = True
 
     def clear_breakpoint_here(self, edit):
         text = edit.text
@@ -337,6 +339,7 @@ class Debugger:
             return
         text.tag_remove("BREAK", "insert linestart",\
                         "insert lineend +1char")
+        # Don't bother to track break_set status
 
     def clear_file_breaks(self, edit):
         text = edit.text
@@ -348,7 +351,8 @@ class Debugger:
         if msg:
             text.bell()
             return
-        text.tag_delete("BREAK")
+        text.tag_remove("BREAK", "1.0", END)
+        edit.break_set = False
 
 
 class StackViewer(ScrolledList):
