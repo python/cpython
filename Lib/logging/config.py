@@ -251,7 +251,7 @@ def listen(port=DEFAULT_LOGGING_CONFIG_PORT):
         allow_reuse_address = 1
 
         def __init__(self, host='localhost', port=DEFAULT_LOGGING_CONFIG_PORT,
-                handler=None):
+                     handler=None):
             ThreadingTCPServer.__init__(self, (host, port), handler)
             logging._acquireLock()
             self.abort = 0
@@ -271,20 +271,23 @@ def listen(port=DEFAULT_LOGGING_CONFIG_PORT):
                 abort = self.abort
                 logging._releaseLock()
 
-    def serve(rcvr, hdlr):
-        server = rcvr(handler=hdlr)
+    def serve(rcvr, hdlr, port):
+        server = rcvr(port=port, handler=hdlr)
         global _listener
         logging._acquireLock()
         _listener = server
         logging._releaseLock()
         server.serve_until_stopped()
 
-    return threading.Thread(target=serve, args=(ConfigSocketReceiver, ConfigStreamHandler))
+    return threading.Thread(target=serve,
+                            args=(ConfigSocketReceiver,
+                                  ConfigStreamHandler, port))
 
 def stopListening():
     """
     Stop the listening server which was created with a call to listen().
     """
+    global _listener
     if _listener:
         logging._acquireLock()
         _listener.abort = 1
