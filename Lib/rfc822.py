@@ -703,7 +703,7 @@ class AddrlistClass:
     
     def getdomainliteral(self):
         """Parse an RFC-822 domain-literal."""
-        return self.getdelimited('[', ']\r', 0)
+        return '[%s]' % self.getdelimited('[', ']\r', 0)
     
     def getatom(self):
         """Parse an RFC-822 atom."""
