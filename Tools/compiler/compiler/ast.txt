@@ -43,7 +43,7 @@ Dict: items!
 Not: expr
 Compare: expr, ops!
 Name: name*
-Global: names
+Global: names*
 Backquote: expr
 Getattr: expr, attrname*
 CallFunc: node, args!, star_args& = None, dstar_args& = None
