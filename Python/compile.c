@@ -4830,18 +4830,27 @@ symtable_global(struct symtable *st, node *n)
 						   st->st_cur->ste_lineno);
 				st->st_errors++;
 				return;
-			} else if (flags & DEF_LOCAL) {
-				sprintf(buf, GLOBAL_AFTER_ASSIGN, name);
-				if (PyErr_Warn(PyExc_SyntaxWarning,
-					       buf) < 0) {
-					/* XXX set line number? */
-					st->st_errors++;
-				}
-			} else {
-				sprintf(buf, GLOBAL_AFTER_USE, name);
-				if (PyErr_Warn(PyExc_SyntaxWarning,
-					       buf) < 0) {
-					/* XXX set line number? */
+			}
+			else {
+				if (flags & DEF_LOCAL)
+					sprintf(buf, GLOBAL_AFTER_ASSIGN,
+						name);
+				else
+					sprintf(buf, GLOBAL_AFTER_USE, name);
+				if (PyErr_WarnExplicit(PyExc_SyntaxWarning,
+						       buf, st->st_filename,
+						       st->st_cur->ste_lineno,
+						       NULL, NULL) < 0)
+				{
+					if (PyErr_ExceptionMatches(
+						PyExc_SyntaxWarning))
+					{
+						PyErr_SetString(
+						    PyExc_SyntaxError, buf);
+						PyErr_SyntaxLocation(
+						    st->st_filename,
+						    st->st_cur->ste_lineno);
+					}
 					st->st_errors++;
 				}
 			}
