@@ -304,7 +304,7 @@ class CoverageResults:
                     n_lines = n_lines + 1
                 elif blank.match(line):
                     # blank lines and comments are preceded by dots
-                    outfile.write('    . ')
+                    outfile.write('     . ')
                 else:
                     # lines preceded by no marks weren't hit
                     # Highlight them if so indicated, unless the line contains
