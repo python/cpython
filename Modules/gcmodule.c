@@ -241,7 +241,9 @@ move_finalizers(PyGC_Head *unreachable, PyGC_Head *finalizers)
 	for (; gc != unreachable; gc=next) {
 		PyObject *op = FROM_GC(gc);
 		next = gc->gc.gc_next;
-		if (PyInstance_Check(op) && PyObject_HasAttr(op, delstr)) {
+		if ((PyInstance_Check(op) ||
+		     PyType_HasFeature(op->ob_type, Py_TPFLAGS_HEAPTYPE)) &&
+		    PyObject_HasAttr(op, delstr)) {
 			gc_list_remove(gc);
 			gc_list_append(gc, finalizers);
 		}
