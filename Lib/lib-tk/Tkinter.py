@@ -1025,6 +1025,11 @@ class Entry(Widget):
 		self.tk.call(self._w, 'select', 'clear', 'end')
 	def select_from(self, index):
 	        self.tk.call(self._w, 'select', 'set', index)
+	def select_present(self):
+		return self.tk.getboolean(
+			self.tk.call(self._w, 'select', 'present'))
+	def select_range(self, start, end):
+		self.tk.call(self._w, 'select', 'range', start, end)
 	def select_to(self, index):
 		self.tk.call(self._w, 'select', 'to', index)
 	def view(self, index):
