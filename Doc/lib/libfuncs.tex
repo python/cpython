@@ -443,7 +443,10 @@ one argument, return the smallest of the arguments.
   binary file, you should append \code{'b'} to the \var{mode} value
   for improved portability.  (It's useful even on systems which don't
   treat binary and text files differently, where it serves as
-  documentation.)  The optional \var{bufsize} argument specifies the
+  documentation.)
+  \index{line-buffered I/O}\index{unbuffered I/O}\index{buffer size, I/O}
+  \index{I/O control!buffering}
+  The optional \var{bufsize} argument specifies the
   file's desired buffer size: 0 means unbuffered, 1 means line
   buffered, any other positive value means use a buffer of
   (approximately) that size.  A negative \var{bufsize} means to use
