@@ -425,6 +425,47 @@ Split(list)
 	return v;
 }
 
+static Tcl_Obj*
+AsObj(value)
+	PyObject *value;
+{
+	Tcl_Obj *result;
+
+	if (PyString_Check(value))
+		return Tcl_NewStringObj(PyString_AS_STRING(value),
+					PyString_GET_SIZE(value));
+	else if (PyInt_Check(value))
+		return Tcl_NewLongObj(PyInt_AS_LONG(value));
+	else if (PyFloat_Check(value))
+		return Tcl_NewDoubleObj(PyFloat_AS_DOUBLE(value));
+	else if (PyTuple_Check(value)) {
+		Tcl_Obj **argv = (Tcl_Obj**)
+			ckalloc(PyTuple_Size(value)*sizeof(Tcl_Obj*));
+		int i;
+		if(!argv)
+		  return 0;
+		for(i=0;i<PyTuple_Size(value);i++)
+		  argv[i] = AsObj(PyTuple_GetItem(value,i));
+		result = Tcl_NewListObj(PyTuple_Size(value), argv);
+		ckfree(FREECAST argv);
+		return result;
+	}
+	else if (PyUnicode_Check(value)) {
+		PyObject* utf8 = PyUnicode_AsUTF8String (value);
+		if (!utf8)
+			return 0;
+		return Tcl_NewStringObj (PyString_AS_STRING (utf8),
+					 PyString_GET_SIZE (utf8));
+	}
+	else {
+		PyObject *v = PyObject_Str(value);
+		if (!v)
+			return 0;
+		result = AsObj(v);
+		Py_DECREF(v);
+		return result;
+	}
+}
 
 
 /**** Tkapp Object ****/
@@ -523,111 +564,65 @@ Tkapp_Call(self, args)
 	PyObject *self;
 	PyObject *args;
 {
-	/* This is copied from Merge() */
-	PyObject *tmp = NULL;
-	char *argvStore[ARGSZ];
-	char **argv = NULL;
-	int fvStore[ARGSZ];
-	int *fv = NULL;
-	int argc = 0, i;
-	PyObject *res = NULL; /* except this has a different type */
-	Tcl_CmdInfo info; /* and this is added */
-	Tcl_Interp *interp = Tkapp_Interp(self); /* and this too */
+	Tcl_Obj *objStore[ARGSZ];
+	Tcl_Obj **objv = NULL;
+	int objc = 0, i;
+	PyObject *res = NULL;
+	Tcl_Interp *interp = Tkapp_Interp(self);
+	/* Could add TCL_EVAL_GLOBAL if wrapped by GlobalCall... */
+	int flags = TCL_EVAL_DIRECT;
 
-	if (!(tmp = PyList_New(0)))
-	    return NULL;
-
-	argv = argvStore;
-	fv = fvStore;
+	objv = objStore;
 
 	if (args == NULL)
-		argc = 0;
+		objc = 0;
 
 	else if (!PyTuple_Check(args)) {
-		argc = 1;
-		fv[0] = 0;
-		argv[0] = AsString(args, tmp);
+		objc = 1;
+		objv[0] = AsObj(args);
+		if (objv[0] == 0)
+			goto finally;
+		Tcl_IncrRefCount(objv[0]);
 	}
 	else {
-		argc = PyTuple_Size(args);
+		objc = PyTuple_Size(args);
 
-		if (argc > ARGSZ) {
-			argv = (char **)ckalloc(argc * sizeof(char *));
-			fv = (int *)ckalloc(argc * sizeof(int));
-			if (argv == NULL || fv == NULL) {
+		if (objc > ARGSZ) {
+			objv = (Tcl_Obj **)ckalloc(objc * sizeof(char *));
+			if (objv == NULL) {
 				PyErr_NoMemory();
 				goto finally;
 			}
 		}
 
-		for (i = 0; i < argc; i++) {
+		for (i = 0; i < objc; i++) {
 			PyObject *v = PyTuple_GetItem(args, i);
-			if (PyTuple_Check(v)) {
-				fv[i] = 1;
-				if (!(argv[i] = Merge(v)))
-					goto finally;
-			}
-			else if (v == Py_None) {
-				argc = i;
-				break;
-			}
-			else {
-				fv[i] = 0;
-				argv[i] = AsString(v, tmp);
-			}
+			objv[i] = AsObj(v);
+			if (!objv[i])
+				goto finally;
+			Tcl_IncrRefCount(objv[i]);
 		}
 	}
-	/* End code copied from Merge() */
 
-	/* All this to avoid a call to Tcl_Merge() and the corresponding call
-	   to Tcl_SplitList() inside Tcl_Eval()...  It can save a bundle! */
-	if (Py_VerboseFlag >= 2) {
-		for (i = 0; i < argc; i++)
-			PySys_WriteStderr("%s ", argv[i]);
-	}
 	ENTER_TCL
-	info.proc = NULL;
-	if (argc < 1 ||
-	    !Tcl_GetCommandInfo(interp, argv[0], &info) ||
-	    info.proc == NULL)
-	{
-		char *cmd;
-		cmd = Tcl_Merge(argc, argv);
-		i = Tcl_Eval(interp, cmd);
-		ckfree(cmd);
-	}
-	else {
-		Tcl_ResetResult(interp);
-		i = (*info.proc)(info.clientData, interp, argc, argv);
-	}
+
+	i = Tcl_EvalObjv(interp, objc, objv, flags);
+
 	ENTER_OVERLAP
-	if (info.proc == NULL && Py_VerboseFlag >= 2)
-		PySys_WriteStderr("... use TclEval ");
-	if (i == TCL_ERROR) {
-		if (Py_VerboseFlag >= 2)
-			PySys_WriteStderr("... error: '%s'\n",
-				interp->result);
+	if (i == TCL_ERROR)
 		Tkinter_Error(self);
-	}
-	else {
-		if (Py_VerboseFlag >= 2)
-			PySys_WriteStderr("-> '%s'\n", interp->result);
-		res = PyString_FromString(interp->result);
-	}
+	else
+		/* We could request the object result here, but doing
+		   so would confuse applications that expect a string. */
+		res = PyString_FromString(Tcl_GetStringResult(interp));
+
 	LEAVE_OVERLAP_TCL
 
-	/* Copied from Merge() again */
   finally:
-	for (i = 0; i < argc; i++)
-		if (fv[i]) {
-			ckfree(argv[i]);
-		}
-	if (argv != argvStore)
-		ckfree(FREECAST argv);
-	if (fv != fvStore)
-		ckfree(FREECAST fv);
-
-	Py_DECREF(tmp);
+	for (i = 0; i < objc; i++)
+		Tcl_DecrRefCount(objv[i]);
+	if (objv != objStore)
+		ckfree(FREECAST objv);
 	return res;
 }
 
