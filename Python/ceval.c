@@ -3042,6 +3042,7 @@ exec_statement(PyFrameObject *f, PyObject *prog, PyObject *globals,
 	else if (locals == Py_None)
 		locals = globals;
 	if (!PyString_Check(prog) &&
+	    !PyUnicode_Check(prog) &&
 	    !PyCode_Check(prog) &&
 	    !PyFile_Check(prog)) {
 		PyErr_SetString(PyExc_TypeError,
@@ -3064,13 +3065,10 @@ exec_statement(PyFrameObject *f, PyObject *prog, PyObject *globals,
 		v = PyRun_File(fp, name, Py_file_input, globals, locals);
 	}
 	else {
-		char *s = PyString_AsString(prog);
-		if (strlen(s) != (size_t)PyString_Size(prog)) {
-			PyErr_SetString(PyExc_ValueError,
-					"embedded '\\0' in exec string");
+		char *str;
+		if (PyString_AsStringAndSize(prog, &str, NULL))
 			return -1;
-		}
-		v = PyRun_String(s, Py_file_input, globals, locals);
+		v = PyRun_String(str, Py_file_input, globals, locals);
 	}
 	if (plain)
 		PyFrame_LocalsToFast(f, 0);

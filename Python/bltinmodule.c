@@ -748,17 +748,14 @@ builtin_eval(PyObject *self, PyObject *args)
 	}
 	if (PyCode_Check(cmd))
 		return PyEval_EvalCode((PyCodeObject *) cmd, globals, locals);
-	if (!PyString_Check(cmd)) {
+	if (!PyString_Check(cmd) &&
+	    !PyUnicode_Check(cmd)) {
 		PyErr_SetString(PyExc_TypeError,
 			   "eval() argument 1 must be string or code object");
 		return NULL;
 	}
-	str = PyString_AsString(cmd);
-	if (strlen(str) != (size_t)PyString_Size(cmd)) {
-		PyErr_SetString(PyExc_ValueError,
-			   "embedded '\\0' in string arg");
+	if (PyString_AsStringAndSize(cmd, &str, NULL))
 		return NULL;
-	}
 	while (*str == ' ' || *str == '\t')
 		str++;
 	return PyRun_String(str, Py_eval_input, globals, locals);

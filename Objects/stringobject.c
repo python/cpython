@@ -239,24 +239,80 @@ string_dealloc(PyObject *op)
 	PyObject_DEL(op);
 }
 
+static int
+string_getsize(register PyObject *op)
+{
+    	char *s;
+    	int len;
+	if (PyString_AsStringAndSize(op, &s, &len))
+		return -1;
+	return len;
+}
+
+static /*const*/ char *
+string_getbuffer(register PyObject *op)
+{
+    	char *s;
+    	int len;
+	if (PyString_AsStringAndSize(op, &s, &len))
+		return NULL;
+	return s;
+}
+
 int
 PyString_Size(register PyObject *op)
 {
-	if (!PyString_Check(op)) {
-		PyErr_BadInternalCall();
-		return -1;
-	}
+	if (!PyString_Check(op))
+		return string_getsize(op);
 	return ((PyStringObject *)op) -> ob_size;
 }
 
 /*const*/ char *
 PyString_AsString(register PyObject *op)
 {
-	if (!PyString_Check(op)) {
-		PyErr_BadInternalCall();
-		return NULL;
-	}
+	if (!PyString_Check(op))
+		return string_getbuffer(op);
 	return ((PyStringObject *)op) -> ob_sval;
+}
+
+/* Internal API needed by PyString_AsStringAndSize(): */
+extern 
+PyObject *_PyUnicode_AsDefaultEncodedString(PyObject *unicode,
+					    const char *errors);
+
+int
+PyString_AsStringAndSize(register PyObject *obj,
+			 register char **s,
+			 register int *len)
+{
+	if (s == NULL) {
+		PyErr_BadInternalCall();
+		return -1;
+	}
+
+	if (!PyString_Check(obj)) {
+		if (PyUnicode_Check(obj)) {
+			obj = _PyUnicode_AsDefaultEncodedString(obj, NULL);
+			if (obj == NULL)
+				return -1;
+		}
+		else {
+			PyErr_Format(PyExc_TypeError,
+				     "expected string or Unicode object, "
+				     "%.200s found", obj->ob_type->tp_name);
+			return -1;
+		}
+	}
+
+	*s = PyString_AS_STRING(obj);
+	if (len != NULL)
+		*len = PyString_GET_SIZE(obj);
+	else if ((int)strlen(*s) != PyString_GET_SIZE(obj)) {
+		PyErr_SetString(PyExc_TypeError,
+				"expected string without null bytes");
+		return -1;
+	}
+	return 0;
 }
 
 /* Methods */
