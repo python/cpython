@@ -36,6 +36,10 @@ Core and builtins
 
 - Bug #845802: Python crashed when __init__.py is a directory.
 
+- Bug #875692: Improve signal handling, especially when using threads, by
+  forcing an early re-execution of PyEval_EvalFrame() "periodic" code when
+  things_to_do is not cleared by Py_MakePendingCalls().
+
 Extension modules
 -----------------
 
