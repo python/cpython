@@ -1,6 +1,8 @@
 from Tkinter import *
 
 class ScrolledList:
+    
+    default = "(None)"
 
     def __init__(self, master, **options):
         # Create top frame, with scrollbar and listbox
@@ -9,7 +11,8 @@ class ScrolledList:
         self.frame.pack(fill="both", expand=1)
         self.vbar = vbar = Scrollbar(frame, name="vbar")
         self.vbar.pack(side="right", fill="y")
-        self.listbox = listbox = Listbox(frame, exportselection=0)
+        self.listbox = listbox = Listbox(frame, exportselection=0,
+            background="white")
         if options:
             listbox.configure(options)
         listbox.pack(expand=1, fill="both")
@@ -22,16 +25,21 @@ class ScrolledList:
         listbox.bind("<ButtonPress-3>", self.popup_event)
         listbox.bind("<Key-Up>", self.up_event)
         listbox.bind("<Key-Down>", self.down_event)
-        # Set the focus
-        listbox.focus_set()
+        # Mark as empty
+        self.clear()
 
     def close(self):
         self.frame.destroy()
 
     def clear(self):
         self.listbox.delete(0, "end")
+        self.empty = 1
+        self.listbox.insert("end", self.default)
 
     def append(self, item):
+        if self.empty:
+            self.listbox.delete(0, "end")
+            self.empty = 0
         self.listbox.insert("end", str(item))
 
     def get(self, index):
