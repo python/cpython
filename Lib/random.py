@@ -47,7 +47,7 @@ def makeseed(a=None):
 def seed(a=None):
 	"""Seed the default generator from any hashable value.
 
-	None or no argument returns (0, 0, 0) to seed from current time.
+	None or no argument seeds from current time.
 
 	"""
 	x, y, z = makeseed(a)
