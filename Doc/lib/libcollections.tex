@@ -1,0 +1,88 @@
+\section{\module{collections} ---
+         High-performance datatypes}
+
+\declaremodule{standard}{collections}
+\modulesynopsis{High-performance datatypes}
+\moduleauthor{Raymond Hettinger}{python@rcn.com}
+\sectionauthor{Raymond Hettinger}{python@rcn.com}
+\versionadded{2.4}
+
+
+This module implements high-performance datatypes.  Currently, the
+only datatype is a deque.  Future additions may include B-trees
+and Fibonacci heaps.
+
+\begin{funcdesc}{deque}{\optional{iterable}}
+  Returns a new deque objected initialized left-to-right (using
+  \method{append()}) with data from \var{iterable}.  If \var{iterable}
+  is not specified, the new deque is empty.
+
+  Deques are a generalization of stacks and queues.  They support
+  thread-safe, memory efficient appends and pops from either side of the
+  deque with approximately the same performance in either direction.
+  \versionadded{2.4}
+\end{funcdesc}
+
+Deque objects support the following methods:
+
+\begin{methoddesc}{append}{x}
+   Add \var{x} to the right side of the deque.
+\end{methoddesc}
+
+\begin{methoddesc}{appendleft}{x}
+   Add \var{x} to the left side of the deque.
+\end{methoddesc}
+
+\begin{methoddesc}{clear}{}
+   Remove all elements from the deque leaving it with length 0.
+\end{methoddesc}
+
+\begin{methoddesc}{pop}{}
+   Remove and return an element from the right side of the deque.
+   If no elements are present, raises a \exception{LookupError}.
+\end{methoddesc}
+
+\begin{methoddesc}{popleft}{}
+   Remove and return an element from the left side of the deque.
+   If no elements are present, raises a \exception{LookupError}.   
+\end{methoddesc}
+
+In addition to the above, deques support iteration, membership testing
+using the \keyword{in} operator, \samp{len(d)}, \samp{copy.copy(d)},
+\samp{copy.deepcopy(d)}, and pickling.
+
+Example:
+
+\begin{verbatim}
+>>> from collections import deque
+>>> d = deque('ghi')        # make a new deque with three items
+>>> for elem in d:          # iterate over the deque's elements
+	print elem.upper()
+
+	
+G
+H
+I
+>>> d.append('j')           # add a new entry to the right side
+>>> d.appendleft('f')       # add a new entry to the left side
+>>> d                       # show the representation of the deque
+deque(['f', 'g', 'h', 'i', 'j'])
+>>> d.pop()                 # return and remove the rightmost item
+'j'
+>>> d.popleft()             # return and remove the leftmost item
+'f'
+>>> list(d)                 # list the contents of the deque
+['g', 'h', 'i']
+>>> 'h' in d                # search the deque
+True
+>>> d.__init__('jkl')       # use __init__ to append many elements at once
+>>> d
+deque(['g', 'h', 'i', 'j', 'k', 'l'])
+>>> d.clear()               # empty the deque
+>>> d.pop()                 # try to pop from an empty deque
+
+Traceback (most recent call last):
+  File "<pyshell#6>", line 1, in -toplevel-
+    d.pop()
+LookupError: pop from an empty deque
+\end{verbatim}    
