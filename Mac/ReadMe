@@ -62,20 +62,22 @@ and/or enabling virtual memory may solve these problems.
 After installing
 ----------------
 
-It is probably a good idea to run the automatic tests. Start Python and
-"import test.autotest" and "test.autotest.main()". This should not print
-any errors. It will, however, print some messages about optional
-features not supported. Running testall.py is done by double-clicking it
-or dropping it onto the interpreter.
+The first step thing you could try is to run "compileall.py" to create
+all .pyc files, but this isn't very important, as pyc files are
+created on-the-fly as well. You may also want to skip this step if you
+are low on diskspace.
+
+Next, it is probably a good idea to run the automatic tests. Start Python
+and "import test.autotest". This should not print any errors. It will,
+however, print some messages about optional features not
+supported. Also, if you didn't run compileall before autotesting you
+may run out of memory the first time you run the tests.
 
 NOTE: as of 1.5b3 the test test_strftime will fail. This is due to a
 problem with the way the MetroWerks handles %% escapes in strftime()
 strings, and there is little I can do about it. test_socket may also
 fail if you have no internet connection. Please also read the Relnotes
 file for other minor problems with this distribution.
-
-Next, try "compileall.py" from :Lib to create all .pyc files (but this
-isn't really important).
 
 PPC and CFM68K users have a couple of applets in the main folder they
 may want to try, (68K users can use the corresponding scripts from the
