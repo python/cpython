@@ -73,7 +73,7 @@ The following manuals are included in this package:
 
 
 If you have any questions, comments, or suggestions regarding these
-documents, please send them via email to python-docs@python.org.
+documents, please send them via email to docs@python.org.
 """
 
 def count_pages(filename):

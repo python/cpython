@@ -49,7 +49,7 @@
 # The formatted output is located in subdirectories.  For PDF and
 # PostScript, look in the paper-$(PAPER)/ directory.  For HTML, look in
 # the html/ directory.  If you want to fix the GNU info process, look
-# in the info/ directory; please send patches to python-docs@python.org.
+# in the info/ directory; please send patches to docs@python.org.
 
 # This Makefile only includes information on how to perform builds; for
 # dependency information, see Makefile.deps.
@@ -650,5 +650,6 @@ clobber:
 	rm -rf isilo/ref/ isilo/tut/ isilo/inst/ isilo/dist/
 	rm -rf isilo/whatsnew/
 	rm -f isilo/python-*-$(RELEASE).pdb isilo-$(RELEASE).zip
+	rm -f pkglist.html paper-$(PAPER)/README
 
 realclean distclean:  clobber
