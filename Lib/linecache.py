@@ -90,7 +90,7 @@ def updatecache(filename):
 ##          print '*** Cannot stat', filename, ':', msg
             return []
     try:
-        fp = open(fullname, 'r')
+        fp = open(fullname, 'rU')
         lines = fp.readlines()
         fp.close()
     except IOError, msg:

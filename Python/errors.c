@@ -646,14 +646,14 @@ PyErr_ProgramText(char *filename, int lineno)
 
 	if (filename == NULL || lineno <= 0)
 		return NULL;
-	fp = fopen(filename, "r");
+	fp = fopen(filename, "r" PY_STDIOTEXTMODE);
 	if (fp == NULL)
 		return NULL;
 	for (i = 0; i < lineno; i++) {
 		char *pLastChar = &linebuf[sizeof(linebuf) - 2];
 		do {
 			*pLastChar = '\0';
-			if (fgets(linebuf, sizeof linebuf, fp) == NULL)
+			if (Py_UniversalNewlineFgets(linebuf, sizeof linebuf, fp, NULL) == NULL)
 				break;
 			/* fgets read *something*; if it didn't get as
 			   far as pLastChar, it must have found a newline

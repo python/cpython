@@ -44,7 +44,7 @@ def compile(file, cfile=None, dfile=None):
 
     """
     import os, marshal, __builtin__
-    f = open(file)
+    f = open(file, 'U')
     try:
         timestamp = long(os.fstat(f.fileno())[8])
     except AttributeError:

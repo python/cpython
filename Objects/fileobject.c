@@ -37,6 +37,23 @@
 #include <errno.h>
 #endif
 
+#ifdef HAVE_GETC_UNLOCKED
+#define GETC(f) getc_unlocked(f)
+#define FLOCKFILE(f) flockfile(f)
+#define FUNLOCKFILE(f) funlockfile(f)
+#else
+#define GETC(f) getc(f)
+#define FLOCKFILE(f)
+#define FUNLOCKFILE(f)
+#endif
+
+#ifdef WITH_UNIVERSAL_NEWLINES
+/* Bits in f_newlinetypes */
+#define NEWLINE_UNKNOWN	0	/* No newline seen, yet */
+#define NEWLINE_CR 1		/* \r newline seen */
+#define NEWLINE_LF 2		/* \n newline seen */
+#define NEWLINE_CRLF 4		/* \r\n newline seen */
+#endif
 
 FILE *
 PyFile_AsFile(PyObject *f)
@@ -99,6 +116,11 @@ fill_file_fields(PyFileObject *f, FILE *fp, char *name, char *mode,
 	f->f_close = close;
 	f->f_softspace = 0;
 	f->f_binary = strchr(mode,'b') != NULL;
+#ifdef WITH_UNIVERSAL_NEWLINES
+	f->f_univ_newline = (strchr(mode, 'U') != NULL);
+	f->f_newlinetypes = NEWLINE_UNKNOWN;
+	f->f_skipnextlf = 0;
+#endif
 
 	if (f->f_name == NULL || f->f_mode == NULL)
 		return NULL;
@@ -134,6 +156,17 @@ open_the_file(PyFileObject *f, char *name, char *mode)
 #endif
 	{
 		Py_BEGIN_ALLOW_THREADS
+#ifdef WITH_UNIVERSAL_NEWLINES
+		if (strcmp(mode, "U") == 0 || strcmp(mode, "rU") == 0)
+			mode = "rb";
+#else
+		/* Compatibility: specifying U in a Python without universal
+		** newlines is allowed, and the file is opened as a normal text
+		** file.
+		*/
+		if (strcmp(mode, "U") == 0 || strcmp(mode, "rU") == 0)
+			mode = "r";
+#endif
 		f->f_fp = fopen(name, mode);
 		Py_END_ALLOW_THREADS
 	}
@@ -394,6 +427,9 @@ file_seek(PyFileObject *f, PyObject *args)
 		clearerr(f->f_fp);
 		return NULL;
 	}
+#ifdef WITH_UNIVERSAL_NEWLINES
+	f->f_skipnextlf = 0;
+#endif
 	Py_INCREF(Py_None);
 	return Py_None;
 }
@@ -534,6 +570,16 @@ file_tell(PyFileObject *f)
 		clearerr(f->f_fp);
 		return NULL;
 	}
+#ifdef WITH_UNIVERSAL_NEWLINES
+	if (f->f_skipnextlf) {
+		int c;
+		c = GETC(f->f_fp);
+		if (c == '\n') {
+			pos++;
+			f->f_skipnextlf = 0;
+		} else if (c != EOF) ungetc(c, f->f_fp);
+	}
+#endif
 #if !defined(HAVE_LARGEFILE_SUPPORT)
 	return PyInt_FromLong(pos);
 #else
@@ -665,8 +711,8 @@ file_read(PyFileObject *f, PyObject *args)
 	for (;;) {
 		Py_BEGIN_ALLOW_THREADS
 		errno = 0;
-		chunksize = fread(BUF(v) + bytesread, 1,
-				  buffersize - bytesread, f->f_fp);
+		chunksize = Py_UniversalNewlineFread(BUF(v) + bytesread,
+				  buffersize - bytesread, f->f_fp, (PyObject *)f);
 		Py_END_ALLOW_THREADS
 		if (chunksize == 0) {
 			if (!ferror(f->f_fp))
@@ -705,7 +751,7 @@ file_readinto(PyFileObject *f, PyObject *args)
 	while (ntodo > 0) {
 		Py_BEGIN_ALLOW_THREADS
 		errno = 0;
-		nnow = fread(ptr+ndone, 1, ntodo, f->f_fp);
+		nnow = Py_UniversalNewlineFread(ptr+ndone, ntodo, f->f_fp, (PyObject *)f);
 		Py_END_ALLOW_THREADS
 		if (nnow == 0) {
 			if (!ferror(f->f_fp))
@@ -934,16 +980,6 @@ getline_via_fgets(FILE *fp)
    <= 0: read arbitrary line
 */
 
-#ifdef HAVE_GETC_UNLOCKED
-#define GETC(f) getc_unlocked(f)
-#define FLOCKFILE(f) flockfile(f)
-#define FUNLOCKFILE(f) funlockfile(f)
-#else
-#define GETC(f) getc(f)
-#define FLOCKFILE(f)
-#define FUNLOCKFILE(f)
-#endif
-
 static PyObject *
 get_line(PyFileObject *f, int n)
 {
@@ -954,9 +990,18 @@ get_line(PyFileObject *f, int n)
 	size_t used_v_size;	/* # used slots in buffer */
 	size_t increment;       /* amount to increment the buffer */
 	PyObject *v;
+#ifdef WITH_UNIVERSAL_NEWLINES
+	int newlinetypes = f->f_newlinetypes;
+	int skipnextlf = f->f_skipnextlf;
+	int univ_newline = f->f_univ_newline;
+#endif
 
-#ifdef USE_FGETS_IN_GETLINE
+#if defined(USE_FGETS_IN_GETLINE)
+#ifdef WITH_UNIVERSAL_NEWLINES
+	if (n <= 0 && !univ_newline )
+#else
 	if (n <= 0)
+#endif
 		return getline_via_fgets(fp);
 #endif
 	total_v_size = n > 0 ? n : 100;
@@ -969,12 +1014,45 @@ get_line(PyFileObject *f, int n)
 	for (;;) {
 		Py_BEGIN_ALLOW_THREADS
 		FLOCKFILE(fp);
+#ifdef WITH_UNIVERSAL_NEWLINES
+		if (univ_newline) {
+			c = 'x'; /* Shut up gcc warning */
+			while ( buf != end && (c = GETC(fp)) != EOF ) {
+				if (skipnextlf ) {
+					skipnextlf = 0;
+					if (c == '\n') {
+						/* Seeing a \n here with skipnextlf true
+						** means we saw a \r before.
+						*/
+						newlinetypes |= NEWLINE_CRLF;
+						c = GETC(fp);
+						if (c == EOF) break;
+					} else {
+						newlinetypes |= NEWLINE_CR;
+					}
+				}
+				if (c == '\r') {
+					skipnextlf = 1;
+					c = '\n';
+				} else if ( c == '\n')
+					newlinetypes |= NEWLINE_LF;
+				*buf++ = c;
+				if (c == '\n') break;
+			}
+			if ( c == EOF && skipnextlf )
+				newlinetypes |= NEWLINE_CR;
+		} else /* If not universal newlines use the normal loop */
+#endif
 		while ((c = GETC(fp)) != EOF &&
 		       (*buf++ = c) != '\n' &&
 			buf != end)
 			;
 		FUNLOCKFILE(fp);
 		Py_END_ALLOW_THREADS
+#ifdef WITH_UNIVERSAL_NEWLINES
+		f->f_newlinetypes = newlinetypes;
+		f->f_skipnextlf = skipnextlf;
+#endif
 		if (c == '\n')
 			break;
 		if (c == EOF) {
@@ -1150,8 +1228,8 @@ file_readlines(PyFileObject *f, PyObject *args)
 		else {
 			Py_BEGIN_ALLOW_THREADS
 			errno = 0;
-			nread = fread(buffer+nfilled, 1,
-				      buffersize-nfilled, f->f_fp);
+			nread = Py_UniversalNewlineFread(buffer+nfilled, 
+				buffersize-nfilled, f->f_fp, (PyObject *)f);
 			Py_END_ALLOW_THREADS
 			shortread = (nread < buffersize-nfilled);
 		}
@@ -1188,7 +1266,8 @@ file_readlines(PyFileObject *f, PyObject *args)
 			}
 			else {
 				/* Grow the big buffer */
-				_PyString_Resize(&big_buffer, buffersize);
+				if ( _PyString_Resize(&big_buffer, buffersize) < 0 )
+					goto error;
 				buffer = PyString_AS_STRING(big_buffer);
 			}
 			continue;
@@ -1503,9 +1582,40 @@ get_closed(PyFileObject *f, void *closure)
 {
 	return PyBool_FromLong((long)(f->f_fp == 0));
 }
+#ifdef WITH_UNIVERSAL_NEWLINES
+static PyObject *
+get_newlines(PyFileObject *f, void *closure)
+{
+	switch (f->f_newlinetypes) {
+	case NEWLINE_UNKNOWN:
+		Py_INCREF(Py_None);
+		return Py_None;
+	case NEWLINE_CR:
+		return PyString_FromString("\r");
+	case NEWLINE_LF:
+		return PyString_FromString("\n");
+	case NEWLINE_CR|NEWLINE_LF:
+		return Py_BuildValue("(ss)", "\r", "\n");
+	case NEWLINE_CRLF:
+		return PyString_FromString("\r\n");
+	case NEWLINE_CR|NEWLINE_CRLF:
+		return Py_BuildValue("(ss)", "\r", "\r\n");
+	case NEWLINE_LF|NEWLINE_CRLF:
+		return Py_BuildValue("(ss)", "\n", "\r\n");
+	case NEWLINE_CR|NEWLINE_LF|NEWLINE_CRLF:
+		return Py_BuildValue("(sss)", "\r", "\n", "\r\n");
+	default:
+		PyErr_Format(PyExc_SystemError, "Unknown newlines value 0x%x\n", f->f_newlinetypes);
+		return NULL;
+	}
+}
+#endif
 
 static PyGetSetDef file_getsetlist[] = {
 	{"closed", (getter)get_closed, NULL, "True if the file is closed"},
+#ifdef WITH_UNIVERSAL_NEWLINES
+	{"newlines", (getter)get_newlines, NULL, "end-of-line convention used in this file"},
+#endif
 	{0},
 };
 
@@ -1805,3 +1915,170 @@ int PyObject_AsFileDescriptor(PyObject *o)
 	}
 	return fd;
 }
+
+#ifdef WITH_UNIVERSAL_NEWLINES
+/* From here on we need access to the real fgets and fread */
+#undef fgets
+#undef fread
+
+/*
+** Py_UniversalNewlineFgets is an fgets variation that understands
+** all of \r, \n and \r\n conventions.
+** The stream should be opened in binary mode.
+** If fobj is NULL the routine always does newline conversion, and
+** it may peek one char ahead to gobble the second char in \r\n.
+** If fobj is non-NULL it must be a PyFileObject. In this case there
+** is no readahead but in stead a flag is used to skip a following
+** \n on the next read. Also, if the file is open in binary mode
+** the whole conversion is skipped. Finally, the routine keeps track of
+** the different types of newlines seen.
+** Note that we need no error handling: fgets() treats error and eof
+** identically.
+*/
+char *
+Py_UniversalNewlineFgets(char *buf, int n, FILE *stream, PyObject *fobj)
+{
+	char *p = buf;
+	int c;
+	int newlinetypes = 0;
+	int skipnextlf = 0;
+	int univ_newline = 1;
+	
+	if (fobj) {
+		if (!PyFile_Check(fobj)) {
+			errno = ENXIO;	/* What can you do... */
+			return NULL;
+		}
+		univ_newline = ((PyFileObject *)fobj)->f_univ_newline;
+		if ( !univ_newline )
+			return fgets(buf, n, stream);
+		newlinetypes = ((PyFileObject *)fobj)->f_newlinetypes;
+		skipnextlf = ((PyFileObject *)fobj)->f_skipnextlf;
+	}
+	FLOCKFILE(stream);
+	c = 'x'; /* Shut up gcc warning */
+	while (--n > 0 && (c = GETC(stream)) != EOF ) {
+		if (skipnextlf ) {
+			skipnextlf = 0;
+			if (c == '\n') {
+				/* Seeing a \n here with skipnextlf true
+				** means we saw a \r before.
+				*/
+				newlinetypes |= NEWLINE_CRLF;
+				c = GETC(stream);
+				if (c == EOF) break;
+			} else {
+				/*
+				** Note that c == EOF also brings us here,
+				** so we're okay if the last char in the file
+				** is a CR.
+				*/
+				newlinetypes |= NEWLINE_CR;
+			}
+		}
+		if (c == '\r') {
+			/* A \r is translated into a \n, and we skip
+			** an adjacent \n, if any. We don't set the
+			** newlinetypes flag until we've seen the next char.
+			*/
+			skipnextlf = 1;
+			c = '\n';
+		} else if ( c == '\n') {
+			newlinetypes |= NEWLINE_LF;
+		}
+		*p++ = c;
+		if (c == '\n') break;
+	}
+	if ( c == EOF && skipnextlf )
+		newlinetypes |= NEWLINE_CR;
+	FUNLOCKFILE(stream);
+	*p = '\0';
+	if (fobj) {
+		((PyFileObject *)fobj)->f_newlinetypes = newlinetypes;
+		((PyFileObject *)fobj)->f_skipnextlf = skipnextlf;
+	} else if ( skipnextlf ) {
+		/* If we have no file object we cannot save the
+		** skipnextlf flag. We have to readahead, which
+		** will cause a pause if we're reading from an
+		** interactive stream, but that is very unlikely
+		** unless we're doing something silly like
+		** execfile("/dev/tty").
+		*/
+		c = GETC(stream);
+		if ( c != '\n' )
+			ungetc(c, stream);
+	}
+	if (p == buf)
+		return NULL;
+	return buf;
+}
+
+/*
+** Py_UniversalNewlineFread is an fread variation that understands
+** all of \r, \n and \r\n conventions.
+** The stream should be opened in binary mode.
+** fobj must be a PyFileObject. In this case there
+** is no readahead but in stead a flag is used to skip a following
+** \n on the next read. Also, if the file is open in binary mode
+** the whole conversion is skipped. Finally, the routine keeps track of
+** the different types of newlines seen.
+*/
+size_t
+Py_UniversalNewlineFread(void *buf, size_t n,
+			 FILE *stream, PyObject *fobj)
+{
+	char *src = buf, *dst = buf, c;
+	int nread, ntodo=n;
+	int newlinetypes, skipnextlf, univ_newline;
+	
+	if (!fobj || !PyFile_Check(fobj)) {
+		errno = ENXIO;	/* What can you do... */
+		return -1;
+	}
+	univ_newline = ((PyFileObject *)fobj)->f_univ_newline;
+	if ( !univ_newline )
+		return fread(buf, 1, n, stream);
+	newlinetypes = ((PyFileObject *)fobj)->f_newlinetypes;
+	skipnextlf = ((PyFileObject *)fobj)->f_skipnextlf;
+	while (ntodo > 0) {
+		if (ferror(stream))
+			break;
+		nread = fread(dst, 1, ntodo, stream);
+		src = dst;
+		if (nread <= 0) {
+			if (skipnextlf)
+				newlinetypes |= NEWLINE_CR;
+			break;
+		}
+		ntodo -= nread;
+		while ( nread-- ) {
+			c = *src++;
+			if (c == '\r') {
+				/* Save CR as LF and set flag to skip next newline
+				*/
+				*dst++ = '\n';
+				skipnextlf = 1;
+			} else if (skipnextlf && c == '\n') {
+				/* Skip an LF, and remember that we saw CR LF
+				*/
+				skipnextlf = 0;
+				newlinetypes |= NEWLINE_CRLF;
+			} else {
+				/* Normal char to be stored in buffer. Also update
+				** the newlinetypes flag if either this is an LF
+				** or the previous char was a CR.
+				*/
+				if (c == '\n')
+					newlinetypes |= NEWLINE_LF;
+				else if (skipnextlf)
+					newlinetypes |= NEWLINE_CR;
+				*dst++ = c;
+				skipnextlf = 0;
+			}
+		}
+	}
+	((PyFileObject *)fobj)->f_newlinetypes = newlinetypes;
+	((PyFileObject *)fobj)->f_skipnextlf = skipnextlf;
+	return dst - (char *)buf;
+}
+#endif

@@ -844,6 +844,7 @@ Optional Packages:
   --with(out)-thread=DIRECTORY  deprecated; use --with(out)-threads
   --with-pth                      use GNU pth threading libraries
   --with(out)-cycle-gc            disable/enable garbage collection
+  --with(out)-universal-newlines            disable/enable foreign newlines
   --with(out)-pymalloc            disable/enable specialized mallocs
   --with-wctype-functions         use wctype.h functions
   --with-sgi-dl=DIRECTORY         IRIX 4 dynamic linking
@@ -10932,6 +10933,29 @@ _ACEOF
 fi
 echo "$as_me:$LINENO: result: $with_cycle_gc" >&5
 echo "${ECHO_T}$with_cycle_gc" >&6
+
+# Check for universal newline support
+echo "$as_me:$LINENO: checking for --with-universal-newline" >&5
+echo $ECHO_N "checking for --with-universal-newline... $ECHO_C" >&6
+
+# Check whether --with-universal-newlines or --without-universal-newlines was given.
+if test "${with_universal_newlines+set}" = set; then
+  withval="$with_universal_newlines"
+
+fi;
+
+if test -z "$with_universal_newlines"
+then with_universal_newlines="yes"
+fi
+if test "$with_universal_newlines" != "no"
+then
+    cat >>confdefs.h <<\_ACEOF
+#define WITH_UNIVERSAL_NEWLINES 1
+_ACEOF
+
+fi
+echo "$as_me:$LINENO: result: $with_universal_newlines" >&5
+echo "${ECHO_T}$with_universal_newlines" >&6
 
 # Check for Python-specific malloc support
 echo "$as_me:$LINENO: checking for --with-pymalloc" >&5

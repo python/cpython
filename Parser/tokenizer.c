@@ -1,6 +1,7 @@
 
 /* Tokenizer implementation */
 
+#include "Python.h"
 #include "pgenheaders.h"
 
 #include <ctype.h>
@@ -245,8 +246,8 @@ tok_nextc(register struct tok_state *tok)
 					}
 					tok->end = tok->buf + BUFSIZ;
 				}
-				if (fgets(tok->buf, (int)(tok->end - tok->buf),
-					  tok->fp) == NULL) {
+				if (Py_UniversalNewlineFgets(tok->buf, (int)(tok->end - tok->buf),
+					  tok->fp, NULL) == NULL) {
 					tok->done = E_EOF;
 					done = 1;
 				}
@@ -284,9 +285,9 @@ tok_nextc(register struct tok_state *tok)
 				tok->end = tok->buf + newsize;
 				tok->start = curstart < 0 ? NULL :
 					     tok->buf + curstart;
-				if (fgets(tok->inp,
+				if (Py_UniversalNewlineFgets(tok->inp,
 					       (int)(tok->end - tok->inp),
-					       tok->fp) == NULL) {
+					       tok->fp, NULL) == NULL) {
 					/* Last line does not end in \n,
 					   fake one */
 					strcpy(tok->inp, "\n");

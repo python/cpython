@@ -594,7 +594,7 @@ builtin_execfile(PyObject *self, PyObject *args)
 
         if (exists) {
 		Py_BEGIN_ALLOW_THREADS
-		fp = fopen(filename, "r");
+		fp = fopen(filename, "r" PY_STDIOTEXTMODE);
 		Py_END_ALLOW_THREADS
 
 		if (fp == NULL) {

@@ -611,7 +611,7 @@ Py_Main(int argc, char **argv, char *filename)
 			Py_GetVersion(), Py_GetPlatform(), COPYRIGHT);
 	
 	if (filename != NULL) {
-		if ((fp = fopen(filename, "r")) == NULL) {
+		if ((fp = fopen(filename, "r" PY_STDIOTEXTMODE)) == NULL) {
 			fprintf(stderr, "%s: can't open file '%s'\n",
 				argv[0], filename);
 			PyMac_Exit(2);
@@ -630,7 +630,7 @@ Py_Main(int argc, char **argv, char *filename)
 	PySys_SetArgv(argc, argv);
 
 	if (filename == NULL && isatty((int)fileno(fp))) {
-		FILE *fp = fopen(STARTUP, "r");
+		FILE *fp = fopen(STARTUP, "r" PY_STDIOTEXTMODE);
 		if (fp != NULL) {
 			(void) PyRun_SimpleFile(fp, STARTUP);
 			PyErr_Clear();
