@@ -3954,7 +3954,7 @@ add_tp_new_wrapper(PyTypeObject *type)
 	func = PyCFunction_New(tp_new_methoddef, (PyObject *)type);
 	if (func == NULL)
 		return -1;
-	if(PyDict_SetItemString(type->tp_dict, "__new__", func)) {
+	if (PyDict_SetItemString(type->tp_dict, "__new__", func)) {
 		Py_DECREF(func);
 		return -1;
 	}
