@@ -79,6 +79,10 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "zlib", "zlib.vcproj", "{680
 		{CF7AC3D1-E2DF-41D2-BEA6-1E2556CDEA26} = {CF7AC3D1-E2DF-41D2-BEA6-1E2556CDEA26}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "launcher", "launcher.vcproj", "{065D53DF-5D8E-4CBD-AE32-B9E29D4FC5C6}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfiguration) = preSolution
 		Debug = Debug
@@ -181,6 +185,12 @@ Global
 		{680CDC79-9CCA-4282-9A8D-927CB0DB55B2}.Release.Build.0 = Release|Win32
 		{680CDC79-9CCA-4282-9A8D-927CB0DB55B2}.ReleaseItanium.ActiveCfg = Release|Win32
 		{680CDC79-9CCA-4282-9A8D-927CB0DB55B2}.ReleaseItanium.Build.0 = Release|Win32
+		{065D53DF-5D8E-4CBD-AE32-B9E29D4FC5C6}.Debug.ActiveCfg = Debug|Win32
+		{065D53DF-5D8E-4CBD-AE32-B9E29D4FC5C6}.Debug.Build.0 = Debug|Win32
+		{065D53DF-5D8E-4CBD-AE32-B9E29D4FC5C6}.Release.ActiveCfg = Release|Win32
+		{065D53DF-5D8E-4CBD-AE32-B9E29D4FC5C6}.Release.Build.0 = Release|Win32
+		{065D53DF-5D8E-4CBD-AE32-B9E29D4FC5C6}.ReleaseItanium.ActiveCfg = ReleaseItanium|Win32
+		{065D53DF-5D8E-4CBD-AE32-B9E29D4FC5C6}.ReleaseItanium.Build.0 = ReleaseItanium|Win32
 	EndGlobalSection
 	GlobalSection(SolutionItems) = postSolution
 		readme.txt = readme.txt
