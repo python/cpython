@@ -788,7 +788,7 @@ class IntSet:
         self.pairs = []
         self.sep = sep
         self.rng = rng
-        if data is not None: self.fromstring(data)
+        if data: self.fromstring(data)
 
     def reset(self):
         self.pairs = []
