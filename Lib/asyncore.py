@@ -138,9 +138,9 @@ def poll2(timeout=0.0, map=None):
         for fd, obj in map.items():
             flags = select.POLLERR | select.POLLHUP | select.POLLNVAL
             if obj.readable():
-                flags = select.POLLIN | select.POLLPRI
+                flags |= select.POLLIN | select.POLLPRI
             if obj.writable():
-                flags = flags | select.POLLOUT
+                flags |= select.POLLOUT
             if flags:
                 pollster.register(fd, flags)
         try:
