@@ -629,28 +629,25 @@ dictionary; \member{__class__} is the instance's class.
   \ttindex{__class__}}
 
 \item[Files]
-A file object represents an open file.  File objects are created by the
-\function{open()} built-in function, and also by
-\function{os.popen()}, \function{os.fdopen()}, and the
-\method{makefile()} method of socket objects (and perhaps by other
-functions or methods provided by extension modules).  The objects
-\code{sys.stdin}, \code{sys.stdout} and \code{sys.stderr} are
-initialized to file objects corresponding to the interpreter's
-standard input, output and error streams.  See the \emph{Python
-Library Reference} for complete documentation of file objects.
-\obindex{file}
-\indexii{C}{language}
-\index{stdio}
-\bifuncindex{open}
-\withsubitem{(in module os)}{\ttindex{popen()}}
-\withsubitem{(socket method)}{\ttindex{makefile()}}
+A file\obindex{file} object represents an open file.  File objects are
+created by the \function{open()}\bifuncindex{open} built-in function,
+and also by
+\withsubitem{(in module os)}{\ttindex{popen()}}\function{os.popen()},
+\function{os.fdopen()}, and the
+\method{makefile()}\withsubitem{(socket method)}{\ttindex{makefile()}}
+method of socket objects (and perhaps by other functions or methods
+provided by extension modules).  The objects
+\ttindex{sys.stdin}\code{sys.stdin},
+\ttindex{sys.stdout}\code{sys.stdout} and
+\ttindex{sys.stderr}\code{sys.stderr} are initialized to file objects
+corresponding to the interpreter's standard\index{stdio} input, output
+and error streams.  See the \citetitle[../lib/lib.html]{Python Library
+Reference} for complete documentation of file objects.
 \withsubitem{(in module sys)}{
   \ttindex{stdin}
   \ttindex{stdout}
   \ttindex{stderr}}
-\ttindex{sys.stdin}
-\ttindex{sys.stdout}
-\ttindex{sys.stderr}
+
 
 \item[Internal types]
 A few types used internally by the interpreter are exposed to the user.
