@@ -8,6 +8,7 @@
  */
 
 /* Modified by Guido van Rossum */
+/* Beep added by Mark Hammond */
 
 /* Example:
 
@@ -43,6 +44,13 @@ static char sound_playsound_doc[] =
 "The sound argument can be a filename, data, or None.\n"
 "For flag values, ored together, see module documentation.\n";
 
+static char sound_beep_doc[] =
+"Beep(frequency, duration) - a wrapper around the Windows Beep API\n"
+"\n"
+"The frequency argument specifies frequency, in hertz, of the sound.\n"
+"This parameter must be in the range 37 through 32,767 (0x25 through 0x7FFF).\n"
+"The duration argument specifies the number of milli-seconds.\n";
+
 static char sound_module_doc[] =
 "PlaySound(sound, flags) - play a sound\n"
 "SND_FILENAME - sound is a wav file name\n"
@@ -54,7 +62,8 @@ static char sound_module_doc[] =
 "SND_NODEFAULT - Do not play a default beep if the sound can not be found\n"
 "SND_NOSTOP - Do not interrupt any sounds currently playing\n"  // Raising RuntimeError if needed
 "SND_NOWAIT - Return immediately if the sound driver is busy\n" // Without any errors
-;
+"\n"
+"Beep(frequency, duration) - Make a beep through the PC speaker.\n";
 
 PyObject *sound_playsound(PyObject *s, PyObject *args)
 {
@@ -89,9 +98,30 @@ PyObject *sound_playsound(PyObject *s, PyObject *args)
     return Py_None;
 }
 
+static PyObject *sound_beep( PyObject *self, PyObject *args )
+{
+	int freq;
+	int dur;
+	BOOL ok;
+
+	if (!PyArg_ParseTuple(args, "ii:Beep", &freq,  &dur))
+		return NULL;
+    Py_BEGIN_ALLOW_THREADS
+	ok = Beep(freq,dur);
+    Py_END_ALLOW_THREADS
+    if(!ok)
+    {
+        PyErr_SetString(PyExc_RuntimeError,"Failed to beep");
+        return NULL;
+    }
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
 static struct PyMethodDef sound_methods[] =
 {
     {"PlaySound", sound_playsound, 1, sound_playsound_doc},
+    {"Beep",      sound_beep,      1, sound_beep_doc},
     {NULL,  NULL}
 };
 
