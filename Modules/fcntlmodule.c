@@ -9,7 +9,9 @@
 
 #include <sys/ioctl.h>
 #include <fcntl.h>
-
+#ifdef HAVE_STROPTS_H
+#include <stropts.h>
+#endif
 
 static int
 conv_descriptor(PyObject *object, int *target)
@@ -337,6 +339,8 @@ ins(PyObject* d, char* symbol, long value)
         return 0;
 }
 
+#define INS(x) if (ins(d, #x, (long)x)) return -1
+
 static int
 all_ins(PyObject* d)
 {
@@ -459,6 +463,39 @@ all_ins(PyObject* d)
         if (ins(d, "DN_MULTISHOT", (long)DN_MULTISHOT)) return -1;
 #endif
 
+#ifdef HAVE_STROPTS_H
+	/* Unix 98 guarantees that these are in stropts.h. */
+	INS(I_PUSH);
+	INS(I_POP);
+	INS(I_LOOK);
+	INS(I_FLUSH);
+	INS(I_FLUSHBAND);
+	INS(I_SETSIG);
+	INS(I_GETSIG);
+	INS(I_FIND);
+	INS(I_PEEK);
+	INS(I_SRDOPT);
+	INS(I_GRDOPT);
+	INS(I_NREAD);
+	INS(I_FDINSERT);
+	INS(I_STR);
+	INS(I_SWROPT);
+	INS(I_GWROPT);
+	INS(I_SENDFD);
+	INS(I_RECVFD);
+	INS(I_LIST);
+	INS(I_ATMARK);
+	INS(I_CKBAND);
+	INS(I_GETBAND);
+	INS(I_CANPUT);
+	INS(I_SETCLTIME);
+	INS(I_GETCLTIME);
+	INS(I_LINK);
+	INS(I_UNLINK);
+	INS(I_PLINK);
+	INS(I_PUNLINK);
+#endif
+	
 	return 0;
 }
 

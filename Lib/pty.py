@@ -86,7 +86,17 @@ def slave_open(tty_name):
     opened filedescriptor.
     Deprecated, use openpty() instead."""
 
-    return os.open(tty_name, os.O_RDWR)
+    result = os.open(tty_name, os.O_RDWR)
+    try:
+        from fcntl import ioctl, I_PUSH
+    except ImportError:
+        return result
+    try:
+       ioctl(result, I_PUSH, "ptem")
+       ioctl(result, I_PUSH, "ldterm")
+    except IOError:
+        pass
+    return result
 
 def fork():
     """fork() -> (pid, master_fd)
