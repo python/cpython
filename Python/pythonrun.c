@@ -40,7 +40,8 @@ static PyObject *run_err_node(node *, char *, PyObject *, PyObject *,
 			      PyCompilerFlags *);
 static PyObject *run_node(node *, char *, PyObject *, PyObject *,
 			  PyCompilerFlags *);
-static PyObject *run_pyc_file(FILE *, char *, PyObject *, PyObject *);
+static PyObject *run_pyc_file(FILE *, char *, PyObject *, PyObject *,
+			      PyCompilerFlags *);
 static void err_input(perrdetail *);
 static void initsigs(void);
 static void call_sys_exitfunc(void);
@@ -447,32 +448,54 @@ initsite(void)
 int
 PyRun_AnyFile(FILE *fp, char *filename)
 {
-	return PyRun_AnyFileEx(fp, filename, 0);
+	return PyRun_AnyFileExFlags(fp, filename, 0, NULL);
+}
+
+int
+PyRun_AnyFileFlags(FILE *fp, char *filename, PyCompilerFlags *flags)
+{
+	return PyRun_AnyFileExFlags(fp, filename, 0, flags);
 }
 
 int
 PyRun_AnyFileEx(FILE *fp, char *filename, int closeit)
 {
+	return PyRun_AnyFileExFlags(fp, filename, closeit, NULL);
+}
+
+int
+PyRun_AnyFileExFlags(FILE *fp, char *filename, int closeit, 
+		     PyCompilerFlags *flags)
+{
 	if (filename == NULL)
 		filename = "???";
 	if (Py_FdIsInteractive(fp, filename)) {
-		int err = PyRun_InteractiveLoop(fp, filename);
+		int err = PyRun_InteractiveLoopFlags(fp, filename, flags);
 		if (closeit)
 			fclose(fp);
 		return err;
 	}
 	else
-		return PyRun_SimpleFileEx(fp, filename, closeit);
+		return PyRun_SimpleFileExFlags(fp, filename, closeit, flags);
 }
 
 int
 PyRun_InteractiveLoop(FILE *fp, char *filename)
 {
+	return PyRun_InteractiveLoopFlags(fp, filename, NULL);
+}
+
+int
+PyRun_InteractiveLoopFlags(FILE *fp, char *filename, PyCompilerFlags *flags)
+{
 	PyObject *v;
 	int ret;
-	PyCompilerFlags flags;
+	PyCompilerFlags local_flags;
 
-	flags.cf_nested_scopes = 0;
+	if (flags == NULL) {
+		flags = &local_flags;
+		local_flags.cf_nested_scopes = 0;
+	}
 	v = PySys_GetObject("ps1");
 	if (v == NULL) {
 		PySys_SetObject("ps1", v = PyString_FromString(">>> "));
@@ -484,7 +507,7 @@ PyRun_InteractiveLoop(FILE *fp, char *filename)
 		Py_XDECREF(v);
 	}
 	for (;;) {
-		ret = PyRun_InteractiveOneFlags(fp, filename, &flags);
+		ret = PyRun_InteractiveOneFlags(fp, filename, flags);
 #ifdef Py_REF_DEBUG
 		fprintf(stderr, "[%ld refs]\n", _Py_RefTotal);
 #endif
@@ -611,6 +634,13 @@ maybe_pyc_file(FILE *fp, char* filename, char* ext, int closeit)
 int
 PyRun_SimpleFileEx(FILE *fp, char *filename, int closeit)
 {
+	return PyRun_SimpleFileExFlags(fp, filename, closeit, NULL);
+}
+
+int
+PyRun_SimpleFileExFlags(FILE *fp, char *filename, int closeit,
+			PyCompilerFlags *flags)
+{
 	PyObject *m, *d, *v;
 	char *ext;
 
@@ -630,9 +660,10 @@ PyRun_SimpleFileEx(FILE *fp, char *filename, int closeit)
 		/* Turn on optimization if a .pyo file is given */
 		if (strcmp(ext, ".pyo") == 0)
 			Py_OptimizeFlag = 1;
-		v = run_pyc_file(fp, filename, d, d);
+		v = run_pyc_file(fp, filename, d, d, flags);
 	} else {
-		v = PyRun_FileEx(fp, filename, Py_file_input, d, d, closeit);
+		v = PyRun_FileExFlags(fp, filename, Py_file_input, d, d, 
+				      closeit, flags);
 	}
 	if (v == NULL) {
 		PyErr_Print();
@@ -926,12 +957,38 @@ PyRun_File(FILE *fp, char *filename, int start, PyObject *globals,
 
 PyObject *
 PyRun_FileEx(FILE *fp, char *filename, int start, PyObject *globals,
-	   PyObject *locals, int closeit)
+	     PyObject *locals, int closeit)
 {
 	node *n = PyParser_SimpleParseFile(fp, filename, start);
 	if (closeit)
 		fclose(fp);
 	return run_err_node(n, filename, globals, locals, NULL);
+}
+
+PyObject *
+PyRun_StringFlags(char *str, int start, PyObject *globals, PyObject *locals,
+		  PyCompilerFlags *flags)
+{
+	return run_err_node(PyParser_SimpleParseString(str, start),
+			    "<string>", globals, locals, flags);
+}
+
+PyObject *
+PyRun_FileFlags(FILE *fp, char *filename, int start, PyObject *globals,
+		PyObject *locals, PyCompilerFlags *flags)
+{
+	return PyRun_FileExFlags(fp, filename, start, globals, locals, 0,
+				 flags); 
+}
+
+PyObject *
+PyRun_FileExFlags(FILE *fp, char *filename, int start, PyObject *globals,
+		  PyObject *locals, int closeit, PyCompilerFlags *flags)
+{
+	node *n = PyParser_SimpleParseFile(fp, filename, start);
+	if (closeit)
+		fclose(fp);
+	return run_err_node(n, filename, globals, locals, flags);
 }
 
 static PyObject *
@@ -949,7 +1006,6 @@ run_node(node *n, char *filename, PyObject *globals, PyObject *locals,
 {
 	PyCodeObject *co;
 	PyObject *v;
-	/* XXX pass sess->ss_nested_scopes to PyNode_Compile */
 	co = PyNode_CompileFlags(n, filename, flags);
 	PyNode_Free(n);
 	if (co == NULL)
@@ -960,7 +1016,8 @@ run_node(node *n, char *filename, PyObject *globals, PyObject *locals,
 }
 
 static PyObject *
-run_pyc_file(FILE *fp, char *filename, PyObject *globals, PyObject *locals)
+run_pyc_file(FILE *fp, char *filename, PyObject *globals, PyObject *locals,
+	     PyCompilerFlags *flags)
 {
 	PyCodeObject *co;
 	PyObject *v;
@@ -984,12 +1041,25 @@ run_pyc_file(FILE *fp, char *filename, PyObject *globals, PyObject *locals)
 	}
 	co = (PyCodeObject *)v;
 	v = PyEval_EvalCode(co, globals, locals);
+	if (v && flags) {
+		if (co->co_flags & CO_NESTED)
+			flags->cf_nested_scopes = 1;
+		fprintf(stderr, "run_pyc_file: nested_scopes: %d\n",
+			flags->cf_nested_scopes);			
+	}
 	Py_DECREF(co);
 	return v;
 }
 
 PyObject *
 Py_CompileString(char *str, char *filename, int start)
+{
+	return Py_CompileStringFlags(str, filename, start, NULL);
+}
+
+PyObject *
+Py_CompileStringFlags(char *str, char *filename, int start, 
+		      PyCompilerFlags *flags)
 {
 	node *n;
 	PyCodeObject *co;

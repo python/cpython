@@ -3456,13 +3456,27 @@ exec_statement(PyFrameObject *f, PyObject *prog, PyObject *globals,
 	else if (PyFile_Check(prog)) {
 		FILE *fp = PyFile_AsFile(prog);
 		char *name = PyString_AsString(PyFile_Name(prog));
-		v = PyRun_File(fp, name, Py_file_input, globals, locals); 
+		if (PyEval_GetNestedScopes()) {
+			PyCompilerFlags cf;
+			cf.cf_nested_scopes = 1;
+			v = PyRun_FileFlags(fp, name, Py_file_input, globals,
+					    locals, &cf); 
+		} else {
+			v = PyRun_File(fp, name, Py_file_input, globals,
+				       locals); 
+		}
 	}
 	else {
 		char *str;
 		if (PyString_AsStringAndSize(prog, &str, NULL))
 			return -1;
-		v = PyRun_String(str, Py_file_input, globals, locals);
+		if (PyEval_GetNestedScopes()) {
+			PyCompilerFlags cf;
+			cf.cf_nested_scopes = 1;
+			v = PyRun_StringFlags(str, Py_file_input, globals, 
+					      locals, &cf);
+		} else
+			v = PyRun_String(str, Py_file_input, globals, locals);
 	}
 	if (plain)
 		PyFrame_LocalsToFast(f, 0);

@@ -26,12 +26,17 @@ DL_IMPORT(void) Py_EndInterpreter(PyThreadState *);
 DL_IMPORT(int) PyRun_AnyFile(FILE *, char *);
 DL_IMPORT(int) PyRun_AnyFileEx(FILE *, char *, int);
 
+DL_IMPORT(int) PyRun_AnyFileFlags(FILE *, char *, PyCompilerFlags *);
+DL_IMPORT(int) PyRun_AnyFileExFlags(FILE *, char *, int, PyCompilerFlags *);
+
 DL_IMPORT(int) PyRun_SimpleString(char *);
 DL_IMPORT(int) PyRun_SimpleFile(FILE *, char *);
 DL_IMPORT(int) PyRun_SimpleFileEx(FILE *, char *, int);
+DL_IMPORT(int) PyRun_SimpleFileExFlags(FILE *, char *, int, PyCompilerFlags *);
 DL_IMPORT(int) PyRun_InteractiveOne(FILE *, char *);
 DL_IMPORT(int) PyRun_InteractiveOneFlags(FILE *, char *, PyCompilerFlags *);
 DL_IMPORT(int) PyRun_InteractiveLoop(FILE *, char *);
+DL_IMPORT(int) PyRun_InteractiveLoopFlags(FILE *, char *, PyCompilerFlags *);
 
 DL_IMPORT(struct _node *) PyParser_SimpleParseString(char *, int);
 DL_IMPORT(struct _node *) PyParser_SimpleParseFile(FILE *, char *, int);
@@ -40,8 +45,16 @@ DL_IMPORT(PyObject *) PyRun_String(char *, int, PyObject *, PyObject *);
 DL_IMPORT(PyObject *) PyRun_File(FILE *, char *, int, PyObject *, PyObject *);
 DL_IMPORT(PyObject *) PyRun_FileEx(FILE *, char *, int,
 				   PyObject *, PyObject *, int);
+DL_IMPORT(PyObject *) PyRun_StringFlags(char *, int, PyObject *, PyObject *,
+					PyCompilerFlags *);
+DL_IMPORT(PyObject *) PyRun_FileFlags(FILE *, char *, int, PyObject *, 
+				      PyObject *, PyCompilerFlags *);
+DL_IMPORT(PyObject *) PyRun_FileExFlags(FILE *, char *, int, PyObject *, 
+					PyObject *, int, PyCompilerFlags *);
 
 DL_IMPORT(PyObject *) Py_CompileString(char *, char *, int);
+DL_IMPORT(PyObject *) Py_CompileStringFlags(char *, char *, int,
+					    PyCompilerFlags *);
 DL_IMPORT(struct symtable *) Py_SymtableString(char *, char *, int);
 
 DL_IMPORT(void) PyErr_Print(void);
