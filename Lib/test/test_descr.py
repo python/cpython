@@ -763,6 +763,7 @@ def classic():
     class E: # *not* subclassing from C
         foo = C.foo
     verify(E().foo == C.foo) # i.e., unbound
+    verify(repr(C.foo.__get__(C())).startswith("<bound method "))
 
 def compattr():
     if verbose: print "Testing computed attributes..."
@@ -907,6 +908,7 @@ def methods():
     class E(object):
         foo = C.foo
     verify(E().foo == C.foo) # i.e., unbound
+    verify(repr(C.foo.__get__(C(1))).startswith("<bound method "))
 
 def specials():
     # Test operators like __hash__ for which a built-in default exists
