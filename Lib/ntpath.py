@@ -1,7 +1,8 @@
 # Module 'ntpath' -- common operations on WinNT/Win95 pathnames
 """Common pathname manipulations, WindowsNT/95 version. 
-Instead of importing this module
-directly, import os and refer to this module as os.path.
+
+Instead of importing this module directly, import os and refer to this
+module as os.path.
 """
 
 import os
@@ -16,17 +17,15 @@ import string
 def normcase(s):
     """Normalize case of pathname.
 
-    Makes all characters lowercase and all slashes into backslashes.
-
-    """
+    Makes all characters lowercase and all slashes into backslashes."""
     return string.lower(string.replace(s, "/", "\\"))
 
 
 # Return wheter a path is absolute.
 # Trivial in Posix, harder on the Mac or MS-DOS.
 # For DOS it is absolute if it starts with a slash or backslash (current
-# volume), or if a pathname after the volume letter and colon starts with
-# a slash or backslash.
+# volume), or if a pathname after the volume letter and colon / UNC resource
+# starts with a slash or backslash.
 
 def isabs(s):
     """Test whether a path is absolute"""
@@ -50,13 +49,30 @@ def join(a, *p):
 
 
 # Split a path in a drive specification (a drive letter followed by a
-# colon) and the path specification.
+# colon, or a UNC resource) and the path specification.
 # It is always true that drivespec + pathspec == p
 def splitdrive(p):
-    """Split a pathname into drive and path specifiers. Returns a 2-tuple
-"(drive,path)";  either part may be empty"""
+    """Split a pathname into drive and path specifiers.
+
+    Return a 2-tuple (drive, path); either part may be empty.
+    This recognizes UNC paths (e.g. '\\\\host\\mountpoint\\dir\\file')"""
     if p[1:2] == ':':
         return p[0:2], p[2:]
+    firstTwo = p[0:2]
+    if firstTwo == '//' or firstTwo == '\\\\':
+        # is a UNC path:
+        # vvvvvvvvvvvvvvvvvvvv equivalent to drive letter
+        # \\machine\mountpoint\directories...
+        #           directory ^^^^^^^^^^^^^^^
+        normp = normcase(p)
+        index = string.find(normp, '\\', 2)
+        if index == -1:
+            ##raise RuntimeError, 'illegal UNC path: "' + p + '"'
+            return ("", p)
+        index = string.find(normp, '\\', index + 1)
+        if index == -1:
+            index = len(p)
+        return p[:index], p[index:]
     return '', p
 
 
@@ -67,8 +83,10 @@ def splitdrive(p):
 # The resulting head won't end in '/' unless it is the root.
 
 def split(p):
-    """Split a pathname.  Returns tuple "(head, tail)" where "tail" is 
-everything after the final slash.  Either part may be empty"""
+    """Split a pathname.
+
+    Return tuple (head, tail) where tail is everything after the final slash.
+    Either part may be empty."""
     d, p = splitdrive(p)
     slashes = ''
     while p and p[-1:] in '/\\':
@@ -96,8 +114,10 @@ everything after the final slash.  Either part may be empty"""
 # It is always true that root + ext == p.
 
 def splitext(p):
-    """Split the extension from a pathname.  Extension is everything from the
-last dot to the end.  Returns "(root, ext)", either part may be empty"""
+    """Split the extension from a pathname.
+
+    Extension is everything from the last dot to the end.
+    Return (root, ext), either part may be empty."""
     root, ext = '', ''
     for c in p:
         if c in ['/','\\']:
@@ -146,17 +166,17 @@ def commonprefix(m):
 # Get size, mtime, atime of files.
 
 def getsize(filename):
-    """Return the size of a file, reported by os.stat()."""
+    """Return the size of a file, reported by os.stat()"""
     st = os.stat(filename)
     return st[stat.ST_SIZE]
 
 def getmtime(filename):
-    """Return the last modification time of a file, reported by os.stat()."""
+    """Return the last modification time of a file, reported by os.stat()"""
     st = os.stat(filename)
     return st[stat.ST_MTIME]
 
 def getatime(filename):
-    """Return the last access time of a file, reported by os.stat()."""
+    """Return the last access time of a file, reported by os.stat()"""
     st = os.stat(filename)
     return st[stat.ST_MTIME]
 
@@ -208,7 +228,7 @@ def isfile(path):
 
 
 # Is a path a mount point?
-# XXX This degenerates in: 'is this the root?' on DOS
+# XXX This degenerates in: 'is this the root?' on DOS/Windows
 
 def ismount(path):
     """Test whether a path is a mount point (defined as root of drive)"""
@@ -225,10 +245,11 @@ def ismount(path):
 # or to impose a different order of visiting.
 
 def walk(top, func, arg):
-    """walk(top,func,args) calls func(arg, d, files) for each directory "d" 
-in the tree  rooted at "top" (including "top" itself).  "files" is a list
-of all the files and subdirs in directory "d".
-"""
+    """Directory tree walk whth callback function.
+
+    walk(top, func, args) calls func(arg, d, files) for each directory d 
+    in the tree rooted at top (including top itself); files is a list
+    of all the files and subdirs in directory d."""
     try:
         names = os.listdir(top)
     except os.error:
@@ -252,8 +273,9 @@ of all the files and subdirs in directory "d".
 # variable expansion.)
 
 def expanduser(path):
-    """Expand ~ and ~user constructions.  If user or $HOME is unknown, 
-do nothing"""
+    """Expand ~ and ~user constructs.
+
+    If user or $HOME is unknown, do nothing."""
     if path[:1] <> '~':
         return path
     i, n = 1, len(path)
@@ -287,8 +309,9 @@ do nothing"""
 varchars = string.letters + string.digits + '_-'
 
 def expandvars(path):  
-    """Expand shell variables of form $var and ${var}.  Unknown variables
-are left unchanged"""
+    """Expand shell variables of form $var and ${var}.
+
+    Unknown variables are left unchanged."""
     if '$' not in path:
         return path
     res = ''
@@ -369,6 +392,7 @@ def normpath(path):
 
 # Return an absolute path.
 def abspath(path):
+    """Return the absolute version of a path"""
     try:
         import win32api
         return win32api.GetFullPathName(path)
