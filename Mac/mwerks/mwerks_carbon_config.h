@@ -9,6 +9,7 @@
 #define TARGET_API_MAC_CARBON 1
 #define TARGET_API_MAC_CARBON_NOTYET 1 /* Things we should do eventually, but not now */
 
+#define USE_ARGV0_CHDIR		/* Workaround for OSXDP4: change dir to argv[0] dir */
 /* #define USE_GUSI2		/* Stdio implemented with GUSI 2 */
 /* # define USE_GUSI1	/* Stdio implemented with GUSI 1 */
 #define USE_MSL			/* Use Mw Standard Library (as opposed to Plaugher C libraries) */
