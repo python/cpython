@@ -533,8 +533,15 @@ if __name__ == '__main__':
             print >> sys.stderr, \
                   'Cannot setuid "nobody"; try running with -n option.'
             sys.exit(1)
-    import __main__
-    class_ = getattr(__main__, options.classname)
+    classname = options.classname
+    if "." in classname:
+        lastdot = classname.rfind(".")
+        mod = __import__(classname[:lastdot], globals(), locals(), [""])
+        classname = classname[lastdot+1:]
+    else:
+        import __main__ as mod
+    print mod.__name__, dir(mod)
+    class_ = getattr(mod, classname)
     proxy = class_((options.localhost, options.localport),
                    (options.remotehost, options.remoteport))
     try:
