@@ -28,57 +28,39 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 
 /* Like strerror() but for Mac OS error numbers */
-char *PyMac_StrError(int err)
+char *
+PyMac_StrError(int err)
 {
 	static char buf[256];
-	Handle h;
-	char *str;
-	static int errors_loaded;
-	
-	h = GetResource('Estr', err);
-	if (!h && !errors_loaded) {
-		/*
-		** Attempt to open the resource file containing the
-		** Estr resources. We ignore all errors. We also try
-		** this only once.
-		*/
-		PyObject *m, *rv;
-		errors_loaded = 1;
-		
-		m = PyImport_ImportModule("macresource");
-		if (!m) {
-			if (Py_VerboseFlag)
-				PyErr_Print();
+	PyObject *m;
+	PyObject *rv;
+
+	m = PyImport_ImportModule("MacOS");
+	if (!m) {
+		if (Py_VerboseFlag)
+			PyErr_Print();
+		PyErr_Clear();
+		rv = NULL;
+	}
+	else {
+		rv = PyObject_CallMethod(m, "GetErrorString", "i", err);
+		if (!rv)
 			PyErr_Clear();
+	}
+	if (!rv) {
+		buf[0] = '\0';
+	}
+	else {
+		char *input = PyString_AsString(rv);
+		if (!input) {
+			PyErr_Clear();
+			buf[0] = '\0';
 		} else {
-			rv = PyObject_CallMethod(m, "open_error_resource", "");
-			if (!rv) {
-				if (Py_VerboseFlag)
-					PyErr_Print();
-				PyErr_Clear();
-			} else {
-				Py_DECREF(rv);
-				/* And try again... */
-				h = GetResource('Estr', err);
-			}
+			strncpy(buf, input, sizeof(buf) - 1);
+			buf[sizeof(buf) - 1] = '\0';
 		}
 	}
-	/*
-	** Whether the code above succeeded or not, we won't try
-	** again.
-	*/
-	errors_loaded = 1;
-		
-	if ( h ) {
-		HLock(h);
-		str = (char *)*h;
-		memcpy(buf, str+1, (unsigned char)str[0]);
-		buf[(unsigned char)str[0]] = '\0';
-		HUnlock(h);
-		ReleaseResource(h);
-	} else {
-		PyOS_snprintf(buf, sizeof(buf), "Mac OS error code %d", err);
-	}
+	
 	return buf;
 }
 
@@ -125,123 +107,50 @@ PyMac_Error(OSErr err)
 OSErr
 PyMac_GetFullPathname(FSSpec *fss, char *path, int len)
 {
-	FSRef fsr;
-	OSErr err;
-	
+	PyObject *fs, *exc;
+	PyObject *rv = NULL;
+	char *input;
+	OSErr err = noErr;
+
 	*path = '\0';
-	err = FSpMakeFSRef(fss, &fsr);
-	if ( err == fnfErr ) {
-		/* FSSpecs can point to non-existing files, fsrefs can't. */
-		FSSpec fss2;
-		int tocopy;
-		
-		err = FSMakeFSSpec(fss->vRefNum, fss->parID, "", &fss2);
-		if ( err ) return err;
-		err = FSpMakeFSRef(&fss2, &fsr);
-		if ( err ) return err;
-		err = (OSErr)FSRefMakePath(&fsr, path, len-1);
-		if ( err ) return err;
-		/* This part is not 100% safe: we append the filename part, but
-		** I'm not sure that we don't run afoul of the various 8bit
-		** encodings here. Will have to look this up at some point...
-		*/
-		strcat(path, "/");
-		tocopy = fss->name[0];
-		if ( strlen(path) + tocopy >= len )
-			tocopy = len - strlen(path) - 1;
-		if ( tocopy > 0 )
-			strncat(path, fss->name+1, tocopy);
-	} else {
-		if ( err ) return err;
-		err = (OSErr)FSRefMakePath(&fsr, path, len);
-		if ( err ) return err;
+
+	fs = PyMac_BuildFSSpec(fss);
+	if (!fs)
+		goto error;
+
+	rv = PyObject_CallMethod(fs, "as_pathname", "");
+	if (!rv)
+		goto error;
+
+	input = PyString_AsString(rv);
+	if (!input)
+		goto error;
+
+	strncpy(path, input, len - 1);
+	path[len - 1] = '\0';
+
+	Py_XDECREF(rv);
+	Py_XDECREF(fs);
+	return err;
+
+  error:
+	exc = PyErr_Occurred();
+	if (exc  && PyErr_GivenExceptionMatches(exc,
+						PyMac_GetOSErrException())) {
+		PyObject *args = PyObject_GetAttrString(exc, "args");
+		if (args) {
+			char *ignore;
+			PyArg_ParseTuple(args, "is", &err, &ignore);
+			Py_XDECREF(args);
+		}
 	}
-	return 0;
+	if (err == noErr)
+		err = -1;
+	PyErr_Clear();
+	Py_XDECREF(rv);
+	Py_XDECREF(fs);
+	return err;
 }
-
-
-#ifdef WITH_NEXT_FRAMEWORK
-/*
-** In a bundle, find a file "resourceName" of type "resourceType". Return the
-** full pathname in "resourceURLCstr".
-*/
-static int
-locateResourcePy(CFStringRef resourceType, CFStringRef resourceName, char *resourceURLCStr, int length)
-{
-    CFBundleRef mainBundle = NULL;
-    CFURLRef URL, absoluteURL;
-    CFStringRef filenameString, filepathString;
-    CFIndex size, i;
-    CFArrayRef arrayRef = NULL;
-    int success = 0;
-    
-	CFURLPathStyle thePathStyle = kCFURLPOSIXPathStyle;
-
-    /* Get a reference to our main bundle */
-    mainBundle = CFBundleGetMainBundle();
-
-	/* If we are running inside a bundle, look through it. Otherwise, do nothing. */
-	if (mainBundle) {
-
-	    /* Look for py files in the main bundle by type */
-	    arrayRef = CFBundleCopyResourceURLsOfType( mainBundle, 
-	            resourceType, 
-	           NULL );
-
-	    /* See if there are any filename matches */
-	    size = CFArrayGetCount(arrayRef);
-	    for (i = 0; i < size; i++) {
-	        URL = CFArrayGetValueAtIndex(arrayRef, i);
-	        filenameString = CFURLCopyLastPathComponent(URL);
-	        if (CFStringCompare(filenameString, resourceName, 0) == kCFCompareEqualTo) {
-	            /* We found a match, get the file's full path */
-	            absoluteURL = CFURLCopyAbsoluteURL(URL);
-	            filepathString = CFURLCopyFileSystemPath(absoluteURL, thePathStyle);
-	            CFRelease(absoluteURL);
-
-	            /* Copy the full path into the caller's character buffer */
-	            success = CFStringGetCString(filepathString, resourceURLCStr, length,
-	                                        kCFStringEncodingMacRoman);
-
-	            CFRelease(filepathString);
-	        }
-	        CFRelease(filenameString);
-	    }
-		CFRelease(arrayRef);
-	}
-    return success;
-}
-
-/*
-** iff we are running in a .app framework then we could be
-** the main program for an applet. In that case, return the
-** script filename for the applet.
-** Otherwise return NULL.
-*/
-char *
-PyMac_GetAppletScriptFile(void)
-{
-    static char scriptpath[1024];
-
-	/* First we see whether we have __rawmain__.py and run that if it
-	** is there. This is used for applets that want sys.argv to be
-	** unix-like: __rawmain__ will construct it (from the initial appleevent)
-	** and then call __main__.py.
-	*/
-	if (locateResourcePy(CFSTR("py"), CFSTR("__rawmain__.py"), scriptpath, 1024)) {
-		return scriptpath;
-	} else if (locateResourcePy(CFSTR("pyc"), CFSTR("__rawmain__.pyc"), scriptpath, 1024)) {
-		return scriptpath;
-	} else if (locateResourcePy(CFSTR("py"), CFSTR("__main__.py"), scriptpath, 1024)) {
-		return scriptpath;
-	} else if (locateResourcePy(CFSTR("pyc"), CFSTR("__main__.pyc"), scriptpath, 1024)) {
-		return scriptpath;
-	}
-	return NULL;
-}
-
-#endif
-
 
 /* Convert a 4-char string object argument to an OSType value */
 int

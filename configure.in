@@ -1193,14 +1193,12 @@ then
 fi
 case "$enable_toolbox_glue" in
 yes)
-	extra_frameworks="-framework CoreServices -framework Foundation"
 	extra_machdep_objs="Python/mactoolboxglue.o"
-	extra_undefs="-u __dummy -u _PyMac_Error"
+	extra_undefs="-u _PyMac_Error"
 	AC_DEFINE(USE_TOOLBOX_OBJECT_GLUE, 1,
          [Define if you want to use MacPython modules on MacOSX in unix-Python.])
 	;;
 *)
-	extra_frameworks=""
 	extra_machdep_objs=""
 	extra_undefs=""
 	;;
@@ -1211,12 +1209,11 @@ AC_SUBST(LIBTOOL_CRUFT)
 case $ac_sys_system/$ac_sys_release in
   Darwin/1.3*)
     LIBTOOL_CRUFT="-lcc_dynamic -arch_only ppc"
-   	LIBTOOL_CRUFT="$LIBTOOL_CRUFT $extra_frameworks"
     LIBTOOL_CRUFT=$LIBTOOL_CRUFT' -install_name $(PYTHONFRAMEWORKINSTALLDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)'
     LIBTOOL_CRUFT=$LIBTOOL_CRUFT' -compatibility_version $(VERSION) -current_version $(VERSION)';;
   Darwin/*)
     LIBTOOL_CRUFT="-lcc_dynamic -arch_only ppc"
-      LIBTOOL_CRUFT="$LIBTOOL_CRUFT $extra_frameworks"
+      LIBTOOL_CRUFT="$LIBTOOL_CRUFT"
     LIBTOOL_CRUFT=$LIBTOOL_CRUFT' -install_name $(PYTHONFRAMEWORKINSTALLDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)'
     LIBTOOL_CRUFT=$LIBTOOL_CRUFT' -compatibility_version $(VERSION) -current_version $(VERSION)';;
 esac
@@ -1418,22 +1415,20 @@ then
 	Linux*|GNU*) LINKFORSHARED="-Xlinker -export-dynamic";;
 	# -u libsys_s pulls in all symbols in libsys
 	Darwin/*) 
-		# -u __dummy makes the linker aware of the objc runtime
-		# in System.framework; otherwise, __objcInit (referenced in
-		# crt1.o) gets erroneously defined as common, which breaks dynamic
-		# loading of any modules which reference it in System.framework.
-		# -u _PyMac_Error is needed to pull in the mac toolbox glue, which is
+		# -u _PyMac_Error is needed to pull in the mac toolbox glue,
+		# which is
 		# not used by the core itself but which needs to be in the core so
 		# that dynamically loaded extension modules have access to it.
 		# -prebind is no longer used, because it actually seems to give a
 		# slowdown in stead of a speedup, maybe due to the large number of
 		# dynamic loads Python does.
-		LINKFORSHARED="$extra_undefs -framework System"
+
+		LINKFORSHARED="$extra_undefs"
 		if test "$enable_framework"
 		then
 			LINKFORSHARED="$LINKFORSHARED -Wl,-F. -framework "'$(PYTHONFRAMEWORK)'
 		fi
-		LINKFORSHARED="$LINKFORSHARED $extra_frameworks";;
+		LINKFORSHARED="$LINKFORSHARED";;
 	OpenUNIX*|UnixWare*) LINKFORSHARED="-Wl,-Bexport";;
 	SCO_SV*) LINKFORSHARED="-Wl,-Bexport";;
 	ReliantUNIX*) LINKFORSHARED="-W1 -Blargedynsym";;

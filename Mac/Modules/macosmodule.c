@@ -338,11 +338,64 @@ static char geterr_doc[] = "Convert OSErr number to string";
 static PyObject *
 MacOS_GetErrorString(PyObject *self, PyObject *args)
 {
-	int errn;
+	int err;
+	char buf[256];
+	Handle h;
+	char *str;
+	static int errors_loaded;
 	
-	if (!PyArg_ParseTuple(args, "i", &errn))
+	if (!PyArg_ParseTuple(args, "i", &err))
 		return NULL;
-	return Py_BuildValue("s", PyMac_StrError(errn));
+
+	h = GetResource('Estr', err);
+	if (!h && !errors_loaded) {
+		/*
+		** Attempt to open the resource file containing the
+		** Estr resources. We ignore all errors. We also try
+		** this only once.
+		*/
+		PyObject *m, *rv;
+		errors_loaded = 1;
+		
+		m = PyImport_ImportModule("macresource");
+		if (!m) {
+			if (Py_VerboseFlag)
+				PyErr_Print();
+			PyErr_Clear();
+		}
+		else {
+			rv = PyObject_CallMethod(m, "open_error_resource", "");
+			if (!rv) {
+				if (Py_VerboseFlag)
+					PyErr_Print();
+				PyErr_Clear();
+			}
+			else {
+				Py_DECREF(rv);
+				/* And try again... */
+				h = GetResource('Estr', err);
+			}
+		}
+	}
+	/*
+	** Whether the code above succeeded or not, we won't try
+	** again.
+	*/
+	errors_loaded = 1;
+		
+	if (h) {
+		HLock(h);
+		str = (char *)*h;
+		memcpy(buf, str+1, (unsigned char)str[0]);
+		buf[(unsigned char)str[0]] = '\0';
+		HUnlock(h);
+		ReleaseResource(h);
+	}
+	else {
+		PyOS_snprintf(buf, sizeof(buf), "Mac OS error code %d", err);
+	}
+
+	return Py_BuildValue("s", buf);
 }
 
 static char splash_doc[] = "Open a splash-screen dialog by resource-id (0=close)";
