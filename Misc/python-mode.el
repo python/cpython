@@ -87,7 +87,7 @@ of the Custom library from:
 
 See the Python Mode home page for details:
 
-    <http://www.python.org/ftp/emacs/>
+    <http://www.python.org/emacs/python-mode>
 ")))
 
 
@@ -708,7 +708,8 @@ package.  Note that the latest X/Emacs releases contain this package.")
    "\\(def[ \t]+"                       ; function definitions start with def
    "\\([a-zA-Z0-9_]+\\)"                ;   name is here
 					;   function arguments...
-   "[ \t]*(\\([-+/a-zA-Z0-9_=,\* \t\n.()\"'#]*\\))"
+;;   "[ \t]*(\\([-+/a-zA-Z0-9_=,\* \t\n.()\"'#]*\\))"
+   "[ \t]*(\\([^:#]*\\))"
    "\\)"                                ; end of def
    "[ \t]*:"                            ; and then the :
    "\\)"                                ; >>methods and functions<<
@@ -766,6 +767,9 @@ of how this works."
 				    py-imenu-method-arg-parens
 				  py-imenu-method-no-arg-parens))
   (goto-char (point-min))
+  ;; Warning: When the buffer has no classes or functions, this will
+  ;; return nil, which seems proper according to the Imenu API, but
+  ;; causes an error in the XEmacs port of Imenu.  Sigh.
   (py-imenu-create-index-engine nil))
 
 (defun py-imenu-create-index-engine (&optional start-indent)
