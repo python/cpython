@@ -19,16 +19,9 @@ from _weakref import \
 
 ProxyTypes = (ProxyType, CallableProxyType)
 
-__all__ = ["ref", "mapping", "proxy", "getweakrefcount", "getweakrefs",
+__all__ = ["ref", "proxy", "getweakrefcount", "getweakrefs",
            "WeakKeyDictionary", "ReferenceType", "ProxyType",
            "CallableProxyType", "ProxyTypes", "WeakValueDictionary"]
-
-def mapping(dict=None,weakkeys=0):
-    if weakkeys:
-        return WeakKeyDictionary(dict)
-    else:
-        return WeakValueDictionary(dict)
-
 
 class WeakValueDictionary(UserDict.UserDict):
 
