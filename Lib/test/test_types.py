@@ -21,7 +21,7 @@ if not (1, 1): raise TestFailed, '(1, 1) is false instead of true'
 if not [1]: raise TestFailed, '[1] is false instead of true'
 if not {'x': 1}: raise TestFailed, '{\'x\': 1} is false instead of true'
 def f(): pass
-class C(): pass
+class C: pass
 import sys
 x = C()
 if not f: raise TestFailed, 'f is false instead of true'

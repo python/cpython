@@ -12,7 +12,7 @@ import string
 import fpformat
 import marshal
 
-class Profile():
+class Profile:
 
 	def init(self):
 		self.timings = {}
@@ -212,7 +212,7 @@ def depth(frame):
 		frame = frame.f_back
 	return d
 
-class Stats():
+class Stats:
 	def init(self, file):
 		f = open(file, 'r')
 		self.stats = marshal.load(f)

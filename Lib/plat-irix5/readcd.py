@@ -21,7 +21,7 @@ def _dopnum(self, cb_type, data):
 	if func:
 		func(arg, cb_type, data)
 
-class Readcd():
+class Readcd:
 	def init(self, *arg):
 		if len(arg) == 0:
 			self.player = cd.open()
