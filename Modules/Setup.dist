@@ -299,6 +299,8 @@ GLHACK=-Dclear=__GLclear
 
 # *** Always uncomment this (leave the leading underscore in!):
 # _tkinter _tkinter.c tkappinit.c -DWITH_APPINIT \
+# *** Uncomment and edit to reflect where your Tcl/Tk libraries are:
+#	-L/usr/local/lib \
 # *** Uncomment and edit to reflect where your Tcl/Tk headers are:
 #	-I/usr/local/include \
 # *** Uncomment and edit to reflect where your X11 header files are:
@@ -306,7 +308,7 @@ GLHACK=-Dclear=__GLclear
 # *** Or uncomment this for Solaris:
 #	-I/usr/openwin/include \
 # *** Uncomment and edit for Tix extension only:
-#	-DWITH_TIX -ltix4.1.8.0 \
+#	-DWITH_TIX -ltix8.1.8.2 \
 # *** Uncomment and edit for BLT extension only:
 #	-DWITH_BLT -I/usr/local/blt/blt8.0-unoff/include -lBLT8.0 \
 # *** Uncomment and edit for PIL (TkImaging) extension only:
@@ -314,10 +316,8 @@ GLHACK=-Dclear=__GLclear
 #	-DWITH_PIL -I../Extensions/Imaging/libImaging  tkImaging.c \
 # *** Uncomment and edit for TOGL extension only:
 #	-DWITH_TOGL togl.c \
-# *** Uncomment and edit to reflect where your Tcl/Tk libraries are:
-#	-L/usr/local/lib \
 # *** Uncomment and edit to reflect your Tcl/Tk versions:
-#	-ltk8.0 -ltcl8.0 \
+#	-ltk8.2 -ltcl8.2 \
 # *** Uncomment and edit to reflect where your X11 libraries are:
 #	-L/usr/X11R6/lib \
 # *** Or uncomment this for Solaris:
