@@ -127,7 +127,7 @@ build_ps() {
 }
 
 cleanup() {
-    rm -f $1.aux $1.log $1.out $1.toc $1.bkm $1.idx $1.ind
+    rm -f $1.aux $1.log $1.out $1.toc $1.bkm $1.idx $1.ind mod$1.ind
     if [ ! "$BUILD_DVI" ] ; then
 	rm -f $FILE.dvi
     fi
