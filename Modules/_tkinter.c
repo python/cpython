@@ -281,6 +281,8 @@ Tkinter_Error(v)
 
 #ifdef WITH_THREAD
 #ifndef MS_WINDOWS
+#include "mytime.h"
+
 /* Millisecond sleep() for Unix platforms. */
 
 static void
