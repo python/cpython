@@ -42,6 +42,7 @@ extern char *getpythonpath();
 extern grammar gram; /* From graminit.c */
 
 int debugging; /* Needed by parser.c */
+int verbose; /* Needed by import.c */
 
 /* Interface to getopt(): */
 extern int optind;
@@ -60,7 +61,7 @@ main(argc, argv)
 	
 	initargs(&argc, &argv); /* Defined in config*.c */
 
-	while ((c = getopt(argc, argv, "c:d")) != EOF) {
+	while ((c = getopt(argc, argv, "c:dv")) != EOF) {
 		if (c == 'c') {
 			/* -c is the last option; following arguments
 			   that look like options are left for the
@@ -76,6 +77,10 @@ main(argc, argv)
 
 		case 'd':
 			debugging++;
+			break;
+
+		case 'v':
+			verbose++;
 			break;
 
 		/* This space reserved for other options */
@@ -157,7 +162,7 @@ run(fp, filename)
 {
 	if (filename == NULL)
 		filename = "???";
-	if (isatty(fileno(fp)))
+	if (isatty((int)fileno(fp)))
 		return run_tty_loop(fp, filename);
 	else
 		return run_script(fp, filename);
@@ -457,16 +462,7 @@ goaway(sts)
 	/*NOTREACHED*/
 }
 
-static
-finaloutput()
-{
 #ifdef TRACE_REFS
-	if (!askyesno("Print left references?"))
-		return;
-	printrefs(stderr);
-#endif /* TRACE_REFS */
-}
-
 /* Ask a yes/no question */
 
 static int
@@ -480,6 +476,7 @@ askyesno(prompt)
 		return 0;
 	return buf[0] == 'y' || buf[0] == 'Y';
 }
+#endif
 
 #ifdef applec /* MPW (also usable for Think C 3.0) */
 
