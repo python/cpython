@@ -220,6 +220,11 @@ import unittest, difflib, pdb, tempfile
 import warnings
 from StringIO import StringIO
 
+# Don't whine about the deprecated is_private function in this
+# module's tests.
+warnings.filterwarnings("ignore", "is_private", DeprecationWarning,
+                        __name__, 0)
+
 real_pdb_set_trace = pdb.set_trace
 
 # There are 4 basic classes:
@@ -287,8 +292,6 @@ def is_private(prefix, base):
     Return true iff base begins with an (at least one) underscore, but
     does not both begin and end with (at least) two underscores.
 
-    >>> warnings.filterwarnings("ignore", "is_private", DeprecationWarning,
-    ...                         "doctest", 0)
     >>> is_private("a.b", "my_func")
     False
     >>> is_private("____", "_my_func")
