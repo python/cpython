@@ -93,6 +93,10 @@ LINK32=link.exe
 # Name "pythoncore - Win32 Debug"
 # Begin Source File
 
+SOURCE=..\..\Modules\_bisectmodule.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Modules\_codecsmodule.c
 # End Source File
 # Begin Source File
