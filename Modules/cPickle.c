@@ -3733,6 +3733,74 @@ load_long_binget(Unpicklerobject *self)
 	return rc;
 }
 
+/* Push an object from the extension registry (EXT[124]).  nbytes is
+ * the number of bytes following the opcode, holding the index (code) value.
+ */
+static int
+load_extension(Unpicklerobject *self, int nbytes)
+{
+	char *codebytes;	/* the nbytes bytes after the opcode */
+	long code;		/* calc_binint returns long */
+	PyObject *py_code;	/* code as a Python int */
+	PyObject *obj;		/* the object to push */
+	PyObject *pair;		/* (module_name, class_name) */
+	PyObject *module_name, *class_name;
+
+	assert(nbytes == 1 || nbytes == 2 || nbytes == 4);
+	if (self->read_func(self, &codebytes, nbytes) < 0) return -1;
+	code = calc_binint(codebytes,  nbytes);
+	if (code <= 0) {		/* note that 0 is forbidden */
+		/* Corrupt or hostile pickle. */
+		PyErr_SetString(UnpicklingError, "EXT specifies code <= 0");
+		return -1;
+	}
+
+	/* Look for the code in the cache. */
+	py_code = PyInt_FromLong(code);
+	if (py_code == NULL) return -1;
+	obj = PyDict_GetItem(extension_cache, py_code);
+	if (obj != NULL) {
+		/* Bingo. */
+		Py_DECREF(py_code);
+		PDATA_APPEND(self->stack, obj, -1);
+		return 0;
+	}
+
+	/* Look up the (module_name, class_name) pair. */
+	pair = PyDict_GetItem(inverted_registry, py_code);
+	if (pair == NULL) {
+		Py_DECREF(py_code);
+		PyErr_Format(PyExc_ValueError, "unregistered extension "
+			     "code %ld", code);
+		return -1;
+	}
+	/* Since the extension registry is manipulable via Python code,
+	 * confirm that obj is really a 2-tuple of strings.
+	 */
+	if (!PyTuple_Check(pair) || PyTuple_Size(pair) != 2 ||
+	    !PyString_Check(module_name = PyTuple_GET_ITEM(pair, 0)) ||
+	    !PyString_Check(class_name = PyTuple_GET_ITEM(pair, 1))) {
+		Py_DECREF(py_code);
+		PyErr_Format(PyExc_ValueError, "_inverted_registry[%ld] "
+			     "isn't a 2-tuple of strings", code);
+		return -1;
+	}
+	/* Load the object. */
+	obj = find_class(module_name, class_name, self->find_class);
+	if (obj == NULL) {
+		Py_DECREF(py_code);
+		return -1;
+	}
+	/* Cache code -> obj. */
+	code = PyDict_SetItem(extension_cache, py_code, obj);
+	Py_DECREF(py_code);
+	if (code < 0) {
+		Py_DECREF(obj);
+		return -1;
+	}
+	PDATA_PUSH(self->stack, obj, -1);
+	return 0;
+}
 
 static int
 load_put(Unpicklerobject *self)
@@ -4214,6 +4282,20 @@ load(Unpicklerobject *self)
 				break;
 			continue;
 
+		case EXT1:
+			if (load_extension(self, 1) < 0)
+				break;
+			continue;
+
+		case EXT2:
+			if (load_extension(self, 2) < 0)
+				break;
+			continue;
+
+		case EXT4:
+			if (load_extension(self, 4) < 0)
+				break;
+			continue;
 		case MARK:
 			if (load_mark(self) < 0)
 				break;
@@ -4368,6 +4450,17 @@ noload_build(Unpicklerobject *self) {
   if (self->stack->length < 1) return stackUnderflow();
   Pdata_clear(self->stack, self->stack->length-1);
   return 0;
+}
+
+static int
+noload_extension(Unpicklerobject *self, int nbytes)
+{
+	char *codebytes;
+
+	assert(nbytes == 1 || nbytes == 2 || nbytes == 4);
+	if (self->read_func(self, &codebytes, nbytes) < 0) return -1;
+	PDATA_APPEND(self->stack, Py_None, -1);
+	return 0;
 }
 
 
@@ -4554,6 +4647,21 @@ noload(Unpicklerobject *self)
 
 		case GET:
 			if (load_get(self) < 0)
+				break;
+			continue;
+
+		case EXT1:
+			if (noload_extension(self, 1) < 0)
+				break;
+			continue;
+
+		case EXT2:
+			if (noload_extension(self, 2) < 0)
+				break;
+			continue;
+
+		case EXT4:
+			if (noload_extension(self, 4) < 0)
 				break;
 			continue;
 
