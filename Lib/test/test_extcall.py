@@ -46,6 +46,50 @@ g(1)
 g(1, 2)
 g(1, 2, 3)
 g(1, 2, 3, *(4, 5))
+class Nothing: pass
+try:
+    g(*Nothing())
+except AttributeError, attr:
+    assert attr[0] == '__len__'
+else:
+    print "should raise AttributeError: __len__"
+
+class Nothing:
+    def __len__(self):
+        return 5
+try:
+    g(*Nothing())
+except AttributeError, attr:
+    assert attr[0] == '__getitem__'
+else:
+    print "should raise AttributeError: __getitem__"
+    
+class Nothing:
+    def __len__(self):
+        return 5
+    def __getitem__(self, i):
+        if i < 3:
+            return i
+        else:
+            raise IndexError, i
+g(*Nothing())
+
+# make sure the function call doesn't stomp on the dictionary?
+d = {'a': 1, 'b': 2, 'c': 3}
+d2 = d.copy()
+assert d == d2
+g(1, d=4, **d)
+print d
+print d2
+assert d == d2, "function call modified dictionary"
+
+# what about willful misconduct?
+def saboteur(**kw):
+    kw['x'] = locals()
+d = {}
+saboteur(a=1, **d)
+assert d == {}
+        
 try:
     g(1, 2, 3, **{'x':4, 'y':5})
 except TypeError, err:
