@@ -48,13 +48,12 @@
 # Where are the various programs?
 LATEX=		TEXINPUTS=$(TEXINPUTS) latex
 PDFLATEX=	TEXINPUTS=$(TEXINPUTS) pdflatex
-TEXINPUTS=	.:$(srcdir):$(srcdir)/texinputs:
 DVIPS=		dvips -N0
 DISTILL=	distill
 KPSEWHICH=	TEXINPUTS=$(TEXINPUTS) kpsewhich
 MAKEINDEX=	makeindex -s $(srcdir)/texinputs/myindex.ist
 L2H=		TEXINPUTS=$(TEXINPUTS) latex2html -init_file $(L2HINIT)
-L2HOUTPUTBASE=	.
+L2HOUTPUTBASE=	html
 L2HARGS=
 L2HINIT=	$(srcdir)/perl/l2hinit.perl
 WEBCHECKER=	$(PYTHON) $(srcdir)/../Tools/webchecker/webchecker.py
@@ -65,7 +64,7 @@ LIBDESTDIR=	$DESTDIR/lib
 LIBDEST=	$LIBDESTDIR/python$(VERSION)
 DOCDESTDIR=	$LIBDEST/doc
 
-# This is only used for .info generation:
+# These is only used for .info generation:
 EMACS=		emacs
 PYTHON=		python
 MAKEINFO=	makeinfo
@@ -86,6 +85,11 @@ PSFILES=	api.ps ext.ps lib.ps ref.ps tut.ps
 
 MANSTYLES=$(srcdir)/texinputs/fncychap.sty $(srcdir)/texinputs/manual.cls \
 	$(srcdir)/texinputs/python.sty $(srcdir)/texinputs/myindex.ist
+
+# Be careful when messing with this one!
+TEXINPUTS=	.:$(srcdir)/texinputs:
+
+MKDVI=		TEXINPUTS=$(TEXINPUTS) $(srcdir)/tools/mkdvi.sh
 
 # Main target
 all:	all-ps
@@ -139,10 +143,10 @@ $(PDFFILES): $(srcdir)/tools/toc2bkm.py
 	$(PDFLATEX) $*
 
 # Dependencies
-COMMONTEX=$(MANSTYLES) copyright.tex boilerplate.tex
+COMMONTEX=$(MANSTYLES) texinputs/copyright.tex texinputs/boilerplate.tex
 COMMONPERL=perl/manual.perl perl/python.perl
 
-$(DVIFILES): tools/fix_hack $(COMMONTEX)
+$(DVIFILES): tools/fix_hack tools/mkdvi.sh $(COMMONTEX)
 
 ref.dvi:  ref1.tex ref2.tex ref3.tex ref4.tex \
 	  ref5.tex ref6.tex ref7.tex ref8.tex
@@ -184,7 +188,7 @@ MACLIBFILES = mac.tex libmac.tex libctb.tex libmacconsole.tex \
     libmacdnr.tex libmacfs.tex libmacos.tex libmacostools.tex \
     libmactcp.tex libmacspeech.tex libmacui.tex libmacic.tex 
 
-# Library document
+# Python Library Reference
 lib.dvi: tools/indfix.py $(LIBFILES)
 	$(srcdir)/tools/newind.py >$*.ind
 	$(srcdir)/tools/newind.py modindex >mod$*.ind
@@ -195,19 +199,21 @@ lib.dvi: tools/indfix.py $(LIBFILES)
 	$(srcdir)/tools/indfix.py $*.ind
 	$(LATEX) $*
 
-# Tutorial document
-tut.dvi: tut.tex 
-	$(LATEX) $*
-	$(LATEX) $*
+# Python/C API Reference Manual
+api.dvi: api/api.tex
+	$(MKDVI) api
 
-# Extending & Embedding, Python/C API documents.
-# Done this way to avoid repeated command sets.
-.tex.dvi:
-	$(srcdir)/tools/newind.py >$*.ind
-	$(LATEX) $*
-	$(srcdir)/tools/fix_hack $*.idx
-	$(MAKEINDEX) $*.idx
-	$(LATEX) $*
+# Extending and Embedding the Python Interpreter
+ext.dvi: ext/ext.tex
+	$(MKDVI) ext
+
+# Python Reference Manual
+ref.dvi: ref/ref.tex
+	$(MKDVI) ref
+
+# Python Tutorial
+tut.dvi: tut/tut.tex
+	$(MKDVI) tut
 
 
 # The remaining part of the Makefile is concerned with various
@@ -253,38 +259,46 @@ lib.texi: python-lib.texi
 # a (trivial) index.html.  Change the definition of $ICONSERVER in
 # perl/l2hinit.perl to use a different location for the icons directory.
 
+$(L2HOUTPUTBASE):
+	mkdir $(L2HOUTPUTBASE)
+
 l2h: l2hapi l2hext l2hlib l2href l2htut
 
-l2hapi: $(COMMONPERL)
+l2hapi: $(COMMONPERL) $(L2HOUTPUTBASE)
 	$(L2H) $(L2HARGS) -dir $(L2HOUTPUTBASE)/api api.tex
-	(cd $(L2HOUTPUTBASE)/api; ../tools/node2label.pl *.html)
+	(MYDIR=`pwd`; cd $(L2HOUTPUTBASE)/api; \
+		$$MYDIR/tools/node2label.pl *.html)
 
-l2hext: $(COMMONPERL)
+l2hext: $(COMMONPERL) $(L2HOUTPUTBASE)
 	$(L2H) $(L2HARGS) -dir $(L2HOUTPUTBASE)/ext ext.tex
-	(cd $(L2HOUTPUTBASE)/ext; ../tools/node2label.pl *.html)
+	(MYDIR=`pwd`; cd $(L2HOUTPUTBASE)/ext; \
+		$$MYDIR/tools/node2label.pl *.html)
 
-l2hlib: $(COMMONPERL)
+l2hlib: $(COMMONPERL) $(L2HOUTPUTBASE)
 	$(srcdir)/tools/fix_libaux.sed <`$(KPSEWHICH) lib.aux` >lib1.aux
 	mv lib1.aux `$(KPSEWHICH) lib.aux`
 	if test -d lib ; then rm -f lib/*.html ; fi
 	$(L2H) $(L2HARGS) -dir $(L2HOUTPUTBASE)/lib lib.tex
-	(cd $(L2HOUTPUTBASE)/lib; ../tools/node2label.pl *.html)
+	(MYDIR=`pwd`; cd $(L2HOUTPUTBASE)/lib; \
+		$$MYDIR/tools/node2label.pl *.html)
 
-l2href: $(COMMONPERL)
+l2href: $(COMMONPERL) $(L2HOUTPUTBASE)
 	$(L2H) $(L2HARGS) -dir $(L2HOUTPUTBASE)/ref ref.tex
-	(cd $(L2HOUTPUTBASE)/ref; ../tools/node2label.pl *.html)
+	(MYDIR=`pwd`; cd $(L2HOUTPUTBASE)/ref; \
+		$$MYDIR/tools/node2label.pl *.html)
 
-l2htut: $(COMMONPERL)
+l2htut: $(COMMONPERL) $(L2HOUTPUTBASE)
 	$(L2H) $(L2HARGS) -dir $(L2HOUTPUTBASE)/tut tut.tex
-	(cd $(L2HOUTPUTBASE)/tut; ../tools/node2label.pl *.html)
+	(MYDIR=`pwd`; cd $(L2HOUTPUTBASE)/tut; \
+		$$MYDIR/tools/node2label.pl *.html)
 
 # webchecker needs an extra flag to process the huge index from the libref
 webcheck:
-	$(WEBCHECKER) file:`pwd`/api/
-	$(WEBCHECKER) file:`pwd`/ext/
-	$(WEBCHECKER) -m290000 file:`pwd`/lib/
-	$(WEBCHECKER) file:`pwd`/ref/
-	$(WEBCHECKER) file:`pwd`/tut/
+	$(WEBCHECKER) file:`pwd`/$(L2HOUTPUTBASE)/api/
+	$(WEBCHECKER) file:`pwd`/$(L2HOUTPUTBASE)/ext/
+	$(WEBCHECKER) -m290000 file:`pwd`/$(L2HOUTPUTBASE)/lib/
+	$(WEBCHECKER) file:`pwd`/$(L2HOUTPUTBASE)/ref/
+	$(WEBCHECKER) file:`pwd`/$(L2HOUTPUTBASE)/tut/
 
 lib-info-$(RELEASE).tar.gz: $(INFOFILES)
 	tar cf - python-???.info* | gzip -9 >$@
@@ -304,12 +318,14 @@ postscript-$(RELEASE).tar.gz: $(PSFILES) ref/ref.ps
 	tar cf - ???.ps | gzip -9 >$@
 	rm ref.ps
 
-tarhtml:
+html-$(RELEASE).tar.gz:
 	tar cf - index.html icons/ \
 		-C $(L2HOUTPUTBASE) ???/???.css ???/*.html */*.gif \
 		| gzip -9 >html-$(RELEASE).tar.gz
 
 # convenience targets:
+
+tarhtml:  html-$(RELEASE).tar.gz
 
 tarinfo:  lib-info-$(RELEASE).tar.gz
 
