@@ -231,14 +231,25 @@ list_print(op, fp, flags)
 	int flags;
 {
 	int i;
+
+	i = Py_ReprEnter((PyObject*)op);
+	if (i != 0) {
+		if (i < 0)
+			return i;
+		fprintf(fp, "[...]");
+		return 0;
+	}
 	fprintf(fp, "[");
 	for (i = 0; i < op->ob_size; i++) {
 		if (i > 0)
 			fprintf(fp, ", ");
-		if (PyObject_Print(op->ob_item[i], fp, 0) != 0)
+		if (PyObject_Print(op->ob_item[i], fp, 0) != 0) {
+			Py_ReprLeave((PyObject *)op);
 			return -1;
+		}
 	}
 	fprintf(fp, "]");
+	Py_ReprLeave((PyObject *)op);
 	return 0;
 }
 
@@ -248,6 +259,13 @@ list_repr(v)
 {
 	PyObject *s, *comma;
 	int i;
+
+	i = Py_ReprEnter((PyObject*)v);
+	if (i != 0) {
+		if (i > 0)
+			return PyString_FromString("[...]");
+		return NULL;
+	}
 	s = PyString_FromString("[");
 	comma = PyString_FromString(", ");
 	for (i = 0; i < v->ob_size && s != NULL; i++) {
@@ -257,6 +275,7 @@ list_repr(v)
 	}
 	Py_XDECREF(comma);
 	PyString_ConcatAndDel(&s, PyString_FromString("]"));
+	Py_ReprLeave((PyObject *)v);
 	return s;
 }
 
