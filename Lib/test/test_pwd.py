@@ -59,7 +59,7 @@ except KeyError:
 else:
     print 'fakename', fakename, 'did not except pwd.getpwnam()'
 
-# Choose a non-existant uid.
+# Choose a non-existent uid.
 fakeuid = 4127
 while byuids.has_key(fakeuid):
     fakeuid = (fakeuid * 3) % 0x10000

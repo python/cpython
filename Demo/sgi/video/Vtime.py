@@ -7,7 +7,7 @@
 #
 # - resample at a fixed rate
 # - divide the time codes by a speed factor (to make it go faster/slower)
-# - drop frames that are less than n msec apart (to accomodate slow players)
+# - drop frames that are less than n msec apart (to accommodate slow players)
 
 
 # Usage:

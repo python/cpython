@@ -1,7 +1,7 @@
 """distutils.command.build_ext
 
 Implements the Distutils 'build_ext' command, for building extension
-modules (currently limited to C extensions, should accomodate C++
+modules (currently limited to C extensions, should accommodate C++
 extensions ASAP)."""
 
 # created 1999/08/09, Greg Ward
@@ -385,7 +385,7 @@ class build_ext (Command):
             # Next, compile the source code to object files.
 
             # XXX not honouring 'define_macros' or 'undef_macros' -- the
-            # CCompiler API needs to change to accomodate this, and I
+            # CCompiler API needs to change to accommodate this, and I
             # want to do one thing at a time!
 
             # Two possible sources for extra compiler arguments:

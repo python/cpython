@@ -270,7 +270,7 @@ if int(-3.5) <> -3: raise TestFailed, 'int(-3.5)'
 # Different base:
 if int("10",16) <> 16L: raise TestFailed, 'int("10",16)'
 if int(u"10",16) <> 16L: raise TestFailed, 'int(u"10",16)'
-# Test conversion fron strings and various anomalies
+# Test conversion from strings and various anomalies
 L = [
         ('0', 0),
         ('1', 1),

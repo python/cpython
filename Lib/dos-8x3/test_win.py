@@ -115,7 +115,7 @@ def DeleteTestData(root_key):
     # Opening should now fail!
     try:
         key = OpenKey(root_key, test_key_name)
-        assert 0, "Could open the non-existant key"
+        assert 0, "Could open the non-existent key"
     except WindowsError: # Use this error name this time
         pass
 

@@ -24,7 +24,7 @@ def normcase(s):
     return s
 
 
-# Return wheter a path is absolute.
+# Return whether a path is absolute.
 # Trivial in Posix, harder on the Mac or MS-DOS.
 
 def isabs(s):
@@ -304,7 +304,7 @@ do nothing"""
 
 # Expand paths containing shell variable substitutions.
 # This expands the forms $variable and ${variable} only.
-# Non-existant variables are left unchanged.
+# Non-existent variables are left unchanged.
 
 _varprog = None
 

@@ -79,7 +79,7 @@ xmlns = re.compile('xmlns(?::(?P<ncname>'+_NCName+'))?$')
 # special names to handle tags: start_foo and end_foo to handle <foo>
 # and </foo>, respectively.  The data between tags is passed to the
 # parser by calling self.handle_data() with some data as argument (the
-# data may be split up in arbutrary chunks).
+# data may be split up in arbitrary chunks).
 
 class XMLParser:
     attributes = {}                     # default, to be overridden

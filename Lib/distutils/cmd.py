@@ -323,7 +323,7 @@ class Command:
         should be disabled by the "dry run" flag, and should announce
         themselves if the current verbosity level is high enough.  This
         method takes care of all that bureaucracy for you; all you have to
-        do is supply the funtion to call and an argument tuple for it (to
+        do is supply the function to call and an argument tuple for it (to
         embody the "external action" being performed), a message to print
         if the verbosity level is high enough, and an optional verbosity
         threshold.

@@ -63,7 +63,7 @@ clattrs = ['ADDED_ALGORITHM_ERROR', 'ALAW', 'ALGORITHM_ID',
 'YUV422DC', 'YUV422HC', '__doc__', '__name__', 'cvt_type', 'error']
 
 
-# This is a very inobstrusive test for the existance of the cl
+# This is a very inobtrusive test for the existence of the cl
 # module and all it's attributes.
 
 def main():

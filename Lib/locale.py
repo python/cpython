@@ -220,7 +220,7 @@ def _parse_localename(localename):
 
         The language code corresponds to RFC 1766.  code and encoding
         can be None in case the values cannot be determined or are
-        unkown to this implementation.
+        unknown to this implementation.
 
     """
     code = normalize(localename)
@@ -229,7 +229,7 @@ def _parse_localename(localename):
     elif code == 'C':
         return None, None
     else:
-        raise ValueError,'unkown locale: %s' % localename
+        raise ValueError,'unknown locale: %s' % localename
     return l
 
 def _build_localename(localetuple):

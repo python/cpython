@@ -296,7 +296,7 @@ class RCS:
     def _system(self, cmd):
         """INTERNAL: run COMMAND in a subshell.
 
-        Standard input for the command is taken fron /dev/null.
+        Standard input for the command is taken from /dev/null.
 
         Raise IOError when the exit status is not zero.
 

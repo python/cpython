@@ -2,7 +2,7 @@
 #
 # Support for the Panel library.
 # Uses built-in module 'pnl'.
-# Applciations should use 'panel.function' instead of 'pnl.function';
+# Applications should use 'panel.function' instead of 'pnl.function';
 # most 'pnl' functions are transparently exported by 'panel',
 # but dopanel() is overridden and you have to use this version
 # if you want to use callbacks.
@@ -137,7 +137,7 @@ def assign_members(target, attrlist, exclist, prefix):
 					print 'assign failed:', stmt
 
 
-# Build a real actuator from an actuator descriptior.
+# Build a real actuator from an actuator description.
 # Return a pair (actuator, name).
 #
 def build_actuator(descr):
