@@ -2151,19 +2151,18 @@ newPicklerobject(PyObject *file, int bin) {
       Py_INCREF(file);
     else
       file=Pdata_New();
+    
+    UNLESS (self->file = file) 
+      goto err;
 
-    self->file = file;
-
-    UNLESS (self->memo = PyDict_New()) {
-       Py_XDECREF((PyObject *)self);
-       return NULL;
-    }
+    UNLESS (self->memo = PyDict_New()) 
+       goto err;
 
     if (PyFile_Check(file)) {
         self->fp = PyFile_AsFile(file);
 	if (self->fp == NULL) {
-	    PyErr_SetString(PyExc_IOError, "output file closed");
-	    return NULL;
+	    PyErr_SetString(PyExc_ValueError, "I/O operation on closed file");
+	    goto err;
 	}
         self->write_func = write_file;
     }
@@ -4054,10 +4053,8 @@ newUnpicklerobject(PyObject *f) {
     self->safe_constructors = NULL;
     self->find_class = NULL;
 
-    UNLESS (self->memo = PyDict_New()) {
-       Py_XDECREF((PyObject *)self);
-       return NULL;
-    }
+    UNLESS (self->memo = PyDict_New()) 
+       goto err;
 
     Py_INCREF(f);
     self->file = f;
@@ -4066,8 +4063,8 @@ newUnpicklerobject(PyObject *f) {
     if (PyFile_Check(f)) {
         self->fp = PyFile_AsFile(f);
 	if (self->fp == NULL) {
-	    PyErr_SetString(PyExc_IOError, "input file closed");
-	    return NULL;
+	    PyErr_SetString(PyExc_ValueError, "I/O operation on closed file");
+	    goto err;
 	}
         self->read_func = read_file;
         self->readline_func = readline_file;
