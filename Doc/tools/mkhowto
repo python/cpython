@@ -279,7 +279,9 @@ class Job:
         if self.latex_runs < 2:
             if os.path.isfile("mod%s.idx" % self.doc):
                 self.run("%s mod%s.idx" % (MAKEINDEX_BINARY, self.doc))
+            use_indfix = 0
             if os.path.isfile(self.doc + ".idx"):
+                use_indfix = 1
                 # call to Doc/tools/fix_hack omitted; doesn't appear necessary
                 self.run("%s %s.idx" % (MAKEINDEX_BINARY, self.doc))
                 import indfix
@@ -295,9 +297,10 @@ class Job:
             if os.path.isfile("mod%s.idx" % self.doc):
                 self.run("%s -s %s mod%s.idx"
                          % (MAKEINDEX_BINARY, ISTFILE, self.doc))
-            if os.path.isfile(self.doc + ".idx"):
+            if use_indfix:
                 self.run("%s -s %s %s.idx"
                          % (MAKEINDEX_BINARY, ISTFILE, self.doc))
+                indfix.process(self.doc + ".ind")
             self.process_synopsis_files()
         #
         # and now finish it off:
