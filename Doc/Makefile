@@ -76,7 +76,7 @@ VPATH=.
 
 # Ideally, you shouldn't need to edit beyond this point
 
-RELEASE=1.5.1
+RELEASE=1.5.1p1
 VERSION=1.5
 
 MANDVIFILES=	api.dvi ext.dvi lib.dvi ref.dvi tut.dvi
