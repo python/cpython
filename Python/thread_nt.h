@@ -1,20 +1,17 @@
 
 /* This code implemented by Dag.Gruneau@elsa.preseco.comm.se */
 /* Fast NonRecursiveMutex support by Yakov Markovitch, markovitch@iso.ru */
+/* Eliminated some memory leaks, gsw@agere.com */
 
 #include <windows.h>
 #include <limits.h>
 #include <process.h>
-#include <Python.h>
 
 typedef struct NRMUTEX {
 	LONG   owned ;
 	DWORD  thread_id ;
 	HANDLE hevent ;
 } NRMUTEX, *PNRMUTEX ;
-
-/* dictionary to correlate thread ids with the handle needed to terminate them*/
-static PyObject *threads = NULL;
 
 typedef PVOID WINAPI interlocked_cmp_xchg_t(PVOID *dest, PVOID exc, PVOID comperand) ;
 
@@ -139,16 +136,10 @@ void FreeNonRecursiveMutex(PNRMUTEX mutex)
 long PyThread_get_thread_ident(void);
 
 /*
- * Change all headers to pure ANSI as no one will use K&R style on an
- * NT
- */
-
-/*
  * Initialization of the C package, should not be needed.
  */
 static void PyThread__init_thread(void)
 {
-	threads = PyDict_New();
 }
 
 /*
@@ -182,7 +173,6 @@ long PyThread_start_new_thread(void (*func)(void *), void *arg)
 	int success = 0;
 	callobj *obj;
 	int id;
-	PyObject *key, *val;
 
 	dprintf(("%ld: PyThread_start_new_thread called\n", PyThread_get_thread_ident()));
 	if (!initialized)
@@ -203,9 +193,6 @@ long PyThread_start_new_thread(void (*func)(void *), void *arg)
 	/* wait for thread to initialize and retrieve id */
 	WaitForSingleObject(obj->done, 5000);  /* maybe INFINITE instead of 5000? */
 	CloseHandle((HANDLE)obj->done);
-	key = PyLong_FromLong(obj->id);
-	val = PyLong_FromLong((long)rv);
-	PyDict_SetItem(threads, key, val);
 	id = obj->id;
 	free(obj);
 	return id;
