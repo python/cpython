@@ -2420,7 +2420,7 @@ PySocket_getnameinfo(PyObject *self, PyObject *args)
 	n = PyArg_ParseTuple(sa, "si|ii", &hostp, &port, &flowinfo, scope_id);
 	if (n == 0)
 		goto fail;
-#ifdef HAVE_SPRINTF
+#ifdef HAVE_SNPRINTF
 	snprintf(pbuf, sizeof(pbuf), "%d", port);
 #else
 	sprintf(pbuf, "%d", port);
