@@ -22,7 +22,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 ******************************************************************/
 
-/* IMGFILE module - Interface to sgi libimg */
+/* IMGFILE module - Interface to sgi libimage */
 
 /* XXX This modele should be done better at some point. It should return
 ** an object of image file class, and have routines to manipulate these
@@ -35,15 +35,19 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "modsupport.h"
 
 #include <gl/image.h>
+#include <errno.h>
 
-/* #include "sigtype.h" */
+static object * ImgfileError; /* Exception we raise for various trouble */
 
-static object * ImgfileError;
 
-static char gfname[1024];
-static IMAGE *image;
+/* The image library does not always call the error hander :-(,
+   therefore we have a global variable indicating that it was called.
+   It is cleared by imgfile_open(). */
 
 static int error_called;
+
+
+/* The error handler */
 
 static imgfile_error(str)
     char *str;
@@ -53,26 +57,31 @@ static imgfile_error(str)
     return;	/* To imglib, which will return a failure indictaor */
 }
 
-static
+
+/* Open an image file and return a pointer to it.
+   Make sure we raise an exception if we fail. */
+
+static IMAGE *
 imgfile_open(fname)
     char *fname;
 {
+    IMAGE *image;
     i_seterror(imgfile_error);
     error_called = 0;
-    if ( image != NULL && strcmp(fname, gfname) != 0 ) {
-	iclose(image);
-	image = NULL;
-	gfname[0] = '\0';
-    }
-    if ( (image=iopen(fname, "r")) == NULL ) {
+    errno = 0;
+    if ( (image = iopen(fname, "r")) == NULL ) {
 	/* Error may already be set by imgfile_error */
-	if ( !error_called )
-	  err_setstr(ImgfileError, "Cannot open image file");
-	return 0;
+	if ( !error_called ) {
+	    if (errno)
+	        err_errno(ImgfileError);
+	    else
+	        err_setstr(ImgfileError, "Can't open image file");
+        }
+	return NULL;
     }
-    strcpy(gfname, fname);
-    return 1;    
+    return image;
 }
+
 
 static object *
 imgfile_read(self, args)
@@ -86,33 +95,44 @@ imgfile_read(self, args)
     long *idatap;
     static short rs[8192], gs[8192], bs[8192];
     int x, y;
+    IMAGE *image;
     
     if ( !getargs(args, "s", &fname) )
-      return 0;
+      return NULL;
     
-    if ( !imgfile_open(fname) )
+    if ( (image = imgfile_open(fname)) == NULL )
       return NULL;
     
     if ( image->colormap != CM_NORMAL ) {
+	iclose(image);
 	err_setstr(ImgfileError, "Can only handle CM_NORMAL images");
 	return NULL;
     }
     if ( BPP(image->type) != 1 ) {
-	err_setstr(ImgfileError, "Cannot handle imgfiles with bpp!=1");
+	iclose(image);
+	err_setstr(ImgfileError, "Can't handle imgfiles with bpp!=1");
 	return NULL;
     }
     xsize = image->xsize;
     ysize = image->ysize;
     zsize = image->zsize;
     if ( zsize != 1 && zsize != 3) {
+	iclose(image);
 	err_setstr(ImgfileError, "Can only handle 1 or 3 byte pixels");
+	return NULL;
+    }
+    if ( xsize > 8192 ) {
+	iclose(image);
+	err_setstr(ImgfileError, "Can't handle image with > 8192 columns");
 	return NULL;
     }
 
     if ( zsize == 3 ) zsize = 4;
-    rv = newsizedstringobject(NULL, xsize*ysize*zsize);
-    if ( rv == NULL )
+    rv = newsizedstringobject((char *)NULL, xsize*ysize*zsize);
+    if ( rv == NULL ) {
+      iclose(image);
       return NULL;
+    }
     cdatap = getstringvalue(rv);
     idatap = (long *)cdatap;
     for ( y=0; y < ysize && !error_called; y++ ) {
@@ -138,6 +158,7 @@ imgfile_read(self, args)
     return rv;
 }
 
+
 static object *
 imgfile_readscaled(self, args)
     object *self;
@@ -153,35 +174,46 @@ imgfile_readscaled(self, args)
     int xwtd, ywtd, xorig, yorig;
     float xfac, yfac;
     int cnt;
+    IMAGE *image;
     
     if ( !getargs(args, "(sii)", &fname, &xwtd, &ywtd) )
-      return 0;
+      return NULL;
 
-    if ( !imgfile_open(fname) )
+    if ( (image = imgfile_open(fname)) == NULL )
       return NULL;
     
     if ( image->colormap != CM_NORMAL ) {
+	iclose(image);
 	err_setstr(ImgfileError, "Can only handle CM_NORMAL images");
 	return NULL;
     }
     if ( BPP(image->type) != 1 ) {
-	err_setstr(ImgfileError, "Cannot handle imgfiles with bpp!=1");
+	iclose(image);
+	err_setstr(ImgfileError, "Can't handle imgfiles with bpp!=1");
 	return NULL;
     }
     xsize = image->xsize;
     ysize = image->ysize;
     zsize = image->zsize;
     if ( zsize != 1 && zsize != 3) {
+	iclose(image);
 	err_setstr(ImgfileError, "Can only handle 1 or 3 byte pixels");
+	return NULL;
+    }
+    if ( xsize > 8192 ) {
+	iclose(image);
+	err_setstr(ImgfileError, "Can't handle image with > 8192 columns");
 	return NULL;
     }
 
     if ( zsize == 3 ) zsize = 4;
     rv = newsizedstringobject(NULL, xwtd*ywtd*zsize);
+    if ( rv == NULL ) {
+      iclose(image);
+      return NULL;
+    }
     xfac = (float)xsize/(float)xwtd;
     yfac = (float)ysize/(float)ywtd;
-    if ( rv == NULL )
-      return NULL;
     cdatap = getstringvalue(rv);
     idatap = (long *)cdatap;
     for ( y=0; y < ywtd && !error_called; y++ ) {
@@ -203,12 +235,14 @@ imgfile_readscaled(self, args)
 	  }
 	}
     }
+    iclose(image);
     if ( error_called ) {
 	DECREF(rv);
 	return NULL;
     }
     return rv;
 }
+
 
 static object *
 imgfile_getsizes(self, args)
@@ -217,20 +251,18 @@ imgfile_getsizes(self, args)
 {
     char *fname;
     object *rv;
+    IMAGE *image;
     
     if ( !getargs(args, "s", &fname) )
-      return 0;
+      return NULL;
     
-    if ( !imgfile_open(fname) )
+    if ( (image = imgfile_open(fname)) == NULL )
       return NULL;
-    rv = newtupleobject(3);
-    if ( rv == NULL )
-      return NULL;
-    settupleitem(rv, 0, newintobject(image->xsize));
-    settupleitem(rv, 1, newintobject(image->ysize));
-    settupleitem(rv, 2, newintobject(image->zsize));
+    rv = mkvalue("(iii)", image->xsize, image->ysize, image->zsize);
+    iclose(image);
     return rv;
 }
+
 
 static object *
 imgfile_write(self, args)
@@ -249,23 +281,32 @@ imgfile_write(self, args)
 
     if ( !getargs(args, "(ss#iii)",
 		  &fname, &cdatap, &len, &xsize, &ysize, &zsize) )
-      return 0;
+      return NULL;
     
     if ( zsize != 1 && zsize != 3 ) {
 	err_setstr(ImgfileError, "Can only handle 1 or 3 byte pixels");
-	return 0;
+	return NULL;
     }
-    if ( (zsize == 1 && len != xsize*ysize) ||
-	 (zsize == 3 && len != xsize*ysize*4) ) {
+    if ( len != xsize * ysize * (zsize == 1 ? 1 : 4) ) {
 	err_setstr(ImgfileError, "Data does not match sizes");
-	return 0;
+	return NULL;
+    }
+    if ( xsize > 8192 ) {
+	err_setstr(ImgfileError, "Can't handle image with > 8192 columns");
+	return NULL;
     }
 
+    error_called = 0;
+    errno = 0;
     image =iopen(fname, "w", RLE(1), 3, xsize, ysize, zsize);
     if ( image == 0 ) {
-	if ( ! error_called )
-	  err_setstr(ImgfileError, "Cannot create image file");
-	return 0;
+	if ( ! error_called ) {
+	    if (errno)
+		err_errno(ImgfileError);
+	    else
+	        err_setstr(ImgfileError, "Can't create image file");
+	}
+	return NULL;
     }
 
     idatap = (long *)cdatap;
@@ -292,18 +333,19 @@ imgfile_write(self, args)
     }
     iclose(image);
     if ( error_called )
-      return 0;
+      return NULL;
     INCREF(None);
     return None;
     
 }
+
 
 static struct methodlist imgfile_methods[] = {
     { "getsizes",	imgfile_getsizes },
     { "read",		imgfile_read },
     { "readscaled",	imgfile_readscaled },
     { "write",		imgfile_write },
-    { 0,          0 }
+    { NULL,		NULL } /* Sentinel */
 };
 
 
@@ -314,6 +356,6 @@ initimgfile()
 	m = initmodule("imgfile", imgfile_methods);
 	d = getmoduledict(m);
 	ImgfileError = newstringobject("imgfile.error");
-	if ( ImgfileError == NULL || dictinsert(d,"error",ImgfileError) )
+	if ( ImgfileError == NULL || dictinsert(d, "error", ImgfileError) )
 	    fatal("can't define imgfile.error");
 }
