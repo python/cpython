@@ -2117,6 +2117,43 @@ statement \samp{\var{o}[\var{key}] = \var{v}}.
 \end{cfuncdesc}
 
 
+\section{Buffer Protocol \label{abstract-buffer}}
+
+\begin{cfuncdesc}{int}{PyObject_AsCharBuffer}{PyObject *obj,
+                                              const char **buffer,
+                                              int *buffer_len}
+  Returns a pointer to a read-only memory location useable as character-
+  based input.  The \var{obj} argument must support the single-segment
+  character buffer interface.  On success, returns \code{0}, sets
+  \var{buffer} to the memory location and \var{buffer_len} to the buffer
+  length.  Returns \code{-1} and sets a \exception{TypeError} on error.
+  \versionadded{1.6}
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{int}{PyObject_AsReadBuffer}{PyObject *obj,
+                                              const char **buffer,
+                                              int *buffer_len}
+  Returns a pointer to a read-only memory location containing
+  arbitrary data.  The \var{obj} argument must support the
+  single-segment readable buffer interface.  On success, returns
+  \code{0}, sets \var{buffer} to the memory location and \var{buffer_len}
+  to the buffer length.  Returns \code{-1} and sets a
+  \exception{TypeError} on error.
+  \versionadded{1.6}
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{int}{PyObject_AsWriteBuffer}{PyObject *obj,
+                                               const char **buffer,
+                                               int *buffer_len}
+  Returns a pointer to a writeable memory location.  The \var{obj}
+  argument must support the single-segment, character buffer
+  interface.  On success, returns \code{0}, sets \var{buffer} to the
+  memory location and \var{buffer_len} to the buffer length.  Returns
+  \code{-1} and sets a \exception{TypeError} on error.
+  \versionadded{1.6}
+\end{cfuncdesc}
+
+
 \chapter{Concrete Objects Layer \label{concrete}}
 
 The functions in this chapter are specific to certain Python object
