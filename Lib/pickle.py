@@ -356,6 +356,10 @@ class Unpickler:
 
 	dispatch = {}
 
+	def load_eof(self):
+		raise EOFError
+	dispatch[''] = load_eof
+
 	def load_persid(self):
 		pid = self.readline()[:-1]
 		self.stack.append(self.persisent_load(pid))
