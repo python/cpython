@@ -27,7 +27,8 @@ dom2 = parse(datasource)   # parse an open file
 dom3 = parseString('<myxml>Some data<empty/> some more data</myxml>')
 \end{verbatim}
 
-The parse function can take either a filename or an open file object. 
+The \function{parse()} function can take either a filename or an open
+file object.
 
 \begin{funcdesc}{parse}{filename_or_file{, parser}}
   Return a \class{Document} from the given input. \var{filename_or_file}
@@ -50,16 +51,35 @@ If you have XML in a string, you can use the
 Both functions return a \class{Document} object representing the
 content of the document.
 
-You can also create a \class{Document} node merely by instantiating a 
-document object.  Then you could add child nodes to it to populate
+What the \function{parse()} and \function{parseString()} functions do
+is connect an XML parser with a ``DOM builder'' that can accept parse
+events from any SAX parser and convert them into a DOM tree.  The name
+of the functions are perhaps misleading, but are easy to grasp when
+learning the interfaces.  The parsing of the document will be
+completed before these functions return; it's simply that these
+functions do not provide a parser implementation themselves.
+
+You can also create a \class{Document} by calling a method on a ``DOM
+Implementation'' object.  You can get this object either by calling
+the \function{getDOMImplementation()} function in the
+\refmodule{xml.dom} package or the \module{xml.dom.minidom} module.
+Using the implementation from the \module{xml.dom.minidom} module will
+always return a \class{Document} instance from the minidom
+implementation, while the version from \refmodule{xml.dom} may provide
+an alternate implementation (this is likely if you have the
+\ulink{PyXML package}{http://pyxml.sourceforge.net/} installed).  Once
+you have a \class{Document}, you can add child nodes to it to populate
 the DOM:
 
 \begin{verbatim}
-from xml.dom.minidom import Document
+from xml.dom.minidom import getDOMImplementation
 
-newdoc = Document()
-newel = newdoc.createElement("some_tag")
-newdoc.appendChild(newel)
+impl = getDOMImplementation()
+
+newdoc = impl.createDocument(None, "some_tag", None)
+top_element = newdoc.documentElement
+text = newdoc.createTextNode('Some textual content.')
+top_element.appendChild(text)
 \end{verbatim}
 
 Once you have a DOM document object, you can access the parts of your
@@ -100,7 +120,7 @@ its descendents are essentially useless.
 \end{seealso}
 
 
-\subsection{DOM objects \label{dom-objects}}
+\subsection{DOM Objects \label{dom-objects}}
 
 The definition of the DOM API for Python is given as part of the
 \refmodule{xml.dom} module documentation.  This section lists the
