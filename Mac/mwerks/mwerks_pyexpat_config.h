@@ -7,3 +7,4 @@
 #define XML_DTD 1
 #define BYTEORDER 4321
 #define XML_CONTEXT_BYTES 1024
+#define HAVE_MEMMOVE
