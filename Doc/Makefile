@@ -64,12 +64,19 @@ PAPER=letter
 INFODIR=	info
 TOOLSDIR=	tools
 
+PWD=$(shell pwd)
+
 # This is the *documentation* release, and is used to construct the file
 # names of the downloadable tarballs.
 RELEASE=2.3.2c1
 
 PYTHON=	   python
 DVIPS=	   dvips -N0 -t $(PAPER)
+
+# (The trailing colon in the value is needed; TeX places it's default
+# set of paths at the location of the empty string in the path list.)
+#
+TEXINPUTS=$(PWD)/commontex:
 
 # This is ugly!  The issue here is that there are two different levels
 # in the directory tree at which we execute mkhowto, so we can't
@@ -78,7 +85,7 @@ DVIPS=	   dvips -N0 -t $(PAPER)
 # $(shell) function here to work around that restriction by
 # identifying mkhowto using an absolute path.
 #
-MKHOWTO=   $(PYTHON) $(shell pwd)/tools/mkhowto
+MKHOWTO=   TEXINPUTS=$(TEXINPUTS) $(PYTHON) $(PWD)/tools/mkhowto
 
 MKDVI=	   $(MKHOWTO) --paper=$(PAPER) --dvi
 MKHTML=	   $(MKHOWTO) --html --about html/stdabout.dat \

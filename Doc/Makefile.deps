@@ -5,9 +5,9 @@ COMMONSTYLES= texinputs/python.sty \
 
 INDEXSTYLES=texinputs/python.ist
 
-COMMONTEX= texinputs/copyright.tex \
-	texinputs/license.tex \
-	texinputs/boilerplate.tex
+COMMONTEX=commontex/copyright.tex \
+	commontex/license.tex \
+	commontex/boilerplate.tex
 
 MANSTYLES= texinputs/fncychap.sty \
 	texinputs/manual.cls \
@@ -29,8 +29,8 @@ APIFILES= $(MANSTYLES) $(INDEXSTYLES) $(COMMONTEX) \
 	api/refcounting.tex \
 	api/utilities.tex \
 	api/veryhigh.tex \
-	texinputs/typestruct.h \
-	texinputs/reportingbugs.tex
+	commontex/typestruct.h \
+	commontex/reportingbugs.tex
 
 # These files are generated from those listed above, and are used to
 # generate the typeset versions of the manuals.  The list is defined
@@ -47,10 +47,10 @@ ANNOAPIFILES= $(MANSTYLES) $(INDEXSTYLES) $(COMMONTEX) api/refcounts.dat \
 	paper-$(PAPER)/refcounting.tex \
 	paper-$(PAPER)/utilities.tex \
 	paper-$(PAPER)/veryhigh.tex \
-	texinputs/reportingbugs.tex
+	commontex/reportingbugs.tex
 
 DOCFILES= $(HOWTOSTYLES) \
-	texinputs/boilerplate.tex \
+	commontex/boilerplate.tex \
 	texinputs/ltxmarkup.sty \
 	doc/doc.tex
 
@@ -65,8 +65,8 @@ EXTFILES= ext/ext.tex $(MANSTYLES) $(INDEXSTYLES) $(COMMONTEX) \
 	ext/noddy3.c \
 	ext/noddy4.c \
 	ext/run-func.c \
-	texinputs/typestruct.h \
-	texinputs/reportingbugs.tex
+	commontex/typestruct.h \
+	commontex/reportingbugs.tex
 
 TUTFILES= tut/tut.tex $(MANSTYLES) $(COMMONTEX)
 
@@ -84,7 +84,7 @@ REFFILES= $(MANSTYLES) $(INDEXSTYLES) $(COMMONTEX) \
 
 # LaTeX source files for the Python Library Reference
 LIBFILES= $(MANSTYLES) $(INDEXSTYLES) $(COMMONTEX) \
-	texinputs/reportingbugs.tex \
+	commontex/reportingbugs.tex \
 	lib/lib.tex \
 	lib/asttable.tex \
 	lib/compiler.tex \
