@@ -1,5 +1,8 @@
 audiopy - a program to control the Solaris audio device.
-Author: Barry A. Warsaw <bwarsaw@python.org>
+
+Author:  Barry Warsaw
+Email:   bwarsaw@python.org
+Version: 0.1
 
 Introduction
 
@@ -34,7 +37,8 @@ Running as a GUI
     Note the underlined characters in the button labels.  These
     indicate keyboard accelerators so that pressing Alt+character you
     can select that device.  For example, Alt-s toggles the Speaker
-    device.
+    device.  The Alt accelerators are the same as those you'd use in
+    as the short-form command line switches (see below).
 
     Alt-q is also an accelerator for selecting Quit from the File
     menu.
