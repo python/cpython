@@ -4,14 +4,6 @@
 #include "Python.h"
 #include <ctype.h>
 
-#ifndef CHAR_BIT
-#define CHAR_BIT 8
-#endif
-
-#ifndef LONG_BIT
-#define LONG_BIT (CHAR_BIT * sizeof(long))
-#endif
-
 long
 PyInt_GetMax(void)
 {
