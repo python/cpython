@@ -989,7 +989,7 @@ eval_frame(PyFrameObject *f)
 		case BINARY_SUBSCR:
 			w = POP();
 			v = POP();
-			if (v->ob_type == &PyList_Type && PyInt_CheckExact(w)) {
+			if (PyList_CheckExact(v) && PyInt_CheckExact(w)) {
 				/* INLINE: list[int] */
 				long i = PyInt_AsLong(w);
 				if (i < 0)
