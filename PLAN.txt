@@ -99,6 +99,10 @@ we try to use this for some, eh, interesting types such as tuples. ***
             def __new__(cls, *args):
                 "How do I call the default __new__ implementation???"
 
+    This was resolved nicely by putting object.__new__ back but not
+    inheriting __new__ from object when the subtype is a built-in or
+    extension type.
+
 More -- I'm sure new issues will crop up as we go.
 
 
