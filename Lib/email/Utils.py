@@ -9,7 +9,7 @@ import re
 from rfc822 import unquote, quote, parseaddr
 from rfc822 import dump_address_pair
 from rfc822 import AddrlistClass as _AddrlistClass
-from rfc822 import parsedate_tz, parsedate, mktime_tz, formatdate
+from rfc822 import parsedate_tz, parsedate, mktime_tz
 
 from quopri import decodestring as _qdecode
 import base64
@@ -102,3 +102,39 @@ def encode(s, charset='iso-8859-1', encoding='q'):
     else:
         raise ValueError, 'Illegal encoding code: ' + encoding
     return '=?%s?%s?%s?=' % (charset.lower(), encoding.lower(), estr)
+
+
+
+def formatdate(timeval=None, localtime=0):
+    """Returns a formatted time as specified by RFC 2822, e.g.:
+
+    Fri, 09 Nov 2001 01:08:47 -0000
+
+    Optional timeval if given is a float time as accepted by localtime() or
+    gmtime().  Optional localtime is a flag that when true, interprets and
+    returns a time relative to the local timezone instead of UTC.
+    """
+    # Note: we cannot use strftime() because that honors the locale and RFC
+    # 2822 requires that day and month names be the English abbreviations.
+    if timeval is None:
+        timeval = time.time()
+    if localtime:
+        now = time.localtime(timeval)
+        # Calculate timezone offset, based on whether the local zone has
+        # daylight savings time, and whether DST is in effect.
+        if time.daylight and now[-1]:
+            offset = time.altzone
+        else:
+            offset = time.timezone
+        zone = '%+03d%02d' % (offset / -3600, offset % 60)
+    else:
+        now = time.gmtime(timeval)
+        # Timezone offset is always -0000
+        zone = '-0000'
+    return '%s, %02d %s %04d %02d:%02d:%02d %s' % (
+        ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][now[6]],
+        now[2],
+        ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+         'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][now[1] - 1],
+        now[0], now[3], now[4], now[5],
+        zone)
