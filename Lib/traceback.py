@@ -3,6 +3,7 @@
 import linecache
 import string
 import sys
+import types
 
 def print_tb(tb, limit = None):
 	if limit is None:
@@ -41,23 +42,29 @@ def extract_tb(tb, limit = None):
 		n = n+1
 	return list
 
-def print_exception(type, value, tb, limit = None):
+def print_exception(etype, value, tb, limit = None):
 	if tb:
 		print 'Traceback (innermost last):'
 		print_tb(tb, limit)
-	if value is None:
-		print type
+	if type(etype) == types.ClassType:
+		stype = etype.__name__
 	else:
-		if type is SyntaxError:
+		stype = etype
+	if value is None:
+		print stype
+	else:
+		if etype is SyntaxError:
 			try:
 				msg, (filename, lineno, offset, line) = value
 			except:
 				pass
 			else:
 				if not filename: filename = "<string>"
-				print '  File "%s", line %d' % (filename, lineno)
+				print '  File "%s", line %d' % \
+				      (filename, lineno)
 				i = 0
-				while i < len(line) and line[i] in string.whitespace:
+				while i < len(line) and \
+				      line[i] in string.whitespace:
 					i = i+1
 				s = '    '
 				print s + string.strip(line)
@@ -68,7 +75,7 @@ def print_exception(type, value, tb, limit = None):
 						s = s + ' '
 				print s + '^'
 				value = msg
-		print '%s: %s' % (type, value)
+		print '%s: %s' % (stype, value)
 
 def print_exc(limit = None):
 	print_exception(sys.exc_type, sys.exc_value, sys.exc_traceback,
