@@ -608,7 +608,7 @@
 
   <!-- Conversions to text; perhaps could be different?  There's -->
   <!-- no way for a style sheet to work with these this way.	 -->
-  <macro name="ABC" outputname=""
+  <macro name="ABC" outputname="">
     <text>ABC</text>
     </macro>
   <macro name="ASCII" outputname="">
