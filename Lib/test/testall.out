@@ -48,6 +48,7 @@ test_opcodes
 2. Opcodes
 XXX Not yet fully implemented
 2.1 try inside for loop
+2.2 raise class exceptions
 test_operations
 3. Operations
 XXX Not yet implemented
