@@ -43,6 +43,14 @@ If the \var{decode_base64} argument is provided and tests true, any
 parts that are coded in the base64 encoding are decoded as well.
 \end{funcdesc}
 
+\begin{funcdesc}{mime_decode_header}{line}
+Return a decoded version of the encoded header line in \var{line}.
+\end{funcdesc}
+
+\begin{funcdesc}{mime_encode_header}{line}
+Return a MIME-encoded version of the header line in \var{line}.
+\end{funcdesc}
+
 \begin{datadesc}{MAXLEN}
 By default, a part will be encoded as quoted-printable when it
 contains any non-ASCII characters (i.e., characters with the 8th bit
