@@ -21,6 +21,7 @@ barrier, in particular frame and traceback objects.
 """
 
 import sys
+import types
 import rpc
 import Debugger
 
@@ -33,6 +34,7 @@ debugging = 0
 frametable = {}
 dicttable = {}
 codetable = {}
+tracebacktable = {}
 
 def wrap_frame(frame):
     fid = id(frame)
@@ -40,10 +42,16 @@ def wrap_frame(frame):
     return fid
 
 def wrap_info(info):
+    "replace info[2], a traceback instance, by its ID"
     if info is None:
         return None
     else:
-        return None # XXX for now
+        traceback = info[2]
+        assert isinstance(traceback, types.TracebackType)
+        traceback_id = id(traceback)
+        tracebacktable[traceback_id] = traceback
+        modified_info = (info[0], info[1], traceback_id)
+        return modified_info
 
 class GUIProxy:
 
@@ -53,6 +61,7 @@ class GUIProxy:
 
     def interaction(self, message, frame, info=None):
         # calls rpc.SocketIO.remotecall() via run.MyHandler instance
+        # pass frame and traceback object IDs instead of the objects themselves
         self.conn.remotecall(self.oid, "interaction",
                              (message, wrap_frame(frame), wrap_info(info)),
                              {})
@@ -84,7 +93,10 @@ class IdbAdapter:
     def get_stack(self, fid, tbid):
         ##print >>sys.__stderr__, "get_stack(%s, %s)" % (`fid`, `tbid`)
         frame = frametable[fid]
-        tb = None # XXX for now
+        if tbid is None:
+            tb = None
+        else:
+            tb = tracebacktable[tbid]
         stack, i = self.idb.get_stack(frame, tb)
         ##print >>sys.__stderr__, "get_stack() ->", stack
         stack = [(wrap_frame(frame), k) for frame, k in stack]
@@ -104,7 +116,8 @@ class IdbAdapter:
 
     def clear_all_file_breaks(self, filename):
         msg = self.idb.clear_all_file_breaks(filename)
-
+        return msg
+    
     #----------called by a FrameProxy----------
 
     def frame_attr(self, fid, name):
@@ -263,11 +276,10 @@ class GUIAdapter:
         self.conn = conn
         self.gui = gui
 
-    def interaction(self, message, fid, iid):
-        ##print "interaction: (%s, %s, %s)" % (`message`,`fid`, `iid`)
+    def interaction(self, message, fid, modified_info):
+        ##print "interaction: (%s, %s, %s)" % (message, fid, modified_info)
         frame = FrameProxy(self.conn, fid)
-        info = None # XXX for now
-        self.gui.interaction(message, frame, info)
+        self.gui.interaction(message, frame, modified_info)
 
 
 class IdbProxy:
@@ -286,8 +298,9 @@ class IdbProxy:
         # Ignores locals on purpose!
         self.call("run", cmd)
 
-    def get_stack(self, frame, tb):
-        stack, i = self.call("get_stack", frame._fid, None)
+    def get_stack(self, frame, tbid):
+        # passing frame and traceback IDs, not the objects themselves
+        stack, i = self.call("get_stack", frame._fid, tbid)
         stack = [(FrameProxy(self.conn, fid), k) for fid, k in stack]
         return stack, i
 
@@ -315,7 +328,7 @@ class IdbProxy:
 
     def clear_all_file_breaks(self, filename):
         msg = self.call("clear_all_file_breaks", filename)
-        
+        return msg
 
 def start_remote_debugger(rpcclt, pyshell):
     """Start the subprocess debugger, initialize the debugger GUI and RPC link
