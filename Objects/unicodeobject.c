@@ -1198,13 +1198,15 @@ PyObject *PyUnicode_DecodeUnicodeEscape(const char *s,
             *p++ = x;
             break;
 
-        /* \xXXXX escape with 0-4 hex digits */
+        /* \xXXXX escape with 1-n hex digits.  for compatibility
+           with 8-bit strings, this code ignores all but the last
+           two digits */
         case 'x':
             x = 0;
             c = (unsigned char)*s;
             if (isxdigit(c)) {
                 do {
-                    x = (x<<4) & ~0xF;
+                    x = (x<<4) & 0xF0;
                     if ('0' <= c && c <= '9')
                         x += c - '0';
                     else if ('a' <= c && c <= 'f')
@@ -1213,7 +1215,7 @@ PyObject *PyUnicode_DecodeUnicodeEscape(const char *s,
                         x += 10 + c - 'A';
                     c = (unsigned char)*++s;
                 } while (isxdigit(c));
-                *p++ = x;
+                *p++ = (unsigned char) x;
             } else {
                 *p++ = '\\';
                 *p++ = (unsigned char)s[-1];
