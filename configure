@@ -3030,7 +3030,7 @@ then
 fi
 echo "$ac_t""$SO" 1>&6
 # LDSHARED is the ld *command* used to create shared library
-# -- "ld" on SunOS 4.x.x, "ld -G" on SunOS 5.x, "ld -shared" on IRIX 5
+# -- "ld" on SunOS 4.x.x, "cc -G" on SunOS 5.x, "ld -shared" on IRIX 5
 # (Shared libraries in this instance are shared modules to be loaded into
 # Python, as opposed to building Python itself as a shared library.)
 echo $ac_n "checking LDSHARED""... $ac_c" 1>&6
@@ -3052,7 +3052,7 @@ then
 	SunOS/5*) 
 		if test "$GCC" = "yes"
 		then LDSHARED='$(CC) -shared'
-		else LDSHARED="ld -G";
+		else LDSHARED="$(CC) -G";
 		fi ;;
 	hp*|HP*) LDSHARED="ld -b";;
 	OSF*) LDSHARED="ld -shared -expect_unresolved \"*\"";;
