@@ -49,7 +49,10 @@ informal introduction to the language, see the {\em Python Tutorial}.
 
 \pagebreak
 
+{
+\parskip = 0mm
 \tableofcontents
+}
 
 \pagebreak
 
@@ -83,6 +86,11 @@ standard modules.  These are not documented here, but in the separate
 {\em Python Library Reference} document.  A few built-in modules are
 mentioned when they interact in a significant way with the language
 definition.
+
+\section{Warning}
+
+This version of the manual is incomplete.  Sections that still need to
+be written or need considerable work are marked with ``XXX''.
 
 \section{Notation}
 
@@ -150,7 +158,17 @@ Two or more physical lines may be joined into logical lines using
 backslash characters (\verb/\/), as follows: when a physical line ends
 in a backslash that is not part of a string literal or comment, it is
 joined with the following forming a single logical line, deleting the
-backslash and the following end-of-line character.
+backslash and the following end-of-line character.  For example:
+%
+\begin{verbatim}
+samplingrates =	(48000, AL.RATE_48000), \
+                (44100, AL.RATE_44100), \
+                (32000, AL.RATE_32000), \
+                (22050, AL.RATE_22050), \
+                (16000, AL.RATE_16000), \
+                (11025, AL.RATE_11025), \
+                ( 8000,  AL.RATE_8000)
+\end{verbatim}
 
 \subsection{Blank lines}
 
@@ -192,6 +210,9 @@ of Python code:
 
 \begin{verbatim}
 def perm(l):
+
+        # Compute the list of all permutations of l
+
     if len(l) <= 1:
                   return [l]
     r = []
@@ -239,10 +260,9 @@ uppercase:      "A"..."Z"
 digit:          "0"..."9"
 \end{verbatim}
 
-Identifiers are unlimited in length.  Case is significant.  Keywords
-are not identifiers.
+Identifiers are unlimited in length.  Case is significant.
 
-\section{Keywords}
+\subsection{Keywords}
 
 The following identifiers are used as reserved words, or {\em
 keywords} of the language, and cannot be used as ordinary
@@ -322,8 +342,8 @@ but you may end up quadrupling backslashes that must appear literally.)
 
 \subsection{Numeric literals}
 
-There are three types of numeric literals: integers, long integers,
-and floating point numbers.
+There are three types of numeric literals: plain integers, long
+integers, and floating point numbers.
 
 Integers and long integers are described by the following regular expressions:
 
@@ -339,25 +359,43 @@ octdigit:       "0"..."7"
 hexdigit:        digit|"a"..."f"|"A"..."F"
 \end{verbatim}
 
+Although both lower case `l'and upper case `L' are allowed as suffix
+for long integers, it is strongly recommended to always use `L', since
+the letter `l' looks too much like the digit `1'.
+
+(Plain) integer decimal literals must be at most $2^{31} - 1$ (i.e., the
+largest positive integer, assuming 32-bit arithmetic); octal and
+hexadecimal literals may be as large as $2^{32} - 1$.  There is no limit
+for long integer literals.
+
+Some examples of (plain and long) integer literals:
+
+\begin{verbatim}
+7     2147483647                        0177    0x80000000
+3L    79228162514264337593543950336L    0377L   0100000000L
+\end{verbatim}
+
 Floating point numbers are described by the following regular expressions:
 
 \begin{verbatim}
-floatnumber:    [intpart] fraction [exponent] | intpart ["."] exponent
+floatnumber:    pointfloat | exponentfloat
+pointfloat:     [intpart] fraction | intpart "."
+exponentfloat:  (intpart | pointfloat) exponent
 intpart:        digit+
 fraction:       "." digit+
 exponent:       ("e"|"E") ["+"|"-"] digit+
 \end{verbatim}
 
-Some examples of numeric literals:
+The range of floating point literals is implementation-dependent.
+
+Some examples of floating point literals:
 
 \begin{verbatim}
-1    1234567890    0177777    0x80000
-
-
+3.14    10.    .001    1e100    3.14e-10
 \end{verbatim}
 
-Note that the definitions for literals do not include a sign; a phrase
-like \verb\-1\ is actually an expression composed of the operator
+Note that numeric literals do not include a sign; a phrase like
+\verb\-1\ is actually an expression composed of the operator
 \verb\-\ and the literal \verb\1\.
 
 \section{Operators}
@@ -395,12 +433,6 @@ They may be used by future versions of the language though!
 
 \chapter{Execution model}
 
-(XXX This chapter should explain the general model of the execution of
-Python code and the evaluation of expressions.  It should introduce
-objects, values, code blocks, scopes, name spaces, name binding,
-types, sequences, numbers, mappings, exceptions, and other technical
-terms needed to make the following chapters concise and exact.)
-
 \section{Objects, values and types}
 
 I won't try to define rigorously here what an object is, but I'll give
@@ -409,37 +441,41 @@ some properties of objects that are important to know about.
 Every object has an identity, a type and a value.  An object's {\em
 identity} never changes once it has been created; think of it as the
 object's (permanent) address.  An object's {\em type} determines the
-operations that an object supports (e.g., can its length be taken?)
-and also defines the ``meaning'' of the object's value; it also never
-changes.  The {\em value} of some objects can change; whether an
-object's value can change is a property of its type.
+operations that an object supports (e.g., does it have a length?)  and
+also defines the ``meaning'' of the object's value.  The type also
+never changes.  The {\em value} of some objects can change; whether
+this is possible is a property of its type.
 
 Objects are never explicitly destroyed; however, when they become
-unreachable they may be garbage-collected.  An implementation,
-however, is allowed to delay garbage collection or omit it altogether
--- it is a matter of implementation quality how garbage collection is
-implemented.  (Implementation note: the current implementation uses a
+unreachable they may be garbage-collected.  An implementation is
+allowed to delay garbage collection or omit it altogether -- it is a
+matter of implementation quality how garbage collection is
+implemented, as long as no objects are collected that are still
+reachable.  (Implementation note: the current implementation uses a
 reference-counting scheme which collects most objects as soon as they
-become onreachable, but does not detect garbage containing circular
+become onreachable, but never collects garbage containing circular
 references.)
+
+Note that the use of the implementation's tracing or debugging
+facilities may keep objects alive that would normally be collectable.
 
 (Some objects contain references to ``external'' resources such as
 open files.  It is understood that these resources are freed when the
 object is garbage-collected, but since garbage collection is not
-guaranteed such objects also provide an explicit way to release the
-external resource (e.g., a \verb\close\ method) and programs are
+guaranteed, such objects also provide an explicit way to release the
+external resource (e.g., a \verb\close\ method).  Programs are strongly
 recommended to use this.)
 
 Some objects contain references to other objects.  These references
 are part of the object's value; in most cases, when such a
 ``container'' object is compared to another (of the same type), the
-comparison takes the {\em values} of the referenced objects into
-account (not their identities).
+comparison applies to the {\em values} of the referenced objects (not
+their identities).
 
-Except for their identity, types affect almost any aspect of objects.
-Even object identities are affected in some sense: for immutable
+Types affect almost all aspects of objects.
+Even object identity is affected in some sense: for immutable
 types, operations that compute new values may actually return a
-reference to an existing object with the same type and value, while
+reference to any existing object with the same type and value, while
 for mutable objects this is not allowed.  E.g., after
 
 \begin{verbatim}
@@ -450,9 +486,13 @@ a = 1; b = 1; c = []; d = []
 \verb\c\ and \verb\d\ are guaranteed to refer to two different, unique,
 newly created lists.
 
+\section{The standard type hierarchy}
+
+XXX None, sequences, numbers, mappings, ...
+
 \section{Execution frames, name spaces, and scopes}
 
-XXX
+XXX code blocks, scopes, name spaces, name binding, exceptions
 
 \chapter{Expressions and conditions}
 
@@ -461,17 +501,17 @@ not lexical analysis.
 
 This chapter explains the meaning of the elements of expressions and
 conditions.  Conditions are a superset of expressions, and a condition
-may be used where an expression is required by enclosing it in
-parentheses.  The only place where an unparenthesized condition is not
-allowed is on the right-hand side of the assignment operator, because
-this operator is the same token (\verb\=\) as used for compasisons.
+may be used wherever an expression is required by enclosing it in
+parentheses.  The only places where expressions are used in the syntax
+instead of conditions is in expression statements and on the
+right-hand side of assignments; this catches some nasty bugs like
+accedentally writing \verb\x == 1\ instead of \verb\x = 1\.
 
-The comma plays a somewhat special role in Python's syntax.  It is an
+The comma has several roles in Python's syntax.  It is usually an
 operator with a lower precedence than all others, but occasionally
-serves other purposes as well (e.g., it has special semantics in print
-statements).  When a comma is accepted by the syntax, one of the
-syntactic categories \verb\expression_list\ or \verb\condition_list\
-is always used.
+serves other purposes as well; e.g., it separates function arguments,
+is used in list and dictionary constructors, and has special semantics
+in \verb\print\ statements.
 
 When (one alternative of) a syntax rule has the form
 
@@ -495,70 +535,88 @@ the following conversions are applied:
 	the other is converted to floating point;
 \item	else, if either argument is a long integer,
 	the other is converted to long integer;
-\item	otherwise, both must be short integers and no conversion
+\item	otherwise, both must be plain integers and no conversion
 	is necessary.
 \end{itemize}
 
-(Note: ``short integers'' in Python are at least 32 bits in size;
+(Note: ``plain integers'' in Python are at least 32 bits in size;
 ``long integers'' are arbitrary precision integers.)
 
 \section{Atoms}
 
-Atoms are the most basic elements of expressions.
-Forms enclosed in reverse quotes or various types of parentheses
-or braces are also categorized syntactically as atoms.
-Syntax rules for atoms:
+Atoms are the most basic elements of expressions.  Forms enclosed in
+reverse quotes or in parentheses, brackets or braces are also
+categorized syntactically as atoms.  The syntax for atoms is:
 
 \begin{verbatim}
-atom:           identifier | literal | parenth_form | string_conversion
-literal:        stringliteral | integer | longinteger | floatnumber
-parenth_form:   enclosure | list_display | dict_display
-enclosure:      "(" [condition_list] ")"
-list_display:   "[" [condition_list] "]"
-dict_display:   "{" [key_datum ("," key_datum)* [","] "}"
-key_datum:      condition ":" condition
-string_conversion:"`" condition_list "`"
+atom:           identifier | literal | enclosure
+enclosure:      parenth_form | list_display | dict_display | string_conversion
 \end{verbatim}
 
 \subsection{Identifiers (Names)}
 
 An identifier occurring as an atom is a reference to a local, global
-or built-in name binding.  If a name can be assigned to anywhere in a code
-block, it refers to a local name throughout that code block.
+or built-in name binding.  If a name can be assigned to anywhere in a
+code block, and is not mentioned in a \verb\global\ statement in that
+code block, it refers to a local name throughout that code block.
 Otherwise, it refers to a global name if one exists, else to a
 built-in name.
 
-When the name is bound to an object, evaluation of the atom
-yields that object.
-When it is not bound, a {\tt NameError} exception
-is raised, with the identifier as string parameter.
+When the name is bound to an object, evaluation of the atom yields
+that object.  When a name is not bound, an attempt to evaluate it
+raises a {\tt NameError} exception.
 
 \subsection{Literals}
+
+Python knows string and numeric literals:
+
+\begin{verbatim}
+literal:        stringliteral | integer | longinteger | floatnumber
+\end{verbatim}
 
 Evaluation of a literal yields an object of the given type
 (string, integer, long integer, floating point number)
 with the given value.
 The value may be approximated in the case of floating point literals.
 
-All literals correspond to immutable data types, and hence the object's
-identity is less important than its value.
-Multiple evaluations of the same literal (either the same occurrence
-in the program text or a different occurrence) may
-obtain the same object or a different object with the same value.
+All literals correspond to immutable data types, and hence the
+object's identity is less important than its value.  Multiple
+evaluations of literals with the same value (either the same
+occurrence in the program text or a different occurrence) may obtain
+the same object or a different object with the same value.
 
 (In the original implementation, all literals in the same code block
 with the same type and value yield the same object.)
 
-\subsection{Enclosures}
+\subsection{Parenthesized form}
 
-An empty enclosure yields an empty tuple object.
+A parenthesized form is an optional condition list enclosed in
+parentheses:
 
-An enclosed condition list yields whatever that condition list yields.
+\begin{verbatim}
+parenth_form:      "(" [condition_list] ")"
+\end{verbatim}
 
-(Note that, except for empty tuples, tuples are not formed by
-enclosure in parentheses, but rather by use of the comma operator.)
+A parenthesized condition list yields whatever that condition list
+yields.
+
+An empty pair of parentheses yields an empty tuple object (since
+tuples are immutable, the rules for literals apply here).
+
+(Note that tuples are not formed by the parentheses, but rather by use
+of the comma operator.  The exception is the empty tuple, for which
+parentheses {\em are} required -- allowing unparenthesized ``nothing''
+in expressions would causes ambiguities and allow common typos to
+pass uncaught.)
 
 \subsection{List displays}
+
+A list display is a possibly empty series of conditions enclosed in
+square brackets:
+
+\begin{verbatim}
+list_display:   "[" [condition_list] "]"
+\end{verbatim}
 
 A list display yields a new list object.
 
@@ -568,36 +626,54 @@ from left to right and inserted in the list object in that order.
 
 \subsection{Dictionary displays}
 
+A dictionary display is a possibly empty series of key/datum pairs
+enclosed in curly braces:
+
+\begin{verbatim}
+dict_display:   "{" [key_datum_list] "}"
+key_datum_list: [key_datum ("," key_datum)* [","]
+key_datum:      condition ":" condition
+\end{verbatim}
+
 A dictionary display yields a new dictionary object.
 
-The key/datum pairs are evaluated from left to right to
-define the entries of the dictionary:
-each key object is used as a key into the dictionary to store
-the corresponding datum pair.
+The key/datum pairs are evaluated from left to right to define the
+entries of the dictionary: each key object is used as a key into the
+dictionary to store the corresponding datum.
 
-Keys must be strings, otherwise a {\tt TypeError} exception is raised.
-Clashes between keys are not detected; the last datum (textually
-rightmost in the display) stored for a given key value prevails.
+Keys must be strings, otherwise a {\tt TypeError} exception is raised.%
+\footnote{
+This restriction may be lifted in a future version of the language.
+}
+Clashes between duplicate keys are not detected; the last datum
+(textually rightmost in the display) stored for a given key value
+prevails.
 
 \subsection{String conversions}
+
+A string conversion is a condition list enclosed in {\em reverse} (or
+backward) quotes:
+
+\begin{verbatim}
+string_conversion: "`" condition_list "`"
+\end{verbatim}
 
 A string conversion evaluates the contained condition list and converts the
 resulting object into a string according to rules specific to its type.
 
 If the object is a string, a number, \verb\None\, or a tuple, list or
-dictionary containing only objects whose type is in this list,
-the resulting
-string is a valid Python expression which can be passed to the
-built-in function \verb\eval()\ to yield an expression with the
+dictionary containing only objects whose type is one of these, the
+resulting string is a valid Python expression which can be passed to
+the built-in function \verb\eval()\ to yield an expression with the
 same value (or an approximation, if floating point numbers are
 involved).
 
 (In particular, converting a string adds quotes around it and converts
 ``funny'' characters to escape sequences that are safe to print.)
 
-It is illegal to attempt to convert recursive objects (e.g.,
-lists or dictionaries that -- directly or indirectly -- contain a reference
-to themselves.)
+It is illegal to attempt to convert recursive objects (e.g., lists or
+dictionaries that contain a reference to themselves, directly or
+indirectly.)
 
 \section{Primaries}
 
@@ -605,20 +681,72 @@ Primaries represent the most tightly bound operations of the language.
 Their syntax is:
 
 \begin{verbatim}
-primary:        atom | attributeref | call | subscription | slicing
-attributeref:   primary "." identifier
-call:           primary "(" [condition_list] ")"
-subscription:   primary "[" condition "]"
-slicing:        primary "[" [condition] ":" [condition] "]"
+primary:        atom | attributeref | subscription | slicing | call
 \end{verbatim}
 
 \subsection{Attribute references}
 
-\subsection{Calls}
+An attribute reference is a primary followed by a period and a name:
+
+\begin{verbatim}
+attributeref:   primary "." identifier
+\end{verbatim}
+
+The primary must evaluate to an object of a type that supports
+attribute references, e.g., a module or a list.  This object is then
+asked to produce the attribute whose name is the identifier.  If this
+attribute is not available, the exception \verb\AttributeError\ is
+raised.  Otherwise, the type and value of the object produced is
+determined by the object.  Multiple evaluations of the same attribute
+reference may yield different objects.
 
 \subsection{Subscriptions}
 
+A subscription selects an item of a sequence or mapping object:
+
+\begin{verbatim}
+subscription:   primary "[" condition "]"
+\end{verbatim}
+
+The primary must evaluate to an object of a sequence or mapping type.
+
+If it is a mapping, the condition must evaluate to an object whose
+value is one of the keys of the mapping, and the subscription selects
+the value in the mapping that corresponds to that key.
+
+If it is a sequence, the condition must evaluate to a nonnegative
+plain integer smaller than the number of items in the sequence, and
+the subscription selects the item whose index is that value (counting
+from zero).
+
+A string's  items are characters.  A character is not a separate data
+type but a string of exactly one character.
+
 \subsection{Slicings}
+
+A slicing selects a range of items in a sequence object:
+
+\begin{verbatim}
+slicing:        primary "[" [condition] ":" [condition] "]"
+\end{verbatim}
+
+XXX
+
+\subsection{Calls}
+
+A call calls a function with a possibly empty series of arguments:
+
+\begin{verbatim}
+call:           primary "(" [condition_list] ")"
+\end{verbatim}
+
+The primary must evaluate to a callable object.  Callable objects are
+user-defined functions, built-in functions, methods of built-in
+objects (``built-in methods''), class objects, and methods of class
+instances (``user-defined methods'').  If it is a class, the argument
+list must be empty.
+
+XXX explain what happens on function call
 
 \section{Factors}
 
@@ -634,7 +762,7 @@ The unary \verb\-\ operator yields the negative of its numeric argument.
 The unary \verb\+\ operator yields its numeric argument unchanged.
 
 The unary \verb\~\ operator yields the bit-wise negation of its
-integral numerical argument.
+(plain or long) integral numerical argument, using 2's complement.
 
 In all three cases, if the argument does not have the proper type,
 a {\tt TypeError} exception is raised.
@@ -647,27 +775,31 @@ Terms represent the most tightly binding binary operators:
 term:           factor | term "*" factor | term "/" factor | term "%" factor
 \end{verbatim}
 
-The \verb\*\ operator yields the product of its arguments.
-The arguments must either both be numbers, or one argument must be
-a (short) integer and the other must be a string.
-In the former case, the numbers are converted to a common type
-and then multiplied together.
-In the latter case, string repetition is performed; a negative
-repetition factor yields the empty string.
+The \verb\*\ (multiplication) operator yields the product of its
+arguments.  The arguments must either both be numbers, or one argument
+must be a plain integer and the other must be a sequence.  In the
+former case, the numbers are converted to a common type and then
+multiplied together.  In the latter case, sequence repetition is
+performed; a negative repetition factor yields the empty string.
 
-The \verb|"/"| operator yields the quotient of its arguments.
-The numeric arguments are first converted to a common type.
-(Short or long) integer division yields an integer of the same type,
-truncating towards zero.
+The \verb|"/"| (division) operator yields the quotient of its
+arguments.  The numeric arguments are first converted to a common
+type.  (Plain or long) integer division yields an integer of the same
+type; the result is that of mathematical division with the {\em floor}
+operator applied to the result, to match the modulo operator.
 Division by zero raises a {\tt RuntimeError} exception.
 
-The \verb|"%"| operator yields the remainder from the division
-of the first argument by the second.
-The numeric arguments are first converted to a common type.
-The outcome of $x \% y$ is defined as $x - y*trunc(x/y)$.
-A zero right argument raises a {\tt RuntimeError} exception.
-The arguments may be floating point numbers, e.g.,
-$3.14 \% 0.7$ equals $0.34$.
+The \verb|"%"| (modulo) operator yields the remainder from the
+division of the first argument by the second.  The numeric arguments
+are first converted to a common type.  A zero right argument raises a
+{\tt RuntimeError} exception.  The arguments may be floating point
+numbers, e.g., $3.14 \% 0.7$ equals $0.34$.  The modulo operator
+always yields a result with the same sign as its second operand (or
+zero); the absolute value of the result is strictly smaller than the
+second operand.
+
+The integer division and modulo operators are connected by the
+following identity: $x = (x/y)*y + (x\%y)$.
 
 \section{Arithmetic expressions}
 
@@ -675,12 +807,13 @@ $3.14 \% 0.7$ equals $0.34$.
 arith_expr:     term | arith_expr "+" term | arith_expr "-" term
 \end{verbatim}
 
-The \verb|"+"| operator yields the sum of its arguments.
-The arguments must either both be numbers, or both strings.
-In the former case, the numbers are converted to a common type
-and then added together.
-In the latter case, the strings are concatenated directly,
-without inserting a space.
+HIRO
+
+The \verb|"+"| operator yields the sum of its arguments.  The
+arguments must either both be numbers, or both sequences.  In the
+former case, the numbers are converted to a common type and then added
+together.  In the latter case, the sequences are concatenated
+directly.
 
 The \verb|"-"| operator yields the difference of its arguments.
 The numeric arguments are first converted to a common type.
@@ -691,7 +824,7 @@ The numeric arguments are first converted to a common type.
 shift_expr:     arith_expr | shift_expr "<<" arith_expr | shift_expr ">>" arith_expr
 \end{verbatim}
 
-These operators accept short integers as arguments only.
+These operators accept (plain) integers as arguments only.
 They shift their left argument to the left or right by the number of bits
 given by the right argument.  Shifts are ``logical"", e.g., bits shifted
 out on one end are lost, and bits shifted in are zero;
@@ -706,7 +839,7 @@ and_expr:       shift_expr | and_expr "&" shift_expr
 \end{verbatim}
 
 This operator yields the bitwise AND of its arguments,
-which must be short integers.
+which must be (plain) integers.
 
 \section{Bitwise XOR expressions}
 
@@ -715,7 +848,7 @@ xor_expr:       and_expr | xor_expr "^" and_expr
 \end{verbatim}
 
 This operator yields the bitwise exclusive OR of its arguments,
-which must be short integers.
+which must be (plain) integers.
 
 \section{Bitwise OR expressions}
 
@@ -724,7 +857,7 @@ or_expr:       xor_expr | or_expr "|" xor_expr
 \end{verbatim}
 
 This operator yields the bitwise OR of its arguments,
-which must be short integers.
+which must be (plain) integers.
 
 \section{Expressions and expression lists}
 
