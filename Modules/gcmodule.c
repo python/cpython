@@ -40,7 +40,7 @@ static int generation = 0; /* current generation being collected */
 
 /* collection frequencies, XXX tune these */
 static int enabled = 1; /* automatic collection enabled? */
-static int threshold0 = 100; /* net new containers before collection */
+static int threshold0 = 5000; /* net new containers before collection */
 static int threshold1 = 10;  /* generation0 collections before collecting 1 */
 static int threshold2 = 10;  /* generation1 collections before collecting 2 */
 
