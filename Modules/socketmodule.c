@@ -2512,14 +2512,14 @@ newSSLObject(PySocketSockObject *Sock, char *key_file, char *cert_file)
 	self->ctx = NULL;
 	self->Socket = NULL;
 
-	self->ctx = SSL_CTX_new(SSLv23_method()); /* Set up context */
-	if (self->ctx == NULL) {
-		errstr = "SSL_CTX_new error";
+	if ((key_file && !cert_file) || (!key_file && cert_file)) {
+		errstr = "Both the key & certificate files must be specified";
 		goto fail;
 	}
 
-	if ((key_file && !cert_file) || (!key_file && cert_file)) {
-		errstr = "Both the key & certificate files must be specified";
+	self->ctx = SSL_CTX_new(SSLv23_method()); /* Set up context */
+	if (self->ctx == NULL) {
+		errstr = "SSL_CTX_new error";
 		goto fail;
 	}
 
