@@ -21,7 +21,7 @@ def url2pathname(url):
         # make sure not to convert quoted slashes :-)
         return urllib.unquote('\\'.join(components))
     comp = url.split('|')
-    if len(comp) != 2 or comp[0][-1] not in string.letters:
+    if len(comp) != 2 or comp[0][-1] not in string.ascii_letters:
         error = 'Bad URL: ' + url
         raise IOError, error
     drive = comp[0][-1].upper()
@@ -42,7 +42,7 @@ def pathname2url(p):
             ///C|/foo/bar/spam.foo
     """
 
-    import string, urllib
+    import urllib
     if not ':' in p:
         # No drive specifier, just convert slashes and quote the name
         if p[:2] == '\\\\':
