@@ -62,7 +62,7 @@ class CollectingParser(HTMLParser):
 	def __init__(self):
 		HTMLParser.__init__(self)
 		self.savetext = None
-		self.nextid = ''
+		self.nextid = []
 		self.isindex = 0
 		self.title = ''
 		self.inanchor = 0
@@ -470,54 +470,54 @@ class NullStylesheet:
 
 
 class X11Stylesheet(NullStylesheet):
-	stdfontset = [ \
-		'-*-helvetica-medium-r-normal-*-*-100-100-*-*-*-*-*', \
-		'-*-helvetica-medium-o-normal-*-*-100-100-*-*-*-*-*', \
-		'-*-helvetica-bold-r-normal-*-*-100-100-*-*-*-*-*', \
-		'-*-courier-medium-r-normal-*-*-100-100-*-*-*-*-*', \
+	stdfontset = [
+		'-*-helvetica-medium-r-normal-*-*-100-100-*-*-*-*-*',
+		'-*-helvetica-medium-o-normal-*-*-100-100-*-*-*-*-*',
+		'-*-helvetica-bold-r-normal-*-*-100-100-*-*-*-*-*',
+		'-*-courier-medium-r-normal-*-*-100-100-*-*-*-*-*',
 		]
-	h1fontset = [ \
-		'-*-helvetica-medium-r-normal-*-*-180-100-*-*-*-*-*', \
-		'-*-helvetica-medium-o-normal-*-*-180-100-*-*-*-*-*', \
-		'-*-helvetica-bold-r-normal-*-*-180-100-*-*-*-*-*', \
+	h1fontset = [
+		'-*-helvetica-medium-r-normal-*-*-180-100-*-*-*-*-*',
+		'-*-helvetica-medium-o-normal-*-*-180-100-*-*-*-*-*',
+		'-*-helvetica-bold-r-normal-*-*-180-100-*-*-*-*-*',
 		]
-	h2fontset = [ \
-		'-*-helvetica-medium-r-normal-*-*-140-100-*-*-*-*-*', \
-		'-*-helvetica-medium-o-normal-*-*-140-100-*-*-*-*-*', \
-		'-*-helvetica-bold-r-normal-*-*-140-100-*-*-*-*-*', \
+	h2fontset = [
+		'-*-helvetica-medium-r-normal-*-*-140-100-*-*-*-*-*',
+		'-*-helvetica-medium-o-normal-*-*-140-100-*-*-*-*-*',
+		'-*-helvetica-bold-r-normal-*-*-140-100-*-*-*-*-*',
 		]
-	h3fontset = [ \
-		'-*-helvetica-medium-r-normal-*-*-120-100-*-*-*-*-*', \
-		'-*-helvetica-medium-o-normal-*-*-120-100-*-*-*-*-*', \
-		'-*-helvetica-bold-r-normal-*-*-120-100-*-*-*-*-*', \
+	h3fontset = [
+		'-*-helvetica-medium-r-normal-*-*-120-100-*-*-*-*-*',
+		'-*-helvetica-medium-o-normal-*-*-120-100-*-*-*-*-*',
+		'-*-helvetica-bold-r-normal-*-*-120-100-*-*-*-*-*',
 		]
 	ddindent = 40
 
 
 class MacStylesheet(NullStylesheet):
-	stdfontset = [ \
-		('Geneva', 'p', 10), \
-		('Geneva', 'i', 10), \
-		('Geneva', 'b', 10), \
-		('Monaco', 'p', 10), \
+	stdfontset = [
+		('Geneva', 'p', 10),
+		('Geneva', 'i', 10),
+		('Geneva', 'b', 10),
+		('Monaco', 'p', 10),
 		]
-	h1fontset = [ \
-		('Geneva', 'p', 18), \
-		('Geneva', 'i', 18), \
-		('Geneva', 'b', 18), \
-		('Monaco', 'p', 18), \
+	h1fontset = [
+		('Geneva', 'p', 18),
+		('Geneva', 'i', 18),
+		('Geneva', 'b', 18),
+		('Monaco', 'p', 18),
 		]
-	h3fontset = [ \
-		('Geneva', 'p', 14), \
-		('Geneva', 'i', 14), \
-		('Geneva', 'b', 14), \
-		('Monaco', 'p', 14), \
+	h3fontset = [
+		('Geneva', 'p', 14),
+		('Geneva', 'i', 14),
+		('Geneva', 'b', 14),
+		('Monaco', 'p', 14),
 		]
-	h3fontset = [ \
-		('Geneva', 'p', 12), \
-		('Geneva', 'i', 12), \
-		('Geneva', 'b', 12), \
-		('Monaco', 'p', 12), \
+	h3fontset = [
+		('Geneva', 'p', 12),
+		('Geneva', 'i', 12),
+		('Geneva', 'b', 12),
+		('Monaco', 'p', 12),
 		]
 
 
@@ -528,29 +528,29 @@ else:
 
 
 class GLStylesheet(NullStylesheet):
-	stdfontset = [ \
-		'Helvetica 10', \
-		'Helvetica-Italic 10', \
-		'Helvetica-Bold 10', \
-		'Courier 10', \
+	stdfontset = [
+		'Helvetica 10',
+		'Helvetica-Italic 10',
+		'Helvetica-Bold 10',
+		'Courier 10',
 		]
-	h1fontset = [ \
-		'Helvetica 18', \
-		'Helvetica-Italic 18', \
-		'Helvetica-Bold 18', \
-		'Courier 18', \
+	h1fontset = [
+		'Helvetica 18',
+		'Helvetica-Italic 18',
+		'Helvetica-Bold 18',
+		'Courier 18',
 		]
-	h2fontset = [ \
-		'Helvetica 14', \
-		'Helvetica-Italic 14', \
-		'Helvetica-Bold 14', \
-		'Courier 14', \
+	h2fontset = [
+		'Helvetica 14',
+		'Helvetica-Italic 14',
+		'Helvetica-Bold 14',
+		'Courier 14',
 		]
-	h3fontset = [ \
-		'Helvetica 12', \
-		'Helvetica-Italic 12', \
-		'Helvetica-Bold 12', \
-		'Courier 12', \
+	h3fontset = [
+		'Helvetica 12',
+		'Helvetica-Italic 12',
+		'Helvetica-Bold 12',
+		'Courier 12',
 		]
 
 
@@ -595,8 +595,7 @@ def testStdwin():
 			if not b:
 				b = fmt.StdwinBackEnd(window, 1)
 				f = fmt.BaseFormatter(b.d, b)
-				p = FormattingParser(f, \
-							    MacStylesheet)
+				p = FormattingParser(f, MacStylesheet)
 				p.feed(data)
 				p.close()
 				b.finish()
