@@ -101,7 +101,7 @@ LIBRARY=	../libpython$(VERSION).a
 
 # === Rules ===
 
-all:		$(OBJS) sharedmods
+all:		$(OBJS)
 
 # Targets for Jim Fulton's extension Makefiles -- are these still needed?
 asharedmodule:	$(ASHAREDMODULE)$(SO)
