@@ -323,17 +323,17 @@ class PyBuildExt(build_ext):
         # (See http://electricrain.com/greg/python/bsddb3/ for an interface to
         # BSD DB 3.x.)
 
-        # Note: If a db.h file is found by configure, bsddb will be enabled
-        # automatically via Setup.config.in.  It only needs to be enabled here
-        # if it is not automatically enabled there; check the generated
-        # Setup.config before enabling it here.
-
         db_incs = find_file('db_185.h', inc_dirs, [])
         if (db_incs is not None and
             self.compiler.find_library_file(lib_dirs, 'db') ):
             exts.append( Extension('bsddb', ['bsddbmodule.c'],
                                    include_dirs = db_incs,
                                    libraries = ['db'] ) )
+        else:
+            db_incs = find_file('db.h', inc_dirs, [])
+            if db_incs is not None:
+                exts.append( Extension('bsddb', ['bsddbmodule.c'],
+                                       include_dirs = db_incs) )
 
         # The mpz module interfaces to the GNU Multiple Precision library.
         # You need to ftp the GNU MP library.
@@ -347,7 +347,6 @@ class PyBuildExt(build_ext):
         # FTP archive sites. One URL for it is:
         # ftp://gatekeeper.dec.com/.b/usenet/comp.sources.misc/volume40/fgmp/part01.Z
 
-        # Anthony Baxter's gdbm module.  GNU dbm(3) will require -lgdbm:
         if (self.compiler.find_library_file(lib_dirs, 'gmp')):
             exts.append( Extension('mpz', ['mpzmodule.c'],
                                    libraries = ['gmp'] ) )
