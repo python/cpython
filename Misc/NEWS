@@ -339,6 +339,13 @@ Windows
 Other
 
 - Most changes to IDLE were backported, including some featurettes.
+  Open module can now handle hierarchical names for packages (such
+  as xml.dom.minidom).  On Windows, Edit SelectAll is now called
+  with Control-A rather than Alt-A.  The Edit Menu only offers
+  module options (like import module, check module, or run script)
+  in a module window.  Those options no longer appear in the shell
+  window where they did not have meaningful application and was
+  confusing new users.
 
 
 What's New in Python 2.2.1 final?
