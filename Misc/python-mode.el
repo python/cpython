@@ -43,6 +43,10 @@
 ;; coloring, highlighting), add this to your .emacs file:
 ;;
 ;;     (add-hook 'python-mode-hook 'turn-on-font-lock)
+;;
+;; But you better be sure you're version of Emacs supports
+;; font-lock-mode!  As of this writing, the latest Emacs and XEmacs
+;; 19's do.
 
 ;; Here's a brief list of recent additions/improvements:
 ;;
