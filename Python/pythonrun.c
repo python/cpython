@@ -152,7 +152,7 @@ Py_Initialize()
 
 	_PyCompareState_Key = PyString_InternFromString("cmp_state");
 
-	bimod = _PyBuiltin_Init_1();
+	bimod = _PyBuiltin_Init();
 	if (bimod == NULL)
 		Py_FatalError("Py_Initialize: can't initialize __builtin__");
 	interp->builtins = PyModule_GetDict(bimod);
@@ -170,8 +170,10 @@ Py_Initialize()
 
 	_PyImport_Init();
 
+	/* initialize builtin exceptions */
+	init_exceptions();
+
 	/* phase 2 of builtins */
-	_PyBuiltin_Init_2(interp->builtins);
 	_PyImport_FixupExtension("__builtin__", "__builtin__");
 
 	initsigs(); /* Signal handling stuff, including initintr() */
@@ -218,9 +220,6 @@ Py_Finalize()
 	/* Disable signal handling */
 	PyOS_FiniInterrupts();
 
-	/* Destroy PyExc_MemoryErrorInst */
-	_PyBuiltin_Fini_1();
-
 	/* Cleanup Unicode implementation */
 	_PyUnicode_Fini();
 
@@ -252,17 +251,18 @@ Py_Finalize()
 	}
 #endif /* Py_TRACE_REFS */
 
-	/* Delete current thread */
-	PyInterpreterState_Clear(interp);
-	PyThreadState_Swap(NULL);
-	PyInterpreterState_Delete(interp);
-
 	/* Now we decref the exception classes.  After this point nothing
 	   can raise an exception.  That's okay, because each Fini() method
 	   below has been checked to make sure no exceptions are ever
 	   raised.
 	*/
-	_PyBuiltin_Fini_2();
+	fini_exceptions();
+
+	/* Delete current thread */
+	PyInterpreterState_Clear(interp);
+	PyThreadState_Swap(NULL);
+	PyInterpreterState_Delete(interp);
+
 	PyMethod_Fini();
 	PyFrame_Fini();
 	PyCFunction_Fini();
