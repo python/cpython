@@ -15,7 +15,7 @@ Public functions:	Internaldate2tuple
 # 
 # Authentication code contributed by Donn Cave <donn@u.washington.edu> June 1998.
 
-__version__ = "2.33"
+__version__ = "2.36"
 
 import binascii, re, socket, string, time, random, sys
 
@@ -446,17 +446,17 @@ class IMAP4:
 		return self._simple_command('RENAME', oldmailbox, newmailbox)
 
 
-	def search(self, charset, criteria):
+	def search(self, charset, *criteria):
 		"""Search mailbox for matching messages.
 
-		(typ, [data]) = <instance>.search(charset, criteria)
+		(typ, [data]) = <instance>.search(charset, criterium, ...)
 
 		'data' is space separated list of matching message numbers.
 		"""
 		name = 'SEARCH'
 		if charset:
 			charset = 'CHARSET ' + charset
-		typ, dat = self._simple_command(name, charset, criteria)
+		typ, dat = apply(self._simple_command, (name, charset) + criteria)
 		return self._untagged_response(typ, dat, name)
 
 
@@ -1022,10 +1022,20 @@ if __debug__:
 
 if __name__ == '__main__':
 
-	import getpass, sys
+	import getopt, getpass, sys
 
-	host = ''
-	if sys.argv[1:]: host = sys.argv[1]
+	try:
+		optlist, args = getopt.getopt(sys.argv[1:], 'd:')
+	except getopt.error, val:
+		pass
+
+	for opt,val in optlist:
+		if opt == '-d':
+			Debug = int(val)
+
+	if not args: args = ('',)
+
+	host = args[0]
 
 	USER = getpass.getuser()
 	PASSWD = getpass.getpass("IMAP password for %s on %s" % (USER, host or "localhost"))
@@ -1039,7 +1049,7 @@ if __name__ == '__main__':
 	('append', ('/tmp/yyz 2', None, None, test_mesg)),
 	('list', ('/tmp', 'yy*')),
 	('select', ('/tmp/yyz 2',)),
-	('search', (None, '(TO zork)')),
+	('search', (None, 'SUBJECT', 'test')),
 	('partial', ('1', 'RFC822', 1, 1024)),
 	('store', ('1', 'FLAGS', '(\Deleted)')),
 	('expunge', ()),
@@ -1063,26 +1073,39 @@ if __name__ == '__main__':
 		_mesg('%s => %s %s' % (cmd, typ, dat))
 		return dat
 
-	Debug = 5
-	M = IMAP4(host)
-	_mesg('PROTOCOL_VERSION = %s' % M.PROTOCOL_VERSION)
+	try:
+		M = IMAP4(host)
+		_mesg('PROTOCOL_VERSION = %s' % M.PROTOCOL_VERSION)
 
-	for cmd,args in test_seq1:
-		run(cmd, args)
+		for cmd,args in test_seq1:
+			run(cmd, args)
 
-	for ml in run('list', ('/tmp/', 'yy%')):
-		mo = re.match(r'.*"([^"]+)"$', ml)
-		if mo: path = mo.group(1)
-		else: path = string.split(ml)[-1]
-		run('delete', (path,))
+		for ml in run('list', ('/tmp/', 'yy%')):
+			mo = re.match(r'.*"([^"]+)"$', ml)
+			if mo: path = mo.group(1)
+			else: path = string.split(ml)[-1]
+			run('delete', (path,))
 
-	for cmd,args in test_seq2:
-		dat = run(cmd, args)
+		for cmd,args in test_seq2:
+			dat = run(cmd, args)
 
-		if (cmd,args) != ('uid', ('SEARCH', 'ALL')):
-			continue
+			if (cmd,args) != ('uid', ('SEARCH', 'ALL')):
+				continue
 
-		uid = string.split(dat[-1])
-		if not uid: continue
-		run('uid', ('FETCH', '%s' % uid[-1],
-			'(FLAGS INTERNALDATE RFC822.SIZE RFC822.HEADER RFC822.TEXT)'))
+			uid = string.split(dat[-1])
+			if not uid: continue
+			run('uid', ('FETCH', '%s' % uid[-1],
+				'(FLAGS INTERNALDATE RFC822.SIZE RFC822.HEADER RFC822.TEXT)'))
+
+		print '\nAll tests OK.'
+
+	except:
+		print '\nTests failed.'
+
+		if not Debug:
+			print '''
+If you would like to see debugging output,
+try: %s -d5
+''' % sys.argv[0]
+
+		raise
