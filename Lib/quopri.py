@@ -13,7 +13,7 @@ EMPTYSTRING = ''
 
 try:
     from binascii import a2b_qp, b2a_qp
-except:
+except ImportError:
     a2b_qp = None
     b2a_qp = None
 
