@@ -65,7 +65,12 @@ block (even in unreachable code), and is not mentioned in a
 name throughout that code block.  When it is not assigned to anywhere
 in the block, or when it is assigned to but also explicitly listed in
 a \keyword{global} statement, it refers to a global name if one exists,
-else to a built-in name (and this binding may dynamically change).
+else to a built-in name (and this binding may dynamically
+change).\footnote{The Python interpreter provides a useful set of
+  predefined built-in functions.  It is not recommended to reuse
+  (hide) these names with self defined objects.  See the
+  \citetitle[../lib/built-in-funcs.html]{Python Library Reference} for
+  the descriptions of built-in functions and methods.}
 \indexii{name}{binding}
 \index{code block}
 \stindex{global}
@@ -757,13 +762,16 @@ execution of a program.
 \end{itemize}
 
 The operators \keyword{in} and \keyword{not in} test for set
-membership: every type can define membership in whatever way is
-appropriate.  Traditionally, this interface has been tightly bound to
-the sequence interface, which is related in that presence in a sequence
-can be usefully interpreted as membership in a set.
+membership.  \code{\var{x} in \var{s}} evaluates to true if \var{x}
+is a member of the set \var{s}, and false otherwise.  \code{\var{x}
+not in \var{s}} returns the negation of \code{\var{x} in \var{s}}.
+The set membership test has traditionally been bound to sequences; an
+object is a member of a set if the set is a sequence and contains an
+element equal to that object.  However, it is possible for an object
+to support membership tests without being a sequence.
 
 For the list and tuple types, \code{\var{x} in \var{y}} is true if and
-only if there exists such an index \var{i} such that
+only if there exists an index \var{i} such that
 \code{\var{x} == \var{y}[\var{i}]} is true.
 
 For the Unicode and string types, \code{\var{x} in \var{y}} is true if
