@@ -42,7 +42,7 @@ def get(using=None):
 def open(url, new=0, autoraise=1):
     get().open(url, new, autoraise)
 
-def open_new(url):      # Marked deprecated.  May be removed in 2.1.
+def open_new(url):
     get().open(url, 1)
 
 
@@ -76,12 +76,152 @@ def _synthesize(browser):
         return [None, controller]
     ret
 
-#
-# Everything after this point initializes _browsers and _tryorder,
-# then disappears.  Some class definitions and instances remain
-# live through these globals, but only the minimum set needed to
-# support the user's platform.
-#
+
+def _iscommand(cmd):
+    """Return true if cmd can be found on the executable search path."""
+    path = os.environ.get("PATH")
+    if not path:
+        return 0
+    for d in path.split(os.pathsep):
+        exe = os.path.join(d, cmd)
+        if os.path.isfile(exe):
+            return 1
+    return 0
+
+
+PROCESS_CREATION_DELAY = 4
+
+
+class GenericBrowser:
+    def __init__(self, cmd):
+        self.name, self.args = cmd.split(None, 1)
+        self.basename = os.path.basename(self.name)
+
+    def open(self, url, new=0, autoraise=1):
+        command = "%s %s" % (self.name, self.args)
+        os.system(command % url)
+
+    def open_new(self, url):
+        self.open(url)
+
+
+class Netscape:
+    "Launcher class for Netscape browsers."
+    def __init__(self, name):
+        self.name = name
+        self.basename = os.path.basename(name)
+
+    def _remote(self, action, autoraise):
+        raise_opt = ("-noraise", "-raise")[autoraise]
+        cmd = "%s %s -remote '%s' >/dev/null 2>&1" % (self.name,
+                                                      raise_opt,
+                                                      action)
+        rc = os.system(cmd)
+        if rc:
+            import time
+            os.system("%s &" % self.name)
+            time.sleep(PROCESS_CREATION_DELAY)
+            rc = os.system(cmd)
+        return not rc
+
+    def open(self, url, new=0, autoraise=1):
+        if new:
+            self._remote("openURL(%s, new-window)"%url, autoraise)
+        else:
+            self._remote("openURL(%s)" % url, autoraise)
+
+    def open_new(self, url):
+        self.open(url, 1)
+
+
+class Konqueror:
+    """Controller for the KDE File Manager (kfm, or Konqueror).
+
+    See http://developer.kde.org/documentation/other/kfmclient.html
+    for more information on the Konqueror remote-control interface.
+
+    """
+    def __init__(self):
+        if _iscommand("konqueror"):
+            self.name = self.basename = "konqueror"
+        else:
+            self.name = self.basename = "kfm"
+
+    def _remote(self, action):
+        cmd = "kfmclient %s >/dev/null 2>&1" % action
+        rc = os.system(cmd)
+        if rc:
+            import time
+            if self.basename == "konqueror":
+                os.system(self.name + " --silent &")
+            else:
+                os.system(self.name + " -d &")
+            time.sleep(PROCESS_CREATION_DELAY)
+            rc = os.system(cmd)
+        return not rc
+
+    def open(self, url, new=1, autoraise=1):
+        # XXX Currently I know no way to prevent KFM from
+        # opening a new win.
+        self._remote("openURL %s" % url)
+
+    open_new = open
+
+
+class Grail:
+    # There should be a way to maintain a connection to Grail, but the
+    # Grail remote control protocol doesn't really allow that at this
+    # point.  It probably neverwill!
+    def _find_grail_rc(self):
+        import glob
+        import pwd
+        import socket
+        import tempfile
+        tempdir = os.path.join(tempfile.gettempdir(),
+                               ".grail-unix")
+        user = pwd.getpwuid(_os.getuid())[0]
+        filename = os.path.join(tempdir, user + "-*")
+        maybes = glob.glob(filename)
+        if not maybes:
+            return None
+        s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        for fn in maybes:
+            # need to PING each one until we find one that's live
+            try:
+                s.connect(fn)
+            except socket.error:
+                # no good; attempt to clean it out, but don't fail:
+                try:
+                    os.unlink(fn)
+                except IOError:
+                    pass
+            else:
+                return s
+
+    def _remote(self, action):
+        s = self._find_grail_rc()
+        if not s:
+            return 0
+        s.send(action)
+        s.close()
+        return 1
+
+    def open(self, url, new=0, autoraise=1):
+        if new:
+            self._remote("LOADNEW " + url)
+        else:
+            self._remote("LOAD " + url)
+
+    def open_new(self, url):
+        self.open(url, 1)
+
+
+class WindowsDefault:
+    def open(self, url, new=0, autoraise=1):
+        os.startfile(url)
+
+    def open_new(self, url):
+        self.open(url)
 
 #
 # Platform support for Unix
@@ -92,31 +232,7 @@ def _synthesize(browser):
 # the TERM and DISPLAY cases, because we might be running Python from inside
 # an xterm.
 if os.environ.get("TERM") or os.environ.get("DISPLAY"):
-    PROCESS_CREATION_DELAY = 4
     _tryorder = ("mozilla","netscape","kfm","grail","links","lynx","w3m")
-
-    def _iscommand(cmd):
-        """Return true if cmd can be found on the executable search path."""
-        path = os.environ.get("PATH")
-        if not path:
-            return 0
-        for d in path.split(os.pathsep):
-            exe = os.path.join(d, cmd)
-            if os.path.isfile(exe):
-                return 1
-        return 0
-
-    class GenericBrowser:
-        def __init__(self, cmd):
-            self.name, self.args = cmd.split(None, 1)
-            self.basename = os.path.basename(self.name)
-
-        def open(self, url, new=0, autoraise=1):
-            command = "%s %s" % (self.name, self.args)
-            os.system(command % url)
-
-        def open_new(self, url):        # Deprecated.  May be removed in 2.1.
-            self.open(url)
 
     # Easy cases first -- register console browsers if we have them.
     if os.environ.get("TERM"):
@@ -134,35 +250,6 @@ if os.environ.get("TERM") or os.environ.get("DISPLAY"):
     if os.environ.get("DISPLAY"):
         # First, the Netscape series
         if _iscommand("netscape") or _iscommand("mozilla"):
-            class Netscape:
-                "Launcher class for Netscape browsers."
-                def __init__(self, name):
-                    self.name = name
-                    self.basename = os.path.basename(name)
-
-                def _remote(self, action, autoraise):
-                    raise_opt = ("-noraise", "-raise")[autoraise]
-                    cmd = "%s %s -remote '%s' >/dev/null 2>&1" % (self.name,
-                                                                  raise_opt,
-                                                                  action)
-                    rc = os.system(cmd)
-                    if rc:
-                        import time
-                        os.system("%s &" % self.name)
-                        time.sleep(PROCESS_CREATION_DELAY)
-                        rc = os.system(cmd)
-                    return not rc
-
-                def open(self, url, new=0, autoraise=1):
-                    if new:
-                        self._remote("openURL(%s, new-window)"%url, autoraise)
-                    else:
-                        self._remote("openURL(%s)" % url, autoraise)
-
-                # Deprecated.  May be removed in 2.1.
-                def open_new(self, url):
-                    self.open(url, 1)
-
             if _iscommand("mozilla"):
                 register("mozilla", None, Netscape("mozilla"))
             if _iscommand("netscape"):
@@ -174,93 +261,20 @@ if os.environ.get("TERM") or os.environ.get("DISPLAY"):
 
         # Konqueror/kfm, the KDE browser.
         if _iscommand("kfm") or _iscommand("konqueror"):
-            class Konqueror:
-                """Controller for the KDE File Manager (kfm, or Konqueror).
-
-                See http://developer.kde.org/documentation/other/kfmclient.html
-                for more information on the Konqueror remote-control interface.
-
-                """
-                def __init__(self):
-                    if _iscommand("konqueror"):
-                        self.name = self.basename = "konqueror"
-                    else:
-                        self.name = self.basename = "kfm"
-
-                def _remote(self, action):
-                    cmd = "kfmclient %s >/dev/null 2>&1" % action
-                    rc = os.system(cmd)
-                    if rc:
-                        import time
-                        if self.basename == "konqueror":
-                            os.system(self.name + " --silent &")
-                        else:
-                            os.system(self.name + " -d &")
-                        time.sleep(PROCESS_CREATION_DELAY)
-                        rc = os.system(cmd)
-                    return not rc
-
-                def open(self, url, new=1, autoraise=1):
-                    # XXX Currently I know no way to prevent KFM from
-                    # opening a new win.
-                    self._remote("openURL %s" % url)
-
-                # Deprecated.  May be removed in 2.1.
-                open_new = open
-
             register("kfm", Konqueror, Konqueror())
 
         # Grail, the Python browser.
         if _iscommand("grail"):
-            class Grail:
-                # There should be a way to maintain a connection to
-                # Grail, but the Grail remote control protocol doesn't
-                # really allow that at this point.  It probably neverwill!
-                def _find_grail_rc(self):
-                    import glob
-                    import pwd
-                    import socket
-                    import tempfile
-                    tempdir = os.path.join(tempfile.gettempdir(),
-                                           ".grail-unix")
-                    user = pwd.getpwuid(_os.getuid())[0]
-                    filename = os.path.join(tempdir, user + "-*")
-                    maybes = glob.glob(filename)
-                    if not maybes:
-                        return None
-                    s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-                    for fn in maybes:
-                        # need to PING each one until we find one that's live
-                        try:
-                            s.connect(fn)
-                        except socket.error:
-                            # no good; attempt to clean it out, but don't fail:
-                            try:
-                                os.unlink(fn)
-                            except IOError:
-                                pass
-                        else:
-                            return s
-
-                def _remote(self, action):
-                    s = self._find_grail_rc()
-                    if not s:
-                        return 0
-                    s.send(action)
-                    s.close()
-                    return 1
-
-                def open(self, url, new=0, autoraise=1):
-                    if new:
-                        self._remote("LOADNEW " + url)
-                    else:
-                        self._remote("LOAD " + url)
-
-                # Deprecated.  May be removed in 2.1.
-                def open_new(self, url):
-                    self.open(url, 1)
-
             register("grail", Grail, None)
+
+
+class InternetConfig:
+    def open(self, url, new=0, autoraise=1):
+        ic.launchurl(url)
+
+    def open_new(self, url):
+        self.open(url)
+
 
 #
 # Platform support for Windows
@@ -268,14 +282,6 @@ if os.environ.get("TERM") or os.environ.get("DISPLAY"):
 
 if sys.platform[:3] == "win":
     _tryorder = ("netscape", "windows-default")
-
-    class WindowsDefault:
-        def open(self, url, new=0, autoraise=1):
-            os.startfile(url)
-
-        def open_new(self, url):        # Deprecated.  May be removed in 2.1.
-            self.open(url)
-
     register("windows-default", WindowsDefault)
 
 #
@@ -287,13 +293,6 @@ try:
 except ImportError:
     pass
 else:
-    class InternetConfig:
-        def open(self, url, new=0, autoraise=1):
-            ic.launchurl(url)
-
-        def open_new(self, url):        # Deprecated.  May be removed in 2.1.
-            self.open(url)
-
     # internet-config is the only supported controller on MacOS,
     # so don't mess with the default!
     _tryorder = ("internet-config")
@@ -315,5 +314,3 @@ for cmd in _tryorder:
 _tryorder = filter(lambda x: _browsers.has_key(x.lower())
                    or x.find("%s") > -1, _tryorder)
 # what to do if _tryorder is now empty?
-
-# end
