@@ -652,6 +652,31 @@ mfs_StandardGetFile(self, args)
 }
 
 static object *
+mfs_PromptGetFile(self, args)
+	object *self;	/* Not used */
+	object *args;
+{
+	SFTypeList list;
+	short numtypes;
+	StandardFileReply reply;
+	char *prompt = NULL;
+	
+	list[0] = list[1] = list[2] = list[3] = 0;
+	numtypes = 0;
+	if (!newgetargs(args, "s|O&O&O&O&", &prompt, PyMac_GetOSType, &list[0],
+			 PyMac_GetOSType, &list[1], PyMac_GetOSType, &list[2],
+			  PyMac_GetOSType, &list[3]) )
+		return NULL;
+	while ( numtypes < 4 && list[numtypes] ) {
+		numtypes++;
+	}
+	if ( numtypes == 0 )
+		numtypes = -1;
+	PyMac_PromptGetFile(numtypes, list, &reply, prompt);
+	return mkvalue("(Oi)", newmfssobject(&reply.sfFile), reply.sfGood);
+}
+
+static object *
 mfs_StandardPutFile(self, args)
 	object *self;	/* Not used */
 	object *args;
@@ -724,11 +749,12 @@ mfs_GetDirectory(self, args)
 {
 	FSSpec fsdir;
 	int ok;
+	char *prompt = NULL;
 		
-	if (!newgetargs(args, "") )
+	if (!newgetargs(args, "|s", &prompt) )
 		return NULL;
 		
-	ok = PyMac_GetDirectory(&fsdir);
+	ok = PyMac_GetDirectory(&fsdir, prompt);
 	return mkvalue("(Oi)", newmfssobject(&fsdir), ok);
 }
 
@@ -767,6 +793,7 @@ mfs_FInfo(self, args)
 static struct methodlist mfs_methods[] = {
 	{"ResolveAliasFile",	mfs_ResolveAliasFile,	1},
 	{"StandardGetFile",		mfs_StandardGetFile,	1},
+	{"PromptGetFile",		mfs_PromptGetFile,		1},
 	{"StandardPutFile",		mfs_StandardPutFile,	1},
 	{"GetDirectory",		mfs_GetDirectory,		1},
 	{"FSSpec",				mfs_FSSpec,				1},
