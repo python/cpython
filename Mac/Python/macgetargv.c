@@ -87,27 +87,6 @@ PyMac_init_process_location()
 	return 0;
 }
 
-/* Given an FSSpec, return the FSSpec of the parent folder */
-
-static OSErr
-get_folder_parent (FSSpec * fss, FSSpec * parent)
-{
-	CInfoPBRec rec;
-	short err;
-
-        * parent = * fss;
-        rec.hFileInfo.ioNamePtr = parent->name;
-        rec.hFileInfo.ioVRefNum = parent->vRefNum;
-        rec.hFileInfo.ioDirID = parent->parID;
-		rec.hFileInfo.ioFDirIndex = -1;
-        rec.hFileInfo.ioFVersNum = 0;
-        if (err = PBGetCatInfoSync (& rec))
-        	return err;
-        parent->parID = rec.dirInfo.ioDrParID;
-/*	parent->name[0] = 0; */
-        return 0;
-}
-
 /* Check that there aren't any args remaining in the event */
 
 static OSErr 
