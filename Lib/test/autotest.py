@@ -89,12 +89,13 @@ def usage(status):
 def do_one_test(t, outdir):
 	filename = os.path.join(outdir, t)
 	real_stdout = sys.stdout
+	if generate:
+		print 'Generating:', filename
+		fake_stdout = open(filename, 'w')
+	else:
+		fake_stdout = Compare(filename)
 	try:
-		if generate:
-			print 'Generating:', filename
-			sys.stdout = open(filename, 'w')
-		else:
-			sys.stdout = Compare(filename)
+		sys.stdout = fake_stdout
 		print t
 		unload(t)
 		try:
@@ -104,8 +105,8 @@ def do_one_test(t, outdir):
 				sys.stderr.write(msg+': Un-installed'
 						 ' optional module?\n')
 	finally:
-		sys.stdout.close()
 		sys.stdout = real_stdout
+		fake_stdout.close()
 
 
 
