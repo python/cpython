@@ -3,7 +3,7 @@
 % $Id$
 
 \title{What's New in Python 2.2}
-\release{1.00}
+\release{1.01}
 \author{A.M. Kuchling}
 \authoraddress{\email{akuchlin@mems-exchange.org}}
 \begin{document}
@@ -11,8 +11,9 @@
 
 \section{Introduction}
 
-This article explains the new features in Python 2.2, released on
-December 21, 2001.
+This article explains the new features in Python 2.2.1, released on
+April 10, 2002.  Python 2.2.1 is a bugfix release of Python 2.2,
+originally released on December 21, 2001.
 
 Python 2.2 can be thought of as the "cleanup release".  There are some
 features such as generators and iterators that are completely new, but
@@ -1063,7 +1064,7 @@ Jeremy Hylton.}
 \begin{itemize}
 
   \item The \module{xmlrpclib} module was contributed to the standard
-  library by Fredrik Lundh, provding support for writing XML-RPC
+  library by Fredrik Lundh, providing support for writing XML-RPC
   clients.  XML-RPC is a simple remote procedure call protocol built on
   top of HTTP and XML. For example, the following snippet retrieves a
   list of RSS channels from the O'Reilly Network, and then 
@@ -1113,7 +1114,7 @@ more information about XML-RPC.
    The original patch for this feature was contributed by Nick Mathewson.
 
   \item The Python profiler has been extensively reworked and various
-  errors in its output have been corrected.  (Contributed by Fred
+  errors in its output have been corrected.  (Contributed by
   Fred~L. Drake, Jr. and Tim Peters.)
  
   \item The \module{socket} module can be compiled to support IPv6;
@@ -1276,9 +1277,11 @@ affect you very much.
 
 As usual there were a bunch of other improvements and bugfixes
 scattered throughout the source tree.  A search through the CVS change
-logs finds there were 527 patches applied, and 683 bugs fixed; both
-figures are likely to be underestimates.  Some of the more notable
-changes are:
+logs finds there were 527 patches applied and 683 bugs fixed between
+Python 2.1 and 2.2; 2.2.1 applied 139 patches and fixed 143 bugs.
+Both figures are likely to be underestimates.  
+
+Some of the more notable changes are:
 
 \begin{itemize}
 
