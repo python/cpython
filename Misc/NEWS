@@ -3,6 +3,23 @@ What's New in Python 2.2a3?
 
 Core
 
+- The builtin dir() now returns more information, and sometimes much
+  more, generally naming all attributes of an object, and all attributes
+  reachable from the object via its class, and from its class's base
+  classes, and so on from them too.  Example:  in 2.2a2, dir([]) returned
+  an empty list.  In 2.2a3,
+
+  >>> dir([])
+  ['__add__', '__class__', '__contains__', '__delattr__', '__delitem__',
+   '__eq__', '__ge__', '__getattr__', '__getitem__', '__getslice__',
+   '__gt__', '__hash__', '__iadd__', '__imul__', '__init__', '__le__',
+   '__len__', '__lt__', '__mul__', '__ne__', '__new__', '__repr__',
+   '__rmul__', '__setattr__', '__setitem__', '__setslice__', '__str__',
+   'append', 'count', 'extend', 'index', 'insert', 'pop', 'remove',
+   'reverse', 'sort']
+
+  dir(module) continues to return only the module's attributes, though.
+
 - Overflowing operations on plain ints now return a long int rather
   than raising OverflowError.  This is a partial implementation of PEP
   237.  You can use -Wdefault::OverflowWarning to enable a warning for

@@ -97,14 +97,15 @@ just like classic classes:
     >>> a.default = -1000
     >>> print a["noway"]
     -1000
-    >>> print dir(a)
-    ['default']
+    >>> 'default' in dir(a)
+    1
     >>> a.x1 = 100
     >>> a.x2 = 200
     >>> print a.x1
     100
-    >>> print dir(a)
-    ['default', 'x1', 'x2']
+    >>> d = dir(a)
+    >>> 'default' in d and 'x1' in d and 'x2' in d
+    1
     >>> print a.__dict__
     {'default': -1000, 'x2': 200, 'x1': 100}
     >>>
