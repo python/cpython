@@ -700,6 +700,7 @@ reop__expand(self, args)
 		PyObject *r, *tuple, *result;
 		r=PyObject_GetAttrString(match_obj, "group");
 		tuple=PyTuple_New(1);
+		Py_INCREF(value);
 		PyTuple_SetItem(tuple, 0, value);
 		result=PyEval_CallObject(r, tuple);
 		Py_DECREF(r); Py_DECREF(tuple);
