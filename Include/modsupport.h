@@ -52,13 +52,20 @@ extern PyObject *Py_BuildValue();
 extern int PyArg_VaParse Py_PROTO((PyObject *, char *, va_list));
 extern PyObject *Py_VaBuildValue Py_PROTO((char *, va_list));
 
-#define PYTHON_API_VERSION 1003
+#define PYTHON_API_VERSION 1005
 /* The API version is maintained (independently from the Python version)
    so we can detect mismatches between the interpreter and dynamically
-   loaded modules.
+   loaded modules.  These are diagnosticised by an error message but
+   the module is still loaded (because the mismatch can only be tested
+   after loading the module).  The error message is intended to
+   explain the core dump a few seconds later.
 
    Please add a line or two to the top of this log for each API
    version change:
+
+   30-Jul-1996	GvR	Slice and ellipses syntax added
+
+   23-Jul-1996	GvR	For 1.4 -- better safe than sorry this time :-)
 
    7-Nov-1995	GvR	Keyword arguments (should've been done at 1.3 :-( )
 
