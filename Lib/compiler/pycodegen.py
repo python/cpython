@@ -707,27 +707,25 @@ class CodeGenerator:
     def visitAssert(self, node):
         # XXX would be interesting to implement this via a
         # transformation of the AST before this stage
-        end = self.newBlock()
-        self.set_lineno(node)
-        # XXX __debug__ and AssertionError appear to be special cases
-        # -- they are always loaded as globals even if there are local
-        # names.  I guess this is a sort of renaming op.
-        self.emit('LOAD_GLOBAL', '__debug__')
-        self.emit('JUMP_IF_FALSE', end)
-        self.nextBlock()
-        self.emit('POP_TOP')
-        self.visit(node.test)
-        self.emit('JUMP_IF_TRUE', end)
-        self.nextBlock()
-        self.emit('POP_TOP')
-        self.emit('LOAD_GLOBAL', 'AssertionError')
-        if node.fail:
-            self.visit(node.fail)
-            self.emit('RAISE_VARARGS', 2)
-        else:
-            self.emit('RAISE_VARARGS', 1)
-        self.nextBlock(end)
-        self.emit('POP_TOP')
+        if __debug__:
+            end = self.newBlock()
+            self.set_lineno(node)
+            # XXX AssertionError appears to be special case -- it is always
+            # loaded as a global even if there is a local name.  I guess this
+            # is a sort of renaming op.
+            self.nextBlock()
+            self.visit(node.test)
+            self.emit('JUMP_IF_TRUE', end)
+            self.nextBlock()
+            self.emit('POP_TOP')
+            self.emit('LOAD_GLOBAL', 'AssertionError')
+            if node.fail:
+                self.visit(node.fail)
+                self.emit('RAISE_VARARGS', 2)
+            else:
+                self.emit('RAISE_VARARGS', 1)
+            self.nextBlock(end)
+            self.emit('POP_TOP')
 
     def visitRaise(self, node):
         self.set_lineno(node)
