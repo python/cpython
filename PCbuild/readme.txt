@@ -71,10 +71,53 @@ directory; for example, if your PCbuild is  .......\dist\src\PCbuild\,
 unpack into new subdirectories of dist\.
 
 _tkinter
-    Python wrapper for the Tk windowing system.  Requires tcl832.exe from
-        http://dev.scriptics.com/software/tcltk/downloadnow83.html
-    Run the installer, forcing installation into dist\Tcl.
-    Be sure to install everything, including the Tcl/Tk header files.
+    Python wrapper for the Tk windowing system.  Requires building
+    Tcl/Tk first.  Following are instructions for Tcl/Tk 8.4.1:
+
+    Get source
+    ----------
+    Go to
+        http://prdownloads.sourceforge.net/tcl/
+    and download
+        tcl841-src.zip
+        tk841-src.zip
+    Unzip into
+        dist\tcl8.4.1\
+        dist\tk\8.4.1\
+    respectively.
+
+    Build Tcl first (done here w/ MSVC 6 on Win2K)
+    ----------------------------------------------
+    cd dist\tcl8.4.1\win
+    run vcvars32.bat [necessary even on Win2K]
+    nmake -f makefile.vc
+    nmake -f makefile.vc INSTALLDIR=..\..\tcl84 install
+
+    XXX Should we compile with OPTS=threads?
+
+    XXX Some tests failed in "nmake -f makefile.vc test".
+
+    XXX Should rename destination directory to something more generic
+    XXX then tcl84.  But unless I can backport 8.3.4 to the 2.2 line
+    XXX too, I've got to be able to build using more than oneX Tcl/Tk
+    XXX release, and that effectively reserves the "tcl" directory name
+    XXX for the duration.  Nothing that requires thought is going to
+    XXX work when it comes to release crunch times.
+
+
+    Build Tk
+    -------
+    cd dist\tk8.4.1\win
+    nmake -f makefile.vc TCLDIR=..\..\tcl8.4.1
+    nmake -f makefile.vc TCLDIR=..\..\tcl8.4.1 INSTALLDIR=..\..\tcl84 install
+
+    XXX Should we compile with OPTS=threads?
+
+    XXX Some tests failed in "nmake -f makefile.vc test".
+
+    XXX Our installer copies a lot of stuff out of the Tcl/Tk install
+    XXX directory.  Is all of that really needed for Python use of Tcl/Tk?
+
 
 zlib
     Python wrapper for the zlib compression library.  Get the source code
@@ -92,13 +135,15 @@ bz2
     Python wrapper for the libbz2 compression library.  Homepage
         http://sources.redhat.com/bzip2/
     Download the source tarball, bzip2-1.0.2.tar.gz.
-    Unpack into dist\bzip2-1.0.2.  WARNING:  If you using WinZip, you
+    Unpack into dist\bzip2-1.0.2.  WARNING:  If you're using WinZip, you
     must disable its "TAR file smart CR/LF conversion" feature (under
     Options -> Configuration -> Miscellaneous -> Other) for the duration.
+
     Don't bother trying to use libbz2.dsp with MSVC.  After 10 minutes
     of fiddling, I couldn't get it to work.  Perhaps it works with
     MSVC 5 (I used MSVC 6).  It's better to run the by-hand makefile
-    anyway, because it runs a  helpful test step at the end.
+    anyway, because it runs a helpful test step at the end.
+
     cd into dist\bzip2-1.0.2, and run
         nmake -f makefile.msc
     [Note that if you're running Win9X, you'll need to run vcvars32.bat
@@ -106,11 +151,12 @@ bz2
      TODO:  make this work like zlib (in particular, MSVC runs the prelink
      step in an enviroment that already has the correct envars set up).
     ]
-    The make step should yield any warnings or errors, and should end
+    The make step shouldn't yield any warnings or errors, and should end
     by displaying 6 blocks each terminated with
         FC: no differences encountered
     If FC finds differences, see the warning abou WinZip above (when I
     first tried it, sample3.ref failed due to CRLF conversion).
+
     All of this managed to build bzip2-1.0.2\libbz2.lib, which the Python
     project links in.
 

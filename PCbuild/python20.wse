@@ -31,8 +31,8 @@ item: Global
   Variable Default1=C:\PROGRAM FILES\WISE INSTALLMASTER 8.1
   Variable Flags1=00001000
   Variable Name2=_TCLMINOR_
-  Variable Description2=Tcl/Tk Minor Version (e.g. the "3" in "8.3.1")
-  Variable Default2=3
+  Variable Description2=Tcl/Tk Minor Version (e.g. the "4" in "8.4.1")
+  Variable Default2=4
   Variable Flags2=00001000
   Variable Name3=_DOC_
   Variable Description3=The unpacked HTML doc directory.
@@ -2048,19 +2048,19 @@ item: Remark
   Text=Tcl/Tk
 end
 item: Install File
-  Source=..\..\tcl\bin\tcl8%_tclminor_%.dll
+  Source=..\..\tcl84\bin\tcl8%_tclminor_%.dll
   Destination=%MAINDIR%\DLLs\tcl8%_TCLMINOR_%.dll
   Description=Tcl/Tk binaries and libraries
   Flags=0000000000000010
 end
 item: Install File
-  Source=..\..\tcl\bin\tk8%_tclminor_%.dll
+  Source=..\..\tcl84\bin\tk8%_tclminor_%.dll
   Destination=%MAINDIR%\DLLs\tk8%_TCLMINOR_%.dll
   Description=Tcl/Tk binaries and libraries
   Flags=0000000000000010
 end
 item: Install File
-  Source=..\..\tcl\lib\*.*
+  Source=..\..\tcl84\lib\*.*
   Destination=%MAINDIR%\tcl
   Description=Tcl/Tk binaries and libraries
   Flags=0000000100000010
