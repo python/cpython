@@ -9,6 +9,15 @@ To use the debugger in its simplest form:
 The debugger's prompt is '(Pdb) '.  This will stop in the first
 function call in <a statement>.
 
+Alternatively, if a statement terminated with an unhandled exception,
+you can use pdb's post-mortem facility to inspect the contents of the
+traceback:
+
+	>>> <a statement>
+	<exception traceback>
+	>>> import pdb
+	>>> pdb.pm()
+
 The commands recognized by the debugger are listed in the next
 section.  Most can be abbreviated as indicated; e.g., h(elp) means
 that 'help' can be typed as 'h' or 'help' (but not as 'he' or 'hel',

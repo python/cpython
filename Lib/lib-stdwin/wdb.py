@@ -2,8 +2,6 @@
 
 # XXX To do:
 # - don't fall out of bottom frame
-# - is the /tmp file hack really needed?
-# - also use it for post-mortem debugging
 
 
 import stdwin
@@ -273,6 +271,8 @@ class Wdb(bdb.Bdb, basewin.BaseWindow): # Window debugger
 			d.close()
 
 
+# Simplified interface
+
 def run(statement):
 	x = Wdb().init()
 	try: x.run(statement)
@@ -287,6 +287,21 @@ def runcall(*args):
 	x = Wdb().init()
 	try: apply(Pdb().init().runcall, args)
 	finally: x.close()
+
+
+# Post-Mortem interface
+
+def post_mortem(traceback):
+	p = Pdb().init()
+	p.reset()
+	p.interaction(None, traceback)
+
+def pm():
+	import sys
+	post_mortem(sys.last_traceback)
+
+
+# Main program for testing
 
 TESTCMD = 'import x; x.main()'
 
