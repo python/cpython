@@ -895,9 +895,9 @@ else {
                                               int *buffer_len}
   Returns a pointer to a read-only memory location useable as character-
   based input.  The \var{obj} argument must support the single-segment
-  character buffer interface.  On success, returns \code{1}, sets
+  character buffer interface.  On success, returns \code{0}, sets
   \var{buffer} to the memory location and \var{buffer_len} to the buffer
-  length.  Returns \code{0} and sets a \exception{TypeError} on error.
+  length.  Returns \code{-1} and sets a \exception{TypeError} on error.
   \versionadded{1.6}
 \end{cfuncdesc}
 
@@ -907,8 +907,8 @@ else {
   Returns a pointer to a read-only memory location containing
   arbitrary data.  The \var{obj} argument must support the
   single-segment readable buffer interface.  On success, returns
-  \code{1}, sets \var{buffer} to the memory location and \var{buffer_len}
-  to the buffer length.  Returns \code{0} and sets a
+  \code{0}, sets \var{buffer} to the memory location and \var{buffer_len}
+  to the buffer length.  Returns \code{-1} and sets a
   \exception{TypeError} on error.
   \versionadded{1.6}
 \end{cfuncdesc}
@@ -924,8 +924,8 @@ else {
                                                int *buffer_len}
   Returns a pointer to a writeable memory location.  The \var{obj}
   argument must support the single-segment, character buffer
-  interface.  On success, returns \code{1}, sets \var{buffer} to the
+  interface.  On success, returns \code{0}, sets \var{buffer} to the
   memory location and \var{buffer_len} to the buffer length.  Returns
-  \code{0} and sets a \exception{TypeError} on error.
+  \code{-1} and sets a \exception{TypeError} on error.
   \versionadded{1.6}
 \end{cfuncdesc}
