@@ -500,15 +500,19 @@ static char splash_doc[] = "Open a splash-screen dialog by resource-id (0=close)
 static PyObject *
 MacOS_splash(PyObject *self, PyObject *args)
 {
-	int resid;
+	int resid = -1;
 	static DialogPtr curdialog;
 	
-	if (!PyArg_ParseTuple(args, "i", &resid))
+	if (!PyArg_ParseTuple(args, "|i", &resid))
 		return NULL;
 	if (curdialog)
 		DisposeDialog(curdialog);
 		
-	curdialog = GetNewDialog(resid, NULL, (WindowPtr)-1);
+	if ( resid != -1 ) {
+		curdialog = GetNewDialog(resid, NULL, (WindowPtr)-1);
+		if ( curdialog )
+			DrawDialog(curdialog);
+	}
 	Py_INCREF(Py_None);
 	return Py_None;
 }
