@@ -1785,7 +1785,7 @@ k_lopsided_mul(PyLongObject *a, PyLongObject *b)
 	memset(ret->ob_digit, 0, ret->ob_size * sizeof(digit));
 
 	/* Successive slices of b are copied into bslice. */
-	bslice = _PyLong_New(bsize);
+	bslice = _PyLong_New(asize);
 	if (bslice == NULL)
 		goto fail;
 
