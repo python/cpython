@@ -78,6 +78,7 @@ import string
 import mimetools
 import multifile
 import shutil
+from bisect import bisect
 
 
 # Exported constants
@@ -332,49 +333,131 @@ class Folder:
 
 	# Return the current message.  Raise KeyError when there is none
 	def getcurrent(self):
-		return min(self.getsequences()['cur'])
+		seqs = self.getsequences()
+		try:
+			return max(seqs['cur'])
+		except (ValueError, KeyError):
+			raise Error, "no cur message"
 
 	# Set the current message
 	def setcurrent(self, n):
 		updateline(self.getsequencesfilename(), 'cur', str(n), 0)
 
 	# Parse an MH sequence specification into a message list.
+	# Attempt to mimic mh-sequence(5) as close as possible.
+	# Also attempt to mimic observed behavior regarding which
+	# conditions cause which error messages
 	def parsesequence(self, seq):
-	    if seq == "all":
-		return self.listmessages()
-	    try:
-		n = string.atoi(seq, 10)
-	    except string.atoi_error:
-		n = 0
-	    if n > 0:
-		return [n]
-	    if regex.match("^last:", seq) >= 0:
+		# XXX Still not complete (see mh-format(5)).
+		# Missing are:
+		# - 'prev', 'next' as count
+		# - Sequence-Negation option
+		all = self.listmessages()
+		# Observed behavior: test for empty folder is done first
+		if not all:
+			raise Error, "no messages in %s" % self.name
+		# Common case first: all is frequently the default
+		if seq == 'all':
+			return all
+		# Test for X:Y before X-Y because 'seq:-n' matches both
+		i = string.find(seq, ':')
+		if i >= 0:
+			head, dir, tail = seq[:i], '', seq[i+1:]
+			if tail[:1] in '-+':
+				dir, tail = tail[:1], tail[1:]
+			if not isnumeric(tail):
+				raise Error, "bad message list %s" % seq
+			try:
+				count = string.atoi(tail)
+			except (ValueError, OverflowError):
+				# Can't use sys.maxint because of i+count below
+				count = len(all)
+			try:
+				anchor = self._parseindex(head, all)
+			except Error, msg:
+				seqs = self.getsequences()
+				if not seqs.has_key(head):
+					if not msg:
+					    msg = "bad message list %s" % seq
+					raise Error, msg, sys.exc_traceback
+				msgs = seqs[head]
+				if not msgs:
+					raise Error, "sequence %s empty" % head
+				if dir == '-':
+					return msgs[-count:]
+				else:
+					return msgs[:count]
+			else:
+				if not dir:
+					if head in ('prev', 'last'):
+						dir = '-'
+				if dir == '-':
+					i = bisect(all, anchor)
+					return all[max(0, i-count):i]
+				else:
+					i = bisect(all, anchor-1)
+					return all[i:i+count]
+		# Test for X-Y next
+		i = string.find(seq, '-')
+		if i >= 0:
+			begin = self._parseindex(seq[:i], all)
+			end = self._parseindex(seq[i+1:], all)
+			i = bisect(all, begin-1)
+			j = bisect(all, end)
+			r = all[i:j]
+			if not r:
+				raise Error, "bad message list %s" % seq
+			return r
+		# Neither X:Y nor X-Y; must be a number or a (pseudo-)sequence
 		try:
-		    n = string.atoi(seq[5:])
-		except string.atoi_error:
-		    n = 0
-		if n > 0:
-		    return self.listmessages()[-n:]
-	    if regex.match("^first:", seq) >= 0:
-		try:
-		    n = string.atoi(seq[6:])
-		except string.atoi_error:
-		    n = 0
-		if n > 0:
-		    return self.listmessages()[:n]
-	    dict = self.getsequences()
-	    if dict.has_key(seq):
-		return dict[seq]
-	    context = self.mh.getcontext()
-	    # Complex syntax -- use pick
-	    pipe = os.popen("pick +%s %s 2>/dev/null" % (self.name, seq))
-	    data = pipe.read()
-	    sts = pipe.close()
-	    self.mh.setcontext(context)
-	    if sts:
-		    raise Error, "unparseable sequence %s" % `seq`
-	    items = string.split(data)
-	    return map(string.atoi, items)
+			n = self._parseindex(seq, all)
+		except Error, msg:
+			seqs = self.getsequences()
+			if not seqs.has_key(seq):
+				if not msg:
+					msg = "bad message list %s" % seq
+				raise Error, msg
+			return seqs[seq]
+		else:
+			if n not in all:
+				if isnumeric(seq):
+					raise Error, \
+					      "message %d doesn't exist" % n
+				else:
+					raise Error, "no %s message" % seq
+			else:
+				return [n]
+
+	# Internal: parse a message number (or cur, first, etc.)
+	def _parseindex(self, seq, all):
+		if isnumeric(seq):
+			try:
+				return string.atoi(seq)
+			except (OverflowError, ValueError):
+				return sys.maxint
+		if seq in ('cur', '.'):
+			return self.getcurrent()
+		if seq == 'first':
+			return all[0]
+		if seq == 'last':
+			return all[-1]
+		if seq == 'next':
+			n = self.getcurrent()
+			i = bisect(all, n)
+			try:
+				return all[i]
+			except IndexError:
+				raise Error, "no next message"
+		if seq == 'prev':
+			n = self.getcurrent()
+			i = bisect(all, n-1)
+			if i == 0:
+				raise Error, "no prev message"
+			try:
+				return all[i-1]
+			except IndexError:
+				raise Error, "no prev message"
+		raise Error, None
 
 	# Open a message -- returns a Message object
 	def openmessage(self, n):
@@ -704,8 +787,7 @@ class IntSet:
 			alo, ahi = self.pairs[i-1]
 			blo, bhi = self.pairs[i]
 			if ahi >= blo-1:
-				self.pairs[i-1:i+1] = [
-				      (alo, max(ahi, bhi))]
+				self.pairs[i-1:i+1] = [(alo, max(ahi, bhi))]
 			else:
 				i = i+1
 
@@ -883,8 +965,20 @@ def test():
 	do('mh.getcontext()')
 	context = mh.getcontext()
 	f = mh.openfolder(context)
-	do('f.listmessages()')
 	do('f.getcurrent()')
+	for seq in ['first', 'last', 'cur', '.', 'prev', 'next',
+		    'first:3', 'last:3', 'cur:3', 'cur:-3',
+		    'prev:3', 'next:3',
+		    '1:3', '1:-3', '100:3', '100:-3', '10000:3', '10000:-3',
+		    'all']:
+		try:
+			do('f.parsesequence(%s)' % `seq`)
+		except Error, msg:
+			print "Error:", msg
+		stuff = os.popen("pick %s 2>/dev/null" % `seq`).read()
+		list = map(string.atoi, string.split(stuff))
+		print list, "<-- pick"
+	do('f.listmessages()')
 
 
 if __name__ == '__main__':
