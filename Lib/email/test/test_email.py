@@ -204,6 +204,17 @@ class TestMessageAPI(TestEmailBase):
         eq(msg.get_payload(3).get_payload(decode=True),
            'This has no Content-Transfer-Encoding: header.\n')
 
+    def test_get_decoded_uu_payload(self):
+        eq = self.assertEqual
+        msg = Message()
+        msg.set_payload('begin 666 -\n+:&5L;&\\@=V]R;&0 \n \nend\n')
+        for cte in ('x-uuencode', 'uuencode', 'uue', 'x-uue'):
+            msg['content-transfer-encoding'] = cte
+            eq(msg.get_payload(decode=True), 'hello world')
+        # Now try some bogus data
+        msg.set_payload('foo')
+        eq(msg.get_payload(decode=True), 'foo')
+
     def test_decoded_generator(self):
         eq = self.assertEqual
         msg = self._msgobj('msg_07.txt')
