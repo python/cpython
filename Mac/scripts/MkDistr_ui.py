@@ -161,6 +161,7 @@ class ListWindow(DialogWindow):
 		return values
 		
 	def do_rawupdate(self, window, event):
+		Qd.SetPort(window)
 		self.list.LUpdate(self.wid.GetWindowPort().visRgn)
 		
 	def do_close(self):
