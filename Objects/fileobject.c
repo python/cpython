@@ -469,7 +469,7 @@ file_read(f, args)
 		if (bytesread < buffersize)
 			break;
 		if (bytesrequested < 0) {
-			buffersize = new_buffersize(f, buffersize);
+			buffersize = bytesread + new_buffersize(f, buffersize);
 			if (_PyString_Resize(&v, buffersize) < 0)
 				return NULL;
 		}
