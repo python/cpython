@@ -130,9 +130,9 @@ class Install (Command):
         # ape the behaviour of Python's configure script.
 
         if self.prefix is None:         # user didn't override
-            self.prefix = sys.prefix
+            self.prefix = os.path.normpath (sys.prefix)
         if self.exec_prefix is None:
-            self.exec_prefix = sys.exec_prefix
+            self.exec_prefix = os.path.normpath (sys.exec_prefix)
 
         if self.install_lib is None:
             self.install_lib = \
@@ -247,10 +247,10 @@ class Install (Command):
            return the "relocated" installation directory."""
 
         if use_exec:
-            sys_prefix = sys.exec_prefix
+            sys_prefix = os.path.normpath (sys.exec_prefix)
             my_prefix = self.exec_prefix
         else:
-            sys_prefix = sys.prefix
+            sys_prefix = os.path.normpath (sys.prefix)
             my_prefix = self.prefix
 
         val = getattr (sysconfig, config_attr)
