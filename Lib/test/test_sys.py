@@ -60,7 +60,7 @@ class SysModuleTest(unittest.TestCase):
         sys.stderr = savestderr
         self.assert_(err.getvalue().endswith("ValueError: 42\n"))
 
-    # FIXME: testing the code for a lost or replace excepthook in
+    # FIXME: testing the code for a lost or replaced excepthook in
     # Python/pythonrun.c::PyErr_PrintEx() is tricky.
 
     def test_exit(self):
