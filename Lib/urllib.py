@@ -63,15 +63,20 @@ else:
 
 # Shortcut for basic usage
 _urlopener = None
-def urlopen(url, data=None):
+def urlopen(url, data=None, proxies=None):
     """urlopen(url [, data]) -> open file-like object"""
     global _urlopener
-    if not _urlopener:
-        _urlopener = FancyURLopener()
-    if data is None:
-        return _urlopener.open(url)
+    if proxies is not None:
+        opener = FancyURLopener(proxies=proxies)
+    elif not _urlopener:
+        opener = FancyURLopener()
+        _urlopener = opener
     else:
-        return _urlopener.open(url, data)
+        opener = _urlopener
+    if data is None:
+        return opener.open(url)
+    else:
+        return opener.open(url, data)
 def urlretrieve(url, filename=None, reporthook=None, data=None):
     global _urlopener
     if not _urlopener:
