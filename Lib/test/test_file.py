@@ -1,9 +1,24 @@
 import sys
 import os
 from array import array
+from weakref import proxy
 
 from test.test_support import verify, TESTFN, TestFailed
 from UserList import UserList
+
+# verify weak references
+f = file(TESTFN, 'w')
+p = proxy(f)
+p.write('teststring')
+verify(f.tell(), p.tell())
+f.close()
+f = None
+try:
+    p.tell()
+except ReferenceError:
+    pass
+else:
+    raise TestFailed('file proxy still exists when the file is gone')
 
 # verify expected attributes exist
 f = file(TESTFN, 'w')

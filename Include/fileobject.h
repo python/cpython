@@ -24,6 +24,7 @@ typedef struct {
 	int f_newlinetypes;	/* Types of newlines seen */
 	int f_skipnextlf;	/* Skip next \n */
 	PyObject *f_encoding;
+	PyObject *weakreflist; /* List of weak references */
 } PyFileObject;
 
 PyAPI_DATA(PyTypeObject) PyFile_Type;

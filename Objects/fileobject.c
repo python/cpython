@@ -307,6 +307,8 @@ static void drop_readahead(PyFileObject *);
 static void
 file_dealloc(PyFileObject *f)
 {
+	if (f->weakreflist != NULL)
+		PyObject_ClearWeakRefs((PyObject *) f);
 	if (f->f_fp != NULL && f->f_close != NULL) {
 		Py_BEGIN_ALLOW_THREADS
 		(*f->f_close)(f->f_fp);
@@ -1821,6 +1823,7 @@ file_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		((PyFileObject *)self)->f_mode = not_yet_string;
 		Py_INCREF(Py_None);
 		((PyFileObject *)self)->f_encoding = Py_None;
+		((PyFileObject *)self)->weakreflist = NULL;
 	}
 	return self;
 }
@@ -1942,12 +1945,12 @@ PyTypeObject PyFile_Type = {
 	/* softspace is writable:  we must supply tp_setattro */
 	PyObject_GenericSetAttr,		/* tp_setattro */
 	0,					/* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_WEAKREFS, /* tp_flags */
 	file_doc,				/* tp_doc */
 	0,					/* tp_traverse */
 	0,					/* tp_clear */
 	0,					/* tp_richcompare */
-	0,					/* tp_weaklistoffset */
+	offsetof(PyFileObject, weakreflist),	/* tp_weaklistoffset */
 	(getiterfunc)file_getiter,		/* tp_iter */
 	(iternextfunc)file_iternext,		/* tp_iternext */
 	file_methods,				/* tp_methods */
