@@ -130,6 +130,8 @@ int PyMac_setfiletype(char *, long, long);		/* Set file creator and type */
 void PyMac_Exit(int);
 void PyMac_InitApplication(void);
 void PyMac_OutputSeen(void);
+void PyMac_OutputNotSeen(void);
+int PyMac_GetDelayConsoleFlag(void);
 #ifdef USE_MAC_APPLET_SUPPORT
 void PyMac_InitApplet(void);
 #endif

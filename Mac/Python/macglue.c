@@ -539,6 +539,25 @@ PyErr_CheckSignals()
 	return 0;
 }
 
+#if 0
+/*
+** This routine is called if we know that an external library yielded
+** to background tasks, so we shouldn't count that time in our computation
+** of how much CPU we used.
+** This happens with SIOUX, and the routine is called from our modified
+** GUSISIOUX.
+*/
+void
+PyMac_LibraryDidYield(int howlong)
+{
+	unsigned long maxnextcheck = (unsigned long)LMGetTicks() + schedparams.check_interval;
+	
+	schedparams.next_check = schedparams.next_check + howlong;
+	if (schedparams.next_check > maxnextcheck )
+		schedparams.next_check = maxnextcheck;
+}
+#endif
+
 int
 PyOS_InterruptOccurred()
 {

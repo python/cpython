@@ -25,6 +25,7 @@ type 'Popt' {
 	byte newStandardExceptions = 0, oldStandardExceptions = 1;
 	byte sitePython = 0, noSitePython = 1;
 	byte navService = 0, noNavService = 1;
+	byte noDelayConsole = 0, delayConsole = 1;
 };
 
 type 'TMPL' {
@@ -53,6 +54,7 @@ resource 'TMPL' (PYTHONOPTIONS_ID, "Popt") {
 		"Old standard exceptions",		'DBYT',
 		"No site-python support",		'DBYT',
 		"No NavServices in macfs",		'DBYT',
+		"Delay console window",			'DBYT',
 	}
 };
 
@@ -72,6 +74,7 @@ resource 'Popt' (PYTHONOPTIONS_ID, "Options") {
 	newStandardExceptions,
 	sitePython,
 	navService,
+	noDelayConsole,
 };
 
 /* The sys.path initializer */

@@ -137,7 +137,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define PYTHONOPTIONS_ID 228
 #define PYTHONOPTIONSOVERRIDE_ID 229
 
-#define POPT_VERSION_CURRENT	6	/* Current version number */
+#define POPT_VERSION_CURRENT	7	/* Current version number */
 #define   POPT_KEEPCONSOLE_NEVER  0
 #define   POPT_KEEPCONSOLE_OUTPUT 1
 #define   POPT_KEEPCONSOLE_ERROR  2
@@ -158,6 +158,7 @@ typedef struct PyMac_PrefRecord {
 	unsigned char	tabwarn;
 	unsigned char	nosite;
 	unsigned char	nonavservice;
+	unsigned char	delayconsole;
 } PyMac_PrefRecord;
 #endif
 
