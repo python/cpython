@@ -34,6 +34,8 @@ class ReprTests(unittest.TestCase):
         eq(r(s), expected)
 
     def test_container(self):
+        from array import array
+
         eq = self.assertEquals
         # Tuples give up after 6 elements
         eq(r(()), "()")
@@ -55,6 +57,16 @@ class ReprTests(unittest.TestCase):
         eq(r(d), "{'alice': 1, 'bob': 2, 'charles': 3, 'dave': 4}")
         d['arthur'] = 1
         eq(r(d), "{'alice': 1, 'arthur': 1, 'bob': 2, 'charles': 3, ...}")
+
+        # array.array after 5.
+        eq(r(array('i')), "array('i', [])")
+        eq(r(array('i', [1])), "array('i', [1])")
+        eq(r(array('i', [1, 2])), "array('i', [1, 2])")
+        eq(r(array('i', [1, 2, 3])), "array('i', [1, 2, 3])")
+        eq(r(array('i', [1, 2, 3, 4])), "array('i', [1, 2, 3, 4])")
+        eq(r(array('i', [1, 2, 3, 4, 5])), "array('i', [1, 2, 3, 4, 5])")
+        eq(r(array('i', [1, 2, 3, 4, 5, 6])),
+                   "array('i', [1, 2, 3, 4, 5, ...])")
 
     def test_numbers(self):
         eq = self.assertEquals
