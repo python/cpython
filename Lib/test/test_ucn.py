@@ -37,6 +37,23 @@ s = u"\N{LATIN CAPITAL LETTER T}" \
     u"\N{LATIN SMALL LETTER P}" \
     u"\N{FULL STOP}"
 verify(s == u"The rEd fOx ate the sheep.", s)
+
+import ucnhash
+
+# minimal sanity check
+for char in "SPAM":
+    name = "LATIN SMALL LETTER %s" % char
+    code = ucnhash.getcode(name)
+    verify(ucnhash.getname(code) == name)
+
+# loop over all characters in the database
+for code in range(65536):
+    try:
+        name = ucnhash.getname(code)
+        verify(ucnhash.getcode(name) == code)
+    except ValueError:
+        pass
+
 print "done."
 
 # misc. symbol testing
