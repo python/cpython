@@ -1,9 +1,9 @@
-import Ctl
-import Controls
-import Win
+from Carbon import Ctl
+from Carbon import Controls
+from Carbon import Win
 import Wbase
-import Qd
-import Evt
+from Carbon import Qd
+from Carbon import Evt
 
 class ControlWidget(Wbase.ClickableWidget):
 	

@@ -40,11 +40,11 @@ class Play_Audio_mac:
 
 	def writeframes(self, data):
 		import time
-		from Sound import bufferCmd, callBackCmd, extSH
+		from Carbon.Sound import bufferCmd, callBackCmd, extSH
 		import struct
 		import MacOS
 		if not self._chan:
-			import Snd
+			from Carbon import Snd
 			self._chan = Snd.SndNewChannel(5, 0, self._callback)
 		nframes = len(data) / self._nchannels / self._sampwidth
 		if len(data) != nframes * self._nchannels * self._sampwidth:

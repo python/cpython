@@ -14,7 +14,7 @@ import types
 import macfs
 import string
 import macpath
-from Res import *
+from Carbon.Res import *
 
 # for testing only
 app = 'MACS'#CSOm'#'nwSP'#'ezVu'#

@@ -21,7 +21,7 @@ import string
 import genpluginprojects
 
 import aetools
-import AppleEvents
+from Carbon import AppleEvents
 
 OLDAESUPPORT = 0
 
@@ -33,8 +33,8 @@ if OLDAESUPPORT:
 else:
 	import CodeWarrior
 
-import Res
-import Dlg
+from Carbon import Res
+from Carbon import Dlg
 
 import buildtools
 import cfmfile

@@ -1,6 +1,6 @@
 import W
 import sys
-import Qd
+from Carbon import Qd
 
 __version__ = "0.2"
 __author__ = "jvr"

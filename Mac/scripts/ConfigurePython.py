@@ -13,7 +13,7 @@ import macfs
 import MacOS
 import gestalt
 import string
-import Res
+from Carbon import Res
 
 SPLASH_COPYCORE=512
 SPLASH_COPYCARBON=513
@@ -89,7 +89,7 @@ def ask_copy():
 	do_copy = 0
 	if macfs.FSSpec(sys.exec_prefix).as_tuple()[0] != -1: # XXXX
 		try:
-			import Dlg
+			from Carbon import Dlg
 			rv = Dlg.CautionAlert(ALERT_NONBOOT, None)
 			if rv == ALERT_NONBOOT_COPY:
 				do_copy = 1
@@ -141,7 +141,7 @@ def main():
 	elif oldcwd != newcwd:
 		# Hack to make sure we get the new MACFS
 		sys.path.insert(0, os.path.join(oldcwd, ':Mac:Lib'))
-		import Dlg
+		from Carbon import Dlg
 		rv = Dlg.CautionAlert(ALERT_NOTPYTHONFOLDER, None)
 		if rv == ALERT_NOTPYTHONFOLDER_REMOVE_QUIT:
 			import pythonprefs, preferences
@@ -162,7 +162,7 @@ def main():
 	n = n + mkcorealias('PythonCore', 'PythonCore')
 	n = n + mkcorealias('PythonCoreCarbon', 'PythonCoreCarbon')
 	if n == 0:
-		import Dlg
+		from Carbon import Dlg
 		Dlg.CautionAlert(ALERT_NOCORE, None)
 		if verbose:
 			print "Warning: PythonCore not copied to Extensions folder"

@@ -6,7 +6,7 @@ import imp
 import sys
 import os
 import string
-import Dlg
+from Carbon import Dlg
 import macfs
 
 DIALOG_ID = 512
@@ -83,7 +83,7 @@ def interact():
 	
 def main():
 	curdir = os.getcwd()
-	import Res
+	from Carbon import Res
 	try:
 		Res.FSpOpenResFile('RunLibScript.rsrc', 1)
 	except:

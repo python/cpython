@@ -10,15 +10,15 @@ import sys
 sys.stdout = sys.stderr
 import traceback
 import MacOS
-import AE
-from AppleEvents import *
-import Evt
-from Events import *
-import Menu
-import Dlg
-import Win
-from Windows import *
-import Qd
+from Carbon import AE
+from Carbon.AppleEvents import *
+from Carbon import Evt
+from Carbon.Events import *
+from Carbon import Menu
+from Carbon import Dlg
+from Carbon import Win
+from Carbon.Windows import *
+from Carbon import Qd
 
 import aetools
 import EasyDialogs

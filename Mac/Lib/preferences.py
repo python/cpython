@@ -1,7 +1,7 @@
 #
 # General parser/loaders for preferences files and such
 #
-import Res
+from Carbon import Res
 import macfs
 import struct
 import MACFS

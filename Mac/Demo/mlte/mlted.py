@@ -5,15 +5,15 @@
 
 from Menu import DrawMenuBar
 from FrameWork import *
-import Win
-import Ctl
-import Qd
-import Res
-import Scrap
+from Carbon import Win
+from Carbon import Ctl
+from Carbon import Qd
+from Carbon import Res
+from Carbon import Scrap
 import os
 import macfs
-import MacTextEditor
-import Mlte
+from Carbon import MacTextEditor
+from Carbon import Mlte
 
 UNDOLABELS = [ # Indexed by MLTECanUndo() value
 	"Typing", "Cut", "Paste", "Clear", "Font Change", "Color Change", "Size Change",

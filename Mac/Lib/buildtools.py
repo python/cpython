@@ -6,7 +6,7 @@ import string
 import imp
 import marshal
 import macfs
-import Res
+from Carbon import Res
 import MACFS
 import MacOS
 import macostools

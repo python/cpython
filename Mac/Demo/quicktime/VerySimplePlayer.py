@@ -3,14 +3,14 @@
 Jack Jansen, CWI, December 1995
 """
 
-import Qt
-import QuickTime
-import Qd
-import QuickDraw
-import Evt
-import Events
-import Win
-import Windows
+from Carbon import Qt
+from Carbon import QuickTime
+from Carbon import Qd
+from Carbon import QuickDraw
+from Carbon import Evt
+from Carbon import Events
+from Carbon import Win
+from Carbon import Windows
 import macfs
 import sys
 

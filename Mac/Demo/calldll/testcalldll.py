@@ -2,7 +2,7 @@ import calldll
 import macfs
 import sys
 import MacOS
-import Res
+from Carbon import Res
 
 fss, ok = macfs.PromptGetFile("Show me calldll.ppc.slb")
 

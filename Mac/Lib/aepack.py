@@ -17,8 +17,8 @@ import string
 import types
 from string import strip
 from types import *
-import AE
-from AppleEvents import *
+from Carbon import AE
+from Carbon.AppleEvents import *
 import MacOS
 import macfs
 import StringIO

@@ -1,12 +1,12 @@
-import Qd
-import Win
-import Evt
-import Fm
+from Carbon import Qd
+from Carbon import Win
+from Carbon import Evt
+from Carbon import Fm
 import FrameWork
-import Windows
-import Events
+from Carbon import Windows
+from Carbon import Events
 import Wbase
-import Dlg
+from Carbon import Dlg
 import MacOS
 import Menu
 import struct
@@ -570,7 +570,7 @@ def FrontWindowInsert(stuff):
 	if EasyDialogs.AskYesNoCancel(
 			"Can't find window or widget to insert text into; copy to clipboard instead?", 
 			1) == 1:
-		import Scrap
+		from Carbon import Scrap
 		Scrap.ZeroScrap()
 		Scrap.PutScrap('TEXT', stuff)
 

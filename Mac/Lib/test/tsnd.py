@@ -1,8 +1,8 @@
 # Show off SndPlay (and some resource manager functions).
 # Get a list of all 'snd ' resources in the system and play them all.
 
-from Res import *
-from Snd import *
+from Carbon.Res import *
+from Carbon.Snd import *
 
 ch = SndNewChannel(0, 0, None)
 print "Channel:", ch

@@ -2,7 +2,7 @@
 API calls with Navigation Services"""
 import macfs
 import struct
-import Res
+from Carbon import Res
 try:
 	import Nav
 except ImportError:

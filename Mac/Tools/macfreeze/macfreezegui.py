@@ -1,11 +1,11 @@
 """macfreezegui - The GUI for macfreeze"""
-import Dlg
+from Carbon import Dlg
 import macfs
 import EasyDialogs
 import sys
 import os
 import string
-import Res
+from Carbon import Res
 
 ID_MAINDIALOG=512
 

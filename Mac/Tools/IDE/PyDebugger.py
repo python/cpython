@@ -6,9 +6,9 @@ import os
 import W
 import WASTEconst
 import PyBrowser
-import Qd
-import Evt
-import Lists
+from Carbon import Qd
+from Carbon import Evt
+from Carbon import Lists
 import MacOS
 _filenames = {}
 
@@ -65,7 +65,7 @@ class Debugger(bdb.Bdb):
 	
 	def start(self, bottomframe = None, running = 0):
 		W.getapplication().DebuggerQuit = bdb.BdbQuit
-		import Menu
+		from Carbon import Menu
 		Menu.HiliteMenu(0)
 		if self.closed:
 			self.setupwidgets(self.title)

@@ -4,7 +4,7 @@
 #
 import macfs
 import py_resource
-import Res
+from Carbon import Res
 import sys
 
 def main():

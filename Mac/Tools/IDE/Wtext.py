@@ -1,12 +1,12 @@
-import Qd
-import TE
-import Fm
+from Carbon import Qd
+from Carbon import TE
+from Carbon import Fm
 import waste
 import WASTEconst
-import Res
-import Evt
-import Events
-import Scrap
+from Carbon import Res
+from Carbon import Evt
+from Carbon import Events
+from Carbon import Scrap
 import string
 
 import Win
@@ -15,8 +15,8 @@ import Wkeys
 import Wcontrols
 import PyFontify
 from types import *
-import Fonts
-import TextEdit
+from Carbon import Fonts
+from Carbon import TextEdit
 
 
 
@@ -175,7 +175,7 @@ class EditText(Wbase.SelectableWidget, _ScrollWidget):
 			self.ted.WEUpdate(port.visRgn)
 	
 	def getfontsettings(self):
-		import Res
+		from Carbon import Res
 		(font, style, size, color) = self.ted.WEGetRunInfo(0)[4]
 		font = Fm.GetFontName(font)
 		return (font, style, size, color)

@@ -1,8 +1,8 @@
 # (Slightly less) primitive operations for sending Apple Events to applications.
 # This could be the basis of a Script Editor like application.
 
-from AE import *
-from AppleEvents import *
+from Carbon.AE import *
+from Carbon.AppleEvents import *
 import aetools
 import types
 

@@ -1,5 +1,5 @@
 import W
-import Windows
+from Carbon import Windows
 
 
 w = W.ModalDialog((100, 100))

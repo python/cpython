@@ -6,12 +6,12 @@
 # Jack Jansen, August 2000
 #
 import sys
-import Qt
-import QuickTime
-import Qd
-import Qdoffs
-import QDOffscreen
-import Res
+from Carbon import Qt
+from Carbon import QuickTime
+from Carbon import Qd
+from Carbon import Qdoffs
+from Carbon import QDOffscreen
+from Carbon import Res
 import MediaDescr
 import imgformat
 import os

@@ -1,7 +1,7 @@
 import cwxmlgen
 import cwtalker
 import os
-import AppleEvents
+from Carbon import AppleEvents
 import macfs
 
 def mkproject(outputfile, modulename, settings, force=0, templatename=None):

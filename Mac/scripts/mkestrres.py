@@ -3,7 +3,7 @@
 import re
 import macfs
 import string
-import Res
+from Carbon import Res
 import os
 
 READ = 1

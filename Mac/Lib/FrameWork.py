@@ -5,24 +5,24 @@ DEBUG=0
 import MacOS
 import traceback
 
-from AE import *
-from AppleEvents import *
-from Ctl import *
-from Controls import *
-from Dlg import *
-from Dialogs import *
-from Evt import *
-from Events import *
-from Menu import *
-from Menus import *
-from Qd import *
-from QuickDraw import *
-#from Res import *
-#from Resources import *
-#from Snd import *
-#from Sound import *
-from Win import *
-from Windows import *
+from Carbon.AE import *
+from Carbon.AppleEvents import *
+from Carbon.Ctl import *
+from Carbon.Controls import *
+from Carbon.Dlg import *
+from Carbon.Dialogs import *
+from Carbon.Evt import *
+from Carbon.Events import *
+from Carbon.Menu import *
+from Carbon.Menus import *
+from Carbon.Qd import *
+from Carbon.QuickDraw import *
+#from Carbon.Res import *
+#from Carbon.Resources import *
+#from Carbon.Snd import *
+#from Carbon.Sound import *
+from Carbon.Win import *
+from Carbon.Windows import *
 import types
 
 import EasyDialogs

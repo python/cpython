@@ -1,15 +1,15 @@
 import W
 import Wkeys
-import Fm
+from Carbon import Fm
 import WASTEconst
 from types import *
-import Events
+from Carbon import Events
 import string
 import sys
 import traceback
 import MacOS
 import MacPrefs
-import Qd
+from Carbon import Qd
 import PyInteractive
 
 if not hasattr(sys, 'ps1'):
@@ -178,7 +178,7 @@ class PyConsole(W.Window):
 		PyBrowser.Browser(self.consoletext._namespace, self.consoletext._namespace["__name__"])
 	
 	def clearbuffer(self):
-		import Res
+		from Carbon import Res
 		self.consoletext.ted.WEUseText(Res.Resource(''))
 		self.consoletext.write(sys.ps1)
 		self.consoletext.flush()
@@ -326,7 +326,7 @@ class PyOutput:
 			self.w.outputtext.settabsettings(tabsettings)
 	
 	def clearbuffer(self):
-		import Res
+		from Carbon import Res
 		self.w.outputtext.set('')
 	
 	def activate(self, onoff):

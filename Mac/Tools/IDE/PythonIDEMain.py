@@ -14,7 +14,8 @@ class PythonIDE(Wapplication.Application):
 	def __init__(self):
 		self.preffilepath = ":Python:PythonIDE preferences"
 		Wapplication.Application.__init__(self, 'Pide')
-		import AE, AppleEvents
+		from Carbon import AE
+		from Carbon import AppleEvents
 		
 		AE.AEInstallEventHandler(AppleEvents.kCoreEventClass, AppleEvents.kAEOpenApplication, 
 				self.ignoreevent)
@@ -123,7 +124,7 @@ class PythonIDE(Wapplication.Application):
 		self.makescriptsmenu()
 	
 	def quitevent(self, theAppleEvent, theReply):
-		import AE
+		from Carbon import AE
 		AE.AEInteractWithUser(50000000)
 		self._quit()
 	

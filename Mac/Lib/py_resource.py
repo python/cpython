@@ -1,6 +1,6 @@
 """Creation of PYC resources"""
 import os
-import Res
+from Carbon import Res
 import __builtin__
 
 READ = 1

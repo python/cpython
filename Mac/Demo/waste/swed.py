@@ -3,15 +3,15 @@
 # To be done:
 # - Functionality: find, etc.
 
-from Menu import DrawMenuBar
+from Carbon.Menu import DrawMenuBar
 from FrameWork import *
-import Win
-import Qd
-import Res
-import Fm
+from Carbon import Win
+from Carbon import Qd
+from Carbon import Res
+from Carbon import Fm
 import waste
 import WASTEconst
-import Scrap
+from Carbon import Scrap
 import os
 import macfs
 import MACFS

@@ -7,7 +7,7 @@ import types
 import macfs
 from MACFS import *
 import MacOS
-import Res
+from Carbon import Res
 import py_resource
 import cfmfile
 import buildtools

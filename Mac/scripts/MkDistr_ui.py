@@ -12,12 +12,12 @@
 # - Box around lists (???)
 # - Change cursor while busy (need cursor support in Qd)
 #
-import Res
-import Dlg
-import Ctl
-import List
-import Win
-import Qd
+from Carbon import Res
+from Carbon import Dlg
+from Carbon import Ctl
+from Carbon import List
+from Carbon import Win
+from Carbon import Qd
 from FrameWork import *
 import EasyDialogs
 import macfs

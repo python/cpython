@@ -1,8 +1,8 @@
 """cmtest - List all components in the system"""
 
-import Cm
-import Res
-import sys
+from Carbon import Cm
+from Carbon import Res
+from Carbon import sys
 
 def getstr255(r):
 	"""Get string from str255 resource"""

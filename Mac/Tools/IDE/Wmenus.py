@@ -1,6 +1,7 @@
 import FrameWork
-import Qd
-import Wbase, Wcontrols, Ctl, Controls
+from Carbon import Qd
+import Wbase, Wcontrols
+from Carbon import Ctl, Controls
 from types import *
 import Wapplication
 
@@ -244,7 +245,7 @@ def _makefontmenu():
 
 
 def _getfontlist():
-	import Res
+	from Carbon import Res
 	fontnames = []
 	for i in range(1, Res.CountResources('FOND') + 1):
 		r = Res.GetIndResource('FOND', i)

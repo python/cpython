@@ -1,10 +1,10 @@
 import os
-import Qd
-import Win
-import Qt, QuickTime
+from Carbon import Qd
+from Carbon import Win
+from Carbon import Qt, QuickTime
 import W
 import macfs
-import Evt, Events
+from Carbon import Evt, Events
 
 _moviesinitialized = 0
 

@@ -15,7 +15,7 @@ So bottom line: the processes() stuff does not work on < MacOS9
 Mostly written by erik@letterror.com
 """
 import Finder
-import AppleEvents
+from Carbon import AppleEvents
 import aetools
 import MacOS
 import sys

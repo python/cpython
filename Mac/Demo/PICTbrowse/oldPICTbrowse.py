@@ -2,10 +2,10 @@
 
 import FrameWork
 import EasyDialogs
-import Res
-import Qd
-import Win
-import List
+from Carbon import Res
+from Carbon import Qd
+from Carbon import Win
+from Carbon import List
 import sys
 import struct
 

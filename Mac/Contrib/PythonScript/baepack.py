@@ -17,8 +17,8 @@ import string
 import types
 from string import strip
 from types import *
-import AE
-from AppleEvents import *
+from Carbon import AE
+from Carbon.AppleEvents import *
 import MacOS
 import macfs
 import StringIO
@@ -195,7 +195,7 @@ def unpack(desc):
 			v = 0x100000000L + v
 		return v
 	if t == typeObjectSpecifier:
-		import Res
+		from Carbon import Res
 #		print desc, type(desc)
 #		print desc.__members__
 #		print desc.data, desc.type

@@ -8,7 +8,7 @@ import sys
 import types
 import StringIO
 
-from Res import *
+from Carbon.Res import *
 
 def main():
 	filename = ""
