@@ -264,20 +264,20 @@ reset_ae_handlers()
 static void 
 event_loop()
 {
-#ifndef TARGET_API_MAC_CARBON
 	EventRecord event;
 	int n;
 	int ok;
 	
 	got_one = 0;
 	for (n = 0; n < 100 && !got_one; n++) {
+#ifndef TARGET_API_MAC_CARBON
 		SystemTask();
+#endif
 		ok = GetNextEvent(everyEvent, &event);
 		if (ok && event.what == kHighLevelEvent) {
 			AEProcessAppleEvent(&event);
 		}
 	}
-#endif
 }
 
 /* Get the argv vector, return argc */
