@@ -365,7 +365,7 @@ inshandler_body = """
 			PyMac_GetOSType, &objectType,
 			PyMac_GetOSType, &selector,
 			&py_handler,
-			ExistingwasteObj_New, &we) ) return NULL;
+			WEOObj_Convert, &we) ) return NULL;
 			
 	if ( selector == weNewHandler ) handler = (UniversalProcPtr)upp_new_handler;
 	else if ( selector == weDisposeHandler ) handler = (UniversalProcPtr)upp_dispose_handler;
