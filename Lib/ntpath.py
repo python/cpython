@@ -23,13 +23,12 @@ extsep = '.'
 sep = '\\'
 pathsep = ';'
 altsep = None
+defpath = '.;C:\\bin'
 if 'ce' in sys.builtin_module_names:
     defpath = '\\Windows'
 elif 'os2' in sys.builtin_module_names:
-    # OS/2 w/ EMX
+    # OS/2 w/ VACPP
     altsep = '/'
-else:
-    defpath = '.;C:\\bin'
 
 # Normalize the case of a pathname and map slashes to backslashes.
 # Other normalizations (such as optimizing '../' away) are not done
