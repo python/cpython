@@ -302,6 +302,7 @@ from types import StringTypes as _StringTypes
 
 from inspect import isclass    as _isclass
 from inspect import isfunction as _isfunction
+from inspect import ismethod as _ismethod
 from inspect import ismodule   as _ismodule
 from inspect import classify_class_attrs as _classify_class_attrs
 
@@ -930,11 +931,11 @@ See doctest.testmod docs for the meaning of optionflags.
                 thisname = prefix + k
                 if type(v) in _StringTypes:
                     f, t = self.runstring(v, thisname)
-                elif _isfunction(v) or _isclass(v):
+                elif _isfunction(v) or _isclass(v) or _ismethod(v):
                     f, t = self.rundoc(v, thisname)
                 else:
                     raise TypeError("Tester.run__test__: values in "
-                            "dict must be strings, functions "
+                            "dict must be strings, functions, methods, "
                             "or classes; " + `v`)
                 failures = failures + f
                 tries = tries + t
