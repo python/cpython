@@ -582,7 +582,16 @@ parameter and are called with a non-string parameter.
 \begin{cfuncdesc}{int}{_PyString_Resize}{PyObject **string, int newsize}
   A way to resize a string object even though it is ``immutable''.
   Only use this to build up a brand new string object; don't use this
-  if the string may already be known in other parts of the code.
+  if the string may already be known in other parts of the code.  It
+  is an error to call this function if the refcount on the input string
+  object is not one.
+  Pass the address of an existing string object as an lvalue (it may
+  be written into), and the new size desired.  On success, \var{*string}
+  holds the resized string object and 0 is returned; the address in
+  \var{*string} may differ from its input value.  If the
+  reallocation fails, the original string object at \var{*string} is
+  deallocated, \var{*string} is set to \NULL{}, a memory exception is set,
+  and -1 is returned.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyString_Format}{PyObject *format,
