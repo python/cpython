@@ -16,6 +16,7 @@
 #
 
 import db
+from UserDict import DictMixin
 
 class DBEnv:
     def __init__(self, *args, **kwargs):
@@ -85,7 +86,7 @@ class DBEnv:
             return apply(self._cobj.set_encrypt, args, kwargs)
 
 
-class DB:
+class DB(DictMixin):
     def __init__(self, dbenv, *args, **kwargs):
         # give it the proper DBEnv C object that its expecting
         self._cobj = apply(db.DB, (dbenv._cobj,) + args, kwargs)

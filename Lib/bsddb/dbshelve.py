@@ -30,6 +30,7 @@ storage.
 #------------------------------------------------------------------------
 
 import cPickle
+from UserDict import DictMixin
 try:
     # For Python 2.3
     from bsddb import db
@@ -75,7 +76,7 @@ def open(filename, flags=db.DB_CREATE, mode=0660, filetype=db.DB_HASH,
 
 #---------------------------------------------------------------------------
 
-class DBShelf:
+class DBShelf(DictMixin):
     """
     A shelf to hold pickled objects, built upon a bsddb DB object.  It
     automatically pickles/unpickles data objects going to/from the DB.
