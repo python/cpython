@@ -28,7 +28,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include "node.h"
 #include "graminit.h"
-#include "errcode.h"
 #include "sysmodule.h"
 #include "bltinmodule.h"
 #include "import.h"

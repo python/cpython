@@ -528,7 +528,7 @@ call_forms_INiINstr (func, obj, args)
 	char *b;
 	int a;
 	
-	if (!getintstrarg(args, &a, &b)) return NULL;
+	if (!getargs(args, "(is)", &a, &b)) return NULL;
 	
 	(*func) (obj, a, b);
 	
@@ -546,7 +546,7 @@ call_forms_INiINi (func, obj, args)
 {
 	int par1, par2;
 	
-	if (!getintintarg(args, &par1, &par2)) return NULL;
+	if (!getargs(args, "(ii)", &par1, &par2)) return NULL;
 	
 	(*func) (obj, par1, par2);
 	
@@ -1048,7 +1048,7 @@ get_default(g, args)
 
 	c = fl_get_default (g->ob_generic);
 
-	return ((object *) mknewcharobject (c)); /* in cgensupport.c */
+	return mkvalue("c", c);
 }
 
 static struct methodlist default_methods[] = {
@@ -1479,7 +1479,7 @@ form_call_INiINi(func, f, args)
 {
 	int a, b;
 
-	if (!getintintarg(args, &a, &b)) return NULL;
+	if (!getargs(args, "(ii)", &a, &b)) return NULL;
 
 	(*func)(f, a, b);
 
@@ -2144,7 +2144,7 @@ forms_set_graphics_mode(dummy, args)
 {
 	int rgbmode, doublebuf;
 
-	if (!getintintarg(args, &rgbmode, &doublebuf))
+	if (!getargs(args, "(ii)", &rgbmode, &doublebuf))
 		return NULL;
 	fl_set_graphics_mode(rgbmode,doublebuf);
 	INCREF(None);
@@ -2441,7 +2441,7 @@ forms_show_input(f, args)
 	char *str;
 	char *a, *b;
 
-	if (!getstrstrarg(args, &a, &b)) return NULL;
+	if (!getargs(args, "(ss)", &a, &b)) return NULL;
 
 	BGN_SAVE
 	str = fl_show_input(a, b);

@@ -91,6 +91,15 @@ static type_lock StdwinLock; /* Lock held when interpreter not locked */
 
 #endif
 
+#define getpointarg(v, a) getargs(v, "(ii)", a, (a)+1)
+#define get3pointarg(v, a) getargs(v, "((ii)(ii)(ii))", \
+				a, a+1, a+2, a+3, a+4, a+5)
+#define getrectarg(v, a) getargs(v, "((ii)(ii))", a, a+1, a+2, a+3)
+#define getrectintarg(v, a) getargs(v, "(((ii)(ii))i)", a, a+1, a+2, a+3, a+4)
+#define getpointintarg(v, a) getargs(v, "((ii)i)", a, a+1, a+2)
+#define getrectpointarg(v, a) getargs(v, "(((ii)(ii))(ii))", \
+				a, a+1, a+2, a+3, a+4, a+5)
+
 static object *StdwinError; /* Exception stdwin.error */
 
 /* Window and menu object types declared here because of forward references */
@@ -1236,7 +1245,7 @@ menu_setitem(self, args)
 {
 	int index;
 	char *text;
-	if (!getintstrarg(args, &index, &text))
+	if (!getargs(args, "(is)", &index, &text))
 		return NULL;
 	wmenusetitem(self->m_menu, index, text);
 	INCREF(None);
@@ -1250,7 +1259,7 @@ menu_enable(self, args)
 {
 	int index;
 	int flag;
-	if (!getintintarg(args, &index, &flag))
+	if (!getargs(args, "(ii)", &index, &flag))
 		return NULL;
 	wmenuenable(self->m_menu, index, flag);
 	INCREF(None);
@@ -1264,7 +1273,7 @@ menu_check(self, args)
 {
 	int index;
 	int flag;
-	if (!getintintarg(args, &index, &flag))
+	if (!getargs(args, "(ii)", &index, &flag))
 		return NULL;
 	wmenucheck(self->m_menu, index, flag);
 	INCREF(None);
@@ -1705,7 +1714,7 @@ window_settitle(wp, args)
 	object *args;
 {
 	object *title;
-	if (!getStrarg(args, &title))
+	if (!getargs(args, "S", &title))
 		return NULL;
 	DECREF(wp->w_title);
 	INCREF(title);
@@ -1930,7 +1939,7 @@ stdwin_open(sw, args)
 	int tag;
 	object *title;
 	windowobject *wp;
-	if (!getStrarg(args, &title))
+	if (!getargs(args, "S", &title))
 		return NULL;
 	for (tag = 0; tag < MAXNWIN; tag++) {
 		if (windowlist[tag] == NULL)
@@ -2180,7 +2189,7 @@ stdwin_askfile(self, args)
 	char *prompt, *dflt;
 	int new, ret;
 	char buf[256];
-	if (!getstrstrintarg(args, &prompt, &dflt, &new))
+	if (!getargs(args, "(ssi)", &prompt, &dflt, &new))
 		return NULL;
 	strncpy(buf, dflt, sizeof buf);
 	buf[sizeof buf - 1] = '\0';
@@ -2201,7 +2210,7 @@ stdwin_askync(self, args)
 {
 	char *prompt;
 	int new, ret;
-	if (!getstrintarg(args, &prompt, &new))
+	if (!getargs(args, "(si)", &prompt, &new))
 		return NULL;
 	BGN_STDWIN
 	ret = waskync(prompt, new);
@@ -2221,7 +2230,7 @@ stdwin_askstr(self, args)
 	char *prompt, *dflt;
 	int ret;
 	char buf[256];
-	if (!getstrstrarg(args, &prompt, &dflt))
+	if (!getargs(args, "(ss)", &prompt, &dflt))
 		return NULL;
 	strncpy(buf, dflt, sizeof buf);
 	buf[sizeof buf - 1] = '\0';

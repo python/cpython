@@ -53,6 +53,8 @@ extern object *getlistitem PROTO((object *, int));
 extern int setlistitem PROTO((object *, int, object *));
 extern int inslistitem PROTO((object *, int, object *));
 extern int addlistitem PROTO((object *, object *));
+extern object *getlistslice PROTO((object *, int, int));
+extern int setlistslice PROTO((object *, int, int, object *));
 extern int sortlist PROTO((object *));
 
 /* Macro, trading safety for speed */

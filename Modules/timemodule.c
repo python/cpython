@@ -78,6 +78,26 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <errno.h>
 #endif
 
+#ifdef SYSV
+/* Access timezone stuff */
+#ifdef OLDTZ				/* ANSI prepends underscore to these */
+#define _timezone	timezone	/* seconds to be added to GMT */
+#define _altzone	0		/* _timezone if daylight saving time */
+#define _daylight	0		/* if zero, _altzone is not available*/
+#define _tzname		tzname		/* Name of timezone and altzone */
+#endif
+#ifdef NOALTTZ				/* if system doesn't support alt tz */
+#undef _daylight
+#undef _altzone
+#define _daylight	0
+#define _altzone 	0
+#endif
+#endif /* SYSV */
+
+/* Forward declarations */
+static void floatsleep PROTO((double));
+static long millitimer PROTO((void)); 
+
 /* Time methods */
 
 static object *
@@ -199,7 +219,6 @@ time_millitimer(self, args)
 	object *args;
 {
 	long msecs;
-	extern long millitimer();
 	if (!getnoarg(args))
 		return NULL;
 	msecs = millitimer();
@@ -225,7 +244,7 @@ time_times(self, args)
 		err_errno(IOError);
 		return NULL;
 	}
-	return mkvalue("dddd",
+	return mkvalue("(dddd)",
 		       (double)t.tms_utime / HZ,
 		       (double)t.tms_stime / HZ,
 		       (double)t.tms_cutime / HZ,
@@ -234,6 +253,71 @@ time_times(self, args)
 
 #endif
 
+
+static object *
+time_convert(when, function)
+	time_t when;
+	struct tm * (*function) PROTO((time_t *));
+{
+	struct tm *p = function(&when);
+	return mkvalue("(iiiiiiiii)",
+		       p->tm_year + 1900,
+		       p->tm_mon + 1, /* Want January == 1 */
+		       p->tm_mday,
+		       p->tm_hour,
+		       p->tm_min,
+		       p->tm_sec,
+		       (p->tm_wday + 6) % 7, /* Want Monday == 0 */
+		       p->tm_yday,
+		       p->tm_isdst);
+}
+
+static object *
+time_gmtime(self, args)
+	object *self;
+	object *args;
+{
+	double when;
+	if (!getargs(args, "d", &when))
+		return NULL;
+	return time_convert((time_t)when, gmtime);
+}
+
+static object *
+time_localtime(self, args)
+	object *self;
+	object *args;
+{
+	double when;
+	if (!getargs(args, "d", &when))
+		return NULL;
+	return time_convert((time_t)when, localtime);
+}
+
+/* Some very old systems may not have mktime().  Comment it out then! */
+
+static object *
+time_mktime(self, args)
+	object *self;
+	object *args;
+{
+	struct tm buf;
+	if (!getargs(args, "(iiiiiiiii)",
+		     &buf.tm_year,
+		     &buf.tm_mon,
+		     &buf.tm_mday,
+		     &buf.tm_hour,
+		     &buf.tm_min,
+		     &buf.tm_sec,
+		     &buf.tm_wday,
+		     &buf.tm_yday,
+		     &buf.tm_isdst))
+		return NULL;
+	if (buf.tm_year >= 1900)
+		buf.tm_year -= 1900;
+	buf.tm_mon--;
+	return newintobject((long)mktime(&buf));
+}
 
 static struct methodlist time_methods[] = {
 #ifdef DO_MILLI
@@ -245,6 +329,9 @@ static struct methodlist time_methods[] = {
 #endif
 	{"sleep",	time_sleep},
 	{"time",	time_time},
+	{"gmtime",	time_gmtime},
+	{"localtime",	time_localtime},
+	{"mktime",	time_mktime},
 	{NULL,		NULL}		/* sentinel */
 };
 
@@ -252,7 +339,40 @@ static struct methodlist time_methods[] = {
 void
 inittime()
 {
-	initmodule("time", time_methods);
+	object *m, *d;
+	m = initmodule("time", time_methods);
+	d = getmoduledict(m);
+#ifdef SYSV
+	tzset();
+	dictinsert(d, "timezone", newintobject((long)_timezone));
+	dictinsert(d, "altzone", newintobject((long)_altzone));
+	dictinsert(d, "daylight", newintobject((long)_daylight));
+	dictinsert(d, "tzname", mkvalue("(zz)", _tzname[0], _tzname[1]));
+#else /* !SYSV */
+	{
+#define YEAR ((time_t)((365 * 24 + 6) * 3600))
+		time_t t;
+		struct tm *p;
+		long winterzone, summerzone;
+		char wintername[10], summername[10];
+		t = (time((time_t *)0) / YEAR) * YEAR;
+		p = localtime(&t);
+		winterzone = -p->tm_gmtoff;
+		strncpy(wintername, p->tm_zone ? p->tm_zone : "   ", 9);
+		wintername[9] = '\0';
+		t += YEAR/2;
+		p = localtime(&t);
+		summerzone = -p->tm_gmtoff;
+		strncpy(summername, p->tm_zone ? p->tm_zone : "   ", 9);
+		summername[9] = '\0';
+		dictinsert(d, "timezone", newintobject(winterzone));
+		dictinsert(d, "altzone", newintobject(summerzone));
+		dictinsert(d, "daylight",
+			   newintobject((long)(winterzone != summerzone)));
+		dictinsert(d, "tzname",
+			   mkvalue("(zz)", wintername, summername));
+	}
+#endif /* !SYSV */
 }
 
 
@@ -274,6 +394,7 @@ sleep(secs)
 }
 #endif
 
+static void
 floatsleep(secs)
 	double secs;
 {
@@ -286,7 +407,7 @@ floatsleep(secs)
 	}
 }
 
-long
+static long
 millitimer()
 {
 	return MacTicks * 50 / 3; /* MacTicks * 1000 / 60 */
@@ -299,7 +420,7 @@ millitimer()
 
 #ifdef BSD_TIME
 
-long
+static long
 millitimer()
 {
 	struct timeval t;
@@ -309,6 +430,7 @@ millitimer()
 	return t.tv_sec*1000 + t.tv_usec/1000;
 }
 
+static void
 floatsleep(secs)
 	double secs;
 {
@@ -325,6 +447,7 @@ floatsleep(secs)
 
 #else /* !BSD_TIME */
 
+static void
 floatsleep(secs)
 	double secs;
 {
@@ -342,13 +465,14 @@ floatsleep(secs)
 #define CLOCKS_PER_SEC 55	/* 54.945 msec per tick (18.2 HZ clock) */
 #endif
 
+static void
 floatsleep(secs)
 	double secs;
 {
 	delay(long(secs/1000.0));
 }
 
-long
+static long
 millitimer()
 {
 	clock_t ticks;

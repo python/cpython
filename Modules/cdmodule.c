@@ -725,12 +725,12 @@ CD_addcallback(self, args)
 	object *args;
 {
 	int type;
-	object *funcobject, *funcargobject;
+	object *func, *funcarg;
 
 	CheckParser(self);
 
 	/* XXX - more work here */
-	if (!getargs(args, "(iOO)", &type, &funcobject, &funcargobject))
+	if (!getargs(args, "(iOO)", &type, &func, &funcarg))
 		return NULL;
 
 	if (type < 0 || type >= NCALLBACKS) {
@@ -744,11 +744,11 @@ CD_addcallback(self, args)
 	CDsetcallback(self->ob_cdparser, (CDDATATYPES) type, CD_callback, (void *) self);
 #endif
 	XDECREF(self->ob_cdcallbacks[type].ob_cdcallback);
-	INCREF(funcobject);
-	self->ob_cdcallbacks[type].ob_cdcallback = funcobject;
+	INCREF(func);
+	self->ob_cdcallbacks[type].ob_cdcallback = func;
 	XDECREF(self->ob_cdcallbacks[type].ob_cdcallbackarg);
-	INCREF(funcargobject);
-	self->ob_cdcallbacks[type].ob_cdcallbackarg = funcargobject;
+	INCREF(funcarg);
+	self->ob_cdcallbacks[type].ob_cdcallbackarg = funcarg;
 
 	INCREF(None);
 	return None;

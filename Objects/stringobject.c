@@ -60,7 +60,7 @@ newstringobject(str)
 	return (object *) op;
 }
 
-void
+static void
 string_dealloc(op)
 	object *op;
 {
@@ -676,6 +676,8 @@ formatstring(format, args)
 					   "unsupported format character");
 				goto error;
 			}
+			/* XXX There's a bug somewhere here so that
+			   XXX '%4d'%-1 yields '-  1' ... */
 			if (sign) {
 				if (*buf == '-' || *buf == '+') {
 					sign = *buf++;

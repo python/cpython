@@ -24,6 +24,13 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* Access object implementation */
 
+/* XXX TO DO LIST
+   - need a "super user" mechanism for debugger etc.
+   - __init__ and __del__ (and all other similar methods)
+     should be usable even when private, not ignored
+   - "from foo import bar" should check access of bar
+*/
+
 #include "allobjects.h"
 
 #include "structmember.h"

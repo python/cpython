@@ -28,6 +28,7 @@ void initall PROTO((void));
 
 int run PROTO((FILE *, char *));
 
+int run_command PROTO((char *));
 int run_script PROTO((FILE *, char *));
 int run_tty_1 PROTO((FILE *, char *));
 int run_tty_loop PROTO((FILE *, char *));

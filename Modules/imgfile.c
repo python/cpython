@@ -162,9 +162,9 @@ imgfile_read(self, args)
     return rv;
 }
 
-IMAGE *glob_image;
-long *glob_datap;
-int glob_width, glob_z;
+static IMAGE *glob_image;
+static long *glob_datap;
+static int glob_width, glob_z;
 
 static
 xs_get(buf, y)

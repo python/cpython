@@ -29,8 +29,7 @@ typedef char *string;
 #define mknewlongobject(x) newintobject(x)
 #define mknewshortobject(x) newintobject((long)x)
 #define mknewfloatobject(x) newfloatobject(x)
-
-extern object *mknewcharobject PROTO((int c));
+#define mknewcharobject(c) mkvalue("c", c)
 
 extern int getiobjectarg PROTO((object *args, int nargs, int i, object **p_a));
 extern int getilongarg PROTO((object *args, int nargs, int i, long *p_a));

@@ -68,7 +68,7 @@ fh_scalefont(self, args)
 	object *args;
 {
 	double size;
-	if (!getdoublearg(args, &size))
+	if (!getargs(args, "d", &size))
 		return NULL;
 	return newfhobject(fmscalefont(self->fh_fh, size));
 }

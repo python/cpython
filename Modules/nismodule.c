@@ -87,7 +87,7 @@ nis_match (self, args)
 	int err;
 	object *res;
 
-	if (!getstrstrarg(args, &key, &map))
+	if (!getargs(args, "(ss)", &key, &map))
 		return NULL;
 	if ((err = yp_get_default_domain(&domain)) != 0)
 		return nis_error(err);

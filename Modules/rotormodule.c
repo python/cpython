@@ -763,8 +763,10 @@ static typeobject Rotortype = {
 };
 
 
-object *rotor_rotor(self, args)
-object *args;
+static object *
+rotor_rotor(self, args)
+	object *self;
+	object *args;
 {
 	char *string;
 	rotorobject *r;

@@ -1964,6 +1964,8 @@ not(v)
 	INCREF(w);
 	return w;
 }
+
+
 /* External interface to call any callable object. The arg may be NULL. */
 
 object *

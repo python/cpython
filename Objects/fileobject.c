@@ -328,7 +328,7 @@ file_read(f, args)
    < 0: strip trailing '\n', raise EOFError if EOF reached immediately
 */
 
-object *
+static object *
 getline(f, n)
 	fileobject *f;
 	int n;

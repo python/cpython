@@ -209,7 +209,7 @@ d_setitem(ap, i, v)
 }
 
 /* Description of types */
-struct arraydescr descriptors[] = {
+static struct arraydescr descriptors[] = {
 	{'c', sizeof(char), c_getitem, c_setitem},
 	{'b', sizeof(char), b_getitem, b_setitem},
 	{'h', sizeof(short), h_getitem, h_setitem},
