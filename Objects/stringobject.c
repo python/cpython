@@ -613,26 +613,6 @@ formatchar(v)
 	return buf;
 }
 
-/* XXX this could be moved to object.c */
-static object *
-get_mapping_item(mo, ko)
-	object *mo;
-	object *ko;
-{
-	mapping_methods *mm = mo->ob_type->tp_as_mapping;
-	object *val;
-
-	if (!mm || !mm->mp_subscript) {
-		err_setstr(TypeError, "subscript not implemented");
-		return NULL;
-	}
-
-	val = (*mm->mp_subscript)(mo, ko);
-	XDECREF(val);		/* still in mapping */
-
-	return val;
-}
-
 
 /* fmt%(v1,v2,...) is roughly equivalent to sprintf(fmt, v1, v2, ...) */
 
@@ -643,6 +623,7 @@ formatstring(format, args)
 {
 	char *fmt, *res;
 	int fmtcnt, rescnt, reslen, arglen, argidx;
+	int args_owned = 0;
 	object *result;
 	object *dict = NULL;
 	if (format == NULL || !is_stringobject(format) || args == NULL) {
@@ -692,6 +673,7 @@ formatstring(format, args)
 			char *buf;
 			int sign;
 			int len;
+			args_owned = 0;
 			if (*fmt == '(') {
 				char *keystart;
 				int keylen;
@@ -717,11 +699,16 @@ formatstring(format, args)
 				key = newsizedstringobject(keystart, keylen);
 				if (key == NULL)
 					goto error;
-				args = get_mapping_item(dict, key);
+				if (args_owned) {
+					DECREF(args);
+					args_owned = 0;
+				}
+				args = PyObject_GetItem(dict, key);
 				DECREF(key);
 				if (args == NULL) {
 					goto error;
 				}
+				args_owned = 1;
 				arglen = -1;
 				argidx = -2;
 			}
@@ -925,9 +912,13 @@ formatstring(format, args)
 		err_setstr(TypeError, "not all arguments converted");
 		goto error;
 	}
+	if (args_owned)
+		DECREF(args);
 	resizestring(&result, reslen - rescnt);
 	return result;
  error:
 	DECREF(result);
+	if (args_owned)
+		DECREF(args);
 	return NULL;
 }
