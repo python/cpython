@@ -1,5 +1,5 @@
 #!/bin/sh
-# From configure.in Revision: 1.3 
+# From configure.in Revision: 1.5 
 #!/bin/sh
 # Guess values for system-dependent variables and create Makefiles.
 # Generated automatically using autoconf version 1.8 
@@ -363,64 +363,6 @@ if egrep yes conftest.out >/dev/null 2>&1; then
 fi
 rm -f conftest*
 
-# Make sure to not get the incompatible SysV /etc/install and
-# /usr/sbin/install, which might be in PATH before a BSD-like install,
-# or the SunOS /usr/etc/install directory, or the AIX /bin/install,
-# or the AFS install, which mishandles nonexistent args, or
-# /usr/ucb/install on SVR4, which tries to use the nonexistent group
-# `staff', or /sbin/install on IRIX which has incompatible command-line
-# syntax.  Sigh.
-#
-#     On most BSDish systems install is in /usr/bin, not /usr/ucb
-#     anyway.
-# This turns out not to be true, so the mere pathname isn't an indication
-# of whether the program works.  What we really need is a set of tests for
-# the install program to see if it actually works in all the required ways.
-#
-# Avoid using ./install, which might have been erroneously created
-# by make from ./install.sh.
-if test "z${INSTALL}" = "z" ; then
-  test -n "$silent" || echo "checking for a BSD compatible install"
-  IFS="${IFS= 	}"; ac_save_ifs="$IFS"; IFS="${IFS}:"
-  for ac_dir in $PATH; do
-    case "$ac_dir" in
-    ''|.|/etc|/sbin|/usr/sbin|/usr/etc|/usr/afsws/bin|/usr/ucb) ;;
-    *)
-      # OSF1 and SCO ODT 3.0 have their own names for install.
-      for ac_prog in installbsd scoinst install; do
-        if test -f $ac_dir/$ac_prog; then
-	  if grep dspmsg $ac_dir/$ac_prog >/dev/null 2>&1; then
-	    : # AIX
-	  else
-	    INSTALL="$ac_dir/$ac_prog -c"
-	    INSTALL_PROGRAM='${INSTALL}'
-	    INSTALL_DATA='${INSTALL} -m 644'
-	    break 2
-	  fi
-	fi
-      done
-      ;;
-    esac
-  done
-  IFS="$ac_save_ifs"
-fi
-if test -z "$INSTALL"; then
-  if test -f ${srcdir}/install.sh; then
-    # As a last resort, use the slow shell script.
-    INSTALL='@top_srcdir@/install.sh -c'
-  else
-    echo "configure: warning: ${srcdir}/install.sh not found; using cp" >&2
-    INSTALL=cp
-  fi
-fi
-test -n "$verbose" && echo "	setting INSTALL to $INSTALL"
-# Use test -z because SunOS4 sh mishandles ${INSTALL_PROGRAM-'${INSTALL}'}.
-# It thinks the first close brace ends the variable substitution.
-test -z "$INSTALL_PROGRAM" && INSTALL_PROGRAM='${INSTALL}'
-test -n "$verbose" && echo "	setting INSTALL_PROGRAM to $INSTALL_PROGRAM"
-test -z "$INSTALL_DATA" && INSTALL_DATA='${INSTALL}'
-test -n "$verbose" && echo "	setting INSTALL_DATA to $INSTALL_DATA"
-
 if test -z "$RANLIB"; then
   # Extract the first word of `ranlib', so it can be a program name with args.
   set ac_dummy ranlib; ac_word=$2
@@ -462,6 +404,16 @@ test -n "$AR" && break
 done
 test -n "$AR" || AR="ar"
 
+
+# Install just never works :-(
+if test -z "$INSTALL"
+then INSTALL=cp
+fi
+
+# Optimizer/debugger flags passed between Makefiles
+if test -z "$OPT"
+then OPT=-O
+fi
 
 # checks for UNIX variants that set C preprocessor variables
 test -n "$silent" || echo "checking for AIX"
@@ -1251,9 +1203,8 @@ ac_sed_defs="${ac_sed_defs}\${ac_dA}WITH_READLINE\${ac_dB}WITH_READLINE\${ac_dC}
 "
 }
 
-if test -d "$withval"
-then LIBS="$LIBS -L$withval"
-else echo "configure: proper usage is --with-readline=DIRECTORY" >&2; exit 1
+if test ! -d "$withval"
+then echo "configure: proper usage is --with-readline=DIRECTORY" >&2; exit 1
 fi
 termcap=
 ac_save_LIBS="${LIBS}"
@@ -1302,7 +1253,7 @@ fi
 fi
 
 if test ! -z "$termcap"
-then LIBS="$LIBS -lreadline"
+then LIBS="$LIBS $withval/libreadline.a"
      # Avoid possible conflict between shared libraries termcap and gl
      # on IRIX 5: both contain a routine called clear.
      if test -f /usr/lib/lib$termcap.a
@@ -2173,11 +2124,10 @@ done
 
 trap 'rm -fr Makefile Objects/Makefile Parser/Makefile Python/Makefile Modules/Makefile.pre config.h conftest*; exit 1' 1 2 15
 CC='$CC'
-INSTALL='$INSTALL'
-INSTALL_PROGRAM='$INSTALL_PROGRAM'
-INSTALL_DATA='$INSTALL_DATA'
 RANLIB='$RANLIB'
 AR='$AR'
+INSTALL='$INSTALL'
+OPT='$OPT'
 CPP='$CPP'
 DLINCLDIR='$DLINCLDIR'
 LIBOBJS='$LIBOBJS'
@@ -2230,11 +2180,10 @@ $ac_prsub
 $ac_vpsub
 $extrasub
 s%@CC@%$CC%g
-s%@INSTALL@%$INSTALL%g
-s%@INSTALL_PROGRAM@%$INSTALL_PROGRAM%g
-s%@INSTALL_DATA@%$INSTALL_DATA%g
 s%@RANLIB@%$RANLIB%g
 s%@AR@%$AR%g
+s%@INSTALL@%$INSTALL%g
+s%@OPT@%$OPT%g
 s%@CPP@%$CPP%g
 s%@DLINCLDIR@%$DLINCLDIR%g
 s%@LIBOBJS@%$LIBOBJS%g
