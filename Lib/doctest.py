@@ -501,7 +501,7 @@ def _run_examples_inner(out, fakeout, examples, globs, verbose, name):
                 # the traceback isn't necessary.
                 want = want.split('\n')[-2] + '\n'
                 exc_type, exc_val, exc_tb = sys.exc_info()
-                got = traceback.format_exception_only(exc_type, exc_val)[0]
+                got = traceback.format_exception_only(exc_type, exc_val)[-1]
                 state = OK
             else:
                 # unexpected exception
