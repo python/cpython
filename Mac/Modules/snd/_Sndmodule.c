@@ -1150,8 +1150,11 @@ void init_Snd(void)
 	PyModule_AddObject(m, "SndChannelType", (PyObject *)&SndChannel_Type);
 	SPB_Type.ob_type = &PyType_Type;
 	if (PyType_Ready(&SPB_Type) < 0) return;
+#if 0
+	/* This would shadow the SPB routine, which is bad news (it is important) */
 	Py_INCREF(&SPB_Type);
 	PyModule_AddObject(m, "SPB", (PyObject *)&SPB_Type);
+#endif
 	/* Backward-compatible name */
 	Py_INCREF(&SPB_Type);
 	PyModule_AddObject(m, "SPBType", (PyObject *)&SPB_Type);
