@@ -153,7 +153,6 @@ errno errnomodule.c	# posix (UNIX) errno values
 # Some more UNIX dependent modules -- off by default, since these
 # are not supported by all UNIX systems:
 
-#dbm dbmmodule.c 	# dbm(3) may require -lndbm or similar
 #nis nismodule.c 	# Sun yellow pages -- not everywhere
 #termios termios.c	# Steen Lumholt's termios module
 #resource resource.c	# Jeremy Hylton's rlimit interface
@@ -324,8 +323,18 @@ rotor rotormodule.c		# enigma-inspired encryption
 #dl dlmodule.c
 
 
-# Anthony Baxter's gdbm module (derived from Jack's dbm module)
-# GNU dbm(3) will require -lgdbm:
+# Modules that provide persistent dictionary-like semantics.  You will
+# probably want to arrange for at least one of them to be available on
+# your machine, though none are defined by default because of library
+# dependencies.  The Python module anydbm.py provides an
+# implementation independent wrapper for these; dumbdbm.py provides
+# similar functionality (but slower of course) implemented in Python.
+
+# The standard Unix dbm module:
+
+#dbm dbmmodule.c 	# dbm(3) may require -lndbm or similar
+
+# Anthony Baxter's gdbm module.  GNU dbm(3) will require -lgdbm:
 
 #gdbm gdbmmodule.c -I/usr/local/include -L/usr/local/lib -lgdbm
 
