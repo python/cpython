@@ -178,6 +178,14 @@ or may raise the following exceptions:
 \end{description}
 \end{methoddesc}
 
+\begin{methoddesc}{starttls}{\optional{keyfile, certfile}}
+Put the SMTP connection in TLS (Transport Layer Security) mode. All SMTP
+commands that follow will be encrypted. You should then call ehlo() again.
+
+If \var{keyfile} and \var{certfile} are provided, these are passed to the
+socket module's ssl function.
+\end{methoddesc}
+
 \begin{methoddesc}{sendmail}{from_addr, to_addrs, msg\optional{,
                              mail_options, rcpt_options}}
 Send mail.  The required arguments are an \rfc{822} from-address

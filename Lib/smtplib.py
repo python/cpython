@@ -2,8 +2,8 @@
 
 '''SMTP/ESMTP client class.
 
-This should follow RFC 821 (SMTP), RFC 1869 (ESMTP) and RFC 2554 (SMTP
-Authentication).
+This should follow RFC 821 (SMTP), RFC 1869 (ESMTP), RFC 2554 (SMTP
+Authentication) and RFC 2487 (Secure SMTP over TLS).
 
 Notes:
 
@@ -123,6 +123,41 @@ class SMTPAuthenticationError(SMTPResponseException):
     Most probably the server didn't accept the username/password
     combination provided.
     """
+
+class SSLFakeSocket:
+    """A fake socket object that really wraps a SSLObject.
+    
+    It only supports what is needed in smtplib.
+    """
+    def __init__(self, realsock, sslobj):
+        self.realsock = realsock
+        self.sslobj = sslobj
+
+    def send(self, str):
+        self.sslobj.write(str)
+        return len(str)
+
+    def close(self):
+        self.realsock.close()
+
+class SSLFakeFile:
+    """A fake file like object that really wraps a SSLObject.
+    
+    It only supports what is needed in smtplib.
+    """
+    def __init__( self, sslobj):
+        self.sslobj = sslobj
+
+    def readline(self):
+        str = ""
+        chr = None
+        while chr != "\n":
+            chr = self.sslobj.read(1)
+            str += chr
+        return str
+
+    def close(self):
+        pass
 
 def quoteaddr(addr):
     """Quote a subset of the email addresses defined by RFC 821.
@@ -333,6 +368,7 @@ class SMTP:
         Hostname to send for this command defaults to the FQDN of the local
         host.
         """
+        self.esmtp_features = {}
         if name:
             self.putcmd("ehlo", name)
         else:
@@ -506,6 +542,22 @@ class SMTP:
             raise SMTPAuthenticationError(code, resp)
         return (code, resp)
 
+    def starttls(self, keyfile = None, certfile = None):
+        """Puts the connection to the SMTP server into TLS mode.
+        
+        If the server supports TLS, this will encrypt the rest of the SMTP
+        session. If you provide the keyfile and certfile parameters,
+        the identity of the SMTP server and client can be checked. This,
+        however, depends on whether the socket module really checks the
+        certificates.
+        """
+        (resp, reply) = self.docmd("STARTTLS") 
+        if resp == 220:
+            sslobj = socket.ssl(self.sock, keyfile, certfile)
+            self.sock = SSLFakeSocket(self.sock, sslobj)
+            self.file = SSLFakeFile(sslobj)
+        return (resp, reply)
+    
     def sendmail(self, from_addr, to_addrs, msg, mail_options=[],
                  rcpt_options=[]):
         """This command performs an entire mail transaction.
