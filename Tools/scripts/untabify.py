@@ -15,8 +15,11 @@ def main():
             raise getopt.error, "At least one file argument required"
     except getopt.error, msg:
         print msg
-        print "usage:", sys.argv[0], "file ..."
+        print "usage:", sys.argv[0], "[-t tabwidth] file ..."
         return
+    for optname, optvalue in opts:
+        if optname == '-t':
+            tabsize = int(optvalue)
 
     for file in args:
         process(file, tabsize)
