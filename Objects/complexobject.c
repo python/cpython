@@ -210,22 +210,6 @@ complex_repr(PyComplexObject *v)
 	return PyString_FromString(buf);
 }
 
-static int
-complex_compare(PyComplexObject *v, PyComplexObject *w)
-{
-	/* Note: "greater" and "smaller" have no meaning for complex numbers,
-	   but Python requires that they be defined nevertheless. */
-	Py_complex i, j;
-	i = v->cval;
-	j = w->cval;
-	if (i.real == j.real && i.imag == j.imag)
-		return 0;
-	else if (i.real != j.real)
-		return (i.real < j.real) ? -1 : 1;
-	else
-		return (i.imag < j.imag) ? -1 : 1;
-}
-
 static long
 complex_hash(PyComplexObject *v)
 {
@@ -421,6 +405,47 @@ complex_coerce(PyObject **pv, PyObject **pw)
 }
 
 static PyObject *
+complex_richcompare(PyObject *v, PyObject *w, int op)
+{
+	int c;
+	Py_complex i, j;
+	PyObject *res;
+
+	if (op != Py_EQ && op != Py_NE) {
+		PyErr_SetString(PyExc_TypeError,
+			"cannot compare complex numbers using <, <=, >, >=");
+		return NULL;
+	}
+
+	c = PyNumber_CoerceEx(&v, &w);
+	if (c < 0)
+		return NULL;
+	if (c > 0) {
+		Py_INCREF(Py_NotImplemented);
+		return Py_NotImplemented;
+	}
+	if (!PyComplex_Check(v) || !PyComplex_Check(w)) {
+		Py_DECREF(v);
+		Py_DECREF(w);
+		Py_INCREF(Py_NotImplemented);
+		return Py_NotImplemented;
+	}
+
+	i = ((PyComplexObject *)v)->cval;
+	j = ((PyComplexObject *)w)->cval;
+	Py_DECREF(v);
+	Py_DECREF(w);
+
+	if ((i.real == j.real && i.imag == j.imag) == (op == Py_EQ))
+		res = Py_True;
+	else
+		res = Py_False;
+
+	Py_INCREF(res);
+	return res;
+}
+
+static PyObject *
 complex_int(PyObject *v)
 {
 	PyErr_SetString(PyExc_TypeError,
@@ -474,29 +499,29 @@ complex_getattr(PyComplexObject *self, char *name)
 }
 
 static PyNumberMethods complex_as_number = {
-	(binaryfunc)complex_add, /*nb_add*/
-	(binaryfunc)complex_sub, /*nb_subtract*/
-	(binaryfunc)complex_mul, /*nb_multiply*/
-	(binaryfunc)complex_div, /*nb_divide*/
-	(binaryfunc)complex_remainder,	/*nb_remainder*/
-	(binaryfunc)complex_divmod,	/*nb_divmod*/
-	(ternaryfunc)complex_pow, /*nb_power*/
-	(unaryfunc)complex_neg, /*nb_negative*/
-	(unaryfunc)complex_pos, /*nb_positive*/
-	(unaryfunc)complex_abs, /*nb_absolute*/
-	(inquiry)complex_nonzero, /*nb_nonzero*/
-	0,		/*nb_invert*/
-	0,		/*nb_lshift*/
-	0,		/*nb_rshift*/
-	0,		/*nb_and*/
-	0,		/*nb_xor*/
-	0,		/*nb_or*/
-	(coercion)complex_coerce, /*nb_coerce*/
-	(unaryfunc)complex_int, /*nb_int*/
-	(unaryfunc)complex_long, /*nb_long*/
-	(unaryfunc)complex_float, /*nb_float*/
-	0,		/*nb_oct*/
-	0,		/*nb_hex*/
+	(binaryfunc)complex_add, 		/* nb_add */
+	(binaryfunc)complex_sub, 		/* nb_subtract */
+	(binaryfunc)complex_mul, 		/* nb_multiply */
+	(binaryfunc)complex_div, 		/* nb_divide */
+	(binaryfunc)complex_remainder,		/* nb_remainder */
+	(binaryfunc)complex_divmod,		/* nb_divmod */
+	(ternaryfunc)complex_pow,		/* nb_power */
+	(unaryfunc)complex_neg,			/* nb_negative */
+	(unaryfunc)complex_pos,			/* nb_positive */
+	(unaryfunc)complex_abs,			/* nb_absolute */
+	(inquiry)complex_nonzero,		/* nb_nonzero */
+	0,					/* nb_invert */
+	0,					/* nb_lshift */
+	0,					/* nb_rshift */
+	0,					/* nb_and */
+	0,					/* nb_xor */
+	0,					/* nb_or */
+	(coercion)complex_coerce,		/* nb_coerce */
+	(unaryfunc)complex_int,			/* nb_int */
+	(unaryfunc)complex_long,		/* nb_long */
+	(unaryfunc)complex_float,		/* nb_float */
+	0,					/* nb_oct */
+	0,					/* nb_hex */
 };
 
 PyTypeObject PyComplex_Type = {
@@ -505,16 +530,26 @@ PyTypeObject PyComplex_Type = {
 	"complex",
 	sizeof(PyComplexObject),
 	0,
-	(destructor)complex_dealloc,	/*tp_dealloc*/
-	(printfunc)complex_print,	/*tp_print*/
-	(getattrfunc)complex_getattr,	/*tp_getattr*/
-	0,				/*tp_setattr*/
-	(cmpfunc)complex_compare,	/*tp_compare*/
-	(reprfunc)complex_repr,		/*tp_repr*/
-	&complex_as_number,    		/*tp_as_number*/
-	0,				/*tp_as_sequence*/
-	0,				/*tp_as_mapping*/
-	(hashfunc)complex_hash, 	/*tp_hash*/
+	(destructor)complex_dealloc,		/* tp_dealloc */
+	(printfunc)complex_print,		/* tp_print */
+	(getattrfunc)complex_getattr,		/* tp_getattr */
+	0,					/* tp_setattr */
+	0,					/* tp_compare */
+	(reprfunc)complex_repr,			/* tp_repr */
+	&complex_as_number,    			/* tp_as_number */
+	0,					/* tp_as_sequence */
+	0,					/* tp_as_mapping */
+	(hashfunc)complex_hash, 		/* tp_hash */
+	0,					/* tp_call */
+	0,					/* tp_str */
+	0,					/* tp_getattro */
+	0,					/* tp_setattro */
+	0,					/* tp_as_buffer */
+	Py_TPFLAGS_DEFAULT,			/* tp_flags */
+	0,					/* tp_doc */
+	0,					/* tp_traverse */
+	0,					/* tp_clear */
+	complex_richcompare,			/* tp_richcompare */
 };
 
 #endif
