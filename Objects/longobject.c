@@ -474,6 +474,58 @@ Overflow:
 	
 }
 
+double
+_PyLong_AsScaledDouble(PyObject *vv, int *exponent)
+{
+/* NBITS_WANTED should be > the number of bits in a double's precision,
+   but small enough so that 2**NBITS_WANTED is within the normal double
+   range.  nbitsneeded is set to 1 less than that because the most-significant
+   Python digit contains at least 1 significant bit, but we don't want to
+   bother counting them (catering to the worst case cheaply).
+
+   57 is one more than VAX-D double precision; I (Tim) don't know of a double
+   format with more precision than that; it's 1 larger so that we add in at
+   least one round bit to stand in for the ignored least-significant bits.
+*/
+#define NBITS_WANTED 57
+	PyLongObject *v;
+	double x;
+	const double multiplier = (double)(1L << SHIFT);
+	int i, sign;
+	int nbitsneeded;
+
+	if (vv == NULL || !PyLong_Check(vv)) {
+		PyErr_BadInternalCall();
+		return -1;
+	}
+	v = (PyLongObject *)vv;
+	i = v->ob_size;
+	sign = 1;
+	if (i < 0) {
+		sign = -1;
+		i = -(i);
+	}
+	else if (i == 0) {
+		*exponent = 0;
+		return 0.0;
+	}
+	--i;
+	x = (double)v->ob_digit[i];
+	nbitsneeded = NBITS_WANTED - 1;
+	/* Invariant:  i Python digits remain unaccounted for. */
+	while (i > 0 && nbitsneeded > 0) {
+		--i;
+		x = x * multiplier + (double)v->ob_digit[i];
+		nbitsneeded -= SHIFT;
+	}
+	/* There are i digits we didn't shift in.  Pretending they're all
+	   zeroes, the true value is x * 2**(i*SHIFT). */
+	*exponent = i;
+	assert(x > 0.0);
+	return x * sign;
+#undef NBITS_WANTED
+}
+
 /* Get a C double from a long int object. */
 
 double

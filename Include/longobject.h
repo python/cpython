@@ -18,6 +18,15 @@ extern DL_IMPORT(PyObject *) PyLong_FromUnsignedLong(unsigned long);
 extern DL_IMPORT(PyObject *) PyLong_FromDouble(double);
 extern DL_IMPORT(long) PyLong_AsLong(PyObject *);
 extern DL_IMPORT(unsigned long) PyLong_AsUnsignedLong(PyObject *);
+
+/* _PyLong_AsScaledDouble returns a double x and an exponent e such that
+   the true value is approximately equal to x * 2**(SHIFT*e).  e is >= 0.
+   x is 0.0 if and only if the input is 0 (in which case, e and x are both
+   zeroes).  Overflow is impossible.  Note that the exponent returned must
+   be multiplied by SHIFT!  There may not be enough room in an int to store
+   e*SHIFT directly. */
+extern DL_IMPORT(double) _PyLong_AsScaledDouble(PyObject *vv, int *e);
+
 extern DL_IMPORT(double) PyLong_AsDouble(PyObject *);
 extern DL_IMPORT(PyObject *) PyLong_FromVoidPtr(void *);
 extern DL_IMPORT(void *) PyLong_AsVoidPtr(PyObject *);
