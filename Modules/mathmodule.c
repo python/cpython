@@ -33,9 +33,6 @@ PERFORMANCE OF THIS SOFTWARE.
 
 #include "Python.h"
 
-#define getdoublearg(v, a) PyArg_Parse(v, "d", a)
-#define get2doublearg(v, a, b) PyArg_Parse(v, "(dd)", a, b)
-
 #include "mymath.h"
 
 #ifndef _MSC_VER
@@ -80,7 +77,7 @@ math_1(args, func)
 	double (*func) Py_FPROTO((double));
 {
 	double x;
-	if (!getdoublearg(args, &x))
+	if (!  PyArg_Parse(args, "d", &x))
 		return NULL;
 	errno = 0;
 	x = (*func)(x);
@@ -97,7 +94,7 @@ math_2(args, func)
 	double (*func) Py_FPROTO((double, double));
 {
 	double x, y;
-	if (!get2doublearg(args, &x, &y))
+	if (! PyArg_Parse(args, "(dd)", &x, &y))
 		return NULL;
 	errno = 0;
 	x = (*func)(x, y);
@@ -156,7 +153,7 @@ math_frexp(self, args)
 {
 	double x;
 	int i;
-	if (!getdoublearg(args, &x))
+	if (! PyArg_Parse(args, "d", &x))
 		return NULL;
 	errno = 0;
 	x = frexp(x, &i);
@@ -173,7 +170,7 @@ math_ldexp(self, args)
 {
 	double x, y;
 	/* Cheat -- allow float as second argument */
-	if (!get2doublearg(args, &x, &y))
+        if (! PyArg_Parse(args, "(dd)", &x, &y))
 		return NULL;
 	errno = 0;
 	x = ldexp(x, (int)y);
@@ -190,7 +187,7 @@ math_modf(self, args)
 	PyObject *args;
 {
 	double x, y;
-	if (!getdoublearg(args, &x))
+	if (! PyArg_Parse(args, "d", &x))
 		return NULL;
 	errno = 0;
 #ifdef MPW /* MPW C modf expects pointer to extended as second argument */
