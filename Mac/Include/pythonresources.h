@@ -58,17 +58,23 @@
 
 /*
 ** The following are valid both in the binary (or shared library)
-** and in the Preferences file
+** and in the Preferences file.
+** For all three the override is tried first, through all current
+** resource files. This allows an applet to override standard settings
+** by providing a resource of the correct type.
 */
 
 /* The STR# resource for sys.path initialization */
 #define PYTHONPATH_ID 128
+#define PYTHONPATHOVERRIDE_ID 129
 
 /* The alis resource for locating the python home directory */
 #define PYTHONHOME_ID 128
+#define PYTHONHOMEOVERRIDE_ID 129
 
 /* The Python options resource and offset of its members */
 #define PYTHONOPTIONS_ID 128
+#define PYTHONOPTIONSOVERRIDE_ID 129
 #define POPT_INSPECT	0
 #define POPT_VERBOSE	1
 #define POPT_SUPPRESS	2
