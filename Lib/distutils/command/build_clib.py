@@ -23,6 +23,7 @@ import os, string
 from types import *
 from distutils.core import Command
 from distutils.errors import *
+from distutils.sysconfig import customize_compiler
 
 
 def show_compilers ():
@@ -111,6 +112,7 @@ class build_clib (Command):
                                       verbose=self.verbose,
                                       dry_run=self.dry_run,
                                       force=self.force)
+        customize_compiler(self.compiler)
 
         if self.include_dirs is not None:
             self.compiler.set_include_dirs (self.include_dirs)
