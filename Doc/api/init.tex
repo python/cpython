@@ -708,11 +708,14 @@ previous versions.
 
 \begin{cvardesc}{int}{PyTrace_EXCEPT}
   The value of the \var{what} parameter to a \ctype{Py_tracefunc}
-  function when an exception has been raised by Python code as the
-  result of an operation.  The operation may have explictly intended
-  to raise the operation (as with a \keyword{raise} statement), or may
-  have triggered an exception in the runtime as a result of the
-  specific operation.
+  function when an exception has been raised.  The callback function
+  is called with this value for \var{what} when after any bytecode is
+  processed after which the exception becomes set within the frame
+  being executed.  The effect of this is that as exception propogation
+  causes the Python stack to unwind, the callback is called upon
+  return to each frame as the exception propogates.  Only trace
+  functions receives these events; they are not needed by the
+  profiler.
 \end{cvardesc}
 
 \begin{cvardesc}{int}{PyTrace_LINE}
