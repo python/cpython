@@ -699,6 +699,30 @@ class Misc:
 				   apply(self.tk.call,
 					 ('grid', 'slaves', self._w) + args)))
 
+	# Support for the "event" command, new in Tk 4.2.
+	# By Case Roole.
+
+	def event_add(self,virtual, *sequences):
+		args = ('event', 'add', virtual) + sequences
+		apply( _default_root.tk.call, args )
+
+	def event_delete(self,virtual,*sequences):
+		args = ('event', 'delete', virtual) + sequences
+		apply( _default_root.tk.call, args )
+
+	def event_generate(self, sequence, **kw):
+		args = ('event', 'generate', self._w, sequence)
+		for k,v in kw.items():
+			args = args + ('-%s' % k,str(v))
+		apply( _default_root.tk.call, args )
+
+	def event_info(self,virtual=None):
+		args = ('event', 'info')
+		if virtual is not None: args = args + (virtual,)
+		s = apply( _default_root.tk.call, args )
+		return _string.split(s)
+
+
 class CallWrapper:
 	def __init__(self, func, subst, widget):
 		self.func = func
