@@ -4,8 +4,10 @@
 *.SYM
 *.dbg
 *.hqx
+*.idb
 *.pyc
 *.slb
+*.xMAP
 *.xSYM
 *Icon
 CVS
