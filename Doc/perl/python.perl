@@ -791,7 +791,7 @@ sub do_cmd_token{
         }
         $BackpatchGrammarFiles{"$CURRENT_FILE"} = 1;
     }
-    return "<a href=\"$target\">$token</a>" . $_;
+    return "<a class='grammartoken' href=\"$target\">$token</a>" . $_;
 }
 
 sub do_cmd_grammartoken{
@@ -809,7 +809,7 @@ sub do_env_productionlist{
     $DefinedGrammars{$lang} .= $_;
     return ("<dl><dd class=\"grammar\">\n"
             . "<div class=\"productions\">\n"
-            . "<table cellpadding=\"2\">\n"
+            . "<table>\n"
             . translate_commands(translate_environments($_))
             . "</table>\n"
             . "</div>\n"
@@ -828,12 +828,12 @@ sub do_cmd_production{
     my $lang = $CURRENT_GRAMMAR;
     local($CURRENT_TOKEN) = $token;
     if ($lang eq '*') {
-        return ("<tr valign=\"baseline\">\n"
-                . "    <td><code>$token</code></td>\n"
-                . "    <td>&nbsp;::=&nbsp;</td>\n"
-                . "    <td><code>"
+        return ("<tr>\n"
+                . "    <td>$token</td>\n"
+                . "    <td>::=</td>\n"
+                . "    <td>"
                 . translate_commands($defn)
-                . "</code></td></tr>"
+                . "</td></tr>"
                 . $_);
     }
     my $target;
@@ -844,13 +844,13 @@ sub do_cmd_production{
         $target = "$CURRENT_FILE\#tok-$lang-$token";
     }
     $TokenToTargetMapping{"$CURRENT_GRAMMAR:$token"} = $target;
-    return ("<tr valign=\"baseline\">\n"
-            . "    <td><code><a id='tok-$token' xml:id='tok-$token'>"
-            . "$token</a></code></td>\n"
-            . "    <td>&nbsp;::=&nbsp;</td>\n"
-            . "    <td><code>"
+    return ("<tr>\n"
+            . "    <td><a id='tok-$token' xml:id='tok-$token'>"
+            . "$token</a></td>\n"
+            . "    <td>::=</td>\n"
+            . "    <td>"
             . translate_commands($defn)
-            . "</code></td></tr>"
+            . "</td></tr>"
             . $_);
 }
 
@@ -858,9 +858,9 @@ sub do_cmd_productioncont{
     local($_) = @_;
     my $defn = next_argument();
     $defn =~ s/^( +)/'&nbsp;' x length $1/e;
-    return ("<tr valign=\"baseline\">\n"
-            . "    <td>&nbsp;</td>\n"
-            . "    <td>&nbsp;</td>\n"
+    return ("<tr>\n"
+            . "    <td></td>\n"
+            . "    <td></td>\n"
             . "    <td><code>"
             . translate_commands($defn)
             . "</code></td></tr>"

@@ -108,6 +108,8 @@ div.note .label         { margin-right: 0.5em;
                           padding: 0.05in; }
 .grammar-footer         { padding: 0.05in;
                           font-size: 85%; }
+.grammartoken           { font-family: "lucida typewriter", lucidatypewriter,
+                                       monospace; }
 
 .productions                  { background-color: #bbeeff; }
 .productions a:active         { color: #ff0000; }
@@ -115,7 +117,28 @@ div.note .label         { margin-right: 0.5em;
 .productions a:visited:hover  { background-color: #99ccff; }
 .productions a:visited        { color: #551a8b; }
 .productions a:link           { color: #0000bb; }
-.productions table            { vertical-align: baseline; }
+.productions table            { vertical-align: baseline;
+                                empty-cells: show; }
+.productions > table td,
+.productions > table th       { padding: 2px; }
+.productions > table td:first-child,
+.productions > table td:last-child {
+                                font-family: "lucida typewriter",
+                                             lucidatypewriter,
+                                             monospace;
+                                }
+/* same as the second selector above, but expressed differently for Opera */
+.productions > table td:first-child + td + td {
+                                font-family: "lucida typewriter",
+                                             lucidatypewriter,
+                                             monospace;
+                                vertical-align: baseline;
+                                }
+.productions > table td:first-child + td {
+                                padding-left: 1em;
+                                padding-right: 1em;
+                                }
+.productions > table tr       { vertical-align: baseline; }
 
 .email                  { font-family: avantgarde, sans-serif; }
 .mailheader             { font-family: avantgarde, sans-serif; }
