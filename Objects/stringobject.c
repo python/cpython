@@ -52,6 +52,7 @@ PyObject *
 PyString_FromStringAndSize(const char *str, int size)
 {
 	register PyStringObject *op;
+	assert(size >= 0);
 	if (size == 0 && (op = nullstring) != NULL) {
 #ifdef COUNT_ALLOCS
 		null_strings++;
