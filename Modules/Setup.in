@@ -274,12 +274,12 @@ TKPATH=:lib-tk
 
 # *** Always uncomment this (leave the leading underscore in!):
 # _tkinter _tkinter.c tkappinit.c -DWITH_APPINIT \
+# *** Uncomment and edit to reflect where your Tcl/Tk headers are:
+#	-I/usr/local/include \
 # *** Uncomment and edit to reflect where your X11 header files are:
 #	-I/usr/X11R6/include \
 # *** Or uncomment this for Solaris:
 #	-I/usr/openwin/include \
-# *** Uncomment and edit to reflect where your Tcl/Tk headers are:
-#	-I/usr/local/include \
 # *** Uncomment and edit for Tix extension only:
 #	-DWITH_TIX -ltix4.1.8.0 \
 # *** Uncomment and edit for BLT extension only:
