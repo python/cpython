@@ -356,12 +356,8 @@ initthread()
 
 	/* Add a symbolic constant */
 	d = PyModule_GetDict(m);
-	ThreadError = PyString_FromString("thread.error");
+	ThreadError = PyErr_NewException("thread.error", NULL, NULL);
 	PyDict_SetItemString(d, "error", ThreadError);
-
-	/* Check for errors */
-	if (PyErr_Occurred())
-		Py_FatalError("can't initialize module thread");
 
 	/* Initialize the C thread library */
 	init_thread();

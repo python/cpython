@@ -2651,13 +2651,11 @@ initstdwin()
 	d = PyModule_GetDict(m);
 	
 	/* Initialize stdwin.error exception */
-	StdwinError = PyString_FromString("stdwin.error");
+	StdwinError = PyErr_NewException("stdwin.error", NULL, NULL);
 	if (StdwinError == NULL ||
 	    PyDict_SetItemString(d, "error", StdwinError) != 0)
-		Py_FatalError("can't define stdwin.error");
+		return;
 #ifdef WITH_THREAD
 	StdwinLock = allocate_lock();
-	if (StdwinLock == NULL)
-		Py_FatalError("can't allocate stdwin lock");
 #endif
 }

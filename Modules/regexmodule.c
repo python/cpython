@@ -718,7 +718,7 @@ initregex()
 	d = PyModule_GetDict(m);
 	
 	/* Initialize regex.error exception */
-	v = RegexError = PyString_FromString("regex.error");
+	v = RegexError = PyErr_NewException("regex.error", NULL, NULL);
 	if (v == NULL || PyDict_SetItemString(d, "error", v) != 0)
 		goto finally;
 	
@@ -742,5 +742,5 @@ initregex()
 	if (!PyErr_Occurred())
 		return;
   finally:
-	Py_FatalError("can't initialize regex module");
+	/* Nothing */ ;
 }

@@ -231,10 +231,6 @@ initxx()
 
 	/* Add some symbolic constants to the module */
 	d = PyModule_GetDict(m);
-	ErrorObject = PyString_FromString("xx.error");
+	ErrorObject = PyErr_NewException("xx.error", NULL, NULL);
 	PyDict_SetItemString(d, "error", ErrorObject);
-
-	/* Check for errors */
-	if (PyErr_Occurred())
-		Py_FatalError("can't initialize module xx");
 }

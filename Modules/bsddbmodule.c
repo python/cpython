@@ -746,7 +746,7 @@ initbsddb() {
 	Bsddbtype.ob_type = &PyType_Type;
 	m = Py_InitModule("bsddb", bsddbmodule_methods);
 	d = PyModule_GetDict(m);
-	BsddbError = PyString_FromString("bsddb.error");
-	if (BsddbError == NULL || PyDict_SetItemString(d, "error", BsddbError))
-		Py_FatalError("can't define bsddb.error");
+	BsddbError = PyErr_NewException("bsddb.error", NULL, NULL);
+	if (BsddbError != NULL)
+		PyDict_SetItemString(d, "error", BsddbError);
 }

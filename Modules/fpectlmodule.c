@@ -227,17 +227,11 @@ static void sigfpe_handler(int signo)
 void initfpectl(void)
 {
     PyObject *m, *d;
-    static int already_initialized = 0;
-
-    if (already_initialized) return;
     m = Py_InitModule("fpectl", fpectl_methods);
     d = PyModule_GetDict(m);
-    fpe_error = PyString_FromString("fpectl.error");
-    PyDict_SetItemString(d, "error", fpe_error);
-
-    if (PyErr_Occurred())
-	Py_FatalError("Cannot initialize module fpectl");
-    already_initialized = 1;
+    fpe_error = PyErr_NewException("fpectl.error", NULL, NULL);
+    if (fpe_error != NULL)
+	PyDict_SetItemString(d, "error", fpe_error);
 }
 
 #ifdef __cplusplus

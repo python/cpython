@@ -1314,17 +1314,16 @@ static PyMethodDef PySocket_methods[] = {
 
 /* Convenience routine to export an integer value.
  *
- * Since this function is called only from initsocket/init_socket(), any
- * errors trigger a fatal exception.
+ * Errors are silently ignored, for better or for worse...
  */
 static void
 BUILD_FUNC_DEF_3(insint,PyObject *,d, char *,name, int,value)
 {
 	PyObject *v = PyInt_FromLong((long) value);
 	if (!v || PyDict_SetItemString(d, name, v))
-		Py_FatalError("can't initialize socket module");
+		PyErr_Clear();
 
-	Py_DECREF(v);
+	Py_XDECREF(v);
 }
 
 
@@ -1398,15 +1397,15 @@ initsocket()
 	m = Py_InitModule("socket", PySocket_methods);
 #endif
 	d = PyModule_GetDict(m);
-	PySocket_Error = PyString_FromString("socket.error");
-	if (PySocket_Error == NULL || 
-	    PyDict_SetItemString(d, "error", PySocket_Error) != 0)
-		Py_FatalError("can't define socket.error");
+	PySocket_Error = PyErr_NewException("socket.error", NULL, NULL);
+	if (PySocket_Error == NULL)
+		return;
+	PyDict_SetItemString(d, "error", PySocket_Error);
 	PySocketSock_Type.ob_type = &PyType_Type;
 	Py_INCREF(&PySocketSock_Type);
 	if (PyDict_SetItemString(d, "SocketType",
 				 (PyObject *)&PySocketSock_Type) != 0)
-		Py_FatalError("can't define socket.SocketType");
+		return;
 	insint(d, "AF_INET", AF_INET);
 #ifdef AF_UNIX
 	insint(d, "AF_UNIX", AF_UNIX);

@@ -958,7 +958,7 @@ initreop()
 	d = PyModule_GetDict(m);
 	
 	/* Initialize reop.error exception */
-	v = ReopError = PyString_FromString("reop.error");
+	v = ReopError = PyErr_NewException("reop.error", NULL, NULL);
 	if (v == NULL || PyDict_SetItemString(d, "error", v) != 0)
 		goto finally;
 	
@@ -1048,6 +1048,6 @@ initreop()
 		return;
 
   finally:
-	Py_FatalError("can't initialize reop module");
+	/* Nothing */;
 }
 

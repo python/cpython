@@ -178,9 +178,7 @@ void initfpetest(void)
 
     m = Py_InitModule("fpetest", fpetest_methods);
     d = PyModule_GetDict(m);
-    fpe_error = PyString_FromString("fpetest.error");
-    PyDict_SetItemString(d, "error", fpe_error);
-
-    if (PyErr_Occurred())
-	Py_FatalError("Cannot initialize module fpetest");
+    fpe_error = PyErr_NewException("fpetest.error", NULL, NULL);
+    if (fpe_error != NULL)
+	    PyDict_SetItemString(d, "error", fpe_error);
 }

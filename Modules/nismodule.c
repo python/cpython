@@ -370,8 +370,7 @@ initnis ()
 	PyObject *m, *d;
 	m = Py_InitModule("nis", nis_methods);
 	d = PyModule_GetDict(m);
-	NisError = PyString_FromString("nis.error");
-	if (NisError == NULL ||
-	    PyDict_SetItemString(d, "error", NisError) != 0)
-		Py_FatalError("Cannot define nis.error");
+	NisError = PyErr_NewException("nis.error", NULL, NULL);
+	if (NisError != NULL)
+		PyDict_SetItemString(d, "error", NisError);
 }

@@ -752,8 +752,7 @@ initimageop()
 	PyObject *m, *d;
 	m = Py_InitModule("imageop", imageop_methods);
 	d = PyModule_GetDict(m);
-	ImageopError = PyString_FromString("imageop.error");
-	if ( ImageopError == NULL ||
-	     PyDict_SetItemString(d,"error",ImageopError) )
-		Py_FatalError("can't define imageop.error");
+	ImageopError = PyErr_NewException("imageop.error", NULL, NULL);
+	if (ImageopError != NULL)
+		PyDict_SetItemString(d, "error", ImageopError);
 }

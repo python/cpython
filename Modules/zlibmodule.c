@@ -801,7 +801,7 @@ PyInit_zlib()
 			   zlib_module_documentation,
 			   (PyObject*)NULL,PYTHON_API_VERSION);
         d = PyModule_GetDict(m);
-        ZlibError = Py_BuildValue("s", "zlib.error");
+        ZlibError = PyErr_NewException("zlib.error", NULL, NULL);
         PyDict_SetItemString(d, "error", ZlibError);
 
 	insint(d, "MAX_WBITS", MAX_WBITS);
@@ -815,7 +815,4 @@ PyInit_zlib()
 	insint(d, "Z_DEFAULT_STRATEGY", Z_DEFAULT_STRATEGY);
 	ver = PyString_FromString(ZLIB_VERSION);
 	PyDict_SetItemString(d, "ZLIB_VERSION", ver);
-
-        if (PyErr_Occurred())
-                Py_FatalError("can't initialize module zlib");
 }

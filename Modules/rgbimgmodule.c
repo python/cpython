@@ -782,9 +782,7 @@ initrgbimg()
 	PyObject *m, *d;
 	m = Py_InitModule("rgbimg", rgbimg_methods);
 	d = PyModule_GetDict(m);
-	ImgfileError = PyString_FromString("rgbimg.error");
-	if (ImgfileError)
+	ImgfileError = PyErr_NewException("rgbimg.error", NULL, NULL);
+	if (ImgfileError != NULL)
 		PyDict_SetItemString(d, "error", ImgfileError);
-	if (PyErr_Occurred())
-		Py_FatalError("can't initialize rgbimg module");
 }
