@@ -60,7 +60,7 @@ AC_MINIX
 AC_HEADER_STDC
 AC_CHECK_HEADERS(dlfcn.h fcntl.h limits.h ncurses.h \
 signal.h stdarg.h stddef.h stdlib.h thread.h unistd.h utime.h \
-sys/audioio.h sys/param.h sys/select.h sys/time.h sys/times.h \
+sys/audioio.h sys/lock.h sys/param.h sys/select.h sys/time.h sys/times.h \
 sys/un.h sys/utsname.h sys/wait.h)
 AC_HEADER_DIRENT
 
@@ -255,7 +255,7 @@ LIBS="$LIBS -ldl -ldld"], AC_MSG_RESULT(no))
 # checks for library functions
 AC_CHECK_FUNCS(chown clock dlopen flock ftime ftruncate \
  gethostname_r getpeername getpgrp getpid gettimeofday getwd \
- link lstat mkfifo nice readlink \
+ link lstat mkfifo nice plock readlink \
  select setgid setuid setsid setpgid setpgrp setvbuf \
  sigaction siginterrupt sigrelse strftime symlink \
  tcgetpgrp tcsetpgrp times truncate uname waitpid) \
