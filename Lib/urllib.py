@@ -369,7 +369,7 @@ class URLopener:
                 h.putheader('Content-length', '%d' % len(data))
             else:
                 h.putrequest('GET', selector)
-            if auth: h.putheader('Authorization: Basic %s' % auth)
+            if auth: h.putheader('Authorization', 'Basic %s' % auth)
             if realhost: h.putheader('Host', realhost)
             for args in self.addheaders: h.putheader(*args)
             h.endheaders()
