@@ -1005,7 +1005,10 @@ PyObject *
 PyRun_StringFlags(char *str, int start, PyObject *globals, PyObject *locals,
 		  PyCompilerFlags *flags)
 {
-	return run_err_node(PyParser_SimpleParseString(str, start),
+	return run_err_node(PyParser_SimpleParseStringFlags(
+				str, start,
+				(flags && flags->cf_flags & PyCF_GENERATORS) ?
+				PyPARSE_YIELD_IS_KEYWORD : 0),
 			    "<string>", globals, locals, flags);
 }
 
