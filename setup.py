@@ -388,7 +388,7 @@ class PyBuildExt(build_ext):
                 exts.append( Extension('resource', ['resource.c']) )
 
             # Generic dynamic loading module
-            exts.append( Extension('dl', ['dlmodule.c']) )
+            #exts.append( Extension('dl', ['dlmodule.c']) )
             
             # Sun yellow pages. Some systems have the functions in libc.
             if platform not in ['cygwin']:
