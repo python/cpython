@@ -82,7 +82,7 @@ MANSTYLES=texinputs/fncychap.sty texinputs/manual.cls texinputs/python.sty
 # Main target
 all:	all-ps
 
-world:	all-ps all-pdf l2h lib.info tarballs
+world:	all-ps all-pdf l2h tarballs
 
 all-dvi: $(DVIFILES)
 all-pdf: $(PDFFILES)
@@ -296,7 +296,7 @@ tarpdf:	pdf-$(VERSION).tar.gz
 
 tarlatex: latex-$(VERSION).tar.gz
 
-tarballs:  tarpdf tarps tarhtml tarinfo tarlatex
+tarballs:  tarpdf tarps tarhtml tarlatex
 
 
 # Housekeeping targets
