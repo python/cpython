@@ -5,7 +5,7 @@
 #define MPW_3 1
 #endif
 
-/* Define if on Macintosh (THINK_C or MPW should also be defined) */
+/* Define if on Macintosh (THINK_C, MPW or __MWERKS__ should also be defined) */
 #define macintosh
 
 /* Define if on AIX 3.
