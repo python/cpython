@@ -31,7 +31,7 @@ DIGITS = tuple(string.digits)
 OCTDIGITS = tuple("01234567")
 HEXDIGITS = tuple("0123456789abcdefABCDEF")
 
-WHITESPACE = string.whitespace
+WHITESPACE = tuple(string.whitespace)
 
 ESCAPES = {
     r"\a": (LITERAL, 7),
@@ -296,7 +296,7 @@ def _branch(pattern, items):
     subpattern.append((BRANCH, (None, items)))
     return subpattern
 
-def _parse(source, state, flags=0):
+def _parse(source, state):
 
     # parse regular expression pattern into an operator list.
 
@@ -468,7 +468,7 @@ def _parse(source, state, flags=0):
                     char = source.get()
                     b = []
                     while 1:
-                        p = _parse(source, state, flags)
+                        p = _parse(source, state)
                         if source.next == ")":
                             if b:
                                 b.append(p)
@@ -495,7 +495,7 @@ def _parse(source, state, flags=0):
                 else:
                     group = state.getgroup(name)
                 while 1:
-                    p = _parse(source, state, flags)
+                    p = _parse(source, state)
                     if source.match(")"):
                         if b:
                             b.append(p)
@@ -532,9 +532,10 @@ def parse(pattern, flags=0):
     # parse 're' pattern into list of (opcode, argument) tuples
     source = Tokenizer(pattern)
     state = State()
+    state.flags = flags
     b = []
     while 1:
-        p = _parse(source, state, flags)
+        p = _parse(source, state)
         tail = source.get()
         if tail == "|":
             b.append(p)
