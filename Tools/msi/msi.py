@@ -1085,7 +1085,7 @@ def add_registry(db):
               ("InstallGroup", -1, prefix+r"\InstallPath\InstallGroup", "",
                "Python %s" % short_version, "REGISTRY"),
               ("PythonPath", -1, prefix+r"\PythonPath", "",
-               "[TARGETDIR]Lib;[TARGETDIR]DLLs;[TARGETDIR]lib-tk", "REGISTRY"),
+               r"[TARGETDIR]Lib;[TARGETDIR]DLLs;[TARGETDIR]Lib\lib-tk", "REGISTRY"),
               ("Documentation", -1, prefix+r"\Help\Main Python Documentation", "",
                r"[TARGETDIR]Doc\Python%s%s.chm" % (major, minor), "REGISTRY"),
               ("Modules", -1, prefix+r"\Modules", "+", None, "REGISTRY"),
