@@ -47,8 +47,11 @@ exactly one argument.)
   give the file from which the code was read; pass e.g. \code{'<string>'}
   if it wasn't read from a file.  The \var{kind} argument specifies
   what kind of code must be compiled; it can be \code{'exec'} if
-  \var{string} consists of a sequence of statements, or \code{'eval'}
-  if it consists of a single expression.
+  \var{string} consists of a sequence of statements, \code{'eval'}
+  if it consists of a single expression, or \code{'single'} if
+  it consists of a single interactive statement (in the latter case,
+  expression statements that evaluate to something else than
+  \code{None} will printed).
 \end{funcdesc}
 
 \begin{funcdesc}{delattr}{object\, name}
@@ -112,8 +115,9 @@ exactly one argument.)
 
   Hints: dynamic execution of statements is supported by the
   \code{exec} statement.  Execution of statements from a file is
-  supported by the \code{execfile()} function.  The \code{vars()}
-  function returns the current local dictionary, which may be useful
+  supported by the \code{execfile()} function.  The \code{globals()}
+  and \code{locals()} functions returns the current global and local
+  dictionary, respectively, which may be useful
   to pass around for use by \code{eval()} or \code{execfile()}.
 
 \end{funcdesc}
@@ -156,6 +160,13 @@ removed.
   of one of the object's attributes.  The result is the value of that
   attribute.  For example, \code{getattr(\var{x}, '\var{foobar}')} is equivalent to
   \code{\var{x}.\var{foobar}}.
+\end{funcdesc}
+
+\begin{funcdesc}{globals}{}
+Return a dictionary representing the current global symbol table.
+This is always the dictionary of the current module (inside a
+function or method, this is the module where it is defined, not the
+module from which it is called).
 \end{funcdesc}
 
 \begin{funcdesc}{hasattr}{object\, name}
@@ -204,6 +215,12 @@ removed.
 \begin{funcdesc}{len}{s}
   Return the length (the number of items) of an object.  The argument
   may be a sequence (string, tuple or list) or a mapping (dictionary).
+\end{funcdesc}
+
+\begin{funcdesc}{locals}{}
+Return a dictionary representing the current local symbol table.
+Inside a function, modifying this dictionary does not always have the
+desired effect.
 \end{funcdesc}
 
 \begin{funcdesc}{long}{x}
