@@ -89,6 +89,7 @@ f = urllib2.urlopen('http://www.python.org/')
 
 import socket
 import httplib
+import inspect
 import re
 import base64
 import types
@@ -252,7 +253,7 @@ class OpenerDirector:
 
     def add_handler(self, handler):
         added = 0
-        for meth in get_methods(handler):
+        for meth in dir(handler):
             if meth[-5:] == '_open':
                 protocol = meth[:-5]
                 if self.handle_open.has_key(protocol):
@@ -303,7 +304,7 @@ class OpenerDirector:
 
     def open(self, fullurl, data=None):
         # accept a URL or a Request object
-        if isinstance(fullurl, types.StringType):
+        if isinstance(fullurl, (types.StringType, types.UnicodeType)):
             req = Request(fullurl, data)
         else:
             req = fullurl
@@ -346,34 +347,6 @@ class OpenerDirector:
             args = (dict, 'default', 'http_error_default') + orig_args
             return self._call_chain(*args)
 
-def is_callable(obj):
-    # not quite like builtin callable (which I didn't know existed),
-    # not entirely sure it needs to be different
-    if type(obj) in (types.BuiltinFunctionType,
-                     types.BuiltinMethodType,  types.LambdaType,
-                     types.MethodType):
-        return 1
-    if isinstance(obj, types.InstanceType):
-        return hasattr(obj, '__call__')
-    return 0
-
-def get_methods(inst):
-    methods = {}
-    classes = []
-    classes.append(inst.__class__)
-    while classes:
-        klass = classes[0]
-        del classes[0]
-        classes = classes + list(klass.__bases__)
-        for name in dir(klass):
-            attr = getattr(klass, name)
-            if isinstance(attr, types.UnboundMethodType):
-                methods[name] = 1
-    for name in dir(inst):
-        if is_callable(getattr(inst, name)):
-            methods[name] = 1
-    return methods.keys()
-
 # XXX probably also want an abstract factory that knows things like
  # the fact that a ProxyHandler needs to get inserted first.
 # would also know when it makes sense to skip a superclass in favor of
@@ -399,12 +372,11 @@ def build_opener(*handlers):
     skip = []
     for klass in default_classes:
         for check in handlers:
-            if isinstance(check, types.ClassType):
+            if inspect.isclass(check):
                 if issubclass(check, klass):
                     skip.append(klass)
-            elif isinstance(check, types.InstanceType):
-                if isinstance(check, klass):
-                    skip.append(klass)
+            elif isinstance(check, klass):
+                skip.append(klass)
     for klass in skip:
         default_classes.remove(klass)
 
@@ -412,7 +384,7 @@ def build_opener(*handlers):
         opener.add_handler(klass())
 
     for h in handlers:
-        if isinstance(h, types.ClassType):
+        if inspect.isclass(h):
             h = h()
         opener.add_handler(h)
     return opener
@@ -545,7 +517,7 @@ class HTTPPasswordMgr:
 
     def add_password(self, realm, uri, user, passwd):
         # uri could be a single URI or a sequence
-        if isinstance(uri, types.StringType):
+        if isinstance(uri, (types.StringType, types.UnicodeType)):
             uri = [uri]
         uri = tuple(map(self.reduce_uri, uri))
         if not self.passwd.has_key(realm):
@@ -1067,7 +1039,7 @@ class OpenerFactory:
     def build_opener(self):
         opener = OpenerDirector()
         for ph in self.proxy_handlers:
-            if isinstance(ph, types.ClassType):
+            if inspect.isclass(ph):
                 ph = ph()
             opener.add_handler(ph)
 
@@ -1088,49 +1060,46 @@ if __name__ == "__main__":
 
         'file:/etc/passwd',
         'file://nonsensename/etc/passwd',
-        'ftp://www.python.org/pub/tmp/httplib.py',
-        'ftp://www.python.org/pub/tmp/imageop.c',
+        'ftp://www.python.org/pub/python/misc/sousa.au',
         'ftp://www.python.org/pub/tmp/blat',
         'http://www.espn.com/', # redirect
         'http://www.python.org/Spanish/Inquistion/',
-        ('http://grail.cnri.reston.va.us/cgi-bin/faqw.py',
+        ('http://www.python.org/cgi-bin/faqw.py',
          'query=pythonistas&querytype=simple&casefold=yes&req=search'),
         'http://www.python.org/',
-        'ftp://prep.ai.mit.edu/welcome.msg',
-        'ftp://www.python.org/pub/tmp/figure.prn',
-        'ftp://www.python.org/pub/tmp/interp.pl',
-        'http://checkproxy.cnri.reston.va.us/test/test.html',
+        'ftp://gatekeeper.research.compaq.com/pub/DEC/SRC/research-reports/00README-Legal-Rules-Regs',
             ]
 
-    if localhost is not None:
-        urls = urls + [
-            'file://%s/etc/passwd' % localhost,
-            'http://%s/simple/' % localhost,
-            'http://%s/digest/' % localhost,
-            'http://%s/not/found.h' % localhost,
-            ]
+##    if localhost is not None:
+##        urls = urls + [
+##            'file://%s/etc/passwd' % localhost,
+##            'http://%s/simple/' % localhost,
+##            'http://%s/digest/' % localhost,
+##            'http://%s/not/found.h' % localhost,
+##            ]
 
-        bauth = HTTPBasicAuthHandler()
-        bauth.add_password('basic_test_realm', localhost, 'jhylton',
-                           'password')
-        dauth = HTTPDigestAuthHandler()
-        dauth.add_password('digest_test_realm', localhost, 'jhylton',
-                           'password')
+##        bauth = HTTPBasicAuthHandler()
+##        bauth.add_password('basic_test_realm', localhost, 'jhylton',
+##                           'password')
+##        dauth = HTTPDigestAuthHandler()
+##        dauth.add_password('digest_test_realm', localhost, 'jhylton',
+##                           'password')
 
 
     cfh = CacheFTPHandler()
     cfh.setTimeout(1)
 
-    # XXX try out some custom proxy objects too!
-    def at_cnri(req):
-        host = req.get_host()
-        print host
-        if host[-18:] == '.cnri.reston.va.us':
-            return 1
-    p = CustomProxy('http', at_cnri, 'proxy.cnri.reston.va.us')
-    ph = CustomProxyHandler(p)
+##    # XXX try out some custom proxy objects too!
+##    def at_cnri(req):
+##        host = req.get_host()
+##        print host
+##        if host[-18:] == '.cnri.reston.va.us':
+##            return 1
+##    p = CustomProxy('http', at_cnri, 'proxy.cnri.reston.va.us')
+##    ph = CustomProxyHandler(p)
 
-    #install_opener(build_opener(dauth, bauth, cfh, GopherHandler, ph))
+##    install_opener(build_opener(dauth, bauth, cfh, GopherHandler, ph))
+    install_opener(build_opener(cfh, GopherHandler))
 
     for url in urls:
         if isinstance(url, types.TupleType):
