@@ -1,12 +1,577 @@
 \documentclass{howto}
 \usepackage{ltxmarkup}
+\usepackage{distutils}
 
-\title{Installing Python Modules}
+\title{Distributing Python Modules}
 
-% Hey wow, Guido didn't write this one either!
 \author{Greg Ward}
 \authoraddress{E-mail: \email{gward@python.net}}
 
+
+\newcommand{\XXX}[1]{\textbf{**#1**}}
+
+
 \begin{document}
+
+
+\section{Introduction}
+\label{sec:intro}
+
+In the past, Python module developers have not had much infrastructure
+support for distributing modules, nor have Python users had much support
+for installing and maintaining third-party modules.  With the
+introduction of the Python Distribution Utilities (Distutils for short)
+in Python 1.6, this situation should start to improve.
+
+This document only covers using the Distutils to distribute your Python
+modules.  Using the Distutils does not tie you to Python 1.6, though:
+the Distutils work just fine with Python 1.5, and it is reasonable (and
+expected to become commonplace) to expect users of Python 1.5 to
+download and install the Distutils separately before they can install
+your modules.  Python 1.6 users, of course, won't have to add anything
+to their Python installation in order to use the Distutils to install
+third-party modules.
+
+This document concentrates on the role of developer/distributor: if
+you're looking for information on installing Python modules, you should
+refer to the ``Installing Python Modules'' manual.
+
+
+\section{Concepts & Terminology}
+\label{sec:concepts}
+
+Using the Distutils is quite simple, both for module developers and for
+users/administrators installing third-party modules.  As a developer,
+your responsibilites (apart from writing solid, well-documented and
+well-tested code, of course!) are:
+\begin{itemize}
+\item write a setup script (\file{setup.py} by convention)
+\item (optional) write a setup configuration file
+\item create a source distribution
+\item (optional) create one or more built (binary) distributions
+\end{itemize}
+Each of these tasks is covered in this document.
+
+Not all module developers have access to a multitude of platforms, so
+it's not always feasible to expect them to create a multitude of built
+distributions.  It is hoped that a class of intermediaries, called
+\emph{packagers}, will arise to take address this need.  Packagers will
+take source distributions released by module developers, build them on
+one or more platforms, and release the resulting built distributions.
+Thus, users on the most popular platforms will be able to install most
+popular Python module distributions in the most natural way for their
+platform, without having to run a single setup script or compile a line
+of code.
+
+
+\subsection{A simple example}
+\label{sec:simple-example}
+
+The setup script is usually quite simple, although since it's written in
+Python, there are no arbitrary limits to what you can do.  If all you
+want to do is distribute a module called \module{foo}, contained in a
+file \file{foo.py}, then you can get away with as little as this:
+\begin{verbatim}
+from distutils.core import setup
+setup (name = "foo",
+       version = "1.0",
+       py_modules = ["foo"])
+\end{verbatim}
+Some observations:
+\begin{itemize}
+\item all information that you supply to the Distutils is supplied as
+  keyword arguments to the \func{setup()} function
+\item those keyword arguments fall into two categories: package
+  meta-data (name, version number) and information about what's in the
+  package (list of pure modules, in this case)
+\item modules are specified by module name, not filename (the same will
+  hold true for packages and extensions)
+\item it's recommended that you supply a little more meta-data, in
+  particular your name, email address and a URL for the project
+\end{itemize}
+
+To create a source distribution for this module, you would run
+\begin{verbatim}
+python setup.py sdist
+\end{verbatim}
+which will create an archive file (e.g., tarball on Unix, zip file on
+Windows) containing your setup script, \file{setup.py}, and your module,
+\file{foo.py}.  The archive file will be named \file{Foo-1.0.tar.gz} (or
+\file{.zip}), and will unpack into a directory \file{Foo-1.0}.
+
+If an end-user wishes to install your \module{foo} module, all she has
+to do is download \file{Foo-1.0.tar.gz}) (or \file{.zip}), unpack it,
+and---from the \file{Foo-1.0} directory---run
+\begin{verbatim}
+python setup.py install
+\end{verbatim}
+which will ultimately copy \file{foo.py} to the appropriate directory
+for third-party modules in their Python installation.
+
+This simple example demonstrates some fundamental concepts of the
+Distutils: first, both developers and installers have the same basic
+user interface, i.e. the setup script.  The difference is which
+Distutils \emph{commands} they use: the \command{sdist} command is
+almost exclusively for module developers, while \command{install} is
+more often for installers (although most developers will want to install
+their own code occasionally).
+
+\XXX{only partially implemented}%
+If you want to make things really easy for your users, you can create
+one or more built distributions for them.  For instance, if you are
+running on a Windows machine, and want to make things easy for other
+Windows users, you can create an executable installer (the most
+appropriate type of built distribution for this platform) with the
+\command{bdist\_wise} command.  (Wise is the installation tool used to
+create Windows installers for Python itself, so we have adopted it for
+use by any Python module distribution.  You'll need to have version XXX
+of Wise installed on your system for the \command{bdist\_wise} to work;
+it's available from \url{http://foo/bar/baz}.  For example:
+\begin{verbatim}
+python setup.py bdist_wise
+\end{verbatim}
+will create an executable installer, \file{Foo-1_0.exe}, in the current
+directory.
+
+\XXX{not implemented yet}
+Other \command{bdist\_*} commands exist for RPM-based Linux systems
+(\command{bdist\_rpm}), Debian-based Linux systems
+(\command{bdist\_deb}), ...
+
+
+\subsection{General Python terminology}
+\label{sec:python-terms}
+
+If you're reading this document, you probably have a good idea of what
+modules, extensions, and so forth are.  Nevertheless, just to be sure
+that everyone is operating from a common starting point, we offer the
+following glossary of common Python terms:
+\begin{description}
+\item[module] the basic unit of code reusability in Python: a block of
+  code imported by some other code.  There are three types of modules
+  that concern us here: pure Python modules, extension modules, and
+  packages.
+\item[pure Python module] a module written in Python and contained in a
+  single \file{.py} file (and possibly associated \file{.pyc} and/or
+  \file{.pyo} files).  Sometimes referred to as a ``pure module.''
+\item[extension module] a module written in the low-level language of
+  the Python implemention: C/C++ for CPython, Java for JPython.
+  Typically contained in a single dynamically loadable pre-compiled
+  file, e.g. a shared object (\file{.so}) file for CPython extensions on
+  Unix, a DLL (given the \file{.pyd} extension) for CPython extensions
+  on Windows, or a Java class file for JPython extensions.
+\item[package] a module that contains other modules; typically contained
+  in a directory in the filesystem and distinguished from other
+  directories by the presence of a file \file{\_\_init\_\_.py}.
+\end{description}
+
+
+\subsection{Distutils-specific terminology}
+\label{sec:distutils-term}
+
+The following terms apply more specifically to the domain of
+distributing Python modules using the Distutils:
+\begin{description}
+\item[module distribution] a collection of Python modules distributed
+  together as a single downloadable resource and meant to be installed
+  \emph{en masse}.  Examples of some well-known module distributions are
+  Numeric Python, PyXML, PIL (the Python Imaging Library), or
+  mxDateTime.  (This would be called a \emph{package}, except that term
+  is already spoken for in the Python context: a single module
+  distribution may contain zero, one, or many Python packages.)
+\item[pure module distribution] a module distribution that contains only
+  pure Python modules and packages.  Sometimes referred to as a ``pure
+  distribution.''
+\item[non-pure module distribution] a module distribution that contains
+  at least one extension module.  Sometimes referred to as a ``non-pure
+  distribution.''
+\item[distribution root] the top-level directory of your source tree (or 
+  source distribution); the directory where \file{setup.py} exists and
+  is run from
+\end{description}
+
+
+\section{Writing the Setup Script}
+\label{sec:setup-script}
+
+The setup script is the centre of all activity in building,
+distributing, and installing modules using the Distutils.  The main
+purpose of the setup script is to describe your module distribution to
+the Distutils, so that the various commands that operate on your modules 
+do the right thing.  As we saw in section~\ref{sec:simple-example}
+above, the setup script consists mainly of a call to \func{setup()}, and 
+all information supplied to the Distutils is suppled as keyword
+arguments to \func{setup()}.
+
+Here's a slightly more involved example, which we'll follow for the next
+couple of sections: the Distutils' own setup script.  (Keep in mind that
+although the Distutils are included with Python 1.6, they also have an
+independent existence so that Python 1.5 users can use them to install
+other module distributions.)
+
+\begin{verbatim}
+#!/usr/bin/env python
+
+from distutils.core import setup
+
+setup (name = "Distutils",
+       version = "1.0",
+       description = "Python Module Distribution Utilities",
+       author = "Greg Ward",
+       author_email = "gward@python.net",
+       url = "http://www.python.org/sigs/distutils-sig/",
+
+       packages = ['distutils', 'distutils.command'],
+      )
+\end{verbatim}
+There are only two differences between this and the trivial one-file
+distribution presented in section~\ref{sec:simple-example}: more
+meta-data, and the specification of pure Python modules by package,
+rather than by module.  This is important since the Distutils consist of
+a couple of dozen modules split into (so far) two packages; an explicit
+list of every module would be tedious to generate and difficult to
+maintain.
+
+
+\subsection{Package directories}
+\label{sec:package-dirs}
+
+The \option{packages} option tells the Distutils to process (build,
+distribute, install, etc.) all pure Python modules found in each package
+mentioned in the \option{packages} list.  In order to do this, of
+course, there has to be a correspondence between package names and
+directories in the filesystem.  The default correspondence is the most
+obvious one, i.e. package \package{distutils} is found in the directory
+\file{distutils} relative to the distribution root.  Thus, when you say
+\code{packages = ['foo']} in your setup script, you are promising that
+the Distutils will find a file \file{foo/\_\_init\_\_.py} (which might
+be spelled differently on your system, but you get the idea) relative to
+the directory where your setup script lives.  (If you break this
+promise, the Distutils will issue a warning but process the broken
+package anyways.)
+
+If you use a different convention to lay out your source directory,
+that's no problem: you just have to supply the \option{package\_dir}
+option to tell the Distutils about your convention.  For example, say
+you keep all Python source under \file{lib}, so that modules not in any
+package are right in \file{lib}, modules in the \package{foo} package
+are in \file{lib/foo}, and so forth.  Then you would put
+\begin{verbatim}
+package_dir = {'': 'lib'}
+\end{verbatim}
+in your setup script.  (The keys to this dictionary are package names,
+and an empty package name stands for the ``root package,'' i.e. no
+package at all.  The values are directory names relative to your
+distribution root.)  In this case, when you say
+\code{packages = ['foo']}, you are promising that the file
+\file{lib/foo/\_\_init\_\_.py} exists.
+
+Another possible convention is to put the \package{foo} package right in 
+\file{lib}, the \package{foo.bar} package in \file{lib/bar}, etc.  This
+would be written in the setup script as
+\begin{verbatim}
+package_dir = {'foo': 'lib'}
+\end{verbatim}
+Note that a \code{\var{package}: \var{dir}} entry in the
+\option{package\_dir} option implicitly applies to all packages below
+\var{package}, so the \package{foo.bar} case is automatically handled
+here.  In this example, having \code{packages = ['foo', 'foo.bar']}
+tells the Distutils to look for \file{lib/__init__.py} and
+\file{lib/bar/__init__.py}.
+
+
+\subsection{Listing individual modules}
+\label{sec:listing-modules}
+
+For a small module distribution, you might prefer to list all modules
+rather than listing packages---especially the case of a single module
+that goes in the ``root package'' (i.e., no package at all).  This
+simplest case was shown in section~\ref{sec:simple-example}; here is a
+slightly more involved example:
+\begin{verbatim}
+py_modules = ['mod1', 'pkg.mod2']
+\end{verbatim}
+This describes two modules, one of them in the ``root'' package, the
+other in the \package{pkg} package.  Again, the default
+package/directory layout implies that these two modules can be found in
+\file{mod1.py} and \file{pkg/mod2.py}, and that \file{pkg/__init__.py}
+exists as well.  And again, you can override the package/directory
+layout using the \option{package\_dir} option.  \XXX{not sure if this is
+  actually true---must check!}
+
+
+\section{Writing the Setup Configuration File}
+\label{sec:setup-config}
+
+\XXX{not implemented yet!}
+
+Often, it's not possible to write down everything needed to build a
+distribution \emph{a priori}.  You need to get some information from the
+user, or from the user's system, in order to proceed.  For example, you
+might include an optional extension module that provides an interface to
+a particular C library.  If that library is installed on the user's
+system, then you can build your optional extension---but you need to
+know where to find the header and library file.  If it's not installed,
+you need to know this so you can omit your optional extension.
+
+The preferred way to do this, of course, would be for you to tell the
+Distutils which optional features (C libraries, system calls, external
+utilities, etc.) you're looking for, and it would inspect the user's
+system and try to find them.  This functionality may appear in a future
+version of the Distutils, but it isn't there now.  So, for the time
+being, we rely on the user building and installing your software to
+provide the necessary information.  The vehicle for doing so is the
+setup configuration file, \file{setup.cfg}.
+
+\XXX{need more here!}
+
+
+\section{Creating a Source Distribution}
+\label{sec:source-dist}
+
+As shown in section~\ref{sec:simple-example}, you use the
+\command{sdist} command to create a source distribution.  In the
+simplest case,
+\begin{verbatim}
+python setup.py sdist
+\end{verbatim}
+(assuming you haven't specified any \command{sdist} options in the setup 
+script or config file), \command{sdist} creates the the archive of the
+default format for the current platform.  The default formats are:
+\begin{tableii}{ll}{textrm}%
+  {Platform}{Default archive format for source distributions}
+  \lineii{Unix}{gzipped tar file (\file{.tar.gz})}
+  \lineii{Windows}{zip file}  
+\end{tableii}
+You can specify as many formats as you like using the \option{--formats} 
+option, for example:
+\begin{verbatim}
+python setup.py sdist --formats=gztar,zip
+\end{verbatim}
+to create a gzipped tarball and a zip file.  The available formats are:
+\begin{tableii}{ll}{textrm}%
+  {Format}{Description}
+  \lineii{zip}{zip file (\file{.zip})}
+  \lineii{gztar}{gzipped tar file (\file{.tar.gz})}
+  \lineii{ztar}{compressed tar file (\file{.tar.Z})}
+  \lineii{tar}{tar file (\file{.tar})}  
+\end{tableii}
+
+
+\subsection{The manifest and manifest template}
+\label{sec:manifest}
+
+Without any additional information, the \command{sdist} command puts a
+minimal set of files into the source distribution:
+\begin{itemize}
+\item all Python source files implied by the \option{py_modules} and
+  \option{packages} options
+\item all C source files mentioned in the \option{ext_modules} or
+  \option{libraries} options (\XXX{getting C library sources currently
+    broken -- no get_source_files() method in build_clib.py!})
+\item anything that looks like a test script: \file{test/test*.py}
+  (currently, the Distutils don't do anything with test scripts except
+  include them in source distributions, but in the future there will be
+  a standard for testing Python module distributions)
+\item \file{README.txt} (or \file{README}) and \file{setup.py}
+\end{itemize}
+Sometimes this is enough, but usually you will want to specify
+additional files to distribute.  The typical way to do this is to write
+a \emph{manifest template}, called \file{MANIFEST.in} by default.  The
+\command{sdist} command processes this template and generates a manifest
+file, \file{MANIFEST}.  (If you prefer, you can skip the manifest
+template and generate the manifest yourself: it just lists one file per
+line.)
+
+The manifest template has one command per line, where each command
+specifies a set of files to include or exclude from the source
+distribution.  For an example, again we turn to the Distutils' own
+manifest template:
+\begin{verbatim}
+include *.txt
+recursive-include examples *.txt
+recursive-include examples *.py
+prune examples/sample?/build
+\end{verbatim}
+The meanings should be fairly clear: include all files in the
+distribution root matching \code{*.txt}, all files anywhere under the
+\file{examples} directory matching \code{*.txt} or \code{*.py}, and
+exclude all directories matching \code{examples/sample?/build}.  There
+are several other commands available in the manifest template
+mini-language; see section~\ref{sec:sdist-cmd}.
+
+The order of commands in the manifest template very much matters:
+initially, we have the list of default files as described above, and
+each command in the template adds to or removes from that list of files.
+When we have fully processed the manifest template, we have our complete
+list of files.  This list is written to the manifest for future
+reference, and then used to build the source distribution archive(s).
+
+We can now see how the \command{sdist} command will build the list of
+files to include in the Distutils source distribution:
+\begin{enumerate}
+\item include all Python source files in the \file{distutils} and
+  \file{distutils/command} subdirectories (because packages
+  corresponding to those two directories were mentioned in the
+  \option{packages} option in the setup script)
+\item include \file{test/test*.py} (always included)
+\item include \file{README.txt} and \file{setup.py} (always included)
+\item include \file{*.txt} in the distribution root (this will find
+  \file{README.txt} a second time, but such redundancies are weeded out
+  later)
+\item in the sub-tree under \file{examples}, include anything matching
+  \file{*.txt}
+\item in the sub-tree under \file{examples}, include anything matching
+  \file{*.py}
+\item remove all files in the sub-trees starting at directories matching
+  \file{examples/sample?/build}---this may exclude files included by the
+  previous two steps, so it's important that the \code{prune} command in
+  the manifest template comes after the two \code{recursive-include}
+  commands
+\end{itemize}
+
+
+\subsection{Manifest-related options}
+\label{sec:manifest-options}
+
+The normal course of operations for the \command{sdist} command is as
+follows:
+\begin{itemize}
+\item if \file{MANIFEST.in} is more recent than \file{MANIFEST}, or
+  \file{MANIFEST} doesn't exist at all, recreate \file{MANIFEST} by
+  processing \file{MANIFEST.in}
+\item use the list of files now in \file{MANIFEST} (either just
+  generated or read in) to create the source distribution archive(s)
+\end{itemize}
+There are a couple of options that modify this behaviour.
+
+First, you might want to force the manifest to be regenerated---for
+example, if you have added or removed files or directories that match an
+existing pattern in the manifest template, you should regenerate the
+manifest:
+\begin{verbatim}
+python setup.py sdist --force-manifest
+\end{verbatim}
+\XXX{this is stupid, but is there a better way to do it without
+  reprocessing MANIFEST.in every single bloody time?}
+
+Or, you might just want to (re)generate the manifest, but not create a
+source distribution:
+\begin{verbatim}
+python setup.py sdist --manifest-only
+\end{verbatim}
+(\option{--manifest-only} implies \option{--force-manifest}.)
+
+If you don't want to use the default file set, you can supply the
+\option{--no-defaults} option.  If you use \option{--no-defaults} and
+don't supply a manifest template (or it's empty, or nothing matches the
+patterns in it), then your source distribution will be empty.
+
+
+\section{Creating Built Distributions}
+\label{sec:built-dist}
+
+
+
+\section{Examples}
+\label{sec:examples}
+
+
+\subsection{Pure Python distribution (by module)}
+\label{sec:pure-mod}
+
+
+\subsection{Pure Python distribution (by package)}
+\label{sec:pure-pkg}
+
+
+\subsection{Single extension module}
+\label{sec:single-ext}
+
+
+\subsection{Multiple extension modules}
+\label{sec:multiple-ext}
+
+
+\subsection{Putting it all together}
+
+
+\section{Reference}
+\label{sec:ref}
+
+
+\subsection{Building modules: the \command{build} command family}
+\label{sec:build-cmds}
+
+\subsubsection{\command{build}}
+\label{sec:build-cmd}
+
+\subsubsection{\command{build\_py}}
+\label{sec:build-py-cmd}
+
+\subsubsection{\command{build\_ext}}
+\label{sec:build-ext-cmd}
+
+\subsubsection{\command{build\_clib}}
+\label{sec:build-clib-cmd}
+
+
+\subsection{Installing modules: the \command{install} command family}
+\label{sec:install-cmd}
+
+
+\subsection{Cleaning up: the \command{clean} command}
+\label{sec:clean-cmd}
+
+
+\subsection{Creating a source distribution: the \command{sdist} command}
+\label{sec:sdist-cmd}
+
+
+\XXX{fragment moved down from above: needs context!}
+The manifest template commands are:
+\begin{tableii}{ll}{command}{Command}{Description}
+  \lineii{include \var{pat}}{include all files matching \var{pat}}
+  \lineii{exclude \var{pat}}{exclude all files matching \var{pat}}
+  \lineii{recursive-include \var{dir} \var{pat}}
+    {include all files under \var{dir} matching \var{pat}}
+  \lineii{recursive-exclude \var{dir} \var{pat}}
+    {exclude all files under \var{dir} matching \var{pat}}
+  \lineii{global-include \var{pat}}
+    {include all files anywhere in the source tree matching \var{pat}}
+  \lineii{global-exclude \var{pat}}
+    {exclude all files anywhere in the source tree matching \var{pat}}
+  \lineii{prune \var{dir}}{exclude all files under \var{dir}}
+  \lineii{graft \var{dir}}{include all files under \var{dir}}
+\end{tableii}
+The patterns here are Unix-style ``glob'' patterns: \code{*} matches any
+sequence of regular filename characters, \code{?} matches any single
+regular filename character, and \code{[\var{range}]} matches any of the
+characters in \var{range} (e.g., \code{a-z}, \code{a-zA-Z},
+\code{a-f0-9_.}).  The definition of ``regular filename character'' is
+platform-specific: on Unix it is anything except slash; on Windows
+anything except backslash or colon; on Mac OS anything except colon.
+\XXX{Windows and Mac OS support not there yet}
+
+
+\subsection{Creating a ``built'' distribution: the \command{bdist} command
+  family}
+\label{sec:bdist-cmds}
+
+
+\subsubsection{\command{blib}}
+
+\subsubsection{\command{blib\_dumb}}
+
+\subsubsection{\command{blib\_rpm}}
+
+\subsubsection{\command{blib\_wise}}
+
+
+
+
+
+
+
 
 \end{document}
