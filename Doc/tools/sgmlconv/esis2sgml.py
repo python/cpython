@@ -127,7 +127,7 @@ def xml_convert(ifp, ofp, autoclose):
     return do_convert(ifp, ofp, xml=1, autoclose=autoclose)
 
 
-AUTOCLOSE = ("para",)
+AUTOCLOSE = ("para", "term",)
 
 
 def main():
