@@ -1040,10 +1040,6 @@ mul(v, w)
 				"can't multiply sequence with non-int");
 			return NULL;
 		}
-		if (tp->tp_as_sequence->sq_repeat == NULL) {
-			err_setstr(TypeError, "sequence does not support *");
-			return NULL;
-		}
 		return (*tp->tp_as_sequence->sq_repeat)
 						(v, (int)getintvalue(w));
 	}
