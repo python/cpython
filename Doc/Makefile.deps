@@ -190,6 +190,7 @@ LIBFILES= $(MANSTYLES) $(COMMONTEX) \
 	../lib/libuu.tex \
 	../lib/libsunaudio.tex \
 	../lib/libfileinput.tex \
+	../lib/libxreadlines.tex \
 	../lib/libimaplib.tex \
 	../lib/libpoplib.tex \
 	../lib/libcalendar.tex \

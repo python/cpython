@@ -1101,15 +1101,21 @@ Files have the following methods:
 \end{methoddesc}
 
 \begin{methoddesc}[file]{write}{str}
-Write a string to the file.  There is no return value.  Note: Due to
-buffering, the string may not actually show up in the file until
-the \method{flush()} or \method{close()} method is called.
+  Write a string to the file.  There is no return value.  Note: Due to
+  buffering, the string may not actually show up in the file until
+  the \method{flush()} or \method{close()} method is called.
 \end{methoddesc}
 
 \begin{methoddesc}[file]{writelines}{list}
-Write a list of strings to the file.  There is no return value.
-(The name is intended to match \method{readlines()};
-\method{writelines()} does not add line separators.)
+  Write a list of strings to the file.  There is no return value.
+  (The name is intended to match \method{readlines()};
+  \method{writelines()} does not add line separators.)
+\end{methoddesc}
+
+\begin{methoddesc}[file]{xreadlines}{}
+  Equivalent to
+  \function{xreadlines.xreadlines(\var{file})}.\refstmodindex{xreadlines}
+  (See the \refmodule{xreadlines} module for more information.)
 \end{methoddesc}
 
 
