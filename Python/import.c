@@ -796,6 +796,10 @@ is_builtin(name)
 extern FILE *PyWin_FindRegisteredModule();
 #endif
 
+#ifdef CHECK_IMPORT_CASE
+static int check_case(char *, int, int, char *);
+#endif
+
 static int find_init_module Py_PROTO((char *)); /* Forward */
 
 static struct filedescr *
@@ -896,8 +900,14 @@ find_module(name, path, buf, buflen, p_fp)
 		if (stat(buf, &statbuf) == 0) {
 			static struct filedescr fd = {"", "", PKG_DIRECTORY};
 			if (S_ISDIR(statbuf.st_mode)) {
-				if (find_init_module(buf))
+				if (find_init_module(buf)) {
+#ifdef CHECK_IMPORT_CASE
+					if (!check_case(buf, len, namelen,
+							name))
+						return NULL;
+#endif
 					return &fd;
+				}
 			}
 		}
 #else
@@ -925,10 +935,77 @@ find_module(name, path, buf, buflen, p_fp)
 			     "No module named %.200s", name);
 		return NULL;
 	}
+#ifdef CHECK_IMPORT_CASE
+	if (!check_case(buf, len, namelen, name)) {
+		fclose(fp);
+		return NULL;
+	}
+#endif
 
 	*p_fp = fp;
 	return fdp;
 }
+
+#ifdef CHECK_IMPORT_CASE
+
+#ifdef MS_WIN32
+#include <windows.h>
+static int
+check_case(char *buf, int len, int namelen, char *name)
+{
+	WIN32_FIND_DATA data;
+	HANDLE h;
+	if (getenv("PYTHONCASEOK") != NULL)
+		return 1;
+	h = FindFirstFile(buf, &data);
+	if (h == INVALID_HANDLE_VALUE) {
+		PyErr_Format(PyExc_NameError,
+		  "Can't find file for module %.100s\n(filename %.300s)",
+		  name, buf);
+		return 0;
+	}
+	FindClose(h);
+	if (strncmp(data.cFileName, name, namelen) != 0) {
+		strcpy(buf+len-namelen, data.cFileName);
+		PyErr_Format(PyExc_NameError,
+		  "Case mismatch for module name %.100s\n(filename %.300s)",
+		  name, buf);
+		return 0;
+	}
+	return 1;
+}
+#endif /* MS_WIN32 */
+
+#ifdef macintosh
+#include <TextUtils.h>
+static int
+check_case(char *buf, int len, int namelen, char *name)
+{
+	FSSpec fss;
+	OSErr err;
+	unsigned char mybuf[MAXPATHLEN+1];
+	
+	strcpy((char *)mybuf, buf);
+	c2pstr((char *)mybuf);
+	err = FSMakeFSSpec(0, 0, mybuf, &fss);
+	if (err) {
+		PyErr_Format(PyExc_NameError,
+		  "Can't find file for module %.100s\n(filename %.300s)",
+		  name, buf);
+		return 0;
+	}
+	p2cstr(fss.name);
+	if ( strncmp(name, (char *)fss.name, namelen) != 0 ) {
+		PyErr_Format(PyExc_NameError,
+		  "Case mismatch for module name %.100s\n(filename %.300s)",
+		  name, fss.name);
+		return 0;
+	}
+	return 1;
+}
+#endif /* macintosh */
+
+#endif CHECK_IMPORT_CASE
 
 #ifdef HAVE_STAT
 /* Helper to look for __init__.py or __init__.py[co] in potential package */
