@@ -85,6 +85,7 @@ Otherwise a generated Info file name is used.")
      (progn (setq obindex t)
 	    "\n@table @code\n@item \\1\n@obindex \\1\n")
      "@end table\n")
+    ("comment" 0 "\n@ignore\n" "\n@end ignore\n")
     ("csimplemacrodesc" 1
      (progn (setq cindex t)
 	    "\n@table @code\n@item \\1\n@cindex \\1\n")
