@@ -84,6 +84,7 @@ if test -z "$CCC"
 then
 	case $ac_sys_system in
 	IRIX*)	SET_CCC="CCC= CC ${SGI_ABI}";;
+	Linux*) SET_CCC="CCC= g++";;
 	*)	SET_CCC=""
 	esac
 else
@@ -279,6 +280,7 @@ AC_TYPE_UID_T
 
 AC_CHECK_SIZEOF(int)
 AC_CHECK_SIZEOF(long)
+AC_CHECK_SIZEOF(void *)
 
 AC_MSG_CHECKING(for long long support)
 have_long_long=no
@@ -433,6 +435,9 @@ AC_DEFINE(_REENTRANT)
 AC_CHECK_HEADER(mach/cthreads.h, [AC_DEFINE(WITH_THREAD)
 AC_DEFINE(C_THREADS)
 LIBOBJS="$LIBOBJS thread.o"],[
+AC_CHECK_FUNC(pthread_create, [AC_DEFINE(WITH_THREAD)
+AC_DEFINE(_POSIX_THREADS)
+LIBOBJS="$LIBOBJS thread.o"],[
 AC_CHECK_HEADER(kernel/OS.h, [AC_DEFINE(WITH_THREAD)
 AC_DEFINE(BEOS_THREADS)
 LIBOBJS="$LIBOBJS thread.o"],[
@@ -456,7 +461,7 @@ AC_CHECK_LIB(cma, pthread_create, [AC_DEFINE(WITH_THREAD)
 AC_DEFINE(_POSIX_THREADS)
 LIBS="$LIBS -lcma"
 LIBOBJS="$LIBOBJS thread.o"])
-])])])])])])
+])])])])])])])
 
 AC_CHECK_LIB(mpc, usconfig, [AC_DEFINE(WITH_THREAD)
 LIBS="$LIBS -lmpc"
@@ -498,7 +503,7 @@ LIBS="$LIBS -ldl -ldld"], AC_MSG_RESULT(no))
 # checks for library functions
 AC_CHECK_FUNCS(alarm chown clock dlopen execv flock fork ftime ftruncate \
  gethostname_r getpeername getpgrp getpid getpwent gettimeofday getwd \
- kill link lstat mkfifo mktime nice pause plock putenv readlink \
+ kill link lstat mkfifo mktime nice pause plock pthread_init putenv readlink \
  select setgid setlocale setuid setsid setpgid setpgrp setvbuf \
  sigaction siginterrupt sigrelse strftime strptime symlink \
  tcgetpgrp tcsetpgrp timegm times truncate uname waitpid)
