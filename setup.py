@@ -653,7 +653,8 @@ class PyBuildExt(build_ext):
                 exts.append( Extension('_Qt', ['qt/_Qtmodule.c'],
                         extra_link_args=['-framework', 'QuickTime',
                                          '-framework', 'Carbon']) )
-##              exts.append( Extension('_Scrap', ['scrap/_Scrapmodule.c']) )
+                exts.append( Extension('_Scrap', ['scrap/_Scrapmodule.c'],
+            		extra_link_args=['-framework', 'Carbon']) )
                 exts.append( Extension('_TE', ['te/_TEmodule.c'],
             		extra_link_args=['-framework', 'Carbon']) )
                 # As there is no standardized place (yet) to put user-installed
