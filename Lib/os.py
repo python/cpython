@@ -1,9 +1,9 @@
 r"""OS routines for Mac, DOS, NT, or Posix depending on what system we're on.
 
 This exports:
-  - all functions from posix, nt, dos, os2, mac, or ce, e.g. unlink, stat, etc.
-  - os.path is one of the modules posixpath, ntpath, macpath, or dospath
-  - os.name is 'posix', 'nt', 'dos', 'os2', 'mac', 'ce' or 'riscos'
+  - all functions from posix, nt, os2, mac, or ce, e.g. unlink, stat, etc.
+  - os.path is one of the modules posixpath, ntpath, or macpath
+  - os.name is 'posix', 'nt', 'os2', 'mac', 'ce' or 'riscos'
   - os.curdir is a string representing the current directory ('.' or ':')
   - os.pardir is a string representing the parent directory ('..' or '::')
   - os.sep is the (or a most common) pathname separator ('/' or ':' or '\\')
@@ -73,24 +73,6 @@ elif 'nt' in _names:
     import nt
     __all__.extend(_get_exports_list(nt))
     del nt
-
-elif 'dos' in _names:
-    name = 'dos'
-    linesep = '\r\n'
-    curdir = '.'; pardir = '..'; sep = '\\'; pathsep = ';'
-    defpath = '.;C:\\bin'
-    from dos import *
-    try:
-        from dos import _exit
-    except ImportError:
-        pass
-    import dospath
-    path = dospath
-    del dospath
-
-    import dos
-    __all__.extend(_get_exports_list(dos))
-    del dos
 
 elif 'os2' in _names:
     name = 'os2'
@@ -365,17 +347,17 @@ else:
     import UserDict
 
     # Fake unsetenv() for Windows
-    # not sure about os2 and dos here but
+    # not sure about os2 here but
     # I'm guessing they are the same.
 
-    if name in ('os2', 'nt', 'dos'):
+    if name in ('os2', 'nt'):
         def unsetenv(key):
             putenv(key, "")
 
     if name == "riscos":
         # On RISC OS, all env access goes through getenv and putenv
         from riscosenviron import _Environ
-    elif name in ('os2', 'nt', 'dos'):  # Where Env Var Names Must Be UPPERCASE
+    elif name in ('os2', 'nt'):  # Where Env Var Names Must Be UPPERCASE
         # But we store them as upper case
         class _Environ(UserDict.IterableUserDict):
             def __init__(self, environ):
