@@ -3694,6 +3694,36 @@ set.
 \end{cfuncdesc}
 
 
+\subsection{Instance Objects \label{instanceObjects}}
+
+\obindex{instance}
+There are very few functions specific to instance objects.
+
+\begin{cvardesc}{PyTypeObject}{PyInstance_Type}
+  Type object for class instances.
+\end{cvardesc}
+
+\begin{cfuncdesc}{int}{PyInstance_Check}{PyObject *obj}
+  Returns true if \var{obj} is an instance.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{PyInstance_New}{PyObject *class,
+                                             PyObject *arg,
+                                             PyObject *kw}
+  Create a new instance of a specific class.  The parameters \var{arg}
+  and \var{kw} are used as the positional and keyword parameters to
+  the object's constructor.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{PyInstance_NewRaw}{PyObject *class,
+                                                PyObject *dict}
+  Create a new instance of a specific class without calling it's
+  constructor.  \var{class} is the class of new object.  The
+  \var{dict} parameter will be used as the object's \member{__dict__};
+  if \NULL, a new dictionary will be created for the instance.
+\end{cfuncdesc}
+
+
 \subsection{Module Objects \label{moduleObjects}}
 
 \obindex{module}
@@ -4736,8 +4766,6 @@ PyArg_ParseTupleAndKeywords, PyArg_ParseTuple, PyArg_Parse
 Py_BuildValue
 
 DL_IMPORT
-
-Py*_Check
 
 _Py_NoneStruct
 
