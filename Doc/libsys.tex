@@ -26,19 +26,52 @@ It is always available.
   modules.)
 \end{datadesc}
 
+\begin{funcdesc}{exc_info}{}
+This function returns a tuple of three values that give information
+about the exception that is currently being handled.  The information
+returned is specific both to the current thread and to the current
+stack frame.  If the current stack frame is not handling an exception,
+the information is taken from the calling stack frame, or its caller,
+and so on until a stack frame is found that is handling an exception.
+Here, ``handling an exception'' is defined as ``executing or having
+executed an \code{except} clause.''  For any stack frame, only
+information about the most recently handled exception is accessible.
+
+If no exception is being handled anywhere on the stack, a tuple
+containing three \code{None} values is returned.  Otherwise, the
+values returned are
+\code{(\var{type}, \var{value}, \var{traceback})}.
+Their meaning is: \var{type} gets the exception type of the exception
+being handled (a string or class object); \var{value} gets the
+exception parameter (its \dfn{associated value} or the second argument
+to \code{raise}, which is always a class instance if the exception
+type is a class object); \var{traceback} gets a traceback object (see
+the Reference Manual) which encapsulates the call stack at the point
+where the exception originally occurred.
+\obindex{traceback}
+
+\strong{Warning:} assigning the \var{traceback} return value to a
+local variable in a function that is handling an exception will cause
+a circular reference. This will prevent anything referenced by a local
+variable in the same function or by the traceback from being garbage
+collected.  Since most functions don't need access to the traceback,
+the best solution is to use something like
+\code{type, value = sys.exc_info()[:2]}
+to extract only the exception type and value.  If you do need the
+traceback, make sure to delete it after use (best done with a
+\code{try-finally} statement) or to call \code{sys.exc_info()} in a
+function that does not itself handle an exception.
+\end{funcdesc}
+
 \begin{datadesc}{exc_type}
 \dataline{exc_value}
 \dataline{exc_traceback}
-  These three variables are not always defined; they are set when an
-  exception handler (an \code{except} clause of a \code{try} statement) is
-  invoked.  Their meaning is: \code{exc_type} gets the exception type of
-  the exception being handled; \code{exc_value} gets the exception
-  parameter (its \dfn{associated value} or the second argument to
-  \code{raise}); \code{exc_traceback} gets a traceback object (see the
-  Reference Manual) which
-  encapsulates the call stack at the point where the exception
-  originally occurred.
-\obindex{traceback}
+Use of these three variables is deprecated; they contain the same
+values as returned by \code{sys.exc_info()} above.  However, since
+they are global variables, they are not specific to the current
+thread, so their use is not safe in a multi-threaded program.  When no
+exception is being handled, \code{sys.exc_type} is set to \code{None}
+and the other two are undefined.
 \end{datadesc}
 
 \begin{datadesc}{exec_prefix}
@@ -74,14 +107,20 @@ where \emph{VER} is equal to \code{sys.version[:3]}.
 \begin{datadesc}{last_type}
 \dataline{last_value}
 \dataline{last_traceback}
-  These three variables are not always defined; they are set when an
-  exception is not handled and the interpreter prints an error message
-  and a stack traceback.  Their intended use is to allow an interactive
-  user to import a debugger module and engage in post-mortem debugging
-  without having to re-execute the command that caused the error (which
-  may be hard to reproduce).  The meaning of the variables is the same
-  as that of \code{exc_type}, \code{exc_value} and \code{exc_tracaback},
-  respectively.
+These three variables are not always defined; they are set when an
+exception is not handled and the interpreter prints an error message
+and a stack traceback.  Their intended use is to allow an interactive
+user to import a debugger module and engage in post-mortem debugging
+without having to re-execute the command that caused the error.
+(Typical use is \code{import pdb; pdb.pm()} to enter the post-mortem
+debugger; see the chapter ``The Python Debugger'' for more
+information.)
+\stmodindex{pdb}
+
+The meaning of the variables is the same
+as that of the return values from \code{sys.exc_info()} above.
+(Since there is only one interactive thread, thread-safety is not a
+concern for these variables, unlike for \code{sys.exc_type} etc.)
 \end{datadesc}
 
 \begin{datadesc}{modules}
