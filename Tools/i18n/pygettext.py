@@ -464,7 +464,11 @@ def main():
             closep = 1
         try:
             eater.set_filename(filename)
-            tokenize.tokenize(fp.readline, eater)
+            try:
+                tokenize.tokenize(fp.readline, eater)
+            except tokenize.TokenError, e:
+                sys.stderr.write('%s: %s, line %d, column %d\n' %
+                                 (e[0], filename, e[1][0], e[1][1]))
         finally:
             if closep:
                 fp.close()
