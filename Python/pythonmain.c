@@ -26,8 +26,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include "allobjects.h"
 
-#include "patchlevel.h"
-
 #include "grammar.h"
 #include "node.h"
 #include "parsetok.h"
