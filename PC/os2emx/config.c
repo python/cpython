@@ -52,17 +52,18 @@ extern void initarray();
 extern void initbinascii();
 extern void initcPickle();
 extern void initcStringIO();
+extern void initcollections();
 extern void initcmath();
 extern void initdatetime();
 extern void initdl();
 extern void initerrno();
 extern void initfcntl();
+extern void init_heapq();
 extern void initimageop();
 extern void inititertools();
 extern void initmath();
 extern void initmd5();
 extern void initoperator();
-extern void initpcre();
 extern void initregex();
 extern void initrgbimg();
 extern void initsha();
@@ -117,17 +118,18 @@ struct _inittab _PyImport_Inittab[] = {
 	{"binascii", initbinascii},
 	{"cPickle", initcPickle},
 	{"cStringIO", initcStringIO},
+	{"collections", initcollections},
 	{"cmath", initcmath},
 	{"datetime", initdatetime},
 	{"dl", initdl},
 	{"errno", initerrno},
 	{"fcntl", initfcntl},
+	{"_heapq", init_heapq},
 	{"imageop", initimageop},
 	{"itertools", inititertools},
 	{"math", initmath},
 	{"md5", initmd5},
 	{"operator", initoperator},
-	{"pcre", initpcre},
 	{"regex", initregex},
 	{"rgbimg", initrgbimg},
 	{"sha", initsha},
