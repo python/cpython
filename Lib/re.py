@@ -58,20 +58,34 @@ def valid_identifier(id):
 #
 #
 
+_cache = {}
+_MAXCACHE = 20
+def _cachecompile(pattern, flags):
+    key = (pattern, flags)
+    try:
+	return _cache[key]
+    except KeyError:
+	pass
+    value = compile(pattern, flags)
+    if len(_cache) >= _MAXCACHE:
+	_cache.clear()
+    _cache[key] = value
+    return value
+
 def match(pattern, string, flags=0):
-    return compile(pattern, flags).match(string)
+    return _cachecompile(pattern, flags).match(string)
 
 def search(pattern, string, flags=0):
-    return compile(pattern, flags).search(string)
+    return _cachecompile(pattern, flags).search(string)
 
 def sub(pattern, repl, string, count=0):
-    return compile(pattern).sub(repl, string, count)
+    return _cachecompile(pattern).sub(repl, string, count)
 
 def subn(pattern, repl, string, count=0):
-    return compile(pattern).subn(repl, string, count)
+    return _cachecompile(pattern).subn(repl, string, count)
 
 def split(pattern, string, maxsplit=0):
-    return compile(pattern).subn(string, maxsplit)
+    return _cachecompile(pattern).subn(string, maxsplit)
 
 #
 #
@@ -1064,6 +1078,7 @@ def compile(pattern, flags=0):
 				    Label(label)] + \
 				   stack[-1] + \
 				   [Label(label + 1)]
+			    max = max - 1
 			    label = label + 2
 			del stack[-1]
 			stack.append(expr)
