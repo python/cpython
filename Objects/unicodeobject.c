@@ -1514,8 +1514,7 @@ PyObject *PyUnicode_AsUTF16String(PyObject *unicode)
 /* --- Unicode Escape Codec ----------------------------------------------- */
 
 static
-int unicodeescape_decoding_error(const char **source,
-                                 Py_UNICODE *x,
+int unicodeescape_decoding_error(Py_UNICODE **x,
                                  const char *errors,
                                  const char *details) 
 {
@@ -1530,7 +1529,8 @@ int unicodeescape_decoding_error(const char **source,
         return 0;
     }
     else if (strcmp(errors,"replace") == 0) {
-        *x = Py_UNICODE_REPLACEMENT_CHARACTER;
+        **x = Py_UNICODE_REPLACEMENT_CHARACTER;
+	(*x)++;
         return 0;
     }
     else {
@@ -1628,9 +1628,9 @@ PyObject *PyUnicode_DecodeUnicodeEscape(const char *s,
             for (i = 0; i < digits; i++) {
                 c = (unsigned char) s[i];
                 if (!isxdigit(c)) {
-                    if (unicodeescape_decoding_error(&s, &x, errors, message))
+                    if (unicodeescape_decoding_error(&p, errors, message))
                         goto onError;
-                    chr = x;
+                    chr = 0xffffffff;
                     i++;
                     break;
                 }
@@ -1643,6 +1643,10 @@ PyObject *PyUnicode_DecodeUnicodeEscape(const char *s,
                     chr += 10 + c - 'A';
             }
             s += i;
+	    if (chr == 0xffffffff)
+		    /* _decoding_error will have already written into the
+		       target buffer. */
+		    break;
         store:
             /* when we get here, chr is a 32-bit unicode character */
             if (chr <= 0xffff)
@@ -1660,11 +1664,10 @@ PyObject *PyUnicode_DecodeUnicodeEscape(const char *s,
 #endif
             } else {
                 if (unicodeescape_decoding_error(
-                    &s, &x, errors,
+                    &p, errors,
                     "illegal Unicode character")
                     )
                     goto onError;
-                *p++ = x; /* store replacement character */
             }
             break;
 
@@ -1699,14 +1702,19 @@ PyObject *PyUnicode_DecodeUnicodeEscape(const char *s,
                         goto store;
                 }
             }
-            if (unicodeescape_decoding_error(&s, &x, errors, message))
+            if (unicodeescape_decoding_error(&p, errors, message))
                 goto onError;
-            *p++ = x;
             break;
 
         default:
-            *p++ = '\\';
-            *p++ = (unsigned char)s[-1];
+	    if (s > end) {
+		if (unicodeescape_decoding_error(&p, errors, "\\ at end of string"))
+		    goto onError;
+	    }
+	    else {
+		*p++ = '\\';
+		*p++ = (unsigned char)s[-1];
+	    }
             break;
         }
     }
@@ -1909,7 +1917,7 @@ PyObject *PyUnicode_DecodeRawUnicodeEscape(const char *s,
     end = s + size;
     while (s < end) {
 	unsigned char c;
-	Py_UNICODE x;
+	Py_UCS4 x;
 	int i;
 
 	/* Non-escape characters are interpreted as Unicode ordinals */
@@ -1938,9 +1946,10 @@ PyObject *PyUnicode_DecodeRawUnicodeEscape(const char *s,
 	for (x = 0, i = 0; i < 4; i++) {
 	    c = (unsigned char)s[i];
 	    if (!isxdigit(c)) {
-		if (unicodeescape_decoding_error(&s, &x, errors,
+		if (unicodeescape_decoding_error(&p, errors,
 						 "truncated \\uXXXX"))
 		    goto onError;
+		x = 0xffffffff;
 		i++;
 		break;
 	    }
@@ -1953,7 +1962,8 @@ PyObject *PyUnicode_DecodeRawUnicodeEscape(const char *s,
 		x += 10 + c - 'A';
 	}
 	s += i;
-	*p++ = x;
+	if (x != 0xffffffff)
+		*p++ = x;
     }
     if (_PyUnicode_Resize(&v, (int)(p - buf)))
 	goto onError;
