@@ -45,6 +45,9 @@ guesstabsize(path)
 	int refnum;
 	Handle h;
 	int tabsize = 0;
+	
+	/* Very simple case: stdin (pathname empty) */
+	if ( path[0] == '\0' || strcmp(path, "<stdin>") == 0 ) return 0;
 	s[0] = strlen(path);
 	memcpy(s+1, path, s[0]);
 	refnum = OpenResFile(s);
