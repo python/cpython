@@ -288,11 +288,60 @@ mfss_NewAliasMinimal(self, args)
 	return (object *)newmfsaobject(alias);
 }
 
+/* XXXX These routines should be replaced with a complete interface to *FInfo */
+static object *
+mfss_GetCreatorType(self, args)
+	mfssobject *self;
+	object *args;
+{
+	OSErr err;
+	FInfo info;
+	
+	if (!newgetargs(args, ""))
+		return NULL;
+	err = FSpGetFInfo(&self->fsspec, &info);
+	if ( err ) {
+		PyErr_Mac(ErrorObject, err);
+		return NULL;
+	}
+	return Py_BuildValue("(O&O&)",
+	           PyMac_BuildOSType, info.fdCreator, PyMac_BuildOSType, info.fdType);
+}
+
+static object *
+mfss_SetCreatorType(self, args)
+	mfssobject *self;
+	object *args;
+{
+	OSErr err;
+	OSType creator, type;
+	FInfo info;
+	
+	if (!newgetargs(args, "O&O&", PyMac_GetOSType, &creator, PyMac_GetOSType, &type))
+		return NULL;
+	err = FSpGetFInfo(&self->fsspec, &info);
+	if ( err ) {
+		PyErr_Mac(ErrorObject, err);
+		return NULL;
+	}
+	info.fdType = type;
+	info.fdCreator = creator;
+	err = FSpSetFInfo(&self->fsspec, &info);
+	if ( err ) {
+		PyErr_Mac(ErrorObject, err);
+		return NULL;
+	}
+	INCREF(None);
+	return None;
+}
+
 static struct methodlist mfss_methods[] = {
 	{"as_pathname",		(method)mfss_as_pathname,			1},
 	{"as_tuple",		(method)mfss_as_tuple,				1},
 	{"NewAlias",		(method)mfss_NewAlias,				1},
 	{"NewAliasMinimal",	(method)mfss_NewAliasMinimal,		1},
+	{"GetCreatorType",	(method)mfss_GetCreatorType,		1},
+	{"SetCreatorType",	(method)mfss_SetCreatorType,		1},
  
 	{NULL,			NULL}		/* sentinel */
 };
