@@ -10,7 +10,7 @@
 
 """Internal support module for sre"""
 
-import _sre,sys
+import _sre, sys
 
 from sre_constants import *
 
@@ -278,8 +278,8 @@ def _optimize_unicode(charset, fixup):
         new = comps.setdefault(chunk, block)
         mapping[i] = new
         if new == block:
-            block += 1
-            data += _mk_bitmap(chunk)
+            block = block + 1
+            data = data + _mk_bitmap(chunk)
     header = [block]
     assert MAXCODE == 65535
     for i in range(128):
