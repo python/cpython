@@ -156,6 +156,11 @@ An \class{IMAP4} instance has the following methods:
   of message part envelope and data.
 \end{methoddesc}
 
+\begin{methoddesc}{getacl}{mailbox}
+  Get the \samp{ACL}s for \var{mailbox}.
+  The method is non-standard, but is supported by the \samp{Cyrus} server.
+\end{methoddesc}
+
 \begin{methoddesc}{list}{\optional{directory\optional{, pattern}}}
   List mailbox names in \var{directory} matching
   \var{pattern}.  \var{directory} defaults to the top-level mail
@@ -185,12 +190,24 @@ An \class{IMAP4} instance has the following methods:
 
 \begin{methoddesc}{open}{host, port}
   Opens socket to \var{port} at \var{host}.
+  The connection objects established by this method
+  will be used in the \code{read}, \code{readline}, and \code{shutdown} methods.
   You may override this method.
 \end{methoddesc}
 
 \begin{methoddesc}{partial}{message_num, message_part, start, length}
   Fetch truncated part of a message.
   Returned data is a tuple of message part envelope and data.
+\end{methoddesc}
+
+\begin{methoddesc}{read}{size}
+  Reads \var{size} bytes from the remote server.
+  You may override this method.
+\end{methoddesc}
+
+\begin{methoddesc}{readline}{}
+  Reads one line from the remote server.
+  You may override this method.
 \end{methoddesc}
 
 \begin{methoddesc}{recent}{}
@@ -233,8 +250,36 @@ msgnums = M.search(None, '(FROM "LDJ")')
   to the mailbox are not allowed.
 \end{methoddesc}
 
+\begin{methoddesc}{setacl}{mailbox, who, what}
+  Set an \samp{ACL} for \var{mailbox}.
+  The method is non-standard, but is supported by the \samp{Cyrus} server.
+\end{methoddesc}
+
+\begin{methoddesc}{shutdown}{}
+  Close connection established in \code{open}.
+  You may override this method.
+\end{methoddesc}
+
 \begin{methoddesc}{socket}{}
-  Returns socket instance used to connect to server. 
+  Returns socket instance used to connect to server.
+\end{methoddesc}
+
+\begin{methoddesc}{sort}{sort_criteria, charset, search_criterium\optional{, ...}}
+  The \code{sort} command is a variant of \code{search} with sorting semantics for
+  the results.  Returned data contains a space
+  separated list of matching message numbers.
+
+  Sort has two arguments before the \var{search_criterium}
+  argument(s); a parenthesized list of \var{sort_criteria}, and the searching \var{charset}.
+  Note that unlike \code{search}, the searching \var{charset} argument is mandatory.
+  There is also a \code{uid sort} command which corresponds to \code{sort} the way
+  that \code{uid search} corresponds to \code{search}.
+  The \code{sort} command first searches the mailbox for messages that
+  match the given searching criteria using the charset argument for
+  the interpretation of strings in the searching criteria.  It then
+  returns the numbers of matching messages.
+
+  This is an \samp{IMAP4rev1} extension command.
 \end{methoddesc}
 
 \begin{methoddesc}{status}{mailbox, names}
@@ -287,13 +332,13 @@ Here is a minimal example (without error checking) that opens a
 mailbox and retrieves and prints all messages:
 
 \begin{verbatim}
-import getpass, imaplib, string
+import getpass, imaplib
 
 M = imaplib.IMAP4()
 M.login(getpass.getuser(), getpass.getpass())
 M.select()
 typ, data = M.search(None, 'ALL')
-for num in string.split(data[0]):
+for num in data[0].split():
     typ, data = M.fetch(num, '(RFC822)')
     print 'Message %s\n%s\n' % (num, data[0][1])
 M.logout()
