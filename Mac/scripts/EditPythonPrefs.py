@@ -3,21 +3,21 @@
 # This program is getting more and more clunky. It should really
 # be rewritten in a modeless way some time soon.
 
-from Dlg import *
-from Events import *
-from Res import *
-import Controls
+from Carbon.Dlg import *
+from Carbon.Events import *
+from Carbon.Res import *
+from Carbon import Controls
 import string
 import struct
 import macfs
 import MacOS
 import os
 import sys
-import Res # For Res.Error
+from Carbon import Res # For Res.Error
 import pythonprefs
 import EasyDialogs
 try:
-	import Help
+	from Carbon import Help
 except ImportError:
 	Help = None
 

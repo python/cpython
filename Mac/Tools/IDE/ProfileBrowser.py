@@ -1,5 +1,5 @@
 import W
-import Evt
+from Carbon import Evt
 
 import sys
 import StringIO

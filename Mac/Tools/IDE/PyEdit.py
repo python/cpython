@@ -7,9 +7,9 @@ from Wkeys import *
 import macfs
 import MACFS
 import MacOS
-import Win
-import Res
-import Evt
+from Carbon import Win
+from Carbon import Res
+from Carbon import Evt
 import os
 import imp
 import sys
@@ -357,7 +357,7 @@ class Editor(W.Window):
 	def close(self):
 		if self.editgroup.editor.changed:
 			import EasyDialogs
-			import Qd
+			from Carbon import Qd
 			Qd.InitCursor()
 			save = EasyDialogs.AskYesNoCancel('Save window "%s" before closing?' % self.title,
 					default=1, no="Don\xd5t save")
@@ -948,7 +948,7 @@ class SearchEngine:
 		if counter:
 			self.hide()
 			import EasyDialogs
-			import Res
+			from Carbon import Res
 			editor.changed = 1
 			editor.selchanged = 1
 			editor.ted.WEUseText(Res.Resource(Text))

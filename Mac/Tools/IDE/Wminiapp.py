@@ -5,7 +5,7 @@ import Wapplication
 class TestApp(Wapplication.Application):
 	
 	def __init__(self):
-		import Res
+		from Carbon import Res
 		Res.FSpOpenResFile("Widgets.rsrc", 1)
 		self._menustocheck = []
 		self.preffilepath = ":Python:PythonIDE preferences"

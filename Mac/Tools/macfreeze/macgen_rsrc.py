@@ -1,7 +1,7 @@
 """macgen_info - Generate PYC resource file only"""
 import EasyDialogs
 import py_resource
-import Res
+from Carbon import Res
 import sys
 
 def generate(output, module_dict, debug=0, preload=1):

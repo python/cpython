@@ -1,10 +1,10 @@
-import Qt
-import QuickTime
+from Carbon import Qt
+from Carbon import QuickTime
 import macfs
-import Qd
-from QuickDraw import srcCopy
+from Carbon import Qd
+from Carbon.QuickDraw import srcCopy
 from ExtPixMapWrapper import ExtPixMapWrapper
-from Qdoffs import *
+from Carbon.Qdoffs import *
 import ImageMac
 import W
 

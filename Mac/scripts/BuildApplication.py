@@ -14,8 +14,8 @@ import string
 import os
 import macfs
 import MacOS
-import Res
-import Dlg
+from Carbon import Res
+from Carbon import Dlg
 import EasyDialogs
 import buildtools
 

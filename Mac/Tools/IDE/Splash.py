@@ -1,10 +1,11 @@
-import Dlg
-import Res
+from Carbon import Dlg
+from Carbon import Res
 
 splash = Dlg.GetNewDialog(468, -1)
 splash.DrawDialog()
 
-import Qd, TE, Fm, sys
+from Carbon import Qd, TE, Fm
+import sys
 
 _real__import__ = None
 
@@ -32,7 +33,7 @@ def importing(module):
 	Qd.SetPort(splash)
 	fontID = Fm.GetFNum("Python-Sans")
 	if not fontID:
-		from Fonts import geneva
+		from Carbon.Fonts import geneva
 		fontID = geneva
 	Qd.TextFont(fontID)
 	Qd.TextSize(9)
@@ -68,10 +69,10 @@ def my__import__(name, globals=None, locals=None, fromlist=None):
 #install_importhook()
 
 kHighLevelEvent = 23
-import Win
-from Fonts import *
-from QuickDraw import *
-from TextEdit import *
+from Carbon import Win
+from Carbon.Fonts import *
+from Carbon.QuickDraw import *
+from Carbon.TextEdit import *
 import string
 import sys
 
@@ -130,8 +131,8 @@ def drawtext(what = 0):
 UpdateSplash(1)
 
 def wait():
-	import Evt
-	import Events
+	from Carbon import Evt
+	from Carbon import Events
 	global splash
 	try:
 		splash

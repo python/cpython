@@ -127,7 +127,7 @@ class BrowserWidget(W.List):
 		return abs(abscol - x) < 3
 	
 	def trackcolumn(self, (x, y)):
-		import Qd, QuickDraw, Evt
+		from Carbon import Qd, QuickDraw, Evt
 		self.SetPort()
 		l, t, r, b = self._bounds
 		bounds = l, t, r, b = l + 1, t + 1, r - 16, b - 1

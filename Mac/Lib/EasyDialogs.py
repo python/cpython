@@ -14,18 +14,18 @@ This module uses DLOG resources 260 and on.
 Based upon STDWIN dialogs with the same names and functions.
 """
 
-from Dlg import GetNewDialog, SetDialogItemText, GetDialogItemText, ModalDialog
-import Qd
-import QuickDraw
-import Dialogs
-import Windows
-import Dlg,Win,Evt,Events # sdm7g
-import Ctl
-import Controls
-import Menu
+from Carbon.Dlg import GetNewDialog, SetDialogItemText, GetDialogItemText, ModalDialog
+from Carbon import Qd
+from Carbon import QuickDraw
+from Carbon import Dialogs
+from Carbon import Windows
+from Carbon import Dlg,Win,Evt,Events # sdm7g
+from Carbon import Ctl
+from Carbon import Controls
+from Carbon import Menu
 import MacOS
 import string
-from ControlAccessor import *	# Also import Controls constants
+from Carbon.ControlAccessor import *	# Also import Controls constants
 import macfs
 
 def cr2lf(text):

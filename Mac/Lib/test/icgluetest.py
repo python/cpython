@@ -2,7 +2,7 @@
 not the icglue module, is what you should normally use."""
 
 import icglue
-import Res
+from Carbon import Res
 
 ici = icglue.ICStart('Pyth')
 #ici.ICFindConfigFile()

@@ -59,7 +59,7 @@ class TwoLineList(W.List):
 	LDEF_ID = 468
 	
 	def createlist(self):
-		import List
+		from Carbon import List
 		self._calcbounds()
 		self.SetPort()
 		rect = self._bounds

@@ -1,7 +1,7 @@
 # List all resources
 
-import Res
-from Resources import *
+from Carbon import Res
+from Carbon.Resources import *
 
 def list1resources():
 	ntypes = Res.Count1Types()

@@ -5,12 +5,12 @@
 # - Handle horizontal scrollbar correctly
 # - Functionality: find, etc.
 
-from Menu import DrawMenuBar
+from Carbon.Menu import DrawMenuBar
 from FrameWork import *
-import Win
-import Qd
-import TE
-import Scrap
+from Carbon import Win
+from Carbon import Qd
+from Carbon import TE
+from Carbon import Scrap
 import os
 import macfs
 

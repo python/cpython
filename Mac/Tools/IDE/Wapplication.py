@@ -1,13 +1,13 @@
 import FrameWork
-import Win
-import Qd
-import Evt
+from Carbon import Win
+from Carbon import Qd
+from Carbon import Evt
 import MacOS
 import Events
 import traceback
 from types import *
 
-import Menu; MenuToolbox = Menu; del Menu
+from Carbon import Menu; MenuToolbox = Menu; del Menu
 
 
 class Application(FrameWork.Application):

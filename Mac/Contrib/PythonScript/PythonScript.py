@@ -10,7 +10,7 @@ import sys
 import getaete
 import baetools
 import baetypes
-import AE
+from Carbon import AE
 import AppleEvents
 import macfs
 from types import *

@@ -27,7 +27,7 @@ def main():
 		#sys.exit(1)
 
 def message(str = "Hello, world!", id = 256):
-	import Dlg
+	from Carbon import Dlg
 	d = Dlg.GetNewDialog(id, -1)
 	if not d:
 		print str

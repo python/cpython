@@ -1,6 +1,6 @@
 """aetypes - Python objects representing various AE types."""
 
-from AppleEvents import *
+from Carbon.AppleEvents import *
 import struct
 from types import *
 import string

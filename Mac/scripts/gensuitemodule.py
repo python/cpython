@@ -14,7 +14,7 @@ import types
 import StringIO
 import macfs
 
-from Res import *
+from Carbon.Res import *
 
 def main():
 	fss, ok = macfs.PromptGetFile('Select file with aeut/aete resource:')

@@ -3,8 +3,8 @@
 # To simplify matters use the python console window for output.
 #
 import ctb
-import Evt
-import Events
+from Carbon import Evt
+from Carbon import Events
 import MacOS
 import sys
 

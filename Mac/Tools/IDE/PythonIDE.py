@@ -10,10 +10,11 @@ def init():
 	import MacOS
 	MacOS.EnableAppswitch(-1)
 	
-	import Qd, QuickDraw
+	from Carbon import Qd, QuickDraw
 	Qd.SetCursor(Qd.GetCursor(QuickDraw.watchCursor).data)
 	
-	import Res, sys, os
+	from Carbon import Res
+	import sys, os
 	try:
 		Res.GetResource('DITL', 468)
 	except Res.Error:

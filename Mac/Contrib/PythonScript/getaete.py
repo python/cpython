@@ -18,7 +18,7 @@ import types
 from MACFS import *
 import macfs
 import string
-from Res import *
+from Carbon.Res import *
 import struct
 
 # for testing only

@@ -2,8 +2,8 @@
 Res and Dlg in the process"""
 
 import EasyDialogs
-import Res
-import Dlg
+from Carbon import Res
+from Carbon import Dlg
 import sys
 import socket
 import string

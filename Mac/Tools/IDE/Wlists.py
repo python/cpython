@@ -1,12 +1,12 @@
 import Wbase
 import Wkeys
-import Scrap
+from Carbon import Scrap
 import string
-import Evt
-import Events
-import Qd
-import Win
-import Lists
+from Carbon import Evt
+from Carbon import Events
+from Carbon import Qd
+from Carbon import Win
+from Carbon import Lists
 
 
 class List(Wbase.SelectableWidget):
@@ -39,7 +39,7 @@ class List(Wbase.SelectableWidget):
 		self.setdrawingmode(1)
 	
 	def createlist(self):
-		import List
+		from Carbon import List
 		self._calcbounds()
 		self.SetPort()
 		rect = self._bounds
@@ -371,7 +371,7 @@ class TwoLineList(List):
 	LDEF_ID = 468
 	
 	def createlist(self):
-		import List
+		from Carbon import List
 		self._calcbounds()
 		self.SetPort()
 		rect = self._bounds

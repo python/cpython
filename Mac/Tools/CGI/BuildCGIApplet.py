@@ -10,7 +10,7 @@ import sys
 import os
 import macfs
 import MacOS
-import Res
+from Carbon import Res
 import EasyDialogs
 import buildtools
 import py_resource

@@ -21,7 +21,7 @@ Being one of my first experiences with Python I didn't use Exceptions to signal 
 
 '''
 import W
-import Qd
+from Carbon import Qd
 from ExtPixMapWrapper import *
 from Numeric import *
 import Image

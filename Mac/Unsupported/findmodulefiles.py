@@ -59,7 +59,7 @@ def findunusedbuiltins(list):
 def mkpycresourcefile(list, main='', dst=None):
 	"""Copy list-of-modules to resource file dst."""
 	import py_resource
-	import Res
+	from Carbon import Res
 	import sys
 	
 	if dst == None:

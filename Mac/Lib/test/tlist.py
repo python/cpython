@@ -8,10 +8,10 @@
 # Actually, it is more a test of FrameWork by now....
 
 from FrameWork import *
-import Win
-import Qd
-import List
-import Lists
+from Carbon import Win
+from Carbon import Qd
+from Carbon import List
+from Carbon import Lists
 import os
 
 class ListWindow(Window):

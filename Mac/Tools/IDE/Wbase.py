@@ -1,7 +1,7 @@
-import Qd
-import Win
-import QuickDraw
-import Evt
+from Carbon import Qd
+from Carbon import Win
+from Carbon import QuickDraw
+from Carbon import Evt
 import string
 from types import *
 import sys

@@ -22,8 +22,8 @@ files: the pack stuff from aepack, the objects from aetypes.
 
 
 from types import *
-import AE
-import AppleEvents
+from Carbon import AE
+from Carbon import AppleEvents
 import MacOS
 import sys
 

@@ -1,8 +1,8 @@
 #
 # Turn a pyc file into a resource file containing it in 'PYC ' resource form
-from Res import *
-import Res
-from Resources import *
+from Carbon.Res import *
+from Carbon import Res
+from Carbon.Resources import *
 import os
 import macfs
 import sys

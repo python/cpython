@@ -3,7 +3,7 @@ import sys
 import W
 import os
 import types
-import List
+from Carbon import List
 
 
 class TraceBack:
