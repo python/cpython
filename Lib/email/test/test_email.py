@@ -2659,6 +2659,43 @@ Content-Type: text/html; NAME*0=file____C__DOCUMENTS_20AND_20SETTINGS_FABIEN_LOC
         self.assertEqual(msg.get_param('NAME'),
                          (None, None, 'file____C__DOCUMENTS_20AND_20SETTINGS_FABIEN_LOCAL_20SETTINGS_TEMP_nsmail.htm'))
 
+    def test_rfc2231_no_language_or_charset_in_filename(self):
+        m = '''\
+Content-Disposition: inline;
+\tfilename*0="This%20is%20even%20more%20";
+\tfilename*1="%2A%2A%2Afun%2A%2A%2A%20";
+\tfilename*2="is it not.pdf"
+
+'''
+        msg = email.message_from_string(m)
+        self.assertEqual(msg.get_filename(),
+                         'This is even more ***fun*** is it not.pdf')
+
+    def test_rfc2231_no_language_or_charset_in_boundary(self):
+        m = '''\
+Content-Type: multipart/alternative;
+\tboundary*0="This%20is%20even%20more%20";
+\tboundary*1="%2A%2A%2Afun%2A%2A%2A%20";
+\tboundary*2="is it not.pdf"
+
+'''
+        msg = email.message_from_string(m)
+        self.assertEqual(msg.get_boundary(),
+                         'This is even more ***fun*** is it not.pdf')
+
+    def test_rfc2231_no_language_or_charset_in_charset(self):
+        # This is a nonsensical charset value, but tests the code anyway
+        m = '''\
+Content-Type: text/plain;
+\tcharset*0="This%20is%20even%20more%20";
+\tcharset*1="%2A%2A%2Afun%2A%2A%2A%20";
+\tcharset*2="is it not.pdf"
+
+'''
+        msg = email.message_from_string(m)
+        self.assertEqual(msg.get_content_charset(),
+                         'this is even more ***fun*** is it not.pdf')
+
 
 
 def _testclasses():
