@@ -38,6 +38,8 @@ Core and builtins
 Extension modules
 -----------------
 
+- The _bsddb module now supports Berkeley DB 4.2.
+
 - Bug #698282: Add __file__ to dynamic modules in multiple interpreters.
 
 - Patch #798145: Return correct information from nl_langinfo(RADIXCHAR).
@@ -146,6 +148,11 @@ C API
 
 Windows
 -------
+
+- The _ssl extension module was built using openssl-0.9.7b.
+
+- The Windows installer includes documentation in HTMLHelp format
+  instead of single HTML pages.
 
 Mac
 ---
