@@ -4,26 +4,24 @@
 # See also the README file.
 #
 # This is a bit of a mess.  The main documents are:
-#   tut -- Tutorial (file tut.tex)
-#   lib -- Library Reference (file lib.tex, inputs lib*.tex)
-#   ext -- Extending and Embedding (file ext.tex)
+#   tut -- Tutorial
+#   ref -- Python Reference Manual
+#   lib -- Library Reference
+#   ext -- Extending and Embedding
 #   api -- Python-C API Reference
 #
-# The Reference Manual is now maintained as a FrameMaker document.
-# See the subdirectory ref; PostScript is included as ref/ref.ps.
-# (In the future, the Tutorial will also be converted to FrameMaker;
-# the other documents will be maintained in a text format such
-# as LaTeX or perhaps TIM.)
+# The latex sources for each of these documents are in subdirectories
+# with the three-letter designations above as the directory names.
 #
 # The main target "make all" creates DVI and PostScript for these
 # four.  You can also do "make lib" (etc.) to process individual
 # documents.
 #
-# There's one local style file: python.sty.  This defines a number
-# of macros that are similar in name and intent as macros in Texinfo
-# (e.g. \code{...} and \emph{...}), as well as a number of
-# environments for formatting function and data definitions, also in
-# the style of Texinfo.
+# The document classes and styles are in the texinputs/ directory.
+# These define a number of macros that are similar in name and intent
+# as macros in Texinfo (e.g. \code{...} and \emph{...}), as well as a
+# number of environments for formatting function and data definitions,
+# also in the style of Texinfo.
 #
 # Everything is processed by LaTeX.  The following tools are used:
 #   latex
@@ -40,19 +38,23 @@
 # Additional targets attempt to convert selected LaTeX sources to
 # various other formats.  These are generally site specific because
 # the tools used are all but universal.  These targets are:
-#   l2h -- convert tut, lib, ext, api from LaTeX to HTML
+#   l2h -- convert tut, ref, lib, ext, api from LaTeX to HTML
 # See the README file for more info on these targets.
 
 # Customizations -- you *may* have to edit these
+
+# you could set this to a4
+PAPER=letter
 
 # Where are the various programs?
 LATEX=		latex
 PDFLATEX=	pdflatex
 DVIPS=		dvips -N0
-DISTILL=	distill
 KPSEWHICH=	TEXINPUTS=$(TEXINPUTS) kpsewhich
 MAKEINDEX=	makeindex -s $(srcdir)/texinputs/myindex.ist
+ACROREAD=	acroread
 L2HARGS=
+PYTHON=		python
 WEBCHECKER=	$(PYTHON) $(srcdir)/../Tools/webchecker/webchecker.py
 
 # Install destination -- not used now but might be useful some time...
@@ -63,7 +65,6 @@ DOCDESTDIR=	$LIBDEST/doc
 
 # These is only used for .info generation:
 EMACS=		emacs
-PYTHON=		python
 MAKEINFO=	makeinfo
 PARTPARSE=	$(PYTHON) $(srcdir)/tools/partparse.py
 
@@ -80,67 +81,59 @@ INFOFILES=	python-lib.info
 PDFFILES=	api.pdf ext.pdf lib.pdf ref.pdf tut.pdf
 PSFILES=	api.ps ext.ps lib.ps ref.ps tut.ps
 
-MANSTYLES=texinputs/fncychap.sty texinputs/manual.cls \
-	  texinputs/python.sty texinputs/myindex.ist
-
 # Be careful when messing with this one!
 TEXINPUTS=	.:$(srcdir)/texinputs:
 
 MKDVI=		TEXINPUTS=$(TEXINPUTS) $(srcdir)/tools/mkdvi.sh
+MKHTML=		TEXINPUTS=$(TEXINPUTS) $(srcdir)/tools/mkhtml.sh
+MKPDF=		TEXINPUTS=$(TEXINPUTS) $(srcdir)/tools/mkdvi.sh --pdf
 
 # Main target
-all:	all-ps
+all:
 
-world:	all-ps all-pdf l2h tarballs
+all-dvi:
+	(cd paper-$(PAPER); $(MAKE) all-dvi)
 
-all-dvi: $(DVIFILES)
-all-pdf: $(PDFFILES)
-all-ps:	 $(PSFILES)
+all-pdf:
+	(cd paper-$(PAPER); $(MAKE) all-pdf)
 
-# This target gets both the PDF and PS files updated; the all-pdf target
-# above doesn't ensure that both are done if the "alternate" rule (using
-# pdflatex) for PDF generation is used.
+all-ps:
+	(cd paper-$(PAPER); $(MAKE) all-ps)
+
+world:	do-ps do-pdf l2h tarballs
+
+do-dvi: $(DVIFILES)
+do-pdf: $(PDFFILES)
+do-ps:	 $(PSFILES)
+
+# This target gets both the PDF and PS files updated.
 #
 all-formats:  $(PSFILES) $(PDFFILES)
 
-# Individual document fake targets
-tut:	tut.ps
-lib:	lib.ps
-ext:	ext.ps
-api:	api.ps
-
 
 # Rules to build PostScript and PDF formats
-.SUFFIXES: .dvi .ps .pdf .tex
+.SUFFIXES: .dvi .ps .pdf
 
 .dvi.ps:
 	$(DVIPS) -o $@ $<
 
-#.ps.pdf:
-#	$(DISTILL) $<
+#.pdf.ps:
+#	$(ACROREAD) -toPostScript $<
 
-# An alternate formulation of PDF creation; requires latex format with
-# pdftex.  To use this instead of the Acrobat distiller solution, comment
-# out the above .ps.pdf rule and uncomment this rule.  This was tested
-# using a pre-release of the teTeX distribution.  See
-# http://www.tug.org/tetex/ for more information on getting & using teTeX.
-# This rule avoids creation of the intermediate PostScript files and uses
-# only free software.
-#
-$(PDFFILES): $(srcdir)/tools/toc2bkm.py
-.dvi.pdf:
-	TEXINPUTS=$(srcdir)/$*:$(TEXINPUTS) $(PDFLATEX) $*
-	$(PYTHON) $(srcdir)/tools/toc2bkm.py $*
-	TEXINPUTS=$(srcdir)/$*:$(TEXINPUTS) $(PDFLATEX) $*
 
 # Dependencies
+# We really need some support of dependency generator for this...
+
+MANSTYLES=texinputs/fncychap.sty texinputs/manual.cls \
+	  texinputs/python.sty texinputs/myindex.ist
+
 COMMONTEX=$(MANSTYLES) texinputs/copyright.tex texinputs/boilerplate.tex
-COMMONPERL=perl/manual.perl perl/python.perl
 
 $(DVIFILES): tools/fix_hack tools/mkdvi.sh $(COMMONTEX)
+$(PDFFILES): tools/fix_hack tools/mkdvi.sh $(COMMONTEX)
 
-ref.dvi:  ref/ref1.tex ref/ref2.tex ref/ref3.tex ref/ref4.tex \
-	  ref/ref5.tex ref/ref6.tex ref/ref7.tex ref/ref8.tex
+REFFILES = ref/ref1.tex ref/ref2.tex ref/ref3.tex ref/ref4.tex \
+	   ref/ref5.tex ref/ref6.tex ref/ref7.tex ref/ref8.tex
 
 # LaTeX source files for the Python Library Reference
 LIBFILES = lib/lib.tex \
@@ -198,21 +191,43 @@ lib.dvi: tools/indfix.py $(LIBFILES)
 	$(srcdir)/tools/indfix.py $*.ind
 	TEXINPUTS=$(srcdir)/lib:$(TEXINPUTS) $(LATEX) $*
 
+lib.pdf: tools/indfix.py $(LIBFILES)
+	$(srcdir)/tools/newind.py >$*.ind
+	$(srcdir)/tools/newind.py modindex >mod$*.ind
+	TEXINPUTS=$(srcdir)/lib:$(TEXINPUTS) $(PDFLATEX) $*
+	$(MAKEINDEX) mod$*.idx
+	$(srcdir)/tools/fix_hack $*.idx
+	$(MAKEINDEX) $*.idx
+	$(srcdir)/tools/indfix.py $*.ind
+	TEXINPUTS=$(srcdir)/lib:$(TEXINPUTS) $(PDFLATEX) $*
+
 # Python/C API Reference Manual
 api.dvi: api/api.tex
 	$(MKDVI) api
+
+api.pdf: api/api.tex
+	$(MKPDF) api
 
 # Extending and Embedding the Python Interpreter
 ext.dvi: ext/ext.tex
 	$(MKDVI) ext
 
+ext.pdf: ext/ext.tex
+	$(MKPDF) ext
+
 # Python Reference Manual
-ref.dvi: ref/ref.tex
+ref.dvi: $(REFFILES)
 	$(MKDVI) ref
+
+ref.pdf: $(REFFILES)
+	$(MKPDF) ref
 
 # Python Tutorial
 tut.dvi: tut/tut.tex
 	$(MKDVI) tut
+
+tut.pdf: tut/tut.tex
+	$(MKPDF) tut
 
 
 # The remaining part of the Makefile is concerned with various
@@ -226,13 +241,13 @@ tut.dvi: tut/tut.tex
 # least the info file gets generated.
 
 lib1.texi: $(LIBFILES) texipre.dat texipost.dat tools/partparse.py
-	$(PARTPARSE) -o $@ `tools/whichlibs`
+	$(PARTPARSE) -o $@ `$(srcdir)/tools/whichlibs`
 	sed 's/"{\\}n{\\}n/"\\n\\n/' $@ >temp.texi
 	mv temp.texi $@
 
 python-lib.texi: lib1.texi tools/fix.el
 	cp lib1.texi temp.texi
-	$(EMACS) -batch -l tools/fix.el -f save-buffer -kill
+	$(EMACS) -batch -l $(srcdir)/tools/fix.el -f save-buffer -kill
 	mv temp.texi $@
 
 python-lib.info: python-lib.texi
@@ -258,26 +273,27 @@ lib.texi: python-lib.texi
 # a (trivial) index.html.  Change the definition of $ICONSERVER in
 # perl/l2hinit.perl to use a different location for the icons directory.
 
+COMMONPERL=perl/manual.perl perl/python.perl
 
 l2h:
 	(cd html; $(MAKE))
 
 l2hapi: $(COMMONPERL)
-	TEXINPUTS=$(TEXINPUTS) $(srcdir)/tools/mkhtml.sh api $(L2HARGS)
+	$(MKHTML) api $(L2HARGS)
 
 l2hext: $(COMMONPERL)
-	TEXINPUTS=$(TEXINPUTS) $(srcdir)/tools/mkhtml.sh ext $(L2HARGS)
+	$(MKHTML) ext $(L2HARGS)
 
 l2hlib: $(COMMONPERL)
 	$(srcdir)/tools/fix_libaux.sed <`$(KPSEWHICH) lib.aux` >lib1.aux
 	mv lib1.aux `$(KPSEWHICH) lib.aux`
-	TEXINPUTS=$(TEXINPUTS) $(srcdir)/tools/mkhtml.sh lib $(L2HARGS)
+	$(MKHTML) lib $(L2HARGS)
 
 l2href: $(COMMONPERL)
-	TEXINPUTS=$(TEXINPUTS) $(srcdir)/tools/mkhtml.sh ref $(L2HARGS)
+	$(MKHTML) ref $(L2HARGS)
 
 l2htut: $(COMMONPERL)
-	TEXINPUTS=$(TEXINPUTS) $(srcdir)/tools/mkhtml.sh tut $(L2HARGS)
+	$(MKHTML) tut $(L2HARGS)
 
 # webchecker needs an extra flag to process the huge index from the libref
 webcheck:
