@@ -139,7 +139,7 @@ def grok_environment_error (exc, prefix="error: "):
 
 
 # Needed by 'split_quoted()'
-_wordchars_re = re.compile(r'[^\\\'\"\ ]*')
+_wordchars_re = re.compile(r'[^\\\'\"%s ]*' % string.whitespace)
 _squote_re = re.compile(r"'(?:[^'\\]|\\.)*'")
 _dquote_re = re.compile(r'"(?:[^"\\]|\\.)*"')
 
@@ -169,7 +169,7 @@ def split_quoted (s):
             words.append(s[:end])
             break
 
-        if s[end] == ' ':               # unescaped, unquoted space: now
+        if s[end] in string.whitespace: # unescaped, unquoted whitespace: now
             words.append(s[:end])       # we definitely have a word delimiter
             s = string.lstrip(s[end:])
             pos = 0
