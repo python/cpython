@@ -906,7 +906,8 @@ unmarshal_code(char *pathname, PyObject *data, time_t mtime)
 		return Py_None;  /* signal caller to try alternative */
 	}
 
-	if (mtime != 0 && !eq_mtime(get_long((unsigned char *)buf + 4), mtime)) {
+	if (mtime != 0 && !eq_mtime(get_long((unsigned char *)buf + 4),
+				    mtime)) {
 		if (Py_VerboseFlag)
 			PySys_WriteStderr("# %s has bad mtime\n",
 					  pathname);
@@ -934,23 +935,23 @@ unmarshal_code(char *pathname, PyObject *data, time_t mtime)
 static PyObject *
 normalize_line_endings(PyObject *source)
 {
-	char *q, *p = PyString_AsString(source);
-	int length = PyString_Size(source) + 1;
+	char *buf, *q, *p = PyString_AsString(source);
 	PyObject *fixed_source;
 
-	fixed_source = PyString_FromStringAndSize(p, length);
-	if (fixed_source == NULL)
+	/* one char extra for trailing \n and one for terminating \0 */
+	buf = PyMem_Malloc(PyString_Size(source) + 2);
+	if (buf == NULL) {
+		PyErr_SetString(PyExc_MemoryError,
+				"zipimport: no memory to allocate "
+				"source buffer");
 		return NULL;
-
-	q = PyString_AsString(fixed_source);
+	}
 	/* replace "\r\n?" by "\n" */
-	for (;;) {
+	for (q = buf;;) {
 		if (*p == '\r') {
 			*q++ = '\n';
-			if (*(p + 1) == '\n') {
+			if (*(p + 1) == '\n')
 				p++;
-				length--;
-			}
 		}
 		else
 			*q++ = *p;
@@ -960,7 +961,8 @@ normalize_line_endings(PyObject *source)
 	}
 	*q++ = '\n';  /* add trailing \n */
 	*q = '\0';
-	_PyString_Resize(&fixed_source, length);
+	fixed_source = PyString_FromString(buf);
+	PyMem_Free(buf);
 	return fixed_source;
 }
 

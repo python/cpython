@@ -56,9 +56,10 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
 
             mod = __import__(".".join(modules), globals(), locals(),
                              ["__dummy__"])
-            file = mod.get_file()
-            self.assertEquals(file, os.path.join(TEMP_ZIP,
-                              os.sep.join(modules) + expected_ext))
+            if expected_ext:
+                file = mod.get_file()
+                self.assertEquals(file, os.path.join(TEMP_ZIP,
+                                  os.sep.join(modules) + expected_ext))
         finally:
             z.close()
             os.remove(TEMP_ZIP)
@@ -100,6 +101,10 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
         files = {TESTMOD + ".py": (NOW, test_src),
                  TESTMOD + pyc_ext: (NOW, test_pyc)}
         self.doTest(pyc_ext, files, TESTMOD)
+
+    def testEmptyPy(self):
+        files = {TESTMOD + ".py": (NOW, "")}
+        self.doTest(None, files, TESTMOD)
 
     def testBadMagic(self):
         # make pyc magic word invalid, forcing loading from .py
