@@ -438,17 +438,19 @@ try:
 except:
     raise TestFailed, "int(%s)" % `s[1:]` + " should return long"
 try:
-    int(1e100)
+    x = int(1e100)
 except OverflowError:
-    pass
+    raise TestFailed("int(1e100) mustn't raise OverflowError")
 else:
-    raise TestFailed("int(1e100) expected OverflowError")
+    if not isinstance(x, long):
+        raise TestFailed("int(1e100) should have returned long")
 try:
-    int(-1e100)
+    x = int(-1e100)
 except OverflowError:
-    pass
+    raise TestFailed("int(-1e100) mustn't raise OverflowError")
 else:
-    raise TestFailed("int(-1e100) expected OverflowError")
+    if not isinstance(x, long):
+        raise TestFailed("int(-1e100) should have returned long")
 
 
 # SF bug 434186:  0x80000000/2 != 0x80000000>>1.

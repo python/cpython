@@ -267,22 +267,26 @@ def test_misc(maxdigits=MAXDIGITS):
     # but long -> int should overflow for hugepos+1 and hugeneg-1
     x = hugepos_aslong + 1
     try:
-        int(x)
-        raise ValueError
+        y = int(x)
     except OverflowError:
-        pass
-    except:
-        raise TestFailed, "int(long(sys.maxint) + 1) didn't overflow"
+        raise TestFailed, "int(long(sys.maxint) + 1) mustn't overflow"
+    if not isinstance(y, long):
+        raise TestFailed("int(long(sys.maxint) + 1) should have returned long")
 
     x = hugeneg_aslong - 1
     try:
-        int(x)
-        raise ValueError
+        y = int(x)
     except OverflowError:
-        pass
-    except:
-        raise TestFailed, "int(long(-sys.maxint-1) - 1) didn't overflow"
+        raise TestFailed, "int(long(-sys.maxint-1) - 1) mustn't overflow"
+    if not isinstance(y, long):
+        raise TestFailed("int(long(-sys.maxint-1) - 1) should have returned long")
 
+    class long2(long):
+        pass
+    x = long2(1L<<100)
+    y = int(x)
+    if type(y) is not long:
+        raise TestFailed("overflowing int conversion must return long not long subtype")
 # ----------------------------------- tests of auto int->long conversion
 
 def test_auto_overflow():

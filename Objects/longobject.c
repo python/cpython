@@ -2517,20 +2517,31 @@ long_coerce(PyObject **pv, PyObject **pw)
 }
 
 static PyObject *
-long_int(PyObject *v)
-{
-	long x;
-	x = PyLong_AsLong(v);
-	if (PyErr_Occurred())
-		return NULL;
-	return PyInt_FromLong(x);
-}
-
-static PyObject *
 long_long(PyObject *v)
 {
 	Py_INCREF(v);
 	return v;
+}
+
+static PyObject *
+long_int(PyObject *v)
+{
+	long x;
+	x = PyLong_AsLong(v);
+	if (PyErr_Occurred()) {
+		if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
+				PyErr_Clear();
+				if (PyLong_CheckExact(v)) {
+					Py_INCREF(v);
+					return v;
+				}
+				else
+					return _PyLong_Copy((PyLongObject *)v);
+		}
+		else
+			return NULL;
+	}
+	return PyInt_FromLong(x);
 }
 
 static PyObject *

@@ -138,16 +138,16 @@ if not 12L < 24L: raise TestFailed, 'long op'
 if not -24L < -12L: raise TestFailed, 'long op'
 x = sys.maxint
 if int(long(x)) != x: raise TestFailed, 'long op'
-try: int(long(x)+1L)
-except OverflowError: pass
-else:raise TestFailed, 'long op'
+try: y = int(long(x)+1L)
+except OverflowError: raise TestFailed, 'long op'
+if not isinstance(y, long): raise TestFailed, 'long op'
 x = -x
 if int(long(x)) != x: raise TestFailed, 'long op'
 x = x-1
 if int(long(x)) != x: raise TestFailed, 'long op'
-try: int(long(x)-1L)
-except OverflowError: pass
-else:raise TestFailed, 'long op'
+try: y = int(long(x)-1L)
+except OverflowError: raise TestFailed, 'long op'
+if not isinstance(y, long): raise TestFailed, 'long op'
 
 try: 5 << -5
 except ValueError: pass
