@@ -43,7 +43,7 @@ Example:
 
 import socket
 import re
-import rfc822
+import email.Utils
 import base64
 import hmac
 from email.base64MIME import encode as encode_base64
@@ -171,7 +171,7 @@ def quoteaddr(addr):
     """
     m = (None, None)
     try:
-        m=rfc822.parseaddr(addr)[1]
+        m = email.Utils.parseaddr(addr)[1]
     except AttributeError:
         pass
     if m == (None, None): # Indicates parse failure or AttributeError
