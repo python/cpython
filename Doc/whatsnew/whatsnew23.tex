@@ -1222,10 +1222,6 @@ char *\var{key})} was added
 as shorthand for 
 \code{PyObject_DelItem(\var{mapping}, PyString_New(\var{key})}.
 
-\item The source code for the Expat XML parser is now included with
-the Python source, so the \module{pyexpat} module is no longer
-dependent on having a system library containing Expat.
-
 \item File objects now manage their internal string buffer
 differently by increasing it exponentially when needed.  
 This results in the benchmark tests in \file{Lib/test/test_bufio.py} 
@@ -1312,6 +1308,6 @@ The author would like to thank the following people for offering
 suggestions, corrections and assistance with various drafts of this
 article: Michael Chermside, Scott David Daniels, Fred~L. Drake, Jr.,
 Michael Hudson, Detlef Lannert, Martin von L\"owis, Andrew MacIntyre,
-Gustavo Niemeyer, Neal Norwitz, Jason Tishler.
+Lalo Martins, Gustavo Niemeyer, Neal Norwitz, Jason Tishler.
 
 \end{document}
