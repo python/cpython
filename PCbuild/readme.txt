@@ -199,11 +199,17 @@ _bsddb.pyd - 0 error(s), 4 warning(s)
 """
     XXX This isn't encouraging, but I don't know what to do about it.
 
+
 _ssl
-    Python wrapper for the secure sockets library.  
+    Python wrapper for the secure sockets library.
 
     Get the latest source code for OpenSSL from
         http://www.openssl.org
+
+    You (probably) don't want the "engine" code.  For example, get
+        openssl-0.9.6g.tar.gz
+    not
+        openssl-engine-0.9.6g.tar.gz
 
     Unpack into the "dist" directory, retaining the folder name from
     the archive - for example, the latest stable OpenSSL will install as
@@ -214,10 +220,10 @@ _ssl
 
     You must also install ActivePerl from
         http://www.activestate.com/Products/ActivePerl/
-    as this is used by the OpenSSL build process.  Complain to them <wink>
+    as this is used by the OpenSSL build process.  Complain to them <wink>.
 
     The MSVC project simply invokes PCBuild/build_ssl.py to perform
-    the build.  This Python script locates and builds your OpenSSL 
+    the build.  This Python script locates and builds your OpenSSL
     installation, then invokes a simple makefile to build the final .pyd.
 
     build_ssl.py attempts to catch the most common errors (such as not
@@ -228,8 +234,8 @@ _ssl
     a peek at build_ssl.py and suggest patches.  Note that build_ssl.py
     should be able to be run directly from the command-line.
 
-    build_ssl.py/MSVC isn't clever enough to clean OpenSSL - you must do this 
-    by hand.
+    build_ssl.py/MSVC isn't clever enough to clean OpenSSL - you must do
+    this by hand.
 
 YOUR OWN EXTENSION DLLs
 -----------------------
