@@ -10,7 +10,8 @@ time Py_Finalize() prints the list of all live objects twice:  first it
 prints the repr() of each object while the interpreter is still fully intact.
 After cleaning up everything it can, it prints all remaining live objects
 again, but the second time just prints their addresses, refcounts, and type
-names.
+names (because the interpreter has been torn down, calling repr methods at
+this point can get into infinite loops or blow up).
 
 Save all this output into a file, then run this script passing the path to
 that file.  The script finds both output chunks, combines them, then prints
@@ -36,6 +37,12 @@ typename is object->ob_type->tp_name, extracted from the second PYTHONDUMPREFS
 output block.
 
 repr is repr(object), extracted from the first PYTHONDUMPREFS output block.
+CAUTION:  If object is a container type, it may not actually contain all the
+objects shown in the repr:  the repr was captured from the first output block,
+and some of the containees may have been released since then.  For example,
+it's common for the line showing the dict of interned strings to display
+strings that no longer exist at the end of Py_Finalize; this can be recognized
+(albeit painfully) because such containees don't have a line of their own.
 
 The objects are listed in allocation order, with most-recently allocated
 printed first, and the first object allocated printed last.
@@ -57,12 +64,10 @@ between the times PYTHONDUMPREFS produced output.
 
     00858028 [1025->1456] str '<dummy key>'
 
-The string '<dummy key>', which is used in dictobject.c as the name of the
-dummy key that overwrites a real key that gets deleted, actually grew
-several hundred references during cleanup.  It suggests that stuff did get
-removed from dicts by cleanup, but that the dicts themselves are staying
-alive for some reason.
-"""
+The string '<dummy key>', which is used in dictobject.c to overwrite a real
+key that gets deleted, grew several hundred references during cleanup.  It
+suggests that stuff did get removed from dicts by cleanup, but that the dicts
+themselves are staying alive for some reason. """
 
 import re
 import sys
