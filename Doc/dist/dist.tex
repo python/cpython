@@ -20,6 +20,7 @@
 }
 
 \makeindex
+\makemodindex
 
 \begin{document}
 
@@ -3478,5 +3479,20 @@ that command is always applicable.
 predicates can be unbound methods, so they must already have been
 defined.  The canonical example is the \command{install} command.
 
+%
+%  The ugly "%begin{latexonly}" pseudo-environments are really just to
+%  keep LaTeX2HTML quiet during the \renewcommand{} macros; they're
+%  not really valuable.
+%
+
+%begin{latexonly}
+\renewcommand{\indexname}{Module Index}
+%end{latexonly}
+\input{modlib.ind}              % Module Index
+
+%begin{latexonly}
+\renewcommand{\indexname}{Index}
+%end{latexonly}
+\input{lib.ind}                 % Index
 
 \end{document}
