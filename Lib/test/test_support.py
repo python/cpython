@@ -55,7 +55,13 @@ def fcmp(x, y): # fuzzy comparison function
         return cmp(len(x), len(y))
     return cmp(x, y)
 
-TESTFN = '@test' # Filename used for testing
+import os
+if os.name !='riscos':
+    TESTFN = '@test' # Filename used for testing
+else:
+    TESTFN = 'test' # Filename used for testing
+del os
+
 from os import unlink
 
 def findfile(file, here=__file__):
