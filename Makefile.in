@@ -152,8 +152,8 @@ all:		$(LIBRARY) python sharedmods
 
 # Build the interpreter
 python:		$(LIBRARY) buildno
-		expr `cat buildno` + 1 >@buildno
-		mv @buildno buildno
+		expr `cat buildno` + 1 >buildno1
+		mv -f buildno1 buildno
 		$(CC) -c $(CFLAGS) -DBUILD=`cat buildno` \
 		      $(srcdir)/Modules/getbuildinfo.c
 		$(AR) cr $(LIBRARY) getbuildinfo.o
