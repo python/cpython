@@ -91,6 +91,10 @@ Library
 
 - warnings.warn now accepts a Warning instance as first argument.
 
+- The xml.sax.expatreader.ExpatParser class will no longer create
+  circular references by using itself as the locator that gets passed
+  to the content handler implementation.  [SF bug #535474]
+
 Tools/Demos
 
 - freeze.py now produces binaries which can import shared modules,
