@@ -215,6 +215,7 @@ class PEP252Mixin:
 		assert self.outputSetattr.im_func == PEP252Mixin.outputSetattr.im_func
 		assert self.outputGetattrBody == None
 		assert self.outputGetattrHook == None
+		assert self.basechain == "NULL"
 		
 	def outputGetattr(self):
 		pass
@@ -293,24 +294,28 @@ class PEP252Mixin:
 					self.outputGetter(name, get)
 				else:
 					Output("#define %s_get_%s NULL", self.prefix, name)
+					Output()
 				if set:
 					self.outputSetter(name, set)
 				else:
 					Output("#define %s_set_%s NULL", self.prefix, name)
+					Output()
 					
 			Output("static PyGetSetDef %s_getsetlist[] = {", self.prefix)
 			IndentLevel()
 			for name, get, set, doc in self.getsetlist:
 				if doc:
-					doc = `doc`
+					doc = '"' + doc + '"'
 				else:
 					doc = "NULL"
-				Output("{\"%s\", (getter)%s_get_%s, (setter)%s_set_%s, %s}", 
+				Output("{\"%s\", (getter)%s_get_%s, (setter)%s_set_%s, %s},", 
 					name, self.prefix, name, self.prefix, name, doc)
+			Output("{NULL, NULL, NULL, NULL},")
 			DedentLevel()
 			Output("};")
 		else:
 			Output("#define %s_getsetlist NULL", self.prefix)
+		Output()
 			
 	def outputGetter(self, name, code):
 		Output("static PyObject *%s_get_%s(%s *self, void *closure)",
@@ -318,14 +323,16 @@ class PEP252Mixin:
 		OutLbrace()
 		Output(code)
 		OutRbrace()
+		Output()
 		
 	def outputSetter(self, name, code):
-		Output("static int %s_get_%s(%s *self, PyObject *v, void *closure)",
+		Output("static int %s_set_%s(%s *self, PyObject *v, void *closure)",
 			self.prefix, name, self.objecttype)
 		OutLbrace()
 		Output(code)
 		Output("return 0;")
 		OutRbrace()
+		Output()
 
 class GlobalObjectDefinition(ObjectDefinition):
 	"""Like ObjectDefinition but exports some parts.
