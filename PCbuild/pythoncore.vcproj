@@ -247,9 +247,6 @@
 			RelativePath="..\Modules\cjkcodecs\_codecs_tw.c">
 		</File>
 		<File
-			RelativePath="..\Modules\cjkcodecs\_codecs_unicode.c">
-		</File>
-		<File
 			RelativePath="..\Modules\_codecsmodule.c">
 			<FileConfiguration
 				Name="Release|Win32">
