@@ -419,6 +419,9 @@ SystemExit__init__(PyObject *self, PyObject *args)
     case 1:
         code = PySequence_GetItem(args, 0);
         break;
+    case -1:
+        PyErr_Clear();
+        /* Fall through */
     default:
         Py_INCREF(args);
         code = args;
@@ -521,6 +524,10 @@ EnvironmentError__init__(PyObject *self, PyObject *args)
 	{
 	    goto finally;
 	}
+	break;
+
+    case -1:
+	PyErr_Clear();
 	break;
     }
 
