@@ -638,8 +638,14 @@ xyzabc
     (r'(?i)[m]+', 'MMM', SUCCEED, 'found', 'MMM'),
     # bug 130748: ^* should be an error (nothing to repeat)
     (r'^*', '', SYNTAX_ERROR),
-    # bug 133283: minimizing repeat bug
-    (r'"(?:\\"|[^"])*?"', r'"\""', SUCCEED, 'found', r'"\"'),
+    # bug 133283: minimizing repeat problem
+    (r'"(?:\\"|[^"])*?"', r'"\""', SUCCEED, 'found', r'"\""'),
+    # bug 477728: minimizing repeat problem
+    (r'^.*?$', 'one\ntwo\nthree\n', FAIL),
+    # bug 483789: minimizing repeat problem
+    (r'a[^>]*?b', 'a>b', FAIL),
+    # bug 490573: minimizing repeat problem
+    (r'^a*?$', 'foo', FAIL),
 ]
 
 try:
