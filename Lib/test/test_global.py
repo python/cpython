@@ -4,15 +4,15 @@ from test_support import check_syntax
 
 import warnings
 
-warnings.filterwarnings("error", category=SyntaxWarning, module=__name__)
+warnings.filterwarnings("error", module="<test code>")
 
 def compile_and_catch_warning(text):
     try:
         compile(text, "<test code>", "exec")
-    except SyntaxWarning, msg:
-        print "got SyntaxWarning as expected"
+    except SyntaxError, msg:
+        print "got SyntaxError as expected"
     else:
-        print "expected SyntaxWarning"
+        print "expected SyntaxError"
 
 prog_text_1 = """
 def wrong1():
