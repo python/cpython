@@ -4,7 +4,6 @@ import sys, os, string, tempfile, traceback
 from os import mkdir, rmdir		# Can't test if these fail
 del mkdir, rmdir
 from test_support import verbose
-if sys.argv[1:2] == ['-q']: verbose = 0
 
 # Helpers to create and destroy hierarchies.
 
@@ -59,7 +58,7 @@ def runtest(hier, code):
 	try:
 	    execfile(codefile, globals(), {})
 	except:
-	    traceback.print_exc()
+	    traceback.print_exc(file=sys.stdout)
     finally:
 	sys.path[:] = savepath
 	try:
@@ -71,7 +70,7 @@ def runtest(hier, code):
 # Test descriptions
 
 tests = [
-    ("t1", [("t1", None)], "import ni"),
+    ("t1", [("t1", None)], "import t1"),
     
     ("t2", [
     ("t2", None),
@@ -140,6 +139,7 @@ print "t4.sub.subsub.spam =", spam
      "print __name__, 'loading'; import string; print string.spam"),
      ],
 """
+import t5
 from t5 import *
 print dir()
 import t5
@@ -181,6 +181,16 @@ from package import * (defined in __init__)
 
 # Run the tests
 
+args = []
+if __name__ == '__main__':
+    args = sys.argv[1:]
+    if args and args[0] == '-q':
+	verbose = 0
+	del args[0]
+
 for name, hier, code in tests:
+    if args and name not in args:
+	print "skipping test", name
+	continue
     print "running test", name
     runtest(hier, code)
