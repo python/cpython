@@ -199,9 +199,6 @@
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 
-/* Define to 1 if you have the `iswprint' function. */
-#undef HAVE_ISWPRINT
-
 /* Define to 1 if you have the `kill' function. */
 #undef HAVE_KILL
 
@@ -252,9 +249,6 @@
 
 /* Define this if you have the makedev macro. */
 #undef HAVE_MAKEDEV
-
-/* Define to 1 if you have the `mbtowc' function. */
-#undef HAVE_MBTOWC
 
 /* Define to 1 if you have the `memmove' function. */
 #undef HAVE_MEMMOVE
@@ -594,9 +588,6 @@
 
 /* Define if the compiler provides a wchar.h header file. */
 #undef HAVE_WCHAR_H
-
-/* Define to 1 if you have the <wctype.h> header file. */
-#undef HAVE_WCTYPE_H
 
 /* Define to 1 if you have the `_getpty' function. */
 #undef HAVE__GETPTY
