@@ -12,6 +12,9 @@ What's New in Python 2.4 alpha 3?
 Core and builtins
 -----------------
 
+- The ``func_name`` (a.k.a. ``__name__``) attribute of user-defined
+  functions is now writable.
+
 - code_new (a.k.a new.code()) now checks its arguments sufficiently
   carefully that passing them on to PyCode_New() won't trigger calls
   to Py_FatalError() or PyErr_BadInternalCall().  It is still the case
