@@ -1,4 +1,3 @@
-
 /* File object implementation */
 
 #include "Python.h"
@@ -116,6 +115,7 @@ fill_file_fields(PyFileObject *f, FILE *fp, char *name, char *mode,
 	f->f_close = close;
 	f->f_softspace = 0;
 	f->f_binary = strchr(mode,'b') != NULL;
+	f->f_buf = NULL;
 #ifdef WITH_UNIVERSAL_NEWLINES
 	f->f_univ_newline = (strchr(mode, 'U') != NULL);
 	f->f_newlinetypes = NEWLINE_UNKNOWN;
@@ -271,6 +271,8 @@ err_closed(void)
 	return NULL;
 }
 
+void drop_readahead(PyFileObject *);
+
 /* Methods */
 
 static void
@@ -283,6 +285,7 @@ file_dealloc(PyFileObject *f)
 	}
 	Py_XDECREF(f->f_name);
 	Py_XDECREF(f->f_mode);
+	drop_readahead(f);
 	f->ob_type->tp_free((PyObject *)f);
 }
 
@@ -405,6 +408,7 @@ file_seek(PyFileObject *f, PyObject *args)
 
 	if (f->f_fp == NULL)
 		return err_closed();
+	drop_readahead(f);
 	whence = 0;
 	if (!PyArg_ParseTuple(args, "O|i:seek", &offobj, &whence))
 		return NULL;
@@ -1178,28 +1182,6 @@ file_readline(PyFileObject *f, PyObject *args)
 }
 
 static PyObject *
-file_xreadlines(PyFileObject *f)
-{
-	static PyObject* xreadlines_function = NULL;
-
-	if (f->f_fp == NULL)
-		return err_closed();
-	if (!xreadlines_function) {
-		PyObject *xreadlines_module =
-			PyImport_ImportModule("xreadlines");
-		if(!xreadlines_module)
-			return NULL;
-
-		xreadlines_function = PyObject_GetAttrString(xreadlines_module,
-							     "xreadlines");
-		Py_DECREF(xreadlines_module);
-		if(!xreadlines_function)
-			return NULL;
-	}
-	return PyObject_CallFunction(xreadlines_function, "(O)", f);
-}
-
-static PyObject *
 file_readlines(PyFileObject *f, PyObject *args)
 {
 	long sizehint = 0;
@@ -1462,6 +1444,15 @@ file_writelines(PyFileObject *f, PyObject *seq)
 #undef CHUNKSIZE
 }
 
+static PyObject *
+file_getiter(PyFileObject *f)
+{
+	if (f->f_fp == NULL)
+		return err_closed();
+	Py_INCREF(f);
+	return (PyObject *)f;
+}
+
 PyDoc_STRVAR(readline_doc,
 "readline([size]) -> next line from the file, as a string.\n"
 "\n"
@@ -1517,10 +1508,10 @@ PyDoc_STRVAR(readlines_doc,
 "total number of bytes in the lines returned.");
 
 PyDoc_STRVAR(xreadlines_doc,
-"xreadlines() -> next line from the file, as a string.\n"
+"xreadlines() -> returns self.\n"
 "\n"
-"Equivalent to xreadlines.xreadlines(file).  This is like readline(), but\n"
-"often quicker, due to reading ahead internally.");
+"For backward compatibility. File objects now include the performance\n"
+"optimizations previously implemented in the xreadlines module.");
 
 PyDoc_STRVAR(writelines_doc,
 "writelines(sequence_of_strings) -> None.  Write the strings to the file.\n"
@@ -1554,7 +1545,7 @@ static PyMethodDef file_methods[] = {
 	{"tell",	(PyCFunction)file_tell,       METH_NOARGS,  tell_doc},
 	{"readinto",	(PyCFunction)file_readinto,   METH_VARARGS, readinto_doc},
 	{"readlines",	(PyCFunction)file_readlines,  METH_VARARGS, readlines_doc},
-	{"xreadlines",	(PyCFunction)file_xreadlines, METH_NOARGS,  xreadlines_doc},
+	{"xreadlines",	(PyCFunction)file_getiter,    METH_NOARGS,  xreadlines_doc},
 	{"writelines",	(PyCFunction)file_writelines, METH_O,	    writelines_doc},
 	{"flush",	(PyCFunction)file_flush,      METH_NOARGS,  flush_doc},
 	{"close",	(PyCFunction)file_close,      METH_NOARGS,  close_doc},
@@ -1617,11 +1608,119 @@ static PyGetSetDef file_getsetlist[] = {
 	{0},
 };
 
-static PyObject *
-file_getiter(PyObject *f)
+void
+drop_readahead(PyFileObject *f)
 {
-	return PyObject_CallMethod(f, "xreadlines", "");
+	if (f->f_buf != NULL) {
+		PyMem_Free(f->f_buf);
+		f->f_buf = NULL;
+	}
 }
+
+/* Make sure that file has a readahead buffer with at least one byte 
+   (unless at EOF) and no more than bufsize.  Returns negative value on 
+   error */
+int readahead(PyFileObject *f, int bufsize) {
+	int chunksize;
+
+	if (f->f_buf != NULL) {
+		if( (f->f_bufend - f->f_bufptr) >= 1) 
+			return 0;
+		else
+			drop_readahead(f);
+	}
+	if ((f->f_buf = PyMem_Malloc(bufsize)) == NULL) {
+		return -1;
+	}
+	Py_BEGIN_ALLOW_THREADS
+	errno = 0;
+	chunksize = Py_UniversalNewlineFread(
+		f->f_buf, bufsize, f->f_fp, (PyObject *)f);
+	Py_END_ALLOW_THREADS
+	if (chunksize == 0) {
+		if (ferror(f->f_fp)) {
+			PyErr_SetFromErrno(PyExc_IOError);
+			clearerr(f->f_fp);
+			drop_readahead(f);
+			return -1;
+		}
+	}
+	f->f_bufptr = f->f_buf;
+	f->f_bufend = f->f_buf + chunksize;
+	return 0;
+}
+
+/* Used by file_iternext.  The returned string will start with 'skip'
+   uninitialized bytes followed by the remainder of the line. Don't be 
+   horrified by the recursive call: maximum recursion depth is limited by 
+   logarithmic buffer growth to about 50 even when reading a 1gb line. */
+
+PyStringObject *
+readahead_get_line_skip(PyFileObject *f, int skip, int bufsize) {
+	PyStringObject* s;
+	char *bufptr;
+	char *buf;
+	int len;
+
+	if (f->f_buf == NULL)
+		if (readahead(f, bufsize) < 0) 
+			return NULL;
+
+	len = f->f_bufend - f->f_bufptr;
+	if (len == 0) 
+		return (PyStringObject *)
+			PyString_FromStringAndSize(NULL, skip);
+	bufptr = memchr(f->f_bufptr, '\n', len);
+	if (bufptr != NULL) {
+		bufptr++;			/* Count the '\n' */
+		len = bufptr - f->f_bufptr;
+		s = (PyStringObject *)
+			PyString_FromStringAndSize(NULL, skip+len);
+		if (s == NULL) 
+			return NULL;
+		memcpy(PyString_AS_STRING(s)+skip, f->f_bufptr, len);
+		f->f_bufptr = bufptr;
+		if (bufptr == f->f_bufend)
+			drop_readahead(f);
+	} else {
+		bufptr = f->f_bufptr;
+		buf = f->f_buf;
+		f->f_buf = NULL; 	/* Force new readahead buffer */
+                s = readahead_get_line_skip(
+			f, skip+len, bufsize + (bufsize>>2) );
+		if (s == NULL) {
+		        PyMem_Free(buf);
+			return NULL;
+		}
+		memcpy(PyString_AS_STRING(s)+skip, bufptr, len);
+		PyMem_Free(buf);
+	}
+	return s;
+}
+
+/* A larger buffer size may actually decrease performance. */
+#define READAHEAD_BUFSIZE 8192
+
+static PyObject *
+file_iternext(PyFileObject *f)
+{
+	PyStringObject* l;
+
+	int i;
+
+	if (f->f_fp == NULL)
+		return err_closed();
+
+	i = f->f_softspace;
+
+	l = readahead_get_line_skip(f, 0, READAHEAD_BUFSIZE);
+	if (l == NULL || PyString_GET_SIZE(l) == 0) {
+		Py_XDECREF(l);
+		return NULL;
+	}
+	return (PyObject *)l;
+}
+
 
 static PyObject *
 file_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
@@ -1742,8 +1841,8 @@ PyTypeObject PyFile_Type = {
 	0,					/* tp_clear */
 	0,					/* tp_richcompare */
 	0,					/* tp_weaklistoffset */
-	file_getiter,				/* tp_iter */
-	0,					/* tp_iternext */
+	(getiterfunc)file_getiter,		/* tp_iter */
+	(iternextfunc)file_iternext,		/* tp_iternext */
 	file_methods,				/* tp_methods */
 	file_memberlist,			/* tp_members */
 	file_getsetlist,			/* tp_getset */

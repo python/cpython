@@ -13,9 +13,12 @@ typedef struct {
 	PyObject *f_name;
 	PyObject *f_mode;
 	int (*f_close)(FILE *);
-	int f_softspace; /* Flag used by 'print' command */
-	int f_binary; /* Flag which indicates whether the file is open
-			 open in binary (1) or test (0) mode */
+	int f_softspace;	/* Flag used by 'print' command */
+	int f_binary;		/* Flag which indicates whether the file is 
+				   open in binary (1) or text (0) mode */
+	char* f_buf;		/* Allocated readahead buffer */
+	char* f_bufend;		/* Points after last occupied position */
+	char* f_bufptr;		/* Current buffer position */
 #ifdef WITH_UNIVERSAL_NEWLINES
 	int f_univ_newline;	/* Handle any newline convention */
 	int f_newlinetypes;	/* Types of newlines seen */
