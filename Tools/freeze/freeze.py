@@ -279,6 +279,33 @@ def main():
             os.unlink(frozen_c)
             os.rename(backup, frozen_c)
 
+    # look for unfrozen modules (builtin and of unknown origin)
+    builtins = []
+    unknown = []
+    mods = dict.keys()
+    mods.sort()
+    for mod in mods:
+        if dict[mod].__code__:
+            continue
+        if not dict[mod].__file__:
+            builtins.append(mod)
+        else:
+            unknown.append(mod)
+
+    # search for unknown modules in extensions directories (not on Windows)
+    addfiles = []
+    if unknown and not win:
+        addfiles, addmods = \
+                  checkextensions.checkextensions(unknown, extensions)
+        for mod in addmods:
+            unknown.remove(mod)
+        builtins = builtins + addmods
+
+    # report unknown modules
+    if unknown:
+        sys.stderr.write('Warning: unknown modules remain: %s\n' %
+                         string.join(unknown))
+
     # windows gets different treatment
     if win:
         # Taking a shortcut here...
@@ -295,29 +322,6 @@ def main():
         return
 
     # generate config.c and Makefile
-    builtins = []
-    unknown = []
-    mods = dict.keys()
-    mods.sort()
-    for mod in mods:
-        if dict[mod].__code__:
-            continue
-        if not dict[mod].__file__:
-            builtins.append(mod)
-        else:
-            unknown.append(mod)
-
-    addfiles = []
-    if unknown:
-        addfiles, addmods = \
-                  checkextensions.checkextensions(unknown, extensions)
-        for mod in addmods:
-            unknown.remove(mod)
-        builtins = builtins + addmods
-    if unknown:
-        sys.stderr.write('Warning: unknown modules remain: %s\n' %
-                         string.join(unknown))
-
     builtins.sort()
     infp = open(config_c_in)
     backup = config_c + '~'
