@@ -298,6 +298,21 @@ assert unicode('hello','utf-8') == u'hello'
 assert unicode('hello','utf8') == u'hello'
 assert unicode('hello','latin-1') == u'hello'
 
+class String:
+    x = ''
+    def __str__(self):
+        return self.x
+
+o = String()
+
+o.x = 'abc'
+assert unicode(o) == u'abc'
+assert str(o) == 'abc'
+
+o.x = u'abc'
+assert unicode(o) == u'abc'
+assert str(o) == 'abc'
+
 try:
     u'Andr\202 x'.encode('ascii')
     u'Andr\202 x'.encode('ascii','strict')
