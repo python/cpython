@@ -53,9 +53,6 @@ class HotShotTestCase(unittest.TestCase):
 
     def check_events(self, expected):
         events = self.get_events_wotime()
-        if not __debug__:
-            # Running under -O, so we don't get LINE events
-            expected = [ev for ev in expected if ev[0] != LINE]
         if events != expected:
             self.fail(
                 "events did not match expectation; got:\n%s\nexpected:\n%s"
