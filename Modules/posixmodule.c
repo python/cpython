@@ -523,7 +523,7 @@ This object may be accessed either as a tuple of\n\
   (mode,ino,dev,nlink,uid,gid,size,atime,mtime,ctime)\n\
 or via the attributes st_mode, st_ino, st_dev, st_nlink, st_uid, and so on.\n\
 \n\
-Posix/windows: If your platform supports st_blksize, st_blocks, or st_rdev,
+Posix/windows: If your platform supports st_blksize, st_blocks, or st_rdev,\n\
 they are available as attributes only.\n\
 \n\
 See os.stat for more information.\n";
@@ -579,8 +579,8 @@ static PyStructSequence_Desc stat_result_desc = {
 static char statvfs_result__doc__[] = 
 "statvfs_result: Result from statvfs or fstatvfs.\n\n\
 This object may be accessed either as a tuple of\n\
-  (bsize,frsize,blocks,bfree,bavail,files,ffree,favail,flag,namemax),
-or via the attributes f_bsize, f_frsize, f_blocks, f_bfree, and so on.
+  (bsize,frsize,blocks,bfree,bavail,files,ffree,favail,flag,namemax),\n\
+or via the attributes f_bsize, f_frsize, f_blocks, f_bfree, and so on.\n\
 \n\
 See os.statvfs for more information.\n";
 
