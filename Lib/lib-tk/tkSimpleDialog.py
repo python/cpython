@@ -11,13 +11,40 @@
 # --------------------------------------------------------------------
 # dialog base class
 
+'''Dialog boxes
+
+This module handles dialog boxes. It contains the following
+public symbols:
+
+Dialog -- a base class for dialogs
+
+askinteger -- get an integer from the user
+
+askfloat -- get a float from the user
+
+askstring -- get a string from the user
+'''
+
 from Tkinter import *
 import os
 
 class Dialog(Toplevel):
 
+    '''Class to open dialogs.
+
+    This class is intended as a base class for custom dialogs
+    '''
+
     def __init__(self, parent, title = None):
 
+        '''Initialize a dialog.
+
+        Arguments:
+
+            parent -- a parent window (the application window)
+
+            title -- the dialog title
+        '''
         Toplevel.__init__(self, parent)
         self.transient(parent)
 
@@ -49,6 +76,7 @@ class Dialog(Toplevel):
         self.wait_window(self)
 
     def destroy(self):
+        '''Destroy the window'''
         self.initial_focus = None
         Toplevel.destroy(self)
 
@@ -56,14 +84,19 @@ class Dialog(Toplevel):
     # construction hooks
 
     def body(self, master):
-        # create dialog body.  return widget that should have
-        # initial focus.  this method should be overridden
+        '''create dialog body.
 
+        return widget that should have initial focus. 
+        This method should be overridden, and is called
+        by the __init__ method.
+        '''
         pass
 
     def buttonbox(self):
-        # add standard button box. override if you don't want the
-        # standard buttons
+        '''add standard button box. 
+
+        override if you don't want the standard buttons
+        '''
         
         box = Frame(self)
 
@@ -103,10 +136,20 @@ class Dialog(Toplevel):
     # command hooks
 
     def validate(self):
+        '''validate the data
+
+        This method is called automatically to validate the data before the 
+        dialog is destroyed. By default, it always validates OK.
+        '''
 
         return 1 # override
 
     def apply(self):
+        '''process the data
+
+        This method is called automatically to process the data, *after*
+        the dialog is destroyed. By default, it does nothing.
+        '''
 
         pass # override
 
@@ -196,6 +239,16 @@ class _QueryInteger(_QueryDialog):
         return string.atoi(self.entry.get())
 
 def askinteger(title, prompt, **kw):
+    '''get an integer from the user
+
+    Arguments:
+
+        title -- the dialog title
+        prompt -- the label text
+        **kw -- see SimpleDialog class
+
+    Return value is an integer
+    '''
     d = apply(_QueryInteger, (title, prompt), kw)
     return d.result
 
@@ -205,6 +258,16 @@ class _QueryFloat(_QueryDialog):
         return string.atof(self.entry.get())
 
 def askfloat(title, prompt, **kw):
+    '''get a float from the user
+
+    Arguments:
+
+        title -- the dialog title
+        prompt -- the label text
+        **kw -- see SimpleDialog class
+
+    Return value is a float
+    '''
     d = apply(_QueryFloat, (title, prompt), kw)
     return d.result
 
@@ -213,6 +276,16 @@ class _QueryString(_QueryDialog):
         return self.entry.get()
 
 def askstring(title, prompt, **kw):
+    '''get a string from the user
+
+    Arguments:
+
+        title -- the dialog title
+        prompt -- the label text
+        **kw -- see SimpleDialog class
+
+    Return value is a string
+    '''
     d = apply(_QueryString, (title, prompt), kw)
     return d.result
 
