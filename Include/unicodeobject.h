@@ -674,7 +674,7 @@ extern DL_IMPORT(PyObject*) PyUnicode_Split(
     
 extern DL_IMPORT(PyObject*) PyUnicode_Splitlines(
     PyObject *s,		/* String to split */
-    int maxsplit		/* Maxsplit count */
+    int keepends		/* If true, line end markers are included */
     );		
 
 /* Translate a string by applying a character mapping table to it and
