@@ -189,36 +189,6 @@ def isfile(path):
     return stat.S_ISREG(st[stat.ST_MODE])
 
 
-# Are two filenames really pointing to the same file?
-
-def samefile(f1, f2):
-    """Test whether two pathnames reference the same actual file"""
-    s1 = os.stat(f1)
-    s2 = os.stat(f2)
-    return samestat(s1, s2)
-
-
-# Are two open files really referencing the same file?
-# (Not necessarily the same file descriptor!)
-# XXX THIS IS BROKEN UNDER DOS! ST_INO seems to indicate number of reads?
-
-def sameopenfile(fp1, fp2):
-    """Test whether two open file objects reference the same file (may not
-work correctly)"""
-    s1 = os.fstat(fp1.fileno())
-    s2 = os.fstat(fp2.fileno())
-    return samestat(s1, s2)
-
-
-# Are two stat buffers (obtained from stat, fstat or lstat)
-# describing the same file?
-
-def samestat(s1, s2):
-    """Test whether two stat buffers reference the same file"""
-    return s1[stat.ST_INO] == s2[stat.ST_INO] and \
-           s1[stat.ST_DEV] == s2[stat.ST_DEV]
-
-
 # Is a path a mount point?
 # XXX This degenerates in: 'is this the root?' on DOS
 
