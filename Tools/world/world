@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 
-"""Print the long name of an Internet domain.
+"""Print mappings between country names and DNS country codes.
 
 This script will take an Internet address and print out where in the
 world that message originated from, based on the top-level domain code
@@ -10,8 +10,22 @@ found in the address.  Addresses can be in any of the following forms:
     host.domain.xx    -- any Internet host or network name
     somebody@where.xx -- an Internet email address
 
+If the country code is not recognizable, it will attempt a reverse lookup,
+searching for the country name and printing a list of matching country codes.
+You can force reverse mappings with the `-r' flag (see below).
+
+For example:
+
+    % world tz us
+    tz originated from Tanzania, United Republic of
+    us originated from United States
+
+    % world united
+
+
 Country codes are maintained by the RIPE Network Coordination Centre,
-in coordination with the ISO 3166 Maintenance Agency at DIN Berlin.
+in coordination with the ISO 3166 Maintenance Agency at DIN Berlin.  The
+authoritative source of counry code mappings is:
 
     <url:ftp://info.ripe.net/iso3166-countrycodes>
 
@@ -28,22 +42,33 @@ Usage: %s [-d] [-p|-P file] [-h] addr [addr ...]
         Print mapping of all top-level domains.
 
     --parse file
-    --p file
-    --P file
-    --Parse file
-        Parse an iso3166-countrycodes file (given as the argument).
-        This first the two letter country code (it ignores the three
-        letter code), followed by the country name.  With -P option,
-        output is in the form of a Python dictionary, and country
-        names are normalized w.r.t. capitalization.  This makes it
-        appropriate for cutting and pasting back into this file.
+    -p file
+        Parse an iso3166-countrycodes file extracting the two letter country
+        code followed by the country name.  Note that the three leter country
+        code and number, which are also provided in the standard format file,
+        are ignored.
+
+    --outputdict
+    -o
+        With used in conjunction with the `-p' option, output is in the form
+        of a Python dictionary, and country names are normalized
+        w.r.t. capitalization.  This makes it appropriate for cutting and
+        pasting back into this file.
+
+    --reverse
+    -r
+        Force reverse lookup.  In this mode the address can be any Python
+        regular expression; this is matched against all country names and a
+        list of matching mappings is printed.  In normal mode (e.g. without
+        this flag), reverse lookup is performed on addresses if no matching
+        country code is found.
 
     -h
     --help
         Print this message.
 
 """
-__version__ = '2.0'
+__version__ = '3.0'
 __author__ = 'Barry Warsaw <bwarsaw@python.org>'
 __source__ = '<url:http://www.python.org/~bwarsaw/pyware/>'
 
@@ -51,6 +76,12 @@ __source__ = '<url:http://www.python.org/~bwarsaw/pyware/>'
 import sys
 import string
 import getopt
+try:
+    import re
+except ImportError:
+    print sys.argv[0], 'requires Python 1.5'
+    sys.exit(1)
+
 
 
 
@@ -59,28 +90,48 @@ def usage(status=0):
     sys.exit(status)
 
 
+
 def resolve(rawaddr):
     parts = string.splitfields(rawaddr, '.')
     if not len(parts):
-	print 'No top-level domain in:', rawaddr
-	return
+	# no top level domain found, bounce it to the next step
+	return rawaddr
     addr = parts[-1]
-    if nameorg.has_key(addr):
-	print rawaddr, 'is from a', nameorg[addr], 'organization'
-    elif country.has_key(addr):
-	print rawaddr, 'originated from', country[addr]
+    if nameorgs.has_key(addr):
+	print rawaddr, 'is from a', nameorgs[addr], 'organization'
+	return None
+    elif countries.has_key(addr):
+	print rawaddr, 'originated from', countries[addr]
+	return None
     else:
-	print 'Where in the world is %s?' % rawaddr
+	# Not resolved, bounce it to the next step
+	return rawaddr
+
+
+
+def reverse(regexp):
+    matches = []
+    cre = re.compile(regexp, re.IGNORECASE)
+    for code, country in all.items():
+	mo = cre.search(country)
+	if mo:
+	    matches.append(code)
+    # print results
+    if not matches:
+	# not resolved, bounce it to the next step
+	return regexp
+    if len(matches) == 1:
+	code = matches[0]
+	print regexp, "matches code `%s', %s" % (code, all[code])
+    else:
+	print regexp, 'matches %d countries:' % len(matches)
+	for code in matches:
+	    print "    %s: %s" % (code, all[code])
+    return None
 
 
 
 def parse(file, normalize):
-    try:
-	import re
-    except ImportError:
-	print 'Parsing requires Python 1.5'
-	sys.exit(1)
-
     try:
 	fp = open(file)
     except IOError, (err, msg):
@@ -149,10 +200,12 @@ def main():
     dump = 0
     parsefile = None
     normalize = 0
+    forcerev = 0
 
-    opts, args = getopt.getopt(sys.argv[1:],
-			       'p:P:hd',
-			       ['parse', 'Parse', 'PARSE', 'help', 'dump'])
+    opts, args = getopt.getopt(
+	sys.argv[1:],
+	'p:rohd',
+	['parse', 'reverse', 'outputdict', 'help', 'dump'])
     for arg, val in opts:
 	if arg in ('-h', '--help'):
 	    help = 1
@@ -160,9 +213,10 @@ def main():
 	    dump = 1
 	elif arg in ('-p', '--parse'):
 	    parsefile = val
-	elif arg in ('-P', '--Parse', '--PARSE'):
-	    parsefile = val
+	elif arg in ('-o', '--output'):
 	    normalize = 1
+	elif arg in ('-r', '--reverse'):
+	    forcerev = 1
 
     if help:
 	usage(status)
@@ -182,12 +236,16 @@ def main():
     elif parsefile:
 	parse(parsefile, normalize)
     else:
-	map(resolve, args)
+	if not forcerev:
+	    args = filter(None, map(resolve, args))
+	args = filter(None, map(reverse, args))
+	for arg in args:
+	    print 'Where in the world is %s?' % arg
 
 
 
 # The mappings
-nameorg = {
+nameorgs = {
     "arpa": "Arpanet",
     "com": "commercial",
     "edu": "educational",
@@ -200,7 +258,7 @@ nameorg = {
 
 
 
-country = {
+countries = {
     "af": "Afghanistan",
     "al": "Albania",
     "dz": "Algeria",
@@ -441,6 +499,9 @@ country = {
     "zm": "Zambia",
     "zw": "Zimbabwe",
     }
+
+all = nameorgs.copy()
+all.update(countries)
 
 
 if __name__ == '__main__':
