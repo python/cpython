@@ -254,7 +254,7 @@ def _class_escape(source, escape):
             if len(escape) != 2:
                 raise error, "bogus escape: %s" % repr("\\" + escape)
             return LITERAL, atoi(escape, 16) & 0xff
-        elif str(escape[1:2]) in OCTDIGITS:
+        elif escape[1:2] in OCTDIGITS:
             # octal escape (up to three digits)
             while source.next in OCTDIGITS and len(escape) < 5:
                 escape = escape + source.get()

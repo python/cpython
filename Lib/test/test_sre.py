@@ -78,6 +78,10 @@ test(r"""sre.match(r'(a)|(b)', 'b').start(1)""", -1)
 test(r"""sre.match(r'(a)|(b)', 'b').end(1)""", -1)
 test(r"""sre.match(r'(a)|(b)', 'b').span(1)""", (-1, -1))
 
+# bug 612074
+pat=u"["+sre.escape(u"\u2039")+u"]"
+test(r"""sre.compile(pat) and 1""", 1, None)
+
 if verbose:
     print 'Running tests on sre.sub'
 
