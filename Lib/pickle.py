@@ -769,6 +769,9 @@ class Unpickler:
                 pass
         if not instantiated:
             try:
+                if not hasattr(klass, '__safe_for_unpickling__'):
+                    raise UnpicklingError('%s is not safe for unpickling' %
+                                          klass)
                 value = apply(klass, args)
             except TypeError, err:
                 raise TypeError, "in constructor for %s: %s" % (
@@ -807,14 +810,9 @@ class Unpickler:
     dispatch[GLOBAL] = load_global
 
     def find_class(self, module, name):
-        try:
-            __import__(module)
-            mod = sys.modules[module]
-            klass = getattr(mod, name)
-        except (ImportError, KeyError, AttributeError):
-            raise SystemError, \
-                  "Failed to import class %s from module %s" % \
-                  (name, module)
+        __import__(module)
+        mod = sys.modules[module]
+        klass = getattr(mod, name)
         return klass
 
     def load_reduce(self):
