@@ -217,7 +217,10 @@ AIX:	A complete overhaul of the shared library support is now in
 
 Minix:  When using ack, use "CC=cc AR=aal RANLIB=: ./configure"!
 
-SCO:    1) Everything works much better if you add -U__STDC__ to the
+SCO:	The following only apply to SCO 3; Python builds out of the box
+	on SCO 5 (or so I've heard).
+
+	1) Everything works much better if you add -U__STDC__ to the
 	defs.  This is because all the SCO header files are broken.
 	Anything that isn't mentioned in the C standard is
 	conditionally excluded when __STDC__ is defined.
@@ -228,18 +231,7 @@ SCO:    1) Everything works much better if you add -U__STDC__ to the
 
 		LIBS=' -lsocket -lcrypt_i'
 
-	3) According to at least one report, the above apply only to
-	SCO 3 -- Python builds out of the box on SCO 5.
-
-SunOS 4.x: There seems to be a linker problem -- the linker doesn't
-	like the dot in the library name "-lpython1.5".  The simplest
-	solution is to edit the "link:" target in Modules/Makefile to
-	change
-		-L.. -lpython$(VERSION)
-	into
-		$(LIBRARY)
-
-	When using the standard "cc" compiler, certain modules may
+SunOS 4.x: When using the standard "cc" compiler, certain modules may
 	not be compilable because they use non-K&R syntax.  You should
 	be able to get a basic Python interpreter by commenting out
 	such modules in the Modules/Setup file, but I really recommend
@@ -631,44 +623,45 @@ Web site
 --------
 
 Python's own web site has URL http://www.python.org/.  Come visit us!
-There are a number of mirrors, listed on the home page -- try a mirror
-that's close you you.
+There are a number of mirrors, and a list of mirrors is accessible
+from the home page -- try a mirror that's close you you.
 
 
 Ftp site
 --------
 
 Python's own ftp site is ftp://ftp.python.org/pub/python/.  There are
-numerous mirrors; see http://www.python.org/python/Mirrors.html for a
-list of mirror sites.
+numerous mirrors; the list of mirrors is accessible from
+http://www.python.org/.
 
 
-Newsgroup and mailing list
---------------------------
+Newsgroups
+----------
 
-There are a newsgroup and a mailing list devoted to Python.  The
-newsgroup, comp.lang.python, contains exactly the same messages as the
-mailing list (though not always in the same order, due to the
-mysterious nature of the Usenet news distribution algorithm).  To
-subscribe to the mailing list, send mail containing your real name and
-e-mail address to "python-list-request@cwi.nl".  Use the same address
-if you want to unsibscribed.  (A real person reads these messages, so
-no LISTPROC or Majordomo commands, please, and please be patient --
-normal turn-around time is about one working day.)
+Read comp.lang.python, a high-volume discussion newsgroup about
+Python, or comp.lang.python.announce, a low-volume moderated newsgroup
+for Python-related announcements.  These are also accessible as
+mailing lists, see the next item.
 
-The Python web site contains a search form that lets you search the
-newsgroup archives (and the web site itself).  Click on the "search"
-link in the banner menu on any page of http://www.python.org/.
+Archives are accessible via Deja News; the Python website has a
+query form for the archives at http://www.python.org/search/.
+
+
+Mailing lists
+-------------
+
+See http://www.python.org/psa/MailingLists.html for an overview of the 
+many Python related mailing lists.
 
 
 Bug reports
 -----------
 
-Bugs are best reported to the comp.lang.python newsgroup or the Python
-mailing list -- see the section "Newsgroup and mailing list" above.
-Before posting, check the newsgroup archives (see above) to see if
-your bug has already been reported!  If you don't want to go public,
-send them to me: <guido@python.org>.
+Bugs are best reported to the comp.lang.python newsgroup (or the
+Python mailing list) -- see the section "Newsgroups" above.  Before
+posting, check the newsgroup archives (see above) to see if your bug
+has already been reported!  If you don't want to go public, send them
+to me: <guido@python.org>.
 
 
 Questions
