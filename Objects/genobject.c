@@ -50,7 +50,8 @@ gen_iternext(PyGenObject *gen)
 	/* Don't keep the reference to f_back any longer than necessary.  It
 	 * may keep a chain of frames alive or it could create a reference
 	 * cycle. */
-	Py_XDECREF(f->f_back);
+	assert(f->f_back != NULL);
+	Py_DECREF(f->f_back);
 	f->f_back = NULL;
 
 	/* If the generator just returned (as opposed to yielding), signal
@@ -61,13 +62,6 @@ gen_iternext(PyGenObject *gen)
 	}
 
 	return result;
-}
-
-static PyObject *
-gen_getiter(PyObject *gen)
-{
-	Py_INCREF(gen);
-	return gen;
 }
 
 static PyMemberDef gen_memberlist[] = {
@@ -104,7 +98,7 @@ PyTypeObject PyGen_Type = {
  	0,					/* tp_clear */
 	0,					/* tp_richcompare */
 	offsetof(PyGenObject, gi_weakreflist),	/* tp_weaklistoffset */
-	(getiterfunc)gen_getiter,		/* tp_iter */
+	PyObject_SelfIter,			/* tp_iter */
 	(iternextfunc)gen_iternext,		/* tp_iternext */
 	0,					/* tp_methods */
 	gen_memberlist,				/* tp_members */
