@@ -393,6 +393,20 @@ Currently-active file is at the head of the list.")
 	  "\\)")
   "Regexp matching lines to not outdent after.")
 
+(defvar py-defun-start-re
+  "^\\([ \t]*\\)def[ \t]+\\([a-zA-Z_0-9]+\\)\\|\\(^[a-zA-Z_0-9]+\\)[ \t]*="
+  "Regexp matching a function, method or variable assignment.
+
+If you change this, you probably have to change `py-current-defun' as well.
+This is only used by `py-current-defun' to find the name for add-log.el.")
+
+(defvar py-class-start-re "^class[ \t]*\\([a-zA-Z_0-9]+\\)"
+  "Regexp for finding a class name.
+
+If you change this, you probably have to change `py-current-defun' as well.
+This is only used by `py-current-defun' to find the name for add-log.el.")
+
+
 
 ;; Menu definitions, only relevent if you have the easymenu.el package
 ;; (standard in the latest Emacs 19 and XEmacs 19 distributions).
@@ -671,6 +685,7 @@ py-beep-if-tab-change\t\tring the bell if tab-width is changed"
   (make-local-variable 'comment-column)
   (make-local-variable 'indent-region-function)
   (make-local-variable 'indent-line-function)
+  (make-local-variable 'add-log-current-defun-function)
   ;;
   (set-syntax-table py-mode-syntax-table)
   (setq major-mode             'python-mode
@@ -685,6 +700,8 @@ py-beep-if-tab-change\t\tring the bell if tab-width is changed"
 	comment-column         40
 	indent-region-function 'py-indent-region
 	indent-line-function   'py-indent-line
+	;; tell add-log.el how to find the current function/method/variable
+	add-log-current-defun-function 'py-current-defun
 	)
   (use-local-map py-mode-map)
   ;; add the menu
@@ -2330,6 +2347,17 @@ local bindings to py-newline-and-indent."))
     (set-buffer cbuf))
   (sit-for 0))
 
+(defun py-current-defun ()
+  ;; tell add-log.el how to find the current function/method/variable
+  (save-excursion
+    (if (re-search-backward py-defun-start-re nil t)
+	(or (match-string 3)
+	    (let ((method (match-string 2)))
+	      (if (and (not (zerop (length (match-string 1))))
+		       (re-search-backward py-class-start-re nil t))
+		  (concat (match-string 1) "." method)
+		method)))
+      nil)))
 
 
 (defconst py-version "$Revision$"
