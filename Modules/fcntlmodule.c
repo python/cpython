@@ -99,7 +99,7 @@ fcntl_ioctl(PyObject *self, PyObject *args)
 	int ret;
 	char *str;
 	int len;
-	int mutate_arg = 0;
+	int mutate_arg = 1;
 	char buf[1024];
 
 	if (PyArg_ParseTuple(args, "O&iw#|i:ioctl",
@@ -107,16 +107,6 @@ fcntl_ioctl(PyObject *self, PyObject *args)
 			     &str, &len, &mutate_arg)) {
 		char *arg;
 
-		if (PyTuple_Size(args) == 3) {
-#if (PY_MAJOR_VERSION>2) || (PY_MINOR_VERSION>=5)
-#error Remove the warning, change mutate_arg to 1
-#endif
-			if (PyErr_Warn(PyExc_FutureWarning,
-       "ioctl with mutable buffer will mutate the buffer by default in 2.5"
-				    ) < 0)
-				return NULL;
-			mutate_arg = 0;
-		}
 	       	if (mutate_arg) {
 			if (len <= sizeof buf) {
 				memcpy(buf, str, len);
