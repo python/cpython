@@ -128,6 +128,16 @@ def allmethods(cl):
         methods[key] = getattr(cl, key)
     return methods
 
+def _split_class_attrs(attrs, predicate):
+    yes = []
+    no = []
+    for tuple in attrs:
+        if predicate(tuple):
+            yes.append(tuple)
+        else:
+            no.append(tuple)
+    return yes, no
+
 # ----------------------------------------------------- module manipulation
 
 def ispackage(path):
@@ -876,13 +886,80 @@ class TextDoc(Doc):
             title = title + '(%s)' % join(parents, ', ')
 
         doc = getdoc(object)
-        contents = doc and doc + '\n'
-        methods = allmethods(object).items()
-        methods.sort()
-        for key, value in methods:
-            contents = contents + '\n' + self.document(value, key, mod, object)
+        contents = doc and [doc + '\n'] or []
+        push = contents.append
 
-        if not contents: return title + '\n'
+        def spill(msg, attrs, predicate):
+            ok, attrs = _split_class_attrs(attrs, predicate)
+            if ok:
+                push(msg)
+                for name, kind, homecls, value in ok:
+                    push(self.document(getattr(object, name),
+                                       name, mod, object))
+            return attrs
+
+        # pydoc can't make any reasonable sense of properties on its own,
+        # and it doesn't appear that the getter, setter and del'er methods
+        # are discoverable.  For now, just pump out their names.
+        def spillproperties(msg, attrs):
+            ok, attrs = _split_class_attrs(attrs, lambda t: t[1] == 'property')
+            if ok:
+                push(msg)
+                for name, kind, homecls, value in ok:
+                    push(name + '\n')
+            return attrs
+    
+        def spilldata(msg, attrs):
+            ok, attrs = _split_class_attrs(attrs, lambda t: t[1] == 'data')
+            if ok:
+                push(msg)
+                for name, kind, homecls, value in ok:
+                    doc = getattr(value, "__doc__", None)
+                    push(self.docother(getattr(object, name),
+                                       name, mod, 70, doc) + '\n')
+            return attrs
+
+        attrs = inspect.classify_class_attrs(object)
+
+        # All attrs defined in this class come first.
+        attrs, inherited = _split_class_attrs(attrs,
+                                              lambda t: t[2] is object)
+        # Sort inherited attrs by name of defining class.
+        inherited.sort(lambda t1, t2: cmp(t1[2].__name__, t2[2].__name__))
+
+        thisclass = object
+        while attrs or inherited:
+            if thisclass is object:
+                tag = "defined here"
+            else:
+                tag = "inherited from class %s" % classname(thisclass,
+                                                            object.__module__)
+
+            # Sort attrs by name.
+            attrs.sort(lambda t1, t2: cmp(t1[0], t2[0]))
+
+            # Pump out the attrs, segregated by kind.
+            attrs = spill("Methods %s:\n" % tag, attrs,
+                          lambda t: t[1] == 'method')
+            attrs = spill("Class methods %s:\n" % tag, attrs,
+                          lambda t: t[1] == 'class method')
+            attrs = spill("Static methods %s:\n" % tag, attrs,
+                          lambda t: t[1] == 'static method')
+            attrs = spillproperties("Properties %s:\n" % tag, attrs)
+            attrs = spilldata("Data %s:\n" % tag, attrs)
+            assert attrs == []
+
+            # Split off the attributes inherited from the next class (note
+            # that inherited remains sorted by class name).
+            if inherited:
+                attrs = inherited
+                thisclass = attrs[0][2]
+                attrs, inherited = _split_class_attrs(attrs,
+                                                lambda t: t[2] is thisclass)
+
+        contents = '\n'.join(contents)
+        if not contents:
+            return title + '\n'
         return title + '\n' + self.indent(rstrip(contents), ' |  ') + '\n'
 
     def formatvalue(self, object):
@@ -933,7 +1010,7 @@ class TextDoc(Doc):
             doc = getdoc(object) or ''
             return decl + '\n' + (doc and rstrip(self.indent(doc)) + '\n')
 
-    def docother(self, object, name=None, mod=None, maxlen=None):
+    def docother(self, object, name=None, mod=None, maxlen=None, doc=None):
         """Produce text documentation for a data object."""
         repr = self.repr(object)
         if maxlen:
@@ -941,6 +1018,8 @@ class TextDoc(Doc):
             chop = maxlen - len(line)
             if chop < 0: repr = repr[:chop] + '...'
         line = (name and self.bold(name) + ' = ' or '') + repr
+        if doc is not None:
+            line += '\n' + self.indent(str(doc))
         return line
 
 # --------------------------------------------------------- user interfaces
