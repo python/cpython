@@ -99,12 +99,11 @@ def process(template, filename):
 	dest.close()
 	tmpl.close()
 	
-	# Copy the creator and type of the template to the destination
-	# unless it already has one
-	
+	# Copy the creator of the template to the destination
+	# unless it already has one. Set type to APPL
 	tctor, ttype = MacOS.GetCreatorAndType(template)
 	ctor, type = MacOS.GetCreatorAndType(destname)
-	if type in undefs: type = ttype
+	if type in undefs: type = 'APPL'
 	if ctor in undefs: ctor = tctor
 	MacOS.SetCreatorAndType(destname, ctor, type)
 	
