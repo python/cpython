@@ -243,9 +243,10 @@ PyFloat_AsDouble(op)
 /* Methods */
 
 void
-PyFloat_AsString(buf, v)
+PyFloat_AsStringEx(buf, v, precision)
 	char *buf;
 	PyFloatObject *v;
+	int precision;
 {
 	register char *cp;
 	/* Subroutine for float_repr and float_print.
@@ -253,7 +254,7 @@ PyFloat_AsString(buf, v)
 	   i.e., they should contain a decimal point or an exponent.
 	   However, %g may print the number as an integer;
 	   in such cases, we append ".0" to the string. */
-	sprintf(buf, "%.12g", v->ob_fval);
+	sprintf(buf, "%.*g", precision, v->ob_fval);
 	cp = buf;
 	if (*cp == '-')
 		cp++;
@@ -270,6 +271,31 @@ PyFloat_AsString(buf, v)
 	}
 }
 
+/* Precisions used by repr() and str(), respectively.
+
+   The repr() precision (17 significant decimal digits) is the minimal number
+   that is guaranteed to have enough precision so that if the number is read
+   back in the exact same binary value is recreated.  This is true for IEEE
+   floating point by design, and also happens to work for all other modern
+   hardware.
+
+   The str() precision is chosen so that in most cases, the rounding noise
+   created by various operations is suppressed, while giving plenty of
+   precision for practical use.
+
+*/
+
+#define PREC_REPR	17
+#define PREC_STR	12
+
+void
+PyFloat_AsString(buf, v)
+	char *buf;
+	PyFloatObject *v;
+{
+	PyFloat_AsStringEx(buf, v, PREC_STR);
+}
+
 /* ARGSUSED */
 static int
 float_print(v, fp, flags)
@@ -278,7 +304,7 @@ float_print(v, fp, flags)
 	int flags; /* Not used but required by interface */
 {
 	char buf[100];
-	PyFloat_AsString(buf, v);
+	PyFloat_AsStringEx(buf, v, flags&Py_PRINT_RAW ? PREC_STR : PREC_REPR);
 	fputs(buf, fp);
 	return 0;
 }
@@ -288,7 +314,16 @@ float_repr(v)
 	PyFloatObject *v;
 {
 	char buf[100];
-	PyFloat_AsString(buf, v);
+	PyFloat_AsStringEx(buf, v, PREC_REPR);
+	return PyString_FromString(buf);
+}
+
+static PyObject *
+float_str(v)
+	PyFloatObject *v;
+{
+	char buf[100];
+	PyFloat_AsStringEx(buf, v, PREC_STR);
 	return PyString_FromString(buf);
 }
 
@@ -673,11 +708,13 @@ PyTypeObject PyFloat_Type = {
 	0,			/*tp_getattr*/
 	0,			/*tp_setattr*/
 	(cmpfunc)float_compare, /*tp_compare*/
-	(reprfunc)float_repr, /*tp_repr*/
+	(reprfunc)float_repr,	/*tp_repr*/
 	&float_as_number,	/*tp_as_number*/
 	0,			/*tp_as_sequence*/
 	0,			/*tp_as_mapping*/
-	(hashfunc)float_hash, /*tp_hash*/
+	(hashfunc)float_hash,	/*tp_hash*/
+        0,			/*tp_call*/
+        (reprfunc)float_str,	/*tp_str*/
 };
 
 void
