@@ -205,79 +205,58 @@ CodecQ = Type("CodecQ", "l")
 dummyshortptr = FakeType('(short *)0')
 dummyStringPtr = FakeType('(StringPtr)0')
 
-class MovieObjectDefinition(PEP253Mixin, GlobalObjectDefinition):
+# XXXX Need to override output_tp_newBody() to allow for None initializer.
+class QtGlobalObjectDefinition(PEP253Mixin, GlobalObjectDefinition):
 	def outputCheckNewArg(self):
+		# We don't allow NULL pointers to be returned by QuickTime API calls,
+		# in stead we raise an exception
 		Output("""if (itself == NULL) {
-					PyErr_SetString(Qt_Error,"Cannot create null Movie");
+					PyErr_SetString(Qt_Error,"Cannot create %s from NULL pointer");
 					return NULL;
-				}""")
+				}""", self.name)
+	
+	def outputCheckConvertArg(self):
+		# But what we do allow is passing None whereever a quicktime object is
+		# expected, and pass this as NULL to the API routines. Note you can
+		# call methods too by creating an object with None as the initializer.
+		Output("if (v == Py_None)")
+		OutLbrace()
+		Output("*p_itself = NULL;")
+		Output("return 1;")
+		OutRbrace()
+	
+class MovieObjectDefinition(QtGlobalObjectDefinition):
 	def outputFreeIt(self, itselfname):
-		Output("DisposeMovie(%s);", itselfname)
+		Output("if (%s) DisposeMovie(%s);", itselfname, itselfname)
 
-class TrackObjectDefinition(PEP253Mixin, GlobalObjectDefinition):
-	def outputCheckNewArg(self):
-		Output("""if (itself == NULL) {
-					PyErr_SetString(Qt_Error,"Cannot create null Track");
-					return NULL;
-				}""")
+class TrackObjectDefinition(QtGlobalObjectDefinition):
 	def outputFreeIt(self, itselfname):
-		Output("DisposeMovieTrack(%s);", itselfname)
+		Output("if (%s) DisposeMovieTrack(%s);", itselfname, itselfname)
 
-class MediaObjectDefinition(PEP253Mixin, GlobalObjectDefinition):
-	def outputCheckNewArg(self):
-		Output("""if (itself == NULL) {
-					PyErr_SetString(Qt_Error,"Cannot create null Media");
-					return NULL;
-				}""")
+class MediaObjectDefinition(QtGlobalObjectDefinition):
 	def outputFreeIt(self, itselfname):
-		Output("DisposeTrackMedia(%s);", itselfname)
+		Output("if (%s) DisposeTrackMedia(%s);", itselfname, itselfname)
 
-class UserDataObjectDefinition(PEP253Mixin, GlobalObjectDefinition):
-	def outputCheckNewArg(self):
-		Output("""if (itself == NULL) {
-					PyErr_SetString(Qt_Error,"Cannot create null UserData");
-					return NULL;
-				}""")
+class UserDataObjectDefinition(QtGlobalObjectDefinition):
 	def outputFreeIt(self, itselfname):
-		Output("DisposeUserData(%s);", itselfname)
+		Output("if (%s) DisposeUserData(%s);", itselfname, itselfname)
 
-class TimeBaseObjectDefinition(PEP253Mixin, GlobalObjectDefinition):
-	def outputCheckNewArg(self):
-		Output("""if (itself == NULL) {
-					PyErr_SetString(Qt_Error,"Cannot create null TimeBase");
-					return NULL;
-				}""")
-##	def outputFreeIt(self, itselfname):
-##		Output("DisposeTimeBase(%s);", itselfname)
-
-class MovieCtlObjectDefinition(PEP253Mixin, GlobalObjectDefinition):
-	def outputCheckNewArg(self):
-		Output("""if (itself == NULL) {
-					PyErr_SetString(Qt_Error,"Cannot create null MovieController");
-					return NULL;
-				}""")
+class TimeBaseObjectDefinition(QtGlobalObjectDefinition):
+	pass
+	
+class MovieCtlObjectDefinition(QtGlobalObjectDefinition):
 	def outputFreeIt(self, itselfname):
-		Output("DisposeMovieController(%s);", itselfname)
+		Output("if (%s) DisposeMovieController(%s);", itselfname, itselfname)
 
-class IdleManagerObjectDefinition(PEP253Mixin, GlobalObjectDefinition):
-	def outputCheckNewArg(self):
-		Output("""if (itself == NULL) {
-					PyErr_SetString(Qt_Error,"Cannot create null IdleManager");
-					return NULL;
-				}""")
-
-class SGOutputObjectDefinition(PEP253Mixin, GlobalObjectDefinition):
+class IdleManagerObjectDefinition(QtGlobalObjectDefinition):
+	pass
+	
+class SGOutputObjectDefinition(QtGlobalObjectDefinition):
 	# XXXX I'm not sure I fully understand how SGOutput works. It seems it's always tied
 	# to a specific SeqGrabComponent, but I'm not 100% sure. Also, I'm not sure all the
 	# routines that return an SGOutput actually return a *new* SGOutput. Need to read up on
 	# this.
-	def outputCheckNewArg(self):
-		Output("""if (itself == NULL) {
-					PyErr_SetString(Qt_Error,"Cannot create null SGOutput");
-					return NULL;
-				}""")
-#	def outputFreeIt(self, itselfname):
-#		Output("SGDisposeOutput(%s);", itselfname)
+	pass
 
 
 # From here on it's basically all boiler plate...

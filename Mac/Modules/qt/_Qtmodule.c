@@ -98,7 +98,7 @@ PyObject *IdleManagerObj_New(IdleManager itself)
 {
 	IdleManagerObject *it;
 	if (itself == NULL) {
-						PyErr_SetString(Qt_Error,"Cannot create null IdleManager");
+						PyErr_SetString(Qt_Error,"Cannot create IdleManager from NULL pointer");
 						return NULL;
 					}
 	it = PyObject_NEW(IdleManagerObject, &IdleManager_Type);
@@ -108,6 +108,11 @@ PyObject *IdleManagerObj_New(IdleManager itself)
 }
 int IdleManagerObj_Convert(PyObject *v, IdleManager *p_itself)
 {
+	if (v == Py_None)
+	{
+		*p_itself = NULL;
+		return 1;
+	}
 	if (!IdleManagerObj_Check(v))
 	{
 		PyErr_SetString(PyExc_TypeError, "IdleManager required");
@@ -216,7 +221,7 @@ PyObject *MovieCtlObj_New(MovieController itself)
 {
 	MovieControllerObject *it;
 	if (itself == NULL) {
-						PyErr_SetString(Qt_Error,"Cannot create null MovieController");
+						PyErr_SetString(Qt_Error,"Cannot create MovieController from NULL pointer");
 						return NULL;
 					}
 	it = PyObject_NEW(MovieControllerObject, &MovieController_Type);
@@ -226,6 +231,11 @@ PyObject *MovieCtlObj_New(MovieController itself)
 }
 int MovieCtlObj_Convert(PyObject *v, MovieController *p_itself)
 {
+	if (v == Py_None)
+	{
+		*p_itself = NULL;
+		return 1;
+	}
 	if (!MovieCtlObj_Check(v))
 	{
 		PyErr_SetString(PyExc_TypeError, "MovieController required");
@@ -237,7 +247,7 @@ int MovieCtlObj_Convert(PyObject *v, MovieController *p_itself)
 
 static void MovieCtlObj_dealloc(MovieControllerObject *self)
 {
-	DisposeMovieController(self->ob_itself);
+	if (self->ob_itself) DisposeMovieController(self->ob_itself);
 	self->ob_type->tp_free((PyObject *)self);
 }
 
@@ -1330,7 +1340,7 @@ PyObject *TimeBaseObj_New(TimeBase itself)
 {
 	TimeBaseObject *it;
 	if (itself == NULL) {
-						PyErr_SetString(Qt_Error,"Cannot create null TimeBase");
+						PyErr_SetString(Qt_Error,"Cannot create TimeBase from NULL pointer");
 						return NULL;
 					}
 	it = PyObject_NEW(TimeBaseObject, &TimeBase_Type);
@@ -1340,6 +1350,11 @@ PyObject *TimeBaseObj_New(TimeBase itself)
 }
 int TimeBaseObj_Convert(PyObject *v, TimeBase *p_itself)
 {
+	if (v == Py_None)
+	{
+		*p_itself = NULL;
+		return 1;
+	}
 	if (!TimeBaseObj_Check(v))
 	{
 		PyErr_SetString(PyExc_TypeError, "TimeBase required");
@@ -1818,7 +1833,7 @@ PyObject *UserDataObj_New(UserData itself)
 {
 	UserDataObject *it;
 	if (itself == NULL) {
-						PyErr_SetString(Qt_Error,"Cannot create null UserData");
+						PyErr_SetString(Qt_Error,"Cannot create UserData from NULL pointer");
 						return NULL;
 					}
 	it = PyObject_NEW(UserDataObject, &UserData_Type);
@@ -1828,6 +1843,11 @@ PyObject *UserDataObj_New(UserData itself)
 }
 int UserDataObj_Convert(PyObject *v, UserData *p_itself)
 {
+	if (v == Py_None)
+	{
+		*p_itself = NULL;
+		return 1;
+	}
 	if (!UserDataObj_Check(v))
 	{
 		PyErr_SetString(PyExc_TypeError, "UserData required");
@@ -1839,7 +1859,7 @@ int UserDataObj_Convert(PyObject *v, UserData *p_itself)
 
 static void UserDataObj_dealloc(UserDataObject *self)
 {
-	DisposeUserData(self->ob_itself);
+	if (self->ob_itself) DisposeUserData(self->ob_itself);
 	self->ob_type->tp_free((PyObject *)self);
 }
 
@@ -2183,7 +2203,7 @@ PyObject *MediaObj_New(Media itself)
 {
 	MediaObject *it;
 	if (itself == NULL) {
-						PyErr_SetString(Qt_Error,"Cannot create null Media");
+						PyErr_SetString(Qt_Error,"Cannot create Media from NULL pointer");
 						return NULL;
 					}
 	it = PyObject_NEW(MediaObject, &Media_Type);
@@ -2193,6 +2213,11 @@ PyObject *MediaObj_New(Media itself)
 }
 int MediaObj_Convert(PyObject *v, Media *p_itself)
 {
+	if (v == Py_None)
+	{
+		*p_itself = NULL;
+		return 1;
+	}
 	if (!MediaObj_Check(v))
 	{
 		PyErr_SetString(PyExc_TypeError, "Media required");
@@ -2204,7 +2229,7 @@ int MediaObj_Convert(PyObject *v, Media *p_itself)
 
 static void MediaObj_dealloc(MediaObject *self)
 {
-	DisposeTrackMedia(self->ob_itself);
+	if (self->ob_itself) DisposeTrackMedia(self->ob_itself);
 	self->ob_type->tp_free((PyObject *)self);
 }
 
@@ -3419,7 +3444,7 @@ PyObject *TrackObj_New(Track itself)
 {
 	TrackObject *it;
 	if (itself == NULL) {
-						PyErr_SetString(Qt_Error,"Cannot create null Track");
+						PyErr_SetString(Qt_Error,"Cannot create Track from NULL pointer");
 						return NULL;
 					}
 	it = PyObject_NEW(TrackObject, &Track_Type);
@@ -3429,6 +3454,11 @@ PyObject *TrackObj_New(Track itself)
 }
 int TrackObj_Convert(PyObject *v, Track *p_itself)
 {
+	if (v == Py_None)
+	{
+		*p_itself = NULL;
+		return 1;
+	}
 	if (!TrackObj_Check(v))
 	{
 		PyErr_SetString(PyExc_TypeError, "Track required");
@@ -3440,7 +3470,7 @@ int TrackObj_Convert(PyObject *v, Track *p_itself)
 
 static void TrackObj_dealloc(TrackObject *self)
 {
-	DisposeMovieTrack(self->ob_itself);
+	if (self->ob_itself) DisposeMovieTrack(self->ob_itself);
 	self->ob_type->tp_free((PyObject *)self);
 }
 
@@ -4761,7 +4791,7 @@ PyObject *MovieObj_New(Movie itself)
 {
 	MovieObject *it;
 	if (itself == NULL) {
-						PyErr_SetString(Qt_Error,"Cannot create null Movie");
+						PyErr_SetString(Qt_Error,"Cannot create Movie from NULL pointer");
 						return NULL;
 					}
 	it = PyObject_NEW(MovieObject, &Movie_Type);
@@ -4771,6 +4801,11 @@ PyObject *MovieObj_New(Movie itself)
 }
 int MovieObj_Convert(PyObject *v, Movie *p_itself)
 {
+	if (v == Py_None)
+	{
+		*p_itself = NULL;
+		return 1;
+	}
 	if (!MovieObj_Check(v))
 	{
 		PyErr_SetString(PyExc_TypeError, "Movie required");
@@ -4782,7 +4817,7 @@ int MovieObj_Convert(PyObject *v, Movie *p_itself)
 
 static void MovieObj_dealloc(MovieObject *self)
 {
-	DisposeMovie(self->ob_itself);
+	if (self->ob_itself) DisposeMovie(self->ob_itself);
 	self->ob_type->tp_free((PyObject *)self);
 }
 
@@ -7308,7 +7343,7 @@ PyObject *SGOutputObj_New(SGOutput itself)
 {
 	SGOutputObject *it;
 	if (itself == NULL) {
-						PyErr_SetString(Qt_Error,"Cannot create null SGOutput");
+						PyErr_SetString(Qt_Error,"Cannot create SGOutput from NULL pointer");
 						return NULL;
 					}
 	it = PyObject_NEW(SGOutputObject, &SGOutput_Type);
@@ -7318,6 +7353,11 @@ PyObject *SGOutputObj_New(SGOutput itself)
 }
 int SGOutputObj_Convert(PyObject *v, SGOutput *p_itself)
 {
+	if (v == Py_None)
+	{
+		*p_itself = NULL;
+		return 1;
+	}
 	if (!SGOutputObj_Check(v))
 	{
 		PyErr_SetString(PyExc_TypeError, "SGOutput required");
