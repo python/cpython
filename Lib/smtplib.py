@@ -40,7 +40,6 @@ Example:
 # This was modified from the Python 1.5 library HTTP lib.
 
 import socket
-import string
 import re
 import rfc822
 import types
@@ -209,7 +208,7 @@ class SMTP:
             if i >= 0:
                 host, port = host[:i], host[i+1:]
                 try: port = int(port)
-                except string.atoi_error:
+                except ValueError:
                     raise socket.error, "nonnumeric port"
         if not port: port = SMTP_PORT
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
