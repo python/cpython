@@ -105,7 +105,7 @@ frozenset_dict_wrapper(PyObject *d)
 	w = (PySetObject *)make_new_set(&PyFrozenSet_Type, NULL);
 	if (w == NULL)
 		return NULL;
-	Py_DECREF(w->data);
+	Py_CLEAR(w->data);
 	Py_INCREF(d);
 	w->data = d;
 	return (PyObject *)w;
