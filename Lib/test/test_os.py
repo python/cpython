@@ -54,11 +54,32 @@ class TemporaryFileTests(unittest.TestCase):
         self.assert_(s == "foobar")
 
     def test_tmpnam(self):
+        import sys
         if not hasattr(os, "tmpnam"):
             return
         warnings.filterwarnings("ignore", "tmpnam", RuntimeWarning,
                                 r"test_os$")
-        self.check_tempfile(os.tmpnam())
+        name = os.tmpnam()
+        if sys.platform in ("win32",):
+            # The Windows tmpnam() seems useless.  From the MS docs:
+            #
+            #     The character string that tmpnam creates consists of
+            #     the path prefix, defined by the entry P_tmpdir in the
+            #     file STDIO.H, followed by a sequence consisting of the
+            #     digit characters '0' through '9'; the numerical value
+            #     of this string is in the range 1 - 65,535.  Changing the
+            #     definitions of L_tmpnam or P_tmpdir in STDIO.H does not
+            #     change the operation of tmpnam.
+            #
+            # The really bizarre part is that, at least under MSVC6,
+            # P_tmpdir is "\\".  That is, the path returned refers to
+            # the root of the current drive.  That's a terrible place to
+            # put temp files, and, depending on privileges, the user
+            # may not even be able to open a file in the root directory.
+            self.failIf(os.path.exists(name),
+                        "file already exists for temporary file")
+        else:
+            self.check_tempfile(name)
 
 # Test attributes on return values from os.*stat* family.
 class StatAttributeTests(unittest.TestCase):
