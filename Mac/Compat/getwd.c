@@ -62,7 +62,7 @@ getwd(cwd)
 		sprintf(cwd, "I/O error %d in PBHGetVol", err);
 		return NULL;
 	}
-	ecwd= strchr(p2cstr((unsigned char*)cwd), EOS);
+	ecwd= strchr((const char *)p2cstr((unsigned char*)cwd), EOS);
 	ebuf= buf;
 	*ebuf = EOS;
 	
@@ -81,7 +81,7 @@ getwd(cwd)
 				return NULL;
 			}
 			dirid= pb.d.ioDrParID;
-			ebuf += strlen(p2cstr((unsigned char *)ebuf));
+			ebuf += strlen((const char *)p2cstr((unsigned char *)ebuf));
 			/* Should check for buf overflow */
 		}
 	}
