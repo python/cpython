@@ -1,3 +1,25 @@
+What's New in Python 2.1.2 (final)?
+===================================
+
+Changes in metadata:
+
+- Fixed the version numbers in the LICENSE, and the copyright date in
+  numerous places.
+
+- Fixed the instructions (in Doc/lib/libposix.tex) for building with
+  Large Filesystem Support (LFS).
+
+- Added GetArgv() docs in Mac UI chapter.
+
+- Some fixes to the Misc/NEWS file (e.g. the note about the new 32-bit
+  installer wasn't in the 2.1.2c1 release).
+
+One code change:
+
+- Backported a bugfix for importdl.c, SF patch #471839: Bug when
+  extensions import extensions.
+
+
 What's New in Python 2.1.2 (rc1)?
 =================================
 
