@@ -1,8 +1,12 @@
 #! /usr/local/bin/python
 
-# Tkinter interface to SYSV `kill' command.
+# Tkinter interface to SYSV `ps' and `kill' commands.
 
 from Tkinter import *
+
+if TkVersion < 4.0:
+	raise ImportError, "This version of svkill requires Tk 4.0 or later"
+
 from string import splitfields
 from string import split
 import commands
@@ -11,9 +15,9 @@ import os
 user = os.environ['LOGNAME']
 
 class BarButton(Menubutton):
-	_CNF = {Pack: {'side': 'left'}}
 	def __init__(self, master=None, cnf={}):
-		Menubutton.__init__(self, master, (self._CNF, cnf))
+		Menubutton.__init__(self, master, cnf)
+		self.pack(side='left')
 		self.menu = Menu(self, {'name': 'menu'})
 		self['menu'] = self.menu		
 
@@ -46,15 +50,14 @@ class Kill(Frame):
 		list = splitfields(s, '\n')
 		self.header.set(list[0] + '          ')
 		del list[0]
-		y = self.frame.vscroll.get()[2]
 		self.frame.list.delete(0, AtEnd())
 		for line in list:
 			self.frame.list.insert(0, line)
-		self.frame.list.yview(y)
 	def do_motion(self, e):
-		e.widget.select_from(e.widget.nearest(e.y))
+		e.widget.select_clear('0', 'end')
+		e.widget.select_set(e.widget.nearest(e.y))
 	def do_leave(self, e):
-		e.widget.select_clear()
+		e.widget.select_clear('0', 'end')
 	def do_1(self, e):
 		self.kill(e.widget.get(e.widget.nearest(e.y)))
 	def __init__(self, master=None, cnf={}):
@@ -117,9 +120,10 @@ class Kill(Frame):
 			self.frame, 
 			{'relief': 'sunken',
 			 'font': '*-Courier-Medium-R-Normal-*-120-*',
-			 'geometry': '40x10',
+			 'width': 40, 'height': 10,
 			 'selectbackground': '#eed5b7',
 			 'selectborderwidth': 0,
+			 'selectmode': 'browse',
 			 'yscroll': self.frame.vscroll.set})
 		self.frame.vscroll['command'] = self.frame.list.yview
 		self.frame.vscroll.pack({'side': 'right', 'fill': 'y'})
