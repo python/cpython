@@ -98,7 +98,10 @@ def _compile(pattern, flags=0):
         return _cache[key]
     except KeyError:
         pass
-    p = sre_compile.compile(pattern, flags)
+    try:
+        p = sre_compile.compile(pattern, flags)
+    except error, v:
+        raise error, v # invalid expression
     if len(_cache) >= _MAXCACHE:
         _cache.clear()
     _cache[key] = p

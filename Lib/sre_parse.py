@@ -142,7 +142,7 @@ class SubPattern:
                 for av in av[1]:
                     l, h = av.getwidth()
                     i = min(i, l)
-                    j = min(j, h)
+                    j = max(j, h)
                 lo = lo + i
                 hi = hi + j
             elif op is CALL:

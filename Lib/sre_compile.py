@@ -73,6 +73,13 @@ def _charset(charset, fixup=None):
         return out
     return charset
 
+def _simple(av):
+    # check if av is a "simple" operator
+    lo, hi = av[2].getwidth()
+    if lo == 0:
+        raise error, "nothing to repeat"
+    return lo == hi == 1 and av[2][0][0] != SUBPATTERN
+
 def _compile(code, pattern, flags):
     # internal: compile a (sub)pattern
     emit = code.append
@@ -116,10 +123,9 @@ def _compile(code, pattern, flags):
             code[skip] = len(code) - skip
         elif op is ANY:
             if flags & SRE_FLAG_DOTALL:
-                emit(OPCODES[op])
+                emit(OPCODES[ANY_ALL])
             else:
-                emit(OPCODES[CATEGORY])
-                emit(CHCODES[CATEGORY_NOT_LINEBREAK])
+                emit(OPCODES[ANY])
         elif op in (REPEAT, MIN_REPEAT, MAX_REPEAT):
             if flags & SRE_FLAG_TEMPLATE:
                 raise error, "internal: unsupported template operator"
@@ -130,30 +136,25 @@ def _compile(code, pattern, flags):
                 _compile(code, av[2], flags)
                 emit(OPCODES[SUCCESS])
                 code[skip] = len(code) - skip
+            elif _simple(av) and op == MAX_REPEAT:
+                emit(OPCODES[REPEAT_ONE])
+                skip = len(code); emit(0)
+                emit(av[0])
+                emit(av[1])
+                _compile(code, av[2], flags)
+                emit(OPCODES[SUCCESS])
+                code[skip] = len(code) - skip
             else:
-                lo, hi = av[2].getwidth()
-                if lo == 0:
-                    raise error, "nothing to repeat"
-                if 0 and lo == hi == 1 and op is MAX_REPEAT:
-                    # FIXME: <fl> fast and wrong (but we'll fix that)
-                    emit(OPCODES[REPEAT_ONE])
-                    skip = len(code); emit(0)
-                    emit(av[0])
-                    emit(av[1])
-                    _compile(code, av[2], flags)
-                    emit(OPCODES[SUCCESS])
-                    code[skip] = len(code) - skip
+                emit(OPCODES[REPEAT])
+                skip = len(code); emit(0)
+                emit(av[0])
+                emit(av[1])
+                _compile(code, av[2], flags)
+                code[skip] = len(code) - skip
+                if op == MAX_REPEAT:
+                    emit(OPCODES[MAX_UNTIL])
                 else:
-                    emit(OPCODES[REPEAT])
-                    skip = len(code); emit(0)
-                    emit(av[0])
-                    emit(av[1])
-                    _compile(code, av[2], flags)
-                    code[skip] = len(code) - skip
-                    if op == MAX_REPEAT:
-                        emit(OPCODES[MAX_UNTIL])
-                    else:
-                        emit(OPCODES[MIN_UNTIL])
+                    emit(OPCODES[MIN_UNTIL])
         elif op is SUBPATTERN:
             if av[0]:
                 emit(OPCODES[MARK])

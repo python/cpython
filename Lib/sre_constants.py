@@ -20,6 +20,7 @@ FAILURE = "failure"
 SUCCESS = "success"
 
 ANY = "any"
+ANY_ALL = "any_all"
 ASSERT = "assert"
 ASSERT_NOT = "assert_not"
 AT = "at"
@@ -81,7 +82,7 @@ OPCODES = [
     # failure=0 success=1 (just because it looks better that way :-)
     FAILURE, SUCCESS,
 
-    ANY,
+    ANY, ANY_ALL,
     ASSERT, ASSERT_NOT,
     AT,
     BRANCH,
