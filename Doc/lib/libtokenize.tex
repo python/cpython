@@ -43,5 +43,8 @@ passed to the \var{tokeneater} function by \function{tokenize()}:
   Token value used to indicate a comment.
 \end{datadesc}
 \begin{datadesc}{NL}
-  Token value used to indicate a newline.
+  Token value used to indicate a non-terminating newline.  The NEWLINE
+  token indicates the end of a logical line of Python code; NL tokens
+  are generated when a logical line of code is continued over multiple
+  physical lines.
 \end{datadesc}
