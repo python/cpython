@@ -330,8 +330,8 @@ RTR_init(Rotorobj *r)
 	RTR_e_rotors(r);
 	RTR_d_rotors(r);
 	for (i = 0; i < r->rotors; i++) {
-		r->positions[i] = (unsigned char) r_rand(r,r->size);
-		r->advances[i] = (1+(2*(r_rand(r,r->size/2))));
+		r->positions[i] = (unsigned char) r_rand(r, (short)r->size);
+		r->advances[i] = (1+(2*(r_rand(r, (short)(r->size/2)))));
 		RTR_permute_rotor(r,
 				  &(r->e_rotor[(i*r->size)]),
 				  &(r->d_rotor[(i*r->size)]));
