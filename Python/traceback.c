@@ -278,7 +278,7 @@ PyTraceBack_Print(v, f)
 		if (limit <= 0)
 			return 0;
 	}
-	err = PyFile_WriteString("Traceback (innermost last):\n", f);
+	err = PyFile_WriteString("Traceback (most recent call last):\n", f);
 	if (!err)
 		err = tb_printinternal((tracebackobject *)v, f, limit);
 	return err;
