@@ -11,6 +11,82 @@ ttyname
 getlogin
 exec
 cuserid
+ValidateMallocHeap
+GetNextMallocHeapRegistration
+GetFirstMallocHeapRegistration
+UnregisterMallocHeap
+RegisterMallocHeap
+wcsftime
+wctime
+wasctime
+wcsstr
+wcstok
+wcscspn
+wcsspn
+wcspbrk
+wcsrchr
+wcsxfrm
+wcscoll
+wcschr
+wcsncmp
+wcscmp
+wcsncat
+wcscat
+wcsncpy
+wcscpy
+wcslen
+swscanf
+__vswscanf
+vwscanf
+wscanf
+fwscanf
+__vfwscanf
+swprintf
+vwprintf
+vswprintf
+wprintf
+fwprintf
+vfwprintf
+wmemcmp
+wmemchr
+wmemset
+wmemmove
+wmemcpy
+towupper
+towlower
+iswxdigit
+iswupper
+iswspace
+iswpunct
+iswprint
+iswlower
+iswgraph
+iswdigit
+iswcntrl
+iswalpha
+iswalnum
+wctrans
+towctrans
+watol
+watoi
+wcstoll
+wcstol
+wcstoull
+wcstoul
+__wcstoull
+__wcstoul
+watof
+wcstod
+__wcstold
+fgetws
+fputws
+ungetwc
+fgetwc
+getwchar
+getwc
+fputwc
+putwchar
+putwc
 __to_gm_time
 __get_time
 __get_clock
@@ -23,6 +99,7 @@ time
 mktime
 difftime
 clock
+__leap_year
 system
 getenv
 atol
@@ -69,7 +146,9 @@ srand
 rand
 qsort
 sprintf
+snprintf
 vsprintf
+vsnprintf
 printf
 vprintf
 fprintf
@@ -176,16 +255,22 @@ __convert_to_newlines
 __convert_from_newlines
 bsearch
 __assertion_failed
+__llmod
 __lmod
 __mod
+__lldiv
 __ldiv
 __div
+__llmul
 __lmul
 __mul
+__lladd
 __ladd
 __add
+lldiv
 ldiv
 div
+llabs
 labs
 abs
 __num_to_file
@@ -231,104 +316,41 @@ RemoveConsole
 InstallConsole
 SIOUXHandleOneEvent
 SIOUXisinrange
-destroy__FPcPc		# destroy(char*,char*)
-capacity__51basic_string_ref<c,14char_traits<c>,12allocator<c>>CFv		# basic_string_ref<char, char_traits<char>, allocator<char>>::capacity() const
-deallocate__12allocator<c>FPc		# allocator<char>::deallocate(char*)
-cleanup__51basic_string_ref<c,14char_traits<c>,12allocator<c>>Fv		# basic_string_ref<char, char_traits<char>, allocator<char>>::cleanup()
-__dt__51basic_string_ref<c,14char_traits<c>,12allocator<c>>Fv		# basic_string_ref<char, char_traits<char>, allocator<char>>::~basic_string_ref()
-destroy<51basic_string_ref<c,14char_traits<c>,12allocator<c>>>__FP51basic_string_ref<c,14char_traits<c>,12allocator<c>>		# destroy<51basic_string_ref<c,14char_traits<c>,12allocator<c>>>(basic_string_ref<char, char_traits<char>, allocator<char>>*)
-__ct__51basic_string_ref<c,14char_traits<c>,12allocator<c>>FRC12allocator<c>		# basic_string_ref<char, char_traits<char>, allocator<char>>::basic_string_ref(const allocator<char>&)
-__ct__11logic_errorFPCc		# logic_error::logic_error(const char*)
-__ct__12out_of_rangeFPCc		# out_of_range::out_of_range(const char*)
-__ct__11logic_errorFRC11logic_error		# logic_error::logic_error(const logic_error&)
-__ct__12out_of_rangeFRC12out_of_range		# out_of_range::out_of_range(const out_of_range&)
-__ct__12allocator<c>FRC12allocator<c>		# allocator<char>::allocator(const allocator<char>&)
-allocate__12allocator<c>FUlPCv		# allocator<char>::allocate(unsigned long,const void*)
-begin__47basic_string<c,14char_traits<c>,12allocator<c>>CFv		# basic_string<char, char_traits<char>, allocator<char>>::begin() const
-memcpy__FPvPCvUl		# memcpy(void*,const void*,unsigned long)
-copy__14char_traits<c>FPcPCcUl		# char_traits<char>::copy(char*,const char*,unsigned long)
-strlen__FPCc		# strlen(const char*)
-length__14char_traits<c>FPCc		# char_traits<char>::length(const char*)
-rem_count__51basic_string_ref<c,14char_traits<c>,12allocator<c>>Fv		# basic_string_ref<char, char_traits<char>, allocator<char>>::rem_count()
-deallocate__64allocator<51basic_string_ref<c,14char_traits<c>,12allocator<c>>>FP51basic_string_ref<c,14char_traits<c>,12allocator<c>>		# allocator<basic_string_ref<char, char_traits<char>, allocator<char>>>::deallocate(basic_string_ref<char, char_traits<char>, allocator<char>>*)
-eos__47basic_string<c,14char_traits<c>,12allocator<c>>Fv		# basic_string<char, char_traits<char>, allocator<char>>::eos()
-__ct__47basic_string<c,14char_traits<c>,12allocator<c>>FRC12allocator<c>		# basic_string<char, char_traits<char>, allocator<char>>::basic_string(const allocator<char>&)
-c_str__47basic_string<c,14char_traits<c>,12allocator<c>>CFv		# basic_string<char, char_traits<char>, allocator<char>>::c_str() const
-cleanup__47basic_string<c,14char_traits<c>,12allocator<c>>Fv		# basic_string<char, char_traits<char>, allocator<char>>::cleanup()
-__ct__51basic_string_ref<c,14char_traits<c>,12allocator<c>>FPCcRC12allocator<c>		# basic_string_ref<char, char_traits<char>, allocator<char>>::basic_string_ref(const char*,const allocator<char>&)
-__ct__51basic_string_ref<c,14char_traits<c>,12allocator<c>>FRC47basic_string<c,14char_traits<c>,12allocator<c>>UlUlRC12allocator<c>		# basic_string_ref<char, char_traits<char>, allocator<char>>::basic_string_ref(const basic_string<char, char_traits<char>, allocator<char>>&,unsigned long,unsigned long,const allocator<char>&)
-throwrange__51basic_string_ref<c,14char_traits<c>,12allocator<c>>Fv		# basic_string_ref<char, char_traits<char>, allocator<char>>::throwrange()
-__dt__12allocator<c>Fv		# allocator<char>::~allocator()
-__ct__12allocator<c>Fv		# allocator<char>::allocator()
-eos__14char_traits<c>Fv		# char_traits<char>::eos()
-assign__14char_traits<c>FRcRCc		# char_traits<char>::assign(char&,const char&)
-empty__47basic_string<c,14char_traits<c>,12allocator<c>>CFv		# basic_string<char, char_traits<char>, allocator<char>>::empty() const
-data__47basic_string<c,14char_traits<c>,12allocator<c>>CFv		# basic_string<char, char_traits<char>, allocator<char>>::data() const
-__ct__47basic_string<c,14char_traits<c>,12allocator<c>>Fv		# basic_string<char, char_traits<char>, allocator<char>>::basic_string()
-__ct__8bad_castFPCc		# bad_cast::bad_cast(const char*)
-__ct__8bad_castFRC8bad_cast		# bad_cast::bad_cast(const bad_cast&)
-size__51basic_string_ref<c,14char_traits<c>,12allocator<c>>CFv		# basic_string_ref<char, char_traits<char>, allocator<char>>::size() const
-__dt__64allocator<51basic_string_ref<c,14char_traits<c>,12allocator<c>>>Fv		# allocator<basic_string_ref<char, char_traits<char>, allocator<char>>>::~allocator()
-__ct__64allocator<51basic_string_ref<c,14char_traits<c>,12allocator<c>>>Fv		# allocator<basic_string_ref<char, char_traits<char>, allocator<char>>>::allocator()
-reference_count__47basic_string<c,14char_traits<c>,12allocator<c>>CFv		# basic_string<char, char_traits<char>, allocator<char>>::reference_count() const
-add_count__51basic_string_ref<c,14char_traits<c>,12allocator<c>>Fv		# basic_string_ref<char, char_traits<char>, allocator<char>>::add_count()
-allocate__64allocator<51basic_string_ref<c,14char_traits<c>,12allocator<c>>>FUlPCv		# allocator<basic_string_ref<char, char_traits<char>, allocator<char>>>::allocate(unsigned long,const void*)
-__nw__FUlPv		# operator new(unsigned long,void*)
-__ct__47basic_string<c,14char_traits<c>,12allocator<c>>FPCcRC12allocator<c>		# basic_string<char, char_traits<char>, allocator<char>>::basic_string(const char*,const allocator<char>&)
-__ct__47basic_string<c,14char_traits<c>,12allocator<c>>FRC47basic_string<c,14char_traits<c>,12allocator<c>>UlUl		# basic_string<char, char_traits<char>, allocator<char>>::basic_string(const basic_string<char, char_traits<char>, allocator<char>>&,unsigned long,unsigned long)
-__dt__47basic_string<c,14char_traits<c>,12allocator<c>>Fv		# basic_string<char, char_traits<char>, allocator<char>>::~basic_string()
-size__47basic_string<c,14char_traits<c>,12allocator<c>>CFv		# basic_string<char, char_traits<char>, allocator<char>>::size() const
-__dt__9bad_allocFv		# bad_alloc::~bad_alloc()
-__as__9bad_allocFRC9bad_alloc		# bad_alloc::operator =(const bad_alloc&)
-__dt__14overflow_errorFv		# overflow_error::~overflow_error()
-__dt__11range_errorFv		# range_error::~range_error()
-__dt__13runtime_errorFv		# runtime_error::~runtime_error()
-__dt__12out_of_rangeFv		# out_of_range::~out_of_range()
-__dt__12length_errorFv		# length_error::~length_error()
-__dt__16invalid_argumentFv		# invalid_argument::~invalid_argument()
-__dt__12domain_errorFv		# domain_error::~domain_error()
-__dt__11logic_errorFv		# logic_error::~logic_error()
-__priv_throwbadcast__Fv		# __priv_throwbadcast()
-__dt__8bad_castFv		# bad_cast::~bad_cast()
-__ct__10bad_typeidFv		# bad_typeid::bad_typeid()
-what__9bad_allocCFv		# bad_alloc::what() const
-what__9exceptionCFv		# exception::what() const
-__dt__9exceptionFv		# exception::~exception()
-__as__9exceptionFRC9exception		# exception::operator =(const exception&)
-__ct__9exceptionFPCc		# exception::exception(const char*)
-__ct__9exceptionFRC9exception		# exception::exception(const exception&)
-__ct__9exceptionFRC47basic_string<c,14char_traits<c>,12allocator<c>>		# exception::exception(const basic_string<char, char_traits<char>, allocator<char>>&)
+__destroy_new_array2
 __destroy_new_array
 __destroy_arr
 __construct_array
 __construct_new_array
 __throw_catch_compare
-unexpected__Fv		# unexpected()
-set_unexpected__FPFv_v		# set_unexpected(void (*)(void))
-terminate__Fv		# terminate()
-set_terminate__FPFv_v		# set_terminate(void (*)(void))
+unexpected__3stdFv		# std::unexpected()
+set_unexpected__3stdFPFv_v		# std::set_unexpected(void (*)(void))
+terminate__3stdFv		# std::terminate()
+set_terminate__3stdFPFv_v		# std::set_terminate(void (*)(void))
+__dt__Q23std9bad_allocFv		# std::bad_alloc::~bad_alloc()
+what__Q23std9bad_allocCFv		# std::bad_alloc::what() const
 __del_hdl
 __new_hdl
-set_new_handler__FPFv_v		# set_new_handler(void (*)(void))
-__throw_bad_alloc__Fv		# __throw_bad_alloc()
+set_new_handler__3stdFPFv_v		# std::set_new_handler(void (*)(void))
+__throw_bad_alloc__3stdFv		# std::__throw_bad_alloc()
+__dla__FPv		# operator delete[](void*)
+__nwa__FUlRCQ23std9nothrow_t		# operator new[](unsigned long,const std::nothrow_t&)
+__nwa__FUl		# operator new[](unsigned long)
 __dl__FPv		# operator delete(void*)
-__nw__FUlRC9nothrow_t		# operator new(unsigned long,const nothrow_t&)
+__nw__FUlRCQ23std9nothrow_t		# operator new(unsigned long,const std::nothrow_t&)
 __nw__FUl		# operator new(unsigned long)
-_prealloc_newpool__FUl		# _prealloc_newpool(unsigned long)
-_set_newnonptrmax__FUl		# _set_newnonptrmax(unsigned long)
-_set_newpoolsize__FUl		# _set_newpoolsize(unsigned long)
-__dt__10bad_typeidFv		# bad_typeid::~bad_typeid()
-__dt__9type_infoFv		# type_info::~type_info()
+_prealloc_newpool__3stdFUl		# std::_prealloc_newpool(unsigned long)
+_set_newnonptrmax__3stdFUl		# std::_set_newnonptrmax(unsigned long)
+_set_newpoolsize__3stdFUl		# std::_set_newpoolsize(unsigned long)
+__dt__Q23std10bad_typeidFv		# std::bad_typeid::~bad_typeid()
+__dt__Q23std8bad_castFv		# std::bad_cast::~bad_cast()
+what__Q23std8bad_castCFv		# std::bad_cast::what() const
+what__Q23std10bad_typeidCFv		# std::bad_typeid::what() const
 __dynamic_cast
 __get_typeid
-__as__9type_infoFRC9type_info		# type_info::operator =(const type_info&)
-__ct__9type_infoFRC9type_info		# type_info::type_info(const type_info&)
-name__9type_infoCFv		# type_info::name() const
-before__9type_infoCFRC9type_info		# type_info::before(const type_info&) const
-__ne__9type_infoCFRC9type_info		# type_info::operator !=(const type_info&) const
-__eq__9type_infoCFRC9type_info		# type_info::operator ==(const type_info&) const
-__dt__13bad_exceptionFv		# bad_exception::~bad_exception()
-what__13bad_exceptionCFv		# bad_exception::what() const
+__dt__Q23std9exceptionFv		# std::exception::~exception()
+__dt__Q23std13bad_exceptionFv		# std::bad_exception::~bad_exception()
+what__Q23std13bad_exceptionCFv		# std::bad_exception::what() const
+what__Q23std9exceptionCFv		# std::exception::what() const
 __end__catch
 Ex68K_CatchInfoDtor
 __throw
@@ -981,7 +1003,6 @@ erfc
 erf
 sqrt
 pow
-hypot
 fabs
 scalb
 modff
@@ -1025,6 +1046,8 @@ getwd
 getbootvol
 sync
 macstat
+PyMac_Getwide
+PyMac_Buildwide
 PyMac_AddLibResources
 __initialize_with_resources
 getfiletype
@@ -1168,6 +1191,8 @@ PyString_FromStringAndSize
 PySlice_GetIndices
 PySlice_New
 PyRange_New
+Py_ReprLeave
+Py_ReprEnter
 PyMem_Free
 PyMem_Realloc
 PyMem_Malloc
@@ -1177,6 +1202,7 @@ Py_Malloc
 PyCallable_Check
 PyNumber_Coerce
 PyNumber_CoerceEx
+PyObject_Not
 PyObject_IsTrue
 PyObject_SetAttr
 PyObject_HasAttr
@@ -1191,6 +1217,7 @@ PyObject_Repr
 PyObject_Print
 _PyObject_NewVar
 _PyObject_New
+_PyModule_Clear
 PyModule_GetName
 PyModule_GetDict
 PyModule_New
@@ -1346,6 +1373,7 @@ PySys_GetFile
 PySys_GetObject
 PyMember_Set
 PyMember_Get
+PyThreadState_GetDict
 PyThreadState_Swap
 PyThreadState_Get
 PyThreadState_Delete
@@ -1363,12 +1391,15 @@ PyParser_SimpleParseFile
 Py_CompileString
 PyRun_File
 PyRun_String
+PyErr_PrintEx
 PyErr_Print
 PyRun_SimpleString
 PyRun_SimpleFile
 PyRun_InteractiveOne
 PyRun_InteractiveLoop
 PyRun_AnyFile
+Py_GetPythonHome
+Py_SetPythonHome
 Py_GetProgramName
 Py_SetProgramName
 Py_EndInterpreter
@@ -1398,6 +1429,7 @@ PyImport_ReloadModule
 PyImport_ImportModuleEx
 PyImport_ImportModule
 PyImport_ImportFrozenModule
+PyImport_ExecCodeModuleEx
 PyImport_ExecCodeModule
 PyImport_AddModule
 _PyImport_FindExtension
@@ -1463,6 +1495,7 @@ _PyBuiltin_Fini_2
 _PyBuiltin_Fini_1
 _PyBuiltin_Init_2
 _PyBuiltin_Init_1
+hypot
 initcStringIO
 initcPickle
 Pickler_setattr
@@ -1473,29 +1506,22 @@ pcre_info
 pcre_version
 pcre_study
 initpcre
-initreop
-npos__47basic_string<c,14char_traits<c>,12allocator<c>>		# basic_string<char, char_traits<char>, allocator<char>>::npos
-__vt__9exception		# exception::__vt
-__vt__8bad_cast		# bad_cast::__vt
-__vt__11logic_error		# logic_error::__vt
-__vt__12domain_error		# domain_error::__vt
-__vt__16invalid_argument		# invalid_argument::__vt
-__vt__12length_error		# length_error::__vt
-__vt__12out_of_range		# out_of_range::__vt
-__vt__13runtime_error		# runtime_error::__vt
-__vt__11range_error		# range_error::__vt
-__vt__14overflow_error		# overflow_error::__vt
-__vt__9bad_alloc		# bad_alloc::__vt
-__throws_bad_alloc
-__vt__9type_info		# type_info::__vt
-__vt__10bad_typeid		# bad_typeid::__vt
-__vt__13bad_exception		# bad_exception::__vt
+__vt__Q23std9bad_alloc		# std::bad_alloc::__vt
+__throws_bad_alloc__3std		# std::__throws_bad_alloc
+__vt__Q23std10bad_typeid		# std::bad_typeid::__vt
+__vt__Q23std8bad_cast		# std::bad_cast::__vt
+__vt__Q23std9exception		# std::exception::__vt
+__vt__Q23std13bad_exception		# std::bad_exception::__vt
 pi
-alloc_msg__9bad_alloc		# bad_alloc::alloc_msg
-__new_handler
+__new_handler__3std		# std::__new_handler
+nothrow__3std		# std::nothrow
 qd
 __global_destructor_chain
 _FE_DFL_ENV
+__wupper_map
+__wlower_map
+__wctype_map
+__month_to_days
 __lconv
 __extended_nan
 __extended_huge
@@ -1641,9 +1667,9 @@ _ftype
 _fcreator
 errno
 __malloc_pool
-__aborting
 __console_exit
 __stdio_exit
+__aborting
 SIOUXTextWindow
 SIOUXState
 SIOUXUseWaitNextEvent
@@ -1696,12 +1722,14 @@ open_app_upp
 not_upp
 _Py_re_syntax_table
 _Py_re_syntax
+Py_TabcheckFlag
 PyOS_ReadlineFunctionPointer
 PyOS_InputHook
 Py_DebugFlag
 Py_VerboseFlag
 Py_InteractiveFlag
 Py_NoSiteFlag
+Py_FrozenFlag
 _Py_PackageContext
 optarg
 Py_OptimizeFlag

@@ -89,6 +89,7 @@ PyImport_ReloadModule
 PyImport_ImportModuleEx
 PyImport_ImportModule
 PyImport_ImportFrozenModule
+PyImport_ExecCodeModuleEx
 PyImport_ExecCodeModule
 PyImport_AddModule
 _PyImport_FindExtension
@@ -120,6 +121,7 @@ Py_DebugFlag
 Py_VerboseFlag
 Py_InteractiveFlag
 Py_NoSiteFlag
+Py_FrozenFlag
 Py_FdIsInteractive
 Py_Exit
 Py_AtExit
@@ -129,12 +131,15 @@ PyParser_SimpleParseFile
 Py_CompileString
 PyRun_File
 PyRun_String
+PyErr_PrintEx
 PyErr_Print
 PyRun_SimpleString
 PyRun_SimpleFile
 PyRun_InteractiveOne
 PyRun_InteractiveLoop
 PyRun_AnyFile
+Py_GetPythonHome
+Py_SetPythonHome
 Py_GetProgramName
 Py_SetProgramName
 Py_EndInterpreter
@@ -142,6 +147,7 @@ Py_NewInterpreter
 Py_Finalize
 Py_Initialize
 Py_IsInitialized
+PyThreadState_GetDict
 PyThreadState_Swap
 PyThreadState_Get
 PyThreadState_Delete
@@ -325,12 +331,15 @@ PyCFunction_GetSelf
 PyCFunction_GetFunction
 PyCFunction_New
 PyModule_Type
+_PyModule_Clear
 PyModule_GetName
 PyModule_GetDict
 PyModule_New
 _Py_NoneStruct
 _Py_cobject_hack
 _Py_abstract_hack
+Py_ReprLeave
+Py_ReprEnter
 PyMem_Free
 PyMem_Realloc
 PyMem_Malloc
@@ -340,6 +349,7 @@ Py_Malloc
 PyCallable_Check
 PyNumber_Coerce
 PyNumber_CoerceEx
+PyObject_Not
 PyObject_IsTrue
 PyObject_SetAttr
 PyObject_HasAttr
@@ -396,6 +406,7 @@ PyNode_New
 PyParser_AddToken
 PyParser_Delete
 PyParser_New
+Py_TabcheckFlag
 PyParser_ParseFile
 PyParser_ParseString
 _PyParser_TokenNames
@@ -517,6 +528,8 @@ PyMac_Initialize
 PyMac_InitApplet
 getfiletype
 setfiletype
+PyMac_Getwide
+PyMac_Buildwide
 PyMac_AddLibResources
 __initialize_with_resources
 getbootvol
@@ -534,7 +547,6 @@ calloc
 realloc
 free
 malloc
-initreop
 Pcre_Type
 initpcre
 pcre_lcc
@@ -661,6 +673,7 @@ socket__12SocketDomainFis		# SocketDomain::socket(int,short)
 __dt__12SocketDomainFv		# SocketDomain::~SocketDomain()
 __ct__12SocketDomainFi		# SocketDomain::SocketDomain(int)
 Ready__12SocketDomainFv		# SocketDomain::Ready()
+Domain__12SocketDomainFi		# SocketDomain::Domain(int)
 GUSIGetEvents
 GUSISetEvents
 GUSIGetHook
@@ -1144,20 +1157,6 @@ __write_file
 __read_file
 __open_file
 __open_temp_file
-atan
-atan2
-memmove
-memcpy
-pow
-exp
-log
-log10
-sqrt
-strcmp
-strlen
-strncmp
-sin
-cos
 __dc_arr
 __del_arr
 __new_arr
@@ -1165,105 +1164,65 @@ __init_arr
 __copy
 __som_check_ev
 __som_check_new
-__vt__13bad_exception		# bad_exception::__vt
-what__13bad_exceptionCFv		# bad_exception::what() const
+__vt__Q23std13bad_exception		# std::bad_exception::__vt
+__vt__Q23std9exception		# std::exception::__vt
+what__Q23std9exceptionCFv		# std::exception::what() const
+__ct__Q23std9exceptionFv		# std::exception::exception()
+__dt__Q23std9exceptionFv		# std::exception::~exception()
+what__Q23std13bad_exceptionCFv		# std::bad_exception::what() const
 __end__catch
 __throw
 __unexpected
-__dt__13bad_exceptionFv		# bad_exception::~bad_exception()
+__dt__Q23std13bad_exceptionFv		# std::bad_exception::~bad_exception()
 __unregister_fragment
 __register_fragment
 __global_destructor_chain
 __destroy_global_chain
 __register_global_object
+__destroy_new_array2
 __destroy_new_array
 __destroy_arr
 __construct_array
 __dt__26__partial_array_destructorFv		# __partial_array_destructor::~__partial_array_destructor()
 __construct_new_array
 __throw_catch_compare
-unexpected__Fv		# unexpected()
-set_unexpected__FPFv_v		# set_unexpected(void (*)(void))
-terminate__Fv		# terminate()
-set_terminate__FPFv_v		# set_terminate(void (*)(void))
-__vt__10bad_typeid		# bad_typeid::__vt
-__vt__9type_info		# type_info::__vt
-__dt__9type_infoFv		# type_info::~type_info()
+unexpected__3stdFv		# std::unexpected()
+set_unexpected__3stdFPFv_v		# std::set_unexpected(void (*)(void))
+terminate__3stdFv		# std::terminate()
+set_terminate__3stdFPFv_v		# std::set_terminate(void (*)(void))
+__vt__Q23std8bad_cast		# std::bad_cast::__vt
+__vt__Q23std10bad_typeid		# std::bad_typeid::__vt
+what__Q23std10bad_typeidCFv		# std::bad_typeid::what() const
+what__Q23std8bad_castCFv		# std::bad_cast::what() const
 __dynamic_cast
+__dt__Q23std8bad_castFv		# std::bad_cast::~bad_cast()
 __get_typeid
-__dt__10bad_typeidFv		# bad_typeid::~bad_typeid()
-__as__9type_infoFRC9type_info		# type_info::operator =(const type_info&)
-__ct__9type_infoFRC9type_info		# type_info::type_info(const type_info&)
-name__9type_infoCFv		# type_info::name() const
-before__9type_infoCFRC9type_info		# type_info::before(const type_info&) const
-__ne__9type_infoCFRC9type_info		# type_info::operator !=(const type_info&) const
-__eq__9type_infoCFRC9type_info		# type_info::operator ==(const type_info&) const
+__dt__Q23std10bad_typeidFv		# std::bad_typeid::~bad_typeid()
+nothrow__3std		# std::nothrow
+__dla__FPv		# operator delete[](void*)
+__nwa__FUlRCQ23std9nothrow_t		# operator new[](unsigned long,const std::nothrow_t&)
+__nwa__FUl		# operator new[](unsigned long)
 __dl__FPv		# operator delete(void*)
-__nw__FUlRC9nothrow_t		# operator new(unsigned long,const nothrow_t&)
+__nw__FUlRCQ23std9nothrow_t		# operator new(unsigned long,const std::nothrow_t&)
 __nw__FUl		# operator new(unsigned long)
-_prealloc_newpool__FUl		# _prealloc_newpool(unsigned long)
-_set_newnonptrmax__FUl		# _set_newnonptrmax(unsigned long)
-_set_newpoolsize__FUl		# _set_newpoolsize(unsigned long)
-__throws_bad_alloc
-__new_handler
+_prealloc_newpool__3stdFUl		# std::_prealloc_newpool(unsigned long)
+_set_newnonptrmax__3stdFUl		# std::_set_newnonptrmax(unsigned long)
+_set_newpoolsize__3stdFUl		# std::_set_newpoolsize(unsigned long)
+__throws_bad_alloc__3std		# std::__throws_bad_alloc
+__vt__Q23std9bad_alloc		# std::bad_alloc::__vt
+__new_handler__3std		# std::__new_handler
+what__Q23std9bad_allocCFv		# std::bad_alloc::what() const
 __del_hdl
 __new_hdl
-set_new_handler__FPFv_v		# set_new_handler(void (*)(void))
-__throw_bad_alloc__Fv		# __throw_bad_alloc()
+set_new_handler__3stdFPFv_v		# std::set_new_handler(void (*)(void))
+__throw_bad_alloc__3stdFv		# std::__throw_bad_alloc()
+__dt__Q23std9bad_allocFv		# std::bad_alloc::~bad_alloc()
 qd
-__vt__9bad_alloc		# bad_alloc::__vt
-__vt__14overflow_error		# overflow_error::__vt
-__vt__11range_error		# range_error::__vt
-__vt__13runtime_error		# runtime_error::__vt
-__vt__12out_of_range		# out_of_range::__vt
-__vt__12length_error		# length_error::__vt
-__vt__16invalid_argument		# invalid_argument::__vt
-__vt__12domain_error		# domain_error::__vt
-__vt__11logic_error		# logic_error::__vt
-__vt__8bad_cast		# bad_cast::__vt
-__vt__9exception		# exception::__vt
-npos__47basic_string<c,14char_traits<c>,12allocator<c>>		# basic_string<char, char_traits<char>, allocator<char>>::npos
-alloc_msg__9bad_alloc		# bad_alloc::alloc_msg
-cleanup__51basic_string_ref<c,14char_traits<c>,12allocator<c>>Fv		# basic_string_ref<char, char_traits<char>, allocator<char>>::cleanup()
-__dt__51basic_string_ref<c,14char_traits<c>,12allocator<c>>Fv		# basic_string_ref<char, char_traits<char>, allocator<char>>::~basic_string_ref()
-__ct__51basic_string_ref<c,14char_traits<c>,12allocator<c>>FRC12allocator<c>		# basic_string_ref<char, char_traits<char>, allocator<char>>::basic_string_ref(const allocator<char>&)
-__ct__47basic_string<c,14char_traits<c>,12allocator<c>>FRC12allocator<c>		# basic_string<char, char_traits<char>, allocator<char>>::basic_string(const allocator<char>&)
-c_str__47basic_string<c,14char_traits<c>,12allocator<c>>CFv		# basic_string<char, char_traits<char>, allocator<char>>::c_str() const
-cleanup__47basic_string<c,14char_traits<c>,12allocator<c>>Fv		# basic_string<char, char_traits<char>, allocator<char>>::cleanup()
-__ct__51basic_string_ref<c,14char_traits<c>,12allocator<c>>FPCcRC12allocator<c>		# basic_string_ref<char, char_traits<char>, allocator<char>>::basic_string_ref(const char*,const allocator<char>&)
-__ct__51basic_string_ref<c,14char_traits<c>,12allocator<c>>FRC47basic_string<c,14char_traits<c>,12allocator<c>>UlUlRC12allocator<c>		# basic_string_ref<char, char_traits<char>, allocator<char>>::basic_string_ref(const basic_string<char, char_traits<char>, allocator<char>>&,unsigned long,unsigned long,const allocator<char>&)
-throwrange__51basic_string_ref<c,14char_traits<c>,12allocator<c>>Fv		# basic_string_ref<char, char_traits<char>, allocator<char>>::throwrange()
-__ct__47basic_string<c,14char_traits<c>,12allocator<c>>FPCcRC12allocator<c>		# basic_string<char, char_traits<char>, allocator<char>>::basic_string(const char*,const allocator<char>&)
-__dt__64allocator<51basic_string_ref<c,14char_traits<c>,12allocator<c>>>Fv		# allocator<basic_string_ref<char, char_traits<char>, allocator<char>>>::~allocator()
-__ct__47basic_string<c,14char_traits<c>,12allocator<c>>FRC47basic_string<c,14char_traits<c>,12allocator<c>>UlUl		# basic_string<char, char_traits<char>, allocator<char>>::basic_string(const basic_string<char, char_traits<char>, allocator<char>>&,unsigned long,unsigned long)
-size__47basic_string<c,14char_traits<c>,12allocator<c>>CFv		# basic_string<char, char_traits<char>, allocator<char>>::size() const
-__dt__9bad_allocFv		# bad_alloc::~bad_alloc()
-__as__9bad_allocFRC9bad_alloc		# bad_alloc::operator =(const bad_alloc&)
-__dt__14overflow_errorFv		# overflow_error::~overflow_error()
-__dt__11range_errorFv		# range_error::~range_error()
-__dt__13runtime_errorFv		# runtime_error::~runtime_error()
-__dt__12out_of_rangeFv		# out_of_range::~out_of_range()
-__dt__12length_errorFv		# length_error::~length_error()
-__dt__16invalid_argumentFv		# invalid_argument::~invalid_argument()
-__dt__12domain_errorFv		# domain_error::~domain_error()
-__dt__11logic_errorFv		# logic_error::~logic_error()
-__priv_throwbadcast__Fv		# __priv_throwbadcast()
-__dt__8bad_castFv		# bad_cast::~bad_cast()
-__dt__47basic_string<c,14char_traits<c>,12allocator<c>>Fv		# basic_string<char, char_traits<char>, allocator<char>>::~basic_string()
-__ct__10bad_typeidFv		# bad_typeid::bad_typeid()
-what__9bad_allocCFv		# bad_alloc::what() const
-what__9exceptionCFv		# exception::what() const
-__dt__9exceptionFv		# exception::~exception()
-__as__9exceptionFRC9exception		# exception::operator =(const exception&)
-__ct__9exceptionFPCc		# exception::exception(const char*)
-__dt__12allocator<c>Fv		# allocator<char>::~allocator()
-__ct__9exceptionFRC9exception		# exception::exception(const exception&)
-__ct__9exceptionFRC47basic_string<c,14char_traits<c>,12allocator<c>>		# exception::exception(const basic_string<char, char_traits<char>, allocator<char>>&)
 exit
 abort
-__aborting
 __console_exit
 __stdio_exit
+__aborting
 __exit
 exit
 __atexit
@@ -1278,16 +1237,22 @@ __flush_all
 __close_all
 __init_file
 __find_unopened_file
+__llmod
 __lmod
 __mod
+__lldiv
 __ldiv
 __div
+__llmul
 __lmul
 __mul
+__lladd
 __ladd
 __add
+lldiv
 ldiv
 div
+llabs
 labs
 abs
 __assertion_failed
@@ -1299,7 +1264,6 @@ __load_buffer
 __prep_buffer
 __convert_to_newlines
 __convert_from_newlines
-ccommand
 puts
 fputs
 putchar
@@ -1314,13 +1278,6 @@ getchar
 getc
 fgetc
 __get_char
-__close_console
-__write_console
-__read_console
-__end_critical_region
-__begin_critical_region
-__kill_critical_regions
-__init_critical_regions
 __ctype_map
 __lower_map
 __upper_map
@@ -1351,9 +1308,6 @@ fflush
 fclose
 tmpfile
 tmpnam
-__rename_file
-__delete_file
-__temp_file_name
 rewind
 fsetpos
 fseek
@@ -1361,6 +1315,24 @@ _fseek
 fgetpos
 ftell
 _ftell
+__float_min
+__float_max
+__float_epsilon
+__float_tiny
+__float_nan
+__float_huge
+__double_min
+__double_max
+__double_epsilon
+__double_tiny
+__double_huge
+__double_nan
+__extended_min
+__extended_max
+__extended_epsilon
+__extended_tiny
+__extended_huge
+__extended_nan
 fmodf
 floorf
 ceilf
@@ -1394,6 +1366,8 @@ memcmp
 __memrchr
 memchr
 memset
+memmove
+memcpy
 __fill_mem
 __copy_longs_rev_unaligned
 __copy_longs_unaligned
@@ -1406,7 +1380,6 @@ perror
 ferror
 feof
 clearerr
-__path2fss
 __pool_free_all
 __pool_free
 __pool_realloc
@@ -1415,10 +1388,10 @@ __pool_alloc
 __pool_preassign
 __pool_preallocate
 __init_pool_obj
-__sys_free
-__sys_alloc
 sprintf
+snprintf
 vsprintf
+vsnprintf
 printf
 vprintf
 fprintf
@@ -1444,10 +1417,13 @@ strrchr
 strxfrm
 strcoll
 strchr
+strncmp
+strcmp
 strncat
 strcat
 strncpy
 strcpy
+strlen
 __close_string
 __write_string
 __read_string
@@ -1465,6 +1441,7 @@ __strtoull
 __strtoul
 system
 getenv
+__month_to_days
 strftime
 localtime
 gmtime
@@ -1474,6 +1451,21 @@ time
 mktime
 difftime
 clock
+__leap_year
+ccommand
+__close_console
+__write_console
+__read_console
+__end_critical_region
+__begin_critical_region
+__kill_critical_regions
+__init_critical_regions
+__rename_file
+__delete_file
+__temp_file_name
+__path2fss
+__sys_free
+__sys_alloc
 __to_gm_time
 __get_time
 __get_clock
@@ -1492,24 +1484,85 @@ __system7present
 __myraise
 utimes
 uname
-__float_min
-__float_max
-__float_epsilon
-__float_tiny
-__float_nan
-__float_huge
-__double_min
-__double_max
-__double_epsilon
-__double_tiny
-__double_huge
-__double_nan
-__extended_min
-__extended_max
-__extended_epsilon
-__extended_tiny
-__extended_huge
-__extended_nan
+fgetws
+fputws
+ungetwc
+fgetwc
+getwchar
+getwc
+fputwc
+putwchar
+putwc
+watof
+wcstod
+__wcstold
+watol
+watoi
+wcstoll
+wcstol
+wcstoull
+wcstoul
+__wcstoull
+__wcstoul
+wctrans
+towctrans
+__wctype_map
+__wlower_map
+__wupper_map
+towupper
+towlower
+iswxdigit
+iswupper
+iswspace
+iswpunct
+iswprint
+iswlower
+iswgraph
+iswdigit
+iswcntrl
+iswalpha
+iswalnum
+wmemcmp
+wmemchr
+wmemset
+wmemmove
+wmemcpy
+swprintf
+vwprintf
+vswprintf
+wprintf
+fwprintf
+vfwprintf
+swscanf
+__vswscanf
+vwscanf
+wscanf
+fwscanf
+__vfwscanf
+wcsstr
+wcstok
+wcscspn
+wcsspn
+wcspbrk
+wcsrchr
+wcsxfrm
+wcscoll
+wcschr
+wcsncmp
+wcscmp
+wcsncat
+wcscat
+wcsncpy
+wcscpy
+wcslen
+wcsftime
+wctime
+wasctime
+ValidateMallocHeap
+GetNextMallocHeapRegistration
+GetFirstMallocHeapRegistration
+UnregisterMallocHeap
+RegisterMallocHeap
 getch
 kbhit
 SIOUXSetTitle
@@ -1551,3 +1604,32 @@ SIOUXUpdateWindow
 SIOUXDrawGrowBox
 AdjustText
 SIOUXIsAppWindow
+atan_d_d
+atan2_d_dd
+atan_d_pd
+atan2_d_pdpd
+atan_r_r
+atan2_r_rr
+atan_r_pr
+atan2_r_prpr
+power_d_dd
+exp_d_d
+exp_d_pd
+exp_r_r
+exp_r_pr
+log_d_d
+log_d_pd
+log10_d_d
+log10_d_pd
+sqrt_d_d
+sqrt_d_pd
+sqrt_r_r
+sqrt_r_pr
+sin_d_d
+sin_d_pd
+sin_r_r
+sin_r_pr
+cos_d_d
+cos_d_pd
+cos_r_r
+cos_r_pr
