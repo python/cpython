@@ -25,10 +25,6 @@ The available attributes of this module are:
   The error raised for bad ZIP files.
 \end{excdesc}
 
-\begin{datadesc}{_debug}
-  Level of printing, defaults to \code{1}.
-\end{datadesc}
-
 \begin{classdesc}{ZipFile}{\unspecified}
   The class for reading and writing ZIP files.  See
   ``\citetitle{ZipFile Objects}'' (section \ref{zipfile-objects}) for
@@ -42,7 +38,7 @@ The available attributes of this module are:
 \begin{classdesc}{ZipInfo}{\optional{filename\optional{, date_time}}}
   Class used the represent infomation about a member of an archive.
   Instances of this class are returned by the \method{getinfo()} and
-  \method{listinfo()} methods of \class{ZipFile} objects.  Most users
+  \method{infolist()} methods of \class{ZipFile} objects.  Most users
   of the \module{zipfile} module will not need to create these, but
   only use those created by this module.
   \var{filename} should be the full name of the archive member, and
@@ -99,9 +95,21 @@ cat myzip.zip >> python.exe
   \var{compression} is the ZIP compression method to use when writing
   the archive, and should be \constant{ZIP_STORED} or
   \constant{ZIP_DEFLATED}; unrecognized values will cause
-  \exception{ValueError} to be raised.  The default is
+  \exception{RuntimeError} to be raised.  If \constant{ZIP_DEFLATED}
+  is specified but the \refmodule{zlib} module is not avaialble,
+  \exception{RuntimeError} is also raised.  The default is
   \constant{ZIP_STORED}. 
 \end{classdesc}
+
+\begin{methoddesc}{close}{}
+  Close the archive file.  You must call \method{close()} before
+  exiting your program or essential records will not be written. 
+\end{methoddesc}
+
+\begin{methoddesc}{getinfo}{name}
+  Return a \class{ZipInfo} object with information about the archive
+  member \var{name}.
+\end{methoddesc}
 
 \begin{methoddesc}{namelist}{}
   Return a list of archive members by name.
@@ -127,22 +135,21 @@ cat myzip.zip >> python.exe
   name of the first bad file, or else return \code{None}.
 \end{methoddesc}
 
-\begin{methoddesc}{writestr}{bytes, arcname, year, month, day,
-                             hour, minute, second}
-  Write the string \var{bytes} and the other data to the archive, and
-  give the archive member the name \var{arcname}.  The archive must be
-  opened with mode \code{'w'} or \code{'a'}.
-\end{methoddesc}
-
-\begin{methoddesc}{write}{filename, arcname}
+\begin{methoddesc}{write}{filename\optional{, arcname\optional{,
+                          compress_type}}}
   Write the file named \var{filename} to the archive, giving it the
-  archive name \var{arcname}.  The archive must be open with mode
-  \code{'w'} or \code{'a'}.
+  archive name \var{arcname} (by default, this will be the same as
+  \var{filename}).  If given, \var{compress_type} overrides the value
+  given for the \var{compression} parameter to the constructor for
+  the new entry.  The archive must be open with mode \code{'w'} or
+  \code{'a'}. 
 \end{methoddesc}
 
-\begin{methoddesc}{close}{}
-  Close the archive file.  You must call \method{close()} before
-  exiting your program or essential records will not be written. 
+\begin{methoddesc}{writestr}{zinfo, bytes}
+  Write the string \var{bytes} to the archive; meta-information is
+  given as the \class{ZipInfo} instance \var{zinfo}.  At least the
+  filename, date, and time must be given by \var{zinfo}.  The archive
+  must be opened with mode \code{'w'} or \code{'a'}.
 \end{methoddesc}
 
 
@@ -189,7 +196,7 @@ those of \class{ZipFile} objects.
 \subsection{ZipInfo Objects \label{zipinfo-objects}}
 
 Instances of the \class{ZipInfo} class are returned by the
-\method{getinfo()} and \method{listinfo()} methods of
+\method{getinfo()} and \method{infolist()} methods of
 \class{ZipFile} objects.  Each object stores information about a
 single member of the ZIP archive.
 
