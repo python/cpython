@@ -31,8 +31,6 @@ typedef unsigned long Py_UInt32;
 #endif
 #endif
 
-#include "mymath.h"
-
 /* Code shamelessly stolen from sox,
 ** (c) Craig Reese, Joe Campbell and Jeff Poskanzer 1989 */
 

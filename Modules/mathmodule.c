@@ -12,8 +12,6 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 #include "Python.h"
 
-#include "mymath.h"
-
 #ifndef _MSC_VER
 #ifndef __STDC__
 extern double fmod (double, double);

@@ -1,8 +1,7 @@
 /* hypot() replacement */
 
 #include "config.h"
-#include "myproto.h"
-#include "mymath.h"
+#include "pyport.h"
 
 double hypot(double x, double y)
 {

@@ -46,7 +46,6 @@ extern void bzero(void *, int);
 #include <net/socket.h>
 #define SOCKET int
 #else
-#include "myselect.h" /* Also includes mytime.h */
 #define SOCKET int
 #endif
 #endif

@@ -30,8 +30,7 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #include <stdlib.h>
 #endif
 
-#include "myproto.h"
-#include "mymalloc.h"
+#include "pyport.h"
 
 #include "pydebug.h"
 

@@ -12,7 +12,6 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 #include "Python.h"
 
-#include "mymath.h"
 #include <ctype.h>
 
 #ifdef COUNT_ALLOCS

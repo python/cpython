@@ -64,7 +64,6 @@ Unicode Integration Proposal (see file Misc/unicode.txt).
 
 #include "Python.h"
 
-#include "mymath.h"
 #include "unicodeobject.h"
 #include "ucnhash.h"
 

@@ -54,7 +54,6 @@ static char cPickle_module_documentation[] =
 
 #include "Python.h"
 #include "cStringIO.h"
-#include "mymath.h"
 
 #ifndef Py_eval_input
 #include <graminit.h>

@@ -14,10 +14,6 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 #include <ctype.h>
 
-#ifdef HAVE_SELECT
-#include "mymath.h"
-#endif
-
 #ifdef macintosh
 #include <time.h>
 #include <OSUtils.h>
@@ -38,12 +34,6 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
-#endif
-
-#if defined(HAVE_SELECT) && !defined(__BEOS__)
-#include "myselect.h"
-#else
-#include "mytime.h"
 #endif
 
 #ifdef HAVE_FTIME

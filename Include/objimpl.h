@@ -14,7 +14,7 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 extern "C" {
 #endif
 
-#include "mymalloc.h"
+#include "pyport.h"
 
 /*
 Functions and macros for modules that implement new object types.

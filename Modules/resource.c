@@ -9,7 +9,6 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 ******************************************************************/
 
 #include "Python.h"
-#include "mytime.h" /* needed for SunOS4.1 */
 #include <sys/resource.h>
 #include <sys/time.h>
 #include <unistd.h>

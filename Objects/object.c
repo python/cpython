@@ -16,8 +16,6 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #include "macglue.h"
 #endif
 
-#include "mymath.h"
-
 /* just for trashcan: */
 #include "compile.h"
 #include "frameobject.h"

@@ -14,7 +14,6 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 #include "Python.h"
 #include "longintrepr.h"
-#include "mymath.h"
 
 #include <assert.h>
 #include <ctype.h>

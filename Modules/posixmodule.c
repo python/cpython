@@ -45,8 +45,6 @@ corresponding Unix manual entries for more information on calls.";
 #include <signal.h>
 #endif
 
-#include "mytime.h"		/* For clock_t on some systems */
-
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
 #endif /* HAVE_FCNTL_H */

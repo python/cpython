@@ -56,7 +56,6 @@ NOTE: you MUST use the SAME key in rotor.newrotor()
 /* Rotor objects */
 
 #include "Python.h"
-#include "mymath.h"
 
 #ifndef TRUE
 #define TRUE	1

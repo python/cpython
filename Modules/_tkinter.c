@@ -49,11 +49,6 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 #ifdef macintosh
 #define MAC_TCL
-#include "myselect.h"
-#endif
-
-#ifdef PYOS_OS2
-#include "myselect.h"
 #endif
 
 #include <tcl.h>
@@ -255,8 +250,6 @@ Tkinter_Error(PyObject *v)
 
 #ifdef WITH_THREAD
 #ifndef MS_WINDOWS
-#include "mytime.h"
-#include "myselect.h"
 
 /* Millisecond sleep() for Unix platforms. */
 

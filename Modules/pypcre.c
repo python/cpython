@@ -47,7 +47,6 @@ restrictions:
 #define FOR_PYTHON
 #include "pcre-int.h"
 #include "Python.h"
-#include "mymalloc.h"
 #include <ctype.h>
 #include "graminit.h"
 

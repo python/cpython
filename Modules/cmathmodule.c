@@ -4,8 +4,6 @@
 
 #include "Python.h"
 
-#include "mymath.h"
-
 #ifdef i860
 /* Cray APP has bogus definition of HUGE_VAL in <math.h> */
 #undef HUGE_VAL

@@ -12,7 +12,7 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 #include "config.h"
 
-#include "mymath.h"
+#include "pyport.h"
 #include <errno.h>
 
 double
