@@ -573,6 +573,10 @@ otherwise return -SIG, where SIG is the signal that killed it. """
         env = args[-1]
         return spawnve(mode, file, args[:-1], env)
 
+
+    __all__.extend(["spawnv", "spawnve", "spawnl", "spawnle",])
+
+
 if _exists("spawnvp"):
     # At the moment, Windows doesn't implement spawnvp[e],
     # so it won't have spawnlp[e] either.
@@ -598,8 +602,7 @@ otherwise return -SIG, where SIG is the signal that killed it. """
         return spawnvpe(mode, file, args[:-1], env)
 
 
-    __all__.extend(["spawnlp","spawnlpe","spawnv", "spawnve","spawnvp",
-                    "spawnvpe","spawnl","spawnle",])
+    __all__.extend(["spawnvp", "spawnvpe", "spawnlp", "spawnlpe",])
 
 
 # Supply popen2 etc. (for Unix)
