@@ -44,17 +44,26 @@ OptResObj_Convert(v, p_itself)
 	PyObject *v;
 	Handle *p_itself;
 {
+	PyObject *tmp;
+	
 	if ( v == Py_None ) {
 		*p_itself = NULL;
 		return 1;
 	}
-	if (!ResObj_Check(v))
+	if (ResObj_Check(v))
 	{
-		PyErr_SetString(PyExc_TypeError, "Resource required");
-		return 0;
+		*p_itself = ((ResourceObject *)v)->ob_itself;
+		return 1;
 	}
-	*p_itself = ((ResourceObject *)v)->ob_itself;
-	return 1;
+	/* If it isn't a resource yet see whether it is convertible */
+	if ( (tmp=PyObject_CallMethod(v, "as_Resource", "")) ) {
+		*p_itself = ((ResourceObject *)tmp)->ob_itself;
+		Py_DECREF(tmp);
+		return 1;
+	}
+	PyErr_Clear();
+	PyErr_SetString(PyExc_TypeError, "Resource required");
+	return 0;
 }
 
 """
@@ -115,6 +124,20 @@ class ResDefiniton(GlobalObjectDefinition):
 
 	def outputCheckNewArg(self):
 		Output("if (itself == NULL) return PyMac_Error(resNotFound);")
+		
+	def outputCheckConvertArg(self):
+		# if it isn't a resource we may be able to coerce it
+		Output("if (!%s_Check(v))", self.prefix)
+		OutLbrace()
+		Output("PyObject *tmp;")
+		Output('if ( (tmp=PyObject_CallMethod(v, "as_Resource", "")) )')
+		OutLbrace()
+		Output("*p_itself = ((ResourceObject *)tmp)->ob_itself;")
+		Output("Py_DECREF(tmp);")
+		Output("return 1;")
+		OutRbrace()
+		Output("PyErr_Clear();")
+		OutRbrace()
 
 	def outputGetattrHook(self):
 		Output(getattrHookCode)
