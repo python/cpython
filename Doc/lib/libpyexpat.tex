@@ -186,7 +186,7 @@ this attribute is false; it may be changed at any time.
 The following attributes contain values relating to the most recent
 error encountered by an \class{xmlparser} object, and will only have
 correct values once a call to \method{Parse()} or \method{ParseFile()}
-has raised a \exception{xml.parsers.expat.error} exception.
+has raised a \exception{xml.parsers.expat.ExpatError} exception.
 
 \begin{memberdesc}[xmlparser]{ErrorByteIndex} 
 Byte index at which an error occurred.
@@ -195,7 +195,7 @@ Byte index at which an error occurred.
 \begin{memberdesc}[xmlparser]{ErrorCode} 
 Numeric code specifying the problem.  This value can be passed to the
 \function{ErrorString()} function, or compared to one of the constants
-defined in the \module{errors} object.
+defined in the \code{errors} object.
 \end{memberdesc}
 
 \begin{memberdesc}[xmlparser]{ErrorColumnNumber} 
@@ -341,7 +341,7 @@ for the end of the element.
 
 \begin{methoddesc}[xmlparser]{CommentHandler}{data}
 Called for comments.  \var{data} is the text of the comment, excluding
-the leading `\code{<!--}' and trailing `\code{-->}'.
+the leading `\code{<!-}\code{-}' and trailing `\code{-}\code{->}'.
 \end{methoddesc}
 
 \begin{methoddesc}[xmlparser]{StartCdataSectionHandler}{}
@@ -383,14 +383,16 @@ Called for references to external entities.  \var{base} is the current
 base, as set by a previous call to \method{SetBase()}.  The public and
 system identifiers, \var{systemId} and \var{publicId}, are strings if
 given; if the public identifier is not given, \var{publicId} will be
-\code{None}.
+\code{None}.  The \var{context} value is opaque and should only be
+used as described below.
 
 For external entities to be parsed, this handler must be implemented.
 It is responsible for creating the sub-parser using
-\code{ExternalEntityRefHandler(\var{context})}, initializing it with
-the appropriate callbacks, and parsing the entity.  If this handler
-returns \code{0}, the parser will throw an
-\constant{XML_ERROR_EXTERNAL_ENTITY_HANDLING} error.
+\code{ExternalEntityParserCreate(\var{context})}, initializing it with
+the appropriate callbacks, and parsing the entity.  This handler
+should return an integer; if it returns \code{0}, the parser will
+throw an \constant{XML_ERROR_EXTERNAL_ENTITY_HANDLING} error,
+otherwise parsing will continue.
 
 If this handler is not provided, external entities are reported by the
 \member{DefaultHandler} callback, if provided.
