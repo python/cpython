@@ -28,10 +28,10 @@ class FormatParagraph:
     keydefs = {
         '<<format-paragraph>>': ['<Alt-q>'],
     }
-    
+
     unix_keydefs = {
         '<<format-paragraph>>': ['<Meta-q>'],
-    } 
+    }
 
     def __init__(self, editwin):
         self.editwin = editwin

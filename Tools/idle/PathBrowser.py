@@ -6,7 +6,7 @@ from TreeWidget import TreeItem
 from ClassBrowser import ClassBrowser, ModuleBrowserTreeItem
 
 class PathBrowser(ClassBrowser):
-    
+
     def __init__(self, flist):
         self.init(flist)
 

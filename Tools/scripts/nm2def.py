@@ -98,6 +98,6 @@ def main():
     f = sys.stdout # open('PC/python_nt.def','w')
     f.write(DEF_TEMPLATE % (exports))
     f.close()
-    
+
 if __name__ == '__main__':
     main()

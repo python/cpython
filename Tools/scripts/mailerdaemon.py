@@ -166,7 +166,7 @@ def parsedir(dir, modify):
     # find all numeric file names and sort them
     files = filter(lambda fn, pat=pat: pat.match(fn) is not None, os.listdir('.'))
     files.sort(sort_numeric)
-    
+
     for fn in files:
         # Lets try to parse the file.
         fp = open(fn)

@@ -111,17 +111,17 @@ class OnDemandOutputWindow:
         # XXX Should use IdlePrefs.ColorPrefs
         "stdout":  {"foreground": "blue"},
         "stderr":  {"foreground": "#007700"},
-    }   
-    
+    }
+
     def __init__(self, flist):
         self.flist = flist
         self.owin = None
-    
+
     def write(self, s, tags, mark):
         if not self.owin:
             self.setup()
         self.owin.write(s, tags, mark)
-    
+
     def setup(self):
         self.owin = owin = OutputWindow(self.flist)
         text = owin.text

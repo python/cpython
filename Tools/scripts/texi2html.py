@@ -46,13 +46,13 @@ blprog = re.compile('^[ \t]*$')                   # Blank line
 kwprog = re.compile('@[a-z]+')                    # Keyword (embedded, usually
                                                   # with {} args)
 spprog = re.compile('[\n@{}&<>]')                 # Special characters in
-                                                  # running text 
+                                                  # running text
                                                   #
                                                   # menu item (Yuck!)
 miprog = re.compile('^\* ([^:]*):(:|[ \t]*([^\t,\n.]+)([^ \t\n]*))[ \t\n]*')
 
 
-
+
 class HTMLNode:
     """Some of the parser's functionality is separated into this class.
 
@@ -1568,7 +1568,7 @@ def test():
     print_headers = 0
     cont = 0
     html3 = 0
-   
+
     while sys.argv[1:2] == ['-d']:
         debugging = debugging + 1
         del sys.argv[1:2]

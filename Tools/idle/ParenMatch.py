@@ -20,7 +20,7 @@ class ParenMatch:
     """Highlight matching parentheses
 
     There are three supported style of paren matching, based loosely
-    on the Emacs options.  The style is select based on the 
+    on the Emacs options.  The style is select based on the
     HILITE_STYLE attribute; it can be changed used the set_style
     method.
 
@@ -43,9 +43,9 @@ class ParenMatch:
     to the right of a right paren.  I don't know how to do that in Tk,
     so I haven't bothered.
     """
-    
+
     menudefs = []
-    
+
     keydefs = {
         '<<flash-open-paren>>' : ('<KeyRelease-parenright>',
                                   '<KeyRelease-bracketright>',
@@ -146,7 +146,7 @@ class LastOpenBracketFinder:
     indentwidth = AutoIndent.indentwidth
     tabwidth = AutoIndent.tabwidth
     context_use_ps1 = AutoIndent.context_use_ps1
-    
+
     def __init__(self, editwin):
         self.editwin = editwin
         self.text = editwin.text
@@ -158,7 +158,7 @@ class LastOpenBracketFinder:
             startatindex = `startat` + ".0"
             # rawtext needs to contain everything up to the last
             # character, which was the close paren.  the parser also
-	    # requires that the last line ends with "\n"
+            # requires that the last line ends with "\n"
             rawtext = self.text.get(startatindex, "insert")[:-1] + "\n"
             y.set_str(rawtext)
             bod = y.find_good_parse_start(
@@ -175,7 +175,7 @@ class LastOpenBracketFinder:
         lno = index2line(self.text.index("insert"))
         i, buf = self._find_offset_in_buf(lno)
         if i is None \
-	   or keysym_type(buf[i]) != right_keysym_type:
+           or keysym_type(buf[i]) != right_keysym_type:
             return None
         lines_back = string.count(buf[i:], "\n") - 1
         # subtract one for the "\n" added to please the parser
@@ -189,4 +189,3 @@ class LastOpenBracketFinder:
                   icis=self.editwin.is_char_in_string):
             return icis(startindex + "%dc" % offset)
         return inner
-

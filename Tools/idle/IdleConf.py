@@ -10,24 +10,24 @@ class IdleConfParser(ConfigParser):
     builtin_sections = {}
     for section in ('EditorWindow', 'Colors'):
         builtin_sections[section] = section
-    
+
     def getcolor(self, sec, name):
         """Return a dictionary with foreground and background colors
 
         The return value is appropriate for passing to Tkinter in, e.g.,
         a tag_config call.
         """
-	fore = self.getdef(sec, name + "-foreground")
-	back = self.getdef(sec, name + "-background")
+        fore = self.getdef(sec, name + "-foreground")
+        back = self.getdef(sec, name + "-background")
         return {"foreground": fore,
                 "background": back}
 
     def getdef(self, sec, options, raw=0, vars=None, default=None):
         """Get an option value for given section or return default"""
-	try:
+        try:
             return self.get(sec, options, raw, vars)
-	except (NoSectionError, NoOptionError):
-	    return default
+        except (NoSectionError, NoOptionError):
+            return default
 
     def getsection(self, section):
         """Return a SectionConfigParser object"""
@@ -37,10 +37,10 @@ class IdleConfParser(ConfigParser):
         exts = []
         for sec in self.sections():
             if self.builtin_sections.has_key(sec):
-		continue
-	    # enable is a bool, but it may not be defined
-	    if self.getdef(sec, 'enable') != '0':
-		exts.append(sec)
+                continue
+            # enable is a bool, but it may not be defined
+            if self.getdef(sec, 'enable') != '0':
+                exts.append(sec)
         return exts
 
     def reload(self):
@@ -69,10 +69,10 @@ class SectionConfigParser:
 
     def getint(self, option):
         return self.config.getint(self.section, option)
-    
+
     def getfloat(self, option):
         return self.config.getint(self.section, option)
-    
+
     def getboolean(self, option):
         return self.config.getint(self.section, option)
 
@@ -98,7 +98,7 @@ def load(dir):
         genplatfile = os.path.join(dir, "config-mac.txt")
     else:
         genplatfile = os.path.join(dir, "config-unix.txt")
-        
+
     platfile = os.path.join(dir, "config-%s.txt" % sys.platform)
 
     try:
@@ -110,4 +110,3 @@ def load(dir):
                    os.path.join(homedir, ".idle")))
 
 idleconf = IdleConfParser()
-

@@ -34,13 +34,13 @@ To fix case 2, change all tabs to spaces by using Select All followed \
 by Untabify Region (both in the Edit menu)."""
 
 class ScriptBinding:
-    
+
     keydefs = {
         '<<check-module>>': ['<Alt-F5>', '<Meta-F5>'],
         '<<import-module>>': ['<F5>'],
         '<<run-script>>': ['<Control-F5>'],
     }
-    
+
     menudefs = [
         ('edit', [None,
                   ('Check module', '<<check-module>>'),

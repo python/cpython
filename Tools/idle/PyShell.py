@@ -124,7 +124,7 @@ class ModifiedColorDelegator(ColorDelegator):
         "stderr": cconf.getcolor("stderr"),
         "console": cconf.getcolor("console"),
         "ERROR": cconf.getcolor("ERROR"),
-	None: cconf.getcolor("normal"),
+        None: cconf.getcolor("normal"),
     })
 
 

@@ -180,14 +180,14 @@ class Codec(codecs.Codec):
     def encode(self,input,errors='strict'):
 
         return codecs.charmap_encode(input,errors,encoding_map)
-        
+
     def decode(self,input,errors='strict'):
 
         return codecs.charmap_decode(input,errors,decoding_map)
 
 class StreamWriter(Codec,codecs.StreamWriter):
     pass
-        
+
 class StreamReader(Codec,codecs.StreamReader):
     pass
 
@@ -210,7 +210,7 @@ def getregentry():
     else:
         l.append("decoding_map = {")
         splits = 0
-        
+
     mappings = map.items()
     mappings.sort()
     append = l.append
@@ -290,7 +290,7 @@ def convertdir(dir,prefix='',comments=1):
             print '* conversion failed'
 
 def rewritepythondir(dir,prefix='',comments=1):
-    
+
     mapnames = os.listdir(dir)
     for mapname in mapnames:
         if not mapname.endswith('.mapping'):

@@ -1,4 +1,3 @@
-
 class Delegator:
 
     # The cache is only used to be able to change delegates!

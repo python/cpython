@@ -261,7 +261,7 @@ def find_executable_linenos(filename):
     # The only way I know to find line numbers is to look for the
     # SET_LINENO instructions.  Isn't there some way to get it from
     # the AST?
-    
+
     return _find_LINENO(code)
 
 ### XXX because os.path.commonprefix seems broken by my way of thinking...
@@ -279,7 +279,7 @@ def commonprefix(dirs):
                 if i == 0: return ''
                 break
     return os.sep.join(prefix)
-    
+
 def create_results_log(results, dirname = ".", show_missing = 1,
                        save_counts = 0):
     import re
@@ -297,7 +297,7 @@ def create_results_log(results, dirname = ".", show_missing = 1,
         results.update(results.__class__(counts, modules))
     except IOError:
         pass
-    
+
     # there are many places where this is insufficient, like a blank
     # line embedded in a multiline string.
     blank = re.compile(r'^\s*(#.*)?$')
@@ -307,7 +307,7 @@ def create_results_log(results, dirname = ".", show_missing = 1,
     tfdir = tempfile.gettempdir()
     for key in per_file.keys():
         filename = key
-        
+
         # skip some "files" we don't care about...
         if filename == "<string>":
             continue
@@ -484,7 +484,7 @@ class Trace:
                     print '%s(%d): ??' % (modulename, lineno)
 
         return self.trace
-    
+
 
 def _err_exit(msg):
     sys.stderr.write("%s: %s\n" % (sys.argv[0], msg))

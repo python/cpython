@@ -39,7 +39,7 @@ def treat_file(file):
     tags.append(s)
     while 1:
         line = fp.readline()
-        if not line: 
+        if not line:
             break
         m = matcher.match(line)
         if m:
