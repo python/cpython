@@ -34,9 +34,10 @@ import sgi
 # Usage and help functions (keep this up-to-date if you change the program!)
 
 def usage():
-	print 'Usage: Vrecb [options] [moviefile]'
+	print 'Usage: Vrecb [options] [moviefile [audiofile]]'
 	print
 	print 'Options:'
+	print '-a            : record audio as well'
 	print '-r rate       : capture 1 out of every "rate" frames', \
 	                     '(default and min 1)'
 	print '-w width      : initial window width', \
@@ -66,6 +67,7 @@ def help():
 
 def main():
 	format = SV.RGB8_FRAMES
+	audio = 0
 	rate = 1
 	width = 0
 	drop = 0
@@ -77,7 +79,7 @@ def main():
 	number = 60
 
 	try:
-		opts, args = getopt.getopt(sys.argv[1:], 'r:w:dg:mM:Gfn:')
+		opts, args = getopt.getopt(sys.argv[1:], 'ar:w:dg:mM:Gfn:')
 	except getopt.error, msg:
 		sys.stdout = sys.stderr
 		print 'Error:', msg, '\n'
@@ -86,6 +88,8 @@ def main():
 
 	try:
 		for opt, arg in opts:
+			if opt == '-a':
+				audio = 1
 			if opt == '-r':
 				rate = string.atoi(arg)
 				if rate < 1:
@@ -120,17 +124,29 @@ def main():
 		sys.exit(2)
 
 	if not fields:
-		print '-f option assumed until Jack fixes it'
+		print '-f option assumed until somebody fixes it'
 		fields = 1
 
 	if args[2:]:
-		sys.stderr.write('usage: Vrecb [options] [file]\n')
+		sys.stderr.write('usage: Vrecb [options] [file [audiofile]]\n')
 		sys.exit(2)
 
 	if args:
 		filename = args[0]
 	else:
 		filename = 'film.video'
+
+	if args[1:] and not audio:
+		sys.stderr.write('-a turned on by appearance of 2nd file\n')
+		audio = 1
+
+	if audio:
+		if args[1:]:
+			audiofilename = args[1]
+		else:
+			audiofilename = 'film.aiff'
+	else:
+		audiofilename = None
 
 	v = sv.OpenVideo()
 	# Determine maximum window size based on signal standard
@@ -187,7 +203,8 @@ def main():
 		if dev == DEVICE.LEFTMOUSE:
 			if val == 1:
 				info = format, x, y, number, rate
-				record(v, info, filename, mono, grey, \
+				record(v, info, filename, audiofilename, \
+					  mono, grey, \
 					  greybits, monotreshold, fields)
 		elif dev == DEVICE.REDRAW:
 			# Window resize (or move)
@@ -205,7 +222,8 @@ def main():
 # Record until the mouse is released (or any other GL event)
 # XXX audio not yet supported
 
-def record(v, info, filename, mono, grey, greybits, monotreshold, fields):
+def record(v, info, filename, audiofilename, \
+	               mono, grey, greybits, monotreshold, fields):
 	import thread
 	format, x, y, number, rate = info
 	fps = 59.64 # Fields per second
@@ -214,6 +232,15 @@ def record(v, info, filename, mono, grey, greybits, monotreshold, fields):
 	#
 	# Go grab
 	#
+	if audiofilename:
+		gl.wintitle('(start audio) ' + filename)
+		audiodone = thread.allocate_lock()
+		audiodone.acquire_lock()
+		audiostart = thread.allocate_lock()
+		audiostart.acquire_lock()
+		audiostop = []
+		initaudio(audiofilename, audiostop, audiostart, audiodone)
+		audiostart.acquire_lock()
 	gl.wintitle('(rec) ' + filename)
 	try:
 		ninfo, data, bitvec = v.CaptureBurst(info)
@@ -241,6 +268,9 @@ def record(v, info, filename, mono, grey, greybits, monotreshold, fields):
 	#
 	# Save
 	#
+	if filename and audiofilename:
+		audiostop.append(None)
+		audiodone.acquire_lock()
 	if filename:
 		#
 		# Construct header and write it
@@ -308,6 +338,46 @@ def record(v, info, filename, mono, grey, greybits, monotreshold, fields):
 		vout.close()
 			
 	gl.wintitle('(done) ' + filename)
+# Initialize audio recording
+
+AQSIZE = 8*8000 # XXX should be a user option
+
+def initaudio(filename, stop, start, done):
+	import thread, aiff
+	afile = aiff.Aiff().init(filename, 'w')
+	afile.nchannels = AL.MONO
+	afile.sampwidth = AL.SAMPLE_8
+	params = [AL.INPUT_RATE, 0]
+	al.getparams(AL.DEFAULT_DEVICE, params)
+	print 'audio sampling rate =', params[1]
+	afile.samprate = params[1]
+	c = al.newconfig()
+	c.setchannels(AL.MONO)
+	c.setqueuesize(AQSIZE)
+	c.setwidth(AL.SAMPLE_8)
+	aport = al.openport(filename, 'r', c)
+	thread.start_new_thread(audiorecord, (afile, aport, stop, start, done))
+
+
+# Thread to record audio samples
+
+# XXX should use writesampsraw for efficiency, but then destroy doesn't
+# XXX seem to set the #samples in the header correctly
+
+def audiorecord(afile, aport, stop, start, done):
+	start.release_lock()
+	leeway = 4
+	while leeway > 0:
+		if stop:
+			leeway = leeway - 1
+		data = aport.readsamps(AQSIZE/8)
+##		afile.writesampsraw(data)
+		afile.writesamps(data)
+		del data
+	afile.destroy()
+	print 'Done writing audio'
+	done.release_lock()
+
 
 # Don't forget to call the main program
 
