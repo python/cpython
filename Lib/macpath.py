@@ -150,7 +150,7 @@ def getctime(filename):
     return os.stat(filename).st_ctime
 
 def exists(s):
-    """Test whether a path exists.  Returns False for broken symbolic links"""    
+    """Test whether a path exists.  Returns False for broken symbolic links"""
 
     try:
         st = os.stat(s)
