@@ -282,8 +282,7 @@ platform: $(PYTHON)
 
 # Build the shared modules
 sharedmods: $(PYTHON)
-	PYTHONPATH= PYTHONHOME= PYTHONSTARTUP= \
-		./$(PYTHON) $(srcdir)/setup.py build
+	PYTHONPATH= ./$(PYTHON) $(srcdir)/setup.py build
 
 # buildno should really depend on something like LIBRARY_SRC
 buildno: $(PARSER_OBJS) \
