@@ -20,7 +20,7 @@ static PyTypeObject $Abbrev$type = {
 	$tp_as_sequence$,		/*tp_as_sequence*/
 	$tp_as_mapping$,		/*tp_as_mapping*/
 	(hashfunc)$tp_hash$,		/*tp_hash*/
-	(binaryfunc)$tp_call$,		/*tp_call*/
+	(ternaryfunc)$tp_call$,		/*tp_call*/
 	(reprfunc)$tp_str$,		/*tp_str*/
 
 	/* Space for future expansion */
