@@ -115,6 +115,7 @@ signal_handler(sig_num)
 #endif
 		is_tripped++;
 		Handlers[sig_num].tripped = 1;
+		Py_AddPendingCall((int (*) Py_PROTO((ANY *)))PyErr_CheckSignals, NULL);
 #ifdef WITH_THREAD
 	}
 #endif
@@ -523,7 +524,7 @@ PyErr_CheckSignals()
 				Py_DECREF(arglist);
 			}
 			if (!result)
-				return 1;
+				return -1;
 
 			Py_DECREF(result);
 		}
@@ -541,6 +542,7 @@ PyErr_SetInterrupt()
 {
 	is_tripped++;
 	Handlers[SIGINT].tripped = 1;
+	Py_AddPendingCall((int (*) Py_PROTO((ANY *)))PyErr_CheckSignals, NULL);
 }
 
 void
