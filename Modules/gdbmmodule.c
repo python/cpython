@@ -41,6 +41,11 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <fcntl.h>
 #include "gdbm.h"
 
+#ifdef WIN32
+#include "gdbmerrno.h"
+extern const char * gdbm_strerror(gdbm_error);
+#endif
+
 static char gdbmmodule__doc__[] = "\
 This module provides an interface to the GNU DBM (GDBM) library.\n\
 \n\
@@ -425,7 +430,7 @@ char *name;
 }
 
 static PyTypeObject Dbmtype = {
-	PyObject_HEAD_INIT(&PyType_Type)
+	PyObject_HEAD_INIT(0)
 	0,
 	"gdbm",
 	sizeof(dbmobject),
@@ -515,6 +520,7 @@ void
 initgdbm() {
 	PyObject *m, *d;
 
+	Dbmtype.ob_type = &PyType_Type;
 	m = Py_InitModule4("gdbm", dbmmodule_methods,
                            gdbmmodule__doc__, (PyObject *)NULL,
 			   PYTHON_API_VERSION);
