@@ -153,6 +153,9 @@ class RExec(ihooks._Verbose):
         self.make_sys()
         self.loader = RModuleLoader(self.hooks, verbose)
         self.importer = RModuleImporter(self.loader, verbose)
+        # but since re isn't normally built-in, we can add it at the end;
+        # we need the imported to be set before this can be imported.
+        self.make_re()
 
     def set_trusted_path(self):
         # Set the path from which dynamic modules may be loaded.
@@ -197,6 +200,13 @@ class RExec(ihooks._Verbose):
         dst.environ = e = {}
         for key, value in os.environ.items():
             e[key] = value
+
+    def make_re(self):
+        dst = self.add_module("re")
+        src = self.r_import("pre")
+        for name in dir(src):
+            if name != "__name__":
+                setattr(dst, name, getattr(src, name))
 
     def make_sys(self):
         m = self.copy_only(sys, self.ok_sys_names)
