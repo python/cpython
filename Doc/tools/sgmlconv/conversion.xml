@@ -190,6 +190,9 @@
     </environment>
 
   <!-- "See also:" sections. -->
+  <environment name="seealso*" outputname="seealso">
+    <attribute name="sidebar">no</attribute>
+    </environment>
   <macro name="seemodule">
     <!-- this causes the optional parameter to \seemodule to be
          discarded -->
@@ -819,6 +822,10 @@
     <child name="denominator"/>
     </macro>
   <macro name="sum">
+    <content/>
+    </macro>
+
+  <macro name="leftline" outputname="">
     <content/>
     </macro>
 
