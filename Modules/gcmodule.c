@@ -214,6 +214,25 @@ update_refs(PyGC_Head *containers)
 	for (; gc != containers; gc = gc->gc.gc_next) {
 		assert(gc->gc.gc_refs == GC_REACHABLE);
 		gc->gc.gc_refs = FROM_GC(gc)->ob_refcnt;
+		/* Python's cyclic gc should never see an incoming refcount
+		 * of 0:  if something decref'ed to 0, it should have been
+		 * deallocated immediately at that time.
+		 * Possible cause (if the assert triggers):  a tp_dealloc
+		 * routine left a gc-aware object tracked during its teardown
+		 * phase, and did something-- or allowed something to happen --
+		 * that called back into Python.  gc can trigger then, and may
+		 * see the still-tracked dying object.  Before this assert
+		 * was added, such mistakes went on to allow gc to try to
+		 * delete the object again.  In a debug build, that caused
+		 * a mysterious segfault, when _Py_ForgetReference tried
+		 * to remove the object from the doubly-linked list of all
+		 * objects a second time.  In a release build, an actual
+		 * double deallocation occurred, which leads to corruption
+		 * of the allocator's internal bookkeeping pointers.  That's
+		 * so serious that maybe this should be a release-build
+		 * check instead of an assert?
+		 */
+		assert(gc->gc.gc_refs != 0);
 	}
 }
 
