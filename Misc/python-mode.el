@@ -407,6 +407,9 @@ py-beep-if-tab-change\tring the bell if tab-width is changed"
 	mode-name "Python"
 	local-abbrev-table python-mode-abbrev-table)
   (use-local-map py-mode-map)
+  ;; Emacs 19 requires this
+  (if (or py-this-is-lucid-emacs-p py-this-is-emacs-19-p)
+      (setq comment-multi-line nil))
   ;; BAW -- style...
   (mapcar (function (lambda (x)
 		      (make-local-variable (car x))
