@@ -107,7 +107,13 @@ meth_getattr(m, name)
 		return None;
 	}
 	if (strcmp(name, "__self__") == 0) {
-		object *self = m->m_self;
+		object *self;
+		if (getrestricted()) {
+			err_setstr(RuntimeError,
+			 "method.__self__ not accessible in restricted mode");
+			return NULL;
+		}
+		self = m->m_self;
 		if (self == NULL)
 			self = None;
 		INCREF(self);

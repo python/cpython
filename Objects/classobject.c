@@ -116,21 +116,28 @@ class_getattr(op, name)
 {
 	register object *v;
 	classobject *class;
-	if (strcmp(name, "__dict__") == 0) {
-		INCREF(op->cl_dict);
-		return op->cl_dict;
-	}
-	if (strcmp(name, "__bases__") == 0) {
-		INCREF(op->cl_bases);
-		return op->cl_bases;
-	}
-	if (strcmp(name, "__name__") == 0) {
-		if (op->cl_name == NULL)
-			v = None;
-		else
-			v = op->cl_name;
-		INCREF(v);
-		return v;
+	if (name[0] == '_' && name[1] == '_') {
+		if (strcmp(name, "__dict__") == 0) {
+			if (getrestricted()) {
+				err_setstr(RuntimeError,
+					   "class.__dict__ not accessible in restricted mode");
+				return NULL;
+			}
+			INCREF(op->cl_dict);
+			return op->cl_dict;
+		}
+		if (strcmp(name, "__bases__") == 0) {
+			INCREF(op->cl_bases);
+			return op->cl_bases;
+		}
+		if (strcmp(name, "__name__") == 0) {
+			if (op->cl_name == NULL)
+				v = None;
+			else
+				v = op->cl_name;
+			INCREF(v);
+			return v;
+		}
 	}
 	v = class_lookup(op, name, &class);
 	if (v == NULL) {
@@ -365,6 +372,11 @@ instance_getattr1(inst, name)
 	classobject *class;
 	if (name[0] == '_' && name[1] == '_') {
 		if (strcmp(name, "__dict__") == 0) {
+			if (getrestricted()) {
+				err_setstr(RuntimeError,
+					   "instance.__dict__ not accessible in restricted mode");
+				return NULL;
+			}
 			INCREF(inst->in_dict);
 			return inst->in_dict;
 		}
@@ -420,15 +432,6 @@ instance_getattr(inst, name)
 	res = instance_getattr1(inst, name);
 	if (res == NULL && (func = inst->in_class->cl_getattr) != NULL) {
 		object *args;
-#if 0
-		if (name[0] == '_' && name[1] == '_') {
-			int n = strlen(name);
-			if (name[n-1] == '_' && name[n-2] == '_') {
-				/* Don't mess with system attributes */
-				return NULL;
-			}
-		}
-#endif
 		err_clear();
 		args = mkvalue("(Os)", inst, name);
 		if (args == NULL)
@@ -1132,6 +1135,11 @@ instancemethod_getattr(im, name)
 	register instancemethodobject *im;
 	char *name;
 {
+	if (name[0] != '_' && getrestricted()) {
+		err_setstr(RuntimeError,
+			   "instance-method attributes not accessible in restricted mode");
+		return NULL;
+	}
 	return getmember((char *)im, instancemethod_memberlist, name);
 }
 
