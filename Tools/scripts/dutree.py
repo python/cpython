@@ -38,8 +38,8 @@ def show(total, d, prefix):
 		tsub, dsub = d[key]
 		list.append((tsub, key))
 		if tsub is not None: sum = sum + tsub
-	if sum < total:
-		list.append((total - sum, os.curdir))
+## 	if sum < total:
+## 		list.append((total - sum, os.curdir))
 	list.sort()
 	list.reverse()
 	width = len(`list[0][0]`)
