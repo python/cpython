@@ -609,7 +609,9 @@ altbininstall:	$(BUILDPYTHON)
 			$(INSTALL_SHARED) libpython$(VERSION)$(SO) $(DESTDIR)$(BINDIR); \
 		else \
 			$(INSTALL_SHARED) libpython$(VERSION)$(SO) $(DESTDIR)$(LIBDIR)/$(INSTSONAME); \
-			(cd $(DESTDIR)$(LIBDIR); $(LN) -sf $(INSTSONAME) libpython$(VERSION)$(SO)); \
+			if test libpython$(VERSION)$(SO) != $(INSTSONAME); then \
+				(cd $(DESTDIR)$(LIBDIR); $(LN) -sf $(INSTSONAME) libpython$(VERSION)$(SO)); \
+			fi \
 		fi; \
 	else	true; \
 	fi
