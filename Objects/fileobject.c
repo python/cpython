@@ -839,21 +839,21 @@ file_writelines(f, args)
 }
 
 static PyMethodDef file_methods[] = {
-	{"close",	(PyCFunction)file_close, 0},
-	{"flush",	(PyCFunction)file_flush, 0},
-	{"fileno",	(PyCFunction)file_fileno, 0},
-	{"isatty",	(PyCFunction)file_isatty, 0},
-	{"read",	(PyCFunction)file_read, 1},
 	{"readline",	(PyCFunction)file_readline, 1},
-	{"readlines",	(PyCFunction)file_readlines, 1},
+	{"read",	(PyCFunction)file_read, 1},
+	{"write",	(PyCFunction)file_write, 0},
+	{"fileno",	(PyCFunction)file_fileno, 0},
 	{"seek",	(PyCFunction)file_seek, 0},
 #ifdef HAVE_FTRUNCATE
 	{"truncate",	(PyCFunction)file_truncate, 0},
 #endif
 	{"tell",	(PyCFunction)file_tell, 0},
-	{"write",	(PyCFunction)file_write, 0},
-	{"writelines",	(PyCFunction)file_writelines, 0},
 	{"readinto",	(PyCFunction)file_readinto, 0},
+	{"readlines",	(PyCFunction)file_readlines, 1},
+	{"writelines",	(PyCFunction)file_writelines, 0},
+	{"flush",	(PyCFunction)file_flush, 0},
+	{"close",	(PyCFunction)file_close, 0},
+	{"isatty",	(PyCFunction)file_isatty, 0},
 	{NULL,		NULL}		/* sentinel */
 };
 
@@ -1027,4 +1027,6 @@ PyFile_WriteString(s, f)
 		Py_DECREF(v);
 		return err;
 	}
+	else
+		return -1;
 }
