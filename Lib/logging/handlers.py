@@ -29,8 +29,6 @@ To use, simply 'import logging' and log away!
 
 import sys, logging, socket, types, os, string, cPickle, struct, time
 
-from SocketServer import ThreadingTCPServer, StreamRequestHandler
-
 #
 # Some constants...
 #
