@@ -282,16 +282,10 @@ def runtest(test, generate, verbose, quiet, testdir = None):
     if not testdir: testdir = findtestdir()
     outputdir = os.path.join(testdir, "output")
     outputfile = os.path.join(outputdir, test)
-    try:
-        if generate:
-            cfp = StringIO.StringIO()
-        elif verbose:
-            cfp = sys.stdout
-        else:
-            cfp = Compare(outputfile, sys.stdout)
-    except IOError:
+    if verbose or generate:
         cfp = None
-        print "Warning: can't open", outputfile
+    else:
+        cfp =  StringIO.StringIO()
     try:
         save_stdout = sys.stdout
         try:
@@ -306,10 +300,15 @@ def runtest(test, generate, verbose, quiet, testdir = None):
             indirect_test = getattr(the_module, "test_main", None)
             if indirect_test is not None:
                 indirect_test()
-            if cfp and not (generate or verbose):
-                cfp.close()
         finally:
             sys.stdout = save_stdout
+            if cfp and test_support.output_comparison_denied():
+                output = cfp.getvalue()
+                cfp = None
+                s = test + "\n"
+                if output.startswith(s):
+                    output = output[len(s):]
+                sys.stdout.write(output)
     except (ImportError, test_support.TestSkipped), msg:
         if not quiet:
             print "test", test, "skipped --", msg
@@ -326,25 +325,44 @@ def runtest(test, generate, verbose, quiet, testdir = None):
             traceback.print_exc(file=sys.stdout)
         return 0
     else:
+        if not cfp:
+            return 1
+        output = cfp.getvalue()
         if generate:
-            output = cfp.getvalue()
             if output == test + "\n":
                 if os.path.exists(outputfile):
                     # Write it since it already exists (and the contents
                     # may have changed), but let the user know it isn't
                     # needed:
-                    fp = open(outputfile, "w")
-                    fp.write(output)
-                    fp.close()
                     print "output file", outputfile, \
                           "is no longer needed; consider removing it"
-                # else:
-                #     We don't need it, so don't create it.
-            else:
-                fp = open(outputfile, "w")
-                fp.write(output)
-                fp.close()
-        return 1
+                else:
+                    # We don't need it, so don't create it.
+                    return 1
+            fp = open(outputfile, "w")
+            fp.write(output)
+            fp.close()
+            return 1
+        if os.path.exists(outputfile):
+            fp = open(outputfile, "r")
+            expected = fp.read()
+            fp.close()
+        else:
+            expected = test + "\n"
+        if output == expected:
+            return 1
+        print "test", test, "produced unexpected output:"
+        reportdiff(expected, output)
+        return 0
+
+def reportdiff(expected, output):
+    print "*" * 70
+    import difflib
+    a = expected.splitlines(1)
+    b = output.splitlines(1)
+    diff = difflib.ndiff(a, b)
+    print ''.join(diff),
+    print "*" * 70
 
 def findtestdir():
     if __name__ == '__main__':
@@ -383,62 +401,6 @@ def printlist(x, width=70, indent=4):
             line += pad + one
     if len(line) > indent:
         print line
-
-class Compare:
-    def __init__(self, filename, origstdout):
-        self.origstdout = origstdout
-        if os.path.exists(filename):
-            self.fp = open(filename, 'r')
-        else:
-            self.fp = StringIO.StringIO(
-                os.path.basename(filename) + "\n")
-        self.stuffthatmatched = []
-
-    def write(self, data):
-        if test_support.suppress_output_comparison():
-            self.origstdout.write(data)
-            return
-        expected = self.fp.read(len(data))
-        if data == expected:
-            self.stuffthatmatched.append(expected)
-        else:
-            # This Compare instance is spoofing stdout, so we need to write
-            # to stderr instead.
-            from sys import stderr as e
-            print >> e, "The actual stdout doesn't match the expected stdout."
-            if self.stuffthatmatched:
-                print >> e, "This much did match (between asterisk lines):"
-                print >> e, "*" * 70
-                good = "".join(self.stuffthatmatched)
-                e.write(good)
-                if not good.endswith("\n"):
-                    e.write("\n")
-                print >> e, "*" * 70
-                print >> e, "Then ..."
-            else:
-                print >> e, "The first write to stdout clashed:"
-            # Note that the prompts are the same length in next two lines.
-            # This is so what we expected and what we got line up.
-            print >> e, "We expected (repr):", `expected`
-            print >> e, "But instead we got:", `data`
-            raise test_support.TestFailed('Writing: ' + `data`+
-                                          ', expected: ' + `expected`)
-
-    def writelines(self, listoflines):
-        map(self.write, listoflines)
-
-    def flush(self):
-        pass
-
-    def close(self):
-        leftover = self.fp.read()
-        if leftover:
-            raise test_support.TestFailed('Tail of expected stdout unseen: ' +
-                                          `leftover`)
-        self.fp.close()
-
-    def isatty(self):
-        return 0
 
 class _Set:
     def __init__(self, seq=[]):
