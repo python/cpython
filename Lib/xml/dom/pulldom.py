@@ -1,5 +1,11 @@
 import xml.sax
 import xml.sax.handler
+import types
+
+try:
+    _StringTypes = [types.StringType, types.UnicodeType]
+except AttributeError:
+    _StringTypes = [types.StringType]
 
 START_ELEMENT = "START_ELEMENT"
 END_ELEMENT = "END_ELEMENT"
@@ -235,7 +241,7 @@ default_bufsize = (2 ** 14) - 20
 def parse(stream_or_string, parser=None, bufsize=None):
     if bufsize is None:
         bufsize = default_bufsize
-    if type(stream_or_string) in [type(""), type(u"")]:
+    if type(stream_or_string) in _StringTypes:
         stream = open(stream_or_string)
     else:
         stream = stream_or_string
