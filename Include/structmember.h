@@ -31,7 +31,7 @@ struct memberlist {
 	char *name;
 	int type;
 	int offset;
-	int readonly;
+	int flags;
 };
 
 /* Types */
@@ -58,9 +58,13 @@ struct memberlist {
 #define T_PSTRING_INPLACE	15
 #endif /* macintosh */
 
-/* Readonly flag */
+/* Flags */
 #define READONLY	1
 #define RO		READONLY		/* Shorthand */
+#define READ_RESTRICTED	2
+#define WRITE_RESTRICTED 4
+#define RESTRICTED	(READ_RESTRICTED | WRITE_RESTRICTED)
+
 
 DL_IMPORT(PyObject *) PyMember_Get(char *, struct memberlist *, char *);
 DL_IMPORT(int) PyMember_Set(char *, struct memberlist *, char *, PyObject *);
