@@ -1509,6 +1509,7 @@ def changeit(buf, pp):
 		ingroupch = pp[i:newi]
 		del pp[i:newi]
 		length = length - (newi-i)
+		changeit(buf, ingroupch) # catch stuff inside the optional arg
 		pp.insert(i, chunk(GROUP, ch.where, ingroupch))
 		i, length = i+1, length+1
 
