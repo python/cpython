@@ -17,14 +17,22 @@ compile Python sources in directories named on the command line or in
 
 
 \begin{funcdesc}{compile_dir}{dir\optional{, maxlevels\optional{,
-                              ddir\optional{, force}}}}
+                              ddir\optional{, force\optional{, 
+                              rx\optional{, quiet}}}}}}
   Recursively descend the directory tree named by \var{dir}, compiling
   all \file{.py} files along the way.  The \var{maxlevels} parameter
   is used to limit the depth of the recursion; it defaults to
   \code{10}.  If \var{ddir} is given, it is used as the base path from 
   which the filenames used in error messages will be generated.  If
   \var{force} is true, modules are re-compiled even if the timestamps
-  are up to date.
+  are up to date. 
+
+  If \var{rx} is given, it specifies a regular expression of file
+  names to exclude from the search; that expression is searched for in
+  the full path.
+
+  If \var{quiet} is true, nothing is printed to the standard output
+  in normal operation.
 \end{funcdesc}
 
 \begin{funcdesc}{compile_path}{\optional{skip_curdir\optional{,
