@@ -156,9 +156,41 @@ def emparse_compuserve(fp):
 	errors.append(line)
     return errors
 
+prov_pattern = regex.compile('.* | \(.*\)')
 
+def emparse_providence(fp):
+    while 1:
+	line = fp.readline()
+	if not line:
+	    raise Unparseable
+	line = line[:-1]
 
-EMPARSERS = [emparse_sendmail, emparse_aol, emparse_cts, emparse_compuserve]
+	# Check that we're not in the returned message yet
+	if string.lower(line)[:5] == 'from:':
+	    raise Unparseable
+	exp = 'The following errors occurred'
+	if line[:len(exp)] == exp:
+	    break
+
+    errors = []
+    while 1:
+	line = fp.readline()
+	if not line:
+	    break
+	line = line[:-1]
+	if not line:
+	    continue
+	if line[:4] == '----':
+	    break
+	if prov_pattern.match(line) > 0:
+	    errors.append(prov_pattern.group(1))
+
+    if not errors:
+	raise Unparseable
+    return errors
+
+EMPARSERS = [emparse_sendmail, emparse_aol, emparse_cts, emparse_compuserve,
+	     emparse_providence]
 
 def parsedir(dir, modify):
     os.chdir(dir)
