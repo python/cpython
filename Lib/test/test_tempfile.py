@@ -292,8 +292,12 @@ class test__mkstemp_inner(TC):
         tester = os.path.join(os.path.dirname(os.path.abspath(me)),
                               "tf_inherit_check.py")
 
-        retval = os.spawnl(os.P_WAIT, sys.executable,
-                           sys.executable, tester, v, fd)
+        # On Windows a spawn* /path/ with embedded spaces shouldn't be quoted,
+        # but an arg with embedded spaces should be decorated with double
+        # quotes on each end
+        decorated = '"%s"' % sys.executable
+        tester = '"%s"' % tester
+        retval = os.spawnl(os.P_WAIT, sys.executable, decorated, tester, v, fd)
         self.failIf(retval < 0,
                     "child process caught fatal signal %d" % -retval)
         self.failIf(retval > 0, "child process reports failure")
