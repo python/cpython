@@ -525,8 +525,8 @@ default_3way_compare(PyObject *v, PyObject *w)
 
 	if (v->ob_type == w->ob_type) {
 		/* same type: compare pointers */
-		void *vv = v;
-		void *ww = w;
+		Py_uintptr_t vv = (Py_uintptr_t)v;
+		Py_uintptr_t ww = (Py_uintptr_t)w;
 		return (vv < ww) ? -1 : (vv > ww) ? 1 : 0;
 	}
 
