@@ -92,14 +92,10 @@ extern PyObject *Py_VaBuildValue Py_PROTO((char *, va_list));
 */
 
 #ifdef MS_WINDOWS
-/* Special defines for Windows versions.  MS_DLL_ID is the key
-   used in the registry.
-   The full MS_DLL_VERSION_ID is imbedded in the core DLL, and
-   is so installers can determine incremental changes.
-*/
-#define MS_DLL_ID "1.5.0"
-#define MS_DLL_VERSION_ID       MS_DLL_ID "." PYTHON_API_STRING
-
+/* Special defines for Windows versions used to live here.  Things
+   have changed, and the "Version" is now in a global string variable.
+   Reason for this is that this for easier branding of a "custom DLL"
+   without actually needing a recompile.  */
 #endif /* MS_WINDOWS */
 
 #ifdef Py_TRACE_REFS
