@@ -476,7 +476,7 @@ class PyBuildExt(build_ext):
                                 '/usr/local/BerkeleyDB.3.1/lib',
                                 '/usr/local/BerkeleyDB.3.0/lib',
                                 '/usr/local/lib',
-                                '/opt/sfw',
+                                '/opt/sfw/lib',
                                 '/sw/lib',
                                 ),
                     'incdirs': ('/usr/local/BerkeleyDB.3.3/include',
@@ -542,16 +542,15 @@ class PyBuildExt(build_ext):
 
         # The standard Unix dbm module:
         if platform not in ['cygwin']:
-            if (self.compiler.find_library_file(lib_dirs, 'ndbm')
-                and find_file("ndbm.h", inc_dirs, []) is not None):
+            if find_file("ndbm.h", inc_dirs, []) is not None:
+                # Some systems have -lndbm, others don't
+                if self.compiler.find_library_file(lib_dirs, 'ndbm'):
+                    ndbm_libs = ['ndbm']
+                else:
+                    ndbm_libs = []
                 exts.append( Extension('dbm', ['dbmmodule.c'],
                                        define_macros=[('HAVE_NDBM_H',None)],
-                                       libraries = ['ndbm'] ) )
-            elif (platform in ['darwin']
-                and find_file("ndbm.h", inc_dirs, []) is not None):
-                # Darwin has ndbm in libc
-                exts.append( Extension('dbm', ['dbmmodule.c'],
-                                       define_macros=[('HAVE_NDBM_H',None)]) )
+                                       libraries = ndbm_libs ) )
             elif (self.compiler.find_library_file(lib_dirs, 'gdbm')
                   and find_file("gdbm/ndbm.h", inc_dirs, []) is not None):
                 exts.append( Extension('dbm', ['dbmmodule.c'],
@@ -559,7 +558,8 @@ class PyBuildExt(build_ext):
                                        libraries = ['gdbm'] ) )
             elif db_incs is not None:
                 exts.append( Extension('dbm', ['dbmmodule.c'],
-                                       library_dirs=[dblib_dir],
+                                       library_dirs=dblib_dir,
+                                       runtime_library_dirs=dblib_dir,
                                        include_dirs=db_incs,
                                        define_macros=[('HAVE_BERKDB_H',None),
                                                       ('DB_DBM_HSEARCH',None)],
