@@ -165,6 +165,14 @@ class Install (Command):
                 # shared files, with no nice way to override it! (this
                 # might be a Python problem, though, not a Distutils
                 # problem...)
+
+                # NO: the way to fix this is
+                #   * any platform-dependent files in distribution?
+                #     yes: install under exec-prefix
+                #     no: install under prefix
+                # ...which will require a pretty major rethink of all
+                # this.  Damn.
+
                 self.install_site_platlib = \
                     os.path.join (self.install_lib, 'site-packages')
             else:
