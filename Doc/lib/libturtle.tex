@@ -1,0 +1,160 @@
+\section{\module{turtle} ---
+         Turtle graphics for Tk}
+
+\declaremodule{standard}{turtle}
+   \platform{Tk}
+\moduleauthor{Guido van Rossum}{guido@python.org}
+\modulesynopsis{An environment for turtle graphics.}
+
+\sectionauthor{Moshe Zadka}{mzadka@geocities.com}
+
+
+The \module{turtle} module provides turtle graphics primitives, in both an
+object-oriented and procedure-oriented ways. Because it uses \module{Tkinter}
+for the underlying graphics, it needs a version of python installed with
+Tk support.
+
+The procedural interface uses a pen and a canvas which are automagically
+created when any of the functions are called.
+
+The \module{turtle} module defines the following functions:
+
+\begin{funcdesc}{degrees}{}
+Set angle measurement units to degrees.
+\end{funcdesc}
+
+\begin{funcdesc}{radians}{}
+Set angle measurement units to radians.
+\end{funcdesc}
+
+\begin{funcdesc}{reset}{}
+Clear the screen, re-center the pen, and set variables to the default
+values.
+\end{funcdesc}
+
+\begin{funcdesc}{clear}{}
+Clear the screen.
+\end{funcdesc}
+
+\begin{funcdesc}{tracer}{flag}
+Set tracing on/off (according to whether flag is true or not). Tracing
+means line are drawn more slowly, with an animation of an arrow along the 
+line.
+\end{funcdesc}
+
+\begin{funcdesc}{forward}{distance}
+Go forward \var{distance} steps.
+\end{funcdesc}
+
+\begin{funcdesc}{backward}{distance}
+Go backward \var{distance} steps.
+\end{funcdesc}
+
+\begin{funcdesc}{left}{angle}
+Turn left \var{angle} units. Units are by default degrees, but can be
+set via the \function{degrees()} and \function{radians()} functions.
+\end{funcdesc}
+
+\begin{funcdesc}{right}{angle}
+Turn right \var{angle} units. Units are by default degrees, but can be
+set via the \function{degrees()} and \function{radians()} functions.
+\end{funcdesc}
+
+\begin{funcdesc}{up}{}
+Move the pen up --- stop drawing.
+\end{funcdesc}
+
+\begin{funcdesc}{down}{}
+Move the pen up --- draw when moving.
+\end{funcdesc}
+
+\begin{funcdesc}{width}{width}
+Set the line width to \var{width}.
+\end{funcdesc}
+
+\begin{funcdesc}{color}{s}
+Set the color by giving a Tk color string.
+\end{funcdesc}
+
+\begin{funcdesc}{color}{(r, g, b)}
+Set the color by giving a RGB tuple, each between 0 and 1.
+\end{funcdesc}
+
+\begin{funcdesc}{color}{r, g, b}
+Set the color by giving the RGB components, each between 0 and 1.
+\end{funcdesc}
+
+\begin{funcdesc}{write}{text\optional{, move}}
+Write \var{text} at the current pen position. If \var{move} is true,
+the pen is moved to the bottom-right corner of the text. By default,
+\var{move} is false.
+\end{funcdesc}
+
+\begin{funcdesc}{fill}{flag}
+The complete specifications are rather complex, but the recommended 
+usage is: call \code{fill(1)} before drawing a path you want to fill,
+and call \code{fill(0)} when you finish to draw the path.
+\end{funcdesc}
+
+\begin{funcdesc}{circle}{radius\optional{, extent}}
+Draw a circle with radius \var{radius} whose center-point is where the 
+pen would be if a \code{forward(\var{radius})} were
+called. \var{extent} determines which part of a circle is drawn: if
+not given it defaults to a full circle.
+
+If \var{extent} is not a full circle, one endpoint of the arc is the
+current pen position. The arc is drawn in a counter clockwise
+direction if \var{radius} is positive, otherwise in a clockwise
+direction.
+\end{funcdesc}
+
+\begin{funcdesc}{goto}{x, y}
+Go to co-ordinates (\var{x}, \var{y}).
+\end{funcdesc}
+
+\begin{funcdesc}{goto}{(x, y)}
+Go to co-ordinates (\var{x}, \var{y}) (specified as a tuple instead of 
+individually).
+\end{funcdesc}
+
+This module also does a documented \code{from math import *}, so see
+the documentation for the \refmodule{math} module for additional
+constants and functions useful for turtle graphics.
+% XXX Should we mention this? If so, a \seealso is also in place...
+
+\begin{funcdesc}{demo}{}
+Exercise the module a bit.
+\end{funcdesc}
+
+\begin{excdesc}{Error}
+Exception raised on any error caught by this module.
+\end{excdesc}
+
+For examples, see the code of the \function{demo()} function.
+
+This module defines the following classes:
+
+\begin{classdesc}{Pen}{}
+Define a pen. All above functions can be called as a methods on the given
+pen. The constructor automatically creates a canvas do be drawn on.
+\end{classdesc}
+
+\begin{classdesc}{RawPen}{canvas}
+Define a pen which draws on a canvas \var{canvas}. This is useful if 
+you want to use the module to create graphics in a ``real'' program.
+\end{classdesc}
+
+\subsection{Pen and RawPen Objects \label{pen-rawpen-objects}}
+
+\class{Pen} and \class{RawPen} objects have all the global functions
+described above, except for \function{demo()} as methods, which
+manipulate the given pen.
+
+The only method which is more powerful as a method is
+\function{degrees()}.
+
+\begin{methoddesc}{degrees}{\optional{fullcircle}}
+\var{fullcircle} is by default 360. This can cause the pen to have any
+angular units whatever: give \var{fullcircle} 2*$\pi$ for radians, or
+400 for gradians.
+\end{methoddesc}
