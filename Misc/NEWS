@@ -31,6 +31,8 @@ Extension Modules
   This allows islice() to work more readily with slices:
       islice(s.start, s.stop, s.step)
 
+- datetime.datetime() now has a strptime class method which can be used to
+  create datetime object using a string and format.
 
 Library
 -------

@@ -1421,6 +1421,15 @@ class TestDateTime(TestDate):
             # Else try again a few times.
         self.failUnless(abs(from_timestamp - from_now) <= tolerance)
 
+    def test_strptime(self):
+        import time
+
+        string = '2004-12-01 13:02:47'
+        format = '%Y-%m-%d %H:%M:%S'
+        expected = self.theclass(*(time.strptime(string, format)[0:6]))
+        got = self.theclass.strptime(string, format)
+        self.assertEqual(expected, got)
+
     def test_more_timetuple(self):
         # This tests fields beyond those tested by the TestDate.test_timetuple.
         t = self.theclass(2004, 12, 31, 6, 22, 33)
