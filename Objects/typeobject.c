@@ -927,9 +927,38 @@ subtype_setdict(PyObject *obj, PyObject *value, void *context)
 	return 0;
 }
 
+static PyObject *
+subtype_getweakref(PyObject *obj, void *context)
+{
+	PyObject **weaklistptr;
+	PyObject *result;
+
+	if (obj->ob_type->tp_weaklistoffset == 0) {
+		PyErr_SetString(PyExc_AttributeError,
+				"This object has no __weaklist__");
+		return NULL;
+	}
+	assert(obj->ob_type->tp_weaklistoffset > 0);
+	assert(obj->ob_type->tp_weaklistoffset + sizeof(PyObject *) <=
+	       obj->ob_type->tp_basicsize);
+	weaklistptr = (PyObject **)
+		((void *)obj + obj->ob_type->tp_weaklistoffset);
+	if (*weaklistptr == NULL)
+		result = Py_None;
+	else
+		result = *weaklistptr;
+	Py_INCREF(result);
+	return result;
+}
+
 static PyGetSetDef subtype_getsets[] = {
-	{"__dict__", subtype_dict, subtype_setdict, NULL},
-	{0},
+	/* Not all objects have these attributes!
+	   The descriptor's __get__ method may raise AttributeError. */
+	{"__dict__", subtype_dict, subtype_setdict,
+	 "dictionary for instance variables (if defined)"},
+	{"__weakref__", subtype_getweakref, NULL,
+	 "list of weak references to the object (if defined)"},
+	{0}
 };
 
 /* bozo: __getstate__ that raises TypeError */
@@ -985,6 +1014,7 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 	etype *et;
 	PyMemberDef *mp;
 	int i, nbases, nslots, slotoffset, add_dict, add_weak;
+	int j, may_add_dict, may_add_weak;
 
 	assert(args != NULL && PyTuple_Check(args));
 	assert(kwds == NULL || PyDict_Check(kwds));
@@ -1072,7 +1102,19 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 	nslots = 0;
 	add_dict = 0;
 	add_weak = 0;
-	if (slots != NULL) {
+	may_add_dict = base->tp_dictoffset == 0;
+	may_add_weak = base->tp_weaklistoffset == 0 && base->tp_itemsize == 0;
+	if (slots == NULL) {
+		if (may_add_dict) {
+			add_dict++;
+		}
+		if (may_add_weak) {
+			add_weak++;
+		}
+	}
+	else {
+		/* Have slots */
+
 		/* Make it into a tuple */
 		if (PyString_Check(slots))
 			slots = Py_BuildValue("(O)", slots);
@@ -1080,70 +1122,125 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 			slots = PySequence_Tuple(slots);
 		if (slots == NULL)
 			return NULL;
+		assert(PyTuple_Check(slots));
+
+		/* Are slots allowed? */
 		nslots = PyTuple_GET_SIZE(slots);
 		if (nslots > 0 && base->tp_itemsize != 0) {
 			PyErr_Format(PyExc_TypeError,
 				     "nonempty __slots__ "
 				     "not supported for subtype of '%s'",
 				     base->tp_name);
+		  bad_slots:
+			Py_DECREF(slots);
 			return NULL;
 		}
+
+		/* Check for valid slot names and two special cases */
 		for (i = 0; i < nslots; i++) {
-			if (!valid_identifier(PyTuple_GET_ITEM(slots, i))) {
-				Py_DECREF(slots);
-				return NULL;
+			PyObject *tmp = PyTuple_GET_ITEM(slots, i);
+			char *s;
+			if (!valid_identifier(tmp))
+				goto bad_slots;
+			assert(PyString_Check(tmp));
+			s = PyString_AS_STRING(tmp);
+			if (strcmp(s, "__dict__") == 0) {
+				if (!may_add_dict || add_dict) {
+					PyErr_SetString(PyExc_TypeError,
+						"__dict__ slot disallowed: "
+						"we already got one");
+					goto bad_slots;
+				}
+				add_dict++;
+			}
+			if (strcmp(s, "__weakref__") == 0) {
+				if (!may_add_weak || add_weak) {
+					PyErr_SetString(PyExc_TypeError,
+						"__weakref__ slot disallowed: "
+						"either we already got one, "
+						"or __itemsize__ != 0");
+					goto bad_slots;
+				}
+				add_weak++;
 			}
 		}
 
-		newslots = PyTuple_New(nslots);
+		/* Copy slots into yet another tuple, demangling names */
+		newslots = PyTuple_New(nslots - add_dict - add_weak);
 		if (newslots == NULL)
-			return NULL;
-		for (i = 0; i < nslots; i++) {
+			goto bad_slots;
+		for (i = j = 0; i < nslots; i++) {
+			char *s;
 			tmp = PyTuple_GET_ITEM(slots, i);
+			s = PyString_AS_STRING(tmp);
+			if ((add_dict && strcmp(s, "__dict__") == 0) ||
+			    (add_weak && strcmp(s, "__weakref__") == 0))
+				continue;
 			if (_Py_Mangle(PyString_AS_STRING(name),
-				PyString_AS_STRING(tmp),
-				buffer, sizeof(buffer)))
+				       PyString_AS_STRING(tmp),
+				       buffer, sizeof(buffer)))
 			{
 				tmp = PyString_FromString(buffer);
 			} else {
 				Py_INCREF(tmp);
 			}
-			PyTuple_SET_ITEM(newslots, i, tmp);
+			PyTuple_SET_ITEM(newslots, j, tmp);
+			j++;
 		}
+		assert(j == nslots - add_dict - add_weak);
+		nslots = j;
 		Py_DECREF(slots);
 		slots = newslots;
 
-	}
-	if (slots != NULL) {
 		/* See if *this* class defines __getstate__ */
-		PyObject *getstate = PyDict_GetItemString(dict,
-							  "__getstate__");
-		if (getstate == NULL) {
+		if (PyDict_GetItemString(dict, "__getstate__") == NULL) {
 			/* If not, provide a bozo that raises TypeError */
 			if (bozo_obj == NULL) {
 				bozo_obj = PyCFunction_New(&bozo_ml, NULL);
-				if (bozo_obj == NULL) {
-					/* XXX decref various things */
-					return NULL;
-				}
+				if (bozo_obj == NULL)
+					goto bad_slots;
 			}
 			if (PyDict_SetItemString(dict,
 						 "__getstate__",
-						 bozo_obj) < 0) {
-				/* XXX decref various things */
-				return NULL;
+						 bozo_obj) < 0)
+			{
+				Py_DECREF(bozo_obj);
+				goto bad_slots;
 			}
 		}
-	}
-	if (slots == NULL && base->tp_dictoffset == 0 &&
-	    (base->tp_setattro == PyObject_GenericSetAttr ||
-	     base->tp_setattro == NULL)) {
-		add_dict++;
-	}
-	if (slots == NULL && base->tp_weaklistoffset == 0 &&
-	    base->tp_itemsize == 0) {
-		nslots++;
-		add_weak++;
+
+		/* Secondary bases may provide weakrefs or dict */
+		if (nbases > 1 &&
+		    ((may_add_dict && !add_dict) ||
+		     (may_add_weak && !add_weak))) {
+			for (i = 0; i < nbases; i++) {
+				tmp = PyTuple_GET_ITEM(bases, i);
+				if (tmp == (PyObject *)base)
+					continue; /* Skip primary base */
+				if (PyClass_Check(tmp)) {
+					/* Classic base class provides both */
+					if (may_add_dict && !add_dict)
+						add_dict++;
+					if (may_add_weak && !add_weak)
+						add_weak++;
+					break;
+				}
+				assert(PyType_Check(tmp));
+				tmptype = (PyTypeObject *)tmp;
+				if (may_add_dict && !add_dict &&
+				    tmptype->tp_dictoffset != 0)
+					add_dict++;
+				if (may_add_weak && !add_weak &&
+				    tmptype->tp_weaklistoffset != 0)
+					add_weak++;
+				if (may_add_dict && !add_dict)
+					continue;
+				if (may_add_weak && !add_weak)
+					continue;
+				/* Nothing more to check */
+				break;
+			}
+		}
 	}
 
 	/* XXX From here until type is safely allocated,
@@ -1151,8 +1248,10 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 
 	/* Allocate the type object */
 	type = (PyTypeObject *)metatype->tp_alloc(metatype, nslots);
-	if (type == NULL)
+	if (type == NULL) {
+		Py_XDECREF(slots);
 		return NULL;
+	}
 
 	/* Keep name and slots alive in the extended type object */
 	et = (etype *)type;
@@ -1245,6 +1344,7 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 			mp->offset = slotoffset;
 			if (base->tp_weaklistoffset == 0 &&
 			    strcmp(mp->name, "__weakref__") == 0) {
+				add_weak++;
 				mp->type = T_OBJECT;
 				mp->flags = READONLY;
 				type->tp_weaklistoffset = slotoffset;
@@ -1252,30 +1352,22 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 			slotoffset += sizeof(PyObject *);
 		}
 	}
-	else {
-		if (add_dict) {
-			if (base->tp_itemsize)
-				type->tp_dictoffset =
-					-(long)sizeof(PyObject *);
-			else
-				type->tp_dictoffset = slotoffset;
-			slotoffset += sizeof(PyObject *);
-			type->tp_getset = subtype_getsets;
-		}
-		if (add_weak) {
-			assert(!base->tp_itemsize);
-			type->tp_weaklistoffset = slotoffset;
-			mp->name = "__weakref__";
-			mp->type = T_OBJECT;
-			mp->offset = slotoffset;
-			mp->flags = READONLY;
-			mp++;
-			slotoffset += sizeof(PyObject *);
-		}
+	if (add_dict) {
+		if (base->tp_itemsize)
+			type->tp_dictoffset = -(long)sizeof(PyObject *);
+		else
+			type->tp_dictoffset = slotoffset;
+		slotoffset += sizeof(PyObject *);
+	}
+	if (add_weak) {
+		assert(!base->tp_itemsize);
+		type->tp_weaklistoffset = slotoffset;
+		slotoffset += sizeof(PyObject *);
 	}
 	type->tp_basicsize = slotoffset;
 	type->tp_itemsize = base->tp_itemsize;
 	type->tp_members = et->members;
+	type->tp_getset = subtype_getsets;
 
 	/* Special case some slots */
 	if (type->tp_dictoffset != 0 || nslots > 0) {
