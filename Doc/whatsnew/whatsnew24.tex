@@ -1184,17 +1184,26 @@ not it's a symbolic link.  This differs from the existing
 
 \item The regular expression language accepted by the \module{re} module
    was extended with simple conditional expressions, written as
-   \code{(?(\var{group})\var{A}|\var{B})}.  \var{group} is either a
-   numeric group ID or a group name defined with \code{(?P<group>...)} 
+   \regexp{(?(\var{group})\var{A}|\var{B})}.  \var{group} is either a
+   numeric group ID or a group name defined with \regexp{(?P<group>...)} 
    earlier in the expression.  If the specified group matched, the
    regular expression pattern \var{A} will be tested against the string; if
    the group didn't match, the pattern \var{B} will be used instead.
 
+\item The \module{re} module is also no longer recursive, thanks 
+to a massive amount of work by Gustavo Niemeyer.  In a recursive
+regular expression engine, certain patterns result in a large amount
+of C stack space being consumed, and it was possible to overflow the
+stack.  For example, if you matched a 30000-byte string of \samp{a}
+characters against the expression \regexp{(a|b)+}, one stack frame was
+consumed per character.  Python 2.3 tried to check for stack overflow
+and raise a \exception{RuntimeError} exception, but if you were
+unlucky Python could dump core.  Python 2.4's regular expression
+engine can match this pattern without problems.
+
 \item A new \function{socketpair()} function was added to the
 \module{socket} module, returning a pair of connected sockets. 
 (Contributed by Dave Cole.)
-
-% XXX sre is now non-recursive.
 
 \item The \function{sys.exitfunc()} function has been deprecated.  Code
 should be using the existing \module{atexit} module, which correctly
