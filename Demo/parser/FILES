@@ -1,4 +1,4 @@
-Demo/parser/
+Demo/parser
 Doc/libparser.tex
 Lib/AST.py
 Lib/symbol.py
