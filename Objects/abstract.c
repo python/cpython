@@ -232,8 +232,11 @@ PyObject_GetItem(o, key)
 	if (m && m->mp_subscript)
 		return m->mp_subscript(o, key);
 
-	if (PyInt_Check(key))
-		return PySequence_GetItem(o, PyInt_AsLong(key));
+	if (o->ob_type->tp_as_sequence) {
+		if (PyInt_Check(key))
+			return PySequence_GetItem(o, PyInt_AsLong(key));
+		return type_error("sequence index must be integer");
+	}
 
 	return type_error("unsubscriptable object");
 }
@@ -254,8 +257,12 @@ PyObject_SetItem(o, key, value)
 	if (m && m->mp_ass_subscript)
 		return m->mp_ass_subscript(o, key, value);
 
-	if (PyInt_Check(key))
-		return PySequence_SetItem(o, PyInt_AsLong(key), value);
+	if (o->ob_type->tp_as_sequence) {
+		if (PyInt_Check(key))
+			return PySequence_SetItem(o, PyInt_AsLong(key), value);
+		type_error("sequence index must be integer");
+		return -1;
+	}
 
 	type_error("object does not support item assignment");
 	return -1;
@@ -276,8 +283,12 @@ PyObject_DelItem(o, key)
 	if (m && m->mp_ass_subscript)
 		return m->mp_ass_subscript(o, key, (PyObject*)NULL);
 
-	if (PyInt_Check(key))
-		return PySequence_DelItem(o, PyInt_AsLong(key));
+	if (o->ob_type->tp_as_sequence) {
+		if (PyInt_Check(key))
+			return PySequence_DelItem(o, PyInt_AsLong(key));
+		type_error("sequence index must be integer");
+		return -1;
+	}
 
 	type_error("object does not support item deletion");
 	return -1;
