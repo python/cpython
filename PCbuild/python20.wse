@@ -87,7 +87,7 @@ end
 item: Wizard Block
   Direction Variable=DIRECTION
   Display Variable=DISPLAY
-  Bitmap Pathname=C:\Program Files\Wise\DIALOGS\TEMPLATE\WIZARD.BMP
+  Bitmap Pathname=C:\Wise\DIALOGS\TEMPLATE\WIZARD.BMP
   X Position=9
   Y Position=10
   Filler Color=8421440
@@ -1048,7 +1048,7 @@ item: Set Variable
   Flags=00010100
 end
 item: Include Script
-  Pathname=%_WISE_%\include\uninstal.wse
+  Pathname=C:\Wise\include\uninstal.wse
 end
 item: If/While Statement
   Variable=COMPONENTS
@@ -1150,7 +1150,7 @@ end
 item: Wizard Block
   Direction Variable=DIRECTION
   Display Variable=DISPLAY
-  Bitmap Pathname=C:\Program Files\Wise\DIALOGS\TEMPLATE\WIZARD.BMP
+  Bitmap Pathname=C:\Wise\DIALOGS\TEMPLATE\WIZARD.BMP
   X Position=9
   Y Position=10
   Filler Color=8421440
