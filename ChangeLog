@@ -1,3 +1,30 @@
+Fri Feb 18 09:54:34 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Lib/sgi/flp.py: avoid using time.milli{sleep,timer}
+
+	* Lib/stdwin/WindowSched.py: avoid using time.milli{sleep,timer}
+	-- still maintain time in milliseconds though
+
+	* Lib/sched.py: remove references to milli{timer,sleep} from comments
+
+	* Lib/os.py: made execvp more portable; added os.pathsep and
+	os.defpath
+
+Thu Feb 17 12:53:33 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Lib/ftplib.py(FTP.makeport): call listen(1) instead of listen(0)
+	so it works on Solaris 2
+
+	* Modules/makesetup: reverse order of DEFS so first Setup file can
+	override; any non-cpp uppercase option is sent to the linker
+
+Wed Feb 16 10:26:59 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Objects/fileobject.c: add name, mode, softspace and closed
+	attributes (softspace is also writable).
+
+	* configure.in: in --verbose mode, don't hide compiler output
+
 ========================================================================
 Release of 1.0.1 (Feb 15 1994)
 ========================================================================
