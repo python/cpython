@@ -892,7 +892,7 @@ builtin_xrange(self, v)
 	if (len < 0)
 		len = 0;
 
-	return newrangeobject(start, len, step);
+	return newrangeobject(start, len, step, 1);
 }
 
 static object *
