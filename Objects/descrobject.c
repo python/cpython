@@ -1127,5 +1127,5 @@ PyTypeObject PyProperty_Type = {
 	property_init,				/* tp_init */
 	PyType_GenericAlloc,			/* tp_alloc */
 	PyType_GenericNew,			/* tp_new */
-	_PyObject_GC_Del,			/* tp_free */
+	PyObject_GC_Del,               		/* tp_free */
 };
