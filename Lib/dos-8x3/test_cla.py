@@ -71,7 +71,7 @@ class AllTests:
 
     def __hash__(self, *args):
         print "__hash__:", args
-        return id(self)
+        return hash(id(self))
 
     def __str__(self, *args):
         print "__str__:", args

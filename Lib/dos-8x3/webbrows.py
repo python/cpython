@@ -196,9 +196,7 @@ if sys.platform[:3] == "win":
     register("windows-default", WindowsDefault)
     DEFAULT_BROWSER = "windows-default"
 elif os.environ.get("DISPLAY"):
-    if os.environ.get("KDEDIR"):
-        DEFAULT_BROWSER = "kfm"
-    elif _iscommand("netscape"):
+    if _iscommand("netscape"):
         DEFAULT_BROWSER = "netscape"
 
 # If the $BROWSER environment variable is set and true, let that be
