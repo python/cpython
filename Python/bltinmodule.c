@@ -1114,82 +1114,114 @@ Update and return a dictionary containing the current scope's local variables.")
 
 
 static PyObject *
-min_max(PyObject *args, int op)
+min_max(PyObject *args, PyObject *kwds, int op)
 {
+	PyObject *v, *it, *item, *val, *maxitem, *maxval, *keyfunc=NULL;
 	const char *name = op == Py_LT ? "min" : "max";
-	PyObject *v, *w, *x, *it;
 
 	if (PyTuple_Size(args) > 1)
 		v = args;
 	else if (!PyArg_UnpackTuple(args, (char *)name, 1, 1, &v))
 		return NULL;
 
+	if (kwds != NULL && PyDict_Check(kwds) && PyDict_Size(kwds)) {
+		keyfunc = PyDict_GetItemString(kwds, "key");
+		if (PyDict_Size(kwds)!=1  ||  keyfunc == NULL) {
+			PyErr_Format(PyExc_TypeError, 
+				"%s() got an unexpected keyword argument", name);
+			return NULL;
+		}
+	} 
+
 	it = PyObject_GetIter(v);
 	if (it == NULL)
 		return NULL;
 
-	w = NULL;  /* the result */
-	for (;;) {
-		x = PyIter_Next(it);
-		if (x == NULL) {
-			if (PyErr_Occurred()) {
-				Py_XDECREF(w);
-				Py_DECREF(it);
-				return NULL;
-			}
-			break;
+	maxitem = NULL; /* the result */
+	maxval = NULL;  /* the value associated with the result */
+	while (item = PyIter_Next(it)) {
+		/* get the value from the key function */
+		if (keyfunc != NULL) {
+			val = PyObject_CallFunctionObjArgs(keyfunc, item, NULL);
+			if (val == NULL)
+				goto Fail_it_item;
+		}
+		/* no key function; the value is the item */
+		else {
+			val = item;
+			Py_INCREF(val);
 		}
 
-		if (w == NULL)
-			w = x;
+		/* maximum value and item are unset; set them */
+		if (maxval == NULL) {
+			maxitem = item;
+			maxval = val;
+		}
+		/* maximum value and item are set; update them as necessary */
 		else {
-			int cmp = PyObject_RichCompareBool(x, w, op);
-			if (cmp > 0) {
-				Py_DECREF(w);
-				w = x;
+			int cmp = PyObject_RichCompareBool(val, maxval, op);
+			if (cmp < 0)
+				goto Fail_it_item_and_val;
+			else if (cmp > 0) {
+				Py_DECREF(maxval);
+				Py_DECREF(maxitem);
+				maxval = val;
+				maxitem = item;
 			}
-			else if (cmp < 0) {
-				Py_DECREF(x);
-				Py_DECREF(w);
-				Py_DECREF(it);
-				return NULL;
+			else {
+				Py_DECREF(item);
+				Py_DECREF(val);
 			}
-			else
-				Py_DECREF(x);
 		}
 	}
-	if (w == NULL)
+	if (PyErr_Occurred())
+		goto Fail_it;
+	if (maxval == NULL) {
 		PyErr_Format(PyExc_ValueError,
 			     "%s() arg is an empty sequence", name);
+		assert(maxitem == NULL);
+	}
+	else
+		Py_DECREF(maxval);
 	Py_DECREF(it);
-	return w;
+	return maxitem;
+
+Fail_it_item_and_val:
+	Py_DECREF(val);
+Fail_it_item:
+	Py_DECREF(item);
+Fail_it:
+	Py_XDECREF(maxval);
+	Py_XDECREF(maxitem);
+	Py_DECREF(it);
+	return NULL;
 }
 
 static PyObject *
-builtin_min(PyObject *self, PyObject *v)
+builtin_min(PyObject *self, PyObject *args, PyObject *kwds)
 {
-	return min_max(v, Py_LT);
+	return min_max(args, kwds, Py_LT);
 }
 
 PyDoc_STRVAR(min_doc,
-"min(sequence) -> value\n\
-min(a, b, c, ...) -> value\n\
+"min(iterable[, key=func]) -> value\n\
+min(a, b, c, ...[, key=func]) -> value\n\
 \n\
-With a single sequence argument, return its smallest item.\n\
+With a single iterable argument, return its smallest item.\n\
 With two or more arguments, return the smallest argument.");
 
 
 static PyObject *
-builtin_max(PyObject *self, PyObject *v)
+builtin_max(PyObject *self, PyObject *args, PyObject *kwds)
 {
-	return min_max(v, Py_GT);
+	return min_max(args, kwds, Py_GT);
 }
 
 PyDoc_STRVAR(max_doc,
-"max(sequence) -> value\n\
-max(a, b, c, ...) -> value\n\
+"max(iterable[, key=func]) -> value\n\
+max(a, b, c, ...[, key=func]) -> value\n\
 \n\
-With a single sequence argument, return its largest item.\n\
+With a single iterable argument, return its largest item.\n\
 With two or more arguments, return the largest argument.");
 
 
@@ -2119,8 +2151,8 @@ static PyMethodDef builtin_methods[] = {
  	{"len",		builtin_len,        METH_O, len_doc},
  	{"locals",	(PyCFunction)builtin_locals,     METH_NOARGS, locals_doc},
  	{"map",		builtin_map,        METH_VARARGS, map_doc},
- 	{"max",		builtin_max,        METH_VARARGS, max_doc},
- 	{"min",		builtin_min,        METH_VARARGS, min_doc},
+ 	{"max",		(PyCFunction)builtin_max,        METH_VARARGS | METH_KEYWORDS, max_doc},
+ 	{"min",		(PyCFunction)builtin_min,        METH_VARARGS | METH_KEYWORDS, min_doc},
  	{"oct",		builtin_oct,        METH_O, oct_doc},
  	{"ord",		builtin_ord,        METH_O, ord_doc},
  	{"pow",		builtin_pow,        METH_VARARGS, pow_doc},
