@@ -285,7 +285,10 @@ class ForkingMixIn:
     def collect_children(self):
         """Internal routine to wait for died children."""
         while self.active_children:
-            pid, status = os.waitpid(0, os.WNOHANG)
+            try:
+                pid, status = os.waitpid(0, os.WNOHANG)
+            except os.error:
+                pid = None
             if not pid: break
             self.active_children.remove(pid)
 
