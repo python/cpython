@@ -507,7 +507,7 @@ resizestring(pv, newsize)
 		return -1;
 	}
 	/* XXX UNREF/NEWREF interface should be more symmetrical */
-#ifdef REF_DEBUG
+#ifdef Py_REF_DEBUG
 	--_Py_RefTotal;
 #endif
 	UNREF(v);

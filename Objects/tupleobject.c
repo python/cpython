@@ -418,7 +418,7 @@ resizetuple(pv, newsize, last_is_sticky)
 	if (sizediff == 0)
 		return 0;
 	/* XXX UNREF/NEWREF interface should be more symmetrical */
-#ifdef REF_DEBUG
+#ifdef Py_REF_DEBUG
 	--_Py_RefTotal;
 #endif
 	UNREF(v);

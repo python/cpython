@@ -347,8 +347,8 @@ instance_dealloc(inst)
 	object *del;
 	/* Call the __del__ method if it exists.  First temporarily
 	   revive the object and save the current exception, if any. */
-#ifdef TRACE_REFS
-	/* much too complicated if TRACE_REFS defined */
+#ifdef Py_TRACE_REFS
+	/* much too complicated if Py_TRACE_REFS defined */
 	extern long ref_total;
 	inst->ob_type = &Instancetype;
 	NEWREF(inst);
@@ -356,9 +356,9 @@ instance_dealloc(inst)
 #ifdef COUNT_ALLOCS
 	inst->ob_type->tp_alloc--; /* ditto */
 #endif
-#else
+#else /* !Py_TRACE_REFS */
 	INCREF(inst);
-#endif /* TRACE_REFS */
+#endif /* !Py_TRACE_REFS */
 	err_fetch(&error_type, &error_value, &error_traceback);
 	if ((del = instance_getattr1(inst, "__del__")) != NULL) {
 		object *res = call_object(del, (object *)NULL);
@@ -375,13 +375,13 @@ instance_dealloc(inst)
 #endif
 		return; /* __del__ added a reference; don't delete now */
 	}
-#ifdef TRACE_REFS
+#ifdef Py_TRACE_REFS
 #ifdef COUNT_ALLOCS
 	inst->ob_type->tp_free--;	/* compensate for increment in UNREF */
 #endif
 	UNREF(inst);
 	inst->ob_type = NULL;
-#endif /* TRACE_REFS */
+#endif /* Py_TRACE_REFS */
 	DECREF(inst->in_class);
 	XDECREF(inst->in_dict);
 	free((ANY *)inst);
