@@ -6,7 +6,8 @@ import types
 
 __all__ = ["BdbQuit","Bdb","Breakpoint"]
 
-class BdbQuit(Exception): pass
+class BdbQuit(Exception):
+    """Exception to give up completely"""
 
 
 class Bdb:

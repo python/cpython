@@ -170,7 +170,8 @@ def expanduser(path):
     """Dummy to retain interface-compatibility with other operating systems."""
     return path
 
-class norm_error(Exception): pass
+class norm_error(Exception):
+    """Path cannot be normalized"""
 
 def normpath(s):
     """Normalize a pathname.  Will return the same result for
