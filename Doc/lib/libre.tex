@@ -297,6 +297,8 @@ the space after the group).  This special sequence can only be used to
 match one of the first 99 groups.  If the first digit of \var{number}
 is 0, or \var{number} is 3 octal digits long, it will not be interpreted
 as a group match, but as the character with octal value \var{number}.
+(There is a group 0, which is the entire matched pattern, but it can't
+be referenced with \regexp{\e 0}; instead, use \regexp{\e g<0>}.)
 Inside the \character{[} and \character{]} of a character class, all numeric
 escapes are treated as characters. 
 
@@ -566,7 +568,9 @@ ignored.
   \samp{\e g<2>} is therefore equivalent to \samp{\e 2}, but isn't
   ambiguous in a replacement such as \samp{\e g<2>0}.  \samp{\e 20}
   would be interpreted as a reference to group 20, not a reference to
-  group 2 followed by the literal character \character{0}.
+  group 2 followed by the literal character \character{0}.  The
+  backreference \samp{\e g<0>} substitutes in the entire substring
+  matched by the RE.
 \end{funcdesc}
 
 \begin{funcdesc}{subn}{pattern, repl, string\optional{, count}}
