@@ -569,7 +569,7 @@ class Misc:
 		# not an integer:
 		try:
 			e.state = getint(s)
-		except TclError:
+		except ValueError:
 			e.state = s
 		e.time = getint(t)
 		e.width = getint(w)
@@ -1547,7 +1547,7 @@ class Scale(Widget):
 		value = self.tk.call(self._w, 'get')
 		try:
 			return getint(value)
-		except TclError:
+		except ValueError:
 			return getdouble(value)
 	def set(self, value):
 		self.tk.call(self._w, 'set', value)
