@@ -1,4 +1,3 @@
-
 /* Return the initial module search path. */
 
 #include "Python.h"
@@ -371,16 +370,31 @@ calculate_path(void)
 #endif
 	
 #ifdef WITH_NEXT_FRAMEWORK
-    /* XXX Need to check this code for buffer overflows */
     pythonModule = NSModuleForSymbol(NSLookupAndBindSymbol("_Py_Initialize"));
     /* Use dylib functions to find out where the framework was loaded from */
     buf = NSLibraryNameForModule(pythonModule);
     if (buf != NULL) {
         /* We're in a framework. */
-        strcpy(progpath, buf);
-
-        /* Frameworks have support for versioning */
-        strcpy(lib_python, "lib");
+        /* See if we might be in the build directory. The framework in the
+        ** build directory is incomplete, it only has the .dylib and a few
+        ** needed symlinks, it doesn't have the Lib directories and such.
+        ** If we're running with the framework from the build directory we must
+        ** be running the interpreter in the build directory, so we use the
+        ** build-directory-specific logic to find Lib and such.
+        */
+        strncpy(argv0_path, buf, MAXPATHLEN);
+        reduce(argv0_path);
+        joinpath(argv0_path, lib_python);
+        joinpath(argv0_path, LANDMARK);
+        if (!ismodule(argv0_path)) {
+        	/* We are in the build directory so use the name of the 
+        	   executable - we know that the absolute path is passed */
+        	strncpy(progpath, prog, MAXPATHLEN);
+        }
+        else {
+        	/* Use the location of the library as the progpath */
+	        strncpy(progpath, buf, MAXPATHLEN);
+        }
     }
     else {
         /* If we're not in a framework, fall back to the old way
