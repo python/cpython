@@ -279,18 +279,18 @@ postscript-$(PAPER)-$(RELEASE).zip: ps
 
 html-$(RELEASE).tgz:	html
 	(cd $(HTMLDIR); \
-		tar cf - *index.html */*.css */*.html */*.gif) \
+		tar cf - *.html */*.css */*.html */*.gif) \
 		| gzip -9 >$@
 
 html-$(RELEASE).tar.bz2:	html
 	(cd $(HTMLDIR); \
-		tar cf - *index.html */*.css */*.html */*.gif) \
+		tar cf - *.html */*.css */*.html */*.gif) \
 		| bzip2 -9 >$@
 
 html-$(RELEASE).zip:	html
 	rm -f $@
 	(cd $(HTMLDIR); \
-		zip -q -9 ../$@ *index.html */*.css */*.html */*.gif)
+		zip -q -9 ../$@ *.html */*.css */*.html */*.gif)
 
 longhtml-$(RELEASE).zip:	longhtml
 	rm -f $@
