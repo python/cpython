@@ -1,21 +1,11 @@
 /*
-  $Log$
-  Revision 1.2  2001/11/06 12:06:39  jackjansen
-  First couple of fixes to make it compile with Universal 3.3.2.
-
-  Revision 1.8  2001/10/03 17:29:01  ganatra
-  add parent method to FSRef class
-
-  Revision 1.7  2001/04/13 20:54:19  ganatra
-  More standard format for MacOSError exceptions
-
-  Revision 1.6  2001/04/11 04:07:40  ganatra
-  Add permissions constants and log header..
-
+** Interface to hfs+ API.
+** Contributed by Nitin Ganatra.
 */
 
 
 #include "Python.h"
+#include "pymactoolbox.h"
 #ifdef WITHOUT_FRAMEWORKS
 #include <Files.h>
 #else
@@ -673,6 +663,19 @@ PyObject *fsRefObject_parent(fsRefObject *self, PyObject *args)
 }
 
 //__________________________________________________________________________________________________
+static char fsRefObject_as_fsref__doc__[] =
+"as_fsref() -> macfs.fsref\n\n\
+Return a macfs.fsref-style object from an hfsplus.fsref style object";
+
+static
+PyObject *fsRefObject_as_fsref(fsRefObject *self, PyObject *args)
+{
+	if (!PyArg_ParseTuple(args, ""))
+		return NULL;
+	return PyMac_BuildFSRef(&self->ref);
+}
+
+//__________________________________________________________________________________________________
 static char fsRefObject_openfork__doc__[] =
 "openfork([resourcefork [,perms]]) -> forkRef\n\n\
 Return a forkRef object for reading/writing/etc. Optionally,\n\
@@ -975,6 +978,7 @@ static PyMethodDef fsRefObject_methods[] = {
 	{"opendir",		(PyCFunction)fsRefObject_opendir,	METH_VARARGS,	fsRefObject_opendir__doc__},
 	{"openfork", 	(PyCFunction)fsRefObject_openfork,	METH_VARARGS,	fsRefObject_openfork__doc__},
 
+	{"as_fsref",	(PyCFunction)fsRefObject_as_fsref,	METH_VARARGS,	fsRefObject_as_fsref__doc__},
 	{NULL,		NULL}
 };
 
@@ -1041,7 +1045,7 @@ statichere PyTypeObject fsRefObject_Type = {
 //__________________________________________________________________________________________________
 //____________________________________ MODULE FUNCTIONS ____________________________________________
 //__________________________________________________________________________________________________
-static char fmgrmodule_getcatinfo__doc__[] =
+static char hfsplusmodule_getcatinfo__doc__[] =
 "getcatinfo(path[,bitmap]) -> Dict\n\n\
 Returns a dictionary of attributes for the given item\n\
 and an optional bitmap describing the attributes to be\n\
@@ -1049,9 +1053,8 @@ fetched (see CarbonCore/Files.h for details of the bit\n\
 definitions and key definitions).";
 
 static
-PyObject *fmgrmodule_getcatinfo(PyObject *self, PyObject *args)
+PyObject *hfsplusmodule_getcatinfo(PyObject *self, PyObject *args)
 {
-	char *path;
 	PyObject *dict;
 	FSRef ref;
 	OSErr err;
@@ -1059,20 +1062,14 @@ PyObject *fmgrmodule_getcatinfo(PyObject *self, PyObject *args)
 	HFSUniStr255 uni;
 	FSCatalogInfoBitmap	bitmap = kFSCatInfoGettableInfo;
 
-	if (!PyArg_ParseTuple(args, "s|l", &path, &bitmap))
+	if (!PyArg_ParseTuple(args, "O&|l", PyMac_GetFSRef, &ref, &bitmap))
 		return NULL;
-
-	Py_BEGIN_ALLOW_THREADS
-	err = FSPathMakeRef((UInt8 *)path, &ref, NULL);
-	Py_END_ALLOW_THREADS
-	if (err != noErr) 
-		return macos_error_for_call(err, "FSPathMakeRef", path);
 
 	Py_BEGIN_ALLOW_THREADS
 	err = FSGetCatalogInfo(&ref, bitmap, &info, &uni, NULL, NULL);
 	Py_END_ALLOW_THREADS
 	if (err != noErr) 
-		return macos_error_for_call(err, "FSGetCatalogInfo", path);
+		return macos_error_for_call(err, "FSGetCatalogInfo", NULL);
 
 	dict = dict_from_cataloginfo(bitmap, &info, &uni);
 	if (dict == NULL)
@@ -1083,30 +1080,27 @@ PyObject *fmgrmodule_getcatinfo(PyObject *self, PyObject *args)
 }
 
 //__________________________________________________________________________________________________
-static char fmgrmodule_opendir__doc__[] =
+static char hfsplusmodule_opendir__doc__[] =
 "opendir(path) -> iterator\n\n\
 Return an iterator for listdir.";
 
 static
-PyObject *fmgrmodule_opendir(PyObject *self, PyObject *args)
+PyObject *hfsplusmodule_opendir(PyObject *self, PyObject *args)
 {
-	char *path;
 	iteratorObject *rv;
 	FSRef ref;
 	OSErr err;
+#if 0
 	Boolean	isdir;
+#endif
 
-	if (!PyArg_ParseTuple(args, "s", &path))
+	if (!PyArg_ParseTuple(args, "O&", PyMac_GetFSRef, &ref))
 		return NULL;
 
-	Py_BEGIN_ALLOW_THREADS
-	err = FSPathMakeRef((UInt8 *)path, &ref, &isdir);
-	Py_END_ALLOW_THREADS
-
-	if (err != noErr)
-		return macos_error_for_call(err, "FSPathMakeRef", path);
-	else if (isdir == false)
+#if 0
+	if (isdir == false)
 		return PyErr_Format(PyExc_SyntaxError, "requires a directory");
+#endif
 
 	rv = newIteratorObject(args, &ref);
 	if (rv == NULL)
@@ -1115,28 +1109,19 @@ PyObject *fmgrmodule_opendir(PyObject *self, PyObject *args)
 }
 
 //__________________________________________________________________________________________________
-static char fmgrmodule_fsref__doc__[] =
+static char hfsplusmodule_fsref__doc__[] =
 "fsref(path) -> FSRef\n\n\
 Return an FSRef object.";
 
 static
-PyObject *fmgrmodule_fsref(PyObject *self, PyObject *args)
+PyObject *hfsplusmodule_fsref(PyObject *self, PyObject *args)
 {
-	char *path;
 	fsRefObject *obj;
 	FSRef ref;
-	OSErr err;
-	Boolean isdir;
+	Boolean isdir = 0;
 
-	if (!PyArg_ParseTuple(args, "s", &path))
+	if (!PyArg_ParseTuple(args, "O&", PyMac_GetFSRef, &ref))
 		return NULL;
-
-	Py_BEGIN_ALLOW_THREADS
-	err = FSPathMakeRef((UInt8 *)path, &ref, &isdir);
-	Py_END_ALLOW_THREADS
-
-	if (err != noErr)
-		return macos_error_for_call(err, "FSPathMakeRef", path);
 
 	obj = newFSRefObject(args, &ref, true, isdir);
 	if (obj == NULL)
@@ -1145,7 +1130,7 @@ PyObject *fmgrmodule_fsref(PyObject *self, PyObject *args)
 }
 
 //__________________________________________________________________________________________________
-static char fmgrmodule_openfork__doc__[] =
+static char hfsplusmodule_openfork__doc__[] =
 "openfork(path[,resourcefork[,perms]]) -> forkRef\n\n\
 Return a forkRef object for reading/writing/etc. Optionally,\n\
 pass 1 for the resourcefork param to open the resource fork,\n\
@@ -1157,27 +1142,23 @@ and permissions to open read-write or something else:\n\
 4: fsRdWrShPerm";
 
 static
-PyObject *fmgrmodule_openfork(PyObject *self, PyObject *args)
+PyObject *hfsplusmodule_openfork(PyObject *self, PyObject *args)
 {
-	char *path;
 	forkRefObject *rv;
 	FSRef ref;
-	OSErr err;
+#if 0
 	Boolean	isdir;
+#endif
 	int resfork = 0, perms = fsRdPerm;
 
-	if (!PyArg_ParseTuple(args, "s|ii", &path, &resfork, &perms))
+	if (!PyArg_ParseTuple(args, "s|ii", PyMac_GetFSRef, &ref, &resfork, &perms))
 		return NULL;
 
-	Py_BEGIN_ALLOW_THREADS
-	err = FSPathMakeRef((UInt8 *)path, &ref, &isdir);
-	Py_END_ALLOW_THREADS
-
-	if (err != noErr) {
-		return macos_error_for_call(err, "FSPathMakeRef", path);
-	} else if (isdir == true) {
+#if 0
+	if (isdir == true) {
 		return PyErr_Format(PyExc_SyntaxError, "requires a file");
 	}
+#endif
 
 	rv = newForkRefObject(args, &ref, resfork, perms);
 	if (rv == NULL)
@@ -1188,11 +1169,11 @@ PyObject *fmgrmodule_openfork(PyObject *self, PyObject *args)
 //__________________________________________________________________________________________________
 // List of functions defined in the module
 //
-static PyMethodDef fmgrmodule_methods[] = {
-	{"getcatinfo",	fmgrmodule_getcatinfo,	METH_VARARGS,	fmgrmodule_getcatinfo__doc__},
-	{"opendir",	fmgrmodule_opendir,	METH_VARARGS,			fmgrmodule_opendir__doc__},
-	{"openfork", fmgrmodule_openfork,	METH_VARARGS,		fmgrmodule_openfork__doc__},
-	{"fsref", fmgrmodule_fsref,	METH_VARARGS,				fmgrmodule_fsref__doc__},
+static PyMethodDef hfsplusmodule_methods[] = {
+	{"getcatinfo",	hfsplusmodule_getcatinfo,	METH_VARARGS,	hfsplusmodule_getcatinfo__doc__},
+	{"opendir",	hfsplusmodule_opendir,	METH_VARARGS,			hfsplusmodule_opendir__doc__},
+	{"openfork", hfsplusmodule_openfork,	METH_VARARGS,		hfsplusmodule_openfork__doc__},
+	{"fsref", hfsplusmodule_fsref,	METH_VARARGS,				hfsplusmodule_fsref__doc__},
 	{NULL,		NULL}
 };
 
@@ -1211,7 +1192,7 @@ inithfsplus(void)
 	fsRefObject_Type.ob_type = &PyType_Type;
 
 	/* Create the module and add the functions */
-	m = Py_InitModule("fmgr", fmgrmodule_methods);
+	m = Py_InitModule("hfsplus", hfsplusmodule_methods);
 
 	/* Add some symbolic constants to the module */
 	d = PyModule_GetDict(m);
@@ -1225,7 +1206,7 @@ inithfsplus(void)
 	insert_int(d, "fsFromLEOF", fsFromLEOF);
 	insert_int(d, "fsFromMark", fsFromMark);
 	insert_int(d, "noCacheMask", noCacheMask);
-	ErrorObject = PyErr_NewException("fmgr.error", NULL, NULL);
+	ErrorObject = PyErr_NewException("hfsplus.error", NULL, NULL);
 	PyDict_SetItemString(d, "error", ErrorObject);
 }
 
