@@ -1,0 +1,66 @@
+\section{\module{winsound} ---
+         Sound-playing interface for Windows}
+
+\declaremodule{builtin}{winsound}
+\modulesynopsis{Access to the sound-playing machinery for Windows.}
+\moduleauthor{Toby Dickenson}{htrd90@zepler.org}
+\sectionauthor{Fred L. Drake, Jr.}{fdrake@acm.org}
+
+
+The \module{winsound} module provides access to the basic
+sound-playing machinery provided by Windows platforms.  It includes a
+single function and several constants.
+
+
+\begin{funcdesc}{PlaySound}{sound, flags}
+  Call the underlying \cfunction{PlaySound()} function from the
+  Platform API.  The \var{sound} parameter may be a filename, audio
+  data as a string, or \code{None}.  Its interpretation depends on the
+  value of \var{flags}, which can be a bit-wise ORed combination of
+  the constants described below.  If the system indicates an error,
+  \exception{RuntimeError} is raised.
+\end{funcdesc}
+
+
+\begin{datadesc}{SND_FILENAME}
+  The \var{sound} parameter is the name of a WAV file.
+\end{datadesc}
+
+\begin{datadesc}{SND_ALIAS}
+  The \var{sound} parameter should be interpreted as a control panel
+  sound association name.
+\end{datadesc}
+
+\begin{datadesc}{SND_LOOP}
+  Play the sound repeatedly.  The \constant{SND_ASYNC} flag must also
+  be used to avoid blocking.
+\end{datadesc}
+
+\begin{datadesc}{SND_MEMORY}
+  The \var{sound} parameter to \function{PlaySound()} is a memory
+  image of a WAV file.
+
+  \strong{Note:}  This module does not support playing from a memory
+  image asynchonously, so a combination of this flag and
+  \constant{SND_ASYNC} will raise a \exception{RuntimeError}.
+\end{datadesc}
+
+\begin{datadesc}{SND_PURGE}
+  Stop playing all instances of the specified sound.
+\end{datadesc}
+
+\begin{datadesc}{SND_ASYNC}
+  Return immediately, allowing sounds to play asynchronously.
+\end{datadesc}
+
+\begin{datadesc}{SND_NODEFAULT}
+  If the specified sound cannot be found, do not play a default beep.
+\end{datadesc}
+
+\begin{datadesc}{SND_NOSTOP}
+  Do not interrupt sounds currently playing.
+\end{datadesc}
+
+\begin{datadesc}{SND_NOWAIT}
+  Return immediately if the sound driver is busy.
+\end{datadesc}
