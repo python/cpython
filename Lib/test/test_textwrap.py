@@ -23,7 +23,7 @@ class BaseTestCase(unittest.TestCase):
             for i in range(len(textin)):
                 result.append("  %d: %r" % (i, textin[i]))
             result = '\n'.join(result)
-        elif isinstance(textin, (str, unicode)):
+        elif isinstance(textin, basestring):
             result = "  %s\n" % repr(textin)
         return result
 
