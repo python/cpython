@@ -215,6 +215,9 @@
 /* Define if you have the clock function.  */
 #undef HAVE_CLOCK
 
+/* Define if you have the confstr function.  */
+#undef HAVE_CONFSTR
+
 /* Define if you have the ctermid function.  */
 #undef HAVE_CTERMID
 
@@ -238,6 +241,9 @@
 
 /* Define if you have the fork function.  */
 #undef HAVE_FORK
+
+/* Define if you have the fpathconf function.  */
+#undef HAVE_FPATHCONF
 
 /* Define if you have the fseek64 function.  */
 #undef HAVE_FSEEK64
@@ -266,17 +272,14 @@
 /* Define if you have the getcwd function.  */
 #undef HAVE_GETCWD
 
-/* Define if you have the getpeername function.  */
-#undef HAVE_GETPEERNAME
-
 /* Define if you have the getgroups function.  */
 #undef HAVE_GETGROUPS
 
 /* Define if you have the getlogin function.  */
 #undef HAVE_GETLOGIN
 
-/* Define if you have the getlogin_r function.  */
-#undef HAVE_GETLOGIN_R
+/* Define if you have the getpeername function.  */
+#undef HAVE_GETPEERNAME
 
 /* Define if you have the getpgrp function.  */
 #undef HAVE_GETPGRP
@@ -292,18 +295,6 @@
 
 /* Define if you have the getwd function.  */
 #undef HAVE_GETWD
-
-/* Define if you have the fpathconf function.  */
-#undef HAVE_FPATHCONF
-
-/* Define if you have the pathconf function.  */
-#undef HAVE_PATHCONF
-
-/* Define if you have the confstr function.  */
-#undef HAVE_CONFSTR
-
-/* Define if you have the sysconf function.  */
-#undef HAVE_SYSCONF
 
 /* Define if you have the hypot function.  */
 #undef HAVE_HYPOT
@@ -328,6 +319,9 @@
 
 /* Define if you have the nice function.  */
 #undef HAVE_NICE
+
+/* Define if you have the pathconf function.  */
+#undef HAVE_PATHCONF
 
 /* Define if you have the pause function.  */
 #undef HAVE_PAUSE
@@ -394,6 +388,9 @@
 
 /* Define if you have the symlink function.  */
 #undef HAVE_SYMLINK
+
+/* Define if you have the sysconf function.  */
+#undef HAVE_SYSCONF
 
 /* Define if you have the tcgetpgrp function.  */
 #undef HAVE_TCGETPGRP
