@@ -194,21 +194,30 @@ sys_getcounts(self, args)
 extern PyObject *_Py_GetObjects Py_PROTO((PyObject *, PyObject *));
 #endif
 
+#ifdef DYNAMIC_EXECUTION_PROFILE
+/* Defined in ceval.c because it uses static globals if that file */
+extern PyObject *_Py_GetDXProfile Py_PROTO((PyObject *,  PyObject *));
+#endif
+
 static struct methodlist sys_methods[] = {
+	/* Might as well keep this in alphabetic order */
 	{"exit",	sys_exit, 0},
-	{"getrefcount",	sys_getrefcount, 0},
 #ifdef COUNT_ALLOCS
 	{"getcounts",	sys_getcounts, 0},
+#endif
+#ifdef DYNAMIC_EXECUTION_PROFILE
+	{"getdxp",	_Py_GetDXProfile, 1},
 #endif
 #ifdef Py_TRACE_REFS
 	{"getobjects",	_Py_GetObjects, 1},
 #endif
+	{"getrefcount",	sys_getrefcount, 0},
 #ifdef USE_MALLOPT
 	{"mdebug",	sys_mdebug, 0},
 #endif
+	{"setcheckinterval",	sys_setcheckinterval, 1},
 	{"setprofile",	sys_setprofile, 0},
 	{"settrace",	sys_settrace, 0},
-	{"setcheckinterval",	sys_setcheckinterval, 1},
 	{NULL,		NULL}		/* sentinel */
 };
 
