@@ -103,7 +103,7 @@ ecre = re.compile(r'''
 
 
 
-def formatdate(timeval=None, localtime=False):
+def formatdate(timeval=None, localtime=False, usegmt=False):
     """Returns a date string as specified by RFC 2822, e.g.:
 
     Fri, 09 Nov 2001 01:08:47 -0000
@@ -114,6 +114,10 @@ def formatdate(timeval=None, localtime=False):
     Optional localtime is a flag that when True, interprets timeval, and
     returns a date relative to the local timezone instead of UTC, properly
     taking daylight savings time into account.
+
+    Optional argument usegmt means that the timezone is written out as 
+    an ascii string, not numeric one (so "GMT" instead of "+0000"). This
+    is needed for HTTP, and is only used when localtime==False.
     """
     # Note: we cannot use strftime() because that honors the locale and RFC
     # 2822 requires that day and month names be the English abbreviations.
@@ -138,7 +142,10 @@ def formatdate(timeval=None, localtime=False):
     else:
         now = time.gmtime(timeval)
         # Timezone offset is always -0000
-        zone = '-0000'
+        if usegmt:
+            zone = 'GMT'
+        else:
+            zone = '-0000'
     return '%s, %02d %s %04d %02d:%02d:%02d %s' % (
         ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][now[6]],
         now[2],
