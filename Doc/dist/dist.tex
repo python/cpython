@@ -652,6 +652,55 @@ setup(...
 \end{verbatim}
 
 
+\subsection{Installing Package Data}
+
+Often, additional files need to be installed into a package.  These
+files are often data that's closely related to the package's
+implementation, or text files containing documentation that might be
+of interest to programmers using the package.  These files are called
+\dfn{package data}.
+
+Package data can be added to packages using the \code{package_data}
+keyword argument to the \function{setup()} function.  The value must
+be a mapping from package name to a list of relative path names that
+should be copied into the package.  The paths are interpreted as
+relative to the directory containing the package (information from the
+\code{package_dir} mapping is used if appropriate); that is, the files
+are expected to be part of the package in the source directories.
+They may contain glob patterns as well.
+
+The path names may contain directory portions; any necessary
+directories will be created in the installation.
+
+For example, if a package should contain a subdirectory with several
+data files, the files can be arranged like this in the source tree:
+
+\begin{verbatim}
+setup.py
+src/
+    mypkg/
+        __init__.py
+        module.py
+        data/
+            tables.dat
+            spoons.dat
+            forks.dat
+\end{verbatim}
+
+The corresponding call to \function{setup()} might be:
+
+\begin{verbatim}
+setup(...,
+      packages=['mypkg'],
+      package_dir={'mypkg': 'src/mypkg'},
+      package_data={'pypkg': ['data/*.dat']},
+      )
+\end{verbatim}
+
+
+\versionadded{2.4}
+
+
 \subsection{Installing Additional Files}
 
 The \option{data\_files} option can be used to specify additional
