@@ -33,7 +33,12 @@ $TOP_NAVIGATION = 1;
 $BOTTOM_NAVIGATION = 1;
 $AUTO_NAVIGATION = 0;
 
-$BODYTEXT = 'bgcolor="#ffffff"';
+$SUPPRESS_CONTENTS = 0;
+$SUPPRESS_INDEXES = 0;
+
+# these exactly match the python.org colors
+$BODYTEXT = ('bgcolor="#ffffff" text="#000000"'
+	     . ' link="#0000bb"  vlink="#551a8b" alink="#ff0000"');
 $CHILDLINE = "\n<p><hr>\n";
 $VERBOSITY = 0;
 
@@ -86,6 +91,23 @@ sub custom_driver_hook{
     print "\nadding $dir to \$TEXINPUTS\n";
 }
 
+# Defining this allows us to remove all table of contents and index
+# processing using an init file; this is required to get rid of the
+# Table of Contents or we'd get a blank page.  Based on a suggestion
+# from Ross Moore <ross@ics.mq.edu.au>.
+#
+# Seems to require a more recent version of LaTeX2HTML than I've
+# been using, though.
+#
+sub preprocess{
+    if ($SUPPRESS_CONTENTS) {
+	s/\\(tableofcontents|listof(figures|tables))/\2/g;
+    }
+    if ($SUPPRESS_INDEXES) {
+	s/\\(print|make)index//g;
+    }
+}
+
 
 sub set_icon_size{
     my($name, $w, $h) = @_;
@@ -95,22 +117,28 @@ sub set_icon_size{
 foreach $name (split(/ /, 'up next previous contents index modules blank')) {
     set_icon_size($name, 32, 32);
 }
-# The '_motif' is really annoying, and makes the HTML larger with no value
-# added, so strip it off:
-foreach $name (keys %icons) {
-    my $icon = $icons{$name};
-    # Strip off the wasteful '_motif':
-    $icon =~ s/_motif//;
-    # Change the greyed-out icons to be blank:
-    $icon =~ s/[a-z]*_gr/blank/;
-    $icons{$name} = $icon;
+sub adjust_icon_information{
+    # The '_motif' is really annoying, and makes the HTML larger with no value
+    # added, so strip it off:
+    foreach $name (keys %icons) {
+        my $icon = $icons{$name};
+        # Strip off the wasteful '_motif':
+        $icon =~ s/_motif//;
+        # Change the greyed-out icons to be blank:
+        $icon =~ s/[a-z]*_gr[.]/blank./;
+        # make sure we're using the latest $IMAGE_TYPE
+        $icon =~ s/[.](gif|png)$/.$IMAGE_TYPE/;
+        $icons{$name} = $icon;
+    }
+    $icons{'blank'} = 'blank.' . $IMAGE_TYPE;
+    
+    $CUSTOM_BUTTONS = '';
+    $BLANK_ICON = "\n<td>" . img_tag('blank.' . $IMAGE_TYPE) . "</td>";
+    $BLANK_ICON =~ s/alt="blank"/alt=""/;
+    $NAV_BGCOLOR = " bgcolor=\"#99CCFF\"";
 }
-$icons{'blank'} = 'blank.' . $IMAGE_TYPE;
+adjust_icon_information();
 
-$CUSTOM_BUTTONS = '';
-$BLANK_ICON = "\n<td>" . img_tag('blank.' . $IMAGE_TYPE) . "</td>";
-$BLANK_ICON =~ s/alt="blank"/alt=""/;
-$NAV_BGCOLOR = " bgcolor=\"#99CCFF\"";
 
 sub make_nav_sectref{
     my($label,$title) = @_;
@@ -127,17 +155,23 @@ sub make_nav_panel{
          . "\n<tr>"
 	 . "\n<td>$NEXT</td>"
 	 . "\n<td>$UP</td>"
-	 . "\n<td>$PREVIOUS</td>"
-	 . "\n<td align=center$NAV_BGCOLOR width=\"100%\">"
-	 . "\n <b class=title>$t_title</b></td>"
-	 . ($CONTENTS ? "\n<td>$CONTENTS</td>" : $BLANK_ICON)
-	 . "\n<td>$CUSTOM_BUTTONS</td>" # module index
-	 . ($INDEX ? "\n<td>$INDEX</td>" : $BLANK_ICON)
-	 . "\n</tr></table>"
-	 #. "<hr>"
-	 . make_nav_sectref("Next", $NEXT_TITLE)
-	 . make_nav_sectref("Up", $UP_TITLE)
-	 . make_nav_sectref("Previous", $PREVIOUS_TITLE);
+	 . "\n<td>$PREVIOUS</td>";
+    if ($SUPPRESS_CONTENTS && $SUPPRESS_INDEXES) {
+	$s .= ("\n<td align=right$NAV_BGCOLOR width=\"100%\">"
+	       . "\n <b class=title>$t_title\&nbsp;\&nbsp;\&nbsp;</b></td>");
+    }
+    else {
+	$s .= ("\n<td align=center$NAV_BGCOLOR width=\"100%\">"
+	       . "\n <b class=title>$t_title</b></td>"
+	       . ($CONTENTS ? "\n<td>$CONTENTS</td>" : $BLANK_ICON)
+	       . "\n<td>$CUSTOM_BUTTONS</td>" # module index
+	       . ($INDEX ? "\n<td>$INDEX</td>" : $BLANK_ICON));
+    }
+    $s .= ("\n</tr></table>"
+	   . make_nav_sectref("Next", $NEXT_TITLE)
+	   . make_nav_sectref("Up", $UP_TITLE)
+	   . make_nav_sectref("Previous", $PREVIOUS_TITLE));
+    # remove these; they are unnecessary and cause error from validation
     $s =~ s/ NAME="tex2html\d+"\n//g;
     return $s;
 }
@@ -320,9 +354,13 @@ sub add_idx_hook{
 }
 
 
-# In addition to the standard stuff, add label to allow named node files.
+# In addition to the standard stuff, add label to allow named node files and
+# support suppression of the page complete (for HTML Help use).
 sub do_cmd_tableofcontents {
     local($_) = @_;
+#     if ($SUPPRESS_CONTENTS) {
+# 	return $_;
+#     }
     $TITLE = $toc_title;
     $tocfile = $CURRENT_FILE;
     my($closures,$reopens) = preserve_open_tags();
@@ -416,29 +454,31 @@ sub add_bbl_and_idx_dummy_commands {
     my $id = $global{'max_id'};
 
     s/([\\]begin\s*$O\d+$C\s*thebibliography)/$bbl_cnt++; $1/eg;
-    s/([\\]begin\s*$O\d+$C\s*thebibliography)/$id++; "\\bibliography$O$id$C$O$id$C $1"/geo
-      #if ($bbl_cnt == 1)
-    ;
-    #}
+    s/([\\]begin\s*$O\d+$C\s*thebibliography)/$id++; "\\bibliography$O$id$C$O$id$C $1"/geo;
     #----------------------------------------------------------------------
     # (FLD) This was added
-    my(@parts) = split(/\\begin\s*$O\d+$C\s*theindex/);
-    if (scalar(@parts) == 3) {
-	# Be careful to re-write the string in place, since $_ is *not*
-	# returned explicity;  *** nasty side-effect dependency! ***
-	print "\nadd_bbl_and_idx_dummy_commands ==> adding module index";
-	my $rx = "([\\\\]begin\\s*$O\\d+$C\\s*theindex[\\s\\S]*)"
-	         . "([\\\\]begin\\s*$O\\d+$C\\s*theindex)";
-	s/$rx/\\textohtmlmoduleindex \1 \\textohtmlindex \2/o;
-	# Add a button to the navigation areas:
-	$CUSTOM_BUTTONS .= ("<a\n href=\"modindex.html\">"
-			    . img_tag('modules.'.$IMAGE_TYPE) . "</a>");
+    if ($SUPPRESS_INDEXES) {
+	$CUSTOM_BUTTONS .= img_tag('blank.' . $IMAGE_TYPE);
     }
     else {
-	$CUSTOM_BUTTONS .= img_tag('blank.' . $IMAGE_TYPE);
-	$global{'max_id'} = $id; # not sure why....
-	s/([\\]begin\s*$O\d+$C\s*theindex)/\\textohtmlindex $1/o;
-	s/[\\]printindex/\\textohtmlindex /o;
+	my(@parts) = split(/\\begin\s*$O\d+$C\s*theindex/);
+	if (scalar(@parts) == 3) {
+	    # Be careful to re-write the string in place, since $_ is *not*
+	    # returned explicity;  *** nasty side-effect dependency! ***
+	    print "\nadd_bbl_and_idx_dummy_commands ==> adding module index";
+	    my $rx = "([\\\\]begin\\s*$O\\d+$C\\s*theindex[\\s\\S]*)"
+	      . "([\\\\]begin\\s*$O\\d+$C\\s*theindex)";
+	    s/$rx/\\textohtmlmoduleindex \1 \\textohtmlindex \2/o;
+	    # Add a button to the navigation areas:
+	    $CUSTOM_BUTTONS .= ("<a\n href=\"modindex.html\">"
+				. img_tag('modules.'.$IMAGE_TYPE) . "</a>");
+	}
+	else {
+	    $CUSTOM_BUTTONS .= img_tag('blank.' . $IMAGE_TYPE);
+	    $global{'max_id'} = $id; # not sure why....
+	    s/([\\]begin\s*$O\d+$C\s*theindex)/\\textohtmlindex $1/o;
+	    s/[\\]printindex/\\textohtmlindex /o;
+	}
     }
     #----------------------------------------------------------------------
     lib_add_bbl_and_idx_dummy_commands()
