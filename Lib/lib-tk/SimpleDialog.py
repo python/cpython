@@ -64,6 +64,7 @@ class SimpleDialog:
         widget.deiconify() # Become visible at the desired location
 
     def go(self):
+        self.root.wait_visibility()
         self.root.grab_set()
         self.root.mainloop()
         self.root.destroy()
