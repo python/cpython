@@ -479,10 +479,9 @@ PyObject_Compare
 PyObject_Unicode
 PyObject_Str
 PyObject_Repr
+_PyGC_Dump
 _PyObject_Dump
 PyObject_Print
-_PyGC_Remove
-_PyGC_Insert
 _PyObject_Del
 _PyObject_NewVar
 _PyObject_New
@@ -620,6 +619,7 @@ Py_GetPlatform
 PyMac_ConsoleIsDead
 PyMac_AppearanceCompliant
 PyMac_OSErrException
+PyMacGluePtr_PyMac_GetFSSpec
 PyMacGluePtr_AEDesc_New
 PyMacGluePtr_AEDesc_Convert
 PyMacGluePtr_CmpObj_New
@@ -712,6 +712,7 @@ CmpObj_Convert
 CmpObj_New
 AEDesc_Convert
 AEDesc_New
+PyMac_GetFSSpec
 PyMac_Buildwide
 PyMac_Getwide
 PyMac_BuildFixed
@@ -783,7 +784,7 @@ PyMac_BuildFSRef
 PyMac_GetFSRef
 newmfsrobject
 newmfssobject
-PyMac_GetFSSpec
+_PyMac_GetFSSpec
 initmac
 initMacOS
 Pcre_Type
@@ -1040,6 +1041,9 @@ PyDescr_NewWrapper
 PyDescr_NewGetSet
 PyDescr_NewMember
 PyDescr_NewMethod
+initgc
+_PyGC_Remove
+_PyGC_Insert
 GUSISetupConsoleStdio
 GUSIStdioFlush
 GUSIStdioClose

@@ -57,7 +57,13 @@ PERFORMANCE OF THIS SOFTWARE.
 #define TARGET_API " PPC"
 #endif
 
-#define COMPILER " [CW" TARGET_API HASGUSI HASTHREAD"]"
+#ifdef WITH_CYCLE_GC
+#define HASGC " GC"
+#else
+#define HASGC ""
+#endif
+
+#define COMPILER " [CW" TARGET_API HASGUSI HASTHREAD HASGC"]"
 #endif
 
 #ifdef MPW

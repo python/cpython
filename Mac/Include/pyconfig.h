@@ -129,9 +129,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 /* Define if you have the Mach cthreads package */
 #undef C_THREADS
 
-/* Defined when case of imported modules are checked against case of file. */
-#define CHECK_IMPORT_CASE
-
 /* Define to `long' if <time.h> doesn't define.  */
 #undef clock_t
 
@@ -147,6 +144,18 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* Define this if your time.h defines altzone */
 #undef HAVE_ALTZONE
+
+/* Define if --enable-ipv6 is specified */
+#undef ENABLE_IPV6
+
+/* Define if sockaddr has sa_len member */
+#undef HAVE_SOCKADDR_SA_LEN
+
+/* struct addrinfo (netdb.h) */
+#undef HAVE_ADDRINFO
+
+/* struct sockaddr_storage (sys/socket.h) */
+#undef HAVE_SOCKADDR_STORAGE
 
 /* Defined when any dynamic module loading is enabled */
 /* #undef HAVE_DYNAMIC_LOADING */
@@ -184,6 +193,9 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 /* Define if you have GNU PTH threads */
 #undef HAVE_PTH
 
+/* Define if you have readline 4.2 */
+#undef HAVE_RL_COMPLETION_MATCHES
+
 /* Define if your compiler supports variable length function prototypes
    (e.g. void fprintf(FILE *, char *, ...);) *and* <stdarg.h> */
 #define HAVE_STDARG_PROTOTYPES
@@ -207,6 +219,9 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* Define as the size of the unicode type. */
 #define Py_UNICODE_SIZE 2
+
+/* Define if nice() returns success/failure instead of the new priority. */
+#undef HAVE_BROKEN_NICE
 
 /* Define if malloc(0) returns a NULL pointer */
 #ifdef USE_MSL_MALLOC
@@ -269,7 +284,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #undef WANT_WCTYPE_FUNCTIONS
 
 /* Define if you want to compile in cycle garbage collection */
-#undef WITH_CYCLE_GC
+#define WITH_CYCLE_GC 1
 
 /* Define if you want to emulate SGI (IRIX 4) dynamic linking.
    This is rumoured to work on VAX (Ultrix), Sun3 (SunOS 3.4),
@@ -293,6 +308,9 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 /* Define if you want to produce an OpenStep/Rhapsody framework
    (shared library plus accessory files). */
 #undef WITH_NEXT_FRAMEWORK
+
+/* Define if you want to use MacPython modules on MacOSX in unix-Python */
+#define USE_TOOLBOX_OBJECT_GLUE
 
 /* Define if you want to use SGI (IRIX 4) dynamic linking.
    This requires the "dl" library by Jack Jansen,
@@ -419,6 +437,9 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 /* Define if you have the getlogin function.  */
 #undef HAVE_GETLOGIN
 
+/* Define if you have the getnameinfo function.  */
+#undef HAVE_GETNAMEINFO
+
 /* Define if you have the getpeername function.  */
 #ifdef USE_GUSI
 #define HAVE_GETPEERNAME
@@ -429,6 +450,9 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* Define if you have the getpid function.  */
 #undef HAVE_GETPID
+
+/* Define if you have the getpriority function.  */
+#undef HAVE_GETPRIORITY
 
 /* Define if you have the getpwent function.  */
 #undef HAVE_GETPWENT
@@ -441,6 +465,9 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 /* Define if you have the getwd function.  */
 #undef HAVE_GETWD
 
+/* Define if you have the hstrerror function.  */
+#undef HAVE_HSTRERROR
+
 /* Define if you have the hypot function.  */
 #ifndef __MC68K__
 /* 68K hypot definition (and implementation) are unuseable
@@ -448,6 +475,9 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 #define HAVE_HYPOT
 #endif
+
+/* Define if you have the inet_pton function.  */
+#undef HAVE_INET_PTON
 
 /* Define if you have the kill function.  */
 #undef HAVE_KILL
@@ -543,6 +573,9 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* Define if you have the sigrelse function.  */
 #undef HAVE_SIGRELSE
+
+/* Define if you have the snprintf function.  */
+#define HAVE_SNPRINTF
 
 /* Define if you have the statvfs function.  */
 #undef HAVE_STATVFS
@@ -682,6 +715,12 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* Define if you have the <sys/param.h> header file.  */
 #undef HAVE_SYS_PARAM_H
+
+/* Define if you have the <sys/poll.h> header file.  */
+#undef HAVE_SYS_POLL_H
+
+/* Define if you have the <sys/resource.h> header file.  */
+#undef HAVE_SYS_RESOURCE_H
 
 /* Define if you have the <sys/select.h> header file.  */
 #undef HAVE_SYS_SELECT_H
