@@ -74,7 +74,7 @@ def _synthesize(browser):
         controller.basename = os.path.basename(browser)
         register(browser, None, controller)
         return [None, controller]
-    ret
+    return [None, None]
 
 
 def _iscommand(cmd):
