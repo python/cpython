@@ -175,7 +175,7 @@ def heapify(x):
     for i in reversed(xrange(n//2)):
         _siftup(x, i)
 
-def nlargest(iterable, n):
+def nlargest(n, iterable):
     """Find the n largest elements in a dataset.
 
     Equivalent to:  sorted(iterable, reverse=True)[:n]
@@ -195,7 +195,7 @@ def nlargest(iterable, n):
     result.sort(reverse=True)
     return result
 
-def nsmallest(iterable, n):
+def nsmallest(n, iterable):
     """Find the n smallest elements in a dataset.
 
     Equivalent to:  sorted(iterable)[:n]
