@@ -1949,7 +1949,7 @@ arrayiter_traverse(arrayiterobject *it, visitproc visit, void *arg)
 }
 
 static PyTypeObject PyArrayIter_Type = {
-	PyObject_HEAD_INIT(&PyType_Type)
+	PyObject_HEAD_INIT(NULL)
 	0,                                      /* ob_size */
 	"arrayiterator",                        /* tp_name */
 	sizeof(arrayiterobject),                /* tp_basicsize */
@@ -1996,6 +1996,7 @@ initarray(void)
 	PyObject *m;
 
 	Arraytype.ob_type = &PyType_Type;
+	PyArrayIter_Type.ob_type = &PyType_Type;
 	m = Py_InitModule3("array", a_methods, module_doc);
 
         Py_INCREF((PyObject *)&Arraytype);
