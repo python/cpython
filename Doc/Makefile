@@ -314,7 +314,7 @@ tarballs:  tarpdf tarps tarhtml
 # - useful results: .dvi, .pdf, .ps, .texi, .info
 clean:	l2hclean
 	rm -f @* *~ *.aux *.idx *.ilg *.ind *.log *.toc *.blg *.bbl *.py[co]
-	rm -f *.bak *.orig lib1.texi
+	rm -f *.bak *.orig lib1.texi *.out
 	rm -f html-$(VERSION).tar.gz postscript-$(VERSION).tar.gz
 	rm -f pdf-$(VERSION).tar.gz
 
