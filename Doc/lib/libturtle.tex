@@ -95,15 +95,16 @@ and call \code{fill(0)} when you finish to draw the path.
 \end{funcdesc}
 
 \begin{funcdesc}{circle}{radius\optional{, extent}}
-Draw a circle with radius \var{radius} whose center-point is where the 
-pen would be if a \code{forward(\var{radius})} were
-called. \var{extent} determines which part of a circle is drawn: if
+Draw a circle with radius \var{radius} whose center-point is
+\var{radius} units left of the turtle.
+\var{extent} determines which part of a circle is drawn: if
 not given it defaults to a full circle.
 
 If \var{extent} is not a full circle, one endpoint of the arc is the
 current pen position. The arc is drawn in a counter clockwise
 direction if \var{radius} is positive, otherwise in a clockwise
-direction.
+direction.  In the process, the direction of the turtle is changed
+by the amount of the \var{extent}.
 \end{funcdesc}
 
 \begin{funcdesc}{goto}{x, y}
