@@ -2,13 +2,13 @@
 
 class UserDict:
     def __init__(self, dict=None, **kwargs):
-        self.data = kwargs              # defaults to {}
+        self.data = {}
         if dict is not None:
-            if hasattr(dict,'keys'):    # handle mapping (possibly a UserDict)
-                self.update(dict)
-            else:                       # handle sequence
-                DICT = type({})  # because builtin dict is locally overridden
-                self.data.update(DICT(dict))
+            if not hasattr(dict,'keys'):
+                dict = type({})(dict)   # make mapping from a sequence
+            self.update(dict)
+        if len(kwargs):
+            self.update(kwargs)
     def __repr__(self): return repr(self.data)
     def __cmp__(self, dict):
         if isinstance(dict, UserDict):
@@ -61,6 +61,12 @@ class UserDict:
         return self.data.popitem()
     def __contains__(self, key):
         return key in self.data
+    def fromkeys(cls, iterable, value=None):
+        d = cls()
+        for key in iterable:
+            d[key] = value
+        return d
+    fromkeys = classmethod(fromkeys)
 
 class IterableUserDict(UserDict):
     def __iter__(self):

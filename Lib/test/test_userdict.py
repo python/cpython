@@ -6,6 +6,9 @@ from UserDict import UserDict, IterableUserDict
 d0 = {}
 d1 = {"one": 1}
 d2 = {"one": 1, "two": 2}
+d3 = {"one": 1, "two": 3, "three": 5}
+d4 = {"one": None, "two": None}
+d5 = {"one": 1, "two": 1}
 
 # Test constructors
 
@@ -21,6 +24,16 @@ uu2 = UserDict(u2)
 
 verify(UserDict(one=1, two=2) == d2)            # keyword arg constructor
 verify(UserDict([('one',1), ('two',2)]) == d2)  # item sequence constructor
+verify(UserDict(dict=[('one',1), ('two',2)]) == d2)
+verify(UserDict([('one',1), ('two',2)], two=3, three=5) == d3) # both together
+
+verify(UserDict.fromkeys('one two'.split()) == d4)  # alternate constructor
+verify(UserDict().fromkeys('one two'.split()) == d4)
+verify(UserDict.fromkeys('one two'.split(), 1) == d5)
+verify(UserDict().fromkeys('one two'.split(), 1) == d5)
+verify(u1.fromkeys('one two'.split()) is not u1)
+verify(isinstance(u1.fromkeys('one two'.split()), UserDict))
+verify(isinstance(u2.fromkeys('one two'.split()), IterableUserDict))
 
 # Test __repr__
 
