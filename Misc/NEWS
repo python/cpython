@@ -559,6 +559,10 @@ Build
 C API
 -----
 
+- Thanks to Anthony Tuininga, the datetime module now supplies a C API
+  containing type-check macros and constructors.  See new docs in the
+  Python/C API Reference Manual for details.
+
 - Private function _PyTime_DoubleToTimet added, to convert a Python
   timestamp (C double) to platform time_t with some out-of-bounds
   checking.  Declared in new header file timefuncs.h.  It would be

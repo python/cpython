@@ -3,6 +3,9 @@
 
 #ifndef DATETIME_H
 #define DATETIME_H
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* Fields are packed into successive bytes, each viewed as unsigned and
  * big-endian, unless otherwise noted:
@@ -132,6 +135,36 @@ typedef struct
          (((PyDateTime_Time*)o)->data[4] << 8)  |	\
           ((PyDateTime_Time*)o)->data[5])
 
+
+/* Define structure for C API. */
+typedef struct {
+    /* type objects */
+    PyTypeObject *DateType;
+    PyTypeObject *DateTimeType;
+    PyTypeObject *TimeType;
+    PyTypeObject *DeltaType;
+    PyTypeObject *TZInfoType;
+
+    /* constructors */
+    PyObject *(*Date_FromDate)(int, int, int, PyTypeObject*);
+    PyObject *(*DateTime_FromDateAndTime)(int, int, int, int, int, int, int,
+            PyObject*, PyTypeObject*);
+    PyObject *(*Time_FromTime)(int, int, int, int, PyObject*, PyTypeObject*);
+    PyObject *(*Delta_FromDelta)(int, int, int, int, PyTypeObject*);
+
+    /* constructors for the DB API */
+    PyObject *(*DateTime_FromTimestamp)(PyObject*, PyObject*, PyObject*);
+    PyObject *(*Date_FromTimestamp)(PyObject*, PyObject*);
+
+} PyDateTime_CAPI;
+
+
+/* "magic" constant used to partially protect against developer mistakes. */
+#define DATETIME_API_MAGIC 0x414548d5
+
+#ifdef Py_BUILD_CORE
+
+/* Macros for type checking when building the Python core. */
 #define PyDate_Check(op) PyObject_TypeCheck(op, &PyDateTime_DateType)
 #define PyDate_CheckExact(op) ((op)->ob_type == &PyDateTime_DateType)
 
@@ -147,4 +180,66 @@ typedef struct
 #define PyTZInfo_Check(op) PyObject_TypeCheck(op, &PyDateTime_TZInfoType)
 #define PyTZInfo_CheckExact(op) ((op)->ob_type == &PyDateTime_TZInfoType)
 
+#else
+
+/* Define global variable for the C API and a macro for setting it. */
+static PyDateTime_CAPI *PyDateTimeAPI;
+
+#define PyDateTime_IMPORT \
+        PyDateTimeAPI = (PyDateTime_CAPI*) PyCObject_Import("datetime", \
+                                                            "datetime_CAPI")
+
+/* This macro would be used if PyCObject_ImportEx() was created.
+#define PyDateTime_IMPORT \
+        PyDateTimeAPI = (PyDateTime_CAPI*) PyCObject_ImportEx("datetime", \
+                                                            "datetime_CAPI", \
+                                                            DATETIME_API_MAGIC)
+*/
+
+/* Macros for type checking when not building the Python core. */
+#define PyDate_Check(op) PyObject_TypeCheck(op, PyDateTimeAPI->DateType)
+#define PyDate_CheckExact(op) ((op)->ob_type == PyDateTimeAPI->DateType)
+
+#define PyDateTime_Check(op) PyObject_TypeCheck(op, PyDateTimeAPI->DateTimeType)
+#define PyDateTime_CheckExact(op) ((op)->ob_type == PyDateTimeAPI->DateTimeType)
+
+#define PyTime_Check(op) PyObject_TypeCheck(op, PyDateTimeAPI->TimeType)
+#define PyTime_CheckExact(op) ((op)->ob_type == PyDateTimeAPI->TimeType)
+
+#define PyDelta_Check(op) PyObject_TypeCheck(op, PyDateTimeAPI->DeltaType)
+#define PyDelta_CheckExact(op) ((op)->ob_type == PyDateTimeAPI->DeltaType)
+
+#define PyTZInfo_Check(op) PyObject_TypeCheck(op, PyDateTimeAPI->TZInfoType)
+#define PyTZInfo_CheckExact(op) ((op)->ob_type == PyDateTimeAPI->TZInfoType)
+
+/* Macros for accessing constructors in a simplified fashion. */
+#define PyDate_FromDate(year, month, day) \
+	PyDateTimeAPI->Date_FromDate(year, month, day, PyDateTimeAPI->DateType)
+
+#define PyDateTime_FromDateAndTime(year, month, day, hour, min, sec, usec) \
+	PyDateTimeAPI->DateTime_FromDateAndTime(year, month, day, hour, \
+		min, sec, usec, Py_None, PyDateTimeAPI->DateTimeType)
+
+#define PyTime_FromTime(hour, minute, second, usecond) \
+	PyDateTimeAPI->Time_FromTime(hour, minute, second, usecond, \
+		Py_None, PyDateTimeAPI->TimeType)
+
+#define PyDelta_FromDSU(days, seconds, useconds) \
+	PyDateTimeAPI->Delta_FromDelta(days, seconds, useconds, 1,
+		PyDateTimeAPI->DeltaType)
+
+/* Macros supporting the DB API. */
+#define PyDateTime_FromTimestamp(args) \
+	PyDateTimeAPI->DateTime_FromTimestamp( \
+		(PyObject*) (PyDateTimeAPI->DateTimeType), args, NULL)
+
+#define PyDate_FromTimestamp(args) \
+	PyDateTimeAPI->Date_FromTimestamp( \
+		(PyObject*) (PyDateTimeAPI->DateType), args)
+
+#endif	/* Py_BUILD_CORE */
+
+#ifdef __cplusplus
+}
+#endif
 #endif

@@ -9,7 +9,13 @@
 #include <time.h>
 
 #include "timefuncs.h"
+
+/* Differentiate between building the core module and building extension
+ * modules.
+ */
+#define Py_BUILD_CORE
 #include "datetime.h"
+#undef Py_BUILD_CORE
 
 /* We require that C int be at least 32 bits, and use int virtually
  * everywhere.  In just a few cases we use a temp long, where a Python
@@ -4520,6 +4526,24 @@ static PyMethodDef module_methods[] = {
 	{NULL, NULL}
 };
 
+/* C API.  Clients get at this via PyDateTime_IMPORT, defined in
+ * datetime.h.
+ */
+static PyDateTime_CAPI CAPI = {
+        &PyDateTime_DateType,
+        &PyDateTime_DateTimeType,
+        &PyDateTime_TimeType,
+        &PyDateTime_DeltaType,
+        &PyDateTime_TZInfoType,
+        new_date_ex,
+        new_datetime_ex,
+        new_time_ex,
+        new_delta_ex,
+        datetime_fromtimestamp,
+        date_fromtimestamp
+};
+
+
 PyMODINIT_FUNC
 initdatetime(void)
 {
@@ -4632,6 +4656,12 @@ initdatetime(void)
 
 	Py_INCREF(&PyDateTime_TZInfoType);
 	PyModule_AddObject(m, "tzinfo", (PyObject *) &PyDateTime_TZInfoType);
+
+        x = PyCObject_FromVoidPtrAndDesc(&CAPI, (void*) DATETIME_API_MAGIC,
+                NULL);
+        if (x == NULL)
+            return;
+        PyModule_AddObject(m, "datetime_CAPI", x);
 
 	/* A 4-year cycle has an extra leap day over what we'd get from
 	 * pasting together 4 single years.
