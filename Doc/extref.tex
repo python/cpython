@@ -2,6 +2,8 @@
 
 \chapter{Extension Reference}
 
+\section{Introduction}
+
 From the viewpoint of of C access to Python services, we have:
 
 \begin{enumerate}
@@ -13,7 +15,7 @@ From the viewpoint of of C access to Python services, we have:
     to write a simple application that gets Python code from the user,
     execs it, and returns the output or errors.
 
-  \item "Abstract objects layer": which is the subject of this proposal.
+  \item "Abstract objects layer": which is the subject of this chapter.
     It has many functions operating on objects, and lest you do many
     things from C that you can also write in Python, without going
     through the Python parser.
@@ -45,6 +47,23 @@ From the viewpoint of of C access to Python services, we have:
   constructors for building objects of built-in types.  This is needed
   so new objects can be returned from C functions that otherwise treat
   objects generically.
+
+\subsection{Memory Management}
+
+  For all of the functions described in this chapter, if a function
+  retains a reference to a Python object passed as an argument, then the
+  function will increase the reference count of the object.  It is
+  unnecessary for the caller to increase the reference count of an
+  argument in anticipation of the object's retention.
+
+  All Python objects returned from functions should be treated as new
+  objects.  Functions that return objects assume that the caller will
+  retain a reference and the reference count of the object has already
+  been incremented to account for this fact.  A caller that does not
+  retain a reference to an object that is returned from a function
+  must decrement the reference count of the object (using
+  DECREF(object)) to prevent memory leaks.
+
 
 \section{Object Protocol}
 
