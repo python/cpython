@@ -118,6 +118,8 @@ class PyBuildExt(build_ext):
         platform = sys.platform
         if platform[:6] =='cygwin':
             platform = 'cygwin'
+        elif platform[:4] =='beos':
+            platform = 'beos'
 
         return platform
 
@@ -139,7 +141,7 @@ class PyBuildExt(build_ext):
 
         # Check for MacOS X, which doesn't need libm.a at all
         math_libs = ['m']
-        if platform == 'Darwin1.2':
+        if platform in ['Darwin1.2', 'beos']:
             math_libs = []
 
         # XXX Omitted modules: gl, pure, dl, SGI-specific modules
