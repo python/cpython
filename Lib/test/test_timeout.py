@@ -87,7 +87,13 @@ class CreationTestCase(unittest.TestCase):
 class TimeoutTestCase(unittest.TestCase):
     """Test case for socket.socket() timeout functions"""
 
-    fuzz = 1.0
+    # There are a number of tests here trying to make sure that an operation
+    # doesn't take too much longer than expected.  But competing machine
+    # activity makes it inevitable that such tests will fail at times.
+    # When fuzz was at 1.0, I (tim) routinely saw bogus failures on Win2K
+    # and Win98SE.  Boosting it to 2.0 helped a lot, but isn't a real
+    # solution.
+    fuzz = 2.0
 
     def setUp(self):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
