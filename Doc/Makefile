@@ -122,7 +122,7 @@ LIBFILES = lib.tex \
     libmailbox.tex libcommands.tex libcmath.tex libni.tex libgzip.tex \
     libpprint.tex libcode.tex libmimify.tex libre.tex libmacic.tex \
     libuserdict.tex libdis.tex libxmllib.tex libqueue.tex \
-    liblocale.tex libbasehttp.tex
+    liblocale.tex libbasehttp.tex libcopyreg.tex
 
 # Library document
 lib.dvi: modindex.py $(LIBFILES)
