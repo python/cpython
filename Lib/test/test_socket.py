@@ -248,7 +248,7 @@ class GeneralModuleTests(unittest.TestCase):
         except socket.error:
             pass
 
-    def testNtoHL(self):
+    def testNtoH(self):
         # This just checks that htons etc. are their own inverse,
         # when looking at the lower 16 or 32 bits.
         sizes = {socket.htonl: 32, socket.ntohl: 32,
