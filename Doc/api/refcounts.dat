@@ -964,6 +964,10 @@ PySequence_InPlaceRepeat:PyObject*::+1:
 PySequence_InPlaceRepeat:PyObject*:s:0:
 PySequence_InPlaceRepeat:PyObject*:o:0:
 
+PySequence_ITEM:PyObject*::+1:
+PySequence_ITEM:PyObject*:o:0:
+PySequence_ITEM:int:i::
+
 PySequence_Repeat:PyObject*::+1:
 PySequence_Repeat:PyObject*:o:0:
 PySequence_Repeat:int:count::
