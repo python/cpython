@@ -156,7 +156,7 @@ signal_alarm(PyObject *self, PyObject *args)
 	if (!PyArg_Parse(args, "i", &t))
 		return NULL;
 	/* alarm() returns the number of seconds remaining */
-	return PyInt_FromLong(alarm(t));
+	return PyInt_FromLong((long)alarm(t));
 }
 
 static char alarm_doc[] =

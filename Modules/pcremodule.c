@@ -258,7 +258,6 @@ PyPcre_expand_escape(unsigned char *pattern, int pattern_len,
 		*indexptr = end;
 		return Py_BuildValue("c", (char)x);
 	}
-	break;
 
 	case('E'):    case('G'):    case('L'):    case('Q'):
 	case('U'):    case('l'):    case('u'):
@@ -331,7 +330,6 @@ PyPcre_expand_escape(unsigned char *pattern, int pattern_len,
 		/* Otherwise, return a string containing the group name */
 		return Py_BuildValue("s#", pattern+index, end-index);
 	}
-	break;
 
 	case('0'):
 	{
@@ -354,7 +352,7 @@ PyPcre_expand_escape(unsigned char *pattern, int pattern_len,
 		*indexptr = i;
 		return Py_BuildValue("c", (unsigned char)octval);
 	}
-	break;
+
 	case('1'):    case('2'):    case('3'):    case('4'):
 	case('5'):    case('6'):    case('7'):    case('8'):
 	case('9'):
@@ -410,7 +408,6 @@ PyPcre_expand_escape(unsigned char *pattern, int pattern_len,
 			return Py_BuildValue("i", pattern[index]-'0');
 		}
 	}
-	break;
 
 	default:
 	  /* It's some unknown escape like \s, so return a string containing

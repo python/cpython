@@ -171,8 +171,6 @@ static PyMethodDef xreadlines_functions[] = {
 DL_EXPORT(void)
 initxreadlines(void)
 {
-	PyObject *m;
-
 	XReadlinesObject_Type.ob_type = &PyType_Type;
-	m = Py_InitModule("xreadlines", xreadlines_functions);
+	Py_InitModule("xreadlines", xreadlines_functions);
 }
