@@ -1,7 +1,8 @@
-# Generated from 'SWDev:Codewarrior Pro 5:Metrowerks CodeWarrior:MacOS Support:Universal:Interfaces:CIncludes:Dialogs.h'
+# Generated from 'flap:CodeWarrior Pro 5:Metrowerks CodeWarrior:MacOS Support:Universal:Interfaces:CIncludes:Dialogs.h'
 
 def FOUR_CHAR_CODE(x): return x
 gestaltDialogMgrAttr = FOUR_CHAR_CODE('dlog')
+gestaltDialogMgrPresent = (1L << 0)
 dialogNoTimeoutErr = -5640
 kControlDialogItem = 4
 kButtonDialogItem = kControlDialogItem | 0
@@ -51,6 +52,14 @@ kAlertStdAlertOKButton = 1
 kAlertStdAlertCancelButton = 2
 kAlertStdAlertOtherButton = 3
 kAlertStdAlertHelpButton = 4
+kDialogFlagsUseThemeBackground = (1 << 0)
+kDialogFlagsUseControlHierarchy = (1 << 1)
+kDialogFlagsHandleMovableModal = (1 << 2)
+kDialogFlagsUseThemeControls = (1 << 3)
+kAlertFlagsUseThemeBackground = (1 << 0)
+kAlertFlagsUseControlHierarchy = (1 << 1)
+kAlertFlagsAlertIsMovable = (1 << 2)
+kAlertFlagsUseThemeControls = (1 << 3)
 kDialogFontNoFontStyle = 0
 kDialogFontUseFontMask = 0x0001
 kDialogFontUseFaceMask = 0x0002

@@ -1,4 +1,4 @@
-# Generated from 'moes:Metrowerks:Metrowerks CodeWarrior:MacOS Support:Headers:Universal Headers:AppleEvents.h'
+# Generated from 'flap:CodeWarrior Pro 5:Metrowerks CodeWarrior:MacOS Support:Universal:Interfaces:CIncludes:AppleEvents.h'
 
 def FOUR_CHAR_CODE(x): return x
 from AEDataModel import *
@@ -52,4 +52,6 @@ kAEIgnoreAppEventHandler = 0x00000002
 kAEIgnoreSysPhacHandler = 0x00000004
 kAEIgnoreSysEventHandler = 0x00000008
 kAEIngoreBuiltInEventHandler = 0x00000010
+# kAEDontDisposeOnResume = (long)0x80000000
 kAENoDispatch = 0
+# kAEUseStandardDispatch = (long)0xFFFFFFFF

@@ -1,4 +1,4 @@
-# Generated from 'SWDev:Codewarrior Pro 5:Metrowerks CodeWarrior:MacOS Support:Universal:Interfaces:CIncludes:QDOffscreen.h'
+# Generated from 'flap:CodeWarrior Pro 5:Metrowerks CodeWarrior:MacOS Support:Universal:Interfaces:CIncludes:QDOffscreen.h'
 
 def FOUR_CHAR_CODE(x): return x
 pixPurgeBit = 0
@@ -32,3 +32,12 @@ clipPix = 1L << clipPixBit
 stretchPix = 1L << stretchPixBit
 ditherPix = 1L << ditherPixBit
 gwFlagErr = 1L << gwFlagErrBit
+deviceIsIndirect = (1L << 0)
+deviceNeedsLock = (1L << 1)
+deviceIsStatic = (1L << 2)
+deviceIsExternalBuffer = (1L << 3)
+deviceIsDDSurface = (1L << 4)
+deviceIsDCISurface = (1L << 5)
+deviceIsGDISurface = (1L << 6)
+deviceIsAScreen = (1L << 7)
+deviceIsOverlaySurface = (1L << 8)

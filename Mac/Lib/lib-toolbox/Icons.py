@@ -1,5 +1,6 @@
-# Generated from 'SWDev:Codewarrior Pro 5:Metrowerks CodeWarrior:MacOS Support:Universal:Interfaces:CIncludes:Icons.h'
+# Generated from 'flap:CodeWarrior Pro 5:Metrowerks CodeWarrior:MacOS Support:Universal:Interfaces:CIncludes:Icons.h'
 
+def FOUR_CHAR_CODE(x): return x
 kGenericDocumentIconResource = -4000
 kGenericStationeryIconResource = -3985
 kGenericEditionFileIconResource = -3989
@@ -177,10 +178,12 @@ kSelectorHuge8BitMask = 0x10000000
 kSelectorAllLargeData = 0x000000FF
 kSelectorAllSmallData = 0x0000FF00
 kSelectorAllMiniData = 0x00FF0000
+# kSelectorAllHugeData = (long)0xFF000000
 kSelectorAll1BitData = kSelectorLarge1Bit | kSelectorSmall1Bit | kSelectorMini1Bit | kSelectorHuge1Bit
 kSelectorAll4BitData = kSelectorLarge4Bit | kSelectorSmall4Bit | kSelectorMini4Bit | kSelectorHuge4Bit
 kSelectorAll8BitData = kSelectorLarge8Bit | kSelectorSmall8Bit | kSelectorMini8Bit | kSelectorHuge8Bit
 kSelectorAll32BitData = kSelectorLarge32Bit | kSelectorSmall32Bit | kSelectorHuge32Bit
+# kSelectorAllAvailableData = (long)0xFFFFFFFF
 svLarge1Bit = kSelectorLarge1Bit
 svLarge4Bit = kSelectorLarge4Bit
 svLarge8Bit = kSelectorLarge8Bit
@@ -196,7 +199,7 @@ svAllMiniData = kSelectorAllMiniData
 svAll1BitData = kSelectorAll1BitData
 svAll4BitData = kSelectorAll4BitData
 svAll8BitData = kSelectorAll8BitData
-svAllAvailableData = kSelectorAllAvailableData
+# svAllAvailableData = kSelectorAllAvailableData
 kSystemIconsCreator = FOUR_CHAR_CODE('macs')
 kClipboardIcon = FOUR_CHAR_CODE('CLIP')
 kClippingUnknownTypeIcon = FOUR_CHAR_CODE('clpu')
