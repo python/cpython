@@ -21,6 +21,8 @@ Core and builtins
 Extension modules
 -----------------
 
+- os/posixmodule has grown the sysexits.h constants (EX_OK and friends).
+
 - Fixed broken threadstate swap in readline that could cause fatal
   errors when a readline hook was being invoked while a background
   thread was active.  (SF bugs #660476 and #513033.)
