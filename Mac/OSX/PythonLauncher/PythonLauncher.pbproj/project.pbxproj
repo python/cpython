@@ -287,9 +287,8 @@
 			buildSettings = {
 				FRAMEWORK_SEARCH_PATHS = "";
 				HEADER_SEARCH_PATHS = "";
-				INSTALL_PATH = "$(HOME)/Applications";
+				INSTALL_PATH = /Applications/Python;
 				LIBRARY_SEARCH_PATHS = "";
-				OTHER_CFLAGS = "";
 				OTHER_LDFLAGS = "";
 				PRODUCT_NAME = PythonLauncher;
 				SECTORDER_FLAGS = "";
@@ -300,7 +299,7 @@
 			);
 			isa = PBXApplicationTarget;
 			name = PythonLauncher;
-			productInstallPath = "$(HOME)/Applications";
+			productInstallPath = /Applications/Python;
 			productName = PythonLauncher;
 			productReference = 1758732AFF379DA111CA2CBB;
 			productSettingsXML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
