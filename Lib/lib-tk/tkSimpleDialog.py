@@ -115,6 +115,7 @@ import string
 class _QueryDialog(Dialog):
 
     def __init__(self, title, prompt,
+                 initialvalue=None,
                  minvalue = None, maxvalue = None,
                  parent = None):
 
@@ -127,15 +128,21 @@ class _QueryDialog(Dialog):
         self.minvalue = minvalue
         self.maxvalue = maxvalue
 
+        self.initialvalue = initialvalue
+
         Dialog.__init__(self, parent, title)
 
     def body(self, master):
 
-        w = Label(master, text=self.prompt)
+        w = Label(master, text=self.prompt, justify=LEFT)
         w.grid(row=0, padx=5, sticky=W)
 
         self.entry = Entry(master, name="entry")
         self.entry.grid(row=1, padx=5, sticky=W+E)
+
+        if self.initialvalue:
+            self.entry.insert(0, self.initialvalue)
+            self.entry.select_range(0, END)
 
         return self.entry
 
@@ -147,7 +154,7 @@ class _QueryDialog(Dialog):
             result = self.getresult()
         except ValueError:
             tkMessageBox.showwarning(
-                "Bad value",
+                "Illegal value",
                 self.errormessage + "\nPlease try again",
                 parent = self
             )
@@ -157,16 +164,16 @@ class _QueryDialog(Dialog):
             tkMessageBox.showwarning(
                 "Too small",
                 "The allowed minimum value is %s. "
-                "Please try again" % self.minvalue,
+                "Please try again." % self.minvalue,
                 parent = self
             )
             return 0
 
         if self.maxvalue is not None and result > self.maxvalue:
             tkMessageBox.showwarning(
-                "Bad value",
+                "Too large",
                 "The allowed maximum value is %s. "
-                "Please try again" % self.maxvalue,
+                "Please try again." % self.maxvalue,
                 parent = self
             )
             return 0
@@ -177,7 +184,7 @@ class _QueryDialog(Dialog):
 
 
 class _QueryInteger(_QueryDialog):
-    errormessage = "Invalid integer"
+    errormessage = "Not an integer."
     def getresult(self):
         return string.atoi(self.entry.get())
 
@@ -186,7 +193,7 @@ def askinteger(title, prompt, **kw):
     return d.result
 
 class _QueryFloat(_QueryDialog):
-    errormessage = "Invalid floating point value"
+    errormessage = "Not a floating point value."
     def getresult(self):
         return string.atof(self.entry.get())
 
@@ -207,6 +214,7 @@ if __name__ == "__main__":
     root = Tk()
     root.update()
 
-    print askinteger("Spam", "Egg count")
-    print askfloat("Spam", "Egg weight")
+    print askinteger("Spam", "Egg count", initialvalue=12*12)
+    print askfloat("Spam", "Egg weight\n(in tons)", minvalue=1, maxvalue=100)
     print askstring("Spam", "Egg label")
+

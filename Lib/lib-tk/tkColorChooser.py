@@ -22,7 +22,7 @@
 #
 
 # FIXME: as of Tk 8.0a2, the Unix colour picker is really ugly, and
-# doesn't seem to work properly on a true colour display.  maybe we
+# doesn't seem to work properly on true colour displays.  maybe we
 # should use the instant python version instead?
 
 from tkCommonDialog import Dialog
@@ -70,3 +70,4 @@ def askcolor(color = None, **options):
 if __name__ == "__main__":
 
     print "color", askcolor()
+
