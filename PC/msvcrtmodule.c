@@ -204,16 +204,16 @@ insertint(PyObject *d, char *name, int value)
 
 /* List of functions exported by this module */
 static struct PyMethodDef msvcrt_functions[] = {
-	{"heapmin",		msvcrt_heapmin, 1},
-	{"locking",             msvcrt_locking, 1},
-	{"setmode",		msvcrt_setmode, 1},
-	{"open_osfhandle",	msvcrt_open_osfhandle, 1},
-	{"get_osfhandle",	msvcrt_get_osfhandle, 1},
-	{"kbhit",		msvcrt_kbhit, 1},
-	{"getch",		msvcrt_getch, 1},
-	{"getche",		msvcrt_getche, 1},
-	{"putch",		msvcrt_putch, 1},
-	{"ungetch",		msvcrt_ungetch, 1},
+	{"heapmin",		msvcrt_heapmin, METH_VARARGS},
+	{"locking",             msvcrt_locking, METH_VARARGS},
+	{"setmode",		msvcrt_setmode, METH_VARARGS},
+	{"open_osfhandle",	msvcrt_open_osfhandle, METH_VARARGS},
+	{"get_osfhandle",	msvcrt_get_osfhandle, METH_VARARGS},
+	{"kbhit",		msvcrt_kbhit, METH_VARARGS},
+	{"getch",		msvcrt_getch, METH_VARARGS},
+	{"getche",		msvcrt_getche, METH_VARARGS},
+	{"putch",		msvcrt_putch, METH_VARARGS},
+	{"ungetch",		msvcrt_ungetch, METH_VARARGS},
 	{NULL,			NULL}
 };
 

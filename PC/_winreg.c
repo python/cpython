@@ -521,8 +521,8 @@ PyHKEY_DetachMethod(PyObject *self, PyObject *args)
 }
 
 static struct PyMethodDef PyHKEY_methods[] = {
-	{"Close",  PyHKEY_CloseMethod, 1, PyHKEY_Close_doc},
-	{"Detach", PyHKEY_DetachMethod, 1, PyHKEY_Detach_doc},
+	{"Close",  PyHKEY_CloseMethod, METH_VARARGS, PyHKEY_Close_doc},
+	{"Detach", PyHKEY_DetachMethod, METH_VARARGS, PyHKEY_Detach_doc},
 	{NULL}
 };
 
@@ -1382,23 +1382,23 @@ PySetValueEx(PyObject *self, PyObject *args)
 }
 
 static struct PyMethodDef winreg_methods[] = {
-	{"CloseKey",         PyCloseKey,        1, CloseKey_doc},
-	{"ConnectRegistry",  PyConnectRegistry, 1, ConnectRegistry_doc},
-	{"CreateKey",        PyCreateKey,       1, CreateKey_doc},
-	{"DeleteKey",        PyDeleteKey,       1, DeleteKey_doc},
-	{"DeleteValue",      PyDeleteValue,     1, DeleteValue_doc},
-	{"EnumKey",          PyEnumKey,         1, EnumKey_doc},
-	{"EnumValue",        PyEnumValue,       1, EnumValue_doc},
-	{"FlushKey",         PyFlushKey,        1, FlushKey_doc},
-	{"LoadKey",          PyLoadKey,         1, LoadKey_doc},
-	{"OpenKey",          PyOpenKey,         1, OpenKey_doc},
-	{"OpenKeyEx",        PyOpenKey,         1, OpenKeyEx_doc},
-	{"QueryValue",       PyQueryValue,      1, QueryValue_doc},
-	{"QueryValueEx",     PyQueryValueEx,    1, QueryValueEx_doc},
-	{"QueryInfoKey",     PyQueryInfoKey,    1, QueryInfoKey_doc},
-	{"SaveKey",          PySaveKey,         1, SaveKey_doc},
-	{"SetValue",         PySetValue,        1, SetValue_doc},
-	{"SetValueEx",       PySetValueEx,      1, SetValueEx_doc},
+	{"CloseKey",         PyCloseKey,        METH_VARARGS, CloseKey_doc},
+	{"ConnectRegistry",  PyConnectRegistry, METH_VARARGS, ConnectRegistry_doc},
+	{"CreateKey",        PyCreateKey,       METH_VARARGS, CreateKey_doc},
+	{"DeleteKey",        PyDeleteKey,       METH_VARARGS, DeleteKey_doc},
+	{"DeleteValue",      PyDeleteValue,     METH_VARARGS, DeleteValue_doc},
+	{"EnumKey",          PyEnumKey,         METH_VARARGS, EnumKey_doc},
+	{"EnumValue",        PyEnumValue,       METH_VARARGS, EnumValue_doc},
+	{"FlushKey",         PyFlushKey,        METH_VARARGS, FlushKey_doc},
+	{"LoadKey",          PyLoadKey,         METH_VARARGS, LoadKey_doc},
+	{"OpenKey",          PyOpenKey,         METH_VARARGS, OpenKey_doc},
+	{"OpenKeyEx",        PyOpenKey,         METH_VARARGS, OpenKeyEx_doc},
+	{"QueryValue",       PyQueryValue,      METH_VARARGS, QueryValue_doc},
+	{"QueryValueEx",     PyQueryValueEx,    METH_VARARGS, QueryValueEx_doc},
+	{"QueryInfoKey",     PyQueryInfoKey,    METH_VARARGS, QueryInfoKey_doc},
+	{"SaveKey",          PySaveKey,         METH_VARARGS, SaveKey_doc},
+	{"SetValue",         PySetValue,        METH_VARARGS, SetValue_doc},
+	{"SetValueEx",       PySetValueEx,      METH_VARARGS, SetValueEx_doc},
 	NULL,
 };
 

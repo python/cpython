@@ -2505,27 +2505,27 @@ On platforms without threads, return 0.\
 ";
 
 static PyMethodDef imp_methods[] = {
-	{"find_module",		imp_find_module,	1, doc_find_module},
-	{"get_magic",		imp_get_magic,		1, doc_get_magic},
-	{"get_suffixes",	imp_get_suffixes,	1, doc_get_suffixes},
-	{"load_module",		imp_load_module,	1, doc_load_module},
-	{"new_module",		imp_new_module,		1, doc_new_module},
-	{"lock_held",		imp_lock_held,		1, doc_lock_held},
+	{"find_module",		imp_find_module, METH_VARARGS, doc_find_module},
+	{"get_magic",		imp_get_magic,	 METH_VARARGS, doc_get_magic},
+	{"get_suffixes",	imp_get_suffixes, METH_VARARGS, doc_get_suffixes},
+	{"load_module",		imp_load_module, METH_VARARGS, doc_load_module},
+	{"new_module",		imp_new_module,	 METH_VARARGS, doc_new_module},
+	{"lock_held",		imp_lock_held,	 METH_VARARGS, doc_lock_held},
 	/* The rest are obsolete */
-	{"get_frozen_object",	imp_get_frozen_object,	1},
-	{"init_builtin",	imp_init_builtin,	1},
-	{"init_frozen",		imp_init_frozen,	1},
-	{"is_builtin",		imp_is_builtin,		1},
-	{"is_frozen",		imp_is_frozen,		1},
-	{"load_compiled",	imp_load_compiled,	1},
+	{"get_frozen_object",	imp_get_frozen_object,	METH_VARARGS},
+	{"init_builtin",	imp_init_builtin,	METH_VARARGS},
+	{"init_frozen",		imp_init_frozen,	METH_VARARGS},
+	{"is_builtin",		imp_is_builtin,		METH_VARARGS},
+	{"is_frozen",		imp_is_frozen,		METH_VARARGS},
+	{"load_compiled",	imp_load_compiled,	METH_VARARGS},
 #ifdef HAVE_DYNAMIC_LOADING
-	{"load_dynamic",	imp_load_dynamic,	1},
+	{"load_dynamic",	imp_load_dynamic,	METH_VARARGS},
 #endif
-	{"load_package",	imp_load_package,	1},
+	{"load_package",	imp_load_package,	METH_VARARGS},
 #ifdef macintosh
-	{"load_resource",	imp_load_resource,	1},
+	{"load_resource",	imp_load_resource,	METH_VARARGS},
 #endif
-	{"load_source",		imp_load_source,	1},
+	{"load_source",		imp_load_source,	METH_VARARGS},
 	{NULL,			NULL}		/* sentinel */
 };
 
