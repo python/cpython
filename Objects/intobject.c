@@ -533,6 +533,12 @@ int_classic_div(PyIntObject *x, PyIntObject *y)
 }
 
 static PyObject *
+int_true_divide(PyObject *v, PyObject *w)
+{
+	return PyFloat_Type.tp_as_number->nb_true_divide(v, w);
+}
+
+static PyObject *
 int_mod(PyIntObject *x, PyIntObject *y)
 {
 	long xi, yi;
@@ -765,12 +771,6 @@ int_or(PyIntObject *v, PyIntObject *w)
 	CONVERT_TO_LONG(v, a);
 	CONVERT_TO_LONG(w, b);
 	return PyInt_FromLong(a | b);
-}
-
-static PyObject *
-int_true_divide(PyObject *v, PyObject *w)
-{
-	return PyFloat_Type.tp_as_number->nb_true_divide(v, w);
 }
 
 static PyObject *
