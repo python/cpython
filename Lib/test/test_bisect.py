@@ -181,7 +181,7 @@ class TestErrorHandling(unittest.TestCase):
         for f in (bisect_left, bisect_right, insort_left, insort_right):
             self.assertRaises(AttributeError, f, GetOnly(), 10)
 
-    def test_get_only(self):
+    def test_cmp_err(self):
         seq = [CmpErr(), CmpErr(), CmpErr()]
         for f in (bisect_left, bisect_right, insort_left, insort_right):
             self.assertRaises(ZeroDivisionError, f, seq, 10)
