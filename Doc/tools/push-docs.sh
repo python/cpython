@@ -3,7 +3,7 @@
 #  Script to push docs from my development area to SourceForge, where the
 #  update-docs.sh script unpacks them into their final destination.
 
-TARGET=python.sourceforge.net:/home/users/fdrake/tmp
+TARGET=python.sourceforge.net:/home/users/f/fd/fdrake/tmp
 
 ADDRESSES='python-dev@python.org doc-sig@python.org python-list@python.org'
 
