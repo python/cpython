@@ -1289,12 +1289,25 @@ static PyObject *
 builtin_raw_input(PyObject *self, PyObject *args)
 {
 	PyObject *v = NULL;
-	PyObject *f;
+	PyObject *fin = PySys_GetObject("stdin");
+	PyObject *fout = PySys_GetObject("stdout");
 
 	if (!PyArg_ParseTuple(args, "|O:[raw_]input", &v))
 		return NULL;
-	if (PyFile_AsFile(PySys_GetObject("stdin")) == stdin &&
-	    PyFile_AsFile(PySys_GetObject("stdout")) == stdout &&
+
+	if (fin == NULL) {
+		PyErr_SetString(PyExc_RuntimeError, "lost sys.stdin");
+		return NULL;
+	}
+	if (fout == NULL) {
+		PyErr_SetString(PyExc_RuntimeError, "lost sys.stdout");
+		return NULL;
+	}
+	if (PyFile_SoftSpace(fout, 0)) {
+		if (PyFile_WriteString(" ", fout) != 0)
+			return NULL;
+	}
+	if (PyFile_AsFile(fin) == stdin && PyFile_AsFile(fout) == stdout &&
 	    isatty(fileno(stdin)) && isatty(fileno(stdout))) {
 		PyObject *po;
 		char *prompt;
@@ -1325,32 +1338,23 @@ builtin_raw_input(PyObject *self, PyObject *args)
 		else { /* strip trailing '\n' */
 			size_t len = strlen(s);
 			if (len > INT_MAX) {
-				PyErr_SetString(PyExc_OverflowError, "input too long");
+				PyErr_SetString(PyExc_OverflowError,
+						"input too long");
 				result = NULL;
 			}
 			else {
-				result = PyString_FromStringAndSize(s, (int)(len-1));
+				result = PyString_FromStringAndSize(s,
+								(int)(len-1));
 			}
 		}
 		PyMem_FREE(s);
 		return result;
 	}
 	if (v != NULL) {
-		f = PySys_GetObject("stdout");
-		if (f == NULL) {
-			PyErr_SetString(PyExc_RuntimeError, "lost sys.stdout");
-			return NULL;
-		}
-		if (Py_FlushLine() != 0 ||
-		    PyFile_WriteObject(v, f, Py_PRINT_RAW) != 0)
+		if (PyFile_WriteObject(v, fout, Py_PRINT_RAW) != 0)
 			return NULL;
 	}
-	f = PySys_GetObject("stdin");
-	if (f == NULL) {
-		PyErr_SetString(PyExc_RuntimeError, "lost sys.stdin");
-		return NULL;
-	}
-	return PyFile_GetLine(f, -1);
+	return PyFile_GetLine(fin, -1);
 }
 
 PyDoc_STRVAR(raw_input_doc,
