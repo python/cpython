@@ -52,7 +52,7 @@ ConfigParser -- responsible for for parsing a list of
         The filename defaults to fp.name; it is only used in error
         messages (if fp has no `name' attribute, the string `<???>' is used).
 
-    get(section, option, raw=0, vars=None)
+    get(section, option, raw=False, vars=None)
         return a string value for the named option.  All % interpolations are
         expanded in the return values, based on the defaults passed into the
         constructor and the DEFAULT section.  Additional substitutions may be
@@ -67,10 +67,10 @@ ConfigParser -- responsible for for parsing a list of
 
     getboolean(section, options)
         like get(), but convert value to a boolean (currently case
-        insensitively defined as 0, false, no, off for 0, and 1, true,
-        yes, on for 1).  Returns 0 or 1.
+        insensitively defined as 0, false, no, off for False, and 1, true,
+        yes, on for True).  Returns False or True.
 
-    items(section, raw=0, vars=None)
+    items(section, raw=False, vars=None)
         return a list of tuples with (name, value) for each option
         in the section.
 
@@ -308,7 +308,7 @@ class RawConfigParser:
             option = self.optionxform(option)
             return option in self._defaults
         elif section not in self._sections:
-            return 0
+            return False
         else:
             option = self.optionxform(option)
             return (option in self._sections[section]
@@ -393,7 +393,7 @@ class RawConfigParser:
         optname = None
         lineno = 0
         e = None                                  # None, or an exception
-        while 1:
+        while True:
             line = fp.readline()
             if not line:
                 break
@@ -459,7 +459,7 @@ class RawConfigParser:
 
 class ConfigParser(RawConfigParser):
 
-    def get(self, section, option, raw=0, vars=None):
+    def get(self, section, option, raw=False, vars=None):
         """Get an option value for a given section.
 
         All % interpolations are expanded in the return values, based on the
@@ -490,7 +490,7 @@ class ConfigParser(RawConfigParser):
         else:
             return self._interpolate(section, option, value, d)
 
-    def items(self, section, raw=0, vars=None):
+    def items(self, section, raw=False, vars=None):
         """Return a list of tuples with (name, value) for each option
         in the section.
 
