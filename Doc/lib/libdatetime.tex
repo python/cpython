@@ -34,9 +34,9 @@ the abstract \class{tzinfo} class.  These \class{tzinfo} objects
 capture information about the offset from UTC time, the time zone
 name, and whether Daylight Saving Time is in effect.  Note that no
 concrete \class{tzinfo} classes are supplied by the \module{datetime}
-module.  Instead, they provide a framework for incorporating the level
-of detail an application may require.  The rules for time adjustment across
-the world are more political than rational, and there is no standard
+module.  Supporting timezones at whatever level of detail is required
+is up to the application.  The rules for time adjustment across the
+world are more political than rational, and there is no standard
 suitable for every application.
 
 The \module{datetime} module exports the following constants:
@@ -201,38 +201,38 @@ Instance attributes (read-only):
 Supported operations:
 
 % XXX this table is too wide!
-\begin{tableiii}{c|l|c}{code}{Operation}{Result}{Notes}
-  \lineiii{\var{t1} = \var{t2} + \var{t3}}
+\begin{tableii}{c|l}{code}{Operation}{Result}
+  \lineii{\var{t1} = \var{t2} + \var{t3}}
           {Sum of \var{t2} and \var{t3}.
            Afterwards \var{t1}-\var{t2} == \var{t3} and \var{t1}-\var{t3}
-           == \var{t2} are true.}
-          {(1)}
-  \lineiii{\var{t1} = \var{t2} - \var{t3}}
-          {Difference of \var{t2} and \var{t3}. Afterwards \var{t1} ==
-           \var{t2} - \var{t3} and \var{t2} == \var{t1} + \var{t3} are
-           true.}
-          {(1)}
-  \lineiii{\var{t1} = \var{t2} * \var{i} or \var{t1} = \var{i} * \var{t2}}
+           == \var{t2} are true.
+          (1)}
+  \lineii{\var{t1} = \var{t2} - \var{t3}}
+          {Difference of \var{t2} and \var{t3}.
+           Afterwards \var{t1} == \var{t2} - \var{t3} and \var{t2} == \var{t1} + \var{t3} are
+           true.
+          (1)}
+  \lineii{\var{t1} = \var{t2} * \var{i} or \var{t1} = \var{i} * \var{t2}}
           {Delta multiplied by an integer or long.
            Afterwards \var{t1} // i == \var{t2} is true,
-           provided \code{i != 0}.
-           In general, \var{t1} * i == \var{t1} * (i-1) + \var{t1} is true.}
-          {(1)}
-  \lineiii{\var{t1} = \var{t2} // \var{i}}
-          {The floor is computed and the remainder (if any) is thrown away.}
-          {(3)}
-  \lineiii{+\var{t1}}
-          {Returns a \class{timedelta} object with the same value.}
-          {(2)}
-  \lineiii{-\var{t1}}
+           provided \code{i != 0}.}
+  \lineii{}{In general, \var{t1} * i == \var{t1} * (i-1) + \var{t1} is true.
+          (1)}
+  \lineii{\var{t1} = \var{t2} // \var{i}}
+          {The floor is computed and the remainder (if any) is thrown away.
+          (3)}
+  \lineii{+\var{t1}}
+          {Returns a \class{timedelta} object with the same value.
+          (2)}
+  \lineii{-\var{t1}}
           {equivalent to \class{timedelta}(-\var{t1.days}, -\var{t1.seconds},
-           -\var{t1.microseconds}), and to \var{t1}* -1.}
-          {(1)(4)}
-  \lineiii{abs(\var{t})}
+           -\var{t1.microseconds}), and to \var{t1}* -1.
+          (1)(4)}
+  \lineii{abs(\var{t})}
           {equivalent to +\var{t} when \code{t.days >= 0}, and to
-           -\var{t} when \code{t.days < 0}.}
-          {(2)}
-\end{tableiii}
+           -\var{t} when \code{t.days < 0}.
+          (2)}
+\end{tableii}
 \noindent
 Notes:
 
@@ -348,56 +348,66 @@ Instance attributes (read-only):
 Supported operations:
 
 % XXX rewrite to be a table
-\begin{itemize}
-  \item
-    date1 + timedelta -> date2
+\begin{tableii}{c|l}{code}{Operation}{Result}
+  \lineii{\var{date2} = \var{date1} + \var{timedelta}}
+    {\var{date2} is \code{\var{timedelta}.days} days removed from
+    \var{date1}.  (1)}
 
-    timedelta + date1 -> date2
 
-    date2 is timedelta.days days removed from the date1, moving forward
-    in time if timedelta.days > 0, or backward if timedetla.days < 0.
-    date2 - date1 == timedelta.days after.  timedelta.seconds and
-    timedelta.microseconds are ignored.  \exception{OverflowError} is
-    raised if date2.year would be smaller than \constant{MINYEAR} or
-    larger than \constant{MAXYEAR}.
+  \lineii{\var{date2} = \var{date1} - \var{timedelta}}
+   {Computes \var{date2} such that \code{\var{date2} + \var{timedelta}
+   == \var{date1}}. (2)}
 
-  \item
-    date1 - timedelta -> date2
+  \lineii{\var{timedelta} = \var{date1} - \var{date2}}
+   {(3)}
 
-    Computes the date2 such that date2 + timedelta == date1.  This
-    isn't quite equivalent to date1 + (-timedelta), because -timedelta
-    in isolation can overflow in cases where date1 - timedelta does
-    not.  timedelta.seconds and timedelta.microseconds are ignored.
+  \lineii{\var{date1}<\var{date2}}
+   {\var{date1} is considered less than \var{date2} when \var{date1}
+   precedes \var{date2} in time. (4)}
 
-  \item
-    date1 - date2 -> timedelta
+\end{tableii}
 
-    This is exact, and cannot overflow.  timedelta.seconds and
+Notes:
+\begin{description}
+
+\item[(1)]
+ \var{date2} is moved forward in time if \code{\var{timedelta}.days
+    > 0}, or backward if \code{\var{timedelta}.days < 0}.  Afterward
+    \code{\var{date2} - \var{date1} == \var{timedelta}.days}.
+    \code{\var{timedelta}.seconds} and
+    \code{\var{timedelta}.microseconds} are ignored.
+    \exception{OverflowError} is raised if \code{\var{date2}.year}
+    would be smaller than \constant{MINYEAR} or larger than
+    \constant{MAXYEAR}.
+
+\item[(2)]
+ This isn't quite equivalent to date1 +
+   (-timedelta), because -timedelta in isolation can overflow in cases
+   where date1 - timedelta does not.  \code{\var{timedelta}.seconds}
+   and \code{\var{timedelta}.microseconds} are ignored.
+
+\item[(3)]
+This is exact, and cannot overflow.  timedelta.seconds and
     timedelta.microseconds are 0, and date2 + timedelta == date1
     after.
 
-  \item
-    comparison of date to date, where date1 is considered less than
-    date2 when date1 precedes date2 in time.  In other words,
-    date1 < date2 if and only if date1.toordinal() < date2.toordinal().
-    \note{In order to stop comparison from falling back to the default
-          scheme of comparing object addresses, date comparison
-          normally raises \exception{TypeError} if the other comparand
-          isn't also a \class{date} object.  However, \code{NotImplemented}
-          is returned instead if the other comparand has a
-          \method{timetuple} attribute.  This hook gives other kinds of
-          date objects a chance at implementing mixed-type comparison.}
+\item[(4)]
+In other words, \code{date1 < date2}
+   if and only if \code{\var{date1}.toordinal() <
+   \var{date2}.toordinal()}. 
+In order to stop comparison from falling back to the default
+scheme of comparing object addresses, date comparison
+normally raises \exception{TypeError} if the other comparand
+isn't also a \class{date} object.  However, \code{NotImplemented}
+is returned instead if the other comparand has a
+\method{timetuple} attribute.  This hook gives other kinds of
+date objects a chance at implementing mixed-type comparison.
+
+\end{description}
 
 
-  \item
-    hash, use as dict key
-
-  \item
-    efficient pickling
-
-  \item
-    in Boolean contexts, all \class{date} objects are considered to be true
-\end{itemize}
+Dates can be used as dictionary keys. In Boolean contexts, all
+\class{date} objects are considered to be true.
 
 Instance methods:
 
@@ -414,10 +424,9 @@ Instance methods:
   0, and the DST flag is -1.
   \code{\var{d}.timetuple()} is equivalent to
       \code{(\var{d}.year, \var{d}.month, \var{d}.day,
-             0, 0, 0,  \# h, m, s
-             \var{d}.weekday(),  \# 0 is Monday
+             0, 0, 0, 
+             \var{d}.weekday(), 
              \var{d}.toordinal() - date(\var{d}.year, 1, 1).toordinal() + 1,
-             \# day of year
             -1)}
 \end{methoddesc}
 
@@ -429,14 +438,14 @@ Instance methods:
 
 \begin{methoddesc}{weekday}{}
   Return the day of the week as an integer, where Monday is 0 and
-  Sunday is 6.  For example, date(2002, 12, 4).weekday() == 2, a
+  Sunday is 6.  For example, \code{date(2002, 12, 4).weekday() == 2}, a
   Wednesday.
   See also \method{isoweekday()}.
 \end{methoddesc}
 
 \begin{methoddesc}{isoweekday}{}
   Return the day of the week as an integer, where Monday is 1 and
-  Sunday is 7.  For example, date(2002, 12, 4).isoweekday() == 3, a
+  Sunday is 7.  For example, \code{date(2002, 12, 4).isoweekday() == 3}, a
   Wednesday.
   See also \method{weekday()}, \method{isocalendar()}.
 \end{methoddesc}
@@ -457,15 +466,15 @@ Instance methods:
   For example, 2004 begins on a Thursday, so the first week of ISO
   year 2004 begins on Monday, 29 Dec 2003 and ends on Sunday, 4 Jan
   2004, so that
-
-  date(2003, 12, 29).isocalendar() == (2004, 1, 1)
-  date(2004, 1, 4).isocalendar() == (2004, 1, 7)
+  \code{date(2003, 12, 29).isocalendar() == (2004, 1, 1)}
+  and 
+  \code{date(2004, 1, 4).isocalendar() == (2004, 1, 7)}.
 \end{methoddesc}
 
 \begin{methoddesc}{isoformat}{}
   Return a string representing the date in ISO 8601 format,
   'YYYY-MM-DD'.  For example,
-  date(2002, 12, 4).isoformat() == '2002-12-04'.
+  \code{date(2002, 12, 4).isoformat() == '2002-12-04'}.
 \end{methoddesc}
 
 \begin{methoddesc}{__str__}{}
@@ -590,8 +599,8 @@ Other constructors, all class methods:
 \begin{methoddesc}{fromordinal}{ordinal}
   Return the \class{datetime} corresponding to the proleptic
   Gregorian ordinal, where January 1 of year 1 has ordinal 1.
-  \exception{ValueError} is raised unless 1 <= ordinal <=
-  datetime.max.toordinal().  The hour, minute, second and
+  \exception{ValueError} is raised unless \code{1 <= ordinal <=
+  datetime.max.toordinal()}.  The hour, minute, second and
   microsecond of the result are all 0,
   and \member{tzinfo} is \code{None}.
 \end{methoddesc}
@@ -661,24 +670,33 @@ Instance attributes (read-only):
 
 Supported operations:
 
-\begin{itemize}
-  \item
-    datetime1 + timedelta -> datetime2
+\begin{tableii}{c|l}{code}{Operation}{Result}
+  \lineii{\var{datetime2} = \var{datetime1} + \var{timedelta}}{(1)}
 
-    timedelta + datetime1 -> datetime2
+  \lineii{\var{datetime2} = \var{datetime1} - \var{timedelta}}{(2)}
+
+  \lineii{\var{timedelta} = \var{datetime1} - \var{datetime2}}{(3)}
+
+  \lineii{\var{datetime1} < \var{datetime2}}
+   {Compares \class{datetime} to \class{datetime}. 
+    (4)}
+
+\end{tableii}
+
+\begin{description}
+
+\item[(1)]
 
     datetime2 is a duration of timedelta removed from datetime1, moving
-    forward in time if timedelta.days > 0, or backward if
-    timedelta.days < 0.  The result has the same \member{tzinfo} member
+    forward in time if \code{\var{timedelta}.days} > 0, or backward if
+    \code{\var{timedelta}.days} < 0.  The result has the same \member{tzinfo} member
     as the input datetime, and datetime2 - datetime1 == timedelta after.
     \exception{OverflowError} is raised if datetime2.year would be
     smaller than \constant{MINYEAR} or larger than \constant{MAXYEAR}.
     Note that no time zone adjustments are done even if the input is an
     aware object.
 
-  \item
-    datetime1 - timedelta -> datetime2
-
+\item[(2)]
     Computes the datetime2 such that datetime2 + timedelta == datetime1.
     As for addition, the result has the same \member{tzinfo} member
     as the input datetime, and no time zone adjustments are done even
@@ -687,9 +705,7 @@ Supported operations:
     -timedelta in isolation can overflow in cases where
     datetime1 - timedelta does not.
 
-  \item
-    datetime1 - datetime2 -> timedelta
-
+\item[(3)]
     Subtraction of a \class{datetime} from a
     \class{datetime} is defined only if both
     operands are naive, or if both are aware.  If one is aware and the
@@ -708,11 +724,13 @@ Supported operations:
           (\var{b}.replace(tzinfo=None) - \var{b}.utcoffset())}
     except that the implementation never overflows.
 
-  \item
-    comparison of \class{datetime} to \class{datetime},
-    where \var{a} is considered less than \var{b}
-    when \var{a} precedes \var{b} in time.  If one comparand is naive and
-    the other is aware, \exception{TypeError} is raised.  If both
+\item[(4)]
+
+\var{datetime1} is considered less than \var{datetime2}
+when \var{datetime1} precedes \var{datetime2} in time.  
+
+If one comparand is naive and
+the other is aware, \exception{TypeError} is raised.  If both
     comparands are aware, and have the same \member{tzinfo} member,
     the common \member{tzinfo} member is ignored and the base datetimes
     are compared.  If both comparands are aware and have different
@@ -727,16 +745,11 @@ Supported operations:
           kinds of date objects a chance at implementing mixed-type
           comparison.}
 
-  \item
-    hash, use as dict key
+\end{description}
 
-  \item
-    efficient pickling
+\class{datetime} objects can be used as dictionary keys. In Boolean
+contexts, all \class{datetime} objects are considered to be true.
 
-  \item
-    in Boolean contexts, all \class{datetime} objects are considered
-    to be true
-\end{itemize}
 
 Instance methods:
 
@@ -773,7 +786,7 @@ Instance methods:
   not be \code{None}, and \code{\var{self}.utcoffset()} must not return
   \code{None}).
 
-  If code{\var{self}.tzinfo} is \var{tz},
+  If \code{\var{self}.tzinfo} is \var{tz},
   \code{\var{self}.astimezone(\var{tz})} is equal to \var{self}:  no
   adjustment of date or time members is performed.
   Else the result is local time in time zone \var{tz}, representing the
