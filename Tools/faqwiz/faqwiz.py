@@ -808,7 +808,7 @@ class FaqWizard:
 
         import tempfile
         tf = tempfile.NamedTemporaryFile()
-        emit(LOGHEADER, self.ui, os.environ, date=date, _file=tfn)
+        emit(LOGHEADER, self.ui, os.environ, date=date, _file=tf)
         tf.flush()
         tf.seek(0)
 
@@ -830,7 +830,7 @@ class FaqWizard:
         print '<PRE>%s</PRE>' % escape(output)
 
         try:
-            os.unlink(tfn)
+            os.unlink(tf.name)
         except os.error:
             pass
 
