@@ -253,8 +253,12 @@ class Bdb: # Basic Debugger
 		    s = s + "<lambda>"
 		if frame.f_locals.has_key('__args__'):
 			args = frame.f_locals['__args__']
-			if args is not None:
-				s = s + repr.repr(args)
+		else:
+			args = None
+		if args:
+			s = s + repr.repr(args)
+		else:
+			s = s + '()'
 		if frame.f_locals.has_key('__return__'):
 			rv = frame.f_locals['__return__']
 			s = s + '->'
