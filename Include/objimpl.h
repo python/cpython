@@ -262,7 +262,7 @@ typedef struct _gc_head {
 /* Get the object given the PyGC_Head */
 #define PyObject_FROM_GC(g) ((PyObject *)(((PyGC_Head *)g)+1))
 
-extern DL_IMPORT(void) PyGC_Dump(PyGC_Head *);
+extern DL_IMPORT(void) _PyGC_Dump(PyGC_Head *);
 
 #endif /* WITH_CYCLE_GC */
 
