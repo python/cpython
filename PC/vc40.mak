@@ -453,8 +453,8 @@ DEF_FILE= \
 	".\PC\_tkinter.def"
 LINK32_OBJS= \
 	"$(INTDIR)/_tkinter.obj" \
-	"..\..\..\..\TCL\bin\tcl75.lib" \
-	"..\..\..\..\TCL\bin\tk41.lib" \
+	".\PC\tcl75.lib" \
+	".\PC\tk41.lib" \
 	".\vc40\python14.lib"
 
 "$(OUTDIR)\_tkinter.dll" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
@@ -4451,12 +4451,12 @@ DEP_CPP__TKIN=\
 ################################################################################
 # Begin Source File
 
-SOURCE=\TCL\bin\tk41.lib
+SOURCE=.\PC\tk41.lib
 # End Source File
 ################################################################################
 # Begin Source File
 
-SOURCE=\TCL\bin\tcl75.lib
+SOURCE=.\PC\tcl75.lib
 # End Source File
 ################################################################################
 # Begin Source File
