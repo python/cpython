@@ -40,6 +40,8 @@ def disassemble(co, lasti):
 				print '(' + co.co_names[oparg] + ')',
 			elif op in hasjrel:
 				print '(to ' + `i + oparg` + ')',
+			elif op in haslocal:
+				print '(' + co.co_varnames[oparg] + ')',
 		print
 
 def findlabels(code):
@@ -67,6 +69,7 @@ hasconst = []
 hasname = []
 hasjrel = []
 hasjabs = []
+haslocal = []
 
 opname = [''] * 256
 for op in range(256): opname[op] = '<' + `op` + '>'
@@ -183,8 +186,11 @@ jrel_op('SETUP_FINALLY', 122)	# ""
 def_op('RESERVE_FAST', 123)	# Number of local variables
 hasconst.append(123)
 def_op('LOAD_FAST', 124)	# Local variable number
+haslocal.append(124)
 def_op('STORE_FAST', 125)	# Local variable number
+haslocal.append(125)
 def_op('DELETE_FAST', 126)	# Local variable number
+haslocal.append(126)
 
 def_op('SET_LINENO', 127)	# Current line number
 SET_LINENO = 127
