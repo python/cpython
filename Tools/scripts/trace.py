@@ -41,7 +41,8 @@ Sample use, programmatically
    # run the new command using the given trace
    trace.run(coverage.globaltrace, 'main()')
    # make a report, telling it where you want output
-   trace.print_results(show_missing=1)
+   r = trace.results()
+   r.write_results(show_missing=1)
 """
 
 import sys, os, tempfile, types, copy, operator, inspect, exceptions, marshal
@@ -50,9 +51,6 @@ try:
     pickle = cPickle
 except ImportError:
     import pickle
-
-true = 1
-false = None
 
 # DEBUG_MODE=1  # make this true to get printouts which help you understand what's going on
 
@@ -147,7 +145,8 @@ class Ignore:
         return 0
 
 class CoverageResults:
-    def __init__(self, counts=None, calledfuncs=None, infile=None, outfile=None):
+    def __init__(self, counts=None, calledfuncs=None, infile=None,
+                 outfile=None): 
         self.counts = counts
         if self.counts is None:
             self.counts = {}
@@ -163,7 +162,9 @@ class CoverageResults:
             try:
                 thingie = pickle.load(open(self.infile, 'r'))
                 if type(thingie) is types.DictType:
-                    # backwards compatibility for old trace.py after Zooko touched it but before calledfuncs  --Zooko 2001-10-24
+                    # backwards compatibility for old trace.py after
+                    # Zooko touched it but before calledfuncs  --Zooko
+                    # 2001-10-24 
                     self.update(self.__class__(thingie))
                 elif type(thingie) is types.TupleType and len(thingie) == 2:
                     counts, calledfuncs = thingie
@@ -171,7 +172,8 @@ class CoverageResults:
             except (IOError, EOFError):
                 pass
             except pickle.UnpicklingError:
-                # backwards compatibility for old trace.py before Zooko touched it  --Zooko 2001-10-24
+                # backwards compatibility for old trace.py before
+                # Zooko touched it  --Zooko 2001-10-24 
                 self.update(self.__class__(marshal.load(open(self.infile))))
 
     def update(self, other):
@@ -182,7 +184,10 @@ class CoverageResults:
         other_calledfuncs = other.calledfuncs
 
         for key in other_counts.keys():
-            if key != 'calledfuncs': # backwards compatibility for abortive attempt to stuff calledfuncs into self.counts, by Zooko  --Zooko 2001-10-24
+            if key != 'calledfuncs':
+                # backwards compatibility for abortive attempt to
+                # stuff calledfuncs into self.counts, by Zooko
+                # --Zooko 2001-10-24 
                 counts[key] = counts.get(key, 0) + other_counts[key]
 
         for key in other_calledfuncs.keys():
@@ -397,14 +402,22 @@ def commonprefix(dirs):
     return os.sep.join(prefix)
 
 class Trace:
-    def __init__(self, count=1, trace=1, countfuncs=0, ignoremods=(), ignoredirs=(), infile=None, outfile=None):
+    def __init__(self, count=1, trace=1, countfuncs=0, ignoremods=(),
+                 ignoredirs=(), infile=None, outfile=None):
         """
-        @param count true iff it should count number of times each line is executed
-        @param trace true iff it should print out each line that is being counted
-        @param countfuncs true iff it should just output a list of (filename, modulename, funcname,) for functions that were called at least once;  This overrides `count' and `trace'
+        @param count true iff it should count number of times each
+                     line is executed  
+        @param trace true iff it should print out each line that is
+                     being counted 
+        @param countfuncs true iff it should just output a list of
+                     (filename, modulename, funcname,) for functions
+                     that were called at least once;  This overrides
+                     `count' and `trace'  
         @param ignoremods a list of the names of modules to ignore
-        @param ignoredirs a list of the names of directories to ignore all of the (recursive) contents of
-        @param infile file from which to read stored counts to be added into the results
+        @param ignoredirs a list of the names of directories to ignore
+                     all of the (recursive) contents of 
+        @param infile file from which to read stored counts to be
+                     added into the results 
         @param outfile file in which to write the results
         """
         self.infile = infile
@@ -506,7 +519,7 @@ class Trace:
             
             filename, lineno, funcname, context, lineindex = \
                       inspect.getframeinfo(frame, 1)
-            key = (filename, lineno,)
+            key = filename, lineno
             self.counts[key] = self.counts.get(key, 0) + 1
             
             # XXX not convinced that this memoizing is a performance
@@ -605,7 +618,7 @@ def main(argv=None):
     ignore_dirs = []
     coverdir = None
     summary = 0
-    listfuncs = false
+    listfuncs = False
 
     for opt, val in opts:
         if opt == "--help":
@@ -617,7 +630,7 @@ def main(argv=None):
             sys.exit(0)
 
         if opt == "-l" or opt == "--listfuncs":
-            listfuncs = true
+            listfuncs = True
             continue
 
         if opt == "-t" or opt == "--trace":
