@@ -1,3 +1,17 @@
+Fri Jan 14 17:35:33 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* configure.in: check for sys/time.h; substitute and check for AR;
+	check for nice()
+
+	* Makefile.in: make python .PRECIOUS; define OPT=-O and pass it to
+	submakes
+
+	* */Makefile*in: set OPT=-O; set AR=@ar@
+
+	* Modules/Setup.minix: new
+
+	* Lib/audiodev.py: only import system specific modules if needed
+
 Thu Jan 13 16:40:28 1994  Guido van Rossum  (guido@voorn.cwi.nl)
 
 	* Modules/flmodule.c: make type objects static
@@ -6,7 +20,9 @@ Thu Jan 13 16:40:28 1994  Guido van Rossum  (guido@voorn.cwi.nl)
 
 	* Makefile.in: add rule to build Makefile; add VPATH for that;
 	remove dependency on configure script (you can run 'make autoconf'
-	instead); add Lib/test to path for test target; 
+	instead); add Lib/test to path for test target;
+
+	* Lib/test: new subdirectory, holds all test modules
 
 Wed Jan 12 10:17:41 1994  Guido van Rossum  (guido@voorn.cwi.nl)
 
