@@ -1434,10 +1434,10 @@ class Wm:
         "program"."""
         return self.tk.call('wm', 'sizefrom', self._w, who)
     sizefrom = wm_sizefrom
-    def wm_state(self):
-        """Return the state of this widget as one of normal,
-        icon, iconic (see wm_iconwindow) and withdrawn."""
-        return self.tk.call('wm', 'state', self._w)
+    def wm_state(self, newstate=None):
+        """Query or set the state of this widget as one of normal, icon,
+        iconic (see wm_iconwindow), withdrawn, or zoomed (Windows only)."""
+        return self.tk.call('wm', 'state', self._w, newstate)
     state = wm_state
     def wm_title(self, string=None):
         """Set the title of this widget."""
