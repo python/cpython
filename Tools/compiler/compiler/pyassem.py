@@ -53,7 +53,7 @@ class PyAssembler:
         # XXX why is the default value for flags 3?
 	self.insts = []
         # used by makeCodeObject
-        self.argcount = len(args)
+        self._getArgCount(args)
         self.code = ''
         self.consts = [docstring]
         self.filename = filename
@@ -66,6 +66,16 @@ class PyAssembler:
         self.lastlineno = 0
         self.last_addr = 0
         self.lnotab = ''
+
+    def _getArgCount(self, args):
+        if args and args[0][0] == '.':
+            for i in range(len(args)):
+                if args[i][0] == '.':
+                    num = i
+            self.argcount = num + 1
+        else:
+            self.argcount = len(args)
+                
 
     def __repr__(self):
         return "<bytecode: %d instrs>" % len(self.insts)
@@ -231,7 +241,8 @@ class PyAssembler:
         return arg
 
     nameOps = ('STORE_NAME', 'IMPORT_NAME', 'IMPORT_FROM',
-               'STORE_ATTR', 'LOAD_ATTR', 'LOAD_NAME', 'DELETE_NAME')
+               'STORE_ATTR', 'LOAD_ATTR', 'LOAD_NAME', 'DELETE_NAME',
+               'DELETE_ATTR')
     localOps = ('LOAD_FAST', 'STORE_FAST', 'DELETE_FAST')
     globalOps = ('LOAD_GLOBAL', 'STORE_GLOBAL', 'DELETE_GLOBAL')
 
