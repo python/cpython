@@ -70,6 +70,8 @@ def urlcleanup():
 ftpcache = {}
 class URLopener:
 
+	tempcache = None		# So close() in __del__() won't fail
+
 	# Constructor
 	def __init__(self, proxies=None):
 		if proxies is None:
