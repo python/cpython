@@ -87,10 +87,6 @@ extern void initctb();
 #ifdef USE_MACSPEECH
 extern void initmacspeech();
 #endif
-#ifdef USE_MACTCP
-extern void initmacdnr();
-extern void initmactcp();
-#endif
 #ifdef USE_IC
 extern void initicglue();
 #endif
@@ -103,6 +99,7 @@ extern void initFm();
 extern void initHelp();
 extern void initIcn();
 extern void initList();
+extern void initMlte();
 extern void initQdoffs();
 extern void initSnd();
 extern void initSndihooks();
@@ -110,6 +107,7 @@ extern void initScrap();
 extern void initTE();
 extern void initColorPicker();
 extern void initPrinting();
+extern void initCF();
 #endif
 #ifdef USE_CORE_TOOLBOX
 extern void initAE();
@@ -215,10 +213,6 @@ struct _inittab _PyImport_Inittab[] = {
 #ifdef USE_MACSPEECH
 	{"macspeech", initmacspeech},
 #endif
-#ifdef USE_MACTCP
-	{"macdnr", initmacdnr},
-	{"mactcp", initmactcp},
-#endif
 #ifdef USE_IC
 	{"icglue", initicglue},
 #endif
@@ -238,6 +232,7 @@ struct _inittab _PyImport_Inittab[] = {
 	{"Fm", initFm},
 	{"Icn", initIcn},
 	{"List", initList},
+	{"Mlte", initMlte},
 	{"Qdoffs", initQdoffs},
 	{"Snd", initSnd},
 	{"Sndihooks", initSndihooks},
@@ -248,6 +243,9 @@ struct _inittab _PyImport_Inittab[] = {
 #if !TARGET_API_MAC_CARBON
 	{"Help", initHelp},
 	{"Printing", initPrinting},
+#endif
+#if TARGET_API_MAC_CARBON
+	{"CF", initCF},
 #endif
 #endif
 #ifdef USE_QT
