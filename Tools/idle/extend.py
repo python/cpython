@@ -8,4 +8,5 @@ standard = [
     "FormatParagraph",
     "ZoomHeight",
     "ScriptBinding",
+    "CallTips",
 ]
