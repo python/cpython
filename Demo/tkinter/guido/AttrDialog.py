@@ -148,6 +148,7 @@ class PackDialog(Dialog):
 	def refresh(self):
 		self.current = self.widget.newinfo()
 		self.current['.class'] = self.widget.winfo_class()
+		self.current['.name'] = self.widget._w
 
 	class packoption: # Mix-in class
 		def set(self, e=None):
@@ -165,7 +166,8 @@ class PackDialog(Dialog):
 
 	options = {
 		'.class': (None, 'Class'),
-		'after': (None, 'Widet'),
+		'.name': (None, 'Name'),
+		'after': (None, 'Widget'),
 		'anchor': ('center', 'Anchor'),
 		'before': (None, 'Widget'),
 		'expand': ('no', 'Boolean'),
@@ -184,6 +186,7 @@ class PackDialog(Dialog):
 		'Class': 'readonly',
 		'Expand': 'boolean',
 		'Fill': ('none', 'x', 'y', 'both'),
+		'Name': 'readonly',
 		'Pad': 'pixel',
 		'Side': ('top', 'right', 'bottom', 'left'),
 		'Widget': 'readonly',
@@ -197,8 +200,8 @@ class RemotePackDialog(PackDialog):
 		self.widget = widget
 		self.refresh()
 		self.top = Toplevel(self.master)
-		self.top.title('Remote %s Pack: %s' % (self.app, self.widget))
-		self.top.minsize(1, 1) # XXX
+		self.top.title(self.app + ' PackDialog')
+		self.top.minsize(1, 1)
 		self.addchoices()
 
 	def refresh(self):
@@ -220,6 +223,7 @@ class RemotePackDialog(PackDialog):
 						  'winfo',
 						  'class',
 						  self.widget)
+		dict['.name'] = self.widget
 		self.current = dict
 
 	class remotepackoption: # Mix-in class
@@ -254,14 +258,19 @@ class WidgetDialog(Dialog):
 
 	def refresh(self):
 		self.configuration = self.widget.config()
+		self.update()
+		self.current['.class'] = self.widget.winfo_class()
+		self.current['.name'] = self.widget._w
+
+	def update(self):
 		self.current = {}
 		self.options = {}
-		self.options['.class'] = (None, 'Class')
-		self.current['.class'] = self.widget.winfo_class()
 		for k, v in self.configuration.items():
 			if len(v) > 4:
 				self.current[k] = v[4]
 				self.options[k] = v[3], v[2] # default, klass
+		self.options['.class'] = (None, 'Class')
+		self.options['.name'] = (None, 'Name')
 
 	class widgetoption: # Mix-in class
 		def set(self, e=None):
@@ -301,6 +310,7 @@ class WidgetDialog(Dialog):
 		'Label': 'string',
 		'Length': 'pixel',
 		'MenuName': 'widget',
+		'Name': 'readonly',
 		'OffTime': 'time',
 		'OnTime': 'time',
 		'Orient': ('horizontal', 'vertical'),
@@ -337,7 +347,60 @@ class WidgetDialog(Dialog):
 		'menubutton': _tristate,
 		'slider': _bistate,
 		}
-		
+
+class RemoteWidgetDialog(WidgetDialog):
+
+	def __init__(self, master, app, widget):
+		self.master = master
+		self.app = app
+		self.widget = widget
+		self.refresh()
+		self.top = Toplevel(self.master)
+		self.top.title(self.app + ' WidgetDialog')
+		self.top.minsize(1, 1)
+		self.addchoices()
+
+	def refresh(self):
+		try:
+			items = self.master.tk.splitlist(
+				self.master.send(self.app,
+						 self.widget,
+						 'config'))
+		except TclError, msg:
+			print 'send widget config', self.widget, ':', msg
+			return
+		dict = {}
+		for item in items:
+			words = self.master.tk.splitlist(item)
+			key = words[0][1:]
+			value = (key,) + words[1:]
+			dict[key] = value
+		self.configuration = dict
+		self.update()
+		self.current['.class'] = self.master.send(self.app,
+							  'winfo',
+							  'class',
+							  self.widget)
+		self.current['.name'] = self.widget
+
+	class remotewidgetoption: # Mix-in class
+		def set(self, e=None):
+			self.current = self.var.get()
+			try:
+				self.dialog.master.send(
+					self.dialog.app,
+					self.dialog.widget,
+					'config',
+					'-'+self.option,
+					self.current)
+			except TclError, msg:
+				print 'send widget config :', msg
+				self.refresh()
+
+	class booleanoption(remotewidgetoption, BooleanOption): pass
+	class enumoption(remotewidgetoption, EnumOption): pass
+	class stringoption(remotewidgetoption, StringOption): pass
+	class readonlyoption(remotewidgetoption, ReadonlyOption): pass
 
 def test():
 	import sys
@@ -345,11 +408,18 @@ def test():
 	root.minsize(1, 1)
 	if sys.argv[2:]:
 		pd = RemotePackDialog(root, sys.argv[1], sys.argv[2])
+		wd = RemoteWidgetDialog(root, sys.argv[1], sys.argv[2])
 	else:
-		frame = Frame(root, {Pack: {'expand': 1, 'fill': 'both'}})
-		button = Button(frame, {'text': 'button',
+		frame = Frame(root, {'name': 'frame',
+				     Pack: {'expand': 1, 'fill': 'both'},
+				     })
+		button = Button(frame, {'name': 'button',
+					'text': 'button',
 					Pack: {'expand': 1}})
-		canvas = Canvas(frame, {Pack: {}})
+		canvas = Canvas(frame, {'name': 'canvas',
+					Pack: {}})
+		fpd = PackDialog(frame)
+		fwd = WidgetDialog(frame)
 		bpd = PackDialog(button)
 		bwd = WidgetDialog(button)
 		cpd = PackDialog(canvas)
