@@ -73,30 +73,57 @@ getpreffilefss(FSSpec *fssp)
 	static FSSpec fss;
 	short prefdirRefNum;
 	long prefdirDirID;
+	long pyprefdirDirID;
 	Handle namehandle;
+	OSErr err;
 	
 	if ( !diditbefore ) {
-		if ( FindFolder(kOnSystemDisk, 'pref', kDontCreateFolder, &prefdirRefNum,
-						&prefdirDirID) != noErr ) {
-			/* Something wrong with preferences folder */
-			(void)StopAlert(NOPREFDIR_ID, NULL);
-			exit(1);
-		}
-		
 		if ( (namehandle=GetNamedResource('STR ', PREFFILENAME_NAME)) == NULL ) {
 			(void)StopAlert(NOPREFNAME_ID, NULL);
 			exit(1);
 		}
 		
-		HLock(namehandle);
 		if ( **namehandle == '\0' ) {
 			/* Empty string means don't use preferences file */
 			rv = 0;
 		} else {
 			/* There is a filename, construct the fsspec */
-			(void)FSMakeFSSpec(prefdirRefNum, prefdirDirID, (unsigned char *)*namehandle, &fss);
+			if ( FindFolder(kOnSystemDisk, 'pref', kDontCreateFolder, &prefdirRefNum,
+							&prefdirDirID) != noErr ) {
+				/* Something wrong with preferences folder */
+				(void)StopAlert(NOPREFDIR_ID, NULL);
+				exit(1);
+			}
+			/* make fsspec for the "Python" folder inside the prefs folder */
+			err = FSMakeFSSpec(prefdirRefNum, prefdirDirID, "\pPython", &fss);
+			if (err == fnfErr) {
+				/* it doesn't exist: create it */
+				err = FSpDirCreate(&fss, smSystemScript, &pyprefdirDirID);
+			} else {
+				/* it does exist, now find out the dirID of the Python prefs folder, brrr. */
+				CInfoPBRec info;
+				info.dirInfo.ioVRefNum 		= fss.vRefNum;
+				info.dirInfo.ioDrDirID 		= fss.parID;
+				info.dirInfo.ioNamePtr 		= fss.name;
+				info.dirInfo.ioFDirIndex 	= 0;
+				info.dirInfo.ioACUser 		= 0;
+				err = PBGetCatInfo(&info, 0);
+				if (err == noErr) {
+					pyprefdirDirID = info.dirInfo.ioDrDirID;
+				}
+			}
+			if (err != noErr) {
+				(void)StopAlert(NOPREFDIR_ID, NULL);
+				exit(1);
+			}
+			HLock(namehandle);
+			err = FSMakeFSSpec(fss.vRefNum, pyprefdirDirID, (unsigned char *)*namehandle, &fss);
+			HUnlock(namehandle);
+			if (err != noErr && err != fnfErr) {
+				(void)StopAlert(NOPREFDIR_ID, NULL);
+				exit(1);
+			}
 		}
-		HUnlock(namehandle);
 		ReleaseResource(namehandle);
 		diditbefore = 1;
 	}
