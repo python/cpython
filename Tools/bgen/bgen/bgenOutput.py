@@ -2,20 +2,41 @@
 
 This should really be a class, but then everybody would be passing
 the output object to each other.  I chose for the simpler approach
-of a module with a global variable.  Use SetOutputFile() to change
-the output file.
+of a module with a global variable.  Use SetOutputFile() or
+SetOutputFileName() to change the output file.
 """
 
-def SetOutputFile(file = None):
-	"""Call this with an open file object to make that the output file.
+_NeedClose = 0
 
-	Call it without arguments to reset the output file to sys.stdout.
+def SetOutputFile(file = None, needclose = 0):
+	"""Call this with an open file object to make it the output file.
+
+	Call it without arguments to close the current file (if necessary)
+	and reset it to sys.stdout.
+	If the second argument is true, the new file will be explicitly closed
+	on a subsequence call.
 	"""
-	global _File
+	global _File, _NeedClose
+	if _NeedClose:
+		tmp = _File
+		_NeedClose = 0
+		_File = None
+		tmp.close()
 	if file is None:
 		import sys
 		file = sys.stdout
 	_File = file
+	_NeedClose = file and needclose
+
+def SetOutputFileName(filename = None):
+	"""Call this with a filename to make it the output file.
+	
+	Call it without arguments to close the current file (if necessary)
+	and reset it to sys.stdout.
+	"""
+	SetOutputFile()
+	if filename:
+		SetOutputFile(open(filename, 'w'), 1)
 
 SetOutputFile()	# Initialize _File
 
@@ -34,7 +55,10 @@ def SetLevel(level):
 	_Level = level
 
 def Output(format = "", *args):
-	"""Call this with a format string and arguments for the format.
+	VaOutput(format, args)
+
+def VaOutput(format, args):
+	"""Call this with a format string and and argument tuple for the format.
 
 	A newline is always added.  Each line in the output is indented
 	to the proper indentation level -- even if the result of the
@@ -64,15 +88,38 @@ def IndentLevel(by = 1):
 	_Level = _Level + by
 
 def DedentLevel(by = 1):
-	"""Decfrement the indentation level by one.
+	"""Decrement the indentation level by one.
 
 	When called with an argument, subtracts it from the indentation level.
 	"""
 	IndentLevel(-by)
 
-def OutLbrace():
-	"""Output a '{' on a line by itself and increase the indentation level."""
-	Output("{")
+def OutIndent(format = "", *args):
+	"""Combine Output() followed by IndentLevel().
+	
+	If no text is given, acts like lone IndentLevel().
+	"""
+	if format: VaOutput(format, args)
+	IndentLevel()
+
+def OutDedent(format = "", *args):
+	"""Combine Output() followed by DedentLevel().
+	
+	If no text is given, acts like loneDedentLevel().
+	"""
+	if format: VaOutput(format, args)
+	DedentLevel()
+
+def OutLbrace(format = "", *args):
+	"""Like Output, but add a '{' and increase the indentation level.
+	
+	If no text is given a lone '{' is output.
+	"""
+	if format:
+		format = format + " {"
+	else:
+		format = "{"
+	VaOutput(format, args)
 	IndentLevel()
 
 def OutRbrace():
@@ -95,22 +142,67 @@ def OutHeader2(text):
 	"""Output a level 2 header comment (uses '-' dashes)."""
 	OutHeader(text, "-")
 
+def Out(text):
+	"""Output multiline text that's internally indented.
+	
+	Pass this a multiline character string.  The whitespace before the
+	first nonblank line of the string will be subtracted from all lines.
+	The lines are then output using Output(), but without interpretation
+	of formatting (if you need formatting you can do it before the call).
+	Recommended use:
+	
+		Out('''
+			int main(argc, argv)
+				int argc;
+				char *argv;
+			{
+				printf("Hello, world\\n");
+				exit(0);
+			}
+		''')
+	
+	Caveat: the indentation must be consistent -- if you use three tabs
+	in the first line, (up to) three tabs are removed from following lines,
+	but a line beginning with 24 spaces is not trimmed at all.  Don't use
+	this as a feature.
+	"""
+	# (Don't you love using triple quotes *inside* triple quotes? :-)
+	
+	import string
+	lines = string.splitfields(text, '\n')
+	indent = ""
+	for line in lines:
+		if string.strip(line):
+			for c in line:
+				if c not in string.whitespace:
+					break
+				indent = indent + c
+			break
+	n = len(indent)
+	for line in lines:
+		if line[:n] == indent:
+			line = line[n:]
+		else:
+			for c in indent:
+				if line[:1] <> c: break
+				line = line[1:]
+		VaOutput("%s", line)
+
 
 def _test():
 	"""Test program.  Run when the module is run as a script."""
 	OutHeader1("test bgenOutput")
-	Output("""
-#include <Python.h>
-#include <stdio.h>
-""")
-	Output("main(argc, argv)")
+	Out("""
+		#include <Python.h>
+		#include <stdio.h>
+	
+		main(argc, argv)
+			int argc;
+			char **argv;
+		{
+			int i;
+	""")
 	IndentLevel()
-	Output("int argc;")
-	Output("char **argv;")
-	DedentLevel()
-	OutLbrace()
-	Output("int i;")
-	Output()
 	Output("""\
 /* Here are a few comment lines.
    Just to test indenting multiple lines.
