@@ -27,18 +27,17 @@
 # Bioreason or Mojam Media be used in advertising or publicity pertaining to
 # distribution of the software without specific, written prior permission.
 #
-
-"""
-program/module to trace Python program or function execution
+"""program/module to trace Python program or function execution
 
 Sample use, command line:
   trace.py -c -f counts --ignore-dir '$prefix' spam.py eggs
   trace.py -t --ignore-dir '$prefix' spam.py eggs
 
 Sample use, programmatically
-   # create a Trace object, telling it what to ignore, and whether to do tracing
-   # or line-counting or both.
-   trace = trace.Trace(ignoredirs=[sys.prefix, sys.exec_prefix,], trace=0, count=1)
+   # create a Trace object, telling it what to ignore, and whether to
+   # do tracing or line-counting or both.
+   trace = trace.Trace(ignoredirs=[sys.prefix, sys.exec_prefix,], trace=0,
+                       count=1)
    # run the new command using the given trace
    trace.run(coverage.globaltrace, 'main()')
    # make a report, telling it where you want output
@@ -167,9 +166,9 @@ class CoverageResults:
                     # backwards compatibility for old trace.py after Zooko touched it but before calledfuncs  --Zooko 2001-10-24
                     self.update(self.__class__(thingie))
                 elif type(thingie) is types.TupleType and len(thingie) == 2:
-                    (counts, calledfuncs,) = thingie
+                    counts, calledfuncs = thingie
                     self.update(self.__class__(counts, calledfuncs))
-            except (IOError, EOFError,):
+            except (IOError, EOFError):
                 pass
             except pickle.UnpicklingError:
                 # backwards compatibility for old trace.py before Zooko touched it  --Zooko 2001-10-24
@@ -193,16 +192,20 @@ class CoverageResults:
         """
         @param coverdir
         """
-        for (filename, modulename, funcname,) in self.calledfuncs.keys():
-            print "filename: %s, modulename: %s, funcname: %s" % (filename, modulename, funcname,)
+        for filename, modulename, funcname in self.calledfuncs.keys():
+            print ("filename: %s, modulename: %s, funcname: %s"
+                   % (filename, modulename, funcname))
 
         import re
         # turn the counts data ("(filename, lineno) = count") into something
         # accessible on a per-file basis
         per_file = {}
         for thingie in self.counts.keys():
-            if thingie != "calledfuncs": # backwards compatibility for abortive attempt to stuff calledfuncs into self.counts, by Zooko  --Zooko 2001-10-24
-                (filename, lineno,) = thingie
+            if thingie != "calledfuncs":
+                # backwards compatibility for abortive attempt to
+                # stuff calledfuncs into self.counts, by Zooko --Zooko
+                # 2001-10-24
+                filename, lineno = thingie
                 lines_hit = per_file[filename] = per_file.get(filename, {})
                 lines_hit[lineno] = self.counts[(filename, lineno)]
 
@@ -327,7 +330,8 @@ class CoverageResults:
         if self.outfile:
             # try and store counts and module info into self.outfile
             try:
-                pickle.dump((self.counts, self.calledfuncs,), open(self.outfile, 'w'), 1)
+                pickle.dump((self.counts, self.calledfuncs),
+                            open(self.outfile, 'w'), 1)
             except IOError, err:
                 sys.stderr.write("cannot save counts files because %s" % err)
 
@@ -339,7 +343,7 @@ def _find_LINENO_from_code(code):
     line_increments = [ord(c) for c in code.co_lnotab[1::2]]
     table_length = len(line_increments)
 
-    lineno = code.co_first_lineno
+    lineno = code.co_firstlineno
 
     for li in line_increments:
         linenos[lineno] = 1
@@ -465,7 +469,8 @@ class Trace:
         Handles `call' events (why == 'call') and adds the (filename, modulename, funcname,) to the self._calledfuncs dict.
         """
         if why == 'call':
-            (filename, lineno, funcname, context, lineindex,) = inspect.getframeinfo(frame, 0)
+            filename, lineno, funcname, context, lineindex = \
+                      inspect.getframeinfo(frame, 0)
             if filename:
                 modulename = inspect.getmodulename(filename)
             else:
@@ -477,21 +482,16 @@ class Trace:
         Handles `call' events (why == 'call') and if the code block being entered is to be ignored then it returns `None', else it returns `self.localtrace'.
         """
         if why == 'call':
-            (filename, lineno, funcname, context, lineindex,) = inspect.getframeinfo(frame, 0)
-            # if DEBUG_MODE and not filename:
-            #     print "%s.globaltrace(frame: %s, why: %s, arg: %s): filename: %s, lineno: %s, funcname: %s, context: %s, lineindex: %s\n" % (self, frame, why, arg, filename, lineno, funcname, context, lineindex,)
+            filename, lineno, funcname, context, lineindex = \
+                      inspect.getframeinfo(frame, 0)
             if filename:
                 modulename = inspect.getmodulename(filename)
                 if modulename is not None:
                     ignore_it = self.ignore.names(filename, modulename)
-                    # if DEBUG_MODE and not self.blabbed.has_key((filename, modulename,)):
-                    #     self.blabbed[(filename, modulename,)] = None
-                    #     print "%s.globaltrace(frame: %s, why: %s, arg: %s, filename: %s, modulename: %s, ignore_it: %s\n" % (self, frame, why, arg, filename, modulename, ignore_it,)
                     if not ignore_it:
                         if self.trace:
-                            print " --- modulename: %s, funcname: %s" % (modulename, funcname,)
-                        # if DEBUG_MODE:
-                        #     print "%s.globaltrace(frame: %s, why: %s, arg: %s, filename: %s, modulename: %s, ignore_it: %s -- about to localtrace\n" % (self, frame, why, arg, filename, modulename, ignore_it,)
+                            print (" --- modulename: %s, funcname: %s"
+                                   % (modulename, funcname))
                         return self.localtrace
             else:
                 # XXX why no filename?
@@ -500,38 +500,58 @@ class Trace:
     def localtrace_trace_and_count(self, frame, why, arg):
         if why == 'line':
             # record the file name and line number of every trace
-            # XXX I wish inspect offered me an optimized `getfilename(frame)' to use in place of the presumably heavier `getframeinfo()'.  --Zooko 2001-10-14
-            (filename, lineno, funcname, context, lineindex,) = inspect.getframeinfo(frame, 1)
+            # XXX I wish inspect offered me an optimized
+            # `getfilename(frame)' to use in place of the presumably
+            # heavier `getframeinfo()'.  --Zooko 2001-10-14
+            
+            filename, lineno, funcname, context, lineindex = \
+                      inspect.getframeinfo(frame, 1)
             key = (filename, lineno,)
             self.counts[key] = self.counts.get(key, 0) + 1
-            # XXX not convinced that this memoizing is a performance win -- I don't know enough about Python guts to tell.  --Zooko 2001-10-14
+            
+            # XXX not convinced that this memoizing is a performance
+            # win -- I don't know enough about Python guts to tell.
+            # --Zooko 2001-10-14
+            
             bname = self.pathtobasename.get(filename)
             if bname is None:
-                # Using setdefault faster than two separate lines?  --Zooko 2001-10-14
-                bname = self.pathtobasename.setdefault(filename, os.path.basename(filename))
+                
+                # Using setdefault faster than two separate lines?
+                # --Zooko 2001-10-14
+                bname = self.pathtobasename.setdefault(filename,
+                                       os.path.basename(filename))
             try:
-                print "%s(%d): %s" % (bname, lineno, context[lineindex],),
+                print "%s(%d): %s" % (bname, lineno, context[lineindex]),
             except IndexError:
-                # Uh.. sometimes getframeinfo gives me a context of length 1 and a lineindex of -2.  Oh well.
+                # Uh.. sometimes getframeinfo gives me a context of
+                # length 1 and a lineindex of -2.  Oh well.
                 pass
         return self.localtrace
 
     def localtrace_trace(self, frame, why, arg):
         if why == 'line':
-            # XXX shouldn't do the count increment when arg is exception?  But be careful to return self.localtrace when arg is exception! ?  --Zooko 2001-10-14
-            # record the file name and line number of every trace
-            # XXX I wish inspect offered me an optimized `getfilename(frame)' to use in place of the presumably heavier `getframeinfo()'.  --Zooko 2001-10-14
-            (filename, lineno, funcname, context, lineindex,) = inspect.getframeinfo(frame)
-            # if DEBUG_MODE:
-            #     print "%s.localtrace_trace(frame: %s, why: %s, arg: %s); filename: %s, lineno: %s, funcname: %s, context: %s, lineindex: %s\n" % (self, frame, why, arg, filename, lineno, funcname, context, lineindex,)
-            # XXX not convinced that this memoizing is a performance win -- I don't know enough about Python guts to tell.  --Zooko 2001-10-14
+            # XXX shouldn't do the count increment when arg is
+            # exception?  But be careful to return self.localtrace
+            # when arg is exception! ?  --Zooko 2001-10-14
+
+            # record the file name and line number of every trace XXX
+            # I wish inspect offered me an optimized
+            # `getfilename(frame)' to use in place of the presumably
+            # heavier `getframeinfo()'.  --Zooko 2001-10-14
+            filename, lineno, funcname, context, lineindex = \
+                      inspect.getframeinfo(frame)
+            
+            # XXX not convinced that this memoizing is a performance
+            # win -- I don't know enough about Python guts to tell.
+            # --Zooko 2001-10-14
             bname = self.pathtobasename.get(filename)
             if bname is None:
-                # Using setdefault faster than two separate lines?  --Zooko 2001-10-14
+                # Using setdefault faster than two separate lines?
+                # --Zooko 2001-10-14
                 bname = self.pathtobasename.setdefault(filename, os.path.basename(filename))
             if context is not None:
                 try:
-                    print "%s(%d): %s" % (bname, lineno, context[lineindex],),
+                    print "%s(%d): %s" % (bname, lineno, context[lineindex]),
                 except IndexError:
                     # Uh.. sometimes getframeinfo gives me a context of length 1 and a lineindex of -2.  Oh well.
                     pass
@@ -541,16 +561,16 @@ class Trace:
 
     def localtrace_count(self, frame, why, arg):
         if why == 'line':
-            # XXX shouldn't do the count increment when arg is exception?  But be careful to return self.localtrace when arg is exception! ?  --Zooko 2001-10-14
-            # record the file name and line number of every trace
-            # XXX I wish inspect offered me an optimized `getfilename(frame)' to use in place of the presumably heavier `getframeinfo()'.  --Zooko 2001-10-14
-            (filename, lineno, funcname, context, lineindex,) = inspect.getframeinfo(frame)
-            key = (filename, lineno,)
+            filename = frame.f_code.co_filename
+            lineno = frame.f_lineno
+            key = filename, lineno
             self.counts[key] = self.counts.get(key, 0) + 1
         return self.localtrace
 
     def results(self):
-        return CoverageResults(self.counts, infile=self.infile, outfile=self.outfile, calledfuncs=self._calledfuncs)
+        return CoverageResults(self.counts, infile=self.infile,
+                               outfile=self.outfile,
+                               calledfuncs=self._calledfuncs)
 
 def _err_exit(msg):
     sys.stderr.write("%s: %s\n" % (sys.argv[0], msg))
@@ -571,7 +591,8 @@ def main(argv=None):
 
     except getopt.error, msg:
         sys.stderr.write("%s: %s\n" % (sys.argv[0], msg))
-        sys.stderr.write("Try `%s --help' for more information\n" % sys.argv[0])
+        sys.stderr.write("Try `%s --help' for more information\n"
+                         % sys.argv[0])
         sys.exit(1)
 
     trace = 0
@@ -674,10 +695,11 @@ def main(argv=None):
     else:
         sys.argv = prog_argv
         progname = prog_argv[0]
-        if eval(sys.version[:3])>1.3:
-            sys.path[0] = os.path.split(progname)[0] # ???
+        sys.path[0] = os.path.split(progname)[0]
 
-        t = Trace(count, trace, countfuncs=listfuncs, ignoremods=ignore_modules, ignoredirs=ignore_dirs, infile=counts_file, outfile=counts_file)
+        t = Trace(count, trace, countfuncs=listfuncs,
+                  ignoremods=ignore_modules, ignoredirs=ignore_dirs,
+                  infile=counts_file, outfile=counts_file)
         try:
             t.run('execfile(' + `progname` + ')')
         except IOError, err:
