@@ -5,8 +5,11 @@ GUSISetupFactories
 __vt__15GUSISIOUXDevice		# GUSISIOUXDevice::__vt
 __vt__15GUSISIOUXSocket		# GUSISIOUXSocket::__vt
 sInstance__15GUSISIOUXDevice		# GUSISIOUXDevice::sInstance
-sInstance__15GUSISIOUXSocket		# GUSISIOUXSocket::sInstance
+initialized__15GUSISIOUXSocket		# GUSISIOUXSocket::initialized
 __dt__15GUSISIOUXDeviceFv		# GUSISIOUXDevice::~GUSISIOUXDevice()
+PyMac_DummyWriteHandler
+PyMac_DummyReadHandler
+PyMac_SetConsoleHandler
 GUSISetupConsoleDescriptors
 open__15GUSISIOUXDeviceFR13GUSIFileTokeni		# GUSISIOUXDevice::open(GUSIFileToken&,int)
 Want__15GUSISIOUXDeviceFR13GUSIFileToken		# GUSISIOUXDevice::Want(GUSIFileToken&)
@@ -20,8 +23,8 @@ write__15GUSISIOUXSocketFRC12GUSIGatherer		# GUSISIOUXSocket::write(const GUSIGa
 read__15GUSISIOUXSocketFRC13GUSIScatterer		# GUSISIOUXSocket::read(const GUSIScatterer&)
 __dt__15GUSISIOUXSocketFv		# GUSISIOUXSocket::~GUSISIOUXSocket()
 Initialize__15GUSISIOUXSocketFv		# GUSISIOUXSocket::Initialize()
-__ct__15GUSISIOUXSocketFv		# GUSISIOUXSocket::GUSISIOUXSocket()
-Instance__15GUSISIOUXSocketFv		# GUSISIOUXSocket::Instance()
+__ct__15GUSISIOUXSocketFi		# GUSISIOUXSocket::GUSISIOUXSocket(int)
+Instance__15GUSISIOUXSocketFi		# GUSISIOUXSocket::Instance(int)
 Py_FileSystemDefaultEncoding
 _PyBuiltin_Init
 _PyEval_SliceIndex
