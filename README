@@ -9,27 +9,7 @@ tar file.
 What's new in this release?
 ---------------------------
 
-See http://www.pythonlabs.com/.
-
-
-Why is it called version 2.0?
------------------------------
-
-While Pythoneers have grown fond of Python's exceedingly slow version
-incrementing, that same quality makes parts of the rest of the world
-think that Python is barely out of its first alpha test.  Especially
-enterprise customers are often fearful of anything that's version 1.x!
-The new version number also clearly marks departure of Python's core
-development team from CNRI to join BeOpen.com.
-
-What happened to Python 1.6?  It was promoted and renamed Python 2.0.
-There were two alpha releases of Python 1.6 before we decided to
-increment the major version number.
-
-Previously, the version number 2.0 was associated with a mythical and
-elusive incompatible future release.  That release (still ways off,
-and not as incompatible as people fear!) is now referred to as Python
-3000.
+See http://www.pythonlabs.com/tech/python2.html .
 
 
 If you don't read instructions
@@ -697,8 +677,9 @@ python-mode.)
 Web site
 --------
 
-Python's own web site has URL http://www.pythonlabs.com/.  Come visit
-us!
+Python's web site is at http://www.python.org/.  The Python core
+development team at BeOpen has its own website at
+http://www.pythonlabs.com/.  Come visit us!
 
 
 Newsgroups
@@ -723,8 +704,20 @@ many Python related mailing lists.
 Bug reports
 -----------
 
-To report or search for bugs, please use the Python Bugs List at
-http://www.python.org/search/search_bugs.html
+To report or search for bugs, please use the SourceForge Bugs
+Tracker at http://sourceforge.net/bugs/?group_id=5470 .
+
+
+Patches and contributions
+-------------------------
+
+To submit a patch or other contribution, please use the SourceForge
+Patch Manager at http://sourceforge.net/patch/?group_id=5470 .
+
+If you have a proposal to change Python, it's best to submit a Python
+Enhancement Proposal (PEP) first.  All current PEPs, as well as
+guidelines for submitting a new PEP, are here:
+http://python.sourceforge.net/peps/.
 
 
 Questions
@@ -830,14 +823,6 @@ Santa Clara, CA 95051
 
 E-mail: guido@beopen.com or guido@python.org
 
-
-
-Copyright notice
-================
-
-The Python source is copyrighted, but you can freely use and copy it
-as long as you don't change or remove the copyright notice.  The
-copyright notice is found in the Misc/COPYRIGHT file.
 
 
 --Guido van Rossum (home page: http://www.python.org/~guido/)
