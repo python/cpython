@@ -60,6 +60,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include <errno.h>
 
+#ifndef NT
 #ifdef macintosh
 /*
 ** For the mac, there's a function macstrerror in macosmodule.c. We can't
@@ -68,9 +69,9 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 #define strerror macstrerror
 #include "macdefs.h"    /* For CW to find EINTR */
-#endif /* macintosh */
-
+#endif /* !macintosh */
 extern char *strerror PROTO((int));
+#endif /* !NT */
 
 /* Last exception stored by err_setval() */
 
@@ -78,17 +79,27 @@ static object *last_exception;
 static object *last_exc_val;
 
 void
+err_restore(exception, value, traceback)
+	object *exception;
+	object *value;
+	object *traceback;
+{
+	err_clear();
+
+	last_exception = exception;
+	last_exc_val = value;
+	(void) tb_store(traceback);
+	XDECREF(traceback);
+}
+
+void
 err_setval(exception, value)
 	object *exception;
 	object *value;
 {
-	err_clear();
-
 	XINCREF(exception);
-	last_exception = exception;
-	
 	XINCREF(value);
-	last_exc_val = value;
+	err_restore(exception, value, (object *)NULL);
 }
 
 void
@@ -116,14 +127,16 @@ err_occurred()
 }
 
 void
-err_get(p_exc, p_val)
+err_fetch(p_exc, p_val, p_tb)
 	object **p_exc;
 	object **p_val;
+	object **p_tb;
 {
 	*p_exc = last_exception;
 	last_exception = NULL;
 	*p_val = last_exc_val;
 	last_exc_val = NULL;
+	*p_tb = tb_fetch();
 }
 
 void

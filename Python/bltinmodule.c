@@ -40,15 +40,35 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 /* Forward */
 static object *filterstring PROTO((object *, object *));
 static object *filtertuple  PROTO((object *, object *));
-static object *exec_eval PROTO((object *v, int start));
 
 static object *
-builtin_abs(self, v)
+builtin___import__(self, args)
 	object *self;
-	object *v;
+	object *args;
 {
+	char *name;
+	object *m;
+
+	if (!newgetargs(args, "s:__import__", &name))
+		return NULL;
+	m = import_module(name);
+	XINCREF(m);
+
+	return m;
+}
+
+
+static object *
+builtin_abs(self, args)
+	object *self;
+	object *args;
+{
+	object *v;
 	number_methods *nm;
-	if (v == NULL || (nm = v->ob_type->tp_as_number) == NULL) {
+
+	if (!newgetargs(args, "O:abs", &v))
+		return NULL;
+	if ((nm = v->ob_type->tp_as_number) == NULL) {
 		err_setstr(TypeError, "abs() requires numeric argument");
 		return NULL;
 	}
@@ -61,7 +81,8 @@ builtin_apply(self, args)
 	object *args;
 {
 	object *func, *arglist;
-	if (!getargs(args, "(OO)", &func, &arglist))
+
+	if (!newgetargs(args, "OO:apply", &func, &arglist))
 		return NULL;
 	if (!is_tupleobject(arglist)) {
 		err_setstr(TypeError, "apply() 2nd argument must be tuple");
@@ -101,12 +122,11 @@ builtin_callable(self, args)
 	object *self;
 	object *args;
 {
-	if (args == NULL) {
-		err_setstr(TypeError,
-			   "callable requires exactly one argument");
+	object *v;
+
+	if (!newgetargs(args, "O:callable", &v))
 		return NULL;
-	}
-	return newintobject((long)callable(args));
+	return newintobject((long)callable(v));
 }
 
 static object *
@@ -119,7 +139,7 @@ builtin_filter(self, args)
 	int len;
 	register int i, j;
 
-	if (!getargs(args, "(OO)", &func, &seq))
+	if (!newgetargs(args, "OO:filter", &func, &seq))
 		return NULL;
 
 	if (is_stringobject(seq)) {
@@ -212,7 +232,8 @@ builtin_chr(self, args)
 {
 	long x;
 	char s[1];
-	if (!getargs(args, "l", &x))
+
+	if (!newgetargs(args, "l:chr", &x))
 		return NULL;
 	if (x < 0 || x >= 256) {
 		err_setstr(ValueError, "chr() arg not in range(256)");
@@ -228,7 +249,8 @@ builtin_cmp(self, args)
 	object *args;
 {
 	object *a, *b;
-	if (!getargs(args, "(OO)", &a, &b))
+
+	if (!newgetargs(args, "OO:cmp", &a, &b))
 		return NULL;
 	return newintobject((long)cmpobject(a, b));
 }
@@ -241,7 +263,7 @@ builtin_coerce(self, args)
 	object *v, *w;
 	object *res;
 
-	if (!getargs(args, "(OO)", &v, &w))
+	if (!newgetargs(args, "OO:coerce", &v, &w))
 		return NULL;
 	if (is_instanceobject(v) || is_instanceobject(w))
 		return instancebinop(v, w, "__coerce__", "__rcoerce__");
@@ -262,7 +284,8 @@ builtin_compile(self, args)
 	char *filename;
 	char *startstr;
 	int start;
-	if (!getargs(args, "(sss)", &str, &filename, &startstr))
+
+	if (!newgetargs(args, "sss:compile", &str, &filename, &startstr))
 		return NULL;
 	if (strcmp(startstr, "exec") == 0)
 		start = file_input;
@@ -277,11 +300,15 @@ builtin_compile(self, args)
 }
 
 static object *
-builtin_dir(self, v)
+builtin_dir(self, args)
 	object *self;
-	object *v;
+	object *args;
 {
+	object *v = NULL;
 	object *d;
+
+	if (!newgetargs(args, "|O:dir", &v))
+		return NULL;
 	if (v == NULL) {
 		d = getlocals();
 		INCREF(d);
@@ -314,13 +341,15 @@ builtin_divmod(self, args)
 	object *args;
 {
 	object *v, *w, *x;
-	if (!getargs(args, "(OO)", &v, &w))
+
+	if (!newgetargs(args, "OO:divmod", &v, &w))
 		return NULL;
 	if (is_instanceobject(v) || is_instanceobject(w))
 		return instancebinop(v, w, "__divmod__", "__rdivmod__");
 	if (v->ob_type->tp_as_number == NULL ||
 				w->ob_type->tp_as_number == NULL) {
-		err_setstr(TypeError, "divmod() requires numeric or class instance arguments");
+		err_setstr(TypeError,
+		    "divmod() requires numeric or class instance arguments");
 		return NULL;
 	}
 	if (coerce(&v, &w) != 0)
@@ -332,110 +361,80 @@ builtin_divmod(self, args)
 }
 
 static object *
-exec_eval(v, start)
-	object *v;
-	int start;
+builtin_eval(self, args)
+	object *self;
+	object *args;
 {
-	object *str = NULL, *globals = NULL, *locals = NULL;
-	char *s;
-	int n;
-	/* XXX This is a bit of a mess.  Should make it varargs */
-	if (v != NULL) {
-		if (is_tupleobject(v) &&
-				((n = gettuplesize(v)) == 2 || n == 3)) {
-			str = gettupleitem(v, 0);
-			globals = gettupleitem(v, 1);
-			if (n == 3)
-				locals = gettupleitem(v, 2);
-		}
-		else
-			str = v;
-	}
-	if (str == NULL || (!is_stringobject(str) && !is_codeobject(str)) ||
-			globals != NULL && !is_dictobject(globals) ||
-			locals != NULL && !is_dictobject(locals)) {
-		err_setstr(TypeError,
-		  "eval arguments must be (string|code)[,dict[,dict]]");
-		return NULL;
-	}
+	object *cmd;
+	object *globals = NULL, *locals = NULL;
+	char *str;
 
-	if (is_codeobject(str))
-		return eval_code((codeobject *) str, globals, locals,
+	if (!newgetargs(args, "O|O!O!:eval",
+			&cmd,
+			&Mappingtype, &globals,
+			&Mappingtype, &locals))
+		return NULL;
+	if (is_codeobject(cmd))
+		return eval_code((codeobject *) cmd, globals, locals,
 				 (object *)NULL, (object *)NULL);
-	s = getstringvalue(str);
-	if (strlen(s) != getstringsize(str)) {
-		err_setstr(ValueError, "embedded '\\0' in string arg");
+	if (!is_stringobject(cmd)) {
+		err_setstr(TypeError,
+			   "eval() argument 1 must be string or code object");
 		return NULL;
 	}
-	if (start == eval_input) {
-		while (*s == ' ' || *s == '\t')
-			s++;
+	str = getstringvalue(cmd);
+	if (strlen(str) != getstringsize(cmd)) {
+		err_setstr(ValueError,
+			   "embedded '\\0' in string arg");
+		return NULL;
 	}
-	return run_string(s, start, globals, locals);
+	while (*str == ' ' || *str == '\t')
+		str++;
+	return run_string(str, eval_input, globals, locals);
 }
 
 static object *
-builtin_eval(self, v)
+builtin_execfile(self, args)
 	object *self;
-	object *v;
+	object *args;
 {
-	return exec_eval(v, eval_input);
-}
-
-static object *
-builtin_execfile(self, v)
-	object *self;
-	object *v;
-{
-	object *str = NULL, *globals = NULL, *locals = NULL, *w;
+	char *filename;
+	object *globals = NULL, *locals = NULL;
+	object *res;
 	FILE* fp;
 	char *s;
 	int n;
-	if (v != NULL) {
-		if (is_stringobject(v))
-			str = v;
-		else if (is_tupleobject(v) &&
-				((n = gettuplesize(v)) == 2 || n == 3)) {
-			str = gettupleitem(v, 0);
-			globals = gettupleitem(v, 1);
-			if (n == 3)
-				locals = gettupleitem(v, 2);
-		}
-	}
-	if (str == NULL || !is_stringobject(str) ||
-			globals != NULL && !is_dictobject(globals) ||
-			locals != NULL && !is_dictobject(locals)) {
-		err_setstr(TypeError,
-		    "execfile arguments must be filename[,dict[,dict]]");
+
+	if (!newgetargs(args, "s|O!O!:execfile",
+			&filename,
+			&Mappingtype, &globals,
+			&Mappingtype, &locals))
 		return NULL;
-	}
-	s = getstringvalue(str);
-	if (strlen(s) != getstringsize(str)) {
-		err_setstr(ValueError, "embedded '\\0' in string arg");
-		return NULL;
-	}
 	BGN_SAVE
-	fp = fopen(s, "r");
+	fp = fopen(filename, "r");
 	END_SAVE
 	if (fp == NULL) {
-		err_setstr(IOError, "execfile cannot open the file argument");
+		err_errno(IOError);
 		return NULL;
 	}
-	w = run_file(fp, getstringvalue(str), file_input, globals, locals);
+	res = run_file(fp, filename, file_input, globals, locals);
 	BGN_SAVE
 	fclose(fp);
 	END_SAVE
-	return w;
+	return res;
 }
 
 static object *
-builtin_float(self, v)
+builtin_float(self, args)
 	object *self;
-	object *v;
+	object *args;
 {
+	object *v;
 	number_methods *nb;
-	
-	if (v == NULL || (nb = v->ob_type->tp_as_number) == NULL ||
+
+	if (!newgetargs(args, "O:float", &v))
+		return NULL;
+	if ((nb = v->ob_type->tp_as_number) == NULL ||
 	    nb->nb_float == NULL) {
 		err_setstr(TypeError,
 			   "float() argument can't be converted to float");
@@ -451,7 +450,8 @@ builtin_getattr(self, args)
 {
 	object *v;
 	object *name;
-	if (!getargs(args, "(OS)", &v, &name))
+
+	if (!newgetargs(args, "OS:getattr", &v, &name))
 		return NULL;
 	return getattro(v, name);
 }
@@ -463,7 +463,8 @@ builtin_hasattr(self, args)
 {
 	object *v;
 	object *name;
-	if (!getargs(args, "(OS)", &v, &name))
+
+	if (!newgetargs(args, "OS:hasattr", &v, &name))
 		return NULL;
 	v = getattro(v, name);
 	if (v == NULL) {
@@ -480,7 +481,8 @@ builtin_id(self, args)
 	object *args;
 {
 	object *v;
-	if (!getargs(args, "O", &v))
+
+	if (!newgetargs(args, "O:id", &v))
 		return NULL;
 	return newintobject((long)v);
 }
@@ -498,16 +500,17 @@ builtin_map(self, args)
 
 	object *func, *result;
 	sequence *seqs = NULL, *sqp;
-	int n, len, newfunc = 0;
+	int n, len;
 	register int i, j;
 
-	if (args == NULL || !is_tupleobject(args)) {
+	n = gettuplesize(args);
+	if (n < 2) {
 		err_setstr(TypeError, "map() requires at least two args");
 		return NULL;
 	}
 
 	func = gettupleitem(args, 0);
-	n    = gettuplesize(args) - 1;
+	n--;
 
 	if ((seqs = NEW(sequence, n)) == NULL) {
 		err_nomem();
@@ -633,7 +636,8 @@ builtin_setattr(self, args)
 	object *v;
 	object *name;
 	object *value;
-	if (!getargs(args, "(OSO)", &v, &name, &value))
+
+	if (!newgetargs(args, "OSO:setattr", &v, &name, &value))
 		return NULL;
 	if (setattro(v, name, value) != 0)
 		return NULL;
@@ -648,7 +652,8 @@ builtin_delattr(self, args)
 {
 	object *v;
 	object *name;
-	if (!getargs(args, "(OS)", &v, &name))
+
+	if (!newgetargs(args, "OS:delattr", &v, &name))
 		return NULL;
 	if (setattro(v, name, (object *)NULL) != 0)
 		return NULL;
@@ -663,7 +668,8 @@ builtin_hash(self, args)
 {
 	object *v;
 	long x;
-	if (!getargs(args, "O", &v))
+
+	if (!newgetargs(args, "O:hash", &v))
 		return NULL;
 	x = hashobject(v);
 	if (x == -1)
@@ -672,13 +678,17 @@ builtin_hash(self, args)
 }
 
 static object *
-builtin_hex(self, v)
+builtin_hex(self, args)
 	object *self;
-	object *v;
+	object *args;
 {
+	object *v;
 	number_methods *nb;
+
+	if (!newgetargs(args, "O:hex", &v))
+		return NULL;
 	
-	if (v == NULL || (nb = v->ob_type->tp_as_number) == NULL ||
+	if ((nb = v->ob_type->tp_as_number) == NULL ||
 	    nb->nb_hex == NULL) {
 		err_setstr(TypeError,
 			   "hex() argument can't be converted to hex");
@@ -690,26 +700,37 @@ builtin_hex(self, v)
 static object *builtin_raw_input PROTO((object *, object *));
 
 static object *
-builtin_input(self, v)
+builtin_input(self, args)
 	object *self;
-	object *v;
+	object *args;
 {
-	object *line = builtin_raw_input(self, v);
+	object *line;
+	char *str;
+	object *res;
+
+	line = builtin_raw_input(self, args);
 	if (line == NULL)
 		return line;
-	v = exec_eval(line, eval_input);
+	if (!getargs(line, "s;embedded '\\0' in input line", &str))
+		return NULL;
+	while (*str == ' ' || *str == '\t')
+			str++;
+	res = run_string(str, eval_input, (object *)NULL, (object *)NULL);
 	DECREF(line);
-	return v;
+	return res;
 }
 
 static object *
-builtin_int(self, v)
+builtin_int(self, args)
 	object *self;
-	object *v;
+	object *args;
 {
+	object *v;
 	number_methods *nb;
-	
-	if (v == NULL || (nb = v->ob_type->tp_as_number) == NULL ||
+
+	if (!newgetargs(args, "O:int", &v))
+		return NULL;
+	if ((nb = v->ob_type->tp_as_number) == NULL ||
 	    nb->nb_int == NULL) {
 		err_setstr(TypeError,
 			   "int() argument can't be converted to int");
@@ -719,16 +740,16 @@ builtin_int(self, v)
 }
 
 static object *
-builtin_len(self, v)
+builtin_len(self, args)
 	object *self;
-	object *v;
+	object *args;
 {
+	object *v;
 	long len;
 	typeobject *tp;
-	if (v == NULL) {
-		err_setstr(TypeError, "len() without argument");
+
+	if (!newgetargs(args, "O:len", &v))
 		return NULL;
-	}
 	tp = v->ob_type;
 	if (tp->tp_as_sequence != NULL) {
 		len = (*tp->tp_as_sequence->sq_length)(v);
@@ -747,13 +768,16 @@ builtin_len(self, v)
 }
 
 static object *
-builtin_long(self, v)
+builtin_long(self, args)
 	object *self;
-	object *v;
+	object *args;
 {
+	object *v;
 	number_methods *nb;
 	
-	if (v == NULL || (nb = v->ob_type->tp_as_number) == NULL ||
+	if (!newgetargs(args, "O:long", &v))
+		return NULL;
+	if ((nb = v->ob_type->tp_as_number) == NULL ||
 	    nb->nb_long == NULL) {
 		err_setstr(TypeError,
 			   "long() argument can't be converted to long");
@@ -763,17 +787,18 @@ builtin_long(self, v)
 }
 
 static object *
-min_max(v, sign)
-	object *v;
+min_max(args, sign)
+	object *args;
 	int sign;
 {
 	int i;
-	object *w, *x;
+	object *v, *w, *x;
 	sequence_methods *sq;
-	if (v == NULL) {
-		err_setstr(TypeError, "min() or max() without argument");
+
+	if (gettuplesize(args) > 1)
+		v = args;
+	else if (!newgetargs(args, "O:min/max", &v))
 		return NULL;
-	}
 	sq = v->ob_type->tp_as_sequence;
 	if (sq == NULL) {
 		err_setstr(TypeError, "min() or max() of non-sequence");
@@ -823,12 +848,15 @@ builtin_max(self, v)
 }
 
 static object *
-builtin_oct(self, v)
+builtin_oct(self, args)
 	object *self;
-	object *v;
+	object *args;
 {
+	object *v;
 	number_methods *nb;
-	
+
+	if (!newgetargs(args, "O:oct", &v))
+		return NULL;
 	if (v == NULL || (nb = v->ob_type->tp_as_number) == NULL ||
 	    nb->nb_oct == NULL) {
 		err_setstr(TypeError,
@@ -847,9 +875,8 @@ builtin_open(self, args)
 	char *mode = "r";
 	int bufsize = -1;
 	object *f;
-	if (!getargs(args, "s", &name) &&
-	    (err_clear(), !getargs(args, "(ss)", &name, &mode)) &&
-	    (err_clear(), !getargs(args, "(ssi)", &name, &mode, &bufsize)))
+
+	if (!newgetargs(args, "s|si:open", &name, &mode, &bufsize))
 		return NULL;
 	f = newfileobject(name, mode);
 	if (f != NULL)
@@ -862,15 +889,11 @@ builtin_ord(self, args)
 	object *self;
 	object *args;
 {
-	char *s;
-	int len;
-	if (!getargs(args, "s#", &s, &len))
+	char c;
+
+	if (!newgetargs(args, "c:ord", &c))
 		return NULL;
-	if (len != 1) {
-		err_setstr(ValueError, "ord() arg must have length 1");
-		return NULL;
-	}
-	return newintobject((long)(s[0] & 0xff));
+	return newintobject((long)(c & 0xff));
 }
 
 static object *
@@ -878,9 +901,9 @@ builtin_pow(self, args)
 	object *self;
 	object *args;
 {
-	object *v, *w, *z, *x;
- 	z = None;
-	if (!newgetargs(args, "OO|O", &v, &w, &z))
+	object *v, *w, *z = None, *x;
+
+	if (!newgetargs(args, "OO|O:pow", &v, &w, &z))
 		return NULL;
 	if (z == None) {
 		if (is_instanceobject(v) || is_instanceobject(w))
@@ -913,43 +936,25 @@ builtin_pow(self, args)
 }
 
 static object *
-builtin_range(self, v)
+builtin_range(self, args)
 	object *self;
-	object *v;
+	object *args;
 {
-	static char *errmsg = "range() requires 1-3 int arguments";
+	long ilow = 0, ihigh = 0, istep = 1;
 	int i, n;
-	long ilow, ihigh, istep;
-	if (v != NULL && is_intobject(v)) {
-		ilow = 0; ihigh = getintvalue(v); istep = 1;
-	}
-	else if (v == NULL || !is_tupleobject(v)) {
-		err_setstr(TypeError, errmsg);
-		return NULL;
+	object *v;
+
+	if (gettuplesize(args) <= 1) {
+		if (!newgetargs(args,
+				"i;range() requires 1-3 int arguments",
+				&ihigh))
+			return NULL;
 	}
 	else {
-		n = gettuplesize(v);
-		if (n < 1 || n > 3) {
-			err_setstr(TypeError, errmsg);
+		if (!newgetargs(args,
+				"ii|i;range() requires 1-3 int arguments",
+				&ilow, &ihigh, &istep))
 			return NULL;
-		}
-		for (i = 0; i < n; i++) {
-			if (!is_intobject(gettupleitem(v, i))) {
-				err_setstr(TypeError, errmsg);
-				return NULL;
-			}
-		}
-		if (n == 3) {
-			istep = getintvalue(gettupleitem(v, 2));
-			--n;
-		}
-		else
-			istep = 1;
-		ihigh = getintvalue(gettupleitem(v, --n));
-		if (n > 0)
-			ilow = getintvalue(gettupleitem(v, 0));
-		else
-			ilow = 0;
 	}
 	if (istep == 0) {
 		err_setstr(ValueError, "zero step for range()");
@@ -978,73 +983,66 @@ builtin_range(self, v)
 }
 
 static object *
-builtin_xrange(self, v)
+builtin_xrange(self, args)
 	object *self;
-	object *v;
+	object *args;
 {
-	static char *errmsg = "xrange() requires 1-3 int arguments";
-	int i, n;
-	long start, stop, step, len;
-	if (v != NULL && is_intobject(v))
-		start = 0, stop = getintvalue(v), step = 1;
+	long ilow = 0, ihigh = 0, istep = 1;
+	int n;
+	object *v;
 
-	else if (v == NULL || !is_tupleobject(v)) {
-		err_setstr(TypeError, errmsg);
-		return NULL;
+	if (gettuplesize(args) <= 1) {
+		if (!newgetargs(args,
+				"i;xrange() requires 1-3 int arguments",
+				&ihigh))
+			return NULL;
 	}
 	else {
-		n = gettuplesize(v);
-		if (n < 1 || n > 3) {
-			err_setstr(TypeError, errmsg);
+		if (!newgetargs(args,
+				"ii|i;xrange() requires 1-3 int arguments",
+				&ilow, &ihigh, &istep))
 			return NULL;
-		}
-		for (i = 0; i < n; i++) {
-			if (!is_intobject(gettupleitem(v, i))) {
-				err_setstr(TypeError, errmsg);
-				return NULL;
-			}
-		}
-		if (n == 3) {
-			step = getintvalue(gettupleitem(v, 2));
-			--n;
-		}
-		else
-			step = 1;
-		stop = getintvalue(gettupleitem(v, --n));
-		if (n > 0)
-			start = getintvalue(gettupleitem(v, 0));
-		else
-			start = 0;
 	}
-
-	if (step == 0) {
+	if (istep == 0) {
 		err_setstr(ValueError, "zero step for xrange()");
 		return NULL;
 	}
-
-	len = (stop - start + step + ((step > 0) ? -1 : 1)) / step;
-	if (len < 0)
-		len = 0;
-
-	return newrangeobject(start, len, step, 1);
+	/* XXX ought to check overflow of subtraction */
+	if (istep > 0)
+		n = (ihigh - ilow + istep - 1) / istep;
+	else
+		n = (ihigh - ilow + istep + 1) / istep;
+	if (n < 0)
+		n = 0;
+	return newrangeobject(ilow, n, istep, 1);
 }
 
 static object *
-builtin_raw_input(self, v)
+builtin_raw_input(self, args)
 	object *self;
-	object *v;
+	object *args;
 {
-	object *f = sysget("stdout");
-	if (f == NULL) {
-		err_setstr(RuntimeError, "lost sys.stdout");
+	object *v = NULL;
+	object *f;
+
+	if (!newgetargs(args, "|O:[raw_]input", &v))
 		return NULL;
-	}
-	flushline();
 	if (v != NULL) {
+		f = sysget("stdout");
+		if (f == NULL) {
+			err_setstr(RuntimeError, "lost sys.stdout");
+			return NULL;
+		}
+		flushline();
 		if (writeobject(v, f, PRINT_RAW) != 0)
 			return NULL;
 	}
-	return filegetline(sysget("stdin"), -1);
+	f = sysget("stdin");
+	if (f == NULL) {
+		err_setstr(RuntimeError, "lost sys.stdin");
+		return NULL;
+	}
+	return filegetline(f, -1);
 }
 
 static object *
@@ -1052,18 +1050,14 @@ builtin_reduce(self, args)
 	object *self;
 	object *args;
 {
-	object *seq, *func, *result;
+	object *seq, *func, *result = NULL;
 	sequence_methods *sqf;
 	register int i;
 
-	if (getargs(args, "(OO)", &func, &seq))
-		result = NULL;
-	else {
-		err_clear();
-		if (!getargs(args, "(OOO)", &func, &seq, &result))
-			return NULL;
+	if (!newgetargs(args, "OO|O:reduce", &func, &seq, &result))
+		return NULL;
+	if (result != NULL)
 		INCREF(result);
-	}
 
 	if ((sqf = seq->ob_type->tp_as_sequence) == NULL) {
 		err_setstr(TypeError,
@@ -1116,22 +1110,26 @@ Fail:
 }
 
 static object *
-builtin_reload(self, v)
+builtin_reload(self, args)
 	object *self;
-	object *v;
+	object *args;
 {
+	object *v;
+
+	if (!newgetargs(args, "O:reload", &v))
+		return NULL;
 	return reload_module(v);
 }
 
 static object *
-builtin_repr(self, v)
+builtin_repr(self, args)
 	object *self;
-	object *v;
+	object *args;
 {
-	if (v == NULL) {
-		err_badarg();
+	object *v;
+
+	if (!newgetargs(args, "O:repr", &v))
 		return NULL;
-	}
 	return reprobject(v);
 }
 
@@ -1145,13 +1143,10 @@ builtin_round(self, args)
 	double x;
 	double f;
 	int ndigits = 0;
-	int sign = 1;
 	int i;
-	if (!getargs(args, "d", &x)) {
-		err_clear();
-		if (!getargs(args, "(di)", &x, &ndigits))
+
+	if (!newgetargs(args, "d|i:round", &x, &ndigits))
 			return NULL;
-	}
 	f = 1.0;
 	for (i = ndigits; --i >= 0; )
 		f = f*10.0;
@@ -1164,25 +1159,27 @@ builtin_round(self, args)
 }
 
 static object *
-builtin_str(self, v)
+builtin_str(self, args)
 	object *self;
-	object *v;
+	object *args;
 {
-	if (v == NULL) {
-		err_badarg();
+	object *v;
+
+	if (!newgetargs(args, "O:str", &v))
 		return NULL;
-	}
 	return strobject(v);
 }
 
 static object *
-builtin_tuple(self, v)
+builtin_tuple(self, args)
 	object *self;
-	object *v;
+	object *args;
 {
+	object *v;
 	sequence_methods *sqf;
-	if (v == NULL)
-		v = None; /* Force error later */
+
+	if (!newgetargs(args, "O:tuple", &v))
+		return NULL;
 	if (is_tupleobject(v)) {
 		INCREF(v);
 		return v;
@@ -1235,25 +1232,29 @@ builtin_tuple(self, v)
 }
 
 static object *
-builtin_type(self, v)
+builtin_type(self, args)
 	object *self;
-	object *v;
+	object *args;
 {
-	if (v == NULL) {
-		err_setstr(TypeError, "type() requires an argument");
+	object *v;
+
+	if (!newgetargs(args, "O:type", &v))
 		return NULL;
-	}
 	v = (object *)v->ob_type;
 	INCREF(v);
 	return v;
 }
 
 static object *
-builtin_vars(self, v)
+builtin_vars(self, args)
 	object *self;
-	object *v;
+	object *args;
 {
+	object *v = NULL;
 	object *d;
+
+	if (!newgetargs(args, "|O:vars", &v))
+		return NULL;
 	if (v == NULL) {
 		d = getlocals();
 		INCREF(d);
@@ -1270,48 +1271,49 @@ builtin_vars(self, v)
 }
 
 static struct methodlist builtin_methods[] = {
-	{"abs",		builtin_abs},
-	{"apply",	builtin_apply},
-	{"callable",	builtin_callable},
-	{"chr",		builtin_chr},
-	{"cmp",		builtin_cmp},
-	{"coerce",	builtin_coerce},
-	{"compile",	builtin_compile},
-	{"delattr",	builtin_delattr},
-	{"dir",		builtin_dir},
-	{"divmod",	builtin_divmod},
-	{"eval",	builtin_eval},
-	{"execfile",	builtin_execfile},
-	{"filter",	builtin_filter},
-	{"float",	builtin_float},
-	{"getattr",	builtin_getattr},
-	{"hasattr",	builtin_hasattr},
-	{"hash",	builtin_hash},
-	{"hex",		builtin_hex},
-	{"id",		builtin_id},
-	{"input",	builtin_input},
-	{"int",		builtin_int},
-	{"len",		builtin_len},
-	{"long",	builtin_long},
-	{"map",		builtin_map},
-	{"max",		builtin_max},
-	{"min",		builtin_min},
-	{"oct",		builtin_oct},
-	{"open",	builtin_open},
-	{"ord",		builtin_ord},
+	{"__import__",	builtin___import__, 1},
+	{"abs",		builtin_abs, 1},
+	{"apply",	builtin_apply, 1},
+	{"callable",	builtin_callable, 1},
+	{"chr",		builtin_chr, 1},
+	{"cmp",		builtin_cmp, 1},
+	{"coerce",	builtin_coerce, 1},
+	{"compile",	builtin_compile, 1},
+	{"delattr",	builtin_delattr, 1},
+	{"dir",		builtin_dir, 1},
+	{"divmod",	builtin_divmod, 1},
+	{"eval",	builtin_eval, 1},
+	{"execfile",	builtin_execfile, 1},
+	{"filter",	builtin_filter, 1},
+	{"float",	builtin_float, 1},
+	{"getattr",	builtin_getattr, 1},
+	{"hasattr",	builtin_hasattr, 1},
+	{"hash",	builtin_hash, 1},
+	{"hex",		builtin_hex, 1},
+	{"id",		builtin_id, 1},
+	{"input",	builtin_input, 1},
+	{"int",		builtin_int, 1},
+	{"len",		builtin_len, 1},
+	{"long",	builtin_long, 1},
+	{"map",		builtin_map, 1},
+	{"max",		builtin_max, 1},
+	{"min",		builtin_min, 1},
+	{"oct",		builtin_oct, 1},
+	{"open",	builtin_open, 1},
+	{"ord",		builtin_ord, 1},
 	{"pow",		builtin_pow, 1},
-	{"range",	builtin_range},
-	{"raw_input",	builtin_raw_input},
-	{"reduce",	builtin_reduce},
-	{"reload",	builtin_reload},
-	{"repr",	builtin_repr},
-	{"round",	builtin_round},
-	{"setattr",	builtin_setattr},
-	{"str",		builtin_str},
-	{"tuple",	builtin_tuple},
-	{"type",	builtin_type},
-	{"vars",	builtin_vars},
-	{"xrange",	builtin_xrange},
+	{"range",	builtin_range, 1},
+	{"raw_input",	builtin_raw_input, 1},
+	{"reduce",	builtin_reduce, 1},
+	{"reload",	builtin_reload, 1},
+	{"repr",	builtin_repr, 1},
+	{"round",	builtin_round, 1},
+	{"setattr",	builtin_setattr, 1},
+	{"str",		builtin_str, 1},
+	{"tuple",	builtin_tuple, 1},
+	{"type",	builtin_type, 1},
+	{"vars",	builtin_vars, 1},
+	{"xrange",	builtin_xrange, 1},
 	{NULL,		NULL},
 };
 
@@ -1322,6 +1324,13 @@ getbuiltin(name)
 	object *name;
 {
 	return mappinglookup(builtin_dict, name);
+}
+
+object *
+getbuiltins(name)
+	char *name;
+{
+	return dictlookup(builtin_dict, name);
 }
 
 int

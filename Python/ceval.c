@@ -43,11 +43,11 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 extern int suppress_print; /* Declared in pythonrun.c, set in pythonmain.c */
 
 /* Turn this on if your compiler chokes on the big switch: */
-/* #define CASE_TOO_BIG 1  	/**/
+/* #define CASE_TOO_BIG 1 */
 
 /* Turn this on if you want to debug the interpreter: */
 /* (This can be on even if NDEBUG is defined) */
-/* #define DEBUG 1  		/**/
+/* #define DEBUG 1 */
 
 #if defined(DEBUG) || !defined(NDEBUG)
 /* For debugging the interpreter: */
@@ -1254,8 +1254,8 @@ eval_code(co, globals, locals, owner, arg)
 				DECREF(v);
 				break;
 			}
-			XDECREF(w);
 			GETLISTITEM(fastlocals, oparg) = v;
+			XDECREF(w);
 			break;
 
 		case DELETE_FAST:
@@ -1270,8 +1270,8 @@ eval_code(co, globals, locals, owner, arg)
 						     (object *)NULL);
 				break;
 			}
-			DECREF(x);
 			GETLISTITEM(fastlocals, oparg) = NULL;
+			DECREF(x);
 			break;
 		
 		case BUILD_TUPLE:
@@ -1323,10 +1323,22 @@ eval_code(co, globals, locals, owner, arg)
 			break;
 		
 		case IMPORT_NAME:
-			name = GETNAME(oparg);
-			x = import_module(name);
-			XINCREF(x);
-			PUSH(x);
+			w = GETNAMEV(oparg);
+			x = getbuiltins("__import__");
+			if (x == NULL) {
+				err_setstr(ImportError,
+					   "__import__ not found");
+				break;
+			}
+			w = mkvalue("(O)", w);
+			if (w == NULL) {
+				x = NULL;
+				break;
+			}
+			x = call_object(x, w);
+			DECREF(w);
+			if (x)
+				PUSH(x);
 			break;
 		
 		case IMPORT_FROM:
@@ -1408,7 +1420,7 @@ eval_code(co, globals, locals, owner, arg)
 		case SET_LINENO:
 #ifdef LLTRACE
 			if (lltrace)
-				printf("--- Line %d ---\n", oparg);
+				printf("--- %s:%d \n", filename, oparg);
 #endif
 			f->f_lineno = oparg;
 			if (f->f_trace != NULL) {
@@ -1497,24 +1509,23 @@ eval_code(co, globals, locals, owner, arg)
 					b->b_type == SETUP_EXCEPT &&
 					why == WHY_EXCEPTION) {
 				if (why == WHY_EXCEPTION) {
-					object *exc, *val;
-					err_get(&exc, &val);
+					object *exc, *val, *tb;
+					err_fetch(&exc, &val, &tb);
 					if (val == NULL) {
 						val = None;
 						INCREF(val);
 					}
-					v = tb_fetch();
 					/* Make the raw exception data
 					   available to the handler,
 					   so a program can emulate the
 					   Python main loop.  Don't do
 					   this for 'finally'. */
 					if (b->b_type == SETUP_EXCEPT) {
-						sysset("exc_traceback", v);
+						sysset("exc_traceback", tb);
 						sysset("exc_value", val);
 						sysset("exc_type", exc);
 					}
-					PUSH(v);
+					PUSH(tb);
 					PUSH(val);
 					PUSH(exc);
 				}
@@ -1598,26 +1609,25 @@ call_exc_trace(p_trace, p_newtrace, f)
 {
 	object *type, *value, *traceback, *arg;
 	int err;
-	err_get(&type, &value);
+	err_fetch(&type, &value, &traceback);
 	if (value == NULL) {
 		value = None;
 		INCREF(value);
 	}
-	traceback = tb_fetch();
-	arg = newtupleobject(3);
-	if (arg == NULL)
-		goto cleanup;
-	settupleitem(arg, 0, type);
-	settupleitem(arg, 1, value);
-	settupleitem(arg, 2, traceback);
-	err = call_trace(p_trace, p_newtrace, f, "exception", arg);
-	if (!err) {
- cleanup:
-		/* Restore original exception */
-		err_setval(type, value);
-		tb_store(traceback);
+	arg = mkvalue("(OOO)", type, value, traceback);
+	if (arg == NULL) {
+		err_restore(type, value, traceback);
+		return;
 	}
-	XDECREF(arg);
+	err = call_trace(p_trace, p_newtrace, f, "exception", arg);
+	DECREF(arg);
+	if (err == 0)
+		err_restore(type, value, traceback);
+	else {
+		XDECREF(type);
+		XDECREF(value);
+		XDECREF(traceback);
+	}
 }
 
 static int
@@ -1724,18 +1734,6 @@ getframe()
 }
 
 void
-printtraceback(f)
-	object *f;
-{
-	object *v = tb_fetch();
-	if (v != NULL) {
-		tb_print(v, f);
-		DECREF(v);
-	}
-}
-
-
-void
 flushline()
 {
 	object *f = sysget("stdout");
@@ -1818,7 +1816,7 @@ static object *
 lshift(v, w)
 	object *v, *w;
 {
-	BINOP("__lshift__", "__rshift__");
+	BINOP("__lshift__", "__rlshift__");
 	if (v->ob_type->tp_as_number != NULL) {
 		object *x;
 		object * (*f) FPROTO((object *, object *));
@@ -1962,6 +1960,9 @@ static object *
 rem(v, w)
 	object *v, *w;
 {
+	if (is_stringobject(v)) {
+		return formatstring(v, w);
+	}
 	BINOP("__mod__", "__rmod__");
 	if (v->ob_type->tp_as_number != NULL) {
 		object *x;
@@ -1971,9 +1972,6 @@ rem(v, w)
 		DECREF(v);
 		DECREF(w);
 		return x;
-	}
-	if (is_stringobject(v)) {
-		return formatstring(v, w);
 	}
 	err_setstr(TypeError, "bad operand type(s) for %");
 	return NULL;
@@ -2492,6 +2490,10 @@ import_from(locals, v, name)
 	object *name;
 {
 	object *w, *x;
+	if (!is_moduleobject(v)) {
+		err_setstr(TypeError, "import-from require module object");
+		return -1;
+	}
 	w = getmoduledict(v);
 	if (getstringvalue(name)[0] == '*') {
 		int pos, err;
@@ -2541,6 +2543,22 @@ build_class(methods, bases, name)
 	if (!is_tupleobject(bases)) {
 		err_setstr(SystemError, "build_class with non-tuple bases");
 		return NULL;
+	}
+	if (gettuplesize(bases) > 0) {
+		object *base;
+		base = gettupleitem(bases, 0);
+		/* Call the base's *type*, if it is callable.
+		   This code is a hook for Donald Beaudry's type extensions.
+		   In unexended Python it will never be triggered since its
+		   types are not callable. */
+		if (base->ob_type->ob_type->tp_call) {
+			object *args;
+			object *class;
+			args = mkvalue("(OOO)", name, bases, methods);
+			class = call_object((object *)base->ob_type, args);
+			DECREF(args);
+			return class;
+		}
 	}
 	if (!is_dictobject(methods)) {
 		err_setstr(SystemError, "build_class with non-dictionary");

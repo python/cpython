@@ -406,6 +406,10 @@ rd_object(fp)
 	FILE *fp;
 {
 	RFILE rf;
+	if (err_occurred()) {
+		fprintf(stderr, "XXX rd_object called with exception set\n");
+		return NULL;
+	}
 	rf.fp = fp;
 	return r_object(&rf);
 }
@@ -416,6 +420,10 @@ rds_object(str, len)
 	int len;
 {
 	RFILE rf;
+	if (err_occurred()) {
+		fprintf(stderr, "XXX rds_object called with exception set\n");
+		return NULL;
+	}
 	rf.fp = NULL;
 	rf.str = NULL;
 	rf.ptr = str;
