@@ -24,6 +24,8 @@ import tokenize
 import tkMessageBox
 import PyShell
 
+from configHandler import idleConf
+
 IDENTCHARS = string.ascii_letters + string.digits + "_"
 
 indent_message = """Error: Inconsistent indentation detected!
@@ -144,26 +146,36 @@ class ScriptBinding:
         The debugger requires a source file.  Make sure there is one, and that
         the current version of the source buffer has been saved.  If the user
         declines to save or cancels the Save As dialog, return None.
+
+        If the user has configured IDLE for Autosave, the file will be
+        silently saved if it already exists and is dirty.
+        
         """
+        filename = self.editwin.io.filename
         if not self.editwin.get_saved():
-            msg = """Source Must Be Saved
-     OK to Save?"""
-            mb = tkMessageBox.Message(
-                                title="Save Before Run or Check",
-                                message=msg,
-                                icon=tkMessageBox.QUESTION,
-                                type=tkMessageBox.OKCANCEL,
-                                default=tkMessageBox.OK,
-                                master=self.editwin.text)
-            reply = mb.show()
-            if reply == "ok":
+            autosave = idleConf.GetOption('main', 'General',
+                                          'autosave', type='bool')
+            if autosave and filename:
                 self.editwin.io.save(None)
             else:
-                return None
-        # filename is None if file doesn't exist
-        filename = self.editwin.io.filename
-        self.editwin.text.focus_set()
+                reply = self.ask_save_dialog()
+                self.editwin.text.focus_set()
+                if reply == "ok":
+                    self.editwin.io.save(None)
+                    filename = self.editwin.io.filename
+                else:
+                    filename = None
         return filename
+
+    def ask_save_dialog(self):
+        msg = "Source Must Be Saved\n" + 5*' ' + "OK to Save?"
+        mb = tkMessageBox.Message(title="Save Before Run or Check",
+                                  message=msg,
+                                  icon=tkMessageBox.QUESTION,
+                                  type=tkMessageBox.OKCANCEL,
+                                  default=tkMessageBox.OK,
+                                  master=self.editwin.text)
+        return mb.show()
 
     def errorbox(self, title, message):
         # XXX This should really be a function of EditorWindow...
