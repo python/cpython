@@ -1,4 +1,4 @@
-\chapter{Expressions}
+\chapter{Expressions\label{expressions}}
 \index{expression}
 
 This chapter explains the meaning of the elements of expressions in
@@ -16,7 +16,7 @@ and no semantics are given, the semantics of this form of \code{name}
 are the same as for \code{othername}.
 \index{syntax}
 
-\section{Arithmetic conversions}
+\section{Arithmetic conversions\label{conversions}}
 \indexii{arithmetic}{conversion}
 
 When a description of an arithmetic operator below uses the phrase
@@ -39,7 +39,9 @@ following coercions are applied:
 Some additional rules apply for certain operators (e.g., a string left
 argument to the `\%' operator). Extensions can define their own
 coercions.
-\section{Atoms}
+
+
+\section{Atoms\label{atoms}}
 \index{atom}
 
 Atoms are the most basic elements of expressions.  The simplest atoms
@@ -52,7 +54,7 @@ atom:      identifier | literal | enclosure
 enclosure: parenth_form|list_display|dict_display|string_conversion
 \end{verbatim}
 
-\subsection{Identifiers (Names)}
+\subsection{Identifiers (Names)\label{atom-identifiers}}
 \index{name}
 \index{identifier}
 
@@ -92,7 +94,7 @@ transformed name is extremely long (longer than 255 characters),
 implementation defined truncation may happen.  If the class name
 consists only of underscores, no transformation is done.
 
-\subsection{Literals}
+\subsection{Literals\label{atom-literals}}
 \index{literal}
 
 Python supports string literals and various numeric literals:
@@ -115,7 +117,7 @@ the same object or a different object with the same value.
 \indexiii{immutable}{data}{type}
 \indexii{immutable}{objects}
 
-\subsection{Parenthesized forms}
+\subsection{Parenthesized forms\label{parenthesized}}
 \index{parenthesized form}
 
 A parenthesized form is an optional expression list enclosed in
@@ -143,7 +145,7 @@ pass uncaught.
 \index{comma}
 \indexii{tuple}{display}
 
-\subsection{List displays}
+\subsection{List displays\label{lists}}
 \indexii{list}{display}
 
 A list display is a possibly empty series of expressions enclosed in
@@ -160,7 +162,7 @@ list object in that order.
 \obindex{list}
 \indexii{empty}{list}
 
-\subsection{Dictionary displays} \label{dict}
+\subsection{Dictionary displays\label{dict}}
 \indexii{dictionary}{display}
 
 A dictionary display is a possibly empty series of key/datum pairs
@@ -189,7 +191,7 @@ are not detected; the last datum (textually rightmost in the display)
 stored for a given key value prevails.
 \indexii{immutable}{objects}
 
-\subsection{String conversions}
+\subsection{String conversions\label{string-conversions}}
 \indexii{string}{conversion}
 \indexii{reverse}{quotes}
 \indexii{backward}{quotes}
@@ -228,7 +230,7 @@ similar but more user-friendly conversion.
 \bifuncindex{repr}
 \bifuncindex{str}
 
-\section{Primaries} \label{primaries}
+\section{Primaries\label{primaries}}
 \index{primary}
 
 Primaries represent the most tightly bound operations of the language.
@@ -238,7 +240,7 @@ Their syntax is:
 primary:        atom | attributeref | subscription | slicing | call
 \end{verbatim}
 
-\subsection{Attribute references}
+\subsection{Attribute references\label{attribute-references}}
 \indexii{attribute}{reference}
 
 An attribute reference is a primary followed by a period and a name:
@@ -258,7 +260,7 @@ yield different objects.
 \obindex{module}
 \obindex{list}
 
-\subsection{Subscriptions}
+\subsection{Subscriptions\label{subscriptions}}
 \index{subscription}
 
 A subscription selects an item of a sequence (string, tuple or list)
@@ -295,7 +297,7 @@ type but a string of exactly one character.
 \index{character}
 \indexii{string}{item}
 
-\subsection{Slicings}
+\subsection{Slicings\label{slicings}}
 \index{slicing}
 \index{slice}
 
@@ -358,7 +360,7 @@ proper slice is a slice object (see section \ref{types}) whose
 the expressions given as lower bound, upper bound and stride,
 respectively, substituting \code{None} for missing expressions.
 
-\subsection{Calls} \label{calls}
+\subsection{Calls\label{calls}}
 \index{call}
 
 A call calls a callable object (e.g., a function) with a possibly empty
@@ -478,7 +480,7 @@ method; the effect is then the same as if that method was called.
 \end{description}
 
 
-\section{The power operator}
+\section{The power operator\label{power}}
 
 The power operator binds more tightly than unary operators on its
 left; it binds less tightly than unary operators on its right.  The
@@ -502,7 +504,7 @@ power, or a negative floating point number to a broken power), a
 \exception{TypeError} exception is raised.
 
 
-\section{Unary arithmetic operations}
+\section{Unary arithmetic operations\label{unary}}
 \indexiii{unary}{arithmetic}{operation}
 \indexiii{unary}{bit-wise}{operation}
 
@@ -531,7 +533,7 @@ In all three cases, if the argument does not have the proper type,
 a \exception{TypeError} exception is raised.
 \exindex{TypeError}
 
-\section{Binary arithmetic operations}
+\section{Binary arithmetic operations\label{binary}}
 \indexiii{binary}{arithmetic}{operation}
 
 The binary arithmetic operations have the conventional priority
@@ -594,7 +596,7 @@ arguments.  The numeric arguments are first converted to a common
 type.
 \index{subtraction}
 
-\section{Shifting operations}
+\section{Shifting operations\label{shifting}}
 \indexii{shifting}{operation}
 
 The shifting operations have lower priority than the arithmetic
@@ -618,7 +620,7 @@ value.  Negative shift counts raise a \exception{ValueError}
 exception.
 \exindex{ValueError}
 
-\section{Binary bit-wise operations}
+\section{Binary bit-wise operations\label{bitwise}}
 \indexiii{binary}{bit-wise}{operation}
 
 Each of the three bitwise operations has a different priority level:
@@ -646,7 +648,7 @@ converted to a common type.
 \indexii{bit-wise}{or}
 \indexii{inclusive}{or}
 
-\section{Comparisons}
+\section{Comparisons\label{comparisons}}
 \index{comparison}
 
 Contrary to \C, all comparison operations in Python have the same
@@ -749,7 +751,7 @@ truth value.
 \opindex{is not}
 \indexii{identity}{test}
 
-\section{Boolean operations} \label{Booleans}
+\section{Boolean operations\label{Booleans}}
 \indexii{Boolean}{operation}
 
 Boolean operations have the lowest priority of all Python operations:
@@ -821,7 +823,7 @@ def make_incrementor(increment):
     return lambda x, n=increment: x+n
 \end{verbatim}
 
-\section{Expression lists and expression lists}
+\section{Expression lists\label{exprlists}}
 \indexii{expression}{list}
 
 \begin{verbatim}
@@ -841,7 +843,7 @@ tuple, but rather yields the value of that expression (expression).
 \code{()}.)
 \indexii{trailing}{comma}
 
-\section{Summary}
+\section{Summary\label{summary}}
 
 The following table summarizes the operator precedences in Python,
 from lowest precedence (least binding) to highest precedence (most
