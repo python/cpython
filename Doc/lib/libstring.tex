@@ -102,12 +102,12 @@ The functions defined in this module are:
   trailing whitespace.
 \end{funcdesc}
 
-\begin{funcdesc}{expandtabs}{s, tabsize}
+\begin{funcdesc}{expandtabs}{s, \optional{tabsize}}
   Expand tabs in a string, i.e.\ replace them by one or more spaces,
   depending on the current column and the given tab size.  The column
   number is reset to zero after each newline occurring in the string.
   This doesn't understand other non-printing characters or escape
-  sequences.
+  sequences.  The tab size defaults to 8.
 \end{funcdesc}
 
 \begin{funcdesc}{find}{s, sub\optional{, start\optional{,end}}}
