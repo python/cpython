@@ -80,7 +80,7 @@ def newdataport(s, f):
 	nextport = (nextport+1) % 16
 	r = socket(AF_INET, SOCK_STREAM)
 	r.bind(gethostbyname(gethostname()), port)
-	r.listen(0)
+	r.listen(1)
 	sendportcmd(s, f, port)
 	return r
 
