@@ -97,7 +97,7 @@ class FileList:
         else:
             raise DistutilsTemplateError, "unknown action '%s'" % action
 
-        return (action, pattern, dir, dir_pattern)
+        return (action, patterns, dir, dir_pattern)
 
     # _parse_template_line ()
     
