@@ -107,6 +107,15 @@ a list of IP addresses for the same interface on the same
 host (most likely containing only a single address).
 \end{funcdesc}
 
+\begin{funcdesc}{getprotobyname}{protocolname}
+Translate an Internet protocol name (e.g. \code{'icmp'}) to a constant
+suitable for passing as the (optional) third argument to the
+\code{socket()} function.  This is usually only needed for sockets
+opened in ``raw'' mode (\code{SOCK_RAW}); for the normal socket modes,
+the correct protocol is chosen automatically if the protocol is
+omitted or zero.
+\end{funcdesc}
+
 \begin{funcdesc}{getservbyname}{servicename\, protocolname}
 Translate an Internet service name and protocol name to a port number
 for that service.  The protocol name should be \code{'tcp'} or
