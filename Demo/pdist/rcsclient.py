@@ -9,6 +9,16 @@ HOST = 'voorn.cwi.nl'
 PORT = 4127
 VERBOSE = 1
 
+
+import client
+
+
+class RCSProxyClient(client.SecureClient):
+	
+    def __init__(self, address, verbose = client.VERBOSE):
+	client.SecureClient.__init__(self, address, verbose)
+
+
 def openrcsclient(opts = []):
 	"open an RCSProxy client based on a list of options returned by getopt"
 	import RCSProxy
@@ -33,7 +43,8 @@ def openrcsclient(opts = []):
 		if o == '-q':
 			verbose = 0
 	address = (host, port)
-	x = RCSProxy.RCSProxyClient(address, verbose)
+	# XXX For local operation, instantiate RCSProxy.RCSProxyLocal() here
+	x = RCSProxyClient(address, verbose)
 	if not directory:
 		try:
 			directory = open("CVS/Repository").readline()
