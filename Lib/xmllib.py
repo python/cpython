@@ -795,16 +795,20 @@ class TestXMLParser(XMLParser):
         self.flush()
 
 def test(args = None):
-    import sys
+    import sys, getopt
+    from time import time
 
     if not args:
         args = sys.argv[1:]
 
-    if args and args[0] == '-s':
-        args = args[1:]
-        klass = XMLParser
-    else:
-        klass = TestXMLParser
+    opts, args = getopt.getopt(args, 'st')
+    klass = TestXMLParser
+    do_time = 0
+    for o, a in opts:
+        if o == '-s':
+            klass = XMLParser
+        elif o == '-t':
+            do_time = 1
 
     if args:
         file = args[0]
@@ -825,13 +829,24 @@ def test(args = None):
         f.close()
 
     x = klass()
+    t0 = time()
     try:
-        for c in data:
-            x.feed(c)
-        x.close()
+        if do_time:
+            x.feed(data)
+            x.close()
+        else:
+            for c in data:
+                x.feed(c)
+            x.close()
     except RuntimeError, msg:
+        t1 = time()
         print msg
+        if do_time:
+            print 'total time: %g' % (t1-t0)
         sys.exit(1)
+    t1 = time()
+    if do_time:
+        print 'total time: %g' % (t1-t0)
 
 
 if __name__ == '__main__':
