@@ -99,16 +99,16 @@ sub custom_driver_hook {
 
 $CUSTOM_BUTTONS = '';
 
-sub make_nav_sectref($$) {
-    my($label, $title) = @_;
+sub make_nav_sectref($$$) {
+    my($label, $linktype, $title) = @_;
     if ($title) {
         if ($title =~ /\<[aA] /) {
-            $title =~ s/\<[aA] /<a class="sectref" /;
+            $title =~ s/\<[aA] /<a class="sectref" rel="$linktype" /;
         }
         else {
             $title = "<span class=\"sectref\">$title</span>";
         }
-        return "<b class=\"navlabel\">$label:</b> $title\n";
+        return "<b class=\"navlabel\">$label:</b>\n$title\n";
     }
     return '';
 }
@@ -175,9 +175,9 @@ sub make_nav_panel() {
           . "\n<td>$INDEX</td>"
           . "\n</tr></table>\n"
           # textual navigation
-          . make_nav_sectref("Previous", $PREVIOUS_TITLE)
-          . make_nav_sectref("Up", $UP_TITLE)
-          . make_nav_sectref("Next", $NEXT_TITLE)
+          . make_nav_sectref("Previous", "prev", $PREVIOUS_TITLE)
+          . make_nav_sectref("Up", "parent", $UP_TITLE)
+          . make_nav_sectref("Next", "next", $NEXT_TITLE)
           );
     # remove these; they are unnecessary and cause errors from validation
     $s =~ s/ NAME="tex2html\d+"\n */ /g;
@@ -580,6 +580,15 @@ sub set_depth_levels {
 %declarations = ('preform' => '<div class="verbatim"><pre></pre></div>',
 		 %declarations);
 
+
+# This is used to map the link rel attributes LaTeX2HTML uses to those
+# currently recommended by the W3C.
+sub custom_REL_hook {
+    my($rel,$junk) = @_;
+    return 'parent' if $rel eq 'up';
+    return 'prev' if $rel eq 'previous';
+    return $rel;
+}
 
 # This is added to get rid of the long comment that follows the
 # doctype declaration; MSIE5 on NT4 SP4 barfs on it and drops the
