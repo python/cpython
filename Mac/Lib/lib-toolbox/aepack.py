@@ -45,11 +45,11 @@ from aetypes import mkenum, mktype
 # we like better (and which is equivalent)
 #
 unpacker_coercions = {
-	typeComp : typeExtended,
+	typeComp : typeFloat,
 	typeColorTable : typeAEList,
 	typeDrawingArea : typeAERecord,
-	typeFixed : typeExtended,
-	typeFloat : typeExtended,
+	typeFixed : typeFloat,
+	typeExtended : typeFloat,
 	typePixelMap : typeAERecord,
 	typeRotation : typeAERecord,
 	typeStyledText : typeAERecord,
@@ -87,14 +87,7 @@ def pack(x, forcetype = None):
 	if t == IntType:
 		return AE.AECreateDesc('long', struct.pack('l', x))
 	if t == FloatType:
-		#
-		# XXXX (note by Guido) Weird thing -- Think C's "double" is 10 bytes, but
-		# struct.pack('d') return 12 bytes (and struct.unpack requires
-		# them, too).  The first 2 bytes seem to be repeated...
-		# Probably an alignment problem
-		# XXXX (note by Jack) haven't checked this under MW
-		#
-		return AE.AECreateDesc('exte', struct.pack('d', x)[2:])
+		return AE.AECreateDesc('doub', struct.pack('d', x))
 	if t == StringType:
 		return AE.AECreateDesc('TEXT', x)
 	if t == ListType:
@@ -148,14 +141,11 @@ def unpack(desc):
 	if t == typeEnumeration:
 		return mkenum(desc.data)
 	# typeEPS returned as unknown
-	if t == typeExtended:
-		data = desc.data
-		# XXX See corresponding note for pack()
-		return struct.unpack('d', data[:2] + data)[0]
 	if t == typeFalse:
 		return 0
-	# typeFixed coerced to extended
-	# typeFloat coerced to extended
+	if t == typeFloat:
+		data = desc.data
+		return struct.unpack('d', data)[0]
 	if t == typeFSS:
 		return macfs.RawFSSpec(desc.data)
 	if t == typeInsertionLoc:
@@ -170,7 +160,6 @@ def unpack(desc):
 		return aetypes.IntlWritingCode(script, language)
 	if t == typeKeyword:
 		return mkkeyword(desc.data)
-	# typeLongFloat is equal to typeFloat
 	if t == typeLongInteger:
 		return struct.unpack('l', desc.data)[0]
 	if t == typeNull:
