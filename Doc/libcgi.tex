@@ -6,6 +6,8 @@
 \indexii{MIME}{headers}
 \index{URL}
 
+\renewcommand{\indexsubitem}{(in module cgi)}
+
 This module makes it easy to write Python scripts that run in a WWW
 server using the Common Gateway Interface.  It was written by Michael
 McLay and subsequently modified by Steve Majewski and Guido van
@@ -113,7 +115,7 @@ if it is unique, or raise \code{IndexError} if the field was specified
 more than once in the form.  (If the field wasn't specified at all,
 \code{KeyError} is raised.)  To access fields that are specified
 multiple times, use \code{form.getlist(fieldname)}.  The
-\code{values()} and \code{items()} methods return mixed lists --
+\code{values()} and \code{items()} methods return mixed lists ---
 containing strings for singly-defined fields, and lists of strings for
 multiply-defined fields.
 \end{funcdesc}

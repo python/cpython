@@ -1,3 +1,271 @@
 \section{Built-in module \sectcode{htmllib}}
 \stmodindex{htmllib}
-To be provided.
+\index{HTML}
+\index{hypertext}
+
+\renewcommand{\indexsubitem}{(in module htmllib)}
+
+This module defines a number of classes which can serve as a basis for
+parsing text files formatted in HTML (HyperText Mark-up Language).
+The classes are not directly concerned with I/O --- the have to be fed
+their input in string form, and will make calls to methods of a
+``formatter'' object in order to produce output.  The classes are
+designed to be used as base classes for other classes in order to add
+functionality, and allow most of their methods to be extended or
+overridden.  In turn, the classes are derived from and extend the
+class \code{SGMLParser} defined in module \code{sgmllib}.
+\index{SGML}
+\stmodindex{sgmllib}
+\ttindex{SGMLParser}
+\index{formatter}
+
+The following is a summary of the interface defined by
+\code{sgmllib.SGMLParser}:
+
+\begin{itemize}
+
+\item
+The interface to feed data to an instance is through the \code{feed()}
+method, which takes a string argument.  This can be called with as
+little or as much text at a time.  When the data contains complete
+HTML elements, these are processed immediately; incomplete elements
+are saved in a buffer.  To force processing of all unprocessed data,
+call the \code{close()} method.
+
+Example: to parse the entire contents of a file, do
+\code{parser.feed(open(file).read()); parser.close()}.
+
+\item
+The interface to define semantics for HTML tags is very simple: derive
+a class and define methods called \code{start_\var{tag}()},
+\code{end_\var{tag}()}, or \code{do_\var{tag}()}.  The parser will
+call these at appropriate moments: \code{start_\var{tag}} or
+\code{do_\var{tag}} is called when an opening tag of the form
+\code{<\var{tag} ...>} is encountered; \code{end_\var{tag}} is called
+when a closing tag of the form \code{<\var{tag}>} is encountered.  If
+an opening tag requires a corresponding closing tag, like \code{<H1>}
+... \code{</H1>}, the class should define the \code{start_\var{tag}}
+method; if a tag requires no closing tag, like \code{<P>}, the class
+should define the \code{do_\var{tag}} method.
+
+\end{itemize}
+
+The module defines the following classes:
+
+\begin{funcdesc}{HTMLParser}{}
+This is the most basic HTML parser class.  It defines one additional
+entity name over the names defined by the \code{SGMLParser} base
+class, \code{\&bullet;}.  It also defines handlers for the following
+tags: \code{<LISTING>...</LISTING>}, \code{<XMP>...</XMP>}, and
+\code{<PLAINTEXT>} (the latter is terminated only by end of file).
+\end{funcdesc}
+
+\begin{funcdesc}{CollectingParser}{}
+This class, derived from \code{HTMLParser}, collects various useful
+bits of information from the HTML text.  To this end it defines
+additional handlers for the following tags: \code{<A>...</A>},
+\code{<HEAD>...</HEAD>}, \code{<BODY>...</BODY>},
+\code{<TITLE>...</TITLE>}, \code{<NEXTID>}, and \code{<ISINDEX>}.
+\end{funcdesc}
+
+\begin{funcdesc}{FormattingParser}{formatter\, stylesheet}
+This class, derived from \code{CollectingParser}, interprets a wide
+selection of HTML tags so it can produce formatted output from the
+parsed data.  It is initialized with two objects, a \var{formatter}
+which should define a number of methods to format text into
+paragraphs, and a \var{stylesheet} which defines a number of static
+parameters for the formatting process.  Formatters and style sheets
+are documented later in this section.
+\index{formatter}
+\index{style sheet}
+\end{funcdesc}
+
+\begin{funcdesc}{AnchoringParser}{formatter\, stylesheet}
+This class, derived from \code{FormattingParser}, extends the handling
+of the \code{<A>...</A>} tag pair to call the formatter's
+\code{bgn_anchor()} and \code{end_anchor()} methods.  This allows the
+formatter to display the anchor in a different font or color, etc.
+\end{funcdesc}
+
+Instances of \code{CollectingParser} (and thus also instances of
+\code{FormattingParser} and \code{AnchoringParser}) have the following
+instance variables:
+
+\begin{datadesc}{anchornames}
+A list of the values if the \code{NAME} attributes of the \code{<A>}
+tags encountered.
+\end{datadesc}
+
+\begin{datadesc}{anchors}
+A list of the values of \code{HREF} attributes of the \code{<A>} tags
+encountered.
+\end{datadesc}
+
+\begin{datadesc}{anchortypes}
+A list of the values if the \code{TYPE} attributes of the \code{<A>}
+tags encountered.
+\end{datadesc}
+
+\begin{datadesc}{inanchor}
+Outside an \code{<A>...</A>} tag pair, this is zero.  inside such a
+pair, it is a unique integer, which is positive if the anchor has a
+\code{HREF} attribute, negative if it hasn't.  Its absolute value is
+one more than the index of the anchor in the \code{anchors},
+\code{anchornames} and \code{anchortypes} lists.
+\end{datadesc}
+
+\begin{datadesc}{isindex}
+True if the \code{<ISINDEX>} tag has been encountered.
+\end{datadesc}
+
+\begin{datadesc}{nextid}
+The attribute list of the last \code{<NEXTID>} tag encountered, or
+an empty list if none.
+\end{datadesc}
+
+\begin{datadesc}{title}
+The text inside the last \code{<TITLE>...</TITLE>} tag pair, or
+\code{''} if no title has been encountered yet.
+\end{datadesc}
+
+The \code{anchors}, \code{anchornames} and \code{anchortypes} lists
+are ``parallel arrays'': items in these lists with the same index
+pertain to the same anchor.  Missing attributes default to the empty
+string.  Anchors with neither a \code{HREF} not a \code{NAME}
+attribute are not entered in these lists at all.
+
+The module also defines a number of style sheet classes.  These should
+never be instantiated --- their class variables are the only behaviour
+required.  Note that style sheets are specifically designed for a
+particular formatter implementation.  The currently defined style
+sheets are:
+\index{style sheet}
+
+\begin{datadesc}{NullStylesheet}
+A style sheet for use on a dumb output device such as an ASCII
+terminal.
+\end{datadesc}
+
+\begin{datadesc}{X11Stylesheet}
+A style sheet for use with an X11 server.
+\end{datadesc}
+
+\begin{datadesc}{MacStylesheet}
+A style sheet for use on Apple Macintosh computers.
+\end{datadesc}
+
+\begin{datadesc}{StdwinStylesheet}
+A style sheet for use with the \code{stdwin} module; it is an alias
+for either \code{X11Stylesheet} or \code{MacStylesheet}.
+\bimodindex{stdwin}
+\end{datadesc}
+
+\begin{datadesc}{GLStylesheet}
+A style sheet for use with the SGI Graphics Library and its font
+manager (the SGI-specific built-in modules \code{gl} and \code{fm}).
+\bimodindex{gl}
+\bimodindex{fm}
+\end{datadesc}
+
+Style sheets have the following class variables:
+
+\begin{datadesc}{stdfontset}
+A list of up to four font definititions, respectively for the roman,
+italic, bold and constant-width variant of a font for normal text.  If
+the list contains less than four font definitions, the last item is
+used as the default for missing items.  The type of a font definition
+depends on the formatter in use; its only use is as a parameter to the
+formatter's \code{setfont()} method.
+\end{datadesc}
+
+\begin{datadesc}{h1fontset}
+\dataline{h2fontset}
+\dataline{h3fontset}
+The font set used for various headers (text inside \code{<H1>...</H1>}
+tag pairs etc.).
+\end{datadesc}
+
+\begin{datadesc}{stdindent}
+The indentation of normal text.  This is measured in the ``native''
+units of the formatter in use; for some formatters these are
+characters, for others (especially those that actually support
+variable-spacing fonts) in pixels or printer points.
+\end{datadesc}
+
+\begin{datadesc}{ddindent}
+The indentation used for the first level of \code{<DD>} tags.
+\end{datadesc}
+
+\begin{datadesc}{ulindent}
+The indentation used for the first level of \code{<UL>} tags.
+\end{datadesc}
+
+\begin{datadesc}{h1indent}
+The indentation used for level 1 headers.
+\end{datadesc}
+
+\begin{datadesc}{h2indent}
+The indentation used for level 2 headers.
+\end{datadesc}
+
+\begin{datadesc}{literalindent}
+The indentation used for literal text (text inside
+\code{<PRE>...</PRE>} and similar tag pairs).
+\end{datadesc}
+
+Although no documented implementation of a formatter exists, the
+\code{FormattingParser} class assumes that formatters have a
+certain interface.  This interface requires the following methods:
+\index{formatter}
+
+\begin{funcdesc}{setfont}{fontspec}
+Set the font to be used subsequently.  The \var{fontspec} argument is
+an item in a style sheet's font set.
+\end{funcdesc}
+
+\begin{funcdesc}{flush}{}
+Finish the current line, if not empty, and begin a new one.
+\end{funcdesc}
+
+\begin{funcdesc}{setleftindent}{n}
+Set the left indentation of the following lines to \var{n} units.
+\end{funcdesc}
+
+\begin{funcdesc}{needvspace}{n}
+Require at least \var{n} blank lines before the next line.  Implies
+\code{flush()}.
+\end{funcdesc}
+
+\begin{funcdesc}{addword}{word\, space}
+Add a var{word} to the current paragraph, followed by \var{space}
+spaces.
+\end{funcdesc}
+
+\begin{datadesc}{nospace}
+If this instance variable is true, empty words are ignored by
+\code{addword}.  It is set to false after a non-empty word has been
+added.
+\end{datadesc}
+
+\begin{funcdesc}{setjust}{justification}
+Set the justification of the current paragraph.  The
+\var{justification} can be \code{'c'} (center), \code{'l'} (left
+justified), \code{'r'} (right justified) or \code{'lr'} (left and
+right justified).
+\end{funcdesc}
+
+\begin{funcdesc}{bgn_anchor}{id}
+Begin an anchor.  The \var{id} parameter is the value of the parser's
+\code{inanchor} attribute.
+\end{funcdesc}
+
+\begin{funcdesc}{end_anchor}{id}
+End an anchor.  The \var{id} parameter is the value of the parser's
+\code{inanchor} attribute.
+\end{funcdesc}
+
+A sample formatters implementation can be found in the module
+\code{fmt}, which in turn uses the module \code{Para}.  These are
+currently not intended as a 
+\ttindex{fmt}
+\ttindex{Para}
