@@ -4,8 +4,8 @@
 
 This module provides access to the IRIS \emph{Font Manager} library.
 It is available only on Silicon Graphics machines.
-See also: 4Sight User's Guide, Section 1, Chapter 5: Using the IRIS
-Font Manager.
+See also: \emph{4Sight User's Guide}, Section 1, Chapter 5: ``Using
+the IRIS Font Manager.''
 
 This is not yet a full interface to the IRIS Font Manager.
 Among the unsupported features are: matrix operations; cache
@@ -14,12 +14,11 @@ details of font info; individual glyph metrics; and printer matching.
 
 It supports the following operations:
 
-\setindexsubitem{(in module fm)}
 \begin{funcdesc}{init}{}
 Initialization function.
-Calls \code{fminit()}.
+Calls \cfunction{fminit()}.
 It is normally not necessary to call this function, since it is called
-automatically the first time the \code{fm} module is imported.
+automatically the first time the \module{fm} module is imported.
 \end{funcdesc}
 
 \begin{funcdesc}{findfont}{fontname}
@@ -29,18 +28,18 @@ Calls \code{fmfindfont(\var{fontname})}.
 
 \begin{funcdesc}{enumerate}{}
 Returns a list of available font names.
-This is an interface to \code{fmenumerate()}.
+This is an interface to \cfunction{fmenumerate()}.
 \end{funcdesc}
 
 \begin{funcdesc}{prstr}{string}
-Render a string using the current font (see the \code{setfont()} font
+Render a string using the current font (see the \function{setfont()} font
 handle method below).
 Calls \code{fmprstr(\var{string})}.
 \end{funcdesc}
 
 \begin{funcdesc}{setpath}{string}
 Sets the font search path.
-Calls \code{fmsetpath(string)}.
+Calls \code{fmsetpath(\var{string})}.
 (XXX Does not work!?!)
 \end{funcdesc}
 
@@ -78,11 +77,12 @@ Calls \code{fmgetcomment(\var{fh})}.
 Returns a tuple giving some pertinent data about this font.
 This is an interface to \code{fmgetfontinfo()}.
 The returned tuple contains the following numbers:
-\code{(\var{printermatched}, \var{fixed_width}, \var{xorig}, \var{yorig},
-\var{xsize}, \var{ysize}, \var{height}, \var{nglyphs})}.
+\code{(}\var{printermatched}, \var{fixed_width}, \var{xorig},
+\var{yorig}, \var{xsize}, \var{ysize}, \var{height},
+\var{nglyphs}\code{)}.
 \end{funcdesc}
 
 \begin{funcdesc}{getstrwidth}{string}
-Returns the width, in pixels, of the string when drawn in this font.
+Returns the width, in pixels, of \var{string} when drawn in this font.
 Calls \code{fmgetstrwidth(\var{fh}, \var{string})}.
 \end{funcdesc}
