@@ -268,27 +268,66 @@ all partially used pools holding small blocks with "size class idx" i. So
 usedpools[0] corresponds to blocks of size 8, usedpools[2] to blocks of size
 16, and so on:  index 2*i <-> blocks of size (i+1)<<ALIGNMENT_SHIFT.
 
-The partially used pools for a given index are linked together via their
-pool_header's prevpool and nextpool members.  "Partially used" means at least
-one block in the pool is currently allocated, *and* at least one block in the
-pool is not currently allocated.
+Pools are carved off the current arena highwater mark (file static arenabase)
+as needed.  Once carved off, a pool is in one of three states forever after:
 
-When all blocks in a pool are allocated, the pool is unlinked from the list,
-and isn't linked to from anything anymore (you can't find it then from
-anything obmalloc.c knows about); the pool's own prevpool and nextpool
-pointers are set to point to itself.  The comments say the pool "is full" then.
+used == partially used, neither empty nor full
+    At least one block in the pool is currently allocated, and at least one
+    block in the pool is not currently allocated (note this implies a pool
+    has room for at least two blocks).
+    This is a pool's initial state, as a pool is created only when malloc
+    needs space.
+    The pool holds blocks of a fixed size, and is in the circular list headed
+    at usedpools[i] (see above).  It's linked to the other used pools of the
+    same size class via the pool_header's nextpool and prevpool members.
+    If all but one block is currently allocated, a malloc can cause a
+    transition to the full state.  If all but one block is not currently
+    allocated, a free can cause a transition to the empty state.
 
-When a small block is returned to pymalloc, there are two cases.  If its pool
-was full, its pool is relinked into the appropriate usedpools[] list, at the
-front (so the next allocation of the same size class will be taken from this
-pool).  Else its pool was not full, the pool is already in a usedpools[]
-list, and isn't moved.  Instead the block is just linked to the front of the
-pool's own freeblock singly-linked list.  However, if that makes the pool
-entirely free of allocated blocks (the comments say the pool "is empty" then),
-the pool is unlinked from usedpools[], and inserted at the front of the
-(file static) singly-linked freepools list, via the pool header's nextpool
-member; prevpool is meaningless in this case.  Pools put on the freepools
-list can be changed to belong to a different size class.
+full == all the pool's blocks are currently allocated
+    On transition to full, a pool is unlinked from its usedpools[] list.
+    It's not linked to from anything then anymore, and its nextpool and
+    prevpool members are meaningless until it transitions back to used.
+    A free of a block in a full pool puts the pool back in the used state.
+    Then it's linked in at the front of the appropriate usedpools[] list, so
+    that the next allocation for its size class will reuse the freed block.
+
+empty == all the pool's blocks are currently available for allocation
+    On transition to empty, a pool is unlinked from its usedpools[] list,
+    and linked to the front of the (file static) singly-linked freepools list,
+    via its nextpool member.  The prevpool member has no meaning in this case.
+    Empty pools have no inherent size class:  the next time a malloc finds
+    an empty list in usedpools[], it takes the first pool off of freepools.
+    If the size class needed happens to be the same as the size class the pool
+    last had, some expensive initialization can be skipped (including an
+    integer division -- XXX since the value
+
+	pool->capacity = (POOL_SIZE - POOL_OVERHEAD) / size;
+
+    is invariant across all pools of a given size class, it may make more
+    sense to compute those at compile-time into a const vector indexed by
+    size class, and lose the pool->capacity member and the runtime divisions).
+
+
+Block Management
+
+Blocks within pools are again carved out as needed.  pool->freeblock points to
+the start of a singly-linked list of free blocks within the pool.  When a
+block is freed, it's inserted at the front of its pool's freeblock list.  Note
+that the available blocks in a pool are *not* linked all together when a pool
+is initialized.  Instead only "the first" (lowest address) block is set up,
+setting pool->freeblock to NULL.  This is consistent with that pymalloc
+strives at all levels (arena, pool, and block) never to touch a piece of
+memory until it's actually needed.  So long as a pool is in the used state,
+we're certain there *is* a block available for allocating.  If pool->freeblock
+is NULL then, that means we simply haven't yet gotten to one of the higher-
+address blocks.  The address of "the next" available block can be computed
+then from pool->ref.count (the number of currently allocated blocks).  This
+computation can be expensive, because it requires an integer multiply.
+However, so long as the pool's size class doesn't change, it's a one-time cost
+for that block; the computation could be made cheaper via adding a highwater
+pointer to the pool_header, but the tradeoff is murky.
+
 
 Major obscurity:  While the usedpools vector is declared to have poolp
 entries, it doesn't really.  It really contains two pointers per (conceptual)
@@ -510,6 +549,7 @@ error:
  */
 #define ADDRESS_IN_RANGE(P, I) \
 	((I) < narenas && (uptr)(P) - arenas[I] < (uptr)ARENA_SIZE)
+
 /*==========================================================================*/
 
 /* malloc */
