@@ -133,20 +133,20 @@ BINFLOAT        = 'G'   # push float; arg is 8-byte float encoding
 TRUE            = 'I01\n'  # not an opcode; see INT docs in pickletools.py
 FALSE           = 'I00\n'  # not an opcode; see INT docs in pickletools.py
 
-# Protocol 2 (not yet implemented) (XXX comments will be added later)
+# Protocol 2 (not yet implemented).
 
-PROTO           = '\x80'
-NEWOBJ          = '\x81'
-EXT1            = '\x82'
-EXT2            = '\x83'
-EXT4            = '\x84'
-TUPLE1          = '\x85'
-TUPLE2          = '\x86'
-TUPLE3          = '\x87'
-NEWTRUE         = '\x88'
-NEWFALSE        = '\x89'
-LONG1           = '\x8a'
-LONG4           = '\x8b'
+PROTO           = '\x80'  # identify pickle protocol
+NEWOBJ          = '\x81'  # build object by applying cls.__new__ to argtuple
+EXT1            = '\x82'  # push object from extension registry; 1-byte index
+EXT2            = '\x83'  # ditto, but 2-byte index
+EXT4            = '\x84'  # ditto, but 4-byte index
+TUPLE1          = '\x85'  # build 1-tuple from stack top
+TUPLE2          = '\x86'  # build 2-tuple from two topmost stack items
+TUPLE3          = '\x87'  # build 3-tuple from three topmost stack items
+NEWTRUE         = '\x88'  # push True
+NEWFALSE        = '\x89'  # push False
+LONG1           = '\x8a'  # push long from < 256 bytes
+LONG4           = '\x8b'  # push really big long
 
 
 __all__.extend([x for x in dir() if re.match("[A-Z][A-Z0-9_]+$",x)])
