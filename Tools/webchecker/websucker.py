@@ -2,7 +2,7 @@
 
 """A variant on webchecker that creates a mirror copy of a remote site."""
 
-__version__ = "0.1"
+__version__ = "$Revision$"
 
 import os
 import sys
@@ -11,22 +11,28 @@ import urllib
 import getopt
 
 import webchecker
-verbose = webchecker.verbose
+
+# Extract real version number if necessary
+if __version__[0] == '$':
+    _v = string.split(__version__)
+    if len(_v) == 3:
+	__version__ = _v[1]
 
 def main():
-    global verbose
+    verbose = webchecker.VERBOSE
     try:
 	opts, args = getopt.getopt(sys.argv[1:], "qv")
     except getopt.error, msg:
 	print msg
-	print "usage:", sys.argv[0], "[-v] ... [rooturl] ..."
+	print "usage:", sys.argv[0], "[-qv] ... [rooturl] ..."
 	return 2
     for o, a in opts:
 	if o == "-q":
-	    webchecker.verbose = verbose = 0
+	    verbose = 0
 	if o == "-v":
-	    webchecker.verbose = verbose = verbose + 1
-    c = Sucker(0)
+	    verbose = verbose + 1
+    c = Sucker()
+    c.setflags(verbose=verbose)
     c.urlopener.addheaders = [
 	    ('User-agent', 'websucker/%s' % __version__),
 	]
@@ -38,63 +44,31 @@ def main():
 
 class Sucker(webchecker.Checker):
 
-    # Alas, had to copy this to make one change...
-    def getpage(self, url):
-	if url[:7] == 'mailto:' or url[:5] == 'news:':
-	    if verbose > 1: print " Not checking mailto/news URL"
-	    return None
-	isint = self.inroots(url)
-	if not isint and not self.checkext:
-	    if verbose > 1: print " Not checking ext link"
-	    return None
+    checkext = 0
+
+    def readhtml(self, url):
+	text = None
 	path = self.savefilename(url)
-	saved = 0
 	try:
 	    f = open(path, "rb")
 	except IOError:
-	    try:
-		f = self.urlopener.open(url)
-	    except IOError, msg:
-		msg = webchecker.sanitize(msg)
-		if verbose > 0:
-		    print "Error ", msg
-		if verbose > 0:
-		    webchecker.show(" HREF ", url, "  from", self.todo[url])
-		self.setbad(url, msg)
-		return None
-	    if not isint:
-		if verbose > 1: print " Not gathering links from ext URL"
-		safeclose(f)
-		return None
-	    nurl = f.geturl()
-	    if nurl != url:
-		path = self.savefilename(nurl)
-	    info = f.info()
+	    f = self.openpage(url)
+	    if f:
+		info = f.info()
+		nurl = f.geturl()
+		if nurl != url:
+		    url = nurl
+		    path = self.savefilename(url)
+		text = f.read()
+		f.close()
+		self.savefile(text, path)
+		if not self.checkforhtml(info, url):
+		    text = None
 	else:
-	    if verbose: print "Loading cached URL", url
-	    saved = 1
-	    nurl = url
-	    info = {}
-	    if url[-1:] == "/":
-		info["content-type"] = "text/html"
-	text = f.read()
-	if not saved: self.savefile(text, path)
-	if info.has_key('content-type'):
-	    ctype = string.lower(info['content-type'])
-	else:
-	    ctype = None
-	if nurl != url:
-	    if verbose > 1:
-		print " Redirected to", nurl
-	if not ctype:
-	    ctype, encoding = webchecker.mimetypes.guess_type(nurl)
-	if ctype != 'text/html':
-	    webchecker.safeclose(f)
-	    if verbose > 1:
-		print " Not HTML, mime type", ctype
-	    return None
-	f.close()
-	return webchecker.Page(text, nurl)
+	    if self.checkforhtml({}, url):
+		text = f.read()
+	    f.close()
+	return text, url
 
     def savefile(self, text, path):
 	dir, base = os.path.split(path)
