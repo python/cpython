@@ -1,3 +1,12 @@
+"""distutils.command.install_scripts
+
+Implements the Distutils 'install_scripts' command, for installing
+Python scripts."""
+
+# contributed by Bastian Kleineidam
+
+__revision__ = "$Id$"
+
 import os
 from distutils.cmd import install_misc
 from stat import ST_MODE
