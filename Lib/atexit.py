@@ -2,7 +2,7 @@
 atexit.py - allow programmer to define multiple exit functions to be executed
 upon normal program termination.
 
-One public function, register, is defined.  
+One public function, register, is defined.
 """
 
 _exithandlers = []
@@ -12,7 +12,7 @@ def _run_exitfuncs():
     _exithandlers is traversed in reverse order so functions are executed
     last in, first out.
     """
-    
+
     while _exithandlers:
         func, targs, kargs = _exithandlers[-1]
         apply(func, targs, kargs)
@@ -51,4 +51,3 @@ if __name__ == "__main__":
     register(x2, 12)
     register(x3, 5, "bar")
     register(x3, "no kwd args")
-
