@@ -17,7 +17,15 @@ including MIME and other \rfc{2822}-based message documents.  It
 subsumes most of the functionality in several older standard modules
 such as \refmodule{rfc822}, \refmodule{mimetools},
 \refmodule{multifile}, and other non-standard packages such as
-\module{mimecntl}.
+\module{mimecntl}.  It is specifically \emph{not} designed to do any
+sending of email messages to SMTP (\rfc{2821}) servers; that is the
+function of the \refmodule{smtplib} module\footnote{For this reason,
+line endings in the \module{email} package are always native line
+endings.  The \module{smtplib} module is responsible for converting
+from native line endings to \rfc{2821} line endings, just as your mail
+server would be responsible for converting from \rfc{2821} line
+endings to native line endings when it stores messages in a local
+mailbox.}.
 
 The primary distinguishing feature of the \module{email} package is
 that it splits the parsing and generating of email messages from the
@@ -49,6 +57,10 @@ classes you might encounter while using the \module{email} package,
 some auxiliary utilities, and a few examples.  For users of the older
 \module{mimelib} package, from which the \module{email} package is
 descended, a section on differences and porting is provided.
+
+\begin{seealso}
+    \seemodule{smtplib}{SMTP protocol client}
+\end{seealso}
 
 \subsection{Representing an email message}
 \input{emailmessage}
