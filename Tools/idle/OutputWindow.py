@@ -67,30 +67,41 @@ class OutputWindow(EditorWindow):
         # x, y = self.event.x, self.event.y
         # self.text.mark_set("insert", "@%d,%d" % (x, y))
         line = self.text.get("insert linestart", "insert lineend")
+        result = self._file_line_helper(line)
+        if not result:
+            # Try the previous line.  This is handy e.g. in tracebacks,
+            # where you tend to right-click on the displayed source line
+            line = self.text.get("insert -1line linestart",
+                                 "insert -1line lineend")
+            result = self._file_line_helper(line)
+            if not result:
+                tkMessageBox.showerror(
+                    "No special line",
+                    "The line you point at doesn't look like "
+                    "a valid file name followed by a line number.",
+                    master=self.text)
+                return
+        filename, lineno = result
+        edit = self.flist.open(filename)
+        edit.gotoline(lineno)
+
+    def _file_line_helper(self, line):
         for prog in self.file_line_progs:
             m = prog.search(line)
             if m:
                 break
         else:
-            tkMessageBox.showerror("No special line",
-                "The line you point at doesn't look like "
-                "a file name followed by a line number.",
-                master=self.text)
-            return
+            return None
         filename, lineno = m.group(1, 2)
         try:
             f = open(filename, "r")
             f.close()
-        except IOError, msg:
-            self.text.bell()
-            return
-        edit = self.flist.open(filename)
+        except IOError:
+            return None
         try:
-            lineno = int(lineno)
-        except ValueError, msg:
-            self.text.bell()
-            return
-        edit.gotoline(lineno)
+            return filename, int(lineno)
+        except TypeError:
+            return None
 
 # These classes are currently not used but might come in handy
 
