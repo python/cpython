@@ -58,7 +58,7 @@ EXPORTS
 	PyFrame_Type DATA
 	PyRange_Type DATA
 	PyComplex_Type DATA
-	_Py_EllipsesObject DATA
+	_Py_EllipsisObject DATA
 	PySlice_Type DATA
 
 	_PyObject_New
@@ -189,6 +189,7 @@ EXPORTS
 	PyNode_Compile
 	PyCode_New
 	PyEval_CallObject
+	PyEval_CallObjectWithKeywords
 	PyEval_EvalCode
 	Py_FlushLine
 	PyEval_GetBuiltins
