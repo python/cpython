@@ -1,5 +1,9 @@
-This is Python release 1.5 beta 1
+This is Python release 1.5 beta 2
 ==================================
+
+The official release date for this version is Friday, December 12,
+1997.
+
 
 What's new in this release?
 ---------------------------
@@ -72,31 +76,60 @@ Misc/NEWS.  Some highlights:
   defined by Python now have a "Py" or "_Py" prefix, and the same is
   true for most macros and typedefs.
 
-If you were an alpha tester, here are the most relevant changes since
-1.5a4 (of course all known bugs have been fixed, leaks plugged, and
-some documentation has been added).  The full list of changes since
-1.5a4 is presented at the end of the Misc/NEWS file.
+If you previously downloaded 1.5b1, here are the most relevant changes
+since then (of course all known bugs have been fixed, leaks plugged,
+and some documentation has been added).  The full list of changes
+since 1.5b1 is presented at the end of the Misc/NEWS file.
 
-  - Package directories now *require* the presence of __init__.py (or
-  .pyc/.pyo as applicable).  Packages can now contain shared
-  library modules.
+  - Thanks to all who contributed doc strings for library modules!
 
-  - New module 'fileinput' to iterate over the lines of a list of files.
+  - The portability problems caused by indented preprocessor commands
+  and C++ style comments should be gone now.
 
-  - New module 'locale' for localized number formatting and string case
-  sensitivity.
+  - Lots of improvements to python-mode.el again.
 
-  - New module 'xmllib' to parse XML files.
+  - Changes in pickle.py and cPickle.c: when unpickling an instance of
+  a class that doesn't define the __getinitargs__() method, the
+  __init__() constructor is no longer called.  This makes a much
+  larger group of classes picklable by default, but may occasionally
+  change semantics.  To force calling __init__() on unpickling, define
+  a __getinitargs__() method.  Other changes too, in particular
+  cPickle now handles classes defined in packages correctly.  The
+  same change applies to copying instances with copy.py.
 
-  - Some more support for Tk extensions (PIL, TIX, BLT, TOGL).
+  - Locale support in the "re" (Perl regular expressions) module.  Use 
+  the flag re.L (or re.LOCALE) to enable locale-specific matching
+  rules for \w and \b.  The in-line syntax for this flag is (?L).
 
-  - Fixed address list parsing in module 'rfc822'.
+  - The built-in function isinstance(x, y) now also succeeds when y is
+  a type object and type(x) is y.
 
-  - More deployment (and only one fix) for the 're' module.
+  - repr() and str() of class and instance objects now reflect the
+  package/module in which the class is defined.
 
-  - New Python mode for Emacs.
+  - Module "ni" has been removed.  (If you really need it, it's been
+  renamed to "ni1".  Let me know if this causes any problems for you.
+  Package authors are encouraged to write __init__.py files that
+  support both ni and 1.5 package support, so the same version can be
+  used with Python 1.4 as well as 1.5.)
 
-  - OS/2 support.
+  - The thread module is now automatically included when threads are
+  configured.  (You must remove it from your existing Setup file,
+  since it is now in its own Setup.thread file.)
+
+  - New command line option "-x" to skip the first line of the script;
+  handy to make executable scripts on non-Unix platforms.
+
+  - In importdl.c, add the RTLD_GLOBAL to the dlopen() flags.  I
+  haven't checked how this affects things, but it should make symbols
+  in one shared library available to the next one.
+
+  - The Windows configuration adds a new main program, "pythonw", and
+  registers a new extension, ".pyw" that invokes this.  This is a
+  standard Python interpreter that does not pop up a console window;
+  handy for pure Tkinter applications.  All output to the original
+  stdout and stderr is lost; reading from the original stdin yields
+  EOF.
 
 
 If you don't read instructions
