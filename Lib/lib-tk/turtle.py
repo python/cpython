@@ -2,8 +2,8 @@
 
 from math import * # Also for export
 import Tkinter
-Tk = Tkinter
-Error = Exception
+class Error(Exception):
+    pass
 
 class RawPen:
 
@@ -85,7 +85,7 @@ class RawPen:
                 # Test the color first
                 try:
                     id = self._canvas.create_line(0, 0, 0, 0, fill=color)
-                except Tk.TclError:
+                except Tkinter.TclError:
                     raise Error, "bad color string: %s" % `color`
                 self._color = color
                 return
@@ -222,7 +222,7 @@ class RawPen:
                         self._canvas.update()
                         self._canvas.after(10)
                     self._canvas.itemconfigure(item, arrow="none")
-                except Tk.TclError:
+                except Tkinter.TclError:
                     # Probably the window was closed!
                     return
             else:
@@ -242,11 +242,11 @@ class Pen(RawPen):
     def __init__(self):
         global _root, _canvas
         if _root is None:
-            _root = Tk.Tk()
+            _root = Tkinter.Tk()
             _root.wm_protocol("WM_DELETE_WINDOW", self._destroy)
         if _canvas is None:
             # XXX Should have scroll bars
-            _canvas = Tk.Canvas(_root, background="white")
+            _canvas = Tkinter.Canvas(_root, background="white")
             _canvas.pack(expand=1, fill="both")
         RawPen.__init__(self, _canvas)
 
