@@ -361,17 +361,28 @@ The fine print:
 \item Output to stdout is captured, but not output to stderr (exception
   tracebacks are captured via a different means).
 
-\item If you continue a line via backslashing in an interactive session, or
-  for any other reason use a backslash, you need to double the backslash in
-  the docstring version.  This is simply because you're in a string, and so
-  the backslash must be escaped for it to survive intact.  Like:
+\item If you continue a line via backslashing in an interactive session,
+  or for any other reason use a backslash, you should use a raw
+  docstring, which will preserve your backslahses exactly as you type
+  them:
 
 \begin{verbatim}
->>> if "yes" == \\
-...     "y" +   \\
-...     "es":
-...     print 'yes'
-yes
+>>> def f(x): 
+...     r'''Backslashes in a raw docstring: m\n'''
+>>> print f.__doc__
+Backslashes in a raw docstring: m\n
+\end{verbatim}
+  
+  Otherwise, the backslash will be interpreted as part of the string.
+  E.g., the "\textbackslash" above would be interpreted as a newline
+  character.  Alternatively, you can double each backslash in the
+  doctest version (and not use a raw string):
+
+\begin{verbatim}
+>>> def f(x): 
+...     '''Backslashes in a raw docstring: m\\n'''
+>>> print f.__doc__
+Backslashes in a raw docstring: m\n
 \end{verbatim}
 
 \item The starting column doesn't matter:
