@@ -157,6 +157,13 @@ def parse_config_h(fp, g=None):
                 g[m.group(1)] = 0
     return g
 
+
+# Regexes needed for parsing Makefile (and similar syntaxes,
+# like old-style Setup files).
+_variable_rx = re.compile("([a-zA-Z][a-zA-Z0-9_]+)\s*=\s*(.*)")
+_findvar1_rx = re.compile(r"\$\(([A-Za-z][A-Za-z0-9_]*)\)")
+_findvar2_rx = re.compile(r"\${([A-Za-z][A-Za-z0-9_]*)}")
+
 def parse_makefile(fn, g=None):
     """Parse a Makefile-style file.
 
@@ -166,19 +173,18 @@ def parse_makefile(fn, g=None):
 
     """
     from distutils.text_file import TextFile
-    fp = TextFile(fn, strip_comments=1, join_lines=1)
+    fp = TextFile(fn, strip_comments=1, skip_blanks=1, join_lines=1)
 
     if g is None:
         g = {}
-    variable_rx = re.compile("([a-zA-Z][a-zA-Z0-9_]+)\s*=\s*(.*)")
     done = {}
     notdone = {}
 
     while 1:
         line = fp.readline()
-        if line is None:
+        if line is None:                # eof
             break
-        m = variable_rx.match(line)
+        m = _variable_rx.match(line)
         if m:
             n, v = m.group(1, 2)
             v = string.strip(v)
@@ -190,14 +196,10 @@ def parse_makefile(fn, g=None):
                 done[n] = v
 
     # do variable interpolation here
-    findvar1_rx = re.compile(r"\$\(([A-Za-z][A-Za-z0-9_]*)\)")
-    findvar2_rx = re.compile(r"\${([A-Za-z][A-Za-z0-9_]*)}")
     while notdone:
         for name in notdone.keys():
             value = notdone[name]
-            m = findvar1_rx.search(value)
-            if not m:
-                m = findvar2_rx.search(value)
+            m = _findvar1_rx.search(value) or _findvar2_rx.search(value)
             if m:
                 n = m.group(1)
                 if done.has_key(n):
@@ -228,9 +230,37 @@ def parse_makefile(fn, g=None):
                 # bogus variable reference; just drop it since we can't deal
                 del notdone[name]
 
+    fp.close()
+
     # save the results in the global dictionary
     g.update(done)
     return g
+
+
+def expand_makefile_vars(s, vars):
+    """Expand Makefile-style variables -- "${foo}" or "$(foo)" -- in
+    'string' according to 'vars' (a dictionary mapping variable names to
+    values).  Variables not present in 'vars' are silently expanded to the
+    empty string.  The variable values in 'vars' should not contain further
+    variable expansions; if 'vars' is the output of 'parse_makefile()',
+    you're fine.  Returns a variable-expanded version of 's'.
+    """
+
+    # This algorithm does multiple expansion, so if vars['foo'] contains
+    # "${bar}", it will expand ${foo} to ${bar}, and then expand
+    # ${bar}... and so forth.  This is fine as long as 'vars' comes from
+    # 'parse_makefile()', which takes care of such expansions eagerly,
+    # according to make's variable expansion semantics.
+
+    while 1:
+        m = _findvar1_rx.search(s) or _findvar2_rx.search(s)
+        if m:
+            name = m.group(1)
+            (beg, end) = m.span()
+            s = s[0:beg] + vars.get(m.group(1)) + s[end:]
+        else:
+            break
+    return s
 
 
 _config_vars = None
