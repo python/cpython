@@ -4,9 +4,12 @@
 This module provides regular expression matching operations similar to
 those found in Emacs.  It is always available.
 
-By default the patterns are Emacs-style regular expressions; there is
+By default the patterns are Emacs-style regular expressions,
+with one exception.  There is
 a way to change the syntax to match that of several well-known
-\UNIX{} utilities.
+\UNIX{} utilities.  The exception is that Emacs' \samp{\e s}
+pattern is not supported, since the original implementation references
+the Emacs syntax tables.
 
 This module is 8-bit clean: both patterns and strings may contain null
 bytes and characters whose high bit is set.
