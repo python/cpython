@@ -483,24 +483,26 @@ class Pickler:
 
         if self.bin:
             write(EMPTY_LIST)
-        else:
+            self.memoize(object)
+            n = len(object)
+            if n > 1:
+                write(MARK)
+                for element in object:
+                    save(element)
+                write(APPENDS)
+            elif n:
+                assert n == 1
+                save(object[0])
+                write(APPEND)
+            # else the list is empty, and we're already done
+
+        else:   # proto 0 -- can't use EMPTY_LIST or APPENDS
             write(MARK + LIST)
-
-        self.memoize(object)
-
-        using_appends = (self.bin and (len(object) > 1))
-
-        if using_appends:
-            write(MARK)
-
-        for element in object:
-            save(element)
-
-            if not using_appends:
+            self.memoize(object)
+            for element in object:
+                save(element)
                 write(APPEND)
 
-        if using_appends:
-            write(APPENDS)
     dispatch[ListType] = save_list
 
     def save_dict(self, object):
