@@ -71,21 +71,26 @@ RELEASE=2.3.2c1
 PYTHON=	   python
 DVIPS=	   dvips -N0 -t $(PAPER)
 
-PWD=$(shell pwd)
-
-# (The trailing colon in the value is needed; TeX places it's default
-# set of paths at the location of the empty string in the path list.)
-#
-TEXINPUTS=$(PWD)/commontex:
-
 # This is ugly!  The issue here is that there are two different levels
 # in the directory tree at which we execute mkhowto, so we can't
 # define it just once using a relative path (at least not with the
 # current implementation and Makefile structure).  We use the GNUish
 # $(shell) function here to work around that restriction by
-# identifying mkhowto using an absolute path.
+# identifying mkhowto and the commontex/ directory using absolute paths.
 #
-MKHOWTO=   TEXINPUTS=$(TEXINPUTS) $(PYTHON) $(PWD)/tools/mkhowto
+PWD=$(shell pwd)
+
+# (The trailing colon in the value is needed; TeX places it's default
+# set of paths at the location of the empty string in the path list.)
+TEXINPUTS=$(PWD)/commontex:
+
+# The mkhowto script can be run from the checkout using the first
+# version of this variable definition, or from a preferred version
+# using the second version.  The standard documentation is typically
+# built using the second flavor, where the preferred version is from
+# the Python CVS trunk.
+#MKHOWTO=   TEXINPUTS=$(TEXINPUTS) $(PYTHON) $(PWD)/tools/mkhowto
+MKHOWTO=   TEXINPUTS=$(TEXINPUTS) mkhowto
 
 MKDVI=	   $(MKHOWTO) --paper=$(PAPER) --dvi
 MKHTML=	   $(MKHOWTO) --html --about html/stdabout.dat \
