@@ -1,7 +1,5 @@
 #! /usr/local/bin/python
 
-# :set tabsize=4:
-
 # A STDWIN-based front end for the Python interpreter.
 #
 # This is useful if you want to avoid console I/O and instead
@@ -11,21 +9,20 @@
 #
 # BUGS AND CAVEATS:
 #
-# I wrote this about two years ago.  There are now some features in
-# Python that make it possible to overcome some of the bugs below,
-# but I haven't the time to adapt it; it's just meant as a little
-# thing to get you started...
+# This was written long ago as a demonstration, and slightly hacked to
+# keep it up-to-date, but never as an industry-strength alternative
+# interface to Python.  It should be rewritten using more classes, and
+# merged with something like wdb.
 #
 # Although this supports multiple windows, the whole application
 # is deaf and dumb when a command is running in one window.
 #
-# Everything written to stdout or stderr is saved on a file which
-# is inserted in the window at the next input request.
+# Interrupt is (ab)used to signal EOF on input requests.
 #
 # On UNIX (using X11), interrupts typed in the window will not be
-# seen until the next input request.  (On the Mac, interrupts work.)
-#
-# Direct input from stdin should not be attempted.
+# seen until the next input or output operation.  When you are stuck
+# in an infinite loop, try typing ^C in the shell window where you
+# started this interpreter.  (On the Mac, interrupts work normally.)
 
 
 import sys
@@ -37,11 +34,6 @@ import mainloop
 import os
 
 
-# Filename used to capture output from commands; change to suit your taste
-#
-OUTFILE = '@python.stdout.tmp'
-
-
 # Stack of windows waiting for [raw_]input().
 # Element [0] is the top.
 # If there are multiple windows waiting for input, only the
@@ -51,12 +43,12 @@ OUTFILE = '@python.stdout.tmp'
 inputwindows = []
 
 
-# Exception raised when input is available.
+# Exception raised when input is available
 #
 InputAvailable = 'input available for raw_input (not an error)'
 
 
-# Main program.  Create the window and call the mainloop.
+# Main program -- create the window and call the mainloop
 #
 def main():
 	# Hack so 'import python' won't load another copy
@@ -70,23 +62,23 @@ def main():
 	mainloop.mainloop()
 
 
-# Create a new window.
+# Create a new window
 #
 def makewindow():
 	# stdwin.setdefscrollbars(0, 1) # Not in Python 0.9.1
 	# stdwin.setfont('monaco') # Not on UNIX! and not Python 0.9.1
-	# stdwin.setdefwinsize(stdwin.textwidth('in')*40, stdwin.lineheight() * 24)
+	# width, height = stdwin.textwidth('in')*40, stdwin.lineheight()*24
+	# stdwin.setdefwinsize(width, height)
 	win = stdwin.open('Python interpreter ready')
 	win.editor = win.textcreate((0,0), win.getwinsize())
-	win.outfile = OUTFILE + `rand.rand()`
-	win.globals = {}	# Dictionary for user's global variables
-	win.command = ''	# Partially read command
-	win.busy = 0		# Ready to accept a command
-	win.auto = 1		# [CR] executes command
-	win.insertOutput = 1		# Insert output at focus.
-	win.insertError = 1			# Insert error output at focus.
+	win.globals = {}		# Dictionary for user's globals
+	win.command = ''		# Partially read command
+	win.busy = 0			# Ready to accept a command
+	win.auto = 1			# [CR] executes command
+	win.insertOutput = 1		# Insert output at focus
+	win.insertError = 1		# Insert error output at focus
 	win.setwincursor('ibeam')
-	win.filename = ''			# Empty if no file associated with this window
+	win.filename = ''		# Empty if no file for this window
 	makefilemenu(win)
 	makeeditmenu(win)
 	win.dispatch = pdispatch	# Event dispatch function
@@ -99,14 +91,14 @@ def makewindow():
 def makefilemenu(win):
 	win.filemenu = mp = win.menucreate('File')
 	mp.callback = []
-	additem(mp, 'New',		'N', do_new)
-	additem(mp, 'Open...',	'O', do_open)
-	additem(mp, '',		'', None)
-	additem(mp, 'Close',	'W', do_close)
-	additem(mp, 'Save',		'S', do_save)
-	additem(mp, 'Save as...',	'', do_saveas)
-	additem(mp, '',		'', None)
-	additem(mp, 'Quit',		'Q', do_quit)
+	additem(mp, 'New', 'N', do_new)
+	additem(mp, 'Open...', 'O', do_open)
+	additem(mp, '', '',  None)
+	additem(mp, 'Close', 'W', do_close)
+	additem(mp, 'Save', 'S', do_save)
+	additem(mp, 'Save as...', '', do_saveas)
+	additem(mp, '', '', None)
+	additem(mp, 'Quit', 'Q', do_quit)
 
 
 # Make an 'Edit' menu
@@ -114,19 +106,19 @@ def makefilemenu(win):
 def makeeditmenu(win):
 	win.editmenu = mp = win.menucreate('Edit')
 	mp.callback = []
-	additem(mp, 'Cut',	'X', do_cut)
-	additem(mp, 'Copy',	'C', do_copy)
-	additem(mp, 'Paste',	'V', do_paste)
-	additem(mp, 'Clear',	'',  do_clear)
-	additem(mp, '',		'', None)
+	additem(mp, 'Cut', 'X', do_cut)
+	additem(mp, 'Copy', 'C', do_copy)
+	additem(mp, 'Paste', 'V', do_paste)
+	additem(mp, 'Clear', '',  do_clear)
+	additem(mp, '', '', None)
 	win.iauto = len(mp.callback)
-	additem(mp, 'Autoexecute',	'', do_auto)
+	additem(mp, 'Autoexecute', '', do_auto)
 	mp.check(win.iauto, win.auto)
 	win.insertOutputNum = len(mp.callback)
-	additem(mp, 'Insert Output',	'', do_insertOutputOption)
+	additem(mp, 'Insert Output', '', do_insertOutputOption)
 	win.insertErrorNum = len(mp.callback)
-	additem(mp, 'Insert Error',	'', do_insertErrorOption)
-	additem(mp, 'Exec',	'\r', do_exec)
+	additem(mp, 'Insert Error', '', do_insertErrorOption)
+	additem(mp, 'Exec', '\r', do_exec)
 
 
 # Helper to add a menu item and callback function
@@ -141,20 +133,14 @@ def additem(mp, text, shortcut, handler):
 
 # Dispatch a single event to the interpreter.
 # Resize events cause a resize of the editor.
-# Other events are directly sent to the editor.
-#
-# Exception: WE_COMMAND/WC_RETURN causes the current selection
-# (if not empty) or current line (if empty) to be sent to the
-# interpreter.  (In the future, there should be a way to insert
-# newlines in the text; or perhaps Enter or Meta-RETURN should be
-# used to trigger execution, like in MPW, though personally I prefer
-# using a plain Return to trigger execution, as this is what I want
-# in the majority of cases.)
-#
-# Also, WE_COMMAND/WC_CANCEL cancels any command in progress.
+# Some events are treated specially.
+# Most other events are passed directly to the editor.
 #
 def pdispatch(event):
 	type, win, detail = event
+	if not win:
+		win = stdwin.getactive()
+		if not win: return
 	if type == WE_CLOSE:
 		do_close(win)
 		return
@@ -167,7 +153,7 @@ def pdispatch(event):
 			void = win.editor.event(event)
 	elif type == WE_COMMAND and detail == WC_CANCEL:
 		if win.busy:
-			raise InputAvailable, (EOFError, None)
+			raise KeyboardInterrupt
 		else:
 			win.command = ''
 			settitle(win)
@@ -183,7 +169,7 @@ def pdispatch(event):
 			win.editor.setfocus(win.editor.getfocus())
 
 
-# Helper to set the title of the window. 
+# Helper to set the title of the window
 #
 def settitle(win):
 	if win.filename == '':
@@ -192,13 +178,13 @@ def settitle(win):
 		win.settitle(win.filename)
 
 
-# Helper to replace the text of the focus.
+# Helper to replace the text of the focus
 #
 def replace(win, text):
 	win.editor.replace(text)
 	# Resize the window to display the text
-	win.setdocsize(0, win.editor.getrect()[1][1])	# update the size before..
-	win.editor.setfocus(win.editor.getfocus())		# move focus to the change
+	win.setdocsize(0, win.editor.getrect()[1][1]) # update the size before
+	win.editor.setfocus(win.editor.getfocus()) # move focus to the change
 
 
 # File menu handlers
@@ -216,7 +202,7 @@ def do_open(win):
 		win.settitle(win.filename)
 		#
 	except KeyboardInterrupt:
-		pass # Don't give an error on cancel.
+		pass			# Don't give an error on cancel
 #
 def do_save(win):
 	try:
@@ -226,13 +212,13 @@ def do_save(win):
 		f.write(win.editor.gettext())
 		#
 	except KeyboardInterrupt:
-		pass # Don't give an error on cancel.
+		pass			# Don't give an error on cancel
 	
 def do_saveas(win):
 	currentFilename = win.filename
 	win.filename = ''
-	do_save(win)				# Use do_save with empty filename
-	if win.filename == '':		# Restore the name if do_save did not set it.
+	do_save(win)		# Use do_save with empty filename
+	if win.filename == '':	# Restore the name if do_save did not set it
 		win.filename = currentFilename
 #
 def do_close(win):
@@ -241,10 +227,6 @@ def do_close(win):
 		return		# need to fail if quitting??
 	win.editor = None # Break circular reference
 	#del win.editmenu	# What about the filemenu??
-	try:
-		os.unlink(win.outfile)
-	except os.error:
-		pass
 	mainloop.unregister(win)
 	win.close()
 #
@@ -252,7 +234,8 @@ def do_quit(win):
 	# Call win.dispatch instead of do_close because there
 	# may be 'alien' windows in the list.
 	for win in mainloop.windows[:]:
-		mainloop.dispatch((WE_CLOSE, win, None)) # need to catch failed close
+		mainloop.dispatch((WE_CLOSE, win, None))
+		# need to catch failed close
 
 
 # Edit menu handlers
@@ -282,8 +265,9 @@ def do_paste(win):
 def do_clear(win):
 	replace(win, '')
 
-#
+
 # These would be better in a preferences dialog:
+#
 def do_auto(win):
 	win.auto = (not win.auto)
 	win.editmenu.check(win.iauto, win.auto)
@@ -312,8 +296,7 @@ def do_exec(win):
 			stdwin.message('Can\'t run recursive commands')
 			return
 		if win <> inputwindows[0]:
-			stdwin.message( \
-				'Please complete recursive input first')
+			stdwin.message('Please complete recursive input first')
 			return
 	#
 	# Set text to the string to execute.
@@ -323,16 +306,17 @@ def do_exec(win):
 	if a == b:
 		# There is no selected text, just an insert point;
 		# so execute the current line.
-		while 0 < a and alltext[a-1] <> '\n': a = a-1 # Find beginning of line.
-		while b < n and alltext[b] <> '\n':		# Find end of line after b.
+		while 0 < a and alltext[a-1] <> '\n': # Find beginning of line
+			a = a-1
+		while b < n and alltext[b] <> '\n': # Find end of line after b
 			b = b+1
 		text = alltext[a:b] + '\n'
 	else:
 		# Execute exactly the selected text.
 		text = win.editor.getfocustext()
-		if text[-1:] <> '\n':					# Make sure text ends with \n.
+		if text[-1:] <> '\n': # Make sure text ends with \n
 			text = text + '\n'
-		while b < n and alltext[b] <> '\n':		# Find end of line after b.
+		while b < n and alltext[b] <> '\n': # Find end of line after b
 			b = b+1
 	#
 	# Set the focus to expect the output, since there is always something.
@@ -348,7 +332,7 @@ def do_exec(win):
 	#
 	if win.busy:
 		# Send it to raw_input() below
-		raise InputAvailable, (None, text)
+		raise InputAvailable, text
 	#
 	# Like the real Python interpreter, we want to execute
 	# single-line commands immediately, but save multi-line
@@ -380,30 +364,23 @@ def do_exec(win):
 	win.command = ''
 	win.settitle('Executing command...')
 	#
-	# Some hacks: sys.stdout is temporarily redirected to a file,
-	# so we can intercept the command's output and insert it
-	# in the editor window; the built-in function raw_input
-	# and input() are replaced by out versions;
-	# and a second, undocumented argument
-	# to exec() is used to specify the directory holding the
-	# user's global variables.  (If this wasn't done, the
-	# exec would be executed in the current local environment,
-	# and the user's assignments to globals would be lost...)
+	# Some hacks:
+	# - The standard files are replaced by an IOWindow instance.
+	# - A 2nd argument to exec() is used to specify the directory
+	#   holding the user's global variables.  (If this wasn't done,
+	#   the exec would be executed in the current local environment,
+	#   and the user's assignments to globals would be lost...)
 	#
-	save_input = builtin.input
-	save_raw_input = builtin.raw_input
+	save_stdin = sys.stdin
 	save_stdout = sys.stdout
 	save_stderr = sys.stderr
-	iwin = Input().init(win)
 	try:
-		builtin.input = iwin.input
-		builtin.raw_input = iwin.raw_input
-		sys.stdout = sys.stderr = open(win.outfile, 'w')
+		sys.stdin = sys.stdout = sys.stderr = IOWindow().init(win)
 		win.busy = 1
 		try:
 			exec(command, win.globals)
 		except KeyboardInterrupt:
-			pass # Don't give an error.
+			print '[Interrupt]'
 		except:
 			msg = sys.exc_type
 			if sys.exc_value <> None:
@@ -419,82 +396,41 @@ def do_exec(win):
 		win.busy = 0
 		sys.stderr = save_stderr
 		sys.stdout = save_stdout
-		builtin.raw_input = save_raw_input
-		builtin.input = save_input
+		sys.stdin = save_stdin
 		settitle(win)
-	getoutput(win)
 
 
-# Read any output the command may have produced back from the file
-# and show it.  Optionally insert it after the focus, like MPW does, 
-# or always append at the end.
+# Class emulating file I/O from/to a window
 #
-def getoutput(win):
-	filename = win.outfile
-	try:
-		fp = open(filename, 'r')
-	except:
-		stdwin.message('Can\'t read output from ' + filename)
-		return
-	#out = fp.read() # Not in Python 0.9.1
-	out = fp.read(10000) # For Python 0.9.1
-	del fp # Close it
-	if out or win.insertOutput:
-		replace(win, out)
-
-
-# Implementation of input() and raw_input().
-# This uses a class only because we must support calls
-# with and without arguments; this can't be done normally in Python,
-# but the extra, implicit argument for instance methods does the trick.
-#
-class Input:
+class IOWindow:
 	#
 	def init(self, win):
 		self.win = win
 		return self
 	#
-	def input(args):
-		# Hack around call with or without argument:
-		if type(args) == type(()):
-			self, prompt = args
-		else:
-			self, prompt = args, ''
-		#
-		return eval(self.raw_input(prompt), self.win.globals)
-	#
-	def raw_input(args):
-		# Hack around call with or without argument:
-		if type(args) == type(()):
-			self, prompt = args
-		else:
-			self, prompt = args, ''
-		#
-		print prompt		# Need to terminate with newline.
-		sys.stdout.close()
-		sys.stdout = sys.stderr = None
-		getoutput(self.win)
-		sys.stdout = sys.stderr = open(self.win.outfile, 'w')
-		save_title = self.win.gettitle()
+	def readline(self, *unused_args):
 		n = len(inputwindows)
+		save_title = self.win.gettitle()
 		title = n*'(' + 'Requesting input...' + ')'*n
 		self.win.settitle(title)
 		inputwindows.insert(0, self.win)
 		try:
 			try:
 				mainloop.mainloop()
-			except InputAvailable, (exc, val): # See do_exec above.
-				if exc:
-					raise exc, val
-				if val[-1:] == '\n':
-					val = val[:-1]
-				return val
-		finally:
-			del inputwindows[0]
-			self.win.settitle(save_title)
-		# If we don't catch InputAvailable, something's wrong...
+			finally:
+				del inputwindows[0]
+				self.win.settitle(save_title)
+		except InputAvailable, val: # See do_exec above
+			return val
+		except KeyboardInterrupt:
+			raise EOFError # Until we have a "send EOF" key
+		# If we didn't catch InputAvailable, something's wrong...
 		raise EOFError
 	#
+	def write(self, text):
+		mainloop.check()
+		replace(self.win, text)
+		mainloop.check()
 
 
 # Currently unused function to test a command's syntax without executing it
@@ -508,13 +444,6 @@ def testsyntax(s):
 	exec(string.joinfields(lines, '\n'))
 
 
-# Call the main program.
+# Call the main program
 #
 main()
-
-
-# This was originally coded on a Mac, so...
-# Local variables:
-# py-indent-offset: 4
-# tab-width: 4
-# end:
