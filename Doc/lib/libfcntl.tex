@@ -118,3 +118,11 @@ hold an integer value; in the second example it will hold a string
 value.  The structure lay-out for the \var{lockdata} variable is
 system dependent --- therefore using the \function{flock()} call may be
 better.
+
+\begin{seealso}
+  \seemodule{os}{The \function{os.open} function supports locking flags
+                 and is available on a wider variety of platforms than 
+		 the \function{fcntl.lockf} and \function{fcntl.flock}
+		 functions, providing a more platform-independent file
+		 locking facility.}
+\end{seealso}
