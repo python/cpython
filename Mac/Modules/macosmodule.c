@@ -764,5 +764,18 @@ initMacOS(void)
 	if (PyDict_SetItemString(d, "runtimemodel", 
 				Py_BuildValue("s", PY_RUNTIMEMODEL)) != 0)
 		return;
+#if !TARGET_API_MAC_OSX
+#define PY_LINKMODEL "cfm"
+#elif defined(WITH_NEXT_FRAMEWORK)
+#define PY_LINKMODEL "framework"
+#elif defined(Py_ENABLE_SHARED)
+#define PY_LINKMODEL "shared"
+#else
+#define PY_LINKMODEL "static"
+#endif
+	if (PyDict_SetItemString(d, "linkmodel", 
+				Py_BuildValue("s", PY_LINKMODEL)) != 0)
+		return;
+
 }
 
