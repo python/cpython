@@ -1510,12 +1510,6 @@ izip_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	PyObject *result;
 	int tuplesize = PySequence_Length(args);
 
-	if (tuplesize < 1) {
-		PyErr_SetString(PyExc_TypeError,
-				"izip() requires at least one sequence");
-		return NULL;
-	}
-
 	/* args must be a tuple */
 	assert(PyTuple_Check(args));
 
@@ -1598,6 +1592,8 @@ izip_next(izipobject *lz)
 	PyObject *it;
 	PyObject *item;
 
+	if (tuplesize == 0)
+		return NULL;
 	if (result->ob_refcnt == 1) {
 		for (i=0 ; i < tuplesize ; i++) {
 			it = PyTuple_GET_ITEM(lz->ittuple, i);
