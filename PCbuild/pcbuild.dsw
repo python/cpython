@@ -3,6 +3,22 @@ Microsoft Developer Studio Workspace File, Format Version 6.00
 
 ###############################################################################
 
+Project: "_socket"=".\_socket.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+    begin source code control
+    _socket
+    ..
+    end source code control
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
 Project: "_sre"=".\_sre.dsp" - Package Owner=<4>
 
 Package=<5>
@@ -138,6 +154,38 @@ Package=<5>
     begin source code control
     pythonw
     ..\pc
+    end source code control
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "select"=".\select.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+    begin source code control
+    select
+    ..
+    end source code control
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "unicodedata"=".\unicodedata.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+    begin source code control
+    unicodedata
+    ..
     end source code control
 }}}
 

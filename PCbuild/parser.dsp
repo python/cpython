@@ -120,7 +120,7 @@ BSC32=bscmake.exe
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib /nologo /base:"0x1e100000" /subsystem:windows /dll /debug /machine:ALPHA /out:"./parser_d.pyd" /pdbtype:sept /libpath:"Debug" /export:initparser
 # SUBTRACT BASE LINK32 /pdb:none
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib /nologo /base:"0x1e100000" /subsystem:windows /dll /debug /machine:ALPHA /out:"alpha-temp-debug/parser_d.pyd" /pdbtype:sept /libpath:"Debug" /export:initparser
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib wsock32.lib /nologo /base:"0x1e100000" /subsystem:windows /dll /debug /machine:ALPHA /out:"alpha-temp-debug/parser_d.pyd" /pdbtype:sept /libpath:"Debug" /export:initparser
 # SUBTRACT LINK32 /pdb:none
 
 !ELSEIF  "$(CFG)" == "parser - Win32 Alpha Release"
@@ -152,7 +152,7 @@ BSC32=bscmake.exe
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib /nologo /base:"0x1e100000" /subsystem:windows /dll /debug /machine:ALPHA /out:"./parser.pyd" /libpath:"Release" /export:initparser
 # SUBTRACT BASE LINK32 /pdb:none
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib /nologo /base:"0x1e100000" /subsystem:windows /dll /debug /machine:ALPHA /out:"alpha-temp-release/parser.pyd" /libpath:"Release" /export:initparser
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib wsock32.lib /nologo /base:"0x1e100000" /subsystem:windows /dll /debug /machine:ALPHA /out:"alpha-temp-release/parser.pyd" /libpath:"Release" /export:initparser
 # SUBTRACT LINK32 /pdb:none
 
 !ENDIF 
