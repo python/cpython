@@ -113,6 +113,18 @@ class TestTemplate(unittest.TestCase):
         s = MyPattern('@bag.foo.who likes to eat a bag of @bag.what')
         self.assertEqual(s.substitute(m), 'tim likes to eat a bag of ham')
 
+        class BadPattern(Template):
+            pattern = r"""
+            (?P<badname>.*)                     |
+            (?P<escaped>@{2})                   |
+            @(?P<named>[_a-z][._a-z0-9]*)       |
+            @{(?P<braced>[_a-z][._a-z0-9]*)}    |
+            (?P<invalid>@)                      |
+            """
+        s = BadPattern('@bag.foo.who likes to eat a bag of @bag.what')
+        self.assertRaises(ValueError, s.substitute, {})
+        self.assertRaises(ValueError, s.safe_substitute, {})
+
     def test_unicode_values(self):
         s = Template('$who likes $what')
         d = dict(who=u't\xffm', what=u'f\xfe\fed')
