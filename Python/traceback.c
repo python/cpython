@@ -26,10 +26,12 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include "allobjects.h"
 
+#include "sysmodule.h"
 #include "compile.h"
 #include "frameobject.h"
 #include "traceback.h"
 #include "structmember.h"
+#include "osdefs.h"
 
 typedef struct _tracebackobject {
 	OB_HEAD
@@ -154,21 +156,56 @@ tb_displayline(fp, filename, lineno)
 	int lineno;
 {
 	FILE *xfp;
-	char buf[1000];
+	char linebuf[1000];
 	int i;
-	if (filename[0] == '<' && filename[strlen(filename)-1] == '>')
-		return;
 	xfp = fopen(filename, "r");
 	if (xfp == NULL) {
-		fprintf(fp, "    (cannot open \"%s\")\n", filename);
-		return;
+		/* Search tail of filename in sys.path before giving up */
+		object *path;
+		char *tail = strrchr(filename, SEP);
+		if (tail == NULL)
+			tail = filename;
+		else
+			tail++;
+		path = sysget("path");
+		if (path != NULL && is_listobject(path)) {
+			int npath = getlistsize(path);
+			char namebuf[MAXPATHLEN+1];
+			for (i = 0; i < npath; i++) {
+				object *v = getlistitem(path, i);
+				if (is_stringobject(v)) {
+					int len;
+					strcpy(namebuf, getstringvalue(v));
+					len = getstringsize(v);
+					if (len > 0 && namebuf[len-1] != SEP)
+						namebuf[len++] = SEP;
+					strcpy(namebuf+len, tail);
+					xfp = fopen(namebuf, "r");
+					if (xfp != NULL) {
+						filename = namebuf;
+						break;
+					}
+				}
+			}
+		}
 	}
+	fprintf(fp, "  File \"%s\"", filename);
+#ifdef applec /* MPW */
+	/* This is needed by MPW's File and Line commands */
+	fprintf(fp, "; ");
+#else
+	/* This is needed by Emacs' compile command */
+	fprintf(fp, ", ");
+#endif
+	fprintf(fp, "line %d\n", lineno);
+	if (xfp == NULL)
+		return;
 	for (i = 0; i < lineno; i++) {
-		if (fgets(buf, sizeof buf, xfp) == NULL)
+		if (fgets(linebuf, sizeof linebuf, xfp) == NULL)
 			break;
 	}
 	if (i == lineno) {
-		char *p = buf;
+		char *p = linebuf;
 		while (*p == ' ' || *p == '\t')
 			p++;
 		fprintf(fp, "    %s", p);
@@ -183,19 +220,7 @@ tb_printinternal(tb, fp)
 	tracebackobject *tb;
 	FILE *fp;
 {
-	while (tb != NULL) {
-		if (intrcheck())
-			break;
-		fprintf(fp, "  File \"%s\"",
-			getstringvalue(tb->tb_frame->f_code->co_filename));
-#ifdef applec /* MPW */
-		/* This is needed by MPW's File and Line commands */
-		fprintf(fp, "; ");
-#else
-		/* This is needed by Emacs' compile command */
-		fprintf(fp, ", ");
-#endif
-		fprintf(fp, "line %d\n", tb->tb_lineno);
+	while (tb != NULL && !intrcheck()) {
 		tb_displayline(fp,
 		     getstringvalue(tb->tb_frame->f_code->co_filename),
 							tb->tb_lineno);
