@@ -1,7 +1,7 @@
 Welcome to the "PC" subdirectory of the Python distribution
 ***********************************************************
 
-*** Note: the project files for MS VC++ 5.0 and 6.0 are now in the
+*** Note: the project files for MS VC++ 6.0 are now in the
 *** PCbuild directory.  See the file readme.txt there for build
 *** instructions.  There is some information below that might
 *** still be relevant.
@@ -62,11 +62,6 @@ testpy.py   A Python test program.  Run this to test your
 	    failed, and how many were skipped.  Don't worry about
 	    skipped tests (these test unavailable optional features).
 
-src         A subdirectory used only for VC++ version 1.5 Python
-            source files.  See below.  The other compilers do not
-            use it.  They reference the actual distribution
-            directories instead.
-
 
 Additional files and subdirectories for 32-bit Windows
 ======================================================
@@ -85,47 +80,16 @@ example_nt     A subdirectory showing how to build an extension as a
                DLL.
 
 
-Microsoft Visual C++ Version 1.5 (16-bit Windows)
-=================================================
-
-Since VC++1.5 does not handle long file names, it is necessary
-to run the "makesrc.exe" program in this directory to copy
-Python files from the distribution to the directory "src"
-with shortened names.  Included file names are shortened too.
-Do this before you attempt to build Python.
-
-The "makesrc.exe" program is a native NT program, and you must
-have NT, Windows 95 or Win32s to run it.  Otherwise you will need
-to copy distribution files to src yourself.
-
-The makefiles are named *.mak and are located in directories
-starting with "vc15_".  NOTE:  When dependencies are scanned
-VC++ will create dependencies for directories which are not
-used because it fails to evaluate "#define" properly.  You
-must manaully edit makefiles (*.mak) to remove references to
-"sys/" and other bad directories.
-
-vc15_lib    A static Python library.  Create this first because is
-            is required for vc15_w31.
-
-vc15_w31    A Windows 3.1x Python QuickWin (console-mode)
-            Python including sockets.  Requires vc15_lib.
-
-
-Watcom C++ Version 10.6
-=======================
-
-The project file for the Watcom compiler is ./python.wpj.
-It will build Watcom versions in the directories wat_*.
-
-wat_dos     A 32-bit extended DOS Python (console-mode) using the
-            dos4gw DOS extender.  Sockets are not included.
-
-wat_os2     A 32-bit OS/2 Python (console-mode).
-            Sockets are not included.
-
-
 IBM VisualAge C/C++ for OS/2
 ============================
 
 See os2vacpp/readme.txt.  This platform is supported by Jeff Rush.
+
+
+Note for Windows 3.x and DOS users
+==================================
+
+Neither Windows 3.x nor DOS is supported any more.  The last Python
+version that supported these was Python 1.5.2; the support files were
+present in Python 2.0 but weren't updated, and it is not our intention
+to support these platforms for Python 2.x.
