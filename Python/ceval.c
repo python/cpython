@@ -2689,22 +2689,39 @@ build_class(methods, bases, name)
 		return NULL;
 	}
 	for (i = PyTuple_Size(bases); --i >= 0; ) {
+		/* XXX Is it intentional that the *last* base gets a
+		   chance at this first? */
 		PyObject *base = PyTuple_GET_ITEM(bases, i);
 		if (!PyClass_Check(base)) {
 			/* Call the base's *type*, if it is callable.
 			   This code is a hook for Donald Beaudry's
 			   and Jim Fulton's type extensions.  In
 			   unexended Python it will never be triggered
-			   since its types are not callable. */
-			if (base->ob_type->ob_type->tp_call) {
-			  	PyObject *args;
-				PyObject *class;
-				args = Py_BuildValue("(OOO)",
-						     name, bases, methods);
-				class = PyEval_CallObject(
-					(PyObject *)base->ob_type, args);
-				Py_DECREF(args);
-				return class;
+			   since its types are not callable.
+			   Ditto: call the bases's *class*, if it has
+			   one.  This makes the same thing possible
+			   without writing C code.  A true meta-object
+			   protocol! */
+			PyObject *basetype = (PyObject *)base->ob_type;
+			PyObject *callable = NULL;
+			if (PyCallable_Check(basetype))
+				callable = basetype;
+			else
+				callable = PyObject_GetAttrString(
+					base, "__class__");
+			if (callable) {
+				PyObject *args;
+				PyObject *newclass = NULL;
+				args = Py_BuildValue(
+					"(OOO)", name, bases, methods);
+				if (args != NULL) {
+					newclass = PyEval_CallObject(
+						callable, args);
+					Py_DECREF(args);
+				}
+				if (callable != basetype)
+					Py_DECREF(callable);
+				return newclass;
 			}
 			PyErr_SetString(PyExc_TypeError,
 				"base is not a class object");
