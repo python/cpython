@@ -366,6 +366,7 @@ class PackageBrowser(PimpInterface):
 		self.w.description.enable(0)
 		
 	def updatestatus(self):
+		topcell = self.w.packagebrowser.gettopcell()
 		sel = self.w.packagebrowser.getselection()
 		data = self.getbrowserdata(self.w.hidden_button.get())
 		self.w.packagebrowser.setitems(data)
@@ -396,6 +397,7 @@ class PackageBrowser(PimpInterface):
 			self.w.recursive_button.enable(1)
 			self.w.force_button.enable(1)
 			self.w.user_button.enable(1)
+		self.w.packagebrowser.settopcell(topcell)
 		
 	def listhit(self, *args, **kwargs):
 		self.updatestatus()
