@@ -247,6 +247,7 @@ extern PyObject * PyObject_Repr Py_PROTO((PyObject *));
 extern PyObject * PyObject_Str Py_PROTO((PyObject *));
 extern int PyObject_Compare Py_PROTO((PyObject *, PyObject *));
 extern PyObject *PyObject_GetAttrString Py_PROTO((PyObject *, char *));
+extern int PyObject_SetAttrString Py_PROTO((PyObject *, char *, PyObject *));
 extern int PyObject_HasAttrString Py_PROTO((PyObject *, char *));
 extern PyObject *PyObject_GetAttr Py_PROTO((PyObject *, PyObject *));
 extern int PyObject_SetAttr Py_PROTO((PyObject *, PyObject *, PyObject *));
