@@ -12,7 +12,7 @@ import audioop
 
 SND_FORMAT_MULAW_8 = 1
 
-def play_sound_file(path):
+def read_sound_file(path):
     fp = open(path, 'r')
     size, enc, rate, nchannels, extra = sunaudio.gethdr(fp)
     data = fp.read()
@@ -22,15 +22,18 @@ def play_sound_file(path):
         print "Expect .au file with 8-bit mu-law samples"
         return
 
+    # Convert the data to 16-bit signed.
+    data = audioop.ulaw2lin(data, 2)
+    return (data, rate, 16, nchannels)
+
+
+def play_sound_file(data, rate, ssize, nchannels):
     try:
         a = ossaudiodev.open('w')
     except ossaudiodev.error, msg:
         if msg[0] in (errno.EACCES, errno.ENODEV, errno.EBUSY):
             raise TestSkipped, msg
         raise TestFailed, msg
-
-    # convert the data to 16-bit signed
-    data = audioop.ulaw2lin(data, 2)
 
     # set the data format
     if sys.byteorder == 'little':
@@ -83,7 +86,8 @@ def test_errors():
         print msg
 
 def test():
-    play_sound_file(findfile('audiotest.au'))
+    (data, rate, ssize, nchannels) = read_sound_file(findfile('audiotest.au'))
+    play_sound_file(data, rate, ssize, nchannels)
     test_errors()
 
 test()
