@@ -1,4 +1,4 @@
-# Copyright 2001-2004 by Vinay Sajip. All Rights Reserved.
+# Copyright 2001-2005 by Vinay Sajip. All Rights Reserved.
 #
 # Permission to use, copy, modify, and distribute this software and its
 # documentation for any purpose and without fee is hereby granted,
@@ -26,7 +26,12 @@ Copyright (C) 2001-2004 Vinay Sajip. All Rights Reserved.
 To use, simply 'import logging' and log away!
 """
 
-import sys, os, types, time, string, cStringIO
+import sys, os, types, time, string, cStringIO, traceback
+
+try:
+    import codecs
+except ImportError:
+    codecs = None
 
 try:
     import thread
@@ -37,7 +42,7 @@ except ImportError:
 __author__  = "Vinay Sajip <vinay_sajip@red-dove.com>"
 __status__  = "beta"
 __version__ = "0.4.9.6"
-__date__    = "03 February 2005"
+__date__    = "12 March 2005"
 
 #---------------------------------------------------------------------------
 #   Miscellaneous module data
@@ -92,6 +97,7 @@ raiseExceptions = 1
 # loggers are initialized with NOTSET so that they will log all messages, even
 # at user-defined levels.
 #
+
 CRITICAL = 50
 FATAL = CRITICAL
 ERROR = 40
@@ -368,7 +374,6 @@ class Formatter:
         This default implementation just uses
         traceback.print_exception()
         """
-        import traceback
         sio = cStringIO.StringIO()
         traceback.print_exception(ei[0], ei[1], ei[2], None, sio)
         s = sio.getvalue()
@@ -674,7 +679,6 @@ class Handler(Filterer):
         The record which was being processed is passed in to this method.
         """
         if raiseExceptions:
-            import traceback
             ei = sys.exc_info()
             traceback.print_exception(ei[0], ei[1], ei[2], None, sys.stderr)
             del ei
@@ -731,11 +735,17 @@ class FileHandler(StreamHandler):
     """
     A handler class which writes formatted logging records to disk files.
     """
-    def __init__(self, filename, mode="a"):
+    def __init__(self, filename, mode='a', encoding=None):
         """
         Open the specified file and use it as the stream for logging.
         """
-        StreamHandler.__init__(self, open(filename, mode))
+        if codecs is None:
+            encoding = None
+        if encoding is None:
+            stream = open(filename, mode)
+        else:
+            stream = codecs.open(filename, mode, encoding)
+        StreamHandler.__init__(self, stream)
         #keep the absolute path, otherwise derived classes which use this
         #may come a cropper when the current directory changes
         self.baseFilename = os.path.abspath(filename)
@@ -1164,7 +1174,7 @@ def basicConfig(**kwargs):
     filename  Specifies that a FileHandler be created, using the specified
               filename, rather than a StreamHandler.
     filemode  Specifies the mode to open the file, if filename is specified
-              (if filemode is unspecified, it defaults to "a").
+              (if filemode is unspecified, it defaults to 'a').
     format    Use the specified format string for the handler.
     datefmt   Use the specified date/time format.
     level     Set the root logger level to the specified level.
@@ -1181,7 +1191,7 @@ def basicConfig(**kwargs):
     if len(root.handlers) == 0:
         filename = kwargs.get("filename")
         if filename:
-            mode = kwargs.get("filemode", "a")
+            mode = kwargs.get("filemode", 'a')
             hdlr = FileHandler(filename, mode)
         else:
             stream = kwargs.get("stream")
