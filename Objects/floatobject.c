@@ -157,7 +157,7 @@ float_rem(v, w)
 	object *w;
 {
 	double wx;
-	extern double fmod();
+	extern double fmod PROTO((double, double));
 	if (!is_floatobject(w)) {
 		err_badarg();
 		return NULL;
@@ -176,7 +176,7 @@ float_pow(v, w)
 	object *w;
 {
 	double iv, iw, ix;
-	extern double pow();
+	extern double pow PROTO((double, double));
 	if (!is_floatobject(w)) {
 		err_badarg();
 		return NULL;
