@@ -1292,6 +1292,40 @@ dict_getattr(dictobject *mp, char *name)
 	return Py_FindMethod(mapp_methods, (PyObject *)mp, name);
 }
 
+static int
+dict_contains(dictobject *mp, PyObject *key)
+{
+	long hash;
+
+#ifdef CACHE_HASH
+	if (!PyString_Check(key) ||
+	    (hash = ((PyStringObject *) key)->ob_shash) == -1)
+#endif
+	{
+		hash = PyObject_Hash(key);
+		if (hash == -1)
+			return -1;
+	}
+	return (mp->ma_size != 0
+		&& (mp->ma_lookup)(mp, key, hash)->me_value != NULL);
+}
+
+staticforward PyObject *dictiter_new(dictobject *);
+
+/* Hack to implement "key in dict" */
+static PySequenceMethods dict_as_sequence = {
+	0,					/* sq_length */
+	0,					/* sq_concat */
+	0,					/* sq_repeat */
+	0,					/* sq_item */
+	0,					/* sq_slice */
+	0,					/* sq_ass_item */
+	0,					/* sq_ass_slice */
+	(objobjproc)dict_contains,		/* sq_contains */
+	0,					/* sq_inplace_concat */
+	0,					/* sq_inplace_repeat */
+};
+
 PyTypeObject PyDict_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,
@@ -1305,7 +1339,7 @@ PyTypeObject PyDict_Type = {
 	(cmpfunc)dict_compare,			/* tp_compare */
 	(reprfunc)dict_repr,			/* tp_repr */
 	0,					/* tp_as_number */
-	0,					/* tp_as_sequence */
+	&dict_as_sequence,			/* tp_as_sequence */
 	&dict_as_mapping,			/* tp_as_mapping */
 	0,					/* tp_hash */
 	0,					/* tp_call */
