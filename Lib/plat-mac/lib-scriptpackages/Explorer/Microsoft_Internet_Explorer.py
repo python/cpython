@@ -1,7 +1,7 @@
 """Suite Microsoft Internet Explorer Suite: Events defined by Internet Explorer
 Level 1, version 1
 
-Generated from /Volumes/Moes/Applications (Mac OS 9)/Internet Explorer 5/Internet Explorer
+Generated from /Applications/Internet Explorer.app
 AETE/AEUT resource version 1/0, language 0, script 0
 """
 

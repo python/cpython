@@ -1,7 +1,7 @@
-"""Suite Files and suitcases: Classes representing files and suitcases
+"""Suite Files: Classes representing files
 Level 1, version 1
 
-Generated from /Volumes/Moes/Systeemmap/Finder
+Generated from /System/Library/CoreServices/Finder.app
 AETE/AEUT resource version 0/144, language 0, script 0
 """
 
@@ -10,7 +10,7 @@ import MacOS
 
 _code = 'fndr'
 
-class Files_and_suitcases_Events:
+class Files_Events:
 
 	pass
 
@@ -33,7 +33,7 @@ class application_file(aetools.ComponentItem):
 	"""application file - An application's file on disk """
 	want = 'appf'
 class accepts_high_level_events(aetools.NProperty):
-	"""accepts high level events - Is the application high-level event aware? """
+	"""accepts high level events - Is the application high-level event aware? (OBSOLETE: always returns true) """
 	which = 'isab'
 	want = 'bool'
 class has_scripting_terminology(aetools.NProperty):
@@ -44,6 +44,10 @@ class minimum_size(aetools.NProperty):
 	"""minimum size - the smallest memory size with which the application can be launched """
 	which = 'mprt'
 	want = 'long'
+class opens_in_Classic(aetools.NProperty):
+	"""opens in Classic - Should the application launch in the Classic environment? """
+	which = 'Clsc'
+	want = 'bool'
 class preferred_size(aetools.NProperty):
 	"""preferred size - the memory size with which the application will be launched """
 	which = 'appt'
@@ -58,21 +62,12 @@ application_files = application_file
 class clipping(aetools.ComponentItem):
 	"""clipping - A clipping """
 	want = 'clpf'
+class clipping_window(aetools.NProperty):
+	"""clipping window - (NOT AVAILABLE YET) the clipping window for this clipping """
+	which = 'lwnd'
+	want = 'obj '
 
 clippings = clipping
-
-class desk_accessory_file(aetools.ComponentItem):
-	"""desk accessory file - A desk accessory file """
-	want = 'dafi'
-
-desk_accessory_files = desk_accessory_file
-
-class desk_accessory_suitcase(aetools.ComponentItem):
-	"""desk accessory suitcase - A desk accessory suitcase """
-	want = 'dsut'
-#        element 'cobj' as ['indx', 'name']
-
-desk_accessory_suitcases = desk_accessory_suitcase
 
 class document_file(aetools.ComponentItem):
 	"""document file - A document file """
@@ -91,14 +86,10 @@ class file_type(aetools.NProperty):
 	"""file type - the OSType identifying the type of data contained in the item """
 	which = 'asty'
 	want = 'type'
-class locked(aetools.NProperty):
-	"""locked - Is the file locked? """
-	which = 'aslk'
-	want = 'bool'
 class product_version(aetools.NProperty):
 	"""product version - the version of the product (visible at the top of the \xd2Get Info\xd3 window) """
 	which = 'ver2'
-	want = 'itxt'
+	want = 'utxt'
 class stationery(aetools.NProperty):
 	"""stationery - Is the file a stationery pad? """
 	which = 'pspd'
@@ -106,22 +97,9 @@ class stationery(aetools.NProperty):
 class version(aetools.NProperty):
 	"""version - the version of the file (visible at the bottom of the \xd2Get Info\xd3 window) """
 	which = 'vers'
-	want = 'itxt'
+	want = 'utxt'
 
 files = file
-
-class font_file(aetools.ComponentItem):
-	"""font file - A font file """
-	want = 'fntf'
-
-font_files = font_file
-
-class font_suitcase(aetools.ComponentItem):
-	"""font suitcase - A font suitcase """
-	want = 'fsut'
-#        element 'cobj' as ['indx', 'name']
-
-font_suitcases = font_suitcase
 
 class internet_location_file(aetools.ComponentItem):
 	"""internet location file - An file containing an internet location """
@@ -129,7 +107,7 @@ class internet_location_file(aetools.ComponentItem):
 class location(aetools.NProperty):
 	"""location - the internet location """
 	which = 'iloc'
-	want = 'itxt'
+	want = 'utxt'
 
 internet_location_files = internet_location_file
 
@@ -138,23 +116,6 @@ class package(aetools.ComponentItem):
 	want = 'pack'
 
 packages = package
-
-class sound_file(aetools.ComponentItem):
-	"""sound file - A sound file """
-	want = 'sndf'
-class sound(aetools.NProperty):
-	"""sound - the sound data """
-	which = 'snd '
-	want = 'snd '
-
-sound_files = sound_file
-
-class suitcase(aetools.ComponentItem):
-	"""suitcase - A font or desk accessory suitcase """
-	want = 'stcs'
-#        element 'cobj' as ['indx', 'name']
-
-suitcases = suitcase
 alias_file._superclassnames = ['file']
 alias_file._privpropdict = {
 	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
@@ -168,6 +129,7 @@ application_file._privpropdict = {
 	'accepts_high_level_events' : accepts_high_level_events,
 	'has_scripting_terminology' : has_scripting_terminology,
 	'minimum_size' : minimum_size,
+	'opens_in_Classic' : opens_in_Classic,
 	'preferred_size' : preferred_size,
 	'suggested_size' : suggested_size,
 }
@@ -176,22 +138,9 @@ application_file._privelemdict = {
 clipping._superclassnames = ['file']
 clipping._privpropdict = {
 	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
+	'clipping_window' : clipping_window,
 }
 clipping._privelemdict = {
-}
-desk_accessory_file._superclassnames = ['file']
-desk_accessory_file._privpropdict = {
-	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
-}
-desk_accessory_file._privelemdict = {
-}
-desk_accessory_suitcase._superclassnames = ['suitcase']
-import Earlier_terms
-desk_accessory_suitcase._privpropdict = {
-	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
-}
-desk_accessory_suitcase._privelemdict = {
-	'item' : Earlier_terms.item,
 }
 document_file._superclassnames = ['file']
 document_file._privpropdict = {
@@ -199,30 +148,17 @@ document_file._privpropdict = {
 }
 document_file._privelemdict = {
 }
+import Finder_items
 file._superclassnames = ['item']
 file._privpropdict = {
 	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
 	'creator_type' : creator_type,
 	'file_type' : file_type,
-	'locked' : locked,
 	'product_version' : product_version,
 	'stationery' : stationery,
 	'version' : version,
 }
 file._privelemdict = {
-}
-font_file._superclassnames = ['file']
-font_file._privpropdict = {
-	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
-}
-font_file._privelemdict = {
-}
-font_suitcase._superclassnames = ['suitcase']
-font_suitcase._privpropdict = {
-	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
-}
-font_suitcase._privelemdict = {
-	'item' : Earlier_terms.item,
 }
 internet_location_file._superclassnames = ['file']
 internet_location_file._privpropdict = {
@@ -237,20 +173,6 @@ package._privpropdict = {
 }
 package._privelemdict = {
 }
-sound_file._superclassnames = ['file']
-sound_file._privpropdict = {
-	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
-	'sound' : sound,
-}
-sound_file._privelemdict = {
-}
-suitcase._superclassnames = ['file']
-suitcase._privpropdict = {
-	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
-}
-suitcase._privelemdict = {
-	'item' : Earlier_terms.item,
-}
 
 #
 # Indices of types declared in this module
@@ -259,31 +181,25 @@ _classdeclarations = {
 	'alia' : alias_file,
 	'appf' : application_file,
 	'clpf' : clipping,
-	'dafi' : desk_accessory_file,
 	'docf' : document_file,
-	'dsut' : desk_accessory_suitcase,
 	'file' : file,
-	'fntf' : font_file,
-	'fsut' : font_suitcase,
 	'inlf' : internet_location_file,
 	'pack' : package,
-	'sndf' : sound_file,
-	'stcs' : suitcase,
 }
 
 _propdeclarations = {
+	'Clsc' : opens_in_Classic,
 	'appt' : preferred_size,
-	'aslk' : locked,
 	'asty' : file_type,
 	'c@#^' : _3c_Inheritance_3e_,
 	'fcrt' : creator_type,
 	'hscr' : has_scripting_terminology,
 	'iloc' : location,
 	'isab' : accepts_high_level_events,
+	'lwnd' : clipping_window,
 	'mprt' : minimum_size,
 	'orig' : original_item,
 	'pspd' : stationery,
-	'snd ' : sound,
 	'sprt' : suggested_size,
 	'ver2' : product_version,
 	'vers' : version,

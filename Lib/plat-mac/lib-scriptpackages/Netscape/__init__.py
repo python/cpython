@@ -1,6 +1,5 @@
 """
-Package generated from /Volumes/Moes/Applications (Mac OS 9)/Netscape Communicator™ Folder/Netscape Communicator™
-Resource aete resid 0 
+Package generated from /Volumes/Moes/Applications (Mac OS 9)/Netscape Communicator\xe2\x84\xa2 Folder/Netscape Communicator\xe2\x84\xa2
 """
 import aetools
 Error = aetools.Error
@@ -62,12 +61,12 @@ import StdSuites
 #
 getbaseclasses(window)
 getbaseclasses(application)
-getbaseclasses(StdSuites.Text_Suite.paragraph)
+getbaseclasses(StdSuites.Text_Suite.text_flow)
 getbaseclasses(StdSuites.Text_Suite.character)
 getbaseclasses(StdSuites.Text_Suite.text_style_info)
-getbaseclasses(StdSuites.Text_Suite.word)
-getbaseclasses(StdSuites.Text_Suite.text_flow)
 getbaseclasses(StdSuites.Text_Suite.line)
+getbaseclasses(StdSuites.Text_Suite.word)
+getbaseclasses(StdSuites.Text_Suite.paragraph)
 getbaseclasses(StdSuites.Text_Suite.text)
 getbaseclasses(text)
 getbaseclasses(styleset)
@@ -78,12 +77,12 @@ getbaseclasses(styleset)
 _classdeclarations = {
 	'cwin' : window,
 	'capp' : application,
-	'cpar' : StdSuites.Text_Suite.paragraph,
+	'cflo' : StdSuites.Text_Suite.text_flow,
 	'cha ' : StdSuites.Text_Suite.character,
 	'tsty' : StdSuites.Text_Suite.text_style_info,
-	'cwor' : StdSuites.Text_Suite.word,
-	'cflo' : StdSuites.Text_Suite.text_flow,
 	'clin' : StdSuites.Text_Suite.line,
+	'cwor' : StdSuites.Text_Suite.word,
+	'cpar' : StdSuites.Text_Suite.paragraph,
 	'ctxt' : StdSuites.Text_Suite.text,
 	'ctxt' : text,
 	'stys' : styleset,
