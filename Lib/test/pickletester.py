@@ -9,6 +9,14 @@ from test.test_support import TestFailed, have_unicode, TESTFN
 # kind of outer loop.  Bump the 3 to 4 if/when protocol 3 is invented.
 protocols = range(3)
 
+
+# Return True if opcode code appears in the pickle, else False.
+def opcode_in_pickle(code, pickle):
+    for op, dummy, dummy in pickletools.genops(pickle):
+        if op.code == code:
+            return True
+    return False
+
 class C:
     def __cmp__(self, other):
         return cmp(self.__dict__, other.__dict__)
@@ -254,13 +262,6 @@ class AbstractPickleTests(unittest.TestCase):
     def setUp(self):
         pass
 
-    # Return True if opcode code appears in the pickle, else False.
-    def opcode_in_pickle(self, code, pickle):
-        for op, dummy, dummy in pickletools.genops(pickle):
-            if op.code == code:
-                return True
-        return False
-
     def test_misc(self):
         # test various datatypes not tested by testdata
         for proto in protocols:
@@ -485,8 +486,7 @@ class AbstractPickleTests(unittest.TestCase):
             s = self.dumps(x, proto)
             y = self.loads(s)
             self.assertEqual(x, y)
-            self.assertEqual(self.opcode_in_pickle(pickle.LONG1, s),
-                             proto >= 2)
+            self.assertEqual(opcode_in_pickle(pickle.LONG1, s), proto >= 2)
 
     def test_long4(self):
         x = 12345678910111213141516178920L << (256*8)
@@ -494,8 +494,7 @@ class AbstractPickleTests(unittest.TestCase):
             s = self.dumps(x, proto)
             y = self.loads(s)
             self.assertEqual(x, y)
-            self.assertEqual(self.opcode_in_pickle(pickle.LONG4, s),
-                             proto >= 2)
+            self.assertEqual(opcode_in_pickle(pickle.LONG4, s), proto >= 2)
 
     def test_short_tuples(self):
         # Map (proto, len(tuple)) to expected opcode.
@@ -528,7 +527,7 @@ class AbstractPickleTests(unittest.TestCase):
                 y = self.loads(s)
                 self.assertEqual(x, y, (proto, x, s, y))
                 expected = expected_opcode[proto, len(x)]
-                self.assertEqual(self.opcode_in_pickle(expected, s), True)
+                self.assertEqual(opcode_in_pickle(expected, s), True)
 
     def test_singletons(self):
         # Map (proto, singleton) to expected opcode.
@@ -550,7 +549,7 @@ class AbstractPickleTests(unittest.TestCase):
                 y = self.loads(s)
                 self.assert_(x is y, (proto, x, s, y))
                 expected = expected_opcode[proto, x]
-                self.assertEqual(self.opcode_in_pickle(expected, s), True)
+                self.assertEqual(opcode_in_pickle(expected, s), True)
 
     def test_newobj_tuple(self):
         x = MyTuple([1, 2, 3])
@@ -598,70 +597,47 @@ class TempAbstractPickleTests(unittest.TestCase):
         self.assertEqual(x.__dict__, y.__dict__)
         self.assertEqual(x.foo, y.foo)
         self.assertEqual(x.bar, y.bar)
-##         import pickletools
-##         print
-##         pickletools.dis(s)
 
-    def test_global_ext1(self):
+    # Register a type with copy_reg, with extension code extcode.  Pickle
+    # an object of that type.  Check that the resulting pickle uses opcode
+    # (EXT[124]) under proto 2, and not in proto 1.
+    def produce_global_ext(self, extcode, opcode):
         import copy_reg
-        copy_reg.add_extension(__name__, "MyList", 0xf0)
+        copy_reg.add_extension(__name__, "MyList", extcode)
         try:
             x = MyList([1, 2, 3])
             x.foo = 42
             x.bar = "hello"
 
-            # Dump using protocol 1 for comparison
+            # Dump using protocol 1 for comparison.
             s1 = self.dumps(x, 1)
             y = self.loads(s1)
             self.assertEqual(list(x), list(y))
             self.assertEqual(x.__dict__, y.__dict__)
             self.assert_(s1.find(__name__) >= 0)
             self.assert_(s1.find("MyList") >= 0)
-##            import pickletools
-##            print
-##            pickletools.dis(s1)
 
-            # Dump using protocol 2 for test
+            # Dump using protocol 2 for test.
             s2 = self.dumps(x, 2)
             self.assertEqual(s2.find(__name__), -1)
             self.assertEqual(s2.find("MyList"), -1)
             y = self.loads(s2)
             self.assertEqual(list(x), list(y))
             self.assertEqual(x.__dict__, y.__dict__)
-##            import pickletools
-##            print
-##            pickletools.dis(s2)
+            self.assertEqual(opcode_in_pickle(opcode, s2), True)
 
         finally:
-            copy_reg.remove_extension(__name__, "MyList", 0xf0)
+            copy_reg.remove_extension(__name__, "MyList", extcode)
+
+    def test_global_ext1(self):
+        self.produce_global_ext(0xf0, pickle.EXT1)
 
     def test_global_ext2(self):
-        import copy_reg
-        copy_reg.add_extension(__name__, "MyList", 0xfff0)
-        try:
-            x = MyList()
-            s2 = self.dumps(x, 2)
-            self.assertEqual(s2.find(__name__), -1)
-            self.assertEqual(s2.find("MyList"), -1)
-            y = self.loads(s2)
-            self.assertEqual(list(x), list(y))
-            self.assertEqual(x.__dict__, y.__dict__)
-        finally:
-            copy_reg.remove_extension(__name__, "MyList", 0xfff0)
+        self.produce_global_ext(0xfff0, pickle.EXT2)
 
     def test_global_ext4(self):
-        import copy_reg
-        copy_reg.add_extension(__name__, "MyList", 0xfffff0)
-        try:
-            x = MyList()
-            s2 = self.dumps(x, 2)
-            self.assertEqual(s2.find(__name__), -1)
-            self.assertEqual(s2.find("MyList"), -1)
-            y = self.loads(s2)
-            self.assertEqual(list(x), list(y))
-            self.assertEqual(x.__dict__, y.__dict__)
-        finally:
-            copy_reg.remove_extension(__name__, "MyList", 0xfffff0)
+        self.produce_global_ext(0xffffff0, pickle.EXT4)
+
 
 class MyInt(int):
     sample = 1
