@@ -24,6 +24,7 @@ RANLIB=		@RANLIB@
 AR=		@AR@
 
 OPT=		@OPT@
+LDFLAGS=	@LDFLAGS@
 
 DEFS=		@DEFS@
 LIBS=		@LIBS@
@@ -107,7 +108,7 @@ all:		$(LIB) ../python sharedmods
 asharedmodule:	$(ASHAREDMODULE)$(SO)
 
 $(ASHAREDMODULE)$(SO): $(ASHAREDMODULESOBS)
-	$(LDSHARED) -o $(ASHAREDMODULE)$(SO) $(ASHAREDMODULESOBS) \
+	$(LDSHARED) $(LDFLAGS) -o $(ASHAREDMODULE)$(SO) $(ASHAREDMODULESOBS) \
 	$(ASHAREDMODULESEXTRA)
 
 $(LIB):		$& $(OBJS) Makefile
@@ -116,7 +117,7 @@ $(LIB):		$& $(OBJS) Makefile
 		$(RANLIB) $(LIB)
 
 ../python:	$(MYLIBS) $(ADDOBJS) Makefile
-		$(LINKCC) $(OPT) $(LINKFORSHARED) $(ADDOBJS) \
+		$(LINKCC) $(LDFLAGS) $(OPT) $(LINKFORSHARED) $(ADDOBJS) \
 		      $(MYLIBS) $(MODLIBS) $(LIBS) $(SYSLIBS) -o python
 		mv python ../python
 
