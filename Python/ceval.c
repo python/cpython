@@ -31,8 +31,6 @@
 
 typedef PyObject *(*callproc)(PyObject *, PyObject *, PyObject *);
 
-#define REPR(ob) PyString_AS_STRING(PyObject_Repr(ob))
-
 /* Forward declarations */
 
 static PyObject *eval_code2(PyCodeObject *,
@@ -1456,7 +1454,7 @@ eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 			if ((x = f->f_locals) == NULL) {
 				PyErr_Format(PyExc_SystemError,
 					     "no locals found when storing %s",
-					     REPR(w));
+					     PyObject_REPR(w));
 				break;
 			}
 			err = PyDict_SetItem(x, w, v);
@@ -1468,7 +1466,7 @@ eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 			if ((x = f->f_locals) == NULL) {
 				PyErr_Format(PyExc_SystemError,
 					     "no locals when deleting %s",
-					     REPR(w));
+					     PyObject_REPR(w));
 				break;
 			}
 			if ((err = PyDict_DelItem(x, w)) != 0)
@@ -1563,7 +1561,7 @@ eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 			if ((x = f->f_locals) == NULL) {
 				PyErr_Format(PyExc_SystemError,
 					     "no locals when loading %s",
-					     REPR(w));
+					     PyObject_REPR(w));
 				break;
 			}
 			x = PyDict_GetItem(x, w);

@@ -19,8 +19,6 @@
 #include "opcode.h"
 #include "structmember.h"
 
-#define REPR(O) PyString_AS_STRING(PyObject_Repr(O))
-
 #include <ctype.h>
 
 /* Three symbols from graminit.h are also defined in Python.h, with
@@ -65,9 +63,6 @@ int Py_OptimizeFlag = 0;
 
 #define ILLEGAL_IMPORT_STAR \
 "'from ... import *' may only occur in a module scope"
-
-#define ILLEGAL_IMPORT_GLOBAL \
-"may not import name '%.400s' because it is declared global"
 
 #define MANGLE_LEN 256
 
@@ -2204,7 +2199,7 @@ com_make_closure(struct compiling *c, PyCodeObject *co)
 			arg = com_lookup_arg(c->c_freevars, name);
 		if (arg == -1) {
 			fprintf(stderr, "lookup %s in %s %d %d\n",
-				REPR(name), c->c_name, reftype, arg);
+				PyObject_REPR(name), c->c_name, reftype, arg);
 			Py_FatalError("com_make_closure()");
 		}
 		com_addoparg(c, LOAD_CLOSURE, arg);
@@ -3995,7 +3990,8 @@ get_ref_type(struct compiling *c, char *name)
 	{
 		char buf[250];
 		sprintf(buf, "unknown scope for %.100s in %.100s (%s)",
-			name, c->c_name, REPR(c->c_symtable->st_cur_id));
+			name, c->c_name, 
+			PyObject_REPR(c->c_symtable->st_cur_id));
 		Py_FatalError(buf);
 	}
 	return -1; /* can't get here */
@@ -4113,13 +4109,6 @@ symtable_load_symbols(struct compiling *c)
 				char buf[500];
 				sprintf(buf, 
 					"name '%.400s' is local and global",
-					PyString_AS_STRING(name));
-				com_error(c, PyExc_SyntaxError, buf);
-				goto fail;
-			}
-			if (info & DEF_IMPORT) {
-				char buf[500];
-				sprintf(buf, ILLEGAL_IMPORT_GLOBAL,
 					PyString_AS_STRING(name));
 				com_error(c, PyExc_SyntaxError, buf);
 				goto fail;
@@ -4529,7 +4518,7 @@ symtable_add_def_o(struct symtable *st, PyObject *dict,
 	    val = PyInt_AS_LONG(o);
 	    if ((flag & DEF_PARAM) && (val & DEF_PARAM)) {
 		    PyErr_Format(PyExc_SyntaxError, DUPLICATE_ARGUMENT,
-				 name);
+				 PyString_AsString(name));
 		    return -1;
 	    }
 	    val |= flag;
@@ -4626,15 +4615,24 @@ symtable_node(struct symtable *st, node *n)
 	case import_stmt:
 		symtable_import(st, n);
 		break;
-	case exec_stmt:
-		if (PyDict_SetItemString(st->st_cur, NOOPT, Py_None) < 0) 
+	case exec_stmt: {
+		PyObject *zero = PyInt_FromLong(0);
+		if (zero == NULL)
 			st->st_errors++;
+		else {
+			if (PyDict_SetItemString(st->st_cur, NOOPT,
+						 zero) < 0)   
+				st->st_errors++;
+			Py_DECREF(zero);
+		}
 		symtable_node(st, CHILD(n, 1));
 		if (NCH(n) > 2)
 			symtable_node(st, CHILD(n, 3));
 		if (NCH(n) > 4)
 			symtable_node(st, CHILD(n, 5));
 		break;
+
+	}
 	case except_clause:
 		if (NCH(n) == 4)
 			symtable_assign(st, CHILD(n, 3), 0);
@@ -4848,24 +4846,29 @@ static void
 symtable_import(struct symtable *st, node *n)
 {
 	int i;
-	/*
-	  import_stmt: 'import' dotted_as_name (',' dotted_as_name)* 
+	/* import_stmt: 'import' dotted_as_name (',' dotted_as_name)* 
               | 'from' dotted_name 'import' 
                                 ('*' | import_as_name (',' import_as_name)*)
-	  import_as_name: NAME [NAME NAME]
+	   import_as_name: NAME [NAME NAME]
 	*/
 
 	if (STR(CHILD(n, 0))[0] == 'f') {  /* from */
 		if (TYPE(CHILD(n, 3)) == STAR) {
+			PyObject *zero = PyInt_FromLong(0);
 			if (st->st_cur_type != TYPE_MODULE) {
 				PyErr_SetString(PyExc_SyntaxError,
 						ILLEGAL_IMPORT_STAR);
 				st->st_errors++;
 				return;
 			}
-			if (PyDict_SetItemString(st->st_cur, NOOPT,
-						 Py_None) < 0)
+			if (zero == NULL)
 				st->st_errors++;
+			else {
+				if (PyDict_SetItemString(st->st_cur, NOOPT,
+							 zero) < 0)
+					st->st_errors++;
+				Py_DECREF(zero);
+			}
 		} else {
 			for (i = 3; i < NCH(n); i += 2) {
 				node *c = CHILD(n, i);
