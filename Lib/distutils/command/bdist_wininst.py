@@ -7,14 +7,14 @@ exe-program."""
 
 __revision__ = "$Id$"
 
-import os, sys
+import sys, os, string
 from distutils.core import Command
 from distutils.util import get_platform, create_tree, remove_tree
 from distutils.errors import *
 
 class bdist_wininst (Command):
 
-    description = "create a \"wininst\" built distribution"
+    description = "create an executable installer for MS Windows"
 
     user_options = [('bdist-dir=', 'd',
                      "temporary directory for creating the distribution"),
@@ -64,22 +64,15 @@ class bdist_wininst (Command):
 
         self.run_command ('build')
 
-        # XXX don't use 'self.get_finalized_command()', because it always
-        # runs 'ensure_finalized()' on the command object; we explictly
-        # want a command object that has *not* been finalized, so we can set
-        # options on it!  (The option we set, 'root', is so that we can do
-        # a proper "fake install" using this install command object.)
-        install = self.distribution.get_command_obj('install')
+        install = self.reinitialize_command('install')
         install.root = self.bdist_dir
 
-        install_lib = self.distribution.get_command_obj('install_lib')
-
+        install_lib = self.reinitialize_command('install_lib')
         install_lib.compile = 0
         install_lib.optimize = 0
 
-        # The packager (correct term in distutils speak?) can choose
-        # if pyc and pyo files should be created on the TARGET system
-        # instead at the SOURCE system.
+        # The packager can choose if .pyc and .pyo files should be created
+        # on the TARGET system instead at the SOURCE system.
 
 ##        # The compilation can only be done on the SOURCE system
 ##        # for one python version (assuming 1.6 and 1.5 have incompatible
@@ -95,7 +88,6 @@ class bdist_wininst (Command):
 
         self.announce ("installing to %s" % self.bdist_dir)
         install.ensure_finalized()
-
         install.run()
 
         # And make an archive relative to the root of the
@@ -103,10 +95,14 @@ class bdist_wininst (Command):
         archive_basename = "%s.win32" % self.distribution.get_fullname()
         # XXX hack! Our archive MUST be relative to sys.prefix
         # XXX What about .install_data, .install_scripts, ...?
+        # [Perhaps require that all installation dirs be under sys.prefix
+        # on Windows?  this will be acceptable until we start dealing
+        # with Python applications, at which point we should zip up
+        # the application directory -- and again everything can be
+        # under one dir --GPW]
         root_dir = install.install_lib
         arcname = self.make_archive (archive_basename, "zip",
-                           root_dir=root_dir)
-
+                                     root_dir=root_dir)
         self.create_exe (arcname)
 
         if not self.keep_tree:
@@ -115,26 +111,23 @@ class bdist_wininst (Command):
     # run()
 
     def create_inifile (self):
-        # create an inifile containing data describing the installation.
+        # Create an inifile containing data describing the installation.
         # This could be done without creating a real file, but
-        # a file is (at least) usefull for debugging bdist_wininst.
-        import string
+        # a file is (at least) useful for debugging bdist_wininst.
 
         metadata = self.distribution.metadata
-
-        ini_name = "%s.ini" % self.distribution.get_fullname()
+        ini_name = "%s.ini" % metadata.get_fullname()
 
         self.announce ("creating %s" % ini_name)
-
         inifile = open (ini_name, "w")
 
-        # write the [metadata] section. values are written with repr()[1:],
-        # so they do not contain unprintable characters, and are not
-        # surrounded by quote chars
+        # Write the [metadata] section.  Values are written with
+        # repr()[1:-1], so they do not contain unprintable characters, and
+        # are not surrounded by quote chars.
         inifile.write ("[metadata]\n")
 
-        # 'info' will be displayed in the installers dialog box,
-        # describing the items to be installed
+        # 'info' will be displayed in the installer's dialog box,
+        # describing the items to be installed.
         info = metadata.long_description + '\n'
 
         for name in dir (metadata):
@@ -173,7 +166,6 @@ class bdist_wininst (Command):
         zcfgdata = co.compress (cfgdata) + co.flush()
 
         installer_name = "%s.win32.exe" % self.distribution.get_fullname()
-
         self.announce ("creating %s" % installer_name)
 
         file = open (installer_name, "wb")
