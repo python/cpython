@@ -44,8 +44,9 @@ additional files here!)
 
 Edit faqconf.py to reflect your setup.  You only need to edit the top
 part, up till the line of all dashes.  The comments should guide you
-in your edits.  You can also choose to make your changes to faqcust.py
-and leave faqconf.py alone.
+in your edits.  (Actually, you can also choose to add your changes to
+faqcust.py and leave faqconf.py alone.  This is essential if you are
+maintaining multiple FAQs; see below.)
 
 Don't forget to edit the SECTION_TITLES variables to reflect the set
 of section titles for your FAQ!
@@ -74,5 +75,24 @@ faq01.001.htp in your working directory and an RCS revision history
 file faq01.001.htp,v in the RCS subdirectory.  You can now exercise
 the other FAQ wizard features (search, index, whole FAQ, what's new,
 roulette, and so on).
+
+Maintaining Multiple FAQs
+-------------------------
+
+If you have multiple FAQs, you need a separate FAQDIR per FAQ, and a
+different customization file per FAQ.  The easiest thing to do would
+be to have the faqcust.py for each FAQ live in the FAQDIR for that
+FAQ, but that creates some security concerns, since the FAQDIR must be
+world writable: *if* someone who breaks into your system (or a
+legitimate user) manages to edit the faqcust.py file they can get
+arbitrary code to execute through the FAQ wizard.  Therefore, you will
+need a more complex setup.
+
+The best way is probably to have a directory that is only writable by
+you for each FAQ, where you place the copy of faqcust.py for that FAQ,
+and have a world-writable subdirectory DATA for the data.  You then
+set FAQDIR to point to the DATA directory and change the faqw.py
+bootstrap script to add FAQDIR/.. to sys.path (in front of SRCDIR, so
+the dummy faqcust.py from SRCDIR is ignored).
 
 --Guido van Rossum (home page: http://www.python.org/~guido/)
