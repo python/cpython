@@ -30,13 +30,14 @@ This module provides an interface to Berkeley socket IPC.
 Limitations:
 
 - only AF_INET and AF_UNIX address families are supported
-- no asynchronous I/O
-- no read/write operations (use send/recv instead)
+- no asynchronous I/O (but read polling: avail)
+- no read/write operations (use send/recv or makefile instead)
 - no flags on sendto/recvfrom operations
 - no setsockopt() call
 
 Interface:
 
+- socket.gethostname() --> host name (string)
 - socket.gethostbyname(hostname) --> host IP address (string: 'dd.dd.dd.dd')
 - socket.getservbyname(servername, protocolname) --> port number
 - socket.socket(family, type [, proto]) --> new socket object
@@ -50,9 +51,10 @@ Interface:
 
 Socket methods:
 
+- s.accept() --> new socket object, sockaddr
+- s.avail() --> boolean
 - s.bind(sockaddr) --> None
 - s.connect(sockaddr) --> None
-- s.accept() --> new socket object, sockaddr
 - s.listen(n) --> None
 - s.makefile(mode) --> file object
 - s.recv(nbytes) --> string
@@ -67,11 +69,16 @@ Socket methods:
 #include "allobjects.h"
 #include "modsupport.h"
 
+#include <signal.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/time.h> /* Needed for struct timeval */
 #include <netinet/in.h>
 #include <sys/un.h>
 #include <netdb.h>
+#ifdef _AIX /* I *think* this works */
+#include <select.h> /* Needed for fd_set */
+#endif
 
 
 /* Global variable holding the exception type for errors detected
@@ -336,6 +343,27 @@ sock_accept(s, args)
 }
 
 
+/* s.avail() method */
+
+static object *
+sock_avail(s, args)
+	sockobject *s;
+	object *args;
+{
+	struct timeval timeout;
+	fd_set readers;
+	int n;
+	timeout.tv_sec = 0;
+	timeout.tv_usec = 0;
+	FD_ZERO(&readers);
+	FD_SET(s->sock_fd, &readers);
+	n = select(s->sock_fd+1, &readers, (fd_set *)0, (fd_set *)0, &timeout);
+	if (n < 0)
+		return socket_error();
+	return newintobject((long) (n != 0));
+}
+
+
 /* s.bind(sockaddr) method */
 
 static object *
@@ -555,6 +583,7 @@ sock_shutdown(s, args)
 
 static struct methodlist sock_methods[] = {
 	{"accept",	sock_accept},
+	{"avail",	sock_avail},
 	{"bind",	sock_bind},
 	{"close",	sock_close},
 	{"connect",	sock_connect},
@@ -614,6 +643,22 @@ static typeobject Socktype = {
 };
 
 
+/* Python interface to gethostname(). */
+
+/*ARGSUSED*/
+static object *
+socket_gethostname(self, args)
+	object *self;
+	object *args;
+{
+	char buf[1024];
+	if (!getnoarg(args))
+		return NULL;
+	if (gethostname(buf, sizeof buf - 1) < 0)
+		return socket_error();
+	buf[sizeof buf - 1] = '\0';
+	return newstringobject(buf);
+}
 /* Python interface to gethostbyname(name). */
 
 /*ARGSUSED*/
@@ -685,6 +730,9 @@ socket_socket(self, args)
 	   file descriptor again! */
 	if (s == NULL)
 		(void) close(fd);
+	/* From now on, ignore SIGPIPE and let the error checking
+	   do the work. */
+	(void) signal(SIGPIPE, SIG_IGN);
 	return (object *) s;
 }
 
@@ -693,6 +741,7 @@ socket_socket(self, args)
 
 static struct methodlist socket_methods[] = {
 	{"gethostbyname",	socket_gethostbyname},
+	{"gethostname",		socket_gethostname},
 	{"getservbyname",	socket_getservbyname},
 	{"socket",		socket_socket},
 	{NULL,			NULL}		 /* Sentinel */
