@@ -416,7 +416,7 @@ class HTTPRedirectHandler(BaseHandler):
         # XXX Probably want to forget about the state of the current
         # request, although that might interact poorly with other
         # handlers that also use handler-specific request attributes
-        new = Request(newurl, req.get_data())
+        new = Request(newurl, req.get_data(), req.headers)
         new.error_302_dict = {}
         if hasattr(req, 'error_302_dict'):
             if len(req.error_302_dict)>10 or \
