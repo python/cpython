@@ -60,11 +60,11 @@ if verbose:
 tmpIn  = TESTFN + "i"
 tmpOut = TESTFN + "o"
 try:
-    fin = open(tmpIn, 'w')
+    fin = open(tmpIn, 'wb')
     fin.write(teststr)
     fin.close()
 
-    fin = open(tmpIn, 'r')
+    fin = open(tmpIn, 'rb')
     fout = open(tmpOut, 'w')
     uu.encode(fin, fout, tmpIn, mode=0644)
     fin.close()
@@ -79,7 +79,7 @@ try:
     if verbose:
         print '6. decode file-> file'
     uu.decode(tmpOut)
-    fin = open(tmpIn, 'r')
+    fin = open(tmpIn, 'rb')
     s = fin.read()
     fin.close()
     verify(s == teststr)
