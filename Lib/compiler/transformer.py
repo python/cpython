@@ -569,7 +569,7 @@ class Transformer:
         type = _cmp_types[n[0]]
 
       lineno = nl[1][2]
-      results.append(type, self.com_node(nodelist[i]))
+      results.append((type, self.com_node(nodelist[i])))
 
     # we need a special "compare" node so that we can distinguish
     #   3 < x < 5   from    (3 < x) < 5
@@ -836,7 +836,7 @@ class Transformer:
             expr2 = None
         else:
           expr1 = expr2 = None
-        clauses.append(expr1, expr2, self.com_node(nodelist[i+2]))
+        clauses.append((expr1, expr2, self.com_node(nodelist[i+2])))
 
       if node[0] == token.NAME:
         elseNode = self.com_node(nodelist[i+2])
@@ -958,7 +958,7 @@ class Transformer:
     # dictmaker: test ':' test (',' test ':' value)* [',']
     items = [ ]
     for i in range(1, len(nodelist), 4):
-      items.append(self.com_node(nodelist[i]), self.com_node(nodelist[i+2]))
+      items.append((self.com_node(nodelist[i]), self.com_node(nodelist[i+2])))
     return Node('dict', items)
 
   def com_apply_trailer(self, primaryNode, nodelist):
