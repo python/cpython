@@ -1914,7 +1914,7 @@ posix_getlogin(PyObject *self, PyObject *args)
                 posix_error();
             else
                 PyErr_SetString(PyExc_OSError,
-                                "unexpected NULL from getlogin()");
+                                "unable to determine login name");
         }
         else
             result = PyString_FromString(name);
