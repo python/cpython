@@ -25,6 +25,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 /* Macintosh Gestalt interface */
 
 #include "Python.h"
+#include "macglue.h"
 
 #include <Types.h>
 #include <Gestalt.h>
@@ -47,12 +48,8 @@ gestalt_gestalt(self, args)
 	}
 	selector = *(OSType*)str;
 	iErr = Gestalt ( selector, &response );
-	if (iErr != 0) {
-		char buf[100];
-		sprintf(buf, "Gestalt error code %d", iErr);
-		PyErr_SetString(PyExc_RuntimeError, buf);
-		return NULL;
-	}
+	if (iErr != 0) 
+		return PyMac_Error(iErr);
 	return PyInt_FromLong(response);
 }
 
