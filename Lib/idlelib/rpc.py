@@ -177,9 +177,12 @@ class SocketIO:
     def remotecall(self, oid, methodname, args, kwargs):
         self.debug("remotecall:", oid, methodname, args, kwargs) 
         seq = self.asynccall(oid, methodname, args, kwargs)
-        return self.asyncreturn(seq)
+        ret = self.asyncreturn(seq)
+        self.debug("return:", ret)
+        return ret
 
     def asynccall(self, oid, methodname, args, kwargs):
+        self.debug("asyncall:", oid, methodname, args, kwargs)
         request = ("call", (oid, methodname, args, kwargs))
         seq = self.putrequest(request)
         return seq

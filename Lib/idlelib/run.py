@@ -1,23 +1,31 @@
 import sys
 import time
 import socket
+
+import CallTips
+import RemoteDebugger
+import RemoteObjectBrowser
+import StackViewer
 import rpc
+
+import __main__
 
 def main():
     """Start the Python execution server in a subprocess
 
-    In Idle, RPCServer is instantiated with handlerclass MyHandler, which
-    inherits register/unregister methods from RPCHandler via the mix-in class
-    SocketIO.
+    In the Python subprocess, RPCServer is instantiated with handlerclass
+    MyHandler, which inherits register/unregister methods from RPCHandler via
+    the mix-in class SocketIO.
 
-    When the RPCServer is instantiated, the TCPServer initialization creates an
-    instance of run.MyHandler and calls its handle() method.  handle()
-    instantiates a run.Executive, passing it a reference to the MyHandler
-    object.  That reference is saved as an attribute of the Executive instance.
-    The Executive methods have access to the reference and can pass it on to
-    entities that they command (e.g. RemoteDebugger.Debugger.start_debugger()).
-    The latter, in turn, can call MyHandler(SocketIO) register/unregister
-    methods via the reference to register and unregister themselves.
+    When the RPCServer svr is instantiated, the TCPServer initialization
+    creates an instance of run.MyHandler and calls its handle() method.
+    handle() instantiates a run.Executive object, passing it a reference to the
+    MyHandler object.  That reference is saved as attribute rpchandler of the
+    Executive instance.  The Executive methods have access to the reference and
+    can pass it on to entities that they command
+    (e.g. RemoteDebugger.Debugger.start_debugger()).  The latter, in turn, can
+    call MyHandler(SocketIO) register/unregister methods via the reference to
+    register and unregister themselves.
 
     """
     port = 8833
@@ -55,19 +63,21 @@ class Executive:
 
     def __init__(self, rpchandler):
         self.rpchandler = rpchandler
-        import __main__
         self.locals = __main__.__dict__
+        self.calltip = CallTips.CallTips()
 
     def runcode(self, code):
         exec code in self.locals
 
     def start_the_debugger(self, gui_adap_oid):
-        import RemoteDebugger
         return RemoteDebugger.start_debugger(self.rpchandler, gui_adap_oid)
 
     def stop_the_debugger(self, idb_adap_oid):
         "Unregister the Idb Adapter.  Link objects and Idb then subject to GC"
         self.rpchandler.unregister(idb_adap_oid)
+
+    def get_the_calltip(self, name):
+        return self.calltip.fetch_tip(name)
 
     def stackviewer(self, flist_oid=None):
         if not hasattr(sys, "last_traceback"):
@@ -75,8 +85,6 @@ class Executive:
         flist = None
         if flist_oid is not None:
             flist = self.rpchandler.get_remote_proxy(flist_oid)
-        import RemoteObjectBrowser
-        import StackViewer
         tb = sys.last_traceback
         while tb and tb.tb_frame.f_globals["__name__"] in ["rpc", "run"]:
             tb = tb.tb_next

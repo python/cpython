@@ -1,30 +1,38 @@
-# CallTips.py - An IDLE extension that provides "Call Tips" - ie, a floating window that
-# displays parameter information as you open parens.
+"""CallTips.py - An IDLE Extension to Jog Your Memory
 
+Call Tips are floating windows which display function/method parameter
+information as you open the parameter parenthesis, and which disappear when you
+type the closing parenthesis.  Future plans include extending the functionality
+to include class attributes.
+
+"""
+import sys
 import string
 import types
+
+import CallTipWindow
+
+import __main__
 
 class CallTips:
 
     menudefs = [
     ]
 
-    def __init__(self, editwin):
+    def __init__(self, editwin=None):
+        if editwin == None:  # subprocess and test
+            self.editwin = None
+            return
         self.editwin = editwin
         self.text = editwin.text
         self.calltip = None
-        if hasattr(self.text, "make_calltip_window"):
-            self._make_calltip_window = self.text.make_calltip_window
-        else:
-            self._make_calltip_window = self._make_tk_calltip_window
+        self._make_calltip_window = self._make_tk_calltip_window
 
     def close(self):
         self._make_calltip_window = None
 
-    # Makes a Tk based calltip window.  Used by IDLE, but not Pythonwin.
-    # See __init__ above for how this is used.
     def _make_tk_calltip_window(self):
-        import CallTipWindow
+        # See __init__ for usage
         return CallTipWindow.CallTip(self.text)
 
     def _remove_calltip_window(self):
@@ -34,7 +42,8 @@ class CallTips:
 
     def paren_open_event(self, event):
         self._remove_calltip_window()
-        arg_text = get_arg_text(self.get_object_at_cursor())
+        name = self.get_name_at_cursor()
+        arg_text = self.fetch_tip(name)
         if arg_text:
             self.calltip_start = self.text.index("insert")
             self.calltip = self._make_calltip_window()
@@ -53,7 +62,8 @@ class CallTips:
             # or off the calltip line, then cancel the tip.
             # (Later need to be smarter about multi-line, etc)
             if self.text.compare("insert", "<=", self.calltip_start) or \
-               self.text.compare("insert", ">", self.calltip_start + " lineend"):
+               self.text.compare("insert", ">", self.calltip_start
+                                 + " lineend"):
                 self._remove_calltip_window()
         return "" #so the event is handled normally.
 
@@ -61,29 +71,34 @@ class CallTips:
         self._remove_calltip_window()
         return "" #so the event is handled normally.
 
-    def get_object_at_cursor(self,
-                wordchars="._" + string.ascii_letters + string.digits):
-        # Usage of ascii_letters is necessary to avoid UnicodeErrors
-        # if chars contains non-ASCII.
+    __IDCHARS = "._" + string.ascii_letters + string.digits
 
-        # XXX - This needs to be moved to a better place
-        # so the "." attribute lookup code can also use it.
-        text = self.text
-        chars = text.get("insert linestart", "insert")
-        i = len(chars)
-        while i and chars[i-1] in wordchars:
-            i = i-1
-        word = chars[i:]
-        if word:
-            # How is this for a hack!
-            import sys, __main__
+    def get_name_at_cursor(self):
+        idchars = self.__IDCHARS
+        str = self.text.get("insert linestart", "insert")
+        i = len(str)
+        while i and str[i-1] in idchars:
+            i -= 1
+        return str[i:]
+        
+    def fetch_tip(self, name):
+        interp = self.editwin and self.editwin.flist.pyshell.interp
+        rpcclt = interp and interp.rpcclt
+        if rpcclt:
+            return rpcclt.remotecall("exec", "get_the_calltip",
+                                     (name,), {})
+        else:
+            entity = self.get_entity(name)
+            return get_arg_text(entity)
+
+    def get_entity(self, name):
+        if name:
             namespace = sys.modules.copy()
             namespace.update(__main__.__dict__)
             try:
-                return eval(word, namespace)
+                return eval(name, namespace)
             except:
-                pass
-        return None # Can't find an object.
+                return None
 
 def _find_constructor(class_ob):
     # Given a class object, return a function object used for the
@@ -142,7 +157,6 @@ def get_arg_text(ob):
             if argText:
                 argText += "\n"
             argText += doc[:pos]
-
     return argText
 
 #################################################
@@ -168,17 +182,21 @@ if __name__=='__main__':
         def t5(self, a, *args): "(a, ...)"
         def t6(self, a, b=None, *args, **kw): "(a, b=None, ..., ***)"
 
-    def test( tests ):
+    def test(tests):
+        ct = CallTips()
         failed=[]
         for t in tests:
             expected = t.__doc__ + "\n" + t.__doc__
-            if get_arg_text(t) != expected:
+            name = t.__name__
+            arg_text = ct.fetch_tip(name)
+            if arg_text != expected:
                 failed.append(t)
-                print "%s - expected %s, but got %s" % (t, `expected`, `get_arg_text(t)`)
+                print "%s - expected %s, but got %s" % (t, expected,
+                                                        get_arg_text(entity))
         print "%d of %d tests failed" % (len(failed), len(tests))
 
     tc = TC()
-    tests = t1, t2, t3, t4, t5, t6, \
-            TC, tc.t1, tc.t2, tc.t3, tc.t4, tc.t5, tc.t6
+    tests = (t1, t2, t3, t4, t5, t6, 
+             TC, tc.t1, tc.t2, tc.t3, tc.t4, tc.t5, tc.t6)
 
     test(tests)
