@@ -342,7 +342,7 @@ int_mul(v, w)
 		b = -b;
 		if (b < 0) {
 			/* Largest negative */
-			if (a == 0 || a == 1 && s == 1) {
+			if (a == 0 || (a == 1 && s == 1)) {
 				x = a*b;
 				goto ok;
 			}
@@ -427,7 +427,7 @@ i_divmod(x, y, p_xdivy, p_xmody)
 			xdivy = xi / yi;
 	}
 	xmody = xi - xdivy*yi;
-	if (xmody < 0 && yi > 0 || xmody > 0 && yi < 0) {
+	if ((xmody < 0 && yi > 0) || (xmody > 0 && yi < 0)) {
 		xmody += yi;
 		xdivy -= 1;
 	}
@@ -476,8 +476,7 @@ int_pow(v, w, z)
 	intobject *z;
 {
 #if 1
-	register long iv, iw, iz, ix, temp, prev;
- 	int zset = 0;
+	register long iv, iw, iz=0, ix, temp, prev;
 	iv = v->ob_ival;
 	iw = w->ob_ival;
 	if (iw < 0) {
@@ -486,7 +485,10 @@ int_pow(v, w, z)
 	}
  	if ((object *)z != None) {
 		iz = z->ob_ival;
-	 	zset = 1;
+		if (iz == 0) {
+			err_setstr(ValueError, "pow(x, y, z) with z==0");
+			return NULL;
+		}
 	}
 	/*
 	 * XXX: The original exponentiation code stopped looping
@@ -513,13 +515,13 @@ int_pow(v, w, z)
 	 	temp *= temp;	/* Square the value of temp */
 	 	if (prev!=0 && temp/prev!=prev)
 			return err_ovf("integer pow()");
-	 	if (zset) {
+	 	if (iz) {
 			/* If we did a multiplication, perform a modulo */
 		 	ix = ix % iz;
 		 	temp = temp % iz;
 		}
 	}
-	if (zset) {
+	if (iz) {
 	 	object *t1, *t2;
 	 	long int div, mod;
 	 	t1=newintobject(ix); 
