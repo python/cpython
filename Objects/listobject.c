@@ -9,24 +9,24 @@
 #endif
 
 static int
-roundupsize(int n)
+list_resize(PyListObject *self, int newsize)
 {
-	unsigned int nbits = 0;
-	unsigned int n2 = (unsigned int)n >> 5;
+	PyObject **items;
+	size_t _new_size;
 
-	/* Round up:
-	 * If n <       256, to a multiple of        8.
-	 * If n <      2048, to a multiple of       64.
-	 * If n <     16384, to a multiple of      512.
-	 * If n <    131072, to a multiple of     4096.
-	 * If n <   1048576, to a multiple of    32768.
-	 * If n <   8388608, to a multiple of   262144.
-	 * If n <  67108864, to a multiple of  2097152.
-	 * If n < 536870912, to a multiple of 16777216.
-	 * ...
-	 * If n < 2**(5+3*i), to a multiple of 2**(3*i).
-	 *
-	 * This over-allocates proportional to the list size, making room
+	/* Bypass realloc() when a previous overallocation is large enough
+	   to accommodate the newsize.  If the newsize is 16 smaller than the
+	   current size, then proceed with the realloc() to shrink the list.
+	*/
+
+	if (self->allocated >= newsize &&
+	    self->ob_size < newsize + 16 &&
+	    self->ob_item != NULL) {
+		self->ob_size = newsize;
+		return 0;
+	}
+
+	/* This over-allocates proportional to the list size, making room
 	 * for additional growth.  The over-allocation is mild, but is
 	 * enough to give linear-time amortized behavior over a long
 	 * sequence of appends() in the presence of a poorly-performing
@@ -36,21 +36,21 @@ roundupsize(int n)
 	 * even with this scheme, although it requires much longer lists to
 	 * provoke them than it used to).
 	 */
-	do {
-		n2 >>= 3;
-		nbits += 3;
-	} while (n2);
-	return ((n >> nbits) + 1) << nbits;
- }
-
-#define NRESIZE(var, type, nitems)				\
-do {								\
-	size_t _new_size = roundupsize(nitems);			\
-	if (_new_size <= ((~(size_t)0) / sizeof(type)))		\
-		PyMem_RESIZE(var, type, _new_size);		\
-	else							\
-		var = NULL;					\
-} while (0)
+	_new_size = (newsize >> 3) + (self->ob_size < 3 ? 1 : 6) + newsize;
+	items = self->ob_item;
+	if (_new_size <= ((~(size_t)0) / sizeof(PyObject *)))
+		PyMem_RESIZE(items, PyObject *, _new_size);
+	else
+		items = NULL;
+	if (items == NULL) {
+		PyErr_NoMemory();
+		return -1;
+	}
+	self->ob_item = items;
+	self->ob_size = newsize;
+	self->allocated = _new_size;
+	return 0;
+}
 
 PyObject *
 PyList_New(int size)
@@ -81,6 +81,7 @@ PyList_New(int size)
 		memset(op->ob_item, 0, sizeof(*op->ob_item) * size);
 	}
 	op->ob_size = size;
+	op->allocated = size;
 	_PyObject_GC_TRACK(op);
 	return (PyObject *) op;
 }
@@ -142,36 +143,33 @@ PyList_SetItem(register PyObject *op, register int i,
 static int
 ins1(PyListObject *self, int where, PyObject *v)
 {
-	int i;
+	int i, n = self->ob_size;
 	PyObject **items;
 	if (v == NULL) {
 		PyErr_BadInternalCall();
 		return -1;
 	}
-	if (self->ob_size == INT_MAX) {
+	if (n == INT_MAX) {
 		PyErr_SetString(PyExc_OverflowError,
 			"cannot add more objects to list");
 		return -1;
 	}
-	items = self->ob_item;
-	NRESIZE(items, PyObject *, self->ob_size+1);
-	if (items == NULL) {
-		PyErr_NoMemory();
+	
+	if (list_resize(self, n+1) == -1)
 		return -1;
-	}
+
 	if (where < 0) {
-		where += self->ob_size;
+		where += n;
 		if (where < 0)
 			where = 0;
 	}
-	if (where > self->ob_size)
-		where = self->ob_size;
-	for (i = self->ob_size; --i >= where; )
+	if (where > n)
+		where = n;
+	items = self->ob_item;
+	for (i = n; --i >= where; )
 		items[i+1] = items[i];
 	Py_INCREF(v);
 	items[where] = v;
-	self->ob_item = items;
-	self->ob_size++;
 	return 0;
 }
 
@@ -467,6 +465,7 @@ list_ass_slice(PyListObject *a, int ilow, int ihigh, PyObject *v)
 	int n; /* Size of replacement list */
 	int d; /* Change in size */
 	int k; /* Loop index */
+	int s;
 #define b ((PyListObject *)v)
 	if (v == NULL)
 		n = 0;
@@ -517,25 +516,21 @@ list_ass_slice(PyListObject *a, int ilow, int ihigh, PyObject *v)
 		if (d < 0) {
 			for (/*k = ihigh*/; k < a->ob_size; k++)
 				item[k+d] = item[k];
-			a->ob_size += d;
-			NRESIZE(item, PyObject *, a->ob_size); /* Can't fail */
-			a->ob_item = item;
+			list_resize(a, a->ob_size + d);
+			item = a->ob_item;
 		}
 	}
 	else { /* Insert d items; recycle ihigh-ilow items */
-		NRESIZE(item, PyObject *, a->ob_size + d);
-		if (item == NULL) {
+		s = a->ob_size;
+		if (list_resize(a, s+d) == -1) {
 			if (recycle != NULL)
 				PyMem_DEL(recycle);
-			PyErr_NoMemory();
-			return -1;
 		}
-		for (k = a->ob_size; --k >= ihigh; )
+		item = a->ob_item;
+		for (k = s; --k >= ihigh; )
 			item[k+d] = item[k];
 		for (/*k = ihigh-1*/; k >= ilow; --k)
 			*p++ = item[k];
-		a->ob_item = item;
-		a->ob_size += d;
 	}
 	for (k = 0; k < n; k++, ilow++) {
 		PyObject *w = PySequence_Fast_GET_ITEM(v_as_SF, k);
@@ -570,7 +565,7 @@ static PyObject *
 list_inplace_repeat(PyListObject *self, int n)
 {
 	PyObject **items;
-	int size, i, j;
+	int size, i, j, p;
 
 
 	size = PyList_GET_SIZE(self);
@@ -579,9 +574,8 @@ list_inplace_repeat(PyListObject *self, int n)
 		return (PyObject *)self;
 	}
 
-	items = self->ob_item;
-
 	if (n < 1) {
+		items = self->ob_item;
 		self->ob_item = NULL;
 		self->ob_size = 0;
 		for (i = 0; i < size; i++)
@@ -591,23 +585,19 @@ list_inplace_repeat(PyListObject *self, int n)
 		return (PyObject *)self;
 	}
 
-	NRESIZE(items, PyObject*, size*n);
-	if (items == NULL) {
-		PyErr_NoMemory();
-		goto finally;
-	}
-	self->ob_item = items;
+	if (list_resize(self, size*n) == -1) 
+		return NULL;
+
+	p = size;
 	for (i = 1; i < n; i++) { /* Start counting at 1, not 0 */
 		for (j = 0; j < size; j++) {
 			PyObject *o = PyList_GET_ITEM(self, j);
 			Py_INCREF(o);
-			PyList_SET_ITEM(self, self->ob_size++, o);
+			PyList_SET_ITEM(self, p++, o);
 		}
 	}
 	Py_INCREF(self);
 	return (PyObject *)self;
-  finally:
-  	return NULL;
 }
 
 static int
@@ -656,8 +646,7 @@ listappend(PyListObject *self, PyObject *v)
 static int
 listextend_internal(PyListObject *self, PyObject *b)
 {
-	PyObject **items;
-	int selflen = PyList_GET_SIZE(self);
+	register int selflen = PyList_GET_SIZE(self);
 	int blen;
 	register int i;
 
@@ -686,23 +675,16 @@ listextend_internal(PyListObject *self, PyObject *b)
 	}
 
 	blen = PyObject_Size(b);
-
-	/* resize a using idiom */
-	items = self->ob_item;
-	NRESIZE(items, PyObject*, selflen + blen);
-	if (items == NULL) {
-		PyErr_NoMemory();
+	if (list_resize(self, selflen + blen) == -1) {
 		Py_DECREF(b);
 		return -1;
 	}
-
-	self->ob_item = items;
 
 	/* populate the end of self with b's items */
 	for (i = 0; i < blen; i++) {
 		PyObject *o = PySequence_Fast_GET_ITEM(b, i);
 		Py_INCREF(o);
-		PyList_SET_ITEM(self, self->ob_size++, o);
+		PyList_SET_ITEM(self, i+selflen, o);
 	}
 	Py_DECREF(b);
 	return 0;
@@ -1841,7 +1823,7 @@ listsort(PyListObject *self, PyObject *args, PyObject *kwds)
 	PyObject **lo, **hi;
 	int nremaining;
 	int minrun;
-	int saved_ob_size;
+	int saved_ob_size, saved_allocated;
 	PyObject **saved_ob_item;
 	PyObject **empty_ob_item;
 	PyObject *compare = NULL;
@@ -1877,8 +1859,10 @@ listsort(PyListObject *self, PyObject *args, PyObject *kwds)
 	 */
 	saved_ob_size = self->ob_size;
 	saved_ob_item = self->ob_item;
+	saved_allocated = self->allocated;
 	self->ob_size = 0;
 	self->ob_item = empty_ob_item = PyMem_NEW(PyObject *, 0);
+	self->allocated = 0;
 
 	if (keyfunc != NULL) {
 		for (i=0 ; i < saved_ob_size ; i++) {
@@ -1999,6 +1983,7 @@ dsu_fail:
 		PyMem_FREE(empty_ob_item);
 	self->ob_size = saved_ob_size;
 	self->ob_item = saved_ob_item;
+	self->allocated = saved_allocated;
 	Py_XDECREF(compare);
 	Py_XINCREF(result);
 	return result;
@@ -2271,13 +2256,9 @@ list_fill(PyListObject *result, PyObject *v)
 		PyErr_Clear();
 		n = 8;	/* arbitrary */
 	}
-	NRESIZE(result->ob_item, PyObject*, n);
-	if (result->ob_item == NULL) {
-		PyErr_NoMemory();
+	if (list_resize(result, n) == -1)
 		goto error;
-	}
 	memset(result->ob_item, 0, sizeof(*result->ob_item) * n);
-	result->ob_size = n;
 
 	/* Run iterator to exhaustion. */
 	for (i = 0; ; i++) {
@@ -2475,7 +2456,7 @@ list_ass_subscript(PyListObject* self, PyObject* item, PyObject* value)
 
 		if (value == NULL) {
 			/* delete slice */
-			PyObject **garbage, **it;
+			PyObject **garbage;
 			int cur, i, j;
 
 			if (slicelength <= 0)
@@ -2515,9 +2496,7 @@ list_ass_subscript(PyListObject* self, PyObject* item, PyObject* value)
 						PyList_GET_ITEM(self, cur));
 			}
 			self->ob_size -= slicelength;
-			it = self->ob_item;
-			NRESIZE(it, PyObject*, self->ob_size);
-			self->ob_item = it;
+			list_resize(self, self->ob_size);
 
 			for (i = 0; i < slicelength; i++) {
 				Py_DECREF(garbage[i]);

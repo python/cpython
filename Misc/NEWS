@@ -12,6 +12,17 @@ What's New in Python 2.4 alpha 1?
 Core and builtins
 -----------------
 
+- Optimized list resize operations to make fewer calls to the system
+  realloc().  Significantly speeds up list appends, list pops,
+  list comprehensions, and the list contructor (when the input iterable
+  length is not known).
+
+- Changed the internal list over-allocation scheme.  For larger lists,
+  overallocation ranged between 3% and 25%.  Now, it is a constant 12%.
+  For smaller lists (n<=5), overallocation was upto eight bytes.  Now,
+  the overallocation is no more than one byte -- this improves space
+  utilization for applications that have large numbers of small lists.
+
 - Support for arbitrary objects supporting the read-only buffer
   interface as the co_code field of code objects (something that was
   only possible to create from C code) has been removed.
