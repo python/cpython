@@ -12,6 +12,8 @@ What's New in Python 2.3.1?
 Core and builtins
 -----------------
 
+- Patch #805613: Fix usage of the PTH library.
+
 - Fixed a bug in the cache of length-one Unicode strings that could
   lead to a seg fault.  The specific problem occurred when an earlier,
   non-fatal error left an uninitialized Unicode object in the
