@@ -472,8 +472,8 @@ class Dist (Command):
                        "could neither find a standalone zip utility nor " +
                        "import the 'zipfile' module") % base_dir
 
-                z = zipfile.ZipFile (base_dir + ".zip", "wb",
-                                     compression=zipfile.ZIP_DEFLATED)
+            z = zipfile.ZipFile (base_dir + ".zip", "wb",
+                                 compression=zipfile.ZIP_DEFLATED)
             
             def visit (z, dirname, names):
                 for name in names:
