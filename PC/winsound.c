@@ -73,7 +73,7 @@ PyDoc_STRVAR(sound_module_doc,
 "\n"
 "Beep(frequency, duration) - Make a beep through the PC speaker.");
 
-PyObject *
+static PyObject *
 sound_playsound(PyObject *s, PyObject *args)
 {
     const char *sound;
