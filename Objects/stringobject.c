@@ -2401,8 +2401,15 @@ string_zfill(PyStringObject *self, PyObject *args)
         return NULL;
 
     if (PyString_GET_SIZE(self) >= width) {
-        Py_INCREF(self);
-        return (PyObject*) self;
+        if (PyString_CheckExact(self)) {
+            Py_INCREF(self);
+            return (PyObject*) self;
+        }
+        else
+            return PyString_FromStringAndSize(
+                PyString_AS_STRING(self),
+                PyString_GET_SIZE(self)
+            );
     }
 
     fill = width - PyString_GET_SIZE(self);
