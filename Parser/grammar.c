@@ -212,21 +212,30 @@ translabel(g, lb)
 			if (p)
 				*p = '\0';
 		}
-		else {
-			if (lb->lb_str[2] == lb->lb_str[0]) {
-				int type = (int) tok_1char(lb->lb_str[1]);
-				if (type != OP) {
-					lb->lb_type = type;
-					lb->lb_str = NULL;
-				}
-				else
-					printf("Unknown OP label %s\n",
-						lb->lb_str);
+		else if (lb->lb_str[2] == lb->lb_str[0]) {
+			int type = (int) tok_1char(lb->lb_str[1]);
+			if (type != OP) {
+				lb->lb_type = type;
+				lb->lb_str = NULL;
 			}
 			else
-				printf("Can't translate STRING label %s\n",
+				printf("Unknown OP label %s\n",
 					lb->lb_str);
 		}
+		else if (lb->lb_str[2] && lb->lb_str[3] == lb->lb_str[0]) {
+			int type = (int) tok_2char(lb->lb_str[1],
+						   lb->lb_str[2]);
+			if (type != OP) {
+				lb->lb_type = type;
+				lb->lb_str = NULL;
+			}
+			else
+				printf("Unknown OP label %s\n",
+					lb->lb_str);
+		}
+		else
+			printf("Can't translate STRING label %s\n",
+				lb->lb_str);
 	}
 	else
 		printf("Can't translate label '%s'\n", labelrepr(lb));
