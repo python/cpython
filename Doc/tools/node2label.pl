@@ -10,9 +10,16 @@ require "labels.pl";
 my $key;
 # sort so that we get a consistent assignment for nodes with multiple labels 
 foreach $label (sort keys %external_labels) {
-  $key = $external_labels{$label};
-  $key =~ s|^/||;
-  $nodes{$key} = $label;
+  #
+  # If the label can't be used as a filename on non-Unix platforms,
+  # skip it.  Such labels may be used internally within the documentation,
+  # but will never be used for filename generation.
+  #
+  if ($label =~ /^([-.a-zA-Z0-9]+)$/) {
+    $key = $external_labels{$label};
+    $key =~ s|^/||;
+    $nodes{$key} = $label;
+  }
 }
 
 # This adds the "internal" labels added for indexing.  These labels will not
