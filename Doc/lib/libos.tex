@@ -531,6 +531,7 @@ The following data items are available for use in constructing the
 Options for the \var{flag} argument to the \function{open()} function.
 These can be bit-wise OR'd together.
 Availability: Macintosh, \UNIX, Windows.
+% XXX O_NDELAY, O_NONBLOCK, O_DSYNC, O_RSYNC, O_SYNC, O_NOCTTY are not on Windows.
 \end{datadesc}
 
 \begin{datadesc}{O_BINARY}
@@ -540,6 +541,16 @@ Availability: Macintosh, Windows.
 % XXX need to check on the availability of this one.
 \end{datadesc}
 
+\begin{datadesc}{O_NOINHERIT}
+\dataline{O_SHORT_LIVED}
+\dataline{O_TEMPORARY}
+\dataline{O_RANDOM}
+\dataline{O_SEQUENTIAL}
+\dataline{O_TEXT}
+Options for the \var{flag} argument to the \function{open()} function.
+These can be bit-wise OR'd together.
+Availability: Windows.
+\end{datadesc}
 
 \subsection{Files and Directories \label{os-file-dir}}
 
