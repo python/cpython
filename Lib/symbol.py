@@ -68,13 +68,14 @@ subscript = 310
 sliceop = 311
 exprlist = 312
 testlist = 313
-dictmaker = 314
-classdef = 315
-arglist = 316
-argument = 317
-list_iter = 318
-list_for = 319
-list_if = 320
+testlist_safe = 314
+dictmaker = 315
+classdef = 316
+arglist = 317
+argument = 318
+list_iter = 319
+list_for = 320
+list_if = 321
 #--end constants--
 
 sym_name = {}
