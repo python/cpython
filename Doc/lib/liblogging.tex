@@ -366,7 +366,7 @@ method in subclasses needs to call \method{Handler.__init__()}.
 \begin{methoddesc}{__init__}{level=\constant{NOTSET}}
 Initializes the \class{Handler} instance by setting its level, setting
 the list of filters to the empty list and creating a lock (using
-\method{getLock()}) for serializing access to an I/O mechanism.
+\method{createLock()}) for serializing access to an I/O mechanism.
 \end{methoddesc}
 
 \begin{methoddesc}{createLock}{}
