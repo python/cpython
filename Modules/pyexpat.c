@@ -6,6 +6,14 @@
 #include "expat.h"
 
 #ifndef PyDoc_STRVAR
+
+/*
+ * fdrake says:
+ * Don't change the PyDoc_STR macro definition to (str), because
+ * '''the parentheses cause compile failures
+ * ("non-constant static initializer" or something like that)
+ * on some platforms (Irix?)'''
+ */
 #define PyDoc_STR(str)         str
 #define PyDoc_VAR(name)        static char name[]
 #define PyDoc_STRVAR(name,str) PyDoc_VAR(name) = PyDoc_STR(str)
@@ -14,6 +22,7 @@
 #if (PY_MAJOR_VERSION == 2 && PY_MINOR_VERSION < 2)
 /* In Python 2.0 and  2.1, disabling Unicode was not possible. */
 #define Py_USING_UNICODE
+#define NOFIX_TRACE
 #endif
 
 enum HandlerTypes {
@@ -38,6 +47,7 @@ enum HandlerTypes {
     XmlDecl,
     ElementDecl,
     AttlistDecl,
+    SkippedEntity,
     _DummyDecl
 };
 
@@ -56,6 +66,7 @@ typedef struct {
     int ordered_attributes;     /* Return attributes as a list. */
     int specified_attributes;   /* Report only specified attributes. */
     int in_callback;            /* Is a callback active? */
+    int ns_prefixes;            /* Namespace-triplets mode? */
     XML_Char *buffer;           /* Buffer used when accumulating characters */
                                 /* NULL if not enabled */
     int buffer_size;            /* Size of buffer, in XML_Char units */
@@ -100,14 +111,13 @@ set_error_attr(PyObject *err, char *name, int value)
  * information.  Always returns NULL.
  */
 static PyObject *
-set_error(xmlparseobject *self)
+set_error(xmlparseobject *self, enum XML_Error code)
 {
     PyObject *err;
     char buffer[256];
     XML_Parser parser = self->itself;
     int lineno = XML_GetErrorLineNumber(parser);
     int column = XML_GetErrorColumnNumber(parser);
-    enum XML_Error code = XML_GetErrorCode(parser);
 
     /* There is no risk of overflowing this buffer, since
        even for 64-bit integers, there is sufficient space. */
@@ -207,10 +217,25 @@ conv_string_len_to_utf8(const XML_Char *str, int len)
 
 static void clear_handlers(xmlparseobject *self, int initial);
 
+/* This handler is used when an error has been detected, in the hope
+   that actual parsing can be terminated early.  This will only help
+   if an external entity reference is encountered. */
+static int
+error_external_entity_ref_handler(XML_Parser parser,
+                                  const XML_Char *context,
+                                  const XML_Char *base,
+                                  const XML_Char *systemId,
+                                  const XML_Char *publicId)
+{
+    return 0;
+}
+
 static void
 flag_error(xmlparseobject *self)
 {
     clear_handlers(self, 0);
+    XML_SetExternalEntityRefHandler(self->itself,
+                                    error_external_entity_ref_handler);
 }
 
 static PyCodeObject*
@@ -264,6 +289,7 @@ getcode(enum HandlerTypes slot, char* func_name, int lineno)
     return NULL;
 }
 
+#ifndef NOFIX_TRACE
 static int
 trace_frame(PyThreadState *tstate, PyFrameObject *f, int code, PyObject *val)
 {
@@ -290,6 +316,7 @@ trace_frame(PyThreadState *tstate, PyFrameObject *f, int code, PyObject *val)
     }	
     return result;
 }
+#endif
 
 static PyObject*
 call_with_frame(PyCodeObject *c, PyObject* func, PyObject* args)
@@ -310,19 +337,23 @@ call_with_frame(PyCodeObject *c, PyObject* func, PyObject* args)
     if (f == NULL)
         return NULL;
     tstate->frame = f;
+#ifndef NOFIX_TRACE
     if (trace_frame(tstate, f, PyTrace_CALL, Py_None)) {
 	Py_DECREF(f);
 	return NULL;
     }
+#endif
     res = PyEval_CallObject(func, args);
     if (res == NULL && tstate->curexc_traceback == NULL)
         PyTraceBack_Here(f);
+#ifndef NOFIX_TRACE
     else {
 	if (trace_frame(tstate, f, PyTrace_RETURN, res)) {
 	    Py_XDECREF(res);
 	    res = NULL;
 	}
     }
+#endif
     tstate->frame = f->f_back;
     Py_DECREF(f);
     return res;
@@ -331,7 +362,7 @@ call_with_frame(PyCodeObject *c, PyObject* func, PyObject* args)
 #ifndef Py_USING_UNICODE
 #define STRING_CONV_FUNC conv_string_to_utf8
 #else
-/* Python 2.0 and later versions */
+/* Python 2.0 and later versions, when built with Unicode support */
 #define STRING_CONV_FUNC (self->returns_unicode \
                           ? conv_string_to_unicode : conv_string_to_utf8)
 #endif
@@ -690,6 +721,13 @@ VOID_HANDLER(AttlistDecl,
               STRING_CONV_FUNC,att_type, STRING_CONV_FUNC,dflt,
               isrequired))
 
+VOID_HANDLER(SkippedEntity,
+             (void *userData,
+              const XML_Char *entityName,
+              int is_parameter_entity),
+             ("Ni",
+              string_intern(self, entityName), is_parameter_entity))
+
 VOID_HANDLER(NotationDecl,
 		(void *userData,
 			const XML_Char *notationName,
@@ -784,7 +822,7 @@ get_parse_result(xmlparseobject *self, int rv)
         return NULL;
     }
     if (rv == 0) {
-        return set_error(self);
+        return set_error(self, XML_GetErrorCode(self->itself));
     }
     if (flush_character_buffer(self) < 0) {
         return NULL;
@@ -1023,6 +1061,7 @@ xmlparse_ExternalEntityParserCreate(xmlparseobject *self, PyObject *args)
     new_parser->ordered_attributes = self->ordered_attributes;
     new_parser->specified_attributes = self->specified_attributes;
     new_parser->in_callback = 0;
+    new_parser->ns_prefixes = self->ns_prefixes;
     new_parser->itself = XML_ExternalEntityParserCreate(self->itself, context,
 							encoding);
     new_parser->handlers = 0;
@@ -1083,22 +1122,50 @@ xmlparse_SetParamEntityParsing(xmlparseobject *p, PyObject* args)
     return PyInt_FromLong(flag);
 }
 
+PyDoc_STRVAR(xmlparse_UseForeignDTD__doc__,
+"UseForeignDTD([flag])\n\
+Allows the application to provide an artificial external subset if one is\n\
+not specified as part of the document instance.  This readily allows the\n\
+use of a 'default' document type controlled by the application, while still\n\
+getting the advantage of providing document type information to the parser.\n\
+'flag' defaults to True if not provided.");
+
+static PyObject *
+xmlparse_UseForeignDTD(xmlparseobject *self, PyObject *args)
+{
+    PyObject *flagobj = NULL;
+    XML_Bool flag = XML_TRUE;
+    enum XML_Error rc;
+    if (!PyArg_ParseTuple(args, "|O:UseForeignDTD", &flagobj))
+        return NULL;
+    if (flagobj != NULL)
+        flag = PyObject_IsTrue(flagobj) ? XML_TRUE : XML_FALSE;
+    rc = XML_UseForeignDTD(self->itself, flag);
+    if (rc != XML_ERROR_NONE) {
+        return set_error(self, rc);
+    }
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
 static struct PyMethodDef xmlparse_methods[] = {
     {"Parse",	  (PyCFunction)xmlparse_Parse,
 		  METH_VARARGS,	xmlparse_Parse__doc__},
     {"ParseFile", (PyCFunction)xmlparse_ParseFile,
 		  METH_VARARGS,	xmlparse_ParseFile__doc__},
     {"SetBase",   (PyCFunction)xmlparse_SetBase,
-		  METH_VARARGS,      xmlparse_SetBase__doc__},
+		  METH_VARARGS, xmlparse_SetBase__doc__},
     {"GetBase",   (PyCFunction)xmlparse_GetBase,
-		  METH_VARARGS,      xmlparse_GetBase__doc__},
+		  METH_VARARGS, xmlparse_GetBase__doc__},
     {"ExternalEntityParserCreate", (PyCFunction)xmlparse_ExternalEntityParserCreate,
-	 	  METH_VARARGS,      xmlparse_ExternalEntityParserCreate__doc__},
+	 	  METH_VARARGS, xmlparse_ExternalEntityParserCreate__doc__},
     {"SetParamEntityParsing", (PyCFunction)xmlparse_SetParamEntityParsing,
 		  METH_VARARGS, xmlparse_SetParamEntityParsing__doc__},
     {"GetInputContext", (PyCFunction)xmlparse_GetInputContext,
 		  METH_VARARGS, xmlparse_GetInputContext__doc__},
-	{NULL,		NULL}		/* sentinel */
+    {"UseForeignDTD", (PyCFunction)xmlparse_UseForeignDTD,
+		  METH_VARARGS, xmlparse_UseForeignDTD__doc__},
+    {NULL,	  NULL}		/* sentinel */
 };
 
 /* ---------- */
@@ -1184,6 +1251,7 @@ newxmlparseobject(char *encoding, char *namespace_separator, PyObject *intern)
     self->ordered_attributes = 0;
     self->specified_attributes = 0;
     self->in_callback = 0;
+    self->ns_prefixes = 0;
     self->handlers = NULL;
     if (namespace_separator != NULL) {
         self->itself = XML_ParserCreateNS(encoding, *namespace_separator);
@@ -1315,6 +1383,8 @@ xmlparse_getattr(xmlparseobject *self, char *name)
         if (strcmp(name, "buffer_used") == 0)
             return PyInt_FromLong((long) self->buffer_used);
     }
+    if (strcmp(name, "namespace_prefixes") == 0)
+        return get_pybool(self->ns_prefixes);
     if (strcmp(name, "ordered_attributes") == 0)
         return get_pybool(self->ordered_attributes);
     if (strcmp(name, "returns_unicode") == 0)
@@ -1333,12 +1403,12 @@ xmlparse_getattr(xmlparseobject *self, char *name)
     }
 
 #define APPEND(list, str)				\
-	do {						\
-		PyObject *o = PyString_FromString(str);	\
-		if (o != NULL)				\
-			PyList_Append(list, o);		\
-		Py_XDECREF(o);				\
-	} while (0)
+        do {						\
+                PyObject *o = PyString_FromString(str);	\
+                if (o != NULL)				\
+        	        PyList_Append(list, o);		\
+                Py_XDECREF(o);				\
+        } while (0)
 
     if (strcmp(name, "__members__") == 0) {
         int i;
@@ -1356,6 +1426,7 @@ xmlparse_getattr(xmlparseobject *self, char *name)
         APPEND(rc, "buffer_size");
         APPEND(rc, "buffer_text");
         APPEND(rc, "buffer_used");
+        APPEND(rc, "namespace_prefixes");
         APPEND(rc, "ordered_attributes");
         APPEND(rc, "returns_unicode");
         APPEND(rc, "specified_attributes");
@@ -1414,6 +1485,14 @@ xmlparse_setattr(xmlparseobject *self, char *name, PyObject *v)
             free(self->buffer);
             self->buffer = NULL;
         }
+        return 0;
+    }
+    if (strcmp(name, "namespace_prefixes") == 0) {
+        if (PyObject_IsTrue(v))
+            self->ns_prefixes = 1;
+        else
+            self->ns_prefixes = 0;
+        XML_SetReturnNSTriplet(self->itself, self->ns_prefixes);
         return 0;
     }
     if (strcmp(name, "ordered_attributes") == 0) {
@@ -1514,7 +1593,7 @@ static PyTypeObject Xmlparsetype = {
 #else
 	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_GC, /*tp_flags*/
 #endif
-	Xmlparsetype__doc__, /* Documentation string */
+	Xmlparsetype__doc__, /* tp_doc - Documentation string */
 #ifdef WITH_CYCLE_GC
 	(traverseproc)xmlparse_traverse,	/* tp_traverse */
 	(inquiry)xmlparse_clear		/* tp_clear */
@@ -1633,9 +1712,18 @@ get_version_string(void)
 #define MODULE_INITFUNC initpyexpat
 #endif
 
+#ifndef PyMODINIT_FUNC
+#   ifdef MS_WINDOWS
+#       define PyMODINIT_FUNC __declspec(dllexport) void
+#   else
+#       define PyMODINIT_FUNC void
+#   endif
+#endif
+
 PyMODINIT_FUNC MODULE_INITFUNC(void);  /* avoid compiler warnings */
 
-PyMODINIT_FUNC MODULE_INITFUNC(void)
+PyMODINIT_FUNC
+MODULE_INITFUNC(void)
 {
     PyObject *m, *d;
     PyObject *errmod_name = PyString_FromString(MODULE_NAME ".errors");
@@ -1713,6 +1801,35 @@ PyMODINIT_FUNC MODULE_INITFUNC(void)
     if (errors_module == NULL || model_module == NULL)
         /* Don't core dump later! */
         return;
+    
+    {
+        const XML_Feature *features = XML_GetFeatureList();
+        PyObject *list = PyList_New(0);
+        if (list == NULL)
+            /* just ignore it */
+            PyErr_Clear();
+        else {
+            int i = 0;
+            for (; features[i].feature != XML_FEATURE_END; ++i) {
+                int ok;
+                PyObject *item = Py_BuildValue("si", features[i].name,
+                                               features[i].value);
+                if (item == NULL) {
+                    Py_DECREF(list);
+                    list = NULL;
+                    break;
+                }
+                ok = PyList_Append(list, item);
+                Py_DECREF(item);
+                if (ok < 0) {
+                    PyErr_Clear();
+                    break;
+                }
+            }
+            if (list != NULL)
+                PyModule_AddObject(m, "features", list);
+        }
+    }
 
 #define MYCONST(name) \
     PyModule_AddStringConstant(errors_module, #name, \
@@ -1852,6 +1969,9 @@ static struct HandlerInfo handler_info[] = {
     {"AttlistDeclHandler",
      (xmlhandlersetter)XML_SetAttlistDeclHandler,
      (xmlhandler)my_AttlistDeclHandler},
+    {"SkippedEntityHandler",
+     (xmlhandlersetter)XML_SetSkippedEntityHandler,
+     (xmlhandler)my_SkippedEntityHandler},
 
     {NULL, NULL, NULL} /* sentinel */
 };
