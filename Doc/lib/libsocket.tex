@@ -189,60 +189,59 @@ Socket objects have the following methods.  Except for
 \method{makefile()} these correspond to \UNIX{} system calls
 applicable to sockets.
 
-\setindexsubitem{(socket method)}
-\begin{funcdesc}{accept}{}
+\begin{methoddesc}[socket]{accept}{}
 Accept a connection.
 The socket must be bound to an address and listening for connections.
 The return value is a pair \code{(\var{conn}, \var{address})}
 where \var{conn} is a \emph{new} socket object usable to send and
 receive data on the connection, and \var{address} is the address bound
 to the socket on the other end of the connection.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{bind}{address}
+\begin{methoddesc}[socket]{bind}{address}
 Bind the socket to \var{address}.  The socket must not already be bound.
 (The format of \var{address} depends on the address family --- see above.)
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{close}{}
+\begin{methoddesc}[socket]{close}{}
 Close the socket.  All future operations on the socket object will fail.
 The remote end will receive no more data (after queued data is flushed).
 Sockets are automatically closed when they are garbage-collected.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{connect}{address}
+\begin{methoddesc}[socket]{connect}{address}
 Connect to a remote socket at \var{address}.
 (The format of \var{address} depends on the address family --- see
 above.)
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{connect_ex}{address}
+\begin{methoddesc}[socket]{connect_ex}{address}
 Like \code{connect(\var{address})}, but return an error indicator
 instead of raising an exception.  The error indicator is 0 if the
 operation succeeded, otherwise the value of the \cdata{errno}
-variable.  This is useful e.g. for asynchronous connects.
-\end{funcdesc}
+variable.  This is useful, e.g., for asynchronous connects.
+\end{methoddesc}
 
-\begin{funcdesc}{fileno}{}
+\begin{methoddesc}[socket]{fileno}{}
 Return the socket's file descriptor (a small integer).  This is useful
 with \function{select.select()}.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{getpeername}{}
+\begin{methoddesc}[socket]{getpeername}{}
 Return the remote address to which the socket is connected.  This is
 useful to find out the port number of a remote IP socket, for instance.
 (The format of the address returned depends on the address family ---
 see above.)  On some systems this function is not supported.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{getsockname}{}
+\begin{methoddesc}[socket]{getsockname}{}
 Return the socket's own address.  This is useful to find out the port
 number of an IP socket, for instance.
 (The format of the address returned depends on the address family ---
 see above.)
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{getsockopt}{level, optname\optional{, buflen}}
+\begin{methoddesc}[socket]{getsockopt}{level, optname\optional{, buflen}}
 Return the value of the given socket option (see the \UNIX{} man page
 \manpage{getsockopt}{2}).  The needed symbolic constants
 (\constant{SO_*} etc.) are defined in this module.  If \var{buflen}
@@ -252,15 +251,15 @@ the maximum length of the buffer used to receive the option in, and
 this buffer is returned as a string.  It is up to the caller to decode
 the contents of the buffer (see the optional built-in module
 \module{struct} for a way to decode C structures encoded as strings).
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{listen}{backlog}
+\begin{methoddesc}[socket]{listen}{backlog}
 Listen for connections made to the socket.  The \var{backlog} argument
 specifies the maximum number of queued connections and should be at
 least 1; the maximum value is system-dependent (usually 5).
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{makefile}{\optional{mode\optional{, bufsize}}}
+\begin{methoddesc}[socket]{makefile}{\optional{mode\optional{, bufsize}}}
 Return a \dfn{file object} associated with the socket.  (File objects
 were described earlier in \ref{bltin-file-objects}, ``File Objects.'')
 The file object references a \cfunction{dup()}ped version of the
@@ -268,49 +267,49 @@ socket file descriptor, so the file object and socket object may be
 closed or garbage-collected independently.  The optional \var{mode}
 and \var{bufsize} arguments are interpreted the same way as by the
 built-in \function{open()} function.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{recv}{bufsize\optional{, flags}}
+\begin{methoddesc}[socket]{recv}{bufsize\optional{, flags}}
 Receive data from the socket.  The return value is a string representing
 the data received.  The maximum amount of data to be received
 at once is specified by \var{bufsize}.  See the \UNIX{} manual page
 \manpage{recv}{2} for the meaning of the optional argument
 \var{flags}; it defaults to zero.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{recvfrom}{bufsize\optional{, flags}}
+\begin{methoddesc}[socket]{recvfrom}{bufsize\optional{, flags}}
 Receive data from the socket.  The return value is a pair
 \code{(\var{string}, \var{address})} where \var{string} is a string
 representing the data received and \var{address} is the address of the
 socket sending the data.  The optional \var{flags} argument has the
 same meaning as for \method{recv()} above.
 (The format of \var{address} depends on the address family --- see above.)
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{send}{string\optional{, flags}}
+\begin{methoddesc}[socket]{send}{string\optional{, flags}}
 Send data to the socket.  The socket must be connected to a remote
 socket.  The optional \var{flags} argument has the same meaning as for
 \method{recv()} above.  Returns the number of bytes sent.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{sendto}{string\optional{, flags}, address}
+\begin{methoddesc}[socket]{sendto}{string\optional{, flags}, address}
 Send data to the socket.  The socket should not be connected to a
 remote socket, since the destination socket is specified by
 \var{address}.  The optional \var{flags} argument has the same
 meaning as for \method{recv()} above.  Return the number of bytes sent.
 (The format of \var{address} depends on the address family --- see above.)
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{setblocking}{flag}
+\begin{methoddesc}[socket]{setblocking}{flag}
 Set blocking or non-blocking mode of the socket: if \var{flag} is 0,
 the socket is set to non-blocking, else to blocking mode.  Initially
 all sockets are in blocking mode.  In non-blocking mode, if a
 \method{recv()} call doesn't find any data, or if a \code{send} call can't
 immediately dispose of the data, a \exception{error} exception is
 raised; in blocking mode, the calls block until they can proceed.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{setsockopt}{level, optname, value}
+\begin{methoddesc}[socket]{setsockopt}{level, optname, value}
 Set the value of the given socket option (see the \UNIX{} man page
 \manpage{setsockopt}{2}).  The needed symbolic constants are defined in
 the \module{socket} module (\code{SO_*} etc.).  The value can be an
@@ -319,14 +318,14 @@ up to the caller to ensure that the string contains the proper bits
 (see the optional built-in module
 \module{struct}\refbimodindex{struct} for a way to encode C structures
 as strings). 
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{shutdown}{how}
+\begin{methoddesc}[socket]{shutdown}{how}
 Shut down one or both halves of the connection.  If \var{how} is
 \code{0}, further receives are disallowed.  If \var{how} is \code{1},
 further sends are disallowed.  If \var{how} is \code{2}, further sends
 and receives are disallowed.
-\end{funcdesc}
+\end{methoddesc}
 
 Note that there are no methods \method{read()} or \method{write()};
 use \method{recv()} and \method{send()} without \var{flags} argument
