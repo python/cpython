@@ -972,6 +972,10 @@ files if \var{dir} is omitted or \code{None}.  If given and not
 filename.  Applications are responsible for properly creating and
 managing files created using paths returned by \function{tempnam()};
 no automatic cleanup is provided.
+On \UNIX, the environment variable \envvar{TMPDIR} overrides
+\var{dir}, while on Windows the \envvar{TMP} is used.  The specific
+behavior of this function depends on the C library implementation;
+some aspects are underspecified in system documentation.
 \warning{Use of \function{tempnam()} is vulnerable to symlink attacks;
 consider using \function{tmpfile()} instead.}
 Availability: \UNIX, Windows.
