@@ -29,9 +29,11 @@ DL_IMPORT(PyThreadState *) Py_NewInterpreter(void);
 DL_IMPORT(void) Py_EndInterpreter(PyThreadState *);
 
 DL_IMPORT(int) PyRun_AnyFile(FILE *, char *);
+DL_IMPORT(int) PyRun_AnyFileEx(FILE *, char *, int);
 
 DL_IMPORT(int) PyRun_SimpleString(char *);
 DL_IMPORT(int) PyRun_SimpleFile(FILE *, char *);
+DL_IMPORT(int) PyRun_SimpleFileEx(FILE *, char *, int);
 DL_IMPORT(int) PyRun_InteractiveOne(FILE *, char *);
 DL_IMPORT(int) PyRun_InteractiveLoop(FILE *, char *);
 
@@ -40,6 +42,8 @@ DL_IMPORT(struct _node *) PyParser_SimpleParseFile(FILE *, char *, int);
 
 DL_IMPORT(PyObject *) PyRun_String(char *, int, PyObject *, PyObject *);
 DL_IMPORT(PyObject *) PyRun_File(FILE *, char *, int, PyObject *, PyObject *);
+DL_IMPORT(PyObject *) PyRun_FileEx(FILE *, char *, int,
+				   PyObject *, PyObject *, int);
 
 DL_IMPORT(PyObject *) Py_CompileString(char *, char *, int);
 

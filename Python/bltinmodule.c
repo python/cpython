@@ -815,10 +815,7 @@ builtin_execfile(PyObject *self, PyObject *args)
 		PyErr_SetFromErrno(PyExc_IOError);
 		return NULL;
 	}
-	res = PyRun_File(fp, filename, Py_file_input, globals, locals);
-	Py_BEGIN_ALLOW_THREADS
-	fclose(fp);
-	Py_END_ALLOW_THREADS
+	res = PyRun_FileEx(fp, filename, Py_file_input, globals, locals, 1);
 	return res;
 }
 

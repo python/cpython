@@ -450,12 +450,22 @@ initsite(void)
 int
 PyRun_AnyFile(FILE *fp, char *filename)
 {
+	return PyRun_AnyFileEx(fp, filename, 0);
+}
+
+int
+PyRun_AnyFileEx(FILE *fp, char *filename, int closeit)
+{
 	if (filename == NULL)
 		filename = "???";
-	if (Py_FdIsInteractive(fp, filename))
-		return PyRun_InteractiveLoop(fp, filename);
+	if (Py_FdIsInteractive(fp, filename)) {
+		int err = PyRun_InteractiveLoop(fp, filename);
+		if (closeit)
+			fclose(fp);
+		return err;
+	}
 	else
-		return PyRun_SimpleFile(fp, filename);
+		return PyRun_SimpleFileEx(fp, filename, closeit);
 }
 
 int
@@ -542,6 +552,12 @@ PyRun_InteractiveOne(FILE *fp, char *filename)
 int
 PyRun_SimpleFile(FILE *fp, char *filename)
 {
+	return PyRun_SimpleFileEx(fp, filename, 0);
+}
+
+int
+PyRun_SimpleFileEx(FILE *fp, char *filename, int closeit)
+{
 	PyObject *m, *d, *v;
 	char *ext;
 
@@ -558,7 +574,8 @@ PyRun_SimpleFile(FILE *fp, char *filename)
 #endif /* macintosh */
 		) {
 		/* Try to run a pyc file. First, re-open in binary */
-		/* Don't close, done in main: fclose(fp); */
+		if (closeit)
+			fclose(fp);
 		if( (fp = fopen(filename, "rb")) == NULL ) {
 			fprintf(stderr, "python: Can't reopen .pyc file\n");
 			return -1;
@@ -568,7 +585,7 @@ PyRun_SimpleFile(FILE *fp, char *filename)
 			Py_OptimizeFlag = 1;
 		v = run_pyc_file(fp, filename, d, d);
 	} else {
-		v = PyRun_File(fp, filename, Py_file_input, d, d);
+		v = PyRun_FileEx(fp, filename, Py_file_input, d, d, closeit);
 	}
 	if (v == NULL) {
 		PyErr_Print();
@@ -845,8 +862,17 @@ PyObject *
 PyRun_File(FILE *fp, char *filename, int start, PyObject *globals,
 	   PyObject *locals)
 {
-	return run_err_node(PyParser_SimpleParseFile(fp, filename, start),
-			    filename, globals, locals);
+	PyRun_FileEx(fp, filename, start, globals, locals, 0);
+}
+
+PyObject *
+PyRun_FileEx(FILE *fp, char *filename, int start, PyObject *globals,
+	   PyObject *locals, int closeit)
+{
+	node *n = PyParser_SimpleParseFile(fp, filename, start);
+	if (closeit)
+		fclose(fp);
+	return run_err_node(n, filename, globals, locals);
 }
 
 static PyObject *
