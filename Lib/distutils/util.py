@@ -84,6 +84,8 @@ def convert_path (pathname):
     """
     if os.sep == '/':
         return pathname
+    if not pathname:
+        return pathname
     if pathname[0] == '/':
         raise ValueError, "path '%s' cannot be absolute" % pathname
     if pathname[-1] == '/':
