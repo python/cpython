@@ -3,6 +3,14 @@ What's New in Python 2.1 alpha 1?
 
 Core language, builtins, and interpreter
 
+- The xrange() object implementation has been improved so that
+  xrange(sys.maxint) can be used on 64-bit platforms.  There's still a
+  limitation that in this case len(xrange(sys.maxint)) can't be
+  calculated, but the common idiom "for i in xrange(sys.maxint)" will
+  work fine as long as the index i doesn't actually reach 2**31.
+  (Python uses regular ints for sequence and string indices; fixing
+  that is much more work.)
+
 - Two changes to from...import:
 
   1) "from M import X" now works even if M is not a real module; it's
