@@ -3621,6 +3621,37 @@ init_socket(void)
 #ifdef	TCP_MAXSEG
 	insint(d, "TCP_MAXSEG", TCP_MAXSEG);
 #endif
+#ifdef	TCP_CORK
+	insint(d, "TCP_CORK", TCP_CORK);
+#endif
+#ifdef	TCP_KEEPIDLE
+	insint(d, "TCP_KEEPIDLE", TCP_KEEPIDLE);
+#endif
+#ifdef	TCP_KEEPINTVL
+	insint(d, "TCP_KEEPINTVL", TCP_KEEPINTVL);
+#endif
+#ifdef	TCP_KEEPCNT
+	insint(d, "TCP_KEEPCNT", TCP_KEEPCNT);
+#endif
+#ifdef	TCP_SYNCNT
+	insint(d, "TCP_SYNCNT", TCP_SYNCNT);
+#endif
+#ifdef	TCP_LINGER2
+	insint(d, "TCP_LINGER2", TCP_LINGER2);
+#endif
+#ifdef	TCP_DEFER_ACCEPT
+	insint(d, "TCP_DEFER_ACCEPT", TCP_DEFER_ACCEPT);
+#endif
+#ifdef	TCP_WINDOW_CLAMP
+	insint(d, "TCP_WINDOW_CLAMP", TCP_WINDOW_CLAMP);
+#endif
+#ifdef	TCP_INFO
+	insint(d, "TCP_INFO", TCP_INFO);
+#endif
+#ifdef	TCP_QUICKACK
+	insint(d, "TCP_QUICKACK", TCP_QUICKACK);
+#endif
+
 
 	/* IPX options */
 #ifdef	IPX_TYPE
