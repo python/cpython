@@ -427,6 +427,28 @@ root:*:0:0:System Administrator:/var/root:/bin/tcsh
 
 
 %======================================================================
+\section{PEP 324: New subprocess Module}
+
+The standard library provides a number of ways to 
+execute a subprocess, each of which offers different features and 
+levels of difficulty.  \function{os.system(\var{command})} is easy, but 
+slow -- it runs a shell process which executes the command -- 
+and dangerous -- you have to be careful about escaping metacharacters.
+The \module{popen2} module offers classes that can capture 
+standard output and standard error from the subprocess, but the naming 
+is confusing.
+
+The \module{subprocess} module cleans all this up, providing a unified 
+interface that offers all the features you might need.
+
+% XXX finish writing this section by adding some examples
+
+
+\begin{seealso}
+\seepep{324}{subprocess - New process module}{Written and implemented by Peter Astrand, with assistance from Fredrik Lundh and others.}
+\end{seealso}
+
+%======================================================================
 \section{PEP 327: Decimal Data Type}
 
 Python has always supported floating-point (FP) numbers as a data
