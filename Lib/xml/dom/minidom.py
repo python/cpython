@@ -613,24 +613,76 @@ class ProcessingInstruction(Node):
     def writexml(self, writer, indent="", addindent="", newl=""):
         writer.write("%s<?%s %s?>%s" % (indent,self.target, self.data, newl))
 
-class Text(Node):
-    nodeType = Node.TEXT_NODE
-    nodeName = "#text"
-    attributes = None
-    childNodeTypes = ()
-
+class CharacterData(Node):
     def __init__(self, data):
         if type(data) not in _StringTypes:
             raise TypeError, "node contents must be a string"
         Node.__init__(self)
         self.data = self.nodeValue = data
 
+    def __getattr__(self, name):
+        if name == "length":
+            return len(self.data)
+
     def __repr__(self):
         if len(self.data) > 10:
             dotdotdot = "..."
         else:
             dotdotdot = ""
-        return "<DOM Text node \"%s%s\">" % (self.data[0:10], dotdotdot)
+        return "<DOM %s node \"%s%s\">" % (
+            self.__class__.__name__, self.data[0:10], dotdotdot)
+
+    def substringData(self, offset, count):
+        if offset < 0:
+            raise xml.dom.IndexSizeErr("offset cannot be negative")
+        if offset >= len(self.data):
+            raise xml.dom.IndexSizeErr("offset cannot be beyond end of data")
+        if count < 0:
+            raise xml.dom.IndexSizeErr("count cannot be negative")
+        return self.data[offset:offset+count]
+
+    def appendData(self, arg):
+        self.data = self.data + arg
+        self.nodeValue = self.data
+
+    def insertData(self, offset, arg):
+        if offset < 0:
+            raise xml.dom.IndexSizeErr("offset cannot be negative")
+        if offset >= len(self.data):
+            raise xml.dom.IndexSizeErr("offset cannot be beyond end of data")
+        if arg:
+            self.data = "%s%s%s" % (
+                self.data[:offset], arg, self.data[offset:])
+            self.nodeValue = self.data
+
+    def deleteData(self, offset, count):
+        if offset < 0:
+            raise xml.dom.IndexSizeErr("offset cannot be negative")
+        if offset >= len(self.data):
+            raise xml.dom.IndexSizeErr("offset cannot be beyond end of data")
+        if count < 0:
+            raise xml.dom.IndexSizeErr("count cannot be negative")
+        if count:
+            self.data = self.data[:offset] + self.data[offset+count:]
+            self.nodeValue = self.data
+
+    def replaceData(self, offset, count, arg):
+        if offset < 0:
+            raise xml.dom.IndexSizeErr("offset cannot be negative")
+        if offset >= len(self.data):
+            raise xml.dom.IndexSizeErr("offset cannot be beyond end of data")
+        if count < 0:
+            raise xml.dom.IndexSizeErr("count cannot be negative")
+        if count:
+            self.data = "%s%s%s" % (
+                self.data[:offset], arg, self.data[offset+count:])
+            self.nodeValue = self.data
+
+class Text(CharacterData):
+    nodeType = Node.TEXT_NODE
+    nodeName = "#text"
+    attributes = None
+    childNodeTypes = ()
 
     def splitText(self, offset):
         if offset < 0 or offset > len(self.data):
@@ -647,6 +699,15 @@ class Text(Node):
 
     def writexml(self, writer, indent="", addindent="", newl=""):
         _write_data(writer, "%s%s%s"%(indent, self.data, newl))
+
+
+class CDATASection(Text):
+    nodeType = Node.CDATA_SECTION_NODE
+    nodeName = "#cdata-section"
+
+    def writexml(self, writer, indent="", addindent="", newl=""):
+        _write_data(writer, "<![CDATA[%s]]>" % self.data)
+
 
 def _nssplit(qualifiedName):
     fields = _string.split(qualifiedName, ':', 1)
@@ -780,6 +841,11 @@ class Document(Node):
         t = Text(data)
         t.ownerDocument = self
         return t
+
+    def createCDATASection(self, data):
+        c = CDATASection(data)
+        c.ownerDocument = self
+        return c
 
     def createComment(self, data):
         c = Comment(data)
