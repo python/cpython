@@ -7,6 +7,11 @@ import struct
 import traceback
 from types import InstanceType, StringType
 
+if hasattr(Win, "FrontNonFloatingWindow"):
+	MyFrontWindow = Win.FrontNonFloatingWindow
+else:
+	MyFrontWindow = Win.FrontWindow
+
 
 class Window(FrameWork.Window, Wbase.SelectableWidget):
 	
@@ -488,9 +493,9 @@ class ModalDialog(Dialog):
 	
 	def do_key(self, event):
 		(what, message, when, where, modifiers) = event
-		w = Win.FrontWindow()
-		if w <> self.wid:
-			return
+		#w = Win.FrontWindow()
+		#if w <> self.wid:
+		#	return
 		c = chr(message & Events.charCodeMask)
 		if modifiers & Events.cmdKey:
 			self.app.checkmenus(self)
@@ -552,7 +557,7 @@ def FrontWindowInsert(stuff):
 		raise TypeError, 'string expected'
 	import W
 	app = W.getapplication()
-	wid = Win.FrontWindow()
+	wid = MyFrontWindow()
 	if wid and app._windows.has_key(wid):
 		window = app._windows[wid]
 		if hasattr(window, "insert"):

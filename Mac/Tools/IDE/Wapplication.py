@@ -6,8 +6,13 @@ import MacOS
 from Carbon import Events
 import traceback
 from types import *
-
 from Carbon import Menu; MenuToolbox = Menu; del Menu
+
+if hasattr(Win, "FrontNonFloatingWindow"):
+	MyFrontWindow = Win.FrontNonFloatingWindow
+else:
+	MyFrontWindow = Win.FrontWindow
+
 
 KILLUNKNOWNWINDOWS = 0  # Set to 0 for debugging.
 
@@ -115,7 +120,7 @@ class Application(FrameWork.Application):
 					break
 	
 	def do_frontWindowMethod(self, attr, *args):
-		wid = Win.FrontWindow()
+		wid = MyFrontWindow()
 		if wid and self._windows.has_key(wid):
 			window = self._windows[wid]
 			if hasattr(window, attr):
@@ -146,7 +151,7 @@ class Application(FrameWork.Application):
 		if keycode in self.fkeymaps.keys():		# JJS
 			ch = self.fkeymaps[keycode]
 			modifiers = modifiers | FrameWork.cmdKey
-		wid = Win.FrontWindow()
+		wid = MyFrontWindow()
 		if modifiers & FrameWork.cmdKey and not modifiers & FrameWork.shiftKey:
 			if wid and self._windows.has_key(wid):
 				self.checkmenus(self._windows[wid])
@@ -175,7 +180,7 @@ class Application(FrameWork.Application):
 		Qd.InitCursor()
 		(what, message, when, where, modifiers) = event
 		self.checkopenwindowsmenu()
-		wid = Win.FrontWindow()
+		wid = MyFrontWindow()
 		if wid and self._windows.has_key(wid):
 			self.checkmenus(self._windows[wid])
 		else:
@@ -209,7 +214,7 @@ class Application(FrameWork.Application):
 	def checkopenwindowsmenu(self):
 		if self._openwindowscheckmark:
 			self.openwindowsmenu.menu.CheckMenuItem(self._openwindowscheckmark, 0)
-		window = Win.FrontWindow()
+		window = MyFrontWindow()
 		if window:
 			for item, wid in self._openwindows.items():
 				if wid == window:
@@ -441,7 +446,7 @@ class Menu(FrameWork.Menu):
 	
 	def _getmenuhandler(self, callback):
 		menuhandler = None
-		wid = Win.FrontWindow()
+		wid = MyFrontWindow()
 		if wid and self.bar.parent._windows.has_key(wid):
 			window = self.bar.parent._windows[wid]
 			if hasattr(window, "domenu_" + callback):

@@ -27,6 +27,11 @@ import types
 
 import EasyDialogs
 
+try:
+	MyFrontWindow = FrontNonFloatingWindow
+except NameError:
+	MyFrontWindow = FrontWindow
+
 kHighLevelEvent = 23	# Don't know what header file this should come from
 SCROLLBARWIDTH = 16		# Again, not a clue...
 
@@ -348,7 +353,7 @@ class Application:
 				return
 		else:
 			# See whether the front window wants it
-			w = FrontWindow()
+			w = MyFrontWindow()
 			if w and self._windows.has_key(w):
 				window = self._windows[w]
 				try:
@@ -393,7 +398,7 @@ class Application:
 	
 	def do_suspendresume(self, event):
 		(what, message, when, where, modifiers) = event
-		wid = FrontWindow()
+		wid = MyFrontWindow()
 		if wid and self._windows.has_key(wid):
 			window = self._windows[wid]
 			window.do_activate(message & 1, event)
@@ -497,7 +502,7 @@ class MenuBar:
 			for i in range(len(menu.items)):
 				label, shortcut, callback, kind = menu.items[i]
 				if type(callback) == types.StringType:
-					wid = Win.FrontWindow()
+					wid = MyFrontWindow()
 					if wid and self.parent._windows.has_key(wid):
 						window = self.parent._windows[wid]
 						if hasattr(window, "domenu_" + callback):
@@ -589,7 +594,7 @@ class Menu:
 				menuhandler = callback
 			else: 
 				# callback is string
-				wid = Win.FrontWindow()
+				wid = MyFrontWindow()
 				if wid and self.bar.parent._windows.has_key(wid):
 					window = self.bar.parent._windows[wid]
 					if hasattr(window, "domenu_" + callback):
@@ -634,7 +639,7 @@ class PopupMenu(Menu):
 		id = (reply & 0xffff0000) >> 16
 		item = reply & 0xffff
 		if not window:
-			wid = Win.FrontWindow()
+			wid = MyFrontWindow()
 			try:
 				window = self.bar.parent._windows[wid]
 			except:
@@ -797,7 +802,7 @@ class Window:
 		# If we're not frontmost, select ourselves and wait for
 		# the activate event.
 		#
-		if FrontWindow() <> window:
+		if MyFrontWindow() <> window:
 			window.SelectWindow()
 			return
 		# We are. Handle the event.
@@ -846,7 +851,7 @@ class ControlsWindow(Window):
 		if DEBUG: print "control hit in", window, "on", control, "; pcode =", pcode
 
 	def do_inContent(self, partcode, window, event):
-		if FrontWindow() <> window:
+		if MyFrontWindow() <> window:
 			window.SelectWindow()
 			return
 		(what, message, when, where, modifiers) = event
