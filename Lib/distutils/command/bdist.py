@@ -8,6 +8,7 @@ distribution)."""
 __revision__ = "$Id$"
 
 import os, string
+from types import *
 from distutils.core import Command
 
 
@@ -25,6 +26,8 @@ class bdist (Command):
                        'nt': 'zip', }
 
     format_command = { 'gztar': 'bdist_dumb',
+                       'ztar':  'bdist_dumb',
+                       'tar':   'bdist_dumb',
                        'zip':   'bdist_dumb', }
 
 
