@@ -11,14 +11,14 @@
                           font-weight: bold }
 
 /* Implement both fixed-size and relative sizes: */
-small.xtiny             { font-size : xx-small }
-small.tiny              { font-size : x-small }
-small.scriptsize        { font-size : smaller }
-small.footnotesize      { font-size : small }
-big.xlarge              { font-size : large }
-big.xxlarge             { font-size : x-large }
-big.huge                { font-size : larger }
-big.xhuge               { font-size : xx-large }
+small.xtiny             { font-size : xx-small; }
+small.tiny              { font-size : x-small; }
+small.scriptsize        { font-size : smaller; }
+small.footnotesize      { font-size : small; }
+big.xlarge              { font-size : large; }
+big.xxlarge             { font-size : x-large; }
+big.huge                { font-size : larger; }
+big.xhuge               { font-size : xx-large; }
 
 /*
  * Document-specific styles come next;
@@ -37,38 +37,38 @@ a:visited               { color: #551a8b; }
 a:link                  { color: #0000bb; }
 
 h1, h2, h3, h4, h5, h6  { font-family: avantgarde, sans-serif;
-                          font-weight: bold }
-h1                      { font-size: 180% }
-h2                      { font-size: 150% }
-h3, h4                  { font-size: 120% }
-code, tt                { font-family: monospace }
+                          font-weight: bold; }
+h1                      { font-size: 180%; }
+h2                      { font-size: 150%; }
+h3, h4                  { font-size: 120%; }
+code, tt                { font-family: monospace; }
 var                     { font-family: times, serif;
                           font-style: italic;
-                          font-weight: normal }
+                          font-weight: normal; }
 
 .navigation td          { background-color: #99ccff;
                           font-weight: bold;
                           font-family: avantgarde, sans-serif;
-                          font-size: 110% }
+                          font-size: 110%; }
 
 .release-info           { font-style: italic; }
 
 .titlegraphic           { vertical-align: top; }
 
-.verbatim               { color: #00008b }
+.verbatim               { color: #00008b; }
 
-.email                  { font-family: avantgarde, sans-serif }
-.mimetype               { font-family: avantgarde, sans-serif }
-.newsgroup              { font-family: avantgarde, sans-serif }
-.url                    { font-family: avantgarde, sans-serif }
-.file                   { font-family: avantgarde, sans-serif }
+.email                  { font-family: avantgarde, sans-serif; }
+.mimetype               { font-family: avantgarde, sans-serif; }
+.newsgroup              { font-family: avantgarde, sans-serif; }
+.url                    { font-family: avantgarde, sans-serif; }
+.file                   { font-family: avantgarde, sans-serif; }
 
 .tableheader            { background-color: #99ccff;
                           font-family: avantgarde, sans-serif; }
 
-.refcount-info          { font-style: italic }
+.refcount-info          { font-style: italic; }
 .refcount-info .value   { font-weight: bold;
-                          color: #006600 }
+                          color: #006600; }
 
 /*
  * Some decoration for the "See also:" blocks, in part inspired by some of
@@ -77,12 +77,12 @@ var                     { font-family: times, serif;
  */
 .seealso                { background-color: #fffaf0;
                           border: thin solid black;
-                          padding: 4pt }
+                          padding: 4pt; }
 
-.seealso .heading       { font-size: 110% }
+.seealso .heading       { font-size: 110%; }
 
 /*
  * Class 'availability' is used for module availability statements at
  * the top of modules.
  */
-.availability .platform { font-weight: bold }
+.availability .platform { font-weight: bold; }
