@@ -664,6 +664,12 @@ f = Function(PixPatHandle, 'GetPixPat',
 )
 functions.append(f)
 
+f = Function(void, 'MakeRGBPat',
+    (PixPatHandle, 'pp', InMode),
+    (RGBColor_ptr, 'myColor', InMode),
+)
+functions.append(f)
+
 f = Function(void, 'FillCRect',
     (Rect_ptr, 'r', InMode),
     (PixPatHandle, 'pp', InMode),
@@ -704,8 +710,52 @@ f = Function(void, 'FillCPoly',
 )
 functions.append(f)
 
+f = Function(void, 'RGBForeColor',
+    (RGBColor_ptr, 'color', InMode),
+)
+functions.append(f)
+
+f = Function(void, 'RGBBackColor',
+    (RGBColor_ptr, 'color', InMode),
+)
+functions.append(f)
+
+f = Function(void, 'SetCPixel',
+    (short, 'h', InMode),
+    (short, 'v', InMode),
+    (RGBColor_ptr, 'cPix', InMode),
+)
+functions.append(f)
+
 f = Function(void, 'SetPortPix',
     (PixMapHandle, 'pm', InMode),
+)
+functions.append(f)
+
+f = Function(void, 'GetCPixel',
+    (short, 'h', InMode),
+    (short, 'v', InMode),
+    (RGBColor, 'cPix', OutMode),
+)
+functions.append(f)
+
+f = Function(void, 'GetForeColor',
+    (RGBColor, 'color', OutMode),
+)
+functions.append(f)
+
+f = Function(void, 'GetBackColor',
+    (RGBColor, 'color', OutMode),
+)
+functions.append(f)
+
+f = Function(void, 'OpColor',
+    (RGBColor_ptr, 'color', InMode),
+)
+functions.append(f)
+
+f = Function(void, 'HiliteColor',
+    (RGBColor_ptr, 'color', InMode),
 )
 functions.append(f)
 
@@ -714,6 +764,27 @@ f = Function(void, 'AllocCursor',
 functions.append(f)
 
 f = Function(long, 'GetCTSeed',
+)
+functions.append(f)
+
+f = Function(long, 'Color2Index',
+    (RGBColor_ptr, 'myColor', InMode),
+)
+functions.append(f)
+
+f = Function(void, 'Index2Color',
+    (long, 'index', InMode),
+    (RGBColor, 'aColor', OutMode),
+)
+functions.append(f)
+
+f = Function(void, 'InvertColor',
+    (RGBColor, 'myColor', OutMode),
+)
+functions.append(f)
+
+f = Function(Boolean, 'RealColor',
+    (RGBColor_ptr, 'color', InMode),
 )
 functions.append(f)
 

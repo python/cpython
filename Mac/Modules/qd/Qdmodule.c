@@ -46,6 +46,31 @@ extern PyObject *WinObj_WhichWindow(WindowPtr);
 
 #define resNotFound -192 /* Can't include <Errors.h> because of Python's "errors.h" */
 
+/*
+** Parse/generate RGB records
+*/
+PyObject *QdRGB_New(itself)
+	RGBColorPtr itself;
+{
+
+	return Py_BuildValue("lll", (long)itself->red, (long)itself->green, (long)itself->blue);
+}
+
+QdRGB_Convert(v, p_itself)
+	PyObject *v;
+	RGBColorPtr p_itself;
+{
+	long red, green, blue;
+	
+	if( !PyArg_ParseTuple(v, "lll", &red, &green, &blue) )
+		return 0;
+	p_itself->red = (unsigned short)red;
+	p_itself->green = (unsigned short)green;
+	p_itself->blue = (unsigned short)blue;
+	return 1;
+}
+
+
 static PyObject *Qd_Error;
 
 /* ---------------------- Object type GrafPort ---------------------- */
@@ -2238,6 +2263,24 @@ static PyObject *Qd_GetPixPat(_self, _args)
 	return _res;
 }
 
+static PyObject *Qd_MakeRGBPat(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	PixPatHandle pp;
+	RGBColor myColor;
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      ResObj_Convert, &pp,
+	                      QdRGB_Convert, &myColor))
+		return NULL;
+	MakeRGBPat(pp,
+	           &myColor);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
 static PyObject *Qd_FillCRect(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
@@ -2358,6 +2401,57 @@ static PyObject *Qd_FillCPoly(_self, _args)
 	return _res;
 }
 
+static PyObject *Qd_RGBForeColor(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	RGBColor color;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      QdRGB_Convert, &color))
+		return NULL;
+	RGBForeColor(&color);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Qd_RGBBackColor(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	RGBColor color;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      QdRGB_Convert, &color))
+		return NULL;
+	RGBBackColor(&color);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Qd_SetCPixel(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	short h;
+	short v;
+	RGBColor cPix;
+	if (!PyArg_ParseTuple(_args, "hhO&",
+	                      &h,
+	                      &v,
+	                      QdRGB_Convert, &cPix))
+		return NULL;
+	SetCPixel(h,
+	          v,
+	          &cPix);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
 static PyObject *Qd_SetPortPix(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
@@ -2368,6 +2462,84 @@ static PyObject *Qd_SetPortPix(_self, _args)
 	                      ResObj_Convert, &pm))
 		return NULL;
 	SetPortPix(pm);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Qd_GetCPixel(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	short h;
+	short v;
+	RGBColor cPix;
+	if (!PyArg_ParseTuple(_args, "hh",
+	                      &h,
+	                      &v))
+		return NULL;
+	GetCPixel(h,
+	          v,
+	          &cPix);
+	_res = Py_BuildValue("O&",
+	                     QdRGB_New, &cPix);
+	return _res;
+}
+
+static PyObject *Qd_GetForeColor(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	RGBColor color;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	GetForeColor(&color);
+	_res = Py_BuildValue("O&",
+	                     QdRGB_New, &color);
+	return _res;
+}
+
+static PyObject *Qd_GetBackColor(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	RGBColor color;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	GetBackColor(&color);
+	_res = Py_BuildValue("O&",
+	                     QdRGB_New, &color);
+	return _res;
+}
+
+static PyObject *Qd_OpColor(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	RGBColor color;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      QdRGB_Convert, &color))
+		return NULL;
+	OpColor(&color);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Qd_HiliteColor(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	RGBColor color;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      QdRGB_Convert, &color))
+		return NULL;
+	HiliteColor(&color);
 	Py_INCREF(Py_None);
 	_res = Py_None;
 	return _res;
@@ -2396,6 +2568,69 @@ static PyObject *Qd_GetCTSeed(_self, _args)
 		return NULL;
 	_rv = GetCTSeed();
 	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qd_Color2Index(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	long _rv;
+	RGBColor myColor;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      QdRGB_Convert, &myColor))
+		return NULL;
+	_rv = Color2Index(&myColor);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qd_Index2Color(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	long index;
+	RGBColor aColor;
+	if (!PyArg_ParseTuple(_args, "l",
+	                      &index))
+		return NULL;
+	Index2Color(index,
+	            &aColor);
+	_res = Py_BuildValue("O&",
+	                     QdRGB_New, &aColor);
+	return _res;
+}
+
+static PyObject *Qd_InvertColor(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	RGBColor myColor;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	InvertColor(&myColor);
+	_res = Py_BuildValue("O&",
+	                     QdRGB_New, &myColor);
+	return _res;
+}
+
+static PyObject *Qd_RealColor(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	Boolean _rv;
+	RGBColor color;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      QdRGB_Convert, &color))
+		return NULL;
+	_rv = RealColor(&color);
+	_res = Py_BuildValue("b",
 	                     _rv);
 	return _res;
 }
@@ -3067,6 +3302,8 @@ static PyMethodDef Qd_methods[] = {
 	 "(PixPatHandle pp) -> None"},
 	{"GetPixPat", (PyCFunction)Qd_GetPixPat, 1,
 	 "(short patID) -> (PixPatHandle _rv)"},
+	{"MakeRGBPat", (PyCFunction)Qd_MakeRGBPat, 1,
+	 "(PixPatHandle pp, RGBColor myColor) -> None"},
 	{"FillCRect", (PyCFunction)Qd_FillCRect, 1,
 	 "(Rect r, PixPatHandle pp) -> None"},
 	{"FillCOval", (PyCFunction)Qd_FillCOval, 1,
@@ -3079,12 +3316,36 @@ static PyMethodDef Qd_methods[] = {
 	 "(RgnHandle rgn, PixPatHandle pp) -> None"},
 	{"FillCPoly", (PyCFunction)Qd_FillCPoly, 1,
 	 "(PolyHandle poly, PixPatHandle pp) -> None"},
+	{"RGBForeColor", (PyCFunction)Qd_RGBForeColor, 1,
+	 "(RGBColor color) -> None"},
+	{"RGBBackColor", (PyCFunction)Qd_RGBBackColor, 1,
+	 "(RGBColor color) -> None"},
+	{"SetCPixel", (PyCFunction)Qd_SetCPixel, 1,
+	 "(short h, short v, RGBColor cPix) -> None"},
 	{"SetPortPix", (PyCFunction)Qd_SetPortPix, 1,
 	 "(PixMapHandle pm) -> None"},
+	{"GetCPixel", (PyCFunction)Qd_GetCPixel, 1,
+	 "(short h, short v) -> (RGBColor cPix)"},
+	{"GetForeColor", (PyCFunction)Qd_GetForeColor, 1,
+	 "() -> (RGBColor color)"},
+	{"GetBackColor", (PyCFunction)Qd_GetBackColor, 1,
+	 "() -> (RGBColor color)"},
+	{"OpColor", (PyCFunction)Qd_OpColor, 1,
+	 "(RGBColor color) -> None"},
+	{"HiliteColor", (PyCFunction)Qd_HiliteColor, 1,
+	 "(RGBColor color) -> None"},
 	{"AllocCursor", (PyCFunction)Qd_AllocCursor, 1,
 	 "() -> None"},
 	{"GetCTSeed", (PyCFunction)Qd_GetCTSeed, 1,
 	 "() -> (long _rv)"},
+	{"Color2Index", (PyCFunction)Qd_Color2Index, 1,
+	 "(RGBColor myColor) -> (long _rv)"},
+	{"Index2Color", (PyCFunction)Qd_Index2Color, 1,
+	 "(long index) -> (RGBColor aColor)"},
+	{"InvertColor", (PyCFunction)Qd_InvertColor, 1,
+	 "() -> (RGBColor myColor)"},
+	{"RealColor", (PyCFunction)Qd_RealColor, 1,
+	 "(RGBColor color) -> (Boolean _rv)"},
 	{"SetClientID", (PyCFunction)Qd_SetClientID, 1,
 	 "(short id) -> None"},
 	{"ProtectEntry", (PyCFunction)Qd_ProtectEntry, 1,
