@@ -11,11 +11,13 @@ class Prog:
 		finally:
 			xxx = regex.set_syntax(save_syntax)
 		return self
-	def match(self, args):
-		if type(args) == type(()):
+	def match(self, *args):
+		if len(args) == 2:
 			str, offset = args
+		elif len(args) == 1:
+			str, offset = args[0], 0
 		else:
-			str, offset = args, 0
+			raise TypeError, 'wrong argument count'
 		if self.prog.search(str, offset) < 0:
 			return ()
 		regs = self.prog.regs

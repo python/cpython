@@ -4,6 +4,9 @@
 # - have a 'dispatch' function as a window member
 
 
+# XXX This is UNIX specific!  For the Mac we need to use a simpler version!
+
+
 import stdwin, stdwinq
 from stdwinevents import *
 
@@ -123,23 +126,38 @@ def do_select():
 # Python's stdwin.getevent() turns WE_COMMAND/WC_CANCEL events
 # into KeyboardInterrupt exceptions; these are turned back in events.
 #
+recursion_level = 0 # Hack to make it reentrant
 def mainloop():
-	stdwin_select_handler() # Process events already in stdwin queue
-	fd = stdwin.fileno()
-	while 1:
-		if windows:
-			registerfd(fd, 'r', stdwin_select_handler)
-			try:
-				while windows:
+	global recursion_level
+	recursion_level = recursion_level + 1
+	try:
+		stdwin_select_handler() # Process events already in queue
+		fd = stdwin.fileno()
+		while 1:
+			if windows:
+				if recursion_level == 1:
+				    registerfd(fd, 'r', stdwin_select_handler)
+				try:
+					while windows:
+						do_select()
+						stdwin_select_handler()
+				finally:
+					if recursion_level == 1:
+						unregisterfd(fd)
+			elif fdlist:
+				while fdlist and not windows:
 					do_select()
-					stdwin_select_handler()
-			finally:
-				unregisterfd(fd)
-		elif fdlist:
-			while fdlist and not windows:
-				do_select()
-		else:
-			break
+			else:
+				break
+	finally:
+		recursion_level = recursion_level - 1
+
+
+# Check for events without ever blocking
+#
+def check():
+	stdwin_select_handler()
+	# XXX Should check for socket stuff as well
 
 
 # Handle stdwin events until none are left

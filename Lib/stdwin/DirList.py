@@ -28,7 +28,7 @@ class DirList(VSplit):
 class DirListWindow(WindowParent):
 	#
 	def create(self, dirname):
-		self = WindowParent.create(self, (dirname, (0, 0)))
+		self = WindowParent.create(self, dirname, (0, 0))
 		child = DirList().create(self, dirname)
 		self.realize()
 		return self

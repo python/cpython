@@ -136,9 +136,9 @@ class WindowParent(ManageOneChild):
 		if self.win:
 			self.win.change(area)
 	#
-	def scroll(self, args):
+	def scroll(self, area, vector):
 		if self.win:
-			self.win.scroll(args)
+			self.win.scroll(area, vector)
 	#
 	def settimer(self, itimer):
 		if self.win:

@@ -50,10 +50,10 @@ class Split:
 		for child in self.children:
 			child.realize()
 	#
-	def draw(self, d_detail):
+	def draw(self, d, detail):
 		# (Could avoid calls to children outside the area)
 		for child in self.children:
-			child.draw(d_detail)
+			child.draw(d, detail)
 	#
 	def altdraw(self, detail):
 		for child in self.altdraw_interest:
@@ -112,15 +112,14 @@ class Split:
 		if self.keybd_focus:
 			self.keybd_focus.deactivate()
 	#
-	def keybd(self, type_detail):
+	def keybd(self, type, detail):
 		if not self.keybd_focus:
 			self.set_keybd_focus(self.keybd_interest[0])
-		type, detail = type_detail
 		if type == WE_COMMAND and detail == WC_TAB and \
 					len(self.keybd_interest) > 1:
 			self.next_keybd_focus()
 			return
-		self.keybd_focus.keybd(type_detail)
+		self.keybd_focus.keybd(type, detail)
 	#
 	def timer(self):
 		for child in self.timer_interest:
@@ -206,7 +205,7 @@ class Split:
 	#
 	def change(self, area):
 		self.parent.change(area)
-	def scroll(self, area_vector):
-		self.parent.scroll(area_vector)
+	def scroll(self, area, vector):
+		self.parent.scroll(area, vector)
 	def settimer(self, itimer):
 		self.parent.settimer(itimer)

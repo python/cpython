@@ -108,6 +108,6 @@ def choose_boundary():
 		pid = `os.getpid()`
 		seed = `rand.rand()`
 		_prefix = hostid + '.' + uid + '.' + pid
-	timestamp = `time.time()`
+	timestamp = `int(time.time())`
 	seed = `rand.rand()`
 	return _prefix + '.' + timestamp + '.' + seed

@@ -27,15 +27,14 @@ class BoxParent(TransParent):
 	def getbounds(self):
 		return self.bounds
 	#
-	def draw(self, args):
-		d, area = args
+	def draw(self, d, area):
 		(left, top), (right, bottom) = self.bounds
 		left = left + 1
 		top = top + 1
 		right = right - 1
 		bottom = bottom - 1
 		d.box((left, top), (right, bottom))
-		TransParent.draw(self, args) # XXX clip to innerbounds?
+		TransParent.draw(self, d, area) # XXX clip to innerbounds?
 	#
 	# XXX should scroll clip to innerbounds???
 	# XXX currently the only user restricts itself to child's bounds

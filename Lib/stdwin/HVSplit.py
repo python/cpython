@@ -55,8 +55,8 @@ class HVSplit(Split):
 
 class HSplit(HVSplit):
 	def create(self, parent):
-		return HVSplit.create(self, (parent, 0))
+		return HVSplit.create(self, parent, 0)
 
 class VSplit(HVSplit):
 	def create(self, parent):
-		return HVSplit.create(self, (parent, 1))
+		return HVSplit.create(self, parent, 1)
