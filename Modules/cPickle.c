@@ -1713,9 +1713,10 @@ save_global(Picklerobject *self, PyObject *args, PyObject *name)
 	module_str = PyString_AS_STRING((PyStringObject *)module);
 	name_str   = PyString_AS_STRING((PyStringObject *)global_name);
 
+	/* XXX This can be doing a relative import.  Clearly it shouldn't,
+	   but I don't know how to stop it. :-( */
 	mod = PyImport_ImportModule(module_str);
 	if (mod == NULL) {
-		/* Py_ErrClear(); ?? */
 		cPickle_ErrFormat(PicklingError,
 				  "Can't pickle %s: it's not found as %s.%s",
 				  "OSS", args, module, global_name);
