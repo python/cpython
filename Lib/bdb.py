@@ -86,16 +86,16 @@ class Bdb: # Basic Debugger
 		return 0
 	
 	def break_here(self, frame):
-	        filename=frame.f_code.co_filename
+		filename=frame.f_code.co_filename
 		if not self.breaks.has_key(filename):
 			return 0
 		lineno=frame.f_lineno
 		if not lineno in self.breaks[filename]:
 			return 0
 		if self.cbreaks.has_key((filename, lineno)):
-		    cond=self.cbreaks[filename, lineno]
-		    return eval(cond, frame.f_globals,
-				frame.f_locals)
+			cond=self.cbreaks[filename, lineno]
+			return eval(cond, frame.f_globals,
+				    frame.f_locals)
 		return 1
 	
 	def break_anywhere(self, frame):
