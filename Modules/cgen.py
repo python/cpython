@@ -376,6 +376,11 @@ def mkobject(type, arg):
 	return 'mknew' + type + 'object(' + arg + ')'
 
 
+# Open optional file argument
+if sys.argv[1:]:
+	sys.stdin = open(sys.argv[1], 'r')
+
+
 # Input line number
 lno = 0
 
