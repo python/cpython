@@ -25,12 +25,12 @@ CHARMASK = 0xff
 SPECIAL_CHARS = ".\\[{()*+?^$|"
 REPEAT_CHARS  = "*+?{"
 
-DIGITS = tuple(string.digits)
+DIGITS = tuple("012345689")
 
 OCTDIGITS = tuple("01234567")
 HEXDIGITS = tuple("0123456789abcdefABCDEF")
 
-WHITESPACE = tuple(string.whitespace)
+WHITESPACE = tuple(" \t\n\r\v\f")
 
 ESCAPES = {
     r"\a": (LITERAL, 7),
@@ -68,7 +68,8 @@ FLAGS = {
     "u": SRE_FLAG_UNICODE,
 }
 
-class State:
+class Pattern:
+    # master pattern object.  keeps track of global attributes
     def __init__(self):
         self.flags = 0
         self.groups = 1
@@ -88,6 +89,33 @@ class SubPattern:
             data = []
         self.data = data
         self.width = None
+    def dump(self, level=0):
+        nl = 1
+        for op, av in self.data:
+            print level*"  " + op,; nl = 0
+            if op == "in":
+                # member sublanguage
+                print; nl = 1
+                for op, a in av:
+                    print (level+1)*"  " + op, a
+            elif op == "branch":
+                print; nl = 1
+                i = 0
+                for a in av[1]:
+                    if i > 0:
+                        print level*"  " + "or"
+                    a.dump(level+1); nl = 1
+                    i = i + 1
+            elif type(av) in (type(()), type([])):
+                for a in av:
+                    if isinstance(a, SubPattern):
+                        if not nl: print
+                        a.dump(level+1); nl = 1
+                    else:
+                        print a, ; nl = 0
+            else:
+                print av, ; nl = 0
+            if not nl: print
     def __repr__(self):
         return repr(self.data)
     def __len__(self):
@@ -255,10 +283,25 @@ def _escape(source, escape, state):
         pass
     raise error, "bogus escape: %s" % repr(escape)
 
-def _branch(pattern, items):
-    # form a branch operator from a set of items
+def _parse_sub(source, state, nested=1):
+    # parse an alternation: a|b|c
 
-    subpattern = SubPattern(pattern)
+    items = []
+    while 1:
+        items.append(_parse(source, state))
+        if source.match("|"):
+            continue
+        if not nested:
+            break
+        if not source.next or source.match(")"):
+            break
+        else:
+            raise error, "pattern not properly closed"
+
+    if len(items) == 1:
+        return items[0]
+
+    subpattern = SubPattern(state)
 
     # check if all items share a common prefix
     while 1:
@@ -285,7 +328,7 @@ def _branch(pattern, items):
             break
     else:
         # we can store this as a character set instead of a
-        # branch (FIXME: use a range if possible)
+        # branch (the compiler may optimize this even more)
         set = []
         for item in items:
             set.append(item[0])
@@ -296,8 +339,7 @@ def _branch(pattern, items):
     return subpattern
 
 def _parse(source, state):
-
-    # parse regular expression pattern into an operator list.
+    # parse a simple pattern
 
     subpattern = SubPattern(state)
 
@@ -451,22 +493,6 @@ def _parse(source, state):
                         if gid is None:
                             raise error, "unknown group name"
                         subpattern.append((GROUPREF, gid))
-                    elif source.match("#"):
-                        index = ""
-                        while 1:
-                            char = source.get()
-                            if char is None:
-                                raise error, "unterminated index"
-                            if char == ")":
-                                break
-                            index = index + char
-                        try:
-                            index = int(index)
-                            if index < 0 or index > MAXREPEAT:
-                                raise ValueError
-                        except ValueError:
-                            raise error, "illegal index"
-                        subpattern.append((INDEX, index))
                         continue
                     else:
                         char = source.get()
@@ -491,48 +517,27 @@ def _parse(source, state):
                             raise error, "syntax error"
                         dir = -1 # lookbehind
                         char = source.get()
-                    b = []
-                    while 1:
-                        p = _parse(source, state)
-                        if source.next == ")":
-                            if b:
-                                b.append(p)
-                                p = _branch(state, b)
-                            if char == "=":
-                                subpattern.append((ASSERT, (dir, p)))
-                            else:
-                                subpattern.append((ASSERT_NOT, (dir, p)))
-                            break
-                        elif source.match("|"):
-                            b.append(p)
-                        else:
-                            raise error, "pattern not properly closed"
+                    p = _parse_sub(source, state)
+                    if char == "=":
+                        subpattern.append((ASSERT, (dir, p)))
+                    else:
+                        subpattern.append((ASSERT_NOT, (dir, p)))
+                    continue
                 else:
                     # flags
                     while FLAGS.has_key(source.next):
                         state.flags = state.flags | FLAGS[source.get()]
             if group:
                 # parse group contents
-                b = []
                 if group == 2:
                     # anonymous group
                     group = None
                 else:
                     group = state.getgroup(name)
-                while 1:
-                    p = _parse(source, state)
-                    if group is not None:
-                        p.append((INDEX, group))
-                    if source.match(")"):
-                        if b:
-                            b.append(p)
-                            p = _branch(state, b)
-                        subpattern.append((SUBPATTERN, (group, p)))
-                        break
-                    elif source.match("|"):
-                        b.append(p)
-                    else:
-                        raise error, "group not properly closed"
+                p = _parse_sub(source, state)
+                subpattern.append((SUBPATTERN, (group, p)))
+                if group is not None:
+                    p.append((INDEX, group))
             else:
                 while 1:
                     char = source.get()
@@ -555,26 +560,24 @@ def _parse(source, state):
 
     return subpattern
 
-def parse(pattern, flags=0):
+def parse(str, flags=0):
     # parse 're' pattern into list of (opcode, argument) tuples
-    source = Tokenizer(pattern)
-    state = State()
-    state.flags = flags
-    b = []
-    while 1:
-        p = _parse(source, state)
-        tail = source.get()
-        if tail == "|":
-            b.append(p)
-        elif tail == ")":
-            raise error, "unbalanced parenthesis"
-        elif tail is None:
-            if b:
-                b.append(p)
-                p = _branch(state, b)
-            break
-        else:
-            raise error, "bogus characters at end of regular expression"
+
+    source = Tokenizer(str)
+
+    pattern = Pattern()
+    pattern.flags = flags
+
+    p = _parse_sub(source, pattern, 0)
+
+    tail = source.get()
+    if tail == ")":
+        raise error, "unbalanced parenthesis"
+    elif tail:
+        raise error, "bogus characters at end of regular expression"
+
+    # p.dump()
+
     return p
 
 def parse_template(source, pattern):
@@ -656,4 +659,4 @@ def expand_template(template, match):
             if s is None:
                 raise error, "empty group"
             a(s)
-    return sep.join(p)
+    return string.join(p, sep)

@@ -1,4 +1,5 @@
 /*
+ *
  * Secret Labs' Regular Expression Engine
  *
  * regular expression matching engine
@@ -33,6 +34,7 @@ typedef struct {
 typedef struct {
     PyObject_VAR_HEAD
     PyObject* string; /* link to the target string */
+    PyObject* regs; /* cached list of matching spans */
     PatternObject* pattern; /* link to the regex (pattern) object */
     int pos, endpos; /* current target slice */
     int lastindex; /* last index marker seen by the engine (-1 if none) */
@@ -60,6 +62,9 @@ typedef struct {
     void* beginning; /* start of original string */
     void* start; /* start of current slice */
     void* end; /* end of original string */
+    /* attributes for the match object */
+    PyObject* string;
+    int pos, endpos;
     /* character size */
     int charsize;
     /* registers */
@@ -78,7 +83,6 @@ typedef struct {
     /* scanner (internal helper object) */
     PyObject_HEAD
     PyObject* pattern;
-    PyObject* string;
     SRE_STATE state;
 } ScannerObject;
 

@@ -197,10 +197,11 @@ def _compile(code, pattern, flags):
             else:
                 emit(ATCODES[av])
         elif op is BRANCH:
-            emit(OPCODES[op])
             tail = []
             for av in av[1]:
+                emit(OPCODES[op])
                 skip = len(code); emit(0)
+                emit(MAXCODE) # save mark
                 _compile(code, av, flags)
                 emit(OPCODES[JUMP])
                 tail.append(len(code)); emit(0)
@@ -286,11 +287,18 @@ def _compile_info(code, pattern, flags):
         emit(OPCODES[FAILURE])
     code[skip] = len(code) - skip
 
+STRING_TYPES = [type("")]
+
+try:
+    STRING_TYPES.append(type(unicode("")))
+except NameError:
+    pass
+
 def compile(p, flags=0):
     # internal: convert pattern list to internal format
 
     # compile, as necessary
-    if type(p) in (type(""), type(u"")):
+    if type(p) in STRING_TYPES:
         import sre_parse
         pattern = p
         p = sre_parse.parse(p, flags)
@@ -307,6 +315,8 @@ def compile(p, flags=0):
     _compile(code, p.data, flags)
 
     code.append(OPCODES[SUCCESS])
+
+    # print code
 
     # FIXME: <fl> get rid of this limitation!
     assert p.pattern.groups <= 100,\
