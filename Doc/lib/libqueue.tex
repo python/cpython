@@ -25,10 +25,15 @@ zero, the queue size is infinite.
 \end{classdesc}
 
 \begin{excdesc}{Empty}
-Exception raised when non-blocking get (e.g. \method{get_nowait()}) is
-called on a \class{Queue} object which is empty, or for which the
-emptyiness cannot be determined (i.e. because the appropriate locks
-cannot be acquired).
+Exception raised when non-blocking \method{get()} (or
+\method{get_nowait()}) is called on a \class{Queue} object which is
+empty or locked.
+\end{excdesc}
+
+\begin{excdesc}{Full}
+Exception raised when non-blocking \method{put()} (or
+\method{get_nowait()}) is called on a \class{Queue} object which is
+full or locked.
 \end{excdesc}
 
 \subsection{Queue Objects}
@@ -41,31 +46,40 @@ is not described here.  See the source code for details.  The public
 methods are:
 
 \begin{methoddesc}{qsize}{}
-Returns the approximate size of the queue.  Because of multithreading
+Return the approximate size of the queue.  Because of multithreading
 semantics, this number is not reliable.
 \end{methoddesc}
 
 \begin{methoddesc}{empty}{}
-Returns \code{1} if the queue is empty, \code{0} otherwise.  Because
+Return \code{1} if the queue is empty, \code{0} otherwise.  Because
 of multithreading semantics, this is not reliable.
 \end{methoddesc}
 
 \begin{methoddesc}{full}{}
-Returns \code{1} if the queue is full, \code{0} otherwise.  Because of
+Return \code{1} if the queue is full, \code{0} otherwise.  Because of
 multithreading semantics, this is not reliable.
 \end{methoddesc}
 
-\begin{methoddesc}{put}{item}
-Puts \var{item} into the queue.
+\begin{methoddesc}{put}{item\optional{, block}}
+Put \var{item} into the queue.  If optional argument \var{block} is 1
+(the default), block if necessary until a free slot is available.
+Otherwise (\var{block} is 0), put \var{item} on the queue if a free
+slot is immediately available, else raise the \exception{Full}
+exception.
 \end{methoddesc}
 
-\begin{methoddesc}{get}{}
-Gets and returns an item from the queue, blocking if necessary until
-one is available.
+\begin{methoddesc}{put_nowait}{item}
+Equivalent to \code{put(\var{item}, 0)}.
+\end{methoddesc}
+
+\begin{methoddesc}{get}{\optional{block}}
+Remove and return an item from the queue.  If optional argument
+\var{block} is 1 (the default), block if necessary until an item is
+available.  Otherwise (\var{block} is 0), return an item if one is
+immediately available, else raise the
+\exception{Empty} exception.
 \end{methoddesc}
 
 \begin{methoddesc}{get_nowait}{}
-Gets and returns an item from the queue if one is immediately
-available.  Raises an \exception{Empty} exception if the queue is
-empty or if the queue's emptiness cannot be determined.
+Equivalent to \code{get(0)}.
 \end{methoddesc}
