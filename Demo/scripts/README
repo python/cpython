@@ -1,18 +1,31 @@
-Contents of this directory:
+This directory contains a collection of executable Python scripts.
+
+Some perform Python housekeeping jobs (e.g., converting old syntax or
+generating tags files), others are useful UNIX tools, are some are
+just cute demos (e.g., pi.py).
+
+A number of these of these deserve a link in your bin directory.  All
+deserve study if you want to learn Python programming.
+
+Table of contents:
 
 byteyears.py		Print product of a file's size and age
 checkpyc.py		Check presence and validity of ".pyc" files
 classfix.py		Convert old class syntax to new
 copytime.py		Copy one file's atime and mtime to another
+h2py.py			Translate #define's into Python assignments
+dutree.py		Format du(1) output as a tree sorted by size
 eptags.py		Create Emacs TAGS file for Python modules
 fact.py			Factorize numbers
-findlinksto.py		Find symbolic links to a given path (prefix)
+findlinksto.py		Recursively find symbolic links to a given path prefix
 from.py			Summarize mailbox
+linktree.py		Make a copy of a tree with links to original files
+lll.py			Find and list symbolic links in current directory
 lpwatch.py		Watch BSD line printer queues
 mkreal.py		Turn a symbolic link into a real file or directory
 objgraph.py		Print object graph from nm output on a library
 pdeps.py		Print dependencies between Python modules
-pi.py			Print digits of pi (uses arbitrary precision integers)
+pi.py			Print all digits of pi -- given enough time and memory
 primes.py		Print prime numbers
 ptags.py		Create vi tags file for Python modules
 suff.py			Sort a list of files by suffix
