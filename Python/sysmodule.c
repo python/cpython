@@ -364,5 +364,23 @@ setpythonargv(argc, argv)
 		fatal("no mem for sys.argv");
 	if (sysset("argv", av) != 0)
 		fatal("can't assign sys.argv");
+	if (argc > 0) {
+		object *path = sysget("path");
+		if (path != NULL) {
+			char *p = strrchr(argv[0], SEP);
+			int n;
+			object *a;
+			if (p == NULL)
+				n = 0;
+			else
+				n = p + 1 - argv[0];
+			a = newsizedstringobject(argv[0], n);
+			if (a == NULL)
+				fatal("no mem for sys.path insertion");
+			if (inslistitem(path, 0, a) < 0)
+				fatal("sys.path.insert(0) failed");
+			DECREF(a);
+		}
+	}
 	DECREF(av);
 }
