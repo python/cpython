@@ -158,38 +158,27 @@ def sameopenfile(fp1, fp2):
 
 def samestat(s1, s2):
 	return s1[stat.ST_INO] == s2[stat.ST_INO] and \
-		s1[stat.ST_DEV] == s2[stat.STD_DEV]
-
-
-# Subroutine and global data used by ismount().
-
-_mounts = []
-
-def _getmounts():
-	import commands, string
-	mounts = []
-	data = commands.getoutput('/etc/mount')
-	lines = string.splitfields(data, '\n')
-	for line in lines:
-		words = string.split(line)
-		if len(words) >= 3 and words[1] == 'on':
-			mounts.append(words[2])
-	return mounts
+		s1[stat.ST_DEV] == s2[stat.ST_DEV]
 
 
 # Is a path a mount point?
-# This only works for normalized paths,
-# and only if the mount table as printed by /etc/mount is correct.
-# It tries to make relative paths absolute by prefixing them with the
-# current directory, but it won't normalize arguments containing '../'
-# or symbolic links.
+# (Does this work for all UNIXes?  Is it even guaranteed to work by POSIX?)
 
 def ismount(path):
-	if not isabs(path):
-		path = join(posix.getcwd(), path)
-	if not _mounts:
-		_mounts[:] = _getmounts()
-	return path in _mounts
+	try:
+		s1 = posix.stat(path)
+		s2 = posix.stat(join(path, '..'))
+	except posix.error:
+		return 0 # It doesn't exist -- so not a mount point :-)
+	dev1 = s1[stat.ST_DEV]
+	dev2 = s2[stat.ST_DEV]
+	if dev1 != dev2:
+		return 1		# path/.. on a different device as path
+	ino1 = s1[stat.ST_INO]
+	ino2 = s2[stat.ST_INO]
+	if ino1 == ino2:
+		return 1		# path/.. is the same i-node as path
+	return 0
 
 
 # Directory tree walk.
