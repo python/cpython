@@ -23,10 +23,15 @@ wishes to do different things depending on the Python version.
 
 import os
 
-try:
+home = os.curdir			# Default
+if os.environ.has_key('HOME'):
     home = os.environ['HOME']
-except:
-    home = os.curdir
+elif os.name == 'nt':			# Contributed by Jeff Bauer
+    if os.environ.has_key('HOMEPATH'):
+	if os.environ.has_key('HOMEDRIVE'):
+	    home = os.environ['HOMEDRIVE'] + os.environ['HOMEPATH']
+	else:
+	    home = os.environ['HOMEPATH']
 
 pythonrc = os.path.join(home, ".pythonrc.py")
 try:
