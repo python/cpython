@@ -1,10 +1,11 @@
 \section{\module{curses} ---
          Screen painting and input handling for character-cell terminals}
 
-\declaremodule{extension}{curses}
+\declaremodule{standard}{curses}
 \sectionauthor{Moshe Zadka}{mzadka@geocities.com}
 \sectionauthor{Eric Raymond}{esr@thyrsus.com}
 \modulesynopsis{An interface to the curses library.}
+\versionadded{1.6}
 
 The \module{curses} module provides an interface to the curses \UNIX{}
 library, the de-facto standard for portable advanced terminal
@@ -20,7 +21,7 @@ Unix.
   \seemodule{curses.ascii}{Utilities for working with \ASCII{}
                            characters, regardless of your locale
                            settings.}
-  \seemodule{curses.textbox}{Editable text widget for curses supporting 
+  \seemodule{curses.textpad}{Editable text widget for curses supporting 
 			     Emacs-like bindings.}
   \seetext{Tutorial material on using curses with Python is available
            on the Python Web site as Andrew Kuchling's
@@ -1162,4 +1163,132 @@ The following table lists the predefined colors:
   \lineii{COLOR_WHITE}{White}
   \lineii{COLOR_YELLOW}{Yellow}
 \end{tableii}
+
+\section{\module{curses.textpad} ---
+         Text input widget for curses programs}
+
+\declaremodule{standard}{curses.textpad}
+\sectionauthor{Eric Raymond}{esr@thyrsus.com}
+\moduleauthor{Eric Raymond}{esr@thyrsus.com}
+\modulesynopsis{Emacs-like input editing in a curses window.}
+\versionadded{1.6}
+
+The \module{curses.textpad} module provides a \class{Textbox} class
+that handles elementary text editing in a curses window, supporting a
+set of keybindings resembling those of Emacs (thus, also of Netscape
+Navigator, BBedit 6.x, FrameMaker, and many other programs).  The
+module also provides a rectangle-drawing function useful for framing
+text boxes or for other purposes.
+
+\subsection{Functions \label{curses-textpad-functions}}
+
+The module \module{curses.textpad} defines the following functions:
+
+\begin{funcdesc}{rectangle}{win, uly, ulx, lry, lrx}
+Draw a rectangle.  The first argument must be a window object; the
+remaining arguments are coordinates relative to that window.  The
+second and third arguments are the y and x coordinates of the upper
+left hand corner of the rectangle To be drawn; the fourth and fifth
+arguments are the y and x coordinates of the lower right hand corner.
+The rectangle will be drawn using VT100/IBM PC forms characters on
+terminals that make this possible (including xterm and most other
+software terminal emulators).  Otherwise it will be drawn with ASCII 
+dashes, vertical bars, and plus signs.
+\end{funcdesc}
+
+\subsection{Textbox objects \label{curses-textpad-objects}}
+
+You can instantiate a \class{Textbox} object as follows:
+
+\classdesc{Textbox}{win}
+Return a textbox widget object.  The win argument should be a curses
+\class{WindowObject} in which the textbox is to be contained.  The
+edit cursor of the textbox is initially located at the upper left
+hand corner of the containin window, with coordinates (0,0). The
+instance's \member{stripspaces} flag is initially on.
+\end{classdesc}
+
+Textbox objects, have the following methods:
+
+\begin{methoddesc}{edit}{validator=None}
+This is the entry point you will normally use.  It accepts editing
+keystrokes until one of the termination keystrokes is entered.  If a
+validator function is specified, each entered keystroke is passed to
+it; command dispatch is done on the result. This method returns the
+window contents as a string; whether blanks in the window are included
+is affected by the \member{stripspaces} member.
+\end{methoddesc}
+
+\begin{methoddesc}{do_command}{ch}
+Process a single command keystroke.  Here are the supported special
+keystrokes: 
+
+\begin{tableii}{c|l}{code}{keystroke}{action}
+  \lineii{Ctrl-A}{Go to left edge of window.}
+  \lineii{Ctrl-B}{Cursor left, wrapping to previous line if appropriate.}
+  \lineii{Ctrl-D}{Delete character under cursor.}
+  \lineii{Ctrl-E}{Go to right edge (stripspaces off) or end of line (stripspaces on).}
+  \lineii{Ctrl-F}{Cursor right, wrapping to next line when appropriate.}
+  \lineii{Ctrl-G}{Terminate, returning the window contents.}
+  \lineii{Ctrl-H}{Delete character backward.}
+  \lineii{Ctrl-J}{Terminate if the window is 1 line, otherwise insert newline.}
+  \lineii{Ctrl-K}{If line is blank, delete it, otherwise clear to end of line.}
+  \lineii{Ctrl-L}{Refresh screen.}
+  \lineii{Ctrl-N}{Cursor down; move down one line.}
+  \lineii{Ctrl-O}{Insert a blank line at cursor location.}
+  \lineii{Ctrl-P}{Cursor up; move up one line.}
+\end{tableii}
+
+Move operations do nothing if the cursor is at an edge where the
+movement is not possible.  The following synonyms are supported where
+possible:  KEY_LEFT = Ctrl-B, KEY_RIGHT = Ctrl-F, KEY_UP = Ctrl-P,
+KEY_DOWN = Ctrl-N, KEY_BACKSPACE = Ctrl-h.
+
+All other keystrokes are treated as a command to insert the given
+character and move right (with line wrapping).
+\end{methoddesc}
+
+\begin{methoddesc}{gather}{}
+This method returns the window contents as a string; whether blanks in
+the window are included is affected by the \member{stripspaces}
+member.
+\end{methoddesc}
+
+\begin{methoddesc}{stripspaces}{}
+This data member is a flag which controls the interpretation of blanks in
+the window.  When it is on, trailing blanks on each line are ignored;
+any cursor motion that would land the cursor on a trailing blank goes
+to the end of that line instead, and trailing blanks are stripped when
+the window contents is gathered.
+\end{methoddesc}
+
+\section{\module{curses.wrapper} ---
+         Exception-handling wrapper for curses programs.}
+
+\declaremodule{standard}{curses.wrapper}
+\sectionauthor{Eric Raymond}{esr@thyrsus.com}
+\moduleauthor{Eric Raymond}{esr@thyrsus.com}
+\modulesynopsis{Exception-handling wrapper for curses programs.}
+\versionadded{1.6}
+
+This module supplies one function, \function{wrapper()}, which runs
+another function which should be the rest of your curses-using
+application.  If the application raises an exception,
+\function{wrapper()} will restore the terminal to a sane state before
+passing it further up the stack and generating a traceback.
+
+\subsection{Functions \label{curses-wrapper-functions}}
+
+\begin{funcdesc}{wrapper}{func, *rest}
+Wrapper function that initializes curses and calls another function,
+\function{func}, restoring normal keyboard/screen behavior on error.
+The callable object 'func' is then passed the main window 'stdscr'
+as its first argument, followed by any other arguments passed to
+\function{wrapper()}.
+\end{funcdesc}
+
+Before calling the hook function, \function{wrapper()} turns on
+cbreak mode, turns off echo, and enables the terminal keypad.  On
+exit (whether normally or by exception) it restores cooked mode, 
+turns on echo, and disables the terminal keypad.
 
