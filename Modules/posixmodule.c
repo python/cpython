@@ -75,21 +75,6 @@ corresponding Unix manual entries for more information on calls.";
 /* Various compilers have only certain posix functions */
 /* XXX Gosh I wish these were all moved into config.h */
 #if defined(PYCC_VACPP) && defined(PYOS_OS2)
-#define HAVE_EXECV      1
-#define HAVE_GETCWD     1
-#define HAVE_SYSTEM     1
-#define HAVE_WAIT       1
-#define HAVE_KILL       1
-#define HAVE_PIPE       1
-#define HAVE_POPEN      1
-
-/* #define HAVE_FORK       1 */
-/* #define HAVE_GETEGID    1 */
-/* #define HAVE_GETEUID    1 */
-/* #define HAVE_GETGID     1 */
-/* #define HAVE_GETPPID    1 */
-/* #define HAVE_GETUID     1 */
-/* #define HAVE_OPENDIR    1 */
 #include <process.h>
 #else
 #if defined(__WATCOMC__) && !defined(__QNX__)		/* Watcom compiler */
