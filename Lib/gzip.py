@@ -37,7 +37,7 @@ def open(filename, mode="rb", compresslevel=9):
 
 class GzipFile:
     """The GzipFile class simulates most of the methods of a file object with
-    the exception of the readinto(), truncate(), and xreadlines() methods.
+    the exception of the readinto() and truncate() methods.
 
     """
 
