@@ -14,9 +14,9 @@
 # You can then use c.write() to write out the changed values to the
 # .cdplayerrc file.
 
-import string
+import string, posix
 
-_cddbrc = '.cddb/'
+_cddbrc = '.cddb'
 _DB_ID_NTRACKS = 5
 _dbid_map = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ@_=+abcdefghijklmnopqrstuvwxyz'
 def _dbid(v):
@@ -25,8 +25,43 @@ def _dbid(v):
 	else:
 		return _dbid_map[v]
 
+def tochash(toc):
+	if type(toc) == type(''):
+		tracklist = []
+		for i in range(2, len(toc), 4):
+			tracklist.append((None,
+				  (string.atoi(toc[i:i+2]),
+				   string.atoi(toc[i+2:i+4]))))
+	else:
+		tracklist = toc
+	ntracks = len(tracklist)
+	hash = _dbid((ntracks >> 4) & 0xF) + _dbid(ntracks & 0xF)
+	if ntracks <= _DB_ID_NTRACKS:
+		nidtracks = ntracks
+	else:
+		nidtracks = _DB_ID_NTRACKS - 1
+		min = 0
+		sec = 0
+		for track in tracklist:
+			start, length = track
+			min = min + length[0]
+			sec = sec + length[1]
+		min = min + sec / 60
+		sec = sec % 60
+		hash = hash + _dbid(min) + _dbid(sec)
+	for i in range(nidtracks):
+		start, length = tracklist[i]
+		hash = hash + _dbid(length[0]) + _dbid(length[1])
+	return hash
+	
 class Cddb:
 	def init(self, tracklist):
+		if posix.environ.has_key('CDDB_PATH'):
+			path = posix.environ['CDDB_PATH']
+			cddb_path = string.splitfields(path, ',')
+		else:
+			home = posix.environ['HOME']
+			cddb_path = [home + '/' + _cddbrc]
 		self.artist = ''
 		self.title = ''
 		if type(tracklist) == type(''):
@@ -60,11 +95,15 @@ class Cddb:
 			start, length = track
 			self.toc = self.toc + string.zfill(length[0], 2) + \
 				  string.zfill(length[1], 2)
-		try:
-			import posix
-			file = posix.environ['HOME'] + '/' + _cddbrc + self.id + '.rdb'
-			f = open(file, 'r')
-		except IOError:
+		for dir in cddb_path:
+			file = dir + '/' + self.id + '.rdb'
+			try:
+				f = open(file, 'r')
+				self.file = file
+				break
+			except IOError:
+				pass
+		if not hasattr(self, 'file'):
 			return self
 		import regex
 		reg = regex.compile('^\\([^.]*\\)\\.\\([^:]*\\):\t\\(.*\\)')
@@ -93,7 +132,7 @@ class Cddb:
 					print 'syntax error in ' + file
 					continue
 				if trackno > ntracks:
-					print 'track number ' + trackno + \
+					print 'track number ' + `trackno` + \
 						  ' in file ' + file + \
 						  ' out of range'
 					continue
@@ -102,8 +141,11 @@ class Cddb:
 		return self
 
 	def write(self):
-		import posix
-		file = posix.environ['HOME'] + '/' + _cddbrc + self.id + '.rdb'
+		if posix.environ.has_key('CDDB_WRITE_DIR'):
+			dir = posix.environ['CDDB_WRITE_DIR']
+		else:
+			dir = posix.environ['HOME'] + '/' + _cddbrc
+		file = dir + '/' + self.id + '.rdb'
 		f = open(file, 'w')
 		f.write('album.title:\t' + self.title + '\n')
 		f.write('album.artist:\t' + self.artist + '\n')
