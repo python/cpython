@@ -358,7 +358,7 @@
 % \begin{cfuncdesc}{type}{name}{arglist}
 \newenvironment{cfuncdesc}[3]{
   \begin{fulllineitems}
-    \item[\code{#1 \bfcode{#2}(\varvars{#3})}\index{#2@{\idxcode{#2()}}}]
+    \item[\code{#1 \bfcode{#2}(\py@varvars{#3})}\index{#2@{\idxcode{#2()}}}]
 }{\end{fulllineitems}}
 
 % C variables ------------------------------------------------------------
@@ -384,7 +384,7 @@
 }{\end{fulllineitems}}
 
 % similar to {funcdesc}, but doesn't add to the index
-\newcommand{\funclineni}[2]{\item[\code{\bfcode{#1}(\varvars{#2})}]}
+\newcommand{\funclineni}[2]{\item[\code{\bfcode{#1}(\py@varvars{#2})}]}
 \newenvironment{funcdescni}[2]{
   \begin{fulllineitems}
     \funclineni{#1}{#2}
@@ -395,7 +395,7 @@
 \newenvironment{classdesc}[2]{
   \global\def\@thisclass{#1}
   \begin{fulllineitems}
-    \item[\code{\bfcode{#1}(\varvars{#2})}%
+    \item[\code{\bfcode{#1}(\py@varvars{#2})}%
       \withsubitem{(class in \@thismodule)}{\ttindex{#1}}]
     \def\baseclasses##1{}
 }{\end{fulllineitems}}
@@ -427,7 +427,7 @@
 % similar to {methoddesc}, but doesn't add to the index
 % (never actually uses the optional argument)
 \newcommand{\methodlineni}[3][\@classbadkey]{%
-  \item[\code{\bfcode{#2}(\varvars{#3})}]}
+  \item[\code{\bfcode{#2}(\py@varvars{#3})}]}
 \newenvironment{methoddescni}[3][\@classbadkey]{
   \begin{fulllineitems}
     \methodlineni{#2}{#3}
@@ -546,7 +546,7 @@
 \newcommand{\email}[1]{{\small\textsf{#1}}}
 \newcommand{\newsgroup}[1]{{\small\textsf{#1}}}
 
-\newcommand{\varvars}[1]{{\def\,{\/{\char`\,}}\var{#1}}}
+\newcommand{\py@varvars}[1]{{\def\,{\/{\char`\,}}\var{#1}}}
 
 \newif\iftexi\texifalse
 \newif\iflatex\latextrue
