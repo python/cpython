@@ -336,9 +336,38 @@ load_dynamic_module(name, pathname, fp)
 		HINSTANCE hDLL;
 		hDLL = LoadLibrary(pathname);
 		if (hDLL==NULL){
-			char errBuf[64];
-			sprintf(errBuf, "DLL load failed with error code %d",
-				GetLastError());
+			char errBuf[256];
+			unsigned int errorCode;
+
+			/* Get an error string from Win32 error code */
+			char theInfo[256];           /* Pointer to error text from system */
+			int theLength;               /* Length of error text */
+
+			errorCode = GetLastError();
+
+			theLength = FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, /* flags */
+				NULL,                              /* message source */
+				errorCode,                         /* the message (error) ID */
+				0,                                 /* default language environment */
+				(LPTSTR) theInfo,                  /* the buffer */
+				sizeof(theInfo),                   /* the buffer size */
+				NULL);                             /* no additional format args. */
+
+			/* Problem: could not get the error message. This should not happen if called correctly. */
+			if (theLength == 0) {
+				sprintf(errBuf, "DLL load failed with error code %d", errorCode);
+			} else {
+				int len;
+				/* For some reason a \r\n is appended to the text */
+				if (theLength >= 2 && theInfo[theLength-2] == '\r' && theInfo[theLength-1] == '\n') {
+					theLength -= 2;
+					theInfo[theLength] = '\0';
+				}
+				strcpy(errBuf, "DLL load failed: ");
+				len = strlen(errBuf);
+				strncpy(errBuf+len, theInfo, sizeof(errBuf)-len);
+				errBuf[sizeof(errBuf)-1] = '\0';
+			}
 			err_setstr(ImportError, errBuf);
 		return NULL;
 		}
