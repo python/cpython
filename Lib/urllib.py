@@ -288,12 +288,16 @@ class URLopener:
 	def open_local_file(self, url):
 		host, file = splithost(url)
 		if not host:
-			return addinfourl(open(url2pathname(file), 'rb'), noheaders(), 'file:'+file)
+			return addinfourl(
+				open(url2pathname(file), 'rb'),
+				noheaders(), 'file:'+file)
 		host, port = splitport(host)
 		if not port and socket.gethostbyname(host) in (
 			  localhost(), thishost()):
 			file = unquote(file)
-			return addinfourl(open(url2pathname(file), 'rb'), noheaders(), 'file:'+file)
+			return addinfourl(
+				open(url2pathname(file), 'rb'),
+				noheaders(), 'file:'+file)
 		raise IOError, ('local file error', 'not on local host')
 
 	# Use FTP protocol
@@ -325,8 +329,9 @@ class URLopener:
 				if string.lower(attr) == 'type' and \
 				   value in ('a', 'A', 'i', 'I', 'd', 'D'):
 					type = string.upper(value)
-			return addinfourl(self.ftpcache[key].retrfile(file, type),
-				  noheaders(), self.openedurl)
+			return addinfourl(
+				self.ftpcache[key].retrfile(file, type),
+				noheaders(), self.openedurl)
 		except ftperrors(), msg:
 			raise IOError, ('ftp error', msg), sys.exc_traceback
 
@@ -443,10 +448,7 @@ def ftperrors():
 	global _ftperrors
 	if not _ftperrors:
 		import ftplib
-		_ftperrors = (ftplib.error_reply,
-			      ftplib.error_temp,
-			      ftplib.error_perm,
-			      ftplib.error_proto)
+		_ftperrors = ftplib.all_errors
 	return _ftperrors
 
 # Return an empty mimetools.Message object
