@@ -748,21 +748,10 @@ PyMac_BuildEventRecord(EventRecord *e)
 }
 
 
-/* What follows is used only by applets. */
+/* ---------- */
+/* Applet support */
 
-static void
-init_mac_world()
-{
-	MaxApplZone();
-	InitGraf(&qd.thePort);
-	InitFonts();
-	InitWindows();
-	TEInit();
-	InitDialogs((long)0);
-	InitMenus();
-	InitCursor();
-}
-
+/* Run a compiled Python Python script from 'PYC ' resource __main__ */
 static int
 run_main_resource()
 {
@@ -795,14 +784,16 @@ run_main_resource()
 	return 0;
 }
 
+/* Initialization sequence for applets */
 void
 PyMac_InitApplet()
 {
-	static char *argv[] = {"__main__", NULL};
+	int argc;
+	char **argv;
 	
-	init_mac_world();
+	argc = PyMac_GetArgv(&argv);
 	Py_Initialize();
-	PySys_SetArgv((sizeof argv / sizeof argv[0]) - 1, argv);
+	PySys_SetArgv(argc, argv);
 	run_main_resource();
 	fflush(stderr);
 	fflush(stdout);
