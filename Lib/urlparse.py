@@ -8,26 +8,26 @@ __all__ = ["urlparse", "urlunparse", "urljoin", "urldefrag",
            "urlsplit", "urlunsplit"]
 
 # A classification of schemes ('' means apply by default)
-uses_relative = ['ftp', 'http', 'gopher', 'nntp', 'imap', 'wais', 'file',
+uses_relative = dict.fromkeys(['ftp', 'http', 'gopher', 'nntp', 'imap', 'wais', 'file',
                  'https', 'shttp',
-                 'prospero', 'rtsp', 'rtspu', '']
-uses_netloc = ['ftp', 'http', 'gopher', 'nntp', 'telnet', 'imap', 'wais',
+                 'prospero', 'rtsp', 'rtspu', ''])
+uses_netloc = dict.fromkeys(['ftp', 'http', 'gopher', 'nntp', 'telnet', 'imap', 'wais',
                'file',
                'https', 'shttp', 'snews',
-               'prospero', 'rtsp', 'rtspu', '']
-non_hierarchical = ['gopher', 'hdl', 'mailto', 'news', 'telnet', 'wais',
+               'prospero', 'rtsp', 'rtspu', ''])
+non_hierarchical = dict.fromkeys(['gopher', 'hdl', 'mailto', 'news', 'telnet', 'wais',
                     'imap', 'snews', 'sip',
-                    ]
-uses_params = ['ftp', 'hdl', 'prospero', 'http', 'imap',
+                    ])
+uses_params = dict.fromkeys(['ftp', 'hdl', 'prospero', 'http', 'imap',
                'https', 'shttp', 'rtsp', 'rtspu', 'sip',
-               '']
-uses_query = ['http', 'wais', 'imap',
+               ''])
+uses_query = dict.fromkeys(['http', 'wais', 'imap',
               'https', 'shttp',
               'gopher', 'rtsp', 'rtspu', 'sip',
-              '']
-uses_fragment = ['ftp', 'hdl', 'http', 'gopher', 'news', 'nntp', 'wais',
+              ''])
+uses_fragment = dict.fromkeys(['ftp', 'hdl', 'http', 'gopher', 'news', 'nntp', 'wais',
                  'https', 'shttp', 'snews',
-                 'file', 'prospero', '']
+                 'file', 'prospero', ''])
 
 # Characters valid in scheme names
 scheme_chars = ('abcdefghijklmnopqrstuvwxyz'
