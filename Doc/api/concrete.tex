@@ -1658,7 +1658,15 @@ format.
 \end{cvardesc}
 
 \begin{cfuncdesc}{int}{PyList_Check}{PyObject *p}
-  Returns true if its argument is a \ctype{PyListObject}.
+  Returns true if \var{p} is a list object or an instance of a
+  subtype of the list type.
+  \versionchanged[Allowed subtypes to be accepted]{2.2}
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{int}{PyList_CheckExact}{PyObject *p}
+  Return true if \var{p} is a list object, but not an instance of a
+  subtype of the list type.
+  \versionadded{2.2}
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyList_New}{int len}
@@ -1778,7 +1786,9 @@ format.
 \end{cvardesc}
 
 \begin{cfuncdesc}{int}{PyDict_Check}{PyObject *p}
-  Returns true if its argument is a \ctype{PyDictObject}.
+  Returns true if \var{p} is a dict object or an instance of a
+  subtype of the dict type.
+  \versionchanged[Allowed subtypes to be accepted]{2.2}
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyDict_New}{}
