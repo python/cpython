@@ -56,8 +56,11 @@ class ProcessTestCase(unittest.TestCase):
 
     def test_stdout_none(self):
         # .stdout is None when not redirected
-        p = subprocess.Popen([sys.executable, "-c", 'print "banana"'],
-                         stdin=subprocess.PIPE, stderr=subprocess.PIPE)
+        p = subprocess.Popen([sys.executable, "-c", 
+                             'print "    this bit of output is from a '
+                             'test of stdout in a different '
+                             'process ..."'],
+                             stdin=subprocess.PIPE, stderr=subprocess.PIPE)
         p.wait()
         self.assertEqual(p.stdout, None)
 
