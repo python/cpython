@@ -631,6 +631,7 @@ CtlObj_New
 DlgObj_chain
 Dialog_Type
 initDlg
+DlgObj_ConvertToWindow
 DlgObj_Convert
 DlgObj_New
 MenuObj_chain
@@ -816,6 +817,14 @@ initEvt
 copyright
 init_sre
 initsha
+DragObj_chain
+DragObj_Type
+dragglue_TrackingHandlerUPP
+dragglue_ReceiveHandlerUPP
+dragglue_SendDataUPP
+initDrag
+DragObj_Convert
+DragObj_New
 __vt__15GUSISIOUXDevice		# GUSISIOUXDevice::__vt
 __vt__15GUSISIOUXSocket		# GUSISIOUXSocket::__vt
 sInstance__15GUSISIOUXDevice		# GUSISIOUXDevice::sInstance
