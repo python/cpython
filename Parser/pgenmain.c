@@ -143,6 +143,16 @@ fatal(msg)
 	exit(1);
 }
 
+#ifdef macintosh
+/* ARGSUSED */
+int
+guesstabsize(path)
+	char *path;
+{
+	return 4;
+}
+#endif
+
 /* XXX TO DO:
    - check for duplicate definitions of names (instead of fatal err)
 */
