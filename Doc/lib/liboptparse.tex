@@ -1052,6 +1052,87 @@ constructor.  As with \member{help} options, you will rarely create
 \end{itemize}
 
 
+\subsubsection{Option attributes\label{optparse-option-attributes}}
+
+The following option attributes may be passed as keyword arguments
+to \code{parser.add{\_}option()}.  If you pass an option attribute
+that is not relevant to a particular option, or fail to pass a required
+option attribute, \module{optparse} raises OptionError.
+\begin{itemize}
+\item {} 
+\member{action} (default: \code{"store"})
+
+Determines \module{optparse}'s behaviour when this option is seen on the command
+line; the available options are documented above.
+
+\item {} 
+\member{type} (default: \code{"string"})
+
+The argument type expected by this option (e.g., \code{"string"} or
+\code{"int"}); the available option types are documented below.
+
+\item {} 
+\member{dest} (default: derived from option strings)
+
+If the option's action implies writing or modifying a value somewhere,
+this tells \module{optparse} where to write it: \member{dest} names an attribute of the
+\code{options} object that \module{optparse} builds as it parses the command line.
+
+\item {} 
+\code{default} (deprecated)
+
+The value to use for this option's destination if the option is not
+seen on the command line.  Deprecated; use \code{parser.set{\_}defaults()}
+instead.
+
+\item {} 
+\code{nargs} (default: 1)
+
+How many arguments of type \member{type} should be consumed when this
+option is seen.  If {\textgreater} 1, \module{optparse} will store a tuple of values to
+\member{dest}.
+
+\item {} 
+\code{const}
+
+For actions that store a constant value, the constant value to store.
+
+\item {} 
+\code{choices}
+
+For options of type \code{"choice"}, the list of strings the user
+may choose from.
+
+\item {} 
+\code{callback}
+
+For options with action \code{"callback"}, the callable to call when this
+option is seen.  See section~\ref{optparse-option-callbacks}, Option Callbacks for detail on the arguments
+passed to \code{callable}.
+
+\item {} 
+\code{callback{\_}args}, \code{callback{\_}kwargs}
+
+Additional positional and keyword arguments to pass to \code{callback}
+after the four standard callback arguments.
+
+\item {} 
+\member{help}
+
+Help text to print for this option when listing all available options
+after the user supplies a \member{help} option (such as \code{"-{}-help"}).
+If no help text is supplied, the option will be listed without help
+text.  To hide this option, use the special value \code{SUPPRESS{\_}HELP}.
+
+\item {} 
+\code{metavar} (default: derived from option strings)
+
+Stand-in for the option argument(s) to use when printing help text.
+See section~\ref{optparse-tutorial}, the tutorial for an example.
+
+\end{itemize}
+
+
 \subsubsection{Standard option types\label{optparse-standard-option-types}}
 
 \module{optparse} has six built-in option types: \code{string}, \code{int}, \code{long},
