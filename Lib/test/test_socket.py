@@ -124,17 +124,20 @@ try:
 	conn.close()
 	os._exit(0)
     else:
-	# child is client
-	time.sleep(1)
-	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-	if verbose:
-	    print 'child connecting'
-	s.connect(hostname, PORT)
-	msg = 'socket test'
-	s.send(msg)
-	data = s.recv(1024)
-	if msg <> data:
-	    print 'parent/client mismatch'
-	s.close()
+	try:
+	    # child is client
+	    time.sleep(1)
+	    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+	    if verbose:
+		print 'child connecting'
+	    s.connect(hostname, PORT)
+	    msg = 'socket test'
+	    s.send(msg)
+	    data = s.recv(1024)
+	    if msg <> data:
+		print 'parent/client mismatch'
+	    s.close()
+	finally:
+	    os._exit(1)
 except socket.error:
     pass
