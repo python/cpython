@@ -124,9 +124,10 @@ Extension modules
 
 Library
 
-- Stop using strings for exceptions.  String objects used for exceptions
-  now derive from Exception.  The objects changed were: Tkinter.TclError,
-  bdb.BdbQuit, macpath.norm_error, tabnanny.NannyNag, and xdrlib.Error.
+- Stop using strings for exceptions.  String objects used for
+  exceptions are now classes deriving from Exception.  The objects
+  changed were: Tkinter.TclError, bdb.BdbQuit, macpath.norm_error,
+  tabnanny.NannyNag, and xdrlib.Error.
 
 - Constants BOM_UTF8, BOM_UTF16, BOM_UTF16_LE, BOM_UTF16_BE,
   BOM_UTF32, BOM_UTF32_LE and BOM_UTF32_BE that represent the Byte
