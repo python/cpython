@@ -123,7 +123,7 @@ class RExec(ihooks._Verbose):
                           'cmath', 'errno', 'imageop',
                           'marshal', 'math', 'md5', 'operator',
                           'parser', 'regex', 'pcre', 'rotor', 'select',
-                          'strop', 'struct', 'time')
+                          'sha', '_sre', 'strop', 'struct', 'time')
 
     ok_posix_names = ('error', 'fstat', 'listdir', 'lstat', 'readlink',
                       'stat', 'times', 'uname', 'getpid', 'getppid',
