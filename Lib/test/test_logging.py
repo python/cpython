@@ -24,7 +24,7 @@
 Copyright (C) 2001-2002 Vinay Sajip. All Rights Reserved.
 """
 
-from select import select
+import select
 import os, sys, string, struct, types, cPickle, cStringIO
 import socket, threading, time, locale
 import logging, logging.handlers, logging.config
@@ -64,7 +64,6 @@ class LogRecordStreamHandler(StreamRequestHandler):
                 if len(chunk) < 4:
                     break
                 slen = struct.unpack(">L", chunk)[0]
-                #print slen
                 chunk = self.connection.recv(slen)
                 while len(chunk) < slen:
                     chunk = chunk + self.connection.recv(slen - len(chunk))
@@ -102,12 +101,18 @@ class LogRecordSocketReceiver(ThreadingTCPServer):
     def serve_until_stopped(self):
         abort = 0
         while not abort:
-            rd, wr, ex = select([self.socket.fileno()],
+            rd, wr, ex = select.select([self.socket.fileno()],
                                        [], [],
                                        self.timeout)
             if rd:
                 self.handle_request()
             abort = self.abort
+
+    def process_request(self, request, client_address):
+        #import threading
+        t = threading.Thread(target = self.finish_request,
+                             args = (request, client_address))
+        t.start()
 
 def runTCP(tcpserver):
     tcpserver.serve_until_stopped()
@@ -421,7 +426,7 @@ def test_main():
     #Set up servers
     threads = []
     tcpserver = LogRecordSocketReceiver()
-    sys.stdout.write("About to start TCP server...\n")
+    #sys.stdout.write("About to start TCP server...\n")
     threads.append(threading.Thread(target=runTCP, args=(tcpserver,)))
 
     for thread in threads:
@@ -447,18 +452,17 @@ def test_main():
         test3()
         banner("log_test3", "end")
 
-        banner("logrecv output", "begin")
-        sys.stdout.write(sockOut.getvalue())
-        sockOut.close()
-        banner("logrecv output", "end")
-
     finally:
         #shut down server
         tcpserver.abort = 1
         for thread in threads:
             thread.join()
+        banner("logrecv output", "begin")
+        sys.stdout.write(sockOut.getvalue())
+        sockOut.close()
+        banner("logrecv output", "end")
+        sys.stdout.flush()
 
 if __name__ == "__main__":
     sys.stdout.write("test_logging\n")
     test_main()
-    sys.stdout.flush()
