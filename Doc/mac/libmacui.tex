@@ -15,7 +15,7 @@ code for details.
 The \module{EasyDialogs} module defines the following functions:
 
 
-\begin{funcdesc}{Message}{str\optional{, id\optional{, ok=None}}}
+\begin{funcdesc}{Message}{str\optional{, id\optional{, ok}}}
 Displays a modal dialog with the message text \var{str}, which should be
 at most 255 characters long. The button text defaults to ``OK'', but is
 set to the string argument \var{ok} if the latter is supplied. Control
@@ -30,8 +30,8 @@ is the prompt message, and the optional \var{default} supplies the
 initial value for the string (otherwise \code{""} is used). The text of
 the ``OK'' and ``Cancel'' buttons can be changed with the \var{ok} and
 \var{cancel} arguments. All strings can be at most 255 bytes long.
-\function{AskString()} returns the string entered or \code{None} in case
-the user cancelled.
+\function{AskString()} returns the string entered or \constant{None}
+in case the user cancelled.
 \end{funcdesc}
 
 
@@ -128,23 +128,23 @@ off.
 	\optional{, wanted}
 	}
 Post a dialog asking the user for a file to open, and return the file
-selected or \var{None} if the user cancelled.
+selected or \constant{None} if the user cancelled.
 \var{message} is a text message to display,
 \var{typeList} is a list of 4-char filetypes allowable,
-\var{defaultLocation} is the pathname, FSSpec or FSRef of the folder
-to show initially,
+\var{defaultLocation} is the pathname, \class{FSSpec} or \class{FSRef}
+of the folder to show initially,
 \var{location} is the \code{(x, y)} position on the screen where the
 dialog is shown,
 \var{actionButtonLabel} is a string to show in stead of ``Open'' in the
 OK button,
 \var{cancelButtonLabel} is a string to show in stead of ``Cancel'' in the
 cancel button,
-\var{wanted} is the type of value wanted as a return: \class{string},
+\var{wanted} is the type of value wanted as a return: \class{str},
 \class{unicode}, \class{FSSpec}, \class{FSRef} and subtypes thereof are
 acceptable.
 
 For a description of the other arguments please see the Apple Navigation
-Services documentation and the EasyDialogs sourcecode.
+Services documentation and the \module{EasyDialogs} source code.
 \end{funcdesc}
 
 \begin{funcdesc}{AskFileForSave}{
@@ -164,10 +164,11 @@ Services documentation and the EasyDialogs sourcecode.
 	\optional{, eventProc}
 	\optional{, wanted}
 	}
-Post a dialog asking the user for a file to save to, and return the file
-selected or \var{None} if the user cancelled. \var{savedFileName} is the
-default for the file name to save to (the return value). See AskFileForOpen
-for a description of the other arguments.
+Post a dialog asking the user for a file to save to, and return the
+file selected or \constant{None} if the user cancelled.
+\var{savedFileName} is the default for the file name to save to (the
+return value). See \function{AskFileForOpen()} for a description of
+the other arguments.
 \end{funcdesc}
 
 \begin{funcdesc}{AskFolder}{
@@ -185,9 +186,9 @@ for a description of the other arguments.
 	\optional{, filterProc}
 	\optional{, wanted}
 	}
-Post a dialog asking the user to select a folder, and return the folder
-selected or \var{None} if the user cancelled. See AskFileForOpen
-for a description of the arguments.
+Post a dialog asking the user to select a folder, and return the
+folder selected or \constant{None} if the user cancelled. See
+\function{AskFileForOpen()} for a description of the arguments.
 \end{funcdesc}
 
 \subsection{ProgressBar Objects \label{progressbar-objects}}
