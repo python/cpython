@@ -947,7 +947,6 @@ Py_GetPrefix
 Py_GetArgcArgv
 Py_GetProgramName
 PyMac_Exit
-PyMac_InteractiveOptions
 PyMac_InitApplication
 PyMac_InitApplet
 Py_GetPlatform
@@ -977,7 +976,6 @@ PyMac_PromptGetFile
 PyMac_GetDirectory
 PyMac_LoadResourceModule
 PyMac_FindResourceModule
-PyMac_Idle
 PyMac_Yield
 PyMac_HandleEvent
 PyMac_SetYield
