@@ -12,8 +12,9 @@ functions:
 
 
 \begin{funcdesc}{get_magic}{}
+\indexii{file}{byte-code}
 Return the magic string value used to recognize byte-compiled code
-files (``\code{.pyc} files'').  (This value may be different for each
+files (\file{.pyc} files).  (This value may be different for each
 Python version.)
 \end{funcdesc}
 
@@ -22,8 +23,8 @@ Return a list of triples, each describing a particular type of module.
 Each triple has the form \code{(\var{suffix}, \var{mode},
 \var{type})}, where \var{suffix} is a string to be appended to the
 module name to form the filename to search for, \var{mode} is the mode
-string to pass to the built-in \code{open} function to open the file
-(this can be \code{'r'} for text files or \code{'rb'} for binary
+string to pass to the built-in \function{open()} function to open the
+file (this can be \code{'r'} for text files or \code{'rb'} for binary
 files), and \var{type} is the file type, which has one of the values
 \constant{PY_SOURCE}, \constant{PY_COMPILED}, or
 \constant{C_EXTENSION}, described below.
@@ -167,6 +168,7 @@ no such module.
 \end{funcdesc}
 
 \begin{funcdesc}{load_compiled}{name, pathname, file}
+\indexii{file}{byte-code}
 Load and initialize a module implemented as a byte-compiled code file
 and return its module object.  If the module was already initialized,
 it will be initialized \emph{again}.  The \var{name} argument is used
@@ -200,8 +202,9 @@ to the source file.  The \var{file} argument is the source
 file, open for reading as text, from the beginning.
 It must currently be a real file
 object, not a user-defined class emulating a file.  Note that if a
-properly matching byte-compiled file (with suffix \file{.pyc}) exists,
-it will be used instead of parsing the given source file.
+properly matching byte-compiled file (with suffix \file{.pyc} or
+\file{.pyo}) exists, it will be used instead of parsing the given
+source file.
 \end{funcdesc}
 
 
