@@ -488,11 +488,11 @@ example:
 >>> tax = 17.5 / 100
 >>> price = 3.50
 >>> price * tax
-0.6125
+0.61249999999999993
 >>> price + _
-4.1125
+4.1124999999999998
 >>> round(_, 2)
-4.11
+4.1100000000000003
 \end{verbatim}
 
 This variable should be treated as read-only by the user.  Don't
@@ -2780,8 +2780,12 @@ string containing only a single newline.
 ''
 \end{verbatim}
 
-\code{f.readlines()} uses \code{f.readline()} repeatedly, and returns
-a list containing all the lines of data in the file.
+\code{f.readlines()} returns a list containing all the lines of data
+in the file.  If given an optional parameter \var{sizehint}, it reads
+that many bytes from the file and enough more to complete a line, and
+returns the lines from that.  This is often used to allow efficient
+reading of a large file by lines, but without having to load the
+entire file in memory.  Only complete lines will be returned.
 
 \begin{verbatim}
 >>> f.readlines()
