@@ -7,18 +7,9 @@
 #	intercom hostname	- start talking to person on other host
 #	intercom -r hostname	- called remotely to do the setup
 
+import names
 import sys, time, posix, gl, fl, FL, al, AL, getopt, rand
 from socket import *
-
-# Hack sys.path so AL can be found
-LIB = '/ufs/guido/lib/python'
-if LIB not in sys.path: sys.path.insert(0, LIB)
-
-# Python binary to be used on remote machine
-PYTHON = '/ufs/guido/bin/sgi/python'
-
-# Directory where the programs live
-AUDIODIR = '/ufs/guido/mm/demo/audio'
 
 # UDP port numbers used (one for each direction!)
 PORT1 = 51042
