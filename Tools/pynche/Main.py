@@ -33,6 +33,7 @@ Where:
 __version__ = '1.0'
 
 import sys
+import os
 import getopt
 import ColorDB
 from PyncheWidget import PyncheWidget
@@ -49,6 +50,8 @@ PROGRAM = sys.argv[0]
 RGB_TXT = [
     # Solaris OpenWindows
     '/usr/openwin/lib/rgb.txt',
+    # The X11R6.4 rgb.txt file
+    os.path.join(sys.path[0], 'rgb.txt'),
     # add more here
     ]
 
