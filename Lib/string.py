@@ -143,28 +143,36 @@ class Template:
         raise ValueError('Invalid placeholder in string: line %d, col %d' %
                          (lineno, colno))
 
-    def substitute(self, __mapping=None, **kws):
-        if __mapping is None:
-            __mapping = kws
+    def substitute(self, *args, **kws):
+        if len(args) > 1:
+            raise TypeError('Too many positional arguments')
+        if not args:
+            mapping = kws
         elif kws:
-            __mapping = _multimap(kws, __mapping)
+            mapping = _multimap(kws, args[0])
+        else:
+            mapping = args[0]
         # Helper function for .sub()
         def convert(mo):
             if mo.group('escaped') is not None:
                 return '$'
             if mo.group('bogus') is not None:
                 self._bogus(mo)
-            val = __mapping[mo.group('named') or mo.group('braced')]
+            val = mapping[mo.group('named') or mo.group('braced')]
             # We use this idiom instead of str() because the latter will fail
             # if val is a Unicode containing non-ASCII characters.
             return '%s' % val
         return self.pattern.sub(convert, self.template)
 
-    def safe_substitute(self, __mapping=None, **kws):
-        if __mapping is None:
-            __mapping = kws
+    def safe_substitute(self, *args, **kws):
+        if len(args) > 1:
+            raise TypeError('Too many positional arguments')
+        if not args:
+            mapping = kws
         elif kws:
-            __mapping = _multimap(kws, __mapping)
+            mapping = _multimap(kws, args[0])
+        else:
+            mapping = args[0]
         # Helper function for .sub()
         def convert(mo):
             if mo.group('escaped') is not None:
@@ -176,12 +184,12 @@ class Template:
                 try:
                     # We use this idiom instead of str() because the latter
                     # will fail if val is a Unicode containing non-ASCII
-                    return '%s' % __mapping[named]
+                    return '%s' % mapping[named]
                 except KeyError:
                     return '$' + named
             braced = mo.group('braced')
             try:
-                return '%s' % __mapping[braced]
+                return '%s' % mapping[braced]
             except KeyError:
                 return '${' + braced + '}'
         return self.pattern.sub(convert, self.template)
