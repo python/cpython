@@ -767,6 +767,9 @@ Yet to be written.
 Windows
 -------
 
+- The Windows distribution now ships with Tcl/Tk version 8.4.1 (it
+  previously shipped with Tcl/Tk 8.3.2).
+
 - When Python is built under a Microsoft compiler, sys.version now
   includes the compiler version number (_MSC_VER).  For example, under
   MSVC 6, sys.version constains the substring "MSC v.1200 ".  1200 is
