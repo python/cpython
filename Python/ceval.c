@@ -3122,7 +3122,7 @@ int
 PyEval_MergeCompilerFlags(PyCompilerFlags *cf)
 {
 	PyFrameObject *current_frame = (PyFrameObject *)PyEval_GetFrame();
-	int result = 0;
+	int result = cf->cf_flags != 0;
 
 	if (current_frame != NULL) {
 		const int codeflags = current_frame->f_code->co_flags;
@@ -3898,16 +3898,27 @@ exec_statement(PyFrameObject *f, PyObject *prog, PyObject *globals,
 				       locals); 
 	}
 	else {
+		PyObject *tmp = NULL;
 		char *str;
 		PyCompilerFlags cf;
+		cf.cf_flags = 0;
+#ifdef Py_USING_UNICODE
+		if (PyUnicode_Check(prog)) {
+			tmp = PyUnicode_AsUTF8String(prog);
+			if (tmp == NULL)
+				return -1;
+			prog = tmp;
+			cf.cf_flags |= PyCF_SOURCE_IS_UTF8;
+		}
+#endif
 		if (PyString_AsStringAndSize(prog, &str, NULL))
 			return -1;
-		cf.cf_flags = 0;
 		if (PyEval_MergeCompilerFlags(&cf))
 			v = PyRun_StringFlags(str, Py_file_input, globals, 
 					      locals, &cf);
 		else
 			v = PyRun_String(str, Py_file_input, globals, locals);
+		Py_XDECREF(tmp);
 	}
 	if (plain)
 		PyFrame_LocalsToFast(f, 0);

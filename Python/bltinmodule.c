@@ -340,9 +340,30 @@ builtin_compile(PyObject *self, PyObject *args)
 	int dont_inherit = 0;
 	int supplied_flags = 0;
 	PyCompilerFlags cf;
+	PyObject *result, *cmd, *tmp = NULL;
 
-	if (!PyArg_ParseTuple(args, "sss|ii:compile", &str, &filename,
+	if (!PyArg_ParseTuple(args, "Oss|ii:compile", &cmd, &filename,
 			      &startstr, &supplied_flags, &dont_inherit))
+		return NULL;
+
+	cf.cf_flags = supplied_flags;
+
+#ifdef Py_USING_UNICODE
+	if (PyUnicode_Check(cmd)) {
+		tmp = PyUnicode_AsUTF8String(cmd);
+		if (tmp == NULL)
+			return NULL;
+		cmd = tmp;
+		cf.cf_flags |= PyCF_SOURCE_IS_UTF8;
+	}
+#endif
+	if (!PyString_Check(cmd)) {
+		PyErr_SetString(PyExc_TypeError,
+				"compile() arg 1 must be a string");
+		return NULL;
+	}
+
+	if (PyString_AsStringAndSize(cmd, &str, NULL))
 		return NULL;
 
 	if (strcmp(startstr, "exec") == 0)
@@ -364,11 +385,12 @@ builtin_compile(PyObject *self, PyObject *args)
 	}
 	/* XXX Warn if (supplied_flags & PyCF_MASK_OBSOLETE) != 0? */
 
-	cf.cf_flags = supplied_flags;
 	if (!dont_inherit) {
 		PyEval_MergeCompilerFlags(&cf);
 	}
-	return Py_CompileStringFlags(str, filename, start, &cf);
+	result = Py_CompileStringFlags(str, filename, start, &cf);
+	Py_XDECREF(tmp);
+	return result;
 }
 
 PyDoc_STRVAR(compile_doc,
@@ -428,7 +450,7 @@ Return the tuple ((x-x%y)/y, x%y).  Invariant: div*y + mod == x.");
 static PyObject *
 builtin_eval(PyObject *self, PyObject *args)
 {
-	PyObject *cmd;
+	PyObject *cmd, *result, *tmp = NULL;
 	PyObject *globals = Py_None, *locals = Py_None;
 	char *str;
 	PyCompilerFlags cf;
@@ -467,14 +489,26 @@ builtin_eval(PyObject *self, PyObject *args)
 			   "eval() arg 1 must be a string or code object");
 		return NULL;
 	}
+	cf.cf_flags = 0;
+
+#ifdef Py_USING_UNICODE
+	if (PyUnicode_Check(cmd)) {
+		tmp = PyUnicode_AsUTF8String(cmd);
+		if (tmp == NULL)
+			return NULL;
+		cmd = tmp;
+		cf.cf_flags |= PyCF_SOURCE_IS_UTF8;
+	}
+#endif
 	if (PyString_AsStringAndSize(cmd, &str, NULL))
 		return NULL;
 	while (*str == ' ' || *str == '\t')
 		str++;
 
-	cf.cf_flags = 0;
 	(void)PyEval_MergeCompilerFlags(&cf);
-	return PyRun_StringFlags(str, Py_eval_input, globals, locals, &cf);
+	result = PyRun_StringFlags(str, Py_eval_input, globals, locals, &cf);
+	Py_XDECREF(tmp);
+	return result;
 }
 
 PyDoc_STRVAR(eval_doc,
