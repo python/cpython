@@ -228,6 +228,7 @@ strop_joinfields(self, args)
 		if (item && !PyString_Check(item)) {
 			PyErr_SetString(PyExc_TypeError,
 				 "first argument must be sequence of strings");
+			Py_DECREF(item);
 			return NULL;
 		}
 		return item;
