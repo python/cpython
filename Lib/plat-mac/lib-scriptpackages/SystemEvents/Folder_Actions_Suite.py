@@ -147,17 +147,41 @@ class Folder_Actions_Suite_Events:
             return _arguments['----']
 
 
-class folder_action(aetools.ComponentItem):
-    """folder action - An action attached to a folder in the file system """
-    want = 'foac'
+class application(aetools.ComponentItem):
+    """application - The Folder Actions Suite host program """
+    want = 'capp'
 class _Prop__3c_Inheritance_3e_(aetools.NProperty):
     """<Inheritance> - All of the properties of the superclass. """
     which = 'c@#^'
-    want = 'cobj'
-class _Prop_enabled(aetools.NProperty):
-    """enabled - Is the folder action enabled? """
-    which = 'enaB'
+    want = 'capp'
+_3c_Inheritance_3e_ = _Prop__3c_Inheritance_3e_()
+class _Prop_folder_actions_enabled(aetools.NProperty):
+    """folder actions enabled - Are Folder Actions currently being processed? """
+    which = 'faen'
     want = 'bool'
+folder_actions_enabled = _Prop_folder_actions_enabled()
+class _Prop_properties(aetools.NProperty):
+    """properties - every property of the Folder Actions Suite host program """
+    which = 'pALL'
+    want = '****'
+properties = _Prop_properties()
+#        element 'cdis' as ['name', 'indx', 'rele', 'rang', 'test']
+#        element 'cfol' as ['name', 'indx', 'rele', 'rang', 'test']
+#        element 'cobj' as ['name', 'indx', 'rele', 'rang', 'test']
+#        element 'cwin' as ['name', 'indx', 'rele', 'rang', 'test', 'ID  ']
+#        element 'docu' as ['name', 'indx', 'rele', 'rang', 'test']
+#        element 'file' as ['name', 'indx', 'rele', 'rang', 'test']
+#        element 'foac' as ['name', 'indx', 'rele', 'rang', 'test']
+#        element 'logi' as ['name', 'indx', 'rele', 'rang', 'test']
+#        element 'pcap' as ['name', 'indx', 'rele', 'rang', 'test']
+#        element 'pcda' as ['name', 'indx', 'rele', 'rang', 'test']
+#        element 'prcs' as ['name', 'indx', 'rele', 'rang', 'test']
+
+applications = application
+
+class folder_action(aetools.ComponentItem):
+    """folder action - An action attached to a folder in the file system """
+    want = 'foac'
 class _Prop_name(aetools.NProperty):
     """name - the name of the folder action, which is also the name of the folder """
     which = 'pnam'
@@ -165,10 +189,6 @@ class _Prop_name(aetools.NProperty):
 class _Prop_path(aetools.NProperty):
     """path - the path to the folder to which the folder action applies """
     which = 'ppth'
-    want = '****'
-class _Prop_properties(aetools.NProperty):
-    """properties - every property of the folder action """
-    which = 'pALL'
     want = '****'
 class _Prop_volume(aetools.NProperty):
     """volume - the volume on which the folder action resides """
@@ -187,11 +207,32 @@ class _Prop_POSIX_path(aetools.NProperty):
     want = 'utxt'
 
 scripts = script
+application._superclassnames = []
+import Disk_Folder_File_Suite
 import Standard_Suite
+import Login_Items_Suite
+import Processes_Suite
+application._privpropdict = {
+    '_3c_Inheritance_3e_' : _Prop__3c_Inheritance_3e_,
+    'folder_actions_enabled' : _Prop_folder_actions_enabled,
+    'properties' : _Prop_properties,
+}
+application._privelemdict = {
+    'application_process' : Processes_Suite.application_process,
+    'desk_accessory_process' : Processes_Suite.desk_accessory_process,
+    'disk' : Disk_Folder_File_Suite.disk,
+    'document' : Standard_Suite.document,
+    'file' : Disk_Folder_File_Suite.file,
+    'folder' : Disk_Folder_File_Suite.folder,
+    'folder_action' : folder_action,
+    'item' : Disk_Folder_File_Suite.item,
+    'login_item' : Login_Items_Suite.login_item,
+    'process' : Processes_Suite.process,
+    'window' : Standard_Suite.window,
+}
 folder_action._superclassnames = ['item']
 folder_action._privpropdict = {
     '_3c_Inheritance_3e_' : _Prop__3c_Inheritance_3e_,
-    'enabled' : _Prop_enabled,
     'name' : _Prop_name,
     'path' : _Prop_path,
     'properties' : _Prop_properties,
@@ -223,13 +264,14 @@ _Enum_actn = {
 # Indices of types declared in this module
 #
 _classdeclarations = {
+    'capp' : application,
     'foac' : folder_action,
     'scpt' : script,
 }
 
 _propdeclarations = {
     'c@#^' : _Prop__3c_Inheritance_3e_,
-    'enaB' : _Prop_enabled,
+    'faen' : _Prop_folder_actions_enabled,
     'pALL' : _Prop_properties,
     'pnam' : _Prop_name,
     'posx' : _Prop_POSIX_path,

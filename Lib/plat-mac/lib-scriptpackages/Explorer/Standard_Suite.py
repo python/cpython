@@ -46,6 +46,7 @@ class _Prop_selected_text(aetools.NProperty):
     """selected text - the selected text """
     which = 'stxt'
     want = 'TEXT'
+selected_text = _Prop_selected_text()
 application._superclassnames = []
 application._privpropdict = {
     'selected_text' : _Prop_selected_text,

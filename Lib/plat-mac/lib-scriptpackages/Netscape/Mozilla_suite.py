@@ -1,7 +1,7 @@
 """Suite Mozilla suite: Experimental Mozilla suite
 Level 1, version 1
 
-Generated from /Volumes/Moes/Applications (Mac OS 9)/Netscape Communicator\xe2\x84\xa2 Folder/Netscape Communicator\xe2\x84\xa2
+Generated from /Volumes/Sap/Applications (Mac OS 9)/Netscape Communicator\xe2\x84\xa2 Folder/Netscape Communicator\xe2\x84\xa2
 AETE/AEUT resource version 1/0, language 0, script 0
 """
 

@@ -65,54 +65,67 @@ class _Prop_Finder_preferences(aetools.NProperty):
     """Finder preferences - (NOT AVAILABLE YET) Various preferences that apply to the Finder as a whole """
     which = 'pfrp'
     want = 'cprf'
+Finder_preferences = _Prop_Finder_preferences()
 class _Prop_clipboard(aetools.NProperty):
     """clipboard - (NOT AVAILABLE YET) the Finder\xd5s clipboard window """
     which = 'pcli'
     want = 'obj '
+clipboard = _Prop_clipboard()
 class _Prop_desktop(aetools.NProperty):
     """desktop - the desktop """
     which = 'desk'
     want = 'cdsk'
+desktop = _Prop_desktop()
 class _Prop_frontmost(aetools.NProperty):
     """frontmost - Is the Finder the frontmost process? """
     which = 'pisf'
     want = 'bool'
+frontmost = _Prop_frontmost()
 class _Prop_home(aetools.NProperty):
     """home - the home directory """
     which = 'home'
     want = 'cfol'
+home = _Prop_home()
 class _Prop_insertion_location(aetools.NProperty):
     """insertion location - the container in which a new folder would appear if \xd2New Folder\xd3 was selected """
     which = 'pins'
     want = 'obj '
+insertion_location = _Prop_insertion_location()
 class _Prop_name(aetools.NProperty):
     """name - the Finder\xd5s name """
     which = 'pnam'
     want = 'itxt'
+name = _Prop_name()
 class _Prop_product_version(aetools.NProperty):
     """product version - the version of the System software running on this computer """
     which = 'ver2'
     want = 'utxt'
+product_version = _Prop_product_version()
 class _Prop_selection(aetools.NProperty):
     """selection - the selection in the frontmost Finder window """
     which = 'sele'
     want = 'obj '
+selection = _Prop_selection()
 class _Prop_startup_disk(aetools.NProperty):
     """startup disk - the startup disk """
     which = 'sdsk'
     want = 'cdis'
+startup_disk = _Prop_startup_disk()
 class _Prop_trash(aetools.NProperty):
     """trash - the trash """
     which = 'trsh'
     want = 'ctrs'
+trash = _Prop_trash()
 class _Prop_version(aetools.NProperty):
     """version - the version of the Finder """
     which = 'vers'
     want = 'utxt'
+version = _Prop_version()
 class _Prop_visible(aetools.NProperty):
     """visible - Is the Finder\xd5s layer visible? """
     which = 'pvis'
     want = 'bool'
+visible = _Prop_visible()
 #        element 'alia' as ['indx', 'name']
 #        element 'appf' as ['indx', 'name', 'ID  ']
 #        element 'brow' as ['indx', 'ID  ']

@@ -48,14 +48,14 @@ getbaseclasses(window)
 getbaseclasses(application)
 getbaseclasses(item)
 getbaseclasses(document)
+getbaseclasses(window)
+getbaseclasses(application)
 getbaseclasses(character)
 getbaseclasses(attachment)
 getbaseclasses(paragraph)
 getbaseclasses(word)
 getbaseclasses(attribute_run)
 getbaseclasses(text)
-getbaseclasses(window)
-getbaseclasses(application)
 
 #
 # Indices of types declared in this module
@@ -66,14 +66,14 @@ _classdeclarations = {
     'capp' : application,
     'cobj' : item,
     'docu' : document,
+    'cwin' : window,
+    'capp' : application,
     'cha ' : character,
     'atts' : attachment,
     'cpar' : paragraph,
     'cwor' : word,
     'catr' : attribute_run,
     'ctxt' : text,
-    'cwin' : window,
-    'capp' : application,
 }
 
 
@@ -85,3 +85,5 @@ class Terminal(Standard_Suite_Events,
 
     _moduleName = 'Terminal'
 
+    _elemdict = application._elemdict
+    _propdict = application._propdict

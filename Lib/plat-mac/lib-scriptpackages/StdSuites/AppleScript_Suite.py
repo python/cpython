@@ -1,7 +1,7 @@
 """Suite AppleScript Suite: Standard terms for AppleScript
 Level 1, version 1
 
-Generated from /Volumes/Moes/Systeemmap/Extensies/AppleScript
+Generated from /Volumes/Sap/System Folder/Extensions/AppleScript
 AETE/AEUT resource version 1/0, language 0, script 0
 """
 
@@ -762,11 +762,15 @@ class strings(aetools.ComponentItem):
 
 string = strings
 
-class aliases(aetools.ComponentItem):
-    """aliases -  """
+class alias(aetools.ComponentItem):
+    """alias - a file on a disk or server.  The file must exist when you check the syntax of your script. """
     want = 'alis'
+class _Prop_POSIX_path(aetools.NProperty):
+    """POSIX path - the POSIX path of the file """
+    which = 'psxp'
+    want = 'TEXT'
 
-alias = aliases
+aliases = alias
 
 class April(aetools.ComponentItem):
     """April - the month of April """
@@ -795,54 +799,67 @@ class _Prop_AppleScript(aetools.NProperty):
     """AppleScript - the top-level script object """
     which = 'ascr'
     want = 'scpt'
+AppleScript = _Prop_AppleScript()
 class _Prop_days(aetools.NProperty):
     """days - the number of seconds in a day """
     which = 'days'
     want = 'long'
+days = _Prop_days()
 class _Prop_hours(aetools.NProperty):
     """hours - the number of seconds in an hour """
     which = 'hour'
     want = 'long'
+hours = _Prop_hours()
 class _Prop_minutes(aetools.NProperty):
     """minutes - the number of seconds in a minute """
     which = 'min '
     want = 'long'
+minutes = _Prop_minutes()
 class _Prop_pi(aetools.NProperty):
     """pi - the constant pi """
     which = 'pi  '
     want = 'doub'
+pi = _Prop_pi()
 class _Prop_print_depth(aetools.NProperty):
     """print depth - the maximum depth to print """
     which = 'prdp'
     want = 'long'
+print_depth = _Prop_print_depth()
 class _Prop_print_length(aetools.NProperty):
     """print length - the maximum length to print """
     which = 'prln'
     want = 'long'
+print_length = _Prop_print_length()
 class _Prop_result(aetools.NProperty):
     """result - the last result of evaluation """
     which = 'rslt'
     want = '****'
+result = _Prop_result()
 class _Prop_return_(aetools.NProperty):
     """return - a return character """
     which = 'ret '
     want = 'cha '
+return_ = _Prop_return_()
 class _Prop_space(aetools.NProperty):
     """space - a space character """
     which = 'spac'
     want = 'cha '
+space = _Prop_space()
 class _Prop_tab(aetools.NProperty):
     """tab - a tab character """
     which = 'tab '
     want = 'cha '
+tab = _Prop_tab()
 class _Prop_text_item_delimiters(aetools.NProperty):
     """text item delimiters - the text item delimiters of a string """
     which = 'txdl'
     want = 'list'
+text_item_delimiters = _Prop_text_item_delimiters()
 class _Prop_weeks(aetools.NProperty):
     """weeks - the number of seconds in a week """
     which = 'week'
     want = 'long'
+weeks = _Prop_weeks()
 
 applications = application
 
@@ -980,11 +997,11 @@ class Friday(aetools.ComponentItem):
     """Friday - Friday """
     want = 'fri '
 
-class file_specifications(aetools.ComponentItem):
-    """file specifications -  """
+class file_specification(aetools.ComponentItem):
+    """file specification - a file specification as used by the operating system """
     want = 'fss '
 
-file_specification = file_specifications
+file_specifications = file_specification
 
 class gallons(aetools.ComponentItem):
     """gallons - a volume measurement in Imperial gallons """
@@ -1416,10 +1433,11 @@ strings._privpropdict = {
 }
 strings._privelemdict = {
 }
-aliases._superclassnames = []
-aliases._privpropdict = {
+alias._superclassnames = []
+alias._privpropdict = {
+    'POSIX_path' : _Prop_POSIX_path,
 }
-aliases._privelemdict = {
+alias._privelemdict = {
 }
 April._superclassnames = []
 April._privpropdict = {
@@ -1582,10 +1600,11 @@ Friday._privpropdict = {
 }
 Friday._privelemdict = {
 }
-file_specifications._superclassnames = []
-file_specifications._privpropdict = {
+file_specification._superclassnames = []
+file_specification._privpropdict = {
+    'POSIX_path' : _Prop_POSIX_path,
 }
-file_specifications._privelemdict = {
+file_specification._privelemdict = {
 }
 gallons._superclassnames = []
 gallons._privpropdict = {
@@ -2045,7 +2064,7 @@ _classdeclarations = {
     'PICT' : pictures,
     'STXT' : styled_text,
     'TEXT' : strings,
-    'alis' : aliases,
+    'alis' : alias,
     'apr ' : April,
     'aug ' : August,
     'bool' : booleans,
@@ -2075,7 +2094,7 @@ _classdeclarations = {
     'feb ' : February,
     'feet' : feet,
     'fri ' : Friday,
-    'fss ' : file_specifications,
+    'fss ' : file_specification,
     'galn' : gallons,
     'gram' : grams,
     'hand' : handlers,
@@ -2169,6 +2188,7 @@ _propdeclarations = {
     'prdp' : _Prop_print_depth,
     'prln' : _Prop_print_length,
     'pscd' : _Prop_script_code,
+    'psxp' : _Prop_POSIX_path,
     'rest' : _Prop_rest,
     'ret ' : _Prop_return_,
     'rslt' : _Prop_result,

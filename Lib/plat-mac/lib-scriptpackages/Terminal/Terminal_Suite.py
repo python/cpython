@@ -68,10 +68,12 @@ class _Prop__3c_Inheritance_3e_(aetools.NProperty):
     """<Inheritance> - All of the properties of the superclass. """
     which = 'c@#^'
     want = 'capp'
+_3c_Inheritance_3e_ = _Prop__3c_Inheritance_3e_()
 class _Prop_properties(aetools.NProperty):
     """properties - every property of the Terminal program """
     which = 'pALL'
     want = '****'
+properties = _Prop_properties()
 #        element 'cwin' as ['name', 'indx', 'rele', 'rang', 'test', 'ID  ']
 #        element 'docu' as ['name', 'indx', 'rele', 'rang', 'test']
 

@@ -1,7 +1,7 @@
 """Suite Standard Suite: Common terms for most applications
 Level 1, version 1
 
-Generated from /Volumes/Moes/Applications (Mac OS 9)/Netscape Communicator\xe2\x84\xa2 Folder/Netscape Communicator\xe2\x84\xa2
+Generated from /Volumes/Sap/Applications (Mac OS 9)/Netscape Communicator\xe2\x84\xa2 Folder/Netscape Communicator\xe2\x84\xa2
 AETE/AEUT resource version 1/0, language 0, script 0
 """
 
@@ -108,10 +108,12 @@ class _Prop_alert_application(aetools.NProperty):
     """alert application - Most of the alerts will be sent to this application using yet unspecified AE interface. We need a few alert boxes: alert, confirm and notify. Any ideas on how to design this event? mailto:atotic@netscape.com. I\xd5d like to conform to the standard. """
     which = 'ALAP'
     want = 'type'
+alert_application = _Prop_alert_application()
 class _Prop_kiosk_mode(aetools.NProperty):
     """kiosk mode - Kiosk mode leaves very few menus enabled """
     which = 'KOSK'
     want = 'long'
+kiosk_mode = _Prop_kiosk_mode()
 #        element 'cwin' as ['indx', 'name', 'ID  ']
 
 class window(aetools.ComponentItem):

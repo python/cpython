@@ -1,7 +1,7 @@
 """Suite Standard Suite: Common terms for most applications
 Level 1, version 1
 
-Generated from /Volumes/Moes/Systeemmap/Extensies/AppleScript
+Generated from /Volumes/Sap/System Folder/Extensions/AppleScript
 AETE/AEUT resource version 1/0, language 0, script 0
 """
 
@@ -201,6 +201,27 @@ class Standard_Suite_Events(builtin_Suite_Events):
         """
         _code = 'core'
         _subcode = 'doex'
+
+        if _arguments: raise TypeError, 'No optional args expected'
+        _arguments['----'] = _object
+
+
+        _reply, _arguments, _attributes = self.send(_code, _subcode,
+                _arguments, _attributes)
+        if _arguments.get('errn', 0):
+            raise aetools.Error, aetools.decodeerror(_arguments)
+        # XXXX Optionally decode result
+        if _arguments.has_key('----'):
+            return _arguments['----']
+
+    def handleBreakpoint(self, _object, _attributes={}, **_arguments):
+        """handleBreakpoint: return true to stop at a breakpoint
+        Required argument: the call frame of the breakpoint
+        Keyword argument _attributes: AppleEvent attribute dictionary
+        Returns: true to stop, false if not
+        """
+        _code = 'core'
+        _subcode = 'brak'
 
         if _arguments: raise TypeError, 'No optional args expected'
         _arguments['----'] = _object
@@ -448,11 +469,15 @@ class Standard_Suite_Events(builtin_Suite_Events):
             return _arguments['----']
 
 
-class aliases(aetools.ComponentItem):
-    """aliases -  """
+class alias(aetools.ComponentItem):
+    """alias - a file on a disk or server.  The file must exist when you check the syntax of your script. """
     want = 'alis'
+class _Prop_POSIX_path(aetools.NProperty):
+    """POSIX path - the POSIX path of the file """
+    which = 'psxp'
+    want = 'TEXT'
 
-alias = aliases
+aliases = alias
 
 class application(aetools.ComponentItem):
     """application - An application program """
@@ -461,22 +486,27 @@ class _Prop_clipboard(aetools.NProperty):
     """clipboard - the contents of the clipboard for this application """
     which = 'pcli'
     want = '****'
+clipboard = _Prop_clipboard()
 class _Prop_frontmost(aetools.NProperty):
     """frontmost - Is this the frontmost application? """
     which = 'pisf'
     want = 'bool'
+frontmost = _Prop_frontmost()
 class _Prop_name(aetools.NProperty):
     """name - the name of the application """
     which = 'pnam'
     want = 'itxt'
+name = _Prop_name()
 class _Prop_selection(aetools.NProperty):
     """selection - the selection visible to the user.  Use the \xd4select\xd5 command to set a new selection; use \xd4contents of selection\xd5 to get or change information in the document. """
     which = 'sele'
     want = 'csel'
+selection = _Prop_selection()
 class _Prop_version(aetools.NProperty):
     """version - the version of the application """
     which = 'vers'
     want = 'vers'
+version = _Prop_version()
 
 applications = application
 
@@ -553,16 +583,13 @@ documents = document
 class file(aetools.ComponentItem):
     """file - a file on a disk or server """
     want = 'file'
-class _Prop_stationery(aetools.NProperty):
-    """stationery - Is the file a stationery file? """
-    which = 'pspd'
-    want = 'bool'
 
 files = file
-aliases._superclassnames = []
-aliases._privpropdict = {
+alias._superclassnames = []
+alias._privpropdict = {
+    'POSIX_path' : _Prop_POSIX_path,
 }
-aliases._privelemdict = {
+alias._privelemdict = {
 }
 application._superclassnames = []
 application._privpropdict = {
@@ -608,7 +635,7 @@ document._privelemdict = {
 }
 file._superclassnames = []
 file._privpropdict = {
-    'stationery' : _Prop_stationery,
+    'POSIX_path' : _Prop_POSIX_path,
 }
 file._privelemdict = {
 }
@@ -663,7 +690,7 @@ _Enum_styl = {
 # Indices of types declared in this module
 #
 _classdeclarations = {
-    'alis' : aliases,
+    'alis' : alias,
     'capp' : application,
     'cins' : insertion_points,
     'csel' : selection_2d_object,
@@ -685,7 +712,7 @@ _propdeclarations = {
     'pmod' : _Prop_modal,
     'pnam' : _Prop_name,
     'prsz' : _Prop_resizable,
-    'pspd' : _Prop_stationery,
+    'psxp' : _Prop_POSIX_path,
     'ptit' : _Prop_titled,
     'pvis' : _Prop_visible,
     'pzum' : _Prop_zoomed,
