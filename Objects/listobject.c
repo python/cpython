@@ -2771,7 +2771,7 @@ PyTypeObject PyListIter_Type = {
 typedef struct {
 	PyObject_HEAD
 	long it_index;
-	PyListObject *it_seq;
+	PyListObject *it_seq; /* Set to NULL when iterator is exhausted */
 } listreviterobject;
 
 PyTypeObject PyListRevIter_Type;
@@ -2819,6 +2819,9 @@ listreviter_next(listreviterobject *it)
 		item = PyList_GET_ITEM(it->it_seq, it->it_index);
 		it->it_index--;
 		Py_INCREF(item);
+	} else if (it->it_seq != NULL) {
+		Py_DECREF(it->it_seq);
+		it->it_seq = NULL;
 	}
 	return item;
 }
