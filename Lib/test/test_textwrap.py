@@ -167,7 +167,7 @@ class IndentTestCases(BaseTestCase):
 
     # called before each test method
     def setUp(self):
-        self.testString = '''\
+        self.text = '''\
 This paragraph will be filled, first without any indentation,
 and then with some (including a hanging indent).'''
 
@@ -180,27 +180,21 @@ This paragraph will be filled, first
 without any indentation, and then with
 some (including a hanging indent).'''
 
-        result = fill(self.testString, 40)
+        result = fill(self.text, 40)
         self.check(result, expect)
 
 
     def test_initial_indent(self):
         '''Test initial_indent parameter.'''
 
-        expect = [
-            "     This paragraph will be filled,",
-            "first without any indentation, and then",
-            "with some (including a hanging indent)."]
-
-        result = wrap(self.testString, 40, initial_indent="     ")
+        expect = ["     This paragraph will be filled,",
+                  "first without any indentation, and then",
+                  "with some (including a hanging indent)."]
+        result = wrap(self.text, 40, initial_indent="     ")
         self.check(result, expect)
 
-        expect = '''\
-     This paragraph will be filled,
-first without any indentation, and then
-with some (including a hanging indent).'''
-
-        result = fill(self.testString, 40, initial_indent="     ")
+        expect = "\n".join(expect)
+        result = fill(self.text, 40, initial_indent="     ")
         self.check(result, expect)
 
 
@@ -213,8 +207,8 @@ with some (including a hanging indent).'''
     with some (including a hanging
     indent).'''
 
-        result = fill(self.testString, 40, initial_indent="  * ", 
-            subsequent_indent="    ")
+        result = fill(self.text, 40,
+                      initial_indent="  * ", subsequent_indent="    ")
         self.check(result, expect)
 
 
