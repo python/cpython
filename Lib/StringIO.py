@@ -13,6 +13,7 @@ buf = f.read()      # read until EOF
 buf = f.read(n)     # read up to n bytes
 buf = f.readline()  # read until end of line ('\n') or EOF
 list = f.readlines()# list of f.readline() results until EOF
+f.truncate([size])  # truncate file at to at most size (default: current pos)
 f.write(buf)        # write at current position
 f.writelines(list)  # for line in list: f.write(line)
 f.getvalue()        # return whole file's contents as a string
@@ -28,6 +29,7 @@ Notes:
 - There's a simple test set (see end of this file).
 """
 
+import errno
 import string
 
 class StringIO:
@@ -102,6 +104,17 @@ class StringIO:
 				break
 			line = self.readline()
 		return lines
+	def truncate(self, size=None):
+		if self.closed:
+			raise ValueError, "I/O operation on closed file"
+		if size is None:
+			size = self.pos
+		elif size < 0:
+			raise IOError(errno.EINVAL,
+                                      "Negative size not allowed")
+		elif size < self.pos:
+			self.pos = size
+		self.buf = self.getvalue()[:size]
 	def write(self, s):
 		if self.closed:
 			raise ValueError, "I/O operation on closed file"
