@@ -450,7 +450,7 @@ class Set(BaseSet):
         If the element is not a member, do nothing.
         """
         try:
-            del self._data[element]
+            self.remove(element)
         except KeyError:
             pass
 
