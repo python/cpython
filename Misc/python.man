@@ -47,20 +47,16 @@ applications.
 See the internal documentation for hints.
 .SH COMMAND LINE OPTIONS
 .TP
-.TP
 .B \-d
 Turn on parser debugging output (for wizards only, depending on
 compilation options).
+.TP
 .B \-i
 When a script is passed as first argument or the \fB\-c\fP option is
 used, enter interactive mode after executing the script or the
-command.  This can be useful to inspect global variables or a stack
-trace when a script raises an exception.
-.TP
-.B \-i
-When executing a program from a file, this option enters interactive
-mode after the program has completed.  It does not read the
-$PYTHONSTARTUP file.
+command.  It does not read the $PYTHONSTARTUP file.  This can be
+useful to inspect global variables or a stack trace when a script
+raises an exception.
 .TP
 .B \-k
 This hack, eh, feature is intended to help you to find expression
