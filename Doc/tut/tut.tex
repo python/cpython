@@ -4117,11 +4117,10 @@ Instance method objects have attributes, too: \code{m.im_self} is the
 object of which the method is an instance, and \code{m.im_func} is the
 function object corresponding to the method.
 
-\subsection{Exceptions Can Be Classes \label{exceptionClasses}}
+\subsection{Exceptions Are Classes Too\label{exceptionClasses}}
 
-User-defined exceptions are no longer limited to being string objects
---- they can be identified by classes as well.  Using this mechanism it
-is possible to create extensible hierarchies of exceptions.
+User-defined exceptions are identified by classes as well.  Using this
+mechanism it is possible to create extensible hierarchies of exceptions.
 
 There are two new valid (semantic) forms for the raise statement:
 
@@ -4139,8 +4138,7 @@ shorthand for:
 raise instance.__class__, instance
 \end{verbatim}
 
-An except clause may list classes as well as string objects.  A class
-in an except clause is compatible with an exception if it is the same
+A class in an except clause is compatible with an exception if it is the same
 class or a base class thereof (but not the other way around --- an
 except clause listing a derived class is not compatible with a base
 class).  For example, the following code will print B, C, D in that
@@ -4199,13 +4197,16 @@ world, such as Europe, Japan, and Australia; a mirror may be faster
 than the main site, depending on your geographical location.  A more
 informal site is \url{http://starship.python.net/}, which contains a
 bunch of Python-related personal home pages; many people have
-downloadable software there.
+downloadable software there. Many more user-created Python modules
+can be found in a third-party repository at
+\url{http://www.vex.net/parnassus}.
 
 For Python-related questions and problem reports, you can post to the
 newsgroup \newsgroup{comp.lang.python}, or send them to the mailing
 list at \email{python-list@python.org}.  The newsgroup and mailing list
 are gatewayed, so messages posted to one will automatically be
-forwarded to the other.  There are around 120 postings a day,
+forwarded to the other.  There are around 120 postings a day (with peaks
+up to several hundred),
 % Postings figure based on average of last six months activity as
 % reported by www.egroups.com; Jan. 2000 - June 2000: 21272 msgs / 182
 % days = 116.9 msgs / day and steadily increasing.
