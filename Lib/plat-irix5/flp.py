@@ -118,10 +118,10 @@ class _newobj():
 # Internal parsing routines.
 #
 def _parse_string(str):
-    return string.strip(str)
+    return str
 
 def _parse_num(str):
-    return eval(string.strip(str))
+    return eval(str)
 
 def _parse_numlist(str):
     slist = string.split(str)
@@ -144,16 +144,18 @@ _parse_func = { \
 # This function parses a line, and returns either
 # a string or a tuple (name,value)
 
+import regexp
+
 def _parse_line(line):
-    try:
-	colonpos = string.index(line,':')
-    except string.index_error:
-	return string.strip(line)
-    name = line[:colonpos]
-    name = string.joinfields(string.split(name),'')
-    name = string.lower(name)
+    a = regexp.match('^([^:]*): *(.*)', line)
+    if not a:
+	return line
+    name = line[:a[1][1]]
+    if name[0] = 'N':
+	    name = string.joinfields(string.split(name),'')
+	    name = string.lower(name)
     name = string.upper(name[0]) + name[1:]
-    value = line[colonpos+1:]
+    value = line[a[2][0]:]
     try:
 	pf = _parse_func[name]
     except RuntimeError:	# BCOMPAT
@@ -165,12 +167,12 @@ def _parse_line(line):
 
 def _readline(file):
     line = file.readline()
-    if line <> '':
-	line = line[:-1]
-    return line
+    if not line:
+    	raise EOFError
+    return line[:-1]
 	
 def _parse_1_line(file):
-    line = ''
+    line = _readline(file)
     while line = '':
 	line = _readline(file)
     return _parse_line(line)
