@@ -431,7 +431,7 @@ nfc_nfkc(PyObject *input, int k)
               skipped[index] = skipped[cskipped-1];
               cskipped--;
               i++;
-              goto again; // continue while
+              goto again; /* continue while */
           }
       }
       /* Hangul Composition. We don't need to check for <LV,T>
