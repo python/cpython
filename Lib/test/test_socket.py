@@ -97,7 +97,7 @@ try:
     if not canfork or os.fork():
         # parent is server
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.bind(hostname, PORT)
+        s.bind((hostname, PORT))
         s.listen(1)
         if verbose:
             print 'parent accepting'
@@ -133,7 +133,7 @@ try:
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             if verbose:
                 print 'child connecting'
-            s.connect(hostname, PORT)
+            s.connect((hostname, PORT))
             msg = 'socket test'
             s.send(msg)
             data = s.recv(1024)
