@@ -243,11 +243,14 @@ tb_printinternal(tb, f, limit)
 		tb1 = tb1->tb_next;
 	}
 	while (tb != NULL && !intrcheck()) {
-		if (depth <= limit)
+		if (depth <= limit) {
+			tb->tb_lineno = PyCode_Addr2Line(tb->tb_frame->f_code,
+							 tb->tb_lasti);
 			tb_displayline(f,
 			    getstringvalue(tb->tb_frame->f_code->co_filename),
 			    tb->tb_lineno,
 			    getstringvalue(tb->tb_frame->f_code->co_name));
+		}
 		depth--;
 		tb = tb->tb_next;
 	}
