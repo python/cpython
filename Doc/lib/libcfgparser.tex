@@ -238,10 +238,12 @@ option in the given \var{section}.
 \end{methoddesc}
 
 \begin{methoddesc}{set}{section, option, value}
-If the given section exists, set the given option to the specified value;
-otherwise raise \exception{NoSectionError}.  \var{value} must be a
-string (\class{str} or \class{unicode}); if not, \exception{TypeError}
-is raised.
+If the given section exists, set the given option to the specified
+value; otherwise raise \exception{NoSectionError}.  While it is
+possible to use \class{RawConfigParser} (or \class{ConfigParser} with
+\var{raw} parameters set to true) for \emph{internal} storage of
+non-string values, full functionality (including interpolation and
+output to files) can only be achieved using string values.
 \versionadded{1.6}
 \end{methoddesc}
 
@@ -281,8 +283,6 @@ option names case sensitive.
 
 The \class{ConfigParser} class extends some methods of the
 \class{RawConfigParser} interface, adding some optional arguments.
-The \class{SafeConfigParser} class implements the same extended
-interface.
 
 \begin{methoddesc}{get}{section, option\optional{, raw\optional{, vars}}}
 Get an \var{option} value for the named \var{section}.  All the
@@ -296,4 +296,18 @@ Return a list of \code{(\var{name}, \var{value})} pairs for each
 option in the given \var{section}. Optional arguments have the
 same meaning as for the \method{get()} method.
 \versionadded{2.3}
+\end{methoddesc}
+
+
+\subsection{SafeConfigParser Objects \label{SafeConfigParser-objects}}
+
+The \class{SafeConfigParser} class implements the same extended
+interface as \class{ConfigParser}, with the following addition:
+
+\begin{methoddesc}{set}{section, option, value}
+If the given section exists, set the given option to the specified
+value; otherwise raise \exception{NoSectionError}.  \var{value} must
+be a string (\class{str} or \class{unicode}); if not,
+\exception{TypeError} is raised.
+\versionadded{2.4}
 \end{methoddesc}
