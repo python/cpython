@@ -2704,7 +2704,7 @@ parser__pickler(self, args)
 	    result = Py_BuildValue("O(O)", pickle_constructor, tuple);
 	    Py_DECREF(tuple);
 	}
-	Py_XDECREF(newargs);
+	Py_DECREF(newargs);
     }
   finally:
     return (result);
