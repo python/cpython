@@ -25,6 +25,9 @@ __imul__ called
 __div__ called
 __rdiv__ called
 __idiv__ called
+__floordiv__ called
+__rfloordiv__ called
+__ifloordiv__ called
 __mod__ called
 __rmod__ called
 __imod__ called
