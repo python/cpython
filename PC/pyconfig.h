@@ -435,10 +435,6 @@ typedef int pid_t;
    (as it does on SGI IRIX 4.x) */
 /* #undef BAD_EXEC_PROTOTYPES */
 
-/* Define if your compiler botches static forward declarations
-   (as it does on SCI ODT 3.0) */
-#define BAD_STATIC_FORWARD 1
-
 /* Define if getpgrp() must be called as getpgrp(0)
    and (consequently) setpgrp() as setpgrp(0, 0). */
 /* #undef GETPGRP_HAVE_ARGS */
