@@ -127,8 +127,8 @@ class UserString:
     def zfill(self, width): return self.__class__(self.data.zfill(width))
 
     # the following methods are defined for unicode objects only:
-    def iswide(self): return self.data.iswide()
-    def width(self): return self.data.width()
+    def iswide(self): return self.data.iswide() # unicode only
+    def width(self): return self.data.width() # unicode only
 
 class MutableString(UserString):
     """mutable string objects
