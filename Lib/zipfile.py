@@ -120,7 +120,6 @@ class ZipInfo:
         null_byte = filename.find(chr(0))
         if null_byte >= 0:
             filename = filename[0:null_byte]
-            print "File name %s contains a suspicious null byte!" % filename
 # This is used to ensure paths in generated ZIP files always use
 # forward slashes as the directory separator, as required by the
 # ZIP format specification.
