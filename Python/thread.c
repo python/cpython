@@ -43,7 +43,7 @@ static int thread_debug = 0;
 #define HDR_SIZE	2680	/* sizeof(ushdr_t) */
 #define MAXPROC		100	/* max # of threads that can be started */
 
-static usptr_t *shared_arena;
+/*static*/ usptr_t *shared_arena;
 static ulock_t count_lock;	/* protection for some variables */
 static ulock_t wait_lock;	/* lock used to wait for other threads */
 static int waiting_for_threads;	/* protected by count_lock */
