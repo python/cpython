@@ -23,9 +23,9 @@ ZIP_DEFLATED = 8
 # Here are some struct module formats for reading headers
 structEndArchive = "<4s4H2lH"     # 9 items, end of archive, 22 bytes
 stringEndArchive = "PK\005\006"   # magic number for end of archive record
-structCentralDir = "<4s4B4H3l5HLl"# 19 items, central directory, 46 bytes
+structCentralDir = "<4s4B4HlLL5HLl"# 19 items, central directory, 46 bytes
 stringCentralDir = "PK\001\002"   # magic number for central directory
-structFileHeader = "<4s2B4H3l2H"  # 12 items, file header record, 30 bytes
+structFileHeader = "<4s2B4HlLL2H"  # 12 items, file header record, 30 bytes
 stringFileHeader = "PK\003\004"   # magic number for file header
 
 # indexes of entries in the central directory structure
@@ -439,7 +439,7 @@ class ZipFile:
         # Seek backwards and write CRC and file sizes
         position = self.fp.tell()       # Preserve current position in file
         self.fp.seek(zinfo.header_offset + 14, 0)
-        self.fp.write(struct.pack("<lll", zinfo.CRC, zinfo.compress_size,
+        self.fp.write(struct.pack("<lLL", zinfo.CRC, zinfo.compress_size,
               zinfo.file_size))
         self.fp.seek(position, 0)
         self.filelist.append(zinfo)
@@ -471,7 +471,7 @@ class ZipFile:
         self.fp.write(bytes)
         if zinfo.flag_bits & 0x08:
             # Write CRC and file sizes after the file data
-            self.fp.write(struct.pack("<lll", zinfo.CRC, zinfo.compress_size,
+            self.fp.write(struct.pack("<lLL", zinfo.CRC, zinfo.compress_size,
                   zinfo.file_size))
         self.filelist.append(zinfo)
         self.NameToInfo[zinfo.filename] = zinfo
