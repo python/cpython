@@ -144,7 +144,7 @@ class _Rlecoderengine:
 		self.data = ''
 
     def write(self, data):
-    	if DEBUG:
+		if DEBUG:
 			testf.write(data) # XXXX
 		self.data = self.data + data
 		if len(self.data) < REASONABLY_LARGE:
