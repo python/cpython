@@ -781,7 +781,7 @@ audioop_add(self, args)
         PyObject *args;
 {
 	signed char *cp1, *cp2, *ncp;
-	int len1, len2, size, val1 = 0, val2 = 0;
+	int len1, len2, size, val1 = 0, val2 = 0, maxval, newval;
 	PyObject *rv;
 	int i;
 
@@ -794,17 +794,19 @@ audioop_add(self, args)
 		return 0;
 	}
     
-	if ( size != 1 && size != 2 && size != 4) {
+	if ( size == 1 ) maxval = 0x7f;
+	else if ( size == 2 ) maxval = 0x7fff;
+	else if ( size == 4 ) maxval = 0x7fffffff;
+	else {
 		PyErr_SetString(AudioopError, "Size should be 1, 2 or 4");
 		return 0;
 	}
-    
+
 	rv = PyString_FromStringAndSize(NULL, len1);
 	if ( rv == 0 )
 		return 0;
 	ncp = (signed char *)PyString_AsString(rv);
-    
-    
+
 	for ( i=0; i < len1; i += size ) {
 		if ( size == 1 )      val1 = (int)*CHARP(cp1, i);
 		else if ( size == 2 ) val1 = (int)*SHORTP(cp1, i);
@@ -814,9 +816,16 @@ audioop_add(self, args)
 		else if ( size == 2 ) val2 = (int)*SHORTP(cp2, i);
 		else if ( size == 4 ) val2 = (int)*LONGP(cp2, i);
 
-		if ( size == 1 ) *CHARP(ncp, i) = (signed char)(val1+val2);
-		else if ( size == 2 ) *SHORTP(ncp, i) = (short)(val1+val2);
-		else if ( size == 4 ) *LONGP(ncp, i) = (long)(val1+val2);
+		newval = val1 + val2;
+		/* truncate in case of overflow */
+		if (newval > maxval) newval = maxval;
+		else if (newval < -maxval) newval = -maxval;
+		else if (size == 4 && (newval^val1) < 0 && (newval^val2) < 0)
+			newval = val1 > 0 ? maxval : - maxval;
+
+		if ( size == 1 )      *CHARP(ncp, i) = (signed char)newval;
+		else if ( size == 2 ) *SHORTP(ncp, i) = (short)newval;
+		else if ( size == 4 ) *LONGP(ncp, i) = (long)newval;
 	}
 	return rv;
 }
@@ -938,119 +947,121 @@ audioop_lin2lin(self, args)
 
 static PyObject *
 audioop_ratecv(self, args)
- 	PyObject *self;
- 	PyObject *args;
+	PyObject *self;
+	PyObject *args;
 {
- 	signed char *cp;
-	unsigned char *ncp;
- 	int len, size, nchannels, inrate, outrate, weightA, weightB;
- 	int chan, d, *prev_i, *cur_i, cur_o;
- 	PyObject *state, *samps, *str, *rv; 
- 	weightA = 1;
- 	weightB = 0;
- 	if (!PyArg_ParseTuple(args, "s#iiiiO|ii", &cp, &len, &size, &nchannels,
- 			      &inrate, &outrate, &state, &weightA, &weightB))
- 		return NULL;
- 	if (size != 1 && size != 2 && size != 4) {
- 		PyErr_SetString(AudioopError, "Size should be 1, 2 or 4");
- 		return NULL;
- 	}
- 	if (nchannels < 1) {
- 		PyErr_SetString(AudioopError, "# of channels should be >= 1");
- 		return NULL;
- 	}
- 	if (weightA < 1 || weightB < 0) {
- 		PyErr_SetString(AudioopError,
-			    "weightA should be >= 1, weightB should be >= 0");
- 		return NULL;
- 	}
- 	prev_i = malloc(nchannels * sizeof(int));
- 	cur_i = malloc(nchannels * sizeof(int));
- 	len = len / size;	/* # of frames */
- 
- 	if (state == Py_None) {
- 		d = -outrate;
- 		for (chan = 0; chan < nchannels; chan++)
- 			prev_i[chan] = cur_i[chan] = 0;
- 	} else {
- 		if (!PyArg_ParseTuple(state,
- 				"iO!;audioop.ratecv: illegal state argument",
- 				&d, &PyTuple_Type, &samps))
- 			return NULL;
- 		if (PyTuple_Size(samps) != nchannels) {
- 			PyErr_SetString(AudioopError,
+	char *cp, *ncp;
+	int len, size, nchannels, inrate, outrate, weightA, weightB;
+	int chan, d, *prev_i, *cur_i, cur_o;
+	PyObject *state, *samps, *str, *rv;
+
+	weightA = 1;
+	weightB = 0;
+	if (!PyArg_ParseTuple(args, "s#iiiiO|ii", &cp, &len, &size, &nchannels,
+			      &inrate, &outrate, &state, &weightA, &weightB))
+		return NULL;
+	if (size != 1 && size != 2 && size != 4) {
+		PyErr_SetString(AudioopError, "Size should be 1, 2 or 4");
+		return NULL;
+	}
+	if (nchannels < 1) {
+		PyErr_SetString(AudioopError, "# of channels should be >= 1");
+		return NULL;
+	}
+	if (weightA < 1 || weightB < 0) {
+		PyErr_SetString(AudioopError,
+			"weightA should be >= 1, weightB should be >= 0");
+		return NULL;
+	}
+	if (len % (size * nchannels) != 0) {
+		PyErr_SetString(AudioopError, "not a whole number of frames");
+		return NULL;
+	}
+	prev_i = malloc(nchannels * sizeof(int));
+	cur_i = malloc(nchannels * sizeof(int));
+	len /= size * nchannels;	/* # of frames */
+
+	if (state == Py_None) {
+		d = -outrate;
+		for (chan = 0; chan < nchannels; chan++)
+			prev_i[chan] = cur_i[chan] = 0;
+	} else {
+		if (!PyArg_ParseTuple(state,
+				"iO!;audioop.ratecv: illegal state argument",
+				&d, &PyTuple_Type, &samps))
+			return NULL;
+		if (PyTuple_Size(samps) != nchannels) {
+			PyErr_SetString(AudioopError,
 					"illegal state argument");
- 			return NULL;
- 		}
- 		for (chan = 0; chan < nchannels; chan++) {
- 			if (!PyArg_ParseTuple(PyTuple_GetItem(samps, chan),
+			return NULL;
+		}
+		for (chan = 0; chan < nchannels; chan++) {
+			if (!PyArg_ParseTuple(PyTuple_GetItem(samps, chan),
 					      "ii",&prev_i[chan],&cur_i[chan]))
- 				return NULL;
- 		}
- 	}
- 	str = PyString_FromStringAndSize(NULL,
-			     size * (len * outrate + inrate - 1) / inrate);
- 	if (str == NULL)
- 		return NULL;
- 	ncp = PyString_AsString(str);
- 
- 	for (;;) {
- 		while (d < 0) {
- 			if (len == 0) {
+				return NULL;
+		}
+	}
+	str = PyString_FromStringAndSize(
+	      NULL, size * nchannels * (len * outrate + inrate - 1) / inrate);
+	if (str == NULL)
+		return NULL;
+	ncp = PyString_AsString(str);
+
+	for (;;) {
+		while (d < 0) {
+			if (len == 0) {
 				samps = PyTuple_New(nchannels);
 				for (chan = 0; chan < nchannels; chan++)
- 					PyTuple_SetItem(samps, chan,
+					PyTuple_SetItem(samps, chan,
 						Py_BuildValue("(ii)",
 							      prev_i[chan],
 							      cur_i[chan]));
 				if (PyErr_Occurred())
 					return NULL;
- 				if (_PyString_Resize(&str,
- 					ncp - (unsigned char *)
-					       PyString_AsString(str)) < 0)
+				if (_PyString_Resize(&str,
+					ncp - PyString_AsString(str)) < 0)
 					return NULL;
 				rv = Py_BuildValue("(O(iO))", str, d, samps);
- 				Py_DECREF(samps);
+				Py_DECREF(samps);
 				Py_DECREF(str);
- 				return rv;
+				return rv;
 			}
- 			for (chan = 0; chan < nchannels; chan++) {
+			for (chan = 0; chan < nchannels; chan++) {
 				prev_i[chan] = cur_i[chan];
 				if (size == 1)
-					cur_i[chan] =
-						((int)*CHARP(cp, 0)) << 8;
+				    cur_i[chan] = ((int)*CHARP(cp, 0)) << 8;
 				else if (size == 2)
-					cur_i[chan] = (int)*SHORTP(cp, 0);
+				    cur_i[chan] = (int)*SHORTP(cp, 0);
 				else if (size == 4)
-					cur_i[chan] =
-						((int)*LONGP(cp, 0)) >> 16;
+				    cur_i[chan] = ((int)*LONGP(cp, 0)) >> 16;
 				cp += size;
 				/* implements a simple digital filter */
-				cur_i[chan] = (weightA * cur_i[chan] +
-					       weightB * prev_i[chan])
-					     / (weightA + weightB);
+				cur_i[chan] =
+					(weightA * cur_i[chan] +
+					 weightB * prev_i[chan]) /
+					(weightA + weightB);
 			}
- 			len--;
+			len--;
 			d += outrate;
 		}
- 		while (d >= 0) {
+		while (d >= 0) {
 			for (chan = 0; chan < nchannels; chan++) {
- 				cur_o = (prev_i[chan] * d + cur_i[chan]
-					 * (outrate - d)) / outrate;
- 				if (size == 1)
-					*CHARP(ncp, 0) =
-						(signed char)(cur_o >> 8);
+				cur_o = (prev_i[chan] * d +
+					 cur_i[chan] * (outrate - d)) /
+					outrate;
+				if (size == 1)
+				    *CHARP(ncp, 0) = (signed char)(cur_o >> 8);
 				else if (size == 2)
-					*SHORTP(ncp, 0) = (short)(cur_o);
- 				else if (size == 4)
-					*LONGP(ncp, 0) = (long)(cur_o<<16);
- 				ncp += size;
- 			}
- 			d -= inrate;
- 		}
- 	}
+				    *SHORTP(ncp, 0) = (short)(cur_o);
+				else if (size == 4)
+				    *LONGP(ncp, 0) = (long)(cur_o<<16);
+				ncp += size;
+			}
+			d -= inrate;
+		}
+	}
 }
- 
+
 static PyObject *
 audioop_lin2ulaw(self, args)
 	PyObject *self;
