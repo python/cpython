@@ -12,7 +12,7 @@ from types import *
 from copy import copy
 from distutils.errors import *
 from distutils.spawn import spawn
-from distutils.util import move_file
+from distutils.util import move_file, mkpath
 
 
 class CCompiler:
@@ -452,6 +452,9 @@ class CCompiler:
 
     def move_file (self, src, dst):
         return move_file (src, dst, verbose=self.verbose, dry_run=self.dry_run)
+
+    def mkpath (self, name, mode=0777):
+        mkpath (name, mode, self.verbose, self.dry_run)
 
 
 # class CCompiler
