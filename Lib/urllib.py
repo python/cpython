@@ -476,30 +476,17 @@ class FancyURLopener(URLopener):
 
 	def prompt_user_passwd(self, host, realm):
 		# Override this in a GUI environment!
+		import getpass
 		try:
 			user = raw_input("Enter username for %s at %s: " %
 					 (realm, host))
-			self.echo_off()
-			try:
-				passwd = raw_input(
-				  "Enter password for %s in %s at %s: " %
-				  (user, realm, host))
-			finally:
-				self.echo_on()
+			passwd = getpass.getpass(
+				"Enter password for %s in %s at %s: " %
+				(user, realm, host))
 			return user, passwd
 		except KeyboardInterrupt:
-			return None, None
-
-	def echo_off(self):
-		# XXX Is this sufficient???
-		if hasattr(os, "system"):
-			os.system("stty -echo")
-
-	def echo_on(self):
-		# XXX Is this sufficient???
-		if hasattr(os, "system"):
 			print
-			os.system("stty echo")
+			return None, None
 
 
 # Utility functions
