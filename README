@@ -367,7 +367,7 @@ QNX:	Chris Herborth (chrish@qnx.com) writes:
 	ftp.qnx.com in /usr/free.  I used the following process to build,
 	test and install Python 1.5 under QNX:
 
-	1) SHELL=/usr/local/bin/bash CC=cc CFLAGS=-5 -O RANLIB=: \
+	1) SHELL=/usr/local/bin/bash CC=cc CFLAGS="-5 -O" RANLIB=: \
 	    bash ./configure --verbose --without-gcc --with-libm=""
 
 	2) copy Modules/Setup.in to Modules/Setup; edit Modules/Setup to
@@ -377,7 +377,7 @@ QNX:	Chris Herborth (chrish@qnx.com) writes:
 		regex reop pcre posix signal readline array cmath math strop
 		struct time operator _locale fcntl pwd grp crypt select socket
 		errno termios audioop imageop rgbimg md5 timing rotor syslog
-		new gdbm soundex binascii parser cStringIO cPickle zlib
+		new gdbm soundex binascii parser cStringIO cPickle zlib curses
 
 	3) SHELL=/usr/local/bin/bash make SHELL=/usr/local/bin/bash
 
