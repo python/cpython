@@ -479,6 +479,15 @@ class TestSubclass(unittest.TestCase):
         d = None
         self.assertRaises(ReferenceError, str, p)
 
+    def test_strange_subclass(self):
+        class X(deque):
+            def __iter__(self):
+                return iter([])
+        d1 = X([1,2,3])
+        d2 = X([4,5,6])
+        d1 == d2   # not clear if this is supposed to be True or False,
+                   # but it used to give a SystemError
+
 #==============================================================================
 
 libreftest = """
