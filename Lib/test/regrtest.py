@@ -1036,21 +1036,25 @@ _expectations = {
         test_bsddb3
         test_cd
         test_cl
+        test_gdbm
         test_gl
         test_imgfile
         test_linuxaudiodev
         test_locale
         test_macfs
         test_macostools
+        test_mpz
         test_nis
         test_normalization
         test_ossaudiodev
         test_pep277
         test_plistlib
+        test_pty
         test_scriptpackages
         test_socket_ssl
         test_socketserver
         test_sunaudiodev
+        test_tcl
         test_timeout
         test_unicode_file
         test_urllibnet
@@ -1059,6 +1063,7 @@ _expectations = {
         """,
 }
 _expectations['freebsd5'] = _expectations['freebsd4']
+_expectations['freebsd6'] = _expectations['freebsd4']
 
 class _ExpectedSkips:
     def __init__(self):

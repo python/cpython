@@ -137,6 +137,8 @@ the library reference as well.
 New platforms
 -------------
 
+- FreeBSD 6 is now supported.
+
 Tests
 -----
 
