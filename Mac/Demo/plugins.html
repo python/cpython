@@ -7,28 +7,25 @@ This document gives a step-by-step example of how to create a new C
 extension module on the mac. For this example, we will create a module
 to interface to the programmers' API of InterSLIP, a package that
 allows you to use MacTCP (and, hence, all internet services) over a
-modem connection. <p>
+modem connection. The actual example does not work anymore, as both
+MacTCP and Interslip died long ago, but the text is still mostly
+correct.<p>
 
 <H2>Prerequisites</H2>
 
 There are a few things you need to pull this off. First and foremost,
 you need a C development environment. Actually, you need a specific
 development environment, CodeWarrior by <A
-HREF="http://www.metrowerks.com/">MetroWerks</A>.  You will probably
-need the latest version. You may be able to get by with an older
+HREF="http://www.metrowerks.com/">MetroWerks</A>.  You will
+need Version 7 or later. You may be able to get by with an older
 version of CodeWarrior or with another development environment (Up to
 about 1994 python was developed with THINK C, and in the dim past it
 was compiled with MPW C) assuming you have managed to get Python to
 compile under your development environment, but the step-by-step
 character of this document will be lost. <p>
 
-Next, you need a <A
-HREF="http://www.python.org/python/Sources.html">python source
-distribution</A>.  For PowerPC and cfm68k development you can actually
-get by without a full source distribution, using the Development
-distribution. You'll also need a functional python interpreter, and
-the Modulator program (which lives in <CODE>Tools:Modulator</CODE> in
-the standard source distribution). You may also find that Guido's <A
+Next, you need to install the Developer option in the MacPython installer.
+You may also find that Guido's <A
 HREF="http://www.python.org/doc/ext/ext.html">Extending and embedding
 the Python interpreter</A> is a very handy piece of documentation. I
 will skip lots of details that are handled there, like complete
@@ -155,70 +152,36 @@ compile, and that if you import it in a python program you will see
 all the methods.  It is, of course, not yet complete in a functional
 way... <p>
 
-<H2>Adding a module to Classic 68K Python</H2>
-
-What you do now depends on whether you're developing for PowerPC (or
-for CFM68K) or for "traditional" mac. For a traditional 68K Python,
-you will have to add your new module to the project file of the Python
-interpreter, and you have to edit "config.c" to add the module to the
-set of builtin modules. In config.c you will add the module at two
-places: near the start of the file there is a list of external
-declarations for all init() routines. Add a line of the form
-<CODE><PRE>
-		extern void initinterslip();
-</PRE></CODE>
-here. Further down the file there is an array that is initialized with
-modulename/initfunction pairs. Add a line of the form
-<CODE><PRE>
-		{"interslip",	initinterslip},
-</PRE></CODE>
-here. You may want to bracket these two lines with
-<CODE><PRE>
-	#ifdef USE_INTERSLIP
-	#endif
-</PRE></CODE>
-lines, that way you can easily control whether the module is
-incorporated into python at compile time. If you decide to do the
-latter edit your config file (you can find the name in the "C/C++
-language" section of the MW preferences dialog, it will probably be
-"mwerks_nonshared_config.h") and add a
-<CODE><PRE>
-	#define USE_INTERSLIP
-</PRE></CODE>
-
-Make the new interpreter and check that you can import the module, see
-the methods (with "dir(interslip)") and call them. <p>
-
 <H2>Creating a plugin module</H2>
 
-For PowerPC or cfm68k development you could follow the same path, but it is
-actually a better idea to use a dynamically loadable module. The
-advantage of dynamically loadable modules is that they are not loaded
-until a python program actually uses them (resulting in less memory
-usage by the interpreter) and that development is a lot simpler (since
-your projects will all be smaller). Moreover, you can distribute a
-plugin module by itself without haveing to distribute a complete
-python interpreter. <p>
+The easiest way to build a plugin module is to use the distutils package,
+this works fine on MacOS with CodeWarrior. See the distutils documentation
+for details. Keep in mind that even though you are on the Mac you specify
+filenames with Unix syntax: they are actually URLs, not filenames.
+ <p>
 
-Go to the "PlugIns" folder and copy the files xx.prj,
-and xx.prj.exp to interslipmodule.prj and
-interslipmodule.prj.exp, respectively. Edit
-interslipmodule.prj.exp and change the name of the exported routine
-"initxx" to "initinterslip".  Open interslipmodule.prj with CodeWarrior,
+Alternatively you can build the project file by hand.
+Go to the ":Mac:Build" folder and copy the files xx.carbon.mcp,
+and xx.carbon.mcp.exp to interslipmodule.carbon.mcp and
+interslipmodule.carbon.mcp.exp, respectively. Edit
+interslipmodule.carbon.mcp.exp and change the name of the exported routine
+"initxx" to "initinterslip".  Open interslipmodule.carbon.mcp with CodeWarrior,
 remove the file xxmodule.c and add interslipmodule.c and make a number
 of adjustments to the preferences:
 <UL>
-<LI> in PPC target, set the output file name to "interslipmodule.pcc.slb",
-<LI> in cfm68k target set the output file name to "interslipmodule.cfm68k.slb".
+<LI> in PPC target, set the output file name to "interslipmodule.carbon.slb",
 <LI> if you are working without a source distribution (i.e. with a normal
 binary distribution plus a development distribution) you will not have
-a file <code>PythonCore</code>. The installation process has deposited this
+a file <code>PythonCoreCarbon</code>. The installation process has deposited this
 file in the System <code>Extensions</code> folder under the name
-<code>PythonCore <i>version</i></code>. Add that file to the project, replacing
-<code>PythonCore</code>.
+<code>PythonCoreCarbon <i>version</i></code>. Add that file to the project, replacing
+<code>PythonCoreCarbon</code>.
+<LI> you must either download and build GUSI (if your extension module uses sockets
+or other Unix I/O constructs) or remove GUSI references from the Access Paths
+settings. See the <a href="building.html">Building</a> document for where to get GUSI
+and how to build it.
 </UL>
-Next, compile and link your module, fire up python and do the same
-tests as for 68K python. <p>
+Next, compile and link your module, fire up python and test it. <p>
 
 <H2>Getting the module to do real work</H2>
 
