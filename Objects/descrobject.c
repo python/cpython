@@ -718,6 +718,18 @@ proxy_traverse(PyObject *self, visitproc visit, void *arg)
 	return 0;
 }
 
+static int
+proxy_compare(proxyobject *v, PyObject *w)
+{
+	return PyObject_Compare(v->dict, w);
+}
+
+static PyObject *
+proxy_richcompare(proxyobject *v, PyObject *w, int op)
+{
+	return PyObject_RichCompare(v->dict, w, op);
+}
+
 static PyTypeObject proxytype = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,					/* ob_size */
@@ -729,7 +741,7 @@ static PyTypeObject proxytype = {
 	0,					/* tp_print */
 	0,					/* tp_getattr */
 	0,					/* tp_setattr */
-	0,					/* tp_compare */
+	(cmpfunc)proxy_compare,			/* tp_compare */
 	0,					/* tp_repr */
 	0,					/* tp_as_number */
 	&proxy_as_sequence,			/* tp_as_sequence */
@@ -744,7 +756,7 @@ static PyTypeObject proxytype = {
  	0,					/* tp_doc */
 	proxy_traverse,				/* tp_traverse */
  	0,					/* tp_clear */
-	0,					/* tp_richcompare */
+	(richcmpfunc)proxy_richcompare,		/* tp_richcompare */
 	0,					/* tp_weaklistoffset */
 	(getiterfunc)proxy_getiter,		/* tp_iter */
 	0,					/* tp_iternext */
