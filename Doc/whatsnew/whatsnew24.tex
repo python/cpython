@@ -591,10 +591,9 @@ expressions.  The differences are:
 >>> [10+i for i in sorted(L)]       # usable in a list comprehension
 [11, 12, 13, 14, 15, 16, 17, 18, 19]
 >>> L                               # original is left unchanged
-[9,7,8,3,2,4,1,6,5]   
-
->>> sorted('Monte Python')          # any iterable may be an input
-[' ', 'M', 'P', 'e', 'h', 'n', 'n', 'o', 'o', 't', 't', 'y']
+[9,7,8,3,2,4,1,6,5]
+>>> sorted('Monty Python')          # any iterable may be an input
+[' ', 'M', 'P', 'h', 'n', 'n', 'o', 'o', 't', 't', 'y', 'y']
 
 >>> # List the contents of a dict sorted by key values
 >>> colormap = dict(red=1, blue=2, green=3, black=4, yellow=5)
@@ -1049,6 +1048,6 @@ changes to your code:
 
 The author would like to thank the following people for offering
 suggestions, corrections and assistance with various drafts of this
-article: Raymond Hettinger.
+article: Michael Dyck, Raymond Hettinger.
 
 \end{document}
