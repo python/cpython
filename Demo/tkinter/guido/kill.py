@@ -1,4 +1,4 @@
-#!/usr/local/bin/tkpython
+#!/usr/local/bin/python
 # Tkinter interface to Linux `kill' command.
 
 from Tkinter import *
