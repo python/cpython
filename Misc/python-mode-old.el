@@ -2,13 +2,13 @@
 
 ;; Copyright (C) 1992,1993,1994  Tim Peters
 
-;; Author: 1995 Barry A. Warsaw
+;; Author: 1995-1996 Barry A. Warsaw
 ;;         1992-1994 Tim Peters
 ;; Maintainer:    python-mode@python.org
 ;; Created:       Feb 1992
-;; Version:       2.30
-;; Last Modified: 1995/09/19 20:01:42
-;; Keywords: python editing language major-mode
+;; Version:       2.72
+;; Last Modified: 1996/08/12 19:52:27
+;; Keywords: python languages oop
 
 ;; This software is provided as-is, without express or implied
 ;; warranty.  Permission to use, copy, modify, distribute or sell this
@@ -17,15 +17,18 @@
 ;; notice and this paragraph appear in all copies.
 
 ;;; Commentary:
-;;
+
 ;; This is a major mode for editing Python programs.  It was developed
-;; by Tim Peters <tim@ksr.com> after an original idea by Michael
-;; A. Guravage.  Tim doesn't appear to be on the 'net any longer so I
-;; have undertaken maintenance of the mode.
+;; by Tim Peters after an original idea by Michael A. Guravage.  In
+;; 1995, Barry Warsaw inherited the mode after Tim left the net, and
+;; is the current maintainer.
 
 ;; At some point this mode will undergo a rewrite to bring it more in
-;; line with GNU Emacs Lisp coding standards.  But all in all, the
-;; mode works exceedingly well.
+;; line with GNU Emacs Lisp coding standards, and to wax all the Emacs
+;; 18 support.  But all in all, the mode works exceedingly well, and
+;; I've simply been tweaking it as I go along.  Ain't it wonderful
+;; that Python has a much more sane syntax than C? (or <shudder> C++?!
+;; :-).  I can say that; I maintain cc-mode!
 
 ;; The following statements, placed in your .emacs file or
 ;; site-init.el, will cause this file to be autoloaded, and
@@ -35,42 +38,59 @@
 ;;	(autoload 'python-mode "python-mode" "Python editing mode." t)
 ;;	(setq auto-mode-alist
 ;;	      (cons '("\\.py$" . python-mode) auto-mode-alist))
-
-;; Here's a brief list of recent additions/improvements:
 ;;
-;; - Wrapping and indentation within triple quote strings should work
-;;   properly now.
+;; If you want font-lock support for Python source code (a.k.a. syntax
+;; coloring, highlighting), add this to your .emacs file:
+;;
+;;     (add-hook 'python-mode-hook 'turn-on-font-lock)
+;;
+;; But you better be sure you're version of Emacs supports
+;; font-lock-mode!  As of this writing, the latest Emacs and XEmacs
+;; 19's do.
+
+;; Here's a brief list of recent additions/improvements/changes:
+;;
+;; - Wrapping and indentation within triple quote strings now works.
 ;; - `Standard' bug reporting mechanism (use C-c C-b)
 ;; - py-mark-block was moved to C-c C-m
 ;; - C-c C-v shows you the python-mode version
-;; - a basic python-font-lock-keywords has been added for Emacs 19
-;;   font-lock colorizations.
+;; - a basic python-font-lock-keywords has been added for (X)Emacs 19
 ;; - proper interaction with pending-del and del-sel modes.
-;; - New py-electric-colon (:) command for improved outdenting.  Also
-;;   py-indent-line (TAB) should handle outdented lines better.
-;; - New commands py-outdent-left (C-c C-l) and py-indent-right (C-c C-r)
+;; - Better support for outdenting: py-electric-colon (:) and
+;;   py-indent-line (TAB) improvements; one level of outdentation
+;;   added after a return, raise, break, or continue statement
+;; - New py-electric-colon (:) command for improved outdenting  Also
+;;   py-indent-line (TAB) should handle outdented lines better
+;; - improved (I think) C-c > and C-c <
+;; - py-(forward|backward)-into-nomenclature, not bound, but useful on
+;;   M-f and M-b respectively.
+;; - integration with imenu by Perry A. Stoll <stoll@atr-sw.atr.co.jp>
+;; - py-indent-offset now defaults to 4
+;; - new variable py-honor-comment-indentation
+;; - comment-region bound to C-c #
+;; - py-delete-char obeys numeric arguments
+;; - Small modification to rule for "indenting comment lines", such
+;;   lines must now also be indented less than or equal to the
+;;   indentation of the previous statement.
 
 ;; Here's a brief to do list:
 ;;
 ;; - Better integration with gud-mode for debugging.
 ;; - Rewrite according to GNU Emacs Lisp standards.
-;; - py-delete-char should obey numeric arguments.
-;; - even better support for outdenting.  Guido suggests outdents of
-;;   at least one level after a return, raise, break, or continue
-;;   statement.
-;; - de-electrify colon inside literals (e.g. comments and strings)
+;; - possibly force indent-tabs-mode == nil, and add a
+;;   write-file-hooks that runs untabify on the whole buffer (to work
+;;   around potential tab/space mismatch problems).  In practice this
+;;   hasn't been a problem... yet.
+;; - have py-execute-region on indented code act as if the region is
+;;   left justified. Avoids syntax errors.
 
 ;; If you can think of more things you'd like to see, drop me a line.
 ;; If you want to report bugs, use py-submit-bug-report (C-c C-b).
 ;;
-;; Note that I only test things on XEmacs (currently 19.11).  If you
-;; port stuff to FSF Emacs 19, or Emacs 18, please send me your
-;; patches.
-
-;; LCD Archive Entry:
-;; python-mode|Barry A. Warsaw|python-mode@python.org
-;; |Major mode for editing Python programs
-;; |1995/09/19 20:01:42|2.30|
+;; Note that I only test things on XEmacs 19 and to some degree on
+;; Emacs 19.  If you port stuff to FSF Emacs 19, or Emacs 18, please
+;; send me your patches.  Byte compiler complaints can probably be
+;; safely ignored.
 
 ;;; Code:
 
@@ -81,7 +101,7 @@
 (defvar py-python-command "python"
   "*Shell command used to start Python interpreter.")
 
-(defvar py-indent-offset 8		; argue with Guido <grin>
+(defvar py-indent-offset 4
   "*Indentation increment.
 Note that `\\[py-guess-indent-offset]' can usually guess a good value
 when you're editing someone else's Python code.")
@@ -92,12 +112,28 @@ When this flag is non-nil, continuation lines are lined up under the
 preceding line's indentation.  When this flag is nil, continuation
 lines are aligned to column zero.")
 
-(defvar py-block-comment-prefix "##"
-  "*String used by `py-comment-region' to comment out a block of code.
+(defvar py-block-comment-prefix "## "
+  "*String used by \\[comment-region] to comment out a block of code.
 This should follow the convention for non-indenting comment lines so
 that the indentation commands won't get confused (i.e., the string
 should be of the form `#x...' where `x' is not a blank or a tab, and
 `...' is arbitrary).")
+
+(defvar py-honor-comment-indentation t
+  "*Controls how comment lines influence subsequent indentation.
+
+When nil, all comment lines are skipped for indentation purposes, and
+in Emacs 19, a faster algorithm is used.
+
+When t, lines that begin with a single `#' are a hint to subsequent
+line indentation.  If the previous line is such a comment line (as
+opposed to one that starts with `py-block-comment-prefix'), then it's
+indentation is used as a hint for this line's indentation.  Lines that
+begin with `py-block-comment-prefix' are ignored for indentation
+purposes.
+
+When not nil or t, comment lines that begin with a `#' are used as
+indentation hints, unless the comment character is in column zero.")
 
 (defvar py-scroll-process-buffer t
   "*Scroll Python process buffer as output arrives.
@@ -169,79 +205,43 @@ equal <number>, `tab-width' is set to <number>, a message saying so is
 displayed in the echo area, and if `py-beep-if-tab-change' is non-nil
 the Emacs bell is also rung as a warning.")
 
-;; These were the previous font-lock keywords, but I think I now
-;; prefer the ones from XEmacs 19.12's font-lock.el.  I've merged the
-;; two into the new definition below.
-;;
-;;(defvar python-font-lock-keywords
-;;  (list
-;;   (cons
-;;    (concat
-;;     "\\<\\("
-;;     (mapconcat
-;;      'identity
-;;      '("access"  "and"      "break"  "continue"
-;;	"del"     "elif"     "else"   "except"
-;;	"exec"    "finally"  "for"    "from"
-;;	"global"  "if"       "import" "in"
-;;	"is"      "lambda"   "not"    "or"
-;;	"pass"    "print"    "raise"  "return"
-;;	"try"     "while"    "def"    "class"
-;;	)
-;;      "\\|")
-;;     "\\)\\>")
-;;    1)
-;;   ;; functions
-;;   '("\\bdef\\s +\\(\\sw+\\)(" 1 font-lock-function-name-face)
-;;   ;; classes
-;;   '("\\bclass\\s +\\(\\sw+\\)[(:]" 1 font-lock-function-name-face)
-;;   )
-;;  "*Additional keywords to highlight `python-mode' buffers.")
+(defconst python-font-lock-keywords
+  (let* ((keywords '("access"     "and"        "break"      "class"
+		     "continue"   "def"        "del"        "elif"
+		     "else:"      "except"     "except:"    "exec"
+		     "finally:"   "for"        "from"       "global"
+		     "if"         "import"     "in"         "is"
+		     "lambda"     "not"        "or"         "pass"
+		     "print"      "raise"      "return"     "try:"
+		     "while"
+		     ))
+	 (kwregex (mapconcat 'identity keywords "\\|")))
+    (list
+     ;; keywords not at beginning of line
+     (cons (concat "\\s-\\(" kwregex "\\)[ \n\t(]") 1)
+     ;; keywords at beginning of line.  i don't think regexps are
+     ;; powerful enough to handle these two cases in one regexp.
+     ;; prove me wrong!
+     (cons (concat "^\\(" kwregex "\\)[ \n\t(]") 1)
+     ;; classes
+     '("\\bclass[ \t]+\\([a-zA-Z_]+[a-zA-Z0-9_]*\\)"
+       1 font-lock-type-face)
+     ;; functions
+     '("\\bdef[ \t]+\\([a-zA-Z_]+[a-zA-Z0-9_]*\\)"
+       1 font-lock-function-name-face)
+     ))
+  "Additional expressions to highlight in Python mode.")
 
-;; These are taken from XEmacs 19.12's font-lock.el file, but have the
-;; more complete list of keywords from the previous definition in
-;; python-mode.el.  There are a few other minor stylistic changes as
-;; well.
-;; 
-(defvar python-font-lock-keywords
-   (list
-    (cons (concat
-	   "\\b\\("
-	   (mapconcat
-	    'identity
-	    '("access"     "and"      "break"    "continue"
-	      "del"        "elif"     "else:"    "except"
-	      "except:"    "exec"     "finally:" "for"
-	      "from"       "global"   "if"       "import"
-	      "in"         "is"       "lambda"   "not"
-	      "or"         "pass"     "print"    "raise"
-	      "return"     "try:"     "while"
-	      )
-	    "\\|")
-	   "\\)[ \n\t(]")
-          1)
-    ;; classes
-    '("\\bclass[ \t]+\\([a-zA-Z_]+[a-zA-Z0-9_]*\\)"
-      1 font-lock-type-face)
-    ;; functions
-    '("\\bdef[ \t]+\\([a-zA-Z_]+[a-zA-Z0-9_]*\\)"
-      1 font-lock-function-name-face)
-    )
-  "*Additional expressions to highlight in Python mode.")
-
-;; R Lindsay Todd <toddr@rpi.edu> suggests these changes to the
-;; original keywords, which wouldn't be necessary if we go with the
-;; XEmacs defaults, but which I agree makes sense without them.
-;;
-;; functions
-;; '("\\bdef\\s +\\(\\sw+\\)\\s *(" 1 font-lock-function-name-face)
-;; classes
-;; '("\\bclass\\s +\\(\\sw+\\)\\s *[(:]" 1 font-lock-type-face)
+(defvar imenu-example--python-show-method-args-p nil 
+  "*Controls echoing of arguments of functions & methods in the imenu buffer.
+When non-nil, arguments are printed.")
 
 
 
 ;; ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 ;; NO USER DEFINABLE VARIABLES BEYOND THIS POINT
+
+(make-variable-buffer-local 'py-indent-offset)
 
 ;; Differentiate between Emacs 18, Lucid Emacs, and Emacs 19.  This
 ;; seems to be the standard way of checking this.
@@ -300,8 +300,8 @@ Currently-active file is at the head of the list.")
 	    ("\n"	 . py-newline-and-indent)
 	    ("\C-c:"	 . py-guess-indent-offset)
 	    ("\C-c\t"	 . py-indent-region)
-	    ("\C-c\C-l"  . py-outdent-left)
-	    ("\C-c\C-r"  . py-indent-right)
+	    ("\C-c\C-l"  . py-shift-region-left)
+	    ("\C-c\C-r"  . py-shift-region-right)
 	    ("\C-c<"	 . py-shift-region-left)
 	    ("\C-c>"	 . py-shift-region-right)
 	    ("\C-c\C-n"  . py-next-statement)
@@ -337,7 +337,12 @@ Currently-active file is at the head of the list.")
 	    ( ?\* . "." ) ( ?\+ . "." ) ( ?\- . "." )
 	    ( ?\/ . "." ) ( ?\< . "." ) ( ?\= . "." )
 	    ( ?\> . "." ) ( ?\| . "." )
-	    ( ?\_ . "w" )	; underscore is legit in names
+	    ;; for historical reasons, underscore is word class
+	    ;; instead of symbol class.  it should be symbol class,
+	    ;; but if you're tempted to change it, try binding M-f and
+	    ;; M-b to py-forward-into-nomenclature and
+	    ;; py-backward-into-nomenclature instead. -baw
+	    ( ?\_ . "w" )	; underscore is legit in words
 	    ( ?\' . "\"")	; single quote is string quote
 	    ( ?\" . "\"" )	; double quote is string quote too
 	    ( ?\` . "$")	; backquote is open and close paren
@@ -379,10 +384,256 @@ Currently-active file is at the head of the list.")
 			     "while\\s +.*:"
 			     "for\\s +.*:"
 			     "if\\s +.*:"
-			     "elif\\s +.*:")
+			     "elif\\s +.*:"
+			     "\\(return\\|break\\|raise\\|continue\\)[ \t\n]"
+			     )
 			   "\\|")
 	  "\\)")
   "Regexp matching lines to not outdent after.")
+
+
+;; Menu definitions, only relevent if you have the easymenu.el package
+;; (standard in the latest Emacs 19 and XEmacs 19 distributions).
+(defvar py-menu nil
+  "Menu for Python Mode.
+
+This menu will get created automatically if you have the easymenu
+package.  Note that the latest XEmacs 19 and Emacs 19 versions contain
+this package.")
+
+(if (condition-case nil
+	(require 'easymenu)
+      (error nil))
+    (easy-menu-define
+     py-menu py-mode-map "Python Mode menu"
+     '("Python"
+       ["Comment Out Region"   comment-region  (mark)]
+       ["Uncomment Region"     (comment-region (point) (mark) '(4)) (mark)]
+       "-"
+       ["Mark current block"   py-mark-block t]
+       ["Mark current def"     mark-python-def-or-class t]
+       ["Mark current class"   (mark-python-def-or-class t) t]
+       "-"
+       ["Shift region left"    py-shift-region-left (mark)]
+       ["Shift region right"   py-shift-region-right (mark)]
+       "-"
+       ["Execute buffer"       py-execute-buffer t]
+       ["Execute region"       py-execute-region (mark)]
+       ["Start interpreter..." py-shell t]
+       "-"
+       ["Go to start of block" py-goto-block-up t]
+       ["Go to start of class" (beginning-of-python-def-or-class t) t]
+       ["Move to end of class" (end-of-python-def-or-class t) t]
+       ["Move to start of def" beginning-of-python-def-or-class t]
+       ["Move to end of def"   end-of-python-def-or-class t]
+       "-"
+       ["Describe mode"        py-describe-mode t]
+       )))
+
+
+
+;; imenu definitions, courtesy of Perry A. Stoll <stoll@atr-sw.atr.co.jp>
+(defvar imenu-example--python-class-regexp
+  (concat				; <<classes>>
+   "\\("				;
+   "^[ \t]*"				; newline and maybe whitespace
+   "\\(class[ \t]+[a-zA-Z0-9_]+\\)"	; class name
+					; possibly multiple superclasses
+   "\\([ \t]*\\((\\([a-zA-Z0-9_, \t\n]\\)*)\\)?\\)"
+   "[ \t]*:"				; and the final :
+   "\\)"				; >>classes<<
+   )
+  "Regexp for Python classes for use with the imenu package."
+  )
+
+(defvar imenu-example--python-method-regexp
+  (concat                               ; <<methods and functions>>
+   "\\("                                ; 
+   "^[ \t]*"                            ; new line and maybe whitespace
+   "\\(def[ \t]+"                       ; function definitions start with def
+   "\\([a-zA-Z0-9_]+\\)"                ;   name is here
+					;   function arguments...
+   "[ \t]*(\\([a-zA-Z0-9_=,\* \t\n]*\\))"
+   "\\)"                                ; end of def
+   "[ \t]*:"                            ; and then the :
+   "\\)"                                ; >>methods and functions<<
+   )
+  "Regexp for Python methods/functions for use with the imenu package."
+  )
+
+(defvar imenu-example--python-method-no-arg-parens '(2 8)
+  "Indicies into groups of the Python regexp for use with imenu.
+
+Using these values will result in smaller imenu lists, as arguments to
+functions are not listed.
+
+See the variable `imenu-example--python-show-method-args-p' for more
+information.")
+
+(defvar imenu-example--python-method-arg-parens '(2 7)
+  "Indicies into groups of the Python regexp for use with imenu.
+Using these values will result in large imenu lists, as arguments to
+functions are listed.
+
+See the variable `imenu-example--python-show-method-args-p' for more
+information.")
+
+;; Note that in this format, this variable can still be used with the
+;; imenu--generic-function. Otherwise, there is no real reason to have
+;; it.
+(defvar imenu-example--generic-python-expression
+  (cons
+   (concat 
+    imenu-example--python-class-regexp
+    "\\|"				; or...
+    imenu-example--python-method-regexp
+    )
+   imenu-example--python-method-no-arg-parens)
+  "Generic Python expression which may be used directly with imenu.
+Used by setting the variable `imenu-generic-expression' to this value.
+Also, see the function \\[imenu-example--create-python-index] for a
+better alternative for finding the index.")
+
+;; These next two variables are used when searching for the python
+;; class/definitions. Just saving some time in accessing the
+;; generic-python-expression, really.
+(defvar imenu-example--python-generic-regexp)
+(defvar imenu-example--python-generic-parens)
+
+
+;;;###autoload
+(eval-when-compile
+  ;; Imenu isn't used in XEmacs, so just ignore load errors
+  (condition-case ()
+      (progn
+	(require 'cl)
+	(require 'imenu))
+    (error nil)))
+
+(defun imenu-example--create-python-index ()
+  "Python interface function for imenu package.
+Finds all python classes and functions/methods. Calls function
+\\[imenu-example--create-python-index-engine].  See that function for
+the details of how this works."
+  (setq imenu-example--python-generic-regexp
+	(car imenu-example--generic-python-expression))
+  (setq imenu-example--python-generic-parens
+	(if imenu-example--python-show-method-args-p
+	    imenu-example--python-method-arg-parens
+	  imenu-example--python-method-no-arg-parens))
+  (goto-char (point-min))
+  (imenu-example--create-python-index-engine nil))
+
+(defun imenu-example--create-python-index-engine (&optional start-indent)
+  "Function for finding imenu definitions in Python.
+
+Finds all definitions (classes, methods, or functions) in a Python
+file for the imenu package.
+
+Returns a possibly nested alist of the form
+
+	(INDEX-NAME . INDEX-POSITION)
+
+The second element of the alist may be an alist, producing a nested
+list as in
+
+	(INDEX-NAME . INDEX-ALIST)
+
+This function should not be called directly, as it calls itself
+recursively and requires some setup.  Rather this is the engine for
+the function \\[imenu-example--create-python-index].
+
+It works recursively by looking for all definitions at the current
+indention level.  When it finds one, it adds it to the alist.  If it
+finds a definition at a greater indentation level, it removes the
+previous definition from the alist. In it's place it adds all
+definitions found at the next indentation level.  When it finds a
+definition that is less indented then the current level, it retuns the
+alist it has created thus far.
+
+The optional argument START-INDENT indicates the starting indentation
+at which to continue looking for Python classes, methods, or
+functions.  If this is not supplied, the function uses the indentation
+of the first definition found."
+  (let ((index-alist '())
+	(sub-method-alist '())
+	looking-p
+	def-name prev-name
+	cur-indent def-pos
+	(class-paren (first  imenu-example--python-generic-parens)) 
+	(def-paren   (second imenu-example--python-generic-parens)))
+    (setq looking-p
+	  (re-search-forward imenu-example--python-generic-regexp
+			     (point-max) t))
+    (while looking-p
+      (save-excursion
+	;; used to set def-name to this value but generic-extract-name is
+	;; new to imenu-1.14. this way it still works with imenu-1.11
+	;;(imenu--generic-extract-name imenu-example--python-generic-parens))
+	(let ((cur-paren (if (match-beginning class-paren)
+			     class-paren def-paren)))
+	  (setq def-name
+		(buffer-substring (match-beginning cur-paren)
+				  (match-end  cur-paren))))
+	(beginning-of-line)
+	(setq cur-indent (current-indentation)))
+
+      ;; HACK: want to go to the next correct definition location. we
+      ;; explicitly list them here. would be better to have them in a
+      ;; list.
+      (setq def-pos
+	    (or  (match-beginning class-paren)
+		 (match-beginning def-paren)))
+
+      ;; if we don't have a starting indent level, take this one
+      (or start-indent
+	  (setq start-indent cur-indent))
+
+      ;; if we don't have class name yet, take this one
+      (or prev-name
+	  (setq prev-name def-name))
+
+      ;; what level is the next definition on?  must be same, deeper
+      ;; or shallower indentation
+      (cond
+       ;; at the same indent level, add it to the list...
+       ((= start-indent cur-indent)
+
+	;; if we don't have push, use the following...
+	;;(setf index-alist (cons (cons def-name def-pos) index-alist))
+	(push (cons def-name def-pos) index-alist))
+
+       ;; deeper indented expression, recur...
+       ((< start-indent cur-indent)
+
+	;; the point is currently on the expression we're supposed to
+	;; start on, so go back to the last expression. The recursive
+	;; call will find this place again and add it to the correct
+	;; list
+	(re-search-backward imenu-example--python-generic-regexp
+			    (point-min) 'move)
+	(setq sub-method-alist (imenu-example--create-python-index-engine
+				cur-indent))
+
+	(if sub-method-alist
+	    ;; we put the last element on the index-alist on the start
+	    ;; of the submethod alist so the user can still get to it.
+	    (let ((save-elmt (pop index-alist)))
+	      (push (cons (imenu-create-submenu-name prev-name)
+			  (cons save-elmt sub-method-alist))
+		    index-alist))))
+
+       ;; found less indented expression, we're done.
+       (t 
+	(setq looking-p nil)
+	(re-search-backward imenu-example--python-generic-regexp 
+			    (point-min) t)))
+      (setq prev-name def-name)
+      (and looking-p
+	   (setq looking-p
+		 (re-search-forward imenu-example--python-generic-regexp
+				    (point-max) 'move))))
+    (nreverse index-alist)))
 
 
 ;;;###autoload
@@ -400,12 +651,12 @@ COMMANDS
 \\{py-mode-map}
 VARIABLES
 
-py-indent-offset\tindentation increment
-py-block-comment-prefix\tcomment string used by py-comment-region
-py-python-command\tshell command to invoke Python interpreter
-py-scroll-process-buffer\talways scroll Python process buffer
-py-temp-directory\tdirectory used for temp files (if needed)
-py-beep-if-tab-change\tring the bell if tab-width is changed"
+py-indent-offset\t\tindentation increment
+py-block-comment-prefix\t\tcomment string used by comment-region
+py-python-command\t\tshell command to invoke Python interpreter
+py-scroll-process-buffer\t\talways scroll Python process buffer
+py-temp-directory\t\tdirectory used for temp files (if needed)
+py-beep-if-tab-change\t\tring the bell if tab-width is changed"
   (interactive)
   (kill-all-local-variables)
   (set-syntax-table py-mode-syntax-table)
@@ -413,6 +664,9 @@ py-beep-if-tab-change\tring the bell if tab-width is changed"
 	mode-name "Python"
 	local-abbrev-table python-mode-abbrev-table)
   (use-local-map py-mode-map)
+  ;; add the menu
+  (if py-menu
+      (easy-menu-add py-menu))
   ;; Emacs 19 requires this
   (if (or py-this-is-lucid-emacs-p py-this-is-emacs-19-p)
       (setq comment-multi-line nil))
@@ -454,12 +708,27 @@ py-beep-if-tab-change\tring the bell if tab-width is changed"
 	    (if py-beep-if-tab-change (beep)))))
     (goto-char start))
 
+  ;; install imenu
+  (setq imenu-create-index-function
+	(function imenu-example--create-python-index))
+  (if (fboundp 'imenu-add-to-menubar)
+      (imenu-add-to-menubar (format "%s-%s" "IM" mode-name)))
+
   ;; run the mode hook. py-mode-hook use is deprecated
   (if python-mode-hook
       (run-hooks 'python-mode-hook)
     (run-hooks 'py-mode-hook)))
 
 
+(defun py-keep-region-active ()
+  ;; do whatever is necessary to keep the region active in XEmacs.
+  ;; Ignore byte-compiler warnings you might see.  Also note that
+  ;; FSF's Emacs 19 does it differently and doesn't its policy doesn't
+  ;; require us to take explicit action.
+  (and (boundp 'zmacs-region-stays)
+       (setq zmacs-region-stays t)))
+
+
 ;; electric characters
 (defun py-outdent-p ()
   ;; returns non-nil if the current line should outdent one level
@@ -495,7 +764,7 @@ Electric behavior is inhibited inside a string or comment."
 	  (if (and (not arg)
 		   (py-outdent-p)
 		   (= indent (save-excursion
-			       (forward-line -1)
+			       (py-next-statement -1)
 			       (py-compute-indentation)))
 		   )
 	      (setq outdent py-indent-offset))
@@ -510,44 +779,6 @@ Electric behavior is inhibited inside a string or comment."
 	    (delete-horizontal-space)
 	    (indent-to (- indent outdent))
 	    )))))
-
-(defun py-indent-right (arg)
-  "Indent the line by one `py-indent-offset' level.
-With numeric arg, indent by that many levels.  You cannot indent
-farther right than the distance the line would be indented by
-\\[py-indent-line]."
-  (interactive "p")
-  (let ((col (current-indentation))
-	(want (* arg py-indent-offset))
-	(indent (py-compute-indentation))
-	(pos (- (point-max) (point)))
-	(bol (save-excursion (beginning-of-line) (point))))
-    (if (<= (+ col want) indent)
-	(progn
-	  (beginning-of-line)
-	  (delete-horizontal-space)
-	  (indent-to (+ col want))
-	  (if (> (- (point-max) pos) (point))
-	      (goto-char (- (point-max) pos)))
-	  ))))
-
-(defun py-outdent-left (arg)
-  "Outdent the line by one `py-indent-offset' level.
-With numeric arg, outdent by that many levels.  You cannot outdent
-farther left than column zero."
-  (interactive "p")
-  (let ((col (current-indentation))
-	(want (* arg py-indent-offset))
-	(pos (- (point-max) (point)))
-	(bol (save-excursion (beginning-of-line) (point))))
-    (if (<= 0 (- col want))
-	(progn
-	  (beginning-of-line)
-	  (delete-horizontal-space)
-	  (indent-to (- col want))
-	  (if (> (- (point-max) pos) (point))
-	      (goto-char (- (point-max) pos)))
-	  ))))
 
 
 ;;; Functions that execute Python commands in a subprocess
@@ -588,7 +819,7 @@ filter."
     (progn
       (require 'shell)
       (switch-to-buffer-other-window
-       (apply (if (boundp 'make-shell) 'make-shell 'make-comint)
+       (apply (if (fboundp 'make-shell) 'make-shell 'make-comint)
 	      "Python" py-python-command nil))))
   (make-local-variable 'shell-prompt-pattern)
   (setq shell-prompt-pattern "^>>> \\|^\\.\\.\\. ")
@@ -722,7 +953,7 @@ See the `\\[py-execute-region]' docs for an account of some subtleties."
 
 
 ;; Functions for Python style indentation
-(defun py-delete-char ()
+(defun py-delete-char (count)
   "Reduce indentation or delete character.
 If point is at the leftmost column, deletes the preceding newline.
 
@@ -731,16 +962,19 @@ neither a continuation line nor a non-indenting comment line, or if
 point is at the end of a blank line, reduces the indentation to match
 that of the line that opened the current block of code.  The line that
 opened the block is displayed in the echo area to help you keep track
-of where you are.
+of where you are.  With numeric count, outdents that many blocks (but
+not past column zero).
 
 Else the preceding character is deleted, converting a tab to spaces if
-needed so that only a single column position is deleted."
-  (interactive "*")
+needed so that only a single column position is deleted.  Numeric
+argument delets that many characters."
+  (interactive "*p")
   (if (or (/= (current-indentation) (current-column))
 	  (bolp)
 	  (py-continuation-line-p)
+	  (not py-honor-comment-indentation)
 	  (looking-at "#[^ \t\n]"))	; non-indenting #
-      (backward-delete-char-untabify 1)
+      (backward-delete-char-untabify count)
     ;; else indent the same as the colon line that opened the block
 
     ;; force non-blank so py-goto-block-up doesn't ignore it
@@ -749,13 +983,16 @@ needed so that only a single column position is deleted."
     (let ((base-indent 0)		; indentation of base line
 	  (base-text "")		; and text of base line
 	  (base-found-p nil))
-      (condition-case nil		; in case no enclosing block
-	  (save-excursion
-	    (py-goto-block-up 'no-mark)
-	    (setq base-indent (current-indentation)
-		  base-text   (py-suck-up-leading-text)
-		  base-found-p t))
-	(error nil))
+      (save-excursion
+	(while (< 0 count)
+	  (condition-case nil		; in case no enclosing block
+	      (progn
+		(py-goto-block-up 'no-mark)
+		(setq base-indent (current-indentation)
+		      base-text   (py-suck-up-leading-text)
+		      base-found-p t))
+	    (error nil))
+	  (setq count (1- count))))
       (delete-char 1)			; toss the dummy character
       (delete-horizontal-space)
       (indent-to base-indent)
@@ -819,7 +1056,7 @@ the new line indented."
        ((py-continuation-line-p)
 	(let ((startpos (point))
 	      (open-bracket-pos (py-nesting-level))
-	      endpos searching found)
+	      endpos searching found state)
 	  (if open-bracket-pos
 	      (progn
 		;; align with first item in list; else a normal
@@ -880,10 +1117,39 @@ the new line indented."
 	      (1+ (current-column))))))
 
        ;; not on a continuation line
+       ((bobp) (current-indentation))
 
-       ;; if at start of restriction, or on a non-indenting comment
-       ;; line, assume they intended whatever's there
-       ((or (bobp) (looking-at "[ \t]*#[^ \t\n]"))
+       ;; Dfn: "Indenting comment line".  A line containing only a
+       ;; comment, but which is treated like a statement for
+       ;; indentation calculation purposes.  Such lines are only
+       ;; treated specially by the mode; they are not treated
+       ;; specially by the Python interpreter.
+
+       ;; The rules for indenting comment lines are a line where:
+       ;;   - the first non-whitespace character is `#', and
+       ;;   - the character following the `#' is whitespace, and
+       ;;   - the line is outdented with respect to (i.e. to the left
+       ;;     of) the indentation of the preceding non-blank line.
+
+       ;; The first non-blank line following an indenting comment
+       ;; line is given the same amount of indentation as the
+       ;; indenting comment line.
+
+       ;; All other comment-only lines are ignored for indentation
+       ;; purposes.
+
+       ;; Are we looking at a comment-only line which is *not* an
+       ;; indenting comment line?  If so, we assume that its been
+       ;; placed at the desired indentation, so leave it alone.
+       ;; Indenting comment lines are aligned as statements down
+       ;; below.
+       ((and (looking-at "[ \t]*#[^ \t\n]")
+	     ;; NOTE: this test will not be performed in older Emacsen
+	     (fboundp 'forward-comment)
+	     (<= (current-indentation)
+		 (save-excursion
+		   (forward-comment (- (point-max)))
+		   (current-indentation))))
 	(current-indentation))
 
        ;; else indentation based on that of the statement that
@@ -893,15 +1159,31 @@ the new line indented."
        (t
 	;; skip back over blank & non-indenting comment lines note:
 	;; will skip a blank or non-indenting comment line that
-	;; happens to be a continuation line too
-	(re-search-backward "^[ \t]*\\([^ \t\n#]\\|#[ \t\n]\\)" nil 'move)
+	;; happens to be a continuation line too.  use fast Emacs 19
+	;; function if it's there.
+	(if (and (eq py-honor-comment-indentation nil)
+		 (fboundp 'forward-comment))
+	    (forward-comment (- (point-max)))
+	  (let (done)
+	    (while (not done)
+	      (re-search-backward "^[ \t]*\\([^ \t\n#]\\|#[ \t\n]\\)"
+				  nil 'move)
+	      (setq done (or (eq py-honor-comment-indentation t)
+			     (bobp)
+			     (/= (following-char) ?#)
+			     (not (zerop (current-column)))))
+	      )))
 	;; if we landed inside a string, go to the beginning of that
 	;; string. this handles triple quoted, multi-line spanning
 	;; strings.
 	(py-goto-initial-line)
-	(if (py-statement-opens-block-p)
-	    (+ (current-indentation) py-indent-offset)
-	  (current-indentation)))))))
+	(+ (current-indentation)
+	   (if (py-statement-opens-block-p)
+	       py-indent-offset
+	     (if (py-statement-closes-block-p)
+		 (- py-indent-offset)
+	       0)))
+	)))))
 
 (defun py-guess-indent-offset (&optional global)
   "Guess a good value for, and change, `py-indent-offset'.
@@ -975,11 +1257,27 @@ to (but not including) the line containing the end of the region are
 shifted to the left, by `py-indent-offset' columns.
 
 If a prefix argument is given, the region is instead shifted by that
-many columns."
-  (interactive "*r\nP")   ; region; raw prefix arg
-  (py-shift-region start end
-		   (- (prefix-numeric-value
-		       (or count py-indent-offset)))))
+many columns.  With no active region, outdent only the current line.
+You cannot outdent the region if any line is already at column zero."
+  (interactive
+   (let ((p (point))
+	 (m (mark))
+	 (arg current-prefix-arg))
+     (if m
+	 (list (min p m) (max p m) arg)
+       (list p (save-excursion (forward-line 1) (point)) arg))))
+  ;; if any line is at column zero, don't shift the region
+  (save-excursion
+    (goto-char start)
+    (while (< (point) end)
+      (back-to-indentation)
+      (if (and (zerop (current-column))
+	       (not (looking-at "\\s *$")))
+	  (error "Region is at left edge."))
+      (forward-line 1)))
+  (py-shift-region start end (- (prefix-numeric-value
+				 (or count py-indent-offset))))
+  (py-keep-region-active))
 
 (defun py-shift-region-right (start end &optional count)
   "Shift region of Python code to the right.
@@ -988,20 +1286,28 @@ to (but not including) the line containing the end of the region are
 shifted to the right, by `py-indent-offset' columns.
 
 If a prefix argument is given, the region is instead shifted by that
-many columns."
-  (interactive "*r\nP")   ; region; raw prefix arg
+many columns.  With no active region, indent only the current line."
+  (interactive
+   (let ((p (point))
+	 (m (mark))
+	 (arg current-prefix-arg))
+     (if m
+	 (list (min p m) (max p m) arg)
+       (list p (save-excursion (forward-line 1) (point)) arg))))
   (py-shift-region start end (prefix-numeric-value
-			      (or count py-indent-offset))))
+			      (or count py-indent-offset)))
+  (py-keep-region-active))
 
 (defun py-indent-region (start end &optional indent-offset)
   "Reindent a region of Python code.
+
 The lines from the line containing the start of the current region up
 to (but not including) the line containing the end of the region are
 reindented.  If the first line of the region has a non-whitespace
 character in the first column, the first line is left alone and the
 rest of the region is reindented with respect to it.  Else the entire
-region is reindented with respect to the (closest code or
-indenting-comment) statement immediately preceding the region.
+region is reindented with respect to the (closest code or indenting
+comment) statement immediately preceding the region.
 
 This is useful when code blocks are moved or yanked, when enclosing
 control structures are introduced or removed, or to reformat code
@@ -1067,6 +1373,12 @@ initial line; and comment lines beginning in column 1 are ignored."
 	      (indent-to target-column)))
 	(forward-line 1))))
   (set-marker end nil))
+
+(defun py-comment-region (beg end &optional arg)
+  "Like `comment-region' but uses double hash (`#') comment starter."
+  (interactive "r\nP")
+  (let ((comment-start py-block-comment-prefix))
+    (comment-region beg end arg)))
 
 
 ;; Functions for moving point
@@ -1415,28 +1727,36 @@ pleasant."
 		  ;; no comment, so go back
 		  (goto-char start))))))))
 
-(defun py-comment-region (start end &optional uncomment-p)
-  "Comment out region of code; with prefix arg, uncomment region.
-The lines from the line containing the start of the current region up
-to (but not including) the line containing the end of the region are
-commented out, by inserting the string `py-block-comment-prefix' at
-the start of each line.  With a prefix arg, removes
-`py-block-comment-prefix' from the start of each line instead."
-  (interactive "*r\nP")   ; region; raw prefix arg
-  (goto-char end)   (beginning-of-line) (setq end (point))
-  (goto-char start) (beginning-of-line) (setq start (point))
-  (let ((prefix-len (length py-block-comment-prefix)) )
-    (save-excursion
-      (save-restriction
-	(narrow-to-region start end)
-	(while (not (eobp))
-	  (if uncomment-p
-	      (and (string= py-block-comment-prefix
-			    (buffer-substring
-			     (point) (+ (point) prefix-len)))
-		   (delete-char prefix-len))
-	    (insert py-block-comment-prefix))
-	  (forward-line 1))))))
+;; ripped from cc-mode
+(defun py-forward-into-nomenclature (&optional arg)
+  "Move forward to end of a nomenclature section or word.
+With arg, to it arg times.
+
+A `nomenclature' is a fancy way of saying AWordWithMixedCaseNotUnderscores."
+  (interactive "p")
+  (let ((case-fold-search nil))
+    (if (> arg 0)
+	(re-search-forward
+	 "\\(\\W\\|[_]\\)*\\([A-Z]*[a-z0-9]*\\)"
+	 (point-max) t arg)
+      (while (and (< arg 0)
+		  (re-search-backward
+		   "\\(\\W\\|[a-z0-9]\\)[A-Z]+\\|\\(\\W\\|[_]\\)\\w+"
+		   (point-min) 0))
+	(forward-char 1)
+	(setq arg (1+ arg)))))
+  (py-keep-region-active))
+
+(defun py-backward-into-nomenclature (&optional arg)
+  "Move backward to beginning of a nomenclature section or word.
+With optional ARG, move that many times.  If ARG is negative, move
+forward.
+
+A `nomenclature' is a fancy way of saying AWordWithMixedCaseNotUnderscores."
+  (interactive "p")
+  (py-forward-into-nomenclature (- arg))
+  (py-keep-region-active))
+
 
 
 ;; Documentation functions
@@ -1511,7 +1831,7 @@ variable docs begin with `->'.
 @VARIABLES
 
 py-indent-offset\tindentation increment
-py-block-comment-prefix\tcomment string used by py-comment-region
+py-block-comment-prefix\tcomment string used by comment-region
 
 py-python-command\tshell command to invoke Python interpreter
 py-scroll-process-buffer\talways scroll Python process buffer
@@ -1668,11 +1988,11 @@ the block structure:
 \\[py-mark-block]\t mark block of lines
 \\[mark-python-def-or-class]\t mark smallest enclosing def
 \\[universal-argument] \\[mark-python-def-or-class]\t mark smallest enclosing class
-\\[py-comment-region]\t comment out region of code
-\\[universal-argument] \\[py-comment-region]\t uncomment region of code
+\\[comment-region]\t comment out region of code
+\\[universal-argument] \\[comment-region]\t uncomment region of code
 %c:py-mark-block
 %c:mark-python-def-or-class
-%c:py-comment-region
+%c:comment-region
 
 @MOVING POINT
 
@@ -1745,16 +2065,26 @@ local bindings to py-newline-and-indent."))
 ;; returns the parse state at point (see parse-partial-sexp docs)
 (defun py-parse-state ()
   (save-excursion
-    (let ((here (point)) )
-      ;; back up to the first preceding line (if any; else start of
-      ;; buffer) that begins with a popular Python keyword, or a non-
-      ;; whitespace and non-comment character.  These are good places
-      ;; to start parsing to see whether where we started is at a
-      ;; non-zero nesting level.  It may be slow for people who write
-      ;; huge code blocks or huge lists ... tough beans.
-      (re-search-backward py-parse-state-re nil 'move)
-      (beginning-of-line)
-      (parse-partial-sexp (point) here))))
+    (let ((here (point))
+	  pps done ci)
+      (while (not done)
+	;; back up to the first preceding line (if any; else start of
+	;; buffer) that begins with a popular Python keyword, or a
+	;; non- whitespace and non-comment character.  These are good
+	;; places to start parsing to see whether where we started is
+	;; at a non-zero nesting level.  It may be slow for people who
+	;; write huge code blocks or huge lists ... tough beans.
+	(re-search-backward py-parse-state-re nil 'move)
+	(setq ci (current-indentation))
+	(beginning-of-line)
+	(save-excursion
+	  (setq pps (parse-partial-sexp (point) here)))
+	;; make sure we don't land inside a triple-quoted string
+	(setq done (or (zerop ci)
+		       (not (nth 3 pps))
+		       (bobp)))
+	)
+      pps)))
 
 ;; if point is at a non-zero nesting level, returns the number of the
 ;; character that opens the smallest enclosing unclosed list; else
@@ -1857,6 +2187,16 @@ local bindings to py-newline-and-indent."))
 	  ;; search failed: couldn't find another interesting colon
 	  (setq searching nil)))
       answer)))
+
+(defun py-statement-closes-block-p ()
+  ;; true iff the current statement `closes' a block == the line
+  ;; starts with `return', `raise', `break' or `continue'.  doesn't
+  ;; catch embedded statements
+  (let ((here (point)))
+    (back-to-indentation)
+    (prog1
+	(looking-at "\\(return\\|raise\\|break\\|continue\\)\\>")
+      (goto-char here))))
 
 ;; go to point right beyond final line of block begun by the current
 ;; line.  This is the same as where py-goto-beyond-final-line goes
@@ -1979,16 +2319,9 @@ local bindings to py-newline-and-indent."))
     (set-buffer cbuf))
   (sit-for 0))
 
-(defun py-keep-region-active ()
-  ;; do whatever is necessary to keep the region active in XEmacs.
-  ;; Ignore byte-compiler warnings you might see.  Also note that
-  ;; FSF's Emacs 19 does it differently and doesn't its policy doesn't
-  ;; require us to take explicit action.
-  (and (boundp 'zmacs-region-stays)
-       (setq zmacs-region-stays t)))
 
 
-(defconst py-version "2.30"
+(defconst py-version "2.72"
   "`python-mode' version number.")
 (defconst py-help-address "python-mode@python.org"
   "Address accepting submission of bug reports.")
