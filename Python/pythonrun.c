@@ -162,6 +162,10 @@ Py_Initialize()
 		initsite(); /* Module site */
 }
 
+#ifdef COUNT_ALLOCS
+extern void dump_counts Py_PROTO((void));
+#endif
+
 /* Undo the effect of Py_Initialize().
 
    Beware: if multiple interpreter and/or thread states exist, these
@@ -1082,10 +1086,6 @@ call_ll_exitfuncs()
 	fflush(stdout);
 	fflush(stderr);
 }
-
-#ifdef COUNT_ALLOCS
-extern void dump_counts Py_PROTO((void));
-#endif
 
 void
 Py_Exit(sts)
