@@ -1,0 +1,3 @@
+[EditorWindow]
+font-name= monaco
+font-size= 9
