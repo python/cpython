@@ -423,6 +423,21 @@ class TestDictFields(unittest.TestCase):
                                          "4": 'DEFAULT', "5": 'DEFAULT',
                                          "6": 'DEFAULT'})
 
+    def test_read_multi(self):
+        sample = [
+            '2147483648,43.0e12,17,abc,def\r\n',
+            '147483648,43.0e2,17,abc,def\r\n',
+            '47483648,43.0,170,abc,def\r\n'
+            ]
+
+        reader = csv.DictReader(sample,
+                                fieldnames="i1 float i2 s1 s2".split())
+        self.assertEqual(reader.next(), {"i1": '2147483648',
+                                         "float": '43.0e12',
+                                         "i2": '17',
+                                         "s1": 'abc',
+                                         "s2": 'def'})
+
     def test_read_with_blanks(self):
         reader = csv.DictReader(["1,2,abc,4,5,6\r\n","\r\n",
                                  "1,2,abc,4,5,6\r\n"],
@@ -557,6 +572,12 @@ Stonecutters Seafood and Chop House, Lemont, IL, 12/19/02, Week Back
 05/05/03?05/05/03?05/05/03?05/05/03?05/05/03?05/05/03
 '''
 
+    sample4 = '''\
+2147483648;43.0e12;17;abc;def
+147483648;43.0e2;17;abc;def
+47483648;43.0;170;abc;def
+'''
+
     def test_has_header(self):
         sniffer = csv.Sniffer()
         self.assertEqual(sniffer.has_header(self.sample1), False)
@@ -582,6 +603,8 @@ Stonecutters Seafood and Chop House, Lemont, IL, 12/19/02, Week Back
         self.assertEqual(dialect.delimiter, "?")
         dialect = sniffer.sniff(self.sample3, delimiters="/,")
         self.assertEqual(dialect.delimiter, "/")
+        dialect = sniffer.sniff(self.sample4)
+        self.assertEqual(dialect.delimiter, ";")
 
 if not hasattr(sys, "gettotalrefcount"):
     if test_support.verbose: print "*** skipping leakage tests ***"
