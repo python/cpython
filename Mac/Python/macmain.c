@@ -192,7 +192,7 @@ PyMac_InteractiveOptions(PyMac_PrefRecord *p, int *argcp, char ***argvp)
 ** Initialization code, shared by interpreter and applets
 */
 static void
-init_common(int *argcp, char ***argvp)
+init_common(int *argcp, char ***argvp, int embedded)
 {
 	/* Remember resource fork refnum, for later */
 	PyMac_AppRefNum = CurResFile();
@@ -223,11 +223,18 @@ init_common(int *argcp, char ***argvp)
 	options.keep_error = 1;		/* default-default */
 	PyMac_PreferenceOptions(&options);
 	
-	/* Create argc/argv. Do it before we go into the options event loop. */
-	*argcp = PyMac_GetArgv(argvp, options.noargs);
-	
-	/* Do interactive option setting, if allowed and <option> depressed */
-	PyMac_InteractiveOptions(&options, argcp, argvp);
+	if ( embedded ) {
+		static char *emb_argv[] = {"embedded-python", 0};
+		
+		*argcp = 1;
+		*argvp = emb_argv;
+	} else {
+		/* Create argc/argv. Do it before we go into the options event loop. */
+		*argcp = PyMac_GetArgv(argvp, options.noargs);
+		
+		/* Do interactive option setting, if allowed and <option> depressed */
+		PyMac_InteractiveOptions(&options, argcp, argvp);
+	}
 	
 	/* Copy selected options to where the machine-independent stuff wants it */
 	Py_VerboseFlag = options.verbose;
@@ -310,7 +317,7 @@ PyMac_InitApplet()
 	char **argv;
 	int err;
 
-	init_common(&argc, &argv);
+	init_common(&argc, &argv, 0);
 	
 	Py_Initialize();
 	PySys_SetArgv(argc, argv);
@@ -325,6 +332,20 @@ PyMac_InitApplet()
 	/* XXX Should we bother to Py_Exit(sts)? */
 }
 
+/*
+** Hook for embedding python.
+*/
+void
+PyMac_Initialize()
+{
+	int argc;
+	char **argv;
+	
+	init_common(&argc, &argv, 1);
+	Py_Initialize();
+	PySys_SetArgv(argc, argv);
+}
+
 #endif /* USE_MAC_APPLET_SUPPORT */
 
 /* For normal application */
@@ -334,7 +355,7 @@ PyMac_InitApplication()
 	int argc;
 	char **argv;
 	
-	init_common(&argc, &argv);
+	init_common(&argc, &argv, 0);
 	
 	if ( argc > 1 ) {
 		/* We're running a script. Attempt to change current directory */
