@@ -33,13 +33,14 @@ PERFORMANCE OF THIS SOFTWARE.
 
 /* (A separate file because this may be OS dependent) */
 
+#include "Python.h"
 #include "config.h"
 
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 
-long
+time_t
 PyOS_GetLastModificationTime(path, fp)
 	char *path;
 	FILE *fp;
