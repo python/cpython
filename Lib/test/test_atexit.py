@@ -2,6 +2,7 @@
 from test_support import TESTFN, vereq
 import atexit
 import os
+import sys
 
 input = """\
 import atexit
@@ -22,7 +23,7 @@ f = file(fname, "w")
 f.write(input)
 f.close()
 
-p = os.popen("python " + fname)
+p = os.popen("%s %s" % (sys.executable, fname))
 output = p.read()
 p.close()
 vereq(output, """\
@@ -50,7 +51,7 @@ f = file(fname, "w")
 f.write(input)
 f.close()
 
-p = os.popen("python " + fname)
+p = os.popen("%s %s" % (sys.executable, fname))
 output = p.read()
 p.close()
 vereq(output, """\
