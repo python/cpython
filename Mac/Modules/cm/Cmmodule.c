@@ -146,54 +146,6 @@ static PyObject *CmpInstObj_GetComponentInstanceError(_self, _args)
 	return _res;
 }
 
-static PyObject *CmpInstObj_ComponentFunctionImplemented(_self, _args)
-	ComponentInstanceObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	long _rv;
-	short ftnNumber;
-	if (!PyArg_ParseTuple(_args, "h",
-	                      &ftnNumber))
-		return NULL;
-	_rv = ComponentFunctionImplemented(_self->ob_itself,
-	                                   ftnNumber);
-	_res = Py_BuildValue("l",
-	                     _rv);
-	return _res;
-}
-
-static PyObject *CmpInstObj_GetComponentVersion(_self, _args)
-	ComponentInstanceObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	long _rv;
-	if (!PyArg_ParseTuple(_args, ""))
-		return NULL;
-	_rv = GetComponentVersion(_self->ob_itself);
-	_res = Py_BuildValue("l",
-	                     _rv);
-	return _res;
-}
-
-static PyObject *CmpInstObj_ComponentSetTarget(_self, _args)
-	ComponentInstanceObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	long _rv;
-	ComponentInstance target;
-	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &target))
-		return NULL;
-	_rv = ComponentSetTarget(_self->ob_itself,
-	                         target);
-	_res = Py_BuildValue("l",
-	                     _rv);
-	return _res;
-}
-
 static PyObject *CmpInstObj_SetComponentInstanceError(_self, _args)
 	ComponentInstanceObject *_self;
 	PyObject *_args;
@@ -270,17 +222,59 @@ static PyObject *CmpInstObj_SetComponentInstanceA5(_self, _args)
 	return _res;
 }
 
+static PyObject *CmpInstObj_ComponentFunctionImplemented(_self, _args)
+	ComponentInstanceObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	long _rv;
+	short ftnNumber;
+	if (!PyArg_ParseTuple(_args, "h",
+	                      &ftnNumber))
+		return NULL;
+	_rv = ComponentFunctionImplemented(_self->ob_itself,
+	                                   ftnNumber);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *CmpInstObj_GetComponentVersion(_self, _args)
+	ComponentInstanceObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	long _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = GetComponentVersion(_self->ob_itself);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *CmpInstObj_ComponentSetTarget(_self, _args)
+	ComponentInstanceObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	long _rv;
+	ComponentInstance target;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpInstObj_Convert, &target))
+		return NULL;
+	_rv = ComponentSetTarget(_self->ob_itself,
+	                         target);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
 static PyMethodDef CmpInstObj_methods[] = {
 	{"CloseComponent", (PyCFunction)CmpInstObj_CloseComponent, 1,
 	 "() -> None"},
 	{"GetComponentInstanceError", (PyCFunction)CmpInstObj_GetComponentInstanceError, 1,
 	 "() -> None"},
-	{"ComponentFunctionImplemented", (PyCFunction)CmpInstObj_ComponentFunctionImplemented, 1,
-	 "(short ftnNumber) -> (long _rv)"},
-	{"GetComponentVersion", (PyCFunction)CmpInstObj_GetComponentVersion, 1,
-	 "() -> (long _rv)"},
-	{"ComponentSetTarget", (PyCFunction)CmpInstObj_ComponentSetTarget, 1,
-	 "(ComponentInstance target) -> (long _rv)"},
 	{"SetComponentInstanceError", (PyCFunction)CmpInstObj_SetComponentInstanceError, 1,
 	 "(OSErr theError) -> None"},
 	{"GetComponentInstanceStorage", (PyCFunction)CmpInstObj_GetComponentInstanceStorage, 1,
@@ -291,6 +285,12 @@ static PyMethodDef CmpInstObj_methods[] = {
 	 "() -> (long _rv)"},
 	{"SetComponentInstanceA5", (PyCFunction)CmpInstObj_SetComponentInstanceA5, 1,
 	 "(long theA5) -> None"},
+	{"ComponentFunctionImplemented", (PyCFunction)CmpInstObj_ComponentFunctionImplemented, 1,
+	 "(short ftnNumber) -> (long _rv)"},
+	{"GetComponentVersion", (PyCFunction)CmpInstObj_GetComponentVersion, 1,
+	 "() -> (long _rv)"},
+	{"ComponentSetTarget", (PyCFunction)CmpInstObj_ComponentSetTarget, 1,
+	 "(ComponentInstance target) -> (long _rv)"},
 	{NULL, NULL, 0}
 };
 
@@ -609,13 +609,13 @@ static PyObject *Cm_RegisterComponentResource(_self, _args)
 {
 	PyObject *_res = NULL;
 	Component _rv;
-	ComponentResourceHandle tr;
+	ComponentResourceHandle cr;
 	short global;
 	if (!PyArg_ParseTuple(_args, "O&h",
-	                      ResObj_Convert, &tr,
+	                      ResObj_Convert, &cr,
 	                      &global))
 		return NULL;
-	_rv = RegisterComponentResource(tr,
+	_rv = RegisterComponentResource(cr,
 	                                global);
 	_res = Py_BuildValue("O&",
 	                     CmpObj_New, _rv);
@@ -728,7 +728,7 @@ static PyObject *Cm_RegisterComponentResourceFile(_self, _args)
 
 static PyMethodDef Cm_methods[] = {
 	{"RegisterComponentResource", (PyCFunction)Cm_RegisterComponentResource, 1,
-	 "(ComponentResourceHandle tr, short global) -> (Component _rv)"},
+	 "(ComponentResourceHandle cr, short global) -> (Component _rv)"},
 	{"FindNextComponent", (PyCFunction)Cm_FindNextComponent, 1,
 	 "(Component aComponent, ComponentDescription looking) -> (Component _rv)"},
 	{"CountComponents", (PyCFunction)Cm_CountComponents, 1,

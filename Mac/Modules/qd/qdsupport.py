@@ -55,7 +55,6 @@ PenState_ptr = StructInputBufferType('PenState')
 
 includestuff = includestuff + """
 #include <%s>""" % MACHEADERFILE + """
-#include <Desk.h>
 
 #define resNotFound -192 /* Can't include <Errors.h> because of Python's "errors.h" */
 
