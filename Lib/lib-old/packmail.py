@@ -21,7 +21,7 @@ def help():
 def pack(outfp, file, name):
 	fp = open(file, 'r')
 	outfp.write('echo ' + name + '\n')
-	outfp.write('sed "s/^X//" >' + name + ' <<"!"\n')
+	outfp.write('sed "s/^X//" >"' + name + '" <<"!"\n')
 	while 1:
 		line = fp.readline()
 		if not line: break
