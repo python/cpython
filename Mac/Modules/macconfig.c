@@ -95,7 +95,6 @@ extern void initmactcp();
 #ifndef USE_CORE_TOOLBOX
 #define USE_CORE_TOOLBOX
 #endif
-extern void initAE();
 extern void initApp();
 extern void initEvt();
 extern void initFm();
@@ -111,6 +110,7 @@ extern void initPrinting();
 extern void initDrag();
 #endif
 #ifdef USE_CORE_TOOLBOX
+extern void initAE();
 extern void initCtl();
 extern void initDlg();
 extern void initMenu();
@@ -205,6 +205,7 @@ struct _inittab _PyImport_Inittab[] = {
 	{"mactcp", initmactcp},
 #endif
 #ifdef USE_CORE_TOOLBOX
+	{"AE", initAE},
 	{"Ctl", initCtl},
 	{"Dlg", initDlg},
 	{"Menu", initMenu},
@@ -214,7 +215,6 @@ struct _inittab _PyImport_Inittab[] = {
 	{"Res", initRes},
 #endif
 #ifdef USE_TOOLBOX
-	{"AE", initAE},
 	{"App", initApp},
 	{"Evt", initEvt},
 	{"Fm", initFm},
