@@ -215,6 +215,8 @@ AIX:	A complete overhaul of the shared library support is now in
 	(The optimizer bug reported at this place in previous releases
 	has been worked around by a minimal code change.)
 
+HP-UX:	Please read the file Misc/HPUX-NOTES.
+
 Minix:  When using ack, use "CC=cc AR=aal RANLIB=: ./configure"!
 
 SCO:	The following only apply to SCO 3; Python builds out of the box
