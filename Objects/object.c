@@ -312,14 +312,18 @@ PyObject_Compare(v, w)
 	if ((vtp = v->ob_type) != (wtp = w->ob_type)) {
 		char *vname = vtp->tp_name;
 		char *wname = wtp->tp_name;
-		if (vtp->tp_as_number != NULL &&
-				wtp->tp_as_number != NULL) {
+		if (vtp->tp_as_number != NULL && wtp->tp_as_number != NULL) {
 			int err;
 			err = PyNumber_CoerceEx(&v, &w);
 			if (err < 0)
 				return -1;
 			else if (err == 0) {
-				int cmp = (*v->ob_type->tp_compare)(v, w);
+				int cmp;
+				vtp = v->ob_type;
+				if (vtp->tp_compare == NULL)
+					cmp = (v < w) ? -1 : 1;
+				else
+					cmp = (*vtp->tp_compare)(v, w);
 				Py_DECREF(v);
 				Py_DECREF(w);
 				return cmp;
