@@ -23,6 +23,8 @@ class ObjectDefinition(GeneratorGroup):
 		self.argref = ""	# set to "*" if arg to <type>_New should be pointer
 		self.static = "static " # set to "" to make <type>_New and <type>_Convert public
 		self.modulename = None
+		if hasattr(self, "assertions"):
+			self.assertions()
 
 	def add(self, g, dupcheck=0):
 		g.setselftype(self.objecttype, self.itselftype)
@@ -62,8 +64,7 @@ class ObjectDefinition(GeneratorGroup):
 		GeneratorGroup.generate(self)
 
 		Output()
-		Output("%sPyMethodChain %s_chain = { %s_methods, %s };",
-		        self.static,    self.prefix, self.prefix, self.basechain)
+		self.outputMethodChain()
 
 		self.outputGetattr()
 
@@ -78,6 +79,10 @@ class ObjectDefinition(GeneratorGroup):
 		self.outputTypeObject()
 
 		OutHeader2("End object type " + self.name)
+		
+	def outputMethodChain(self):
+		Output("%sPyMethodChain %s_chain = { %s_methods, %s };",
+		        self.static,    self.prefix, self.prefix, self.basechain)
 
 	def outputStructMembers(self):
 		Output("%s ob_itself;", self.itselftype)
@@ -200,7 +205,127 @@ class ObjectDefinition(GeneratorGroup):
 		                                           self.name)
 		DedentLevel()
 
+class PEP252Mixin:
+	getsetlist = []
+	
+	def assertions(self):
+		# Check that various things aren't overridden. If they are it could
+		# signify a bgen-client that has been partially converted to PEP252.
+		assert self.outputGetattr.im_func == PEP252Mixin.outputGetattr.im_func
+		assert self.outputSetattr.im_func == PEP252Mixin.outputSetattr.im_func
+		assert self.outputGetattrBody == None
+		assert self.outputGetattrHook == None
+		
+	def outputGetattr(self):
+		pass
+		
+	outputGetattrBody = None
 
+	outputGetattrHook = None
+
+	def outputSetattr(self):
+		pass
+	
+	def outputMethodChain(self):
+		# This is a good place to output the getters and setters
+		self.outputGetSetList()
+	
+	def outputHook(self, name):
+		methodname = "outputHook_" + name
+		if hasattr(self, methodname):
+			func = getattr(self, methodname)
+			func()
+		else:
+			Output("0, /*%s*/", methodname)
+	
+	def outputTypeObject(self):
+		sf = self.static and "static "
+		Output()
+		Output("%sPyTypeObject %s = {", sf, self.typename)
+		IndentLevel()
+		Output("PyObject_HEAD_INIT(NULL)")
+		Output("0, /*ob_size*/")
+		if self.modulename:
+			Output("\"%s.%s\", /*tp_name*/", self.modulename, self.name)
+		else:
+			Output("\"%s\", /*tp_name*/", self.name)
+		Output("sizeof(%s), /*tp_basicsize*/", self.objecttype)
+		Output("0, /*tp_itemsize*/")
+		
+		Output("/* methods */")
+		Output("(destructor) %s_dealloc, /*tp_dealloc*/", self.prefix)
+		Output("0, /*tp_print*/")
+		Output("(getattrfunc)0, /*tp_getattr*/")
+		Output("(setattrfunc)0, /*tp_setattr*/")
+		Output("(cmpfunc) %s_compare, /*tp_compare*/", self.prefix)
+		Output("(reprfunc) %s_repr, /*tp_repr*/", self.prefix)
+		
+		Output("(PyNumberMethods *)0, /* tp_as_number */")
+		Output("(PySequenceMethods *)0, /* tp_as_sequence */")
+		Output("(PyMappingMethods *)0, /* tp_as_mapping */")
+		
+		Output("(hashfunc) %s_hash, /*tp_hash*/", self.prefix)
+		Output("0, /*tp_call*/")
+		Output("0, /*tp_str*/")
+		Output("PyObject_GenericGetAttr, /*tp_getattro*/")
+		Output("PyObject_GenericSetAttr, /*tp_setattro */")
+		
+		self.outputHook("tp_as_buffer")
+		self.outputHook("tp_flags")
+		self.outputHook("tp_doc")
+		self.outputHook("tp_traverse")
+		self.outputHook("tp_clear")
+		self.outputHook("tp_richcompare")
+		self.outputHook("tp_weaklistoffset")
+		self.outputHook("tp_iter")
+		self.outputHook("tp_iternext")
+		Output("%s_methods, /* tp_methods */", self.prefix)
+		self.outputHook("tp_members")
+		Output("%s_getsetlist, /*tp_getset*/", self.prefix)
+		self.outputHook("tp_base")
+		DedentLevel()
+		Output("};")
+		
+	def outputGetSetList(self):
+		if self.getsetlist:
+			for name, get, set, doc in self.getsetlist:
+				if get:
+					self.outputGetter(name, get)
+				else:
+					Output("#define %s_get_%s NULL", self.prefix, name)
+				if set:
+					self.outputSetter(name, set)
+				else:
+					Output("#define %s_set_%s NULL", self.prefix, name)
+					
+			Output("static PyGetSetDef %s_getsetlist[] = {", self.prefix)
+			IndentLevel()
+			for name, get, set, doc in self.getsetlist:
+				if doc:
+					doc = `doc`
+				else:
+					doc = "NULL"
+				Output("{\"%s\", (getter)%s_get_%s, (setter)%s_set_%s, %s}", 
+					name, self.prefix, name, self.prefix, name, doc)
+			DedentLevel()
+			Output("};")
+		else:
+			Output("#define %s_getsetlist NULL", self.prefix)
+			
+	def outputGetter(self, name, code):
+		Output("static PyObject *%s_get_%s(%s *self, void *closure)",
+			self.prefix, name, self.objecttype)
+		OutLbrace()
+		Output(code)
+		OutRbrace()
+		
+	def outputSetter(self, name, code):
+		Output("static int %s_get_%s(%s *self, PyObject *v, void *closure)",
+			self.prefix, name, self.objecttype)
+		OutLbrace()
+		Output(code)
+		Output("return 0;")
+		OutRbrace()
 
 class GlobalObjectDefinition(ObjectDefinition):
 	"""Like ObjectDefinition but exports some parts.
