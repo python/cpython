@@ -66,12 +66,15 @@ Module interface:
 - a UNIX domain socket address is a string specifying the pathname
 
 Socket methods:
+(NB: an argument list of the form (sockaddr...) means that multiple
+arguments are treated the same as a single tuple argument, for backwards
+compatibility.)
 
 - s.accept() --> new socket object, sockaddr
-- s.bind(sockaddr) --> None
+- s.bind(sockaddr...) --> None
 - s.close() --> None
-- s.connect(sockaddr) --> None
-- s.connect_ex(sockaddr) --> 0 or errno (handy for e.g. async connect)
+- s.connect(sockaddr...) --> None
+- s.connect_ex(sockaddr...) --> 0 or errno (handy for e.g. async connect)
 - s.fileno() --> file descriptor
 - s.dup() --> same as socket.fromfd(os.dup(s.fileno(), ...)
 - s.getpeername() --> sockaddr
@@ -849,7 +852,7 @@ If a nonzero buffersize argument is given, the return value is a\n\
 string of that length; otherwise it is an integer.";
 
 
-/* s.bind(sockaddr) method */
+/* s.bind(sockaddr...) method */
 
 static PyObject *
 BUILD_FUNC_DEF_2(PySocketSock_bind,PySocketSockObject *,s, PyObject *,args)
@@ -857,10 +860,7 @@ BUILD_FUNC_DEF_2(PySocketSock_bind,PySocketSockObject *,s, PyObject *,args)
 	struct sockaddr *addr;
 	int addrlen;
 	int res;
-	PyObject *addro;
-	if (!PyArg_ParseTuple(args, "O:bind", &addro))
-		return NULL;
-	if (!getsockaddrarg(s, addro, &addr, &addrlen))
+	if (!getsockaddrarg(s, args, &addr, &addrlen))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
 	res = bind(s->sock_fd, addr, addrlen);
@@ -903,7 +903,7 @@ static char close_doc[] =
 Close the socket.  It cannot be used after this call.";
 
 
-/* s.connect(sockaddr) method */
+/* s.connect(sockaddr...) method */
 
 static PyObject *
 BUILD_FUNC_DEF_2(PySocketSock_connect,PySocketSockObject *,s, PyObject *,args)
@@ -911,10 +911,7 @@ BUILD_FUNC_DEF_2(PySocketSock_connect,PySocketSockObject *,s, PyObject *,args)
 	struct sockaddr *addr;
 	int addrlen;
 	int res;
-	PyObject *addro;
-	if (!PyArg_ParseTuple(args, "O:connect", &addro))
-		return NULL;
-	if (!getsockaddrarg(s, addro, &addr, &addrlen))
+	if (!getsockaddrarg(s, args, &addr, &addrlen))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
 	res = connect(s->sock_fd, addr, addrlen);
@@ -932,7 +929,7 @@ Connect the socket to a remote address.  For IP sockets, the address\n\
 is a pair (host, port).";
 
 
-/* s.connect_ex(sockaddr) method */
+/* s.connect_ex(sockaddr...) method */
 
 static PyObject *
 BUILD_FUNC_DEF_2(PySocketSock_connect_ex,PySocketSockObject *,s, PyObject *,args)
@@ -940,10 +937,7 @@ BUILD_FUNC_DEF_2(PySocketSock_connect_ex,PySocketSockObject *,s, PyObject *,args
 	struct sockaddr *addr;
 	int addrlen;
 	int res;
-	PyObject *addro;
-	if (!PyArg_ParseTuple(args, "O:connect_ex", &addro))
-		return NULL;
-	if (!getsockaddrarg(s, addro, &addr, &addrlen))
+	if (!getsockaddrarg(s, args, &addr, &addrlen))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
 	res = connect(s->sock_fd, addr, addrlen);
@@ -1310,13 +1304,13 @@ of the socket (flag == 1), or both ends (flag == 2).";
 static PyMethodDef PySocketSock_methods[] = {
 	{"accept",		(PyCFunction)PySocketSock_accept, 1,
 				accept_doc},
-	{"bind",		(PyCFunction)PySocketSock_bind, 1,
+	{"bind",		(PyCFunction)PySocketSock_bind, 0,
 				bind_doc},
 	{"close",		(PyCFunction)PySocketSock_close, 1,
 				close_doc},
-	{"connect",		(PyCFunction)PySocketSock_connect, 1,
+	{"connect",		(PyCFunction)PySocketSock_connect, 0,
 				connect_doc},
-	{"connect_ex",		(PyCFunction)PySocketSock_connect_ex, 1,
+	{"connect_ex",		(PyCFunction)PySocketSock_connect_ex, 0,
 				connect_ex_doc},
 #ifndef NO_DUP
 	{"dup",			(PyCFunction)PySocketSock_dup, 1,
