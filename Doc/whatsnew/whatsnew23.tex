@@ -293,14 +293,13 @@ coefficient that multiplies some other quantity.  If the statement is
 clearly a truth value.
 
 Python's Booleans were not added for the sake of strict type-checking.
-A very strict language such as Pascal
-% XXX is Pascal the right example here?
-would also prevent you performing arithmetic with Booleans, and would
-require that the expression in an \keyword{if} statement always
-evaluate to a Boolean.  Python is not this strict, and it never will
-be.  (\pep{285} explicitly says this.)  So you can still use any
-expression in an \keyword{if}, even ones that evaluate to a list or
-tuple or some random object, and the Boolean type is a subclass of the
+A very strict language such as Pascal would also prevent you
+performing arithmetic with Booleans, and would require that the
+expression in an \keyword{if} statement always evaluate to a Boolean.
+Python is not this strict, and it never will be.  (\pep{285}
+explicitly says so.)  So you can still use any expression in an
+\keyword{if}, even ones that evaluate to a list or tuple or some
+random object, and the Boolean type is a subclass of the
 \class{int} class, so arithmetic using a Boolean still works.
 
 \begin{verbatim}
@@ -382,14 +381,20 @@ allocating memory have been consolidated down into two APIs.
 Memory allocated with one API must not be freed with the other API.
 
 \begin{itemize}
-  \item To allocate and free an undistinguished chunk of memory, use
-  \cfunction{PyMem_Malloc()}, \cfunction{PyMem_Realloc()},
-  \cfunction{PyMem_Free()}, and the other \cfunction{PyMem_*}
-  functions.
+  \item To allocate and free an undistinguished chunk of memory using 
+  Python's allocator, use
+  \cfunction{PyMem_Malloc()}, \cfunction{PyMem_Realloc()}, and
+  \cfunction{PyMem_Free()}.
+
+  \item In rare cases you may want to avoid using Python's allocator 
+  in order to allocate a chunk of memory; 
+  use \cfunction{PyObject_Malloc}, \cfunction{PyObject_Realloc}, 
+  and \cfunction{PyObject_Free}.
 
   \item To allocate and free Python objects,  
   use \cfunction{PyObject_New()}, \cfunction{PyObject_NewVar()}, and 
   \cfunction{PyObject_Del()}.
+
 \end{itemize}
 
 Thanks to lots of work by Tim Peters, pymalloc in 2.3 also provides
@@ -491,6 +496,13 @@ KeyError: pop(): dictionary is empty
 {}
 >>>
 \end{verbatim}
+
+\item Two new functions in the \module{math} module, 
+\function{degrees(\var{rads})} and \function{radians(\var{degs})},
+convert between radians and degrees.  Other functions in the 
+\module{math} module such as
+\function{math.sin()} and \function{math.cos()} have always required
+input values measured in radians. (Contributed by Raymond Hettinger.)
 
 \item Two new functions, \function{killpg()} and \function{mknod()},
 were added to the \module{posix} module that underlies the \module{os}
