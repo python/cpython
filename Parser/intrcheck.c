@@ -149,7 +149,7 @@ checksignals_witharg(void * arg)
 	return PyErr_CheckSignals();
 }
 
-static RETSIGTYPE
+static void
 intcatcher(int sig)
 {
 	extern void Py_Exit(int);
@@ -168,10 +168,9 @@ intcatcher(int sig)
 	}
 	signal(SIGINT, intcatcher);
 	Py_AddPendingCall(checksignals_witharg, NULL);
-	Py_RETURN_FROM_SIGNAL_HANDLER(0);
 }
 
-static RETSIGTYPE (*old_siginthandler)(int) = SIG_DFL;
+static void (*old_siginthandler)(int) = SIG_DFL;
 
 void
 PyOS_InitInterrupts(void)

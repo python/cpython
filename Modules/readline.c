@@ -427,13 +427,10 @@ setup_readline(void)
 static jmp_buf jbuf;
 
 /* ARGSUSED */
-static RETSIGTYPE
+static void
 onintr(int sig)
 {
 	longjmp(jbuf, 1);
-#if RETSIGTYPE != void
-	return 0;
-#endif
 }
 
 
@@ -444,7 +441,7 @@ call_readline(char *prompt)
 {
 	size_t n;
 	char *p, *q;
-	RETSIGTYPE (*old_inthandler)(int);
+	void (*old_inthandler)(int);
 	old_inthandler = signal(SIGINT, onintr);
 	if (setjmp(jbuf)) {
 #ifdef HAVE_SIGRELSE

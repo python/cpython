@@ -652,9 +652,8 @@ has already been done for you).  A good start is to copy the file
 config.h.in to config.h and edit the latter to reflect the actual
 configuration of your system.  Most symbols must simply be defined as
 1 only if the corresponding feature is present and can be left alone
-otherwise; however RETSIGTYPE must always be defined, either as int or
-as void, and the *_t type symbols must be defined as some variant of
-int if they need to be defined at all.
+otherwise; however the *_t type symbols must be defined as some variant
+of int if they need to be defined at all.
 
 
 
