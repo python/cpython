@@ -74,14 +74,14 @@ class TestCase(unittest.TestCase):
         self.assertEqual(len(d2), 1)
 
 
-from test_userdict import TestMappingProtocol
+from test import mapping_tests
 
-class TestShelveBase(TestMappingProtocol):
+class TestShelveBase(mapping_tests.BasicTestMappingProtocol):
     fn = "shelftemp.db"
     counter = 0
     def __init__(self, *args, **kw):
         self._db = []
-        TestMappingProtocol.__init__(self, *args, **kw)
+        mapping_tests.BasicTestMappingProtocol.__init__(self, *args, **kw)
     _tested_class = shelve.Shelf
     def _reference(self):
         return {"key1":"value1", "key2":2, "key3":(1,2,3)}
