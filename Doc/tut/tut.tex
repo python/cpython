@@ -1753,6 +1753,27 @@ item, then to the result and the next item, and so on.  For example,
 0
 \end{verbatim}
 
+\subsection{List Comprehensions}
+
+List comprehensions provide a concise way to create lists without resorting
+to use of the \func{map()} or \func{filter()} functions.  The resulting
+construct tends often to be clearer than use of those functions.
+
+\begin{verbatim}
+>>> spcs = ["  Apple", " Banana ", "Coco  nut  "]
+>>> print [s.strip() for s in spcs]
+['Apple', 'Banana', 'Coco  nut']
+>>> vec = [2, 4, 6]
+>>> print [3*x for x in vec]
+[6, 12, 18]
+>>> vec1 = [2, 4, 6]
+>>> vec2 = [4, 3, -9]
+>>> print [x*y for x in vec1 for y in vec2]
+[8, 6, -18, 16, 12, -36, 24, 18, -54]
+>>> print [x+y for x in vec1 for y in vec2]
+[6, 5, -7, 8, 7, -5, 10, 9, -3]
+\end{verbatim}
+
 \section{The \keyword{del} statement \label{del}}
 
 There is a way to remove an item from a list given its index instead
