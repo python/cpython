@@ -915,22 +915,14 @@ class PyBuildExt(build_ext):
            self.detect_tkinter_darwin(inc_dirs, lib_dirs):
             return
 
-        # Set platform specific library prefix, if any
-        if platform == 'cygwin':
-            lib_prefix = 'cyg'
-        else:
-            lib_prefix = ''
-
         # Assume we haven't found any of the libraries or include files
         # The versions with dots are used on Unix, and the versions without
         # dots on Windows, for detection by cygwin.
         tcllib = tklib = tcl_includes = tk_includes = None
         for version in ['8.4', '84', '8.3', '83', '8.2',
                         '82', '8.1', '81', '8.0', '80']:
-            tklib = self.compiler.find_library_file(lib_dirs,
-                                                    lib_prefix + 'tk' + version)
-            tcllib = self.compiler.find_library_file(lib_dirs,
-                                                     lib_prefix + 'tcl' + version)
+            tklib = self.compiler.find_library_file(lib_dirs, 'tk' + version)
+            tcllib = self.compiler.find_library_file(lib_dirs, 'tcl' + version)
             if tklib and tcllib:
                 # Exit the loop when we've found the Tcl/Tk libraries
                 break
@@ -988,8 +980,8 @@ class PyBuildExt(build_ext):
             libs.append('BLT')
 
         # Add the Tcl/Tk libraries
-        libs.append(lib_prefix + 'tk'+ version)
-        libs.append(lib_prefix + 'tcl'+ version)
+        libs.append('tk'+ version)
+        libs.append('tcl'+ version)
 
         if platform in ['aix3', 'aix4']:
             libs.append('ld')
