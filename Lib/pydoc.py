@@ -1618,15 +1618,23 @@ has the same effect as typing a particular string at the help> prompt.
     def interact(self):
         self.output.write('\n')
         while True:
-            self.output.write('help> ')
-            self.output.flush()
             try:
-                request = self.input.readline()
+                request = self.getline('help> ')
                 if not request: break
-            except KeyboardInterrupt: break
+            except (KeyboardInterrupt, EOFError):
+                break
             request = strip(replace(request, '"', '', "'", ''))
             if lower(request) in ['q', 'quit']: break
             self.help(request)
+
+    def getline(self, prompt):
+        """Read one line, using raw_input when available."""
+        if self.input is sys.stdin:
+            return raw_input(prompt)
+        else:
+            self.output.write(prompt)
+            self.output.flush()
+            return self.input.readline()
 
     def help(self, request):
         if type(request) is type(''):
