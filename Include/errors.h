@@ -46,6 +46,7 @@ extern object *OverflowError;
 extern object *RuntimeError;
 extern object *SyntaxError;
 extern object *SystemError;
+extern object *SystemExit;
 extern object *TypeError;
 extern object *ValueError;
 extern object *ZeroDivisionError;
