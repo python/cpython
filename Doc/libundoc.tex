@@ -28,11 +28,7 @@ SimpleHTTPServer.py -- Simple HTTP Server
 
 MimeWriter.py -- Generic MIME writer
 
-mimify.py -- Mimification and unmimification of mail messages
-
 multifile.py -- make each part of a multipart message ``feel'' like
-
-gzip.py -- compression using zlib (compatible with gzip)
 
 
 \section{Miscellaneous useful utilities}
@@ -73,6 +69,7 @@ bdb.py -- A generic Python debugger base class (used by pdb)
 
 ihooks.py -- Import hook support (for ni and rexec)
 
+
 \section{Parsing Python}
 
 (One could argue that these should all be documented together with the
@@ -85,9 +82,14 @@ symbol.py -- Symbols (from ``graminit.h'')
 
 keyword.py -- Keywords (from ``graminit.c'')
 
-tokenize.py -- regular expression that recognizes Python tokens
+tokenize.py -- regular expression that recognizes Python tokens; also
+contains helper code for colorizing Python source code.
 
 pyclbr.py -- Parse a Python file and retrieve classes and methods
+
+code.py -- Deal with Python code objects: code.compile_command() can
+determine whether an interactively entered command is complete or not,
+distinguishing incomplete from invalid input.
 
 
 \section{Platform specific modules}
