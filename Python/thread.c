@@ -23,7 +23,7 @@ static ulock_t wait_lock;	/* lock used to wait for other threads */
 static int waiting_for_threads;	/* protected by count_lock */
 static int nthreads;		/* protected by count_lock */
 static int exit_status;
-static int do_exit;
+static int do_exit;		/* indicates that the program is to exit */
 static int exiting;		/* we're already exiting (for maybe_exit) */
 static pid_t my_pid;		/* PID of main thread */
 static pid_t pidlist[MAXPROC];	/* PIDs of other threads */
@@ -106,12 +106,14 @@ void init_thread _P0()
 #ifdef DEBUG
 	thread_debug = getenv("THREADDEBUG") != 0;
 #endif
-	dprintf(("init_thread called\n"));
 	if (initialized)
 		return;
 	initialized = 1;
+	dprintf(("init_thread called\n"));
 
 #ifdef __sgi
+	if (usconfig(CONF_INITUSERS, 16) < 0)
+		perror("usconfig - CONF_INITUSERS");
 	my_pid = getpid();	/* so that we know which is the main thread */
 	atexit(maybe_exit);
 	s.sa_handler = exit_sig;
@@ -119,13 +121,20 @@ void init_thread _P0()
 	/*sigaddset(&s.sa_mask, SIGUSR1);*/
 	s.sa_flags = 0;
 	sigaction(SIGUSR1, &s, 0);
-	prctl(PR_SETEXITSIG, SIGUSR1);
-	usconfig(CONF_ARENATYPE, US_SHAREDONLY);
+	if (prctl(PR_SETEXITSIG, SIGUSR1) < 0)
+		perror("prctl - PR_SETEXITSIG");
+	if (usconfig(CONF_ARENATYPE, US_SHAREDONLY) < 0)
+		perror("usconfig - CONF_ARENATYPE");
 	/*usconfig(CONF_LOCKTYPE, US_DEBUGPLUS);*/
-	shared_arena = usinit(tmpnam(0));
+	if ((shared_arena = usinit(tmpnam(0))) == 0)
+		perror("usinit");
 	count_lock = usnewlock(shared_arena);
 	(void) usinitlock(count_lock);
 	wait_lock = usnewlock(shared_arena);
+	dprintf(("arena start: %lx, arena size: %ld\n", (long) shared_arena, (long) usconfig(CONF_GETSIZE, shared_arena)));
+#ifdef USE_DL			/* for python */
+	dl_setrange((long) shared_arena, (long) shared_arena + 64 * 1024);
+#endif
 #endif
 #ifdef sun
 	lwp_setstkcache(STACKSIZE, NSTACKS);

@@ -98,7 +98,7 @@ void
 init_save_thread()
 {
 	if (interpreter_lock)
-		fatal("2nd call to init_save_thread");
+		return;
 	interpreter_lock = allocate_lock();
 	acquire_lock(interpreter_lock, 1);
 }
