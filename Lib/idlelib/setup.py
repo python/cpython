@@ -6,6 +6,15 @@ import idlever
 
 idle_name = "idle"
 
+# IDLE not being imported as a package by its script.  It is now being
+# installed as a collection of modules in a directory in .../site-packages/,
+# with a .pth file which will add IDLE to sys.path
+
+# Name of 'package' to be installed in site-packages:
+pkgname = idle_name + "lib"
+
+pkg_dir = "."
+
 try:
     pos = sys.argv.index("--check-tkinter")
 except ValueError:
@@ -18,27 +27,14 @@ else:
         print >>sys.stderr, "Cannot install IDLE without _tkinter"
         raise SystemExit
 
-try:
-    package_dir = os.path.join(os.environ["SRCDIR"], "Tools", idle_name)
-except KeyError:
-    package_dir = "."
-
-# name of package to be installed in site-packages
-pkgname = idle_name + "lib"
-
-# the normal build_py would not incorporate the .txt or config files
-txt_files = ['extend.txt', 'help.txt', 'CREDITS.txt', 'LICENSE.txt']
+# the normal build_py would not incorporate anything but .py files
+txt_files = ['extend.txt', 'help.txt', 'CREDITS.txt', 'LICENSE.txt',
+             'README.txt']
 txt_files += ['config-extensions.def', 'config-highlight.def',
               'config-keys.def', 'config-main.def']
+txt_files += [idle_name + '.bat', idle_name + '.pyw']
+
 Icons = glob.glob1("Icons","*.gif")
-
-# Create a .pth file to live in site-packages; Python will add IDLE to
-# sys.path:
-
-pathfile = idle_name + ".pth"
-pfile = open(pathfile, 'w')
-pfile.write(pkgname +'\n')
-pfile.close()
 
 class IDLE_Builder(build_py):
     def get_plain_outfile(self, build_dir, package, file):
@@ -49,31 +45,24 @@ class IDLE_Builder(build_py):
     def run(self):
         # Copies all .py files, then also copies the txt and gif files
         build_py.run(self)
-        assert self.packages == [pkgname]
         for name in txt_files:
-            outfile = self.get_plain_outfile(self.build_lib, [pkgname], name)
+            outfile = self.get_plain_outfile(self.build_lib, [], name)
             dir = os.path.dirname(outfile)
             self.mkpath(dir)
-            self.copy_file(os.path.join(package_dir, name), outfile,
+            self.copy_file(os.path.join(pkg_dir, name), outfile,
                            preserve_mode = 0)
         for name in Icons:
             outfile = self.get_plain_outfile(self.build_lib,
-                                             [pkgname, "Icons"], name)
+                                             ["Icons"], name)
             dir = os.path.dirname(outfile)
             self.mkpath(dir)
             self.copy_file(os.path.join("Icons", name),
                            outfile, preserve_mode = 0)
-        # Copy the .pth file to the same level as the package directory
-        outfile = self.get_plain_outfile(self.build_lib, [], pathfile)
-        dir = os.path.dirname(outfile)
-        self.mkpath(dir)
-        self.copy_file(os.path.join(package_dir, pathfile), outfile,
-                       preserve_mode=0)
 
     def get_source_files(self):
         # returns the .py files, the .txt and .def files, and the icons
-        icons = [os.path.join(package_dir, "Icons",name) for name in Icons]
-        txts = [os.path.join(package_dir, name) for name in txt_files]
+        icons = [os.path.join(pkg_dir, "Icons",name) for name in Icons]
+        txts = [os.path.join(pkg_dir, name) for name in txt_files]
         return build_py.get_source_files(self) + txt_files + icons
 
     def get_outputs(self, include_bytecode=1):
@@ -82,12 +71,11 @@ class IDLE_Builder(build_py):
         if not include_bytecode:
             return outputs
         for name in txt_files:
-            filename = self.get_plain_outfile(self.build_lib,
-                                              [pkgname], name)
+            filename = self.get_plain_outfile(self.build_lib, [], name)
             outputs.append(filename)
         for name in Icons:
             filename = self.get_plain_outfile(self.build_lib,
-                                              [pkgname, "Icons"], name)
+                                              ["Icons"], name)
             outputs.append(filename)
         return outputs
 
@@ -104,28 +92,26 @@ setup(name="IDLEfork",
       description = "IDLEfork, the Developmental Python IDE",
       author = "Guido van Rossum et. al.",
       author_email = "idle-dev@python.org",
-      maintainer = "Kurt B. Kaiser",
-      maintainer_email = "kbk@shore.net",
       license = "PSF: www.python.org",
       url = "https://sourceforge.net/projects/idlefork/",
       long_description =
-"""IDLE is a Tkinter based IDE for Python. It is written in 100% pure Python
-and works both on Windows and Unix. It features a multi-window text editor with
-multiple undo, Python colorizing, and many other things, as well as a Python
-shell window and a debugger.
+"""IDLE is a Tkinter based IDE for Python. It is written in 100% pure
+Python and works both on Windows and Unix. It features a multi-window
+text editor with multiple undo, Python colorizing, and many other
+things, as well as a Python shell window and a debugger.
 
-IDLEfork is a separate line of development which was initiated by D. Scherer
-at CMU as part of Visual Python.  It features execution in a separate process
-which is newly initiated for each run.  At version 0.9 the RPC was changed to
-incorporate code by GvR, which supports the debugger.  IDLEfork also
-incorporates a GUI configuration utilility.  For further details, refer to
-idlefork.sourceforge.net.
-
+IDLEfork is a separate line of development which was initiated by
+D. Scherer at CMU as part of Visual Python.  It features execution in a
+separate process which is newly initiated for each run.  At version 0.9
+the RPC was changed to incorporate code by GvR, which supports the
+debugger.  IDLEfork also incorporates a GUI configuration utilility.
+For further details, refer to idlefork.sourceforge.net.
 """,
 
       cmdclass = {'build_py':IDLE_Builder,
                   'install_lib':IDLE_Installer},
-      package_dir = {pkgname: package_dir},
-      packages = [pkgname],
-      scripts = [os.path.join(package_dir, idle_name)]
+      package_dir = {pkgname: pkg_dir},
+      extra_path = pkgname,
+      py_modules = [f.split('.')[0] for f in glob.glob("*.py")],
+      scripts = [os.path.join(pkg_dir, idle_name)]
       )
