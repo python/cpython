@@ -13,15 +13,20 @@ import re
 import string
 import sys
 
+prefix = os.path.normpath (sys.prefix)
+exec_prefix = os.path.normpath (sys.exec_prefix)
+
 
 def get_config_h_filename():
     """Return full pathname of installed config.h file."""
-    return os.path.join(sys.exec_prefix, "include", "python" + sys.version[:3],
+    return os.path.join(exec_prefix,
+                        "include", "python" + sys.version[:3],
                         "config.h")
 
 def get_makefile_filename():
     """Return full pathname of installed Makefile from the Python build."""
-    return os.path.join(sys.exec_prefix, "lib", "python" + sys.version[:3],
+    return os.path.join(exec_prefix,
+                        "lib", "python" + sys.version[:3],
                         "config", "Makefile")
 
 def parse_config_h(fp, g=None):
@@ -125,7 +130,7 @@ def _init_posix():
     g = globals()
     # load the installed config.h:
     parse_config_h(open(get_config_h_filename()), g)
-    # load the installed Makefile.pre.in:
+    # load the installed Makefile:
     parse_makefile(open(get_makefile_filename()), g)
 
 
@@ -134,16 +139,16 @@ def _init_nt():
     g=globals()
     # load config.h, though I don't know how useful this is
     parse_config_h(open(
-            os.path.join(sys.exec_prefix, "include", "config.h")), g)
+            os.path.join(exec_prefix, "include", "config.h")), g)
     # set basic install directories
-    g['LIBDEST']=os.path.join(sys.exec_prefix, "Lib")
-    g['BINLIBDEST']= os.path.join(sys.exec_prefix, "Lib")
+    g['LIBDEST']=os.path.join(exec_prefix, "Lib")
+    g['BINLIBDEST']= os.path.join(exec_prefix, "Lib")
 
     # XXX hmmm.. a normal install puts include files here
-    g['INCLUDEPY'] = os.path.join (sys.prefix, 'include' )
+    g['INCLUDEPY'] = os.path.join (prefix, 'include' )
 
     g['SO'] = '.dll'
-    g['exec_prefix'] = sys.exec_prefix
+    g['exec_prefix'] = exec_prefix
 
 try:
     exec "_init_" + os.name
