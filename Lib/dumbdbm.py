@@ -92,6 +92,9 @@ class _Database(UserDict.DictMixin):
         # CAUTION:  It's vital that _commit() succeed, and _commit() can
         # be called from __del__().  Therefore we must never reference a
         # global in this routine.
+        if self._index is None:
+            return  # nothing to do
+
         try:
             self._os.unlink(self._bakfile)
         except self._os.error:
@@ -204,12 +207,9 @@ class _Database(UserDict.DictMixin):
 
     def close(self):
         self._commit()
-        self._index = None
-        self._datfile = self._dirfile = self._bakfile = None
+        self._index = self._datfile = self._dirfile = self._bakfile = None
 
-    def __del__(self):
-        if self._index is not None:
-            self._commit()
+    __del__ = close
 
 
 

@@ -38,6 +38,9 @@ Extension modules
 Library
 -------
 
+- Closing a dumbdbm database more than once is now harmless (it used to
+  raise a nuisance exception on the second close).
+
 - It's vital that a dumbdbm database be closed properly, else the
   on-disk data and directory files can be left in mutually inconsistent
   states.  dumbdbm.py's _Database.__del__() method attempted to close
