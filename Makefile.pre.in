@@ -376,6 +376,7 @@ Modules/Setup: $(srcdir)/Modules/Setup.dist
 		echo "Modules/Setup.dist is newer than Modules/Setup;"; \
 		echo "check to make sure you have all the updates you"; \
 		echo "need in your Modules/Setup file."; \
+		echo "Usually, copying Setup.dist to Setup will work."; \
 		echo "-----------------------------------------------"; \
 	fi
 
