@@ -543,10 +543,12 @@ def ftpcp(source, sourcename, target, targetname = '', type = 'I'):
 	target.voidresp()
 
 
-NoFileSpecified = "netrc.NoFileSpecified"
-
-
 class Netrc:
+    """Class to parse & provide access to 'netrc' format files.
+
+    See the netrc(4) man page for information on the file format.
+
+    """
     __defuser = None
     __defpasswd = None
     __defacct = None
@@ -556,7 +558,7 @@ class Netrc:
 	    if os.environ.has_key("HOME"):
 		filename = os.path.join(os.environ["HOME"], ".netrc")
 	    else:
-		raise NoFileSpecified, "specify file to load or set $HOME"
+		raise IOError, "specify file to load or set $HOME"
 	self.__hosts = {}
 	self.__macros = {}
 	fp = open(filename, "r")
@@ -625,7 +627,7 @@ class Netrc:
 
 	"""
 	host = string.lower(host)
-	user, passwd, acct = None, None, None
+	user = passwd = acct = None
 	if self.__hosts.has_key(host):
 	    user, passwd, acct = self.__hosts[host]
 	user = user or self.__defuser
@@ -641,19 +643,38 @@ class Netrc:
 	"""Return a sequence of lines which define a named macro."""
 	return self.__macros[macro]
 
+
 
 def test():
 	'''Test program.
-	Usage: ftp [-d] host [-l[dir]] [-d[dir]] [-p] [file] ...'''
+	Usage: ftp [-d] [-r[file]] host [-l[dir]] [-d[dir]] [-p] [file] ...'''
 
 	debugging = 0
+	rcfile = None
 	while sys.argv[1] == '-d':
 		debugging = debugging+1
+		del sys.argv[1]
+	if sys.argv[1][:2] == '-r':
+		# get name of alternate ~/.netrc file:
+		rcfile = sys.argv[1][2:]
 		del sys.argv[1]
 	host = sys.argv[1]
 	ftp = FTP(host)
 	ftp.set_debuglevel(debugging)
-	ftp.login()
+	userid = passwd = acct = ''
+	try:
+	    netrc = Netrc(rcfile)
+	except IOError:
+	    if rcfile is not None:
+		sys.stderr.write("Could not open account file"
+				 " -- using anonymous login.")
+	else:
+	    try:
+		userid, passwd, acct = netrc.get_account(host)
+	    except KeyError:
+		# no account for host
+		sys.stderr.write("No account -- using anonymous login.")
+	ftp.login(userid, passwd, acct)
 	for file in sys.argv[2:]:
 		if file[:2] == '-l':
 			ftp.dir(file[2:])
