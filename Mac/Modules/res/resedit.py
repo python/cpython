@@ -13,14 +13,45 @@ if ( h == NULL ) {
 HLock(h);
 memcpy(*h, buf, len);
 HUnlock(h);
-return (PyObject *)ResObj_New(h);
+return ResObj_New(h);
 """
 
 f = ManualGenerator("Resource", resource_body)
 f.docstring = lambda: """Convert a string to a resource object.
 
-The created resource object is actually just a handle.
-Apply AddResource() to write it to a resource file.
+The created resource object is actually just a handle,
+apply AddResource() to write it to a resource file.
+See also the Handle() docstring.
+"""
+functions.append(f)
+
+handle_body = """
+char *buf;
+int len;
+Handle h;
+ResourceObject *rv;
+
+if (!PyArg_ParseTuple(_args, "s#", &buf, &len))
+	return NULL;
+h = NewHandle(len);
+if ( h == NULL ) {
+	PyErr_NoMemory();
+	return NULL;
+}
+HLock(h);
+memcpy(*h, buf, len);
+HUnlock(h);
+rv = (ResourceObject *)ResObj_New(h);
+rv->ob_freeit = PyMac_AutoDisposeHandle;
+return (PyObject *)rv;
+"""
+
+f = ManualGenerator("Handle", handle_body)
+f.docstring = lambda: """Convert a string to a Handle object.
+
+Resource() and Handle() are very similar, but objects created with Handle() are
+by default automatically DisposeHandle()d upon object cleanup. Use AutoDispose()
+to change this.
 """
 functions.append(f)
 
@@ -45,4 +76,23 @@ resmethods.append(genresconverter("Menu", "Menu"))
 f = ResMethod(void, 'LoadResource',
     (Handle, 'theResource', InMode),
 )
+resmethods.append(f)
+
+#
+# A method to set the auto-dispose flag
+#
+AutoDispose_body = """
+int onoff, old = 0;
+if (!PyArg_ParseTuple(_args, "i", &onoff))
+	return NULL;
+if ( _self->ob_freeit )
+	old = 1;
+if ( onoff )
+	_self->ob_freeit = PyMac_AutoDisposeHandle;
+else
+	_self->ob_freeit = NULL;
+return Py_BuildValue("i", old);
+"""
+f = ManualGenerator("AutoDispose", AutoDispose_body)
+f.docstring = lambda: "(int)->int. Automatically DisposeHandle the object on Python object cleanup"
 resmethods.append(f)

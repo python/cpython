@@ -47,6 +47,13 @@ extern PyObject *WinObj_WhichWindow(WindowPtr);
 
 #define resNotFound -192 /* Can't include <Errors.h> because of Python's "errors.h" */
 
+/* Function to dispose a resource, with a "normal" calling sequence */
+static void
+PyMac_AutoDisposeHandle(Handle h)
+{
+	DisposeHandle(h);
+}
+
 static PyObject *Res_Error;
 
 /* ---------------------- Object type Resource ---------------------- */
@@ -58,6 +65,7 @@ PyTypeObject Resource_Type;
 typedef struct ResourceObject {
 	PyObject_HEAD
 	Handle ob_itself;
+	void (*ob_freeit)(Handle ptr);
 } ResourceObject;
 
 PyObject *ResObj_New(itself)
@@ -68,6 +76,7 @@ PyObject *ResObj_New(itself)
 	it = PyObject_NEW(ResourceObject, &Resource_Type);
 	if (it == NULL) return NULL;
 	it->ob_itself = itself;
+	it->ob_freeit = NULL;
 	return (PyObject *)it;
 }
 ResObj_Convert(v, p_itself)
@@ -97,7 +106,11 @@ ResObj_Convert(v, p_itself)
 static void ResObj_dealloc(self)
 	ResourceObject *self;
 {
-	/* Cleanup of self->ob_itself goes here */
+	if (self->ob_freeit && self->ob_itself)
+	{
+		self->ob_freeit(self->ob_itself);
+	}
+	self->ob_itself = NULL;
 	PyMem_DEL(self);
 }
 
@@ -462,6 +475,25 @@ static PyObject *ResObj_LoadResource(_self, _args)
 	return _res;
 }
 
+static PyObject *ResObj_AutoDispose(_self, _args)
+	ResourceObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+
+	int onoff, old = 0;
+	if (!PyArg_ParseTuple(_args, "i", &onoff))
+		return NULL;
+	if ( _self->ob_freeit )
+		old = 1;
+	if ( onoff )
+		_self->ob_freeit = PyMac_AutoDisposeHandle;
+	else
+		_self->ob_freeit = NULL;
+	return Py_BuildValue("i", old);
+
+}
+
 static PyMethodDef ResObj_methods[] = {
 	{"HomeResFile", (PyCFunction)ResObj_HomeResFile, 1,
 	 "() -> (short _rv)"},
@@ -503,6 +535,8 @@ static PyMethodDef ResObj_methods[] = {
 	 "Return this resource/handle as a Menu"},
 	{"LoadResource", (PyCFunction)ResObj_LoadResource, 1,
 	 "() -> None"},
+	{"AutoDispose", (PyCFunction)ResObj_AutoDispose, 1,
+	 "(int)->int. Automatically DisposeHandle the object on Python object cleanup"},
 	{NULL, NULL, 0}
 };
 
@@ -1305,7 +1339,34 @@ static PyObject *Res_Resource(_self, _args)
 	HLock(h);
 	memcpy(*h, buf, len);
 	HUnlock(h);
-	return (PyObject *)ResObj_New(h);
+	return ResObj_New(h);
+
+}
+
+static PyObject *Res_Handle(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+
+	char *buf;
+	int len;
+	Handle h;
+	ResourceObject *rv;
+
+	if (!PyArg_ParseTuple(_args, "s#", &buf, &len))
+		return NULL;
+	h = NewHandle(len);
+	if ( h == NULL ) {
+		PyErr_NoMemory();
+		return NULL;
+	}
+	HLock(h);
+	memcpy(*h, buf, len);
+	HUnlock(h);
+	rv = (ResourceObject *)ResObj_New(h);
+	rv->ob_freeit = PyMac_AutoDisposeHandle;
+	return (PyObject *)rv;
 
 }
 
@@ -1377,7 +1438,9 @@ static PyMethodDef Res_methods[] = {
 	{"FSpCreateResFile", (PyCFunction)Res_FSpCreateResFile, 1,
 	 "(FSSpec spec, OSType creator, OSType fileType, ScriptCode scriptTag) -> None"},
 	{"Resource", (PyCFunction)Res_Resource, 1,
-	 "Convert a string to a resource object.\n\nThe created resource object is actually just a handle.\nApply AddResource() to write it to a resource file.\n"},
+	 "Convert a string to a resource object.\n\nThe created resource object is actually just a handle,\napply AddResource() to write it to a resource file.\nSee also the Handle() docstring.\n"},
+	{"Handle", (PyCFunction)Res_Handle, 1,
+	 "Convert a string to a Handle object.\n\nResource() and Handle() are very similar, but objects created with Handle() are\nby default automatically DisposeHandle()d upon object cleanup. Use AutoDispose()\nto change this.\n"},
 	{NULL, NULL, 0}
 };
 
@@ -1420,7 +1483,6 @@ OptResObj_Convert(v, p_itself)
 	PyErr_SetString(PyExc_TypeError, "Resource required");
 	return 0;
 }
-
 
 
 void initRes()
