@@ -272,6 +272,7 @@ class FancyModuleLoader(ModuleLoader):
 	if type == FROZEN_MODULE:
 	    code = self.hooks.get_frozen_object(name)
 	elif type == PY_COMPILED:
+	    import marshal
 	    file.seek(8)
 	    code = marshal.load(file)
 	elif type == PY_SOURCE:
