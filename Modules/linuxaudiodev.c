@@ -27,9 +27,19 @@
 #endif
 
 #include <sys/ioctl.h>
+#if defined(linux)
 #include <linux/soundcard.h>
 
 typedef unsigned long uint32_t;
+
+#elif defined(__FreeBSD__)
+#include <machine/soundcard.h>
+
+#ifndef SNDCTL_DSP_CHANNELS
+#define SNDCTL_DSP_CHANNELS SOUND_PCM_WRITE_CHANNELS
+#endif
+
+#endif
 
 typedef struct {
     PyObject_HEAD;
