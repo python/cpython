@@ -89,9 +89,9 @@ def gotopluginfolder():
 	"""Go to the plugin folder, assuming we are somewhere in the Python tree"""
 	import os
 	
-	while not os.path.isdir(":Mac:Plugins"):
+	while not os.path.isdir(":Mac:PlugIns"):
 		os.chdir("::")
-	os.chdir(":Mac:Plugins")
+	os.chdir(":Mac:PlugIns")
 	if verbose: print "current directory is", os.getcwd()
 	
 def loadtoolboxmodules():
@@ -146,8 +146,8 @@ def mkcorealias(src, altsrc):
 	import macostools
 	version = string.split(sys.version)[0]
 	dst = getextensiondirfile(src+ ' ' + version)
-	if not os.path.exists(src):
-		if not os.path.exists(altsrc):
+	if not os.path.exists(os.path.join(sys.exec_prefix, src)):
+		if not os.path.exists(os.path.join(sys.exec_prefix, altsrc)):
 			if verbose:  print '*', src, 'not found'
 			return 0
 		src = altsrc
@@ -155,7 +155,7 @@ def mkcorealias(src, altsrc):
 		os.unlink(dst)
 	except os.error:
 		pass
-	macostools.mkalias(src, dst)
+	macostools.mkalias(os.path.join(sys.exec_prefix, src), dst)
 	if verbose:  print ' ', dst, '->', src
 	return 1
 	
