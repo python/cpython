@@ -100,6 +100,10 @@ class MyScanner(Scanner):
 			 [("ExistingWindowPtr", "*", "*")]),
 			([("WindowRef", "FrontWindow", "ReturnMode")],	# Ditto
 			 [("ExistingWindowPtr", "*", "*")]),
+			([("WindowPtr", "FrontNonFloatingWindow", "ReturnMode")],
+			 [("ExistingWindowPtr", "*", "*")]),
+			([("WindowRef", "FrontNonFloatingWindow", "ReturnMode")],	# Ditto
+			 [("ExistingWindowPtr", "*", "*")]),
 			]
 
 if __name__ == "__main__":

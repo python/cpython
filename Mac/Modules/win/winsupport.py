@@ -49,6 +49,12 @@ PropertyTag = OSTypeType("PropertyTag")
 
 includestuff = includestuff + """
 #include <%s>""" % MACHEADERFILE + """
+/* Function to dispose a window, with a "normal" calling sequence */
+static void
+PyMac_AutoDisposeWindow(WindowPtr w)
+{
+	DisposeWindow(w);
+}
 """
 
 finalstuff = finalstuff + """
@@ -60,15 +66,18 @@ WinObj_WhichWindow(w)
 {
 	PyObject *it;
 	
-	/* XXX What if we find a stdwin window or a window belonging
-	       to some other package? */
-	if (w == NULL)
-		it = NULL;
-	else
-		it = (PyObject *) GetWRefCon(w);
-	if (it == NULL || ((WindowObject *)it)->ob_itself != w)
+	if (w == NULL) {
 		it = Py_None;
-	Py_INCREF(it);
+		Py_INCREF(it);
+	} else {
+		it = (PyObject *) GetWRefCon(w);
+		if (it == NULL || ((WindowObject *)it)->ob_itself != w) {
+			it = WinObj_New(w);
+			((WindowObject *)it)->ob_freeit = NULL;
+		} else {
+			Py_INCREF(it);
+		}
+	}
 	return it;
 }
 """
@@ -76,22 +85,31 @@ WinObj_WhichWindow(w)
 class MyObjectDefinition(GlobalObjectDefinition):
 	def outputCheckNewArg(self):
 		Output("if (itself == NULL) return PyMac_Error(resNotFound);")
+	def outputStructMembers(self):
+		GlobalObjectDefinition.outputStructMembers(self)
+		Output("void (*ob_freeit)(%s ptr);", self.itselftype)
 	def outputInitStructMembers(self):
 		GlobalObjectDefinition.outputInitStructMembers(self)
 		Output("SetWRefCon(itself, (long)it);")
+		Output("it->ob_freeit = PyMac_AutoDisposeWindow;")
 	def outputCheckConvertArg(self):
-		Output("#if !TARGET_API_MAC_CARBON")
 		OutLbrace("if (DlgObj_Check(v))")
-		Output("*p_itself = ((WindowObject *)v)->ob_itself;")
+		Output("*p_itself = DlgObj_ConvertToWindow(v);")
 		Output("return 1;")
 		OutRbrace()
-		Output("#endif")
 		Out("""
 		if (v == Py_None) { *p_itself = NULL; return 1; }
 		if (PyInt_Check(v)) { *p_itself = (WindowPtr)PyInt_AsLong(v); return 1; }
 		""")
-	def outputFreeIt(self, itselfname):
-		Output("DisposeWindow(%s);", itselfname)
+	def outputCleanupStructMembers(self):
+		Output("if (self->ob_itself) SetWRefCon(self->ob_itself, 0);")
+		Output("if (self->ob_freeit && self->ob_itself)")
+		OutLbrace()
+		Output("self->ob_freeit(self->ob_itself);")
+		OutRbrace()
+		Output("self->ob_itself = NULL;")
+##	def outputFreeIt(self, itselfname):
+##		Output("DisposeWindow(%s);", itselfname)
 # From here on it's basically all boiler plate...
 
 # Create the generator groups and link them
