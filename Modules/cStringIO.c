@@ -51,68 +51,10 @@
     If you have questions regarding this software,
     contact:
    
-      Jim Fulton, jim@digicool.com
+      info@digicool.com
       Digital Creations L.C.  
    
       (540) 371-6909
-
-
-  $Log$
-  Revision 2.5  1997/04/11 19:56:06  guido
-  My own patch: support writable 'softspace' attribute.
-
-  Revision 2.4  1997/04/09 17:35:33  guido
-  Unknown changes by Jim Fulton.
-
-  Revision 1.16  1997/02/17 22:17:43  jim
-  *** empty log message ***
-
-  Revision 1.14  1997/01/24 19:56:24  chris
-  undid last change
-
-  Revision 1.13  1997/01/24 19:45:20  chris
-  extra byte in buffer no longer included in buf_size
-
-  Revision 1.12  1997/01/24 19:38:28  chris
-  *** empty log message ***
-
-  Revision 1.11  1997/01/23 20:45:01  jim
-  ANSIfied it.
-  Changed way C API was exported.
-
-  Revision 1.10  1997/01/02 15:19:55  chris
-  checked in to be sure repository is up to date.
-
-  Revision 1.9  1996/12/27 21:40:29  jim
-  Took out some lamosities in interface, like returning self from
-  write.
-
-  Revision 1.8  1996/12/23 15:52:49  jim
-  Added ifdef to check for CObject before using it.
-
-  Revision 1.7  1996/12/23 15:22:35  jim
-  Finished implementation, adding full compatibility with StringIO, and
-  then some.
-
-  We still need to take out some cStringIO oddities.
-
-  Revision 1.6  1996/10/15 18:42:07  jim
-  Added lots of casts to make warnings go away.
-
-  Revision 1.5  1996/10/11 21:03:42  jim
-  *** empty log message ***
-
-  Revision 1.4  1996/10/11 21:02:15  jim
-  *** empty log message ***
-
-  Revision 1.3  1996/10/07 20:51:38  chris
-  *** empty log message ***
-
-  Revision 1.2  1996/07/18 13:08:34  jfulton
-  *** empty log message ***
-
-  Revision 1.1  1996/07/15 17:06:33  jfulton
-  Initial version.
 
 
 */
@@ -142,6 +84,8 @@ static char cStringIO_module_documentation[] =
 "  \n"
 "If someone else wants to provide a more complete implementation,\n"
 "go for it. :-)  \n"
+"\n"
+"$Id$\n"
 ;
 
 #include "Python.h"
@@ -149,8 +93,6 @@ static char cStringIO_module_documentation[] =
 #include "cStringIO.h"
 
 #define UNLESS(E) if(!(E))
-
-/* ----------------------------------------------------- */
 
 /* Declarations for objects of type StringO */
 
@@ -160,10 +102,6 @@ typedef struct {
   int pos, string_size, buf_size, closed, softspace;
 } Oobject;
 
-staticforward PyTypeObject Otype;
-
-/* ---------------------------------------------------------------- */
-
 /* Declarations for objects of type StringI */
 
 typedef struct {
@@ -172,10 +110,6 @@ typedef struct {
   int pos, string_size, closed;
   PyObject *pbuf;
 } Iobject;
-
-staticforward PyTypeObject Itype;
-
-/* ---------------------------------------------------------------- */
 
 static char O_reset__doc__[] = 
 "reset() -- Reset the file position to the beginning"
@@ -343,7 +277,14 @@ O_write(Oobject *self, PyObject *args) {
 
 static PyObject *
 O_getval(Oobject *self, PyObject *args) {
-  return PyString_FromStringAndSize(self->buf, self->pos);
+  PyObject *use_pos;
+  int s;
+
+  use_pos=Py_None;
+  UNLESS(PyArg_ParseTuple(args,"|O",&use_pos)) return NULL;
+  if(PyObject_IsTrue(use_pos)) s=self->pos;
+  else                         s=self->string_size;
+  return PyString_FromStringAndSize(self->buf, s);
 }
 
 static PyObject *
@@ -434,7 +375,12 @@ static struct PyMethodDef O_methods[] = {
   {"reset",      (PyCFunction)O_reset,        0,      O_reset__doc__},
   {"seek",       (PyCFunction)O_seek,         1,      O_seek__doc__},
   {"tell",       (PyCFunction)O_tell,         0,      O_tell__doc__},
-  {"getvalue",   (PyCFunction)O_getval,       0,      "getvalue() -- Get the string value"},
+  {"getvalue",   (PyCFunction)O_getval,       1,
+   "getvalue([use_pos]) -- Get the string value."
+   "\n"
+   "If use_pos is specified and is a true value, then the string returned\n"
+   "will include only the text up to the current file position.\n"
+  },
   {"truncate",   (PyCFunction)O_truncate,     0,      O_truncate__doc__},
   {"isatty",     (PyCFunction)O_isatty,       0,      O_isatty__doc__},
   {"close",      (PyCFunction)O_close,        0,      O_close__doc__},
@@ -442,32 +388,6 @@ static struct PyMethodDef O_methods[] = {
   {"writelines", (PyCFunction)O_writelines,   0,      O_writelines__doc__},
   {NULL,		NULL}		/* sentinel */
 };
-
-/* ---------- */
-
-
-static PyObject *
-newOobject(int  size) {
-  Oobject *self;
-	
-  self = PyObject_NEW(Oobject, &Otype);
-  if (self == NULL)
-    return NULL;
-  self->pos=0;
-  self->closed = 0;
-  self->string_size = 0;
-  self->softspace = 0;
-
-  UNLESS(self->buf=malloc(size*sizeof(char)))
-    {
-      PyErr_SetString(PyExc_MemoryError,"out of memory");
-      self->buf_size = 0;
-      return NULL;
-    }
-
-  self->buf_size=size;
-  return (PyObject*)self;
-}
 
 
 static void
@@ -527,6 +447,29 @@ static PyTypeObject Otype = {
   Otype__doc__ 		/* Documentation string */
 };
 
+static PyObject *
+newOobject(int  size) {
+  Oobject *self;
+	
+  self = PyObject_NEW(Oobject, &Otype);
+  if (self == NULL)
+    return NULL;
+  self->pos=0;
+  self->closed = 0;
+  self->string_size = 0;
+  self->softspace = 0;
+
+  UNLESS(self->buf=malloc(size*sizeof(char)))
+    {
+      PyErr_SetString(PyExc_MemoryError,"out of memory");
+      self->buf_size = 0;
+      return NULL;
+    }
+
+  self->buf_size=size;
+  return (PyObject*)self;
+}
+
 /* End of code for StringO objects */
 /* -------------------------------------------------------- */
 
@@ -553,29 +496,6 @@ static struct PyMethodDef I_methods[] = {
   {"flush",     (PyCFunction)O_flush,        0,      O_flush__doc__},
   {NULL,		NULL}		/* sentinel */
 };
-
-/* ---------- */
-
-
-static PyObject *
-newIobject(PyObject *s) {
-  Iobject *self;
-  char *buf;
-  int size;
-	
-  UNLESS(buf=PyString_AsString(s)) return NULL;
-  UNLESS(-1 != (size=PyString_Size(s))) return NULL;
-  UNLESS(self = PyObject_NEW(Iobject, &Itype)) return NULL;
-  Py_INCREF(s);
-  self->buf=buf;
-  self->string_size=size;
-  self->pbuf=s;
-  self->pos=0;
-  self->closed = 0;
-  
-  return (PyObject*)self;
-}
-
 
 static void
 I_dealloc(Iobject *self) {
@@ -616,6 +536,25 @@ static PyTypeObject Itype = {
   0L,0L,0L,0L,
   Itype__doc__ 		/* Documentation string */
 };
+
+static PyObject *
+newIobject(PyObject *s) {
+  Iobject *self;
+  char *buf;
+  int size;
+	
+  UNLESS(buf=PyString_AsString(s)) return NULL;
+  UNLESS(-1 != (size=PyString_Size(s))) return NULL;
+  UNLESS(self = PyObject_NEW(Iobject, &Itype)) return NULL;
+  Py_INCREF(s);
+  self->buf=buf;
+  self->string_size=size;
+  self->pbuf=s;
+  self->pos=0;
+  self->closed = 0;
+  
+  return (PyObject*)self;
+}
 
 /* End of code for StringI objects */
 /* -------------------------------------------------------- */
@@ -676,8 +615,67 @@ initcStringIO() {
   /* Export Types */
   PyDict_SetItemString(d,"InputType",  (PyObject*)&Itype);
   PyDict_SetItemString(d,"OutputType", (PyObject*)&Otype);
+
+  /* Maybe make certain warnings go away */
+  if(0) PycString_IMPORT;
   
   /* Check for errors */
   if (PyErr_Occurred()) Py_FatalError("can't initialize module cStringIO");
 }
 
+
+/******************************************************************************
+
+  $Log$
+  Revision 2.6  1997/08/13 03:14:41  guido
+  cPickle release 0.3 from Jim Fulton
+
+  Revision 1.21  1997/06/19 18:51:42  jim
+  Added ident string.
+
+  Revision 1.20  1997/06/13 20:50:50  jim
+  - Various changes to make gcc -Wall -pedantic happy, including
+    getting rid of staticforward declarations and adding pretend use
+    of two statics defined in .h file.
+
+  Revision 1.19  1997/06/02 18:15:17  jim
+  Merged in guido's changes.
+
+  Revision 1.18  1997/05/07 16:26:47  jim
+  getvalue() can nor be given an argument.  If this argument is true,
+  then getvalue returns the text upto the current position.  Otherwise
+  it returns all of the text.  The default value of the argument is
+  false.
+
+  Revision 1.17  1997/04/17 18:02:46  chris
+  getvalue() now returns entire string, not just the string up to
+  current position
+
+  Revision 2.5  1997/04/11 19:56:06  guido
+  My own patch: support writable 'softspace' attribute.
+
+  > Jim asked: What is softspace for?
+  
+  It's an old feature.  The print statement uses this to remember
+  whether it should insert a space before the next item or not.
+  Implementation is in fileobject.c.
+
+  Revision 1.11  1997/01/23 20:45:01  jim
+  ANSIfied it.
+  Changed way C API was exported.
+
+  Revision 1.10  1997/01/02 15:19:55  chris
+  checked in to be sure repository is up to date.
+
+  Revision 1.9  1996/12/27 21:40:29  jim
+  Took out some lamosities in interface, like returning self from
+  write.
+
+  Revision 1.8  1996/12/23 15:52:49  jim
+  Added ifdef to check for CObject before using it.
+
+  Revision 1.7  1996/12/23 15:22:35  jim
+  Finished implementation, adding full compatibility with StringIO, and
+  then some.
+
+ *****************************************************************************/
