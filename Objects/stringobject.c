@@ -67,14 +67,14 @@ newsizedstringobject(str, size)
 		null_strings++;
 #endif
 		INCREF(op);
-		return op;
+		return (object *)op;
 	}
 	if (size == 1 && str != NULL && (op = characters[*str & UCHAR_MAX]) != NULL) {
 #ifdef COUNT_ALLOCS
 		one_strings++;
 #endif
 		INCREF(op);
-		return op;
+		return (object *)op;
 	}
 	op = (stringobject *)
 		malloc(sizeof(stringobject) + size * sizeof(char));
@@ -110,14 +110,14 @@ newstringobject(str)
 		null_strings++;
 #endif
 		INCREF(op);
-		return op;
+		return (object *)op;
 	}
 	if (size == 1 && (op = characters[*str & UCHAR_MAX]) != NULL) {
 #ifdef COUNT_ALLOCS
 		one_strings++;
 #endif
 		INCREF(op);
-		return op;
+		return (object *)op;
 	}
 	op = (stringobject *)
 		malloc(sizeof(stringobject) + size * sizeof(char));
@@ -179,22 +179,29 @@ string_print(op, fp, flags)
 {
 	int i;
 	char c;
+	int quote;
 	/* XXX Ought to check for interrupts when writing long strings */
 	if (flags & PRINT_RAW) {
 		fwrite(op->ob_sval, 1, (int) op->ob_size, fp);
 		return 0;
 	}
-	fprintf(fp, "'");
+
+	/* figure out which quote to use; single is prefered */
+	quote = '\'';
+	if (strchr(op->ob_sval, '\'') && !strchr(op->ob_sval, '"'))
+		quote = '"';
+
+	fputc(quote, fp);
 	for (i = 0; i < op->ob_size; i++) {
 		c = op->ob_sval[i];
-		if (c == '\'' || c == '\\')
+		if (c == quote || c == '\\')
 			fprintf(fp, "\\%c", c);
 		else if (c < ' ' || c >= 0177)
-			fprintf(fp, "\\%03o", c&0377);
+			fprintf(fp, "\\%03o", c & 0377);
 		else
-			putc(c, fp);
+			fputc(c, fp);
 	}
-	fprintf(fp, "'");
+	fputc(quote, fp);
 	return 0;
 }
 
@@ -212,22 +219,28 @@ string_repr(op)
 		register int i;
 		register char c;
 		register char *p;
+		int quote;
+
+		/* figure out which quote to use; single is prefered */
+		quote = '\'';
+		if (strchr(op->ob_sval, '\'') && !strchr(op->ob_sval, '"'))
+			quote = '"';
+
 		p = ((stringobject *)v)->ob_sval;
-		*p++ = '\'';
+		*p++ = quote;
 		for (i = 0; i < op->ob_size; i++) {
 			c = op->ob_sval[i];
-			if (c == '\'' || c == '\\')
+			if (c == quote || c == '\\')
 				*p++ = '\\', *p++ = c;
 			else if (c < ' ' || c >= 0177) {
-				sprintf(p, "\\%03o", c&0377);
+				sprintf(p, "\\%03o", c & 0377);
 				while (*p != '\0')
 					p++;
-				
 			}
 			else
 				*p++ = c;
 		}
-		*p++ = '\'';
+		*p++ = quote;
 		*p = '\0';
 		resizestring(&v, (int) (p - ((stringobject *)v)->ob_sval));
 		return v;
