@@ -1,4 +1,4 @@
-#####################==================----------------·············
+#####################==================----------------
 #
 # Top-Level Makefile for Building Python 2.3 for OS/2 using GCC/EMX
 # Originally written by Andrew Zabolotny, <bit@eltech.ru> for Python 1.5.2
@@ -21,7 +21,7 @@
 #   make lx		(if you have lxlite)
 #   make test		(optional)
 #
-#####################==================----------------·············
+#####################==================----------------
 
 # === Compilation mode: debug or release ===
 MODE=		optimize
@@ -71,6 +71,8 @@ LDFLAGS.A=	$(LDFLAGS) $(LIBS)
 ARFLAGS=	crs
 IMPLIB=		emximp
 EXPLIB=		emxexp
+EXEOPT=		emxbind
+
 
 # adjust C compiler settings based on build options
 ifeq ($(MODE),debug)
@@ -111,6 +113,10 @@ else
   A=		.a
   AR=		ar
 endif
+
+# EMX's default number of file handles is 40, which is sometimes insufficient
+# (the tempfile regression test tries to create 100 temporary files)
+NFILES=250
 
 # Source file paths
 SRCPATH=.;../../Python;../../Parser;../../Objects;../../Include;../../Modules
@@ -235,15 +241,6 @@ DESCRIPTION._curses$(MODULE.EXT)=	Python Extension DLL for access to ncurses lib
 DESCRIPTION.pyexpat$(MODULE.EXT)=	Python Extension DLL for access to expat library
 
 # Source files
-SRC.PGEN=	$(addprefix ../../Parser/, \
-		pgenmain.c \
-		pgen.c \
-		printgrammar.c \
-		grammar.c \
-		bitset.c \
-		firstsets.c)
-OBJ.PGEN=	$(addprefix $(OUT),$(notdir $(SRC.PGEN:.c=$O)))
-
 SRC.OS2EMX=	config.c dlfcn.c getpathp.c
 SRC.MAIN=	$(addprefix $(TOP), \
 		Modules/getbuildinfo.c \
@@ -253,17 +250,20 @@ SRC.MODULES=	$(addprefix $(TOP), \
 		Modules/signalmodule.c \
 		Modules/posixmodule.c \
 		Modules/threadmodule.c)
-SRC.PARSER=	$(addprefix $(TOP), \
+SRC.PARSE1=	$(addprefix $(TOP), \
 		Parser/acceler.c \
 		Parser/grammar1.c \
 		Parser/listnode.c \
 		Parser/node.c \
 		Parser/parser.c \
 		Parser/parsetok.c \
-		Parser/tokenizer.c \
 		Parser/bitset.c \
-		Parser/metagrammar.c \
+		Parser/metagrammar.c)
+SRC.PARSE2=	$(addprefix $(TOP), \
+		Parser/tokenizer.c \
 		Parser/myreadline.c)
+SRC.PARSER=	$(SRC.PARSE1) \
+		$(SRC.PARSE2)
 SRC.PYTHON=	$(addprefix $(TOP), \
 		Python/bltinmodule.c \
 		Python/exceptions.c \
@@ -338,6 +338,21 @@ SRC.LIB=	$(SRC.OS2EMX) \
 		$(SRC.MODULES)
 OBJ.LIB=	$(addprefix $(OUT),$(notdir $(SRC.LIB:.c=$O)))
 
+SRC.PGEN=	$(SRC.PARSE1) \
+		$(addprefix $(TOP), \
+		Objects/obmalloc.c) \
+		$(addprefix $(TOP), \
+		Python/mysnprintf.c) \
+		$(addprefix $(TOP), \
+		Parser/tokenizer_pgen.c \
+		Parser/pgenmain.c \
+		Parser/pgen.c \
+		Parser/printgrammar.c \
+		Parser/grammar.c \
+		Parser/firstsets.c) \
+		
+OBJ.PGEN=	$(addprefix $(OUT),$(notdir $(SRC.PGEN:.c=$O)))
+
 SRC.EXE=	$(TOP)Modules/python.c
 SRC.PMEXE=	pythonpm.c
 
@@ -356,7 +371,6 @@ EASYEXTMODULES=	array \
 		fpetest \
 		_locale \
 		math \
-		new \
 		parser \
 		pwd \
 		rgbimg \
@@ -471,11 +485,13 @@ $(PYTHON.DLL): $(OUT)dllentry$O $(PYTHON.LIB) $(PYTHON.DEF)
 
 $(PYTHON.EXE): $(SRC.EXE) $(PYTHON.EXEIMP) $(OUT)python.def
 	$(CC) -Zmt $(LDMODE.EXE) -Zcrtdll -Wall $(INCLUDE) -L. -lgcc -o $@ $(SRC.EXE) $(PYTHON.EXEIMP) $(LIBS) $(OUT)python.def
+	$(EXEOPT) -aq $(PYTHON.EXE) -h$(NFILES)
 
 $(PYTHONPM.EXE): $(SRC.PMEXE) $(PYTHON.EXEIMP) $(OUT)pythonpm.def
 	$(CC) -Zmt $(LDMODE.EXE) -Zcrtdll -Wall $(INCLUDE) -L. -lgcc -o $@ $(SRC.PMEXE) $(PYTHON.EXEIMP) $(LIBS) $(OUT)pythonpm.def
+	$(EXEOPT) -aq $(PYTHONPM.EXE) -h$(NFILES)
 
-$(PGEN.EXE): $(OBJ.PGEN) $(PYTHON.LIB) $(OUT)pgen.def
+$(PGEN.EXE): $(OBJ.PGEN) $(OUT)pgen.def
 
 # Explicit building instructions for those external modules that require 
 # awkward handling (due e.g. to non-std naming, or multiple source files)
@@ -631,6 +647,6 @@ zlib$(MODULE.EXT): $(OUT)zlibmodule$O $(OUT)zlib_m.def $(PYTHON.IMPLIB)
 
 # the test target
 test:
-	./python -tt ../../lib/test/regrtest.py -l -u "network"
+	./python -E -tt ../../lib/test/regrtest.py -l -u "network"
 
 -include $(OUTBASE)python.dep
