@@ -82,7 +82,7 @@
     \ttindex{stdout}\ttindex{stderr}\ttindex{stdin}}
 
   The return value points to the first thread state created in the new
-  sub-interpreter.  This thread state is made the current thread
+  sub-interpreter.  This thread state is made in the current thread
   state.  Note that no actual thread is created; see the discussion of
   thread states below.  If creation of the new interpreter is
   unsuccessful, \NULL{} is returned; no exception is set since the
@@ -457,7 +457,7 @@ structure.
 
 When creating a thread data structure, you need to provide an
 interpreter state data structure.  The interpreter state data
-structure hold global data that is shared by all threads in an
+structure holds global data that is shared by all threads in an
 interpreter, for example the module administration
 (\code{sys.modules}).  Depending on your needs, you can either create
 a new interpreter state data structure, or share the interpreter state
@@ -555,7 +555,7 @@ for calling into Python from a C thread is
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{void}{PyEval_AcquireThread}{PyThreadState *tstate}
-  Acquire the global interpreter lock and then set the current thread
+  Acquire the global interpreter lock and set the current thread
   state to \var{tstate}, which should not be \NULL.  The lock must
   have been created earlier.  If this thread already has the lock,
   deadlock ensues.  This function is not available when thread support
