@@ -90,17 +90,17 @@ MKPDF=		TEXINPUTS=$(TEXINPUTS) $(srcdir)/tools/mkdvi.sh --pdf
 # Main target
 all:	all-ps
 
-all-dvi:
+all-dvi dvi:
 	(cd paper-$(PAPER); \
 		$(MAKE) srcdir=.. VPATH=.. TEXINPUTS=$(TEXINPUTS) \
 		-f ../Makefile do-dvi)
 
-all-pdf:
+all-pdf pdf:
 	(cd paper-$(PAPER); \
 		$(MAKE) srcdir=.. VPATH=.. TEXINPUTS=$(TEXINPUTS) \
 		-f ../Makefile do-pdf)
 
-all-ps:
+all-ps ps:
 	(cd paper-$(PAPER); \
 		$(MAKE) srcdir=.. VPATH=.. TEXINPUTS=$(TEXINPUTS) \
 		-f ../Makefile do-ps)
