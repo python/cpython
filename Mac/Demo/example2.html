@@ -10,10 +10,7 @@ applets, standalone applications written in Python.  <A
 HREF="example2/InterslipControl-2.py">Source</A> and resource file (in
 binary and <A HREF="example2/InterslipControl-2.rsrc.hqx">BinHex</A>
 form for downloading) are available in the folder <A
-HREF="example2">example2</A>.  If you want to run the program on your
-machine and you have Python 1.3 or earlier you will also need a new copy of <A
-HREF="update-to-1.3/FrameWork.py">FrameWork.py</A>, which has been
-updated since the 1.3 release. <p>
+HREF="example2">example2</A>. <p>
 
 Again, we start with ResEdit to create our dialogs. Not only do we
 want a main dialog this time but also an "About" dialog, and we
@@ -31,7 +28,7 @@ off, there's the standard BNDL combo. I've picked 'PYTi' as signature
 for the application. I tend to pick PYT plus one lower-case letter for
 my signatures.  The finder gets confused if you have two applications
 with the same signature. This may be due to some incorrectness on the
-side of "mkapplet", I am not sure.  There is one case when you
+side of "BuildApplet", I am not sure.  There is one case when you
 definitely need a unique signature: when you create an applet that has
 its own data files and you want the user to be able to start your
 applet by double-clicking one of the datafiles. <p>
@@ -135,26 +132,27 @@ nothing has changed. <p>
 
 <H2><IMG SRC="html.icons/mkapplet.gif"><A NAME="applets">Creating applets</A></H2>
 
-Now, if you have a PowerPC Macintosh, let us try to turn the python
-script into an applet, a standalone application.  Actually,
-"standalone" is probably not the correct term here, since an applet
-does still depend on a lot of the python environment: the PythonCore
-shared library, the Python Preferences file, the python Lib folder and
-any other modules that the main module depends on. It is possible to
-get rid of all these dependencies except for the dependency on
-PythonCore, but at the moment that is still quite difficult so we will
-ignore that possibility for now. By standalone we mean here that the
-script has the look-and-feel of an application, including the ability
-to have its own document types, be droppable, etc. <p>
+Now let us try to turn the python script into an applet, a standalone
+application. This will <em>not</em> work if you have the "classic 68k"
+Python distribution, only if you have the cfm68k or PPC distribution. 
+Actually, "standalone" is probably not the correct term here, since an
+applet does still depend on a lot of the python environment: the
+PythonCore shared library, the Python Preferences file, the python Lib
+folder and any other modules that the main module depends on. It is
+possible to get rid of all these dependencies except for the dependency
+on PythonCore, but at the moment that is still quite difficult so we
+will ignore that possibility for now. By standalone we mean here that
+the script has the look-and-feel of an application, including the
+ability to have its own document types, be droppable, etc. <p>
 
 The easiest way to create an applet is to take your source file and
-drop it onto "mkapplet" (normally located in the Python home
-folder). This will create an applet with the same name as your python
+drop it onto "BuildApplet", located in the Python home
+folder. This will create an applet with the same name as your python
 source with the ".py" stripped. Also, if a resource file with the same
 name as your source but with ".rsrc" extension is available the
 resources from that file will be copied to your applet too. If there
 is no resource file for your script a set of default resources will be
-used, and the applet will have the default creator 'PYTa'. The latter
+used, and the applet will have the default creator 'Pyt0'. The latter
 also happens if you do have a resource file but without the BNDL
 combo. <A NAME="no-bundle">Actually</A>, for our example that would
 have been the most logical solution, since our applet does not have
@@ -164,8 +162,8 @@ having the custom icon, but that could have been done by pasting an
 icon on the finder Info window, or by providing an custon icon in your
 resource file and setting the "custom icon" finder bit. <p>
 
-If you need slightly more control over the mkapplet process you can
-double-click mkapplet, and you will get dialogs for source and
+If you need slightly more control over the BuildApplet process you can
+double-click it, and you will get dialogs for source and
 destination of the applet. The rest of the process, including locating
 the resource file, remains the same. <p>
 
