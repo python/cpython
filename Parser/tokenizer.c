@@ -279,7 +279,6 @@ tok_nextc(tok)
 				int curstart = tok->start == NULL ? -1 :
 					       tok->start - tok->buf;
 				int curvalid = tok->inp - tok->buf;
-				int cursize = tok->end - tok->buf;
 				int newsize = curvalid + BUFSIZ;
 				char *newbuf = tok->buf;
 				RESIZE(newbuf, char, newsize);

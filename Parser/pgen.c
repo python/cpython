@@ -66,10 +66,14 @@ typedef struct _nfa {
 } nfa;
 
 /* Forward */
-static compile_rhs PROTO((labellist *ll, nfa *nf, node *n, int *pa, int *pb));
-static compile_alt PROTO((labellist *ll, nfa *nf, node *n, int *pa, int *pb));
-static compile_item PROTO((labellist *ll, nfa *nf, node *n, int *pa, int *pb));
-static compile_atom PROTO((labellist *ll, nfa *nf, node *n, int *pa, int *pb));
+static void compile_rhs PROTO((labellist *ll,
+			       nfa *nf, node *n, int *pa, int *pb));
+static void compile_alt PROTO((labellist *ll,
+			       nfa *nf, node *n, int *pa, int *pb));
+static void compile_item PROTO((labellist *ll,
+				nfa *nf, node *n, int *pa, int *pb));
+static void compile_atom PROTO((labellist *ll,
+				nfa *nf, node *n, int *pa, int *pb));
 
 static int
 addnfastate(nf)
@@ -128,7 +132,7 @@ typedef struct _nfagrammar {
 } nfagrammar;
 
 /* Forward */
-static compile_rule PROTO((nfagrammar *gr, node *n));
+static void compile_rule PROTO((nfagrammar *gr, node *n));
 
 static nfagrammar *
 newnfagrammar()
@@ -195,7 +199,7 @@ metacompile(n)
 	return gr;
 }
 
-static
+static void
 compile_rule(gr, n)
 	nfagrammar *gr;
 	node *n;
@@ -216,7 +220,7 @@ compile_rule(gr, n)
 	REQ(n, NEWLINE);
 }
 
-static
+static void
 compile_rhs(ll, nf, n, pa, pb)
 	labellist *ll;
 	nfa *nf;
@@ -253,7 +257,7 @@ compile_rhs(ll, nf, n, pa, pb)
 	}
 }
 
-static
+static void
 compile_alt(ll, nf, n, pa, pb)
 	labellist *ll;
 	nfa *nf;
@@ -284,7 +288,7 @@ compile_alt(ll, nf, n, pa, pb)
 	}
 }
 
-static
+static void
 compile_item(ll, nf, n, pa, pb)
 	labellist *ll;
 	nfa *nf;
@@ -325,7 +329,7 @@ compile_item(ll, nf, n, pa, pb)
 	}
 }
 
-static
+static void
 compile_atom(ll, nf, n, pa, pb)
 	labellist *ll;
 	nfa *nf;
@@ -437,12 +441,12 @@ typedef struct _ss_dfa {
 } ss_dfa;
 
 /* Forward */
-static printssdfa PROTO((int xx_nstates, ss_state *xx_state, int nbits,
-			 labellist *ll, char *msg));
-static simplify PROTO((int xx_nstates, ss_state *xx_state));
-static convert PROTO((dfa *d, int xx_nstates, ss_state *xx_state));
+static void printssdfa PROTO((int xx_nstates, ss_state *xx_state, int nbits,
+			      labellist *ll, char *msg));
+static void simplify PROTO((int xx_nstates, ss_state *xx_state));
+static void convert PROTO((dfa *d, int xx_nstates, ss_state *xx_state));
 
-static
+static void
 makedfa(gr, nf, d)
 	nfagrammar *gr;
 	nfa *nf;
@@ -548,7 +552,7 @@ makedfa(gr, nf, d)
 	/* XXX cleanup */
 }
 
-static
+static void
 printssdfa(xx_nstates, xx_state, nbits, ll, msg)
 	int xx_nstates;
 	ss_state *xx_state;
@@ -629,7 +633,7 @@ renamestates(xx_nstates, xx_state, from, to)
 	}
 }
 
-static
+static void
 simplify(xx_nstates, xx_state)
 	int xx_nstates;
 	ss_state *xx_state;
@@ -661,7 +665,7 @@ simplify(xx_nstates, xx_state)
 
 /* Convert the DFA into a grammar that can be used by our parser */
 
-static
+static void
 convert(d, xx_nstates, xx_state)
 	dfa *d;
 	int xx_nstates;
