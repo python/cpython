@@ -53,8 +53,8 @@ def buildapplet():
             buildtools.process(template, filename, dstfilename, 1)
     else:
 
-        SHORTOPTS = "o:r:ne:v?P"
-        LONGOPTS=("output=", "resource=", "noargv", "extra=", "verbose", "help", "python=")
+        SHORTOPTS = "o:r:ne:v?PR"
+        LONGOPTS=("output=", "resource=", "noargv", "extra=", "verbose", "help", "python=", "destroot=")
         try:
             options, args = getopt.getopt(sys.argv[1:], SHORTOPTS, LONGOPTS)
         except getopt.error:
@@ -67,6 +67,7 @@ def buildapplet():
         raw = 0
         extras = []
         verbose = None
+        destroot = ''
         for opt, arg in options:
             if opt in ('-o', '--output'):
                 dstfilename = arg
@@ -87,6 +88,8 @@ def buildapplet():
                 verbose = Verbose()
             elif opt in ('-?', '--help'):
                 usage()
+            elif opt in ('-d', '--destroot'):
+                destroot = arg
         # On OS9 always be verbose
         if sys.platform == 'mac' and not verbose:
             verbose = 'default'
@@ -97,7 +100,8 @@ def buildapplet():
                 buildtools.update(template, filename, dstfilename)
             else:
                 buildtools.process(template, filename, dstfilename, 1,
-                        rsrcname=rsrcfilename, others=extras, raw=raw, progress=verbose)
+                        rsrcname=rsrcfilename, others=extras, raw=raw,
+                        progress=verbose, destroot=destroot)
 
 def usage():
     print "BuildApplet creates an application from a Python source file"

@@ -110,6 +110,9 @@ class BundleBuilder(Defaults):
 
     # Verbosity level.
     verbosity = 1
+    
+    # Destination root directory
+    destroot = ""
 
     def setup(self):
         # XXX rethink self.name munging, this is brittle.
@@ -445,7 +448,7 @@ class AppBuilder(BundleBuilder):
                 execname = os.path.basename(self.executable)
             execpath = pathjoin(self.execdir, execname)
             if not self.symlink_exec:
-                self.files.append((self.executable, execpath))
+                self.files.append((self.destroot + self.executable, execpath))
             self.execpath = execpath
 
         if self.mainprogram is not None:
@@ -828,7 +831,7 @@ def main(builder=None):
         "mainprogram=", "creator=", "nib=", "plist=", "link",
         "link-exec", "help", "verbose", "quiet", "argv", "standalone",
         "exclude=", "include=", "package=", "strip", "iconfile=",
-        "lib=", "python=", "semi-standalone", "bundle-id=")
+        "lib=", "python=", "semi-standalone", "bundle-id=", "destroot=")
 
     try:
         options, args = getopt.getopt(sys.argv[1:], shortopts, longopts)
@@ -890,6 +893,8 @@ def main(builder=None):
             builder.includePackages.append(arg)
         elif opt == '--strip':
             builder.strip = 1
+        elif opt == '--destroot':
+            builder.destroot = arg
 
     if len(args) != 1:
         usage("Must specify one command ('build', 'report' or 'help')")

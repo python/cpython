@@ -60,7 +60,7 @@ def findtemplate(template=None):
     return file
 
 def process(template, filename, destname, copy_codefragment=0,
-        rsrcname=None, others=[], raw=0, progress="default"):
+        rsrcname=None, others=[], raw=0, progress="default", destroot=""):
 
     if progress == "default":
         progress = EasyDialogs.ProgressBar("Processing %s..."%os.path.split(filename)[1], 120)
@@ -108,7 +108,7 @@ def process(template, filename, destname, copy_codefragment=0,
     except os.error:
         pass
     process_common(template, progress, code, rsrcname, destname, 0,
-        copy_codefragment, raw, others, filename)
+        copy_codefragment, raw, others, filename, destroot)
 
 
 def update(template, filename, output):
@@ -130,10 +130,10 @@ def update(template, filename, output):
 
 
 def process_common(template, progress, code, rsrcname, destname, is_update,
-        copy_codefragment, raw=0, others=[], filename=None):
+        copy_codefragment, raw=0, others=[], filename=None, destroot=""):
     if MacOS.runtimemodel == 'macho':
         return process_common_macho(template, progress, code, rsrcname, destname,
-            is_update, raw, others, filename)
+            is_update, raw, others, filename, destroot)
     if others:
         raise BuildError, "Extra files only allowed for MachoPython applets"
     # Create FSSpecs for the various files
@@ -265,7 +265,7 @@ def process_common(template, progress, code, rsrcname, destname, is_update,
         progress.inc(0)
 
 def process_common_macho(template, progress, code, rsrcname, destname, is_update,
-        raw=0, others=[], filename=None):
+        raw=0, others=[], filename=None, destroot=""):
     # Check that we have a filename
     if filename is None:
         raise BuildError, "Need source filename on MacOSX"
@@ -302,6 +302,7 @@ def process_common_macho(template, progress, code, rsrcname, destname, is_update
     builder.mainprogram = filename
     builder.builddir = destdir
     builder.name = shortname
+    builder.destroot = destroot
     if rsrcname:
         realrsrcname = macresource.resource_pathname(rsrcname)
         builder.files.append((realrsrcname,
