@@ -31,6 +31,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <Folders.h>
 #include <StandardFile.h>
 #include <Aliases.h>
+#include <LowMem.h>
 
 #include "nfullpath.h"
 
@@ -689,6 +690,33 @@ mfs_StandardPutFile(self, args)
 	return mkvalue("(Oi)",newmfssobject(&reply.sfFile), reply.sfGood);
 }
 
+/*
+** Set initial directory for file dialogs */
+static object *
+mfs_SetFolder(self, args)
+	object *self;
+	object *args;
+{
+	FSSpec spec;
+	FSSpec ospec;
+	short orefnum;
+	long oparid;
+	
+	/* Get old values */
+	orefnum = -LMGetSFSaveDisk();
+	oparid = LMGetCurDirStore();
+	(void)FSMakeFSSpec(orefnum, oparid, "\pplaceholder", &ospec);
+	
+	/* Go to working directory by default */
+	(void)FSMakeFSSpec(0, 0, "\p:placeholder", &spec);
+	if (!newgetargs(args, "|O&", PyMac_GetFSSpec, &spec))
+		return NULL;
+	/* Set standard-file working directory */
+	LMSetSFSaveDisk(-spec.vRefNum);
+	LMSetCurDirStore(spec.parID);
+	return (object *)newmfssobject(&ospec);
+}
+
 static object *
 mfs_FSSpec(self, args)
 	object *self;	/* Not used */
@@ -794,6 +822,7 @@ static struct methodlist mfs_methods[] = {
 	{"PromptGetFile",		mfs_PromptGetFile,		1},
 	{"StandardPutFile",		mfs_StandardPutFile,	1},
 	{"GetDirectory",		mfs_GetDirectory,		1},
+	{"SetFolder",			mfs_SetFolder,			1},
 	{"FSSpec",				mfs_FSSpec,				1},
 	{"RawFSSpec",			mfs_RawFSSpec,			1},
 	{"RawAlias",			mfs_RawAlias,			1},
