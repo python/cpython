@@ -4681,6 +4681,59 @@ propogate.
 \end{cfuncdesc}
 
 
+\section{Profiling and Tracing \label{profiling}}
+
+\sectionauthor{Fred L. Drake, Jr.}{fdrake@acm.org}
+
+The Python interpreter provides some low-level support for attaching
+profiling and execution tracing facilities.  These are used for
+profiling, debugging, and coverage analysis tools.
+
+Starting with Python 2.2, the implementation of this facility was
+substantially revised, and an interface from C was added.  This C
+interface allows the profiling or tracing code to avoid the overhead
+of calling through Python-level callable objects, making a direct C
+function call instead.  The essential attributes of the facility have
+not changed; the interface allows trace functions to be installed
+per-thread, and the basic events reported to the trace function are
+the same as had been reported to the Python-level trace functions in
+previous versions.
+
+\begin{ctypedesc}[Py_tracefunc]{int (*Py_tracefunc)(PyObject *obj,
+                                PyFrameObject *frame, int what,
+                                PyObject *arg)}
+  The type of the trace function registered using
+  \cfunction{PyEval_SetProfile()} and \cfunction{PyEval_SetTrace()}.
+  The first parameter is the object passed to the registration
+  function, 
+\end{ctypedesc}
+
+\begin{cvardesc}{int}{PyTrace_CALL}
+  The value of the \var{what} parameter to a \ctype{Py_tracefunc}
+  function when a new function or method call is being reported.
+\end{cvardesc}
+
+\begin{cvardesc}{int}{PyTrace_EXCEPT}
+\end{cvardesc}
+
+\begin{cvardesc}{int}{PyTrace_LINE}
+  The value passed as the \var{what} parameter to a trace function
+  (but not a profiling function) when a line-number event is being
+  reported.
+\end{cvardesc}
+
+\begin{cvardesc}{int}{PyTrace_RETURN}
+  The value for the \var{what} parameter to \ctype{Py_tracefunc}
+  functions when a call is returning without propogating an exception.
+\end{cvardesc}
+
+\begin{cfuncdesc}{void}{PyEval_SetProfile}{Py_tracefunc func, PyObject *obj}
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{void}{PyEval_SetTrace}{Py_tracefunc func, PyObject *obj}
+\end{cfuncdesc}
+
+
 \chapter{Memory Management \label{memory}}
 \sectionauthor{Vladimir Marangozov}{Vladimir.Marangozov@inrialpes.fr}
 
