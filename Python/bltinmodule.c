@@ -37,9 +37,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "ceval.h"
 #include "modsupport.h"
 
-/* Should be in longobject.h */
-extern stringobject *long_format PROTO((object *, int));
-
 static object *
 builtin_abs(self, v)
 	object *self;
@@ -228,7 +225,7 @@ builtin_hex(self, v)
 			return newstringobject(buf);
 		}
 		if (is_longobject(v)) {
-			return (object *) long_format(v, 16);
+			return long_format(v, 16);
 		}
 	}
 	err_setstr(TypeError, "hex() requires int/long argument");
@@ -399,7 +396,7 @@ builtin_oct(self, v)
 			return newstringobject(buf);
 		}
 		if (is_longobject(v)) {
-			return (object *) long_format(v, 8);
+			return long_format(v, 8);
 		}
 	}
 	err_setstr(TypeError, "oct() requires int/long argument");
