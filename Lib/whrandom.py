@@ -82,7 +82,9 @@ class whrandom:
 		return a + (b-a) * self.random()
 
 	def randint(self, a, b):
-		"""Get a random integer in the range [a, b] including both end points.
+		"""Get a random integer in the range [a, b] including
+                both end points.
+
 		(Deprecated; use randrange below.)"""
 		return self.randrange(a, b+1)
 
@@ -91,10 +93,11 @@ class whrandom:
 		return seq[int(self.random() * len(seq))]
 
 	def randrange(self, start, stop=None, step=1, int=int, default=None):
-		"""Choose a random item from range([start,] step[, stop]).
+		"""Choose a random item from range(start, stop[, step]).
+
 		This fixes the problem with randint() which includes the
 		endpoint; in Python this is usually not what you want.
-	    Do not supply the 'int' and 'default' arguments."""
+                Do not supply the 'int' and 'default' arguments."""
 		# This code is a bit messy to make it fast for the
 		# common case while still doing adequate error checking
 		istart = int(start)
