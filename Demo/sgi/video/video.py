@@ -98,11 +98,12 @@ def initcmap(ybits,ibits,qbits,chrompack):
     for y in range(maxy):
       yv = float(y)/float(maxy-1)
       for i in range(maxi):
-	iv = (float(i)/float(maxi-1))-0.5
+      	if maxi = 1: iv = 0
+	else: iv = (float(i)/float(maxi-1))-0.5
 	for q in range(maxq):
-	  qv = (float(q)/float(maxq-1))-0.5
+	  if maxq = 1: qv = 0
+	  else: qv = (float(q)/float(maxq-1))-0.5
 	  index = 2048 + y + (i << ybits) + (q << (ybits+ibits))
-
 	  rv,gv,bv = colorsys.yiq_to_rgb(yv,iv,qv)
 	  r,g,b = int(rv*255.0), int(gv*255.0), int(bv*255.0)
 	  if index < 4096 - 256:
