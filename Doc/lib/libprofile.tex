@@ -110,7 +110,7 @@ would add the following to your module:
 
 \begin{verbatim}
 import profile
-profile.run("foo()")
+profile.run('foo()')
 \end{verbatim}
 %
 The above action would cause \samp{foo()} to be run, and a series of
@@ -122,7 +122,7 @@ function:
 
 \begin{verbatim}
 import profile
-profile.run("foo()", 'fooprof')
+profile.run('foo()', 'fooprof')
 \end{verbatim}
 %
 The file \file{profile.py} can also be invoked as
@@ -388,8 +388,8 @@ single function statistics.
 \begin{methoddesc}{sort_stats}{key\optional{, ...}}
 This method modifies the \class{Stats} object by sorting it according
 to the supplied criteria.  The argument is typically a string
-identifying the basis of a sort (example: \code{"time"} or
-\code{"name"}).
+identifying the basis of a sort (example: \code{'time'} or
+\code{'name'}).
 
 When more than one key is provided, then additional keys are used as
 secondary criteria when the there is equality in all keys selected
@@ -417,18 +417,18 @@ defined:
 Note that all sorts on statistics are in descending order (placing
 most time consuming items first), where as name, file, and line number
 searches are in ascending order (i.e., alphabetical). The subtle
-distinction between \code{"nfl"} and \code{"stdname"} is that the
+distinction between \code{'nfl'} and \code{'stdname'} is that the
 standard name is a sort of the name as printed, which means that the
 embedded line numbers get compared in an odd way.  For example, lines
 3, 20, and 40 would (if the file names were the same) appear in the
-string order 20, 3 and 40.  In contrast, \code{"nfl"} does a numeric
-compare of the line numbers.  In fact, \code{sort_stats("nfl")} is the
-same as \code{sort_stats("name", "file", "line")}.
+string order 20, 3 and 40.  In contrast, \code{'nfl'} does a numeric
+compare of the line numbers.  In fact, \code{sort_stats('nfl')} is the
+same as \code{sort_stats('name', 'file', 'line')}.
 
 For compatibility with the old profiler, the numeric arguments
-\samp{-1}, \samp{0}, \samp{1}, and \samp{2} are permitted.  They are
-interpreted as \code{"stdname"}, \code{"calls"}, \code{"time"}, and
-\code{"cumulative"} respectively.  If this old style format (numeric)
+\code{-1}, \code{0}, \code{1}, and \code{2} are permitted.  They are
+interpreted as \code{'stdname'}, \code{'calls'}, \code{'time'}, and
+\code{'cumulative'} respectively.  If this old style format (numeric)
 is used, only one sort key (the numeric key) will be used, and
 additional arguments will be silently ignored.
 \end{methoddesc}
@@ -461,7 +461,7 @@ defined by the \module{re} module).  If several restrictions are
 provided, then they are applied sequentially.  For example:
 
 \begin{verbatim}
-print_stats(.1, "foo:")
+print_stats(.1, 'foo:')
 \end{verbatim}
 
 would first limit the printing to first 10\% of list, and then only
@@ -469,7 +469,7 @@ print functions that were part of filename \samp{.*foo:}.  In
 contrast, the command:
 
 \begin{verbatim}
-print_stats("foo:", .1)
+print_stats('foo:', .1)
 \end{verbatim}
 
 would limit the list to all functions having file names \samp{.*foo:},
