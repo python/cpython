@@ -357,9 +357,10 @@ or warnings.filterwarnings().
 An experimental feature added to Python 2.1 was a specialized object
 allocator called pymalloc, written by Vladimir Marangozov.  Pymalloc
 was intended to be faster than the system \function{malloc()} and have
-less memory overhead.  The allocator uses C's \function{malloc()}
-function to get large pools of memory, and then fulfills smaller
-memory requests from these pools.  
+less memory overhead for typical allocation patterns of Python
+programs.  The allocator uses C's \function{malloc()} function to get
+large pools of memory, and then fulfills smaller memory requests from
+these pools.
 
 In 2.1 and 2.2, pymalloc was an experimental feature and wasn't
 enabled by default; you had to explicitly turn it on by providing the
@@ -378,32 +379,34 @@ and \function{free()}, meaning that if you accidentally called
 mismatched functions, the error wouldn't be noticeable.  When the
 object allocator is enabled, these functions aren't aliases of
 \function{malloc()} and \function{free()} any more, and calling the
-wrong function to free memory will get you a core dump.  For example,
-if memory was allocated using \function{PyMem_New()}, it has to be
-freed using \function{PyMem_Del()}, not \function{free()}.  A few
-modules included with Python fell afoul of this and had to be fixed;
-doubtless there are more third-party modules that will have the same
-problem.
+wrong function to free memory may get you a core dump.  For example,
+if memory was allocated using \function{PyObject_Malloc()}, it has to
+be freed using \function{PyObject_Free()}, not \function{free()}.  A
+few modules included with Python fell afoul of this and had to be
+fixed; doubtless there are more third-party modules that will have the
+same problem.
 
 As part of this change, the confusing multiple interfaces for
-allocating memory have been consolidated down into two APIs.  
-Memory allocated with one API must not be freed with the other API.
+allocating memory have been consolidated down into two API families.
+Memory allocated with one family must not be manipulated with
+functions from the other family.
+
+There is another family of functions specifically for allocating
+Python \emph{objects} (as opposed to memory).
 
 \begin{itemize}
-  \item To allocate and free an undistinguished chunk of memory using 
-  Python's allocator, use
-  \cfunction{PyMem_Malloc()}, \cfunction{PyMem_Realloc()}, and
-  \cfunction{PyMem_Free()}.
+  \item To allocate and free an undistinguished chunk of memory use
+  the ``raw memory'' family: \cfunction{PyMem_Malloc()},
+  \cfunction{PyMem_Realloc()}, and \cfunction{PyMem_Free()}.
 
-  \item In rare cases you may want to avoid using Python's allocator 
-  in order to allocate a chunk of memory; 
-  use \cfunction{PyObject_Malloc}, \cfunction{PyObject_Realloc}, 
-  and \cfunction{PyObject_Free}.
+  \item The ``object memory'' family is the interface to the pymalloc
+  facility described above and is biased towards a large number of
+  ``small'' allocations: \cfunction{PyObject_Malloc},
+  \cfunction{PyObject_Realloc}, and \cfunction{PyObject_Free}.
 
-  \item To allocate and free Python objects,  
-  use \cfunction{PyObject_New()}, \cfunction{PyObject_NewVar()}, and 
+  \item To allocate and free Python objects, use the ``object'' family
+  \cfunction{PyObject_New()}, \cfunction{PyObject_NewVar()}, and
   \cfunction{PyObject_Del()}.
-
 \end{itemize}
 
 Thanks to lots of work by Tim Peters, pymalloc in 2.3 also provides
@@ -411,6 +414,13 @@ debugging features to catch memory overwrites and doubled frees in
 both extension modules and in the interpreter itself.  To enable this
 support, turn on the Python interpreter's debugging code by running
 \program{configure} with \longprogramopt{with-pydebug}.  
+
+To aid extension writers, a header file \file{Misc/pymemcompat.h} is
+distributed with the source to Python 2.3 that allows Python
+extensions to use the 2.3 interfaces to memory allocation and compile
+against any version of Python since 1.5.2.  (The idea is that you take
+the file from Python's source distribution and bundle it with the
+source of you extension).
 
 \begin{seealso}
 
