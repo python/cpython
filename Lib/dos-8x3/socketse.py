@@ -396,6 +396,8 @@ class StreamRequestHandler(BaseRequestHandler):
 
     def finish(self):
         self.wfile.flush()
+        self.wfile.close()
+        self.rfile.close()
 
 
 class DatagramRequestHandler(BaseRequestHandler):
