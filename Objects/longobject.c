@@ -1791,9 +1791,9 @@ then we're asking whether asize digits >= f(bsize/2) digits + 2 bits.  By #4,
 asize is at least f(bsize/2)+1 digits, so this in turn reduces to whether 1
 digit is enough to hold 2 bits.  This is so since SHIFT=15 >= 2.  If
 asize == bsize, then we're asking whether bsize digits is enough to hold
-f(bsize/2) digits + 2 bits, or equivalently (by #1) whether c(bsize/2) digits
-is enough to hold 2 bits.  This is so if bsize >= 1, which holds because
-bsize >= KARATSUBA_CUTOFF >= 1.
+c(bsize/2) digits + 2 bits, or equivalently (by #1) whether f(bsize/2) digits
+is enough to hold 2 bits.  This is so if bsize >= 2, which holds because
+bsize >= KARATSUBA_CUTOFF >= 2.
 
 Note that since there's always enough room for (ah+al)*(bh+bl), and that's
 clearly >= each of ah*bh and al*bl, there's always enough room to subtract
