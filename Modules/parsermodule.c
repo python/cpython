@@ -1651,7 +1651,7 @@ validate_try(tree)
                && validate_colon(CHILD(tree, nch - 2))
                && validate_suite(CHILD(tree, nch - 1)));
     else {
-        const char* name = "execpt";
+        const char* name = "except";
         char buffer[60];
         if (TYPE(CHILD(tree, nch - 3)) != except_clause)
             name = STR(CHILD(tree, nch - 3));
