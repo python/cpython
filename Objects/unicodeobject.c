@@ -406,8 +406,10 @@ PyObject *PyUnicode_FromEncodedObject(register PyObject *obj,
 	/* Overwrite the error message with something more useful in
 	   case of a TypeError. */
 	if (PyErr_ExceptionMatches(PyExc_TypeError))
-	    PyErr_SetString(PyExc_TypeError,
-		  "coercing to Unicode: need string or buffer");
+	    PyErr_Format(PyExc_TypeError,
+			 "coercing to Unicode: need string or buffer, "
+			 "%.80s found",
+			 obj->ob_type->tp_name);
 	goto onError;
     }
 
