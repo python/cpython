@@ -635,7 +635,6 @@ convertsimple(PyObject *arg, char **p_format, va_list *p_va, char *msgbuf)
 			else { /* any buffer-like object */
 				char *buf;
 				int count = convertbuffer(arg, p, &buf);
-
 				if (count < 0)
 					return converterr(buf, arg, msgbuf);
 				*q = count;
@@ -936,7 +935,7 @@ convertsimple(PyObject *arg, char **p_format, va_list *p_va, char *msgbuf)
 		
 	case 't': { /* 8-bit character buffer, read-only access */
 		const char **p = va_arg(*p_va, const char **);
-		char *buf;
+		PyBufferProcs *pb = arg->ob_type->tp_as_buffer;
 		int count;
 		
 		if (*format++ != '#')
@@ -944,14 +943,21 @@ convertsimple(PyObject *arg, char **p_format, va_list *p_va, char *msgbuf)
 				"invalid use of 't' format character", 
 				arg, msgbuf);
 		if (!PyType_HasFeature(arg->ob_type,
-				       Py_TPFLAGS_HAVE_GETCHARBUFFER))
+				       Py_TPFLAGS_HAVE_GETCHARBUFFER) ||
+		    pb == NULL || pb->bf_getcharbuffer == NULL ||
+		    pb->bf_getsegcount == NULL)
 			return converterr(
 				"string or read-only character buffer",
 				arg, msgbuf);
 
-		count = convertbuffer(arg, (void **)p, &buf);
+		if (pb->bf_getsegcount(arg, NULL) != 1)
+			return converterr(
+				"string or single-segment read-only buffer",
+				arg, msgbuf);
+
+		count = pb->bf_getcharbuffer(arg, 0, p);
 		if (count < 0)
-			return converterr(buf, arg, msgbuf);
+			return converterr("(unspecified)", arg, msgbuf);
 		*va_arg(*p_va, int *) = count;
 		break;
 	}
