@@ -1,4 +1,4 @@
-from test_support import TestFailed
+from test_support import TestFailed, vereq
 from random import random
 
 # These tests ensure that complex math does the right thing; tests of
@@ -62,6 +62,9 @@ for i in range(100):
 
 if complex(0.0, 0.0):
     raise TestFailed("complex(0.0, 0.0) should be false")
+
+if vereq(complex(5.3, 9.8).conjugate(), 5.3-9.8j):
+    raise TestFailed("complex.conjugate() didn't work")
 
 try:
     print int(5+3j)
