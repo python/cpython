@@ -189,7 +189,9 @@ Otherwise a generated Info file name is used.")
 		 "@multitable @columnfractions .20 .20 .20 .20 .20\n"
 		 "@item \\3 @tab \\4 @tab \\5 @tab \\6 @tab \\7\n"
 		 "@item ------- @tab ------- @tab ------- @tab ------- @tab -------\n")
-     "@end multitable\n"))
+     "@end multitable\n")
+    ("alltt" 0 "@example" "@end example")
+    )
   "Associative list defining substitutions for environments.
 Each list item is of the form (ENVIRONMENT ARGNUM BEGIN END) where:
 - ENVIRONMENT is LaTeX environment name
