@@ -62,10 +62,16 @@ Library
 - mimetypes now recognizes more extensions and file types.  At the
   same time, some mappings not sanctioned by IANA were removed.
 
-Tools
-
 - The "compiler" package has been brought up to date to the state of
-  Python 2.2 bytecode generation.
+  Python 2.2 bytecode generation.  It has also been promoted from a
+  Tool to a standard library package.  (Tools/compiler still exists as
+  a sample driver.)
+
+- pydoc and inspect are now aware of new-style classes;
+  e.g. help(list) at the interactive prompt now shows proper
+  documentation for all operations on list objects.
+
+Tools
 
 Build
 
