@@ -203,12 +203,7 @@ DOCTYPE html [
             ])
 
     def test_illegal_declarations(self):
-        s = 'abc<!spacer type="block" height="25">def'
-        self._run_check(s, [
-            ("data", "abc"),
-            ("unknown decl", 'spacer type="block" height="25"'),
-            ("data", "def"),
-            ])
+        self._parse_error('<!spacer type="block" height="25">')
 
     def test_starttag_end_boundary(self):
         self._run_check("""<a b='<'>""", [("starttag", "a", [("b", "<")])])
