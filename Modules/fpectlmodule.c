@@ -180,9 +180,8 @@ static void fpe_reset(Sigfunc *handler)
 
 /*-- Linux ----------------------------------------------------------------*/
 #elif defined(linux)
-    /* Linux delivers SIGFPE by default,
-       except for log(0), atanh(-1), 0.^0.
-     */
+#include <i386/fpu_control.h>
+    __setfpucw(0x1372);
     signal(SIGFPE, handler);
 
 /*-- NeXT -----------------------------------------------------------------*/

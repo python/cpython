@@ -1,6 +1,5 @@
 #include "config.h"
 #include "pyfpe.h"
-
 /* 
  * The signal handler for SIGFPE is actually declared in an external
  * module fpectl, or as preferred by the user.  These variable
@@ -12,5 +11,5 @@
 #ifdef WANT_SIGFPE_HANDLER
 jmp_buf PyFPE_jbuf;
 int PyFPE_counter = 0;
-double PyFPE_dummy(){return(1.0);}
+double PyFPE_dummy(void *dummy){ return 1.0; }
 #endif
