@@ -630,7 +630,7 @@ strop_count(self, args)
 	PyObject *args;
 {
 	char *s, *sub;
-	int len, n, j;
+	int len, n;
 	int i = 0, last = INT_MAX;
 	int m, r;
 
