@@ -8,17 +8,6 @@ import re
 import string
 import sys
 
-if sys.platform=="win32":
-    # On Windows, we can locate modules in the registry with
-    # the help of the win32api package.
-    try:
-        import win32api
-    except ImportError:
-        print "The win32api module is not available - modules listed"
-        print "in the registry will not be found."
-        win32api = None
-
-
 IMPORT_NAME = dis.opname.index('IMPORT_NAME')
 IMPORT_FROM = dis.opname.index('IMPORT_FROM')
 STORE_NAME = dis.opname.index('STORE_NAME')
@@ -339,15 +328,17 @@ class ModuleFinder:
                 return (None, None, ("", "", imp.C_BUILTIN))
 
             # Emulate the Registered Module support on Windows.
-            if sys.platform=="win32" and win32api is not None:
-                HKEY_LOCAL_MACHINE = 0x80000002
+            if sys.platform=="win32":
+                import _winreg
+                from _winreg import HKEY_LOCAL_MACHINE
                 try:
-                    pathname = win32api.RegQueryValue(HKEY_LOCAL_MACHINE, "Software\\Python\\PythonCore\\%s\\Modules\\%s" % (sys.winver, name))
+                    pathname = _winreg.QueryValueEx(HKEY_LOCAL_MACHINE, \
+                        "Software\\Python\\PythonCore\\%s\\Modules\\%s" % (sys.winver, name))
                     fp = open(pathname, "rb")
                     # XXX - To do - remove the hard code of C_EXTENSION.
                     stuff = "", "rb", imp.C_EXTENSION
                     return fp, pathname, stuff
-                except win32api.error:
+                except _winreg.error:
                     pass
 
             path = self.path
