@@ -428,11 +428,121 @@ build.  Things to talk about:
 %\label{tweak-flags}
 
 
-\subsection{Using non-Microsoft compilers on Windows}
-\label{non-ms-compilers}
+\subsection{Using non-Microsoft compilers on Windows \label{non-ms-compilers}}
+\sectionauthor{Rene Liebscher}{R.Liebscher@gmx.de}
 
+\subsubsection{Borland C++}
+
+This subsection describes the necessary steps to use Distutils with the 
+Borland C++ compiler version 
+5.5.\footnote{Check
+\url{http://www.borland.com/bcppbuilder/freecompiler/} for download}
+%Should we mention that users have to create cfg-files for the compiler
+%see also http://community.borland.com/article/0,1410,21205,00.html 
+
+First you have to know that the Borland's object file format(OMF) is
+different from what is used by the Python version you can download
+from the Python web site.  (Python is built with Microsoft Visual C++,
+which uses COFF as object file format.)  For this reason you have to
+convert Python's library \file{python20.lib} into the Borland format.
+You can do this as follows:
+
+\begin{verbatim}
+coff2omf python20.lib python20_bcpp.lib
+\end{verbatim}
+
+The \file{coff2omf} program comes with the Borland compiler.  The file
+\file{python20.lib} is in the \file{Libs} directory of your Python
+installation.  If your extension uses other libraries (zlib,...) you
+have to convert them too.
+
+The converted files have to reside in the same directories as the normal
+libraries do.
+
+How does Distutils manage to use these libraries with their changed
+names?  If the extension needs a library (eg. \file{foo}) Distutils
+checks first if it finds a library with suffix \file{_bcpp}
+(eg. \file{foo_bcpp.lib}) and then uses this library.  In the case it
+doesn't find such a special library it uses the default name
+(\file{foo.lib}.)\footnote{This also means you could replace all
+existing COFF-libraries with OMF-libraries of the same name.}
+
+To let Distutils compile your extension with Borland C++ you now have
+to type:
+
+\begin{verbatim}
+python setup.py build --compiler=bcpp
+\end{verbatim}
+
+If you want to use the Borland \Cpp{} compiler as default, you should
+consider to write it in your personal or system-wide configuration
+file for Distutils (see section~\ref{config-files}.)
+ 
 \XXX{One place to look: \url{http://www.cyberus.ca/~g_will/pyExtenDL.shtml}}
 
+
+\subsubsection{GNU C / Cygwin / MinGW32}
+
+This section describes the necessary steps to use Distutils with the
+GNU C/C++ compilers in their Cygwin and MinGW32
+distributions\footnote{Check
+\url{http://sources.redhat.com/cygwin/} and
+\url{http://www.mingw.org} for more information}. 
+
+\XXX{For a Python which was built with Cygwin, all should work without 
+any of these following steps.}
+
+For these compilers we have to create some special libraries too.
+This task is more complex as for Borland's C++, because there is no
+program to convert the library (inclusive the references on data structures.)
+ 
+First you have to create a list of symbols which the Python DLL exports.
+(You can find a good program for this task at 
+\url{http://starship.python.net/crew/kernr/mingw32/Notes.html}, see at 
+PExports 0.42h there.) 
+
+\begin{verbatim}
+pexports python20.dll >python20.def
+\end{verbatim}
+
+Then you can create from these information an import library for gcc.
+ 
+\begin{verbatim}
+dlltool --dllname python20.dll --def python20.def --output-lib libpython20.a
+\end{verbatim}
+The resulting library has to be placed in the same directory as 
+\file{python20.lib}. (Should be the \file{libs} directory under your
+Python installation directory.)
+
+If your extension uses other libraries (zlib,...) you might 
+have to convert them too.
+The converted files have to reside in the same directories as the normal
+libraries do.
+
+To let Distutils compile your extension with Cygwin you now have to type
+
+\begin{verbatim}
+python setup.py build --compiler=cygwin
+\end{verbatim}
+
+and for Cygwin in no-cygwin mode\footnote{Then you have no POSIX emulation
+available, but you also don't need \file{cygwin1.dll}.} or for MinGW32 type
+ 
+\begin{verbatim}
+python setup.py build --compiler=mingw32
+\end{verbatim}
+
+If you want to use any of these options/compilers as default, you should
+consider to write it in your personal or system-wide configuration file
+for Distutils (see section~\ref{config-files}.)
+
+\XXX{One place to look: \url{http://www.zope.org/Members/als/tips/win32_mingw_modules}}
+
+\XXX{For converted import libraries for python20, tcl83 and tk83 in 
+cygwin/mingw32 and bcpp format, see 
+\url{http://www.htw-dresden.de/~liebschr/PyOpenGL/py2.0-libs.tgz}
+and for the missing header files of the in python2.0 included tcl/tk,
+ see \url{http://www.htw-dresden.de/\%7Eliebschr/PyOpenGL/py2.0-tk8.3-header.tgz}.}
 
 
 \section{Alternate Installation}
