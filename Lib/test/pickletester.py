@@ -1,6 +1,7 @@
 import unittest
 import pickle
 import pickletools
+import copy_reg
 
 from test.test_support import TestFailed, have_unicode, TESTFN
 
@@ -16,6 +17,37 @@ def opcode_in_pickle(code, pickle):
         if op.code == code:
             return True
     return False
+
+# We can't very well test the extension registry without putting known stuff
+# in it, but we have to be careful to restore its original state.  Code
+# should do this:
+#
+#     e = ExtensionSaver(extension_code)
+#     try:
+#         fiddle w/ the extension registry's stuff for extension_code
+#     finally:
+#         e.restore()
+
+class ExtensionSaver:
+    # Remember current registration for code (if any), and remove it (if
+    # there is one).
+    def __init__(self, code):
+        self.code = code
+        if code in copy_reg._inverted_registry:
+            self.pair = copy_reg._inverted_registry[code]
+            copy_reg.remove_extension(self.pair[0], self.pair[1], code)
+        else:
+            self.pair = None
+
+    # Restore previous registration for code.
+    def restore(self):
+        code = self.code
+        curpair = copy_reg._inverted_registry.get(code)
+        if curpair is not None:
+            copy_reg.remove_extension(curpair[0], curpair[1], code)
+        pair = self.pair
+        if pair is not None:
+            copy_reg.add_extension(pair[0], pair[1], code)
 
 class C:
     def __cmp__(self, other):
@@ -586,42 +618,52 @@ class AbstractPickleTests(unittest.TestCase):
     # Register a type with copy_reg, with extension code extcode.  Pickle
     # an object of that type.  Check that the resulting pickle uses opcode
     # (EXT[124]) under proto 2, and not in proto 1.
+
     def produce_global_ext(self, extcode, opcode):
-        import copy_reg
-        copy_reg.add_extension(__name__, "MyList", extcode)
+        e = ExtensionSaver(extcode)
         try:
+            copy_reg.add_extension(__name__, "MyList", extcode)
             x = MyList([1, 2, 3])
             x.foo = 42
             x.bar = "hello"
 
             # Dump using protocol 1 for comparison.
             s1 = self.dumps(x, 1)
+            self.assert_(__name__ in s1)
+            self.assert_("MyList" in s1)
+            self.assertEqual(opcode_in_pickle(opcode, s1), False)
+
             y = self.loads(s1)
             self.assertEqual(list(x), list(y))
             self.assertEqual(x.__dict__, y.__dict__)
-            self.assert_(s1.find(__name__) >= 0)
-            self.assert_(s1.find("MyList") >= 0)
 
             # Dump using protocol 2 for test.
             s2 = self.dumps(x, 2)
-            self.assertEqual(s2.find(__name__), -1)
-            self.assertEqual(s2.find("MyList"), -1)
+            self.assert_(__name__ not in s2)
+            self.assert_("MyList" not in s2)
+            self.assertEqual(opcode_in_pickle(opcode, s2), True)
+
             y = self.loads(s2)
             self.assertEqual(list(x), list(y))
             self.assertEqual(x.__dict__, y.__dict__)
-            self.assertEqual(opcode_in_pickle(opcode, s2), True)
 
         finally:
-            copy_reg.remove_extension(__name__, "MyList", extcode)
+            e.restore()
 
     def test_global_ext1(self):
-        self.produce_global_ext(0xf0, pickle.EXT1)
+        self.produce_global_ext(0x00000001, pickle.EXT1)  # smallest EXT1 code
+        self.produce_global_ext(0x000000ff, pickle.EXT1)  # largest EXT1 code
 
     def test_global_ext2(self):
-        self.produce_global_ext(0xfff0, pickle.EXT2)
+        self.produce_global_ext(0x00000100, pickle.EXT2)  # smallest EXT2 code
+        self.produce_global_ext(0x0000ffff, pickle.EXT2)  # largest EXT2 code
+        self.produce_global_ext(0x0000abcd, pickle.EXT2)  # check endianness
 
     def test_global_ext4(self):
-        self.produce_global_ext(0xabcdef0, pickle.EXT4)
+        self.produce_global_ext(0x00010000, pickle.EXT4)  # smallest EXT4 code
+        self.produce_global_ext(0x7fffffff, pickle.EXT4)  # largest EXT4 code
+        self.produce_global_ext(0x12abcdef, pickle.EXT4)  # check endianness
+
 
 # XXX Temporary hack, so long as the C implementation of pickle protocol
 # XXX 2 isn't ready.  When it is, move the methods in TempAbstractPickleTests
