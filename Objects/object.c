@@ -196,7 +196,10 @@ PyObject_Print(PyObject *op, FILE *fp, int flags)
 			fprintf(fp, "<refcnt %u at %p>",
 				op->ob_refcnt, op);
 		else if (op->ob_type->tp_print == NULL) {
-			if (op->ob_type->tp_repr == NULL) {
+			if ((flags & Py_PRINT_RAW)
+			    ? (op->ob_type->tp_str == NULL)
+			    : (op->ob_type->tp_repr == NULL))
+			{
 				fprintf(fp, "<%s object at %p>",
 					op->ob_type->tp_name, op);
 			}
