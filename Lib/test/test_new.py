@@ -100,7 +100,7 @@ print 'new.code()'
 # Note: Jython will never have new.code()
 if hasattr(new, 'code'):
     def f(a): pass
-    
+
     c = f.func_code
     argcount = c.co_argcount
     nlocals = c.co_nlocals
@@ -116,16 +116,16 @@ if hasattr(new, 'code'):
     lnotab = c.co_lnotab
     freevars = c.co_freevars
     cellvars = c.co_cellvars
-    
+
     d = new.code(argcount, nlocals, stacksize, flags, codestring,
                  constants, names, varnames, filename, name,
                  firstlineno, lnotab, freevars, cellvars)
-    
+
     # test backwards-compatibility version with no freevars or cellvars
     d = new.code(argcount, nlocals, stacksize, flags, codestring,
                  constants, names, varnames, filename, name,
                  firstlineno, lnotab)
-    
+
     try: # this used to trigger a SystemError
         d = new.code(-argcount, nlocals, stacksize, flags, codestring,
                      constants, names, varnames, filename, name,
@@ -143,7 +143,7 @@ if hasattr(new, 'code'):
         pass
     else:
         raise TestFailed, "negative co_nlocals didn't trigger an exception"
-    
+
     try: # this used to trigger a Py_FatalError!
         d = new.code(argcount, nlocals, stacksize, flags, codestring,
                      constants, (5,), varnames, filename, name,

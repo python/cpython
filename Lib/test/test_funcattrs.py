@@ -276,7 +276,7 @@ def test_func_name():
     verify(f.func_name == "h")
     cantset(f, "func_globals", 1)
     cantset(f, "__name__", 1)
-    
+
 
 def test_func_code():
     def f(): pass
