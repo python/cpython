@@ -178,7 +178,7 @@ set_hook(const char *funcname, PyObject **hook_var,
 		Py_INCREF(function);
 		*hook_var = function;
 		Py_XDECREF(tmp);
-		*tstate = PyThreadState_Get();
+		*tstate = PyThreadState_GET();
 	}
 	else {
 		PyOS_snprintf(buf, sizeof(buf),

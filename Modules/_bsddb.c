@@ -4457,7 +4457,7 @@ DL_EXPORT(void) init_bsddb(void)
 
 #if defined(WITH_THREAD) && !defined(MYDB_USE_GILSTATE)
     /* Save the current interpreter, so callbacks can do the right thing. */
-    _db_interpreterState = PyThreadState_Get()->interp;
+    _db_interpreterState = PyThreadState_GET()->interp;
 #endif
 
     /* Create the module and add the functions */
