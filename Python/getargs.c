@@ -166,7 +166,7 @@ vgetargs1(PyObject *args, char *format, va_list *p_va, int compat)
 		return 0;
 	}
 	
-	len = PyTuple_Size(args);
+	len = PyTuple_GET_SIZE(args);
 	
 	if (len < min || max < len) {
 		if (message == NULL) {
@@ -188,8 +188,8 @@ vgetargs1(PyObject *args, char *format, va_list *p_va, int compat)
 	for (i = 0; i < len; i++) {
 		if (*format == '|')
 			format++;
-		msg = convertitem(PyTuple_GetItem(args, i), &format, p_va,
-				 levels, msgbuf);
+		msg = convertitem(PyTuple_GET_ITEM(args, i), &format, p_va,
+				  levels, msgbuf);
 		if (msg) {
 			seterror(i+1, msg, levels, fname, message);
 			return 0;
@@ -995,12 +995,10 @@ vgetargskeywords(PyObject *args, PyObject *keywords, char *format,
 		else if (c == ':') {
 			fname = format;
 			break;
-		}
-		else if (c == ';') {
+		} else if (c == ';') {
 			message = format;
 			break;
-		}
-		else if (c == 'e')
+		} else if (c == 'e')
 			; /* Pass */
 		else if (isalpha(c))
 			max++;
@@ -1019,7 +1017,7 @@ vgetargskeywords(PyObject *args, PyObject *keywords, char *format,
 		return 0;
 	}	
 	
-	tplen = PyTuple_Size(args);
+	tplen = PyTuple_GET_SIZE(args);
 	
 	/* do a cursory check of the keywords just to see how many we got */
 	   
@@ -1095,7 +1093,7 @@ vgetargskeywords(PyObject *args, PyObject *keywords, char *format,
 	for (i = 0; i < tplen; i++) {
 		if (*format == '|')
 			format++;
-		msg = convertitem(PyTuple_GetItem(args, i), &format, p_va,
+		msg = convertitem(PyTuple_GET_ITEM(args, i), &format, p_va,
 				 levels, msgbuf);
 		if (msg) {
 			seterror(i+1, msg, levels, fname, message);
