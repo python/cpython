@@ -67,7 +67,7 @@ def checkcache(filename):
     try:
 	fp = open(cachename, 'r')
     except IOError:
-	print 'flp: no cache file', cachename
+	#print 'flp: no cache file', cachename
 	return None
     try:
 	if fp.read(4) != MAGIC:
@@ -76,9 +76,9 @@ def checkcache(filename):
 	cache_mtime = rdlong(fp)
 	file_mtime = getmtime(filename)
 	if cache_mtime != file_mtime:
-	    print 'flp: outdated cache file', cachename
+	    #print 'flp: outdated cache file', cachename
 	    return None
-	print 'flp: valid cache file', cachename
+	#print 'flp: valid cache file', cachename
 	altforms = marshal.load(fp)
 	forms = {}
 	for name in altforms.keys():
@@ -139,7 +139,7 @@ def writecache(filename, forms):
     fp.seek(0)
     fp.write(MAGIC)
     fp.close()
-    print 'flp: wrote cache file', cachename
+    #print 'flp: wrote cache file', cachename
     
 #
 # Internal: Locate form file (using PYTHONPATH) and open file
@@ -218,6 +218,12 @@ class _newobj:
 # Internal parsing routines.
 #
 def _parse_string(str):
+    if '\\' in str:
+	s = '\'' + str + '\''
+	try:
+	    return eval(s)
+	except:
+	    pass
     return str
 
 def _parse_num(str):
