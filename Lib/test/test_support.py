@@ -117,6 +117,10 @@ def verify(condition, reason='test failed'):
     if not condition:
         raise TestFailed(reason)
 
+def vereq(a, b):
+    if not (a == b):
+        raise TestFailed, "%r == %r" % (a, b)
+
 def sortdict(dict):
     "Like repr(dict), but in sorted order."
     items = dict.items()

@@ -75,7 +75,7 @@ structseq_slice(PyStructSequence *obj, int low, int high)
 	for(i = low; i < high; ++i) {
 		PyObject *v = obj->ob_item[i];
 		Py_INCREF(v);
-		PyTuple_SET_ITEM(np, i, v);
+		PyTuple_SET_ITEM(np, i-low, v);
 	}
 	return (PyObject *) np;
 }
