@@ -2,7 +2,6 @@
 #ifndef Py_CURSES_H
 #define Py_CURSES_H
 
-#ifdef HAVE_NCURSES_H
 #ifdef __APPLE__
 /*
 ** On Mac OS X 10.2 [n]curses.h and stdlib.h use different guards
@@ -12,6 +11,8 @@
 #define _WCHAR_T
 #endif
 #endif
+
+#ifdef HAVE_NCURSES_H
 #include <ncurses.h>
 #else
 #include <curses.h>
