@@ -292,7 +292,7 @@ class StreamRecoder:
             conversion: encode and decode work on the frontend (the
             input to .read() and output of .write()) while 
             Reader and Writer work on the backend (reading and
-            writing to the the stream).
+            writing to the stream).
 
             You can use these objects to do transparent direct
             recodings from e.g. latin-1 to utf-8 and back.
