@@ -215,8 +215,8 @@ and a copyright notice before printing the first prompt, e.g.:
 
 \bcode\begin{verbatim}
 python
-Python 1.3 (Oct 13 1995)
-Copyright 1991-1995 Stichting Mathematisch Centrum, Amsterdam
+Python 1.4b3 (Aug 25 1996)  [GCC 2.7.0]
+Copyright 1991-1996 Stichting Mathematisch Centrum, Amsterdam
 >>>
 \end{verbatim}\ecode
 
@@ -3862,5 +3862,53 @@ Numerous things I have forgotten or that are so obscure no-one will
 notice them anyway :-)
 
 \end{itemize}
+
+
+\chapter{New in Release 1.4}
+
+
+This chapter describes additions to the Python language and library in
+version 1.4.
+
+\begin{itemize}
+
+\item
+Power operator.  \code{x**y} is equivalent to \code{pow(x, y)}.
+
+\item
+Complex numbers.  Imaginary literals are writen with a \code{'j'}
+suffix (\code{'J'} is allowed for consistency.)  Complex numbers with
+a nonzero real component are written as
+\code{(\var{real}+\var{imag}j)}.  The usual arithmetic operators on
+complex numbers are supported, so that e.g. \code{1j**2} equals
+\code{-1.0}.  Module \code{cmath} provides versions of all math
+functions that take complex arguments and return complex results.
+(Module \code{math} only supports real numbers, so that
+\code{math.sqrt(-1)} still raises a \code{ValueError} exception.)
+
+\item
+New indexing syntax.  It is now possible to use a tuple as an indexing
+expression for a mapping object without parenthesizing it,
+e.g. \code{x[1, 2, 3]}.
+
+\item
+New slicing syntax.  In support of the Numerical Python extension
+(distributed separately), slice indices of the form
+\code{x[lo:hi:stride]} are possible, multiple slice indices separated by
+commas are allowed, and an index position may be replaced by ellipses,
+as follows: \code{x[a, ..., z]}.  There's also a new built-in function
+\code{slice(lo, hi, stride)} and a new built-in object
+\code{Ellipses}, which yield the same effect without using special
+syntax.  None of the standard sequence types support indexing with
+slice objects or ellipses yet.  Note that when any of these extensions
+are used, the mapping interface for indexing will be used.
+
+\item
+XXX More!!!
+
+\end{itemize}
+
+
+
 
 \end{document}
