@@ -81,6 +81,9 @@ def buildapplet():
 				verbose = Verbose()
 			elif opt in ('-?', '--help'):
 				usage()
+		# On OS9 always be verbose
+		if sys.platform == 'mac' and not verbose:
+			verbose = 'default'
 		# Loop over all files to be processed
 		for filename in args:
 			cr, tp = MacOS.GetCreatorAndType(filename)
