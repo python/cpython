@@ -1,5 +1,5 @@
-How to install Python 1.5.2b1 on your Macintosh
------------------------------------------------
+How to install Python 1.6a1 on your Macintosh
+---------------------------------------------
 
 If this is your first encounter with Python: you definitely need the
 common user documentation (common to all platforms). You can find this
@@ -13,11 +13,20 @@ now. The documentation is in HTML format, start with index.html.
 
 Caveats
 -------
-There are still problems with cfm68k Python. 68K Mac users should
-probably try to use the cfm68k distribution first, and revert to the
-classic 68k distribution in case the bugs make their Python
-unworkable.  The main problem is that packages ("dotted import") and
-NumPy printing don't work.
+This is an alfa version, and for this once it really means that: there
+are quite a few features that have only lightly been tested, and bugs are
+to be expected.
+
+Aside from the general Python 1.6 features like unicode support the
+main new features of this MacPython release is support for multithreading.
+This has not been tested very well. 
+
+This installer installs MacPython for PowerPC only, whether a 68K distribution
+of Python 1.6 will happen is not certain at the moment. There is no Tkinter
+in this installer.
+
+All references to 68k, cfm68k and Tkinter in this document and in the
+installer should be ignored: it really isn't there.
 
 What to install
 ---------------
