@@ -622,24 +622,6 @@ class PyBuildExt(build_ext):
                 exts.append( Extension('nis', ['nismodule.c'],
                                        libraries = libs) )
 
-            # Hye-Shik Chang's iconv_codec C interface
-            iconv_incs = find_file('iconv.h', inc_dirs,
-                                   ['/usr/local/include', '/usr/pkg/include'])
-            iconv_libs = find_library_file(self.compiler, 'iconv', lib_dirs,
-                                           ['/usr/local/lib', '/usr/pkg/lib'])
-                                           
-            if platform not in ['darwin'] and iconv_incs is not None:
-                if iconv_libs is not None:
-                    iconv_libraries = ['iconv']
-                else:
-                    iconv_libraries = [] # in libc
-
-                exts.append( Extension('_iconv_codec',
-                                       ['_iconv_codec.c'],
-                                       include_dirs = iconv_incs,
-                                       library_dirs = iconv_libs,
-                                       libraries = iconv_libraries), )
-
         # Curses support, requring the System V version of curses, often
         # provided by the ncurses library.
         if platform == 'sunos4':

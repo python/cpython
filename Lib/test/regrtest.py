@@ -569,7 +569,6 @@ _expectations = {
         test_gdbm
         test_gl
         test_grp
-        test_iconv_codecs
         test_imgfile
         test_ioctl
         test_largefile
@@ -626,7 +625,6 @@ _expectations = {
         test_fork1
         test_gl
         test_grp
-        test_iconv_codecs
         test_ioctl
         test_imgfile
         test_largefile
@@ -774,7 +772,6 @@ _expectations = {
         test_email_codecs
         test_gdbm
         test_gl
-        test_iconv_codecs
         test_imgfile
         test_largefile
         test_linuxaudiodev
@@ -890,7 +887,6 @@ _expectations = {
         test_dl
         test_email_codecs
         test_gl
-        test_iconv_codecs
         test_imgfile
         test_largefile
         test_linuxaudiodev
