@@ -166,6 +166,10 @@ Implements \code{TOS = `TOS`}.
 Implements \code{TOS = \~{}TOS}.
 \end{opcodedesc}
 
+\begin{opcodedesc}{GET_ITER}{}
+Implements \code{TOS = iter(TOS)}.
+\end{opcodedesc}
+
 Binary operations remove the top of the stack (TOS) and the second top-most
 stack item (TOS1) from the stack.  They perform the operation, and put the
 result back on the stack.
@@ -179,7 +183,17 @@ Implements \code{TOS = TOS1 * TOS}.
 \end{opcodedesc}
 
 \begin{opcodedesc}{BINARY_DIVIDE}{}
-Implements \code{TOS = TOS1 / TOS}.
+Implements \code{TOS = TOS1 / TOS} when
+\code{from __future__ import division} is not in effect.
+\end{opcodedesc}
+
+\begin{opcodedesc}{BINARY_FLOOR_DIVIDE}{}
+Implements \code{TOS = TOS1 // TOS}.
+\end{opcodedesc}
+
+\begin{opcodedesc}{BINARY_TRUE_DIVIDE}{}
+Implements \code{TOS = TOS1 / TOS} when
+\code{from __future__ import division} is in effect.
 \end{opcodedesc}
 
 \begin{opcodedesc}{BINARY_MODULO}{}
@@ -232,7 +246,17 @@ Implements in-place \code{TOS = TOS1 * TOS}.
 \end{opcodedesc}
 
 \begin{opcodedesc}{INPLACE_DIVIDE}{}
-Implements in-place \code{TOS = TOS1 / TOS}.
+Implements in-place \code{TOS = TOS1 / TOS} when
+\code{from __future__ import division} is not in effect.
+\end{opcodedesc}
+
+\begin{opcodedesc}{INPLACE_FLOOR_DIVIDE}{}
+Implements in-place \code{TOS = TOS1 // TOS}.
+\end{opcodedesc}
+
+\begin{opcodedesc}{INPLACE_TRUE_DIVIDE}{}
+Implements in-place \code{TOS = TOS1 / TOS} when
+\code{from __future__ import division} is in effect.
 \end{opcodedesc}
 
 \begin{opcodedesc}{INPLACE_MODULO}{}
@@ -328,6 +352,8 @@ Implements \code{TOS1[TOS] = TOS2}.
 Implements \code{del TOS1[TOS]}.
 \end{opcodedesc}
 
+Miscellaneous opcodes.
+
 \begin{opcodedesc}{PRINT_EXPR}{}
 Implements the expression statement for the interactive mode.  TOS is
 removed from the stack and printed.  In non-interactive mode, an
@@ -359,6 +385,12 @@ object on the TOS.  This is used by the extended print statement.
 Terminates a loop due to a \keyword{break} statement.
 \end{opcodedesc}
 
+\begin{opcodedesc}{CONTINUE_LOOP}{target}
+Continues a loop due to a \keyword{continue} statement.  \var{target}
+is the address to jump to (which should be a \code{FOR_ITER}
+instruction).
+\end{opcodedesc}
+
 \begin{opcodedesc}{LOAD_LOCALS}{}
 Pushes a reference to the locals of the current scope on the stack.
 This is used in the code for a class definition: After the class body
@@ -367,6 +399,10 @@ is evaluated, the locals are passed to the class definition.
 
 \begin{opcodedesc}{RETURN_VALUE}{}
 Returns with TOS to the caller of the function.
+\end{opcodedesc}
+
+\begin{opcodedesc}{YIELD_VALUE}{}
+Pops \code{TOS} and yields it from a generator.
 \end{opcodedesc}
 
 \begin{opcodedesc}{IMPORT_STAR}{}
@@ -513,11 +549,19 @@ is not changed.
 Set byte code counter to \var{target}.
 \end{opcodedesc}
 
+\begin{opcodedesc}{FOR_ITER}{delta}
+\code{TOS} is an iterator.  Call its \method{next()} method.  If this
+yields a new value, push it on the stack (leaving the iterator below
+it).  If the iterator indicates it is exhausted  \code{TOS} is
+popped, and the byte code counter is incremented by \var{delta}.
+\end{opcodedesc}
+
 \begin{opcodedesc}{FOR_LOOP}{delta}
-Iterate over a sequence.  TOS is the current index, TOS1 the sequence.
-First, the next element is computed.  If the sequence is exhausted,
-increment byte code counter by \var{delta}.  Otherwise, push the
-sequence, the incremented counter, and the current item onto the stack.
+This opcode is obsolete.
+%Iterate over a sequence.  TOS is the current index, TOS1 the sequence.
+%First, the next element is computed.  If the sequence is exhausted,
+%increment byte code counter by \var{delta}.  Otherwise, push the
+%sequence, the incremented counter, and the current item onto the stack.
 \end{opcodedesc}
 
 %\begin{opcodedesc}{LOAD_LOCAL}{namei}
