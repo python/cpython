@@ -21,7 +21,9 @@ entityref = regex.compile('&[a-zA-Z][a-zA-Z0-9]*[;.]')
 charref = regex.compile('&#[a-zA-Z0-9]+;')
 starttagopen = regex.compile('<[a-zA-Z]')
 endtag = regex.compile('</[a-zA-Z][a-zA-Z0-9]*[ \t\n]*>')
+special = regex.compile('<![^<>]*>')
 commentopen = regex.compile('<!--')
+commentclose = regex.compile('--[ \t\n]*>')
 
 
 # SGML parser base class -- find tags and call handler functions.
@@ -111,6 +113,14 @@ class SGMLParser:
 					if k < 0: break
 					i = i+k
 					continue
+				k = special.match(rawdata, i)
+				if k >= 0:
+					if self.literal:
+						self.handle_data(rawdata[i])
+						i = i+1
+						continue
+					i = i+k
+					continue
 			elif rawdata[i] == '&':
 				k = charref.match(rawdata, i)
 				if k >= 0:
@@ -141,25 +151,16 @@ class SGMLParser:
 		self.rawdata = rawdata[i:]
 		# XXX if end: check for empty stack
 
-	# Internal -- parse comment, return length or -1 if not ternimated
+	# Internal -- parse comment, return length or -1 if not terminated
 	def parse_comment(self, i):
 		rawdata = self.rawdata
 		if rawdata[i:i+4] <> '<!--':
 			raise RuntimeError, 'unexpected call to handle_comment'
-		try:
-			j = string.index(rawdata, '--', i+4)
-		except string.index_error:
+		j = commentclose.search(rawdata, i+4)
+		if j < 0:
 			return -1
 		self.handle_comment(rawdata[i+4: j])
-		j = j+2
-		n = len(rawdata)
-		while j < n and rawdata[j] in ' \t\n': j = j+1
-		if j == n: return -1 # Wait for final '>'
-		if rawdata[j] == '>':
-			j = j+1
-		else:
-			print '*** comment not terminated with >'
-			print repr(rawdata[j-5:j]), '*!*', repr(rawdata[j:j+5])
+		j = j+commentclose.match(rawdata, j)
 		return j-i
 
 	# Internal -- handle starttag, return length or -1 if not terminated
