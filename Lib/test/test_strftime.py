@@ -116,7 +116,7 @@ def strftest(now):
         if re.match(e[1], result):
             if verbose:
                 print "Supports nonstandard '%s' format (%s)" % (e[0], e[2])
-        elif result[0] == '%':
+        elif not result or result[0] == '%':
             if verbose:
                 print "Does not appear to support '%s' format (%s)" % (e[0],
                                                                        e[2])
