@@ -121,6 +121,7 @@ extern void initimgppm();
 extern void initimgpgm();
 extern void initimgtiff();
 extern void initimgsgi();
+extern void initimgpng();
 extern void initimgop();
 #endif
 #ifdef USE_TK
@@ -214,6 +215,7 @@ struct _inittab inittab[] = {
 	{"imgpgm",	initimgpgm},
 	{"imgtiff",	initimgtiff},
 	{"imgsgi",	initimgsgi},
+	{"imgpng",	initimgpng},
 	{"imgop",	initimgop},
 #endif
 #ifdef USE_TK
