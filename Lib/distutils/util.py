@@ -44,18 +44,10 @@ def extend (list, new_list):
 
 def get_platform ():
     """Return a string (suitable for tacking onto directory names) that
-       identifies the current platform.  Under Unix, identifies both the OS
-       and hardware architecture, e.g. "linux-i586", "solaris-sparc",
-       "irix-mips".  For Windows and Mac OS, just returns 'sys.platform' --
-       i.e. "???" or "???"."""
-
-    if os.name == 'posix':
-        (OS, _, rel, _, arch) = os.uname()
-        return "%s%c-%s" % (string.lower (OS), rel[0], string.lower (arch))
-    else:
-        return sys.platform
-
-# get_platform()
+    identifies the current platform.  Currently, this is just
+    'sys.platform'.
+    """
+    return sys.platform
 
 
 def convert_path (pathname):
