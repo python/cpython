@@ -61,7 +61,7 @@ class CCompiler:
     #     different versions of libfoo.a in different locations.  I
     #     think this is useless without the ability to null out the
     #     library search path anyways.
-    
+
 
     # Subclasses that rely on the standard filename generation methods
     # implemented below should override these; see the comment near
@@ -159,7 +159,7 @@ class CCompiler:
             setattr(self, key, split_quoted(value))
         else:
             setattr(self, key, value)
-        
+
 
 
     def _find_macro (self, name):
@@ -352,7 +352,7 @@ class CCompiler:
         else:
             raise TypeError, \
                   "'include_dirs' (if supplied) must be a list of strings"
-                    
+
         return (output_dir, macros, include_dirs)
 
     # _fix_compile_args ()
@@ -364,7 +364,7 @@ class CCompiler:
         list of all object files and a dictionary telling which source
         files can be skipped.
         """
-        # Get the list of expected output (object) files 
+        # Get the list of expected output (object) files
         objects = self.object_filenames (sources,
                                          strip_dir=1,
                                          output_dir=output_dir)
@@ -401,7 +401,7 @@ class CCompiler:
             raise TypeError, \
                   "'objects' must be a list or tuple of strings"
         objects = list (objects)
-            
+
         if output_dir is None:
             output_dir = self.output_dir
         elif type (output_dir) is not StringType:
@@ -560,7 +560,7 @@ class CCompiler:
         Raises LibError on failure.
         """
         pass
-    
+
 
     # values for target_desc parameter in link()
     SHARED_OBJECT = "shared_object"
@@ -621,7 +621,7 @@ class CCompiler:
         """
         raise NotImplementedError
 
-    
+
     # Old 'link_*()' methods, rewritten to use the new 'link()' method.
 
     def link_shared_lib (self,
@@ -636,13 +636,13 @@ class CCompiler:
                          extra_preargs=None,
                          extra_postargs=None,
                          build_temp=None):
-        self.link(CCompiler.SHARED_LIBRARY, objects, 
+        self.link(CCompiler.SHARED_LIBRARY, objects,
                   self.library_filename(output_libname, lib_type='shared'),
                   output_dir,
                   libraries, library_dirs, runtime_library_dirs,
                   export_symbols, debug,
                   extra_preargs, extra_postargs, build_temp)
-    
+
 
     def link_shared_object (self,
                             objects,
@@ -673,9 +673,9 @@ class CCompiler:
                          debug=0,
                          extra_preargs=None,
                          extra_postargs=None):
-        self.link(CCompiler.EXECUTABLE, objects, 
+        self.link(CCompiler.EXECUTABLE, objects,
                   self.executable_filename(output_progname), output_dir,
-                  libraries, library_dirs, runtime_library_dirs, None, 
+                  libraries, library_dirs, runtime_library_dirs, None,
                   debug, extra_preargs, extra_postargs, None)
 
 
@@ -846,12 +846,12 @@ _default_compilers = (
     # on a cygwin built python we can use gcc like an ordinary UNIXish
     # compiler
     ('cygwin.*', 'unix'),
-    
+
     # OS name mappings
     ('posix', 'unix'),
     ('nt', 'msvc'),
     ('mac', 'mwerks'),
-    
+
     )
 
 def get_default_compiler(osname=None, platform=None):
@@ -901,7 +901,7 @@ def show_compilers():
     # XXX this "knows" that the compiler option it's describing is
     # "--compiler", which just happens to be the case for the three
     # commands that use it.
-    from distutils.fancy_getopt import FancyGetopt 
+    from distutils.fancy_getopt import FancyGetopt
     compilers = []
     for compiler in compiler_class.keys():
         compilers.append(("compiler="+compiler, None,
@@ -909,7 +909,7 @@ def show_compilers():
     compilers.sort()
     pretty_printer = FancyGetopt(compilers)
     pretty_printer.print_help("List of available compilers:")
-    
+
 
 def new_compiler (plat=None,
                   compiler=None,
@@ -932,14 +932,14 @@ def new_compiler (plat=None,
     try:
         if compiler is None:
             compiler = get_default_compiler(plat)
-        
+
         (module_name, class_name, long_description) = compiler_class[compiler]
     except KeyError:
         msg = "don't know how to compile C/C++ code on platform '%s'" % plat
         if compiler is not None:
             msg = msg + " with '%s' compiler" % compiler
         raise DistutilsPlatformError, msg
-              
+
     try:
         module_name = "distutils." + module_name
         __import__ (module_name)

@@ -16,7 +16,7 @@ from types import *
 # module is already big enough, and I want to make this class a bit more
 # complex to simplify some common cases ("foo" module in "foo.c") and do
 # better error-checking ("foo.c" actually exists).
-# 
+#
 # Also, putting this in build_ext.py means every setup script would have to
 # import that large-ish module (indirectly, through distutils.core) in
 # order to do anything.
@@ -211,7 +211,7 @@ def read_setup_file (filename):
         #extensions[module] = { 'sources': source_files,
         #                       'cpp_args': cpp_args,
         #                       'lib_args': library_args }
-        
+
     return extensions
 
 # read_setup_file ()

@@ -97,7 +97,7 @@ class Distribution:
 
 
     # -- Creation/initialization methods -------------------------------
-    
+
     def __init__ (self, attrs=None):
         """Construct a new Distribution instance: initialize all the
         attributes of a Distribution, and then use 'attrs' (a dictionary
@@ -208,7 +208,7 @@ class Distribution:
                           "invalid distribution option '%s'" % key
 
         self.finalize_options()
-        
+
     # __init__ ()
 
 
@@ -251,7 +251,7 @@ class Distribution:
                     print indent + "  " + line
 
     # dump_option_dicts ()
-            
+
 
 
     # -- Config file finding/parsing methods ---------------------------
@@ -378,7 +378,7 @@ class Distribution:
             cmdlist = self.get_command_list()
             self.script_args = EasyDialogs.GetArgv(
                 self.global_options + self.display_options, cmdlist)
- 
+
         # We have to parse the command line a bit at a time -- global
         # options, then the first command, then its options, and so on --
         # because each command will be handled by a different class, and
@@ -396,7 +396,7 @@ class Distribution:
         # for display options we return immediately
         if self.handle_display_options(option_order):
             return
-            
+
         while args:
             args = self._parse_command_opts(parser, args)
             if args is None:            # user asked for help (and got it)
@@ -508,7 +508,7 @@ class Distribution:
                             "must be a callable object (function, etc.)"
                             % (`func`, help_option))
 
-            if help_option_found: 
+            if help_option_found:
                 return
 
         # Put the options from the command-line into their official
@@ -801,7 +801,7 @@ class Distribution:
         (from 'self.command_options').
         """
         from distutils.core import DEBUG
-        
+
         command_name = command_obj.get_command_name()
         if option_dict is None:
             option_dict = self.get_option_dict(command_name)
@@ -841,7 +841,7 @@ class Distribution:
         user-supplied values from the config files and command line.
         You'll have to re-finalize the command object (by calling
         'finalize_options()' or 'ensure_finalized()') before using it for
-        real.  
+        real.
 
         'command' should be a command name (string) or command object.  If
         'reinit_subcommands' is true, also reinitializes the command's
@@ -868,11 +868,11 @@ class Distribution:
 
         if reinit_subcommands:
             for sub in command.get_sub_commands():
-                self.reinitialize_command(sub, reinit_subcommands)            
+                self.reinitialize_command(sub, reinit_subcommands)
 
         return command
 
-        
+
     # -- Methods that operate on the Distribution ----------------------
 
     def announce (self, msg, level=1):
@@ -976,7 +976,7 @@ class DistributionMetadata:
         self.long_description = None
         self.keywords = None
         self.platforms = None
-        
+
     def write_pkg_info (self, base_dir):
         """Write the PKG-INFO file into the release tree.
         """
@@ -1003,9 +1003,9 @@ class DistributionMetadata:
             pkg_info.write('Platform: %s\n' % platform )
 
         pkg_info.close()
-        
+
     # write_pkg_info ()
-    
+
     # -- Metadata query methods ----------------------------------------
 
     def get_name (self):
@@ -1045,7 +1045,7 @@ class DistributionMetadata:
     def get_license(self):
         return self.license or "UNKNOWN"
     get_licence = get_license
-    
+
     def get_description(self):
         return self.description or "UNKNOWN"
 

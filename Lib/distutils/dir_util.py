@@ -49,7 +49,7 @@ def mkpath (name, mode=0777, verbose=0, dry_run=0):
 
     (head, tail) = os.path.split(name)
     tails = [tail]                      # stack of lone dirs to create
-    
+
     while head and tail and not os.path.isdir(head):
         #print "splitting '%s': " % head,
         (head, tail) = os.path.split(head)
@@ -140,7 +140,7 @@ def copy_tree (src, dst,
 
     if not dry_run and not os.path.isdir(src):
         raise DistutilsFileError, \
-              "cannot copy tree '%s': not a directory" % src    
+              "cannot copy tree '%s': not a directory" % src
     try:
         names = os.listdir(src)
     except os.error, (errno, errstr):
@@ -166,7 +166,7 @@ def copy_tree (src, dst,
             if not dry_run:
                 os.symlink(link_dest, dst_name)
             outputs.append(dst_name)
-            
+
         elif os.path.isdir(src_name):
             outputs.extend(
                 copy_tree(src_name, dst_name,

@@ -7,7 +7,7 @@ and building lists of files.
 # created 2000/07/17, Rene Liebscher (as template.py)
 # most parts taken from commands/sdist.py
 # renamed 2000/07/29 (to filelist.py) and officially added to
-#  the Distutils source, Greg Ward 
+#  the Distutils source, Greg Ward
 
 __revision__ = "$Id$"
 
@@ -34,8 +34,8 @@ class FileList:
         filtering applied)
     """
 
-    def __init__(self, 
-                 warn=None, 
+    def __init__(self,
+                 warn=None,
                  debug_print=None):
         # use standard warning and debug functions if no other given
         self.warn = warn or self.__warn
@@ -53,10 +53,10 @@ class FileList:
 
 
     # -- Fallback warning/debug functions ------------------------------
-    
+
     def __warn (self, msg):
         sys.stderr.write("warning: %s\n" % msg)
-        
+
     def __debug_print (self, msg):
         """Print 'msg' to stdout if the global DEBUG (taken from the
         DISTUTILS_DEBUG environment variable) flag is true.
@@ -93,7 +93,7 @@ class FileList:
 
 
     # -- "File template" methods ---------------------------------------
-    
+
     def _parse_template_line (self, line):
         words = string.split(line)
         action = words[0]
@@ -129,9 +129,9 @@ class FileList:
         return (action, patterns, dir, dir_pattern)
 
     # _parse_template_line ()
-    
 
-    def process_template_line (self, line):    
+
+    def process_template_line (self, line):
 
         # Parse the line: split it up, make sure the right number of words
         # is there, and return the relevant words.  'action' is always
@@ -190,7 +190,7 @@ class FileList:
                     self.warn(("no previously-included files matching '%s' " +
                                "found under directory '%s'") %
                               (pattern, dir))
-                    
+
         elif action == 'graft':
             self.debug_print("graft " + dir_pattern)
             if not self.include_pattern(None, prefix=dir_pattern):
@@ -251,7 +251,7 @@ class FileList:
                 self.debug_print(" adding " + name)
                 self.files.append(name)
                 files_found = 1
-    
+
         return files_found
 
     # include_pattern ()
@@ -261,7 +261,7 @@ class FileList:
                          anchor=1, prefix=None, is_regex=0):
         """Remove strings (presumably filenames) from 'files' that match
         'pattern'.  Other parameters are the same as for
-        'include_pattern()', above.  
+        'include_pattern()', above.
         The list 'self.files' is modified in place.
         Return 1 if files are found.
         """
@@ -274,7 +274,7 @@ class FileList:
                 self.debug_print(" removing " + self.files[i])
                 del self.files[i]
                 files_found = 1
-    
+
         return files_found
 
     # exclude_pattern ()
@@ -354,14 +354,14 @@ def translate_pattern (pattern, anchor=1, prefix=None, is_regex=0):
         pattern_re = glob_to_re(pattern)
     else:
         pattern_re = ''
-        
+
     if prefix is not None:
         prefix_re = (glob_to_re(prefix))[0:-1] # ditch trailing $
         pattern_re = "^" + os.path.join(prefix_re, ".*" + pattern_re)
     else:                               # no prefix -- respect anchor flag
         if anchor:
             pattern_re = "^" + pattern_re
-        
+
     return re.compile(pattern_re)
 
 # translate_pattern ()

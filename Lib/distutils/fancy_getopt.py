@@ -73,7 +73,7 @@ class FancyGetopt:
         # 'negative_alias' keeps track of options that are the boolean
         # opposite of some other option
         self.negative_alias = {}
-        
+
         # These keep track of the information in the option table.  We
         # don't actually populate these structures until we're ready to
         # parse the command-line, since the 'option_table' passed in here
@@ -90,7 +90,7 @@ class FancyGetopt:
         self.option_order = []
 
     # __init__ ()
-    
+
 
     def _build_index (self):
         self.option_index.clear()
@@ -117,7 +117,7 @@ class FancyGetopt:
         return self.option_index.has_key(long_option)
 
     def get_attr_name (self, long_option):
-        """Translate long option name 'long_option' to the form it 
+        """Translate long option name 'long_option' to the form it
         has as an attribute of some object: ie., translate hyphens
         to underscores."""
         return string.translate(long_option, longopt_xlate)
@@ -134,7 +134,7 @@ class FancyGetopt:
                 raise DistutilsGetoptError, \
                       ("invalid %s '%s': "
                        "aliased option '%s' not defined") % (what, alias, opt)
-        
+
     def set_aliases (self, alias):
         """Set the aliases for this option parser."""
         self._check_alias_dict(alias, "alias")
@@ -476,7 +476,7 @@ def translate_longopt (opt):
     changing "-" to "_".
     """
     return string.translate(opt, longopt_xlate)
-        
+
 
 class OptionDummy:
     """Dummy class just used as a place to hold command-line option
@@ -489,7 +489,7 @@ class OptionDummy:
             setattr(self, opt, None)
 
 # class OptionDummy
-    
+
 
 if __name__ == "__main__":
     text = """\

@@ -102,7 +102,7 @@ class BCPPCompiler(CCompiler) :
             compile_opts.extend (self.compile_options_debug)
         else:
             compile_opts.extend (self.compile_options)
-        
+
         for i in range (len (sources)):
             src = sources[i] ; obj = objects[i]
             ext = (os.path.splitext (src))[1]
@@ -130,11 +130,11 @@ class BCPPCompiler(CCompiler) :
                     input_opt = ""
                 elif ext in self._cpp_extensions:
                     input_opt = "-P"
-                else: 
+                else:
                     # Unknown file type -- no extra options.  The compiler
                     # will probably fail, but let it just in case this is a
                     # file the compiler recognizes even if we don't.
-                    input_opt = ""                              
+                    input_opt = ""
 
                 output_opt = "-o" + obj
 
@@ -174,17 +174,17 @@ class BCPPCompiler(CCompiler) :
             if extra_postargs:
                 lib_args.extend (extra_postargs)
             try:
-               self.spawn ([self.lib] + lib_args)
+                self.spawn ([self.lib] + lib_args)
             except DistutilsExecError, msg:
-               raise LibError, msg
+                raise LibError, msg
         else:
             self.announce ("skipping %s (up-to-date)" % output_filename)
 
     # create_static_lib ()
-    
-    
+
+
     def link (self,
-              target_desc,        
+              target_desc,
               objects,
               output_filename,
               output_dir=None,
@@ -254,14 +254,14 @@ class BCPPCompiler(CCompiler) :
                     resources.append(file)
                 else:
                     objects.append(file)
-            
-            
+
+
             for l in library_dirs:
-                ld_args.append("/L%s" % os.path.normpath(l)) 
+                ld_args.append("/L%s" % os.path.normpath(l))
             ld_args.append("/L.") # we sometimes use relative paths
 
-            # list of object files                
-            ld_args.extend(objects)     
+            # list of object files
+            ld_args.extend(objects)
 
             # XXX the command-line syntax for Borland C++ is a bit wonky;
             # certain filenames are jammed together in one big string, but
@@ -275,11 +275,11 @@ class BCPPCompiler(CCompiler) :
 
             # name of dll/exe file
             ld_args.extend([',',output_filename])
-            # no map file and start libraries 
+            # no map file and start libraries
             ld_args.append(',,')
 
             for lib in libraries:
-                # see if we find it and if there is a bcpp specific lib 
+                # see if we find it and if there is a bcpp specific lib
                 # (xxx_bcpp.lib)
                 libfile = self.find_library_file(library_dirs, lib, debug)
                 if libfile is None:
@@ -300,7 +300,7 @@ class BCPPCompiler(CCompiler) :
             ld_args.append(',')
             ld_args.extend(resources)
 
-            
+
             if extra_preargs:
                 ld_args[:0] = extra_preargs
             if extra_postargs:

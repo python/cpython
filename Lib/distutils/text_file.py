@@ -86,7 +86,7 @@ class TextFile:
 
         if filename is None and file is None:
             raise RuntimeError, \
-                  "you must supply either or both of 'filename' and 'file'" 
+                  "you must supply either or both of 'filename' and 'file'"
 
         # set values for all options -- either from client option hash
         # or fallback to default_options
@@ -113,7 +113,7 @@ class TextFile:
         # actually read from the file; it's only populated by an
         # 'unreadline()' operation
         self.linebuf = []
-        
+
 
     def open (self, filename):
         """Open a new file named 'filename'.  This overrides both the
@@ -213,7 +213,7 @@ class TextFile:
                     # EOF; I think that's OK.)
                     eol = (line[-1] == '\n') and '\n' or ''
                     line = line[0:pos] + eol
-                    
+
                     # If all that's left is whitespace, then skip line
                     # *now*, before we try to join it to 'buildup_line' --
                     # that way constructs like
@@ -226,7 +226,7 @@ class TextFile:
 
                 else:                   # it's an escaped "#"
                     line = string.replace (line, "\\#", "#")
-                
+
 
             # did previous line end with a backslash? then accumulate
             if self.join_lines and buildup_line:
@@ -256,7 +256,7 @@ class TextFile:
                     self.current_line = self.current_line[1] + 1
                 else:
                     self.current_line = self.current_line + 1
-                
+
 
             # strip whitespace however the client wants (leading and
             # trailing, or one or the other, or neither)
@@ -351,7 +351,7 @@ line 3 \\
             print expected_result
             print "** received:"
             print result
-            
+
 
     filename = "test.txt"
     out_file = open (filename, "w")
@@ -382,4 +382,3 @@ line 3 \\
     test_input (6, "join lines with collapsing", in_file, result6)
 
     os.remove (filename)
-    

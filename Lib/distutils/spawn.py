@@ -71,7 +71,7 @@ def _spawn_nt (cmd,
     cmd = _nt_quote_args(cmd)
     if search_path:
         # either we find one or it stays the same
-        executable = find_executable(executable) or executable 
+        executable = find_executable(executable) or executable
     if verbose:
         print string.join([executable] + cmd[1:], ' ')
     if not dry_run:
@@ -87,7 +87,7 @@ def _spawn_nt (cmd,
             raise DistutilsExecError, \
                   "command '%s' failed with exit status %d" % (cmd[0], rc)
 
-                
+
 def _spawn_posix (cmd,
                   search_path=1,
                   verbose=0,
@@ -110,11 +110,11 @@ def _spawn_posix (cmd,
             sys.stderr.write("unable to execute %s: %s\n" %
                              (cmd[0], e.strerror))
             os._exit(1)
-            
+
         sys.stderr.write("unable to execute %s for unknown reasons" % cmd[0])
         os._exit(1)
 
-    
+
     else:                               # in the parent
         # Loop until the child either exits or is terminated by a signal
         # (ie. keep waiting if it's merely stopped)
@@ -133,7 +133,7 @@ def _spawn_posix (cmd,
                     raise DistutilsExecError, \
                           "command '%s' failed with exit status %d" % \
                           (cmd[0], exit_status)
-        
+
             elif os.WIFSTOPPED(status):
                 continue
 
@@ -166,4 +166,4 @@ def find_executable(executable, path=None):
     else:
         return executable
 
-# find_executable()    
+# find_executable()

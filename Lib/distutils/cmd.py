@@ -41,7 +41,7 @@ class Command:
     # current situation.  (Eg. we "install_headers" is only applicable if
     # we have any C header files to install.)  If 'predicate' is None,
     # that command is always applicable.
-    # 
+    #
     # 'sub_commands' is usually defined at the *end* of a class, because
     # predicates can be unbound methods, so they must already have been
     # defined.  The canonical example is the "install" command.
@@ -111,7 +111,7 @@ class Command:
         if not self.finalized:
             self.finalize_options()
         self.finalized = 1
-        
+
 
     # Subclasses must define:
     #   initialize_options()
@@ -133,12 +133,12 @@ class Command:
         command-line.  Thus, this is not the place to code dependencies
         between options; generally, 'initialize_options()' implementations
         are just a bunch of "self.foo = None" assignments.
-           
+
         This method must be implemented by all command classes.
         """
         raise RuntimeError, \
               "abstract method -- subclass %s must override" % self.__class__
-        
+
     def finalize_options (self):
         """Set final values for all the options that this command supports.
         This is always called as late as possible, ie.  after any option
@@ -198,12 +198,12 @@ class Command:
         if DEBUG:
             print msg
             sys.stdout.flush()
-        
+
 
 
     # -- Option validation methods -------------------------------------
     # (these are very handy in writing the 'finalize_options()' method)
-    # 
+    #
     # NB. the general philosophy here is to ensure that a particular option
     # value meets certain type and value constraints.  If not, we try to
     # force it into conformance (eg. if we expect a list but have a string,
@@ -252,7 +252,7 @@ class Command:
                 raise DistutilsOptionError, \
                       "'%s' must be a list of strings (got %s)" % \
                       (option, `val`)
-        
+
     def _ensure_tested_string (self, option, tester,
                                what, error_fmt, default=None):
         val = self._ensure_stringlike(option, what, default)
@@ -382,7 +382,7 @@ class Command:
         and force flags.
         """
         return dir_util.copy_tree(
-            infile, outfile, 
+            infile, outfile,
             preserve_mode,preserve_times,preserve_symlinks,
             not self.force,
             self.verbose >= level,
@@ -426,7 +426,7 @@ class Command:
                        (outfile, string.join(infiles, ', '))
         if skip_msg is None:
             skip_msg = "skipping %s (inputs unchanged)" % outfile
-        
+
 
         # Allow 'infiles' to be a single string
         if type(infiles) is StringType:
@@ -459,7 +459,7 @@ class install_misc (Command):
     """Common base class for installing some files in a subdirectory.
     Currently used by install_data and install_scripts.
     """
-    
+
     user_options = [('install-dir=', 'd', "directory to install the files to")]
 
     def initialize_options (self):

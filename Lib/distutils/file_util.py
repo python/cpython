@@ -35,20 +35,20 @@ def _copy_file_contents (src, dst, buffer_size=16*1024):
         except os.error, (errno, errstr):
             raise DistutilsFileError, \
                   "could not open '%s': %s" % (src, errstr)
-        
+
         try:
             fdst = open(dst, 'wb')
         except os.error, (errno, errstr):
             raise DistutilsFileError, \
                   "could not create '%s': %s" % (dst, errstr)
-        
+
         while 1:
             try:
                 buf = fsrc.read(buffer_size)
             except os.error, (errno, errstr):
                 raise DistutilsFileError, \
                       "could not read from '%s': %s" % (src, errstr)
-            
+
             if not buf:
                 break
 
@@ -57,7 +57,7 @@ def _copy_file_contents (src, dst, buffer_size=16*1024):
             except os.error, (errno, errstr):
                 raise DistutilsFileError, \
                       "could not write to '%s': %s" % (dst, errstr)
-            
+
     finally:
         if fdst:
             fdst.close()
@@ -134,7 +134,7 @@ def copy_file (src, dst,
             print "%s %s -> %s" % (action, src, dir)
         else:
             print "%s %s -> %s" % (action, src, dst)
-            
+
     if dry_run:
         return (dst, 1)
 
@@ -146,7 +146,7 @@ def copy_file (src, dst,
         except os.error, exc:
             raise DistutilsFileError, \
                   "could not copy '%s' to '%s': %s" % (src, dst, exc[-1])
-    
+
     # If linking (hard or symbolic), use the appropriate system call
     # (Unix only, of course, but that's the caller's responsibility)
     elif link == 'hard':
@@ -189,7 +189,7 @@ def move_file (src, dst,
     """
     from os.path import exists, isfile, isdir, basename, dirname
     import errno
-    
+
     if verbose:
         print "moving %s -> %s" % (src, dst)
 
@@ -232,7 +232,7 @@ def move_file (src, dst,
             except os.error:
                 pass
             raise DistutilsFileError, \
-                  ("couldn't move '%s' to '%s' by copy/delete: " + 
+                  ("couldn't move '%s' to '%s' by copy/delete: " +
                    "delete '%s' failed: %s") % \
                   (src, dst, src, msg)
 
