@@ -2,7 +2,7 @@
 
 # Python implementation of an 'echo' tcp server: echo all data it receives.
 #
-# This is the simplest possible server, sevicing a single request only.
+# This is the simplest possible server, servicing a single request only.
 
 import sys
 from socket import *
