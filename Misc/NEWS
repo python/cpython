@@ -223,9 +223,10 @@ Build
 C API
 -----
 
-- The PyArg_Parse functions now raise a TypeError instead of truncating float
-  arguments if an integer is specified (this affects the 'b', 'B', 'h', 'H',
-  'i', and 'l' codes).
+- The PyArg_Parse functions now issue a DeprecationWarning if a float
+  argument is provided when an integer is specified (this affects the 'b',
+  'B', 'h', 'H', 'i', and 'l' codes).  Future versions of Python will
+  raise a TypeError.
 
 
 New platforms
