@@ -400,11 +400,17 @@ inshandler_body = """
 stdhand = ManualGenerator("STDObjectHandlers", stdhandlers_body)
 inshand = ManualGenerator("WEInstallObjectHandler", inshandler_body)
 
+
+# Tab hook handlers. Could be parsed from WETabs.h, but this is just as simple.
 f = Method(OSErr, 'WEInstallTabHooks', (WEReference, 'we', InMode))
 methods.append(f)
 f = Method(OSErr, 'WERemoveTabHooks', (WEReference, 'we', InMode))
 methods.append(f)
 f = Method(Boolean, 'WEIsTabHooks', (WEReference, 'we', InMode))
+methods.append(f)
+f = Method(SInt16, 'WEGetTabSize', (WEReference, 'we', InMode))
+methods.append(f)
+f = Method(OSErr, 'WESetTabSize', (SInt16, 'tabWidth', InMode), (WEReference, 'we', InMode))
 methods.append(f)
 
 # add the populated lists to the generator groups

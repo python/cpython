@@ -1694,6 +1694,38 @@ static PyObject *wasteObj_WEIsTabHooks(_self, _args)
 	return _res;
 }
 
+static PyObject *wasteObj_WEGetTabSize(_self, _args)
+	wasteObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	SInt16 _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = WEGetTabSize(_self->ob_itself);
+	_res = Py_BuildValue("h",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *wasteObj_WESetTabSize(_self, _args)
+	wasteObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	SInt16 tabWidth;
+	if (!PyArg_ParseTuple(_args, "h",
+	                      &tabWidth))
+		return NULL;
+	_err = WESetTabSize(tabWidth,
+	                    _self->ob_itself);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
 static PyMethodDef wasteObj_methods[] = {
 	{"WEGetText", (PyCFunction)wasteObj_WEGetText, 1,
 	 "() -> (Handle _rv)"},
@@ -1839,6 +1871,10 @@ static PyMethodDef wasteObj_methods[] = {
 	 "() -> None"},
 	{"WEIsTabHooks", (PyCFunction)wasteObj_WEIsTabHooks, 1,
 	 "() -> (Boolean _rv)"},
+	{"WEGetTabSize", (PyCFunction)wasteObj_WEGetTabSize, 1,
+	 "() -> (SInt16 _rv)"},
+	{"WESetTabSize", (PyCFunction)wasteObj_WESetTabSize, 1,
+	 "(SInt16 tabWidth) -> None"},
 	{NULL, NULL, 0}
 };
 
