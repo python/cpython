@@ -233,6 +233,7 @@ structseq_reduce(PyStructSequence* self)
 {
 	PyObject* tup;
 	PyObject* dict;
+	PyObject* result;
 	long n_fields, n_visible_fields;
 	int i;
 	
@@ -259,7 +260,12 @@ structseq_reduce(PyStructSequence* self)
 				     self->ob_item[i]);
 	}
 
-	return Py_BuildValue("(O(OO))", self->ob_type, tup, dict);
+	result = Py_BuildValue("(O(OO))", self->ob_type, tup, dict);
+
+	Py_DECREF(tup);
+	Py_DECREF(dict);
+
+	return result;
 }
 
 static PySequenceMethods structseq_as_sequence = {
