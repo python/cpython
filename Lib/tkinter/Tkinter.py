@@ -248,7 +248,7 @@ class Misc:
 	def send(self, interp, cmd, *args):
 		return apply(self.tk.call, ('send', interp, cmd) + args)
 	def lower(self, belowThis=None):
-		self.tk.call('lift', self._w, belowThis)
+		self.tk.call('lower', self._w, belowThis)
 	def tkraise(self, aboveThis=None):
 		self.tk.call('raise', self._w, aboveThis)
 	lift = tkraise
