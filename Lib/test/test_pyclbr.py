@@ -142,6 +142,7 @@ class PyclbrTest(TestCase):
         cm('urllib', ignore=('getproxies_registry',
                              'open_https',
                              'getproxies_internetconfig',)) # not on all platforms
+        cm('pickle')
         cm('aifc', ignore=('openfp',))  # set with = in module
         cm('Cookie')
         cm('sre_parse', ignore=('dump',)) # from sre_constants import *
