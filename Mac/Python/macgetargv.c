@@ -139,6 +139,12 @@ PyMac_GetFullPath (FSSpec *fss, char *buf)
 	plen = fss_current.name[0];
 	memcpy(buf, &fss_current.name[1], plen);
 	buf[plen] = 0;
+	/* Special case for disk names */
+	if ( fss_current.parID <= 1 ) {
+		buf[plen++] = ':';
+		buf[plen] = 0;
+		return 0;
+	}
 	while (fss_current.parID > 1) {
     		/* Get parent folder name */
                 if (err = get_folder_parent(&fss_current, &fss_parent))
