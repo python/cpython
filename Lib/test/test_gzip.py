@@ -50,5 +50,29 @@ while 1:
     if L == []: break
 f.close()
 
+# Try seek, read test
+
+f = gzip.GzipFile(filename)
+while 1:
+    oldpos = f.tell()
+    line1 = f.readline()
+    if not line1: break
+    newpos = f.tell()
+    f.seek(oldpos)  # negative seek
+    if len(line1)>10:
+        amount = 10
+    else:
+        amount = len(line1)
+    line2 = f.read(amount)
+    verify(line1[:amount] == line2)
+    f.seek(newpos)  # positive seek
+f.close()
+
+# Try seek, write test
+f = gzip.GzipFile(filename, 'w')
+for pos in range(0, 256, 16):
+    f.seek(pos) 
+    f.write('GZ\n')
+f.close()
 
 os.unlink(filename)
