@@ -37,7 +37,7 @@ def main():
 	base, ext = os.path.splitext(infile)
 	outfile = base + ".ind"
 	ofp = open(outfile, "w")
-    ofp.write("\\begin{theindex}\n\label{modindex}\n\n")
+    ofp.write("\\begin{theindex}\n\n")
     lines = ifp.readlines()
     for i in range(len(lines)):
 	if lines[i][0] == '\\':
