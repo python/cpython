@@ -62,6 +62,9 @@
    handler ignores signals if getpid() isn't the same as in the main
    thread.  XXX This is a hack.
 
+   GNU pth is a user-space threading library, and as such, all threads
+   run within the same process. In this case, if the currently running
+   thread is not the main_thread, send the signal to the main_thread.
 */
 
 #ifdef WITH_THREAD
@@ -109,6 +112,12 @@ static void
 signal_handler(int sig_num)
 {
 #ifdef WITH_THREAD
+#ifdef WITH_PTH
+	if (PyThread_get_thread_ident() != main_thread) {
+		pth_raise(*(pth_t *) main_thread, sig_num);
+		return;
+	}
+#endif
 	/* See NOTES section above */
 	if (getpid() == main_pid) {
 #endif

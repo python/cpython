@@ -111,7 +111,7 @@
 #define Py_file_input 257
 #define Py_eval_input 258
 
-#ifdef _GNU_PTH
+#ifdef HAVE_PTH
 /* GNU pth user-space thread support */
 #include <pth.h>
 #endif

@@ -745,6 +745,15 @@ else
     AC_CHECK_HEADER(mach/cthreads.h, [AC_DEFINE(WITH_THREAD)
     AC_DEFINE(C_THREADS)
     LIBOBJS="$LIBOBJS thread.o"],[
+    AC_MSG_CHECKING(for --with-pth)
+    AC_ARG_WITH(pth,
+    [  --with-pth                      use GNU pth threading libraries], [
+    AC_MSG_RESULT($withval)
+    AC_DEFINE(WITH_THREAD)
+    AC_DEFINE(HAVE_PTH)
+    LIBS="-lpth $LIBS"
+    LIBOBJS="$LIBOBJS thread.o"],[
+    AC_MSG_RESULT(no)
     AC_CHECK_LIB(pthread, pthread_create, [AC_DEFINE(WITH_THREAD)
     AC_DEFINE(_POSIX_THREADS)
     LIBS="-lpthread $LIBS"
@@ -767,10 +776,6 @@ else
     AC_DEFINE(_POSIX_THREADS)
     LIBS="$LIBS -lthread"
     LIBOBJS="$LIBOBJS thread.o"], [
-    AC_CHECK_LIB(pth, pth_init, [AC_DEFINE(WITH_THREAD)
-    AC_DEFINE(_GNU_PTH)
-    LIBS="-lpth $LIBS"
-    LIBOBJS="$LIBOBJS thread.o"],[
     AC_CHECK_LIB(cma, pthread_create, [AC_DEFINE(WITH_THREAD)
     AC_DEFINE(_POSIX_THREADS)
     LIBS="$LIBS -lcma"

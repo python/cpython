@@ -109,12 +109,13 @@ void PyThread_init_thread(void)
 #include "thread_lwp.h"
 #endif
 
-#ifdef _GNU_PTH
+#ifdef HAVE_PTH
 #include "thread_pth.h"
-#else
+#undef _POSIX_THREADS
+#endif
+
 #ifdef _POSIX_THREADS
 #include "thread_pthread.h"
-#endif
 #endif
 
 #ifdef C_THREADS
