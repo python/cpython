@@ -427,7 +427,7 @@ posix_utime(self, args)
 
 #ifndef MSDOS
 
-/* Process Primitives */
+/* Process operations */
 
 static object *
 posix__exit(self, args)
@@ -545,6 +545,26 @@ posix_kill(self, args)
 }
 
 static object *
+posix_popen(self, args)
+	object *self;
+	object *args;
+{
+	extern int pclose PROTO((FILE *));
+	object *name, *mode;
+	FILE *fp;
+	if (args == NULL || !is_tupleobject(args) || gettuplesize(args) != 2 ||
+		!is_stringobject(name = gettupleitem(args, 0)) ||
+		!is_stringobject(mode = gettupleitem(args, 1))) {
+		err_setstr(TypeError, "open() requires 2 string arguments");
+		return NULL;
+	}
+	fp = popen(getstringvalue(name), getstringvalue(mode));
+	if (fp == NULL)
+		return posix_error();
+	return newopenfileobject(fp, name, mode, pclose);
+}
+
+static object *
 posix_wait(self, args) /* Also waitpid() */
 	object *self;
 	object *args;
@@ -644,6 +664,7 @@ static struct methodlist posix_methods[] = {
 	{"getpid",	posix_getpid},
 	{"getppid",	posix_getppid},
 	{"kill",	posix_kill},
+	{"popen",	posix_popen},
 	{"wait",	posix_wait},
 #endif
 #ifndef NO_LSTAT
@@ -674,6 +695,21 @@ initposix()
 	if (PosixError == NULL || dictinsert(d, "error", PosixError) != 0)
 		fatal("can't define posix.error");
 }
+
+
+/* Function used elsewhere to get a file's modification time */
+
+long
+getmtime(path)
+	char *path;
+{
+	struct stat st;
+	if (stat(path, &st) != 0)
+		return -1;
+	else
+		return st.st_mtime;
+}
+
 
 #ifdef MSDOS
 
