@@ -73,7 +73,7 @@ extern int _GrafObj_Convert(PyObject *, GrafPtr *);
 extern PyObject *_BMObj_New(BitMapPtr);
 extern int _BMObj_Convert(PyObject *, BitMapPtr *);
 extern PyObject *_QdRGB_New(RGBColorPtr);
-extern int _QdRGB_Convert(PyObject *, RGBColorPtr *);
+extern int _QdRGB_Convert(PyObject *, RGBColorPtr);
 
 #define GrafObj_New _GrafObj_New
 #define GrafObj_Convert _GrafObj_Convert
@@ -222,7 +222,7 @@ initstuff = initstuff + """
 	PyMac_INIT_TOOLBOX_OBJECT_NEW(GrafPtr, GrafObj_New);
 	PyMac_INIT_TOOLBOX_OBJECT_CONVERT(GrafPtr, GrafObj_Convert);
 	PyMac_INIT_TOOLBOX_OBJECT_NEW(RGBColorPtr, QdRGB_New);
-	PyMac_INIT_TOOLBOX_OBJECT_CONVERT(RGBColorPtr, QdRGB_Convert);
+	PyMac_INIT_TOOLBOX_OBJECT_CONVERT(RGBColor, QdRGB_Convert);
 """
 
 ## not yet...
