@@ -193,8 +193,24 @@ def TemporaryFile(mode='w+b', bufsize=-1, suffix=""):
         except:
             os.close(fd)
             raise
+    elif os.name == 'nt':
+        # Windows -- can't unlink an open file, but O_TEMPORARY creates a
+        # file that "deletes itself" when the last handle is closed.
+        # O_NOINHERIT ensures processes created via spawn() don't get a
+        # handle to this too.  That would be a security hole, and, on my
+        # Win98SE box, when an O_TEMPORARY file is inherited by a spawned
+        # process, the fd in the spawned process seems to lack the
+        # O_TEMPORARY flag, so the file doesn't go away by magic then if the
+        # spawning process closes it first.
+        flags = (os.O_RDWR | os.O_CREAT | os.O_EXCL |
+                 os.O_TEMPORARY | os.O_NOINHERIT)
+        if 'b' in mode:
+            flags |= os.O_BINARY
+        fd = os.open(name, flags, 0700)
+        return os.fdopen(fd, mode, bufsize)
     else:
-        # Non-unix -- can't unlink file that's still open, use wrapper
+        # Assume we can't unlink a file that's still open, or arrange for
+        # an automagically self-deleting file -- use wrapper.
         file = open(name, mode, bufsize)
         return TemporaryFileWrapper(file, name)
 
