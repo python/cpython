@@ -503,7 +503,7 @@ float_pow(PyObject *v, PyObject *w, PyObject *z)
 		PyFPE_START_PROTECT("pow", return NULL)
 		if ((PyObject *)z != Py_None) {
 			double iz;
-			CONVERT_TO_DOUBLE(w, iz);
+			CONVERT_TO_DOUBLE(z, iz);
 			ix=fmod(1.0, iz);
 			if (ix!=0 && iz<0) ix+=iz;
 		}
