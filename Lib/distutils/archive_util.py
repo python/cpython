@@ -15,12 +15,12 @@ from distutils.spawn import spawn
 def make_tarball (base_name, base_dir, compress="gzip",
                   verbose=0, dry_run=0):
     """Create a (possibly compressed) tar file from all the files under
-       'base_dir'.  'compress' must be "gzip" (the default), "compress", or
-       None.  Both "tar" and the compression utility named by 'compress'
-       must be on the default program search path, so this is probably
-       Unix-specific.  The output tar file will be named 'base_dir' +
-       ".tar", possibly plus the appropriate compression extension
-       (".gz" or ".Z").  Return the output filename."""
+       'base_dir'.  'compress' must be "gzip" (the default), "compress",
+       "bzip2", or None.  Both "tar" and the compression utility named by
+       'compress' must be on the default program search path, so this is
+       probably Unix-specific.  The output tar file will be named 'base_dir'
+       + ".tar", possibly plus the appropriate compression extension (".gz",
+       ".bz2" or ".Z").  Return the output filename."""
 
     # XXX GNU tar 1.13 has a nifty option to add a prefix directory.
     # It's pretty new, though, so we certainly can't require it --
@@ -29,9 +29,15 @@ def make_tarball (base_name, base_dir, compress="gzip",
     # detect GNU tar to use its 'z' option and save a step.)
 
     compress_ext = { 'gzip': ".gz",
+                     'bzip2': '.bz2',
                      'compress': ".Z" }
+    
+    # flags for compression program, each element of list will be an argument
+    compress_flags = {'gzip': ["-f9"],
+                      'compress': ["-f"],
+                      'bzip2': ['-f9']}
 
-    if compress is not None and compress not in ('gzip', 'compress'):
+    if compress is not None and compress not in compress_ext.keys():
         raise ValueError, \
               "bad value for 'compress': must be None, 'gzip', or 'compress'"
 
@@ -40,7 +46,8 @@ def make_tarball (base_name, base_dir, compress="gzip",
     spawn (cmd, verbose=verbose, dry_run=dry_run)
 
     if compress:
-        spawn ([compress, archive_name], verbose=verbose, dry_run=dry_run)
+        spawn ([compress] + compress_flags[compress] + [archive_name],
+               verbose=verbose, dry_run=dry_run)
         return archive_name + compress_ext[compress]
     else:
         return archive_name
@@ -104,6 +111,7 @@ def make_zipfile (base_name, base_dir, verbose=0, dry_run=0):
 
 ARCHIVE_FORMATS = {
     'gztar': (make_tarball, [('compress', 'gzip')]),
+    'bztar': (make_tarball, [('compress', 'bzip2')]),
     'ztar':  (make_tarball, [('compress', 'compress')]),
     'tar':   (make_tarball, [('compress', None)]),
     'zip':   (make_zipfile, [])
