@@ -747,6 +747,29 @@ class TestCase(unittest.TestCase):
         (a, b), (c,) = IteratingSequenceClass(2), {42: 24}
         self.assertEqual((a, b, c), (0, 1, 42))
 
+        # Test reference count behavior
+
+        class C(object):
+            count = 0
+            def __new__(cls):
+                cls.count += 1
+                return object.__new__(cls)
+            def __del__(self):
+                cls = self.__class__
+                assert cls.count > 0
+                cls.count -= 1
+        x = C()
+        self.assertEqual(C.count, 1)
+        del x
+        self.assertEqual(C.count, 0)
+        l = [C(), C(), C()]
+        self.assertEqual(C.count, 3)
+        try:
+            a, b = iter(l)
+        except ValueError:
+            pass
+        del l
+        self.assertEqual(C.count, 0)
 
 def test_main():
     run_unittest(TestCase)
