@@ -356,7 +356,10 @@ class Pickler:
     dispatch[NoneType] = save_none
 
     def save_bool(self, object):
-        self.write(object and TRUE or FALSE)
+        if self.proto >= 2:
+            self.write(object and NEWTRUE or NEWFALSE)
+        else:
+            self.write(object and TRUE or FALSE)
     dispatch[bool] = save_bool
 
     def save_int(self, object, pack=struct.pack):
@@ -759,6 +762,14 @@ class Unpickler:
     def load_none(self):
         self.append(None)
     dispatch[NONE] = load_none
+
+    def load_false(self):
+        self.append(False)
+    dispatch[NEWFALSE] = load_false
+
+    def load_true(self):
+        self.append(True)
+    dispatch[NEWTRUE] = load_true
 
     def load_int(self):
         data = self.readline()
