@@ -24,8 +24,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* Mac module implementation */
 
-#include "allobjects.h"
-#include "modsupport.h"
+#include "Python.h"
 #include "ceval.h"
 
 #include <stdio.h>
@@ -89,100 +88,100 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #ifndef USE_GUSI
 
-int chdir PROTO((const char *path));
-int mkdir PROTO((const char *path, int mode));
-DIR * opendir PROTO((char *));
-void closedir PROTO((DIR *));
-struct dirent * readdir PROTO((DIR *));
-int rmdir PROTO((const char *path));
-int sync PROTO((void));
+int chdir Py_PROTO((const char *path));
+int mkdir Py_PROTO((const char *path, int mode));
+DIR * opendir Py_PROTO((char *));
+void closedir Py_PROTO((DIR *));
+struct dirent * readdir Py_PROTO((DIR *));
+int rmdir Py_PROTO((const char *path));
+int sync Py_PROTO((void));
 
 #if defined(THINK_C) || defined(__SC__)
-int unlink PROTO((char *));
+int unlink Py_PROTO((char *));
 #else
-int unlink PROTO((const char *));
+int unlink Py_PROTO((const char *));
 #endif
 
 #endif /* USE_GUSI */
 
-char *getwd PROTO((char *));
-char *getbootvol PROTO((void));
+char *getwd Py_PROTO((char *));
+char *getbootvol Py_PROTO((void));
 
 
-static object *MacError; /* Exception mac.error */
+static PyObject *MacError; /* Exception mac.error */
 
 /* Set a MAC-specific error from errno, and return NULL */
 
-static object * 
+static PyObject * 
 mac_error() 
 {
-	return err_errno(MacError);
+	return PyErr_SetFromErrno(MacError);
 }
 
 /* MAC generic methods */
 
-static object *
+static PyObject *
 mac_1str(args, func)
-	object *args;
-	int (*func) FPROTO((const char *));
+	PyObject *args;
+	int (*func) Py_FPROTO((const char *));
 {
 	char *path1;
 	int res;
-	if (!getargs(args, "s", &path1))
+	if (!PyArg_Parse(args, "s", &path1))
 		return NULL;
-	BGN_SAVE
+	Py_BEGIN_ALLOW_THREADS
 	res = (*func)(path1);
-	END_SAVE
+	Py_END_ALLOW_THREADS
 	if (res < 0)
 		return mac_error();
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
-static object *
+static PyObject *
 mac_2str(args, func)
-	object *args;
-	int (*func) FPROTO((const char *, const char *));
+	PyObject *args;
+	int (*func) Py_FPROTO((const char *, const char *));
 {
 	char *path1, *path2;
 	int res;
-	if (!getargs(args, "(ss)", &path1, &path2))
+	if (!PyArg_Parse(args, "(ss)", &path1, &path2))
 		return NULL;
-	BGN_SAVE
+	Py_BEGIN_ALLOW_THREADS
 	res = (*func)(path1, path2);
-	END_SAVE
+	Py_END_ALLOW_THREADS
 	if (res < 0)
 		return mac_error();
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
-static object *
+static PyObject *
 mac_strint(args, func)
-	object *args;
-	int (*func) FPROTO((const char *, int));
+	PyObject *args;
+	int (*func) Py_FPROTO((const char *, int));
 {
 	char *path;
 	int i;
 	int res;
-	if (!getargs(args, "(si)", &path, &i))
+	if (!PyArg_Parse(args, "(si)", &path, &i))
 		return NULL;
-	BGN_SAVE
+	Py_BEGIN_ALLOW_THREADS
 	res = (*func)(path, i);
-	END_SAVE
+	Py_END_ALLOW_THREADS
 	if (res < 0)
 		return mac_error();
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
-static object *
+static PyObject *
 mac_chdir(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
 #ifdef USE_GUSI
-	object *rv;
+	PyObject *rv;
 	
 	/* Change MacOS's idea of wd too */
 	rv = mac_1str(args, chdir);
@@ -194,264 +193,264 @@ mac_chdir(self, args)
 
 }
 
-static object *
+static PyObject *
 mac_close(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
 	int fd, res;
-	if (!getargs(args, "i", &fd))
+	if (!PyArg_Parse(args, "i", &fd))
 		return NULL;
-	BGN_SAVE
+	Py_BEGIN_ALLOW_THREADS
 	res = close(fd);
-	END_SAVE
+	Py_END_ALLOW_THREADS
 #ifndef USE_GUSI
 	/* GUSI gives surious errors here? */
 	if (res < 0)
 		return mac_error();
 #endif
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
 #ifdef WEHAVE_DUP
 
-static object *
+static PyObject *
 mac_dup(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
 	int fd;
-	if (!getargs(args, "i", &fd))
+	if (!PyArg_Parse(args, "i", &fd))
 		return NULL;
-	BGN_SAVE
+	Py_BEGIN_ALLOW_THREADS
 	fd = dup(fd);
-	END_SAVE
+	Py_END_ALLOW_THREADS
 	if (fd < 0)
 		return mac_error();
-	return newintobject((long)fd);
+	return PyInt_FromLong((long)fd);
 }
 
 #endif
 
 #ifdef WEHAVE_FDOPEN
-static object *
+static PyObject *
 mac_fdopen(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
-	extern int fclose PROTO((FILE *));
+	extern int fclose Py_PROTO((FILE *));
 	int fd;
 	char *mode;
 	FILE *fp;
-	if (!getargs(args, "(is)", &fd, &mode))
+	if (!PyArg_Parse(args, "(is)", &fd, &mode))
 		return NULL;
-	BGN_SAVE
+	Py_BEGIN_ALLOW_THREADS
 	fp = fdopen(fd, mode);
-	END_SAVE
+	Py_END_ALLOW_THREADS
 	if (fp == NULL)
 		return mac_error();
-	return newopenfileobject(fp, "(fdopen)", mode, fclose);
+	return PyFile_FromFile(fp, "(fdopen)", mode, fclose);
 }
 #endif
 
-static object *
+static PyObject *
 mac_getbootvol(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
 	char *res;
-	if (!getnoarg(args))
+	if (!PyArg_NoArgs(args))
 		return NULL;
-	BGN_SAVE
+	Py_BEGIN_ALLOW_THREADS
 	res = getbootvol();
-	END_SAVE
+	Py_END_ALLOW_THREADS
 	if (res == NULL)
 		return mac_error();
-	return newstringobject(res);
+	return PyString_FromString(res);
 }
 
-static object *
+static PyObject *
 mac_getcwd(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
 	char path[MAXPATHLEN];
 	char *res;
-	if (!getnoarg(args))
+	if (!PyArg_NoArgs(args))
 		return NULL;
-	BGN_SAVE
+	Py_BEGIN_ALLOW_THREADS
 #ifdef USE_GUSI
 	res = getcwd(path, sizeof path);
 #else
 	res = getwd(path);
 #endif
-	END_SAVE
+	Py_END_ALLOW_THREADS
 	if (res == NULL) {
-		err_setstr(MacError, path);
+		PyErr_SetString(MacError, path);
 		return NULL;
 	}
-	return newstringobject(res);
+	return PyString_FromString(res);
 }
 
-static object *
+static PyObject *
 mac_listdir(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
 	char *name;
-	object *d, *v;
+	PyObject *d, *v;
 	DIR *dirp;
 	struct dirent *ep;
-	if (!getargs(args, "s", &name))
+	if (!PyArg_Parse(args, "s", &name))
 		return NULL;
-	BGN_SAVE
+	Py_BEGIN_ALLOW_THREADS
 	if ((dirp = opendir(name)) == NULL) {
-		RET_SAVE
+		Py_BLOCK_THREADS
 		return mac_error();
 	}
-	if ((d = newlistobject(0)) == NULL) {
+	if ((d = PyList_New(0)) == NULL) {
 		closedir(dirp);
-		RET_SAVE
+		Py_BLOCK_THREADS
 		return NULL;
 	}
 	while ((ep = readdir(dirp)) != NULL) {
-		v = newstringobject(ep->d_name);
+		v = PyString_FromString(ep->d_name);
 		if (v == NULL) {
-			DECREF(d);
+			Py_DECREF(d);
 			d = NULL;
 			break;
 		}
-		if (addlistitem(d, v) != 0) {
-			DECREF(v);
-			DECREF(d);
+		if (PyList_Append(d, v) != 0) {
+			Py_DECREF(v);
+			Py_DECREF(d);
 			d = NULL;
 			break;
 		}
-		DECREF(v);
+		Py_DECREF(v);
 	}
 	closedir(dirp);
-	END_SAVE
+	Py_END_ALLOW_THREADS
 
 	return d;
 }
 
-static object *
+static PyObject *
 mac_lseek(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
 	int fd;
 	int where;
 	int how;
 	long res;
-	if (!getargs(args, "(iii)", &fd, &where, &how))
+	if (!PyArg_Parse(args, "(iii)", &fd, &where, &how))
 		return NULL;
-	BGN_SAVE
+	Py_BEGIN_ALLOW_THREADS
 	res = lseek(fd, (long)where, how);
-	END_SAVE
+	Py_END_ALLOW_THREADS
 	if (res < 0)
 		return mac_error();
-	return newintobject(res);
+	return PyInt_FromLong(res);
 }
 
-static object *
+static PyObject *
 mac_mkdir(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
 	int res;
 	char *path;
 	int mode = 0777; /* Unused */
-	if (!newgetargs(args, "s|i", &path, &mode))
+	if (!PyArg_ParseTuple(args, "s|i", &path, &mode))
 		return NULL;
-	BGN_SAVE
+	Py_BEGIN_ALLOW_THREADS
 #ifdef USE_GUSI
 	res = mkdir(path);
 #else
 	res = mkdir(path, mode);
 #endif
-	END_SAVE
+	Py_END_ALLOW_THREADS
 	if (res < 0)
 		return mac_error();
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
-static object *
+static PyObject *
 mac_open(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
 	char *path;
 	int mode;
 	int fd;
-	if (!getargs(args, "(si)", &path, &mode))
+	if (!PyArg_Parse(args, "(si)", &path, &mode))
 		return NULL;
-	BGN_SAVE
+	Py_BEGIN_ALLOW_THREADS
 	fd = open(path, mode);
-	END_SAVE
+	Py_END_ALLOW_THREADS
 	if (fd < 0)
 		return mac_error();
-	return newintobject((long)fd);
+	return PyInt_FromLong((long)fd);
 }
 
-static object *
+static PyObject *
 mac_read(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
 	int fd, size;
-	object *buffer;
-	if (!getargs(args, "(ii)", &fd, &size))
+	PyObject *buffer;
+	if (!PyArg_Parse(args, "(ii)", &fd, &size))
 		return NULL;
-	buffer = newsizedstringobject((char *)NULL, size);
+	buffer = PyString_FromStringAndSize((char *)NULL, size);
 	if (buffer == NULL)
 		return NULL;
-	BGN_SAVE
-	size = read(fd, getstringvalue(buffer), size);
-	END_SAVE
+	Py_BEGIN_ALLOW_THREADS
+	size = read(fd, PyString_AsString(buffer), size);
+	Py_END_ALLOW_THREADS
 	if (size < 0) {
-		DECREF(buffer);
+		Py_DECREF(buffer);
 		return mac_error();
 	}
-	resizestring(&buffer, size);
+	_PyString_Resize(&buffer, size);
 	return buffer;
 }
 
-static object *
+static PyObject *
 mac_rename(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
 	return mac_2str(args, rename);
 }
 
-static object *
+static PyObject *
 mac_rmdir(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
 	return mac_1str(args, rmdir);
 }
 
-static object *
+static PyObject *
 mac_stat(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
 	struct stat st;
 	char *path;
 	int res;
-	if (!getargs(args, "s", &path))
+	if (!PyArg_Parse(args, "s", &path))
 		return NULL;
-	BGN_SAVE
+	Py_BEGIN_ALLOW_THREADS
 	res = stat(path, &st);
-	END_SAVE
+	Py_END_ALLOW_THREADS
 	if (res != 0)
 		return mac_error();
 #if 1
-	return mkvalue("(lllllllddd)",
+	return Py_BuildValue("(lllllllddd)",
 		    (long)st.st_mode,
 		    (long)st.st_ino,
 		    (long)st.st_dev,
@@ -463,7 +462,7 @@ mac_stat(self, args)
 		    (double)st.st_mtime,
 		    (double)st.st_ctime);
 #else
-	return mkvalue("(llllllllll)",
+	return Py_BuildValue("(llllllllll)",
 		    (long)st.st_mode,
 		    (long)st.st_ino,
 		    (long)st.st_dev,
@@ -477,34 +476,34 @@ mac_stat(self, args)
 #endif
 }
 
-static object *
+static PyObject *
 mac_xstat(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
 	struct macstat mst;
 	struct stat st;
 	char *path;
 	int res;
-	if (!getargs(args, "s", &path))
+	if (!PyArg_Parse(args, "s", &path))
 		return NULL;
 	/*
 	** Convoluted: we want stat() and xstat() to agree, so we call both
 	** stat and macstat, and use the latter only for values not provided by
 	** the former.
 	*/
-	BGN_SAVE
+	Py_BEGIN_ALLOW_THREADS
 	res = macstat(path, &mst);
-	END_SAVE
+	Py_END_ALLOW_THREADS
 	if (res != 0)
 		return mac_error();
-	BGN_SAVE
+	Py_BEGIN_ALLOW_THREADS
 	res = stat(path, &st);
-	END_SAVE
+	Py_END_ALLOW_THREADS
 	if (res != 0)
 		return mac_error();
 #if 1
-	return mkvalue("(llllllldddls#s#)",
+	return Py_BuildValue("(llllllldddls#s#)",
 		    (long)st.st_mode,
 		    (long)st.st_ino,
 		    (long)st.st_dev,
@@ -519,7 +518,7 @@ mac_xstat(self, args)
 		    mst.st_creator, 4,
 		    mst.st_type, 4);
 #else
-	return mkvalue("(llllllllllls#s#)",
+	return Py_BuildValue("(llllllllllls#s#)",
 		    (long)st.st_mode,
 		    (long)st.st_ino,
 		    (long)st.st_dev,
@@ -536,61 +535,61 @@ mac_xstat(self, args)
 #endif
 }
 
-static object *
+static PyObject *
 mac_sync(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
 	int res;
-	if (!getnoarg(args))
+	if (!PyArg_NoArgs(args))
 		return NULL;
-	BGN_SAVE
+	Py_BEGIN_ALLOW_THREADS
 	res = sync();
-	END_SAVE
+	Py_END_ALLOW_THREADS
 	if (res != 0)
 		return mac_error();
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
-static object *
+static PyObject *
 mac_unlink(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
 	return mac_1str(args, (int (*)(const char *))unlink);
 }
 
-static object *
+static PyObject *
 mac_write(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
 	int fd, size;
 	char *buffer;
-	if (!getargs(args, "(is#)", &fd, &buffer, &size))
+	if (!PyArg_Parse(args, "(is#)", &fd, &buffer, &size))
 		return NULL;
-	BGN_SAVE
+	Py_BEGIN_ALLOW_THREADS
 	size = write(fd, buffer, size);
-	END_SAVE
+	Py_END_ALLOW_THREADS
 	if (size < 0)
 		return mac_error();
-	return newintobject((long)size);
+	return PyInt_FromLong((long)size);
 }
 
 #ifdef USE_MALLOC_DEBUG
-static object *
+static PyObject *
 mac_mstats(self, args)
-	object*self;
-	object *args;
+	PyObject*self;
+	PyObject *args;
 {
 	mstats("python");
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 #endif USE_MALLOC_DEBUG
 
-static struct methodlist mac_methods[] = {
+static struct PyMethodDef mac_methods[] = {
 	{"chdir",	mac_chdir},
 	{"close",	mac_close},
 #ifdef WEHAVE_DUP
@@ -625,13 +624,13 @@ static struct methodlist mac_methods[] = {
 void
 initmac()
 {
-	object *m, *d;
+	PyObject *m, *d;
 	
-	m = initmodule("mac", mac_methods);
-	d = getmoduledict(m);
+	m = Py_InitModule("mac", mac_methods);
+	d = PyModule_GetDict(m);
 	
 	/* Initialize mac.error exception */
-	MacError = newstringobject("mac.error");
-	if (MacError == NULL || dictinsert(d, "error", MacError) != 0)
-		fatal("can't define mac.error");
+	MacError = PyString_FromString("mac.error");
+	if (MacError == NULL || PyDict_SetItemString(d, "error", MacError) != 0)
+		Py_FatalError("can't define mac.error");
 }

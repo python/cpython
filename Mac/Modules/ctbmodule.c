@@ -26,7 +26,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 /* ctbcm objects */
 
 
-#include "allobjects.h"
+#include "Python.h"
 
 #include "macglue.h"
 
@@ -46,19 +46,19 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define 	_CommToolboxTrap		0x8B
 #define 	_UnimplementedOSTrap	0x9F
 
-extern object *PyErr_Mac(object *,int);
+extern PyObject *PyErr_Mac(PyObject *,int);
 
-static object *ErrorObject;
+static PyObject *ErrorObject;
 
 typedef struct {
-	OB_HEAD
+	PyObject_HEAD
 	ConnHandle hdl;		/* The handle to the connection */
-	object *callback;	/* Python callback routine */
+	PyObject *callback;	/* Python callback routine */
 	int has_callback;	/* True if callback not None */
 	int err;			/* Error to pass to the callback */
 } ctbcmobject;
 
-staticforward typeobject ctbcmtype;
+staticforward PyTypeObject ctbcmtype;
 
 #define is_ctbcmobject(v)		((v)->ob_type == &ctbcmtype)
 
@@ -86,7 +86,7 @@ initialize_ctb()
 	initialized = 0;
 	
 	if ( !TrapAvailable(_CommToolboxTrap, OSTrap) ) {
-		err_setstr(ErrorObject, "CTB not available");
+		PyErr_SetString(ErrorObject, "CTB not available");
 		return 0;
 	}
 	if ( (err=InitCTBUtilities()) ) {
@@ -110,16 +110,16 @@ ctbcm_pycallback(arg)
 	void *arg;
 {
 	ctbcmobject *self = (ctbcmobject *)arg;
-	object *args, *rv;
+	PyObject *args, *rv;
 	
 	if ( !self->has_callback )    /* It could have been removed in the meantime */
 		return 0;
-	args = mkvalue("(i)", self->err);
-	rv = call_object(self->callback, args);
-	DECREF(args);
+	args = Py_BuildValue("(i)", self->err);
+	rv = PyEval_CallObject(self->callback, args);
+	Py_DECREF(args);
 	if( rv == NULL )
 		return -1;
-	DECREF(rv);
+	Py_DECREF(rv);
 	return 0;
 }
 
@@ -139,15 +139,15 @@ ctbcm_ctbcallback(hconn)
 
 static ctbcmobject *
 newctbcmobject(arg)
-	object *arg;
+	PyObject *arg;
 {
 	ctbcmobject *self;
-	self = NEWOBJ(ctbcmobject, &ctbcmtype);
+	self = PyObject_NEW(ctbcmobject, &ctbcmtype);
 	if (self == NULL)
 		return NULL;
 	self->hdl = NULL;
-	INCREF(None);
-	self->callback = None;
+	Py_INCREF(Py_None);
+	self->callback = Py_None;
 	self->has_callback = 0;
 	return self;
 }
@@ -164,104 +164,104 @@ ctbcm_dealloc(self)
 		CMDispose(self->hdl);
 		self->hdl = NULL;
 	}
-	DEL(self);
+	PyMem_DEL(self);
 }
 
-static object *
+static PyObject *
 ctbcm_open(self, args)
 	ctbcmobject *self;
-	object *args;
+	PyObject *args;
 {
 	long timeout;
 	OSErr err;
 	ConnectionCompletionUPP cb_upp = NewConnectionCompletionProc(ctbcm_ctbcallback);
 	
-	if (!getargs(args, "l", &timeout))
+	if (!PyArg_Parse(args, "l", &timeout))
 		return NULL;
 	if ( (err=CMOpen(self->hdl, self->has_callback, cb_upp, timeout)) < 0)
 		return PyErr_Mac(ErrorObject, (int)err);
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
-static object *
+static PyObject *
 ctbcm_listen(self, args)
 	ctbcmobject *self;
-	object *args;
+	PyObject *args;
 {
 	long timeout;
 	OSErr err;
 	ConnectionCompletionUPP cb_upp = NewConnectionCompletionProc(ctbcm_ctbcallback);
 	
-	if (!getargs(args, "l", &timeout))
+	if (!PyArg_Parse(args, "l", &timeout))
 		return NULL;
 	if ( (err=CMListen(self->hdl,self->has_callback, cb_upp, timeout)) < 0)
 		return PyErr_Mac(ErrorObject, (int)err);
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
-static object *
+static PyObject *
 ctbcm_accept(self, args)
 	ctbcmobject *self;
-	object *args;
+	PyObject *args;
 {
 	int accept;
 	OSErr err;
 	
-	if (!getargs(args, "i", &accept))
+	if (!PyArg_Parse(args, "i", &accept))
 		return NULL;
 	if ( (err=CMAccept(self->hdl, accept)) < 0)
 		return PyErr_Mac(ErrorObject, (int)err);
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
-static object *
+static PyObject *
 ctbcm_close(self, args)
 	ctbcmobject *self;
-	object *args;
+	PyObject *args;
 {
 	int now;
 	long timeout;
 	OSErr err;
 	ConnectionCompletionUPP cb_upp = NewConnectionCompletionProc(ctbcm_ctbcallback);
 	
-	if (!getargs(args, "(li)", &timeout, &now))
+	if (!PyArg_Parse(args, "(li)", &timeout, &now))
 		return NULL;
 	if ( (err=CMClose(self->hdl, self->has_callback, cb_upp, timeout, now)) < 0)
 		return PyErr_Mac(ErrorObject, (int)err);
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
-static object *
+static PyObject *
 ctbcm_read(self, args)
 	ctbcmobject *self;
-	object *args;
+	PyObject *args;
 {
 	long timeout, len;
 	int chan;
 	CMFlags flags;
 	OSErr err;
-	object *rv;
+	PyObject *rv;
 	ConnectionCompletionUPP cb_upp = NewConnectionCompletionProc(ctbcm_ctbcallback);
 	
-	if (!getargs(args, "(lil)", &len, &chan, &timeout))
+	if (!PyArg_Parse(args, "(lil)", &len, &chan, &timeout))
 		return NULL;
-	if ((rv=newsizedstringobject(NULL, len)) == NULL)
+	if ((rv=PyString_FromStringAndSize(NULL, len)) == NULL)
 		return NULL;
-	if ((err=CMRead(self->hdl, (Ptr)getstringvalue(rv), &len, (CMChannel)chan,
+	if ((err=CMRead(self->hdl, (Ptr)PyString_AsString(rv), &len, (CMChannel)chan,
 				self->has_callback, cb_upp, timeout, &flags)) < 0)
 		return PyErr_Mac(ErrorObject, (int)err);
-	resizestring(&rv, len);
-	return mkvalue("(Oi)", rv, (int)flags);
+	_PyString_Resize(&rv, len);
+	return Py_BuildValue("(Oi)", rv, (int)flags);
 }
 
-static object *
+static PyObject *
 ctbcm_write(self, args)
 	ctbcmobject *self;
-	object *args;
+	PyObject *args;
 {
 	long timeout, len;
 	int chan, ilen, flags;
@@ -269,184 +269,184 @@ ctbcm_write(self, args)
 	char *buf;
 	ConnectionCompletionUPP cb_upp = NewConnectionCompletionProc(ctbcm_ctbcallback);
 	
-	if (!getargs(args, "(s#ili)", &buf, &ilen, &chan, &timeout, &flags))
+	if (!PyArg_Parse(args, "(s#ili)", &buf, &ilen, &chan, &timeout, &flags))
 		return NULL;
 	len = ilen;
 	if ((err=CMWrite(self->hdl, (Ptr)buf, &len, (CMChannel)chan,
 				self->has_callback, cb_upp, timeout, (CMFlags)flags)) < 0)
 		return PyErr_Mac(ErrorObject, (int)err);
-	return newintobject((int)len);
+	return PyInt_FromLong((int)len);
 }
 
-static object *
+static PyObject *
 ctbcm_status(self, args)
 	ctbcmobject *self;
-	object *args;
+	PyObject *args;
 {
 	CMBufferSizes sizes;
 	CMStatFlags flags;
 	OSErr err;
-	object *rv;
+	PyObject *rv;
 	
-	if (!getnoarg(args))
+	if (!PyArg_NoArgs(args))
 		return NULL;
 	if ((err=CMStatus(self->hdl, sizes, &flags)) < 0)
 		return PyErr_Mac(ErrorObject, (int)err);
-	rv = mkvalue("(llllll)", sizes[0], sizes[1], sizes[2], sizes[3], sizes[4], sizes[5]);
+	rv = Py_BuildValue("(llllll)", sizes[0], sizes[1], sizes[2], sizes[3], sizes[4], sizes[5]);
 	if ( rv == NULL )
 		return NULL;
-	return mkvalue("(Ol)", rv, (long)flags);
+	return Py_BuildValue("(Ol)", rv, (long)flags);
 }
 
-static object *
+static PyObject *
 ctbcm_getconfig(self, args)
 	ctbcmobject *self;
-	object *args;
+	PyObject *args;
 {
 	char *rv;
 
-	if (!getnoarg(args))
+	if (!PyArg_NoArgs(args))
 		return NULL;
 	if ((rv=(char *)CMGetConfig(self->hdl)) == NULL ) {
-		err_setstr(ErrorObject, "CMGetConfig failed");
+		PyErr_SetString(ErrorObject, "CMGetConfig failed");
 		return NULL;
 	}
-	return newstringobject(rv);
+	return PyString_FromString(rv);
 }
 
-static object *
+static PyObject *
 ctbcm_setconfig(self, args)
 	ctbcmobject *self;
-	object *args;
+	PyObject *args;
 {
 	char *cfg;
 	OSErr err;
 	
-	if (!getargs(args, "s", &cfg))
+	if (!PyArg_Parse(args, "s", &cfg))
 		return NULL;
 	if ((err=CMSetConfig(self->hdl, (Ptr)cfg)) < 0)
 		return PyErr_Mac(ErrorObject, err);
-	return newintobject((int)err);
+	return PyInt_FromLong((int)err);
 }
 
-static object *
+static PyObject *
 ctbcm_choose(self, args)
 	ctbcmobject *self;
-	object *args;
+	PyObject *args;
 {
 	int rv;
 	Point pt;
 
-	if (!getnoarg(args))
+	if (!PyArg_NoArgs(args))
 		return NULL;
 	pt.v = 40;
 	pt.h = 40;
 	rv=CMChoose(&self->hdl, pt, (ConnectionChooseIdleUPP)0);
-	return newintobject(rv);
+	return PyInt_FromLong(rv);
 }
 
-static object *
+static PyObject *
 ctbcm_idle(self, args)
 	ctbcmobject *self;
-	object *args;
+	PyObject *args;
 {
-	if (!getnoarg(args))
+	if (!PyArg_NoArgs(args))
 		return NULL;
 	CMIdle(self->hdl);
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
-static object *
+static PyObject *
 ctbcm_abort(self, args)
 	ctbcmobject *self;
-	object *args;
+	PyObject *args;
 {
-	if (!getnoarg(args))
+	if (!PyArg_NoArgs(args))
 		return NULL;
 	CMAbort(self->hdl);
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
-static object *
+static PyObject *
 ctbcm_reset(self, args)
 	ctbcmobject *self;
-	object *args;
+	PyObject *args;
 {
-	if (!getnoarg(args))
+	if (!PyArg_NoArgs(args))
 		return NULL;
 	CMReset(self->hdl);
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
-static object *
+static PyObject *
 ctbcm_break(self, args)
 	ctbcmobject *self;
-	object *args;
+	PyObject *args;
 {
 	long duration;
 	ConnectionCompletionUPP cb_upp = NewConnectionCompletionProc(ctbcm_ctbcallback);
 	
-	if (!getargs(args, "l", &duration))
+	if (!PyArg_Parse(args, "l", &duration))
 		return NULL;
 	CMBreak(self->hdl, duration,self->has_callback, cb_upp);
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
-static struct methodlist ctbcm_methods[] = {
-	{"Open",		(method)ctbcm_open},
-	{"Close",		(method)ctbcm_close},
-	{"Read",		(method)ctbcm_read},
-	{"Write",		(method)ctbcm_write},
-	{"Status",		(method)ctbcm_status},
-	{"GetConfig",	(method)ctbcm_getconfig},
-	{"SetConfig",	(method)ctbcm_setconfig},
-	{"Choose",		(method)ctbcm_choose},
-	{"Idle",		(method)ctbcm_idle},
-	{"Listen",		(method)ctbcm_listen},
-	{"Accept",		(method)ctbcm_accept},
-	{"Abort",		(method)ctbcm_abort},
-	{"Reset",		(method)ctbcm_reset},
-	{"Break",		(method)ctbcm_break},
+static struct PyMethodDef ctbcm_methods[] = {
+	{"Open",		(PyCFunction)ctbcm_open},
+	{"Close",		(PyCFunction)ctbcm_close},
+	{"Read",		(PyCFunction)ctbcm_read},
+	{"Write",		(PyCFunction)ctbcm_write},
+	{"Status",		(PyCFunction)ctbcm_status},
+	{"GetConfig",	(PyCFunction)ctbcm_getconfig},
+	{"SetConfig",	(PyCFunction)ctbcm_setconfig},
+	{"Choose",		(PyCFunction)ctbcm_choose},
+	{"Idle",		(PyCFunction)ctbcm_idle},
+	{"Listen",		(PyCFunction)ctbcm_listen},
+	{"Accept",		(PyCFunction)ctbcm_accept},
+	{"Abort",		(PyCFunction)ctbcm_abort},
+	{"Reset",		(PyCFunction)ctbcm_reset},
+	{"Break",		(PyCFunction)ctbcm_break},
 	{NULL,		NULL}		/* sentinel */
 };
 
-static object *
+static PyObject *
 ctbcm_getattr(self, name)
 	ctbcmobject *self;
 	char *name;
 {
 	if ( strcmp(name, "callback") == 0 ) {
-		INCREF(self->callback);
+		Py_INCREF(self->callback);
 		return self->callback;
 	}
-	return findmethod(ctbcm_methods, (object *)self, name);
+	return Py_FindMethod(ctbcm_methods, (PyObject *)self, name);
 }
 
 static int
 ctbcm_setattr(self, name, v)
 	ctbcmobject *self;
 	char *name;
-	object *v;
+	PyObject *v;
 {
 	if ( strcmp(name, "callback") != 0 ) {
-		err_setstr(AttributeError, "ctbcm objects have callback attr only");
+		PyErr_SetString(PyExc_AttributeError, "ctbcm objects have callback attr only");
 		return -1;
 	}
 	if ( v == NULL ) {
-		v = None;
+		v = Py_None;
 	}
-	INCREF(v);	/* XXXX Must I do this? */
+	Py_INCREF(v);	/* XXXX Must I do this? */
 	self->callback = v;
-	self->has_callback = (v != None);
+	self->has_callback = (v != Py_None);
 	return 0;
 }
 
-statichere typeobject ctbcmtype = {
-	OB_HEAD_INIT(&Typetype)
+statichere PyTypeObject ctbcmtype = {
+	PyObject_HEAD_INIT(&PyType_Type)
 	0,			/*ob_size*/
 	"ctbcm",			/*tp_name*/
 	sizeof(ctbcmobject),	/*tp_basicsize*/
@@ -467,13 +467,13 @@ statichere typeobject ctbcmtype = {
 
 /* Function of no arguments returning new ctbcm object */
 
-static object *
+static PyObject *
 ctb_cmnew(self, args)
-	object *self; /* Not used */
-	object *args;
+	PyObject *self; /* Not used */
+	PyObject *args;
 {
 	int strlen;
-	object *sizes_obj;
+	PyObject *sizes_obj;
 	char *c_str;
 	unsigned char p_str[255];
 	CMBufferSizes sizes;
@@ -481,16 +481,16 @@ ctb_cmnew(self, args)
 	ConnHandle hdl;
 	ctbcmobject *rv;
 	
-	if (!getargs(args, "(s#O)", &c_str, &strlen, &sizes_obj))
+	if (!PyArg_Parse(args, "(s#O)", &c_str, &strlen, &sizes_obj))
 		return NULL;
 	strncpy((char *)p_str+1, c_str, strlen);
 	p_str[0] = strlen;
 	if (!initialize_ctb())
 		return NULL;
-	if ( sizes_obj == None ) {
+	if ( sizes_obj == Py_None ) {
 		memset(sizes, '\0', sizeof sizes);
 	} else {
-		if ( !getargs(sizes_obj, "(llllll)", &sizes[0], &sizes[1], &sizes[2],
+		if ( !PyArg_Parse(sizes_obj, "(llllll)", &sizes[0], &sizes[1], &sizes[2],
 						&sizes[3], &sizes[4], &sizes[5]))
 			return NULL;
 	}
@@ -498,7 +498,7 @@ ctb_cmnew(self, args)
 		return PyErr_Mac(ErrorObject, procid);
 	hdl = CMNew(procid, cmNoMenus|cmQuiet, sizes, 0, 0);
 	if ( hdl == NULL ) {
-		err_setstr(ErrorObject, "CMNew failed");
+		PyErr_SetString(ErrorObject, "CMNew failed");
 		return NULL;
 	}
 	rv = newctbcmobject(args);
@@ -506,26 +506,26 @@ ctb_cmnew(self, args)
 	    return NULL;   /* XXXX Should dispose of hdl */
 	rv->hdl = hdl;
 	CMSetUserData(hdl, (long)rv);
-	return (object *)rv;
+	return (PyObject *)rv;
 }
 
-static object *
+static PyObject *
 ctb_available(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
 	int ok;
 	
-	if (!getnoarg(args))
+	if (!PyArg_NoArgs(args))
 		return NULL;
 	ok = initialize_ctb();
-	err_clear();
-	return newintobject(ok);
+	PyErr_Clear();
+	return PyInt_FromLong(ok);
 }
 
 /* List of functions defined in the module */
 
-static struct methodlist ctb_methods[] = {
+static struct PyMethodDef ctb_methods[] = {
 	{"CMNew",		ctb_cmnew},
 	{"available",	ctb_available},
 	{NULL,		NULL}		/* sentinel */
@@ -537,15 +537,15 @@ static struct methodlist ctb_methods[] = {
 void
 initctb()
 {
-	object *m, *d, *o;
+	PyObject *m, *d, *o;
 
 	/* Create the module and add the functions */
-	m = initmodule("ctb", ctb_methods);
+	m = Py_InitModule("ctb", ctb_methods);
 
 	/* Add some symbolic constants to the module */
-	d = getmoduledict(m);
+	d = PyModule_GetDict(m);
 	
-#define CMCONST(name, value) o = newintobject(value); dictinsert(d, name, o)
+#define CMCONST(name, value) o = PyInt_FromLong(value); PyDict_SetItemString(d, name, o)
 
 	CMCONST("cmData", 1);
 	CMCONST("cmCntl", 2);
@@ -576,10 +576,10 @@ initctb()
 	CMCONST("cmStatusListenPend", 0x2000);
 	CMCONST("cmStatusIncomingCallPresent", 0x4000);
 	
-	ErrorObject = newstringobject("ctb.error");
-	dictinsert(d, "error", ErrorObject);
+	ErrorObject = PyString_FromString("ctb.error");
+	PyDict_SetItemString(d, "error", ErrorObject);
 
 	/* Check for errors */
-	if (err_occurred())
-		fatal("can't initialize module ctb");
+	if (PyErr_Occurred())
+		Py_FatalError("can't initialize module ctb");
 }

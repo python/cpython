@@ -24,26 +24,25 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* Macintosh Gestalt interface */
 
-#include "allobjects.h"
-#include "modsupport.h"
+#include "Python.h"
 
 #include <Types.h>
 #include <GestaltEqu.h>
 
-static object *
+static PyObject *
 gestalt_gestalt(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
 	OSErr iErr;
 	char *str;
 	int size;
 	OSType selector;
 	long response;
-	if (!getargs(args, "s#", &str, &size))
+	if (!PyArg_Parse(args, "s#", &str, &size))
 		return NULL;
 	if (size != 4) {
-		err_setstr(TypeError, "gestalt arg must be 4-char string");
+		PyErr_SetString(PyExc_TypeError, "gestalt arg must be 4-char string");
 		return NULL;
 	}
 	selector = *(OSType*)str;
@@ -51,13 +50,13 @@ gestalt_gestalt(self, args)
 	if (iErr != 0) {
 		char buf[100];
 		sprintf(buf, "Gestalt error code %d", iErr);
-		err_setstr(RuntimeError, buf);
+		PyErr_SetString(PyExc_RuntimeError, buf);
 		return NULL;
 	}
-	return newintobject(response);
+	return PyInt_FromLong(response);
 }
 
-static struct methodlist gestalt_methods[] = {
+static struct PyMethodDef gestalt_methods[] = {
 	{"gestalt", gestalt_gestalt},
 	{NULL, NULL} /* Sentinel */
 };
@@ -65,5 +64,5 @@ static struct methodlist gestalt_methods[] = {
 void
 initgestalt()
 {
-	initmodule("gestalt", gestalt_methods);
+	Py_InitModule("gestalt", gestalt_methods);
 }
