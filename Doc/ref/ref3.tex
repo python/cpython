@@ -447,8 +447,8 @@ function).
 
 Special read-only attributes: \member{im_self} is the class instance
 object, \member{im_func} is the function object;
-\member{im_class} is the class that defined the method (which may be a
-base class of the class of which \member{im_self} is an instance);
+\member{im_class} is the class of \member{im_self} for bound methods,
+or the class that asked for the method for unbound methods);
 \member{__doc__} is the method's documentation (same as
 \code{im_func.__doc__}); \member{__name__} is the method name (same as
 \code{im_func.__name__}).
@@ -467,8 +467,8 @@ case (class attribute), the \member{im_self} attribute is \code{None},
 and the method object is said to be unbound; in the latter case
 (instance attribute), \method{im_self} is the instance, and the method
 object is said to be bound.  For
-instance, when \class{C} is a class which contains a definition for a
-function \method{f()}, \code{C.f} does not yield the function object
+instance, when \class{C} is a class which has a method
+\method{f()}, \code{C.f} does not yield the function object
 \code{f}; rather, it yields an unbound method object \code{m} where
 \code{m.im_class} is \class{C}, \code{m.im_func} is \method{f()}, and
 \code{m.im_self} is \code{None}.  When \code{x} is a \class{C}
@@ -597,7 +597,6 @@ base class list.
 When a class attribute reference would yield a user-defined function
 object, it is transformed into an unbound user-defined method object
 (see above).  The \member{im_class} attribute of this method object is the
-class in which the function object was found, not necessarily the
 class for which the attribute reference was initiated.
 \obindex{class}
 \obindex{class instance}
@@ -639,7 +638,7 @@ the search continues with the class attributes.  If a class attribute
 is found that is a user-defined function object (and in no other
 case), it is transformed into an unbound user-defined method object
 (see above).  The \member{im_class} attribute of this method object is
-the class in which the function object was found, not necessarily the
+the
 class of the instance for which the attribute reference was initiated.
 If no class attribute is found, and the object's class has a
 \method{__getattr__()} method, that is called to satisfy the lookup.
