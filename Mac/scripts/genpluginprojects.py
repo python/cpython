@@ -36,7 +36,7 @@ def genpluginproject(architecture, module,
 		sources=[], sourcedirs=[],
 		libraries=[], extradirs=[],
 		extraexportsymbols=[], outputdir=":::Lib:lib-dynload",
-		libraryflags=None, stdlibraryflags=None):
+		libraryflags=None, stdlibraryflags=None, prefixname=None):
 	if architecture == "all":
 		# For the time being we generate two project files. Not as nice as
 		# a single multitarget project, but easier to implement for now.
@@ -78,7 +78,9 @@ def genpluginproject(architecture, module,
 		else:
 			print "Warning: %s: sourcefile not found: %s"%(module, sources[0])
 			sourcedirs = []
-	if architecture == "carbon":
+	if prefixname:
+		pass
+	elif architecture == "carbon":
 		prefixname = "mwerks_carbonplugin_config.h"
 	else:
 		prefixname = "mwerks_plugin_config.h"
