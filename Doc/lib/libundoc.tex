@@ -92,12 +92,15 @@ To use any of these modules, add that directory to \code{sys.path},
 possibly using \envvar{PYTHONPATH}.
 
 \begin{description}
-\item[\module{newdir}]
---- New \function{dir()} function (the standard \function{dir()} is
-now just as good)
-
 \item[\module{addpack}]
 --- alternate approach to packages
+
+\item[\module{cmp}]
+--- File comparison function.  Use the newer \module{filecmp} instead.
+
+\item[\module{cmpcache}]
+--- Caching version of the obsolete \module{cmp} module.  Use the
+newer \module{filecmp} instead.
 
 \item[\module{codehack}]
 --- Extract function name or line number from a function
@@ -111,12 +114,16 @@ code object (these are now accessible as attributes:
 \item[\module{fmt}]
 --- text formatting abstractions (too slow)
 
-\item[\module{Para}]
---- helper for fmt.py
-
 \item[\module{lockfile}]
 --- wrapper around FCNTL file locking (use
 \function{fcntl.lockf()}/\function{flock()} intead; see \refmodule{fcntl})
+
+\item[\module{newdir}]
+--- New \function{dir()} function (the standard \function{dir()} is
+now just as good)
+
+\item[\module{Para}]
+--- helper for fmt.py
 
 \item[\module{poly}]
 --- Polynomials
