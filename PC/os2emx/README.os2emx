@@ -5,9 +5,16 @@ What's new since the previous release
 -------------------------------------
 
 This release of the port incorporates the following changes from the 
-December 24, 2001 release of the Python 2.2 port:
+April 14, 2002 release of the Python 2.2.1 port:
 
 - based on the Python v2.3 final release source.
+- now setting higher number of file handles (250).
+- defaults to building with PyMalloc enabled (Python 2.3 default).
+- the port is now maintained in the Python CVS repository.
+
+Python 2.3 incorporates several changes which have resolved the 
+longstanding problems the EMX port has had with test_longexp (used 
+to be "YOU HAVE BEEN WARNED" item 1).
   
 
 Licenses and info about Python and EMX
@@ -66,10 +73,12 @@ Previous Python port releases by me:-
  - v2.0 (Stackless re-release) on June 18, 2001.
  - v2.1.1 on August 5, 2001;
  - v2.1.1 on August 12, 2001 (cleanup release);
- - v2.1.1 (updated DLL) on August 14, 2001.
- - v2.2b2 on December 8, 2001 (not uploaded to archive sites)
- - v2.2c1 on December 16, 2001 (not uploaded to archive sites)
- - v2.2 on December 24, 2001
+ - v2.1.1 (updated DLL) on August 14, 2001;
+ - v2.2b2 on December 8, 2001 (not uploaded to archive sites);
+ - v2.2c1 on December 16, 2001 (not uploaded to archive sites);
+ - v2.2 on December 24, 2001;
+ - v2.2.1c2 on March 31, 2002 (not uploaded to archive sites);
+ - v2.2.1 on April 14, 2002.
 
 It is possible to have these earlier ports still usable after installing 
 this port - see the README.os2emx.multiple_versions file, contributed by
@@ -91,7 +100,7 @@ My development system is running OS/2 v4 with fixpack 12.
 - GNU Readline (Kai Uwe Rommel's port available from Hobbes or LEO, v2.1)
 - GNU GDBM     (Kai Uwe Rommel's port available from Hobbes or LEO, v1.7.3)
 - zlib         (Hung-Chi Chu's port available from Hobbes or LEO, v1.1.3)
-- expat        (from ftp://ftp.jclark.com/pub/xml/, v1.2)
+- expat        (distributed with Python, v1.95.2)
 - GNU MP       (Peter Meerwald's port available from LEO, v2.0.2)
 - GNU UFC      (Kai Uwe Rommel's port available from LEO, v2.0.4)
 
@@ -113,7 +122,8 @@ to compile & link the executable.  This is so that fork() works (see
 
 Python23.dll is created as a normal OMF DLL, with an OMF import 
 library and module definition file.  There is also an a.out (.a) import 
-library to support linking the DLL to a.out executables.
+library to support linking the DLL to a.out executables.  The DLL 
+requires the EMX runtime DLLs.
 
 This port has been built with complete support for multithreading.
 
@@ -278,46 +288,7 @@ YOU HAVE BEEN WARNED!!
 
 I know about a number of nasties in this port.
 
-1.  EMX's malloc() and/or the underlying OS/2 VM system aren't particularly 
-comfortable with Python's use of heap memory.  The test_longexp regression 
-test exhausts the available swap space on a machine with 64MB of RAM with 
-150MB of available swap space.
-
-Using a crudely instrumented wrapper around malloc()/realloc()/free(), the 
-heap memory usage of the expression at the core of the test 
-(eval('[' + '2,' * NUMREPS + ']')) is as follows (approximately):
-  NUMREPS = 1       => 300k
-  NUMREPS = 10000   => 22MB
-  NUMREPS = 20500   => 59MB
-
-I don't even have enough memory to try for NUMREPS = 25000 :-(, let alone 
-the NUMREPS = 65580 in test_longexp!  I do have a report that the test 
-succeeds in the presence of sufficient memory (~200MB RAM).
-
-During the course of running the test routine, the Python parser 
-allocates lots of 21 byte memory chunks, each of which is actually 
-a 64 byte allocation.  There are a smaller number of 3 byte allocations 
-which consume 12 bytes each.  Consequently, more than 3 times as much 
-memory is allocated than is actually used.
-
-The Python Object Allocator code (PyMalloc) was introduced in Python 2.1 
-for Python's core to be able to wrap the malloc() system to deal with 
-problems with "unfriendly" malloc() behaviour, such as this.  Unfortunately 
-for the OS/2 port, it is only supported for the allocation of memory for 
-objects, whereas my research into this problem indicates it is the parser 
-which is source of this particular malloc() frenzy.
-
-I have attempted using PyMalloc to manage all of Python's memory 
-allocation.  While this works fine (modulo the socket regression test 
-failing in the absence of a socket.pyc), it is a significant performance 
-hit - the time to run the regression test blows out from ~3.5 minutes to 
-~5.75 minutes on my system.
-
-I therefore don't plan to pursue this any further for the time being.
-
-Be aware that certain types of expressions could well bring your system 
-to its knees as a result of this issue.  I have modified the longexp test 
-to report failure to highlight this.
+{1.  Issue resolved...}
 
 2.  Eberhard Mattes, author of EMX, writes in his documentation that fork() 
 is very inefficient in the OS/2 environment.  It also requires that the 
@@ -528,6 +499,23 @@ Include subdirectory with all other include files.
 
 [2001/12/08] - 2.2 Final
 
+[2002/03/31] - 2.2.1 Release Candidate 2
+
+[2002/04/14] - 2.2.1 Final
+
+[2002/8/18]
+
+26.  now explicitly set the number of file handles available to a 
+Python process to 250.  EMX default is 40, which is insufficient for the 
+recently checked in security improvments to the tempfile regression 
+test (test_tempfile) which tries to create 100 temporary files.
+
+This setting can be overridden via the EMXOPT environment variable:
+  set EMXOPT=-h250
+is equivalent to the setting currently used.  The emxbind utility (if you 
+have it installed) can also be used to permanently change the setting in 
+python.exe - please refer to the EMX documentation for more information.
+
 ... probably other issues that I've not encountered, or don't remember :-(
 
 If you encounter other difficulties with this port, which can be 
@@ -567,4 +555,4 @@ Andrew MacIntyre
 E-mail: andymac@bullseye.apana.org.au, or andymac@pcug.org.au
 Web:    http://www.andymac.org/
 
-24 December, 2001.
+18 August, 2001.
