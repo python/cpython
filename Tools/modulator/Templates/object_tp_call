@@ -1,0 +1,9 @@
+
+static PyObject *
+$abbrev$_call(self, args)
+	$abbrev$object *self;
+	PyObject *args;
+{
+	/* XXXX Return the result of calling self with argument args */
+}
+
