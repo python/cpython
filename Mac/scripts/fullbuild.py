@@ -3,17 +3,21 @@
 # distribution can be made, and puts it all in the right place.
 #
 # It expects the projects to be in the places where Jack likes them:
-# in directories named like 'build.macppc.shared'. That is fixable,
+# in directories named like 'build.mac'. That is fixable,
 # however.
 #
 # NOTE: You should proably make a copy of python with which to execute this
 # script, rebuilding running programs does not work...
+
+MACBUILDNO=":Mac:Include:macbuildno.h"
 
 import os
 import sys
 import macfs
 import MacOS
 import EasyDialogs
+import regex
+import string
 
 import addpack
 import aetools
@@ -180,6 +184,21 @@ I_APPLETS : (buildapplet, None, [
 		":Mac:scripts:ConfigurePython.py"
 	]),
 }
+
+def incbuildno(filename):
+	fp = open(filename)
+	line = fp.readline()
+	fp.close()
+	
+	pat = regex.compile('#define BUILD \([0-9][0-9]*\)')
+	pat.match(line)
+	buildno = pat.group(1)
+	if not buildno:
+		raise 'Incorrect macbuildno.h line', line
+	new = string.atoi(buildno) + 1
+	fp = open(filename, 'w')
+	fp.write('#define BUILD %d\n'%new)
+	fp.close()
 				
 def main():
 	try:
@@ -193,6 +212,8 @@ def main():
 	dir = dir.as_pathname()
 	
 	todo = handle_dialog()
+	
+	incbuildno(os.path.join(dir, MACBUILDNO))
 	
 	instructions = []
 	for i in todo:
