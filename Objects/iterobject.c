@@ -71,6 +71,19 @@ iter_iternext(PyObject *iterator)
 	return NULL;
 }
 
+static int
+iter_len(seqiterobject *it)
+{
+	if (it->it_seq)
+		return PyObject_Size(it->it_seq) - it->it_index;
+	return 0;
+}
+
+static PySequenceMethods iter_as_sequence = {
+	(inquiry)iter_len,		/* sq_length */
+	0,				/* sq_concat */
+};
+
 PyTypeObject PySeqIter_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,					/* ob_size */
@@ -85,7 +98,7 @@ PyTypeObject PySeqIter_Type = {
 	0,					/* tp_compare */
 	0,					/* tp_repr */
 	0,					/* tp_as_number */
-	0,					/* tp_as_sequence */
+	&iter_as_sequence,			/* tp_as_sequence */
 	0,					/* tp_as_mapping */
 	0,					/* tp_hash */
 	0,					/* tp_call */

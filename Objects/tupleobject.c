@@ -839,6 +839,19 @@ tupleiter_next(tupleiterobject *it)
 	return NULL;
 }
 
+static int
+tupleiter_len(tupleiterobject *it)
+{
+	if (it->it_seq)
+		return PyTuple_GET_SIZE(it->it_seq) - it->it_index;
+	return 0;
+}
+
+static PySequenceMethods tupleiter_as_sequence = {
+	(inquiry)tupleiter_len,		/* sq_length */
+	0,				/* sq_concat */
+};
+
 PyTypeObject PyTupleIter_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,					/* ob_size */
@@ -853,7 +866,7 @@ PyTypeObject PyTupleIter_Type = {
 	0,					/* tp_compare */
 	0,					/* tp_repr */
 	0,					/* tp_as_number */
-	0,					/* tp_as_sequence */
+	&tupleiter_as_sequence,			/* tp_as_sequence */
 	0,					/* tp_as_mapping */
 	0,					/* tp_hash */
 	0,					/* tp_call */
