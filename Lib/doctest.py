@@ -848,7 +848,8 @@ class DocTestFinder:
     """
 
     def __init__(self, verbose=False, parser=DocTestParser(),
-                 recurse=True, _namefilter=None):
+                 recurse=True, _namefilter=None,
+                 exclude_empty=False):
         """
         Create a new doctest finder.
 
@@ -860,10 +861,14 @@ class DocTestFinder:
 
         If the optional argument `recurse` is false, then `find` will
         only examine the given object, and not any contained objects.
+
+        If the optional argument `exclude_empty` is true, then `find`
+        will exclude tests for objects with empty docstrings.
         """
         self._parser = parser
         self._verbose = verbose
         self._recurse = recurse
+        self._exclude_empty = exclude_empty
         # _namefilter is undocumented, and exists only for temporary backward-
         # compatibility support of testmod's deprecated isprivate mess.
         self._namefilter = _namefilter
@@ -1055,17 +1060,18 @@ class DocTestFinder:
         else:
             try:
                 if obj.__doc__ is None:
-                    return None
-                docstring = str(obj.__doc__)
+                    docstring = ''
+                else:
+                    docstring = str(obj.__doc__)
             except (TypeError, AttributeError):
-                return None
-
-        # Don't bother if the docstring is empty.
-        if not docstring:
-            return None
+                docstring = ''
 
         # Find the docstring's location in the file.
         lineno = self._find_lineno(obj, source_lines)
+
+        # Don't bother if the docstring is empty.
+        if self._exclude_empty and not docstring:
+            return None
 
         # Return a DocTest for this object.
         if module is None:
