@@ -98,19 +98,17 @@ def _once(var, initializer):
     """
 
     vars = globals()
-    lock = _once_lock
-
     # Check first outside the lock.
     if vars.get(var) is not None:
         return
     try:
-        lock.acquire()
+        _once_lock.acquire()
         # Check again inside the lock.
         if vars.get(var) is not None:
             return
         vars[var] = initializer()
     finally:
-        lock.release()
+        _once_lock.release()
 
 class _RandomNameSequence:
     """An instance of _RandomNameSequence generates an endless
