@@ -148,12 +148,43 @@ def split_letters(nodes):
     return letter_groups
 
 
+# need a function to separate the nodes into columns...
+def split_columns(nodes, columns=1):
+    if columns <= 1:
+        return (nodes,)
+    # This is a rough height; we may have to increase to avoid breaks before
+    # a subitem.
+    colheight = len(nodes) / columns
+    numlong = len(nodes) % columns
+    if numlong:
+        colheight = colheight + 1
+    else:
+        numlong = columns
+    cols = []
+    for i in range(numlong):
+        start = i * colheight
+        end = start + colheight
+        cols.append(nodes[start:end])
+    del nodes[:end]
+    colheight = colheight - 1
+    try:
+        numshort = len(nodes) / colheight
+    except ZeroDivisionError:
+        cols = cols + (columns - len(cols)) * [[]]
+    else:
+        for i in range(numshort):
+            start = i * colheight
+            end = start + colheight
+            cols.append(nodes[start:end])
+    return tuple(cols)
+
+
 DL_LEVEL_INDENT = "  "
 
-def format_nodes(nodes):
-    level = 0
+def format_column(nodes):
     strings = ["<dl compact>"]
     append = strings.append
+    level = 0
     previous = []
     for node in nodes:
         current = node.text
@@ -183,6 +214,26 @@ def format_nodes(nodes):
         previous = current
     append("\n")
     append("</dl>" * (level + 1))
+    return string.join(strings, '')
+
+
+def format_nodes(nodes, columns=1):
+    strings = []
+    append = strings.append
+    if columns > 1:
+        colnos = range(columns)
+        colheight = len(nodes) / columns
+        if len(nodes) % columns:
+            colheight = colheight + 1
+        colwidth = 100 / columns
+        append('<table width="100%"><tr valign="top">')
+        for col in split_columns(nodes, columns):
+            append('<td width="%d%%">\n' % colwidth)
+            append(format_column(col))
+            append("\n</td>")
+        append("\n</tr></table>")
+    else:
+        append(format_column(nodes))
     append("\n<p>\n")
     return string.join(strings, '')
 
@@ -198,7 +249,7 @@ def format_letter(letter):
            % (letter, lettername)
 
 
-def format_html(nodes):
+def format_html(nodes, columns=1):
     letter_groups = split_letters(nodes)
     items = []
     for letter, nodes in letter_groups:
@@ -207,7 +258,7 @@ def format_html(nodes):
     s = ["<hr><center>\n%s</center>\n" % string.join(items, " |\n")]
     for letter, nodes in letter_groups:
         s.append(format_letter(letter))
-        s.append(format_nodes(nodes))
+        s.append(format_nodes(nodes, columns))
     return string.join(s, '')
 
 
@@ -237,10 +288,13 @@ def main():
     import getopt
     ifn = "-"
     ofn = "-"
-    opts, args = getopt.getopt(sys.argv[1:], "o:", ["output="])
+    columns = 1
+    opts, args = getopt.getopt(sys.argv[1:], "c:o:", ["columns=", "output="])
     for opt, val in opts:
         if opt in ("-o", "--output"):
             ofn = val
+        elif opt in ("-c", "--columns"):
+            columns = string.atoi(val)
     if not args:
         args = [ifn]
     nodes = []
@@ -248,7 +302,7 @@ def main():
         nodes = nodes + load(open(fn))
     nodes.sort()
     collapse(nodes)
-    html = format_html(nodes)
+    html = format_html(nodes, columns)
     if ofn == "-":
         sys.stdout.write(html)
     else:
