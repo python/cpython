@@ -14,6 +14,10 @@
 long PyThread_get_thread_ident(void);
 #endif
 
+#if !defined(THREAD_STACK_SIZE)
+#define	THREAD_STACK_SIZE	0x10000
+#endif
+
 /*
  * Initialization of the C package, should not be needed.
  */
@@ -31,7 +35,7 @@ PyThread_start_new_thread(void (*func)(void *), void *arg)
 	int aThread;
 	int success = 0;
 
-	aThread = _beginthread(func,NULL,65536,arg);
+	aThread = _beginthread(func, NULL, THREAD_STACK_SIZE, arg);
 
 	if (aThread == -1) {
 		success = -1;
