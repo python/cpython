@@ -13,7 +13,7 @@ OPT=-g
 
 # Where Python is installed, and which version
 INST=/usr/local
-VER=1.5
+VER=2.0
 
 # Expressions using the above definitions -- no need to change
 PYVER=python$(VER)
@@ -28,7 +28,7 @@ PYLIBS=$(PYC)/lib$(PYVER).a
 # Libraries to link with -- very installation dependent
 # (See LIBS= in Modules/Makefile in build tree)
 RLLIBS=-lreadline -ltermcap
-OTHERLIBS=-lsocket -lnsl -lpthread -ldl -lm
+OTHERLIBS=-lnsl -lpthread -ldl -lm -ldb -lutil
 
 # Compilation and link flags -- no need to change normally
 CFLAGS=$(PYINCL) $(OPT)
