@@ -40,7 +40,8 @@ commentclose = regex.compile('--[ \t\n]*>')
 class SGMLParser:
 
 	# Interface -- initialize and reset this instance
-	def __init__(self):
+	def __init__(self, verbose=0):
+		self.verbose = verbose
 		self.reset()
 
 	# Interface -- reset this instance.  Loses all unprocessed data
@@ -141,7 +142,8 @@ class SGMLParser:
 			k = incomplete.match(rawdata, i)
 			if k < 0: raise RuntimeError, 'no incomplete match ??'
 			j = i+k
-			if j == n: break # Really incomplete
+			if j == n or rawdata[i:i+2] == '<!':
+				break # Really incomplete
 			self.handle_data(rawdata[i:j])
 			i = j
 		# end while
@@ -234,8 +236,9 @@ class SGMLParser:
 
 	# Example -- report an unbalanced </...> tag.
 	def report_unbalanced(self, tag):
-		print '*** Unbalanced </' + tag + '>'
-		print '*** Stack:', self.stack
+		if self.verbose:
+			print '*** Unbalanced </' + tag + '>'
+			print '*** Stack:', self.stack
 
 	# Example -- handle character reference, no need to override
 	def handle_charref(self, name):
@@ -256,7 +259,6 @@ class SGMLParser:
 	# Example -- handle entity reference, no need to override
 	def handle_entityref(self, name):
 		table = self.entitydefs
-		name = string.lower(name)
 		if table.has_key(name):
 			self.handle_data(table[name])
 		else:
