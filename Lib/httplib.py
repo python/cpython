@@ -614,7 +614,7 @@ class FakeSocket:
                     break
                 raise
             except socket.error, err:
-                if err[0] = errno.EINTR:
+                if err[0] == errno.EINTR:
                     continue
                 raise
             if buf == '':
