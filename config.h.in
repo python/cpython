@@ -102,6 +102,9 @@
 /* Define if you have POSIX threads */
 #undef _POSIX_THREADS
 
+/* Define if you have BeOS threads */
+#undef BEOS_THREADS
+
 /* Define to force use of thread-safe errno, h_errno, and other functions */
 #undef _REENTRANT
 
@@ -399,6 +402,12 @@
 
 /* Define if you have the ieee library (-lieee).  */
 #undef HAVE_LIBIEEE
+
+/* Define if your compiler supports long long.  */
+#undef HAVE_LONG_LONG
+
+/* The number of bytes in a long long.  */
+#undef SIZEOF_LONG_LONG
 
 /* Define if you have the m library (-lm).  */
 #undef HAVE_LIBM
