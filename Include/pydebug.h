@@ -37,7 +37,6 @@ extern "C" {
 
 extern DL_IMPORT(int) Py_DebugFlag;
 extern DL_IMPORT(int) Py_VerboseFlag;
-extern DL_IMPORT(int) Py_SuppressPrintingFlag;
 extern DL_IMPORT(int) Py_InteractiveFlag;
 extern DL_IMPORT(int) Py_OptimizeFlag;
 
