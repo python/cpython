@@ -27,7 +27,7 @@ def confirm(outcome, name):
     tests = tests + 1
     if outcome:
         if verbose:
-            print "Failed", name
+            print "Passed", name
     else:
         failures.append(name)
 
