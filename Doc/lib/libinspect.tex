@@ -287,3 +287,18 @@ context to return, which are centered around the current line.
   Return a list of frame records for the stack below the current
   exception.
 \end{funcdesc}
+
+Stackframes stored directly or indirectly in local variables can
+easily cause reference cycles the garbage collector can't collect,
+leading to memory leaks.  To avoid this, it's a good idea to
+explicitly remove the cycle in a \keyword{finally} clause.  For
+example:
+
+\begin{verbatim}
+def handle_stackframe_without_leak():
+    frame = inspect.currentframe()
+    try:
+        # do something with the frame
+    finally:
+        del frame
+\end{verbatim}
