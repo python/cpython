@@ -592,7 +592,10 @@ instance_getattr1(inst, name)
 	if (v == NULL) {
 		v = class_lookup(inst->in_class, name, &class);
 		if (v == NULL) {
-			PyErr_SetObject(PyExc_AttributeError, name);
+			PyErr_Format(PyExc_AttributeError,
+				     "'%.50s' instance has no attribute '%.400s'",
+				     PyString_AsString(inst->in_class->cl_name),
+				     sname);
 			return NULL;
 		}
 	}
