@@ -12,6 +12,15 @@
 #include <signal.h>
 #include <errno.h>
 
+#if defined(HAVE_LOCALE_H) && defined(HAVE_SETLOCALE)
+/* GNU readline() mistakenly sets the LC_CTYPE locale.
+ * This is evil.  Only the user or the app's main() should do this!
+ * We must save and restore the locale around the rl_initialize() call.
+ */
+#define SAVE_LOCALE
+#include <locale.h>
+#endif
+
 /* GNU readline definitions */
 #undef HAVE_CONFIG_H /* Else readline/chardefs.h includes strings.h */
 #include <readline/readline.h>
@@ -538,6 +547,10 @@ flex_complete(char *text, int start, int end)
 static void
 setup_readline(void)
 {
+#ifdef SAVE_LOCALE
+	char *saved_locale = setlocale(LC_CTYPE, NULL);
+#endif
+
 	using_history();
 
 	rl_readline_name = "python";
@@ -571,6 +584,10 @@ setup_readline(void)
 	 * inside this function.  Nothing we can do about it.
 	 */
 	rl_initialize();
+
+#ifdef SAVE_LOCALE
+	setlocale(LC_CTYPE, saved_locale); /* Restore locale */
+#endif
 }
 
 
