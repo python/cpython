@@ -1346,6 +1346,18 @@ Tkapp_Quit(self, args)
 	return Py_None;
 }
 
+static PyObject *
+Tkapp_InterpAddr(self, args)
+	PyObject *self;
+	PyObject *args;
+{
+
+	if (!PyArg_ParseTuple(args, ""))
+		return NULL;
+
+	return PyInt_FromLong((long)Tkapp_Interp(self));
+}
+
 
 
 /**** Tkapp Method List ****/
@@ -1385,6 +1397,7 @@ static PyMethodDef Tkapp_methods[] =
 	{"mainloop", 	       Tkapp_MainLoop, 1},
 	{"dooneevent", 	       Tkapp_DoOneEvent, 1},
 	{"quit", 	       Tkapp_Quit, 1},
+	{"interpaddr",         Tkapp_InterpAddr, 1},
 	{NULL, 		       NULL}
 };
 
