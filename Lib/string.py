@@ -101,10 +101,12 @@ class _multimap:
 
 class _TemplateMetaclass(type):
     pattern = r"""
-    (?P<escaped>%(delim)s{2})       |   # Escape sequence of two delimiters
-    %(delim)s(?P<named>%(id)s)      |   # delimiter and a Python identifier
-    %(delim)s{(?P<braced>%(id)s)}   |   # delimiter and a braced identifier
-    (?P<invalid>%(delim)s)              # Other ill-formed delimiter exprs
+    %(delim)s(?:
+      (?P<escaped>%(delim)s) |   # Escape sequence of two delimiters
+      (?P<named>%(id)s)      |   # delimiter and a Python identifier
+      {(?P<braced>%(id)s)}   |   # delimiter and a braced identifier
+      (?P<invalid>)              # Other ill-formed delimiter exprs
+    )
     """
 
     def __init__(cls, name, bases, dct):
