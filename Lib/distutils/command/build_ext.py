@@ -58,6 +58,8 @@ class BuildExt (Command):
                 "directories to search for shared C libraries at runtime"),
                ('link-objects=', 'O',
                 "extra explicit link objects to include in the link"),
+               ('debug', 'g',
+                "compile/link with debugging information"),
               ]
 
 
@@ -73,12 +75,15 @@ class BuildExt (Command):
         self.library_dirs = None
         self.rpath = None
         self.link_objects = None
+        self.debug = None
 
 
     def set_final_options (self):
         from distutils import sysconfig
 
-        self.set_undefined_options ('build', ('build_platlib', 'build_dir'))
+        self.set_undefined_options ('build',
+                                    ('build_platlib', 'build_dir'),
+                                    ('debug', 'debug'))
 
         if self.package is None:
             self.package = self.distribution.ext_package
@@ -223,7 +228,8 @@ class BuildExt (Command):
             include_dirs = build_info.get ('include_dirs')
             self.compiler.compile (sources,
                                    macros=macros,
-                                   include_dirs=include_dirs)
+                                   include_dirs=include_dirs,
+                                   debug=self.debug)
 
             # Now link the object files together into a "shared object" --
             # of course, first we have to figure out all the other things
@@ -236,7 +242,8 @@ class BuildExt (Command):
             library_dirs = build_info.get ('library_dirs')
             extra_args = build_info.get ('extra_link_args') or []
             if self.compiler.compiler_type == 'msvc':
-                extra_args.append ('/export:init%s' % extension_name)
+                mod_name = string.split (extension_name, '.')[-1]
+                extra_args.append ('/export:init%s' % mod_name)
 
             ext_filename = self.extension_filename \
                            (extension_name, self.package)
@@ -246,7 +253,8 @@ class BuildExt (Command):
             self.compiler.link_shared_object (objects, ext_filename, 
                                               libraries=libraries,
                                               library_dirs=library_dirs,
-                                              extra_postargs=extra_args)
+                                              extra_postargs=extra_args,
+                                              debug=self.debug)
 
     # build_extensions ()
 
