@@ -142,8 +142,7 @@ To create HTML files:
 	  version changes enough that supporting multiple versions is not 
 	  likely to work.  Many older versions don't work with Perl
 	  5.6 as well.  This also screws up code fragments.  ;-(
-	  Releases are available at:
-	  <http://saftsack.fs.uni-bayreuth.de/~latex2ht/current/>.
+	  Releases are available at: <http://www.latex2html.org/>.
 
 
 What if Times fonts are not available?
