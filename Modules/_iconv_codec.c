@@ -533,8 +533,6 @@ errorexit:
 static void
 iconvcodec_dealloc(iconvcodecObject *self)
 {
-    _PyObject_GC_UNTRACK(self);
-
     if (self->enchdl != (iconv_t)-1)
         iconv_close(self->enchdl);
     if (self->dechdl != (iconv_t)-1)
@@ -542,7 +540,7 @@ iconvcodec_dealloc(iconvcodecObject *self)
     if (self->encoding != NULL)
         PyMem_Free(self->encoding);
 
-    PyObject_GC_Del(self);
+    self->ob_type->tp_free((PyObject *)self);
 }
 
 static PyObject *
@@ -573,8 +571,7 @@ statichere PyTypeObject iconvcodec_Type = {
     PyObject_GenericGetAttr,        /* tp_getattro */
     0,                              /* tp_setattro */
     0,                              /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
-             Py_TPFLAGS_HAVE_GC,    /* tp_flags */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,    /* tp_flags */
     iconvcodec_doc,                 /* tp_doc */
     0,                              /* tp_traverse */
     0,                              /* tp_clear */
@@ -593,7 +590,7 @@ statichere PyTypeObject iconvcodec_Type = {
     0,                              /* tp_init */
     PyType_GenericAlloc,            /* tp_alloc */
     iconvcodec_new,                 /* tp_new */
-    PyObject_GC_Del,                /* tp_free */
+    PyObject_Del,                   /* tp_free */
 };
 
 static struct PyMethodDef _iconv_codec_methods[] = {
@@ -608,6 +605,7 @@ init_iconv_codec(void)
     m = Py_InitModule("_iconv_codec", _iconv_codec_methods);
 
     PyModule_AddStringConstant(m, "__version__", (char*)__version__);
+    Py_INCREF(&iconvcodec_Type);
     PyModule_AddObject(m, "iconvcodec", (PyObject *)(&iconvcodec_Type));
     PyModule_AddStringConstant(m, "internal_encoding", UNICODE_ENCODING);
 
