@@ -28,7 +28,7 @@ written in Python.
 # responsible for its maintenance.
 #
 
-__version__ = "2.5"
+__version__ = "2.6"
 
 
 # Imports
@@ -633,11 +633,19 @@ class FieldStorage:
 
     def read_lines(self):
         """Internal: read lines until EOF or outerboundary."""
-        self.file = self.make_file('')
+        self.file = self.__file = StringIO()
         if self.outerboundary:
             self.read_lines_to_outerboundary()
         else:
             self.read_lines_to_eof()
+
+    def __write(self, line):
+        if self.__file is not None:
+            if self.__file.tell() + len(line) > 1000:
+                self.file = self.make_file('')
+                self.file.write(self.__file.getvalue())
+                self.__file = None
+        self.file.write(line)
 
     def read_lines_to_eof(self):
         """Internal: read lines until EOF."""
@@ -646,7 +654,7 @@ class FieldStorage:
             if not line:
                 self.done = -1
                 break
-            self.file.write(line)
+            self.__write(line)
 
     def read_lines_to_outerboundary(self):
         """Internal: read lines until outerboundary."""
@@ -674,7 +682,7 @@ class FieldStorage:
                 line = line[:-1]
             else:
                 delim = ""
-            self.file.write(odelim + line)
+            self.__write(odelim + line)
 
     def skip_lines(self):
         """Internal: skip lines until outer boundary if defined."""
