@@ -203,6 +203,7 @@ class RegexObject:
 		if type(g)==type( "" ): g = [g]
 		results[len(results):] = list(g)
 	    pos = lastmatch = j
+	    n = n + 1
 	results.append(source[lastmatch:])
 	return results
 
@@ -259,11 +260,13 @@ class MatchObject:
     
     def groups(self):
 	"Return a tuple containing all subgroups of the match object"
-
-	# If _num_regs==1, we don't want to call self.group with an
-	# empty tuple.
-	if self.re._num_regs == 1: return ()
-	return apply(self.group, tuple(range(1, self.re._num_regs) ) )
+	result = []
+	for g in range(1, self.re._num_regs):
+	    if (self.regs[g][0] == -1) or (self.regs[g][1] == -1):
+		result.append(None)
+	    else:
+		result.append(self.string[self.regs[g][0]:self.regs[g][1]])
+	return tuple(result)
 
     def group(self, *groups):
 	"Return one or more groups of the match."
