@@ -5,8 +5,19 @@
 To use this tool, first run `python -Dwarn yourscript.py 2>warnings'.
 This runs the script `yourscript.py' while writing warning messages
 about all uses of the classic division operator to the file
-`warnings'.  (The warnings are written to stderr, so you must use `2>'
-for the I/O redirect.  I don't yet know how to do this on Windows.)
+`warnings'.  The warnings look like this:
+
+  <file>:<line>: DeprecationWarning: classic <type> division
+
+The warnings are written to stderr, so you must use `2>' for the I/O
+redirect.  I know of no way to redirect stderr on Windows in a DOS
+box, so you will have to modify the script to set sys.stderr to some
+kind of log file if you want to do this on Windows.
+
+The warnings are not limited to the script; modules imported by the
+script may also trigger warnings.  In fact a useful technique is to
+write a test script specifically intended to exercise all code in a
+particular module or set of modules.
 
 Then run `python fixdiv.py warnings'.  This first reads the warnings,
 looking for classic division warnings, and sorts them by file name and
@@ -14,7 +25,72 @@ line number.  Then, for each file that received at least one warning,
 it parses the file and tries to match the warnings up to the division
 operators found in the source code.  If it is successful, it writes a
 recommendation to stdout in the form of a context diff.  If it is not
-successful, it writes recommendations to stdout instead.
+successful, it writes observations to stdout instead.
+
+There are several possible recommendations and observations:
+
+- A / operator was found that can remain unchanged.  This is the
+  recommendation when only float and/or complex arguments were seen.
+
+- A / operator was found that should be changed to //.  This is the
+  recommendation when only int and/or long arguments were seen.
+
+- A / operator was found for which int or long as well as float or
+  complex arguments were seen.  This is highly unlikely; if it occurs,
+  you may have to restructure the code to keep the classic semantics,
+  or maybe you don't care about the classic semantics.
+
+- A / operator was found for which no warnings were seen.  This could
+  be code that was never executed, or code that was only executed with
+  with user-defined objects as arguments.  You will have to
+  investigate further.  Note that // can be overloaded separately from
+  /, using __floordiv__.  True division can also be separately
+  overloaded, using __truediv__.  Classic division should be the same
+  as either of those.  (XXX should I add a warning for division on
+  user-defined objects, to disambiguate this case from code that was
+  never executed?)
+
+- A warning was seen for a line not containing a / operator.  This is
+  an anomaly that shouldn't happen; the most likely cause is a change
+  to the file between the time the test script was run to collect
+  warnings and the time fixdiv was run.
+
+- More than one / operator was found on one line, or in a statement
+  split across multiple lines.  Because the warnings framework doesn't
+  (and can't) show the offset within the line, and the code generator
+  doesn't always give the correct line number for operations in a
+  multi-line statement, it's not clear whether both were executed.  In
+  practice, they usually are, so the default action is make the same
+  recommendation for all / operators, based on the above criteria.
+
+Notes:
+
+- The augmented assignment operator /= is handled the same way as the
+  / operator.
+
+- This tool never looks at the // operator; no warnings are ever
+  generated for use of this operator.
+
+- This tool never looks at the / operator when a future division
+  statement is in effect; no warnings are generated in this case, and
+  because the tool only looks at files for which at least one classic
+  division warning was seen, it will never look at files containing a
+  future division statement.
+
+- Warnings may be issued for code not read from a file, but executed
+  using an exec statement or the eval() function.  These will have
+  <string> in the filename position.  The fixdiv script will attempt
+  and fail to open a file named "<string>", and issue a warning about
+  this failure.  You're on your own to deal with this.  You could make
+  all recommended changes and add a future division statement to all
+  affected files, and then re-run the test script; it should not issue
+  any warnings.  If there are any, and you have a hard time tracking
+  down where they are generated, you can use the -Werror option to
+  force an error instead of a first warning, generating a traceback.
+
+- The tool should be run from the same directory as that from which
+  the original script was run, otherwise it won't be able to open
+  files given by relative pathnames.
 """
 
 import sys
@@ -27,30 +103,41 @@ def main():
     try:
         opts, args = getopt.getopt(sys.argv[1:], "h")
     except getopt.error, msg:
-        usage(2, msg)
+        usage(msg)
+        return 2
     for o, a in opts:
         if o == "-h":
-            help()
+            print __doc__
+            return
     if not args:
-        usage(2, "at least one file argument is required")
+        usage("at least one file argument is required")
+        return 2
     if args[1:]:
         sys.stderr.write("%s: extra file arguments ignored\n", sys.argv[0])
-    readwarnings(args[0])
+    warnings = readwarnings(args[0])
+    if warnings is None:
+        return 1
+    files = warnings.keys()
+    if not files:
+        print "No classic division warnings read from", args[0]
+        return
+    files.sort()
+    exit = None
+    for file in files:
+        x = process(file, warnings[file])
+        exit = exit or x
+    return exit
 
-def usage(exit, msg=None):
-    if msg:
-        sys.stderr.write("%s: %s\n" % (sys.argv[0], msg))
+def usage(msg):
+    sys.stderr.write("%s: %s\n" % (sys.argv[0], msg))
     sys.stderr.write("Usage: %s warnings\n" % sys.argv[0])
     sys.stderr.write("Try `%s -h' for more information.\n" % sys.argv[0])
-    sys.exit(exit)
 
-def help():
-    print __doc__
-    sys.exit(0)
+PATTERN = ("^(.+?):(\d+): DeprecationWarning: "
+           "classic (int|long|float|complex) division$")
 
 def readwarnings(warningsfile):
-    pat = re.compile(
-        "^(.+?):(\d+): DeprecationWarning: classic ([a-z]+) division$")
+    prog = re.compile(PATTERN)
     try:
         f = open(warningsfile)
     except IOError, msg:
@@ -61,7 +148,7 @@ def readwarnings(warningsfile):
         line = f.readline()
         if not line:
             break
-        m = pat.match(line)
+        m = prog.match(line)
         if not m:
             if line.find("division") >= 0:
                 sys.stderr.write("Warning: ignored input " + line)
@@ -72,36 +159,32 @@ def readwarnings(warningsfile):
             warnings[file] = list = []
         list.append((int(lineno), intern(what)))
     f.close()
-    files = warnings.keys()
-    files.sort()
-    for file in files:
-        process(file, warnings[file])
+    return warnings
 
 def process(file, list):
     print "-"*70
-    if not list:
-        sys.stderr.write("no division warnings for %s\n" % file)
-        return
+    assert list # if this fails, readwarnings() is broken
     try:
         fp = open(file)
     except IOError, msg:
         sys.stderr.write("can't open: %s\n" % msg)
-        return
-    print "Processing:", file
+        return 1
+    print "Index:", file
     f = FileContext(fp)
     list.sort()
     index = 0 # list[:index] has been processed, list[index:] is still to do
-    orphans = [] # subset of list for which no / operator was found
-    unknown = [] # lines with / operators for which no warnings were seen
     g = tokenize.generate_tokens(f.readline)
     while 1:
         startlineno, endlineno, slashes = lineinfo = scanline(g)
         if startlineno is None:
             break
         assert startlineno <= endlineno is not None
+        orphans = []
         while index < len(list) and list[index][0] < startlineno:
             orphans.append(list[index])
             index += 1
+        if orphans:
+            reportphantomwarnings(orphans, f)
         warnings = []
         while index < len(list) and list[index][0] <= endlineno:
             warnings.append(list[index])
@@ -109,7 +192,7 @@ def process(file, list):
         if not slashes and not warnings:
             pass
         elif slashes and not warnings:
-            report(slashes, "Unexecuted code")
+            report(slashes, "No conclusive evidence")
         elif warnings and not slashes:
             reportphantomwarnings(warnings, f)
         else:
@@ -222,7 +305,6 @@ def scanline(g):
             startlineno = endlineno
         if token in ("/", "/="):
             slashes.append((start, line))
-        ## if type in (tokenize.NEWLINE, tokenize.NL, tokenize.COMMENT):
         if type == tokenize.NEWLINE:
             break
     return startlineno, endlineno, slashes
@@ -234,4 +316,4 @@ def chop(line):
         return line
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
