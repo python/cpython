@@ -2021,7 +2021,7 @@ typedef struct {
 
 PyTypeObject PyListIter_Type;
 
-PyObject *
+static PyObject *
 list_iter(PyObject *seq)
 {
         listiterobject *it;
