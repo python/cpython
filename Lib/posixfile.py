@@ -76,9 +76,9 @@ class _posixfile_:
     #
     # Initialization routines
     #
-    def open(self, name, mode):
+    def open(self, name, mode='r', bufsize=-1):
 	import __builtin__
-	return self.fileopen(__builtin__.open(name, mode))
+	return self.fileopen(__builtin__.open(name, mode, bufsize))
 
     def fileopen(self, file):
 	if `type(file)` != "<type 'file'>":
