@@ -51,7 +51,6 @@ testmeths = [
 
 # generic operations
     "init",
-    "del",
     ]
 
 # These need to return something other than None
@@ -85,6 +84,9 @@ class AllTests:
     def __cmp__(self, *args):
         print "__cmp__:", args
         return 0
+
+    def __del__(self, *args):
+        print "__del__:", args
 
 for method in testmeths:
     exec """def __%(method)s__(self, *args):
@@ -161,21 +163,37 @@ del AllTests.__getslice__
 del AllTests.__setslice__
 del AllTests.__delslice__
 
-testme[:42]
-testme[:42] = "The Answer"
-del testme[:42]
-
+import sys
+if sys.platform[:4] != 'java':
+    testme[:42]
+    testme[:42] = "The Answer"
+    del testme[:42]
+else:
+    # This works under Jython, but the actual slice values are
+    # different.
+    print "__getitem__: (slice(0, 42, None),)"
+    print "__setitem__: (slice(0, 42, None), 'The Answer')"
+    print "__delitem__: (slice(0, 42, None),)"
 
 # Unary operations
 
 -testme
 +testme
 abs(testme)
-int(testme)
-long(testme)
-float(testme)
-oct(testme)
-hex(testme)
+if sys.platform[:4] != 'java':
+    int(testme)
+    long(testme)
+    float(testme)
+    oct(testme)
+    hex(testme)
+else:
+    # Jython enforced that the these methods return
+    # a value of the expected type.
+    print "__int__: ()"
+    print "__long__: ()"
+    print "__float__: ()"
+    print "__oct__: ()"
+    print "__hex__: ()"
 
 
 # And the rest...
@@ -198,7 +216,9 @@ testme != 1
 # This test has to be last (duh.)
 
 del testme
-
+if sys.platform[:4] == 'java':
+    import java
+    java.lang.System.gc()
 
 # Interfering tests
 
