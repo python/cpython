@@ -186,11 +186,12 @@ list_dealloc(op)
 	listobject *op;
 {
 	int i;
-	for (i = 0; i < op->ob_size; i++) {
-		XDECREF(op->ob_item[i]);
-	}
-	if (op->ob_item != NULL)
+	if (op->ob_item != NULL) {
+		for (i = 0; i < op->ob_size; i++) {
+			XDECREF(op->ob_item[i]);
+		}
 		free((ANY *)op->ob_item);
+	}
 	free((ANY *)op);
 }
 
