@@ -57,17 +57,18 @@ syslog_openlog(PyObject * self, PyObject * args)
 {
 	long logopt = 0;
 	long facility = LOG_USER;
+	PyObject *new_S_ident_o;
 
-
-	Py_XDECREF(S_ident_o);
 	if (!PyArg_ParseTuple(args,
 			      "S|ll;ident string [, logoption [, facility]]",
-			      &S_ident_o, &logopt, &facility))
+			      &new_S_ident_o, &logopt, &facility))
 		return NULL;
 
 	/* This is needed because openlog() does NOT make a copy
 	 * and syslog() later uses it.. cannot trash it.
 	 */
+	Py_XDECREF(S_ident_o);
+	S_ident_o = new_S_ident_o;
 	Py_INCREF(S_ident_o);
 
 	openlog(PyString_AsString(S_ident_o), logopt, facility);
