@@ -1,49 +1,36 @@
-Changes in 2.1.1 since 2.1
---------------------------
+Changes in 2.2a2 since 2.1.1
+----------------------------
 
 These release notes refer to Mac-specific changes only. See NEWS (in the Misc folder)
-for machine-independent changes.
+for machine-independent changes. But note that more things may have changed: MacPython
+2.2a2 is built from newer sources than unix/windows 2.2a2 (for CVS users: the r22a2-mac
+tag is what you are looking for).
 
-- Handling non-ascii characters in sys.path on non-MacRoman systems should  be fixed,
-  iff MacPython has a codec for the charset. Otherwise you should get an error, at least.
-  Pathnames in sys.path also retain their original case again.
-- IDE could crash on corrupt preferences. Fixed.
-- IDE will now work if you use either pre or sre as re.
-- Evt.WaitNextEvent could give an error when bit 15 was set, which could cause a problem
-  with IDE in classic mode. Fixed.
-- MacOS8.X users in classic mode had problems with Fm not loading, which also caused
-  IDE not working. Fixed.
-- Fm.IsAntiAliasedTextEnabled and Fm.SetAntiAliasedTextEnabled have gone for now, to
-  fix the problem above.
-- Disabled the Tkinter file I/O event handler, which was there but didn't work anyway.
-- Problems with loading dynamic modules that are part of a package into BuildApplication-
-  generated programs were fixed.
-- The order of the EasyDialogs yes/no/cancel buttons has been conformed to the Mac
-  standard.
-- Handling of Dialogs and Windows that were not created by Python is a bit more graceful
-  now, which may fix some crashes.
-- Ctl.SendControlMessage has gone. But it didn't work anyway.
-- Various problems with the TextEdit and Waste demos have been fixed.
-- Embedding/extending only: in preparation to allowing the use of MacPython modules in
-  unix-Python on OSX the xxx_New and xxx_Convert routines are now optionally vectored via
-  glue routines in macglue.c. The only change that may be needed for embedders/extenders is
-  that you may want to include pymactoolbox.h in your sources.
-- Embedding/extending only: Most MacPython source is now much more Mach-O friendly, and
-  should work with Universal Headers 3.4.
-- Experimental: an Mlte module has been added, an interface to the Multi Lingual Text
-  Engine. There is a minimal example in :Mac:Demos:mlte.
-- Experimental: some support for FSRef objects has been added. You can do little more that
-  convert them to/from FSSpecs. Carbon only.
-- Experimental: the CF module has some support for CoreFoundation types. CFString
-  and CFURL work, to a degree, and can be converted to/from Python strings and Unicode
-  objects. Carbon only.
+- The main change is that all toolbox modules have moved to a package called Carbon.
+  So things like "import Res" should be changed to "from Carbon import Res", and
+  "from Res import *" to "from Carbon.Res import *". Please see the readme file for
+  some open questions and join the discussions on pythonmac-sig if you have anything
+  to contribute. Aside from reducing clutter this change will also benefit the
+  port to Mach-O/OSX Python later.
+- On input MacPython now accepts either \n (unix style) or \r (mac style) newlines
+  for text files. This is an experimental feature; again: feedback is requested.
+- There is a new module macresource which makes it easier to open a resource file
+  accompanying your script when the script is not (yet) converted to an applet.
+  This module will later also do the right thing in Mach-O/OSX Python.
+- Threads had a stack that was too small for many serious Python applications (20K).
+  They now get 64K. There is still no overflow check, though.
+- Garbage collection and the gc module have (finally) been enabled.
+- EasyDialogs.ProgressBar now has indeterminate progressbars if you specify maxval=0.
+  This is also the new default. Patch supplied by Dean Draayer.
+- Various outdated scripts have been moved to :Mac:Unsupported.
+- Various outdated items from :Mac:Lib:test have been removed.
 
 What is not in this distribution
 --------------------------------
 
-- The garbage collection mods have not been enabled, mainly due to lack of test-time.
-- Stackless Python/microthreads hasn't been ported to 2.1 yet. If/when it becomes available
+- Stackless Python/microthreads hasn't been ported to 2.2 yet. If/when it becomes available
   Just will undoubtedly announce it on pythonmac-sig and the MacPython homepage.
+- The toolbox modules have not been updated to Universal Header 3.4 or CarbonLib 1.4 yet.
 
 Known problems
 --------------
@@ -51,7 +38,7 @@ Known problems
 This list is probably incomplete, more problems may be listed on the MacPython homepage,
 http://www.cwi.nl/~jack/macpython.html.
 
-- MacPython 2.1.1 (and MacPython 2.1) will not run correctly on a multiprocessor MacOS X
+- MacPython 2.2a2 (and MacPython 2.1) will not run correctly on a multiprocessor MacOS X
   machine, it will quickly deadlock during I/O operations. The GUSI I/O library is suspected,
   hints/clues/workarounds are solicited.
 - Tkinter does not work under Carbon.
