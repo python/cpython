@@ -1242,8 +1242,11 @@ GenericEventHandler(const AppleEvent *request, AppleEvent *reply, refcontype ref
 	replyObject->ob_itself.descriptorType = 'null';
 	replyObject->ob_itself.dataHandle = NULL;
 	Py_DECREF(args);
-	if (res == NULL)
+	if (res == NULL) {
+		PySys_WriteStderr("Exception in AE event handler function\n");
+		PyErr_Print();
 		return -1;
+	}
 	Py_DECREF(res);
 	return noErr;
 }
