@@ -389,7 +389,13 @@ class PyBuildExt(build_ext):
         # BSD DB 3.x.)
 
         dblib = []
-        if self.compiler.find_library_file(lib_dirs, 'db'):
+        if self.compiler.find_library_file(lib_dirs, 'db-3.1'):
+            dblib = ['db-3.1']
+        elif self.compiler.find_library_file(lib_dirs, 'db2'):
+            dblib = ['db2']
+        elif self.compiler.find_library_file(lib_dirs, 'db1'):
+            dblib = ['db1']
+        elif self.compiler.find_library_file(lib_dirs, 'db'):
             dblib = ['db']
         
         db185_incs = find_file('db_185.h', inc_dirs,
