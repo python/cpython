@@ -1,0 +1,3 @@
+Make {1} -f MakeFile >Make.out
+Set Echo 1
+Make.out
