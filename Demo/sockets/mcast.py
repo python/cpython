@@ -67,7 +67,7 @@ def openmcastsock(group, port):
 	#
 	# Allow multiple copies of this program on one machine
 	# (not strictly needed)
-	s.setsockopt(SOL_SOCKET, SO_REUSEPORT, 1)
+	s.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
 	#
 	# Bind it to the port
 	s.bind(('', port))
