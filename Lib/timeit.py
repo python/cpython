@@ -1,3 +1,5 @@
+#! /usr/bin/env python
+
 """Tool for measuring execution time of small code snippets.
 
 This module avoids a number of common traps for measuring execution
