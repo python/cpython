@@ -82,9 +82,9 @@ emacs_bindings = [
     ("edit", "Redo", "Alt-z", "<<redo>>", "<Alt-z>", "<Meta-z>"),
     ("edit", None, None),
 
-    ("edit", "Cut", None, "<<Cut>>"),
-    ("edit", "Copy", None, "<<Copy>>"),
-    ("edit", "Paste", None, "<<Paste>>"),
+    ("edit", "Cut", None, "<<Cut>>", "<Control-w>"),
+    ("edit", "Copy", None, "<<Copy>>", "<Alt-w>"),
+    ("edit", "Paste", None, "<<Paste>>", "<Control-y>"),
     ("edit", None, None),
 
     ("edit", "Find...", "C-s",
@@ -136,6 +136,8 @@ emacs_bindings = [
     (None, None, None, "<<toggle-auto-coloring>>", "<Control-slash>"),
 
     (None, None, None, "<<dump-undo-state>>", "<Control-backslash>"),
+    
+    (None, None, None, "<<do-nothing>>", "<Control-x>"),
 ]
 
 default_bindings = emacs_bindings

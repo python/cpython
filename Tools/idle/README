@@ -1,10 +1,6 @@
-BUGS:
-    
-- when there's a selection, typing ^X will delete the selection!
-  (cause: ^X is a binding for cut ;-( )
-
 TO DO:
 
+- "Recent documents" menu item
 - use platform specific default bindings
 - title and Windows menu should have base filename first
 - restructure state sensitive code to avoid testing flags all the time
