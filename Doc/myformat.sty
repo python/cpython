@@ -158,7 +158,7 @@
 \newcommand{\funcline}[2]{\item[\code{#1(\varvars{#2})}]\ttindex{#1}}
 \newcommand{\funcdesc}[2]{\fulllineitems\funcline{#1}{#2}}
 \let\endfuncdesc\endfulllineitems
-\newcommand{\optional}[1]{{\ \textnormal{\Large[}}{#1}\hspace{0.5mm}{\textnormal{\Large]}}\ }
+\newcommand{\optional}[1]{{\textnormal{\Large[}}{#1}\hspace{0.5mm}{\textnormal{\Large]}} }
 
 
 % same for excdesc
@@ -240,7 +240,7 @@
 %    \seetext{{\em Encyclopedia Britannica}}.                  % Ref to a book
 %  \end{seealso}
 
-\newenvironment{seealso}[0]{{\bf See Also: }}{\par}
+\newenvironment{seealso}[0]{{\bf See Also:}\par}{\par}
 \newcommand{\seemodule}[2]{\ref{module-#1}: {\tt #1} (#2)}
 \newcommand{\seetext}[1]{\par{#1}}
 
