@@ -37,7 +37,7 @@ import warnings
 __all__ = ["PickleError", "PicklingError", "UnpicklingError", "Pickler",
            "Unpickler", "dump", "dumps", "load", "loads"]
 
-# These are purely informational; no code usues these
+# These are purely informational; no code uses these.
 format_version = "2.0"                  # File format version we write
 compatible_formats = ["1.0",            # Original protocol 0
                       "1.1",            # Protocol 0 with INST added
@@ -47,7 +47,7 @@ compatible_formats = ["1.0",            # Original protocol 0
                       ]                 # Old format versions we can read
 
 # Why use struct.pack() for pickling but marshal.loads() for
-# unpickling?  struct.pack() is 40% faster than marshal.loads(), but
+# unpickling?  struct.pack() is 40% faster than marshal.dumps(), but
 # marshal.loads() is twice as fast as struct.unpack()!
 mloads = marshal.loads
 
@@ -73,6 +73,8 @@ class UnpicklingError(PickleError):
     """
     pass
 
+# An instance of _Stop is raised by Unpickler.load_stop() in response to
+# the STOP opcode, passing the object that is the result of unpickling.
 class _Stop(Exception):
     def __init__(self, value):
         self.value = value
@@ -138,7 +140,7 @@ BINFLOAT        = 'G'   # push float; arg is 8-byte float encoding
 TRUE            = 'I01\n'  # not an opcode; see INT docs in pickletools.py
 FALSE           = 'I00\n'  # not an opcode; see INT docs in pickletools.py
 
-# Protocol 2 (not yet implemented).
+# Protocol 2 (XXX not yet implemented).
 
 PROTO           = '\x80'  # identify pickle protocol
 NEWOBJ          = '\x81'  # build object by applying cls.__new__ to argtuple
@@ -772,6 +774,9 @@ def _keep_alive(x, memo):
         memo[id(memo)]=[x]
 
 
+# A cache for whichmodule(), mapping a function object to the name of
+# the module in which the function was found.
+
 classmap = {} # called classmap for backwards compatibility
 
 def whichmodule(func, funcname):
@@ -780,7 +785,7 @@ def whichmodule(func, funcname):
     Search sys.modules for the module.
     Cache in classmap.
     Return a module name.
-    If the function cannot be found, return __main__.
+    If the function cannot be found, return "__main__".
     """
     if func in classmap:
         return classmap[func]

@@ -603,29 +603,7 @@ float8 = ArgumentDescriptor(
 
 # Protocol 2 formats
 
-def decode_long(data):
-    r"""Decode a long from a two's complement little-endian binary string.
-    >>> decode_long("\xff\x00")
-    255L
-    >>> decode_long("\xff\x7f")
-    32767L
-    >>> decode_long("\x00\xff")
-    -256L
-    >>> decode_long("\x00\x80")
-    -32768L
-    >>> decode_long("\x80")
-    -128L
-    >>> decode_long("\x7f")
-    127L
-    """
-    x = 0L
-    i = 0L
-    for c in data:
-        x |= long(ord(c)) << i
-        i += 8L
-    if data and ord(c) >= 0x80:
-        x -= 1L << i
-    return x
+from pickle import decode_long
 
 def read_long1(f):
     r"""
@@ -1793,6 +1771,7 @@ def assure_pickle_consistency(verbose=False):
         raise ValueError("\n".join(msg))
 
 assure_pickle_consistency()
+del assure_pickle_consistency
 
 ##############################################################################
 # A pickle opcode generator.
