@@ -470,6 +470,25 @@ def _parse(source, state, flags=0):
                         if source.next is None or source.next == ")":
                             break
                         source.get()
+                elif source.next in ("=", "!"):
+                    # lookahead assertions
+                    char = source.get()
+                    b = []
+                    while 1:
+                        p = _parse(source, state, flags)
+                        if source.next == ")":
+                            if b:
+                                b.append(p)
+                                p = _branch(state, b)
+                            if char == "=":
+                                subpattern.append((ASSERT, p))
+                            else:
+                                subpattern.append((ASSERT_NOT, p))
+                            break
+                        elif source.match("|"):
+                            b.append(p)
+                        else:
+                            raise error, "pattern not properly closed"
                 else:
                     # flags
                     while FLAGS.has_key(source.next):

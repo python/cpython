@@ -26,52 +26,12 @@ def _compile(code, pattern, flags):
     # internal: compile a (sub)pattern
     emit = code.append
     for op, av in pattern:
-        if op is ANY:
-            if flags & SRE_FLAG_DOTALL:
-                emit(OPCODES[op])
-            else:
-                emit(OPCODES[CATEGORY])
-                emit(CHCODES[CATEGORY_NOT_LINEBREAK])
-        elif op in (SUCCESS, FAILURE):
-            emit(OPCODES[op])
-        elif op is AT:
-            emit(OPCODES[op])
-            if flags & SRE_FLAG_MULTILINE:
-                emit(ATCODES[AT_MULTILINE[av]])
-            else:
-                emit(ATCODES[av])
-        elif op is BRANCH:
-            emit(OPCODES[op])
-            tail = []
-            for av in av[1]:
-                skip = len(code); emit(0)
-                _compile(code, av, flags)
-                emit(OPCODES[JUMP])
-                tail.append(len(code)); emit(0)
-                code[skip] = len(code) - skip
-            emit(0) # end of branch
-            for tail in tail:
-                code[tail] = len(code) - tail
-        elif op is CALL:
-            emit(OPCODES[op])
-            skip = len(code); emit(0)
-            _compile(code, av, flags)
-            emit(OPCODES[SUCCESS])
-            code[skip] = len(code) - skip
-        elif op is CATEGORY:
-            emit(OPCODES[op])
-            if flags & SRE_FLAG_LOCALE:
-                emit(CHCODES[CH_LOCALE[av]])
-            elif flags & SRE_FLAG_UNICODE:
-                emit(CHCODES[CH_UNICODE[av]])
-            else:
-                emit(CHCODES[av])
-        elif op is GROUP:
+        if op in (LITERAL, NOT_LITERAL):
             if flags & SRE_FLAG_IGNORECASE:
                 emit(OPCODES[OP_IGNORE[op]])
             else:
                 emit(OPCODES[op])
-            emit(av-1)
+            emit(ord(av))
         elif op is IN:
             if flags & SRE_FLAG_IGNORECASE:
                 emit(OPCODES[OP_IGNORE[op]])
@@ -101,15 +61,12 @@ def _compile(code, pattern, flags):
                     raise error, "internal: unsupported set operator"
             emit(OPCODES[FAILURE])
             code[skip] = len(code) - skip
-        elif op in (LITERAL, NOT_LITERAL):
-            if flags & SRE_FLAG_IGNORECASE:
-                emit(OPCODES[OP_IGNORE[op]])
-            else:
+        elif op is ANY:
+            if flags & SRE_FLAG_DOTALL:
                 emit(OPCODES[op])
-            emit(ord(av))
-        elif op is MARK:
-            emit(OPCODES[op])
-            emit(av)
+            else:
+                emit(OPCODES[CATEGORY])
+                emit(CHCODES[CATEGORY_NOT_LINEBREAK])
         elif op in (REPEAT, MIN_REPEAT, MAX_REPEAT):
             if flags & SRE_FLAG_TEMPLATE:
                 emit(OPCODES[REPEAT])
@@ -150,6 +107,49 @@ def _compile(code, pattern, flags):
             if group:
                 emit(OPCODES[MARK])
                 emit((group-1)*2+1)
+        elif op in (SUCCESS, FAILURE):
+            emit(OPCODES[op])
+        elif op in (ASSERT, ASSERT_NOT, CALL):
+            emit(OPCODES[op])
+            skip = len(code); emit(0)
+            _compile(code, av, flags)
+            emit(OPCODES[SUCCESS])
+            code[skip] = len(code) - skip
+        elif op is AT:
+            emit(OPCODES[op])
+            if flags & SRE_FLAG_MULTILINE:
+                emit(ATCODES[AT_MULTILINE[av]])
+            else:
+                emit(ATCODES[av])
+        elif op is BRANCH:
+            emit(OPCODES[op])
+            tail = []
+            for av in av[1]:
+                skip = len(code); emit(0)
+                _compile(code, av, flags)
+                emit(OPCODES[JUMP])
+                tail.append(len(code)); emit(0)
+                code[skip] = len(code) - skip
+            emit(0) # end of branch
+            for tail in tail:
+                code[tail] = len(code) - tail
+        elif op is CATEGORY:
+            emit(OPCODES[op])
+            if flags & SRE_FLAG_LOCALE:
+                emit(CHCODES[CH_LOCALE[av]])
+            elif flags & SRE_FLAG_UNICODE:
+                emit(CHCODES[CH_UNICODE[av]])
+            else:
+                emit(CHCODES[av])
+        elif op is GROUP:
+            if flags & SRE_FLAG_IGNORECASE:
+                emit(OPCODES[OP_IGNORE[op]])
+            else:
+                emit(OPCODES[op])
+            emit(av-1)
+        elif op is MARK:
+            emit(OPCODES[op])
+            emit(av)
         else:
             raise ValueError, ("unsupported operand type", op)
 

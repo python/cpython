@@ -20,6 +20,7 @@
  * 00-06-28 fl	fixed findall (0.9.1)
  * 00-06-29 fl	fixed split, added more scanner features (0.9.2)
  * 00-06-30 fl	tuning, fast search (0.9.3)
+ * 00-06-30 fl	added assert (lookahead) primitives (0.9.4)
  *
  * Copyright (c) 1997-2000 by Secret Labs AB.  All rights reserved.
  *
@@ -30,7 +31,7 @@
 
 #ifndef SRE_RECURSIVE
 
-char copyright[] = " SRE 0.9.3 Copyright (c) 1997-2000 by Secret Labs AB ";
+char copyright[] = " SRE 0.9.4 Copyright (c) 1997-2000 by Secret Labs AB ";
 
 #include "Python.h"
 
@@ -576,11 +577,10 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern)
 			pattern += pattern[0];
 			break;
 
-#if 0
-		case SRE_OP_CALL:
-			/* match subpattern, without backtracking */
+		case SRE_OP_ASSERT:
+			/* assert subpattern */
 			/* args: <skip> <pattern> */
-			TRACE(("%8d: subpattern\n", PTR(ptr)));
+			TRACE(("%8d: assert subpattern\n", PTR(ptr)));
 			state->ptr = ptr;
 			i = SRE_MATCH(state, pattern + 1);
             if (i < 0)
@@ -588,9 +588,20 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern)
             if (!i)
 				goto failure;
 			pattern += pattern[0];
-			ptr = state->ptr;
 			break;
-#endif
+
+		case SRE_OP_ASSERT_NOT:
+			/* assert not subpattern */
+			/* args: <skip> <pattern> */
+			TRACE(("%8d: assert not subpattern\n", PTR(ptr)));
+			state->ptr = ptr;
+			i = SRE_MATCH(state, pattern + 1);
+            if (i < 0)
+                return i;
+            if (i)
+				goto failure;
+			pattern += pattern[0];
+			break;
 
 #if 0
 		case SRE_OP_MAX_REPEAT_ONE:
