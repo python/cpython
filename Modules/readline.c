@@ -287,6 +287,23 @@ static char doc_set_completer_delims[] = "\
 set_completer_delims(string) -> None\n\
 set the readline word delimiters for tab-completion";
 
+static PyObject *
+py_add_history(PyObject *self, PyObject *args)
+{
+	char *line;
+
+	if(!PyArg_ParseTuple(args, "s:add_history", &line)) {
+		return NULL;
+	}
+	add_history(line);
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
+static char doc_add_history[] = "\
+add_history(string) -> None\n\
+add a line to the history buffer";
+
 
 /* get the tab-completion word-delimiters that readline uses */
 
@@ -375,6 +392,7 @@ static struct PyMethodDef readline_methods[] =
 
 	{"set_completer_delims", set_completer_delims, 
 	 METH_VARARGS, doc_set_completer_delims},
+	{"add_history", py_add_history, METH_VARARGS, doc_add_history},
 	{"get_completer_delims", get_completer_delims, 
 	 METH_OLDARGS, doc_get_completer_delims},
 	
