@@ -314,6 +314,9 @@ class FeedParser:
                     # body parts within such double boundaries.
                     while True:
                         line = self._input.readline()
+                        if line is NeedMoreData:
+                            yield NeedMoreData
+                            continue
                         mo = boundaryre.match(line)
                         if not mo:
                             self._input.unreadline(line)
