@@ -720,7 +720,10 @@ class AbstractBasicAuthHandler:
                     return self.retry_http_basic_auth(host, req, realm)
 
     def retry_http_basic_auth(self, host, req, realm):
-        user,pw = self.passwd.find_user_password(realm, host)
+        # TODO(jhylton): Remove the host argument? It depends on whether
+        # retry_http_basic_auth() is consider part of the public API.
+        # It probably is.
+        user, pw = self.passwd.find_user_password(realm, req.get_full_url())
         if pw is not None:
             raw = "%s:%s" % (user, pw)
             auth = 'Basic %s' % base64.encodestring(raw).strip()
@@ -877,13 +880,12 @@ class AbstractDigestAuthHandler:
                'response="%s"' % (user, realm, nonce, req.get_selector(),
                                   respdig)
         if opaque:
-            base = base + ', opaque="%s"' % opaque
+            base += ', opaque="%s"' % opaque
         if entdig:
-            base = base + ', digest="%s"' % entdig
-        if algorithm != 'MD5':
-            base = base + ', algorithm="%s"' % algorithm
+            base += ', digest="%s"' % entdig
+        base += ', algorithm="%s"' % algorithm
         if qop:
-            base = base + ', qop=auth, nc=%s, cnonce="%s"' % (ncvalue, cnonce)
+            base += ', qop=auth, nc=%s, cnonce="%s"' % (ncvalue, cnonce)
         return base
 
     def get_algorithm_impls(self, algorithm):
