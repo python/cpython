@@ -117,7 +117,7 @@ class VersionPredicate:
                 raise ValueError("empty parenthesized list in %r" 
                                  % versionPredicateStr)
         else:
-            self.pred=[]
+            self.pred = []
 
     def __str__(self):
         if self.pred:
