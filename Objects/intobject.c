@@ -43,7 +43,9 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define CHAR_BIT 8
 #endif
 
+#ifndef LONG_BIT
 #define LONG_BIT (CHAR_BIT * sizeof(long))
+#endif
 
 /* Standard Booleans */
 

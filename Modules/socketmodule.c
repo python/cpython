@@ -388,7 +388,7 @@ sock_allowbroadcast(s, args)
 	if (!getargs(args, "i", &flag))
 		return NULL;
 	res = setsockopt(s->sock_fd, SOL_SOCKET, SO_BROADCAST,
-			 &flag, sizeof flag);
+			 (ANY *)&flag, sizeof flag);
 	if (res < 0)
 		return socket_error();
 	INCREF(None);
@@ -422,7 +422,7 @@ sock_setsockopt(s, args)
 		if (!getargs(args, "(iis#)", &level, &optname, &buf, &buflen))
 			return NULL;
 	}
-	res = setsockopt(s->sock_fd, level, optname, buf, buflen);
+	res = setsockopt(s->sock_fd, level, optname, (ANY *)buf, buflen);
 	if (res < 0)
 		return socket_error();
 	INCREF(None);
@@ -450,7 +450,8 @@ sock_getsockopt(s, args)
 	if (getargs(args, "(ii)", &level, &optname)) {
 		int flag = 0;
 		int flagsize = sizeof flag;
-		res = getsockopt(s->sock_fd, level, optname, &flag, &flagsize);
+		res = getsockopt(s->sock_fd, level, optname,
+				 (ANY *)&flag, &flagsize);
 		if (res < 0)
 			return socket_error();
 		return newintobject(flag);
@@ -465,8 +466,8 @@ sock_getsockopt(s, args)
 	buf = newsizedstringobject((char *)NULL, buflen);
 	if (buf == NULL)
 		return NULL;
-	res = getsockopt(s->sock_fd, level, optname, getstringvalue(buf),
-			 &buflen);
+	res = getsockopt(s->sock_fd, level, optname,
+			 (ANY *)getstringvalue(buf), &buflen);
 	if (res < 0) {
 		DECREF(buf);
 		return socket_error();
@@ -720,7 +721,7 @@ sock_recvfrom(s, args)
 		return NULL;
 	BGN_SAVE
 	n = recvfrom(s->sock_fd, getstringvalue(buf), len, flags,
-		     addrbuf, &addrlen);
+		     (ANY *)addrbuf, &addrlen);
 	END_SAVE
 	if (n < 0)
 		return socket_error();

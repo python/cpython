@@ -58,7 +58,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #ifdef SYSV
 
-#define UTIME_STRUCT
+#define UTIME_STRUCT 1
 #include <dirent.h>
 #define direct dirent
 #ifdef i386
@@ -89,7 +89,7 @@ extern int mkdir PROTO((const char *, mode_t));
 extern int chdir PROTO((const char *));
 extern int rmdir PROTO((const char *));
 extern int chmod PROTO((const char *, mode_t));
-extern char *getcwd PROTO((char *, int)); /* XXX or size_t? */
+extern char *getcwd(); /* No PROTO((char *, int)) -- non portable */
 #ifndef MSDOS
 extern char *strerror PROTO((int));
 extern int link PROTO((const char *, const char *));

@@ -960,14 +960,6 @@ typeobject Instancetype = {
 	instance_hash,		/*tp_hash*/
 };
 
-static object *
-instance_convert(inst, methodname)
-	object *inst;
-	char *methodname;
-{
-	return generic_unary_op((instanceobject *)inst, methodname);
-}
-
 
 /* Instance method objects are used for two purposes:
    (a) as bound instance methods (returned by instancename.methodname)

@@ -59,8 +59,6 @@ extern object *instancemethodgetfunc PROTO((object *));
 extern object *instancemethodgetself PROTO((object *));
 extern object *instancemethodgetclass PROTO((object *));
 
-extern object *instance_convert PROTO((object *, char *));
-
 extern int issubclass PROTO((object *, object *));
 
 #ifdef __cplusplus
