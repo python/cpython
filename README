@@ -318,8 +318,12 @@ Linux:  A problem with threads and fork() was tracked down to a bug in
 	module now needs the -lcrypt option.  The setup.py script
 	takes care of this automatically.
 
-Red Hat Linux: There's an executable /usr/bin/python which is Python
-	1.5.2 on most Red Hat installations; several key Red Hat tools
+Red Hat Linux: Red Hat 9 built Python2.2 in UCS-4 mode and hacked
+	Tcl to support it. To compile Python2.3 with Tkinter, you will
+	need to pass --enable-unicode=ucs4 flag to ./configure. 
+
+	There's an executable /usr/bin/python which is Python
+	1.5.2 on most older Red Hat installations; several key Red Hat tools
 	require this version.  Python 2.1.x may be installed as
 	/usr/bin/python2.  The Makefile installs Python as
 	/usr/local/bin/python, which may or may not take precedence
