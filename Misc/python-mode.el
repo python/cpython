@@ -355,7 +355,7 @@ Currently-active file is at the head of the list.")
 
 ;; Regexp that describes tracebacks
 (defconst py-traceback-line-re
-  "[ \t]+File \"\\([^\"]+\\)\", line \\([0-9]+\\), in ")
+  "[ \t]+File \"\\([^\"]+\\)\", line \\([0-9]+\\)")
 
 
 
@@ -1242,7 +1242,7 @@ exception in the exception stack."
 	 (buffer (if proc "*Python*" py-output-buffer)))
     (if top
 	(py-find-next-exception 'bob buffer 're-search-forward "Top")
-      (py-find-next-exception 'boi buffer 're-search-backward "Top"))))
+      (py-find-next-exception 'bol buffer 're-search-backward "Top"))))
 
 
 ;; Electric deletion
