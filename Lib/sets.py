@@ -154,7 +154,8 @@ class BaseSet(object):
         """
         if not isinstance(other, BaseSet):
             return NotImplemented
-        result = self.__class__(self._data)
+        result = self.__class__()
+        result._data = self._data.copy()
         result._data.update(other._data)
         return result
 
