@@ -24,8 +24,13 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* Mapping object implementation; using a hash table */
 
+/* This file should really be called "dictobject.c", since "mapping"
+  is the generic name for objects with an unorderred arbitrary key
+  set (just like lists are sequences), but since it improves (and was
+  originally derived from) a file by that name I had to change its
+  name.  For the user these objects are still called "dictionaries". */
+
 #include "allobjects.h"
-#include "mappingobject.h"
 #include "modsupport.h"
 
 
@@ -593,7 +598,7 @@ mapping_getattr(mp, name)
 typeobject Mappingtype = {
 	OB_HEAD_INIT(&Typetype)
 	0,
-	"mapping",
+	"dictionary",
 	sizeof(mappingobject),
 	0,
 	mapping_dealloc,	/*tp_dealloc*/

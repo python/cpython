@@ -261,7 +261,7 @@ instance_setattr(inst, name, v)
 		return dictinsert(inst->in_attr, name, v);
 }
 
-object *
+static object *
 instance_repr(inst)
 	instanceobject *inst;
 {
@@ -280,7 +280,7 @@ instance_repr(inst)
 	return res;
 }
 
-int
+static int
 instance_compare(inst, other)
 	instanceobject *inst, *other;
 {
@@ -311,7 +311,43 @@ instance_compare(inst, other)
 	return outcome;
 }
 
-int
+static long
+instance_hash(inst)
+	instanceobject *inst;
+{
+	object *func;
+	object *res;
+	int outcome;
+
+	func = instance_getattr(inst, "__hash__");
+	if (func == NULL) {
+		/* If there is no __cmp__ method, we hash on the address.
+		   If a __cmp__ method exists, there must be a __hash__. */
+		err_clear();
+		func = instance_getattr(inst, "__cmp__");
+		if (func == NULL)
+			return (long)inst;
+		err_setstr(TypeError, "unhashable instance");
+		return -1;
+	}
+	res = call_object(func, (object *)NULL);
+	DECREF(func);
+	if (res == NULL)
+		return -1;
+	if (is_intobject(res)) {
+		outcome = getintvalue(res);
+		if (outcome == -1)
+			outcome = -2;
+	}
+	else {
+		err_setstr(TypeError, "__hash__() should return an int");
+		outcome = -1;
+	}
+	DECREF(res);
+	return outcome;
+}
+
+static int
 instance_length(inst)
 	instanceobject *inst;
 {
@@ -339,7 +375,7 @@ instance_length(inst)
 	return outcome;
 }
 
-object *
+static object *
 instance_subscript(inst, key)
 	instanceobject *inst;
 	object *key;
@@ -362,7 +398,7 @@ instance_subscript(inst, key)
 	return res;
 }
 
-int
+static int
 instance_ass_subscript(inst, key, value)
 	instanceobject*inst;
 	object *key;
@@ -395,7 +431,7 @@ instance_ass_subscript(inst, key, value)
 	return 0;
 }
 
-mapping_methods instance_as_mapping = {
+static mapping_methods instance_as_mapping = {
 	instance_length,	/*mp_length*/
 	instance_subscript,	/*mp_subscript*/
 	instance_ass_subscript,	/*mp_ass_subscript*/
@@ -612,7 +648,7 @@ UNARY(instance_neg, "__neg__")
 UNARY(instance_pos, "__pos__")
 UNARY(instance_abs, "__abs__")
 
-int
+static int
 instance_nonzero(self)
 	instanceobject *self;
 {
@@ -739,9 +775,10 @@ typeobject Instancetype = {
 	&instance_as_number,	/*tp_as_number*/
 	&instance_as_sequence,	/*tp_as_sequence*/
 	&instance_as_mapping,	/*tp_as_mapping*/
+	instance_hash,		/*tp_hash*/
 };
 
-object *
+static object *
 instance_convert(inst, methodname)
 	object *inst;
 	char *methodname;
@@ -837,6 +874,20 @@ instancemethod_compare(a, b)
 	return cmp;
 }
 
+static long
+instancemethod_hash(a)
+	instancemethodobject *a;
+{
+	long x, y;
+	x = hashobject(a->im_self);
+	if (x == -1)
+		return -1;
+	y = hashobject(a->im_func);
+	if (y == -1)
+		return -1;
+	return x ^ y;
+}
+
 typeobject Instancemethodtype = {
 	OB_HEAD_INIT(&Typetype)
 	0,
@@ -852,4 +903,5 @@ typeobject Instancemethodtype = {
 	0,			/*tp_as_number*/
 	0,			/*tp_as_sequence*/
 	0,			/*tp_as_mapping*/
+	instancemethod_hash,	/*tp_hash*/
 };

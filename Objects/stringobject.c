@@ -293,6 +293,21 @@ string_compare(a, b)
 	return (len_a < len_b) ? -1 : (len_a > len_b) ? 1 : 0;
 }
 
+static long
+string_hash(a)
+	stringobject *a;
+{
+	register int len = a->ob_size;
+	register unsigned char *p = (unsigned char *) a->ob_sval;
+	register long x = *p << 7;
+	while (--len >= 0)
+		x = (x + x + x) ^ *p++;
+	x ^= a->ob_size;
+	if (x == -1)
+		x = -2;
+	return x;
+}
+
 static sequence_methods string_as_sequence = {
 	string_length,	/*sq_length*/
 	string_concat,	/*sq_concat*/
@@ -318,6 +333,7 @@ typeobject Stringtype = {
 	0,		/*tp_as_number*/
 	&string_as_sequence,	/*tp_as_sequence*/
 	0,		/*tp_as_mapping*/
+	string_hash,	/*tp_hash*/
 };
 
 void

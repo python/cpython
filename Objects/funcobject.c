@@ -1,6 +1,6 @@
 /***********************************************************
-Copyright 1991, 1992 by Stichting Mathematisch Centrum, Amsterdam, The
-Netherlands.
+Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Amsterdam, The Netherlands.
 
                         All Rights Reserved
 
@@ -25,7 +25,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 /* Function object implementation */
 
 #include "allobjects.h"
-
+#include "compile.h"
 #include "structmember.h"
 
 typedef struct {
@@ -98,6 +98,17 @@ func_dealloc(op)
 	DEL(op);
 }
 
+static object*
+func_repr(op)
+	funcobject *op;
+{
+	char buf[140];
+	sprintf(buf, "<function %.100s at %lx>",
+		getstringvalue(((codeobject*)(op->func_code))->co_name),
+		(long)op);
+	return newstringobject(buf);
+}
+
 typeobject Functype = {
 	OB_HEAD_INIT(&Typetype)
 	0,
@@ -109,5 +120,5 @@ typeobject Functype = {
 	func_getattr,	/*tp_getattr*/
 	0,		/*tp_setattr*/
 	0,		/*tp_compare*/
-	0,		/*tp_repr*/
+	func_repr,	/*tp_repr*/
 };

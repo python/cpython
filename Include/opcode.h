@@ -1,6 +1,6 @@
 /***********************************************************
-Copyright 1991, 1992 by Stichting Mathematisch Centrum, Amsterdam, The
-Netherlands.
+Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Amsterdam, The Netherlands.
 
                         All Rights Reserved
 
@@ -112,6 +112,10 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #define LOAD_LOCAL	115	/* Index in name list */
 #define LOAD_GLOBAL	116	/* Index in name list */
+
+#define LOAD_FAST	117	/* Local variable number */
+#define STORE_FAST	118	/* Local variable number */
+#define RESERVE_FAST	119	/* Number of local variables */
 
 #define SETUP_LOOP	120	/* Target address (absolute) */
 #define SETUP_EXCEPT	121	/* "" */

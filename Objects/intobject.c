@@ -144,6 +144,16 @@ int_compare(v, w)
 	return (i < j) ? -1 : (i > j) ? 1 : 0;
 }
 
+static long
+int_hash(v)
+	intobject *v;
+{
+	long x = v -> ob_ival;
+	if (x == -1)
+		x = -2;
+	return x;
+}
+
 static object *
 int_add(v, w)
 	intobject *v;
@@ -413,7 +423,7 @@ int_or(v, w)
 
 static object *
 int_int(v)
-	object *v;
+	intobject *v;
 {
 	INCREF(v);
 	return v;
@@ -421,26 +431,24 @@ int_int(v)
 
 static object *
 int_long(v)
-	object *v;
+	intobject *v;
 {
-	long x = getintvalue(v);
-	return newlongobject(x);
+	return newlongobject((v -> ob_ival));
 }
 
 static object *
 int_float(v)
-	object *v;
+	intobject *v;
 {
-	long x = getintvalue(v);
-	return newfloatobject((double)x);
+	return newfloatobject((double)(v -> ob_ival));
 }
 
 static object *
 int_oct(v)
-	object *v;
+	intobject *v;
 {
 	char buf[20];
-	long x = getintvalue(v);
+	long x = v -> ob_ival;
 	if (x == 0)
 		strcpy(buf, "0");
 	else if (x > 0)
@@ -452,17 +460,16 @@ int_oct(v)
 
 static object *
 int_hex(v)
-	object *v;
+	intobject *v;
 {
 	char buf[20];
-	long x = getintvalue(v);
+	long x = v -> ob_ival;
 	if (x >= 0)
 		sprintf(buf, "0x%lx", x);
 	else
 		sprintf(buf, "-0x%lx", -x);
 	return newstringobject(buf);
 }
-
 
 static number_methods int_as_number = {
 	int_add,	/*nb_add*/
@@ -505,4 +512,5 @@ typeobject Inttype = {
 	&int_as_number,	/*tp_as_number*/
 	0,		/*tp_as_sequence*/
 	0,		/*tp_as_mapping*/
+	&int_hash,	/*tp_hash*/
 };

@@ -173,6 +173,7 @@ eval_code(co, globals, locals, arg)
 	register object *u;
 	register object *t;
 	register frameobject *f; /* Current frame */
+	register listobject *fastlocals = NULL;
 	object *trace = NULL;	/* Trace function or NULL */
 	object *retval;		/* Return value iff why == WHY_RETURN */
 	char *name;		/* Name used by some instructions */
@@ -911,19 +912,18 @@ eval_code(co, globals, locals, arg)
 			break;
 		
 		case STORE_ATTR:
-			name = GETNAME(oparg);
+			w = GETNAMEV(oparg);
 			v = POP();
 			u = POP();
-			err = setattr(v, name, u); /* v.name = u */
+			err = setattro(v, w, u); /* v.w = u */
 			DECREF(v);
 			DECREF(u);
 			break;
 		
 		case DELETE_ATTR:
-			name = GETNAME(oparg);
+			w = GETNAMEV(oparg);
 			v = POP();
-			err = setattr(v, name, (object *)NULL);
-							/* del v.name */
+			err = setattro(v, w, (object *)NULL); /* del v.w */
 			DECREF(v);
 			break;
 		
@@ -992,6 +992,22 @@ eval_code(co, globals, locals, arg)
 			INCREF(x);
 			PUSH(x);
 			break;
+
+		case RESERVE_FAST:
+			if (oparg > 0) {
+				XDECREF(fastlocals);
+				x = newlistobject(oparg);
+				fastlocals = (listobject *) x;
+			}
+			break;
+
+		case LOAD_FAST:
+			/* NYI */
+			break;
+
+		case STORE_FAST:
+			/* NYI */
+			break;
 		
 		case BUILD_TUPLE:
 			x = newtupleobject(oparg);
@@ -1025,9 +1041,9 @@ eval_code(co, globals, locals, arg)
 			break;
 		
 		case LOAD_ATTR:
-			name = GETNAME(oparg);
+			w = GETNAMEV(oparg);
 			v = POP();
-			x = getattr(v, name);
+			x = getattro(v, w);
 			DECREF(v);
 			PUSH(x);
 			break;
@@ -1283,6 +1299,8 @@ eval_code(co, globals, locals, arg)
 	
 	current_frame = f->f_back;
 	DECREF(f);
+
+	XDECREF(fastlocals);
 	
 	return retval;
 }

@@ -1,6 +1,6 @@
 /***********************************************************
-Copyright 1991, 1992 by Stichting Mathematisch Centrum, Amsterdam, The
-Netherlands.
+Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Amsterdam, The Netherlands.
 
                         All Rights Reserved
 
@@ -22,28 +22,23 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 ******************************************************************/
 
-/*
-Dictionary object type -- mapping from char * to object.
-NB: the key is given as a char *, not as a stringobject.
-These functions set errno for errors.  Functions dictremove() and
-dictinsert() return nonzero for errors, getdictsize() returns -1,
-the others NULL.  A successful call to dictinsert() calls INCREF()
-for the inserted item.
-*/
+/* All in the sake of backward compatibility... */
 
-extern typeobject Dicttype;
+#include "mappingobject.h"
 
-#define is_dictobject(op) ((op)->ob_type == &Dicttype)
+#define is_dictobject(op) is_mappingobject(op)
 
-extern object *newdictobject PROTO((void));
+#define newdictobject newmappingobject
+
 extern object *dictlookup PROTO((object *dp, char *key));
 extern int dictinsert PROTO((object *dp, char *key, object *item));
 extern int dictremove PROTO((object *dp, char *key));
-extern int getdictsize PROTO((object *dp));
 extern char *getdictkey PROTO((object *dp, int i));
-extern object *getdictkeys PROTO((object *dp));
 
-extern object *getdict2key PROTO((object *dp, int i));
-extern object *dict2lookup PROTO((object *dp, object *key));
-extern int dict2insert PROTO((object *dp, object *key, object *item));
-extern int dict2remove PROTO((object *dp, object *key));
+#define getdictsize getmappingsize
+#define getdictkeys getmappingkeys
+
+#define getdict2key getmappingkey
+#define dict2lookup mappinglookup
+#define dict2insert mappinginsert
+#define dict2remove mappingremove

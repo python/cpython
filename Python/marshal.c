@@ -195,6 +195,7 @@ w_object(v, p)
 		w_object(co->co_consts, p);
 		w_object(co->co_names, p);
 		w_object(co->co_filename, p);
+		w_object(co->co_name, p);
 	}
 	else {
 		w_byte(TYPE_UNKNOWN, p);
@@ -384,9 +385,10 @@ r_object(p)
 			object *consts = r_object(p);
 			object *names = r_object(p);
 			object *filename = r_object(p);
+			object *name = r_object(p);
 			if (!err_occurred()) {
 				v = (object *) newcodeobject(code,
-						consts, names, filename);
+						consts, names, filename, name);
 			}
 			else
 				v = NULL;

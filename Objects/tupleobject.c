@@ -1,6 +1,6 @@
 /***********************************************************
-Copyright 1991, 1992 by Stichting Mathematisch Centrum, Amsterdam, The
-Netherlands.
+Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Amsterdam, The Netherlands.
 
                         All Rights Reserved
 
@@ -179,6 +179,27 @@ tuplecompare(v, w)
 	return v->ob_size - w->ob_size;
 }
 
+static long
+tuplehash(v)
+	tupleobject *v;
+{
+	register long x, y;
+	register int len = v->ob_size;
+	register object **p;
+	x = 0x345678L;
+	p = v->ob_item;
+	while (--len >= 0) {
+		y = hashobject(*p++);
+		if (y == -1)
+			return -1;
+		x = (x + x + x) ^ y;
+	}
+	x ^= v->ob_size;
+	if (x == -1)
+		x = -2;
+	return x;
+}
+
 static int
 tuplelength(a)
 	tupleobject *a;
@@ -329,4 +350,5 @@ typeobject Tupletype = {
 	0,		/*tp_as_number*/
 	&tuple_as_sequence,	/*tp_as_sequence*/
 	0,		/*tp_as_mapping*/
+	tuplehash,	/*tp_hash*/
 };

@@ -1,6 +1,6 @@
 /***********************************************************
-Copyright 1991, 1992 by Stichting Mathematisch Centrum, Amsterdam, The
-Netherlands.
+Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Amsterdam, The Netherlands.
 
                         All Rights Reserved
 
@@ -108,9 +108,39 @@ meth_repr(m)
 		sprintf(buf, "<built-in function '%.80s'>", m->m_name);
 	else
 		sprintf(buf,
-			"<built-in method '%.80s' of some %.80s object>",
-			m->m_name, m->m_self->ob_type->tp_name);
+			"<built-in method '%.80s' of %.80s object at %lx>",
+			m->m_name, m->m_self->ob_type->tp_name,
+			(long)m->m_self);
 	return newstringobject(buf);
+}
+
+static int
+meth_compare(a, b)
+	methodobject *a, *b;
+{
+	if (a->m_self != b->m_self)
+		return cmpobject(a->m_self, b->m_self);
+	if (a->m_meth == b->m_meth)
+		return 0;
+	if (strcmp(a->m_name, b->m_name) < 0)
+		return -1;
+	else
+		return 1;
+}
+
+static long
+meth_hash(a)
+	methodobject *a;
+{
+	long x, y;
+	if (a->m_self == NULL)
+		x = 0;
+	else {
+		x = hashobject(a->m_self);
+		if (x == -1)
+			return -1;
+	}
+	return x ^ (long) a->m_meth;
 }
 
 typeobject Methodtype = {
@@ -123,11 +153,12 @@ typeobject Methodtype = {
 	0,		/*tp_print*/
 	0,		/*tp_getattr*/
 	0,		/*tp_setattr*/
-	0,		/*tp_compare*/
+	meth_compare,	/*tp_compare*/
 	meth_repr,	/*tp_repr*/
 	0,		/*tp_as_number*/
 	0,		/*tp_as_sequence*/
 	0,		/*tp_as_mapping*/
+	meth_hash,	/*tp_hash*/
 };
 
 object *listmethods PROTO((struct methodlist *)); /* Forward */

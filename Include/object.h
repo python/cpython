@@ -1,6 +1,6 @@
 /***********************************************************
-Copyright 1991, 1992 by Stichting Mathematisch Centrum, Amsterdam, The
-Netherlands.
+Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Amsterdam, The Netherlands.
 
                         All Rights Reserved
 
@@ -188,6 +188,10 @@ typedef struct _typeobject {
 	number_methods *tp_as_number;
 	sequence_methods *tp_as_sequence;
 	mapping_methods *tp_as_mapping;
+
+	/* More standard operations (at end for binary compatibility) */
+
+	long (*tp_hash) FPROTO((object *));
 } typeobject;
 
 extern typeobject Typetype; /* The type of type objects */
@@ -199,7 +203,9 @@ extern int printobject PROTO((object *, FILE *, int));
 extern object * reprobject PROTO((object *));
 extern int cmpobject PROTO((object *, object *));
 extern object *getattr PROTO((object *, char *));
-extern int setattr PROTO((object *, char *, object *));
+extern object *getattro PROTO((object *, object *));
+extern int setattro PROTO((object *, object *, object *));
+extern long hashobject PROTO((object *));
 
 /* Flag bits for printing: */
 #define PRINT_RAW	1	/* No string quotes etc. */

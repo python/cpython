@@ -52,9 +52,9 @@ extern int verbose; /* Defined in pythonmain.c */
 extern char *argv0;
 #endif
 
-/* Magic word to reject pre-0.9.4 .pyc files */
+/* Magic word to reject pre-0.9.9 .pyc files */
 
-#define MAGIC 0x949494L
+#define MAGIC 0x99BE2AL
 
 static object *modules;
 
