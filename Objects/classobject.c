@@ -729,6 +729,27 @@ instance_getattr(register PyInstanceObject *inst, PyObject *name)
 	return res;
 }
 
+/* See classobject.h comments:  this only does dict lookups, and is always
+ * safe to call.
+ */
+PyObject *
+_PyInstance_Lookup(PyObject *pinst, PyObject *name)
+{
+	PyObject *v;
+	PyClassObject *class;
+	PyInstanceObject *inst;	/* pinst cast to the right type */
+
+	assert(PyInstance_Check(pinst));
+	inst = (PyInstanceObject *)pinst;
+
+	assert(PyString_Check(name));
+
+ 	v = PyDict_GetItem(inst->in_dict, name);
+	if (v == NULL)
+		v = class_lookup(inst->in_class, name, &class);
+	return v;
+}
+
 static int
 instance_setattr1(PyInstanceObject *inst, PyObject *name, PyObject *v)
 {
@@ -1056,7 +1077,7 @@ sliceobj_from_intint(int i, int j)
 	start = PyInt_FromLong((long)i);
 	if (!start)
 		return NULL;
-	
+
 	end = PyInt_FromLong((long)j);
 	if (!end) {
 		Py_DECREF(start);
@@ -1088,9 +1109,9 @@ instance_slice(PyInstanceObject *inst, int i, int j)
 		if (func == NULL)
 			return NULL;
 		arg = Py_BuildValue("(N)", sliceobj_from_intint(i, j));
-	} else 
+	} else
 		arg = Py_BuildValue("(ii)", i, j);
-		
+
 	if (arg == NULL) {
 		Py_DECREF(func);
 		return NULL;
@@ -1219,7 +1240,7 @@ instance_contains(PyInstanceObject *inst, PyObject *member)
 		res = PyEval_CallObject(func, arg);
 		Py_DECREF(func);
 		Py_DECREF(arg);
-		if(res == NULL) 
+		if(res == NULL)
 			return -1;
 		ret = PyObject_IsTrue(res);
 		Py_DECREF(res);
@@ -1292,7 +1313,7 @@ static PyObject *coerce_obj;
 
 /* Try one half of a binary operator involving a class instance. */
 static PyObject *
-half_binop(PyObject *v, PyObject *w, char *opname, binaryfunc thisfunc, 
+half_binop(PyObject *v, PyObject *w, char *opname, binaryfunc thisfunc,
 		int swapped)
 {
 	PyObject *args;
@@ -1300,7 +1321,7 @@ half_binop(PyObject *v, PyObject *w, char *opname, binaryfunc thisfunc,
 	PyObject *coerced = NULL;
 	PyObject *v1;
 	PyObject *result;
-	
+
 	if (!PyInstance_Check(v)) {
 		Py_INCREF(Py_NotImplemented);
 		return Py_NotImplemented;
@@ -1654,7 +1675,7 @@ bin_power(PyObject *v, PyObject *w)
 /* This version is for ternary calls only (z != None) */
 static PyObject *
 instance_pow(PyObject *v, PyObject *w, PyObject *z)
-{	
+{
 	if (z == Py_None) {
 		return do_binop(v, w, "__pow__", "__rpow__", bin_power);
 	}
@@ -1723,7 +1744,7 @@ instance_ipow(PyObject *v, PyObject *w, PyObject *z)
 #define NAME_OPS 6
 static PyObject **name_op = NULL;
 
-static int 
+static int
 init_name_op(void)
 {
 	int i;
