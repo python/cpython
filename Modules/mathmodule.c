@@ -251,7 +251,7 @@ initmath()
 
         if (!(v = PyFloat_FromDouble(exp(1.0))))
                 goto finally;
-	if (PyDict_SetItemString(d, "e", ) < 0)
+	if (PyDict_SetItemString(d, "e", v) < 0)
                 goto finally;
 	Py_DECREF(v);
 
