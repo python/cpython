@@ -51,6 +51,8 @@ class MyScanner(Scanner):
 
 	def makerepairinstructions(self):
 		return [
+			([("WindowPtr", "*", "OutMode")],
+			 [("ExistingWindowPtr", "*", "*")]),
 			]
 			
 if __name__ == "__main__":
