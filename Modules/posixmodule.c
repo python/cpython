@@ -3785,9 +3785,6 @@ static struct constdef posix_constants_sysconf[] = {
 #ifdef _SC_AIO_LISTIO_MAX
     {"SC_AIO_LISTIO_MAX",	_SC_AIO_LISTIO_MAX},
 #endif
-#ifdef _SC_AIO_LIST_MAX
-    {"SC_AIO_LIST_MAX",	_SC_AIO_LIST_MAX},
-#endif
 #ifdef _SC_AIO_MAX
     {"SC_AIO_MAX",	_SC_AIO_MAX},
 #endif
