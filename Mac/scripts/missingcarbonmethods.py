@@ -62,6 +62,11 @@ missing_Qt = [
 	]
 
 missing_Qd = [
+	'device',
+	'portBits',
+	'portPixMap',
+	'portVersion',
+	'grafVars',
 	]
 
 missing_Qdoffs = [
