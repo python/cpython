@@ -16,7 +16,7 @@ handles the EMX port of the GNU C compiler to OS/2.
 #   of Python is only distributed with threads enabled.
 #
 # tested configurations:
-#   
+#
 # * EMX gcc 2.81/EMX 0.9d fix03
 
 # created 2001/5/7, Andrew MacIntyre, from Rene Liebscher's cywinccompiler.py
@@ -40,7 +40,7 @@ class EMXCCompiler (UnixCCompiler):
     shared_lib_format = "%s%s"
     res_extension = ".res"      # compiled resource file
     exe_extension = ".exe"
-   
+
     def __init__ (self,
                   verbose=0,
                   dry_run=0,
@@ -56,11 +56,11 @@ class EMXCCompiler (UnixCCompiler):
                 "Python's pyconfig.h doesn't seem to support your compiler.  " +
                 ("Reason: %s." % details) +
                 "Compiling may fail because of undefined preprocessor macros.")
-        
+
         (self.gcc_version, self.ld_version) = \
             get_versions()
         self.debug_print(self.compiler_type + ": gcc %s, ld %s\n" %
-                         (self.gcc_version, 
+                         (self.gcc_version,
                           self.ld_version) )
 
         # Hard-code GCC because that's what this is all about.
@@ -73,7 +73,7 @@ class EMXCCompiler (UnixCCompiler):
         # want the gcc library statically linked (so that we don't have
         # to distribute a version dependent on the compiler we have)
         self.dll_libraries=["gcc"]
-        
+
     # __init__ ()
 
     def _compile(self, obj, src, ext, cc_args, extra_postargs, pp_opts):
@@ -83,7 +83,7 @@ class EMXCCompiler (UnixCCompiler):
                 self.spawn(["rc", "-r", src])
             except DistutilsExecError, msg:
                 raise CompileError, msg
-        else: # for other files use the C-compiler 
+        else: # for other files use the C-compiler
             try:
                 self.spawn(self.compiler_so + cc_args + [src, '-o', obj] +
                            extra_postargs)
@@ -103,12 +103,12 @@ class EMXCCompiler (UnixCCompiler):
               extra_preargs=None,
               extra_postargs=None,
               build_temp=None):
-        
+
         # use separate copies, so we can modify the lists
         extra_preargs = copy.copy(extra_preargs or [])
         libraries = copy.copy(libraries or [])
         objects = copy.copy(objects or [])
-                
+
         # Additional libraries
         libraries.extend(self.dll_libraries)
 
@@ -118,10 +118,10 @@ class EMXCCompiler (UnixCCompiler):
             (target_desc != self.EXECUTABLE)):
             # (The linker doesn't do anything if output is up-to-date.
             # So it would probably better to check if we really need this,
-            # but for this we had to insert some unchanged parts of 
-            # UnixCCompiler, and this is not what we want.) 
+            # but for this we had to insert some unchanged parts of
+            # UnixCCompiler, and this is not what we want.)
 
-            # we want to put some files in the same directory as the 
+            # we want to put some files in the same directory as the
             # object files are, build_temp doesn't help much
             # where are the object files
             temp_dir = os.path.dirname(objects[0])
@@ -131,7 +131,7 @@ class EMXCCompiler (UnixCCompiler):
 
             # generate the filenames for these files
             def_file = os.path.join(temp_dir, dll_name + ".def")
-       
+
             # Generate .def file
             contents = [
                 "LIBRARY %s INITINSTANCE TERMINSTANCE" % \
@@ -144,21 +144,21 @@ class EMXCCompiler (UnixCCompiler):
                          "writing %s" % def_file)
 
             # next add options for def-file and to creating import libraries
-            # for gcc/ld the def-file is specified as any other object files    
+            # for gcc/ld the def-file is specified as any other object files
             objects.append(def_file)
 
         #end: if ((export_symbols is not None) and
         #        (target_desc != self.EXECUTABLE or self.linker_dll == "gcc")):
-                                                 
+
         # who wants symbols and a many times larger output file
-        # should explicitly switch the debug mode on 
+        # should explicitly switch the debug mode on
         # otherwise we let dllwrap/ld strip the output file
-        # (On my machine: 10KB < stripped_file < ??100KB 
+        # (On my machine: 10KB < stripped_file < ??100KB
         #   unstripped_file = stripped_file + XXX KB
-        #  ( XXX=254 for a typical python extension)) 
-        if not debug: 
-            extra_preargs.append("-s") 
-        
+        #  ( XXX=254 for a typical python extension))
+        if not debug:
+            extra_preargs.append("-s")
+
         UnixCCompiler.link(self,
                            target_desc,
                            objects,
@@ -172,7 +172,7 @@ class EMXCCompiler (UnixCCompiler):
                            extra_preargs,
                            extra_postargs,
                            build_temp)
-        
+
     # link ()
 
     # -- Miscellaneous methods -----------------------------------------
@@ -196,7 +196,7 @@ class EMXCCompiler (UnixCCompiler):
                 base = os.path.basename (base)
             if ext == '.rc':
                 # these need to be compiled to object files
-                obj_names.append (os.path.join (output_dir, 
+                obj_names.append (os.path.join (output_dir,
                                             base + self.res_extension))
             else:
                 obj_names.append (os.path.join (output_dir,
@@ -216,7 +216,7 @@ class EMXCCompiler (UnixCCompiler):
             emx_dirs = os.environ['LIBRARY_PATH'].split(';')
         except KeyError:
             emx_dirs = []
-	
+
         for dir in dirs + emx_dirs:
             shortlibp = os.path.join(dir, shortlib)
             longlibp = os.path.join(dir, longlib)
@@ -224,7 +224,7 @@ class EMXCCompiler (UnixCCompiler):
                 return shortlibp
             elif os.path.exists(longlibp):
                 return longlibp
-            
+
         # Oops, didn't find it in *any* of 'dirs'
         return None
 
@@ -266,15 +266,15 @@ def check_config_h():
     # GCC, and the pyconfig.h file should be OK
     if string.find(sys.version,"GCC") >= 0:
         return (CONFIG_H_OK, "sys.version mentions 'GCC'")
-    
+
     fn = sysconfig.get_config_h_filename()
     try:
         # It would probably better to read single lines to search.
-        # But we do this only once, and it is fast enough 
+        # But we do this only once, and it is fast enough
         f = open(fn)
         s = f.read()
         f.close()
-        
+
     except IOError, exc:
         # if we can't read this file, we cannot say it is wrong
         # the compiler will complain later about this file as missing
@@ -296,7 +296,7 @@ def get_versions():
     from distutils.version import StrictVersion
     from distutils.spawn import find_executable
     import re
-        
+
     gcc_exe = find_executable('gcc')
     if gcc_exe:
         out = os.popen(gcc_exe + ' -dumpversion','r')
@@ -313,4 +313,3 @@ def get_versions():
     # anyway - so we can link OMF DLLs
     ld_version = None
     return (gcc_version, ld_version)
-
