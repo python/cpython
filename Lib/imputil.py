@@ -7,7 +7,6 @@
 # note: avoid importing non-builtin modules
 import imp                      ### not available in JPython?
 import sys
-import strop
 import __builtin__
 
 # for the DirectoryImporter
@@ -78,7 +77,7 @@ class ImportManager:
     def _import_hook(self, fqname, globals=None, locals=None, fromlist=None):
         """Python calls this hook to locate and import a module."""
 
-        parts = strop.split(fqname, '.')
+        parts = fqname.split('.')
 
         # determine the context of this import
         parent = self._determine_import_context(globals)
@@ -157,7 +156,7 @@ class ImportManager:
             assert globals is parent.__dict__
             return parent
 
-        i = strop.rfind(parent_fqname, '.')
+        i = parent_fqname.rfind('.')
 
         # a module outside of a package has no particular import context
         if i == -1:
@@ -612,7 +611,6 @@ def _test_revamp():
 # TODO
 #
 # from Finn Bock:
-#   remove use of "strop" -- not available in JPython
 #   type(sys) is not a module in JPython. what to use instead?
 #   imp.C_EXTENSION is not in JPython. same for get_suffixes and new_module
 #
@@ -638,7 +636,6 @@ def _test_revamp():
 #   need __path__ processing
 #   performance
 #   move chaining to a subclass [gjs: it's been nuked]
-#   avoid strop
 #   deinstall should be possible
 #   query mechanism needed: is a specific Importer installed?
 #   py/pyc/pyo piping hooks to filter/process these files
