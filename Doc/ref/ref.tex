@@ -416,11 +416,10 @@ for long integers, it is strongly recommended to always use `L', since
 the letter `l' looks too much like the digit `1'.
 
 Plain integer decimal literals must be at most $2^{31} - 1$ (i.e., the
-largest positive integer, assuming 32-bit arithmetic); plain octal and
+largest positive integer, assuming 32-bit arithmetic).  Plain octal and
 hexadecimal literals may be as large as $2^{32} - 1$, but values
-larger than $2^{31} - 1$ are converted to a signed value in the range
-$-2^{31} \dots 2^{31} - 1$ by subtracting $2^{32}$.  There is no limit
-for long integer literals.
+larger than $2^{31} - 1$ are converted to a negative value by
+subtracting $2^{32}$.  There is no limit for long integer literals.
 
 Some examples of plain and long integer literals:
 
@@ -571,7 +570,7 @@ lists.
 Below is a list of the types that are built into Python.  Extension
 modules written in C can define additional types.  Future versions of
 Python may add types to the type hierarchy (e.g., rational or complex
-numbers, efficientlt stored arrays of integers, etc.).
+numbers, efficiently stored arrays of integers, etc.).
 \index{type}
 \index{type hierarchy}
 \index{extension module}
@@ -1619,8 +1618,9 @@ Mappings (dictionaries) are compared through lexicographic
 comparison of their sorted (key, value) lists.%
 \footnote{This is expensive since it requires sorting the keys first,
 but about the only sensible definition.  It was tried to compare
-dictionaries using the rule below for most other types, but this gave
-surprises in cases like \verb|if d == {}: ...|.}
+dictionaries by identity only, but this caused surprises because
+people expected to be able to test a dictionary for emptiness by
+comparing it to {\tt \{\}}.}
 
 \item
 Most other types compare unequal unless they are the same object;
@@ -2313,9 +2313,93 @@ original local name space.
 
 \section{P.M.}
 
-XXX Syntax for scripts, modules
-XXX Syntax for interactive input, eval, exec, execfile, input
 XXX New definition of expressions (as conditions)
+
+\chapter{Top-level components}
+
+The Python interpreter can get its input from a number of sources:
+from a script passed to it as standard input or as program argument,
+typed in interactively, from a module source file, etc.  This chapter
+gives the syntax used in these cases.
+
+\section{Complete Python programs}
+
+While a language specification need not prescribe how the language
+interpreter is invoked, it is useful to have a notion of a complete
+Python program.  A complete Python program is executed in a minimally
+initialized environment: all built-in and standard modules are
+available, but none have been initialized, except for \verb\sys\
+(various system services), \verb\builtin\ (built-in functions,
+exceptions and \verb\None\) and \verb\__main__\.  The latter is used
+to provide the local and global name space for execution of the
+complete program.
+
+The syntax for a complete Python program is that for file input,
+described in the next section.
+
+The interpreter may also be invoked in interactive mode; in this case,
+it does not read and execute a complete program but reads and executes
+one statement (possibly compound) at a time.  The initial environment
+is identical to that of a complete program; each statement is executed
+in the name space of \verb\__main__\.
+
+Under {\UNIX}, a complete program can be passed to the interpreter in
+three forms: with the {\bf -c} {\it string} command line option, as a
+file passed as the first command line argument, or as standard input.
+If the file or standard input is a tty device, the interpreter enters
+interactive mode; otherwise, it executes the file as a complete
+program.
+
+\section{File input}
+
+All input read from non-interactive files has the same form:
+
+\begin{verbatim}
+file_input:     (NEWLINE | statement)*
+\end{verbatim}
+
+This syntax is used in the following situations:
+
+\begin{itemize}
+
+\item when parsing a complete Python program (from a file or from a string);
+
+\item when parsing a module;
+
+\item when parsing a string passed to \verb\exec()\;
+
+\item when parsing a file passed to \verb\execfile()\;
+
+\end{itemize}
+
+\section{Interactive input}
+
+Input in interactive mode is parsed using the following grammar:
+
+\begin{verbatim}
+interactive_input: [stmt_list] NEWLINE | compound_stmt NEWLINE
+\end{verbatim}
+
+Note that a (top-level) compound statement must be followed by a blank
+line in interactive mode; this is needed to help the parser detect the
+end of the input.
+
+\section{Expression input}
+
+There are two forms of expression input.  Both ignore leading
+whitespace.
+ 
+The string argument to \verb\eval()\ must have the following form:
+
+\begin{verbatim}
+eval_input:     condition_list NEWLINE*
+\end{verbatim}
+
+The input line read by \verb\input()\ must have the following form:
+
+\begin{verbatim}
+input_input:    condition_list NEWLINE
+\end{verbatim}
 
 \input{ref.ind}		% The index
 
