@@ -1,4 +1,4 @@
-# An example of a multi-threaded Tkinter program.
+# Brownian motion -- an example of a multi-threaded Tkinter program.
 
 from Tkinter import *
 import random
@@ -14,22 +14,35 @@ RADIUS = 2
 LAMBDA = 10
 FILL = 'red'
 
+stop = 0                                # Set when main loop exits
+
+lock = threading.Lock()                 # Protects the random generator
+
 def particle(canvas):
     r = RADIUS
-    x = random.gauss(WIDTH/2.0, SIGMA)
-    y = random.gauss(HEIGHT/2.0, SIGMA)
+    lock.acquire()
+    try:
+        x = random.gauss(WIDTH/2.0, SIGMA)
+        y = random.gauss(HEIGHT/2.0, SIGMA)
+    finally:
+        lock.release()
     p = canvas.create_oval(x-r, y-r, x+r, y+r, fill=FILL)
-    while 1:
-        dx = random.gauss(0, BUZZ)
-        dy = random.gauss(0, BUZZ)
+    while not stop:
+        lock.acquire()
+        try:
+            dx = random.gauss(0, BUZZ)
+            dy = random.gauss(0, BUZZ)
+            dt = random.expovariate(LAMBDA)
+        finally:
+            lock.release()
         try:
             canvas.move(p, dx, dy)
         except TclError:
             break
-        dt = random.expovariate(LAMBDA)
         time.sleep(dt)
 
 def main():
+    global stop
     root = Tk()
     canvas = Canvas(root, width=WIDTH, height=HEIGHT)
     canvas.pack(fill='both', expand=1)
@@ -39,6 +52,9 @@ def main():
     for i in range(np):
         t = threading.Thread(target=particle, args=(canvas,))
         t.start()
-    root.mainloop()
+    try:
+        root.mainloop()
+    finally:
+        stop = 1
 
 main()
