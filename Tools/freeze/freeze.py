@@ -105,7 +105,7 @@ def main():
 
     # parse command line
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'deh:mo:p:P:qs:w')
+        opts, args = getopt.getopt(sys.argv[1:], 'de:hmo:p:P:qs:w')
     except getopt.error, msg:
         usage('getopt error: ' + str(msg))
 
