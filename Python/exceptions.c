@@ -785,7 +785,7 @@ SyntaxError__str__(PyObject *self, PyObject *args)
     /* XXX -- do all the additional formatting with filename and
        lineno here */
 
-    if (PyString_Check(str)) {
+    if (str != NULL && PyString_Check(str)) {
 	int have_filename = 0;
 	int have_lineno = 0;
 	char *buffer = NULL;
@@ -840,6 +840,44 @@ SyntaxError__str__(PyObject *self, PyObject *args)
 static PyMethodDef SyntaxError_methods[] = {
     {"__init__", SyntaxError__init__, METH_VARARGS},
     {"__str__",  SyntaxError__str__, METH_VARARGS},
+    {NULL, NULL}
+};
+
+
+static PyObject *
+KeyError__str__(PyObject *self, PyObject *args)
+{
+    PyObject *argsattr;
+    PyObject *result;
+
+    if (!PyArg_ParseTuple(args, "O:__str__", &self))
+	return NULL;
+
+    if (!(argsattr = PyObject_GetAttrString(self, "args")))
+	return NULL;
+
+    /* If args is a tuple of exactly one item, apply repr to args[0].
+       This is done so that e.g. the exception raised by {}[''] prints
+         KeyError: ''
+       rather than the confusing
+         KeyError
+       alone.  The downside is that if KeyError is raised with an explanatory
+       string, that string will be displayed in quotes.  Too bad.
+       If args is anything else, use the default Exception__str__().
+    */
+    if (PyTuple_Check(argsattr) && PyTuple_GET_SIZE(argsattr) == 1) {
+	PyObject *key = PyTuple_GET_ITEM(argsattr, 0);
+	result = PyObject_Repr(key);
+    }
+    else
+	result = Exception__str__(self, args);
+
+    Py_DECREF(argsattr);
+    return result;
+}
+
+static PyMethodDef KeyError_methods[] = {
+    {"__str__",  KeyError__str__, METH_VARARGS},
     {NULL, NULL}
 };
 
@@ -1617,7 +1655,7 @@ static struct {
  {"IndexError",         &PyExc_IndexError,     &PyExc_LookupError,
   IndexError__doc__},
  {"KeyError",           &PyExc_KeyError,       &PyExc_LookupError,
-  KeyError__doc__},
+  KeyError__doc__, KeyError_methods},
  {"ArithmeticError",    &PyExc_ArithmeticError, 0, ArithmeticError__doc__},
  {"OverflowError",      &PyExc_OverflowError,     &PyExc_ArithmeticError,
   OverflowError__doc__},

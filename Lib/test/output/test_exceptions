@@ -10,7 +10,7 @@ spam
 ImportError
 spam
 IndexError
-spam
+'spam'
 KeyError
 spam
 KeyboardInterrupt
