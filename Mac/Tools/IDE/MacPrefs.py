@@ -50,7 +50,8 @@ class PrefFile(PrefObject):
 		self._prefsdict = {}
 		try:
 			prefdict = marshal.load(open(self.__path, 'rb'))
-		except IOError:
+		except (IOError, ValueError):
+			# file not found, or currupt marshal data
 			pass
 		else:
 			for key, value in prefdict.items():
