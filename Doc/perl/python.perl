@@ -87,6 +87,9 @@ sub do_cmd_let{
 
 sub do_cmd_textasciitilde{ '~' . @_[0]; }
 sub do_cmd_textasciicircum{ '^' . @_[0]; }
+sub do_cmd_textbar{ '|' . @_[0]; }
+sub do_cmd_infinity{ '&infin;' . @_[0]; }
+sub do_cmd_plusminus{ '&plusmn;' . @_[0]; }
 
 
 # words typeset in a special way (not in HTML though)
@@ -1462,7 +1465,7 @@ sub process_all_localmoduletables{
             process_localmoduletables_in_file($file);
         }
         else {
-            print "\nsynopsis table $key has no file association";
+            print "\nsynopsis table $key has no file association\n";
         }
     }
 }
