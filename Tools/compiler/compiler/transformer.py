@@ -173,6 +173,10 @@ class Transformer:
         # code for function
         code = self.com_node(nodelist[4])
 
+        if doc is not None:
+            assert isinstance(code, Stmt)
+            assert isinstance(code.nodes[0], Discard)
+            del code.nodes[0]
         n = Function(name, names, defaults, flags, doc, code)
         n.lineno = lineno
         return n
@@ -400,7 +404,7 @@ class Transformer:
         if (len(nodelist) == 4):
             expr2 = self.com_node(nodelist[3])
         else:
-            expr2 = Name('None')
+            expr2 = None
         n = Assert(expr1, expr2)
         n.lineno = nodelist[0][2]
         return n
