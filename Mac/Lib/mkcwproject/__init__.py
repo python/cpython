@@ -40,12 +40,13 @@ def mkproject(outputfile, modulename, settings):
 	#
 	# Generate the project from the xml
 	#
+	makeproject(dictcopy['mac_projectxmlname'], outputfile)
+	
+def makeproject(xmlfile, projectfile):
 	cw = cwtalker.MyCodeWarrior(start=1)
 	cw.send_timeout = AppleEvents.kNoTimeOut
-##	xmlfss = macfs.FSSpec(dictcopy['mac_projectxmlname'])
-##	prjfss = macfs.FSSpec(outputfile)
-	xmlfss = dictcopy['mac_projectxmlname']
-	prjfss = outputfile
+	xmlfss = macfs.FSSpec(xmlfile)
+	prjfss = macfs.FSSpec(projectfile)
 	cw.activate()
 	cw.my_mkproject(prjfss, xmlfss)
 	
