@@ -1,7 +1,6 @@
 import os
 import bdb
 import types
-import traceback
 from Tkinter import *
 from WindowList import ListedToplevel
 from ScrolledList import ScrolledList
