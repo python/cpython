@@ -201,6 +201,10 @@ Extension modules
 
 Library
 
+- New "algorithms" module: heapq, implements a heap queue.  Thanks to
+  Kevin O'Connor for the code and François Pinard for an entertaining
+  write-up explaining the theory and practical uses of heaps.
+
 - New encoding for the Palm OS character set: palmos.
 
 - binascii.crc32() and the zipfile module had problems on some 64-bit
