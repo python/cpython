@@ -11,7 +11,7 @@ file causing it."""
 
 __revision__ = "$Id$"
 
-import os, string, re, shutil
+import sys, os, string, re, shutil
 from distutils.errors import *
 
 
