@@ -3,6 +3,22 @@ Microsoft Developer Studio Workspace File, Format Version 6.00
 
 ###############################################################################
 
+Project: "_sre"=".\_sre.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+    begin source code control
+    _sre
+    ..
+    end source code control
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
 Project: "_tkinter"=".\_tkinter.dsp" - Package Owner=<4>
 
 Package=<5>
