@@ -1,15 +1,32 @@
-This is Python version 2.0
-==========================
+This is Python version 2.0 beta 1
+=================================
 
-There are various beta versions -- these are distinguishable through
-Include/patchlevel.h or by the name of the top-level directory and the
-tar file.
+Copyright (c) 2000 BeOpen.com.
+All rights reserved.
+
+Copyright (c) 1995-2000 Corporation for National Research Initiatives.
+All rights reserved.
+
+Copyright (c) 1991-1995, Stichting Mathematisch Centrum.
+All rights reserved.
+
+License information
+-------------------
+
+See the file "LICENSE" for information on terms & conditions for
+accessing and otherwise using this software, and for a DISCLAIMER OF
+ALL WARRANTIES.
+
+The Python distribution is *not* affected by the GNU Public Licence
+(GPL).  There are interfaces to some GNU code but these are entirely
+optional and no GNU code is distributed with Python.
 
 
 What's new in this release?
 ---------------------------
 
-See http://www.pythonlabs.com/tech/python2.html .
+See the file Misc/NEWS; see also this URL:
+http://www.pythonlabs.com/tech/python2.html
 
 
 If you don't read instructions
@@ -26,9 +43,10 @@ part on customizing Modules/Setup.
 What is Python anyway?
 ----------------------
 
-Python is an interpreted object-oriented programming language, and is
-often compared to Tcl, Perl, Java or Scheme.  To find out more, point
-your browser to http://www.pythonlabs.com/.
+Python is an interpreted object-oriented programming language.  It is
+often compared to Tcl, Perl, Java, JavaScript, Visual Basic or Scheme.
+To find out more about what Python can do for you, point your browser
+to http://www.pythonlabs.com/.
 
 
 How do I learn Python?
@@ -42,15 +60,80 @@ There's a quickly growing set of books on Python.  See
 http://www.python.org/psa/bookstore/ for a list.
 
 
-Copyright issues
-----------------
+Documentation
+-------------
 
-Python is COPYRIGHTED but free to use for all.  See the full copyright
-notice at the end of this file and in the file Misc/COPYRIGHT.
+All documentation is provided online in a variety of formats.  In
+order of importance for new users: Tutorial, Library Reference,
+Language Reference, Extending & Embedding, and the Python/C API.
+Especially the Library Reference is of immense value since much of
+Python's power (including the built-in data types and functions!) is
+described there.
 
-The Python distribution is *not* affected by the GNU Public Licence
-(GPL).  There are interfaces to some GNU code but these are entirely
-optional and no GNU code is distributed with Python.
+All documentation is also available online via the Python web site
+(http://www.python.org/doc/, see below).  It is available online for
+occaissional reference, or can be downloaded in many formats for
+faster access.  The documents are available in HTML, PostScript, PDF,
+HTML Help, and LaTeX; the LaTeX version is primarily for documentation
+authors or people with special formatting requirements.
+
+
+Web site
+--------
+
+Python's web site is at http://www.python.org/.  The Python core
+development team at BeOpen has its own website at
+http://www.pythonlabs.com/.  Come visit us!
+
+
+Newsgroups
+----------
+
+Read comp.lang.python, a high-volume discussion newsgroup about
+Python, or comp.lang.python.announce, a low-volume moderated newsgroup
+for Python-related announcements.  These are also accessible as
+mailing lists, see the next item.
+
+Archives are accessible via Deja News; the Python website has a
+query form for the archives at http://www.python.org/search/.
+
+
+Mailing lists
+-------------
+
+See http://www.python.org/psa/MailingLists.html for an overview of the
+many Python related mailing lists.
+
+
+Bug reports
+-----------
+
+To report or search for bugs, please use the SourceForge Bugs
+Tracker at http://sourceforge.net/bugs/?group_id=5470 .
+
+
+Patches and contributions
+-------------------------
+
+To submit a patch or other contribution, please use the SourceForge
+Patch Manager at http://sourceforge.net/patch/?group_id=5470 .
+
+If you have a proposal to change Python, it's best to submit a Python
+Enhancement Proposal (PEP) first.  All current PEPs, as well as
+guidelines for submitting a new PEP, are here:
+http://python.sourceforge.net/peps/.
+
+
+Questions
+---------
+
+For help, if you can't find it in the manuals or on the web site, it's
+best to post to the comp.lang.python or the Python mailing list (see
+above).  If you specifically don't want to involve the newsgroup or
+mailing list, send questions to <help@python.org> (a group of
+volunteers which does *not* include me).  Because of my work and email
+volume, I'm often be slow in answering questions sent to me directly;
+I prefer to answer questions posted to the newsgroup.
 
 
 
@@ -621,96 +704,19 @@ of int if they need to be defined at all.
 Miscellaneous issues
 ====================
 
-Documentation
--------------
-
-All documentation is provided online in a variety of formats.  In
-order of importance for new users: Tutorial, Library Reference,
-Language Reference, Extending & Embedding, and the Python/C API.
-Especially the Library Reference is of immense value since much of
-Python's power (including the built-in data types and functions!) is
-described there.
-
-All documentation is also available online via the Python web site
-(http://www.python.org/doc/, see below).  It is available online for
-occaissional reference, or can be downloaded in many formats for
-faster access.  The documents are available in HTML, PostScript, PDF,
-HTML Help, and LaTeX; the LaTeX version is primarily for documentation
-authors or people with special formatting requirements.
-
-
 Emacs mode
 ----------
 
 There's an excellent Emacs editing mode for Python code; see the file
 Misc/python-mode.el.  Originally written by the famous Tim Peters, it
-is now maintained by the equally famous Barry Warsaw
-<bwarsaw@python.org>.  The latest version, along with various other
-contributed Python-related Emacs goodies, is online at
-<http://www.python.org/emacs/python-mode>.  And if you are planning to
-edit the Python C code, please pick up the latest version of CC Mode
-<http://www.python.org/emacs/cc-mode>; it contains a "python" style
-used throughout most of the Python C source files.  (Newer versions of
-Emacs or XEmacs may already come with the latest version of
-python-mode.)
-
-
-Web site
---------
-
-Python's web site is at http://www.python.org/.  The Python core
-development team at BeOpen has its own website at
-http://www.pythonlabs.com/.  Come visit us!
-
-
-Newsgroups
-----------
-
-Read comp.lang.python, a high-volume discussion newsgroup about
-Python, or comp.lang.python.announce, a low-volume moderated newsgroup
-for Python-related announcements.  These are also accessible as
-mailing lists, see the next item.
-
-Archives are accessible via Deja News; the Python website has a
-query form for the archives at http://www.python.org/search/.
-
-
-Mailing lists
--------------
-
-See http://www.python.org/psa/MailingLists.html for an overview of the 
-many Python related mailing lists.
-
-
-Bug reports
------------
-
-To report or search for bugs, please use the SourceForge Bugs
-Tracker at http://sourceforge.net/bugs/?group_id=5470 .
-
-
-Patches and contributions
--------------------------
-
-To submit a patch or other contribution, please use the SourceForge
-Patch Manager at http://sourceforge.net/patch/?group_id=5470 .
-
-If you have a proposal to change Python, it's best to submit a Python
-Enhancement Proposal (PEP) first.  All current PEPs, as well as
-guidelines for submitting a new PEP, are here:
-http://python.sourceforge.net/peps/.
-
-
-Questions
----------
-
-For help, if you can't find it in the manuals or on the web site, it's
-best to post to the comp.lang.python or the Python mailing list (see
-above).  If you specifically don't want to involve the newsgroup or
-mailing list, send questions to <help@python.org> (a group of
-volunteers which does *not* include me).  Because of my work and email
-volume, I'm often be slow in answering questions sent to me directly;
-I prefer to answer questions posted to the newsgroup.
+is now maintained by the equally famous Barry Warsaw.  The latest
+version, along with various other contributed Python-related Emacs
+goodies, is online at <http://www.python.org/emacs/python-mode>.  And
+if you are planning to edit the Python C code, please pick up the
+latest version of CC Mode <http://www.python.org/emacs/cc-mode>; it
+contains a "python" style used throughout most of the Python C source
+files.  (Newer versions of Emacs or XEmacs may already come with the
+latest version of python-mode.)
 
 
 The Tk interface
@@ -740,7 +746,7 @@ guido, matt and www (the matt and guido subdirectories have been
 overhauled to use more recent Tkinter coding conventions).
 
 Note that there's a Python module called "Tkinter" (capital T) which
-lives in Lib/tkinter/Tkinter.py, and a C module called "_tkinter"
+lives in Lib/lib-tk/Tkinter.py, and a C module called "_tkinter"
 (lower case t and leading underscore) which lives in
 Modules/_tkinter.c.  Demos and normal Tk applications only import the
 Python Tkinter module -- only the latter uses the C _tkinter module
@@ -760,50 +766,47 @@ Distribution structure
 Most subdirectories have their own README file.  Most files have
 comments.
 
+.cvsignore	Additional filename matching patterns for CVS to ignore
+BeOS/		Files specific to the BeOS port
 Demo/           Demonstration scripts, modules and programs
+Doc/		Documentation sources (LaTeX)
 Grammar/        Input for the parser generator
 Include/        Public header files
+LICENSE		Licensing information
 Lib/            Python library modules
 Makefile.in     Source from which config.status creates Makefile
 Misc/           Miscellaneous useful files
 Modules/        Implementation of most built-in modules
 Objects/        Implementation of most built-in object types
-PC/             PC porting files (DOS, Windows, OS/2)
-PCbuild/	Directory where you should build for Windows NT/95
+PC/             Files specific to PC ports (DOS, Windows, OS/2)
+PCbuild/	Build directory for Microsoft Visual C++
 Parser/         The parser and tokenizer and their input handling
 Python/         The "compiler" and interpreter
 README          The file you're reading now
 Tools/          Some useful programs written in Python
-acconfig.h      Additional input for the autoheader program
-config.h.in     Source from which config.status creates config.h
+acconfig.h      Additional input for the GNU autoheader program
+config.h.in     Source from which config.h is created (GNU autoheader output)
 configure       Configuration shell script (GNU autoconf output)
-configure.in    Configuration specification (GNU autoconf input)
+configure.in    Configuration specification (input for GNU autoconf)
 install-sh      Shell script used to install files
 
 The following files will (may) be created in the toplevel directory by
 the configuration and build processes:
 
 Makefile        Build rules
-config.cache    cache of configuration variables
+buildno		Keeps track of the build number
+config.cache    Cache of configuration variables
 config.h        Configuration header
 config.log      Log from last configure run
 config.status   Status from last run of configure script
+getbuildinfo.o	Object file from Modules/getbuildinfo.c
 libpython2.0.a	The library archive
 python          The executable interpreter
 tags, TAGS      Tags files for vi and Emacs
 
 
-
-How to reach the author
-=======================
-
-Guido van Rossum
-BeOpen.com
-160 Saratoga Avenue, Suite 46
-Santa Clara, CA 95051
-
-E-mail: guido@beopen.com or guido@python.org
+That's all, folks!
+------------------
 
 
-
---Guido van Rossum (home page: http://www.python.org/~guido/)
+--Guido van Rossum (home page: http://www.pythonlabs.com/~guido/)
