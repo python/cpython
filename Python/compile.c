@@ -46,10 +46,10 @@ extern int errno;
 #define OFF(x) offsetof(codeobject, x)
 
 static struct memberlist code_memberlist[] = {
-	{"co_code",	T_OBJECT,	OFF(co_code)},
-	{"co_consts",	T_OBJECT,	OFF(co_consts)},
-	{"co_names",	T_OBJECT,	OFF(co_names)},
-	{"co_filename",	T_OBJECT,	OFF(co_filename)},
+	{"co_code",	T_OBJECT,	OFF(co_code),		READONLY},
+	{"co_consts",	T_OBJECT,	OFF(co_consts),		READONLY},
+	{"co_names",	T_OBJECT,	OFF(co_names),		READONLY},
+	{"co_filename",	T_OBJECT,	OFF(co_filename),	READONLY},
 	{NULL}	/* Sentinel */
 };
 
