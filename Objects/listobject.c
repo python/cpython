@@ -631,7 +631,7 @@ docompare(x, y, compare)
    good assumption for Python), it should be 10, which is the cutoff
    point: quicksort requires more comparisons than insertion sort for
    smaller arrays. */
-#define MINSIZE 12
+#define MINSIZE 10
 
 /* Straight insertion sort.  More efficient for sorting small arrays. */
 
