@@ -301,8 +301,9 @@ dictresize(mp, minused)
 			insertdict(mp,ep->me_key,ep->me_hash,ep->me_value);
 	}
 	for (i = 0, ep = oldtable; i < oldsize; i++, ep++) {
-		if (ep->me_value == NULL)
+		if (ep->me_value == NULL) {
 			Py_XDECREF(ep->me_key);
+		}
 	}
 
 	PyMem_XDEL(oldtable);
@@ -483,10 +484,12 @@ dict_dealloc(mp)
 	register int i;
 	register dictentry *ep;
 	for (i = 0, ep = mp->ma_table; i < mp->ma_size; i++, ep++) {
-		if (ep->me_key != NULL)
+		if (ep->me_key != NULL) {
 			Py_DECREF(ep->me_key);
-		if (ep->me_value != NULL)
+		}
+		if (ep->me_value != NULL) {
 			Py_DECREF(ep->me_value);
+		}
 	}
 	PyMem_XDEL(mp->ma_table);
 	PyMem_DEL(mp);
@@ -501,20 +504,34 @@ dict_print(mp, fp, flags)
 	register int i;
 	register int any;
 	register dictentry *ep;
+
+	i = Py_ReprEnter((PyObject*)mp);
+	if (i != 0) {
+		if (i < 0)
+			return i;
+		fprintf(fp, "{...}");
+		return 0;
+	}
+
 	fprintf(fp, "{");
 	any = 0;
 	for (i = 0, ep = mp->ma_table; i < mp->ma_size; i++, ep++) {
 		if (ep->me_value != NULL) {
 			if (any++ > 0)
 				fprintf(fp, ", ");
-			if (PyObject_Print((PyObject *)ep->me_key, fp, 0) != 0)
+			if (PyObject_Print((PyObject *)ep->me_key, fp, 0)!=0) {
+				Py_ReprLeave((PyObject*)mp);
 				return -1;
+			}
 			fprintf(fp, ": ");
-			if (PyObject_Print(ep->me_value, fp, 0) != 0)
+			if (PyObject_Print(ep->me_value, fp, 0) != 0) {
+				Py_ReprLeave((PyObject*)mp);
 				return -1;
+			}
 		}
 	}
 	fprintf(fp, "}");
+	Py_ReprLeave((PyObject*)mp);
 	return 0;
 }
 
@@ -527,6 +544,14 @@ dict_repr(mp)
 	register int i;
 	register int any;
 	register dictentry *ep;
+
+	i = Py_ReprEnter((PyObject*)mp);
+	if (i != 0) {
+		if (i > 0)
+			return PyString_FromString("{...}");
+		return NULL;
+	}
+
 	v = PyString_FromString("{");
 	sepa = PyString_FromString(", ");
 	colon = PyString_FromString(": ");
@@ -541,6 +566,7 @@ dict_repr(mp)
 		}
 	}
 	PyString_ConcatAndDel(&v, PyString_FromString("}"));
+	Py_ReprLeave((PyObject*)mp);
 	Py_XDECREF(sepa);
 	Py_XDECREF(colon);
 	return v;
