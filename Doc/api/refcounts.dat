@@ -216,6 +216,11 @@ PyEval_RestoreThread:PyThreadState*:tstate::
 
 PyEval_SaveThread:PyThreadState*:::
 
+PyEval_EvalCode:PyObject*::+1:
+PyEval_EvalCode:PyCodeObject*:co:0:
+PyEval_EvalCode:PyObject*:globals:0:
+PyEval_EvalCode:PyObject*:locals:0:
+
 PyFile_AsFile:FILE*:::
 PyFile_AsFile:PyFileObject*:p:0:
 
@@ -649,7 +654,7 @@ PyRun_AnyFile:int:::
 PyRun_AnyFile:FILE*:fp::
 PyRun_AnyFile:char*:filename::
 
-PyRun_File:PyObject*::1:??? -- same as eval_code2()
+PyRun_File:PyObject*::+1:??? -- same as eval_code2()
 PyRun_File:FILE*:fp::
 PyRun_File:char*:filename::
 PyRun_File:int:start::
@@ -671,7 +676,7 @@ PyRun_SimpleFile:char*:filename::
 PyRun_SimpleString:int:::
 PyRun_SimpleString:char*:command::
 
-PyRun_String:PyObject*::1:??? -- same as eval_code2()
+PyRun_String:PyObject*::+1:??? -- same as eval_code2()
 PyRun_String:char*:str::
 PyRun_String:int:start::
 PyRun_String:PyObject*:globals:0:
