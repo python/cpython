@@ -27,22 +27,12 @@ class install_py (Command):
 
     def finalize_options (self):
 
-        # Find out from the 'build_ext' command if we were asked to build
-        # any extensions.  If so, that means even pure-Python modules in
-        # this distribution have to be installed to the "platlib"
-        # directory.
-        extensions = self.get_peer_option ('build_ext', 'extensions')
-        if extensions:
-            dir_option = 'install_site_platlib'
-        else:
-            dir_option = 'install_site_lib'
-
         # Get all the information we need to install pure Python modules
         # from the umbrella 'install' command -- build (source) directory,
         # install (target) directory, and whether to compile .py files.
         self.set_undefined_options ('install',
                                     ('build_lib', 'build_dir'),
-                                    (dir_option, 'install_dir'),
+                                    ('install_lib', 'install_dir'),
                                     ('compile_py', 'compile'),
                                     ('optimize_py', 'optimize'))
 
@@ -52,8 +42,9 @@ class install_py (Command):
         # Make sure we have "built" all pure Python modules first
         self.run_peer ('build_py')
 
-        # Dump entire contents of the build directory to the installation
-        # directory (that's the beauty of having a build directory!)
+        # Install everything: simply dump the entire contents of the build
+        # directory to the installation directory (that's the beauty of
+        # having a build directory!)
         outfiles = self.copy_tree (self.build_dir, self.install_dir)
                    
         # (Optionally) compile .py to .pyc
@@ -65,7 +56,8 @@ class install_py (Command):
             from py_compile import compile
 
             for f in outfiles:
-                # XXX can't assume this filename mapping!
+                # XXX can't assume this filename mapping! (what if
+                # we're running under "python -O"?)
 
                 # only compile the file if it is actually a .py file
                 if f[-3:] == '.py':
