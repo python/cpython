@@ -182,6 +182,8 @@ Here's an overview of the questions per chapter:
   4.41. Q. How do I delete a file?  And other file questions.
   4.42. Q. How to modify urllib or httplib to support HTTP/1.1?
   4.43. Q. Unexplicable syntax errors in compile() or exec.
+  4.44. Q. How do I convert a string to a number?
+  4.45. Q. How do I convert a number to a string?
 
  5. Extending Python
   5.1. Q. Can I create my own functions in C?
@@ -1707,6 +1709,27 @@ A. When a statement suite (as opposed to an expression) is compiled by
 compile(), exec or execfile(), it *must* end in a newline.  In some
 cases, when the source ends in an indented block it appears that at
 least two newlines are required.
+
+4.44. Q. How do I convert a string to a number?
+
+A. To convert, e.g., the string '144' to the number 144, import the
+module string and use the string.atoi() function.  For floating point
+numbers, use string.atof(); for long integers, use string.atol().  See
+the library reference manual section for the string module for more
+details.  While you could use the built-in function eval() instead of
+any of those, this is not recommended, because someone could pass you
+a Python expression that might have unwanted side effects (like
+reformatting your disk).
+
+4.45. Q. How do I convert a number to a string?
+
+A. To convert, e.g., the number 144 to the string '144', use the
+built-in function repr() or the backquote notation (these are
+equivalent).  If you want a hexadecimal or octal representation, use
+the built-in functions hex() or oct(), respectively.  For fancy
+formatting, use the % operator on strings, just like C printf formats,
+e.g. "%04d" % 144 yields '0144' and "%.3f" % (1/3.0) yields '0.333'.
+See the library reference manual for details.
 
 
 5. Extending Python
