@@ -284,7 +284,7 @@ int
 PyObject_Compare(v, w)
 	PyObject *v, *w;
 {
-	PyTypeObject *tp;
+	PyTypeObject *vtp, *wtp;
 	if (v == NULL || w == NULL) {
 		PyErr_BadInternalCall();
 		return -1;
@@ -309,9 +309,11 @@ PyObject_Compare(v, w)
 		Py_DECREF(res);
 		return (c < 0) ? -1 : (c > 0) ? 1 : 0;	
 	}
-	if ((tp = v->ob_type) != w->ob_type) {
-		if (tp->tp_as_number != NULL &&
-				w->ob_type->tp_as_number != NULL) {
+	if ((vtp = v->ob_type) != (wtp = w->ob_type)) {
+		char *vname = vtp->tp_name;
+		char *wname = wtp->tp_name;
+		if (vtp->tp_as_number != NULL &&
+				wtp->tp_as_number != NULL) {
 			int err;
 			err = PyNumber_CoerceEx(&v, &w);
 			if (err < 0)
@@ -323,11 +325,16 @@ PyObject_Compare(v, w)
 				return cmp;
 			}
 		}
-		return strcmp(tp->tp_name, w->ob_type->tp_name);
+		else if (vtp->tp_as_number != NULL)
+			vname = "";
+		else if (wtp->tp_as_number != NULL)
+			wname = "";
+		/* Numerical types compare smaller than all other types */
+		return strcmp(vname, wname);
 	}
-	if (tp->tp_compare == NULL)
+	if (vtp->tp_compare == NULL)
 		return (v < w) ? -1 : 1;
-	return (*tp->tp_compare)(v, w);
+	return (*vtp->tp_compare)(v, w);
 }
 
 long
