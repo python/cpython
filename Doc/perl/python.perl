@@ -730,7 +730,7 @@ sub do_env_cfuncdesc{
                    . "\n  <span class=\"value\">$rcinfo.</span>"
                    . "\n</div>");
     }
-    return "<dl><dt>$return_type <b>$idx</b> (<var>$arg_list</var>)\n<dd>"
+    return "<dl><dt>$return_type <b>$idx</b>(<var>$arg_list</var>)\n<dd>"
            . $rcinfo
            . $_
            . '</dl>';
@@ -785,7 +785,7 @@ sub do_env_funcdesc{
 				   . get_indexsubitem());
     $idx =~ s/ \(.*\)//;
     $idx =~ s/\(\)<\/tt>/<\/tt>/;
-    return "<dl><dt><b>$idx</b> (<var>$arg_list</var>)\n<dd>" . $_ . '</dl>';
+    return "<dl><dt><b>$idx</b>(<var>$arg_list</var>)\n<dd>" . $_ . '</dl>';
 }
 
 sub do_env_funcdescni{
@@ -793,7 +793,7 @@ sub do_env_funcdescni{
     my $function_name = next_argument();
     my $arg_list = convert_args(next_argument());
     return "<dl><dt><b><tt class='function'>$function_name</tt></b>"
-      . " (<var>$arg_list</var>)\n"
+      . "(<var>$arg_list</var>)\n"
       . '<dd>'
       . $_
       . '</dl>';
@@ -807,7 +807,7 @@ sub do_cmd_funcline{
     my $idx = make_str_index_entry($prefix . get_indexsubitem());
     $prefix =~ s/\(\)//;
 
-    return "<dt><b>$prefix</b> (<var>$arg_list</var>)\n<dd>" . $_;
+    return "<dt><b>$prefix</b>(<var>$arg_list</var>)\n<dd>" . $_;
 }
 
 sub do_cmd_funclineni{
@@ -816,7 +816,7 @@ sub do_cmd_funclineni{
     my $arg_list = convert_args(next_argument());
     my $prefix = "<tt class='function'>$function_name</tt>";
 
-    return "<dt><b>$prefix</b> (<var>$arg_list</var>)\n<dd>" . $_;
+    return "<dt><b>$prefix</b>(<var>$arg_list</var>)\n<dd>" . $_;
 }
 
 # Change this flag to index the opcode entries.  I don't think it's very
@@ -895,7 +895,7 @@ sub handle_classlike_descriptor{
     $idx = make_str_index_entry(
 		"<tt class='$what'>$THIS_CLASS</tt> ($what in $THIS_MODULE)" );
     $idx =~ s/ \(.*\)//;
-    return ("<dl><dt><b>$what $idx</b> (<var>$arg_list</var>)\n<dd>"
+    return ("<dl><dt><b>$what $idx</b>(<var>$arg_list</var>)\n<dd>"
             . $_
             . '</dl>');
 }
@@ -923,7 +923,7 @@ sub do_env_methoddesc{
     my $idx = make_str_index_entry("<tt class='method'>$method()</tt>$extra");
     $idx =~ s/ \(.*\)//;
     $idx =~ s/\(\)//;
-    return "<dl><dt><b>$idx</b> (<var>$arg_list</var>)\n<dd>" . $_ . '</dl>';
+    return "<dl><dt><b>$idx</b>(<var>$arg_list</var>)\n<dd>" . $_ . '</dl>';
 }
 
 
@@ -941,7 +941,7 @@ sub do_cmd_methodline{
     my $idx = make_str_index_entry("<tt class='method'>$method()</tt>$extra");
     $idx =~ s/ \(.*\)//;
     $idx =~ s/\(\)//;
-    return "<dt><b>$idx</b> (<var>$arg_list</var>)\n<dd>"
+    return "<dt><b>$idx</b>(<var>$arg_list</var>)\n<dd>"
            . $_;
 }
 
@@ -951,7 +951,7 @@ sub do_cmd_methodlineni{
     next_optional_argument();
     my $method = next_argument();
     my $arg_list = convert_args(next_argument());
-    return "<dt><b>$method</b> (<var>$arg_list</var>)\n<dd>"
+    return "<dt><b>$method</b>(<var>$arg_list</var>)\n<dd>"
            . $_;
 }
 
@@ -960,7 +960,7 @@ sub do_env_methoddescni{
     next_optional_argument();
     my $method = next_argument();
     my $arg_list = convert_args(next_argument());
-    return "<dl><dt><b>$method</b> (<var>$arg_list</var>)\n<dd>"
+    return "<dl><dt><b>$method</b>(<var>$arg_list</var>)\n<dd>"
            . $_
 	   . '</dl>';
 }
