@@ -8,11 +8,11 @@
 This module provides a standard interface to extract, format and print
 stack traces of Python programs.  It exactly mimics the behavior of
 the Python interpreter when it prints a stack trace.  This is useful
-when you want to print stack traces under program control, e.g. in a
+when you want to print stack traces under program control, such as in a
 ``wrapper'' around the interpreter.
 
-The module uses traceback objects --- this is the object type
-that is stored in the variables \code{sys.exc_traceback} and
+The module uses traceback objects --- this is the object type that is
+stored in the variables \code{sys.exc_traceback} (deprecated) and
 \code{sys.last_traceback} and returned as the third item from
 \function{sys.exc_info()}.
 \obindex{traceback}
@@ -35,22 +35,22 @@ This differs from \function{print_tb()} in the
 following ways: (1) if \var{traceback} is not \code{None}, it prints a
 header \samp{Traceback (most recent call last):}; (2) it prints the
 exception \var{type} and \var{value} after the stack trace; (3) if
-\var{type} is \exception{SyntaxError} and \var{value} has the appropriate
-format, it prints the line where the syntax error occurred with a
-caret indicating the approximate position of the error.
+\var{type} is \exception{SyntaxError} and \var{value} has the
+appropriate format, it prints the line where the syntax error occurred
+with a caret indicating the approximate position of the error.
 \end{funcdesc}
 
 \begin{funcdesc}{print_exc}{\optional{limit\optional{, file}}}
-This is a shorthand for `\code{print_exception(sys.exc_type,}
-\code{sys.exc_value,} \code{sys.exc_traceback,} \var{limit}\code{,}
-\var{file}\code{)}'.  (In fact, it uses \code{sys.exc_info()} to
-retrieve the same information in a thread-safe way.)
+This is a shorthand for \code{print_exception(sys.exc_type,
+sys.exc_value, sys.exc_traceback, \var{limit}, \var{file})}.  (In
+fact, it uses \function{sys.exc_info()} to retrieve the same
+information in a thread-safe way instead of using the deprecated
+variables.)
 \end{funcdesc}
 
 \begin{funcdesc}{print_last}{\optional{limit\optional{, file}}}
-This is a shorthand for `\code{print_exception(sys.last_type,}
-\code{sys.last_value,} \code{sys.last_traceback,} \var{limit}\code{,}
-\var{file}\code{)}'.
+This is a shorthand for \code{print_exception(sys.last_type,
+sys.last_value, sys.last_traceback, \var{limit}, \var{file})}.
 \end{funcdesc}
 
 \begin{funcdesc}{print_stack}{\optional{f\optional{, limit\optional{, file}}}}
@@ -93,8 +93,8 @@ Format the exception part of a traceback.  The arguments are the
 exception type and value such as given by \code{sys.last_type} and
 \code{sys.last_value}.  The return value is a list of strings, each
 ending in a newline.  Normally, the list contains a single string;
-however, for \code{SyntaxError} exceptions, it contains several lines
-that (when printed) display detailed information about where the
+however, for \exception{SyntaxError} exceptions, it contains several
+lines that (when printed) display detailed information about where the
 syntax error occurred.  The message indicating which exception
 occurred is the always last string in the list.
 \end{funcdesc}
