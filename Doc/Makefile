@@ -19,7 +19,7 @@
 # four.  You can also do "make lib" (etc.) to process individual
 # documents.
 #
-# There's one local style file: myformat.sty.  This defines a number
+# There's one local style file: python.sty.  This defines a number
 # of macros that are similar in name and intent as macros in Texinfo
 # (e.g. \code{...} and \emph{...}), as well as a number of
 # environments for formatting function and data definitions, also in
@@ -125,7 +125,7 @@ tut-all:  tut.dvi tut.pdf tut.ps l2htut
 	$(PDFLATEX) $*
 
 # Dependencies
-COMMONTEX=myformat.sty copyright.tex boilerplate.tex
+COMMONTEX=python.sty manual.cls copyright.tex boilerplate.tex
 
 $(DVIFILES): fix_hack $(COMMONTEX)
 
@@ -245,7 +245,7 @@ lib.texi: python-lib.texi
 
 l2h: l2hapi l2hext l2hlib l2htut
 
-l2htut: tut.dvi myformat.perl
+l2htut: tut.dvi manual.perl python.perl
 	$(L2H) $(L2HARGS) tut.tex
 	(cd tut; ../node2label.pl *.html)
 	sed 's/^<P CLASS=ABSTRACT>,/<P CLASS=ABSTRACT>/' \
@@ -253,7 +253,7 @@ l2htut: tut.dvi myformat.perl
 	mv tut/xxx tut/tut.html
 	ln -s tut.html tut/index.html || true
 
-l2hext: ext.dvi myformat.perl
+l2hext: ext.dvi manual.perl python.perl
 	$(L2H) $(L2HARGS) ext.tex
 	(cd ext; ../node2label.pl *.html)
 	sed 's/^<P CLASS=ABSTRACT>,/<P CLASS=ABSTRACT>/' \
@@ -261,7 +261,7 @@ l2hext: ext.dvi myformat.perl
 	mv ext/xxx ext/ext.html
 	ln -s ext.html ext/index.html || true
 
-l2hlib: lib.dvi myformat.perl
+l2hlib: lib.dvi manual.perl python.perl
 	./fix_libaux.sed <lib.aux >lib1.aux
 	mv lib1.aux lib.aux
 	if [ -d lib ] ; then rm -f lib/*.html ; fi
@@ -272,7 +272,7 @@ l2hlib: lib.dvi myformat.perl
 	mv lib/xxx lib/lib.html
 	ln -s lib.html lib/index.html || true
 
-l2hapi: api.dvi myformat.perl
+l2hapi: api.dvi manual.perl python.perl
 	$(L2H) $(L2HARGS) api.tex
 	(cd api; ../node2label.pl *.html)
 	sed 's/^<P CLASS=ABSTRACT>,/<P CLASS=ABSTRACT>/' \
@@ -310,7 +310,7 @@ tarballs:  tarpdf tarps tarhtml
 # Housekeeping targets
 
 # Remove temporary files; all except the following:
-# - sources: .tex, .bib, .sty
+# - sources: .tex, .bib, .sty, *.cls
 # - useful results: .dvi, .pdf, .ps, .texi, .info
 clean:	l2hclean
 	rm -f @* *~ *.aux *.idx *.ilg *.ind *.log *.toc *.blg *.bbl *.py[co]
