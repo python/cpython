@@ -22,8 +22,17 @@ static PyObject *crypt_crypt(self, args)
 
 }
 
+static char crypt_crypt__doc__[] = "\
+crypt(word, salt) -> string\n\
+word will usually be a user's password. salt is a 2-character string\n\
+which will be used to select one of 4096 variations of DES. The characters\n\
+in salt must be either \".\", \"/\", or an alphanumeric character. Returns\n\
+the hashed password as a string, which will be composed of characters from\n\
+the same alphabet as the salt.";
+
+
 static PyMethodDef crypt_methods[] = {
-	{"crypt",	crypt_crypt},
+	{"crypt",	crypt_crypt, 0, crypt_crypt__doc__},
 	{NULL,		NULL}		/* sentinel */
 };
 
