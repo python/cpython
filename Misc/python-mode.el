@@ -3714,7 +3714,7 @@ If point is inside a string, narrow to that string and fill.
       (py-fill-comment justify))
      ;; are we inside a string?
      ((nth 3 pps)
-      (py-fill-string (nth 2 pps)))
+      (py-fill-string (nth 8 pps)))
      ;; otherwise use the default
      (t
       (fill-paragraph justify)))))
