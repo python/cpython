@@ -8,11 +8,17 @@ import os
 import stat
 import getopt
 
-oldcprt = 'Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,\nAmsterdam, The Netherlands.'
-newcprt = 'Copyright 1991, 1992, 1993, 1994 by Stichting Mathematisch Centrum,\nAmsterdam, The Netherlands.'
+oldcprt = """\
+Copyright 1991, 1992, 1993, 1994 by Stichting Mathematisch Centrum,
+Amsterdam, The Netherlands."""
+newcprt = """\
+Copyright 1991-1995 by Stichting Mathematisch Centrum, Amsterdam,
+The Netherlands."""
 
 oldprog = regex.compile(oldcprt)
 newprog = regex.compile(newcprt)
+
+HEADSIZE = 1024
 
 def main():
 	opts, args = getopt.getopt(sys.argv[1:], 'y:')
@@ -36,7 +42,7 @@ def main():
 		except IOError, msg:
 			print file, ': open failed :', msg
 			continue
-		head = f.read(1024)
+		head = f.read(HEADSIZE)
 		if oldprog.search(head) < 0:
 			if newprog.search(head) < 0:
 				print file, ': NO COPYRIGHT FOUND'
