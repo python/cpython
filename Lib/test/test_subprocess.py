@@ -436,8 +436,8 @@ class ProcessTestCase(unittest.TestCase):
             os.chmod(fname, 0700)
             p = subprocess.Popen(fname)
             p.wait()
-            self.assertEqual(p.returncode, 47)
             os.remove(fname)
+            self.assertEqual(p.returncode, 47)
 
         def test_invalid_args(self):
             # invalid arguments should raise ValueError
@@ -477,6 +477,7 @@ class ProcessTestCase(unittest.TestCase):
             os.close(f)
             os.chmod(fname, 0700)
             rc = subprocess.call(fname)
+            os.remove(fname)
             self.assertEqual(rc, 47)
 
 
