@@ -106,7 +106,34 @@ be supplied later. Some useful (but outdated) info can be found in Mac/Demo.
 The commandline scripts /usr/local/bin/python and pythonw
 can be used to run non-GUI and GUI python scripts from the command line, respectively.
 
-6. Odds and ends.
+6. How do I create a binary distribution?
+-----------------------------------------
+
+Note: this section is work-in-progress.
+
+First, to make sure there's no contamination, it is best to remove your existing Python
+installation (clear out /Library/Frameworks/Python.framework and /Applications/Python).
+Also, after build/install is finished check that nothing has shown up in those two locations.
+
+Create a subdirectory of the main python directory, say build-pythondist. In there, run
+	../configure --enable-framework=/tmp/pythondist/Library/Frameworks/Python.framework \
+		LDFLAGS=-Wl,-x
+	make
+	make frameworkinstall
+This installs a complete distribution set in /tmp/pythondist: in a framework build all other
+pathnames are computed from the framework pathname.
+
+Note that the unix tools in /tmp/pythondist are wrong, these have to be removed, and the
+installer post-install script should recreate them on the target system. Also, the .pyc and
+.pyo files need to be removed:
+	rm -rf /tmp/pythondist/usr
+	python.exe ../Mac/script/zappycfiles.py /tmp/pythondist
+
+TBD: find out how to make a .pkg from here.
+
+TBD: documentation.
+
+7. Odds and ends.
 -----------------
 
 The PythonLauncher is actually an Objective C Cocoa app built with Project Builder.
