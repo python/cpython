@@ -307,4 +307,15 @@ sub protect_useritems {
     $_ = $preitems . $_;
 }
 
+# This changes the markup used for {verbatim} environments, and is the
+# best way I've found that ensures the <dl> goes one the outside of the
+# <pre>...</pre>.
+#
+# Note that this *must* be done in the init file, not the python.perl
+# style support file.  The %declarations must be set before initialize()
+# is called in the main script.
+#
+%declarations = ('preform', '<dl><dd><pre></pre></dl>',
+		 %declarations);
+
 1;	# This must be the last line
