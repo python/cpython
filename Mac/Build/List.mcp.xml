@@ -92,9 +92,9 @@
                     </SETTING>
                                         <SETTING>
                         <SETTING><NAME>SearchPath</NAME>
-                            <SETTING><NAME>Path</NAME><VALUE>Macintosh HD:SWdev:Jack:Python:Mac:Build::Modules:List</VALUE></SETTING>
+                            <SETTING><NAME>Path</NAME><VALUE>::Modules:List</VALUE></SETTING>
                             <SETTING><NAME>PathFormat</NAME><VALUE>MacOS</VALUE></SETTING>
-                            <SETTING><NAME>PathRoot</NAME><VALUE>Absolute</VALUE></SETTING>
+                            <SETTING><NAME>PathRoot</NAME><VALUE>Project</VALUE></SETTING>
                         </SETTING>
                         <SETTING><NAME>Recursive</NAME><VALUE>false</VALUE></SETTING>
                         <SETTING><NAME>HostFlags</NAME><VALUE>All</VALUE></SETTING>
@@ -102,27 +102,27 @@
 
                     <SETTING>
                         <SETTING><NAME>SearchPath</NAME>
-                            <SETTING><NAME>Path</NAME><VALUE>Macintosh HD:SWdev:Jack:Python:Mac:</VALUE></SETTING>
+                            <SETTING><NAME>Path</NAME><VALUE>:::Mac:</VALUE></SETTING>
                             <SETTING><NAME>PathFormat</NAME><VALUE>MacOS</VALUE></SETTING>
-                            <SETTING><NAME>PathRoot</NAME><VALUE>Absolute</VALUE></SETTING>
+                            <SETTING><NAME>PathRoot</NAME><VALUE>Project</VALUE></SETTING>
                         </SETTING>
                         <SETTING><NAME>Recursive</NAME><VALUE>true</VALUE></SETTING>
                         <SETTING><NAME>HostFlags</NAME><VALUE>All</VALUE></SETTING>
                     </SETTING>
                     <SETTING>
                         <SETTING><NAME>SearchPath</NAME>
-                            <SETTING><NAME>Path</NAME><VALUE>Macintosh HD:SWdev:Jack:Python:Include:</VALUE></SETTING>
+                            <SETTING><NAME>Path</NAME><VALUE>:::Include:</VALUE></SETTING>
                             <SETTING><NAME>PathFormat</NAME><VALUE>MacOS</VALUE></SETTING>
-                            <SETTING><NAME>PathRoot</NAME><VALUE>Absolute</VALUE></SETTING>
+                            <SETTING><NAME>PathRoot</NAME><VALUE>Project</VALUE></SETTING>
                         </SETTING>
                         <SETTING><NAME>Recursive</NAME><VALUE>false</VALUE></SETTING>
                         <SETTING><NAME>HostFlags</NAME><VALUE>All</VALUE></SETTING>
                     </SETTING>
                     <SETTING>
                         <SETTING><NAME>SearchPath</NAME>
-                            <SETTING><NAME>Path</NAME><VALUE>Macintosh HD:SWdev:Jack:Python:</VALUE></SETTING>
+                            <SETTING><NAME>Path</NAME><VALUE>:::</VALUE></SETTING>
                             <SETTING><NAME>PathFormat</NAME><VALUE>MacOS</VALUE></SETTING>
-                            <SETTING><NAME>PathRoot</NAME><VALUE>Absolute</VALUE></SETTING>
+                            <SETTING><NAME>PathRoot</NAME><VALUE>Project</VALUE></SETTING>
                         </SETTING>
                         <SETTING><NAME>Recursive</NAME><VALUE>true</VALUE></SETTING>
                         <SETTING><NAME>HostFlags</NAME><VALUE>All</VALUE></SETTING>
@@ -131,9 +131,9 @@
                 <SETTING><NAME>SystemSearchPaths</NAME>
                     <SETTING>
                         <SETTING><NAME>SearchPath</NAME>
-                            <SETTING><NAME>Path</NAME><VALUE>Macintosh HD:SWdev:Jack:Python::GUSI2:include:</VALUE></SETTING>
+                            <SETTING><NAME>Path</NAME><VALUE>::::GUSI2:include:</VALUE></SETTING>
                             <SETTING><NAME>PathFormat</NAME><VALUE>MacOS</VALUE></SETTING>
-                            <SETTING><NAME>PathRoot</NAME><VALUE>Absolute</VALUE></SETTING>
+                            <SETTING><NAME>PathRoot</NAME><VALUE>Project</VALUE></SETTING>
                         </SETTING>
                         <SETTING><NAME>Recursive</NAME><VALUE>false</VALUE></SETTING>
                         <SETTING><NAME>HostFlags</NAME><VALUE>All</VALUE></SETTING>
@@ -164,7 +164,7 @@
                 <SETTING><NAME>PostLinker</NAME><VALUE></VALUE></SETTING>
                 <SETTING><NAME>Targetname</NAME><VALUE>List.ppc</VALUE></SETTING>
                 <SETTING><NAME>OutputDirectory</NAME>
-                    <SETTING><NAME>Path</NAME><VALUE>Macintosh HD:SWdev:Jack:Python:Mac:Plugins</VALUE></SETTING>
+                    <SETTING><NAME>Path</NAME><VALUE>::Plugins</VALUE></SETTING>
                     <SETTING><NAME>PathFormat</NAME><VALUE>MacOS</VALUE></SETTING>
                     <SETTING><NAME>PathRoot</NAME><VALUE>Project</VALUE></SETTING>
                 </SETTING>
@@ -600,9 +600,9 @@
                 <SETTING><NAME>MWMerge_MacOS_copyResources</NAME><VALUE>1</VALUE></SETTING>
                 <SETTING><NAME>MWMerge_MacOS_skipResources</NAME>
                     <SETTING><VALUE></VALUE></SETTING>
-                    <SETTING><VALUE>™ø∞</VALUE></SETTING>
-                    <SETTING><VALUE>ﬂ^h</VALUE></SETTING>
-                    <SETTING><VALUE>—ß0</VALUE></SETTING>
+                    <SETTING><VALUE>Å¯É</VALUE></SETTING>
+                    <SETTING><VALUE>˛^h</VALUE></SETTING>
+                    <SETTING><VALUE>ãﬂ0</VALUE></SETTING>
                 </SETTING>
 
                 <!-- Settings for "PPC CodeGen" panel -->
