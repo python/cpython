@@ -377,6 +377,9 @@ def is_private(prefix, base):
     Return true iff base begins with an (at least one) underscore, but
     does not both begin and end with (at least) two underscores.
 
+    >>> import warnings
+    >>> warnings.filterwarnings("ignore", "is_private", DeprecationWarning,
+    ...                         "doctest", 0)
     >>> is_private("a.b", "my_func")
     False
     >>> is_private("____", "_my_func")
@@ -392,6 +395,9 @@ def is_private(prefix, base):
     >>> is_private("", "")  # senseless but consistent
     False
     """
+    warnings.warn("is_private is deprecated; it wasn't useful; "
+                  "examine DocTestFinder.find() lists instead",
+                  DeprecationWarning)
     return base[:1] == "_" and not base[:2] == "__" == base[-2:]
 
 def _extract_future_flags(globs):
