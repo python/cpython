@@ -397,9 +397,6 @@ class MSVCCompiler (CCompiler) :
             if extra_postargs:
                 ld_args.extend(extra_postargs)
 
-            print "link_shared_object():"
-            print "  output_filename =", output_filename
-            print "  mkpath'ing:", os.path.dirname (output_filename)
             self.mkpath (os.path.dirname (output_filename))
             try:
                 self.spawn ([self.link] + ld_args)
