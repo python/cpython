@@ -105,7 +105,6 @@ class _TemplateMetaclass(type):
 class Template:
     """A string class for supporting $-substitutions."""
     __metaclass__ = _TemplateMetaclass
-    __slots__ = ['template']
 
     delimiter = r'\$'
     idpattern = r'[_a-z][_a-z0-9]*'
