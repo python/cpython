@@ -16,16 +16,16 @@ from distutils.util import write_file
 class Install (Command):
 
     options = [('prefix=', None, "installation prefix"),
-               ('execprefix=', None,
+               ('exec-prefix=', None,
                 "prefix for platform-specific files"),
 
                # Build directories: where to install from
                ('build-base=', None,
                 "base build directory"),
                ('build-lib=', None,
-                "build directory for non-platform-specific library files"),
+                "build directory for pure Python modules"),
                ('build-platlib=', None,
-                "build directory for platform-specific library files"),
+                "build directory for extension modules"),
 
                # Installation directories: where to put modules and packages
                ('install-lib=', None,
@@ -113,11 +113,11 @@ class Install (Command):
         # to fix things.
 
         # Figure out the build directories, ie. where to install from
-        self.set_peer_option ('build', 'basedir', self.build_base)
+        self.set_peer_option ('build', 'build_base', self.build_base)
         self.set_undefined_options ('build',
-                                    ('basedir', 'build_base'),
-                                    ('libdir', 'build_lib'),
-                                    ('platdir', 'build_platlib'))
+                                    ('build_base', 'build_base'),
+                                    ('build_lib', 'build_lib'),
+                                    ('build_platlib', 'build_platlib'))
 
         # Figure out actual installation directories; the basic principle
         # is: if the user supplied nothing, then use the directories that
@@ -274,8 +274,6 @@ class Install (Command):
     
 
     def run (self):
-
-        self.set_final_options ()
 
         # Obviously have to build before we can install
         self.run_peer ('build')
