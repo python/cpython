@@ -1285,10 +1285,12 @@ class Unpickler:
 class _EmptyClass:
     pass
 
-# Encode/decode longs.
+# Encode/decode longs in linear time.
+
+import binascii as _binascii
 
 def encode_long(x):
-    r"""Encode a long to a two's complement little-ending binary string.
+    r"""Encode a long to a two's complement little-endian binary string.
     >>> encode_long(255L)
     '\xff\x00'
     >>> encode_long(32767L)
@@ -1303,14 +1305,46 @@ def encode_long(x):
     '\x7f'
     >>>
     """
-    # XXX This is still a quadratic algorithm.
-    # Should use hex() to get started.
-    digits = []
-    while not -128 <= x < 128:
-        digits.append(x & 0xff)
-        x >>= 8
-    digits.append(x & 0xff)
-    return "".join(map(chr, digits))
+
+    if x == 0:
+        return '\x00'
+    if x > 0:
+        ashex = hex(x)
+        assert ashex.startswith("0x")
+        njunkchars = 2 + ashex.endswith('L')
+        nibbles = len(ashex) - njunkchars
+        if nibbles & 1:
+            # need an even # of nibbles for unhexlify
+            ashex = "0x0" + ashex[2:]
+        elif ashex[2] >= '8':
+            # "looks negative", so need a byte of sign bits
+            ashex = "0x00" + ashex[2:]
+    else:
+        # Build the 256's-complement:  (1L << nbytes) + x.  The trick is
+        # to find the number of bytes in linear time (although that should
+        # really be a constant-time task).
+        ashex = hex(-x)
+        assert ashex.startswith("0x")
+        njunkchars = 2 + ashex.endswith('L')
+        nibbles = len(ashex) - njunkchars
+        if nibbles & 1:
+            # need an even # of nibbles for unhexlify
+            nibbles += 1
+        nbytes = nibbles >> 1
+        x += 1L << (nbytes * 8)
+        assert x > 0
+        ashex = hex(x)
+        if x >> (nbytes * 8 - 1) == 0:
+            # "looks positive", so need a byte of sign bits
+            ashex = "0xff" + x[2:]
+
+    if ashex.endswith('L'):
+        ashex = ashex[2:-1]
+    else:
+        ashex = ashex[2:]
+    assert len(ashex) & 1 == 0
+    binary = _binascii.unhexlify(ashex)
+    return binary[::-1]
 
 def decode_long(data):
     r"""Decode a long from a two's complement little-endian binary string.
@@ -1327,15 +1361,12 @@ def decode_long(data):
     >>> decode_long("\x7f")
     127L
     """
-    # XXX This is quadratic too.
-    x = 0L
-    i = 0L
-    for c in data:
-        x |= long(ord(c)) << i
-        i += 8L
-    if data and ord(c) >= 0x80:
-        x -= 1L << i
-    return x
+
+    ashex = _binascii.hexlify(data[::-1])
+    n = long(ashex, 16)
+    if data[-1] >= '\x80':
+        n -= 1L << (len(data) * 8)
+    return n
 
 # Shorthands
 
