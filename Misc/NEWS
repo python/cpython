@@ -22,6 +22,9 @@ Extension Modules
 Library
 -------
 
+- Bug #902037: XML.sax.saxutils.prepare_input_source() now combines relative
+  paths with a base path before checking os.path.isfile().
+
 - The whichdb module can now be run from the command line.
 
 - Bug #1045381: time.strptime() can now infer the date using %U or %W (week of
