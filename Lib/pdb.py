@@ -997,7 +997,7 @@ def runcall(*args, **kwds):
     return Pdb().runcall(*args, **kwds)
 
 def set_trace():
-    Pdb().set_trace()
+    Pdb().set_trace(sys._getframe().f_back)
 
 # Post-Mortem interface
 
