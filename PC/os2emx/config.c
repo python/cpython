@@ -72,7 +72,6 @@ extern void initstruct();
 extern void inittermios();
 extern void inittime();
 extern void inittiming();
-extern void initxreadlines();
 extern void initxxsubtype();
 extern void initzipimport();
 #if !HAVE_DYNAMIC_LOADING
@@ -86,7 +85,6 @@ extern void initfpectl();
 extern void initfpetest();
 extern void initparser();
 extern void initpwd();
-extern void initrotor();
 extern void initunicodedata();
 extern void initzlib();
 #ifdef USE_SOCKET
@@ -138,7 +136,6 @@ struct _inittab _PyImport_Inittab[] = {
 	{"termios", inittermios},
 	{"time", inittime},
 	{"timing", inittiming},
-	{"xreadlines", initxreadlines},
 	{"xxsubtype", initxxsubtype},
 	{"zipimport", initzipimport},
 #if !HAVE_DYNAMIC_LOADING
@@ -152,7 +149,6 @@ struct _inittab _PyImport_Inittab[] = {
 	{"fpetest", initfpetest},
 	{"parser", initparser},
 	{"pwd", initpwd},
-	{"rotor", initrotor},
 	{"unicodedata", initunicodedata},
 	{"zlib", initzlib},
 #ifdef USE_SOCKET
