@@ -42,6 +42,8 @@ def unix_getpass(prompt='Password: '):
 
 def win_getpass(prompt='Password: '):
     """Prompt for password with echo off, using Windows getch()."""
+    if sys.stdin is not sys.__stdin__:
+        return default_getpass(prompt)
     import msvcrt
     for c in prompt:
         msvcrt.putch(c)
