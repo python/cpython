@@ -10,9 +10,9 @@
  *
  * See xdrlib.py for usage notes.
  *
- * Note: this has so far, only been tested on Solaris 2.5 and SGI IRIX 5.3.
- * On these systems, you will need to link with -lnsl for these
- * symbols to be defined.
+ * Note: this has so far, only been tested on Solaris 2.5 and IRIX 5.3.  On
+ * these systems, you will need to link with -lnsl for these symbols to be
+ * defined.
  */
 
 #include "Python.h"
@@ -27,8 +27,8 @@ static PyObject* xdr_error;
 
 static PyObject*
 pack_float(self, args)
-	PyObject* self;
-	PyObject* args;
+     PyObject* self;
+     PyObject* args;
 {
     XDR xdr;
     float value;
@@ -41,8 +41,11 @@ pack_float(self, args)
     if (!PyArg_ParseTuple(args, "f", &value))
         return NULL;
 
+    xdr.x_ops = NULL;
     xdrmem_create(&xdr, addr.buffer, 4, XDR_ENCODE);
-    if (xdr_float(&xdr, &value))
+    if( xdr.x_ops == NULL )
+        PyErr_SetString(xdr_error, "XDR stream initialization failed.");
+    else if (xdr_float(&xdr, &value))
         rtn = PyString_FromStringAndSize(addr.buffer, 4);
     else
         PyErr_SetString(xdr_error, "conversion from float failed");
@@ -51,10 +54,12 @@ pack_float(self, args)
     return rtn;
 }
     
+
+
 static PyObject*
 pack_double(self, args)
-	PyObject* self;
-	PyObject* args;
+     PyObject* self;
+     PyObject* args;
 {
     XDR xdr;
     double value;
@@ -67,8 +72,11 @@ pack_double(self, args)
     if (!PyArg_ParseTuple(args, "d", &value))
         return NULL;
 
+    xdr.x_ops = NULL;
     xdrmem_create(&xdr, addr.buffer, 8, XDR_ENCODE);
-    if (xdr_double(&xdr, &value))
+    if( xdr.x_ops == NULL )
+        PyErr_SetString(xdr_error, "XDR stream initialization failed.");
+    else if (xdr_double(&xdr, &value))
         rtn = PyString_FromStringAndSize(addr.buffer, 8);
     else
         PyErr_SetString(xdr_error, "conversion from double failed");
@@ -81,8 +89,8 @@ pack_double(self, args)
 
 static PyObject*
 unpack_float(self, args)
-	PyObject* self;
-	PyObject* args;
+     PyObject* self;
+     PyObject* args;
 {
     XDR xdr;
     float value;
@@ -99,8 +107,11 @@ unpack_float(self, args)
     }
 
         /* Python guarantees that the string is 4 byte aligned */
+    xdr.x_ops = NULL;
     xdrmem_create(&xdr, (caddr_t)string, 4, XDR_DECODE);
-    if (xdr_float(&xdr, &value))
+    if( xdr.x_ops == NULL )
+        PyErr_SetString(xdr_error, "XDR stream initialization failed.");
+    else if (xdr_float(&xdr, &value))
         rtn = Py_BuildValue("f", value);
     else
         PyErr_SetString(xdr_error, "conversion to float failed");
@@ -110,10 +121,11 @@ unpack_float(self, args)
 }
 
     
+
 static PyObject*
 unpack_double(self, args)
-	PyObject* self;
-	PyObject* args;
+     PyObject* self;
+     PyObject* args;
 {
     XDR xdr;
     double value;
@@ -130,8 +142,11 @@ unpack_double(self, args)
     }
 
         /* Python guarantees that the string is 4 byte aligned */
+    xdr.x_ops = NULL;
     xdrmem_create(&xdr, (caddr_t)string, 8, XDR_DECODE);
-    if (xdr_double(&xdr, &value))
+    if( xdr.x_ops == NULL )
+        PyErr_SetString(xdr_error, "XDR stream initialization failed.");
+    else if (xdr_double(&xdr, &value))
         rtn = Py_BuildValue("d", value);
     else
         PyErr_SetString(xdr_error, "conversion to double failed");
