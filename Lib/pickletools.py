@@ -13,10 +13,11 @@ dis(pickle, out=None, indentlevel=4)
 # Other ideas:
 #
 # - A pickle verifier:  read a pickle and check it exhaustively for
-#   well-formedness.
+#   well-formedness.  dis() does a lot of this already.
 #
 # - A protocol identifier:  examine a pickle and return its protocol number
 #   (== the highest .proto attr value among all the opcodes in the pickle).
+#   dis() already prints this info at the end.
 #
 # - A pickle optimizer:  for example, tuple-building code is sometimes more
 #   elaborate than necessary, catering for the possibility that the tuple
@@ -711,6 +712,9 @@ class StackObject(object):
 
         assert isinstance(doc, str)
         self.doc = doc
+
+    def __repr__(self):
+        return self.name
 
 
 pyint = StackObject(
@@ -1858,10 +1862,33 @@ def dis(pickle, out=None, indentlevel=4):
 
     Optional arg indentlevel is the number of blanks by which to indent
     a new MARK level.  It defaults to 4.
+
+    In addition to printing the disassembly, some sanity checks are made:
+
+    + All embedded opcode arguments "make sense".
+
+    + Explicit and implicit pop operations have enough items on the stack.
+
+    + When an opcode implicitly refers to a markobject, a markobject is
+      actually on the stack.
+
+    + A memo entry isn't referenced before it's defined.
+
+    + The markobject isn't stored in the memo.
+
+    + A memo entry isn't redefined.
     """
 
-    markstack = []
+    # Most of the hair here is for sanity checks, but most of it is needed
+    # anyway to detect when a protocol 0 POP takes a MARK off the stack
+    # (which in turn is needed to indent MARK blocks correctly).
+
+    stack = []          # crude emulation of unpickler stack
+    memo = {}           # crude emulation of unpicker memo
+    maxproto = -1       # max protocol number seen
+    markstack = []      # bytecode positions of MARK opcodes
     indentchunk = ' ' * indentlevel
+    errormsg = None
     for opcode, arg, pos in genops(pickle):
         if pos is not None:
             print >> out, "%5d:" % pos,
@@ -1870,12 +1897,54 @@ def dis(pickle, out=None, indentlevel=4):
                               indentchunk * len(markstack),
                               opcode.name)
 
+        maxproto = max(maxproto, opcode.proto)
+
+        # See whether a MARK should be popped.
+        before = opcode.stack_before    # don't mutate
+        after = opcode.stack_after      # don't mutate
         markmsg = None
-        if markstack and markobject in opcode.stack_before:
-            assert markobject not in opcode.stack_after
-            markpos = markstack.pop()
-            if markpos is not None:
-                markmsg = "(MARK at %d)" % markpos
+        if markobject in before or (opcode.name == "POP" and
+                                    stack and
+                                    stack[-1] is markobject):
+            assert markobject not in after
+            if markstack:
+                markpos = markstack.pop()
+                if markpos is None:
+                    markmsg = "(MARK at unknown opcode offset)"
+                else:
+                    markmsg = "(MARK at %d)" % markpos
+                # Pop everything at and after the topmost markobject.
+                while stack[-1] is not markobject:
+                    stack.pop()
+                stack.pop()
+                # Remove markobject stuff from stack_before.
+                try:
+                    i = before.index(markobject)
+                    before = before[:i]
+                except ValueError:
+                    assert opcode.name == "POP"
+                    assert len(before) == 1
+                    before = []     # stop code later from popping again
+            else:
+                errormsg = markmsg = "no MARK exists on stack"
+
+        # Check for correct memo usage.
+        if opcode.name in ("PUT", "BINPUT", "LONG_BINPUT"):
+            if arg in memo:
+                errormsg = "memo key %r already defined" % arg
+            elif not stack:
+                errormsg = "stack is empty -- can't store into memo"
+            elif stack[-1] is markobject:
+                errormsg = "can't store markobject in the memo"
+            else:
+                memo[arg] = stack[-1]
+
+        elif opcode.name in ("GET", "BINGET", "LONG_BINGET"):
+            if arg in memo:
+                assert len(after) == 1
+                after = [memo[arg]]     # for better stack emulation
+            else:
+                errormsg = "memo key %r has never been stored into" % arg
 
         if arg is not None or markmsg:
             # make a mild effort to align arguments
@@ -1886,10 +1955,27 @@ def dis(pickle, out=None, indentlevel=4):
                 line += ' ' + markmsg
         print >> out, line
 
-        if markobject in opcode.stack_after:
+        if errormsg:
+            # Note that we delayed complaining until the offending opcode
+            # was printed.
+            raise ValueError(errormsg)
+
+        # Emulate the stack effects.
+        n = len(before)
+        if len(stack) < n:
+            raise ValueError("tried to pop %d items from stack with "
+                             "only %d items" % (n, len(stack)))
+        if n:
+            del stack[-n:]
+        if markobject in after:
             assert markobject not in opcode.stack_before
             markstack.append(pos)
 
+        stack.extend(after)
+
+    print >> out, "highest protocol among opcodes =", maxproto
+    if stack:
+        raise ValueError("stack not empty after STOP: %r" % stack)
 
 _dis_test = r"""
 >>> import pickle
@@ -1919,6 +2005,7 @@ _dis_test = r"""
    48: s    SETITEM
    49: a    APPEND
    50: .    STOP
+highest protocol among opcodes = 0
 
 Try again with a "binary" pickle.
 
@@ -1943,6 +2030,7 @@ Try again with a "binary" pickle.
    36: s        SETITEM
    37: e        APPENDS    (MARK at 3)
    38: .    STOP
+highest protocol among opcodes = 1
 
 Exercise the INST/OBJ/BUILD family.
 
@@ -1951,6 +2039,7 @@ Exercise the INST/OBJ/BUILD family.
     0: c    GLOBAL     'random random'
    15: p    PUT        0
    18: .    STOP
+highest protocol among opcodes = 0
 
 >>> x = [pickle.PicklingError()] * 2
 >>> dis(pickle.dumps(x, 0))
@@ -1973,6 +2062,7 @@ Exercise the INST/OBJ/BUILD family.
    52: g    GET        1
    55: a    APPEND
    56: .    STOP
+highest protocol among opcodes = 0
 
 >>> dis(pickle.dumps(x, 1))
     0: ]    EMPTY_LIST
@@ -1993,6 +2083,7 @@ Exercise the INST/OBJ/BUILD family.
    46: h        BINGET     2
    48: e        APPENDS    (MARK at 3)
    49: .    STOP
+highest protocol among opcodes = 1
 
 Try "the canonical" recursive-object test.
 
@@ -2017,6 +2108,8 @@ True
    10: p    PUT        1
    13: a    APPEND
    14: .    STOP
+highest protocol among opcodes = 0
+
 >>> dis(pickle.dumps(L, 1))
     0: ]    EMPTY_LIST
     1: q    BINPUT     0
@@ -2026,13 +2119,11 @@ True
     7: q    BINPUT     1
     9: a    APPEND
    10: .    STOP
+highest protocol among opcodes = 1
 
-The protocol 0 pickle of the tuple causes the disassembly to get confused,
-as it doesn't realize that the POP opcode at 16 gets rid of the MARK at 0
-(so the output remains indented until the end).  The protocol 1 pickle
-doesn't trigger this glitch, because the disassembler realizes that
-POP_MARK gets rid of the MARK.  Doing a better job on the protocol 0
-pickle would require the disassembler to emulate the stack.
+Note that, in the protocol 0 pickle of the recursive tuple, the disassembler
+has to emulate the stack in order to realize that the POP opcode at 16 gets
+rid of the MARK at 0.
 
 >>> dis(pickle.dumps(T, 0))
     0: (    MARK
@@ -2045,9 +2136,11 @@ pickle would require the disassembler to emulate the stack.
    11: p        PUT        1
    14: a        APPEND
    15: 0        POP
-   16: 0        POP
-   17: g        GET        1
-   20: .        STOP
+   16: 0        POP        (MARK at 0)
+   17: g    GET        1
+   20: .    STOP
+highest protocol among opcodes = 0
+
 >>> dis(pickle.dumps(T, 1))
     0: (    MARK
     1: ]        EMPTY_LIST
@@ -2060,6 +2153,7 @@ pickle would require the disassembler to emulate the stack.
    11: 1        POP_MARK   (MARK at 0)
    12: h    BINGET     1
    14: .    STOP
+highest protocol among opcodes = 1
 
 Try protocol 2.
 
@@ -2072,6 +2166,7 @@ Try protocol 2.
     8: q    BINPUT     1
    10: a    APPEND
    11: .    STOP
+highest protocol among opcodes = 2
 
 >>> dis(pickle.dumps(T, 2))
     0: \x80 PROTO      2
@@ -2084,6 +2179,7 @@ Try protocol 2.
    11: 0    POP
    12: h    BINGET     1
    14: .    STOP
+highest protocol among opcodes = 2
 """
 
 __test__ = {'disassembler_test': _dis_test,
