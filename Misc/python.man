@@ -24,7 +24,8 @@ python \- an interpreted, interactive, object-oriented programming language
 [
 .B \-v
 ]
-[
+.br
+       [
 .B \-x
 ]
 [
@@ -51,6 +52,9 @@ The Python Library Reference documents built-in and standard types,
 constants, functions and modules.
 Finally, the Python Reference Manual describes the syntax and
 semantics of the core language in (perhaps too) much detail.
+(Information on locating these documents is included in
+.B "SEE ALSO"
+below; they may be installed on your system as well.)
 .PP
 Python's basic power can be extended with your own modules written in
 C or C++.
@@ -75,8 +79,7 @@ raises an exception.
 Turn on basic optimizations.  This changes the filename extension for
 compiled (bytecode) files from
 .I .pyc
-to
-.I pyo.
+to \fI.pyo\fP.  Given twice, causes docstrings to be discarded.
 .TP
 .B \-S
 Disable the import of the module
@@ -95,7 +98,10 @@ Force stdin, stdout and stderr to be totally unbuffered.
 .TP
 .B \-v
 Print a message each time a module is initialized, showing the place
-(filename or built-in module) from which it is loaded.
+(filename or built-in module) from which it is loaded.  When given
+twice, print a message for each file that is checked for when 
+searching for a module.  Also provides information on module cleanup
+at exit.
 .TP
 .B \-x
 Skip the first line of the source.  This is intended for a DOS
@@ -104,7 +110,8 @@ be off by one!
 .TP
 .B \-X
 Make the standard exceptions strings instead of classes.
-Use for backward compatibility with old code only.
+Use for backward compatibility with old code only.  This is not
+necessary for most uses of string exceptions.
 .TP
 .BI "\-c " command
 Specify the command to execute (see next section).
@@ -166,27 +173,47 @@ sometimes ignored, in favor of the
 exception).  Error messages are written to stderr.
 .SH FILES AND DIRECTORIES
 These are subject to difference depending on local installation
-conventions:
-.IP /usr/local/bin/python
+conventions; ${prefix} and ${exec_prefix} are installation-dependent
+and should be interpreted as for GNU software; they may be the same.
+The default for both is \fI/usr/local\fP.
+.IP \fI${exec_prefix}/bin/python\fP
 Recommended location of the interpreter.
-.IP /usr/local/lib/python<version>
-Recommended location of the directory containing the standard modules.
+.PP
+.I ${prefix}/lib/python<version>
+.br
+.I ${exec_prefix}/lib/python<version>
+.RS
+Recommended locations of the directories containing the standard
+modules.
+.RE
+.PP
+.I ${prefix}/include/python<version>
+.br
+.I ${exec_prefix}/include/python<version>
+.RS
+Recommended locations of the directories containing the include files
+needed for developing Python extensions and embedding the
+interpreter.
+.RE
+.IP \fI~/.pythonrc.py\fP
+User-specific initialization file loaded by the \fIuser\fP module;
+not used by default or by most applications.
 .SH ENVIRONMENT VARIABLES
 .IP PYTHONHOME
 Change the location of the standard Python libraries.  By default, the
-libraries are searched in <prefix>/lib/python<version> and
-<exec_prefix>/lib/python<version>, where <prefix> and <exec_prefix>
+libraries are searched in ${prefix}/lib/python<version> and
+${exec_prefix}/lib/python<version>, where ${prefix} and ${exec_prefix}
 are installation-dependent directories, both defaulting to
-/usr/local.  When $PYTHONHOME is set to a single directory, its value
-replaces both <prefix> and <exec_prefix>.  To specify different values
-for these, set $PYTHONHOME to <prefix>:<exec_prefix>.
+\fI/usr/local\fP.  When $PYTHONHOME is set to a single directory, its value
+replaces both ${prefix} and ${exec_prefix}.  To specify different values
+for these, set $PYTHONHOME to ${prefix}:${exec_prefix}.
 .IP PYTHONPATH
 Augments the default search path for module files.
 The format is the same as the shell's $PATH: one or more directory
 pathnames separated by colons.
 Non-existant directories are silently ignored.
 The default search path is installation dependent, but generally
-begins with <prefix>/lib/python<version> (see PYTHONHOME below).
+begins with ${prefix}/lib/python<version> (see PYTHONHOME above).
 The default search path is always appended to $PYTHONPATH.
 If a script argument is given, the directory containing the script is
 inserted in the path in front of $PYTHONPATH.
@@ -218,11 +245,19 @@ the \fB\-u\fP option.
 If this is set to a non-empty string it is equivalent to specifying
 the \fB\-v\fP option.
 .SH SEE ALSO
-Python Tutorial
-.br
-Python Library Reference
-.br
-Python Reference Manual
+.IP "Python Tutorial"
+URL: http://www.python.org/doc/tut/tut.html
+.IP "Python Library Reference"
+URL: http://www.python.org/doc/lib/lib.html
+.IP "Python Reference Manual"
+URL: http://www.python.org/doc/ref/ref.html
+.IP "Extending and Embedding the Python Interpreter"
+URL: http://www.python.org/doc/ext/ext.html
+.IP "Python/C API"
+URL: http://www.python.org/doc/api/api.html
+.PP
+Downloadable versions of these documents in many formats are available
+at the Python website; see \fB\INTERNET RESOURCES\fP below.
 .SH AUTHOR
 .nf
 Guido van Rossum
@@ -240,7 +275,15 @@ Web site: http://www.python.org
 .br
 FTP site: ftp://ftp.python.org
 .br
-Newsgroup: comp.lang.python
+Newsgroups: comp.lang.python, comp.lang.python.announce
+.PP
+There are many mirror sites; a current list is available at
+http://www.python.org/mirrors.html.
+.PP
+The \fI\Python Software Activity\fP provides many mailing lists which
+serve various special interests within the Python community;
+information on these special interest groups is available at
+http://www.python.org/sigs/.
 .SH COPYRIGHT
 Copyright 1991-1995 by Stichting Mathematisch Centrum, Amsterdam,
 The Netherlands.
