@@ -182,20 +182,21 @@ Functions for sequences:
 \begin{funcdesc}{sample}{population, k}
   Return a \var{k} length list of unique elements chosen from the
   population sequence.  Used for random sampling without replacement.
-
-  Returns a new list containing elements from the population.  The
-  list itself is in random order so that all sub-slices are also
-  random samples.  The original sequence is left undisturbed.
-
-  If the population has repeated elements, then each occurence is a
-  possible selection in the sample.
-
-  If indices are needed for a large population, use \function{xrange}
-  as an argument:  \code{sample(xrange(10000000), 60)}.
-
-  Optional argument random is a 0-argument function returning a random
-  float in [0.0, 1.0); by default, the standard random.random.  			   
   \versionadded{2.3}
+
+  Returns a new list containing elements from the population while
+  leaving the original population unchanged.  The resulting list is
+  in selection order so that all sub-slices will also be valid random
+  samples.  This allows raffle winners (the sample) to be partitioned
+  into grand prize and second place winners (the subslices).
+
+  Members of the population need not be hashable or unique.  If the
+  population contains repeats, then each occurrence is a possible
+  selection in the sample.
+
+  To choose a sample from a range of integers, use \function{xrange}
+  as an argument.  This is especially fast and space efficient for
+  sampling from a large population:  \code{sample(xrange(10000000), 60)}.
 \end{funcdesc}
 
 
