@@ -67,6 +67,13 @@ test('split', u'a b c d', [u'a', u'b', u'c', u'd'], None, 4)
 test('split', u'a b c d', [u'a b c d'], None, 0)
 test('split', u'a  b  c  d', [u'a', u'b', u'c  d'], None, 2)
 test('split', u'a b c d ', [u'a', u'b', u'c', u'd'])
+test('split', u'a//b//c//d', [u'a', u'b', u'c', u'd'], u'//')
+test('split', u'a//b//c//d', [u'a', u'b', u'c', u'd'], '//')
+test('split', 'a//b//c//d', [u'a', u'b', u'c', u'd'], u'//')
+test('split', u'endcase test', [u'endcase ', u''], u'test')
+test('split', u'endcase test', [u'endcase ', u''], 'test')
+test('split', 'endcase test', [u'endcase ', u''], u'test')
+
 
 # join now works with any sequence type
 class Sequence:
