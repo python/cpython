@@ -3,7 +3,7 @@
 """world -- Print mappings between country names and DNS country codes.
 
 Contact: Barry Warsaw
-Email:   bwarsaw@python.org
+Email:   barry@python.org
 Version: %(__version__)s
 
 This script will take a list of Internet addresses and print out where in the
@@ -14,9 +14,9 @@ code found in the address.  Addresses can be in any of the following forms:
     host.domain.xx    -- any Internet host or network name
     somebody@where.xx -- an Internet email address
 
-If no match is found, the address is interpreted as a regular expression [*]
-and a reverse lookup is attempted.  This script will search the country names
-and print a list of matching entries.  You can force reverse mappings with the
+If no match is found, the address is interpreted as a regular expression and a
+reverse lookup is attempted.  This script will search the country names and
+print a list of matching entries.  You can force reverse mappings with the
 `-r' flag (see below).
 
 For example:
@@ -33,10 +33,6 @@ For example:
         us: United States
         tz: Tanzania, United Republic of
         gb: United Kingdom
-
-
- [*] Note that regular expressions must conform to Python 1.5's re.py module
- syntax.  The comparison is done with the search() method.
 
 Country codes are maintained by the RIPE Network Coordination Centre,
 in coordination with the ISO 3166 Maintenance Agency at DIN Berlin.  The
@@ -69,7 +65,7 @@ Usage: %(PROGRAM)s [-d] [-p file] [-o] [-h] addr [addr ...]
         When used in conjunction with the `-p' option, output is in the form
         of a Python dictionary, and country names are normalized
         w.r.t. capitalization.  This makes it appropriate for cutting and
-        pasting back into this file.
+        pasting back into this file.  Output is always to standard out.
 
     --reverse
     -r
@@ -82,18 +78,13 @@ Usage: %(PROGRAM)s [-d] [-p file] [-o] [-h] addr [addr ...]
     -h
     --help
         Print this message.
-
 """
 __version__ = '$Revision$'
 
 
 import sys
 import getopt
-try:
-    import re
-except ImportError:
-    print sys.argv[0], 'requires Python 1.5'
-    sys.exit(1)
+import re
 
 PROGRAM = sys.argv[0]
 
@@ -110,22 +101,18 @@ def usage(code, msg=''):
 def resolve(rawaddr):
     parts = rawaddr.split('.')
     if not len(parts):
-	# no top level domain found, bounce it to the next step
-	return rawaddr
+        # no top level domain found, bounce it to the next step
+        return rawaddr
     addr = parts[-1]
     if nameorgs.has_key(addr):
-        if nameorgs[addr][0].lower() in 'aeiou':
-            ana = 'an'
-        else:
-            ana = 'a'
-	print rawaddr, 'is from', ana, nameorgs[addr], 'organization'
-	return None
+        print rawaddr, 'is in the', nameorgs[addr], 'top level domain'
+        return None
     elif countries.has_key(addr):
-	print rawaddr, 'originated from', countries[addr]
-	return None
+        print rawaddr, 'originated from', countries[addr]
+        return None
     else:
-	# Not resolved, bounce it to the next step
-	return rawaddr
+        # Not resolved, bounce it to the next step
+        return rawaddr
 
 
 
@@ -133,82 +120,83 @@ def reverse(regexp):
     matches = []
     cre = re.compile(regexp, re.IGNORECASE)
     for code, country in all.items():
-	mo = cre.search(country)
-	if mo:
-	    matches.append(code)
+        mo = cre.search(country)
+        if mo:
+            matches.append(code)
     # print results
     if not matches:
-	# not resolved, bounce it to the next step
-	return regexp
+        # not resolved, bounce it to the next step
+        return regexp
     if len(matches) == 1:
-	code = matches[0]
-	print regexp, "matches code `%s', %s" % (code, all[code])
+        code = matches[0]
+        print regexp, "matches code `%s', %s" % (code, all[code])
     else:
-	print regexp, 'matches %d countries:' % len(matches)
-	for code in matches:
-	    print "    %s: %s" % (code, all[code])
+        print regexp, 'matches %d countries:' % len(matches)
+        for code in matches:
+            print "    %s: %s" % (code, all[code])
     return None
 
 
 
 def parse(file, normalize):
     try:
-	fp = open(file)
+        fp = open(file)
     except IOError, (err, msg):
-	print msg, ':', file
+        print msg, ':', file
 
     cre = re.compile('(.*?)[ \t]+([A-Z]{2})[ \t]+[A-Z]{3}[ \t]+[0-9]{3}')
     scanning = 0
 
     if normalize:
-	print 'country = {'
+        print 'countries = {'
 
     while 1:
-	line = fp.readline()
-	if line == '':
-	    break			# EOF
-	if scanning:
-	    mo = cre.match(line)
-	    if not mo:
-		line = line.strip()
-		if not line:
-		    continue
-		elif line[0] == '-':
-		    break
-		else:
-		    print 'Could not parse line:', line
-		    continue
-	    country, code = mo.group(1, 2)
-	    if normalize:
-		words = country.split()
-		for i in range(len(words)):
-		    w = words[i]
-		    # XXX special cases
-		    if w in ('AND', 'OF', 'OF)', 'name:', 'METROPOLITAN'):
-			words[i] = w.lower()
-		    elif w == 'THE' and i != 1:
-			words[i] = w.lower()
-		    elif len(w) > 3 and w[1] == "'":
-			words[i] = w[0:3].upper() + w[3:].lower()
-		    elif w == '(U.S.)':
-			pass
-		    elif w[0] == '(' and w != '(local':
-			words[i] = '(' + w[1:].capitalize()
-		    elif w.find('-') != -1:
-			words[i] = '-'.join([s.capitalize() for s in w.split('-')])
-		    else:
-			words[i] = w.capitalize()
-		code = code.lower()
-		country = ' '.join(words)
-		print '    "%s": "%s",' % (code, country)
-	    else:
-		print code, country
-	    
-	elif line[0] == '-':
-	    scanning = 1
+        line = fp.readline()
+        if line == '':
+            break                       # EOF
+        if scanning:
+            mo = cre.match(line)
+            if not mo:
+                line = line.strip()
+                if not line:
+                    continue
+                elif line[0] == '-':
+                    break
+                else:
+                    print 'Could not parse line:', line
+                    continue
+            country, code = mo.group(1, 2)
+            if normalize:
+                words = country.split()
+                for i in range(len(words)):
+                    w = words[i]
+                    # XXX special cases
+                    if w in ('AND', 'OF', 'OF)', 'name:', 'METROPOLITAN'):
+                        words[i] = w.lower()
+                    elif w == 'THE' and i <> 1:
+                        words[i] = w.lower()
+                    elif len(w) > 3 and w[1] == "'":
+                        words[i] = w[0:3].upper() + w[3:].lower()
+                    elif w in ('(U.S.)', 'U.S.'):
+                        pass
+                    elif w[0] == '(' and w <> '(local':
+                        words[i] = '(' + w[1:].capitalize()
+                    elif w.find('-') <> -1:
+                        words[i] = '-'.join(
+                            [s.capitalize() for s in w.split('-')])
+                    else:
+                        words[i] = w.capitalize()
+                code = code.lower()
+                country = ' '.join(words)
+                print '    "%s": "%s",' % (code, country)
+            else:
+                print code, country
+            
+        elif line[0] == '-':
+            scanning = 1
 
     if normalize:
-	print '    }'
+        print '    }'
 
 
 def main():
@@ -228,53 +216,62 @@ def main():
         usage(1, msg)
 
     for opt, arg in opts:
-	if opt in ('-h', '--help'):
-	    help = 1
-	elif opt in ('-d', '--dump'):
-	    dump = 1
-	elif opt in ('-p', '--parse'):
-	    parsefile = arg
-	elif opt in ('-o', '--output'):
-	    normalize = 1
-	elif opt in ('-r', '--reverse'):
-	    forcerev = 1
+        if opt in ('-h', '--help'):
+            help = 1
+        elif opt in ('-d', '--dump'):
+            dump = 1
+        elif opt in ('-p', '--parse'):
+            parsefile = arg
+        elif opt in ('-o', '--outputdict'):
+            normalize = 1
+        elif opt in ('-r', '--reverse'):
+            forcerev = 1
 
     if help:
-	usage(status)
+        usage(status)
 
     if dump:
-	print 'Non-geographic domains:'
-	codes = nameorgs.keys()
-	codes.sort()
-	for code in codes:
-	    print '    %4s:' % code, nameorgs[code]
+        print 'Non-geographic domains:'
+        codes = nameorgs.keys()
+        codes.sort()
+        for code in codes:
+            print '    %4s:' % code, nameorgs[code]
 
-	print '\nCountry coded domains:'
-	codes = countries.keys()
-	codes.sort()
-	for code in codes:
-	    print '    %2s:' % code, countries[code]
+        print '\nCountry coded domains:'
+        codes = countries.keys()
+        codes.sort()
+        for code in codes:
+            print '    %2s:' % code, countries[code]
     elif parsefile:
-	parse(parsefile, normalize)
+        parse(parsefile, normalize)
     else:
-	if not forcerev:
-	    args = filter(None, map(resolve, args))
-	args = filter(None, map(reverse, args))
-	for arg in args:
-	    print 'Where in the world is %s?' % arg
+        if not forcerev:
+            args = filter(None, map(resolve, args))
+        args = filter(None, map(reverse, args))
+        for arg in args:
+            print 'Where in the world is %s?' % arg
 
 
 
 # The mappings
 nameorgs = {
+    # New top level domains as described by ICANN
+    # http://www.icann.org/tlds/
+    "aero": "air-transport industry",
     "arpa": "Arpanet",
+    "biz": "business",
     "com": "commercial",
+    "coop": "cooperatives",
     "edu": "educational",
     "gov": "government",
+    "info": "unrestricted `info'",
+    "int": "international",
     "mil": "military",
+    "museum": "museums",
+    "name": "`name' (for registration by individuals)",
     "net": "networking",
     "org": "non-commercial",
-    "int": "international",
+    "pro": "professionals",
     # This isn't in the same class as those above, but is included here
     # because `uk' is the common practice country code for the United Kingdom.
     # AFAICT, the official `gb' code is routinely ignored!
@@ -525,7 +522,7 @@ countries = {
     "ve": "Venezuela",
     "vn": "Viet Nam",
     "vg": "Virgin Islands, British",
-    "vi": "Virgin Islands, U.s.",
+    "vi": "Virgin Islands, U.S.",
     "wf": "Wallis and Futuna",
     "eh": "Western Sahara",
     "ye": "Yemen",
