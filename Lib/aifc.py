@@ -506,7 +506,8 @@ class Aifc_read():
 			return ''
 		data = self._ssnd_chunk.read(nframes * self._framesize)
 		if self._decomp and data:
-			self._decomp.SetParam(CL.FRAME_BUFFER_SIZE, len(data) * 2)
+			dummy = self._decomp.SetParam(CL.FRAME_BUFFER_SIZE, \
+				  len(data) * 2)
 			data = self._decomp.Decompress(len(data) / self._nchannels, data)
 		self._soundpos = self._soundpos + len(data) / (self._nchannels * self._sampwidth)
 		return data
@@ -638,7 +639,7 @@ class Aifc_write():
 	def setnchannels(self, nchannels):
 		if self._nframeswritten:
 			raise Error, 'cannot change parameters after starting to write'
-		dummy = _convert(nchannels, _nchannelslist)
+		dummy = _convert2(nchannels, _nchannelslist)
 		self._nchannels = nchannels
 
 	def getnchannels(self):
@@ -756,8 +757,9 @@ class Aifc_write():
 			self._write_header(len(data))
 		nframes = len(data) / (self._sampwidth * self._nchannels)
 		if self._comp:
-			self._comp.SetParam(CL.FRAME_BUFFER_SIZE, len(data))
-			self._comp.SetParam(CL.COMPRESSED_BUFFER_SIZE, \
+			dummy = self._comp.SetParam(CL.FRAME_BUFFER_SIZE, \
+				  len(data))
+			dummy = self._comp.SetParam(CL.COMPRESSED_BUFFER_SIZE,\
 				  len(data))
 			data = self._comp.Compress(nframes, data)
 		self._file.write(data)
