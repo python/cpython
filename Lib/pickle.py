@@ -188,14 +188,13 @@ class Pickler:
 
         return GET + `i` + '\n'
 
-    def save(self, object, pers_save = 0):
+    def save(self, object):
         memo = self.memo
 
-        if not pers_save:
-            pid = self.persistent_id(object)
-            if pid is not None:
-                self.save_pers(pid)
-                return
+        pid = self.persistent_id(object)
+        if pid is not None:
+            self.save_pers(pid)
+            return
 
         d = id(object)
 
@@ -215,11 +214,6 @@ class Pickler:
         try:
             f = self.dispatch[t]
         except KeyError:
-            pid = self.inst_persistent_id(object)
-            if pid is not None:
-                self.save_pers(pid)
-                return
-
             try:
                 issc = issubclass(t, TypeType)
             except TypeError: # t is not a class
@@ -279,14 +273,11 @@ class Pickler:
     def persistent_id(self, object):
         return None
 
-    def inst_persistent_id(self, object):
-        return None
-
     def save_pers(self, pid):
         if not self.bin:
             self.write(PERSID + str(pid) + '\n')
         else:
-            self.save(pid, 1)
+            self.save(pid)
             self.write(BINPERSID)
 
     def save_reduce(self, callable, arg_tup, state = None):
