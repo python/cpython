@@ -802,9 +802,10 @@ The shifting operations have lower priority than the arithmetic
 operations:
 
 \begin{productionlist}
+  % The empty groups below prevent conversion to guillemets.
   \production{shift_expr}
              {\token{a_expr}
-              | \token{shift_expr} ( "<<" | ">>" ) \token{a_expr}}
+              | \token{shift_expr} ( "<{}<" | ">{}>" ) \token{a_expr}}
 \end{productionlist}
 
 These operators accept plain or long integers as arguments.  The
