@@ -161,6 +161,16 @@ rather than to the source of \function{deprecation()} itself (since
 the latter would defeat the purpose of the warning message).
 \end{funcdesc}
 
+\begin{funcdesc}{warn_explicit}{message, category, filename,
+ lineno\optional{, module\optional{, registry}}}
+This is a low-level interface to the functionality of
+\function{warn()}, passing in explicitly the message, category,
+filename and line number, and optionally the module name and the
+registry (which should be the \code{__warningregistry__} dictionary of
+the module).  The module name defaults to the filename with \code{.py}
+stripped; if no registry is passed, the warning is never suppressed.
+\end{funcdesc}
+
 \begin{funcdesc}{showwarning}{message, category, filename,
 			     lineno\optional{, file}}
 Write a warning to a file.  The default implementation calls
