@@ -31,6 +31,14 @@ compatible with the old python bsddb module.  For details about the more
 modern Db and DbEnv object oriented interface see the above mentioned
 pybsddb URL.
 
+\begin{notice}[warning]
+This legacy interface is not thread safe in python 2.3.x or earlier.  
+Data corruption, core dumps or deadlocks may occur if you attempt 
+multi-threaded access.  You must use the modern pybsddb interface 
+linked to above if you need multi-threaded or multi-process database 
+access.
+\end{notice}
+
 The \module{bsddb} module defines the following functions that create
 objects that access the appropriate type of Berkeley DB file.  The
 first two arguments of each function are the same.  For ease of
