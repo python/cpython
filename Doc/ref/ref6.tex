@@ -603,10 +603,19 @@ list of identifiers, looks each one of them up in the module found in step
 As with the first form of \keyword{import}, an alternate local name can be
 supplied by specifying "\keyword{as} localname".  If a name is not found,
 \exception{ImportError} is raised.  If the list of identifiers is replaced
-by a star (\samp{*}), all names defined in the module are bound, except
-those beginning with an underscore (\character{_}).
+by a star (\character{*}), all public names defined in the module are
+bound in the local namespace of the \keyword{import} statement..
 \indexii{name}{binding}
 \exindex{ImportError}
+
+The \emph{public names} defined by a module are determined by checking
+the module's namespace for a variable named \code{__all__}; if
+defined, it must be a sequence of strings which are names defined or
+imported by that module.  The names given in \code{__all__} are all
+considered public and are required to exist.  If \code{__all__} is not
+defined, the set of public names includes all names found in the
+module's namespace which do not begin with an underscore character
+(\character{_}).
 
 Names bound by \keyword{import} statements may not occur in
 \keyword{global} statements in the same scope.
@@ -628,7 +637,12 @@ file \file{__init__.py}.\ttindex{__init__.py}
 \url{http://www.python.org/doc/essays/packages.html} for more details, also
 about how the module search works from inside a package.]
 
-[XXX Also should mention __import__().]
+The built-in function \function{__import__()} is provided to support
+applications that determine which modules need to be loaded
+dynamically; refer to \ulink{Built-in
+Functions}{../lib/built-in-funcs.html} in the
+\citetitle[../lib/lib.html]{Python Library Reference} for additional
+information.
 \bifuncindex{__import__}
 
 
