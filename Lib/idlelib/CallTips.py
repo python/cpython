@@ -1,9 +1,10 @@
 """CallTips.py - An IDLE Extension to Jog Your Memory
 
-Call Tips are floating windows which display function/method parameter
-information as you open the parameter parenthesis, and which disappear when you
-type the closing parenthesis.  Future plans include extending the functionality
-to include class attributes.
+Call Tips are floating windows which display function, class, and method
+parameter and docstring information when you type an opening parenthesis, and
+which disappear when you type a closing parenthesis.
+
+Future plans include extending the functionality to include class attributes.
 
 """
 import sys
@@ -82,8 +83,21 @@ class CallTips:
         return str[i:]
         
     def fetch_tip(self, name):
-        interp = self.editwin and self.editwin.flist.pyshell.interp
-        rpcclt = interp and interp.rpcclt
+        """Return the argument list and docstring of a function or class 
+        
+        If there is a Python subprocess, get the calltip there.  Otherwise,
+        either fetch_tip() is running in the subprocess itself or it was called
+        in an IDLE EditorWindow before any script had been run.
+
+        The subprocess environment is that of the most recently run script.  If
+        two unrelated modules are being edited some calltips in the current
+        module may be inoperative if the module was not the last to run.
+
+        """  
+        try:
+            rpcclt = self.editwin.flist.pyshell.interp.rpcclt
+        except:
+            rpcclt = None
         if rpcclt:
             return rpcclt.remotecall("exec", "get_the_calltip",
                                      (name,), {})
@@ -92,6 +106,7 @@ class CallTips:
             return get_arg_text(entity)
 
     def get_entity(self, name):
+        "Lookup name in a namespace spanning sys.modules and __main.dict__"
         if name:
             namespace = sys.modules.copy()
             namespace.update(__main__.__dict__)
@@ -112,7 +127,7 @@ def _find_constructor(class_ob):
     return None
 
 def get_arg_text(ob):
-    # Get a string describing the arguments for the given object.
+    "Get a string describing the arguments for the given object"
     argText = ""
     if ob is not None:
         argOffset = 0
