@@ -57,7 +57,7 @@ struct tok_state {
 };
 
 extern struct tok_state *tok_setups PROTO((char *));
-extern struct tok_state *tok_setupf PROTO((FILE *, char *ps1, char *ps2));
+extern struct tok_state *tok_setupf PROTO((FILE *, char *, char *));
 extern void tok_free PROTO((struct tok_state *));
 extern int tok_get PROTO((struct tok_state *, char **, char **));
 

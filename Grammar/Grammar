@@ -143,4 +143,4 @@ exprlist: expr (',' expr)* [',']
 testlist: test (',' test)* [',']
 dictmaker: test ':' test (',' test ':' test)* [',']
 
-classdef: class NAME ['(' testlist ')'] ':' suite
+classdef: 'class' NAME ['(' testlist ')'] ':' suite
