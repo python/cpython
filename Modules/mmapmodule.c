@@ -154,7 +154,7 @@ mmap_close_method(mmap_object *self, PyObject *args)
 #ifdef MS_WINDOWS
 #define CHECK_VALID(err)						\
 do {									\
-    if (!self->map_handle) {						\
+    if (self->map_handle == INVALID_HANDLE_VALUE) {						\
 	PyErr_SetString (PyExc_ValueError, "mmap closed or invalid");	\
 	return err;							\
     }									\
@@ -974,7 +974,7 @@ new_mmap_object(PyObject *self, PyObject *args, PyObject *kwdict)
 			return NULL;
 		}
 		/* Win9x appears to need us seeked to zero */
-		fseek(&_iob[fileno], 0, SEEK_SET);
+		lseek(fileno, 0, SEEK_SET);
 	}
 
 	m_obj = PyObject_New (mmap_object, &mmap_object_type);
