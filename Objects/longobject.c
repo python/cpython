@@ -2003,6 +2003,8 @@ lshift_error:
 
 /* Bitwise and/xor/or operations */
 
+#undef MIN
+#undef MAX
 #define MAX(x, y) ((x) < (y) ? (y) : (x))
 #define MIN(x, y) ((x) > (y) ? (y) : (x))
 
