@@ -305,7 +305,6 @@ struct {
 #ifdef __MWERKS__
 /* This is really "Jack Jansen" specific for now :-) */
 	{"macspeech", initmacspeech},
-	{"imgformat", initimgformat},
 	{"macdnr", initmacdnr},
 	{"mactcp", initmactcp},
 #endif
