@@ -141,7 +141,7 @@ donecalls()
 
 #ifdef MSDOS
 /* In MS-DOS, the delimiter is a semicolon */
-#define PYTHONPATH ".;C\\python\\lib"
+#define PYTHONPATH ".;..\\lib;\\python\\lib"
 #endif /* MSDOS */
 
 #ifndef PYTHONPATH

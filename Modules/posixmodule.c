@@ -32,6 +32,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #ifdef MSDOS
 #define NO_LSTAT
 #define NO_UNAME
+#include <dos.h>
 #endif
 
 #ifdef __sgi
@@ -79,17 +80,19 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <unistd.h>
 #else /* _SEQUENT_ */
 /* XXX Aren't these always declared in unistd.h? */
-extern char *strerror PROTO((int));
-extern int chmod PROTO((const char *, mode_t));
-extern char *getcwd PROTO((char *, int)); /* XXX or size_t? */
 extern int mkdir PROTO((const char *, mode_t));
 extern int chdir PROTO((const char *));
+extern int rmdir PROTO((const char *));
+extern int chmod PROTO((const char *, mode_t));
+extern char *getcwd PROTO((char *, int)); /* XXX or size_t? */
+#if 0
+extern char *strerror PROTO((int));
 extern int link PROTO((const char *, const char *));
 extern int rename PROTO((const char *, const char *));
-extern int rmdir PROTO((const char *));
 extern int stat PROTO((const char *, struct stat *));
 extern int unlink PROTO((const char *));
 extern int pclose PROTO((FILE *));
+#endif
 #endif /* _SEQUENT_ */
 #ifdef NO_LSTAT
 #define lstat stat
@@ -279,7 +282,7 @@ posix_listdir(self, args)
 	char *name;
 	object *d, *v;
 
-#ifdef MSDOS
+#ifdef TURBO_C
 	struct ffblk ep;
 	int rv;
 	if (!getstrarg(args, &name))
@@ -304,7 +307,54 @@ posix_listdir(self, args)
 		}
 		DECREF(v);
 	} while ((rv = findnext(&ep)) == 0);
-#else /* !MSDOS */
+#endif /* TURBO_C */
+#ifdef MSDOS
+	struct find_t ep;
+	int rv;
+	char _name[100];
+	int attrib;
+	int num= 0;
+
+	if (!getstrarg(args, &name))
+		return NULL;
+	strcpy( _name, name );
+
+again:
+	if ((d = newlistobject(0)) == NULL)
+		return NULL;
+
+	if( _name[strlen( _name )-1]=='/' )
+		strcat( _name, "*.*" );
+
+	if (_dos_findfirst(_name, _A_NORMAL|_A_SUBDIR, &ep) == -1)
+		return posix_error();
+	attrib= ep.attrib;
+	do {
+		v = newstringobject(ep.name);
+		if (v == NULL) {
+			DECREF(d);
+			d = NULL;
+			break;
+		}
+		if (addlistitem(d, v) != 0) {
+			DECREF(v);
+			DECREF(d);
+			d = NULL;
+			break;
+		}
+		num++;
+		DECREF(v);
+	} while ((rv = _dos_findnext(&ep)) == 0);
+
+	if( attrib&_A_SUBDIR && num==1 )
+		{
+		DECREF( d );
+		strcat( _name, "/*.*" );
+		goto again;
+		}
+
+#endif /* MSDOS */
+#ifdef unix
 	DIR *dirp;
 	struct direct *ep;
 	if (!getstrarg(args, &name))
@@ -336,7 +386,7 @@ posix_listdir(self, args)
 	}
 	closedir(dirp);
 	END_SAVE
-#endif /* !MSDOS */
+#endif /* unix */
 
 	return d;
 }
@@ -1205,11 +1255,11 @@ getmtime(path)
 }
 
 
-#ifdef MSDOS
+#ifdef TURBO_C
 
 /* A small "compatibility library" for TurboC under MS-DOS */
 
-#include <sir.h>
+//#include <sir.h>
 #include <io.h>
 #include <dos.h>
 #include <fcntl.h>
@@ -1247,4 +1297,4 @@ utime(path, times)
 	close(fh);				/* close the temp handle */
 }
 
-#endif /* MSDOS */
+#endif /* TURBO_C */

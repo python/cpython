@@ -28,6 +28,8 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "modsupport.h"
 
 #include <ctype.h>
+/* XXX This file assumes that the <ctype.h> is*() functions
+   XXX are defined for all 8-bit characters! */
 
 
 static object *
@@ -365,8 +367,6 @@ static struct methodlist strop_methods[] = {
 };
 
 
-/* Initialization function for the module (*must* be called initstrop) */
-
 void
 initstrop()
 {
@@ -375,12 +375,42 @@ initstrop()
 	int c, n;
 	m = initmodule("strop", strop_methods);
 	d = getmoduledict(m);
+
+	/* Create 'whitespace' object */
 	n = 0;
 	for (c = 1; c < 256; c++) {
 		if (isspace(c))
 			buf[n++] = c;
 	}
+	if (s) {
+		s = newsizedstringobject(buf, n);
+		dictinsert(d, "whitespace", s);
+		DECREF(s);
+	}
+	/* Create 'lowercase' object */
+	n = 0;
+	for (c = 1; c < 256; c++) {
+		if (islower(c))
+			buf[n++] = c;
+	}
 	s = newsizedstringobject(buf, n);
-	dictinsert(d, "whitespace", s);
-	DECREF(s);
+	if (s) {
+		dictinsert(d, "lowercase", s);
+		DECREF(s);
+	}
+
+	/* Create 'uppercase' object */
+	n = 0;
+	for (c = 1; c < 256; c++) {
+		if (isupper(c))
+			buf[n++] = c;
+	}
+	s = newsizedstringobject(buf, n);
+	if (s) {
+		dictinsert(d, "uppercase", s);
+		DECREF(s);
+	}
+
+	if (err_occurred())
+		fatal("can't initialize module strop");
 }
