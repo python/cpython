@@ -167,7 +167,8 @@ getpythonpath()
 		fatal("not enough memory to copy module search path");
 	strcpy(buf, path);
 	p = buf + strlen(buf);
-	*p++ = DELIM;
+	if (p != buf)
+		*p++ = DELIM;
 	strcpy(p, defpath);
 	return buf;
 }
@@ -201,9 +202,7 @@ struct {
 	{0, 0}
 };
 
-#ifdef USE_FROZEN
-#include "frozen.c"
-#else
+#ifndef USE_FROZEN
 struct frozen {
 	char *name;
 	char *code;
