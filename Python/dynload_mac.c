@@ -17,15 +17,7 @@
 
 const struct filedescr _PyImport_DynLoadFiletab[] = {
 	{".slb", "rb", C_EXTENSION},
-#ifdef __CFM68K__
-	{".CFM68K.slb", "rb", C_EXTENSION},
-#else
-#if TARGET_API_MAC_CARBON
 	{".carbon.slb", "rb", C_EXTENSION},
-#else
-	{".ppc.slb", "rb", C_EXTENSION},
-#endif
-#endif
 	{0, 0}
 };
 
