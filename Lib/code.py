@@ -1,5 +1,3 @@
-# XXX This is broken with class exceptions
-
 """Utilities dealing with code objects."""
 
 def compile_command(source, filename="<input>", symbol="single"):
@@ -50,7 +48,15 @@ def compile_command(source, filename="<input>", symbol="single"):
 
     if code:
 	return code
-    if not code1 and err1 == err2:
+    try:
+	e1 = err1.__dict__
+    except AttributeError:
+	e1 = err1
+    try:
+	e2 = err2.__dict__
+    except AttributeError:
+	e2 = err2
+    if not code1 and e1 == e2:
 	raise SyntaxError, err1
 
 
