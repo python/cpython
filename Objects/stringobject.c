@@ -3867,7 +3867,7 @@ PyString_Format(PyObject *format, PyObject *args)
 				}
 #endif
 				/* Fall through */
-  			case 'r':
+			case 'r':
 				if (c == 's')
 					temp = PyObject_Str(v);
 				else
