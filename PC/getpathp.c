@@ -366,7 +366,7 @@ get_progpath(void)
 		                    dllpath, MAXPATHLEN+1, 
 		                    NULL, NULL);
 	}
-	wprogpath[MAXPATHLEN]=_T('\0')';
+	wprogpath[MAXPATHLEN]=_T('\0');
 	if (GetModuleFileName(NULL, wprogpath, MAXPATHLEN)) {
 		WideCharToMultiByte(CP_ACP, 0, 
 		                    wprogpath, -1, 
