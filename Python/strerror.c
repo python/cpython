@@ -1,4 +1,4 @@
-/* PD implementation of strerror() for BSD derivatives that don't have it.
+/* PD implementation of strerror() for systems that don't have it.
    Author: Guido van Rossum, CWI Amsterdam, Oct. 1990, <guido@cwi.nl>. */
 
 #include <stdio.h>
@@ -16,3 +16,8 @@ strerror(err)
 	sprintf(buf, "Unknown errno %d", err);
 	return buf;
 }
+
+#ifdef THINK_C
+int sys_nerr = 0;
+char *sys_errlist[1] = 0;
+#endif
