@@ -2884,7 +2884,7 @@ posix_WIFSTOPPED(self, args)
 #ifdef WIFSIGNALED
 static char posix_WIFSIGNALED__doc__[] =
 "WIFSIGNALED(status) -> Boolean\n\
-Retrun true if the process returning 'status' was terminated by a signal.";
+Return true if the process returning 'status' was terminated by a signal.";
 
 static PyObject *
 posix_WIFSIGNALED(self, args)
