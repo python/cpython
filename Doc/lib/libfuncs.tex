@@ -501,14 +501,15 @@ If the \module{readline} module was loaded, then
 line editing and history features.
 \end{funcdesc}
 
-\begin{funcdesc}{reduce}{function, list\optional{, initializer}}
-Apply the binary \var{function} to the items of \var{list} so as to
-reduce the list to a single value.  E.g.,
-\code{reduce(lambda x, y: x*y, \var{list}, 1)} returns the product of
-the elements of \var{list}.  The optional \var{initializer} can be
-thought of as being prepended to \var{list} so as to allow reduction
-of an empty \var{list}.  The \var{list} arguments may be any kind of
-sequence.
+\begin{funcdesc}{reduce}{function, sequence\optional{, initializer}}
+Apply \var{function} of two arguments cumulatively to the items of
+\var{sequence}, from left to right, so as to reduce the sequence to
+a single value.  For example,
+\code{reduce(lambda x, y: x+y, [1, 2, 3, 4, 5])} calculates
+\code{((((1+2)+3)+4)+5)}.
+If the optional \var{initializer} is present, it is placed before the
+items of the sequence in the calculation, and serves as a default when
+the sequence is empty.
 \end{funcdesc}
 
 \begin{funcdesc}{reload}{module}
