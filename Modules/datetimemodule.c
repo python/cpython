@@ -80,6 +80,12 @@
  */
 #define HASTZINFO(p)		(((_PyDateTime_BaseTZInfo *)(p))->hastzinfo)
 
+/* M is a char or int claiming to be a valid month.  The macro is equivalent
+ * to the two-sided Python test
+ *	1 <= M <= 12
+ */
+#define MONTH_IS_SANE(M) ((unsigned int)(M) - 1 < 12)
+
 /* Forward declarations. */
 static PyTypeObject PyDateTime_DateType;
 static PyTypeObject PyDateTime_DateTimeType;
@@ -2195,7 +2201,8 @@ date_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 	/* Check for invocation from pickle with __getstate__ state */
 	if (PyTuple_GET_SIZE(args) == 1 &&
 	    PyString_Check(state = PyTuple_GET_ITEM(args, 0)) &&
-	    PyString_GET_SIZE(state) == _PyDateTime_DATE_DATASIZE)
+	    PyString_GET_SIZE(state) == _PyDateTime_DATE_DATASIZE &&
+	    MONTH_IS_SANE(PyString_AS_STRING(state)[2]))
 	{
 	    	PyDateTime_Date *me;
 
@@ -3550,7 +3557,8 @@ datetime_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 	if (PyTuple_GET_SIZE(args) >= 1 &&
 	    PyTuple_GET_SIZE(args) <= 2 &&
 	    PyString_Check(state = PyTuple_GET_ITEM(args, 0)) &&
-	    PyString_GET_SIZE(state) == _PyDateTime_DATETIME_DATASIZE)
+	    PyString_GET_SIZE(state) == _PyDateTime_DATETIME_DATASIZE &&
+	    MONTH_IS_SANE(PyString_AS_STRING(state)[2]))
 	{
 		PyDateTime_DateTime *me;
 		char aware;
