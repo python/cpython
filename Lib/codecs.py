@@ -539,6 +539,48 @@ def EncodedFile(file, data_encoding, file_encoding=None, errors='strict'):
     sr.file_encoding = file_encoding
     return sr
 
+### Helpers for codec lookup
+
+def getencoder(encoding):
+
+    """ Lookup up the codec for the given encoding and return
+        its encoder function.
+
+        Raises a LookupError in case the encoding cannot be found.
+
+    """
+    return lookup(encoding)[0]
+
+def getdecoder(encoding):
+
+    """ Lookup up the codec for the given encoding and return
+        its decoder function.
+
+        Raises a LookupError in case the encoding cannot be found.
+
+    """
+    return lookup(encoding)[1]
+
+def getreader(encoding):
+
+    """ Lookup up the codec for the given encoding and return
+        its StreamReader class or factory function.
+
+        Raises a LookupError in case the encoding cannot be found.
+
+    """
+    return lookup(encoding)[2]
+
+def getwriter(encoding):
+
+    """ Lookup up the codec for the given encoding and return
+        its StreamWriter class or factory function.
+
+        Raises a LookupError in case the encoding cannot be found.
+
+    """
+    return lookup(encoding)[3]
+
 ### Helpers for charmap-based codecs
 
 def make_identity_dict(rng):
