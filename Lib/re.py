@@ -64,13 +64,13 @@ def findall(pattern, string):
 
 def escape(pattern):
     "Escape all non-alphanumeric characters in pattern."
-    result = []
+    result = list(pattern)
     alphanum=string.letters+'_'+string.digits
-    for char in pattern:
+    for i in range(len(pattern)):
+        char = pattern[i]
         if char not in alphanum:
-            if char=='\000': result.append('\\000')
-            else: result.append('\\'+char)
-        else: result.append(char)
+            if char=='\000': result[i] = '\\000'
+            else: result[i] = '\\'+char
     return string.join(result, '')
 
 def compile(pattern, flags=0):
