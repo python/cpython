@@ -37,8 +37,6 @@ PERFORMANCE OF THIS SOFTWARE.
  * Pull in the system error definitions
  */ 
 
-#include <errno.h>
-
 static PyMethodDef errno_methods[] = {
   {NULL,	NULL}
 };
