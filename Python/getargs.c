@@ -499,7 +499,7 @@ convertsimple1(arg, p_format, p_va)
 			break;
 		}
 	
-#if HAVE_LONG_LONG
+#ifdef HAVE_LONG_LONG
 	case 'L': /* LONG_LONG */
 		{
 			LONG_LONG *p = va_arg( *p_va, LONG_LONG * );
@@ -1027,7 +1027,7 @@ skipitem(p_format, p_va)
 			break;
 		}
 	
-#if HAVE_LONG_LONG
+#ifdef HAVE_LONG_LONG
 	case 'L': /* LONG_LONG int */
 		{
 			(void) va_arg(*p_va, LONG_LONG *);
