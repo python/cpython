@@ -12,8 +12,6 @@ import string, sys
 
 from sre_constants import *
 
-MAXREPEAT = 65535
-
 SPECIAL_CHARS = ".\\[{()*+?^$|"
 REPEAT_CHARS = "*+?{"
 

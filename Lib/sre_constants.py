@@ -9,6 +9,8 @@
 # See the sre.py file for information on usage and redistribution.
 #
 
+MAXREPEAT = 65535
+
 # should this really be here?
 
 class error(Exception):

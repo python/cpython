@@ -222,7 +222,7 @@ def _optimize_charset(charset, fixup):
 def _simple(av):
     # check if av is a "simple" operator
     lo, hi = av[2].getwidth()
-    if lo == 0:
+    if lo == 0 and hi == MAXREPEAT:
         raise error, "nothing to repeat"
     return lo == hi == 1 and av[2][0][0] != SUBPATTERN
 
