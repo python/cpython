@@ -1,7 +1,7 @@
 \documentclass{howto}
 
 \title{What's New in Python 2.0}
-\release{0.04}
+\release{0.05}
 \author{A.M. Kuchling and Moshe Zadka}
 \authoraddress{\email{amk1@bigfoot.com}, \email{moshez@math.huji.ac.il} }
 \begin{document}
@@ -81,8 +81,8 @@ long, containing the character \var{ch}.
 
 \item \code{ord(\var{u})}, where \var{u} is a 1-character regular or Unicode string, returns the number of the character as an integer.
 
-\item \code{unicode(\var{string}, \optional{\var{encoding},} 
-\optional{\var{errors}} ) } creates a Unicode string from an 8-bit
+\item \code{unicode(\var{string} \optional{, \var{encoding}} 
+\optional{, \var{errors}} ) } creates a Unicode string from an 8-bit
 string.  \code{encoding} is a string naming the encoding to use.
 The \code{errors} parameter specifies the treatment of characters that
 are invalid for the current encoding; passing \code{'strict'} as the
@@ -151,7 +151,7 @@ output.close()
 The following code would then read UTF-8 input from the file:
 
 \begin{verbatim}
-input = UTF8_streamread( open( '/tmp/output', 'rb') )
+input = UTF8_streamreader( open( '/tmp/output', 'rb') )
 print repr(input.read())
 input.close()
 \end{verbatim}
@@ -272,11 +272,10 @@ up-to-date by Skip Montanaro.
 \section{Augmented Assignment}
 
 Augmented assignment operators, another long-requested feature, have
-been added to Python 2.0.  Augmented assignment operators include 
-\code{+=}, \code{-=}, \code{*=}, and so forth.  For example, the 
-statement \code{a += 2} increments the value of the variable \code{a}
-by 2, equivalent to the slightly lengthier 
-\code{a = a + 2}.  
+been added to Python 2.0.  Augmented assignment operators include
+\code{+=}, \code{-=}, \code{*=}, and so forth.  For example, the
+statement \code{a += 2} increments the value of the variable 
+\code{a} by 2, equivalent to the slightly lengthier \code{a = a + 2}.
 
 The full list of supported assignment operators is \code{+=},
 \code{-=}, \code{*=}, \code{/=}, \code{\%=}, \code{**=}, \code{\&=},
@@ -312,7 +311,7 @@ assignment patch was implemented by Thomas Wouters.
 \section{String Methods}
 
 Until now string-manipulation functionality was in the \module{string}
-Python module, which was usually a front-end for the \module{strop}
+module, which was usually a front-end for the \module{strop}
 module written in C.  The addition of Unicode posed a difficulty for
 the \module{strop} module, because the functions would all need to be
 rewritten in order to accept either 8-bit or Unicode strings.  For
@@ -445,12 +444,12 @@ def f(*args, **kw):
 \end{verbatim}
 
 The \keyword{print} statement can now have its output directed to a
-file-like object by following the \keyword{print} with \code{>>
-\var{fileobj}}, similar to the redirection operator in Unix shells.
+file-like object by following the \keyword{print} with 
+\verb|>> file|, similar to the redirection operator in Unix shells.
 Previously you'd either have to use the \method{write()} method of the
 file-like object, which lacks the convenience and simplicity of
-\keyword{print}, or you could assign a new value to \code{sys.stdout}
-and then restore the old value.  For sending output to standard error,
+\keyword{print}, or you could assign a new value to 
+\code{sys.stdout} and then restore the old value.  For sending output to standard error,
 it's much easier to write this:
 
 \begin{verbatim}
@@ -535,9 +534,10 @@ A new built-in, \function{zip(\var{seq1}, \var{seq2}, ...)}, has been
 added.  \function{zip()} returns a list of tuples where each tuple
 contains the i-th element from each of the argument sequences.  The
 difference between \function{zip()} and \code{map(None, \var{seq1},
-\var{seq2})} is that \function{map()} raises an error if the sequences
-aren't all of the same length, while \function{zip()} truncates the
-returned list to the length of the shortest argument sequence.
+\var{seq2})} is that \function{map()} pads the sequences with
+\code{None} if the sequences aren't all of the same length, while
+\function{zip()} truncates the returned list to the length of the
+shortest argument sequence.
 
 The \function{int()} and \function{long()} functions now accept an
 optional ``base'' parameter when the first argument is a string.
@@ -551,7 +551,7 @@ added to the \module{sys} module.  \code{sys.version_info} is a tuple
 \var{serial})} For example, in a hypothetical 2.0.1beta1,
 \code{sys.version_info} would be \code{(2, 0, 1, 'beta', 1)}.
 \var{level} is a string such as \code{"alpha"}, \code{"beta"}, or
-\code{""} for a final release.
+\code{"final"} for a final release.
 
 Dictionaries have an odd new method, \method{setdefault(\var{key},
 \var{default})}, which behaves similarly to the existing
@@ -609,7 +609,7 @@ similarly easy-going.  2.0alpha1 tightened these functions up, but
 because the documentation actually used the erroneous multiple
 argument form, many people wrote code which would break with the
 stricter checking.  GvR backed out the changes in the face of public
-reaction, so for the\module{socket} module, the documentation was
+reaction, so for the \module{socket} module, the documentation was
 fixed and the multiple argument form is simply marked as deprecated;
 it \emph{will} be tightened up again in a future Python version.
 
@@ -631,16 +631,15 @@ of a long integer no longer has a trailing 'L' character, though
 \function{repr()} still includes it.  The 'L' annoyed many people who
 wanted to print long integers that looked just like regular integers,
 since they had to go out of their way to chop off the character.  This
-is no longer a problem in 2.0, but code which assumes the 'L' is
-there, and does \code{str(longval)[:-1]} will now lose the final
-digit.  
+is no longer a problem in 2.0, but code which does \code{str(longval)[:-1]} and assumes the 'L' is there, will now lose
+the final digit.
 
 Taking the \function{repr()} of a float now uses a different
 formatting precision than \function{str()}.  \function{repr()} uses
 \code{\%.17g} format string for C's \function{sprintf()}, while
 \function{str()} uses \code{\%.12g} as before.  The effect is that 
 \function{repr()} may occasionally show more decimal places than 
-\function{str()}, for numbers 
+\function{str()}, for certain numbers. 
 For example, the number 8.1 can't be represented exactly in binary, so
 \code{repr(8.1)} is \code{'8.0999999999999996'}, while str(8.1) is
 \code{'8.1'}.
@@ -727,7 +726,7 @@ only supports K\&R C.
 Before Python 2.0, installing modules was a tedious affair -- there
 was no way to figure out automatically where Python is installed, or
 what compiler options to use for extension modules.  Software authors
-had to go through an ardous ritual of editing Makefiles and
+had to go through an arduous ritual of editing Makefiles and
 configuration files, which only really work on Unix and leave Windows
 and MacOS unsupported.  Software users faced wildly differing
 installation instructions 
@@ -835,8 +834,8 @@ interfaces.
 The \module{Tkinter} module now supports Tcl/Tk version 8.1, 8.2, or
 8.3, and support for the older 7.x versions has been dropped.  The
 Tkinter module now supports displaying Unicode strings in Tk widgets.
-Also, Fredrik Lundh contributed an optimization which make operations
-like \code{create_line} and \code{create_polygon} are much faster,
+Also, Fredrik Lundh contributed an optimization which makes operations
+like \code{create_line} and \code{create_polygon} much faster,
 especially when using lots of coordinates.
 
 The \module{curses} module has been greatly extended, starting from
@@ -895,12 +894,12 @@ A.M. Kuchling.)
 
 \item{\module{robotparser}:} Parse a \file{robots.txt} file, which is
 used for writing Web spiders that politely avoid certain areas of a
-Web site.  The parser accepts the contents of a \file{robots.txt} file
+Web site.  The parser accepts the contents of a \file{robots.txt} file,
 builds a set of rules from it, and can then answer questions about
 the fetchability of a given URL.  (Contributed by Skip Montanaro.)
 
 \item{\module{tabnanny}:} A module/script to 
-checks Python source code for ambiguous indentation.
+check Python source code for ambiguous indentation.
 (Contributed by Tim Peters.)
 
 \item{\module{UserString}:} A base class useful for deriving objects that behave like strings.  
@@ -992,7 +991,8 @@ these modules.
 \section{Acknowledgements}
 
 The authors would like to thank the following people for offering
-suggestions on drafts of this article: Fredrik Lundh, Skip
-Montanaro, Vladimir Marangozov, Guido van Rossum, Neil Schemenauer.
+suggestions on drafts of this article: Mark Hammond, Fredrik Lundh, 
+Detlef Lannert, Skip Montanaro, Vladimir Marangozov, Guido van Rossum, 
+and Neil Schemenauer.
 
 \end{document}
