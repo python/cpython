@@ -283,7 +283,7 @@ def runtest(test, generate, verbose, quiet, testdir = None):
     if not testdir: testdir = findtestdir()
     outputdir = os.path.join(testdir, "output")
     outputfile = os.path.join(outputdir, test)
-    if verbose or generate:
+    if verbose:
         cfp = None
     else:
         cfp =  StringIO.StringIO()
