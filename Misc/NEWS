@@ -125,7 +125,7 @@ Standard library and extensions
   by makefile().
 
 - sre: Added experimental expand() method to match objects.  Does not
-  user buffer interface on Unicode strings.  Does not hang if group id
+  use buffer interface on Unicode strings.  Does not hang if group id
   is followed by whitespace.
 
 - StringIO: Size hint in readlines() is now supported as documented. 
