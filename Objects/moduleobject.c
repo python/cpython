@@ -83,13 +83,14 @@ module_dealloc(m)
 	free((char *)m);
 }
 
-static void
+static int
 module_print(m, fp, flags)
 	moduleobject *m;
 	FILE *fp;
 	int flags;
 {
 	fprintf(fp, "<module '%s'>", getstringvalue(m->md_name));
+	return 0;
 }
 
 static object *

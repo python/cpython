@@ -428,7 +428,7 @@ eval_code(co, globals, locals, arg)
 			if (v != None) {
 				flushline();
 				softspace(sysget("stdout"), 1);
-				printobject(v, fp, 0);
+				err = printobject(v, fp, 0);
 				flushline();
 			}
 			DECREF(v);
@@ -447,7 +447,7 @@ eval_code(co, globals, locals, arg)
 					softspace(sysget("stdout"), 0);
 			}
 			else {
-				printobject(v, fp, 0);
+				err = printobject(v, fp, 0);
 			}
 			DECREF(v);
 			break;
@@ -933,7 +933,8 @@ prtrace(v, str)
 	char *str;
 {
 	printf("%s ", str);
-	printobject(v, stdout, 0);
+	if (printobject(v, stdout, 0) != 0)
+		err_clear(); /* Don't know what else to do */
 	printf("\n");
 }
 #endif

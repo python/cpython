@@ -533,21 +533,18 @@ long_dealloc(v)
 	DEL(v);
 }
 
-static void
+static int
 long_print(v, fp, flags)
 	longobject *v;
 	FILE *fp;
 	int flags;
 {
 	stringobject *str = long_format(v, 10);
-	if (str == NULL) {
-		err_clear();
-		fprintf(fp, "[err]");
-	}
-	else {
-		fprintf(fp, "%sL", GETSTRINGVALUE(str));
-		DECREF(str);
-	}
+	if (str == NULL)
+		return -1;
+	fprintf(fp, "%sL", GETSTRINGVALUE(str));
+	DECREF(str);
+	return 0;
 }
 
 static object *
