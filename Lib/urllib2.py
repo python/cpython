@@ -572,7 +572,7 @@ class HTTPPasswordMgrWithDefaultRealm(HTTPPasswordMgr):
 
 class AbstractBasicAuthHandler:
 
-    rx = re.compile('[ \t]*([^ \t]+)[ \t]+realm="([^"]*)"')
+    rx = re.compile('[ \t]*([^ \t]+)[ \t]+realm="([^"]*)"', re.I)
 
     # XXX there can actually be multiple auth-schemes in a
     # www-authenticate header.  should probably be a lot more careful
