@@ -783,9 +783,30 @@ PyLong_AsLongLong(PyObject *vv)
 		return -1;
 	}
 	if (!PyLong_Check(vv)) {
+		PyNumberMethods *nb;
+		PyObject *io;
 		if (PyInt_Check(vv))
 			return (PY_LONG_LONG)PyInt_AsLong(vv);
-		PyErr_BadInternalCall();
+		if ((nb = vv->ob_type->tp_as_number) == NULL ||
+		    nb->nb_int == NULL) {
+			PyErr_SetString(PyExc_TypeError, "an integer is required");
+			return -1;
+		}
+		io = (*nb->nb_int) (vv);
+		if (io == NULL)
+			return -1;
+		if (PyInt_Check(io)) {
+			bytes = PyInt_AsLong(io);
+			Py_DECREF(io);
+			return bytes;
+		}
+		if (PyLong_Check(io)) {
+			bytes = PyLong_AsLongLong(io);
+			Py_DECREF(io);
+			return bytes;
+		}
+		Py_DECREF(io);
+		PyErr_SetString(PyExc_TypeError, "integer conversion failed");
 		return -1;
 	}
 

@@ -187,16 +187,10 @@ class LongLong_TestCase(unittest.TestCase):
     def test_L(self):
         from _testcapi import getargs_L
         # L returns 'long long', and does range checking (LLONG_MIN ... LLONG_MAX)
-
-        # XXX There's a bug in getargs.c, format code "L":
-        # If you pass something else than a Python long, you
-        # get "Bad argument to internal function".
-
-        # So these three tests are commented out:
-
-##        self.failUnlessEqual(3, getargs_L(3.14))
-##        self.failUnlessEqual(99, getargs_L(Long()))
-##        self.failUnlessEqual(99, getargs_L(Int()))
+        self.failUnlessRaises(TypeError, getargs_L, "Hello")
+        self.failUnlessEqual(3, getargs_L(3.14))
+        self.failUnlessEqual(99, getargs_L(Long()))
+        self.failUnlessEqual(99, getargs_L(Int()))
 
         self.assertRaises(OverflowError, getargs_L, LLONG_MIN-1)
         self.failUnlessEqual(LLONG_MIN, getargs_L(LLONG_MIN))
