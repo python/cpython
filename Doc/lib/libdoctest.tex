@@ -860,7 +860,7 @@ sections \ref{doctest-simple-testmod} and
   passed).
 
   Optional argument \var{optionflags} or's together option flags.  See
-  see section~\ref{doctest-options}.
+  section~\ref{doctest-options}.
 
   Optional argument \var{raise_on_error} defaults to false.  If true,
   an exception is raised upon the first failure or unexpected exception
@@ -927,34 +927,46 @@ sections \ref{doctest-simple-testmod} and
 
 \subsection{Unittest API\label{doctest-unittest-api}}
 
-Doctest provides several functions that can be used to create
-\module{unittest} test suites from doctest examples.  These test
-suites can then be run using \module{unittest} test runners:
+As your collection of doctest'ed modules grows, you'll want a way to run
+all their doctests systematically.  Prior to Python 2.4, \module{doctest}
+had a barely documented \class{Tester} class that supplied a rudimentary
+way to combine doctests from multiple modules. \class{Tester} was feeble,
+and in practice most serious Python testing frameworks build on the
+\module{unittest} module, which supplies many flexible ways to combine
+tests from multiple sources.  So, in Python 2.4, module{doctest}'s
+\class{Tester} class is deprecated, and \module{doctest} provides several
+functions that can be used to create \module{unittest} test suites from
+modules and text files containing doctests.  These test suites can then be
+run using \module{unittest} test runners:
 
 \begin{verbatim}
-  import unittest
-  import doctest
-  import my_module_with_doctests
+import unittest
+import doctest
+import my_module_with_doctests, and_another
 
-  suite = doctest.DocTestSuite(my_module_with_doctests)
-  runner = unittest.TextTestRunner()
-  runner.run(suite)
+suite = unittest.TestSuite()
+for mod in my_module_with_doctests, and_another:
+    suite.addTest(doctest.DocTestSuite(mod))
+runner = unittest.TextTestRunner()
+runner.run(suite)
 \end{verbatim}
 
 \begin{funcdesc}{DocFileSuite}{*paths, **kw}
   Convert doctest tests from one or more text files to a
   \class{\refmodule{unittest}.TestSuite}.
 
-  The returned \class{TestSuite} is to be run by the unittest
+  The returned \class{unittest.TestSuite} is to be run by the unittest
   framework and runs the interactive examples in each file.  If an
   example in any file fails, then the synthesized unit test fails, and
   a \exception{failureException} exception is raised showing the
   name of the file containing the test and a (sometimes approximate)
   line number.
 
-  A number of options may be provided as keyword arguments:
+  Pass one or more paths (as strings) to text files to be examined.
 
-  The optional argument \var{module_relative} specifies how
+  Options may be provided as keyword arguments:
+
+  Optional argument \var{module_relative} specifies how
   the the filenames in \var{paths} should be interpreted:
 
   \begin{itemize}
@@ -972,33 +984,33 @@ suites can then be run using \module{unittest} test runners:
         current working directory.
   \end{itemize}
 
-  The optional argument \var{package} is a Python package or the name
+  Optional argument \var{package} is a Python package or the name
   of a Python package whose directory should be used as the base
   directory for module-relative filenames.  If no package is
   specified, then the calling module's directory is used as the base
   directory for module-relative filenames.  It is an error to specify
   \var{package} if \var{module_relative} is \code{False}.
 
-  The optional argument \var{setUp} specifies a set-up function for
+  Optional argument \var{setUp} specifies a set-up function for
   the test suite.  This is called before running the tests in each
   file.  The \var{setUp} function will be passed a \class{DocTest}
   object.  The setUp function can access the test globals as the
   \var{globs} attribute of the test passed.
 
-  The optional argument \var{tearDown} specifies a tear-down function
+  Optional argument \var{tearDown} specifies a tear-down function
   for the test suite.  This is called after running the tests in each
   file.  The \var{tearDown} function will be passed a \class{DocTest}
   object.  The setUp function can access the test globals as the
   \var{globs} attribute of the test passed.
 
-  The optional argument \var{globs} is a dictionary containing the
+  Optional argument \var{globs} is a dictionary containing the
   initial global variables for the tests.  A new copy of this
   dictionary is created for each test.  By default, \var{globs} is
-  empty.
+  a new empty dictionary.
 
-  The optional argument \var{optionflags} specifies the default
-  doctest options for the tests.  It is created by or-ing together
-  individual option flags.
+  Optional argument \var{optionflags} specifies the default
+  doctest options for the tests, created by or-ing together
+  individual option flags.  See section~\ref{doctest-options}.
 
   \versionadded{2.4}
 \end{funcdesc}
@@ -1010,58 +1022,44 @@ suites can then be run using \module{unittest} test runners:
   Convert doctest tests for a module to a
   \class{\refmodule{unittest}.TestSuite}.
 
-  The returned \class{TestSuite} is to be run by the unittest framework
-  and runs each doctest in the module.  If any of the doctests fail,
-  then the synthesized unit test fails, and a \exception{failureException}
-  exception is raised showing the name of the file containing the test and a
-  (sometimes approximate) line number.
+  The returned \class{unittest.TestSuite} is to be run by the unittest
+  framework and runs each doctest in the module.  If any of the doctests
+  fail, then the synthesized unit test fails, and a
+  \exception{failureException} exception is raised showing the name of the
+  file containing the test and a (sometimes approximate) line number.
 
-  The optional argument \var{module} provides the module to be tested.  It
+  Optional argument \var{module} provides the module to be tested.  It
   can be a module object or a (possibly dotted) module name.  If not
   specified, the module calling this function is used.
 
-  The optional argument \var{globs} is a dictionary containing the
+  Optional argument \var{globs} is a dictionary containing the
   initial global variables for the tests.  A new copy of this
   dictionary is created for each test.  By default, \var{globs} is
-  empty.
+  a new empty dictionary.
 
-  The optional argument \var{extraglobs} specifies an extra set of
+  Optional argument \var{extraglobs} specifies an extra set of
   global variables, which is merged into \var{globs}.  By default, no
   extra globals are used.
 
-  The optional argument \var{test_finder} is the \class{DocTestFinder}
+  Optional argument \var{test_finder} is the \class{DocTestFinder}
   object (or a drop-in replacement) that is used to extract doctests
   from the module.
 
-  The optional argument \var{setUp} specifies a set-up function for
-  the test suite.  This is called before running the tests in each
-  file.  The \var{setUp} function will be passed a \class{DocTest}
-  object.  The setUp function can access the test globals as the
-  \var{globs} attribute of the test passed.
-
-  The optional argument \var{tearDown} specifies a tear-down function
-  for the test suite.  This is called after running the tests in each
-  file.  The \var{tearDown} function will be passed a \class{DocTest}
-  object.  The setUp function can access the test globals as the
-  \var{globs} attribute of the test passed.
-
-  The optional argument \var{optionflags} specifies the default
-  doctest options for the tests.  It is created by or-ing together
-  individual option flags.
+  Optional arguments \var{setUp}, \var{tearDown}, and \var{optionflags}
+  are the same as for function \function{DocFileSuite()} above.
 
   \versionadded{2.3}
   \versionchanged[The parameters \var{globs}, \var{extraglobs},
     \var{test_finder}, \var{setUp}, \var{tearDown}, and
-    \var{optionflags} were added]{2.4}
-  \versionchanged[This function now uses the same search technique as
-    \function{testmod()}.]{2.4}
+    \var{optionflags} were added; this function now uses the same search
+    technique as \function{testmod()}]{2.4}
 \end{funcdesc}
 
 \subsection{Advanced API\label{doctest-advanced-api}}
 
 The basic API is a simple wrapper that's intended to make doctest easy
-to use.  It is fairly flexible, and should meet most user's needs;
-however, if you require more fine grained control over testing, or
+to use.  It is fairly flexible, and should meet most users' needs;
+however, if you require more fine-grained control over testing, or
 wish to extend doctest's capabilities, then you should use the
 advanced API.
 
