@@ -277,13 +277,18 @@ initspam()
 
 Note that the Python name for the exception object is
 \exception{spam.error}.  The \cfunction{PyErr_NewException()} function
-may create either a string or class, depending on whether the
-\programopt{-X} flag was passed to the interpreter.  If
-\programopt{-X} was used, \cdata{SpamError} will be a string object,
-otherwise it will be a class object with the base class being
-\exception{Exception}, described in the
+may create a class with the base class being \exception{Exception}
+(unless another class is passed in instead of \NULL), described in the
 \citetitle[../lib/lib.html]{Python Library Reference} under ``Built-in
 Exceptions.''
+
+Note also that the \cdata{SpamError} variable retains a reference to
+the newly created exception class; this is intentional!  Since the
+exception could be removed from the module by external code, an owned
+reference to the class is needed to ensure that it will not be
+discarded, causing \cdata{SpamError} to become a dangling pointer.
+Should it become a dangling pointer, C code which raises the exception
+could cause a core dump or other unintended side effects.
 
 
 \section{Back to the Example
@@ -2127,22 +2132,12 @@ Now we come to the basic type methods - the ones most extension types
 will implement.
 
 \begin{verbatim}
-	destructor tp_dealloc;
-\end{verbatim}
-\begin{verbatim}
-	printfunc tp_print;
-\end{verbatim}
-\begin{verbatim}
-	getattrfunc tp_getattr;
-\end{verbatim}
-\begin{verbatim}
-	setattrfunc tp_setattr;
-\end{verbatim}
-\begin{verbatim}
-	cmpfunc tp_compare;
-\end{verbatim}
-\begin{verbatim}
-	reprfunc tp_repr;
+    destructor tp_dealloc;
+    printfunc tp_print;
+    getattrfunc tp_getattr;
+    setattrfunc tp_setattr;
+    cmpfunc tp_compare;
+    reprfunc tp_repr;
 \end{verbatim}
 
 
