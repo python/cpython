@@ -31,7 +31,9 @@ Library
 Build
 -----
 
-...
+- Bug 1034277 / Patch 1035255: Remove compilation of core against CoreServices
+  and CoreFoundation on OS X.  Involved removing PyMac_GetAppletScriptFile()
+  which has no known users.  Thanks Bob Ippolito.
 
 C API
 -----
