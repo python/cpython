@@ -795,7 +795,11 @@ class PyShell(OutputWindow):
         import __builtin__
         __builtin__.quit = __builtin__.exit = "To exit, type Ctrl-D."
         #
-        self.config(usetabs=1, indentwidth=8, context_use_ps1=1)
+##        self.config(usetabs=1, indentwidth=8, context_use_ps1=1)
+        self.usetabs = True
+        # indentwidth must be 8 when using tabs.  See note in EditorWindow:
+        self.indentwidth = 8
+        self.context_use_ps1 = True
         #
         text = self.text
         text.configure(wrap="char")

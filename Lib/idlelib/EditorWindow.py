@@ -165,6 +165,38 @@ class EditorWindow(object):
         text.pack(side=TOP, fill=BOTH, expand=1)
         text.focus_set()
 
+        # usetabs true  -> literal tab characters are used by indent and
+        #                  dedent cmds, possibly mixed with spaces if
+        #                  indentwidth is not a multiple of tabwidth,
+        #                  which will cause Tabnanny to nag!
+        #         false -> tab characters are converted to spaces by indent
+        #                  and dedent cmds, and ditto TAB keystrokes
+        self.usetabs = False
+
+        # indentwidth is the number of characters per logical indent level.
+        # Recommended Python default indent is four spaces.
+        self.indentwidth = 4
+
+        # tabwidth is the display width of a literal tab character.
+        # CAUTION:  telling Tk to use anything other than its default
+        # tab setting causes it to use an entirely different tabbing algorithm,
+        # treating tab stops as fixed distances from the left margin.
+        # Nobody expects this, so for now tabwidth should never be changed.
+        self.tabwidth = 8    # for IDLE use, must remain 8 until Tk is fixed.
+                             # indentwidth should be 8 when usetabs is True.
+
+        # If context_use_ps1 is true, parsing searches back for a ps1 line;
+        # else searches for a popular (if, def, ...) Python stmt.
+        self.context_use_ps1 = False
+
+        # When searching backwards for a reliable place to begin parsing,
+        # first start num_context_lines[0] lines back, then
+        # num_context_lines[1] lines back if that didn't work, and so on.
+        # The last value should be huge (larger than the # of lines in a
+        # conceivable file).
+        # Making the initial values larger slows things down more often.
+        self.num_context_lines = 50, 500, 5000000
+
         self.per = per = self.Percolator(text)
         if self.ispythonsource(filename):
             self.color = color = self.ColorDelegator()
@@ -196,6 +228,8 @@ class EditorWindow(object):
                 io.set_filename(filename)
         self.saved_change_hook()
 
+        self.set_indentation_params(self.ispythonsource(filename))
+
         self.load_extensions()
 
         menu = self.menudict.get('windows')
@@ -213,10 +247,6 @@ class EditorWindow(object):
         self.askyesno = tkMessageBox.askyesno
         self.askinteger = tkSimpleDialog.askinteger
         self.showerror = tkMessageBox.showerror
-
-        if self.extensions.has_key('AutoIndent'):
-            self.extensions['AutoIndent'].set_indentation_params(
-                self.ispythonsource(filename))
 
     def new_callback(self, event):
         dirname, basename = self.io.defaultfilename()
@@ -881,62 +911,19 @@ class EditorWindow(object):
                                   "n" * newtabwidth)
             text.configure(tabs=pixels)
 
-### begin autoindent code ###
-
-    # usetabs true  -> literal tab characters are used by indent and
-    #                  dedent cmds, possibly mixed with spaces if
-    #                  indentwidth is not a multiple of tabwidth
-    #         false -> tab characters are converted to spaces by indent
-    #                  and dedent cmds, and ditto TAB keystrokes
-    # indentwidth is the number of characters per logical indent level.
-    # tabwidth is the display width of a literal tab character.
-    # CAUTION:  telling Tk to use anything other than its default
-    # tab setting causes it to use an entirely different tabbing algorithm,
-    # treating tab stops as fixed distances from the left margin.
-    # Nobody expects this, so for now tabwidth should never be changed.
-    usetabs = 0
-    indentwidth = 4
-    tabwidth = 8    # for IDLE use, must remain 8 until Tk is fixed
-
-    # If context_use_ps1 is true, parsing searches back for a ps1 line;
-    # else searches for a popular (if, def, ...) Python stmt.
-    context_use_ps1 = 0
-
-    # When searching backwards for a reliable place to begin parsing,
-    # first start num_context_lines[0] lines back, then
-    # num_context_lines[1] lines back if that didn't work, and so on.
-    # The last value should be huge (larger than the # of lines in a
-    # conceivable file).
-    # Making the initial values larger slows things down more often.
-    num_context_lines = 50, 500, 5000000
-
-    def config(self, **options):
-        for key, value in options.items():
-            if key == 'usetabs':
-                self.usetabs = value
-            elif key == 'indentwidth':
-                self.indentwidth = value
-            elif key == 'tabwidth':
-                self.tabwidth = value
-            elif key == 'context_use_ps1':
-                self.context_use_ps1 = value
-            else:
-                raise KeyError, "bad option name: %r" % (key,)
-
     # If ispythonsource and guess are true, guess a good value for
     # indentwidth based on file content (if possible), and if
     # indentwidth != tabwidth set usetabs false.
     # In any case, adjust the Text widget's view of what a tab
     # character means.
 
-    def set_indentation_params(self, ispythonsource, guess=1):
+    def set_indentation_params(self, ispythonsource, guess=True):
         if guess and ispythonsource:
             i = self.guess_indent()
             if 2 <= i <= 8:
                 self.indentwidth = i
             if self.indentwidth != self.tabwidth:
-                self.usetabs = 0
-
+                self.usetabs = False
         self.set_tabwidth(self.tabwidth)
 
     def smart_backspace_event(self, event):
@@ -988,8 +975,9 @@ class EditorWindow(object):
         # if intraline selection:
         #     delete it
         # elif multiline selection:
-        #     do indent-region & return
-        # indent one level
+        #     do indent-region
+        # else:
+        #     indent one level
         text = self.text
         first, last = self.get_selection_indices()
         text.undo_block_start()
@@ -1005,6 +993,7 @@ class EditorWindow(object):
                 # only whitespace to the left
                 self.reindent_to(effective + self.indentwidth)
             else:
+                # tab to the next 'stop' within or to right of line's text:
                 if self.usetabs:
                     pad = '\t'
                 else:
@@ -1178,28 +1167,34 @@ class EditorWindow(object):
     def toggle_tabs_event(self, event):
         if self.askyesno(
               "Toggle tabs",
-              "Turn tabs " + ("on", "off")[self.usetabs] + "?",
+              "Turn tabs " + ("on", "off")[self.usetabs] +
+              "?\nIndent width " +
+              ("will be", "remains at")[self.usetabs] + " 8.",
               parent=self.text):
             self.usetabs = not self.usetabs
+        # Try to prevent mixed tabs/spaces.
+        # User must reset indent width manually after using tabs
+        #      if he insists on getting into trouble.
+        self.indentwidth = 8
         return "break"
 
-    # XXX this isn't bound to anything -- see class tabwidth comments
-    def change_tabwidth_event(self, event):
-        new = self._asktabwidth()
-        if new != self.tabwidth:
-            self.tabwidth = new
-            self.set_indentation_params(0, guess=0)
-        return "break"
+    # XXX this isn't bound to anything -- see tabwidth comments
+##     def change_tabwidth_event(self, event):
+##         new = self._asktabwidth()
+##         if new != self.tabwidth:
+##             self.tabwidth = new
+##             self.set_indentation_params(0, guess=0)
+##         return "break"
 
     def change_indentwidth_event(self, event):
         new = self.askinteger(
                   "Indent width",
-                  "New indent width (2-16)",
+                  "New indent width (2-16)\n(Always use 8 when using tabs)",
                   parent=self.text,
                   initialvalue=self.indentwidth,
                   minvalue=2,
                   maxvalue=16)
-        if new and new != self.indentwidth:
+        if new and new != self.indentwidth and not self.usetabs:
             self.indentwidth = new
         return "break"
 
