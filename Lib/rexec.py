@@ -59,7 +59,9 @@ copydict(posix.environ, safe_posix.environ)
 safe_types = new_module('types')
 copymodule(types, safe_types)
 
-def safe_import(name):
+def safe_import(name, globals=None, locals=None, fromlist=None):
+	if '.' in name:
+		raise ImportError, "import of dotted names not supported"
 	if safe_sys.modules.has_key(name):
 		return safe_sys.modules[name]
 	if name in safe_modules:
