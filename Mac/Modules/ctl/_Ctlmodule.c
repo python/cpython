@@ -4035,29 +4035,6 @@ static PyObject *Ctl_FindControl(PyObject *_self, PyObject *_args)
 	return _res;
 }
 
-static PyObject *Ctl_FindControlUnderMouse(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	ControlHandle _rv;
-	Point inWhere;
-	WindowPtr inWindow;
-	SInt16 outPart;
-#ifndef FindControlUnderMouse
-	PyMac_PRECHECK(FindControlUnderMouse);
-#endif
-	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      PyMac_GetPoint, &inWhere,
-	                      WinObj_Convert, &inWindow))
-		return NULL;
-	_rv = FindControlUnderMouse(inWhere,
-	                            inWindow,
-	                            &outPart);
-	_res = Py_BuildValue("O&h",
-	                     CtlObj_New, _rv,
-	                     outPart);
-	return _res;
-}
-
 static PyObject *Ctl_IdleControls(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -4137,7 +4114,7 @@ static PyObject *Ctl_CreateRootControl(PyObject *_self, PyObject *_args)
 	                         &outControl);
 	if (_err != noErr) return PyMac_Error(_err);
 	_res = Py_BuildValue("O&",
-	                     CtlObj_WhichControl, outControl);
+	                     CtlObj_New, outControl);
 	return _res;
 }
 
@@ -4340,7 +4317,7 @@ static PyObject *Ctl_CreateDisclosureTriangleControl(PyObject *_self, PyObject *
 	                                       &outControl);
 	if (_err != noErr) return PyMac_Error(_err);
 	_res = Py_BuildValue("O&",
-	                     CtlObj_WhichControl, outControl);
+	                     CtlObj_New, outControl);
 	return _res;
 }
 
@@ -4375,7 +4352,7 @@ static PyObject *Ctl_CreateProgressBarControl(PyObject *_self, PyObject *_args)
 	                                &outControl);
 	if (_err != noErr) return PyMac_Error(_err);
 	_res = Py_BuildValue("O&",
-	                     CtlObj_WhichControl, outControl);
+	                     CtlObj_New, outControl);
 	return _res;
 }
 
@@ -4410,7 +4387,7 @@ static PyObject *Ctl_CreateLittleArrowsControl(PyObject *_self, PyObject *_args)
 	                                 &outControl);
 	if (_err != noErr) return PyMac_Error(_err);
 	_res = Py_BuildValue("O&",
-	                     CtlObj_WhichControl, outControl);
+	                     CtlObj_New, outControl);
 	return _res;
 }
 
@@ -4433,7 +4410,7 @@ static PyObject *Ctl_CreateChasingArrowsControl(PyObject *_self, PyObject *_args
 	                                  &outControl);
 	if (_err != noErr) return PyMac_Error(_err);
 	_res = Py_BuildValue("O&",
-	                     CtlObj_WhichControl, outControl);
+	                     CtlObj_New, outControl);
 	return _res;
 }
 
@@ -4456,7 +4433,7 @@ static PyObject *Ctl_CreateSeparatorControl(PyObject *_self, PyObject *_args)
 	                              &outControl);
 	if (_err != noErr) return PyMac_Error(_err);
 	_res = Py_BuildValue("O&",
-	                     CtlObj_WhichControl, outControl);
+	                     CtlObj_New, outControl);
 	return _res;
 }
 
@@ -4485,7 +4462,7 @@ static PyObject *Ctl_CreateGroupBoxControl(PyObject *_self, PyObject *_args)
 	                             &outControl);
 	if (_err != noErr) return PyMac_Error(_err);
 	_res = Py_BuildValue("O&",
-	                     CtlObj_WhichControl, outControl);
+	                     CtlObj_New, outControl);
 	return _res;
 }
 
@@ -4520,7 +4497,7 @@ static PyObject *Ctl_CreateCheckGroupBoxControl(PyObject *_self, PyObject *_args
 	                                  &outControl);
 	if (_err != noErr) return PyMac_Error(_err);
 	_res = Py_BuildValue("O&",
-	                     CtlObj_WhichControl, outControl);
+	                     CtlObj_New, outControl);
 	return _res;
 }
 
@@ -4564,7 +4541,7 @@ static PyObject *Ctl_CreatePopupGroupBoxControl(PyObject *_self, PyObject *_args
 	                                  &outControl);
 	if (_err != noErr) return PyMac_Error(_err);
 	_res = Py_BuildValue("O&",
-	                     CtlObj_WhichControl, outControl);
+	                     CtlObj_New, outControl);
 	return _res;
 }
 
@@ -4593,7 +4570,7 @@ static PyObject *Ctl_CreatePopupArrowControl(PyObject *_self, PyObject *_args)
 	                               &outControl);
 	if (_err != noErr) return PyMac_Error(_err);
 	_res = Py_BuildValue("O&",
-	                     CtlObj_WhichControl, outControl);
+	                     CtlObj_New, outControl);
 	return _res;
 }
 
@@ -4616,7 +4593,7 @@ static PyObject *Ctl_CreatePlacardControl(PyObject *_self, PyObject *_args)
 	                            &outControl);
 	if (_err != noErr) return PyMac_Error(_err);
 	_res = Py_BuildValue("O&",
-	                     CtlObj_WhichControl, outControl);
+	                     CtlObj_New, outControl);
 	return _res;
 }
 
@@ -4645,7 +4622,7 @@ static PyObject *Ctl_CreateClockControl(PyObject *_self, PyObject *_args)
 	                          &outControl);
 	if (_err != noErr) return PyMac_Error(_err);
 	_res = Py_BuildValue("O&",
-	                     CtlObj_WhichControl, outControl);
+	                     CtlObj_New, outControl);
 	return _res;
 }
 
@@ -4671,7 +4648,7 @@ static PyObject *Ctl_CreateUserPaneControl(PyObject *_self, PyObject *_args)
 	                             &outControl);
 	if (_err != noErr) return PyMac_Error(_err);
 	_res = Py_BuildValue("O&",
-	                     CtlObj_WhichControl, outControl);
+	                     CtlObj_New, outControl);
 	return _res;
 }
 
@@ -4706,7 +4683,7 @@ static PyObject *Ctl_CreateEditTextControl(PyObject *_self, PyObject *_args)
 	                             &outControl);
 	if (_err != noErr) return PyMac_Error(_err);
 	_res = Py_BuildValue("O&",
-	                     CtlObj_WhichControl, outControl);
+	                     CtlObj_New, outControl);
 	return _res;
 }
 
@@ -4735,7 +4712,7 @@ static PyObject *Ctl_CreateStaticTextControl(PyObject *_self, PyObject *_args)
 	                               &outControl);
 	if (_err != noErr) return PyMac_Error(_err);
 	_res = Py_BuildValue("O&",
-	                     CtlObj_WhichControl, outControl);
+	                     CtlObj_New, outControl);
 	return _res;
 }
 
@@ -4761,7 +4738,7 @@ static PyObject *Ctl_CreateWindowHeaderControl(PyObject *_self, PyObject *_args)
 	                                 &outControl);
 	if (_err != noErr) return PyMac_Error(_err);
 	_res = Py_BuildValue("O&",
-	                     CtlObj_WhichControl, outControl);
+	                     CtlObj_New, outControl);
 	return _res;
 }
 
@@ -4787,7 +4764,7 @@ static PyObject *Ctl_CreatePushButtonControl(PyObject *_self, PyObject *_args)
 	                               &outControl);
 	if (_err != noErr) return PyMac_Error(_err);
 	_res = Py_BuildValue("O&",
-	                     CtlObj_WhichControl, outControl);
+	                     CtlObj_New, outControl);
 	return _res;
 }
 
@@ -4819,7 +4796,7 @@ static PyObject *Ctl_CreateRadioButtonControl(PyObject *_self, PyObject *_args)
 	                                &outControl);
 	if (_err != noErr) return PyMac_Error(_err);
 	_res = Py_BuildValue("O&",
-	                     CtlObj_WhichControl, outControl);
+	                     CtlObj_New, outControl);
 	return _res;
 }
 
@@ -4851,7 +4828,7 @@ static PyObject *Ctl_CreateCheckBoxControl(PyObject *_self, PyObject *_args)
 	                             &outControl);
 	if (_err != noErr) return PyMac_Error(_err);
 	_res = Py_BuildValue("O&",
-	                     CtlObj_WhichControl, outControl);
+	                     CtlObj_New, outControl);
 	return _res;
 }
 
@@ -4892,7 +4869,7 @@ static PyObject *Ctl_CreatePopupButtonControl(PyObject *_self, PyObject *_args)
 	                                &outControl);
 	if (_err != noErr) return PyMac_Error(_err);
 	_res = Py_BuildValue("O&",
-	                     CtlObj_WhichControl, outControl);
+	                     CtlObj_New, outControl);
 	return _res;
 }
 
@@ -4915,7 +4892,7 @@ static PyObject *Ctl_CreateRadioGroupControl(PyObject *_self, PyObject *_args)
 	                               &outControl);
 	if (_err != noErr) return PyMac_Error(_err);
 	_res = Py_BuildValue("O&",
-	                     CtlObj_WhichControl, outControl);
+	                     CtlObj_New, outControl);
 	return _res;
 }
 
@@ -4953,7 +4930,7 @@ static PyObject *Ctl_CreateScrollingTextBoxControl(PyObject *_self, PyObject *_a
 	                                     &outControl);
 	if (_err != noErr) return PyMac_Error(_err);
 	_res = Py_BuildValue("O&",
-	                     CtlObj_WhichControl, outControl);
+	                     CtlObj_New, outControl);
 	return _res;
 }
 
@@ -4979,7 +4956,30 @@ static PyObject *Ctl_CreateDataBrowserControl(PyObject *_self, PyObject *_args)
 	                                &outControl);
 	if (_err != noErr) return PyMac_Error(_err);
 	_res = Py_BuildValue("O&",
-	                     CtlObj_WhichControl, outControl);
+	                     CtlObj_New, outControl);
+	return _res;
+}
+
+static PyObject *Ctl_FindControlUnderMouse(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ControlHandle _rv;
+	Point inWhere;
+	WindowPtr inWindow;
+	SInt16 outPart;
+#ifndef FindControlUnderMouse
+	PyMac_PRECHECK(FindControlUnderMouse);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      PyMac_GetPoint, &inWhere,
+	                      WinObj_Convert, &inWindow))
+		return NULL;
+	_rv = FindControlUnderMouse(inWhere,
+	                            inWindow,
+	                            &outPart);
+	_res = Py_BuildValue("O&h",
+	                     CtlObj_WhichControl, _rv,
+	                     outPart);
 	return _res;
 }
 
@@ -5011,8 +5011,6 @@ static PyMethodDef Ctl_methods[] = {
 	 "(WindowPtr theWindow, RgnHandle updateRegion) -> None"},
 	{"FindControl", (PyCFunction)Ctl_FindControl, 1,
 	 "(Point testPoint, WindowPtr theWindow) -> (ControlPartCode _rv, ControlHandle theControl)"},
-	{"FindControlUnderMouse", (PyCFunction)Ctl_FindControlUnderMouse, 1,
-	 "(Point inWhere, WindowPtr inWindow) -> (ControlHandle _rv, SInt16 outPart)"},
 	{"IdleControls", (PyCFunction)Ctl_IdleControls, 1,
 	 "(WindowPtr inWindow) -> None"},
 
@@ -5090,6 +5088,8 @@ static PyMethodDef Ctl_methods[] = {
 	 "(WindowPtr window, Rect boundsRect, SInt16 contentResID, Boolean autoScroll, UInt32 delayBeforeAutoScroll, UInt32 delayBetweenAutoScroll, UInt16 autoScrollAmount) -> (ControlHandle outControl)"},
 	{"CreateDataBrowserControl", (PyCFunction)Ctl_CreateDataBrowserControl, 1,
 	 "(WindowPtr window, Rect boundsRect, OSType style) -> (ControlHandle outControl)"},
+	{"FindControlUnderMouse", (PyCFunction)Ctl_FindControlUnderMouse, 1,
+	 "(Point inWhere, WindowPtr inWindow) -> (ControlHandle _rv, SInt16 outPart)"},
 	{"as_Control", (PyCFunction)Ctl_as_Control, 1,
 	 "(Handle h) -> (ControlHandle _rv)"},
 	{NULL, NULL, 0}

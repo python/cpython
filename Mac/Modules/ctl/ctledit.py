@@ -1,3 +1,12 @@
+# FindControlUnderMouse() returns an existing control, not a new one,
+# so create this one by hand.
+f = Function(ExistingControlHandle, 'FindControlUnderMouse',
+    (Point, 'inWhere', InMode),
+    (WindowRef, 'inWindow', InMode),
+    (SInt16, 'outPart', OutMode),
+)
+functions.append(f)
+
 f = Function(ControlHandle, 'as_Control',
 	(Handle, 'h', InMode))
 functions.append(f)
@@ -25,3 +34,12 @@ f = ManualGenerator("DisposeControl", DisposeControl_body)
 f.docstring = lambda : "() -> None"
 
 methods.append(f)
+
+# All CreateXxxXxxControl() functions return a new object in an output
+# parameter; these should however be managed by us (we're creating them
+# after all), so set the type to ControlRef.
+for f in functions:
+	if f.name.startswith("Create"):
+		v = f.argumentList[-1]
+		if v.type == ExistingControlHandle:
+			v.type = ControlRef
