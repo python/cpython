@@ -1196,8 +1196,6 @@ PyMac_GetFSRef(PyObject *v, FSRef *fsr)
 #if TARGET_API_MAC_OS8
 	return 0;
 #else
-	OSErr err;
-
 	/* If it's an FSRef we're also okay. */
 	if (_mfs_GetFSRefFromFSRef(v, fsr))
 		return 1;
