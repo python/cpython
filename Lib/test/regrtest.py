@@ -25,6 +25,7 @@ import sys
 import string
 import os
 import getopt
+import traceback
 
 import test_support
 
@@ -136,6 +137,11 @@ def runtest(test, generate, verbose2):
 	return -1
     except test_support.TestFailed, msg:
 	print "test", test, "failed --", msg
+	return 0
+    except:
+	print "test", test, "crashed --", sys.exc_type, ":", sys.exc_value
+	if verbose2:
+	    traceback.print_exc(file=sys.stdout)
 	return 0
     else:
 	return 1
