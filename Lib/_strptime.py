@@ -423,6 +423,9 @@ def strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
     found = format_regex.match(data_string)
     if not found:
         raise ValueError("time data did not match format")
+    if len(data_string) != found.end():
+        raise ValueError("unconverted data remains: %s" %
+                          data_string[found.end():])
     year = 1900
     month = day = 1
     hour = minute = second = 0
