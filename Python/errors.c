@@ -17,14 +17,14 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #endif
 
 #ifdef macintosh
-extern char *PyMac_StrError Py_PROTO((int));
+extern char *PyMac_StrError(int);
 #undef strerror
 #define strerror PyMac_StrError
 #endif /* macintosh */
 
 #ifndef __STDC__
 #ifndef MS_WINDOWS
-extern char *strerror Py_PROTO((int));
+extern char *strerror(int);
 #endif
 #endif
 

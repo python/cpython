@@ -49,11 +49,10 @@ struct tok_state {
 	int altindstack[MAXINDENT];	/* Stack of alternate indents */
 };
 
-extern struct tok_state *PyTokenizer_FromString Py_PROTO((char *));
-extern struct tok_state *PyTokenizer_FromFile
-	Py_PROTO((FILE *, char *, char *));
-extern void PyTokenizer_Free Py_PROTO((struct tok_state *));
-extern int PyTokenizer_Get Py_PROTO((struct tok_state *, char **, char **));
+extern struct tok_state *PyTokenizer_FromString(char *);
+extern struct tok_state *PyTokenizer_FromFile(FILE *, char *, char *);
+extern void PyTokenizer_Free(struct tok_state *);
+extern int PyTokenizer_Get(struct tok_state *, char **, char **);
 
 #ifdef __cplusplus
 }

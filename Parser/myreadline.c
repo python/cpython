@@ -118,7 +118,7 @@ PyOS_StdioReadline(prompt)
 
    Note: Python expects in return a buffer allocated with PyMem_Malloc. */
 
-char *(*PyOS_ReadlineFunctionPointer) Py_PROTO((char *));
+char *(*PyOS_ReadlineFunctionPointer)(char *);
 
 
 /* Interface used by tokenizer.c and bltinmodule.c */

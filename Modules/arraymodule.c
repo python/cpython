@@ -31,8 +31,8 @@ struct arrayobject; /* Forward */
 struct arraydescr {
 	int typecode;
 	int itemsize;
-	PyObject * (*getitem) Py_FPROTO((struct arrayobject *, int));
-	int (*setitem) Py_FPROTO((struct arrayobject *, int, PyObject *));
+	PyObject * (*getitem)(struct arrayobject *, int);
+	int (*setitem)(struct arrayobject *, int, PyObject *);
 };
 
 typedef struct arrayobject {
@@ -46,15 +46,15 @@ staticforward PyTypeObject Arraytype;
 #define is_arrayobject(op) ((op)->ob_type == &Arraytype)
 
 /* Forward */
-static PyObject *newarrayobject Py_PROTO((int, struct arraydescr *));
+static PyObject *newarrayobject(int, struct arraydescr *);
 #if 0
-static int getarraysize Py_PROTO((PyObject *));
+static int getarraysize(PyObject *);
 #endif
-static PyObject *getarrayitem Py_PROTO((PyObject *, int));
-static int setarrayitem Py_PROTO((PyObject *, int, PyObject *));
+static PyObject *getarrayitem(PyObject *, int);
+static int setarrayitem(PyObject *, int, PyObject *);
 #if 0
-static int insarrayitem Py_PROTO((PyObject *, int, PyObject *));
-static int addarrayitem Py_PROTO((PyObject *, PyObject *));
+static int insarrayitem(PyObject *, int, PyObject *);
+static int addarrayitem(PyObject *, PyObject *);
 #endif
 
 static PyObject *

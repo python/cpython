@@ -90,8 +90,8 @@ extern int ftime();
 #endif
 
 /* Forward declarations */
-static int floatsleep Py_PROTO((double));
-static double floattime Py_PROTO(());
+static int floatsleep(double);
+static double floattime();
 
 /* For Y2K check */
 static PyObject *moddict;
@@ -255,7 +255,7 @@ tmtotuple(p)
 static PyObject *
 time_convert(when, function)
 	time_t when;
-	struct tm * (*function) Py_PROTO((const time_t *));
+	struct tm * (*function)(const time_t *);
 {
 	struct tm *p;
 	errno = 0;
@@ -786,8 +786,8 @@ floatsleep(double secs)
 #ifdef MSDOS
 	struct timeb t1, t2;
 	double frac;
-	extern double fmod Py_PROTO((double, double));
-	extern double floor Py_PROTO((double));
+	extern double fmod(double, double);
+	extern double floor(double);
 	if (secs <= 0.0)
 		return;
 	frac = fmod(secs, 1.0);

@@ -20,9 +20,9 @@ extern DL_IMPORT(PyTypeObject) PyCFunction_Type;
 
 #define PyCFunction_Check(op) ((op)->ob_type == &PyCFunction_Type)
 
-typedef PyObject *(*PyCFunction) Py_FPROTO((PyObject *, PyObject *));
-typedef PyObject *(*PyCFunctionWithKeywords)
-	Py_FPROTO((PyObject *, PyObject *, PyObject *));
+typedef PyObject *(*PyCFunction)(PyObject *, PyObject *);
+typedef PyObject *(*PyCFunctionWithKeywords)(PyObject *, PyObject *,
+					     PyObject *);
 
 extern DL_IMPORT(PyCFunction) PyCFunction_GetFunction(PyObject *);
 extern DL_IMPORT(PyObject *) PyCFunction_GetSelf(PyObject *);

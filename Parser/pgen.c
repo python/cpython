@@ -45,14 +45,14 @@ typedef struct _nfa {
 } nfa;
 
 /* Forward */
-static void compile_rhs Py_PROTO((labellist *ll,
-			       nfa *nf, node *n, int *pa, int *pb));
-static void compile_alt Py_PROTO((labellist *ll,
-			       nfa *nf, node *n, int *pa, int *pb));
-static void compile_item Py_PROTO((labellist *ll,
-				nfa *nf, node *n, int *pa, int *pb));
-static void compile_atom Py_PROTO((labellist *ll,
-				nfa *nf, node *n, int *pa, int *pb));
+static void compile_rhs(labellist *ll,
+			nfa *nf, node *n, int *pa, int *pb);
+static void compile_alt(labellist *ll,
+			nfa *nf, node *n, int *pa, int *pb);
+static void compile_item(labellist *ll,
+			 nfa *nf, node *n, int *pa, int *pb);
+static void compile_atom(labellist *ll,
+			 nfa *nf, node *n, int *pa, int *pb);
 
 static int
 addnfastate(nf)
@@ -111,7 +111,7 @@ typedef struct _nfagrammar {
 } nfagrammar;
 
 /* Forward */
-static void compile_rule Py_PROTO((nfagrammar *gr, node *n));
+static void compile_rule(nfagrammar *gr, node *n);
 
 static nfagrammar *
 newnfagrammar()
@@ -420,10 +420,10 @@ typedef struct _ss_dfa {
 } ss_dfa;
 
 /* Forward */
-static void printssdfa Py_PROTO((int xx_nstates, ss_state *xx_state, int nbits,
-			      labellist *ll, char *msg));
-static void simplify Py_PROTO((int xx_nstates, ss_state *xx_state));
-static void convert Py_PROTO((dfa *d, int xx_nstates, ss_state *xx_state));
+static void printssdfa(int xx_nstates, ss_state *xx_state, int nbits,
+		       labellist *ll, char *msg);
+static void simplify(int xx_nstates, ss_state *xx_state);
+static void convert(dfa *d, int xx_nstates, ss_state *xx_state);
 
 static void
 makedfa(gr, nf, d)

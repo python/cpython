@@ -90,9 +90,9 @@ extern "C" {
 #ifndef PyCore_MALLOC_PROTO
 #undef PyCore_REALLOC_PROTO
 #undef PyCore_FREE_PROTO
-#define PyCore_MALLOC_PROTO     Py_PROTO((size_t))
-#define PyCore_REALLOC_PROTO    Py_PROTO((ANY *, size_t))
-#define PyCore_FREE_PROTO       Py_PROTO((ANY *))
+#define PyCore_MALLOC_PROTO    (size_t)
+#define PyCore_REALLOC_PROTO   (ANY *, size_t)
+#define PyCore_FREE_PROTO      (ANY *)
 #endif
 
 #ifdef NEED_TO_DECLARE_MALLOC_AND_FRIEND
@@ -138,9 +138,9 @@ extern void PyCore_FREE_FUNC PyCore_FREE_PROTO;
    returns a non-NULL pointer, even if the underlying malloc
    doesn't. Returned pointers must be checked for NULL explicitly.
    No action is performed on failure. */
-extern DL_IMPORT(ANY *) PyMem_Malloc Py_PROTO((size_t));
-extern DL_IMPORT(ANY *) PyMem_Realloc Py_PROTO((ANY *, size_t));
-extern DL_IMPORT(void) PyMem_Free Py_PROTO((ANY *));
+extern DL_IMPORT(ANY *) PyMem_Malloc(size_t);
+extern DL_IMPORT(ANY *) PyMem_Realloc(ANY *, size_t);
+extern DL_IMPORT(void) PyMem_Free(ANY *);
 
 /* Starting from Python 1.6, the wrappers Py_{Malloc,Realloc,Free} are
    no longer supported. They used to call PyErr_NoMemory() on failure. */
@@ -198,7 +198,7 @@ extern DL_IMPORT(void) PyMem_Free Py_PROTO((ANY *));
 
    #define PyCore_MALLOC_FUNC      d_malloc
    ...
-   #define PyCore_MALLOC_PROTO	Py_PROTO((size_t, char *, unsigned long))
+   #define PyCore_MALLOC_PROTO	(size_t, char *, unsigned long)
    ...
    #define NEED_TO_DECLARE_MALLOC_AND_FRIEND
 

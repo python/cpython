@@ -375,30 +375,30 @@ block_pop(c, type)
 
 /* Prototype forward declarations */
 
-static int com_init Py_PROTO((struct compiling *, char *));
-static void com_free Py_PROTO((struct compiling *));
-static void com_push Py_PROTO((struct compiling *, int));
-static void com_pop Py_PROTO((struct compiling *, int));
-static void com_done Py_PROTO((struct compiling *));
-static void com_node Py_PROTO((struct compiling *, struct _node *));
-static void com_factor Py_PROTO((struct compiling *, struct _node *));
-static void com_addbyte Py_PROTO((struct compiling *, int));
-static void com_addint Py_PROTO((struct compiling *, int));
-static void com_addoparg Py_PROTO((struct compiling *, int, int));
-static void com_addfwref Py_PROTO((struct compiling *, int, int *));
-static void com_backpatch Py_PROTO((struct compiling *, int));
-static int com_add Py_PROTO((struct compiling *, PyObject *, PyObject *, PyObject *));
-static int com_addconst Py_PROTO((struct compiling *, PyObject *));
-static int com_addname Py_PROTO((struct compiling *, PyObject *));
-static void com_addopname Py_PROTO((struct compiling *, int, node *));
-static void com_list Py_PROTO((struct compiling *, node *, int));
-static int com_argdefs Py_PROTO((struct compiling *, node *));
-static int com_newlocal Py_PROTO((struct compiling *, char *));
-static PyCodeObject *icompile Py_PROTO((struct _node *, struct compiling *));
-static PyCodeObject *jcompile Py_PROTO((struct _node *, char *,
-					struct compiling *));
-static PyObject *parsestrplus Py_PROTO((node *));
-static PyObject *parsestr Py_PROTO((char *));
+static int com_init(struct compiling *, char *);
+static void com_free(struct compiling *);
+static void com_push(struct compiling *, int);
+static void com_pop(struct compiling *, int);
+static void com_done(struct compiling *);
+static void com_node(struct compiling *, struct _node *);
+static void com_factor(struct compiling *, struct _node *);
+static void com_addbyte(struct compiling *, int);
+static void com_addint(struct compiling *, int);
+static void com_addoparg(struct compiling *, int, int);
+static void com_addfwref(struct compiling *, int, int *);
+static void com_backpatch(struct compiling *, int);
+static int com_add(struct compiling *, PyObject *, PyObject *, PyObject *);
+static int com_addconst(struct compiling *, PyObject *);
+static int com_addname(struct compiling *, PyObject *);
+static void com_addopname(struct compiling *, int, node *);
+static void com_list(struct compiling *, node *, int);
+static int com_argdefs(struct compiling *, node *);
+static int com_newlocal(struct compiling *, char *);
+static PyCodeObject *icompile(struct _node *, struct compiling *);
+static PyCodeObject *jcompile(struct _node *, char *,
+			      struct compiling *);
+static PyObject *parsestrplus(node *);
+static PyObject *parsestr(char *);
 
 static int
 com_init(c, filename)
@@ -813,7 +813,7 @@ parsenumber(co, s)
 	struct compiling *co;
 	char *s;
 {
-	extern double atof Py_PROTO((const char *));
+	extern double atof(const char *);
 	char *end;
 	long x;
 	double dx;
@@ -1823,8 +1823,8 @@ com_list(c, n, toplevel)
 
 /* Begin of assignment compilation */
 
-static void com_assign_name Py_PROTO((struct compiling *, node *, int));
-static void com_assign Py_PROTO((struct compiling *, node *, int));
+static void com_assign_name(struct compiling *, node *, int);
+static void com_assign(struct compiling *, node *, int);
 
 static void
 com_assign_attr(c, n, assigning)
@@ -2013,7 +2013,7 @@ com_assign(c, n, assigning)
 	}
 }
 
-/* Forward */ static node *get_rawdocstring Py_PROTO((node *));
+/* Forward */ static node *get_rawdocstring(node *);
 
 static void
 com_expr_stmt(c, n)
@@ -3041,7 +3041,7 @@ com_node(c, n)
 	}
 }
 
-static void com_fplist Py_PROTO((struct compiling *, node *));
+static void com_fplist(struct compiling *, node *);
 
 static void
 com_fpdef(c, n)

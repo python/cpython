@@ -37,7 +37,7 @@ typedef struct {
 
 static PyObject *SvError;		/* exception sv.error */
 
-static PyObject *newcaptureobject Py_PROTO((svobject *, void *, int));
+static PyObject *newcaptureobject(svobject *, void *, int);
 
 /* Set a SV-specific error from svideo_errno and return NULL */
 static PyObject *

@@ -310,7 +310,7 @@ PyNumber_Or(v, w)
 	BINOP(v, w, "__or__", "__ror__", PyNumber_Or);
 	if (v->ob_type->tp_as_number != NULL) {
 		PyObject *x = NULL;
-		PyObject * (*f) Py_FPROTO((PyObject *, PyObject *));
+		PyObject * (*f)(PyObject *, PyObject *);
 		if (PyNumber_Coerce(&v, &w) != 0)
 			return NULL;
 		if ((f = v->ob_type->tp_as_number->nb_or) != NULL)
@@ -332,7 +332,7 @@ PyNumber_Xor(v, w)
 	BINOP(v, w, "__xor__", "__rxor__", PyNumber_Xor);
 	if (v->ob_type->tp_as_number != NULL) {
 		PyObject *x = NULL;
-		PyObject * (*f) Py_FPROTO((PyObject *, PyObject *));
+		PyObject * (*f)(PyObject *, PyObject *);
 		if (PyNumber_Coerce(&v, &w) != 0)
 			return NULL;
 		if ((f = v->ob_type->tp_as_number->nb_xor) != NULL)
@@ -352,7 +352,7 @@ PyNumber_And(v, w)
 	BINOP(v, w, "__and__", "__rand__", PyNumber_And);
 	if (v->ob_type->tp_as_number != NULL) {
 		PyObject *x = NULL;
-		PyObject * (*f) Py_FPROTO((PyObject *, PyObject *));
+		PyObject * (*f)(PyObject *, PyObject *);
 		if (PyNumber_Coerce(&v, &w) != 0)
 			return NULL;
 		if ((f = v->ob_type->tp_as_number->nb_and) != NULL)
@@ -372,7 +372,7 @@ PyNumber_Lshift(v, w)
 	BINOP(v, w, "__lshift__", "__rlshift__", PyNumber_Lshift);
 	if (v->ob_type->tp_as_number != NULL) {
 		PyObject *x = NULL;
-		PyObject * (*f) Py_FPROTO((PyObject *, PyObject *));
+		PyObject * (*f)(PyObject *, PyObject *);
 		if (PyNumber_Coerce(&v, &w) != 0)
 			return NULL;
 		if ((f = v->ob_type->tp_as_number->nb_lshift) != NULL)
@@ -392,7 +392,7 @@ PyNumber_Rshift(v, w)
 	BINOP(v, w, "__rshift__", "__rrshift__", PyNumber_Rshift);
 	if (v->ob_type->tp_as_number != NULL) {
 		PyObject *x = NULL;
-		PyObject * (*f) Py_FPROTO((PyObject *, PyObject *));
+		PyObject * (*f)(PyObject *, PyObject *);
 		if (PyNumber_Coerce(&v, &w) != 0)
 			return NULL;
 		if ((f = v->ob_type->tp_as_number->nb_rshift) != NULL)
@@ -417,7 +417,7 @@ PyNumber_Add(v, w)
 		return (*m->sq_concat)(v, w);
 	else if (v->ob_type->tp_as_number != NULL) {
 		PyObject *x = NULL;
-		PyObject * (*f) Py_FPROTO((PyObject *, PyObject *));
+		PyObject * (*f)(PyObject *, PyObject *);
 		if (PyNumber_Coerce(&v, &w) != 0)
 			return NULL;
 		if ((f = v->ob_type->tp_as_number->nb_add) != NULL)
@@ -437,7 +437,7 @@ PyNumber_Subtract(v, w)
 	BINOP(v, w, "__sub__", "__rsub__", PyNumber_Subtract);
 	if (v->ob_type->tp_as_number != NULL) {
 		PyObject *x = NULL;
-		PyObject * (*f) Py_FPROTO((PyObject *, PyObject *));
+		PyObject * (*f)(PyObject *, PyObject *);
 		if (PyNumber_Coerce(&v, &w) != 0)
 			return NULL;
 		if ((f = v->ob_type->tp_as_number->nb_subtract) != NULL)
@@ -469,7 +469,7 @@ PyNumber_Multiply(v, w)
 	}
 	if (tp->tp_as_number != NULL) {
 		PyObject *x = NULL;
-		PyObject * (*f) Py_FPROTO((PyObject *, PyObject *));
+		PyObject * (*f)(PyObject *, PyObject *);
 		if (PyInstance_Check(v)) {
 			/* Instances of user-defined classes get their
 			   other argument uncoerced, so they may
@@ -515,7 +515,7 @@ PyNumber_Divide(v, w)
 	BINOP(v, w, "__div__", "__rdiv__", PyNumber_Divide);
 	if (v->ob_type->tp_as_number != NULL) {
 		PyObject *x = NULL;
-		PyObject * (*f) Py_FPROTO((PyObject *, PyObject *));
+		PyObject * (*f)(PyObject *, PyObject *);
 		if (PyNumber_Coerce(&v, &w) != 0)
 			return NULL;
 		if ((f = v->ob_type->tp_as_number->nb_divide) != NULL)
@@ -539,7 +539,7 @@ PyNumber_Remainder(v, w)
 	BINOP(v, w, "__mod__", "__rmod__", PyNumber_Remainder);
 	if (v->ob_type->tp_as_number != NULL) {
 		PyObject *x = NULL;
-		PyObject * (*f) Py_FPROTO((PyObject *, PyObject *));
+		PyObject * (*f)(PyObject *, PyObject *);
 		if (PyNumber_Coerce(&v, &w) != 0)
 			return NULL;
 		if ((f = v->ob_type->tp_as_number->nb_remainder) != NULL)
@@ -559,7 +559,7 @@ PyNumber_Divmod(v, w)
 	BINOP(v, w, "__divmod__", "__rdivmod__", PyNumber_Divmod);
 	if (v->ob_type->tp_as_number != NULL) {
 		PyObject *x = NULL;
-		PyObject * (*f) Py_FPROTO((PyObject *, PyObject *));
+		PyObject * (*f)(PyObject *, PyObject *);
 		if (PyNumber_Coerce(&v, &w) != 0)
 			return NULL;
 		if ((f = v->ob_type->tp_as_number->nb_divmod) != NULL)
@@ -579,7 +579,7 @@ do_pow(v, w)
 	PyObject *v, *w;
 {
 	PyObject *res;
-	PyObject * (*f) Py_FPROTO((PyObject *, PyObject *, PyObject *));
+	PyObject * (*f)(PyObject *, PyObject *, PyObject *);
 	BINOP(v, w, "__pow__", "__rpow__", do_pow);
 	if (v->ob_type->tp_as_number == NULL ||
 	    w->ob_type->tp_as_number == NULL) {
@@ -604,7 +604,7 @@ PyNumber_Power(v, w, z)
 {
 	PyObject *res;
 	PyObject *v1, *z1, *w2, *z2;
-	PyObject * (*f) Py_FPROTO((PyObject *, PyObject *, PyObject *));
+	PyObject * (*f)(PyObject *, PyObject *, PyObject *);
 
 	if (z == Py_None)
 		return do_pow(v, w);

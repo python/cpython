@@ -1112,7 +1112,7 @@ will allow before refusing new connections.";
 static PyObject *
 BUILD_FUNC_DEF_2(PySocketSock_makefile,PySocketSockObject *,s, PyObject *,args)
 {
-	extern int fclose Py_PROTO((FILE *));
+	extern int fclose(FILE *);
 	char *mode = "r";
 	int bufsize = -1;
 #ifdef MS_WIN32

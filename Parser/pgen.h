@@ -16,10 +16,10 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 /* Parser generator interface */
 
-extern grammar *meta_grammar Py_PROTO((void));
+extern grammar *meta_grammar(void);
 
 struct _node;
-extern grammar *pgen Py_PROTO((struct _node *));
+extern grammar *pgen(struct _node *);
 
 #ifdef __cplusplus
 }

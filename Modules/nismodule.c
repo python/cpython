@@ -71,7 +71,7 @@ nis_mapname (map, pfix)
 	return map;
 }
 
-typedef int (*foreachfunc) Py_PROTO((int, char *, int, char *, int, char *));
+typedef int (*foreachfunc)(int, char *, int, char *, int, char *);
 
 struct ypcallback_data {
 	PyObject	*dict;

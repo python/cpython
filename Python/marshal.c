@@ -171,8 +171,7 @@ w_object(v, p)
 			w_short(ob->ob_digit[i], p);
 	}
 	else if (PyFloat_Check(v)) {
-		extern void PyFloat_AsString
-			Py_PROTO((char *, PyFloatObject *));
+		extern void PyFloat_AsString(char *, PyFloatObject *);
 		char buf[256]; /* Plenty to format any double */
 		PyFloat_AsString(buf, (PyFloatObject *)v);
 		n = strlen(buf);
@@ -182,8 +181,7 @@ w_object(v, p)
 	}
 #ifndef WITHOUT_COMPLEX
 	else if (PyComplex_Check(v)) {
-		extern void PyFloat_AsString
-			Py_PROTO((char *, PyFloatObject *));
+		extern void PyFloat_AsString(char *, PyFloatObject *);
 		char buf[256]; /* Plenty to format any double */
 		PyFloatObject *temp;
 		w_byte(TYPE_COMPLEX, p);
@@ -438,7 +436,7 @@ r_object(p)
 	
 	case TYPE_FLOAT:
 		{
-			extern double atof Py_PROTO((const char *));
+			extern double atof(const char *);
 			char buf[256];
 			double dx;
 			n = r_byte(p);
@@ -457,7 +455,7 @@ r_object(p)
 #ifndef WITHOUT_COMPLEX
 	case TYPE_COMPLEX:
 		{
-			extern double atof Py_PROTO((const char *));
+			extern double atof(const char *);
 			char buf[256];
 			Py_complex c;
 			n = r_byte(p);

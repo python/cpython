@@ -107,7 +107,7 @@ gl_varray(self, args)
 	PyObject *v, *w=NULL;
 	int i, n, width;
 	double vec[3];
-	PyObject * (*getitem) Py_FPROTO((PyObject *, int));
+	PyObject * (*getitem)(PyObject *, int);
 	
 	if (!PyArg_GetObject(args, 1, 0, &v))
 		return NULL;
@@ -208,7 +208,7 @@ gen_nvarray(args, inorm)
 	PyObject *v, *w, *wnorm, *wvec;
 	int i, n;
 	float norm[3], vec[3];
-	PyObject * (*getitem) Py_FPROTO((PyObject *, int));
+	PyObject * (*getitem)(PyObject *, int);
 	
 	if (!PyArg_GetObject(args, 1, 0, &v))
 		return NULL;

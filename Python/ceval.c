@@ -43,34 +43,32 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 /* Forward declarations */
 
-static PyObject *eval_code2 Py_PROTO((PyCodeObject *,
-				 PyObject *, PyObject *,
-				 PyObject **, int,
-				 PyObject **, int,
-				 PyObject **, int,
-				 PyObject *));
+static PyObject *eval_code2(PyCodeObject *,
+			    PyObject *, PyObject *,
+			    PyObject **, int,
+			    PyObject **, int,
+			    PyObject **, int,
+			    PyObject *);
 #ifdef LLTRACE
-static int prtrace Py_PROTO((PyObject *, char *));
+static int prtrace(PyObject *, char *);
 #endif
-static void call_exc_trace Py_PROTO((PyObject **, PyObject**,
-				     PyFrameObject *));
-static int call_trace Py_PROTO((PyObject **, PyObject **,
-				PyFrameObject *, char *, PyObject *));
-static PyObject *call_builtin Py_PROTO((PyObject *, PyObject *, PyObject *));
-static PyObject *call_function Py_PROTO((PyObject *, PyObject *, PyObject *));
-static PyObject *loop_subscript Py_PROTO((PyObject *, PyObject *));
-static PyObject *apply_slice Py_PROTO((PyObject *, PyObject *, PyObject *));
-static int assign_slice Py_PROTO((PyObject *, PyObject *,
-				  PyObject *, PyObject *));
-static PyObject *cmp_outcome Py_PROTO((int, PyObject *, PyObject *));
-static int import_from Py_PROTO((PyObject *, PyObject *, PyObject *));
-static PyObject *build_class Py_PROTO((PyObject *, PyObject *, PyObject *));
-static int exec_statement Py_PROTO((PyFrameObject *,
-				    PyObject *, PyObject *, PyObject *));
-static PyObject *find_from_args Py_PROTO((PyFrameObject *, int));
-static void set_exc_info Py_PROTO((PyThreadState *,
-				PyObject *, PyObject *, PyObject *));
-static void reset_exc_info Py_PROTO((PyThreadState *));
+static void call_exc_trace(PyObject **, PyObject**, PyFrameObject *);
+static int call_trace(PyObject **, PyObject **,
+		      PyFrameObject *, char *, PyObject *);
+static PyObject *call_builtin(PyObject *, PyObject *, PyObject *);
+static PyObject *call_function(PyObject *, PyObject *, PyObject *);
+static PyObject *loop_subscript(PyObject *, PyObject *);
+static PyObject *apply_slice(PyObject *, PyObject *, PyObject *);
+static int assign_slice(PyObject *, PyObject *,
+			PyObject *, PyObject *);
+static PyObject *cmp_outcome(int, PyObject *, PyObject *);
+static int import_from(PyObject *, PyObject *, PyObject *);
+static PyObject *build_class(PyObject *, PyObject *, PyObject *);
+static int exec_statement(PyFrameObject *,
+			  PyObject *, PyObject *, PyObject *);
+static PyObject *find_from_args(PyFrameObject *, int);
+static void set_exc_info(PyThreadState *, PyObject *, PyObject *, PyObject *);
+static void reset_exc_info(PyThreadState *);
 
 
 /* Dynamic execution profile */
@@ -211,7 +209,7 @@ PyEval_RestoreThread(tstate)
 
 #define NPENDINGCALLS 32
 static struct {
-	int (*func) Py_PROTO((ANY *));
+	int (*func)(ANY *);
 	ANY *arg;
 } pendingcalls[NPENDINGCALLS];
 static volatile int pendingfirst = 0;
@@ -220,7 +218,7 @@ static volatile int things_to_do = 0;
 
 int
 Py_AddPendingCall(func, arg)
-	int (*func) Py_PROTO((ANY *));
+	int (*func)(ANY *);
 	ANY *arg;
 {
 	static int busy = 0;
@@ -258,7 +256,7 @@ Py_MakePendingCalls()
 	things_to_do = 0;
 	for (;;) {
 		int i;
-		int (*func) Py_PROTO((ANY *));
+		int (*func)(ANY *);
 		ANY *arg;
 		i = pendingfirst;
 		if (i == pendinglast)
@@ -287,8 +285,8 @@ enum why_code {
 		WHY_BREAK	/* 'break' statement */
 };
 
-static enum why_code do_raise Py_PROTO((PyObject *, PyObject *, PyObject *));
-static int unpack_sequence Py_PROTO((PyObject *, int, PyObject **));
+static enum why_code do_raise(PyObject *, PyObject *, PyObject *);
+static int unpack_sequence(PyObject *, int, PyObject **);
 
 
 PyObject *

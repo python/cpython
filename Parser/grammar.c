@@ -142,7 +142,7 @@ findlabel(ll, type, str)
 }
 
 /* Forward */
-static void translabel Py_PROTO((grammar *, label *));
+static void translabel(grammar *, label *);
 
 void
 translatelabels(g)

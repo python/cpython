@@ -32,10 +32,10 @@ int Py_DebugFlag;
 int Py_VerboseFlag;
 
 /* Forward */
-grammar *getgrammar Py_PROTO((char *filename));
+grammar *getgrammar(char *filename);
 #ifdef THINK_C
-int main Py_PROTO((int, char **));
-char *askfile Py_PROTO((void));
+int main(int, char **);
+char *askfile(void);
 #endif
 
 void

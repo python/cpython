@@ -76,22 +76,22 @@
 static struct PycStringIO_CAPI {
   
   /* Read a string.  If the last argument is -1, the remainder will be read. */
-  int(*cread) Py_FPROTO((PyObject *, char **, int));
+  int(*cread)(PyObject *, char **, int);
 
   /* Read a line */
-  int(*creadline) Py_FPROTO((PyObject *, char **));
+  int(*creadline)(PyObject *, char **);
 
   /* Write a string */
-  int(*cwrite) Py_FPROTO((PyObject *, char *, int));
+  int(*cwrite)(PyObject *, char *, int);
 
   /* Get the cStringIO object as a Python string */
-  PyObject *(*cgetvalue) Py_FPROTO((PyObject *));
+  PyObject *(*cgetvalue)(PyObject *);
 
   /* Create a new output object */
-  PyObject *(*NewOutput) Py_FPROTO((int));
+  PyObject *(*NewOutput)(int);
 
   /* Create an input object from a Python string */
-  PyObject *(*NewInput) Py_FPROTO((PyObject *));
+  PyObject *(*NewInput)(PyObject *);
 
   /* The Python types for cStringIO input and output objects.
      Note that you can do input on an output object.

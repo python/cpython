@@ -64,7 +64,7 @@ PyNode_AddChild(n1, type, str, lineno)
 }
 
 /* Forward */
-static void freechildren Py_PROTO((node *));
+static void freechildren(node *);
 
 
 void

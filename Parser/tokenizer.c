@@ -17,7 +17,7 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #include "tokenizer.h"
 #include "errcode.h"
 
-extern char *PyOS_Readline Py_PROTO((char *));
+extern char *PyOS_Readline(char *);
 /* Return malloc'ed string including trailing \n;
    empty malloc'ed string for EOF;
    NULL if interrupted */
@@ -34,9 +34,9 @@ extern char *PyOS_Readline Py_PROTO((char *));
 #endif
 
 /* Forward */
-static struct tok_state *tok_new Py_PROTO((void));
-static int tok_nextc Py_PROTO((struct tok_state *tok));
-static void tok_backup Py_PROTO((struct tok_state *tok, int c));
+static struct tok_state *tok_new(void);
+static int tok_nextc(struct tok_state *tok);
+static void tok_backup(struct tok_state *tok, int c);
 
 /* Token names */
 
