@@ -174,13 +174,17 @@ class Pickler:
         protocol; supported protocols are 0, 1, 2.  The default
         protocol is 0, to be backwards compatible.  (Protocol 0 is the
         only protocol that can be written to a file opened in text
-        mode and read back successfully.)
+        mode and read back successfully.  When using a protocol higher
+        than 0, make sure the file is opened in binary mode, both when
+        pickling and unpickling.)
 
         Protocol 1 is more efficient than protocol 0; protocol 2 is
         more efficient than protocol 1.
 
         Specifying a negative protocol version selects the highest
-        protocol version supported.
+        protocol version supported.  The higher the protocol used, the
+        more recent the version of Python needed to read the pickle
+        produced.
 
         The file parameter must have a write() method that accepts a single
         string argument.  It can thus be an open file object, a StringIO
@@ -209,12 +213,7 @@ class Pickler:
         self.memo.clear()
 
     def dump(self, obj):
-        """Write a pickled representation of obj to the open file.
-
-        Either the binary or ASCII format will be used, depending on the
-        value of the bin flag passed to the constructor.
-
-        """
+        """Write a pickled representation of obj to the open file."""
         if self.proto >= 2:
             self.write(PROTO + chr(self.proto))
         self.save(obj)
@@ -931,9 +930,8 @@ class Unpickler:
     def __init__(self, file):
         """This takes a file-like object for reading a pickle data stream.
 
-        This class automatically determines whether the data stream was
-        written in binary mode or not, so it does not need a flag as in
-        the Pickler class factory.
+        The protocol version of the pickle is detected automatically, so no
+        proto argument is needed.
 
         The file-like object must have two methods, a read() method that
         takes an integer argument, and a readline() method that requires no

@@ -14,6 +14,9 @@ PyDoc_STRVAR(cPickle_module_documentation,
 
 #define WRITE_BUF_SIZE 256
 
+/* Bump this when new opcodes are added to the pickle protocol. */
+#define CURRENT_PROTOCOL_NUMBER 2
+
 /*
  * Pickle opcodes.  These must be kept in synch with pickle.py.  Extensive
  * docs are in pickletools.py.
@@ -2316,13 +2319,24 @@ static struct PyMethodDef Pickler_methods[] =
 
 
 static Picklerobject *
-newPicklerobject(PyObject *file, int bin)
+newPicklerobject(PyObject *file, int proto)
 {
 	Picklerobject *self;
 
-	if (!( self = PyObject_New(Picklerobject, &Picklertype)))
+	if (proto < 0)
+		proto = CURRENT_PROTOCOL_NUMBER;
+	if (proto > CURRENT_PROTOCOL_NUMBER) {
+		PyErr_Format(PyExc_ValueError, "pickle protocol %d asked for; "
+			     "the highest available protocol is %d",
+			     proto, CURRENT_PROTOCOL_NUMBER);
 		return NULL;
+	}
 
+	self = PyObject_New(Picklerobject, &Picklertype);
+	if (self == NULL)
+		return NULL;
+	self->proto = proto;
+	self->bin = proto > 0;
 	self->fp = NULL;
 	self->write = NULL;
 	self->memo = NULL;
@@ -2330,7 +2344,6 @@ newPicklerobject(PyObject *file, int bin)
 	self->pers_func = NULL;
 	self->inst_pers_func = NULL;
 	self->write_buf = NULL;
-	self->bin = bin;
 	self->fast = 0;
         self->nesting = 0;
 	self->fast_container = 0;
@@ -2338,13 +2351,15 @@ newPicklerobject(PyObject *file, int bin)
 	self->buf_size = 0;
 	self->dispatch_table = NULL;
 
+	self->file = NULL;
 	if (file)
 		Py_INCREF(file);
-	else
-		file=Pdata_New();
-
-	if (!( self->file = file ))
-		goto err;
+	else {
+		file = Pdata_New();
+		if (file == NULL)
+			goto err;
+	}
+	self->file = file;
 
 	if (!( self->memo = PyDict_New()))
 		goto err;
@@ -2352,7 +2367,8 @@ newPicklerobject(PyObject *file, int bin)
 	if (PyFile_Check(file)) {
 		self->fp = PyFile_AsFile(file);
 		if (self->fp == NULL) {
-			PyErr_SetString(PyExc_ValueError, "I/O operation on closed file");
+			PyErr_SetString(PyExc_ValueError,
+					"I/O operation on closed file");
 			goto err;
 		}
 		self->write_func = write_file;
@@ -2377,8 +2393,8 @@ newPicklerobject(PyObject *file, int bin)
 			}
 		}
 
-		if (!( self->write_buf =
-		       (char *)malloc(WRITE_BUF_SIZE * sizeof(char))))  {
+		self->write_buf = (char *)PyMem_Malloc(WRITE_BUF_SIZE);
+		if (self->write_buf == NULL) {
 			PyErr_NoMemory();
 			goto err;
 		}
@@ -2401,7 +2417,7 @@ newPicklerobject(PyObject *file, int bin)
 	return self;
 
   err:
-	Py_DECREF((PyObject *)self);
+	Py_DECREF(self);
 	return NULL;
 }
 
@@ -2410,15 +2426,20 @@ static PyObject *
 get_Pickler(PyObject *self, PyObject *args)
 {
 	PyObject *file = NULL;
-	int bin = 1;
+	int proto = 0;
 
-	if (!PyArg_ParseTuple(args, "|i:Pickler", &bin)) {
+	/* XXX What is this doing?  The documented signature is
+	 * XXX Pickler(file, proto=0), but this accepts Pickler() and
+	 * XXX Pickler(integer) too.  The meaning then is clear as mud.
+	 * XXX Bug?  Feature?
+	 */
+	if (!PyArg_ParseTuple(args, "|i:Pickler", &proto)) {
 		PyErr_Clear();
-		bin = 0;
-		if (!PyArg_ParseTuple(args, "O|i:Pickler", &file, &bin))
+		proto = 0;
+		if (!PyArg_ParseTuple(args, "O|i:Pickler", &file, &proto))
 			return NULL;
 	}
-	return (PyObject *)newPicklerobject(file, bin);
+	return (PyObject *)newPicklerobject(file, proto);
 }
 
 
@@ -2433,11 +2454,7 @@ Pickler_dealloc(Picklerobject *self)
 	Py_XDECREF(self->pers_func);
 	Py_XDECREF(self->inst_pers_func);
 	Py_XDECREF(self->dispatch_table);
-
-	if (self->write_buf) {
-		free(self->write_buf);
-	}
-
+	PyMem_Free(self->write_buf);
 	PyObject_Del(self);
 }
 
@@ -4487,18 +4504,22 @@ Unpickler_setattr(Unpicklerobject *self, char *name, PyObject *value)
 	return -1;
 }
 
+/* ---------------------------------------------------------------------------
+ * Module-level functions.
+ */
 
+/* dump(obj, file, proto=0). */
 static PyObject *
 cpm_dump(PyObject *self, PyObject *args)
 {
 	PyObject *ob, *file, *res = NULL;
 	Picklerobject *pickler = 0;
-	int bin = 0;
+	int proto = 0;
 
-	if (!( PyArg_ParseTuple(args, "OO|i", &ob, &file, &bin)))
+	if (!( PyArg_ParseTuple(args, "OO|i", &ob, &file, &proto)))
 		goto finally;
 
-	if (!( pickler = newPicklerobject(file, bin)))
+	if (!( pickler = newPicklerobject(file, proto)))
 		goto finally;
 
 	if (dump(pickler, ob) < 0)
@@ -4514,20 +4535,21 @@ cpm_dump(PyObject *self, PyObject *args)
 }
 
 
+/* dumps(obj, proto=0). */
 static PyObject *
 cpm_dumps(PyObject *self, PyObject *args)
 {
 	PyObject *ob, *file = 0, *res = NULL;
 	Picklerobject *pickler = 0;
-	int bin = 0;
+	int proto = 0;
 
-	if (!( PyArg_ParseTuple(args, "O|i:dumps", &ob, &bin)))
+	if (!( PyArg_ParseTuple(args, "O|i:dumps", &ob, &proto)))
 		goto finally;
 
 	if (!( file = PycStringIO->NewOutput(128)))
 		goto finally;
 
-	if (!( pickler = newPicklerobject(file, bin)))
+	if (!( pickler = newPicklerobject(file, proto)))
 		goto finally;
 
 	if (dump(pickler, ob) < 0)
@@ -4543,6 +4565,7 @@ cpm_dumps(PyObject *self, PyObject *args)
 }
 
 
+/* load(fileobj). */
 static PyObject *
 cpm_load(PyObject *self, PyObject *args)
 {
@@ -4564,6 +4587,7 @@ cpm_load(PyObject *self, PyObject *args)
 }
 
 
+/* loads(string) */
 static PyObject *
 cpm_loads(PyObject *self, PyObject *args)
 {
@@ -4619,34 +4643,53 @@ static PyTypeObject Unpicklertype = {
 
 static struct PyMethodDef cPickle_methods[] = {
   {"dump",         (PyCFunction)cpm_dump,         METH_VARARGS,
-   PyDoc_STR("dump(object, file, [binary]) --"
-   "Write an object in pickle format to the given file\n"
+   PyDoc_STR("dump(object, file, proto=0) -- "
+   "Write an object in pickle format to the given file.\n"
    "\n"
-   "If the optional argument, binary, is provided and is true, then the\n"
-   "pickle will be written in binary format, which is more space and\n"
-   "computationally efficient. \n")
+   "See the Pickler docstring for the meaning of optional argument proto.")
   },
+
   {"dumps",        (PyCFunction)cpm_dumps,        METH_VARARGS,
-   PyDoc_STR("dumps(object, [binary]) --"
-   "Return a string containing an object in pickle format\n"
+   PyDoc_STR("dumps(object, proto=0) -- "
+   "Return a string containing an object in pickle format.\n"
    "\n"
-   "If the optional argument, binary, is provided and is true, then the\n"
-   "pickle will be written in binary format, which is more space and\n"
-   "computationally efficient. \n")
+   "See the Pickler docstring for the meaning of optional argument proto.")
   },
+
   {"load",         (PyCFunction)cpm_load,         METH_VARARGS,
    PyDoc_STR("load(file) -- Load a pickle from the given file")},
+
   {"loads",        (PyCFunction)cpm_loads,        METH_VARARGS,
    PyDoc_STR("loads(string) -- Load a pickle from the given string")},
+
   {"Pickler",      (PyCFunction)get_Pickler,      METH_VARARGS,
-   PyDoc_STR("Pickler(file, [binary]) -- Create a pickler\n"
+   PyDoc_STR("Pickler(file, proto=0) -- Create a pickler.\n"
    "\n"
-   "If the optional argument, binary, is provided and is true, then\n"
-   "pickles will be written in binary format, which is more space and\n"
-   "computationally efficient. \n")
+   "This takes a file-like object for writing a pickle data stream.\n"
+   "The optional proto argument tells the pickler to use the given\n"
+   "protocol; supported protocols are 0, 1, 2.  The default\n"
+   "protocol is 0, to be backwards compatible.  (Protocol 0 is the\n"
+   "only protocol that can be written to a file opened in text\n"
+   "mode and read back successfully.  When using a protocol higher\n"
+   "than 0, make sure the file is opened in binary mode, both when\n"
+   "pickling and unpickling.)\n"
+   "\n"
+   "Protocol 1 is more efficient than protocol 0; protocol 2 is\n"
+   "more efficient than protocol 1.\n"
+   "\n"
+   "Specifying a negative protocol version selects the highest\n"
+   "protocol version supported.  The higher the protocol used, the\n"
+   "more recent the version of Python needed to read the pickle\n"
+   "produced.\n"
+   "\n"
+   "The file parameter must have a write() method that accepts a single\n"
+   "string argument.  It can thus be an open file object, a StringIO\n"
+   "object, or any other custom object that meets this interface.\n")
   },
+
   {"Unpickler",    (PyCFunction)get_Unpickler,    METH_VARARGS,
-   PyDoc_STR("Unpickler(file) -- Create an unpickler")},
+   PyDoc_STR("Unpickler(file) -- Create an unpickler.")},
+
   { NULL, NULL }
 };
 
@@ -4683,8 +4726,6 @@ init_stuff(PyObject *module_dict)
 		return -1;
 
 	Py_DECREF(copy_reg);
-
-	/* Down to here ********************************** */
 
 	if (!( empty_tuple = PyTuple_New(0)))
 		return -1;
