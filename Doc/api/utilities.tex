@@ -384,7 +384,7 @@ and the entry in [square] brackets is the type of the C variable(s)
 whose address should be passed.
 
 \begin{description}
-  \item[\samp{s} (string or Unicode object) {[char *]}]
+  \item[\samp{s} (string or Unicode object) {[const char *]}]
   Convert a Python string or Unicode object to a C pointer to a
   character string.  You must not provide storage for the string
   itself; a pointer to an existing string is stored into the character
@@ -396,7 +396,7 @@ whose address should be passed.
   raised.
 
   \item[\samp{s\#} (string, Unicode or any read buffer compatible object)
-  {[char *, int]}]
+  {[const char *, int]}]
   This variant on \samp{s} stores into two C variables, the first one
   a pointer to a character string, the second one its length.  In this
   case the Python string may contain embedded null bytes.  Unicode
@@ -405,12 +405,12 @@ whose address should be passed.
   compatible objects pass back a reference to the raw internal data
   representation.
 
-  \item[\samp{z} (string or \code{None}) {[char *]}]
+  \item[\samp{z} (string or \code{None}) {[const char *]}]
   Like \samp{s}, but the Python object may also be \code{None}, in
   which case the C pointer is set to \NULL.
 
   \item[\samp{z\#} (string or \code{None} or any read buffer
-  compatible object) {[char *, int]}]
+  compatible object) {[const char *, int]}]
   This is to \samp{s\#} as \samp{z} is to \samp{s}.
 
   \item[\samp{u} (Unicode object) {[Py_UNICODE *]}]
@@ -433,7 +433,7 @@ whose address should be passed.
   encoded data without embedded NUL bytes.
 
   This format requires two arguments.  The first is only used as
-  input, and must be a \ctype{char*} which points to the name of an
+  input, and must be a \ctype{const char*} which points to the name of an
   encoding as a NUL-terminated string, or \NULL, in which case the
   default encoding is used.  An exception is raised if the named
   encoding is not known to Python.  The second argument must be a
@@ -461,7 +461,7 @@ whose address should be passed.
   characters.
 
   It requires three arguments.  The first is only used as input, and
-  must be a \ctype{char*} which points to the name of an encoding as a
+  must be a \ctype{const char*} which points to the name of an encoding as a
   NUL-terminated string, or \NULL, in which case the default encoding
   is used.  An exception is raised if the named encoding is not known
   to Python.  The second argument must be a \ctype{char**}; the value
