@@ -1884,11 +1884,14 @@ Tkapp_SplitList(PyObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, "et:splitlist", "utf-8", &list))
 		return NULL;
 
-	if (Tcl_SplitList(Tkapp_Interp(self), list, &argc, &argv) == TCL_ERROR)
+	if (Tcl_SplitList(Tkapp_Interp(self), list, 
+			  &argc, &argv) == TCL_ERROR)  {
+		PyMem_Free(list);
 		return Tkinter_Error(self);
+	}
 
 	if (!(v = PyTuple_New(argc)))
-		return NULL;
+		goto finally;
 
 	for (i = 0; i < argc; i++) {
 		PyObject *s = PyString_FromString(argv[i]);
@@ -1901,12 +1904,14 @@ Tkapp_SplitList(PyObject *self, PyObject *args)
 
   finally:
 	ckfree(FREECAST argv);
+	PyMem_Free(list);
 	return v;
 }
 
 static PyObject *
 Tkapp_Split(PyObject *self, PyObject *args)
 {
+	PyObject *v;
 	char *list;
 
 	if (PyTuple_Size(args) == 1) {
@@ -1918,7 +1923,9 @@ Tkapp_Split(PyObject *self, PyObject *args)
 	}
 	if (!PyArg_ParseTuple(args, "et:split", "utf-8", &list))
 		return NULL;
-	return Split(list);
+	v = Split(list);
+	PyMem_Free(list);
+	return v;
 }
 
 static PyObject *
