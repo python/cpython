@@ -146,6 +146,17 @@ multiplied by the floating-point value \var{factor}.  Overflow is
 silently ignored.
 \end{funcdesc}
 
+\begin{funcdesc}{ratecv}{fragment\, width\, nchannels\, inrate\, outrate\, state\optional{\, weightA\, weightB}}
+Convert the frame rate of the input fragment.
+
+\code{State} is a tuple containing the state of the converter.  The
+converter returns a tupl \code{(\var{newfragment}, \var{newstate})},
+and \var{newstate} should be passed to the next call of ratecv.
+
+The \code{weightA} and \coden{weightB} arguments are parameters for a
+simple digital filter and default to 1 and 0 respectively.
+\end{funcdesc}
+
 \begin{funcdesc}{reverse}{fragment\, width}
 Reverse the samples in a fragment and returns the modified fragment.
 \end{funcdesc}
