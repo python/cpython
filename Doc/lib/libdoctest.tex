@@ -817,7 +817,8 @@ sections \ref{doctest-simple-testmod} and
                           name}\optional{, package}\optional{,
                           globs}\optional{, verbose}\optional{,
                           report}\optional{, optionflags}\optional{,
-                          extraglobs}\optional{, raise_on_error}}
+                          extraglobs}\optional{, raise_on_error}\optional{,
+                          parser}}
 
   All arguments except \var{filename} are optional, and should be
   specified in keyword form.
@@ -885,6 +886,10 @@ sections \ref{doctest-simple-testmod} and
   an exception is raised upon the first failure or unexpected exception
   in an example.  This allows failures to be post-mortem debugged.
   Default behavior is to continue running examples.
+
+  Optional argument \var{parser} specifies a \class{DocTestParser} (or
+  subclass) that should be used to extract tests from the files.  It
+  defaults to a normal parser (i.e., \code{\class{DocTestParser}()}).
 
   \versionadded{2.4}
 \end{funcdesc}
@@ -1064,6 +1069,10 @@ instances from text files and modules with doctests:
   individual option flags.  See section~\ref{doctest-options}.
   See function \function{set_unittest_reportflags()} below for
   a better way to set reporting options.
+
+  Optional argument \var{parser} specifies a \class{DocTestParser} (or
+  subclass) that should be used to extract tests from the files.  It
+  defaults to a normal parser (i.e., \code{\class{DocTestParser}()}).
 
   \versionadded{2.4}
 \end{funcdesc}
