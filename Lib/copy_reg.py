@@ -69,6 +69,84 @@ def _reduce(self):
     else:
         return _reconstructor, args
 
+# A better version of _reduce, used by copy and pickle protocol 2
+
+def __newobj__(cls, *args):
+    return cls.__new__(cls, *args)
+
+def _better_reduce(obj):
+    cls = obj.__class__
+    getnewargs = getattr(obj, "__getnewargs__", None)
+    if getnewargs:
+        args = getnewargs()
+    else:
+        args = ()
+    getstate = getattr(obj, "__getstate__", None)
+    if getstate:
+        try:
+            state = getstate()
+        except TypeError, err:
+            # XXX Catch generic exception caused by __slots__
+            if str(err) != ("a class that defines __slots__ "
+                            "without defining __getstate__ "
+                            "cannot be pickled"):
+                raise # Not that specific exception
+            getstate = None
+    if not getstate:
+        state = getattr(obj, "__dict__", None)
+        names = _slotnames(cls)
+        if names:
+            slots = {}
+            nil = []
+            for name in names:
+                value = getattr(obj, name, nil)
+                if value is not nil:
+                    slots[name] = value
+            if slots:
+                state = (state, slots)
+    listitems = dictitems = None
+    if isinstance(obj, list):
+        listitems = iter(obj)
+    elif isinstance(obj, dict):
+        dictitems = obj.iteritems()
+    return __newobj__, (cls,) + args, state, listitems, dictitems
+
+def _slotnames(cls):
+    """Return a list of slot names for a given class.
+
+    This needs to find slots defined by the class and its bases, so we
+    can't simply return the __slots__ attribute.  We must walk down
+    the Method Resolution Order and concatenate the __slots__ of each
+    class found there.  (This assumes classes don't modify their
+    __slots__ attribute to misrepresent their slots after the class is
+    defined.)
+    """
+
+    # Get the value from a cache in the class if possible
+    names = cls.__dict__.get("__slotnames__")
+    if names is not None:
+        return names
+
+    # Not cached -- calculate the value
+    names = []
+    if not hasattr(cls, "__slots__"):
+        # This class has no slots
+        pass
+    else:
+        # Slots found -- gather slot names from all base classes
+        for c in cls.__mro__:
+            if "__slots__" in c.__dict__:
+                names += [name for name in c.__dict__["__slots__"]
+                               if name not in ("__dict__", "__weakref__")]
+
+    # Cache the outcome in the class if at all possible
+    try:
+        cls.__slotnames__ = names
+    except:
+        pass # But don't die if we can't
+
+    return names
+
 # A registry of extension codes.  This is an ad-hoc compression
 # mechanism.  Whenever a global reference to <module>, <name> is about
 # to be pickled, the (<module>, <name>) tuple is looked up here to see
