@@ -874,8 +874,10 @@ PyObject *obj;
 
 if (!PyArg_ParseTuple(_args, "O", &obj))
 	return NULL;
-if (PyString_Check(obj))
+if (PyString_Check(obj)) {
+	Py_INCREF(obj);
 	return obj;
+}
 if (PyUnicode_Check(obj))
 	return PyUnicode_AsEncodedString(obj, "utf8", "strict");
 _res = PyObject_CallMethod(obj, "as_pathname", NULL);
