@@ -15,7 +15,7 @@ Let's try a simple generator:
     >>> g.next()
     2
 
-    "Falling off the end" stops the generator:
+"Falling off the end" stops the generator:
 
     >>> g.next()
     Traceback (most recent call last):
@@ -582,7 +582,14 @@ __test__ = {"tut":      tutorial_tests,
 # so this works as expected in both ways of running regrtest.
 def test_main():
     import doctest, test_generators
-    doctest.testmod(test_generators)
+    if 0:
+        # Temporary block to help track down leaks.  So far, the blame
+        # has fallen mostly on doctest.
+        for i in range(1000):
+            doctest.master = None
+            doctest.testmod(test_generators)
+    else:
+        doctest.testmod(test_generators)
 
 # This part isn't needed for regrtest, but for running the test directly.
 if __name__ == "__main__":
