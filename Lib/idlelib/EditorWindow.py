@@ -233,7 +233,7 @@ class EditorWindow:
         ("edit", "_Edit"),
         ("format", "F_ormat"),
         ("run", "_Run"),
-        #("settings", "_Settings"),
+        ("settings", "_Settings"),
         ("windows", "_Windows"),
         ("help", "_Help"),
     ]
