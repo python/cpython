@@ -4971,15 +4971,16 @@ Return a pointer to a readable segment of the buffer.  This function
 is allowed to raise an exception, in which case it must return
 \code{-1}.  The \var{segment} which is passed must be zero or
 positive, and strictly less than the number of segments returned by
-the \member{bf_getsegcount} slot function.  On success, returns
-\code{0} and sets \code{*\var{ptrptr}} to a pointer to the buffer
-memory.
+the \member{bf_getsegcount} slot function.  On success, it returns the
+length of the buffer memory, and sets \code{*\var{ptrptr}} to a
+pointer to that memory.
 \end{ctypedesc}
 
 \begin{ctypedesc}[getwritebufferproc]{int (*getwritebufferproc)
                             (PyObject *self, int segment, void **ptrptr)}
-Return a pointer to a writable memory buffer in \code{*\var{ptrptr}};
-the memory buffer must correspond to buffer segment \var{segment}.
+Return a pointer to a writable memory buffer in \code{*\var{ptrptr}},
+and the length of that segment as the function return value.
+The memory buffer must correspond to buffer segment \var{segment}.
 Must return \code{-1} and set an exception on error.
 \exception{TypeError} should be raised if the object only supports
 read-only buffers, and \exception{SystemError} should be raised when
