@@ -7,6 +7,10 @@ database--DBM, GDBM, or dbhash.  If none of these modules is
 installed, the slow-but-simple implementation in module \code{dumbdbm}
 will be used.   Both modules provide the same interface:
 
+% not the best solution, but it's what you get for documenting both
+% at the same time.
+\renewcommand{\indexsubitem}{(in modules anydbm, dumbdbm)}
+
 \begin{funcdesc}{open}{filename\optional{\, flag\, mode}}
 Open the database file \var{filename} and return a corresponding object.  
 The optional \var{flag} argument can be
