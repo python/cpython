@@ -1863,6 +1863,21 @@ def classic_comparisons():
 def rich_comparisons():
     if verbose:
         print "Testing rich comparisons..."
+    class Z(complex):
+        pass
+    z = Z(1)
+    verify(z == 1+0j)
+    verify(1+0j == z)
+    class ZZ(complex):
+        def __eq__(self, other):
+            try:
+                return abs(self - other) <= 1e-6
+            except:
+                return NotImplemented
+    zz = ZZ(1.0000003)
+    verify(zz == 1+0j)
+    verify(1+0j == zz)
+            
     class classic:
         pass
     for base in (classic, int, object, list):
