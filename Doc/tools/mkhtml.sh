@@ -32,11 +32,14 @@ fi
 echo "latex2html -init_file $srcdir/perl/l2hinit.perl -dir $part" \
  "${1:+$@} $srcdir/$part/$part.tex"
 latex2html \
+ -no_auto_link \
  -init_file $srcdir/perl/l2hinit.perl \
- -address '<hr>Send comments to <a href="mailto:python-docs@python.org">python-docs@python.org</a>.' \
+ -address '<hr>Send comments on this document to <a href="mailto:python-docs@python.org">python-docs@python.org</a>.' \
  -dir $part \
  ${1:+$@} \
  $srcdir/$part/$part.tex || exit $?
+
+cp $part/$part.html $part/index.html
 
 # copy in the stylesheet
 echo "cp $srcdir/html/style.css $part/$part.css"
