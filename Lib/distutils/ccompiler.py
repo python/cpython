@@ -792,8 +792,8 @@ class CCompiler:
                           output_dir=''):
 
         if output_dir is None: output_dir = ''
-        if lib_type not in ("static","shared"):
-            raise ValueError, "'lib_type' must be \"static\" or \"shared\""
+        if lib_type not in ("static","shared","dylib"):
+            raise ValueError, "'lib_type' must be \"static\", \"shared\" or \"dylib\""
         fmt = getattr (self, lib_type + "_lib_format")
         ext = getattr (self, lib_type + "_lib_extension")
 
