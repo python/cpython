@@ -67,6 +67,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 ** call it strerror(), though, since that is already defined (for Think C)
 ** in ANSI
 */
+#undef strerror
 #define strerror macstrerror
 #include "macdefs.h"    /* For CW to find EINTR */
 #endif /* !macintosh */
