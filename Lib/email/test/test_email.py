@@ -765,6 +765,21 @@ This is an example of string which has almost the limit of header length.
  =?iso-8859-1?q?entlang=2C_an_s=FCdl=FCndischen_Wandgem=E4lden_vorbei=2C_g?=
  =?iso-8859-1?q?egen_die_rotierenden_Klingen_bef=F6rdert=2E_?=""")
 
+    def test_long_received_header(self):
+        h = 'from FOO.TLD (vizworld.acl.foo.tld [123.452.678.9]) by hrothgar.la.mastaler.com (tmda-ofmipd) with ESMTP; Wed, 05 Mar 2003 18:10:18 -0700'
+        msg = Message()
+        msg['Received-1'] = Header(h, continuation_ws='\t')
+        msg['Received-2'] = h
+        self.assertEqual(msg.as_string(), """\
+Received-1: from FOO.TLD (vizworld.acl.foo.tld [123.452.678.9]) by
+	hrothgar.la.mastaler.com (tmda-ofmipd) with ESMTP;
+	Wed, 05 Mar 2003 18:10:18 -0700
+Received-2: from FOO.TLD (vizworld.acl.foo.tld [123.452.678.9]) by
+	hrothgar.la.mastaler.com (tmda-ofmipd) with ESMTP;
+	Wed, 05 Mar 2003 18:10:18 -0700
+
+""")
+
 
 
 # Test mangling of "From " lines in the body of a message
