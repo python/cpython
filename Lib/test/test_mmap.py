@@ -189,6 +189,21 @@ def test_both():
         verify(open(TESTFN, "rb").read() == 'a'*mapsize,
                "Readonly memory map data file was modified")
 
+        print "  Opening mmap with size too big"
+        import sys
+        f = open(TESTFN, "r+b")
+        try:
+            m = mmap.mmap(f.fileno(), mapsize+1)
+        except ValueError:
+            # we do not expect a ValueError on Windows
+            if sys.platform.startswith('win'):
+                verify(0, "Opening mmap with size+1 should work on Windows.")
+            pass
+        else:
+            # we expect a ValueError on Unix, but not on Windows
+            if not sys.platform.startswith('win'):
+                verify(0, "Opening mmap with size+1 should raise ValueError.")
+
         print "  Opening mmap with access=ACCESS_WRITE"
         f = open(TESTFN, "r+b")
         m = mmap.mmap(f.fileno(), mapsize, access=mmap.ACCESS_WRITE)
