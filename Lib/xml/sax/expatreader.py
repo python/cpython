@@ -9,17 +9,17 @@ from xml.sax._exceptions import *
 
 # xml.parsers.expat does not raise ImportError in Jython
 import sys
-if sys.platform[ : 4] == "java":
+if sys.platform[:4] == "java":
     raise SAXReaderNotAvailable("expat not available in Java", None)
 del sys
 
 try:
     from xml.parsers import expat
 except ImportError:
-    raise SAXReaderNotAvailable("expat not supported",None)
+    raise SAXReaderNotAvailable("expat not supported", None)
 else:
     if not hasattr(expat, "ParserCreate"):
-        raise SAXReaderNotAvailable("expat not supported",None)
+        raise SAXReaderNotAvailable("expat not supported", None)
 from xml.sax import xmlreader, saxutils, handler
 
 AttributesImpl = xmlreader.AttributesImpl
