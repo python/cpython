@@ -112,7 +112,8 @@ class RExec(ihooks._Verbose):
 
     ok_path = tuple(sys.path)		# That's a policy decision
 
-    ok_builtin_modules = ('array', 'audioop', 'imageop', 'marshal', 'math',
+    ok_builtin_modules = ('array', 'binascii', 'audioop', 'imageop',
+			  'marshal', 'math',
 			  'md5', 'parser', 'regex', 'rotor', 'select',
 			  'strop', 'struct', 'time')
 
@@ -229,6 +230,9 @@ class RExec(ihooks._Verbose):
 
     def r_reload(self, m):
         return self.importer.reload(m)
+
+    def r_unload(self, m):
+        return self.importer.unload(m)
     
     # The s_* methods are similar but also swap std{in,out,err}
 
@@ -274,12 +278,15 @@ class RExec(ihooks._Verbose):
     def s_reload(self, *args):
         self.s_apply(self.r_reload, args)
     
+    def s_unload(self, *args):
+        self.s_apply(self.r_unload, args)
+    
     # Restricted open(...)
     
     def r_open(self, file, mode='r', buf=-1):
         if mode not in ('r', 'rb'):
             raise IOError, "can't open files for writing in restricted mode"
-        return open(file, 'r', buf)
+        return open(file, mode, buf)
 
 
 def test():
