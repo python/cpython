@@ -123,6 +123,25 @@ OSErr PyMac_init_process_location(void);
 char *	strdup(const char *str);
 #endif
 
+#ifdef USE_GUSI2
+/* from pyGUSISIOUX.cp */
+typedef long (*PyWriteHandler)(char *buffer, long n);
+typedef long (*PyReadHandler)(char *buffer, long n);
+
+/* Override routines that normally reads and writes to the
+** SIOUX console window. Intended for embedding applications
+** that want to forestall a Python console window ever showing up.
+*/
+void PyMac_SetConsoleHandler(PyReadHandler stdinH, PyWriteHandler stdoutH,
+			     PyWriteHandler stderrH);
+
+/* Courtesy console handlers that drop all output and return
+** 0 on reads.
+*/
+long PyMac_DummyReadHandler(char *, long);
+long PyMac_DummyWriteHandler(char *, long);
+#endif /* USE_GUSI2 */
+
 #ifdef __cplusplus
 	}
 #endif
