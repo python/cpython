@@ -93,12 +93,16 @@ class HTTPServer(SocketServer.TCPServer):
         host, port = self.socket.getsockname()
         if not host or host == '0.0.0.0':
             host = socket.gethostname()
-        hostname, hostnames, hostaddrs = socket.gethostbyaddr(host)
-        if '.' not in hostname:
-            for host in hostnames:
-                if '.' in host:
-                    hostname = host
-                    break
+        try:
+            hostname, hostnames, hostaddrs = socket.gethostbyaddr(host)
+        except socket.error:
+            hostname = host
+        else:
+            if '.' not in hostname:
+                for host in hostnames:
+                    if '.' in host:
+                        hostname = host
+                        break
         self.server_name = hostname
         self.server_port = port
 
