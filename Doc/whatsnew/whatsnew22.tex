@@ -424,14 +424,9 @@ Finally, it's possible to constrain the list of attributes that can be
 referenced on an object using the new \member{__slots__} class attribute.
 Python objects are usually very dynamic; at any time it's possible to
 define a new attribute on an instance by just doing
-\code{obj.new_attr=1}.  This is flexible and convenient, but this
-flexibility can also lead to bugs, as when you meant to write
-\code{obj.template = 'a'} but made a typo and wrote
-\code{obj.templtae} by accident.  
-
-A new-style class can define a class attribute named \member{__slots__}
-to constrain the list of legal attribute names.  An example will make
-this clear:
+\code{obj.new_attr=1}.   A new-style class can define a class attribute named
+\member{__slots__} to limit the legal attributes 
+to a particular set of names.  An example will make this clear:
 
 \begin{verbatim}
 >>> class C(object):
@@ -443,14 +438,15 @@ None
 >>> obj.template = 'Test'
 >>> print obj.template
 Test
->>> obj.templtae = None
+>>> obj.newattr = None
 Traceback (most recent call last):
   File "<stdin>", line 1, in ?
-AttributeError: 'C' object has no attribute 'templtae'
+AttributeError: 'C' object has no attribute 'newattr'
 \end{verbatim}
 
 Note how you get an \exception{AttributeError} on the attempt to
 assign to an attribute not listed in \member{__slots__}.
+
 
 
 \subsection{Related Links}
