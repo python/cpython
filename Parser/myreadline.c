@@ -140,10 +140,12 @@ char *
 PyOS_Readline(prompt)
 	char *prompt;
 {
+	char *rv;
 	if (PyOS_ReadlineFunctionPointer == NULL) {
 			PyOS_ReadlineFunctionPointer = PyOS_StdioReadline;
 	}
 	Py_BEGIN_ALLOW_THREADS
-	return (*PyOS_ReadlineFunctionPointer)(prompt);
+	rv = (*PyOS_ReadlineFunctionPointer)(prompt);
 	Py_END_ALLOW_THREADS
+	return rv;
 }
