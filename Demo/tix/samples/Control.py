@@ -20,7 +20,7 @@
 
 import Tix
 
-TCL_ALL_EVENTS		= 0
+TCL_ALL_EVENTS          = 0
 
 def RunSample (root):
     control = DemoControl(root)
@@ -46,7 +46,7 @@ class DemoControl:
         # $w.top.a allows only integer values
         #
         # [Hint] The -options switch sets the options of the subwidgets.
-        # [Hint] We set the label.width subwidget option of the Controls to 
+        # [Hint] We set the label.width subwidget option of the Controls to
         #        be 16 so that their labels appear to be aligned.
         #
         a = Tix.Control(top, label='Number of Engines: ', integer=1,
@@ -83,7 +83,7 @@ class DemoControl:
     def okcmd (self):
         # tixDemo:Status "Selected %d of %s engines each of thrust %d", (demo_num_engines.get(), demo_maker.get(), demo_thrust.get())
         self.quitcmd()
-        
+
     def quitcmd (self):
         self.exit = 0
 
@@ -100,9 +100,9 @@ def adjust_maker(w, inc):
     i = maker_list.index(demo_maker.get())
     i = i + inc
     if i >= len(maker_list):
-	i = 0
+        i = 0
     elif i < 0:
-	i = len(maker_list) - 1
+        i = len(maker_list) - 1
 
     # In Tcl/Tix we should return the string maker_list[i]. We can't
     # do that in Tkinter so we set the global variable. (This works).
@@ -110,10 +110,10 @@ def adjust_maker(w, inc):
 
 def validate_maker(w):
     try:
-	i = maker_list.index(demo_maker.get())
+        i = maker_list.index(demo_maker.get())
     except ValueError:
-	# Works here though. Why ? Beats me.
-	return maker_list[0]
+        # Works here though. Why ? Beats me.
+        return maker_list[0]
     # Works here though. Why ? Beats me.
     return maker_list[i]
 

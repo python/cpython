@@ -58,10 +58,10 @@ def findtemplate(template=None):
         raise BuildError, "Template %r not found on sys.path" % (template,)
     file = file.as_pathname()
     return file
-    
-def process(template, filename, destname, copy_codefragment=0, 
+
+def process(template, filename, destname, copy_codefragment=0,
         rsrcname=None, others=[], raw=0, progress="default"):
-    
+
     if progress == "default":
         progress = EasyDialogs.ProgressBar("Processing %s..."%os.path.split(filename)[1], 120)
         progress.label("Compiling...")
@@ -72,7 +72,7 @@ def process(template, filename, destname, copy_codefragment=0,
         raise BuildError, "BuildApplet could destroy your sourcefile on OSX, please rename: %s" % filename
     # Read the source and compile it
     # (there's no point overwriting the destination if it has a syntax error)
-    
+
     fp = open(filename, 'rU')
     text = fp.read()
     fp.close()
@@ -82,17 +82,17 @@ def process(template, filename, destname, copy_codefragment=0,
         raise BuildError, "Syntax error in script %s: %s" % (filename, arg)
     except EOFError:
         raise BuildError, "End-of-file in script %s" % (filename,)
-    
+
     # Set the destination file name. Note that basename
     # does contain the whole filepath, only a .py is stripped.
-    
+
     if string.lower(filename[-3:]) == ".py":
         basename = filename[:-3]
         if MacOS.runtimemodel != 'macho' and not destname:
             destname = basename
     else:
         basename = filename
-        
+
     if not destname:
         if MacOS.runtimemodel == 'macho':
             destname = basename + '.app'
@@ -100,16 +100,16 @@ def process(template, filename, destname, copy_codefragment=0,
             destname = basename + '.applet'
     if not rsrcname:
         rsrcname = basename + '.rsrc'
-        
+
     # Try removing the output file. This fails in MachO, but it should
     # do any harm.
     try:
         os.remove(destname)
     except os.error:
         pass
-    process_common(template, progress, code, rsrcname, destname, 0, 
+    process_common(template, progress, code, rsrcname, destname, 0,
         copy_codefragment, raw, others, filename)
-    
+
 
 def update(template, filename, output):
     if MacOS.runtimemodel == 'macho':
@@ -120,7 +120,7 @@ def update(template, filename, output):
         progress = None
     if not output:
         output = filename + ' (updated)'
-    
+
     # Try removing the output file
     try:
         os.remove(output)
@@ -129,7 +129,7 @@ def update(template, filename, output):
     process_common(template, progress, None, filename, output, 1, 1)
 
 
-def process_common(template, progress, code, rsrcname, destname, is_update, 
+def process_common(template, progress, code, rsrcname, destname, is_update,
         copy_codefragment, raw=0, others=[], filename=None):
     if MacOS.runtimemodel == 'macho':
         return process_common_macho(template, progress, code, rsrcname, destname,
@@ -139,12 +139,12 @@ def process_common(template, progress, code, rsrcname, destname, is_update,
     # Create FSSpecs for the various files
     template_fsr, d1, d2 = Carbon.File.FSResolveAliasFile(template, 1)
     template = template_fsr.as_pathname()
-    
+
     # Copy data (not resources, yet) from the template
     if progress:
         progress.label("Copy data fork...")
         progress.set(10)
-    
+
     if copy_codefragment:
         tmpl = open(template, "rb")
         dest = open(destname, "wb")
@@ -155,9 +155,9 @@ def process_common(template, progress, code, rsrcname, destname, is_update,
         tmpl.close()
         del dest
         del tmpl
-    
+
     # Open the output resource fork
-    
+
     if progress:
         progress.label("Copy resources...")
         progress.set(20)
@@ -167,7 +167,7 @@ def process_common(template, progress, code, rsrcname, destname, is_update,
         destdir, destfile = os.path.split(destname)
         Res.FSCreateResourceFile(destdir, unicode(destfile), RESOURCE_FORK_NAME)
         output = Res.FSOpenResourceFile(destname, RESOURCE_FORK_NAME, WRITE)
-    
+
     # Copy the resources from the target specific resource template, if any
     typesfound, ownertype = [], None
     try:
@@ -183,27 +183,27 @@ def process_common(template, progress, code, rsrcname, destname, is_update,
             skip_oldfile = []
         typesfound, ownertype = copyres(input, output, skip_oldfile, 0, progress)
         Res.CloseResFile(input)
-    
+
     # Check which resource-types we should not copy from the template
     skiptypes = []
     if 'vers' in typesfound: skiptypes.append('vers')
     if 'SIZE' in typesfound: skiptypes.append('SIZE')
-    if 'BNDL' in typesfound: skiptypes = skiptypes + ['BNDL', 'FREF', 'icl4', 
+    if 'BNDL' in typesfound: skiptypes = skiptypes + ['BNDL', 'FREF', 'icl4',
             'icl8', 'ics4', 'ics8', 'ICN#', 'ics#']
     if not copy_codefragment:
         skiptypes.append('cfrg')
 ##  skipowner = (ownertype <> None)
-    
+
     # Copy the resources from the template
-    
+
     input = Res.FSOpenResourceFile(template, RESOURCE_FORK_NAME, READ)
     dummy, tmplowner = copyres(input, output, skiptypes, 1, progress)
-        
+
     Res.CloseResFile(input)
 ##  if ownertype == None:
 ##      raise BuildError, "No owner resource found in either resource file or template"
     # Make sure we're manipulating the output resource file now
-    
+
     Res.UseResFile(output)
 
     if ownertype == None:
@@ -213,27 +213,27 @@ def process_common(template, progress, code, rsrcname, destname, is_update,
         newres = Res.Resource('\0')
         newres.AddResource(DEFAULT_APPLET_CREATOR, 0, "Owner resource")
         ownertype = DEFAULT_APPLET_CREATOR
-    
+
     if code:
         # Delete any existing 'PYC ' resource named __main__
-        
+
         try:
             res = Res.Get1NamedResource(RESTYPE, RESNAME)
             res.RemoveResource()
         except Res.Error:
             pass
-        
+
         # Create the raw data for the resource from the code object
         if progress:
             progress.label("Write PYC resource...")
             progress.set(120)
-        
+
         data = marshal.dumps(code)
         del code
         data = (MAGIC + '\0\0\0\0') + data
-        
+
         # Create the resource and write it
-        
+
         id = 0
         while id < 128:
             id = Res.Unique1ID(RESTYPE)
@@ -244,11 +244,11 @@ def process_common(template, progress, code, rsrcname, destname, is_update,
         res.SetResAttrs(attrs)
         res.WriteResource()
         res.ReleaseResource()
-    
+
     # Close the output file
-    
+
     Res.CloseResFile(output)
-    
+
     # Now set the creator, type and bundle bit of the destination.
     # Done with FSSpec's, FSRef FInfo isn't good enough yet (2.3a1+)
     dest_fss = Carbon.File.FSSpec(destname)
@@ -258,13 +258,13 @@ def process_common(template, progress, code, rsrcname, destname, is_update,
     dest_finfo.Flags = dest_finfo.Flags | Carbon.Files.kHasBundle | Carbon.Files.kIsShared
     dest_finfo.Flags = dest_finfo.Flags & ~Carbon.Files.kHasBeenInited
     dest_fss.FSpSetFInfo(dest_finfo)
-    
+
     macostools.touched(destname)
     if progress:
         progress.label("Done.")
         progress.inc(0)
 
-def process_common_macho(template, progress, code, rsrcname, destname, is_update, 
+def process_common_macho(template, progress, code, rsrcname, destname, is_update,
         raw=0, others=[], filename=None):
     # Check that we have a filename
     if filename is None:
@@ -304,7 +304,7 @@ def process_common_macho(template, progress, code, rsrcname, destname, is_update
     builder.name = shortname
     if rsrcname:
         realrsrcname = macresource.resource_pathname(rsrcname)
-        builder.files.append((realrsrcname, 
+        builder.files.append((realrsrcname,
             os.path.join('Contents/Resources', os.path.basename(rsrcname))))
     for o in others:
         if type(o) == str:
@@ -320,10 +320,10 @@ def process_common_macho(template, progress, code, rsrcname, destname, is_update
         builder.argv_emulation = 1
     builder.setup()
     builder.build()
-    if progress: 
+    if progress:
         progress.label('Done.')
         progress.inc(0)
-    
+
 ##  macostools.touched(dest_fss)
 
 # Copy resources between two resource file descriptors.
@@ -406,7 +406,7 @@ def copyapptree(srctree, dsttree, exceptlist=[], progress=None):
                 progress.label('Copy '+this)
                 progress.inc(0)
             shutil.copy2(srcpath, dstpath)
-            
+
 def writepycfile(codeobject, cfile):
     import marshal
     fc = open(cfile, 'wb')
@@ -417,4 +417,3 @@ def writepycfile(codeobject, cfile):
     fc.seek(0, 0)
     fc.write(MAGIC)
     fc.close()
-

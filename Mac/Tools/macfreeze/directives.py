@@ -17,27 +17,26 @@ DIRECTIVE_RE=r'^\s*#\s*macfreeze:\s*(\S*)\s*(.*)\s*$'
 REPROG=re.compile(DIRECTIVE_RE)
 
 def findfreezedirectives(program):
-	extra_modules = []
-	exclude_modules = []
-	optional_modules = []
-	extra_path = []
-	progdir, filename = os.path.split(program)
-	fp = open(program)
-	for line in fp.readlines():
-		match = REPROG.match(line)
-		if match:
-			directive = match.group(1)
-			argument = match.group(2)
-			if directive == 'include':
-				extra_modules.append(argument)
-			elif directive == 'exclude':
-				exclude_modules.append(argument)
-			elif directive == 'optional':
-				optional_modules.append(argument)
-			elif directive == 'path':
-				argument = os.path.join(progdir, argument)
-				extra_path.append(argument)
-			else:
-				print '** Unknown directive', line
-	return extra_modules, exclude_modules, optional_modules, extra_path
-	
+    extra_modules = []
+    exclude_modules = []
+    optional_modules = []
+    extra_path = []
+    progdir, filename = os.path.split(program)
+    fp = open(program)
+    for line in fp.readlines():
+        match = REPROG.match(line)
+        if match:
+            directive = match.group(1)
+            argument = match.group(2)
+            if directive == 'include':
+                extra_modules.append(argument)
+            elif directive == 'exclude':
+                exclude_modules.append(argument)
+            elif directive == 'optional':
+                optional_modules.append(argument)
+            elif directive == 'path':
+                argument = os.path.join(progdir, argument)
+                extra_path.append(argument)
+            else:
+                print '** Unknown directive', line
+    return extra_modules, exclude_modules, optional_modules, extra_path

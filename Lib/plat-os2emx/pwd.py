@@ -4,14 +4,14 @@
 # written by Andrew MacIntyre, April 2001.
 # updated July 2003, adding field accessor support
 
-# note that this implementation checks whether ":" or ";" as used as 
+# note that this implementation checks whether ":" or ";" as used as
 # the field separator character.  Path conversions are are applied when
 # the database uses ":" as the field separator character.
 
-"""Replacement for pwd standard extension module, intended for use on 
+"""Replacement for pwd standard extension module, intended for use on
 OS/2 and similar systems which don't normally have an /etc/passwd file.
 
-The standard Unix password database is an ASCII text file with 7 fields 
+The standard Unix password database is an ASCII text file with 7 fields
 per record (line), separated by a colon:
   - user name (string)
   - password (encrypted string, or "*" or "")
@@ -23,13 +23,13 @@ per record (line), separated by a colon:
 
 (see the section 8.1 of the Python Library Reference)
 
-This implementation differs from the standard Unix implementation by 
-allowing use of the platform's native path separator character - ';' on OS/2, 
-DOS and MS-Windows - as the field separator in addition to the Unix 
-standard ":".  Additionally, when ":" is the separator path conversions 
+This implementation differs from the standard Unix implementation by
+allowing use of the platform's native path separator character - ';' on OS/2,
+DOS and MS-Windows - as the field separator in addition to the Unix
+standard ":".  Additionally, when ":" is the separator path conversions
 are applied to deal with any munging of the drive letter reference.
 
-The module looks for the password database at the following locations 
+The module looks for the password database at the following locations
 (in order first to last):
   - ${ETC_PASSWD}             (or %ETC_PASSWD%)
   - ${ETC}/passwd             (or %ETC%/passwd)
@@ -94,8 +94,8 @@ def __unixpathconv(path):
 
 # decide what field separator we can try to use - Unix standard, with
 # the platform's path separator as an option.  No special field conversion
-# handler is required when using the platform's path separator as field 
-# separator, but are required for the home directory and shell fields when 
+# handler is required when using the platform's path separator as field
+# separator, but are required for the home directory and shell fields when
 # using the standard Unix (":") field separator.
 __field_sep = {':': __unixpathconv}
 if os.pathsep:

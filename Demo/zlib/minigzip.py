@@ -9,7 +9,7 @@ def write32(output, value):
     output.write(chr(value & 255)) ; value=value / 256
     output.write(chr(value & 255)) ; value=value / 256
     output.write(chr(value & 255))
-    
+
 def read32(input):
     v=ord(input.read(1))
     v=v+ (ord(input.read(1))<<8 )
@@ -19,9 +19,9 @@ def read32(input):
 
 import zlib, sys
 if len(sys.argv)!=2:
-   print 'Usage: minigzip.py <filename>'
-   print '  The file will be compressed or decompressed.'
-   sys.exit(0)
+    print 'Usage: minigzip.py <filename>'
+    print '  The file will be compressed or decompressed.'
+    sys.exit(0)
 
 filename=sys.argv[1]
 compressing=1 ; outputname=filename+'.gz'
@@ -64,7 +64,7 @@ else:
                                         # extra flags, and OS byte.
     if flag & FEXTRA:
         # Read & discard the extra field, if present
-        xlen=ord(input.read(1))         
+        xlen=ord(input.read(1))
         xlen=xlen+256*ord(input.read(1))
         input.read(xlen)
     if flag & FNAME:
@@ -92,11 +92,11 @@ else:
     decompdata=decompobj.flush()
     output.write(decompdata) ; length=length+len(decompdata)
     crcval=zlib.crc32(decompdata, crcval)
-    
+
     # We've read to the end of the file, so we have to rewind in order
     # to reread the 8 bytes containing the CRC and the file size.  The
     # decompressor is smart and knows when to stop, so feeding it
-    # extra data is harmless.  
+    # extra data is harmless.
     input.seek(-8, 2)
     crc32=read32(input)
     isize=read32(input)
@@ -104,4 +104,3 @@ else:
     if isize!=length: print 'Incorrect length of data produced'
 
 input.close() ; output.close()
-

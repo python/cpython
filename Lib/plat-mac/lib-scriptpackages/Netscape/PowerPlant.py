@@ -1,4 +1,4 @@
-"""Suite PowerPlant: 
+"""Suite PowerPlant:
 Level 0, version 0
 
 Generated from /Volumes/Sap/Applications (Mac OS 9)/Netscape Communicator\xe2\x84\xa2 Folder/Netscape Communicator\xe2\x84\xa2
@@ -62,10 +62,10 @@ class PowerPlant_Events:
             return _arguments['----']
 
 _Enum_dbac = {
-    'DoNothing' : '\x00\x00\x00\x00',	# No debugging action is taken.
-    'PostAlert' : '\x00\x00\x00\x01',	# Post an alert.
-    'LowLevelDebugger' : '\x00\x00\x00\x02',	# Break into the low level debugger (MacsBug).
-    'SourceDebugger' : '\x00\x00\x00\x03',	# Break into the source level debugger (if source debugger is executing).
+    'DoNothing' : '\x00\x00\x00\x00',   # No debugging action is taken.
+    'PostAlert' : '\x00\x00\x00\x01',   # Post an alert.
+    'LowLevelDebugger' : '\x00\x00\x00\x02',    # Break into the low level debugger (MacsBug).
+    'SourceDebugger' : '\x00\x00\x00\x03',      # Break into the source level debugger (if source debugger is executing).
 }
 
 

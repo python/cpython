@@ -1,6 +1,6 @@
 # -*-mode: python; fill-column: 75; tab-width: 8; coding: iso-latin-1-unix -*-
 #
-#	$Id$
+#       $Id$
 #
 # Tix Demostration Program
 #
@@ -19,21 +19,21 @@
 import Tix, os, copy
 from Tkconstants import *
 
-TCL_ALL_EVENTS		= 0
+TCL_ALL_EVENTS          = 0
 
 def RunSample (root):
     dirlist = DemoDirList(root)
     dirlist.mainloop()
     dirlist.destroy()
-    
+
 class DemoDirList:
     def __init__(self, w):
         self.root = w
         self.exit = -1
-        
+
         z = w.winfo_toplevel()
         z.wm_protocol("WM_DELETE_WINDOW", lambda self=self: self.quitcmd())
-        
+
         # Create the tixDirList and the tixLabelEntry widgets on the on the top
         # of the dialog box
 
@@ -48,14 +48,14 @@ class DemoDirList:
         #
         top.dir = Tix.DirList(top)
         top.dir.hlist['width'] = 40
-        
+
         # When the user presses the ".." button, the selected directory
         # is "transferred" into the entry widget
         #
         top.btn = Tix.Button(top, text = "  >>  ", pady = 0)
 
         # We use a LabelEntry to hold the installation directory. The user
-        # can choose from the DirList widget, or he can type in the directory 
+        # can choose from the DirList widget, or he can type in the directory
         # manually
         #
         top.ent = Tix.LabelEntry(top, label="Installation Directory:",
@@ -64,7 +64,7 @@ class DemoDirList:
                                   entry.width 40
                                   label.anchor w
                                   ''')
-        
+
         font = self.root.tk.eval('tix option get fixed_font')
         # font = self.root.master.tix_option_get('fixed_font')
         top.ent.entry['font'] = font
@@ -129,4 +129,3 @@ if __name__== '__main__' :
         for line in traceback.format_exception(t,v,tb):
             text = text + line + '\n'
             d = tkMessageBox.showerror ( 'Tix Demo Error', text)
-

@@ -15,12 +15,12 @@ def need(restype, resid, filename=None, modname=None):
     is available we are done. If it is not available we look for a file filename
     (default: modname with .rsrc appended) either in the same folder as
     where modname was loaded from, or otherwise across sys.path.
-    
+
     Returns the refno of the resource file opened (or None)"""
 
     if modname is None and filename is None:
         raise ArgumentError, "Either filename or modname argument (or both) must be given"
-    
+
     if type(resid) is type(1):
         try:
             h = Res.GetResource(restype, resid)
@@ -35,14 +35,14 @@ def need(restype, resid, filename=None, modname=None):
             pass
         else:
             return None
-            
+
     # Construct a filename if we don't have one
     if not filename:
         if '.' in modname:
             filename = modname.split('.')[-1] + '.rsrc'
         else:
             filename = modname + '.rsrc'
-    
+
     # Now create a list of folders to search
     searchdirs = []
     if modname == '__main__':
@@ -53,7 +53,7 @@ def need(restype, resid, filename=None, modname=None):
         if hasattr(mod, '__file__'):
             searchdirs = [os.path.dirname(mod.__file__)]
     searchdirs.extend(sys.path)
-    
+
     # And look for the file
     for dir in searchdirs:
         pathname = os.path.join(dir, filename)
@@ -61,16 +61,16 @@ def need(restype, resid, filename=None, modname=None):
             break
     else:
         raise ResourceFileNotFoundError, filename
-    
+
     refno = open_pathname(pathname)
-    
+
     # And check that the resource exists now
     if type(resid) is type(1):
         h = Res.GetResource(restype, resid)
     else:
         h = Res.GetNamedResource(restype, resid)
     return refno
-    
+
 def open_pathname(pathname, verbose=0):
     """Open a resource file given by pathname, possibly decoding an
     AppleSingle file"""
@@ -95,7 +95,7 @@ def open_pathname(pathname, verbose=0):
         else:
             raise
     return refno
-    
+
 def resource_pathname(pathname, verbose=0):
     """Return the pathname for a resource file (either DF or RF based).
     If the pathname given already refers to such a file simply return it,
@@ -121,12 +121,12 @@ def resource_pathname(pathname, verbose=0):
         else:
             raise
     return pathname
-    
+
 def open_error_resource():
     """Open the resource file containing the error code to error message
     mapping."""
     need('Estr', 1, filename="errors.rsrc", modname=__name__)
-    
+
 def _decode(pathname, verbose=0):
     # Decode an AppleSingle resource file, return the new pathname.
     newpathname = pathname + '.df.rsrc'

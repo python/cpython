@@ -225,4 +225,3 @@ def ensure_relative (path):
         if path[0:1] == os.sep:
             path = drive + path[1:]
         return path
-

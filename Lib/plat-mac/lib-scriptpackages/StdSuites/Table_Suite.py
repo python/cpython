@@ -74,9 +74,9 @@ tables._privpropdict = {
 tables._privelemdict = {
 }
 _Enum_prtn = {
-    'read_only' : 'nmod',	# Can\xd5t change values or formulas
-    'formulas_protected' : 'fpro',	# Can changes values but not formulas
-    'read_2f_write' : 'modf',	# Can change values and formulas
+    'read_only' : 'nmod',       # Can\xd5t change values or formulas
+    'formulas_protected' : 'fpro',      # Can changes values but not formulas
+    'read_2f_write' : 'modf',   # Can change values and formulas
 }
 
 

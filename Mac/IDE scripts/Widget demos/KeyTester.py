@@ -4,12 +4,12 @@ import W
 
 # key callback function
 def tester(char, event):
-	text = "%r\r%d\r%s\r%s" % (char, ord(char), hex(ord(chart)), oct(ord(char)))
-	window.keys.set(text)
+    text = "%r\r%d\r%s\r%s" % (char, ord(char), hex(ord(chart)), oct(ord(char)))
+    window.keys.set(text)
 
 # close callback
 def close():
-	window.close()
+    window.close()
 
 # new window
 window = W.Dialog((180, 100), "Type a character")

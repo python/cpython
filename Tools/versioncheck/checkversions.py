@@ -1,4 +1,4 @@
-"""Checkversions - recursively search a directory (default: sys.prefix) 
+"""Checkversions - recursively search a directory (default: sys.prefix)
 for _checkversion.py files, and run each of them. This will tell you of
 new versions available for any packages you have installed."""
 
@@ -29,7 +29,7 @@ def check1dir(dummy, dir, files):
             execfile(fullname)
         except:
             print '** Exception in', fullname
-            
+
 def walk1tree(tree):
     os.path.walk(tree, check1dir, None)
 
@@ -50,5 +50,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-

@@ -1,5 +1,5 @@
 # -*-mode: python; fill-column: 75; tab-width: 8; coding: iso-latin-1-unix -*-
-# 
+#
 # $Id$
 #
 # Tix Demostration Program
@@ -27,25 +27,25 @@ def RunSample(w):
     # to invent new months?
     #
     # [Hint] The -options switch sets the options of the subwidgets.
-    # [Hint] We set the label.width subwidget option of both comboboxes to 
+    # [Hint] We set the label.width subwidget option of both comboboxes to
     #        be 10 so that their labels appear to be aligned.
     #
     a = Tix.ComboBox(top, label="Month: ", dropdown=1,
-	command=select_month, editable=0, variable=demo_month,
-	options='listbox.height 6 label.width 10 label.anchor e')
+        command=select_month, editable=0, variable=demo_month,
+        options='listbox.height 6 label.width 10 label.anchor e')
 
     # $w.top.b is a non-drop-down combo box. It is not editable: we provide
     # four choices for the user, but he can enter an alternative year if he
     # wants to.
     #
     # [Hint] Use the padY and anchor options of the label subwidget to
-    #	     align the label with the entry subwidget.
+    #        align the label with the entry subwidget.
     # [Hint] Notice that you should use padY (the NAME of the option) and not
     #        pady (the SWITCH of the option).
     #
     b = Tix.ComboBox(top, label="Year: ", dropdown=0,
-	command=select_year, editable=1, variable=demo_year,
-	options='listbox.height 4 label.padY 5 label.width 10 label.anchor ne')
+        command=select_year, editable=1, variable=demo_year,
+        options='listbox.height 4 label.padY 5 label.width 10 label.anchor ne')
 
     a.pack(side=Tix.TOP, anchor=Tix.W)
     b.pack(side=Tix.TOP, anchor=Tix.W)
@@ -70,7 +70,7 @@ def RunSample(w):
     b.insert(Tix.END, '1996')
 
     # Use "tixSetSilent" to set the values of the combo box if you
-    # don't want your -command procedures (cbx:select_month and 
+    # don't want your -command procedures (cbx:select_month and
     # cbx:select_year) to be called.
     #
     a.set_silent('January')
@@ -78,9 +78,9 @@ def RunSample(w):
 
     box = Tix.ButtonBox(w, orientation=Tix.HORIZONTAL)
     box.add('ok', text='Ok', underline=0, width=6,
-	    command=lambda w=w: ok_command(w))
+            command=lambda w=w: ok_command(w))
     box.add('cancel', text='Cancel', underline=0, width=6,
-	    command=lambda w=w: w.destroy())
+            command=lambda w=w: w.destroy())
     box.pack(side=Tix.BOTTOM, fill=Tix.X)
     top.pack(side=Tix.TOP, fill=Tix.BOTH, expand=1)
 

@@ -1,4 +1,4 @@
-"""Suite Text: 
+"""Suite Text:
 Level 0, version 0
 
 Generated from /Volumes/Sap/Applications (Mac OS 9)/Netscape Communicator\xe2\x84\xa2 Folder/Netscape Communicator\xe2\x84\xa2

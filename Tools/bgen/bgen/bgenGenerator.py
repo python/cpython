@@ -55,7 +55,7 @@ class BaseFunctionGenerator:
         docstring = self.docstring()
         if self.condition:
             Output()
-            Output(self.condition)      
+            Output(self.condition)
         Output("{\"%s\", (PyCFunction)%s_%s, 1,", name, self.prefix, self.name)
         Output(" PyDoc_STR(%s)},", stringify(docstring))
         if self.condition:
@@ -91,7 +91,7 @@ class ManualGenerator(BaseFunctionGenerator):
 
     def functionbody(self):
         Output("%s", self.body)
-        
+
     def setselftype(self, selftype, itselftype):
         self.objecttype = selftype
         self.itselftype = itselftype
@@ -114,7 +114,7 @@ class FunctionGenerator(BaseFunctionGenerator):
             self.argumentList.append(self.rv)
         else:
             self.rv = None
-    
+
     def makereturnvar(self):
         return Variable(self.returntype, "_rv", OutMode)
 
@@ -129,7 +129,7 @@ class FunctionGenerator(BaseFunctionGenerator):
             if name is None: name = "_arg%d" % iarg
             arg = Variable(type, name, mode)
             self.argumentList.append(arg)
-    
+
     def docstring(self):
         input = []
         output = []
@@ -146,7 +146,7 @@ class FunctionGenerator(BaseFunctionGenerator):
                 else:
                     typeName = "?"
                     print "Nameless type", arg.type
-                    
+
                 str = typeName + ' ' + arg.name
             if arg.mode in (InMode, InOutMode):
                 input.append(str)
@@ -161,7 +161,7 @@ class FunctionGenerator(BaseFunctionGenerator):
         else:
             outstr = "(%s)" % ", ".join(output)
         return instr + " -> " + outstr
-    
+
     def functionbody(self):
         self.declarations()
         self.precheck()
@@ -195,7 +195,7 @@ class FunctionGenerator(BaseFunctionGenerator):
                 continue
             if arg.mode in (InMode, InOutMode):
                 arg.getargsCheck()
-    
+
     def precheck(self):
         pass
 

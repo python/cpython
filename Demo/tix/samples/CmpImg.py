@@ -1,5 +1,5 @@
 # -*-mode: python; fill-column: 75; tab-width: 8; coding: iso-latin-1-unix -*-
-# 
+#
 # $Id$
 #
 # Tix Demostration Program
@@ -22,13 +22,13 @@ static char * netw_xpm[] = {
 /* width height ncolors chars_per_pixel */
 "32 32 7 1",
 /* colors */
-" 	s None	c None",
-".	c #000000000000",
-"X	c white",
-"o	c #c000c000c000",
-"O	c #404040",
-"+	c blue",
-"@	c red",
+"       s None  c None",
+".      c #000000000000",
+"X      c white",
+"o      c #c000c000c000",
+"O      c #404040",
+"+      c blue",
+"@      c red",
 /* pixels */
 "                                ",
 "                 .............. ",
@@ -69,11 +69,11 @@ static char * drivea_xpm[] = {
 /* width height ncolors chars_per_pixel */
 "32 32 5 1",
 /* colors */
-" 	s None	c None",
-".	c #000000000000",
-"X	c white",
-"o	c #c000c000c000",
-"O	c #800080008000",
+"       s None  c None",
+".      c #000000000000",
+"X      c white",
+"o      c #c000c000c000",
+"O      c #800080008000",
 /* pixels */
 "                                ",
 "                                ",
@@ -146,10 +146,10 @@ static unsigned char drivea_bits[] = {
 def RunSample(w):
     w.img0 = Tix.Image('pixmap', data=network_pixmap)
     if not w.img0:
-	w.img0 = Tix.Image('bitmap', data=network_bitmap)
+        w.img0 = Tix.Image('bitmap', data=network_bitmap)
     w.img1 = Tix.Image('pixmap', data=hard_disk_pixmap)
     if not w.img0:
-	w.img1 = Tix.Image('bitmap', data=hard_disk_bitmap)
+        w.img1 = Tix.Image('bitmap', data=hard_disk_bitmap)
 
     hdd = Tix.Button(w, padx=4, pady=1, width=120)
     net = Tix.Button(w, padx=4, pady=1, width=120)
@@ -163,7 +163,7 @@ def RunSample(w):
     w.hdd_img = Tix.Image('compound', window=hdd)
     w.hdd_img.tk.call(str(w.hdd_img), 'add', 'line')
     w.hdd_img.tk.call(str(w.hdd_img), 'add', 'text', '-text', 'Hard Disk',
-		    '-underline', '0')
+                    '-underline', '0')
     w.hdd_img.tk.call(str(w.hdd_img), 'add', 'space', '-width', '7')
     w.hdd_img.tk.call(str(w.hdd_img), 'add', 'image', '-image', w.img1)
 
@@ -175,7 +175,7 @@ def RunSample(w):
     w.net_img = Tix.Image('compound', window=net)
     w.net_img.tk.call(str(w.net_img), 'add', 'line')
     w.net_img.tk.call(str(w.net_img), 'add', 'text', '-text', 'Network',
-		    '-underline', '0')
+                    '-underline', '0')
     w.net_img.tk.call(str(w.net_img), 'add', 'space', '-width', '7')
     w.net_img.tk.call(str(w.net_img), 'add', 'image', '-image', w.img0)
 
@@ -184,7 +184,7 @@ def RunSample(w):
     net['image'] = w.net_img
 
     close = Tix.Button(w, pady=1, text='Close',
-		       command=lambda w=w: w.destroy())
+                       command=lambda w=w: w.destroy())
 
     hdd.pack(side=Tix.LEFT, padx=10, pady=10, fill=Tix.Y, expand=1)
     net.pack(side=Tix.LEFT, padx=10, pady=10, fill=Tix.Y, expand=1)
@@ -194,4 +194,3 @@ if __name__ == '__main__':
     root = Tix.Tk()
     RunSample(root)
     root.mainloop()
- 

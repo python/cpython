@@ -73,7 +73,7 @@ class Required_Suite_Events(Required_Suite_Events):
             return _arguments['----']
 
     def run(self, _no_object=None, _attributes={}, **_arguments):
-        """run: 
+        """run:
         Keyword argument _attributes: AppleEvent attribute dictionary
         """
         _code = 'aevt'

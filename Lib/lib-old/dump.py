@@ -23,41 +23,41 @@
 # Dump a whole symbol table
 #
 def dumpsymtab(dict):
-	for key in dict.keys():
-		dumpvar(key, dict[key])
+    for key in dict.keys():
+        dumpvar(key, dict[key])
 
 # Dump a single variable
 #
 def dumpvar(name, x):
-	import sys
-	t = type(x)
-	if t == type({}):
-		print name, '= {}'
-		for key in x.keys():
-			item = x[key]
-			if not printable(item):
-				print '#',
-			print name, '[', `key`, '] =', `item`
-	elif t in (type(''), type(0), type(0.0), type([]), type(())):
-		if not printable(x):
-			print '#',
-		print name, '=', `x`
-	elif t == type(sys):
-		print 'import', name, '#', x
-	else:
-		print '#', name, '=', x
+    import sys
+    t = type(x)
+    if t == type({}):
+        print name, '= {}'
+        for key in x.keys():
+            item = x[key]
+            if not printable(item):
+                print '#',
+            print name, '[', `key`, '] =', `item`
+    elif t in (type(''), type(0), type(0.0), type([]), type(())):
+        if not printable(x):
+            print '#',
+        print name, '=', `x`
+    elif t == type(sys):
+        print 'import', name, '#', x
+    else:
+        print '#', name, '=', x
 
 # check if a value is printable in a way that can be read back with input()
 #
 def printable(x):
-	t = type(x)
-	if t in (type(''), type(0), type(0.0)):
-		return 1
-	if t in (type([]), type(())):
-		for item in x:
-			if not printable(item):
-				return 0
-		return 1
-	if x == {}:
-		return 1
-	return 0
+    t = type(x)
+    if t in (type(''), type(0), type(0.0)):
+        return 1
+    if t in (type([]), type(())):
+        for item in x:
+            if not printable(item):
+                return 0
+        return 1
+    if x == {}:
+        return 1
+    return 0

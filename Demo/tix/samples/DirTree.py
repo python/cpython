@@ -1,6 +1,6 @@
 # -*-mode: python; fill-column: 75; tab-width: 8; coding: iso-latin-1-unix -*-
 #
-#	$Id$
+#       $Id$
 #
 # Tix Demostration Program
 #
@@ -19,7 +19,7 @@
 import Tix, os, copy
 from Tkconstants import *
 
-TCL_ALL_EVENTS		= 0
+TCL_ALL_EVENTS          = 0
 
 def RunSample (root):
     dirtree = DemoDirTree(root)
@@ -30,7 +30,7 @@ class DemoDirTree:
     def __init__(self, w):
         self.root = w
         self.exit = -1
-        
+
         z = w.winfo_toplevel()
         z.wm_protocol("WM_DELETE_WINDOW", lambda self=self: self.quitcmd())
 
@@ -48,14 +48,14 @@ class DemoDirTree:
         #
         top.dir = Tix.DirTree(top)
         top.dir.hlist['width'] = 40
-        
+
         # When the user presses the ".." button, the selected directory
         # is "transferred" into the entry widget
         #
         top.btn = Tix.Button(top, text = "  >>  ", pady = 0)
 
         # We use a LabelEntry to hold the installation directory. The user
-        # can choose from the DirTree widget, or he can type in the directory 
+        # can choose from the DirTree widget, or he can type in the directory
         # manually
         #
         top.ent = Tix.LabelEntry(top, label="Installation Directory:",
@@ -115,4 +115,3 @@ class DemoDirTree:
 if __name__== '__main__' :
     root=Tix.Tk()
     RunSample(root)
-

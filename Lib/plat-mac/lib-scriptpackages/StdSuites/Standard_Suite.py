@@ -656,33 +656,33 @@ class _b2_(aetools.NComparison):
 class _b3_(aetools.NComparison):
     """\xb3 - Greater than or equal to """
 _Enum_kfrm = {
-    'index' : 'indx',	# keyform designating indexed access
-    'named' : 'name',	# keyform designating named access
-    'id' : 'ID  ',	# keyform designating access by unique identifier
+    'index' : 'indx',   # keyform designating indexed access
+    'named' : 'name',   # keyform designating named access
+    'id' : 'ID  ',      # keyform designating access by unique identifier
 }
 
 _Enum_savo = {
-    'yes' : 'yes ',	# Save objects now
-    'no' : 'no  ',	# Do not save objects
-    'ask' : 'ask ',	# Ask the user whether to save
+    'yes' : 'yes ',     # Save objects now
+    'no' : 'no  ',      # Do not save objects
+    'ask' : 'ask ',     # Ask the user whether to save
 }
 
 _Enum_styl = {
-    'plain' : 'plan',	# Plain
-    'bold' : 'bold',	# Bold
-    'italic' : 'ital',	# Italic
-    'outline' : 'outl',	# Outline
-    'shadow' : 'shad',	# Shadow
-    'underline' : 'undl',	# Underline
-    'superscript' : 'spsc',	# Superscript
-    'subscript' : 'sbsc',	# Subscript
-    'strikethrough' : 'strk',	# Strikethrough
-    'small_caps' : 'smcp',	# Small caps
-    'all_caps' : 'alcp',	# All capital letters
-    'all_lowercase' : 'lowc',	# Lowercase
-    'condensed' : 'cond',	# Condensed
-    'expanded' : 'pexp',	# Expanded
-    'hidden' : 'hidn',	# Hidden
+    'plain' : 'plan',   # Plain
+    'bold' : 'bold',    # Bold
+    'italic' : 'ital',  # Italic
+    'outline' : 'outl', # Outline
+    'shadow' : 'shad',  # Shadow
+    'underline' : 'undl',       # Underline
+    'superscript' : 'spsc',     # Superscript
+    'subscript' : 'sbsc',       # Subscript
+    'strikethrough' : 'strk',   # Strikethrough
+    'small_caps' : 'smcp',      # Small caps
+    'all_caps' : 'alcp',        # All capital letters
+    'all_lowercase' : 'lowc',   # Lowercase
+    'condensed' : 'cond',       # Condensed
+    'expanded' : 'pexp',        # Expanded
+    'hidden' : 'hidn',  # Hidden
 }
 
 

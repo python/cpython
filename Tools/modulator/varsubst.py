@@ -13,7 +13,7 @@ class Varsubst:
 
     def useindent(self, onoff):
         self.do_useindent = onoff
-        
+
     def subst(self, s):
         rv = ''
         while 1:

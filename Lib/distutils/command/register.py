@@ -286,4 +286,3 @@ Your selection [default 1]: ''',
         if self.show_response:
             print '-'*75, data, '-'*75
         return result
-

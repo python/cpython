@@ -131,8 +131,8 @@ def asksaveasfilename(**options):
 
 def askopenfilenames(**options):
     """Ask for multiple filenames to open
-    
-    Returns a list of filenames or empty list if 
+
+    Returns a list of filenames or empty list if
     cancel button selected
     """
     options["multiple"]=1
@@ -151,8 +151,8 @@ def askopenfile(mode = "r", **options):
 def askopenfiles(mode = "r", **options):
     """Ask for multiple filenames and return the open file
     objects
-    
-    returns a list of open file objects or an empty list if 
+
+    returns a list of open file objects or an empty list if
     cancel selected
     """
 
@@ -204,7 +204,7 @@ if __name__ == "__main__":
         fp=open(openfilename,"r")
         fp.close()
     except:
-        print "Could not open File: " 
+        print "Could not open File: "
         print sys.exc_info()[1]
 
     print "open", openfilename.encode(enc)
@@ -213,4 +213,3 @@ if __name__ == "__main__":
 
     saveasfilename=asksaveasfilename()
     print "saveas", saveasfilename.encode(enc)
-

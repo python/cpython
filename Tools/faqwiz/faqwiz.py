@@ -583,7 +583,7 @@ class FaqWizard:
     def do_roulette(self):
         import random
         files = self.dir.list()
-        if not files: 
+        if not files:
             self.error("No entries.")
             return
         file = random.choice(files)
@@ -732,7 +732,7 @@ class FaqWizard:
             emit(VERSIONCONFLICT, entry, self.ui)
             return
         commit_ok = ((not PASSWORD
-                      or self.ui.password == PASSWORD) 
+                      or self.ui.password == PASSWORD)
                      and self.ui.author
                      and '@' in self.ui.email
                      and self.ui.log)
@@ -820,7 +820,7 @@ class FaqWizard:
         log("output: " + output)
         log("done: " + str(sts))
         log("TempFile:\n" + tf.read() + "end")
-        
+
         if not sts:
             self.prologue(T_COMMITTED)
             emit(COMMITTED)

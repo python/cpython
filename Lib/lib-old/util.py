@@ -10,16 +10,16 @@
 # If it occurs more than once, remove the first occurrence.
 #
 def remove(item, list):
-	if item in list: list.remove(item)
+    if item in list: list.remove(item)
 
 
 # Return a string containing a file's contents.
 #
 def readfile(fn):
-	return readopenfile(open(fn, 'r'))
+    return readopenfile(open(fn, 'r'))
 
 
 # Read an open file until EOF.
 #
 def readopenfile(fp):
-	return fp.read()
+    return fp.read()

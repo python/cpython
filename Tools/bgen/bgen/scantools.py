@@ -51,15 +51,15 @@ class Scanner:
             self.setoutput(output, defsoutput)
         if input:
             self.setinput(input)
-    
+
     def initusedtypes(self):
         self.usedtypes = {}
-    
+
     def typeused(self, type, mode):
         if not self.usedtypes.has_key(type):
             self.usedtypes[type] = {}
         self.usedtypes[type][mode] = None
-    
+
     def reportusedtypes(self):
         types = self.usedtypes.keys()
         types.sort()
@@ -100,12 +100,12 @@ if missing: raise "Missing Types"
 
     def writeinitialdefs(self):
         pass
-        
+
     def initblacklists(self):
         self.blacklistnames = self.makeblacklistnames()
         self.blacklisttypes = ["unknown", "-"] + self.makeblacklisttypes()
         self.greydictnames = self.greylist2dict(self.makegreylist())
-        
+
     def greylist2dict(self, list):
         rv = {}
         for define, namelist in list:
@@ -118,7 +118,7 @@ if missing: raise "Missing Types"
 
     def makeblacklisttypes(self):
         return []
-        
+
     def makegreylist(self):
         return []
 
@@ -128,7 +128,7 @@ if missing: raise "Missing Types"
 
     def makerepairinstructions(self):
         """Parse the repair file into repair instructions.
-        
+
         The file format is simple:
         1) use \ to split a long logical line in multiple physical lines
         2) everything after the first # on a line is ignored (as comment)
@@ -216,10 +216,10 @@ if missing: raise "Missing Types"
                 replacements.append(replacement)
             list.append((fpat, patterns, replacements))
         return list
-        
+
     def makeinherentpointertypes(self):
         return []
-    
+
     def openrepairfile(self, filename = "REPAIR"):
         try:
             return open(filename, "rU")
@@ -337,7 +337,7 @@ if missing: raise "Missing Types"
             scan = [scan]
         self.allscaninputs = scan
         self._nextinput()
-        
+
     def _nextinput(self):
         if not self.allscaninputs:
             return 0
@@ -526,7 +526,7 @@ if missing: raise "Missing Types"
         type = type.strip()
         type = re.sub("[ \t]+", "_", type)
         return self.modifyarg(type, name, mode)
-    
+
     def modifyarg(self, type, name, mode):
         if type[:6] == "const_":
             type = type[6:]
@@ -567,7 +567,7 @@ if missing: raise "Missing Types"
             else: # No patterns match
                 i = i+1
         return arglist
-    
+
     def matcharg(self, patarg, arg):
         return len(filter(None, map(fnmatch.fnmatchcase, arg, patarg))) == 3
 
@@ -666,4 +666,3 @@ def test():
 
 if __name__ == '__main__':
     test()
-

@@ -1,6 +1,6 @@
 """Strip viewer and related widgets.
 
-The classes in this file implement the StripViewer shown in the top two thirds 
+The classes in this file implement the StripViewer shown in the top two thirds
 of the main Pynche window.  It consists of three StripWidgets which display
 the variations in red, green, and blue respectively of the currently selected
 r/g/b color value.
@@ -182,7 +182,7 @@ class StripWidget:
         # the last chip selected
         self.__lastchip = None
         self.__sb = switchboard
-        
+
         canvaswidth = numchips * (chipwidth + 1)
         canvasheight = chipheight + 43            # BAW: Kludge
 
@@ -372,7 +372,7 @@ class StripViewer:
         hexbtn.grid(row=1, column=1, sticky=W)
 
         # XXX: ignore this feature for now; it doesn't work quite right yet
-        
+
 ##        gentypevar = self.__gentypevar = IntVar()
 ##        self.__variations = Radiobutton(frame,
 ##                                        text='Variations',

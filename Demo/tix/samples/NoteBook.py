@@ -1,5 +1,5 @@
 # -*-mode: python; fill-column: 75; tab-width: 8; coding: iso-latin-1-unix -*-
-# 
+#
 # $Id$
 #
 # Tix Demostration Program
@@ -23,9 +23,9 @@ def RunSample(w):
     # notebook, so that they are well-aligned on the screen.
     prefix = Tix.OptionName(w)
     if prefix:
-	prefix = '*'+prefix
+        prefix = '*'+prefix
     else:
-	prefix = ''
+        prefix = ''
     w.option_add(prefix+'*TixControl*entry.width', 10)
     w.option_add(prefix+'*TixControl*label.width', 18)
     w.option_add(prefix+'*TixControl*label.anchor', Tix.E)
@@ -37,14 +37,14 @@ def RunSample(w):
     nb = Tix.NoteBook(w, name='nb', ipadx=6, ipady=6)
     nb['bg'] = 'gray'
     nb.nbframe['backpagecolor'] = 'gray'
-	
+
     # Create the two tabs on the notebook. The -underline option
     # puts a underline on the first character of the labels of the tabs.
     # Keyboard accelerators will be defined automatically according
-    # to the underlined character.	
+    # to the underlined character.
     nb.add('hard_disk', label="Hard Disk", underline=0)
     nb.add('network', label="Network", underline=0)
-	
+
     nb.pack(expand=1, fill=Tix.BOTH, padx=5, pady=5 ,side=Tix.TOP)
 
     #----------------------------------------
@@ -56,62 +56,62 @@ def RunSample(w):
     tab=nb.hard_disk
     f = Tix.Frame(tab)
     common = Tix.Frame(tab)
-	
+
     f.pack(side=Tix.LEFT, padx=2, pady=2, fill=Tix.BOTH, expand=1)
     common.pack(side=Tix.RIGHT, padx=2, fill=Tix.Y)
-	
+
     a = Tix.Control(f, value=12,   label='Access time: ')
     w = Tix.Control(f, value=400,  label='Write Throughput: ')
     r = Tix.Control(f, value=400,  label='Read Throughput: ')
     c = Tix.Control(f, value=1021, label='Capacity: ')
-	
+
     a.pack(side=Tix.TOP, padx=20, pady=2)
     w.pack(side=Tix.TOP, padx=20, pady=2)
     r.pack(side=Tix.TOP, padx=20, pady=2)
     c.pack(side=Tix.TOP, padx=20, pady=2)
-	
+
     # Create the common buttons
     createCommonButtons(common)
-	
+
     #----------------------------------------
-    # Create the second page	
+    # Create the second page
     #----------------------------------------
-	
+
     tab = nb.network
 
     f = Tix.Frame(tab)
     common = Tix.Frame(tab)
-	
+
     f.pack(side=Tix.LEFT, padx=2, pady=2, fill=Tix.BOTH, expand=1)
     common.pack(side=Tix.RIGHT, padx=2, fill=Tix.Y)
-	
+
     a = Tix.Control(f, value=12,   label='Access time: ')
     w = Tix.Control(f, value=400,  label='Write Throughput: ')
     r = Tix.Control(f, value=400,  label='Read Throughput: ')
     c = Tix.Control(f, value=1021, label='Capacity: ')
     u = Tix.Control(f, value=10,   label='Users: ')
-	
+
     a.pack(side=Tix.TOP, padx=20, pady=2)
     w.pack(side=Tix.TOP, padx=20, pady=2)
     r.pack(side=Tix.TOP, padx=20, pady=2)
     c.pack(side=Tix.TOP, padx=20, pady=2)
     u.pack(side=Tix.TOP, padx=20, pady=2)
-	
+
     createCommonButtons(common)
-	
+
 def doDestroy():
     global root
     root.destroy()
 
 def createCommonButtons(master):
-    ok = Tix.Button(master, name='ok', text='OK', width=6, 
-		command=doDestroy)
-    cancel = Tix.Button(master, name='cancel', 
-		    text='Cancel', width=6, 
-		    command=doDestroy)
-    
+    ok = Tix.Button(master, name='ok', text='OK', width=6,
+                command=doDestroy)
+    cancel = Tix.Button(master, name='cancel',
+                    text='Cancel', width=6,
+                    command=doDestroy)
+
     ok.pack(side=Tix.TOP, padx=2, pady=2)
-    cancel.pack(side=Tix.TOP, padx=2, pady=2)	
+    cancel.pack(side=Tix.TOP, padx=2, pady=2)
 
 if __name__ == '__main__':
     root = Tix.Tk()

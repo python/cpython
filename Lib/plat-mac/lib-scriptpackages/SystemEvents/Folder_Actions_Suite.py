@@ -252,11 +252,11 @@ script._privpropdict = {
 script._privelemdict = {
 }
 _Enum_actn = {
-    'items_added' : 'fget',	# items added
-    'items_removed' : 'flos',	# items removed
-    'window_closed' : 'fclo',	# window closed
-    'window_moved' : 'fsiz',	# window moved
-    'window_opened' : 'fopn',	# window opened
+    'items_added' : 'fget',     # items added
+    'items_removed' : 'flos',   # items removed
+    'window_closed' : 'fclo',   # window closed
+    'window_moved' : 'fsiz',    # window moved
+    'window_opened' : 'fopn',   # window opened
 }
 
 

@@ -64,7 +64,7 @@ class ModuleMetaclass(BaseMetaclass):
                 self.__types[name] = obj
                 if obj.has_members():
                     self.__members = True
-                    
+
     def initvars(self):
         v = self.__vars = {}
         filename = getattr(self, "__file__", None)
@@ -83,7 +83,7 @@ class ModuleMetaclass(BaseMetaclass):
         if self.__members:
             p(template.member_include)
         print >> f
-        
+
         if self.__doc__:
             p(template.module_doc)
 
@@ -98,7 +98,7 @@ class ModuleMetaclass(BaseMetaclass):
         p(template.module_init_start)
         for name, type in sortitems(self.__types):
             type.dump_init(f)
-            
+
         p("}")
 
 class Module:
@@ -121,7 +121,7 @@ class TypeMetaclass(BaseMetaclass):
 
         for name, func in sortitems(self.__methods):
             func.dump(f)
-            
+
         self.dump_methoddef(f, self.__methods, self.__vars)
         self.dump_memberdef(f)
         self.dump_slots(f)
@@ -199,7 +199,7 @@ class TypeMetaclass(BaseMetaclass):
             print >> f, templ % vars
 
         if self.struct:
-           p(template.dealloc_func, {"name" : self.__slots[TP_DEALLOC]})
+            p(template.dealloc_func, {"name" : self.__slots[TP_DEALLOC]})
 
         p(template.type_struct_start)
         for s in Slots[:-5]: # XXX
@@ -218,4 +218,3 @@ class TypeMetaclass(BaseMetaclass):
 
 class Type:
     __metaclass__ = TypeMetaclass
-

@@ -268,7 +268,7 @@ class dispatcher:
                 reuse_constant = socket.SO_EXCLUSIVEADDRUSE
             else:
                 reuse_constant = socket.SO_REUSEADDR
-                
+
             self.socket.setsockopt(
                 socket.SOL_SOCKET, reuse_constant,
                 self.socket.getsockopt(socket.SOL_SOCKET,
@@ -276,7 +276,7 @@ class dispatcher:
                 )
         except socket.error:
             pass
-        
+
     # ==================================================
     # predicates for select()
     # these are used as filters for the lists of sockets

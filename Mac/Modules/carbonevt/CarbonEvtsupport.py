@@ -8,23 +8,23 @@ from CarbonEvtscan import RefObjectTypes
 CFStringRef = OpaqueByValueType('CFStringRef')
 
 for typ in RefObjectTypes:
-	execstr = "%(name)s = OpaqueByValueType('%(name)s')" % {"name": typ}
-	exec execstr
+    execstr = "%(name)s = OpaqueByValueType('%(name)s')" % {"name": typ}
+    exec execstr
 
 
 if 0:
-	# these types will have no methods and will merely be opaque blobs
-	# should write getattr and setattr for them?
+    # these types will have no methods and will merely be opaque blobs
+    # should write getattr and setattr for them?
 
-	StructObjectTypes = ["EventTypeSpec",
-						"HIPoint",
-						"HICommand",
-						"EventHotKeyID",
-						]
+    StructObjectTypes = ["EventTypeSpec",
+                                            "HIPoint",
+                                            "HICommand",
+                                            "EventHotKeyID",
+                                            ]
 
-	for typ in StructObjectTypes:
-		execstr = "%(name)s = OpaqueType('%(name)s')" % {"name": typ}
-		exec execstr
+    for typ in StructObjectTypes:
+        execstr = "%(name)s = OpaqueType('%(name)s')" % {"name": typ}
+        exec execstr
 
 EventHotKeyID = OpaqueByValueType("EventHotKeyID", "EventHotKeyID")
 EventTypeSpec_ptr = OpaqueType("EventTypeSpec", "EventTypeSpec")
@@ -35,10 +35,10 @@ void_ptr = stringptr
 # here are some types that are really other types
 
 class MyVarInputBufferType(VarInputBufferType):
-	def passInput(self, name):
-		return "%s__len__, %s__in__" % (name, name)
+    def passInput(self, name):
+        return "%s__len__, %s__in__" % (name, name)
 
-MyInBuffer = MyVarInputBufferType('char', 'long', 'l')		# (buf, len)
+MyInBuffer = MyVarInputBufferType('char', 'long', 'l')          # (buf, len)
 
 EventTime = double
 EventTimeout = EventTime
@@ -61,11 +61,11 @@ CarbonEventsFunction = OSErrFunctionGenerator
 CarbonEventsMethod = OSErrMethodGenerator
 
 class EventHandlerRefMethod(OSErrMethodGenerator):
-	def precheck(self):
-		OutLbrace('if (_self->ob_itself == NULL)')
-		Output('PyErr_SetString(CarbonEvents_Error, "Handler has been removed");')
-		Output('return NULL;')
-		OutRbrace()
+    def precheck(self):
+        OutLbrace('if (_self->ob_itself == NULL)')
+        Output('PyErr_SetString(CarbonEvents_Error, "Handler has been removed");')
+        Output('return NULL;')
+        OutRbrace()
 
 
 RgnHandle = OpaqueByValueType("RgnHandle", "ResObj")
@@ -89,17 +89,17 @@ PyObject *EventRef_New(EventRef itself);
 static PyObject*
 EventTypeSpec_New(EventTypeSpec *in)
 {
-	return Py_BuildValue("ll", in->eventClass, in->eventKind);
+        return Py_BuildValue("ll", in->eventClass, in->eventKind);
 }
 
 static int
 EventTypeSpec_Convert(PyObject *v, EventTypeSpec *out)
 {
-	if (PyArg_Parse(v, "(O&l)",
-	                PyMac_GetOSType, &(out->eventClass),
-	                &(out->eventKind)))
-		return 1;
-	return NULL;
+        if (PyArg_Parse(v, "(O&l)",
+                        PyMac_GetOSType, &(out->eventClass),
+                        &(out->eventKind)))
+                return 1;
+        return NULL;
 }
 
 /********** end EventTypeSpec *******/
@@ -110,15 +110,15 @@ EventTypeSpec_Convert(PyObject *v, EventTypeSpec *out)
 static PyObject*
 HIPoint_New(HIPoint *in)
 {
-	return Py_BuildValue("ff", in->x, in->y);
+        return Py_BuildValue("ff", in->x, in->y);
 }
 
 static int
 HIPoint_Convert(PyObject *v, HIPoint *out)
 {
-	if (PyArg_ParseTuple(v, "ff", &(out->x), &(out->y)))
-		return 1;
-	return NULL;
+        if (PyArg_ParseTuple(v, "ff", &(out->x), &(out->y)))
+                return 1;
+        return NULL;
 }
 #endif
 
@@ -129,15 +129,15 @@ HIPoint_Convert(PyObject *v, HIPoint *out)
 static PyObject*
 EventHotKeyID_New(EventHotKeyID *in)
 {
-	return Py_BuildValue("ll", in->signature, in->id);
+        return Py_BuildValue("ll", in->signature, in->id);
 }
 
 static int
 EventHotKeyID_Convert(PyObject *v, EventHotKeyID *out)
 {
-	if (PyArg_ParseTuple(v, "ll", &out->signature, &out->id))
-		return 1;
-	return NULL;
+        if (PyArg_ParseTuple(v, "ll", &out->signature, &out->id))
+                return 1;
+        return NULL;
 }
 
 /********** end EventHotKeyID *******/
@@ -148,27 +148,27 @@ static EventHandlerUPP myEventHandlerUPP;
 
 static pascal OSStatus
 myEventHandler(EventHandlerCallRef handlerRef, EventRef event, void *outPyObject) {
-	PyObject *retValue;
-	int status;
+        PyObject *retValue;
+        int status;
 
-	retValue = PyObject_CallFunction((PyObject *)outPyObject, "O&O&",
-	                                 EventHandlerCallRef_New, handlerRef,
-	                                 EventRef_New, event);
-	if (retValue == NULL) {
-		PySys_WriteStderr("Error in event handler callback:\n");
-		PyErr_Print();  /* this also clears the error */
-		status = noErr; /* complain? how? */
-	} else {
-		if (retValue == Py_None)
-			status = noErr;
-		else if (PyInt_Check(retValue)) {
-			status = PyInt_AsLong(retValue);
-		} else
-			status = noErr; /* wrong object type, complain? */
-		Py_DECREF(retValue);
-	}
+        retValue = PyObject_CallFunction((PyObject *)outPyObject, "O&O&",
+                                         EventHandlerCallRef_New, handlerRef,
+                                         EventRef_New, event);
+        if (retValue == NULL) {
+                PySys_WriteStderr("Error in event handler callback:\n");
+                PyErr_Print();  /* this also clears the error */
+                status = noErr; /* complain? how? */
+        } else {
+                if (retValue == Py_None)
+                        status = noErr;
+                else if (PyInt_Check(retValue)) {
+                        status = PyInt_AsLong(retValue);
+                } else
+                        status = noErr; /* wrong object type, complain? */
+                Py_DECREF(retValue);
+        }
 
-	return status;
+        return status;
 }
 
 /******** end myEventHandler ***********/
@@ -184,56 +184,56 @@ module = MacModule('_CarbonEvt', 'CarbonEvents', includestuff, finalstuff, inits
 
 
 class EventHandlerRefObjectDefinition(PEP253Mixin, GlobalObjectDefinition):
-	def outputStructMembers(self):
-		Output("%s ob_itself;", self.itselftype)
-		Output("PyObject *ob_callback;")
-	def outputInitStructMembers(self):
-		Output("it->ob_itself = %sitself;", self.argref)
-		Output("it->ob_callback = NULL;")
-	def outputFreeIt(self, name):
-		OutLbrace("if (self->ob_itself != NULL)")
-		Output("RemoveEventHandler(self->ob_itself);")
-		Output("Py_DECREF(self->ob_callback);")
-		OutRbrace()
-		
+    def outputStructMembers(self):
+        Output("%s ob_itself;", self.itselftype)
+        Output("PyObject *ob_callback;")
+    def outputInitStructMembers(self):
+        Output("it->ob_itself = %sitself;", self.argref)
+        Output("it->ob_callback = NULL;")
+    def outputFreeIt(self, name):
+        OutLbrace("if (self->ob_itself != NULL)")
+        Output("RemoveEventHandler(self->ob_itself);")
+        Output("Py_DECREF(self->ob_callback);")
+        OutRbrace()
+
 class MyGlobalObjectDefinition(PEP253Mixin, GlobalObjectDefinition):
-	pass
+    pass
 
 for typ in RefObjectTypes:
-	if typ == 'EventHandlerRef':
-		EventHandlerRefobject = EventHandlerRefObjectDefinition('EventHandlerRef')
-	else:
-		execstr = typ + 'object = MyGlobalObjectDefinition(typ)'
-		exec execstr
-	module.addobject(eval(typ + 'object'))
+    if typ == 'EventHandlerRef':
+        EventHandlerRefobject = EventHandlerRefObjectDefinition('EventHandlerRef')
+    else:
+        execstr = typ + 'object = MyGlobalObjectDefinition(typ)'
+        exec execstr
+    module.addobject(eval(typ + 'object'))
 
 
 functions = []
 for typ in RefObjectTypes: ## go thru all ObjectTypes as defined in CarbonEventsscan.py
-	# initialize the lists for carbongen to fill
-	execstr = typ + 'methods = []'
-	exec execstr
+    # initialize the lists for carbongen to fill
+    execstr = typ + 'methods = []'
+    exec execstr
 
 execfile('CarbonEventsgen.py')
 
 
 
-for f in functions: module.add(f)	# add all the functions carboneventsgen put in the list
+for f in functions: module.add(f)       # add all the functions carboneventsgen put in the list
 
-for typ in RefObjectTypes:				 ## go thru all ObjectTypes as defined in CarbonEventsscan.py
-	methods = eval(typ + 'methods')  ## get a reference to the method list from the main namespace
-	obj = eval(typ + 'object')		  ## get a reference to the object
-	for m in methods: obj.add(m)	## add each method in the list to the object
+for typ in RefObjectTypes:                               ## go thru all ObjectTypes as defined in CarbonEventsscan.py
+    methods = eval(typ + 'methods')  ## get a reference to the method list from the main namespace
+    obj = eval(typ + 'object')                ## get a reference to the object
+    for m in methods: obj.add(m)    ## add each method in the list to the object
 
 
 removeeventhandler = """
 OSStatus _err;
 if (_self->ob_itself == NULL) {
-	PyErr_SetString(CarbonEvents_Error, "Handler has been removed");
-	return NULL;
+        PyErr_SetString(CarbonEvents_Error, "Handler has been removed");
+        return NULL;
 }
 if (!PyArg_ParseTuple(_args, ""))
-	return NULL;
+        return NULL;
 _err = RemoveEventHandler(_self->ob_itself);
 if (_err != noErr) return PyMac_Error(_err);
 _self->ob_itself = NULL;
@@ -255,15 +255,15 @@ EventHandlerRef outRef;
 OSStatus _err;
 
 if (!PyArg_ParseTuple(_args, "O&O", EventTypeSpec_Convert, &inSpec, &callback))
-	return NULL;
+        return NULL;
 
 _err = InstallEventHandler(_self->ob_itself, myEventHandlerUPP, 1, &inSpec, (void *)callback, &outRef);
 if (_err != noErr) return PyMac_Error(_err);
 
 _res = EventHandlerRef_New(outRef);
 if (_res != NULL) {
-	((EventHandlerRefObject*)_res)->ob_callback = callback;
-	Py_INCREF(callback);
+        ((EventHandlerRefObject*)_res)->ob_callback = callback;
+        Py_INCREF(callback);
 }
 return _res;"""
 

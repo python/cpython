@@ -253,74 +253,74 @@ USB_address._privpropdict = {
 USB_address._privelemdict = {
 }
 _Enum_econ = {
-    'ADB' : 'eadb',	# 
-    'printer_port' : 'ecpp',	# 
-    'modem_port' : 'ecmp',	# 
-    'modem_printer_port' : 'empp',	# 
-    'LocalTalk' : 'eclt',	# 
-    'Ethernet' : 'ecen',	# 
-    'Token_Ring' : 'etok',	# 
-    'SCSI' : 'ecsc',	# 
-    'USB' : 'ecus',	# 
-    'FireWire' : 'ecfw',	# 
-    'infrared' : 'ecir',	# 
-    'PC_card' : 'ecpc',	# 
-    'PCI_bus' : 'ecpi',	# 
-    'NuBus' : 'enub',	# 
-    'PDS_slot' : 'ecpd',	# 
-    'Comm_slot' : 'eccm',	# 
-    'monitor_out' : 'ecmn',	# 
-    'video_out' : 'ecvo',	# 
-    'video_in' : 'ecvi',	# 
-    'audio_out' : 'ecao',	# 
-    'audio_line_in' : 'ecai',	# 
-    'audio_line_out' : 'ecal',	# 
-    'microphone' : 'ecmi',	# 
+    'ADB' : 'eadb',     #
+    'printer_port' : 'ecpp',    #
+    'modem_port' : 'ecmp',      #
+    'modem_printer_port' : 'empp',      #
+    'LocalTalk' : 'eclt',       #
+    'Ethernet' : 'ecen',        #
+    'Token_Ring' : 'etok',      #
+    'SCSI' : 'ecsc',    #
+    'USB' : 'ecus',     #
+    'FireWire' : 'ecfw',        #
+    'infrared' : 'ecir',        #
+    'PC_card' : 'ecpc', #
+    'PCI_bus' : 'ecpi', #
+    'NuBus' : 'enub',   #
+    'PDS_slot' : 'ecpd',        #
+    'Comm_slot' : 'eccm',       #
+    'monitor_out' : 'ecmn',     #
+    'video_out' : 'ecvo',       #
+    'video_in' : 'ecvi',        #
+    'audio_out' : 'ecao',       #
+    'audio_line_in' : 'ecai',   #
+    'audio_line_out' : 'ecal',  #
+    'microphone' : 'ecmi',      #
 }
 
 _Enum_edvt = {
-    'hard_disk_drive' : 'ehd ',	# 
-    'floppy_disk_drive' : 'efd ',	# 
-    'CD_ROM_drive' : 'ecd ',	# 
-    'DVD_drive' : 'edvd',	# 
-    'storage_device' : 'edst',	# 
-    'keyboard' : 'ekbd',	# 
-    'mouse' : 'emou',	# 
-    'trackball' : 'etrk',	# 
-    'trackpad' : 'edtp',	# 
-    'pointing_device' : 'edpd',	# 
-    'video_monitor' : 'edvm',	# 
-    'LCD_display' : 'edlc',	# 
-    'display' : 'edds',	# 
-    'modem' : 'edmm',	# 
-    'PC_card' : 'ecpc',	# 
-    'PCI_card' : 'edpi',	# 
-    'NuBus_card' : 'ednb',	# 
-    'printer' : 'edpr',	# 
-    'speakers' : 'edsp',	# 
-    'microphone' : 'ecmi',	# 
+    'hard_disk_drive' : 'ehd ', #
+    'floppy_disk_drive' : 'efd ',       #
+    'CD_ROM_drive' : 'ecd ',    #
+    'DVD_drive' : 'edvd',       #
+    'storage_device' : 'edst',  #
+    'keyboard' : 'ekbd',        #
+    'mouse' : 'emou',   #
+    'trackball' : 'etrk',       #
+    'trackpad' : 'edtp',        #
+    'pointing_device' : 'edpd', #
+    'video_monitor' : 'edvm',   #
+    'LCD_display' : 'edlc',     #
+    'display' : 'edds', #
+    'modem' : 'edmm',   #
+    'PC_card' : 'ecpc', #
+    'PCI_card' : 'edpi',        #
+    'NuBus_card' : 'ednb',      #
+    'printer' : 'edpr', #
+    'speakers' : 'edsp',        #
+    'microphone' : 'ecmi',      #
 }
 
 _Enum_epro = {
-    'serial' : 'epsr',	# 
-    'AppleTalk' : 'epat',	# 
-    'IP' : 'epip',	# 
-    'SCSI' : 'ecsc',	# 
-    'ADB' : 'eadb',	# 
-    'FireWire' : 'ecfw',	# 
-    'IrDA' : 'epir',	# 
-    'IRTalk' : 'epit',	# 
-    'USB' : 'ecus',	# 
-    'PC_card' : 'ecpc',	# 
-    'PCI_bus' : 'ecpi',	# 
-    'NuBus' : 'enub',	# 
-    'bus' : 'ebus',	# 
-    'Macintosh_video' : 'epmv',	# 
-    'SVGA' : 'epsg',	# 
-    'S_video' : 'epsv',	# 
-    'analog_audio' : 'epau',	# 
-    'digital_audio' : 'epda',	# 
-    'PostScript' : 'epps',	# 
+    'serial' : 'epsr',  #
+    'AppleTalk' : 'epat',       #
+    'IP' : 'epip',      #
+    'SCSI' : 'ecsc',    #
+    'ADB' : 'eadb',     #
+    'FireWire' : 'ecfw',        #
+    'IrDA' : 'epir',    #
+    'IRTalk' : 'epit',  #
+    'USB' : 'ecus',     #
+    'PC_card' : 'ecpc', #
+    'PCI_bus' : 'ecpi', #
+    'NuBus' : 'enub',   #
+    'bus' : 'ebus',     #
+    'Macintosh_video' : 'epmv', #
+    'SVGA' : 'epsg',    #
+    'S_video' : 'epsv', #
+    'analog_audio' : 'epau',    #
+    'digital_audio' : 'epda',   #
+    'PostScript' : 'epps',      #
 }
 
 

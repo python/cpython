@@ -1,5 +1,5 @@
 # -*-mode: python; fill-column: 75; tab-width: 8; coding: iso-latin-1-unix -*-
-# 
+#
 # $Id$
 #
 # Tix Demostration Program
@@ -16,7 +16,7 @@
 import Tix
 
 options = {'text':'Plain Text', 'post':'PostScript', 'html':'HTML',
-	   'tex':'LaTeX', 'rtf':'Rich Text Format'}
+           'tex':'LaTeX', 'rtf':'Rich Text Format'}
 
 def RunSample(w):
     global demo_opt_from, demo_opt_to
@@ -27,22 +27,22 @@ def RunSample(w):
     top = Tix.Frame(w, bd=1, relief=Tix.RAISED)
 
     from_file = Tix.OptionMenu(top, label="From File Format : ",
-			       variable=demo_opt_from,
-			       options = 'label.width  19 label.anchor e menubutton.width 15')
+                               variable=demo_opt_from,
+                               options = 'label.width  19 label.anchor e menubutton.width 15')
 
     to_file = Tix.OptionMenu(top, label="To File Format : ",
-			     variable=demo_opt_to,
-			     options='label.width  19 label.anchor e menubutton.width 15')
+                             variable=demo_opt_to,
+                             options='label.width  19 label.anchor e menubutton.width 15')
 
     # Add the available options to the two OptionMenu widgets
     #
     # [Hint] You have to add the options first before you set the
-    #	     global variables "demo_opt_from" and "demo_opt_to". Otherwise
-    #	     the OptionMenu widget will complain about "unknown options"!
+    #        global variables "demo_opt_from" and "demo_opt_to". Otherwise
+    #        the OptionMenu widget will complain about "unknown options"!
     #
     for opt in options.keys():
-	from_file.add_command(opt, label=options[opt])
-	to_file.add_command(opt, label=options[opt])
+        from_file.add_command(opt, label=options[opt])
+        to_file.add_command(opt, label=options[opt])
 
     demo_opt_from.set('html')
     demo_opt_to.set('post')
@@ -52,9 +52,9 @@ def RunSample(w):
 
     box = Tix.ButtonBox(w, orientation=Tix.HORIZONTAL)
     box.add('ok', text='Ok', underline=0, width=6,
-	    command=lambda w=w: ok_command(w))
+            command=lambda w=w: ok_command(w))
     box.add('cancel', text='Cancel', underline=0, width=6,
-	    command=lambda w=w: w.destroy())
+            command=lambda w=w: w.destroy())
     box.pack(side=Tix.BOTTOM, fill=Tix.X)
     top.pack(side=Tix.TOP, fill=Tix.BOTH, expand=1)
 

@@ -2025,110 +2025,110 @@ Font._privpropdict = {
 Font._privelemdict = {
 }
 _Enum_Acce = {
-    'public' : 'Publ',	# 
-    'protected' : 'Prot',	# 
-    'private' : 'Priv',	# 
+    'public' : 'Publ',  #
+    'protected' : 'Prot',       #
+    'private' : 'Priv', #
 }
 
 _Enum_BXbr = {
-    'Always_Build' : 'BXb1',	# Always build the target before running.
-    'Ask_Build' : 'BXb2',	# Ask before building the target when running.
-    'Never_Build' : 'BXb3',	# Never before building the target before running.
+    'Always_Build' : 'BXb1',    # Always build the target before running.
+    'Ask_Build' : 'BXb2',       # Ask before building the target when running.
+    'Never_Build' : 'BXb3',     # Never before building the target before running.
 }
 
 _Enum_DbSA = {
-    'No_Action' : 'DSA1',	# Don\xd5t do anything to non-debug windows
-    'Hide_Windows' : 'DSA2',	# Hide non-debugging windows
-    'Collapse_Windows' : 'DSA3',	# Collapse non-debugging windows
-    'Close_Windows' : 'DSA4',	# Close non-debugging windows
+    'No_Action' : 'DSA1',       # Don\xd5t do anything to non-debug windows
+    'Hide_Windows' : 'DSA2',    # Hide non-debugging windows
+    'Collapse_Windows' : 'DSA3',        # Collapse non-debugging windows
+    'Close_Windows' : 'DSA4',   # Close non-debugging windows
 }
 
 _Enum_DgBL = {
-    'Always' : 'DgB0',	# Always build before debugging.
-    'Never' : 'DgB1',	# Never build before debugging.
-    'Ask' : 'DgB2',	# Ask about building before debugging.
+    'Always' : 'DgB0',  # Always build before debugging.
+    'Never' : 'DgB1',   # Never build before debugging.
+    'Ask' : 'DgB2',     # Ask about building before debugging.
 }
 
 _Enum_ErrT = {
-    'information' : 'ErIn',	# 
-    'compiler_warning' : 'ErCW',	# 
-    'compiler_error' : 'ErCE',	# 
-    'definition' : 'ErDf',	# 
-    'linker_warning' : 'ErLW',	# 
-    'linker_error' : 'ErLE',	# 
-    'find_result' : 'ErFn',	# 
-    'generic_error' : 'ErGn',	# 
+    'information' : 'ErIn',     #
+    'compiler_warning' : 'ErCW',        #
+    'compiler_error' : 'ErCE',  #
+    'definition' : 'ErDf',      #
+    'linker_warning' : 'ErLW',  #
+    'linker_error' : 'ErLE',    #
+    'find_result' : 'ErFn',     #
+    'generic_error' : 'ErGn',   #
 }
 
 _Enum_Inte = {
-    'never_interact' : 'eNvr',	# Never allow user interactions
-    'interact_with_self' : 'eInS',	# Allow user interaction only when an AppleEvent is sent from within CodeWarrior
-    'interact_with_local' : 'eInL',	# Allow user interaction when AppleEvents are sent from applications on the same machine (default)
-    'interact_with_all' : 'eInA',	# Allow user interaction from both local and remote AppleEvents
+    'never_interact' : 'eNvr',  # Never allow user interactions
+    'interact_with_self' : 'eInS',      # Allow user interaction only when an AppleEvent is sent from within CodeWarrior
+    'interact_with_local' : 'eInL',     # Allow user interaction when AppleEvents are sent from applications on the same machine (default)
+    'interact_with_all' : 'eInA',       # Allow user interaction from both local and remote AppleEvents
 }
 
 _Enum_Lang = {
-    'C' : 'LC  ',	# 
-    'C_2b__2b_' : 'LC++',	# 
-    'Pascal' : 'LP  ',	# 
-    'Object_Pascal' : 'LP++',	# 
-    'Java' : 'LJav',	# 
-    'Assembler' : 'LAsm',	# 
-    'Unknown' : 'L?  ',	# 
+    'C' : 'LC  ',       #
+    'C_2b__2b_' : 'LC++',       #
+    'Pascal' : 'LP  ',  #
+    'Object_Pascal' : 'LP++',   #
+    'Java' : 'LJav',    #
+    'Assembler' : 'LAsm',       #
+    'Unknown' : 'L?  ', #
 }
 
 _Enum_PPrm = {
-    'absolute' : 'Abso',	# An absolute path name, including volume name.
-    'project_relative' : 'PRel',	# A path relative to the current project\xd5s folder.
-    'shell_relative' : 'SRel',	# A path relative to the CodeWarrior\xaa folder.
-    'system_relative' : 'YRel',	# A path relative to the system folder
-    'root_relative' : 'RRel',	# 
+    'absolute' : 'Abso',        # An absolute path name, including volume name.
+    'project_relative' : 'PRel',        # A path relative to the current project\xd5s folder.
+    'shell_relative' : 'SRel',  # A path relative to the CodeWarrior\xaa folder.
+    'system_relative' : 'YRel', # A path relative to the system folder
+    'root_relative' : 'RRel',   #
 }
 
 _Enum_PXdg = {
-    'Diagnose_None' : 'PXd1',	# No Plugin Diagnostics.
-    'Diagnose_Errors' : 'PXd2',	# Plugin Diagnostics for errors only.
-    'Diagnose_All' : 'PXd3',	# Plugin Diagnostics for everything.
+    'Diagnose_None' : 'PXd1',   # No Plugin Diagnostics.
+    'Diagnose_Errors' : 'PXd2', # Plugin Diagnostics for errors only.
+    'Diagnose_All' : 'PXd3',    # Plugin Diagnostics for everything.
 }
 
 _Enum_PthF = {
-    'Generic_Path' : 'PFGn',	# 
-    'MacOS_Path' : 'PFMc',	# MacOS path using colon as separator
-    'Windows_Path' : 'PFWn',	# Windows path using backslash as separator
-    'Unix_Path' : 'PFUx',	# Unix path using slash as separator
+    'Generic_Path' : 'PFGn',    #
+    'MacOS_Path' : 'PFMc',      # MacOS path using colon as separator
+    'Windows_Path' : 'PFWn',    # Windows path using backslash as separator
+    'Unix_Path' : 'PFUx',       # Unix path using slash as separator
 }
 
 _Enum_RefP = {
-    'Think_Reference' : 'DanR',	# 
-    'QuickView' : 'ALTV',	# 
+    'Think_Reference' : 'DanR', #
+    'QuickView' : 'ALTV',       #
 }
 
 _Enum_STKd = {
-    'Absolute_Path' : 'STK0',	# The \xd2path\xd3 property is an absolute path to the location of the source tree.
-    'Registry_Key' : 'STK1',	# The \xd2path\xd3 property is the name of a registry key that contains the path to the root.
-    'Environment_Variable' : 'STK2',	# The \xd2path\xd3 property is the name of an environment variable that contains the path to the root.
+    'Absolute_Path' : 'STK0',   # The \xd2path\xd3 property is an absolute path to the location of the source tree.
+    'Registry_Key' : 'STK1',    # The \xd2path\xd3 property is the name of a registry key that contains the path to the root.
+    'Environment_Variable' : 'STK2',    # The \xd2path\xd3 property is the name of an environment variable that contains the path to the root.
 }
 
 _Enum_SrcT = {
-    'source' : 'FTxt',	# A source file (.c, .cp, .p, etc).
-    'unknown' : 'FUnk',	# An unknown file type.
+    'source' : 'FTxt',  # A source file (.c, .cp, .p, etc).
+    'unknown' : 'FUnk', # An unknown file type.
 }
 
 _Enum_TmpB = {
-    'User_Specified' : 'Usrs',	# Use user specified symbols when setting temporary breakpoints on program launch.
-    'Default' : 'Dflt',	# Use system default symbols when setting temporary breakpoints on program launch.
+    'User_Specified' : 'Usrs',  # Use user specified symbols when setting temporary breakpoints on program launch.
+    'Default' : 'Dflt', # Use system default symbols when setting temporary breakpoints on program launch.
 }
 
 _Enum_TxtF = {
-    'MacOS' : 'TxF0',	# MacOS text format
-    'DOS' : 'TxF1',	# DOS text format
-    'Unix' : 'TxF2',	# Unix text format
+    'MacOS' : 'TxF0',   # MacOS text format
+    'DOS' : 'TxF1',     # DOS text format
+    'Unix' : 'TxF2',    # Unix text format
 }
 
 _Enum_savo = {
-    'yes' : 'yes ',	# Save changes
-    'no' : 'no  ',	# Do not save changes
-    'ask' : 'ask ',	# Ask the user whether to save
+    'yes' : 'yes ',     # Save changes
+    'no' : 'no  ',      # Do not save changes
+    'ask' : 'ask ',     # Ask the user whether to save
 }
 
 

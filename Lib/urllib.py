@@ -1223,7 +1223,7 @@ if sys.platform == 'darwin':
 
     def getproxies():
         return getproxies_environment() or getproxies_internetconfig()
-        
+
 elif os.name == 'nt':
     def getproxies_registry():
         """Return a dictionary of scheme -> proxy server URL mappings.

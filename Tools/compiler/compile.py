@@ -39,7 +39,7 @@ def main():
                                 filename + ".prof")
                 else:
                     compileFile(filename, DISPLAY)
-                    
+
             except SyntaxError, err:
                 print err
                 if err.lineno is not None:

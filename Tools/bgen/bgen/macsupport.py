@@ -129,10 +129,10 @@ class VarUnicodeInputBufferType(VarInputBufferType):
 
     def getargsFormat(self):
         return "u#"
-        
+
 class VarUnicodeReverseInputBufferType(ReverseInputBufferMixin, VarUnicodeInputBufferType):
     pass
-    
+
 UnicodeInBuffer = VarUnicodeInputBufferType('UniChar', 'UniCharCount', 'l')
 UnicodeReverseInBuffer = VarUnicodeReverseInputBufferType('UniChar', 'UniCharCount', 'l')
 UniChar_ptr = InputOnlyType("UniCharPtr", "u")
@@ -180,7 +180,7 @@ class OSErrMethodGenerator(OSErrMixIn, MethodGenerator): pass
 
 class WeakLinkMixIn:
     "Mix-in to test the function actually exists (!= NULL) before calling"
-    
+
     def precheck(self):
         Output('#ifndef %s', self.name)
         Output('PyMac_PRECHECK(%s);', self.name)

@@ -11,7 +11,7 @@ Limitations:
 - No keyboard shortcuts.
 - Less fancy animation when you win.
 - The determination of which stack you drag to is more relaxed.
-  
+
 Apology:
 
 I'm not much of a card player, so my terminology in these comments may
@@ -35,7 +35,7 @@ from Canvas import Rectangle, CanvasText, Group, Window
 
 class Group(Group):
     def bind(self, sequence=None, command=None):
-	return self.canvas.tag_bind(self.id, sequence, command)
+        return self.canvas.tag_bind(self.id, sequence, command)
 
 
 # Constants determining the size and lay-out of cards and stacks.  We
@@ -135,7 +135,7 @@ class Card:
 
     Semi-public read-only instance variables (XXX should be made
     private):
-    
+
     group -- the Canvas.Group representing the card
     x, y -- the position of the card's top left corner
 
@@ -150,68 +150,68 @@ class Card:
     """
 
     def __init__(self, suit, value, canvas):
-	"""Card constructor.
+        """Card constructor.
 
-	Arguments are the card's suit and value, and the canvas widget.
+        Arguments are the card's suit and value, and the canvas widget.
 
-	The card is created at position (0, 0), with its face down
-	(adding it to a stack will position it according to that
-	stack's rules).
+        The card is created at position (0, 0), with its face down
+        (adding it to a stack will position it according to that
+        stack's rules).
 
-	"""
-	self.suit = suit
-	self.value = value
-	self.color = COLOR[suit]
-	self.face_shown = 0
+        """
+        self.suit = suit
+        self.value = value
+        self.color = COLOR[suit]
+        self.face_shown = 0
 
-	self.x = self.y = 0
-	self.group = Group(canvas)
+        self.x = self.y = 0
+        self.group = Group(canvas)
 
-	text = "%s  %s" % (VALNAMES[value], suit)
-	self.__text = CanvasText(canvas, CARDWIDTH/2, 0,
-			       anchor=N, fill=self.color, text=text)
-	self.group.addtag_withtag(self.__text)
+        text = "%s  %s" % (VALNAMES[value], suit)
+        self.__text = CanvasText(canvas, CARDWIDTH/2, 0,
+                               anchor=N, fill=self.color, text=text)
+        self.group.addtag_withtag(self.__text)
 
-	self.__rect = Rectangle(canvas, 0, 0, CARDWIDTH, CARDHEIGHT,
-			      outline='black', fill='white')
-	self.group.addtag_withtag(self.__rect)
+        self.__rect = Rectangle(canvas, 0, 0, CARDWIDTH, CARDHEIGHT,
+                              outline='black', fill='white')
+        self.group.addtag_withtag(self.__rect)
 
-	self.__back = Rectangle(canvas, MARGIN, MARGIN,
-			      CARDWIDTH-MARGIN, CARDHEIGHT-MARGIN,
-			      outline='black', fill='blue')
-	self.group.addtag_withtag(self.__back)
+        self.__back = Rectangle(canvas, MARGIN, MARGIN,
+                              CARDWIDTH-MARGIN, CARDHEIGHT-MARGIN,
+                              outline='black', fill='blue')
+        self.group.addtag_withtag(self.__back)
 
     def __repr__(self):
-	"""Return a string for debug print statements."""
-	return "Card(%r, %r)" % (self.suit, self.value)
+        """Return a string for debug print statements."""
+        return "Card(%r, %r)" % (self.suit, self.value)
 
     def moveto(self, x, y):
-	"""Move the card to absolute position (x, y)."""
-	self.moveby(x - self.x, y - self.y)
+        """Move the card to absolute position (x, y)."""
+        self.moveby(x - self.x, y - self.y)
 
     def moveby(self, dx, dy):
-	"""Move the card by (dx, dy)."""
-	self.x = self.x + dx
-	self.y = self.y + dy
-	self.group.move(dx, dy)
+        """Move the card by (dx, dy)."""
+        self.x = self.x + dx
+        self.y = self.y + dy
+        self.group.move(dx, dy)
 
     def tkraise(self):
-	"""Raise the card above all other objects in its canvas."""
-	self.group.tkraise()
+        """Raise the card above all other objects in its canvas."""
+        self.group.tkraise()
 
     def showface(self):
-	"""Turn the card's face up."""
-	self.tkraise()
-	self.__rect.tkraise()
-	self.__text.tkraise()
-	self.face_shown = 1
+        """Turn the card's face up."""
+        self.tkraise()
+        self.__rect.tkraise()
+        self.__text.tkraise()
+        self.face_shown = 1
 
     def showback(self):
-	"""Turn the card's face down."""
-	self.tkraise()
-	self.__rect.tkraise()
-	self.__back.tkraise()
-	self.face_shown = 0
+        """Turn the card's face down."""
+        self.tkraise()
+        self.__rect.tkraise()
+        self.__back.tkraise()
+        self.face_shown = 0
 
 
 class Stack:
@@ -240,7 +240,7 @@ class Stack:
 
         The default user (single) click handler shows the top card
         face up.  The default user double click handler calls the user
-	single click handler.
+        single click handler.
 
     usermovehandler(cards) -- called to complete a subpile move
 
@@ -255,133 +255,133 @@ class Stack:
         The default event handlers turn the top card of the stack with
         its face up on a (single or double) click, and also support
         moving a subpile around.
-    
+
     startmoving(event) -- begin a move operation
     finishmoving() -- finish a move operation
 
     """
 
     def __init__(self, x, y, game=None):
-	"""Stack constructor.
+        """Stack constructor.
 
-	Arguments are the stack's nominal x and y position (the top
-	left corner of the first card placed in the stack), and the
-	game object (which is used to get the canvas; subclasses use
-	the game object to find other stacks).
+        Arguments are the stack's nominal x and y position (the top
+        left corner of the first card placed in the stack), and the
+        game object (which is used to get the canvas; subclasses use
+        the game object to find other stacks).
 
-	"""
-	self.x = x
-	self.y = y
-	self.game = game
-	self.cards = []
-	self.group = Group(self.game.canvas)
-	self.group.bind('<1>', self.clickhandler)
- 	self.group.bind('<Double-1>', self.doubleclickhandler)
-	self.group.bind('<B1-Motion>', self.motionhandler)
-	self.group.bind('<ButtonRelease-1>', self.releasehandler)
-	self.makebottom()
+        """
+        self.x = x
+        self.y = y
+        self.game = game
+        self.cards = []
+        self.group = Group(self.game.canvas)
+        self.group.bind('<1>', self.clickhandler)
+        self.group.bind('<Double-1>', self.doubleclickhandler)
+        self.group.bind('<B1-Motion>', self.motionhandler)
+        self.group.bind('<ButtonRelease-1>', self.releasehandler)
+        self.makebottom()
 
     def makebottom(self):
-	pass
+        pass
 
     def __repr__(self):
-	"""Return a string for debug print statements."""
-	return "%s(%d, %d)" % (self.__class__.__name__, self.x, self.y)
+        """Return a string for debug print statements."""
+        return "%s(%d, %d)" % (self.__class__.__name__, self.x, self.y)
 
     # Public methods
 
     def add(self, card):
-	self.cards.append(card)
-	card.tkraise()
-	self.position(card)
-	self.group.addtag_withtag(card.group)
+        self.cards.append(card)
+        card.tkraise()
+        self.position(card)
+        self.group.addtag_withtag(card.group)
 
     def delete(self, card):
-	self.cards.remove(card)
-	card.group.dtag(self.group)
+        self.cards.remove(card)
+        card.group.dtag(self.group)
 
     def showtop(self):
-	if self.cards:
-	    self.cards[-1].showface()
+        if self.cards:
+            self.cards[-1].showface()
 
     def deal(self):
-	if not self.cards:
-	    return None
-	card = self.cards[-1]
-	self.delete(card)
-	return card
+        if not self.cards:
+            return None
+        card = self.cards[-1]
+        self.delete(card)
+        return card
 
     # Subclass overridable methods
 
     def position(self, card):
-	card.moveto(self.x, self.y)
+        card.moveto(self.x, self.y)
 
     def userclickhandler(self):
-	self.showtop()
+        self.showtop()
 
     def userdoubleclickhandler(self):
-	self.userclickhandler()
+        self.userclickhandler()
 
     def usermovehandler(self, cards):
-	for card in cards:
-	    self.position(card)
+        for card in cards:
+            self.position(card)
 
     # Event handlers
 
     def clickhandler(self, event):
-	self.finishmoving()		# In case we lost an event
-	self.userclickhandler()
-	self.startmoving(event)
+        self.finishmoving()             # In case we lost an event
+        self.userclickhandler()
+        self.startmoving(event)
 
     def motionhandler(self, event):
-	self.keepmoving(event)
+        self.keepmoving(event)
 
     def releasehandler(self, event):
-	self.keepmoving(event)
-	self.finishmoving()
+        self.keepmoving(event)
+        self.finishmoving()
 
     def doubleclickhandler(self, event):
-	self.finishmoving()		# In case we lost an event
-	self.userdoubleclickhandler()
-	self.startmoving(event)
+        self.finishmoving()             # In case we lost an event
+        self.userdoubleclickhandler()
+        self.startmoving(event)
 
     # Move internals
 
     moving = None
 
     def startmoving(self, event):
-	self.moving = None
-	tags = self.game.canvas.gettags('current')
-	for i in range(len(self.cards)):
-	    card = self.cards[i]
-	    if card.group.tag in tags:
-		break
-	else:
-	    return
-	if not card.face_shown:
-	    return
-	self.moving = self.cards[i:]
-	self.lastx = event.x
-	self.lasty = event.y
-	for card in self.moving:
-	    card.tkraise()
+        self.moving = None
+        tags = self.game.canvas.gettags('current')
+        for i in range(len(self.cards)):
+            card = self.cards[i]
+            if card.group.tag in tags:
+                break
+        else:
+            return
+        if not card.face_shown:
+            return
+        self.moving = self.cards[i:]
+        self.lastx = event.x
+        self.lasty = event.y
+        for card in self.moving:
+            card.tkraise()
 
     def keepmoving(self, event):
-	if not self.moving:
-	    return
-	dx = event.x - self.lastx
-	dy = event.y - self.lasty
-	self.lastx = event.x
-	self.lasty = event.y
-	if dx or dy:
-	    for card in self.moving:
-		card.moveby(dx, dy)
+        if not self.moving:
+            return
+        dx = event.x - self.lastx
+        dy = event.y - self.lasty
+        self.lastx = event.x
+        self.lasty = event.y
+        if dx or dy:
+            for card in self.moving:
+                card.moveby(dx, dy)
 
     def finishmoving(self):
-	cards = self.moving
-	self.moving = None
-	if cards:
-	    self.usermovehandler(cards)
+        cards = self.moving
+        self.moving = None
+        if cards:
+            self.usermovehandler(cards)
 
 
 class Deck(Stack):
@@ -400,37 +400,37 @@ class Deck(Stack):
     """
 
     def makebottom(self):
-	bottom = Rectangle(self.game.canvas,
-			   self.x, self.y,
-			   self.x+CARDWIDTH, self.y+CARDHEIGHT,
-			   outline='black', fill=BACKGROUND)
- 	self.group.addtag_withtag(bottom)
+        bottom = Rectangle(self.game.canvas,
+                           self.x, self.y,
+                           self.x+CARDWIDTH, self.y+CARDHEIGHT,
+                           outline='black', fill=BACKGROUND)
+        self.group.addtag_withtag(bottom)
 
     def fill(self):
-	for suit in ALLSUITS:
-	    for value in ALLVALUES:
-		self.add(Card(suit, value, self.game.canvas))
+        for suit in ALLSUITS:
+            for value in ALLVALUES:
+                self.add(Card(suit, value, self.game.canvas))
 
     def shuffle(self):
-	n = len(self.cards)
-	newcards = []
-	for i in randperm(n):
-	    newcards.append(self.cards[i])
-	self.cards = newcards
+        n = len(self.cards)
+        newcards = []
+        for i in randperm(n):
+            newcards.append(self.cards[i])
+        self.cards = newcards
 
     def userclickhandler(self):
-	opendeck = self.game.opendeck
-	card = self.deal()
-	if not card:
-	    while 1:
-		card = opendeck.deal()
-		if not card:
-		    break
-		self.add(card)
-		card.showback()
-	else:
-	    self.game.opendeck.add(card)
-	    card.showface()
+        opendeck = self.game.opendeck
+        card = self.deal()
+        if not card:
+            while 1:
+                card = opendeck.deal()
+                if not card:
+                    break
+                self.add(card)
+                card.showback()
+        else:
+            self.game.opendeck.add(card)
+            card.showface()
 
 
 def randperm(n):
@@ -438,191 +438,191 @@ def randperm(n):
     r = range(n)
     x = []
     while r:
-	i = random.choice(r)
-	x.append(i)
-	r.remove(i)
+        i = random.choice(r)
+        x.append(i)
+        r.remove(i)
     return x
 
 
 class OpenStack(Stack):
 
     def acceptable(self, cards):
-	return 0
+        return 0
 
     def usermovehandler(self, cards):
-	card = cards[0]
-	stack = self.game.closeststack(card)
-	if not stack or stack is self or not stack.acceptable(cards):
-	    Stack.usermovehandler(self, cards)
-	else:
-	    for card in cards:
-		self.delete(card)
-		stack.add(card)
-	    self.game.wincheck()
+        card = cards[0]
+        stack = self.game.closeststack(card)
+        if not stack or stack is self or not stack.acceptable(cards):
+            Stack.usermovehandler(self, cards)
+        else:
+            for card in cards:
+                self.delete(card)
+                stack.add(card)
+            self.game.wincheck()
 
     def userdoubleclickhandler(self):
-	if not self.cards:
-	    return
-	card = self.cards[-1]
-	if not card.face_shown:
-	    self.userclickhandler()
-	    return
-	for s in self.game.suits:
-	    if s.acceptable([card]):
-		self.delete(card)
-		s.add(card)
-		self.game.wincheck()
-		break
+        if not self.cards:
+            return
+        card = self.cards[-1]
+        if not card.face_shown:
+            self.userclickhandler()
+            return
+        for s in self.game.suits:
+            if s.acceptable([card]):
+                self.delete(card)
+                s.add(card)
+                self.game.wincheck()
+                break
 
 
 class SuitStack(OpenStack):
 
     def makebottom(self):
-	bottom = Rectangle(self.game.canvas,
-			   self.x, self.y,
-			   self.x+CARDWIDTH, self.y+CARDHEIGHT,
-			   outline='black', fill='')
+        bottom = Rectangle(self.game.canvas,
+                           self.x, self.y,
+                           self.x+CARDWIDTH, self.y+CARDHEIGHT,
+                           outline='black', fill='')
 
     def userclickhandler(self):
-	pass
+        pass
 
     def userdoubleclickhandler(self):
-	pass
+        pass
 
     def acceptable(self, cards):
-	if len(cards) != 1:
-	    return 0
-	card = cards[0]
-	if not self.cards:
-	    return card.value == ACE
-	topcard = self.cards[-1]
-	return card.suit == topcard.suit and card.value == topcard.value + 1
+        if len(cards) != 1:
+            return 0
+        card = cards[0]
+        if not self.cards:
+            return card.value == ACE
+        topcard = self.cards[-1]
+        return card.suit == topcard.suit and card.value == topcard.value + 1
 
 
 class RowStack(OpenStack):
 
     def acceptable(self, cards):
-	card = cards[0]
-	if not self.cards:
-	    return card.value == KING
-	topcard = self.cards[-1]
-	if not topcard.face_shown:
-	    return 0
-	return card.color != topcard.color and card.value == topcard.value - 1
+        card = cards[0]
+        if not self.cards:
+            return card.value == KING
+        topcard = self.cards[-1]
+        if not topcard.face_shown:
+            return 0
+        return card.color != topcard.color and card.value == topcard.value - 1
 
     def position(self, card):
-	y = self.y
-	for c in self.cards:
-	    if c == card:
-		break
-	    if c.face_shown:
-		y = y + 2*MARGIN
-	    else:
-		y = y + OFFSET
-	card.moveto(self.x, y)
+        y = self.y
+        for c in self.cards:
+            if c == card:
+                break
+            if c.face_shown:
+                y = y + 2*MARGIN
+            else:
+                y = y + OFFSET
+        card.moveto(self.x, y)
 
 
 class Solitaire:
 
     def __init__(self, master):
-	self.master = master
+        self.master = master
 
-	self.canvas = Canvas(self.master,
-			     background=BACKGROUND,
-			     highlightthickness=0,
-			     width=NROWS*XSPACING,
-			     height=3*YSPACING + 20 + MARGIN)
-	self.canvas.pack(fill=BOTH, expand=TRUE)
+        self.canvas = Canvas(self.master,
+                             background=BACKGROUND,
+                             highlightthickness=0,
+                             width=NROWS*XSPACING,
+                             height=3*YSPACING + 20 + MARGIN)
+        self.canvas.pack(fill=BOTH, expand=TRUE)
 
-	self.dealbutton = Button(self.canvas,
-				 text="Deal",
-				 highlightthickness=0,
-				 background=BACKGROUND,
-				 activebackground="green",
-				 command=self.deal)
-	Window(self.canvas, MARGIN, 3*YSPACING + 20,
-	       window=self.dealbutton, anchor=SW)
+        self.dealbutton = Button(self.canvas,
+                                 text="Deal",
+                                 highlightthickness=0,
+                                 background=BACKGROUND,
+                                 activebackground="green",
+                                 command=self.deal)
+        Window(self.canvas, MARGIN, 3*YSPACING + 20,
+               window=self.dealbutton, anchor=SW)
 
-	x = MARGIN
-	y = MARGIN
+        x = MARGIN
+        y = MARGIN
 
-	self.deck = Deck(x, y, self)
+        self.deck = Deck(x, y, self)
 
-	x = x + XSPACING
-	self.opendeck = OpenStack(x, y, self)
-	
-	x = x + XSPACING
-	self.suits = []
-	for i in range(NSUITS):
-	    x = x + XSPACING
-	    self.suits.append(SuitStack(x, y, self))
+        x = x + XSPACING
+        self.opendeck = OpenStack(x, y, self)
 
-	x = MARGIN
-	y = y + YSPACING
+        x = x + XSPACING
+        self.suits = []
+        for i in range(NSUITS):
+            x = x + XSPACING
+            self.suits.append(SuitStack(x, y, self))
 
-	self.rows = []
-	for i in range(NROWS):
-	    self.rows.append(RowStack(x, y, self))
-	    x = x + XSPACING
+        x = MARGIN
+        y = y + YSPACING
 
-	self.openstacks = [self.opendeck] + self.suits + self.rows
-	
-	self.deck.fill()
-	self.deal()
+        self.rows = []
+        for i in range(NROWS):
+            self.rows.append(RowStack(x, y, self))
+            x = x + XSPACING
+
+        self.openstacks = [self.opendeck] + self.suits + self.rows
+
+        self.deck.fill()
+        self.deal()
 
     def wincheck(self):
-	for s in self.suits:
-	    if len(s.cards) != NVALUES:
-		return
-	self.win()
-	self.deal()
+        for s in self.suits:
+            if len(s.cards) != NVALUES:
+                return
+        self.win()
+        self.deal()
 
     def win(self):
-	"""Stupid animation when you win."""
-	cards = []
-	for s in self.openstacks:
-	    cards = cards + s.cards
-	while cards:
-	    card = random.choice(cards)
-	    cards.remove(card)
-	    self.animatedmoveto(card, self.deck)
+        """Stupid animation when you win."""
+        cards = []
+        for s in self.openstacks:
+            cards = cards + s.cards
+        while cards:
+            card = random.choice(cards)
+            cards.remove(card)
+            self.animatedmoveto(card, self.deck)
 
     def animatedmoveto(self, card, dest):
-	for i in range(10, 0, -1):
-	    dx, dy = (dest.x-card.x)/i, (dest.y-card.y)/i
-	    card.moveby(dx, dy)
-	    self.master.update_idletasks()
+        for i in range(10, 0, -1):
+            dx, dy = (dest.x-card.x)/i, (dest.y-card.y)/i
+            card.moveby(dx, dy)
+            self.master.update_idletasks()
 
     def closeststack(self, card):
-	closest = None
-	cdist = 999999999
-	# Since we only compare distances,
-	# we don't bother to take the square root.
-	for stack in self.openstacks:
-	    dist = (stack.x - card.x)**2 + (stack.y - card.y)**2
-	    if dist < cdist:
-		closest = stack
-		cdist = dist
-	return closest
+        closest = None
+        cdist = 999999999
+        # Since we only compare distances,
+        # we don't bother to take the square root.
+        for stack in self.openstacks:
+            dist = (stack.x - card.x)**2 + (stack.y - card.y)**2
+            if dist < cdist:
+                closest = stack
+                cdist = dist
+        return closest
 
     def deal(self):
-	self.reset()
-	self.deck.shuffle()
-	for i in range(NROWS):
-	    for r in self.rows[i:]:
-		card = self.deck.deal()
-		r.add(card)
-	for r in self.rows:
-	    r.showtop()
+        self.reset()
+        self.deck.shuffle()
+        for i in range(NROWS):
+            for r in self.rows[i:]:
+                card = self.deck.deal()
+                r.add(card)
+        for r in self.rows:
+            r.showtop()
 
     def reset(self):
-	for stack in self.openstacks:
-	    while 1:
-		card = stack.deal()
-		if not card:
-		    break
-		self.deck.add(card)
-		card.showback()
+        for stack in self.openstacks:
+            while 1:
+                card = stack.deal()
+                if not card:
+                    break
+                self.deck.add(card)
+                card.showback()
 
 
 # Main function, run when invoked as a stand-alone Python program.

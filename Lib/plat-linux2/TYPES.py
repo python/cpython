@@ -61,11 +61,11 @@ __flexarr = []
 __flexarr = [1]
 def __ASMNAME(cname): return __ASMNAME2 (__USER_LABEL_PREFIX__, cname)
 
-def __attribute__(xyz): return  
+def __attribute__(xyz): return
 
 def __attribute_format_arg__(x): return __attribute__ ((__format_arg__ (x)))
 
-def __attribute_format_arg__(x): return  
+def __attribute_format_arg__(x): return
 
 __USE_LARGEFILE = 1
 __USE_LARGEFILE64 = 1
@@ -168,4 +168,3 @@ def minor(dev): return ((dev).__val[1] & 0xff)
 def major(dev): return (((dev).__val[0] >> 8) & 0xff)
 
 def minor(dev): return ((dev).__val[0] & 0xff)
-

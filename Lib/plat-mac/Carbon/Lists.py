@@ -4,7 +4,7 @@ def FOUR_CHAR_CODE(x): return x
 listNotifyNothing = FOUR_CHAR_CODE('nada')
 listNotifyClick = FOUR_CHAR_CODE('clik')
 listNotifyDoubleClick = FOUR_CHAR_CODE('dblc')
-listNotifyPreClick = FOUR_CHAR_CODE('pclk') 
+listNotifyPreClick = FOUR_CHAR_CODE('pclk')
 lDrawingModeOffBit = 3
 lDoVAutoscrollBit = 1
 lDoHAutoscrollBit = 0

@@ -25,4 +25,4 @@ kCGEncodingMacRoman = 1
 kCGInterpolationDefault = 0
 kCGInterpolationNone = 1
 kCGInterpolationLow = 2
-kCGInterpolationHigh = 3     
+kCGInterpolationHigh = 3

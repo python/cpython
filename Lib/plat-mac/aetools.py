@@ -113,7 +113,7 @@ def keysubst(arguments, keydict):
             arguments[keydict[k]] = v
         elif k != '----' and k not in ok:
             raise TypeError, 'Unknown keyword argument: %s'%k
-            
+
 def enumsubst(arguments, key, edict):
     """Substitute a single enum keyword argument, if it occurs"""
     if not arguments.has_key(key) or edict is None:
@@ -124,7 +124,7 @@ def enumsubst(arguments, key, edict):
         arguments[key] = Enum(edict[v])
     elif not v in ok:
         raise TypeError, 'Unknown enumerator: %s'%v
-        
+
 def decodeerror(arguments):
     """Create the 'best' argument for a raise MacOS.Error"""
     errn = arguments['errn']
@@ -137,7 +137,7 @@ def decodeerror(arguments):
         err_a3 = arguments['erob']
     else:
         err_a3 = None
-    
+
     return (err_a1, err_a2, err_a3)
 
 class TalkTo:
@@ -146,7 +146,7 @@ class TalkTo:
     _moduleName = None  # Can be overridden by subclasses
     _elemdict = {}      # Can be overridden by subclasses
     _propdict = {}      # Can be overridden by subclasses
-    
+
     __eventloop_initialized = 0
     def __ensure_WMAvailable(klass):
         if klass.__eventloop_initialized: return 1
@@ -156,10 +156,10 @@ class TalkTo:
         Evt.WaitNextEvent(0,0)
         return 1
     __ensure_WMAvailable = classmethod(__ensure_WMAvailable)
-    
+
     def __init__(self, signature=None, start=0, timeout=0):
         """Create a communication channel with a particular application.
-        
+
         Addressing the application is done by specifying either a
         4-byte signature, an AEDesc or an object that will __aepack__
         to an AEDesc.
@@ -184,7 +184,7 @@ class TalkTo:
             self.send_timeout = AppleEvents.kAEDefaultTimeout
         if start:
             self._start()
-        
+
     def _start(self):
         """Start the application, if it is not running yet"""
         try:
@@ -199,19 +199,19 @@ class TalkTo:
                 else:
                     break
                 time.sleep(1)
-            
+
     def start(self):
         """Deprecated, used _start()"""
         self._start()
-            
+
     def newevent(self, code, subcode, parameters = {}, attributes = {}):
         """Create a complete structure for an apple event"""
-        
+
         event = AE.AECreateAppleEvent(code, subcode, self.target,
                   AppleEvents.kAutoGenerateReturnID, AppleEvents.kAnyTransactionID)
         packevent(event, parameters, attributes)
         return event
-    
+
     def sendevent(self, event):
         """Send a pre-created appleevent, await the reply and unpack it"""
         if not self.__ensure_WMAvailable():
@@ -220,11 +220,11 @@ class TalkTo:
                                   self.send_timeout)
         parameters, attributes = unpackevent(reply, self._moduleName)
         return reply, parameters, attributes
-        
+
     def send(self, code, subcode, parameters = {}, attributes = {}):
         """Send an appleevent given code/subcode/pars/attrs and unpack the reply"""
         return self.sendevent(self.newevent(code, subcode, parameters, attributes))
-    
+
     #
     # The following events are somehow "standard" and don't seem to appear in any
     # suite...
@@ -256,9 +256,9 @@ class TalkTo:
             if as:
                 item.__class__ = as
             return item
-    
+
     get = _get
-            
+
     _argmap_set = {
         'to' : 'data',
     }
@@ -283,12 +283,12 @@ class TalkTo:
         # XXXX Optionally decode result
         if _arguments.has_key('----'):
             return _arguments['----']
-            
+
     set = _set
 
     # Magic glue to allow suite-generated classes to function somewhat
     # like the "application" class in OSA.
-    
+
     def __getattr__(self, name):
         if self._elemdict.has_key(name):
             cls = self._elemdict[name]
@@ -297,7 +297,7 @@ class TalkTo:
             cls = self._propdict[name]
             return cls()
         raise AttributeError, name
-        
+
 # Tiny Finder class, for local use only
 
 class _miniFinder(TalkTo):
@@ -321,7 +321,7 @@ class _miniFinder(TalkTo):
         if _arguments.has_key('----'):
             return _arguments['----']
 #pass
-    
+
 _finder = _miniFinder('MACS')
 
 def _launch(appfile):
@@ -332,12 +332,12 @@ def _launch(appfile):
 class _application_file(ComponentItem):
     """application file - An application's file on disk"""
     want = 'appf'
-    
+
 _application_file._propdict = {
 }
 _application_file._elemdict = {
 }
-    
+
 # Test program
 # XXXX Should test more, really...
 

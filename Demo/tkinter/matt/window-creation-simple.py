@@ -4,28 +4,28 @@ from Tkinter import *
 
 class Test(Frame):
     def printit(self):
-	print "hi"
+        print "hi"
 
     def makeWindow(self):
-	fred = Toplevel()
-	fred.label = Label(fred, text="Here's a new window")
-	fred.label.pack()
+        fred = Toplevel()
+        fred.label = Label(fred, text="Here's a new window")
+        fred.label.pack()
 
     def createWidgets(self):
-	self.QUIT = Button(self, text='QUIT', foreground='red', 
-			   command=self.quit)
-	
-	self.QUIT.pack(side=LEFT, fill=BOTH)
+        self.QUIT = Button(self, text='QUIT', foreground='red',
+                           command=self.quit)
 
-	# a hello button
-	self.hi_there = Button(self, text='Make a New Window', 
-			       command=self.makeWindow)
-	self.hi_there.pack(side=LEFT)
+        self.QUIT.pack(side=LEFT, fill=BOTH)
+
+        # a hello button
+        self.hi_there = Button(self, text='Make a New Window',
+                               command=self.makeWindow)
+        self.hi_there.pack(side=LEFT)
 
     def __init__(self, master=None):
-	Frame.__init__(self, master)
-	Pack.config(self)
-	self.createWidgets()
+        Frame.__init__(self, master)
+        Pack.config(self)
+        self.createWidgets()
 
 test = Test()
 test.mainloop()

@@ -304,9 +304,9 @@ document._privpropdict = {
 document._privelemdict = {
 }
 _Enum_savo = {
-    'yes' : 'yes ',	# Save objects now
-    'no' : 'no  ',	# Do not save objects
-    'ask' : 'ask ',	# Ask the user whether to save
+    'yes' : 'yes ',     # Save objects now
+    'no' : 'no  ',      # Do not save objects
+    'ask' : 'ask ',     # Ask the user whether to save
 }
 
 

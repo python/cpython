@@ -373,22 +373,22 @@ ARGV_CMDLINE_DATA=14
 ##                  MacOS.HandleEvent(ev)
 ##
 def _setmenu(control, items):
-        mhandle = control.GetControlData_Handle(Controls.kControlMenuPart,
-                Controls.kControlPopupButtonMenuHandleTag)
-        menu = Menu.as_Menu(mhandle)
-        for item in items:
-            if type(item) == type(()):
-                label = item[0]
-            else:
-                label = item
-            if label[-1] == '=' or label[-1] == ':':
-                label = label[:-1]
-            menu.AppendMenu(label)
+    mhandle = control.GetControlData_Handle(Controls.kControlMenuPart,
+            Controls.kControlPopupButtonMenuHandleTag)
+    menu = Menu.as_Menu(mhandle)
+    for item in items:
+        if type(item) == type(()):
+            label = item[0]
+        else:
+            label = item
+        if label[-1] == '=' or label[-1] == ':':
+            label = label[:-1]
+        menu.AppendMenu(label)
 ##          mhandle, mid = menu.getpopupinfo()
 ##          control.SetControlData_Handle(Controls.kControlMenuPart,
 ##                  Controls.kControlPopupButtonMenuHandleTag, mhandle)
-        control.SetControlMinimum(1)
-        control.SetControlMaximum(len(items)+1)
+    control.SetControlMinimum(1)
+    control.SetControlMaximum(len(items)+1)
 
 def _selectoption(d, optionlist, idx):
     if idx < 0 or idx >= len(optionlist):
@@ -836,4 +836,3 @@ if __name__ == '__main__':
         test()
     except KeyboardInterrupt:
         Message("Operation Canceled.")
-

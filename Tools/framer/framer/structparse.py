@@ -29,7 +29,7 @@ def parse(s):
         line = line.strip()
         if line.startswith("}"):
             break
-        
+
         assert line.endswith(";")
         line = line[:-1]
         words = line.split()

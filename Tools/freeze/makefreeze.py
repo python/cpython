@@ -19,7 +19,7 @@ default_entry_point = """
 int
 main(int argc, char **argv)
 {
-	extern int Py_FrozenMain(int, char **);
+        extern int Py_FrozenMain(int, char **);
 """ + ((not __debug__ and """
         Py_OptimizeFlag++;
 """) or "")  + """

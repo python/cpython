@@ -4,7 +4,7 @@ import zlib, sys
 if len(sys.argv)>1: filename=sys.argv[1]
 else: filename='zlibdemo.py'
 print 'Reading', filename
-f=open(filename, 'r')		# Get the data to compress
+f=open(filename, 'r')           # Get the data to compress
 s=f.read()
 f.close()
 
@@ -24,7 +24,7 @@ decompressor=zlib.decompressobj()
 comptext=decomp=''
 for i in range(0, len(s), chunk):
     comptext=comptext+compressor.compress(s[i:i+chunk])
-comptext=comptext+compressor.flush()	# Don't forget to call flush()!!
+comptext=comptext+compressor.flush()    # Don't forget to call flush()!!
 
 for i in range(0, len(comptext), chunk):
     decomp=decomp+decompressor.decompress(comptext[i:i+chunk])
@@ -33,4 +33,3 @@ decomp=decomp+decompressor.flush()
 print 'Progressive compression (level 9):'
 print '    Original:', len(s), 'Compressed:', len(comptext),
 print 'Uncompressed:', len(decomp)
-

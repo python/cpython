@@ -172,11 +172,11 @@ SHUT_RDWR = 2
 # Included from sys/netconfig.h
 
 # Included from sys/cdefs.h
-def __P(protos): return protos		 
+def __P(protos): return protos
 
 def __STRING(x): return #x
 
-def __P(protos): return ()		 
+def __P(protos): return ()
 
 def __STRING(x): return "x"
 
@@ -485,7 +485,7 @@ def ATOMIC_INT_INCR(atomic_intp): return _ATOMIC_INT_INCR(atomic_intp)
 
 def ATOMIC_INT_DECR(atomic_intp): return _ATOMIC_INT_DECR(atomic_intp)
 
-def FSPIN_INIT(lp): return  
+def FSPIN_INIT(lp): return
 
 def FSPIN_LOCK(l): return DISABLE()
 
@@ -493,15 +493,15 @@ def FSPIN_TRYLOCK(l): return (DISABLE(), B_TRUE)
 
 def FSPIN_UNLOCK(l): return ENABLE()
 
-def LOCK_DEINIT(lp): return  
+def LOCK_DEINIT(lp): return
 
-def LOCK_DEALLOC(lp): return  
+def LOCK_DEALLOC(lp): return
 
 def LOCK_OWNED(lp): return (B_TRUE)
 
-def RW_DEINIT(lp): return  
+def RW_DEINIT(lp): return
 
-def RW_DEALLOC(lp): return  
+def RW_DEALLOC(lp): return
 
 def RW_OWNED(lp): return (B_TRUE)
 
@@ -517,7 +517,7 @@ def RW_RDLOCK_PLMIN(lockp): return LOCK_PLMIN(lockp)
 
 def RW_WRLOCK_PLMIN(lockp): return LOCK_PLMIN(lockp)
 
-def LOCK_DEINIT(l): return  
+def LOCK_DEINIT(l): return
 
 def LOCK_PLMIN(lockp): return LOCK((lockp), PLMIN)
 
@@ -537,9 +537,9 @@ def FSPIN_OWNED(l): return (B_TRUE)
 
 CR_MLDREAL = 0x00000001
 CR_RDUMP = 0x00000002
-def crhold(credp): return crholdn((credp), 1)	 
+def crhold(credp): return crholdn((credp), 1)
 
-def crfree(credp): return crfreen((credp), 1)	 
+def crfree(credp): return crfreen((credp), 1)
 
 
 # Included from sys/strmdep.h
@@ -823,11 +823,11 @@ INADDR_MAX_LOCAL_GROUP = 0xe00000ff
 
 # Included from sys/inline.h
 IP_HIER_BASE = (20)
-def ASSERT_LOCK(x): return  
+def ASSERT_LOCK(x): return
 
-def ASSERT_WRLOCK(x): return  
+def ASSERT_WRLOCK(x): return
 
-def ASSERT_UNLOCK(x): return  
+def ASSERT_UNLOCK(x): return
 
 def CANPUT(q): return canput((q))
 

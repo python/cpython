@@ -580,44 +580,44 @@ text_document._privelemdict = {
     'text' : Standard_Suite.text,
 }
 _Enum_DKND = {
-    'project' : 'PRJD',	# a project document
-    'editor_document' : 'EDIT',	# an editor document
-    'message' : 'MSSG',	# a message document
-    'file_compare' : 'COMP',	# a file compare document
-    'catalog_document' : 'CTLG',	# a browser catalog
-    'class_browser' : 'BROW',	# a class browser document
-    'single_class_browser' : '1BRW',	# a single class browser document
-    'symbol_browser' : 'SYMB',	# a symbol browser document
-    'class_hierarchy' : 'HIER',	# a class hierarchy document
-    'single_class_hierarchy' : '1HIR',	# a single class hierarchy document
-    'project_inspector' : 'INSP',	# a project inspector
-    'ToolServer_worksheet' : 'TOOL',	# the ToolServer worksheet
-    'build_progress_document' : 'PRGS',	# the build progress window
+    'project' : 'PRJD', # a project document
+    'editor_document' : 'EDIT', # an editor document
+    'message' : 'MSSG', # a message document
+    'file_compare' : 'COMP',    # a file compare document
+    'catalog_document' : 'CTLG',        # a browser catalog
+    'class_browser' : 'BROW',   # a class browser document
+    'single_class_browser' : '1BRW',    # a single class browser document
+    'symbol_browser' : 'SYMB',  # a symbol browser document
+    'class_hierarchy' : 'HIER', # a class hierarchy document
+    'single_class_hierarchy' : '1HIR',  # a single class hierarchy document
+    'project_inspector' : 'INSP',       # a project inspector
+    'ToolServer_worksheet' : 'TOOL',    # the ToolServer worksheet
+    'build_progress_document' : 'PRGS', # the build progress window
 }
 
 _Enum_FTYP = {
-    'library_file' : 'LIBF',	# a library file
-    'project_file' : 'PRJF',	# a project file
-    'resource_file' : 'RESF',	# a resource file
-    'text_file' : 'TXTF',	# a text file
-    'unknown_file' : 'UNKN',	# unknown file type
+    'library_file' : 'LIBF',    # a library file
+    'project_file' : 'PRJF',    # a project file
+    'resource_file' : 'RESF',   # a resource file
+    'text_file' : 'TXTF',       # a text file
+    'unknown_file' : 'UNKN',    # unknown file type
 }
 
 _Enum_Inte = {
-    'never_interact' : 'eNvr',	# never allow user interactions
-    'interact_with_self' : 'eInS',	# allow user interaction only when an AppleEvent is sent from within CodeWarrior
-    'interact_with_local' : 'eInL',	# allow user interaction when AppleEvents are sent from applications on the same machine (default)
-    'interact_with_all' : 'eInA',	# allow user interaction from both local and remote AppleEvents
+    'never_interact' : 'eNvr',  # never allow user interactions
+    'interact_with_self' : 'eInS',      # allow user interaction only when an AppleEvent is sent from within CodeWarrior
+    'interact_with_local' : 'eInL',     # allow user interaction when AppleEvents are sent from applications on the same machine (default)
+    'interact_with_all' : 'eInA',       # allow user interaction from both local and remote AppleEvents
 }
 
 _Enum_PERM = {
-    'read_write' : 'RdWr',	# the file is open with read/write permission
-    'read_only' : 'Read',	# the file is open with read/only permission
-    'checked_out_read_write' : 'CkRW',	# the file is checked out with read/write permission
-    'checked_out_read_only' : 'CkRO',	# the file is checked out with read/only permission
-    'checked_out_read_modify' : 'CkRM',	# the file is checked out with read/modify permission
-    'locked' : 'Lock',	# the file is locked on disk
-    'none' : 'LNNO',	# the file is new
+    'read_write' : 'RdWr',      # the file is open with read/write permission
+    'read_only' : 'Read',       # the file is open with read/only permission
+    'checked_out_read_write' : 'CkRW',  # the file is checked out with read/write permission
+    'checked_out_read_only' : 'CkRO',   # the file is checked out with read/only permission
+    'checked_out_read_modify' : 'CkRM', # the file is checked out with read/modify permission
+    'locked' : 'Lock',  # the file is locked on disk
+    'none' : 'LNNO',    # the file is new
 }
 
 

@@ -429,4 +429,3 @@ print """
 def in_table_d2(code):
     return unicodedata.bidirectional(code) == "L"
 """
-

@@ -75,7 +75,7 @@ class CygwinCCompiler (UnixCCompiler):
                          (status, details))
         if status is not CONFIG_H_OK:
             self.warn(
-                "Python's pyconfig.h doesn't seem to support your compiler. " 
+                "Python's pyconfig.h doesn't seem to support your compiler. "
                 "Reason: %s. "
                 "Compiling may fail because of undefined preprocessor macros."
                 % details)

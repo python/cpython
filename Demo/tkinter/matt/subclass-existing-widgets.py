@@ -5,9 +5,9 @@ from Tkinter import *
 
 class New_Button(Button):
     def callback(self):
-	print self.counter
-	self.counter = self.counter + 1
-    
+        print self.counter
+        self.counter = self.counter + 1
+
 def createWidgets(top):
     f = Frame(top)
     f.pack()
@@ -26,4 +26,3 @@ def createWidgets(top):
 root = Tk()
 createWidgets(root)
 root.mainloop()
-

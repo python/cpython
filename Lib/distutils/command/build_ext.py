@@ -173,7 +173,7 @@ class build_ext (Command):
             self.include_dirs.append(os.path.join(sys.exec_prefix, 'PC'))
             self.library_dirs.append(os.path.join(sys.exec_prefix, 'PCBuild'))
 
-        # OS/2 (EMX) doesn't support Debug vs Release builds, but has the 
+        # OS/2 (EMX) doesn't support Debug vs Release builds, but has the
         # import libraries in its "Config" subdirectory
         if os.name == 'os2':
             self.library_dirs.append(os.path.join(sys.exec_prefix, 'Config'))
@@ -636,7 +636,7 @@ class build_ext (Command):
             # EMX/GCC requires the python library explicitly, and I
             # believe VACPP does as well (though not confirmed) - AIM Apr01
             template = "python%d%d"
-            # debug versions of the main DLL aren't supported, at least 
+            # debug versions of the main DLL aren't supported, at least
             # not at this time - AIM Apr01
             #if self.debug:
             #    template = template + '_d'

@@ -50,7 +50,7 @@ def __P(args): return args
 
 def __PMT(args): return args
 
-def __P(args): return ()	 
+def __P(args): return ()
 
 def __PMT(args): return ()
 
@@ -60,7 +60,7 @@ def __STRING(x): return "x"
 
 def __ASMNAME(cname): return __ASMNAME2 (__USER_LABEL_PREFIX__, cname)
 
-def __attribute__(xyz): return  
+def __attribute__(xyz): return
 
 __USE_EXTERN_INLINES = 1
 
@@ -140,4 +140,3 @@ _SYS_SYSMACROS_H = 1
 def major(dev): return ( ((  (dev) >> 8) & 0xff))
 
 def minor(dev): return ( ((dev) & 0xff))
-

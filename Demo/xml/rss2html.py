@@ -80,7 +80,7 @@ class RSSHandler(handler.ContentHandler):
 
         if name == "rss":
             self._out.write(bottom)
-                
+
     def characters(self, content):
         self._text = self._text + content
 

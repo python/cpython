@@ -327,28 +327,28 @@ graphic_line._privpropdict = {
 graphic_line._privelemdict = {
 }
 _Enum_arro = {
-    'no_arrow' : 'arno',	# No arrow on line
-    'arrow_at_start' : 'arst',	# Arrow at start of line
-    'arrow_at_end' : 'aren',	# Arrow at end of line
-    'arrow_at_both_ends' : 'arbo',	# Arrow at both the start and the end of the line
+    'no_arrow' : 'arno',        # No arrow on line
+    'arrow_at_start' : 'arst',  # Arrow at start of line
+    'arrow_at_end' : 'aren',    # Arrow at end of line
+    'arrow_at_both_ends' : 'arbo',      # Arrow at both the start and the end of the line
 }
 
 _Enum_tran = {
-    'copy_pixels' : 'cpy ',	# 
-    'not_copy_pixels' : 'ncpy',	# 
-    'or_pixels' : 'or  ',	# 
-    'not_or_pixels' : 'ntor',	# 
-    'bic_pixels' : 'bic ',	# 
-    'not_bic_pixels' : 'nbic',	# 
-    'xor_pixels' : 'xor ',	# 
-    'not_xor_pixels' : 'nxor',	# 
-    'add_over_pixels' : 'addo',	# 
-    'add_pin_pixels' : 'addp',	# 
-    'sub_over_pixels' : 'subo',	# 
-    'sub_pin_pixels' : 'subp',	# 
-    'ad_max_pixels' : 'admx',	# 
-    'ad_min_pixels' : 'admn',	# 
-    'blend_pixels' : 'blnd',	# 
+    'copy_pixels' : 'cpy ',     #
+    'not_copy_pixels' : 'ncpy', #
+    'or_pixels' : 'or  ',       #
+    'not_or_pixels' : 'ntor',   #
+    'bic_pixels' : 'bic ',      #
+    'not_bic_pixels' : 'nbic',  #
+    'xor_pixels' : 'xor ',      #
+    'not_xor_pixels' : 'nxor',  #
+    'add_over_pixels' : 'addo', #
+    'add_pin_pixels' : 'addp',  #
+    'sub_over_pixels' : 'subo', #
+    'sub_pin_pixels' : 'subp',  #
+    'ad_max_pixels' : 'admx',   #
+    'ad_min_pixels' : 'admn',   #
+    'blend_pixels' : 'blnd',    #
 }
 
 

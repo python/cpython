@@ -84,7 +84,7 @@ class Web_Browser_Suite_Events:
         """GetWindowInfo: Returns a window info record (URL/Title) for the specified window.
         Required argument: Window Identifier of the window
         Keyword argument _attributes: AppleEvent attribute dictionary
-        Returns:   
+        Returns:
         """
         _code = 'WWW!'
         _subcode = 'WNFO'

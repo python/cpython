@@ -16,106 +16,106 @@ class Enumerations_Events(Type_Names_Suite_Events):
     pass
 
 _Enum_earr = {
-    'not_arranged' : 'narr',	# 
-    'snap_to_grid' : 'grda',	# 
-    'arranged_by_name' : 'nama',	# 
-    'arranged_by_modification_date' : 'mdta',	# 
-    'arranged_by_creation_date' : 'cdta',	# 
-    'arranged_by_size' : 'siza',	# 
-    'arranged_by_kind' : 'kina',	# 
-    'arranged_by_label' : 'laba',	# 
+    'not_arranged' : 'narr',    #
+    'snap_to_grid' : 'grda',    #
+    'arranged_by_name' : 'nama',        #
+    'arranged_by_modification_date' : 'mdta',   #
+    'arranged_by_creation_date' : 'cdta',       #
+    'arranged_by_size' : 'siza',        #
+    'arranged_by_kind' : 'kina',        #
+    'arranged_by_label' : 'laba',       #
 }
 
 _Enum_ecvw = {
-    'icon_view' : 'icnv',	# 
-    'list_view' : 'lsvw',	# 
-    'column_view' : 'clvw',	# 
+    'icon_view' : 'icnv',       #
+    'list_view' : 'lsvw',       #
+    'column_view' : 'clvw',     #
 }
 
 _Enum_edfm = {
-    'Mac_OS_format' : 'dfhf',	# 
-    'Mac_OS_Extended_format' : 'dfh+',	# 
-    'UFS_format' : 'dfuf',	# 
-    'NFS_format' : 'dfnf',	# 
-    'audio_format' : 'dfau',	# 
-    'ProDOS_format' : 'dfpr',	# 
-    'MS_2d_DOS_format' : 'dfms',	# 
-    'ISO_9660_format' : 'df96',	# 
-    'High_Sierra_format' : 'dfhs',	# 
-    'QuickTake_format' : 'dfqt',	# 
-    'Apple_Photo_format' : 'dfph',	# 
-    'AppleShare_format' : 'dfas',	# 
-    'UDF_format' : 'dfud',	# 
-    'WebDAV_format' : 'dfwd',	# 
-    'FTP_format' : 'dfft',	# 
-    'Packet_2d_written_UDF_format' : 'dfpu',	# 
-    'unknown_format' : 'df??',	# 
+    'Mac_OS_format' : 'dfhf',   #
+    'Mac_OS_Extended_format' : 'dfh+',  #
+    'UFS_format' : 'dfuf',      #
+    'NFS_format' : 'dfnf',      #
+    'audio_format' : 'dfau',    #
+    'ProDOS_format' : 'dfpr',   #
+    'MS_2d_DOS_format' : 'dfms',        #
+    'ISO_9660_format' : 'df96', #
+    'High_Sierra_format' : 'dfhs',      #
+    'QuickTake_format' : 'dfqt',        #
+    'Apple_Photo_format' : 'dfph',      #
+    'AppleShare_format' : 'dfas',       #
+    'UDF_format' : 'dfud',      #
+    'WebDAV_format' : 'dfwd',   #
+    'FTP_format' : 'dfft',      #
+    'Packet_2d_written_UDF_format' : 'dfpu',    #
+    'unknown_format' : 'df??',  #
 }
 
 _Enum_elsv = {
-    'name_column' : 'elsn',	# 
-    'modification_date_column' : 'elsm',	# 
-    'creation_date_column' : 'elsc',	# 
-    'size_column' : 'elss',	# 
-    'kind_column' : 'elsk',	# 
-    'label_column' : 'elsl',	# 
-    'version_column' : 'elsv',	# 
-    'comment_column' : 'elsC',	# 
+    'name_column' : 'elsn',     #
+    'modification_date_column' : 'elsm',        #
+    'creation_date_column' : 'elsc',    #
+    'size_column' : 'elss',     #
+    'kind_column' : 'elsk',     #
+    'label_column' : 'elsl',    #
+    'version_column' : 'elsv',  #
+    'comment_column' : 'elsC',  #
 }
 
 _Enum_ipnl = {
-    'General_Information_panel' : 'gpnl',	# 
-    'Sharing_panel' : 'spnl',	# 
-    'Memory_panel' : 'mpnl',	# 
-    'Preview_panel' : 'vpnl',	# 
-    'Application_panel' : 'apnl',	# 
-    'Languages_panel' : 'pklg',	# 
-    'Plugins_panel' : 'pkpg',	# 
-    'Name__26__Extension_panel' : 'npnl',	# 
-    'Comments_panel' : 'cpnl',	# 
-    'Content_Index_panel' : 'cinl',	# 
+    'General_Information_panel' : 'gpnl',       #
+    'Sharing_panel' : 'spnl',   #
+    'Memory_panel' : 'mpnl',    #
+    'Preview_panel' : 'vpnl',   #
+    'Application_panel' : 'apnl',       #
+    'Languages_panel' : 'pklg', #
+    'Plugins_panel' : 'pkpg',   #
+    'Name__26__Extension_panel' : 'npnl',       #
+    'Comments_panel' : 'cpnl',  #
+    'Content_Index_panel' : 'cinl',     #
 }
 
 _Enum_isiz = {
-    'mini' : 'miic',	# 
-    'small' : 'smic',	# 
-    'large' : 'lgic',	# 
+    'mini' : 'miic',    #
+    'small' : 'smic',   #
+    'large' : 'lgic',   #
 }
 
 _Enum_lvic = {
-    'small_icon' : 'smic',	# 
-    'large_icon' : 'lgic',	# 
+    'small_icon' : 'smic',      #
+    'large_icon' : 'lgic',      #
 }
 
 _Enum_priv = {
-    'read_only' : 'read',	# 
-    'read_write' : 'rdwr',	# 
-    'write_only' : 'writ',	# 
-    'none' : 'none',	# 
+    'read_only' : 'read',       #
+    'read_write' : 'rdwr',      #
+    'write_only' : 'writ',      #
+    'none' : 'none',    #
 }
 
 _Enum_sodr = {
-    'normal' : 'snrm',	# 
-    'reversed' : 'srvs',	# 
+    'normal' : 'snrm',  #
+    'reversed' : 'srvs',        #
 }
 
 _Enum_vwby = {
-    'conflicts' : 'cflc',	# 
-    'existing_items' : 'exsi',	# 
-    'small_icon' : 'smic',	# 
-    'icon' : 'iimg',	# 
-    'name' : 'pnam',	# 
-    'modification_date' : 'asmo',	# 
-    'size' : 'ptsz',	# 
-    'kind' : 'kind',	# 
-    'comment' : 'comt',	# 
-    'label' : 'labi',	# 
-    'version' : 'vers',	# 
-    'creation_date' : 'ascd',	# 
-    'small_button' : 'smbu',	# 
-    'large_button' : 'lgbu',	# 
-    'grid' : 'grid',	# 
-    'all' : 'kyal',	# 
+    'conflicts' : 'cflc',       #
+    'existing_items' : 'exsi',  #
+    'small_icon' : 'smic',      #
+    'icon' : 'iimg',    #
+    'name' : 'pnam',    #
+    'modification_date' : 'asmo',       #
+    'size' : 'ptsz',    #
+    'kind' : 'kind',    #
+    'comment' : 'comt', #
+    'label' : 'labi',   #
+    'version' : 'vers', #
+    'creation_date' : 'ascd',   #
+    'small_button' : 'smbu',    #
+    'large_button' : 'lgbu',    #
+    'grid' : 'grid',    #
+    'all' : 'kyal',     #
 }
 
 

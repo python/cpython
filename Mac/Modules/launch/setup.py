@@ -4,10 +4,10 @@
 from distutils.core import Extension, setup
 
 setup(name="LaunchServices", version="0.2",
-	ext_modules=[
-		Extension('_Launch', ['_Launchmodule.c'],
-		extra_link_args=['-framework', 'ApplicationServices'])
-	],
-	py_modules=['LaunchServices.Launch', 'LaunchServices.LaunchServices'],
-	package_dir={'LaunchServices':'../../../Lib/plat-mac/Carbon'}
-	)
+        ext_modules=[
+                Extension('_Launch', ['_Launchmodule.c'],
+                extra_link_args=['-framework', 'ApplicationServices'])
+        ],
+        py_modules=['LaunchServices.Launch', 'LaunchServices.LaunchServices'],
+        package_dir={'LaunchServices':'../../../Lib/plat-mac/Carbon'}
+        )

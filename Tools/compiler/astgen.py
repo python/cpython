@@ -88,7 +88,7 @@ class NodeInfo:
             self.args = self.args.replace('*', '')
             self.args = self.args.replace('!', '')
             self.args = self.args.replace('&', '')
-        
+
         return d
 
     def gen_source(self):
@@ -158,7 +158,7 @@ class NodeInfo:
                 template = "        nodes.%s(%sself.%s%s)"
                 for name in self.argnames:
                     if self.argprops[name] == P_NONE:
-                        tmp = ("        if self.%s is not None:" 
+                        tmp = ("        if self.%s is not None:"
                                "            nodes.append(self.%s)")
                         print >> buf, tmp % (name, name)
                     elif self.argprops[name] == P_NESTED:

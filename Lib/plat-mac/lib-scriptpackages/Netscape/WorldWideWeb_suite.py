@@ -1,4 +1,4 @@
-"""Suite WorldWideWeb suite, as defined in Spyglass spec.: 
+"""Suite WorldWideWeb suite, as defined in Spyglass spec.:
 Level 1, version 1
 
 Generated from /Volumes/Sap/Applications (Mac OS 9)/Netscape Communicator\xe2\x84\xa2 Folder/Netscape Communicator\xe2\x84\xa2
@@ -317,7 +317,7 @@ class WorldWideWeb_suite_Events:
 
     def unregister_protocol(self, _object=None, _attributes={}, **_arguments):
         """unregister protocol: reverses the effects of \xd2register protocol\xd3
-        Required argument: Application sig. 
+        Required argument: Application sig.
         Keyword argument for_protocol: protocol prefix. If none, unregister for all protocols
         Keyword argument _attributes: AppleEvent attribute dictionary
         Returns: TRUE if successful

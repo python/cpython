@@ -79,7 +79,7 @@ class Command:
         # verbose is largely ignored, but needs to be set for
         # backwards compatibility (I think)?
         self.verbose = dist.verbose
-        
+
         # Some commands define a 'self.force' option to ignore file
         # timestamps, but methods defined *here* assume that
         # 'self.force' exists for all commands.  So define it here
@@ -100,7 +100,7 @@ class Command:
 
 
     # XXX A more explicit way to customize dry_run would be better.
-    
+
     def __getattr__ (self, attr):
         if attr == 'dry_run':
             myval = getattr(self, "_" + attr)

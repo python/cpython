@@ -36,46 +36,46 @@ identchars = string.ascii_letters + string.digits + '_' # Identifier characters
 _namecache = {} # The cache
 
 def getcodename(co):
-	try:
-		return co.co_name
-	except AttributeError:
-		pass
-	key = `co` # arbitrary but uniquely identifying string
-	if _namecache.has_key(key): return _namecache[key]
-	filename = co.co_filename
-	code = co.co_code
-	name = ''
-	if ord(code[0]) == SET_LINENO:
-		lineno = ord(code[1]) | ord(code[2]) << 8
-		line = linecache.getline(filename, lineno)
-		words = line.split()
-		if len(words) >= 2 and words[0] in ('def', 'class'):
-			name = words[1]
-			for i in range(len(name)):
-				if name[i] not in identchars:
-					name = name[:i]
-					break
-	_namecache[key] = name
-	return name
+    try:
+        return co.co_name
+    except AttributeError:
+        pass
+    key = `co` # arbitrary but uniquely identifying string
+    if _namecache.has_key(key): return _namecache[key]
+    filename = co.co_filename
+    code = co.co_code
+    name = ''
+    if ord(code[0]) == SET_LINENO:
+        lineno = ord(code[1]) | ord(code[2]) << 8
+        line = linecache.getline(filename, lineno)
+        words = line.split()
+        if len(words) >= 2 and words[0] in ('def', 'class'):
+            name = words[1]
+            for i in range(len(name)):
+                if name[i] not in identchars:
+                    name = name[:i]
+                    break
+    _namecache[key] = name
+    return name
 
 # Use the above routine to find a function's name.
 
 def getfuncname(func):
-	try:
-		return func.func_name
-	except AttributeError:
-		pass
-	return getcodename(func.func_code)
+    try:
+        return func.func_name
+    except AttributeError:
+        pass
+    return getcodename(func.func_code)
 
 # A part of the above code to extract just the line number from a code object.
 
 def getlineno(co):
-	try:
-		return co.co_firstlineno
-	except AttributeError:
-		pass
-	code = co.co_code
-	if ord(code[0]) == SET_LINENO:
-		return ord(code[1]) | ord(code[2]) << 8
-	else:
-		return -1
+    try:
+        return co.co_firstlineno
+    except AttributeError:
+        pass
+    code = co.co_code
+    if ord(code[0]) == SET_LINENO:
+        return ord(code[1]) | ord(code[2]) << 8
+    else:
+        return -1

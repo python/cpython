@@ -537,7 +537,7 @@ class install (Command):
             not (self.path_file and self.install_path_file) and
             install_lib not in sys_path):
             log.debug(("modules installed to '%s', which is not in "
-                       "Python's module search path (sys.path) -- " 
+                       "Python's module search path (sys.path) -- "
                        "you'll have to change the search path yourself"),
                        self.install_lib)
 

@@ -3,34 +3,34 @@
 """buildpkg.py -- Build OS X packages for Apple's Installer.app.
 
 This is an experimental command-line tool for building packages to be
-installed with the Mac OS X Installer.app application. 
+installed with the Mac OS X Installer.app application.
 
-It is much inspired by Apple's GUI tool called PackageMaker.app, that 
-seems to be part of the OS X developer tools installed in the folder 
-/Developer/Applications. But apparently there are other free tools to 
-do the same thing which are also named PackageMaker like Brian Hill's 
-one: 
+It is much inspired by Apple's GUI tool called PackageMaker.app, that
+seems to be part of the OS X developer tools installed in the folder
+/Developer/Applications. But apparently there are other free tools to
+do the same thing which are also named PackageMaker like Brian Hill's
+one:
 
   http://personalpages.tds.net/~brian_hill/packagemaker.html
 
-Beware of the multi-package features of Installer.app (which are not 
-yet supported here) that can potentially screw-up your installation 
+Beware of the multi-package features of Installer.app (which are not
+yet supported here) that can potentially screw-up your installation
 and are discussed in these articles on Stepwise:
 
   http://www.stepwise.com/Articles/Technical/Packages/InstallerWoes.html
   http://www.stepwise.com/Articles/Technical/Packages/InstallerOnX.html
 
-Beside using the PackageMaker class directly, by importing it inside 
+Beside using the PackageMaker class directly, by importing it inside
 another module, say, there are additional ways of using this module:
-the top-level buildPackage() function provides a shortcut to the same 
+the top-level buildPackage() function provides a shortcut to the same
 feature and is also called when using this module from the command-
 line.
 
     ****************************************************************
-    NOTE: For now you should be able to run this even on a non-OS X 
+    NOTE: For now you should be able to run this even on a non-OS X
           system and get something similar to a package, but without
-          the real archive (needs pax) and bom files (needs mkbom) 
-          inside! This is only for providing a chance for testing to 
+          the real archive (needs pax) and bom files (needs mkbom)
+          inside! This is only for providing a chance for testing to
           folks without OS X.
     ****************************************************************
 
@@ -39,7 +39,7 @@ TODO:
   - handle multi-volume packages (?)
   - integrate into distutils (?)
 
-Dinu C. Gherman, 
+Dinu C. Gherman,
 gherman@europemail.com
 November 2001
 
@@ -120,14 +120,14 @@ class PackageMaker:
     """A class to generate packages for Mac OS X.
 
     This is intended to create OS X packages (with extension .pkg)
-    containing archives of arbitrary files that the Installer.app 
+    containing archives of arbitrary files that the Installer.app
     will be able to handle.
 
-    As of now, PackageMaker instances need to be created with the 
-    title, version and description of the package to be built. 
-    The package is built after calling the instance method 
-    build(root, **options). It has the same name as the constructor's 
-    title argument plus a '.pkg' extension and is located in the same 
+    As of now, PackageMaker instances need to be created with the
+    title, version and description of the package to be built.
+    The package is built after calling the instance method
+    build(root, **options). It has the same name as the constructor's
+    title argument plus a '.pkg' extension and is located in the same
     parent folder that contains the root folder.
 
     E.g. this will create a package folder /my/space/distutils.pkg/:
@@ -165,7 +165,7 @@ class PackageMaker:
         info = {"Title": title, "Version": version, "Description": desc}
         self.packageInfo = copy.deepcopy(self.packageInfoDefaults)
         self.packageInfo.update(info)
-        
+
         # variables set later
         self.packageRootFolder = None
         self.packageResourceFolder = None
@@ -176,8 +176,8 @@ class PackageMaker:
     def build(self, root, resources=None, **options):
         """Create a package for some given root folder.
 
-        With no 'resources' argument set it is assumed to be the same 
-        as the root directory. Option items replace the default ones 
+        With no 'resources' argument set it is assumed to be the same
+        as the root directory. Option items replace the default ones
         in the package info.
         """
 
@@ -195,12 +195,12 @@ class PackageMaker:
                 self.packageInfo[k] = v
             elif not k in ["OutputDir"]:
                 raise Error, "Unknown package option: %s" % k
-        
+
         # Check where we should leave the output. Default is current directory
         outputdir = options.get("OutputDir", os.getcwd())
         packageName = self.packageInfo["Title"]
         self.PackageRootFolder = os.path.join(outputdir, packageName + ".pkg")
- 
+
         # do what needs to be done
         self._makeFolders()
         self._addInfo()
@@ -215,7 +215,7 @@ class PackageMaker:
         "Create package folder structure."
 
         # Not sure if the package name should contain the version or not...
-        # packageName = "%s-%s" % (self.packageInfo["Title"], 
+        # packageName = "%s-%s" % (self.packageInfo["Title"],
         #                          self.packageInfo["Version"]) # ??
 
         contFolder = join(self.PackageRootFolder, "Contents")
@@ -267,7 +267,7 @@ class PackageMaker:
         self.archPath = join(self.packageResourceFolder, base)
         cmd = "pax -w -f %s %s" % (self.archPath, ".")
         res = os.system(cmd)
-        
+
         # compress archive
         cmd = "gzip %s" % self.archPath
         res = os.system(cmd)
@@ -277,8 +277,8 @@ class PackageMaker:
     def _addResources(self):
         "Add Welcome/ReadMe/License files, .lproj folders and scripts."
 
-        # Currently we just copy everything that matches the allowed 
-        # filenames. So, it's left to Installer.app to deal with the 
+        # Currently we just copy everything that matches the allowed
+        # filenames. So, it's left to Installer.app to deal with the
         # same file available in multiple formats...
 
         if not self.resourceFolder:
@@ -337,9 +337,9 @@ class PackageMaker:
     def _addSizes(self):
         "Write .sizes file with info about number and size of files."
 
-        # Not sure if this is correct, but 'installedSize' and 
-        # 'zippedSize' are now in Bytes. Maybe blocks are needed? 
-        # Well, Installer.app doesn't seem to care anyway, saying 
+        # Not sure if this is correct, but 'installedSize' and
+        # 'zippedSize' are now in Bytes. Maybe blocks are needed?
+        # Well, Installer.app doesn't seem to care anyway, saying
         # the installation needs 100+ MB...
 
         numFiles = 0
@@ -353,7 +353,7 @@ class PackageMaker:
 
         try:
             zippedSize = os.stat(self.archPath+ ".gz")[6]
-        except OSError: # ignore error 
+        except OSError: # ignore error
             pass
         base = self.packageInfo["Title"] + ".sizes"
         f = open(join(self.packageResourceFolder, base), "w")
@@ -370,7 +370,7 @@ class PackageMaker:
 
 def buildPackage(*args, **options):
     "A Shortcut function for building a package."
-    
+
     o = options
     title, version, desc = o["Title"], o["Version"], o["Description"]
     pm = PackageMaker(title, version, desc)
@@ -391,9 +391,9 @@ def test0():
 def test1():
     "Test for the reportlab distribution with modified options."
 
-    pm = PackageMaker("reportlab", "1.10", 
+    pm = PackageMaker("reportlab", "1.10",
                       "ReportLab's Open Source PDF toolkit.")
-    pm.build(root="/Users/dinu/Desktop/reportlab", 
+    pm.build(root="/Users/dinu/Desktop/reportlab",
              DefaultLocation="/Applications/ReportLab",
              Relocatable="YES")
 
@@ -401,9 +401,9 @@ def test2():
     "Shortcut test for the reportlab distribution with modified options."
 
     buildPackage(
-        "/Users/dinu/Desktop/reportlab", 
-        Title="reportlab", 
-        Version="1.10", 
+        "/Users/dinu/Desktop/reportlab",
+        Title="reportlab",
+        Version="1.10",
         Description="ReportLab's Open Source PDF toolkit.",
         DefaultLocation="/Applications/ReportLab",
         Relocatable="YES")

@@ -4,10 +4,10 @@
 from distutils.core import Extension, setup
 
 setup(name="OSA", version="0.1",
-	ext_modules=[
-		Extension('_OSA', ['_OSAmodule.c'],
-		extra_link_args=['-framework', 'Carbon'])
-	],
-	py_modules=['OSA.OSA', 'OSA.OSAconst'],
-	package_dir={'OSA':'../../../Lib/plat-mac/Carbon'}
-	)
+        ext_modules=[
+                Extension('_OSA', ['_OSAmodule.c'],
+                extra_link_args=['-framework', 'Carbon'])
+        ],
+        py_modules=['OSA.OSA', 'OSA.OSAconst'],
+        package_dir={'OSA':'../../../Lib/plat-mac/Carbon'}
+        )

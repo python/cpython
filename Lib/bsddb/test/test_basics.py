@@ -301,7 +301,7 @@ class BasicTestCase(unittest.TestCase):
         else:
             txn = None
         c = self.d.cursor(txn=txn)
-        
+
         rec = c.first()
         count = 0
         while rec is not None:
@@ -318,7 +318,7 @@ class BasicTestCase(unittest.TestCase):
                 else:
                     self.fail("unexpected DBNotFoundError")
             assert c.get_current_size() == len(c.current()[1]), "%s != len(%r)" % (c.get_current_size(), c.current()[1])
-        
+
         assert count == self._numKeys
 
 
@@ -351,7 +351,7 @@ class BasicTestCase(unittest.TestCase):
         rec = c.set('empty value')
         assert rec[1] == ''
         assert c.get_current_size() == 0
-        
+
         try:
             n = c.set('bad key')
         except db.DBNotFoundError, val:

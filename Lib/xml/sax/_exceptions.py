@@ -93,10 +93,10 @@ class SAXParseException(SAXException):
             sysid = "<unknown>"
         linenum = self.getLineNumber()
         if linenum is None:
-           linenum = "?"
+            linenum = "?"
         colnum = self.getColumnNumber()
         if colnum is None:
-           colnum = "?"
+            colnum = "?"
         return "%s:%s:%s: %s" % (sysid, linenum, colnum, self._msg)
 
 

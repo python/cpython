@@ -297,7 +297,7 @@ class Checker:
     def message(self, format, *args):
         if args:
             format = format%args
-        print format 
+        print format
 
     def __getstate__(self):
         return (self.roots, self.todo, self.done, self.bad, self.round)
@@ -380,7 +380,7 @@ class Checker:
             # triples is now a (URL, fragment) pair. The value
             # of the "source" variable comes from the list of
             # origins, and is a URL, not a pair.
-            for url, rawlink, msg in triples:           
+            for url, rawlink, msg in triples:
                 if rawlink != self.format_url(url): s = " (%s)" % rawlink
                 else: s = ""
                 self.message("  HREF %s%s\n    msg %s",
@@ -462,7 +462,7 @@ class Checker:
             self.todo[url] = [origin]
             self.note(3, "  New todo link %s", self.format_url(url))
 
-    def format_url(self, url):  
+    def format_url(self, url):
         link, fragment = url
         if fragment: return link + "#" + fragment
         else: return link
@@ -716,7 +716,7 @@ class Page:
             t = t[:-1] + ('',)
             rawlink = urlparse.urlunparse(t)
             link = urlparse.urljoin(base, rawlink)
-            infos.append((link, rawlink, fragment))     
+            infos.append((link, rawlink, fragment))
 
         return infos
 

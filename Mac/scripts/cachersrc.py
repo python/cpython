@@ -10,36 +10,35 @@ import sys
 import getopt
 
 class NoArgsError(Exception):
-	pass
-	
+    pass
+
 def handler((verbose, force), dirname, fnames):
-	for fn in fnames:
-		if fn[-5:] == '.rsrc' and fn[-13:] != '.rsrc.df.rsrc':
-			if force:
-				try:
-					os.unlink(os.path.join(dirname, fn + '.df.rsrc'))
-				except IOError:
-					pass
-			macresource.open_pathname(os.path.join(dirname, fn), verbose=verbose)
-			
+    for fn in fnames:
+        if fn[-5:] == '.rsrc' and fn[-13:] != '.rsrc.df.rsrc':
+            if force:
+                try:
+                    os.unlink(os.path.join(dirname, fn + '.df.rsrc'))
+                except IOError:
+                    pass
+            macresource.open_pathname(os.path.join(dirname, fn), verbose=verbose)
+
 def main():
-	try:
-		opts, args = getopt.getopt(sys.argv[1:], 'vf')
-		if not args:
-			raise NoArgsError
-	except (getopt.GetoptError, NoArgsError):
-		sys.stderr.write('Usage: cachersrc.py dirname ...\n')
-		sys.exit(1)
-	verbose = 0
-	force = 0
-	for o, v in opts:
-		if o == '-v':
-			verbose = 1
-		if o == '-f':
-			force = 1
-	for dir in sys.argv[1:]:
-		os.path.walk(dir, handler, (verbose, force))
-		
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], 'vf')
+        if not args:
+            raise NoArgsError
+    except (getopt.GetoptError, NoArgsError):
+        sys.stderr.write('Usage: cachersrc.py dirname ...\n')
+        sys.exit(1)
+    verbose = 0
+    force = 0
+    for o, v in opts:
+        if o == '-v':
+            verbose = 1
+        if o == '-f':
+            force = 1
+    for dir in sys.argv[1:]:
+        os.path.walk(dir, handler, (verbose, force))
+
 if __name__ == '__main__':
-	main()
-	
+    main()

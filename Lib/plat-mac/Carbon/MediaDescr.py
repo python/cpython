@@ -4,58 +4,58 @@ import struct
 Error = 'MediaDescr.Error'
 
 class _MediaDescriptionCodec:
-        def __init__(self, trunc, size, names, fmt):
-                self.trunc = trunc
-                self.size = size
-                self.names = names
-                self.fmt = fmt
+    def __init__(self, trunc, size, names, fmt):
+        self.trunc = trunc
+        self.size = size
+        self.names = names
+        self.fmt = fmt
 
-        def decode(self, data):
-                if self.trunc:
-                        data = data[:self.size]
-                values = struct.unpack(self.fmt, data)
-                if len(values) != len(self.names):
-                        raise Error, ('Format length does not match number of names', descr)
-                rv = {}
-                for i in range(len(values)):
-                        name = self.names[i]
-                        value = values[i]
-                        if type(name) == type(()):
-                                name, cod, dec = name
-                                value = dec(value)
-                        rv[name] = value
-                return rv
+    def decode(self, data):
+        if self.trunc:
+            data = data[:self.size]
+        values = struct.unpack(self.fmt, data)
+        if len(values) != len(self.names):
+            raise Error, ('Format length does not match number of names', descr)
+        rv = {}
+        for i in range(len(values)):
+            name = self.names[i]
+            value = values[i]
+            if type(name) == type(()):
+                name, cod, dec = name
+                value = dec(value)
+            rv[name] = value
+        return rv
 
-        def encode(dict):
-                list = [self.fmt]
-                for name in self.names:
-                        if type(name) == type(()):
-                                name, cod, dec = name
-                        else:
-                                cod = dec = None
-                        value = dict[name]
-                        if cod:
-                                value = cod(value)
-                        list.append(value)
-                rv = struct.pack(*list)
-                return rv
+    def encode(dict):
+        list = [self.fmt]
+        for name in self.names:
+            if type(name) == type(()):
+                name, cod, dec = name
+            else:
+                cod = dec = None
+            value = dict[name]
+            if cod:
+                value = cod(value)
+            list.append(value)
+        rv = struct.pack(*list)
+        return rv
 
 # Helper functions
 def _tofixed(float):
-        hi = int(float)
-        lo = int(float*0x10000) & 0xffff
-        return (hi<<16)|lo
+    hi = int(float)
+    lo = int(float*0x10000) & 0xffff
+    return (hi<<16)|lo
 
 def _fromfixed(fixed):
-        hi = (fixed >> 16) & 0xffff
-        lo = (fixed & 0xffff)
-        return hi + (lo / float(0x10000))
+    hi = (fixed >> 16) & 0xffff
+    lo = (fixed & 0xffff)
+    return hi + (lo / float(0x10000))
 
 def _tostr31(str):
-        return chr(len(str)) + str + '\0'*(31-len(str))
+    return chr(len(str)) + str + '\0'*(31-len(str))
 
 def _fromstr31(str31):
-        return str31[1:1+ord(str31[0])]
+    return str31[1:1+ord(str31[0])]
 
 SampleDescription = _MediaDescriptionCodec(
         1,      # May be longer, truncate

@@ -1,5 +1,5 @@
 # -*-mode: python; fill-column: 75; tab-width: 8; coding: iso-latin-1-unix -*-
-# 
+#
 # $Id$
 #
 # Tix Demostration Program
@@ -13,18 +13,18 @@
 # This file demonstrates how to use multiple columns and multiple styles
 # in the tixHList widget
 #
-# In a tixHList widget, you can have one ore more columns. 
+# In a tixHList widget, you can have one ore more columns.
 #
 
 import Tix
 
-TCL_ALL_EVENTS		= 0
+TCL_ALL_EVENTS          = 0
 
 def RunSample (root):
     shlist = DemoSHList(root)
     shlist.mainloop()
     shlist.destroy()
-    
+
 class DemoSHList:
     def __init__(self, w):
         self.root = w
@@ -32,7 +32,7 @@ class DemoSHList:
 
         z = w.winfo_toplevel()
         z.wm_protocol("WM_DELETE_WINDOW", lambda self=self: self.quitcmd())
-        
+
         # We create the frame and the ScrolledHList widget
         # at the top of the dialog box
         #
@@ -47,7 +47,7 @@ class DemoSHList:
         hlist=top.a.hlist
 
         # Create the title for the HList widget
-        #	>> Notice that we have set the hlist.header subwidget option to true
+        #       >> Notice that we have set the hlist.header subwidget option to true
         #      so that the header is displayed
         #
 
@@ -72,22 +72,22 @@ class DemoSHList:
 
         # This is our little relational database
         #
-        boss = ('doe', 'John Doe',	'Director')
+        boss = ('doe', 'John Doe',      'Director')
 
         managers = [
-            ('jeff',  'Jeff Waxman',	'Manager'),
-            ('john',  'John Lee',		'Manager'),
-            ('peter', 'Peter Kenson',	'Manager')
+            ('jeff',  'Jeff Waxman',    'Manager'),
+            ('john',  'John Lee',               'Manager'),
+            ('peter', 'Peter Kenson',   'Manager')
         ]
 
         employees = [
-            ('alex',  'john',	'Alex Kellman',		'Clerk'),
-            ('alan',  'john',       'Alan Adams',		'Clerk'),
-            ('andy',  'peter',      'Andreas Crawford',	'Salesman'),
-            ('doug',  'jeff',       'Douglas Bloom',	'Clerk'),
-            ('jon',   'peter',      'Jon Baraki',		'Salesman'),
-            ('chris', 'jeff',       'Chris Geoffrey',	'Clerk'),
-            ('chuck', 'jeff',       'Chuck McLean',		'Cleaner')
+            ('alex',  'john',   'Alex Kellman',         'Clerk'),
+            ('alan',  'john',       'Alan Adams',               'Clerk'),
+            ('andy',  'peter',      'Andreas Crawford', 'Salesman'),
+            ('doug',  'jeff',       'Douglas Bloom',    'Clerk'),
+            ('jon',   'peter',      'Jon Baraki',               'Salesman'),
+            ('chris', 'jeff',       'Chris Geoffrey',   'Clerk'),
+            ('chuck', 'jeff',       'Chuck McLean',             'Cleaner')
         ]
 
         style['mgr_name'] = Tix.DisplayStyle(Tix.TEXT, refwindow=hlist)
@@ -98,7 +98,7 @@ class DemoSHList:
 
         style['empl_posn'] = Tix.DisplayStyle(Tix.TEXT, padx=8, refwindow=hlist)
 
-        # Let configure the appearance of the HList subwidget 
+        # Let configure the appearance of the HList subwidget
         #
         hlist.config(separator='.', width=25, drawbranch=0, indent=10)
         hlist.column_width(0, chars=20)
@@ -124,10 +124,10 @@ class DemoSHList:
         for key,mgr,name,posn in employees :
             # "." is the separator character we chose above
 
-            entrypath = '.' + mgr        + '.' + key 
+            entrypath = '.' + mgr        + '.' + key
 
             #           ^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^
-            #	    parent entryPath / child's name
+            #       parent entryPath / child's name
 
             hlist.add(entrypath, text=name, style=style['empl_name'])
             hlist.item_create(entrypath, 1, itemtype=Tix.TEXT,
@@ -166,4 +166,3 @@ class DemoSHList:
 if __name__== '__main__' :
     root=Tix.Tk()
     RunSample(root)
-

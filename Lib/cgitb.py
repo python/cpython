@@ -42,13 +42,13 @@ def small(text):
         return '<small>' + text + '</small>'
     else:
         return ''
-    
+
 def strong(text):
     if text:
         return '<strong>' + text + '</strong>'
     else:
         return ''
-    
+
 def grey(text):
     if text:
         return '<font color="#909090">' + text + '</font>'

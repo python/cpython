@@ -51,49 +51,49 @@ uncompress.append('uncompress', '--')
 
 
 class error(Exception):
-	pass
+    pass
 
 def torgb(filename):
-	temps = []
-	ret = None
-	try:
-		ret = _torgb(filename, temps)
-	finally:
-		for temp in temps[:]:
-			if temp != ret:
-				try:
-					os.unlink(temp)
-				except os.error:
-					pass
-				temps.remove(temp)
-	return ret
+    temps = []
+    ret = None
+    try:
+        ret = _torgb(filename, temps)
+    finally:
+        for temp in temps[:]:
+            if temp != ret:
+                try:
+                    os.unlink(temp)
+                except os.error:
+                    pass
+                temps.remove(temp)
+    return ret
 
 def _torgb(filename, temps):
-	if filename[-2:] == '.Z':
-		(fd, fname) = tempfile.mkstemp()
-		os.close(fd)
-		temps.append(fname)
-		sts = uncompress.copy(filename, fname)
-		if sts:
-			raise error, filename + ': uncompress failed'
-	else:
-		fname = filename
-	try:
-		ftype = imghdr.what(fname)
-	except IOError, msg:
-		if type(msg) == type(()) and len(msg) == 2 and \
-			type(msg[0]) == type(0) and type(msg[1]) == type(''):
-			msg = msg[1]
-		if type(msg) is not type(''):
-			msg = repr(msg)
-		raise error, filename + ': ' + msg
-	if ftype == 'rgb':
-		return fname
-	if ftype is None or not table.has_key(ftype):
-		raise error, '%s: unsupported image file type %r' % (filename, ftype)
-	(fd, temp) = tempfile.mkstemp()
-	os.close(fd)
-	sts = table[ftype].copy(fname, temp)
-	if sts:
-		raise error, filename + ': conversion to rgb failed'
-	return temp
+    if filename[-2:] == '.Z':
+        (fd, fname) = tempfile.mkstemp()
+        os.close(fd)
+        temps.append(fname)
+        sts = uncompress.copy(filename, fname)
+        if sts:
+            raise error, filename + ': uncompress failed'
+    else:
+        fname = filename
+    try:
+        ftype = imghdr.what(fname)
+    except IOError, msg:
+        if type(msg) == type(()) and len(msg) == 2 and \
+                type(msg[0]) == type(0) and type(msg[1]) == type(''):
+            msg = msg[1]
+        if type(msg) is not type(''):
+            msg = repr(msg)
+        raise error, filename + ': ' + msg
+    if ftype == 'rgb':
+        return fname
+    if ftype is None or not table.has_key(ftype):
+        raise error, '%s: unsupported image file type %r' % (filename, ftype)
+    (fd, temp) = tempfile.mkstemp()
+    os.close(fd)
+    sts = table[ftype].copy(fname, temp)
+    if sts:
+        raise error, filename + ': conversion to rgb failed'
+    return temp

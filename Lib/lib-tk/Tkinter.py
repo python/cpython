@@ -1557,7 +1557,7 @@ class Tk(Misc, Wm):
         self._tkloaded = 0
         # to avoid recursions in the getattr code in case of failure, we
         # ensure that self.tk is always _something_.
-        self.tk = None  
+        self.tk = None
         if baseName is None:
             import sys, os
             baseName = os.path.basename(sys.argv[0])

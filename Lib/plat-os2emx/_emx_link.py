@@ -2,7 +2,7 @@
 
 # Written by Andrew I MacIntyre, December 2002.
 
-"""_emx_link.py is a simplistic emulation of the Unix link(2) library routine 
+"""_emx_link.py is a simplistic emulation of the Unix link(2) library routine
 for creating so-called hard links.  It is intended to be imported into
 the os module in place of the unimplemented (on OS/2) Posix link()
 function (os.link()).

@@ -101,7 +101,7 @@ class ChipViewer:
         # shows the name of the nearest color in the database.  BAW: should
         # an exact match be indicated in some way?
         #
-        # Always use the #rrggbb style to actually set the color, since we may 
+        # Always use the #rrggbb style to actually set the color, since we may
         # not be using X color names (e.g. "web-safe" names)
         colordb = self.__sb.colordb()
         rgbtuple = (red, green, blue)

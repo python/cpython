@@ -1,5 +1,5 @@
 # -*-mode: python; fill-column: 75; tab-width: 8; coding: iso-latin-1-unix -*-
-# 
+#
 # $Id$
 #
 # Tix Demostration Program
@@ -15,13 +15,13 @@
 
 import Tix
 
-TCL_ALL_EVENTS		= 0
+TCL_ALL_EVENTS          = 0
 
 def RunSample (root):
     shlist = DemoSHList(root)
     shlist.mainloop()
     shlist.destroy()
-    
+
 class DemoSHList:
     def __init__(self, w):
         self.root = w
@@ -29,7 +29,7 @@ class DemoSHList:
 
         z = w.winfo_toplevel()
         z.wm_protocol("WM_DELETE_WINDOW", lambda self=self: self.quitcmd())
-        
+
         # We create the frame and the ScrolledHList widget
         # at the top of the dialog box
         #
@@ -61,7 +61,7 @@ class DemoSHList:
 
         hlist=top.a.hlist
 
-        # Let configure the appearance of the HList subwidget 
+        # Let configure the appearance of the HList subwidget
         #
         hlist.config( separator='.', width=25, drawbranch=0, indent=10)
 
@@ -71,7 +71,7 @@ class DemoSHList:
                 f=Tix.Frame(hlist, name='sep%d' % count, height=2, width=150,
                     bd=2, relief=Tix.SUNKEN )
 
-                hlist.add_child( itemtype=Tix.WINDOW, 
+                hlist.add_child( itemtype=Tix.WINDOW,
                     window=f, state=Tix.DISABLED )
 
             hlist.add(boss, itemtype=Tix.TEXT, text=name)
@@ -88,13 +88,13 @@ class DemoSHList:
             hlist.add( key, text=name )
 
             # [Hint] Make sure the keys (e.g. 'boss.person') you choose
-            #	 are unique names. If you cannot be sure of this (because of
-            #	 the structure of your database, e.g.) you can use the
-            #	 "add_child" command instead:
+            #    are unique names. If you cannot be sure of this (because of
+            #    the structure of your database, e.g.) you can use the
+            #    "add_child" command instead:
             #
             #  hlist.addchild( boss,  text=name)
             #                  ^^^^
-            #                  parent entryPath 
+            #                  parent entryPath
 
 
         # Use a ButtonBox to hold the buttons.
@@ -129,4 +129,3 @@ class DemoSHList:
 if __name__== '__main__' :
     root=Tix.Tk()
     RunSample(root)
-

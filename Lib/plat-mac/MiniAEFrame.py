@@ -59,9 +59,9 @@ class MiniApplication:
         self.quitting = 1
 
     def dooneevent(self, mask = everyEvent, timeout = 60*60):
-            got, event = Evt.WaitNextEvent(mask, timeout)
-            if got:
-                self.lowlevelhandler(event)
+        got, event = Evt.WaitNextEvent(mask, timeout)
+        if got:
+            self.lowlevelhandler(event)
 
     def lowlevelhandler(self, event):
         what, message, when, where, modifiers = event

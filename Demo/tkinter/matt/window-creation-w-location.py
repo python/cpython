@@ -17,29 +17,29 @@ class QuitButton(Button):
 
 class Test(Frame):
     def makeWindow(self, *args):
-	fred = Toplevel()
+        fred = Toplevel()
 
-	fred.label = Canvas (fred, width="2i", height="2i")
+        fred.label = Canvas (fred, width="2i", height="2i")
 
-	fred.label.create_line("0", "0", "2i", "2i")
-	fred.label.create_line("0", "2i", "2i", "0")
-	fred.label.pack()
+        fred.label.create_line("0", "0", "2i", "2i")
+        fred.label.create_line("0", "2i", "2i", "0")
+        fred.label.pack()
 
-	##centerWindow(fred, self.master)
+        ##centerWindow(fred, self.master)
 
     def createWidgets(self):
-	self.QUIT = QuitButton(self)
-	self.QUIT.pack(side=LEFT, fill=BOTH)
+        self.QUIT = QuitButton(self)
+        self.QUIT.pack(side=LEFT, fill=BOTH)
 
-	self.makeWindow = Button(self, text='Make a New Window',
-				 width=50, height=20,
-				 command=self.makeWindow)
-	self.makeWindow.pack(side=LEFT)
+        self.makeWindow = Button(self, text='Make a New Window',
+                                 width=50, height=20,
+                                 command=self.makeWindow)
+        self.makeWindow.pack(side=LEFT)
 
     def __init__(self, master=None):
-	Frame.__init__(self, master)
-	Pack.config(self)
-	self.createWidgets()
+        Frame.__init__(self, master)
+        Pack.config(self)
+        self.createWidgets()
 
 test = Test()
 test.mainloop()

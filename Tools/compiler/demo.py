@@ -14,7 +14,7 @@ class MethodFinder:
     Each visit method takes two arguments, the node and its current
     scope.  The scope is the name of the current class or None.
     """
-    
+
     def visitClass(self, node, scope=None):
         self.visit(node.code, node.name)
 
@@ -22,7 +22,7 @@ class MethodFinder:
         if scope is not None:
             print "%s.%s" % (scope, node.name)
         self.visit(node.code, None)
-            
+
 def main(files):
     mf = MethodFinder()
     for file in files:
@@ -34,5 +34,5 @@ def main(files):
 
 if __name__ == "__main__":
     import sys
-    
+
     main(sys.argv[1:])
