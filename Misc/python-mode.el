@@ -2,7 +2,7 @@
 
 ;; Copyright (C) 1992,1993,1994  Tim Peters
 
-;; Author: 1995-1998 Barry A. Warsaw
+;; Author: 1995-2001 Barry A. Warsaw
 ;;         1992-1994 Tim Peters
 ;; Maintainer: python-mode@python.org
 ;; Created:    Feb 1992
@@ -1341,7 +1341,9 @@ is inserted at the end.  See also the command `py-clear-queue'."
 	  ))
       ;; TBD: delete the buffer
       )
-     )))
+     )
+    ;; Clean up after ourselves.
+    (kill-buffer buf)))
 
 
 ;; Code execution commands
