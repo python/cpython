@@ -46,10 +46,9 @@ parse_and_bind(PyObject *self, PyObject *args)
 	return Py_None;
 }
 
-static char doc_parse_and_bind[] = "\
-parse_and_bind(string) -> None\n\
-Parse and execute single line of a readline init file.\
-";
+PyDoc_STRVAR(doc_parse_and_bind,
+"parse_and_bind(string) -> None\n\
+Parse and execute single line of a readline init file.");
 
 
 /* Exported function to parse a readline init file */
@@ -67,11 +66,10 @@ read_init_file(PyObject *self, PyObject *args)
 	return Py_None;
 }
 
-static char doc_read_init_file[] = "\
-read_init_file([filename]) -> None\n\
+PyDoc_STRVAR(doc_read_init_file,
+"read_init_file([filename]) -> None\n\
 Parse a readline initialization file.\n\
-The default filename is the last filename used.\
-";
+The default filename is the last filename used.");
 
 
 /* Exported function to load a readline history file */
@@ -90,11 +88,10 @@ read_history_file(PyObject *self, PyObject *args)
 }
 
 static int history_length = -1; /* do not truncate history by default */
-static char doc_read_history_file[] = "\
-read_history_file([filename]) -> None\n\
+PyDoc_STRVAR(doc_read_history_file,
+"read_history_file([filename]) -> None\n\
 Load a readline history file.\n\
-The default filename is ~/.history.\
-";
+The default filename is ~/.history.");
 
 
 /* Exported function to save a readline history file */
@@ -114,19 +111,17 @@ write_history_file(PyObject *self, PyObject *args)
 	return Py_None;
 }
 
-static char doc_write_history_file[] = "\
-write_history_file([filename]) -> None\n\
+PyDoc_STRVAR(doc_write_history_file,
+"write_history_file([filename]) -> None\n\
 Save a readline history file.\n\
-The default filename is ~/.history.\
-";
+The default filename is ~/.history.");
 
 
-static char set_history_length_doc[] = "\
-set_history_length(length) -> None\n\
+PyDoc_STRVAR(set_history_length_doc,
+"set_history_length(length) -> None\n\
 set the maximal number of items which will be written to\n\
 the history file. A negative length is used to inhibit\n\
-history truncation.\n\
-";
+history truncation.");
 
 static PyObject*
 set_history_length(PyObject *self, PyObject *args)
@@ -141,11 +136,10 @@ set_history_length(PyObject *self, PyObject *args)
 
 
 
-static char get_history_length_doc[] = "\
-get_history_length() -> int\n\
+PyDoc_STRVAR(get_history_length_doc,
+"get_history_length() -> int\n\
 return the maximum number of items that will be written to\n\
-the history file.\n\
-";
+the history file.");
 
 static PyObject*
 get_history_length(PyObject *self, PyObject *args)
@@ -204,12 +198,11 @@ set_startup_hook(PyObject *self, PyObject *args)
 	return set_hook("startup_hook", &startup_hook, &startup_hook_tstate, args);
 }
 
-static char doc_set_startup_hook[] = "\
-set_startup_hook([function]) -> None\n\
+PyDoc_STRVAR(doc_set_startup_hook,
+"set_startup_hook([function]) -> None\n\
 Set or remove the startup_hook function.\n\
 The function is called with no arguments just\n\
-before readline prints the first prompt.\n\
-";
+before readline prints the first prompt.");
 
 #ifdef HAVE_RL_PRE_INPUT_HOOK
 static PyObject *
@@ -218,13 +211,12 @@ set_pre_input_hook(PyObject *self, PyObject *args)
 	return set_hook("pre_input_hook", &pre_input_hook,  &pre_input_hook_tstate, args);
 }
 
-static char doc_set_pre_input_hook[] = "\
-set_pre_input_hook([function]) -> None\n\
+PyDoc_STRVAR(doc_set_pre_input_hook,
+"set_pre_input_hook([function]) -> None\n\
 Set or remove the pre_input_hook function.\n\
 The function is called with no arguments after the first prompt\n\
 has been printed and just before readline starts reading input\n\
-characters.\n\
-";
+characters.");
 #endif
 
 /* Exported function to specify a word completer in Python */
@@ -243,9 +235,9 @@ get_begidx(PyObject *self)
 	return begidx;
 }
 
-static char doc_get_begidx[] = "\
-get_begidx() -> int\n\
-get the beginning index of the readline tab-completion scope";
+PyDoc_STRVAR(doc_get_begidx,
+"get_begidx() -> int\n\
+get the beginning index of the readline tab-completion scope");
 
 /* get the ending index for the scope of the tab-completion */
 static PyObject *
@@ -255,9 +247,9 @@ get_endidx(PyObject *self)
 	return endidx;
 }
 
-static char doc_get_endidx[] = "\
-get_endidx() -> int\n\
-get the ending index of the readline tab-completion scope";
+PyDoc_STRVAR(doc_get_endidx,
+"get_endidx() -> int\n\
+get the ending index of the readline tab-completion scope");
 
 
 /* set the tab-completion word-delimiters that readline uses */
@@ -276,9 +268,9 @@ set_completer_delims(PyObject *self, PyObject *args)
 	return Py_None;
 }
 
-static char doc_set_completer_delims[] = "\
-set_completer_delims(string) -> None\n\
-set the readline word delimiters for tab-completion";
+PyDoc_STRVAR(doc_set_completer_delims,
+"set_completer_delims(string) -> None\n\
+set the readline word delimiters for tab-completion");
 
 static PyObject *
 py_add_history(PyObject *self, PyObject *args)
@@ -293,9 +285,9 @@ py_add_history(PyObject *self, PyObject *args)
 	return Py_None;
 }
 
-static char doc_add_history[] = "\
-add_history(string) -> None\n\
-add a line to the history buffer";
+PyDoc_STRVAR(doc_add_history,
+"add_history(string) -> None\n\
+add a line to the history buffer");
 
 
 /* get the tab-completion word-delimiters that readline uses */
@@ -306,9 +298,9 @@ get_completer_delims(PyObject *self)
 	return PyString_FromString(rl_completer_word_break_characters);
 }
 	
-static char doc_get_completer_delims[] = "\
-get_completer_delims() -> string\n\
-get the readline word delimiters for tab-completion";
+PyDoc_STRVAR(doc_get_completer_delims,
+"get_completer_delims() -> string\n\
+get the readline word delimiters for tab-completion");
 
 static PyObject *
 set_completer(PyObject *self, PyObject *args)
@@ -316,13 +308,12 @@ set_completer(PyObject *self, PyObject *args)
 	return set_hook("completer", &completer, &completer_tstate, args);
 }
 
-static char doc_set_completer[] = "\
-set_completer([function]) -> None\n\
+PyDoc_STRVAR(doc_set_completer,
+"set_completer([function]) -> None\n\
 Set or remove the completer function.\n\
 The function is called as function(text, state),\n\
 for state in 0, 1, 2, ..., until it returns a non-string.\n\
-It should return the next possible completion starting with 'text'.\
-";
+It should return the next possible completion starting with 'text'.");
 
 /* Exported function to get any element of history */
 
@@ -342,10 +333,9 @@ get_history_item(PyObject *self, PyObject *args)
 	}
 }
 
-static char doc_get_history_item[] = "\
-get_history_item() -> string\n\
-return the current contents of history item at index.\
-";
+PyDoc_STRVAR(doc_get_history_item,
+"get_history_item() -> string\n\
+return the current contents of history item at index.");
 
 /* Exported function to get current length of history */
 
@@ -358,10 +348,9 @@ get_current_history_length(PyObject *self)
 	return PyInt_FromLong(hist_st ? (long) hist_st->length : (long) 0);
 }
 
-static char doc_get_current_history_length[] = "\
-get_current_history_length() -> integer\n\
-return the current (not the maximum) length of history.\
-";
+PyDoc_STRVAR(doc_get_current_history_length,
+"get_current_history_length() -> integer\n\
+return the current (not the maximum) length of history.");
 
 /* Exported function to read the current line buffer */
 
@@ -371,10 +360,9 @@ get_line_buffer(PyObject *self)
 	return PyString_FromString(rl_line_buffer);
 }
 
-static char doc_get_line_buffer[] = "\
-get_line_buffer() -> string\n\
-return the current contents of the line buffer.\
-";
+PyDoc_STRVAR(doc_get_line_buffer,
+"get_line_buffer() -> string\n\
+return the current contents of the line buffer.");
 
 /* Exported function to insert text into the line buffer */
 
@@ -389,10 +377,9 @@ insert_text(PyObject *self, PyObject *args)
 	return Py_None;
 }
 
-static char doc_insert_text[] = "\
-insert_text(string) -> None\n\
-Insert text into the command line.\
-";
+PyDoc_STRVAR(doc_insert_text,
+"insert_text(string) -> None\n\
+Insert text into the command line.");
 
 static PyObject *
 redisplay(PyObject *self)
@@ -402,11 +389,10 @@ redisplay(PyObject *self)
 	return Py_None;
 }
 
-static char doc_redisplay[] = "\
-redisplay() -> None\n\
+PyDoc_STRVAR(doc_redisplay,
+"redisplay() -> None\n\
 Change what's displayed on the screen to reflect the current\n\
-contents of the line buffer.\
-";
+contents of the line buffer.");
 
 /* Table of functions exported by the module */
 
@@ -663,8 +649,8 @@ call_readline(char *prompt)
 
 /* Initialize the module */
 
-static char doc_module[] =
-"Importing this module enables command line editing using GNU readline.";
+PyDoc_STRVAR(doc_module,
+"Importing this module enables command line editing using GNU readline.");
 
 DL_EXPORT(void)
 initreadline(void)

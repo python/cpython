@@ -96,11 +96,11 @@ signal_default_int_handler(PyObject *self, PyObject *args)
 	return NULL;
 }
 
-static char default_int_handler_doc[] =
+PyDoc_STRVAR(default_int_handler_doc,
 "default_int_handler(...)\n\
 \n\
 The default handler for SIGINT instated by Python.\n\
-It raises KeyboardInterrupt.";
+It raises KeyboardInterrupt.");
 
 
 static int
@@ -155,10 +155,10 @@ signal_alarm(PyObject *self, PyObject *args)
 	return PyInt_FromLong((long)alarm(t));
 }
 
-static char alarm_doc[] =
+PyDoc_STRVAR(alarm_doc,
 "alarm(seconds)\n\
 \n\
-Arrange for SIGALRM to arrive after the given number of seconds.";
+Arrange for SIGALRM to arrive after the given number of seconds.");
 #endif
 
 #ifdef HAVE_PAUSE
@@ -177,10 +177,10 @@ signal_pause(PyObject *self)
 	Py_INCREF(Py_None);
 	return Py_None;
 }
-static char pause_doc[] =
+PyDoc_STRVAR(pause_doc,
 "pause()\n\
 \n\
-Wait until a signal arrives.";
+Wait until a signal arrives.");
 
 #endif
 
@@ -231,7 +231,7 @@ signal_signal(PyObject *self, PyObject *args)
 	return old_handler;
 }
 
-static char signal_doc[] =
+PyDoc_STRVAR(signal_doc,
 "signal(sig, action) -> action\n\
 \n\
 Set the action for the given signal.  The action can be SIG_DFL,\n\
@@ -240,7 +240,7 @@ returned.  See getsignal() for possible return values.\n\
 \n\
 *** IMPORTANT NOTICE ***\n\
 A signal handler function is called with two arguments:\n\
-the first is the signal number, the second is the interrupted stack frame.";
+the first is the signal number, the second is the interrupted stack frame.");
 
 
 static PyObject *
@@ -260,15 +260,14 @@ signal_getsignal(PyObject *self, PyObject *args)
 	return old_handler;
 }
 
-static char getsignal_doc[] =
+PyDoc_STRVAR(getsignal_doc,
 "getsignal(sig) -> action\n\
 \n\
 Return the current action for the given signal.  The return value can be:\n\
 SIG_IGN -- if the signal is being ignored\n\
 SIG_DFL -- if the default action for the signal is in effect\n\
 None -- if an unknown handler is in effect\n\
-anything else -- the callable Python object used as a handler\n\
-";
+anything else -- the callable Python object used as a handler");
 
 #ifdef HAVE_SIGPROCMASK /* we assume that having SIGPROCMASK is enough
 			   to guarantee full POSIX signal handling */
@@ -353,7 +352,7 @@ signal_sigprocmask(PyObject* self, PyObject* args)
 	return _signal_sigset_to_list(&oldset);
 }
 
-static char sigprocmask_doc[] = 
+PyDoc_STRVAR(sigprocmask_doc,
 "sigprocmask(how, sigset) -> sigset\n\
 \n\
 Change the list of currently blocked signals.  The parameter how should be\n\
@@ -371,7 +370,7 @@ of how:\n\
   SIG_SETMASK\n\
     The set of blocked signals is set to the argument set.\n\
 \n\
-A list contating the numbers of the previously blocked signals is returned.";
+A list contating the numbers of the previously blocked signals is returned.");
 
 static PyObject*
 signal_sigpending(PyObject* self)
@@ -385,11 +384,11 @@ signal_sigpending(PyObject* self)
 	return _signal_sigset_to_list(&set);
 }
 
-static char sigpending_doc[] = 
+PyDoc_STRVAR(sigpending_doc,
 "sigpending() -> sigset\n\
 \n\
 Return the set of pending signals, i.e. a list containing the numbers of\n\
-those signals that have been raised while blocked.";
+those signals that have been raised while blocked.");
 
 static PyObject*
 signal_sigsuspend(PyObject* self, PyObject* arg)
@@ -411,11 +410,11 @@ signal_sigsuspend(PyObject* self, PyObject* arg)
 	return Py_None;
 }
 
-static char sigsuspend_doc[] = 
+PyDoc_STRVAR(sigsuspend_doc,
 "sigsuspend(sigset) -> None\n\
 \n\
 Temporarily replace the signal mask with sigset (which should be a sequence\n\
-of signal numbers) and suspend the process until a signal is received.";
+of signal numbers) and suspend the process until a signal is received.");
 #endif
 
 /* List of functions defined in the module */
@@ -443,7 +442,7 @@ static PyMethodDef signal_methods[] = {
 };
 
 
-static char module_doc[] =
+PyDoc_STRVAR(module_doc,
 "This module provides mechanisms to use signal handlers in Python.\n\
 \n\
 Functions:\n\
@@ -468,7 +467,7 @@ SIGINT, SIGTERM, etc. -- signal numbers\n\
 \n\
 *** IMPORTANT NOTICE ***\n\
 A signal handler function is called with two arguments:\n\
-the first is the signal number, the second is the interrupted stack frame.";
+the first is the signal number, the second is the interrupted stack frame.");
 
 DL_EXPORT(void)
 initsignal(void)

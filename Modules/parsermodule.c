@@ -46,20 +46,17 @@ char *strdup(char *);
 /*  String constants used to initialize module attributes.
  *
  */
-static char*
-parser_copyright_string
-= "Copyright 1995-1996 by Virginia Polytechnic Institute & State\n\
+static char parser_copyright_string[] =
+"Copyright 1995-1996 by Virginia Polytechnic Institute & State\n\
 University, Blacksburg, Virginia, USA, and Fred L. Drake, Jr., Reston,\n\
 Virginia, USA.  Portions copyright 1991-1995 by Stichting Mathematisch\n\
 Centrum, Amsterdam, The Netherlands.";
 
 
-static char*
-parser_doc_string
-= "This is an interface to Python's internal parser.";
+PyDoc_STRVAR(parser_doc_string,
+"This is an interface to Python's internal parser.");
 
-static char*
-parser_version_string = "0.5";
+static char parser_version_string[] = "0.5";
 
 
 typedef PyObject* (*SeqMaker) (int length);

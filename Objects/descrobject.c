@@ -1062,7 +1062,7 @@ property_init(PyObject *self, PyObject *args, PyObject *kwds)
 	return 0;
 }
 
-static char property_doc[] =
+PyDoc_STRVAR(property_doc,
 "property(fget=None, fset=None, fdel=None, doc=None) -> property attribute\n"
 "\n"
 "fget is a function to be used for getting an attribute value, and likewise\n"
@@ -1072,7 +1072,7 @@ static char property_doc[] =
 "    def getx(self): return self.__x\n"
 "    def setx(self, value): self.__x = value\n"
 "    def delx(self): del self.__x\n"
-"    x = property(getx, setx, delx, \"I'm the 'x' property.\")";
+"    x = property(getx, setx, delx, \"I'm the 'x' property.\")");
 
 static int
 property_traverse(PyObject *self, visitproc visit, void *arg)

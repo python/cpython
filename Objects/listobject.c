@@ -1633,24 +1633,24 @@ list_nohash(PyObject *self)
 	return -1;
 }
 
-static char append_doc[] =
-"L.append(object) -- append object to end";
-static char extend_doc[] =
-"L.extend(list) -- extend list by appending list elements";
-static char insert_doc[] =
-"L.insert(index, object) -- insert object before index";
-static char pop_doc[] =
-"L.pop([index]) -> item -- remove and return item at index (default last)";
-static char remove_doc[] =
-"L.remove(value) -- remove first occurrence of value";
-static char index_doc[] =
-"L.index(value) -> integer -- return index of first occurrence of value";
-static char count_doc[] =
-"L.count(value) -> integer -- return number of occurrences of value";
-static char reverse_doc[] =
-"L.reverse() -- reverse *IN PLACE*";
-static char sort_doc[] =
-"L.sort([cmpfunc]) -- sort *IN PLACE*; if given, cmpfunc(x, y) -> -1, 0, 1";
+PyDoc_STRVAR(append_doc,
+"L.append(object) -- append object to end");
+PyDoc_STRVAR(extend_doc,
+"L.extend(list) -- extend list by appending list elements");
+PyDoc_STRVAR(insert_doc,
+"L.insert(index, object) -- insert object before index");
+PyDoc_STRVAR(pop_doc,
+"L.pop([index]) -> item -- remove and return item at index (default last)");
+PyDoc_STRVAR(remove_doc,
+"L.remove(value) -- remove first occurrence of value");
+PyDoc_STRVAR(index_doc,
+"L.index(value) -> integer -- return index of first occurrence of value");
+PyDoc_STRVAR(count_doc,
+"L.count(value) -> integer -- return number of occurrences of value");
+PyDoc_STRVAR(reverse_doc,
+"L.reverse() -- reverse *IN PLACE*");
+PyDoc_STRVAR(sort_doc,
+"L.sort([cmpfunc]) -- sort *IN PLACE*; if given, cmpfunc(x, y) -> -1, 0, 1");
 
 static PyMethodDef list_methods[] = {
 	{"append",	(PyCFunction)listappend,  METH_O, append_doc},

@@ -2455,47 +2455,40 @@ imp_new_module(PyObject *self, PyObject *args)
 
 /* Doc strings */
 
-static char doc_imp[] = "\
-This module provides the components needed to build your own\n\
-__import__ function.  Undocumented functions are obsolete.\n\
-";
+PyDoc_STRVAR(doc_imp,
+"This module provides the components needed to build your own\n\
+__import__ function.  Undocumented functions are obsolete.");
 
-static char doc_find_module[] = "\
-find_module(name, [path]) -> (file, filename, (suffix, mode, type))\n\
+PyDoc_STRVAR(doc_find_module,
+"find_module(name, [path]) -> (file, filename, (suffix, mode, type))\n\
 Search for a module.  If path is omitted or None, search for a\n\
 built-in, frozen or special module and continue search in sys.path.\n\
 The module name cannot contain '.'; to search for a submodule of a\n\
-package, pass the submodule name and the package's __path__.\
-";
+package, pass the submodule name and the package's __path__.");
 
-static char doc_load_module[] = "\
-load_module(name, file, filename, (suffix, mode, type)) -> module\n\
+PyDoc_STRVAR(doc_load_module,
+"load_module(name, file, filename, (suffix, mode, type)) -> module\n\
 Load a module, given information returned by find_module().\n\
-The module name must include the full package name, if any.\
-";
+The module name must include the full package name, if any.");
 
-static char doc_get_magic[] = "\
-get_magic() -> string\n\
-Return the magic number for .pyc or .pyo files.\
-";
+PyDoc_STRVAR(doc_get_magic,
+"get_magic() -> string\n\
+Return the magic number for .pyc or .pyo files.");
 
-static char doc_get_suffixes[] = "\
-get_suffixes() -> [(suffix, mode, type), ...]\n\
+PyDoc_STRVAR(doc_get_suffixes,
+"get_suffixes() -> [(suffix, mode, type), ...]\n\
 Return a list of (suffix, mode, type) tuples describing the files\n\
-that find_module() looks for.\
-";
+that find_module() looks for.");
 
-static char doc_new_module[] = "\
-new_module(name) -> module\n\
+PyDoc_STRVAR(doc_new_module,
+"new_module(name) -> module\n\
 Create a new module.  Do not enter it in sys.modules.\n\
-The module name must include the full package name, if any.\
-";
+The module name must include the full package name, if any.");
 
-static char doc_lock_held[] = "\
-lock_held() -> 0 or 1\n\
+PyDoc_STRVAR(doc_lock_held,
+"lock_held() -> 0 or 1\n\
 Return 1 if the import lock is currently held.\n\
-On platforms without threads, return 0.\
-";
+On platforms without threads, return 0.");
 
 static PyMethodDef imp_methods[] = {
 	{"find_module",		imp_find_module, METH_VARARGS, doc_find_module},

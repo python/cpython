@@ -179,7 +179,7 @@ static unsigned short crctab_hqx[256] = {
 	0x6e17, 0x7e36, 0x4e55, 0x5e74, 0x2e93, 0x3eb2, 0x0ed1, 0x1ef0,
 };
 
-static char doc_a2b_uu[] = "(ascii) -> bin. Decode a line of uuencoded data";
+PyDoc_STRVAR(doc_a2b_uu, "(ascii) -> bin. Decode a line of uuencoded data");
 
 static PyObject *
 binascii_a2b_uu(PyObject *self, PyObject *args)
@@ -254,7 +254,7 @@ binascii_a2b_uu(PyObject *self, PyObject *args)
 	return rv;
 }
 
-static char doc_b2a_uu[] = "(bin) -> ascii. Uuencode line of data";
+PyDoc_STRVAR(doc_b2a_uu, "(bin) -> ascii. Uuencode line of data");
 	
 static PyObject *
 binascii_b2a_uu(PyObject *self, PyObject *args)
@@ -330,7 +330,7 @@ binascii_find_valid(unsigned char *s, int slen, int num)
 	return ret;
 }
 
-static char doc_a2b_base64[] = "(ascii) -> bin. Decode a line of base64 data";
+PyDoc_STRVAR(doc_a2b_base64, "(ascii) -> bin. Decode a line of base64 data");
 
 static PyObject *
 binascii_a2b_base64(PyObject *self, PyObject *args)
@@ -417,7 +417,7 @@ binascii_a2b_base64(PyObject *self, PyObject *args)
 	return rv;
 }
 
-static char doc_b2a_base64[] = "(bin) -> ascii. Base64-code line of data";
+PyDoc_STRVAR(doc_b2a_base64, "(bin) -> ascii. Base64-code line of data");
 	
 static PyObject *
 binascii_b2a_base64(PyObject *self, PyObject *args)
@@ -470,7 +470,7 @@ binascii_b2a_base64(PyObject *self, PyObject *args)
 	return rv;
 }
 
-static char doc_a2b_hqx[] = "ascii -> bin, done. Decode .hqx coding";
+PyDoc_STRVAR(doc_a2b_hqx, "ascii -> bin, done. Decode .hqx coding");
 
 static PyObject *
 binascii_a2b_hqx(PyObject *self, PyObject *args)
@@ -534,7 +534,7 @@ binascii_a2b_hqx(PyObject *self, PyObject *args)
 	return NULL;
 }
 
-static char doc_rlecode_hqx[] = "Binhex RLE-code binary data";
+PyDoc_STRVAR(doc_rlecode_hqx, "Binhex RLE-code binary data");
 
 static PyObject *
 binascii_rlecode_hqx(PyObject *self, PyObject *args)
@@ -581,7 +581,7 @@ binascii_rlecode_hqx(PyObject *self, PyObject *args)
 	return rv;
 }
 
-static char doc_b2a_hqx[] = "Encode .hqx data";
+PyDoc_STRVAR(doc_b2a_hqx, "Encode .hqx data");
 	
 static PyObject *
 binascii_b2a_hqx(PyObject *self, PyObject *args)
@@ -621,7 +621,7 @@ binascii_b2a_hqx(PyObject *self, PyObject *args)
 	return rv;
 }
 
-static char doc_rledecode_hqx[] = "Decode hexbin RLE-coded string";
+PyDoc_STRVAR(doc_rledecode_hqx, "Decode hexbin RLE-coded string");
 	
 static PyObject *
 binascii_rledecode_hqx(PyObject *self, PyObject *args)
@@ -717,8 +717,8 @@ binascii_rledecode_hqx(PyObject *self, PyObject *args)
 	return rv;
 }
 
-static char doc_crc_hqx[] =
-"(data, oldcrc) -> newcrc. Compute hqx CRC incrementally";
+PyDoc_STRVAR(doc_crc_hqx,
+"(data, oldcrc) -> newcrc. Compute hqx CRC incrementally");
 
 static PyObject *
 binascii_crc_hqx(PyObject *self, PyObject *args)
@@ -737,8 +737,8 @@ binascii_crc_hqx(PyObject *self, PyObject *args)
 	return Py_BuildValue("i", crc);
 }
 
-static char doc_crc32[] =
-"(data, oldcrc = 0) -> newcrc. Compute CRC-32 incrementally";
+PyDoc_STRVAR(doc_crc32,
+"(data, oldcrc = 0) -> newcrc. Compute CRC-32 incrementally");
 
 /*  Crc - 32 BIT ANSI X3.66 CRC checksum files
     Also known as: ISO 3307
@@ -912,10 +912,10 @@ binascii_hexlify(PyObject *self, PyObject *args)
 	return NULL;
 }
 
-static char doc_hexlify[] =
+PyDoc_STRVAR(doc_hexlify,
 "b2a_hex(data) -> s; Hexadecimal representation of binary data.\n\
 \n\
-This function is also available as \"hexlify()\".";
+This function is also available as \"hexlify()\".");
 
 
 static int
@@ -978,11 +978,11 @@ binascii_unhexlify(PyObject *self, PyObject *args)
 	return NULL;
 }
 
-static char doc_unhexlify[] =
+PyDoc_STRVAR(doc_unhexlify,
 "a2b_hex(hexstr) -> s; Binary data of hexadecimal representation.\n\
 \n\
 hexstr must contain an even number of hex digits (upper or lower case).\n\
-This function is also available as \"unhexlify()\"";
+This function is also available as \"unhexlify()\"");
 
 static int table_hex[128] = {
   -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
@@ -999,7 +999,7 @@ static int table_hex[128] = {
 
 #define MAXLINESIZE 76
 
-static char doc_a2b_qp[] = "Decode a string of qp-encoded data";
+PyDoc_STRVAR(doc_a2b_qp, "Decode a string of qp-encoded data");
 
 static PyObject* 
 binascii_a2b_qp(PyObject *self, PyObject *args, PyObject *kwargs)
@@ -1088,13 +1088,13 @@ to_hex (unsigned char ch, unsigned char *s)
 	return 0;
 }
 
-static char doc_b2a_qp[] = 
+PyDoc_STRVAR(doc_b2a_qp,
 "b2a_qp(data, quotetabs=0, istext=1, header=0) -> s; \n\
  Encode a string using quoted-printable encoding. \n\
 \n\
 On encoding, when istext is set, newlines are not encoded, and white \n\
 space at end of lines is.  When istext is not set, \\r and \\n (CR/LF) are \n\
-both encoded.  When quotetabs is set, space and tabs are encoded.";
+both encoded.  When quotetabs is set, space and tabs are encoded.");
 
 /* XXX: This is ridiculously complicated to be backward compatible
  * (mostly) with the quopri module.  It doesn't re-create the quopri
@@ -1295,7 +1295,7 @@ static struct PyMethodDef binascii_module_methods[] = {
 
 
 /* Initialization function for the module (*must* be called initbinascii) */
-static char doc_binascii[] = "Conversion between binary data and ASCII";
+PyDoc_STRVAR(doc_binascii, "Conversion between binary data and ASCII");
 
 DL_EXPORT(void)
 initbinascii(void)

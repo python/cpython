@@ -34,7 +34,7 @@ static char errNotAHandle[] = "Object is not a handle";
 /* Forward declares */
 
 /* Doc strings */
-static char module_doc[] =
+PyDoc_STRVAR(module_doc,
 "This module provides access to the Windows registry API.\n"
 "\n"
 "Functions:\n"
@@ -68,18 +68,18 @@ static char module_doc[] =
 "\n"
 "Integer constants:\n"
 "Many constants are defined - see the documentation for each function\n"
-"to see what constants are used, and where.";
+"to see what constants are used, and where.");
 
 
-static char CloseKey_doc[] =
+PyDoc_STRVAR(CloseKey_doc,
 "CloseKey(hkey) - Closes a previously opened registry key.\n"
 "\n"
 "The hkey argument specifies a previously opened key.\n"
 "\n"
 "Note that if the key is not closed using this method, it will be\n"
-"closed when the hkey object is destroyed by Python.";
+"closed when the hkey object is destroyed by Python.");
 
-static char ConnectRegistry_doc[] =
+PyDoc_STRVAR(ConnectRegistry_doc,
 "key = ConnectRegistry(computer_name, key) - "
 "Establishes a connection to a predefined registry handle on another computer.\n"
 "\n"
@@ -88,9 +88,9 @@ static char ConnectRegistry_doc[] =
 "key is the predefined handle to connect to.\n"
 "\n"
 "The return value is the handle of the opened key.\n"
-"If the function fails, an EnvironmentError exception is raised.";
+"If the function fails, an EnvironmentError exception is raised.");
 
-static char CreateKey_doc[] =
+PyDoc_STRVAR(CreateKey_doc,
 "key = CreateKey(key, sub_key) - Creates or opens the specified key.\n"
 "\n"
 "key is an already open key, or one of the predefined HKEY_* constants\n"
@@ -101,9 +101,9 @@ static char CreateKey_doc[] =
 "If the key already exists, this function opens the existing key\n"
 "\n"
 "The return value is the handle of the opened key.\n"
-"If the function fails, an exception is raised.";
+"If the function fails, an exception is raised.");
 
-static char DeleteKey_doc[] =
+PyDoc_STRVAR(DeleteKey_doc,
 "DeleteKey(key, sub_key) - Deletes the specified key.\n"
 "\n"
 "key is an already open key, or any one of the predefined HKEY_* constants.\n"
@@ -113,15 +113,15 @@ static char DeleteKey_doc[] =
 "This method can not delete keys with subkeys.\n"
 "\n"
 "If the method succeeds, the entire key, including all of its values,\n"
-"is removed.  If the method fails, an EnvironmentError exception is raised.";
+"is removed.  If the method fails, an EnvironmentError exception is raised.");
 
-static char DeleteValue_doc[] =
+PyDoc_STRVAR(DeleteValue_doc,
 "DeleteValue(key, value) - Removes a named value from a registry key.\n"
 "\n"
 "key is an already open key, or any one of the predefined HKEY_* constants.\n"
-"value is a string that identifies the value to remove.";
+"value is a string that identifies the value to remove.");
 
-static char EnumKey_doc[] =
+PyDoc_STRVAR(EnumKey_doc,
 "string = EnumKey(key, index) - Enumerates subkeys of an open registry key.\n"
 "\n"
 "key is an already open key, or any one of the predefined HKEY_* constants.\n"
@@ -129,9 +129,9 @@ static char EnumKey_doc[] =
 "\n"
 "The function retrieves the name of one subkey each time it is called.\n"
 "It is typically called repeatedly until an EnvironmentError exception is\n"
-"raised, indicating no more values are available.\n";
+"raised, indicating no more values are available.");
 
-static char EnumValue_doc[] =
+PyDoc_STRVAR(EnumValue_doc,
 "tuple = EnumValue(key, index) - Enumerates values of an open registry key.\n"
 "key is an already open key, or any one of the predefined HKEY_* constants.\n"
 "index is an integer that identifies the index of the value to retrieve.\n"
@@ -144,9 +144,9 @@ static char EnumValue_doc[] =
 "value_name is a string that identifies the value.\n"
 "value_data is an object that holds the value data, and whose type depends\n"
 " on the underlying registry type.\n"
-"data_type is an integer that identifies the type of the value data.";
+"data_type is an integer that identifies the type of the value data.");
 
-static char FlushKey_doc[] =
+PyDoc_STRVAR(FlushKey_doc,
 "FlushKey(key) - Writes all the attributes of a key to the registry.\n"
 "\n"
 "key is an already open key, or any one of the predefined HKEY_* constants.\n"
@@ -157,9 +157,9 @@ static char FlushKey_doc[] =
 "Unlike CloseKey(), the FlushKey() method returns only when all the data has\n"
 "been written to the registry.\n"
 "An application should only call FlushKey() if it requires absolute certainty that registry changes are on disk.\n"
-"If you don't know whether a FlushKey() call is required, it probably isn't.\n";
+"If you don't know whether a FlushKey() call is required, it probably isn't.");
 
-static char LoadKey_doc[] =
+PyDoc_STRVAR(LoadKey_doc,
 "LoadKey(key, sub_key, file_name) - Creates a subkey under the specified key\n"
 "and stores registration information from a specified file into that subkey.\n"
 "\n"
@@ -176,9 +176,9 @@ static char LoadKey_doc[] =
 "If key is a handle returned by ConnectRegistry(), then the path specified\n"
 "in fileName is relative to the remote computer.\n"
 "\n"
-"The docs imply key must be in the HKEY_USER or HKEY_LOCAL_MACHINE tree";
+"The docs imply key must be in the HKEY_USER or HKEY_LOCAL_MACHINE tree");
 
-static char OpenKey_doc[] =
+PyDoc_STRVAR(OpenKey_doc,
 "key = OpenKey(key, sub_key, res = 0, sam = KEY_READ) - Opens the specified key.\n"
 "\n"
 "key is an already open key, or any one of the predefined HKEY_* constants.\n"
@@ -188,12 +188,11 @@ static char OpenKey_doc[] =
 " security access for the key.  Default is KEY_READ\n"
 "\n"
 "The result is a new handle to the specified key\n"
-"If the function fails, an EnvironmentError exception is raised.\n";
+"If the function fails, an EnvironmentError exception is raised.");
 
-static char OpenKeyEx_doc[] =
-"See OpenKey()";
+PyDoc_STRVAR(OpenKeyEx_doc, "See OpenKey()");
 
-static char QueryInfoKey_doc[] =
+PyDoc_STRVAR(QueryInfoKey_doc,
 "tuple = QueryInfoKey(key) - Returns information about a key.\n"
 "\n"
 "key is an already open key, or any one of the predefined HKEY_* constants.\n"
@@ -202,9 +201,9 @@ static char QueryInfoKey_doc[] =
 "An integer that identifies the number of sub keys this key has.\n"
 "An integer that identifies the number of values this key has.\n"
 "A long integer that identifies when the key was last modified (if available)\n"
-" as 100's of nanoseconds since Jan 1, 1600.\n";
+" as 100's of nanoseconds since Jan 1, 1600.");
 
-static char QueryValue_doc[] =
+PyDoc_STRVAR(QueryValue_doc,
 "string = QueryValue(key, sub_key) - retrieves the unnamed value for a key.\n"
 "\n"
 "key is an already open key, or any one of the predefined HKEY_* constants.\n"
@@ -214,15 +213,15 @@ static char QueryValue_doc[] =
 "\n"
 "Values in the registry have name, type, and data components. This method\n"
 "retrieves the data for a key's first value that has a NULL name.\n"
-"But the underlying API call doesn't return the type, Lame Lame Lame, DONT USE THIS!!!";
+"But the underlying API call doesn't return the type, Lame Lame Lame, DONT USE THIS!!!");
 
-static char QueryValueEx_doc[] =
+PyDoc_STRVAR(QueryValueEx_doc,
 "value,type_id = QueryValueEx(key, value_name) - Retrieves the type and data for a specified value name associated with an open registry key.\n"
 "\n"
 "key is an already open key, or any one of the predefined HKEY_* constants.\n"
-"value_name is a string indicating the value to query";
+"value_name is a string indicating the value to query");
 
-static char SaveKey_doc[] =
+PyDoc_STRVAR(SaveKey_doc,
 "SaveKey(key, file_name) - Saves the specified key, and all its subkeys to the specified file.\n"
 "\n"
 "key is an already open key, or any one of the predefined HKEY_* constants.\n"
@@ -234,9 +233,9 @@ static char SaveKey_doc[] =
 "If key represents a key on a remote computer, the path described by\n"
 "file_name is relative to the remote computer.\n"
 "The caller of this method must possess the SeBackupPrivilege security privilege.\n"
-"This function passes NULL for security_attributes to the API.";
+"This function passes NULL for security_attributes to the API.");
 
-static char SetValue_doc[] =
+PyDoc_STRVAR(SetValue_doc,
 "SetValue(key, sub_key, type, value) - Associates a value with a specified key.\n"
 "\n"
 "key is an already open key, or any one of the predefined HKEY_* constants.\n"
@@ -253,9 +252,9 @@ static char SetValue_doc[] =
 "the configuration registry.  This helps the registry perform efficiently.\n"
 "\n"
 "The key identified by the key parameter must have been opened with\n"
-"KEY_SET_VALUE access.";
+"KEY_SET_VALUE access.");
 
-static char SetValueEx_doc[] =
+PyDoc_STRVAR(SetValueEx_doc,
 "SetValueEx(key, value_name, reserved, type, value) - Stores data in the value field of an open registry key.\n"
 "\n"
 "key is an already open key, or any one of the predefined HKEY_* constants.\n"
@@ -285,10 +284,10 @@ static char SetValueEx_doc[] =
 "\n"
 "Value lengths are limited by available memory. Long values (more than\n"
 "2048 bytes) should be stored as files with the filenames stored in \n"
-"the configuration registry.  This helps the registry perform efficiently.\n";
+"the configuration registry.  This helps the registry perform efficiently.");
 
 /* PyHKEY docstrings */
-static char PyHKEY_doc[] =
+PyDoc_STRVAR(PyHKEY_doc,
 "PyHKEY Object - A Python object, representing a win32 registry key.\n"
 "\n"
 "This object wraps a Windows HKEY object, automatically closing it when\n"
@@ -308,15 +307,15 @@ static char PyHKEY_doc[] =
 "Operations:\n"
 "__nonzero__ - Handles with an open object return true, otherwise false.\n"
 "__int__ - Converting a handle to an integer returns the Win32 handle.\n"
-"__cmp__ - Handle objects are compared using the handle value.\n";
+"__cmp__ - Handle objects are compared using the handle value.");
 
 
-static char PyHKEY_Close_doc[] =
+PyDoc_STRVAR(PyHKEY_Close_doc,
 "key.Close() - Closes the underlying Windows handle.\n"
 "\n"
-"If the handle is already closed, no error is raised.";
+"If the handle is already closed, no error is raised.");
 
-static char PyHKEY_Detach_doc[] =
+PyDoc_STRVAR(PyHKEY_Detach_doc,
 "int = key.Detach() - Detaches the Windows handle from the handle object.\n"
 "\n"
 "The result is the value of the handle before it is detached.  If the\n"
@@ -326,7 +325,7 @@ static char PyHKEY_Detach_doc[] =
 "but the handle is not closed.  You would call this function when you\n"
 "need the underlying win32 handle to exist beyond the lifetime of the\n"
 "handle object.\n"
-"On 64 bit windows, the result of this function is a long integer\n";
+"On 64 bit windows, the result of this function is a long integer");
 
 
 /************************************************************************

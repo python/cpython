@@ -116,11 +116,11 @@ time_time(PyObject *self, PyObject *args)
 	return PyFloat_FromDouble(secs);
 }
 
-static char time_doc[] =
+PyDoc_STRVAR(time_doc,
 "time() -> floating point number\n\
 \n\
 Return the current time in seconds since the Epoch.\n\
-Fractions of a second may be present if the system clock provides them.";
+Fractions of a second may be present if the system clock provides them.");
 
 #ifdef HAVE_CLOCK
 
@@ -173,11 +173,12 @@ time_clock(PyObject *self, PyObject *args)
 #endif /* MS_WIN32 && !MS_WIN64 */
 
 #ifdef HAVE_CLOCK
-static char clock_doc[] =
+PyDoc_STRVAR(clock_doc,
 "clock() -> floating point number\n\
 \n\
 Return the CPU time or real time since the start of the process or since\n\
-the first call to clock().  This has as much precision as the system records.";
+the first call to clock().  This has as much precision as the system\n\
+records.");
 #endif
 
 static PyObject *
@@ -192,11 +193,11 @@ time_sleep(PyObject *self, PyObject *args)
 	return Py_None;
 }
 
-static char sleep_doc[] =
+PyDoc_STRVAR(sleep_doc,
 "sleep(seconds)\n\
 \n\
 Delay execution for a given number of seconds.  The argument may be\n\
-a floating point number for subsecond precision.";
+a floating point number for subsecond precision.");
 
 static PyStructSequence_Field struct_time_type_fields[] = {
 	{"tm_year", NULL},
@@ -274,12 +275,12 @@ time_gmtime(PyObject *self, PyObject *args)
 	return time_convert((time_t)when, gmtime);
 }
 
-static char gmtime_doc[] =
+PyDoc_STRVAR(gmtime_doc,
 "gmtime([seconds]) -> (tm_year, tm_mon, tm_day, tm_hour, tm_min,\n\
                        tm_sec, tm_wday, tm_yday, tm_isdst)\n\
 \n\
 Convert seconds since the Epoch to a time tuple expressing UTC (a.k.a.\n\
-GMT).  When 'seconds' is not passed in, convert the current time instead.";
+GMT).  When 'seconds' is not passed in, convert the current time instead.");
 
 static PyObject *
 time_localtime(PyObject *self, PyObject *args)
@@ -292,11 +293,11 @@ time_localtime(PyObject *self, PyObject *args)
 	return time_convert((time_t)when, localtime);
 }
 
-static char localtime_doc[] =
+PyDoc_STRVAR(localtime_doc,
 "localtime([seconds]) -> (tm_year,tm_mon,tm_day,tm_hour,tm_min,tm_sec,tm_wday,tm_yday,tm_isdst)\n\
 \n\
 Convert seconds since the Epoch to a time tuple expressing local time.\n\
-When 'seconds' is not passed in, convert the current time instead.";
+When 'seconds' is not passed in, convert the current time instead.");
 
 static int
 gettmarg(PyObject *args, struct tm *p)
@@ -389,12 +390,12 @@ time_strftime(PyObject *self, PyObject *args)
 	}
 }
 
-static char strftime_doc[] =
+PyDoc_STRVAR(strftime_doc,
 "strftime(format[, tuple]) -> string\n\
 \n\
 Convert a time tuple to a string according to a format specification.\n\
 See the library reference manual for formatting codes. When the time tuple\n\
-is not present, current time as returned by localtime() is used.";
+is not present, current time as returned by localtime() is used.");
 #endif /* HAVE_STRFTIME */
 
 #ifdef HAVE_STRPTIME
@@ -430,11 +431,11 @@ time_strptime(PyObject *self, PyObject *args)
 	return tmtotuple(&tm);
 }
 
-static char strptime_doc[] =
+PyDoc_STRVAR(strptime_doc,
 "strptime(string, format) -> tuple\n\
 \n\
 Parse a string to a time tuple according to a format specification.\n\
-See the library reference manual for formatting codes (same as strftime()).";
+See the library reference manual for formatting codes (same as strftime()).");
 #endif /* HAVE_STRPTIME */
 
 static PyObject *
@@ -456,12 +457,12 @@ time_asctime(PyObject *self, PyObject *args)
 	return PyString_FromString(p);
 }
 
-static char asctime_doc[] =
+PyDoc_STRVAR(asctime_doc,
 "asctime([tuple]) -> string\n\
 \n\
 Convert a time tuple to a string, e.g. 'Sat Jun 06 16:26:11 1998'.\n\
 When the time tuple is not present, current time as returned by localtime()\n\
-is used.";
+is used.");
 
 static PyObject *
 time_ctime(PyObject *self, PyObject *args)
@@ -487,12 +488,12 @@ time_ctime(PyObject *self, PyObject *args)
 	return PyString_FromString(p);
 }
 
-static char ctime_doc[] =
+PyDoc_STRVAR(ctime_doc,
 "ctime(seconds) -> string\n\
 \n\
 Convert a time in seconds since the Epoch to a string in local time.\n\
 This is equivalent to asctime(localtime(seconds)). When the time tuple is\n\
-not present, current time as returned by localtime() is used.";
+not present, current time as returned by localtime() is used.");
 
 #ifdef HAVE_MKTIME
 static PyObject *
@@ -516,10 +517,10 @@ time_mktime(PyObject *self, PyObject *args)
 	return PyFloat_FromDouble((double)tt);
 }
 
-static char mktime_doc[] =
+PyDoc_STRVAR(mktime_doc,
 "mktime(tuple) -> floating point number\n\
 \n\
-Convert a time tuple in local time to seconds since the Epoch.";
+Convert a time tuple in local time to seconds since the Epoch.");
 #endif /* HAVE_MKTIME */
 
 static PyMethodDef time_methods[] = {
@@ -545,7 +546,7 @@ static PyMethodDef time_methods[] = {
 };
 
 
-static char module_doc[] =
+PyDoc_STRVAR(module_doc,
 "This module provides various functions to manipulate time values.\n\
 \n\
 There are two standard representations of time.  One is the number\n\
@@ -587,8 +588,7 @@ asctime() -- convert time tuple to string\n\
 ctime() -- convert time in seconds to string\n\
 mktime() -- convert local time tuple to seconds since Epoch\n\
 strftime() -- convert time tuple to string according to format specification\n\
-strptime() -- parse string to time tuple according to format specification\n\
-";
+strptime() -- parse string to time tuple according to format specification");
 
 
 DL_EXPORT(void)

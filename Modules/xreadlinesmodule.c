@@ -1,9 +1,9 @@
 #include "Python.h"
 
-static char xreadlines_doc [] =
+PyDoc_STRVAR(xreadlines_doc,
 "xreadlines(f)\n\
 \n\
-Return an xreadlines object for the file f.";
+Return an xreadlines object for the file f.");
 
 typedef struct {
 	PyObject_HEAD
@@ -112,7 +112,7 @@ xreadlines_next(PyXReadlinesObject *a, PyObject *args)
 	return res;
 }
 
-static char next_doc[] = "x.next() -> the next line or raise StopIteration";
+PyDoc_STRVAR(next_doc, "x.next() -> the next line or raise StopIteration");
 
 static PyMethodDef xreadlines_methods[] = {
 	{"next", (PyCFunction)xreadlines_next, METH_VARARGS, next_doc},

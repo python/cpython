@@ -30,8 +30,7 @@
  * Doc/lib/libexcs.tex!
  */
 
-static char
-module__doc__[] =
+PyDoc_STRVAR(module__doc__,
 "Python's standard exception class hierarchy.\n\
 \n\
 Before Python 1.5, the standard exceptions were all simple string objects.\n\
@@ -113,7 +112,8 @@ Exception\n\
       +-- PendingDeprecationWarning\n\
       +-- SyntaxWarning\n\
       +-- OverflowWarning\n\
-      +-- RuntimeWarning";
+      +-- RuntimeWarning"
+);
 
 
 /* Helper function for populating a dictionary with method wrappers. */
@@ -230,8 +230,7 @@ get_self(PyObject *args)
  * All classes after Exception can be created using PyErr_NewException().
  */
 
-static char
-Exception__doc__[] = "Common base class for all exceptions.";
+PyDoc_STRVAR(Exception__doc__, "Common base class for all exceptions.");
 
 
 static PyObject *
@@ -372,19 +371,16 @@ make_Exception(char *modulename)
 
 
 
-static char
-StandardError__doc__[] = "Base class for all standard Python exceptions.";
+PyDoc_STRVAR(StandardError__doc__,
+"Base class for all standard Python exceptions.");
 
-static char
-TypeError__doc__[] = "Inappropriate argument type.";
+PyDoc_STRVAR(TypeError__doc__, "Inappropriate argument type.");
 
-static char
-StopIteration__doc__[] = "Signal the end from iterator.next().";
+PyDoc_STRVAR(StopIteration__doc__, "Signal the end from iterator.next().");
 
 
 
-static char
-SystemExit__doc__[] = "Request to exit from the interpreter.";
+PyDoc_STRVAR(SystemExit__doc__, "Request to exit from the interpreter.");
 
 
 static PyObject *
@@ -439,17 +435,14 @@ static PyMethodDef SystemExit_methods[] = {
 
 
 
-static char
-KeyboardInterrupt__doc__[] = "Program interrupted by user.";
+PyDoc_STRVAR(KeyboardInterrupt__doc__, "Program interrupted by user.");
 
-static char
-ImportError__doc__[] =
-"Import can't find module, or can't find name in module.";
+PyDoc_STRVAR(ImportError__doc__,
+"Import can't find module, or can't find name in module.");
 
 
 
-static char
-EnvironmentError__doc__[] = "Base class for I/O related errors.";
+PyDoc_STRVAR(EnvironmentError__doc__, "Base class for I/O related errors.");
 
 
 static PyObject *
@@ -627,41 +620,31 @@ PyMethodDef EnvironmentError_methods[] = {
 
 
 
-static char
-IOError__doc__[] = "I/O operation failed.";
+PyDoc_STRVAR(IOError__doc__, "I/O operation failed.");
 
-static char
-OSError__doc__[] = "OS system call failed.";
+PyDoc_STRVAR(OSError__doc__, "OS system call failed.");
 
 #ifdef MS_WINDOWS
-static char
-WindowsError__doc__[] = "MS-Windows OS system call failed.";
+PyDoc_STRVAR(WindowsError__doc__, "MS-Windows OS system call failed.");
 #endif /* MS_WINDOWS */
 
-static char
-EOFError__doc__[] = "Read beyond end of file.";
+PyDoc_STRVAR(EOFError__doc__, "Read beyond end of file.");
 
-static char
-RuntimeError__doc__[] = "Unspecified run-time error.";
+PyDoc_STRVAR(RuntimeError__doc__, "Unspecified run-time error.");
 
-static char
-NotImplementedError__doc__[] =
-"Method or function hasn't been implemented yet.";
+PyDoc_STRVAR(NotImplementedError__doc__,
+"Method or function hasn't been implemented yet.");
 
-static char
-NameError__doc__[] = "Name not found globally.";
+PyDoc_STRVAR(NameError__doc__, "Name not found globally.");
 
-static char
-UnboundLocalError__doc__[] =
-"Local name referenced but not bound to a value.";
+PyDoc_STRVAR(UnboundLocalError__doc__,
+"Local name referenced but not bound to a value.");
 
-static char
-AttributeError__doc__[] = "Attribute not found.";
+PyDoc_STRVAR(AttributeError__doc__, "Attribute not found.");
 
 
 
-static char
-SyntaxError__doc__[] = "Invalid syntax.";
+PyDoc_STRVAR(SyntaxError__doc__, "Invalid syntax.");
 
 
 static int
@@ -859,81 +842,65 @@ static PyMethodDef SyntaxError_methods[] = {
 
 /* Exception doc strings */
 
-static char
-AssertionError__doc__[] = "Assertion failed.";
+PyDoc_STRVAR(AssertionError__doc__, "Assertion failed.");
 
-static char
-LookupError__doc__[] = "Base class for lookup errors.";
+PyDoc_STRVAR(LookupError__doc__, "Base class for lookup errors.");
 
-static char
-IndexError__doc__[] = "Sequence index out of range.";
+PyDoc_STRVAR(IndexError__doc__, "Sequence index out of range.");
 
-static char
-KeyError__doc__[] = "Mapping key not found.";
+PyDoc_STRVAR(KeyError__doc__, "Mapping key not found.");
 
-static char
-ArithmeticError__doc__[] = "Base class for arithmetic errors.";
+PyDoc_STRVAR(ArithmeticError__doc__, "Base class for arithmetic errors.");
 
-static char
-OverflowError__doc__[] = "Result too large to be represented.";
+PyDoc_STRVAR(OverflowError__doc__, "Result too large to be represented.");
 
-static char
-ZeroDivisionError__doc__[] =
-"Second argument to a division or modulo operation was zero.";
+PyDoc_STRVAR(ZeroDivisionError__doc__,
+"Second argument to a division or modulo operation was zero.");
 
-static char
-FloatingPointError__doc__[] = "Floating point operation failed.";
+PyDoc_STRVAR(FloatingPointError__doc__, "Floating point operation failed.");
 
-static char
-ValueError__doc__[] = "Inappropriate argument value (of correct type).";
+PyDoc_STRVAR(ValueError__doc__,
+"Inappropriate argument value (of correct type).");
 
-static char
-UnicodeError__doc__[] = "Unicode related error.";
+PyDoc_STRVAR(UnicodeError__doc__, "Unicode related error.");
 
-static char
-SystemError__doc__[] = "Internal error in the Python interpreter.\n\
+PyDoc_STRVAR(SystemError__doc__,
+"Internal error in the Python interpreter.\n\
 \n\
 Please report this to the Python maintainer, along with the traceback,\n\
-the Python version, and the hardware/OS platform and version.";
+the Python version, and the hardware/OS platform and version.");
 
-static char
-ReferenceError__doc__[] = "Weak ref proxy used after referent went away.";
+PyDoc_STRVAR(ReferenceError__doc__,
+"Weak ref proxy used after referent went away.");
 
-static char
-MemoryError__doc__[] = "Out of memory.";
+PyDoc_STRVAR(MemoryError__doc__, "Out of memory.");
 
-static char
-IndentationError__doc__[] = "Improper indentation.";
+PyDoc_STRVAR(IndentationError__doc__, "Improper indentation.");
 
-static char
-TabError__doc__[] = "Improper mixture of spaces and tabs.";
+PyDoc_STRVAR(TabError__doc__, "Improper mixture of spaces and tabs.");
 
 /* Warning category docstrings */
 
-static char
-Warning__doc__[] = "Base class for warning categories.";
+PyDoc_STRVAR(Warning__doc__, "Base class for warning categories.");
 
-static char
-UserWarning__doc__[] = "Base class for warnings generated by user code.";
+PyDoc_STRVAR(UserWarning__doc__,
+"Base class for warnings generated by user code.");
 
-static char
-DeprecationWarning__doc__[] =
-"Base class for warnings about deprecated features.";
+PyDoc_STRVAR(DeprecationWarning__doc__,
+"Base class for warnings about deprecated features.");
 
-static char
-PendingDeprecationWarning__doc__[] =
+PyDoc_STRVAR(PendingDeprecationWarning__doc__,
 "Base class for warnings about features which will be deprecated "
-"in the future.";
+"in the future.");
 
-static char
-SyntaxWarning__doc__[] = "Base class for warnings about dubious syntax.";
+PyDoc_STRVAR(SyntaxWarning__doc__,
+"Base class for warnings about dubious syntax.");
 
-static char
-OverflowWarning__doc__[] = "Base class for warnings about numeric overflow.";
+PyDoc_STRVAR(OverflowWarning__doc__,
+"Base class for warnings about numeric overflow.");
 
-static char
-RuntimeWarning__doc__[] =
-"Base class for warnings about dubious runtime behavior.";
+PyDoc_STRVAR(RuntimeWarning__doc__,
+"Base class for warnings about dubious runtime behavior.");
 
 
 

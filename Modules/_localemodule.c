@@ -38,15 +38,14 @@ This software comes with no warranty. Use at your own risk.
 char *strdup(const char *);
 #endif
 
-static char locale__doc__[] = "Support for POSIX locales.";
+PyDoc_STRVAR(locale__doc__, "Support for POSIX locales.");
 
 static PyObject *Error;
 
 /* support functions for formatting floating point numbers */
 
-static char setlocale__doc__[] =
-"(integer,string=None) -> string. Activates/queries locale processing."
-;
+PyDoc_STRVAR(setlocale__doc__,
+"(integer,string=None) -> string. Activates/queries locale processing.");
 
 /* to record the LC_NUMERIC settings */
 static PyObject* grouping = NULL;
@@ -244,9 +243,8 @@ PyLocale_setlocale(PyObject* self, PyObject* args)
     return result_object;
 }
 
-static char localeconv__doc__[] =
-"() -> dict. Returns numeric and monetary locale-specific parameters."
-;
+PyDoc_STRVAR(localeconv__doc__,
+"() -> dict. Returns numeric and monetary locale-specific parameters.");
 
 static PyObject*
 PyLocale_localeconv(PyObject* self)
@@ -321,9 +319,8 @@ PyLocale_localeconv(PyObject* self)
     return NULL;
 }
 
-static char strcoll__doc__[] =
-"string,string -> int. Compares two strings according to the locale."
-;
+PyDoc_STRVAR(strcoll__doc__,
+"string,string -> int. Compares two strings according to the locale.");
 
 static PyObject*
 PyLocale_strcoll(PyObject* self, PyObject* args)
@@ -335,9 +332,8 @@ PyLocale_strcoll(PyObject* self, PyObject* args)
   return PyInt_FromLong(strcoll(s1, s2));
 }
 
-static char strxfrm__doc__[] =
-"string -> string. Returns a string that behaves for cmp locale-aware."
-;
+PyDoc_STRVAR(strxfrm__doc__,
+"string -> string. Returns a string that behaves for cmp locale-aware.");
 
 static PyObject*
 PyLocale_strxfrm(PyObject* self, PyObject* args)
@@ -521,10 +517,9 @@ struct langinfo_constant{
     {0, 0}
 };
 
-static char nl_langinfo__doc__[] =
+PyDoc_STRVAR(nl_langinfo__doc__,
 "nl_langinfo(key) -> string\n"
-"Return the value for the locale information associated with key."
-;
+"Return the value for the locale information associated with key.");
 
 static PyObject*
 PyLocale_nl_langinfo(PyObject* self, PyObject* args)
@@ -545,9 +540,9 @@ PyLocale_nl_langinfo(PyObject* self, PyObject* args)
 
 #ifdef HAVE_LIBINTL_H
 
-static char gettext__doc__[]=
+PyDoc_STRVAR(gettext__doc__,
 "gettext(msg) -> string\n"
-"Return translation of msg.";
+"Return translation of msg.");
 
 static PyObject*
 PyIntl_gettext(PyObject* self, PyObject *args)
@@ -558,9 +553,9 @@ PyIntl_gettext(PyObject* self, PyObject *args)
 	return PyString_FromString(gettext(in));
 }
 
-static char dgettext__doc__[]=
+PyDoc_STRVAR(dgettext__doc__,
 "dgettext(domain, msg) -> string\n"
-"Return translation of msg in domain.";
+"Return translation of msg in domain.");
 
 static PyObject*
 PyIntl_dgettext(PyObject* self, PyObject *args)
@@ -571,9 +566,9 @@ PyIntl_dgettext(PyObject* self, PyObject *args)
 	return PyString_FromString(dgettext(domain, in));
 }
 
-static char dcgettext__doc__[]=
+PyDoc_STRVAR(dcgettext__doc__,
 "dcgettext(domain, msg, category) -> string\n"
-"Return translation of msg in domain and category.";
+"Return translation of msg in domain and category.");
 
 static PyObject*
 PyIntl_dcgettext(PyObject *self, PyObject *args)
@@ -585,9 +580,9 @@ PyIntl_dcgettext(PyObject *self, PyObject *args)
 	return PyString_FromString(dcgettext(domain,msgid,category));
 }
 
-static char textdomain__doc__[]=
+PyDoc_STRVAR(textdomain__doc__,
 "textdomain(domain) -> string\n"
-"Set the C library's textdmain to domain, returning the new domain.";
+"Set the C library's textdmain to domain, returning the new domain.");
 
 static PyObject*
 PyIntl_textdomain(PyObject* self, PyObject* args)
@@ -603,9 +598,9 @@ PyIntl_textdomain(PyObject* self, PyObject* args)
 	return PyString_FromString(domain);
 }
 
-static char bindtextdomain__doc__[]=
+PyDoc_STRVAR(bindtextdomain__doc__,
 "bindtextdomain(domain, dir) -> string\n"
-"Bind the C library's domain to dir.";
+"Bind the C library's domain to dir.");
 
 static PyObject*
 PyIntl_bindtextdomain(PyObject* self,PyObject*args)

@@ -101,9 +101,9 @@ static PyObject * ProfilerError = NULL;
 
 /* The log reader... */
 
-static char logreader_close__doc__[] =
+PyDoc_STRVAR(logreader_close__doc__,
 "close()\n"
-"Close the log file, preventing additional records from being read.";
+"Close the log file, preventing additional records from being read.");
 
 static PyObject *
 logreader_close(LogReaderObject *self, PyObject *args)
@@ -522,9 +522,9 @@ logreader_sq_item(LogReaderObject *self, int index)
     return result;
 }
 
-static char next__doc__[] =
+PyDoc_STRVAR(next__doc__,
 "next() -> event-info\n"
-"Return the next event record from the log file.";
+"Return the next event record from the log file.");
 
 static PyObject *
 logreader_next(LogReaderObject *self, PyObject *args)
@@ -1021,9 +1021,9 @@ is_available(ProfilerObject *self)
 
 /* Profiler object interface methods. */
 
-static char addinfo__doc__[] =
+PyDoc_STRVAR(addinfo__doc__,
 "addinfo(key, value)\n"
-"Insert an ADD_INFO record into the log.";
+"Insert an ADD_INFO record into the log.");
 
 static PyObject *
 profiler_addinfo(ProfilerObject *self, PyObject *args)
@@ -1044,9 +1044,9 @@ profiler_addinfo(ProfilerObject *self, PyObject *args)
     return result;
 }
 
-static char close__doc__[] =
+PyDoc_STRVAR(close__doc__,
 "close()\n"
-"Shut down this profiler and close the log files, even if its active.";
+"Shut down this profiler and close the log files, even if its active.");
 
 static PyObject *
 profiler_close(ProfilerObject *self, PyObject *args)
@@ -1065,9 +1065,9 @@ profiler_close(ProfilerObject *self, PyObject *args)
     return result;
 }
 
-static char runcall__doc__[] =
+PyDoc_STRVAR(runcall__doc__,
 "runcall(callable[, args[, kw]]) -> callable()\n"
-"Profile a specific function call, returning the result of that call.";
+"Profile a specific function call, returning the result of that call.");
 
 static PyObject *
 profiler_runcall(ProfilerObject *self, PyObject *args)
@@ -1088,10 +1088,10 @@ profiler_runcall(ProfilerObject *self, PyObject *args)
     return result;
 }
 
-static char runcode__doc__[] =
+PyDoc_STRVAR(runcode__doc__,
 "runcode(code, globals[, locals])\n"
 "Execute a code object while collecting profile data.  If locals is\n"
-"omitted, globals is used for the locals as well.";
+"omitted, globals is used for the locals as well.");
 
 static PyObject *
 profiler_runcode(ProfilerObject *self, PyObject *args)
@@ -1127,9 +1127,9 @@ profiler_runcode(ProfilerObject *self, PyObject *args)
     return result;
 }
 
-static char start__doc__[] =
+PyDoc_STRVAR(start__doc__,
 "start()\n"
-"Install this profiler for the current thread.";
+"Install this profiler for the current thread.");
 
 static PyObject *
 profiler_start(ProfilerObject *self, PyObject *args)
@@ -1146,9 +1146,9 @@ profiler_start(ProfilerObject *self, PyObject *args)
     return result;
 }
 
-static char stop__doc__[] =
+PyDoc_STRVAR(stop__doc__,
 "stop()\n"
-"Remove this profiler from the current thread.";
+"Remove this profiler from the current thread.");
 
 static PyObject *
 profiler_stop(ProfilerObject *self, PyObject *args)
@@ -1225,7 +1225,7 @@ profiler_getattr(ProfilerObject *self, char *name)
 }
 
 
-static char profiler_object__doc__[] =
+PyDoc_STRVAR(profiler_object__doc__,
 "High-performance profiler object.\n"
 "\n"
 "Methods:\n"
@@ -1241,7 +1241,7 @@ static char profiler_object__doc__[] =
 "closed:       True if the profiler has already been closed.\n"
 "frametimings: True if ENTER/EXIT events collect timing information.\n"
 "lineevents:   True if SET_LINENO events are reported to the profiler.\n"
-"linetimings:  True if SET_LINENO events collect timing information.";
+"linetimings:  True if SET_LINENO events collect timing information.");
 
 static PyTypeObject ProfilerType = {
     PyObject_HEAD_INIT(NULL)
@@ -1288,9 +1288,9 @@ logreader_getattr(LogReaderObject *self, char *name)
 }
 
 
-static char logreader__doc__[] = "\
-logreader(filename) --> log-iterator\n\
-Create a log-reader for the timing information file.";
+PyDoc_STRVAR(logreader__doc__,
+"logreader(filename) --> log-iterator\n\
+Create a log-reader for the timing information file.");
 
 static PySequenceMethods logreader_as_sequence = {
     0,					/* sq_length */
@@ -1476,9 +1476,9 @@ write_header(ProfilerObject *self)
     return 0;
 }
 
-static char profiler__doc__[] = "\
-profiler(logfilename[, lineevents[, linetimes]]) -> profiler\n\
-Create a new profiler object.";
+PyDoc_STRVAR(profiler__doc__,
+"profiler(logfilename[, lineevents[, linetimes]]) -> profiler\n\
+Create a new profiler object.");
 
 static PyObject *
 hotshot_profiler(PyObject *unused, PyObject *args)
@@ -1529,10 +1529,10 @@ hotshot_profiler(PyObject *unused, PyObject *args)
     return (PyObject *) self;
 }
 
-static char coverage__doc__[] = "\
-coverage(logfilename) -> profiler\n\
+PyDoc_STRVAR(coverage__doc__,
+"coverage(logfilename) -> profiler\n\
 Returns a profiler that doesn't collect any timing information, which is\n\
-useful in building a coverage analysis tool.";
+useful in building a coverage analysis tool.");
 
 static PyObject *
 hotshot_coverage(PyObject *unused, PyObject *args)
@@ -1552,17 +1552,22 @@ hotshot_coverage(PyObject *unused, PyObject *args)
     return result;
 }
 
-static char resolution__doc__[] =
+PyDoc_VAR(resolution__doc__) = 
 #ifdef MS_WIN32
+PyDoc_STR(
 "resolution() -> (performance-counter-ticks, update-frequency)\n"
 "Return the resolution of the timer provided by the QueryPerformanceCounter()\n"
 "function.  The first value is the smallest observed change, and the second\n"
-"is the result of QueryPerformanceFrequency().";
+"is the result of QueryPerformanceFrequency()."
+)
 #else
+PyDoc_STR(
 "resolution() -> (gettimeofday-usecs, getrusage-usecs)\n"
 "Return the resolution of the timers provided by the gettimeofday() and\n"
-"getrusage() system calls, or -1 if the call is not supported.";
+"getrusage() system calls, or -1 if the call is not supported."
+)
 #endif
+;
 
 static PyObject *
 hotshot_resolution(PyObject *unused, PyObject *args)

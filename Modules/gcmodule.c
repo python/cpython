@@ -508,11 +508,10 @@ collect_generations(void)
 	return n;
 }
 
-static char gc_enable__doc__[] =
+PyDoc_STRVAR(gc_enable__doc__,
 "enable() -> None\n"
 "\n"
-"Enable automatic garbage collection.\n"
-;
+"Enable automatic garbage collection.\n");
 
 static PyObject *
 gc_enable(PyObject *self, PyObject *args)
@@ -527,11 +526,10 @@ gc_enable(PyObject *self, PyObject *args)
 	return Py_None;
 }
 
-static char gc_disable__doc__[] =
+PyDoc_STRVAR(gc_disable__doc__,
 "disable() -> None\n"
 "\n"
-"Disable automatic garbage collection.\n"
-;
+"Disable automatic garbage collection.\n");
 
 static PyObject *
 gc_disable(PyObject *self, PyObject *args)
@@ -546,11 +544,10 @@ gc_disable(PyObject *self, PyObject *args)
 	return Py_None;
 }
 
-static char gc_isenabled__doc__[] =
+PyDoc_STRVAR(gc_isenabled__doc__,
 "isenabled() -> status\n"
 "\n"
-"Returns true if automatic garbage collection is enabled.\n"
-;
+"Returns true if automatic garbage collection is enabled.\n");
 
 static PyObject *
 gc_isenabled(PyObject *self, PyObject *args)
@@ -562,11 +559,10 @@ gc_isenabled(PyObject *self, PyObject *args)
 	return Py_BuildValue("i", enabled);
 }
 
-static char gc_collect__doc__[] =
+PyDoc_STRVAR(gc_collect__doc__,
 "collect() -> n\n"
 "\n"
-"Run a full collection.  The number of unreachable objects is returned.\n"
-;
+"Run a full collection.  The number of unreachable objects is returned.\n");
 
 static PyObject *
 gc_collect(PyObject *self, PyObject *args)
@@ -588,7 +584,7 @@ gc_collect(PyObject *self, PyObject *args)
 	return Py_BuildValue("l", n);
 }
 
-static char gc_set_debug__doc__[] = 
+PyDoc_STRVAR(gc_set_debug__doc__,
 "set_debug(flags) -> None\n"
 "\n"
 "Set the garbage collection debugging flags. Debugging information is\n"
@@ -602,8 +598,7 @@ static char gc_set_debug__doc__[] =
 "  DEBUG_INSTANCES - Print instance objects.\n"
 "  DEBUG_OBJECTS - Print objects other than instances.\n"
 "  DEBUG_SAVEALL - Save objects to gc.garbage rather than freeing them.\n"
-"  DEBUG_LEAK - Debug leaking programs (everything but STATS).\n"
-;
+"  DEBUG_LEAK - Debug leaking programs (everything but STATS).\n");
 
 static PyObject *
 gc_set_debug(PyObject *self, PyObject *args)
@@ -615,11 +610,10 @@ gc_set_debug(PyObject *self, PyObject *args)
 	return Py_None;
 }
 
-static char gc_get_debug__doc__[] = 
+PyDoc_STRVAR(gc_get_debug__doc__,
 "get_debug() -> flags\n"
 "\n"
-"Get the garbage collection debugging flags.\n"
-;
+"Get the garbage collection debugging flags.\n");
 
 static PyObject *
 gc_get_debug(PyObject *self, PyObject *args)
@@ -630,12 +624,11 @@ gc_get_debug(PyObject *self, PyObject *args)
 	return Py_BuildValue("i", debug);
 }
 
-static char gc_set_thresh__doc__[] =
+PyDoc_STRVAR(gc_set_thresh__doc__,
 "set_threshold(threshold0, [threshold1, threshold2]) -> None\n"
 "\n"
 "Sets the collection thresholds.  Setting threshold0 to zero disables\n"
-"collection.\n"
-;
+"collection.\n");
 
 static PyObject *
 gc_set_thresh(PyObject *self, PyObject *args)
@@ -655,11 +648,10 @@ gc_set_thresh(PyObject *self, PyObject *args)
 	return Py_None;
 }
 
-static char gc_get_thresh__doc__[] =
+PyDoc_STRVAR(gc_get_thresh__doc__,
 "get_threshold() -> (threshold0, threshold1, threshold2)\n"
 "\n"
-"Return the current collection thresholds\n"
-;
+"Return the current collection thresholds\n");
 
 static PyObject *
 gc_get_thresh(PyObject *self, PyObject *args)
@@ -702,9 +694,9 @@ gc_referrers_for(PyObject *objs, PyGC_Head *list, PyObject *resultlist)
 	return 1; /* no error */
 }
 
-static char gc_get_referrers__doc__[]=
+PyDoc_STRVAR(gc_get_referrers__doc__,
 "get_referrers(*objs) -> list\n\
-Return the list of objects that directly refer to any of objs.";
+Return the list of objects that directly refer to any of objs.");
 
 static PyObject *
 gc_get_referrers(PyObject *self, PyObject *args)
@@ -720,12 +712,11 @@ gc_get_referrers(PyObject *self, PyObject *args)
 	return result;
 }
 
-static char gc_get_objects__doc__[] =
+PyDoc_STRVAR(gc_get_objects__doc__,
 "get_objects() -> [...]\n"
 "\n"
 "Return a list of objects tracked by the collector (excluding the list\n"
-"returned).\n"
-;
+"returned).\n");
 
 /* appending objects in a GC list to a Python list */
 static int
@@ -765,7 +756,7 @@ gc_get_objects(PyObject *self, PyObject *args)
 }
 
 
-static char gc__doc__ [] =
+PyDoc_STRVAR(gc__doc__,
 "This module provides access to the garbage collector for reference cycles.\n"
 "\n"
 "enable() -- Enable automatic garbage collection.\n"
@@ -777,8 +768,7 @@ static char gc__doc__ [] =
 "set_threshold() -- Set the collection thresholds.\n"
 "get_threshold() -- Return the current the collection thresholds.\n"
 "get_objects() -- Return a list of all objects tracked by the collector.\n"
-"get_referrers() -- Return the list of objects that refer to an object.\n"
-;
+"get_referrers() -- Return the list of objects that refer to an object.\n");
 
 static PyMethodDef GcMethods[] = {
 	{"enable",	   gc_enable,	  METH_VARARGS, gc_enable__doc__},

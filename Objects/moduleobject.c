@@ -209,11 +209,11 @@ module_traverse(PyModuleObject *m, visitproc visit, void *arg)
 	return 0;
 }
 
-static char module_doc[] =
+PyDoc_STRVAR(module_doc,
 "module(name[, doc])\n\
 \n\
 Create a module object.\n\
-The name must be a string; the optional doc argument can have any type.";
+The name must be a string; the optional doc argument can have any type.");
 
 PyTypeObject PyModule_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)

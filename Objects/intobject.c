@@ -830,14 +830,14 @@ int_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	return new;
 }
 
-static char int_doc[] =
+PyDoc_STRVAR(int_doc,
 "int(x[, base]) -> integer\n\
 \n\
 Convert a string or number to an integer, if possible.  A floating point\n\
 argument will be truncated towards zero (this does not include a string\n\
 representation of a floating point number!)  When converting a string, use\n\
 the optional base.  It is an error to supply a base when converting a\n\
-non-string.";
+non-string.");
 
 static PyNumberMethods int_as_number = {
 	(binaryfunc)int_add,	/*nb_add*/

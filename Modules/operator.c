@@ -1,14 +1,14 @@
-static char operator_doc[] = "\
-Operator interface.\n\
+
+#include "Python.h"
+
+PyDoc_STRVAR(operator_doc,
+"Operator interface.\n\
 \n\
 This module exports a set of functions implemented in C corresponding\n\
 to the intrinsic operators of Python.  For example, operator.add(x, y)\n\
 is equivalent to the expression x+y.  The function names are those\n\
 used for special class methods; variants without leading and trailing\n\
-'__' are also provided for convenience.\n\
-";
-
-#include "Python.h"
+'__' are also provided for convenience.");
 
 #define spam1(OP,AOP) static PyObject *OP(PyObject *s, PyObject *a) { \
   PyObject *a1; \
