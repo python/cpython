@@ -790,6 +790,7 @@ PySocketSock_accept(PySocketSockObject *s, PyObject *args)
 		return NULL;
 	if (!getsockaddrlen(s, &addrlen))
 		return NULL;
+	memset(addrbuf, 0, addrlen);
 	Py_BEGIN_ALLOW_THREADS
 	newfd = accept(s->sock_fd, (struct sockaddr *) addrbuf, &addrlen);
 	Py_END_ALLOW_THREADS
@@ -1212,6 +1213,7 @@ PySocketSock_getpeername(PySocketSockObject *s, PyObject *args)
 		return NULL;
 	if (!getsockaddrlen(s, &addrlen))
 		return NULL;
+	memset(addrbuf, 0, addrlen);
 	Py_BEGIN_ALLOW_THREADS
 	res = getpeername(s->sock_fd, (struct sockaddr *) addrbuf, &addrlen);
 	Py_END_ALLOW_THREADS
@@ -1360,7 +1362,8 @@ PySocketSock_recvfrom(PySocketSockObject *s, PyObject *args)
 	if (buf == NULL)
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
-	n = recvfrom(s->sock_fd, PyString_AsString(buf), len, flags,
+	memset(addrbuf, 0, addrlen);
+	n = recvfrom(s->sock_fd, PyString_AS_STRING(buf), len, flags,
 #ifndef MS_WINDOWS
 #if defined(PYOS_OS2)
 		     (struct sockaddr *)addrbuf, &addrlen
