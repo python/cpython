@@ -272,7 +272,7 @@ def testAttributeRepr():
 def testTextNodeRepr(): pass
 
 def testWriteXML():
-    str = '<a b="c"/>'
+    str = '<?xml version="1.0" ?>\n<a b="c"/>'
     dom = parseString(str)
     domstr = dom.toxml()
     dom.unlink()
