@@ -23,6 +23,10 @@ if abs(0L) != 0L: raise TestFailed, 'abs(0L)'
 if abs(1234L) != 1234L: raise TestFailed, 'abs(1234L)'
 if abs(-1234L) != 1234L: raise TestFailed, 'abs(-1234L)'
 
+try: abs('a')
+except TypeError: pass
+else: raise TestFailed, 'abs("a")'
+
 print 'apply'
 def f0(*args):
     if args != (): raise TestFailed, 'f0 called with ' + `args`
@@ -416,6 +420,10 @@ x = -1-sys.maxint
 if x >> 1 != x//2:
     raise TestFailed("x >> 1 != x/2 when x == -1-sys.maxint")
 
+try: int('123\0')
+except ValueError: pass
+else: raise TestFailed("int('123\0') didn't raise exception")
+
 print 'isinstance'
 class C:
     pass
@@ -503,6 +511,10 @@ for s, v in L + LL:
                 pass
             except ValueError, e:
                 raise TestFailed, "long(%s) raised ValueError: %s" % (`ss`, e)
+
+try: long('123\0')
+except ValueError: pass
+else: raise TestFailed("long('123\0') didn't raise exception")
 
 print 'map'
 if map(None, 'hello world') != ['h','e','l','l','o',' ','w','o','r','l','d']:

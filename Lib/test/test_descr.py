@@ -768,6 +768,12 @@ def metaclass():
     vereq(type(a), C)
     vereq(T.counter, 1)
 
+    class C(object): pass
+    c = C()
+    try: c()
+    except TypeError: pass
+    else: raise TestError, "calling object w/o call method should raise TypeError"
+
 def pymods():
     if verbose: print "Testing Python subclass of module..."
     log = []
@@ -2607,6 +2613,12 @@ def delhook():
     del c
     vereq(log, [1])
 
+    class D(object): pass
+    d = D()
+    try: del d[0]
+    except TypeError: pass
+    else: raise TestFailed, "invalid del() didn't raise TypeError"
+
 def hashinherit():
     if verbose: print "Testing hash of mutable subclasses..."
 
@@ -2629,6 +2641,59 @@ def hashinherit():
         pass
     else:
         raise TestFailed, "hash() of list subclass should fail"
+
+def strops():
+    try: 'a' + 5
+    except TypeError: pass
+    else: raise TestFailed, "'' + 5 doesn't raise TypeError"
+
+    try: ''.split('')
+    except ValueError: pass
+    else: raise TestFailed, "''.split('') doesn't raise ValueError"
+
+    try: ''.join([0])
+    except TypeError: pass
+    else: raise TestFailed, "''.join([0]) doesn't raise TypeError"
+
+    try: ''.rindex('5')
+    except ValueError: pass
+    else: raise TestFailed, "''.rindex('5') doesn't raise ValueError"
+
+    try: ''.replace('', '')
+    except ValueError: pass
+    else: raise TestFailed, "''.replace('', '') doesn't raise ValueError"
+
+    try: '%(n)s' % None
+    except TypeError: pass
+    else: raise TestFailed, "'%(n)s' % None doesn't raise TypeError"
+
+    try: '%(n' % {}
+    except ValueError: pass
+    else: raise TestFailed, "'%(n' % {} '' doesn't raise ValueError"
+
+    try: '%*s' % ('abc')
+    except TypeError: pass
+    else: raise TestFailed, "'%*s' % ('abc') doesn't raise TypeError"
+
+    try: '%*.*s' % ('abc', 5)
+    except TypeError: pass
+    else: raise TestFailed, "'%*.*s' % ('abc', 5) doesn't raise TypeError"
+
+    try: '%s' % (1, 2)
+    except TypeError: pass
+    else: raise TestFailed, "'%s' % (1, 2) doesn't raise TypeError"
+
+    try: '%' % None
+    except ValueError: pass
+    else: raise TestFailed, "'%' % None doesn't raise ValueError"
+
+    vereq('534253'.isdigit(), 1)
+    vereq('534253x'.isdigit(), 0)
+    vereq('%c' % 5, '\x05')
+    vereq('%c' % '5', '5')
+
+
+
 
 def test_main():
     class_docstrings()
@@ -2683,6 +2748,7 @@ def test_main():
     kwdargs()
     delhook()
     hashinherit()
+    strops()
     if verbose: print "All OK"
 
 if __name__ == "__main__":
