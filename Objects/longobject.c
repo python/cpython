@@ -388,7 +388,6 @@ _PyLong_AsByteArray(PyLongObject* v,
 	accumbits = 0;
 	carry = do_twos_comp ? 1 : 0;
 	for (i = 0; i < ndigits; ++i) {
-		unsigned int numnewbits = SHIFT;
 		twodigits thisdigit = v->ob_digit[i];
 		if (do_twos_comp) {
 			thisdigit = (thisdigit ^ MASK) + carry;
@@ -399,22 +398,25 @@ _PyLong_AsByteArray(PyLongObject* v,
 		   significant than what's already in accum, so needs to be
 		   prepended to accum. */
 		accum |= thisdigit << accumbits;
+		accumbits += SHIFT;
 
-		/* How many new bits did we add?  The most-significant digit
-		   may be (probably is) at least partly empty. */
+		/* The most-significant digit may be (probably is) at least
+		   partly empty. */
 		if (i == ndigits - 1) {
-			twodigits bitmask = 1 << (SHIFT - 1);
-			twodigits signbit = do_twos_comp << (SHIFT - 1);
+			/* Count # of sign bits -- they needn't be stored,
+			 * although for signed conversion we need later to
+			 * make sure at least one sign bit gets stored.
+			 * First shift conceptual sign bit to real sign bit.
+			 */
+			stwodigits s = (stwodigits)(thisdigit <<
+				(8*sizeof(stwodigits) - SHIFT));
 			unsigned int nsignbits = 0;
-			while ((thisdigit & bitmask) == signbit && bitmask) {
+			while ((s < 0) == do_twos_comp && nsignbits < SHIFT) {
 				++nsignbits;
-				bitmask >>= 1;
-				signbit >>= 1;
+				s <<= 1;
 			}
-			assert(nsignbits <= SHIFT);
-			numnewbits -= nsignbits;
+			accumbits -= nsignbits;
 		}
-		accumbits += numnewbits;
 
 		/* Store as many bytes as possible. */
 		while (accumbits >= 8) {
