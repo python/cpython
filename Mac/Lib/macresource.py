@@ -49,7 +49,7 @@ def need(restype, resid, filename=None, modname=None):
 	if sys.modules.has_key(modname):
 		mod = sys.modules[modname]
 		if hasattr(mod, '__file__'):
-			searchdirs = [mod.__file__]
+			searchdirs = [os.path.split(mod.__file__)[0]]
 	if not searchdirs:
 		searchdirs = sys.path
 	
