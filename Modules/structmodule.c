@@ -224,12 +224,8 @@ pack_float(double x, /* The number to pack */
 		return -1;
 	}
 
-	if (e >= 128) {
-		/* XXX 128 itself is reserved for Inf/NaN */
-		PyErr_SetString(PyExc_OverflowError,
-				"float too large to pack with f format");
-		return -1;
-	}
+	if (e >= 128)
+		goto Overflow;
 	else if (e < -126) {
 		/* Gradual underflow */
 		f = ldexp(f, 126 + e);
@@ -242,6 +238,14 @@ pack_float(double x, /* The number to pack */
 
 	f *= 8388608.0; /* 2**23 */
 	fbits = (long) floor(f + 0.5); /* Round */
+	assert(fbits <= 8388608);
+	if (fbits >> 23) {
+		/* The carry propagated out of a string of 23 1 bits. */
+		fbits = 0;
+		++e;
+		if (e >= 255)
+			goto Overflow;
+	}
 
 	/* First byte */
 	*p = (s<<7) | (e>>1);
@@ -260,6 +264,11 @@ pack_float(double x, /* The number to pack */
 
 	/* Done */
 	return 0;
+
+ Overflow:
+	PyErr_SetString(PyExc_OverflowError,
+			"float too large to pack with f format");
+	return -1;
 }
 
 static int
@@ -295,12 +304,8 @@ pack_double(double x, /* The number to pack */
 		return -1;
 	}
 
-	if (e >= 1024) {
-		/* XXX 1024 itself is reserved for Inf/NaN */
-		PyErr_SetString(PyExc_OverflowError,
-				"float too large to pack with d format");
-		return -1;
-	}
+	if (e >= 1024)
+		goto Overflow;
 	else if (e < -1022) {
 		/* Gradual underflow */
 		f = ldexp(f, 1022 + e);
@@ -314,9 +319,24 @@ pack_double(double x, /* The number to pack */
 	/* fhi receives the high 28 bits; flo the low 24 bits (== 52 bits) */
 	f *= 268435456.0; /* 2**28 */
 	fhi = (long) floor(f); /* Truncate */
+	assert(fhi < 268435456);
+
 	f -= (double)fhi;
 	f *= 16777216.0; /* 2**24 */
 	flo = (long) floor(f + 0.5); /* Round */
+	assert(flo <= 16777216);
+	if (flo >> 24) {
+		/* The carry propagated out of a string of 24 1 bits. */
+		flo = 0;
+		++fhi;
+		if (fhi >> 28) {
+			/* And it also progagated out of the next 28 bits. */
+			fhi = 0;
+			++e;
+			if (e >= 2047)
+				goto Overflow;
+		}
+	}
 
 	/* First byte */
 	*p = (s<<7) | (e>>4);
@@ -352,6 +372,11 @@ pack_double(double x, /* The number to pack */
 
 	/* Done */
 	return 0;
+
+ Overflow:
+	PyErr_SetString(PyExc_OverflowError,
+			"float too large to pack with d format");
+	return -1;
 }
 
 static PyObject *

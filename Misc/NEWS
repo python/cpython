@@ -37,6 +37,14 @@ Core and builtins
 Extension modules
 -----------------
 
+- The platform-independent routines for packing floats in IEEE formats
+  (struct.pack's <f, >f, <d, and >d codes; pickle and cPickle's protocol 1
+  pickling of floats) ignored that rounding can cause a carry to
+  propagate.  The worst consequence was that, in rare cases, <f and >f
+  could produce strings that, when unpacked again, were a factor of 2
+  away from the original float.  This has been fixed.  See SF bug
+  #705836.
+
 - New function time.tzset() provides access to the C library tzet()
   function, if supported.  (SF patch #675422.)
 
