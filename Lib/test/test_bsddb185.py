@@ -11,6 +11,7 @@ import anydbm
 import whichdb
 import os
 import tempfile
+import shutil
 
 class Bsddb185Tests(unittest.TestCase):
 
@@ -28,15 +29,12 @@ class Bsddb185Tests(unittest.TestCase):
         # Verify that anydbm.open does *not* create a bsddb185 file
         tmpdir = tempfile.mkdtemp()
         try:
-            try:
-                dbfile = os.path.join(tmpdir, "foo.db")
-                anydbm.open(os.path.splitext(dbfile)[0], "c").close()
-                ftype = whichdb.whichdb(dbfile)
-                self.assertNotEqual(ftype, "bsddb185")
-            finally:
-                os.unlink(dbfile)
+            dbfile = os.path.join(tmpdir, "foo.db")
+            anydbm.open(dbfile, "c").close()
+            ftype = whichdb.whichdb(dbfile)
+            self.assertNotEqual(ftype, "bsddb185")
         finally:
-            os.rmdir(tmpdir)
+            shutil.rmtree(tmpdir)
 
 def test_main():
     run_unittest(Bsddb185Tests)
