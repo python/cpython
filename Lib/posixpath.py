@@ -367,3 +367,10 @@ def normpath(path):
     if not comps and not slashes:
         comps.append('.')
     return slashes + string.joinfields(comps, '/')
+
+
+# Return an absolute path.
+def abspath(path):
+    if not isabs(path):
+        path = join(os.getcwd(), path)
+    return normpath(path)

@@ -365,3 +365,10 @@ def normpath(path):
     if not prefix and not comps:
         comps.append('.')
     return prefix + string.joinfields(comps, os.sep)
+
+
+# Return an absolute path.
+def abspath(path):
+    if not isabs(path):
+        path = join(os.getcwd(), path)
+    return normpath(path)
