@@ -719,7 +719,8 @@ class Message:
         boundary = self.get_param('boundary', missing)
         if boundary is missing:
             return failobj
-        return Utils.collapse_rfc2231_value(boundary).strip()
+        # RFC 2046 says that boundaries may begin but not end in w/s
+        return Utils.collapse_rfc2231_value(boundary).rstrip()
 
     def set_boundary(self, boundary):
         """Set the boundary parameter in Content-Type to 'boundary'.
