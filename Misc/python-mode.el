@@ -8,7 +8,7 @@
 ;; Created:    Feb 1992
 ;; Keywords:   python languages oop
 
-(defconst py-version "$Revision$ a"
+(defconst py-version "$Revision$"
   "`python-mode' version number.")
 
 ;; This software is provided as-is, without express or implied
@@ -22,18 +22,19 @@
 ;; This is a major mode for editing Python programs.  It was developed
 ;; by Tim Peters after an original idea by Michael A. Guravage.  Tim
 ;; subsequently left the net; in 1995, Barry Warsaw inherited the mode
-;; and is the current maintainer.
+;; and is the current maintainer.  Tim's now back but disavows all
+;; responsibility for the mode.  Smart Tim :-)
 
 ;; This version of python-mode.el is no longer compatible with Emacs
 ;; 18.  I am striving to maintain compatibility with the X/Emacs 19
 ;; lineage but as time goes on that becomes more and more difficult.
 ;; I current recommend that you upgrade to the latest stable released
-;; version of your favorite branch: Emacs 20.2 or better, or XEmacs
-;; 20.4 or better (Emacs 20.3 and XEmacs 21.0 are in beta testing as
-;; of this writing 20-Aug-1998 but both appear to work fine with this
-;; version of python-mode.el).  Even Windows users should be using at
-;; least NTEmacs 20.2, and XEmacs 21.0 will work very nicely on
-;; Windows when it is released.
+;; version of your favorite branch: Emacs 20.3 or better, or XEmacs
+;; 20.4 or better (XEmacs 21.0 is in beta testing as of this writing
+;; 27-Oct-1998 appears to work fine with this version of
+;; python-mode.el).  Even Windows users should be using at least
+;; NTEmacs 20.3, and XEmacs 21.0 will work very nicely on Windows when
+;; it is released.
 
 ;; FOR MORE INFORMATION:
 
