@@ -6,8 +6,8 @@ Reply-to: guido@cwi.nl (Guido van Rossum)
 Approved: news-answers-request@MIT.Edu
 
 Archive-name: python-faq/part1
-Version: 1.6
-Last-modified: 11 April 1994
+Version: 1.7
+Last-modified: 4 May 1994
 
 This article contains answers to Frequently Asked Questions about
 Python (an object-oriented interpreted programming language -- see
@@ -86,7 +86,7 @@ Here's an overview of the questions per chapter:
        script (after the script name).
   3.6. Q. When building on the SGI, make tries to run python to create
        glmodule.c, but python hasn't been built or installed yet.
-  3.7. Q. Other trouble building Python 1.0.1 on platform X.
+  3.7. Q. Other trouble building Python 1.0.2 on platform X.
 
  4. Programming in Python
   4.1. Q. Is there a source code level debugger with breakpoints, step,
@@ -173,27 +173,26 @@ either!
 
 A. The latest Python source distribution is always available by
 anonymous ftp from ftp.cwi.nl [192.16.184.180] in the directory
-/pub/python, with filename python<version>.tar.Z.  (In the future and
-on some archive sites the extension will be .gz, indicating use of
-gzip compression.)  It is a compressed (gzip'ed if the extension is
-.gz) tar file containing the complete C source, LaTeX documentation,
-Python library modules, example programs, and several useful pieces of
-freely distributable software.  This will compile and run out of the
-box on most UNIX platforms.  At the time of writing, <version> is
-1.0.1.  (See section 7 for non-UNIX information.)
+/pub/python, with filename python<version>.tar.gz.  (Old versions may
+have an extension of .Z, indicating use of "compress" compression.)
+It is a gzip'ed tar file containing the complete C source, LaTeX
+documentation, Python library modules, example programs, and several
+useful pieces of freely distributable software.  This will compile and
+run out of the box on most UNIX platforms.  At the time of writing,
+<version> is 1.0.2.  (See section 7 for non-UNIX information.)
 
 1.4. Q. How do I get documentation on Python?
 
 A. The latest Python documentation set is always available by
 anonymous ftp from ftp.cwi.nl [192.16.184.180] in the directory
-/pub/python, with filename pythondoc-ps<version>.tar.Z.  (Or .gz --
-see the previous question.)  It is a compressed (or gzip'ed) tar file
-containing PostScript files of the reference manual, the library
-manual, and the tutorial.  At the time of writing <version> is 1.0.1.
-Note that the library manual is the most important one of the set, as
-much of Python's power stems from the standard or built-in types,
-functions and modules, all of which are described here.  PostScript
-for a high-level description of Python is in the file nluug-paper.ps.
+/pub/python, with filename pythondoc-ps<version>.tar.gz.  It is a
+gzip'ed tar file containing PostScript files of the reference manual,
+the library manual, and the tutorial.  At the time of writing
+<version> is 1.0.2.  Note that the library manual is the most
+important one of the set, as much of Python's power stems from the
+standard or built-in types, functions and modules, all of which are
+described here.  PostScript for a high-level description of Python is
+in the file nluug-paper.ps.
 
 The following sites keep mirrors of the Python distribution:
 
@@ -312,7 +311,7 @@ Ivan Herman <ivan@cwi.nl>.
 
 2.4. Q. How stable is Python?
 
-A. Very stable.  While the current version number (1.0.1) would
+A. Very stable.  While the current version number (1.0.2) would
 suggest it is in the early stages of development, in fact new, stable
 releases (numbered 0.9.x) have been coming out roughly every 3 to 6
 months for the past four years.
@@ -383,7 +382,7 @@ again.  You don't need to do "make clean"; you do need to run "make
 Makefile" in the Modules subdirectory (or just run "make" at the
 toplevel).
 
-3.7. Q. Other trouble building Python 1.0.1 on platform X.
+3.7. Q. Other trouble building Python 1.0.2 on platform X.
 
 A. Please email the details to <guido@cwi.nl> and I'll look into it.
 
@@ -645,7 +644,7 @@ binary.  Where's the library?
 
 A. You still need to copy the files from the distribution directory
 "python/Lib" to your system.  If you don't have the full distribution,
-you can get the file pythonlib1.0.1.tar.Z from most ftp sites carrying
+you can get the file pythonlib1.0.2.tar.gz from most ftp sites carrying
 Python; this is a subset of the distribution containing just those
 file.
 
