@@ -62,7 +62,7 @@ def _test():
         raise ValueError("wrote %r read %r" % (teststr, got))
     got = e.read()
     if got:
-        raise ValueError("unexected %r on stderr" % (got,))
+        raise ValueError("unexpected %r on stderr" % (got,))
     for inst in popen2._active[:]:
         inst.wait()
     if popen2._active:
