@@ -160,8 +160,7 @@ Source: PCbuild\zlib.lib;        DestDir: "{app}\libs"; CopyMode: alwaysoverwrit
 
 Source: PCbuild\python22.lib;    DestDir: "{app}\libs"; CopyMode: alwaysoverwrite; Components: main
 
-Source: ..\expat\bin\xmlparse.dll; DestDir: "{app}\DLLs"; CopyMode: alwaysoverwrite; Components: main
-Source: ..\expat\bin\xmltok.dll;   DestDir: "{app}\DLLs"; CopyMode: alwaysoverwrite; Components: main
+Source: ..\expat\Libs\expat.dll; DestDir: "{app}\DLLs"; CopyMode: alwaysoverwrite; Components: main
 
 Source: Lib\*.py; DestDir: "{app}\Lib"; CopyMode: alwaysoverwrite; Components: main
 Source: Lib\lib-tk\*.py; DestDir: "{app}\Lib\lib-tk"; CopyMode: alwaysoverwrite; Components: main

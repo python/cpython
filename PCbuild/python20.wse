@@ -837,14 +837,8 @@ item: Remark
   Text=*** More DLLs ***
 end
 item: Install File
-  Source=%_SRC_%\..\expat\bin\xmlparse.dll
-  Destination=%MAINDIR%\DLLs\xmlparse.dll
-  Description=Expat library
-  Flags=0000000000000010
-end
-item: Install File
-  Source=%_SRC_%\..\expat\bin\xmltok.dll
-  Destination=%MAINDIR%\DLLs\xmltok.dll
+  Source=%_SRC_%\..\expat\Libs\expat.dll
+  Destination=%MAINDIR%\DLLs\expat.dll
   Description=Expat library
   Flags=0000000000000010
 end

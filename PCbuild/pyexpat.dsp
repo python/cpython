@@ -45,7 +45,7 @@ CFG=pyexpat - Win32 Alpha Debug
 F90=df.exe
 CPP=cl.exe
 # ADD BASE CPP /nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /YX /FD /c
-# ADD CPP /nologo /MD /W3 /GX /Zi /O2 /I "..\Include" /I "..\PC" /I "..\..\expat\xmlparse" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /YX /FD /c
+# ADD CPP /nologo /MD /W3 /GX /Zi /O2 /I "..\Include" /I "..\PC" /I "..\..\expat\Source\lib" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "HAVE_EXPAT_H" /YX /FD /c
 MTL=midl.exe
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /o "NUL" /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /o "NUL" /win32
@@ -76,7 +76,7 @@ LINK32=link.exe
 F90=df.exe
 CPP=cl.exe
 # ADD BASE CPP /nologo /MTd /W3 /Gm /GX /Zi /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /YX /FD /c
-# ADD CPP /nologo /MDd /W3 /Gm /GX /Zi /Od /I "..\Include" /I "..\PC" /I "..\..\expat\xmlparse" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /YX /FD /c
+# ADD CPP /nologo /MDd /W3 /Gm /GX /Zi /Od /I "..\Include" /I "..\PC" /I "..\..\expat\Source\lib" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "HAVE_EXPAT_H" /YX /FD /c
 MTL=midl.exe
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /o "NUL" /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /o "NUL" /win32
@@ -180,11 +180,7 @@ SOURCE=..\Modules\pyexpat.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\expat\lib\xmltok.lib
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\expat\lib\xmlparse.lib
+SOURCE=..\..\expat\Libs\expat.lib
 # End Source File
 # End Target
 # End Project
