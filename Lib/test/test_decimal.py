@@ -1056,6 +1056,14 @@ class ContextAPItests(unittest.TestCase):
         self.assert_(Decimal(10) in ['a', 1.0, Decimal(10), (1,2), {}])
         self.assert_(Decimal(10) not in ['a', 1.0, (1,2), {}])
 
+    def test_copy(self):
+        # All copies should be deep
+        c = Context()
+        d = c.copy()
+        self.assertNotEqual(id(c), id(d))
+        self.assertNotEqual(id(c.flags), id(d.flags))
+        self.assertNotEqual(id(c.traps), id(d.traps))
+
 def test_main(arith=False, verbose=None):
     """ Execute the tests.
 
