@@ -16,14 +16,14 @@ OVERRIDE_POPT_ID = 229
 OVERRIDE_GUSI_ID = 10241
 
 # version
-CUR_VERSION=6
+CUR_VERSION=7
 
 preffilename = PstringLoader(AnyResLoader('STR ', resname=PREFNAME_NAME)).load()
 pref_fss = preferencefile(preffilename, 'Pyth', 'pref')
 
 class PoptLoader(VersionLoader):
 	def __init__(self, loader):
-		VersionLoader.__init__(self, "bbbbbbbbbbbbb", loader)
+		VersionLoader.__init__(self, "bbbbbbbbbbbbbb", loader)
 		
 	def versioncheck(self, data):
 		if data[0] == CUR_VERSION:
@@ -44,16 +44,11 @@ class GusiLoader:
 		tp = self.data[0:4]
 		cr = self.data[4:8]
 		flags = ord(self.data[9])
-		delay = ((flags & 0x20) == 0x20)
-		return cr, tp, delay
+		return cr, tp
 		
-	def save(self, (cr, tp, delay)):
+	def save(self, (cr, tp)):
 		flags = ord(self.data[9])
-		if delay:
-			flags = flags | 0x20
-		else:
-			flags = flags & ~0x20
-		newdata = tp + cr + self.data[8] + chr(flags) + self.data[10:]
+		newdata = tp + cr + self.data[8:]
 		self.loader.save(newdata)
 		
 popt_default_default = NullLoader(chr(CUR_VERSION) + 8*'\0')
@@ -85,23 +80,23 @@ class PythonOptions:
 		diralias = self.dir.load()
 		dirfss, dummy = macfs.RawAlias(diralias).Resolve()
 		dict['dir'] = dirfss
-		dict['creator'], dict['type'], dict['delayconsole'] = self.gusi.load()
+		dict['creator'], dict['type'] = self.gusi.load()
 		flags = self.popt.load()
 		dict['version'], dict['inspect'], dict['verbose'], dict['optimize'], \
 			dict['unbuffered'], dict['debugging'], dummy, dict['keep_console'], \
 			dict['nointopt'], dict['noargs'], dict['tabwarn'], \
-			dict['nosite'], dict['nonavservice'] = flags
+			dict['nosite'], dict['nonavservice'], dict['delayconsole'] = flags
 		return dict
 		
 	def save(self, dict):
 		self.path.save(dict['path'])
 		diralias = macfs.FSSpec(dict['dir']).NewAlias().data
 		self.dir.save(diralias)
-		self.gusi.save((dict['creator'], dict['type'], dict['delayconsole']))
+		self.gusi.save((dict['creator'], dict['type']))
 		flags = dict['version'], dict['inspect'], dict['verbose'], dict['optimize'], \
 			dict['unbuffered'], dict['debugging'], 0, dict['keep_console'], \
 			dict['nointopt'], dict['noargs'], dict['tabwarn'], \
-			dict['nosite'], dict['nonavservice']
+			dict['nosite'], dict['nonavservice'], dict['delayconsole']
 		self.popt.save(flags)
 
 def AppletOptions(file):

@@ -53,9 +53,9 @@ extern int ccommand(char ***);
 #ifdef USE_MAC_SHARED_LIBRARY
 extern PyMac_AddLibResources(void);
 #endif
-#ifdef USE_GUSI
-#include "GUSISIOUX.h"
-#endif
+//#ifdef USE_GUSI
+//#include "GUSISIOUX.h"
+//#endif
 
 #define STARTUP "PythonStartup"
 
@@ -70,6 +70,14 @@ short PyMac_AppRefNum;	/* RefNum of application resource fork */
 /* For Py_GetArgcArgv(); set by main() */
 static char **orig_argv;
 static int  orig_argc;
+
+/* A flag which remembers whether the user has acknowledged all the console
+** output (by typing something)
+*/
+#define STATE_UNKNOWN 0
+#define STATE_LASTREAD 1
+#define STATE_LASTWRITE 2
+int console_output_state = STATE_UNKNOWN;
 
 PyMac_PrefRecord PyMac_options;
 
@@ -544,10 +552,18 @@ Py_Main(argc, argv)
 void
 PyMac_OutputSeen()
 {
-#ifdef GUSISIOUX_STATE_UNKNOWN
-	gusisioux_state = GUSISIOUX_STATE_LASTREAD;
-#endif
+	console_output_state = STATE_LASTREAD;
 }
+
+/*
+** Set the "unseen output" flag
+*/
+void
+PyMac_OutputNotSeen()
+{
+	console_output_state = STATE_LASTWRITE;
+}
+	
 
 /*
 ** Terminate application
@@ -569,15 +585,11 @@ PyMac_Exit(status)
 		keep = 0;
 		break;
 	case POPT_KEEPCONSOLE_OUTPUT:
-#ifdef GUSISIOUX_STATE_UNKNOWN
-		if (gusisioux_state == GUSISIOUX_STATE_LASTWRITE ||
-				gusisioux_state == GUSISIOUX_STATE_UNKNOWN )
+		if (console_output_state == STATE_LASTWRITE ||
+				console_output_state == STATE_UNKNOWN )
 			keep = 1;
 		else
 			keep = 0;
-#else
-		keep = 1;
-#endif
 		break;
 	case POPT_KEEPCONSOLE_ERROR:
 		keep = (status != 0);
@@ -635,4 +647,10 @@ char *
 Py_GetExecPrefix()
 {
 	return PyMac_GetPythonDir();
+}
+
+int
+PyMac_GetDelayConsoleFlag()
+{
+	return (int)PyMac_options.delayconsole;
 }
