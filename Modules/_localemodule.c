@@ -181,7 +181,7 @@ PyLocale_setlocale(PyObject* self, PyObject* args)
             return NULL;
         }
         result_object = PyString_FromString(result);
-        if (!result)
+        if (!result_object)
             return NULL;
         /* record changes to LC_NUMERIC */
         if (category == LC_NUMERIC || category == LC_ALL) {
@@ -199,6 +199,8 @@ PyLocale_setlocale(PyObject* self, PyObject* args)
                 thousands_sep = PyString_FromString(lc->thousands_sep);
                 Py_XDECREF(decimal_point);
                 decimal_point = PyString_FromString(lc->decimal_point);
+                if (saved_numeric)
+                    free(saved_numeric);
                 saved_numeric = strdup(locale);
                 /* restore to "C" */
                 setlocale(LC_NUMERIC, "C");
