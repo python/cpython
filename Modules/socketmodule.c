@@ -217,7 +217,6 @@ shutdown(how) -- shut down traffic in one or both directions\n\
 
 /* Generic includes */
 #include <sys/types.h>
-/*#include <signal.h>*/
 
 /* Generic socket object definitions and includes */
 #define PySocket_BUILDING_SOCKET
