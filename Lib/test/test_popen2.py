@@ -5,11 +5,17 @@
 
 # popen2 contains its own testing routine
 # which is especially useful to see if open files
-# like stdin can be read successfully by a forked 
+# like stdin can be read successfully by a forked
 # subprocess.
 
 def main():
-    from os import fork # skips test through ImportError
+    try:
+        from os import popen
+    except ImportError:
+        # if we don't have os.popen, check that
+        # we have os.fork.  if not, skip the test
+        # (by raising an ImportError)
+        from os import fork
     import popen2
     popen2._test()
 
