@@ -4,6 +4,10 @@ AC_PREREQ(2.0)
 AC_INIT(Include/object.h)
 AC_CONFIG_HEADER(config.h)
 
+# Set VERSION so we only need to edit in one place (i.e., here)
+AC_SUBST(VERSION)
+VERSION=1.5
+
 # NEXTSTEP stuff
 if test -f /usr/lib/NextStep/software_version; then
 
@@ -525,7 +529,6 @@ AC_MSG_RESULT($va_list_is_array)
 AC_CHECK_LIB(ieee, __fpu_control)
 
 # Check for --with-fpectl
-AC_SUBST(WANT_SIGFPE_HANDLER)
 AC_MSG_CHECKING(for --with-fpectl)
 AC_ARG_WITH(fpectl, [--with-fpectl             enable SIGFPE catching], [
 if test "$withval" != no
@@ -589,7 +592,6 @@ test $ac_cv_func_getopt = no && LIBOBJS="$LIBOBJS getopt.o"
 AC_SUBST(LIBOBJS)dnl
 
 # check whether malloc(0) returns NULL or not
-AC_SUBST(MALLOC_ZERO_RETURNS_NULL)
 AC_MSG_CHECKING(what malloc(0) returns)
 AC_CACHE_VAL(ac_cv_malloc_zero,
 [AC_TRY_RUN([#include <stdio.h>
