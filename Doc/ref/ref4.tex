@@ -2,165 +2,146 @@
 \index{execution model}
 
 
-\section{Code blocks, execution frames, and namespaces \label{execframes}}
-\index{code block}
+\section{Naming and binding \label{naming}}
+\indexii{code}{block}
 \index{namespace}
-\indexii{execution}{frame}
+\index{scope}
 
-A \dfn{code block}\indexii{code}{block} is a piece
-of Python program text that can be executed as a unit, such as a
-module, a class definition or a function body.  Some code blocks (like
-modules) are normally executed only once, others (like function
-bodies) may be executed many times.  Code blocks may textually contain
-other code blocks.  Code blocks may invoke other code blocks (that may
-or may not be textually contained in them) as part of their execution,
-e.g., by invoking (calling) a function.
+\dfn{Names}\index{name} refer to objects.  Names are introduced by
+name binding operations.  Each occurrence of a name in the program
+text refers to the \dfn{binding}\indexii{binding}{name} of that name
+established in the innermost function block containing the use.
 
-The following are code blocks: A module is a code block.  A function
-body is a code block.  A class definition is a code block.  Each
-command typed interactively is a separate code block; a script file (a
-file given as standard input to the interpreter or specified on the
-interpreter command line the first argument) is a code block; a script
-command (a command specified on the interpreter command line with the
-`\strong{-c}' option) is a code block.  The file read by the built-in
-function \function{execfile()} is a code block.  The string argument
-passed to the built-in function \function{eval()} and to the
-\keyword{exec} statement is a code block.  And finally, the expression
-read and evaluated by the built-in function \function{input()} is a
-code block.
+A \dfn{block}\index{block} is a piece of Python program text that is
+executed as a unit.  The following are blocks: a module, a function
+body, and a class definition.  Each command typed interactively is a
+block.  A script file (a file given as standard input to the
+interpreter or specified on the interpreter command line the first
+argument) is a code block.  A script command (a command specified on
+the interpreter command line with the `\strong{-c}' option) is a code
+block.  The file read by the built-in function \function{execfile()}
+is a code block.  The string argument passed to the built-in function
+\function{eval()} and to the \keyword{exec} statement is a code block.
+The expression read and evaluated by the built-in function
+\function{input()} is a code block.
 
-A code block is executed in an execution frame.  An \dfn{execution
-frame}\indexii{execution}{frame} contains some administrative
-information (used for debugging), determines where and how execution
-continues after the code block's execution has completed, and (perhaps
-most importantly) defines two namespaces, the local and the global
-namespace, that affect execution of the code block.
+A \dfn{scope}\index{scope} defines the visibility of a name within a
+block.  If a local variable is defined in a block, it's scope includes
+that block.  If the definition occurs in a function block, the scope
+extends to any blocks contained within the defining one, unless a
+contained block introduces a different binding for the name.  The
+scope of names defined in a class block is limited to the class block;
+it does not extend to the code blocks of methods.
 
-A \dfn{namespace}\index{namespace} is a mapping from names
-(identifiers) to objects.  A particular namespace may be referenced by
-more than one execution frame, and from other places as well.  Adding
-a name to a namespace is called \dfn{binding}\indexii{binding}{name} a
-name (to an object); changing the mapping of a name is called
-\dfn{rebinding}\indexii{rebinding}{name}; removing a name is
-\dfn{unbinding}\indexii{unbinding}{name}.  Namespaces are functionally
-equivalent to dictionaries (and often implemented as dictionaries).
+When a name is used in a code block, it is resolved using the nearest
+enclosing scope.  The set of all such scopes visible to a code block
+is called the block's \dfn{environment}\index{environment}.  
 
-The \dfn{local namespace}\indexii{local}{namespace} of an execution
-frame determines the default place where names are defined and
-searched.  The
-\dfn{global namespace}\indexii{global}{namespace} determines the place
-where names listed in \keyword{global}\stindex{global} statements are
-defined and searched, and where names that are not bound anywhere in
-the current code block are searched.
+If a name is bound in a block, it is a local variable of that block.
+If a name is bound at the module level, it is a global variable.  (The
+variables of the module code block are local and global.)  If a
+variable is used in a code block but not defined there, it is a
+\dfn{free variable}\indexii{free}{variable}.
 
-Whether a name is local or global in a code block is determined by
-static inspection of the source text for the code block: in the
-absence of \keyword{global} statements, a name that is bound anywhere
-in the code block is local in the entire code block; all other names
-are considered global.  The \keyword{global} statement forces global
-interpretation of selected names throughout the code block.  The
-following constructs bind names: formal parameters to functions,
+When a name is not found at all, a
+\exception{NameError}\withsubitem{(built-in
+exception)}{\ttindex{NameError}} exception is raised.  If the name
+refers to a local variable that has not been bound, a
+\exception{UnboundLocalError}\ttindex{UnboundLocalError} exception is
+raised.  \exception{UnboundLocalError} is a subclass of
+\exception{NameError}.
+
+The following constructs bind names: formal parameters to functions,
 \keyword{import} statements, class and function definitions (these
 bind the class or function name in the defining block), and targets
 that are identifiers if occurring in an assignment, \keyword{for} loop
 header, or in the second position of an \keyword{except} clause
-header.  Local names are searched only on the local namespace; global
-names are searched only in the global and built-in
-namespace.\footnote{
-  If the code block contains \keyword{exec} statements or the
-  construct ``\samp{from \ldots import *}'', the semantics of local
-  names change: local name lookup first searches the local namespace,
-  then the global namespace and the built-in namespace.}
+header.  The \keyword{import} statement of the form ``\samp{from
+\ldots import *}''\stindex{from} binds all names defined in the
+imported module, except those beginning with an underscore.  This form
+may only be used at the module level.
 
 A target occurring in a \keyword{del} statement is also considered bound
-for this purpose (though the actual semantics are to ``unbind'' the
-name).
+for this purpose (though the actual semantics are to unbind the
+name).  It is illegal to unbind a name that is referenced by an
+enclosing scope; the compiler will report a \exception{SyntaxError}.
 
-When a global name is not found in the global namespace, it is
-searched in the built-in namespace (which is actually the global
-namespace of the module
-\module{__builtin__}\refbimodindex{__builtin__}).  The built-in
-namespace associated with the execution of a code block is actually
-found by looking up the name \code{__builtins__} in its global
-namespace; this should be a dictionary or a module (in the latter case
-its dictionary is used).  Normally, the \code{__builtins__} namespace
-is the dictionary of the built-in module \module{__builtin__} (note:
-no `s'); if it isn't, restricted
-execution\indexii{restricted}{execution} mode is in effect.  When a 
-name is not found at all, a
-\exception{NameError}\withsubitem{(built-in
-exception)}{\ttindex{NameError}} exception is raised.
-\stindex{from}
-\stindex{exec}
-\stindex{global}
+Each assignment or import statement occurs within a block defined by a
+class or function definition or at the module level (the top-level
+code block).
 
-The following table lists the meaning of the local and global
-namespace for various types of code blocks.  The namespace for a
-particular module is automatically created when the module is first
-imported (i.e., when it is loaded).  Note that in almost all cases,
-the global namespace is the namespace of the containing module ---
-scopes in Python do not nest!
+If a name binding operation occurs anywhere within a code block, all
+uses of the name within the block are treated as references to the
+current block.  This can lead to errors when a name is used within a
+block before it is bound.
 
-\begin{tableiv}{l|l|l|l}{textrm}
-  {Code block type}{Global namespace}{Local namespace}{Notes}
-  \lineiv{Module}
-         {n.s. for this module}
-         {same as global}{}
-  \lineiv{Script (file or command)}
-         {n.s. for \module{__main__}\refbimodindex{__main__}}
-         {same as global}{(1)}
-  \lineiv{Interactive command}
-         {n.s. for \module{__main__}\refbimodindex{__main__}}
-         {same as global}{}
-  \lineiv{Class definition}
-         {global n.s. of containing block}
-         {new n.s.}{}
-  \lineiv{Function body}
-         {global n.s. of containing block}
-         {new n.s.}{(2)}
-  \lineiv{String passed to \keyword{exec} statement}
-         {global n.s. of containing block}
-         {local n.s. of containing block}{(2), (3)}
-  \lineiv{String passed to \function{eval()}}
-         {global n.s. of caller}
-         {local n.s. of caller}{(2), (3)}
-  \lineiv{File read by \function{execfile()}}
-         {global n.s. of caller}
-         {local n.s. of caller}{(2), (3)}
-  \lineiv{Expression read by \function{input()}}
-         {global n.s. of caller}
-         {local n.s. of caller}{}
-\end{tableiv}
+The previous rule is a subtle.  Python lacks declarations and allows
+name binding operations to occur anywhere within a code block.  The
+local variables of a code block can be determined by scanning the
+entire text of the block for name binding operations.
 
-Notes:
+If the global statement occurs within a block, all uses of the name
+specified in the statement refer to the binding of that name in the
+top-level namespace.  Names are resolved in the top-level namespace by
+searching the global namespace, i.e. the namespace of the module
+containing the code block, and the builtin namespace, the namespace of
+the module \module{__builtin__}.  The global namespace is searched
+first.  If the name is not found there, the builtin namespace is
+searched.  The global statement must precede all uses of the name.
 
-\begin{description}
+The built-in namespace associated with the execution of a code block
+is actually found by looking up the name \code{__builtins__} in its
+global namespace; this should be a dictionary or a module (in the
+latter case the module's dictionary is used).  Normally, the
+\code{__builtins__} namespace is the dictionary of the built-in module
+\module{__builtin__} (note: no `s').  If it isn't, restricted
+execution\indexii{restricted}{execution} mode is in effect.
 
-\item[n.s.] means \emph{namespace}
+The namespace for a module is automatically created the first time a
+module is imported.  The main module for a script is always called
+\module{__main__}\refbimodindex{__main__}.
 
-\item[(1)] The main module for a script is always called
-\module{__main__}; ``the filename don't enter into it.''
+The global statement has the same scope as a name binding operation
+in the same block.  If the nearest enclosing scope for a free variable
+contains a global statement, the free variable is treated as a global.
 
-\item[(2)] The global and local namespace for these can be
-overridden with optional extra arguments.
+A class definition is an executable statement that may use and define
+names.  These references follow the normal rules for name resolution.
+The namespace of the class definition becomes the attribute dictionary
+of the class.  Names defined at the class scope are not visible in
+methods. 
 
-\item[(3)] The \keyword{exec} statement and the \function{eval()} and
+\subsection{Interaction with dynamic features \label{dynamic-features}}
+
+There are several cases where Python statements are illegal when
+used in conjunction with nested scopes that contain free
+variables.
+
+If a variable is referenced in an enclosing scope, it is illegal
+to delete the name.  An error will be reported at compile time.
+
+If the wild card form of import --- \samp{import *} --- is used in a
+function and the function contains or is a nested block with free
+variables, the compiler will raise a SyntaxError.
+
+If \keyword{exec} is used in a function and the function contains or
+is a nested block with free variables, the compiler will raise a
+\exception{SyntaxError} unless the exec explicitly specifies the local
+namespace for the \keyword{exec}.  (In other words, \samp{exec obj}
+would be illegal, but \samp{exec obj in ns} would be legal.)
+
+The \function{eval()}, \function{execfile()}, and \function{input()}
+functions and the \keyword{exec} statement do not have access to the
+full environment for resolving names.  Names may be resolved in the
+local and global namespaces of the caller.  Free variables are not
+resolved in the nearest enclosing namespace, but in the global
+namespace.\footnote{This limitation occurs because the code that is
+    executed by these operations is not available at the time the
+    module is compiled.}
+The \keyword{exec} statement and the \function{eval()} and
 \function{execfile()} functions have optional arguments to override
 the global and local namespace.  If only one namespace is specified,
 it is used for both.
-
-\end{description}
-
-The built-in functions \function{globals()} and \function{locals()} returns a
-dictionary representing the current global and local namespace,
-respectively.  The effect of modifications to this dictionary on the
-namespace are undefined.\footnote{
-  The current implementations return the dictionary actually used to
-  implement the namespace, \emph{except} for functions, where the
-  optimizer may cause the local namespace to be implemented
-  differently, and \function{locals()} returns a read-only
-  dictionary.}
-
 
 \section{Exceptions \label{exceptions}}
 \index{exception}
