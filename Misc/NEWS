@@ -78,6 +78,9 @@ Extension Modules
 Library
 -------
 
+- Patch #918101: Add tarfile open mode r|* for auto-detection of the 
+  stream compression; add, for symmetry reasons, r:* as a synonym of r.
+
 - Patch #1043890: Add extractall method to tarfile.
 
 - Patch #1075887: Don't require MSVC in distutils if there is nothing

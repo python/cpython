@@ -181,6 +181,18 @@ class ReadStreamTest(ReadTest):
 
         stream.close()
 
+class ReadAsteriskTest(ReadTest):
+
+    def setUp(self):
+        mode = self.mode + self.sep + "*"
+        self.tar = tarfile.open(tarname(self.comp), mode)
+
+class ReadStreamAsteriskTest(ReadStreamTest):
+
+    def setUp(self):
+        mode = self.mode + self.sep + "*"
+        self.tar = tarfile.open(tarname(self.comp), mode)
+
 class WriteTest(BaseTest):
     mode = 'w'
 
@@ -336,6 +348,11 @@ class WriteTestGzip(WriteTest):
     comp = "gz"
 class WriteStreamTestGzip(WriteStreamTest):
     comp = "gz"
+class ReadAsteriskTestGzip(ReadAsteriskTest):
+    comp = "gz"
+class ReadStreamAsteriskTestGzip(ReadStreamAsteriskTest):
+    comp = "gz"
+
 
 # Filemode test cases
 
@@ -354,6 +371,10 @@ if bz2:
     class WriteTestBzip2(WriteTest):
         comp = "bz2"
     class WriteStreamTestBzip2(WriteStreamTestGzip):
+        comp = "bz2"
+    class ReadAsteriskTestBzip2(ReadAsteriskTest):
+        comp = "bz2"
+    class ReadStreamAsteriskTestBzip2(ReadStreamAsteriskTest):
         comp = "bz2"
 
 # If importing gzip failed, discard the Gzip TestCases.
@@ -375,6 +396,8 @@ def test_main():
         FileModeTest,
         ReadTest,
         ReadStreamTest,
+        ReadAsteriskTest,
+        ReadStreamAsteriskTest,
         WriteTest,
         WriteStreamTest,
         WriteGNULongTest,
@@ -386,13 +409,15 @@ def test_main():
     if gzip:
         tests.extend([
             ReadTestGzip, ReadStreamTestGzip,
-            WriteTestGzip, WriteStreamTestGzip
+            WriteTestGzip, WriteStreamTestGzip,
+            ReadAsteriskTestGzip, ReadStreamAsteriskTestGzip
         ])
 
     if bz2:
         tests.extend([
             ReadTestBzip2, ReadStreamTestBzip2,
-            WriteTestBzip2, WriteStreamTestBzip2
+            WriteTestBzip2, WriteStreamTestBzip2,
+            ReadAsteriskTestBzip2, ReadStreamAsteriskTestBzip2
         ])
     try:
         test_support.run_unittest(*tests)
