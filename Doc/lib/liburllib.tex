@@ -62,11 +62,12 @@ If the \var{url} uses the \file{http:} scheme identifier, the optional
 must in standard \file{application/x-www-form-urlencoded} format;
 see the \function{urlencode()} function below.
 
-The \function{urlopen()} function works transparently with proxies.
-In a \UNIX{} or Windows environment, set the \envvar{http_proxy},
-\envvar{ftp_proxy} or \envvar{gopher_proxy} environment variables to a
-URL that identifies the proxy server before starting the Python
-interpreter.  For example (the \character{\%} is the command prompt):
+The \function{urlopen()} function works transparently with proxies
+whicd do not require authentication.  In a \UNIX{} or Windows
+environment, set the \envvar{http_proxy}, \envvar{ftp_proxy} or
+\envvar{gopher_proxy} environment variables to a URL that identifies
+the proxy server before starting the Python interpreter.  For example
+(the \character{\%} is the command prompt):
 
 \begin{verbatim}
 % http_proxy="http://www.someproxy.com:3128"
@@ -77,6 +78,9 @@ interpreter.  For example (the \character{\%} is the command prompt):
 
 In a Macintosh environment, \function{urlopen()} will retrieve proxy
 information from Internet\index{Internet Config} Config.
+
+Proxies which require authentication for use are not currently
+supported; this is considered an implementation limitation.
 
 The \function{urlopen()} function works transparently with proxies.
 In a \UNIX{} or Windows environment, set the \envvar{http_proxy},
