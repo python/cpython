@@ -1282,12 +1282,35 @@ static const char *stripformat[] = {"|O:lstrip", "|O:rstrip", "|O:strip"};
 
 #define STRIPNAME(i) (stripformat[i]+3)
 
+#define SPLIT_APPEND(data, left, right)				\
+	str = PyString_FromStringAndSize((data) + (left),	\
+					 (right) - (left));	\
+	if (str == NULL)					\
+		goto onError;					\
+	if (PyList_Append(list, str)) {				\
+		Py_DECREF(str);					\
+		goto onError;					\
+	}							\
+	else							\
+		Py_DECREF(str);
+
+#define SPLIT_INSERT(data, left, right)			 	\
+	str = PyString_FromStringAndSize((data) + (left),	\
+					 (right) - (left));	\
+	if (str == NULL)					\
+		goto onError;					\
+	if (PyList_Insert(list, 0, str)) {			\
+		Py_DECREF(str);					\
+		goto onError;					\
+	}							\
+	else							\
+		Py_DECREF(str);
 
 static PyObject *
 split_whitespace(const char *s, int len, int maxsplit)
 {
-	int i, j, err;
-	PyObject* item;
+	int i, j;
+	PyObject *str;
 	PyObject *list = PyList_New(0);
 
 	if (list == NULL)
@@ -1302,33 +1325,49 @@ split_whitespace(const char *s, int len, int maxsplit)
 		if (j < i) {
 			if (maxsplit-- <= 0)
 				break;
-			item = PyString_FromStringAndSize(s+j, (int)(i-j));
-			if (item == NULL)
-				goto finally;
-			err = PyList_Append(list, item);
-			Py_DECREF(item);
-			if (err < 0)
-				goto finally;
+			SPLIT_APPEND(s, j, i);
 			while (i < len && isspace(Py_CHARMASK(s[i])))
 				i++;
 			j = i;
 		}
 	}
 	if (j < len) {
-		item = PyString_FromStringAndSize(s+j, (int)(len - j));
-		if (item == NULL)
-			goto finally;
-		err = PyList_Append(list, item);
-		Py_DECREF(item);
-		if (err < 0)
-			goto finally;
+		SPLIT_APPEND(s, j, len);
 	}
 	return list;
-  finally:
+  onError:
 	Py_DECREF(list);
 	return NULL;
 }
 
+static PyObject *
+split_char(const char *s, int len, char ch, int maxcount)
+{
+	register int i, j;
+	PyObject *str;
+	PyObject *list = PyList_New(0);
+
+	if (list == NULL)
+		return NULL;
+
+	for (i = j = 0; i < len; ) {
+		if (s[i] == ch) {
+			if (maxcount-- <= 0)
+				break;
+			SPLIT_APPEND(s, j, i);
+			i = j = i + 1;
+		} else
+			i++;
+	}
+	if (j <= len) {
+		SPLIT_APPEND(s, j, len);
+	}
+	return list;
+
+  onError:
+	Py_DECREF(list);
+	return NULL;
+}
 
 PyDoc_STRVAR(split__doc__,
 "S.split([sep [,maxsplit]]) -> list of strings\n\
@@ -1362,10 +1401,13 @@ string_split(PyStringObject *self, PyObject *args)
 #endif
 	else if (PyObject_AsCharBuffer(subobj, &sub, &n))
 		return NULL;
+
 	if (n == 0) {
 		PyErr_SetString(PyExc_ValueError, "empty separator");
 		return NULL;
 	}
+	else if (n == 1)
+		return split_char(s, len, sub[0], maxsplit);
 
 	list = PyList_New(0);
 	if (list == NULL)
@@ -1406,8 +1448,8 @@ string_split(PyStringObject *self, PyObject *args)
 static PyObject *
 rsplit_whitespace(const char *s, int len, int maxsplit)
 {
-	int i, j, err;
-	PyObject* item;
+	int i, j;
+	PyObject *str;
 	PyObject *list = PyList_New(0);
 
 	if (list == NULL)
@@ -1422,33 +1464,49 @@ rsplit_whitespace(const char *s, int len, int maxsplit)
 		if (j > i) {
 			if (maxsplit-- <= 0)
 				break;
-			item = PyString_FromStringAndSize(s+i+1, (int)(j-i));
-			if (item == NULL)
-				goto finally;
-			err = PyList_Insert(list, 0, item);
-			Py_DECREF(item);
-			if (err < 0)
-				goto finally;
+			SPLIT_INSERT(s, i + 1, j + 1);
 			while (i >= 0 && isspace(Py_CHARMASK(s[i])))
 				i--;
 			j = i;
 		}
 	}
 	if (j >= 0) {
-		item = PyString_FromStringAndSize(s, (int)(j + 1));
-		if (item == NULL)
-			goto finally;
-		err = PyList_Insert(list, 0, item);
-		Py_DECREF(item);
-		if (err < 0)
-			goto finally;
+		SPLIT_INSERT(s, 0, j + 1);
 	}
 	return list;
-  finally:
+  onError:
 	Py_DECREF(list);
 	return NULL;
 }
 
+static PyObject *
+rsplit_char(const char *s, int len, char ch, int maxcount)
+{
+	register int i, j;
+	PyObject *str;
+	PyObject *list = PyList_New(0);
+
+	if (list == NULL)
+		return NULL;
+
+	for (i = j = len - 1; i >= 0; ) {
+		if (s[i] == ch) {
+			if (maxcount-- <= 0)
+				break;
+			SPLIT_INSERT(s, i + 1, j + 1);
+			j = i = i - 1;
+		} else
+			i--;
+	}
+	if (j >= -1) {
+		SPLIT_INSERT(s, 0, j + 1);
+	}
+	return list;
+
+ onError:
+	Py_DECREF(list);
+	return NULL;
+}
 
 PyDoc_STRVAR(rsplit__doc__,
 "S.rsplit([sep [,maxsplit]]) -> list of strings\n\
@@ -1483,10 +1541,13 @@ string_rsplit(PyStringObject *self, PyObject *args)
 #endif
 	else if (PyObject_AsCharBuffer(subobj, &sub, &n))
 		return NULL;
+
 	if (n == 0) {
 		PyErr_SetString(PyExc_ValueError, "empty separator");
 		return NULL;
 	}
+	else if (n == 1)
+		return rsplit_char(s, len, sub[0], maxsplit);
 
 	list = PyList_New(0);
 	if (list == NULL)
@@ -3103,17 +3164,6 @@ PyDoc_STRVAR(splitlines__doc__,
 Return a list of the lines in S, breaking at line boundaries.\n\
 Line breaks are not included in the resulting list unless keepends\n\
 is given and true.");
-
-#define SPLIT_APPEND(data, left, right)					\
-	str = PyString_FromStringAndSize(data + left, right - left);	\
-	if (!str)							\
-	    goto onError;						\
-	if (PyList_Append(list, str)) {					\
-	    Py_DECREF(str);						\
-	    goto onError;						\
-	}								\
-        else								\
-            Py_DECREF(str);
 
 static PyObject*
 string_splitlines(PyStringObject *self, PyObject *args)
