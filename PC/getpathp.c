@@ -164,17 +164,6 @@ search_for_prefix(argv0_path, landmark)
 #define BUILD_LANDMARK "PC\\getpathp.c"
 #endif
 
-static int
-prefixisbuilddir()
-{
-	int n = strlen(prefix);
-	int ok;
-	join(prefix, BUILD_LANDMARK);
-	ok = exists(prefix);
-	prefix[n] = '\0';
-	return ok;
-}
-
 #include "malloc.h" // for alloca - see comments below!
 extern const char *PyWin_DLLVersionString; // a string loaded from the DLL at startup.
 
@@ -364,16 +353,14 @@ calculate_path()
 		envpath = NULL;
 
 #ifdef MS_WIN32
-	if (!prefixisbuilddir()) {
-		/* Are we running under Windows 3.1(1) Win32s? */
-		if (PyWin_IsWin32s()) {
-			/* Only CLASSES_ROOT is supported */
-			machinepath = getpythonregpath(HKEY_CLASSES_ROOT, TRUE); 
-			userpath = NULL;
-		} else {
-			machinepath = getpythonregpath(HKEY_LOCAL_MACHINE, FALSE);
-			userpath = getpythonregpath(HKEY_CURRENT_USER, FALSE);
-		}
+	/* Are we running under Windows 3.1(1) Win32s? */
+	if (PyWin_IsWin32s()) {
+		/* Only CLASSES_ROOT is supported */
+		machinepath = getpythonregpath(HKEY_CLASSES_ROOT, TRUE); 
+		userpath = NULL;
+	} else {
+		machinepath = getpythonregpath(HKEY_LOCAL_MACHINE, FALSE);
+		userpath = getpythonregpath(HKEY_CURRENT_USER, FALSE);
 	}
 #endif
 
@@ -404,8 +391,6 @@ calculate_path()
 	bufsz += strlen(PYTHONPATH) + 1;
 	bufsz += strlen(argv0_path) + 1;
 #ifdef MS_WIN32
-	if (userpath || machinepath)
-		bufsz = 0; /* Reset! */
 	if (userpath)
 		bufsz += strlen(userpath) + 1;
 	if (machinepath)
@@ -452,10 +437,6 @@ calculate_path()
 		buf = strchr(buf, '\0');
 		*buf++ = DELIM;
 		free(machinepath);
-	}
-	if (userpath || machinepath) {
-		buf[-1] = '\0';
-		return;
 	}
 #endif
 	if (pythonhome == NULL) {
