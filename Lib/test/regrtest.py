@@ -14,6 +14,7 @@ Command line options:
 -x: exclude   -- arguments are tests to *exclude*
 -s: single    -- run only a single test (see below)
 -r: random    -- randomize test execution order
+-f: fromfile  -- read names of tests to run from a file (see below)
 -l: findleaks -- if GC is available detect tests that leak memory
 -u: use       -- specify which special resource intensive tests to run
 -h: help      -- print this text and exit
@@ -30,6 +31,11 @@ run the full regression test non-stop).  The file /tmp/pynexttest is read to
 find the next test to run.  If this file is missing, the first test_*.py file
 in testdir or on the command line is used.  (actually tempfile.gettempdir() is
 used instead of /tmp).
+
+-f reads the names of tests from the file given as f's argument, one or more
+test names per line.  Whitespace is ignored.  Blank lines and lines beginning
+with '#' are ignored.  This is especially useful for whittling down failures
+involving interactions among tests.
 
 -u is used to specify which special resource intensive tests to run, such as
 those requiring large file support or network connectivity.  The argument is a
@@ -69,7 +75,7 @@ def usage(code, msg=''):
 
 
 def main(tests=None, testdir=None, verbose=0, quiet=0, generate=0,
-         exclude=0, single=0, randomize=0, findleaks=0,
+         exclude=0, single=0, randomize=0, fromfile=None, findleaks=0,
          use_resources=None):
     """Execute a test suite.
 
@@ -96,9 +102,9 @@ def main(tests=None, testdir=None, verbose=0, quiet=0, generate=0,
 
     test_support.record_original_stdout(sys.stdout)
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'hvgqxsrlu:',
+        opts, args = getopt.getopt(sys.argv[1:], 'hvgqxsrf:lu:',
                                    ['help', 'verbose', 'quiet', 'generate',
-                                    'exclude', 'single', 'random',
+                                    'exclude', 'single', 'random', 'fromfile',
                                     'findleaks', 'use='])
     except getopt.error, msg:
         usage(2, msg)
@@ -122,6 +128,8 @@ def main(tests=None, testdir=None, verbose=0, quiet=0, generate=0,
             single = 1
         elif o in ('-r', '--randomize'):
             randomize = 1
+        elif o in ('-f', '--fromfile'):
+            fromfile = a
         elif o in ('-l', '--findleaks'):
             findleaks = 1
         elif o in ('-u', '--use'):
@@ -136,6 +144,8 @@ def main(tests=None, testdir=None, verbose=0, quiet=0, generate=0,
                     use_resources.append(r)
     if generate and verbose:
         usage(2, "-g and -v don't go together!")
+    if single and fromfile:
+        usage(2, "-s and -f don't go together!")
 
     good = []
     bad = []
@@ -164,10 +174,22 @@ def main(tests=None, testdir=None, verbose=0, quiet=0, generate=0,
             fp.close()
         except IOError:
             pass
-    for i in range(len(args)):
-        # Strip trailing ".py" from arguments
-        if args[i][-3:] == os.extsep+'py':
-            args[i] = args[i][:-3]
+
+    if fromfile:
+        tests = []
+        fp = open(fromfile)
+        for line in fp:
+            guts = line.split() # assuming no test has whitespace in its name
+            if guts and not guts[0].startswith('#'):
+                tests.extend(guts)
+        fp.close()
+
+    # Strip .py extensions.
+    if args:
+        args = map(removepy, args)
+    if tests:
+        tests = map(removepy, tests)
+
     stdtests = STDTESTS[:]
     nottests = NOTTESTS[:]
     if exclude:
@@ -417,6 +439,11 @@ def findtestdir():
         file = __file__
     testdir = os.path.dirname(file) or os.curdir
     return testdir
+
+def removepy(name):
+    if name.endswith(os.extsep + "py"):
+        name = name[:-3]
+    return name
 
 def count(n, word):
     if n == 1:
