@@ -593,6 +593,9 @@ GLUE_NEW(WindowPtr, WinObj_New, "Carbon.Win")
 GLUE_CONVERT(WindowPtr, WinObj_Convert, "Carbon.Win")
 GLUE_NEW(WindowPtr, WinObj_WhichWindow, "Carbon.Win")
 
+GLUE_CONVERT(CFTypeRef, CFObj_Convert, "Carbon.CF")
+GLUE_NEW(CFTypeRef, CFObj_New, "Carbon.CF")
+
 GLUE_CONVERT(CFTypeRef, CFTypeRefObj_Convert, "Carbon.CF")
 GLUE_NEW(CFTypeRef, CFTypeRefObj_New, "Carbon.CF")
 
