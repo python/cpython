@@ -152,20 +152,13 @@ def getimage(name):
     return (image, sizes[0], sizes[1])
 
 def get_qualified_path(name):
-    """ return a more qualified path to name contructed from argv[1]"""
+    """ return a more qualified path to name"""
     import sys
     import os
-    import string
-    
-   # get a more qualified path component of the script...
-    if __name__ == '__main__':
-	ourname = sys.argv[0]
-    else: # ...or the full path of the module
-	ourname = sys.modules[__name__].__file__
-
-    parts = string.splitfields(ourname, os.sep)
-    parts[-1] = name
-    name = string.joinfields(parts, os.sep)
+    for dir in sys.path:
+	fullname = os.path.join(dir, name)
+	if os.path.exists(fullname):
+	    return fullname
     return name
 
 # rgbimg (unlike imgfile) is portable to platforms other than SGI.

@@ -35,9 +35,9 @@ else:
 
 def test():
 	import sys
-	if sys.platform in ('win', 'mac'):
+	if sys.platform[:3] in ('win', 'mac'):
 		if verbose:
-			print "Can't test select easily"
+			print "Can't test select easily on", sys.platform
 		return
 	cmd = 'for i in 0 1 2 3 4 5 6 7 8 9; do echo testing...; sleep 1; done'
 	p = os.popen(cmd, 'r')
