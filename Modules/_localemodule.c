@@ -215,7 +215,7 @@ PyLocale_setlocale(PyObject* self, PyObject* args)
 	    if (*codeset && (enc = PyCodec_Encoder(codeset))) {
 		/* Release previous file encoding */
 		if (Py_FileSystemDefaultEncoding)
-		    free (Py_FileSystemDefaultEncoding);
+		    free((char *)Py_FileSystemDefaultEncoding);
 		Py_FileSystemDefaultEncoding = strdup(codeset);
 		Py_DECREF(enc);
 	    } else
