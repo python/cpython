@@ -1,14 +1,14 @@
 Document Type: WSE
 item: Global
   Version=5.0
-  Title=Python 1.5.2b1
+  Title=Python 1.5.2b2
   Flags=00010100
   Languages=65 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
   Japanese Font Name=MS Gothic
   Japanese Font Size=10
   Start Gradient=0 0 255
   End Gradient=0 0 0
-  Windows Flags=00000000000010010010110000001000
+  Windows Flags=00000100000010010010110100001000
   Log Pathname=%MAINDIR%\INSTALL.LOG
   Message Font=MS Sans Serif
   Font Size=8
@@ -17,21 +17,15 @@ item: Global
   Patch Threshold=85
   Patch Memory=4000
   Variable Name1=_SYS_
-  Variable Default1=D:\NT\System32
+  Variable Default1=C:\WINNT\System32
   Variable Flags1=00001000
-  Variable Name2=_ODBC16_
-  Variable Default2=D:\NT\System32
+  Variable Name2=_WISE_
+  Variable Default2=C:\Program Files\Wise
   Variable Flags2=00001000
-  Variable Name3=_ODBC32_
-  Variable Default3=D:\NT\System32
-  Variable Flags3=00001000
-  Variable Name4=_WISE_
-  Variable Default4=C:\Program Files\Wise
-  Variable Flags4=00001000
-  Variable Name5=_SRC_
-  Variable Description5=Root of Python Build Tree
-  Variable Default5=D:\src\Python-1.5
-  Variable Flags5=00001001
+  Variable Name3=_SRC_
+  Variable Description3=Root of Python Build Tree
+  Variable Default3=D:\src\Python-1.5
+  Variable Flags3=00001001
 end
 item: Open/Close INSTALL.LOG
   Flags=00000001
@@ -55,7 +49,7 @@ item: Check Configuration
 end
 item: Set Variable
   Variable=APPTITLE
-  Value=Python 1.5.2b1
+  Value=Python 1.5.2b2
 end
 item: Set Variable
   Variable=GROUP
@@ -202,7 +196,7 @@ item: Custom Dialog Set
       Create Flags=01010000000000000000000000000000
       Text=This installation program will install %APPTITLE% on your system.
       Text=
-      Text=Press the Next button to start the installation. You can press the Exit Setup button now if you do not want to install the %APPTITLE% at this time.
+      Text=Press the Next button to start the installation. You can press the Exit Setup button now if you do not want to install %APPTITLE% at this time.
       Text French=Ce programme d'installation va installer %APPTITLE%.
       Text French=
       Text French=Cliquez sur le bouton Suite pour démarrer l'installation. Vous pouvez cliquer sur le bouton Quitter l'installation si vous ne voulez pas installer %APPTITLE% tout de suite.
@@ -799,13 +793,13 @@ item: Install File
   Flags=0000000000000010
 end
 item: Install File
-  Source=c:\winnt\system32\MSVCIRT.DLL
+  Source=%_SYS_%\MSVCIRT.DLL
   Destination=%SYS32%\MSVCIRT.DLL
   Description=Visual C++ Runtime DLLs
   Flags=0000001000000011
 end
 item: Install File
-  Source=c:\winnt\system32\MSVCRT.DLL
+  Source=%_SYS_%\MSVCRT.DLL
   Destination=%SYS32%\MSVCRT.DLL
   Description=Visual C++ Runtime DLLs
   Flags=0000001000000011
@@ -872,7 +866,7 @@ item: Install File
   Flags=0000000000000010
 end
 item: Install File
-  Source=%_SRC_%\Tools\idle\README
+  Source=%_SRC_%\Tools\idle\README.txt
   Destination=%MAINDIR%\Tools\idle\README.txt
   Description=IDLE read-me file
   Flags=0000000000000010
@@ -985,96 +979,118 @@ item: Add Text to INSTALL.LOG
   Text=File Tree: %MAINDIR%\Lib\*.*
 end
 item: Edit Registry
+  Total Keys=1
   Key=.py
   New Value=Python.File
 end
 item: Edit Registry
+  Total Keys=1
   Key=.py
   New Value=text/plain
   Value Name=Content Type
 end
 item: Edit Registry
+  Total Keys=1
   Key=Python.File
   New Value=Python File
 end
 item: Edit Registry
+  Total Keys=1
   Key=Python.File\shell\open\command
   New Value=%MAINDIR%\python.exe "%%1" %%*
 end
 item: Edit Registry
+  Total Keys=1
   Key=Python.File\DefaultIcon
   New Value=%MAINDIR%\Py.ico
 end
 item: Edit Registry
+  Total Keys=1
   Key=.pyw
   New Value=Python.NoConFile
 end
 item: Edit Registry
+  Total Keys=1
   Key=.pyw
   New Value=text/plain
   Value Name=Content Type
 end
 item: Edit Registry
+  Total Keys=1
   Key=Python.NoConFile
   New Value=Python File (no console)
 end
 item: Edit Registry
+  Total Keys=1
   Key=Python.NoConFile\shell\open\command
   New Value=%MAINDIR%\pythonw.exe "%%1" %%*
 end
 item: Edit Registry
+  Total Keys=1
   Key=Python.NoConFile\DefaultIcon
   New Value=%MAINDIR%\Py.ico
 end
 item: Edit Registry
+  Total Keys=1
   Key=.pyc
   New Value=Python.CompiledFile
 end
 item: Edit Registry
+  Total Keys=1
   Key=.pyo
   New Value=Python.CompiledFile
 end
 item: Edit Registry
+  Total Keys=1
   Key=Python.CompiledFile
   New Value=Compiled Python File
 end
 item: Edit Registry
+  Total Keys=1
   Key=Python.CompiledFile\shell\open\command
   New Value=%MAINDIR%\python.exe "%%1" %%*
 end
 item: Edit Registry
+  Total Keys=1
   Key=Python.CompiledFile\DefaultIcon
   New Value=%MAINDIR%\pyc.ico
 end
 item: Edit Registry
+  Total Keys=1
   Key=Software\Python\PythonCore\CurrentVersion
   Root=130
 end
 item: Edit Registry
+  Total Keys=1
   Key=Software\Python\PythonCore\%PY_VERSION%\InstallPath
   New Value=%MAINDIR%
   Root=2
 end
 item: Edit Registry
+  Total Keys=1
   Key=Software\Python\PythonCore\%PY_VERSION%\InstallPath\InstallGroup
   New Value=%GROUP%
   Root=2
 end
 item: Edit Registry
+  Total Keys=1
   Key=Software\Python\PythonCore\%PY_VERSION%\PythonPath
   New Value=%MAINDIR%\Lib\plat-win;%MAINDIR%\Lib;%MAINDIR%\DLLs;%MAINDIR%\Lib\lib-tk
   Root=2
 end
 item: Edit Registry
+  Total Keys=1
   Key=Software\Python\PythonCore\%PY_VERSION%\Dll
   New Value=%SYS32%\Python15.dll
   Root=2
 end
 item: Edit Registry
+  Total Keys=1
   Key=Software\Python\PythonCore\%PY_VERSION%\Modules
   Root=2
 end
 item: Edit Registry
+  Total Keys=1
   Key=Software\Microsoft\Windows\CurrentVersion\App Paths\Python.exe
   New Value=%MAINDIR%\Python.exe
   Root=2
@@ -1087,6 +1103,7 @@ item: If/While Statement
   Flags=00001010
 end
 item: Edit Registry
+  Total Keys=1
   Key=Software\Python\PythonCore\%PY_VERSION%\Help\Main Python Documentation
   New Value=%MAINDIR%\Doc\index.html
   Root=2
@@ -1189,6 +1206,17 @@ item: If/While Statement
   Value=E
   Flags=00001010
 end
+item: Display Message
+  Title=Install Tcl/Tk?
+  Text=Python can now run the Tcl/Tk installer.
+  Text=
+  Text=This is needed if you want to use Tkinter or IDLE. If you don't want to install Tcl/Tk, or already have Tcl/Tk installed, simply hit No.
+  Text=
+  Text=After the Tcl/Tk installer is finished, you will be presented with the final panel of the Python installation.
+  Text=
+  Text=Do you want to install Tcl/Tk now?
+  Flags=00100001
+end
 item: Install File
   Source=D:\downloads\tcl804.exe
   Destination=%TEMP%\tcl804.exe
@@ -1200,6 +1228,8 @@ item: Execute Program
   Command Line=tcl804.exe
   Default Directory=%TEMP%
   Flags=00000011
+end
+item: End Block
 end
 item: End Block
 end
