@@ -777,6 +777,7 @@ _res = Py_BuildValue("O&",
 return _res;"""
 
 f = ManualGenerator("CreateTabsControl", createtabscontrol_body, condition="#if TARGET_API_MAC_CARBON")
+f.docstring = lambda: "(WindowPtr window, Rect boundsRect, UInt16 size, UInt16 direction, ControlTabEntry tabArray) -> (ControlHandle outControl)"
 module.add(f)
 
 # generate output (open the output file as late as possible)
