@@ -773,10 +773,26 @@ mfsr_as_fsspec(mfsrobject *self, PyObject *args)
 	return (PyObject *)newmfssobject(&fss);
 }
 
+static PyObject *
+mfsr_as_pathname(mfsrobject *self, PyObject *args)
+{
+	char strbuf[PATHNAMELEN];
+	OSStatus err;
+	
+	if (!PyArg_ParseTuple(args, ""))
+		return NULL;
+	err = FSRefMakePath(&self->fsref, strbuf, PATHNAMELEN);
+	if ( err ) {
+		PyErr_Mac(ErrorObject, err);
+		return NULL;
+	}
+	return PyString_FromString(strbuf);
+}
+
 static struct PyMethodDef mfsr_methods[] = {
 	{"as_fsspec",		(PyCFunction)mfsr_as_fsspec,	1},
+	{"as_pathname",		(PyCFunction)mfsr_as_pathname,			1},
 #if 0
-	{"as_pathname",		(PyCFunction)mfss_as_pathname,			1},
 	{"as_tuple",		(PyCFunction)mfss_as_tuple,				1},
 	{"NewAlias",		(PyCFunction)mfss_NewAlias,				1},
 	{"NewAliasMinimal",	(PyCFunction)mfss_NewAliasMinimal,		1},
