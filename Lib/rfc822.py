@@ -288,7 +288,8 @@ class Message:
 
         This returns a list of values for headers given more than once;
         each value in the result list is stripped in the same way as the
-        result of getheader().  If the header is not given, return None.
+        result of getheader().  If the header is not given, return an
+        empty list.
         """
         result = []
         current = ''
@@ -306,7 +307,7 @@ class Message:
                 have_header = 1
         if have_header:
             result.append(current)
-        return result or None
+        return result
     
     def getaddr(self, name):
         """Get a single address from a header, as a tuple.
