@@ -272,12 +272,6 @@ assert '...%(foo)s...' % {u'foo':u"abc",'def':123} ==  u'...abc...'
 assert '...%(foo)s...' % {u'foo':u"abc",u'def':123} == u'...abc...'
 assert '...%s...%s...%s...%s...' % (1,2,3,u"abc") == u'...1...2...3...abc...'
 assert '...%s...' % u"abc" == u'...abc...'
-try:
-    '...%s...הצü...' % u"abc"
-except ValueError:
-    pass
-else:
-    print "*** formatting failed ...%s...הצü...' % u'abc' failed to raise an exception"
 print 'done.'
 
 # Test builtin codecs
