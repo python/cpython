@@ -10,9 +10,8 @@ audiopy		Audiopy is a program to control the Solaris audio
 bgen		Generate complete extension modules from a
 		description.  Still under development!
 
-compiler	A Python source to bytecode compiler written in
-		Python, including an interface for manipulating
-		abstract syntax trees.	Still under development.
+compiler	Tools used to maintain the compiler package in the
+		standard library.
 
 faqwiz		FAQ Wizard.
 		See http://www.python.org/cgi-bin/faqw.py
