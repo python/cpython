@@ -347,7 +347,10 @@ class HTTPConnection:
         if port is None:
             i = host.find(':')
             if i >= 0:
-                port = int(host[i+1:])
+                try:
+                    port = int(host[i+1:])
+                except ValueError:
+                    raise InvalidURL, "nonnumeric port: '%s'"%host[i+1:]
                 host = host[:i]
             else:
                 port = self.default_port
@@ -806,6 +809,9 @@ class HTTPException(Exception):
     pass
 
 class NotConnected(HTTPException):
+    pass
+
+class InvalidURL(HTTPException):
     pass
 
 class UnknownProtocol(HTTPException):
