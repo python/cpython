@@ -131,16 +131,19 @@ class ProgressBar:
 		self._update(0)
 
 	def __del__( self ):
+		self.d.BringToFront()
 		self.d.HideWindow()
 		del self.d
 		
 	def title(self, newstr=""):
 		"""title(text) - Set title of progress window"""
+		self.d.BringToFront()
 		w = self.d.GetDialogWindow()
 		w.SetWTitle(newstr)
 		
 	def label( self, *newstr ):
 		"""label(text) - Set text in progress box"""
+		self.d.BringToFront()
 		if newstr:
 			self._label = newstr[0]
 		tp, text_h, rect = self.d.GetDialogItem(2)
