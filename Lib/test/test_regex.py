@@ -48,7 +48,7 @@ print 'case folded search:', cre.search('HELLO WORLD')
 print '__members__:', cre.__members__
 print 'regs:', cre.regs
 print 'last:', cre.last
-print 'translate:', `cre.translate`
+print 'translate:', len(cre.translate)
 print 'givenpat:', cre.givenpat
 
 print 'match with pos:', cre.match('hello world', 7)

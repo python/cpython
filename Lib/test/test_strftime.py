@@ -19,7 +19,7 @@ def main():
 def strftest(now):
     if verbose:
 	print "strftime test for", time.ctime(now)
-    nowsecs = int(now)
+    nowsecs = str(long(now))[:-1]
     gmt = time.gmtime(now)
     now = time.localtime(now)
 
@@ -75,7 +75,7 @@ def strftest(now):
 	    # This is for IRIX; on Solaris, %C yields date(1) format.
 	    # Tough.
 	('%k', '%2d' % now[3], 'hour, blank padded ( 0-23)'),
-	('%s', '%d' % nowsecs, 'seconds since the Epoch in UCT'),
+	('%s', nowsecs, 'seconds since the Epoch in UCT'),
 	('%3y', '%03d' % (now[0]%100),
 	 'year without century rendered using fieldwidth'),
 	('%n', '\n', 'newline character'),
