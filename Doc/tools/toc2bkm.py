@@ -101,7 +101,7 @@ def write_toc(toc, fp):
 
 def write_toc_entry(entry, fp, layer):
     stype, snum, title, pageno, toc = entry
-    s = "\\pdfoutline goto name{page.%dx}" % pageno
+    s = "\\pdfoutline goto name{page%03d}" % pageno
     if toc:
 	s = "%s count -%d" % (s, len(toc))
     if snum:
