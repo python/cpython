@@ -68,17 +68,17 @@ lock_PyThread_acquire_lock(lockobject *self, PyObject *args)
 		return Py_None;
 	}
 	else
-		return PyInt_FromLong((long)i);
+		return PyBool_FromLong((long)i);
 }
 
 static char acquire_doc[] =
-"acquire([wait]) -> None or Boolean\n\
+"acquire([wait]) -> None or bool\n\
 (PyThread_acquire_lock() is an obsolete synonym)\n\
 \n\
 Lock the lock.  Without argument, this blocks if the lock is already\n\
 locked (even by the same thread), waiting for another thread to release\n\
-the lock, and return None when the lock is acquired.\n\
-With a Boolean argument, this will only block if the argument is true,\n\
+the lock, and return None once the lock is acquired.\n\
+With an argument, this will only block if the argument is true,\n\
 and the return value reflects whether the lock is acquired.\n\
 The blocking operation is not interruptible.";
 
@@ -110,13 +110,13 @@ lock_locked_lock(lockobject *self)
 {
 	if (PyThread_acquire_lock(self->lock_lock, 0)) {
 		PyThread_release_lock(self->lock_lock);
-		return PyInt_FromLong(0L);
+		return PyBool_FromLong(0L);
 	}
-	return PyInt_FromLong(1L);
+	return PyBool_FromLong(1L);
 }
 
 static char locked_doc[] =
-"locked() -> Boolean\n\
+"locked() -> bool\n\
 (locked_lock() is an obsolete synonym)\n\
 \n\
 Return whether the lock is in the locked state.";
