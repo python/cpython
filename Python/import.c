@@ -55,8 +55,12 @@ PERFORMANCE OF THIS SOFTWARE.
 #ifndef DONT_HAVE_STAT
 #define HAVE_STAT
 
+#ifndef DONT_HAVE_SYS_TYPES_H
 #include <sys/types.h>
+#endif
+#ifndef DONT_HAVE_SYS_STAT_H
 #include <sys/stat.h>
+#endif
 
 #if defined(PYCC_VACPP)
 /* VisualAge C/C++ Failed to Define MountType Field in sys/stat.h */

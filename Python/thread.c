@@ -42,12 +42,16 @@ PERFORMANCE OF THIS SOFTWARE.
 #define DL_IMPORT(RTYPE) RTYPE
 #endif
 
+#ifndef DONT_HAVE_STDIO_H
 #include <stdio.h>
+#endif
 
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
 #else
+#ifdef Py_DEBUG
 extern char *getenv();
+#endif
 #endif
 
 #ifdef HAVE_UNISTD_H
@@ -160,6 +164,10 @@ void PyThread_init_thread _P0()
 
 #ifdef BEOS_THREADS
 #include "thread_beos.h"
+#endif
+
+#ifdef WINCE_THREADS
+#include "thread_wince.h"
 #endif
 
 /*
