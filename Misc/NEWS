@@ -4,6 +4,21 @@ Release date: 30-May-2003
 
 - SF #745055: Fix memory leaks in Tkapp_Split and Tkapp_SplitList.
 
+- On Posix systems, as of Python 2.2, the arguments for
+  socket.socket() default to AF_INET, SOCK_STREAM.  This is now so for
+  the Windows-specific wrapper in socket.py as well.
+
+- Backport SF #736892: Add argument sanity checking for __get__().
+
+- SF #742911: Fix segfault due to clearing weak references too late
+  for new-style class instances.
+
+- Backport SF 742860: new, improved __delitem__ for WeakKeyDictionary.
+
+- RPM spec file update from Sean Reifschneider.
+
+- Mac OS X specific backports for distutils/unixccompiler.py.
+
 
 What's New in Python 2.2.3c1 ?
 Release date: 22-May-2003
