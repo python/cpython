@@ -37,6 +37,12 @@ class BaseTestCase(unittest.TestCase):
         result = wrap(text, width)
         self.check(result, expect)
 
+    def check_split (self, wrapper, text, expect):
+        result = wrapper._split(text)
+        self.assertEquals(result, expect,
+                          "\nexpected %r\n"
+                          "but got  %r" % (expect, result))
+
 
 class WrapTestCase(BaseTestCase):
 
@@ -155,13 +161,10 @@ What a mess!
         # All of the above behaviour could be deduced by probing the
         # _split() method.
         text = "Here's an -- em-dash and--here's another---and another!"
-        result = self.wrapper._split(text)
         expect = ["Here's", " ", "an", " ", "--", " ", "em-", "dash", " ",
                   "and", "--", "here's", " ", "another", "---",
                   "and", " ", "another!"]
-        self.assertEquals(result, expect,
-                          "\nexpected %r\n"
-                          "but got  %r" % (expect, result))
+        self.check_split(self.wrapper, text, expect)
 
     def test_unix_options (self):
         # Test that Unix-style command-line options are wrapped correctly.
@@ -193,12 +196,9 @@ What a mess!
 
         # Again, all of the above can be deduced from _split().
         text = "the -n option, or --dry-run or --dryrun"
-        result = self.wrapper._split(text)
         expect = ["the", " ", "-n", " ", "option,", " ", "or", " ",
                   "--dry-", "run", " ", "or", " ", "--dryrun"]
-        self.assertEquals(result, expect,
-                          "\nexpected %r\n"
-                          "but got  %r" % (expect, result))
+        self.check_split(self.wrapper, text, expect)
 
     def test_split(self):
         # Ensure that the standard _split() method works as advertised
