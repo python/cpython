@@ -21,7 +21,7 @@ class TraceBack:
 		try:
 			self.lastwindowtitle = lastwindowtitle
 			self.start = start
-			self.type, self.value, self.tb = sys.exc_type, sys.exc_value, sys.exc_traceback
+			self.type, self.value, self.tb = sys.exc_info()
 			if self.type is not SyntaxError:
 				self.show()
 				if type(self.type) == types.ClassType:
