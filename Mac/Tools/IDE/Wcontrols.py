@@ -94,6 +94,19 @@ class ControlWidget(Wbase.ClickableWidget):
 	
 	def gettitle(self):
 		return self._title
+	
+	def set(self, value):
+		if self._control:
+			self._control.SetControl32BitValue(value)
+		else:
+			self._value = value
+	
+	def get(self):
+		if self._control:
+			return self._control.GetControl32BitValue()
+		else:
+			return self._value
+
 
 class Button(ControlWidget):
 	
@@ -165,19 +178,7 @@ class CheckBox(ControlWidget):
 	
 	def toggle(self):
 		self.set(not self.get())
-	
-	def set(self, value):
-		if self._control:
-			self._control.SetControlValue(value)
-		else:
-			self._value = value
-	
-	def get(self):
-		if self._control:
-			return self._control.GetControlValue()
-		else:
-			return self._value
-	
+
 
 class RadioButton(ControlWidget):
 	
@@ -217,13 +218,7 @@ class RadioButton(ControlWidget):
 				button._control.SetControlValue(button == self)
 			else:
 				button._value = (button == self)
-	
-	def get(self):
-		if self._control:
-			return self._control.GetControlValue()
-		else:
-			return self._value
-	
+
 
 class Scrollbar(ControlWidget):
 	
@@ -234,9 +229,9 @@ class Scrollbar(ControlWidget):
 		ControlWidget.__init__(self, possize, "", procID, callback, value, min, max)
 	
 	# interface
-	def set(self, value):
-		if self._callback:
-			Wbase.CallbackCall(self._callback, 1, value)
+#	def set(self, value):
+#		if self._callback:
+#			Wbase.CallbackCall(self._callback, 1, value)
 	
 	def up(self):
 		if self._callback:
@@ -255,16 +250,19 @@ class Scrollbar(ControlWidget):
 			Wbase.CallbackCall(self._callback, 1, '--')
 	
 	def setmin(self, min):
-		self._control.SetControlMinimum(min)
+		self._control.SetControl32BitMinimum(min)
 	
-	def setmax(self, min):
-		self._control.SetControlMinimum(max)
+	def setmax(self, max):
+		self._control.SetControl32BitMaximum(max)
+	
+	def setviewsize(self, view):
+		self._control.SetControlViewSize(view)
 	
 	def getmin(self):
-		return self._control.GetControlMinimum()
+		return self._control.GetControl32BitMinimum()
 	
 	def getmax(self):
-		return self._control.GetControlMinimum()
+		return self._control.GetControl32BitMaximum()
 	
 	# internals
 	def click(self, point, modifiers):
@@ -299,7 +297,7 @@ class Scrollbar(ControlWidget):
 	
 	def _hit(self, part):
 		if part == Controls.inThumb:
-			value = self._control.GetControlValue()
+			value = self._control.GetControl32BitValue()
 		elif part == Controls.inUpButton:
 			value = "+"
 		elif part == Controls.inDownButton:
@@ -329,19 +327,7 @@ class Scrollbar(ControlWidget):
 			else:
 				Qd.FrameRect(self._bounds)
 			self.GetWindow().ValidWindowRect(self._bounds)
-	
-	def set(self, value):
-		if self._control:
-			self._control.SetControlValue(value)
-		else:
-			self._value = value
-	
-	def get(self):
-		if self._control:
-			return self._control.GetControlValue()
-		else:
-			return self._value
-	
+
 
 def _scalebarvalue(absmin, absmax, curmin, curmax):
 	if curmin <= absmin and curmax >= absmax:
