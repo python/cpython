@@ -34,21 +34,25 @@ test_re
 ('a[b-d]e', 'ace', 0, 'found', 'ace')
 ('a[b-d]', 'aac', 0, 'found', 'ac')
 ('a[-b]', 'a-', 0, 'found', 'a-')
+=== Syntax error: ('a[-b]', 'a-', 0, 'found', 'a-')
 ('a[b-]', 'a-', 2)
 ('a[]b', '-', 2)
-*** Unexpected error ***
 ('a[', '-', 2)
 ('a\\', '-', 2)
 ('abc)', '-', 2)
 ('(abc', '-', 2)
 ('a]', 'a]', 0, 'found', 'a]')
 ('a[]]b', 'a]b', 0, 'found', 'a]b')
+=== Syntax error: ('a[]]b', 'a]b', 0, 'found', 'a]b')
 ('a[^bc]d', 'aed', 0, 'found', 'aed')
 ('a[^bc]d', 'abd', 1)
 ('a[^-b]c', 'adc', 0, 'found', 'adc')
+=== Syntax error: ('a[^-b]c', 'adc', 0, 'found', 'adc')
 ('a[^-b]c', 'a-c', 1)
+=== Syntax error: ('a[^-b]c', 'a-c', 1)
 ('a[^]b]c', 'a]c', 1)
 ('a[^]b]c', 'adc', 0, 'found', 'adc')
+=== Failed incorrectly ('a[^]b]c', 'adc', 0, 'found', 'adc')
 ('\\ba\\b', 'a-', 0, '"-"', '-')
 ('\\ba\\b', '-a', 0, '"-"', '-')
 ('\\ba\\b', '-a-', 0, '"-"', '-')
@@ -64,125 +68,76 @@ test_re
 === Syntax error: ('a(b', 'a(b', 0, 'found+"-"+g1', 'a(b-None')
 ('a\\(*b', 'ab', 0, 'found', 'ab')
 ('a\\(*b', 'a((b', 0, 'found', 'a((b')
-=== Failed incorrectly ('a\\(*b', 'a((b', 0, 'found', 'a((b')
 ('a\\\\b', 'a\\b', 0, 'found', 'a\\b')
-=== Failed incorrectly ('a\\\\b', 'a\\b', 0, 'found', 'a\\b')
 ('((a))', 'abc', 0, 'found+"-"+g1+"-"+g2', 'a-a-a')
-=== grouping error ('((a))', 'abc', 0, 'found+"-"+g1+"-"+g2', 'a-a-a') 'a-None-None' should be 'a-a-a'
 ('(a)b(c)', 'abc', 0, 'found+"-"+g1+"-"+g2', 'abc-a-c')
-=== grouping error ('(a)b(c)', 'abc', 0, 'found+"-"+g1+"-"+g2', 'abc-a-c') 'abc-None-None' should be 'abc-a-c'
 ('a+b+c', 'aabbabc', 0, 'found', 'abc')
 ('(a+|b)*', 'ab', 0, 'found+"-"+g1', 'ab-b')
-*** Unexpected error ***
 ('(a+|b)+', 'ab', 0, 'found+"-"+g1', 'ab-b')
-*** Unexpected error ***
 ('(a+|b)?', 'ab', 0, 'found+"-"+g1', 'a-a')
-*** Unexpected error ***
 (')(', '-', 2)
 ('[^ab]*', 'cde', 0, 'found', 'cde')
 ('abc', '', 1)
 ('a*', '', 0, 'found', '')
 ('a|b|c|d|e', 'e', 0, 'found', 'e')
 ('(a|b|c|d|e)f', 'ef', 0, 'found+"-"+g1', 'ef-e')
-*** Unexpected error ***
 ('abcd*efg', 'abcdefg', 0, 'found', 'abcdefg')
 ('ab*', 'xabyabbbz', 0, 'found', 'ab')
 ('ab*', 'xayabbbz', 0, 'found', 'a')
 ('(ab|cd)e', 'abcde', 0, 'found+"-"+g1', 'cde-cd')
-*** Unexpected error ***
 ('[abhgefdc]ij', 'hij', 0, 'found', 'hij')
 ('^(ab|cd)e', 'abcde', 1, 'xg1y', 'xy')
-*** Unexpected error ***
 ('(abc|)ef', 'abcdef', 0, 'found+"-"+g1', 'ef-')
 === Syntax error: ('(abc|)ef', 'abcdef', 0, 'found+"-"+g1', 'ef-')
 ('(a|b)c*d', 'abcd', 0, 'found+"-"+g1', 'bcd-b')
-*** Unexpected error ***
 ('(ab|ab*)bc', 'abc', 0, 'found+"-"+g1', 'abc-a')
-*** Unexpected error ***
 ('a([bc]*)c*', 'abc', 0, 'found+"-"+g1', 'abc-bc')
-=== grouping error ('a([bc]*)c*', 'abc', 0, 'found+"-"+g1', 'abc-bc') 'abc-None' should be 'abc-bc'
 ('a([bc]*)(c*d)', 'abcd', 0, 'found+"-"+g1+"-"+g2', 'abcd-bc-d')
-=== grouping error ('a([bc]*)(c*d)', 'abcd', 0, 'found+"-"+g1+"-"+g2', 'abcd-bc-d') 'abcd-None-None' should be 'abcd-bc-d'
 ('a([bc]+)(c*d)', 'abcd', 0, 'found+"-"+g1+"-"+g2', 'abcd-bc-d')
-=== grouping error ('a([bc]+)(c*d)', 'abcd', 0, 'found+"-"+g1+"-"+g2', 'abcd-bc-d') 'abcd-None-None' should be 'abcd-bc-d'
 ('a([bc]*)(c+d)', 'abcd', 0, 'found+"-"+g1+"-"+g2', 'abcd-b-cd')
-=== grouping error ('a([bc]*)(c+d)', 'abcd', 0, 'found+"-"+g1+"-"+g2', 'abcd-b-cd') 'abcd-None-None' should be 'abcd-b-cd'
 ('a[bcd]*dcdcde', 'adcdcde', 0, 'found', 'adcdcde')
 ('a[bcd]+dcdcde', 'adcdcde', 1)
 ('(ab|a)b*c', 'abc', 0, 'found+"-"+g1', 'abc-ab')
-*** Unexpected error ***
 ('((a)(b)c)(d)', 'abcd', 0, 'g1+"-"+g2+"-"+g3+"-"+g4', 'abc-a-b-d')
-=== grouping error ('((a)(b)c)(d)', 'abcd', 0, 'g1+"-"+g2+"-"+g3+"-"+g4', 'abc-a-b-d') 'None-None-None-None' should be 'abc-a-b-d'
 ('[a-zA-Z_][a-zA-Z0-9_]*', 'alpha', 0, 'found', 'alpha')
 ('^a(bc+|b[eh])g|.h$', 'abh', 0, 'found+"-"+g1', 'bh-None')
-*** Unexpected error ***
 ('(bc+d$|ef*g.|h?i(j|k))', 'effgz', 0, 'found+"-"+g1+"-"+g2', 'effgz-effgz-None')
-*** Unexpected error ***
 ('(bc+d$|ef*g.|h?i(j|k))', 'ij', 0, 'found+"-"+g1+"-"+g2', 'ij-ij-j')
-*** Unexpected error ***
 ('(bc+d$|ef*g.|h?i(j|k))', 'effg', 1)
-*** Unexpected error ***
 ('(bc+d$|ef*g.|h?i(j|k))', 'bcdd', 1)
-*** Unexpected error ***
 ('(bc+d$|ef*g.|h?i(j|k))', 'reffgz', 0, 'found+"-"+g1+"-"+g2', 'effgz-effgz-None')
-*** Unexpected error ***
 ('(((((((((a)))))))))', 'a', 0, 'found', 'a')
 ('multiple words of text', 'uh-uh', 1)
 ('multiple words', 'multiple words, yeah', 0, 'found', 'multiple words')
-=== Failed incorrectly ('multiple words', 'multiple words, yeah', 0, 'found', 'multiple words')
 ('(.*)c(.*)', 'abcde', 0, 'found+"-"+g1+"-"+g2', 'abcde-ab-de')
-=== grouping error ('(.*)c(.*)', 'abcde', 0, 'found+"-"+g1+"-"+g2', 'abcde-ab-de') 'abcde-None-None' should be 'abcde-ab-de'
-('((.*), (.*))', '(a, b)', 0, 'g2+"-"+g1', 'b-a')
-=== grouping error ('((.*), (.*))', '(a, b)', 0, 'g2+"-"+g1', 'b-a') 'None-None' should be 'b-a'
+('\\((.*), (.*)\\)', '(a, b)', 0, 'g2+"-"+g1', 'b-a')
 ('[k]', 'ab', 1)
 ('a[-]?c', 'ac', 0, 'found', 'ac')
+=== Syntax error: ('a[-]?c', 'ac', 0, 'found', 'ac')
 ('(abc)\\1', 'abcabc', 0, 'g1', 'abc')
-=== grouping error ('(abc)\\1', 'abcabc', 0, 'g1', 'abc') 'None' should be 'abc'
 ('([a-c]*)\\1', 'abcabc', 0, 'g1', 'abc')
-=== grouping error ('([a-c]*)\\1', 'abcabc', 0, 'g1', 'abc') 'None' should be 'abc'
 ('^(.+)?B', 'AB', 0, 'g1', 'A')
-=== grouping error ('^(.+)?B', 'AB', 0, 'g1', 'A') 'None' should be 'A'
 ('(a+).\\1$', 'aaaaa', 0, 'found+"-"+g1', 'aaaaa-aa')
-=== grouping error ('(a+).\\1$', 'aaaaa', 0, 'found+"-"+g1', 'aaaaa-aa') 'aaaaa-None' should be 'aaaaa-aa'
 ('^(a+).\\1$', 'aaaa', 1)
 ('(abc)\\1', 'abcabc', 0, 'found+"-"+g1', 'abcabc-abc')
-=== grouping error ('(abc)\\1', 'abcabc', 0, 'found+"-"+g1', 'abcabc-abc') 'abcabc-None' should be 'abcabc-abc'
 ('([a-c]+)\\1', 'abcabc', 0, 'found+"-"+g1', 'abcabc-abc')
-=== grouping error ('([a-c]+)\\1', 'abcabc', 0, 'found+"-"+g1', 'abcabc-abc') 'abcabc-None' should be 'abcabc-abc'
 ('(a)\\1', 'aa', 0, 'found+"-"+g1', 'aa-a')
-=== grouping error ('(a)\\1', 'aa', 0, 'found+"-"+g1', 'aa-a') 'aa-None' should be 'aa-a'
 ('(a+)\\1', 'aa', 0, 'found+"-"+g1', 'aa-a')
-=== grouping error ('(a+)\\1', 'aa', 0, 'found+"-"+g1', 'aa-a') 'aa-None' should be 'aa-a'
 ('(a+)+\\1', 'aa', 0, 'found+"-"+g1', 'aa-a')
-=== grouping error ('(a+)+\\1', 'aa', 0, 'found+"-"+g1', 'aa-a') 'aa-None' should be 'aa-a'
 ('(a).+\\1', 'aba', 0, 'found+"-"+g1', 'aba-a')
-=== grouping error ('(a).+\\1', 'aba', 0, 'found+"-"+g1', 'aba-a') 'aba-None' should be 'aba-a'
 ('(a)ba*\\1', 'aba', 0, 'found+"-"+g1', 'aba-a')
-=== grouping error ('(a)ba*\\1', 'aba', 0, 'found+"-"+g1', 'aba-a') 'aba-None' should be 'aba-a'
 ('(aa|a)a\\1$', 'aaa', 0, 'found+"-"+g1', 'aaa-a')
-*** Unexpected error ***
 ('(a|aa)a\\1$', 'aaa', 0, 'found+"-"+g1', 'aaa-a')
-*** Unexpected error ***
 ('(a+)a\\1$', 'aaa', 0, 'found+"-"+g1', 'aaa-a')
-=== grouping error ('(a+)a\\1$', 'aaa', 0, 'found+"-"+g1', 'aaa-a') 'aaa-None' should be 'aaa-a'
 ('([abc]*)\\1', 'abcabc', 0, 'found+"-"+g1', 'abcabc-abc')
-=== grouping error ('([abc]*)\\1', 'abcabc', 0, 'found+"-"+g1', 'abcabc-abc') 'abcabc-None' should be 'abcabc-abc'
 ('(a)(b)c|ab', 'ab', 0, 'found+"-"+g1+"-"+g2', 'ab-None-None')
 ('(a)+x', 'aaax', 0, 'found+"-"+g1', 'aaax-a')
-=== grouping error ('(a)+x', 'aaax', 0, 'found+"-"+g1', 'aaax-a') 'aaax-None' should be 'aaax-a'
 ('([ac])+x', 'aacx', 0, 'found+"-"+g1', 'aacx-c')
-=== grouping error ('([ac])+x', 'aacx', 0, 'found+"-"+g1', 'aacx-c') 'aacx-None' should be 'aacx-c'
 ('([^/]*/)*sub1/', 'd:msgs/tdir/sub1/trial/away.cpp', 0, 'found+"-"+g1', 'd:msgs/tdir/sub1/-tdir/')
-=== grouping error ('([^/]*/)*sub1/', 'd:msgs/tdir/sub1/trial/away.cpp', 0, 'found+"-"+g1', 'd:msgs/tdir/sub1/-tdir/') 'd:msgs/tdir/sub1/-None' should be 'd:msgs/tdir/sub1/-tdir/'
 ('([^.]*)\\.([^:]*):[T ]+(.*)', 'track1.title:TBlah blah blah', 0, 'found+"-"+g1+"-"+g2+"-"+g3', 'track1.title:TBlah blah blah-track1-title-Blah blah blah')
-=== Failed incorrectly ('([^.]*)\\.([^:]*):[T ]+(.*)', 'track1.title:TBlah blah blah', 0, 'found+"-"+g1+"-"+g2+"-"+g3', 'track1.title:TBlah blah blah-track1-title-Blah blah blah')
 ('([^N]*N)+', 'abNNxyzN', 0, 'found+"-"+g1', 'abNNxyzN-xyzN')
-=== grouping error ('([^N]*N)+', 'abNNxyzN', 0, 'found+"-"+g1', 'abNNxyzN-xyzN') 'abNNxyzN-None' should be 'abNNxyzN-xyzN'
 ('([^N]*N)+', 'abNNxyz', 0, 'found+"-"+g1', 'abNN-N')
-=== grouping error ('([^N]*N)+', 'abNNxyz', 0, 'found+"-"+g1', 'abNN-N') 'abNN-None' should be 'abNN-N'
 ('([abc]*)x', 'abcx', 0, 'found+"-"+g1', 'abcx-abc')
-=== grouping error ('([abc]*)x', 'abcx', 0, 'found+"-"+g1', 'abcx-abc') 'abcx-None' should be 'abcx-abc'
 ('([abc]*)x', 'abc', 1)
 ('([xyz]*)x', 'abcx', 0, 'found+"-"+g1', 'x-')
-=== grouping error ('([xyz]*)x', 'abcx', 0, 'found+"-"+g1', 'x-') 'x-None' should be 'x-'
 ('(a)+b|aac', 'aac', 0, 'found+"-"+g1', 'aac-None')

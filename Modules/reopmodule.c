@@ -87,13 +87,13 @@ reop_match(self, args)
 	char *string;
 	int fastmaplen, stringlen;
 	int can_be_null, anchor, i;
-	int num_regs, flags, pos, result;
+	int flags, pos, result;
 	struct re_pattern_buffer bufp;
 	struct re_registers re_regs;
 	
 	if (!PyArg_Parse(args, "(s#iiis#is#i)", 
 			 &(bufp.buffer), &(bufp.allocated), 
-			 &num_regs, &flags, &can_be_null,
+			 &(bufp.num_registers), &flags, &can_be_null,
 			 &(bufp.fastmap), &fastmaplen,
 			 &anchor,
 			 &string, &stringlen, 
@@ -106,10 +106,9 @@ reop_match(self, args)
 	bufp.fastmap_accurate=1;
 	bufp.can_be_null=can_be_null;
 	bufp.uses_registers=1;
-	bufp.num_registers=num_regs;
 	bufp.anchor=anchor;
 	
-	for(i=0; i<num_regs; i++) {re_regs.start[i]=-1; re_regs.end[i]=-1;}
+	for(i=0; i<bufp.num_registers; i++) {re_regs.start[i]=-1; re_regs.end[i]=-1;}
 	
 	result = re_match(&bufp, 
 			  string, stringlen, pos, 
@@ -123,7 +122,7 @@ reop_match(self, args)
 		Py_INCREF(Py_None);
 		return Py_None;
 	}
-	return makeresult(&re_regs, num_regs);
+	return makeresult(&re_regs, bufp.num_registers);
 }
 
 static PyObject *
@@ -134,13 +133,13 @@ reop_search(self, args)
 	char *string;
 	int fastmaplen, stringlen;
 	int can_be_null, anchor, i;
-	int num_regs, flags, pos, result;
+	int flags, pos, result;
 	struct re_pattern_buffer bufp;
 	struct re_registers re_regs;
 	
 	if (!PyArg_Parse(args, "(s#iiis#is#i)", 
 			 &(bufp.buffer), &(bufp.allocated), 
-			 &num_regs, &flags, &can_be_null,
+			 &(bufp.num_registers), &flags, &can_be_null,
 			 &(bufp.fastmap), &fastmaplen,
 			 &anchor,
 			 &string, &stringlen, 
@@ -153,10 +152,9 @@ reop_search(self, args)
 	bufp.fastmap_accurate=1;
 	bufp.can_be_null=can_be_null;
 	bufp.uses_registers=1;
-	bufp.num_registers=1;
 	bufp.anchor=anchor;
 
-	for(i=0; i<num_regs; i++) {re_regs.start[i]=-1; re_regs.end[i]=-1;}
+	for(i=0; i<bufp.num_registers; i++) {re_regs.start[i]=-1; re_regs.end[i]=-1;}
 	
 	result = re_search(&bufp, 
 			   string, stringlen, pos, stringlen-pos,
@@ -170,7 +168,7 @@ reop_search(self, args)
 		Py_INCREF(Py_None);
 		return Py_None;
 	}
-	return makeresult(&re_regs, num_regs);
+	return makeresult(&re_regs, bufp.num_registers);
 }
 
 #if 0
