@@ -953,14 +953,13 @@ PyObject *PyUnicode_EncodeUTF16(const Py_UNICODE *s,
 			sizeof(Py_UNICODE) * (size + (byteorder == 0)));
     if (v == NULL)
         return NULL;
-    if (size == 0)
-        goto done;
 
     q = PyString_AS_STRING(v);
     p = (Py_UNICODE *)q;
-    
     if (byteorder == 0)
 	*p++ = 0xFEFF;
+    if (size == 0)
+        goto done;
     if (byteorder == 0 ||
 #ifdef BYTEORDER_IS_LITTLE_ENDIAN	
 	byteorder == -1
@@ -994,7 +993,7 @@ PyObject *PyUnicode_AsUTF16String(PyObject *unicode)
 
 static
 int unicodeescape_decoding_error(const char **source,
-                                 unsigned long *x,
+                                 Py_UNICODE *x,
                                  const char *errors,
                                  const char *details) 
 {
@@ -1009,7 +1008,7 @@ int unicodeescape_decoding_error(const char **source,
         return 0;
     }
     else if (strcmp(errors,"replace") == 0) {
-        *x = (unsigned long)Py_UNICODE_REPLACEMENT_CHARACTER;
+        *x = Py_UNICODE_REPLACEMENT_CHARACTER;
         return 0;
     }
     else {
@@ -1063,7 +1062,7 @@ PyObject *PyUnicode_DecodeUnicodeEscape(const char *s,
     end = s + size;
     while (s < end) {
         unsigned char c;
-        unsigned long x;
+        Py_UNICODE x;
         int i;
 
         /* Non-escape characters are interpreted as Unicode ordinals */
@@ -1372,7 +1371,7 @@ PyObject *PyUnicode_DecodeRawUnicodeEscape(const char *s,
     end = s + size;
     while (s < end) {
 	unsigned char c;
-	unsigned long x;
+	Py_UNICODE x;
 	int i;
 
 	/* Non-escape characters are interpreted as Unicode ordinals */
