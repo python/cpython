@@ -95,6 +95,15 @@ fcntl_fcntl(self, args)
 	return PyInt_FromLong((long)ret);
 }
 
+static char fcntl_doc [] =
+
+"fcntl(fd, opt, [arg])\n\
+\n\
+Perform the requested operation on file descriptor fd.  The operation\n\
+is defined by op and is operating system dependent.  Typically these\n\
+codes can be retrieved from the library module FCNTL.  The argument arg\n\
+is optional, and defaults to 0; it may be an int or a string.";
+
 
 /* ioctl(fd, opt, [arg]) */
 
@@ -145,6 +154,14 @@ fcntl_ioctl(self, args)
 	}
 	return PyInt_FromLong((long)ret);
 }
+
+static char ioctl_doc [] =
+"ioctl(fd, opt, [arg])\n\
+\n\
+Perform the requested operation on file descriptor fd.  The operation\n\
+is defined by op and is operating system dependent.  Typically these\n\
+codes can be retrieved from the library module IOCTL.  The argument arg\n\
+is optional, and defaults to 0; it may be an int or a string.";
 
 
 /* flock(fd, operation) */
@@ -198,6 +215,14 @@ fcntl_flock(self, args)
 	return Py_None;
 }
 
+static char flock_doc [] =
+"flock(fd, operation)\n\
+\n\
+Perform the lock operation op on file descriptor fd.  See the Unix \n\
+manual flock(3) for details.  (On some systems, this function is\n\
+emulated using fcntl().)";
+
+
 /* lockf(fd, operation) */
 static PyObject *
 fcntl_lockf(self, args)
@@ -244,16 +269,29 @@ fcntl_lockf(self, args)
 	return Py_None;
 }
 
+static char lockf_doc [] =
+"lockf (fd, operation)\n\
+\n\
+This is a wrapper around the FCNTL.F_SETLK and FCNTL.F_SETLKW fcntl()\n\
+calls.  See the Unix manual for details.";
+
 /* List of functions */
 
 static PyMethodDef fcntl_methods[] = {
-	{"fcntl",	fcntl_fcntl},
-	{"ioctl",	fcntl_ioctl},
-	{"flock",	fcntl_flock},
-	{"lockf",       fcntl_lockf, 1},
+	{"fcntl",	fcntl_fcntl, 0, fcntl_doc},
+	{"ioctl",	fcntl_ioctl, 0, ioctl_doc},
+	{"flock",	fcntl_flock, 0, flock_doc},
+	{"lockf",       fcntl_lockf, 1, lockf_doc},
 	{NULL,		NULL}		/* sentinel */
 };
 
+
+static char module_doc [] =
+
+"This module performs file control and I/O control on file \n\
+descriptors.  It is an interface to the fcntl() and ioctl() Unix\n\
+routines.  File descriptors can be obtained with the fileno() method of\n\
+a file or socket object.";
 
 /* Module initialisation */
 
@@ -287,8 +325,8 @@ initfcntl()
 {
 	PyObject *m, *d;
 
-	/* Create the module and add the functions */
-	m = Py_InitModule("fcntl", fcntl_methods);
+	/* Create the module and add the functions and documentation */
+	m = Py_InitModule3("fcntl", fcntl_methods, module_doc);
 
 	/* Add some symbolic constants to the module */
 	d = PyModule_GetDict(m);
