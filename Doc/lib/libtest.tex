@@ -29,13 +29,14 @@ testing style; these styles of tests will not be covered.
 \end{seealso}
 
 
-\subsection{test_support \label{test_support-docs}}
+\subsection{\module[test.testsupport]{test.test_support} ---
+            --- Utility functions for tests}
+\declaremodule[test.testsupport]{standard}{test.test_support}
 
-The \module{test_support} module contains functions for assisting with writing
-regression tests.
+The \module{test.test_support} module contains functions for assisting
+with writing regression tests.
 
-
-The \module{test_support} module defines the following exceptions:
+The \module{test.test_support} module defines the following exceptions:
 
 \begin{excdesc}{TestFailed}
 Exception to be raised when a test fails.
@@ -89,7 +90,7 @@ any byte-compiled files of the module.
 Returns \constant{True} if \var{resource} is enabled and available.
 The list of available resources is only set when \module{regrtest.py} is
 executing the tests.
-\end{funcdest}
+\end{funcdesc}
 
 \begin{funcdesc}{requires}{resource\optional{, msg}}
 Raises \exception{ResourceDenied} if \var{resource} is not available.
@@ -110,7 +111,7 @@ Execute \class{unittest.TestCase} subclasses passed to the function.
 The function scans the classes for methods starting with the name
 \code{"test_"} and executes the tests individually.
 This is the preferred way to execute tests.
-\end{datadesc}
+\end{funcdesc}
 
 \begin{funcdesc}{run_suite}{suite\optional{, testclass=None}}
 Execute the \class{unittest.TestSuite} instance, \var{suite}.
@@ -121,17 +122,18 @@ originated from.
 
 
 
-\subsection{Writing Unit Tests for the \module{test} package \label{writing-tests}}
+\subsection{Writing Unit Tests for the \module{test} package%
+            \label{writing-tests}}
 
 It is preferred that tests for the \module{test} package use the
-\module{unittest} module and follow a few guidelines.
+\refmodule{unittest} module and follow a few guidelines.
 One is to have the name of all the test methods start with \code{"test_"} as
 well as the module's name.
 This is needed so that the methods are recognized by the test driver as
 test methods.
 Also, no documentation string for the method should be included.
 A comment (such as
-\var{# Tests function returns only True or False}) should be used to provide
+\code{\# Tests function returns only True or False}) should be used to provide
 documentation for test methods.
 This is done because documentation strings get printed out if they exist and
 thus what test is being run is not stated.
