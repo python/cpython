@@ -10,10 +10,6 @@ support for those representations we can't do much with from Python.
 import struct
 from types import LongType
 
-# workaround Python 1.4b2 bug
-import sys
-sys.path[0] = '.'
-
 # use C layer XDR libraries for some data types if available
 try:
     import _xdr
