@@ -274,18 +274,20 @@ class HelpHtmlParser(HTMLParser):
 
     def anchor_bgn(self, href, name, type):
         if self.proc:
-            self.saved_clear()
-            self.hrefstack.append(href)
-
-    def anchor_end(self):
-        if self.proc:
-            title = cgi.escape(self.saved_get(), True)
-            path = self.path + '/' + self.hrefstack.pop()
             # XXX See SF bug <http://www.python.org/sf/546579>.
-            # XXX index.html for the 2.2 language reference manual contains
+            # XXX index.html for the 2.2.1 language reference manual contains
             # XXX nested <a></a> tags in the entry for the section on blank
             # XXX lines.  We want to ignore the nested part completely.
             if len(self.hrefstack) == 0:
+                self.saved_clear()
+                self.hrefstack.append(href)
+
+    def anchor_end(self):
+        if self.proc:
+            # XXX See XXX above.
+            if self.hrefstack:
+                title = cgi.escape(self.saved_get(), True)
+                path = self.path + '/' + self.hrefstack.pop()
                 self.tab(object_sitemap % (title, path))
 
     def start_dl(self, atr_val):
