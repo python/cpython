@@ -1,11 +1,11 @@
-Changes in 2.1b1 since 2.0
+Changes in 2.1b2 since 2.0
 --------------------------
 
 These release notes refer to Mac-specific changes only. See NEWS (in the Misc folder)
-for machine-independent changes. Changes since previous alfa/beta releases for 2.1 are
+for machine-independent changes. Changes since 2.1b1 are
 marked with [*] and at the bottom of the list.
 
-- The good news: this release is Carbon-based, so it runs natively on MacOS 8.6 or
+- This release is Carbon-based, so it runs natively on MacOS 8.6 or
   later and MacOSX.
 - Alternatively there is a classic PPC interpreter as well. There are two reasons you
   might want to use this: (a) you have a pre-MacOS9 system and don't want to install
@@ -52,26 +52,16 @@ marked with [*] and at the bottom of the list.
   the .mcp.xml files in CodeWarrior.
 - ConfigurePython has been replace by two applets: ConfigurePythonClassic and
   ConfigurePythonCarbon. These will select either execution model for machines
-  supporting both, and it will also build all the standard applets. [*]
-- Dlg.ModalDialog() almost invariably crashed. This showed in EasyDialogs, EditPythonPrefs
-  and meny other things. Fixed. [*]
-- Carbon MacPython did not work with CarbonLib 1.1 or later. Fixed. [*]
-- IDE flashed a window and complained about it. Fixed, by getting rid of regex in
-  favor of re. Code not fully tested. [*]
-- IDE could crash on some edit operations due to WEGetUndoInfo(). Fixed. [*]
-- time.time() again returns positive values. [*]
-- Classic PPC is included again. [*]
-- Numeric is included again. It is now built using distutils, and lives in :Lib:site-python.
-  This makes it a lot easier to replace Numeric with a new version (when one comes out). [*]
-- PIL is included again. [*]
+  supporting both, and it will also build all the standard applets.
 - PythonInterpreterCarbon and PythonInterpreterClassic are now files of type "Atmp", not
   "APPL", so there should not be any confusion as to what the real application is
-  (PythonInterpreter). [*]
-- PythonIDE used to burn CPU cycles when idle, this has been fixed. PythonInterpreter
-  still has the problem. [*]
-- A BBEdit language module by Chris Stern is included in the :Mac:Contrib folder. [*]
+  (PythonInterpreter).
+- A BBEdit language module by Chris Stern is included in the :Mac:Contrib folder.
 - The ConfigurePython applets will now detect if the preference file refers to a different
-  folder than where they live. They offer to remove the preference file in this case. [*]
+  folder than where they live. They offer to remove the preference file in this case.
+- Import case-check was broken in 2.1b1, this is fixed. [*]
+- A side-effect of the previous fix is that getpass works again. [*]
+- BuildApplication was broken under Carbon. Fixed. [*]
 
 
 What is not in this distribution
@@ -87,6 +77,7 @@ Known problems
 This list is far from complete, more problems may be listed on the MacPython homepage,
 http://www.cwi.nl/~jack/macpython.html.
 
+- Tkinter does not work under Carbon.
 - The IDE and Tkinter do not work together. Run tkinter programs under PythonInterpreter.
 - After running a Tkinter program your menubar may end up dead, with command-alt-escape
   the only way to terminate Python.
