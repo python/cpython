@@ -6,1134 +6,1096 @@
 % These apply to all modules, and may be given more than once:
 
 \moduleauthor{Vinay Sajip}{vinay_sajip@red-dove.com}
-\sectionauthor{Skip Montanaro}{skip@pobox.com}
+\sectionauthor{Vinay Sajip}{vinay_sajip@red-dove.com}
 
 \modulesynopsis{Logging module for Python based on PEP 282.}
 
+\indexii{Errors}{logging}
 
-There is a need for a standard logging system in Python, as documented in
-{}\pep{282} and enthusiastically endorsed by Guido van Rossum in the
-{}\citetitle[http://www.python.org/doc/essays/pepparade.html]{Parade of the
-PEPs}.  By a happy coincidence, the package described here was already in
-development and fairly close in intent and design to the description in the
-aforementioned PEP, borrowing as it did heavily from JSR-47 (now JDK 1.4's
-java.util.logging package) and
-{}\ulink{log4j}{http://jakarta.apache.org/log4j/}. This section page
-describes it in more detail.
+\versionadded{2.3}
+This module defines functions and classes which implement a flexible
+error logging system for applications.
 
-This package owes its greatest debt to Apache
-{}\ulink{log4j}{http://jakarta.apache.org/log4j/}. Due notice was also taken
-of log4j's comprehensive
-{}\ulink{critique}{http://jakarta.apache.org/log4j/docs/critique.html} of
-JSR-47.  This package bears a close resemblance to log4j, but is not a close
-translation (as, for example, {}\ulink{log4p}{http://log4p.sourceforge.net/}
-appears to be).
+Logging is performed by calling methods on instances of the
+\class{Logger} class (hereafter called \dfn{loggers}). Each instance has a
+name, and they are conceptually arranged in a name space hierarchy
+using dots (periods) as separators. For example, a logger named
+"scan" is the parent of loggers "scan.text", "scan.html" and "scan.pdf".
+Logger names can be anything you want, and indicate the area of an
+application in which a logged message originates.
 
+Logged messages also have levels of importance associated with them.
+The default levels provided are \constant{DEBUG}, \constant{INFO},
+\constant{WARNING}, \constant{ERROR} and \constant{CRITICAL}. As a
+convenience, you indicate the importance of a logged message by calling
+an appropriate method of \class{Logger}. The methods are
+\method{debug}, \method{info}, \method{warning}, \method{error} and
+\method{critical}, which mirrors the default levels. You are not
+constrained to use these levels - you can specify your own and use a
+more general \class{Logger} method, \method{log}, which takes an
+explicit level argument.
 
+Levels can also be associated with loggers, being set either by the
+developer or through loading a saved logging configuration. When a
+logging method is called on a logger, the logger compares its own
+level with the level associated with the method call. If the logger's
+level is higher than the method call's, no logging message is actually
+generated. This is the basic mechanism controlling the verbosity of
+logging output.
 
-\subsection{Functions}
+Logging messages are encoded as instances of the \class{LogRecord} class.
+When a logger decides to actually log an event, an \class{LogRecord}
+instance is created from the logging message.
 
-The \module{logging} module defines the following functions:
+Logging messages are subjected to a dispatch mechanism through the
+use of \dfn{handlers}, which are instances of subclasses of the
+\class{Handler} class. Handlers are responsible for ensuring that a logged
+message (in the form of a \class{LogRecord}) ends up in a particular
+location (or set of locations) which is useful for the target audience for
+that message (e.g. end users, support desk staff, system administrators,
+developers). Handlers are passed \class{LogRecord} instances intended for
+particular destinations. Each logger can have zero, one or more handlers
+associated with it (via the \method{addHandler} method of \class{Logger}).
+In addition to any handlers directly associated with a logger,
+\emph{all handlers associated with all ancestors of the logger} are called
+upon to dispatch the message.
 
+Just as for loggers, handlers can have levels associated with them.
+A handler's level acts as a filter in the same way as a logger's level does.
+If a handler decides to actually dispatch an event, the \method{emit} method
+is used to send the message to its destination. Most user-defined subclasses
+of \class{Handler} will need to override this \method{emit}.
 
-\begin{funcdesc}{getLevelName}{level}
+In addition to the base \class{Handler} class, many useful subclasses
+are provided:
 
-Return the textual representation of logging level \var{level}.
+\begin{enumerate}
 
-If the level is one of the predefined levels (\var{CRITICAL}, \var{ERROR},
-{}\var{WARN}, \var{INFO}, \var{DEBUG}) then you get the corresponding
-string. If you have associated levels with names using
-{}\function{addLevelName} then the name you have associated with \var{level}
-is returned. Otherwise, the string "Level \%s" \% level is returned.
+\item \class{StreamHandler} instances send error messages to
+streams (file-like objects).
 
+\item \class{FileHandler} instances send error messages to disk
+files.
+
+\item \class{RotatingFileHandler} instances send error messages to disk
+files, with support for maximum log file sizes and log file rotation.
+
+\item \class{SocketHandler} instances send error messages to
+TCP/IP sockets.
+
+\item \class{DatagramHandler} instances send error messages to UDP
+sockets.
+
+\item \class{SMTPHandler} instances send error messages to a
+designated email address.
+
+\item \class{SysLogHandler} instances send error messages to a
+Unix syslog, possibly on a remote machine.
+
+\item \class{NTEventLogHandler} instances send error messages to a
+Windows NT/2000/XP event log.
+
+\item \class{MemoryHandler} instances send error messages to a
+buffer in memory, which is flushed whenever specific criteria are
+met.
+
+\item \class{HTTPHandler} instances send error messages to an
+HTTP server using either GET or POST semantics.
+
+\end{enumerate}
+
+The \class{StreamHandler} and \class{FileHandler} classes are defined
+in the core logging package. The other handlers are defined in a sub-
+module, \module{logging.handlers}. (There is also another sub-module,
+\module{logging.config}, for configuration functionality.)
+
+Logged messages are formatted for presentation through instances of the
+\class{Formatter} class. They are initialized with a format string
+suitable for use with the \% operator and a dictionary.
+
+For formatting multiple messages in a batch, instances of
+\class{BufferingFormatter} can be used. In addition to the format string
+(which is applied to each message in the batch), there is provision for
+header and trailer format strings.
+
+When filtering based on logger level and/or handler level is not enough,
+instances of \class{Filter} can be added to both \class{Logger} and
+\class{Handler} instances (through their \method{addFilter} method).
+Before deciding to process a message further, both loggers and handlers
+consult all their filters for permission. If any filter returns a false
+value, the message is not processed further.
+
+The basic \class{Filter} functionality allows filtering by specific logger
+name. If this feature is used, messages sent to the named logger and its
+children are allowed through the filter, and all others dropped.
+
+In addition to the classes described above, there are a number of module-
+level functions.
+
+\begin{funcdesc}{getLogger}{\optional{name}}
+Return a logger with the specified name or, if no name is specified, return
+a logger which is the root logger of the hierarchy.
+
+All calls to this function with a given name return the same logger instance.
+This means that logger instances never need to be passed between different
+parts of an application.
 \end{funcdesc}
 
-
-\begin{funcdesc}{addLevelName}{level, levelName}
-
-Associate \var{levelName} with \var{level}.  This is used when converting
-levels to text during message formatting.
-
+\begin{funcdesc}{debug}{msg\optional{, *args\optional{, **kwargs}}}
+Logs a message with level \constant{DEBUG} on the root logger.
+The \var{msg} is the message format string, and the \var{args} are the
+arguments which are merged into \var{msg}. The only keyword argument in
+\var{kwargs} which is inspected is \var{exc_info} which, if it does not
+evaluate as false, causes exception information (via a call to
+\method{sys.exc_info()}) to be added to the logging message.
 \end{funcdesc}
 
-
-\begin{funcdesc}{setLoggerClass}{klass}
-
-Set the class to be used when instantiating a logger. The class should
-define \code{__init__()} such that only a name argument is required, and the
-{}\code{__init__()} should call Logger.__init__()
-
+\begin{funcdesc}{info}{msg\optional{, *args\optional{, **kwargs}}}
+Logs a message with level \constant{INFO} on the root logger.
+The arguments are interpreted as for \function{debug()}.
 \end{funcdesc}
 
+\begin{funcdesc}{warning}{msg\optional{, *args\optional{, **kwargs}}}
+Logs a message with level \constant{WARNING} on the root logger.
+The arguments are interpreted as for \function{debug()}.
+\end{funcdesc}
+
+\begin{funcdesc}{error}{msg\optional{, *args\optional{, **kwargs}}}
+Logs a message with level \constant{ERROR} on the root logger.
+The arguments are interpreted as for \function{debug()}.
+\end{funcdesc}
+
+\begin{funcdesc}{critical}{msg\optional{, *args\optional{, **kwargs}}}
+Logs a message with level \constant{CRITICAL} on the root logger.
+The arguments are interpreted as for \function{debug()}.
+\end{funcdesc}
+
+\begin{funcdesc}{exception}{msg\optional{, *args}}
+Logs a message with level \constant{ERROR} on the root logger.
+The arguments are interpreted as for \function{debug()}. Exception info
+is added to the logging message. This function should only be called
+from an exception handler.
+\end{funcdesc}
+
+\begin{funcdesc}{disable}{lvl}
+Provides an overriding level \var{lvl} for all loggers which takes
+precedence over the logger's own level. When the need arises to
+temporarily throttle logging output down across the whole application,
+this function can be useful.
+\end{funcdesc}
+
+\begin{funcdesc}{addLevelName}{lvl, levelName}
+Associates level \var{lvl} with text \var{levelName} in an internal
+dictionary, which is used to map numeric levels to a textual
+representation, for example when a \class{Formatter} formats a message.
+This function can also be used to define your own levels. The only
+constraints are that all levels used must be registered using this
+function, levels should be positive integers and they should increase
+in increasing order of severity.
+\end{funcdesc}
+
+\begin{funcdesc}{getLevelName}{lvl}
+Returns the textual representation of logging level \var{lvl}. If the
+level is one of the predefined levels \constant{CRITICAL},
+\constant{ERROR}, \constant{WARNING}, \constant{INFO} or \constant{DEBUG}
+then you get the corresponding string. If you have associated levels
+with names using \function{addLevelName()} then the name you have associated
+with \var{lvl} is returned. Otherwise, the string "Level \%s" \% lvl is
+returned.
+\end{funcdesc}
 
 \begin{funcdesc}{basicConfig}{}
-
-Do basic configuration for the logging system by creating a
-{}\class{StreamHandler} with a default {}\class{Formatter} and adding it to
-the root logger.
-
+Does basic configuration for the logging system by creating a
+\class{StreamHandler} with a default \class{Formatter} and adding it to
+the root logger. The functions \function{debug()}, \function{info()},
+\function{warning()}, \function{error()} and \function{critical()} will call
+\function{basicConfig()} automatically if no handlers are defined for the
+root logger.
 \end{funcdesc}
-
-
-\begin{funcdesc}{getLogger}{\optional{name=None}}
-
-Return a logger with the specified name, creating it if necessary.  If no
-name is specified, return the root logger.
-
-\end{funcdesc}
-
-
-\begin{funcdesc}{critical}{msg, *args, **kwargs}
-
-Log a message with severity \code{CRITICAL} on the root logger.
-
-\end{funcdesc}
-
-
-\begin{funcdesc}{error}{msg, *args, **kwargs}
-
-Log a message with severity \var{ERROR} on the root logger.
-
-\end{funcdesc}
-
-
-\begin{funcdesc}{exception}{msg, *args}
-
-Log a message with severity \code{ERROR} on the root logger,
-with exception information.
-
-\end{funcdesc}
-
-\begin{funcdesc}{warn}{msg, *args, **kwargs}
-
-Log a message with severity \code{WARN} on the root logger.
-
-\end{funcdesc}
-
-
-\begin{funcdesc}{info}{msg, *args, **kwargs}
-
-Log a message with severity \code{INFO} on the root logger.
-
-\end{funcdesc}
-
-
-\begin{funcdesc}{debug}{msg, *args, **kwargs}
-
-Log a message with severity \code{DEBUG} on the root logger.
-
-\end{funcdesc}
-
-
-\begin{funcdesc}{disable}{level}
-
-Disable all logging calls less severe than \code{level}.
-
-\end{funcdesc}
-
 
 \begin{funcdesc}{shutdown}{}
-
-Perform any cleanup actions in the logging system (e.g. flushing buffers).
-Should be called at application exit.
-
+Informs the logging system to perform an orderly shutdown by flushing and
+closing all handlers.
 \end{funcdesc}
 
+\begin{funcdesc}{setLoggerClass}{klass}
+Tells the logging system to use the class \var{klass} when instantiating a
+logger. The class should define \method{__init__()} such that only a name
+argument is required, and the \method{__init__()} should call
+\method{Logger.__init__()}. This function is typically called before any
+loggers are instantiated by applications which need to use custom logger
+behavior.
+\end{funcdesc}
 
+\subsection{Logger Objects}
 
-\subsection{Data}
+Loggers have the following attributes and methods. Note that Loggers are
+never instantiated directly, but always through the module-level function
+\function{logging.getLogger(name)}.
 
-The \module{logging} module defines the following data objects:
-
-\begin{datadesc}{root}
-
-The default logger.
-
+\begin{datadesc}{propagate}
+If this evaluates to false, logging messages are not passed by this
+logger or by child loggers to higher level (ancestor) loggers. The
+constructor sets this attribute to 1.
 \end{datadesc}
 
-
-\begin{datadesc}{BASIC_FORMAT}
-
-The default message format.
-
-\end{datadesc}
-
-
-\begin{datadesc}{CRITICAL}
-
-The \code{CRITICAL} level.
-
-\end{datadesc}
-
-
-\begin{datadesc}{FATAL}
-
-The \code {FATAL} level.  A synonym for \code{CRITICAL}.
-
-\end{datadesc}
-
-
-\begin{datadesc}{WARN}
-
-The \code {WARN} level.
-
-\end{datadesc}
-
-
-\begin{datadesc}{INFO}
-
-The \code{INFO} level.
-
-\end{datadesc}
-
-
-\begin{datadesc}{DEBUG}
-
-The \code{DEBUG} level.
-
-\end{datadesc}
-
-
-\begin{datadesc}{NOTSET}
-
-The \code{NOTSET} level.
-
-\end{datadesc}
-
-
-\begin{datadesc}{raiseExceptions}
-
-Indicates whether exceptions during handling should be propagated.  True by
-default.
-
-\end{datadesc}
-
-
-
-\subsection{Classes}
-
-The \module{logging} module defines the following classes:
-
-
-\begin{classdesc}{Formatter}{\optional{fmt=None\optional{, datefmt=None}}}
-
-Formatters need to know how a LogRecord is constructed. They are responsible
-for converting a LogRecord to (usually) a string which can be interpreted by
-either a human or an external system. The base Formatter allows a formatting
-string to be specified. If none is supplied, the default value of
-\code{"\%s(message)\e n"} is used.
-                                                                               
-The Formatter can be initialized with a format string which makes use of
-knowledge of the LogRecord attributes - e.g. the default value mentioned
-above makes use of the fact that the user's message and arguments are pre-
-formatted into a LogRecord's message attribute. Currently, the useful
-attributes in a LogRecord are described by:
-                                                                               
-\begin{description}
-
-\item[\%(name)s]{Name of the logger (logging channel)}
-
-\item[\%(levelno)s]{Numeric logging level for the message (DEBUG, INFO,        
-WARN, ERROR, CRITICAL)}
-
-\item[\%(levelname)s]{Text logging level for the message ("DEBUG", "INFO",       
-"WARN", "ERROR", "CRITICAL")}
-
-\item[\%(pathname)s]{Full pathname of the source file where the logging
-call was issued (if available)}
-
-\item[\%(filename)s]{Filename portion of pathname}
-
-\item[\%(module)s]{Module (name portion of filename)}
-
-\item[\%(lineno)d]{Source line number where the logging call was issued
-(if available)}
-
-\item[\%(created)f]{Time when the LogRecord was created (time.time()
-return value)}
-
-\item[\%(asctime)s]{Textual time when the LogRecord was created}
-
-\item[\%(msecs)d]{Millisecond portion of the creation time}
-
-\item[\%(relativeCreated)d]{Time in milliseconds when the LogRecord was
-created, relative to the time the logging module was loaded (typically at
-application startup time)}
-
-\item[\%(thread)d]{Thread ID (if available)}
-
-\item[\%(message)s]{The result of record.getMessage(), computed just as the
-record is emitted}
-
-\end{description}
-
-\end{classdesc}
-
-\begin{methoddesc}{format}{self, record}
-
-The record's attribute dictionary is used as the operand to a string
-formatting operation which yields the returned string.  Before formatting
-the dictionary, a couple of preparatory steps are carried out. The message
-attribute of the record is computed using \code{LogRecord.getMessage()}. If
-the formatting string contains "\%(asctime)", \code{formatTime()} is called
-to format the event time.  If there is exception information, it is
-formatted using \code{formatException()} and appended to the message.
-
-\end{methoddesc}
-
-\begin{methoddesc}{formatException}{self, ei}
-
-Format the specified exception information as a string. This default
-implementation just uses \code{traceback.print_exception()}
-
-\end{methoddesc}
-
-\begin{methoddesc}{formatTime}{self, record\optional{, datefmt=None}}
-
-This method should be called from \code{format()} by a formatter which wants
-to make use of a formatted time. This method can be overridden in formatters
-to provide for any specific requirement, but the basic behaviour is as
-follows: if datefmt (a string) is specified, it is used with time.strftime()
-to format the creation time of the record. Otherwise, the ISO8601 format is
-used. The resulting string is returned. This function uses a
-user-configurable function to convert the creation time to a tuple. By
-default, \code{time.localtime()} is used; to change this for a particular
-formatter instance, set the 'converter' attribute to a function with the
-same signature as \code{time.localtime()} or \code{time.gmtime()}. To change
-it for all formatters, for example if you want all logging times to be shown
-in GMT, set the 'converter' attribute in the \class{Formatter} class.
-
-\end{methoddesc}
-
-
-\begin{classdesc}{Filterer}{}
-
-A base class for loggers and handlers which allows them to share common
-code.
-
-\end{classdesc}
-
-\begin{methoddesc}{addFilter}{filter}
-
-Add the specified filter to this handler.
-
-\end{methoddesc}
-
-\begin{methoddesc}{filter}{self, record}
-
-Determine if a record is loggable by consulting all the filters. The default
-is to allow the record to be logged; any filter can veto this and the record
-is then dropped. Returns a boolean value.
-
-\end{methoddesc}
-
-\begin{methoddesc}{removeFilter}{filter}
-
-Remove the specified filter from this handler.                           
-
-\end{methoddesc}
-
-
-\begin{classdesc}{BufferingFormatter}{\optional{linefmt=None}}
-
-A formatter suitable for formatting a number of records.  Optionally specify
-a formatter which will be used to format each individual record.
-
-\end{classdesc}
-
-
-\begin{methoddesc}{format}{records}
-
-Format the specified records and return the result as a string.
-
-\end{methoddesc}
-
-\begin{methoddesc}{formatFooter}{records}
-
-Return the footer string for the specified records.
-
-\end{methoddesc}
-
-\begin{methoddesc}{formatHeader}{records}
-
-Return the header string for the specified records.
-
-\end{methoddesc}
-
-\begin{classdesc}{BufferingHandler}{capacity}
-
-A handler class which buffers logging records in memory. Whenever each
-record is added to the buffer, a check is made to see if the buffer should
-be flushed. If it should, then \code{flush()} is expected to do the needful.
-The handler is initialized with the buffer size.
-
-\end{classdesc}
-
-\begin{methoddesc}{emit}{record}
-
-Append the record. If \code{shouldFlush()} tells us to, call \code{flush()}
-to process the buffer.
-
-\end{methoddesc}
-
-\begin{methoddesc}{flush}{}
-
-Override to implement custom flushing behaviour. This version just zaps the
-buffer to empty.
-
-\end{methoddesc}
-
-\begin{methoddesc}{shouldFlush}{record}
-
-Returns true if the buffer is up to capacity. This method can be overridden
-to implement custom flushing strategies.
-
-\end{methoddesc}
-
-
-\begin{classdesc}{DatagramHandler}{host,port}
-
-A handler class which writes logging records, in pickle format, to a
-datagram socket. Note that the very simple wire protocol used means that
-packet sizes are expected to be encodable within 16 bits (i.e. < 32767
-bytes).
-
-Initializes the handler with a specific \code{host} and \code{port}.
-
-\end{classdesc}
-
-\begin{methoddesc}{makeSocket}{}
-
-The factory method of SocketHandler is here overridden to create a UDP
-socket (SOCK_DGRAM).
-
-\end{methoddesc}
-
-\begin{methoddesc}{send}{s}
-
-Send a pickled string to a socket. This function allows for partial sends
-which can happen when the network is busy.
-
-\end{methoddesc}
-
-\begin{classdesc}{FileHandler}{filename\optional{, mode='a+'}}
-
-A handler class which writes formatted logging records to disk files.  The
-specified file is opened and used as the stream for logging.  By default,
-the file grows indefinitely. You can call \code{setRollover()} to allow the
-file to rollover at a predetermined size.
-
-\end{classdesc}
-
-\begin{methoddesc}{close}{}
-
-Closes the stream.
-
-\end{methoddesc}
-
-\begin{methoddesc}{doRollover}{}
-
-Do a rollover, as described in \code{setRollover()}.
-
-\end{methoddesc}
-
-\begin{methoddesc}{emit}{record}
-
-Output the record to the file, catering for rollover as described
-in \code{setRollover()}.
-
-\end{methoddesc}
-
-\begin{methoddesc}{setRollover}{maxBytes, backupCount}
-
-Set the rollover parameters so that rollover occurs whenever the current log
-file is nearly \var{maxBytes} in length. If \var{backupCount} is >= 1, the
-system will successively create new files with the same pathname as the base
-file, but with extensions ".1", ".2" etc. appended to it. For example, with
-a \var{backupCount} of 5 and a base file name of "app.log", you would get
-"app.log", "app.log.1", "app.log.2", ... through to "app.log.5". When the
-last file reaches its size limit, the logging reverts to "app.log" which is
-truncated xto zero length. If maxBytes is zero, rollover never occurs.
-
-\end{methoddesc}
-
-\begin{classdesc}{Filter}{\optional{name=''}}
-
-The base filter class. \class{Logger} and \class{Handler} instances can
-optionally use \class{Filter} instances to filter records as desired. The
-base filter class only allows events which are below a certain point in the
-logger hierarchy. For example, a filter initialized with "A.B" will allow
-events logged by loggers "A.B", "A.B.C", "A.B.C.D", "A.B.D" etc. but not
-"A.BB", "B.A.B" etc. If initialized with the empty string, all events are
-passed.
-
-The instance is initialized with the name of the logger which, together with
-its children, will have its events allowed through the filter. If no name is
-specified, allow every event.
-
-\end{classdesc}
-
-\begin{methoddesc}{filter}{record}
-
-Is the specified record to be logged? Returns 0 for no, nonzero for yes. If
-deemed appropriate, the record may be modified in-place.
-
-\end{methoddesc}
-
-
-\begin{classdesc}{HTTPHandler}{host, url\optional{, method='GET'}}
-
-A class which sends records to a Web server, using either GET or POST
-semantics.  The instance is initialized with the \var{host}, the request
-\var{url}, and the \var{method} ("GET" or "POST")
-
-\end{classdesc}
-
-\begin{methoddesc}{emit}{record}
-
-Send the \var{record} to the Web server as an URL-encoded dictionary
-
-\end{methoddesc}
-
-\begin{classdesc}{Handler}{\optional{level=0}}
-
-The base handler class. Acts as a placeholder which defines the Handler
-interface. \class{Handler} instances can optionally use \class{Formatter}
-instances to format records as desired. By default, no formatter is
-specified; in this case, the 'raw' message as determined by record.message
-is logged.  Initializes the instance - basically setting the formatter to
-None and the filter list to empty.
-
-XXX - what does the level do?
-
-\end{classdesc}
-
-\begin{methoddesc}{acquire}{}
-
-Acquire the I/O thread lock.
-
-\end{methoddesc}
-
-\begin{methoddesc}{close}{}
-
-Tidy up any resources used by the handler. This version does nothing and is
-intended to be implemented by subclasses.
-
-\end{methoddesc}
-
-\begin{methoddesc}{createLock}{}
-
-Acquire a thread lock for serializing access to the underlying I/O.
-
-\end{methoddesc}
-
-\begin{methoddesc}{emit}{record}
-
-Do whatever it takes to actually log the specified logging record.  This
-version is intended to be implemented by subclasses and so raises a
-\exception{NotImplementedError}.
-
-\end{methoddesc}
-
-\begin{methoddesc}{flush}{}
-
-Ensure all logging output has been flushed. This version does nothing and is
-intended to be implemented by subclasses.
-
-\end{methoddesc}
-
-\begin{methoddesc}{format}{record}
-
-Do formatting for a \var{record} - if a formatter is set, use it.
-Otherwise, use the default formatter for the module.
-
-\end{methoddesc}
-
-\begin{methoddesc}{handle}{record}
-
-Conditionally emit the specified logging \var{record}, depending on filters
-which may have been added to the handler. Wrap the actual emission of the
-record with acquisition/release of the I/O thread lock.
-
-\end{methoddesc}
-
-\begin{methoddesc}{handleError}{}
-
-This method should be called from handlers when an exception is encountered
-during an \code{emit()} call. By default it does nothing, because by default
-{}\var{raiseExceptions} is false, which means that exceptions get silently
-ignored. This is what is mostly wanted for a logging system - most users
-will not care about errors in the logging system, they are more interested
-in application errors.  You could, however, replace this with a custom
-handler if you wish.
-
-XXX looks to me like raiseExceptions defaults to 1.
-
-\end{methoddesc}
-
-\begin{methoddesc}{release}{}
-
-Release the I/O thread lock.
-
-\end{methoddesc}
-
-\begin{methoddesc}{setFormatter}{formatter}
-
-Set the \var{formatter} for this handler.
-
-\end{methoddesc}
-
-\begin{methoddesc}{setLevel}{level}
-
-Set the logging \var{level} of this handler.
-
-\end{methoddesc}
-
-\begin{classdesc}{LogRecord}{name,lvl,pathname,lineno,msg,args,exc_info}
-
-\class{LogRecord} instances are created every time something is logged. They
-contain all the information pertinent to the event being logged. The main
-information passed in is in msg and args, which are combined using
-\code{str(msg) \% args} to create the message field of the record. The
-record also includes information such as when the record was created, the
-source line where the logging call was made, and any exception information
-to be logged.
-
-\end{classdesc}
-
-\begin{methoddesc}{getMessage}{}
-
-Return the message for this LogRecord, merging any user-supplied arguments
-with the message.
-
-\end{methoddesc}
-
-\begin{classdesc}{Logger}{name\optional{, level=0}}
-
-Instances of the \class{Logger} class represent a single logging channel. A
-"logging channel" indicates an area of an application. Exactly how an "area"
-is defined is up to the application developer. Since an application can have
-any number of areas, logging channels are identified by a unique
-string. Application areas can be nested (e.g. an area of "input processing"
-might include sub-areas "read CSV files", "read XLS files" and "read
-Gnumeric files"). To cater for this natural nesting, channel names are
-organized into a namespace hierarchy where levels are separated by periods,
-much like the Java or Python package namespace. So in the instance given
-above, channel names might be "input" for the upper level, and "input.csv",
-"input.xls" and "input.gnu" for the sub-levels.  There is no arbitrary limit
-to the depth of nesting.
-
-The logger is initialized with a \var{name} and an optional \var{level}.
-
-\end{classdesc}
-
-\begin{methoddesc}{_log}{lvl, msg, args\optional{, exc_info=None}}
-
-Low-level logging routine which creates a \class{LogRecord} and then calls
-all the handlers of this logger to handle the record.
-
-\end{methoddesc}
-
-\begin{methoddesc}{addHandler}{hdlr}
-
-Add the specified handler to this logger.
-
-\end{methoddesc}
-
-\begin{methoddesc}{callHandlers}{record}
-
-Loop through all handlers for this logger and its parents in the logger
-hierarchy. If no handler was found, output a one-off error message to
-sys.stderr. Stop searching up the hierarchy whenever a logger with the
-"propagate" attribute set to zero is found - that will be the last logger
-whose handlers are called.
-
-\end{methoddesc}
-
-\begin{methoddesc}{critical}{msg, *args, **kwargs}
-
-Log \code{msg \% args} with severity \code{CRITICAL}. To pass exception
-information, use the keyword argument \var{exc_info} with a true value,
-e.g., \code{logger.critical("Houston, we have a \%s", "major disaster",
-exc_info=1)}.
-
-\end{methoddesc}
-
-\begin{methoddesc}{fatal}{msg, *args, **kwargs}
-
-Synonym for \method{critical}.
-
-\end{methoddesc}
-
-\begin{methoddesc}{debug}{msg, *args, **kwargs}
-
-Log \code{msg \% args} with severity \code{DEBUG}. To pass exception
-information, use the keyword argument exc_info with a true value, e.g.,
-\code{logger.debug("Houston, we have a \%s", "thorny problem", exc_info=1)}.
-
-\end{methoddesc}
-
-\begin{methoddesc}{error}{msg, *args, **kwargs}
-
-Log \code{msg \% args} with severity \code{ERROR}. To pass exception
-information, use the keyword argument exc_info with a true value, e.g.,
-\code{logger.error("Houston, we have a \%s", "major problem", exc_info=1)}
-
-\end{methoddesc}
-
-\begin{methoddesc}{exception}{msg, *args}
-
-Convenience method for logging an \code{ERROR} with exception information.
-
-\end{methoddesc}
-
-
-\begin{methoddesc}{findCaller}{}
-
-Find the stack frame of the caller so that we can note the source file name
-and line number.
-
-\end{methoddesc}
-
-\begin{methoddesc}{getEffectiveLevel}{}
-
-Loop through this logger and its parents in the logger hierarchy, looking
-for a non-zero logging level. Return the first one found.
-
-\end{methoddesc}
-
-\begin{methoddesc}{handle}{record}
-
-Call the handlers for the specified \var{record}. This method is used for
-unpickled records received from a socket, as well as those created
-locally. Logger-level filtering is applied.
-
-\end{methoddesc}
-
-\begin{methoddesc}{info}{msg, *args, **kwargs}
-
-Log \code{msg \% args} with severity \code{INFO}. To pass exception
-information, use the keyword argument exc_info with a true value, e.g.,
-\code{logger.info("Houston, we have a \%s", "interesting problem",
-exc_info=1)}
-
+\begin{methoddesc}{setLevel}{lvl}
+Sets the threshold for this logger to \var{lvl}. Logging messages
+which are less severe than \var{lvl} will be ignored. When a logger is
+created, the level is set to \constant{ALL} (which causes all messages
+to be processed).
 \end{methoddesc}
 
 \begin{methoddesc}{isEnabledFor}{lvl}
-
-Is this logger enabled for level \var{lvl}?
-
+Indicates if a message of severity \var{lvl} would be processed by
+this logger.  This method checks first the module-level level set by
+\function{logging.disable(lvl)} and then the logger's effective level as
+determined by \method{getEffectiveLevel()}.
 \end{methoddesc}
 
-\begin{methoddesc}{log}{lvl, msg, *args, **kwargs}
-
-Log \code{msg \% args} with the severity \var{lvl}. To pass exception
-information, use the keyword argument \var{exc_info} with a true value,
-e.g., \code{logger.log(lvl, "We have a \%s", "mysterious problem",
-exc_info=1)}
-
+\begin{methoddesc}{getEffectiveLevel}{}
+Indicates the effective level for this logger. If a value other than
+\constant{ALL} has been set using \method{setLevel()}, it is returned.
+Otherwise, the hierarchy is traversed towards the root until a value
+other than \constant{ALL} is found,and that value is returned.
 \end{methoddesc}
 
-\begin{methoddesc}{makeRecord}{name, lvl, fn, lno, msg, args, exc_info}
+\begin{methoddesc}{debug}{msg\optional{, *args\optional{, **kwargs}}}
+Logs a message with level \constant{DEBUG} on this logger.
+The \var{msg} is the message format string, and the \var{args} are the
+arguments which are merged into \var{msg}. The only keyword argument in
+\var{kwargs} which is inspected is \var{exc_info} which, if it does not
+evaluate as false, causes exception information (via a call to
+\method{sys.exc_info()}) to be added to the logging message.
+\end{methoddesc}
 
-A factory method which can be overridden in subclasses to create specialized
-\code{LogRecord} instances.
+\begin{methoddesc}{info}{msg\optional{, *args\optional{, **kwargs}}}
+Logs a message with level \constant{INFO} on this logger.
+The arguments are interpreted as for \method{debug()}.
+\end{methoddesc}
 
+\begin{methoddesc}{warning}{msg\optional{, *args\optional{, **kwargs}}}
+Logs a message with level \constant{WARNING} on this logger.
+The arguments are interpreted as for \method{debug()}.
+\end{methoddesc}
+
+\begin{methoddesc}{error}{msg\optional{, *args\optional{, **kwargs}}}
+Logs a message with level \constant{ERROR} on this logger.
+The arguments are interpreted as for \method{debug()}.
+\end{methoddesc}
+
+\begin{methoddesc}{critical}{msg\optional{, *args\optional{, **kwargs}}}
+Logs a message with level \constant{CRITICAL} on this logger.
+The arguments are interpreted as for \method{debug()}.
+\end{methoddesc}
+
+\begin{methoddesc}{log}{lvl, msg\optional{, *args\optional{, **kwargs}}}
+Logs a message with level \var{lvl} on this logger.
+The other arguments are interpreted as for \method{debug()}.
+\end{methoddesc}
+
+\begin{methoddesc}{exception}{msg\optional{, *args}}
+Logs a message with level \constant{ERROR} on this logger.
+The arguments are interpreted as for \method{debug()}. Exception info
+is added to the logging message. This method should only be called
+from an exception handler.
+\end{methoddesc}
+
+\begin{methoddesc}{addFilter}{filt}
+Adds the specified filter \var{filt} to this logger.
+\end{methoddesc}
+
+\begin{methoddesc}{removeFilter}{filt}
+Removes the specified filter \var{filt} from this logger.
+\end{methoddesc}
+
+\begin{methoddesc}{filter}{record}
+Applies this logger's filters to the record and returns a true value if
+the record is to be processed.
+\end{methoddesc}
+
+\begin{methoddesc}{addHandler}{hdlr}
+Adds the specified handler \var{hdlr} to this logger.
 \end{methoddesc}
 
 \begin{methoddesc}{removeHandler}{hdlr}
-
-Remove the specified handler from this logger.
-
+Removes the specified handler \var{hdlr} from this logger.
 \end{methoddesc}
 
-\begin{methoddesc}{setLevel}{level}
-
-Set the logging \var{level} of this logger.
-
+\begin{methoddesc}{findCaller}{}
+Finds the caller's source filename and line number. Returns the filename
+and line number as a 2-element tuple.
 \end{methoddesc}
 
-\begin{methoddesc}{warn}{msg, *args, **kwargs}
-
-Log \code{msg \% args} with severity \code{WARN}. To pass exception
-information, use the keyword argument exc_info with a true value, e.g.,
-\code{logger.warn("Houston, we have a \%s", "bit of a problem", exc_info=1)}
-
+\begin{methoddesc}{handle}{record}
+Handles a record by passing it to all handlers associated with this logger
+and its ancestors (until a false value of \var{propagate} is found).
+This method is used for unpickled records received from a socket, as well
+as those created locally. Logger-level filtering is applied using
+\method{filter()}.
 \end{methoddesc}
 
-
-\begin{classdesc}{Manager}{root}
-
-There is (under normal circumstances) just one \code{Manager} instance,
-which holds the hierarchy of loggers.
-
-The manager is initialized with the \var{root} node of the logger hierarchy.
-
-\end{classdesc}
-
-\begin{methoddesc}{_fixupChildren}{ph, logger}
-
-Ensure that children of the placeholder \var{ph} are connected to the
-specified \code{logger}.
-
+\begin{methoddesc}{makeRecord}{name, lvl, fn, lno, msg, args, exc_info}
+This is a factory method which can be overridden in subclasses to create
+specialized \class{LogRecord} instances.
 \end{methoddesc}
 
-\begin{methoddesc}{_fixupParents}{logger}
+\subsection{Handler Objects}
 
-Ensure that there are either loggers or placeholders all the way from the
-specified \var{logger} to the root of the logger hierarchy.
+Handlers have the following attributes and methods. Note that a Handler is
+never instantiated directly; this class acts as a base for more useful
+subclasses. However, the \method{__init__()} in subclasses needs to call
+\method{Handler.__init__()}.
 
+\begin{methoddesc}{__init__}{level=\constant{ALL}}
+Initializes the \class{Handler} instance by setting its level, setting
+the list of filters to the empty list and creating a lock (using
+\method{getLock()}) for serializing access to an I/O mechanism.
 \end{methoddesc}
 
-\begin{methoddesc}{getLogger}{name}
-
-Get a logger with the specified \var{name} (channel name), creating it if it
-doesn't yet exist. If a PlaceHolder existed for the specified name (i.e. the
-logger didn't exist but a child of it did), replace it with the created
-logger and fix up the parent/child references which pointed to the
-placeholder to now point to the logger.
-
+\begin{methoddesc}{createLock}{}
+Initializes a thread lock which can be used to serialize access to
+underlying I/O functionality which may not be threadsafe.
 \end{methoddesc}
 
-\begin{classdesc}{MemoryHandler}{capacity\optional{,
-flushLevel=40\optional{, target=None}}} 
+\begin{methoddesc}{acquire}{}
+Acquires the thread lock created with \method{createLock()}.
+\end{methoddesc}
 
-A handler class which buffers logging records in memory, periodically
-flushing them to a target handler. Flushing occurs whenever the buffer is
-full, or when an event of a certain severity or greater is seen.
+\begin{methoddesc}{release}{}
+Releases the thread lock acquired with \method{acquire()}.
+\end{methoddesc}
 
-The handler is initialized with the buffer size (\var{capacity}), the level
-at which flushing should occur (\var{flushLevel}) and an optional
-{}\var{target}.  Note that without a target being set either here or via
-\code{setTarget()}, a \class{MemoryHandler} is no use to anyone!
+\begin{methoddesc}{setLevel}{lvl}
+Sets the threshold for this handler to \var{lvl}. Logging messages which are
+less severe than \var{lvl} will be ignored. When a handler is created, the
+level is set to \constant{ALL} (which causes all messages to be processed).
+\end{methoddesc}
 
-\end{classdesc}
+\begin{methoddesc}{setFormatter}{form}
+Sets the \class{Formatter} for this handler to \var{form}.
+\end{methoddesc}
 
-\begin{methoddesc}{close}{}
+\begin{methoddesc}{addFilter}{filt}
+Adds the specified filter \var{filt} to this handler.
+\end{methoddesc}
 
-Flush, set the target to None and lose the buffer.
+\begin{methoddesc}{removeFilter}{filt}
+Removes the specified filter \var{filt} from this handler.
+\end{methoddesc}
 
+\begin{methoddesc}{filter}{record}
+Applies this handler's filters to the record and returns a true value if
+the record is to be processed.
 \end{methoddesc}
 
 \begin{methoddesc}{flush}{}
-
-For a \class{MemoryHandler}, flushing means just sending the buffered
-records to the target, if there is one. Override if you want different
-behavior.
-
+Ensure all logging output has been flushed. This version does
+nothing and is intended to be implemented by subclasses.
 \end{methoddesc}
-
-\begin{methoddesc}{setTarget}{target}
-
-Set the \var{target} handler for this handler.
-
-\end{methoddesc}
-
-\begin{methoddesc}{shouldFlush}{record}
-
-Check for buffer full or a \var{record} at the flushLevel or higher.
-
-\end{methoddesc}
-
-
-\begin{classdesc}{NTEventLogHandler}{appname\optional{,
-dllname=None\optional{, logtype='Application'}}} 
-
-A handler class which sends events to the NT Event Log. Adds a registry
-entry for the specified application name.  If no \var{dllname} is provided,
-\code{win32service.pyd} (which contains some basic message placeholders) is
-used.  Note that use of these placeholders will make your event logs big, as
-the entire message source is held in the log.  If you want slimmer logs, you
-have to pass in the name of your own DLL which contains the message
-definitions you want to use in the event log.
-
-XXX what is \var{logtype}?
-
-\end{classdesc}
 
 \begin{methoddesc}{close}{}
-
-You can remove the application name from the registry as a source of event
-log entries. However, if you do this, you will not be able to see the events
-as you intended in the Event Log Viewer - it needs to be able to access the
-registry to get the DLL name.
-
+Tidy up any resources used by the handler. This version does
+nothing and is intended to be implemented by subclasses.
 \end{methoddesc}
 
-\begin{methoddesc}{emit}{record}
-
-Determine the message ID, event category and event type. Then log the
-\var{record} in the NT event log.
-
-\end{methoddesc}
-
-\begin{methoddesc}{getEventCategory}{record}
-
-Return the event category for the \var{record}.  Override this if you want
-to specify your own categories. This version returns 0.
-
-\end{methoddesc}
-
-\begin{methoddesc}{getEventType}{record}
-
-Return the event type for the \var{record}. Override this if you want to
-specify your own types. This version does a mapping using the handler's
-typemap attribute, which is set up in the constructor to a dictionary which
-contains mappings for \var{DEBUG}, \var{INFO}, \var{WARN}, \var{ERROR} and
-{}\var{CRITICAL}. If you are using your own levels you will either need to
-override this method or place a suitable dictionary in the handler's typemap
-attribute.
-
-\end{methoddesc}
-
-\begin{methoddesc}{getMessageID}{record}
-
-Return the message ID for the event \var{record}. If you are using your own
-messages, you could do this by having the msg passed to the logger being an
-ID rather than a formatting string. Then, in here, you could use a
-dictionary lookup to get the message ID. This version returns 1, which is
-the base message ID in \code{win32service.pyd}.
-
-\end{methoddesc}
-
-
-\begin{classdesc}{PlaceHolder}{logger}
-
-\class{PlaceHolder} instances are used in the \class{Manager} logger
-hierarchy to take the place of nodes for which no loggers have been defined
-
-Initialize with the specified \var{logger} being a child of this
-\class{PlaceHolder}.
-
-\end{classdesc}
-
-\begin{methoddesc}{append}{logger}
-
-Add the specified \var{logger} as a child of this placeholder.
-
-\end{methoddesc}
-
-\begin{classdesc}{RootLogger}{level}
-
-A root logger is not that different to any other logger, except that it must
-have a logging \var{level} and there is only one instance of it in the
-hierarchy.
-
-\end{classdesc}
-
-
-\begin{classdesc}{SMTPHandler}{mailhost, fromaddr, toaddr, subject}
-
-A handler class which sends an SMTP email for each logging event.
-
-The instance is initialized with the from (\var{fromaddr}) and to
-(\var{toaddr}) addresses and \var{subject} line of the email. To specify a
-non-standard SMTP port, use the (host, port) tuple format for the
-\var{mailhost} argument.
-
-\end{classdesc}
-
-
-\begin{methoddesc}{emit}{record}
-
-Format the \var{record} and send it to the specified addressees.
-
-\end{methoddesc}
-
-\begin{methoddesc}{getSubject}{record}
-
-If you want to specify a subject line which is \var{record}-dependent,
-override this method.
-
-\end{methoddesc}
-
-\begin{classdesc}{SocketHandler}{host, port}
-
-A handler class which writes pickled logging records to a streaming
-socket. The socket is kept open across logging calls.  If the peer resets
-it, an attempt is made to reconnect on the next call.  Note that the very
-simple wire protocol used means that packet sizes are expected to be
-encodable within 16 bits (i.e. < 32767 bytes).
-
-The handler is initialized with a specific \var{host} address and
-{}\var{port}.  The attribute \var{closeOnError} is set to 1 - which means
-that if a socket error occurs, the socket is silently closed and then
-reopened on the next logging call.
-
-\end{classdesc}
-
-\begin{methoddesc}{close}{}
-
-Closes the socket.
-
-\end{methoddesc}
-
-\begin{methoddesc}{emit}{record}
-
-Pickles the \var{record} and writes it to the socket in binary format.  If
-there is an error with the socket, silently drop the packet.  If there was a
-problem with the socket, re-establishes the socket.
-
+\begin{methoddesc}{handle}{record}
+Conditionally emits the specified logging record, depending on
+filters which may have been added to the handler. Wraps the actual
+emission of the record with acquisition/release of the I/O thread
+lock.
 \end{methoddesc}
 
 \begin{methoddesc}{handleError}{}
-
-An error has occurred during logging.  Most likely cause - connection lost.
-Close the socket so that we can retry on the next event.
-
+This method should be called from handlers when an exception is
+encountered during an emit() call. By default it does nothing,
+which means that exceptions get silently ignored. This is what is
+mostly wanted for a logging system - most users will not care
+about errors in the logging system, they are more interested in
+application errors. You could, however, replace this with a custom
+handler if you wish.
 \end{methoddesc}
 
-\begin{methoddesc}{makePickle}{record}
-
-Pickles the \var{record} in binary format with a length prefix, and returns
-it ready for transmission across the socket.
-
+\begin{methoddesc}{format}{record}
+Do formatting for a record - if a formatter is set, use it.
+Otherwise, use the default formatter for the module.
 \end{methoddesc}
 
-\begin{methoddesc}{makeSocket}{}
-
-A factory method which allows subclasses to define the precise type of
-socket they want.
-
+\begin{methoddesc}{emit}{record}
+Do whatever it takes to actually log the specified logging record.
+This version is intended to be implemented by subclasses and so
+raises a \exception{NotImplementedError}.
 \end{methoddesc}
 
-\begin{methoddesc}{send}{s}
+\subsubsection{StreamHandler}
 
-Send a pickled string (\var{s}) to the socket.  This function allows for
-partial sends which can happen when the network is busy.
+The \class{StreamHandler} class sends logging output to streams such as
+\var{sys.stdout}, \var{sys.stderr} or any file-like object (or, more
+precisely, any object which supports \method{write()} and \method{flush()}
+methods.
 
-\end{methoddesc}
-
-\begin{classdesc}{StreamHandler}{\optional{strm=None}}
-
-A handler class which writes logging records, appropriately formatted, to a
-stream.  Note that this class does not close the stream, as \var{sys.stdout}
-or \var{sys.stderr} may be used.
-
-If \var{strm} is not specified, \var{sys.stderr} is used.
-
+\begin{classdesc}{StreamHandler}{\optional{strm}}
+Returns a new instance of the \class{StreamHandler} class. If \var{strm} is
+specified, the instance will use it for logging output; otherwise,
+\var{sys.stderr} will be used.
 \end{classdesc}
 
 \begin{methoddesc}{emit}{record}
-
-If a formatter is specified, it is used to format the \var{record}.  The
-record is then written to the stream with a trailing newline (N.B. this may
-be removed depending on feedback).  If exception information is present, it
-is formatted using \var{traceback.print_exception} and appended to the
-stream.
-
+If a formatter is specified, it is used to format the record.
+The record is then written to the stream with a trailing newline.
+If exception information is present, it is formatted using
+\function{traceback.print_exception()} and appended to the stream.
 \end{methoddesc}
 
 \begin{methoddesc}{flush}{}
-
-Flushes the stream.
-
+Flushes the stream by calling its \method{flush()} method. Note that
+the \method{close()} method is inherited from \class{Handler} and
+so does nothing, so an explicit \method{flush()} call may be needed
+at times.
 \end{methoddesc}
 
-\begin{classdesc}{SysLogHandler}{\optional{address=('localhost',
-514)\optional{, facility=1}}} 
+\subsubsection{FileHandler}
 
-A handler class which sends formatted logging records to a syslog
-server. Based on Sam Rushing's
-\ulink{http://www.nightmare.com/squirl/python-ext/misc/syslog.py}{syslog
-module}.  Contributed by Nicolas Untz (after which minor refactoring changes
-have been made).
+The \class{FileHandler} class sends logging output to a disk file.
+It delegates the output functionality from \class{StreamHandler}.
 
-If \var{address} is specified as a string, UNIX socket is used.  If
-\var{facility} is not specified, \code{LOG_USER} is used.
-
+\begin{classdesc}{FileHandler}{filename\optional{, mode}}
+Returns a new instance of the \class{FileHandler} class. The specified
+file is opened and used as the stream for logging. If \var{mode} is
+not specified, \constant{"a"} is used. By default, the file grows
+indefinitely.
 \end{classdesc}
 
 \begin{methoddesc}{close}{}
-
-Closes the socket.
-
+Closes the file.
 \end{methoddesc}
 
 \begin{methoddesc}{emit}{record}
+Outputs the record to the file.
+\end{methoddesc}
 
-The \var{record} is formatted, and then sent to the syslog server. If
-exception information is present, it is not sent to the server.
+\subsubsection{RotatingFileHandler}
 
+The \class{RotatingFileHandler} class supports rotation of disk log files.
+
+\begin{classdesc}{RotatingFileHandler}{filename\optional{, mode, maxBytes,
+							 backupCount}}
+Returns a new instance of the \class{RotatingFileHandler} class. The
+specified file is opened and used as the stream for logging. If
+\var{mode} is not specified, \constant{"a"} is used. By default, the
+file grows indefinitely. You can use the \var{maxBytes} and
+\var{backupCount} values to allow the file to \dfn{rollover} at a
+predetermined size. When the size is about to be exceeded, the file is
+closed and a new file opened for output, transparently to the
+caller. Rollover occurs whenever the current log file is nearly
+\var{maxBytes} in length. If \var{backupCount} is >= 1, the system
+will successively create new files with the same pathname as the base
+file, but with extensions ".1", ".2" etc. appended to it. For example,
+with a backupCount of 5 and a base file name of "app.log", you would
+get "app.log", "app.log.1", "app.log.2", ... through to
+"app.log.5". When the last file reaches its size limit, the logging
+reverts to "app.log" which is truncated to zero length. If
+\var{maxBytes} is zero, rollover never occurs.
+\end{classdesc}
+
+\begin{methoddesc}{doRollover}{}
+Does a rollover, as described above.
+\end{methoddesc}
+
+\begin{methoddesc}{emit}{record}
+Outputs the record to the file, catering for rollover as described
+in \method{setRollover()}.
+\end{methoddesc}
+
+\subsubsection{SocketHandler}
+
+The \class{SocketHandler} class sends logging output to a network
+socket. The base class uses a TCP socket.
+
+\begin{classdesc}{SocketHandler}{host, port}
+Returns a new instance of the \class{SocketHandler} class intended to
+communicate with a remote machine whose address is given by \var{host}
+and \var{port}.
+\end{classdesc}
+
+\begin{methoddesc}{close}{}
+Closes the socket.
+\end{methoddesc}
+
+\begin{methoddesc}{handleError}{}
+\end{methoddesc}
+
+\begin{methoddesc}{emit}{}
+Pickles the record and writes it to the socket in binary format.
+If there is an error with the socket, silently drops the packet.
+If the connection was previously lost, re-establishes the connection.
+\end{methoddesc}
+
+\begin{methoddesc}{handleError}{}
+Handles an error which has occurred during \method{emit()}. The
+most likely cause is a lost connection. Closes the socket so that
+we can retry on the next event.
+\end{methoddesc}
+
+\begin{methoddesc}{makeSocket}{}
+This is a factory method which allows subclasses to define the precise
+type of socket they want. The default implementation creates a TCP
+socket (\constant{socket.SOCK_STREAM}).
+\end{methoddesc}
+
+\begin{methoddesc}{makePickle}{record}
+Pickles the record in binary format with a length prefix, and returns
+it ready for transmission across the socket.
+\end{methoddesc}
+
+\begin{methoddesc}{send}{packet}
+Send a pickled string \var{packe} to the socket. This function allows
+for partial sends which can happen when the network is busy.
+\end{methoddesc}
+
+\subsubsection{DatagramHandler}
+
+The \class{DatagramHandler} class inherits from \class{SocketHandler}
+to support sending logging messages over UDP sockets.
+
+\begin{classdesc}{DatagramHandler}{host, port}
+Returns a new instance of the \class{DatagramHandler} class intended to
+communicate with a remote machine whose address is given by \var{host}
+and \var{port}.
+\end{classdesc}
+
+\begin{methoddesc}{emit}{}
+Pickles the record and writes it to the socket in binary format.
+If there is an error with the socket, silently drops the packet.
+\end{methoddesc}
+
+\begin{methoddesc}{makeSocket}{}
+The factory method of \class{SocketHandler} is here overridden to create
+a UDP socket (\constant{socket.SOCK_DGRAM}).
+\end{methoddesc}
+
+\begin{methoddesc}{send}{s}
+Send a pickled string to a socket. This function allows for
+partial sends which can happen when the network is busy.
+\end{methoddesc}
+
+\subsubsection{SysLogHandler}
+
+The \class{SysLogHandler} class supports sending logging messages to a
+remote or local Unix syslog.
+
+\begin{classdesc}{SysLogHandler}{\optional{address\optional{, facility}}}
+Returns a new instance of the \class{SysLogHandler} class intended to
+communicate with a remote Unix machine whose address is given by
+\var{address} in the form of a (host, port) tuple. If \var{address} is not
+specified, ('localhost', 514) is used. The address is used to open a UDP
+socket. If \var{facility} is not specified, \constant{LOG_USER} is used.
+\end{classdesc}
+
+\begin{methoddesc}{close}{}
+Closes the socket to the remote host.
+\end{methoddesc}
+
+\begin{methoddesc}{emit}{record}
+The record is formatted, and then sent to the syslog server. If
+exception information is present, it is \emph{not} sent to the server.
 \end{methoddesc}
 
 \begin{methoddesc}{encodePriority}{facility, priority}
-
-Encode the \var{facility} and \var{priority}. You can pass in strings or
-integers - if strings are passed, the \var{facility_names} and
-\var{priority_names} mapping dictionaries are used to convert them to
-integers.
-
+Encodes the facility and priority into an integer. You can pass in strings
+or integers - if strings are passed, internal mapping dictionaries are used
+to convert them to integers.
 \end{methoddesc}
 
+\subsubsection{NTEventLogHandler}
 
-\subsection{Examples \label{logging-example}}
+The \class{NTEventLogHandler} class supports sending logging messages
+to a local Windows NT, Windows 2000 or Windows XP event log. Before
+you can use it, you need Mark Hammond's Win32 extensions for Python
+installed.
 
-Using the package doesn't get much simpler. It is packaged as a Python
-package.  You just need to \code{import logging} and you're ready to
-go. Minimal example:
+\begin{classdesc}{NTEventLogHandler}{appname
+                                     \optional{, dllname\optional{, logtype}}}
+Returns a new instance of the \class{NTEventLogHandler} class. The
+\var{appname} is used to define the application name as it appears in the
+event log. An appropriate registry entry is created using this name.
+The \var{dllname} should give the fully qualified pathname of a .dll or .exe
+which contains message definitions to hold in the log (if not specified,
+\constant{"win32service.pyd"} is used - this is installed with the Win32
+extensions and contains some basic placeholder message definitions.
+Note that use of these placeholders will make your event logs big, as the
+entire message source is held in the log. If you want slimmer logs, you have
+to pass in the name of your own .dll or .exe which contains the message
+definitions you want to use in the event log). The \var{logtype} is one of
+\constant{"Application"}, \constant{"System"} or \constant{"Security"}, and
+defaults to \constant{"Application"}.
+\end{classdesc}
+
+\begin{methoddesc}{close}{}
+At this point, you can remove the application name from the registry as a
+source of event log entries. However, if you do this, you will not be able
+to see the events as you intended in the Event Log Viewer - it needs to be
+able to access the registry to get the .dll name. The current version does
+not do this (in fact it doesn't do anything).
+\end{methoddesc}
+
+\begin{methoddesc}{emit}{record}
+Determines the message ID, event category and event type, and then logs the
+message in the NT event log.
+\end{methoddesc}
+
+\begin{methoddesc}{getEventCategory}{record}
+Returns the event category for the record. Override this if you
+want to specify your own categories. This version returns 0.
+\end{methoddesc}
+
+\begin{methoddesc}{getEventType}{record}
+Returns the event type for the record. Override this if you want
+to specify your own types. This version does a mapping using the
+handler's typemap attribute, which is set up in \method{__init__()}
+to a dictionary which contains mappings for \constant{DEBUG},
+\constant{INFO}, \constant{WARNING}, \constant{ERROR} and
+\constant{CRITICAL}. If you are using your own levels, you will either need
+to override this method or place a suitable dictionary in the
+handler's \var{typemap} attribute.
+\end{methoddesc}
+
+\begin{methoddesc}{getMessageID}{record}
+Returns the message ID for the record. If you are using your
+own messages, you could do this by having the \var{msg} passed to the
+logger being an ID rather than a format string. Then, in here,
+you could use a dictionary lookup to get the message ID. This
+version returns 1, which is the base message ID in
+\constant{win32service.pyd}.
+\end{methoddesc}
+
+\subsubsection{SMTPHandler}
+
+The \class{SMTPHandler} class supports sending logging messages to an email
+address via SMTP.
+
+\begin{classdesc}{SMTPHandler}{mailhost, fromaddr, toaddrs, subject}
+Returns a new instance of the \class{SMTPHandler} class. The
+instance is initialized with the from and to addresses and subject
+line of the email. The \var{toaddrs} should be a list of strings without
+domain names (That's what the \var{mailhost} is for). To specify a
+non-standard SMTP port, use the (host, port) tuple format for the
+\var{mailhost} argument. If you use a string, the standard SMTP port
+is used.
+\end{classdesc}
+
+\begin{methoddesc}{emit}{record}
+Formats the record and sends it to the specified addressees.
+\end{methoddesc}
+
+\begin{methoddesc}{getSubject}{record}
+If you want to specify a subject line which is record-dependent,
+override this method.
+\end{methoddesc}
+
+\subsubsection{MemoryHandler}
+
+The \class{MemoryHandler} supports buffering of logging records in memory,
+periodically flushing them to a \dfn{target} handler. Flushing occurs
+whenever the buffer is full, or when an event of a certain severity or
+greater is seen.
+
+\class{MemoryHandler} is a subclass of the more general
+\class{BufferingHandler}, which is an abstract class. This buffers logging
+records in memory. Whenever each record is added to the buffer, a
+check is made by calling \method{shouldFlush()} to see if the buffer
+should be flushed.  If it should, then \method{flush()} is expected to
+do the needful.
+
+\begin{classdesc}{BufferingHandler}{capacity}
+Initializes the handler with a buffer of the specified capacity.
+\end{classdesc}
+
+\begin{methoddesc}{emit}{record}
+Appends the record to the buffer. If \method{shouldFlush()} returns true,
+calls \method{flush()} to process the buffer.
+\end{methoddesc}
+
+\begin{methoddesc}{flush}{}
+You can override this to implement custom flushing behaviour. This version
+just zaps the buffer to empty.
+\end{methoddesc}
+
+\begin{methoddesc}{shouldFlush}{record}
+Returns true if the buffer is up to capacity. This method can be
+overridden to implement custom flushing strategies.
+\end{methoddesc}
+
+\begin{classdesc}{MemoryHandler}{capacity\optional{, flushLevel
+				 \optional{, target}}}
+Returns a new instance of the \class{MemoryHandler} class. The
+instance is initialized with a buffer size of \var{capacity}. If
+\var{flushLevel} is not specified, \constant{ERROR} is used. If no
+\var{target} is specified, the target will need to be set using
+\method{setTarget()} before this handler does anything useful.
+\end{classdesc}
+
+\begin{methoddesc}{close}{}
+Calls \method{flush()}, sets the target to \constant{None} and
+clears the buffer.
+\end{methoddesc}
+
+\begin{methoddesc}{flush}{}
+For a \class{MemoryHandler}, flushing means just sending the buffered
+records to the target, if there is one. Override if you want
+different behaviour.
+\end{methoddesc}
+
+\begin{methoddesc}{setTarget}{target}
+Sets the target handler for this handler.
+\end{methoddesc}
+
+\begin{methoddesc}{shouldFlush}{record}
+Checks for buffer full or a record at the \var{flushLevel} or higher.
+\end{methoddesc}
+
+\subsubsection{HTTPHandler}
+
+The \class{HTTPHandler} class supports sending logging messages to a
+Web server, using either GET or POST semantics.
+
+\begin{classdesc}{HTTPHandler}{host, url\optional{, method}}
+Returns a new instance of the \class{HTTPHandler} class. The
+instance is initialized with a host address, url and HTTP method.
+If no \var{method} is specified, GET is used.
+\end{classdesc}
+
+\begin{methoddesc}{emit}{record}
+Sends the record to the Web server as an URL-encoded dictionary.
+\end{methoddesc}
+
+\subsection{Formatter Objects}
+
+\class{Formatter}s have the following attributes and methods. They are
+responsible for converting a \class{LogRecord} to (usually) a string
+which can be interpreted by either a human or an external system. The
+base
+\class{Formatter} allows a formatting string to be specified. If none is
+supplied, the default value of "\%s(message)\\n" is used.
+
+A Formatter can be initialized with a format string which makes use of
+knowledge of the \class{LogRecord} attributes - e.g. the default value
+mentioned above makes use of the fact that the user's message and
+arguments are pre- formatted into a LogRecord's \var{message}
+attribute. Currently, the useful attributes in a LogRecord are
+described by:
+
+\%(name)s            Name of the logger (logging channel)
+\%(levelno)s         Numeric logging level for the message (DEBUG, INFO,
+                     WARNING, ERROR, CRITICAL)
+\%(levelname)s       Text logging level for the message ("DEBUG", "INFO",
+                     "WARNING", "ERROR", "CRITICAL")
+\%(pathname)s        Full pathname of the source file where the logging
+                     call was issued (if available)
+\%(filename)s        Filename portion of pathname
+\%(module)s          Module (name portion of filename)
+\%(lineno)d          Source line number where the logging call was issued
+                     (if available)
+\%(created)f         Time when the LogRecord was created (time.time()
+                     return value)
+\%(asctime)s         Textual time when the LogRecord was created
+\%(msecs)d           Millisecond portion of the creation time
+\%(relativeCreated)d Time in milliseconds when the LogRecord was created,
+                     relative to the time the logging module was loaded
+                     (typically at application startup time)
+\%(thread)d          Thread ID (if available)
+\%(message)s         The result of msg \% args, computed just as the
+                     record is emitted
+
+
+\begin{classdesc}{Formatter}{\optional{fmt\optional{, datefmt}}}
+Returns a new instance of the \class{Formatter} class. The
+instance is initialized with a format string for the message as a whole,
+as well as a format string for the date/time portion of a message. If
+no \var{fmt} is specified, "\%(message)s" is used. If no \var{datefmt}
+is specified, the ISO8601 date format is used.
+\end{classdesc}
+
+\begin{methoddesc}{format}{record}
+The record's attribute dictionary is used as the operand to a
+string formatting operation. Returns the resulting string.
+Before formatting the dictionary, a couple of preparatory steps
+are carried out. The \var{message} attribute of the record is computed
+using \var{msg} \% \var{args}. If the formatting string contains
+\constant{"(asctime)"}, \method{formatTime()} is called to format the
+event time. If there is exception information, it is formatted using
+\method{formatException()} and appended to the message.
+\end{methoddesc}
+
+\begin{methoddesc}{formatTime}{record\optional{, datefmt}}
+This method should be called from \method{format()} by a formatter which
+wants to make use of a formatted time. This method can be overridden
+in formatters to provide for any specific requirement, but the
+basic behaviour is as follows: if \var{datefmt} (a string) is specified,
+it is used with \method{time.strftime()} to format the creation time of the
+record. Otherwise, the ISO8601 format is used. The resulting
+string is returned.
+\end{methoddesc}
+
+\begin{methoddesc}{formatException}{exc_info}
+Formats the specified exception information (a standard exception tuple
+as returned by \method{sys.exc_info()}) as a string. This default
+implementation just uses \method{traceback.print_exception()}.
+The resulting string is returned.
+\end{methoddesc}
+
+\subsection{Filter Objects}
+
+\class{Filter}s can be used by \class{Handler}s and \class{Logger}s for
+more sophisticated filtering than is provided by levels. The base filter
+class only allows events which are below a certain point in the logger
+hierarchy. For example, a filter initialized with "A.B" will allow events
+logged by loggers "A.B", "A.B.C", "A.B.C.D", "A.B.D" etc. but not "A.BB",
+"B.A.B" etc. If initialized with the empty string, all events are passed.
+
+\begin{classdesc}{Filter}{\optional{name}}
+Returns an instance of the \class{Filter} class. If \var{name} is specified,
+it names a logger which, together with its children, will have its events
+allowed through the filter. If no name is specified, allows every event.
+\end{classdesc}
+
+\begin{methoddesc}{filter}{record}
+Is the specified record to be logged? Returns zero for no, nonzero for
+yes. If deemed appropriate, the record may be modified in-place by this
+method.
+\end{methoddesc}
+
+\subsection{LogRecord Objects}
+
+LogRecord instances are created every time something is logged. They
+contain all the information pertinent to the event being logged. The
+main information passed in is in msg and args, which are combined
+using msg \% args to create the message field of the record. The record
+also includes information such as when the record was created, the
+source line where the logging call was made, and any exception
+information to be logged.
+
+LogRecord has no methods; it's just a repository for information about the
+logging event. The only reason it's a class rather than a dictionary is to
+facilitate extension.
+
+\begin{classdesc}{LogRecord}{name, lvl, pathname, lineno, msg, args,
+			     exc_info}
+Returns an instance of \class{LogRecord} initialized with interesting
+information. The \var{name} is the logger name; \var{lvl} is the
+numeric level; \var{pathname} is the absolute pathname of the source
+file in which the logging call was made; \var{lineno} is the line
+number in that file where the logging call is found; \var{msg} is the
+user-supplied message (a format string); \var{args} is the tuple
+which, together with \var{msg}, makes up the user message; and
+\var{exc_info} is the exception tuple obtained by calling
+\function{sys.exc_info() }(or \constant{None}, if no exception information
+is available).
+\end{classdesc}
+
+\subsection{Thread Safety}
+
+The logging module is intended to be thread-safe without any special work
+needing to be done by its clients. It achieves this though using threading
+locks; there is one lock to serialize access to the module's shared data,
+and each handler also creates a lock to serialize access to its underlying
+I/O.
+
+\subsection{Configuration}
+
+
+\subsubsection{Configuration functions}
+
+The following functions allow the logging module to be configured.
+
+\begin{funcdesc}{fileConfig}{fname\optional{, defaults}}
+Reads the logging configuration from a ConfigParser-format file named
+\var{fname}. This function can be called several times from an application,
+allowing an end user the ability to select from various pre-canned
+configurations (if the developer provides a mechanism to present the
+choices and load the chosen configuration). Defaults to be passed to
+ConfigParser can be specified in the \var{defaults} argument.
+\end{funcdesc}
+
+\begin{funcdesc}{listen}{\optional{port}}
+Starts up a socket server on the specified port, and listens for new
+configurations. If no port is specified, the module's default
+\constant{DEFAULT_LOGGING_CONFIG_PORT} is used. Logging configurations
+will be sent as a file suitable for processing by \function{fileConfig()}.
+Returns a \class{Thread} instance on which you can call \method{start()}
+to start the server, and which you can \method{join()} when appropriate.
+To stop the server, call \function{stopListening()}.
+\end{funcdesc}
+
+\begin{funcdesc}{stopListening}{}
+Stops the listening server which was created with a call to
+\function{listen()}. This is typically called before calling \method{join()}
+on the return value from \function{listen()}.
+\end{funcdesc}
+
+\subsubsection{Configuration file format}
+
+The configuration file format understood by \function{fileConfig} is
+based on ConfigParser functionality. The file must contain sections
+called \code{[loggers]}, \code{[handlers]} and \code{[formatters]}
+which identify by name the entities of each type which are defined in
+the file. For each such entity, there is a separate section which
+identified how that entity is configured. Thus, for a logger named
+\code{log01} in the \code{[loggers]} section, the relevant
+configuration details are held in a section
+\code{[logger_log01]}. Similarly, a handler called \code{hand01} in
+the \code{[handlers]} section will have its configuration held in a
+section called \code{[handler_hand01]}, while a formatter called
+\code{form01} in the \code{[formatters]} section will have its
+configuration specified in a section called
+\code{[formatter_form01]}. The root logger configuration must be
+specified in a section called \code{[logger_root]}.
+
+Examples of these sections in the file are given below.
 
 \begin{verbatim}
-# -- app.py --
-import logging
+[loggers]
+keys=root,log02,log03,log04,log05,log06,log07
 
-logging.info("Starting...")
-logging.warn("Nothing to do!")
-logging.info("Done...")
+[handlers]
+keys=hand01,hand02,hand03,hand04,hand05,hand06,hand07,hand08,hand09
+
+[formatters]
+keys=form01,form02,form03,form04,form05,form06,form07,form08,form09
 \end{verbatim}
 
-When you run \code{app.py}, the results are:
+The root logger must specify a level and a list of handlers. An
+example of a root logger section is given below.
 
 \begin{verbatim}
-2002-03-15 01:09:10,440 root                INFO  - Starting...
-2002-03-15 01:09:10,440 root                WARN  - Nothing to do!
-2002-03-15 01:09:10,440 root                INFO  - Done...
+[logger_root]
+level=NOTSET
+handlers=hand01
 \end{verbatim}
 
+The \code{level} entry can be one of \code{DEBUG, INFO, WARNING,
+ERROR, CRITICAL} or \code{NOTSET}. For the root logger only,
+\code{NOTSET} means that all messages will be logged. Level values are
+\function{eval()}uated in the context of the \code{logging} package's
+namespace.
 
+The \code{handlers} entry is a comma-separated list of handler names,
+which must appear in the \code{[handlers]} section. These names must
+appear in the \code{[handlers]} section and have corresponding
+sections in the configuration file.
 
-Here's a
-slightly more involved example; if you've just looked at \pep{282} you will
-probably get a feeling of dejà vu. (This is intentional.)
+For loggers other than the root logger, some additional information is
+required. This is illustrated by the following example.
 
 \begin{verbatim}
-# -- mymodule.py --
-import logging
-log = logging.getLogger("MyModule")
-
-def doIt():
-    log.debug("doin' stuff")
-    #do stuff...but suppose an error occurs?
-    raise TypeError, "bogus type error for testing"
+[logger_parser]
+level=DEBUG
+handlers=hand01
+propagate=1
+qualname=compiler.parser
 \end{verbatim}
+
+The \code{level} and \code{handlers} entries are interpreted as for
+the root logger, except that if a non-root logger's level is specified
+as \code{NOTSET}, the system consults loggers higher up the hierarchy
+to determine the effective level of the logger. The \code{propagate}
+entry is set to 1 to indicate that messages must propagate to handlers
+higher up the logger hierarchy from this logger, or 0 to indicate that
+messages are \strong{not} propagated to handlers up the hierarchy. The
+\code{qualname} entry is the hierarchical channel name of the logger,
+i.e. the name used by the application to get the logger.
+
+Sections which specify handler configuration are exemplified by the
+following.
 
 \begin{verbatim}
-# -- myapp.py --
-import logging, mymodule
-
-logging.basicConfig() # basic configuration - console output
-
-log = logging.getLogger("MyApp")
-
-log.info("start my app")
-try:
-    mymodule.doIt()
-except Exception, e:
-    log.exception("There was a problem doin' stuff.")
-log.info("end my app")
+[handler_hand01]
+class=StreamHandler
+level=NOTSET
+formatter=form01
+args=(sys.stdout,)
 \end{verbatim}
 
-When you run \code{myapp.py}, the results are:
+The \code{class} entry indicates the handler's class (as determined by
+\function{eval()} in the \code{logging} package's namespace). The
+\code{level} is interpreted as for loggers, and \code{NOTSET} is taken
+to mean "log everything".
+
+The \code{formatter} entry indicates the key name of the formatter for
+this handler. If blank, a default formatter
+(\code{logging._defaultFormatter}) is used. If a name is specified, it
+must appear in the \code{[formatters]} section and have a
+corresponding section in the configuration file.
+
+The \code{args} entry, when \function{eval()}uated in the context of
+the \code{logging} package's namespace, is the list of arguments to
+the constructor for the handler class. Refer to the constructors for
+the relevant handlers, or to the examples below, to see how typical
+entries are constructed.
 
 \begin{verbatim}
-2002-03-14 23:40:49,299 MyApp               INFO  - start my app
-2002-03-14 23:40:49,299 MyModule            DEBUG - doin' stuff
-2002-03-14 23:40:49,299 MyApp               ERROR - There was a problem doin' stuff.
-Traceback (innermost last):
-  File "myapp.py", line 9, in ?
-    mymodule.doIt()
-  File "mymodule.py", line 7, in doIt
-    raise TypeError, "bogus type error for testing"
-TypeError: bogus type error for testing
-2002-03-14 23:40:49,409 MyApp               INFO  - end my app
+[handler_hand02]
+class=FileHandler
+level=DEBUG
+formatter=form02
+args=('python.log', 'w')
+
+[handler_hand03]
+class=handlers.SocketHandler
+level=INFO
+formatter=form03
+args=('localhost', handlers.DEFAULT_TCP_LOGGING_PORT)
+
+[handler_hand04]
+class=handlers.DatagramHandler
+level=WARN
+formatter=form04
+args=('localhost', handlers.DEFAULT_UDP_LOGGING_PORT)
+
+[handler_hand05]
+class=handlers.SysLogHandler
+level=ERROR
+formatter=form05
+args=(('localhost', handlers.SYSLOG_UDP_PORT), handlers.SysLogHandler.LOG_USER)
+
+[handler_hand06]
+class=NTEventLogHandler
+level=CRITICAL
+formatter=form06
+args=('Python Application', '', 'Application')
+
+[handler_hand07]
+class=SMTPHandler
+level=WARN
+formatter=form07
+args=('localhost', 'from@abc', ['user1@abc', 'user2@xyz'], 'Logger Subject')
+
+[handler_hand08]
+class=MemoryHandler
+level=NOTSET
+formatter=form08
+target=
+args=(10, ERROR)
+
+[handler_hand09]
+class=HTTPHandler
+level=NOTSET
+formatter=form09
+args=('localhost:9022', '/log', 'GET')
 \end{verbatim}
+
+Sections which specify formatter configuration are typified by the following.
+
+\begin{verbatim}
+[formatter_form01]
+format=F1 %(asctime)s %(levelname)s %(message)s
+datefmt=
+\end{verbatim}
+
+The \code{format} entry is the overall format string, and the
+\code{datefmt} entry is the \function{strftime()}-compatible date/time format
+string. If empty, the package substitutes ISO8601 format date/times, which
+is almost equivalent to specifying the date format string "%Y-%m-%d %H:%M:%S".
+The ISO8601 format also specifies milliseconds, which are appended to the
+result of using the above format string, with a comma separator. An example
+time in ISO8601 format is \code{2003-01-23 00:29:50,411}.
