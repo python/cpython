@@ -7,7 +7,7 @@
 
 def normalize(p): # Strip unnecessary zero coefficients
 	n = len(p)
-	while p:
+	while n:
 		if p[n-1]: return p[:n]
 		n = n-1
 	return []
