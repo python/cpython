@@ -26,7 +26,7 @@
 #
 ####
 # 
-# $Id$
+# Id: Cookie.py,v 2.29 2000/08/23 05:28:49 timo Exp 
 #   by Timothy O'Malley <timo@alum.mit.edu>
 #
 #  Cookie.py is a Python module for the handling of HTTP
@@ -34,7 +34,7 @@
 #  information on cookies.
 #
 #  The original idea to treat Cookies as a dictionary came from
-#  Dave Mitchel (davem@magnet.com) in 1995, when he released the
+#  Dave Mitchell (davem@magnet.com) in 1995, when he released the
 #  first version of nscookie.py.
 #
 ####
@@ -69,7 +69,7 @@ a dictionary.
    >>> C = Cookie.SmartCookie()
    >>> C["fig"] = "newton"
    >>> C["sugar"] = "wafer"
-   >>> C
+   >>> print C
    Set-Cookie: sugar=wafer;
    Set-Cookie: fig=newton;
 
@@ -92,7 +92,7 @@ HTTP_COOKIE environment variable.
 
    >>> C = Cookie.SmartCookie()
    >>> C.load("chips=ahoy; vienna=finger")
-   >>> C
+   >>> print C
    Set-Cookie: vienna=finger;
    Set-Cookie: chips=ahoy;
 
@@ -102,7 +102,7 @@ such trickeries do not confuse it.
 
    >>> C = Cookie.SmartCookie()
    >>> C.load('keebler="E=everybody; L=\\"Loves\\"; fudge=\\012;";')
-   >>> C
+   >>> print C
    Set-Cookie: keebler="E=everybody; L=\"Loves\"; fudge=\012;";
 
 Each element of the Cookie also supports all of the RFC 2109
@@ -112,7 +112,7 @@ attribute.
    >>> C = Cookie.SmartCookie()
    >>> C["oreo"] = "doublestuff"
    >>> C["oreo"]["path"] = "/"
-   >>> C
+   >>> print C
    Set-Cookie: oreo="doublestuff"; Path=/;
 
 Each dictionary element has a 'value' attribute, which gives you
@@ -144,7 +144,7 @@ the value to a string, when the values are set dictionary-style.
    '7'
    >>> C["string"].value
    'seven'
-   >>> C
+   >>> print C
    Set-Cookie: number=7;
    Set-Cookie: string=seven;
 
@@ -165,7 +165,7 @@ values, however.)
    7
    >>> C["string"].value
    'seven'
-   >>> C
+   >>> print C
    Set-Cookie: number="I7\012.";
    Set-Cookie: string="S'seven'\012p1\012.";
 
@@ -190,7 +190,7 @@ as a string.
    7
    >>> C["string"].value
    'seven'
-   >>> C
+   >>> print C
    Set-Cookie: number="I7\012.";
    Set-Cookie: string=seven;
 
@@ -309,7 +309,7 @@ _Translator       = {
     }
 
 def _quote(str, LegalChars=_LegalChars,
-           join=string.join, idmap=string._idmap, translate=string.translate):
+	   join=string.join, idmap=string._idmap, translate=string.translate):
     #
     # If the string does not need to be double-quoted,
     # then just return the string.  Otherwise, surround
@@ -317,9 +317,9 @@ def _quote(str, LegalChars=_LegalChars,
     # special characters.
     #
     if "" == translate(str, idmap, LegalChars):
-        return str
+	return str
     else:
-        return '"' + join( map(_Translator.get, str, str), "" ) + '"'    
+	return '"' + join( map(_Translator.get, str, str), "" ) + '"'    
 # end _quote
 
 
@@ -440,7 +440,7 @@ class Morsel(UserDict):
     # end __setitem__
 
     def isReservedKey(self, K):
-        return string.lower(K) in self._reserved_keys
+	return string.lower(K) in self._reserved_keys
     # end isReservedKey
 
     def set(self, key, val, coded_val,
@@ -462,8 +462,12 @@ class Morsel(UserDict):
     def output(self, attrs=None, header = "Set-Cookie:"):
         return "%s %s" % ( header, self.OutputString(attrs) )
 
-    __repr__ = output
+    __str__ = output
 
+    def __repr__(self):
+        return '<%s: %s=%s>' % (self.__class__.__name__,
+                                self.key, repr(self.value) )
+    
     def js_output(self, attrs=None):
         # Print javascript
         return """
@@ -488,7 +492,7 @@ class Morsel(UserDict):
         if attrs == None:
             attrs = self._reserved_keys
         for K,V in self.items():
-            if not V: continue
+            if V == "": continue
             if K not in attrs: continue
             if K == "expires" and type(V) == type(1):
                 RA("%s=%s;" % (self._reserved[K], _getdate(V)))
@@ -585,8 +589,14 @@ class BaseCookie(UserDict):
         return string.join(result, sep)
     # end output
 
-    __repr__ = output
-        
+    __str__ = output
+
+    def __repr__(self):
+        L = []
+        for K,V in self.items():
+            L.append( '%s=%s' % (K,repr(V.value) ) )
+        return '<%s: %s>' % (self.__class__.__name__, string.join(L))
+    
     def js_output(self, attrs=None):
         """Return a string suitable for JavaScript."""
         result = []
@@ -630,13 +640,13 @@ class BaseCookie(UserDict):
                     M[ K[1:] ] = V
             elif string.lower(K) in Morsel._reserved_keys:
                 if M:
-                    M[ K ] = V
+                    M[ K ] = _unquote(V)
             else:
                 rval, cval = self.value_decode(V)
                 self.__set(K, rval, cval)
                 M = self[K]
                     
-        return
+	return
     # end __ParseString
 # end BaseCookie class
 
@@ -716,3 +726,7 @@ Cookie = SmartCookie
 #
 # should add a test routine?
 #
+
+#Local Variables:
+#tab-width: 4
+#end:
