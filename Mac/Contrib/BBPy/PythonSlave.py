@@ -15,10 +15,10 @@ import traceback
 import aetools
 import string
 from Carbon import AE
-from Carbon import EasyDialogs
+import EasyDialogs
 import os
 from Carbon import Qd
-from Types import *
+from types import *
 from Carbon.Events import charCodeMask, cmdKey
 import MacOS
 from Carbon import Evt
