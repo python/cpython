@@ -1720,6 +1720,9 @@ a partially-initialized module object in \code{sys.modules}.
 \item \constant{None} is now a constant; code that binds a new value to 
 the name \samp{None} is now a syntax error.
 
+% signal module now raises a RuntimeError on insane calls - e.g. setting a 
+% handler on SIGKILL
+
 \end{itemize}
 
 
