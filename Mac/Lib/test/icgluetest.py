@@ -18,7 +18,7 @@ for i in range(1, numprefs+1):
 	h.data = ""
 	attrs = ici.ICFindPrefHandle(key, h)
 	print "Attr: ", attrs
-	print "Data: ", h.data
+	print "Data: ", `h.data[:64]`
 
 ici.ICEnd()
 del ici
