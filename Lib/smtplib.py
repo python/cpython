@@ -574,7 +574,7 @@ class SMTP:
                 "%s %s" % (AUTH_LOGIN, encode_base64(user, eol="")))
             if code != 334:
                 raise SMTPAuthenticationError(code, resp)
-            (code, resp) = self.docmd(encode_base64(user, eol=""))
+            (code, resp) = self.docmd(encode_base64(password, eol=""))
         elif authmethod is None:
             raise SMTPException("No suitable authentication method found.")
         if code not in [235, 503]:
