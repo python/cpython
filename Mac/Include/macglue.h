@@ -112,6 +112,8 @@ PyObject *PyMac_BuildEventRecord(EventRecord *); /* Convert EventRecord to PyObj
 
 int PyMac_GetFixed(PyObject *, Fixed *);	/* argument parser for Fixed */
 PyObject *PyMac_BuildFixed(Fixed);			/* Convert Fixed to PyObject */
+int PyMac_Getwide(PyObject *, wide *);	/* argument parser for wide */
+PyObject *PyMac_Buildwide(wide);			/* Convert wide to PyObject */
 void PyMac_InitApplet(void);			/* Initialize and run an Applet */
 void PyMac_Initialize(void);			/* Initialize function for embedding Python */
 
