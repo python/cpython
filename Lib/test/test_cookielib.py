@@ -231,6 +231,24 @@ def _interact(cookiejar, url, set_cookie_hdrs, hdr_name):
     return cookie_hdr
 
 
+class FileCookieJarTests(TestCase):
+    def test_lwp_valueless_cookie(self):
+        # cookies with no value should be saved and loaded consistently
+        from cookielib import LWPCookieJar
+        filename = test_support.TESTFN
+        c = LWPCookieJar()
+        interact_netscape(c, "http://www.acme.com/", 'boo')
+        self.assertEqual(c._cookies["www.acme.com"]["/"]["boo"].value, None)
+        try:
+            c.save(filename, ignore_discard=True)
+            c = LWPCookieJar()
+            c.load(filename, ignore_discard=True)
+        finally:
+            try: os.unlink(filename)
+            except OSError: pass
+        self.assertEqual(c._cookies["www.acme.com"]["/"]["boo"].value, None)
+
+
 class CookieTests(TestCase):
     # XXX
     # Get rid of string comparisons where not actually testing str / repr.
@@ -1636,6 +1654,7 @@ def test_main(verbose=None):
         DateTimeTests,
         HeaderTests,
         CookieTests,
+        FileCookieJarTests,
         LWPCookieTests,
         )
 

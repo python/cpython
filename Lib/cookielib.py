@@ -451,11 +451,7 @@ def parse_ns_headers(ns_headers):
             param = param.rstrip()
             if param == "": continue
             if "=" not in param:
-                if param.lower() in known_attrs:
-                    k, v = param, None
-                else:
-                    # cookie with missing value
-                    k, v = param, None
+                k, v = param, None
             else:
                 k, v = re.split(r"\s*=\s*", param, 1)
                 k = k.lstrip()
