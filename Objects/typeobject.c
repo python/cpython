@@ -955,9 +955,9 @@ static PyGetSetDef subtype_getsets[] = {
 	/* Not all objects have these attributes!
 	   The descriptor's __get__ method may raise AttributeError. */
 	{"__dict__", subtype_dict, subtype_setdict,
-	 "dictionary for instance variables (if defined)"},
+	 PyDoc_STR("dictionary for instance variables (if defined)")},
 	{"__weakref__", subtype_getweakref, NULL,
-	 "list of weak references to the object (if defined)"},
+	 PyDoc_STR("list of weak references to the object (if defined)")},
 	{0}
 };
 
@@ -1878,7 +1878,7 @@ object_set_class(PyObject *self, PyObject *value, void *closure)
 
 static PyGetSetDef object_getsets[] = {
 	{"__class__", object_get_class, object_set_class,
-	 "the object's class"},
+	 PyDoc_STR("the object's class")},
 	{0}
 };
 
