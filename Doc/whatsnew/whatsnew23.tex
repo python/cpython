@@ -1223,7 +1223,7 @@ contributed single changes.)
 
 
 %======================================================================
-\section{New and Improved Modules}
+\section{New, Improved, and Deprecated Modules}
 
 As usual, Python's standard library received a number of enhancements and
 bug fixes.  Here's a partial list of the most notable changes, sorted
@@ -1432,6 +1432,19 @@ than the previous algorithm.
 functions: \function{get_history_item()},
 \function{get_current_history_length()}, and \function{redisplay()}.
 
+\item The \module{rexec} and \module{Bastion} modules have been
+declared dead, and attempts to import them will fail with a
+\exception{RuntimeError}.  New-style classes provide new ways to break
+out of the restricted execution environment provided by
+\module{rexec}, and no one has interest in fixing them or time to do
+so.  If you have applications using \module{rexec}, rewrite them to
+use something else.
+
+(Sticking with Python 2.2 or 2.1 will not make your applications any
+safer, because there are known bugs in the \module{rexec} module in
+those versions.  I repeat, if you're using \module{rexec}, stop using
+it immediately.)
+
 \item The \module{shutil} module gained a \function{move(\var{src},
 \var{dest})} function that recursively moves a file or directory to a new
 location.
@@ -1580,6 +1593,9 @@ For example:
 in \module{xml.dom.minidom} can now generate XML output in a
 particular encoding by providing an optional encoding argument to
 the \method{toxml()} and \method{toprettyxml()} methods of DOM nodes.
+
+item The \module{Tix} module has received various bug fixes and
+updates for the current version of the Tix package.
 
 \item The \module{Tkinter} module now works with a thread-enabled 
 version of Tcl.  Tcl's threading model requires that widgets only be
