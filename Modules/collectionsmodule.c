@@ -310,17 +310,14 @@ deque_extendleft(dequeobject *deque, PyObject *iterable)
 PyDoc_STRVAR(extendleft_doc,
 "Extend the left side of the deque with elements from the iterable");
 
-static PyObject *
-deque_rotate(dequeobject *deque, PyObject *args)
+static int
+_deque_rotate(dequeobject *deque, int n)
 {
-	int i, n=1, len=deque->len, halflen=(len+1)>>1;
+	int i, len=deque->len, halflen=(len+1)>>1;
 	PyObject *item, *rv;
 
-	if (!PyArg_ParseTuple(args, "|i:rotate", &n))
-		return NULL;
-
 	if (len == 0)
-		Py_RETURN_NONE;
+		return 0;
 	if (n > halflen || n < -halflen) {
 		n %= len;
 		if (n > halflen)
@@ -335,7 +332,7 @@ deque_rotate(dequeobject *deque, PyObject *args)
 		rv = deque_appendleft(deque, item);
 		Py_DECREF(item);
 		if (rv == NULL)
-			return NULL;
+			return -1;
 		Py_DECREF(rv);
 	}
 	for (i=0 ; i>n ; i--) {
@@ -344,10 +341,22 @@ deque_rotate(dequeobject *deque, PyObject *args)
 		rv = deque_append(deque, item);
 		Py_DECREF(item);
 		if (rv == NULL)
-			return NULL;
+			return -1;
 		Py_DECREF(rv);
 	}
-	Py_RETURN_NONE;
+	return 0;
+}
+
+static PyObject *
+deque_rotate(dequeobject *deque, PyObject *args)
+{
+	int n=1;
+
+	if (!PyArg_ParseTuple(args, "|i:rotate", &n))
+		return NULL;
+	if (_deque_rotate(deque, n) == 0)
+		Py_RETURN_NONE;
+	return NULL;
 }
 
 PyDoc_STRVAR(rotate_doc,
@@ -424,38 +433,17 @@ deque_item(dequeobject *deque, int i)
 static int
 deque_del_item(dequeobject *deque, int i)
 {
-	PyObject *item=NULL, *minus_i=NULL, *plus_i=NULL;
-	int rv = -1;
+	PyObject *item;
 
 	assert (i >= 0 && i < deque->len);
-
-	minus_i = Py_BuildValue("(i)", -i);
-	if (minus_i == NULL)
-		goto fail;
-
-	plus_i = Py_BuildValue("(i)", i);
-	if (plus_i == NULL)
-		goto fail;
-
-	item = deque_rotate(deque, minus_i);
-	if (item == NULL)
-		goto fail;
-	Py_DECREF(item);
+	if (_deque_rotate(deque, -i) == -1)
+		return -1;
 
 	item = deque_popleft(deque, NULL);
 	assert (item != NULL);
 	Py_DECREF(item);
 
-	item = deque_rotate(deque, plus_i);
-	if (item == NULL)
-		goto fail;
-
-	rv = 0;
-fail:
-	Py_XDECREF(item);
-	Py_XDECREF(minus_i);
-	Py_XDECREF(plus_i);
-	return rv;
+	return _deque_rotate(deque, i);
 }
 
 static int
