@@ -1359,7 +1359,7 @@ you are implementing, use the \cfunction{PyObject_TypeCheck} function.
 A sample of its use might be something like the following:
 
 \begin{verbatim}
-    if (! PyObject_TypeCheck(some_object, &MyType) {
+    if (! PyObject_TypeCheck(some_object, &MyType)) {
         PyErr_SetString(PyExc_TypeError, "arg #1 not a mything");
         return NULL;
     }
