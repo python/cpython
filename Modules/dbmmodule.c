@@ -60,7 +60,7 @@ newdbmobject(file, flags, mode)
 	if ( (dp->di_dbm = dbm_open(file, flags, mode)) == 0 ) {
 	    err_errno(DbmError);
 	    DECREF(dp);
-	    return 0;
+	    return NULL;
 	}
 	return (object *)dp;
 }
@@ -107,12 +107,12 @@ dbm_subscript(dp, key)
 	drec = dbm_fetch(dp->di_dbm, krec);
 	if ( drec.dptr == 0 ) {
 	    err_setstr(KeyError, GETSTRINGVALUE((stringobject *)key));
-	    return 0;
+	    return NULL;
 	}
 	if ( dbm_error(dp->di_dbm) ) {
 	    dbm_clearerr(dp->di_dbm);
 	    err_setstr(DbmError, "");
-	    return 0;
+	    return NULL;
 	}
 	return newsizedstringobject(drec.dptr, drec.dsize);
 }
@@ -162,6 +162,21 @@ static mapping_methods dbm_as_mapping = {
 };
 
 static object *
+dbm__close(dp, args)
+	register dbmobject *dp;
+	object *args;
+{
+	if ( !getnoarg(args) )
+		return NULL;
+        if ( dp->di_dbm )
+	    dbm_close(dp->di_dbm);
+	dp->di_dbm = NULL;
+	DEL(dp);
+	INCREF(None);
+	return None;
+}
+
+static object *
 dbm_keys(dp, args)
 	register dbmobject *dp;
 	object *args;
@@ -170,10 +185,6 @@ dbm_keys(dp, args)
 	datum key;
 	int err;
 
-	if (dp == NULL || !is_dbmobject(dp)) {
-		err_badcall();
-		return NULL;
-	}
 	if (!getnoarg(args))
 		return NULL;
 	v = newlistobject(0);
@@ -196,7 +207,6 @@ dbm_keys(dp, args)
 	return v;
 }
 
-
 static object *
 dbm_has_key(dp, args)
 	register dbmobject *dp;
@@ -211,6 +221,7 @@ dbm_has_key(dp, args)
 }
 
 static struct methodlist dbm_methods[] = {
+	{"close",	(method)dbm__close},
 	{"keys",	(method)dbm_keys},
 	{"has_key",	(method)dbm_has_key},
 	{NULL,		NULL}		/* sentinel */
@@ -227,7 +238,7 @@ dbm_getattr(dp, name)
 static typeobject Dbmtype = {
 	OB_HEAD_INIT(&Typetype)
 	0,
-	"Dbm_dictionary",
+	"dbm",
 	sizeof(dbmobject),
 	0,
 	(destructor)dbm_dealloc, /*tp_dealloc*/
@@ -248,27 +259,33 @@ dbmopen(self, args)
     object *self;
     object *args;
 {
-    char *name, *flags;
-    int iflags, mode;
+	char *name;
+	char *flags = "r";
+	int iflags;
+	int mode = 0666;
 
-        if ( !getargs(args, "(ssi)", &name, &flags, &mode) )
-	  return 0;
+        if ( !newgetargs(args, "s|si", &name, &flags, &mode) )
+	  return NULL;
 	if ( strcmp(flags, "r") == 0 )
 	  iflags = O_RDONLY;
 	else if ( strcmp(flags, "w") == 0 )
-	  iflags = O_WRONLY|O_CREAT;
-	else if ( strcmp(flags, "rw") == 0 )
+	  iflags = O_RDWR;
+	else if ( strcmp(flags, "rw") == 0 ) /* B/W compat */
+	  iflags = O_RDWR|O_CREAT; 
+	else if ( strcmp(flags, "c") == 0 )
 	  iflags = O_RDWR|O_CREAT;
+	else if ( strcmp(flags, "n") == 0 )
+	  iflags = O_RDWR|O_CREAT|O_TRUNC;
 	else {
 	    err_setstr(DbmError,
-		       "Flags should be one of 'r', 'w' or 'rw'");
-	    return 0;
+		       "Flags should be one of 'r', 'w', 'c' or 'n'");
+	    return NULL;
 	}
         return newdbmobject(name, iflags, mode);
 }
 
 static struct methodlist dbmmodule_methods[] = {
-    { "open", (method)dbmopen },
+    { "open", (method)dbmopen, 1 },
     { 0, 0 },
 };
 
@@ -282,5 +299,3 @@ initdbm() {
     if ( DbmError == NULL || dictinsert(d, "error", DbmError) )
       fatal("can't define dbm.error");
 }
-
-	
