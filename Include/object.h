@@ -135,6 +135,7 @@ method blocks.
 
 typedef object * (*unaryfunc) PROTO((object *));
 typedef object * (*binaryfunc) PROTO((object *, object *));
+typedef object * (*ternaryfunc) PROTO((object *, object *, object *));
 typedef int (*inquiry) PROTO((object *));
 typedef int (*coercion) PROTO((object **, object **));
 typedef object *(*intargfunc) PROTO((object *, int));
@@ -150,7 +151,7 @@ typedef struct {
 	binaryfunc nb_divide;
 	binaryfunc nb_remainder;
 	binaryfunc nb_divmod;
-	binaryfunc nb_power;
+	ternaryfunc nb_power;
 	unaryfunc nb_negative;
 	unaryfunc nb_positive;
 	unaryfunc nb_absolute;
