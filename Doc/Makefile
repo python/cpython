@@ -53,7 +53,7 @@ PAPER=letter
 # Where are the various programs?
 LATEX=		latex
 PDFLATEX=	pdflatex
-DVIPS=		dvips -N0
+DVIPS=		dvips -N0 -t $(PAPER)
 KPSEWHICH=	TEXINPUTS=$(TEXINPUTS) kpsewhich tex
 MAKEINDEX=	makeindex -s $(srcdir)/texinputs/myindex.ist
 ACROREAD=	acroread
