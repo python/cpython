@@ -178,7 +178,7 @@ class URLopener:
 		if not filename and (not type or type == 'file'):
 			try:
 				fp = self.open_local_file(url1)
-                                hdrs = fp.info()
+				hdrs = fp.info()
 				del fp
 				return url2pathname(splithost(url1)[1]), hdrs
 			except IOError, msg:
@@ -187,14 +187,14 @@ class URLopener:
 		headers = fp.info()
 		if not filename:
 			import tempfile
-                        garbage, path = splittype(url)
-                        print (garbage, path)
-                        garbage, path = splithost(path or "")
-                        print (garbage, path)
-                        path, garbage = splitquery(path or "")
-                        print (path, garbage)
-                        path, garbage = splitattr(path or "")
-                        print (path, garbage)
+			garbage, path = splittype(url)
+			print (garbage, path)
+			garbage, path = splithost(path or "")
+			print (garbage, path)
+			path, garbage = splitquery(path or "")
+			print (path, garbage)
+			path, garbage = splitattr(path or "")
+			print (path, garbage)
 			suffix = os.path.splitext(path)[1]
 			filename = tempfile.mktemp(suffix)
 			self.__tempfiles.append(filename)
