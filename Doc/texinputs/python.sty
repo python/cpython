@@ -975,10 +975,13 @@
 %
 \newcommand{\py@release}{}
 \newcommand{\version}{}
+\newcommand{\shortversion}{}
 \newcommand{\releasename}{Release}
 \newcommand{\release}[1]{%
   \renewcommand{\py@release}{\releasename\space\version}%
   \renewcommand{\version}{#1}}
+\newcommand{\setshortversion}[1]{%
+  \renewcommand{\shortversion}{#1}}
 
 % Allow specification of the author's address separately from the
 % author's name.  This can be used to format them differently, which

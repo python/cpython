@@ -236,6 +236,18 @@ distribution, to create or maintain whole documents or sections.
   macros.  This section contains the reference material for these
   facilities.
 
+  \subsection{Markup for the Preamble \label{preamble-info}}
+
+    \begin{macrodesc}{release}{\p{ver}}
+      Set the version number for the software described in the
+      document.
+    \end{macrodesc}
+
+    \begin{macrodesc}{setshortversion}{\p{sver}}
+      Specify the ``short'' version number of the documented software
+      to be \var{sver}.
+    \end{macrodesc}
+
   \subsection{Meta-information Markup \label{meta-info}}
 
     \begin{macrodesc}{sectionauthor}{\p{author}\p{email}}
@@ -567,6 +579,17 @@ distribution, to create or maintain whole documents or sections.
       acceptable.
     \end{macrodesc}
 
+    \begin{macrodesc}{shortversion}{}
+      The ``short'' version number of the documented software, as
+      specified using the \macro{setshortversion} macro in the
+      preamble.  For Python, the short version number for a release is
+      the first three characters of the \code{sys.version} value.  For
+      example, versions 2.0b1 and 2.0.1 both have a short version of
+      2.0.  This may not apply for all packages; if
+      \macro{setshortversion} is not used, this produces an empty
+      expansion.  See also the \macro{version} macro.
+    \end{macrodesc}
+
     \begin{macrodesc}{strong}{\p{text}}
       Strongly emphasized text; this will be presented using a bold
       font.
@@ -588,8 +611,9 @@ distribution, to create or maintain whole documents or sections.
     \end{macrodesc}
 
     \begin{macrodesc}{version}{}
-      The version number for the documentation, as specified using
-      \macro{release} in the preamble.
+      The version number of the described software, as specified using
+      \macro{release} in the preamble.  See also the
+      \macro{shortversion} macro.
     \end{macrodesc}
 
     \begin{macrodesc}{versionadded}{\p{version}}
