@@ -343,13 +343,14 @@ class C:
   and does not create a new module.\footnote{It is used relatively
   rarely so does not warrant being made into a statement.}
 
-  The arguments are a file name and two optional dictionaries.  The
-  file is parsed and evaluated as a sequence of Python statements
-  (similarly to a module) using the \var{globals} and \var{locals}
-  dictionaries as global and local namespace.  If the \var{locals}
-  dictionary is omitted it defaults to the \var{globals} dictionary.
-  If both dictionaries are omitted, the expression is executed in the
-  environment where \function{execfile()} is called.  The return value is
+  The arguments are a file name and two optional dictionaries.  The file is
+  parsed and evaluated as a sequence of Python statements (similarly to a
+  module) using the \var{globals} and \var{locals} dictionaries as global and
+  local namespace. If provided, \var{locals} can be any mapping object.
+  \versionchanged[formerly \var{locals} was required to be a dictionary]{2.4}
+  If the \var{locals} dictionary is omitted it defaults to the \var{globals}
+  dictionary. If both dictionaries are omitted, the expression is executed in
+  the environment where \function{execfile()} is called.  The return value is
   \code{None}.
 
   \warning{The default \var{locals} act as described for function
