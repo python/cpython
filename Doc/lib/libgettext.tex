@@ -302,28 +302,49 @@ In this example, the string \code{'writing a log message'} is marked as
 a candidate for translation, while the strings \code{'mylog.txt'} and
 \code{'w'} are not.
 
-The GNU \code{gettext} package provides a tool, called
-\program{xgettext}, that scans C and \Cpp{} source code looking for these
-specially marked strings.  \program{xgettext} generates what are
-called \file{.pot} files, essentially structured human readable files
-which contain every marked string in the source code.  These
-\file{.pot} files are copied and handed over to human translators who write
-language-specific versions for every supported natural language.
+The Python distribution comes with two tools which help you generate
+the message catalogs once you've prepared your source code.  These may
+or may not be available from a binary distribution, but they can be
+found in a source distribution, in the \file{Tools/i18n} directory.
 
-For I18N Python programs however, \program{xgettext} won't work; it
-doesn't understand the myriad of string types support by Python.  The
-standard Python distribution provides a tool called
-\program{pygettext} that does though (found in the \file{Tools/i18n/}
-directory).\footnote{Fran\c cois Pinard has written a program called
+The \program{pygettext}\footnote{Fran\c cois Pinard has
+written a program called
 \program{xpot} which does a similar job.  It is available as part of
 his \program{po-utils} package at
-\url{http://www.iro.umontreal.ca/contrib/po-utils/HTML}.
-}  This is a command line script that
-supports a similar interface as \program{xgettext}; see its
-documentation for details.  Once you've used \program{pygettext} to
-create your \file{.pot} files, you can use the standard GNU
-\program{gettext} tools to generate your machine-readable \file{.mo}
-files, which are readable by the \class{GNUTranslations} class.
+\url{http://www.iro.umontreal.ca/contrib/po-utils/HTML}.} program
+scans all your Python source code looking for the strings you
+previously marked as translatable.  It is similar to the GNU
+\program{gettext} program except that it understands all the
+intricacies of Python source code, but knows nothing about C or C++
+source code.  You don't need GNU \code{gettext} unless you're also
+going to be translating C code (e.g. C extension modules).
+
+\program{pygettext} generates textual Uniforum-style human readable
+message catalog \file{.pot} files, essentially structured human
+readable files which contain every marked string in the source code,
+along with a placeholder for the translation strings.
+\program{pygettext} is a command line script that supports a similar
+command line interface as \program{xgettext}; for details on its use,
+run:
+
+\begin{verbatim}
+pygettext.py --help
+\end{verbatim}
+
+Copies of these \file{.pot} files are then handed over to the
+individual human translators who write language-specific versions for
+every supported natural language.  They send you back the filled in
+language-specific versions as a \file{.po} file.  Using the
+\program{msgfmt.py}\footnote{\program{msgfmt.py} is binary
+compatible with GNU \program{msgfmt} except that it provides a
+simpler, all-Python implementation.  With this and
+\program{pygettext.py}, you generally won't need to install the GNU
+\program{gettext} package to internationalize your Python
+applications.} program (in the \file{Tools/i18n} directory), you take the
+\file{.po} files from your translators and generate the
+machine-readable \file{.mo} binary catalog files.  The \file{.mo}
+files are what the \module{gettext} module uses for the actual
+translation processing during run-time.
 
 How you use the \module{gettext} module in your code depends on
 whether you are internationalizing your entire application or a single
