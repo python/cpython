@@ -433,6 +433,7 @@ equal to \var{x}, else \code{1}}{}
   \hline
   \lineiii{\var{s}[\var{i}]}{\var{i}'th item of \var{s}, origin 0}{(2)}
   \lineiii{\var{s}[\var{i}:\var{j}]}{slice of \var{s} from \var{i} to \var{j}}{(2), (3)}
+  \lineiii{\var{s}[\var{i}:\var{j}:\var{k}]}{slice of \var{s} from \var{i} to \var{j} with step \var{k}}{(2), (4)}
   \hline
   \lineiii{len(\var{s})}{length of \var{s}}{}
   \lineiii{min(\var{s})}{smallest item of \var{s}}{}
@@ -446,6 +447,7 @@ equal to \var{x}, else \code{1}}{}
 \indexii{repetition}{operation}
 \indexii{subscript}{operation}
 \indexii{slice}{operation}
+\indexii{extended slice}{operation}
 \opindex{in}
 \opindex{not in}
 
@@ -492,6 +494,15 @@ Notes:
   \code{len(\var{s})}, use \code{len(\var{s})}.  If \var{i} is omitted,
   use \code{0}.  If \var{j} is omitted, use \code{len(\var{s})}.  If
   \var{i} is greater than or equal to \var{j}, the slice is empty.
+
+\item[(4)] The slice of \var{s} from \var{i} to \var{j} with step \var{k} 
+  is defined as the sequence of items with index \code{\var{x} =
+  \var{i} + \var{n}*\var{k}} such that \var{n} \code{>=} \code{0} and
+  \code{\var{i} <= \var{x} < \var{j}}.  If \var{i} or \var{j} is
+  greater than \code{len(\var{s})}, use \code{len(\var{s})}.  If
+  \var{i} or \var{j} are ommitted then they become ``end'' values
+  (which end depends on the sign of \var{k}).
+
 \end{description}
 
 
@@ -875,31 +886,36 @@ The following operations are defined on mutable sequence types (where
   	{slice of \var{s} from \var{i} to \var{j} is replaced by \var{t}}{}
   \lineiii{del \var{s}[\var{i}:\var{j}]}
 	{same as \code{\var{s}[\var{i}:\var{j}] = []}}{}
+  \lineiii{\var{s}[\var{i}:\var{j}:\var{k}] = \var{t}}
+  	{the elements of \code{\var{s}[\var{i}:\var{j}:\var{k}]} are replaced by those of \var{t}}{(1)}
+  \lineiii{del \var{s}[\var{i}:\var{j}:\var{k}]}
+	{removes the elements of \code{\var{s}[\var{i}:\var{j}:\var{k}]} from the list}{}
   \lineiii{\var{s}.append(\var{x})}
-	{same as \code{\var{s}[len(\var{s}):len(\var{s})] = [\var{x}]}}{(1)}
+	{same as \code{\var{s}[len(\var{s}):len(\var{s})] = [\var{x}]}}{(2)}
   \lineiii{\var{s}.extend(\var{x})}
-        {same as \code{\var{s}[len(\var{s}):len(\var{s})] = \var{x}}}{(2)}
+        {same as \code{\var{s}[len(\var{s}):len(\var{s})] = \var{x}}}{(3)}
   \lineiii{\var{s}.count(\var{x})}
     {return number of \var{i}'s for which \code{\var{s}[\var{i}] == \var{x}}}{}
   \lineiii{\var{s}.index(\var{x})}
-    {return smallest \var{i} such that \code{\var{s}[\var{i}] == \var{x}}}{(3)}
+    {return smallest \var{i} such that \code{\var{s}[\var{i}] == \var{x}}}{(4)}
   \lineiii{\var{s}.insert(\var{i}, \var{x})}
 	{same as \code{\var{s}[\var{i}:\var{i}] = [\var{x}]}
-	  if \code{\var{i} >= 0}}{(4)}
+	  if \code{\var{i} >= 0}}{(5)}
   \lineiii{\var{s}.pop(\optional{\var{i}})}
-    {same as \code{\var{x} = \var{s}[\var{i}]; del \var{s}[\var{i}]; return \var{x}}}{(5)}
+    {same as \code{\var{x} = \var{s}[\var{i}]; del \var{s}[\var{i}]; return \var{x}}}{(6)}
   \lineiii{\var{s}.remove(\var{x})}
-	{same as \code{del \var{s}[\var{s}.index(\var{x})]}}{(3)}
+	{same as \code{del \var{s}[\var{s}.index(\var{x})]}}{(4)}
   \lineiii{\var{s}.reverse()}
-	{reverses the items of \var{s} in place}{(6)}
+	{reverses the items of \var{s} in place}{(7)}
   \lineiii{\var{s}.sort(\optional{\var{cmpfunc}})}
-	{sort the items of \var{s} in place}{(6), (7)}
+	{sort the items of \var{s} in place}{(7), (8)}
 \end{tableiii}
 \indexiv{operations on}{mutable}{sequence}{types}
 \indexiii{operations on}{sequence}{types}
 \indexiii{operations on}{list}{type}
 \indexii{subscript}{assignment}
 \indexii{slice}{assignment}
+\indexii{extended slice}{assignment}
 \stindex{del}
 \withsubitem{(list method)}{
   \ttindex{append()}\ttindex{extend()}\ttindex{count()}\ttindex{index()}
@@ -908,32 +924,35 @@ The following operations are defined on mutable sequence types (where
 \noindent
 Notes:
 \begin{description}
-\item[(1)] The C implementation of Python has historically accepted
+\item[(1)] \var{t} must have the same length as the slice it is 
+  replacing.
+
+\item[(2)] The C implementation of Python has historically accepted
   multiple parameters and implicitly joined them into a tuple; this
   no longer works in Python 2.0.  Use of this misfeature has been
   deprecated since Python 1.4.
 
-\item[(2)] Raises an exception when \var{x} is not a list object.  The
+\item[(3)] Raises an exception when \var{x} is not a list object.  The
   \method{extend()} method is experimental and not supported by
   mutable sequence types other than lists.
 
-\item[(3)] Raises \exception{ValueError} when \var{x} is not found in
+\item[(4)] Raises \exception{ValueError} when \var{x} is not found in
   \var{s}.
 
-\item[(4)] When a negative index is passed as the first parameter to
+\item[(5)] When a negative index is passed as the first parameter to
   the \method{insert()} method, the new element is prepended to the
   sequence.
 
-\item[(5)] The \method{pop()} method is only supported by the list and
+\item[(6)] The \method{pop()} method is only supported by the list and
   array types.  The optional argument \var{i} defaults to \code{-1},
   so that by default the last item is removed and returned.
 
-\item[(6)] The \method{sort()} and \method{reverse()} methods modify the
+\item[(7)] The \method{sort()} and \method{reverse()} methods modify the
   list in place for economy of space when sorting or reversing a large
   list.  To remind you that they operate by side effect, they don't return
   the sorted or reversed list.
 
-\item[(7)] The \method{sort()} method takes an optional argument
+\item[(8)] The \method{sort()} method takes an optional argument
   specifying a comparison function of two arguments (list items) which
   should return a negative, zero or positive number depending on whether
   the first argument is considered smaller than, equal to, or larger

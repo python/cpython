@@ -5061,6 +5061,58 @@ static PySequenceMethods unicode_as_sequence = {
     (objobjproc)PyUnicode_Contains, 	/*sq_contains*/
 };
 
+static PyObject*
+unicode_subscript(PyUnicodeObject* self, PyObject* item)
+{
+    if (PyInt_Check(item)) {
+        long i = PyInt_AS_LONG(item);
+        if (i < 0)
+            i += PyString_GET_SIZE(self);
+        return unicode_getitem(self, i);
+    } else if (PyLong_Check(item)) {
+        long i = PyLong_AsLong(item);
+        if (i == -1 && PyErr_Occurred())
+            return NULL;
+        if (i < 0)
+            i += PyString_GET_SIZE(self);
+        return unicode_getitem(self, i);
+    } else if (PySlice_Check(item)) {
+        int start, stop, step, slicelength, cur, i;
+        Py_UNICODE* source_buf;
+        Py_UNICODE* result_buf;
+        PyObject* result;
+
+        if (PySlice_GetIndicesEx((PySliceObject*)item, PyString_GET_SIZE(self),
+				 &start, &stop, &step, &slicelength) < 0) {
+            return NULL;
+        }
+
+        if (slicelength <= 0) {
+            return PyUnicode_FromUnicode(NULL, 0);
+        } else {
+            source_buf = PyUnicode_AS_UNICODE((PyObject*)self);
+            result_buf = PyMem_MALLOC(slicelength*sizeof(Py_UNICODE));
+
+            for (cur = start, i = 0; i < slicelength; cur += step, i++) {
+                result_buf[i] = source_buf[cur];
+            }
+            
+            result = PyUnicode_FromUnicode(result_buf, slicelength);
+            PyMem_FREE(result_buf);
+            return result;
+        }
+    } else {
+        PyErr_SetString(PyExc_TypeError, "string indices must be integers");
+        return NULL;
+    }
+}
+
+static PyMappingMethods unicode_as_mapping = {
+    (inquiry)unicode_length,		/* mp_length */
+    (binaryfunc)unicode_subscript,	/* mp_subscript */
+    (objobjargproc)0,			/* mp_ass_subscript */
+};
+
 static int
 unicode_buffer_getreadbuf(PyUnicodeObject *self,
 			  int index,
@@ -5355,7 +5407,7 @@ PyObject *PyUnicode_Format(PyObject *format,
 	arglen = -1;
 	argidx = -2;
     }
-    if (args->ob_type->tp_as_mapping)
+    if (args->ob_type->tp_as_mapping && !PyTuple_Check(args))
 	dict = args;
 
     while (--fmtcnt >= 0) {
@@ -5817,7 +5869,7 @@ PyTypeObject PyUnicode_Type = {
     (reprfunc) unicode_repr, 		/* tp_repr */
     0, 					/* tp_as_number */
     &unicode_as_sequence, 		/* tp_as_sequence */
-    0, 					/* tp_as_mapping */
+    &unicode_as_mapping, 		/* tp_as_mapping */
     (hashfunc) unicode_hash, 		/* tp_hash*/
     0, 					/* tp_call*/
     (reprfunc) unicode_str,	 	/* tp_str */

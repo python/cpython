@@ -109,6 +109,59 @@ PySlice_GetIndices(PySliceObject *r, int length,
 	return 0;
 }
 
+int
+PySlice_GetIndicesEx(PySliceObject *r, int length,
+		     int *start, int *stop, int *step, int *slicelength)
+{
+	/* this is harder to get right than you might think */
+	int defstart, defstop;
+
+	if (r->step == Py_None) {
+		*step = 1;
+	} else {
+		*step = PyInt_AsLong(r->step);
+		if (*step == -1 && PyErr_Occurred()) {
+			return -1;
+		}
+		else if (*step == 0) {
+			PyErr_SetString(PyExc_ValueError,
+					"slice step cannot be zero");
+			return -1;
+		}
+	}
+
+	defstart = *step < 0 ? length-1 : 0;
+	defstop = *step < 0 ? -1 : length;
+
+	if (r->start == Py_None) {
+		*start = defstart;
+	} else {
+		if (!_PyEval_SliceIndex(r->start, start)) return -1;
+		if (*start < 0) *start += length;
+		if (*start < 0) *start = (*step < 0) ? -1 : 0;
+		if (*start >= length) 
+			*start = (*step < 0) ? length - 1 : length;
+	}
+
+	if (r->stop == Py_None) {
+		*stop = defstop;
+	} else {
+		if (!_PyEval_SliceIndex(r->stop, stop)) return -1;
+		if (*stop < 0) *stop += length;
+		if (*stop < 0) *stop = -1;
+		if (*stop > length) *stop = length;
+	}
+
+	if (*step < 0) {
+		*slicelength = (*stop-*start+1)/(*step)+1;
+	} else {
+		*slicelength = (*stop-*start-1)/(*step)+1;
+	}
+	if (*slicelength < 0) *slicelength = 0;
+
+	return 0;
+}
+
 static void
 slice_dealloc(PySliceObject *r)
 {

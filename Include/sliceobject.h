@@ -32,6 +32,9 @@ DL_IMPORT(PyObject *) PySlice_New(PyObject* start, PyObject* stop,
                                   PyObject* step);
 DL_IMPORT(int) PySlice_GetIndices(PySliceObject *r, int length,
                                   int *start, int *stop, int *step);
+DL_IMPORT(int) PySlice_GetIndicesEx(PySliceObject *r, int length,
+				    int *start, int *stop, 
+				    int *step, int *slicelength);
 
 #ifdef __cplusplus
 }

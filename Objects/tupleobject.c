@@ -541,6 +541,63 @@ static PySequenceMethods tuple_as_sequence = {
 	(objobjproc)tuplecontains,		/* sq_contains */
 };
 
+static PyObject*
+tuplesubscript(PyTupleObject* self, PyObject* item)
+{
+	if (PyInt_Check(item)) {
+		long i = PyInt_AS_LONG(item);
+		if (i < 0)
+			i += PyTuple_GET_SIZE(self);
+		return tupleitem(self, i);
+	}
+	else if (PyLong_Check(item)) {
+		long i = PyLong_AsLong(item);
+		if (i == -1 && PyErr_Occurred())
+			return NULL;
+		if (i < 0)
+			i += PyTuple_GET_SIZE(self);
+		return tupleitem(self, i);
+	}
+	else if (PySlice_Check(item)) {
+		int start, stop, step, slicelength, cur, i;
+		PyObject* result;
+		PyObject* it;
+
+		if (PySlice_GetIndicesEx((PySliceObject*)item,
+				 PyTuple_GET_SIZE(self),
+				 &start, &stop, &step, &slicelength) < 0) {
+			return NULL;
+		}
+
+		if (slicelength <= 0) {
+			return PyTuple_New(0);
+		}
+		else {
+			result = PyTuple_New(slicelength);
+
+			for (cur = start, i = 0; i < slicelength; 
+			     cur += step, i++) {
+				it = PyTuple_GET_ITEM(self, cur);
+				Py_INCREF(it);
+				PyTuple_SET_ITEM(result, i, it);
+			}
+			
+			return result;
+		}
+	}
+	else {
+		PyErr_SetString(PyExc_TypeError, 
+				"tuple indices must be integers");
+		return NULL;
+	}
+}
+
+static PyMappingMethods tuple_as_mapping = {
+	(inquiry)tuplelength,
+	(binaryfunc)tuplesubscript,
+	0
+};
+
 PyTypeObject PyTuple_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,
@@ -555,7 +612,7 @@ PyTypeObject PyTuple_Type = {
 	(reprfunc)tuplerepr,			/* tp_repr */
 	0,					/* tp_as_number */
 	&tuple_as_sequence,			/* tp_as_sequence */
-	0,					/* tp_as_mapping */
+	&tuple_as_mapping,			/* tp_as_mapping */
 	(hashfunc)tuplehash,			/* tp_hash */
 	0,					/* tp_call */
 	0,					/* tp_str */

@@ -1684,6 +1684,192 @@ static char list_doc[] =
 
 staticforward PyObject * list_iter(PyObject *seq);
 
+static PyObject*
+list_subscript(PyListObject* self, PyObject* item)
+{
+	if (PyInt_Check(item)) {
+		long i = PyInt_AS_LONG(item);
+		if (i < 0)
+			i += PyList_GET_SIZE(self);
+		return list_item(self, i);
+	}
+	else if (PyLong_Check(item)) {
+		long i = PyLong_AsLong(item);
+		if (i == -1 && PyErr_Occurred())
+			return NULL;
+		if (i < 0)
+			i += PyList_GET_SIZE(self);
+		return list_item(self, i);
+	}
+	else if (PySlice_Check(item)) {
+		int start, stop, step, slicelength, cur, i;
+		PyObject* result;
+		PyObject* it;
+
+		if (PySlice_GetIndicesEx((PySliceObject*)item, self->ob_size,
+				 &start, &stop, &step, &slicelength) < 0) {
+			return NULL;
+		}
+
+		if (slicelength <= 0) {
+			return PyList_New(0);
+		}
+		else {
+			result = PyList_New(slicelength);
+			if (!result) return NULL;
+
+			for (cur = start, i = 0; i < slicelength; 
+			     cur += step, i++) {
+				it = PyList_GET_ITEM(self, cur);
+				Py_INCREF(it);
+				PyList_SET_ITEM(result, i, it);
+			}
+			
+			return result;
+		}
+	}
+	else {
+		PyErr_SetString(PyExc_TypeError,
+				"list indices must be integers");
+		return NULL;
+	}
+}
+
+static int 
+list_ass_subscript(PyListObject* self, PyObject* item, PyObject* value)
+{
+	if (PyInt_Check(item)) {
+		long i = PyInt_AS_LONG(item);
+		if (i < 0)
+			i += PyList_GET_SIZE(self);
+		return list_ass_item(self, i, value);
+	}
+	else if (PyLong_Check(item)) {
+		long i = PyLong_AsLong(item);
+		if (i == -1 && PyErr_Occurred())
+			return -1;
+		if (i < 0)
+			i += PyList_GET_SIZE(self);
+		return list_ass_item(self, i, value);
+	}
+	else if (PySlice_Check(item)) {
+		int start, stop, step, slicelength;
+
+		if (PySlice_GetIndicesEx((PySliceObject*)item, self->ob_size,
+				 &start, &stop, &step, &slicelength) < 0) {
+			return -1;
+		}
+
+		if (value == NULL) {
+			/* delete slice */
+			PyObject **garbage, **item;
+			int cur, i, j;
+			
+			if (slicelength <= 0)
+				return 0;
+
+			if (step < 0) {
+				stop = start + 1;
+				start = stop + step*(slicelength - 1) - 1;
+				step = -step;
+			}
+
+			garbage = (PyObject**)
+				PyMem_MALLOC(slicelength*sizeof(PyObject*));
+			
+			/* drawing pictures might help 
+			   understand these for loops */
+			for (cur = start, i = 0; cur < stop; cur += step, i++) {
+				garbage[i] = PyList_GET_ITEM(self, cur);
+
+				for (j = 0; j < step; j++) {
+					PyList_SET_ITEM(self, cur + j - i, 
+						PyList_GET_ITEM(self, cur + j + 1));
+				}
+			}
+			for (cur = start + slicelength*step + 1; 
+			     cur < self->ob_size; cur++) {
+				PyList_SET_ITEM(self, cur - slicelength,
+						PyList_GET_ITEM(self, cur));
+			}
+			self->ob_size -= slicelength;
+			item = self->ob_item;
+			NRESIZE(item, PyObject*, self->ob_size);
+			self->ob_item = item;
+
+			for (i = 0; i < slicelength; i++) {
+				Py_DECREF(garbage[i]);
+			}
+			PyMem_FREE(garbage);
+
+			return 0;
+		}
+		else {
+			/* assign slice */
+			PyObject **garbage, *ins;
+			int cur, i;
+
+			if (!PyList_Check(value)) {
+				PyErr_Format(PyExc_TypeError,
+			     "must assign list (not \"%.200s\") to slice",
+					     value->ob_type->tp_name);
+				return -1;
+			}
+
+			if (PyList_GET_SIZE(value) != slicelength) {
+				PyErr_Format(PyExc_ValueError,
+            "attempt to assign list of size %d to extended slice of size %d",
+					     PyList_Size(value), slicelength);
+				return -1;
+			}
+
+			if (!slicelength)
+				return 0;
+
+			/* protect against a[::-1] = a */
+			if (self == (PyListObject*)value) { 
+				value = list_slice((PyListObject*)value, 0,
+						   PyList_GET_SIZE(value));
+			} 
+			else {
+				Py_INCREF(value);
+			}
+
+			garbage = (PyObject**)
+				PyMem_MALLOC(slicelength*sizeof(PyObject*));
+			
+			for (cur = start, i = 0; i < slicelength; 
+			     cur += step, i++) {
+				garbage[i] = PyList_GET_ITEM(self, cur);
+				
+				ins = PyList_GET_ITEM(value, i);
+				Py_INCREF(ins);
+				PyList_SET_ITEM(self, cur, ins);
+			}
+
+			for (i = 0; i < slicelength; i++) {
+				Py_DECREF(garbage[i]);
+			}
+			
+			PyMem_FREE(garbage);
+			Py_DECREF(value);
+			
+			return 0;
+		}
+	} 
+	else {
+		PyErr_SetString(PyExc_TypeError, 
+				"list indices must be integers");
+		return -1;
+	}
+}
+
+static PyMappingMethods list_as_mapping = {
+	(inquiry)list_length,
+	(binaryfunc)list_subscript,
+	(objobjargproc)list_ass_subscript
+};
+
 PyTypeObject PyList_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,
@@ -1698,7 +1884,7 @@ PyTypeObject PyList_Type = {
 	(reprfunc)list_repr,			/* tp_repr */
 	0,					/* tp_as_number */
 	&list_as_sequence,			/* tp_as_sequence */
-	0,					/* tp_as_mapping */
+	&list_as_mapping,			/* tp_as_mapping */
 	list_nohash,				/* tp_hash */
 	0,					/* tp_call */
 	0,					/* tp_str */
