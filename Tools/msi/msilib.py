@@ -445,7 +445,7 @@ class Directory:
             blogical = None
         add_data(db, "Directory", [(logical, blogical, default)])
 
-    def start_component(self, component = None, feature = None, flags = None, keyfile = None):
+    def start_component(self, component = None, feature = None, flags = None, keyfile = None, uuid=None):
         """Add an entry to the Component table, and make this component the current for this
         directory. If no component name is given, the directory name is used. If no feature
         is given, the current feature is used. If no flags are given, the directory's default
@@ -453,7 +453,10 @@ class Directory:
         table."""
         if flags is None:
             flags = self.componentflags
-        uuid = gen_uuid()
+        if uuid is None:
+            uuid = gen_uuid()
+        else:
+            uuid = uuid.upper()
         if component is None:
             component = self.logical
         self.component = component
