@@ -2014,7 +2014,7 @@ def set_unittest_reportflags(flags):
       >>> doctest._unittest_reportflags == (REPORT_NDIFF |
       ...                                   REPORT_ONLY_FIRST_FAILURE)
       True
-      
+
     Only reporting flags can be set:
 
       >>> set_unittest_reportflags(ELLIPSIS)
@@ -2036,17 +2036,17 @@ def set_unittest_reportflags(flags):
 
     if nrflags:
         raise ValueError("Invalid flags passed", flags)
-    
+
     global _unittest_reportflags
     old = _unittest_reportflags
     _unittest_reportflags = flags
     return old
-    
+
 
 class FakeModule:
     """Fake module created by tests
     """
-    
+
     def __init__(self, dict, name):
         self.__dict__ = dict
         self.__name__ = name
@@ -2065,7 +2065,7 @@ class DocTestCase(unittest.TestCase):
 
     def setUp(self):
         test = self._dt_test
-            
+
         if self._dt_setUp is not None:
             self._dt_setUp(test)
 
@@ -2082,12 +2082,12 @@ class DocTestCase(unittest.TestCase):
         old = sys.stdout
         new = StringIO()
         optionflags = self._dt_optionflags
-        
+
         if not (optionflags & valid_unittest_reportflags):
             # The option flags don't include any reporting flags,
             # so add the default reporting flags
             optionflags |= _unittest_reportflags
-        
+
         runner = DocTestRunner(optionflags=optionflags,
                                checker=self._dt_checker, verbose=False)
 
@@ -2327,7 +2327,7 @@ def DocFileSuite(*paths, **kw):
 
     optionflags
        A set of doctest option flags expressed as an integer.
-      
+
     """
     suite = unittest.TestSuite()
 
