@@ -1414,7 +1414,7 @@ class Decimal(object):
         return float(str(self))
 
     def __int__(self):
-        """Converts self to a int, truncating if necessary."""
+        """Converts self to an int, truncating if necessary."""
         if self._is_special:
             if self._isnan():
                 context = getcontext()
