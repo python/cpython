@@ -214,15 +214,15 @@ the OPT variable.
 
 If you get failures in test_long, or sys.maxint gets set to -1, you
 are probably experiencing compiler bugs, usually related to
-optimization.  This is a common problem with some versions of gcc and
-egcs, and some vendor-supplied compilers, which can sometimes be
-worked around by turning off optimization.  Consider switching to
-stable versions (gcc 2.7.2.3, egcs 1.1.2, or contact your vendor.)
+optimization.  This is a common problem with some versions of gcc, and
+some vendor-supplied compilers, which can sometimes be worked around
+by turning off optimization.  Consider switching to stable versions
+(gcc 2.95.2, or contact your vendor.)
 
 From Python 2.0 onward, all Python C code is ANSI C.  Compiling using
 old K&R-C-only compilers is no longer possible.  ANSI C compilers are
 available for all modern systems, either in the form of updated
-compilers from the vendor, or one of the free compilers (gcc, egcs).
+compilers from the vendor, or one of the free compilers (gcc).
 
 Platform specific notes
 -----------------------
@@ -250,6 +250,23 @@ Solaris: When using Sun's C compiler with threads, at least on Solaris
         Solaris.  binutils 2.12 works, and the binutils maintainers
         are aware of the problem, so binutils 2.13.1 will probably fix
         this problem.
+
+	When the dynamic loader complains about errors finding shared
+	libraries, such as
+
+	ld.so.1: ./python: fatal: libstdc++.so.5: open failed: 
+	No such file or directory 
+
+	you need to first make sure that the library is available on
+	your system. Then, you need to instruct the dynamic loader how
+	to find it. You can chose any of the following strategies:
+
+	1. When compiling Python, set LD_RUN_PATH to the directories
+	   containing missing libraries.
+	2. When running Python, set LD_LIBRARY_PATH to these directories.
+	3. Use crle(8) to extend the search path of the loader.
+	4. Modify the installed GCC specs file, adding -R options into the
+	   *link: section.
 
 Linux:  A problem with threads and fork() was tracked down to a bug in
 	the pthreads code in glibc version 2.0.5; glibc version 2.0.7
