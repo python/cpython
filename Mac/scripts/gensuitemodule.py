@@ -232,11 +232,6 @@ def compilesuite(suite, major, minor, language, script, fname):
 	fp.write("AETE/AEUT resource version %d/%d, language %d, script %d\n" % \
 		(major, minor, language, script))
 	fp.write('"""\n\n')
-	# XXXX Temp?
-	fp.write("import addpack\n")
-	fp.write("addpack.addpack('Tools')\n")
-	fp.write("addpack.addpack('bgen')\n")
-	fp.write("addpack.addpack('ae')\n\n")
 	
 	fp.write('import aetools\n')
 	fp.write('import MacOS\n\n')
