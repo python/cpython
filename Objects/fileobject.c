@@ -686,7 +686,7 @@ file_readinto(PyFileObject *f, PyObject *args)
 
 	if (f->f_fp == NULL)
 		return err_closed();
-	if (!PyArg_Parse(args, "w#", &ptr, &ntodo))
+	if (!PyArg_ParseTuple(args, "w#", &ptr, &ntodo))
 		return NULL;
 	ndone = 0;
 	while (ntodo > 0) {
@@ -1462,7 +1462,7 @@ static PyMethodDef file_methods[] = {
 	{"truncate",	(PyCFunction)file_truncate,   METH_VARARGS, truncate_doc},
 #endif
 	{"tell",	(PyCFunction)file_tell,       METH_NOARGS,  tell_doc},
-	{"readinto",	(PyCFunction)file_readinto,   METH_OLDARGS, readinto_doc},
+	{"readinto",	(PyCFunction)file_readinto,   METH_VARARGS, readinto_doc},
 	{"readlines",	(PyCFunction)file_readlines,  METH_VARARGS, readlines_doc},
 	{"xreadlines",	(PyCFunction)file_xreadlines, METH_NOARGS,  xreadlines_doc},
 	{"writelines",	(PyCFunction)file_writelines, METH_O,	    writelines_doc},
