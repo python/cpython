@@ -35,21 +35,6 @@ def verifydocpath(docpath):
 	return 1
 
 
-class TwoLineList(W.List):
-	
-	LDEF_ID = 468
-	
-	def createlist(self):
-		from Carbon import List
-		self._calcbounds()
-		self.SetPort()
-		rect = self._bounds
-		rect = rect[0]+1, rect[1]+1, rect[2]-16, rect[3]-1
-		self._list = List.LNew(rect, (0, 0, 1, 0), (0, 28), self.LDEF_ID, self._parentwindow.wid,
-					0, 1, 0, 1)
-		self.set(self.items)
-
-
 _resultscounter = 1
 
 class Results:
