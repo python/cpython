@@ -350,6 +350,7 @@ class SyntaxSpec(Instruction):
 	self.syntax = syntax
 	Instruction.__init__(self, chr(20), 2)
     def assemble(self, postition, labels):
+	# XXX
 	return self.opcode + chr(self.syntax)
 
 class NotSyntaxSpec(Instruction):
@@ -358,6 +359,7 @@ class NotSyntaxSpec(Instruction):
 	self.syntax = syntax
 	Instruction.__init__(self, chr(21), 2)
     def assemble(self, postition, labels):
+	# XXX
 	return self.opcode + chr(self.syntax)
 
 class Label(Instruction):
@@ -373,11 +375,15 @@ class OpenParen(Instruction):
     def __init__(self, register):
 	self.register = register
 	Instruction.__init__(self, '', 0)
+    def assemble(self, position, labels):
+	raise error, 'unmatched open parenthesis'
 
 class Alternation(Instruction):
     name = '|'
     def __init__(self):
 	Instruction.__init__(self, '', 0)
+    def assemble(self, position, labels):
+	raise error, 'an alternation was not taken care of'
 
 #
 #
@@ -924,7 +930,9 @@ def compile(pattern, flags=0):
 	elif char == '*':
 	    # Kleene closure
 	    if len(stack) == 0:
-		raise error, 'the Kleene closure needs something to repeat'
+		raise error, '* needs something to repeat'
+	    if (stack[-1][0].name == '(') or (stack[-1][0].name == '|'):
+		raise error, '* needs something to repeat'
 	    registers = registers_used(stack[-1])
 	    if (index < len(pattern)) and (pattern[index] == '?'):
 		# non-greedy matching
@@ -948,7 +956,9 @@ def compile(pattern, flags=0):
 	elif char == '+':
 	    # positive closure
 	    if len(stack) == 0:
-		raise error, 'the positive closure needs something to repeat'
+		raise error, '+ needs something to repeat'
+	    if (stack[-1][0].name == '(') or (stack[-1][0].name == '|'):
+		raise error, '+ needs something to repeat'
 	    registers = registers_used(stack[-1])
 	    if (index < len(pattern)) and (pattern[index] == '?'):
 		# non-greedy
