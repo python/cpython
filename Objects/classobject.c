@@ -156,21 +156,6 @@ Create a class object.  The name must be a string; the second argument\n\
 a tuple of classes, and the third a dictionary.");
 
 static PyObject *
-new_class(PyObject* unused, PyObject* args)
-{
-	PyObject *name;
-	PyObject *classes;
-	PyObject *dict;
-  
-	if (!PyArg_ParseTuple(args, "SO!O!:class",
-			      &name,
-			      &PyTuple_Type, &classes,
-			      &PyDict_Type, &dict))
-		return NULL;
-	return PyClass_New(classes, dict, name);
-}
-
-static PyObject *
 class_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
 	PyObject *name, *bases, *dict;
