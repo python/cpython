@@ -1376,7 +1376,7 @@ If the folder cannot be retrieved, OSError is raised.
 
 Which folders are available depends on the exact Windows version, and probably
 also the configuration. For details refer to Microsoft's documentation of the
-SHGetSpecialFolderPath function.
+\code{SHGetSpecialFolderPath} function.
 
 \begin{verbatim}
 create_shortcut(target, description, filename[, arguments[,
@@ -1384,15 +1384,15 @@ create_shortcut(target, description, filename[, arguments[,
 \end{verbatim}
 
 This function creates a shortcut.
-target is the path to the program to be started by the shortcut.
-description is displayed in a popup window when the
-filename is the title of the shortcut that the user will see.
-arguments specifies the command line arguments, if any.
-workdir is the working directory for the program.
-iconpath is the file containing the icon for the shortcut,
-and iconindex is the iconindex in the file.
-Again, for details consult the Microsoft documentation for the IShellLink
-interface.
+\var{target} is the path to the program to be started by the shortcut.
+\var{description} is the description of the sortcut.
+\var{filename} is the title of the shortcut that the user will see.
+\var{arguments} specifies the command line arguments, if any.
+\var{workdir} is the working directory for the program.
+\var{iconpath} is the file containing the icon for the shortcut,
+and \var{iconindex} is the index of the icon in the file
+\var{iconpath}.  Again, for details consult the Microsoft
+documentation for the \code{IShellLink} interface.
 
 \section{Examples}
 \label{examples}
