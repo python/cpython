@@ -37,6 +37,15 @@ Copyright (C) 1994 Steen Lumholt.
 #define MAC_TCL
 #endif
 
+/* Allow using this code in Python 2.[12] */
+#ifndef PyDoc_STRVAR
+#define PyDoc_STRVAR(name,str) static char name[] = PyDoc_STR(str)
+#endif
+
+#ifndef PyMODINIT_FUNC
+#define PyPyMODINIT_FUNC void
+#endif
+
 /* Starting with Tcl 8.4, many APIs offer const-correctness.  Unfortunately,
    making _tkinter correct for this API means to break earlier
    versions. USE_COMPAT_CONST allows to make _tkinter work with both 8.4 and
@@ -723,6 +732,9 @@ PyTclObject_str(PyTclObject *self)
 }
 
 /* Like _str, but create Unicode if necessary. */
+PyDoc_STRVAR(PyTclObject_string__doc__, 
+"the string representation of this object, either as string or Unicode");
+
 static PyObject *
 PyTclObject_string(PyTclObject *self, void *ignored)
 {
@@ -755,6 +767,8 @@ PyTclObject_string(PyTclObject *self, void *ignored)
 }
 
 #ifdef Py_USING_UNICODE
+PyDoc_STRVAR(PyTclObject_unicode__doc__, "convert argument to unicode");
+
 static PyObject *
 PyTclObject_unicode(PyTclObject *self, void *ignored)
 {
@@ -779,21 +793,25 @@ PyTclObject_repr(PyTclObject *self)
 	return PyString_FromString(buf);
 }
 
+PyDoc_STRVAR(get_typename__doc__, "name of the Tcl type");
+
 static PyObject*
 get_typename(PyTclObject* obj, void* ignored)
 {
 	return PyString_FromString(obj->value->typePtr->name);
 }
 
+
 static PyGetSetDef PyTclObject_getsetlist[] = {
-	{"typename", (getter)get_typename, NULL, "name of the Tcl type"},
-	{"string", (getter)PyTclObject_string, NULL, "name of the Tcl type"},
+	{"typename", (getter)get_typename, NULL, get_typename__doc__},
+	{"string", (getter)PyTclObject_string, NULL, 
+	 PyTclObject_string__doc__},
 	{0},
 };
 
 static PyMethodDef PyTclObject_methods[] = {
 	{"__unicode__",	(PyCFunction)PyTclObject_unicode, METH_NOARGS,
-	 "convert argument to unicode"},
+	PyTclObject_unicode__doc__},
 	{0}
 };
 
