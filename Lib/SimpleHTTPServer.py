@@ -6,7 +6,7 @@ and HEAD requests in a fairly straightforward manner.
 """
 
 
-__version__ = "0.5"
+__version__ = "0.6"
 
 
 import os
@@ -16,6 +16,7 @@ import BaseHTTPServer
 import urllib
 import cgi
 import shutil
+import mimetypes
 from StringIO import StringIO
 
 
@@ -179,14 +180,13 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         else:
             return self.extensions_map['']
 
-    extensions_map = {
-            '': 'text/plain',   # Default, *must* be present
-            '.html': 'text/html',
-            '.htm': 'text/html',
-            '.gif': 'image/gif',
-            '.jpg': 'image/jpeg',
-            '.jpeg': 'image/jpeg',
-            }
+    extensions_map = mimetypes.types_map.copy()
+    extensions_map.update({
+        '': 'application/octet-stream', # Default
+        '.py': 'text/plain',
+        '.c': 'text/plain',
+        '.h': 'text/plain',
+        })
 
 
 def test(HandlerClass = SimpleHTTPRequestHandler,
