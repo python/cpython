@@ -12,6 +12,7 @@
 %
 \LoadClass[twoside]{article}
 
+\setcounter{secnumdepth}{1}
 
 % Optional packages:
 %
