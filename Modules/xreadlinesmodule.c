@@ -136,7 +136,7 @@ static PyTypeObject XReadlinesObject_Type = {
 	PyObject_HEAD_INIT(NULL)
 	0,
 	"xreadlines",
-	sizeof(PyXReadlinesObject) + PyGC_HEAD_SIZE,
+	sizeof(PyXReadlinesObject),
 	0,
 	(destructor)xreadlines_dealloc,		/* tp_dealloc */
 	0,					/* tp_print */
