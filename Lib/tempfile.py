@@ -129,8 +129,12 @@ def TemporaryFile(mode='w+b', bufsize=-1, suffix=""):
     if os.name == 'posix':
         # Unix -- be very careful
         fd = os.open(name, os.O_RDWR|os.O_CREAT|os.O_EXCL, 0700)
-        os.unlink(name)
-        return os.fdopen(fd, mode, bufsize)
+        try:
+            os.unlink(name)
+            return os.fdopen(fd, mode, bufsize)
+        except:
+            os.close(fd)
+            raise
     else:
         # Non-unix -- can't unlink file that's still open, use wrapper
         file = open(name, mode, bufsize)
