@@ -157,10 +157,9 @@ AppleScript is basically a connectionless RPC protocol nothing happens
 when we create to talker object. Hence, if the destination application
 is not running we will not notice until we send our first
 command. There is another thing to note about errors returned by
-AppleScript calls: even though <CODE>MacOS.Error</CODE> is raised not
-all of the errors are actually <CODE>OSErr</CODE>-type errors, some
-are error codes returned by the server application. In that case, the
-error message will be incorrect. <p>
+AppleScript calls: <CODE>MacOS.Error</CODE> is raised for
+all of the errors that are known to be <CODE>OSErr</CODE>-type errors,
+server generated errors raise <CODE>aetools.Error</CODE>. <p>
 
 That concludes our simple example. Again, let me emphasize that
 scripting support in Python is not very complete at the moment, and
