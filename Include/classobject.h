@@ -59,14 +59,6 @@ extern DL_IMPORT(PyObject *) PyMethod_Class(PyObject *);
 
 extern DL_IMPORT(int) PyClass_IsSubclass(PyObject *, PyObject *);
 
-extern DL_IMPORT(PyObject *) PyInstance_DoBinOp(PyObject *, PyObject *,
-                                                char *, char *,
-                                                PyObject * (*)(PyObject *,
-                                                               PyObject *));
-
-extern DL_IMPORT(int)
-PyInstance_HalfBinOp(PyObject *, PyObject *, char *, PyObject **,
-			PyObject * (*)(PyObject *, PyObject *), int);
 
 #ifdef __cplusplus
 }
