@@ -1092,8 +1092,9 @@ PyInit_tkinter ()
   if (!inited)
     {
       inited = 1;
-      if (atexit (Tkinter_Cleanup))
-	PyErr_SetFromErrno (Tkinter_TclError);
+      if (Py_AtExit (Tkinter_Cleanup) != 0)
+	fprintf(stderr,
+		"Tkinter: warning: cleanup procedure not registered\n");
     }
 
   if (PyErr_Occurred ())

@@ -63,6 +63,7 @@ Socket methods:
 - s.recvfrom(nbytes [,flags]) --> string, sockaddr
 - s.send(string [,flags]) --> nbytes
 - s.sendto(string, [flags,] sockaddr) --> nbytes
+- s.setblocking(1 | 0) --> None
 - s.shutdown(how) --> None
 - s.close() --> None
 
@@ -80,6 +81,7 @@ Socket methods:
 #include <netdb.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <fcntl.h>
 #else
 #include <winsock.h>
 #endif
@@ -435,6 +437,34 @@ BUILD_FUNC_DEF_2(sock_allowbroadcast,sockobject *,s, object *,args)
 			 (ANY *)&flag, sizeof flag);
 	if (res < 0)
 		return socket_error();
+	INCREF(None);
+	return None;
+}
+#endif
+
+
+#ifndef NT
+
+/* s.setblocking(1 | 0) method */
+
+static object *
+sock_setblocking(s, args)
+	sockobject *s;
+	object *args;
+{
+	int block;
+	int delay_flag;
+	if (!getintarg(args, &block))
+		return NULL;
+	BGN_SAVE
+	delay_flag = fcntl (s->sock_fd, F_GETFL, 0);
+	if (block)
+		delay_flag &= (~O_NDELAY);
+	else
+		delay_flag |= O_NDELAY;
+	fcntl (s->sock_fd, F_SETFL, delay_flag);
+	END_SAVE
+
 	INCREF(None);
 	return None;
 }
@@ -812,6 +842,9 @@ static struct methodlist sock_methods[] = {
 	{"accept",		(method)sock_accept},
 #if 0
 	{"allowbroadcast",	(method)sock_allowbroadcast},
+#endif
+#ifndef NT
+	{"setblocking",         (method)sock_setblocking},
 #endif
 	{"setsockopt",		(method)sock_setsockopt},
 	{"getsockopt",		(method)sock_getsockopt},

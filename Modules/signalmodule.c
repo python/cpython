@@ -32,6 +32,8 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <signal.h>
 #include <errno.h>
 
+#include "rename1.h"
+
 #ifndef SIG_ERR
 #define SIG_ERR ((RETSIGTYPE (*)())-1)
 #endif
@@ -68,147 +70,150 @@ static long main_thread;
 static pid_t main_pid;
 #endif
 
-struct signalhandler_list {
+struct PySignal_SignalArrayStruct {
 	int	tripped;
-	object *func;
+	PyObject *func;
 };
 
-static struct signalhandler_list sig_list[NSIG];
-static int tripped = 0;		/* Speed up sigcheck() when none tripped */
+static struct PySignal_SignalArrayStruct PySignal_SignalHandlerArray[NSIG];
+static int PySignal_IsTripped = 0; /* Speed up sigcheck() when none tripped */
 
-static object *sig_dfl_object;
-static object *sig_ign_object;
-static object *default_int_handler_object;
+static PyObject *PySignal_SignalDefaultHandler;
+static PyObject *PySignal_SignalIgnoreHandler;
+static PyObject *PySignal_DefaultIntHandler;
 
-static object *
-default_int_handler(self, arg)
-     object *self;
-     object *arg;
+static PyObject *
+PySignal_CDefaultIntHandler(self, arg)
+	PyObject *self;
+	PyObject *arg;
 {
-	err_set(KeyboardInterrupt);
-	return NULL;
+	PyErr_SetNone(PyExc_KeyboardInterrupt);
+	return (PyObject *)NULL;
 }
 
 static RETSIGTYPE
-signal_handler(sig_num)
-     int sig_num;
+PySignal_Handler(sig_num)
+	int sig_num;
 {
 #ifdef WITH_THREAD
 	/* See NOTES section above */
 	if (getpid() == main_pid) {
 #endif
-		tripped++;
-		sig_list[sig_num].tripped = 1;
+		PySignal_IsTripped++;
+		PySignal_SignalHandlerArray[sig_num].tripped = 1;
 #ifdef WITH_THREAD
 	}
 #endif
-	(void *)signal(sig_num, &signal_handler);
+	(void *)signal(sig_num, &PySignal_Handler);
 }
  
-static object *
-signal_alarm(self, args)
-	object *self; /* Not used */
-	object *args;
+
+static PyObject *
+PySignal_Alarm(self, args)
+	PyObject *self; /* Not used */
+	PyObject *args;
 {
 	int t;
-	if (!getargs(args, "i", &t))
-		return NULL;
-	alarm(t);
-	INCREF(None);
-	return None;
-}
- 
-static object *
-signal_pause(self, args)
-	object *self; /* Not used */
-	object *args;
-{
-	if (!getnoarg(args))
-		return NULL;
-	pause();
-	INCREF(None);
-	return None;
+	int rtn;
+	if (!PyArg_Parse(args, "i", &t))
+		return (PyObject *)NULL;
+	/* alarm() returns the number of seconds remaining */
+	return PyInt_FromLong(alarm(t));
 }
 
 static object *
-signal_signal(self, args)
-	object *self; /* Not used */
-	object *args;
+PySignal_Pause(self, args)
+	PyObject *self; /* Not used */
+	PyObject *args;
 {
-        object *obj;
-	int sig_num;
-	object *old_handler;
-	RETSIGTYPE (*func)();
-	if (!getargs(args, "(iO)", &sig_num, &obj))
+	if (!PyArg_NoArgs(args))
 		return NULL;
+	BGN_SAVE
+	pause();
+	END_SAVE
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
+static PyObject *
+PySignal_Signal(self, args)
+	PyObject *self; /* Not used */
+	PyObject *args;
+{
+	PyObject *obj;
+	int sig_num;
+	PyObject *old_handler;
+	RETSIGTYPE (*func)();
+	if (!PyArg_Parse(args, "(iO)", &sig_num, &obj))
+		return (PyObject *)NULL;
 #ifdef WITH_THREAD
 	if (get_thread_ident() != main_thread) {
-		err_setstr(ValueError, "signal only works in main thread");
-		return NULL;
+		PyErr_SetString(PyExc_ValueError, "signal only works in main thread");
+		return (PyObject *)NULL;
 	}
 #endif
 	if (sig_num < 1 || sig_num >= NSIG) {
-		err_setstr(ValueError, "signal number out of range");
-		return NULL;
+		PyErr_SetString(PyExc_ValueError, "signal number out of range");
+		return (PyObject *)NULL;
 	}
-	if (obj == sig_ign_object)
+	if (obj == PySignal_SignalIgnoreHandler)
 		func = SIG_IGN;
-	else if (obj == sig_dfl_object)
+	else if (obj == PySignal_SignalDefaultHandler)
 		func = SIG_DFL;
-	else if (!is_methodobject(obj) &&
-		 !is_funcobject(obj) &&
-		 !is_instancemethodobject(obj)) {
-		err_setstr(TypeError,
+	else if (!PyCFunction_Check(obj) &&
+		 !PyFunction_Check(obj) &&
+		 !PyMethod_Check(obj)) {
+		PyErr_SetString(PyExc_TypeError,
 "signal handler must be signal.SIG_IGN, signal.SIG_DFL, or a callable object");
-		return NULL;
+		return (PyObject *)NULL;
 	}
 	else
-		func = signal_handler;
+		func = PySignal_Handler;
 	if (signal(sig_num, func) == SIG_ERR) {
-		err_errno(RuntimeError);
-		return NULL;
+		PyErr_SetFromErrno(PyExc_RuntimeError);
+		return (PyObject *)NULL;
 	}
-	old_handler = sig_list[sig_num].func;
-	sig_list[sig_num].tripped = 0;
-	INCREF(obj);
-	sig_list[sig_num].func = obj;
+	old_handler = PySignal_SignalHandlerArray[sig_num].func;
+	PySignal_SignalHandlerArray[sig_num].tripped = 0;
+	Py_INCREF(obj);
+	PySignal_SignalHandlerArray[sig_num].func = obj;
 	return old_handler;
 }
 
-static object *
-signal_getsignal(self, args)
-	object *self; /* Not used */
-	object *args;
+static PyObject *
+PySignal_GetSignal(self, args)
+	PyObject *self; /* Not used */
+	PyObject *args;
 {
 	int sig_num;
-	object *old_handler;
-	if (!getargs(args, "i", &sig_num))
-		return NULL;
+	PyObject *old_handler;
+	if (!PyArg_Parse(args, "i", &sig_num))
+		return (PyObject *)NULL;
 	if (sig_num < 1 || sig_num >= NSIG) {
-		err_setstr(ValueError, "signal number out of range");
-		return NULL;
+		PyErr_SetString(PyExc_ValueError, "signal number out of range");
+		return (PyObject *)NULL;
 	}
-	old_handler = sig_list[sig_num].func;
-	INCREF(old_handler);
+	old_handler = PySignal_SignalHandlerArray[sig_num].func;
+	Py_INCREF(old_handler);
 	return old_handler;
 }
 
 
 /* List of functions defined in the module */
 
-static struct methodlist signal_methods[] = {
-	{"alarm",	signal_alarm},
-        {"signal",	signal_signal},
-        {"getsignal",	signal_getsignal},
-	{"pause",	signal_pause},
+static PyMethodDef PySignal_methods[] = {
+	{"alarm",	PySignal_Alarm},
+	{"signal",	PySignal_Signal},
+	{"getsignal",	PySignal_GetSignal},
+	{"pause",	PySignal_Pause},
 	{NULL,		NULL}		/* sentinel */
 };
 
 void
 initsignal()
 {
-	object *m, *d, *x;
-	object *b_dict;
+	PyObject *m, *d, *x;
+	PyObject *b_dict;
 	int i;
 
 #ifdef WITH_THREAD
@@ -217,218 +222,218 @@ initsignal()
 #endif
 
 	/* Create the module and add the functions */
-	m = initmodule("signal", signal_methods);
+	m = Py_InitModule("signal", PySignal_methods);
 
 	/* Add some symbolic constants to the module */
-	d = getmoduledict(m);
+	d = PyModule_GetDict(m);
 
-	sig_dfl_object = newintobject((long)SIG_DFL);
-	dictinsert(d, "SIG_DFL", sig_dfl_object);
-	sig_ign_object = newintobject((long)SIG_IGN);
-	dictinsert(d, "SIG_IGN", sig_ign_object);
-	dictinsert(d, "NSIG", newintobject((long)NSIG));
-	default_int_handler_object = newmethodobject("default_int_handler",
-						     default_int_handler,
-						     (object *)NULL,
+	PySignal_SignalDefaultHandler = PyInt_FromLong((long)SIG_DFL);
+	PyDict_SetItemString(d, "SIG_DFL", PySignal_SignalDefaultHandler);
+	PySignal_SignalIgnoreHandler = PyInt_FromLong((long)SIG_IGN);
+	PyDict_SetItemString(d, "SIG_IGN", PySignal_SignalIgnoreHandler);
+	PyDict_SetItemString(d, "NSIG", PyInt_FromLong((long)NSIG));
+	PySignal_DefaultIntHandler = PyCFunction_New("default_int_handler",
+						     PySignal_CDefaultIntHandler,
+						     (PyObject *)NULL,
 						     0);
-	dictinsert(d, "default_int_handler", default_int_handler_object);
+	PyDict_SetItemString(d, "default_int_handler", PySignal_DefaultIntHandler);
 
-	sig_list[0].tripped = 0;
+	PySignal_SignalHandlerArray[0].tripped = 0;
 	for (i = 1; i < NSIG; i++) {
 		RETSIGTYPE (*t)();
 		t = signal(i, SIG_IGN);
 		signal(i, t);
-		sig_list[i].tripped = 0;
+		PySignal_SignalHandlerArray[i].tripped = 0;
 		if (t == SIG_DFL)
-			sig_list[i].func = sig_dfl_object;
+			PySignal_SignalHandlerArray[i].func = PySignal_SignalDefaultHandler;
 		else if (t == SIG_IGN)
-			sig_list[i].func = sig_ign_object;
+			PySignal_SignalHandlerArray[i].func = PySignal_SignalIgnoreHandler;
 		else
-			sig_list[i].func = None; /* None of our business */
-		INCREF(sig_list[i].func);
+			PySignal_SignalHandlerArray[i].func = Py_None; /* None of our business */
+		Py_INCREF(PySignal_SignalHandlerArray[i].func);
 	}
-	if (sig_list[SIGINT].func == sig_dfl_object) {
+	if (PySignal_SignalHandlerArray[SIGINT].func == PySignal_SignalDefaultHandler) {
 		/* Install default int handler */
-		DECREF(sig_list[SIGINT].func);
-		sig_list[SIGINT].func = default_int_handler_object;
-		INCREF(default_int_handler_object);
-		signal(SIGINT, &signal_handler);
+		Py_DECREF(PySignal_SignalHandlerArray[SIGINT].func);
+		PySignal_SignalHandlerArray[SIGINT].func = PySignal_DefaultIntHandler;
+		Py_INCREF(PySignal_DefaultIntHandler);
+		signal(SIGINT, &PySignal_Handler);
 	}
 
 #ifdef SIGHUP
-	x = newintobject(SIGHUP);
-	dictinsert(d, "SIGHUP", x);
+	x = PyInt_FromLong(SIGHUP);
+	PyDict_SetItemString(d, "SIGHUP", x);
 #endif
 #ifdef SIGINT
-	x = newintobject(SIGINT);
-	dictinsert(d, "SIGINT", x);
+	x = PyInt_FromLong(SIGINT);
+	PyDict_SetItemString(d, "SIGINT", x);
 #endif
 #ifdef SIGQUIT
-	x = newintobject(SIGQUIT);
-	dictinsert(d, "SIGQUIT", x);
+	x = PyInt_FromLong(SIGQUIT);
+	PyDict_SetItemString(d, "SIGQUIT", x);
 #endif
 #ifdef SIGILL
-	x = newintobject(SIGILL);
-	dictinsert(d, "SIGILL", x);
+	x = PyInt_FromLong(SIGILL);
+	PyDict_SetItemString(d, "SIGILL", x);
 #endif
 #ifdef SIGTRAP
-	x = newintobject(SIGTRAP);
-	dictinsert(d, "SIGTRAP", x);
+	x = PyInt_FromLong(SIGTRAP);
+	PyDict_SetItemString(d, "SIGTRAP", x);
 #endif
 #ifdef SIGIOT
-	x = newintobject(SIGIOT);
-	dictinsert(d, "SIGIOT", x);
+	x = PyInt_FromLong(SIGIOT);
+	PyDict_SetItemString(d, "SIGIOT", x);
 #endif
 #ifdef SIGABRT
-	x = newintobject(SIGABRT);
-	dictinsert(d, "SIGABRT", x);
+	x = PyInt_FromLong(SIGABRT);
+	PyDict_SetItemString(d, "SIGABRT", x);
 #endif
 #ifdef SIGEMT
-	x = newintobject(SIGEMT);
-	dictinsert(d, "SIGEMT", x);
+	x = PyInt_FromLong(SIGEMT);
+	PyDict_SetItemString(d, "SIGEMT", x);
 #endif
 #ifdef SIGFPE
-	x = newintobject(SIGFPE);
-	dictinsert(d, "SIGFPE", x);
+	x = PyInt_FromLong(SIGFPE);
+	PyDict_SetItemString(d, "SIGFPE", x);
 #endif
 #ifdef SIGKILL
-	x = newintobject(SIGKILL);
-	dictinsert(d, "SIGKILL", x);
+	x = PyInt_FromLong(SIGKILL);
+	PyDict_SetItemString(d, "SIGKILL", x);
 #endif
 #ifdef SIGBUS
-	x = newintobject(SIGBUS);
-	dictinsert(d, "SIGBUS", x);
+	x = PyInt_FromLong(SIGBUS);
+	PyDict_SetItemString(d, "SIGBUS", x);
 #endif
 #ifdef SIGSEGV
-	x = newintobject(SIGSEGV);
-	dictinsert(d, "SIGSEGV", x);
+	x = PyInt_FromLong(SIGSEGV);
+	PyDict_SetItemString(d, "SIGSEGV", x);
 #endif
 #ifdef SIGSYS
-	x = newintobject(SIGSYS);
-	dictinsert(d, "SIGSYS", x);
+	x = PyInt_FromLong(SIGSYS);
+	PyDict_SetItemString(d, "SIGSYS", x);
 #endif
 #ifdef SIGPIPE
-	x = newintobject(SIGPIPE);
-	dictinsert(d, "SIGPIPE", x);
+	x = PyInt_FromLong(SIGPIPE);
+	PyDict_SetItemString(d, "SIGPIPE", x);
 #endif
 #ifdef SIGALRM
-	x = newintobject(SIGALRM);
-	dictinsert(d, "SIGALRM", x);
+	x = PyInt_FromLong(SIGALRM);
+	PyDict_SetItemString(d, "SIGALRM", x);
 #endif
 #ifdef SIGTERM
-	x = newintobject(SIGTERM);
-	dictinsert(d, "SIGTERM", x);
+	x = PyInt_FromLong(SIGTERM);
+	PyDict_SetItemString(d, "SIGTERM", x);
 #endif
 #ifdef SIGUSR1
-	x = newintobject(SIGUSR1);
-	dictinsert(d, "SIGUSR1", x);
+	x = PyInt_FromLong(SIGUSR1);
+	PyDict_SetItemString(d, "SIGUSR1", x);
 #endif
 #ifdef SIGUSR2
-	x = newintobject(SIGUSR2);
-	dictinsert(d, "SIGUSR2", x);
+	x = PyInt_FromLong(SIGUSR2);
+	PyDict_SetItemString(d, "SIGUSR2", x);
 #endif
 #ifdef SIGCLD
-	x = newintobject(SIGCLD);
-	dictinsert(d, "SIGCLD", x);
+	x = PyInt_FromLong(SIGCLD);
+	PyDict_SetItemString(d, "SIGCLD", x);
 #endif
 #ifdef SIGCHLD
-	x = newintobject(SIGCHLD);
-	dictinsert(d, "SIGCHLD", x);
+	x = PyInt_FromLong(SIGCHLD);
+	PyDict_SetItemString(d, "SIGCHLD", x);
 #endif
 #ifdef SIGPWR
-	x = newintobject(SIGPWR);
-	dictinsert(d, "SIGPWR", x);
+	x = PyInt_FromLong(SIGPWR);
+	PyDict_SetItemString(d, "SIGPWR", x);
 #endif
 #ifdef SIGIO
-	x = newintobject(SIGIO);
-	dictinsert(d, "SIGIO", x);
+	x = PyInt_FromLong(SIGIO);
+	PyDict_SetItemString(d, "SIGIO", x);
 #endif
 #ifdef SIGURG
-	x = newintobject(SIGURG);
-	dictinsert(d, "SIGURG", x);
+	x = PyInt_FromLong(SIGURG);
+	PyDict_SetItemString(d, "SIGURG", x);
 #endif
 #ifdef SIGWINCH
-	x = newintobject(SIGWINCH);
-	dictinsert(d, "SIGWINCH", x);
+	x = PyInt_FromLong(SIGWINCH);
+	PyDict_SetItemString(d, "SIGWINCH", x);
 #endif
 #ifdef SIGPOLL
-	x = newintobject(SIGPOLL);
-	dictinsert(d, "SIGPOLL", x);
+	x = PyInt_FromLong(SIGPOLL);
+	PyDict_SetItemString(d, "SIGPOLL", x);
 #endif
 #ifdef SIGSTOP
-	x = newintobject(SIGSTOP);
-	dictinsert(d, "SIGSTOP", x);
+	x = PyInt_FromLong(SIGSTOP);
+	PyDict_SetItemString(d, "SIGSTOP", x);
 #endif
 #ifdef SIGTSTP
-	x = newintobject(SIGTSTP);
-	dictinsert(d, "SIGTSTP", x);
+	x = PyInt_FromLong(SIGTSTP);
+	PyDict_SetItemString(d, "SIGTSTP", x);
 #endif
 #ifdef SIGCONT
-	x = newintobject(SIGCONT);
-	dictinsert(d, "SIGCONT", x);
+	x = PyInt_FromLong(SIGCONT);
+	PyDict_SetItemString(d, "SIGCONT", x);
 #endif
 #ifdef SIGTTIN
-	x = newintobject(SIGTTIN);
-	dictinsert(d, "SIGTTIN", x);
+	x = PyInt_FromLong(SIGTTIN);
+	PyDict_SetItemString(d, "SIGTTIN", x);
 #endif
 #ifdef SIGTTOU
-	x = newintobject(SIGTTOU);
-	dictinsert(d, "SIGTTOU", x);
+	x = PyInt_FromLong(SIGTTOU);
+	PyDict_SetItemString(d, "SIGTTOU", x);
 #endif
 #ifdef SIGVTALRM
-	x = newintobject(SIGVTALRM);
-	dictinsert(d, "SIGVTALRM", x);
+	x = PyInt_FromLong(SIGVTALRM);
+	PyDict_SetItemString(d, "SIGVTALRM", x);
 #endif
 #ifdef SIGPROF
-	x = newintobject(SIGPROF);
-	dictinsert(d, "SIGPROF", x);
+	x = PyInt_FromLong(SIGPROF);
+	PyDict_SetItemString(d, "SIGPROF", x);
 #endif
 #ifdef SIGCPU
-	x = newintobject(SIGCPU);
-	dictinsert(d, "SIGCPU", x);
+	x = PyInt_FromLong(SIGCPU);
+	PyDict_SetItemString(d, "SIGCPU", x);
 #endif
 #ifdef SIGFSZ
-	x = newintobject(SIGFSZ);
-	dictinsert(d, "SIGFSZ", x);
+	x = PyInt_FromLong(SIGFSZ);
+	PyDict_SetItemString(d, "SIGFSZ", x);
 #endif
 	/* Check for errors */
-	if (err_occurred())
-		fatal("can't initialize module signal");
+	if (PyErr_Occurred())
+		Py_FatalError("can't initialize module signal");
 }
 
 int
 sigcheck()
 {
 	int i;
-	object *f;
-	if (!tripped)
+	PyObject *f;
+	if (!PySignal_IsTripped)
 		return 0;
 #ifdef WITH_THREAD
 	if (get_thread_ident() != main_thread)
 		return 0;
 #endif
 	f = getframe();
-	if (f == NULL)
-		f = None;
+	if (f == (PyObject *)NULL)
+		f = Py_None;
 	for (i = 1; i < NSIG; i++) {
-		if (sig_list[i].tripped) {
-			object *arglist, *result;
-			sig_list[i].tripped = 0;
-			arglist = mkvalue("(iO)", i, f);
-			if (arglist == NULL)
-				result = NULL;
+		if (PySignal_SignalHandlerArray[i].tripped) {
+			PyObject *arglist, *result;
+			PySignal_SignalHandlerArray[i].tripped = 0;
+			arglist = Py_BuildValue("(iO)", i, f);
+			if (arglist == (PyObject *)NULL)
+				result = (PyObject *)NULL;
 			else {
-				result = call_object(sig_list[i].func,arglist);
-				DECREF(arglist);
+				result = PyEval_CallObject(PySignal_SignalHandlerArray[i].func,arglist);
+				Py_DECREF(arglist);
 			}
-			if (result == NULL) {
+			if (result == (PyObject *)NULL) {
 				return 1;
 			} else {
-				DECREF(result);
+				Py_DECREF(result);
 			}
 		}
 	}
-	tripped = 0;
+	PySignal_IsTripped = 0;
 	return 0;
 }
 
@@ -443,12 +448,12 @@ initintr()
 int
 intrcheck()
 {
-	if (sig_list[SIGINT].tripped) {
+	if (PySignal_SignalHandlerArray[SIGINT].tripped) {
 #ifdef WITH_THREAD
 		if (get_thread_ident() != main_thread)
 			return 0;
 #endif
-		sig_list[SIGINT].tripped = 0;
+		PySignal_SignalHandlerArray[SIGINT].tripped = 0;
 		return 1;
 	}
 	return 0;

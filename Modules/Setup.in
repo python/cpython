@@ -53,10 +53,7 @@ TESTPATH=:$(DESTLIB)/test
 # Enable this for Sun systems
 #ARCHPATH=:$(DESTLIB)/sun4
 
-# Enable this if stdwin installed
-#STDWINPATH=:$(DESTLIB)/stdwin
-
-PYTHONPATH=.:$(DESTLIB)$(TESTPATH)$(ARCHPATH)$(STDWINPATH)
+PYTHONPATH=.:$(DESTLIB)$(TESTPATH)$(ARCHPATH)$(STDWINPATH)$(TKPATH)
 
 
 # Modules that should always be present (non UNIX dependent)
@@ -104,12 +101,13 @@ rgbimg rgbimgmodule.c   # Read SGI RGB image files (but coded portably)
 # ftp://ftp.cwi.nl/pub/stdwin.  The STDWIN variable must point to the
 # STDWIN toplevel directory.  The ARCH variable must be set to the
 # architecture identifier used to build STDWIN.  NB if you combine this
-# with the gl module on an SGI machine, you should replace "-lX11" with
-# "-lX11_s".
+# with the gl module on an SGI IRIX 4 machine, you should replace
+"-lX11" with "-lX11_s".
 
 #STDWIN=/ufs/guido/src/stdwin
 #ARCH=???
 #stdwin stdwinmodule.c -I$(STDWIN)/H $(STDWIN)/Build/$(ARCH)/x11/lib/lib.a -lX11
+#STDWINPATH=:$(DESTLIB)/stdwin
 
 
 # The md5 module implements the RSA Data Security, Inc. MD5
@@ -174,8 +172,18 @@ md5 md5module.c md5c.c
 # timing timingmodule.c
 
 
+# Steen Lumholt's tkinter module.  For use with plain Tk, use the
+# first line.  For use with extended Tk, edit tkappinit.c, add
+# appropriate -DWITH_... and libraries/objects to the second line, and
+# use that.  In all cases also enable the last line (TKPATH).
+
+#tkinter tkintermodule.c -I/usr/local/include -L/usr/local/lib -ltk -ltcl -lX11
+#tkinter tkintermodule.c tkappinit.c -DWITH_APPINIT -I/usr/local/include -L/usr/local/lib -ltk -ltcl -lX11
+#TKPATH=:$(DESTLIB)/tkinter
+
+
 # Lance Ellinghouse's modules
-rotor rotormodule.c		# enigma-inspired en-, decryption
+rotor rotormodule.c		# enigma-inspired encryption
 # syslog syslogmodule.c		# syslog daemon interface
 # curses cursesmodule.c -lcurses -ltermcap	# guess what?
 
