@@ -169,14 +169,15 @@ lookmapping(mp, key, hash)
 	register unsigned long sum = (unsigned long) hash;
 	register mappingentry *freeslot = NULL;
 	register int mask = mp->ma_size-1;
-	register mappingentry *ep = &mp->ma_table[i];
+	mappingentry *ep0 = mp->ma_table;
+	register mappingentry *ep;
 	/* We must come up with (i, incr) such that 0 <= i < ma_size
 	   and 0 < incr < ma_size and both are a function of hash */
 	i = (~sum) & mask;
 	/* We use ~sum instead if sum, as degenerate hash functions, such
 	   as for ints <sigh>, can have lots of leading zeros. It's not
 	   really a performance risk, but better safe than sorry. */
-	ep = &mp->ma_table[i];
+	ep = &ep0[i];
 	if (ep->me_key == NULL)
 		return ep;
 	if (ep->me_key == dummy)
@@ -185,16 +186,16 @@ lookmapping(mp, key, hash)
 		 (ep->me_hash == hash && cmpobject(ep->me_key, key) == 0)) {
 		return ep;
 	}
-	/* Derive incr from i, just to make it more arbitrary. Note that
+	/* Derive incr from sum, just to make it more arbitrary. Note that
 	   incr must not be 0, or we will get into an infinite loop.*/
-	incr = i << 1;
+	incr = (sum ^ (sum >> 3)) & mask;
 	if (!incr)
 		incr = mask;
 	if (incr > mask) /* Cycle through GF(2^n)-{0} */
 		incr ^= mp->ma_poly; /* This will implicitly clear the
 					highest bit */
 	for (;;) {
-		ep = &mp->ma_table[(i+incr)&mask];
+		ep = &ep0[(i+incr)&mask];
 		if (ep->me_key == NULL) {
 			if (freeslot != NULL)
 				return freeslot;
