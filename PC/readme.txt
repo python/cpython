@@ -1,5 +1,5 @@
-Welcome to the "PC" subdirectory of the Python distribution!
-************************************************************
+Welcome to the "PC" subdirectory of the Python distribution
+***********************************************************
 
 *** Note: the project files for MS VC++ 5.0 and 6.0 are now in the
 *** PCbuild directory.  See the file readme.txt there for build
