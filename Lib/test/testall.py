@@ -4,7 +4,7 @@
 # Remember to add new tests when new features are added!
 
 from test_support import *
-
+		  
 print 'test_grammar'
 forget('test_grammar')
 import test_grammar
@@ -36,5 +36,9 @@ import test_math
 print 'test_time'
 unload('test_time')
 import test_time
+
+print 'test_array'
+unload('test_array')
+import test_array
 
 print 'Passed all tests.'
