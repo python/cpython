@@ -185,7 +185,7 @@ equal <number>, `tab-width' is set to <number>, a message saying so is
 displayed in the echo area, and if `py-beep-if-tab-change' is non-nil
 the Emacs bell is also rung as a warning.")
 
-(defvar python-font-lock-keywords
+(defconst python-font-lock-keywords
   (let* ((keywords '("access"     "and"      "break"    "continue"
 		     "del"        "elif"     "else:"    "except"
 		     "except:"    "exec"     "finally:" "for"
@@ -209,7 +209,7 @@ the Emacs bell is also rung as a warning.")
      '("\\bdef[ \t]+\\([a-zA-Z_]+[a-zA-Z0-9_]*\\)"
        1 font-lock-function-name-face)
      ))
-  "*Additional expressions to highlight in Python mode.")
+  "Additional expressions to highlight in Python mode.")
 
 
 ;; ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
