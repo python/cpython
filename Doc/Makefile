@@ -298,7 +298,8 @@ COMMONPERL=perl/manual.perl perl/python.perl
 html:	l2h
 
 l2h:
-	(cd $(HTMLDIR); $(MAKE) TEXINPUTS=../paper-$(PAPER):../texinputs:)
+	(cd $(HTMLDIR); $(MAKE) TEXINPUTS=../paper-$(PAPER):../texinputs: \
+		-f ../html/Makefile)
 
 l2hapi: $(COMMONPERL)
 	$(MKHTML) api $(L2HARGS)
@@ -325,6 +326,7 @@ webcheck:
 	$(WEBCHECKER) file:`pwd`/api/
 	$(WEBCHECKER) file:`pwd`/ext/
 	$(WEBCHECKER) -m290000 file:`pwd`/lib/
+	$(WEBCHECKER) file:`pwd`/mac/
 	$(WEBCHECKER) file:`pwd`/ref/
 	$(WEBCHECKER) file:`pwd`/tut/
 
