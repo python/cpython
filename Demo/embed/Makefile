@@ -1,35 +1,34 @@
-# Makefile for embedded Python use demo
+# Makefile for embedded Python use demo.
+# (This version tailored for CNRI and Solaris; edit lines marked with XXX.)
 
-# Top of the build tree and source tree
+# XXX The compiler you are using
+CC=	 	gcc
+
+# XXX Top of the build tree and source tree
 blddir=		../..
 srcdir=		../..
+
+# Python version
+VERSION=	1.5
 
 # Compiler flags
 OPT=		-g
 INCLUDES=	-I$(srcdir)/Include -I$(blddir)
-DEFINES=	-DHAVE_CONFIG_H
-CFLAGS=		$(OPT) $(DEFINES) $(INCLUDES)
+CFLAGS=		$(OPT) $(INCLUDES)
 
-# Libraries (must be in this order!)
-MYLIBS=		$(blddir)/Modules/libModules.a \
-		$(blddir)/Python/libPython.a \
-		$(blddir)/Objects/libObjects.a \
-		$(blddir)/Parser/libParser.a
+# The Python library
+LIBPYTHON=		$(blddir)/libpython$(VERSION).a
 
-# XXX edit MODLIBS, LIBS and SYSLIBS to match $(blddir)/Modules/Makefile
-MODLIBS=	
-LIBS=		
+# XXX edit LIBS (in particular) to match $(blddir)/Modules/Makefile
+LIBS=		-lsocket -lnsl -ldl  -lreadline -ltermcap
 SYSLIBS=	-lm
-ALLLIBS=	$(MYLIBS) $(MODLIBS) $(LIBS) $(SYSLIBS)
+MODLIBS=	
+ALLLIBS=	$(LIBPYTHON) $(MODLIBS) $(LIBS) $(SYSLIBS)
 
 # Build the demo application
 all:		demo
-demo:		demo.o config.o
-		$(CC) demo.o config.o $(ALLLIBS) -o demo
-
-# Build config.o, suppressing the main() function
-config.o:	$(blddir)/Modules/config.c
-		$(CC) $(CFLAGS) -DNO_MAIN -c $(blddir)/Modules/config.c
+demo:		demo.o
+		$(CC) demo.o $(ALLLIBS) -o demo
 
 # Administrative targets
 
