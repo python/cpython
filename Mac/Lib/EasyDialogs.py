@@ -72,7 +72,6 @@ def AskString(prompt, default = "", id=257, ok=None, cancel=None):
 	can be at most 255 characters long.
 	"""
 	
-	id = 257
 	d = GetNewDialog(id, -1)
 	if not d:
 		print "Can't get DLOG resource with id =", id
