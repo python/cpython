@@ -50,6 +50,7 @@ extern DL_IMPORT(PyObject *) Py_FindMethod(PyMethodDef[], PyObject *, char *);
 extern DL_IMPORT(PyObject *) PyCFunction_New(PyMethodDef *, PyObject *);
 
 /* Flag passed to newmethodobject */
+#define METH_OLDARGS  0x0000
 #define METH_VARARGS  0x0001
 #define METH_KEYWORDS 0x0002
 
