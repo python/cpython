@@ -1,23 +1,201 @@
-What's New in Python 2.1 final?
-===============================
+What's New in Python 2.1c2?
+===========================
 
-- Eric Raymond extended the pstats module with a simple interactive
-  statistics browser, invoked when the module is run as a script.
+A flurry of small changes, and one showstopper fixed in the nick of
+time made it necessary to release another release candidate.  The list
+here is the *complete* list of patches (except version updates):
 
-- Ping added an interactive help browser to pydoc.
+Core
 
-- An updated python-mode.el version 4.0 which integrates Ken
-  Manheimer's pdbtrack.el.  This makes debugging Python code via pdb
-  much nicer in XEmacs and Emacs.  When stepping through your program
-  with pdb, in either the shell window or the *Python* window, the
-  source file and line will be tracked by an arrow.
+- Tim discovered a nasty bug in the dictionary code, caused by
+  PyDict_Next() calling dict_resize(), and the GC code's use of
+  PyDict_Next() violating an assumption in dict_items().  This was
+  fixed with considerable amounts of band-aid, but the net effect is a
+  saner and more robust implementation.
+
+- Made a bunch of symbols static that were accidentally global.
+
+Build and Ports
+
+- The setup.py script didn't check for a new enough version of zlib
+  (1.1.3 is needed).  Now it does.
+
+- Changed "make clean" target to also remove shared libraries.
+
+- Added a more general warning about the SGI Irix optimizer to README.
+
+Library
+
+- Fix a bug in urllib.basejoin("http://host", "../file.html") which
+  omitted the slash between host and file.html.
+
+- The mailbox module's _Mailbox class contained a completely broken
+  and undocumented seek() method.  Ripped it out.
+
+- Fixed a bunch of typos in various library modules (urllib2, smtpd,
+  sgmllib, netrc, chunk) found by Neil Norwitz's PyChecker.
+
+- Fixed a few last-minute bugs in unittest.
+
+Extensions
+
+- Reverted the patch to the OpenSSL code in socketmodule.c to support
+  RAND_status() and the EGD, and the subsequent patch that tried to
+  fix it for pre-0.9.5 versions; the problem with the patch is that on
+  some systems it issues a warning whenever socket is imported, and
+  that's unacceptable.
+
+Tests
+
+- Fixed the pickle tests to work with "import test.test_pickle".
+
+- Tweaked test_locale.py to actually run the test Windows.
+
+- In distutils/archive_util.py, call zipfile.ZipFile() with mode "w",
+  not "wb" (which is not a valid mode at all).
+
+- Fix pstats browser crashes.  Import readline if it exists to make
+  the user interface nicer.
+
+- Add "import thread" to the top of test modules that import the
+  threading module (test_asynchat and test_threadedtempfile).  This
+  prevents test failures caused by a broken threading module resulting
+  from a previously caught failed import.
+
+- Changed test_asynchat.py to set the SO_REUSEADDR option; this was
+  needed on some platforms (e.g. Solaris 8) when the tests are run
+  twice in succession.
+
+- Skip rather than fail test_sunaudiodev if no audio device is found.
+
+
+What's New in Python 2.1c1?
+===========================
+
+This list was significantly updated when 2.1c2 was released; the 2.1c1
+release didn't mention most changes that were actually part of 2.1c1:
+
+Legal
+
+- Copyright was assigned to the Python Software Foundation (PSF) and a
+  PSF license (very similar to the CNRI license) was added.
+
+- The CNRI copyright notice was updated to include 2001.
+
+Core
 
 - After a public outcry, assignment to __debug__ is no longer illegal;
   instead, a warning is issued.  It will become illegal in 2.2.
 
+- Fixed a core dump with "%#x" % 0, and changed the semantics so that
+  "%#x" now always prepends "0x", even if the value is zero.
+
+- Fixed some nits in the bytecode compiler.
+
+- Fixed core dumps when calling certain kinds of non-functions.
+
+- Fixed various core dumps caused by reference count bugs.
+
+Build and Ports
+
+- Use INSTALL_SCRIPT to install script files.
+
 - New port: SCO Unixware 7, by Billy G. Allie.
 
-- Updated the RISCOS port.
+- Updated RISCOS port.
+
+- Updated BeOS port and notes.
+
+- Various other porting problems resolved.
+
+Library
+
+- The TERMIOS and SOCKET modules are now truly obsolete and
+  unnecessary.  Their symbols are incorporated in the termios and
+  socket modules.
+
+- Fixed some 64-bit bugs in pickle, cPickle, and struct, and added
+  better tests for pickling.
+
+- threading: make Condition.wait() robust against KeyboardInterrupt.
+
+- zipfile: add support to zipfile to support opening an archive
+  represented by an open file rather than a file name.  Fix bug where
+  the archive was not properly closed.  Fixed a bug in this bugfix
+  where flush() was called for a read-only file.
+
+- imputil: added an uninstall() method to the ImportManager.
+
+- Canvas: fixed bugs in lower() and tkraise() methods.
+
+- SocketServer: API change (added overridable close_request() method)
+  so that the TCP server can explicitly close the request.
+
+- pstats: Eric Raymond added a simple interactive statistics browser,
+  invoked when the module is run as a script.
+
+- locale: fixed a problem in format().
+
+- webbrowser: made it work when the BROWSER environment variable has a
+  value like "/usr/bin/netscape".  Made it auto-detect Konqueror for
+  KDE 2.  Fixed some other nits.
+
+- unittest: changes to allow using a different exception than
+  AssertionError, and added a few more function aliases.  Some other
+  small changes.
+
+- urllib, urllib2: fixed redirect problems and a coupleof other nits.
+
+- asynchat: fixed a critical bug in asynchat that slipped through the
+  2.1b2 release.  Fixed another rare bug.
+
+- Fix some unqualified except: clauses (always a bad code example).
+
+XML
+
+- pyexpat: new API get_version_string().
+
+- Fixed some minidom bugs.
+
+Extensions
+
+- Fixed a core dump in _weakref.  Removed the weakref.mapping()
+  function (it adds nothing to the API).
+
+- Rationalized the use of header files in the readline module, to make
+  it compile (albeit with some warnings) with the very recent readline
+  4.2, without breaking for earlier versions.
+
+- Hopefully fixed a buffering problem in linuxaudiodev.
+
+- Attempted a fix to make the OpenSSL support in the socket module
+  work again with pre-0.9.5 versions of OpenSSL.
+
+Tests
+
+- Added a test case for asynchat and asyncore.
+
+- Removed coupling between tests where one test failing could break
+  another.
+
+Tools
+
+- Ping added an interactive help browser to pydoc, fixed some nits
+  in the rest of the pydoc code, and added some features to his
+  inspect module.
+
+- An updated python-mode.el version 4.1 which integrates Ken
+  Manheimer's pdbtrack.el.  This makes debugging Python code via pdb
+  much nicer in XEmacs and Emacs.  When stepping through your program
+  with pdb, in either the shell window or the *Python* window, the
+  source file and line will be tracked by an arrow.  Very cool!
+
+- IDLE: syntax warnings in interactive mode are changed into errors.
+
+- Some improvements to Tools/webchecker (ignore some more URL types,
+  follow some more links). 
+
+- Brought the Tools/compiler package up to date.
 
 
 What's New in Python 2.1 beta 2?
@@ -935,6 +1113,9 @@ Core language, builtins, and interpreter
 
 
 Standard library and extensions
+
+- socket module: the OpenSSL code now adds support for RAND_status()
+  and EGD (Entropy Gathering Device).
 
 - array: reverse() method of array now works.  buffer_info() now does
   argument checking; it still takes no arguments.
