@@ -29,9 +29,6 @@ l2href:
 l2htut:
 	$(MAKE) srcdir=.. VPATH=.. TEXINPUTS=$(TEXINPUTS) -f ../Makefile l2htut
 
-webcheck:
-	$(MAKE) srcdir=.. VPATH=.. -f ../Makefile webcheck
-
 icons:
 	mkdir icons
 	cp ../icons/*.gif icons/
