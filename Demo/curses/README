@@ -10,11 +10,11 @@ originals. I won't attempt to `beautify' the program anytime soon, but
 I wouldn't mind someone else making an effort in that direction, of
 course.
 
-ncurses.py	-- currently only a panels demo
+ncurses.py      -- currently only a panels demo
                    XXX this won't work until panel support is checked in
-rain.py		-- raindrops keep falling on my desktop
-tclock.py	-- ASCII clock, by Howard Jones
-xmas.py		-- I'm dreaming of an ASCII christmas
+rain.py         -- raindrops keep falling on my desktop
+tclock.py       -- ASCII clock, by Howard Jones
+xmas.py         -- I'm dreaming of an ASCII christmas
 
 Please send bugfixes and new contributions to me or, even better,
 submit them to the Python Bug Tracker on SourceForge
@@ -24,6 +24,5 @@ submit them to the Python Bug Tracker on SourceForge
 Other demos
 ===========
 
-life.py		Simple game of Life
-
-
+life.py         -- Simple game of Life
+repeat.py       -- Repeatedly execute a shell command (like watch(1))
