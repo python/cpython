@@ -77,7 +77,7 @@ def print_undoc_symbols(prefix, docdir, incdir):
 
     incfiles = os.path.join(incdir, INCLUDEPATTERN)
 
-    fp = os.popen("ctags -IPyAPI_FUNC --c-types=%s -f - %s"
+    fp = os.popen("ctags -IPyAPI_FUNC -IPy_GCC_ATTRIBUTE --c-types=%s -f - %s"
                   % (TAG_KINDS, incfiles))
     dict = findnames(fp, prefix)
     names = dict.keys()
