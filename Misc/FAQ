@@ -587,15 +587,14 @@ If you'd like to be included in the list above, send me email!
 
 A. Very stable.  While the current version number would suggest it is
 in the early stages of development, in fact new, stable releases
-(numbered 0.9.x through 1.3) have been coming out roughly every 3 to
-6 months for the past four years.
+(numbered 0.9.x through 1.4) have been coming out roughly every 3 to
+6 or 12 months for the past four years.
 
 2.5. Q. What new developments are expected for Python in the future?
 
-A. See my Work-In-Progress web page, currently at
-<URL:http://www.python.org:~guido/WIP.html>, and the pages for the
-Second Python Workshop (best reached via the Python home page,
-<URL:http://www.python.org/>).  Also follow the newsgroup discussions!
+A. Follow the newsgroup discussions!  The workshop proceedings
+(<URL:http://www.python.org/workshops/>) may also contain interesting
+looks into the future.
 
 2.6. Q. Is it reasonable to propose incompatible changes to Python?
 
