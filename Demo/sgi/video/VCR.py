@@ -100,7 +100,7 @@ DM_SET=EXP_8 + '\xc4'
 FWD_SHUTTLE='\xb5'
 REV_SHUTTLE='\xb6'
 
-class VCR():
+class VCR:
 	def init(self):
 		self.ifp, self.ofp = initline(DEVICE)
 		return self
