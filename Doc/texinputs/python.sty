@@ -1096,9 +1096,9 @@
     #2
   \end{fulllineitems}
 }
-\newenvironment{seealso}[0]{
+
+\newenvironment{seealso*}{
   \par
-  \strong{See Also:}\par
   \def\seetext##1{\par{##1}}
   \let\seemodule=\py@seemodule
   \let\seepep=\py@seepep
@@ -1106,7 +1106,17 @@
   \let\seetitle=\py@seetitle
   \let\seeurl=\py@seeurl
 }{\par}
-
+\newenvironment{seealso}{
+  \par
+  \strong{See Also:}
+  \par
+  \def\seetext##1{\par{##1}}
+  \let\seemodule=\py@seemodule
+  \let\seepep=\py@seepep
+  \let\seerfc=\py@seerfc
+  \let\seetitle=\py@seetitle
+  \let\seeurl=\py@seeurl
+}{\par}
 
 % Allow the Python release number to be specified independently of the
 % \date{}.  This allows the date to reflect the document's date and

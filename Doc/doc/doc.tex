@@ -1302,18 +1302,31 @@ This \UNIX\ is also followed by a space.
 
     Many sections include a list of references to module documentation
     or external documents.  These lists are created using the
-    \env{seealso} environment.  This environment defines some
-    additional macros to support creating reference entries in a
-    reasonable manner.
+    \env{seealso} or \env{seealso*} environments.  These environments
+    define some additional macros to support creating reference
+    entries in a reasonable manner.
 
     The \env{seealso} environment is typically placed in a section
     just before any sub-sections.  This is done to ensure that
     reference links related to the section are not hidden in a
-    subsection in the hypertext renditions of the documentation.
+    subsection in the hypertext renditions of the documentation.  For
+    the HTML output, it is shown as a ``side bar,'' boxed off from the
+    main flow of the text.  The \env{seealso*} environment is
+    different in that it should be used when a list of references is
+    being presented as part of the primary content; it is not
+    specially set off from the text.
 
     \begin{envdesc}{seealso}{}
       This environment creates a ``See also:'' heading and defines the
       markup used to describe individual references.
+    \end{envdesc}
+
+    \begin{envdesc}{seealso*}{}
+      This environment is used to create a list of references which
+      form part of the main content.  It is not given a special
+      header and is not set off from the main flow of the text.  It
+      provides the same additional markup used to describe individual
+      references.
     \end{envdesc}
 
     For each of the following macros, \var{why} should be one or more
@@ -1322,7 +1335,7 @@ This \UNIX\ is also followed by a space.
     ending with the apropriate punctuation.
 
     These macros are only defined within the content of the
-    \env{seealso} environment.
+    \env{seealso} and \env{seealso*} environments.
 
     \begin{macrodesc}{seemodule}{\op{key}\p{name}\p{why}}
       Refer to another module.  \var{why} should be a brief
@@ -1369,9 +1382,10 @@ This \UNIX\ is also followed by a space.
 
     \begin{macrodesc}{seeurl}{\p{url}\p{why}}
       References to specific on-line resources should be given using
-      the \macro{seeurl} macro.  No title is associated with the
-      reference, but the \var{why} text may include a title marked
-      using the \macro{citetitle} macro.
+      the \macro{seeurl} macro if they don't have a meaningful title.
+      Online documents which have identifiable titles should be
+      referenced using the \macro{seetitle} macro, using the optional
+      parameter to that macro to provide the URL.
     \end{macrodesc}
 
 
