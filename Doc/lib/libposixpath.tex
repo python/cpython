@@ -214,4 +214,9 @@ influence the set of directories visited below \var{dirname}, e.g., to
 avoid visiting certain parts of the tree.  (The object referred to by
 \var{names} must be modified in place, using \keyword{del} or slice
 assignment.)
+
+Note that symbolic links to directories are not treated as subdirectories,
+and that \var{walk} therefore will not visit them. To visit linked
+directories you must identify them with \var{os.path.islink(file)} and
+\var{os.path.isdir(file)}, and invoke \function{walk()} as necessary.
 \end{funcdesc}
