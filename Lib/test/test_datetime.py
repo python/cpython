@@ -1176,6 +1176,14 @@ class TestDateTime(TestDate):
             derived = unpickler.loads(green)
             self.assertEqual(orig, derived)
 
+    def test_more_pickling(self):
+        a = self.theclass(2003, 2, 7, 16, 48, 37, 444116)
+        s = pickle.dumps(a)
+        b = pickle.loads(s)
+        self.assertEqual(b.year, 2003)
+        self.assertEqual(b.month, 2)
+        self.assertEqual(b.day, 7)
+
     def test_more_compare(self):
         # The test_compare() inherited from TestDate covers the error cases.
         # We just want to test lexicographic ordering on the members datetime
