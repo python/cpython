@@ -1112,7 +1112,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 	 Returns -1 on failure.  This is equivalent to
 	 the Python statement: del o[key].
        */
-#define PyMapping_DelItemString(O,K) PyDict_DelItemString((O),(K))
+#define PyMapping_DelItemString(O,K) PyObject_DelItemString((O),(K))
 
      /* implemented as a macro:
 
@@ -1122,7 +1122,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 	 Returns -1 on failure.  This is equivalent to
 	 the Python statement: del o[key].
        */
-#define PyMapping_DelItem(O,K) PyDict_DelItem((O),(K))
+#define PyMapping_DelItem(O,K) PyObject_DelItem((O),(K))
 
      DL_IMPORT(int) PyMapping_HasKeyString(PyObject *o, char *key);
 
