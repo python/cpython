@@ -381,8 +381,8 @@ class PyBuildExt(build_ext):
         # Edit the variables DB and DBPORT to point to the db top directory
         # and the subdirectory of PORT where you built it.
         #
-        # (See http://electricrain.com/greg/python/bsddb3/ for an interface to
-        # BSD DB 3.x.)
+        # (See http://pybsddb.sourceforge.net/ for an interface to
+        # Berkeley DB 3.x.)
 
         dblib = []
         if self.compiler.find_library_file(lib_dirs, 'db-3.1'):
