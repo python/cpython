@@ -61,6 +61,8 @@ Extension Modules
 Library
 -------
 
+- Patch #1112812: Make bsddb/__init__.py more friendly for modulefinder.
+
 - Patch #1110248: SYNC_FLUSH the zlib buffer for GZipFile.flush.
 
 - Patch #1107973: Allow to iterate over the lines of a tarfile.ExFileObject.

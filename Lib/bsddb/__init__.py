@@ -65,9 +65,9 @@ import sys, os
 # iterator interface is dynamically defined and added using a mixin
 # class.  old python can't tokenize it due to the yield keyword.
 if sys.version >= '2.3':
+    import UserDict
+    from weakref import ref
     exec """
-import UserDict
-from weakref import ref
 class _iter_mixin(UserDict.DictMixin):
     def _make_iter_cursor(self):
         cur = self.db.cursor()
