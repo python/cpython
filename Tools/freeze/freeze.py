@@ -175,6 +175,7 @@ def main():
         print "(Using Python source directory)"
         binlib = exec_prefix
         incldir = os.path.join(prefix, 'Include')
+        config_h_dir = exec_prefix
         config_c_in = os.path.join(prefix, 'Modules', 'config.c.in')
         frozenmain_c = os.path.join(prefix, 'Python', 'frozenmain.c')
         makefile_in = os.path.join(exec_prefix, 'Modules', 'Makefile')
@@ -184,12 +185,14 @@ def main():
         binlib = os.path.join(exec_prefix,
                               'lib', 'python%s' % version, 'config')
         incldir = os.path.join(prefix, 'include', 'python%s' % version)
+        config_h_dir = os.path.join(exec_prefix, 'include',
+                                    'python%s' % version)
         config_c_in = os.path.join(binlib, 'config.c.in')
         frozenmain_c = os.path.join(binlib, 'frozenmain.c')
         makefile_in = os.path.join(binlib, 'Makefile')
     supp_sources = []
     defines = []
-    includes = ['-I' + incldir, '-I' + binlib]
+    includes = ['-I' + incldir, '-I' + config_h_dir]
 
     # sanity check of directories and files
     for dir in [prefix, exec_prefix, binlib, incldir] + extensions:
