@@ -1904,12 +1904,21 @@ posix_getlogin(PyObject *self, PyObject *args)
     PyObject *result = NULL;
 
     if (PyArg_ParseTuple(args, ":getlogin")) {
-        char *name = getlogin();
+        char *name;
+        int old_errno = errno;
 
-        if (name == NULL)
-            posix_error();
+        errno = 0;
+        name = getlogin();
+        if (name == NULL) {
+            if (errno)
+                posix_error();
+            else
+                PyErr_SetString(PyExc_OSError,
+                                "unexpected NULL from getlogin()");
+        }
         else
             result = PyString_FromString(name);
+        errno = old_errno;
     }
     return result;
 }
