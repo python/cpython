@@ -598,7 +598,7 @@ _PyTuple_Resize(PyObject **pv, int newsize)
 	register PyTupleObject *v;
 	register PyTupleObject *sv;
 	int i;
-	int sizediff;
+	int oldsize;
 
 	v = (PyTupleObject *) *pv;
 	if (v == NULL || v->ob_type != &PyTuple_Type ||
@@ -608,11 +608,11 @@ _PyTuple_Resize(PyObject **pv, int newsize)
 		PyErr_BadInternalCall();
 		return -1;
 	}
-	sizediff = newsize - v->ob_size;
-	if (sizediff == 0)
+	oldsize = v->ob_size;
+	if (oldsize == newsize)
 		return 0;
 
-	if (v->ob_size == 0) {
+	if (oldsize == 0) {
 		/* Empty tuples are often shared, so we should never 
 		   resize them in-place even if we do own the only
 		   (current) reference */
@@ -627,7 +627,8 @@ _PyTuple_Resize(PyObject **pv, int newsize)
 #endif
 	_PyObject_GC_UNTRACK(v);
 	_Py_ForgetReference((PyObject *) v);
-	for (i = newsize; i < v->ob_size; i++) {
+	/* DECREF items deleted by shrinkage */
+	for (i = newsize; i < oldsize; i++) {
 		Py_XDECREF(v->ob_item[i]);
 		v->ob_item[i] = NULL;
 	}
@@ -638,7 +639,8 @@ _PyTuple_Resize(PyObject **pv, int newsize)
 		return -1;
 	}
 	_Py_NewReference((PyObject *) sv);
-	for (i = sv->ob_size; i < newsize; i++)
+	/* Zero out items added by growing */
+	for (i = oldsize; i < newsize; i++)
 		sv->ob_item[i] = NULL;
 	*pv = (PyObject *) sv;
 	_PyObject_GC_TRACK(sv);
