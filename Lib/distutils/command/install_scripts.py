@@ -50,7 +50,7 @@ class install_scripts (Command):
                 if self.dry_run:
                     self.announce("changing mode of %s" % file)
                 else:
-                    mode = (os.stat(file)[ST_MODE]) | 0111
+                    mode = ((os.stat(file)[ST_MODE]) | 0111) & 07777
                     self.announce("changing mode of %s to %o" % (file, mode))
                     os.chmod(file, mode)
 
