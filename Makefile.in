@@ -235,7 +235,7 @@ Modules:	Parser Python Objects
 TESTOPTS=	
 TESTPROG=	$(srcdir)/Lib/test/regrtest.py
 TESTPYTHON=	./python$(EXE)
-test:		python$(EXE)
+test:		all
 		-rm -f $(srcdir)/Lib/test/*.py[co]
 		-PYTHONPATH= $(TESTPYTHON) $(TESTPROG) $(TESTOPTS)
 		PYTHONPATH= $(TESTPYTHON) $(TESTPROG) $(TESTOPTS)
