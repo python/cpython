@@ -14,6 +14,7 @@
 # used to query various info about the object, if available.
 # (rfc822.Message objects are queried with the getheader() method.)
 
+import string
 import socket
 import regex
 
@@ -147,8 +148,12 @@ class URLopener:
 		if not host: raise IOError, ('gopher error', 'no host given')
 		type, selector = splitgophertype(selector)
 		selector, query = splitquery(selector)
-		if query: fp = gopherlib.send_query(selector, query, host)
-		else: fp = gopherlib.send_selector(selector, host)
+		selector = unquote(selector)
+		if query:
+			query = unquote(query)
+			fp = gopherlib.send_query(selector, query, host)
+		else:
+			fp = gopherlib.send_selector(selector, host)
 		return addinfo(fp, noheaders())
 
 	# Use local file or FTP depending on form of URL
@@ -165,23 +170,41 @@ class URLopener:
 		host, port = splitport(host)
 		if not port and socket.gethostbyname(host) in (
 			  localhost(), thishost()):
+			file = unquote(file)
 			return addinfo(open(file, 'r'), noheaders())
 		raise IOError, ('local file error', 'not on local host')
 
 	# Use FTP protocol
 	def open_ftp(self, url):
-		host, file = splithost(url)
+		host, path = splithost(url)
 		if not host: raise IOError, ('ftp error', 'no host given')
 		host, port = splitport(host)
+		user, host = splituser(host)
+		if user: user, passwd = splitpasswd(user)
+		else: passwd = None
 		host = socket.gethostbyname(host)
 		if not port:
 			import ftplib
 			port = ftplib.FTP_PORT
-		key = (host, port)
+		path, attrs = splitattr(path)
+		dirs = string.splitfields(path, '/')
+		dirs, file = dirs[:-1], dirs[-1]
+		if dirs and not dirs[0]: dirs = dirs[1:]
+		key = (user, host, port, string.joinfields(dirs, '/'))
+		print 'key =', key
 		try:
 			if not self.ftpcache.has_key(key):
-				self.ftpcache[key] = ftpwrapper(host, port)
-			return addinfo(self.ftpcache[key].retrfile(file),
+				self.ftpcache[key] = \
+						   ftpwrapper(user, passwd,
+							      host, port, dirs)
+			if not file: type = 'D'
+			else: type = 'I'
+			for attr in attrs:
+				attr, value = splitvalue(attr)
+				if string.lower(attr) == 'type' and \
+				   value in ('a', 'A', 'i', 'I', 'd', 'D'):
+					type = string.upper(value)
+			return addinfo(self.ftpcache[key].retrfile(file, type),
 				  noheaders())
 		except ftperrors(), msg:
 			raise IOError, ('ftp error', msg)
@@ -232,24 +255,33 @@ def noheaders():
 
 # Class used by open_ftp() for cache of open FTP connections
 class ftpwrapper:
-	def __init__(self, host, port):
+	def __init__(self, user, passwd, host, port, dirs):
+		self.user = unquote(user or '')
+		self.passwd = unquote(passwd or '')
 		self.host = host
 		self.port = port
+		self.dirs = []
+		for dir in dirs:
+			self.dirs.append(unquote(dir))
 		self.init()
 	def init(self):
 		import ftplib
 		self.ftp = ftplib.FTP()
 		self.ftp.connect(self.host, self.port)
-		self.ftp.login()
-	def retrfile(self, file):
+		self.ftp.login(self.user, self.passwd)
+		for dir in self.dirs:
+			self.ftp.cwd(dir)
+	def retrfile(self, file, type):
 		import ftplib
+		if type in ('d', 'D'): cmd = 'TYPE A'; isdir = 1
+		else: cmd = 'TYPE ' + type; isdir = 0
 		try:
-			self.ftp.voidcmd('TYPE I')
+			self.ftp.voidcmd(cmd)
 		except ftplib.all_errors:
 			self.init()
-			self.ftp.voidcmd('TYPE I')
+			self.ftp.voidcmd(cmd)
 		conn = None
-		if file:
+		if file and not isdir:
 			try:
 				cmd = 'RETR ' + file
 				conn = self.ftp.transfercmd(cmd)
@@ -317,7 +349,6 @@ def basejoin(base, url):
 	basepath, basequery = splitquery(basepath)
 	type = basetype or 'file'
 	if path[:1] != '/':
-		import string
 		i = string.rfind(basepath, '/')
 		if i < 0: basepath = '/'
 		else: basepath = basepath[:i+1]
@@ -327,19 +358,23 @@ def basejoin(base, url):
 	else: return type + ':' + path
 
 
-# Utilities to parse URLs:
+# Utilities to parse URLs (most of these return None for missing parts):
 # unwrap('<URL:type//host/path>') --> 'type//host/path'
 # splittype('type:opaquestring') --> 'type', 'opaquestring'
 # splithost('//host[:port]/path') --> 'host[:port]', '/path'
+# splituser('user[:passwd]@host[:port]') --> 'user[:passwd]', 'host[:port]'
+# splitpasswd('user:passwd') -> 'user', 'passwd'
 # splitport('host:port') --> 'host', 'port'
 # splitquery('/path?query') --> '/path', 'query'
 # splittag('/path#tag') --> '/path', 'tag'
+# splitattr('/path;attr1=value1;attr2=value2;...') ->
+#   '/path', ['attr1=value1', 'attr2=value2', ...]
+# splitvalue('attr=value') --> 'attr', 'value'
 # splitgophertype('/Xselector') --> 'X', 'selector'
 # unquote('abc%20def') -> 'abc def'
 # quote('abc def') -> 'abc%20def')
 
 def unwrap(url):
-	import string
 	url = string.strip(url)
 	if url[:1] == '<' and url[-1:] == '>':
 		url = string.strip(url[1:-1])
@@ -356,6 +391,16 @@ def splithost(url):
 	if _hostprog.match(url) >= 0: return _hostprog.group(1, 2)
 	return None, url
 
+_userprog = regex.compile('^\([^@]*\)@\(.*\)$')
+def splituser(host):
+	if _userprog.match(host) >= 0: return _userprog.group(1, 2)
+	return None, host
+
+_passwdprog = regex.compile('^\([^:]*\):\(.*\)$')
+def splitpasswd(user):
+	if _passwdprog.match(user) >= 0: return _passwdprog.group(1, 2)
+	return user, None
+
 _portprog = regex.compile('^\(.*\):\([0-9]+\)$')
 def splitport(host):
 	if _portprog.match(host) >= 0: return _portprog.group(1, 2)
@@ -371,6 +416,15 @@ def splittag(url):
 	if _tagprog.match(url) >= 0: return _tagprog.group(1, 2)
 	return url, None
 
+def splitattr(url):
+	words = string.splitfields(url, ';')
+	return words[0], words[1:]
+
+_valueprog = regex.compile('^\([^=]*\)=\(.*\)$')
+def splitvalue(attr):
+	if _valueprog.match(attr) >= 0: return _valueprog.group(1, 2)
+	return attr, None
+
 def splitgophertype(selector):
 	if selector[:1] == '/' and selector[1:2]:
 		return selector[1], selector[2:]
@@ -378,7 +432,6 @@ def splitgophertype(selector):
 
 _quoteprog = regex.compile('%[0-9a-fA-F][0-9a-fA-F]')
 def unquote(s):
-	import string
 	i = 0
 	n = len(s)
 	res = ''
@@ -391,13 +444,15 @@ def unquote(s):
 		i = j+3
 	return res
 
-_acceptable = \
-	  'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._@'
-def quote(s):
+always_safe = string.letters + string.digits + '_,.+-'
+def quote(s, safe = '/'):
+	safe = always_safe + safe
 	res = ''
 	for c in s:
-		if c in _acceptable: res = res + c
-		else: res = res + '%%%02x' % ord(c)
+		if c in safe:
+			res = res + c
+		else:
+			res = res + '%%%02x' % ord(c)
 	return res
 
 # Test and time quote() and unquote()
@@ -452,5 +507,5 @@ def test():
 
 # Run test program when run as a script
 if __name__ == '__main__':
-	test1()
+##	test1()
 	test()
