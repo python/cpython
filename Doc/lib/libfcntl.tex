@@ -78,11 +78,9 @@ The module defines the following functions:
   long which is then passed to \function{ioctl()} and copied back into
   the supplied buffer.
   
-  If \var{mutate_flag} is not supplied, then in 2.3 it defaults to
-  false.  This is planned to change over the next few Python versions:
-  in 2.4 failing to supply \var{mutate_flag} will get a warning but
-  the same behavior and in versions later than 2.5 it will default to
-  true.
+  If \var{mutate_flag} is not supplied, then from Python 2.5 it
+  defaults to true, which is a change from versions 2.3 and 2.4.
+  Supply the argument explicitly if version portability is a priority.
 
   An example:
 
