@@ -9,6 +9,9 @@
 ;; Version:       3.0
 ;; Keywords: python languages oop
 
+(defconst py-version "3.0"
+  "`python-mode' version number.")
+
 ;; This software is provided as-is, without express or implied
 ;; warranty.  Permission to use, copy, modify, distribute or sell this
 ;; software, without fee, for any purpose and by any individual or
@@ -27,7 +30,7 @@
 ;; 18 support.  But all in all, the mode works exceedingly well, and
 ;; I've simply been tweaking it as I go along.  Ain't it wonderful
 ;; that Python has a much more sane syntax than C? (or <shudder> C++?!
-;; :-).  I can say that; I maintain cc-mode!
+;; :-).  I can say that; I maintain CC Mode!
 
 ;; The following statements, placed in your .emacs file or
 ;; site-init.el, will cause this file to be autoloaded, and
@@ -96,36 +99,51 @@
 
 ;;; Code:
 
+(require 'custom)
+
 
 ;; user definable variables
 ;; vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 
-(defvar py-python-command "python"
-  "*Shell command used to start Python interpreter.")
+(defgroup python nil
+  "Support for the Python programming language, <http://www.python.org/>"
+  :group 'languages)
 
-(defvar py-indent-offset 4
-  "*Indentation increment.
+(defcustom py-python-command "python"
+  "*Shell command used to start Python interpreter."
+  :type 'string
+  :group 'python)
+
+(defcustom py-indent-offset 4
+  "*Amount of offset per level of indentation
 Note that `\\[py-guess-indent-offset]' can usually guess a good value
-when you're editing someone else's Python code.")
+when you're editing someone else's Python code."
+  :type 'integer
+  :group 'python)
 
-(defvar py-align-multiline-strings-p t
-  "*Flag describing how multiline triple quoted strings are aligned.
+(defcustom py-align-multiline-strings-p t
+  "*Flag describing how multi-line triple quoted strings are aligned.
 When this flag is non-nil, continuation lines are lined up under the
 preceding line's indentation.  When this flag is nil, continuation
-lines are aligned to column zero.")
+lines are aligned to column zero."
+  :type '(choice (const :tag "Align under preceding line" t)
+		 (const :tag "Align to column zero" nil))
+  :group 'python)
 
-(defvar py-block-comment-prefix "## "
+(defcustom py-block-comment-prefix "## "
   "*String used by \\[comment-region] to comment out a block of code.
 This should follow the convention for non-indenting comment lines so
 that the indentation commands won't get confused (i.e., the string
 should be of the form `#x...' where `x' is not a blank or a tab, and
-`...' is arbitrary).")
+`...' is arbitrary)."
+  :type 'string
+  :group 'python)
 
-(defvar py-honor-comment-indentation t
+(defcustom py-honor-comment-indentation t
   "*Controls how comment lines influence subsequent indentation.
 
 When nil, all comment lines are skipped for indentation purposes, and
-in Emacs 19, a faster algorithm is used.
+if possible, a faster algorithm is used (i.e. X/Emacs 19 and beyond).
 
 When t, lines that begin with a single `#' are a hint to subsequent
 line indentation.  If the previous line is such a comment line (as
@@ -135,9 +153,15 @@ begin with `py-block-comment-prefix' are ignored for indentation
 purposes.
 
 When not nil or t, comment lines that begin with a `#' are used as
-indentation hints, unless the comment character is in column zero.")
+indentation hints, unless the comment character is in column zero."
+  :type '(choice
+	  (const :tag "Skip all comment lines (fast)" nil)
+	  (const :tag "Single # `sets' indentation for next line" t)
+	  (const :tag "Single # `sets' indentation except at column zero" other)
+	  )
+  :group 'python)
 
-(defvar py-scroll-process-buffer t
+(defcustom py-scroll-process-buffer t
   "*Scroll Python process buffer as output arrives.
 If nil, the Python process buffer acts, with respect to scrolling, like
 Shell-mode buffers normally act.  This is surprisingly complicated and
@@ -175,7 +199,9 @@ happier setting this option to nil.
 
 Obscure:  `End of buffer' above should really say `at or beyond the
 process mark', but if you know what that means you didn't need to be
-told <grin>.")
+told <grin>."
+  :type 'boolean
+  :group 'python)
 
 (defvar py-temp-directory
   (let ((ok '(lambda (x)
@@ -193,7 +219,9 @@ told <grin>.")
   "*Directory used for temp files created by a *Python* process.
 By default, the first directory from this list that exists and that you
 can write into:  the value (if any) of the environment variable TMPDIR,
-/usr/tmp, /tmp, or the current directory.")
+/usr/tmp, /tmp, or the current directory."
+  :type 'string
+  :group 'python)
 
 (defvar py-beep-if-tab-change t
   "*Ring the bell if tab-width is changed.
@@ -205,7 +233,34 @@ is found before the first code line when the file is entered, and the
 current value of (the general Emacs variable) `tab-width' does not
 equal <number>, `tab-width' is set to <number>, a message saying so is
 displayed in the echo area, and if `py-beep-if-tab-change' is non-nil
-the Emacs bell is also rung as a warning.")
+the Emacs bell is also rung as a warning."
+  :type 'boolean
+  :group 'python)
+
+
+;; ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+;; NO USER DEFINABLE VARIABLES BEYOND THIS POINT
+
+;; As of 30-Jan-1997, Emacs 19.34 works but XEmacs 19.15b90 and
+;; previous does not.  It is suspected that Emacsen before 19.34 are
+;; also broken.
+(defvar py-parse-partial-sexp-works-p
+  (let ((buf (get-buffer-create " ---*---pps---*---"))
+	state status)
+    (save-excursion
+      (set-buffer buf)
+      (erase-buffer)
+      (insert "(line1\n line2)\nline3")
+      (lisp-mode)
+      (goto-char (point-min))
+      (setq state (parse-partial-sexp (point) (save-excursion
+						(forward-line 1)
+						(point))))
+      (parse-partial-sexp (point) (point-max) 0 nil state)
+      (setq status (not (= (point) (point-max))))
+      (kill-buffer buf)
+      status))
+  "Does `parse-partial-sexp' work in this Emacs?")
 
 (defvar python-font-lock-keywords
   (let* ((keywords '("and"        "break"      "class"
@@ -240,28 +295,97 @@ the Emacs bell is also rung as a warning.")
   "*Controls echoing of arguments of functions & methods in the imenu buffer.
 When non-nil, arguments are printed.")
 
-
-
-;; ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-;; NO USER DEFINABLE VARIABLES BEYOND THIS POINT
-
 (make-variable-buffer-local 'py-indent-offset)
-
-;; Differentiate between Emacs 18, Lucid Emacs, and Emacs 19.  This
-;; seems to be the standard way of checking this.
-;; BAW - This is *not* the right solution.  When at all possible,
-;; instead of testing for the version of Emacs, use feature tests.
-
-(setq py-this-is-lucid-emacs-p (string-match "Lucid\\|XEmacs" emacs-version))
-(setq py-this-is-emacs-19-p
-      (and
-       (not py-this-is-lucid-emacs-p)
-       (string-match "^19\\." emacs-version)))
 
 ;; have to bind py-file-queue before installing the kill-emacs hook
 (defvar py-file-queue nil
   "Queue of Python temp files awaiting execution.
 Currently-active file is at the head of the list.")
+
+(defvar py-delete-function 'backward-delete-char-untabify
+  "*Function called by `py-delete-char' when deleting characters.")
+
+(defvar py-backspace-function 'backward-delete-char-untabify
+  "*Function called by `py-backspace-command' when deleting characters.")
+
+
+;; Constants
+
+;; Regexp matching a Python string literal
+(defconst py-stringlit-re
+  (concat
+   "'\\([^'\n\\]\\|\\\\.\\)*'"		; single-quoted
+   "\\|"				; or
+   "\"\\([^\"\n\\]\\|\\\\.\\)*\""))	; double-quoted
+
+;; Regexp matching Python lines that are continued via backslash.
+;; This is tricky because a trailing backslash does not mean
+;; continuation if it's in a comment
+(defconst py-continued-re
+  (concat
+   "\\(" "[^#'\"\n\\]" "\\|" py-stringlit-re "\\)*"
+   "\\\\$"))
+  
+;; Regexp matching blank or comment lines.
+(defconst py-blank-or-comment-re "[ \t]*\\($\\|#\\)")
+
+;; Regexp matching clauses to be outdented one level.
+(defconst py-outdent-re
+  (concat "\\(" (mapconcat 'identity
+			   '("else:"
+			     "except\\(\\s +.*\\)?:"
+			     "finally:"
+			     "elif\\s +.*:")
+			   "\\|")
+	  "\\)"))
+  
+
+;; Regexp matching lines to not outdent after.
+(defconst py-no-outdent-re
+  (concat "\\(" (mapconcat 'identity
+			   '("try:"
+			     "except\\(\\s +.*\\)?:"
+			     "while\\s +.*:"
+			     "for\\s +.*:"
+			     "if\\s +.*:"
+			     "elif\\s +.*:"
+			     "\\(return\\|break\\|raise\\|continue\\)[ \t\n]"
+			     )
+			   "\\|")
+	  "\\)"))
+
+;; Regexp matching a function, method or variable assignment.  If you
+;; change this, you probably have to change `py-current-defun' as
+;; well.  This is only used by `py-current-defun' to find the name for
+;; add-log.el.
+(defvar py-defun-start-re
+  "^\\([ \t]*\\)def[ \t]+\\([a-zA-Z_0-9]+\\)\\|\\(^[a-zA-Z_0-9]+\\)[ \t]*=")
+
+;; Regexp for finding a class name.  If you change this, you probably
+;; have to change `py-current-defun' as well.  This is only used by
+;; `py-current-defun' to find the name for add-log.el.
+(defvar py-class-start-re "^class[ \t]*\\([a-zA-Z_0-9]+\\)")
+
+
+
+;; Utilities
+
+(defmacro py-safe (&rest body)
+  ;; safely execute BODY, return nil if an error occurred
+  (` (condition-case nil
+	 (progn (,@ body))
+       (error nil))))
+
+(defsubst py-keep-region-active ()
+  ;; Do whatever is necessary to keep the region active in XEmacs.
+  ;; Ignore byte-compiler warnings you might see.  Also note that
+  ;; FSF's Emacs 19 does it differently; its policy doesn't require us
+  ;; to take explicit action.
+  (and (boundp 'zmacs-region-stays)
+       (setq zmacs-region-stays t)))
+
+
+;; Major mode boilerplate
 
 ;; define a mode-specific abbrev table for those who use such things
 (defvar python-mode-abbrev-table nil
@@ -276,14 +400,10 @@ Currently-active file is at the head of the list.")
 (and (fboundp 'make-obsolete-variable)
      (make-obsolete-variable 'py-mode-hook 'python-mode-hook))
 
-(defvar py-delete-function 'backward-delete-char-untabify
-  "*Function called by `py-delete-char' when deleting characters.")
-
 (defvar py-mode-map ()
   "Keymap used in `python-mode' buffers.")
-
 (if py-mode-map
-    ()
+    nil
   (setq py-mode-map (make-sparse-keymap))
 
   ;; shadow global bindings for newline-and-indent w/ the py- version.
@@ -328,148 +448,81 @@ Currently-active file is at the head of the list.")
 
 (defvar py-mode-syntax-table nil
   "Syntax table used in `python-mode' buffers.")
-
 (if py-mode-syntax-table
-    ()
+    nil
   (setq py-mode-syntax-table (make-syntax-table))
-  ;; BAW - again, blech.
-  (mapcar (function
-	   (lambda (x) (modify-syntax-entry
-			(car x) (cdr x) py-mode-syntax-table)))
-	  '(( ?\( . "()" ) ( ?\) . ")(" )
-	    ( ?\[ . "(]" ) ( ?\] . ")[" )
-	    ( ?\{ . "(}" ) ( ?\} . "){" )
-	    ;; fix operator symbols misassigned in the std table
-	    ( ?\$ . "." ) ( ?\% . "." ) ( ?\& . "." )
-	    ( ?\* . "." ) ( ?\+ . "." ) ( ?\- . "." )
-	    ( ?\/ . "." ) ( ?\< . "." ) ( ?\= . "." )
-	    ( ?\> . "." ) ( ?\| . "." )
-	    ;; for historical reasons, underscore is word class
-	    ;; instead of symbol class.  it should be symbol class,
-	    ;; but if you're tempted to change it, try binding M-f and
-	    ;; M-b to py-forward-into-nomenclature and
-	    ;; py-backward-into-nomenclature instead. -baw
-	    ( ?\_ . "w" )	; underscore is legit in words
-	    ( ?\' . "\"")	; single quote is string quote
-	    ( ?\" . "\"" )	; double quote is string quote too
-	    ( ?\` . "$")	; backquote is open and close paren
-	    ( ?\# . "<")	; hash starts comment
-	    ( ?\n . ">"))))	; newline ends comment
+  (modify-syntax-entry ?\( "()" py-mode-syntax-table)
+  (modify-syntax-entry ?\) ")(" py-mode-syntax-table)
+  (modify-syntax-entry ?\[ "(]" py-mode-syntax-table)
+  (modify-syntax-entry ?\] ")[" py-mode-syntax-table)
+  (modify-syntax-entry ?\{ "(}" py-mode-syntax-table)
+  (modify-syntax-entry ?\} "){" py-mode-syntax-table)
+  ;; Add operator symbols misassigned in the std table
+  (modify-syntax-entry ?\$ "."  py-mode-syntax-table)
+  (modify-syntax-entry ?\% "."  py-mode-syntax-table)
+  (modify-syntax-entry ?\& "."  py-mode-syntax-table)
+  (modify-syntax-entry ?\* "."  py-mode-syntax-table)
+  (modify-syntax-entry ?\+ "."  py-mode-syntax-table)
+  (modify-syntax-entry ?\- "."  py-mode-syntax-table)
+  (modify-syntax-entry ?\/ "."  py-mode-syntax-table)
+  (modify-syntax-entry ?\< "."  py-mode-syntax-table)
+  (modify-syntax-entry ?\= "."  py-mode-syntax-table)
+  (modify-syntax-entry ?\> "."  py-mode-syntax-table)
+  (modify-syntax-entry ?\| "."  py-mode-syntax-table)
+  ;; For historical reasons, underscore is word class instead of
+  ;; symbol class.  GNU conventions say it should be symbol class, but
+  ;; there's a natural conflict between what major mode authors want
+  ;; and what users expect from `forward-word' and `backward-word'.
+  ;; Guido and I have hashed this out and have decided to keep
+  ;; underscore in word class.  If you're tempted to change it, try
+  ;; binding M-f and M-b to py-forward-into-nomenclature and
+  ;; py-backward-into-nomenclature instead.
+  (modify-syntax-entry ?\_ "w"  py-mode-syntax-table)
+  ;; Both single quote and double quote are string delimiters
+  (modify-syntax-entry ?\' "\"" py-mode-syntax-table)
+  (modify-syntax-entry ?\" "\"" py-mode-syntax-table)
+  ;; backquote is open and close paren
+  (modify-syntax-entry ?\` "$"  py-mode-syntax-table)
+  ;; comment delimiters
+  (modify-syntax-entry ?\# "<"  py-mode-syntax-table)
+  (modify-syntax-entry ?\n ">"  py-mode-syntax-table)
+  )
 
-(defconst py-stringlit-re
-  (concat
-   "'\\([^'\n\\]\\|\\\\.\\)*'"		; single-quoted
-   "\\|"				; or
-   "\"\\([^\"\n\\]\\|\\\\.\\)*\"")	; double-quoted
-  "Regexp matching a Python string literal.")
-
-;; this is tricky because a trailing backslash does not mean
-;; continuation if it's in a comment
-(defconst py-continued-re
-  (concat
-   "\\(" "[^#'\"\n\\]" "\\|" py-stringlit-re "\\)*"
-   "\\\\$")
-  "Regexp matching Python lines that are continued via backslash.")
-
-(defconst py-blank-or-comment-re "[ \t]*\\($\\|#\\)"
-  "Regexp matching blank or comment lines.")
-
-(defconst py-outdent-re
-  (concat "\\(" (mapconcat 'identity
-			   '("else:"
-			     "except\\(\\s +.*\\)?:"
-			     "finally:"
-			     "elif\\s +.*:")
-			   "\\|")
-	  "\\)")
-  "Regexp matching clauses to be outdented one level.")
-
-(defconst py-no-outdent-re
-  (concat "\\(" (mapconcat 'identity
-			   '("try:"
-			     "except\\(\\s +.*\\)?:"
-			     "while\\s +.*:"
-			     "for\\s +.*:"
-			     "if\\s +.*:"
-			     "elif\\s +.*:"
-			     "\\(return\\|break\\|raise\\|continue\\)[ \t\n]"
-			     )
-			   "\\|")
-	  "\\)")
-  "Regexp matching lines to not outdent after.")
-
-(defvar py-defun-start-re
-  "^\\([ \t]*\\)def[ \t]+\\([a-zA-Z_0-9]+\\)\\|\\(^[a-zA-Z_0-9]+\\)[ \t]*="
-  "Regexp matching a function, method or variable assignment.
-
-If you change this, you probably have to change `py-current-defun' as well.
-This is only used by `py-current-defun' to find the name for add-log.el.")
-
-(defvar py-class-start-re "^class[ \t]*\\([a-zA-Z_0-9]+\\)"
-  "Regexp for finding a class name.
-
-If you change this, you probably have to change `py-current-defun' as well.
-This is only used by `py-current-defun' to find the name for add-log.el.")
-
-;; As of 30-Jan-1997, Emacs 19.34 works but XEmacs 19.15b90 and
-;; previous does not.  It is suspected that Emacsen before 19.34 are
-;; also broken.
-(defvar py-parse-partial-sexp-works-p
-  (let ((buf (get-buffer-create " ---*---pps---*---"))
-	state status)
-    (save-excursion
-      (set-buffer buf)
-      (erase-buffer)
-      (insert "(line1\n line2)\nline3")
-      (lisp-mode)
-      (goto-char (point-min))
-      (setq state (parse-partial-sexp (point) (save-excursion
-						(forward-line 1)
-						(point))))
-      (parse-partial-sexp (point) (point-max) 0 nil state)
-      (setq status (not (= (point) (point-max))))
-      (kill-buffer buf)
-      status))
-  "Does `parse-partial-sexp' work in this Emacs?")
 
 
 ;; Menu definitions, only relevent if you have the easymenu.el package
 ;; (standard in the latest Emacs 19 and XEmacs 19 distributions).
 (defvar py-menu nil
   "Menu for Python Mode.
+This menu will get created automatically if you have the `easymenu'
+package.  Note that the latest X/Emacs releases contain this package.")
 
-This menu will get created automatically if you have the easymenu
-package.  Note that the latest XEmacs 19 and Emacs 19 versions contain
-this package.")
-
-(if (condition-case nil
-	(require 'easymenu)
-      (error nil))
-    (easy-menu-define
-     py-menu py-mode-map "Python Mode menu"
-     '("Python"
-       ["Comment Out Region"   py-comment-region  (mark)]
-       ["Uncomment Region"     (py-comment-region (point) (mark) '(4)) (mark)]
-       "-"
-       ["Mark current block"   py-mark-block t]
-       ["Mark current def"     mark-python-def-or-class t]
-       ["Mark current class"   (mark-python-def-or-class t) t]
-       "-"
-       ["Shift region left"    py-shift-region-left (mark)]
-       ["Shift region right"   py-shift-region-right (mark)]
-       "-"
-       ["Execute buffer"       py-execute-buffer t]
-       ["Execute region"       py-execute-region (mark)]
-       ["Start interpreter..." py-shell t]
-       "-"
-       ["Go to start of block" py-goto-block-up t]
-       ["Go to start of class" (beginning-of-python-def-or-class t) t]
-       ["Move to end of class" (end-of-python-def-or-class t) t]
-       ["Move to start of def" beginning-of-python-def-or-class t]
-       ["Move to end of def"   end-of-python-def-or-class t]
-       "-"
-       ["Describe mode"        py-describe-mode t]
-       )))
+(and (py-safe (require 'easymenu) t)
+     (easy-menu-define
+      py-menu py-mode-map "Python Mode menu"
+      '("Python"
+	["Comment Out Region"   py-comment-region  (mark)]
+	["Uncomment Region"     (py-comment-region (point) (mark) '(4)) (mark)]
+	"-"
+	["Mark current block"   py-mark-block t]
+	["Mark current def"     mark-python-def-or-class t]
+	["Mark current class"   (mark-python-def-or-class t) t]
+	"-"
+	["Shift region left"    py-shift-region-left (mark)]
+	["Shift region right"   py-shift-region-right (mark)]
+	"-"
+	["Execute buffer"       py-execute-buffer t]
+	["Execute region"       py-execute-region (mark)]
+	["Start interpreter..." py-shell t]
+	"-"
+	["Go to start of block" py-goto-block-up t]
+	["Go to start of class" (beginning-of-python-def-or-class t) t]
+	["Move to end of class" (end-of-python-def-or-class t) t]
+	["Move to start of def" beginning-of-python-def-or-class t]
+	["Move to end of def"   end-of-python-def-or-class t]
+	"-"
+	["Describe mode"        py-describe-mode t]
+	)))
 
 
 
@@ -734,7 +787,7 @@ py-beep-if-tab-change\t\tring the bell if tab-width is changed"
   (if py-menu
       (easy-menu-add py-menu))
   ;; Emacs 19 requires this
-  (if (or py-this-is-lucid-emacs-p py-this-is-emacs-19-p)
+  (if (boundp 'comment-multi-line)
       (setq comment-multi-line nil))
   ;; hack to allow overriding the tabsize in the file (see tokenizer.c)
   ;;
@@ -774,15 +827,6 @@ py-beep-if-tab-change\t\tring the bell if tab-width is changed"
     (run-hooks 'py-mode-hook)))
 
 
-(defun py-keep-region-active ()
-  ;; do whatever is necessary to keep the region active in XEmacs.
-  ;; Ignore byte-compiler warnings you might see.  Also note that
-  ;; FSF's Emacs 19 does it differently and doesn't its policy doesn't
-  ;; require us to take explicit action.
-  (and (boundp 'zmacs-region-stays)
-       (setq zmacs-region-stays t)))
-
-
 ;; electric characters
 (defun py-outdent-p ()
   ;; returns non-nil if the current line should outdent one level
@@ -796,7 +840,6 @@ py-beep-if-tab-change\t\tring the bell if tab-width is changed"
 		(not (looking-at py-no-outdent-re)))
 	 )))
       
-
 (defun py-electric-colon (arg)
   "Insert a colon.
 In certain cases the line is outdented appropriately.  If a numeric
@@ -2352,13 +2395,9 @@ local bindings to py-newline-and-indent."))
 
 (defun py-kill-emacs-hook ()
   ;; delete our temp files
-  (while py-file-queue
-    (py-delete-file-silently (car py-file-queue))
-    (setq py-file-queue (cdr py-file-queue)))
-  (if (not (or py-this-is-lucid-emacs-p py-this-is-emacs-19-p))
-      ;; run the hook we inherited, if any
-      (and py-inherited-kill-emacs-hook
-	   (funcall py-inherited-kill-emacs-hook))))
+  (py-safe (while py-file-queue
+	     (py-delete-file-silently (car py-file-queue))
+	     (setq py-file-queue (cdr py-file-queue)))))
 
 ;; make PROCESS's buffer visible, append STRING to it, and force
 ;; display; also make shell-mode believe the user typed this string,
@@ -2371,13 +2410,7 @@ local bindings to py-newline-and-indent."))
     (set-buffer pbuf)
     (goto-char (point-max))
     (move-marker (process-mark process) (point))
-    (if (not (or py-this-is-emacs-19-p
-		 py-this-is-lucid-emacs-p))
-	(move-marker last-input-start (point))) ; muck w/ shell-mode
     (funcall (process-filter process) process string)
-    (if (not (or py-this-is-emacs-19-p
-		 py-this-is-lucid-emacs-p))
-	(move-marker last-input-end (point))) ; muck w/ shell-mode
     (set-buffer cbuf))
   (sit-for 0))
 
@@ -2403,8 +2436,6 @@ local bindings to py-newline-and-indent."))
       nil)))
 
 
-(defconst py-version "$Revision$"
-  "`python-mode' version number.")
 (defconst py-help-address "python-mode@python.org"
   "Address accepting submission of bug reports.")
 
@@ -2453,17 +2484,7 @@ to do so may mean a greater delay in fixing your bug.\n\n")
 
 
 ;; arrange to kill temp files when Emacs exists
-(if (or py-this-is-emacs-19-p py-this-is-lucid-emacs-p)
-    (add-hook 'kill-emacs-hook 'py-kill-emacs-hook)
-  ;; have to trust that other people are as respectful of our hook
-  ;; fiddling as we are of theirs
-  (if (boundp 'py-inherited-kill-emacs-hook)
-      ;; we were loaded before -- trust others not to have screwed us
-      ;; in the meantime (no choice, really)
-      nil
-    ;; else arrange for our hook to run theirs
-    (setq py-inherited-kill-emacs-hook kill-emacs-hook)
-    (setq kill-emacs-hook 'py-kill-emacs-hook)))
+(add-hook 'kill-emacs-hook 'py-kill-emacs-hook)
 
 
 
