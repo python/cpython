@@ -1814,6 +1814,18 @@ def properties():
             raise TestFailed("expected TypeError from trying to set "
                              "readonly %r attr on a property" % attr)
 
+    class D(object):
+        __getitem__ = property(lambda s: 1/0)
+
+    d = D()
+    try:
+        for i in d:
+            str(i)
+    except ZeroDivisionError:
+        pass
+    else:
+        raise TestFailed, "expected ZeroDivisionError from bad property"
+
 def supers():
     if verbose: print "Testing super..."
 
