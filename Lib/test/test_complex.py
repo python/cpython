@@ -1,4 +1,4 @@
-import unittest, os, math
+import unittest, os
 from test import test_support
 
 import warnings
