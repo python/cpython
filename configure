@@ -1,6 +1,6 @@
 #! /bin/sh
 
-# From configure.in Revision: 1.102 
+# From configure.in Revision: 1.103 
 
 # Guess values for system-dependent variables and create Makefiles.
 # Generated automatically using autoconf version 2.13 
@@ -2054,7 +2054,7 @@ else
 fi
 rm -f conftest*
 echo "$ac_t""$have_long_long" 1>&6
-if test $have_long_long = yes ; then
+if test "$have_long_long" = yes ; then
 echo $ac_n "checking size of long long""... $ac_c" 1>&6
 echo "configure:2060: checking size of long long" >&5
 if eval "test \"`echo '$''{'ac_cv_sizeof_long_long'+set}'`\" = set"; then
@@ -2141,9 +2141,9 @@ EOF
 
 echo $ac_n "checking whether to enable large file support""... $ac_c" 1>&6
 echo "configure:2144: checking whether to enable large file support" >&5
-if test $have_long_long = yes -a \
-	$ac_cv_sizeof_off_t -gt $ac_cv_sizeof_long -a \
-	$ac_cv_sizeof_long_long -ge $ac_cv_sizeof_off_t; then
+if test "$have_long_long" = yes -a \
+	"$ac_cv_sizeof_off_t" -gt "$ac_cv_sizeof_long" -a \
+	"$ac_cv_sizeof_long_long" -ge "$ac_cv_sizeof_off_t"; then
   cat >> confdefs.h <<\EOF
 #define HAVE_LARGEFILE_SUPPORT 1
 EOF
