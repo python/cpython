@@ -19,6 +19,7 @@ class Module(GeneratorGroup):
 	def addobject(self, od):
 		self.generators.append(od)
 		self.typeobjects.append(od)
+		od.setmodulename(self.name)
 
 	def generate(self):
 		OutHeader1("Module " + self.name)
