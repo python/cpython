@@ -231,7 +231,6 @@ static PyObject*
 Exception__str__(PyObject* self, PyObject* args)
 {
     PyObject* out;
-    PyObject* tmp;
 
     if (!PyArg_ParseTuple(args, "O", &self))
         return NULL;
@@ -245,11 +244,16 @@ Exception__str__(PyObject* self, PyObject* args)
         out = PyString_FromString("");
         break;
     case 1:
-	if (!(tmp = PySequence_GetItem(args, 0)))
-	    out = NULL;
-	else
+    {
+	PyObject* tmp = PySequence_GetItem(args, 0);
+	if (tmp) {
 	    out = PyObject_Str(tmp);
+	    Py_DECREF(tmp);
+	}
+	else
+	    out = NULL;
 	break;
+    }
     default:
         out = PyObject_Str(args);
         break;
