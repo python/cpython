@@ -1214,10 +1214,11 @@ long_lshift(a, b)
 	longobject *a;
 	longobject *b;
 {
+	/* This version due to Tim Peters */
 	longobject *z;
 	long shiftby;
-	int newsize, wordshift, loshift, hishift, i, j;
-	digit lomask, himask;
+	int oldsize, newsize, wordshift, remshift, i, j;
+	twodigits accum;
 	
 	shiftby = getlongvalue((object *)b);
 	if (shiftby == -1L && err_occurred())
@@ -1226,26 +1227,18 @@ long_lshift(a, b)
 		err_setstr(ValueError, "negative shift count");
 		return NULL;
 	}
-	if (shiftby > MASK) {
+	if ((long)(int)shiftby != shiftby) {
 		err_setstr(ValueError, "outrageous left shift count");
 		return NULL;
 	}
-	if (shiftby % SHIFT == 0) {
-		wordshift = shiftby / SHIFT;
-		loshift = 0;
-		hishift = SHIFT;
-		newsize = ABS(a->ob_size) + wordshift;
-		lomask = MASK;
-		himask = 0;
-	}
-	else {
-		wordshift = shiftby / SHIFT + 1;
-		loshift = SHIFT - shiftby%SHIFT;
-		hishift = shiftby % SHIFT;
-		newsize = ABS(a->ob_size) + wordshift;
-		lomask = ((digit)1 << hishift) - 1;
-		himask = MASK ^ lomask;
-	}
+	/* wordshift, remshift = divmod(shiftby, SHIFT) */
+	wordshift = (int)shiftby / SHIFT;
+	remshift  = (int)shiftby - wordshift * SHIFT;
+
+	oldsize = ABS(a->ob_size);
+	newsize = oldsize + wordshift;
+	if (remshift)
+		++newsize;
 	z = alloclongobject(newsize);
 	if (z == NULL)
 		return NULL;
@@ -1253,13 +1246,16 @@ long_lshift(a, b)
 		z->ob_size = -(z->ob_size);
 	for (i = 0; i < wordshift; i++)
 		z->ob_digit[i] = 0;
-	for (i = wordshift, j = 0; i < newsize; i++, j++) {
-		if (i > 0)
-			z->ob_digit[i-1] |=
-				(a->ob_digit[j] << hishift) & himask;
-		z->ob_digit[i] =
-			(a->ob_digit[j] >> loshift) & lomask;
+	accum = 0;	
+	for (i = wordshift, j = 0; j < oldsize; i++, j++) {
+		accum |= a->ob_digit[j] << remshift;
+		z->ob_digit[i] = (digit)(accum & MASK);
+		accum >>= SHIFT;
 	}
+	if (remshift)
+		z->ob_digit[newsize-1] = (digit)accum;
+	else	
+		assert(!accum);
 	return (object *) long_normalize(z);
 }
 
