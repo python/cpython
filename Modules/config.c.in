@@ -149,27 +149,27 @@ extern char *getenv();
 char *
 getpythonpath()
 {
-#ifdef macintosh
-	return PYTHONPATH;
-#else /* !macintosh */
 	char *path = getenv("PYTHONPATH");
 	char *defpath = PYTHONPATH;
-	char *buf;
+	static char *buf = NULL;
 	char *p;
 	int n;
 
-	if (path == 0 || *path == '\0')
-		return defpath;
+	if (path == NULL)
+		path = "";
 	n = strlen(path) + strlen(defpath) + 2;
+	if (buf != NULL) {
+		free(buf);
+		buf = NULL;
+	}
 	buf = malloc(n);
 	if (buf == NULL)
-		return path; /* XXX too bad -- but not likely */
+		fatal("not enough memory to copy module search path");
 	strcpy(buf, path);
 	p = buf + strlen(buf);
 	*p++ = DELIM;
 	strcpy(p, defpath);
 	return buf;
-#endif /* !macintosh */
 }
 
 
