@@ -16,6 +16,7 @@ are class instances of the class Class defined here.
 
 A class is described by the class Class in this module.  Instances
 of this class have the following instance variables:
+        module -- the module name
         name -- the name of the class
         super -- a list of super classes (Class instances)
         methods -- a dictionary of methods
@@ -29,24 +30,21 @@ string giving the name of the super class.  Since import statements
 are recognized and imported modules are scanned as well, this
 shouldn't happen often.
 
-XXX describe the Function class.
+A function is described by the class Function in this module.
+Instances of this class have the following instance variables:
+        module -- the module name
+        name -- the name of the class
+        file -- the file in which the class was defined
+        lineno -- the line in the file on which the class statement occurred
+
 
 BUGS
 - Nested classes and functions can confuse it.
 
-PACKAGE RELATED BUGS
-- If you have a package and a module inside that or another package
-  with the same name, module caching doesn't work properly since the
-  key is the base name of the module/package.
-- The only entry that is returned when you readmodule a package is a
-  __path__ whose value is a list which confuses certain class browsers.
-- When code does:
-  from package import subpackage
-  class MyClass(subpackage.SuperClass):
-    ...
-  It can't locate the parent.  It probably needs to have the same
-  hairy logic that the import locator already does.  (This logic
-  exists coded in Python in the freeze package.)
+PACKAGE CAVEAT
+- When you call readmodule_ex for a package, dict['__path__'] is a
+  list, which may confuse older class browsers.  (readmodule filters
+  these out though.)
 """
 
 import sys
@@ -54,7 +52,7 @@ import imp
 import tokenize # Python tokenizer
 from token import NAME
 
-__all__ = ["readmodule"]
+__all__ = ["readmodule", "readmodule_ex", "Class", "Function"]
 
 _modules = {}                           # cache of modules we've seen
 
@@ -74,76 +72,84 @@ class Class:
     def _addmethod(self, name, lineno):
         self.methods[name] = lineno
 
-class Function(Class):
+class Function:
     '''Class to represent a top-level Python function'''
     def __init__(self, module, name, file, lineno):
-        Class.__init__(self, module, name, None, file, lineno)
-    def _addmethod(self, name, lineno):
-        assert 0, "Function._addmethod() shouldn't be called"
+        self.module = module
+        self.name = name
+        self.file = file
+        self.lineno = lineno
 
-def readmodule(module, path=[], inpackage=False):
+def readmodule(module, path=[]):
     '''Backwards compatible interface.
 
-    Like readmodule_ex() but strips Function objects from the
+    Call readmodule_ex() and then only keep Class objects from the
     resulting dictionary.'''
 
-    dict = readmodule_ex(module, path, inpackage)
+    dict = readmodule_ex(module, path)
     res = {}
     for key, value in dict.items():
-        if not isinstance(value, Function):
+        if isinstance(value, Class):
             res[key] = value
     return res
 
-def readmodule_ex(module, path=[], inpackage=False):
+def readmodule_ex(module, path=[], inpackage=None):
     '''Read a module file and return a dictionary of classes.
 
     Search for MODULE in PATH and sys.path, read and parse the
     module and return a dictionary with one entry for each class
-    found in the module.'''
+    found in the module.
 
+    If INPACKAGE is true, it must be the dotted name of the package in
+    which we are searching for a submodule, and then PATH must be the
+    package search path; otherwise, we are searching for a top-level
+    module, and PATH is combined with sys.path.
+    '''
+
+    # Compute the full module name (prepending inpackage if set)
+    if inpackage:
+        fullmodule = "%s.%s" % (inpackage, module)
+    else:
+        fullmodule = module
+
+    # Check in the cache
+    if fullmodule in _modules:
+        return _modules[fullmodule]
+
+    # Initialize the dict for this module's contents
     dict = {}
 
-    i = module.rfind('.')
-    if i >= 0:
-        # Dotted module name
-        package = module[:i].strip()
-        submodule = module[i+1:].strip()
-        parent = readmodule_ex(package, path, inpackage)
-        child = readmodule_ex(submodule, parent['__path__'], True)
-        return child
-
-    if module in _modules:
-        # we've seen this module before...
-        return _modules[module]
-    if module in sys.builtin_module_names:
-        # this is a built-in module
+    # Check if it is a built-in module; we don't do much for these
+    if module in sys.builtin_module_names and not inpackage:
         _modules[module] = dict
         return dict
 
-    # search the path for the module
+    # Check for a dotted module name
+    i = module.rfind('.')
+    if i >= 0:
+        package = module[:i]
+        submodule = module[i+1:]
+        parent = readmodule_ex(package, path, inpackage)
+        if inpackage:
+            package = "%s.%s" % (inpackage, package)
+        return readmodule_ex(submodule, parent['__path__'], package)
+
+    # Search the path for the module
     f = None
     if inpackage:
-        try:
-            f, file, (suff, mode, type) = \
-                    imp.find_module(module, path)
-        except ImportError:
-            f = None
-    if f is None:
-        fullpath = list(path) + sys.path
-        f, file, (suff, mode, type) = imp.find_module(module, fullpath)
+        f, file, (suff, mode, type) = imp.find_module(module, path)
+    else:
+        f, file, (suff, mode, type) = imp.find_module(module, path + sys.path)
     if type == imp.PKG_DIRECTORY:
         dict['__path__'] = [file]
-        _modules[module] = dict
         path = [file] + path
-        f, file, (suff, mode, type) = \
-                        imp.find_module('__init__', [file])
+        f, file, (suff, mode, type) = imp.find_module('__init__', [file])
+    _modules[fullmodule] = dict
     if type != imp.PY_SOURCE:
         # not Python source, can't do anything with this module
         f.close()
-        _modules[module] = dict
         return dict
 
-    _modules[module] = dict
     classstack = [] # stack of (class, indent) pairs
 
     g = tokenize.generate_tokens(f.readline)
@@ -221,7 +227,13 @@ def readmodule_ex(module, path=[], inpackage=False):
                 for mod, mod2 in modules:
                     try:
                         # Recursively read the imported module
-                        readmodule_ex(mod, path, inpackage)
+                        if not inpackage:
+                            readmodule_ex(mod, path)
+                        else:
+                            try:
+                                readmodule_ex(mod, path, inpackage)
+                            except ImportError:
+                                readmodule_ex(mod)
                     except:
                         # If we can't find or parse the imported module,
                         # too bad -- don't die here.

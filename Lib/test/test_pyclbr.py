@@ -6,6 +6,7 @@ from test.test_support import run_unittest
 import unittest, sys
 from types import ClassType, FunctionType, MethodType
 import pyclbr
+from unittest import TestCase
 
 # This next line triggers an error on old versions of pyclbr.
 
@@ -18,16 +19,19 @@ from commands import getstatus
 # is imperfect (as designed), testModule is called with a set of
 # members to ignore.
 
-class PyclbrTest(unittest.TestCase):
+class PyclbrTest(TestCase):
 
     def assertListEq(self, l1, l2, ignore):
         ''' succeed iff {l1} - {ignore} == {l2} - {ignore} '''
-        for p1, p2 in (l1, l2), (l2, l1):
-            for item in p1:
-                ok = (item in p2) or (item in ignore)
-                if not ok:
-                    self.fail("%r missing" % item)
-
+        try:
+            for p1, p2 in (l1, l2), (l2, l1):
+                for item in p1:
+                    ok = (item in p2) or (item in ignore)
+                    if not ok:
+                        self.fail("%r missing" % item)
+        except:
+            print >>sys.stderr, "l1=%r, l2=%r, ignore=%r" % (l1, l2, ignore)
+            raise
 
     def assertHasattr(self, obj, attr, ignore):
         ''' succeed iff hasattr(obj,attr) or attr in ignore. '''
@@ -40,7 +44,8 @@ class PyclbrTest(unittest.TestCase):
     def assertHaskey(self, obj, key, ignore):
         ''' succeed iff obj.has_key(key) or key in ignore. '''
         if key in ignore: return
-        if not obj.has_key(key): print "***",key
+        if not obj.has_key(key):
+            print >>sys.stderr, "***",key
         self.failUnless(obj.has_key(key))
 
     def assertEquals(self, a, b, ignore=None):
@@ -56,7 +61,9 @@ class PyclbrTest(unittest.TestCase):
             module is loaded with __import__.'''
 
         if module == None:
-            module = __import__(moduleName, globals(), {}, [])
+            # Import it.
+            # ('<silly>' is to work around an API silliness in __import__)
+            module = __import__(moduleName, globals(), {}, ['<silly>'])
 
         dict = pyclbr.readmodule_ex(moduleName)
 
@@ -74,7 +81,11 @@ class PyclbrTest(unittest.TestCase):
                 pyclbr_bases = [ getattr(base, 'name', base)
                                  for base in value.super ]
 
-                self.assertListEq(real_bases, pyclbr_bases, ignore)
+                try:
+                    self.assertListEq(real_bases, pyclbr_bases, ignore)
+                except:
+                    print >>sys.stderr, "class=%s" % py_item
+                    raise
 
                 actualMethods = []
                 for m in py_item.__dict__.keys():
@@ -94,10 +105,17 @@ class PyclbrTest(unittest.TestCase):
                 # can't check file or lineno
 
         # Now check for missing stuff.
+        def defined_in(item, module):
+            if isinstance(item, ClassType):
+                return item.__module__ == module.__name__
+            if isinstance(item, FunctionType):
+                return item.func_globals is module.__dict__
+            return False
         for name in dir(module):
             item = getattr(module, name)
-            if type(item) in (ClassType, FunctionType):
-                self.assertHaskey(dict, name, ignore)
+            if isinstance(item,  (ClassType, FunctionType)):
+                if defined_in(item, module):
+                    self.assertHaskey(dict, name, ignore)
 
     def test_easy(self):
         self.checkModule('pyclbr')
@@ -136,8 +154,10 @@ class PyclbrTest(unittest.TestCase):
                                 'makedict', 'dump' # from sre_constants
                                 ))
 
-        cm('test.test_pyclbr',
-           module=sys.modules[__name__])
+        # Tests for modules inside packages
+        cm('email.Parser')
+
+        cm('test.test_pyclbr', ignore=('defined_in',))
 
         # pydoc doesn't work because of string issues
         # cm('pydoc', pydoc)
