@@ -39,6 +39,8 @@ Extension Modules
 Library
 -------
 
+- Bug #1103844: fix distutils.install.dump_dirs() with negated options.
+
 - os.{SEEK_SET, SEEK_CUR, SEEK_END} have been added for convenience.
 
 - Enhancements to the csv module:
