@@ -55,7 +55,7 @@ PyFunction_New(code, globals)
 		consts = ((PyCodeObject *)code)->co_consts;
 		if (PyTuple_Size(consts) >= 1) {
 			doc = PyTuple_GetItem(consts, 0);
-			if (!PyString_Check(doc))
+			if (!PyString_Check(doc) && !PyUnicode_Check(doc))
 				doc = Py_None;
 		}
 		else
