@@ -14,9 +14,9 @@ PyAPI_FUNC(void) PySys_SetArgv(int, char **);
 PyAPI_FUNC(void) PySys_SetPath(char *);
 
 PyAPI_FUNC(void) PySys_WriteStdout(const char *format, ...)
-			__attribute__((format(printf, 1, 2)));
+			Py_GCC_ATTRIBUTE((format(printf, 1, 2)));
 PyAPI_FUNC(void) PySys_WriteStderr(const char *format, ...)
-			__attribute__((format(printf, 1, 2)));
+			Py_GCC_ATTRIBUTE((format(printf, 1, 2)));
 
 PyAPI_DATA(PyObject *) _PySys_TraceFunc, *_PySys_ProfileFunc;
 PyAPI_DATA(int) _PySys_CheckInterval;
