@@ -5359,8 +5359,17 @@ static PyObject *
 super_getattro(PyObject *self, PyObject *name)
 {
 	superobject *su = (superobject *)self;
+	int skip = su->obj_type == NULL;
 
-	if (su->obj_type != NULL) {
+	if (!skip) {
+		/* We want __class__ to return the class of the super object
+		   (i.e. super, or a subclass), not the class of su->obj. */
+		skip = (PyString_Check(name) &&
+			PyString_GET_SIZE(name) == 9 &&
+			strcmp(PyString_AS_STRING(name), "__class__") == 0);
+	}
+
+	if (!skip) {
 		PyObject *mro, *res, *tmp, *dict;
 		PyTypeObject *starttype;
 		descrgetfunc f;
@@ -5390,9 +5399,6 @@ super_getattro(PyObject *self, PyObject *name)
 			else
 				continue;
 			res = PyDict_GetItem(dict, name);
-			/* Skip data descriptors because when obj_type is a
-			   metaclass, we don't want to return its __class__
-			   descriptor.  See supers() in test_descr.py. */
 			if (res != NULL && !PyDescr_IsData(res)) {
 				Py_INCREF(res);
 				f = res->ob_type->tp_descr_get;
