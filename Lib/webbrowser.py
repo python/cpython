@@ -104,11 +104,11 @@ class Netscape:
 register("netscape", Netscape)
 
 
-class Konquerer:
-    """Controller for the KDE File Manager (kfm, or Konquerer).
+class Konqueror:
+    """Controller for the KDE File Manager (kfm, or Konqueror).
 
     See http://developer.kde.org/documentation/other/kfmclient.html
-    for more information on the Konquerer remote-control interface.
+    for more information on the Konqueror remote-control interface.
 
     """
     def _remote(self, action):
@@ -128,7 +128,7 @@ class Konquerer:
     def open_new(self, url):
         self._remote("openURL %s" % url)
 
-register("kfm", Konquerer)
+register("kfm", Konqueror)
 
 
 class Grail:
