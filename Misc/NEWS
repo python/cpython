@@ -47,6 +47,10 @@ Core and builtins
 Extension Modules
 -----------------
 
+- operator.itemgetter() and operator.attrgetter() now support retrieving
+  multiple fields.  This provides direct support for sorting on multiple
+  keys (primary, secondary, etc).
+
 - os.access now supports Unicode path names on non-Win32 systems.
 
 - Patches #925152, #1118602: Avoid reading after the end of the buffer

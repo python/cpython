@@ -306,24 +306,31 @@ as arguments for \function{map()}, \function{sorted()},
 \method{itertools.groupby()}, or other functions that expect a
 function argument.
 
-\begin{funcdesc}{attrgetter}{attr}
+\begin{funcdesc}{attrgetter}{attr\optional{, args...}}
 Return a callable object that fetches \var{attr} from its operand.
+If more than one attribute is requested, returns a tuple of attributes.
 After, \samp{f=attrgetter('name')}, the call \samp{f(b)} returns
-\samp{b.name}.
+\samp{b.name}.  After, \samp{f=attrgetter('name', 'date')}, the call
+\samp{f(b)} returns \samp{(b.name, b.date)}. 
 \versionadded{2.4}
+\versionchanged[Added support for multiple attributes]{2.5}
 \end{funcdesc}
     
-\begin{funcdesc}{itemgetter}{item}
+\begin{funcdesc}{itemgetter}{item\optional{, args...}}
 Return a callable object that fetches \var{item} from its operand.
+If more than one item is requested, returns a tuple of items.
 After, \samp{f=itemgetter(2)}, the call \samp{f(b)} returns
 \samp{b[2]}.
+After, \samp{f=itemgetter(2,5,3)}, the call \samp{f(b)} returns
+\samp{(b[2], b[5], b[3])}.		
 \versionadded{2.4}
+\versionchanged[Added support for multiple item extraction]{2.5}		
 \end{funcdesc}
 
 Examples:
                 
 \begin{verbatim}
->>> from operator import *
+>>> from operator import itemgetter
 >>> inventory = [('apple', 3), ('banana', 2), ('pear', 5), ('orange', 1)]
 >>> getcount = itemgetter(1)
 >>> map(getcount, inventory)
