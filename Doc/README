@@ -51,7 +51,7 @@ What if I find a bug?
 ---------------------
 
 First, check that the bug is present in the development version of the
-documentation at <http://python.sourceforge.net/devel-docs/>; we may
+documentation at <http://www.python.org/dev/doc/devel/>; we may
 have already fixed it.
 
 If we haven't, tell us about it.  We'd like the documentation to be
