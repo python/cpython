@@ -327,6 +327,7 @@ getline(f, n)
 	int n1, n2;
 	object *v;
 
+	fp = f->f_fp;
 	n2 = n > 0 ? n : 100;
 	v = newsizedstringobject((char *)NULL, n2);
 	if (v == NULL)
