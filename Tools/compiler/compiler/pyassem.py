@@ -143,17 +143,19 @@ class PyAssembler:
         for t in self.insts:
             opname = t[0]
             if len(t) == 1:
-                lnotab.addCode(chr(self.opnum[opname]))
+                lnotab.addCode(self.opnum[opname])
             elif len(t) == 2:
-                oparg = self._convertArg(opname, t[1])
                 if opname == 'SET_LINENO':
+		    oparg = t[1]
                     lnotab.nextLine(oparg)
+		else:
+		    oparg = self._convertArg(opname, t[1])
                 try:
                     hi, lo = divmod(oparg, 256)
                 except TypeError:
                     raise TypeError, "untranslated arg: %s, %s" % (opname, oparg)
-                lnotab.addCode(chr(self.opnum[opname]) + chr(lo) +
-                               chr(hi))
+                lnotab.addCode(self.opnum[opname], lo, hi)
+                
         # why is a module a special case?
         if self.flags == 0:
             nlocals = 0
@@ -324,9 +326,10 @@ class LineAddrTable:
         self.lastoff = 0
         self.lnotab = []
 
-    def addCode(self, code):
-        self.code.append(code)
-        self.codeOffset = self.codeOffset + len(code)
+    def addCode(self, *args):
+        for arg in args:
+            self.code.append(chr(arg))
+        self.codeOffset = self.codeOffset + len(args)
 
     def nextLine(self, lineno):
         if self.firstline == 0:
@@ -451,9 +454,9 @@ class StackDepthTracker:
         ('LOAD_', 1),
         ('IMPORT_', 1),
         ]
-    # special cases
-
-    #: UNPACK_TUPLE, UNPACK_LIST, BUILD_TUPLE,
+    
+    # special cases:
+    # UNPACK_TUPLE, UNPACK_LIST, BUILD_TUPLE,
     # BUILD_LIST, CALL_FUNCTION, MAKE_FUNCTION, BUILD_SLICE
     def UNPACK_TUPLE(self, count):
         return count
