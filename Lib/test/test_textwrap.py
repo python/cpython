@@ -166,6 +166,12 @@ What a mess!
                   "and", " ", "another!"]
         self.check_split(self.wrapper, text, expect)
 
+        text = "and then--bam!--he was gone"
+        expect = ["and", " ", "then", "--", "bam!", "--",
+                  "he", " ", "was", " ", "gone"]
+        self.check_split(self.wrapper, text, expect)
+
+
     def test_unix_options (self):
         # Test that Unix-style command-line options are wrapped correctly.
         # Both Optik (OptionParser) and Docutils rely on this behaviour!
