@@ -19,7 +19,7 @@ static PyObject *
 ellipses_repr(op)
 	PyObject *op;
 {
-	return PyString_FromString("...");
+	return PyString_FromString("Ellipses");
 }
 
 static PyTypeObject PyEllipses_Type = {
