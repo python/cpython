@@ -100,6 +100,14 @@ Extension modules
   useful behavior when the optional tinzo argument was specified.  See
   also SF bug report <http://www.python.org/sf/660872>.
 
+  date and datetime comparison:  In order to prevent comparison from
+  falling back to the default compare-object-addresses strategy, these
+  raised TypeError whenever they didn't understand the other object type.
+  They still do, except when the other object has a "timetuple" attribute,
+  in which case they return NotImplemented now.  This gives other
+  datetime objects (e.g., mxDateTime) a chance to intercept the
+  comparison.
+
   The constructors building a datetime from a timestamp could raise
   ValueError if the platform C localtime()/gmtime() inserted "leap
   seconds".  Leap seconds are ignored now.  On such platforms, it's

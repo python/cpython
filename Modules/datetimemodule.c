@@ -2437,8 +2437,15 @@ date_richcompare(PyDateTime_Date *self, PyObject *other, int op)
 	int diff;
 
 	if (! PyDate_Check(other)) {
+		if (PyObject_HasAttrString(other, "timetuple")) {
+			/* A hook for other kinds of date objects. */
+			Py_INCREF(Py_NotImplemented);
+			return Py_NotImplemented;
+		}
+		/* Stop this from falling back to address comparison. */
 		PyErr_Format(PyExc_TypeError,
-			     "can't compare date to %s instance",
+			     "can't compare '%s' to '%s'",
+			     self->ob_type->tp_name,
 			     other->ob_type->tp_name);
 		return NULL;
 	}
@@ -4018,6 +4025,11 @@ datetime_richcompare(PyDateTime_DateTime *self, PyObject *other, int op)
 	int offset1, offset2;
 
 	if (! PyDateTime_Check(other)) {
+		if (PyObject_HasAttrString(other, "timetuple")) {
+			/* A hook for other kinds of datetime objects. */
+			Py_INCREF(Py_NotImplemented);
+			return Py_NotImplemented;
+		}
 		/* Stop this from falling back to address comparison. */
 		PyErr_Format(PyExc_TypeError,
 			     "can't compare '%s' to '%s'",
