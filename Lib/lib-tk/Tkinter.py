@@ -1067,6 +1067,23 @@ class Misc:
         exc, val, tb = sys.exc_type, sys.exc_value, sys.exc_traceback
         root = self._root()
         root.report_callback_exception(exc, val, tb)
+    def _configure(self, cmd, cnf, kw):
+        """Internal function."""
+        if kw:
+            cnf = _cnfmerge((cnf, kw))
+        elif cnf:
+            cnf = _cnfmerge(cnf)
+        if cnf is None:
+            cnf = {}
+            for x in self.tk.split(
+                    self.tk.call(_flatten((self._w, cmd)))):
+                cnf[x[0][1:]] = (x[0][1:],) + x[1:]
+            return cnf
+        if type(cnf) is StringType:
+            x = self.tk.split(
+                    self.tk.call(_flatten((self._w, cmd, '-'+cnf))))
+            return (x[0][1:],) + x[1:]
+        self.tk.call(_flatten((self._w, cmd)) + self._options(cnf))
     # These used to be defined in Widget:
     def configure(self, cnf=None, **kw):
         """Configure resources of a widget.
@@ -1075,23 +1092,7 @@ class Misc:
         arguments. To get an overview about
         the allowed keyword arguments call the method keys.
         """
-        # XXX ought to generalize this so tag_config etc. can use it
-        if kw:
-            cnf = _cnfmerge((cnf, kw))
-        elif cnf:
-            cnf = _cnfmerge(cnf)
-        if cnf is None:
-            cnf = {}
-            for x in self.tk.split(
-                self.tk.call(self._w, 'configure')):
-                cnf[x[0][1:]] = (x[0][1:],) + x[1:]
-            return cnf
-        if type(cnf) is StringType:
-            x = self.tk.split(self.tk.call(
-                self._w, 'configure', '-'+cnf))
-            return (x[0][1:],) + x[1:]
-        self.tk.call((self._w, 'configure')
-              + self._options(cnf))
+        return self._configure('configure', cnf, kw)
     config = configure
     def cget(self, key):
         """Return the resource value for a KEY given as string."""
@@ -2043,19 +2044,7 @@ class Canvas(Widget):
         arguments. To get an overview about
         the allowed keyword arguments call the method without arguments.
         """
-        if cnf is None and not kw:
-            cnf = {}
-            for x in self.tk.split(
-                self.tk.call(self._w,
-                         'itemconfigure', tagOrId)):
-                cnf[x[0][1:]] = (x[0][1:],) + x[1:]
-            return cnf
-        if type(cnf) == StringType and not kw:
-            x = self.tk.split(self.tk.call(
-                self._w, 'itemconfigure', tagOrId, '-'+cnf))
-            return (x[0][1:],) + x[1:]
-        self.tk.call((self._w, 'itemconfigure', tagOrId) +
-                 self._options(cnf, kw))
+        return self._configure(('itemconfigure', tagOrId), cnf, kw)
     itemconfig = itemconfigure
     # lower, tkraise/lift hide Misc.lower, Misc.tkraise/lift,
     # so the preferred name for them is tag_lower, tag_raise
@@ -2383,18 +2372,7 @@ class Listbox(Widget):
         call the method without arguments.
         Valid resource names: background, bg, foreground, fg,
         selectbackground, selectforeground."""
-        if cnf is None and not kw:
-            cnf = {}
-            for x in self.tk.split(
-                self.tk.call(self._w, 'itemconfigure', index)):
-                cnf[x[0][1:]] = (x[0][1:],) + x[1:]
-            return cnf
-        if type(cnf) == StringType and not kw:
-            x = self.tk.split(self.tk.call(
-                self._w, 'itemconfigure', index, '-'+cnf))
-            return (x[0][1:],) + x[1:]
-        self.tk.call((self._w, 'itemconfigure', index) +
-                     self._options(cnf, kw))
+        return self._configure(('itemconfigure', index), cnf, kw)
     itemconfig = itemconfigure
 
 class Menu(Widget):
@@ -2481,18 +2459,7 @@ class Menu(Widget):
         return self.tk.call(self._w, 'entrycget', index, '-' + option)
     def entryconfigure(self, index, cnf=None, **kw):
         """Configure a menu item at INDEX."""
-        if cnf is None and not kw:
-            cnf = {}
-            for x in self.tk.split(self.tk.call(
-                (self._w, 'entryconfigure', index))):
-                cnf[x[0][1:]] = (x[0][1:],) + x[1:]
-            return cnf
-        if type(cnf) == StringType and not kw:
-            x = self.tk.split(self.tk.call(
-                (self._w, 'entryconfigure', index, '-'+cnf)))
-            return (x[0][1:],) + x[1:]
-        self.tk.call((self._w, 'entryconfigure', index)
-              + self._options(cnf, kw))
+        return self._configure(('entryconfigure', index), cnf, kw)
     entryconfig = entryconfigure
     def index(self, index):
         """Return the index of a menu item identified by INDEX."""
@@ -2719,18 +2686,9 @@ class Text(Widget):
         if option[-1:] == "_":
             option = option[:-1]
         return self.tk.call(self._w, "image", "cget", index, option)
-    def image_configure(self, index, cnf={}, **kw):
+    def image_configure(self, index, cnf=None, **kw):
         """Configure an embedded image at INDEX."""
-        if not cnf and not kw:
-            cnf = {}
-            for x in self.tk.split(
-                    self.tk.call(
-                    self._w, "image", "configure", index)):
-                cnf[x[0][1:]] = (x[0][1:],) + x[1:]
-            return cnf
-        apply(self.tk.call,
-              (self._w, "image", "configure", index)
-              + self._options(cnf, kw))
+        return self._configure(('image', 'configure', index), cnf, kw)
     def image_create(self, index, cnf={}, **kw):
         """Create an embedded image at INDEX."""
         return apply(self.tk.call,
@@ -2821,15 +2779,9 @@ class Text(Widget):
         if option[-1:] == '_':
             option = option[:-1]
         return self.tk.call(self._w, 'tag', 'cget', tagName, option)
-    def tag_configure(self, tagName, cnf={}, **kw):
+    def tag_configure(self, tagName, cnf=None, **kw):
         """Configure a tag TAGNAME."""
-        if type(cnf) == StringType:
-            x = self.tk.split(self.tk.call(
-                self._w, 'tag', 'configure', tagName, '-'+cnf))
-            return (x[0][1:],) + x[1:]
-        self.tk.call(
-              (self._w, 'tag', 'configure', tagName)
-              + self._options(cnf, kw))
+        return self._configure(('tag', 'configure', tagName), cnf, kw)
     tag_config = tag_configure
     def tag_delete(self, *tagNames):
         """Delete all tags in TAGNAMES."""
@@ -2874,16 +2826,9 @@ class Text(Widget):
         if option[-1:] == '_':
             option = option[:-1]
         return self.tk.call(self._w, 'window', 'cget', index, option)
-    def window_configure(self, index, cnf={}, **kw):
+    def window_configure(self, index, cnf=None, **kw):
         """Configure an embedded window at INDEX."""
-        if type(cnf) == StringType:
-            x = self.tk.split(self.tk.call(
-                self._w, 'window', 'configure',
-                index, '-'+cnf))
-            return (x[0][1:],) + x[1:]
-        self.tk.call(
-              (self._w, 'window', 'configure', index)
-              + self._options(cnf, kw))
+        return self._configure(('window', 'configure', index), cnf, kw)
     window_config = window_configure
     def window_create(self, index, cnf={}, **kw):
         """Create a window at INDEX."""
