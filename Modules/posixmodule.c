@@ -116,6 +116,7 @@ extern int symlink();
 #include <process.h>
 #include <windows.h>
 #define popen   _popen
+#define pclose	_pclose
 #endif /* NT */
 
 #ifdef OS2
@@ -730,6 +731,7 @@ posix_execve(self, args)
 	return NULL;
 }
 
+#ifndef NT
 static object *
 posix_fork(self, args)
 	object *self;
@@ -763,6 +765,7 @@ posix_geteuid(self, args)
 		return NULL;
 	return newintobject((long)geteuid());
 }
+#endif /* !NT */
 
 static object *
 posix_getgid(self, args)
@@ -820,6 +823,7 @@ posix_setpgrp(self, args)
 
 #endif /* HAVE_SETPGRP */
 
+#ifndef NT
 static object *
 posix_getppid(self, args)
 	object *self;
@@ -853,6 +857,7 @@ posix_kill(self, args)
 	INCREF(None);
 	return None;
 }
+#endif /* !NT */
 
 static object *
 posix_popen(self, args)
@@ -922,6 +927,7 @@ posix_waitpid(self, args)
 }
 #endif /* HAVE_WAITPID */
 
+#ifndef NT
 static object *
 posix_wait(self, args)
 	object *self;
@@ -936,6 +942,7 @@ posix_wait(self, args)
 	else
 		return mkvalue("ii", pid, sts);
 }
+#endif /* !NT */
 
 static object *
 posix_lstat(self, args)
@@ -1260,6 +1267,7 @@ posix_pipe(self, args)
 	object *self;
 	object *args;
 {
+#ifndef NT
 	int fds[2];
 	int res;
 	if (!getargs(args, ""))
@@ -1270,6 +1278,18 @@ posix_pipe(self, args)
 	if (res != 0)
 		return posix_error();
 	return mkvalue("(ii)", fds[0], fds[1]);
+#else /* NT */
+	HANDLE read, write;
+	BOOL ok;
+	if (!getargs(args, ""))
+		return NULL;
+	BGN_SAVE
+	ok = CreatePipe( &read, &write, NULL, 0);
+	END_SAVE
+	if (!ok)
+		return posix_error();
+	return mkvalue("(ii)", read, write);
+#endif /* NT */
 }
 
 static struct methodlist posix_methods[] = {
@@ -1362,10 +1382,7 @@ static struct methodlist posix_methods[] = {
 	{"write",	posix_write},
 	{"fstat",	posix_fstat},
 	{"fdopen",	posix_fdopen},
-#ifndef NT
 	{"pipe",	posix_pipe},
-#endif /* !NT */
-
 	{NULL,		NULL}		 /* Sentinel */
 };
 
