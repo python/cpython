@@ -711,7 +711,7 @@ then
 	        then CCSHARED="-fPIC";
 	        fi;;
 	hp*|HP*) if test "$GCC" = yes;
-		 then CCSHARED="-fpic";
+		 then CCSHARED="-fPIC";
 		 else CCSHARED="+z";
 		 fi;;
 	Linux*) CCSHARED="-fPIC";;
