@@ -79,7 +79,7 @@ PyTuple_New(size)
 #endif
 	{
 		op = (PyTupleObject *) malloc(
-			sizeof(PyTupleObject) + size * sizeof(PyObject *));
+			sizeof(PyTupleObject) + (size-1) * sizeof(PyObject *));
 		if (op == NULL)
 			return PyErr_NoMemory();
 
