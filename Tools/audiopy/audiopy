@@ -494,9 +494,8 @@ Version: %s''' % __version__
     try:
         device.setinfo(info)
     except sunaudiodev.error, (code, msg):
-        if code == errno.EINVAL:
-            pass
-        raise
+        if code <> errno.EINVAL:
+            raise
     device.close()
             
 
