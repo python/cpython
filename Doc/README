@@ -69,7 +69,10 @@ documentation are written in Python.
 The simplest way to get the rest of the tools in the configuration we
 used is to install the teTeX TeX distribution, version 0.9.  More
 information is available on teTeX at <http://www.tug.org/tetex/>.
-This is a UNIX-only TeX distribution at this time.
+This is a UNIX-only TeX distribution at this time.  Note that the 0.9
+release is still in testing; this documentation release was tested
+with the 18 Mar 1998 release.  We'll be upgrading to the final version 
+when it becomes available.
 
 If you don't want to get teTeX, or if you're not using UNIX, here is
 what you'll need:
@@ -85,7 +88,10 @@ To create DVI, PDF, or PostScript files:
 To create PDF files:
 
 	- pdflatex.  We used the one in the teTeX 0.9 distribution
-	  (version 0.11 at the time of this writing).
+	  (version 0.12f at the time of this writing).  Versions even
+	  a couple of patchlevels different are highly likely to
+	  fail due to syntax changes for some of the pdftex
+	  primitives.
 
 To create PostScript files:
 
@@ -142,6 +148,18 @@ l2h" should do the trick.
 For the reference manual, we use Harlequin's webmaker.  We're not very 
 happy with it and hope that eventually FrameMaker will be able to
 produce HTML without third party help.
+
+
+What else is in here?
+---------------------
+
+There is a new LaTeX document class called "howto".  This is used for
+the new series of Python HOWTO documents which is being coordinated by 
+Andrew Kuchling <amk@acm.org>.  The file howto.tex is a commented
+template which may be used an example.  A script to "do the right
+thing" to format a howto document is included as tools/mkhowto.sh.
+Support for this document class is still new, but is expected to
+evolve rapidly.
 
 
 Copyright notice
