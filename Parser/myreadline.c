@@ -51,79 +51,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "mymalloc.h"
 #include "intrcheck.h"
 
-
-#ifdef WITH_READLINE
-
-extern char *readline();
-extern int rl_initialize();
-extern int rl_insert();
-extern int rl_bind_key();
-extern void add_history();
-extern char *rl_readline_name;
-
-#include <setjmp.h>
-#include <signal.h>
-
-static jmp_buf jbuf;
-
-/* ARGSUSED */
-static RETSIGTYPE
-onintr(sig)
-	int sig;
-{
-	longjmp(jbuf, 1);
-}
-
-void
-PyOS_ReadlineInit()
-{
-	static int been_here;
-	if (!been_here) {
-		/* Force rebind of TAB to insert-tab */
-		rl_readline_name = "python";
-		rl_initialize();
-		rl_bind_key('\t', rl_insert);
-		been_here++;
-	}
-}
-
-char *
-PyOS_GnuReadline(prompt)
-	char *prompt;
-{
-	int n;
-	char *p;
-	RETSIGTYPE (*old_inthandler)();
-	PyOS_ReadlineInit();
-	old_inthandler = signal(SIGINT, onintr);
-	if (setjmp(jbuf)) {
-#ifdef HAVE_SIGRELSE
-		/* This seems necessary on SunOS 4.1 (Rasmus Hahn) */
-		sigrelse(SIGINT);
-#endif
-		signal(SIGINT, old_inthandler);
-		return NULL;
-	}
-	p = readline(prompt);
-	signal(SIGINT, old_inthandler);
-	if (p == NULL) {
-		p = malloc(1);
-		if (p != NULL)
-			*p = '\0';
-		return p;
-	}
-	n = strlen(p);
-	if (n > 0)
-		add_history(p);
-	if ((p = realloc(p, n+2)) != NULL) {
-		p[n] = '\n';
-		p[n+1] = '\0';
-	}
-	return p;
-}
-
-#endif /* !WITH_READLINE */
-
+int (*Py_input_hook)() = NULL;
 
 /* This function restarts a fgets() after an EINTR error occurred
    except if PyOS_InterruptOccurred() returns true. */
@@ -136,6 +64,8 @@ my_fgets(buf, len, fp)
 {
 	char *p;
 	for (;;) {
+		if (Py_input_hook != NULL)
+			(void)(Py_input_hook)();
 		errno = 0;
 		p = fgets(buf, len, fp);
 		if (p != NULL)
@@ -221,11 +151,6 @@ PyOS_Readline(prompt)
 	char *prompt;
 {
 	if (PyOS_ReadlineFunctionPointer == NULL) {
-#ifdef WITH_READLINE
-		if (isatty(fileno(stdin)))
-			PyOS_ReadlineFunctionPointer = PyOS_GnuReadline;
-		else
-#endif
 			PyOS_ReadlineFunctionPointer = PyOS_StdioReadline;
 	}
 	return (*PyOS_ReadlineFunctionPointer)(prompt);
