@@ -36,6 +36,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #ifdef MS_WIN32
 extern void PyWinFreeze_ExeInit();
 extern void PyWinFreeze_ExeTerm();
+extern int PyInitFrozenExtensions();
 #endif
 
 #ifdef HAVE_UNISTD_H
@@ -72,6 +73,9 @@ Py_FrozenMain(argc, argv)
 		setbuf(stderr, (char *)NULL);
 	}
 
+#ifdef MS_WIN32
+	PyInitFrozenExtensions();
+#endif /* MS_WIN32 */
 	Py_SetProgramName(argv[0]);
 	Py_Initialize();
 #ifdef MS_WIN32
