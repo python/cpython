@@ -935,7 +935,7 @@ def pi():
     3.141592653589793238462643383279502887
     """
     getcontext().prec += 9  # extra digits for intermediate steps
-    three = Decimal(3)        # substitute "three=3.0" for regular floats
+    three = Decimal(3)      # substitute "three=3.0" for regular floats
     lastc, t, c, n, na, d, da = 0, three, 3, 1, 0, 0, 24
     while c != lastc:
         lastc = c
@@ -947,12 +947,16 @@ def pi():
     return c
 
 def exp(x):
-    """Return e raised to the power of x.
+    """Return e raised to the power of x.  Result type matches input type.
 
     >>> print exp(Decimal(1))
     2.718281828459045235360287471352662498
     >>> print exp(Decimal(2))
     7.389056098930650227230427460575007813
+    >>> print exp(2.0)
+    7.38905609893
+    >>> print exp(2+0j)
+    (7.38905609893+0j)
     """
     getcontext().prec += 9  # extra digits for intermediate steps
     i, laste, e, fact, num = 0, 0, 1, 1, 1
@@ -970,6 +974,10 @@ def cos(x):
 
     >>> print cos(Decimal('0.5'))
     0.8775825618903727161162815826038296521
+    >>> print cos(0.5)
+    0.87758256189
+    >>> print cos(0.5+0j)
+    (0.87758256189+0j)
     """
     getcontext().prec += 9  # extra digits for intermediate steps
     i, laste, e, fact, num, sign = 0, 0, 1, 1, 1, 1
@@ -988,6 +996,10 @@ def sin(x):
 
     >>> print sin(Decimal('0.5'))
     0.4794255386042030002732879352155713880
+    >>> print sin(0.5)
+    0.479425538604
+    >>> print sin(0.5+0j)
+    (0.479425538604+0j)
     """
     getcontext().prec += 9  # extra digits for intermediate steps
     i, laste, e, fact, num, sign = 1, 0, x, 1, x, 1
