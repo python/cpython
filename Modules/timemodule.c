@@ -89,11 +89,12 @@ extern int ftime();
 #endif /* MS_WINDOWS */
 #endif /* !__WATCOMC__ || __QNX__ */
 
-#ifdef MS_WIN32
-/* Win32 has better clock replacement */
+#if defined(MS_WIN32) && !defined(MS_WIN64)
+/* Win32 has better clock replacement
+   XXX Win64 does not yet, but might when the platform matures. */
 #include <largeint.h>
 #undef HAVE_CLOCK /* We have our own version down below */
-#endif /* MS_WIN32 */
+#endif /* MS_WIN32 && !MS_WIN64 */
 
 #if defined(PYCC_VACPP)
 #include <sys/time.h>
@@ -190,7 +191,7 @@ time_clock(self, args)
 }
 #endif /* HAVE_CLOCK */
 
-#ifdef MS_WIN32
+#if defined(MS_WIN32) && !defined(MS_WIN64)
 /* Due to Mark Hammond */
 static PyObject *
 time_clock(self, args)
@@ -226,7 +227,7 @@ time_clock(self, args)
 }
 
 #define HAVE_CLOCK /* So it gets included in the methods */
-#endif /* MS_WIN32 */
+#endif /* MS_WIN32 && !MS_WIN64 */
 
 #ifdef HAVE_CLOCK
 static char clock_doc[] =
