@@ -2,6 +2,7 @@
 /* audioopmodule - Module to detect peak values in arrays */
 
 #include "Python.h"
+#include <math.h>
 
 #if SIZEOF_INT == 4
 typedef int Py_Int32;
@@ -902,6 +903,7 @@ audioop_ratecv(PyObject *self, PyObject *args)
 	int len, size, nchannels, inrate, outrate, weightA, weightB;
 	int chan, d, *prev_i, *cur_i, cur_o;
 	PyObject *state, *samps, *str, *rv = NULL;
+	int size_times_nchannels;
 
 	weightA = 1;
 	weightB = 0;
@@ -936,17 +938,28 @@ audioop_ratecv(PyObject *self, PyObject *args)
 
 	prev_i = (int *) malloc(nchannels * sizeof(int));
 	cur_i = (int *) malloc(nchannels * sizeof(int));
-	len /= size * nchannels;	/* # of frames */
 	if (prev_i == NULL || cur_i == NULL) {
 		(void) PyErr_NoMemory();
 		goto exit;
 	}
 
+	size_times_nchannels = size * nchannels;
+	if (size_times_nchannels / nchannels != size) {
+		/* This overflow test is rigorously correct because
+		   both multiplicands are >= 1.  Use the argument names
+		   from the docs for the error msg. */
+		PyErr_SetString(PyExc_OverflowError,
+		                "width * nchannels too big for a C int");
+		goto exit;
+	}
+	len /= size_times_nchannels;	/* # of frames */
+
 	if (state == Py_None) {
 		d = -outrate;
 		for (chan = 0; chan < nchannels; chan++)
 			prev_i[chan] = cur_i[chan] = 0;
-	} else {
+	}
+	else {
 		if (!PyArg_ParseTuple(state,
 				"iO!;audioop.ratecv: illegal state argument",
 				&d, &PyTuple_Type, &samps))
@@ -962,10 +975,53 @@ audioop_ratecv(PyObject *self, PyObject *args)
 				goto exit;
 		}
 	}
-	str = PyString_FromStringAndSize(
-	      NULL, size * nchannels * (len * outrate + inrate - 1) / inrate);
-	if (str == NULL)
-		goto exit;
+
+	/* str <- Space for the output buffer. */
+	{
+		/* There are len input frames, so we need (mathematically)
+		   ceiling(len*outrate/inrate) output frames, and each frame
+		   requires size_times_nchannels bytes.  Computing this
+		   without spurious overflow is the challenge. */
+		int ceiling;   /* the number of output frames, eventually */
+		int nbytes;    /* the number of output bytes needed */
+		int q = len / inrate;
+		int r = len - q * inrate;
+		/* Now len = q * inrate + r exactly, so
+		   len*outrate/inrate =
+		   (q*inrate+r)*outrate/inrate =
+		   (q*inrate*outrate + r*outrate)/inrate =
+		   q*outrate + r*outrate/inrate exactly.
+		   q*outrate is an exact integer, so the ceiling we're after is
+		   q*outrate + ceiling(r*outrate/inrate). */
+		ceiling = q * outrate;
+		if (ceiling / outrate != q) {
+			PyErr_SetString(PyExc_MemoryError,
+				"not enough memory for output buffer");
+			goto exit;
+		}
+		/* Since r = len % inrate, in particular r < inrate.  So
+		   r * outrate / inrate = (r / inrate) * outrate < outrate,
+		   so ceiling(r * outrate / inrate) <= outrate:  the final
+		   result fits in an int -- it can't overflow. */
+		assert(r < inrate);
+		q = (int)ceil((double)r * (double)outrate / (double)inrate);
+		assert(q <= outrate);
+		ceiling += q;
+		if (ceiling < 0) {
+			PyErr_SetString(PyExc_MemoryError,
+				"not enough memory for output buffer");
+			goto exit;
+		}
+		nbytes = ceiling * size_times_nchannels;
+		if (nbytes / size_times_nchannels != ceiling) {
+			PyErr_SetString(PyExc_MemoryError,
+				"not enough memory for output buffer");
+			goto exit;
+		}
+		str = PyString_FromStringAndSize(NULL, nbytes);
+		if (str == NULL)
+			goto exit;
+	}
 	ncp = PyString_AsString(str);
 
 	for (;;) {
