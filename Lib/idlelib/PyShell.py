@@ -29,7 +29,10 @@ import string
 import getopt
 import re
 import protocol
+import socket
+import time
 import warnings
+import traceback
 
 import linecache
 from code import InteractiveInterpreter
@@ -44,6 +47,21 @@ from UndoDelegator import UndoDelegator
 from OutputWindow import OutputWindow, OnDemandOutputWindow
 from configHandler import idleConf
 import idlever
+
+import rpc
+
+use_subprocess = 0 # Set to 1 to spawn subprocess for command execution
+
+# Change warnings module to write to sys.__stderr__
+try:
+    import warnings
+except ImportError:
+    pass
+else:
+    def idle_showwarning(message, category, filename, lineno):
+        file = sys.__stderr__
+        file.write(warnings.formatwarning(message, category, filename, lineno))
+    warnings.showwarning = idle_showwarning
 
 # We need to patch linecache.checkcache, because we don't want it
 # to throw away our <pyshell#...> entries.
@@ -186,6 +204,99 @@ class ModifiedInterpreter(InteractiveInterpreter):
         InteractiveInterpreter.__init__(self, locals=locals)
         self.save_warnings_filters = None
 
+        global flist
+        self.output = OnDemandOutputWindow(flist)
+
+    rpcclt = None
+    rpcpid = None
+
+    def spawn_subprocess(self):
+        port = 8833
+        addr = ("localhost", port)
+        w = ['-W' + s for s in sys.warnoptions]
+        args = [sys.executable] + w + ["-c", "__import__('run').main()",
+                                       str(port)]
+        self.rpcpid = os.spawnv(os.P_NOWAIT, args[0], args)
+        for i in range(5):
+            time.sleep(i)
+            try:
+                self.rpcclt = rpc.RPCClient(addr)
+                break
+            except socket.error, err:
+                if i > 3:
+                    print >>sys.__stderr__, "Socket error:", err, "; retry..."
+        else:
+            # XXX Make this a dialog?
+            print >>sys.__stderr__, "Can't spawn subprocess!"
+            return
+        self.output.stdout=PseudoFile(self.output, "stdout")
+        self.output.stderr=PseudoFile(self.output, "stderr")
+        self.rpcclt.register("stdin", self.output)
+        self.rpcclt.register("stdout", self.output.stdout)
+        self.rpcclt.register("stderr", self.output.stderr)
+        self.rpcclt.register("flist", self.tkconsole.flist)
+        self.poll_subprocess()
+
+    active_seq = None
+
+    def poll_subprocess(self):
+        clt = self.rpcclt
+        if clt is None:
+            return
+        response = clt.pollresponse(self.active_seq)
+        self.tkconsole.text.after(50, self.poll_subprocess)
+        if response:
+            self.tkconsole.resetoutput()
+            self.active_seq = None
+            how, what = response
+            file = self.tkconsole.console
+            if how == "OK":
+                if what is not None:
+                    print >>file, `what`
+            elif how == "EXCEPTION":
+                mod, name, args, tb = what
+                print >>file, 'Traceback (most recent call last):'
+                while tb and tb[0][0] in ("run.py", "rpc.py"):
+                    del tb[0]
+                while tb and tb[-1][0] in ("run.py", "rpc.py"):
+                    del tb[-1]
+                for i in range(len(tb)):
+                    fn, ln, nm, line = tb[i]
+                    if not line and fn.startswith("<pyshell#"):
+                        line = linecache.getline(fn, ln)
+                        tb[i] = fn, ln, nm, line
+                traceback.print_list(tb, file=file)
+                if mod and mod != "exceptions":
+                    name = mod + "." + name
+                print >>file, name + ":", " ".join(map(str, args))
+                if self.tkconsole.getvar("<<toggle-jit-stack-viewer>>"):
+                    self.remote_stack_viewer()
+            elif how == "ERROR":
+                print >>sys.__stderr__, "Oops:", how, what
+                print >>file, "Oops:", how, what
+            self.tkconsole.endexecuting()
+
+    def kill_subprocess(self):
+        clt = self.rpcclt
+        self.rpcclt = None
+        if clt is not None:
+            clt.close()
+
+    def remote_stack_viewer(self):
+        import RemoteObjectBrowser
+        oid = self.rpcclt.remotecall("exec", "stackviewer", ("flist",), {})
+        if oid is None:
+            self.tkconsole.root.bell()
+            return
+        item = RemoteObjectBrowser.StubObjectTreeItem(self.rpcclt, oid)
+        from TreeWidget import ScrolledCanvas, TreeNode
+        top = Toplevel(self.tkconsole.root)
+        sc = ScrolledCanvas(top, bg="white", highlightthickness=0)
+        sc.frame.pack(expand=1, fill="both")
+        node = TreeNode(sc.canvas, None, item)
+        node.expand()
+        # XXX Should GC the remote tree when closing the window
+
     gid = 0
 
     def execsource(self, source):
@@ -264,10 +375,11 @@ class ModifiedInterpreter(InteractiveInterpreter):
 
     def showtraceback(self):
         # Extend base class method to reset output properly
-        text = self.tkconsole.text
         self.tkconsole.resetoutput()
         self.checklinecache()
         InteractiveInterpreter.showtraceback(self)
+        if self.tkconsole.getvar("<<toggle-jit-stack-viewer>>"):
+            self.tkconsole.open_stack_viewer()
 
     def checklinecache(self):
         c = linecache.cache
@@ -283,12 +395,43 @@ class ModifiedInterpreter(InteractiveInterpreter):
     def getdebugger(self):
         return self.debugger
 
+    def runcommand(self, code):
+        # This runs the code without invoking the debugger.
+        # The code better not raise an exception!
+        if self.tkconsole.executing:
+            tkMessageBox.showerror(
+                "Already executing",
+                "The Python Shell window is already executing a command; "
+                "please wait until it is finished.",
+                master=self.tkconsole.text)
+            return 0
+        if self.rpcclt:
+            self.rpcclt.remotecall("exec", "runcode", (code,), {})
+        else:
+            exec code in self.locals
+        return 1
+
     def runcode(self, code):
         # Override base class method
+        if self.tkconsole.executing:
+            tkMessageBox.showerror(
+                "Already executing",
+                "The Python Shell window is already executing a command; "
+                "please wait until it is finished.",
+                master=self.tkconsole.text)
+            return
+
+        self.checklinecache()
         if self.save_warnings_filters is not None:
             warnings.filters[:] = self.save_warnings_filters
             self.save_warnings_filters = None
         debugger = self.debugger
+        if not debugger and self.rpcclt is not None:
+            self.tkconsole.beginexecuting()
+            self.active_seq = self.rpcclt.asynccall("exec", "runcode",
+                                                    (code,), {})
+            return
+
         try:
             self.tkconsole.beginexecuting()
             try:
@@ -305,12 +448,8 @@ class ModifiedInterpreter(InteractiveInterpreter):
                     raise
                 else:
                     self.showtraceback()
-                    if self.tkconsole.getvar("<<toggle-jit-stack-viewer>>"):
-                        self.tkconsole.open_stack_viewer()
             except:
                 self.showtraceback()
-                if self.tkconsole.getvar("<<toggle-jit-stack-viewer>>"):
-                    self.tkconsole.open_stack_viewer()
 
         finally:
             self.tkconsole.endexecuting()
@@ -318,7 +457,6 @@ class ModifiedInterpreter(InteractiveInterpreter):
     def write(self, s):
         # Override base class write
         self.tkconsole.console.write(s)
-
 
 class PyShell(OutputWindow):
 
@@ -366,12 +504,18 @@ class PyShell(OutputWindow):
         self.save_stdout = sys.stdout
         self.save_stderr = sys.stderr
         self.save_stdin = sys.stdin
-        sys.stdout = PseudoFile(self, "stdout")
-        sys.stderr = PseudoFile(self, "stderr")
-        sys.stdin = self
+        self.stdout = PseudoFile(self, "stdout")
+        self.stderr = PseudoFile(self, "stderr")
         self.console = PseudoFile(self, "console")
+        if not use_subprocess:
+            sys.stdout = self.stdout
+            sys.stderr = self.stderr
+            sys.stdin = self
 
         self.history = self.History(self.text)
+
+        if use_subprocess:
+            self.interp.spawn_subprocess()
 
     reading = 0
     executing = 0
@@ -411,8 +555,18 @@ class PyShell(OutputWindow):
         self.set_debugger_indicator()
 
     def open_debugger(self):
+        if self.interp.rpcclt:
+            return self.open_remote_debugger()
         import Debugger
         self.interp.setdebugger(Debugger.Debugger(self))
+        sys.ps1 = "[DEBUG ON]\n>>> "
+        self.showprompt()
+        self.set_debugger_indicator()
+
+    def open_remote_debugger(self):
+        import RemoteDebugger
+        gui = RemoteDebugger.start_remote_debugger(self.interp.rpcclt, self)
+        self.interp.setdebugger(gui)
         sys.ps1 = "[DEBUG ON]\n>>> "
         self.showprompt()
         self.set_debugger_indicator()
@@ -430,6 +584,7 @@ class PyShell(OutputWindow):
         ##self._cancel_check = None
         self.executing = 0
         self.canceled = 0
+        self.showprompt()
 
     def close(self):
         # Extend base class method
@@ -449,6 +604,7 @@ class PyShell(OutputWindow):
 
     def _close(self):
         self.close_debugger()
+        self.interp.kill_subprocess()
         # Restore std streams
         sys.stdout = self.save_stdout
         sys.stderr = self.save_stderr
@@ -520,9 +676,18 @@ class PyShell(OutputWindow):
             self.showprompt()
             return "break"
         self.endoffile = 0
-        self.canceled = 1
         if self.reading:
+            self.canceled = 1
             self.top.quit()
+        elif (self.executing and self.interp.rpcclt and
+              self.interp.rpcpid and hasattr(os, "kill")):
+            try:
+                from signal import SIGINT
+            except ImportError:
+                SIGINT = 2
+            os.kill(self.interp.rpcpid, SIGINT)
+        else:
+            self.canceled = 1
         return "break"
 
     def eof_callback(self, event):
@@ -532,11 +697,6 @@ class PyShell(OutputWindow):
                 self.text.compare("insert", "==", "end-1c")):
             return # Let the default binding (delete next char) take over
         if not self.executing:
-##             if not tkMessageBox.askokcancel(
-##                 "Exit?",
-##                 "Are you sure you want to exit?",
-##                 default="ok", master=self.text):
-##                 return "break"
             self.resetoutput()
             self.close()
         else:
@@ -656,6 +816,8 @@ class PyShell(OutputWindow):
         return self._cancel_check
 
     def open_stack_viewer(self, event=None):
+        if self.interp.rpcclt:
+            return self.interp.remote_stack_viewer()
         try:
             sys.last_traceback
         except:
@@ -675,6 +837,7 @@ class PyShell(OutputWindow):
             s = ""
         self.console.write(s)
         self.text.mark_set("insert", "end-1c")
+        self.set_line_and_column()
 
     def resetoutput(self):
         source = self.text.get("iomark", "end-1c")
@@ -683,6 +846,7 @@ class PyShell(OutputWindow):
         if self.text.get("end-2c") != "\n":
             self.text.insert("end-1c", "\n")
         self.text.mark_set("iomark", "end-1c")
+        self.set_line_and_column()
         sys.stdout.softspace = 0
 
     def write(self, s, tags=()):
@@ -698,6 +862,7 @@ class PseudoFile:
     def __init__(self, shell, tags):
         self.shell = shell
         self.tags = tags
+        self.softspace = 0
 
     def write(self, s):
         self.shell.write(s, self.tags)
@@ -718,9 +883,10 @@ idle file(s)    (without options) edit the file(s)
 
 -c cmd     run the command in a shell
 -d         enable the debugger
+-e         edit mode; arguments are files to be edited
 -i         open an interactive shell
 -i file(s) open a shell and also an editor window for each file
--r script  run a file as a script in a shell
+-r script  use experimental remote (subprocess) execution feature 
 -s         run $IDLESTARTUP or $PYTHONSTARTUP before anything else
 -t title   set title of shell window
 
@@ -822,9 +988,10 @@ be a security risk on a single-user machine.
         interactive = 0
         script = None
         startup = 0
+        global use_subprocess
     
         try:
-            opts, args = getopt.getopt(argv, "c:dir:st:")
+            opts, args = getopt.getopt(sys.argv[1:], "c:deir:st:")
         except getopt.error, msg:
             sys.stderr.write("Error: %s\n" % str(msg))
             sys.stderr.write(usage_msg)
@@ -836,10 +1003,14 @@ be a security risk on a single-user machine.
                 cmd = a
             if o == '-d':
                 debug = 1
+            if o == '-e':
+                edit = 1
             if o == '-i':
                 interactive = 1
             if o == '-r':
+                edit = 1
                 script = a
+                use_subprocess = 1
             if o == '-s':
                 startup = 1
             if o == '-t':

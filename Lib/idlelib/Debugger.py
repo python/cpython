@@ -1,5 +1,6 @@
 import os
 import bdb
+import types
 import traceback
 from Tkinter import *
 from WindowList import ListedToplevel
@@ -7,20 +8,66 @@ from WindowList import ListedToplevel
 import StackViewer
 
 
-class Debugger(bdb.Bdb):
+class Idb(bdb.Bdb):
+
+    def __init__(self, gui):
+        self.gui = gui
+        bdb.Bdb.__init__(self)
+
+    def user_line(self, frame):
+        # get the currently executing function
+        co_filename = frame.f_code.co_filename
+        co_name = frame.f_code.co_name 
+        try:
+            func = frame.f_locals[co_name]
+            if getattr(func, "DebuggerStepThrough", 0):
+                print "XXXX DEBUGGER STEPPING THROUGH"
+                self.set_step()
+                return
+        except:
+            pass
+        if co_filename in ('rpc.py', '<string>'):
+            self.set_step()
+            return
+        if co_filename.endswith('threading.py'):
+            self.set_step()
+            return
+        message = self.__frame2message(frame)
+        self.gui.interaction(message, frame)
+
+    def user_exception(self, frame, info):
+        message = self.__frame2message(frame)
+        self.gui.interaction(message, frame, info)
+
+    def __frame2message(self, frame):
+        code = frame.f_code
+        filename = code.co_filename
+        lineno = frame.f_lineno
+        basename = os.path.basename(filename)
+        message = "%s:%s" % (basename, lineno)
+        if code.co_name != "?":
+            message = "%s: %s()" % (message, code.co_name)
+        return message
+
+
+class Debugger:
 
     interacting = 0
-
     vstack = vsource = vlocals = vglobals = None
 
-    def __init__(self, pyshell):
-        bdb.Bdb.__init__(self)
+    def __init__(self, pyshell, idb=None):
+        if idb is None:
+            idb = Idb(self)
         self.pyshell = pyshell
+        self.idb = idb
         self.make_gui()
 
-    def canonic(self, filename):
-        # Canonicalize filename -- called by Bdb
-        return os.path.normcase(os.path.abspath(filename))
+    def run(self, *args):
+        try:
+            self.interacting = 1
+            return self.idb.run(*args)
+        finally:
+            self.interacting = 0
 
     def close(self, event=None):
         if self.interacting:
@@ -30,24 +77,6 @@ class Debugger(bdb.Bdb):
             self.stackviewer.close(); self.stackviewer = None
         self.pyshell.close_debugger()
         self.top.destroy()
-
-    def run(self, *args):
-        try:
-            self.interacting = 1
-            return apply(bdb.Bdb.run, (self,) + args)
-        finally:
-            self.interacting = 0
-
-    def user_line(self, frame):
-        self.interaction(frame)
-
-    def user_return(self, frame, rv):
-        # XXX show rv?
-        ##self.interaction(frame)
-        pass
-
-    def user_exception(self, frame, info):
-        self.interaction(frame, info)
 
     def make_gui(self):
         pyshell = self.pyshell
@@ -128,16 +157,8 @@ class Debugger(bdb.Bdb):
 
     frame = None
 
-    def interaction(self, frame, info=None):
+    def interaction(self, message, frame, info=None):
         self.frame = frame
-        code = frame.f_code
-        file = code.co_filename
-        base = os.path.basename(file)
-        lineno = frame.f_lineno
-        #
-        message = "%s:%s" % (base, lineno)
-        if code.co_name != "?":
-            message = "%s: %s()" % (message, code.co_name)
         self.status.configure(text=message)
         #
         if info:
@@ -160,7 +181,7 @@ class Debugger(bdb.Bdb):
         #
         sv = self.stackviewer
         if sv:
-            stack, i = self.get_stack(self.frame, tb)
+            stack, i = self.idb.get_stack(self.frame, tb)
             sv.load_stack(stack, i)
         #
         self.show_variables(1)
@@ -184,32 +205,34 @@ class Debugger(bdb.Bdb):
         frame = self.frame
         if not frame:
             return
+        filename, lineno = self.__frame2fileline(frame)
+        if filename[:1] + filename[-1:] != "<>" and os.path.exists(filename):
+            self.flist.gotofileline(filename, lineno)
+
+    def __frame2fileline(self, frame):
         code = frame.f_code
-        file = code.co_filename
+        filename = code.co_filename
         lineno = frame.f_lineno
-        if file[:1] + file[-1:] != "<>" and os.path.exists(file):
-            edit = self.flist.open(file)
-            if edit:
-                edit.gotoline(lineno)
+        return filename, lineno
 
     def cont(self):
-        self.set_continue()
+        self.idb.set_continue()
         self.root.quit()
 
     def step(self):
-        self.set_step()
+        self.idb.set_step()
         self.root.quit()
 
     def next(self):
-        self.set_next(self.frame)
+        self.idb.set_next(self.frame)
         self.root.quit()
 
     def ret(self):
-        self.set_return(self.frame)
+        self.idb.set_return(self.frame)
         self.root.quit()
 
     def quit(self):
-        self.set_quit()
+        self.idb.set_quit()
         self.root.quit()
 
     stackviewer = None
@@ -219,7 +242,7 @@ class Debugger(bdb.Bdb):
             self.stackviewer = sv = StackViewer.StackViewer(
                 self.fstack, self.flist, self)
             if self.frame:
-                stack, i = self.get_stack(self.frame, None)
+                stack, i = self.idb.get_stack(self.frame, None)
                 sv.load_stack(stack, i)
         else:
             sv = self.stackviewer
@@ -233,6 +256,7 @@ class Debugger(bdb.Bdb):
             self.sync_source_line()
 
     def show_frame(self, (frame, lineno)):
+        # Called from OldStackViewer
         self.frame = frame
         self.show_variables()
 
@@ -295,15 +319,15 @@ class Debugger(bdb.Bdb):
         text.tag_add("BREAK", "insert linestart", "insert lineend +1char")
 
     # A literal copy of Bdb.set_break() without the print statement at the end
-    def set_break(self, filename, lineno, temporary=0, cond = None):
-        import linecache # Import as late as possible
-        filename = self.canonic(filename)
-        line = linecache.getline(filename, lineno)
-        if not line:
-            return 'That line does not exist!'
-        if not self.breaks.has_key(filename):
-            self.breaks[filename] = []
-        list = self.breaks[filename]
-        if not lineno in list:
-            list.append(lineno)
-        bp = bdb.Breakpoint(filename, lineno, temporary, cond)
+    #def set_break(self, filename, lineno, temporary=0, cond = None):
+    #    import linecache # Import as late as possible
+    #    filename = self.canonic(filename)
+    #    line = linecache.getline(filename, lineno)
+    #    if not line:
+    #        return 'That line does not exist!'
+    #    if not self.breaks.has_key(filename):
+    #        self.breaks[filename] = []
+    #    list = self.breaks[filename]
+    #    if not lineno in list:
+    #        list.append(lineno)
+    #    bp = bdb.Breakpoint(filename, lineno, temporary, cond)

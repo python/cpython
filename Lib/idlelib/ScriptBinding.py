@@ -14,6 +14,14 @@ namespace.  Output goes to the shell window.
 - Run module (Control-F5) does the same but executes the module's
 code in the __main__ namespace.
 
+XXX Redesign this interface (yet again) as follows:
+
+- Present a dialog box for ``Run script''
+
+- Allow specify command line arguments in the dialog box
+
+- Restart the interpreter when running a script
+
 """
 
 import sys
@@ -25,9 +33,9 @@ indent_message = """Error: Inconsistent indentation detected!
 
 This means that either:
 
-(1) your indentation is outright incorrect (easy to fix), or
+1) your indentation is outright incorrect (easy to fix), or
 
-(2) your indentation mixes tabs and spaces in a way that depends on \
+2) your indentation mixes tabs and spaces in a way that depends on \
 how many spaces a tab is worth.
 
 To fix case 2, change all tabs to spaces by using Select All followed \
@@ -105,28 +113,31 @@ class ScriptBinding:
         return 1
 
     def import_module_event(self, event):
+        flist = self.editwin.flist
+        shell = flist.open_shell()
+        interp = shell.interp
+
         filename = self.getfilename()
         if not filename:
             return
 
         modname, ext = os.path.splitext(os.path.basename(filename))
-        if sys.modules.has_key(modname):
-            mod = sys.modules[modname]
-        else:
-            mod = imp.new_module(modname)
-            sys.modules[modname] = mod
-        mod.__file__ = filename
-        setattr(sys.modules['__main__'], modname, mod)
 
         dir = os.path.dirname(filename)
         dir = os.path.normpath(os.path.abspath(dir))
-        if dir not in sys.path:
-            sys.path.insert(0, dir)
 
-        flist = self.editwin.flist
-        shell = flist.open_shell()
-        interp = shell.interp
-        interp.runcode("reload(%s)" % modname)
+        interp.runcode("""if 1:
+            import sys as _sys
+            if %s not in _sys.path:
+                _sys.path.insert(0, %s)
+            if _sys.modules.get(%s):
+                del _sys
+                import %s
+                reload(%s)
+            else:
+                del _sys
+                import %s
+                \n""" % (`dir`, `dir`, `modname`, modname, modname, modname))
 
     def run_script_event(self, event):
         filename = self.getfilename()
@@ -136,10 +147,16 @@ class ScriptBinding:
         flist = self.editwin.flist
         shell = flist.open_shell()
         interp = shell.interp
-        if (not sys.argv or
-            os.path.basename(sys.argv[0]) != os.path.basename(filename)):
-            # XXX Too often this discards arguments the user just set...
-            sys.argv = [filename]
+        # XXX Too often this discards arguments the user just set...
+        interp.runcommand("""if 1:
+            _filename = %s
+            import sys as _sys
+            from os.path import basename as _basename
+            if (not _sys.argv or
+                _basename(_sys.argv[0]) != _basename(_filename)):
+                _sys.argv = [_filename]
+            del _filename, _sys, _basename
+                \n""" % `filename`)
         interp.execfile(filename)
 
     def getfilename(self):
