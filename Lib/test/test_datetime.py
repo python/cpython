@@ -2086,7 +2086,7 @@ class TestDateTimeTZ(TestDateTime):
                 self.assertEqual(str(d), datestr + ' ' + tailstr)
 
 
-def suite():
+def test_suite():
     allsuites = [unittest.makeSuite(klass, 'test')
                  for klass in (TestModule,
                                TestTZInfo,
@@ -2105,7 +2105,7 @@ def test_main():
     import gc
     import sys
 
-    thesuite = suite()
+    thesuite = test_suite()
     lastrc = None
     while True:
         test_support.run_suite(thesuite)
