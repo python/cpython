@@ -22,7 +22,7 @@ Class Differ:
 """
 
 __all__ = ['get_close_matches', 'ndiff', 'restore', 'SequenceMatcher',
-           'Differ']
+           'Differ', 'IS_CHARACTER_JUNK', 'IS_LINE_JUNK']
 
 class SequenceMatcher:
 
