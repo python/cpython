@@ -1,4 +1,7 @@
-#!/depot/gnu/plat/bin/perl -i
+#! /usr/bin/env perl
+
+use English;
+$INPLACE_EDIT = '';
 
 # read the labels, then reverse the mappings
 require "labels.pl";
