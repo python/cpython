@@ -281,10 +281,13 @@ nameorgs = {
     "int": "international",
     # This isn't in the same class as those above, but is included here
     # because `uk' is the common practice country code for the United Kingdom.
-    # AFAICT, the official `gb' code is routinely ignored!  David Pick
-    # <D.M.Pick@qmw.ac.uk> tells me that `uk' was long in use before ISO3166,
-    # but in reverse order (e.g. uk.ac.qmc) and this was just carried over
-    # into the New World of the Internet.
+    # AFAICT, the official `gb' code is routinely ignored!
+    #
+    # <D.M.Pick@qmw.ac.uk> tells me that `uk' was long in use before ISO3166
+    # was adopted for top-level DNS zone names (although in the reverse order
+    # like uk.ac.qmw) and was carried forward (with the reversal) to avoid a
+    # large-scale renaming process as the UK switched from their old `Coloured
+    # Book' protocols over X.25 to Internet protocols over IP.
     #
     # See <url:http://www.ripe.net/docs/ripe-159.html#222123>
     "uk": "United Kingdom (common practice)",
