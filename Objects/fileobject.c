@@ -452,7 +452,11 @@ file_isatty(f, args)
 #define SMALLCHUNK BUFSIZ
 #endif
 
-#define BIGCHUNK (512*1024)
+#if SIZEOF_INT < 4
+#define BIGCHUNK  (512 * 32)
+#else
+#define BIGCHUNK  (512 * 1024)
+#endif
 
 static size_t
 new_buffersize(f, currentsize)
