@@ -147,7 +147,6 @@ class FAQServer:
 		    print "<H1>Section %s</H1>" % section
 		    print "<HR>"
 		self.show(name, title, text, 1)
-		n = n+1
 	if not section:
 	    print "No FAQ entries?!?!"
 
