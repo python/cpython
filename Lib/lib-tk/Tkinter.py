@@ -84,7 +84,7 @@ class Variable:
 	trace = trace_variable
 	def trace_vdelete(self, mode, cbname):
 		self._tk.call("trace", "vdelete", self._name, mode, cbname)
-		self._tk.deletecommand(cbname)
+		self._master.deletecommand(cbname)
 	def trace_vinfo(self):
 		return map(self._tk.split, self._tk.splitlist(
 			self._tk.call("trace", "vinfo", self._name)))
@@ -1134,6 +1134,7 @@ class Canvas(Widget):
 		return self.tk.getdouble(self.tk.call(
 			self._w, 'canvasy', screeny, gridspacing))
 	def coords(self, *args):
+		# XXX Should use _flatten on args
 		return map(self.tk.getdouble,
                            self.tk.splitlist(self._do('coords', args)))
 	def _create(self, itemType, args, kw): # Args: (val, val, ..., cnf={})
