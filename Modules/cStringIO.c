@@ -343,13 +343,14 @@ O_flush(Oobject *self, PyObject *args) {
 }
 
 
-static char O_writelines__doc__[] = "blah";
+static char O_writelines__doc__[] =
+"writelines(sequence_of_strings): write each string";
 static PyObject *
 O_writelines(Oobject *self, PyObject *args) {
   PyObject *string_module = 0;
   static PyObject *string_joinfields = 0;
 
-  UNLESS(PyArg_ParseTuple(args, "O", args)) {
+  UNLESS(PyArg_ParseTuple(args, "O", &args)) {
     return NULL;
   }
 
@@ -370,8 +371,19 @@ O_writelines(Oobject *self, PyObject *args) {
     return NULL;
   }
 
-  return O_write(self, 
-      PyObject_CallFunction(string_joinfields, "Os", args, ""));
+  {
+	  PyObject *x = PyObject_CallFunction(string_joinfields,
+					      "Os", args, "");
+	  if (x == NULL)
+		  return NULL;
+	  args = Py_BuildValue("(O)", x);
+	  Py_DECREF(x);
+	  if (args == NULL)
+		  return NULL;
+	  x = O_write(self, args);
+	  Py_DECREF(args);
+	  return x;
+  }
 }
 
 static struct PyMethodDef O_methods[] = {
