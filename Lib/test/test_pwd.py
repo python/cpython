@@ -62,7 +62,7 @@ else:
 # Choose a non-existant uid.
 fakeuid = 4127
 while byuids.has_key(fakeuid):
-    print 'fakeuid =', fakeuid
+    fakeuid = (fakeuid * 3) % 0x10000
 
 try:
     pwd.getpwuid(fakeuid)
