@@ -98,13 +98,13 @@ distribution, to create or maintain whole documents or sections.
 	three-character names:
 
 	\begin{tableii}{p{.75in}|p{3in}}{filenq}{Directory}{Document Title}
-	  \lineii{api/}{\emph{The Python/C API}}
-	  \lineii{doc/}{\emph{Documenting Python}}
-	  \lineii{ext/}{\emph{Extending and Embedding the Python Interpreter}}
-	  \lineii{lib/}{\emph{Python Library Reference}}
-	  \lineii{mac/}{\emph{Macintosh Module Reference}}
-	  \lineii{ref/}{\emph{Python Reference Manual}}
-	  \lineii{tut/}{\emph{Python Tutorial}}
+	  \lineii{api/}{\citetitle[../api/api.html]{The Python/C API}}
+	  \lineii{doc/}{\citetitle[../doc/doc.html]{Documenting Python}}
+	  \lineii{ext/}{\citetitle[../ext/ext.html]{Extending and Embedding the Python Interpreter}}
+	  \lineii{lib/}{\citetitle[../lib/lib.html]{Python Library Reference}}
+	  \lineii{mac/}{\citetitle[../mac/mac.html]{Macintosh Module Reference}}
+	  \lineii{ref/}{\citetitle[../ref/ref.html]{Python Reference Manual}}
+	  \lineii{tut/}{\citetitle[../tut/tut.html]{Python Tutorial}}
 	\end{tableii}
 
     \term{Format-Specific Output}
@@ -197,9 +197,10 @@ distribution, to create or maintain whole documents or sections.
   The \code{manual} documents are larger and are used for most of the
   standard documents.  This document class is based on the standard
   \LaTeX{} \code{report} class and is formatted very much like a long
-  technical report.  The \emph{Python Reference Manual} is a good
-  example of a \code{manual} document, and the \emph{Python Library
-  Reference} is a large example.
+  technical report.  The \citetitle[../ref/ref.html]{Python Reference
+  Manual} is a good example of a \code{manual} document, and the
+  \citetitle[../lib/lib.html]{Python Library Reference} is a large
+  example.
 
   The \code{howto} documents are shorter, and don't have the large
   structure of the \code{manual} documents.  This class is based on
@@ -211,7 +212,9 @@ distribution, to create or maintain whole documents or sections.
   more broad.  This class is used for ``how-to'' documents (this
   document is an example) and for shorter reference manuals for small,
   fairly cohesive module libraries.  Examples of the later use include
-  the standard \emph{Macintosh Library Modules} and \emph{Using
+  the standard \citetitle[../mac/mac.html]{Macintosh Library Modules}
+  and
+\citetitle[http://starship.python.org/crew/fdrake/manuals/krb5py/krb5py.html]{Using
   Kerberos from Python}, which contains reference material for an
   extension package.  These documents are roughly equivalent to a
   single chapter from a larger work.
@@ -596,9 +599,10 @@ distribution, to create or maintain whole documents or sections.
   \subsection{Library-level Markup}
 
     This markup is used when describing a selection of modules.  For
-    example, the \emph{Macintosh Library Modules} document uses this
-    to help provide an overview of the modules in the collection, and
-    many chapters in the \emph{Python Library Reference} use it for
+    example, the \citetitle[../mac/mac.html]{Macintosh Library
+    Modules} document uses this to help provide an overview of the
+    modules in the collection, and many chapters in the
+    \citetitle[../lib/lib.html]{Python Library Reference} use it for
     the same purpose.
 
   \begin{macrodesc}{localmoduletable}{}
