@@ -19,20 +19,23 @@ def constant(numchips):
 	numchips = numchips - 1
     return seq
 
-def constant_red_generator(numchips, rgbtuple):
-    red = rgbtuple[0]
+# red variations, green+blue = cyan constant
+def constant_cyan_generator(numchips, rgbtuple):
+    red, green, blue = rgbtuple
     seq = constant(numchips)
-    return map(None, [red] * numchips, seq, seq)
+    return map(None, seq, [green] * numchips, [blue] * numchips)
 
-def constant_green_generator(numchips, rgbtuple):
-    green = rgbtuple[1]
+# green variations, red+blue = magenta constant
+def constant_magenta_generator(numchips, rgbtuple):
+    red, green, blue = rgbtuple
     seq = constant(numchips)
-    return map(None, seq, [green] * numchips, seq)
+    return map(None, [red] * numchips, seq, [blue] * numchips)
 
-def constant_blue_generator(numchips, rgbtuple):
-    blue = rgbtuple[2]
+# blue variations, red+green = yellow constant
+def constant_yellow_generator(numchips, rgbtuple):
+    red, green, blue = rgbtuple
     seq = constant(numchips)
-    return map(None, seq, seq, [blue] * numchips)
+    return map(None, [red] * numchips, [green] * numchips, seq)
 
 
 
@@ -53,13 +56,16 @@ class PyncheWidget(Pmw.MegaWidget):
 	group = Pmw.Group(parent, tag_text='Color Selectors')
 	group.pack(side=TOP, expand=YES, fill=BOTH)
 	self.__reds = StripWidget(group.interior(),
-				  generator=constant_red_generator)
+				  generator=constant_cyan_generator,
+				  axis=0)
 	self.__reds.pack()
 	self.__blues = StripWidget(group.interior(),
-				   generator=constant_blue_generator)
+				   generator=constant_magenta_generator,
+				   axis=1)
 	self.__blues.pack()
 	self.__greens = StripWidget(group.interior(),
-				    generator=constant_green_generator)
+				    generator=constant_yellow_generator,
+				    axis=2)
 	self.__greens.pack()
 
 	# create chip window
