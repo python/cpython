@@ -8,33 +8,61 @@
 This module defines a number of classes that allow easy and uniform
 access to mail messages in a (\UNIX{}) mailbox.
 
-\begin{classdesc}{UnixMailbox}{fp}
-Access a classic \UNIX{}-style mailbox, where all messages are contained
-in a single file and separated by ``From name time'' lines.
-The file object \var{fp} points to the mailbox file.
+\begin{classdesc}{UnixMailbox}{fp\optional{, factory}}
+Access to a classic \UNIX{}-style mailbox, where all messages are
+contained in a single file and separate by ``From '' (a.k.a ``From_'')
+lines.  The file object \var{fp} points to the mailbox file.  Optional
+\var{factory} is a callable that should create new message objects.
+It is called with one argument, \var{fp} by the \method{next()}
+method.  The default is the \class{rfc822.Message} class (see the
+\refmodule{rfc822} module).
+
+For maximum portability, messages in a \UNIX{}-style mailbox are
+separated by any line that begins exactly with the letters \emph{F},
+\emph{r}, \emph{o}, \emph{m}, \emph{[space]} if preceded by exactly two
+newlines.  Because of the wide-range of variations in practice,
+nothing else on the From_ line should be considered.  However, the
+current implementation doesn't check for the leading two newlines.
+This is usually fine for most applications.
+
+The \class{UnixMailbox} class implements a more strict version of
+From_ line checking, using a regular expression that usually correctly
+matched From_ delimiters.  It considers delimiter line to be separated
+by ``From name time'' lines.  For maximum portability, use the
+\class{PortableUnixMailbox} class instead.  This
+class is completely identical to \class{UnixMailbox} except that
+individual messages are separated by only ``From '' lines.
+
+For more
+information see
+\url{http://home.netscape.com/eng/mozilla/2.0/relnotes/demo/content-length.html}.
 \end{classdesc}
 
-\begin{classdesc}{MmdfMailbox}{fp}
+\begin{classdesc}{MmdfMailbox}{fp\optional{, factory}}
 Access an MMDF-style mailbox, where all messages are contained
 in a single file and separated by lines consisting of 4 control-A
 characters.  The file object \var{fp} points to the mailbox file.
+Optional \var{factory} is as with the \class{UnixMailbox} class.
 \end{classdesc}
 
-\begin{classdesc}{MHMailbox}{dirname}
+\begin{classdesc}{MHMailbox}{dirname\optional{, factory}}
 Access an MH mailbox, a directory with each message in a separate
 file with a numeric name.
 The name of the mailbox directory is passed in \var{dirname}.
+\var{factory} is as with the \class{UnixMailbox} class.
 \end{classdesc}
 
-\begin{classdesc}{Maildir}{dirname}
+\begin{classdesc}{Maildir}{dirname\optional{, factory}}
 Access a Qmail mail directory.  All new and current mail for the
 mailbox specified by \var{dirname} is made available.
+\var{factory} is as with the \class{UnixMailbox} class.
 \end{classdesc}
 
-\begin{classdesc}{BabylMailbox}{fp}
+\begin{classdesc}{BabylMailbox}{fp\optional{, factory}}
 Access a Babyl mailbox, which is similar to an MMDF mailbox.  Mail
 messages start with a line containing only \code{'*** EOOH ***'} and
 end with a line containing only \code{'\e{}037\e{}014'}.
+\var{factory} is as with the \class{UnixMailbox} class.
 \end{classdesc}
 
 
@@ -44,7 +72,9 @@ All implementations of Mailbox objects have one externally visible
 method:
 
 \begin{methoddesc}[mailbox]{next}{}
-Return the next message in the mailbox, as a \class{rfc822.Message}
+Return the next message in the mailbox, created with the optional
+\var{factory} argument passed into the mailbox object's constructor.
+By defaul this is an \class{rfc822.Message}
 object (see the \refmodule{rfc822} module).  Depending on the mailbox
 implementation the \var{fp} attribute of this object may be a true
 file object or a class instance simulating a file object, taking care
