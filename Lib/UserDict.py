@@ -47,5 +47,7 @@ class UserDict:
         return self.data.popitem()
     def __contains__(self, key):
         return key in self.data
+
+class IterableUserDict(UserDict):
     def __iter__(self):
         return iter(self.data)
