@@ -202,10 +202,10 @@ class MissingSectionHeaderError(ParsingError):
 class RawConfigParser:
     def __init__(self, defaults=None):
         self._sections = {}
-        if defaults is None:
-            self._defaults = {}
-        else:
-            self._defaults = defaults
+        self._defaults = {}
+        if defaults:
+            for key, value in defaults.items():
+                self._defaults[self.optionxform(key)] = value
 
     def defaults(self):
         return self._defaults
@@ -511,8 +511,9 @@ class ConfigParser(RawConfigParser):
             if section != DEFAULTSECT:
                 raise NoSectionError(section)
         # Update with the entry specific variables
-        if vars is not None:
-            d.update(vars)
+        if vars:
+            for key, value in vars.items():
+                d[self.optionxform(key)] = value
         option = self.optionxform(option)
         try:
             value = d[option]
@@ -544,7 +545,8 @@ class ConfigParser(RawConfigParser):
                 raise NoSectionError(section)
         # Update with the entry specific variables
         if vars:
-            d.update(vars)
+            for key, value in vars.items():
+                d[self.optionxform(key)] = value
         options = d.keys()
         if "__name__" in options:
             options.remove("__name__")

@@ -94,6 +94,11 @@ Library
 
 - httplib now handles ipv6 address/port pairs.
 
+- SF bug #1017864: ConfigParser now correctly handles default keys,
+  processing them with ``ConfigParser.optionxform`` when supplied,
+  consistent with the handling of config file entries and runtime-set
+  options.
+
 Build
 -----
 
