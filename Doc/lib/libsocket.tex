@@ -284,7 +284,8 @@ checked --- subsequent operations on the object may fail if the file
 descriptor is invalid.  This function is rarely needed, but can be
 used to get or set socket options on a socket passed to a program as
 standard input or output (such as a server started by the \UNIX{} inet
-daemon).
+daemon).  The socket is assumed to be created in blocking mode without
+a timeout.
 Availability: \UNIX.
 \end{funcdesc}
 
@@ -515,29 +516,35 @@ block until they can proceed.
 \end{methoddesc}
 
 \begin{methoddesc}[socket]{settimeout}{value}
-Set a timeout on blocking socket operations. Value can be any numeric
-value or \code{None}. Socket operations will raise an
-\exception{error} exception if the timeout period \var{value} has
-elapsed before the operation has completed. Setting a timeout of
-\code{None} disables timeouts on socket operations.
+Set a timeout on blocking socket operations. Value can be a
+nonnegative float expressing seconds, or \code{None}.  If a float is
+give, subsequent socket operations will raise an \exception{error}
+exception if the timeout period \var{value} has elapsed before the
+operation has completed.  Setting a timeout of \code{None} disables
+timeouts on socket operations.
 \versionadded{2.3}
 \end{methoddesc}
 
 \begin{methoddesc}[socket]{gettimeout}{}
 Returns the timeout in floating seconds associated with socket
-operations.  A timeout of \code{None} indicates that timeouts on
-socket operations are disabled.
+operations, or \code{None} if no timeout is set.
 \versionadded{2.3}
 \end{methoddesc}
 
-Some notes on the interaction between socket blocking and timeouts:
-socket blocking mode takes precedence over timeouts. If a socket is
-set to non-blocking mode, then timeouts are not used.
-The timeout value associated with the socket can still be set using
-\method{settimeout()} and its value retrieved using
-\method{gettimeout()}, but the timeout is never enforced (an exception
-will never be thrown).  Otherwise, if the socket is in blocking mode,
-setting the timeout will raise an exception as expected.
+Some notes on the interaction between socket blocking and timeouts: A
+socket object can be in one of three modes: blocking, non-blocking, or
+timout.  Sockets are always created in blocking mode.  In blocking
+mode, operations block until complete.  In non-blocking mode,
+operations fail (with an error that is unfortunately system-dependent)
+if they cannot be completed immediately.  In timeout mode, operations
+fail if they cannot be completed within the timeout specified for the
+socket.
+
+Calling \method{settimeout()} cancels non-blocking mode as set by
+\method{setblocking()}; calling \method{setblocking()} cancels a
+previously set timeout.  Setting the timeout to zero acts similarly
+but is implemented different than setting the socket in non-blocking
+mode (this could be considered a bug and may even be fixed).
 
 \begin{methoddesc}[socket]{setsockopt}{level, optname, value}
 Set the value of the given socket option (see the \UNIX{} manual page
