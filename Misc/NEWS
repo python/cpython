@@ -59,7 +59,7 @@ with '__'.
 - New version of Fred Drake's parser module and associates (token,
 symbol, AST).
 
-- New PYTHON_API_VERSION value.
+- New PYTHON_API_VERSION value, as well as .pyc file magic number.
 
 - The "complex" internal structure type is now called "Py_complex" to
 avoid name conflicts.
