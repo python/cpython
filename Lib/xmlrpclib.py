@@ -343,7 +343,7 @@ class DateTime:
 
     def __init__(self, value=0):
         if not isinstance(value, StringType):
-            if not isinstance(value, TupleType):
+            if not isinstance(value, (TupleType, time.struct_time)):
                 if value == 0:
                     value = time.time()
                 value = time.localtime(value)
