@@ -261,6 +261,7 @@ LIBFILES= $(MANSTYLES) $(INDEXSTYLES) $(COMMONTEX) \
 	lib/libcalendar.tex \
 	lib/libpopen2.tex \
 	lib/libbisect.tex \
+	lib/libheapq.tex \
 	lib/libmimetypes.tex \
 	lib/libsmtplib.tex \
 	lib/libcmd.tex \
