@@ -588,9 +588,11 @@ class Transformer:
             if nodelist[i-1][0] == token.LEFTSHIFT:
                 node = LeftShift([node, right])
                 node.lineno = nodelist[1][2]
-            else:
+            elif nodelist[i-1][0] == token.RIGHTSHIFT:
                 node = RightShift([node, right])
                 node.lineno = nodelist[1][2]
+            else:
+                raise ValueError, "unexpected token: %s" % nodelist[i-1][0]
         return node
 
     def arith_expr(self, nodelist):
@@ -600,9 +602,11 @@ class Transformer:
             if nodelist[i-1][0] == token.PLUS:
                 node = Add([node, right])
                 node.lineno = nodelist[1][2]
-            else:
+            elif nodelist[i-1][0] == token.MINUS:
                 node = Sub([node, right])
                 node.lineno = nodelist[1][2]
+            else:
+                raise ValueError, "unexpected token: %s" % nodelist[i-1][0]
         return node
 
     def term(self, nodelist):
@@ -614,8 +618,12 @@ class Transformer:
                 node = Mul([node, right])
             elif t == token.SLASH:
                 node = Div([node, right])
-            else:
+            elif t == token.PERCENT:
                 node = Mod([node, right])
+            elif t == token.DOUBLESLASH:
+                node = FloorDiv([node, right])
+            else:
+                raise ValueError, "unexpected token: %s" % t
             node.lineno = nodelist[1][2]
         return node
 
@@ -750,10 +758,13 @@ class Transformer:
 
                 if i < len(nodelist):
                     # should be DOUBLESTAR or STAR STAR
-                    if nodelist[i][0] == token.DOUBLESTAR:
+                    t = nodelist[i][0]
+                    if t == token.DOUBLESTAR:
                         node = nodelist[i+1]
-                    else:
+                    elif t == token.STARSTAR:
                         node = nodelist[i+2]
+                    else:
+                        raise ValueError, "unexpected token: %s" % t
                     names.append(node[1])
                     flags = flags | CO_VARKEYWORDS
 
