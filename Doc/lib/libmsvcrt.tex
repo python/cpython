@@ -20,9 +20,33 @@ API documentation.
 \subsection{File Operations \label{msvcrt-files}}
 
 \begin{funcdesc}{locking}{fd, mode, nbytes}
-  Lock part of a file based on a file descriptor from the C runtime.
-  Raises \exception{IOError} on failure.
+  Lock part of a file based on file descriptor \var{fd} from the C
+  runtime.  Raises \exception{IOError} on failure.  The locked region
+  of the file extends from the current file position for \var{nbytes}
+  bytes, and may continue beyond the end of the file.  \var{mode} must
+  be one of the \constant{LK_\var{*}} constants listed below.
+  Multiple regions in a file may be locked at the same time, but may
+  not overlap.  Adjacent regions are not merged; they must be unlocked
+  individually.
 \end{funcdesc}
+
+\begin{datadesc}{LK_LOCK}
+\dataline{LK_RLCK}
+  Locks the specified bytes. If the bytes cannot be locked, the
+  program immediately tries again after 1 second.  If, after 10
+  attempts, the bytes cannot be locked, \exception{IOError} is
+  raised.
+\end{datadesc}
+
+\begin{datadesc}{LK_NBLCK}
+\dataline{LK_NBRLCK}
+  Locks the specified bytes. If the bytes cannot be locked,
+  \exception{IOError} is raised.
+\end{datadesc}
+
+\begin{datadesc}{LK_UNLCK}
+  Unlocks the specified bytes, which must have been previously locked. 
+\end{datadesc}
 
 \begin{funcdesc}{setmode}{fd, flags}
   Set the line-end translation mode for the file descriptor \var{fd}.
