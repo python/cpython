@@ -32,8 +32,8 @@ def test():
     f = open(fname1, 'r')
     finish = f.readline()
 
-    if start <> finish:
-        print 'Error: binhex <> hexbin'
+    if start != finish:
+        print 'Error: binhex != hexbin'
     elif verbose:
         print 'binhex == hexbin'
 

@@ -110,11 +110,11 @@ for i in range(-10, 11):
                 o = pow(i,j) % k
                 n = pow(i,j,k)
                 if o != n: print 'Integer mismatch:', i,j,k
-            if j >= 0 and k <> 0:
+            if j >= 0 and k != 0:
                 o = pow(long(i),j) % k
                 n = pow(long(i),j,k)
                 if o != n: print 'Long mismatch:', i,j,k
-            if i >= 0 and k <> 0:
+            if i >= 0 and k != 0:
                 o = pow(float(i),j) % k
                 n = pow(float(i),j,k)
                 if o != n: print 'Float mismatch:', i,j,k

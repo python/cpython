@@ -33,10 +33,10 @@ im = new.instancemethod(break_yolks, c, C)
 if verbose:
     print im
 
-if c.get_yolks() <> 3 and c.get_more_yolks() <> 6:
+if c.get_yolks() != 3 and c.get_more_yolks() != 6:
     print 'Broken call of hand-crafted class instance'
 im()
-if c.get_yolks() <> 1 and c.get_more_yolks() <> 4:
+if c.get_yolks() != 1 and c.get_more_yolks() != 4:
     print 'Broken call of hand-crafted instance method'
 
 codestr = '''
@@ -53,7 +53,7 @@ func = new.function(ccode, g)
 if verbose:
     print func
 func()
-if g['c'] <> 3:
+if g['c'] != 3:
     print 'Could not create a proper function object'
 
 # bogus test of new.code()

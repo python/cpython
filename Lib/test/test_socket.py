@@ -137,7 +137,7 @@ try:
             msg = 'socket test'
             s.send(msg)
             data = s.recv(1024)
-            if msg <> data:
+            if msg != data:
                 print 'parent/client mismatch'
             s.close()
         finally:

@@ -25,7 +25,7 @@ def pack(outfp, file, name):
 	while 1:
 		line = fp.readline()
 		if not line: break
-		if line[-1:] <> '\n':
+		if line[-1:] != '\n':
 			line = line + '\n'
 		outfp.write('X' + line)
 	outfp.write('!\n')

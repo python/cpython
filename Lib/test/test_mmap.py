@@ -46,7 +46,7 @@ def test_both():
 
     # Test doing a regular expression match in an mmap'ed file
     match=re.search('[A-Za-z]+', m)
-    if match == None:
+    if match is None:
         print '  ERROR: regex match on mmap failed!'
     else:
         start, end = match.span(0)

@@ -73,7 +73,7 @@ def showline(filename, lineno, line, prog):
 		else:
 			prefix = ' ' * len(prefix)
 			for c in line:
-				if c <> '\t': c = ' '
+				if c != '\t': c = ' '
 				prefix = prefix + c
 		if start == end: prefix = prefix + '\\'
 		else: prefix = prefix + '^'*(end-start)

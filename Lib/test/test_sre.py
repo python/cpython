@@ -47,12 +47,12 @@ if verbose:
     print 'Running tests on character literals'
 
 for i in [0, 8, 16, 32, 64, 127, 128, 255]:
-    test(r"""sre.match(r"\%03o" % i, chr(i)) != None""", 1)
-    test(r"""sre.match(r"\%03o0" % i, chr(i)+"0") != None""", 1)
-    test(r"""sre.match(r"\%03o8" % i, chr(i)+"8") != None""", 1)
-    test(r"""sre.match(r"\x%02x" % i, chr(i)) != None""", 1)
-    test(r"""sre.match(r"\x%02x0" % i, chr(i)+"0") != None""", 1)
-    test(r"""sre.match(r"\x%02xz" % i, chr(i)+"z") != None""", 1)
+    test(r"""sre.match(r"\%03o" % i, chr(i)) is not None""", 1)
+    test(r"""sre.match(r"\%03o0" % i, chr(i)+"0") is not None""", 1)
+    test(r"""sre.match(r"\%03o8" % i, chr(i)+"8") is not None""", 1)
+    test(r"""sre.match(r"\x%02x" % i, chr(i)) is not None""", 1)
+    test(r"""sre.match(r"\x%02x0" % i, chr(i)+"0") is not None""", 1)
+    test(r"""sre.match(r"\x%02xz" % i, chr(i)+"z") is not None""", 1)
 test(r"""sre.match("\911", "")""", None, sre.error)
 
 #
@@ -197,11 +197,11 @@ if verbose:
 p = ""
 for i in range(0, 256):
     p = p + chr(i)
-    test(r"""sre.match(sre.escape(chr(i)), chr(i)) != None""", 1)
+    test(r"""sre.match(sre.escape(chr(i)), chr(i)) is not None""", 1)
     test(r"""sre.match(sre.escape(chr(i)), chr(i)).span()""", (0,1))
 
 pat = sre.compile(sre.escape(p))
-test(r"""pat.match(p) != None""", 1)
+test(r"""pat.match(p) is not None""", 1)
 test(r"""pat.match(p).span()""", (0,256))
 
 if verbose:

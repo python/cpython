@@ -77,7 +77,7 @@ class Cdplayer:
 			line = old.readline()
 			if line == '':
 				break
-			if line[:l] <> s:
+			if line[:l] != s:
 				new.write(line)
 		new.write(self.id + '.title:\t' + self.title + '\n')
 		new.write(self.id + '.artist:\t' + self.artist + '\n')

@@ -68,20 +68,20 @@ class SavingBackEnd(NullBackEnd):
 		for i in range(len(self.paralist)):
 			p = self.paralist[i]
 			result = p.whereis(d, h, v)
-			if result <> None:
+			if result is not None:
 				return i, result
 		return None
 	#
 	def roundtowords(self, long1, long2):
 		i, offset = long1
 		text = self.paralist[i].extract()
-		while offset > 0 and text[offset-1] <> ' ': offset = offset-1
+		while offset > 0 and text[offset-1] != ' ': offset = offset-1
 		long1 = i, offset
 		#
 		i, offset = long2
 		text = self.paralist[i].extract()
 		n = len(text)
-		while offset < n-1 and text[offset] <> ' ': offset = offset+1
+		while offset < n-1 and text[offset] != ' ': offset = offset+1
 		long2 = i, offset
 		#
 		return long1, long2
@@ -159,7 +159,7 @@ class BaseFormatter:
 		return Para.Para()
 	#
 	def setfont(self, font):
-		if font == None: return
+		if font is None: return
 		self.font = self.nextfont = font
 		d = self.d
 		d.setfont(font)
@@ -193,7 +193,7 @@ class BaseFormatter:
 		if self.para:
 			self.b.addpara(self.para)
 			self.para = None
-			if self.font <> None:
+			if self.font is not None:
 				self.d.setfont(self.font)
 		self.nospace = 1
 	#
@@ -338,8 +338,8 @@ def finalize(para):
 	para.words.append(('r', '', 0, 0, 0, 0)) # temporary, deleted at end
 	for i in range(len(para.words)):
 		fo, te, wi = para.words[i][:3]
-		if fo <> None: curfont = fo
-		if curfont <> oldfont:
+		if fo is not None: curfont = fo
+		if curfont != oldfont:
 			if closechar.has_key(oldfont):
 				c = closechar[oldfont]
 				j = i-1
@@ -430,7 +430,7 @@ class StdwinBackEnd(SavingBackEnd):
 			pos1 = long1[:3]
 			pos2 = long2[:3]
 			new = pos1, pos2
-		if new <> self.selection:
+		if new != self.selection:
 			d = self.window.begindrawing()
 			if self.selection:
 				self.invert(d, self.selection)
@@ -462,7 +462,7 @@ class StdwinBackEnd(SavingBackEnd):
 	#
 	def search(self, prog):
 		import re, string
-		if type(prog) == type(''):
+		if type(prog) is type(''):
 			prog = re.compile(string.lower(prog))
 		if self.selection:
 			iold = self.selection[0][0]
@@ -551,7 +551,7 @@ class GLFontCache:
 				self.fontcache[fontkey] = \
 					self.fontcache[key] = handle
 		self.fontkey = fontkey
-		if self.fonthandle <> handle:
+		if self.fonthandle != handle:
 			self.fonthandle = handle
 			self.fontinfo = handle.getfontinfo()
 			handle.setfont()
@@ -582,7 +582,7 @@ class GLWriter(GLFontCache):
 	def setfont(self, fontkey):
 		oldhandle = self.fonthandle
 		GLFontCache.setfont(fontkey)
-		if self.fonthandle <> oldhandle:
+		if self.fonthandle != oldhandle:
 			handle.setfont()
 
 
@@ -612,7 +612,7 @@ class GLBackEnd(SavingBackEnd):
 		import gl
 		gl.winset(self.wid)
 		width = gl.getsize()[1]
-		if width <> self.width:
+		if width != self.width:
 			setdocsize = 1
 			self.width = width
 			for p in self.paralist:

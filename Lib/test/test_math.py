@@ -85,7 +85,7 @@ testit('fmod(-10,1.5)', math.fmod(-10,1.5), -1)
 
 print 'frexp'
 def testfrexp(name, (mant, exp), (emant, eexp)):
-    if abs(mant-emant) > eps or exp <> eexp:
+    if abs(mant-emant) > eps or exp != eexp:
         raise TestFailed, '%s returned %s, expected %s'%\
               (name, `mant, exp`, `emant,eexp`)
 

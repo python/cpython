@@ -28,7 +28,7 @@ class Para:
 	# Each word should be a 7-tuple:
 	# (font, text, width, space, stretch, ascent, descent)
 	def addword(self, d, font, text, space, stretch):
-		if font <> None:
+		if font is not None:
 			d.setfont(font)
 		width = d.textwidth(text)
 		ascent = d.baseline()
@@ -50,7 +50,7 @@ class Para:
 	def getlength(self):
 		total = 0
 		for word in self.words:
-			if type(word) <> Int:
+			if type(word) is not Int:
 				total = total + word[2] + word[3]
 		return total
 	#
@@ -63,7 +63,7 @@ class Para:
 		as, de = 1, 0
 		for i in range(len(self.words)):
 			word = self.words[i]
-			if type(word) == Int: continue
+			if type(word) is Int: continue
 			(fo, te, wi, sp, st, as, de) = word
 			self.words[i] = (fo, te, wi, sp, 0, as, de)
 			total = total + wi + sp
@@ -99,7 +99,7 @@ class Para:
 			j = i
 			while i < n:
 				word = words[i]
-				if type(word) == Int:
+				if type(word) is Int:
 					if word > 0 and width >= avail:
 						break
 					i = i+1
@@ -107,7 +107,7 @@ class Para:
 				fo, te, wi, sp, st, as, de = word
 				if width + wi > avail and width > 0 and wi > 0:
 					break
-				if fo <> None:
+				if fo is not None:
 					lastfont = fo
 					if width == 0:
 						firstfont = fo
@@ -119,7 +119,7 @@ class Para:
 				ascent = max(ascent, as)
 				descent = max(descent, de)
 				i = i+1
-			while i > j and type(words[i-1]) == Int and \
+			while i > j and type(words[i-1]) is Int and \
 				words[i-1] > 0: i = i-1
 			width = width - lsp
 			if i < n:
@@ -152,10 +152,10 @@ class Para:
 			v2 = v + ascent + descent
 			for j in range(i, i+wordcount):
 				word = self.words[j]
-				if type(word) == Int:
+				if type(word) is Int:
 					ok = anchorfunc(self, tuple, word, \
 							h, v)
-					if ok <> None: return ok
+					if ok is not None: return ok
 					continue
 				fo, te, wi, sp, st, as, de = word
 				if extra > 0 and stretch > 0:
@@ -167,7 +167,7 @@ class Para:
 				h2 = h + wi + sp + ex
 				ok = wordfunc(self, tuple, word, h, v, \
 					h2, v2, (j==i), (j==i+wordcount-1))
-				if ok <> None: return ok
+				if ok is not None: return ok
 				h = h2
 			v = v2
 			i = i + wordcount
@@ -177,7 +177,7 @@ class Para:
 	# given by (left, top, right) with an unspecified bottom.
 	# Return the computed bottom of the text.
 	def render(self, d, left, top, right):
-		if self.width <> right-left:
+		if self.width != right-left:
 			self.layout(right-left)
 		self.left = left
 		self.top = top
@@ -193,7 +193,7 @@ class Para:
 		return self.bottom
 	#
 	def _renderword(self, tuple, word, h, v, h2, v2, isfirst, islast):
-		if word[0] <> None: self.d.setfont(word[0])
+		if word[0] is not None: self.d.setfont(word[0])
 		baseline = v + tuple[5]
 		self.d.text((h, baseline - word[5]), word[1])
 		if self.anchorid > 0:
@@ -229,7 +229,7 @@ class Para:
 	def extract(self):
 		text = ''
 		for w in self.words:
-			if type(w) <> Int:
+			if type(w) is not Int:
 				word = w[1]
 				if w[3]: word = word + ' '
 				text = text + word
@@ -254,14 +254,14 @@ class Para:
 	#
 	def _whereisword(self, tuple, word, h1, v1, h2, v2, isfirst, islast):
 		fo, te, wi, sp, st, as, de = word
-		if fo <> None: self.lastfont = fo
+		if fo is not None: self.lastfont = fo
 		h = h1
 		if isfirst: h1 = 0
 		if islast: h2 = 999999
 		if not (v1 <= self.mousev <= v2 and h1 <= self.mouseh <= h2):
 			self.charcount = self.charcount + len(te) + (sp > 0)
 			return
-		if self.lastfont <> None:
+		if self.lastfont is not None:
 			self.d.setfont(self.lastfont)
 		cc = 0
 		for c in te:
@@ -295,7 +295,7 @@ class Para:
 					self.__class__._screenposanchor)
 		finally:
 			self.d = None
-		if ok == None:
+		if ok is None:
 			ascent, descent = self.lines[-1][5:7]
 			ok = self.right, self.bottom - ascent - descent, \
 				self.bottom - descent, self.bottom
@@ -303,7 +303,7 @@ class Para:
 	#
 	def _screenposword(self, tuple, word, h1, v1, h2, v2, isfirst, islast):
 		fo, te, wi, sp, st, as, de = word
-		if fo <> None: self.lastfont = fo
+		if fo is not None: self.lastfont = fo
 		cc = len(te) + (sp > 0)
 		if self.pos > cc:
 			self.pos = self.pos - cc
@@ -324,11 +324,11 @@ class Para:
 	# if pos2 is None, the end is implied.
 	# Undoes its own effect when called again with the same arguments
 	def invert(self, d, pos1, pos2):
-		if pos1 == None:
+		if pos1 is None:
 			pos1 = self.left, self.top, self.top, self.top
 		else:
 			pos1 = self.screenpos(d, pos1)
-		if pos2 == None:
+		if pos2 is None:
 			pos2 = self.right, self.bottom,self.bottom,self.bottom
 		else:
 			pos2 = self.screenpos(d, pos2)

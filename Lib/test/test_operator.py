@@ -9,7 +9,7 @@ def test(name, input, output, *args):
         val = apply(f, params)
     except:
         val = sys.exc_type
-    if val <> output:
+    if val != output:
         print '%s%s = %s: %s expected' % (f.__name__, params, `val`, `output`)
 
 test('abs', -1, 1)
@@ -21,12 +21,12 @@ test('countOf', [1, 2, 1, 3, 1, 4], 1, 3)
 
 a = [4, 3, 2, 1]
 test('delitem', a, None, 1)
-if a <> [4, 2, 1]:
+if a != [4, 2, 1]:
     print 'delitem() failed'
 
 a = range(10)
 test('delslice', a, None, 2, 8)
-if a <> [0, 1, 8, 9]:
+if a != [0, 1, 8, 9]:
     print 'delslice() failed'
 
 a = range(10)
@@ -59,12 +59,12 @@ test('sequenceIncludes', range(4), 1, 2)
 test('sequenceIncludes', range(4), 0, 5)
 
 test('setitem', a, None, 0, 2)
-if a <> [2, 1, 2]:
+if a != [2, 1, 2]:
     print 'setitem() failed'
 
 a = range(4)
 test('setslice', a, None, 1, 3, [2, 1])
-if a <> [0, 2, 1, 3]:
+if a != [0, 2, 1, 3]:
     print 'setslice() failed:', a
 
 test('sub', 5, 2, 3)

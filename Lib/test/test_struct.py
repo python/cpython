@@ -15,14 +15,14 @@ def simple_err(func, *args):
 simple_err(struct.calcsize, 'Q')
 
 sz = struct.calcsize('i')
-if sz * 3 <> struct.calcsize('iii'):
+if sz * 3 != struct.calcsize('iii'):
     raise TestFailed, 'inconsistent sizes'
 
 fmt = 'cbxxxxxxhhhhiillffd'
 fmt3 = '3c3b18x12h6i6l6f3d'
 sz = struct.calcsize(fmt)
 sz3 = struct.calcsize(fmt3)
-if sz * 3 <> sz3:
+if sz * 3 != sz3:
     raise TestFailed, 'inconsistent sizes (3*%s -> 3*%d = %d, %s -> %d)' % (
         `fmt`, sz, 3*sz, `fmt3`, sz3)
 
@@ -49,8 +49,8 @@ for prefix in ('', '@', '<', '>', '=', '!'):
             print "trying:", format
         s = struct.pack(format, c, b, h, i, l, f, d)
         cp, bp, hp, ip, lp, fp, dp = struct.unpack(format, s)
-        if (cp <> c or bp <> b or hp <> h or ip <> i or lp <> l or
-            int(100 * fp) <> int(100 * f) or int(100 * dp) <> int(100 * d)):
+        if (cp != c or bp != b or hp != h or ip != i or lp != l or
+            int(100 * fp) != int(100 * f) or int(100 * dp) != int(100 * d)):
             # ^^^ calculate only to two decimal places
             raise TestFailed, "unpack/pack not transitive (%s, %s)" % (
                 str(format), str((cp, bp, hp, ip, lp, fp, dp)))

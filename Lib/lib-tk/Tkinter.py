@@ -339,7 +339,7 @@ class Misc:
         """Wait until a WIDGET is destroyed.
 
         If no parameter is given self is used."""
-        if window == None:
+        if window is None:
             window = self
         self.tk.call('tkwait', 'window', window._w)
     def wait_visibility(self, window=None):
@@ -347,7 +347,7 @@ class Misc:
         (e.g. it appears).
 
         If no parameter is given self is used."""
-        if window == None:
+        if window is None:
             window = self
         self.tk.call('tkwait', 'visibility', window._w)
     def setvar(self, name='PY_VAR', value='1'):

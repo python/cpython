@@ -19,7 +19,7 @@ for i in range(10):
     try: pass
     finally: pass
     n = n+i
-if n <> 90:
+if n != 90:
     raise TestFailed, 'try inside for'
 
 

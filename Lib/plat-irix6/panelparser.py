@@ -71,7 +71,7 @@ syntax_error = 'syntax error'
 # May raise syntax_error.
 #
 def parse_expr(tokens):
-	if (not tokens) or tokens[0] <> '(':
+	if (not tokens) or tokens[0] != '(':
 		raise syntax_error, 'expected "("'
 	tokens = tokens[1:]
 	expr = []

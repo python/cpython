@@ -59,7 +59,7 @@ def decompress(jpegdata):
 	return imgdata, width, height, bytesperpixel
 
 def setoption(name, value):
-	if type(value) <> type(0):
+	if type(value) is not type(0):
 		raise TypeError, 'jpeg.setoption: numeric options only'
 	if name == 'forcegrey':
 		name = 'forcegray'

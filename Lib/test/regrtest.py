@@ -283,7 +283,7 @@ class Compare:
 
     def write(self, data):
         expected = self.fp.read(len(data))
-        if data <> expected:
+        if data != expected:
             raise test_support.TestFailed, \
                     'Writing: '+`data`+', expected: '+`expected`
 
