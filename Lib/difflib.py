@@ -104,7 +104,7 @@ __init__(isjunk=None, a='', b='')
     Optional arg isjunk is None (the default), or a one-argument function
     that takes a sequence element and returns true iff the element is junk.
     None is equivalent to passing "lambda x: 0", i.e. no elements are
-    considered to be junk.  For examples, pass
+    considered to be junk.  For example, pass
         lambda x: x in " \\t"
     if you're comparing lines as sequences of characters, and don't want to
     synch up on blanks or hard tabs.
@@ -289,7 +289,7 @@ class SequenceMatcher:
         Optional arg isjunk is None (the default), or a one-argument
         function that takes a sequence element and returns true iff the
         element is junk. None is equivalent to passing "lambda x: 0", i.e.
-        no elements are considered to be junk.  For examples, pass
+        no elements are considered to be junk.  For example, pass
             lambda x: x in " \\t"
         if you're comparing lines as sequences of characters, and don't
         want to synch up on blanks or hard tabs.
@@ -299,7 +299,7 @@ class SequenceMatcher:
         also .set_seqs() and .set_seq1().
 
         Optional arg b is the second of two sequences to be compared.  By
-        default, an empty string.  The elements of a must be hashable. See
+        default, an empty string.  The elements of b must be hashable. See
         also .set_seqs() and .set_seq2().
         """
 
@@ -752,9 +752,9 @@ def get_close_matches(word, possibilities, n=3, cutoff=0.6):
     """
 
     if not n >  0:
-        raise ValueError("n must be > 0: %s" % `n`)
+        raise ValueError("n must be > 0: " + `n`)
     if not 0.0 <= cutoff <= 1.0:
-        raise ValueError("cutoff must be in [0.0, 1.0]: %s" % `cutoff`)
+        raise ValueError("cutoff must be in [0.0, 1.0]: " + `cutoff`)
     result = []
     s = SequenceMatcher()
     s.set_seq2(word)
