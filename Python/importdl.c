@@ -181,6 +181,12 @@ typedef void (*dl_funcptr)();
 #include <sys/ldr.h>
 typedef void (*dl_funcptr)();
 #define _DL_FUNCPTR_DEFINED
+#ifdef AIX_GENUINE_CPLUSPLUS
+#include "/usr/lpp/xlC/include/load.h"
+#define aix_load loadAndInit
+#else
+#define aix_load load
+#endif
 static int  aix_getoldmodules(void **);
 static int  aix_bindnewmodule(void *, void *);
 static void aix_loaderror(char *);
@@ -473,7 +479,7 @@ _PyImport_LoadDynamicModule(name, pathname, fp)
 		if (!staticmodlistptr)
 			if (aix_getoldmodules(&staticmodlistptr) == -1)
 				return NULL;
-		p = (dl_funcptr) load(pathname, L_NOAUTODEFER, 0);
+		p = (dl_funcptr) aix_load(pathname, L_NOAUTODEFER, 0);
 		if (p == NULL) {
 			aix_loaderror(pathname);
 			return NULL;
