@@ -3250,9 +3250,7 @@ Return true if the file descriptor 'fd' is an open file descriptor\n\
 connected to a terminal.";
 
 static PyObject *
-posix_isatty(self, args)
-	PyObject *self;
-	PyObject *args;
+posix_isatty(PyObject *self, PyObject *args)
 {
 	int fd;
 	if (!PyArg_ParseTuple(args, "i:isatty", &fd))
