@@ -7,6 +7,7 @@
 
 static char visible_length_key[] = "n_sequence_fields";
 static char real_length_key[] = "n_fields";
+static char unnamed_fields_key[] = "n_unnamed_fields";
 
 /* Fields with this name have only a field index, not a field name. 
    They are only allowed for indices < n_visible_fields. */
@@ -19,6 +20,10 @@ char *PyStructSequence_UnnamedField = "unnamed field";
 #define REAL_SIZE_TP(tp) PyInt_AsLong( \
                       PyDict_GetItemString((tp)->tp_dict, real_length_key))
 #define REAL_SIZE(op) REAL_SIZE_TP((op)->ob_type)
+
+#define UNNAMED_FIELDS_TP(tp) PyInt_AsLong( \
+                      PyDict_GetItemString((tp)->tp_dict, unnamed_fields_key))
+#define UNNAMED_FIELDS(op) UNNAMED_FIELDS_TP((op)->ob_type)
 
 
 PyObject *
@@ -91,7 +96,7 @@ structseq_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	PyObject *dict = NULL;
 	PyObject *ob;
 	PyStructSequence *res = NULL;
-	int len, min_len, max_len, i;
+	int len, min_len, max_len, i, n_unnamed_fields;
 	static char *kwlist[] = {"sequence", "dict", 0};
 
 	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|O:structseq", 
@@ -115,6 +120,7 @@ structseq_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	len = PySequence_Fast_GET_SIZE(arg);
 	min_len = VISIBLE_SIZE_TP(type);
 	max_len = REAL_SIZE_TP(type);
+	n_unnamed_fields = UNNAMED_FIELDS_TP(type);
 
 	if (min_len != max_len) {
 		if (len < min_len) {
@@ -151,7 +157,7 @@ structseq_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	}
 	for (; i < max_len; ++i) {
 		if (dict && (ob = PyDict_GetItemString(
-			dict, type->tp_members[i].name))) {
+			dict, type->tp_members[i-n_unnamed_fields].name))) {
 		}
 		else {
 			ob = Py_None;
@@ -238,11 +244,12 @@ structseq_reduce(PyStructSequence* self)
 	PyObject* tup;
 	PyObject* dict;
 	PyObject* result;
-	long n_fields, n_visible_fields;
+	long n_fields, n_visible_fields, n_unnamed_fields;
 	int i;
 	
 	n_fields = REAL_SIZE(self);
 	n_visible_fields = VISIBLE_SIZE(self);
+	n_unnamed_fields = UNNAMED_FIELDS(self);
 	tup = PyTuple_New(n_visible_fields);
 	if (!tup) {
 		return NULL;
@@ -260,7 +267,8 @@ structseq_reduce(PyStructSequence* self)
 	}
 	
 	for (; i < n_fields; i++) {
-		PyDict_SetItemString(dict, self->ob_type->tp_members[i].name,
+		char *n = self->ob_type->tp_members[i-n_unnamed_fields].name;
+		PyDict_SetItemString(dict, n,
 				     self->ob_item[i]);
 	}
 
@@ -340,7 +348,7 @@ PyStructSequence_InitType(PyTypeObject *type, PyStructSequence_Desc *desc)
 
 	n_unnamed_members = 0;
 	for (i = 0; desc->fields[i].name != NULL; ++i)
-		if (desc->fields[0].name == PyStructSequence_UnnamedField)
+		if (desc->fields[i].name == PyStructSequence_UnnamedField)
 			n_unnamed_members++;
 	n_members = i;
 
@@ -377,6 +385,8 @@ PyStructSequence_InitType(PyTypeObject *type, PyStructSequence_Desc *desc)
 		       PyInt_FromLong((long) desc->n_in_sequence));
 	PyDict_SetItemString(dict, real_length_key, 
 		       PyInt_FromLong((long) n_members));
+	PyDict_SetItemString(dict, unnamed_fields_key, 
+		       PyInt_FromLong((long) n_unnamed_members));
 	PyDict_SetItemString(dict, "__safe_for_unpickling__", 
 		       PyInt_FromLong(1));
 }
