@@ -1,6 +1,6 @@
 Document Type: WSE
 item: Global
-  Version=8.12
+  Version=8.14
   Title=Python 2.2 alpha 1
   Flags=00010100
   Languages=65 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
@@ -1846,6 +1846,9 @@ item: If/While Statement
   Value=A
   Flags=00001010
 end
+item: Remark
+  Text=Registering file extensions requires Admin privs.
+end
 item: If/While Statement
   Variable=COMPONENTS
   Value=E
@@ -2063,9 +2066,6 @@ item: Remark
   Text=Ack, and "Win2K" isn't enough either -- you can't actually do this without Admin privs too.
 end
 item: Check Configuration
-  Flags=11110010
-end
-item: Check Configuration
   Flags=10111111
 end
 item: Edit Registry
@@ -2089,7 +2089,46 @@ item: Edit Registry
     Root=2
   end
 end
-item: End Block
+item: Else Statement
+end
+item: Remark
+  Text=Same thing, except write to HKCU instead.
+end
+item: Remark
+  Text=Damn -- this "edit keys" cmd was created by the Installation Expert view, and I duplicated and
+end
+item: Remark
+  Text=edited it by hand.  The info comes from the "Windows 2000" section of the Properties view,
+end
+item: Remark
+  Text=and if you change it there it will only show up in the "if" block above.
+end
+item: Remark
+  Text=Easiest to make corresponding changes in *this* block by editing this script in
+end
+item: Remark
+  Text=a plain text editor.
+end
+item: Edit Registry
+  Total Keys=3
+  item: Key
+    Key=Software\Microsoft\Windows\CurrentVersion\Uninstall\%APPTITLE%
+    New Value=http://www.python.org/
+    Value Name=HelpLink
+    Root=1
+  end
+  item: Key
+    Key=Software\Microsoft\Windows\CurrentVersion\Uninstall\%APPTITLE%
+    New Value=PythonLabs at Zope Corporation
+    Value Name=Publisher
+    Root=1
+  end
+  item: Key
+    Key=Software\Microsoft\Windows\CurrentVersion\Uninstall\%APPTITLE%
+    New Value=http://www.python.org/
+    Value Name=URLInfoAbout
+    Root=1
+  end
 end
 item: End Block
 end
