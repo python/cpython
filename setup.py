@@ -157,7 +157,9 @@ class PyBuildExt(build_ext):
         # Workaround for Mac OS X: The Carbon-based modules cannot be
         # reliably imported into a command-line Python
         if 'Carbon' in ext.extra_link_args:
-        	self.announce('WARNING: skipping import check for Carbon-based "%s"' % ext.name)
+        	self.announce(
+                    'WARNING: skipping import check for Carbon-based "%s"' %
+                    ext.name)
         	return
         try:
             __import__(ext.name)
@@ -265,8 +267,8 @@ class PyBuildExt(build_ext):
         exts.append( Extension('select', ['selectmodule.c']) )
 
         # The md5 module implements the RSA Data Security, Inc. MD5
-        # Message-Digest Algorithm, described in RFC 1321.  The necessary files
-        # md5c.c and md5.h are included here.
+        # Message-Digest Algorithm, described in RFC 1321.  The
+        # necessary files md5c.c and md5.h are included here.
         exts.append( Extension('md5', ['md5module.c', 'md5c.c']) )
 
         # The sha module implements the SHA checksum algorithm.
@@ -461,8 +463,10 @@ class PyBuildExt(build_ext):
             curses_libs = ['ncurses']
             exts.append( Extension('_curses', ['_cursesmodule.c'],
                                    libraries = curses_libs) )
-        elif (self.compiler.find_library_file(lib_dirs, 'curses')) and platform != 'darwin':
-        	# OSX has an old Berkeley curses, not good enough for the _curses module.
+        elif (self.compiler.find_library_file(lib_dirs, 'curses')
+              and platform != 'darwin'):
+        	# OSX has an old Berkeley curses, not good enough for
+        	# the _curses module.
             if (self.compiler.find_library_file(lib_dirs, 'terminfo')):
                 curses_libs = ['curses', 'terminfo']
             else:
@@ -488,8 +492,9 @@ class PyBuildExt(build_ext):
             exts.append( Extension('fpectl', ['fpectlmodule.c'],
                                    libraries=['fpe']) )
         elif 0: # XXX how to detect SunPro?
-            # For Solaris with SunPro compiler (tested on Solaris 2.5 with SunPro C 4.2):
-            # (Without the compiler you don't have -lsunmath.)
+            # For Solaris with SunPro compiler (tested on Solaris 2.5
+            # with SunPro C 4.2): (Without the compiler you don't have
+            # -lsunmath.)
             #fpectl fpectlmodule.c -R/opt/SUNWspro/lib -lsunmath -lm
             pass
         else:
@@ -577,7 +582,9 @@ class PyBuildExt(build_ext):
             		extra_link_args=['-framework', 'Carbon']) )
             exts.append( Extension('icglue', ['icgluemodule.c'],
             		extra_link_args=['-framework', 'Carbon']) )
-            exts.append( Extension('macfs', ['macfsmodule.c', '../Python/getapplbycreator.c'],
+            exts.append( Extension('macfs',
+                                   ['macfsmodule.c',
+                                    '../Python/getapplbycreator.c'],
             		extra_link_args=['-framework', 'Carbon']) )
             exts.append( Extension('_CF', ['cf/_CFmodule.c']) )
             exts.append( Extension('_Res', ['res/_Resmodule.c']) )
@@ -615,7 +622,8 @@ class PyBuildExt(build_ext):
                 exts.append( Extension('_Qdoffs', ['qdoffs/_Qdoffsmodule.c'],
             		extra_link_args=['-framework', 'Carbon']) )
                 exts.append( Extension('_Qt', ['qt/_Qtmodule.c'],
-                        extra_link_args=['-framework', 'QuickTime', '-framework', 'Carbon']) )
+                        extra_link_args=['-framework', 'QuickTime',
+                                         '-framework', 'Carbon']) )
 ##              exts.append( Extension('_Scrap', ['scrap/_Scrapmodule.c']) )
                 exts.append( Extension('_TE', ['te/_TEmodule.c'],
             		extra_link_args=['-framework', 'Carbon']) )
@@ -651,7 +659,8 @@ class PyBuildExt(build_ext):
             # Check for the include files on Debian, where
             # they're put in /usr/include/{tcl,tk}X.Y
             debian_tcl_include = [ '/usr/include/tcl' + version ]
-            debian_tk_include =  [ '/usr/include/tk'  + version ] + debian_tcl_include
+            debian_tk_include =  [ '/usr/include/tk'  + version ] + \
+                                 debian_tcl_include
             tcl_includes = find_file('tcl.h', inc_dirs, debian_tcl_include)
             tk_includes = find_file('tk.h', inc_dirs, debian_tk_include)
 
@@ -691,7 +700,8 @@ class PyBuildExt(build_ext):
                 return
 
         # Check for BLT extension
-        if self.compiler.find_library_file(lib_dirs + added_lib_dirs, 'BLT8.0'):
+        if self.compiler.find_library_file(lib_dirs + added_lib_dirs,
+                                           'BLT8.0'):
             defs.append( ('WITH_BLT', 1) )
             libs.append('BLT8.0')
 
