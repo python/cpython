@@ -55,8 +55,8 @@ typedef struct _typeobject {
 
     /* Attribute descriptor and subclassing stuff */
     struct PyMethodDef *tp_methods;
-    struct memberlist *tp_members;
-    struct getsetlist *tp_getset;
+    struct PyMemberDef *tp_members;
+    struct PyGetSetDef *tp_getset;
     struct _typeobject *tp_base;
     PyObject *tp_dict;
     descrgetfunc tp_descr_get;
