@@ -5,9 +5,6 @@
 # Copyright (C) 2002 Python Software Foundation.
 # Written by Greg Ward <gward@python.net>
 
-# XXX currently this module does not work very well with Unicode
-# strings.  See http://www.python.org/sf/622831 for updates.
-
 __revision__ = "$Id$"
 
 import string, re
