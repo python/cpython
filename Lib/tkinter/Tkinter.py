@@ -668,7 +668,7 @@ class Pack:
 		for i in range(0, len(words), 2):
 			key = words[i][1:]
 			value = words[i+1]
-			if value[0] == '.':
+			if value[:1] == '.':
 				value = self._nametowidget(value)
 			dict[key] = value
 		return dict
@@ -745,7 +745,7 @@ class Grid:
 		for i in range(0, len(words), 2):
 			key = words[i][1:]
 			value = words[i+1]
-			if value[0] == '.':
+			if value[:1] == '.':
 				value = self._nametowidget(value)
 			dict[key] = value
 		return dict
