@@ -299,7 +299,7 @@ default value is substituted.  If a parameter has a default value, all
 following parameters must also have a default value --- this is a
 syntactic restriction that is not expressed by the grammar.%
 \footnote{Currently this is not checked; instead,
-\verb@def f(a=1,b)@ is interpreted as \verb@def f(a=1,b=None)@.}
+{\tt def f(a=1,b)} is interpreted as {\tt def f(a=1,b=None)}.}
 \indexiii{default}{parameter}{value}
 
 Function call semantics are described in section \ref{calls}.  When a

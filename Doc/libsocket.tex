@@ -79,7 +79,16 @@ is an IP address itself it is returned unchanged.
 Return a string containing the hostname of the machine where 
 the Python interpreter is currently executing.  If you want to know the
 current machine's IP address, use
-\code{socket.gethostbyname( socket.gethostname() )} instead.
+\code{socket.gethostbyname(socket.gethostname())} instead.
+\end{funcdesc}
+
+\begin{funcdesc}{gethostbyaddr}{ip_address}
+Return a triple \code{(hostname, aliaslist, ipaddrlist)} where
+\code{hostname} is the primary host name responding to the given
+\var{ip_address}, \code{aliaslist} is a (possibly empty) list of
+alternative host names for the same address, and \code{ipaddrlist} is
+a list of IP addresses for the same interface on the same
+host (most likely containing only a single address).
 \end{funcdesc}
 
 \begin{funcdesc}{getservbyname}{servicename\, protocolname}

@@ -470,7 +470,7 @@ A file object represents an open file.  (It is a wrapper around a C
 \verb@open()@ built-in function, and also by \verb@posix.popen()@ and
 the \verb@makefile@ method of socket objects.  \verb@sys.stdin@,
 \verb@sys.stdout@ and \verb@sys.stderr@ are file objects corresponding
-the the interpreter's standard input, output and error streams.
+to the interpreter's standard input, output and error streams.
 See the Python Library Reference for methods of file objects and other
 details.
 \obindex{file}
@@ -498,7 +498,7 @@ but they are mentioned here for completeness.
 Code objects represent executable code.  The difference between a code
 object and a function object is that the function object contains an
 explicit reference to the function's context (the module in which it
-was defined) which a code object contains no context.  There is no way
+was defined) while a code object contains no context.  There is no way
 to execute a bare code object.
 \obindex{code}
 
@@ -622,8 +622,12 @@ former decrements the reference count for \code{x} by one, but
 \code{x,__del__} is only called when its reference count reaches zero.
 
 \item[\tt __repr__(self)]
-Called by the \verb@repr()@ built-in function and by conversions
-(reverse quotes) to compute the string representation of an object.
+Called by the \verb@repr()@ built-in function and by string conversions
+(reverse or backward quotes) to compute the string representation of an object.
+\indexii{string}{conversion}
+\indexii{reverse}{quotes}
+\indexii{backward}{quotes}
+\index{back-quotes}
 
 \item[\tt __str__(self)]
 Called by the \verb@str()@ built-in function and by the \verb@print@
