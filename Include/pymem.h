@@ -111,13 +111,18 @@ extern DL_IMPORT(void) PyMem_Free(void *);
 /* Macros */
 #define PyMem_NEW(type, n) \
 	( (type *) PyMem_MALLOC(_PyMem_EXTRA + (n) * sizeof(type)) )
-#define PyMem_RESIZE(p, type, n) \
-	if ((p) == NULL) \
-		(p) = (type *)(PyMem_MALLOC( \
-				    _PyMem_EXTRA + (n) * sizeof(type))); \
-	else \
-		(p) = (type *)(PyMem_REALLOC((p), \
-				    _PyMem_EXTRA + (n) * sizeof(type)))
+
+/* See comment near MALLOC_ZERO_RETURNS_NULL in pyport.h. */
+#define PyMem_RESIZE(p, type, n)			\
+	do {						\
+		size_t _sum = (n) * sizeof(type);	\
+		if (!_sum)				\
+			_sum = 1;			\
+		(p) = (type *)((p) ?			\
+			       PyMem_REALLOC(p, _sum) :	\
+			       PyMem_MALLOC(_sum));	\
+	} while (0)
+
 #define PyMem_DEL(p) PyMem_FREE(p)
 
 /* PyMem_XDEL is deprecated. To avoid the call when p is NULL,
