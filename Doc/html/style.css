@@ -37,9 +37,10 @@ var			{ font-family: serif;
                           font-style: italic;
                           font-weight: normal }
 
-.navigation .title	{ font-family: avantgarde, sans-serif;
+.navigation td		{ background-color: #99ccff;
+                          font-weight: bold;
+                          font-family: avantgarde, sans-serif;
 			  font-size: 110% }
-.navigation td		{ background-color: #99ccff; }
 
 .titlegraphic		{ vertical-align: top; }
 
