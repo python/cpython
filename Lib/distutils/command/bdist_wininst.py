@@ -28,6 +28,8 @@ class bdist_wininst (Command):
                     ('target-version=', 'v',
                      "require a specific python version" +
                      " on the target system (1.5 or 1.6/2.0)"),
+                    ('dist-dir=', 'd',
+                     "directory to put final built distributions in"),
                    ]
 
     def initialize_options (self):
@@ -36,6 +38,7 @@ class bdist_wininst (Command):
         self.target_compile = 0
         self.target_optimize = 0
         self.target_version = None
+        self.dist_dir = None
 
     # initialize_options()
 
@@ -56,6 +59,8 @@ class bdist_wininst (Command):
                 raise DistutilsOptionError ("target version can only be" +
                                             short_version)
             self.target_version = short_version
+
+        self.set_undefined_options('bdist', ('dist_dir', 'dist_dir'))
 
     # finalize_options()
 
@@ -92,7 +97,10 @@ class bdist_wininst (Command):
 
         # And make an archive relative to the root of the
         # pseudo-installation tree.
-        archive_basename = "%s.win32" % self.distribution.get_fullname()
+        fullname = self.distribution.get_fullname()
+        archive_basename = os.path.join(self.bdist_dir,
+                                        "%s.win32" % fullname)
+
         # XXX hack! Our archive MUST be relative to sys.prefix
         # XXX What about .install_data, .install_scripts, ...?
         # [Perhaps require that all installation dirs be under sys.prefix
@@ -103,7 +111,7 @@ class bdist_wininst (Command):
         root_dir = install.install_lib
         arcname = self.make_archive (archive_basename, "zip",
                                      root_dir=root_dir)
-        self.create_exe (arcname)
+        self.create_exe (arcname, fullname)
 
         if not self.keep_tree:
             remove_tree (self.bdist_dir, self.verbose, self.dry_run)
@@ -156,7 +164,7 @@ class bdist_wininst (Command):
 
     # create_inifile()
 
-    def create_exe (self, arcname):
+    def create_exe (self, arcname, fullname):
         import struct, zlib
 
         cfgdata = open (self.create_inifile()).read()
@@ -165,7 +173,8 @@ class bdist_wininst (Command):
         co = zlib.compressobj (zlib.Z_DEFAULT_COMPRESSION, comp_method, -15)
         zcfgdata = co.compress (cfgdata) + co.flush()
 
-        installer_name = "%s.win32.exe" % self.distribution.get_fullname()
+        installer_name = os.path.join(self.dist_dir,
+                                      "%s.win32.exe" % fullname)
         self.announce ("creating %s" % installer_name)
 
         file = open (installer_name, "wb")
