@@ -34,3 +34,4 @@ CVS
 Makefile*
 Setup.in
 [(]*[)]
+*~[0-9]
