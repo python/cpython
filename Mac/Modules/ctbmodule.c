@@ -32,6 +32,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include <CommResources.h>
 #include <Connections.h>
+#include <CTBUtilities.h>
 #include <ToolUtils.h>
 #include <OSUtils.h>
 
