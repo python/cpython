@@ -262,28 +262,28 @@ fcntl_lockf(PyObject *self, PyObject *args)
 }
 
 static char lockf_doc [] =
-"lockf (fd, operation, length=0, start=0, whence=0)
-
-This is essentially a wrapper around the fcntl() locking calls.  fd is the
-file descriptor of the file to lock or unlock, and operation is one of the
-following values:
-
-    LOCK_UN - unlock
-    LOCK_SH - acquire a shared lock
-    LOCK_EX - acquire an exclusive lock
-
-When operation is LOCK_SH or LOCK_EX, it can also be bit-wise OR'd with
-LOCK_NB to avoid blocking on lock acquisition.  If LOCK_NB is used and the
-lock cannot be acquired, an IOError will be raised and the exception will
-have an errno attribute set to EACCES or EAGAIN (depending on the operating
-system -- for portability, check for either value).
-
-length is the number of bytes to lock, with the default meaning to lock to
-EOF.  start is the byte offset, relative to whence, to that the lock
-starts.  whence is as with fileobj.seek(), specifically:
-
-    0 - relative to the start of the file (SEEK_SET)
-    1 - relative to the current buffer position (SEEK_CUR)
+"lockf (fd, operation, length=0, start=0, whence=0)\n\
+\n\
+This is essentially a wrapper around the fcntl() locking calls.  fd is the\n\
+file descriptor of the file to lock or unlock, and operation is one of the\n\
+following values:\n\
+\n\
+    LOCK_UN - unlock\n\
+    LOCK_SH - acquire a shared lock\n\
+    LOCK_EX - acquire an exclusive lock\n\
+\n\
+When operation is LOCK_SH or LOCK_EX, it can also be bit-wise OR'd with\n\
+LOCK_NB to avoid blocking on lock acquisition.  If LOCK_NB is used and the\n\
+lock cannot be acquired, an IOError will be raised and the exception will\n\
+have an errno attribute set to EACCES or EAGAIN (depending on the operating\n\
+system -- for portability, check for either value).\n\
+\n\
+length is the number of bytes to lock, with the default meaning to lock to\n\
+EOF.  start is the byte offset, relative to whence, to that the lock\n\
+starts.  whence is as with fileobj.seek(), specifically:\n\
+\n\
+    0 - relative to the start of the file (SEEK_SET)\n\
+    1 - relative to the current buffer position (SEEK_CUR)\n\
     2 - relative to the end of the file (SEEK_END)";
 
 /* List of functions */
