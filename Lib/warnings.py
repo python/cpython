@@ -1,6 +1,10 @@
 """Python part of the warnings subsystem."""
 
+# Note: function level imports should *not* be used
+# in this module as it may cause import lock deadlock.
+# See bug 683658.
 import sys, re, types
+import linecache
 
 __all__ = ["warn", "showwarning", "formatwarning", "filterwarnings",
            "resetwarnings"]
@@ -114,7 +118,6 @@ def showwarning(message, category, filename, lineno, file=None):
 
 def formatwarning(message, category, filename, lineno):
     """Function to format a warning the standard way."""
-    import linecache
     s =  "%s:%s: %s: %s\n" % (filename, lineno, category.__name__, message)
     line = linecache.getline(filename, lineno).strip()
     if line:

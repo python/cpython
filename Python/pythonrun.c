@@ -60,6 +60,11 @@ int Py_IgnoreEnvironmentFlag; /* e.g. PYTHONPATH, PYTHONHOME */
   true divisions (which they will be in 2.3). */
 int _Py_QnewFlag = 0;
 
+/* Reference to 'warnings' module, to avoid importing it
+   on the fly when the import lock may be held.  See 683658
+*/
+PyObject *PyModule_WarningsModule = NULL;
+
 static int initialized = 0;
 
 /* API to access the initialized flag -- useful for esoteric use */
@@ -169,6 +174,8 @@ Py_Initialize(void)
 
 	_PyImportHooks_Init();
 
+	PyModule_WarningsModule = PyImport_ImportModule("warnings");
+
 	initsigs(); /* Signal handling stuff, including initintr() */
 
 	initmain(); /* Module __main__ */
@@ -224,6 +231,10 @@ Py_Finalize(void)
 
 	/* Cleanup Codec registry */
 	_PyCodecRegistry_Fini();
+
+	/* drop module references we saved */
+	Py_XDECREF(PyModule_WarningsModule);
+	PyModule_WarningsModule = NULL;
 
 	/* Destroy all modules */
 	PyImport_Cleanup();
