@@ -57,6 +57,14 @@ be added to the end of the the argument list.
   \code{None} will printed).
 \end{funcdesc}
 
+\begin{funcdesc}{complex}{real\optional{, imag}}
+  Create a complex number with the value \var{real} + \var{imag}*j.
+  Each argument may be any numeric type (including complex).
+  If \var{imag} is omitted, it defaults to zero and the function
+  serves as a numeric conversion function like \code{int}, \code{long}
+  and \code{float}.
+\end{funcdesc}
+
 \begin{funcdesc}{delattr}{object\, name}
   This is a relative of \code{setattr}.  The arguments are an
   object and a string.  The string must be the name
@@ -153,8 +161,14 @@ removed.
 \end{funcdesc}
 
 \begin{funcdesc}{float}{x}
-  Convert a number to floating point.  The argument may be a plain or
-  long integer or a floating point number.
+  Convert a string or a number to floating point.  If the argument is a
+  string, it must contain a possibly singed decimal or floating point
+  number, possibly embedded in whitespace;
+  this behaves identical to \code{string.atof(\var{x})}.
+  Otherwise, the argument may be a plain or
+  long integer or a floating point number, and a floating point number
+  with the same value (within Python's floating point precision) is
+  returned.
 \end{funcdesc}
 
 \begin{funcdesc}{getattr}{object\, name}
@@ -226,7 +240,11 @@ module from which it is called).
 \end{funcdesc}
 
 \begin{funcdesc}{int}{x}
-  Convert a number to a plain integer.  The argument may be a plain or
+  Convert a string or number to a plain integer.  If the argument is a
+  string, it must contain a possibly singed decimal number
+  representable as a Python integer, possibly embedded in whitespace;
+  this behaves identical to \code{string.atoi(\var{x})}.
+  Otherwise, the argument may be a plain or
   long integer or a floating point number.  Conversion of floating
   point numbers to integers is defined by the C semantics; normally
   the conversion truncates towards zero.\footnote{This is ugly --- the
@@ -245,8 +263,15 @@ desired effect.
 \end{funcdesc}
 
 \begin{funcdesc}{long}{x}
-  Convert a number to a long integer.  The argument may be a plain or
-  long integer or a floating point number.
+  Convert a string or number to a long integer.  If the argument is a
+  string, it must contain a possibly singed decimal number of
+  arbitrary size, possibly embedded in whitespace;
+  this behaves identical to \code{string.atol(\var{x})}.
+  Otherwise, the argument may be a plain or
+  long integer or a floating point number, and a long interger with
+  the same value is returned.    Conversion of floating
+  point numbers to integers is defined by the C semantics;
+  see the description of \code{int()}.
 \end{funcdesc}
 
 \begin{funcdesc}{map}{function\, list\, ...}
