@@ -1192,7 +1192,10 @@ Files have the following methods:
 \end{methoddesc}
 
 \begin{methoddesc}[file]{xreadlines}{}
-  Equivalent to \function{xreadlines.xreadlines(file)}.\refstmodindex{xreadlines}
+  Equivalent to
+  \function{xreadlines.xreadlines(\var{file})}.\refstmodindex{xreadlines}
+  (See the \refmodule{xreadlines} module for more information.)
+  \versionadded{2.1}
 \end{methoddesc}
 
 \begin{methoddesc}[file]{seek}{offset\optional{, whence}}
@@ -1231,12 +1234,6 @@ Files have the following methods:
   Write a list of strings to the file.  There is no return value.
   (The name is intended to match \method{readlines()};
   \method{writelines()} does not add line separators.)
-\end{methoddesc}
-
-\begin{methoddesc}[file]{xreadlines}{}
-  Equivalent to
-  \function{xreadlines.xreadlines(\var{file})}.\refstmodindex{xreadlines}
-  (See the \refmodule{xreadlines} module for more information.)
 \end{methoddesc}
 
 
