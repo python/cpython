@@ -2,7 +2,7 @@
 
 # Sanity checker for time.strftime
 
-import time, calendar, sys, string, os
+import time, calendar, sys, string, os, re
 from test_support import verbose
 
 def main():
@@ -54,7 +54,7 @@ def strftest(now):
         ('%S', '%02d' % now[5], 'seconds of current time (00-60)'),
         ('%U', '%02d' % ((now[7] + jan1[6])/7),
          'week number of the year (Sun 1st)'),
-        ('%w', '%d' % ((1+now[6]) % 7), 'weekday as a number (Sun 1st)'),
+        ('%w', '0?%d' % ((1+now[6]) % 7), 'weekday as a number (Sun 1st)'),
         ('%W', '%02d' % ((now[7] + (jan1[6] - 1)%7)/7),
          'week number of the year (Mon 1st)'),
         # %x see below
@@ -70,7 +70,7 @@ def strftest(now):
         ('%c', fixasctime(time.asctime(now)), 'near-asctime() format'),
         ('%x', '%02d/%02d/%02d' % (now[1], now[2], (now[0]%100)),
          '%m/%d/%y %H:%M:%S'),
-        ('(%Z)', '(%s)' % tz, 'time zone name'),
+        ('%Z', '%s' % tz, 'time zone name'),
 
         # These are some platform specific extensions
         ('%D', '%02d/%02d/%02d' % (now[1], now[2], (now[0]%100)), 'mm/dd/yy'),
@@ -98,7 +98,7 @@ def strftest(now):
         except ValueError, error:
             print "Standard '%s' format gave error:" % e[0], error
             continue
-        if result == e[1]: continue
+        if re.match(e[1], result): continue
         if result[0] == '%':
             print "Does not support standard '%s' format (%s)" % (e[0], e[2])
         else:
@@ -113,7 +113,7 @@ def strftest(now):
                 print "Error for nonstandard '%s' format (%s): %s" % \
                       (e[0], e[2], str(result))
             continue
-        if result == e[1]:
+        if re.match(e[1], result):
             if verbose:
                 print "Supports nonstandard '%s' format (%s)" % (e[0], e[2])
         elif result[0] == '%':
