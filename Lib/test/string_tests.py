@@ -208,6 +208,8 @@ class CommonTest(unittest.TestCase):
         self.checkequal(['a\x00b', 'c'], 'a\x00b\x00c', 'rsplit', '\x00', 1)
         self.checkequal(['', ''], 'abcd', 'rsplit', 'abcd')
         self.checkequal([u'a b', u'c', u'd'], 'a b c d', 'rsplit', u' ', 2)
+        self.checkequal(['', ' endcase'], '| endcase', 'rsplit', '|')
+        self.checkequal(['', ' endcase'], 'test endcase', 'rsplit', 'test')
 
     def test_strip(self):
         self.checkequal('hello', '   hello   ', 'strip')

@@ -4294,7 +4294,7 @@ PyObject *rsplit_char(PyUnicodeObject *self,
 	} else
 	    i--;
     }
-    if (j >= 0) {
+    if (j >= -1) {
 	SPLIT_INSERT(self->str, 0, j + 1);
     }
     return list;
