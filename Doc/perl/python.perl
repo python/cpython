@@ -103,13 +103,13 @@ sub do_cmd_e{ '&#92;' . @_[0]; }
 
 $DEVELOPER_ADDRESS = '';
 $SHORT_VERSION = '';
-$PYTHON_VERSION = '';
+$PACKAGE_VERSION = '';
 
-sub do_cmd_version{ $PYTHON_VERSION . @_[0]; }
+sub do_cmd_version{ $PACKAGE_VERSION . @_[0]; }
 sub do_cmd_shortversion{ $SHORT_VERSION . @_[0]; }
 sub do_cmd_release{
     local($_) = @_;
-    $PYTHON_VERSION = next_argument();
+    $PACKAGE_VERSION = next_argument();
     return $_;
 }
 
@@ -1024,6 +1024,9 @@ sub fix_font{
     elsif ($font eq 'kbd') {
         $font = 'kbd';
     }
+    elsif ($font eq 'programopt') {
+        $font = 'b';
+    }
     return $font;
 }
 
@@ -1270,8 +1273,8 @@ sub make_my_titlepage() {
     }
     if ($t_date) {
 	$the_title .= "\n<p><strong>$t_date</strong>";
-	if ($PYTHON_VERSION) {
-	    $the_title .= "<br><strong>Release $PYTHON_VERSION</strong>";
+	if ($PACKAGE_VERSION) {
+	    $the_title .= "<br><strong>Release $PACKAGE_VERSION</strong>";
         }
 	$the_title .= "</p>"
     }
