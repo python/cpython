@@ -281,12 +281,19 @@ class ForkingMixIn:
     """Mix-in class to handle each request in a new process."""
 
     active_children = None
+    max_children = 40
 
     def collect_children(self):
         """Internal routine to wait for died children."""
         while self.active_children:
+            if len(self.active_children) < self.max_children:
+                options = os.WNOHANG
+            else:
+                # If the maximum number of children are already
+                # running, block while waiting for a child to exit
+                options = 0
             try:
-                pid, status = os.waitpid(0, os.WNOHANG)
+                pid, status = os.waitpid(0, options)
             except os.error:
                 pid = None
             if not pid: break
