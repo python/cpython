@@ -308,8 +308,8 @@ then
 	case $GCC in
 	yes)
 		case $ac_cv_prog_cc_g in
-		yes)	OPT="-g -O2 -Wall -Wstrict-prototypes";;
-		*)	OPT="-O2 -Wall -Wstrict-prototypes";;
+		yes)	OPT="-g -O2 -Wall -Wstrict-prototypes -fPIC";;
+		*)	OPT="-O2 -Wall -Wstrict-prototypes -fPIC";;
 		esac
 		;;
 	*)	OPT="-O";;
@@ -564,7 +564,7 @@ then
 	SunOS/4*) LDSHARED="ld";;
 	SunOS/5*) 
 		if test "$GCC" = "yes"
-		then LDSHARED='$(CC) -G'
+		then LDSHARED='$(CC) -shared'
 		else LDSHARED="ld -G";
 		fi ;;
 	hp*|HP*) LDSHARED="ld -b";;

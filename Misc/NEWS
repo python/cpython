@@ -139,6 +139,8 @@ http://sourceforge.net/tracker/index.php?func=detail&aid=<id>&group_id=5470&atid
   the start tag was for an empty element of the type <tag .../>.  This
   modification fixes the problem.
 
+- #117606 - configure.in, configure - use gcc -shared and gcc -fPIC
+
 What's New in Python 2.0?
 =========================
 
