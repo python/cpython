@@ -69,10 +69,13 @@ file type and creator codes will not be correct.
   \function{copy2()}.  If \var{symlinks} is true, symbolic links in
   the source tree are represented as symbolic links in the new tree;
   if false or omitted, the contents of the linked files are copied to
-  the new tree.  Errors are reported to standard output.
+  the new tree.  If exception(s) occur, an Error is raised
+  with a list of reasons.
 
   The source code for this should be considered an example rather than 
   a tool.
+\versionchanged[Error is raised if any exceptions occur during copying,
+rather than printing a message]{2.3}
 \end{funcdesc}
 
 \begin{funcdesc}{rmtree}{path\optional{, ignore_errors\optional{, onerror}}}
