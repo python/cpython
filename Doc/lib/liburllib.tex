@@ -18,7 +18,7 @@ operations are available.
 
 It defines the following public functions:
 
-\begin{funcdesc}{urlopen}{url\optional{, data}}
+\begin{funcdesc}{urlopen}{url\optional{, data\optional{, proxies}}}
 Open a network object denoted by a URL for reading.  If the URL does
 not have a scheme identifier, or if it has \file{file:} as its scheme
 identifier, this opens a local file; otherwise it opens a socket to a
@@ -83,6 +83,23 @@ section.
 
 In a Macintosh environment, \function{urlopen()} will retrieve proxy
 information from Internet\index{Internet Config} Config.
+
+Alternatively, the optional \var{proxies} argument may be used to
+explicitly specify proxies.  It must be a dictionary mapping scheme
+names to proxy URLs, where an empty dictionary causes no proxies to be
+used, and \code{None} (the default value) causes environmental proxy
+settings to be used as discussed above.  For example:
+
+\begin{verbatim}
+# Use http://www.someproxy.com:3128 for http proxying
+proxies = proxies={'http': 'http://www.someproxy.com:3128'}
+filehandle = urllib.urlopen(some_url, proxies=proxies)
+# Don't use any proxies
+filehandle = urllib.urlopen(some_url, proxies={})
+# Use proxies from environment - both versions are equivalent
+filehandle = urllib.urlopen(some_url, proxies=None)
+filehandle = urllib.urlopen(some_url)
+\end{verbatim} 
 
 The \function{urlopen()} function does not support explicit proxy
 specification.  If you need to override environmental proxy settings,
@@ -205,7 +222,7 @@ attribute \member{version} to an appropriate string value before the
 
 The optional \var{proxies} parameter should be a dictionary mapping
 scheme names to proxy URLs, where an empty dictionary turns proxies
-off completely.  Its default value is None, in which case
+off completely.  Its default value is \code{None}, in which case
 environmental proxy settings will be used if present, as discussed in
 the definition of \function{urlopen()}, above.
 
@@ -314,7 +331,7 @@ Overridable interface to open unknown URL types.
 Retrieves the contents of \var{url} and places it in \var{filename}.  The
 return value is a tuple consisting of a local filename and either a
 \class{mimetools.Message} object containing the response headers (for remote
-URLs) or None (for local URLs).  The caller must then open and read the
+URLs) or \code{None} (for local URLs).  The caller must then open and read the
 contents of \var{filename}.  If \var{filename} is not given and the URL
 refers to a local file, the input filename is returned.  If the URL is
 non-local and \var{filename} is not given, the filename is the output of
