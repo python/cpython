@@ -1018,7 +1018,8 @@ Execute the program \var{path} in a new process.  If \var{mode} is
 \constant{P_NOWAIT}, this function returns the process ID of the new
 process; if \var{mode} is \constant{P_WAIT}, returns the process's
 exit code if it exits normally, or \code{-\var{signal}}, where
-\var{signal} is the signal that killed the process.
+\var{signal} is the signal that killed the process.  On Windows, the
+process ID will actually be the process handle.
 
 The \character{l} and \character{v} variants of the
 \function{spawn*()} functions differ in how command-line arguments are
