@@ -3127,6 +3127,51 @@ posix_setgid(PyObject *self, PyObject *args)
 }
 #endif /* HAVE_SETGID */
 
+#ifdef HAVE_SETGROUPS
+static char posix_setgroups__doc__[] =
+"setgroups(list) -> None\n\
+Set the groups of the current process to list.";
+
+static PyObject *
+posix_setgroups(PyObject *self, PyObject *args)
+{
+	PyObject *groups;
+	int i, len;
+        gid_t grouplist[MAX_GROUPS];
+	
+	if (!PyArg_ParseTuple(args, "O:setgid", &groups))
+		return NULL;
+	if (!PySequence_Check(groups)) {
+		PyErr_SetString(PyExc_TypeError, "setgroups argument must be a sequence");
+		return NULL;
+	}
+	len = PySequence_Size(groups);
+	if (len > MAX_GROUPS) {
+		PyErr_SetString(PyExc_ValueError, "too many groups");
+		return NULL;
+	}
+	for(i = 0; i < len; i++) {
+		PyObject *elem;
+		elem = PySequence_GetItem(groups, i);
+		if (!elem)
+			return NULL;
+		if (!PyInt_Check(elem)) {
+			PyErr_SetString(PyExc_TypeError,
+					"groups must be integers");
+			Py_DECREF(elem);
+			return NULL;
+		}
+		/* XXX: check that value fits into gid_t. */
+		grouplist[i] = PyInt_AsLong(elem);
+		Py_DECREF(elem);
+	}
+
+	if (setgroups(len, grouplist) < 0)
+		return posix_error();
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+#endif /* HAVE_SETGROUPS */
 
 #ifdef HAVE_WAITPID
 static char posix_waitpid__doc__[] =
@@ -5467,6 +5512,9 @@ static PyMethodDef posix_methods[] = {
 #ifdef HAVE_SETGID
 	{"setgid",	posix_setgid, METH_VARARGS, posix_setgid__doc__},
 #endif /* HAVE_SETGID */
+#ifdef HAVE_SETGROUPS
+	{"setgroups",	posix_setgroups, METH_VARARGS, posix_setgroups__doc__},
+#endif /* HAVE_SETGROUPS */
 #ifdef HAVE_SETPGRP
 	{"setpgrp",	posix_setpgrp, METH_VARARGS, posix_setpgrp__doc__},
 #endif /* HAVE_SETPGRP */

@@ -1391,7 +1391,7 @@ AC_CHECK_FUNCS(alarm chown chroot clock confstr ctermid ctermid_r execv \
  hstrerror inet_pton kill link lstat mkfifo mktime mremap \
  nice pathconf pause plock poll pthread_init \
  putenv readlink \
- select setegid seteuid setgid \
+ select setegid seteuid setgid setgroups \
  setlocale setregid setreuid setsid setpgid setuid setvbuf snprintf \
  sigaction siginterrupt sigrelse strftime strptime symlink sysconf \
  tcgetpgrp tcsetpgrp tempnam timegm times tmpfile tmpnam tmpnam_r \
