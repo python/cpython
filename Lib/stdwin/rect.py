@@ -29,14 +29,15 @@ def intersect(list):
 	if is_empty(list[0]): return empty
 	(left, top), (right, bottom) = list[0]
 	for rect in list[1:]:
-		if not is_empty(rect):
-			(l, t), (r, b) = rect
-			if left < l: left = l
-			if top < t: top = t
-			if right > r: right = r
-			if bottom > b: bottom = b
-			if is_empty((left, top), (right, bottom)):
-				return empty
+		if is_empty(rect):
+			return empty
+		(l, t), (r, b) = rect
+		if left < l: left = l
+		if top < t: top = t
+		if right > r: right = r
+		if bottom > b: bottom = b
+		if is_empty((left, top), (right, bottom)):
+			return empty
 	return (left, top), (right, bottom)
 
 
