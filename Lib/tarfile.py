@@ -1137,7 +1137,11 @@ class TarFile(object):
         tarinfo.mode  = stmd
         tarinfo.uid   = statres.st_uid
         tarinfo.gid   = statres.st_gid
-        tarinfo.size  = not stat.S_ISDIR(stmd) and statres.st_size or 0
+        if stat.S_ISDIR(stmd):
+            # For a directory, the size must be 0
+            tarinfo.size  = 0
+        else:
+            tarinfo.size = statres.st_size
         tarinfo.mtime = statres.st_mtime
         tarinfo.type  = type
         tarinfo.linkname = linkname
