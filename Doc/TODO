@@ -35,3 +35,6 @@ PYTHON DOCUMENTATION TO-DO LIST			-*- indented-text -*-
   fixing.)
 
 * Figure out HTMLHelp generation for the Windows world.
+
+* Before next Python release, document that the mode parameter to
+  wave.open() may be omitted, and how it is determined if omitted.
