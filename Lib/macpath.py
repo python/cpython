@@ -1,8 +1,13 @@
 # module 'macpath' -- pathname (or -related) operations for the Macintosh
 
+import string
 import mac
-
 from stat import *
+
+
+# Normalize the case of a pathname.  Dummy in Posix, but string.lower here.
+
+normcase = string.lower
 
 
 # Return true if a path is absolute.
