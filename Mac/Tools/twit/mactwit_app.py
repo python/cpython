@@ -18,6 +18,7 @@ _watch = Qd.GetCursor(4).data
 
 # Made available to TwitCore:
 AskString = EasyDialogs.AskString
+ShowMessage = EasyDialogs.Message
 
 def SetCursor():
 	Qd.SetCursor(_arrow)

@@ -14,7 +14,6 @@ MARGIN=2
 ICONSIZE=16
 TEXTWIDTH=4096 # More-or-less random value
 
-PIC_CURRENT=512
 PIC_BREAK=513
 picture_cache={}
 
@@ -179,14 +178,16 @@ class MT_IconTextWidget(MT_TextWidget):
 				self.terect[0]-1, self.terect[3]-1)
 		self.curlinerange = (self.terect[1]+self.ted.lineHeight,
 				self.terect[3]-2*self.ted.lineHeight)
+		self.piccurrent = 512
 		
 	def setbreaks(self, list):
 		self.breakpointlist = list[:]
 		Qd.SetPort(self.wid)
 		Win.InvalRect(self.iconrect)
 		
-	def setcurline(self, line):
+	def setcurline(self, line, pic=512):
 		self.curline = line
+		self.piccurrent = pic
 		Qd.SetPort(self.wid)
 		self.showline(line)
 
@@ -224,7 +225,7 @@ class MT_IconTextWidget(MT_TextWidget):
 			if topline <= i <= botline:
 				self.draw1icon(i, PIC_BREAK)
 		if self.curline <> None and topline <= self.curline <= botline:
-			self.draw1icon(self.curline, PIC_CURRENT)
+			self.draw1icon(self.curline, self.piccurrent)
 			
 	def draw1icon(self, line, which):
 		offset = self.line_index[line]

@@ -13,6 +13,13 @@ SIMPLE_TYPES=(
 	types.StringType
 )
 
+# XXXX Mac-specific
+ICON_NORMAL=512
+ICON_RETURN=515
+ICON_CALL=516
+ICON_ZERO=517
+ICON_DEAD=518
+
 def Initialize():
 	pass
 
@@ -23,6 +30,7 @@ class DebuggerStuff(bdb.Bdb):
 		self.parent = parent
 		self.exception_info = (None, None)
 		self.reason = 'Not running'
+		self.icon = ICON_NORMAL
 		self.reset()
 		
 	def reset(self):
@@ -30,6 +38,7 @@ class DebuggerStuff(bdb.Bdb):
 		self.forget()
 	
 	def forget(self):
+		print 'FORGET'
 		self.lineno = None
 		self.stack = []
 		self.curindex = 0
@@ -37,6 +46,7 @@ class DebuggerStuff(bdb.Bdb):
 	
 	def setup(self, f, t):
 		self.forget()
+		print 'SETUP', f, t
 		self.stack, self.curindex = self.get_stack(f, t)
 		self.curframe = self.stack[self.curindex][0]
 		
@@ -46,19 +56,23 @@ class DebuggerStuff(bdb.Bdb):
 		self.exception_info = (None, None)
 
 	def user_call(self, frame, argument_list):
-		self.reason = 'Calling function'
+		self.reason = 'Calling'
+		self.icon = ICON_CALL
 		self.interaction(frame, None)
 			
 	def user_line(self, frame):
 		self.reason = 'Stopped'
+		self.icon = ICON_NORMAL
 		self.interaction(frame, None)
 		
 	def user_return(self, frame, return_value):
-		self.reason = 'Returning from function'
+		self.reason = 'Returning'
+		self.icon = ICON_RETURN
 		self.interaction(frame, None)
 				
 	def user_exception(self, frame, (exc_type, exc_value, exc_traceback)):
 		self.reason = 'Exception occurred'
+		self.icon = ICON_DEAD
 		self.exception_info = (exc_type, exc_value)
 		self.interaction(frame, exc_traceback)
 
@@ -71,6 +85,7 @@ class DebuggerStuff(bdb.Bdb):
 		return tp, value
 		
 	def getstacktrace(self):
+		print 'DBG GETSTACKTRACE', self.stack
 		names, locations = [], []
 		for frame, lineno in self.stack:
 			name = frame.f_code.co_name
@@ -89,6 +104,7 @@ class DebuggerStuff(bdb.Bdb):
 			if not modname: modname = "<unknown>"	
 
 			locations.append("%s:%d" % (modname, lineno))
+		print 'DBG RETURNS', names, locations
 		return names, locations
 		
 	def getframe(self, number):
@@ -128,11 +144,13 @@ class Application:
 		self.run_dialog.open()
 		self.module_dialog = None
 		self.initial_cmd = None
+		self.cur_string_name = None
 		if pm_args:
 			while pm_args.tb_next <> None:
 				pm_args = pm_args.tb_next
 			self.dbg.setup(pm_args.tb_frame, pm_args)
 			self.run_dialog.setsession_pm()
+			self.run_dialog.update_views()
 		elif run_args:
 			self.run_dialog.setsession_run()
 			self.initial_cmd = run_args
@@ -164,6 +182,12 @@ class Application:
 		
 	def run(self):
 		cmd = AskString('Statement to execute:')
+		self.cur_string_name = '<string: "%s">'%cmd
+		try:
+			cmd = compile(cmd, self.cur_string_name, 'exec')
+		except SyntaxError, arg:
+			ShowMessage('Syntax error: %s'%`arg`)
+			return
 		self.initial_cmd = (cmd, None, None)
 		self.run_dialog.setsession_run()
 		self.exit_mainloop()
@@ -247,12 +271,19 @@ class StackBrowser:
 				self.cur_line = optnextline
 			if self.cur_source == '<string>':
 				self.cur_source = None
-				msg = "Executing from <string>"
+				msg = "Executing from unknown <string>"
+			elif type(self.cur_source) == types.StringType and \
+						self.cur_source[:8] == '<string:':
+				msg = "Executing from "+self.cur_source
+				self.cur_source = None
 			print 'SOURCE', self.cur_source
 			print 'LINE', self.cur_line
 				
 		self.setsource(msg)
-		self.source.setcurline(self.cur_line)
+		if not self.cur_line:
+			self.source.setcurline(1, ICON_ZERO)
+		else:
+			self.source.setcurline(self.cur_line, self.parent.dbg.icon)
 		self.breaks_changed(self.cur_source)
 		
 		
