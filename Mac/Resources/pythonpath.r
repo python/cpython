@@ -83,7 +83,8 @@ resource 'STR#' (PYTHONPATH_ID, "sys.path initialization") {
 		"$(PYTHON):Mac:Lib:lib-scripting",
 		"$(PYTHON):Extensions:img:Mac",
 		"$(PYTHON):Extensions:img:Lib",
-		"$(PYTHON):Extensions:Numerical:Lib"
+		"$(PYTHON):Extensions:Numerical:Lib",
+		"$(PYTHON):Lib:lib-tk"
 	}
 };
 
