@@ -939,11 +939,11 @@ BUILD_FUNC_DEF_2(PySocketSock_recvfrom,PySocketSockObject *,s, PyObject *,args)
 	Py_BEGIN_ALLOW_THREADS
 	n = recvfrom(s->sock_fd, PyString_AsString(buf), len, flags,
 #ifndef MS_WINDOWS
-   #if defined(PYOS_OS2)
+#if defined(PYOS_OS2)
 		     (struct sockaddr *)addrbuf, &addrlen
-   #else
+#else
 		     (ANY *)addrbuf, &addrlen
-   #endif
+#endif
 #else
 		     (struct sockaddr *)addrbuf, &addrlen
 #endif
@@ -1465,14 +1465,14 @@ OS2init()
     int rc = sock_init();
 
     if (rc == 0) {
-		atexit(OS2cleanup);
-        return 1; // Indicate Success
+	    atexit(OS2cleanup);
+	    return 1; /* Indicate Success */
     }
 
     sprintf(reason, "OS/2 TCP/IP Error# %d", sock_errno());
     PyErr_SetString(PyExc_ImportError, reason);
 
-	return 0;  // Indicate Failure
+    return 0;  /* Indicate Failure */
 }
 
 #endif /* PYOS_OS2 */
@@ -1510,13 +1510,13 @@ initsocket()
 		return;
 	m = Py_InitModule("_socket", PySocket_methods);
 #else
-  #if defined(__TOS_OS2__)
+#if defined(__TOS_OS2__)
 	if (!OS2init())
 		return;
 	m = Py_InitModule("_socket", PySocket_methods);
-  #else
+#else
 	m = Py_InitModule("socket", PySocket_methods);
-  #endif
+#endif
 #endif
 	d = PyModule_GetDict(m);
 	PySocket_Error = PyErr_NewException("socket.error", NULL, NULL);
