@@ -1,18 +1,20 @@
-% By Skip Montanaro
-
-\section{Standard Module \module{stat}}
+\section{\module{stat} ---
+         Utilities for interpreting \function{stat()} results.}
 \declaremodule{standard}{stat}
+\sectionauthor{Skip Montanaro}{skip@automatrix.com}
+
 
 \modulesynopsis{Utilities for interpreting the results of
 \function{os.stat()}, \function{os.lstat()} and \function{os.fstat()}.}
 
 
-The \code{stat} module defines constants and functions for interpreting the
-results of \code{os.stat()} and \code{os.lstat()} (if they exist).
-For complete details about the \code{stat()} and \code{lstat()} system
-calls, consult your local man pages.
+The \module{stat} module defines constants and functions for
+interpreting the results of \function{os.stat()} and
+\function{os.lstat()} (if they exist).  For complete details about the
+\cfunction{stat()} and \cfunction{lstat()} system calls, consult your
+local man pages.
 
-The \code{stat} module defines the following functions:
+The \module{stat} module defines the following functions:
 
 
 \begin{funcdesc}{S_ISDIR}{mode}
