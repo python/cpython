@@ -145,6 +145,9 @@ def	genallprojects(force=0):
 	genpluginproject("ppc", "TE", libraries=["DragLib"])
 	genpluginproject("carbon", "TE")
 	
+	# OSX Only?
+	genpluginproject("carbon", "CF")
+	
 	# Other Mac modules
 	genpluginproject("all", "calldll", sources=["calldll.c"])
 	genpluginproject("all", "ColorPicker")

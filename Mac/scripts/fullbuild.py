@@ -287,6 +287,8 @@ I_CARBON_PLUGINS :  (buildmwproject, "CWIE", [
 	(":Mac:Build:Snd.carbon.mcp", "Snd.carbon"),
 	(":Mac:Build:Sndihooks.carbon.mcp", "Sndihooks.carbon"),
 	(":Mac:Build:TE.carbon.mcp", "TE.carbon"),
+	
+	(":Mac:Build:CF.carbon.mcp", "CF.carbon"),
 	]),
 
 I_PPC_FULL : (buildmwproject, "CWIE", [
