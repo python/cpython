@@ -3,10 +3,7 @@
 # XXX TypeErrors on calling handlers, or on bad return values from a
 # handler, are obscure and unhelpful.
         
-import sys, string
-import os
-
-import pyexpat
+from xml.parsers import expat
                 
 class Outputter:
     def StartElementHandler(self, name, attrs):
@@ -16,7 +13,7 @@ class Outputter:
         print 'End element:\n\t', repr(name)
 
     def CharacterDataHandler(self, data):
-        data = string.strip(data)
+        data = data.strip()
         if data:
             print 'Character data:'
             print '\t', repr(data)
@@ -63,29 +60,37 @@ class Outputter:
         pass
 
 
+def confirm(ok):
+    if ok:
+        print "OK."
+    else:
+        print "Not OK."
+
 out = Outputter()
-parser = pyexpat.ParserCreate(namespace_separator='!')
+parser = expat.ParserCreate(namespace_separator='!')
 
 # Test getting/setting returns_unicode
-parser.returns_unicode = 0 ; assert parser.returns_unicode == 0
-parser.returns_unicode = 1 ; assert parser.returns_unicode == 1
-parser.returns_unicode = 2 ; assert parser.returns_unicode == 1
-parser.returns_unicode = 0 ; assert parser.returns_unicode == 0
+parser.returns_unicode = 0; confirm(parser.returns_unicode == 0)
+parser.returns_unicode = 1; confirm(parser.returns_unicode == 1)
+parser.returns_unicode = 2; confirm(parser.returns_unicode == 1)
+parser.returns_unicode = 0; confirm(parser.returns_unicode == 0)
 
-HANDLER_NAMES = ['StartElementHandler', 'EndElementHandler',
-             'CharacterDataHandler', 'ProcessingInstructionHandler',
-             'UnparsedEntityDeclHandler', 'NotationDeclHandler',
-             'StartNamespaceDeclHandler', 'EndNamespaceDeclHandler',
-             'CommentHandler', 'StartCdataSectionHandler',
-             'EndCdataSectionHandler',
-             'DefaultHandler', 'DefaultHandlerExpand',
-             #'NotStandaloneHandler',
-             'ExternalEntityRefHandler'
-             ]
+HANDLER_NAMES = [
+    'StartElementHandler', 'EndElementHandler',
+    'CharacterDataHandler', 'ProcessingInstructionHandler',
+    'UnparsedEntityDeclHandler', 'NotationDeclHandler',
+    'StartNamespaceDeclHandler', 'EndNamespaceDeclHandler',
+    'CommentHandler', 'StartCdataSectionHandler',
+    'EndCdataSectionHandler',
+    'DefaultHandler', 'DefaultHandlerExpand',
+    #'NotStandaloneHandler',
+    'ExternalEntityRefHandler'
+    ]
 for name in HANDLER_NAMES:
-    setattr(parser, name, getattr(out, name) )
+    setattr(parser, name, getattr(out, name))
 
-data = """<?xml version="1.0" encoding="iso-8859-1" standalone="no"?>
+data = '''\
+<?xml version="1.0" encoding="iso-8859-1" standalone="no"?>
 <?xml-stylesheet href="stylesheet.css"?>
 <!-- comment data -->
 <!DOCTYPE quotations SYSTEM "quotations.dtd" [
@@ -104,45 +109,44 @@ data = """<?xml version="1.0" encoding="iso-8859-1" standalone="no"?>
 <sub2><![CDATA[contents of CDATA section]]></sub2>
 &external_entity;
 </root>
-"""
+'''
 
 # Produce UTF-8 output
 parser.returns_unicode = 0
 try:
     parser.Parse(data, 1)
-except pyexpat.error:
-    print '** Error', parser.ErrorCode, pyexpat.ErrorString( parser.ErrorCode)
+except expat.error:
+    print '** Error', parser.ErrorCode, expat.ErrorString(parser.ErrorCode)
     print '** Line', parser.ErrorLineNumber
     print '** Column', parser.ErrorColumnNumber
     print '** Byte', parser.ErrorByteIndex
 
 # Try the parse again, this time producing Unicode output
-parser = pyexpat.ParserCreate(namespace_separator='!')
+parser = expat.ParserCreate(namespace_separator='!')
 parser.returns_unicode = 1
 
 for name in HANDLER_NAMES:
-    setattr(parser, name, getattr(out, name) )
+    setattr(parser, name, getattr(out, name))
 try:
     parser.Parse(data, 1)
-except pyexpat.error:
-    print '** Error', parser.ErrorCode, pyexpat.ErrorString( parser.ErrorCode)
+except expat.error:
+    print '** Error', parser.ErrorCode, expat.ErrorString(parser.ErrorCode)
     print '** Line', parser.ErrorLineNumber
     print '** Column', parser.ErrorColumnNumber
     print '** Byte', parser.ErrorByteIndex
 
 # Try parsing a file
-parser = pyexpat.ParserCreate(namespace_separator='!')
+parser = expat.ParserCreate(namespace_separator='!')
 parser.returns_unicode = 1
 
 for name in HANDLER_NAMES:
-    setattr(parser, name, getattr(out, name) )
+    setattr(parser, name, getattr(out, name))
 import StringIO
 file = StringIO.StringIO(data)
 try:
     parser.ParseFile(file)
-except pyexpat.error:
-    print '** Error', parser.ErrorCode, pyexpat.ErrorString( parser.ErrorCode)
+except expat.error:
+    print '** Error', parser.ErrorCode, expat.ErrorString(parser.ErrorCode)
     print '** Line', parser.ErrorLineNumber
     print '** Column', parser.ErrorColumnNumber
     print '** Byte', parser.ErrorByteIndex
-

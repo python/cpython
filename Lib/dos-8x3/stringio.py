@@ -91,11 +91,15 @@ class StringIO:
 		r = self.buf[self.pos:newpos]
 		self.pos = newpos
 		return r
-	def readlines(self):
+	def readlines(self, sizehint = 0):
+		total = 0
 		lines = []
 		line = self.readline()
 		while line:
 			lines.append(line)
+			total += len(line)
+			if 0 < sizehint <= total:
+				break
 			line = self.readline()
 		return lines
 	def write(self, s):

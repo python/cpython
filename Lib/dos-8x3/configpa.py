@@ -440,7 +440,7 @@ class ConfigParser:
                         # allow empty values
                         if optval == '""':
                             optval = ''
-                        cursect[optname] = optval
+                        cursect[self.optionxform(optname)] = optval
                     else:
                         # a non-fatal parsing error occurred.  set up the
                         # exception but keep going. the exception will be

@@ -67,9 +67,6 @@ class _posixfile_:
                 (self.states[file.closed], file.name, file.mode, \
                  hex(id(self))[2:])
 
-    def __del__(self):
-        self._file_.close()
-
     #
     # Initialization routines
     #
