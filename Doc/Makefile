@@ -1,6 +1,8 @@
 # Makefile for Python documentation
 # ---------------------------------
 #
+# See also the README file.
+#
 # This is a bit of a mess.  The main documents are:
 #   tut -- Tutorial (file tut.tex)
 #   lib -- Library Reference (file lib.tex, inputs lib*.tex)
@@ -40,15 +42,28 @@
 #   lib.texi -- convert lib from LaTeX to Texinfo
 #   lib.info -- convert lib from Texinfo to Emacs INFO
 #   libwww -- convert lib from Texinfo to HTML
+# See the README file for more info on these targets.
 
-# Where's dvips?
-DVIPS=	dvips -f
+# Customizations -- you *may* have to edit these
 
-# Install destination -- actually not used
-DESTDIR=/usr/local
-LIBDESTDIR=$DESTDIR/lib
-LIBDEST=$LIBDESTDIR/python
-DOCDESTDIR=$LIBDEST/doc
+# Where are the various programs?
+LATEX=		latex
+BIBTEX=		bibtex
+EMACS=		emacs
+DVIPS=		dvips -f
+MAKEINDEX=	makeindex
+PYTHON=		python
+MAKEINFO=	makeinfo
+L2H=		/ufs/guido/l2h/latex2html
+L2HARGS=	-address $$USER@`domainname` -dont_include myformat
+
+# Install destination -- not used now but might be useful some time...
+DESTDIR=	/usr/local
+LIBDESTDIR=	$DESTDIR/lib
+LIBDEST=	$LIBDESTDIR/python
+DOCDESTDIR=	$LIBDEST/doc
+
+# Ideally, you shouldn't need to edit beyond this point
 
 # Main target
 all:	tut.dvi lib.dvi ref.dvi ext.dvi
@@ -67,18 +82,18 @@ tut.dvi lib.dvi ref.dvi ext.dvi: myformat.sty fix_hack
 
 # Tutorial document
 tut.dvi: tut.tex 
-	latex tut
-	latex tut
+	$(LATEX) tut
+	$(LATEX) tut
 	$(DVIPS) tut >tut.ps
 
 # Reference document
 ref.dvi: ref.tex ref1.tex ref2.tex ref3.tex ref4.tex ref5.tex ref6.tex \
 						     ref7.tex ref8.tex 
 	touch ref.ind
-	latex ref
+	$(LATEX) ref
 	./fix_hack ref.idx
-	makeindex ref
-	latex ref
+	$(MAKEINDEX) ref
+	$(LATEX) ref
 	$(DVIPS) ref >ref.ps
 
 # LaTeX source files for the Python Library Reference
@@ -114,52 +129,52 @@ libwhrandom.tex libwww.tex
 # Library document
 lib.dvi: $(LIBFILES)
 	touch lib.ind
-	latex lib
+	$(LATEX) lib
 	./fix_hack lib.idx
-	makeindex lib
-	latex lib
+	$(MAKEINDEX) lib
+	$(LATEX) lib
 	$(DVIPS) lib >lib.ps
 
 # Extensions document
 ext.dvi: ext.tex 
 	touch ext.ind
-	latex ext
+	$(LATEX) ext
 	./fix_hack ext.idx
-	makeindex ext
-	latex ext
+	$(MAKEINDEX) ext
+	$(LATEX) ext
 	$(DVIPS) ext >ext.ps
 
 # Quarterly document
 qua.dvi: qua.tex quabib.bib
-	latex qua
-	bibtex qua
-	latex qua
-	latex qua
+	$(LATEX) qua
+	$(BIBTEX) qua
+	$(LATEX) qua
+	$(BIBTEX) qua
 	$(DVIPS) qua >qua.ps
 
 
 # The remaining part of the Makefile is concerned with various
-# conversions, as described above.
+# conversions, as described above.  See also the README file.
 
 lib.texi: lib*.tex texipre.dat texipost.dat partparse.py fix.el
-	python partparse.py -o @lib.texi `./whichlibs`
-	emacs -batch -l fix.el -f save-buffer -kill
+	$(PYTHON) partparse.py -o @lib.texi `./whichlibs`
+	$(EMACS) -batch -l fix.el -f save-buffer -kill
 	mv @lib.texi lib.texi
 
 .PRECIOUS:	lib.texi
 
 python-lib.info: lib.texi
-	-makeinfo --footnote-style end --fill-column 72 --paragraph-indent 0 \
-	         lib.texi
+	-$(MAKEINFO) --footnote-style end --fill-column 72 \
+		     --paragraph-indent 0 lib.texi
 
 lib.info: python-lib.info
 
 # This target is very local to CWI...
 libwww: lib.texi
-	python texi2html.py -d lib.texi /ufs/guido/public_html/python-lib
+	$(PYTHON) texi2html.py -d lib.texi /ufs/guido/public_html/python-lib
 
-# Targets to convert the manuals to HTML using Nikos Drakos' excellent
-# LaTeX to HTML Converter.  For more info on this program, see
+# Targets to convert the manuals to HTML using Nikos Drakos' LaTeX to
+# HTML converter.  For more info on this program, see
 # <URL:http://cbl.leeds.ac.uk/nikos/tex2html/doc/latex2html/latex2html.html>.
 # (I've had some trouble getting this to work with the netpbm version
 # of the pbmplus library; ppmtogif dumped core because giftopnm
@@ -168,15 +183,13 @@ libwww: lib.texi
 # You can probably also use "pbmtopgm | pgmtoppm"...
 
 # In order to use these targets, you must edit the definition of L2H
-# in the Makefile to point to the latex2html program.  Note that
-# LaTeX2HTML inserts references to an "icons" directory in each page
-# that it generates.  You can customize where these icons are to be
-# found; I generally make it point to "../icons" and then create a
+# earlier in the Makefile to point to the latex2html program.  Note
+# that LaTeX2HTML inserts references to an "icons" directory in each
+# page that it generates.  You can customize where these icons are to
+# be found; I generally make it point to "../icons" and then create a
 # symbolic link to the icons directory in the LaTeX2HTML source at the
 # appropriate place.
 
-L2H=	/ufs/guido/l2h/latex2html
-L2HARGS=-address $$USER@`domainname` -dont_include myformat
 l2h: l2htut l2href l2hext
 
 l2htut: tut
