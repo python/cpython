@@ -3733,6 +3733,45 @@ def dict_type_with_metaclass():
         __metaclass__ = M
     veris(type(C.__dict__), type(B.__dict__))
 
+def meth_class_get():
+    # Full coverage of descrobject.c::classmethod_get()
+    if verbose: print "Testing __get__ method of METH_CLASS C methods..."
+    # Baseline
+    arg = [1, 2, 3]
+    res = {1: None, 2: None, 3: None}
+    vereq(dict.fromkeys(arg), res)
+    vereq({}.fromkeys(arg), res)
+    # Now get the descriptor
+    descr = dict.__dict__["fromkeys"]
+    # More baseline using the descriptor directly
+    vereq(descr.__get__(None, dict)(arg), res)
+    vereq(descr.__get__({})(arg), res)
+    # Now check various error cases
+    try:
+        descr.__get__(None, None)
+    except TypeError:
+        pass
+    else:
+        raise TestFailed, "shouldn't have allowed descr.__get__(None, None)"
+    try:
+        descr.__get__(42)
+    except TypeError:
+        pass
+    else:
+        raise TestFailed, "shouldn't have allowed descr.__get__(42)"
+    try:
+        descr.__get__(None, 42)
+    except TypeError:
+        pass
+    else:
+        raise TestFailed, "shouldn't have allowed descr.__get__(None, 42)"
+    try:
+        descr.__get__(None, int)
+    except TypeError:
+        pass
+    else:
+        raise TestFailed, "shouldn't have allowed descr.__get__(None, int)"
+
 
 def test_main():
     do_this_first()
@@ -3819,6 +3858,7 @@ def test_main():
     mutable_names()
     subclass_right_op()
     dict_type_with_metaclass()
+    meth_class_get()
 
     if verbose: print "All OK"
 
