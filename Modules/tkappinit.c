@@ -12,6 +12,7 @@
    it explicitly, e.g. tkapp.eval("load {} Blt").
  */
 
+#include <string.h>
 #include <tcl.h>
 #include <tk.h>
 
