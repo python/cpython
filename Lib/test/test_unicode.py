@@ -302,7 +302,7 @@ class UnicodeTest(
         self.checkequalnofix(True, u'\ud55c\uae00', 'iswide')
         self.checkequalnofix(False, u'\ud55c\u2606\uae00', 'iswide')
 
-    def test_wide(self):
+    def test_width(self):
         self.assertEqual(u''.width(), 0)
         self.assertEqual(u'abcd'.width(), 4)
         self.assertEqual(u'\u0187\u01c9'.width(), 2)
