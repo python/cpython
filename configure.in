@@ -82,19 +82,19 @@ AC_MSG_RESULT($MACHDEP)
 #
 # Not all make programs have this predefined.
 #
-AC_SUBST(SET_CCC)
-AC_MSG_CHECKING(CCC)
-if test -z "$CCC"
-then
-	case $ac_sys_system in
-	IRIX*)	SET_CCC="CCC= CC ${SGI_ABI}";;
-	Linux*) SET_CCC="CCC= g++";;
-	*)	SET_CCC=""
-	esac
-else
-        SET_CCC="CCC= ${CCC}"
-fi
-AC_MSG_RESULT($SET_CCC)
+#AC_SUBST(SET_CCC)
+#AC_MSG_CHECKING(CCC)
+#if test -z "$CCC"
+#then
+#	case $ac_sys_system in
+#	IRIX*)	SET_CCC="CCC= CC ${SGI_ABI}";;
+#	Linux*) SET_CCC="CCC= g++";;
+#	*)	SET_CCC=""
+#	esac
+#else
+#        SET_CCC="CCC= ${CCC}"
+#fi
+#AC_MSG_RESULT($SET_CCC)
 
 
 # checks for alternative programs
@@ -152,6 +152,36 @@ AC_ARG_WITH(gcc, [--without-gcc             never use gcc], [
 	esac])
 AC_MSG_RESULT($without_gcc)
 
+AC_SUBST(SET_CXX)
+AC_SUBST(MAINOBJ)
+MAINOBJ=python.o
+AC_MSG_CHECKING(for --with-cxx=<compiler>)
+AC_ARG_WITH(cxx, [--with-cxx=<compiler>     enable C++ support],[
+	case $withval in
+	no)	CXX=
+		with_cxx=no;;
+	*)	CXX=$withval
+		MAINOBJ=ccpython.o
+		with_cxx=$withval;;
+	esac], [
+	with_cxx=no
+])
+AC_MSG_RESULT($with_cxx)
+SET_CXX="CXX = $CXX"
+
+#AC_MSG_CHECKING(CCC)
+#if test -z "$CCC"
+#then
+#	case $ac_sys_system in
+#	IRIX*)	SET_CCC="CCC= CC ${SGI_ABI}";;
+#	Linux*) SET_CCC="CCC= g++";;
+#	*)	SET_CCC=""
+#	esac
+#else
+#        SET_CCC="CCC= ${CCC}"
+#fi
+#AC_MSG_RESULT($SET_CCC)
+
 # If the user switches compilers, we can't believe the cache
 if test ! -z "$ac_cv_prog_CC" -a ! -z "$CC" -a "$CC" != "$ac_cv_prog_CC"
 then
@@ -192,6 +222,10 @@ LDLIBRARY=''
 # linking.
 AC_SUBST(LINKCC)
 AC_MSG_CHECKING(LINKCC)
+if test -z "$LINKCC" -a ! -z "$CXX"
+then
+    LINKCC="$CXX"
+fi
 if test -z "$LINKCC"
 then
 	case $ac_sys_system in
