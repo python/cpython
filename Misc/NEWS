@@ -3,6 +3,8 @@ What's New in Python 2.2a4?
 
 Core
 
+- file.writelines() now accepts any iterable object producing strings.
+
 - PyUnicode_FromEncodedObject() now works very much like
   PyObject_Str(obj) in that it tries to use __str__/tp_str
   on the object if the object is not a string or buffer. This

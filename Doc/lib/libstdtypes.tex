@@ -1312,8 +1312,10 @@ Files have the following methods:
   the \method{flush()} or \method{close()} method is called.
 \end{methoddesc}
 
-\begin{methoddesc}[file]{writelines}{list}
-  Write a list of strings to the file.  There is no return value.
+\begin{methoddesc}[file]{writelines}{sequence}
+  Write a sequence of strings to the file.  The sequence can be any
+  iterable object producing strings, typically a list of strings.
+  There is no return value.
   (The name is intended to match \method{readlines()};
   \method{writelines()} does not add line separators.)
 \end{methoddesc}

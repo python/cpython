@@ -641,6 +641,59 @@ class TestCase(unittest.TestCase):
             self.assertEqual(indexOf(iclass, i), i)
         self.assertRaises(ValueError, indexOf, iclass, -1)
 
+    # Test iterators with file.writelines().
+    def test_writelines(self):
+        f = file(TESTFN, "w")
+
+        try:
+            self.assertRaises(TypeError, f.writelines, None)
+            self.assertRaises(TypeError, f.writelines, 42)
+    
+            f.writelines(["1\n", "2\n"])
+            f.writelines(("3\n", "4\n"))
+            f.writelines({'5\n': None})
+            f.writelines({})
+
+            # Try a big chunk too.
+            class Iterator:
+                def __init__(self, start, finish):
+                    self.start = start
+                    self.finish = finish
+                    self.i = self.start
+
+                def next(self):
+                    if self.i >= self.finish:
+                        raise StopIteration
+                    result = str(self.i) + '\n'
+                    self.i += 1
+                    return result
+
+                def __iter__(self):
+                    return self
+
+            class Whatever:
+                def __init__(self, start, finish):
+                    self.start = start
+                    self.finish = finish
+
+                def __iter__(self):
+                    return Iterator(self.start, self.finish)
+                    
+            f.writelines(Whatever(6, 6+2000))            
+            f.close()
+
+            f = file(TESTFN)
+            expected = [str(i) + "\n" for i in range(1, 2006)]
+            self.assertEqual(list(f), expected)
+            
+        finally:
+            f.close()
+            try:
+                unlink(TESTFN)
+            except OSError:
+                pass
+
+
     # Test iterators on RHS of unpacking assignments.
     def test_unpack_iter(self):
         a, b = 1, 2
