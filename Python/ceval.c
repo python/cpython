@@ -3922,6 +3922,15 @@ build_class(PyObject *methods, PyObject *bases, PyObject *name)
 	}
 	result = PyObject_CallFunction(metaclass, "OOO", name, bases, methods);
 	Py_DECREF(metaclass);
+	if (result == NULL && PyErr_ExceptionMatches(PyExc_TypeError)) {
+		/* A type error here likely means that the user passed 
+		   in a base that was not a class (such the random module
+		   instead of the random.random type).  Help them out with
+		   a more informative error message */
+		PyErr_SetString(PyExc_TypeError,
+			"Error when calling the metaclass.\n" \
+			"Make sure the base arguments are valid.");
+	}
 	return result;
 }
 
