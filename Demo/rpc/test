@@ -1,0 +1,22 @@
+: ${PYTHON=python}
+
+set -xe
+
+$PYTHON -c 'from rpc import test; test()'
+$PYTHON -c 'from rpc import test; test()' charon.cwi.nl
+
+$PYTHON -c 'from rpc import testsvr; testsvr()' &
+SVR=$!
+$PYTHON -c 'from rpc import testclt; testclt()'
+kill -2 $SVR
+
+$PYTHON -c 'from mountclient import test; test()'
+$PYTHON -c 'from mountclient import test; test()' gatekeeper.dec.com
+
+$PYTHON -c 'from nfsclient import test; test()'
+$PYTHON -c 'from nfsclient import test; test()' gatekeeper.dec.com
+$PYTHON -c 'from nfsclient import test; test()' gatekeeper.dec.com /archive
+
+$PYTHON -c 'from rnusersclient import test; test()' ''
+
+$PYTHON -c 'from rpc import testbcast; testbcast()'
