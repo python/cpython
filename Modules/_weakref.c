@@ -59,7 +59,6 @@ clear_weakref(PyWeakReference *self)
     if (self->wr_object != Py_None) {
         PyWeakReference **list = GET_WEAKREFS_LISTPTR(self->wr_object);
 
-        PyObject_GC_Fini((PyObject *)self);
         if (*list == self)
             *list = self->wr_next;
         self->wr_object = Py_None;
@@ -79,6 +78,7 @@ static void
 weakref_dealloc(PyWeakReference *self)
 {
     clear_weakref(self);
+    PyObject_GC_Fini((PyObject *)self);
     self->wr_next = free_list;
     free_list = self;
 }
