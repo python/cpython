@@ -32,7 +32,7 @@
 %define name python
 %define version 2.3.4
 %define libvers 2.3
-%define release 1pydotorg
+%define release 2pydotorg
 %define __prefix /usr
 
 #  kludge to get around rpm <percent>define weirdness
@@ -127,6 +127,10 @@ formats.
 %endif
 
 %changelog
+* Thu May 27 2004 Sean Reifschneider <jafo-rpms@tummy.com> [2.3.4-2pydotorg]
+- Including changes from Ian Holsman to build under Red Hat 7.3.
+- Fixing some problems with the /usr/local path change.
+
 * Sat Mar 27 2004 Sean Reifschneider <jafo-rpms@tummy.com> [2.3.2-3pydotorg]
 - Being more agressive about finding the paths to fix for
   #!/usr/local/bin/python.
@@ -241,9 +245,9 @@ fi
 ########
 #  Tools
 echo '#!/bin/bash' >${RPM_BUILD_ROOT}%{_bindir}/idle%{binsuffix}
-echo 'exec %{_prefix}/bin/python%{binsuffix} /usr/lib/python%{libvers}/idlelib/idle.py' >>$RPM_BUILD_ROOT%{_bindir}/idle%{binsuffix}
+echo 'exec %{__prefix}/bin/python%{binsuffix} /usr/lib/python%{libvers}/idlelib/idle.py' >>$RPM_BUILD_ROOT%{_bindir}/idle%{binsuffix}
 chmod 755 $RPM_BUILD_ROOT%{_bindir}/idle%{binsuffix}
-cp -a Tools $RPM_BUILD_ROOT%{_prefix}/lib/python%{libvers}
+cp -a Tools $RPM_BUILD_ROOT%{__prefix}/lib/python%{libvers}
 
 #  MAKE FILE LISTS
 rm -f mainpkg.files
@@ -271,12 +275,13 @@ mkdir -p "$RPM_BUILD_ROOT"/var/www/html/python
 %endif
 
 #  fix the #! line in installed files
-find . -type f -print0 | xargs -0 grep -l /usr/local/bin/python |
-      while read file
+find "$RPM_BUILD_ROOT" -type f -print0 |
+      xargs -0 grep -l /usr/local/bin/python | while read file
 do
+   FIXFILE="$file"
    sed 's|^#!.*python|#!/usr/bin/env python'"%{binsuffix}"'|' \
-         "$RPM_BUILD_ROOT"/"$file" >/tmp/fix-python-path.$$
-   cat /tmp/fix-python-path.$$ >"$RPM_BUILD_ROOT"/"$file"
+         "$FIXFILE" >/tmp/fix-python-path.$$
+   cat /tmp/fix-python-path.$$ >"$FIXFILE"
    rm -f /tmp/fix-python-path.$$
 done
 
@@ -314,7 +319,7 @@ rm -f mainpkg.files tools.files
 %defattr(-,root,root)
 %doc Misc/README Misc/cheatsheet Misc/Porting
 %doc LICENSE Misc/ACKS Misc/HISTORY Misc/NEWS
-%{__prefix}/man/man1/python%{binsuffix}.1.gz
+%{__prefix}/man/man1/python%{binsuffix}.1*
 
 %dir %{__prefix}/include/python%{libvers}
 %dir %{__prefix}/lib/python%{libvers}/
