@@ -54,7 +54,7 @@ class LiveVideoIn:
 		# Initialize capture
 		(mode, self.realwidth, self.realheight, qsize, rate) = \
 			v.InitContinuousCapture(SV.RGB8_FRAMES, \
-				self.realwidth, self.realheight, 1, 5)
+				self.realwidth, self.realheight, 1, 2)
 		self.width = vw
 		self.height = vh
 		self.x0 = (self.realwidth-self.width)/2
@@ -62,8 +62,8 @@ class LiveVideoIn:
 		self.y0 = (self.realheight-self.height)/2
 		self.y1 = self.y0 + self.height - 1
 		# Compute # full lines per packet
-		self.lpp = pktmax / self.width
-		self.pktsize = self.lpp*self.width
+		self.lpp = pktmax / self.linewidth()
+		self.pktsize = self.lpp*self.linewidth()
 		self.data = None
 		self.dataoffset = 0
 		self.lpos = 0
@@ -85,6 +85,17 @@ class LiveVideoIn:
 
 	def close(self):
 		v.EndContinuousCapture()
+
+	# Get the length in bytes of a video line
+	def linewidth(self):
+		if self.type == 'mono':
+			return (self.width+7)/8
+		elif self.type == 'grey2':
+			return (self.width+3)/4
+		elif self.type == 'grey4':
+			return (self.width+1)/2
+		else:
+			return self.width
 
 	# Get the next video packet.
 	# This returns (lpos, data) where:
@@ -125,12 +136,5 @@ class LiveVideoIn:
 		data = self.data[self.dataoffset:self.dataoffset+self.pktsize]
 		lpos = self.lpos
 		self.dataoffset = self.dataoffset + self.pktsize
-		if self.type == 'mono':
-			self.lpos = self.lpos + self.lpp*8
-		elif self.type == 'grey2':
-			self.lpos = self.lpos + self.lpp*4
-		elif self.type == 'grey4':
-			self.lpos = self.lpos + self.lpp*2
-		else:
-			self.lpos = self.lpos + self.lpp
+		self.lpos = self.lpos + self.lpp
 		return lpos, data
