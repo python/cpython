@@ -136,6 +136,7 @@ Exported functions:
 
 import re, string, time, operator
 from types import *
+from cgi import escape as _escape
 
 try:
     unicode
@@ -472,15 +473,13 @@ class Marshaller:
     dispatch[FloatType] = dump_double
 
     def dump_string(self, value):
-        from cgi import escape
-        self.write("<value><string>%s</string></value>\n" % escape(value))
+        self.write("<value><string>%s</string></value>\n" % _escape(value))
     dispatch[StringType] = dump_string
 
     if unicode:
         def dump_unicode(self, value):
             value = value.encode(self.encoding)
-            from cgi import escape
-            self.write("<value><string>%s</string></value>\n" % escape(value))
+            self.write("<value><string>%s</string></value>\n" % _escape(value))
         dispatch[UnicodeType] = dump_unicode
 
     def container(self, value):
@@ -513,8 +512,7 @@ class Marshaller:
             write("<member>\n")
             if type(k) is not StringType:
                 raise TypeError, "dictionary key must be string"
-            from cgi import escape
-            write("<name>%s</name>\n" % escape(k))
+            write("<name>%s</name>\n" % _escape(k))
             self.__dump(v)
             write("</member>\n")
         write("</struct></value>\n")
