@@ -957,8 +957,8 @@ item: Install File
   Flags=0000000000000010
 end
 item: Install File
-  Source=%_SRC_%\Tools\scripts\pydoc
-  Destination=%MAINDIR%\pydoc.pyw
+  Source=%_SRC_%\Tools\scripts\*.pyw
+  Destination=%MAINDIR%\Tools\Scripts
   Description=Utility Scripts
   Flags=0000000000000010
 end
@@ -1366,7 +1366,7 @@ end
 item: Create Shortcut
   Source=%MAINDIR%\pythonw.exe
   Destination=%GROUP%\Module Docs.lnk
-  Command Options=%MAINDIR%\pydoc.pyw
+  Command Options=%MAINDIR%\Tools\Scripts\pydoc.pyw
   Working Directory=%MAINDIR%
   Key Type=1536
   Flags=00000001
