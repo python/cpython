@@ -30,6 +30,7 @@ Special objects:
 
 SocketType -- type object for socket objects
 error -- exception raised for I/O errors
+has_ipv6 -- boolean value indicating if IPv6 is supported
 
 Integer constants:
 

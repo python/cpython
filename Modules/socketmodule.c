@@ -35,6 +35,7 @@ Module interface:
 	--> List of (family, socktype, proto, canonname, sockaddr)
 - socket.getnameinfo(sockaddr, flags) --> (host, port)
 - socket.AF_INET, socket.SOCK_STREAM, etc.: constants from <socket.h>
+- socket.has_ipv6: boolean value indicating if IPv6 is supported
 - socket.inet_aton(IP address) -> 32-bit packed IP representation
 - socket.inet_ntoa(packed IP) -> IP address string
 - socket.getdefaulttimeout() -> None | float
@@ -61,6 +62,9 @@ Local naming conventions:
 */
 
 #include "Python.h"
+
+#undef MAX
+#define MAX(x, y) ((x) < (y) ? (y) : (x))
 
 /* Socket object documentation */
 PyDoc_STRVAR(sock_doc,
@@ -2776,6 +2780,100 @@ socket_inet_ntoa(PyObject *self, PyObject *args)
 	return PyString_FromString(inet_ntoa(packed_addr));
 }
 
+#ifdef HAVE_INET_PTON
+
+PyDoc_STRVAR(inet_pton_doc,
+"inet_pton(af, ip) -> packed IP address string\n\
+\n\
+Convert an IP address from string format to a packed string suitable\n\
+for use with low-level network functions.");
+
+static PyObject *
+socket_inet_pton(PyObject *self, PyObject *args)
+{
+	int af;
+	char* ip;
+	int retval;
+	char packed[MAX(sizeof(struct in_addr), sizeof(struct in6_addr))];
+
+	if (!PyArg_ParseTuple(args, "is:inet_pton", &af, &ip)) {
+		return NULL;
+	}
+
+	retval = inet_pton(af, ip, packed);
+	if (retval < 0) {
+		PyErr_SetFromErrno(socket_error);
+		return NULL;
+	} else if (retval == 0) {
+		PyErr_SetString(socket_error,
+			"illegal IP address string passed to inet_pton");
+		return NULL;
+	} else if (af == AF_INET) {
+		return PyString_FromStringAndSize(packed,
+			sizeof(struct in_addr));
+	} else if (af == AF_INET6) {
+		return PyString_FromStringAndSize(packed,
+			sizeof(struct in6_addr));
+	} else {
+		PyErr_SetString(socket_error, "unknown address family");
+		return NULL;
+	}
+}
+	
+PyDoc_STRVAR(inet_ntop_doc,
+"inet_ntop(af, packed_ip) -> string formatted IP address\n\
+\n\
+Convert a packed IP address of the given family to string format.");
+
+static PyObject *
+socket_inet_ntop(PyObject *self, PyObject *args)
+{
+	int af;
+	char* packed;
+	int len;
+	const char* retval;
+	char ip[MAX(INET_ADDRSTRLEN, INET6_ADDRSTRLEN) + 1];
+	
+	/* Guarantee NUL-termination for PyString_FromString() below */
+	memset((void *) &ip[0], '\0', sizeof(ip) + 1);
+
+	if (!PyArg_ParseTuple(args, "is#:inet_ntop", &af, &packed, &len)) {
+		return NULL;
+	}
+
+	if (af == AF_INET) {
+		if (len != sizeof(struct in_addr)) {
+			PyErr_SetString(PyExc_ValueError,
+				"invalid length of packed IP address string");
+			return NULL;
+		}
+	} else if (af == AF_INET6) {
+		if (len != sizeof(struct in6_addr)) {
+			PyErr_SetString(PyExc_ValueError,
+				"invalid length of packed IP address string");
+			return NULL;
+		}
+	} else {
+		PyErr_Format(PyExc_ValueError,
+			"unknown address family %d", af);
+		return NULL;
+	}
+
+	retval = inet_ntop(af, packed, ip, sizeof(ip));
+	if (!retval) {
+		PyErr_SetFromErrno(socket_error);
+		return NULL;
+	} else {
+		return PyString_FromString(retval);
+	}
+
+	/* NOTREACHED */
+	PyErr_SetString(PyExc_RuntimeError, "invalid handling of inet_ntop");
+	return NULL;
+}
+
+#endif /* HAVE_INET_PTON */
+
 /* Python interface to getaddrinfo(host, port). */
 
 /*ARGSUSED*/
@@ -3035,6 +3133,12 @@ static PyMethodDef socket_methods[] = {
 	 METH_VARARGS, inet_aton_doc},
 	{"inet_ntoa",		socket_inet_ntoa,
 	 METH_VARARGS, inet_ntoa_doc},
+#ifdef HAVE_INET_PTON
+	{"inet_pton",		socket_inet_pton,
+	 METH_VARARGS, inet_pton_doc},
+	{"inet_ntop",		socket_inet_ntop,
+	 METH_VARARGS, inet_ntop_doc},
+#endif
 	{"getaddrinfo",		socket_getaddrinfo,
 	 METH_VARARGS, getaddrinfo_doc},
 	{"getnameinfo",		socket_getnameinfo,
@@ -3178,7 +3282,7 @@ See the socket module for documentation.");
 PyMODINIT_FUNC
 init_socket(void)
 {
-	PyObject *m;
+	PyObject *m, *has_ipv6;
 
 	if (!os_init())
 		return;
@@ -3213,6 +3317,14 @@ init_socket(void)
 	if (PyModule_AddObject(m, "socket",
 			       (PyObject *)&sock_type) != 0)
 		return;
+
+#ifdef ENABLE_IPV6
+	has_ipv6 = Py_True;
+#else
+	has_ipv6 = Py_False;
+#endif
+	Py_INCREF(has_ipv6);
+	PyModule_AddObject(m, "has_ipv6", has_ipv6);
 
 	/* Export C API */
 	if (PyModule_AddObject(m, PySocket_CAPI_NAME,
@@ -3800,6 +3912,7 @@ init_socket(void)
 #ifndef HAVE_INET_PTON
 
 /* Simplistic emulation code for inet_pton that only works for IPv4 */
+/* These are not exposed because they do not set errno properly */
 
 int
 inet_pton(int af, const char *src, void *dst)

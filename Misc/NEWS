@@ -383,6 +383,10 @@ Extension modules
   zlib test suite using the unittest module.  (SF bug #640230 and
   patch #678531.)
 
+- The socket module now provides the functions inet_pton and inet_ntop
+  for converting between string and packed representation of IP addresses.
+  See SF patch #658327.
+
 - Added an itertools module containing high speed, memory efficient
   looping constructs inspired by tools from Haskell and SML.
 
