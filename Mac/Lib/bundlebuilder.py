@@ -197,8 +197,7 @@ class BundleBuilder(Defaults):
 
 	def report(self):
 		# XXX something decent
-		import pprint
-		pprint.pprint(self.__dict__)
+		pass
 
 
 
@@ -227,7 +226,7 @@ imp.set_frozenmodules(marshal.load(f))
 f.close()
 """ % FROZEN_ARCHIVE
 
-SITE_CO = compile(SITE_PY, "<-bundlebuilder->", "exec")
+SITE_CO = compile(SITE_PY, "<-bundlebuilder.py->", "exec")
 
 MAYMISS_MODULES = ['mac', 'os2', 'nt', 'ntpath', 'dos', 'dospath',
 	'win32api', 'ce', '_winreg', 'nturl2path', 'sitecustomize',
@@ -236,23 +235,17 @@ MAYMISS_MODULES = ['mac', 'os2', 'nt', 'ntpath', 'dos', 'dospath',
 
 STRIP_EXEC = "/usr/bin/strip"
 
-EXECVE_WRAPPER = """\
-#!/usr/bin/env python
+BOOTSTRAP_SCRIPT = """\
+#!/bin/sh
 
-import os
-from sys import argv, executable
-resources = os.path.join(os.path.dirname(os.path.dirname(argv[0])),
-		"Resources")
-mainprogram = os.path.join(resources, "%(mainprogram)s")
-assert os.path.exists(mainprogram)
-argv.insert(1, mainprogram)
-os.environ["PYTHONPATH"] = resources
-%(setexecutable)s
-os.execve(executable, argv, os.environ)
+execdir=$(dirname ${0})
+executable=${execdir}/%(executable)s
+resdir=$(dirname ${execdir})/Resources
+main=${resdir}/%(mainprogram)s
+PYTHONPATH=$resdir
+export PYTHONPATH
+exec ${executable} ${main} ${1}
 """
-
-setExecutableTemplate = """executable = os.path.join(resources, "%s")"""
-pythonhomeSnippet = """os.environ["home"] = resources"""
 
 
 class AppBuilder(BundleBuilder):
@@ -300,6 +293,7 @@ class AppBuilder(BundleBuilder):
 
 	# Modules that modulefinder couldn't find:
 	missingModules = []
+	maybeMissingModules = []
 
 	# List of all binaries (executables or shared libs), for stripping purposes
 	binaries = []
@@ -321,6 +315,11 @@ class AppBuilder(BundleBuilder):
 		if self.name[-4:] != ".app":
 			self.name += ".app"
 
+		if self.executable is None:
+			if not self.standalone:
+				self.symlink_exec = 1
+			self.executable = sys.executable
+
 		if self.nibname:
 			self.plist.NSMainNibFile = self.nibname
 			if not hasattr(self.plist, "NSPrincipalClass"):
@@ -331,35 +330,31 @@ class AppBuilder(BundleBuilder):
 		self.plist.CFBundleExecutable = self.name
 
 		if self.standalone:
-			if self.executable is None:  # *assert* that it is None?
-				self.executable = sys.executable
 			self.findDependencies()
 
 	def preProcess(self):
 		resdir = "Contents/Resources"
 		if self.executable is not None:
 			if self.mainprogram is None:
-				execpath = pathjoin(self.execdir, self.name)
+				execname = self.name
 			else:
-				execpath = pathjoin(resdir, os.path.basename(self.executable))
+				execname = os.path.basename(self.executable)
+			execpath = pathjoin(self.execdir, execname)
 			if not self.symlink_exec:
 				self.files.append((self.executable, execpath))
 				self.binaries.append(execpath)
 			self.execpath = execpath
-			# For execve wrapper
-			setexecutable = setExecutableTemplate % os.path.basename(self.executable)
-		else:
-			setexecutable = ""  # XXX for locals() call
 
 		if self.mainprogram is not None:
 			mainname = os.path.basename(self.mainprogram)
 			self.files.append((self.mainprogram, pathjoin(resdir, mainname)))
 			# Create execve wrapper
 			mainprogram = self.mainprogram  # XXX for locals() call
+			executable = os.path.basename(self.executable)
 			execdir = pathjoin(self.bundlepath, self.execdir)
 			mainwrapperpath = pathjoin(execdir, self.name)
 			makedirs(execdir)
-			open(mainwrapperpath, "w").write(EXECVE_WRAPPER % locals())
+			open(mainwrapperpath, "w").write(BOOTSTRAP_SCRIPT % locals())
 			os.chmod(mainwrapperpath, 0777)
 
 	def postProcess(self):
@@ -374,7 +369,7 @@ class AppBuilder(BundleBuilder):
 			makedirs(os.path.dirname(dst))
 			os.symlink(os.path.abspath(self.executable), dst)
 
-		if self.missingModules:
+		if self.missingModules or self.maybeMissingModules:
 			self.reportMissing()
 
 	def addPythonModules(self):
@@ -474,24 +469,43 @@ class AppBuilder(BundleBuilder):
 					# include a real .pyc file if USE_FROZEN is True.
 					self.pymodules.append((name, mod.__code__, ispkg))
 
-		self.missingModules.extend(mf.any_missing())
+		if hasattr(mf, "any_missing_maybe"):
+			missing, maybe = mf.any_missing_maybe()
+		else:
+			missing = mf.any_missing()
+			maybe = []
+		self.missingModules.extend(missing)
+		self.maybeMissingModules.extend(maybe)
 
 	def reportMissing(self):
 		missing = [name for name in self.missingModules
 				if name not in MAYMISS_MODULES]
-		missingsub = [name for name in missing if "." in name]
-		missing = [name for name in missing if "." not in name]
+		if self.maybeMissingModules:
+			maybe = self.maybeMissingModules
+		else:
+			maybe = [name for name in missing if "." in name]
+			missing = [name for name in missing if "." not in name]
 		missing.sort()
-		missingsub.sort()
+		maybe.sort()
+		if maybe:
+			self.message("Warning: couldn't find the following submodules:", 1)
+			self.message("    (Note that these could be false alarms -- "
+			             "it's not always", 1)
+			self.message("    possible to distinguish between from \"package import submodule\" ", 1)
+			self.message("    and \"from package import name\")", 1)
+			for name in maybe:
+				self.message("  ? " + name, 1)
 		if missing:
 			self.message("Warning: couldn't find the following modules:", 1)
-			self.message("  " + ", ".join(missing))
-		if missingsub:
-			self.message("Warning: couldn't find the following submodules "
-				"(but it's probably OK since modulefinder can't distinguish "
-				"between from \"module import submodule\" and "
-				"\"from module import name\"):", 1)
-			self.message("  " + ", ".join(missingsub))
+			for name in missing:
+				self.message("  ? " + name, 1)
+
+	def report(self):
+		# XXX something decent
+		import pprint
+		pprint.pprint(self.__dict__)
+		if self.standalone:
+			self.reportMissing()
 
 #
 # Utilities.
