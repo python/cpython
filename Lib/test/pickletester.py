@@ -884,7 +884,7 @@ class MyDict(dict):
     sample = {"a": 1, "b": 2}
 
 myclasses = [MyInt, MyLong, MyFloat,
-             # MyComplex, # XXX complex somehow doesn't work here :-(
+             MyComplex,
              MyStr, MyUnicode,
              MyTuple, MyList, MyDict]
 
