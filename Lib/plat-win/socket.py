@@ -96,31 +96,47 @@ class _fileobject:
 
 	def read(self, n=-1):
 		if n >= 0:
-			while len(self._rbuf) < n:
-				new = self._sock.recv(self._rbufsize)
+			k = len(self._rbuf)
+			if n <= k:
+				data = self._rbuf[:n]
+				self._rbuf = self._rbuf[n:]
+				return data
+			n = n - k
+			l = [self._rbuf]
+			self._rbuf = ""
+			while n > 0:
+				new = self._sock.recv(max(n, self._rbufsize))
 				if not new: break
-				self._rbuf = self._rbuf + new
-			data, self._rbuf = self._rbuf[:n], self._rbuf[n:]
-			return data
+				k = len(new)
+				if k > n:
+					l.append(new[:n])
+					self._rbuf = new[n:]
+					break
+				l.append(new)
+				n = n - k
+			return "".join(l)
+		k = max(512, self._rbufsize)
+		l = [self._rbuf]
+		self._rbuf = ""
 		while 1:
-			new = self._sock.recv(self._rbufsize)
+			new = self._sock.recv(k)
 			if not new: break
-			self._rbuf = self._rbuf + new
-		data, self._rbuf = self._rbuf, ""
-		return data
+			l.append(new)
+			k = min(k*2, 1024**2)
+		return "".join(l)
 
-	def readline(self):
-		import string
+	def readline(self, limit=-1):
 		data = ""
-		i = string.find(self._rbuf, '\n')
-		while i < 0:
+		i = self._rbuf.find('\n')
+		while i < 0 and not (0 < limit <= len(self._rbuf)):
 			new = self._sock.recv(self._rbufsize)
 			if not new: break
-			i = string.find(new, '\n')
+			i = new.find('\n')
 			if i >= 0: i = i + len(self._rbuf)
 			self._rbuf = self._rbuf + new
 		if i < 0: i = len(self._rbuf)
 		else: i = i+1
+		if 0 <= limit < len(self._rbuf): i = limit
 		data, self._rbuf = self._rbuf[:i], self._rbuf[i:]
 		return data
 
