@@ -313,11 +313,21 @@ builtin_unichr(PyObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, "l:unichr", &x))
 		return NULL;
 
+#ifdef Py_UNICODE_WIDE
 	if (x < 0 || x > 0x10ffff) {
 		PyErr_SetString(PyExc_ValueError,
-				"unichr() arg not in range(0x110000)");
+				"unichr() arg not in range(0x110000) "
+				"(wide Python build)");
 		return NULL;
 	}
+#else
+	if (x < 0 || x > 0xffff) {
+		PyErr_SetString(PyExc_ValueError,
+				"unichr() arg not in range(0x10000) "
+				"(narrow Python build)");
+		return NULL;
+	}
+#endif
 
 	if (x <= 0xffff) {
 		/* UCS-2 character */
