@@ -11,7 +11,7 @@
 
 /* Define if getpgrp() must be called as getpgrp(0)
    and (consequently) setpgrp() as setpgrp(0, 0). */
-#undef GETPGRP_HAVE_ARGS
+#undef GETPGRP_HAVE_ARG
 
 /* Define this if your time.h defines altzone */
 #undef HAVE_ALTZONE
