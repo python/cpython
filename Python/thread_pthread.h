@@ -68,6 +68,8 @@ PERFORMANCE OF THIS SOFTWARE.
 
 #elif defined(__unix) && defined(__sparc)
 #  define PY_PTHREAD_STD
+#elif defined(__linux)
+#  define PY_PTHREAD_STD
 
 #endif
 
