@@ -109,7 +109,10 @@ def	genallprojects(force=0):
 		extradirs=["::::gdbm:mac", "::::gdbm"])
 	genpluginproject("all", "_weakref", sources=["_weakref.c"])
 	genpluginproject("all", "_symtable", sources=["symtablemodule.c"])
+	# Example/test modules
 	genpluginproject("all", "_testcapi")
+	genpluginproject("all", "xx")
+	genpluginproject("all", "xxsubtype", sources=["xxsubtype.c"])
 	
 	# bgen-generated Toolbox modules
 	genpluginproject("carbon", "_AE", outputdir="::Lib:Carbon")
