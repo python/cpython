@@ -2124,8 +2124,16 @@ def gui():
 
     import Tkinter
     try:
-        gui = GUI(Tkinter.Tk())
-        Tkinter.mainloop()
+        root = Tkinter.Tk()
+        # Tk will crash if pythonw.exe has an XP .manifest
+        # file and the root has is not destroyed explicitly.
+        # If the problem is ever fixed in Tk, the explicit
+        # destroy can go.
+        try:
+            gui = GUI(root)
+            root.mainloop()
+        finally:
+            root.destroy()
     except KeyboardInterrupt:
         pass
 
