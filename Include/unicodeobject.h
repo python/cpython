@@ -107,6 +107,17 @@ typedef unsigned short Py_UNICODE;
 
 #endif
 
+/*
+ * Use this typedef when you need to represent a UTF-16 surrogate pair
+ * as single unsigned integer.
+ */
+#if SIZEOF_INT >= 4 
+typedef unsigned int Py_UCS4; 
+#elif SIZEOF_LONG >= 4
+typedef unsigned long Py_UCS4; 
+#endif 
+
+
 /* --- Internal Unicode Operations ---------------------------------------- */
 
 /* If you want Python to use the compiler's wctype.h functions instead
