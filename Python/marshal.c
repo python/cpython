@@ -84,17 +84,17 @@ w_string(char *s, int n, WFILE *p)
 static void
 w_short(int x, WFILE *p)
 {
-	w_byte( x      & 0xff, p);
-	w_byte((x>> 8) & 0xff, p);
+	w_byte((char)( x      & 0xff), p);
+	w_byte((char)((x>> 8) & 0xff), p);
 }
 
 static void
 w_long(long x, WFILE *p)
 {
-	w_byte((int)( x      & 0xff), p);
-	w_byte((int)((x>> 8) & 0xff), p);
-	w_byte((int)((x>>16) & 0xff), p);
-	w_byte((int)((x>>24) & 0xff), p);
+ 	w_byte((char)( x      & 0xff), p);
+ 	w_byte((char)((x>> 8) & 0xff), p);
+ 	w_byte((char)((x>>16) & 0xff), p);
+ 	w_byte((char)((x>>24) & 0xff), p);
 }
 
 #if SIZEOF_LONG > 4

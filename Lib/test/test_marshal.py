@@ -39,3 +39,6 @@ for base in maxint64, minint64, -maxint64, -(minint64 >> 1):
             base = 0
         else:
             base >>= 1
+
+# Simple-minded check for SF 588452: Debug build crashes
+marshal.dumps([128] * 1000)
