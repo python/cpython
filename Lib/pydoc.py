@@ -580,8 +580,8 @@ TT { font-family: lucida console, lucida typewriter, courier }
         note = ''
         skipdocs = 0
         if inspect.ismethod(object):
+            imclass = object.im_class
             if cl:
-                imclass = object.im_class
                 if imclass is not cl:
                     url = '%s.html#%s-%s' % (
                         imclass.__module__, imclass.__name__, name)
@@ -589,9 +589,10 @@ TT { font-family: lucida console, lucida typewriter, courier }
                         url, classname(imclass, mod))
                     skipdocs = 1
             else:
-                note = (object.im_self and
-                        ' method of %s instance' + object.im_self.__class__ or
-                        ' unbound %s method' % object.im_class.__name__)
+                inst = object.im_self
+                note = (inst and
+                    ' method of %s instance' % classname(inst.__class__, mod) or
+                    ' unbound %s method' % classname(imclass, mod))
             object = object.im_func
 
         if name == realname:
@@ -847,9 +848,10 @@ class TextDoc(Doc):
                     note = ' from ' + classname(imclass, mod)
                     skipdocs = 1
             else:
-                note = (object.im_self and
-                        ' method of %s instance' + object.im_self.__class__ or
-                        ' unbound %s method' % classname(imclass, mod))
+                inst = object.im_self
+                note = (inst and
+                    ' method of %s instance' % classname(inst.__class__, mod) or
+                    ' unbound %s method' % classname(imclass, mod))
             object = object.im_func
 
         if name == realname:
@@ -1699,7 +1701,7 @@ def gui():
                 self.scanner.quit = 1
             self.scanner = ModuleScanner()
             threading.Thread(target=self.scanner.run,
-                             args=(key, self.update, self.done)).start()
+                             args=(self.update, key, self.done)).start()
 
         def update(self, path, modname, desc):
             if modname[-9:] == '.__init__':
