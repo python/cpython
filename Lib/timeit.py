@@ -11,10 +11,11 @@ Command line usage:
 
 Options:
   -n/--number N: how many times to execute 'statement' (default: see below)
-  -r/--repeat N: how many times to repeat the timer (default 1)
+  -r/--repeat N: how many times to repeat the timer (default 3)
   -s/--setup S: statement to be executed once initially (default 'pass')
   -t/--time: use time.time() (default on Unix)
   -c/--clock: use time.clock() (default on Windows)
+  -v/--verbose: print raw timing results; repeat for more digits precision
   -h/--help: print this usage message and exit
   statement: statement to be timed (default 'pass')
 
@@ -33,8 +34,9 @@ time() is much more precise.  On either platform, the default timer
 functions measures wall clock time, not the CPU time.  This means that
 other processes running on the same computer may interfere with the
 timing.  The best thing to do when accurate timing is necessary is to
-repeat the timing a few times and use the best time; the -r option is
-good for this.  On Unix, you can use clock() to measure CPU time.
+repeat the timing a few times and use the best time.  The -r option is
+good for this; the default of 3 repetitions is probably enough in most
+cases.  On Unix, you can use clock() to measure CPU time.
 
 Note: there is a certain baseline overhead associated with executing a
 pass statement.  The code here doesn't try to hide it, but you should
@@ -60,7 +62,7 @@ __all__ = ["Timer"]
 
 dummy_src_name = "<timeit-src>"
 default_number = 1000000
-default_repeat = 10
+default_repeat = 3
 
 if sys.platform == "win32":
     # On Windows, the best timer is time.clock()
@@ -159,7 +161,7 @@ class Timer:
 
         This is a convenience function that calls the timer()
         repeatedly, returning a list of results.  The first argument
-        specifies how many times to call timer(), defaulting to 10;
+        specifies how many times to call timer(), defaulting to 3;
         the second argument specifies the timer argument, defaulting
         to one million.
 
@@ -197,9 +199,9 @@ def main(args=None):
         args = sys.argv[1:]
     import getopt
     try:
-        opts, args = getopt.getopt(args, "n:s:r:tch",
+        opts, args = getopt.getopt(args, "n:s:r:tcvh",
                                    ["number=", "setup=", "repeat=",
-                                    "time", "clock", "help"])
+                                    "time", "clock", "verbose", "help"])
     except getopt.error, err:
         print err
         print "use -h/--help for command line help"
@@ -208,7 +210,9 @@ def main(args=None):
     stmt = "\n".join(args) or "pass"
     number = 0 # auto-determine
     setup = []
-    repeat = 1
+    repeat = default_repeat
+    verbose = 0
+    precision = 3
     for o, a in opts:
         if o in ("-n", "--number"):
             number = int(a)
@@ -222,6 +226,10 @@ def main(args=None):
             timer = time.time
         if o in ("-c", "--clock"):
             timer = time.clock
+        if o in ("-v", "--verbose"):
+            if verbose:
+                precision += 1
+            verbose += 1
         if o in ("-h", "--help"):
             print __doc__,
             return 0
@@ -236,6 +244,8 @@ def main(args=None):
             except:
                 t.print_exc()
                 return 1
+            if verbose:
+                print "%d loops -> %.*g secs" % (number, precision, x)
             if x >= 0.2:
                 break
     try:
@@ -244,12 +254,11 @@ def main(args=None):
         t.print_exc()
         return 1
     best = min(r)
+    if verbose:
+        print "raw times:", " ".join(["%.*g" % (precision, x) for x in r])
     print "%d loops," % number,
     usec = best * 1e6 / number
-    if repeat > 1:
-        print "best of %d: %.3f usec per loop" % (repeat, usec)
-    else:
-        print "time: %.3f usec per loop" % usec
+    print "best of %d: %.*g usec per loop" % (repeat, precision, usec)
     return None
 
 if __name__ == "__main__":
