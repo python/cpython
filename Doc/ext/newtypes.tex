@@ -622,10 +622,19 @@ which matches the requested comparison.  (It is always used if defined
 and the \cfunction{PyObject_Compare()} or \cfunction{PyObject_Cmp()}
 functions are used, or if \function{cmp()} is used from Python.)
 It is analogous to the \method{__cmp__()} method.  This function
-should return a negative integer if \var{obj1} is less than
-\var{obj2}, \code{0} if they are equal, and a positive integer if
+should return \code{-1} if \var{obj1} is less than
+\var{obj2}, \code{0} if they are equal, and \code{1} if
 \var{obj1} is greater than
 \var{obj2}.
+(It was previously allowed to return arbitrary negative or positive
+integers for less than and greater than, respectively; as of Python
+2.2, this is no longer allowed.  In the future, other return values
+may be assigned a different meaning.)
+
+A \member{tp_compare} handler may raise an exception.  In this case it
+should return a negative value.  The caller has to test for the
+exception using \cfunction{PyErr_Occurred()}.
+
 
 Here is a sample implementation:
 
