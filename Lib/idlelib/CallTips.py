@@ -21,7 +21,7 @@ class CallTips:
     ]
 
     def __init__(self, editwin=None):
-        if editwin == None:  # subprocess and test
+        if editwin is None:  # subprocess and test
             self.editwin = None
             return
         self.editwin = editwin
