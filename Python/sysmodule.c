@@ -194,6 +194,7 @@ initsys()
 	extern long getmaxint PROTO((void));
 	extern char *getversion PROTO((void));
 	extern char *getcopyright PROTO((void));
+	extern char *getplatform PROTO((void));
 	extern int fclose PROTO((FILE *));
 	object *m = initmodule("sys", sys_methods);
 	object *v;
@@ -212,6 +213,8 @@ initsys()
 	dictinsert(sysdict, "version", v = newstringobject(getversion()));
 	XDECREF(v);
 	dictinsert(sysdict, "copyright", v = newstringobject(getcopyright()));
+	XDECREF(v);
+	dictinsert(sysdict, "platform", v = newstringobject(getplatform()));
 	XDECREF(v);
 	dictinsert(sysdict, "maxint", v = newintobject(getmaxint()));
 	XDECREF(v);
