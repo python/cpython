@@ -3,7 +3,7 @@
 \stmodindex{fnmatch}
 
 This module provides support for Unix shell-style wildcards, which are
-\emph{not} the same as Python's regular expressions (which are
+\emph{not} the same as regular expressions (which are
 documented in the \code{re} module).  The special characters used
 in shell-style wildcards are:
 \begin{itemize}
@@ -36,6 +36,9 @@ false; the comparision is case-sensitive.
 \begin{funcdesc}{translate}{pattern}
 Translate a shell pattern into a corresponding regular expression,
 returning a string describing the pattern.  It does not compile the
-expression.  
+expression.  \strong{Version note:} in Python 1.4 and earlier, this
+function translated to \code{regex} (Emacs style) regular expressions;
+in 1.5 and later, it translates to \code{re} (Perl style) regular
+expressions.
 \end{funcdesc}
 
