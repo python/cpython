@@ -59,7 +59,7 @@ TOOLSDIR=	tools
 
 # This is the *documentation* release, and is used to construct the file
 # names of the downloadable tarballs.
-RELEASE=1.5.2p1
+RELEASE=1.6
 
 
 # These must be declared phony since there
@@ -219,6 +219,7 @@ latex-$(RELEASE).tar.bz2:
 	$(TOOLSDIR)/mksourcepkg --bzip2 $(RELEASE)
 
 latex-$(RELEASE).zip:
+	rm -f $@
 	$(TOOLSDIR)/mksourcepkg --zip $(RELEASE)
 
 pdf-$(PAPER)-$(RELEASE).tgz: pdf
@@ -228,30 +229,36 @@ pdf-$(PAPER)-$(RELEASE).tar.bz2: pdf
 	(cd paper-$(PAPER); tar cf - *.pdf) | bzip2 -9 >$@
 
 pdf-$(PAPER)-$(RELEASE).zip: pdf
-	(cd paper-$(PAPER); zip -9 ../$@ *.pdf)
+	rm -f $@
+	(cd paper-$(PAPER); zip -q -9 ../$@ *.pdf)
 
 postscript-$(PAPER)-$(RELEASE).tar.bz2: ps
 	(cd paper-$(PAPER); $(MAKE) README)
-	(cd paper-$(PAPER); tar cf - *.ps README) | gzip -9 >$@
+	(cd paper-$(PAPER); tar cf - *.ps README) | bzip2 -9 >$@
 
 postscript-$(PAPER)-$(RELEASE).tgz: ps
 	(cd paper-$(PAPER); $(MAKE) README)
-	(cd paper-$(PAPER); tar cf - *.ps README) | bzip2 -9 >$@
+	(cd paper-$(PAPER); tar cf - *.ps README) | gzip -9 >$@
 
 postscript-$(PAPER)-$(RELEASE).zip: ps
 	(cd paper-$(PAPER); $(MAKE) README)
-	(cd paper-$(PAPER); zip -9 ../$@ *.ps README)
+	rm -f $@
+	(cd paper-$(PAPER); zip -q -9 ../$@ *.ps README)
 
 html-$(RELEASE).tgz:	html
-	(cd $(HTMLDIR); tar cf - *index.html ???/*.css ???/*.html */*.gif) \
+	(cd $(HTMLDIR); \
+		tar cf - *index.html ???/*.css ???/*.html */*.gif) \
 		| gzip -9 >$@
 
 html-$(RELEASE).tar.bz2:	html
-	(cd $(HTMLDIR); tar cf - *index.html ???/*.css ???/*.html */*.gif) \
+	(cd $(HTMLDIR); \
+		tar cf - *index.html ???/*.css ???/*.html */*.gif) \
 		| bzip2 -9 >$@
 
 html-$(RELEASE).zip:	html
-	(cd $(HTMLDIR); zip -9 ../$@ *index.html ???/*.css ???/*.html */*.gif)
+	rm -f $@
+	(cd $(HTMLDIR); \
+		zip -q -9 ../$@ *index.html ???/*.css ???/*.html */*.gif)
 
 # convenience targets:
 
