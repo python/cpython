@@ -159,15 +159,16 @@ class Sniffer:
         self.preferred = [',', '\t', ';', ' ', ':']
 
 
-    def sniff(self, sample):
+    def sniff(self, sample, delimiters=None):
         """
         Returns a dialect (or None) corresponding to the sample
         """
 
         quotechar, delimiter, skipinitialspace = \
-                   self._guess_quote_and_delimiter(sample)
+                   self._guess_quote_and_delimiter(sample, delimiters)
         if delimiter is None:
-            delimiter, skipinitialspace = self._guess_delimiter(sample)
+            delimiter, skipinitialspace = self._guess_delimiter(sample,
+                                                                delimiters)
 
         class dialect(Dialect):
             _name = "sniffed"
@@ -184,7 +185,7 @@ class Sniffer:
         return dialect
 
 
-    def _guess_quote_and_delimiter(self, data):
+    def _guess_quote_and_delimiter(self, data, delimiters):
         """
         Looks for text enclosed between two identical quotes
         (the probable quotechar) which are preceded and followed
@@ -222,7 +223,7 @@ class Sniffer:
                 key = m[n]
             except KeyError:
                 continue
-            if key:
+            if key and (delimiters is None or key in delimiters):
                 delims[key] = delims.get(key, 0) + 1
             try:
                 n = regexp.groupindex['space'] - 1
@@ -248,7 +249,7 @@ class Sniffer:
         return (quotechar, delim, skipinitialspace)
 
 
-    def _guess_delimiter(self, data):
+    def _guess_delimiter(self, data, delimiters):
         """
         The delimiter /should/ occur the same number of times on
         each row. However, due to malformed data, it may not. We don't want
@@ -316,7 +317,8 @@ class Sniffer:
             while len(delims) == 0 and consistency >= threshold:
                 for k, v in modeList:
                     if v[0] > 0 and v[1] > 0:
-                        if (v[1]/total) >= consistency:
+                        if ((v[1]/total) >= consistency and
+                            (delimiters is None or k in delimiters)):
                             delims[k] = v
                 consistency -= 0.01
 
