@@ -708,20 +708,6 @@ listextend_internal(PyListObject *self, PyObject *b)
 }
 
 static PyObject *
-list_inplace_concat(PyListObject *self, PyObject *other)
-{
-	other = PySequence_Fast(other, "argument to += must be iterable");
-	if (!other)
-		return NULL;
-
-	if (listextend_internal(self, other) < 0)
-		return NULL;
-
-	Py_INCREF(self);
-	return (PyObject *)self;
-}
-
-static PyObject *
 listextend(PyListObject *self, PyObject *b)
 {
 	PyObject *it;      /* iter(v) */
@@ -788,6 +774,19 @@ listextend(PyListObject *self, PyObject *b)
   error:
 	Py_DECREF(it);
 	return NULL;
+}
+
+static PyObject *
+list_inplace_concat(PyListObject *self, PyObject *other)
+{
+	PyObject *result;
+
+	result = listextend(self, other);
+	if (result == NULL)
+		return result;
+	Py_DECREF(result);
+	Py_INCREF(self);
+	return (PyObject *)self;
 }
 
 static PyObject *
