@@ -62,7 +62,8 @@ var                     { font-family: serif;
 .file                   { font-family: avantgarde, sans-serif }
 
 .tableheader td         { background-color: #99ccff; }
-.tableheader th         { background-color: #99ccff; }
+.tableheader th         { background-color: #99ccff;
+                          font-family: avantgarde, sans-serif; }
 
 .refcount-info          { font-style: italic }
 .refcount-info .value   { font-weight: bold;
