@@ -63,8 +63,8 @@ Extension modules
 Library
 -------
 
-- Bug #848614: distutils' msvccompiler fails to find the MSVC because
-  of incomplete registry entries.
+- Bug #848614: distutils' msvccompiler fails to find the MSVC6
+  compiler because of incomplete registry entries.
 
 - Patch #841977: modulefinder didn't find extension modules
   in packages.
