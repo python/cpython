@@ -319,6 +319,29 @@ class StrptimeTests(unittest.TestCase):
                             "LocaleTime().timezone has duplicate values and "
                              "time.daylight but timezone value not set to -1")
 
+    def test_bad_timezone(self):
+        # Explicitly test possibility of bad timezone;
+        # when time.tzname[0] == time.tzname[1] and time.daylight
+        if sys.platform == "mac":
+            return # MacOS9 has severely broken timezone support.
+        try:
+            original_tzname = time.tzname
+            original_daylight = time.daylight
+            time.tzname = ("PDT", "PDT")
+            time.daylight = 1
+            # Need to make sure that timezone is not calculated since that
+            # calls time.tzset and overrides temporary changes to time .
+            _strptime._locale_cache = _strptime.TimeRE(_strptime.LocaleTime(
+                                                    timezone=("PDT", "PDT")))
+            _strptime._regex_cache.clear()
+            tz_value = _strptime.strptime("PDT", "%Z")[8]
+            self.failUnlessEqual(tz_value, -1)
+        finally:
+            time.tzname = original_tzname
+            time.daylight = original_daylight
+            _strptime._locale_cache = _strptime.TimeRE()
+            _strptime._regex_cache.clear()
+
     def test_date_time(self):
         # Test %c directive
         for position in range(6):

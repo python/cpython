@@ -493,12 +493,12 @@ def strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
             # Since -1 is default value only need to worry about setting tz if
             # it can be something other than -1.
             found_zone = found_dict['Z'].lower()
-            if locale_time.timezone[0] == locale_time.timezone[1] and \
-               time.daylight:
-                pass #Deals with bad locale setup where timezone info is
-                     # the same; first found on FreeBSD 4.4.
-            elif found_zone in ("utc", "gmt"):
+            if found_zone in ("utc", "gmt"):
                 tz = 0
+            elif time.tzname[0] == time.tzname[1] and \
+               time.daylight:
+                continue #Deals with bad locale setup where timezone info is
+                         # the same; first found on FreeBSD 4.4.
             elif locale_time.timezone[2].lower() == found_zone:
                 tz = 0
             elif time.daylight and \
