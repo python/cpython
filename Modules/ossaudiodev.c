@@ -8,6 +8,7 @@
  *
  * Renamed to ossaudiodev and rearranged/revised/hacked up
  * by Greg Ward <gward@python.net>, November 2002.
+ * Mixer interface by Nicholas FitzRoy-Dale <wzdd@lardcave.net>, Dec 2002.
  *              
  * (c) 2000 Peter Bosch.  All Rights Reserved.
  * (c) 2002 Gregory P. Ward.  All Rights Reserved.
@@ -53,6 +54,11 @@ typedef struct {
     uint32_t	x_afmts;	/* Audio formats supported by hardware*/
 } oss_t;
 
+typedef struct {
+    PyObject_HEAD;
+    int	x_fd;	/* The open mixer device */
+} oss_mixer_t;
+
 /* XXX several format defined in soundcard.h are not supported,
    including _NE (native endian) options and S32 options
 */
@@ -76,6 +82,7 @@ static struct {
 static int n_audio_types = sizeof(audio_types) / sizeof(audio_types[0]);
 
 static PyTypeObject OSSType;
+static PyTypeObject OSSMixerType;
 
 static PyObject *OSSAudioError;
 
@@ -154,6 +161,58 @@ oss_dealloc(oss_t *xp)
     PyObject_Del(xp);
 }
 
+static oss_mixer_t *
+newossmixerobject(PyObject *arg)
+{
+    char *basedev = NULL, *mode = NULL;
+    int fd, imode;
+    oss_mixer_t *xp;
+    
+    if (!PyArg_ParseTuple (arg, "|ss", &basedev, &mode)) {
+    	return NULL;
+    }
+    
+    if (basedev == NULL) {
+	basedev = getenv("MIXERDEV");
+	if (basedev == NULL)	    	/* MIXERDEV not set */
+	    basedev = "/dev/mixer";
+    }
+
+    if (mode == NULL || strcmp(mode, "r") == 0)
+        imode = O_RDONLY;
+    else if (strcmp(mode, "w") == 0)
+        imode = O_WRONLY;
+    else if (strcmp(mode, "rw") == 0)
+        imode = O_RDWR;
+    else {
+        PyErr_SetString(OSSAudioError, "mode must be 'r', 'w', or 'rw'");
+        return NULL;
+    }
+
+    if ((fd = open (basedev, imode)) == -1) {
+        PyErr_SetFromErrnoWithFilename(PyExc_IOError, basedev);
+        return NULL;
+    }
+    
+    if ((xp = PyObject_New(oss_mixer_t, &OSSMixerType)) == NULL) {
+        close(fd);
+        return NULL;
+    }
+    
+    xp->x_fd = fd;
+    
+    return xp;
+}
+
+static void
+oss_mixer_dealloc(oss_mixer_t *xp)
+{
+    /* if already closed, don't reclose it */
+    if (xp->x_fd != -1)
+	close(xp->x_fd);
+    PyObject_Del(xp);
+}
+
 
 /* Methods to wrap the OSS ioctls.  The calling convention is pretty
    simple:
@@ -187,6 +246,33 @@ _do_ioctl_1(int fd, PyObject *args, char *fname, int cmd)
         return PyErr_SetFromErrno(PyExc_IOError);
     return PyInt_FromLong(arg);
 }
+
+/* _do_ioctl_1_internal() is a wrapper for ioctls that take no inputs
+   but return an output -- ie. we need to pass a pointer to a local C
+   variable so the driver can write its output there, but from Python
+   all we see is the return value.  For example,
+   SOUND_MIXER_READ_DEVMASK returns a bitmask of available mixer
+   devices, but does not use the value of the parameter passed-in in any
+   way.
+*/
+
+static PyObject *
+_do_ioctl_1_internal(int fd, PyObject *args, char *fname, int cmd)
+{
+    char argfmt[32] = ":";
+    int arg = 0;
+
+    assert(strlen(fname) <= 30);
+    strcat(argfmt, fname);
+    if (!PyArg_ParseTuple(args, argfmt, &arg))
+	return NULL;
+
+    if (ioctl(fd, cmd, &arg) == -1)
+        return PyErr_SetFromErrno(PyExc_IOError);
+    return PyInt_FromLong(arg);
+}
+
+
 
 /* _do_ioctl_0() is a private helper for the no-argument ioctls:
    SNDCTL_DSP_{SYNC,RESET,POST}. */
@@ -567,6 +653,114 @@ oss_getptr(oss_t *self, PyObject *args)
     return Py_BuildValue("iii", info.bytes, info.blocks, info.ptr);
 }
 
+/* Mixer methods */
+static PyObject *
+oss_mixer_close(oss_mixer_t *self, PyObject *args)
+{
+    if (!PyArg_ParseTuple(args, ":close"))
+	return NULL;
+
+    if (self->x_fd >= 0) {
+        close(self->x_fd);
+        self->x_fd = -1;
+    }
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
+static PyObject *
+oss_mixer_fileno(oss_mixer_t *self, PyObject *args)
+{
+    if (!PyArg_ParseTuple(args, ":fileno")) 
+	return NULL;
+    return PyInt_FromLong(self->x_fd);
+}
+
+/* Simple mixer interface methods */
+
+static PyObject *
+oss_mixer_channels (oss_mixer_t *self, PyObject *args)
+{
+    return _do_ioctl_1_internal(self->x_fd, args, "channels",
+        SOUND_MIXER_READ_DEVMASK);
+}
+
+static PyObject *
+oss_mixer_stereo_channels (oss_mixer_t *self, PyObject *args)
+{
+    return _do_ioctl_1_internal(self->x_fd, args, "stereochannels",
+        SOUND_MIXER_READ_STEREODEVS);
+}
+
+static PyObject *
+oss_mixer_rec_channels (oss_mixer_t *self, PyObject *args)
+{
+    return _do_ioctl_1_internal(self->x_fd, args, "recchannels",
+        SOUND_MIXER_READ_STEREODEVS);
+}
+
+static PyObject *
+oss_mixer_getvol (oss_mixer_t *self, PyObject *args)
+{
+    int channel, volume;
+    
+    /* Can't use _do_ioctl_1 because of encoded arg thingy. */
+    if (!PyArg_ParseTuple (args, "i:getvol", &channel))
+    	return NULL;
+    
+    if (channel < 0 || channel > SOUND_MIXER_NRDEVICES) {
+    	PyErr_SetString (OSSAudioError, "Invalid mixer channel specified.");
+	return NULL;
+    }
+    
+    if (ioctl (self->x_fd, MIXER_READ(channel), &volume) == -1)
+    	return PyErr_SetFromErrno(PyExc_IOError);
+    
+    return Py_BuildValue ("(ii)", volume & 0xff, (volume & 0xff00) >> 8);
+}
+
+static PyObject *
+oss_mixer_setvol (oss_mixer_t *self, PyObject *args)
+{
+    int channel, volume, leftVol, rightVol;
+    
+    /* Can't use _do_ioctl_1 because of encoded arg thingy. */
+    if (!PyArg_ParseTuple (args, "i(ii):setvol", &channel, &leftVol, &rightVol))
+    	return NULL;
+	    
+    if (channel < 0 || channel > SOUND_MIXER_NRDEVICES) {
+    	PyErr_SetString (OSSAudioError, "Invalid mixer channel specified.");
+	return NULL;
+    }
+    
+    if (leftVol < 0 || rightVol < 0 || leftVol > 100 || rightVol > 100) {
+    	PyErr_SetString (OSSAudioError, "Volumes must be between 0 and 100.");
+	return NULL;
+    }
+
+    volume = (rightVol << 8) | leftVol;
+    
+    if (ioctl (self->x_fd, MIXER_WRITE(channel), &volume) == -1)
+    	return PyErr_SetFromErrno(PyExc_IOError);
+   
+    return Py_BuildValue ("(ii)", volume & 0xff, (volume & 0xff00) >> 8);
+}
+
+static PyObject *
+oss_mixer_getrecsrc (oss_mixer_t *self, PyObject *args)
+{
+    return _do_ioctl_1_internal(self->x_fd, args, "getrecsrc",
+        SOUND_MIXER_READ_RECSRC);
+}
+
+static PyObject *
+oss_mixer_setrecsrc (oss_mixer_t *self, PyObject *args)
+{
+    return _do_ioctl_1(self->x_fd, args, "setrecsrc",
+        SOUND_MIXER_WRITE_RECSRC);
+}
+
+
 static PyMethodDef oss_methods[] = {
     /* Regular file methods */
     { "read",		(PyCFunction)oss_read, METH_VARARGS },
@@ -598,10 +792,33 @@ static PyMethodDef oss_methods[] = {
     { NULL,		NULL}		/* sentinel */
 };
 
+static PyMethodDef oss_mixer_methods[] = {
+    /* Regular file method - OSS mixers are ioctl-only interface */
+    { "close",		(PyCFunction)oss_mixer_close, METH_VARARGS },   
+    { "fileno",     	(PyCFunction)oss_mixer_fileno, METH_VARARGS },
+
+    /* Simple ioctl wrappers */
+    { "channels",   	(PyCFunction)oss_mixer_channels, METH_VARARGS }, 
+    { "stereochannels", (PyCFunction)oss_mixer_stereo_channels, METH_VARARGS},
+    { "recchannels",    (PyCFunction)oss_mixer_rec_channels, METH_VARARGS},   
+    { "getvol",     	(PyCFunction)oss_mixer_getvol, METH_VARARGS },
+    { "setvol",     	(PyCFunction)oss_mixer_setvol, METH_VARARGS },
+    { "getrecsrc",     	(PyCFunction)oss_mixer_getrecsrc, METH_VARARGS },
+    { "setrecsrc",     	(PyCFunction)oss_mixer_setrecsrc, METH_VARARGS },
+    
+    { NULL, 	    	NULL}
+};
+
 static PyObject *
 oss_getattr(oss_t *xp, char *name)
 {
     return Py_FindMethod(oss_methods, (PyObject *)xp, name);
+}
+
+static PyObject *
+oss_mixer_getattr(oss_mixer_t *xp, char *name)
+{
+    return Py_FindMethod(oss_mixer_methods, (PyObject *)xp, name);
 }
 
 static PyTypeObject OSSType = {
@@ -619,14 +836,37 @@ static PyTypeObject OSSType = {
     0,				/*tp_repr*/
 };
 
+static PyTypeObject OSSMixerType = {
+    PyObject_HEAD_INIT(&PyType_Type)
+    0,				    /*ob_size*/
+    "ossaudiodev.oss_mixer_device", /*tp_name*/
+    sizeof(oss_mixer_t),	    /*tp_size*/
+    0,				    /*tp_itemsize*/
+    /* methods */
+    (destructor)oss_mixer_dealloc,  /*tp_dealloc*/
+    0,			    	    /*tp_print*/
+    (getattrfunc)oss_mixer_getattr, /*tp_getattr*/
+    0,		    		    /*tp_setattr*/
+    0,				    /*tp_compare*/
+    0,				    /*tp_repr*/
+};
+
+
 static PyObject *
 ossopen(PyObject *self, PyObject *args)
 {
     return (PyObject *)newossobject(args);
 }
 
+static PyObject *
+ossopenmixer(PyObject *self, PyObject *args)
+{
+    return (PyObject *)newossmixerobject(args);
+}
+
 static PyMethodDef ossaudiodev_methods[] = {
     { "open", ossopen, METH_VARARGS },
+    { "openmixer", ossopenmixer, METH_VARARGS },
     { 0, 0 },
 };
 
@@ -659,6 +899,33 @@ initossaudiodev(void)
     _EXPORT_INT(m, AFMT_MPEG);
     _EXPORT_INT(m, AFMT_AC3);
     _EXPORT_INT(m, AFMT_S16_NE);
+	
+    /* Expose the sound mixer channels. */
+    _EXPORT_INT(m, SOUND_MIXER_VOLUME);
+    _EXPORT_INT(m, SOUND_MIXER_BASS);
+    _EXPORT_INT(m, SOUND_MIXER_TREBLE);
+    _EXPORT_INT(m, SOUND_MIXER_SYNTH);
+    _EXPORT_INT(m, SOUND_MIXER_PCM);
+    _EXPORT_INT(m, SOUND_MIXER_SPEAKER);
+    _EXPORT_INT(m, SOUND_MIXER_LINE);
+    _EXPORT_INT(m, SOUND_MIXER_MIC);
+    _EXPORT_INT(m, SOUND_MIXER_CD);
+    _EXPORT_INT(m, SOUND_MIXER_IMIX);
+    _EXPORT_INT(m, SOUND_MIXER_ALTPCM);
+    _EXPORT_INT(m, SOUND_MIXER_RECLEV);
+    _EXPORT_INT(m, SOUND_MIXER_IGAIN);
+    _EXPORT_INT(m, SOUND_MIXER_OGAIN);
+    _EXPORT_INT(m, SOUND_MIXER_LINE1);
+    _EXPORT_INT(m, SOUND_MIXER_LINE2);
+    _EXPORT_INT(m, SOUND_MIXER_LINE3);
+    _EXPORT_INT(m, SOUND_MIXER_DIGITAL1);
+    _EXPORT_INT(m, SOUND_MIXER_DIGITAL2);
+    _EXPORT_INT(m, SOUND_MIXER_DIGITAL3);
+    _EXPORT_INT(m, SOUND_MIXER_PHONEIN);
+    _EXPORT_INT(m, SOUND_MIXER_PHONEOUT);
+    _EXPORT_INT(m, SOUND_MIXER_VIDEO);
+    _EXPORT_INT(m, SOUND_MIXER_RADIO);
+    _EXPORT_INT(m, SOUND_MIXER_MONITOR);
 
     /* Expose all the ioctl numbers for masochists who like to do this
        stuff directly. */
