@@ -18,14 +18,9 @@ the General Decimal Arithmetic Specification:
 
     www2.hursley.ibm.com/decimal/decarith.html
 
-IEEE standard 854-1987:
+and IEEE standard 854-1987:
 
     www.cs.berkeley.edu/~ejr/projects/754/private/drafts/854-1987/dir.html
-
-and ANSI standard X3.274-1996:
-
-    www.rexxla.org/Standards/ansi.html
-
 
 Decimal floating point has finite precision with arbitrarily large bounds.
 
@@ -128,19 +123,13 @@ __all__ = [
     'Inexact', 'InvalidContext', 'Rounded', 'Subnormal', 'Overflow',
     'Underflow',
 
-    # Module parameters
-    'DEFAULT_MAX_EXPONENT', 'DEFAULT_MIN_EXPONENT',
-
     # Constants for use in setting up contexts
     'ROUND_DOWN', 'ROUND_HALF_UP', 'ROUND_HALF_EVEN', 'ROUND_CEILING',
     'ROUND_FLOOR', 'ROUND_UP', 'ROUND_HALF_DOWN',
     'Signals',    # <-- Used for building trap/flag dictionaries
 
     # Functions for manipulating contexts
-    'setcontext', 'getcontext',
-
-    # Functions for working with decimals
-    'isinfinity', 'isnan',
+    'setcontext', 'getcontext'
 ]
 
 import threading
@@ -153,17 +142,17 @@ DEFAULT_MAX_EXPONENT = 999999999
 DEFAULT_MIN_EXPONENT = -999999999
 
 #Rounding
-ROUND_DOWN = 'down'
-ROUND_HALF_UP = 'half_up'
-ROUND_HALF_EVEN = 'half_even'
-ROUND_CEILING = 'ceiling'
-ROUND_FLOOR = 'floor'
-ROUND_UP = 'up'
-ROUND_HALF_DOWN = 'half_down'
+ROUND_DOWN = 'ROUND_DOWN'
+ROUND_HALF_UP = 'ROUND_HALF_UP'
+ROUND_HALF_EVEN = 'ROUND_HALF_EVEN'
+ROUND_CEILING = 'ROUND_CEILING'
+ROUND_FLOOR = 'ROUND_FLOOR'
+ROUND_UP = 'ROUND_UP'
+ROUND_HALF_DOWN = 'ROUND_HALF_DOWN'
 
 #Rounding decision (not part of the public API)
-NEVER_ROUND = 'never'    # Round in division (non-divmod), sqrt ONLY
-ALWAYS_ROUND = 'always'  # Every operation rounds at end.
+NEVER_ROUND = 'NEVER_ROUND'    # Round in division (non-divmod), sqrt ONLY
+ALWAYS_ROUND = 'ALWAYS_ROUND'  # Every operation rounds at end.
 
 #Errors
 
@@ -468,17 +457,17 @@ class Decimal(object):
         # String?
         # REs insist on real strings, so we can too.
         if isinstance(value, basestring):
-            if isinfinity(value):
+            if _isinfinity(value):
                 self._exp = 'F'
                 self._int = (0,)
-                sign = isinfinity(value)
+                sign = _isinfinity(value)
                 if sign == 1:
                     self._sign = 0
                 else:
                     self._sign = 1
                 return
-            if isnan(value):
-                sig, sign, diag = isnan(value)
+            if _isnan(value):
+                sig, sign, diag = _isnan(value)
                 if len(diag) > context.prec: #Diagnostic info too long
                     self._sign, self._int, self._exp = \
                                 context._raise_error(ConversionSyntax)
@@ -2127,8 +2116,8 @@ class Context(object):
     flags  - When an exception is caused, flags[exception] is incremented.
              (Whether or not the trap_enabler is set)
              Should be reset by user of Decimal instance.
-    Emin -   Minimum exponent (defaults to -999999999)
-    Emax -   Maximum exponent (defaults to 999999999)
+    Emin -   Minimum exponent
+    Emax -   Maximum exponent
     capitals -      If 1, 1*10^1 is printed as 1E+1.
                     If 0, printed as 1e1
                     (Defaults to 1)
@@ -2140,7 +2129,7 @@ class Context(object):
     def __init__(self, prec=None, rounding=None,
                  trap_enablers=None, flags=None,
                  _rounding_decision=None,
-                 Emin=DEFAULT_MIN_EXPONENT, Emax=DEFAULT_MAX_EXPONENT,
+                 Emin=None, Emax=None,
                  capitals=1, _clamp=0,
                  _ignored_flags=[]):
         if flags is None:
@@ -2927,15 +2916,15 @@ _infinity_map = {
     '-infinity' : -1
 }
 
-def isinfinity(num):
+def _isinfinity(num):
     """Determines whether a string or float is infinity.
 
-    +1 for positive infinity; 0 for finite ; +1 for positive infinity
+    +1 for negative infinity; 0 for finite ; +1 for positive infinity
     """
     num = str(num).lower()
     return _infinity_map.get(num, 0)
 
-def isnan(num):
+def _isnan(num):
     """Determines whether a string or float is NaN
 
     (1, sign, diagnostic info as string) => NaN
@@ -2978,6 +2967,8 @@ DefaultContext = Context(
         trap_enablers=dict.fromkeys(Signals, 0),
         flags=None,
         _rounding_decision=ALWAYS_ROUND,
+        Emax=DEFAULT_MAX_EXPONENT,
+        Emin=DEFAULT_MIN_EXPONENT
 )
 
 # Pre-made alternate contexts offered by the specification
