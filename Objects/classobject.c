@@ -1314,7 +1314,7 @@ instance_coerce(PyObject **pv, PyObject **pw)
 
 
 #define UNARY(funcname, methodname) \
-static PyObject *funcname(self) PyInstanceObject *self; { \
+static PyObject *funcname(PyInstanceObject *self) { \
 	static PyObject *o; \
 	if (o == NULL) o = PyString_InternFromString(methodname); \
 	return generic_unary_op(self, o); \
