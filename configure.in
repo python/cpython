@@ -1607,9 +1607,10 @@ if test -z "$with_universal_newlines"
 then with_universal_newlines="yes"
 fi
 if test "$with_universal_newlines" = "no"
+then
     echo --without-universal-newlines is unsupported, see README
     exit 1
-then
+else
     AC_DEFINE(WITH_UNIVERSAL_NEWLINES, 1,
       [Define if you want to read files with foreign newlines.])
 fi
