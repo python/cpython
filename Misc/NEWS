@@ -32,6 +32,12 @@ What's New in Python 2.1 alpha 1?
 
 Core language, builtins, and interpreter
 
+- The compiler will report a SyntaxError if "from ... import *" occurs
+  in a function or class scope or if a name bound by the import
+  statement is declared global in the same scope.  The language
+  reference has also documented that these cases are illegal, but
+  they were not enforced.
+
 - There is a new Unicode companion to the PyObject_Str() API
   called PyObject_Unicode(). It behaves in the same way as the
   former, but assures that the returned value is an Unicode object
