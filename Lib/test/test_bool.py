@@ -213,22 +213,34 @@ veris(marshal.loads(marshal.dumps(False)), False)
 import pickle
 veris(pickle.loads(pickle.dumps(True)), True)
 veris(pickle.loads(pickle.dumps(False)), False)
+veris(pickle.loads(pickle.dumps(True, True)), True)
+veris(pickle.loads(pickle.dumps(False, True)), False)
 
 import cPickle
 veris(cPickle.loads(cPickle.dumps(True)), True)
 veris(cPickle.loads(cPickle.dumps(False)), False)
+veris(cPickle.loads(cPickle.dumps(True, True)), True)
+veris(cPickle.loads(cPickle.dumps(False, True)), False)
 
 veris(pickle.loads(cPickle.dumps(True)), True)
 veris(pickle.loads(cPickle.dumps(False)), False)
+veris(pickle.loads(cPickle.dumps(True, True)), True)
+veris(pickle.loads(cPickle.dumps(False, True)), False)
 
 veris(cPickle.loads(pickle.dumps(True)), True)
 veris(cPickle.loads(pickle.dumps(False)), False)
+veris(cPickle.loads(pickle.dumps(True, True)), True)
+veris(cPickle.loads(pickle.dumps(False, True)), False)
 
 # Test for specific backwards-compatible pickle values
 vereq(pickle.dumps(True), "I01\n.")
 vereq(pickle.dumps(False), "I00\n.")
 vereq(cPickle.dumps(True), "I01\n.")
 vereq(cPickle.dumps(False), "I00\n.")
+vereq(pickle.dumps(True, True), "I01\n.")
+vereq(pickle.dumps(False, True), "I00\n.")
+vereq(cPickle.dumps(True, True), "I01\n.")
+vereq(cPickle.dumps(False, True), "I00\n.")
 
 if verbose:
     print "All OK"
