@@ -32,6 +32,7 @@ import marshal
 import sys
 import struct
 import re
+import warnings
 
 __all__ = ["PickleError", "PicklingError", "UnpicklingError", "Pickler",
            "Unpickler", "dump", "dumps", "load", "loads"]
@@ -39,7 +40,7 @@ __all__ = ["PickleError", "PicklingError", "UnpicklingError", "Pickler",
 # These are purely informational; no code usues these
 format_version = "2.0"                  # File format version we write
 compatible_formats = ["1.0",            # Original protocol 0
-                      "1.1",            # Protocol 0 with class supprt added
+                      "1.1",            # Protocol 0 with INST added
                       "1.2",            # Original protocol 1
                       "1.3",            # Protocol 1 with BINFLOAT added
                       "2.0",            # Protocol 2
@@ -249,103 +250,112 @@ class Pickler:
         return GET + `i` + '\n'
 
     def save(self, obj):
+        # Check for persistent id (defined by a subclass)
         pid = self.persistent_id(obj)
-        if pid is not None:
+        if pid:
             self.save_pers(pid)
             return
 
-        memo = self.memo
-        d = id(obj)
-        if d in memo:
-            self.write(self.get(memo[d][0]))
+        # Check the memo
+        x = self.memo.get(id(obj))
+        if x:
+            self.write(self.get(x[0]))
             return
 
+        # Check the type dispatch table
         t = type(obj)
-        try:
-            f = self.dispatch[t]
-        except KeyError:
-            pass
-        else:
-            f(self, obj)
+        f = self.dispatch.get(t)
+        if f:
+            f(self, obj) # Call unbound method with explicit self
             return
 
-        # The dispatch table doesn't know about type t.
+        # Check for a class with a custom metaclass; treat as regular class
         try:
             issc = issubclass(t, TypeType)
-        except TypeError: # t is not a class
+        except TypeError: # t is not a class (old Boost; see SF #502085)
             issc = 0
         if issc:
             self.save_global(obj)
             return
 
-        try:
-            reduce = dispatch_table[t]
-        except KeyError:
-            try:
-                reduce = obj.__reduce__
-            except AttributeError:
-                raise PicklingError, \
-                    "can't pickle %s object: %s" % (`t.__name__`,
-                                                     `obj`)
-            else:
-                tup = reduce()
+        # Check copy_reg.dispatch_table
+        reduce = dispatch_table.get(t)
+        if reduce:
+            rv = reduce(obj)
         else:
-            tup = reduce(obj)
+            # Check for __reduce__ method
+            reduce = getattr(obj, "__reduce__", None)
+            if not reduce:
+                raise PicklingError("Can't pickle %r object: %r" %
+                                    (t.__name__, obj))
+            rv = reduce()
 
-        if type(tup) is StringType:
-            self.save_global(obj, tup)
+        # Check for string returned by reduce(), meaning "save as global"
+        if type(rv) is StringType:
+            self.save_global(obj, rv)
             return
 
-        if type(tup) is not TupleType:
-            raise PicklingError, "Value returned by %s must be a " \
-                                 "tuple" % reduce
+        # Assert that reduce() returned a tuple
+        if type(rv) is not TupleType:
+            raise PicklingError("%s must return string or tuple" % reduce)
 
-        l = len(tup)
-
-        if (l != 2) and (l != 3):
-            raise PicklingError, "tuple returned by %s must contain " \
-                                 "only two or three elements" % reduce
-
-        callable = tup[0]
-        arg_tup  = tup[1]
-
-        if l > 2:
-            state = tup[2]
-        else:
+        # Assert that it returned a 2-tuple or 3-tuple, and unpack it
+        l = len(rv)
+        if l == 2:
+            func, args = rv
             state = None
+        elif l == 3:
+            func, args, state = rv
+        else:
+            raise PicklingError("Tuple returned by %s must have "
+                                "exactly two or three elements" % reduce)
 
-        if type(arg_tup) is not TupleType and arg_tup is not None:
-            raise PicklingError, "Second element of tuple returned " \
-                                 "by %s must be a tuple" % reduce
-
-        self.save_reduce(callable, arg_tup, state)
+        # Save the reduce() output and finally memoize the object
+        self.save_reduce(func, args, state)
         self.memoize(obj)
 
     def persistent_id(self, obj):
+        # This exists so a subclass can override it
         return None
 
     def save_pers(self, pid):
+        # Save a persistent id reference
         if self.bin:
             self.save(pid)
             self.write(BINPERSID)
         else:
             self.write(PERSID + str(pid) + '\n')
 
-    def save_reduce(self, acallable, arg_tup, state = None):
-        write = self.write
+    def save_reduce(self, func, args, state=None):
+        # This API is be called by some subclasses
+
+        # Assert that args is a tuple or None
+        if not isinstance(args, TupleType):
+            if args is None:
+                # A hack for Jim Fulton's ExtensionClass, now deprecated.
+                # See load_reduce()
+                warnings.warn("__basicnew__ special case is deprecated",
+                              DeprecationWarning)
+            else:
+                raise PicklingError(
+                    "args from reduce() should be a tuple")
+
+        # Assert that func is callable
+        if not callable(func):
+            raise PicklingError("func from reduce should be callable")
+
         save = self.save
+        write = self.write
 
-        if not callable(acallable):
-            raise PicklingError("__reduce__() must return callable as "
-                                "first argument, not %s" % `acallable`)
-
-        save(acallable)
-        save(arg_tup)
+        save(func)
+        save(args)
         write(REDUCE)
 
         if state is not None:
             save(state)
             write(BUILD)
+
+    # Methods below this point are dispatched through the dispatch table
 
     dispatch = {}
 
@@ -1028,9 +1038,8 @@ class Unpickler:
                                            "unpickling" % callable
 
         if arg_tup is None:
-            import warnings
-            warnings.warn("The None return argument form of __reduce__  is "
-                          "deprecated. Return a tuple of arguments instead.",
+            # A hack for Jim Fulton's ExtensionClass, now deprecated
+            warnings.warn("__basicnew__ special case is deprecated",
                           DeprecationWarning)
             value = callable.__basicnew__()
         else:
