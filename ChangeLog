@@ -1,4 +1,19 @@
+Tue Jan 10 11:34:23 1995  Guido van Rossum  <guido@voorn.cwi.nl>
+
+	* Python/bltinmodule.c (builtin_{execfile,eval}): fix
+	globals/locals defaults to match the manual again; also allow None
+	to mean the same as the default
+
+	* Lib/nntplib.py: fix comments for list command (should be last,
+	first instead of first, last)
+
+	* Lib/test/test_grammar.py: fix exec test so presence of
+	__builtins__ doesn't break it
+
 Mon Jan  9 14:20:16 1995  Guido van Rossum  <guido@voorn.cwi.nl>
+
+	* Objects/{funcobject.c,methodobject.c,classobject.c}: don't
+	expose certain internals (e.g. __dict__) in restricted mode.
 
 	* Python/thread_pthread.h: Alpha OSF/1 fix
 
