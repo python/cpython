@@ -541,7 +541,15 @@ class FakeSocket:
         self.__sock = sock
         self.__ssl = ssl
 
-    def makefile(self, mode):           # hopefully, never have to write
+    def makefile(self, mode, bufsize=None):
+        """Return a readable file-like object with data from socket.
+
+        This method offers only partial support for the makefile
+        interface of a real socket.  It only supports modes 'r' and
+        'rb' and the bufsize argument is ignored.
+
+        The returned object contains *all* of the file data 
+        """
         if mode != 'r' and mode != 'rb':
             raise UnimplementedFileMode()
 
@@ -618,6 +626,8 @@ class HTTP:
         self.send = self._conn.send
         self.putrequest = self._conn.putrequest
         self.endheaders = self._conn.endheaders
+        self._conn._http_vsn = self._http_vsn
+        self._conn._http_vsn_str = self._http_vsn_str
 
         # we never actually use these for anything, but we keep them here for
         # compatibility with post-1.5.2 CVS.
