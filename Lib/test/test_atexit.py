@@ -72,7 +72,7 @@ class TestCase(unittest.TestCase):
             sys.stdout = sys.__stdout__
             sys.stderr = sys.__stderr__
             atexit._exithandlers = save_handlers
-       
+
     ### helpers
     def h1(self):
         print "h1"
