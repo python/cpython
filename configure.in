@@ -79,10 +79,10 @@ AC_SUBST(MACHDEP)
 AC_MSG_CHECKING(MACHDEP)
 if test -z "$MACHDEP"
 then
-	ac_sys_system=`uname -s | tr -d '[[/ ]]' | tr '[[A-Z]]' '[[a-z]]'`
-	ac_sys_release=`uname -r | tr -d '[[/ ]]' | sed 's/\..*//'`
+	ac_sys_system=`uname -s | tr -d '[/ ]' | tr '[[A-Z]]' '[[a-z]]'`
+	ac_sys_release=`uname -r | tr -d '[/ ]' | sed 's/\..*//'`
 	ac_sys_cpu=`(uname -p 2>/dev/null || uname -m) |
-		     tr '[[A-Z]]' '[[-a-z]]'`
+		     tr '[[A-Z]]' '[[a-z]]'`
 ##	MACHDEP="$ac_sys_system$ac_sys_release$ac_sys_cpu"
 	MACHDEP="$ac_sys_system$ac_sys_release"
 	case MACHDEP in
