@@ -27,9 +27,23 @@ Tcl_AppInit (interp)
 				  (ClientData) main, NULL);
 	}
 #endif
+
+#ifdef WITH_PIL /* 0.2b5 and later -- not yet released as of May 14 */
+	{
+		extern void TkImaging_Init(Tcl_Interp *interp);
+		TkImaging_Init(interp);
+	}
+#endif
+
+#ifdef WITH_PIL_OLD /* 0.2b4 and earlier */
+	{
+		extern void TkImaging_Init(void);
+		TkImaging_Init();
+	}
+#endif
+
 #ifdef WITH_XXX
 
 #endif
 	return TCL_OK;
 }
-
