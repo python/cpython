@@ -1,11 +1,12 @@
 # Mount RPC client -- RFC 1094 (NFS), Appendix A
 
 # This module demonstrates how to write your own RPC client in Python.
-# Since there is no RPC compiler for Python (yet), you must first
-# create classes derived from Packer and Unpacker to handle the data
-# types for the server you want to interface to.  You then write the
-# client class.  If you want to support both the TCP and the UDP
-# version of a protocol, use multiple inheritance as shown below.
+# When this example was written, there was no RPC compiler for
+# Python. Without such a compiler, you must first create classes
+# derived from Packer and Unpacker to handle the data types for the
+# server you want to interface to.  You then write the client class.
+# If you want to support both the TCP and the UDP version of a
+# protocol, use multiple inheritance as shown below.
 
 
 import rpc
