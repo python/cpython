@@ -1423,7 +1423,7 @@ PySocketSock_makefile(PySocketSockObject *s, PyObject *args)
 	char *mode = "r";
 	int bufsize = -1;
 #ifdef MS_WIN32
-	intptr_t fd;
+	Py_intptr_t fd;
 #else
 	int fd;
 #endif
