@@ -1,10 +1,6 @@
 #include "Python.h"
 #include <ctype.h>
 
-#ifdef HAVE_PYMEMCOMPAT_H
-#include "pymemcompat.h"
-#endif
-
 #include "compile.h"
 #include "frameobject.h"
 #include "expat.h"
@@ -973,7 +969,13 @@ xmlparse_ExternalEntityParserCreate(xmlparseobject *self, PyObject *args)
     if (self->buffer != NULL) {
         new_parser->buffer = malloc(new_parser->buffer_size);
         if (new_parser->buffer == NULL) {
+#ifndef Py_TPFLAGS_HAVE_GC
+            /* Code for versions 2.0 and 2.1 */
+            PyObject_Del(new_parser);
+#else
+            /* Code for versions 2.2 and later. */
             PyObject_GC_Del(new_parser);
+#endif
             return PyErr_NoMemory();
         }
     }
