@@ -110,14 +110,6 @@ class ReprTests(unittest.TestCase):
         eq(repr(xrange(1)), 'xrange(1)')
         eq(repr(xrange(1, 2)), 'xrange(1, 2)')
         eq(repr(xrange(1, 2, 3)), 'xrange(1, 4, 3)')
-        # Turn off warnings for deprecated multiplication
-        warnings.filterwarnings('ignore',
-                 r'xrange object multiplication is deprecated',
-                 DeprecationWarning, module=ReprTests.__module__)
-        warnings.filterwarnings('ignore',
-                 r"PyRange_New's 'repetitions' argument is deprecated",
-                 DeprecationWarning, module=ReprTests.__module__)
-        eq(repr(xrange(1) * 3), '(xrange(1) * 3)')
 
     def test_nesting(self):
         eq = self.assertEquals
