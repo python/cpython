@@ -313,8 +313,6 @@ class PyBuildExt(build_ext):
                                libraries=math_libs) )
         # operator.add() and similar goodies
         exts.append( Extension('operator', ['operator.c']) )
-        # access to the builtin codecs and codec registry
-        exts.append( Extension('_codecs', ['_codecsmodule.c']) )
         # Python C API test module
         exts.append( Extension('_testcapi', ['_testcapimodule.c']) )
         # static Unicode character database

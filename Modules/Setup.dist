@@ -111,6 +111,7 @@ PYTHONPATH=$(COREPYTHONPATH)
 posix posixmodule.c		# posix (UNIX) system calls
 errno errnomodule.c		# posix (UNIX) errno values
 _sre _sre.c			# Fredrik Lundh's new regular expressions
+_codecs _codecsmodule.c		# access to the builtin codecs and codec registry
 
 # The rest of the modules listed in this file are all commented out by
 # default.  Usually they can be detected and built as dynamically
@@ -163,7 +164,6 @@ GLHACK=-Dclear=__GLclear
 #time timemodule.c # -lm # time operations and variables
 #operator operator.c	# operator.add() and similar goodies
 #_weakref _weakref.c	# basic weak reference support
-#_codecs _codecsmodule.c	# access to the builtin codecs and codec registry
 #_testcapi _testcapimodule.c    # Python C API test module
 
 #unicodedata unicodedata.c    # static Unicode character database
