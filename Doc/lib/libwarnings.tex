@@ -43,7 +43,7 @@ implementation of this function formats the message by calling
 implementations.
 
 
-\subsection{Warning Categories}
+\subsection{Warning Categories \label{warning-categories}}
 
 There are a number of built-in exceptions that represent warning
 categories.  This categorization is useful to be able to filter out
@@ -76,7 +76,7 @@ of the standard warning categories.  A warning category must always be
 a subclass of the \exception{Warning} class.
 
 
-\subsection{The Warnings Filter}
+\subsection{The Warnings Filter \label{warning-filter}}
 
 The warnings filter controls whether warnings are ignored, displayed,
 or turned into errors (raising an exception).
@@ -138,7 +138,7 @@ it is first imported (invalid options are ignored, after printing a
 message to \code{sys.stderr}).
 
 
-\subsection{Available Functions}
+\subsection{Available Functions \label{warning-functions}}
 
 \begin{funcdesc}{warn}{message\optional{, category\optional{, stacklevel}}}
 Issue a warning, or maybe ignore it or raise an exception.  The
@@ -175,7 +175,8 @@ contain embedded newlines and ends in a newline.
 \end{funcdesc}
 
 \begin{funcdesc}{filterwarnings}{action\optional{,
-message\optional{, category\optional{, module\optional{, lineno}}}}}
+                 message\optional{, category\optional{,
+                 module\optional{, lineno}}}}}
 Insert an entry into the list of warnings filters (at the front).
 This checks the types of the arguments, compiles the message and
 module regular expressions, and inserts them as a tuple in front
