@@ -511,7 +511,11 @@ poll_poll(pollObject *self, PyObject *args)
 			}
 			PyTuple_SET_ITEM(value, 0, num);
 
-			num = PyInt_FromLong(self->ufds[i].revents);
+			/* The &0xffff is a workaround for AIX.  'revents'
+			   is a 16-bit short, and IBM assigned POLLNVAL
+			   to be 0x8000, so the conversion to int results
+			   in a negative number. See SF bug #923315. */
+			num = PyInt_FromLong(self->ufds[i].revents & 0xffff);
 			if (num == NULL) {
 				Py_DECREF(value);
 				goto error;
