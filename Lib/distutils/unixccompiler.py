@@ -102,6 +102,7 @@ class UnixCCompiler (CCompiler):
                  output_dir=None,
                  macros=None,
                  include_dirs=None,
+                 debug=0,
                  extra_preargs=None,
                  extra_postargs=None):
 
@@ -149,6 +150,8 @@ class UnixCCompiler (CCompiler):
         # (will have to fix this when I add the ability to build a
         # new Python)
         cc_args = ['-c'] + pp_opts + self.ccflags + self.ccflags_shared
+        if debug:
+            cc_args[:0] = ['-g']
         if extra_preargs:
             cc_args[:0] = extra_preargs
         if extra_postargs is None:
@@ -194,7 +197,8 @@ class UnixCCompiler (CCompiler):
     def link_static_lib (self,
                          objects,
                          output_libname,
-                         output_dir=None):
+                         output_dir=None,
+                         debug=0):
 
         if type (objects) not in (ListType, TupleType):
             raise TypeError, \
@@ -234,6 +238,7 @@ class UnixCCompiler (CCompiler):
                          output_dir=None,
                          libraries=None,
                          library_dirs=None,
+                         debug=0,
                          extra_preargs=None,
                          extra_postargs=None):
         # XXX should we sanity check the library name? (eg. no
@@ -244,6 +249,7 @@ class UnixCCompiler (CCompiler):
             output_dir,
             libraries,
             library_dirs,
+            debug,
             extra_preargs,
             extra_postargs)
         
@@ -254,6 +260,7 @@ class UnixCCompiler (CCompiler):
                             output_dir=None,
                             libraries=None,
                             library_dirs=None,
+                            debug=0,
                             extra_preargs=None,
                             extra_postargs=None):
 
@@ -279,6 +286,8 @@ class UnixCCompiler (CCompiler):
         if self.force or newer:
             ld_args = self.ldflags_shared + objects + \
                       lib_opts + ['-o', output_filename]
+            if debug:
+                ld_args[:0] = ['-g']
             if extra_preargs:
                 ld_args[:0] = extra_preargs
             if extra_postargs:
@@ -296,6 +305,7 @@ class UnixCCompiler (CCompiler):
                          output_dir=None,
                          libraries=None,
                          library_dirs=None,
+                         debug=0,
                          extra_preargs=None,
                          extra_postargs=None):
     
@@ -318,6 +328,8 @@ class UnixCCompiler (CCompiler):
 
         if self.force or newer:
             ld_args = objects + lib_opts + ['-o', output_filename]
+            if debug:
+                ld_args[:0] = ['-g']
             if extra_preargs:
                 ld_args[:0] = extra_preargs
             if extra_postargs:
