@@ -101,9 +101,14 @@ sub use_wrappers{
     return $before . $stuff . $after . $_;
 }
 
-sub use_current{
-    return use_wrappers(@_[0], '', '');
+sub use_env_wrappers{
+    local($_,$before,$after,$tag) = @_;
+    push(@open_tags,$tag);
+    my $s = join('', $before,
+		 translate_commands(next_argument()), $after, $_);
+    return $s;
 }
+
 sub use_sans_serif{
     return use_wrappers(@_[0], '<font face="sans-serif">', '</font>');
 }
@@ -121,9 +126,9 @@ sub do_cmd_optional{
 # output files for users that read them over the network rather than
 # from local repositories.
 
-sub do_cmd_pytype{ return use_current(@_); }
-sub do_cmd_makevar{ return use_current(@_); }
-sub do_cmd_code{ return use_wrappers(@_[0], '<tt>', '</tt>'); }
+sub do_cmd_pytype{ return @_[0]; }
+sub do_cmd_makevar{ return @_[0]; }
+sub do_cmd_code{ return use_env_wrappers(@_[0], '<tt>', '</tt>', 'tt'); }
 sub do_cmd_module{ return do_cmd_code(@_); }
 sub do_cmd_keyword{ return do_cmd_code(@_); }
 sub do_cmd_exception{ return do_cmd_code(@_); }
@@ -140,11 +145,19 @@ sub do_cmd_character{ return do_cmd_samp(@_); }
 sub do_cmd_program{ return do_cmd_strong(@_); }
 sub do_cmd_email{ return use_sans_serif(@_); }
 sub do_cmd_mimetype{ return use_sans_serif(@_); }
-sub do_cmd_var{ return use_italics(@_); }
+sub do_cmd_var{
+    local($_, *open_args) = @_;
+    my $prevtag = $open_args[(scalar @open_args) - 1];
+    if ($prevtag eq "code" || $prevtag eq "tt") {
+	# in code of some sort....
+	my $text = next_argument();
+	return "</$prevtag><i>$text</i><$prevtag>$_";
+    }
+    return use_italics(@_); }
 sub do_cmd_dfn{ return use_italics(@_); }	# make an index entry?
 sub do_cmd_emph{ return use_italics(@_); }
 sub do_cmd_file{ return use_wrappers(@_[0], '"<tt>', '</tt>"'); }
-sub do_cmd_samp{ return use_wrappers(@_[0], '"<tt>', '</tt>"'); }
+sub do_cmd_samp{ return use_env_wrappers(@_[0], '"<tt>', '</tt>"', 'tt'); }
 sub do_cmd_kbd{ return use_wrappers(@_[0], '<kbd>', '</kbd>'); }
 sub do_cmd_strong{ return use_wrappers(@_[0], '<b>', '</b>'); }
 
@@ -1022,6 +1035,12 @@ sub do_cmd_term{
     # could easily add an index entry here...
     return "<dt><b>$aname" . $term . "</a></b>\n<dd>" . $_;
 }
+
+
+process_commands_wrap_deferred(<<_RAW_ARG_DEFERRED_CMDS_);
+code # {}
+samp # {}
+_RAW_ARG_DEFERRED_CMDS_
 
 
 1;				# This must be the last line
