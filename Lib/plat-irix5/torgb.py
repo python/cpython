@@ -18,7 +18,7 @@ t.append('fromppm $IN $OUT', 'ff')
 table['ppm'] = t
 
 t = pipes.Template().init()
-t.append('pnmtoppm', '--')
+t.append('(PATH=$PATH:/ufs/guido/bin/sgi; exec pnmtoppm)', '--')
 t.append('fromppm $IN $OUT', 'ff')
 table['pnm'] = t
 table['pgm'] = t
@@ -36,13 +36,13 @@ table['tiff'] = t
 
 t = pipes.Template().init()
 t.append('rasttopnm', '--')
-t.append('pnmtoppm', '--')
+t.append('(PATH=$PATH:/ufs/guido/bin/sgi; exec pnmtoppm)', '--')
 t.append('fromppm $IN $OUT', 'ff')
 table['rast'] = t
 
 t = pipes.Template().init()
 t.append('djpeg', '--')
-t.append('pnmtoppm', '--')
+t.append('(PATH=$PATH:/ufs/guido/bin/sgi; exec pnmtoppm)', '--')
 t.append('fromppm $IN $OUT', 'ff')
 table['jpeg'] = t
 
