@@ -46,62 +46,28 @@ If \var{verbose} is true, additional debugging output may be sent to
 standard output.
 \end{classdesc}
 
-The \class{RExec} class has the following class attributes, which are
-used by the \method{__init__()} method.  Changing them on an existing
-instance won't have any effect; instead, create a subclass of
-\class{RExec} and assign them new values in the class definition.
-Instances of the new class will then use those new values.  All these
-attributes are tuples of strings.
+It is important to be aware that code running in a restricted
+environment can still call the \function{sys.exit()} function.  To
+disallow restricted code from exiting the interpreter, always protect
+calls that cause restricted code to run with a
+\keyword{try}/\keyword{except} statement that catches the
+\exception{SystemExit} exception.  Removing the \function{sys.exit()}
+function from the restricted environment is not sufficient --- the
+restricted code could still use \code{raise SystemExit}.  Removing
+\exception{SystemExit} is not a reasonable option; some library code
+makes use of this and would break were it not available.
 
-\begin{memberdesc}{nok_builtin_names}
-Contains the names of built-in functions which will \emph{not} be
-available to programs running in the restricted environment.  The
-value for \class{RExec} is \code{('open',} \code{'reload',}
-\code{'__import__')}.  (This gives the exceptions, because by far the
-majority of built-in functions are harmless.  A subclass that wants to
-override this variable should probably start with the value from the
-base class and concatenate additional forbidden functions --- when new
-dangerous built-in functions are added to Python, they will also be
-added to this module.)
-\end{memberdesc}
 
-\begin{memberdesc}{ok_builtin_modules}
-Contains the names of built-in modules which can be safely imported.
-The value for \class{RExec} is \code{('audioop',} \code{'array',}
-\code{'binascii',} \code{'cmath',} \code{'errno',} \code{'imageop',}
-\code{'marshal',} \code{'math',} \code{'md5',} \code{'operator',}
-\code{'parser',} \code{'regex',} \code{'rotor',} \code{'select',}
-\code{'strop',} \code{'struct',} \code{'time')}.  A similar remark
-about overriding this variable applies --- use the value from the base
-class as a starting point.
-\end{memberdesc}
+\begin{seealso}
+  \seetitle[http://grail.sourceforge.net/]{Grail Home Page}{Grail is a
+            Web browser written entirely in Python.  It uses the
+            \module{rexec} module as a foundation for supporting
+            Python applets, and can be used as an example usage of
+            this module.}
+\end{seealso}
 
-\begin{memberdesc}{ok_path}
-Contains the directories which will be searched when an \keyword{import}
-is performed in the restricted environment.  
-The value for \class{RExec} is the same as \code{sys.path} (at the time
-the module is loaded) for unrestricted code.
-\end{memberdesc}
 
-\begin{memberdesc}{ok_posix_names}
-% Should this be called ok_os_names?
-Contains the names of the functions in the \refmodule{os} module which will be
-available to programs running in the restricted environment.  The
-value for \class{RExec} is \code{('error',} \code{'fstat',}
-\code{'listdir',} \code{'lstat',} \code{'readlink',} \code{'stat',}
-\code{'times',} \code{'uname',} \code{'getpid',} \code{'getppid',}
-\code{'getcwd',} \code{'getuid',} \code{'getgid',} \code{'geteuid',}
-\code{'getegid')}.
-\end{memberdesc}
-
-\begin{memberdesc}{ok_sys_names}
-Contains the names of the functions and variables in the \refmodule{sys}
-module which will be available to programs running in the restricted
-environment.  The value for \class{RExec} is \code{('ps1',}
-\code{'ps2',} \code{'copyright',} \code{'version',} \code{'platform',}
-\code{'exit',} \code{'maxint')}.
-\end{memberdesc}
-
+\subsection{RExec Objects \label{rexec-objects}}
 
 \class{RExec} instances support the following methods:
 
@@ -189,6 +155,61 @@ Reload the module object \var{module}, re-parsing and re-initializing it.
 Unload the module object \var{module}.   
 % XXX what are the semantics of this?  
 \end{methoddesc}
+
+
+\subsection{Defining restricted environments \label{rexec-extension}}
+
+The \class{RExec} class has the following class attributes, which are
+used by the \method{__init__()} method.  Changing them on an existing
+instance won't have any effect; instead, create a subclass of
+\class{RExec} and assign them new values in the class definition.
+Instances of the new class will then use those new values.  All these
+attributes are tuples of strings.
+
+\begin{memberdesc}{nok_builtin_names}
+Contains the names of built-in functions which will \emph{not} be
+available to programs running in the restricted environment.  The
+value for \class{RExec} is \code{('open', 'reload', '__import__')}.
+(This gives the exceptions, because by far the majority of built-in
+functions are harmless.  A subclass that wants to override this
+variable should probably start with the value from the base class and
+concatenate additional forbidden functions --- when new dangerous
+built-in functions are added to Python, they will also be added to
+this module.)
+\end{memberdesc}
+
+\begin{memberdesc}{ok_builtin_modules}
+Contains the names of built-in modules which can be safely imported.
+The value for \class{RExec} is \code{('audioop', 'array', 'binascii',
+'cmath', 'errno', 'imageop', 'marshal', 'math', 'md5', 'operator',
+'parser', 'regex', 'rotor', 'select', 'strop', 'struct', 'time')}.  A
+similar remark about overriding this variable applies --- use the
+value from the base class as a starting point.
+\end{memberdesc}
+
+\begin{memberdesc}{ok_path}
+Contains the directories which will be searched when an \keyword{import}
+is performed in the restricted environment.  
+The value for \class{RExec} is the same as \code{sys.path} (at the time
+the module is loaded) for unrestricted code.
+\end{memberdesc}
+
+\begin{memberdesc}{ok_posix_names}
+% Should this be called ok_os_names?
+Contains the names of the functions in the \refmodule{os} module which will be
+available to programs running in the restricted environment.  The
+value for \class{RExec} is \code{('error', 'fstat', 'listdir',
+'lstat', 'readlink', 'stat', 'times', 'uname', 'getpid', 'getppid',
+'getcwd', 'getuid', 'getgid', 'geteuid', 'getegid')}.
+\end{memberdesc}
+
+\begin{memberdesc}{ok_sys_names}
+Contains the names of the functions and variables in the \refmodule{sys}
+module which will be available to programs running in the restricted
+environment.  The value for \class{RExec} is \code{('ps1', 'ps2',
+'copyright', 'version', 'platform', 'exit', 'maxint')}.
+\end{memberdesc}
+
 
 \subsection{An example}
 
