@@ -24,9 +24,19 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* Long (arbitrary precision) integer object implementation */
 
+/* XXX The functional organization of this file is terrible */
+
 #include "allobjects.h"
 #include "longintrepr.h"
 #include <assert.h>
+
+static int ticker;	/* XXX Could be shared with ceval? */
+
+#define INTRCHECK(block) \
+	if (--ticker < 0) { \
+		ticker = 100; \
+		if (intrcheck()) { block; } \
+	}
 
 /* Normalize (remove leading zeros from) a long int object.
    Doesn't attempt to free the storage--in most cases, due to the nature
@@ -146,7 +156,7 @@ dgetlongvalue(vv)
 longobject *
 mul1(a, n)
 	longobject *a;
-	digit n;
+	wdigit n;
 {
 	return muladd1(a, n, (digit)0);
 }
@@ -156,8 +166,8 @@ mul1(a, n)
 longobject *
 muladd1(a, n, extra)
 	longobject *a;
-	digit n;
-	digit extra;
+	wdigit n;
+	wdigit extra;
 {
 	int size_a = ABS(a->ob_size);
 	longobject *z = alloclongobject(size_a+1);
@@ -182,7 +192,7 @@ muladd1(a, n, extra)
 longobject *
 divrem1(a, n, prem)
 	longobject *a;
-	digit n;
+	wdigit n;
 	digit *prem;
 {
 	int size = ABS(a->ob_size);
@@ -253,12 +263,12 @@ long_format(a, base)
 		*--p = rem;
 		DECREF(a);
 		a = temp;
-		if (a->ob_size >= INTRLIMIT && intrcheck()) {
+		INTRCHECK({
 			DECREF(a);
 			DECREF(str);
 			err_set(KeyboardInterrupt);
 			return NULL;
-		}
+		})
 	} while (a->ob_size != 0);
 	DECREF(a);
 	if (sign)
@@ -342,7 +352,8 @@ long_divrem(a, b, prem)
 		return NULL;
 	}
 	if (size_a < size_b ||
-		size_a == size_b && a->ob_digit[size_a-1] < b->ob_digit[size_b-1]) {
+			size_a == size_b &&
+			a->ob_digit[size_a-1] < b->ob_digit[size_b-1]) {
 		/* |a| < |b|. */
 		if (prem != NULL) {
 			INCREF(a);
@@ -376,7 +387,7 @@ long_divrem(a, b, prem)
 	return z;
 }
 
-/* True unsigned long division with remainder */
+/* Unsigned long division with remainder -- the algorithm */
 
 static longobject *
 x_divrem(v1, w1, prem)
@@ -399,7 +410,7 @@ x_divrem(v1, w1, prem)
 	}
 	
 	assert(size_v >= size_w && size_w > 1); /* Assert checks by div() */
-	assert(v->refcnt == 1); /* Since v will be used as accumulator! */
+	assert(v->ob_refcnt == 1); /* Since v will be used as accumulator! */
 	assert(size_w == ABS(w->ob_size)); /* That's how d was calculated */
 	
 	size_v = ABS(v->ob_size);
@@ -408,15 +419,15 @@ x_divrem(v1, w1, prem)
 	for (j = size_v, k = a->ob_size-1; a != NULL && k >= 0; --j, --k) {
 		digit vj = (j >= size_v) ? 0 : v->ob_digit[j];
 		twodigits q;
-		long carry = 0; /* Signed! long! */
+		stwodigits carry = 0;
 		int i;
 		
-		if (size_v >= INTRLIMIT && intrcheck()) {
+		INTRCHECK({
 			DECREF(a);
 			a = NULL;
 			err_set(KeyboardInterrupt);
 			break;
-		}
+		})
 		if (vj == w->ob_digit[size_w-1])
 			q = MASK;
 		else
@@ -713,11 +724,11 @@ long_mul(a, w)
 		twodigits f = a->ob_digit[i];
 		int j;
 		
-		if (z->ob_size >= INTRLIMIT && intrcheck()) {
+		INTRCHECK({
 			DECREF(z);
 			err_set(KeyboardInterrupt);
 			return NULL;
-		}
+		})
 		for (j = 0; j < size_b; ++j) {
 			carry += z->ob_digit[i+j] + b->ob_digit[j] * f;
 			z->ob_digit[i+j] = carry & MASK;
@@ -781,7 +792,8 @@ long_rem(v, w)
    	 13	-10	 3		-7
    	-13	-10	-3		-3
    So, to get from rem to mod, we have to add b if a and b
-   have different signs. */
+   have different signs.  We then subtract one from the 'div'
+   part of the outcome to keep the invariant intact. */
 
 static object *
 long_divmod(v, w)
@@ -800,13 +812,24 @@ long_divmod(v, w)
 		return NULL;
 	}
 	if ((v->ob_size < 0) != (((longobject *)w)->ob_size < 0)) {
-		longobject *temp = (longobject *) long_add(rem, w);
+		longobject *temp;
+		longobject *one;
+		temp = (longobject *) long_add(rem, w);
 		DECREF(rem);
-		rem = temp; /* XXX ??? was rem = b ??? */
+		rem = temp;
 		if (rem == NULL) {
 			DECREF(div);
 			return NULL;
 		}
+		one = (longobject *) newlongobject(1L);
+		if (one == NULL ||
+		    (temp = (longobject *) long_sub(div, one)) == NULL) {
+			DECREF(rem);
+			DECREF(div);
+			return NULL;
+		}
+		DECREF(div);
+		div = temp;
 	}
 	z = newtupleobject(2);
 	if (z != NULL) {
@@ -869,6 +892,13 @@ long_abs(v)
 		return long_pos(v);
 }
 
+static int
+long_nonzero(v)
+	longobject *v;
+{
+	return v->ob_size != 0;
+}
+
 static number_methods long_as_number = {
 	long_add,	/*nb_add*/
 	long_sub,	/*nb_subtract*/
@@ -880,6 +910,7 @@ static number_methods long_as_number = {
 	long_neg,	/*nb_negative*/
 	long_pos,	/*tp_positive*/
 	long_abs,	/*tp_absolute*/
+	long_nonzero,	/*tp_nonzero*/
 };
 
 typeobject Longtype = {
