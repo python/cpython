@@ -82,6 +82,7 @@ extern void initsoundex();
 extern void initoperator();
 extern void initerrno();
 extern void initreop();
+extern void initpcre();
 #ifdef THINK
 extern void initmacconsole();
 #endif
@@ -183,6 +184,7 @@ struct _inittab _PyImport_Inittab[] = {
 	{"operator", initoperator},
 	{"errno", initerrno},
 	{"reop", initreop},
+	{"pcre", initpcre},
 #ifdef THINK_C
 /* This is an interface to the Think runtime */
 	{"macconsole", initmacconsole},
