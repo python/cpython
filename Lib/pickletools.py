@@ -1614,6 +1614,8 @@ opcodes = [
       the class object obtained from INST's arguments is applied to the
       argtuple obtained from the stack, and the resulting instance object
       is pushed on the stack.
+
+      NOTE:  checks for __safe_for_unpickling__ went away in Python 2.3.
       """),
 
     I(name='OBJ',
@@ -1643,6 +1645,10 @@ opcodes = [
       except that no __safe_for_unpickling__ check is done (XXX this is
       a bug; cPickle does test __safe_for_unpickling__).  See INST for
       the gory details.
+
+      NOTE:  In Python 2.3, INST and OBJ are identical except for how they
+      get the class object.  That was always the intent; the implementations
+      had diverged for accidental reasons.
       """),
 
     I(name='NEWOBJ',
