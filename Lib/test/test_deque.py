@@ -28,6 +28,18 @@ class TestBasic(unittest.TestCase):
         self.assertEqual(right, range(150, 400))
         self.assertEqual(list(d), range(50, 150))
 
+    def test_extend(self):
+        d = deque('a')
+        self.assertRaises(TypeError, d.extend, 1)
+        d.extend('bcd')
+        self.assertEqual(list(d), list('abcd'))
+
+    def test_extendleft(self):
+        d = deque('a')
+        self.assertRaises(TypeError, d.extendleft, 1)
+        d.extendleft('bcd')
+        self.assertEqual(list(d), list(reversed('abcd')))
+
     def test_len(self):
         d = deque('ab')
         self.assertEqual(len(d), 2)
