@@ -362,6 +362,7 @@ class URLopener:
         dirs = string.splitfields(path, '/')
         dirs, file = dirs[:-1], dirs[-1]
         if dirs and not dirs[0]: dirs = dirs[1:]
+        if dirs and not dirs[0]: dirs[0] = '/'
         key = (user, host, port, string.joinfields(dirs, '/'))
         # XXX thread unsafe!
         if len(self.ftpcache) > MAXFTPCACHE:
