@@ -136,6 +136,7 @@ class UnicodeTest(
         self.checkequalnofix(u'iiix', u'abababc', 'translate', {ord('a'):None, ord('b'):ord('i'), ord('c'):u'x'})
         self.checkequalnofix(u'<i><i><i>c', u'abababc', 'translate', {ord('a'):None, ord('b'):u'<i>'})
         self.checkequalnofix(u'c', u'abababc', 'translate', {ord('a'):None, ord('b'):u''})
+        self.checkequalnofix(u'xyyx', u'xzx', 'translate', {ord('z'):u'yy'})
 
         self.assertRaises(TypeError, u'hello'.translate)
         self.assertRaises(TypeError, u'abababc'.translate, {ord('a'):''})
