@@ -1279,8 +1279,8 @@ elif os.name == 'nt':
                     for p in proxyServer.split(';'):
                         protocol, address = p.split('=', 1)
                         # See if address has a type:// prefix
-                        type, address = splittype(address)
-                        if not type:
+                        import re
+                        if not re.match('^([^/:]+)://', address):
                             address = '%s://%s' % (protocol, address)
                         proxies[protocol] = address
                 else:
