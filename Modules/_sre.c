@@ -337,19 +337,6 @@ mark_restore(SRE_STATE* state, int lo, int hi)
     return 0;
 }
 
-static void
-lastmark_restore(SRE_STATE *state, int lastmark)
-{
-    if (state->lastmark > lastmark) {
-        memset(
-            state->mark + lastmark + 1, 0,
-            (state->lastmark - lastmark) * sizeof(void*)
-            );
-        state->lastmark = lastmark;
-        state->lastindex = (lastmark == 0) ? -1 : (lastmark-1)/2+1;
-    }
-}
-
 /* generate 8-bit version */
 
 #define SRE_CHAR unsigned char
@@ -690,6 +677,22 @@ SRE_INFO(SRE_STATE* state, SRE_CODE* pattern)
 }
 #endif
 
+/* macros to preserve lastmark in case of backtracking */
+#define LASTMARK_SAVE()     \
+    do { \
+        lastmark = state->lastmark; \
+        lastindex = state->lastindex; \
+    } while (0)
+#define LASTMARK_RESTORE()  \
+    do { \
+        if (state->lastmark > lastmark) { \
+            memset(state->mark + lastmark + 1, 0, \
+                   (state->lastmark - lastmark) * sizeof(void*)); \
+            state->lastmark = lastmark; \
+            state->lastindex = lastindex; \
+        } \
+    } while (0)
+
 LOCAL(int)
 SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern, int level)
 {
@@ -700,7 +703,7 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern, int level)
     SRE_CHAR* ptr = state->ptr;
     int i, count;
     SRE_REPEAT* rp;
-    int lastmark;
+    int lastmark, lastindex;
     SRE_CODE chr;
 
     SRE_REPEAT rep; /* FIXME: <fl> allocate in STATE instead */
@@ -927,7 +930,7 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern, int level)
             /* alternation */
             /* <BRANCH> <0=skip> code <JUMP> ... <NULL> */
             TRACE(("|%p|%p|BRANCH\n", pattern, ptr));
-            lastmark = state->lastmark;
+            LASTMARK_SAVE();
             for (; pattern[0]; pattern += pattern[0]) {
                 if (pattern[1] == SRE_OP_LITERAL &&
                     (ptr >= end || (SRE_CODE) *ptr != pattern[2]))
@@ -939,7 +942,7 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern, int level)
                 i = SRE_MATCH(state, pattern + 1, level + 1);
                 if (i)
                     return i;
-                lastmark_restore(state, lastmark);
+                LASTMARK_RESTORE();
             }
             return 0;
 
@@ -979,8 +982,11 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern, int level)
                 /* tail is empty.  we're finished */
                 state->ptr = ptr;
                 return 1;
+            }
 
-            } else if (pattern[pattern[0]] == SRE_OP_LITERAL) {
+            LASTMARK_SAVE();
+
+            if (pattern[pattern[0]] == SRE_OP_LITERAL) {
                 /* tail starts with a literal. skip positions where
                    the rest of the pattern cannot possibly match */
                 chr = pattern[pattern[0]+1];
@@ -998,11 +1004,11 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern, int level)
                         return i;
                     ptr--;
                     count--;
+                    LASTMARK_RESTORE();
                 }
 
             } else {
                 /* general case */
-                lastmark = state->lastmark;
                 while (count >= (int) pattern[1]) {
                     state->ptr = ptr;
                     i = SRE_MATCH(state, pattern + pattern[0], level + 1);
@@ -1010,7 +1016,7 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern, int level)
                         return i;
                     ptr--;
                     count--;
-                    lastmark_restore(state, lastmark);
+                    LASTMARK_RESTORE();
                 }
             }
             return 0;
@@ -1055,7 +1061,7 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern, int level)
                 /* general case */
                 int matchmax = ((int)pattern[2] == 65535);
                 int c;
-                lastmark = state->lastmark;
+                LASTMARK_SAVE();
                 while (matchmax || count <= (int) pattern[2]) {
                     state->ptr = ptr;
                     i = SRE_MATCH(state, pattern + pattern[0], level + 1);
@@ -1065,13 +1071,13 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern, int level)
                     c = SRE_COUNT(state, pattern+3, 1, level+1);
                     if (c < 0)
                         return c;
+                    LASTMARK_RESTORE();
                     if (c == 0)
                         break;
                     assert(c == 1);
                     ptr++;
                     count++;
                 }
-                lastmark_restore(state, lastmark);
             }
             return 0;
 
@@ -1113,6 +1119,8 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern, int level)
 
             TRACE(("|%p|%p|MAX_UNTIL %d\n", pattern, ptr, count));
 
+            LASTMARK_SAVE();
+
             if (count < rp->pattern[1]) {
                 /* not enough matches */
                 rp->count = count;
@@ -1122,6 +1130,7 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern, int level)
                     return i;
                 rp->count = count - 1;
                 state->ptr = ptr;
+                LASTMARK_RESTORE();
                 return 0;
             }
 
@@ -1129,7 +1138,6 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern, int level)
                 /* we may have enough matches, but if we can
                    match another item, do so */
                 rp->count = count;
-                lastmark = state->lastmark;
                 i = mark_save(state, 0, lastmark);
                 if (i < 0)
                     return i;
@@ -1138,7 +1146,7 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern, int level)
                 if (i)
                     return i;
                 i = mark_restore(state, 0, lastmark);
-                state->lastmark = lastmark;
+                LASTMARK_RESTORE();
                 if (i < 0)
                     return i;
                 rp->count = count - 1;
@@ -1182,6 +1190,8 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern, int level)
                 return 0;
             }
 
+            LASTMARK_SAVE();
+
             /* see if the tail matches */
             state->repeat = rp->prev;
             i = SRE_MATCH(state, pattern, level + 1);
@@ -1190,6 +1200,8 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern, int level)
 
             state->ptr = ptr;
             state->repeat = rp;
+
+            LASTMARK_RESTORE();
 
             if (count >= rp->pattern[2] && rp->pattern[2] != 65535)
                 return 0;
@@ -3084,3 +3096,6 @@ PyMODINIT_FUNC init_sre(void)
 }
 
 #endif /* !defined(SRE_RECURSIVE) */
+
+/* vim:ts=4:sw=4:et
+*/
