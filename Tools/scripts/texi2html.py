@@ -1,4 +1,4 @@
-#! /usr/local/bin/python
+#! /usr/bin/env python
 
 # Convert GNU texinfo files into HTML, one file per node.
 # Based on Texinfo 2.14.
@@ -36,21 +36,23 @@
 # How about icons ?
 
 import os
-import regex
-import regsub
 import string
+import re
 
 MAGIC = '\\input texinfo'
 
-cmprog = regex.compile('^@\([a-z]+\)\([ \t]\|$\)') # Command (line-oriented)
-blprog = regex.compile('^[ \t]*$') # Blank line
-kwprog = regex.compile('@[a-z]+') # Keyword (embedded, usually with {} args)
-spprog = regex.compile('[\n@{}&<>]') # Special characters in running text
-miprog = regex.compile( \
-	'^\* \([^:]*\):\(:\|[ \t]*\([^\t,\n.]+\)\([^ \t\n]*\)\)[ \t\n]*')
-					# menu item (Yuck!)
+cmprog = re.compile('^@([a-z]+)([ \t]|$)')        # Command (line-oriented)
+blprog = re.compile('^[ \t]*$')                   # Blank line
+kwprog = re.compile('@[a-z]+')                    # Keyword (embedded, usually
+                                                  # with {} args)
+spprog = re.compile('[\n@{}&<>]')                 # Special characters in
+                                                  # running text 
+                                                  #
+                                                  # menu item (Yuck!)
+miprog = re.compile('^\* ([^:]*):(:|[ \t]*([^\t,\n.]+)([^ \t\n]*))[ \t\n]*')
 
 
+
 class HTMLNode:
     """Some of the parser's functionality is separated into this class.
 
@@ -212,7 +214,7 @@ class TexinfoParser:
     def parse(self, fp):
 	line = fp.readline()
 	lineno = 1
-	while line and (line[0] == '%' or blprog.match(line) >= 0):
+	while line and (line[0] == '%' or blprog.match(line)):
 	    line = fp.readline()
 	    lineno = lineno + 1
 	if line[:len(MAGIC)] <> MAGIC:
@@ -237,8 +239,9 @@ class TexinfoParser:
 		    print '*** EOF before @bye'
 		break
 	    lineno = lineno + 1
-	    if cmprog.match(line) >= 0:
-		a, b = cmprog.regs[1]
+            mo = cmprog.match(line)
+            if mo:
+                a, b = mo.span(1)
 		cmd = line[a:b]
 		if cmd in ('noindent', 'refill'):
 		    accu.append(line)
@@ -247,8 +250,8 @@ class TexinfoParser:
 			if not self.skip:
 			    self.process(accu)
 			accu = []
-		    self.command(line)
-	    elif blprog.match(line) >= 0 and \
+		    self.command(line, mo)
+	    elif blprog.match(line) and \
 		 'format' not in self.stack and \
 		 'example' not in self.stack:
 		if accu:
@@ -346,12 +349,16 @@ class TexinfoParser:
 	if self.stack and self.stack[-1] == 'menu':
 	    # XXX should be done differently
 	    for line in accu:
-		if miprog.match(line) < 0:
+                mo = miprog.match(line)
+                if not mo:
 		    line = string.strip(line) + '\n'
 		    self.expand(line)
 		    continue
-		(bgn, end), (a, b), (c, d), (e, f), (g, h) = \
-			miprog.regs[:5]
+                bgn, end = mo.span(0)
+                a, b = mo.span(1)
+                c, d = mo.span(2)
+                e, f = mo.span(3)
+                g, h = mo.span(4)
 		label = line[a:b]
 		nodename = line[c:d]
 		if nodename[0] == ':': nodename = label
@@ -373,8 +380,10 @@ class TexinfoParser:
 	n = len(text)
 	while i < n:
 	    start = i
-	    i = spprog.search(text, i)
-	    if i < 0:
+            mo = spprog.search(text, i)
+            if mo:
+                i = mo.start()
+            else:
 		self.write(text[start:])
 		break
 	    self.write(text[start:i])
@@ -674,14 +683,24 @@ class TexinfoParser:
     def open_w(self): self.write('<NOBREAK>')
     def close_w(self): self.write('</NOBREAK>')
 
+    def open_url(self): self.startsaving()
+    def close_url(self):
+        text = self.collectsavings()
+        self.write('<A HREF="', text, '">', text, '</A>')
+
+    def open_email(self): self.startsaving()
+    def close_email(self):
+        text = self.collectsavings()
+        self.write('<A HREF="mailto:', text, '">', text, '</A>')
+
     open_titlefont = open_
     close_titlefont = close_
 
     def open_small(self): pass
     def close_small(self): pass
 
-    def command(self, line):
-	a, b = cmprog.regs[1]
+    def command(self, line, mo):
+        a, b = mo.span(1)
 	cmd = line[a:b]
 	args = string.strip(line[b:])
 	if self.debugging > 1:
@@ -1378,15 +1397,17 @@ class TexinfoParser:
 	    print '--- Generating', self.indextitle[name], 'index'
 	#  The node already provides a title
 	index1 = []
-	junkprog = regex.compile('^\(@[a-z]+\)?{')
+        junkprog = re.compile('^(@[a-z]+)?{')
 	for key, node in index:
 	    sortkey = string.lower(key)
 	    # Remove leading `@cmd{' from sort key
 	    # -- don't bother about the matching `}'
 	    oldsortkey = sortkey
 	    while 1:
-		i = junkprog.match(sortkey)
-		if i < 0: break
+                mo = junkprog.match(sortkey)
+                if not mo:
+                    break
+                i = mo.end()
 		sortkey = sortkey[i:]
 	    index1.append(sortkey, key, node)
 	del index[:]
@@ -1481,12 +1502,14 @@ def splitwords(str, minlength):
 
 
 # Find the end of a "word", matching braces and interpreting @@ @{ @}
-fwprog = regex.compile('[@{} ]')
+fwprog = re.compile('[@{} ]')
 def findwordend(str, i, n):
     level = 0
     while i < n:
-	i = fwprog.search(str, i)
-	if i < 0: break
+        mo = fwprog.search(str, i)
+        if not mo:
+            break
+        i = mo.start()
 	c = str[i]; i = i+1
 	if c == '@': i = i+1 # Next character is not special
 	elif c == '{': level = level+1
