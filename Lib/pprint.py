@@ -130,7 +130,7 @@ class PrettyPrinter:
         write = stream.write
 
         if sepLines:
-            if typ is dict:
+            if issubclass(typ, dict):
                 write('{')
                 if self._indent_per_level > 1:
                     write((self._indent_per_level - 1) * ' ')
@@ -157,8 +157,8 @@ class PrettyPrinter:
                 write('}')
                 return
 
-            if typ is list or typ is tuple:
-                if typ is list:
+            if issubclass(typ, list) or issubclass(typ, tuple):
+                if issubclass(typ, list):
                     write('[')
                     endchar = ']'
                 else:
@@ -179,7 +179,7 @@ class PrettyPrinter:
                                           allowance + 1, context, level)
                     indent = indent - self._indent_per_level
                     del context[objid]
-                if typ is tuple and length == 1:
+                if issubclass(typ, tuple) and length == 1:
                     write(',')
                 write(endchar)
                 return
@@ -207,7 +207,7 @@ class PrettyPrinter:
 
 def _safe_repr(object, context, maxlevels, level):
     typ = _type(object)
-    if typ is str:
+    if issubclass(typ, basestring):
         if 'locale' not in _sys.modules:
             return `object`, True, False
         if "'" in object and '"' not in object:
@@ -226,7 +226,7 @@ def _safe_repr(object, context, maxlevels, level):
                 write(qget(char, `char`[1:-1]))
         return ("%s%s%s" % (closure, sio.getvalue(), closure)), True, False
 
-    if typ is dict:
+    if issubclass(typ, dict):
         if not object:
             return "{}", True, False
         objid = _id(object)
@@ -251,8 +251,8 @@ def _safe_repr(object, context, maxlevels, level):
         del context[objid]
         return "{%s}" % _commajoin(components), readable, recursive
 
-    if typ is list or typ is tuple:
-        if typ is list:
+    if issubclass(typ, list) or issubclass(typ, tuple):
+        if issubclass(typ, list):
             if not object:
                 return "[]", True, False
             format = "[%s]"
