@@ -29,7 +29,11 @@ steady flow of bug fixes and improvements are always being submitted.
 A host of minor fixes, a few optimizations, additional docstrings, and
 better error messages went into 2.0; to list them all would be
 impossible, but they're certainly significant.  Consult the
-publicly-available CVS logs if you want to see the full list.
+publicly-available CVS logs if you want to see the full list.  This
+progress is due to the five developers working for 
+PythonLabs are now getting paid to spend their days fixing bugs,
+and also due to the improved communication resulting 
+from moving to SourceForge.
 
 % ======================================================================
 \section{What About Python 1.6?}
@@ -88,12 +92,14 @@ The shift to using SourceForge's services has resulted in a remarkable
 increase in the speed of development.  Patches now get submitted,
 commented on, revised by people other than the original submitter, and
 bounced back and forth between people until the patch is deemed worth
-checking in.  This didn't come without a cost: developers now have
-more e-mail to deal with, more mailing lists to follow, and special
-tools had to be written for the new environment.  For example,
-SourceForge sends default patch and bug notification e-mail messages
-that are completely unhelpful, so Ka-Ping Yee wrote an HTML
-screen-scraper that sends more useful messages.
+checking in.  Bugs are tracked in one central location and can be
+assigned to a specific person for fixing, and we can count the number
+of open bugs to measure progress.  This didn't come without a cost:
+developers now have more e-mail to deal with, more mailing lists to
+follow, and special tools had to be written for the new environment.
+For example, SourceForge sends default patch and bug notification
+e-mail messages that are completely unhelpful, so Ka-Ping Yee wrote an
+HTML screen-scraper that sends more useful messages.
 
 The ease of adding code caused a few initial growing pains, such as
 code was checked in before it was ready or without getting clear
@@ -102,10 +108,11 @@ emerged is somewhat similar to that used by the Apache group.
 Developers can vote +1, +0, -0, or -1 on a patch; +1 and -1 denote
 acceptance or rejection, while +0 and -0 mean the developer is mostly
 indifferent to the change, though with a slight positive or negative
-slant.  The most significant change from the Apache model is that
-Guido van Rossum, who has Benevolent Dictator For Life status, can
-ignore the votes of the other developers and approve or reject a
-change, effectively giving him a +Infinity / -Infinity vote.
+slant.  The most significant change from the Apache model is that the
+voting is essentially advisory, letting Guido van Rossum, who has
+Benevolent Dictator For Life status, know what the general opinion is.
+He can still ignore the result of a vote, and approve or
+reject a change even if the community disagrees with him.
 
 Producing an actual patch is the last step in adding a new feature,
 and is usually easy compared to the earlier task of coming up with a
@@ -474,7 +481,7 @@ words, \code{s.join(seq)} is equivalent to the old
 \code{string.join(seq, s)}.
 
 % ======================================================================
-\section{Optional Collection of Cycles}
+\section{Garbage Collection of Cycles}
 
 The C implementation of Python uses reference counting to implement
 garbage collection.  Every Python object maintains a count of the
@@ -513,18 +520,23 @@ code, and it could be deleted.  Several objects can participate in a
 cycle if they have references to each other, causing all of the
 objects to be leaked.
 
-An experimental step has been made toward fixing this problem.  When
-compiling Python, the \verb|--with-cycle-gc| option can be specified.
-This causes a cycle detection algorithm to be periodically executed,
-which looks for inaccessible cycles and deletes the objects involved.
-A new \module{gc} module provides functions to perform a garbage
-collection, obtain debugging statistics, and tuning the collector's parameters.
+Python 2.0 fixes this problem by periodically executing a cycle
+detection algorithm which looks for inaccessible cycles and deletes
+the objects involved.  A new \module{gc} module provides functions to
+perform a garbage collection, obtain debugging statistics, and tuning
+the collector's parameters.
 
-Why isn't cycle detection enabled by default?  Running the cycle detection
-algorithm takes some time, and some tuning will be required to
-minimize the overhead cost.  It's not yet obvious how much performance
-is lost, because benchmarking this is tricky and depends crucially
-on how often the program creates and destroys objects. 
+Running the cycle detection algorithm takes some time, and therefore
+will result in some additional overhead.  It is hoped that after we've
+gotten experience with the cycle collection from using 2.0, Python 2.1
+will be able to minimize the overhead with careful tuning.  It's not
+yet obvious how much performance is lost, because benchmarking this is
+tricky and depends crucially on how often the program creates and
+destroys objects.  The detection of cycles can be disabled when Python
+is compiled, if you can't afford even a tiny speed penalty or suspect
+that the cycle collection is buggy, by specifying the
+\samp{--without-cycle-gc} switch when running the \file{configure}
+script.
 
 Several people tackled this problem and contributed to a solution.  An
 early implementation of the cycle detection approach was written by
@@ -618,9 +630,15 @@ The comparison \code{a==b} returns true, because the two recursive
 data structures are isomorphic. See the thread ``trashcan
 and PR\#7'' in the April 2000 archives of the python-dev mailing list
 for the discussion leading up to this implementation, and some useful
-relevant links.
+relevant links.  
 % Starting URL:
 % http://www.python.org/pipermail/python-dev/2000-April/004834.html
+
+Note that comparisons can now also raise exceptions. In earlier
+versions of Python, a comparison operation such as \code{cmp(a,b)}
+would always produce an answer, even if a user-defined
+\method{__cmp__} method encountered an error, since the resulting
+exception would simply be silently swallowed.
 
 Work has been done on porting Python to 64-bit Windows on the Itanium
 processor, mostly by Trent Mick of ActiveState.  (Confusingly,
@@ -629,6 +647,11 @@ that for ease of porting, MS Visual C++ treats code as 32 bit on Itanium.)
 PythonWin also supports Windows CE; see the Python CE page at
 \url{http://starship.python.net/crew/mhammond/ce/} for more
 information.
+
+Another new platform is Darwin/MacOS X; inital support for it is in
+Python 2.0.  Dynamic loading works, if you specify ``configure
+--with-dyld --with-suffix=.x''.  Consult the README in the Python
+source distribution for more instructions.
 
 An attempt has been made to alleviate one of Python's warts, the
 often-confusing \exception{NameError} exception when code refers to a
@@ -1136,8 +1159,6 @@ standard library; some of the affected modules include
 and \module{nntplib}.  Consult the CVS logs for the exact
 patch-by-patch details.  
 
-% XXX gettext support
-
 Brian Gallew contributed OpenSSL support for the \module{socket}
 module.  OpenSSL is an implementation of the Secure Socket Layer,
 which encrypts the data being sent over a socket.  When compiling
@@ -1201,9 +1222,15 @@ the function to be called on exit.
 \module{dircmp} modules, which have now become deprecated.
 (Contributed by Gordon MacMillan and Moshe Zadka.)
 
+\item{\module{gettext}:} This module provides internationalization
+(I18N) and localization (L10N) support for Python programs by
+providing an interface to the GNU gettext message catalog library.
+(Integrated by Barry Warsaw, from separate contributions by Martin von
+Loewis, Peter Funk, and James Henstridge.)
+
 \item{\module{linuxaudiodev}:} Support for the \file{/dev/audio}
 device on Linux, a twin to the existing \module{sunaudiodev} module.
-(Contributed by Peter Bosch.)
+(Contributed by Peter Bosch, with fixes by Jeremy Hylton.)
 
 \item{\module{mmap}:} An interface to memory-mapped files on both
 Windows and Unix.  A file's contents can be mapped directly into
@@ -1314,7 +1341,8 @@ these modules.
 
 The authors would like to thank the following people for offering
 suggestions on drafts of this article: Mark Hammond, Gregg Hauser,
-Fredrik Lundh, Detlef Lannert, Aahz Maruch, Skip Montanaro, Vladimir
-Marangozov, Guido van Rossum, Neil Schemenauer, and Russ Schmidt.
+Jeremy Hylton, Fredrik Lundh, Detlef Lannert, Aahz Maruch, Skip
+Montanaro, Vladimir Marangozov, Guido van Rossum, Neil Schemenauer,
+and Russ Schmidt.
 
 \end{document}
