@@ -1,4 +1,4 @@
-# Generated from 'Sap:CodeWarrior6:Metrowerks C/C++:Headers:Universal Headers 2.0.1f:Events.h'
+# Generated from 'Sap:CodeWarrior7:Metrowerks CodeWarrior:MacOS Support:Headers:Universal Headers:Events.h'
 
 nullEvent = 0
 mouseDown = 1
@@ -39,6 +39,16 @@ controlKey = 0x1000
 rightShiftKey = 0x2000
 rightOptionKey = 0x4000
 rightControlKey = 0x8000
+activeFlagBit = 0
+btnStateBit = 7
+cmdKeyBit = 8
+shiftKeyBit = 9
+alphaLockBit = 10
+optionKeyBit = 11
+controlKeyBit = 12
+rightShiftKeyBit = 13
+rightOptionKeyBit = 14
+rightControlKeyBit = 15
 networkEvt = 10
 driverEvt = 11
 app1Evt = 12

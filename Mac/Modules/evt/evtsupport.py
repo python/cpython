@@ -27,8 +27,10 @@ from macsupport import *
 RgnHandle = FakeType("(RgnHandle)0") # XXX
 
 KeyMap = ArrayOutputBufferType("KeyMap")
-MacOSEventKind = Type("MacOSEventKind", "h")
-MacOSEventMask = Type("MacOSEventMask", "h")
+MacOSEventKind = Type("MacOSEventKind", "h") # Old-style
+MacOSEventMask = Type("MacOSEventMask", "h") # Old-style
+EventMask = Type("EventMask", "h")
+EventKind = Type("EventKind", "h")
 
 includestuff = includestuff + """
 #include <%s>""" % MACHEADERFILE + """

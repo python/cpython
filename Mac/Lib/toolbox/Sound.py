@@ -1,4 +1,4 @@
-# Generated from 'Sap:CodeWarrior6:Metrowerks C/C++:Headers:Universal Headers 2.0.1f:Sound.h'
+# Generated from 'Sap:CodeWarrior7:Metrowerks CodeWarrior:MacOS Support:Headers:Universal Headers:Sound.h'
 
 soundListRsrc = 'snd '
 rate44khz = 0xAC440000L
@@ -98,6 +98,5 @@ secondSoundFormat = 0x0002
 dbBufferReady = 0x00000001
 dbLastBuffer = 0x00000004
 sysBeepDisable = 0x0000
-sysBeepEnable = 0x0001
 unitTypeNoSelection = 0xFFFF
 unitTypeSeconds = 0x0000

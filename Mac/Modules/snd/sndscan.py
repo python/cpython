@@ -54,6 +54,8 @@ class SoundScanner(Scanner):
 			"GetSoundVol",
 			"SetSoundVol",
 			"UnsignedFixed",
+			# Don't have the time to dig into this...
+			"Component",
 			]
 
 	def makerepairinstructions(self):
