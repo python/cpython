@@ -314,15 +314,12 @@ class HandlerTests(unittest.TestCase):
             ("ftp://localhost/foo/bar/baz.html",
              "localhost", ftplib.FTP_PORT, "I",
              ["foo", "bar"], "baz.html", "text/html"),
-# XXXX Bug: FTPHandler tries to gethostbyname "localhost:80", with the
-#  port still there.
-##             ("ftp://localhost:80/foo/bar/",
-##              "localhost", 80, "D",
-##              ["foo", "bar"], "", None),
-# XXXX bug: second use of splitattr() in FTPHandler should be splitvalue()
-##             ("ftp://localhost/baz.gif;type=a",
-##              "localhost", ftplib.FTP_PORT, "A",
-##              [], "baz.gif", "image/gif"),
+            ("ftp://localhost:80/foo/bar/",
+             "localhost", 80, "D",
+             ["foo", "bar"], "", None),
+            ("ftp://localhost/baz.gif;type=a",
+             "localhost", ftplib.FTP_PORT, "A",
+             [], "baz.gif", None),  # XXX really this should guess image/gif
             ]:
             r = h.ftp_open(Request(url))
             # ftp authentication not yet implemented by FTPHandler
@@ -333,7 +330,7 @@ class HandlerTests(unittest.TestCase):
             self.assertEqual(h.ftpwrapper.filename, filename)
             self.assertEqual(h.ftpwrapper.filetype, type_)
             headers = r.info()
-            self.assertEqual(headers["Content-type"], mimetype)
+            self.assertEqual(headers.get("Content-type"), mimetype)
             self.assertEqual(int(headers["Content-length"]), len(data))
 
     def test_file(self):

@@ -116,7 +116,7 @@ except ImportError:
 # not sure how many of these need to be gotten rid of
 from urllib import unwrap, unquote, splittype, splithost, \
      addinfourl, splitport, splitgophertype, splitquery, \
-     splitattr, ftpwrapper, noheaders, splituser, splitpasswd
+     splitattr, ftpwrapper, noheaders, splituser, splitpasswd, splitvalue
 
 # support for FileHandler, proxies via environment variables
 from urllib import localhost, url2pathname, getproxies
@@ -1143,6 +1143,8 @@ class FTPHandler(BaseHandler):
         host, port = splitport(host)
         if port is None:
             port = ftplib.FTP_PORT
+        else:
+            port = int(port)
 
         # username/password handling
         user, host = splituser(host)
@@ -1168,7 +1170,7 @@ class FTPHandler(BaseHandler):
             fw = self.connect_ftp(user, passwd, host, port, dirs)
             type = file and 'I' or 'D'
             for attr in attrs:
-                attr, value = splitattr(attr)
+                attr, value = splitvalue(attr)
                 if attr.lower() == 'type' and \
                    value in ('a', 'A', 'i', 'I', 'd', 'D'):
                     type = value.upper()
