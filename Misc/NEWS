@@ -23,6 +23,16 @@ Core
   usually for the better, but may also cause numerically unstable
   algorithms to break.
 
+- The implementation of dicts suffers fewer collisions, which has speed
+  benefits.  However, the order in which dict entries appear in dict.keys(),
+  dict.values() and dict.items() may differ from previous releases for a
+  given dict.  Nothing is defined about this order, so no program should
+  rely on it.  Nevertheless, it's easy to write test cases that rely on the
+  order by accident, typically because of printing the str() or repr() of a
+  dict to an "expected results" file.  See Lib/test/test_support.py's new
+  sortdict(dict) function for a simple way to display a dict in sorted
+  order.
+
 - Dictionary objects now support the "in" operator: "x in dict" means
   the same as dict.has_key(x).
 

@@ -1,11 +1,11 @@
 test_cookie
-<SimpleCookie: vienna='finger' chips='ahoy'>
-Set-Cookie: vienna=finger;
+<SimpleCookie: chips='ahoy' vienna='finger'>
 Set-Cookie: chips=ahoy;
-  vienna 'finger' 'finger'
 Set-Cookie: vienna=finger;
   chips 'ahoy' 'ahoy'
 Set-Cookie: chips=ahoy;
+  vienna 'finger' 'finger'
+Set-Cookie: vienna=finger;
 <SimpleCookie: keebler='E=mc2; L="Loves"; fudge=\n;'>
 Set-Cookie: keebler="E=mc2; L=\"Loves\"; fudge=\012;";
   keebler 'E=mc2; L="Loves"; fudge=\n;' 'E=mc2; L="Loves"; fudge=\n;'

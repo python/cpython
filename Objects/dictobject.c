@@ -188,12 +188,7 @@ lookdict(dictobject *mp, PyObject *key, register long hash)
 	/* We must come up with (i, incr) such that 0 <= i < ma_size
 	   and 0 < incr < ma_size and both are a function of hash.
 	   i is the initial table index and incr the initial probe offset. */
-	i = (~hash) & mask;
-	/* We use ~hash instead of hash, as degenerate hash functions, such
-	   as for ints <sigh>, can have lots of leading zeros. It's not
-	   really a performance risk, but better safe than sorry.
-	   12-Dec-00 tim:  so ~hash produces lots of leading ones instead --
-	   what's the gain? */
+	i = hash & mask;
 	ep = &ep0[i];
 	if (ep->me_key == NULL || ep->me_key == key)
 		return ep;
@@ -301,10 +296,7 @@ lookdict_string(dictobject *mp, PyObject *key, register long hash)
 	}
 	/* We must come up with (i, incr) such that 0 <= i < ma_size
 	   and 0 < incr < ma_size and both are a function of hash */
-	i = (~hash) & mask;
-	/* We use ~hash instead of hash, as degenerate hash functions, such
-	   as for ints <sigh>, can have lots of leading zeros. It's not
-	   really a performance risk, but better safe than sorry. */
+	i = hash & mask;
 	ep = &ep0[i];
 	if (ep->me_key == NULL || ep->me_key == key)
 		return ep;
