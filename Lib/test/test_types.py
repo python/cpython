@@ -28,7 +28,7 @@ if not x: raise TestFailed, 'x is false instead of true'
 print '6.2 Boolean operations'
 if 0 or 0: raise TestFailed, '0 or 0 is true instead of false'
 if 1 and 1: pass
-else: raise TestFailed, '1 and 1 is false instead of false'
+else: raise TestFailed, '1 and 1 is false instead of true'
 if not 1: raise TestFailed, 'not 1 is true instead of false'
 
 print '6.3 Comparisons'
