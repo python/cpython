@@ -314,7 +314,9 @@ static char O_close__doc__[] = "close(): explicitly release resources held.";
 
 static PyObject *
 O_close(Oobject *self, PyObject *args) {
-  free(self->buf);
+  if (self->buf != NULL)
+    free(self->buf);
+  self->buf = NULL;
 
   self->pos = self->string_size = self->buf_size = 0;
   self->closed = 1;
@@ -392,7 +394,8 @@ static struct PyMethodDef O_methods[] = {
 
 static void
 O_dealloc(Oobject *self) {
-  free(self->buf);
+  if (self->buf != NULL)
+    free(self->buf);
   PyMem_DEL(self);
 }
 
@@ -475,7 +478,8 @@ newOobject(int  size) {
 
 static PyObject *
 I_close(Iobject *self, PyObject *args) {
-  Py_DECREF(self->pbuf);
+  Py_XDECREF(self->pbuf);
+  self->pbuf = NULL;
 
   self->pos = self->string_size = 0;
   self->closed = 1;
@@ -499,7 +503,7 @@ static struct PyMethodDef I_methods[] = {
 
 static void
 I_dealloc(Iobject *self) {
-  Py_DECREF(self->pbuf);
+  Py_XDECREF(self->pbuf);
   PyMem_DEL(self);
 }
 
@@ -627,6 +631,17 @@ initcStringIO() {
 /******************************************************************************
 
   $Log$
+  Revision 2.7  1997/09/03 00:09:26  guido
+  Fix the bug Jeremy was experiencing: both the close() and the
+  dealloc() functions contained code to free/DECREF the buffer
+  (there were differences between I and O objects but the logic bug was
+  the same).  Fixed this be setting the buffer pointer to NULL and
+  testing for that.  (This also makes it safe to call close() more than
+  once.)
+
+  XXX Worry: what if you try to read() or write() once the thing is
+  closed?
+
   Revision 2.6  1997/08/13 03:14:41  guido
   cPickle release 0.3 from Jim Fulton
 
