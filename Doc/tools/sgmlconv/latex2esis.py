@@ -185,11 +185,10 @@ class Conversion:
                     if topentry.outputname:
                         self.write(")%s\n-\\n\n" % topentry.outputname)
                 #
-                if entry.outputname:
-                    if entry.empty:
-                        self.write("e\n")
+                if entry.outputname and entry.empty:
+                    self.write("e\n")
                 #
-                params, optional, empty, environ = self.start_macro(macroname)
+                params, optional, empty = self.start_macro(macroname)
                 # rip off the macroname
                 if params:
                     line = line[m.end(1):]
@@ -363,7 +362,7 @@ class Conversion:
         conversion = self.get_entry(name)
         parameters = conversion.parameters
         optional = parameters and parameters[0].optional
-        return parameters, optional, conversion.empty, conversion.environment
+        return parameters, optional, conversion.empty
 
     def get_entry(self, name):
         entry = self.table.get(name)
