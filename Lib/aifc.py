@@ -178,7 +178,6 @@ def _read_string(file):
 _HUGE_VAL = 1.79769313486231e+308 # See <limits.h>
 
 def _read_float(f): # 10 bytes
-    import math
     expon = _read_short(f) # 2 bytes
     sign = 1
     if expon < 0:
@@ -746,8 +745,8 @@ class Aifc_write:
 
     def _comp_data(self, data):
         import cl
-        dum = self._comp.SetParam(cl.FRAME_BUFFER_SIZE, len(data))
-        dum = self._comp.SetParam(cl.COMPRESSED_BUFFER_SIZE, len(data))
+        dummy = self._comp.SetParam(cl.FRAME_BUFFER_SIZE, len(data))
+        dummy = self._comp.SetParam(cl.COMPRESSED_BUFFER_SIZE, len(data))
         return self._comp.Compress(self._nframes, data)
 
     def _lin2ulaw(self, data):
@@ -784,7 +783,6 @@ class Aifc_write:
 
     def _init_compression(self):
         if self._comptype == 'G722':
-            import audioop
             self._convert = self._lin2adpcm
             return
         try:
