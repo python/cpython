@@ -751,11 +751,12 @@ TAGS::
 
 clean:
 	find . -name '*.o' -exec rm -f {} ';'
+	find . -name '*.s[ol]' -exec rm -f {} ';'
 	find $(srcdir) -name '*.py[co]' -exec rm -f {} ';'
 
 clobber: clean
 	-rm -f $(PYTHON) $(PGEN) $(LIBRARY) $(LDLIBRARY) $(DLLLIBRARY) \
-		Modules/*.so Modules/*.sl tags TAGS \
+		tags TAGS \
 		config.cache config.log config.h Modules/config.c 
 	-rm -rf build
 
