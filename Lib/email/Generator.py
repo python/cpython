@@ -11,6 +11,8 @@ import random
 from types import ListType, StringType
 from cStringIO import StringIO
 
+from email.Header import Header
+
 EMPTYSTRING = ''
 SEMISPACE = '; '
 BAR = '|'
@@ -149,17 +151,17 @@ class Generator:
             # headers.
             text = '%s: %s' % (h, v)
             if self.__maxheaderlen > 0 and len(text) > self.__maxheaderlen:
-                text = self._split_header(text)
+                text = self._split_header(h, text)
             print >> self._fp, text
         # A blank line always separates headers from body
         print >> self._fp
 
-    def _split_header(self, text):
+    def _split_header(self, name, text):
         maxheaderlen = self.__maxheaderlen
         # Find out whether any lines in the header are really longer than
         # maxheaderlen characters wide.  There could be continuation lines
         # that actually shorten it.  Also, replace hard tabs with 8 spaces.
-        lines = [s.replace('\t', SPACE8) for s in text.split('\n')]
+        lines = [s.replace('\t', SPACE8) for s in text.splitlines()]
         for line in lines:
             if len(line) > maxheaderlen:
                 break
@@ -167,56 +169,12 @@ class Generator:
             # No line was actually longer than maxheaderlen characters, so
             # just return the original unchanged.
             return text
-        rtn = []
-        for line in text.split('\n'):
-            splitline = []
-            # Short lines can remain unchanged
-            if len(line.replace('\t', SPACE8)) <= maxheaderlen:
-                splitline.append(line)
-                rtn.append(SEMINLTAB.join(splitline))
-            else:
-                oldlen = len(line)
-                # Try to break the line on semicolons, but if that doesn't
-                # work, try to split on folding whitespace.
-                while len(line) > maxheaderlen:
-                    i = line.rfind(';', 0, maxheaderlen)
-                    if i < 0:
-                        break
-                    splitline.append(line[:i])
-                    line = line[i+1:].lstrip()
-                if len(line) <> oldlen:
-                    # Splitting on semis worked
-                    splitline.append(line)
-                    rtn.append(SEMINLTAB.join(splitline))
-                    continue
-                # Splitting on semis didn't help, so try to split on
-                # whitespace.
-                parts = re.split(r'(\s+)', line)
-                # Watch out though for "Header: longnonsplittableline"
-                if parts[0].endswith(':') and len(parts) == 3:
-                    rtn.append(line)
-                    continue
-                first = parts.pop(0)
-                sublines = [first]
-                acc = len(first)
-                while parts:
-                    len0 = len(parts[0])
-                    len1 = len(parts[1])
-                    if acc + len0 + len1 < maxheaderlen:
-                        sublines.append(parts.pop(0))
-                        sublines.append(parts.pop(0))
-                        acc += len0 + len1
-                    else:
-                        # Split it here, but don't forget to ignore the
-                        # next whitespace-only part
-                        splitline.append(EMPTYSTRING.join(sublines))
-                        del parts[0]
-                        first = parts.pop(0)
-                        sublines = [first]
-                        acc = len(first)
-                splitline.append(EMPTYSTRING.join(sublines))
-                rtn.append(NLTAB.join(splitline))
-        return NL.join(rtn)
+        # The `text' argument already has the field name prepended, so don't
+        # provide it here or the first line will get folded too short.
+        h = Header(text, maxlinelen=maxheaderlen,
+                   # For backwards compatibility, we use a hard tab here
+                   continuation_ws='\t')
+        return h.encode()
 
     #
     # Handlers for writing types and subtypes
