@@ -2165,11 +2165,21 @@ static PyObject *WinObj_getattr(self, name)
 
 #define WinObj_setattr NULL
 
-#define WinObj_compare NULL
+static int WinObj_compare(self, other)
+	WindowObject *self, *other;
+{
+	if ( self->ob_itself > other->ob_itself ) return 1;
+	if ( self->ob_itself < other->ob_itself ) return -1;
+	return 0;
+}
 
 #define WinObj_repr NULL
 
-#define WinObj_hash NULL
+static int WinObj_hash(self)
+	WindowObject *self;
+{
+	return (int)self->ob_itself;
+}
 
 PyTypeObject Window_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)

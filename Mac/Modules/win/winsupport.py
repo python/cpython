@@ -126,6 +126,29 @@ class MyObjectDefinition(GlobalObjectDefinition):
 		OutRbrace()
 		Output("self->ob_itself = NULL;")
 		Output("self->ob_freeit = NULL;")
+		
+	def outputCompare(self):
+		Output()
+		Output("static int %s_compare(self, other)", self.prefix)
+		IndentLevel()
+		Output("%s *self, *other;", self.objecttype)
+		DedentLevel()
+		OutLbrace()
+		Output("if ( self->ob_itself > other->ob_itself ) return 1;")
+		Output("if ( self->ob_itself < other->ob_itself ) return -1;")
+		Output("return 0;")
+		OutRbrace()
+		
+	def outputHash(self):
+		Output()
+		Output("static int %s_hash(self)", self.prefix)
+		IndentLevel()
+		Output("%s *self;", self.objecttype)
+		DedentLevel()
+		OutLbrace()
+		Output("return (int)self->ob_itself;")
+		OutRbrace()
+		
 ##	def outputFreeIt(self, itselfname):
 ##		Output("DisposeWindow(%s);", itselfname)
 # From here on it's basically all boiler plate...
