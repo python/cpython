@@ -46,7 +46,7 @@ warnings.filterwarnings('ignore', '', DeprecationWarning, __name__)
 
 def openfile(filename):
     path = os.path.join(os.path.dirname(landmark), 'data', filename)
-    return open(path, 'rb')
+    return open(path, 'r')
 
 
 
