@@ -106,7 +106,7 @@ a circular reference. This will prevent anything referenced by a local
 variable in the same function or by the traceback from being garbage
 collected.  Since most functions don't need access to the traceback,
 the best solution is to use something like
-\code{type, value = sys.exc_info()[:2]}
+\code{exctype, value = sys.exc_info()[:2]}
 to extract only the exception type and value.  If you do need the
 traceback, make sure to delete it after use (best done with a
 \keyword{try} ... \keyword{finally} statement) or to call
