@@ -303,13 +303,16 @@ tok_nextc(tok)
 				done = tok->inp[-1] == '\n';
 			}
 			tok->cur = tok->buf + cur;
+#ifndef macintosh
 			/* replace "\r\n" with "\n" */
+			/* For Mac we leave the \r, giving a syntax error */
 			pt = tok->inp - 2;
 			if (pt >= tok->buf && *pt == '\r') {
 				*pt++ = '\n';
 				*pt = '\0';
 				tok->inp = pt;
 			}
+#endif
 		}
 		if (tok->done != E_OK) {
 			if (tok->prompt != NULL)
@@ -560,6 +563,14 @@ tok_get(tok, p_start, p_end)
 		return NEWLINE;
 	}
 	
+#ifdef macintosh
+	if (c == '\r') {
+		fprintf(stderr, "File contains \\r characters (incorrect line endings?)\n");
+		tok->done = E_TOKEN;
+		tok->cur = tok->inp;
+		return ERRORTOKEN;
+	}
+#endif	
 	/* Period or number starting with period? */
 	if (c == '.') {
 		c = tok_nextc(tok);
