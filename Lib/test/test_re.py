@@ -165,6 +165,22 @@ try:
 except AssertionError:
     raise TestFailed, "qualified re.split"
 
+if verbose:
+    print "Running tests on re.findall"
+
+try:
+    assert re.findall(":+", "abc") == []
+    assert re.findall(":+", "a:b::c:::d") == [":", "::", ":::"]
+    assert re.findall("(:+)", "a:b::c:::d") == [":", "::", ":::"]
+    assert re.findall("(:)(:*)", "a:b::c:::d") == [(":", ""),
+                                                   (":", ":"),
+                                                   (":", "::")]
+except AssertionError:
+    raise TestFailed, "re.findall"
+
+if verbose:
+    print "Running tests on re.match"
+
 try:
     # No groups at all
     m = re.match('a', 'a') ; assert m.groups() == ()    
@@ -176,6 +192,7 @@ try:
     assert pat.match('b').groups() == ('b', None, 'b', None)    
     assert pat.match('ac').groups() == ('a', 'a', None, 'c')    
     assert pat.match('bc').groups() == ('b', None, 'b', 'c')    
+    assert pat.match('bc').groups("") == ('b', "", 'b', 'c')    
 except AssertionError:
     raise TestFailed, "match .groups() method"
 
@@ -192,6 +209,9 @@ try:
 except AssertionError:
     raise TestFailed, "match .group() method"
 
+if verbose:
+    print "Running tests on re.escape"
+
 try:
     p=""
     for i in range(0, 256):
@@ -204,7 +224,7 @@ try:
     assert pat.match(p).span() == (0,256)
 except AssertionError:
     raise TestFailed, "re.escape"
-    
+
 
 if verbose:
     print 'Pickling a RegexObject instance'
