@@ -381,11 +381,11 @@ And a cast of thousands.
 .SH INTERNET RESOURCES
 Main website:  http://www.python.org/
 .br
-Documentation:  http://www.python.org/doc/
+Documentation:  http://docs.python.org/
 .br
 Community website:  http://starship.python.net/
 .br
-Developer resources:  http://sourceforge.net/project/python/
+Developer resources:  http://www.python.org/dev/
 .br
 FTP:  ftp://ftp.python.org/pub/python/
 .br
