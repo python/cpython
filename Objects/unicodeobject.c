@@ -2891,15 +2891,15 @@ int findstring(PyUnicodeObject *self,
     if (start < 0)
         start = 0;
 
-    if (substring->length == 0)
-        return start;
-
     if (end > self->length)
         end = self->length;
     if (end < 0)
         end += self->length;
     if (end < 0)
         end = 0;
+
+    if (substring->length == 0)
+	return (direction > 0) ? start : end;
 
     end -= substring->length;
 

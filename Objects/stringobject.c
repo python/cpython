@@ -1536,7 +1536,7 @@ string_find_internal(PyStringObject *self, PyObject *args, int dir)
 	}
 #ifdef Py_USING_UNICODE
 	else if (PyUnicode_Check(subobj))
-		return PyUnicode_Find((PyObject *)self, subobj, i, last, 1);
+		return PyUnicode_Find((PyObject *)self, subobj, i, last, dir);
 #endif
 	else if (PyObject_AsCharBuffer(subobj, &sub, &n))
 		return -2;
