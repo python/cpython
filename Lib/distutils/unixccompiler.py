@@ -92,6 +92,7 @@ class UnixCCompiler(CCompiler):
             pp_args[:0] = extra_preargs
         if extra_postargs:
             pp_args.extend(extra_postargs)
+        pp_args.append(source)
 
         # We need to preprocess: either we're being forced to, or we're
         # generating output to stdout, or there's a target output file and
