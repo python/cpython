@@ -392,12 +392,14 @@ any kind of sequence; the result is always a list.
   \code{'a'} opens it for appending (which on \emph{some} \UNIX{}
   systems means that \emph{all} writes append to the end of the file,
   regardless of the current seek position).
-  Modes \code{'r+'}, \code{'w+'} and
-  \code{'a+'} open the file for updating, provided the underlying
-  \code{stdio} library understands this.  On systems that differentiate
-  between binary and text files, \code{'b'} appended to the mode opens
-  the file in binary mode.  If the file cannot be opened,
-  \exception{IOError} is raised.
+
+  Modes \code{'r+'}, \code{'w+'} and \code{'a+'} open the file for
+  updating (note that \code{'w+'} truncates the file).  Append
+  \code{'b'} to the mode to open the file in binary mode, on systems
+  that differentiate between binary and text files (else it is
+  ignored).  If the file cannot be opened, \exception{IOError} is
+  raised.
+
 If \var{mode} is omitted, it defaults to \code{'r'}.
 The optional \var{bufsize} argument specifies the file's desired
 buffer size: 0 means unbuffered, 1 means line buffered, any other
