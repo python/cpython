@@ -7,13 +7,13 @@
 \modulesynopsis{General purpose event scheduler.}
 
 The \module{sched} module defines a class which implements a general
-purpose event scheduler:
+purpose event scheduler:\index{event scheduling}
 
 \begin{classdesc}{scheduler}{timefunc, delayfunc}
 The \class{scheduler} class defines a generic interface to scheduling
 events. It needs two functions to actually deal with the ``outside world''
 --- \var{timefunc} should be callable without arguments, and return 
-a number (the ``time'', in any units whatsoever). The \var{delayfunc}
+a number (the ``time'', in any units whatsoever).  The \var{delayfunc}
 function should be callable with one argument, compatible with the output
 of \var{timefunc}, and should delay that many time units.
 \var{delayfunc} will also be called with the argument \code{0} after
@@ -43,9 +43,9 @@ From print_time 930343700.273
 \end{verbatim}
 
 
-\subsection{Schedule Objects \label{schedule-objects}}
+\subsection{Scheduler Objects \label{scheduler-objects}}
 
-\class{schdule} instances have the following methods:
+\class{scheduler} instances have the following methods:
 
 \begin{methoddesc}{enterabs}{time, priority, action, argument}
 Schedule a new event. The \var{time} argument should be a numeric type
@@ -74,7 +74,7 @@ currently in the queue, this method will raise a
 \end{methoddesc}
 
 \begin{methoddesc}{empty}{}
-Check whether there are no scheduled events.
+Return true if the event queue is empty.
 \end{methoddesc}
 
 \begin{methoddesc}{run}{}
