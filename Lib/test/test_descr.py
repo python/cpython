@@ -1389,6 +1389,30 @@ def inherits():
     a = octlong(12345)
     verify(long(a) == 12345L)
     verify(long(a).__class__ is long)
+    verify((+a).__class__ is long)
+    verify((-a).__class__ is long)
+    verify((-octlong(0)).__class__ is long)
+    verify((a >> 0).__class__ is long)
+    verify((a << 0).__class__ is long)
+    verify((a - 0).__class__ is long)
+    verify((a * 1).__class__ is long)
+    verify((a ** 1).__class__ is long)
+    verify((a // 1).__class__ is long)
+    verify((1 * a).__class__ is long)
+    verify((a | 0).__class__ is long)
+    verify((a ^ 0).__class__ is long)
+    verify((a & -1L).__class__ is long)
+    verify((octlong(0) << 12).__class__ is long)
+    verify((octlong(0) >> 12).__class__ is long)
+    verify(abs(octlong(0)).__class__ is long)
+
+    # Because octlong overrides __add__, we can't check the absence of +0
+    # optimizations using octlong.
+    class longclone(long):
+        pass
+    a = longclone(1)
+    verify((a + 0).__class__ is long)
+    verify((0 + a).__class__ is long)
 
     class precfloat(float):
         __slots__ = ['prec']
