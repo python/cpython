@@ -122,7 +122,7 @@ Note that classes are callable, as are instances with a __call__() method.");
 static PyObject *
 builtin_filter(PyObject *self, PyObject *args)
 {
-	PyObject *func, *seq, *result, *it;
+	PyObject *func, *seq, *result, *it, *arg;
 	int len;   /* guess for result list size */
 	register int j;
 
@@ -151,6 +151,11 @@ builtin_filter(PyObject *self, PyObject *args)
 	if (len < 0)
 		len = 8;  /* arbitrary */
 
+	/* Pre-allocate argument list tuple. */
+	arg = PyTuple_New(1);
+	if (arg == NULL)
+		goto Fail_arg;
+
 	/* Get a result list. */
 	if (PyList_Check(seq) && seq->ob_refcnt == 1) {
 		/* Eww - can modify the list in-place. */
@@ -166,7 +171,7 @@ builtin_filter(PyObject *self, PyObject *args)
 	/* Build the result list. */
 	j = 0;
 	for (;;) {
-		PyObject *item, *good;
+		PyObject *item;
 		int ok;
 
 		item = PyIter_Next(it);
@@ -177,24 +182,20 @@ builtin_filter(PyObject *self, PyObject *args)
 		}
 
 		if (func == Py_None) {
-			good = item;
-			Py_INCREF(good);
+			ok = PyObject_IsTrue(item);
 		}
 		else {
-			PyObject *arg = Py_BuildValue("(O)", item);
-			if (arg == NULL) {
-				Py_DECREF(item);
-				goto Fail_result_it;
-			}
-			good = PyEval_CallObject(func, arg);
-			Py_DECREF(arg);
+			PyObject *good;
+			PyTuple_SET_ITEM(arg, 0, item);
+			good = PyObject_Call(func, arg, NULL);
+			PyTuple_SET_ITEM(arg, 0, NULL);
 			if (good == NULL) {
 				Py_DECREF(item);
 				goto Fail_result_it;
 			}
+			ok = PyObject_IsTrue(good);
+			Py_DECREF(good);
 		}
-		ok = PyObject_IsTrue(good);
-		Py_DECREF(good);
 		if (ok) {
 			if (j < len)
 				PyList_SET_ITEM(result, j, item);
@@ -216,12 +217,15 @@ builtin_filter(PyObject *self, PyObject *args)
 		goto Fail_result_it;
 
 	Py_DECREF(it);
+	Py_DECREF(arg);
 	return result;
 
 Fail_result_it:
 	Py_DECREF(result);
 Fail_it:
 	Py_DECREF(it);
+Fail_arg:
+	Py_DECREF(arg);
 	return NULL;
 }
 
