@@ -912,6 +912,7 @@ PySequence_Index(s, o)
       if(err) return -1;
       if(! not_equal) return i;
     }
+  PyErr_SetString(PyExc_ValueError, "list.index(x): x not in list");
   return -1;
 }
 
