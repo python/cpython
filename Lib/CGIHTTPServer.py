@@ -234,7 +234,7 @@ class CGIHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
             self.log_message("command: %s", cmdline)
             try:
                 nbytes = int(length)
-            except ValueError:
+            except (TypeError, ValueError):
                 nbytes = 0
             files = popenx(cmdline, 'b')
             fi = files[0]
