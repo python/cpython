@@ -151,6 +151,18 @@
 /* Define if you want to compile in rudimentary thread support */
 #undef WITH_THREAD
 
+/* The number of bytes in an off_t. */
+#undef SIZEOF_OFF_T
+
+/* Defined to enable large file support when an off_t is bigger than a long
+   and long long is available and at least as big as an off_t. You may need
+   to add some flags for configuration and compilation to enable this mode.
+   E.g, for Solaris 2.7:
+   CFLAGS="-D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64" OPT="-O2 $CFLAGS" \
+ configure
+*/
+#undef HAVE_LARGEFILE_SUPPORT
+
 /* The number of bytes in a int.  */
 #undef SIZEOF_INT
 
@@ -181,11 +193,32 @@
 /* Define if you have the execv function.  */
 #undef HAVE_EXECV
 
+/* Define if you have the fdatasync function.  */
+#undef HAVE_FDATASYNC
+
 /* Define if you have the flock function.  */
 #undef HAVE_FLOCK
 
 /* Define if you have the fork function.  */
 #undef HAVE_FORK
+
+/* Define if you have the fseek64 function.  */
+#undef HAVE_FSEEK64
+
+/* Define if you have the fseeko function.  */
+#undef HAVE_FSEEKO
+
+/* Define if you have the fstatvfs function.  */
+#undef HAVE_FSTATVFS
+
+/* Define if you have the fsync function.  */
+#undef HAVE_FSYNC
+
+/* Define if you have the ftell64 function.  */
+#undef HAVE_FTELL64
+
+/* Define if you have the ftello function.  */
+#undef HAVE_FTELLO
 
 /* Define if you have the ftime function.  */
 #undef HAVE_FTIME
@@ -288,6 +321,9 @@
 
 /* Define if you have the sigrelse function.  */
 #undef HAVE_SIGRELSE
+
+/* Define if you have the statvfs function.  */
+#undef HAVE_STATVFS
 
 /* Define if you have the strdup function.  */
 #undef HAVE_STRDUP
