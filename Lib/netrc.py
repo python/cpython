@@ -56,13 +56,14 @@ class netrc:
                     "bad toplevel token %r" % tt, file, lexer.lineno)
 
             # We're looking at start of an entry for a named machine or default.
-            login = account = password = None
+            login = ''
+            account = password = None
             self.hosts[entryname] = {}
             while 1:
                 tt = lexer.get_token()
                 if (tt=='' or tt == 'machine' or
                     tt == 'default' or tt =='macdef'):
-                    if login and password:
+                    if password:
                         self.hosts[entryname] = (login, account, password)
                         lexer.push_token(tt)
                         break
