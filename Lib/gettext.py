@@ -51,7 +51,7 @@ from errno import ENOENT
 _default_localedir = os.path.join(sys.prefix, 'share', 'locale')
 
 
-
+
 def _expand_lang(locale):
     from locale import normalize
     locale = normalize(locale)
@@ -94,7 +94,7 @@ def _expand_lang(locale):
     return ret
 
 
-
+
 class NullTranslations:
     def __init__(self, fp=None):
         self._info = {}
@@ -192,7 +192,7 @@ class GNUTranslations(NullTranslations):
         return unicode(tmsg, self._charset)
 
 
-
+
 # Locate a .mo file using the gettext strategy
 def find(domain, localedir=None, languages=None):
     # Get some reasonable defaults for arguments that were not supplied
@@ -223,7 +223,7 @@ def find(domain, localedir=None, languages=None):
     return None
 
 
-
+
 # a mapping between absolute .mo file path and Translation object
 _translations = {}
 
@@ -243,12 +243,12 @@ def translation(domain, localedir=None, languages=None, class_=None):
     return t
 
 
-
+
 def install(domain, localedir=None, unicode=0):
     translation(domain, localedir).install(unicode)
 
 
-
+
 # a mapping b/w domains and locale directories
 _localedirs = {}
 # current global domain, `messages' used for compatibility w/ GNU gettext
@@ -275,7 +275,7 @@ def dgettext(domain, message):
     except IOError:
         return message
     return t.gettext(message)
-    
+
 
 def gettext(message):
     return dgettext(_current_domain, message)

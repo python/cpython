@@ -93,14 +93,14 @@ class HTTPResponse:
         self.msg = None
 
         # from the Status-Line of the response
-        self.version = _UNKNOWN	# HTTP-Version
-        self.status = _UNKNOWN	# Status-Code
-        self.reason = _UNKNOWN	# Reason-Phrase
+        self.version = _UNKNOWN # HTTP-Version
+        self.status = _UNKNOWN  # Status-Code
+        self.reason = _UNKNOWN  # Reason-Phrase
 
-        self.chunked = _UNKNOWN		# is "chunked" being used?
-        self.chunk_left = _UNKNOWN	# bytes left to read in current chunk
-        self.length = _UNKNOWN		# number of bytes left in response
-        self.will_close = _UNKNOWN	# conn will close at end of response
+        self.chunked = _UNKNOWN         # is "chunked" being used?
+        self.chunk_left = _UNKNOWN      # bytes left to read in current chunk
+        self.length = _UNKNOWN          # number of bytes left in response
+        self.will_close = _UNKNOWN      # conn will close at end of response
 
     def begin(self):
         if self.msg is not None:
@@ -130,7 +130,7 @@ class HTTPResponse:
         if version == 'HTTP/1.0':
             self.version = 10
         elif version.startswith('HTTP/1.'):
-            self.version = 11	# use HTTP/1.1 code for HTTP/1.x where x>=1
+            self.version = 11   # use HTTP/1.1 code for HTTP/1.x where x>=1
         elif version == 'HTTP/0.9':
             self.version = 9
         else:
@@ -186,9 +186,9 @@ class HTTPResponse:
             self.length = None
 
         # does the body have a fixed length? (of zero)
-        if (status == 204 or		# No Content
-            status == 304 or		# Not Modified
-            100 <= status < 200):	# 1xx codes
+        if (status == 204 or            # No Content
+            status == 304 or            # Not Modified
+            100 <= status < 200):       # 1xx codes
             self.length = 0
 
         # if the connection remains open, and we aren't using chunked, and
@@ -225,7 +225,7 @@ class HTTPResponse:
                     line = self.fp.readline()
                     i = line.find(';')
                     if i >= 0:
-                        line = line[:i]	# strip chunk-extensions
+                        line = line[:i] # strip chunk-extensions
                     chunk_left = int(line, 16)
                     if chunk_left == 0:
                         break
@@ -237,7 +237,7 @@ class HTTPResponse:
                     return value
                 elif amt == chunk_left:
                     value = value + self._safe_read(amt)
-                    self._safe_read(2)	# toss the CRLF at the end of the chunk
+                    self._safe_read(2)  # toss the CRLF at the end of the chunk
                     self.chunk_left = None
                     return value
                 else:
@@ -245,7 +245,7 @@ class HTTPResponse:
                     amt = amt - chunk_left
 
                 # we read the whole chunk, get another
-                self._safe_read(2)	# toss the CRLF at the end of the chunk
+                self._safe_read(2)      # toss the CRLF at the end of the chunk
                 chunk_left = None
 
             # read and discard trailer up to the CRLF terminator
@@ -266,7 +266,7 @@ class HTTPResponse:
                 s = self.fp.read()
             else:
                 s = self._safe_read(self.length)
-            self.close()	# we read everything
+            self.close()        # we read everything
             return s
 
         if self.length is not None:
@@ -355,7 +355,7 @@ class HTTPConnection:
     def close(self):
         """Close the connection to the HTTP server."""
         if self.sock:
-            self.sock.close()	# close it manually... there may be other refs
+            self.sock.close()   # close it manually... there may be other refs
             self.sock = None
         if self.__response:
             self.__response.close()
@@ -380,7 +380,7 @@ class HTTPConnection:
         try:
             self.sock.send(str)
         except socket.error, v:
-            if v[0] == 32:	# Broken pipe
+            if v[0] == 32:      # Broken pipe
                 self.close()
             raise
 

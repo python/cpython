@@ -109,7 +109,7 @@ class BasicModuleLoader(_Verbose):
     """
 
     def find_module(self, name, path = None):
-        if path is None: 
+        if path is None:
             path = [None] + self.default_path()
         for dir in path:
             stuff = self.find_module_in_dir(name, dir)
@@ -390,7 +390,7 @@ class BasicModuleImporter(_Verbose):
 class ModuleImporter(BasicModuleImporter):
 
     """A module importer that supports packages."""
-    
+
     def import_module(self, name, globals=None, locals=None, fromlist=None):
         parent = self.determine_parent(globals)
         q, tail = self.find_head_package(parent, name)

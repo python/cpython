@@ -8,7 +8,7 @@ import string
 
 def getcaps():
     """Return a dictionary containing the mailcap database.
-    
+
     The dictionary maps a MIME type (in all lowercase, e.g. 'text/plain')
     to a list of dictionaries corresponding to mailcap entries.  The list
     collects all the entries for that MIME type from all available mailcap
@@ -137,7 +137,7 @@ def parsefield(line, i, n):
 
 def findmatch(caps, MIMEtype, key='view', filename="/dev/null", plist=[]):
     """Find a match for a mailcap entry.
-    
+
     Return a tuple containing the command line, and the mailcap entry
     used; (None, None) if no match is found.  This may invoke the
     'test' command of several matching entries before deciding which
@@ -145,7 +145,7 @@ def findmatch(caps, MIMEtype, key='view', filename="/dev/null", plist=[]):
 
     """
     entries = lookup(caps, MIMEtype, key)
-    # XXX This code should somehow check for the needsterminal flag. 
+    # XXX This code should somehow check for the needsterminal flag.
     for e in entries:
         if e.has_key('test'):
             test = subst(e['test'], filename, plist)

@@ -16,7 +16,7 @@ def url2pathname(pathname):
         raise RuntimeError, 'Cannot convert non-local URL to pathname'
     # Turn starting /// into /, an empty hostname means current host
     if pathname[:3] == '///':
-    	pathname = pathname[2:]
+        pathname = pathname[2:]
     elif pathname[:2] == '//':
         raise RuntimeError, 'Cannot convert non-local URL to pathname'
     components = string.split(pathname, '/')
@@ -68,11 +68,11 @@ def pathname2url(pathname):
         return '/' + string.join(components, '/')
     else:
         return string.join(components, '/')
-        
+
 def _pncomp2url(component):
-	component = urllib.quote(component[:31], safe='')  # We want to quote slashes
-	return component
-	
+    component = urllib.quote(component[:31], safe='')  # We want to quote slashes
+    return component
+
 def test():
     for url in ["index.html",
                 "bar/index.html",
