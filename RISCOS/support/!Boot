@@ -9,4 +9,4 @@ IconSprites <Obey$Dir>.!Sprites
 set Alias$@RunType_ae5 TaskWindow |"python %%*0|" -name |"Python|" -quit
 | -display
 set File$Type_ae5 Python
-set Alias$Python Run <Python$Dir>.python21 %*0
+set Alias$Python Run <Python$Dir>.python22 %*0

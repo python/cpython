@@ -1,8 +1,8 @@
 /* drawf  DrawFile functions */
 
-#include "h.os"
-#include "h.osfile"
-#include "h.drawfile"
+#include "oslib/os.h"
+#include "oslib/osfile.h"
+#include "oslib/drawfile.h"
 #include "Python.h"
 
 #include <limits.h>
