@@ -79,22 +79,12 @@ different device than \var{p}, or whether \file{\var{p}/..} and
 detect mount points for all \UNIX{} and POSIX variants.
 \end{funcdesc}
 
-\begin{funcdesc}{join}{p\, q}
-Join the paths
-\var{p}
-and
-\var{q} intelligently:
-If
-\var{q}
-is an absolute path, the return value is
-\var{q}.
-Otherwise, the concatenation of
-\var{p}
-and
-\var{q}
-is returned, with a slash (\code{'/'}) inserted unless
-\var{p}
-is empty or ends in a slash.
+\begin{funcdesc}{join}{p\optional{\, q\optional{\, ...}}}
+Joins one or more path components intelligently.  If any component is
+an absolute path, all previous components are thrown away, and joining
+continues.  The return value is the concatenation of \var{p}, and
+optionally \var{q}, etc., with exactly one slash (\code{'/'}) inserted
+between components, unless \var{p} is empty.
 \end{funcdesc}
 
 \begin{funcdesc}{normcase}{p}
