@@ -207,8 +207,8 @@ Socket methods:
 #endif /* USE_SSL */
 
 #ifndef HAVE_INET_PTON
-int inet_pton (int af, char *src, void *dst);
-char *inet_ntop(int af, void *src, char *dst, socklen_t size);
+int inet_pton (int af, const char *src, void *dst);
+const char *inet_ntop(int af, const void *src, char *dst, socklen_t size);
 #endif
 
 /* I know this is a bad practice, but it is the easiest... */
@@ -2948,7 +2948,7 @@ init_socket(void)
 /* Simplistic emulation code for inet_pton that only works for IPv4 */
 #ifndef HAVE_INET_PTON
 int 
-inet_pton (int af, char *src, void *dst)
+inet_pton (int af, const char *src, void *dst)
 {
 	if(af == AF_INET){
 		long packed_addr;
@@ -2966,8 +2966,8 @@ inet_pton (int af, char *src, void *dst)
 	return -1;
 }
 
-char *
-inet_ntop(int af, void *src, char *dst, socklen_t size)
+const char *
+inet_ntop(int af, const void *src, char *dst, socklen_t size)
 {
 	if (af == AF_INET) {
 		struct in_addr packed_addr;
