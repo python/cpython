@@ -158,7 +158,7 @@ to \class{noddy.Noddy}.
 \end{verbatim}
 
 This is so that Python knows how much memory to allocate when you call
-\cfunction{PyObject_New}.
+\cfunction{PyObject_New()}.
 
 \begin{verbatim}
     0,                          /* tp_itemsize */
@@ -192,7 +192,7 @@ For now, all we want to be able to do is to create new \class{Noddy}
 objects. To enable object creation, we have to provide a
 \member{tp_new} implementation. In this case, we can just use the
 default implementation provided by the API function
-\cfunction{PyType_GenericNew}.  We'd like to just assign this to the
+\cfunction{PyType_GenericNew()}.  We'd like to just assign this to the
 \member{tp_new} slot, but we can't, for portability sake, On some
 platforms or compilers, we can't statically initialize a structure
 member with a function defined in another C module, so, instead, we'll
@@ -209,7 +209,7 @@ All the other type methods are \NULL, so we'll go over them later
 --- that's for a later section!
 
 Everything else in the file should be familiar, except for some code
-in \cfunction{initnoddy}:
+in \cfunction{initnoddy()}:
 
 \begin{verbatim}
     if (PyType_Ready(&noddy_NoddyType) < 0)
@@ -315,7 +315,7 @@ which is assigned to the \member{tp_dealloc} member:
 \end{verbatim}
 
 This method decrements the reference counts of the two Python
-attributes. We use \cfunction{Py_XDECREF} here because the
+attributes. We use \cfunction{Py_XDECREF()} here because the
 \member{first} and \member{last} members could be \NULL.  It then
 calls the \member{tp_free} member of the object's type to free the
 object's memory.  Note that the object's type might not be
@@ -362,14 +362,14 @@ and install it in the \member{tp_new} member:
 
 The new member is responsible for creating (as opposed to
 initializing) objects of the type.  It is exposed in Python as the
-\method{__new__} method.  See the paper titled ``Unifying types and
-classes in Python'' for a detailed discussion of the \method{__new__}
+\method{__new__()} method.  See the paper titled ``Unifying types and
+classes in Python'' for a detailed discussion of the \method{__new__()}
 method.  One reason to implement a new method is to assure the initial
 values of instance variables.  In this case, we use the new method to
 make sure that the initial values of the members \member{first} and
 \member{last} are not \NULL. If we didn't care whether the initial
-values were \NULL, we could have used \cfunction{PyType_GenericNew} as
-our new method, as we did before.  \cfunction{PyType_GenericNew}
+values were \NULL, we could have used \cfunction{PyType_GenericNew()} as
+our new method, as we did before.  \cfunction{PyType_GenericNew()}
 initializes all of the instance variable members to NULLs.
 
 The new method is a static method that is passed the type being
@@ -422,7 +422,7 @@ by filling the \member{tp_init} slot.
 \end{verbatim}
 
 The \member{tp_init} slot is exposed in Python as the
-\method{__init__} method. It is used to initialize an object after
+\method{__init__()} method. It is used to initialize an object after
 it's created. Unlike the new method, we can't guarantee that the
 initializer is called.  The initializer isn't called when unpickling
 objects and it can be overridden.  Our initializer accepts arguments
@@ -550,8 +550,8 @@ definition:
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /*tp_flags*/
 \end{verbatim}
 
-We rename \cfunction{initnoddy} to \cfunction{initnoddy2}
-and update the module name passed to \cfunction{Py_InitModule3}.
+We rename \cfunction{initnoddy()} to \cfunction{initnoddy2()}
+and update the module name passed to \cfunction{Py_InitModule3()}.
 
 Finally, we update our \file{setup.py} file to build the new module:
 
@@ -661,7 +661,7 @@ static PyMemberDef Noddy_members[] = {
 With these changes, we can assure that the \member{first} and
 \member{last} members are never NULL so we can remove checks for \NULL
 values in almost all cases. This means that most of the
-\cfunction{Py_XDECREF} calls can be converted to \cfunction{Py_DECREF}
+\cfunction{Py_XDECREF()} calls can be converted to \cfunction{Py_DECREF()}
 calls. The only place we can't change these calls is in the
 deallocator, where there is the possibility that the initialization of
 these members failed in the constructor.
@@ -723,8 +723,8 @@ Noddy_traverse(Noddy *self, visitproc visit, void *arg)
 \end{verbatim}
 
 For each subobject that can participate in cycles, we need to call the
-\cfunction{visit} function, which is passed to the traversal method.
-The \cfunction{visit} function takes as arguments the subobject and
+\cfunction{visit()} function, which is passed to the traversal method.
+The \cfunction{visit()} function takes as arguments the subobject and
 the extra argument \var{arg} passed to the traversal method.
 
 We also need to provide a method for clearing any subobjects that can
@@ -751,7 +751,8 @@ Noddy_dealloc(Noddy* self)
 }
 \end{verbatim}
 
-Finally, we add the \constant{Py_TPFLAGS_HAVE_GC} flag to the class flags:
+Finally, we add the \constant{Py_TPFLAGS_HAVE_GC} flag to the class
+flags:
 
 \begin{verbatim}
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC, /*tp_flags*/
