@@ -1462,6 +1462,7 @@ type_dealloc(PyTypeObject *type)
 	Py_XDECREF(type->tp_mro);
 	Py_XDECREF(type->tp_cache);
 	Py_XDECREF(type->tp_subclasses);
+	PyObject_Free(type->tp_doc);
 	Py_XDECREF(et->name);
 	Py_XDECREF(et->slots);
 	type->ob_type->tp_free((PyObject *)type);
