@@ -30,6 +30,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "import.h"
 #include "modsupport.h"
 #include "structmember.h"
+#include "ceval.h"
 
 
 /* Config objects */
@@ -274,7 +275,9 @@ al_readsamps (self, args)
 	v = newsizedstringobject ((char *)NULL, width * count);
 	if (v == NULL) return NULL;
 
+	BGN_SAVE
 	ALreadsamps (self-> ob_port, (void *) getstringvalue(v), count);
+	END_SAVE
 
 	return (v);
 }
@@ -294,7 +297,9 @@ al_writesamps (self, args)
 	c = ALgetconfig(self->ob_port);
 	width = ALgetwidth(c);
 	ALfreeconfig(c);
+	BGN_SAVE
 	ALwritesamps (self-> ob_port, (void *) buf, (long) size / width);
+	END_SAVE
 
 	INCREF (None);
 	return None;
@@ -361,6 +366,7 @@ al_getconfig (self, args)
 static struct methodlist port_methods[] = {
 	{"closeport",		al_closeport},
 	{"getfd",		al_getfd},
+        {"fileno",		al_getfd},
 	{"getfilled",		al_getfilled},
 	{"getfillable",		al_getfillable},
 	{"readsamps",		al_readsamps},

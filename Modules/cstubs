@@ -25,6 +25,11 @@ Each definition must be contained on one line:
 		N*retval
 */
 
+/*
+ * An attempt has been made to make this module switch threads on qread
+ * calls. It is far from safe, though.
+ */
+
 #include <gl.h>
 #include <device.h>
 
@@ -32,6 +37,7 @@ Each definition must be contained on one line:
 #include "import.h"
 #include "modsupport.h"
 #include "cgensupport.h"
+#include "ceval.h"
 
 /*
 Some stubs are too complicated for the stub generator.
@@ -39,6 +45,27 @@ We can include manually written versions of them here.
 A line starting with '%' gives the name of the function so the stub
 generator can include it in the table of functions.
 */
+
+% qread
+
+static object *
+gl_qread(self, args)
+	object *self;
+	object *args;
+{
+	long retval;
+	short arg1 ;
+	BGN_SAVE
+	retval = qread( & arg1 );
+	END_SAVE
+	{ object *v = newtupleobject( 2 );
+	  if (v == NULL) return NULL;
+	  settupleitem(v, 0, mknewlongobject(retval));
+	  settupleitem(v, 1, mknewshortobject(arg1));
+	  return v;
+	}
+}
+
 
 /*
 varray -- an array of v.. calls.

@@ -29,6 +29,16 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
    and possibly also with previous versions.
    (You must also edit FL.py to set _v15 to 1.) */
 
+/* A half-hearted attempt has been made to allow programs using this
+ * module to exploit parallelism (through the threads module). No provisions
+ * have been made for multiple threads to use this module at the same time,
+ * though. So, a program with a forms thread and a non-forms thread will work
+ * fine but a program with two threads using forms will probably crash (unless
+ * the program takes precaution to ensure that only one thread can be in
+ * this module at any time). This will have to be fixed some time.
+ * (A fix will probably also have to synchronise with the gl module).
+ */
+
 #include "forms.h"
 
 #include "allobjects.h"
@@ -1964,7 +1974,9 @@ forms_do_or_check_forms(dummy, args, func)
 		return NULL;
 
 	for (;;) {
+	        BGN_SAVE
 		generic = (*func)();
+		END_SAVE
 		if (generic == NULL) {
 			INCREF(None);
 			return None;
@@ -2131,7 +2143,9 @@ forms_qread(self, args)
 {
 	long retval;
 	short arg1 ;
+	BGN_SAVE
 	retval = fl_qread(&arg1);
+	END_SAVE
 	{ object *v = newtupleobject(2);
 	  if (v == NULL) return NULL;
 	  settupleitem(v, 0, newintobject(retval));
@@ -2273,7 +2287,9 @@ forms_show_message(f, args)
 
         if (!getargs(args, "(sss)", &a, &b, &c)) return NULL;
 
+	BGN_SAVE
 	fl_show_message(a, b, c);
+	END_SAVE
 
 	INCREF(None);
 	return None;
@@ -2287,6 +2303,7 @@ forms_show_choice(f, args)
 	char *m1, *m2, *m3, *b1, *b2, *b3;
 	int nb;
 	char *format;
+	int rv;
 
 	if (args == NULL || !is_tupleobject(args)) {
 		err_badarg();
@@ -2314,7 +2331,10 @@ forms_show_choice(f, args)
         if (!getargs(args, format, &m1, &m2, &m3, &b1, &b2, &b3))
 		return NULL;
 
-	return newintobject(fl_show_choice(m1, m2, m3, nb, b1, b2, b3));
+	BGN_SAVE
+	rv = fl_show_choice(m1, m2, m3, nb, b1, b2, b3);
+	END_SAVE
+	return newintobject(rv);
 }
 
 static object *
@@ -2327,7 +2347,9 @@ forms_show_question(f, args)
 
         if (!getargs(args, "(sss)", &a, &b, &c)) return NULL;
 
+	BGN_SAVE
 	ret = fl_show_question(a, b, c);
+	END_SAVE
    
         return newintobject((long) ret);
 }
@@ -2342,7 +2364,9 @@ forms_show_input(f, args)
 
         if (!getstrstrarg(args, &a, &b)) return NULL;
 
+	BGN_SAVE
 	str = fl_show_input(a, b);
+	END_SAVE
 
 	if (str == NULL) {
 		INCREF(None);
@@ -2361,7 +2385,9 @@ forms_file_selector(f, args)
 
         if (!getargs(args, "(ssss)", &a, &b, &c, &d)) return NULL;
 
+	BGN_SAVE
 	str = fl_show_file_selector(a, b, c, d);
+	END_SAVE
    
 	if (str == NULL) {
 		INCREF(None);
