@@ -655,7 +655,7 @@ then
 fi
 case "$enable_toolbox_glue" in
 yes)
-	extra_frameworks="-framework Carbon -framework Foundation"
+	extra_frameworks="-framework CoreServices -framework Foundation"
 	extra_machdep_objs="Python/mactoolboxglue.o"
 	extra_undefs="-u __dummy -u _PyMac_Error"
 	AC_DEFINE(USE_TOOLBOX_OBJECT_GLUE)

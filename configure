@@ -1,6 +1,6 @@
 #! /bin/sh
 
-# From configure.in Revision: 1.276 
+# From configure.in Revision: 1.278 
 
 # Guess values for system-dependent variables and create Makefiles.
 # Generated automatically using autoconf version 2.13 
@@ -3027,7 +3027,7 @@ then
 fi
 case "$enable_toolbox_glue" in
 yes)
-	extra_frameworks="-framework Carbon -framework Foundation"
+	extra_frameworks="-framework CoreServices -framework Foundation"
 	extra_machdep_objs="Python/mactoolboxglue.o"
 	extra_undefs="-u __dummy -u _PyMac_Error"
 	cat >> confdefs.h <<\EOF
@@ -7379,6 +7379,84 @@ EOF
 
 fi
 
+# On HP/UX 11.0, mvwdelch is a block with a return statement
+echo $ac_n "checking whether mvwdelch is an expression""... $ac_c" 1>&6
+echo "configure:7385: checking whether mvwdelch is an expression" >&5
+if eval "test \"`echo '$''{'ac_cv_mvwdelch_is_expression'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+  cat > conftest.$ac_ext <<EOF
+#line 7390 "configure"
+#include "confdefs.h"
+#include <curses.h>
+int main() {
+
+  int rtn;
+  rtn = mvwdelch(0,0,0);
+
+; return 0; }
+EOF
+if { (eval echo configure:7400: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
+  rm -rf conftest*
+  ac_cv_mvwdelch_is_expression=yes
+else
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -rf conftest*
+  ac_cv_mvwdelch_is_expression=no
+fi
+rm -f conftest*
+fi
+
+echo "$ac_t""$ac_cv_mvwdelch_is_expression" 1>&6
+
+if test "$ac_cv_mvwdelch_is_expression" = yes
+then
+  cat >> confdefs.h <<\EOF
+#define MVWDELCH_IS_EXPRESSION 1
+EOF
+
+fi
+
+echo $ac_n "checking whether WINDOW has _flags""... $ac_c" 1>&6
+echo "configure:7423: checking whether WINDOW has _flags" >&5
+if eval "test \"`echo '$''{'ac_cv_window_has_flags'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+  cat > conftest.$ac_ext <<EOF
+#line 7428 "configure"
+#include "confdefs.h"
+#include <curses.h>
+int main() {
+
+  WINDOW *w;
+  w->_flags = 0;
+
+; return 0; }
+EOF
+if { (eval echo configure:7438: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
+  rm -rf conftest*
+  ac_cv_window_has_flags=yes
+else
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -rf conftest*
+  ac_cv_window_has_flags=no
+fi
+rm -f conftest*
+fi
+
+echo "$ac_t""$ac_cv_window_has_flags" 1>&6
+
+
+if test "$ac_cv_window_has_flags" = yes
+then
+  cat >> confdefs.h <<\EOF
+#define WINDOW_HAS_FLAGS 1
+EOF
+
+fi
+
 # THIS MUST BE LAST, IT CAN BREAK OTHER TESTS!
 # Add sys/socket.h to confdefs.h
 cat >> confdefs.h <<\EOF
@@ -7387,12 +7465,12 @@ cat >> confdefs.h <<\EOF
 #endif
 EOF
 echo $ac_n "checking for socklen_t""... $ac_c" 1>&6
-echo "configure:7391: checking for socklen_t" >&5
+echo "configure:7469: checking for socklen_t" >&5
 if eval "test \"`echo '$''{'ac_cv_type_socklen_t'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
   cat > conftest.$ac_ext <<EOF
-#line 7396 "configure"
+#line 7474 "configure"
 #include "confdefs.h"
 #include <sys/types.h>
 #if STDC_HEADERS
@@ -7441,7 +7519,7 @@ done
 
 SRCDIRS="Parser Grammar Objects Python Modules"
 echo $ac_n "checking for build directories""... $ac_c" 1>&6
-echo "configure:7445: checking for build directories" >&5
+echo "configure:7523: checking for build directories" >&5
 for dir in $SRCDIRS; do
     if test ! -d $dir; then
         mkdir $dir

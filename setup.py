@@ -565,35 +565,55 @@ class PyBuildExt(build_ext):
             # procedure triggers on.
             frameworkdir = sysconfig.get_config_var('PYTHONFRAMEWORKDIR')
             exts.append( Extension('gestalt', ['gestaltmodule.c']) )
-            exts.append( Extension('MacOS', ['macosmodule.c']) )
-            exts.append( Extension('icglue', ['icgluemodule.c']) )
-            exts.append( Extension('macfs', ['macfsmodule.c', '../Python/getapplbycreator.c']) )
-            exts.append( Extension('_CF', ['cf/_CFmodule.c'],
-                    extra_link_args=['-framework', 'CoreFoundation']) )
-            exts.append( Extension('_Res', ['res/_Resmodule.c'] ) )
-            exts.append( Extension('_Snd', ['snd/_Sndmodule.c']) )
+            exts.append( Extension('MacOS', ['macosmodule.c'],
+            		extra_link_args=['-framework', 'Carbon']) )
+            exts.append( Extension('icglue', ['icgluemodule.c'],
+            		extra_link_args=['-framework', 'Carbon']) )
+            exts.append( Extension('macfs', ['macfsmodule.c', '../Python/getapplbycreator.c'],
+            		extra_link_args=['-framework', 'Carbon']) )
+            exts.append( Extension('_CF', ['cf/_CFmodule.c']) )
+            exts.append( Extension('_Res', ['res/_Resmodule.c']) )
+            exts.append( Extension('_Snd', ['snd/_Sndmodule.c'],
+            		extra_link_args=['-framework', 'Carbon']) )
             if frameworkdir:
-                exts.append( Extension('Nav', ['Nav.c']) )
-                exts.append( Extension('_AE', ['ae/_AEmodule.c']) )
-                exts.append( Extension('_App', ['app/_Appmodule.c']) )
-                exts.append( Extension('_Cm', ['cm/_Cmmodule.c']) )
-                exts.append( Extension('_Ctl', ['ctl/_Ctlmodule.c']) )
-                exts.append( Extension('_Dlg', ['dlg/_Dlgmodule.c']) )
-                exts.append( Extension('_Drag', ['drag/_Dragmodule.c']) )
-                exts.append( Extension('_Evt', ['evt/_Evtmodule.c']) )
-                exts.append( Extension('_Fm', ['fm/_Fmmodule.c']) )
-                exts.append( Extension('_Icn', ['icn/_Icnmodule.c']) )
-                exts.append( Extension('_List', ['list/_Listmodule.c']) )
-                exts.append( Extension('_Menu', ['menu/_Menumodule.c']) )
-                exts.append( Extension('_Mlte', ['mlte/_Mltemodule.c']) )
-                exts.append( Extension('_Qd', ['qd/_Qdmodule.c']) )
-                exts.append( Extension('_Qdoffs', ['qdoffs/_Qdoffsmodule.c']) )
+                exts.append( Extension('Nav', ['Nav.c'],
+            		extra_link_args=['-framework', 'Carbon']) )
+                exts.append( Extension('_AE', ['ae/_AEmodule.c'],
+            		extra_link_args=['-framework', 'Carbon']) )
+                exts.append( Extension('_App', ['app/_Appmodule.c'],
+            		extra_link_args=['-framework', 'Carbon']) )
+                exts.append( Extension('_Cm', ['cm/_Cmmodule.c'],
+            		extra_link_args=['-framework', 'Carbon']) )
+                exts.append( Extension('_Ctl', ['ctl/_Ctlmodule.c'],
+            		extra_link_args=['-framework', 'Carbon']) )
+                exts.append( Extension('_Dlg', ['dlg/_Dlgmodule.c'],
+            		extra_link_args=['-framework', 'Carbon']) )
+                exts.append( Extension('_Drag', ['drag/_Dragmodule.c'],
+            		extra_link_args=['-framework', 'Carbon']) )
+                exts.append( Extension('_Evt', ['evt/_Evtmodule.c'],
+            		extra_link_args=['-framework', 'Carbon']) )
+                exts.append( Extension('_Fm', ['fm/_Fmmodule.c'],
+            		extra_link_args=['-framework', 'Carbon']) )
+                exts.append( Extension('_Icn', ['icn/_Icnmodule.c'],
+            		extra_link_args=['-framework', 'Carbon']) )
+                exts.append( Extension('_List', ['list/_Listmodule.c'],
+            		extra_link_args=['-framework', 'Carbon']) )
+                exts.append( Extension('_Menu', ['menu/_Menumodule.c'],
+            		extra_link_args=['-framework', 'Carbon']) )
+                exts.append( Extension('_Mlte', ['mlte/_Mltemodule.c'],
+            		extra_link_args=['-framework', 'Carbon']) )
+                exts.append( Extension('_Qd', ['qd/_Qdmodule.c'],
+            		extra_link_args=['-framework', 'Carbon']) )
+                exts.append( Extension('_Qdoffs', ['qdoffs/_Qdoffsmodule.c'],
+            		extra_link_args=['-framework', 'Carbon']) )
                 exts.append( Extension('_Qt', ['qt/_Qtmodule.c'],
-                        extra_link_args=['-framework', 'QuickTime']) )
+                        extra_link_args=['-framework', 'QuickTime', '-framework', 'Carbon']) )
 ##              exts.append( Extension('_Scrap', ['scrap/_Scrapmodule.c']) )
-                exts.append( Extension('_TE', ['te/_TEmodule.c']) )
+                exts.append( Extension('_TE', ['te/_TEmodule.c'],
+            		extra_link_args=['-framework', 'Carbon']) )
 ##              exts.append( Extension('waste', ['waste/wastemodule.c']) )
-                exts.append( Extension('_Win', ['win/_Winmodule.c']) )
+                exts.append( Extension('_Win', ['win/_Winmodule.c'],
+            		extra_link_args=['-framework', 'Carbon']) )
             
         self.extensions.extend(exts)
 
