@@ -8,20 +8,22 @@ RFC1808_BASE = "http://a/b/c/d;p?q#f"
 RFC2396_BASE = "http://a/b/c/d;p?q"
 
 class UrlParseTestCase(unittest.TestCase):
-    def test_frags(self):
-        for url, parsed, split in [
-            ('http://www.python.org',
-             ('http', 'www.python.org', '', '', '', ''),
-             ('http', 'www.python.org', '', '', '')),
-            ('http://www.python.org#abc',
-             ('http', 'www.python.org', '', '', '', 'abc'),
-             ('http', 'www.python.org', '', '', 'abc')),
-            ('http://www.python.org/#abc',
-             ('http', 'www.python.org', '/', '', '', 'abc'),
-             ('http', 'www.python.org', '/', '', 'abc')),
-            (RFC1808_BASE,
-             ('http', 'a', '/b/c/d', 'p', 'q', 'f'),
-             ('http', 'a', '/b/c/d;p', 'q', 'f')),
+
+    def checkRoundtrips(self, url, parsed, split):
+        result = urlparse.urlparse(url)
+        self.assertEqual(result, parsed)
+        # put it back together and it should be the same
+        result2 = urlparse.urlunparse(result)
+        self.assertEqual(result2, url)
+
+        # check the roundtrip using urlsplit() as well
+        result = urlparse.urlsplit(url)
+        self.assertEqual(result, split)
+        result2 = urlparse.urlunsplit(result)
+        self.assertEqual(result2, url)
+
+    def test_roundtrips(self):
+        testcases = [
             ('file:///tmp/junk.txt',
              ('file', '', '/tmp/junk.txt', '', '', ''),
              ('file', '', '/tmp/junk.txt', '', '')),
@@ -29,20 +31,41 @@ class UrlParseTestCase(unittest.TestCase):
              ('imap', 'mail.python.org', '/mbox1', '', '', ''),
              ('imap', 'mail.python.org', '/mbox1', '', '')),
             ('mms://wms.sys.hinet.net/cts/Drama/09006251100.asf',
-             ('mms', 'wms.sys.hinet.net', '/cts/Drama/09006251100.asf', '', '', ''),
-             ('mms', 'wms.sys.hinet.net', '/cts/Drama/09006251100.asf', '', '')),
-            ]:
-            result = urlparse.urlparse(url)
-            self.assertEqual(result, parsed)
-            # put it back together and it should be the same
-            result2 = urlparse.urlunparse(result)
-            self.assertEqual(result2, url)
+             ('mms', 'wms.sys.hinet.net', '/cts/Drama/09006251100.asf',
+              '', '', ''),
+             ('mms', 'wms.sys.hinet.net', '/cts/Drama/09006251100.asf',
+              '', '')),
+            ]
+        for url, parsed, split in testcases:
+            self.checkRoundtrips(url, parsed, split)
 
-            # check the roundtrip using urlsplit() as well
-            result = urlparse.urlsplit(url)
-            self.assertEqual(result, split)
-            result2 = urlparse.urlunsplit(result)
-            self.assertEqual(result2, url)
+    def test_http_roundtrips(self):
+        # urlparse.urlsplit treats 'http:' as an optimized special case,
+        # so we test both 'http:' and 'https:' in all the following.
+        # Three cheers for white box knowledge!
+        testcases = [
+            ('://www.python.org',
+             ('www.python.org', '', '', '', ''),
+             ('www.python.org', '', '', '')),
+            ('://www.python.org#abc',
+             ('www.python.org', '', '', '', 'abc'),
+             ('www.python.org', '', '', 'abc')),
+            ('://www.python.org?q=abc',
+             ('www.python.org', '', '', 'q=abc', ''),
+             ('www.python.org', '', 'q=abc', '')),
+            ('://www.python.org/#abc',
+             ('www.python.org', '/', '', '', 'abc'),
+             ('www.python.org', '/', '', 'abc')),
+            ('://a/b/c/d;p?q#f',
+             ('a', '/b/c/d', 'p', 'q', 'f'),
+             ('a', '/b/c/d;p', 'q', 'f')),
+            ]
+        for scheme in ('http', 'https'):
+            for url, parsed, split in testcases:
+                url = scheme + url
+                parsed = (scheme,) + parsed
+                split = (scheme,) + split
+                self.checkRoundtrips(url, parsed, split)
 
     def checkJoin(self, base, relurl, expected):
         self.assertEqual(urlparse.urljoin(base, relurl), expected,
