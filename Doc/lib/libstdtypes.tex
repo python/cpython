@@ -549,6 +549,7 @@ Return a copy of the string with only its first character capitalized.
 \begin{methoddesc}[string]{center}{width\optional{, fillchar}}
 Return centered in a string of length \var{width}. Padding is done
 using the specified \var{fillchar} (default is a space).
+\versionchanged[Support for the \var{fillchar} argument]{2.4}
 \end{methoddesc}
 
 \begin{methoddesc}[string]{count}{sub\optional{, start\optional{, end}}}
@@ -650,6 +651,7 @@ Return the string left justified in a string of length \var{width}.
 Padding is done using the specified \var{fillchar} (default is a
 space).  The original string is returned if
 \var{width} is less than \code{len(\var{s})}.
+\versionchanged[Support for the \var{fillchar} argument]{2.4}
 \end{methoddesc}
 
 \begin{methoddesc}[string]{lower}{}
@@ -689,6 +691,7 @@ Return the string right justified in a string of length \var{width}.
 Padding is done using the specified \var{fillchar} (default is a space).
 The original string is returned if
 \var{width} is less than \code{len(\var{s})}.
+\versionchanged[Support for the \var{fillchar} argument]{2.4}
 \end{methoddesc}
 
 \begin{methoddesc}[string]{rstrip}{\optional{chars}}
