@@ -44,6 +44,7 @@ extern DL_IMPORT(PyTypeObject) PyModule_Type;
 extern PyObject *PyModule_New Py_PROTO((char *));
 extern PyObject *PyModule_GetDict Py_PROTO((PyObject *));
 extern char *PyModule_GetName Py_PROTO((PyObject *));
+extern void _PyModule_Clear Py_PROTO((PyObject *));
 
 #ifdef __cplusplus
 }
