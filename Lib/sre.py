@@ -166,6 +166,7 @@ def findall(pattern, string):
     return _compile(pattern, 0).findall(string)
 
 if sys.hexversion >= 0x02020000:
+    __all__.append("finditer")
     def finditer(pattern, string):
         """Return an iterator over all non-overlapping matches in the
         string.  For each match, the iterator returns a match object.
