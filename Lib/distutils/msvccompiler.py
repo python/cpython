@@ -21,15 +21,25 @@ _can_read_reg = 0
 try:
     import winreg
     _can_read_reg = 1
-    hkey_mod = winreg                   # module that provides HKEY_* stuff
-    reg_mod = winreg                    # provides other registry stuff
+    hkey_mod = winreg
+
+    RegOpenKeyEx = winreg.OpenKeyEx
+    RegEnumKey = winreg.EnumKey
+    RegEnumValue = winreg.EnumValue
+    RegError = winreg.error
+
 except ImportError:
     try:
         import win32api
         import win32con
         _can_read_reg = 1
         hkey_mod = win32con
-        reg_mod = win32api
+
+        RegOpenKeyEx = win32api.RegOpenKeyEx
+        RegEnumKey = win32api.RegEnumKey
+        RegEnumValue = win32api.RegEnumValue
+        RegError = win32api.error
+
     except ImportError:
         pass
 
@@ -38,11 +48,6 @@ if _can_read_reg:
     HKEY_LOCAL_MACHINE = hkey_mod.HKEY_LOCAL_MACHINE
     HKEY_CURRENT_USER = hkey_mod.HKEY_CURRENT_USER
     HKEY_USERS = hkey_mod.HKEY_USERS
-    RegOpenKeyEx = reg_mod.RegOpenKeyEx
-    RegEnumKey = reg_mod.RegEnumKey
-    RegEnumValue = reg_mod.RegEnumValue
-    RegError = reg_mod.error
-    _can_read_reg = 1
     
     
 
