@@ -835,25 +835,17 @@ static PyObject *
 MPZ_mpz(PyObject *self, PyObject *args)
 {
 	mpzobject *mpzp;
-	PyObject *objp;
 
 
 #ifdef MPZ_DEBUG
 	fputs("MPZ_mpz() called...\n", stderr);
 #endif /* def MPZ_DEBUG */
 
-	if (!PyArg_Parse(args, "O", &objp))
-		return NULL;
-
 	/* at least we know it's some object */
-	/* note DON't Py_DECREF args NEITHER objp */
+	/* note DON't Py_DECREF args */
 
-	if (PyInt_Check(objp)) {
-		long lval;
-
-		if (!PyArg_Parse(objp, "l", &lval))
-			return NULL;
-
+	if (PyInt_Check(args)) {
+		long lval = PyInt_AS_LONG(args);
 		if (lval == (long)0) {
 			Py_INCREF(mpz_value_zero);
 			mpzp = mpz_value_zero;
@@ -866,7 +858,7 @@ MPZ_mpz(PyObject *self, PyObject *args)
 			return NULL;
 		else mpz_set_si(&mpzp->mpz, lval);
 	}
-	else if (PyLong_Check(objp)) {
+	else if (PyLong_Check(args)) {
 		MP_INT mplongdigit;
 		int i;
 		unsigned char isnegative;
@@ -880,13 +872,13 @@ MPZ_mpz(PyObject *self, PyObject *args)
 
 		/* how we're gonna handle this? */
 		if ((isnegative =
-		     ((i = ((PyLongObject *)objp)->ob_size) < 0) ))
+		     ((i = ((PyLongObject *)args)->ob_size) < 0) ))
 			i = -i;
 
 		while (i--) {
 			mpz_set_ui(&mplongdigit,
 				   (unsigned long)
-				   ((PyLongObject *)objp)->ob_digit[i]);
+				   ((PyLongObject *)args)->ob_digit[i]);
 			mpz_mul_2exp(&mplongdigit,&mplongdigit,
 				     (unsigned long int)i * SHIFT);
 			mpz_ior(&mpzp->mpz, &mpzp->mpz, &mplongdigit);
@@ -898,9 +890,9 @@ MPZ_mpz(PyObject *self, PyObject *args)
 		/* get rid of allocation for tmp variable */
 		mpz_clear(&mplongdigit);
 	}
-	else if (PyString_Check(objp)) {
-		unsigned char *cp = (unsigned char *)PyString_AS_STRING(objp);
-		int len = PyString_GET_SIZE(objp);
+	else if (PyString_Check(args)) {
+		unsigned char *cp = (unsigned char *)PyString_AS_STRING(args);
+		int len = PyString_GET_SIZE(args);
 		MP_INT mplongdigit;
 
 		if ((mpzp = newmpzobject()) == NULL)
@@ -923,9 +915,9 @@ MPZ_mpz(PyObject *self, PyObject *args)
 		/* get rid of allocation for tmp variable */
 		mpz_clear(&mplongdigit);
 	}
-	else if (is_mpzobject(objp)) {
-		Py_INCREF(objp);
-		mpzp = (mpzobject *)objp;
+	else if (is_mpzobject(args)) {
+		Py_INCREF(args);
+		mpzp = (mpzobject *)args;
 	}
 	else {
 		PyErr_SetString(PyExc_TypeError,
@@ -973,7 +965,7 @@ MPZ_powm(PyObject *self, PyObject *args)
 	int tstres;
 
 
-	if (!PyArg_Parse(args, "(OOO)", &base, &exp, &mod))
+	if (!PyArg_ParseTuple(args, "OOO", &base, &exp, &mod))
 		return NULL;
 
 	if ((mpzbase = mpz_mpzcoerce(base)) == NULL
@@ -989,6 +981,14 @@ MPZ_powm(PyObject *self, PyObject *args)
 	if ((tstres=mpz_cmp_ui(&mpzexp->mpz, (unsigned long int)0)) == 0) {
 		Py_INCREF(mpz_value_one);
 		return (PyObject *)mpz_value_one;
+	}
+
+	if (mpz_cmp_ui(&mpzmod->mpz, 0) == 0) {
+		Py_DECREF(mpzbase);
+		Py_DECREF(mpzexp);
+		Py_DECREF(mpzmod);
+		PyErr_SetString(PyExc_ValueError, "modulus cannot be 0");
+		return NULL;
 	}
 
 	if (tstres < 0) {
@@ -1023,7 +1023,7 @@ MPZ_gcd(PyObject *self, PyObject *args)
 	mpzobject *z;
 
 
-	if (!PyArg_Parse(args, "(OO)", &op1, &op2))
+	if (!PyArg_ParseTuple(args, "OO", &op1, &op2))
 		return NULL;
 
 	if ((mpzop1 = mpz_mpzcoerce(op1)) == NULL
@@ -1052,7 +1052,7 @@ MPZ_gcdext(PyObject *self, PyObject *args)
 	mpzobject *g = NULL, *s = NULL, *t = NULL;
 
 
-	if (!PyArg_Parse(args, "(OO)", &op1, &op2))
+	if (!PyArg_ParseTuple(args, "OO", &op1, &op2))
 		return NULL;
 
 	if ((mpzop1 = mpz_mpzcoerce(op1)) == NULL
@@ -1086,15 +1086,11 @@ MPZ_gcdext(PyObject *self, PyObject *args)
 static PyObject *
 MPZ_sqrt(PyObject *self, PyObject *args)
 {
-	PyObject *op;
 	mpzobject *mpzop = NULL;
 	mpzobject *z;
 
 
-	if (!PyArg_Parse(args, "O", &op))
-		return NULL;
-
-	if ((mpzop = mpz_mpzcoerce(op)) == NULL
+	if ((mpzop = mpz_mpzcoerce(args)) == NULL
 	    || (z = newmpzobject()) == NULL) {
 		Py_XDECREF(mpzop);
 		return NULL;
@@ -1111,15 +1107,11 @@ MPZ_sqrt(PyObject *self, PyObject *args)
 static PyObject *
 MPZ_sqrtrem(PyObject *self, PyObject *args)
 {
-	PyObject *op, *z = NULL;
+	PyObject *z = NULL;
 	mpzobject *mpzop = NULL;
 	mpzobject *root = NULL, *rem = NULL;
 
-
-	if (!PyArg_Parse(args, "O", &op))
-		return NULL;
-
-	if ((mpzop = mpz_mpzcoerce(op)) == NULL
+	if ((mpzop = mpz_mpzcoerce(args)) == NULL
 	    || (z = PyTuple_New(2)) == NULL
 	    || (root = newmpzobject()) == NULL
 	    || (rem = newmpzobject()) == NULL) {
@@ -1212,7 +1204,7 @@ MPZ_divm(PyObject *self, PyObject *args)
 	mpzobject *z = NULL;
 
 
-	if (!PyArg_Parse(args, "(OOO)", &num, &den, &mod))
+	if (!PyArg_ParseTuple(args, "OOO", &num, &den, &mod))
 		return NULL;
 
 	if ((mpznum = mpz_mpzcoerce(num)) == NULL
@@ -1550,17 +1542,17 @@ static PyTypeObject MPZtype = {
 
 static PyMethodDef mpz_functions[] = {
 #if 0
-	{initialiser_name,	MPZ_mpz, METH_OLDARGS},
+	{initialiser_name,	MPZ_mpz,	METH_O},
 #else /* 0 */
 	/* until guido ``fixes'' struct PyMethodDef */
-	{(char *)initialiser_name,	MPZ_mpz, METH_OLDARGS},
+	{(char *)initialiser_name, MPZ_mpz,	METH_O},
 #endif /* 0 else */	
-	{"powm",		MPZ_powm, METH_OLDARGS},
-	{"gcd",			MPZ_gcd, METH_OLDARGS},
-	{"gcdext",		MPZ_gcdext, METH_OLDARGS},
-	{"sqrt",		MPZ_sqrt, METH_OLDARGS},
-	{"sqrtrem",		MPZ_sqrtrem, METH_OLDARGS},
-	{"divm",		MPZ_divm, METH_OLDARGS},
+	{"powm",		MPZ_powm,	METH_VARARGS},
+	{"gcd",			MPZ_gcd,	METH_VARARGS},
+	{"gcdext",		MPZ_gcdext,	METH_VARARGS},
+	{"sqrt",		MPZ_sqrt,	METH_O},
+	{"sqrtrem",		MPZ_sqrtrem,	METH_O},
+	{"divm",		MPZ_divm,	METH_VARARGS},
 	{NULL,			NULL}		 /* Sentinel */
 };
 
