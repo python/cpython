@@ -81,6 +81,7 @@ class MiniApplication:
 				if c == '.':
 					raise KeyboardInterrupt, "Command-period"
 				if c == 'q':
+					MacOS.OutputSeen()
 					self.quitting = 1
 					return
 		elif what == mouseDown:
@@ -96,6 +97,7 @@ class MiniApplication:
 						name = self.applemenu.GetMenuItemText(item)
 						Menu.OpenDeskAcc(name)
 				elif id == self.quitid and item == 1:
+					MacOS.OutputSeen()
 					self.quitting = 1
 				Menu.HiliteMenu(0)
 				return
