@@ -43,7 +43,7 @@ AC_MSG_CHECKING(MACHDEP)
 if test -z "$MACHDEP"
 then
 	ac_sys_system=`uname -s`
-	if test "$ac_sys_system" = "AIX" ; then
+	if test "$ac_sys_system" = "AIX" -o "$ac_sys_system" = "Monterey64"; then
 		ac_sys_release=`uname -v`
 	else
 		ac_sys_release=`uname -r`
@@ -148,6 +148,9 @@ AC_ARG_WITH(gcc, [  --without-gcc                   never use gcc], [
 			;;
 		esac
 		;;
+    Monterey*)
+        RANLIB=:
+        without_gcc=;;
 	*)	without_gcc=no;;
 	esac])
 AC_MSG_RESULT($without_gcc)
@@ -207,6 +210,10 @@ BeOS*)
 	case $CC in
 	cc) CC=cc;;
 	esac;;
+Monterey*)
+    case $CC in
+    cc) CC="$CC -Wl,-Bexport";;
+    esac;;
 esac
 
 # LDLIBRARY is the name of the library to link against (as opposed to the
@@ -236,6 +243,8 @@ then
 	   LDLIBRARY='libpython$(VERSION).so';;
 	dgux*)
 	   LINKCC="LD_RUN_PATH=$libdir \$(PURIFY) \$(CC)";;
+	Monterey64*)
+	   LINKCC="\$(PURIFY) \$(CC) -L/usr/lib/ia64l64";;
 	*) LINKCC="\$(PURIFY) \$(CC)";;
 	esac
 fi
@@ -307,6 +316,11 @@ then
 	*)	OPT="-O";;
 	esac
 fi
+
+# The current (beta) Monterey compiler dies with optimizations
+case $ac_sys_system in
+Monterey*) OPT="";;
+esac
 
 if test "$ac_arch_flags"
 then
@@ -450,6 +464,30 @@ AC_MSG_RESULT($ac_cv_sizeof_time_t)
 AC_DEFINE_UNQUOTED(SIZEOF_TIME_T, $ac_cv_sizeof_time_t)
 
 
+# if have pthread_t then define SIZEOF_PTHREAD_T
+AC_MSG_CHECKING(for pthread_t)
+have_pthread_t=no
+AC_TRY_COMPILE([#include <pthread.h>], [pthread_t x; x = (pthread_t)0;], have_pthread_t=yes)
+AC_MSG_RESULT($have_pthread_t)
+if test "$have_pthread_t" = yes ; then
+  # AC_CHECK_SIZEOF() doesn't include <pthread.h>.
+  AC_MSG_CHECKING(size of pthread_t)
+  AC_CACHE_VAL(ac_cv_sizeof_pthread_t,
+  [AC_TRY_RUN([#include <stdio.h>
+  #include <pthread.h>
+  main()
+  {
+    FILE *f=fopen("conftestval", "w");
+    if (!f) exit(1);
+    fprintf(f, "%d\n", sizeof(pthread_t));
+    exit(0);
+  }], ac_cv_sizeof_pthread_t=`cat conftestval`, ac_cv_sizeof_pthread_t=0)
+  ])
+  AC_MSG_RESULT($ac_cv_sizeof_pthread_t)
+  AC_DEFINE_UNQUOTED(SIZEOF_PTHREAD_T, $ac_cv_sizeof_pthread_t)
+fi
+
+
 # Minor variations in building a framework between NextStep versions 4 and 5
 AC_SUBST(LIBTOOL_CRUFT)
 case $ac_sys_system/$ac_sys_release in
@@ -547,6 +585,7 @@ then
 			LDSHARED="ld -Bshareable"
 		fi;;
 	SCO_SV*) LDSHARED="cc -G -KPIC -Ki486 -belf -Wl,-Bexport";;
+	Monterey*) LDSHARED="cc -G -dy -Bdynamic -Bexport -L/usr/lib/ia64l64";;
 	*)	LDSHARED="ld";;
 	esac
 fi
@@ -566,6 +605,7 @@ then
 	FreeBSD*|OpenBSD*) CCSHARED="-fpic";;
 	NetBSD*) CCSHARED="-fPIC";;
 	SCO_SV*) CCSHARED="-KPIC -dy -Bdynamic";;
+	Monterey*) CCSHARED="-G";;
 	IRIX*/6*)  case $CC in
 		   *gcc*) CCSHARED="-shared";;
 		   *) CCSHARED="";;
