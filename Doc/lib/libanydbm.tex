@@ -6,7 +6,8 @@
 
 
 \module{anydbm} is a generic interface to variants of the DBM
-database --- \module{dbhash}\refbimodindex{dbhash},
+database --- \refmodule{dbhash}\refstmodindex{dbhash} (requires
+\module{bsddb}\refbimodindex{bsddb}),
 \refmodule{gdbm}\refbimodindex{gdbm}, or
 \refmodule{dbm}\refbimodindex{dbm}.  If none of these modules is
 installed, the slow-but-simple implementation in module
@@ -48,7 +49,7 @@ strings.
 
 \begin{seealso}
   \seemodule{anydbm}{Generic interface to \code{dbm}-style databases.}
-  % Should include entry for dbhash, but that isn't documented.
+  \seemodule{dbhash}{BSD \code{db} database interface.}
   \seemodule{dbm}{Standard \UNIX{} database interface.}
   \seemodule{dumbdbm}{Portable implementation of the \code{dbm} interface.}
   \seemodule{gdbm}{GNU database interface, based on the \code{dbm} interface.}
