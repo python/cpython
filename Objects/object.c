@@ -201,6 +201,19 @@ strobject(v)
 	}
 }
 
+static object *
+do_cmp(v, w)
+	object *v, *w;
+{
+	/* __rcmp__ actually won't be called unless __cmp__ isn't defined,
+	   because the check in cmpobject() reverses the objects first.
+	   This is intentional -- it makes no sense to define cmp(x,y) different
+	   than -cmp(y,x). */
+	if (is_instanceobject(v) || is_instanceobject(w))
+		return instancebinop(v, w, "__cmp__", "__rcmp__", do_cmp);
+	return newintobject((long)cmpobject(v, w));
+}
+
 int
 cmpobject(v, w)
 	object *v, *w;
@@ -212,6 +225,24 @@ cmpobject(v, w)
 		return -1;
 	if (w == NULL)
 		return 1;
+	if (is_instanceobject(v) || is_instanceobject(w)) {
+		object *res;
+		int c;
+		if (!is_instanceobject(v))
+			return -cmpobject(w, v);
+		res = do_cmp(v, w);
+		if (res == NULL) {
+			err_clear();
+			return (v < w) ? -1 : 1;
+		}
+		if (!is_intobject(res)) {
+			DECREF(res);
+			return (v < w) ? -1 : 1;
+		}
+		c = getintvalue(res);
+		DECREF(res);
+		return (c < 0) ? -1 : (c > 0) ? 1 : 0;	
+	}
 	if ((tp = v->ob_type) != w->ob_type) {
 		if (tp->tp_as_number != NULL &&
 				w->ob_type->tp_as_number != NULL) {
