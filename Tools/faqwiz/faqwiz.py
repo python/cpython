@@ -806,7 +806,7 @@ class FaqWizard:
 	f.close()
 
 	command = interpolate(
-	    SH_LOCK + '\n' + SH_CHECKIN,
+	    "set -e\n" + SH_LOCK + '\n' + SH_CHECKIN,
 	    file=file, tfn=tfn)
 
 	p = os.popen(command)
