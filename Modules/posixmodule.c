@@ -544,6 +544,7 @@ posix_utime(self, args)
 	object *args;
 {
 	char *path;
+	long atime, mtime;
 	int res;
 
 #ifdef HAVE_UTIME_H
@@ -558,8 +559,10 @@ posix_utime(self, args)
 #define UTIME_ARG buf
 #endif /* HAVE_UTIME_H */
 
-	if (!getargs(args, "(s(ll))", &path, &ATIME, &MTIME))
+	if (!getargs(args, "(s(ll))", &path, &atime, &mtime))
 		return NULL;
+	ATIME = atime;
+	MTIME = utime;
 	BGN_SAVE
 	res = utime(path, UTIME_ARG);
 	END_SAVE
