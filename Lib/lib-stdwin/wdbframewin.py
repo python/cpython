@@ -1,4 +1,10 @@
-# wdb.py -- a window-based Python debugger
+# wdbframewin.py -- frame window for wdb.py
+
+# XXX To do:
+# - display function name in window title
+# - execute arbitrary statements instead of just evaluating expressions
+# - allow setting variables by editing their values
+
 
 import stdwin
 from stdwinevents import *
@@ -6,6 +12,7 @@ import basewin
 import sys
 
 WIDTH = 40
+MINHEIGHT = 8
 MAXHEIGHT = 16
 
 class FrameWindow(basewin.BaseWindow):
@@ -15,12 +22,13 @@ class FrameWindow(basewin.BaseWindow):
 		self.frame = frame # Not used except for identity tests
 		self.dict = dict
 		self.name = name
-		nl = max(4, len(self.dict))
+		nl = max(MINHEIGHT, len(self.dict) + 5)
 		nl = min(nl, MAXHEIGHT)
 		width = WIDTH*stdwin.textwidth('0')
 		height = nl*stdwin.lineheight()
 		stdwin.setdefwinsize(width, height)
 		self = basewin.BaseWindow.init(self, '--Frame ' + name + '--')
+		# XXX Should use current function name
 		self.initeditor()
 		self.displaylist = ['>>>', '', '-'*WIDTH]
 		self.refreshframe()
@@ -60,7 +68,7 @@ class FrameWindow(basewin.BaseWindow):
 			output = ''
 		else:
 			globals = self.frame.f_globals
-			locals = self.frame.f_locals
+			locals = self.dict
 			try:
 				value = eval(expr, globals, locals)
 				output = repr.repr(value)
