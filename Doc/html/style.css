@@ -51,6 +51,8 @@ var                     { font-family: serif;
                           font-family: avantgarde, sans-serif;
                           font-size: 110% }
 
+.release-info           { font-style: italic; }
+
 .titlegraphic           { vertical-align: top; }
 
 .verbatim               { color: #00008b }
