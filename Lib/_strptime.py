@@ -37,9 +37,9 @@ class LocaleTime(object):
     ATTRIBUTES:
         f_weekday -- full weekday names (7-item list)
         a_weekday -- abbreviated weekday names (7-item list)
-        f_month -- full weekday names (14-item list; dummy value in [0], which
+        f_month -- full month names (13-item list; dummy value in [0], which
                     is added by code)
-        a_month -- abbreviated weekday names (13-item list, dummy value in
+        a_month -- abbreviated month names (13-item list, dummy value in
                     [0], which is added by code)
         am_pm -- AM/PM representation (2-item list)
         LC_date_time -- format string for date/time representation (string)
