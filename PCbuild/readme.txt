@@ -158,20 +158,27 @@ _bsddb
     Go to Sleepycat's download page:
         http://www.sleepycat.com/download/
 
-    and download version 4.2.42.  The file name is db-4.2.52.NC.zip.
-    XXX with or without strong cryptography?  I picked "without".
-
-    Unpack into
-        dist\db-4.2.52
-
-    [If using WinZip to unpack the db-4.2.52.NC distro, that requires
-     renaming the directory (to remove ".NC") after unpacking.
-    ]
-
+    and download version 4.2.52.
+    
+    With or without strong cryptography? You can choose either with or 
+    without strong cryptography, as per the instructions below.  By 
+    default, Python is built and distributed WITHOUT strong crypto
+    XXX - is the above correct?
+    
+    Unpack into the dist\. directory, ensuring you expand with folder names.
+    
+    If you downloaded with strong crypto, this will create a dist\db-4.2.52
+    directory, and is ready to use.
+    
+    If you downloaded WITHOUT strong crypto, this will create a 
+    dist\db-4.2.52.NC directory - this directory should be renamed to
+    dist\db-4.2.52 before use.
+      
     Open
         dist\db-4.2.52\docs\index.html
 
-    and follow the Windows instructions for building the Sleepycat
+    and follow the "Windows->Building Berkeley DB with Visual C++ .NET"
+    instructions for building the Sleepycat
     software.  Note that Berkeley_DB.dsw is in the build_win32 subdirectory.
     Build the Release version ("build_all -- Win32 Release").
 
