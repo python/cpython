@@ -63,6 +63,7 @@ class TestBasicOps(unittest.TestCase):
             uniq = dict.fromkeys(s)
             self.assertEqual(len(uniq), k)
             self.failIf(None in uniq)
+        self.assertEqual(self.gen.sample([], 0), [])  # test edge case N==k==0
 
     def test_gauss(self):
         # Ensure that the seed() method initializes all the hidden state.  In
