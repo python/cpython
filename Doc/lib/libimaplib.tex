@@ -96,6 +96,9 @@ passed as an IMAP4 literal.  If necessary (the string contains IMAP4
 protocol-sensitive characters and isn't enclosed with either
 parentheses or double quotes) each string is quoted. However, the
 \var{password} argument to the \samp{LOGIN} command is always quoted.
+If you want to avoid having an argument string quoted
+(eg: the \var{flags} argument to \samp{STORE}) then enclose the string in
+parentheses (eg: \code{r'(\e Deleted)'}).
 
 Each command returns a tuple: \code{(\var{type}, [\var{data},
 ...])} where \var{type} is usually \code{'OK'} or \code{'NO'},
@@ -144,8 +147,10 @@ An \class{IMAP4} instance has the following methods:
 \end{methoddesc}
 
 \begin{methoddesc}{fetch}{message_set, message_parts}
-  Fetch (parts of) messages. Returned data are tuples of message part
-  envelope and data.
+  Fetch (parts of) messages.  \var{message_parts} should be
+  a string of message part names enclosed within parentheses,
+  eg: \samp{"(UID BODY[TEXT])"}.  Returned data are tuples
+  of message part envelope and data.
 \end{methoddesc}
 
 \begin{methoddesc}{list}{\optional{directory\optional{, pattern}}}
@@ -199,9 +204,23 @@ An \class{IMAP4} instance has the following methods:
   \code{None}. Returns the given code, instead of the usual type.
 \end{methoddesc}
 
-\begin{methoddesc}{search}{charset, criteria}
-  Search mailbox for matching messages. Returned data contains a space
-  separated list of matching message numbers.
+\begin{methoddesc}{search}{charset, criterium\optional{, ...}}
+  Search mailbox for matching messages.  Returned data contains a space
+  separated list of matching message numbers.  \var{charset} may be
+  \code{None}, in which case no \samp{CHARSET} will be specified in the
+  request to the server.  The IMAP protocol requires that at least one
+  criterium be specified; an exception will be raised when the server
+  returns an error.
+
+  Example:
+
+\begin{verbatim}
+# M is a connected IMAP4 instance...
+msgnums = M.search(None, 'FROM', '"LDJ"')
+
+# or:
+msgnums = M.search(None, '(FROM "LDJ")')
+\end{verbatim}
 \end{methoddesc}
 
 \begin{methoddesc}{select}{\optional{mailbox\optional{, readonly}}}
@@ -227,16 +246,18 @@ An \class{IMAP4} instance has the following methods:
   Subscribe to new mailbox.
 \end{methoddesc}
 
-\begin{methoddesc}{uid}{command, args}
+\begin{methoddesc}{uid}{command, arg\optional{, ...}}
   Execute command args with messages identified by UID, rather than
-  message number. Returns response appropriate to command.
+  message number.  Returns response appropriate to command.  At least
+  one argument must be supplied; if none are provided, the server will
+  return an error and an exception will be raised.
 \end{methoddesc}
 
 \begin{methoddesc}{unsubscribe}{mailbox}
   Unsubscribe from old mailbox.
 \end{methoddesc}
 
-\begin{methoddesc}{xatom}{name\optional{, arg1\optional{, arg2}}}
+\begin{methoddesc}{xatom}{name\optional{, arg\optional{, ...}}}
   Allow simple extension commands notified by server in
   \samp{CAPABILITY} response.
 \end{methoddesc}
