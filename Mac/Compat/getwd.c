@@ -28,6 +28,7 @@
 */
 
 #include "macdefs.h"
+#include <stdio.h>
 
 #define ROOTID 2 /* Root directory ID */
 
