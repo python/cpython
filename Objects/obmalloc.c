@@ -701,7 +701,7 @@ _PyMalloc_Free(void *p)
 			}
 			/*
 			 * Pool is now empty:  unlink from usedpools, and
-			 * link to the front of usedpools.  This ensures that
+			 * link to the front of freepools.  This ensures that
 			 * previously freed pools will be allocated later
 			 * (being not referenced, they are perhaps paged out).
 			 */
