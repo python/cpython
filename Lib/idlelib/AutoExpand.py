@@ -13,7 +13,7 @@ class AutoExpand:
          ]),
     ]
 
-    wordchars = string.letters + string.digits + "_"
+    wordchars = string.ascii_letters + string.digits + "_"
 
     def __init__(self, editwin):
         self.text = editwin.text
