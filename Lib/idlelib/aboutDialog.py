@@ -54,7 +54,8 @@ class AboutDialog(Toplevel):
         labelDesc.grid(row=2, column=0, sticky=W, columnspan=3, padx=10, pady=5)
         labelEmail = Label(frameBg, text='email:  idle-dev@python.org',
                            justify=LEFT, fg=self.fg, bg=self.bg)
-        labelEmail.grid(row=6,column=0,columnspan=2,sticky=W,padx=10,pady=0)
+        labelEmail.grid(row=6, column=0, columnspan=2,
+                        sticky=W, padx=10, pady=0)
         labelWWW = Label(frameBg, text='www:  http://www.python.org/idle/',
                          justify=LEFT, fg=self.fg, bg=self.bg)
         labelWWW.grid(row=7, column=0, columnspan=2, sticky=W, padx=10, pady=0)
@@ -90,7 +91,7 @@ class AboutDialog(Toplevel):
         Frame(frameBg, borderwidth=1, relief=SUNKEN,
               height=2, bg=self.bg).grid(row=11, column=0, sticky=EW,
                                          columnspan=3, padx=5, pady=5)
-        idle_v = Label(frameBg, text='IDLE version  ' + idlever.IDLE_VERSION,
+        idle_v = Label(frameBg, text='IDLE version:   ' + idlever.IDLE_VERSION,
                        fg=self.fg, bg=self.bg)
         idle_v.grid(row=12, column=0, sticky=W, padx=10, pady=0)
         idle_button_f = Frame(frameBg, bg=self.bg)
@@ -132,7 +133,7 @@ class AboutDialog(Toplevel):
         textView.TextViewer(self, title, None, data)
 
     def ViewFile(self, viewTitle, viewFile, encoding=None):
-        fn=os.path.join(os.path.abspath(os.path.dirname(__file__)),viewFile)
+        fn = os.path.join(os.path.abspath(os.path.dirname(__file__)), viewFile)
         if encoding:
             import codecs
             try:
@@ -156,6 +157,6 @@ if __name__ == '__main__':
     root = Tk()
     def run():
         import aboutDialog
-        aboutDialog.AboutDialog(root,'About')
+        aboutDialog.AboutDialog(root, 'About')
     Button(root, text='Dialog', command=run).pack()
     root.mainloop()
