@@ -2631,11 +2631,25 @@ int fixswapcase(PyUnicodeObject *self)
 static 
 int fixcapitalize(PyUnicodeObject *self)
 {
-    if (self->length > 0 && Py_UNICODE_ISLOWER(self->str[0])) {
-	self->str[0] = Py_UNICODE_TOUPPER(self->str[0]);
-	return 1;
+    int len = self->length;
+    Py_UNICODE *s = self->str;
+    int status = 0;
+    
+    if (len == 0)
+	return 0;
+    if (Py_UNICODE_ISLOWER(*s)) {
+	*s = Py_UNICODE_TOUPPER(*s);
+	status = 1;
     }
-    return 0;
+    s++;
+    while (--len > 0) {
+        if (Py_UNICODE_ISUPPER(*s)) {
+            *s = Py_UNICODE_TOLOWER(*s);
+            status = 1;
+        }
+        s++;
+    }
+    return status;
 }
 
 static
