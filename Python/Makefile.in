@@ -131,7 +131,7 @@ sigcheck.o: sigcheck.c
 strerror.o: strerror.c
 strtod.o: strtod.c
 structmember.o: structmember.c
-sysmodule.o: sysmodule.c
+sysmodule.o: sysmodule.c ../Include/patchlevel.h
 thread.o: thread.c
 traceback.o: traceback.c
 version.o: version.c
