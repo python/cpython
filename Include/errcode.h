@@ -51,6 +51,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #define E_NOMEM		15	/* Ran out of memory */
 #define E_DONE		16	/* Parsing complete */
 #define E_ERROR		17	/* Execution error */
+#define E_INDENT	18	/* Invalid indentation detected */
 
 #ifdef __cplusplus
 }
