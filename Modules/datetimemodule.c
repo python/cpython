@@ -3668,8 +3668,9 @@ time_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 static void
 time_dealloc(PyDateTime_Time *self)
 {
-	if (self->hastzinfo)
+	if (self->hastzinfo) {
 		Py_XDECREF(self->tzinfo);
+	}
 	self->ob_type->tp_free((PyObject *)self);
 }
 
@@ -4030,7 +4031,6 @@ static PyObject *
 time_unpickler(PyObject *module, PyObject *arg)
 {
 	PyDateTime_Time *self;
-	PyObject *tzinfo = Py_None;
 
 	/* We don't want to allocate space for tzinfo if it's not needed.
 	 * Figuring that out in advance is irritating, so for now we

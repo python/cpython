@@ -7658,55 +7658,55 @@ all_ins(PyObject *d)
 	/* These come from sysexits.h */
 #ifdef EX_OK
 	if (ins(d, "EX_OK", (long)EX_OK)) return -1;
-#endif EX_OK
+#endif /* EX_OK */
 #ifdef EX_USAGE
 	if (ins(d, "EX_USAGE", (long)EX_USAGE)) return -1;
-#endif EX_USAGE
+#endif /* EX_USAGE */
 #ifdef EX_DATAERR
 	if (ins(d, "EX_DATAERR", (long)EX_DATAERR)) return -1;
-#endif EX_DATAERR
+#endif /* EX_DATAERR */
 #ifdef EX_NOINPUT
 	if (ins(d, "EX_NOINPUT", (long)EX_NOINPUT)) return -1;
-#endif EX_NOINPUT
+#endif /* EX_NOINPUT */
 #ifdef EX_NOUSER
 	if (ins(d, "EX_NOUSER", (long)EX_NOUSER)) return -1;
-#endif EX_NOUSER
+#endif /* EX_NOUSER */
 #ifdef EX_NOHOST
 	if (ins(d, "EX_NOHOST", (long)EX_NOHOST)) return -1;
-#endif EX_NOHOST
+#endif /* EX_NOHOST */
 #ifdef EX_UNAVAILABLE
 	if (ins(d, "EX_UNAVAILABLE", (long)EX_UNAVAILABLE)) return -1;
-#endif EX_UNAVAILABLE
+#endif /* EX_UNAVAILABLE */
 #ifdef EX_SOFTWARE
 	if (ins(d, "EX_SOFTWARE", (long)EX_SOFTWARE)) return -1;
-#endif EX_SOFTWARE
+#endif /* EX_SOFTWARE */
 #ifdef EX_OSERR
 	if (ins(d, "EX_OSERR", (long)EX_OSERR)) return -1;
-#endif EX_OSERR
+#endif /* EX_OSERR */
 #ifdef EX_OSFILE
 	if (ins(d, "EX_OSFILE", (long)EX_OSFILE)) return -1;
-#endif EX_OSFILE
+#endif /* EX_OSFILE */
 #ifdef EX_CANTCREAT
 	if (ins(d, "EX_CANTCREAT", (long)EX_CANTCREAT)) return -1;
-#endif EX_CANTCREAT
+#endif /* EX_CANTCREAT */
 #ifdef EX_IOERR
 	if (ins(d, "EX_IOERR", (long)EX_IOERR)) return -1;
-#endif EX_IOERR
+#endif /* EX_IOERR */
 #ifdef EX_TEMPFAIL
 	if (ins(d, "EX_TEMPFAIL", (long)EX_TEMPFAIL)) return -1;
-#endif EX_TEMPFAIL
+#endif /* EX_TEMPFAIL */
 #ifdef EX_PROTOCOL
 	if (ins(d, "EX_PROTOCOL", (long)EX_PROTOCOL)) return -1;
-#endif EX_PROTOCOL
+#endif /* EX_PROTOCOL */
 #ifdef EX_NOPERM
 	if (ins(d, "EX_NOPERM", (long)EX_NOPERM)) return -1;
-#endif EX_NOPERM
+#endif /* EX_NOPERM */
 #ifdef EX_CONFIG
 	if (ins(d, "EX_CONFIG", (long)EX_CONFIG)) return -1;
-#endif EX_CONFIG
+#endif /* EX_CONFIG */
 #ifdef EX_NOTFOUND
 	if (ins(d, "EX_NOTFOUND", (long)EX_NOTFOUND)) return -1;
-#endif EX_NOTFOUND
+#endif /* EX_NOTFOUND */
 
 #ifdef HAVE_SPAWNV
 #if defined(PYOS_OS2) && defined(PYCC_GCC)
