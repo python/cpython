@@ -484,7 +484,7 @@ class EditorWindow:
         return extend.standard
 
     def load_extension(self, name):
-        mod = __import__(name)
+        mod = __import__(name, globals(), locals(), [])
         cls = getattr(mod, name)
         ins = cls(self)
         self.extensions[name] = ins
