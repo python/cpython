@@ -407,21 +407,25 @@ static PyTypeObject Dbmtype = {
 /* ----------------------------------------------------------------- */
 
 static char dbmopen__doc__[] = "\
-open(filename, [flag, [mode]])  -> dbm_object\n\
+open(filename, [flags, [mode]])  -> dbm_object\n\
 Open a dbm database and return a dbm object. The filename argument is\n\
 the name of the database file.\n\
 \n\
-The optional flag argument can be 'r' (to open an existing database\n\
+The optional flags argument can be 'r' (to open an existing database\n\
 for reading only -- default), 'w' (to open an existing database for\n\
 reading and writing), 'c' (which creates the database if it doesn't\n\
 exist), or 'n' (which always creates a new empty database).\n\
 \n\
-Appending f to the flag opens the database in fast mode; altered\n\
-data will not automatically be written to the disk after every\n\
-change. This results in faster writes to the database, but may\n\
-result in an inconsistent database if the program crashes while the\n\
-database is still open. Use the sync() method to force any\n\
-unwritten data to be written to the disk.\n\
+Some versions of gdbm support additional flags which must be\n\
+appended to one of the flags described above. The module constant\n\
+'open_flags' is a string of valid additional flags. The 'f' flag\n\
+opens the database in fast mode; altered data will not automatically\n\
+be written to the disk after every change. This results in faster\n\
+writes to the database, but may result in an inconsistent database\n\
+if the program crashes while the database is still open. Use the\n\
+sync() method to force any unwritten data to be written to the disk.\n\
+The 's' flag causes all database operations to be synchronized to\n\
+disk. The 'u' flag disables locking of the database file.\n\
 \n\
 The optional mode argument is the Unix mode of the file, used only\n\
 when the database has to be created. It defaults to octal 0666. ";
@@ -451,13 +455,48 @@ dbmopen(PyObject *self, PyObject *args)
         break;
     default:
         PyErr_SetString(DbmError,
-                        "Flags should be one of 'r', 'w', 'c' or 'n'");
+                        "First flag must be one of 'r', 'w', 'c' or 'n'");
         return NULL;
     }
-    if (flags[1] == 'f')
-        iflags |= GDBM_FAST;
+    for (flags++; *flags != '\0'; flags++) {
+        char buf[40];
+        switch (*flags) {
+#ifdef GDBM_FAST
+            case 'f':
+                iflags |= GDBM_FAST;
+                break;
+#endif
+#ifdef GDBM_SYNC
+            case 's':
+                iflags |= GDBM_SYNC;
+                break;
+#endif
+#ifdef GDBM_NOLOCK
+            case 'u':
+                iflags |= GDBM_NOLOCK;
+                break;
+#endif
+            default:
+                sprintf(buf, "Flag '%c' is not supported.", *flags);
+                PyErr_SetString(DbmError, buf);
+                return NULL;
+        }
+    }
+
     return newdbmobject(name, iflags, mode);
 }
+
+static char dbmmodule_open_flags[] = "rwcn"
+#ifdef GDBM_FAST
+                                     "f"
+#endif
+#ifdef GDBM_SYNC
+                                     "s"
+#endif
+#ifdef GDBM_NOLOCK
+                                     "u"
+#endif
+                                     ;
 
 static PyMethodDef dbmmodule_methods[] = {
     { "open", (PyCFunction)dbmopen, METH_VARARGS, dbmopen__doc__},
@@ -474,6 +513,9 @@ initgdbm(void) {
                        PYTHON_API_VERSION);
     d = PyModule_GetDict(m);
     DbmError = PyErr_NewException("gdbm.error", NULL, NULL);
-    if (DbmError != NULL)
+    if (DbmError != NULL) {
         PyDict_SetItemString(d, "error", DbmError);
+        PyDict_SetItemString(d, "open_flags",
+                PyString_FromString(dbmmodule_open_flags));
+    }
 }
