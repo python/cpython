@@ -115,10 +115,11 @@ def main(tests=None, testdir=None, verbose=0, quiet=0, generate=0,
         elif o in ('-l', '--findleaks'):
             findleaks = 1
         elif o in ('-u', '--use'):
-            use_resources = [x.lower() for x in a.split(',')]
-            for r in use_resources:
+            u = [x.lower() for x in a.split(',')]
+            for r in u:
                 if r not in ('largefile', 'network'):
                     usage(1, 'Invalid -u/--use option: %s' % a)
+            use_resources.extend(u)
     if generate and verbose:
         usage(2, "-g and -v don't go together!")
 
