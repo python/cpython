@@ -20,7 +20,7 @@ Here's a sample session using the \module{ftplib} module:
 \begin{verbatim}
 >>> from ftplib import FTP
 >>> ftp = FTP('ftp.cwi.nl')   # connect to host, default port
->>> ftp.login()               # user anonymous, passwd user@hostname
+>>> ftp.login()               # user anonymous, passwd anonymous@
 >>> ftp.retrlines('LIST')     # list directory contents
 total 24418
 drwxrwsr-x   5 ftp-usr  pdmaint     1536 Mar 20 09:48 .
@@ -121,10 +121,7 @@ Log in as the given \var{user}.  The \var{passwd} and \var{acct}
 parameters are optional and default to the empty string.  If no
 \var{user} is specified, it defaults to \code{'anonymous'}.  If
 \var{user} is \code{'anonymous'}, the default \var{passwd} is
-\samp{\var{realuser}@\var{host}} where \var{realuser} is the real user
-name (glanced from the \envvar{LOGNAME} or \envvar{USER} environment
-variable) and \var{host} is the hostname as returned by
-\function{socket.gethostname()}.  This function should be called only
+\code{'anonymous@'}.  This function should be called only
 once for each instance, after a connection has been established; it
 should not be called at all if a host and user were given when the
 instance was created.  Most FTP commands are only allowed after the
