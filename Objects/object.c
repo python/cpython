@@ -600,8 +600,13 @@ PyObject_GetAttr(v, name)
 {
 	if (v->ob_type->tp_getattro != NULL)
 		return (*v->ob_type->tp_getattro)(v, name);
-	else
-		return PyObject_GetAttrString(v, PyString_AsString(name));
+
+	if (!PyString_Check(name)) {
+		PyErr_SetString(PyExc_TypeError,
+				"attribute name must be string");
+		return NULL;
+	}
+	return PyObject_GetAttrString(v, PyString_AS_STRING(name));
 }
 
 int
@@ -626,12 +631,19 @@ PyObject_SetAttr(v, name, value)
 {
 	int err;
 	Py_INCREF(name);
-	PyString_InternInPlace(&name);
+	if (PyString_Check(name))
+		PyString_InternInPlace(&name);
 	if (v->ob_type->tp_setattro != NULL)
 		err = (*v->ob_type->tp_setattro)(v, name, value);
-	else
+	else if (PyString_Check(name)) {
 		err = PyObject_SetAttrString(
-			v, PyString_AsString(name), value);
+			v, PyString_AS_STRING(name), value);
+	}
+	else {
+		PyErr_SetString(PyExc_TypeError,
+				"attribute name must be string");
+		err = -1;
+	}
 	Py_DECREF(name);
 	return err;
 }
