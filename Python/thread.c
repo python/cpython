@@ -111,7 +111,6 @@ void PyThread_init_thread(void)
 
 #ifdef HAVE_PTH
 #include "thread_pth.h"
-#undef _POSIX_THREADS
 #endif
 
 #ifdef _POSIX_THREADS

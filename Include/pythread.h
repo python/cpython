@@ -13,7 +13,7 @@ extern "C" {
 #endif
 
 DL_IMPORT(void) PyThread_init_thread(void);
-DL_IMPORT(int) PyThread_start_new_thread(void (*)(void *), void *);
+DL_IMPORT(long) PyThread_start_new_thread(void (*)(void *), void *);
 DL_IMPORT(void) PyThread_exit_thread(void);
 DL_IMPORT(void) PyThread__PyThread_exit_thread(void);
 DL_IMPORT(long) PyThread_get_thread_ident(void);

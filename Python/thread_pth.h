@@ -44,7 +44,7 @@ static void PyThread__init_thread(void)
  */
 
 
-int PyThread_start_new_thread(void (*func)(void *), void *arg)
+long PyThread_start_new_thread(void (*func)(void *), void *arg)
 {
 	pth_t th;
 	dprintf(("PyThread_start_new_thread called\n"));
@@ -56,7 +56,7 @@ int PyThread_start_new_thread(void (*func)(void *), void *arg)
 				 (void *)arg
 				 );
 
-	return th == NULL ? 0 : 1;
+	return th;
 }
 
 long PyThread_get_thread_ident(void)

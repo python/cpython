@@ -5,6 +5,7 @@
 #include <windows.h>
 #include <limits.h>
 #include <process.h>
+#include <Python.h>
 
 typedef struct NRMUTEX {
 	LONG   owned ;
@@ -12,6 +13,8 @@ typedef struct NRMUTEX {
 	HANDLE hevent ;
 } NRMUTEX, *PNRMUTEX ;
 
+/* dictionary to correlate thread ids with the handle needed to terminate them*/
+static PyObject *threads = NULL;
 
 typedef PVOID WINAPI interlocked_cmp_xchg_t(PVOID *dest, PVOID exc, PVOID comperand) ;
 
@@ -145,28 +148,67 @@ long PyThread_get_thread_ident(void);
  */
 static void PyThread__init_thread(void)
 {
+	threads = PyDict_New();
 }
 
 /*
  * Thread support.
  */
-int PyThread_start_new_thread(void (*func)(void *), void *arg)
+
+typedef struct {
+	void (*func)(void*);
+	void *arg;			
+	long id;
+	HANDLE done;
+} callobj;
+
+static int
+bootstrap(void *call)
+{
+	callobj *obj = (callobj*)call;
+	/* copy callobj since other thread might free it before we're done */
+	void (*func)(void*) = obj->func;
+	void *arg = obj->arg;
+
+	obj->id = PyThread_get_thread_ident();
+	ReleaseSemaphore(obj->done, 1, NULL);
+	func(arg);
+	return 0;
+}
+
+long PyThread_start_new_thread(void (*func)(void *), void *arg)
 {
 	unsigned long rv;
 	int success = 0;
+	callobj *obj;
+	int id;
+	PyObject *key, *val;
 
 	dprintf(("%ld: PyThread_start_new_thread called\n", PyThread_get_thread_ident()));
 	if (!initialized)
 		PyThread_init_thread();
 
-	rv = _beginthread(func, 0, arg); /* use default stack size */
+	obj = malloc(sizeof(callobj)); 
+	obj->func = func;
+	obj->arg = arg;
+	obj->done = CreateSemaphore(NULL, 0, 1, NULL);
+
+	rv = _beginthread(func, 0, obj); /* use default stack size */
  
 	if (rv != (unsigned long)-1) {
 		success = 1;
 		dprintf(("%ld: PyThread_start_new_thread succeeded: %p\n", PyThread_get_thread_ident(), rv));
 	}
 
-	return success;
+	/* wait for thread to initialize and retrieve id */
+	WaitForSingleObject(obj->done, 5000);  /* maybe INFINITE instead of 5000? */
+	CloseHandle((HANDLE)obj->done);
+	key = PyLong_FromLong(obj->id);
+	val = PyLong_FromLong((long)rv);
+	PyDict_SetItem(threads, key, val);
+	id = obj->id;
+	free(obj);
+	return id;
 }
 
 /*

@@ -213,6 +213,7 @@ thread_PyThread_start_new_thread(PyObject *self, PyObject *fargs)
 {
 	PyObject *func, *args, *keyw = NULL;
 	struct bootstate *boot;
+	long ident;
 
 	if (!PyArg_ParseTuple(fargs, "OO|O:start_new_thread", &func, &args, &keyw))
 		return NULL;
@@ -242,7 +243,8 @@ thread_PyThread_start_new_thread(PyObject *self, PyObject *fargs)
 	Py_INCREF(args);
 	Py_XINCREF(keyw);
 	PyEval_InitThreads(); /* Start the interpreter's thread-awareness */
-	if (!PyThread_start_new_thread(t_bootstrap, (void*) boot)) {
+	ident = PyThread_start_new_thread(t_bootstrap, (void*) boot);
+	if (ident == -1) {
 		PyErr_SetString(ThreadError, "can't start new thread\n");
 		Py_DECREF(func);
 		Py_DECREF(args);
@@ -250,20 +252,19 @@ thread_PyThread_start_new_thread(PyObject *self, PyObject *fargs)
 		PyMem_DEL(boot);
 		return NULL;
 	}
-	Py_INCREF(Py_None);
-	return Py_None;
+	return PyInt_FromLong(ident);
 }
 
 static char start_new_doc[] =
 "start_new_thread(function, args[, kwargs])\n\
 (start_new() is an obsolete synonym)\n\
 \n\
-Start a new thread.  The thread will call the function with positional\n\
-arguments from the tuple args and keyword arguments taken from the optional\n\
-dictionary kwargs.  The thread exits when the function returns; the return\n\
-value is ignored.  The thread will also exit when the function raises an\n\
-unhandled exception; a stack trace will be printed unless the exception is\n\
-SystemExit.";
+Start a new thread and return its identifier.  The thread will call the\n\
+function with positional arguments from the tuple args and keyword arguments\n\
+taken from the optional dictionary kwargs.  The thread exits when the\n\
+function returns; the return value is ignored.  The thread will also exit\n\
+when the function raises an unhandled exception; a stack trace will be\n\
+printed unless the exception is SystemExit.\n";
 
 static PyObject *
 thread_PyThread_exit_thread(PyObject *self, PyObject *args)
