@@ -648,11 +648,12 @@ operators:
 \begin{productionlist}
   \production{m_expr}
              {\token{u_expr} | \token{m_expr} "*" \token{u_expr}
+              | \token{m_expr} "//" \token{u_expr}
               | \token{m_expr} "/" \token{u_expr}}
   \productioncont{| \token{m_expr} "\%" \token{u_expr}}
   \production{a_expr}
-             {\token{m_expr} | \token{aexpr} "+" \token{m_expr}
-              \token{aexpr} "-" \token{m_expr}}
+             {\token{m_expr} | \token{a_expr} "+" \token{m_expr}
+              | \token{a_expr} "-" \token{m_expr}}
 \end{productionlist}
 
 The \code{*} (multiplication) operator yields the product of its
@@ -663,11 +664,12 @@ then multiplied together.  In the latter case, sequence repetition is
 performed; a negative repetition factor yields an empty sequence.
 \index{multiplication}
 
-The \code{/} (division) operator yields the quotient of its
-arguments.  The numeric arguments are first converted to a common
-type.  Plain or long integer division yields an integer of the same
-type; the result is that of mathematical division with the `floor'
-function applied to the result.  Division by zero raises the
+The \code{/} (division) and \code{//} (floor division) operators yield
+the quotient of their arguments.  The numeric arguments are first
+converted to a common type.  Plain or long integer division yields an
+integer of the same type; the result is that of mathematical division
+with the `floor' function applied to the result.  Division by zero
+raises the
 \exception{ZeroDivisionError} exception.
 \exindex{ZeroDivisionError}
 \index{division}
