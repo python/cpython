@@ -7,7 +7,7 @@ Python News
 What's New in Python 2.4.1c2?
 =============================
 
-*Release date: DD-MAR-2005*
+*Release date: 17-MAR-2005*
 
 Library
 -------
@@ -24,6 +24,7 @@ Library
   before because a bugfix first included in 2.4.1c1 provoked it (bug
   #1110478: revert os.environ.update to do putenv again).
 
+- Bug #1156259: Seeking in codecs.reader was broken, now fixed.
 
 Tests
 -----
