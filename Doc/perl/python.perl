@@ -23,10 +23,6 @@ sub next_optional_argument{
     return $param;
 }
 
-sub swallow_newline{
-    s/[\n]?//o;
-}
-
 
 # This is a fairly simple hack; it supports \let when it is used to create
 # (or redefine) a macro to exactly be some other macro: \let\newname=\oldname.
@@ -251,6 +247,44 @@ sub do_cmd_versionchanged{
     return "\nChanged in version $release.\n" . $_;
 }
 
+#
+# These function handle platform dependency tracking.  The first two implement
+# the \platform and \platformof macros, and the third is called at the end of
+# processing to fill in references to the platform of a module.
+#
+sub do_cmd_platform{
+    local($_) = @_;
+    my $platform = next_argument();
+    $ModulePlatforms{$THIS_MODULE} = $platform;
+    $platform = "Macintosh"
+      if $platform eq "Mac";
+    return "\n<p class=availability>Availability: <span"
+      . "\n class=platform>$platform</span>.</p>\n" . $_;
+}
+
+sub do_cmd_platformof{
+    local($_) = @_;
+    next_optional_argument();
+    my $module = next_argument();
+    return "<tex2html-platformof><$module>" . $_;
+}
+
+$IGNORE_PLATFORM_ANNOTATION = '';
+sub do_cmd_ignorePlatformAnnotation{
+    local($_) = @_;
+    $IGNORE_PLATFORM_ANNOTATION = next_argument();
+    return $_;
+}
+
+sub process_all_platformofs{
+    while (/<tex2html-platformof><([^>]+)>/) {
+	my $match = $&;
+	my $module = $1;
+	s/$match/<span\n class=platform>$ModulePlatforms{$module}<\/span>/;
+    }
+}
+
+
 # file and samp are at the end of this file since they screw up fontlock.
 
 # index commands
@@ -338,7 +372,6 @@ sub new_link_info{
 sub do_cmd_index{
     local($_) = @_;
     my $str = next_argument();
-#    swallow_newline();
     #
     my($name,$aname,$ahref) = new_link_info();
     add_index_entry("$str", $ahref);
@@ -398,14 +431,12 @@ sub do_cmd_ttindex{
     local($_) = @_;
     my $str = next_argument();
     my $entry = $str . get_indexsubitem();
-#    swallow_newline();
     return make_index_entry($entry) . $_;
 }
 
 sub my_typed_index_helper{
     local($word,$_) = @_;
     my $str = next_argument();
-#    swallow_newline();
     #
     my($name,$aname,$ahref) = new_link_info();
     add_index_entry("$str $word", $ahref);
@@ -421,7 +452,6 @@ sub do_cmd_obindex{ return my_typed_index_helper('object', @_); }
 sub my_parword_index_helper{
     local($word,$_) = @_;
     my $str = next_argument();
-#    swallow_newline();
     return make_index_entry("$str ($word)") . $_;
 }
 
@@ -444,6 +474,7 @@ sub make_mod_index_entry{
     return "$aname$anchor_invisible_mark</a>";
 }
 
+
 $THIS_MODULE = '';
 $THIS_CLASS = '';
 
@@ -460,14 +491,12 @@ sub define_module{
 sub my_module_index_helper{
     local($word, $_) = @_;
     my $name = next_argument();
-#    swallow_newline();
     return define_module($word, $name) . $_;
 }
 
 sub ref_module_index_helper{
     local($word, $_) = @_;
     my $str = next_argument();
-#    swallow_newline();
     $word = "$word " if $word;
     return make_mod_index_entry("<tt>$str</tt> (${word}module)", 'REF') . $_;
 }
@@ -476,7 +505,6 @@ sub do_cmd_bifuncindex{
     local($_) = @_;
     my $str = next_argument();
     my $fname = "<tt>$str()</tt>";
-#    swallow_newline();
     return make_index_entry("$fname (built-in function)") . $_;
 }
 
@@ -989,24 +1017,27 @@ sub do_cmd_modulesynopsis{
     local($_) = @_;
     my $st = get_synopsis_table(get_chapter_id());
     $st->set_synopsis($THIS_MODULE, next_argument());
-#    swallow_newline();
     return $_;
 }
 
 sub do_cmd_localmoduletable{
     local($_) = @_;
     my $chap = get_chapter_id();
-    return "<tex2htmllocalmoduletable><$chap>\\tableofchildlinks[off]" . $_;
+    return "<tex2html-localmoduletable><$chap>\\tableofchildlinks[off]" . $_;
 }
 
 sub process_all_localmoduletables{
-    while (/<tex2htmllocalmoduletable><(\d+)>/) {
+    while (/<tex2html-localmoduletable><(\d+)>/) {
 	my $match = $&;
 	my $chap = $1;
 	my $st = get_synopsis_table($chap);
 	my $data = $st->tohtml();
 	s/$match/$data/;
     }
+}
+sub process_python_state{
+    process_all_localmoduletables();
+    process_all_platformofs();
 }
 
 
@@ -1048,7 +1079,6 @@ sub do_cmd_seetext{
 
 sub do_env_definitions{
     local($_) = @_;
-#    swallow_newline();
     return "<dl class=definitions>$_</dl>\n";
 }
 
@@ -1056,7 +1086,6 @@ sub do_cmd_term{
     local($_) = @_;
     my $term = next_argument();
     my($name,$aname,$ahref) = new_link_info();
-#    swallow_newline();
     # could easily add an index entry here...
     return "<dt><b>$aname" . $term . "</a></b>\n<dd>" . $_;
 }
@@ -1068,6 +1097,8 @@ declaremodule # [] # {} # {}
 memberline # [] # {}
 methodline # [] # {} # {}
 modulesynopsis # {}
+platform # {}
+platformof # [] # {}
 samp # {}
 setindexsubitem # {}
 withsubitem # {} # {}
