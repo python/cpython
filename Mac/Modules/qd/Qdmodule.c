@@ -329,6 +329,81 @@ PyTypeObject BitMap_Type = {
 /* --------------------- End object type BitMap --------------------- */
 
 
+/* ------------------ Object type QDGlobalsAccess ------------------- */
+
+staticforward PyTypeObject QDGlobalsAccess_Type;
+
+#define QDGA_Check(x) ((x)->ob_type == &QDGlobalsAccess_Type)
+
+typedef struct QDGlobalsAccessObject {
+	PyObject_HEAD
+} QDGlobalsAccessObject;
+
+static PyObject *QDGA_New()
+{
+	QDGlobalsAccessObject *it;
+	it = PyObject_NEW(QDGlobalsAccessObject, &QDGlobalsAccess_Type);
+	if (it == NULL) return NULL;
+	return (PyObject *)it;
+}
+
+static void QDGA_dealloc(self)
+	QDGlobalsAccessObject *self;
+{
+	PyMem_DEL(self);
+}
+
+static PyMethodDef QDGA_methods[] = {
+	{NULL, NULL, 0}
+};
+
+static PyMethodChain QDGA_chain = { QDGA_methods, NULL };
+
+static PyObject *QDGA_getattr(self, name)
+	QDGlobalsAccessObject *self;
+	char *name;
+{
+
+		if ( strcmp(name, "arrow") == 0 )
+			return PyString_FromStringAndSize((char *)&qd.arrow, sizeof(qd.arrow));
+		if ( strcmp(name, "black") == 0 ) 
+			return PyString_FromStringAndSize((char *)&qd.black, sizeof(qd.black));
+		if ( strcmp(name, "white") == 0 ) 
+			return PyString_FromStringAndSize((char *)&qd.white, sizeof(qd.white));
+		if ( strcmp(name, "gray") == 0 ) 
+			return PyString_FromStringAndSize((char *)&qd.gray, sizeof(qd.gray));
+		if ( strcmp(name, "ltGray") == 0 ) 
+			return PyString_FromStringAndSize((char *)&qd.ltGray, sizeof(qd.ltGray));
+		if ( strcmp(name, "dkGray") == 0 ) 
+			return PyString_FromStringAndSize((char *)&qd.dkGray, sizeof(qd.dkGray));
+		if ( strcmp(name, "screenBits") == 0 ) 
+			return BMObj_New(&qd.screenBits);
+		if ( strcmp(name, "thePort") == 0 ) 
+			return GrafObj_New(qd.thePort);
+		if ( strcmp(name, "randSeed") == 0 ) 
+			return Py_BuildValue("l", &qd.randSeed);
+			
+	return Py_FindMethodInChain(&QDGA_chain, (PyObject *)self, name);
+}
+
+#define QDGA_setattr NULL
+
+staticforward PyTypeObject QDGlobalsAccess_Type = {
+	PyObject_HEAD_INIT(&PyType_Type)
+	0, /*ob_size*/
+	"QDGlobalsAccess", /*tp_name*/
+	sizeof(QDGlobalsAccessObject), /*tp_basicsize*/
+	0, /*tp_itemsize*/
+	/* methods */
+	(destructor) QDGA_dealloc, /*tp_dealloc*/
+	0, /*tp_print*/
+	(getattrfunc) QDGA_getattr, /*tp_getattr*/
+	(setattrfunc) QDGA_setattr, /*tp_setattr*/
+};
+
+/* ---------------- End object type QDGlobalsAccess ----------------- */
+
+
 static PyObject *Qd_SetPort(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
@@ -3855,26 +3930,10 @@ void initQd()
 
 	{
 		PyObject *o;
-		
-		o = PyString_FromStringAndSize((char *)&qd.arrow, sizeof(qd.arrow));
-		if (o == NULL || PyDict_SetItemString(d, "arrow", o) != 0)
-			Py_FatalError("can't initialize Qd.arrow");
-		o = PyString_FromStringAndSize((char *)&qd.black, sizeof(qd.black));
-		if (o == NULL || PyDict_SetItemString(d, "black", o) != 0)
-			Py_FatalError("can't initialize Qd.black");
-		o = PyString_FromStringAndSize((char *)&qd.white, sizeof(qd.white));
-		if (o == NULL || PyDict_SetItemString(d, "white", o) != 0)
-			Py_FatalError("can't initialize Qd.white");
-		o = PyString_FromStringAndSize((char *)&qd.gray, sizeof(qd.gray));
-		if (o == NULL || PyDict_SetItemString(d, "gray", o) != 0)
-			Py_FatalError("can't initialize Qd.gray");
-		o = PyString_FromStringAndSize((char *)&qd.ltGray, sizeof(qd.ltGray));
-		if (o == NULL || PyDict_SetItemString(d, "ltGray", o) != 0)
-			Py_FatalError("can't initialize Qd.ltGray");
-		o = PyString_FromStringAndSize((char *)&qd.dkGray, sizeof(qd.dkGray));
-		if (o == NULL || PyDict_SetItemString(d, "dkGray", o) != 0)
-			Py_FatalError("can't initialize Qd.dkGray");
-		/* thePort, screenBits and randSeed still missing... */
+	 	
+		o = QDGA_New();
+		if (o == NULL || PyDict_SetItemString(d, "qd", o) != 0)
+			Py_FatalError("can't initialize Qd.qd");
 	}
 
 
