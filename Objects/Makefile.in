@@ -9,17 +9,19 @@ VPATH=		@srcdir@
 
 CC=		@CC@
 RANLIB=		@RANLIB@
+DEFS=		@DEFS@
 
 
 # === Other things that are customizable but not by configure ===
 
+TOP=		..
+INCLDIR=	$(TOP)/Py
+OPT=		-g
+CFLAGS=		$(OPT) -I$(INCLDIR) $(DEFS)
+
 AR=		ar
 MKDEP=		mkdep
 SHELL=		/bin/sh
-
-INCLDIR=	$(srcdir)/../Py
-OPT=		-g
-CFLAGS=		$(OPT) -I$(INCLDIR)
 
 
 # === Fixed definitions ===
@@ -47,16 +49,16 @@ all:		$(LIB)
 
 $(LIB):		$(OBJS)
 		$(AR) cr $(LIB) $(OBJS)
+		$(RANLIB) $(LIB)
 
 clean:
-		-rm -f $(OBJS)
-		-rm -f core *~ [@,#]* *.old *.orig *.rej
+		-rm -f *.o core *~ [@,#]* *.old *.orig *.rej
 
 clobber:	clean
-		-rm -f $(LIB) tags TAGS
+		-rm -f *.a tags TAGS
 
-Makefile:	Makefile.in ../config.status
-		(cd ..; $(SHELL) config.status)
+Makefile:	Makefile.in $(TOP)/config.status
+		CONFIG_FILES=Makefile $(SHELL) $(TOP)/config.status
 
 depend:		$(SRCS)
 		$(MKDEP) $(CFLAGS) $(SRCS) $(PGENSRCS)
