@@ -28,9 +28,12 @@ class IdleConfParser(ConfigParser):
         Get an option value for given section/option or return default.
         If type is specified, return as type.
         """
-        if type=='bool': getVal=self.getboolean
-        elif type=='int': getVal=self.getint
-        else: getVal=self.get
+        if type=='bool': 
+            getVal=self.getboolean
+        elif type=='int': 
+            getVal=self.getint
+        else: 
+            getVal=self.get
         if self.has_option(section,option):
             #return getVal(section, option, raw, vars)
             return getVal(section, option)
@@ -165,7 +168,6 @@ class IdleConf:
         """
         pass
     
-    
     def GetKeys(self, name=None):
         """
         Gets the requested keybindings or returns a final fallback keybinding 
@@ -173,7 +175,6 @@ class IdleConf:
         config files.
         """
         pass
-    
     
     def LoadCfgFiles(self):
         """ 
