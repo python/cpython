@@ -21,6 +21,7 @@
 #include <Folders.h>
 #include <Resources.h>
 #include <TextUtils.h>
+#include <Dialogs.h>
 
 #define PYTHONPATH "\
 :\n\
@@ -97,6 +98,7 @@ PyMac_OpenPrefFile()
     short prefdirRefNum;
     long prefdirDirID;
     short action;
+    OSErr err;
 
     if ( FindFolder(kOnSystemDisk, 'pref', kDontCreateFolder, &prefdirRefNum,
     				&prefdirDirID) != noErr ) {
@@ -116,16 +118,16 @@ PyMac_OpenPrefFile()
 		prefrh = FSpOpenResFile(&dirspec, fsRdWrShPerm);
 		if ( prefrh == -1 ) {
 			/* This "cannot happen":-) */
-			printf("Cannot create preferences file!!\n");
+			printf("Cannot create preferences file, error %d\n", ResError());
 			exit(1);
 		}
-		if ( PyMac_process_location(&dirspec) != 0 ) {
-			printf("Cannot get FSSpec for application!!\n");
+		if ( (err=PyMac_process_location(&dirspec)) != 0 ) {
+			printf("Cannot get FSSpec for application, error %d\n", err);
 			exit(1);
 		}
 		dirspec.name[0] = 0;
-		if (NewAlias(NULL, &dirspec, &handle) != 0 ) {
-			printf("Cannot make alias to application directory!!\n");
+		if ((err=NewAlias(NULL, &dirspec, &handle)) != 0 ) {
+			printf("Cannot make alias to application directory, error %d\n", err);
 			exit(1);
 		}
     	AddResource((Handle)handle, 'alis', PYTHONHOME_ID, "\p");
