@@ -1367,8 +1367,8 @@ def _mdiff(fromlines, tolines, context=None, linejunk=None,
             text = lines.pop(0)[2:]
             # if line of text is just a newline, insert a space so there is
             # something for the user to highlight and see.
-            if len(text) <= 1:
-                text = ' '+text
+            if not text:
+                text = ' '
             # insert marks that won't be noticed by an xml/html escaper.
             text = '\0' + format_key + text + '\1'
         # Return line of text, first allow user's line formatter to do it's
