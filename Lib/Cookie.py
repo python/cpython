@@ -216,7 +216,6 @@ Finis.
 # Import our required modules
 #
 import string
-from UserDict import UserDict
 
 try:
     from cPickle import dumps, loads
@@ -406,7 +405,7 @@ def _getdate(future=0, weekdayname=_weekdayname, monthname=_monthname):
 #       pickled for network transit.
 #
 
-class Morsel(UserDict):
+class Morsel(dict):
     # RFC 2109 lists these attributes as reserved:
     #   path       comment         domain
     #   max-age    secure      version
@@ -425,27 +424,25 @@ class Morsel(UserDict):
                    "secure"      : "secure",
                    "version" : "Version",
                    }
-    _reserved_keys = _reserved.keys()
 
     def __init__(self):
         # Set defaults
         self.key = self.value = self.coded_value = None
-        UserDict.__init__(self)
 
         # Set default attributes
-        for K in self._reserved_keys:
-            UserDict.__setitem__(self, K, "")
+        for K in self._reserved:
+            dict.__setitem__(self, K, "")
     # end __init__
 
     def __setitem__(self, K, V):
         K = K.lower()
-        if not K in self._reserved_keys:
+        if not K in self._reserved:
             raise CookieError("Invalid Attribute %s" % K)
-        UserDict.__setitem__(self, K, V)
+        dict.__setitem__(self, K, V)
     # end __setitem__
 
     def isReservedKey(self, K):
-        return K.lower() in self._reserved_keys
+        return K.lower() in self._reserved
     # end isReservedKey
 
     def set(self, key, val, coded_val,
@@ -453,7 +450,7 @@ class Morsel(UserDict):
             idmap=string._idmap, translate=string.translate ):
         # First we verify that the key isn't a reserved word
         # Second we make sure it only contains legal characters
-        if key.lower() in self._reserved_keys:
+        if key.lower() in self._reserved:
             raise CookieError("Attempt to set a reserved key: %s" % key)
         if "" != translate(key, idmap, LegalChars):
             raise CookieError("Illegal key value: %s" % key)
@@ -495,7 +492,7 @@ class Morsel(UserDict):
 
         # Now add any defined attributes
         if attrs is None:
-            attrs = self._reserved_keys
+            attrs = self._reserved
         items = self.items()
         items.sort()
         for K,V in items:
@@ -546,7 +543,7 @@ _CookiePattern = re.compile(
 #   Using this class is almost just like using a dictionary.
 # See this module's docstring for example usage.
 #
-class BaseCookie(UserDict):
+class BaseCookie(dict):
     # A container class for a set of Morsels
     #
 
@@ -571,7 +568,6 @@ class BaseCookie(UserDict):
     # end value_encode
 
     def __init__(self, input=None):
-        UserDict.__init__(self)
         if input: self.load(input)
     # end __init__
 
@@ -579,7 +575,7 @@ class BaseCookie(UserDict):
         """Private method for setting a cookie's value"""
         M = self.get(key, Morsel())
         M.set(key, real_value, coded_value)
-        UserDict.__setitem__(self, key, M)
+        dict.__setitem__(self, key, M)
     # end __set
 
     def __setitem__(self, key, value):
@@ -651,7 +647,7 @@ class BaseCookie(UserDict):
                 # (Does anyone care?)
                 if M:
                     M[ K[1:] ] = V
-            elif K.lower() in Morsel._reserved_keys:
+            elif K.lower() in Morsel._reserved:
                 if M:
                     M[ K ] = _unquote(V)
             else:
