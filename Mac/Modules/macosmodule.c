@@ -44,34 +44,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 static PyObject *MacOS_Error; /* Exception MacOS.Error */
 
-/* Convert a ResType argument */
-static int
-GetOSType(PyObject *v, ResType *pr)
-{
-	if (!PyString_Check(v) || PyString_Size(v) != 4) {
-		PyErr_SetString(MacOS_Error,
-			"OSType arg must be string of 4 chars");
-		return 0;
-	}
-	memcpy((char *)pr, PyString_AsString(v), 4);
-	return 1;
-}
-
-/* Convert a Str255 argument */
-static int
-GetStr255(PyObject *v, Str255 pbuf)
-{
-	int len;
-	if (!PyString_Check(v) || (len = PyString_Size(v)) > 255) {
-		PyErr_SetString(MacOS_Error,
-			"Str255 arg must be string of at most 255 chars");
-		return 0;
-	}
-	pbuf[0] = len;
-	memcpy((char *)(pbuf+1), PyString_AsString(v), len);
-	return 1;
-}
-
 /*----------------------------------------------------------------------*/
 /* Resource objects */
 
