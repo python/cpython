@@ -18,7 +18,9 @@ def glob(pathname):
         else:
             return []
     dirname, basename = os.path.split(pathname)
-    if has_magic(dirname):
+    if not dirname:
+        return glob1(os.curdir, basename)
+    elif has_magic(dirname):
         list = glob(dirname)
     else:
         list = [dirname]
@@ -43,12 +45,9 @@ def glob1(dirname, pattern):
         names = os.listdir(dirname)
     except os.error:
         return []
-    result = []
-    for name in names:
-        if name[0] != '.' or pattern[0] == '.':
-            if fnmatch.fnmatch(name, pattern):
-                result.append(name)
-    return result
+    if pattern[0]!='.':
+        names=filter(lambda x: x[0]!='.',names)
+    return fnmatch.filter(names,pattern)
 
 
 magic_check = re.compile('[*?[]')
