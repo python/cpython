@@ -68,6 +68,16 @@ required by the HTML 2.0 specification (\rfc{1866}).  It also defines
 handlers for all HTML 2.0 and many HTML 3.0 and 3.2 elements.
 \end{classdesc}
 
+
+\begin{seealso}
+  \seemodule{htmlentitydefs}{Definition of replacement text for HTML
+                             2.0 entities.}
+  \seemodule{sgmllib}{Base class for \class{HTMLParser}.}
+\end{seealso}
+
+
+\subsection{HTMLParser Objects \label{html-parser-objects}}
+
 In addition to tag methods, the \class{HTMLParser} class provides some
 additional methods and instance variables for use within tag methods.
 
@@ -119,3 +129,25 @@ false, whitespace is collapsed to single spaces.  A call to this
 method without a preceeding call to \method{save_bgn()} will raise a
 \exception{TypeError} exception.
 \end{methoddesc}
+
+
+
+\section{\module{htmlentitydefs} ---
+         Definitions of HTML general entities}
+
+\declaremodule{standard}{htmlentitydefs}
+\modulesynopsis{Definitions of HTML general entities.}
+\sectionauthor{Fred L. Drake, Jr.}{fdrake@acm.org}
+
+This module defines a single dictionary, \code{entitydefs}, which is
+used by the \refmodule{htmllib} module to provide the
+\member{entitydefs} member of the \class{HTMLParser} class.  The
+definition provided here contains all the entities defined by HTML 2.0 
+that can be handled using simple textual substitution in the Latin-1
+character set (ISO-8859-1).
+
+
+\begin{datadesc}{entitydefs}
+  A dictionary mapping HTML 2.0 entity definitions to their
+  replacement text in ISO Latin-1.
+\end{datadesc}
