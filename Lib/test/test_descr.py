@@ -2298,7 +2298,37 @@ def subclasspropagation():
         pass
     else:
         raise TestFailed, "d.foo should be undefined now"
-    
+
+def buffer_inherit():
+    import binascii
+    # SF bug [#470040] ParseTuple t# vs subclasses.
+    if verbose:
+        print "Testing that buffer interface is inherited ..."
+
+    class MyStr(str):
+        pass
+    base = 'abc'
+    m = MyStr(base)
+    # b2a_hex uses the buffer interface to get its argument's value, via
+    # PyArg_ParseTuple 't#' code.
+    vereq(binascii.b2a_hex(m), binascii.b2a_hex(base))
+
+    # It's not clear that unicode will continue to support the character
+    # buffer interface, and this test will fail if that's taken away.
+    class MyUni(unicode):
+        pass
+    base = u'abc'
+    m = MyUni(base)
+    vereq(binascii.b2a_hex(m), binascii.b2a_hex(base))
+
+    class MyInt(int):
+        pass
+    m = MyInt(42)
+    try:
+        binascii.b2a_hex(m)
+        raise TestFailed('subclass of int should not have a buffer interface')
+    except TypeError:
+        pass
 
 def test_main():
     class_docstrings()
@@ -2347,6 +2377,7 @@ def test_main():
     copies()
     binopoverride()
     subclasspropagation()
+    buffer_inherit()
     if verbose: print "All OK"
 
 if __name__ == "__main__":
