@@ -238,7 +238,7 @@ aliases = {
     'iso2022jp_2'        : 'iso2022_jp_2',
     'iso_2022_jp_2'      : 'iso2022_jp_2',
 
-    # iso_3022_jp_3 codec
+    # iso2022_jp_3 codec
     'iso2022jp_3'        : 'iso2022_jp_3',
     'iso_2022_jp_3'      : 'iso2022_jp_3',
 
