@@ -393,6 +393,7 @@ HARDEXTMODULES=	binascii \
 		cStringI \
 		_hotshot \
 		imageop \
+		itertool \
 		md5 \
 		operator \
 		pcre \
@@ -530,6 +531,13 @@ _hotshot$(MODULE.EXT): $(OUT)_hotshot$O $(OUT)_hotshot_m.def $(PYTHON.IMPLIB)
 
 imageop$(MODULE.EXT): $(OUT)imageop$O $(OUT)imageop_m.def $(PYTHON.IMPLIB)
 	$(LD) $(LDFLAGS.DLL) -o $@ $(^^) $(L^) $(LIBS)
+
+# itertools needs to be renamed to be useful
+itertools$(MODULE.EXT): $(OUT)itertoolsmodule$O $(OUT)itertools_m.def $(PYTHON.IMPLIB)
+	$(LD) $(LDFLAGS.DLL) -o $@ $(^^) $(L^) $(LIBS)
+
+itertool$(MODULE.EXT): itertools$(MODULE.EXT)
+	cp $^ $@
 
 md5$(MODULE.EXT): $(OUT)md5module$O $(OUT)md5c$O $(OUT)md5_m.def $(PYTHON.IMPLIB)
 	$(LD) $(LDFLAGS.DLL) -o $@ $(^^) $(L^) $(LIBS)

@@ -298,6 +298,7 @@ EXPORTS
   "PyFunction_New"
   "PyFunction_GetCode"
   "PyFunction_GetGlobals"
+  "PyFunction_GetModule"
   "PyFunction_GetDefaults"
   "PyFunction_SetDefaults"
   "PyFunction_GetClosure"
@@ -347,6 +348,8 @@ EXPORTS
   "PyLong_FromDouble"
   "PyLong_AsLong"
   "PyLong_AsUnsignedLong"
+  "_PyLong_Sign"
+  "_PyLong_NumBits"
   "_PyLong_FromByteArray"
   "_PyLong_AsByteArray"
   "_PyLong_AsScaledDouble"
@@ -362,7 +365,7 @@ EXPORTS
   "PyLong_Type"
 
 ; From python23_s.lib(methodobject)
-  "PyCFunction_New"
+  "PyCFunction_NewEx"
   "PyCFunction_GetFunction"
   "PyCFunction_GetSelf"
   "PyCFunction_GetFlags"
@@ -370,6 +373,7 @@ EXPORTS
   "Py_FindMethodInChain"
   "Py_FindMethod"
   "PyCFunction_Fini"
+  "PyCFunction_New"
   "PyCFunction_Type"
 
 ; From python23_s.lib(moduleobject)
@@ -387,9 +391,9 @@ EXPORTS
   "_PyObject_New"
   "_PyObject_NewVar"
   "_PyObject_Del"
-  "PyObject_Print"
   "PyObject_Str"
   "PyObject_Repr"
+  "PyObject_Print"
   "_PyObject_Dump"
   "PyObject_Unicode"
   "PyObject_GetAttr"
@@ -666,6 +670,7 @@ EXPORTS
   "_PyExc_Fini"
 
 ; From python23_s.lib(ceval)
+  "PyEval_GetCallStats"
   "PyEval_InitThreads"
   "PyEval_AcquireLock"
   "PyEval_ReleaseLock"
