@@ -81,6 +81,7 @@
 #	rewind()	-- rewind to the beginning of the audio stream
 #	setpos(pos)	-- seek to the specified position
 #	tell()		-- return the current position
+#	close()		-- close the instance (make it unusable)
 # The position returned by tell(), the position given to setpos() and
 # the position of marks are all compatible and have nothing to do with
 # the actual postion in the file.

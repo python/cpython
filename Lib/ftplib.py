@@ -57,10 +57,6 @@ all_errors = (error_reply, error_temp, error_perm, error_proto, \
 CRLF = '\r\n'
 
 
-# Telnet special characters
-DM = chr(242)				# Data Mark
-IP = chr(244)				# Interrupt Process
-
 # Next port to be used by makeport(), with PORT_OFFSET added
 # (This is now only used when the python interpreter doesn't support
 # the getsockname() method yet)
@@ -327,6 +323,12 @@ class FTP:
 	def cwd(self, dirname):
 		self.voidcmd('CWD ' + dirname)
 
+	# Retrieve the size of a file
+	def size(self, filename):
+		resp = self.sendcmd('SIZE ' + filename)
+		if resp[:3] == '213':
+			return string.atoi(string.strip(resp[3:]))
+
 	# Make a directory, return its full pathname
 	def mkd(self, dirname):
 		resp = self.sendcmd('MKD ' + dirname)
@@ -340,6 +342,10 @@ class FTP:
 	# Quit, and close the connection
 	def quit(self):
 		self.voidcmd('QUIT')
+		self.close()
+
+	# Close the connection without assuming anything about it
+	def close(self):
 		self.file.close()
 		self.sock.close()
 		del self.file, self.sock
