@@ -43,7 +43,12 @@ STRIPFLAG=-s
 CPMAC=/Developer/Tools/CpMac
 
 APPTEMPLATE=$(srcdir)/Mac/OSXResources/app
-APPSUBDIRS=MacOS Resources Resources/English.lproj
+APPSUBDIRS=MacOS Resources Resources/English.lproj \
+	Resources/English.lproj/Documentation \
+	Resources/English.lproj/Documentation/doc \
+	Resources/English.lproj/Documentation/macpython_ide_tutorial
+DOCDIR=$(srcdir)/Mac/OSXResources/app/Resources/English.lproj/Documentation
+DOCINDEX=$(DOCDIR)/"Documentation idx"
 CACHERSRC=$(srcdir)/Mac/scripts/cachersrc.py
 compileall=$(srcdir)/Lib/compileall.py
 bundlebuilder=$(srcdir)/Lib/plat-mac/bundlebuilder.py
@@ -57,6 +62,9 @@ install_PythonLauncher:
 		DSTROOT=$(dstroot) INSTALL_PATH=$(PYTHONAPPSPATH) install
 	
 install_Python:
+	@if test ! -f $(DOCINDEX); then \
+		echo WARNING: you should run Apple Help Indexing Tool on $(DOCDIR); \
+	fi
 	@for i in $(PYTHONAPPSDIR) $(APPINSTALLDIR) $(APPINSTALLDIR)/Contents; do \
 		if test ! -d $$i; then \
 			echo "Creating directory $$i"; \
@@ -82,6 +90,10 @@ install_Python:
 			*.py[co]) ;; \
 			*.orig) ;; \
 			*~) ;; \
+			*idx) \
+				echo $(CPMAC) "$$i" $$b; \
+				$(CPMAC) "$$i" $$b; \
+				;; \
 			*) \
 				if test -d $$i; then continue; fi; \
 				if test -x $$i; then \
@@ -94,10 +106,7 @@ install_Python:
 			esac; \
 		done; \
 	done
-	$(INSTALL_PROGRAM) $(STRIPFLAG) $(BUILDPYTHON) $(APPINSTALLDIR)/Contents/MacOS/python
-# Finally create the documentation symlink
-	$(LN) -fsn ../../../../English.lproj/Documentation $(APPINSTALLDIR)/Contents/Resources/English.lproj/Documentation
-	
+	$(INSTALL_PROGRAM) $(STRIPFLAG) $(BUILDPYTHON) $(APPINSTALLDIR)/Contents/MacOS/python	
 	
 install_IDE: $(INSTALLED_PYTHONW)
 	@if ! $(INSTALLED_PYTHONW) -c "import waste"; then  \
