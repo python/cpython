@@ -28,15 +28,10 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 ******************************************************************/
 
-/* Include files and extern declarations used by most of the parser.
-   This is a precompiled header for THINK C. */
+/* Include files and extern declarations used by most of the parser. */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif
-
-#ifdef THINK_C
-#define macintosh
 #endif
 
 #include <stdio.h>
