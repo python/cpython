@@ -2,7 +2,7 @@
 
 """world -- Print mappings between country names and DNS country codes.
 
-Author:  Barry Warsaw
+Contact: Barry Warsaw
 Email:   bwarsaw@python.org
 Version: %(__version__)s
 

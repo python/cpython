@@ -2,7 +2,7 @@
 
 """audiopy -- a program to control the Solaris audio device.
 
-Author:  Barry Warsaw
+Contact: Barry Warsaw
 Email:   bwarsaw@python.org
 Version: %(__version__)s
 
@@ -240,9 +240,9 @@ class MainWindow:
 Audiopy %s
 Control the Solaris audio device
 
-For information contact
-author: Barry A. Warsaw
-email : bwarsaw@python.org''' % __version__)
+For information
+Contact: Barry A. Warsaw
+Email:   bwarsaw@python.org''' % __version__)
 
     def __popup_using(self, event=None):
         if not self.__helpwin:
@@ -405,7 +405,7 @@ def main():
         elif arg in ('-v', '--version'):
             print '''\
 audiopy -- a program to control the Solaris audio device.
-Author:  Barry Warsaw
+Contact: Barry Warsaw
 Email:   bwarsaw@python.org
 Version: %s''' % __version__            
             sys.exit(0)

@@ -1,6 +1,6 @@
 world -- Print mappings between country names and DNS country codes.
 
-Author:  Barry Warsaw
+Contact: Barry Warsaw
 Email:   bwarsaw@python.org
 
 This script will take a list of Internet addresses and print out where in the
