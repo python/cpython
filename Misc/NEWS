@@ -80,7 +80,9 @@ Build
 C API
 -----
 
-TBD
+- The extended type structure used for heap types (new-style
+  classes defined by Python code using a class statement) is now
+  exported from object.h as PyHeapTypeObject.  (SF patch #696193.)
 
 New platforms
 -------------
