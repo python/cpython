@@ -236,6 +236,11 @@ def main(args=None):
             print __doc__,
             return 0
     setup = "\n".join(setup) or "pass"
+    # Include the current directory, so that local imports work (sys.path
+    # contains the directory of this script, rather than the current
+    # directory)
+    import os
+    sys.path.insert(0, os.curdir)
     t = Timer(stmt, setup, timer)
     if number == 0:
         # determine number so that 0.2 <= total time < 2.0
