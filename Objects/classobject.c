@@ -1114,7 +1114,7 @@ halfbinop(v, w, opname, r_result, thisfunc, swapped)
 	func = PyObject_GetAttrString(v, opname);
 	if (func == NULL) {
 		Py_XDECREF(coerced);
-		if (PyErr_Occurred() != PyExc_AttributeError)
+		if (!PyErr_ExceptionMatches(PyExc_AttributeError))
 			return -1;
 		PyErr_Clear();
 		return 1;
