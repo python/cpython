@@ -4967,15 +4967,9 @@ symtable_update_free_vars(struct symtable *st)
 	for (i = 0; i < PyList_GET_SIZE(ste->ste_children); ++i) {
 		int pos = 0;
 
-		if (list)
-			if (PyList_SetSlice(list, 0, 
-					((PyVarObject*)list)->ob_size, 0) < 0)
+		if (list && PyList_SetSlice(list, 0, 
+					    PyList_GET_SIZE(list), 0) < 0)
 				return -1;
-			/* Yes, the above call CAN fail, even though it's reducing
-			   the size of the list.  The current implementation will
-			   allocate temp memory equal to the size of the list: this
-			   is avoidable in this specific case, but probably not
-			   worth the effort of special-casing it. - JRH */
 		child = (PySymtableEntryObject *)
 			PyList_GET_ITEM(ste->ste_children, i);
 		while (PyDict_Next(child->ste_symbols, &pos, &name, &o)) {
