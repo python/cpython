@@ -127,7 +127,7 @@ PyMac_InteractiveOptions(PyMac_PrefRecord *p, int *argcp, char ***argvp)
 	/* Set default values */
 #define SET_OPT_ITEM(num, var) \
 		GetDialogItem(dialog, (num), &type, (Handle *)&handle, &rect); \
-		SetCtlValue(handle, (short)p->var);
+		SetControlValue(handle, (short)p->var);
 
 	SET_OPT_ITEM(OPT_INSPECT, inspect);
 	SET_OPT_ITEM(OPT_VERBOSE, verbose);
@@ -146,7 +146,7 @@ PyMac_InteractiveOptions(PyMac_PrefRecord *p, int *argcp, char ***argvp)
 		if ( item == OPT_OK )
 			break;
 		if ( item == OPT_CANCEL ) {
-			DisposDialog(dialog);
+			DisposeDialog(dialog);
 			exit(0);
 		}
 		if ( item == OPT_CMDLINE ) {
@@ -171,7 +171,7 @@ PyMac_InteractiveOptions(PyMac_PrefRecord *p, int *argcp, char ***argvp)
 		if ( item == (num) ) { \
 			p->var = !p->var; \
 			GetDialogItem(dialog, (num), &type, (Handle *)&handle, &rect); \
-			SetCtlValue(handle, (short)p->var); \
+			SetControlValue(handle, (short)p->var); \
 		}
 		
 		OPT_ITEM(OPT_INSPECT, inspect);
@@ -184,7 +184,7 @@ PyMac_InteractiveOptions(PyMac_PrefRecord *p, int *argcp, char ***argvp)
 		
 #undef OPT_ITEM
 	}
-	DisposDialog(dialog);
+	DisposeDialog(dialog);
 }
 
 /*
