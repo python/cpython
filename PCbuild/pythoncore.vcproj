@@ -1375,18 +1375,6 @@
 			</FileConfiguration>
 		</File>
 		<File
-			RelativePath="..\Modules\cjkcodecs\mapdata_ja_JP.c">
-		</File>
-		<File
-			RelativePath="..\Modules\cjkcodecs\mapdata_ko_KR.c">
-		</File>
-		<File
-			RelativePath="..\Modules\cjkcodecs\mapdata_zh_CN.c">
-		</File>
-		<File
-			RelativePath="..\Modules\cjkcodecs\mapdata_zh_TW.c">
-		</File>
-		<File
 			RelativePath="..\Python\marshal.c">
 			<FileConfiguration
 				Name="Release|Win32">
