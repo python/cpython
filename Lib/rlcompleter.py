@@ -58,7 +58,10 @@ class Completer:
                 self.matches = self.attr_matches(text)
             else:
                 self.matches = self.global_matches(text)
-        return self.matches[state]
+        try:
+            return self.matches[state]
+        except IndexError:
+            return None
 
     def global_matches(self, text):
         """Compute matches when text is a simple name.
