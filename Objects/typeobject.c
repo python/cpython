@@ -661,6 +661,25 @@ classic_mro(PyObject *cls)
     David A. Moon, Keith Playford, and P. Tucker Withington. 
     (OOPSLA 1996)
 
+    Some notes about the rules implied by C3:
+
+    No duplicate bases. 
+    It isn't legal to repeat a class in a list of base classes.
+
+    The next three properties are the 3 constraints in "C3".
+
+    Local precendece order.  
+    If A precedes B in C's MRO, then A will precede B in the MRO of all
+    subclasses of C.
+
+    Monotonicity.
+    The MRO of a class must be an extension without reordering of the
+    MRO of each of its superclasses.
+
+    Extended Precedence Graph (EPG).
+    Linearization is consistent if there is a path in the EPG from
+    each class to all its successors in the linearization.  See
+    the paper for definition of EPG.
  */
 
 static int 
@@ -675,6 +694,92 @@ tail_contains(PyObject *list, int whence, PyObject *o) {
 	return 0;
 }
 
+static PyObject *
+class_name(PyObject *cls)
+{
+	PyObject *name = PyObject_GetAttrString(cls, "__name__");
+	if (name == NULL) {
+		PyErr_Clear();
+		Py_XDECREF(name);
+		name = PyObject_Repr(cls);
+	}
+	if (name == NULL)
+		return NULL;
+	if (!PyString_Check(name)) {
+		Py_DECREF(name);
+		return NULL;
+	}
+	return name;
+}
+
+static int
+check_duplicates(PyObject *list)
+{
+	int i, j, n;
+	/* Let's use a quadratic time algorithm,
+	   assuming that the bases lists is short.
+	*/
+	n = PyList_GET_SIZE(list);
+	for (i = 0; i < n; i++) {
+		PyObject *o = PyList_GET_ITEM(list, i);
+		for (j = i + 1; j < n; j++) {
+			if (PyList_GET_ITEM(list, j) == o) {
+				o = class_name(o);
+				PyErr_Format(PyExc_TypeError,
+					     "duplicate base class %s",
+					     o ? PyString_AS_STRING(o) : "?");
+				Py_XDECREF(o);
+				return -1;
+			}
+		}
+	}
+	return 0;
+}
+
+/* Raise a TypeError for an MRO order disagreement.
+
+   It's hard to produce a good error message.  In the absence of better
+   insight into error reporting, report the classes that were candidates
+   to be put next into the MRO.  There is some conflict between the
+   order in which they should be put in the MRO, but it's hard to
+   diagnose what constraint can't be satisfied.
+*/
+
+static void
+set_mro_error(PyObject *to_merge, int *remain)
+{
+	int i, n, off, to_merge_size;
+	char buf[1000];
+	PyObject *k, *v;
+	PyObject *set = PyDict_New();
+
+	to_merge_size = PyList_GET_SIZE(to_merge);
+	for (i = 0; i < to_merge_size; i++) {
+		PyObject *L = PyList_GET_ITEM(to_merge, i);
+		if (remain[i] < PyList_GET_SIZE(L)) {
+			PyObject *c = PyList_GET_ITEM(L, remain[i]);
+			if (PyDict_SetItem(set, c, Py_None) < 0)
+				return;
+		}
+	}
+	n = PyDict_Size(set);
+
+	off = PyOS_snprintf(buf, sizeof(buf), "MRO conflict among bases");
+	i = 0;
+	while (PyDict_Next(set, &i, &k, &v) && off < sizeof(buf)) {
+		PyObject *name = class_name(k);
+		off += PyOS_snprintf(buf + off, sizeof(buf) - off, " %s",
+				     name ? PyString_AS_STRING(name) : "?");
+		Py_XDECREF(name);
+		if (--n && off+1 < sizeof(buf)) {
+			buf[off++] = ',';
+			buf[off] = '\0';
+		}
+	}
+	PyErr_SetString(PyExc_TypeError, buf);
+	Py_DECREF(set);
+}
+
 static int 
 pmerge(PyObject *acc, PyObject* to_merge) {
 	int i, j, to_merge_size;
@@ -683,6 +788,10 @@ pmerge(PyObject *acc, PyObject* to_merge) {
 	
 	to_merge_size = PyList_GET_SIZE(to_merge);
 
+	/* remain stores an index into each sublist of to_merge.
+	   remain[i] is the index of the next base in to_merge[i]
+	   that is not included in acc.
+	*/
 	remain = PyMem_MALLOC(SIZEOF_INT*to_merge_size);
 	if (remain == NULL)
 		return -1;
@@ -701,11 +810,19 @@ pmerge(PyObject *acc, PyObject* to_merge) {
 			continue;
                 }
 
+		/* Choose next candidate for MRO.
+
+		   The input sequences alone can determine the choice.
+		   If not, choose the class which appears in the MRO
+		   of the earliest direct superclass of the new class.
+		*/
+
 		candidate = PyList_GET_ITEM(cur_list, remain[i]);
 		for (j = 0; j < to_merge_size; j++) {
 			PyObject *j_lst = PyList_GET_ITEM(to_merge, j);
-			if (tail_contains(j_lst, remain[j], candidate))
+			if (tail_contains(j_lst, remain[j], candidate)) {
 				goto skip; /* continue outer loop */
+			}
 		}
 		ok = PyList_Append(acc, candidate);
 		if (ok < 0) {
@@ -722,10 +839,12 @@ pmerge(PyObject *acc, PyObject* to_merge) {
 	  skip: ;
 	}
 
-	PyMem_FREE(remain);
-	if (empty_cnt == to_merge_size)
+	if (empty_cnt == to_merge_size) {
+		PyMem_FREE(remain);
 		return 0;
-	PyErr_SetString(PyExc_TypeError, "MRO order disagreement");
+	}
+	set_mro_error(to_merge, remain);
+	PyMem_FREE(remain);
 	return -1;
 }
 
@@ -740,6 +859,15 @@ mro_implementation(PyTypeObject *type)
 		if(PyType_Ready(type) < 0)
 			return NULL;
 	}
+
+	/* Find a superclass linearization that honors the constraints
+	   of the explicit lists of bases and the constraints implied by
+	   each base class.  
+
+	   to_merge is a list of lists, where each list is a superclass
+	   linearization implied by a base class.  The last element of
+	   to_merge is the declared list of bases.
+	*/
 
 	bases = type->tp_bases;
 	n = PyTuple_GET_SIZE(bases);
@@ -767,6 +895,12 @@ mro_implementation(PyTypeObject *type)
 	bases_aslist = PySequence_List(bases);
 	if (bases_aslist == NULL) {
 		Py_DECREF(to_merge);
+		return NULL;
+	}
+	/* This is just a basic sanity check. */
+	if (check_duplicates(bases_aslist) < 0) {
+		Py_DECREF(to_merge);
+		Py_DECREF(bases_aslist);
 		return NULL;
 	}
 	PyList_SET_ITEM(to_merge, n, bases_aslist);
