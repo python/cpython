@@ -314,6 +314,16 @@ For class exceptions, \function{str()} returns only the message.
   \exception{IndexError}.
 \end{excdesc}
 
+\begin{excdesc}{WindowsError}
+  Raised when a Windows-specific error occurs or when the error number
+  does not correspond to an \cdata{errno} value.  The
+  \member{errno} and \member{strerror} values are created from the
+  return values of the \cfunction{GetLastError()} and
+  \cfunction{FormatMessage()} functions from the Windows Platform API.
+  This is a subclass of \exception{OSError}.
+\versionadded{1.6}
+\end{excdesc}
+
 \begin{excdesc}{ZeroDivisionError}
   Raised when the second argument of a division or modulo operation is
   zero.  The associated value is a string indicating the type of the
