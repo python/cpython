@@ -496,13 +496,16 @@ def help():
 # When invoked as main program, invoke the debugger on a script
 if __name__=='__main__':
 	import sys
+	import os
 	if not sys.argv[1:]:
 		print "usage: pdb.py scriptfile [arg] ..."
 		sys.exit(2)
 
-	# Get the module name and function name, if present
-	filename = sys.argv[1]
+	filename = sys.argv[1]	# Get script filename
 
-	del sys.argv[0]
+	del sys.argv[0]		# Hide "pdb.py" from argument list
+
+	# Insert script directory in front of module search path
+	sys.path.insert(0, os.path.dirname(filename))
 
 	run('execfile(' + `filename` + ')', {'__name__': '__main__'})
