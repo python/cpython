@@ -118,23 +118,26 @@ Example:
 import os, sys
 from stat import *
 
-def process(dir, func):
-    '''recursively descend the directory rooted at dir, calling func for
-       each regular file'''
+def walktree(dir, callback):
+    '''recursively descend the directory rooted at dir,
+       calling the callback function for each regular file'''
 
     for f in os.listdir(dir):
-        mode = os.stat('%s/%s' % (dir, f))[ST_MODE]
+        pathname = '%s/%s' % (dir, f)
+        mode = os.stat(pathname)[ST_MODE]
         if S_ISDIR(mode):
-            # recurse into directory
-            process('%s/%s' % (dir, f), func)
+            # It's a directory, recurse into it
+            walktree(pathname, callback)
         elif S_ISREG(mode):
-            func('%s/%s' % (dir, f))
+            # It's a file, call the callback function
+            callback(pathname)
         else:
-            print 'Skipping %s/%s' % (dir, f)
+            # Unknown file type, print a message
+            print 'Skipping %s' % pathname
 
-def f(file):
-    print 'frobbed', file
+def visitfile(file):
+    print 'visiting', file
 
 if __name__ == '__main__':
-    process(sys.argv[1], f)
+    walktree(sys.argv[1], visitfile)
 \end{verbatim}
