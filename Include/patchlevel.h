@@ -1,1 +1,1 @@
-#define PATCHLEVEL "1.3b1"
+#define PATCHLEVEL "1.3b3"
