@@ -62,7 +62,7 @@ def print_differences(data, olddata):
             print '#    updated %r -> %r to %r' % \
                   (k, olddata[k], data[k])
         # Additions are not mentioned
-    
+
 if __name__ == '__main__':
     data = locale.locale_alias.copy()
     data.update(parse(LOCALE_ALIAS))
@@ -71,4 +71,3 @@ if __name__ == '__main__':
     print 'locale_alias = {'
     pprint(data)
     print '}'
-    

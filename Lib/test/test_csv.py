@@ -33,7 +33,7 @@ class Test_Csv(unittest.TestCase):
         self.assertRaises(TypeError, ctor, arg, quoting=None)
 #       We now allow this, only raising an exception if quoting is needed.
 #        self.assertRaises(TypeError, ctor, arg, quotechar=None)
-#        self.assertRaises(TypeError, ctor, arg, 
+#        self.assertRaises(TypeError, ctor, arg,
 #                          quoting=csv.QUOTE_NONE, escapechar=None)
 #       No longer complains about dialects with invalid attributes [AM]
 #        class BadDialect:

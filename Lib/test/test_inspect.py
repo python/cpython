@@ -31,11 +31,11 @@ class IsTestBase(unittest.TestCase):
     predicates = set([inspect.isbuiltin, inspect.isclass, inspect.iscode,
                       inspect.isframe, inspect.isfunction, inspect.ismethod,
                       inspect.ismodule, inspect.istraceback])
-    
+
     def istest(self, predicate, exp):
         obj = eval(exp)
         self.failUnless(predicate(obj), '%s(%s)' % (predicate.__name__, exp))
-        
+
         for other in self.predicates - set([predicate]):
             self.failIf(other(obj), 'not %s(%s)' % (other.__name__, exp))
 
@@ -44,7 +44,7 @@ class TestPredicates(IsTestBase):
         # Doc/lib/libinspect.tex claims there are 11 such functions
         count = len(filter(lambda x:x.startswith('is'), dir(inspect)))
         self.assertEqual(count, 11, "There are %d (not 11) is* functions" % count)
-    
+
     def test_excluding_predicates(self):
         self.istest(inspect.isbuiltin, 'sys.exit')
         self.istest(inspect.isbuiltin, '[].append')
@@ -66,7 +66,7 @@ class TestPredicates(IsTestBase):
 class TestInterpreterStack(IsTestBase):
     def __init__(self, *args, **kwargs):
         unittest.TestCase.__init__(self, *args, **kwargs)
-    
+
         git.abuse(7, 8, 9)
 
     def test_abuse_done(self):
@@ -76,7 +76,7 @@ class TestInterpreterStack(IsTestBase):
     def test_stack(self):
         self.assert_(len(mod.st) >= 5)
         self.assertEqual(mod.st[0][1:],
-             (modfile, 16, 'eggs', ['    st = inspect.stack()\n'], 0))             
+             (modfile, 16, 'eggs', ['    st = inspect.stack()\n'], 0))
         self.assertEqual(mod.st[1][1:],
              (modfile, 9, 'spam', ['    eggs(b + d, c + f)\n'], 0))
         self.assertEqual(mod.st[2][1:],
@@ -113,7 +113,7 @@ class TestInterpreterStack(IsTestBase):
 class GetSourceBase(unittest.TestCase):
     # Subclasses must override.
     fodderFile = None
-    
+
     def __init__(self, *args, **kwargs):
         unittest.TestCase.__init__(self, *args, **kwargs)
 
@@ -126,10 +126,10 @@ class GetSourceBase(unittest.TestCase):
     def assertSourceEqual(self, obj, top, bottom):
         self.assertEqual(inspect.getsource(obj),
                          self.sourcerange(top, bottom))
-    
+
 class TestRetrievingSourceCode(GetSourceBase):
     fodderFile = mod
-    
+
     def test_getclasses(self):
         classes = inspect.getmembers(mod, inspect.isclass)
         self.assertEqual(classes,
@@ -147,7 +147,7 @@ class TestRetrievingSourceCode(GetSourceBase):
                             ]
                            ]
                           ])
-        
+
     def test_getfunctions(self):
         functions = inspect.getmembers(mod, inspect.isfunction)
         self.assertEqual(functions, [('eggs', mod.eggs),
@@ -172,8 +172,8 @@ class TestRetrievingSourceCode(GetSourceBase):
         self.assertSourceEqual(mod.StupidGit, 21, 46)
 
     def test_getsourcefile(self):
-         self.assertEqual(inspect.getsourcefile(mod.spam), modfile)
-         self.assertEqual(inspect.getsourcefile(git.abuse), modfile)
+        self.assertEqual(inspect.getsourcefile(mod.spam), modfile)
+        self.assertEqual(inspect.getsourcefile(git.abuse), modfile)
 
     def test_getfile(self):
         self.assertEqual(inspect.getfile(mod.StupidGit), mod.__file__)
@@ -192,38 +192,38 @@ class TestOneliners(GetSourceBase):
     def test_oneline_lambda(self):
         # Test inspect.getsource with a one-line lambda function.
         self.assertSourceEqual(mod2.oll, 25, 25)
-    
+
     def test_threeline_lambda(self):
         # Test inspect.getsource with a three-line lambda function,
         # where the second and third lines are _not_ indented.
-        self.assertSourceEqual(mod2.tll, 28, 30)        
-    
+        self.assertSourceEqual(mod2.tll, 28, 30)
+
     def test_twoline_indented_lambda(self):
         # Test inspect.getsource with a two-line lambda function,
         # where the second line _is_ indented.
         self.assertSourceEqual(mod2.tlli, 33, 34)
-    
+
     def test_onelinefunc(self):
         # Test inspect.getsource with a regular one-line function.
         self.assertSourceEqual(mod2.onelinefunc, 37, 37)
-    
+
     def test_manyargs(self):
         # Test inspect.getsource with a regular function where
         # the arguments are on two lines and _not_ indented and
         # the body on the second line with the last arguments.
         self.assertSourceEqual(mod2.manyargs, 40, 41)
-    
+
     def test_twolinefunc(self):
         # Test inspect.getsource with a regular function where
         # the body is on two lines, following the argument list and
         # continued on the next line by a \\.
         self.assertSourceEqual(mod2.twolinefunc, 44, 45)
-    
+
     def test_lambda_in_list(self):
         # Test inspect.getsource with a one-line lambda function
         # defined in a list, indented.
         self.assertSourceEqual(mod2.a[1], 49, 49)
-    
+
     def test_anonymous(self):
         # Test inspect.getsource with a lambda function defined
         # as argument to another function.
@@ -233,7 +233,7 @@ class TestOneliners(GetSourceBase):
 def attrs_wo_objs(cls):
     return [t[:3] for t in inspect.classify_class_attrs(cls)]
 
-class TestClassesAndFunctions(unittest.TestCase):    
+class TestClassesAndFunctions(unittest.TestCase):
     def test_classic_mro(self):
         # Test classic-class method resolution order.
         class A:    pass
@@ -284,7 +284,7 @@ class TestClassesAndFunctions(unittest.TestCase):
 
     def test_getargspec_sublistofone(self):
         def sublistOfOne((foo)): return 1
-        
+
         self.assertArgSpecEquals(sublistOfOne, [['foo']])
 
     def test_classify_oldstyle(self):
@@ -418,4 +418,3 @@ def test_main():
 
 if __name__ == "__main__":
     test_main()
-    

@@ -110,7 +110,7 @@ class BundleBuilder(Defaults):
 
     # Verbosity level.
     verbosity = 1
-    
+
     # Destination root directory
     destroot = ""
 
