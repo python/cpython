@@ -4962,7 +4962,7 @@ as well as any other name registerd with codecs.register_error that is\n\
 able to handle UnicodeDecodeErrors.");
 
 static PyObject *
-unicode_decode(PyStringObject *self, PyObject *args)
+unicode_decode(PyUnicodeObject *self, PyObject *args)
 {
     char *encoding = NULL;
     char *errors = NULL;
