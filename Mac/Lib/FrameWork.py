@@ -518,6 +518,7 @@ class Menu:
 		self.id, self.menu = self.bar.addmenu(title, after)
 		bar.menus[self.id] = self
 		self.items = []
+		self._parent = None
 		
 	def delete(self):
 		self.bar.delmenu(self.id)
@@ -526,6 +527,7 @@ class Menu:
 		del self.items
 		del self.menu
 		del self.id
+		del self._parent
 		
 	def additem(self, label, shortcut=None, callback=None, kind=None):
 		self.menu.AppendMenu('x')		# add a dummy string
@@ -556,6 +558,8 @@ class Menu:
 		sub = Menu(self.bar, title, -1)
 		item = self.additem(label, '\x1B', None, 'submenu')
 		self.menu.SetItemMark(item, sub.id)
+		sub._parent = self
+		sub._parent_item = item
 		return sub
 	
 	def dispatch(self, id, item, window, event):
@@ -587,8 +591,12 @@ class Menu:
 	def enable(self, onoff):
 		if onoff:
 			self.menu.EnableItem(0)
+			if self._parent:
+				self._parent.menu.EnableItem(self._parent_item)
 		else:
 			self.menu.DisableItem(0)
+			if self._parent:
+				self._parent.menu.DisableItem(self._parent_item)
 		if self.bar and self.bar.parent:
 				self.bar.parent.needmenubarredraw = 1
 			
