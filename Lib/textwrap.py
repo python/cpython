@@ -53,7 +53,7 @@ class TextWrapper:
         single space!
       fix_sentence_endings (default: false)
         Ensure that sentence-ending punctuation is always followed
-        by two spaces.  Off by default becaus the algorithm is
+        by two spaces.  Off by default because the algorithm is
         (unavoidably) imperfect.
       break_long_words (default: true)
         Break words longer than 'width'.  If false, those words will not
