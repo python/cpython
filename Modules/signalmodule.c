@@ -270,6 +270,153 @@ None -- if an unknown handler is in effect\n\
 anything else -- the callable Python object used as a handler\n\
 ";
 
+#ifdef HAVE_SIGPROCMASK /* we assume that having SIGPROCMASK is enough
+			   to guarantee full POSIX signal handling */
+/* returns 0 for success, <0 for failure (with exception set) */
+static int
+_signal_list_to_sigset(PyObject* seq, sigset_t* set, char* mesg)
+{
+	int i, len, val;
+
+	seq = PySequence_Fast(seq, mesg);
+	if (!seq)
+		return -1;
+
+	len = PySequence_Fast_GET_SIZE(seq);
+
+	sigemptyset(set);
+
+	for (i = 0; i < len; i++) {
+		val = PyInt_AsLong(PySequence_Fast_GET_ITEM(seq, i));
+		if (val == -1 && PyErr_Occurred()) {
+			Py_DECREF(seq);
+			return -1;
+		}
+		if (sigaddset(set, val) < 0) {
+			Py_DECREF(seq);
+			PyErr_SetFromErrno(PyExc_ValueError);
+			return -1;
+		}
+	}
+	
+	Py_DECREF(seq);
+	return 0;
+}
+
+static PyObject*
+_signal_sigset_to_list(sigset_t* set)
+{
+	PyObject* ret;
+	PyObject* ob;
+	int i;
+
+	ret = PyList_New(0);
+	if (!ret)
+		return NULL;
+
+	for (i = 1; i < NSIG; i++) {
+		if (sigismember(set, i)) {
+			ob = PyInt_FromLong(i);
+			if (!ob) {
+				Py_DECREF(ret);
+				return NULL;
+			}
+			PyList_Append(ret, ob);
+			Py_DECREF(ob);
+		}
+	}
+
+	return ret;
+}
+
+static PyObject*
+signal_sigprocmask(PyObject* self, PyObject* args)
+{
+	int how;
+	sigset_t newset, oldset;
+	PyObject* seq;
+
+	if (!PyArg_ParseTuple(args, "iO", &how, &seq))
+		return NULL;
+	
+	if (_signal_list_to_sigset(seq, &newset,
+				   "sigprocmask requires a sequence") < 0)
+		return NULL;
+
+	if (sigprocmask(how, &newset, &oldset) < 0) {
+		return PyErr_SetFromErrno(PyExc_ValueError);
+	}
+	
+	if (PyErr_CheckSignals())
+		return NULL;
+
+	return _signal_sigset_to_list(&oldset);
+}
+
+static char sigprocmask_doc[] = 
+"sigprocmask(how, sigset) -> sigset\n\
+\n\
+Change the list of currently blocked signals.  The parameter how should be\n\
+one of SIG_BLOCK, SIG_UNBLOCK or SIG_SETMASK and sigset should be a\n\
+sequence of signal numbers.  The behaviour of the call depends on the value\n\
+of how:\n\
+\n\
+  SIG_BLOCK\n\
+    The set of blocked signals is the union of the current set and the\n\
+    sigset argument.\n\
+  SIG_UNBLOCK\n\
+    The signals in sigset are removed from the current set of blocked\n\
+    signals.  It is legal to attempt to unblock a signal which is not\n\
+    blocked.\n\
+  SIG_SETMASK\n\
+    The set of blocked signals is set to the argument set.\n\
+\n\
+A list contating the numbers of the previously blocked signals is returned.";
+
+static PyObject*
+signal_sigpending(PyObject* self)
+{
+	sigset_t set;
+
+	if (sigpending(&set) < 0) {
+		return PyErr_SetFromErrno(PyExc_ValueError);
+	}
+	
+	return _signal_sigset_to_list(&set);
+}
+
+static char sigpending_doc[] = 
+"sigpending() -> sigset\n\
+\n\
+Return the set of pending signals, i.e. a list containing the numbers of\n\
+those signals that have been raised while blocked.";
+
+static PyObject*
+signal_sigsuspend(PyObject* self, PyObject* arg)
+{
+	sigset_t set;
+
+	if (_signal_list_to_sigset(arg, &set, 
+				   "sigsuspend requires a sequence") < 0)
+		return NULL;
+	
+	Py_BEGIN_ALLOW_THREADS
+	sigsuspend(&set);
+	Py_END_ALLOW_THREADS
+
+	if (PyErr_CheckSignals())
+		return NULL;
+
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
+static char sigsuspend_doc[] = 
+"sigsuspend(sigset) -> None\n\
+\n\
+Temporarily replace the signal mask with sigset (which should be a sequence\n\
+of signal numbers) and suspend the process until a signal is received.";
+#endif
 
 /* List of functions defined in the module */
 static PyMethodDef signal_methods[] = {
@@ -284,6 +431,14 @@ static PyMethodDef signal_methods[] = {
 #endif
 	{"default_int_handler", signal_default_int_handler, 
 	 METH_VARARGS, default_int_handler_doc},
+#ifdef HAVE_SIGPROCMASK
+	{"sigprocmask",         (PyCFunction)signal_sigprocmask, 
+	 METH_VARARGS,          sigprocmask_doc},
+	{"sigpending",          (PyCFunction)signal_sigpending, 
+	 METH_NOARGS,           sigpending_doc},
+	{"sigsuspend",          (PyCFunction)signal_sigsuspend, 
+	 METH_O,                sigsuspend_doc},
+#endif
 	{NULL,			NULL}		/* sentinel */
 };
 
@@ -298,6 +453,10 @@ signal() -- set the action for a given signal\n\
 getsignal() -- get the signal action for a given signal\n\
 pause() -- wait until a signal arrives [Unix only]\n\
 default_int_handler() -- default SIGINT handler\n\
+\n\
+sigpending()  |\n\
+sigprocmask() |-- posix signal mask handling [Unix only]\n\
+sigsuspend()  |\n\
 \n\
 Constants:\n\
 \n\
@@ -547,6 +706,18 @@ initsignal(void)
 	PyDict_SetItemString(d, "SIGINFO", x);
         Py_XDECREF(x);
 #endif
+#ifdef HAVE_SIGPROCMASK
+	x = PyInt_FromLong(SIG_BLOCK);
+	PyDict_SetItemString(d, "SIG_BLOCK", x);
+        Py_XDECREF(x);
+	x = PyInt_FromLong(SIG_UNBLOCK);
+	PyDict_SetItemString(d, "SIG_UNBLOCK", x);
+        Py_XDECREF(x);
+	x = PyInt_FromLong(SIG_SETMASK);
+	PyDict_SetItemString(d, "SIG_SETMASK", x);
+        Py_XDECREF(x);
+#endif
+
         if (!PyErr_Occurred())
                 return;
 
