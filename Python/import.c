@@ -1170,7 +1170,7 @@ load_next(mod, altmod, p_name, buf, p_buflen)
 	if (result == Py_None && altmod != mod) {
 		Py_DECREF(result);
 		/* Here, altmod must be None and mod must not be None */
-		result = import_submodule(altmod, name, name);
+		result = import_submodule(altmod, p, p);
 		if (result != NULL && result != Py_None) {
 			if (mark_miss(buf) != 0) {
 				Py_DECREF(result);
