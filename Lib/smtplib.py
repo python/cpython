@@ -485,7 +485,7 @@ class SMTP:
                                   the helo greeting.
          SMTPAuthenticationError  The server didn't accept the username/
                                   password combination.
-         SMTPError                No suitable authentication method was
+         SMTPException            No suitable authentication method was
                                   found.
         """
 
@@ -537,7 +537,7 @@ class SMTP:
             (code, resp) = self.docmd("AUTH",
                 AUTH_PLAIN + " " + encode_plain(user, password))
         elif authmethod == None:
-            raise SMTPError("No suitable authentication method found.")
+            raise SMTPException("No suitable authentication method found.")
         if code not in [235, 503]:
             # 235 == 'Authentication successful'
             # 503 == 'Error: already authenticated'
