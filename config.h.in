@@ -453,3 +453,9 @@
 
 /* Define if you have the m library (-lm).  */
 #undef HAVE_LIBM
+
+/* Define if you have special dynamic linkage requirements in declarations. */
+#undef DL_EXPORT_HEADER
+#ifdef DL_EXPORT_HEADER
+#include DL_EXPORT_HEADER
+#endif

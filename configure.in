@@ -107,8 +107,40 @@ AC_ARG_WITH(gcc, [--without-gcc             never use gcc], [
 	case $ac_sys_system in
 	OSF1)	CC=cc
 		without_gcc=;;
-	BeOS*)	CC=cc
-		without_gcc=;;
+	BeOS*)
+		# Dunno if it's a good idea to get this over with all at once, or
+		# to handle it in with the other goodies.
+		MACHDEP=beos
+
+		case $BE_HOST_CPU in
+		ppc)
+			CC="mwcc -I$PWD/BeOS"
+			without_gcc=yes
+			OPT="-DUSE_DL_EXPORT -O7 -opt schedule604"
+			CCSHARED=-UUSE_DL_EXPORT
+			LDFLAGS="$LDFLAGS -nodup"
+
+			AR="$PWD/BeOS/ar-fake"
+			RANLIB=:
+			
+			AC_DEFINE(DL_EXPORT_HEADER,"dl_export.h")
+			;;
+		x86)
+			CC="gcc -I$PWD/BeOS"
+			without_gcc=no
+			OPT="-DUSE_DL_EXPORT -O3 -mpentiumpro"
+			CCSHARED=-UUSE_DL_EXPORT
+
+			AR="$PWD/BeOS/ar-fake"
+			RANLIB=:
+			
+			AC_DEFINE(DL_EXPORT_HEADER,"dl_export.h")
+			;;
+		*)
+			AC_ERROR(Your BeOS system isn't PowerPC or x86... neat, but this won't work...)
+			;;
+		esac
+		;;
 	*)	without_gcc=no;;
 	esac])
 AC_MSG_RESULT($without_gcc)
