@@ -37,10 +37,6 @@ Example:
   >>> s.getreply()
   (250, "Somebody OverHere <somebody@here.my.org>")
   >>> s.quit()
-
-Bugs/TODO:
-    - Exceptions should be classes
-
 '''
 
 import socket
@@ -53,10 +49,11 @@ SMTP_PORT = 25
 CRLF="\r\n"
 
 # used for exceptions 
-SMTPServerDisconnected="Server not connected"
-SMTPSenderRefused="Sender address refused"
-SMTPRecipientsRefused="All Recipients refused"
-SMTPDataError="Error transmitting message data"
+class SMTPException(Exception): pass
+class SMTPServerDisconnected(SMTPException): pass
+class SMTPSenderRefused(SMTPException): pass
+class SMTPRecipientsRefused(SMTPException): pass
+class SMTPDataError(SMTPException): pass
 
 def quoteaddr(addr):
     """Quote a subset of the email addresses defined by RFC 821.
@@ -171,9 +168,9 @@ class SMTP:
             try:
                 self.sock.send(str)
             except socket.error:
-                raise SMTPServerDisconnected
+                raise SMTPServerDisconnected('Server not connected')
         else:
-            raise SMTPServerDisconnected
+            raise SMTPServerDisconnected('please run connect() first')
  
     def putcmd(self, cmd, args=""):
         """Send a command to the server."""
@@ -245,7 +242,7 @@ class SMTP:
         # MTA's will disconnect on an ehlo. Toss an exception if 
         # that happens -ddm
         if code == -1 and len(msg) == 0:
-            raise SMTPServerDisconnected
+            raise SMTPServerDisconnected("Server not connected")
         self.ehlo_resp=msg
         if code<>250:
             return code
@@ -388,7 +385,7 @@ class SMTP:
         (code,resp) = self.mail(from_addr, esmtp_opts)
         if code <> 250:
             self.rset()
-            raise SMTPSenderRefused
+            raise SMTPSenderRefused('%s: %s' % (from_addr, resp))
         senderrs={}
         if type(to_addrs) == types.StringType:
             to_addrs = [to_addrs]
@@ -399,11 +396,13 @@ class SMTP:
         if len(senderrs)==len(to_addrs):
             # the server refused all our recipients
             self.rset()
-            raise SMTPRecipientsRefused
+            raise SMTPRecipientsRefused(string.join(
+		map(lambda x:"%s: %s" % (x[0], x[1][1]), senderrs.items()),
+					'; '))
         code=self.data(msg)
         if code <>250 :
             self.rset()
-            raise SMTPDataError
+            raise SMTPDataError('data transmission error: %s' % code)
         #if we got here then somebody got our mail
         return senderrs         
 
