@@ -1,0 +1,75 @@
+Magic: 12321
+
+Internal Form Definition File
+    (do not change)
+
+Number of forms: 1
+
+=============== FORM ===============
+Name: main_form
+Width: 170.000000
+Height: 190.000000
+Number of Objects: 4
+
+--------------------
+class: 1
+type: 1
+box: 0.000000 0.000000 170.000000 190.000000
+boxtype: 1
+colors: 47 47
+alignment: 4
+style: 0
+size: 11.000000
+lcol: 0
+label: 
+name: 
+callback: 
+argument: 
+
+--------------------
+class: 11
+type: 0
+box: 10.000000 140.000000 150.000000 40.000000
+boxtype: 1
+colors: 47 47
+alignment: 4
+style: 0
+size: 11.000000
+lcol: 0
+label: Button 1
+name: button1
+callback: 
+argument: 
+
+--------------------
+class: 11
+type: 0
+box: 10.000000 100.000000 150.000000 40.000000
+boxtype: 1
+colors: 47 47
+alignment: 4
+style: 0
+size: 11.000000
+lcol: 0
+label: Button 2
+name: button2
+callback: 
+argument: 
+
+--------------------
+class: 11
+type: 6
+box: 10.000000 10.000000 150.000000 40.000000
+boxtype: 1
+colors: 47 47
+alignment: 4
+style: 0
+size: 11.000000
+lcol: 0
+label: EXIT
+name: exitbutton
+callback: 
+argument: 
+
+==============================
+create_the_forms
