@@ -190,8 +190,6 @@ builtin_filter(self, args)
 		int ok;
 
 		if ((item = (*sqf->sq_item)(seq, i)) == NULL) {
-			if (i < len)
-				goto Fail_1;
 			if (PyErr_ExceptionMatches(PyExc_IndexError)) {
 				PyErr_Clear();
 				break;
@@ -784,6 +782,11 @@ builtin_map(self, args)
 	func = PyTuple_GetItem(args, 0);
 	n--;
 
+	if (func == Py_None && n == 1) {
+		/* map(None, S) is the same as list(S). */
+		return PySequence_List(PyTuple_GetItem(args, 1));
+	}
+
 	if ((seqs = PyMem_NEW(sequence, n)) == NULL) {
 		PyErr_NoMemory();
 		goto Fail_2;
@@ -820,7 +823,6 @@ builtin_map(self, args)
 	if ((result = (PyObject *) PyList_New(len)) == NULL)
 		goto Fail_2;
 
-	/* XXX Special case map(None, single_list) could be more efficient */
 	for (i = 0; ; ++i) {
 		PyObject *alist, *item=NULL, *value;
 		int any = 0;
@@ -840,8 +842,6 @@ builtin_map(self, args)
 			else {
 				item = (*sqp->sqf->sq_item)(sqp->seq, i);
 				if (item == NULL) {
-					if (i < sqp->len)
-						goto Fail_0;
 					if (PyErr_ExceptionMatches(
 						PyExc_IndexError))
 					{
@@ -896,6 +896,9 @@ builtin_map(self, args)
 				goto Fail_1;
 		}
 	}
+
+	if (i < len && PyList_SetSlice(result, i, len, NULL) < 0)
+		goto Fail_1;
 
 	PyMem_DEL(seqs);
 	return result;
