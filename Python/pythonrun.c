@@ -1,6 +1,6 @@
 /***********************************************************
-Copyright 1991, 1992, 1993, 1994 by Stichting Mathematisch Centrum,
-Amsterdam, The Netherlands.
+Copyright 1991-1995 by Stichting Mathematisch Centrum, Amsterdam,
+The Netherlands.
 
                         All Rights Reserved
 
@@ -178,12 +178,12 @@ run_tty_1(fp, filename)
 		return -1;
 	d = getmoduledict(m);
 	v = run_node(n, filename, d, d);
-	flushline();
 	if (v == NULL) {
 		print_error();
 		return -1;
 	}
 	DECREF(v);
+	flushline();
 	return 0;
 }
 
@@ -211,12 +211,12 @@ run_script(fp, filename)
 	} else {
 		v = run_file(fp, filename, file_input, d, d);
 	}
-	flushline();
 	if (v == NULL) {
 		print_error();
 		return -1;
 	}
 	DECREF(v);
+	flushline();
 	return 0;
 }
 
@@ -230,12 +230,12 @@ run_command(command)
 		return -1;
 	d = getmoduledict(m);
 	v = run_string(command, file_input, d, d);
-	flushline();
 	if (v == NULL) {
 		print_error();
 		return -1;
 	}
 	DECREF(v);
+	flushline();
 	return 0;
 }
 
@@ -244,6 +244,7 @@ print_error()
 {
 	object *exception, *v, *tb, *f;
 	err_fetch(&exception, &v, &tb);
+	flushline();
 	if (exception == NULL)
 		fatal("print_error called but no exception");
 	if (exception == SystemExit) {

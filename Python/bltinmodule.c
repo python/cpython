@@ -1,6 +1,6 @@
 /***********************************************************
-Copyright 1991, 1992, 1993, 1994 by Stichting Mathematisch Centrum,
-Amsterdam, The Netherlands.
+Copyright 1991-1995 by Stichting Mathematisch Centrum, Amsterdam,
+The Netherlands.
 
                         All Rights Reserved
 
@@ -922,16 +922,31 @@ builtin_pow(self, args)
 	}
 	if (coerce(&v, &w) != 0)
 		return NULL;
-	if (z!=None) {
-	 	if (coerce(&w, &z) != 0)
-			return NULL;
-		if (coerce(&v, &z) != 0)
-			return NULL;
+	if (z == None) {
+		x = (*v->ob_type->tp_as_number->nb_power)(v, w, z);
 	}
-	x = (*v->ob_type->tp_as_number->nb_power)(v, w, z);
+	else {
+		object *v1, *z1, *w2, *z2;
+		x = NULL;
+		v1 = v;
+		z1 = z;
+		if (coerce(&v1, &z1) != 0)
+			goto error2;
+		w2 = w;
+		z2 = z1;
+	 	if (coerce(&w2, &z2) != 0)
+			goto error1;
+		x = (*v1->ob_type->tp_as_number->nb_power)(v1, w2, z2);
+		DECREF(w2);
+		DECREF(z2);
+	error1:
+		DECREF(v1);
+		DECREF(z1);
+	error2:
+		;
+	}
 	DECREF(v);
 	DECREF(w);
-	if (z!=None) {DECREF(w); DECREF(v); DECREF(z); DECREF(z);}
 	return x;
 }
 
