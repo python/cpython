@@ -683,10 +683,16 @@ libinstall:	$(BUILDPYTHON) $(srcdir)/Lib/$(PLATDIR)
 	$(INSTALL_DATA) $(srcdir)/LICENSE $(LIBDEST)/LICENSE.txt
 	PYTHONPATH=$(LIBDEST)  $(RUNSHARED) \
 		./$(BUILDPYTHON) -Wi -tt $(LIBDEST)/compileall.py \
-		-x badsyntax $(LIBDEST)
+		-x 'badsyntax|site-packages' $(LIBDEST)
 	PYTHONPATH=$(LIBDEST) $(RUNSHARED) \
 		./$(BUILDPYTHON) -Wi -tt -O $(LIBDEST)/compileall.py \
-		-x badsyntax $(LIBDEST)
+		-x 'badsyntax|site-packages' $(LIBDEST)
+	PYTHONPATH=$(LIBDEST)  $(RUNSHARED) \
+		./$(BUILDPYTHON) -Wi -t $(LIBDEST)/compileall.py \
+		-x badsyntax $(LIBDEST)/site-packages
+	PYTHONPATH=$(LIBDEST) $(RUNSHARED) \
+		./$(BUILDPYTHON) -Wi -t -O $(LIBDEST)/compileall.py \
+		-x badsyntax $(LIBDEST)/site-packages
 
 # Create the PLATDIR source directory, if one wasn't distributed..
 $(srcdir)/Lib/$(PLATDIR):
