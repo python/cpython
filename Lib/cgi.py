@@ -763,6 +763,7 @@ class FieldStorage:
         Arguments, all optional:
 
         fp              : file pointer; default: sys.stdin
+            (not used when the request method is GET)
 
         headers         : header dictionary-like object; default:
             taken from environ as per CGI spec
@@ -789,7 +790,7 @@ class FieldStorage:
         self.strict_parsing = strict_parsing
         if environ.has_key('REQUEST_METHOD'):
             method = string.upper(environ['REQUEST_METHOD'])
-        if not fp and method == 'GET':
+        if method == 'GET':
             if environ.has_key('QUERY_STRING'):
                 qs = environ['QUERY_STRING']
             elif sys.argv[1:]:
