@@ -33,6 +33,11 @@ PERFORMANCE OF THIS SOFTWARE.
 
 #include "Python.h"
 
+/* just for trashcan: */
+#include "compile.h"
+#include "frameobject.h"
+#include "traceback.h"
+
 #if defined( Py_TRACE_REFS ) || defined( Py_REF_DEBUG )
 DL_IMPORT(long) _Py_RefTotal;
 #endif
@@ -822,7 +827,8 @@ _Py_Dealloc(op)
 {
 	destructor dealloc = op->ob_type->tp_dealloc;
 	_Py_ForgetReference(op);
-	op->ob_type = NULL;
+	if (_PyTrash_delete_nesting < PyTrash_UNWIND_LEVEL-1)
+		op->ob_type = NULL;
 	(*dealloc)(op);
 }
 
@@ -1045,37 +1051,77 @@ Py_ReprLeave(obj)
 
   CT 2k0325
   added better safe than sorry check for threadstate
+
+  CT 2k0422
+  complete rewrite. We now build a chain via ob_type
+  and save the limited number of types in ob_refcnt.
+  This is perfect since we don't need any memory.
+  A patch for free-threading would need just a lock.
 */
 
+#define Py_TRASHCAN_TUPLE       1
+#define Py_TRASHCAN_LIST        2
+#define Py_TRASHCAN_DICT        3
+#define Py_TRASHCAN_FRAME       4
+#define Py_TRASHCAN_TRACEBACK   5
+/* extend here if other objects want protection */
+
 int _PyTrash_delete_nesting = 0;
+
 PyObject * _PyTrash_delete_later = NULL;
 
 void
 _PyTrash_deposit_object(op)
 	PyObject *op;
 {
-	PyObject *error_type, *error_value, *error_traceback;
+	int typecode;
+	PyObject *hold = _PyTrash_delete_later;
 
-	if (PyThreadState_GET() != NULL)
-	    PyErr_Fetch(&error_type, &error_value, &error_traceback);
+	if (PyTuple_Check(op))
+		typecode = Py_TRASHCAN_TUPLE;
+	else if (PyList_Check(op))
+		typecode = Py_TRASHCAN_LIST;
+	else if (PyDict_Check(op))
+		typecode = Py_TRASHCAN_DICT;
+	else if (PyFrame_Check(op))
+		typecode = Py_TRASHCAN_FRAME;
+	else if (PyTraceBack_Check(op))
+		typecode = Py_TRASHCAN_TRACEBACK;
+	op->ob_refcnt = typecode;
 
-	if (!_PyTrash_delete_later)
-		_PyTrash_delete_later = PyList_New(0);
-	if (_PyTrash_delete_later)
-		PyList_Append(_PyTrash_delete_later, (PyObject *)op);
-
-	if (PyThreadState_GET() != NULL)
-	    PyErr_Restore(error_type, error_value, error_traceback);
+	op->ob_type = (PyTypeObject*)_PyTrash_delete_later;
+	_PyTrash_delete_later = op;
 }
 
 void
-_PyTrash_destroy_list()
+_PyTrash_destroy_chain()
 {
 	while (_PyTrash_delete_later) {
 		PyObject *shredder = _PyTrash_delete_later;
-		_PyTrash_delete_later = NULL;
+		_PyTrash_delete_later = (PyObject*) shredder->ob_type;
+
+		switch (shredder->ob_refcnt) {
+		case Py_TRASHCAN_TUPLE:
+			shredder->ob_type = &PyTuple_Type;
+			break;
+		case Py_TRASHCAN_LIST:
+			shredder->ob_type = &PyList_Type;
+			break;
+		case Py_TRASHCAN_DICT:
+			shredder->ob_type = &PyDict_Type;
+			break;
+		case Py_TRASHCAN_FRAME:
+			shredder->ob_type = &PyFrame_Type;
+			break;
+		case Py_TRASHCAN_TRACEBACK:
+			shredder->ob_type = &PyTraceBack_Type;
+			break;
+		}
+		_Py_NewReference(shredder);
+
 		++_PyTrash_delete_nesting;
 		Py_DECREF(shredder);
 		--_PyTrash_delete_nesting;
 	}
 }
+

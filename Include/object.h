@@ -536,6 +536,11 @@ times.
   Also, we could do an exact stack measure then.
   Unfortunately, deallocations also take place when
   the thread state is undefined.
+
+  CT 2k0422 complete rewrite.
+  There is no need to allocate new objects.
+  Everything is done vialob_refcnt and ob_type now.
+  Adding support for free-threading should be easy, too.
 */
 
 #define PyTrash_UNWIND_LEVEL 50
@@ -551,11 +556,11 @@ times.
 			_PyTrash_deposit_object((PyObject*)op);\
 		--_PyTrash_delete_nesting; \
 		if (_PyTrash_delete_later && _PyTrash_delete_nesting <= 0) \
-			_PyTrash_destroy_list(); \
+			_PyTrash_destroy_chain(); \
 	} \
 
 extern DL_IMPORT(void) _PyTrash_deposit_object Py_PROTO((PyObject*));
-extern DL_IMPORT(void) _PyTrash_destroy_list Py_PROTO(());
+extern DL_IMPORT(void) _PyTrash_destroy_chain Py_PROTO(());
 
 extern DL_IMPORT(int) _PyTrash_delete_nesting;
 extern DL_IMPORT(PyObject *) _PyTrash_delete_later;
@@ -564,6 +569,7 @@ extern DL_IMPORT(PyObject *) _PyTrash_delete_later;
 
 #define xxPy_TRASHCAN_SAFE_BEGIN(op) 
 #define xxPy_TRASHCAN_SAFE_END(op) ;
+
 #ifdef __cplusplus
 }
 #endif
