@@ -366,6 +366,7 @@ poll_register(pollObject *self, PyObject *args)
 {
 	PyObject *o, *key, *value;
 	int fd, events = POLLIN | POLLPRI | POLLOUT;
+	int err;
 
 	if (!PyArg_ParseTuple(args, "O|i:register", &o, &events)) {
 		return NULL;
@@ -376,11 +377,20 @@ poll_register(pollObject *self, PyObject *args)
 
 	/* Add entry to the internal dictionary: the key is the 
 	   file descriptor, and the value is the event mask. */
-	if ( (NULL == (key = PyInt_FromLong(fd))) ||
-	     (NULL == (value = PyInt_FromLong(events))) ||
-	     (PyDict_SetItem(self->dict, key, value)) == -1) {
+	key = PyInt_FromLong(fd);
+	if (key == NULL)
+		return NULL;
+	value = PyInt_FromLong(events);
+	if (value == NULL) {
+		Py_DECREF(key);
 		return NULL;
 	}
+	err = PyDict_SetItem(self->dict, key, value);
+	Py_DECREF(key);
+	Py_DECREF(value);
+	if (err < 0)
+		return NULL;
+
 	self->ufd_uptodate = 0;
 		       
 	Py_INCREF(Py_None);
