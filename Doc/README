@@ -165,9 +165,10 @@ the new series of Python HOWTO documents which is being coordinated by
 Andrew Kuchling <amk@acm.org>.  The file templates/howto.tex is a
 commented example which may be used a template.  A script to "do the
 right thing" to format a howto document is included as
-tools/mkhowto.sh.  Support for this document class is still new, but
-is expected to evolve rapidly.  Use "mkhowto.sh --help" for
-information on using the formatting tool.
+tools/mkhowto.sh.  These documents can be formatted as HTML, PDF,
+PostScript, or ASCII files.  Support for this document class is
+still new, but is expected to evolve rapidly.  Use "mkhowto.sh --help"
+for information on using the formatting tool.
 
 For authors of module documentation, there is a file
 templates/module.tex which may be used as a template for a module
