@@ -79,7 +79,7 @@ class install_lib (Command):
 
         build_cmd = self.find_peer (build_cmd)
         build_files = build_cmd.get_outputs()
-        build_dir = build_cmd.get_option (cmd_option)
+        build_dir = getattr (build_cmd, cmd_option)
 
         prefix_len = len (build_dir) + len (os.sep)
         outputs = []

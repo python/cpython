@@ -64,7 +64,7 @@ class bdist (Command):
                   "invalid archive format '%s'" % self.format
 
         sub_cmd = self.find_peer (cmd_name)
-        sub_cmd.set_option ('format', self.format)
+        sub_cmd.format = self.format
         self.run_peer (cmd_name)
 
     # run()
