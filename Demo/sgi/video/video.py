@@ -31,12 +31,11 @@ def openvideo(name):
         sys.exit(1)
     line = f.readline()
     if not line: raise EndOfFile
+    colorinfo = (8, 0, 0, 0)
     if line[:4] == 'CMIF':
 	if line[:14] == 'CMIF video 2.0':
 	    line = f.readline()
 	    colorinfo = eval(line[:-1])
-	else:
-	    colorinfo = (8,0,0,0)
 	line = f.readline()
     x = eval(line[:-1])
     if len(x) == 3: w, h, pf = x
