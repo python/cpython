@@ -170,7 +170,7 @@ TESTOPTS=
 TESTPROG=	$(srcdir)/Lib/test/regrtest.py
 test:		python
 		-rm -f $(srcdir)/Lib/test/*.pyc
-		PYTHONPATH= ./python $(TESTPROG) $(TESTOPTS)
+		-PYTHONPATH= ./python $(TESTPROG) $(TESTOPTS)
 		PYTHONPATH= ./python $(TESTPROG) $(TESTOPTS)
 
 # Install everything
