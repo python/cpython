@@ -3,8 +3,6 @@
 import warnings
 warnings.filterwarnings('ignore', r".*posixfile module",
                         DeprecationWarning, 'posixfile$')
-warnings.filterwarnings('ignore', r".*statcache module",
-                        DeprecationWarning, 'statcache$')
 
 from test.test_support import verbose
 
@@ -80,7 +78,6 @@ import shlex
 import shutil
 import smtplib
 import sndhdr
-import statcache
 import statvfs
 import stringold
 import sunau

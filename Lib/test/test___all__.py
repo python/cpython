@@ -9,8 +9,6 @@ warnings.filterwarnings("ignore", ".* 'pre' .*", DeprecationWarning,
                         r'pre$')
 warnings.filterwarnings("ignore", ".* regsub .*", DeprecationWarning,
                         r'^regsub$')
-warnings.filterwarnings("ignore", ".* statcache .*", DeprecationWarning,
-                        r'statcache$')
 
 class AllTest(unittest.TestCase):
 
@@ -148,7 +146,6 @@ class AllTest(unittest.TestCase):
         self.check_all("socket")
         self.check_all("sre")
         self.check_all("_strptime")
-        self.check_all("statcache")
         self.check_all("symtable")
         self.check_all("tabnanny")
         self.check_all("tarfile")
