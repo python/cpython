@@ -402,6 +402,15 @@ def unpack_other(object, indent = 0):
 		attrs = attrs + object.__members__
 	if hasattr(object, '__methods__'):
 		attrs = attrs + object.__methods__
+	if hasattr(object, '__dict__'):
+		attrs = attrs + object.__dict__.keys()
+	if hasattr(object, '__slots__'):
+		# XXX??
+		attrs = attrs + object.__slots__
+	if hasattr(object, "__class__") and "__class__" not in attrs:
+		attrs.append("__class__")
+	if hasattr(object, "__doc__") and "__doc__" not in attrs:
+		attrs.append("__doc__")
 	items = []
 	for attr in attrs:
 		items.append((attr, getattr(object, attr)))
