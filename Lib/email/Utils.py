@@ -13,13 +13,13 @@ import warnings
 from cStringIO import StringIO
 from types import ListType
 
-from rfc822 import quote
-from rfc822 import AddressList as _AddressList
-from rfc822 import mktime_tz
+from email._parseaddr import quote
+from email._parseaddr import AddressList as _AddressList
+from email._parseaddr import mktime_tz
 
 # We need wormarounds for bugs in these methods in older Pythons (see below)
-from rfc822 import parsedate as _parsedate
-from rfc822 import parsedate_tz as _parsedate_tz
+from email._parseaddr import parsedate as _parsedate
+from email._parseaddr import parsedate_tz as _parsedate_tz
 
 try:
     True, False
