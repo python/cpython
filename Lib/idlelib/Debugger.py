@@ -297,6 +297,7 @@ class Debugger(bdb.Bdb):
     # A literal copy of Bdb.set_break() without the print statement at the end
     def set_break(self, filename, lineno, temporary=0, cond = None):
         import linecache # Import as late as possible
+        filename = self.canonic(filename)
         line = linecache.getline(filename, lineno)
         if not line:
             return 'That line does not exist!'
