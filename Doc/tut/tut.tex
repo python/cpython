@@ -1186,6 +1186,39 @@ f()
 
 will print \code{5}.
 
+\strong{Important warning:}  The default value is evaluated only once.
+This makes a difference when the default is a mutable object such as a
+list or dictionary.  For example, the following function accumulates
+the arguments passed to it on subsequent calls:
+
+\begin{verbatim}
+def f(a, l = []):
+    l.append(a)
+    return a
+print f(1)
+print f(2)
+print f(3)
+\end{verbatim}
+
+This will print
+
+\begin{verbatim}
+[1]
+[1, 2]
+[1, 2, 3]
+\end{verbatim}
+
+If you don't want the default to be shared between subsequent calls,
+you can write the function like this instead:
+
+\begin{verbatim}
+def f(a, l = None):
+    if l is None:
+        l = []
+    l.append(a)
+    return a
+\end{verbatim}
+
 \subsection{Keyword Arguments}
 \label{keywordArgs}
 
@@ -1574,6 +1607,7 @@ number of elements as the length of the tuple.  Note that multiple
 assignment is really just a combination of tuple packing and tuple
 unpacking!
 
+% XXX This is no longer necessary!
 Occasionally, the corresponding operation on lists is useful: \emph{list
 unpacking}.  This is supported by enclosing the list of variables in
 square brackets:
@@ -1582,6 +1616,9 @@ square brackets:
 >>> a = ['spam', 'eggs', 100, 1234]
 >>> [a1, a2, a3, a4] = a
 \end{verbatim}
+
+% XXX Add a bit on the difference between tuples and lists.
+% XXX Also explain that a tuple can *contain* a mutable object!
 
 \section{Dictionaries}
 \label{dictionaries}
@@ -1857,6 +1894,8 @@ This imports all names except those beginning with an underscore
 
 \subsection{The Module Search Path}
 \label{searchPath}
+
+% XXX Need to document that a lone .pyc/.pyo is acceptable too!
 
 \indexiii{module}{search}{path}
 When a module named \module{spam} is imported, the interpreter searches
