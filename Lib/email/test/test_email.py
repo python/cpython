@@ -1926,6 +1926,16 @@ class TestMiscellaneous(unittest.TestCase):
            [('Al Person', 'aperson@dom.ain'),
             ('Bud Person', 'bperson@dom.ain')])
 
+    def test_getaddresses_nasty(self):
+        eq = self.assertEqual
+        eq(Utils.getaddresses(['foo: ;']), [('', '')])
+        eq(Utils.getaddresses(
+           ['[]*-- =~$']),
+           [('', ''), ('', ''), ('', '*--')])
+        eq(Utils.getaddresses(
+           ['foo: ;', '"Jason R. Mastaler" <jason@dom.ain>']),
+           [('', ''), ('Jason R. Mastaler', 'jason@dom.ain')])
+
     def test_utils_quote_unquote(self):
         eq = self.assertEqual
         msg = Message()
