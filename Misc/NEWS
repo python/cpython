@@ -180,6 +180,8 @@ Core and builtins
 Extension modules
 -----------------
 
+- array objects now support the copy module
+
 - cStringIO.writelines() now accepts any iterable argument and writes
   the lines one at a time rather than joining them and writing once.
   Made a parallel change to StringIO.writelines().  Saves memory and
