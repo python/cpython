@@ -2,8 +2,8 @@ FAQ Wizard
 ----------
 
 Author: Guido van Rossum <guido@python.org>
-Version: 0.7
-Date: 14 August 1997
+Version: 0.8
+Date: 27 August 1997
 
 
 This is a CGI program that maintains a user-editable FAQ.  It uses RCS
@@ -27,14 +27,20 @@ Setup Information
 
 This assumes you are familiar with Python, with your http server, and
 with running CGI scripts under your http server.  You need Python 1.4
-or better.  
+or better.
+
+Select a place where the Python modules that constitute the FAQ wizard
+will live (the directory where you unpacked it is an obvious choice).
+This will be called the SRCDIR.  This directory should not be writable
+by other users of your system (since they would be able to execute
+arbitrary code by invoking the FAQ wizard's CGI script).
 
 Create a dedicated working directory, preferably one that's not
-directly reachable from your http server.  Drop the Python modules
-mentioned above in the working directory.  Create a subdirectory named
-RCS.  Make both the working directory and the RCS subdirectory
-wrld-writable.  (This is essential, since the FAQ wizard runs as use
-nobody, and needs to create additional files here!)
+directly reachable from your http server.  This will be called the
+FAQDIR.  Create a subdirectory named RCS.  Make both the working
+directory and the RCS subdirectory wrld-writable.  (This is essential,
+since the FAQ wizard runs as use nobody, and needs to create
+additional files here!)
 
 Edit faqconf.py to reflect your setup.  You only need to edit the top
 part, up till the line of all dashes.  The comments should guide you
@@ -45,12 +51,13 @@ Don't forget to edit the SECTION_TITLES variables to reflect the set
 of section titles for your FAQ!
 
 Next, edit faqw.py to reflect the pathname of your Python interpreter
-and the directory you just created.  Then install in in your cgi-bin
-directory.  Make sure that it is world-executable.  You should now be
-able to connect to the FAQ wizard by entering the following URL in
-your web client (subsituting the appropriate host and port for
-"your.web.server", and perhaps specifying a different directory for
-"cgi-bin" if local conventions so dictate):
+and the values for SRCDIR and FAQDIR that you just chose.  Then
+install faqw.py in your cgi-bin directory.  Make sure that it is
+world-executable.  You should now be able to connect to the FAQ wizard
+by entering the following URL in your web client (subsituting the
+appropriate host and port for "your.web.server", and perhaps
+specifying a different directory for "cgi-bin" if local conventions so
+dictate):
 
 	http://your.web.server/cgi-bin/faqw.py
 
@@ -61,11 +68,11 @@ and debugging CGI scripts, including setup debugging.  This
 documentation is repeated in the doc string in the cgi module; try
 ``import cgi; print cgi.__doc__''.
 
-Assuming this woks, you should now be able to add the first entry to
+Assuming this works, you should now be able to add the first entry to
 your FAQ using the FAQ wizard interface.  This creates a file
 faq01.001.htp in your working directory and an RCS revision history
 file faq01.001.htp,v in the RCS subdirectory.  You can now exercise
 the other FAQ wizard features (search, index, whole FAQ, what's new,
-and roulette).
+roulette, and so on).
 
 --Guido van Rossum (home page: http://www.python.org/~guido/)

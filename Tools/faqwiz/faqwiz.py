@@ -7,8 +7,7 @@ program to maintain some other FAQ than the Python FAQ is contained in
 the configuration module, faqconf.py.
 
 Note that this is not an executable script; it's an importable module.
-The actual script in cgi-bin minimal; it's appended at the end of this
-file as a string literal.
+The actual script to place in cgi-bin is faqw.py.
 
 """
 
@@ -263,7 +262,20 @@ class FaqEntry:
 	self.emit_marks()
 	emit(ENTRY_HEADER2, self)
 	pre = 0
+	raw = 0
 	for line in string.split(self.body, '\n'):
+	    # Allow the user to insert raw html into a FAQ answer
+	    # (Skip Montanaro, with changes by Guido)
+	    tag = string.lower(string.rstrip(line))
+	    if tag == '<html>':
+		raw = 1
+		continue
+	    if tag == '</html>':
+		raw = 0
+		continue
+	    if raw:
+		print line
+		continue
 	    if not string.strip(line):
 		if pre:
 		    print '</PRE>'
@@ -578,6 +590,7 @@ class FaqWizard:
 	    return
 	file = whrandom.choice(files)
 	self.prologue(T_ROULETTE)
+	emit(ROULETTE)
 	self.dir.show(file)
 
     def do_help(self):
@@ -818,18 +831,3 @@ class FaqWizard:
 
 wiz = FaqWizard()
 wiz.go()
-
-# This bootstrap script should be placed in your cgi-bin directory.
-# You only need to edit the first two lines: change
-# /usr/local/bin/python to where your Python interpreter lives change
-# the value for FAQDIR to where your FAQ lives.  The faqwiz.py and
-# faqconf.py files should live there, too.
-
-BOOTSTRAP = """\
-#! /usr/local/bin/python
-FAQDIR = "/usr/people/guido/python/FAQ"
-import sys, os
-os.chdir(FAQDIR)
-sys.path.insert(0, FAQDIR)
-import faqwiz
-"""
