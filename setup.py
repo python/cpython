@@ -341,8 +341,15 @@ class PyBuildExt(build_ext):
             locale_libs = ['intl']
         else:
             locale_libs = []
+        if platform == 'darwin':
+            locale_extra_link_args = ['-framework', 'CoreFoundation']
+        else:
+            locale_extra_link_args = []
+        
+
         exts.append( Extension('_locale', ['_localemodule.c'],
-                               libraries=locale_libs ) )
+                               libraries=locale_libs,
+                               extra_link_args=locale_extra_link_args) )
 
         # Modules with some UNIX dependencies -- on by default:
         # (If you have a really backward UNIX, select and socket may not be
