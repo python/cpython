@@ -1,10 +1,10 @@
-# Copyright (C) 2001,2002 Python Software Foundation
-# Author: barry@zope.com (Barry Warsaw)
+# Copyright (C) 2001-2004 Python Software Foundation
+# Author: barry@python.org (Barry Warsaw)
 
 """A package for parsing, handling, and generating email messages.
 """
 
-__version__ = '2.5.4'
+__version__ = '2.5.5'
 
 __all__ = [
     'base64MIME',
