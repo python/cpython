@@ -558,7 +558,7 @@ PyWeakref_NewRef(PyObject *ob, PyObject *callback)
 
     if (!PyType_SUPPORTS_WEAKREFS(ob->ob_type)) {
         PyErr_Format(PyExc_TypeError,
-                     "'%s' objects are not weakly referencable",
+		     "cannot create weak reference to '%s' object",
                      ob->ob_type->tp_name);
         return NULL;
     }
@@ -602,7 +602,7 @@ PyWeakref_NewProxy(PyObject *ob, PyObject *callback)
 
     if (!PyType_SUPPORTS_WEAKREFS(ob->ob_type)) {
         PyErr_Format(PyExc_TypeError,
-                     "'%s' objects are not weakly referencable",
+		     "cannot create weak reference to '%s' object",
                      ob->ob_type->tp_name);
         return NULL;
     }
