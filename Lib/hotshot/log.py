@@ -51,6 +51,9 @@ class LogReader:
         self._append = self._stack.append
         self._pop = self._stack.pop
 
+    def close(self):
+        self._reader.close()
+
     def addinfo(self, key, value):
         """This method is called for each additional ADD_INFO record.
 

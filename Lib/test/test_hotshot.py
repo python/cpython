@@ -31,10 +31,7 @@ class UnlinkingLogReader(hotshot.log.LogReader):
         try:
             return hotshot.log.LogReader.next(self)
         except (IndexError, StopIteration):
-            # XXX This fails on Windows because the named file is still
-            # XXX open.  Offhand I couldn't find an appropriate way to close
-            # XXX the file object, or even where the heck it is.  LogReader
-            # XXX in particular doesn't have a close() method.
+            self.close()
             os.unlink(self.__logfn)
             raise
 
