@@ -414,17 +414,14 @@ defines the global namespace of the module in which the function was
 defined; \member{func_dict} or \member{__dict__} contains the
 namespace supporting arbitrary function attributes;
 \member{func_closure} is \code{None} or a tuple of cells that contain
-binding for the function's free variables.
+bindings for the function's free variables.
 
-Of these, \member{func_code}, \member{func_defaults}, \member{func_closure},
+Of these, \member{func_code}, \member{func_defaults}, 
 \member{func_doc}/\member{__doc__}, and
 \member{func_dict}/\member{__dict__} may be writable; the
 others can never be changed.  Additional information about a
 function's definition can be retrieved from its code object; see the
 description of internal types below.
-
-In Python 2.1, the \member{func_closure} slot is always \code{None}
-unless nested scopes are enabled.  (See the appendix.)
 
 \withsubitem{(function attribute)}{
   \ttindex{func_doc}
@@ -432,6 +429,7 @@ unless nested scopes are enabled.  (See the appendix.)
   \ttindex{__name__}
   \ttindex{__dict__}
   \ttindex{func_defaults}
+  \ttindex{func_closure}
   \ttindex{func_code}
   \ttindex{func_globals}
   \ttindex{func_dict}}
