@@ -1349,7 +1349,9 @@ builtin_raw_input(self, args)
 			po = NULL;
 			prompt = "";
 		}
+		Py_BEGIN_ALLOW_THREADS
 		s = PyOS_Readline(prompt);
+		Py_END_ALLOW_THREADS
 		Py_XDECREF(po);
 		if (s == NULL) {
 			PyErr_SetNone(PyExc_KeyboardInterrupt);
