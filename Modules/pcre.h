@@ -34,6 +34,7 @@ extern "C" {
 #define PCRE_EXTRA           0x0040
 #define PCRE_NOTBOL          0x0080
 #define PCRE_NOTEOL          0x0100
+#define PCRE_UNGREEDY        0x0400
 #ifdef FOR_PYTHON
 #define PCRE_LOCALE          0x0200
 #endif
