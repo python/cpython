@@ -964,7 +964,7 @@ _PyObject_DebugMalloc(size_t nbytes)
 		return NULL;
 	}
 
-	p = PyObject_Malloc(total);
+	p = (uchar *)PyObject_Malloc(total);
 	if (p == NULL)
 		return NULL;
 
@@ -1231,7 +1231,7 @@ _PyObject_DebugDumpStats(void)
 	/* # of free pools + pools not yet carved out of current arena */
 	uint numfreepools = 0;
 	/* # of bytes for arena alignment padding */
-	uint arena_alignment = 0;
+	ulong arena_alignment = 0;
 	/* # of bytes in used and full pools used for pool_headers */
 	ulong pool_header_bytes = 0;
 	/* # of bytes in used and full pools wasted due to quantization,
