@@ -48,7 +48,7 @@ Proposal
   services of Python objects.  This proposal can be viewed as one
   components of a Python C interface consisting of several components.
 
-  From the viewpoint of of C access to Python services, we have (as
+  From the viewpoint of C access to Python services, we have (as
   suggested by Guido in off-line discussions):
 
   - "Very high level layer": two or three functions that let you exec or
@@ -68,7 +68,7 @@ Proposal
   - "Concrete objects layer": This is the public type-dependent
     interface provided by the standard built-in types, such as floats,
     strings, and lists.  This interface exists and is currently
-    documented by the collection of include files provides with the
+    documented by the collection of include files provided with the
     Python distributions.
 
   From the point of view of Python accessing services provided by C
@@ -467,7 +467,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 	  for subsequent processing.
 
 	  0 is returned on success.  buffer and buffer_len are only
-	  set in case no error occurrs. Otherwise, -1 is returned and
+	  set in case no error occurs. Otherwise, -1 is returned and
 	  an exception set.
 
        */
@@ -704,7 +704,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
      PyAPI_FUNC(PyObject *) PyNumber_Or(PyObject *o1, PyObject *o2);
 
        /*
-	 Returns the result of bitwise or or o1 and o2 on success, or
+	 Returns the result of bitwise or on o1 and o2 on success, or
 	 NULL on failure.  This is the equivalent of the Python
 	 expression: o1|o2.
 
@@ -1041,7 +1041,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 	  Iterate over seq.  Result depends on the operation:
 	  PY_ITERSEARCH_COUNT:  return # of times obj appears in seq; -1 if
 	  	error.
-	  PY_ITERSEARCH_INDEX:  return 0-based index of first occurence of
+	  PY_ITERSEARCH_INDEX:  return 0-based index of first occurrence of
 	  	obj in seq; set ValueError and return -1 if none found;
 	  	also return -1 on error.
 	  PY_ITERSEARCH_CONTAINS:  return 1 if obj in seq, else 0; -1 on
