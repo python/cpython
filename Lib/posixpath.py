@@ -400,9 +400,11 @@ def abspath(path):
 def realpath(filename):
     """Return the canonical path of the specified filename, eliminating any
 symbolic links encountered in the path."""
-    filename = abspath(filename)
-
-    bits = ['/'] + filename.split('/')[1:]
+    if isabs(filename):
+        bits = ['/'] + filename.split('/')[1:]
+    else:
+        bits = filename.split('/')
+        
     for i in range(2, len(bits)+1):
         component = join(*bits[0:i])
         # Resolve symbolic links.
@@ -410,13 +412,13 @@ symbolic links encountered in the path."""
             resolved = _resolve_link(component)
             if resolved is None:
                 # Infinite loop -- return original component + rest of the path
-                return join(*([component] + bits[i:]))
+                return abspath(join(*([component] + bits[i:])))
             else:
                 newpath = join(*([resolved] + bits[i:]))
-                return realpath(newpath)
+                return realpath(newpath)        
 
-    return filename
-
+    return abspath(filename)
+    
 
 def _resolve_link(path):
     """Internal helper function.  Takes a path and follows symlinks
