@@ -18,6 +18,9 @@ extern "C" {
   This would typically be done in your init function.
 
 */
+#define PycString_IMPORT \
+  PycStringIO = (struct PycStringIO_CAPI*)PyCObject_Import("cStringIO", \
+                                                           "cStringIO_CAPI")
 
 /* Basic functions to manipulate cStringIO objects from C */
 
@@ -46,35 +49,13 @@ static struct PycStringIO_CAPI {
      */
   PyTypeObject *InputType, *OutputType;
 
-} * PycStringIO = NULL;
+} *PycStringIO;
 
 /* These can be used to test if you have one */
 #define PycStringIO_InputCheck(O) \
   ((O)->ob_type==PycStringIO->InputType)
 #define PycStringIO_OutputCheck(O) \
   ((O)->ob_type==PycStringIO->OutputType)
-
-static void *
-xxxPyCObject_Import(char *module_name, char *name)
-{
-  PyObject *m, *c;
-  void *r=NULL;
-  
-  if((m=PyImport_ImportModule(module_name)))
-    {
-      if((c=PyObject_GetAttrString(m,name)))
-	{
-	  r=PyCObject_AsVoidPtr(c);
-	  Py_DECREF(c);
-	}
-      Py_DECREF(m);
-    }
-
-  return r;
-}
-
-#define PycString_IMPORT \
-  PycStringIO=(struct PycStringIO_CAPI*)xxxPyCObject_Import("cStringIO", "cStringIO_CAPI")
 
 #ifdef __cplusplus
 }
