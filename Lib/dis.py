@@ -139,17 +139,17 @@ def_op('UNARY_POSITIVE', 10)
 def_op('UNARY_NEGATIVE', 11)
 def_op('UNARY_NOT', 12)
 def_op('UNARY_CONVERT', 13)
-def_op('UNARY_CALL', 14)
+
 def_op('UNARY_INVERT', 15)
 
 def_op('BINARY_POWER', 19)
+
 def_op('BINARY_MULTIPLY', 20)
 def_op('BINARY_DIVIDE', 21)
 def_op('BINARY_MODULO', 22)
 def_op('BINARY_ADD', 23)
 def_op('BINARY_SUBTRACT', 24)
 def_op('BINARY_SUBSCR', 25)
-def_op('BINARY_CALL', 26)
 
 def_op('SLICE+0', 30)
 def_op('SLICE+1', 31)
@@ -168,6 +168,7 @@ def_op('DELETE_SLICE+3', 53)
 
 def_op('STORE_SUBSCR', 60)
 def_op('DELETE_SUBSCR', 61)
+
 def_op('BINARY_LSHIFT', 62)
 def_op('BINARY_RSHIFT', 63)
 def_op('BINARY_AND', 64)
@@ -179,11 +180,12 @@ def_op('PRINT_ITEM', 71)
 def_op('PRINT_NEWLINE', 72)
 
 def_op('BREAK_LOOP', 80)
-def_op('RAISE_EXCEPTION', 81)
+
 def_op('LOAD_LOCALS', 82)
 def_op('RETURN_VALUE', 83)
+
 def_op('EXEC_STMT', 85)
-def_op('BUILD_FUNCTION', 86)
+
 def_op('POP_BLOCK', 87)
 def_op('END_FINALLY', 88)
 def_op('BUILD_CLASS', 89)
@@ -204,12 +206,12 @@ name_op('UNPACK_VARARG', 99)	# Minimal number of arguments
 def_op('LOAD_CONST', 100)	# Index in const list 
 hasconst.append(100)
 name_op('LOAD_NAME', 101)	# Index in name list 
-hascompare.append(106)
 def_op('BUILD_TUPLE', 102)	# Number of tuple items 
 def_op('BUILD_LIST', 103)	# Number of list items 
 def_op('BUILD_MAP', 104)	# Always zero for now 
 name_op('LOAD_ATTR', 105)	# Index in name list 
 def_op('COMPARE_OP', 106)	# Comparison operator 
+hascompare.append(106)
 name_op('IMPORT_NAME', 107)	# Index in name list 
 name_op('IMPORT_FROM', 108)	# Index in name list 
 
@@ -221,6 +223,7 @@ jrel_op('FOR_LOOP', 114)	# Number of bytes to skip
 
 name_op('LOAD_LOCAL', 115)	# Index in name list
 name_op('LOAD_GLOBAL', 116)	# Index in name list
+
 def_op('SET_FUNC_ARGS', 117)	# Argcount
 
 jrel_op('SETUP_LOOP', 120)	# Distance to target address
