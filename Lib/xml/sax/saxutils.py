@@ -198,14 +198,16 @@ def prepare_input_source(source, base = ""):
         source = xmlreader.InputSource(source)
         source.setByteStream(f)
 
-    if source.getByteStream() == None:
+    if source.getByteStream() is None:
         sysid = source.getSystemId()
-        if urlparse.urlparse(sysid)[0] == '':
+        if os.path.isfile(sysid):
             basehead = os.path.split(os.path.normpath(base))[0]
             source.setSystemId(os.path.join(basehead, sysid))
+            f = open(sysid, "rb")
         else:
             source.setSystemId(urlparse.urljoin(base, sysid))
+            f = urllib.urlopen(source.getSystemId())
             
-        source.setByteStream(urllib.urlopen(source.getSystemId()))
+        source.setByteStream(f)
         
     return source
