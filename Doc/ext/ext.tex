@@ -718,10 +718,9 @@ convertible to Unicode into a character buffer. It only works for
 encoded data without embedded \NULL{} bytes.
 
 The variant reads one C variable and stores into two C variables, the
-first one a pointer to an encoding name string (\var{encoding}), the
+first one a pointer to an encoding name string (\var{encoding}), and the
 second a pointer to a pointer to a character buffer (\var{**buffer},
-the buffer used for storing the encoded data) and the third one a
-pointer to an integer (\var{*buffer_length}, the buffer length).
+the buffer used for storing the encoded data).
 
 The encoding name must map to a registered codec. If set to \NULL{},
 the default encoding is used.
@@ -2138,7 +2137,7 @@ start an interactive interpreter and have a short session like this:
 
 \begin{verbatim}
 >>> import distutils.sysconfig
->>> distutils.sysconfig.LINKFORSHARED 
+>>> distutils.sysconfig.get_config_var('LINKFORSHARED')
 '-Xlinker -export-dynamic'
 \end{verbatim}
 \refstmodindex{distutils.sysconfig}
