@@ -502,6 +502,16 @@ S\code{[\var{start}:\var{end}]}.  Optional arguments \var{start} and
 \var{end} are interpreted as in slice notation.
 \end{methoddesc}
 
+\begin{methoddesc}[string]{decode}{\optional{encoding\optional{, errors}}}
+Decodes the string using the codec registered for \var{encoding}.
+\var{encoding} defaults to the default string encoding.  \var{errors}
+may be given to set a different error handling scheme.  The default is
+\code{'strict'}, meaning that encoding errors raise
+\exception{ValueError}.  Other possible values are \code{'ignore'} and
+\code{replace'}.
+\versionadded{2.2}
+\end{methoddesc}
+
 \begin{methoddesc}[string]{encode}{\optional{encoding\optional{,errors}}}
 Return an encoded version of the string.  Default encoding is the current
 default string encoding.  \var{errors} may be given to set a different
