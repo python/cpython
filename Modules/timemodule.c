@@ -616,7 +616,7 @@ inittime()
 	/* Squirrel away the module's dictionary for the y2k check */
 	Py_INCREF(d);
 	moddict = d;
-#ifdef HAVE_TZNAME
+#if defined(HAVE_TZNAME) && !defined(__GNU_LIBRARY__)
 	tzset();
 #ifdef PYOS_OS2
 	ins(d, "timezone", PyInt_FromLong((long)_timezone));
@@ -634,32 +634,42 @@ inittime()
 #endif
 	ins(d, "daylight", PyInt_FromLong((long)daylight));
 	ins(d, "tzname", Py_BuildValue("(zz)", tzname[0], tzname[1]));
-#else /* !HAVE_TZNAME */
+#else /* !HAVE_TZNAME && !__GNU_LIBRARY__ */
 #if HAVE_TM_ZONE
+#error "HAVE_TM_ZONE"
 	{
 #define YEAR ((time_t)((365 * 24 + 6) * 3600))
 		time_t t;
 		struct tm *p;
-		long winterzone, summerzone;
-		char wintername[10], summername[10];
-		/* XXX This won't work on the southern hemisphere.
-		  XXX Anybody got a better idea? */
+		long janzone, julyzone;
+		char janname[10], julyname[10];
 		t = (time((time_t *)0) / YEAR) * YEAR;
 		p = localtime(&t);
-		winterzone = -p->tm_gmtoff;
-		strncpy(wintername, p->tm_zone ? p->tm_zone : "   ", 9);
-		wintername[9] = '\0';
+		janzone = -p->tm_gmtoff;
+		strncpy(janname, p->tm_zone ? p->tm_zone : "   ", 9);
+		janname[9] = '\0';
 		t += YEAR/2;
 		p = localtime(&t);
-		summerzone = -p->tm_gmtoff;
-		strncpy(summername, p->tm_zone ? p->tm_zone : "   ", 9);
-		summername[9] = '\0';
-		ins(d, "timezone", PyInt_FromLong(winterzone));
-		ins(d, "altzone", PyInt_FromLong(summerzone));
-		ins(d, "daylight",
-                    PyInt_FromLong((long)(winterzone != summerzone)));
-		ins(d, "tzname",
-                    Py_BuildValue("(zz)", wintername, summername));
+		julyzone = -p->tm_gmtoff;
+		strncpy(julyname, p->tm_zone ? p->tm_zone : "   ", 9);
+		julyname[9] = '\0';
+		
+		if( janzone < julyzone ) {
+			/* DST is reversed in the southern hemisphere */
+			ins(d, "timezone", PyInt_FromLong(julyzone));
+			ins(d, "altzone", PyInt_FromLong(janzone));
+			ins(d, "daylight",
+			    PyInt_FromLong((long)(janzone != julyzone)));
+			ins(d, "tzname",
+			    Py_BuildValue("(zz)", julyname, janname));
+		} else {
+			ins(d, "timezone", PyInt_FromLong(janzone));
+			ins(d, "altzone", PyInt_FromLong(julyzone));
+			ins(d, "daylight",
+			    PyInt_FromLong((long)(janzone != julyzone)));
+			ins(d, "tzname",
+			    Py_BuildValue("(zz)", janname, julyname));
+		}
 	}
 #else
 #ifdef macintosh
