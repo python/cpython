@@ -787,7 +787,7 @@ complex_subtype_from_string(PyTypeObject *type, PyObject *v)
 
 		}  /* end of switch  */
 
-	} while (*s!='\0' && !sw_error);
+	} while (s - start < len && !sw_error);
 
 	if (sw_error) {
 		PyErr_SetString(PyExc_ValueError,
