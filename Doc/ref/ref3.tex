@@ -133,9 +133,10 @@ Its truth value is false.
 \item[NotImplemented]
 This type has a single value.  There is a single object with this value.
 This object is accessed through the built-in name \code{NotImplemented}.
-Binary number methods may return this value if they do not implement the
-operation for the types of operands provided.  The interpreter will then
-try the reverse operation. Its truth value is true.
+Numeric methods and rich comparison methods may return this value if
+they do not implement the operation for the operands provided.  (The
+interpreter will then try the reflected operation, or some other
+fallback, depending on the operator.)  Its truth value is true.
 \ttindex{NotImplemented}
 \obindex{NotImplemented@{\texttt{NotImplemented}}}
 
@@ -943,8 +944,44 @@ expression: a more convenient or concise representation may be used
 instead.  The return value must be a string object.
 \end{methoddesc}
 
+\begin{methoddesc}[object]{__lt__}{self, other}
+\methodline[object]{__le__}{self, other}
+\methodline[object]{__eq__}{self, other}
+\methodline[object]{__ne__}{self, other}
+\methodline[object]{__gt__}{self, other}
+\methodline[object]{__ge__}{self, other}
+\versionadded{2.1}
+These are the so-called ``rich comparison'' methods, and are called
+for comparison operators in preference to \method{__cmp__()} below.
+The correspondence between operator symbols and method names is as
+follows:
+\code{\var{x}<\var{y}} calls \code{\var{x}.__lt__(\var{y})},
+\code{\var{x}<=\var{y}} calls \code{\var{x}.__le__(\var{y})},
+\code{\var{x}==\var{y}} calls \code{\var{x}.__eq__(\var{y})},
+\code{\var{x}!=\var{y}} and \code{\var{x}<>\var{y}} call
+\code{\var{x}.__ne__(\var{y})},
+\code{\var{x}>\var{y}} calls \code{\var{x}.__gt__(\var{y})}, and
+\code{\var{x}>=\var{y}} calls \code{\var{x}.__ge__(\var{y})}.
+These methods can return any value, but if the comparison operator is
+used in a Boolean context, the return value should be interpretable as
+a Boolean value, else a \exception{TypeError} will be raised.
+By convention, \code{0} is used for false and \code{1} for true.
+
+There are no reflected (swapped-argument) versions of these methods
+(to be used when the left argument does not support the operation but
+the right argument does); rather, \method{__lt__()} and
+\method{__gt__()} are each other's reflection, \method{__le__()} and
+\method{__ge__()} are each other's reflection, and \method{__eq__()}
+and \method{__ne__()} are their own reflection.
+
+Arguments to rich comparison methods are never coerced.  A rich
+comparison method may return \code{NotImplemented} if it does not
+implement the operation for a given pair of arguments.
+\end{methoddesc}
+
 \begin{methoddesc}[object]{__cmp__}{self, other}
-Called by all comparison operations.  Should return a negative integer if
+Called by comparison operations if rich comparison (see above) is not
+defined.  Should return a negative integer if
 \code{self < other},  zero if \code{self == other}, a positive integer if
 \code{self > other}.  If no \method{__cmp__()} operation is defined, class
 instances are compared by object identity (``address'').
@@ -1288,7 +1325,7 @@ called to implement the binary arithmetic operations (\code{+},
 \code{-}, \code{*}, \code{/}, \code{\%},
 \function{divmod()}\bifuncindex{divmod},
 \function{pow()}\bifuncindex{pow}, \code{**}, \code{<<}, \code{>>},
-\code{\&}, \code{\^}, \code{|}) with reversed operands.  These
+\code{\&}, \code{\^}, \code{|}) with reflected (swapped) operands.  These
 functions are only called if the left operand does not support the
 corresponding operation.  For instance, to evaluate the expression
 \var{x}\code{-}\var{y}, where \var{y} is an instance of a class that
