@@ -1004,19 +1004,19 @@ PyObject *PyUnicode_EncodeUTF7(const Py_UNICODE *s,
         Py_UNICODE ch = s[i];
 
         if (!inShift) {
-			if (ch == '+') {
-				*out++ = '+';
+            if (ch == '+') {
+                *out++ = '+';
                 *out++ = '-';
             } else if (SPECIAL(ch, encodeSetO, encodeWhiteSpace)) {
                 charsleft = ch;
                 bitsleft = 16;
                 *out++ = '+';
-				/* out, charsleft, bitsleft = */ ENCODE(out, charsleft, bitsleft);
+                /* out, charsleft, bitsleft = */ ENCODE(out, charsleft, bitsleft);
                 inShift = bitsleft > 0;
-			} else {
-				*out++ = (char) ch;
-			}
-		} else {
+            } else {
+                *out++ = (char) ch;
+            }
+        } else {
             if (!SPECIAL(ch, encodeSetO, encodeWhiteSpace)) {
                 *out++ = B64(charsleft << (6-bitsleft));
                 charsleft = 0;
@@ -1059,7 +1059,7 @@ PyObject *PyUnicode_EncodeUTF7(const Py_UNICODE *s,
                 }
             }
         }
-	}
+    }
     if (bitsleft) {
         *out++= B64(charsleft << (6-bitsleft) );
         *out++ = '-';
