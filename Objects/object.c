@@ -91,6 +91,21 @@ inc_count(PyTypeObject *tp)
 }
 #endif
 
+#ifdef Py_REF_DEBUG
+/* Log a fatal error; doesn't return. */
+void
+_Py_NegativeRefcount(const char *fname, int lineno, PyObject *op)
+{
+	char buf[300];
+
+	PyOS_snprintf(buf, sizeof(buf),
+		      "%s:%i object at %p has negative ref count %i",
+		      fname, lineno, op, op->ob_refcnt);
+	Py_FatalError(buf);
+}
+
+#endif /* Py_REF_DEBUG */
+
 PyObject *
 PyObject_Init(PyObject *op, PyTypeObject *tp)
 {

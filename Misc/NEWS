@@ -352,6 +352,10 @@ Build
 
 C API
 
+- Py_FatalError() is now declared as taking a const char* argument.  It
+  was previously declared without const.  This should not affect working
+  code.
+
 - Added new macro PySequence_ITEM(o, i) that directly calls
   sq_item without rechecking that o is a sequence and without
   adjusting for negative indices.

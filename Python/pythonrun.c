@@ -1266,7 +1266,7 @@ err_input(perrdetail *err)
 /* Print fatal error message and abort */
 
 void
-Py_FatalError(char *msg)
+Py_FatalError(const char *msg)
 {
 	fprintf(stderr, "Fatal Python error: %s\n", msg);
 #ifdef macintosh

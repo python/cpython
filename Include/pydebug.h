@@ -26,7 +26,7 @@ extern DL_IMPORT(int) _Py_QnewFlag;
    PYTHONPATH and PYTHONHOME from the environment */
 #define Py_GETENV(s) (Py_IgnoreEnvironmentFlag ? NULL : getenv(s))
 
-DL_IMPORT(void) Py_FatalError(char *message);
+DL_IMPORT(void) Py_FatalError(const char *message);
 
 #ifdef __cplusplus
 }
