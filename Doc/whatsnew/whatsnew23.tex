@@ -5,7 +5,7 @@
 %   Go through and get the contributor's name for all the various changes
 
 \title{What's New in Python 2.3}
-\release{0.01}
+\release{0.02}
 \author{A.M. Kuchling}
 \authoraddress{\email{akuchlin@mems-exchange.org}}
 
@@ -506,6 +506,8 @@ KeyError: pop(): dictionary is empty
 >>>
 \end{verbatim}
 
+(Contributed by Raymond Hettinger.)
+
 \item Two new functions in the \module{math} module, 
 \function{degrees(\var{rads})} and \function{radians(\var{degs})},
 convert between radians and degrees.  Other functions in the 
@@ -582,40 +584,28 @@ This results in the benchmark tests in \file{Lib/test/test_bufio.py}
 speeding up from 57 seconds to 1.7 seconds, according to one
 measurement.
 
-\item XXX Introduce two new flag bits that can be set in a PyMethodDef method
-descriptor, as used for the tp_methods slot of a type.  These new flag
-bits are both optional, and mutually exclusive.  Most methods will not
-use either.  These flags are used to create special method types which
-exist in the same namespace as normal methods without having to use
-tedious construction code to insert the new special method objects in
-the type's tp_dict after PyType_Ready() has been called.
-
-If METH_CLASS is specified, the method will represent a class method
-like that returned by the classmethod() built-in.
-
-If METH_STATIC is specified, the method will represent a static method
-like that returned by the staticmethod() built-in.
-
-These flags may not be used in the PyMethodDef table for modules since
-these special method types are not meaningful in that case; a
-ValueError will be raised if these flags are found in that context.
+\item It's now possible to define class and static methods for a C
+extension type by setting either the \constant{METH_CLASS} or
+\constant{METH_STATIC} flags in a method's \ctype{PyMethodDef}
+structure.
 
 \end{itemize}
 
 \subsection{Port-Specific Changes}
 
+
 XXX write this
 
 XXX OS/2 EMX port
 
-XXX MacOS: Weaklink most toolbox modules, improving backward
-compatibility. Modules will no longer fail to load if a single routine
-is missing on the curent OS version, in stead calling the missing
-routine will raise an exception.  Should finally fix 531398. 2.2.1
-candidate.  Also blacklisted some constants with definitions that
-were not Python-compatible.
+On MacOS, most toolbox modules have been weaklinked to improve
+backward compatibility.  This means that modules will no longer fail
+to load if a single routine is missing on the curent OS version.
+Instead calling the missing routine will raise an exception.  
 
-XXX Checked in Sean Reifschneider's RPM spec file and patches.
+Sean Reifschneider contributed an updated RPM spec file that can be
+found in the \file{Misc/RPM/} directory in the Python source
+distribution.
 
 
 %======================================================================
