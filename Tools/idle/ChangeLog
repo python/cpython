@@ -1,3 +1,86 @@
+======================================================================
+	Python release 1.5.2c1, IDLE version 0.4
+======================================================================
+
+Wed Apr  7 18:41:59 1999  Guido van Rossum  <guido@eric.cnri.reston.va.us>
+
+	* README.txt, NEWS.txt: New version.
+
+	* idlever.py: Version bump awaiting impending new release.
+	(Not much has changed :-( )
+
+Mon Mar 29 14:52:28 1999  Guido van Rossum  <guido@eric.cnri.reston.va.us>
+
+	* ScriptBinding.py, PyShell.py:
+	At Tim Peters' recommendation, add a dummy flush() method to
+	PseudoFile.
+
+Thu Mar 11 23:21:23 1999  Guido van Rossum  <guido@eric.cnri.reston.va.us>
+
+	* PathBrowser.py: Don't crash when sys.path contains an empty string.
+
+	* Attic/Outline.py: This file was never supposed to be part of IDLE.
+
+	* PathBrowser.py:
+	- Don't crash in the case where a superclass is a string instead of a
+	pyclbr.Class object; this can happen when the superclass is
+	unrecognizable (to pyclbr), e.g. when module renaming is used.
+
+	- Show a watch cursor when calling pyclbr (since it may take a while
+	recursively parsing imported modules!).
+
+Wed Mar 10 05:18:02 1999  Guido van Rossum  <guido@eric.cnri.reston.va.us>
+
+	* EditorWindow.py, Bindings.py: Add PathBrowser to File module
+
+	* PathBrowser.py: "Path browser" - 4 scrolled lists displaying:
+	    directories on sys.path
+	    modules in selected directory
+	    classes in selected module
+	    methods of selected class
+
+	Sinlge clicking in a directory, module or class item updates the next
+	column with info about the selected item.  Double clicking in a
+	module, class or method item opens the file (and selects the clicked
+	item if it is a class or method).
+
+	I guess eventually I should be using a tree widget for this, but the
+	ones I've seen don't work well enough, so for now I use the old
+	Smalltalk or NeXT style multi-column hierarchical browser.
+
+	* MultiScrolledLists.py:
+	New utility: multiple scrolled lists in parallel
+
+	* ScrolledList.py: - White background.
+	- Display "(None)" (or text of your choosing) when empty.
+	- Don't set the focus.
+
+======================================================================
+	Python release 1.5.2b2, IDLE version 0.3
+======================================================================
+	
+Wed Feb 17 22:47:41 1999  Guido van Rossum  <guido@eric.cnri.reston.va.us>
+
+	* NEWS.txt: News in 0.3.
+
+	* README.txt, idlever.py: Bump version to 0.3.
+
+	* EditorWindow.py:
+	After all, we don't need to call the callbacks ourselves!
+
+	* WindowList.py:
+	When deleting, call the callbacks *after* deleting the window from our list!
+
+	* EditorWindow.py:
+	Fix up the Windows menu via the new callback mechanism instead of
+	depending on menu post commands (which don't work when the menu is
+	torn off).
+
+	* WindowList.py:
+	Support callbacks to patch up Windows menus everywhere.
+
+	* ChangeLog: Oh, why not.  Checking in the Emacs-generated change log.
+
 Tue Feb 16 22:34:17 1999  Guido van Rossum  <guido@eric.cnri.reston.va.us>
 
 	* ScriptBinding.py:
@@ -107,7 +190,6 @@ Sat Jan  9 22:01:33 1999  Guido van Rossum  <guido@eric.cnri.reston.va.us>
 	This now actually works.  See doc string.  It can run a module (i.e.
 	import or reload) or debug it (same with debugger control).  Output
 	goes to a fresh output window, only created when needed.
-
 
 ======================================================================
 	Python release 1.5.2b1, IDLE version 0.2
