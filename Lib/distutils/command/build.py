@@ -48,6 +48,12 @@ class Build (Command):
         if self.distribution.packages or self.distribution.py_modules:
             self.run_peer ('build_py')
 
+        # Build any standalone C libraries next -- they're most likely to
+        # be needed by extension modules, so obviously have to be done
+        # first!
+        if self.distribution.libraries:
+            self.run_peer ('build_lib')
+
         # And now 'build_ext' -- compile extension modules and put them
         # into the build tree
         if self.distribution.ext_modules:
