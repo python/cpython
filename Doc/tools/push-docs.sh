@@ -11,7 +11,6 @@ PKGTYPE="bzip"  # must be one of: bzip, tar, zip  ("tar" implies gzip)
 TARGET="$TARGETHOST:$TARGETDIR"
 
 ADDRESSES='python-dev@python.org doc-sig@python.org python-list@python.org'
-ADDRESSES=fdrake01@comcast.net
 
 TOOLDIR="`dirname $0`"
 VERSION=`$TOOLDIR/getversioninfo`
