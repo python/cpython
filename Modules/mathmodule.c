@@ -43,33 +43,6 @@ extern double modf PROTO((double, double *));
 #endif /* _MSC_VER */
 
 
-#if defined(HAVE_HYPOT)
-#ifndef _MSC_VER
-extern double hypot PROTO((double, double));
-#endif
-#else
-double hypot(x,y)
-	double x;
-	double y;
-{
-	double yx;
-
-	x = fabs(x);
-	y = fabs(y);
-	if (x < y) {
-		double temp = x;
-		x = y;
-		y = temp;
-	}
-	if (x == 0.)
-		return 0.;
-	else {
-		yx = y/x;
-		return x*sqrt(1.+yx*yx);
-	}
-}
-#endif
-
 #ifdef i860
 /* Cray APP has bogus definition of HUGE_VAL in <math.h> */
 #undef HUGE_VAL
