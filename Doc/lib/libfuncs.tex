@@ -314,7 +314,12 @@ class C:
   \var{expression} argument is parsed and evaluated as a Python
   expression (technically speaking, a condition list) using the
   \var{globals} and \var{locals} dictionaries as global and local name
-  space.  If the \var{locals} dictionary is omitted it defaults to
+  space.  If the \var{globals} dictionary is present and lacks
+  '__builtins__', the current globals are copied into \var{globals} before
+  \var{expression} is parsed.  This means that \var{expression}
+  normally has full access to the standard
+  \refmodule[builtin]{__builtin__} module and restricted environments
+  are propagated.  If the \var{locals} dictionary is omitted it defaults to
   the \var{globals} dictionary.  If both dictionaries are omitted, the
   expression is executed in the environment where \keyword{eval} is
   called.  The return value is the result of the evaluated expression.
