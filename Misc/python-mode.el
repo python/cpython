@@ -238,6 +238,12 @@ the Emacs bell is also rung as a warning."
   :type 'boolean
   :group 'python)
 
+(defcustom py-jump-on-exception t
+  "*Jump to innermost exception frame in *Python Output* buffer.
+When this variable is non-nil and ane exception occurs when running
+Python code synchronously in a subprocess, jump immediately to the
+source code of the innermost frame.")
+
 (defcustom py-backspace-function 'backward-delete-char-untabify
   "*Function called by `py-electric-backspace' when deleting backwards."
   :type 'function
@@ -1043,14 +1049,20 @@ Electric behavior is inhibited inside a string or comment."
       (set-buffer curbuf))))
 
 (defun py-postprocess-output-buffer (buf)
-  (save-excursion
-    (set-buffer buf)
-    (beginning-of-buffer)
-    (while (re-search-forward py-traceback-line-re nil t)
-      (let ((file (match-string 1))
-	    (line (string-to-int (match-string 2))))
-	(py-highlight-line (py-point 'bol) (py-point 'eol) file line))
+  (let (line file bol)
+    (save-excursion
+      (set-buffer buf)
+      (beginning-of-buffer)
+      (while (re-search-forward py-traceback-line-re nil t)
+	(setq file (match-string 1)
+	      line (string-to-int (match-string 2))
+	      bol (py-point 'bol))
+	(py-highlight-line bol (py-point 'eol) file line))
+      (when (and py-jump-on-exception line)
+	(beep)
+	(py-jump-to-exception file line))
       )))
+
 
 
 ;;; Subprocess commands
