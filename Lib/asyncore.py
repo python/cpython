@@ -50,6 +50,7 @@ import exceptions
 import select
 import socket
 import sys
+import types
 
 import os
 if os.name == 'nt':
@@ -215,19 +216,22 @@ class dispatcher:
             elif self.connected:
                 status.append ('connected')
             if self.addr:
-                status.append ('%s:%d' % self.addr)
-            return '<%s %s at %x>' % (
-                self.__class__.__name__,
-                ' '.join (status),
-                id(self)
-                )
+                if self.addr == types.TupleType:
+                    status.append ('%s:%d' % self.addr)
+                else:
+                    status.append (self.addr)
+            return '<%s %s at %x>' % (self.__class__.__name__,
+                                      ' '.join (status), id (self))
         except:
-            try:
-                ar = repr(self.addr)
-            except:
-                ar = 'no self.addr!'
+            pass
+        
+        try:
+            ar = repr (self.addr)
+        except AttributeError:
+            ar = 'no self.addr!'
 
-            return '<__repr__ (self) failed for object at %x (addr=%s)>' % (id(self),ar)
+        return '<__repr__() failed for %s instance at %x (addr=%s)>' % \
+               (self.__class__.__name__, id (self), ar)
 
     def add_channel (self, map=None):
         #self.log_info ('adding channel %s' % self)
@@ -299,6 +303,7 @@ class dispatcher:
 
     def connect (self, address):
         self.connected = 0
+        # XXX why not use connect_ex?
         try:
             self.socket.connect (address)
         except socket.error, why:
