@@ -972,6 +972,27 @@ instance_item(PyInstanceObject *inst, int i)
 }
 
 static PyObject *
+sliceobj_from_intint(int i, int j)
+{
+	PyObject *start, *end, *res;
+
+	start = PyInt_FromLong((long)i);
+	if (!start)
+		return NULL;
+	
+	end = PyInt_FromLong((long)j);
+	if (!end) {
+		Py_DECREF(start);
+		return NULL;
+	}
+	res = PySlice_New(start, end, NULL);
+	Py_DECREF(start);
+	Py_DECREF(end);
+	return res;
+}
+
+
+static PyObject *
 instance_slice(PyInstanceObject *inst, int i, int j)
 {
 	PyObject *func, *arg, *res;
@@ -980,9 +1001,19 @@ instance_slice(PyInstanceObject *inst, int i, int j)
 	if (getslicestr == NULL)
 		getslicestr = PyString_InternFromString("__getslice__");
 	func = instance_getattr(inst, getslicestr);
-	if (func == NULL)
-		return NULL;
-	arg = Py_BuildValue("(ii)", i, j);
+
+	if (func == NULL) {
+		PyErr_Clear();
+
+		if (getitemstr == NULL)
+			getitemstr = PyString_InternFromString("__getitem__");
+		func = instance_getattr(inst, getitemstr);
+		if (func == NULL)
+			return NULL;
+		arg = Py_BuildValue("(N)", sliceobj_from_intint(i, j));
+	} else 
+		arg = Py_BuildValue("(ii)", i, j);
+		
 	if (arg == NULL) {
 		Py_DECREF(func);
 		return NULL;
@@ -1038,19 +1069,39 @@ instance_ass_slice(PyInstanceObject *inst, int i, int j, PyObject *value)
 			delslicestr =
 				PyString_InternFromString("__delslice__");
 		func = instance_getattr(inst, delslicestr);
+		if (func == NULL) {
+			PyErr_Clear();
+			if (delitemstr == NULL)
+				delitemstr =
+				    PyString_InternFromString("__delitem__");
+			func = instance_getattr(inst, delitemstr);
+			if (func == NULL)
+				return -1;
+
+			arg = Py_BuildValue("(N)",
+					    sliceobj_from_intint(i, j));
+		} else
+			arg = Py_BuildValue("(ii)", i, j);
 	}
 	else {
 		if (setslicestr == NULL)
 			setslicestr =
 				PyString_InternFromString("__setslice__");
 		func = instance_getattr(inst, setslicestr);
+		if (func == NULL) {
+			PyErr_Clear();
+			if (setitemstr == NULL)
+				setitemstr =
+				    PyString_InternFromString("__setitem__");
+			func = instance_getattr(inst, setitemstr);
+			if (func == NULL)
+				return -1;
+
+			arg = Py_BuildValue("(NO)",
+					    sliceobj_from_intint(i, j), value);
+		} else
+			arg = Py_BuildValue("(iiO)", i, j, value);
 	}
-	if (func == NULL)
-		return -1;
-	if (value == NULL)
-		arg = Py_BuildValue("(ii)", i, j);
-	else
-		arg = Py_BuildValue("(iiO)", i, j, value);
 	if (arg == NULL) {
 		Py_DECREF(func);
 		return -1;
