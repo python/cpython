@@ -1680,10 +1680,16 @@ This function always succeeds.
 
 
 \begin{cfuncdesc}{PyObject*}{PyObject_Type}{PyObject *o}
-On success, returns a type object corresponding to the object
-type of object \var{o}. On failure, returns \NULL{}.  This is
-equivalent to the Python expression \samp{type(\var{o})}.
+When \var{o} is non-\NULL, returns a type object corresponding to the
+object type of object \var{o}. On failure, raises
+\exception{SystemError} and returns \NULL.  This is equivalent to the
+Python expression \code{type(\var{o})}.
 \bifuncindex{type}
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{int}{PyObject_TypeCheck}{PyObject *o, PyTypeObject *type}
+Return true if the object \var{o} is of type \var{type} or a subtype
+of \var{type}.  Both parameters must be non-\NULL.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyObject_Length}{PyObject *o}
@@ -2365,7 +2371,15 @@ integer type.  This is the same object as \code{types.IntType}.
 \end{cvardesc}
 
 \begin{cfuncdesc}{int}{PyInt_Check}{PyObject* o}
-Returns true if \var{o} is of type \cdata{PyInt_Type}.
+Returns true if \var{o} is of type \cdata{PyInt_Type} or a subtype of
+\cdata{PyInt_Type}.
+\versionchanged[Allowed subtypes to be accepted]{2.2}
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{int}{PyInt_CheckExact}{PyObject* o}
+Returns true if \var{o} is of type \cdata{PyInt_Type}, but not a
+subtype of \cdata{PyInt_Type}.
+\versionadded{2.2}
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyInt_FromLong}{long ival}
@@ -2410,7 +2424,15 @@ integer type.  This is the same object as \code{types.LongType}.
 \end{cvardesc}
 
 \begin{cfuncdesc}{int}{PyLong_Check}{PyObject *p}
-Returns true if its argument is a \ctype{PyLongObject}.
+Returns true if its argument is a \ctype{PyLongObject} or a subtype of
+\ctype{PyLongObject}.
+\versionchanged[Allowed subtypes to be accepted]{2.2}
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{int}{PyLong_CheckExact}{PyObject *p}
+Returns true if its argument is a \ctype{PyLongObject}, but not a
+subtype of \ctype{PyLongObject}.
+\versionadded{2.2}
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyLong_FromLong}{long v}
@@ -2423,9 +2445,52 @@ Returns a new \ctype{PyLongObject} object from a C \ctype{unsigned
 long}, or \NULL{} on failure.
 \end{cfuncdesc}
 
+\begin{cfuncdesc}{PyObject*}{PyLong_FromLongLong}{long long v}
+Returns a new \ctype{PyLongObject} object from a C \ctype{long long},
+or \NULL{} on failure.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{PyLong_FromUnsignedLongLong}{unsigned long long v}
+Returns a new \ctype{PyLongObject} object from a C \ctype{unsigned
+long long}, or \NULL{} on failure.
+\end{cfuncdesc}
+
 \begin{cfuncdesc}{PyObject*}{PyLong_FromDouble}{double v}
 Returns a new \ctype{PyLongObject} object from the integer part of
 \var{v}, or \NULL{} on failure.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{PyLong_FromString}{char *str, char **pend,
+                                                int base}
+Return a new \ctype{PyLongObject} based on the string value in
+\var{str}, which is interpreted according to the radix in \var{base}.
+If \var{pend} is non-\NULL, \code{*\var{pend}} will point to the first 
+character in \var{str} which follows the representation of the
+number.  If \var{base} is \code{0}, the radix will be determined base
+on the leading characters of \var{str}: if \var{str} starts with
+\code{'0x'} or \code{'0X'}, radix 16 will be used; if \var{str} starts 
+with \code{'0'}, radix 8 will be used; otherwise radix 10 will be
+used.  If \var{base} is not \code{0}, it must be between \code{2} and
+\code{36}, inclusive.  Leading spaces are ignored.  If there are no
+digits, \exception{ValueError} will be raised.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{PyLong_FromUnicode}{Py_UNICODE *u,
+                                                 int length, int base}
+Convert a sequence of Unicode digits to a Python long integer value.
+The first parameter, \var{u}, points to the first character of the
+Unicode string, \var{length} gives the number of characters, and
+\var{base} is the radix for the conversion.  The radix must be in the
+range [2, 36]; if it is out of range, \exception{ValueError} will be
+raised.
+\versionadded{1.6}
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{PyLong_FromVoidPtr}{void *p}
+Create a Python integer or long integer from the pointer \var{p}.  The
+pointer value can be retrieved from the resulting value using
+\cfunction{PyLong_AsVoidPtr()}.
+\versionadded{1.5.2}
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{long}{PyLong_AsLong}{PyObject *pylong}
@@ -2442,23 +2507,36 @@ Returns a C \ctype{unsigned long} representation of the contents of
 is raised.\withsubitem{(built-in exception)}{\ttindex{OverflowError}}
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{double}{PyLong_AsDouble}{PyObject *pylong}
-Returns a C \ctype{double} representation of the contents of \var{pylong}.
+\begin{cfuncdesc}{long long}{PyLong_AsLongLong}{PyObject *pylong}
+Return a C \ctype{long long} from a Python long integer.  If
+\var{pylong} cannot be represented as a \ctype{long long}, an
+\exception{OverflowError} will be raised.
+\versionadded{2.2}
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{PyObject*}{PyLong_FromString}{char *str, char **pend,
-                                                int base}
-Return a new \ctype{PyLongObject} based on the string value in
-\var{str}, which is interpreted according to the radix in \var{base}.
-If \var{pend} is non-\NULL, \code{*\var{pend}} will point to the first 
-character in \var{str} which follows the representation of the
-number.  If \var{base} is \code{0}, the radix will be determined base
-on the leading characters of \var{str}: if \var{str} starts with
-\code{'0x'} or \code{'0X'}, radix 16 will be used; if \var{str} starts 
-with \code{'0'}, radix 8 will be used; otherwise radix 10 will be
-used.  If \var{base} is not \code{0}, it must be between \code{2} and
-\code{36}, inclusive.  Leading spaces are ignored.  If there are no
-digits, \exception{ValueError} will be raised.
+\begin{cfuncdesc}{unsigned long long}{PyLong_AsUnsignedLongLong}{PyObject
+                                                                 *pylong}
+Return a C \ctype{unsigned long long} from a Python long integer.  If
+\var{pylong} cannot be represented as an \ctype{unsigned long long},
+an \exception{OverflowError} will be raised if the value is positive,
+or a \exception{TypeError} will be raised if the value is negative.
+\versionadded{2.2}
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{double}{PyLong_AsDouble}{PyObject *pylong}
+Returns a C \ctype{double} representation of the contents of
+\var{pylong}.  If \var{pylong} cannot be approximately represented as
+a \ctype{double}, an \exception{OverflowError} exception is raised and
+\code{-1.0} will be returned.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{void*}{PyLong_AsVoidPtr}{PyObject *pylong}
+Convert a Python integer or long integer \var{pylong} to a C
+\ctype{void} pointer.  If \var{pylong} cannot be converted, an
+\exception{OverflowError} will be raised.  This is only assured to
+produce a usable \ctype{void} pointer for values created with
+\cfunction{PyLong_FromVoidPtr()}.
+\versionadded{1.5.2}
 \end{cfuncdesc}
 
 
@@ -2477,7 +2555,15 @@ point type.  This is the same object as \code{types.FloatType}.
 \end{cvardesc}
 
 \begin{cfuncdesc}{int}{PyFloat_Check}{PyObject *p}
-Returns true if its argument is a \ctype{PyFloatObject}.
+Returns true if its argument is a \ctype{PyFloatObject} or a subtype
+of \ctype{PyFloatObject}.
+\versionchanged[Allowed subtypes to be accepted]{2.2}
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{int}{PyFloat_CheckExact}{PyObject *p}
+Returns true if its argument is a \ctype{PyFloatObject}, but not a
+subtype of \ctype{PyFloatObject}.
+\versionadded{2.2}
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyFloat_FromDouble}{double v}
@@ -2569,7 +2655,15 @@ number type.
 \end{cvardesc}
 
 \begin{cfuncdesc}{int}{PyComplex_Check}{PyObject *p}
-Returns true if its argument is a \ctype{PyComplexObject}.
+Returns true if its argument is a \ctype{PyComplexObject} or a subtype
+of \ctype{PyComplexObject}.
+\versionchanged[Allowed subtypes to be accepted]{2.2}
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{int}{PyComplex_CheckExact}{PyObject *p}
+Returns true if its argument is a \ctype{PyComplexObject}, but not a
+subtype of \ctype{PyComplexObject}.
+\versionadded{2.2}
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyComplex_FromCComplex}{Py_complex v}
@@ -2620,7 +2714,15 @@ layer.\withsubitem{(in module types)}{\ttindex{StringType}}.
 \end{cvardesc}
 
 \begin{cfuncdesc}{int}{PyString_Check}{PyObject *o}
-Returns true if the object \var{o} is a string object.
+Returns true if the object \var{o} is a string object or an instance
+of a subtype of the string type.
+\versionchanged[Allowed subtypes to be accepted]{2.2}
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{int}{PyString_CheckExact}{PyObject *o}
+Returns true if the object \var{o} is a string object, but not an
+instance of a subtype of the string type.
+\versionadded{2.2}
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyString_FromString}{const char *v}
@@ -2835,7 +2937,15 @@ The following APIs are really C macros and can be used to do fast
 checks and to access internal read-only data of Unicode objects:
 
 \begin{cfuncdesc}{int}{PyUnicode_Check}{PyObject *o}
-Returns true if the object \var{o} is a Unicode object.
+Returns true if the object \var{o} is a Unicode object or an instance
+of a Unicode subtype.
+\versionchanged[Allowed subtypes to be accepted]{2.2}
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{int}{PyUnicode_CheckExact}{PyObject *o}
+Returns true if the object \var{o} is a Unicode object, but not an
+instance of a subtype.
+\versionadded{2.2}
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyUnicode_GET_SIZE}{PyObject *o}
@@ -3623,7 +3733,15 @@ layer.\withsubitem{(in module types)}{\ttindex{TupleType}}.
 \end{cvardesc}
 
 \begin{cfuncdesc}{int}{PyTuple_Check}{PyObject *p}
-Return true if the argument is a tuple object.
+Return true if \var{p} is a tuple object or an instance of a subtype
+of the tuple type.
+\versionchanged[Allowed subtypes to be accepted]{2.2}
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{int}{PyTuple_CheckExact}{PyObject *p}
+Return true if \var{p} is a tuple object, but not an instance of
+a subtype of the tuple type.
+\versionadded{2.2}
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyTuple_New}{int len}
@@ -3983,7 +4101,15 @@ type.  This is exposed to Python programs as \code{types.FileType}.
 \end{cvardesc}
 
 \begin{cfuncdesc}{int}{PyFile_Check}{PyObject *p}
-Returns true if its argument is a \ctype{PyFileObject}.
+Returns true if its argument is a \ctype{PyFileObject} or a subtype of
+\ctype{PyFileObject}.
+\versionchanged[Allowed subtypes to be accepted]{2.2}
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{int}{PyFile_CheckExact}{PyObject *p}
+Returns true if its argument is a \ctype{PyFileObject}, but not a
+subtype of \ctype{PyFileObject}.
+\versionadded{2.2}
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyFile_FromString}{char *filename, char *mode}
@@ -4159,7 +4285,15 @@ type.  This is exposed to Python programs as \code{types.ModuleType}.
 \end{cvardesc}
 
 \begin{cfuncdesc}{int}{PyModule_Check}{PyObject *p}
-Returns true if its argument is a module object.
+Returns true if \var{p} is a module object, or a subtype of a
+module object.
+\versionchanged[Allowed subtypes to be accepted]{2.2}
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{int}{PyModule_CheckExact}{PyObject *p}
+Returns true if \var{p} is a module object, but not a subtype of
+\cdata{PyModule_Type}.
+\versionadded{2.2}
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyModule_New}{char *name}
