@@ -75,6 +75,8 @@ typedef struct {
 	PyObject *f_mode;
 	int (*f_close) Py_PROTO((FILE *));
 	int f_softspace; /* Flag used by 'print' command */
+	int f_binary; /* Flag which indicates whether the file is open
+			 open in binary (1) or test (0) mode */
 } PyFileObject;
 
 FILE *
@@ -112,6 +114,10 @@ PyFile_FromFile(fp, name, mode, close)
 	f->f_mode = PyString_FromString(mode);
 	f->f_close = close;
 	f->f_softspace = 0;
+	if (strchr(mode,'b') != NULL)
+	    f->f_binary = 1;
+	else
+	    f->f_binary = 0;
 	if (f->f_name == NULL || f->f_mode == NULL) {
 		Py_DECREF(f);
 		return NULL;
@@ -863,7 +869,7 @@ file_write(f, args)
 	int n, n2;
 	if (f->f_fp == NULL)
 		return err_closed();
-	if (!PyArg_Parse(args, "s#", &s, &n))
+	if (!PyArg_Parse(args, f->f_binary ? "s#" : "t#", &s, &n))
 		return NULL;
 	f->f_softspace = 0;
 	Py_BEGIN_ALLOW_THREADS

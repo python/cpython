@@ -199,6 +199,114 @@ PyObject_DelItem(o, key)
 	return -1;
 }
 
+int PyObject_AsCharBuffer(PyObject *obj,
+			  const char **buffer,
+			  int *buffer_len)
+{
+	PyBufferProcs *pb;
+	const char *pp;
+	int len;
+
+	if (obj == NULL || buffer == NULL || buffer_len == NULL) {
+		null_error();
+		return -1;
+	}
+	pb = obj->ob_type->tp_as_buffer;
+	if ( pb == NULL ||
+	     pb->bf_getcharbuffer == NULL ||
+	     pb->bf_getsegcount == NULL ) {
+		PyErr_SetString(PyExc_TypeError,
+				"expected a character buffer object");
+		goto onError;
+	}
+	if ( (*pb->bf_getsegcount)(obj,NULL) != 1 ) {
+		PyErr_SetString(PyExc_TypeError,
+				"expected a single-segment buffer object");
+		goto onError;
+	}
+	len = (*pb->bf_getcharbuffer)(obj,0,&pp);
+	if (len < 0)
+		goto onError;
+	*buffer = pp;
+	*buffer_len = len;
+	return 0;
+
+ onError:
+	return -1;
+}
+
+int PyObject_AsReadBuffer(PyObject *obj,
+			  const void **buffer,
+			  int *buffer_len)
+{
+	PyBufferProcs *pb;
+	void *pp;
+	int len;
+
+	if (obj == NULL || buffer == NULL || buffer_len == NULL) {
+		null_error();
+		return -1;
+	}
+	pb = obj->ob_type->tp_as_buffer;
+	if ( pb == NULL ||
+	     pb->bf_getreadbuffer == NULL ||
+	     pb->bf_getsegcount == NULL ) {
+		PyErr_SetString(PyExc_TypeError,
+				"expected a readable buffer object");
+		goto onError;
+	}
+	if ( (*pb->bf_getsegcount)(obj,NULL) != 1 ) {
+		PyErr_SetString(PyExc_TypeError,
+				"expected a single-segment buffer object");
+		goto onError;
+	}
+	len = (*pb->bf_getreadbuffer)(obj,0,&pp);
+	if (len < 0)
+		goto onError;
+	*buffer = pp;
+	*buffer_len = len;
+	return 0;
+
+ onError:
+	return -1;
+}
+
+int PyObject_AsWriteBuffer(PyObject *obj,
+			   void **buffer,
+			   int *buffer_len)
+{
+	PyBufferProcs *pb;
+	void*pp;
+	int len;
+
+	if (obj == NULL || buffer == NULL || buffer_len == NULL) {
+		null_error();
+		return -1;
+	}
+	pb = obj->ob_type->tp_as_buffer;
+	if ( pb == NULL ||
+	     pb->bf_getwritebuffer == NULL ||
+	     pb->bf_getsegcount == NULL ) {
+		PyErr_SetString(PyExc_TypeError,
+				"expected a writeable buffer object");
+		goto onError;
+	}
+	if ( (*pb->bf_getsegcount)(obj,NULL) != 1 ) {
+		PyErr_SetString(PyExc_TypeError,
+				"expected a single-segment buffer object");
+		goto onError;
+	}
+	len = (*pb->bf_getwritebuffer)(obj,0,&pp);
+	if (len < 0)
+		goto onError;
+	*buffer = pp;
+	*buffer_len = len;
+	return 0;
+
+ onError:
+	return -1;
+}
+
 /* Operations on numbers */
 
 int
@@ -447,6 +555,8 @@ PyNumber_Remainder(v, w)
 {
 	if (PyString_Check(v))
 		return PyString_Format(v, w);
+	else if (PyUnicode_Check(v))
+		return PyUnicode_Format(v, w);
 	BINOP(v, w, "__mod__", "__rmod__", PyNumber_Remainder);
 	if (v->ob_type->tp_as_number != NULL) {
 		PyObject *x = NULL;
@@ -621,6 +731,8 @@ PyNumber_Int(o)
 	PyObject *o;
 {
 	PyNumberMethods *m;
+	const char *buffer;
+	int buffer_len;
 
 	if (o == NULL)
 		return null_error();
@@ -629,6 +741,8 @@ PyNumber_Int(o)
 	m = o->ob_type->tp_as_number;
 	if (m && m->nb_int)
 		return m->nb_int(o);
+	if (!PyObject_AsCharBuffer(o, &buffer, &buffer_len))
+		return PyInt_FromString((char*)buffer, NULL, 10);
 
 	return type_error("object can't be converted to int");
 }
@@ -655,17 +769,19 @@ PyNumber_Int(o)
  * calls PyLong_FromString().
  */
 static PyObject *
-long_from_string(v)
-	PyObject *v;
+long_from_string(s, len)
+	const char *s;
+	int len;
 {
-	char *s, *end;
+	const char *start;
+	char *end;
 	PyObject *x;
 	char buffer[256]; /* For errors */
 
-	s = PyString_AS_STRING(v);
+	start = s;
 	while (*s && isspace(Py_CHARMASK(*s)))
 		s++;
-	x = PyLong_FromString(s, &end, 10);
+	x = PyLong_FromString((char*)s, &end, 10);
 	if (x == NULL) {
 		if (PyErr_ExceptionMatches(PyExc_ValueError))
 			goto bad;
@@ -680,7 +796,7 @@ long_from_string(v)
 		Py_XDECREF(x);
 		return NULL;
 	}
-	else if (end != PyString_AS_STRING(v) + PyString_GET_SIZE(v)) {
+	else if (end != start + len) {
 		PyErr_SetString(PyExc_ValueError,
 				"null byte in argument for long()");
 		return NULL;
@@ -693,6 +809,8 @@ PyNumber_Long(o)
 	PyObject *o;
 {
 	PyNumberMethods *m;
+	const char *buffer;
+	int buffer_len;
 
 	if (o == NULL)
 		return null_error();
@@ -701,10 +819,13 @@ PyNumber_Long(o)
 		 * doesn't do.  In particular long('9.5') must raise an
 		 * exception, not truncate the float.
 		 */
-		return long_from_string(o);
+		return long_from_string(PyString_AS_STRING(o),
+					PyString_GET_SIZE(o));
 	m = o->ob_type->tp_as_number;
 	if (m && m->nb_long)
 		return m->nb_long(o);
+	if (!PyObject_AsCharBuffer(o, &buffer, &buffer_len))
+		return long_from_string(buffer, buffer_len);
 
 	return type_error("object can't be converted to long");
 }
@@ -717,13 +838,12 @@ PyNumber_Float(o)
 
 	if (o == NULL)
 		return null_error();
-	if (PyString_Check(o))
-		return PyFloat_FromString(o, NULL);
-	m = o->ob_type->tp_as_number;
-	if (m && m->nb_float)
-		return m->nb_float(o);
-
-	return type_error("object can't be converted to float");
+	if (!PyString_Check(o)) {
+		m = o->ob_type->tp_as_number;
+		if (m && m->nb_float)
+			return m->nb_float(o);
+	}
+	return PyFloat_FromString(o, NULL);
 }
 
 /* Operations on sequences */
