@@ -210,9 +210,8 @@ class _fileobject(object):
         else:
             self._rbufsize = bufsize
         self._wbufsize = bufsize
-        # The buffers are lists of non-empty strings
-        self._rbuf = []
-        self._wbuf = []
+        self._rbuf = "" # A string
+        self._wbuf = [] # A list of strings
 
     def _getclosed(self):
         return self._sock is not None
@@ -261,90 +260,113 @@ class _fileobject(object):
             buf_len += len(x)
         return buf_len
 
-    def _get_rbuf_len(self):
-        buf_len = 0
-        for x in self._rbuf:
-            buf_len += len(x)
-        return buf_len
-
     def read(self, size=-1):
+        data = self._rbuf
         if size < 0:
             # Read until EOF
+            buffers = []
+            if data:
+                buffers.append(data)
+            self._rbuf = ""
             if self._rbufsize <= 1:
                 recv_size = self.default_bufsize
             else:
                 recv_size = self._rbufsize
-            while 1:
+            while True:
                 data = self._sock.recv(recv_size)
                 if not data:
                     break
-                self._rbuf.append(data)
+                buffers.append(data)
+            return "".join(buffers)
         else:
-            buf_len = self._get_rbuf_len()
-            while buf_len < size:
-                recv_size = max(self._rbufsize, size - buf_len)
+            # Read until size bytes or EOF seen, whichever comes first
+            buf_len = len(data)
+            if buf_len >= size:
+                self._rbuf = data[size:]
+                return data[:size]
+            buffers = []
+            if data:
+                buffers.append(data)
+            self._rbuf = ""
+            while True:
+                left = size - buf_len
+                recv_size = max(self._rbufsize, left)
                 data = self._sock.recv(recv_size)
                 if not data:
                     break
-                buf_len += len(data)
-                self._rbuf.append(data)
-        data = "".join(self._rbuf)
-        self._rbuf = []
-        if 0 <= size < buf_len:
-            self._rbuf.append(data[size:])
-            data = data[:size]
-        return data
+                buffers.append(data)
+                n = len(data)
+                if n >= left:
+                    self._rbuf = data[left:]
+                    buffers[-1] = data[:left]
+                    break
+                buf_len += n
+            return "".join(buffers)
 
     def readline(self, size=-1):
-        data_len = 0
-        for index, x in enumerate(self._rbuf):
-            data_len += len(x)
-            if '\n' in x or 0 <= size <= data_len:
-                index += 1
-                data = "".join(self._rbuf[:index])
-                end = data.find('\n')
-                if end < 0:
-                    end = len(data)
-                else:
-                    end += 1
-                if 0 <= size < end:
-                    end = size
-                data, rest = data[:end], data[end:]
-                if rest:
-                    self._rbuf[:index] = [rest]
-                else:
-                    del self._rbuf[:index]
-                return data
-        recv_size = self._rbufsize
-        while 1:
-            if size >= 0:
-                recv_size = min(self._rbufsize, size - data_len)
-            x = self._sock.recv(recv_size)
-            if not x:
-                break
-            data_len += len(x)
-            self._rbuf.append(x)
-            if '\n' in x or 0 <= size <= data_len:
-                break
-        data = "".join(self._rbuf)
-        end = data.find('\n')
-        if end < 0:
-            end = len(data)
+        data = self._rbuf
+        if size < 0:
+            # Read until \n or EOF, whichever comes first
+            nl = data.find('\n')
+            if nl >= 0:
+                nl += 1
+                self._rbuf = data[nl:]
+                return data[:nl]
+            buffers = []
+            if data:
+                buffers.append(data)
+            self._rbuf = ""
+            while True:
+                data = self._sock.recv(self._rbufsize)
+                if not data:
+                    break
+                buffers.append(data)
+                nl = data.find('\n')
+                if nl >= 0:
+                    nl += 1
+                    self._rbuf = data[nl:]
+                    buffers[-1] = data[:nl]
+                    break
+            return "".join(buffers)
         else:
-            end += 1
-        if 0 <= size < end:
-            end = size
-        data, rest = data[:end], data[end:]
-        if rest:
-            self._rbuf = [rest]
-        else:
-            self._rbuf = []
-        return data
+            # Read until size bytes or \n or EOF seen, whichever comes first
+            nl = data.find('\n', 0, size)
+            if nl >= 0:
+                nl += 1
+                self._rbuf = data[nl:]
+                return data[:nl]
+            buf_len = len(data)
+            if buf_len >= size:
+                self._rbuf = data[size:]
+                return data[:size]
+            buffers = []
+            if data:
+                buffers.append(data)
+            self._rbuf = ""
+            while True:
+                data = self._sock.recv(self._rbufsize)
+                if not data:
+                    break
+                buffers.append(data)
+                left = size - buf_len
+                nl = data.find('\n', 0, left)
+                if nl >= 0:
+                    nl += 1
+                    self._rbuf = data[nl:]
+                    buffers[-1] = data[:nl]
+                    break
+                n = len(data)
+                if n >= left:
+                    self._rbuf = data[left:]
+                    buffers[-1] = data[:left]
+                    break
+                buf_len += n
+            return "".join(buffers)
 
     def readlines(self, sizehint=0):
         total = 0
         list = []
-        while 1:
+        while True:
             line = self.readline()
             if not line:
                 break
