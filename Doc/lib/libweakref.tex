@@ -181,6 +181,28 @@ idiom shown above is safe in threaded applications as well as
 single-threaded applications.
 
 
+\subsection{Example \label{weakref-example}}
+
+This simple example shows how an application can use objects IDs to
+retrieve objects that it has seen before.  The IDs of the objects can
+then be used in other data structures without forcing the objects to
+remain alive, but the objects can still be retrieved by ID if they
+do.
+
+% Example contributed by Tim Peters <tim_one@msn.com>.
+\begin{verbatim}
+import weakref
+
+_id2obj_dict = weakref.mapping()
+
+def remember(obj):
+    _id2obj_dict[id(obj)] = obj
+
+def id2obj(id):
+    return _id2obj_dict.get(id)
+\end{verbatim}
+
+
 \subsection{Weak References in Extension Types
             \label{weakref-extension}}
 
