@@ -152,17 +152,17 @@ attributes, which are used to define the parameters for a specific
 \class{reader} or \class{writer} instance.
 \end{classdesc*}
 
-\begin{classdesc}{Sniffer}{\optional{sample=16384}}
-The \class{Sniffer} class is used to deduce the format of a CSV file.  The
-optional \var{sample} argument to the constructor specifies the number of
-bytes to use when determining Dialect parameters.
+\begin{classdesc}{Sniffer}{}
+The \class{Sniffer} class is used to deduce the format of a CSV file.
 \end{classdesc}
 
 The \class{Sniffer} class provides a single method:
 
-\begin{methoddesc}{sniff}{fileobj}
-Analyze the next chunk of \var{fileobj} and return a \class{Dialect} subclass
-reflecting the parameters found.
+\begin{methoddesc}{sniff}{sample\optional{,delimiters=None}}
+Analyze the given \var{sample} and return a \class{Dialect} subclass
+reflecting the parameters found.  If the optional \var{delimiters} parameter
+is given, it is interpreted as a string containing possible valid delimiter
+characters.
 \end{methoddesc}
 
 \begin{methoddesc}{has_header}{sample}
