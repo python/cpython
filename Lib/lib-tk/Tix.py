@@ -730,8 +730,8 @@ class HList(TixWidget):
        c = self.tk.call(self._w, 'info', 'selection')
        return self.tk.splitlist(c)
 
-    def item_cget(self,  col, opt):
-       return self.tk.call(self._w, 'item', 'cget', col, opt)
+    def item_cget(self, entry, col, opt):
+       return self.tk.call(self._w, 'item', 'cget', entry, col, opt)
  
     def item_configure(self, entry, col, cnf={}, **kw):
        if cnf is None:
