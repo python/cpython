@@ -285,8 +285,6 @@ Library
 
 - Add hlist missing entryconfigure and entrycget methods.
 
-- site.py now removes paths that do not exist.
-
 - The ptcp154 codec was added for Kazakh character set support.
 
 - Support non-anonymous ftp URLs in urllib2.
