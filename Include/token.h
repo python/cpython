@@ -52,9 +52,14 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define BACKQUOTE	25
 #define LBRACE		26
 #define RBRACE		27
-#define OP		28
-#define ERRORTOKEN	29
-#define N_TOKENS	30
+#define EQEQUAL		28
+#define NOTEQUAL	29
+#define LESSEQUAL	30
+#define GREATEREQUAL	31
+/* Don't forget to update the table tok_name in tokenizer.c! */
+#define OP		32
+#define ERRORTOKEN	33
+#define N_TOKENS	34
 
 /* Special definitions for cooperation with parser */
 
@@ -67,3 +72,4 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 extern char *tok_name[]; /* Token names */
 extern int tok_1char PROTO((int));
+extern int tok_2char PROTO((int, int));
