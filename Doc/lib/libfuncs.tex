@@ -406,7 +406,7 @@ buffer size: 0 means unbuffered, 1 means line buffered, any other
 positive value means use a buffer of (approximately) that size.  A
 negative \var{bufsize} means to use the system default, which is
 usually line buffered for for tty devices and fully buffered for other
-files.%
+files.  If omitted, the system default is used.%
 \footnote{Specifying a buffer size currently has no effect on systems
 that don't have \cfunction{setvbuf()}.  The interface to specify the buffer
 size is not done using a method that calls \cfunction{setvbuf()}, because
