@@ -266,7 +266,7 @@ parser_compare_nodes(left, right)
     for (j = 0; j < NCH(left); ++j) {
 	int v = parser_compare_nodes(CHILD(left, j), CHILD(right, j));
 
-	if (v != NULL)
+	if (v != 0)
 	    return (v);
     }
     return (0);
