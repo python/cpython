@@ -2998,3 +2998,158 @@ override_slots(PyTypeObject *type, PyObject *dict)
 	TPSLOT("__init__", tp_init, slot_tp_init);
 	TPSLOT("__new__", tp_new, slot_tp_new);
 }
+
+
+/* Cooperative 'super' */
+
+typedef struct {
+	PyObject_HEAD
+	PyObject *type;
+	PyObject *obj;
+} superobject;
+
+static void
+super_dealloc(PyObject *self)
+{
+	superobject *su = (superobject *)self;
+
+	Py_XDECREF(su->obj);
+	Py_XDECREF(su->type);
+	self->ob_type->tp_free(self);
+}
+
+static PyObject *
+super_getattro(PyObject *self, PyObject *name)
+{
+	superobject *su = (superobject *)self;
+
+	if (su->obj != NULL) {
+		PyObject *mro, *res, *tmp;
+		descrgetfunc f;
+		int i, n;
+
+		mro = ((PyTypeObject *)(su->obj->ob_type))->tp_mro;
+		assert(mro != NULL && PyTuple_Check(mro));
+		n = PyTuple_GET_SIZE(mro);
+		for (i = 0; i < n; i++) {
+			if (su->type == PyTuple_GET_ITEM(mro, i))
+				break;
+		}
+		assert(i < n);
+		i++;
+		res = NULL;
+		for (; i < n; i++) {
+			tmp = PyTuple_GET_ITEM(mro, i);
+			assert(PyType_Check(tmp));
+			res = PyDict_GetItem(
+				((PyTypeObject *)tmp)->tp_defined, name);
+			if (res != NULL) {
+				Py_INCREF(res);
+				f = res->ob_type->tp_descr_get;
+				if (f != NULL) {
+					tmp = f(res, su->obj, res);
+					Py_DECREF(res);
+					res = tmp;
+				}
+				return res;
+			}
+		}
+	}
+	return PyObject_GenericGetAttr(self, name);
+}
+
+static PyObject *
+super_descr_get(PyObject *self, PyObject *obj, PyObject *type)
+{
+	superobject *su = (superobject *)self;
+	superobject *new;
+
+	if (obj == NULL || obj == Py_None || su->obj != NULL) {
+		/* Not binding to an object, or already bound */
+		Py_INCREF(self);
+		return self;
+	}
+	new = (superobject *)PySuper_Type.tp_new(&PySuper_Type, NULL, NULL);
+	if (new == NULL)
+		return NULL;
+	Py_INCREF(su->type);
+	Py_INCREF(obj);
+	new->type = su->type;
+	new->obj = obj;
+	return (PyObject *)new;
+}
+
+static int
+super_init(PyObject *self, PyObject *args, PyObject *kwds)
+{
+	superobject *su = (superobject *)self;
+	PyObject *type, *obj = NULL;
+
+	if (!PyArg_ParseTuple(args, "O!|O:super", &PyType_Type, &type, &obj))
+		return -1;
+	if (obj == Py_None)
+		obj = NULL;
+	if (obj != NULL && !PyType_IsSubtype(obj->ob_type,
+					     (PyTypeObject *)type)) {
+		PyErr_SetString(PyExc_TypeError,
+			"super(type, obj) requires isinstance(obj, type)");
+		return -1;
+	}
+	Py_INCREF(type);
+	Py_XINCREF(obj);
+	su->type = type;
+	su->obj = obj;
+	return 0;
+}
+
+static char super_doc[] =
+"super(type) -> unbound super object\n"
+"super(type, obj) -> bound super object; requires isinstance(obj, type)\n"
+"Typical use to call a cooperative superclass method:\n"
+"class C(B):\n"
+"    def meth(self, arg):\n"
+"        super(C, self).meth(arg)";
+
+PyTypeObject PySuper_Type = {
+	PyObject_HEAD_INIT(&PyType_Type)
+	0,					/* ob_size */
+	"super",				/* tp_name */
+	sizeof(superobject),			/* tp_basicsize */
+	0,					/* tp_itemsize */
+	/* methods */
+	super_dealloc,		 		/* tp_dealloc */
+	0,					/* tp_print */
+	0,					/* tp_getattr */
+	0,					/* tp_setattr */
+	0,					/* tp_compare */
+	0,					/* tp_repr */
+	0,					/* tp_as_number */
+	0,					/* tp_as_sequence */
+	0,		       			/* tp_as_mapping */
+	0,					/* tp_hash */
+	0,					/* tp_call */
+	0,					/* tp_str */
+	super_getattro,				/* tp_getattro */
+	0,					/* tp_setattro */
+	0,					/* tp_as_buffer */
+	Py_TPFLAGS_DEFAULT,			/* tp_flags */
+ 	super_doc,				/* tp_doc */
+ 	0,					/* tp_traverse */
+ 	0,					/* tp_clear */
+	0,					/* tp_richcompare */
+	0,					/* tp_weaklistoffset */
+	0,					/* tp_iter */
+	0,					/* tp_iternext */
+	0,					/* tp_methods */
+	0,					/* tp_members */
+	0,					/* tp_getset */
+	0,					/* tp_base */
+	0,					/* tp_dict */
+	super_descr_get,			/* tp_descr_get */
+	0,					/* tp_descr_set */
+	0,					/* tp_dictoffset */
+	super_init,				/* tp_init */
+	PyType_GenericAlloc,			/* tp_alloc */
+	PyType_GenericNew,			/* tp_new */
+	_PyObject_Del,				/* tp_free */
+};
