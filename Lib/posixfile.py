@@ -92,16 +92,16 @@ class _posixfile_:
     def dup(self):
         import posix
 
-        try: ignore = posix.fdopen
-        except: raise AttributeError, 'dup() method unavailable'
+        if not hasattr(posix, 'fdopen'):
+            raise AttributeError, 'dup() method unavailable'
 
         return posix.fdopen(posix.dup(self._file_.fileno()), self._file_.mode)
 
     def dup2(self, fd):
         import posix
 
-        try: ignore = posix.fdopen
-        except: raise AttributeError, 'dup() method unavailable'
+        if not hasattr(posix, 'fdopen'):
+            raise AttributeError, 'dup() method unavailable'
 
         posix.dup2(self._file_.fileno(), fd)
         return posix.fdopen(fd, self._file_.mode)
