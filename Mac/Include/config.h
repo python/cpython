@@ -13,6 +13,11 @@
 #define HAVE_FOPENRF
 #endif
 
+#ifdef __SC__
+#define atof Py_AtoF
+#define strtod Py_StrToD
+#endif
+
 /* Define if on AIX 3.
    System headers sometimes define this.
    We just want to avoid a redefinition error message.  */
