@@ -456,6 +456,19 @@ _PySys_Init(void)
 	PyDict_SetItemString(sysdict, "builtin_module_names",
 		   v = list_builtin_module_names());
 	Py_XDECREF(v);
+	{
+		/* Assumes that longs are at least 2 bytes long.
+		   Should be safe! */
+		unsigned long number = 1;
+
+		s = (char *) &number;
+		if (s[0] == 0)
+			PyDict_SetItemString(sysdict, "byte_order",
+					     PyString_FromString("big"));
+		else
+			PyDict_SetItemString(sysdict, "byte_order",
+					     PyString_FromString("little"));
+	}
 #ifdef MS_COREDLL
 	PyDict_SetItemString(sysdict, "dllhandle",
 			     v = PyLong_FromVoidPtr(PyWin_DLLhModule));
