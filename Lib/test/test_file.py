@@ -109,6 +109,23 @@ f.close()
 if not f.closed:
     raise TestFailed, 'file.closed should be true'
 
+# make sure that explicitly setting the buffer size doesn't cause
+# misbehaviour especially with repeated close() calls
+for s in (-1, 0, 1, 512):
+    try:
+        f = open(TESTFN, 'w', s)
+        f.write(str(s))
+        f.close()
+        f.close()
+        f = open(TESTFN, 'r', s)
+        d = int(f.read())
+        f.close()
+        f.close()
+    except IOError, msg:
+        raise TestFailed, 'error setting buffer size %d: %s' % (s, str(msg))
+    if d != s:
+        raise TestFailed, 'readback failure using buffer size %d'
+
 methods = ['fileno', 'flush', 'isatty', 'next', 'read', 'readinto',
            'readline', 'readlines', 'seek', 'tell', 'truncate', 'write',
            'xreadlines', '__iter__']
