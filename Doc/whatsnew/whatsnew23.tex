@@ -316,24 +316,25 @@ Hisao and Martin von L\"owis.}
 \section{PEP 277: Unicode file name support for Windows NT}
 
 On Windows NT, 2000, and XP, the system stores file names as Unicode
-strings. Traditionally, Python has represented file names are byte
-strings, which is inadequate since it renders some file names
+strings. Traditionally, Python has represented file names as byte
+strings, which is inadequate because it renders some file names
 inaccessible.
 
-Python allows now to use arbitrary Unicode strings (within limitations
-of the file system) for all functions that expect file names, in
-particular \function{open}. If a Unicode string is passed to
-\function{os.listdir}, Python returns now a list of Unicode strings.
-A new function \function{getcwdu} returns the current directory as a
-Unicode string.
+Python now allows using arbitrary Unicode strings (within the
+limitations of the file system) for all functions that expect file
+names, in particular the \function{open()} built-in. If a Unicode
+string is passed to \function{os.listdir}, Python now returns a list
+of Unicode strings.  A new function, \function{os.getcwdu()}, returns
+the current directory as a Unicode string.
 
-Byte strings continue to work as file names, the system will
-transparently convert them to Unicode using the \code{mbcs} encoding.
+Byte strings still work as file names, and Python will transparently
+convert them to Unicode using the \code{mbcs} encoding.
 
-Other systems allow Unicode strings as file names as well, but convert
-them to byte strings before passing them to the system, which may
-cause UnicodeErrors. Applications can test whether arbitrary Unicode
-strings are supported as file names with \code{os.path.unicode_file_names}.
+Other systems also allow Unicode strings as file names, but convert
+them to byte strings before passing them to the system which may cause
+a \exception{UnicodeError} to be raised. Applications can test whether
+arbitrary Unicode strings are supported as file names by checking
+\member{os.path.unicode_file_names}, a Boolean value.
 
 \begin{seealso}
 
@@ -493,31 +494,33 @@ strings \samp{True} and \samp{False} instead of \samp{1} and \samp{0}.
 \section{PEP 293: Codec Error Handling Callbacks}
 
 When encoding a Unicode string into a byte string, unencodable
-characters may be encountered. So far, Python allowed to specify the
-error processing as either ``strict'' (raise \code{UnicodeError},
-default), ``ignore'' (skip the character), or ``replace'' (with
-question mark). It may be desirable to specify an alternative
-processing of the error, e.g. by inserting an XML character reference
-or HTML entity reference into the converted string.
+characters may be encountered.  So far, Python has allowed specifying
+the error processing as either ``strict'' (raising
+\exception{UnicodeError}), ``ignore'' (skip the character), or
+``replace'' (with question mark), defaulting to ``strict''. It may be
+desirable to specify an alternative processing of the error, e.g. by
+inserting an XML character reference or HTML entity reference into the
+converted string.
 
 Python now has a flexible framework to add additional processing
-strategies; new error handlers can be added with
+strategies.  New error handlers can be added with
 \function{codecs.register_error}. Codecs then can access the error
-handler with \code{codecs.lookup_error}. An equivalent C API has been
-added for codecs written in C. The error handler gets various state
-information, such as the string being converted, the position in the
-string where the error was detected, and the target encoding. It can
-then either raise an exception, or return a replacement string.
+handler with \function{codecs.lookup_error}. An equivalent C API has
+been added for codecs written in C. The error handler gets the
+necessary state information, such as the string being converted, the
+position in the string where the error was detected, and the target
+encoding.  The handler can then either raise an exception, or return a
+replacement string.
 
 Two additional error handlers have been implemented using this
-framework: ``backslashreplace'' using Python backslash quoting to
+framework: ``backslashreplace'' uses Python backslash quoting to
 represent the unencodable character, and ``xmlcharrefreplace'' emits
 XML character references.
 
 \begin{seealso}
 
 \seepep{293}{Codec Error Handling Callbacks}{Written and implemented by 
-Walter Dörwald.}
+Walter D\"orwald.}
 
 \end{seealso}
 
