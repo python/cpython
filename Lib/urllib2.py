@@ -87,46 +87,39 @@ f = urllib2.urlopen('http://www.python.org/')
 # gopher can return a socket.error
 # check digest against correct (i.e. non-apache) implementation
 
-import socket
+import base64
+import ftplib
+import gopherlib
 import httplib
 import inspect
-import re
-import base64
-import urlparse
 import md5
 import mimetypes
 import mimetools
+import os
+import posixpath
+import random
+import re
 import rfc822
-import ftplib
+import sha
+import socket
 import sys
 import time
-import os
-import gopherlib
-import posixpath
+import urlparse
 
 try:
     from cStringIO import StringIO
 except ImportError:
     from StringIO import StringIO
 
-try:
-    import sha
-except ImportError:
-    # need 1.5.2 final
-    sha = None
-
 # not sure how many of these need to be gotten rid of
 from urllib import unwrap, unquote, splittype, splithost, \
      addinfourl, splitport, splitgophertype, splitquery, \
      splitattr, ftpwrapper, noheaders
 
-# support for proxies via environment variables
-from urllib import getproxies
+# support for FileHandler, proxies via environment variables
+from urllib import localhost, url2pathname, getproxies
 
-# support for FileHandler
-from urllib import localhost, url2pathname
-
-__version__ = "2.0a1"
+__version__ = "2.1"
 
 _opener = None
 def urlopen(url, data=None):
@@ -680,20 +673,61 @@ class ProxyBasicAuthHandler(AbstractBasicAuthHandler, BaseHandler):
                                           host, req, headers)
 
 
+def randombytes(n):
+    """Return n random bytes."""
+    # Use /dev/urandom if it is available.  Fall back to random module
+    # if not.  It might be worthwhile to extend this function to use
+    # other platform-specific mechanisms for getting random bytes.
+    if os.path.exists("/dev/urandom"):
+        f = open("/dev/urandom")
+        s = f.read(n)
+        f.close()
+        return s
+    else:
+        L = [chr(random.randrange(0, 256)) for i in range(n)]
+        return "".join(L)
+
 class AbstractDigestAuthHandler:
+    # Digest authentication is specified in RFC 2617.
+
+    # XXX The client does not inspect the Authentication-Info header
+    # in a successful response.
+
+    # XXX It should be possible to test this implementation against
+    # a mock server that just generates a static set of challenges.
+
+    # XXX qop="auth-int" supports is shaky
 
     def __init__(self, passwd=None):
         if passwd is None:
             passwd = HTTPPasswordMgr()
         self.passwd = passwd
         self.add_password = self.passwd.add_password
+        self.retried = 0
+        self.nonce_count = 0
 
-    def http_error_auth_reqed(self, authreq, host, req, headers):
-        authreq = headers.get(self.auth_header, None)
+    def reset_retry_count(self):
+        self.retried = 0
+
+    def http_error_auth_reqed(self, auth_header, host, req, headers):
+        authreq = headers.get(auth_header, None)
+        if self.retried > 5:
+            # Don't fail endlessly - if we failed once, we'll probably
+            # fail a second time. Hm. Unless the Password Manager is
+            # prompting for the information. Crap. This isn't great
+            # but it's better than the current 'repeat until recursion
+            # depth exceeded' approach <wink>
+            raise HTTPError(req.get_full_url(), 401, "digest auth failed", 
+                            headers, None)
+        else:
+            self.retried += 1
         if authreq:
-            kind = authreq.split()[0]
-            if kind == 'Digest':
+            scheme = authreq.split()[0]
+            if scheme.lower() == 'digest':
                 return self.retry_http_digest_auth(req, authreq)
+            else:
+                raise ValueError("AbstractDigestAuthHandler doesn't know "
+                                 "about %s"%(scheme))
 
     def retry_http_digest_auth(self, req, auth):
         token, challenge = auth.split(' ', 1)
@@ -707,10 +741,21 @@ class AbstractDigestAuthHandler:
             resp = self.parent.open(req)
             return resp
 
+    def get_cnonce(self, nonce):
+        # The cnonce-value is an opaque
+        # quoted string value provided by the client and used by both client
+        # and server to avoid chosen plaintext attacks, to provide mutual
+        # authentication, and to provide some message integrity protection.
+        # This isn't a fabulous effort, but it's probably Good Enough.
+        dig = sha.new("%s:%s:%s:%s" % (self.nonce_count, nonce, time.ctime(),
+                                       randombytes(8))).hexdigest()
+        return dig[:16]
+
     def get_authorization(self, req, chal):
         try:
             realm = chal['realm']
             nonce = chal['nonce']
+            qop = chal.get('qop')
             algorithm = chal.get('algorithm', 'MD5')
             # mod_digest doesn't send an opaque, even though it isn't
             # supposed to be optional
@@ -722,8 +767,7 @@ class AbstractDigestAuthHandler:
         if H is None:
             return None
 
-        user, pw = self.passwd.find_user_password(realm,
-                                                  req.get_full_url())
+        user, pw = self.passwd.find_user_password(realm, req.get_full_url())
         if user is None:
             return None
 
@@ -737,7 +781,18 @@ class AbstractDigestAuthHandler:
         A2 = "%s:%s" % (req.has_data() and 'POST' or 'GET',
                         # XXX selector: what about proxies and full urls
                         req.get_selector())
-        respdig = KD(H(A1), "%s:%s" % (nonce, H(A2)))
+        if qop == 'auth':
+            self.nonce_count += 1
+            ncvalue = '%08x' % self.nonce_count
+            cnonce = self.get_cnonce(nonce)
+            noncebit = "%s:%s:%s:%s:%s" % (nonce, ncvalue, cnonce, qop, H(A2))
+            respdig = KD(H(A1), noncebit)
+        elif qop is None:
+            respdig = KD(H(A1), "%s:%s" % (nonce, H(A2)))
+        else:
+            # XXX handle auth-int.
+            pass
+    
         # XXX should the partial digests be encoded too?
 
         base = 'username="%s", realm="%s", nonce="%s", uri="%s", ' \
@@ -749,16 +804,18 @@ class AbstractDigestAuthHandler:
             base = base + ', digest="%s"' % entdig
         if algorithm != 'MD5':
             base = base + ', algorithm="%s"' % algorithm
+        if qop:
+            base = base + ', qop=auth, nc=%s, cnonce="%s"' % (ncvalue, cnonce)
         return base
 
     def get_algorithm_impls(self, algorithm):
         # lambdas assume digest modules are imported at the top level
         if algorithm == 'MD5':
-            H = lambda x, e=encode_digest:e(md5.new(x).digest())
+            H = lambda x: md5.new(x).hexdigest()
         elif algorithm == 'SHA':
-            H = lambda x, e=encode_digest:e(sha.new(x).digest())
+            H = lambda x: sha.new(x).hexdigest()
         # XXX MD5-sess
-        KD = lambda s, d, H=H: H("%s:%s" % (s, d))
+        KD = lambda s, d: H("%s:%s" % (s, d))
         return H, KD
 
     def get_entity_digest(self, data, chal):
@@ -777,7 +834,10 @@ class HTTPDigestAuthHandler(BaseHandler, AbstractDigestAuthHandler):
 
     def http_error_401(self, req, fp, code, msg, headers):
         host = urlparse.urlparse(req.get_full_url())[1]
-        self.http_error_auth_reqed('www-authenticate', host, req, headers)
+        retry = self.http_error_auth_reqed('www-authenticate', 
+                                           host, req, headers)
+        self.reset_retry_count()
+        return retry
 
 
 class ProxyDigestAuthHandler(BaseHandler, AbstractDigestAuthHandler):
@@ -786,18 +846,10 @@ class ProxyDigestAuthHandler(BaseHandler, AbstractDigestAuthHandler):
 
     def http_error_407(self, req, fp, code, msg, headers):
         host = req.get_host()
-        self.http_error_auth_reqed('proxy-authenticate', host, req, headers)
-
-
-def encode_digest(digest):
-    hexrep = []
-    for c in digest:
-        n = (ord(c) >> 4) & 0xf
-        hexrep.append(hex(n)[-1])
-        n = ord(c) & 0xf
-        hexrep.append(hex(n)[-1])
-    return ''.join(hexrep)
-
+        retry = self.http_error_auth_reqed('proxy-authenticate', 
+                                           host, req, headers)
+        self.reset_retry_count()
+        return retry
 
 class AbstractHTTPHandler(BaseHandler):
 
