@@ -276,7 +276,6 @@ class IOBinding:
         return "break"
 
     def print_window(self, event):
-        tempfilename = None
         if self.get_saved():
             filename = self.filename
         else:
