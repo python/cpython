@@ -524,7 +524,7 @@ PyCursesWindow_Bkgd(PyCursesWindowObject *self, PyObject *args)
     return NULL;
   }
 
-  return PyCursesCheckERR(wbkgd(self->win, bkgd | A_NORMAL), "bkgd");
+  return PyCursesCheckERR(wbkgd(self->win, bkgd | attr), "bkgd");
 }
 
 static PyObject *
