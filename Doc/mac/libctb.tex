@@ -1,7 +1,8 @@
 \section{\module{ctb} ---
-         Interface to the Communications Tool Box.}
-\declaremodule{builtin}{ctb}
+         Interface to the Communications Tool Box}
 
+\declaremodule{builtin}{ctb}
+  \platform{Mac}
 \modulesynopsis{Interfaces to the Communications Tool Box.  Only the Connection
 Manager is supported.}
 
@@ -48,8 +49,8 @@ Alternatively, passing \code{None} for \var{sizes} will result in
 default buffer sizes.
 \end{funcdesc}
 
-\subsection{connection object}
-\label{connection-object}
+
+\subsection{Connection Objects \label{connection-object}}
 
 For all connection methods that take a \var{timeout} argument, a value
 of \code{-1} is indefinite, meaning that the command runs to completion.

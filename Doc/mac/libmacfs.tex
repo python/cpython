@@ -1,11 +1,10 @@
 \section{\module{macfs} ---
-         FSSpec, the Alias Manager, \program{finder} aliases,
-         and the Standard File package.}
-\declaremodule{builtin}{macfs}
+         Various file system services}
 
+\declaremodule{builtin}{macfs}
+  \platform{Mac}
 \modulesynopsis{Support for FSSpec, the Alias Manager,
                 \program{finder} aliases, and the Standard File package.}
-
 
 
 This module provides access to Macintosh FSSpec handling, the Alias
@@ -111,8 +110,8 @@ Locate the application with 4-char creator code \var{creator}. The
 function returns an \pytype{FSSpec} object pointing to the application.
 \end{funcdesc}
 
-\subsection{FSSpec objects}
-\label{fsspec-objects}
+
+\subsection{FSSpec objects \label{fsspec-objects}}
 
 \begin{memberdesc}[FSSpec]{data}
 The raw data from the FSSpec object, suitable for passing
@@ -168,8 +167,7 @@ Python.
 \end{methoddesc}
 
 
-\subsection{Alias Objects}
-\label{alias-objects}
+\subsection{Alias Objects \label{alias-objects}}
 
 \begin{memberdesc}[Alias]{data}
 The raw data for the Alias record, suitable for storing in a resource
@@ -202,8 +200,7 @@ has changed the Python program is responsible for getting the
 resource.
 
 
-\subsection{FInfo Objects}
-\label{finfo-objects}
+\subsection{FInfo Objects \label{finfo-objects}}
 
 See \emph{Inside Macintosh: Files} for a complete description of what
 the various fields mean.

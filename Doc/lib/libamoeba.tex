@@ -1,9 +1,10 @@
 \chapter{Amoeba Specific Services}
 
 \section{\module{amoeba} ---
-         Amoeba system support.}
-\declaremodule{builtin}{amoeba}
+         Amoeba system support}
 
+\declaremodule{builtin}{amoeba}
+  \platform{Amoeba}
 \modulesynopsis{Functions for the Amoeba operating system.}
 
 
@@ -12,13 +13,13 @@ Amoeba applications.  It is only available on systems that support
 Amoeba operations.  RPC errors and other Amoeba errors are reported as
 the exception \code{amoeba.error = 'amoeba.error'}.
 
-The module \code{amoeba} defines the following items:
+The module \module{amoeba} defines the following items:
 
 \begin{funcdesc}{name_append}{path, cap}
 Stores a capability in the Amoeba directory tree.
 Arguments are the pathname (a string) and the capability (a capability
 object as returned by
-\code{name_lookup()}).
+\function{name_lookup()}).
 \end{funcdesc}
 
 \begin{funcdesc}{name_delete}{path}
@@ -38,11 +39,11 @@ object, to which various interesting operations apply, described below.
 Replaces a capability in the Amoeba directory tree.
 Arguments are the pathname and the new capability.
 (This differs from
-\code{name_append()}
+\function{name_append()}
 in the behavior when the pathname already exists:
-\code{name_append()}
+\function{name_append()}
 finds this an error while
-\code{name_replace()}
+\function{name_replace()}
 allows it, as its name suggests.)
 \end{funcdesc}
 
@@ -62,7 +63,7 @@ in C.
 The exception raised when an Amoeba function returns an error.
 The value accompanying this exception is a pair containing the numeric
 error code and the corresponding string, as returned by the C function
-\code{err_why()}.
+\cfunction{err_why()}.
 \end{excdesc}
 
 \begin{funcdesc}{timeout}{msecs}

@@ -1,7 +1,8 @@
 \section{\module{MiniAEFrame} ---
-         Support to act as an Open Scripting Architecture server.}
-\declaremodule{standard}{MiniAEFrame}
+         Open Scripting Architecture server support}
 
+\declaremodule{standard}{MiniAEFrame}
+  \platform{Mac}
 \modulesynopsis{Support to act as an Open Scripting Architecture (OSA) server
 (``Apple Events'').}
 
@@ -11,7 +12,7 @@ that can function as an Open Scripting Architecture
 \index{Open Scripting Architecture}
 (OSA) server, i.e. receive and process
 AppleEvents\index{AppleEvents}. It can be used in conjunction with
-\module{FrameWork}\refstmodindex{FrameWork} or standalone.
+\refmodule{FrameWork}\refstmodindex{FrameWork} or standalone.
 
 This module is temporary, it will eventually be replaced by a module
 that handles argument names better and possibly automates making your
@@ -38,8 +39,7 @@ provide its own windows, etc.
 \end{classdesc}
 
 
-\subsection{AEServer Objects}
-\label{aeserver-objects}
+\subsection{AEServer Objects \label{aeserver-objects}}
 
 \begin{methoddesc}[AEServer]{installaehandler}{classe, type, callback}
 Installs an AppleEvent handler. \var{classe} and \var{type} are the

@@ -1,7 +1,8 @@
 \section{\module{al} ---
-         Audio functions on the SGI.}
-\declaremodule{builtin}{al}
+         Audio functions on the SGI}
 
+\declaremodule{builtin}{al}
+  \platform{IRIX}
 \modulesynopsis{Audio functions on the SGI.}
 
 
@@ -13,9 +14,9 @@ releases before 4.0.5.  Again, see the manual to check whether a
 specific function is available on your platform.
 
 All functions and methods defined in this module are equivalent to
-the \C{} functions with \samp{AL} prefixed to their name.
+the C functions with \samp{AL} prefixed to their name.
 
-Symbolic constants from the \C{} header file \code{<audio.h>} are
+Symbolic constants from the C header file \code{<audio.h>} are
 defined in the standard module \module{AL}\refstmodindex{AL}, see
 below.
 
@@ -163,15 +164,16 @@ Get status information on last error.
 
 
 \section{\module{AL} ---
-         Constants used with the \module{al} module.}
-\declaremodule{standard}{AL}
+         Constants used with the \module{al} module}
 
+\declaremodule{standard}{AL}
+  \platform{IRIX}
 \modulesynopsis{Constants used with the \module{al} module.}
 
 
 This module defines symbolic constants needed to use the built-in
 module \module{al} (see above); they are equivalent to those defined
-in the \C{} header file \code{<audio.h>} except that the name prefix
+in the C header file \code{<audio.h>} except that the name prefix
 \samp{AL_} is omitted.  Read the module source for a complete list of
 the defined names.  Suggested use:
 

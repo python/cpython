@@ -1,9 +1,9 @@
 \section{\module{ic} ---
-         Access to Internet Config.}
+         Access to Internet Config}
+
 \declaremodule{builtin}{ic}
-
+  \platform{Mac}
 \modulesynopsis{Access to Internet Config.}
-
 
 
 This module provides access to Macintosh Internet Config package,
@@ -94,10 +94,10 @@ Return the mapping entry for the given \var{file}, which can be passed
 as either a filename or an \function{macfs.FSSpec()} result, and which
 need not exist.
 
-The mapping entry is returned as a tuple \code{(}\var{version},
+The mapping entry is returned as a tuple \code{(\var{version},
 \var{type}, \var{creator}, \var{postcreator}, \var{flags},
 \var{extension}, \var{appname}, \var{postappname}, \var{mimetype},
-\var{entryname}\code{)}, where \var{version} is the entry version
+\var{entryname})}, where \var{version} is the entry version
 number, \var{type} is the 4-character filetype, \var{creator} is the
 4-character creator type, \var{postcreator} is the 4-character creator
 code of an

@@ -2,6 +2,7 @@
          Simple ``database'' interface}
 
 \declaremodule{builtin}{dbm}
+  \platform{UNIX}
 \modulesynopsis{The standard ``database'' interface, based on ndbm.}
 
 
@@ -9,7 +10,7 @@ The \module{dbm} module provides an interface to the \UNIX{}
 \code{(n)dbm} library.  Dbm objects behave like mappings
 (dictionaries), except that keys and values are always strings.
 Printing a dbm object doesn't print the keys and values, and the
-\code{items()} and \code{values()} methods are not supported.
+\method{items()} and \method{values()} methods are not supported.
 
 See also the \refmodule{gdbm}\refbimodindex{gdbm} module, which
 provides a similar interface using the GNU GDBM library.

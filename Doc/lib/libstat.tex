@@ -1,11 +1,11 @@
 \section{\module{stat} ---
-         Utilities for interpreting \function{stat()} results.}
+         Interpreting \function{stat()} results}
+
 \declaremodule{standard}{stat}
-\sectionauthor{Skip Montanaro}{skip@automatrix.com}
-
-
+  \platform{UNIX}
 \modulesynopsis{Utilities for interpreting the results of
-\function{os.stat()}, \function{os.lstat()} and \function{os.fstat()}.}
+  \function{os.stat()}, \function{os.lstat()} and \function{os.fstat()}.}
+\sectionauthor{Skip Montanaro}{skip@automatrix.com}
 
 
 The \module{stat} module defines constants and functions for
@@ -46,7 +46,7 @@ Return non-zero if the mode was gotten from a socket.
 \end{funcdesc}
 
 All the data items below are simply symbolic indexes into the 10-tuple
-returned by \code{os.stat()} or \code{os.lstat()}.  
+returned by \function{os.stat()} or \function{os.lstat()}.  
 
 \begin{datadesc}{ST_MODE}
 Inode protection mode.
@@ -109,7 +109,15 @@ def process(dir, func):
             print 'Skipping %s/%s' % (dir, f)
 
 def f(file):
+-Egon
+
+
+
     print 'frobbed', file
 
 if __name__ == '__main__': process(sys.argv[1], f)
 \end{verbatim}
+
+-Egon
+
+

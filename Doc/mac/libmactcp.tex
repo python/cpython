@@ -1,20 +1,20 @@
 \section{\module{mactcp} ---
-         The MacTCP interfaces.}
+         The MacTCP interfaces}
+
 \declaremodule{builtin}{mactcp}
-
+  \platform{Mac}
 \modulesynopsis{The MacTCP interfaces.}
-
 
 
 This module provides an interface to the Macintosh TCP/IP driver%
 \index{MacTCP} MacTCP. There is an accompanying module,
-\module{macdnr}\refbimodindex{macdnr}, which provides an interface to
-the name-server (allowing you to translate hostnames to IP addresses),
-a module \module{MACTCPconst}\refstmodindex{MACTCPconst} which has
-symbolic names for constants constants used by MacTCP. Since the
-built-in module \module{socket} is also available on the Macintosh it
-is usually easier to use sockets instead of the Macintosh-specific
-MacTCP API.
+\refmodule{macdnr}\refbimodindex{macdnr}, which provides an interface
+to the name-server (allowing you to translate hostnames to IP
+addresses), a module \module{MACTCPconst}\refstmodindex{MACTCPconst}
+which has symbolic names for constants constants used by MacTCP. Since
+the built-in module \module{socket}\refbimodindex{socket} is also
+available on the Macintosh it is usually easier to use sockets instead
+of the Macintosh-specific MacTCP API.
 
 A complete description of the MacTCP interface can be found in the
 Apple MacTCP API documentation.
@@ -55,7 +55,7 @@ function with two integer parameters:\ an event code and a detail. This
 function will be called upon network-generated events such as urgent
 data arrival.  Macintosh documentation calls this the
 \dfn{asynchronous service routine}.  In addition, it is called with
-eventcode \code{MACTCP.PassiveOpenDone} when a \code{PassiveOpen}
+eventcode \code{MACTCP.PassiveOpenDone} when a \method{PassiveOpen()}
 completes. This is a Python addition to the MacTCP semantics.
 It is safe to do further calls from \var{asr}.
 \end{memberdesc}
@@ -70,11 +70,11 @@ calls other than \method{wait()}, \method{isdone()} or
 \end{methoddesc}
 
 \begin{methoddesc}[TCP Stream]{wait}{}
-Wait for \code{PassiveOpen} to complete.
+Wait for \method{PassiveOpen()} to complete.
 \end{methoddesc}
 
 \begin{methoddesc}[TCP Stream]{isdone}{}
-Return \code{1} if a \code{PassiveOpen} has completed.
+Return \code{1} if a \method{PassiveOpen()} has completed.
 \end{methoddesc}
 
 \begin{methoddesc}[TCP Stream]{GetSockName}{}

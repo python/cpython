@@ -1,8 +1,12 @@
 \section{\module{crypt} ---
-         The \cfunction{crypt()} function used to check \UNIX{} passwords.}
-\declaremodule{builtin}{crypt}
+         Function used to check \UNIX{} passwords}
 
-\modulesynopsis{The \cfunction{crypt()} function used to check \UNIX{} passwords.}
+\declaremodule{builtin}{crypt}
+  \platform{UNIX}
+\modulesynopsis{The \cfunction{crypt()} function used to check \UNIX{}
+  passwords.}
+\moduleauthor{Steven D. Majewski}{sdm7g@virginia.edu}
+\sectionauthor{Steven D. Majewski}{sdm7g@virginia.edu}
 
 
 This module implements an interface to the \manpage{crypt}{3} routine,
@@ -16,9 +20,9 @@ attempting to crack \UNIX{} passwords with a dictionary.
 \var{word} will usually be a user's password.  \var{salt} is a
 2-character string which will be used to select one of 4096 variations
 of DES\indexii{cipher}{DES}.  The characters in \var{salt} must be
-either \code{.}, \code{/}, or an alphanumeric character.  Returns the
-hashed password as a string, which will be composed of characters from
-the same alphabet as the salt.
+either \character{.}, \character{/}, or an alphanumeric character.
+Returns the hashed password as a string, which will be composed of
+characters from the same alphabet as the salt.
 \end{funcdesc}
 
 The module and documentation were written by Steve Majewski.
