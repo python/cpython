@@ -45,10 +45,6 @@ Some of these are very old and/or not very robust; marked with ``hmm.''
 
 \item[\module{ihooks}]
 --- Import hook support (for \refmodule{rexec}; may become obsolete).
-
-\item[\module{tzparse}]
---- Parse a timezone specification (unfinished; may disappear in the
-future).
 \end{description}
 
 
@@ -166,6 +162,11 @@ with \module{regex} (extension module).  Refer to the
 \item[\module{timing}]
 --- Measure time intervals to high resolution (use
 \function{time.clock()} instead).  (This is an extension module.)
+
+\item[\module{tzparse}]
+--- Parse a timezone specification (unfinished; may disappear in the
+future, and does not work when the \envvar{TZ} environment variable is
+not set).
 
 \item[\module{util}]
 --- Useful functions that don't fit elsewhere.
