@@ -152,9 +152,11 @@ getpath.o:	getpath.c Makefile
 # When the configuration changes, we remove the library, so that it
 # gets remade from scratch; this ensures to remove modules that are no
 # longer pertinent (but that were in a previous configuration).
-config.c Makefile: Makefile.pre config.c.in $(MAKESETUP) Setup Setup.local
+config.c Makefile: Makefile.pre config.c.in $(MAKESETUP)
+config.c Makefile: Setup.thread Setup Setup.local
+config.c Makefile:
 		-rm -f $(LIBRARY)
-		$(SHELL) $(MAKESETUP) Setup.local Setup
+		$(SHELL) $(MAKESETUP) Setup.thread Setup.local Setup
 
 Setup:
 		cp $(srcdir)/Setup.in Setup
