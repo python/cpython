@@ -441,6 +441,28 @@ def _comment_line(line):
     else:
         return '#'
 
+class _OutputRedirectingPdb(pdb.Pdb):
+    """
+    A specialized version of the python debugger that redirects stdout
+    to a given stream when interacting with the user.  Stdout is *not*
+    redirected when traced code is executed.
+    """
+    def __init__(self, out):
+        self.__out = out
+        pdb.Pdb.__init__(self)
+
+    def trace_dispatch(self, *args):
+        # Redirect stdout to the given stream.
+        save_stdout = sys.stdout
+        sys.stdout = self.__out
+        # Call Pdb's trace dispatch method.
+        pdb.Pdb.trace_dispatch(self, *args)
+        # Restore stdout.
+        sys.stdout = save_stdout
+
+    def resume(self):
+        self._resume = 1
+
 ######################################################################
 ## 2. Example & DocTest
 ######################################################################
@@ -631,7 +653,7 @@ class DocTestParser:
         output = []
         charno, lineno = 0, 0
         # Find all doctest examples in the string:
-        for m in self._EXAMPLE_RE.finditer(string.expandtabs()):
+        for m in self._EXAMPLE_RE.finditer(string):
             # Add the pre-example text to `output`.
             output.append(string[charno:m.start()])
             # Update lineno (lines before this example)
@@ -1260,7 +1282,8 @@ class DocTestRunner:
         original_optionflags = self.optionflags
 
         # Process each example.
-        for example in test.examples:
+        for examplenum, example in enumerate(test.examples):
+
             # If REPORT_ONLY_FIRST_FAILURE is set, then supress
             # reporting after the first failure.
             quiet = (self.optionflags & REPORT_ONLY_FIRST_FAILURE and
@@ -1280,18 +1303,25 @@ class DocTestRunner:
             if not quiet:
                 self.report_start(out, test, example)
 
+            # Use a special filename for compile(), so we can retrieve
+            # the source code during interactive debugging (see
+            # __patched_linecache_getlines).
+            filename = '<doctest %s[%d]>' % (test.name, examplenum)
+
             # Run the example in the given context (globs), and record
             # any exception that gets raised.  (But don't intercept
             # keyboard interrupts.)
             try:
                 # Don't blink!  This is where the user's code gets run.
-                exec compile(example.source, "<string>", "single",
+                exec compile(example.source, filename, "single",
                              compileflags, 1) in test.globs
+                self.debugger.set_continue() # ==== Example Finished ====
                 exception = None
             except KeyboardInterrupt:
                 raise
             except:
                 exception = sys.exc_info()
+                self.debugger.set_continue() # ==== Example Finished ====
 
             got = self._fakeout.getvalue()  # the actual output
             self._fakeout.truncate(0)
@@ -1352,6 +1382,17 @@ class DocTestRunner:
         self.failures += f
         self.tries += t
 
+    __LINECACHE_FILENAME_RE = re.compile(r'<doctest '
+                                         r'(?P<name>[\w\.]+)'
+                                         r'\[(?P<examplenum>\d+)\]>$')
+    def __patched_linecache_getlines(self, filename):
+        m = self.__LINECACHE_FILENAME_RE.match(filename)
+        if m and m.group('name') == self.test.name:
+            example = self.test.examples[int(m.group('examplenum'))]
+            return example.source.splitlines(True)
+        else:
+            return self.save_linecache_getlines(filename)
+
     def run(self, test, compileflags=None, out=None, clear_globs=True):
         """
         Run the examples in `test`, and display the results using the
@@ -1372,6 +1413,8 @@ class DocTestRunner:
         `DocTestRunner.check_output`, and the results are formatted by
         the `DocTestRunner.report_*` methods.
         """
+        self.test = test
+
         if compileflags is None:
             compileflags = _extract_future_flags(test.globs)
 
@@ -1380,25 +1423,27 @@ class DocTestRunner:
             out = save_stdout.write
         sys.stdout = self._fakeout
 
-        # Patch pdb.set_trace to restore sys.stdout, so that interactive
-        # debugging output is visible (not still redirected to self._fakeout).
-        # Note that we run "the real" pdb.set_trace (captured at doctest
-        # import time) in our replacement.  Because the current run() may
-        # run another doctest (and so on), the current pdb.set_trace may be
-        # our set_trace function, which changes sys.stdout.  If we called
-        # a chain of those, we wouldn't be left with the save_stdout
-        # *this* run() invocation wants.
-        def set_trace():
-            sys.stdout = save_stdout
-            real_pdb_set_trace()
-
+        # Patch pdb.set_trace to restore sys.stdout during interactive
+        # debugging (so it's not still redirected to self._fakeout).
+        # Note that the interactive output will go to *our*
+        # save_stdout, even if that's not the real sys.stdout; this
+        # allows us to write test cases for the set_trace behavior.
         save_set_trace = pdb.set_trace
-        pdb.set_trace = set_trace
+        self.debugger = _OutputRedirectingPdb(save_stdout)
+        self.debugger.reset()
+        pdb.set_trace = self.debugger.set_trace
+
+        # Patch linecache.getlines, so we can see the example's source
+        # when we're inside the debugger.
+        self.save_linecache_getlines = linecache.getlines
+        linecache.getlines = self.__patched_linecache_getlines
+
         try:
             return self.__run(test, compileflags, out)
         finally:
             sys.stdout = save_stdout
             pdb.set_trace = save_set_trace
+            linecache.getlines = self.save_linecache_getlines
             if clear_globs:
                 test.globs.clear()
 

@@ -117,6 +117,25 @@ class SampleNewStyleClass(object):
         return self.val
 
 ######################################################################
+## Fake stdin (for testing interactive debugging)
+######################################################################
+
+class _FakeInput:
+    """
+    A fake input stream for pdb's interactive debugger.  Whenever a
+    line is read, print it (to simulate the user typing it), and then
+    return it.  The set of lines to return is specified in the
+    constructor; they should not have trailing newlines.
+    """
+    def __init__(self, lines):
+        self.lines = lines
+
+    def readline(self):
+        line = self.lines.pop(0)
+        print line
+        return line+'\n'
+
+######################################################################
 ## Test Cases
 ######################################################################
 
@@ -1436,31 +1455,28 @@ Create a docstring that we want to debug:
 Create some fake stdin input, to feed to the debugger:
 
     >>> import tempfile
-    >>> fake_stdin = tempfile.TemporaryFile(mode='w+')
-    >>> fake_stdin.write('\n'.join(['next', 'print x', 'continue', '']))
-    >>> fake_stdin.seek(0)
     >>> real_stdin = sys.stdin
-    >>> sys.stdin = fake_stdin
+    >>> sys.stdin = _FakeInput(['next', 'print x', 'continue'])
 
 Run the debugger on the docstring, and then restore sys.stdin.
 
-    >>> try:
-    ...     doctest.debug_src(s)
-    ... finally:
-    ...      sys.stdin = real_stdin
-    ...      fake_stdin.close()
-    ... # doctest: +NORMALIZE_WHITESPACE
+    >>> try: doctest.debug_src(s)
+    ... finally: sys.stdin = real_stdin
     > <string>(1)?()
-    (Pdb) 12
+    (Pdb) next
+    12
     --Return--
     > <string>(1)?()->None
-    (Pdb) 12
-    (Pdb)
+    (Pdb) print x
+    12
+    (Pdb) continue
 
 """
 
 def test_pdb_set_trace():
-    r"""Using pdb.set_trace from a doctest
+    # Note: this should *not* be an r'...' string, because we need
+    # to use '\t' for the output of ...
+    """Using pdb.set_trace from a doctest
 
     You can use pdb.set_trace from a doctest.  To do so, you must
     retrieve the set_trace function from the pdb module at the time
@@ -1481,29 +1497,21 @@ def test_pdb_set_trace():
     captures our debugger input:
 
       >>> import tempfile
-      >>> fake_stdin = tempfile.TemporaryFile(mode='w+')
-      >>> fake_stdin.write('\n'.join([
-      ...    'up',       # up out of pdb.set_trace
-      ...    'up',       # up again to get out of our wrapper
+      >>> real_stdin = sys.stdin
+      >>> sys.stdin = _FakeInput([
       ...    'print x',  # print data defined by the example
       ...    'continue', # stop debugging
-      ...    '']))
-      >>> fake_stdin.seek(0)
-      >>> real_stdin = sys.stdin
-      >>> sys.stdin = fake_stdin
+      ...    ''])
 
-      >>> runner.run(test) # doctest: +ELLIPSIS
+      >>> try: runner.run(test)
+      ... finally: sys.stdin = real_stdin
       --Return--
-      > ...set_trace()->None
-      -> Pdb().set_trace()
-      (Pdb) > ...set_trace()
-      -> real_pdb_set_trace()
-      (Pdb) > <string>(1)?()
-      (Pdb) 42
-      (Pdb) (0, 2)
-
-      >>> sys.stdin = real_stdin
-      >>> fake_stdin.close()
+      > <doctest foo[1]>(1)?()->None
+      -> import pdb; pdb.set_trace()
+      (Pdb) print x
+      42
+      (Pdb) continue
+      (0, 2)
 
       You can also put pdb.set_trace in a function called from a test:
 
@@ -1516,30 +1524,85 @@ def test_pdb_set_trace():
       ... >>> calls_set_trace()
       ... '''
       >>> test = parser.get_doctest(doc, globals(), "foo", "foo.py", 0)
-      >>> fake_stdin = tempfile.TemporaryFile(mode='w+')
-      >>> fake_stdin.write('\n'.join([
-      ...    'up',       # up out of pdb.set_trace
-      ...    'up',       # up again to get out of our wrapper
+      >>> real_stdin = sys.stdin
+      >>> sys.stdin = _FakeInput([
       ...    'print y',  # print data defined in the function
       ...    'up',       # out of function
       ...    'print x',  # print data defined by the example
       ...    'continue', # stop debugging
-      ...    '']))
-      >>> fake_stdin.seek(0)
-      >>> real_stdin = sys.stdin
-      >>> sys.stdin = fake_stdin
+      ...    ''])
 
-      >>> runner.run(test) # doctest: +ELLIPSIS
+      >>> try: runner.run(test)
+      ... finally: sys.stdin = real_stdin
       --Return--
-      > ...set_trace()->None
-      -> Pdb().set_trace()
-      (Pdb) ...set_trace()
-      -> real_pdb_set_trace()
-      (Pdb) > <string>(3)calls_set_trace()
-      (Pdb) 2
-      (Pdb) > <string>(1)?()
-      (Pdb) 1
-      (Pdb) (0, 2)
+      > <doctest test.test_doctest.test_pdb_set_trace[8]>(3)calls_set_trace()->None
+      -> import pdb; pdb.set_trace()
+      (Pdb) print y
+      2
+      (Pdb) up
+      > <doctest foo[1]>(1)?()
+      -> calls_set_trace()
+      (Pdb) print x
+      1
+      (Pdb) continue
+      (0, 2)
+
+    During interactive debugging, source code is shown, even for
+    doctest examples:
+
+      >>> doc = '''
+      ... >>> def f(x):
+      ... ...     g(x*2)
+      ... >>> def g(x):
+      ... ...     print x+3
+      ... ...     import pdb; pdb.set_trace()
+      ... >>> f(3)
+      ... '''
+      >>> test = parser.get_doctest(doc, globals(), "foo", "foo.py", 0)
+      >>> real_stdin = sys.stdin
+      >>> sys.stdin = _FakeInput([
+      ...    'list',     # list source from example 2
+      ...    'next',     # return from g()
+      ...    'list',     # list source from example 1
+      ...    'next',     # return from f()
+      ...    'list',     # list source from example 3
+      ...    'continue', # stop debugging
+      ...    ''])
+      >>> try: runner.run(test)
+      ... finally: sys.stdin = real_stdin
+      ... # doctest: +NORMALIZE_WHITESPACE
+      --Return--
+      > <doctest foo[1]>(3)g()->None
+      -> import pdb; pdb.set_trace()
+      (Pdb) list
+        1     def g(x):
+        2         print x+3
+        3  ->     import pdb; pdb.set_trace()
+      [EOF]
+      (Pdb) next
+      --Return--
+      > <doctest foo[0]>(2)f()->None
+      -> g(x*2)
+      (Pdb) list
+        1     def f(x):
+        2  ->     g(x*2)
+      [EOF]
+      (Pdb) next
+      --Return--
+      > <doctest foo[2]>(1)?()->None
+      -> f(3)
+      (Pdb) list
+        1  -> f(3)
+      [EOF]
+      (Pdb) continue
+      **********************************************************************
+      File "foo.py", line 7, in foo
+      Failed example:
+          f(3)
+      Expected nothing
+      Got:
+          9
+      (1, 3)
       """
 
 def test_DocTestSuite():
