@@ -73,14 +73,16 @@ else:
         return s
     warnings.formatwarning = idle_formatwarning
 
-def extended_linecache_checkcache(orig_checkcache=linecache.checkcache):
+def extended_linecache_checkcache(filename=None,
+                                  orig_checkcache=linecache.checkcache):
     """Extend linecache.checkcache to preserve the <pyshell#...> entries
 
-    Rather than repeating the linecache code, patch it to save the pyshell#
-    entries, call the original linecache.checkcache(), and then restore the
-    saved entries.  Assigning the orig_checkcache keyword arg freezes its value
-    at definition time to the (original) method linecache.checkcache(), i.e.
-    makes orig_checkcache lexical.
+    Rather than repeating the linecache code, patch it to save the
+    <pyshell#...> entries, call the original linecache.checkcache()
+    (which destroys them), and then restore the saved entries.
+
+    orig_checkcache is bound at definition time to the original
+    method, allowing it to be patched.
 
     """
     cache = linecache.cache
