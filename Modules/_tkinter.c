@@ -1426,48 +1426,6 @@ FileHandler(ClientData clientData, int mask)
 	LEAVE_PYTHON
 }
 
-static int
-GetFileNo(PyObject *file)
-	/* Either an int >= 0 or an object with a
-	 *.fileno() method that returns an int >= 0
-	 */
-{
-	PyObject *meth, *args, *res;
-	int id;
-	if (PyInt_Check(file)) {
-		id = PyInt_AsLong(file);
-		if (id < 0)
-			PyErr_SetString(PyExc_ValueError, "invalid file id");
-		return id;
-	}
-	args = PyTuple_New(0);
-	if (args == NULL)
-		return -1;
-
-	meth = PyObject_GetAttrString(file, "fileno");
-	if (meth == NULL) {
-		Py_DECREF(args);
-		return -1;
-	}
-
-	res = PyEval_CallObject(meth, args);
-	Py_DECREF(args);
-	Py_DECREF(meth);
-	if (res == NULL)
-		return -1;
-
-	if (PyInt_Check(res))
-		id = PyInt_AsLong(res);
-	else
-		id = -1;
-
-	if (id < 0)
-		PyErr_SetString(PyExc_ValueError,
-				"invalid fileno() return value");
-	Py_DECREF(res);
-	return id;
-}
-
 static PyObject *
 Tkapp_CreateFileHandler(PyObject *self, PyObject *args)
      /* args is (file, mask, func) */
@@ -1478,7 +1436,7 @@ Tkapp_CreateFileHandler(PyObject *self, PyObject *args)
 
 	if (!PyArg_ParseTuple(args, "OiO:createfilehandler", &file, &mask, &func))
 		return NULL;
-	tfile = GetFileNo(file);
+	tfile = PyObject_AsFileDescriptor(file);
 	if (tfile < 0)
 		return NULL;
 	if (!PyCallable_Check(func)) {
@@ -1506,7 +1464,7 @@ Tkapp_DeleteFileHandler(PyObject *self, PyObject *args)
   
 	if (!PyArg_ParseTuple(args, "O:deletefilehandler", &file))
 		return NULL;
-	tfile = GetFileNo(file);
+	tfile = PyObject_AsFileDescriptor(file);
 	if (tfile < 0)
 		return NULL;
 

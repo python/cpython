@@ -96,31 +96,9 @@ list2set(PyObject *list, fd_set *set, pylist fd2obj[FD_SETSIZE + 3])
                     return -1;
 
 		Py_INCREF(o);
+		v = PyObject_AsFileDescriptor( o );
+		if (v == -1) goto finally;
 
-		if (PyInt_Check(o)) {
-			v = PyInt_AsLong(o);
-		}
-		else if ((meth = PyObject_GetAttrString(o, "fileno")) != NULL)
-		{
-			PyObject *fno = PyEval_CallObject(meth, NULL);
-			Py_DECREF(meth);
-			if (fno == NULL)
-				goto finally;
-
-                        if (!PyInt_Check(fno)) {
-				PyErr_SetString(PyExc_TypeError,
-                                       "fileno method returned a non-integer");
-				Py_DECREF(fno);
-				goto finally;
-                        }
-                        v = PyInt_AsLong(fno);
-			Py_DECREF(fno);
-		}
-		else {
-			PyErr_SetString(PyExc_TypeError,
-			"argument must be an int, or have a fileno() method.");
-			goto finally;
-		}
 #if defined(_MSC_VER)
 		max = 0;		     /* not used for Win32 */
 #else  /* !_MSC_VER */
