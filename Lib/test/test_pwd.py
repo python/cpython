@@ -1,10 +1,8 @@
+from test_support import verbose
 import pwd
 import string
 
-verbose = 0
-if __name__ == '__main__':
-    verbose = 1
-
+print 'pwd.getpwall()'
 entries = pwd.getpwall()
 
 for e in entries:
@@ -12,12 +10,16 @@ for e in entries:
     uid = e[2]
     if verbose:
 	print name, uid
+    print 'pwd.getpwuid()'
     dbuid = pwd.getpwuid(uid)
     if dbuid[0] <> name:
 	print 'Mismatch in pwd.getpwuid()'
+    print 'pwd.getpwnam()'
     dbname = pwd.getpwnam(name)
     if dbname[2] <> uid:
 	print 'Mismatch in pwd.getpwnam()'
+    else:
+	print 'name matches uid'
     break
 
 # try to get some errors
@@ -53,7 +55,7 @@ while bynames.has_key(fakename):
 try:
     pwd.getpwnam(fakename)
 except KeyError:
-    pass
+    print 'caught expected exception'
 else:
     print 'fakename', fakename, 'did not except pwd.getpwnam()'
 
@@ -65,6 +67,6 @@ fakeuid = uids[0] + 1
 try:
     pwd.getpwuid(fakeuid)
 except KeyError:
-    pass
+    print 'caught expected exception'
 else:
     print 'fakeuid', fakeuid, 'did not except pwd.getpwuid()'
