@@ -1,14 +1,16 @@
+(-) try out Kees Blom's railroad diagram generator
+
 (-) redesign error handling (cf. Donald's mail)
 
-(-) do MPW and THINK still not support sys_errlist?
+(*) do MPW and THINK still not support sys_errlist?  Indeed not (neither).
 
 (-) does MPW 3.2 need the MPW_881_BUG defined in Parser/acceler.c
 
 (-) rename MPW_3_1 define (which really means 3.x)
 
-(-) incorporate urlparse.py, uu.py
+(*) incorporate urlparse.py, uu.py
 
-(-) rewrite instance __getattr__ etc. to store ptr in class instead of
+(*) rewrite instance __getattr__ etc. to store ptr in class instead of
 instance -- also have separate __delattr__
 
 (-) add warning to docs about sys.exc_traceback and sys.last_traceback.
@@ -23,7 +25,7 @@ instance -- also have separate __delattr__
 
     (-) there's no way to show the text caret after a multi-line paste?
 
-(-) termios module
+(*) termios module
 
 (*) put signal patches out separately
 
@@ -31,7 +33,7 @@ instance -- also have separate __delattr__
 
 (*) More MPW and Mac changes
 
-(() Sjoerd's compileall script
+(*) Sjoerd's compileall script
 
 (-) systematically create /usr/local/lib/python/<machine>-<os>/
     subdirectories, with a lib/ subdirectory containing the lib*.a
@@ -39,12 +41,12 @@ instance -- also have separate __delattr__
 
 (-) need newer DOS binary (16 bit version doesn't do default args)
 
-(-) support for dynamically loadable libraries in makesetup and Extensions.
+(*) support for dynamically loadable libraries in makesetup and Extensions.
     e.g. add a make rule to build .so files (unfortunately need to figure
     out what ld option is needed) (more appropriate for makesetup
     script?)
 
-(-) Move tkinter into the standard Modules directory; Tkinter c.s. to
+(*) Move tkinter into the standard Modules directory; Tkinter c.s. to
     Lib/tkinter etc. (???)
 
 (-) document Tk
@@ -53,13 +55,13 @@ instance -- also have separate __delattr__
 
 (-) interactive Python GUI (a la NT thingie)
 
-(-) speedup finddfa (and classify?)
+(*) speedup finddfa (and classify?)
 
 (-) more stuff under CVS (demo, extensions)
 
-(-) Mac port of 1.1
+(*) Mac port of 1.1
 
-(-) Mac port of STDWIN 0.9.9 to THINK C 6.0
+(*) Mac port of STDWIN 0.9.9 to THINK C 6.0
 
 (-) use const for char * parameters (and many more) where possible
 
