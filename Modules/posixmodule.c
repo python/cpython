@@ -155,6 +155,7 @@ extern int rename();
 extern int pclose();
 extern int lstat();
 extern int symlink();
+extern int fsync();
 #else /* !HAVE_UNISTD_H */
 #if defined(PYCC_VACPP)
 extern int mkdir Py_PROTO((char *));
