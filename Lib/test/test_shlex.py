@@ -3,6 +3,8 @@ import unittest
 import os, sys
 import shlex
 
+from test import test_support
+
 try:
     from cStringIO import StringIO
 except ImportError:
@@ -187,5 +189,8 @@ if not getattr(shlex, "split", None):
         if methname.startswith("test") and methname != "testCompat":
             delattr(ShlexTest, methname)
 
+def test_main():
+    test_support.run_unittest(ShlexTest)
+
 if __name__ == "__main__":
-    unittest.main()
+    test_main()
