@@ -1,7 +1,6 @@
 test_future
 6
 6
-2
 SyntaxError badsyntax_future3 3
 SyntaxError badsyntax_future4 3
 SyntaxError badsyntax_future5 4
