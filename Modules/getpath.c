@@ -152,6 +152,7 @@ PERFORMANCE OF THIS SOFTWARE.
 
 static char prefix[MAXPATHLEN+1];
 static char exec_prefix[MAXPATHLEN+1];
+static char progpath[MAXPATHLEN+1];
 static char *module_search_path = NULL;
 static char lib_python[20]; /* Dynamically set to "lib/python" VERSION */
 
@@ -324,15 +325,14 @@ calculate_path()
 {
 	extern char *Py_GetProgramName();
 
-	char delimiter[2] = {DELIM, '\0'};
-	char separator[2] = {SEP, '\0'};
+	static char delimiter[2] = {DELIM, '\0'};
+	static char separator[2] = {SEP, '\0'};
 	char *pythonpath = PYTHONPATH;
 	char *rtpypath = getenv("PYTHONPATH");
 	char *home = getenv("PYTHONHOME");
 	char *path = getenv("PATH");
 	char *prog = Py_GetProgramName();
 	char argv0_path[MAXPATHLEN+1];
-	char progpath[MAXPATHLEN+1];
 	int pfound, efound; /* 1 if found; -1 if found build directory */
 	char *buf;
 	int bufsz;
@@ -542,4 +542,12 @@ Py_GetExecPrefix()
 	if (!module_search_path)
 		calculate_path();
 	return exec_prefix;
+}
+
+char *
+Py_GetProgramFullPath()
+{
+	if (!module_search_path)
+		calculate_path();
+	return progpath;
 }
