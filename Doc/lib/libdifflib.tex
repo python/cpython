@@ -53,8 +53,8 @@
   \strong{Timing:} The basic Ratcliff-Obershelp algorithm is cubic
   time in the worst case and quadratic time in the expected case.
   \class{SequenceMatcher} is quadratic time for the worst case and has
-  expected-case behavior dependent on how many elements the sequences
-  have in common; best case time (no elements in common) is linear.
+  expected-case behavior dependent in a complicated way on how many
+  elements the sequences have in common; best case time is linear.
 \end{classdesc}
 
 
@@ -68,6 +68,9 @@
   \code{None} is equivalent to passing \code{lambda x: 0}, i.e.\ no
   elements are ignored.  For example, pass
 
+% BUG: the HTML generated for this is
+% BUG:     lambda x: x in " \\t"
+% BUG: i.e. it displays two backslashes.
 \begin{verbatim}
 lambda x: x in " \\t"
 \end{verbatim}
@@ -138,7 +141,7 @@ of the other sequences.
   junk happens to be adjacent to an interesting match.
 
   Here's the same example as before, but considering blanks to be junk.
-  That prevents \code{' abcd'} from matching the \code{ abcd} at the
+  That prevents \code{' abcd'} from matching the \code{' abcd'} at the
   tail end of the second sequence directly.  Instead only the
   \code{'abcd'} can match, and matches the leftmost \code{'abcd'} in
   the second sequence:
@@ -217,8 +220,8 @@ replace a[3:4] (x) b[2:3] (y)
   range [0, 1].
 
   Where T is the total number of elements in both sequences, and M is
-  the number of matches, this is 2,0*M / T. Note that this is \code{1}
-  if the sequences are identical, and \code{0} if they have nothing in
+  the number of matches, this is 2.0*M / T. Note that this is \code{1.}
+  if the sequences are identical, and \code{0.} if they have nothing in
   common.
 
   This is expensive to compute if \method{get_matching_blocks()} or
@@ -242,8 +245,10 @@ replace a[3:4] (x) b[2:3] (y)
   \method{ratio()} or \method{quick_ratio()}.
 \end{methoddesc}
 
-The three methods that return the ratio of differences to similarities
-can give different results due to differing levels of approximation:
+The three methods that return the ratio of matching to total characters
+can give different results due to differing levels of approximation,
+although \method{quick_ratio()} and \method{real_quick_ratio()} are always
+at least as large as \method{ratio()}:
 
 \begin{verbatim}
 >>> s = SequenceMatcher(None, "abcd", "bcde")
