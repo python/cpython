@@ -167,6 +167,13 @@ Core and builtins
 Extension modules
 -----------------
 
+- time.strftime() now checks that the values in its time tuple argument
+  are within the proper boundaries to prevent possible crashes from the
+  platform's C library implementation of strftime().  Can possibly
+  break code that uses values outside the range that didn't cause
+  problems previously (such as sitting day of year to 0).  Fixes bug
+  #897625.
+
 - The socket module now supports Bluetooth sockets, if the
   system has <bluetooth/bluetooth.h>
 

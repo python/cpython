@@ -3189,11 +3189,11 @@ time_strftime(PyDateTime_Time *self, PyObject *args, PyObject *kw)
 	 * 1900 to worm around that.
 	 */
 	tuple = Py_BuildValue("iiiiiiiii",
-		              1900, 0, 0, /* year, month, day */
+		              1900, 1, 1, /* year, month, day */
 			      TIME_GET_HOUR(self),
 			      TIME_GET_MINUTE(self),
 			      TIME_GET_SECOND(self),
-			      0, 0, -1); /* weekday, daynum, dst */
+			      0, 1, -1); /* weekday, daynum, dst */
 	if (tuple == NULL)
 		return NULL;
 	assert(PyTuple_Size(tuple) == 9);

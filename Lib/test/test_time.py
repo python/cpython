@@ -37,6 +37,62 @@ class TimeTestCase(unittest.TestCase):
             except ValueError:
                 self.fail('conversion specifier: %r failed.' % format)
 
+    def test_strftime_bounds_checking(self):
+        # Make sure that strftime() checks the bounds of the various parts
+        #of the time tuple.
+
+        # Check year
+        self.assertRaises(ValueError, time.strftime, '',
+                            (1899, 1, 1, 0, 0, 0, 0, 1, -1))
+        if time.accept2dyear:
+            self.assertRaises(ValueError, time.strftime, '',
+                                (-1, 1, 1, 0, 0, 0, 0, 1, -1))
+            self.assertRaises(ValueError, time.strftime, '',
+                                (100, 1, 1, 0, 0, 0, 0, 1, -1))
+        # Check month
+        self.assertRaises(ValueError, time.strftime, '',
+                            (1900, 0, 1, 0, 0, 0, 0, 1, -1))
+        self.assertRaises(ValueError, time.strftime, '',
+                            (1900, 13, 1, 0, 0, 0, 0, 1, -1))
+        # Check day of month
+        self.assertRaises(ValueError, time.strftime, '',
+                            (1900, 1, 0, 0, 0, 0, 0, 1, -1))
+        self.assertRaises(ValueError, time.strftime, '',
+                            (1900, 1, 32, 0, 0, 0, 0, 1, -1))
+        # Check hour
+        self.assertRaises(ValueError, time.strftime, '',
+                            (1900, 1, 1, -1, 0, 0, 0, 1, -1))
+        self.assertRaises(ValueError, time.strftime, '',
+                            (1900, 1, 1, 24, 0, 0, 0, 1, -1))
+        # Check minute
+        self.assertRaises(ValueError, time.strftime, '',
+                            (1900, 1, 1, 0, -1, 0, 0, 1, -1))
+        self.assertRaises(ValueError, time.strftime, '',
+                            (1900, 1, 1, 0, 60, 0, 0, 1, -1))
+        # Check second
+        self.assertRaises(ValueError, time.strftime, '',
+                            (1900, 1, 1, 0, 0, -1, 0, 1, -1))
+        # C99 only requires allowing for one leap second, but Python's docs say
+        # allow two leap seconds (0..61)
+        self.assertRaises(ValueError, time.strftime, '',
+                            (1900, 1, 1, 0, 0, 62, 0, 1, -1))
+        # No check for upper-bound day of week;
+        #  value forced into range by a ``% 7`` calculation.
+        # Start check at -2 since gettmarg() increments value before taking
+        #  modulo.
+        self.assertRaises(ValueError, time.strftime, '',
+                            (1900, 1, 1, 0, 0, 0, -2, 1, -1))
+        # Check day of the year
+        self.assertRaises(ValueError, time.strftime, '',
+                            (1900, 1, 1, 0, 0, 0, 0, 0, -1))
+        self.assertRaises(ValueError, time.strftime, '',
+                            (1900, 1, 1, 0, 0, 0, 0, 367, -1))
+        # Check daylight savings flag
+        self.assertRaises(ValueError, time.strftime, '',
+                            (1900, 1, 1, 0, 0, 0, 0, 1, -2))
+        self.assertRaises(ValueError, time.strftime, '',
+                            (1900, 1, 1, 0, 0, 0, 0, 1, 2))
+
     def test_strptime(self):
         tt = time.gmtime(self.t)
         for directive in ('a', 'A', 'b', 'B', 'c', 'd', 'H', 'I',
