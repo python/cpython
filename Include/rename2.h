@@ -418,6 +418,19 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define ref_total _Py_RefTotal
 #define sigcheck PyErr_CheckSignals
 
+/* Misc. stuff */
+#define getcompiler Py_GetCompiler
+#define getcopyright Py_GetCopyright
+#define getplatform Py_GetPlatform
+#define getversion Py_GetVersion
+
+/* Misc. Internals */
+#define askyesno _Py_AskYesNo
+#define frozen_modules _PyImport_FrozenModules
+#define import_filetab _PyImport_Filetab
+#define import_maxsuffixsize _PyImport_MaxSuffixSize
+#define load_dynamic_module _PyImport_LoadDynamicModule
+
 #ifdef __cplusplus
 }
 #endif
