@@ -2095,8 +2095,7 @@ int_from_string(v)
 	long x;
 	char buffer[256]; /* For errors */
 
-	if (!PyArg_Parse(v, "s", &s))
-		return NULL;
+	s = PyString_AS_STRING(v);
 	while (*s && isspace(Py_CHARMASK(*s)))
 		s++;
 	if (s[0] == '\0') {
@@ -2110,6 +2109,11 @@ int_from_string(v)
 	if (*end != '\0') {
 		sprintf(buffer, "invalid literal for int(): %.200s", s);
 		PyErr_SetString(PyExc_ValueError, buffer);
+		return NULL;
+	}
+	else if (end-s != PyString_GET_SIZE(v)) {
+		PyErr_SetString(PyExc_ValueError,
+				"null byte in argument for int()");
 		return NULL;
 	}
 	else if (errno != 0) {
@@ -2128,9 +2132,7 @@ long_from_string(v)
 	PyObject *x;
 	char buffer[256]; /* For errors */
 
-	if (!PyArg_Parse(v, "s", &s))
-		return NULL;
-
+	s = PyString_AS_STRING(v);
 	while (*s && isspace(Py_CHARMASK(*s)))
 		s++;
 	if (s[0] == '\0') {
@@ -2148,6 +2150,11 @@ long_from_string(v)
 		Py_DECREF(x);
 		return NULL;
 	}
+	else if (end-s != PyString_GET_SIZE(v)) {
+		PyErr_SetString(PyExc_ValueError,
+				"null byte in argument for float()");
+		return NULL;
+	}
 	return x;
 }
 
@@ -2160,8 +2167,7 @@ float_from_string(v)
 	double x;
 	char buffer[256]; /* For errors */
 
-	if (!PyArg_Parse(v, "s", &s))
-		return NULL;
+	s = PyString_AS_STRING(v);
 	while (*s && isspace(Py_CHARMASK(*s)))
 		s++;
 	if (s[0] == '\0') {
@@ -2177,6 +2183,11 @@ float_from_string(v)
 	if (*end != '\0') {
 		sprintf(buffer, "invalid literal for float(): %.200s", s);
 		PyErr_SetString(PyExc_ValueError, buffer);
+		return NULL;
+	}
+	else if (end-s != PyString_GET_SIZE(v)) {
+		PyErr_SetString(PyExc_ValueError,
+				"null byte in argument for float()");
 		return NULL;
 	}
 	else if (errno != 0) {
