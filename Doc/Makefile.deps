@@ -315,6 +315,7 @@ LIBFILES= $(MANSTYLES) $(INDEXSTYLES) $(COMMONTEX) \
 	lib/libstatvfs.tex \
 	lib/libtty.tex \
 	lib/libasyncore.tex \
+	lib/libasynchat.tex \
 	lib/libatexit.tex \
 	lib/libmmap.tex \
 	lib/tkinter.tex \
