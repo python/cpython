@@ -19,6 +19,13 @@ Core
   apply bounds checking on the used buffer which enhances protection
   against buffer overruns.
 
+- Unicode APIs now use name mangling to assure that mixing interpreters
+  and extensions using different Unicode widths is rendered next to 
+  impossible. Trying to import an incompatible Unicode-aware extension 
+  will result in an ImportError.  Unicode extensions writers must make
+  sure to check the Unicode width compatibility in their extensions by
+  using at least one of the mangled Unicode APIs in the extension.
+
 Library
 
 - New function xml.sax.saxutils.quoteattr():  Quote an XML attribute
