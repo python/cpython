@@ -9,8 +9,8 @@ AC_INIT(python, PYTHON_VERSION)
 AC_CONFIG_SRCDIR([Include/object.h])
 AC_CONFIG_HEADER(pyconfig.h)
 
-# This is for stuff that absolutely must end up in pyconfig.h.
-# Please use pyport.h instead, if possible.
+dnl This is for stuff that absolutely must end up in pyconfig.h.
+dnl Please use pyport.h instead, if possible.
 AH_TOP([
 #ifndef Py_PYCONFIG_H
 #define Py_PYCONFIG_H
@@ -23,6 +23,12 @@ AH_BOTTOM([
 
 #endif /*Py_PYCONFIG_H*/
 ])
+
+# We don't use PACKAGE_ variables, and they cause conflicts
+# with other autoconf-based packages that include Python.h
+grep -v 'define PACKAGE_' <confdefs.h >confdefs.h.new
+rm confdefs.h
+mv confdefs.h.new confdefs.h
 
 AC_SUBST(VERSION)
 VERSION=PYTHON_VERSION
