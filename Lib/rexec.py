@@ -429,9 +429,9 @@ class RExec(ihooks._Verbose):
         expression, or a compiled code object, which will be evaluated in
         the restricted environment's __main__ module.  The value of the
         expression or code object will be returned.
-        return self.s_apply(self.r_eval, args)
 
         """
+        return self.s_apply(self.r_eval, args)
 
     def s_execfile(self, *args):
         """Execute the Python code in the file in the restricted
