@@ -23,6 +23,8 @@ TOP=''
 
 # Where to put CW projects, relative to TOP
 CWDIR=':Mac:mwerks:projects'
+# From which folders to put projects there
+CWDIRDIRS=['build.macppc.stand', 'build.macppc.shared', 'build.mac68k.stand', 'build.mac68k.shared', 'PlugIns']
 
 # Helper routines
 def binhexit(path, name):
@@ -80,13 +82,15 @@ def hexbincwprojects(creator):
 		
 		if srcfile[-1] == 'µ':
 			dstfile = srcfile[:-1]+'mu.hqx'
+		elif srcfile[-3] == '.mu':
+			dstfile = srcfile + '.hqx'
 		elif ord(srcfile[-1]) >= 128:
 			dstfile = srcfile[:-1]+`ord(srcfile[-1])`+'.hqx'
 		else:
 			dstfile = srcfile + '.hqx'
 			
 		if os.path.exists(dstfile) and \
-				os.stat(dstfile)[8] > os.stat(srcfile)[8]:
+				os.stat(dstfile)[8] >= os.stat(srcfile)[8]:
 			print 'Skip', dstfile,'- Up-to-date'
 			continue
 		print 'Compacting', dstfile
@@ -104,20 +108,26 @@ def copycwproject(path, name):
 	global project_files
 	
 	dstdir = os.path.join(TOP, CWDIR)
-	if not os.path.exists(dstdir):
-		print dstdir
-		print 'No CW-project dir, skip', name
+	if path[:len(dstdir)] == dstdir:
 		return
-	dstfile = os.path.join(dstdir, name)
-	# Check that we're not in the dest directory
-	if dstfile == path:
-		return
+	srcdir = os.path.split(path)[0]
+	srcdir = os.path.split(srcdir)[1]
+	if srcdir in CWDIRDIRS:
+		if not os.path.exists(dstdir):
+			print dstdir
+			print 'No CW-project dir, skip', name
+			return
+		dstfile = os.path.join(dstdir, name)
+	else:
+		if path[-2:] != '.µ':
+			return
+		dstfile = path[:-2]+ '.mu'
 
 	# If the destination doesn't exists or is older that the source
 	# we copy and remember it
 	
 	if os.path.exists(dstfile) and \
-			os.stat(dstfile)[8] > os.stat(path)[8]:
+			os.stat(dstfile)[8] >= os.stat(path)[8]:
 		print 'Not copying', path,'- Up-to-date'
 	else:
 		print 'Copy', path
@@ -136,22 +146,28 @@ def copycwexpfile(path, name):
 	global project_files
 	
 	dstdir = os.path.join(TOP, CWDIR)
-	if not os.path.exists(dstdir):
-		print dstdir
-		print 'No CW-project dir, skip', name
+	if path[:len(dstdir)] == dstdir:
 		return
-	dstfile = os.path.join(dstdir, name)
+	srcdir = os.path.split(path)[0]
+	srcdir = os.path.split(srcdir)[1]
+	if srcdir in CWDIRDIRS:
+		if not os.path.exists(dstdir):
+			print dstdir
+			print 'No CW-project dir, skip', name
+			return
+		dstfile = os.path.join(dstdir, name)
+	else:
+		if path[-6:] != '.µ.exp':
+			return
+		dstfile = path[:-6] + '.mu.exp'
 	if dstfile[-6:] == '.µ.exp':
 		dstfile = dstfile[:-6]+'.mu.exp'
-	# Check that we're not in the dest directory
-	if dstfile == path:
-		return
 
 	# If the destination doesn't exists or is older that the source
 	# we copy and remember it
 	
 	if os.path.exists(dstfile) and \
-			os.stat(dstfile)[8] > os.stat(path)[8]:
+			os.stat(dstfile)[8] >= os.stat(path)[8]:
 		print 'Not copying', path,'- Up-to-date'
 	else:
 		print 'Copy', path
