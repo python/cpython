@@ -56,6 +56,19 @@ def play_sound_file(data, rate, ssize, nchannels):
     dsp.getptr()
     dsp.fileno()
 
+    # Make sure the read-only attributes work.
+    assert dsp.closed is False, "dsp.closed is not False"
+    assert dsp.name == "/dev/dsp"
+    assert dsp.mode == 'w', "bad dsp.mode: %r" % dsp.mode
+
+    # And make sure they're really read-only.
+    for attr in ('closed', 'name', 'mode'):
+        try:
+            setattr(dsp, attr, 42)
+            raise RuntimeError("dsp.%s not read-only" % attr)
+        except TypeError:
+            pass
+
     # set parameters based on .au file headers
     dsp.setparameters(AFMT_S16_NE, nchannels, rate)
     t1 = time.time()
@@ -65,9 +78,7 @@ def play_sound_file(data, rate, ssize, nchannels):
     t2 = time.time()
     print "elapsed time: %.1f sec" % (t2-t1)
 
-def test_setparameters():
-    dsp = ossaudiodev.open("w")
-
+def test_setparameters(dsp):
     # Two configurations for testing:
     #   config1 (8-bit, mono, 8 kHz) should work on even the most
     #      ancient and crufty sound card, but maybe not on special-
@@ -96,11 +107,16 @@ def test_setparameters():
     assert result == (fmt, channels, rate), \
            "setparameters%r: returned %r" % (config + result)
 
+def test_bad_setparameters(dsp):
+
     # Now try some configurations that are presumably bogus: eg. 300
     # channels currently exceeds even Hollywood's ambitions, and
     # negative sampling rate is utter nonsense.  setparameters() should
     # accept these in non-strict mode, returning something other than
     # was requested, but should barf in strict mode.
+    fmt = AFMT_S16_NE
+    rate = 44100
+    channels = 2
     for config in [(fmt, 300, rate),       # ridiculous nchannels
                    (fmt, -5, rate),        # impossible nchannels
                    (fmt, channels, -50),   # impossible rate
@@ -119,6 +135,16 @@ def test_setparameters():
 def test():
     (data, rate, ssize, nchannels) = read_sound_file(findfile('audiotest.au'))
     play_sound_file(data, rate, ssize, nchannels)
-    test_setparameters()
+
+    dsp = ossaudiodev.open("w")
+    try:
+        test_setparameters(dsp)
+
+        # Disabled because it fails under Linux 2.6 with ALSA's OSS
+        # emulation layer.
+        #test_bad_setparameters(dsp)
+    finally:
+        dsp.close()
+        assert dsp.closed is True, "dsp.closed is not True"
 
 test()

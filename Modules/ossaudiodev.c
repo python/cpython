@@ -46,11 +46,12 @@ typedef unsigned long uint32_t;
 
 typedef struct {
     PyObject_HEAD;
-    int      fd;                      /* The open file */
-    int      mode;                    /* file mode */
-    int      icount;                  /* Input count */
-    int      ocount;                  /* Output count */
-    uint32_t afmts;                   /* Audio formats supported by hardware */
+    char    *devicename;              /* name of the device file */
+    int      fd;                      /* file descriptor */
+    int      mode;                    /* file mode (O_RDONLY, etc.) */
+    int      icount;                  /* input count */
+    int      ocount;                  /* output count */
+    uint32_t afmts;                   /* audio formats supported by hardware */
 } oss_audio_t;
 
 typedef struct {
@@ -74,7 +75,7 @@ newossobject(PyObject *arg)
 {
     oss_audio_t *self;
     int fd, afmts, imode;
-    char *basedev = NULL;
+    char *devicename = NULL;
     char *mode = NULL;
 
     /* Two ways to call open():
@@ -82,11 +83,11 @@ newossobject(PyObject *arg)
          open(mode)         (for backwards compatibility)
        because the *first* argument is optional, parsing args is
        a wee bit tricky. */
-    if (!PyArg_ParseTuple(arg, "s|s:open", &basedev, &mode))
+    if (!PyArg_ParseTuple(arg, "s|s:open", &devicename, &mode))
        return NULL;
     if (mode == NULL) {                 /* only one arg supplied */
-       mode = basedev;
-       basedev = NULL;
+       mode = devicename;
+       devicename = NULL;
     }
 
     if (strcmp(mode, "r") == 0)
@@ -102,18 +103,18 @@ newossobject(PyObject *arg)
 
     /* Open the correct device: either the 'device' argument,
        or the AUDIODEV environment variable, or "/dev/dsp". */
-    if (basedev == NULL) {              /* called with one arg */
-       basedev = getenv("AUDIODEV");
-       if (basedev == NULL)             /* $AUDIODEV not set */
-          basedev = "/dev/dsp";
+    if (devicename == NULL) {              /* called with one arg */
+       devicename = getenv("AUDIODEV");
+       if (devicename == NULL)             /* $AUDIODEV not set */
+          devicename = "/dev/dsp";
     }
 
     /* Open with O_NONBLOCK to avoid hanging on devices that only allow
        one open at a time.  This does *not* affect later I/O; OSS
        provides a special ioctl() for non-blocking read/write, which is
        exposed via oss_nonblock() below. */
-    if ((fd = open(basedev, imode|O_NONBLOCK)) == -1) {
-        PyErr_SetFromErrnoWithFilename(PyExc_IOError, basedev);
+    if ((fd = open(devicename, imode|O_NONBLOCK)) == -1) {
+        PyErr_SetFromErrnoWithFilename(PyExc_IOError, devicename);
         return NULL;
     }
 
@@ -121,12 +122,12 @@ newossobject(PyObject *arg)
        expected write() semantics. */
     if (fcntl(fd, F_SETFL, 0) == -1) {
         close(fd);
-        PyErr_SetFromErrnoWithFilename(PyExc_IOError, basedev);
+        PyErr_SetFromErrnoWithFilename(PyExc_IOError, devicename);
         return NULL;
     }
 
     if (ioctl(fd, SNDCTL_DSP_GETFMTS, &afmts) == -1) {
-        PyErr_SetFromErrnoWithFilename(PyExc_IOError, basedev);
+        PyErr_SetFromErrnoWithFilename(PyExc_IOError, devicename);
         return NULL;
     }
     /* Create and initialize the object */
@@ -134,6 +135,7 @@ newossobject(PyObject *arg)
         close(fd);
         return NULL;
     }
+    self->devicename = devicename;
     self->fd = fd;
     self->mode = imode;
     self->icount = self->ocount = 0;
@@ -158,22 +160,22 @@ oss_dealloc(oss_audio_t *self)
 static oss_mixer_t *
 newossmixerobject(PyObject *arg)
 {
-    char *basedev = NULL;
+    char *devicename = NULL;
     int fd;
     oss_mixer_t *self;
 
-    if (!PyArg_ParseTuple(arg, "|s", &basedev)) {
+    if (!PyArg_ParseTuple(arg, "|s", &devicename)) {
         return NULL;
     }
 
-    if (basedev == NULL) {
-        basedev = getenv("MIXERDEV");
-        if (basedev == NULL)            /* MIXERDEV not set */
-            basedev = "/dev/mixer";
+    if (devicename == NULL) {
+        devicename = getenv("MIXERDEV");
+        if (devicename == NULL)            /* MIXERDEV not set */
+            devicename = "/dev/mixer";
     }
 
-    if ((fd = open(basedev, O_RDWR)) == -1) {
-        PyErr_SetFromErrnoWithFilename(PyExc_IOError, basedev);
+    if ((fd = open(devicename, O_RDWR)) == -1) {
+        PyErr_SetFromErrnoWithFilename(PyExc_IOError, devicename);
         return NULL;
     }
 
@@ -827,7 +829,33 @@ static PyMethodDef oss_mixer_methods[] = {
 static PyObject *
 oss_getattr(oss_audio_t *self, char *name)
 {
-    return Py_FindMethod(oss_methods, (PyObject *)self, name);
+    PyObject * rval = NULL;
+    if (strcmp(name, "closed") == 0) {
+        rval = (self->fd == -1) ? Py_True : Py_False;
+        Py_INCREF(rval);
+    }
+    else if (strcmp(name, "name") == 0) {
+        rval = PyString_FromString(self->devicename);
+    }
+    else if (strcmp(name, "mode") == 0) {
+        /* No need for a "default" in this switch: from newossobject(),
+           self->mode can only be one of these three values. */
+        switch(self->mode) {
+            case O_RDONLY:
+                rval = PyString_FromString("r");
+                break;
+            case O_RDWR:
+                rval = PyString_FromString("rw");
+                break;
+            case O_WRONLY:
+                rval = PyString_FromString("w");
+                break;
+        }
+    }
+    else {
+        rval = Py_FindMethod(oss_methods, (PyObject *)self, name);
+    }
+    return rval;
 }
 
 static PyObject *
