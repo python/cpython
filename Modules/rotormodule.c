@@ -158,11 +158,26 @@ char *key;
 	int i;
 	int len=strlen(key);
 	for (i=0;i<len;i++) {
+#ifdef BUGGY_CODE_BW_COMPAT
+		/* This is the code as it was originally released.
+		   It causes warnings on many systems and can generate
+		   different results as well.  If you have files
+		   encrypted using an older version you may want to
+		   #define BUGGY_CODE_BW_COMPAT so as to be able to
+		   decrypt them... */
 		k1 = (((k1<<3 | k1<<-13) + key[i]) & 65535);
 		k2 = (((k2<<3 | k2<<-13) ^ key[i]) & 65535);
 		k3 = (((k3<<3 | k3<<-13) - key[i]) & 65535);
 		k4 = ((key[i] - (k4<<3 | k4<<-13)) & 65535);
 		k5 = (((k5<<3 | k5<<-13) ^ ~key[i]) & 65535);
+#else
+		/* This code should be more portable */
+		k1 = (((k1<<3 | k1>>13) + key[i]) & 65535);
+		k2 = (((k2<<3 | k2>>13) ^ key[i]) & 65535);
+		k3 = (((k3<<3 | k3>>13) - key[i]) & 65535);
+		k4 = ((key[i] - (k4<<3 | k4>>13)) & 65535);
+		k5 = (((k5<<3 | k5>>13) ^ ~key[i]) & 65535);
+#endif
 	}
 	r->key[0] = (short)k1;
 	r->key[1] = (short)(k2|1);
