@@ -12,6 +12,12 @@ and the like. Use with care.
 
 Note the capitalisation of the module name, this is a historical
 artifact.
+\begin{datadesc}{runtimemodel}
+Either \code{"ppc"}, \code{"carbon"} or \code{"macho"}. This signifies
+whether this Python uses the classic (InterfaceLib style) runtime
+model, the MacOS X compatible CarbonLib style or the MacOS X-only
+Mach-O style.
+\end{datadesc}
 
 \begin{excdesc}{Error}
 This exception is raised on MacOS generated errors, either from
