@@ -7,8 +7,8 @@ conform to the following interface:
       arguments; the red, green, and blue values of the selected color.
 
     - When a Viewer selects a color and wishes to update all other Views, it
-      should call update_views() on the Switchboard object.  Not that the
-      Viewer typically does *not* update itself before calling update_views(), 
+      should call update_views() on the Switchboard object.  Note that the
+      Viewer typically does *not* update itself before calling update_views(),
       since this would cause it to get updated twice.
 
 Optionally, Viewers can also implement:
@@ -23,11 +23,11 @@ Optionally, Viewers can also implement:
       unmapped.  All Viewers should implement this.
 
     - colordb_changed() which takes a single argument, an instance of
-      ColorDB.  This is called whenever the color name database is changed and 
+      ColorDB.  This is called whenever the color name database is changed and
       gives a chance for the Viewers to do something on those events.  See
       ListViewer for details.
 
-External Viewers are found dynamically.  Viewer modules should have names such 
+External Viewers are found dynamically.  Viewer modules should have names such
 as FooViewer.py.  If such a named module has a module global variable called
 ADDTOVIEW and this variable is true, the Viewer will be added dynamically to
 the `View' menu.  ADDTOVIEW contains a string which is used as the menu item
@@ -64,7 +64,7 @@ class Switchboard:
                 try:
                     fp = open(initfile)
                     self.__optiondb = marshal.load(fp)
-                    if type(self.__optiondb) <> DictType:
+                    if not isinstance(self.__optiondb, DictType):
                         print >> sys.stderr, \
                               'Problem reading options from file:', initfile
                         self.__optiondb = {}
