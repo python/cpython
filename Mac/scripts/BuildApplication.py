@@ -112,11 +112,10 @@ class radio:
 
 def interact(scriptname):
 	if PPC_ONLY:
-		return 'pwpc'
+		return 'pwpc', 1
 	d = Dlg.GetNewDialog(DLG_ID, -1)
 	if not d:
-		print "Can't get DLOG resource with id =", DLG_ID
-		return
+		raise "Can't get DLOG resource with id =", DLG_ID
 	d.SetDialogDefaultItem(OK_BUTTON)
 	d.SetDialogCancelItem(CANCEL_BUTTON)
 	Dlg.ParamText(scriptname, "", "", "")
