@@ -281,8 +281,14 @@ class Plist(Dict):
     writePlist() functions instead.
     """
 
+    def __init__(self, **kwargs):
+        from warnings import warn
+        warn("The Plist class is deprecated, use the readPlist() and "
+             "writePlist() functions instead", PendingDeprecationWarning)
+        super(Plist, self).__init__(**kwargs)
+
     def fromFile(cls, pathOrFile):
-        """Deprecated! Use the readPlist() function instead."""
+        """Deprecated. Use the readPlist() function instead."""
         rootObject = readPlist(pathOrFile)
         plist = cls()
         plist.update(rootObject)
@@ -290,7 +296,7 @@ class Plist(Dict):
     fromFile = classmethod(fromFile)
 
     def write(self, pathOrFile):
-        """Deprecated! Use the writePlist() function instead."""
+        """Deprecated. Use the writePlist() function instead."""
         writePlist(self, pathOrFile)
 
 
