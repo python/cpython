@@ -43,6 +43,5 @@ class install_headers (Command):
 
     def get_outputs (self):
         return self.outfiles
-    # run()
 
 # class install_headers
