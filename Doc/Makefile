@@ -168,7 +168,7 @@ LIBFILES = lib.tex \
     libframework.tex libminiae.tex libbinhex.tex libuu.tex libsunaudio.tex
 
 # Library document
-lib.dvi: tools/modindex.py tools/indfix.py $(LIBFILES)
+lib.dvi: tools/indfix.py $(LIBFILES)
 	rm -f $*.ind mod$*.ind
 	$(LATEX) $*
 	$(MAKEINDEX) mod$*.idx
