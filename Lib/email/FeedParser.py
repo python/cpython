@@ -62,6 +62,7 @@ class BufferedSubFile(object):
     def close(self):
         # Don't forget any trailing partial line.
         self._lines.append(self._partial)
+        self._partial = ''
         self._closed = True
 
     def readline(self):
@@ -279,7 +280,7 @@ class FeedParser:
             separator = '--' + boundary
             boundaryre = re.compile(
                 '(?P<sep>' + re.escape(separator) +
-                r')(?P<end>--)?(?P<ws>[ \t]*)(?P<linesep>\r\n|\r|\n)$')
+                r')(?P<end>--)?(?P<ws>[ \t]*)(?P<linesep>\r\n|\r|\n)?$')
             capturing_preamble = True
             preamble = []
             linesep = False
