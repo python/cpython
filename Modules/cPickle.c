@@ -88,7 +88,9 @@ PyDoc_STRVAR(cPickle_module_documentation,
 #define FALSE       "I00\n"
 
 /* Keep in synch with pickle.Pickler._BATCHSIZE.  This is how many elements
- * batch_{list, dict} pump out before doing APPENDS/SETITEMS.
+ * batch_list/dict() pumps out before doing APPENDS/SETITEMS.  Nothing will
+ * break if this gets out of synch with pickle.py, but it's unclear that
+ * would help anything either.
  */
 #define BATCHSIZE 1000
 
@@ -1709,7 +1711,6 @@ save_list(Picklerobject *self, PyObject *args)
 	int len;
 	PyObject *iter;
 
-
 	if (self->fast && !fast_save_enter(self, args))
 		goto finally;
 
@@ -1756,18 +1757,123 @@ save_list(Picklerobject *self, PyObject *args)
 }
 
 
+/* iter is an iterator giving (key, value) pairs, and we batch up chunks of
+ *     MARK key value ... key value SETITEMS
+ * opcode sequences.  Calling code should have arranged to first create an
+ * empty dict, or dict-like object, for the SETITEMS to operate on.
+ * Returns 0 on success, <0 on error.
+ *
+ * This is very much like batch_list().  The difference between saving
+ * elements directly, and picking apart two-tuples, is so long-winded at
+ * the C level, though, that attempts to combine these routines were too
+ * ugly to bear.
+ */
+static int
+batch_dict(Picklerobject *self, PyObject *iter)
+{
+	PyObject *p;
+	PyObject *slice[BATCHSIZE];
+	int i, n;
+
+	static char setitem = SETITEM;
+	static char setitems = SETITEMS;
+
+	assert(iter != NULL);
+
+	if (self->proto == 0) {
+		/* SETITEMS isn't available; do one at a time. */
+		for (;;) {
+			p = PyIter_Next(iter);
+			if (p == NULL) {
+				if (PyErr_Occurred())
+					return -1;
+				break;
+			}
+			if (!PyTuple_Check(p) || PyTuple_Size(p) != 2) {
+				PyErr_SetString(PyExc_TypeError, "dict items "
+					"iterator must return 2-tuples");
+				return -1;
+			}
+			i = save(self, PyTuple_GET_ITEM(p, 0), 0);
+			if (i >= 0)
+				i = save(self, PyTuple_GET_ITEM(p, 1), 0);
+			Py_DECREF(p);
+			if (i < 0)
+				return -1;
+			if (self->write_func(self, &setitem, 1) < 0)
+				return -1;
+
+		}
+		return 0;
+	}
+
+	/* proto > 0:  write in batches of BATCHSIZE. */
+	do {
+		/* Get next group of (no more than) BATCHSIZE elements. */
+		for (n = 0; n < BATCHSIZE; ++n) {
+			p = PyIter_Next(iter);
+			if (p == NULL) {
+				if (PyErr_Occurred())
+					goto BatchFailed;
+				break;
+			}
+			if (!PyTuple_Check(p) || PyTuple_Size(p) != 2) {
+				PyErr_SetString(PyExc_TypeError, "dict items "
+					"iterator must return 2-tuples");
+				goto BatchFailed;
+			}
+			slice[n] = p;
+		}
+
+		if (n > 1) {
+			/* Pump out MARK, slice[0:n], SETITEMS. */
+			if (self->write_func(self, &MARKv, 1) < 0)
+				goto BatchFailed;
+			for (i = 0; i < n; ++i) {
+				p = slice[i];
+				if (save(self, PyTuple_GET_ITEM(p, 0), 0) < 0)
+					goto BatchFailed;
+				if (save(self, PyTuple_GET_ITEM(p, 1), 0) < 0)
+					goto BatchFailed;
+			}
+			if (self->write_func(self, &setitems, 1) < 0)
+				goto BatchFailed;
+		}
+		else if (n == 1) {
+			p = slice[0];
+			if (save(self, PyTuple_GET_ITEM(p, 0), 0) < 0)
+				goto BatchFailed;
+			if (save(self, PyTuple_GET_ITEM(p, 1), 0) < 0)
+				goto BatchFailed;
+			if (self->write_func(self, &setitem, 1) < 0)
+				goto BatchFailed;
+		}
+
+		for (i = 0; i < n; ++i) {
+			Py_DECREF(slice[i]);
+		}
+	}while (n == BATCHSIZE);
+	return 0;
+
+BatchFailed:
+	while (--n >= 0) {
+		Py_DECREF(slice[n]);
+	}
+	return -1;
+}
+
 static int
 save_dict(Picklerobject *self, PyObject *args)
 {
-	PyObject *key = 0, *value = 0;
-	int i, len, res = -1, using_setitems;
+	int res = -1;
 	char s[3];
-
-	static char setitem = SETITEM, setitems = SETITEMS;
+	int len;
+	PyObject *iter;
 
 	if (self->fast && !fast_save_enter(self, args))
 		goto finally;
 
+	/* Create an empty dict. */
 	if (self->bin) {
 		s[0] = EMPTY_DICT;
 		len = 1;
@@ -1781,6 +1887,7 @@ save_dict(Picklerobject *self, PyObject *args)
 	if (self->write_func(self, s, len) < 0)
 		goto finally;
 
+	/* Get dict size, and bow out early if empty. */
 	if ((len = PyDict_Size(args)) < 0)
 		goto finally;
 
@@ -1793,30 +1900,12 @@ save_dict(Picklerobject *self, PyObject *args)
 			goto finally;
 	}
 
-	if ((using_setitems = (self->bin && (PyDict_Size(args) > 1))))
-		if (self->write_func(self, &MARKv, 1) < 0)
-			goto finally;
-
-	i = 0;
-	while (PyDict_Next(args, &i, &key, &value)) {
-		if (save(self, key, 0) < 0)
-			goto finally;
-
-		if (save(self, value, 0) < 0)
-			goto finally;
-
-		if (!using_setitems) {
-			if (self->write_func(self, &setitem, 1) < 0)
-				goto finally;
-		}
-	}
-
-	if (using_setitems) {
-		if (self->write_func(self, &setitems, 1) < 0)
-			goto finally;
-	}
-
-	res = 0;
+	/* Materialize the dict items. */
+	iter = PyObject_CallMethod(args, "iteritems", "()");
+	if (iter == NULL)
+		goto finally;
+	res = batch_dict(self, iter);
+	Py_DECREF(iter);
 
   finally:
 	if (self->fast && !fast_save_leave(self, args))
