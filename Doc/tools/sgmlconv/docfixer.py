@@ -123,34 +123,98 @@ def cleanup_root_text(doc):
         doc.removeChild(node)
 
 
-def handle_args(doc):
-    for node in find_all_elements(doc, "args"):
-        parent = node.parentNode
-        nodes = []
-        for n in parent.childNodes:
-            if n.nodeType != xml.dom.core.ELEMENT or n.tagName != "args":
-                nodes.append(n)
-        signature = doc.createElement("signature")
-        signature.appendChild(doc.createTextNode("\n    "))
-        name = doc.createElement("name")
-        name.appendChild(doc.createTextNode(parent.getAttribute("name")))
-        parent.removeAttribute("name")
-        signature.appendChild(name)
-        desc = doc.createElement("description")
-        for n in nodes:
-            parent.removeChild(n)
-            desc.appendChild(n)
-        desc.appendChild(doc.createTextNode("\n  "))
-        parent.replaceChild(signature, node)
-        parent.insertBefore(doc.createTextNode("\n  "), signature)
-        if node.childNodes:
-            # keep the <args>...</args>, newline & indent
+DESCRIPTOR_ELEMENTS = (
+    "cfuncdesc", "cvardesc", "ctypedesc",
+    "classdesc", "memberdesc", "memberdescni", "methoddesc", "methoddescni",
+    "excdesc", "funcdesc", "funcdescni", "opcodedesc",
+    "datadesc", "datadescni",
+    )
+
+def fixup_descriptors(doc):
+    for tagName in DESCRIPTOR_ELEMENTS:
+        nodes = find_all_elements(doc, tagName)
+        for node in nodes:
+            rewrite_descriptor(doc, node)
+
+def rewrite_descriptor(doc, descriptor):
+    #
+    # Do these things:
+    #   1. Add an "index=noindex" attribute to the element if the tagName
+    #      ends in 'ni', removing the 'ni' from the name.
+    #   2. Create a <signature> from the name attribute and <args>.
+    #   3. Create additional <signature>s from <*line{,ni}> elements,
+    #      if found.
+    #   4. Move remaining child nodes to a <description> element.
+    #   5. Put it back together.
+    #
+    descname = descriptor.tagName
+    index = 1
+    if descname[-2:] == "ni":
+        descname = descname[:-2]
+        descriptor.setAttribute("index", "noindex")
+        descriptor._node.name = descname
+        index = 0
+    desctype = descname[:-4] # remove 'desc'
+    linename = desctype + "line"
+    if not index:
+        linename = linename + "ni"
+    # 2.
+    signature = doc.createElement("signature")
+    name = doc.createElement("name")
+    signature.appendChild(doc.createTextNode("\n    "))
+    signature.appendChild(name)
+    name.appendChild(doc.createTextNode(descriptor.getAttribute("name")))
+    descriptor.removeAttribute("name")
+    if descriptor.attributes.has_key("var"):
+        variable = descriptor.getAttribute("var")
+        if variable:
+            args = doc.createElement("args")
+            args.appendChild(doc.createTextNode(variable))
             signature.appendChild(doc.createTextNode("\n    "))
-            signature.appendChild(node)
-        parent.appendChild(doc.createText("\n  "))
-        parent.appendChild(desc)
-        parent.appendChild(doc.createText("\n"))
-        signature.appendChild(doc.createTextNode("\n  "))
+            signature.appendChild(args)
+        descriptor.removeAttribute("var")
+    newchildren = [signature]
+    children = descriptor.childNodes
+    pos = skip_leading_nodes(children, 0)
+    if pos < len(children):
+        child = children[pos]
+        if child.nodeType == xml.dom.core.ELEMENT and child.tagName == "args":
+            # create an <args> in <signature>:
+            args = doc.createElement("args")
+            argchildren = []
+            map(argchildren.append, child.childNodes)
+            for n in argchildren:
+                child.removeChild(n)
+                args.appendChild(n)
+            signature.appendChild(doc.createTextNode("\n    "))
+            signature.appendChild(args)
+    signature.appendChild(doc.createTextNode("\n  "))
+    # 3.
+    pos = skip_leading_nodes(children, pos + 1)
+    while pos < len(children) \
+          and children[pos].nodeType == xml.dom.core.ELEMENT \
+          and children[pos].tagName == linename:
+        # this is really a supplemental signature, create <signature>
+        sig = methodline_to_signature(doc, children[pos])
+        newchildren.append(sig)
+        pos = skip_leading_nodes(children, pos + 1)
+    # 4.
+    description = doc.createElement("description")
+    description.appendChild(doc.createTextNode("\n"))
+    newchildren.append(description)
+    move_children(descriptor, description, pos)
+    last = description.childNodes[-1]
+    if last.nodeType == xml.dom.core.TEXT:
+        last.data = string.rstrip(last.data) + "\n  "
+    # 5.
+    # should have nothing but whitespace and signature lines in <descriptor>;
+    # discard them
+    while descriptor.childNodes:
+        descriptor.removeChild(descriptor.childNodes[0])
+    for node in newchildren:
+        descriptor.appendChild(doc.createTextNode("\n  "))
+        descriptor.appendChild(node)
+    descriptor.appendChild(doc.createTextNode("\n"))
 
 
 def methodline_to_signature(doc, methodline):
@@ -158,15 +222,23 @@ def methodline_to_signature(doc, methodline):
     signature.appendChild(doc.createTextNode("\n    "))
     name = doc.createElement("name")
     name.appendChild(doc.createTextNode(methodline.getAttribute("name")))
+    methodline.removeAttribute("name")
     signature.appendChild(name)
-    methodline.parentNode.removeChild(methodline)
     if len(methodline.childNodes):
-        methodline._node.name = "args"
-        methodline.removeAttribute("name")
+        args = doc.createElement("args")
         signature.appendChild(doc.createTextNode("\n    "))
-        signature.appendChild(methodline)
+        signature.appendChild(args)
+        move_children(methodline, args)
     signature.appendChild(doc.createTextNode("\n  "))
     return signature
+
+
+def move_children(origin, dest, start=0):
+    children = origin.childNodes
+    while start < len(children):
+        node = children[start]
+        origin.removeChild(node)
+        dest.appendChild(node)
 
 
 def handle_appendix(doc):
@@ -468,25 +540,16 @@ def move_elements_by_name(doc, source, dest, name, sep=None):
             dest.appendChild(doc.createTextNode(sep))
 
 
-FIXUP_PARA_ELEMENTS = (
-    "chapter",
-    "section", "subsection", "subsubsection",
-    "paragraph", "subparagraph",
-    "excdesc", "datadesc",
-    "excdescni", "datadescni",
-    )
-
 RECURSE_INTO_PARA_CONTAINERS = (
-    "chapter",
+    "chapter", "abstract", "enumerate",
     "section", "subsection", "subsubsection",
     "paragraph", "subparagraph",
-    "abstract",
-    "memberdesc", "memberdescni", "datadesc", "datadescni",
+    "howto", "manual",
     )
 
 PARA_LEVEL_ELEMENTS = (
-    "moduleinfo", "title", "verbatim",
-    "opcodedesc", "classdesc",
+    "moduleinfo", "title", "verbatim", "enumerate", "item",
+    "opcodedesc", "classdesc", "datadesc",
     "funcdesc", "methoddesc", "excdesc",
     "funcdescni", "methoddescni", "excdescni",
     "tableii", "tableiii", "tableiv", "localmoduletable",
@@ -496,10 +559,8 @@ PARA_LEVEL_ELEMENTS = (
     )
 
 PARA_LEVEL_PRECEEDERS = (
-    "index", "indexii", "indexiii", "indexiv",
-    "stindex", "obindex", "COMMENT", "label", "input",
-    "memberline", "memberlineni",
-    "methodline", "methodlineni",
+    "index", "indexii", "indexiii", "indexiv", "setindexsubitem",
+    "stindex", "obindex", "COMMENT", "label", "input", "title",
     )
 
 
@@ -509,9 +570,9 @@ def fixup_paras(doc):
            and child.tagName in RECURSE_INTO_PARA_CONTAINERS:
             #
             fixup_paras_helper(doc, child)
-            descriptions = child.getElementsByTagName("description")
-            for description in descriptions:
-                fixup_paras_helper(doc, description)
+    descriptions = find_all_elements(doc, "description")
+    for description in descriptions:
+        fixup_paras_helper(doc, description)
 
 
 def fixup_paras_helper(doc, container, depth=0):
@@ -543,7 +604,7 @@ def build_para(doc, parent, start, i):
     children = parent.childNodes
     after = start + 1
     have_last = 0
-    BREAK_ELEMENTS = PARA_LEVEL_ELEMENTS + FIXUP_PARA_ELEMENTS
+    BREAK_ELEMENTS = PARA_LEVEL_ELEMENTS + RECURSE_INTO_PARA_CONTAINERS
     # Collect all children until \n\n+ is found in a text node or a
     # member of BREAK_ELEMENTS is found.
     for j in range(start, i):
@@ -707,7 +768,6 @@ def convert(ifp, ofp):
     p.feed(ifp.read())
     doc = p.document
     normalize(doc)
-    handle_args(doc)
     simplify(doc)
     handle_labels(doc)
     handle_appendix(doc)
@@ -724,6 +784,7 @@ def convert(ifp, ofp):
     cleanup_root_text(doc)
     cleanup_trailing_parens(doc, ["function", "method", "cfunction"])
     cleanup_synopses(doc)
+    fixup_descriptors(doc)
     normalize(doc)
     fixup_paras(doc)
     fixup_sectionauthors(doc)
