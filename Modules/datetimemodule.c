@@ -4516,13 +4516,6 @@ initdatetime(void)
 	PyObject *d;	/* its dict */
 	PyObject *x;
 
-	/* Types that use __reduce__ for pickling need to set the following
-	 * magical attr in the type dict, with a true value.
-	 */
-	PyObject *safepickle = PyString_FromString("__safe_for_unpickling__");
-	if (safepickle == NULL)
-		return;
-
 	m = Py_InitModule3("datetime", module_methods,
 			   "Fast implementation of the datetime type.");
 
@@ -4577,17 +4570,8 @@ initdatetime(void)
 		}
 	}
 
-	/* tzinfo values */
-	d = PyDateTime_TZInfoType.tp_dict;
-
-	if (PyDict_SetItem(d, safepickle, Py_True) < 0)
-		return;
-
 	/* timedelta values */
 	d = PyDateTime_DeltaType.tp_dict;
-
-	if (PyDict_SetItem(d, safepickle, Py_True) < 0)
-		return;
 
 	x = new_delta(0, 0, 1, 0);
 	if (x == NULL || PyDict_SetItemString(d, "resolution", x) < 0)
@@ -4607,9 +4591,6 @@ initdatetime(void)
 	/* date values */
 	d = PyDateTime_DateType.tp_dict;
 
-	if (PyDict_SetItem(d, safepickle, Py_True) < 0)
-		return;
-
 	x = new_date(1, 1, 1);
 	if (x == NULL || PyDict_SetItemString(d, "min", x) < 0)
 		return;
@@ -4627,9 +4608,6 @@ initdatetime(void)
 
 	/* time values */
 	d = PyDateTime_TimeType.tp_dict;
-
-	if (PyDict_SetItem(d, safepickle, Py_True) < 0)
-		return;
 
 	x = new_time(0, 0, 0, 0, Py_None);
 	if (x == NULL || PyDict_SetItemString(d, "min", x) < 0)
@@ -4649,9 +4627,6 @@ initdatetime(void)
 	/* datetime values */
 	d = PyDateTime_DateTimeType.tp_dict;
 
-	if (PyDict_SetItem(d, safepickle, Py_True) < 0)
-		return;
-
 	x = new_datetime(1, 1, 1, 0, 0, 0, 0, Py_None);
 	if (x == NULL || PyDict_SetItemString(d, "min", x) < 0)
 		return;
@@ -4666,8 +4641,6 @@ initdatetime(void)
 	if (x == NULL || PyDict_SetItemString(d, "resolution", x) < 0)
 		return;
 	Py_DECREF(x);
-
-	Py_DECREF(safepickle);
 
 	/* module initialization */
 	PyModule_AddIntConstant(m, "MINYEAR", MINYEAR);

@@ -15,8 +15,6 @@ class myint(int):
 
 class initarg(C):
 
-    __safe_for_unpickling__ = 1
-
     def __init__(self, a, b):
         self.a = a
         self.b = b

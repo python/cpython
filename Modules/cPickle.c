@@ -92,14 +92,13 @@ static PyObject *BadPickleGet;
 
 
 static PyObject *dispatch_table;
-static PyObject *safe_constructors;
 static PyObject *empty_tuple;
 
 static PyObject *__class___str, *__getinitargs___str, *__dict___str,
   *__getstate___str, *__setstate___str, *__name___str, *__reduce___str,
-  *write_str, *__safe_for_unpickling___str, *append_str,
+  *write_str, *append_str,
   *read_str, *readline_str, *__main___str, *__basicnew___str,
-  *copy_reg_str, *dispatch_table_str, *safe_constructors_str;
+  *copy_reg_str, *dispatch_table_str;
 
 /*************************************************************************
  Internal Data type for pickle data.                                     */
@@ -306,7 +305,6 @@ typedef struct Unpicklerobject {
 	int (*readline_func)(struct Unpicklerobject *, char **);
 	int buf_size;
 	char *buf;
-	PyObject *safe_constructors;
 	PyObject *find_class;
 } Unpicklerobject;
 
@@ -3078,8 +3076,7 @@ load_dict(Unpicklerobject *self)
 static PyObject *
 Instance_New(PyObject *cls, PyObject *args) 
 {
-	int has_key;
-	PyObject *safe=0, *r=0;
+	PyObject *r = 0;
 
 	if (PyClass_Check(cls)) {
 		int l;
@@ -3105,21 +3102,6 @@ Instance_New(PyObject *cls, PyObject *args)
 
 		if ((r=PyInstance_New(cls, args, NULL))) return r;
 		else goto err;
-	}
-
-	/* Is safe_constructors always a dict? */
-	has_key = cPickle_PyMapping_HasKey(safe_constructors, cls);
-	if (!has_key) {
-		safe = PyObject_GetAttr(cls, __safe_for_unpickling___str);
-		if (!safe ||
-		    !PyObject_IsTrue(safe)) {
-			cPickle_ErrFormat(UnpicklingError,
-					  "%s is not safe for unpickling", 
-					  "O", cls);
-			Py_XDECREF(safe);
-			return NULL;
-		}
-		Py_DECREF(safe);
 	}
 
 	if (args==Py_None) {
@@ -4332,7 +4314,6 @@ newUnpicklerobject(PyObject *f)
 	self->buf_size = 0;
 	self->read = NULL;
 	self->readline = NULL;
-	self->safe_constructors = NULL;
 	self->find_class = NULL;
 
 	if (!( self->memo = PyDict_New())) 
@@ -4373,21 +4354,6 @@ newUnpicklerobject(PyObject *f)
 		}
 	}
 
-	if (PyEval_GetRestricted()) {
-		/* Restricted execution, get private tables */
-		PyObject *m;
-
-		if (!( m=PyImport_Import(copy_reg_str)))  goto err;
-		self->safe_constructors=PyObject_GetAttr(m, 
-							 safe_constructors_str);
-		Py_DECREF(m);
-		if (!( self->safe_constructors ))  goto err;
-	}
-	else {
-		self->safe_constructors=safe_constructors;
-		Py_INCREF(safe_constructors);
-	}
-
 	return self;
 
   err:
@@ -4418,7 +4384,6 @@ Unpickler_dealloc(Unpicklerobject *self)
 	Py_XDECREF(self->pers_func);
 	Py_XDECREF(self->arg);
 	Py_XDECREF(self->last_string);
-	Py_XDECREF(self->safe_constructors);
 
 	if (self->marks) {
 		free(self->marks);
@@ -4693,26 +4658,20 @@ init_stuff(PyObject *module_dict)
 	INIT_STR(__main__);
 	INIT_STR(__reduce__);
 	INIT_STR(write);
-	INIT_STR(__safe_for_unpickling__);
 	INIT_STR(append);
 	INIT_STR(read);
 	INIT_STR(readline);
 	INIT_STR(copy_reg);
 	INIT_STR(dispatch_table);
-	INIT_STR(safe_constructors);
 	INIT_STR(__basicnew__);
 
 	if (!( copy_reg = PyImport_ImportModule("copy_reg"))) 
 		return -1;
 
-	/* These next few are special because we want to use different
-	   ones in restricted mode. */
+	/* This is special because we want to use a different
+	   one in restricted mode. */
 	dispatch_table = PyObject_GetAttr(copy_reg, dispatch_table_str);
 	if (!dispatch_table) 
-		return -1;
-
-	if (!( safe_constructors = PyObject_GetAttr(copy_reg,
-						    safe_constructors_str))) 
 		return -1;
 
 	Py_DECREF(copy_reg);
