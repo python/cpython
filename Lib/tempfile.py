@@ -80,33 +80,6 @@ tempdir = None
 
 _once_lock = _allocate_lock()
 
-def _once(var, initializer):
-    """Wrapper to execute an initialization operation just once,
-    even if multiple threads reach the same point at the same time.
-
-    var is the name (as a string) of the variable to be entered into
-    the current global namespace.
-
-    initializer is a callable which will return the appropriate initial
-    value for variable.  It will be called only if variable is not
-    present in the global namespace, or its current value is None.
-
-    Do not call _once from inside an initializer routine, it will deadlock.
-    """
-
-    vars = globals()
-    # Check first outside the lock.
-    if vars.get(var) is not None:
-        return
-    try:
-        _once_lock.acquire()
-        # Check again inside the lock.
-        if vars.get(var) is not None:
-            return
-        vars[var] = initializer()
-    finally:
-        _once_lock.release()
-
 class _RandomNameSequence:
     """An instance of _RandomNameSequence generates an endless
     sequence of unpredictable strings which can safely be incorporated
@@ -178,8 +151,7 @@ def _candidate_tempdir_list():
 
 def _get_default_tempdir():
     """Calculate the default directory to use for temporary files.
-    This routine should be called through '_once' (see above) as we
-    do not want multiple threads attempting this calculation simultaneously.
+    This routine should be called exactly once.
 
     We determine whether or not a candidate temp dir is usable by
     trying to create and write to a file in that directory.  If this
@@ -212,10 +184,19 @@ def _get_default_tempdir():
     raise IOError, (_errno.ENOENT,
                     ("No usable temporary directory found in %s" % dirlist))
 
+_name_sequence = None
+
 def _get_candidate_names():
     """Common setup sequence for all user-callable interfaces."""
 
-    _once('_name_sequence', _RandomNameSequence)
+    global _name_sequence
+    if _name_sequence is None:
+        _once_lock.acquire()
+        try:
+            if _name_sequence is None:
+                _name_sequence = _RandomNameSequence()
+        finally:
+            _once_lock.release()
     return _name_sequence
 
 
@@ -245,12 +226,21 @@ def gettempprefix():
     """Accessor for tempdir.template."""
     return template
 
+tempdir = None
+
 def gettempdir():
     """Accessor for tempdir.tempdir."""
-    _once('tempdir', _get_default_tempdir)
+    global tempdir
+    if tempdir is None:
+        _once_lock.acquire()
+        try:
+            if tempdir is None:
+                tempdir = _get_default_tempdir()
+        finally:
+            _once_lock.release()
     return tempdir
 
-def mkstemp(suffix="", prefix=template, dir=gettempdir(), text=False):
+def mkstemp(suffix="", prefix=template, dir=None, text=False):
     """mkstemp([suffix, [prefix, [dir, [text]]]])
     User-callable function to create and return a unique temporary
     file.  The return value is a pair (fd, name) where fd is the
@@ -277,6 +267,9 @@ def mkstemp(suffix="", prefix=template, dir=gettempdir(), text=False):
     Caller is responsible for deleting the file when done with it.
     """
 
+    if dir is None:
+        dir = gettempdir()
+
     if text:
         flags = _text_openflags
     else:
@@ -285,7 +278,7 @@ def mkstemp(suffix="", prefix=template, dir=gettempdir(), text=False):
     return _mkstemp_inner(dir, prefix, suffix, flags)
 
 
-def mkdtemp(suffix="", prefix=template, dir=gettempdir()):
+def mkdtemp(suffix="", prefix=template, dir=None):
     """mkdtemp([suffix, [prefix, [dir]]])
     User-callable function to create and return a unique temporary
     directory.  The return value is the pathname of the directory.
@@ -298,6 +291,9 @@ def mkdtemp(suffix="", prefix=template, dir=gettempdir()):
 
     Caller is responsible for deleting the directory when done with it.
     """
+
+    if dir is None:
+        dir = gettempdir()
 
     names = _get_candidate_names()
 
@@ -314,7 +310,7 @@ def mkdtemp(suffix="", prefix=template, dir=gettempdir()):
 
     raise IOError, (_errno.EEXIST, "No usable temporary directory name found")
 
-def mktemp(suffix="", prefix=template, dir=gettempdir()):
+def mktemp(suffix="", prefix=template, dir=None):
     """mktemp([suffix, [prefix, [dir]]])
     User-callable function to return a unique temporary file name.  The
     file is not created.
@@ -331,6 +327,9 @@ def mktemp(suffix="", prefix=template, dir=gettempdir()):
     from warnings import warn as _warn
     _warn("mktemp is a potential security risk to your program",
           RuntimeWarning, stacklevel=2)
+
+    if dir is None:
+        dir = gettempdir()
 
     names = _get_candidate_names()
     for seq in xrange(TMP_MAX):
@@ -383,7 +382,7 @@ class _TemporaryFileWrapper:
             self.close()
 
 def NamedTemporaryFile(mode='w+b', bufsize=-1, suffix="",
-                       prefix=template, dir=gettempdir()):
+                       prefix=template, dir=None):
     """Create and return a temporary file.
     Arguments:
     'prefix', 'suffix', 'dir' -- as for mkstemp.
@@ -395,6 +394,9 @@ def NamedTemporaryFile(mode='w+b', bufsize=-1, suffix="",
     file.name.  The file will be automatically deleted when it is
     closed.
     """
+
+    if dir is None:
+        dir = gettempdir()
 
     if 'b' in mode:
         flags = _bin_openflags
@@ -417,7 +419,7 @@ if _os.name != 'posix' or _os.sys.platform == 'cygwin':
 
 else:
     def TemporaryFile(mode='w+b', bufsize=-1, suffix="",
-                      prefix=template, dir=gettempdir()):
+                      prefix=template, dir=None):
         """Create and return a temporary file.
         Arguments:
         'prefix', 'suffix', 'directory' -- as for mkstemp.
@@ -428,6 +430,9 @@ else:
         Returns a file object.  The file has no name, and will cease to
         exist when it is closed.
         """
+
+        if dir is None:
+            dir = gettempdir()
 
         if 'b' in mode:
             flags = _bin_openflags
