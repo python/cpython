@@ -798,7 +798,7 @@ The conversion flag characters are:
               (where defined below).}
   \lineii{0}{The conversion will be zero padded.}
   \lineii{-}{The converted value is left adjusted (overrides
-             \character{-}).}
+             the \character{0} conversion if both are given).}
   \lineii{{~}}{(a space) A blank should be left before a positive number
              (or empty string) produced by a signed conversion.}
   \lineii{+}{A sign character (\character{+} or \character{-}) will
@@ -810,35 +810,50 @@ present, but are ignored as they are not necessary for Python.
 
 The conversion types are:
 
-\begin{tableii}{c|l}{character}{Conversion}{Meaning}
-  \lineii{d}{Signed integer decimal.}
-  \lineii{i}{Signed integer decimal.}
-  \lineii{o}{Unsigned octal.}
-  \lineii{u}{Unsigned decimal.}
-  \lineii{x}{Unsigned hexidecimal (lowercase).}
-  \lineii{X}{Unsigned hexidecimal (uppercase).}
-  \lineii{e}{Floating point exponential format (lowercase).}
-  \lineii{E}{Floating point exponential format (uppercase).}
-  \lineii{f}{Floating point decimal format.}
-  \lineii{F}{Floating point decimal format.}
-  \lineii{g}{Same as \character{e} if exponent is greater than -4 or
-             less than precision, \character{f} otherwise.}
-  \lineii{G}{Same as \character{E} if exponent is greater than -4 or
-             less than precision, \character{F} otherwise.}
-  \lineii{c}{Single character (accepts integer or single character
-             string).}
-  \lineii{r}{String (converts any python object using
-             \function{repr()}).}
-  \lineii{s}{String (converts any python object using
-             \function{str()}).}
-  \lineii{\%}{No argument is converted, results in a \character{\%}
-              character in the result.  (The complete specification is
-              \code{\%\%}.)}
-\end{tableii}
+\begin{tableiii}{c|l|c}{character}{Conversion}{Meaning}{Notes}
+  \lineiii{d}{Signed integer decimal.}{}
+  \lineiii{i}{Signed integer decimal.}{}
+  \lineiii{o}{Unsigned octal.}{(1)}
+  \lineiii{u}{Unsigned decimal.}{}
+  \lineiii{x}{Unsigned hexidecimal (lowercase).}{(2)}
+  \lineiii{X}{Unsigned hexidecimal (uppercase).}{(2)}
+  \lineiii{e}{Floating point exponential format (lowercase).}{}
+  \lineiii{E}{Floating point exponential format (uppercase).}{}
+  \lineiii{f}{Floating point decimal format.}{}
+  \lineiii{F}{Floating point decimal format.}{}
+  \lineiii{g}{Same as \character{e} if exponent is greater than -4 or
+              less than precision, \character{f} otherwise.}{}
+  \lineiii{G}{Same as \character{E} if exponent is greater than -4 or
+              less than precision, \character{F} otherwise.}{}
+  \lineiii{c}{Single character (accepts integer or single character
+              string).}{}
+  \lineiii{r}{String (converts any python object using
+              \function{repr()}).}{(3)}
+  \lineiii{s}{String (converts any python object using
+              \function{str()}).}{}
+  \lineiii{\%}{No argument is converted, results in a \character{\%}
+               character in the result.}{}
+\end{tableiii}
+
+\noindent
+Notes:
+\begin{description}
+  \item[(1)]
+    The alternate form causes a leading zero (\character{0}) to be
+    inserted between left-hand padding and the formatting of the
+    number if the leading character of the result is not already a
+    zero.
+  \item[(2)]
+    The alternate form causes a leading \code{'0x'} or \code{'0X'}
+    (depending on whether the \character{x} or \character{X} format
+    was used) to be inserted between left-hand padding and the
+    formatting of the number if the leading character of the result is
+    not already a zero.
+  \item[(3)]
+    The \code{\%r} conversion was added in Python 2.0.
+\end{description}
 
 % XXX Examples?
-
-(The \code{\%r} conversion was added in Python 2.0.)
 
 Since Python strings have an explicit length, \code{\%s} conversions
 do not assume that \code{'\e0'} is the end of the string.
