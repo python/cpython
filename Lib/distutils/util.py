@@ -43,6 +43,8 @@ def mkpath (name, mode=0777, verbose=0, dry_run=0):
         return
 
     (head, tail) = os.path.split (name)
+    if not tail:                        # in case 'name' has trailing slash
+        (head, tail) = os.path.split (head)
     tails = [tail]                      # stack of lone dirs to create
     
     while head and tail and not os.path.isdir (head):
@@ -59,6 +61,9 @@ def mkpath (name, mode=0777, verbose=0, dry_run=0):
     for d in tails:
         #print "head = %s, d = %s: " % (head, d),
         head = os.path.join (head, d)
+        if PATH_CREATED.get (head):
+            continue
+
         if verbose:
             print "creating", head
 
