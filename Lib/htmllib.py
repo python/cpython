@@ -9,6 +9,7 @@ import string
 from sgmllib import SGMLParser
 from formatter import AS_IS
 
+__all__ = ["HTMLParser"]
 
 class HTMLParser(SGMLParser):
 

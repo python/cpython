@@ -2,6 +2,8 @@
 
 import string
 
+__all__ = ["send_selector","send_query"]
+
 # Default selector, host and port
 DEF_SELECTOR = '1/'
 DEF_HOST     = 'gopher.micro.umn.edu'

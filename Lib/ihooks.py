@@ -42,7 +42,7 @@ instantiated).
 The classes defined here should be used as base classes for extended
 functionality along those lines.
 
-If a module mporter class supports dotted names, its import_module()
+If a module importer class supports dotted names, its import_module()
 must return a different value depending on whether it is called on
 behalf of a "from ... import ..." statement or not.  (This is caused
 by the way the __import__ hook is used by the Python interpreter.)  It
@@ -57,6 +57,8 @@ import os
 import sys
 import string
 
+__all__ = ["BasicModuleLoader","Hooks","ModuleLoader","FancyModuleLoader",
+           "BasicModuleImporter","ModuleImporter","install","uninstall"]
 
 VERBOSE = 0
 
