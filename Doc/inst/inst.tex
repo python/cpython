@@ -273,12 +273,12 @@ being installed is pure Python or contains extensions (``non-pure''):
 \begin{tableiv}{l|l|l|c}{textrm}%
   {Platform}{Standard installation location}{Default value}{Notes}
   \lineiv{\UNIX{} (pure)}
-          {\filenq{\filevar{prefix}/lib/python2.0/site-packages}}
-          {\filenq{/usr/local/lib/python2.0/site-packages}}
+          {\filenq{\filevar{prefix}/lib/python2.4/site-packages}}
+          {\filenq{/usr/local/lib/python2.4/site-packages}}
           {(1)}
   \lineiv{\UNIX{} (non-pure)}
-          {\filenq{\filevar{exec-prefix}/lib/python2.0/site-packages}}
-          {\filenq{/usr/local/lib/python2.0/site-packages}}
+          {\filenq{\filevar{exec-prefix}/lib/python2.4/site-packages}}
+          {\filenq{/usr/local/lib/python2.4/site-packages}}
           {(1)}
   \lineiv{Windows}
           {\filenq{\filevar{prefix}}}
@@ -314,15 +314,15 @@ installation uses for \filevar{prefix} and \filevar{exec-prefix} by
 running Python in interactive mode and typing a few simple commands.
 Under \UNIX, just type \code{python} at the shell prompt.  Under
 Windows, choose \menuselection{Start \sub Programs \sub Python
-2.1 \sub Python (command line)}.  Under Mac OS 9, start \file{PythonInterpreter}.
+2.4 \sub Python (command line)}.  Under Mac OS 9, start \file{PythonInterpreter}.
 Once the interpreter is started, you type Python code at the
 prompt.  For example, on my Linux system, I type the three Python
 statements shown below, and get the output as shown, to find out my
 \filevar{prefix} and \filevar{exec-prefix}:
 
 \begin{verbatim}
-Python 1.5.2 (#1, Apr 18 1999, 16:03:16)  [GCC pgcc-2.91.60] on linux2
-Copyright 1991-1995 Stichting Mathematisch Centrum, Amsterdam
+Python 2.4 (#26, Aug  7 2004, 17:19:02) 
+Type "help", "copyright", "credits" or "license" for more information.
 >>> import sys
 >>> sys.prefix
 '/usr'
@@ -1023,15 +1023,15 @@ different from the format used by the Python version you can download
 from the Python or ActiveState Web site.  (Python is built with
 Microsoft Visual \Cpp, which uses COFF as the object file format.)
 For this reason you have to convert Python's library
-\file{python20.lib} into the Borland format.  You can do this as
+\file{python24.lib} into the Borland format.  You can do this as
 follows:
 
 \begin{verbatim}
-coff2omf python20.lib python20_bcpp.lib
+coff2omf python24.lib python24_bcpp.lib
 \end{verbatim}
 
 The \file{coff2omf} program comes with the Borland compiler.  The file
-\file{python20.lib} is in the \file{Libs} directory of your Python
+\file{python24.lib} is in the \file{Libs} directory of your Python
 installation.  If your extension uses other libraries (zlib,...) you
 have to convert them too.
 
@@ -1092,17 +1092,17 @@ First you have to create a list of symbols which the Python DLL exports.
 PExports 0.42h there.)
 
 \begin{verbatim}
-pexports python20.dll >python20.def
+pexports python24.dll >python24.def
 \end{verbatim}
 
 Then you can create from these information an import library for gcc.
  
 \begin{verbatim}
-dlltool --dllname python20.dll --def python20.def --output-lib libpython20.a
+dlltool --dllname python24.dll --def python24.def --output-lib libpython24.a
 \end{verbatim}
 
 The resulting library has to be placed in the same directory as 
-\file{python20.lib}. (Should be the \file{libs} directory under your
+\file{python24.lib}. (Should be the \file{libs} directory under your
 Python installation directory.)
 
 If your extension uses other libraries (zlib,...) you might 
