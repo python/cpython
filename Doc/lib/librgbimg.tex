@@ -2,14 +2,17 @@
          Read and write ``SGI RGB'' files}
 
 \declaremodule{builtin}{rgbimg}
-\modulesynopsis{Read and write image files in ``SGI RGB'' format (the module is
-\emph{not} SGI specific though!).}
+\modulesynopsis{Read and write image files in ``SGI RGB'' format (the module
+                is \emph{not} SGI specific though!).}
 
 
 The \module{rgbimg} module allows Python programs to access SGI imglib image
 files (also known as \file{.rgb} files).  The module is far from
 complete, but is provided anyway since the functionality that there is
 enough in some cases.  Currently, colormap files are not supported.
+
+\note{This module is only built by default for 32-bit platforms; it is
+not expected to work properly on other systems.}
 
 The module defines the following variables and functions:
 
