@@ -548,10 +548,17 @@ gc_collect(PyObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, ":collect"))	/* check no args */
 		return NULL;
 
-	generation = 2;
-	gc_list_merge(&_PyGC_generation0, &generation2);
-	gc_list_merge(&generation1, &generation2);
-	n = collect(&generation2, &generation2);
+	if (collecting) {
+		n = 0; /* already collecting, don't do anything */
+	}
+	else {
+		collecting = 1;
+		generation = 2;
+		gc_list_merge(&_PyGC_generation0, &generation2);
+		gc_list_merge(&generation1, &generation2);
+		n = collect(&generation2, &generation2);
+		collecting = 0;
+	}
 
 	return Py_BuildValue("l", n);
 }
