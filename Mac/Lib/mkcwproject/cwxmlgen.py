@@ -9,6 +9,9 @@ TEMPLATELIST= [
 	("tmp_allsources", "file", "template-allsources.xml", "sources"),
 	("tmp_linkorder", "file", "template-linkorder.xml", "sources"),
 	("tmp_grouplist", "file", "template-grouplist.xml", "sources"),
+	("tmp_alllibraries", "file", "template-alllibraries.xml", "libraries"),
+	("tmp_linkorderlib", "file", "template-linkorderlib.xml", "libraries"),
+	("tmp_grouplistlib", "file", "template-grouplistlib.xml", "libraries"),
 	("tmp_extrasearchdirs", "file", "template-searchdirs.xml", "extrasearchdirs"),
 	("tmp_projectxmldata", "file", "template.prj.xml", None)
 ]
@@ -24,6 +27,8 @@ class ProjectBuilder:
 		if not os.path.exists(templatedir):
 			raise Error, "Cannot file templatedir"
 		self.dict = dict
+		if not dict.has_key('prefixname'):
+			dict['prefixname'] = 'mwerks_plugin_config.h'
 		self.templatelist = templatelist
 		self.templatedir = templatedir
 		
@@ -43,11 +48,17 @@ class ProjectBuilder:
 						raise Error, "List or tuple expected for %s"%key
 					for curkeyvalue in keyvalues:
 						self.dict[key] = curkeyvalue
+						if os.path.isabs(curkeyvalue):
+							self.dict['pathtype'] = 'Absolute'
+						else:
+							self.dict['pathtype'] = 'Project'
 						curkeyvalueresult = self._generate_one_value(datasource, dataname)
 						result = result + curkeyvalueresult
 				finally:
 					# Restore the list
 					self.dict[key] = keyvalues
+					self.dict['pathtype'] = None
+					del self.dict['pathtype']
 		else:
 			# Not a multi-element rule. Simply generate
 			result = self._generate_one_value(datasource, dataname)
