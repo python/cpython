@@ -348,6 +348,8 @@ Test passed.
 # 0,9,7    9-Feb-2001
 #    string method conversion
 
+from __future__ import generators
+
 __version__ = 0, 9, 7
 
 import types
