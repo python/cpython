@@ -9,9 +9,11 @@ class Play_Audio_mac:
 		self._sampwidth = 1
 		self._nchannels = 1
 		self._gc = []
+		self._usercallback = None
 
 	def __del__(self):
 		self.stop()
+		self._usercallback = None
 
 	def wait(self):
 		import time
@@ -75,6 +77,11 @@ class Play_Audio_mac:
 
 	def _callback(self, *args):
 		del self._gc[0]
+		if self._usercallback:
+			self._usercallback()
+			
+	def setcallback(self, callback):
+		self._usercallback = callback
 
 	def getfilled(self):
 		filled = 0
@@ -83,7 +90,7 @@ class Play_Audio_mac:
 		return filled / self._nchannels / self._sampwidth
 
 	def getfillable(self):
-		return self._qsize - self.getfilled()
+		return (self._qsize / self._nchannels / self._sampwidth) - self.getfilled()
 
 	def ulaw2lin(self, data):
 		import audioop
