@@ -84,7 +84,7 @@ The \module{spam} module defines the following functions:
 
 \begin{funcdesc}{open}{filename\optional{, mode\optional{, buffersize}}}
 Open the file \var{filename} as a can of Spam.  The optional
-\var{mode} and \var{buffersize} arguments specify the read-write mode
+\var{mode} and \var{buffersize} arguments specify the read/write mode
 (\code{'r'} (default) or \code{'w'}) and the buffer size (default:
 system dependent).
 \end{funcdesc}
@@ -101,7 +101,9 @@ once the \function{open()} function has been called.
 
 % --- 3.3. ---
 % Exceptions are described using a ``excdesc'' block.  This has only
-% one parameter: the exception name.
+% one parameter: the exception name.  Exceptions defined as classes in
+% the source code should be documented using this environment, but
+% constructor parameters must be ommitted.
 
 \begin{excdesc}{error}
 Exception raised when an operation fails for a Spam specific reason.
@@ -129,8 +131,7 @@ failure.
 % an example giving the flavor of the module may be given before the
 % detailed list of functions.)
 
-\subsection{Example}
-\nodename{Spam Example}
+\subsection{Example \label{spam-example}}
 
 The following example demonstrates how to open a can of spam using the
 \module{spam} module.
