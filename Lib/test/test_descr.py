@@ -2478,6 +2478,11 @@ def setclass():
     cant(C(), object)
     cant(object(), list)
     cant(list(), object)
+    class Int(int): __slots__ = []
+    cant(2, Int)
+    cant(Int(), int)
+    cant(True, int)
+    cant(2, bool)
 
 def setdict():
     if verbose: print "Testing __dict__ assignment..."
