@@ -289,6 +289,24 @@ Tools/Demos
 
 Build
 
+- Accoring to Annex F of the current C standard,
+
+    The Standard C macro HUGE_VAL and its float and long double analogs,
+    HUGE_VALF and HUGE_VALL, expand to expressions whose values are
+    positive infinities.
+
+  Python only uses the double HUGE_VAL, and only to #define its own symbol
+  Py_HUGE_VAL.  Some platforms have incorrect definitions for HUGE_VAL.
+  pyport.h used to try to worm around that, but the workarounds triggered
+  other bugs on other platforms, so we gave up.  If your platform defines
+  HUGE_VAL incorrectly, you'll need to #define Py_HUGE_VAL to something
+  that works on your platform.  The only instance of this I'm sure about
+  is on an unknown subset of Cray systems, described here:
+
+  http://www.cray.com/swpubs/manuals/SN-2194_2.0/html-SN-2194_2.0/x3138.htm
+
+  Presumably 2.3a1 breaks such systems.  If anyone uses such a system, help!
+
 - The configure option --without-doc-strings can be used to remove the
   doc strings from the builtin functions and modules; this reduces the
   size of the executable.
