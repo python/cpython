@@ -1073,7 +1073,7 @@ for which they do not apply, they will flag a Python exception.
 Print an object \var{o}, on file \var{fp}.  Returns \code{-1} on error
 The flags argument is used to enable certain printing
 options. The only option currently supported is
-\constant{Py_Print_RAW}.
+\constant{Py_PRINT_RAW}.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyObject_HasAttrString}{PyObject *o, char *attr_name}
@@ -1721,28 +1721,40 @@ This instance of \code{PyTypeObject} represents the Python string type.
 \end{cvardesc}
 
 \begin{cfuncdesc}{int}{PyString_Check}{PyObject *o}
-
+Returns true if the object \var{o} is a string object.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyString_FromStringAndSize}{const char *v,
                                                           int len}
+Returns a new string object with the value \var{v} and length
+\var{len} on success, and \NULL{} on failure.  If \var{v} is \NULL{},
+the contents of the string are uninitialized.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyString_FromString}{const char *v}
+Returns a new string object with the value \var{v} on success, and
+\NULL{} on failure.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyString_Size}{PyObject *string}
+Returns the length of the string in string object \var{string}.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{char*}{PyString_AsString}{PyObject *string}
+Resturns a \NULL{} terminated representation of the contents of \var{string}.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{void}{PyString_Concat}{PyObject **string,
                                          PyObject *newpart}
+Creates a new string object in \var{*string} containing the contents
+of \var{newpart} appended to \var{string}.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{void}{PyString_ConcatAndDel}{PyObject **string,
                                                PyObject *newpart}
+Creates a new string object in \var{*string} containing the contents
+of \var{newpart} appended to \var{string}.  --WHAT IS THE 
+DIFFERENCE BETWEEN THIS AND PLAIN CONCAT?--
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{_PyString_Resize}{PyObject **string, int newsize}
@@ -1852,27 +1864,42 @@ Returns true if its argument is a \code{PyListObject}.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyList_New}{int size}
+Returns a new list of length \var{len} on success, and \NULL{} on
+failure.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyList_Size}{PyObject *list}
+Returns the length of the list object in \var{list}.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyList_GetItem}{PyObject *list, int index}
+Returns the item in \var{list} at index \var{index}.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyList_SetItem}{PyObject *list, int index,
                                        PyObject *item}
+Sets the item at index \var{index} in list to \var{item}.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyList_Insert}{PyObject *list, int index,
                                       PyObject *index}
+Inserts the item \var{item} into list \var{list} in front of index \var{index}
+and returns true if successful.
+For example: 
+\begin{verbatim}
+PyList_Insert(list, 0, object);
+\end{verbatim}
 \end{cfuncdesc}
+would insert \var{object} at the front of the list.
 
 \begin{cfuncdesc}{int}{PyList_Append}{PyObject *list, PyObject *item}
+Appends the object \var{item} at the end of list \var{list}.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyList_GetSlice}{PyObject *list,
                                               int low, int high}
+Returns a list of the objects in \var{list} containing the objects 
+\emph{between} \var{low} and \var{high}.  Analogous to \var{list[low:high]}.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyList_SetSlice}{PyObject *list,
@@ -1881,12 +1908,14 @@ Returns true if its argument is a \code{PyListObject}.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyList_Sort}{PyObject *list}
+
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyList_Reverse}{PyObject *list}
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyList_AsTuple}{PyObject *list}
+Returns a new tuple object containing the contents of \var{list}.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyList_GET_ITEM}{PyObject *list, int i}
@@ -2051,21 +2080,29 @@ Returns true if its argument is a \code{PyLongObject}.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyLong_FromLong}{long v}
+Returns a new \code{PyLong} object from \var{v}.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyLong_FromUnsignedLong}{unsigned long v}
+Returns a new \code{PyLong} object from an unsigned \C{} long.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyLong_FromDouble}{double v}
+Returns a new \code{PyLong} object from the integer part of \var{v}.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{long}{PyLong_AsLong}{PyObject *pylong}
+Returns a \C{} \code{long} representation of the contents of \var{pylong}.  
+WHAT HAPPENS IF \var{pylong} > MAXLONG?
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{unsigned long}{PyLong_AsUnsignedLong}{PyObject *pylong}
+Returns a \C{} \code{unsigned long} representation of the contents of 
+\var{pylong}.  WHAT HAPPENS IF \var{pylong} > MAXLONG?
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{double}{PyLong_AsDouble}{PyObject *pylong}
+Returns a \C{} \code{double} representation of teh contents of \var{pylong}.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyLong_FromString}{char *str, char **pend,
@@ -2091,9 +2128,11 @@ Returns true if its argument is a \code{PyFloatObject}.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyFloat_FromDouble}{double v}
+Creates a \code{PyFloat} object from \var{v}.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{double}{PyFloat_AsDouble}{PyObject *pyfloat}
+Returns a \C{} \code{double} representation of the contents of \var{pyfloat}.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{double}{PyFloat_AS_DOUBLE}{PyObject *pyfloat}
@@ -2153,12 +2192,15 @@ Returns true if its argument is a \code{PyComplexObject}.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyComplex_FromDoubles}{double real, double imag}
+Returns a new \code{PyComplex} object from \var{real} and \var{imag}.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{double}{PyComplex_RealAsDouble}{PyObject *op}
+Returns the real part of \var{op} as a \C{} \code{double}.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{double}{PyComplex_ImagAsDouble}{PyObject *op}
+Returns the imaginary part of \var{op} as a \C{} \code{double}.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{Py_complex}{PyComplex_AsCComplex}{PyObject *op}
@@ -2854,6 +2896,11 @@ must be held.
 \begin{cfuncdesc}{TYPE}{_PyObject_NEW_VAR}{TYPE, PyTypeObject *, int size}
 \end{cfuncdesc}
 
+Py_InitModule (!!!)
+
+PyArg_ParseTupleAndKeywords, PyArg_ParseTuple, PyArg_Parse
+
+Py_BuildValue
 
 PyObject, PyVarObject
 
