@@ -2004,8 +2004,13 @@ posix_utime(PyObject *self, PyObject *args)
 		Py_END_ALLOW_THREADS
 #endif /* HAVE_UTIMES */
 	}
-	if (res < 0)
+	if (res < 0) {
+#ifdef Py_WIN_WIDE_FILENAMES
+		if (have_unicode_filename)
+			return posix_error_with_unicode_filename(wpath);
+#endif /* Py_WIN_WIDE_FILENAMES */
 		return posix_error_with_filename(path);
+	}
 	Py_INCREF(Py_None);
 	return Py_None;
 #undef UTIME_ARG
