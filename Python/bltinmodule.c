@@ -1934,40 +1934,43 @@ filterstring(PyObject *func, PyObject *strobj)
 	int outlen = len;
 
 	if (func == Py_None) {
-		/* No character is ever false -- share input string
-		 * (if it's not a subclass) */
-		if (PyString_CheckExact(strobj))
+		/* If it's a real string we can return the original,
+		 * as no character is ever false and __getitem__
+		 * does return this character. If it's a subclass
+		 * we must go through the __getitem__ loop */
+		if (PyString_CheckExact(strobj)) {
 			Py_INCREF(strobj);
-		else
-			strobj = PyString_FromStringAndSize(
-				PyString_AS_STRING(strobj),
-				len
-			);
-		return strobj;
+			return strobj;
+		}
 	}
 	if ((result = PyString_FromStringAndSize(NULL, len)) == NULL)
 		return NULL;
 
 	for (i = j = 0; i < len; ++i) {
-		PyObject *item, *arg, *good;
+		PyObject *item;
 		int ok;
 
 		item = (*strobj->ob_type->tp_as_sequence->sq_item)(strobj, i);
 		if (item == NULL)
 			goto Fail_1;
-		arg = Py_BuildValue("(O)", item);
-		if (arg == NULL) {
-			Py_DECREF(item);
-			goto Fail_1;
+		if (func==Py_None) {
+			ok = 1;
+		} else {
+			PyObject *arg, *good;
+			arg = Py_BuildValue("(O)", item);
+			if (arg == NULL) {
+				Py_DECREF(item);
+				goto Fail_1;
+			}
+			good = PyEval_CallObject(func, arg);
+			Py_DECREF(arg);
+			if (good == NULL) {
+				Py_DECREF(item);
+				goto Fail_1;
+			}
+			ok = PyObject_IsTrue(good);
+			Py_DECREF(good);
 		}
-		good = PyEval_CallObject(func, arg);
-		Py_DECREF(arg);
-		if (good == NULL) {
-			Py_DECREF(item);
-			goto Fail_1;
-		}
-		ok = PyObject_IsTrue(good);
-		Py_DECREF(good);
 		if (ok) {
 			int reslen;
 			if (!PyString_Check(item)) {
@@ -2026,16 +2029,14 @@ filterunicode(PyObject *func, PyObject *strobj)
 	int outlen = len;
 
 	if (func == Py_None) {
-		/* No character is ever false -- share input string
-		 * (it if's not a subclass) */
-		if (PyUnicode_CheckExact(strobj))
+		/* If it's a real string we can return the original,
+		 * as no character is ever false and __getitem__
+		 * does return this character. If it's a subclass
+		 * we must go through the __getitem__ loop */
+		if (PyUnicode_CheckExact(strobj)) {
 			Py_INCREF(strobj);
-		else
-			strobj = PyUnicode_FromUnicode(
-				PyUnicode_AS_UNICODE(strobj),
-				len
-			);
-		return strobj;
+			return strobj;
+		}
 	}
 	if ((result = PyUnicode_FromUnicode(NULL, len)) == NULL)
 		return NULL;
@@ -2047,19 +2048,23 @@ filterunicode(PyObject *func, PyObject *strobj)
 		item = (*strobj->ob_type->tp_as_sequence->sq_item)(strobj, i);
 		if (item == NULL)
 			goto Fail_1;
-		arg = Py_BuildValue("(O)", item);
-		if (arg == NULL) {
-			Py_DECREF(item);
-			goto Fail_1;
+		if (func == Py_None) {
+			ok = 1;
+		} else {
+			arg = Py_BuildValue("(O)", item);
+			if (arg == NULL) {
+				Py_DECREF(item);
+				goto Fail_1;
+			}
+			good = PyEval_CallObject(func, arg);
+			Py_DECREF(arg);
+			if (good == NULL) {
+				Py_DECREF(item);
+				goto Fail_1;
+			}
+			ok = PyObject_IsTrue(good);
+			Py_DECREF(good);
 		}
-		good = PyEval_CallObject(func, arg);
-		Py_DECREF(arg);
-		if (good == NULL) {
-			Py_DECREF(item);
-			goto Fail_1;
-		}
-		ok = PyObject_IsTrue(good);
-		Py_DECREF(good);
 		if (ok) {
 			int reslen;
 			if (!PyUnicode_Check(item)) {

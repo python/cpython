@@ -418,26 +418,40 @@ class BuiltinTest(unittest.TestCase):
 
     def test_filter_subclasses(self):
         # test, that filter() never returns tuple, str or unicode subclasses
+        # and that the result always go's through __getitem__
+        # FIXME: For tuple currently it doesn't go through __getitem__
         funcs = (None, lambda x: True)
         class tuple2(tuple):
-            pass
+            def __getitem__(self, index):
+                return 2*tuple.__getitem__(self, index)
         class str2(str):
-            pass
+            def __getitem__(self, index):
+                return 2*str.__getitem__(self, index)
         inputs = {
-            tuple2: [(), (1,2,3)],
-            str2:   ["", "123"]
+            tuple2: {(): (), (1, 2, 3): (1, 2, 3)}, # FIXME
+            str2:   {"": "", "123": "112233"}
         }
         if have_unicode:
             class unicode2(unicode):
-                pass
-            inputs[unicode2] = [unicode(), unicode("123")]
+                def __getitem__(self, index):
+                    return 2*unicode.__getitem__(self, index)
+            inputs[unicode2] = {
+                unicode(): unicode(),
+                unicode("123"): unicode("112233")
+            }
 
-        for func in funcs:
-            for (cls, inps) in inputs.iteritems():
-                for inp in inps:
-                    out = filter(func, cls(inp))
-                    self.assertEqual(inp, out)
-                    self.assert_(not isinstance(out, cls))
+        for (cls, inps) in inputs.iteritems():
+            for (inp, exp) in inps.iteritems():
+                 # make sure the output goes through __getitem__
+                 # even if func is None
+                 self.assertEqual(
+                     filter(funcs[0], cls(inp)),
+                     filter(funcs[1], cls(inp))
+                 )
+                 for func in funcs:
+                    outp = filter(func, cls(inp))
+                    self.assertEqual(outp, exp)
+                    self.assert_(not isinstance(outp, cls))
 
     def test_float(self):
         self.assertEqual(float(3.14), 3.14)
