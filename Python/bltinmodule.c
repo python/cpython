@@ -18,6 +18,8 @@
 */
 #if defined(MS_WINDOWS) && defined(HAVE_USABLE_WCHAR_T)
 const char *Py_FileSystemDefaultEncoding = "mbcs";
+#elif defined(__APPLE__)
+const char *Py_FileSystemDefaultEncoding = "utf-8";
 #else
 const char *Py_FileSystemDefaultEncoding = NULL; /* use default */
 #endif
@@ -341,6 +343,7 @@ builtin_compile(PyObject *self, PyObject *args)
 	int supplied_flags = 0;
 	PyCompilerFlags cf;
 	PyObject *result, *cmd, *tmp = NULL;
+	int length;
 
 	if (!PyArg_ParseTuple(args, "Oss|ii:compile", &cmd, &filename,
 			      &startstr, &supplied_flags, &dont_inherit))
@@ -357,14 +360,13 @@ builtin_compile(PyObject *self, PyObject *args)
 		cf.cf_flags |= PyCF_SOURCE_IS_UTF8;
 	}
 #endif
-	if (!PyString_Check(cmd)) {
+	if (PyObject_AsReadBuffer(cmd, (const void **)&str, &length))
+		return NULL;
+	if (length != strlen(str)) {
 		PyErr_SetString(PyExc_TypeError,
-				"compile() arg 1 must be a string");
+				"expected string without null bytes");
 		return NULL;
 	}
-
-	if (PyString_AsStringAndSize(cmd, &str, NULL))
-		return NULL;
 
 	if (strcmp(startstr, "exec") == 0)
 		start = Py_file_input;
