@@ -87,15 +87,15 @@ class TestBisect(unittest.TestCase):
     ]
 
     def test_precomputed(self):
-        for func, list, elt, expected in self.precomputedCases:
-            self.assertEqual(func(list, elt), expected)
+        for func, data, elem, expected in self.precomputedCases:
+            self.assertEqual(func(data, elem), expected)
 
-    def test_random(self, n=20):
+    def test_random(self, n=25):
         from random import randrange
         for i in xrange(n):
             data = [randrange(0, n, 2) for j in xrange(i)]
             data.sort()
-            elem = randrange(n)
+            elem = randrange(-1, n+1)
             ip = bisect_left(data, elem)
             if ip < len(data):
                 self.failUnless(elem <= data[ip])
@@ -108,11 +108,22 @@ class TestBisect(unittest.TestCase):
                 self.failUnless(data[ip-1] <= elem)
 
     def test_optionalSlicing(self):
-        for func, list, elt, expected in self.precomputedCases:
-            lo = min(len(list), 1)
-            self.failUnless(func(list, elt, lo=lo) >= lo)
-            hi = min(len(list), 2)
-            self.failUnless(func(list, elt, hi=hi) <= hi)
+        for func, data, elem, expected in self.precomputedCases:
+            for lo in xrange(4):
+                lo = min(len(data), lo)
+                for hi in xrange(3,8):
+                    hi = min(len(data), hi)
+                    ip = func(data, elem, lo, hi)
+                    self.failUnless(lo <= ip <= hi)
+                    if func is bisect_left and ip < hi:
+                        self.failUnless(elem <= data[ip])
+                    if func is bisect_left and ip > lo:
+                        self.failUnless(data[ip-1] < elem)
+                    if func is bisect_right and ip < hi:
+                        self.failUnless(elem < data[ip])
+                    if func is bisect_right and ip > lo:
+                        self.failUnless(data[ip-1] <= elem)
+                    self.assertEqual(ip, max(lo, min(hi, expected)))
 
     def test_backcompatibility(self):
         self.assertEqual(bisect, bisect_right)
