@@ -506,12 +506,12 @@ com_mangle(c, name, buffer, maxlen)
 	char *buffer;
 	int maxlen;
 {
-	/* Name mangling: __private becomes _classname_private.
+	/* Name mangling: __private becomes _classname__private.
 	   This is independent from how the name is used. */
 	char *p;
 	int nlen, plen;
 	nlen = strlen(name);
-	if (nlen+1 >= maxlen)
+	if (nlen+2 >= maxlen)
 		return 0; /* Don't mangle __extremely_long_names */
 	if (name[nlen-1] == '_' && name[nlen-2] == '_')
 		return 0; /* Don't mangle __whatever__ */
@@ -523,11 +523,11 @@ com_mangle(c, name, buffer, maxlen)
 		return 0; /* Don't mangle if class is just underscores */
 	plen = strlen(p);
 	if (plen + nlen >= maxlen)
-		plen = maxlen-nlen-1; /* Truncate class name if too long */
-	/* buffer = "_" + p[:plen] + name[1:] # i.e. plen+nlen bytes */
+		plen = maxlen-nlen-2; /* Truncate class name if too long */
+	/* buffer = "_" + p[:plen] + name # i.e. 1+plen+nlen bytes */
 	buffer[0] = '_';
 	strncpy(buffer+1, p, plen);
-	strcpy(buffer+plen+1, name+1);
+	strcpy(buffer+1+plen, name);
 	/* fprintf(stderr, "mangle %s -> %s\n", name, buffer); */
 	return 1;
 }
