@@ -249,7 +249,7 @@ class GeneralModuleTests(unittest.TestCase):
 
     def testNtoH(self):
         for func in socket.htonl, socket.ntohl:
-            for i in (0, 1, 0xffff0000, 2L):
+            for i in (0, 1, ~0xffff, 2L):
                 self.assertEqual(i, func(func(i)))
 
             biglong = 2**32L - 1
