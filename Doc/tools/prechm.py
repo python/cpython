@@ -51,7 +51,7 @@ Title=Python %s Documentation
 
 [WINDOWS]
 %s="Python %s Documentation","%s.hhc","%s.hhk","index.html","index.html",\
-,,,,0x2520,220,0x384e,,,,,0,,,
+,,,,0x63520,220,0x384e,[271,372,740,718],,,,,,,0
 
 [FILES]
 '''
@@ -59,6 +59,7 @@ Title=Python %s Documentation
 contents_header = '''
 <OBJECT type="text/site properties">
 	<param name="Window Styles" value="0x801227">
+	<param name="ImageType" value="Folder">
 </OBJECT>
 <UL>
 <LI> <OBJECT type="text/sitemap">
