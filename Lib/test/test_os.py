@@ -205,9 +205,9 @@ class StatAttributeTests(unittest.TestCase):
         except TypeError:
             pass
 
-from test_userdict import TestMappingProtocol
+from test import mapping_tests
 
-class EnvironTests(TestMappingProtocol):
+class EnvironTests(mapping_tests.BasicTestMappingProtocol):
     """check that os.environ object conform to mapping protocol"""
     _tested_class = None
     def _reference(self):

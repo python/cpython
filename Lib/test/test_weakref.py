@@ -912,16 +912,16 @@ class MappingTestCase(TestBase):
         self.assertEqual(len(d), 0)
         self.assertEqual(count, 2)
 
-from test_userdict import TestMappingProtocol
+from test import mapping_tests
 
-class WeakValueDictionaryTestCase(TestMappingProtocol):
+class WeakValueDictionaryTestCase(mapping_tests.BasicTestMappingProtocol):
     """Check that WeakValueDictionary conforms to the mapping protocol"""
     __ref = {"key1":Object(1), "key2":Object(2), "key3":Object(3)}
     _tested_class = weakref.WeakValueDictionary
     def _reference(self):
         return self.__ref.copy()
 
-class WeakKeyDictionaryTestCase(TestMappingProtocol):
+class WeakKeyDictionaryTestCase(mapping_tests.BasicTestMappingProtocol):
     """Check that WeakKeyDictionary conforms to the mapping protocol"""
     __ref = {Object("key1"):1, Object("key2"):2, Object("key3"):3}
     _tested_class = weakref.WeakKeyDictionary
