@@ -880,6 +880,7 @@ def add_files(db):
             lib.add_file("test.xml")
             lib.add_file("test.xml.out")
             lib.add_file("testtar.tar")
+            lib.add_file("test_difflib_expect.html")
             lib.glob("*.uue")
             lib.add_file("readme.txt", src="README")
         if dir=='decimaltestdata':
@@ -1012,7 +1013,7 @@ def add_registry(db):
     # will cause pythonw.exe to be installed.
     tcldata = []
     if have_tcl:
-        tcltkdata = [(tcltk.id, "REGISTRY.tcl"),
+        tcldata = [(tcltk.id, "REGISTRY.tcl"),
                      (tcltk.id, "pythonw.exe")]
     add_data(db, "FeatureComponents",
              [(default_feature.id, "REGISTRY"),
@@ -1032,10 +1033,10 @@ def add_registry(db):
             ("pyo", "python.exe", "Python.CompiledFile", None, default_feature.id)])
     # add_data(db, "MIME") XXX
     add_data(db, "Verb",
-            [("py", "open", 1, None, r'-n -e "%1"'),
-            ("pyw", "open", 1, None, r'-n -e "%1"'),
-            ("pyc", "open", 1, None, r'-n -e "%1"'),
-            ("pyo", "open", 1, None, r'-n -e "%1"')])
+            [("py", "open", 1, None, r'"%1"'),
+            ("pyw", "open", 1, None, r'"%1"'),
+            ("pyc", "open", 1, None, r'"%1"'),
+            ("pyo", "open", 1, None, r'"%1"')])
     add_data(db, "ProgId",
             [("Python.File", None, None, "Python File", "python_icon.exe", 0),
              ("Python.NoConFile", None, None, "Python File (no console)", "python_icon.exe", 0),
