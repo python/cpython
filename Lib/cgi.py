@@ -136,7 +136,8 @@ Old classes
 -----------
 
 These classes, present in earlier versions of the cgi module, are still 
-supported for backward compatibility.  New applications should use the 
+supported for backward compatibility.  New applications should use the
+FieldStorage class.
 
 SvFormContentDict: single value form content as dictionary; assumes each 
 field name occurs in the form only once.
@@ -406,7 +407,7 @@ backwards compatible and debugging classes and functions?
 
 # " <== Emacs font-lock de-bogo-kludgificocity
 
-__version__ = "2.0b4"
+__version__ = "2.0"
 
 
 # Imports
