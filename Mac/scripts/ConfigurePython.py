@@ -1,58 +1,15 @@
 # This python script creates Finder aliases for all the
 # dynamically-loaded modules that "live in" in a single
 # shared library.
-# It needs a fully functional non-dynamic python to work
-# but you can run it in a shared python as long as you can point
-# it to toolboxmodules.slb
 #
-# Jack Jansen, CWI, August 1995
+# This is sort-of a merger between Jack's MkPluginAliases
+# and Guido's mkaliases.
+#
+# Jack Jansen, CWI, August 1996
 
 import sys
-
-def help():
-	print"""
-Try the following:
-1. Remove any old "Python Preferences" files from the system folder.
-2. Remove any old "PythonCore" or "PythonCoreCFM68K" files from the system folder.
-3. Make sure this script, your interpreter and your PythonCore are all located in the
-   same folder.
-4. Run this script again, by dropping it on your interpreter.
-
-If this fails try removing starting afresh from the distribution archive.
-"""
-	sys.exit(1)
-	
-try:
-	import os
-except ImportError:
-	print """
-I cannot import the 'os' module, so something is wrong with sys.path
-"""
-	help()
-	
-try:
-	import Res
-except ImportError:
-	import macfs
-	#
-	# Check that we are actually in the main python directory
-	#
-	fss, ok = macfs.StandardGetFile('Where are the toolbox modules?', 'shlb')
-	tblibname = fss.as_pathname()
-	try:
-		for wtd in ["Ctl", "Dlg", "Evt", "Qd", "Res", "Win"]:
-			imp.load_dynamic(wtd, tblibname)
-	except ImportError:
-		print """
-I cannot load the toolbox modules by hand. Are you sure you are
-using a PowerPC mac?
-"""
-		sys.exit(1)
-		
-
+import os
 import macfs
-import EasyDialogs
-import macostools
 
 ppc_goals = [
 	("AE.ppc.slb", "toolboxmodules.ppc.slb"),
@@ -103,42 +60,97 @@ cfm68k_goals = [
 	("Qt.CFM68K.slb", "qtmodules.CFM68K.slb"),
 ]
 
+def gotopluginfolder():
+	"""Go to the plugin folder, assuming we are somewhere in the Python tree"""
+	import os
+	
+	while not os.path.isdir(":Plugins"):
+		os.chdir("::")
+	os.chdir(":Plugins")
+	print "current directory is", os.getcwd()
+	
+def loadtoolboxmodules():
+	"""Attempt to load the Res module"""
+	try:
+		import Res
+	except ImportError, arg:
+		err1 = arg
+		pass
+	else:
+		print 'imported Res the standard way.'
+		return
+	
+	# We cannot import it. First attempt to load the cfm68k version
+	import imp
+	try:
+		dummy = imp.load_dynamic('Res', 'toolboxmodules.CFM68K.slb')
+	except ImportError, arg:
+		err2 = arg
+		pass
+	else:
+		print 'Loaded Res from toolboxmodules.CFM68K.slb.'
+		return
+		
+	# Ok, try the ppc version
+	try:
+		dummy = imp.load_dynamic('Res', 'toolboxmodules.ppc.slb')
+	except ImportError, arg:
+		err3 = arg
+		pass
+	else:
+		print 'Loaded Res from toolboxmodules.ppc.slb.'
+		return
+	
+	# Tough luck....
+	print "I cannot import the Res module, nor load it from either of"
+	print "toolboxmodules shared libraries. The errors encountered were:"
+	print "import Res:", err1
+	print "load from toolboxmodules.CFM68K.slb:", err2
+	print "load from toolboxmodules.ppc.slb:", err3
+	sys.exit(1)
+	
+		
 
 def main():
-	# Ask the user for the plugins directory
-	dir, ok = macfs.GetDirectory('Where is the PlugIns folder?')
-	if not ok: sys.exit(0)
-	os.chdir(dir.as_pathname())
+	gotopluginfolder()
 	
+	loadtoolboxmodules()
+	
+	import macostools
+		
 	# Remove old .slb aliases and collect a list of .slb files
-	if EasyDialogs.AskYesNoCancel('Proceed with removing old aliases?') <= 0:
-		sys.exit(0)
 	LibFiles = []
 	allfiles = os.listdir(':')
+	print 'Removing old aliases...'
 	for f in allfiles:
 		if f[-4:] == '.slb':
 			finfo = macfs.FSSpec(f).GetFInfo()
 			if finfo.Flags & 0x8000:
+				print '  Removing', f
 				os.unlink(f)
 			else:
 				LibFiles.append(f)
+				print '  Found', f
+	print
 	
-	print LibFiles
-	# Create the new aliases.
-	if EasyDialogs.AskYesNoCancel('Proceed with creating PPC aliases?') > 0:
-		for dst, src in ppc_goals:
-			if src in LibFiles:
-				macostools.mkalias(src, dst)
-			else:
-				EasyDialogs.Message(dst+' not created: '+src+' not found')
-	if EasyDialogs.AskYesNoCancel('Proceed with creating CFM68K aliases?') > 0:
-		for dst, src in cfm68k_goals:
-			if src in LibFiles:
-				macostools.mkalias(src, dst)
-			else:
-				EasyDialogs.Message(dst+' not created: '+src+' not found')
-			
-	EasyDialogs.Message('All done!')
+	# Create the new PPC aliases.
+	print 'Creating PPC aliases...'
+	for dst, src in ppc_goals:
+		if src in LibFiles:
+			macostools.mkalias(src, dst)
+			print ' ', dst, '->', src
+		else:
+			print '*', dst, 'not created:', src, 'not found'
+	print
+	
+	# Create the CFM68K aliases.
+	print 'Creating CFM68K aliases...'
+	for dst, src in cfm68k_goals:
+		if src in LibFiles:
+			macostools.mkalias(src, dst)
+			print ' ', dst, '->', src
+		else:
+			print '*', dst, 'not created:', src, 'not found'
 			
 if __name__ == '__main__':
 	main()
