@@ -362,18 +362,3 @@ Passed test_xmlgen_ignorable
 Passed test_xmlgen_ns
 Passed test_xmlgen_pi
 37 tests, 0 failures
-test_simple (test.test_xmllib.XMLParserTestCase) ... ok
-
-----------------------------------------------------------------------
-Ran 1 test in 0.019s
-
-OK
-test_dump_bad_dict (test.test_xmlrpc.XMLRPCTestCase) ... ok
-test_dump_big_int (test.test_xmlrpc.XMLRPCTestCase) ... ok
-test_dump_big_long (test.test_xmlrpc.XMLRPCTestCase) ... ok
-test_dump_load (test.test_xmlrpc.XMLRPCTestCase) ... ok
-
-----------------------------------------------------------------------
-Ran 4 tests in 0.005s
-
-OK
