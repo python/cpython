@@ -3,6 +3,12 @@ What's New in IDLE 1.1a0?
 
 *Release date: XX-XXX-2004*
 
+- Added a Tk error dialog to run.py inform the user if the subprocess can't
+  connect to the user GUI process.  Added a timeout to the GUI's listening
+  socket.  Added Tk error dialogs to PyShell.py to announce a failure to bind
+  the port or connect to the subprocess.  Clean up error handling during
+  connection initiation phase.  This is an update of Python Patch 778323.
+
 - Print correct exception even if source file changed since shell was 
   restarted.  IDLEfork Patch 869012 Noam Raphael
 
