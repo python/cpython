@@ -833,7 +833,7 @@ def altmro():
     verify(X().f() == "A")
 
 def overloading():
-    if verbose: print "testing operator overloading..."
+    if verbose: print "Testing operator overloading..."
 
     class B(object):
         "Intermediate class because object doesn't have a __setattr__"
@@ -890,7 +890,7 @@ def overloading():
     verify(a.delslice == (0, 10))
 
 def methods():
-    if verbose: print "testing methods..."
+    if verbose: print "Testing methods..."
     class C(object):
         def __init__(self, x):
             self.x = x
@@ -912,7 +912,7 @@ def methods():
 
 def specials():
     # Test operators like __hash__ for which a built-in default exists
-    if verbose: print "testing special operators..."
+    if verbose: print "Testing special operators..."
     # Test the default behavior for static classes
     class C(object):
         def __getitem__(self, i):
@@ -1040,6 +1040,35 @@ def specials():
         verify(i in p10)
     verify(10 not in p10)
 
+def weakrefs():
+    if verbose: print "Testing weak references..."
+    import weakref
+    class C(object):
+        pass
+    c = C()
+    r = weakref.ref(c)
+    verify(r() is c)
+    del c
+    verify(r() is None)
+    del r
+    class NoWeak(object):
+        __slots__ = ['foo']
+    no = NoWeak()
+    try:
+        weakref.ref(no)
+    except TypeError, msg:
+        verify(str(msg).find("weakly") >= 0)
+    else:
+        verify(0, "weakref.ref(no) should be illegal")
+    class Weak(object):
+        __slots__ = ['foo', '__weakref__']
+    yes = Weak()
+    r = weakref.ref(yes)
+    verify(r() is yes)
+    del yes
+    verify(r() is None)
+    del r
+
 def all():
     lists()
     dicts()
@@ -1068,6 +1097,7 @@ def all():
     overloading()
     methods()
     specials()
+    weakrefs()
 
 all()
 
