@@ -137,15 +137,12 @@ def make_objecttreeitem(labeltext, object, setfunction=None):
 def test():
     import sys
     from Tkinter import Toplevel
-    import pyclbr
     import PyShell
-    pyclbr._modules.clear()
     root = Toplevel(PyShell.root)
     root.configure(bd=0, bg="yellow")
     root.focus_set()
     sc = ScrolledCanvas(root, bg="white", highlightthickness=0, takefocus=1)
     sc.frame.pack(expand=1, fill="both")
-    #item = FileTreeItem("C:/windows/desktop")
     item = make_objecttreeitem("sys", sys)
     node = TreeNode(sc.canvas, None, item)
     node.expand()

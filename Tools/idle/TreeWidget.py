@@ -436,8 +436,6 @@ class ScrolledCanvas:
 
 def test():
     import PyShell
-    import pyclbr
-    pyclbr._modules.clear()
     root = Toplevel(PyShell.root)
     root.configure(bd=0, bg="yellow")
     root.focus_set()
