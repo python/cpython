@@ -37,8 +37,10 @@ newclassobject(bases, dict, name)
 	object *dict;
 	object *name; /* String; NULL if unknown */
 {
+#ifdef SUPPORT_OBSOLETE_ACCESS
 	int pos;
 	object *key, *value;
+#endif
 	classobject *op, *dummy;
 	static object *getattrstr, *setattrstr, *delattrstr;
 	if (dictlookup(dict, "__doc__") == NULL) {
@@ -73,11 +75,13 @@ newclassobject(bases, dict, name)
 	XINCREF(op->cl_getattr);
 	XINCREF(op->cl_setattr);
 	XINCREF(op->cl_delattr);
+#ifdef SUPPORT_OBSOLETE_ACCESS
 	pos = 0;
 	while (mappinggetnext(dict, &pos, &key, &value)) {
 		if (is_accessobject(value))
 			setaccessowner(value, (object *)op);
 	}
+#endif
 	return (object *) op;
 }
 
@@ -151,12 +155,14 @@ class_getattr(op, name)
 		err_setval(AttributeError, name);
 		return NULL;
 	}
+#ifdef SUPPORT_OBSOLETE_ACCESS
 	if (is_accessobject(v)) {
 		v = getaccessvalue(v, getowner());
 		if (v == NULL)
 			return NULL;
 	}
 	else
+#endif
 		INCREF(v);
 	if (is_funcobject(v)) {
 		object *w = newinstancemethodobject(v, (object *)NULL,
@@ -173,7 +179,9 @@ class_setattr(op, name, v)
 	object *name;
 	object *v;
 {
+#ifdef SUPPORT_OBSOLETE_ACCESS
 	object *ac;
+#endif
 	char *sname = getstringvalue(name);
 	if (sname[0] == '_' && sname[1] == '_') {
 		int n = getstringsize(name);
@@ -187,9 +195,11 @@ class_setattr(op, name, v)
 			   "classes are read-only in restricted mode");
 		return -1;
 	}
+#ifdef SUPPORT_OBSOLETE_ACCESS
 	ac = mappinglookup(op->cl_dict, name);
 	if (ac != NULL && is_accessobject(ac))
 		return setaccessvalue(ac, getowner(), v);
+#endif
 	if (v == NULL) {
 		int rv = mappingremove(op->cl_dict, name);
 		if (rv < 0)
@@ -260,6 +270,7 @@ issubclass(class, base)
 
 /* Instance objects */
 
+#ifdef SUPPORT_OBSOLETE_ACCESS
 static int
 addaccess(class, inst)
 	classobject *class;
@@ -295,6 +306,7 @@ addaccess(class, inst)
     	}
 	return 0;
 }
+#endif
 
 object *
 newinstanceobject(class, arg, kw)
@@ -315,8 +327,11 @@ newinstanceobject(class, arg, kw)
 	INCREF(class);
 	inst->in_class = (classobject *)class;
 	inst->in_dict = newdictobject();
-	if (inst->in_dict == NULL ||
-	    addaccess((classobject *)class, inst) != 0) {
+	if (inst->in_dict == NULL
+#ifdef SUPPORT_OBSOLETE_ACCESS
+	    || addaccess((classobject *)class, inst) != 0
+#endif
+		) {
 		DECREF(inst);
 		return NULL;
 	}
@@ -382,8 +397,12 @@ instance_dealloc(inst)
 	if ((del = instance_getattr1(inst, delstr)) != NULL) {
 		object *res = call_object(del, (object *)NULL);
 		DECREF(del);
-		XDECREF(res);
-		/* XXX If __del__ raised an exception, it is ignored! */
+		if (res == NULL) {
+			writestring("exception in __del__ method ignored\n",
+				    sysget("stdout"));
+		}
+		else
+			DECREF(res);
 	}
 	/* Restore the saved exception and undo the temporary revival */
 	err_restore(error_type, error_value, error_traceback);
@@ -438,12 +457,14 @@ instance_getattr1(inst, name)
 			return NULL;
 		}
 	}
+#ifdef SUPPORT_OBSOLETE_ACCESS
 	if (is_accessobject(v)) {
 		v = getaccessvalue(v, getowner());
 		if (v == NULL)
 			return NULL;
 	}
 	else
+#endif
 		INCREF(v);
 	if (class != NULL) {
 		if (is_funcobject(v)) {
@@ -492,10 +513,12 @@ instance_setattr1(inst, name, v)
 	object *name;
 	object *v;
 {
+#ifdef SUPPORT_OBSOLETE_ACCESS
 	object *ac;
 	ac = mappinglookup(inst->in_dict, name);
 	if (ac != NULL && is_accessobject(ac))
 		return setaccessvalue(ac, getowner(), v);
+#endif
 	if (v == NULL) {
 		int rv = mappingremove(inst->in_dict, name);
 		if (rv < 0)

@@ -28,6 +28,10 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 ******************************************************************/
 
+/* This object type is no longer supported */
+
+#ifdef SUPPORT_OBSOLETE_ACCESS
+
 /* Access object interface */
 
 /* Access mode bits (note similarity with UNIX permissions) */
@@ -59,6 +63,8 @@ PyObject *PyAccess_Clone Py_PROTO((PyObject *));
 int PyAccess_HasValue Py_PROTO((PyObject *));
 
 extern DL_IMPORT(PyTypeObject) PyAnyNumber_Type, PyAnySequence_Type, PyAnyMapping_Type;
+
+#endif /* !SUPPORT_OBSOLETE_ACCESS */
 
 #ifdef __cplusplus
 }
