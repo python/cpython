@@ -1,163 +1,143 @@
-from test.test_support import verbose, TestFailed
+import unittest
+import warnings
+import sys
+from test import test_support
 
-if verbose:
-    print "Testing whether compiler catches assignment to __debug__"
+class TestSpecifics(unittest.TestCase):
 
-try:
-    compile('__debug__ = 1', '?', 'single')
-except SyntaxError:
-    pass
+    def test_debug_assignment(self):
+        # catch assignments to __debug__
+        self.assertRaises(SyntaxError, compile, '__debug__ = 1', '?', 'single')
+        import __builtin__
+        prev = __builtin__.__debug__
+        setattr(__builtin__, '__debug__', 'sure')
+        setattr(__builtin__, '__debug__', prev)
 
-import __builtin__
-prev = __builtin__.__debug__
-setattr(__builtin__, '__debug__', 'sure')
-setattr(__builtin__, '__debug__', prev)
+    def test_argument_handling(self):
+        # detect duplicate positional and keyword arguments
+        self.assertRaises(SyntaxError, eval, 'lambda a,a:0')
+        self.assertRaises(SyntaxError, eval, 'lambda a,a=1:0')
+        self.assertRaises(SyntaxError, eval, 'lambda a=1,a=1:0')
+        try:
+            exec 'def f(a, a): pass'
+            self.fail("duplicate arguments")
+        except SyntaxError:
+            pass
+        try:
+            exec 'def f(a = 0, a = 1): pass'
+            self.fail("duplicate keyword arguments")
+        except SyntaxError:
+            pass
+        try:
+            exec 'def f(a): global a; a = 1'
+            self.fail("variable is global and local")
+        except SyntaxError:
+            pass
 
-if verbose:
-    print 'Running tests on argument handling'
+    def test_syntax_error(self):
+        self.assertRaises(SyntaxError, compile, "1+*3", "filename", "exec")
 
-try:
-    exec 'def f(a, a): pass'
-    raise TestFailed, "duplicate arguments"
-except SyntaxError:
-    pass
+    def test_duplicate_global_local(self):
+        try:
+            exec 'def f(a): global a; a = 1'
+            self.fail("variable is global and local")
+        except SyntaxError:
+            pass
 
-if verbose:
-    print "compiling string with syntax error"
+    def test_complex_args(self):
 
-try:
-    compile("1+*3", "filename", "exec")
-except SyntaxError, detail:
-    if not detail.filename == "filename":
-        raise TestFailed, "expected 'filename', got %r" % detail.filename
+        def comp_args((a, b)):
+            return a,b
+        self.assertEqual(comp_args((1, 2)), (1, 2))
 
-try:
-    exec 'def f(a = 0, a = 1): pass'
-    raise TestFailed, "duplicate keyword arguments"
-except SyntaxError:
-    pass
+        def comp_args((a, b)=(3, 4)):
+            return a, b
+        self.assertEqual(comp_args((1, 2)), (1, 2))
+        self.assertEqual(comp_args(), (3, 4))
 
-try:
-    exec 'def f(a): global a; a = 1'
-    raise TestFailed, "variable is global and local"
-except SyntaxError:
-    pass
+        def comp_args(a, (b, c)):
+            return a, b, c
+        self.assertEqual(comp_args(1, (2, 3)), (1, 2, 3))
 
-if verbose:
-    print "testing complex args"
+        def comp_args(a=2, (b, c)=(3, 4)):
+            return a, b, c
+        self.assertEqual(comp_args(1, (2, 3)), (1, 2, 3))
+        self.assertEqual(comp_args(), (2, 3, 4))
 
-def comp_args((a, b)):
-    print a,b
+    def test_argument_order(self):
+        try:
+            exec 'def f(a=1, (b, c)): pass'
+            self.fail("non-default args after default")
+        except SyntaxError:
+            pass
 
-comp_args((1, 2))
+    def test_float_literals(self):
+        # testing bad float literals
+        self.assertRaises(SyntaxError, eval, "2e")
+        self.assertRaises(SyntaxError, eval, "2.0e+")
+        self.assertRaises(SyntaxError, eval, "1e-")
+        self.assertRaises(SyntaxError, eval, "3-4e/21")
 
-def comp_args((a, b)=(3, 4)):
-    print a, b
-
-comp_args((1, 2))
-comp_args()
-
-def comp_args(a, (b, c)):
-    print a, b, c
-
-comp_args(1, (2, 3))
-
-def comp_args(a=2, (b, c)=(3, 4)):
-    print a, b, c
-
-comp_args(1, (2, 3))
-comp_args()
-
-try:
-    exec 'def f(a=1, (b, c)): pass'
-    raise TestFailed, "non-default args after default"
-except SyntaxError:
-    pass
-
-if verbose:
-    print "testing bad float literals"
-
-def expect_error(s):
-    try:
-        eval(s)
-        raise TestFailed("%r accepted" % s)
-    except SyntaxError:
-        pass
-
-expect_error("2e")
-expect_error("2.0e+")
-expect_error("1e-")
-expect_error("3-4e/21")
-
-if verbose:
-    print "testing compile() of indented block w/o trailing newline"
-
-s = """
+    def test_indentation(self):
+        # testing compile() of indented block w/o trailing newline"
+        s = """
 if 1:
     if 2:
         pass"""
-compile(s, "<string>", "exec")
+        compile(s, "<string>", "exec")
+
+    def test_literals_with_leading_zeroes(self):
+        for arg in ["077787", "0xj", "0x.", "0e",  "090000000000000",
+                    "080000000000000", "000000000000009", "000000000000008"]:
+            self.assertRaises(SyntaxError, eval, arg)
+
+        self.assertEqual(eval("0777"), 511)
+        self.assertEqual(eval("0777L"), 511)
+        self.assertEqual(eval("000777"), 511)
+        self.assertEqual(eval("0xff"), 255)
+        self.assertEqual(eval("0xffL"), 255)
+        self.assertEqual(eval("0XfF"), 255)
+        self.assertEqual(eval("0777."), 777)
+        self.assertEqual(eval("0777.0"), 777)
+        self.assertEqual(eval("000000000000000000000000000000000000000000000000000777e0"), 777)
+        self.assertEqual(eval("0777e1"), 7770)
+        self.assertEqual(eval("0e0"), 0)
+        self.assertEqual(eval("0000E-012"), 0)
+        self.assertEqual(eval("09.5"), 9.5)
+        self.assertEqual(eval("0777j"), 777j)
+        self.assertEqual(eval("00j"), 0j)
+        self.assertEqual(eval("00.0"), 0)
+        self.assertEqual(eval("0e3"), 0)
+        self.assertEqual(eval("090000000000000."), 90000000000000.)
+        self.assertEqual(eval("090000000000000.0000000000000000000000"), 90000000000000.)
+        self.assertEqual(eval("090000000000000e0"), 90000000000000.)
+        self.assertEqual(eval("090000000000000e-0"), 90000000000000.)
+        self.assertEqual(eval("090000000000000j"), 90000000000000j)
+        self.assertEqual(eval("000000000000007"), 7)
+        self.assertEqual(eval("000000000000008."), 8.)
+        self.assertEqual(eval("000000000000009."), 9.)
+
+    def test_unary_minus(self):
+        # Verify treatment of unary minus on negative numbers SF bug #660455
+        warnings.filterwarnings("ignore", "hex/oct constants", FutureWarning)
+        warnings.filterwarnings("ignore", "hex.* of negative int", FutureWarning)
+        # XXX Of course the following test will have to be changed in Python 2.4
+        # This test is in a <string> so the filterwarnings() can affect it
+        all_one_bits = '0xffffffff'
+        if sys.maxint != 2147483647:
+            all_one_bits = '0xffffffffffffffff'
+        self.assertEqual(eval(all_one_bits), -1)
+        self.assertEqual(eval("-" + all_one_bits), 1)
+
+    def test_sequence_unpacking_error(self):
+        # Verify sequence packing/unpacking with "or".  SF bug #757818
+        i,j = (1, -1) or (-1, 1)
+        self.assertEqual(i, 1)
+        self.assertEqual(j, -1)
 
 
-if verbose:
-    print "testing literals with leading zeroes"
+def test_main():
+    test_support.run_unittest(TestSpecifics)
 
-def expect_same(test_source, expected):
-    got = eval(test_source)
-    if got != expected:
-        raise TestFailed("eval(%r) gave %r, but expected %r" %
-                         (test_source, got, expected))
-
-expect_error("077787")
-expect_error("0xj")
-expect_error("0x.")
-expect_error("0e")
-expect_same("0777", 511)
-expect_same("0777L", 511)
-expect_same("000777", 511)
-expect_same("0xff", 255)
-expect_same("0xffL", 255)
-expect_same("0XfF", 255)
-expect_same("0777.", 777)
-expect_same("0777.0", 777)
-expect_same("000000000000000000000000000000000000000000000000000777e0", 777)
-expect_same("0777e1", 7770)
-expect_same("0e0", 0)
-expect_same("0000E-012", 0)
-expect_same("09.5", 9.5)
-expect_same("0777j", 777j)
-expect_same("00j", 0j)
-expect_same("00.0", 0)
-expect_same("0e3", 0)
-expect_same("090000000000000.", 90000000000000.)
-expect_same("090000000000000.0000000000000000000000", 90000000000000.)
-expect_same("090000000000000e0", 90000000000000.)
-expect_same("090000000000000e-0", 90000000000000.)
-expect_same("090000000000000j", 90000000000000j)
-expect_error("090000000000000")  # plain octal literal w/ decimal digit
-expect_error("080000000000000")  # plain octal literal w/ decimal digit
-expect_error("000000000000009")  # plain octal literal w/ decimal digit
-expect_error("000000000000008")  # plain octal literal w/ decimal digit
-expect_same("000000000000007", 7)
-expect_same("000000000000008.", 8.)
-expect_same("000000000000009.", 9.)
-
-# Verify treatment of unary minus on negative numbers SF bug #660455
-import warnings
-warnings.filterwarnings("ignore", "hex/oct constants", FutureWarning)
-warnings.filterwarnings("ignore", "hex.* of negative int", FutureWarning)
-# XXX Of course the following test will have to be changed in Python 2.4
-# This test is in a <string> so the filterwarnings() can affect it
-import sys
-all_one_bits = '0xffffffff'
-if sys.maxint != 2147483647:
-    all_one_bits = '0xffffffffffffffff'
-exec """
-expect_same(all_one_bits, -1)
-expect_same("-" + all_one_bits, 1)
-"""
-
-# Verify sequence packing/unpacking with "or".  SF bug #757818
-i,j = (1, -1) or (-1, 1)
-if i != 1 or j != -1:
-    raise TestFailed, "Sequence packing/unpacking"
+if __name__ == "__main__":
+    test_main()
