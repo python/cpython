@@ -27,7 +27,7 @@ for file in files:
     majorrev = string.atoi(majorrev_re.group(0)) + 1
 
     if not dir.islocked(file):
-	dir.checkout(file, WITHLOCK)
+        dir.checkout(file, WITHLOCK)
 
     msg = "Bumping major revision number (to %d)" % majorrev
     dir.checkin((file, "%s.0" % majorrev), msg, "-f")
