@@ -1,8 +1,9 @@
 \section{Standard Module \sectcode{SocketServer}}
+\label{module-SocketServer}
 \stmodindex{SocketServer}
 
 The \code{SocketServer} module simplifies the task of writing network
-servers.  
+servers.
 
 There are four basic server classes: \code{TCPServer} uses the
 Internet TCP protocol, which provides for continuous streams of data
@@ -12,8 +13,8 @@ lost while in transit.  The more infrequently used
 \code{UnixStreamServer} and \code{UnixDatagramServer} classes are
 similar, but use Unix domain sockets; they're not available on
 non-Unix platforms.  For more details on network programming, consult
-a book such as W. Richard Steven's \emph{Unix Network Programming}_ or
-XXX (a Windows equivalent).
+a book such as W. Richard Steven's \emph{UNIX Network Programming}
+or Ralph Davis's \emph{Win32 Network Programming}.
 
 These four classes process requests \dfn{synchronously}; each request
 must be completed before the next request can be started.  This isn't
@@ -36,7 +37,7 @@ many requests.
 Server classes have the same external methods and attributes, no
 matter what network protocol they use:
 
-\renewcommand{\indexsubitem}{(in module SocketServer)}
+\renewcommand{\indexsubitem}{(SocketServer protocol)}
 
 %XXX should data and methods be intermingled, or separate?
 % how should the distinction between class and instance variables be
