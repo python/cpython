@@ -193,11 +193,12 @@ sub do_cmd_manpage{
 sub do_cmd_rfc{
     local($_) = @_;
     my($rfcnumber,$br_id) = next_argument();
-
+    my $href =
+      "http://info.internet.isi.edu/in-notes/rfc/files/rfc$rfcnumber.txt";
     # Save the reference
     my $nstr = gen_index_id("RFC!RFC $rfcnumber", '');
     $index{$nstr} .= make_half_href("$CURRENT_FILE#$br_id");
-    return "<a name=$br_id>RFC $rfcnumber</a>" .$_;
+    return "<a name=\"$br_id\"\nhref=\"$href\">RFC $rfcnumber</a>" .$_;
 }
 
 sub do_cmd_deprecated{
@@ -269,11 +270,13 @@ $IDXFILE_FIELD_SEP = "\1";
 
 
 sub gen_target_name{
-    return "l2h-" . @_[0];
+    my($stuff) = @_;
+    return "l2h-" . $stuff;
 }
 
 sub gen_target{
-    return '<a name="' . @_[0] . '">';
+    my($name) = @_;
+    return '<a name="' . $name . '">';
 }
 
 sub gen_link{
