@@ -42,11 +42,33 @@ def extract_tb(tb, limit = None):
 	return list
 
 def print_exception(type, value, tb, limit = None):
-	print 'Traceback (innermost last):'
-	print_tb(tb, limit)
-	print type,
-	if value is not None: print ':', value,
-	print
+	if tb:
+		print 'Traceback (innermost last):'
+		print_tb(tb, limit)
+	if value is None:
+		print type
+	else:
+		if type is SyntaxError:
+			try:
+				msg, (filename, lineno, offset, line) = value
+			except:
+				pass
+			else:
+				if not filename: filename = "<string>"
+				print '  File "%s", line %d' % (filename, lineno)
+				i = 0
+				while i < len(line) and line[i] in string.whitespace:
+					i = i+1
+				s = '    '
+				print s + string.strip(line)
+				for c in line[i:offset-1]:
+					if c in string.whitespace:
+						s = s + c
+					else:
+						s = s + ' '
+				print s + '^'
+				value = msg
+		print '%s: %s' % (type, value)
 
 def print_exc(limit = None):
 	print_exception(sys.exc_type, sys.exc_value, sys.exc_traceback,

@@ -59,7 +59,7 @@ def checkcache():
 def updatecache(filename):
 	if cache.has_key(filename):
 		del cache[filename]
-	if filename[0] + filename[-1] == '<>':
+	if not filename or filename[0] + filename[-1] == '<>':
 		return []
 	fullname = filename
 	try:
