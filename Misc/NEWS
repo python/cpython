@@ -42,6 +42,8 @@ Core and builtins
 Library
 -------
 
+- Bug #938076: Consider output encoding in XMLGenerator.
+
 - Bug #936637: Properly delegate startElementNS in saxutils.XMLFilterBase.
 
 - Bug #944082: Empty passwords in urllib2 are now supported.
