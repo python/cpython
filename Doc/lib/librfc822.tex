@@ -238,24 +238,36 @@ be used to read the message content.
 
 An \class{AddressList} instance has the following methods:
 
-\begin{methoddesc}{__len__}{name}
+\begin{methoddesc}{__len__}{}
 Return the number of addresses in the address list.
 \end{methoddesc}
 
-\begin{methoddesc}{__str__}{name}
+\begin{methoddesc}{__str__}{}
 Return a canonicalized string representation of the address list.
 Addresses are rendered in "name" <host@domain> form, comma-separated.
 \end{methoddesc}
 
-\begin{methoddesc}{__add__}{name}
-Return an \class{AddressList} instance that contains all addresses in
-both \class{AddressList} operands, with duplicates removed (set union).
+\begin{methoddesc}{__add__}{alist}
+Return a new \class{AddressList} instance that contains all addresses
+in both \class{AddressList} operands, with duplicates removed (set
+union).
 \end{methoddesc}
 
-\begin{methoddesc}{__sub__}{name}
-Return an \class{AddressList} instance that contains every address in the
-left-hand \class{AddressList} operand that is not present in the right-hand
-address operand (set difference).
+\begin{methoddesc}{__iadd__}{alist}
+In-place version of \method{__add__()}; turns this \class{AddressList}
+instance into the union of itself and the right-hand instance,
+\var{alist}.
+\end{methoddesc}
+
+\begin{methoddesc}{__sub__}{alist}
+Return a new \class{AddressList} instance that contains every address
+in the left-hand \class{AddressList} operand that is not present in
+the right-hand address operand (set difference).
+\end{methoddesc}
+
+\begin{methoddesc}{__isub__}{alist}
+In-place version of \method{__sub__()}, removing addresses in this
+list which are also in \var{alist}.
 \end{methoddesc}
 
 
@@ -264,5 +276,6 @@ Finally, \class{AddressList} instances have one public instance variable:
 \begin{memberdesc}{addresslist}
 A list of tuple string pairs, one per address.  In each member, the
 first is the canonicalized name part, the second is the
-actual route-address (@-separated username-host.domain pair).
+actual route-address (\character{@}-separated username-host.domain
+pair).
 \end{memberdesc}
