@@ -49,7 +49,12 @@ class MaildirTestCase(unittest.TestCase):
         self._msgfiles.append(tmpname)
         fp.write(DUMMY_MESSAGE)
         fp.close()
-        os.link(tmpname, newname)
+        if hasattr(os, "link"):
+            os.link(tmpname, newname)
+        else:
+            fp = open(newname, "w")
+            fp.write(DUMMY_MESSAGE)
+            fp.close()
         self._msgfiles.append(newname)
 
     def test_empty_maildir(self):
