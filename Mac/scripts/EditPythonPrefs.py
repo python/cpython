@@ -1,4 +1,7 @@
 """Edit the Python Preferences file."""
+#
+# This program is getting more and more clunky. It should really
+# be rewritten in a modeless way some time soon.
 
 from Dlg import *
 from Events import *
@@ -20,6 +23,14 @@ OK_ITEM = 2
 CANCEL_ITEM = 3
 DIR_ITEM = 4
 TITLE_ITEM = 5
+OPTIONS_ITEM = 7
+
+# The options dialog. There is a correspondence between
+# the dialog item numbers and the option.
+OPT_DIALOG_ID = 513
+# 1 thru 7 are the options
+OD_OK_ITEM = 8
+OD_CANCEL_ITEM = 9
 
 # Resource IDs in the preferences file
 PATH_STRINGS_ID = 128
@@ -61,6 +72,7 @@ def listtores(list):
 def message(str = "Hello, world!", id = MESSAGE_ID):
 	"""Show a simple alert with a text message"""
 	d = GetNewDialog(id, -1)
+	d.SetDialogDefaultItem(1)
 	print 'd=', d
 	tp, h, rect = d.GetDialogItem(2)
 	SetDialogItemText(h, str)
@@ -68,7 +80,26 @@ def message(str = "Hello, world!", id = MESSAGE_ID):
 		n = ModalDialog(None)
 		if n == 1: break
 		
-def interact(list, pythondir, title):
+def optinteract(options):
+	"""Let the user interact with the options dialog"""
+	old_options = options[:]
+	d = GetNewDialog(OPT_DIALOG_ID, -1)
+	d.SetDialogDefaultItem(OD_OK_ITEM)
+	d.SetDialogCancelItem(OD_CANCEL_ITEM)
+	while 1:
+		for i in range(len(options)):
+			tp, h, rect = d.GetDialogItem(i+1)
+			h.as_Control().SetControlValue(options[i])
+		n = ModalDialog(None)
+		if n == OD_OK_ITEM:
+			return options
+		elif n == OD_CANCEL_ITEM:
+			return old_options
+		elif 1 <= n <= len(options):
+			options[n-1] = (not options[n-1])
+
+			
+def interact(list, pythondir, options, title):
 	"""Let the user interact with the dialog"""
 	opythondir = pythondir
 	try:
@@ -95,12 +126,14 @@ def interact(list, pythondir, title):
 			fss, ok = macfs.GetDirectory('Select python home folder:')
 			if ok:
 				pythondir = fss
+		if n == OPTIONS_ITEM:
+			options = optinteract(options)
 	tmp = string.splitfields(GetDialogItemText(h), '\r')
 	rv = []
 	for i in tmp:
 		if i:
 			rv.append(i)
-	return rv, pythondir
+	return rv, pythondir, options
 	
 def getprefpath(id):
 	# Load the path and directory resources
@@ -119,6 +152,13 @@ def getprefdir(id):
 	except (MacOS.Error, Res.Error):
 		return None, None, 1
 	return fss, dr, fss_changed
+
+def getoptions(id):
+	try:
+		opr = GetResource('Popt', id)
+	except (MacOS.Error, Res.Error):
+		return [0]*7, None
+	return map(lambda x: ord(x), opr.data), opr
 	
 def openpreffile(rw):
 	# Find the preferences folder and our prefs file, create if needed.	
@@ -155,38 +195,49 @@ def edit_preferences():
 	if fss == None:
 		fss = macfs.FSSpec(os.getcwd())
 		fss_changed = 1
+		
+	options, opr = getoptions(OPTIONS_ID)
+	saved_options = options[:]
 	
 	# Let the user play away
-	result = interact(l, fss, 'System-wide preferences')
+	result = interact(l, fss, options, 'System-wide preferences')
 	
 	# See what we have to update, and how
 	if result == None:
 		sys.exit(0)
 		
-	pathlist, nfss = result
+	pathlist, nfss, options = result
 	if nfss != fss:
 		fss_changed = 1
 		
-	if fss_changed or pathlist != l:
-		if fss_changed:
-			alias = nfss.NewAlias()
-			if dr:
-				dr.data = alias.data
-				dr.ChangedResource()
-			else:
-				dr = Resource(alias.data)
-				dr.AddResource('alis', DIRECTORY_ID, '')
-				
-		if pathlist != l:
-			if pathlist == []:
-				if sr.HomeResFile() == preff_handle:
-					sr.RemoveResource()
-			elif sr.HomeResFile() == preff_handle:
-				sr.data = listtores(pathlist)
-				sr.ChangedResource()
-			else:
-				sr = Resource(listtores(pathlist))
-				sr.AddResource('STR#', PATH_STRINGS_ID, '')
+	if fss_changed:
+		alias = nfss.NewAlias()
+		if dr:
+			dr.data = alias.data
+			dr.ChangedResource()
+		else:
+			dr = Resource(alias.data)
+			dr.AddResource('alis', DIRECTORY_ID, '')
+			
+	if pathlist != l:
+		if pathlist == []:
+			if sr.HomeResFile() == preff_handle:
+				sr.RemoveResource()
+		elif sr.HomeResFile() == preff_handle:
+			sr.data = listtores(pathlist)
+			sr.ChangedResource()
+		else:
+			sr = Resource(listtores(pathlist))
+			sr.AddResource('STR#', PATH_STRINGS_ID, '')
+			
+	if options != saved_options:
+		newdata = reduce(lambda x, y: x+chr(y), options, '')
+		if opr and opr.HomeResFile() == preff_handle:
+			opr.data = newdata
+			opr.ChangedResource()
+		else:
+			opr = Resource(newdata)
+			opr.AddResource('Popt', OPTIONS_ID, '')
 				
 	CloseResFile(preff_handle)
 	
@@ -207,49 +258,66 @@ def edit_applet(name):
 	fss, dr, fss_changed = getprefdir(OVERRIDE_DIRECTORY_ID)
 	if fss == None:
 		if notfound:
-			notfound = notfound + ' and ' + 'directory'
+			notfound = notfound + ', directory'
 		else:
 			notfound = 'directory'
 		fss, dummy, dummy2 = getprefdir(DIRECTORY_ID)
 		if fss == None:
 			fss = macfs.FSSpec(os.getcwd())
 			fss_changed = 1
+
+	options, opr = getoptions(OVERRIDE_OPTIONS_ID)
+	if not opr:
+		if notfound:
+			notfound = notfound + ', options'
+		else:
+			notfound = 'options'
+		options, dummy = getoptions(OPTIONS_ID)
+	saved_options = options[:]
 	
 	dummy = dummy2 = None # Discard them.
 	
 	if notfound:
 		message('Warning: initial %s taken from system-wide defaults'%notfound)
 	# Let the user play away
-	result = interact(l, fss, name)
+	result = interact(l, fss, options, name)
 	
 	# See what we have to update, and how
 	if result == None:
 		sys.exit(0)
 		
-	pathlist, nfss = result
+	pathlist, nfss, options = result
 	if nfss != fss:
 		fss_changed = 1
 		
-	if fss_changed or pathlist != l:
-		if fss_changed:
-			alias = nfss.NewAlias()
-			if dr:
-				dr.data = alias.data
-				dr.ChangedResource()
-			else:
-				dr = Resource(alias.data)
-				dr.AddResource('alis', OVERRIDE_DIRECTORY_ID, '')
-				
-		if pathlist != l:
-			if pathlist == []:
-				if sr.HomeResFile() == app_handle:
-					sr.RemoveResource()
-			elif sr and sr.HomeResFile() == app_handle:
-				sr.data = listtores(pathlist)
-				sr.ChangedResource()
-			else:
-				sr = Resource(listtores(pathlist))
-				sr.AddResource('STR#', OVERRIDE_PATH_STRINGS_ID, '')
+	if fss_changed:
+		alias = nfss.NewAlias()
+		if dr:
+			dr.data = alias.data
+			dr.ChangedResource()
+		else:
+			dr = Resource(alias.data)
+			dr.AddResource('alis', OVERRIDE_DIRECTORY_ID, '')
+			
+	if pathlist != l:
+		if pathlist == []:
+			if sr.HomeResFile() == app_handle:
+				sr.RemoveResource()
+		elif sr and sr.HomeResFile() == app_handle:
+			sr.data = listtores(pathlist)
+			sr.ChangedResource()
+		else:
+			sr = Resource(listtores(pathlist))
+			sr.AddResource('STR#', OVERRIDE_PATH_STRINGS_ID, '')
+			
+	if options != saved_options:
+		newdata = reduce(lambda x, y: x+chr(y), options, '')
+		if opr and opr.HomeResFile() == app_handle:
+			opr.data = newdata
+			opr.ChangedResource()
+		else:
+			opr = Resource(newdata)
+			opr.AddResource('Popt', OVERRIDE_OPTIONS_ID, '')
 				
 	CloseResFile(app_handle)
 
