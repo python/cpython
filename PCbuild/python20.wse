@@ -1,7 +1,7 @@
 Document Type: WSE
 item: Global
   Version=5.0
-  Title=Python 2.1 alpha 2
+  Title=Python 2.1 beta 1
   Flags=00010100
   Languages=65 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
   Japanese Font Name=MS Gothic
@@ -64,7 +64,7 @@ item: End Block
 end
 item: Set Variable
   Variable=APPTITLE
-  Value=Python 2.1 alpha 2
+  Value=Python 2.1 beta 1
 end
 item: Set Variable
   Variable=GROUP
@@ -72,7 +72,7 @@ item: Set Variable
 end
 item: Set Variable
   Variable=PY_VERSION
-  Value=2.1a2
+  Value=2.1b1
 end
 item: Set Variable
   Variable=MAINDIR
