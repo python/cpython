@@ -816,6 +816,17 @@ This \UNIX\ is also followed by a space.
       The name of a keyword in a programming language.
     \end{macrodesc}
 
+    \begin{macrodesc}{mailheader}{\p{name}}
+      The name of an \rfc{822}-style mail header.  This markup does
+      not imply that the header is being used in an email message, but
+      can be used to refer to any header of the same ``style.''  This
+      is also used for headers defined by the various MIME
+      specifications.  The header name should be entered in the same
+      way it would normally be found in practice, with the
+      camel-casing conventions being preferred where there is more
+      than one common usage.  For example: \mailheader{Content-Type}.
+    \end{macrodesc}
+
     \begin{macrodesc}{makevar}{\p{name}}
       The name of a \program{make} variable.
     \end{macrodesc}
@@ -834,19 +845,9 @@ This \UNIX\ is also followed by a space.
       used.
     \end{macrodesc}
 
-    \begin{macrodesc}{mailheader}{\p{name}}
-      The name of an \rfc{822}-style mail header.  This markup does
-      not imply that the header is being used in an email message, but
-      can be used to refer to any header of the same ``style.''  This
-      is also used for headers defined by the various MIME
-      specifications.  The header name should be entered in the same
-      way it would normally be found in practice, with the
-      camel-casing conventions being preferred where there is more
-      than one common usage.  For example: \mailheader{Content-Type}.
-    \end{macrodesc}
-
     \begin{macrodesc}{mimetype}{\p{name}}
-      The name of a MIME type.
+      The name of a MIME type, or a component of a MIME type (the
+      major or minor portion, taken alone).
     \end{macrodesc}
 
     \begin{macrodesc}{module}{\p{name}}
