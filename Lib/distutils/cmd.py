@@ -344,5 +344,35 @@ class Command:
 # class Command
 
 
+class install_misc (Command):
+    """Common base class for installing some files in a subdirectory.
+    Currently used by install_data and install_scripts.
+    """
+    
+    user_options = [('install-dir=', 'd', "directory to install the files to")]
+
+    def initialize_options (self):
+        self.install_dir = None
+        self.outfiles = None
+
+    def _install_dir_from(self, dirname):
+        self.set_undefined_options('install', (dirname, 'install_dir'))
+
+    def _copydata(self, filelist):
+        self.outfiles = []
+        if not filelist:
+            return
+        self.mkpath(self.install_dir)
+        for f in filelist:
+            self.outfiles.append(self.copy_file (f, self.install_dir))
+
+    def _outputdata(self, filelist):
+        if self.outfiles is not None:
+            return self.outfiles
+        # XXX de-lambda-fy
+        return map(lambda x: os.path.join(self.install_dir, x), filelist)
+
+
+
 if __name__ == "__main__":
     print "ok"

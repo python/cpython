@@ -154,6 +154,8 @@ class Distribution:
         self.ext_package = None
         self.include_dirs = None
         self.extra_path = None
+        self.scripts = None
+        self.data = None
 
         # And now initialize bookkeeping stuff that can't be supplied by
         # the caller at all.  'command_obj' maps command names to
