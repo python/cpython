@@ -1,0 +1,25 @@
+This directory contains the source to the Python documentation.
+
+Unfortunately it's not not very readable, complete or up-to-date yet --
+in other words, I'm still working on it!
+
+There are four documents and a macro file:
+
+	macros.ms		macros .so'ed by the documents
+
+	paper.ms		conference paper about Python
+	intro.ms		informal introduction to Python
+	ref.ms			Python language reference manual
+	modules.ms		description of standard modules
+
+XXX There should also be a man page.
+
+To typeset one of the documents on the default Postscript printer, chdir
+to this directory (otherwise the macros aren't found!) and issue the
+command
+
+	pstroff -ms file.ms
+
+When typesetting all documents, issue a separate command for each.
+
+--Guido (last modified 10 Sep 90)
