@@ -43,6 +43,9 @@ static int threshold2 = 10;  /* generation1 collections before collecting 2 */
 /* net new objects allocated since last collection */
 static int allocated;
 
+/* true if we are currently running the collector */
+static int collecting;
+
 /* set for debugging information */
 #define DEBUG_STATS		(1<<0) /* print collection statistics */
 #define DEBUG_COLLECTABLE	(1<<1) /* print collectable objects */
@@ -490,8 +493,6 @@ collect_generations(void)
 void
 _PyGC_Insert(PyObject *op)
 {
-	/* collection lock since collecting may cause allocations */
-	static int collecting = 0;
 
 #ifdef Py_DEBUG
 	if (!PyObject_IS_GC(op)) {
@@ -503,9 +504,9 @@ _PyGC_Insert(PyObject *op)
 	    threshold0 &&
 	    !collecting &&
 	    !PyErr_Occurred()) {
-		collecting++;
+		collecting = 1;
 		collect_generations();
-		collecting--;
+		collecting = 0;
 	}
 	allocated++;
 	gc_list_append(PyObject_AS_GC(op), &generation0);
@@ -594,10 +595,17 @@ gc_collect(PyObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, ":collect"))	/* check no args */
 		return NULL;
 
-	generation = 2;
-	gc_list_merge(&generation0, &generation2);
-	gc_list_merge(&generation1, &generation2);
-	n = collect(&generation2, &generation2);
+	if (collecting) {
+		n = 0; /* already collecting, don't do anything */
+	}
+	else {
+		collecting = 1;
+		generation = 2;
+		gc_list_merge(&generation0, &generation2);
+		gc_list_merge(&generation1, &generation2);
+		n = collect(&generation2, &generation2);
+		collecting = 0;
+	}
 
 	return Py_BuildValue("l", n);
 }
