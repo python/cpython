@@ -9,11 +9,11 @@ from types import *
 import unittest
 
 try:
+    # For Pythons w/distutils pybsddb
+    from bsddb3 import db, dbshelve
+except ImportError:
     # For Python 2.3
     from bsddb import db, dbshelve
-except ImportError:
-    # For earlier Pythons w/distutils pybsddb
-    from bsddb3 import db, dbshelve
 
 from test_all import verbose
 

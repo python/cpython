@@ -10,11 +10,11 @@ import tempfile
 from test_all import verbose
 
 try:
+    # For Pythons w/distutils pybsddb
+    from bsddb3 import db, hashopen, btopen, rnopen
+except ImportError:
     # For Python 2.3
     from bsddb import db, hashopen, btopen, rnopen
-except ImportError:
-    # For earlier Pythons w/distutils pybsddb
-    from bsddb3 import db, hashopen, btopen, rnopen
 
 
 class CompatibilityTestCase(unittest.TestCase):
