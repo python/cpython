@@ -338,7 +338,7 @@ regobj_getattr(regexobject *re, char *name)
 }
 
 static PyTypeObject Regextype = {
-	PyObject_HEAD_INIT(&PyType_Type)
+	PyObject_HEAD_INIT(NULL)
 	0,				     /*ob_size*/
 	"regex",			     /*tp_name*/
 	sizeof(regexobject),		     /*tp_size*/
@@ -654,6 +654,9 @@ initregex(void)
 	int i;
 	char *s;
 	
+	/* Initialize object type */
+	Regextype.ob_type = &PyType_Type;
+
 	m = Py_InitModule("regex", regex_global_methods);
 	d = PyModule_GetDict(m);
 

@@ -2114,7 +2114,7 @@ static PyObject *SSL_getattr(SSLObject *self, char *name)
 }
 
 staticforward PyTypeObject SSL_Type = {
-	PyObject_HEAD_INIT(&PyType_Type)
+	PyObject_HEAD_INIT(NULL)
 	0,				/*ob_size*/
 	"SSL",			/*tp_name*/
 	sizeof(SSLObject),		/*tp_basicsize*/
@@ -2381,6 +2381,9 @@ init_socket(void)
 		return;
 #endif /* __TOS_OS2__ */
 #endif /* MS_WINDOWS */
+#ifdef USE_SSL
+	SSL_Type.ob_type = &PyType_Type;
+#endif
 	m = Py_InitModule3("_socket", PySocket_methods, module_doc);
 	d = PyModule_GetDict(m);
 	PySocket_Error = PyErr_NewException("socket.error", NULL, NULL);
