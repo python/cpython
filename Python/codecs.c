@@ -486,6 +486,7 @@ PyObject *PyCodec_StrictErrors(PyObject *exc)
 }
 
 
+#ifdef Py_USING_UNICODE
 PyObject *PyCodec_IgnoreErrors(PyObject *exc)
 {
     int end;
@@ -728,6 +729,7 @@ PyObject *PyCodec_BackslashReplaceErrors(PyObject *exc)
 	return NULL;
     }
 }
+#endif
 
 static PyObject *strict_errors(PyObject *self, PyObject *exc)
 {
@@ -735,6 +737,7 @@ static PyObject *strict_errors(PyObject *self, PyObject *exc)
 }
 
 
+#ifdef Py_USING_UNICODE
 static PyObject *ignore_errors(PyObject *self, PyObject *exc)
 {
     return PyCodec_IgnoreErrors(exc);
@@ -757,6 +760,7 @@ static PyObject *backslashreplace_errors(PyObject *self, PyObject *exc)
 {
     return PyCodec_BackslashReplaceErrors(exc);
 }
+#endif
 
 
 void _PyCodecRegistry_Init(void)
@@ -774,6 +778,7 @@ void _PyCodecRegistry_Init(void)
 		METH_O
 	    }
 	},
+#ifdef Py_USING_UNICODE
 	{
 	    "ignore",
 	    {
@@ -806,6 +811,7 @@ void _PyCodecRegistry_Init(void)
 		METH_O
 	    }
 	}
+#endif
     };
     if (_PyCodec_SearchPath == NULL)
 	_PyCodec_SearchPath = PyList_New(0);
