@@ -174,13 +174,13 @@ setcallback(self, which, callback, uppp)
 	char keybuf[9];
 	
 	if ( which == kControlUserPaneDrawProcTag )
-		*uppp = mydrawproc_upp;
+		*uppp = (UniversalProcPtr)mydrawproc_upp;
 	else if ( which == kControlUserPaneIdleProcTag )
-		*uppp = myidleproc_upp;
+		*uppp = (UniversalProcPtr)myidleproc_upp;
 	else if ( which == kControlUserPaneHitTestProcTag )
-		*uppp = myhittestproc_upp;
+		*uppp = (UniversalProcPtr)myhittestproc_upp;
 	else if ( which == kControlUserPaneTrackingProcTag )
-		*uppp = mytrackingproc_upp;
+		*uppp = (UniversalProcPtr)mytrackingproc_upp;
 	else
 		return -1;
 	/* Only now do we test for clearing of the callback: */
@@ -285,7 +285,7 @@ mytrackingproc(ControlHandle control, Point startPt, ControlActionUPP actionProc
 initstuff = initstuff + """
 mytracker_upp = NewControlActionProc(mytracker);
 mydrawproc_upp = NewControlUserPaneDrawProc(mydrawproc);
-myidleproc_upp = NewControlUserPaneDrawProc(myidleproc);
+myidleproc_upp = NewControlUserPaneIdleProc(myidleproc);
 myhittestproc_upp = NewControlUserPaneHitTestProc(myhittestproc);
 mytrackingproc_upp = NewControlUserPaneTrackingProc(mytrackingproc);
 """
