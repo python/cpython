@@ -27,10 +27,13 @@ __version__ = "$Revision$"       # Code version
 
 from types import *
 from copy_reg import dispatch_table, safe_constructors
-import string, marshal, sys
+import string
+import marshal
+import sys
+import struct
 
-format_version = "1.2"                  # File format version we write
-compatible_formats = ["1.0", "1.1"]     # Old format versions we can read
+format_version = "1.3"                     # File format version we write
+compatible_formats = ["1.0", "1.1", "1.2"] # Old format versions we can read
 
 mdumps = marshal.dumps
 mloads = marshal.loads
@@ -81,6 +84,7 @@ SETITEM         = 's'
 TUPLE           = 't'
 EMPTY_TUPLE     = ')'
 SETITEMS        = 'u'
+BINFLOAT        = 'G'
 
 class Pickler:
 
@@ -91,14 +95,6 @@ class Pickler:
 
     def dump(self, object):
         self.save(object)
-        self.write(STOP)
-
-    def dump_special(self, callable, args, state = None):
-        if type(args) is not TupleType and args is not None:
-            raise PicklingError, "Second argument to dump_special " \
-                                 "must be a tuple"
-
-        self.save_reduce(callable, args, state)
         self.write(STOP)
 
     def put(self, i):
@@ -252,8 +248,11 @@ class Pickler:
         self.write(LONG + `object` + '\n')
     dispatch[LongType] = save_long
 
-    def save_float(self, object):
-        self.write(FLOAT + `object` + '\n')
+    def save_float(self, object, pack=struct.pack):
+        if self.bin:
+            self.write(BINFLOAT + pack('>d', object))
+        else:
+            self.write(FLOAT + `object` + '\n')
     dispatch[FloatType] = save_float
 
     def save_string(self, object):
@@ -551,6 +550,10 @@ class Unpickler:
     def load_float(self):
         self.append(string.atof(self.readline()[:-1]))
     dispatch[FLOAT] = load_float
+
+    def load_binfloat(self, unpack=struct.unpack):
+        self.append(unpack('>d', self.read(8))[0])
+    dispatch[BINFLOAT] = load_binfloat
 
     def load_string(self):
         self.append(eval(self.readline()[:-1],
