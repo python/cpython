@@ -1,0 +1,171 @@
+\documentclass{howto}
+
+%  This is a template for short or medium-size Python-related documents, 
+% mostly notably the series of HOWTOs, but it can be used for any
+% document you like.   
+
+% The title should be descriptive enough for people to be able to find
+% the relevant document. 
+\title{Spammifying Sprockets in Python}
+
+% Increment the release number whenever significant changes are made.
+% The author and/or editor can define 'significant' however they like.
+\release{0.00}
+
+% At minimum, give your name and an e-mail address.  You can include a
+% snail-mail address if you like.
+\author{Me, 'cause I wrote it}
+\authoraddress{Me, 'cause I'm self-employed.}
+
+\begin{document}
+\maketitle
+
+% The abstract should be a paragraph or two long, and describe the
+% scope of the document.
+\begin{abstract}
+\noindent
+This document describes how to spammify sprockets.  It is a useful
+example of a Python HOWTO document.  It is not dependent on any
+particular sprocket implementation, and includes a Python-based
+implementation in the \module{sprunkit} module.
+\end{abstract}
+
+\tableofcontents
+
+Spammifying sprockets from Python is both fun and entertaining.
+Applying the techniques described here, you can also fill your hard
+disk quite effectively.
+
+\section{What is Sprocket Spammification?}
+
+You have to ask?  It's the only thing to do to your sprockets!
+
+
+\section{Why Use Python?}
+
+Python is an excellent language from which to spammify your sprockets
+since you can do it on any platform.
+
+
+\section{Software Requirements}
+
+You need to have the following software installed:
+
+% The {itemize} environment uses a bullet for each \item.  If you want the 
+% \item's numbered, use the {enumerate} environment instead.
+\begin{itemize}
+  \item  Python 1.9.
+  \item  Some sprocket definition files.
+  \item  At least one sprocket system implementation.
+\end{itemize}
+
+Note that the \module{sprunkit} is provided with this package and
+implements ActiveSprockets in Python.
+
+
+% The preceding sections will have been written in a gentler,
+% introductory style.  You may also wish to include a reference
+% section, documenting all the functions/exceptions/constants.
+% The following is a model for such a reference section, for
+% an extension module written in C.
+
+\section{Extension Module \sectcode{spamsprock}}
+\exmodindex{spamsprock}		% Set the module name for the index
+\label{module-spamsprock}       % Create a label for cross-references
+
+A \C{} module is provided to perform spammification operations very
+quickly.  It exports a function, an exception, and some constants.
+
+% A function definition
+\begin{funcdesc}{spammify}{sprocket\optional{, options}}
+Spammify the sprocket given as \var{sprocket}.  Flags my be
+bitwise-ORed together and passed as \var{options}.
+\end{funcdesc}
+
+% An exception definition
+\begin{excdesc}{SpamError}
+The exception that is raised when spammification fails, or just takes
+too long.
+\end{excdesc}
+
+% A definition of two constants
+\begin{datadesc}{FROBNICATE}
+Value to be used for the \var{options} parameter to
+\function{spammify()} to indicate that the \var{sprocket} parameter to 
+that function should be frobnicated as well as spammified.
+\end{datadesc}
+
+\begin{datadesc}{NO_FROBNICATE}
+As with \constant{FROBNICATE}, but indicates that frobnication should
+not be performed.  The default is to frobnicate randomly.
+\end{datadesc}
+
+
+% The following section is a model for documenting modules written in
+% Python. 
+
+\section{Module \sectcode{sprunkit}}
+\modindex{ezspam}
+\label{module-sprunkit}
+
+This module provides a high level interface to spammification
+operations.  It provides an interesting base class and an exception.
+
+% A class definition
+\begin{classdesc}{SprunkSprocket}{\optional{path}}
+A Python-only implementation of a persistent sprocket.  The \var{path} 
+parameter should refer to a spocket definition file.  If omitted, a
+new sprocket is created.
+\end{classdesc}
+
+% An exception definition
+\begin{excdesc}{PersistenceError}
+Exception raised when the \method{save()} method of a
+\class{SprunkSprockit} instance fails.
+\end{excdesc}
+
+
+\subsection{\class{SprunkSprocket} Objects}
+
+\class{SprunkSprocket} objects have the following methods:
+
+\begin{funcdesc}{save}{\optional{path}}
+Save the sprocket in the file specified by \var{path}.  If \var{path}
+is omitted, the \var{path} specified to the constructor is used.  If
+neither was specified, raises the \exception{PersistenceError}
+exception.
+\end{funcdesc}
+
+
+\begin{funcdesc}{persist}{path}
+Set the default file name that the \method{save()} method will use.
+\end{funcdesc}
+
+
+\begin{funcdesc}{insist}{}
+Make the sprocket assert itself.  This method cannot fail.
+\end{funcdesc}
+
+
+\appendix
+
+\section{This is an Appendix}
+
+To create an appendix in a Python HOWTO document, use markup like
+this:
+
+\begin{verbatim}
+\appendix
+
+\section{This is an Appendix}
+
+To create an appendix in a Python HOWTO document, ....
+
+
+\section{This is another}
+
+Just add another \section{}, but don't say \appendix again.
+\end{verbatim}
+
+
+\end{document}
