@@ -2,6 +2,7 @@
 \label{module-xdrlib}
 \stmodindex{xdrlib}
 \index{XDR}
+\index{External Data Representation}
 \index{RFC!1014}
 
 \renewcommand{\indexsubitem}{(in module xdrlib)}
@@ -31,11 +32,11 @@ Resets the pack buffer to the empty string.
 \end{funcdesc}
 
 In general, you can pack any of the most common XDR data types by
-calling the appropriate \code{pack_\var{type}} method.  Each method
+calling the appropriate \code{pack_\var{type}()} method.  Each method
 takes a single argument, the value to pack.  The following simple data
-type packing methods are supported: \code{pack_uint}, \code{pack_int},
-\code{pack_enum}, \code{pack_bool}, \code{pack_uhyper},
-and \code{pack_hyper}.
+type packing methods are supported: \code{pack_uint()}, \code{pack_int()},
+\code{pack_enum()}, \code{pack_bool()}, \code{pack_uhyper()},
+and \code{pack_hyper()}.
 
 \begin{funcdesc}{pack_float}{value}
 Packs the single-precision floating point number \var{value}.
@@ -47,30 +48,30 @@ Packs the double-precision floating point number \var{value}.
 
 The following methods support packing strings, bytes, and opaque data:
 
-\begin{funcdesc}{pack_fstring}{n\, s}
+\begin{funcdesc}{pack_fstring}{n, s}
 Packs a fixed length string, \var{s}.  \var{n} is the length of the
 string but it is \emph{not} packed into the data buffer.  The string
 is padded with null bytes if necessary to guaranteed 4 byte alignment.
 \end{funcdesc}
 
-\begin{funcdesc}{pack_fopaque}{n\, data}
+\begin{funcdesc}{pack_fopaque}{n, data}
 Packs a fixed length opaque data stream, similarly to
-\code{pack_fstring}.
+\code{pack_fstring()}.
 \end{funcdesc}
 
 \begin{funcdesc}{pack_string}{s}
 Packs a variable length string, \var{s}.  The length of the string is
 first packed as an unsigned integer, then the string data is packed
-with \code{pack_fstring}.
+with \code{pack_fstring()}.
 \end{funcdesc}
 
 \begin{funcdesc}{pack_opaque}{data}
 Packs a variable length opaque data string, similarly to
-\code{pack_string}.
+\code{pack_string()}.
 \end{funcdesc}
 
 \begin{funcdesc}{pack_bytes}{bytes}
-Packs a variable length byte stream, similarly to \code{pack_string}.
+Packs a variable length byte stream, similarly to \code{pack_string()}.
 \end{funcdesc}
 
 The following methods support packing arrays and lists:
@@ -88,7 +89,7 @@ the individual item.  At the end of the list, an unsigned integer
 \begin{funcdesc}{pack_farray}{n\, array\, pack_item}
 Packs a fixed length list (\var{array}) of homogeneous items.  \var{n}
 is the length of the list; it is \emph{not} packed into the buffer,
-but a \code{ValueError} exception is raised if \code{len(array)} is not
+but a \code{ValueError} exception is raised if \code{len(\var{array})} is not
 equal to \var{n}.  As above, \var{pack_item} is the function used to
 pack each element.
 \end{funcdesc}
@@ -96,7 +97,7 @@ pack each element.
 \begin{funcdesc}{pack_array}{list\, pack_item}
 Packs a variable length \var{list} of homogeneous items.  First, the
 length of the list is packed as an unsigned integer, then each element
-is packed as in \code{pack_farray} above.
+is packed as in \code{pack_farray()} above.
 \end{funcdesc}
 
 \subsection{Unpacker Objects}
@@ -133,7 +134,7 @@ if all of the data has not been unpacked.
 
 In addition, every data type that can be packed with a \code{Packer},
 can be unpacked with an \code{Unpacker}.  Unpacking methods are of the
-form \code{unpack_\var{type}}, and take no arguments.  They return the
+form \code{unpack_\var{type}()}, and take no arguments.  They return the
 unpacked object.
 
 \begin{funcdesc}{unpack_float}{}
@@ -142,7 +143,7 @@ Unpacks a single-precision floating point number.
 
 \begin{funcdesc}{unpack_double}{}
 Unpacks a double-precision floating point number, similarly to
-\code{unpack_float}.
+\code{unpack_float()}.
 \end{funcdesc}
 
 In addition, the following methods unpack strings, bytes, and opaque
@@ -156,23 +157,23 @@ alignment is assumed.
 
 \begin{funcdesc}{unpack_fopaque}{n}
 Unpacks and returns a fixed length opaque data stream, similarly to
-\code{unpack_fstring}.
+\code{unpack_fstring()}.
 \end{funcdesc}
 
 \begin{funcdesc}{unpack_string}{}
 Unpacks and returns a variable length string.  The length of the
 string is first unpacked as an unsigned integer, then the string data
-is unpacked with \code{unpack_fstring}.
+is unpacked with \code{unpack_fstring()}.
 \end{funcdesc}
 
 \begin{funcdesc}{unpack_opaque}{}
 Unpacks and returns a variable length opaque data string, similarly to
-\code{unpack_string}.
+\code{unpack_string()}.
 \end{funcdesc}
 
 \begin{funcdesc}{unpack_bytes}{}
 Unpacks and returns a variable length byte stream, similarly to
-\code{unpack_string}.
+\code{unpack_string()}.
 \end{funcdesc}
 
 The following methods support unpacking arrays and lists:
@@ -195,7 +196,7 @@ As above, \var{unpack_item} is the function used to unpack each element.
 \begin{funcdesc}{unpack_array}{unpack_item}
 Unpacks and returns a variable length \var{list} of homogeneous items.
 First, the length of the list is unpacked as an unsigned integer, then
-each element is unpacked as in \code{unpack_farray} above.
+each element is unpacked as in \code{unpack_farray()} above.
 \end{funcdesc}
 
 \subsection{Exceptions}
