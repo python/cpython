@@ -16,7 +16,7 @@ f = open(test_support.TESTFN, 'w')
 try:
     # 2**31 == 2147483648
     f.seek(2147483649L)
-except OverflowError:
+except (IOError, OverflowError):
     f.close()
     os.unlink(test_support.TESTFN)
     raise test_support.TestSkipped, \
