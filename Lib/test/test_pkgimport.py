@@ -36,9 +36,13 @@ class TestImport(unittest.TestCase):
         self.remove_modules()
 
     def rewrite_file(self, contents):
-        compiled_path = self.module_path + 'c'
-        if os.path.exists(compiled_path): os.remove(compiled_path)
-        open(self.module_path, 'w').write(contents)
+        for extension in "co":
+            compiled_path = self.module_path + extension
+            if os.path.exists(compiled_path):
+                os.remove(compiled_path)
+        f = open(self.module_path, 'w')
+        f.write(contents)
+        f.close()
     
     def test_package_import__semantics(self):
 
