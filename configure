@@ -1,6 +1,6 @@
 #! /bin/sh
 
-# From configure.in Revision: 1.69 
+# From configure.in Revision: 1.70 
 
 # Guess values for system-dependent variables and create Makefiles.
 # Generated automatically using autoconf version 2.12 
@@ -1168,7 +1168,7 @@ CC="$ac_save_cc"
 fi
 
 echo "$ac_t""$ac_cv_opt_olimit_ok" 1>&6
-if test $ac_cv_olimit_ok = yes; then
+if test $ac_cv_opt_olimit_ok = yes; then
   OPT="$OPT -OPT:Olimit=0"
 fi
 
