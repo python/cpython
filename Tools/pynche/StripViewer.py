@@ -24,7 +24,6 @@ select the color under the cursor while you drag it, but be forewarned that
 this can be slow.
 """
 
-import string
 from Tkinter import *
 import ColorDB
 
@@ -46,7 +45,10 @@ BTNDOWN = 4
 BTNUP = 5
 BTNDRAG = 6
 
+SPACE = ' '
 
+
+
 def constant(numchips):
     step = 255.0 / (numchips - 1)
     start = 0.0
@@ -141,7 +143,7 @@ class RightArrow(LeftArrow):
 	    width=3.0,
 	    tags=self._TAG)
 	text = self._canvas.create_text(
-	    x - self._ARROWWIDTH + 15,		  # TBD: kludge
+	    x - self._ARROWWIDTH + 15,		  # BAW: kludge
 	    self._ARROWHEIGHT - self._TEXTYOFFSET,
             justify=RIGHT,
 	    text='128',
@@ -151,7 +153,7 @@ class RightArrow(LeftArrow):
     def _x(self):
 	coords = self._canvas.bbox(self._TAG)
 	assert coords
-	return coords[2] - 6			  # TBD: kludge
+	return coords[2] - 6			  # BAW: kludge
 
 
 
@@ -182,7 +184,7 @@ class StripWidget:
         self.__sb = switchboard
         
 	canvaswidth = numchips * (chipwidth + 1)
-	canvasheight = chipheight + 43		  # TBD: Kludge
+	canvasheight = chipheight + 43		  # BAW: Kludge
 
 	# create the canvas and pack it
 	canvas = self.__canvas = Canvas(master,
@@ -301,7 +303,7 @@ class StripWidget:
                 chip = i
             i = i + 1
         # call the raw tcl script
-        colors = string.join(chips)
+        colors = SPACE.join(chips)
         tk.eval('setcolor %s {%s}' % (self.__canvas._w, colors))
         # move the arrows around
         self.__trackarrow(chip, (red, green, blue))
