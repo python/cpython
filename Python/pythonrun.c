@@ -101,6 +101,7 @@ Py_IsInitialized()
 
 */
 
+extern void win_pre_init(), win_pre_exit();
 void
 Py_Initialize()
 {
@@ -112,6 +113,9 @@ Py_Initialize()
 	if (initialized)
 		return;
 	initialized = 1;
+#ifdef MS_WINDOWS
+	win_pre_init();
+#endif
 	
 	if ((p = getenv("PYTHONDEBUG")) && *p != '\0')
 		Py_DebugFlag = 1;
@@ -1096,6 +1100,9 @@ Py_Exit(sts)
 #ifdef macintosh
 	PyMac_Exit(sts);
 #else
+#ifdef MS_WINDOWS
+	win_pre_exit(sts);
+#endif
 	exit(sts);
 #endif
 }
@@ -1160,3 +1167,43 @@ Py_FdIsInteractive(fp, filename)
 	       (strcmp(filename, "<stdin>") == 0) ||
 	       (strcmp(filename, "???") == 0);
 }
+
+#ifdef MS_WINDOWS
+
+#include <windows.h>
+#include <conio.h>
+
+static int its_my_console = -1;
+
+static void
+win_pre_init()
+{
+	HANDLE console;
+	CONSOLE_SCREEN_BUFFER_INFO info;
+	if (its_my_console >= 0)
+		return;
+	its_my_console = 0;
+	console = GetStdHandle(STD_OUTPUT_HANDLE);
+	if (console == INVALID_HANDLE_VALUE)
+		return;
+	if (!GetConsoleScreenBufferInfo(console, &info)) {
+		return;
+	}
+	if (info.dwCursorPosition.Y == 0)
+		its_my_console = 1;
+}
+
+static void
+win_pre_exit(sts)
+	int sts;
+{
+	if (sts == 0)
+		return;
+	if (its_my_console <= 0)
+		return;
+	fprintf(stderr, "Hit any key to exit...");
+	fflush(stderr);
+	_getch();
+}
+
+#endif
