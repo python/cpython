@@ -89,7 +89,7 @@ def translate(text, pre=0):
             if ':' in url:
                 repl = '<A HREF="%s">%s</A>' % (url, url)
             else:
-                repl = '<A HREF="mailto:%s">&lt;%s&gt;</A>' % (url, url)
+                repl = '<A HREF="mailto:%s">%s</A>' % (url, url)
         else:
             repl = url
         list.append(repl)
