@@ -1852,7 +1852,7 @@ def testmod(m=None, name=None, globs=None, verbose=None, isprivate=None,
 
 def testfile(filename, module_relative=True, name=None, package=None,
              globs=None, verbose=None, report=True, optionflags=0,
-             extraglobs=None, raise_on_error=False):
+             extraglobs=None, raise_on_error=False, parser=DocTestParser()):
     """
     Test examples in the given file.  Return (#failures, #tests).
 
@@ -1914,6 +1914,9 @@ def testfile(filename, module_relative=True, name=None, package=None,
     first unexpected exception or failure. This allows failures to be
     post-mortem debugged.
 
+    Optional keyword arg "parser" specifies a DocTestParser (or
+    subclass) that should be used to extract tests from the files.
+
     Advanced tomfoolery:  testmod runs methods of a local instance of
     class doctest.Tester, then merges the results into (or creates)
     global Tester instance doctest.master.  Methods of doctest.master
@@ -1952,7 +1955,7 @@ def testfile(filename, module_relative=True, name=None, package=None,
 
     # Read the file, convert it to a test, and run it.
     s = open(filename).read()
-    test = DocTestParser().get_doctest(s, globs, name, filename, 0)
+    test = parser.get_doctest(s, globs, name, filename, 0)
     runner.run(test)
 
     if report:
@@ -2321,7 +2324,7 @@ class DocFileCase(DocTestCase):
                 )
 
 def DocFileTest(path, module_relative=True, package=None,
-                globs=None, **options):
+                globs=None, parser=DocTestParser(), **options):
     if globs is None:
         globs = {}
 
@@ -2339,7 +2342,7 @@ def DocFileTest(path, module_relative=True, package=None,
     doc = open(path).read()
 
     # Convert it to a test, and wrap it in a DocFileCase.
-    test = DocTestParser().get_doctest(doc, globs, name, path, 0)
+    test = parser.get_doctest(doc, globs, name, path, 0)
     return DocFileCase(test, **options)
 
 def DocFileSuite(*paths, **kw):
@@ -2389,7 +2392,11 @@ def DocFileSuite(*paths, **kw):
       A dictionary containing initial global variables for the tests.
 
     optionflags
-       A set of doctest option flags expressed as an integer.
+      A set of doctest option flags expressed as an integer.
+
+    parser
+      A DocTestParser (or subclass) that should be used to extract
+      tests from the files.
     """
     suite = unittest.TestSuite()
 
