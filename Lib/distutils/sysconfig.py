@@ -102,16 +102,14 @@ def get_python_lib(plat_specific=0, standard_lib=0, prefix=None):
     elif os.name == "mac":
         if plat_specific:
             if standard_lib:
-                return os.path.join(prefix, "Mac", "Plugins")
+                return os.path.join(prefix, "Lib", "lib-dynload")
             else:
-                raise DistutilsPlatformError(
-                    "OK, where DO site-specific extensions go on the Mac?")
+                return os.path.join(prefix, "Lib", "site-packages")
         else:
             if standard_lib:
                 return os.path.join(prefix, "Lib")
             else:
-                raise DistutilsPlatformError(
-                    "OK, where DO site-specific modules go on the Mac?")
+                return os.path.join(prefix, "Lib", "site-packages")
     else:
         raise DistutilsPlatformError(
             "I don't know where Python installs its library "
