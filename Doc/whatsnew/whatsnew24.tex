@@ -1,3 +1,4 @@
+
 \documentclass{howto}
 \usepackage{distutils}
 % $Id$
@@ -785,12 +786,11 @@ If the separation is large, then you might as well use
 another, \function{tee()} is ideal.  Possible applications include
 bookmarking, windowing, or lookahead iterators.
 
-\item A \function{basicConfig} function was added to the
-\module{logging} package to simplify log configuration.  It defaults
-to logging to standard error, but a
-number of optional keyword arguments can be specified to 
-log to a particular file, change the logging format, or set  the
-logging level.  For example:
+\item The \module{logging} package's \function{basicConfig} function 
+gained some keyword arguments to simplify log configuration.  The
+default behavior is to log messages to standard error, but
+various keyword arguments can be specified to log to a particular file,
+change the logging format, or set the logging level.  For example:
 
 \begin{verbatim}
 import logging
