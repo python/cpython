@@ -64,8 +64,9 @@ Extension modules
   (SF bug 763298).
 
   The DB and DBEnv set_get_returns_none function was extended to take
-  a level instead of a boolean flag.  The new level 2 mans return None
-  instead of raising an exception.  This applies to set methods.
+  a level instead of a boolean flag.  The new level 2 means that in
+  addition, cursor.set()/.get() methods return None instead of raising
+  an exception.
 
   A typo was fixed in DBCursor.join_item(), preventing a crash.
 
