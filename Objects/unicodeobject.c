@@ -6540,8 +6540,11 @@ PyObject *PyUnicode_Format(PyObject *format,
 	    case 'e':
 	    case 'E':
 	    case 'f':
+	    case 'F':
 	    case 'g':
 	    case 'G':
+		if (c == 'F')
+			c = 'f';
 		pbuf = formatbuf;
 		len = formatfloat(pbuf, sizeof(formatbuf)/sizeof(Py_UNICODE),
 			flags, prec, c, v);

@@ -12,6 +12,9 @@ What's New in Python 2.4 alpha 1?
 Core and builtins
 -----------------
 
+- The % formatting operator now supports '%F' which is equivalent to
+  '%f'.  This has always been documented but never implemented.
+
 - complex(obj) could leak a little memory if obj wasn't a string or
   number.
 
