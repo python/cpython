@@ -138,6 +138,10 @@ class TestSetOfSets(unittest.TestCase):
         outer = Set([inner])
         element = outer.pop()
         assert type(element) == ImmutableSet, "Construct set of sets"
+        outer.add(inner)        # Rebuild set of sets with .add method
+        outer.remove(inner)
+        assert outer == Set()   # Verify that remove worked
+        outer.discard(inner)    # Absence of KeyError indicates working fine
 
 #==============================================================================
 
