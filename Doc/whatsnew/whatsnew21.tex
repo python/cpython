@@ -611,7 +611,7 @@ should be faster than the system \function{malloc()} and have less
 memory overhead.  The allocator uses C's \function{malloc()} function
 to get large pools of memory, and then fulfills smaller memory
 requests from these pools.  It can be enabled by providing the
-"--with-pymalloc" option to the \file{configure} script; see
+\longprogramopt{--with-pymalloc} option to the \program{configure} script; see
 \file{Objects/obmalloc.c} for the implementation details.
 Contributed by Vladimir Marangozov.
 
