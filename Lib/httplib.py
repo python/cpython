@@ -126,7 +126,13 @@ class HTTPResponse:
             self.close()
             raise BadStatusLine(line)
 
-        self.status = status = int(status)
+        # The status code is a three-digit number
+        try:
+            self.status = status = int(status)
+            if status < 100 or status > 999:
+                raise BadStatusLine(line)
+        except ValueError:
+            raise BadStatusLine(line)
         self.reason = reason.strip()
 
         if version == 'HTTP/1.0':
