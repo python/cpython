@@ -365,10 +365,11 @@ class FeedParser:
             # Any CRLF at the front of the epilogue is not technically part of
             # the epilogue.  Also, watch out for an empty string epilogue,
             # which means a single newline.
-            firstline = epilogue[0]
-            bolmo = NLCRE_bol.match(firstline)
-            if bolmo:
-                epilogue[0] = firstline[len(bolmo.group(0)):]
+            if epilogue:
+                firstline = epilogue[0]
+                bolmo = NLCRE_bol.match(firstline)
+                if bolmo:
+                    epilogue[0] = firstline[len(bolmo.group(0)):]
             self._cur.epilogue = EMPTYSTRING.join(epilogue)
             return
         # Otherwise, it's some non-multipart type, so the entire rest of the
