@@ -500,25 +500,46 @@ AC_MSG_RESULT($va_list_is_array)
 # Linux requires this for correct f.p. operations
 AC_CHECK_LIB(ieee, __fpu_control)
 
+# Check for --with-fpectl
+AC_SUBST(WANT_SIGFPE_HANDLER)
+AC_MSG_CHECKING(for --with-fpectl)
+AC_ARG_WITH(fpectl, [--with-fpectl             enable SIGFPE catching], [
+if test "$withval" != no
+then AC_DEFINE(WANT_SIGFPE_HANDLER) AC_MSG_RESULT(yes)
+else AC_MSG_RESULT(no)
+fi])
+
 # check for --with-libm=...
 AC_SUBST(LIBM)
 case $ac_sys_system in
 next) ;;
 *) LIBM=-lm
 esac
+AC_MSG_CHECKING(for --with-libm=STRING)
 AC_ARG_WITH(libm, [--with-libm=STRING        math library], [
-if test "$withval" != yes
+if test "$withval" = no
+then LIBM=
+     AC_MSG_RESULT(force LIBM empty)
+elif test "$withval" != yes
 then LIBM=$withval
+     AC_MSG_RESULT(set LIBM=\"$withval\")
 else AC_ERROR(proper usage is --with-libm=STRING)
-fi])
+fi],
+[AC_MSG_RESULT(default LIBM=\"$LIBM\")])
 
 # check for --with-libc=...
 AC_SUBST(LIBC)
+AC_MSG_CHECKING(for --with-libc=STRING)
 AC_ARG_WITH(libc, [--with-libc=STRING        C library], [
-if test "$withval" != yes
+if test "$withval" = no
+then LIBC=
+     AC_MSG_RESULT(force LIBC empty)
+elif test "$withval" != yes
 then LIBC=$withval
+     AC_MSG_RESULT(set LIBC=\"$withval\")
 else AC_ERROR(proper usage is --with-libc=STRING)
-fi])
+fi],
+[AC_MSG_RESULT(default LIBC=\"$LIBC\")])
 
 # check for hypot() in math library
 LIBS_SAVE=$LIBS
