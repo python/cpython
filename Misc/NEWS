@@ -188,9 +188,9 @@ Core language, builtins, and interpreter
 
 - Two changes to from...import:
 
-  1) "from M import X" now works even if M is not a real module; it's
-     basically a getattr() operation with AttributeError exceptions
-     changed into ImportError.
+  1) "from M import X" now works even if (after loading module M)
+     sys.modules['M'] is not a real module; it's basically a getattr()
+     operation with AttributeError exceptions changed into ImportError.
 
   2) "from M import *" now looks for M.__all__ to decide which names to
      import; if M.__all__ doesn't exist, it uses M.__dict__.keys() but
