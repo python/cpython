@@ -16,6 +16,7 @@ ObjectType = object
 IntType = int
 LongType = long
 FloatType = float
+BooleanType = bool
 try:
     ComplexType = complex
 except NameError:
