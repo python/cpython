@@ -113,6 +113,9 @@ corresponding Unix manual entries for more information on calls.";
 extern int rename(const char *, const char *);
 extern int pclose(FILE *);
 extern int fclose(FILE *);
+extern int fsync(int);
+extern int lstat(const char *, struct stat *);
+extern int symlink(const char *, const char *);
 #endif
 
 #ifdef NeXT
