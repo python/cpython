@@ -151,7 +151,7 @@ type_call(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		return NULL;
 	}
 
-	obj = type->tp_new(type, args, NULL);
+	obj = type->tp_new(type, args, kwds);
 	if (obj != NULL) {
 		type = obj->ob_type;
 		if (type->tp_init != NULL &&
