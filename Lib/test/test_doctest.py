@@ -280,8 +280,11 @@ We'll simulate a __file__ attr that ends in pyc:
     >>> print tests  # doctest: +ELLIPSIS
     [<DocTest sample_func from ...:13 (1 example)>]
 
-    >>> tests[0].filename
-    'test_doctest.py'
+The exact name depends on how test_doctest was invoked, so allow for
+leading path components.
+
+    >>> tests[0].filename # doctest: +ELLIPSIS
+    '...test_doctest.py'
 
     >>> test.test_doctest.__file__ = old
 
