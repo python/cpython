@@ -204,10 +204,14 @@ main(argc, argv)
 #endif
 	}
 	else if (Py_InteractiveFlag) {
-		char *ibuffer = malloc(BUFSIZ);
-		char *obuffer = malloc(BUFSIZ);
-		setvbuf(stdin,  ibuffer, _IOLBF, BUFSIZ);
-		setvbuf(stdout, obuffer, _IOLBF, BUFSIZ);
+#ifdef MS_WINDOWS
+		/* Doesn't have to have line-buffered -- use unbuffered */
+		setvbuf(stdin,  (char *)NULL, _IONBF, BUFSIZ);
+		setvbuf(stdout, (char *)NULL, _IONBF, BUFSIZ);
+#else
+		setvbuf(stdin,  (char *)NULL, _IOLBF, BUFSIZ);
+		setvbuf(stdout, (char *)NULL, _IOLBF, BUFSIZ);
+#endif
 		/* Leave stderr alone - it should be unbuffered anyway. */
   	}
 
