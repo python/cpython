@@ -221,11 +221,12 @@ def test_both():
         verify(m[:] == 'c'*mapsize,
                "Write-through memory map memory not updated properly.")
         m.flush()
-        del m, f
+        m.close()
+        f.close()
         f = open(TESTFN, 'rb')
         stuff = f.read()
         f.close()
-        verify(open(TESTFN, 'rb').read() == 'c'*mapsize,
+        verify(stuff == 'c'*mapsize,
                "Write-through memory map data file not updated properly.")
 
         print "  Opening mmap with access=ACCESS_COPY"
