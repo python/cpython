@@ -9,10 +9,17 @@
 # - the order of the elements of a 'struct tm' differs, to ease sorting
 # - months numbers are 1-12, not 0-11; month arrays have a dummy element 0
 # - Monday is the first day of the week (numbered 0)
+# - years are expressed in full, e.g. 1970, not 70.
+# - timezone is currently hardcoded
+# - doesn't know about daylight saving time
 
 # These are really parameters of the 'time' module:
 epoch = 1970		# Time began on January 1 of this year (00:00:00 UTC)
 day_0 = 3		# The epoch begins on a Thursday (Monday = 0)
+
+# Localization: Minutes West from Greenwich
+timezone = -2*60	# Middle-European time with DST on
+# timezone = 5*60  	# EST (sigh -- THINK time() doesn't return UTC)
 
 # Return 1 for leap years, 0 for non-leap years
 def isleap(year):
@@ -96,10 +103,6 @@ def asctime(arg):
 	s = day_abbr[wday] + ' ' + month_abbr[month] + ' ' + zd(`day`)
 	s = s + ' ' + dd(`hours`) + ':' + dd(`mins`) + ':' + dd(`secs`)
 	return s + ' ' + `year`
-
-# Localization: Minutes West from Greenwich
-timezone = -2*60	# Middle-European time with DST on
-# timezone = 5*60  	# EST (sigh -- THINK time() doesn't return UTC)
 
 # Local time ignores DST issues for now -- adjust 'timezone' to fake it
 def localtime(secs):
