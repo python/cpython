@@ -203,3 +203,30 @@ err_badcall()
 {
 	err_setstr(SystemError, "bad argument to internal function");
 }
+
+
+#ifdef HAVE_STDARG_PROTOTYPES
+PyObject *
+PyErr_Format(PyObject *exception, const char *format, ...)
+#else
+PyObject *
+PyErr_Format(exception, format, va_alist)
+	PyObject *exception;
+	const char *format;
+	va_dcl
+#endif
+{
+	va_list vargs;
+	char buffer[500]; /* Caller is responsible for limiting the format */
+	PyObject *s;
+
+#ifdef HAVE_STDARG_PROTOTYPES
+	va_start(vargs, format);
+#else
+	va_start(vargs);
+#endif
+
+	vsprintf(buffer, format, vargs);
+	PyErr_SetString(exception, buffer);
+	return NULL;
+}
