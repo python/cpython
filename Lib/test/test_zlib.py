@@ -69,7 +69,7 @@ bufs = []
 for i in range(0, len(combuf), 128):
     bufs.append(deco.decompress(combuf[i:i+128]))
 bufs.append(deco.flush())
-decomp2 = ''.join(buf)
+decomp2 = ''.join(bufs)
 if decomp2 != buf:
     print "decompressobj with init options failed"
 else:
