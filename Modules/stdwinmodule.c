@@ -1039,12 +1039,18 @@ text_getattr(tp, name)
 	textobject *tp;
 	char *name;
 {
-	if (tp->t_attr != NULL) {
-		object *v = dictlookup(tp->t_attr, name);
-		if (v != NULL) {
-			INCREF(v);
-			return v;
-		}
+	object *v = NULL;
+	if (strcmp(name, "__dict__") == 0) {
+		v = tp->t_attr;
+		if (v == NULL)
+			v = None;
+	}
+	else if (tp->t_attr != NULL) {
+		v = dictlookup(tp->t_attr, name);
+	}
+	if (v != NULL) {
+		INCREF(v);
+		return v;
 	}
 	return findmethod(text_methods, (object *)tp, name);
 }
@@ -1217,12 +1223,18 @@ menu_getattr(mp, name)
 	menuobject *mp;
 	char *name;
 {
-	if (mp->m_attr != NULL) {
-		object *v = dictlookup(mp->m_attr, name);
-		if (v != NULL) {
-			INCREF(v);
-			return v;
-		}
+	object *v = NULL;
+	if (strcmp(name, "__dict__") == 0) {
+		v = mp->m_attr;
+		if (v == NULL)
+			v = None;
+	}
+	else if (mp->m_attr != NULL) {
+		v = dictlookup(mp->m_attr, name);
+	}
+	if (v != NULL) {
+		INCREF(v);
+		return v;
 	}
 	return findmethod(menu_methods, (object *)mp, name);
 }
@@ -1575,12 +1587,18 @@ window_getattr(wp, name)
 	windowobject *wp;
 	char *name;
 {
-	if (wp->w_attr != NULL) {
-		object *v = dictlookup(wp->w_attr, name);
-		if (v != NULL) {
-			INCREF(v);
-			return v;
-		}
+	object *v = NULL;
+	if (strcmp(name, "__dict__") == 0) {
+		v = wp->w_attr;
+		if (v == NULL)
+			v = None;
+	}
+	else if (wp->w_attr != NULL) {
+		v = dictlookup(wp->w_attr, name);
+	}
+	if (v != NULL) {
+		INCREF(v);
+		return v;
 	}
 	return findmethod(window_methods, (object *)wp, name);
 }
