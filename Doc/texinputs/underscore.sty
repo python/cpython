@@ -1,0 +1,232 @@
+% underscore.sty     12-Oct-2001   Donald Arseneau   asnd@triumf.ca
+% Make the "_" character print as "\textunderscore" in text.
+% Copyright 1998,2001 Donald Arseneau;  Distribute freely if unchanged.
+% Instructions follow after the definitions.
+
+\ProvidesPackage{underscore}[2001/10/12]
+
+\begingroup
+ \catcode`\_=\active
+ \gdef_{% \relax % No relax gives a small vulnerability in alignments
+   \ifx\if@safe@actives\iftrue % must be outermost test!
+      \string_%
+   \else
+      \ifx\protect\@typeset@protect
+         \ifmmode \sb \else \BreakableUnderscore \fi
+      \else
+         \ifx\protect\@unexpandable@protect \noexpand_%
+         \else \protect_%
+      \fi\fi
+    \fi}
+\endgroup
+
+% At begin: set catcode; fix \long \ttdefault so I can use it in comparisons; 
+\AtBeginDocument{%
+  {\immediate\write\@auxout{\catcode\number\string`\_ \string\active}}%
+  \catcode\string`\_\string=\active
+  \edef\ttdefault{\ttdefault}%
+}
+
+\newcommand{\BreakableUnderscore}{\leavevmode\nobreak\hskip\z@skip
+ \ifx\f@family\ttdefault \string_\else \textunderscore\fi
+ \usc@dischyph\nobreak\hskip\z@skip}
+
+\DeclareRobustCommand{\_}{%
+  \ifmmode \nfss@text{\textunderscore}\else \BreakableUnderscore \fi}
+
+\let\usc@dischyph\@dischyph
+\DeclareOption{nohyphen}{\def\usc@dischyph{\discretionary{}{}{}}}
+\DeclareOption{strings}{\catcode`\_=\active}
+
+\ProcessOptions
+\ifnum\catcode`\_=\active\else \endinput \fi
+
+%%%%%%%%   Redefine commands that use character strings   %%%%%%%%
+
+\@ifundefined{UnderscoreCommands}{\let\UnderscoreCommands\@empty}{}
+\expandafter\def\expandafter\UnderscoreCommands\expandafter{%
+  \UnderscoreCommands
+  \do\include \do\includeonly
+  \do\@input \do\@iinput \do\InputIfFileExists
+  \do\ref \do\pageref \do\newlabel
+  \do\bibitem \do\@bibitem \do\cite \do\nocite \do\bibcite
+}
+
+% Macro to redefine a macro to pre-process its string argument
+% with \protect -> \string.
+\def\do#1{% Avoid double processing if user includes command twice!
+ \@ifundefined{US\string_\expandafter\@gobble\string#1}{%
+   \edef\@tempb{\meaning#1}% Check if macro is just a protection shell...
+   \def\@tempc{\protect}%
+   \edef\@tempc{\meaning\@tempc\string#1\space\space}%
+   \ifx\@tempb\@tempc % just a shell: hook into the protected inner command
+     \expandafter\do
+       \csname \expandafter\@gobble\string#1 \expandafter\endcsname
+   \else % Check if macro takes an optional argument
+     \def\@tempc{\@ifnextchar[}%
+     \edef\@tempa{\def\noexpand\@tempa####1\meaning\@tempc}%
+     \@tempa##2##3\@tempa{##2\relax}%
+     \edef\@tempb{\meaning#1\meaning\@tempc}%
+     \edef\@tempc{\noexpand\@tempd \csname
+        US\string_\expandafter\@gobble\string#1\endcsname}%
+     \if \expandafter\@tempa\@tempb \relax 12\@tempa % then no optional arg
+       \@tempc #1\US@prot
+     \else  % There is optional arg
+       \@tempc #1\US@protopt
+     \fi
+   \fi
+ }{}}
+
+\def\@tempd#1#2#3{\let#1#2\def#2{#3#1}}
+
+\def\US@prot#1#2{\let\@@protect\protect \let\protect\string
+  \edef\US@temp##1{##1{#2}}\restore@protect\US@temp#1}
+\def\US@protopt#1{\@ifnextchar[{\US@protarg#1}{\US@prot#1}}
+\def\US@protarg #1[#2]{\US@prot{{#1[#2]}}}
+
+\UnderscoreCommands
+\let\do\relax \let\@tempd\relax  % un-do
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\endinput
+
+underscore.sty    12-Oct-2001  Donald Arseneau
+
+Features:
+~~~~~~~~~
+\_ prints an underscore so that the hyphenation of constituent words
+is not affected and hyphenation is permitted after the underscore.
+For example, "compound\_fracture" hyphenates as com- pound_- frac- ture.
+If you prefer the underscore to break without a hyphen (but still with 
+the same rules for explicit hyphen-breaks) then use the [nohyphen]
+package option.
+
+A simple _  acts just like \_ in text mode, but makes a subscript in 
+math mode: activation_energy $E_a$
+
+Both forms use an underscore character if the font encoding contains
+one (e.g., "\usepackage[T1]{fontenc}" or typewriter fonts in any encoding),
+but they use a rule if the there is no proper character.
+
+Deficiencies:
+~~~~~~~~~~~~~
+The skips and penalties ruin any kerning with the underscore character
+(when a character is used).  However, there doesn't seem to be much, if
+any, such kerning in the ec fonts, and there is never any kerning with
+a rule.
+
+You must avoid "_" in file names and in cite or ref tags, or you must use 
+the babel package, with its active-character controls, or you must give 
+the [strings] option, which attempts to redefine several commands (and 
+may not work perfectly).  Even without the [strings] option or babel, you 
+can use occasional underscores like: "\include{file\string_name}".
+
+Option: [strings]
+~~~~~~~~~~~~~~~~~
+The default operation is quite simple and needs no customization; but
+you must avoid using "_" in any place where LaTeX uses an argument as
+a string of characters for some control function or as a name.  These
+include the tags for \cite and \ref, file names for \input, \include,
+and \includegraphics, environment names, counter names, and placement
+parameters (like "[t]").  The problem with these contexts is that they
+are `moving arguments' but LaTeX does not `switch on' the \protect
+mechanism for them.
+
+If you need to use the underscore character in these places, the package
+option [strings] is provided to redefine commands taking a string argument
+so that the argument is protected (with \protect -> \string).  The list
+of commands is given in "\UnderscoreCommands", with "\do" before each,
+covering \cite, \ref, \input, and their variants.  Not included are many
+commands regarding font names, everything with counter names, environment
+names, page styles, and versions of \ref and \cite defined by external
+packages (e.g. \vref and \citeyear).
+
+You can add to the list of supported commands by defining \UnderscoreCommands
+before loading this package; e.g.
+
+   \usepackage{chicago}
+   \newcommand{\UnderscoreCommands}{%   (\cite already done)
+     \do\citeNP \do\citeA \do\citeANP \do\citeN \do\shortcite
+     \do\shortciteNP \do\shortciteA \do\shortciteANP \do\shortciteN
+     \do\citeyear \do\citeyearNP
+   }
+   \usepackage[strings]{underscore}
+
+Not all commands can be supported this way!  Only commands that take a
+string argument *first* can be protected.  One optional argument before
+the string argument is also permitted, as exemplified by \cite: both
+\cite{tags} and \cite[text]{tags} are allowed.  A command like
+\@addtoreset which takes two counter names as arguments could not
+be protected by adding it to \UnderscoreCommands.
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! When you use the [strings] option, you must load this package !!
+!! last (or nearly last).                                        !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+There are two reasons: 1) The redefinitions done for protection must come
+after other packages define their customized versions of those commands.
+2) The [strings] option requires the _ character to be activated immediately
+in order for the cite and ref tags to be read properly from the .aux file
+as plain strings, and this catcode setting might disrupt other packages.
+
+The babel package implements a protection mechanism for many commands,
+and will be a complete fix for most documents without the [strings] option.
+Many add-on packages are compatible with babel, so they will get the
+strings protection also.  However, there are several commands that are 
+not covered by babel, but can easily be supported by the [strings] and 
+\UnderscoreCommands mechanism.  Beware that using both [strings] and babel 
+may lead to conflicts, but does appear to work (load babel last).
+
+Implementation Notes:
+~~~~~~~~~~~~~~~~~~~~~
+The first setting of "_" to be an active character is performed in a local
+group so as to not interfere with other packages.  The catcode setting
+is repeated with \AtBeginDocument so the definition is in effect for the
+text.  However, the catcode setting is repeated immediately when the
+[strings] option is detected.
+
+The definition of the active "_" is essentially:
+       \ifmmode \sb \else \BreakableUnderscore \fi
+where "\sb" retains the normal subscript meaning of "_" and where
+"\BreakableUnderscore" is essentially "\_".  The rest of the definition
+handles the "\protect"ion without causing \relax to be inserted before
+the character.
+
+\BreakableUnderscore uses "\nobreak\hskip\z@skip" to separate the
+underscore from surrounding words, thus allowing TeX to hyphenate them,
+but preventing free breaks around the underscore. Next, it checks the
+current font family, and uses the underscore character from tt fonts or
+otherwise \textunderscore (which is a character or rule depending on
+the font encoding).  After the underscore, it inserts a discretionary
+hyphenation point as "\usc@dischyph", which is usually just "\-"
+except that it still works in the tabbing environment, although it
+will give "\discretionary{}{}{}" under the [nohyphen] option.  After
+that, another piece of non-breaking interword glue is inserted. 
+Ordinarily, the comparison "\ifx\f@family\ttdefault" will always fail 
+because \ttdefault is `long' where \f@family is not (boooo hisss), but 
+\ttdefault is redefined to be non-long by "\AtBeginDocument".
+
+The "\_" command is then defined to use "\BreakableUnderscore".
+
+If the [strings] option is not given, then that is all!
+
+Under the [strings] option, the list of special commands is processed to:
+- retain the original command as \US_command (\US_ref)
+- redefine the command as \US@prot\US_command for ordinary commands
+  (\ref -> \US@prot\US_ref) or as \US@protopt\US_command when an optional
+  argument is possible (\bibitem -> \US@protopt\US_bibitem).
+- self-protecting commands (\cite) retain their self-protection.
+Diagnosing the state of the pre-existing command is done by painful
+contortions involving \meaning.
+
+\US@prot and \US@protopt read the argument, process it with \protect
+enabled, then invoke the saved \US_command.
+
+Modifications:
+~~~~~~~~~~~~~~
+12-Oct-2001  Babel (safe@actives) compatibility and [nohyphen] option.
+
+Test file integrity:  ASCII 32-57, 58-126:  !"#$%&'()*+,-./0123456789
+:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~
