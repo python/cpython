@@ -1122,10 +1122,12 @@ is defined, \code{\var{x}(arg1, arg2, ...)} is a shorthand for
 \end{methoddesc}
 
 
-\subsection{Emulating sequence and mapping types\label{sequence-types}}
+\subsection{Emulating container types\label{sequence-types}}
 
-The following methods can be defined to emulate sequence or mapping
-objects.  The first set of methods is used either to emulate a
+The following methods can be defined to implement container
+objects.  Containers usually are sequences (such as lists or tuples)
+or mappings (like dictionaries), but can represent other containers as
+well.  The first set of methods is used either to emulate a
 sequence or to emulate a mapping; the difference is that for a
 sequence, the allowable keys should be the integers \var{k} for which
 \code{0 <= \var{k} < \var{N}} where \var{N} is the length of the
@@ -1177,7 +1179,7 @@ values.
   \ttindex{__contains__()}}
 \withsubitem{(numeric object method)}{\ttindex{__coerce__()}}
 
-\begin{methoddesc}[mapping object]{__len__}{self}
+\begin{methoddesc}[container object]{__len__}{self}
 Called to implement the built-in function
 \function{len()}\bifuncindex{len}.  Should return the length of the
 object, an integer \code{>=} 0.  Also, an object that doesn't define a
@@ -1186,7 +1188,7 @@ returns zero is considered to be false in a Boolean context.
 \withsubitem{(object method)}{\ttindex{__nonzero__()}}
 \end{methoddesc}
 
-\begin{methoddesc}[mapping object]{__getitem__}{self, key}
+\begin{methoddesc}[container object]{__getitem__}{self, key}
 Called to implement evaluation of \code{\var{self}[\var{key}]}.
 For sequence types, the accepted keys should be integers and slice
 objects.\obindex{slice}  Note that
@@ -1201,7 +1203,7 @@ raised; if of a value outside the set of indexes for the sequence
 proper detection of the end of the sequence.
 \end{methoddesc}
 
-\begin{methoddesc}[mapping object]{__setitem__}{self, key, value}
+\begin{methoddesc}[container object]{__setitem__}{self, key, value}
 Called to implement assignment to \code{\var{self}[\var{key}]}.  Same
 note as for \method{__getitem__()}.  This should only be implemented
 for mappings if the objects support changes to the values for keys, or
@@ -1210,13 +1212,39 @@ replaced.  The same exceptions should be raised for improper
 \var{key} values as for the \method{__getitem__()} method.
 \end{methoddesc}
 
-\begin{methoddesc}[mapping object]{__delitem__}{self, key}
+\begin{methoddesc}[container object]{__delitem__}{self, key}
 Called to implement deletion of \code{\var{self}[\var{key}]}.  Same
 note as for \method{__getitem__()}.  This should only be implemented
 for mappings if the objects support removal of keys, or for sequences
 if elements can be removed from the sequence.  The same exceptions
 should be raised for improper \var{key} values as for the
 \method{__getitem__()} method.
+\end{methoddesc}
+
+\begin{methoddesc}[container object]{__iter__}{self}
+This method is called when an iterator is required for a container.
+This method should return a new iterator object that can iterate over
+all the objects in the container.  For mappings, it should iterate
+over the keys of the container, and should also be made available as
+the method \method{iterkeys()}.
+
+Iterator objects also need to implement this method; they are required
+to return themselves.  For more information on iterator objects, see
+``\ulink{Iterator Types}{../lib/typeiter.html}'' in the
+\citetitle[../lib/lib.html]{Python Library Reference}.
+\end{methoddesc}
+
+The membership test operators (\keyword{in} and \keyword{not in}) are
+normally implemented as an iteration through a sequence.  However,
+container objects can supply the following special method with a more
+efficient implementation, which also does not require the object be a
+sequence.
+
+\begin{methoddesc}[container object]{__contains__}{self, item}
+Called to implement membership test operators.  Should return true if
+\var{item} is in \var{self}, false otherwise.  For mapping objects,
+this should consider the keys of the mapping rather than the values or
+the key-item pairs.
 \end{methoddesc}
 
 
@@ -1309,16 +1337,6 @@ already be doing that, negative indexes cannot be passed in; they must
 be be constrained to the bounds of the sequence before being passed to
 the \method{__*item__()} methods.
 Calling \code{max(0, i)} conveniently returns the proper value.
-
-The membership test operators (\keyword{in} and \keyword{not in}) are
-normally implemented as an iteration through the sequence.  However,
-sequence objects can supply the following special method with a more
-efficient implementation:
-
-\begin{methoddesc}[sequence object]{__contains__}{self, item}
-Called to implement membership test operators.  Should return true if
-\var{item} is in \var{self}, false otherwise.
-\end{methoddesc}
 
 
 \subsection{Emulating numeric types\label{numeric-types}}
