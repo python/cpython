@@ -1,4 +1,8 @@
-"""
+"""Miscellaneous support code shared by some of the tool scripts.
+
+This includes option parsing code, HTML formatting code, and a couple of
+useful helpers.
+
 """
 __version__ = '$Revision$'
 
