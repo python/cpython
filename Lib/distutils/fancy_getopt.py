@@ -239,7 +239,7 @@ class FancyGetopt:
         if args is None:
             args = sys.argv[1:]
         if object is None:
-            object = OptionDummy(self.attr_name.values())
+            object = OptionDummy()
             created_object = 1
         else:
             created_object = 0
