@@ -2,6 +2,11 @@ What's New in Python 2.2.3 ?
 Release date: XX-XXX-2003
 ============================
 
+- Make all the strip, lstrip, rstrip functions/methods on
+  string/unicode/UserString consistent by adding and/or
+  documenting the chars parameter.  The chars parameter
+  specifies which characters to strip.
+
 - Some horridly obscure problems were fixed involving interaction
   between garbage collection and classes with "ambitious" getattr hooks.
   If a class instance didn't have a __del__ method, but did have a
