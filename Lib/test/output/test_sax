@@ -1,12 +1,20 @@
 test_sax
+Passed test_attrs_empty
+Passed test_attrs_wattr
 Passed test_escape_all
 Passed test_escape_basic
 Passed test_escape_extra
+Passed test_expat_attrs_empty
+Passed test_expat_attrs_wattr
+Passed test_expat_nsattrs_empty
+Passed test_expat_nsattrs_wattr
 Passed test_filter_basic
+Passed test_nsattrs_empty
+Passed test_nsattrs_wattr
 Passed test_xmlgen_basic
 Passed test_xmlgen_content
 Passed test_xmlgen_content_escape
 Passed test_xmlgen_ignorable
 Passed test_xmlgen_ns
 Passed test_xmlgen_pi
-10 tests, 0 failures
+18 tests, 0 failures
