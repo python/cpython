@@ -776,8 +776,7 @@ class PyBuildExt(build_ext):
             exts.append( Extension('_CarbonEvt', ['carbonevt/_CarbonEvtmodule.c'],
                     extra_link_args=['-framework', 'Carbon']) )
             exts.append( Extension('_CG', ['cg/_CGmodule.c'],
-                    extra_link_args=['-framework', 'ApplicationServices',
-                                     '-framework', 'Carbon']) )
+                    extra_link_args=['-framework', 'ApplicationServices']) )
             exts.append( Extension('_Cm', ['cm/_Cmmodule.c'],
                     extra_link_args=['-framework', 'Carbon']) )
             exts.append( Extension('_Ctl', ['ctl/_Ctlmodule.c'],
