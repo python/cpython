@@ -1,6 +1,6 @@
-#! /ufs/guido/bin/sgi/python
+#! /usr/local/python
 
-# XXX This file is being hacked -- some functionality has been taken out!
+# XXX This only works on SGIs running IRIX 4.0 or higher
 
 # JUKEBOX: browse directories full of sampled sound files.
 #
@@ -9,17 +9,17 @@
 # displaying its contents (and so on recursively).  Double clicking
 # on a file plays it as a sound file (assuming it is one).
 #
-# Playing is asynchronous: the application keeps listening to events
-# while the sample is playing, so you can change the volume (gain)
-# during playing, cancel playing or start a new sample right away.
+# Playing is asynchronous: the application keeps listening for events
+# while the sample is playing, so you can cancel playing or start a
+# new sample right away.  Synchronous playing is available through the
+# -s option.
 #
-# The control window displays the current output gain and a primitive
-# "stop button" to cancel the current play request.
+# The control window displays a "stop button" that cancel the current
+# play request.
 #
-# Sound files must currently be in Dik Winter's compressed Mac format.
-# Since decompression is costly, decompressed samples are saved in
-# /usr/tmp/@j* until the application is left.  The files are read
-# afresh each time, though.
+# Most sound file formats recognized by SOX or SFPLAY are recognized.
+# Since conversion is costly, converted files are cached in
+# /usr/tmp/@j* until the user quits.
 
 import commands
 import getopt
@@ -32,13 +32,11 @@ import sys
 import tempfile
 
 from WindowParent import WindowParent
-from HVSplit import VSplit
 from Buttons import PushButton
-from Sliders import ComplexSlider
 
 # Pathnames
 
-DEF_DB = '/usr/local/sounds/aiff'	# Default directory of sounds
+DEF_DB = '/usr/local/sounds'		# Default directory of sounds
 SOX = '/usr/local/sox'			# Sound format conversion program
 SFPLAY = '/usr/sbin/sfplay'		# Sound playing program
 
@@ -47,7 +45,7 @@ SFPLAY = '/usr/sbin/sfplay'		# Sound playing program
 
 class struct(): pass		# Class to define featureless structures
 
-G = struct()			# Holds writable global variables
+G = struct()			# oHlds writable global variables
 
 
 # Main program
@@ -67,7 +65,7 @@ def main():
 		sys.stdout = sys.stderr
 		print msg
 		print 'usage: jukebox [-d] [-s] [-t type] [-r rate]'
-		print '  -d        debugging'
+		print '  -d        debugging (-dd event debugging)'
 		print '  -s        synchronous playing'
 		print '  -t type   file type'
 		print '  -r rate   sampling rate'
@@ -75,7 +73,7 @@ def main():
 	#
 	for optname, optarg in optlist:
 		if   optname == '-d':
-			G.debug = 1
+			G.debug = G.debug + 1
 		elif optname == '-r':
 			G.rate = int(eval(optarg))
 		elif optname == '-s':
@@ -97,6 +95,10 @@ def main():
 		clearcache()
 		killchild()
 
+# Entries in Rate menu:
+rates = ['default', \
+	'8000', '11025', '16000', '22050', '32000', '41000', '48000']
+
 def maineventloop():
 	mouse_events = WE_MOUSE_DOWN, WE_MOUSE_MOVE, WE_MOUSE_UP
 	while G.windows:
@@ -108,6 +110,16 @@ def maineventloop():
 				checkchild()
 				if G.busy:
 					G.cw.win.settimer(1)
+			elif type == WE_MENU:
+				menu, item = detail
+				if menu is G.ratemenu:
+					clearcache()
+					if item == 0:
+						G.rate = 0
+					else:
+						G.rate = eval(rates[item])
+					for i in range(len(rates)):
+						menu.check(i, (i == item))
 			else:
 				G.cw.dispatch(event)
 		else:
@@ -119,7 +131,7 @@ def maineventloop():
 				w.close(w)
 				del w, event
 			else:
-				if G.debug: print type, w, detail
+				if G.debug > 1: print type, w, detail
 
 def checkchild():
 	if G.busy:
@@ -142,14 +154,24 @@ def waitchild(options):
 def opencontrolwindow():
 	stdwin.setdefscrollbars(0, 0)
 	cw = WindowParent().create('Jukebox', (0, 0))
-	v = VSplit().create(cw)
 	#
-	stop = PushButton().definetext(v, 'Stop')
+	stop = PushButton().definetext(cw, '        Stop        ')
 	stop.hook = stop_hook
 	stop.enable(0)
 	G.stop = stop
 	#
 	cw.realize()
+	#
+	G.ratemenu = cw.win.menucreate('Rate')
+	for r in rates:
+		G.ratemenu.additem(r)
+	if G.rate == 0:
+		G.ratemenu.check(0, 1)
+	else:
+		for i in len(range(rates)):
+			if rates[i] == `G.rate`:
+				G.ratemenu.check(i, 1)
+	#
 	return cw
 
 def stop_hook(self):
@@ -264,31 +286,51 @@ cache = {}
 
 def clearcache():
 	for x in cache.keys():
-		try:
-			sts = os.system('rm -f ' + cache[x])
-			if sts:
-				print cmd
-				print 'Exit status', sts
-		except:
+		cmd = 'rm -f ' + cache[x]
+		if G.debug: print cmd
+		sts = os.system(cmd)
+		if sts:
 			print cmd
-			print 'Exception?!'
+			print 'Exit status', sts
 		del cache[x]
 
-def playfile(name):
+validrates = (8000, 11025, 16000, 22050, 32000, 44100, 48000)
+
+def playfile(filename):
 	killchild()
-	if G.mode in ('', 'au', 'aiff'):
-		tempname = name
-	elif cache.has_key(name):
-		tempname = cache[name]
+	import sndhdr
+	tuple = sndhdr.what(filename)
+	raw = 0
+	if tuple:
+		mode, rate = tuple[:2]
+		if rate == 0:
+			rate = G.rate
+			if rate == 0:
+				rate = 8000
+	else:
+		mode = G.mode
+		rate = G.rate
+	if G.debug: print 'mode =', mode, 'rate =', rate
+	if mode in ('au', 'aiff', 'wav', 'aifc', 'ul', 'ub', 'sb') and \
+		  rate in validrates:
+		tempname = filename
+		if mode in ('ul', 'ub', 'sb'):
+			raw = 1
+	elif cache.has_key(filename):
+		tempname = cache[filename]
 	else:
 		tempname = G.tempprefix + `rand.rand()` + '.aiff'
 		cmd = SOX
-		if G.mode <> '' and G.mode <> 'sox':
-			cmd = cmd + ' -t ' + G.mode
-		cmd = cmd + ' ' + commands.mkarg(name)
+		if G.debug:
+			cmd = cmd + ' -V'
+		if mode <> '':
+			cmd = cmd + ' -t ' + mode
+		cmd = cmd + ' ' + commands.mkarg(filename)
 		cmd = cmd + ' -t aiff'
-		if G.rate:
-			cmd = cmd + ' -r ' + `G.rate`
+		if rate not in validrates:
+			rate = 32000
+		if rate:
+			cmd = cmd + ' -r ' + `rate`
 		cmd = cmd + ' ' + tempname
 		if G.debug: print cmd
 		sts = os.system(cmd)
@@ -297,18 +339,51 @@ def playfile(name):
 			print 'Exit status', sts
 			stdwin.fleep()
 			return
-		cache[name] = tempname
-	pid = os.fork()
-	if pid == 0:
-		# Child
-		os.exec(SFPLAY, [SFPLAY, '-r', tempname])
-		# NOTREACHED
-	# Parent
+		cache[filename] = tempname
+	if raw:
+		pid = sfplayraw(tempname, tuple)
+	else:
+		pid = sfplay(tempname, [])
 	if G.synchronous:
 		sts = os.wait(pid, 0)
 	else:
 		G.busy = pid
 		G.stop.enable(1)
 		G.cw.win.settimer(1)
+
+def sfplayraw(filename, tuple):
+	import sndhdr
+	args = ['-i']
+	type, rate, channels, frames, bits = tuple
+	if type == 'ul':
+		args.append('mulaw')
+	elif type == 'ub':
+		args = args + ['integer', '8', 'unsigned']
+	elif type == 'sb':
+		args = args + ['integer', '8', '2scomp']
+	else:
+		print 'sfplayraw: warning: unknown type in', tuple
+	if channels > 1:
+		args = args + ['channels', `channels`]
+	if not rate:
+		rate = G.rate
+	if rate:
+		args = args + ['rate', `rate`]
+	args.append('end')
+	return sfplay(filename, args)
+
+def sfplay(filename, args):
+	if G.debug:
+		args = ['-p'] + args
+	args = [SFPLAY, '-r'] + args + [filename]
+	if G.debug: print 'sfplay:', args
+	pid = os.fork()
+	if pid == 0:
+		# Child
+		os.exec(SFPLAY, args)
+		# NOTREACHED
+	else:
+		# Parent
+		return pid
 
 main()
