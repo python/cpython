@@ -276,8 +276,8 @@ Currently-active file is at the head of the list.")
 	    ("\n"	 . py-newline-and-indent)
 	    ("\C-c:"	 . py-guess-indent-offset)
 	    ("\C-c\t"	 . py-indent-region)
-	    ("\C-c\C-l"  . py-outdent-left)
-	    ("\C-c\C-r"  . py-indent-right)
+	    ("\C-c\C-l"  . py-shift-region-left)
+	    ("\C-c\C-r"  . py-shift-region-right)
 	    ("\C-c<"	 . py-shift-region-left)
 	    ("\C-c>"	 . py-shift-region-right)
 	    ("\C-c\C-n"  . py-next-statement)
@@ -493,84 +493,6 @@ Electric behavior is inhibited inside a string or comment."
 	    (delete-horizontal-space)
 	    (indent-to (- indent outdent))
 	    )))))
-
-(defun py-indent-right (start end arg)
-  "Indent lines in the region by one `py-indent-offset' level.
-With numeric arg, indent by that many levels.  You cannot indent
-farther right than the distance the line would be indented by
-\\[py-indent-line].  With no active region, indent only the
-current line."
-  (interactive
-   (let ((p (point))
-	 (m (mark))
-	 (arg (prefix-numeric-value current-prefix-arg)))
-     (if m
-	 (list (min p m) (max p m) arg)
-       (list p m arg))))
-  (let* ((dir (= (point) start))
-	 (pos (if dir (point)
-		(- (point-max) (point))))
-	 (end (save-excursion
-		(goto-char (or end (1+ start)))
-		(and (not (bolp))
-		     (forward-line 1))
-		(set-marker (make-marker) (point))))
-	 col want indent)
-    (goto-char start)
-    (beginning-of-line)
-    (unwind-protect
-	(while (< (point) end)
-	  (setq col (current-indentation)
-		want (* arg py-indent-offset)
-		indent (py-compute-indentation))
-	  (if (<= (+ col want) indent)
-	      (progn
-		(beginning-of-line)
-		(delete-horizontal-space)
-		(indent-to (+ col want))))
-	  (forward-line 1))
-      (set-marker end nil))
-    (goto-char (if dir pos
-		 (- (point-max) pos)))
-    (py-keep-region-active)))
-
-(defun py-outdent-left (start end arg)
-  "Outdent lines in the region by one `py-indent-offset' level.
-With numeric arg, outdent by that many levels.  You cannot outdent
-farther left than column zero.  With no active region, outdent only
-the current line."
-  (interactive
-   (let ((p (point))
-	 (m (mark))
-	 (arg (prefix-numeric-value current-prefix-arg)))
-     (if m
-	 (list (min p m) (max p m) arg)
-       (list p m arg))))
-  (let* ((dir (= (point) start))
-	 (pos (if dir (point)
-		(- (point-max) (point))))
-	 (end (save-excursion
-		(goto-char (or end (1+ start)))
-		(and (not (bolp))
-		     (forward-line 1))
-		(set-marker (make-marker) (point))))
-	 col want)
-    (goto-char start)
-    (beginning-of-line)
-    (unwind-protect
-	(while (< (point) end)
-	  (setq col (current-indentation)
-		want (* arg py-indent-offset))
-	  (if (<= 0 (- col want))
-	      (progn
-		(beginning-of-line)
-		(delete-horizontal-space)
-		(indent-to (- col want))))
-	  (forward-line 1))
-      (set-marker end nil))
-    (goto-char (if dir pos
-		 (- (point-max) pos)))
-    (py-keep-region-active)))
 
 
 ;;; Functions that execute Python commands in a subprocess
@@ -1010,11 +932,26 @@ to (but not including) the line containing the end of the region are
 shifted to the left, by `py-indent-offset' columns.
 
 If a prefix argument is given, the region is instead shifted by that
-many columns."
-  (interactive "*r\nP")   ; region; raw prefix arg
-  (py-shift-region start end
-		   (- (prefix-numeric-value
-		       (or count py-indent-offset)))))
+many columns.  With no active region, outdent only the current line.
+You cannot outdent the region if any line is already at column zero."
+  (interactive
+   (let ((p (point))
+	 (m (mark))
+	 (arg current-prefix-arg))
+     (if m
+	 (list (min p m) (max p m) arg)
+       (list p (save-excursion (forward-line 1) (point)) arg))))
+  ;; if any line is at column zero, don't shift the region
+  (save-excursion
+    (goto-char start)
+    (while (< (point) end)
+      (back-to-indentation)
+      (if (zerop (current-column))
+	  (error "Region is at left edge."))
+      (forward-line 1)))
+  (py-shift-region start end (- (prefix-numeric-value
+				 (or count py-indent-offset))))
+  (py-keep-region-active))
 
 (defun py-shift-region-right (start end &optional count)
   "Shift region of Python code to the right.
@@ -1023,10 +960,17 @@ to (but not including) the line containing the end of the region are
 shifted to the right, by `py-indent-offset' columns.
 
 If a prefix argument is given, the region is instead shifted by that
-many columns."
-  (interactive "*r\nP")   ; region; raw prefix arg
+many columns.  With no active region, indent only the current line."
+  (interactive
+   (let ((p (point))
+	 (m (mark))
+	 (arg current-prefix-arg))
+     (if m
+	 (list (min p m) (max p m) arg)
+       (list p (save-excursion (forward-line 1) (point)) arg))))
   (py-shift-region start end (prefix-numeric-value
-			      (or count py-indent-offset))))
+			      (or count py-indent-offset)))
+  (py-keep-region-active))
 
 (defun py-indent-region (start end &optional indent-offset)
   "Reindent a region of Python code.
