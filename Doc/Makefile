@@ -182,8 +182,9 @@ l2hext: ext.dvi myformat.perl
 	@rm -rf python-ext
 	sed 's/^<P CLASS=ABSTRACT>,/<P CLASS=ABSTRACT>/' \
 		<ext/ext.html >ext/xxx
-	ln -s ext.html ext/index.html
 	mv ext/xxx ext/ext.html
+	ln -s ext.html ext/index.html
+	@rm -rf python-ext
 	mv ext python-ext
 
 l2hlib: lib.dvi myformat.perl
@@ -202,8 +203,9 @@ l2hapi: api.dvi myformat.perl
 	@rm -rf python-api
 	sed 's/^<P CLASS=ABSTRACT>,/<P CLASS=ABSTRACT>/' \
 		<api/api.html >api/xxx
-	ln -s api.html api/index.html
 	mv api/xxx api/api.html
+	ln -s api.html api/index.html
+	@rm -rf python-api
 	mv api python-api
 
 
