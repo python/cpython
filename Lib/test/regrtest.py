@@ -36,6 +36,9 @@ those requiring large file support or network connectivity.  The argument is a
 comma-separated list of words indicating the resources to test.  Currently
 only the following are defined:
 
+    curses -    Tests that use curses and will modify the terminal's
+                state and output modes.
+                
     largefile - It is okay to run some test that may create huge files.  These
                 tests can take a long time and may consume >2GB of disk space
                 temporarily.
@@ -118,7 +121,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=0, generate=0,
         elif o in ('-u', '--use'):
             u = [x.lower() for x in a.split(',')]
             for r in u:
-                if r not in ('largefile', 'network'):
+                if r not in ('curses', 'largefile', 'network'):
                     usage(1, 'Invalid -u/--use option: %s' % a)
             use_resources.extend(u)
     if generate and verbose:
