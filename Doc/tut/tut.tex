@@ -4868,12 +4868,12 @@ numbers respectively):
 \section{Multi-threading\label{multi-threading}}
 
 Threading is a technique for decoupling tasks which are not sequentially
-dependent.  Python threads are driven by the operating system and run
-in a single process and share memory space in a single interpreter.
+dependent.  Threads can be used to improve the responsiveness of
+applications that accept user input while other tasks run in the
+background.  A related use case is running I/O in parallel with
+computations in another thread.
 
-Threads can be used to improve the responsiveness of applications that
-accept user input while other tasks run in the background.  The
-following code shows how the high level
+The following code shows how the high level
 \ulink{\module{threading}}{../lib/module-threading.html} module can run
 tasks in background while the main program continues to run:
 
@@ -4891,8 +4891,12 @@ tasks in background while the main program continues to run:
             f.close()
             print 'Finished background zip of: ', self.infile
 
-    AsyncZip('mydata.txt', 'myarchive.zip').start()
-    print 'The main program continues to run'
+    background = AsyncZip('mydata.txt', 'myarchive.zip')
+    background.start()
+    print 'The main program continues to run in foreground.'
+    
+    background.join()    # Wait for the background task to finish
+    print 'Main program waited until background was done.'
 \end{verbatim}
 
 The principal challenge of multi-threaded applications is coordinating
@@ -4901,13 +4905,13 @@ module provides a number of synchronization primitives including locks,
 events, condition variables, and semaphores.
 
 While those tools are powerful, minor design errors can result in
-problems that are difficult to reproduce.  A simpler and more robust
-approach to task coordination is concentrating all access to a resource
+problems that are difficult to reproduce.  So, the preferred approach
+to task coordination is to concentrate all access to a resource
 in a single thread and then using the
 \ulink{\module{Queue}}{../lib/module-Queue.html} module to feed that
-thread with requests from other threads.  Applications that use
+thread with requests from other threads.  Applications using
 \class{Queue} objects for inter-thread communication and coordination
-tend to be easier to design, more readable, and more reliable.
+are easier to design, more readable, and more reliable.
 
 
 \section{Logging\label{logging}}
