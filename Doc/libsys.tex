@@ -52,7 +52,7 @@ It is always available.
   This value is not actually defined by the module, but can be set by
   the user (or by a program) to specify a clean-up action at program
   exit.  When set, it should be a parameterless function.  This function
-  will be called when the interpreter exits in any way (except not when a
+  will be called when the interpreter exits in any way (except when a
   fatal error occurs: in that case the interpreter's internal state
   cannot be trusted).
 \end{datadesc}
@@ -79,6 +79,11 @@ It is always available.
   A list of strings that specifies the search path for modules.
   Initialized from the environment variable \code{PYTHONPATH}, or an
   installation-dependent default.
+\end{datadesc}
+
+\begin{datadesc}{platform}
+This string contains a platform identifier.  This can be used to
+append platform-specific components to \code{sys.path}, for instance.
 \end{datadesc}
 
 \begin{datadesc}{ps1}
