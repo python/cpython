@@ -2,7 +2,6 @@
 # displays parameter information as you open parens.
 
 import string
-import sys
 import types
 
 class CallTips:
@@ -128,16 +127,21 @@ def get_arg_text(ob):
                     items.append("...")
                 if fob.func_code.co_flags & 0x8:
                     items.append("***")
-                argText = string.join(items , ", ")
+                argText = ", ".join(items)
                 argText = "(%s)" % argText
             except:
                 pass
         # See if we can use the docstring
-        if hasattr(ob, "__doc__") and ob.__doc__:
-            pos = string.find(ob.__doc__, "\n")
-            if pos<0 or pos>70: pos=70
-            if argText: argText = argText + "\n"
-            argText = argText + ob.__doc__[:pos]
+        doc = getattr(ob, "__doc__", "")
+        if doc:
+            while doc[:1] in " \t\n":
+                doc = doc[1:]
+            pos = doc.find("\n")
+            if pos < 0 or pos > 70:
+                pos = 70
+            if argText:
+                argText += "\n"
+            argText += doc[:pos]
 
     return argText
 
