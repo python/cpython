@@ -255,7 +255,8 @@ def _test():
 		if msg is None:
 			break
 		msgs.append(msg)
-		msg.fp = None
+		if len(args) <= 1:
+			msg.fp = None
 	if len(args) > 1:
 		num = string.atoi(args[1])
 		print 'Message %d body:'%num
