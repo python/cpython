@@ -79,9 +79,8 @@ staticforward PyTypeObject Rotor_Type;
 
 #define is_rotor(v)		((v)->ob_type == &Rotor_Type)
 
-/*
-	This defines the necessary routines to manage rotor objects
-*/
+
+/* This defines the necessary routines to manage rotor objects */
 
 static void
 set_seed(r) 
@@ -135,9 +134,7 @@ r_rand(r, s)
 	Rotorobj *r;
 	short s;
 {
-	/*short tmp = (short)((int)(r_random(r) * (float)32768.0) % 32768);*/
-	short tmp = (short)((short)(r_random(r) * (float)s) % s);
-	return tmp;
+	return (short)((short)(r_random(r) * (float)s) % s);
 }
 
 static void
@@ -145,35 +142,18 @@ set_key(r, key)
 	Rotorobj *r;
 	char *key;
 {
-#ifdef BUGGY_CODE_BW_COMPAT
-	/* See comments below */
-	int k1=995, k2=576, k3=767, k4=671, k5=463;
-#else
 	unsigned long k1=995, k2=576, k3=767, k4=671, k5=463;
-#endif
 	int i;
 	int len = strlen(key);
+
 	for (i = 0; i < len; i++) {
-#ifdef BUGGY_CODE_BW_COMPAT
-		/* This is the code as it was originally released.
-		   It causes warnings on many systems and can generate
-		   different results as well.  If you have files
-		   encrypted using an older version you may want to
-		   #define BUGGY_CODE_BW_COMPAT so as to be able to
-		   decrypt them... */
-		k1 = (((k1<<3 | k1<<-13) + key[i]) & 65535);
-		k2 = (((k2<<3 | k2<<-13) ^ key[i]) & 65535);
-		k3 = (((k3<<3 | k3<<-13) - key[i]) & 65535);
-		k4 = ((key[i] - (k4<<3 | k4<<-13)) & 65535);
-		k5 = (((k5<<3 | k5<<-13) ^ ~key[i]) & 65535);
-#else
-		/* This code should be more portable */
-		k1 = (((k1<<3 | k1>>13) + key[i]) & 65535);
-		k2 = (((k2<<3 | k2>>13) ^ key[i]) & 65535);
-		k3 = (((k3<<3 | k3>>13) - key[i]) & 65535);
-		k4 = ((key[i] - (k4<<3 | k4>>13)) & 65535);
-		k5 = (((k5<<3 | k5>>13) ^ ~key[i]) & 65535);
-#endif
+		unsigned short ki = Py_CHARMASK(key[i]);
+
+		k1 = (((k1<<3 | k1>>13) + ki) & 65535);
+		k2 = (((k2<<3 | k2>>13) ^ ki) & 65535);
+		k3 = (((k3<<3 | k3>>13) - ki) & 65535);
+		k4 = ((ki - (k4<<3 | k4>>13)) & 65535);
+		k5 = (((k5<<3 | k5>>13) ^ ~ki) & 65535);
 	}
 	r->key[0] = (short)k1;
 	r->key[1] = (short)(k2|1);
@@ -184,6 +164,8 @@ set_key(r, key)
 	set_seed(r);
 }
 
+
+
 /* These define the interface to a rotor object */
 static Rotorobj *
 rotorobj_new(num_rotors, key)
@@ -226,10 +208,11 @@ rotorobj_new(num_rotors, key)
 	return (Rotorobj*)PyErr_NoMemory();
 }
 
+
 /* These routines impliment the rotor itself */
 
-/*  Here is a fairly sofisticated {en,de}cryption system.  It is based
-    on the idea of a "rotor" machine.  A bunch of rotors, each with a
+/*  Here is a fairly sophisticated {en,de}cryption system.  It is based on
+    the idea of a "rotor" machine.  A bunch of rotors, each with a
     different permutation of the alphabet, rotate around a different amount
     after encrypting one character.  The current state of the rotors is
     used to encrypt one character.
@@ -248,16 +231,17 @@ rotorobj_new(num_rotors, key)
     encryption routine.
 
     j'
-*/
 
-/*(defun RTR-make-id-rotor (rotor)
-  "Set ROTOR to the identity permutation"
-  (let ((j 0))
-    (while (< j RTR-size)
-      (aset rotor j j)
-      (setq j (+ 1 j)))
-    rotor))
-*/
+ */
+
+/* Note: the C code here is a fairly straightforward transliteration of a
+ * rotor implemented in lisp.  The original lisp code has been removed from
+ * this file to for simplification, but I've kept the docstrings as
+ * comments in front of the functions.
+ */
+
+
+/* Set ROTOR to the identity permutation */
 static void
 RTR_make_id_rotor(r, rtr)
 	Rotorobj *r;
@@ -271,18 +255,7 @@ RTR_make_id_rotor(r, rtr)
 }
 
 
-/*(defvar RTR-e-rotors 
-  (let ((rv (make-vector RTR-number-of-rotors 0))
-	(i 0)
-	tr)
-    (while (< i RTR-number-of-rotors)
-      (setq tr (make-vector RTR-size 0))
-      (RTR-make-id-rotor tr)
-      (aset rv i tr)
-      (setq i (+ 1 i)))
-    rv)
-  "The current set of encryption rotors")
-*/
+/* The current set of encryption rotors */
 static void
 RTR_e_rotors(r)
 	Rotorobj *r;
@@ -293,21 +266,7 @@ RTR_e_rotors(r)
 	}
 }
 
-/*(defvar RTR-d-rotors 
-  (let ((rv (make-vector RTR-number-of-rotors 0))
-	(i 0)
-	tr)
-    (while (< i RTR-number-of-rotors)
-      (setq tr (make-vector RTR-size 0))
-      (setq j 0)
-      (while (< j RTR-size)
-	(aset tr j j)
-	(setq j (+ 1 j)))
-      (aset rv i tr)
-      (setq i (+ 1 i)))
-    rv)
-  "The current set of decryption rotors")
-*/
+/* The current set of decryption rotors */
 static void
 RTR_d_rotors(r)
 	Rotorobj *r;
@@ -320,9 +279,7 @@ RTR_d_rotors(r)
 	}
 }
 
-/*(defvar RTR-positions (make-vector RTR-number-of-rotors 1)
-  "The positions of the rotors at this time")
-*/
+/* The positions of the rotors at this time */
 static void
 RTR_positions(r)
 	Rotorobj *r;
@@ -333,9 +290,7 @@ RTR_positions(r)
 	}
 }
 
-/*(defvar RTR-advances (make-vector RTR-number-of-rotors 1)
-  "The number of positions to advance the rotors at a time")
-*/
+/* The number of positions to advance the rotors at a time */
 static void
 RTR_advances(r) 
 	Rotorobj *r;
@@ -346,22 +301,9 @@ RTR_advances(r)
 	}
 }
 
-/*(defun RTR-permute-rotor (e d)
-  "Permute the E rotor, and make the D rotor its inverse"
-  ;; see Knuth for explaination of algorithm.
-  (RTR-make-id-rotor e)
-  (let ((i RTR-size)
-	q j)
-    (while (<= 2 i)
-      (setq q (fair16 i))		; a little tricky, decrement here
-      (setq i (- i 1))			; since we have origin 0 array's
-      (setq j (aref e q))
-      (aset e q (aref e i))
-      (aset e i j)
-      (aset d j i))
-    (aset e 0 (aref e 0))		; don't forget e[0] and d[0]
-    (aset d (aref e 0) 0)))
-*/
+/* Permute the E rotor, and make the D rotor its inverse
+ * see Knuth for explanation of algorithm.
+ */
 static void
 RTR_permute_rotor(r, e, d)
 	Rotorobj *r;
@@ -384,19 +326,9 @@ RTR_permute_rotor(r, e, d)
 	d[(e[0])] = (unsigned char)0;
 }
 
-/*(defun RTR-init (key)
-  "Given KEY (a list of 5 16 bit numbers), initialize the rotor machine.
-Set the advancement, position, and permutation of the rotors"
-  (R16-set-state key)
-  (let (i)
-    (setq i 0)
-    (while (< i RTR-number-of-rotors)
-      (aset RTR-positions i (fair16 RTR-size))
-      (aset RTR-advances i (+ 1 (* 2 (fair16 (/ RTR-size 2)))))
-      (message "Initializing rotor %d..." i)
-      (RTR-permute-rotor (aref RTR-e-rotors i) (aref RTR-d-rotors i))
-      (setq i (+ 1 i)))))
-*/
+/* Given KEY (a list of 5 16 bit numbers), initialize the rotor machine.
+ * Set the advancement, position, and permutation of the rotors
+ */
 static void
 RTR_init(r)
 	Rotorobj *r;
@@ -417,28 +349,7 @@ RTR_init(r)
 	r->isinited = TRUE;
 }
 
-/*(defun RTR-advance ()
-  "Change the RTR-positions vector, using the RTR-advances vector"
-  (let ((i 0)
-	(temp 0))
-    (if RTR-size-mask
-	(while (< i RTR-number-of-rotors)
-	  (setq temp (+ (aref RTR-positions i) (aref RTR-advances i)))
-	  (aset RTR-positions i (logand temp RTR-size-mask))
-	  (if (and (>= temp RTR-size)
-		   (< i (- RTR-number-of-rotors 1))) 
-	      (aset RTR-positions (+ i 1)
-		    (+ 1 (aref RTR-positions (+ i 1)))))
-	  (setq i (+ i 1)))
-      (while (< i RTR-number-of-rotors)
-	(setq temp (+ (aref RTR-positions i) (aref RTR-advances i)))
-	(aset RTR-positions i (% temp RTR-size))
-	(if (and (>= temp RTR-size)
-		 (< i (- RTR-number-of-rotors 1))) 
-	    (aset RTR-positions (+ i 1)
-		  (+ 1 (aref RTR-positions (+ i 1)))))
-	(setq i (+ i 1))))))
-*/
+/* Change the RTR-positions vector, using the RTR-advances vector */
 static void
 RTR_advance(r)
 	Rotorobj *r;
@@ -465,25 +376,7 @@ RTR_advance(r)
 	}
 }
 
-/*(defun RTR-e-char (p)
-  "Encrypt the character P with the current rotor machine"
-  (let ((i 0))
-    (if RTR-size-mask
-	(while (< i RTR-number-of-rotors)
-	  (setq p (aref (aref RTR-e-rotors i)
-			(logand (logxor (aref RTR-positions i)
-					p)
-				RTR-size-mask)))
-	  (setq i (+ 1 i)))
-      (while (< i RTR-number-of-rotors)
-	  (setq p (aref (aref RTR-e-rotors i)
-			(% (logxor (aref RTR-positions i)
-				   p)
-			   RTR-size)))
-	(setq i (+ 1 i))))
-    (RTR-advance)
-    p))
-*/
+/* Encrypt the character P with the current rotor machine */
 static unsigned char
 RTR_e_char(r, p)
 	Rotorobj *r;
@@ -510,25 +403,7 @@ RTR_e_char(r, p)
 	return ((unsigned char)tp);
 }
 
-/*(defun RTR-d-char (c)
-  "Decrypt the character C with the current rotor machine"
-  (let ((i (- RTR-number-of-rotors 1)))
-    (if RTR-size-mask
-	(while (<= 0 i)
-	  (setq c (logand (logxor (aref RTR-positions i)
-				  (aref (aref RTR-d-rotors i)
-					c))
-			  RTR-size-mask))
-	  (setq i (- i 1)))
-	(while (<= 0 i)
-	  (setq c (% (logxor (aref RTR-positions i)
-			     (aref (aref RTR-d-rotors i)
-				   c))
-		     RTR-size))
-	  (setq i (- i 1))))
-    (RTR-advance)
-    c))
-*/
+/* Decrypt the character C with the current rotor machine */
 static unsigned char
 RTR_d_char(r, c)
 	Rotorobj *r;
@@ -555,18 +430,7 @@ RTR_d_char(r, c)
 	return(tc);
 }
 
-/*(defun RTR-e-region (beg end key)
-  "Perform a rotor encryption of the region from BEG to END by KEY"
-  (save-excursion
-    (let ((tenth (/ (- end beg) 10)))
-      (RTR-init key)
-      (goto-char beg)
-      ;; ### make it stop evry 10% or so to tell us
-      (while (< (point) end)
-	(let ((fc (following-char)))
-	  (insert-char (RTR-e-char fc) 1)
-	  (delete-char 1))))))
-*/
+/* Perform a rotor encryption of the region from BEG to END by KEY */
 static void
 RTR_e_region(r, beg, len, doinit)
 	Rotorobj *r;
@@ -582,17 +446,7 @@ RTR_e_region(r, beg, len, doinit)
 	}
 }
 
-/*(defun RTR-d-region (beg end key)
-  "Perform a rotor decryption of the region from BEG to END by KEY"
-  (save-excursion
-    (progn
-      (RTR-init key)
-      (goto-char beg)
-      (while (< (point) end)
-	(let ((fc (following-char)))
-	  (insert-char (RTR-d-char fc) 1)
-	  (delete-char 1))))))
-*/
+/* Perform a rotor decryption of the region from BEG to END by KEY */
 static void
 RTR_d_region(r, beg, len, doinit)
 	Rotorobj *r;
@@ -609,52 +463,8 @@ RTR_d_region(r, beg, len, doinit)
 }
 
 
-/*(defun RTR-key-string-to-ints (key)
-  "Convert a string into a list of 4 numbers"
-  (let ((k1 995)
-	(k2 576)
-	(k3 767)
-	(k4 671)
-	(k5 463)
-	(i 0))
-    (while (< i (length key))
-      (setq k1 (logand (+      (logior (lsh k1 3) (lsh k1 -13)) (aref key i)) 65535))
-      (setq k2 (logand (logxor (logior (lsh k2 3) (lsh k2 -13)) (aref key i)) 65535))
-      (setq k3 (logand (-      (logior (lsh k3 3) (lsh k3 -13)) (aref key i)) 65535))
-      (setq k4 (logand (-      (aref key i) (logior (lsh k4 3) (lsh k4 -13))) 65535))
-      (setq k5 (logand (logxor (logior (lsh k5 3) (lsh k5 -13)) (lognot (aref key i))) 65535))
-      (setq i (+ i 1)))
-    (list k1 (logior 1 k2) k3 k4 k5)))*/
-/* This is done in set_key() above */
-
-#if 0
-/*(defun encrypt-region (beg end key)
-  "Interactivly encrypt the region"
-  (interactive "r\nsKey:")
-  (RTR-e-region beg end (RTR-key-string-to-ints key)))*/
-static void encrypt_region(r, region, len)
-	Rotorobj *r;
-	unsigned char *region;
-	int len;
-{
-	RTR_e_region(r,region,len,TRUE);
-}
-
-/*(defun decrypt-region (beg end key)
-  "Interactivly decrypt the region"
-  (interactive "r\nsKey:")
-  (RTR-d-region beg end (RTR-key-string-to-ints key)))*/
-static void decrypt_region(r, region, len)
-	Rotorobj *r;
-	unsigned char *region;
-	int len;
-{
-	RTR_d_region(r,region,len,TRUE);
-}
-#endif /* 0 */
-
+
 /* Rotor methods */
-
 static void
 rotor_dealloc(xp)
 	Rotorobj *xp;
@@ -833,17 +643,13 @@ rotor_rotor(self, args)
 }
 
 
+
 static struct PyMethodDef
 rotor_methods[] = {
 	{"newrotor",  rotor_rotor, 1},
 	{NULL,        NULL}		     /* sentinel */
 };
 
-
-/* Initialize this module.
-   This is called when the first 'import rotor' is done,
-   via a table in config.c, if config.c is compiled with USE_ROTOR
-   defined. */
 
 void
 initrotor()
