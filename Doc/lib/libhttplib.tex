@@ -13,46 +13,7 @@ that use HTTP and HTTPS.  \note{HTTPS support is only
 available if the \refmodule{socket} module was compiled with SSL
 support.}
 
-The module defines one class, \class{HTTP}:
-
-\begin{classdesc}{HTTP}{\optional{host\optional{, port}}}
-An \class{HTTP} instance
-represents one transaction with an HTTP server.  It should be
-instantiated passing it a host and optional port number.  If no port
-number is passed, the port is extracted from the host string if it has
-the form \code{\var{host}:\var{port}}, else the default HTTP port (80)
-is used.  If no host is passed, no connection is made, and the
-\method{connect()} method should be used to connect to a server.  For
-example, the following calls all create instances that connect to the
-server at the same host and port:
-
-\begin{verbatim}
->>> h1 = httplib.HTTP('www.cwi.nl')
->>> h2 = httplib.HTTP('www.cwi.nl:80')
->>> h3 = httplib.HTTP('www.cwi.nl', 80)
-\end{verbatim}
-
-Once an \class{HTTP} instance has been connected to an HTTP server, it
-should be used as follows:
-
-\begin{enumerate}
-
-\item Make exactly one call to the \method{putrequest()} method.
-
-\item Make zero or more calls to the \method{putheader()} method.
-
-\item Call the \method{endheaders()} method (this can be omitted if
-step 4 makes no calls).
-
-\item Optional calls to the \method{send()} method.
-
-\item Call the \method{getreply()} method.
-
-\item Call the \method{getfile()} method and read the data off the
-file object that it returns.
-
-\end{enumerate}
-\end{classdesc}
+The constants defined in this module are:
 
 \begin{datadesc}{HTTP_PORT}
   The default port for the HTTP protocol (always \code{80}).
@@ -62,11 +23,98 @@ file object that it returns.
   The default port for the HTTPS protocol (always \code{443}).
 \end{datadesc}
 
+The module provides the following classes:
 
-\subsection{HTTP Objects \label{http-objects}}
+\begin{classdesc}{HTTPConnection}{host\optional{, port}}
+An \class{HTTPConnection} instance represents one transaction with an HTTP
+server.  It should be instantiated passing it a host and optional port number.
+If no port number is passed, the port is extracted from the host string if it
+has the form \code{\var{host}:\var{port}}, else the default HTTP port (80) is
+used.  For example, the following calls all create instances that connect to
+the server at the same host and port:
 
-\class{HTTP} instances have the following methods:
+\begin{verbatim}
+>>> h1 = httplib.HTTPConnection('www.cwi.nl')
+>>> h2 = httplib.HTTPConnection('www.cwi.nl:80')
+>>> h3 = httplib.HTTPConnection('www.cwi.nl', 80)
+\end{verbatim}
+\end{classdesc}
 
+\begin{classdesc}{HTTPSConnection}{host\optional{, port}}
+A subclass of \class{HTTPConnection} that uses SSL for communication with
+secure servers.  Default port is \code{443}.
+\end{classdesc}
+
+The following exceptions are raised as appropriate:
+
+\begin{excdesc}{HTTPException}
+The base class of the other exceptions in this module.  It is a
+subclass of \exception{Exception}.
+\end{excdesc}
+
+\begin{excdesc}{NotConnected}
+A subclass of \exception{HTTPException}.
+\end{excdesc}
+
+\begin{excdesc}{UnknownProtocol}
+A subclass of \exception{HTTPException}.
+\end{excdesc}
+
+\begin{excdesc}{UnknownTransferEncoding}
+A subclass of \exception{HTTPException}.
+\end{excdesc}
+
+\begin{excdesc}{IllegalKeywordArgument}
+A subclass of \exception{HTTPException}.
+\end{excdesc}
+
+\begin{excdesc}{UnimplementedFileMode}
+A subclass of \exception{HTTPException}.
+\end{excdesc}
+
+\begin{excdesc}{IncompleteRead}
+A subclass of \exception{HTTPException}.
+\end{excdesc}
+
+\begin{excdesc}{ImproperConnectionState}
+A subclass of \exception{HTTPException}.
+\end{excdesc}
+
+\begin{excdesc}{CannotSendRequest}
+A subclass of \exception{ImproperConnectionState}.
+\end{excdesc}
+
+\begin{excdesc}{CannotSendHeader}
+A subclass of \exception{ImproperConnectionState}.
+\end{excdesc}
+
+\begin{excdesc}{ResponseNotReady}
+A subclass of \exception{ImproperConnectionState}.
+\end{excdesc}
+
+\begin{excdesc}{BadStatusLine}
+A subclass of \exception{HTTPException}.  Raised if a server responds with a
+HTTP status code that we don't understand.
+\end{excdesc}
+
+
+\subsection{HTTPConnection Objects \label{httpconnection-objects}}
+
+\class{HTTPConnection} instances have the following methods:
+
+\begin{methoddesc}{request}{method, url\optional{, body\optional{, headers}}}
+This will send a request to the server using the HTTP request method
+\var{method} and the selector \var{url}.  If the \var{body} argument is
+present, it should be a string of data to send after the headers are finished.
+The header Content-Length is automatically set to the correct value.
+The \var{headers} argument should be a mapping of extra HTTP headers to send
+with the request.
+\end{methoddesc}
+
+\begin{methoddesc}{getresponse}{}
+Should be called after a request is sent to get the response from the server.
+Returns an \class{HTTPResponse} instance.
+\end{methoddesc}
 
 \begin{methoddesc}{set_debuglevel}{level}
 Set the debugging level (the amount of debugging output printed).
@@ -74,11 +122,12 @@ The default debug level is \code{0}, meaning no debugging output is
 printed.
 \end{methoddesc}
 
-\begin{methoddesc}{connect}{host\optional{, port}}
-Connect to the server given by \var{host} and \var{port}.  See the
-introduction to the \refmodule{httplib} module for information on the
-default ports.  This should be called directly only if the instance
-was instantiated without passing a host.
+\begin{methoddesc}{connect}{}
+Connect to the server specified when the object was created.
+\end{methoddesc}
+
+\begin{methoddesc}{close}{}
+Close the connection to the server.
 \end{methoddesc}
 
 \begin{methoddesc}{send}{data}
@@ -91,11 +140,11 @@ Send data to the server.  This should be used directly only after the
 This should be the first call after the connection to the server has
 been made.  It sends a line to the server consisting of the
 \var{request} string, the \var{selector} string, and the HTTP version
-(\code{HTTP/1.0}).
+(\code{HTTP/1.1}).
 \end{methoddesc}
 
 \begin{methoddesc}{putheader}{header, argument\optional{, ...}}
-Send an \rfc{822} style header to the server.  It sends a line to the
+Send an \rfc{822}-style header to the server.  It sends a line to the
 server consisting of the header, a colon and a space, and the first
 argument.  If more arguments are given, continuation lines are sent,
 each consisting of a tab and an argument.
@@ -105,23 +154,35 @@ each consisting of a tab and an argument.
 Send a blank line to the server, signalling the end of the headers.
 \end{methoddesc}
 
-\begin{methoddesc}{getreply}{}
-Complete the request by shutting down the sending end of the socket,
-read the reply from the server, and return a triple
-\code{(\var{replycode}, \var{message}, \var{headers})}.  Here,
-\var{replycode} is the integer reply code from the request (e.g.,
-\code{200} if the request was handled properly); \var{message} is the
-message string corresponding to the reply code; and \var{headers} is
-an instance of the class \class{mimetools.Message} containing the
-headers received from the server.  See the description of the
-\refmodule{mimetools}\refstmodindex{mimetools} module.
+
+\subsection{HTTPResponse Objects \label{httpresponse-objects}}
+
+\class{HTTPResponse} instances have the following methods and attributes:
+
+\begin{methoddesc}{read}{}
+Reads and returns the response body.
 \end{methoddesc}
 
-\begin{methoddesc}{getfile}{}
-Return a file object from which the data returned by the server can be
-read, using the \method{read()}, \method{readline()} or
-\method{readlines()} methods.
+\begin{methoddesc}{getheader}{name\optional{, default}}
+Get the contents of the header \var{name}, or \var{default} if there is no
+matching header.
 \end{methoddesc}
+
+\begin{datadesc}{msg}
+  A \class{mimetools.Message} instance containing the response headers.
+\end{datadesc}
+
+\begin{datadesc}{version}
+  HTTP protocol version used by server.  10 for HTTP/1.0, 11 for HTTP/1.1.
+\end{datadesc}
+
+\begin{datadesc}{status}
+  Status code returned by server.
+\end{datadesc}
+
+\begin{datadesc}{reason}
+  Reason phrase returned by server.
+\end{datadesc}
 
 
 \subsection{Examples \label{httplib-examples}}
@@ -130,17 +191,18 @@ Here is an example session that uses the \samp{GET} method:
 
 \begin{verbatim}
 >>> import httplib
->>> h = httplib.HTTP('www.cwi.nl')
->>> h.putrequest('GET', '/index.html')
->>> h.putheader('Accept', 'text/html')
->>> h.putheader('Accept', 'text/plain')
->>> h.putheader('Host', 'www.cwi.nl')
->>> h.endheaders()
->>> errcode, errmsg, headers = h.getreply()
->>> print errcode # Should be 200
->>> f = h.getfile()
->>> data = f.read() # Get the raw HTML
->>> f.close()
+>>> conn = httplib.HTTPConnection("www.python.org")
+>>> conn.request("GET", "/index.html")
+>>> r1 = conn.getresponse()
+>>> print r1.status, r1.reason
+200 OK
+>>> data1 = r1.read()
+>>> conn.request("GET", "/parrot.spam")
+>>> r2 = conn.getresponse()
+>>> print r2.status, r2.reason
+404 Not Found
+>>> data2 = r2.read()
+>>> conn.close()
 \end{verbatim}
 
 Here is an example session that shows how to \samp{POST} requests:
@@ -148,15 +210,13 @@ Here is an example session that shows how to \samp{POST} requests:
 \begin{verbatim}
 >>> import httplib, urllib
 >>> params = urllib.urlencode({'spam': 1, 'eggs': 2, 'bacon': 0})
->>> h = httplib.HTTP("www.musi-cal.com:80")
->>> h.putrequest("POST", "/cgi-bin/query")
->>> h.putheader("Content-type", "application/x-www-form-urlencoded")
->>> h.putheader("Content-length", "%d" % len(params))
->>> h.putheader('Accept', 'text/plain')
->>> h.putheader('Host', 'www.musi-cal.com')
->>> h.endheaders()
->>> h.send(params)
->>> reply, msg, hdrs = h.getreply()
->>> print reply # should be 200
->>> data = h.getfile().read() # get the raw HTML
+>>> headers = {"Content-type": "application/x-www-form-urlencoded",
+...            "Accept": "text/plain"}
+>>> conn = httplib.HTTPConnection("musi-cal.mojam.com:80")
+>>> conn.request("POST", "/cgi-bin/query", params, headers)
+>>> response = h.getresponse()
+>>> print response.status, response.reason
+200 OK
+>>> data = response.read()
+>>> conn.close()
 \end{verbatim}
