@@ -602,12 +602,41 @@ builtin_reload(self, v)
 }
 
 static object *
+builtin_repr(self, v)
+	object *self;
+	object *v;
+{
+	if (v == NULL) {
+		err_badarg();
+		return NULL;
+	}
+	return reprobject(v);
+}
+
+static object *
+builtin_str(self, v)
+	object *self;
+	object *v;
+{
+	if (v == NULL) {
+		err_badarg();
+		return NULL;
+	}
+	if (is_stringobject(v)) {
+		INCREF(v);
+		return v;
+	}
+	else
+		return reprobject(v);
+}
+
+static object *
 builtin_type(self, v)
 	object *self;
 	object *v;
 {
 	if (v == NULL) {
-		err_setstr(TypeError, "type() requres an argument");
+		err_setstr(TypeError, "type() requires an argument");
 		return NULL;
 	}
 	v = (object *)v->ob_type;
@@ -642,7 +671,9 @@ static struct methodlist builtin_methods[] = {
 	{"range",	builtin_range},
 	{"raw_input",	builtin_raw_input},
 	{"reload",	builtin_reload},
+	{"repr",	builtin_repr},
 	{"setattr",	builtin_setattr},
+	{"str",		builtin_str},
 	{"type",	builtin_type},
 	{NULL,		NULL},
 };

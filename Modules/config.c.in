@@ -136,6 +136,9 @@ extern void initamoeba();
 #ifdef USE_AUDIO
 extern void initaudio();
 #endif
+#ifdef USE_AUDIOOP
+extern void initaudioop();
+#endif
 #ifdef USE_CD
 extern void initcd();
 #endif
@@ -240,6 +243,10 @@ struct {
 
 #ifdef USE_AUDIO
 	{"audio",	initaudio},
+#endif
+
+#ifdef USE_AUDIOOP
+	{"audioop",	initaudioop},
 #endif
 
 #ifdef USE_CD
