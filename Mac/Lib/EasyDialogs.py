@@ -171,11 +171,17 @@ def AskYesNoCancel(question, default = 0, yes=None, no=None, cancel=None, id=262
 	h = d.GetDialogItemAsControl(5)
 	SetDialogItemText(h, lf2cr(question))
 	if yes != None:
-		h = d.GetDialogItemAsControl(2)
-		h.SetControlTitle(yes)
+		if yes == '':
+			d.HideDialogItem(2)
+		else:
+			h = d.GetDialogItemAsControl(2)
+			h.SetControlTitle(yes)
 	if no != None:
-		h = d.GetDialogItemAsControl(3)
-		h.SetControlTitle(no)
+		if no == '':
+			d.HideDialogItem(3)
+		else:
+			h = d.GetDialogItemAsControl(3)
+			h.SetControlTitle(no)
 	if cancel != None:
 		if cancel == '':
 			d.HideDialogItem(4)
