@@ -514,11 +514,10 @@ release_weakrefs(PyGC_Head *wr_callbacks, PyGC_Head *old)
 	while (! gc_list_is_empty(wr_callbacks)) {
 		PyGC_Head *gc = wr_callbacks->gc.gc_next;
 		PyObject *op = FROM_GC(gc);
-		PyWeakReference *wr = (PyWeakReference *)op;
 
 		assert(IS_REACHABLE(op));
 		assert(PyWeakref_Check(op));
-		assert(wr->wr_callback != NULL);
+		assert(((PyWeakReference *)op)->wr_callback != NULL);
 		Py_DECREF(op);
 		if (wr_callbacks->gc.gc_next == gc) {
 			/* object is still alive -- move it */
