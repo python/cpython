@@ -371,47 +371,42 @@ class TestSubsets(unittest.TestCase):
 #------------------------------------------------------------------------------
 
 class TestSubsetEqualEmpty(TestSubsets):
-    def setUp(self):
-        self.left  = Set()
-        self.right = Set()
-        self.name  = "both empty"
-        self.cases = "<>"
+    left  = Set()
+    right = Set()
+    name  = "both empty"
+    cases = "<>"
 
 #------------------------------------------------------------------------------
 
 class TestSubsetEqualNonEmpty(TestSubsets):
-    def setUp(self):
-        self.left  = Set([1, 2])
-        self.right = Set([1, 2])
-        self.name  = "equal pair"
-        self.cases = "<>"
+    left  = Set([1, 2])
+    right = Set([1, 2])
+    name  = "equal pair"
+    cases = "<>"
 
 #------------------------------------------------------------------------------
 
 class TestSubsetEmptyNonEmpty(TestSubsets):
-    def setUp(self):
-        self.left  = Set()
-        self.right = Set([1, 2])
-        self.name  = "one empty, one non-empty"
-        self.cases = "<"
+    left  = Set()
+    right = Set([1, 2])
+    name  = "one empty, one non-empty"
+    cases = "<"
 
 #------------------------------------------------------------------------------
 
 class TestSubsetPartial(TestSubsets):
-    def setUp(self):
-        self.left  = Set([1])
-        self.right = Set([1, 2])
-        self.name  = "one a non-empty subset of other"
-        self.cases = "<"
+   left  = Set([1])
+   right = Set([1, 2])
+   name  = "one a non-empty subset of other"
+   cases = "<"
 
 #------------------------------------------------------------------------------
 
 class TestSubsetNonOverlap(TestSubsets):
-    def setUp(self):
-        self.left  = Set([1])
-        self.right = Set([2])
-        self.name  = "neither empty, neither contains"
-        self.cases = ""
+    left  = Set([1])
+    right = Set([2])
+    name  = "neither empty, neither contains"
+    cases = ""
 
 #==============================================================================
 
