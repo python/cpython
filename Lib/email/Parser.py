@@ -124,19 +124,25 @@ class Parser:
         if boundary:
             preamble = epilogue = None
             # Split into subparts.  The first boundary we're looking for won't
-            # have the leading newline since we're at the start of the body
-            # text.
+            # always have a leading newline since we're at the start of the
+            # body text, and there's not always a preamble before the first
+            # boundary.
             separator = '--' + boundary
             payload = fp.read()
-            start = payload.find(separator)
-            if start < 0:
+            # We use an RE here because boundaries can have trailing 
+            # whitespace.
+            mo = re.search(
+                r'(?P<sep>' + re.escape(separator) + r')(?P<ws>[ \t]*)',
+                payload)
+            if not mo:
                 raise Errors.BoundaryError(
                     "Couldn't find starting boundary: %s" % boundary)
+            start = mo.start()
             if start > 0:
                 # there's some pre-MIME boundary preamble
                 preamble = payload[0:start]
             # Find out what kind of line endings we're using
-            start += len(separator)
+            start += len(mo.group('sep')) + len(mo.group('ws'))
             cre = re.compile('\r\n|\r|\n')
             mo = cre.search(payload, start)
             if mo:
@@ -151,31 +157,32 @@ class Parser:
                 terminator = mo.start()
                 linesep = mo.group('sep')
                 if mo.end() < len(payload):
-                    # there's some post-MIME boundary epilogue
+                    # There's some post-MIME boundary epilogue
                     epilogue = payload[mo.end():]
             elif self._strict:
                 raise Errors.BoundaryError(
                         "Couldn't find terminating boundary: %s" % boundary)
             else:
-                # handle the case of no trailing boundary. I hate mail clients.
-                # check that it ends in a blank line
-                endre = re.compile('(?P<sep>\r\n|\r|\n){2}$')
-                mo = endre.search(payload)
+                # Handle the case of no trailing boundary.  Check that it ends
+                # in a blank line.  Some cases (spamspamspam) don't even have
+                # that!
+                mo = re.search('(?P<sep>\r\n|\r|\n){2}$', payload)
                 if not mo:
-                    raise Errors.BoundaryError(
-                        "Couldn't find terminating boundary, and no "+
-                        "trailing empty line")
-                else:
-                    linesep = mo.group('sep')
-                    terminator = len(payload)
+                    mo = re.search('(?P<sep>\r\n|\r|\n)$', payload)
+                    if not mo:
+                        raise Errors.BoundaryError(
+                          'No terminating boundary and no trailing empty line')
+                linesep = mo.group('sep')
+                terminator = len(payload)
             # We split the textual payload on the boundary separator, which
             # includes the trailing newline. If the container is a
             # multipart/digest then the subparts are by default message/rfc822 
             # instead of text/plain.  In that case, they'll have a optional 
             # block of MIME headers, then an empty line followed by the 
             # message headers.
-            separator += linesep
-            parts = payload[start:terminator].split(linesep + separator)
+            parts = re.split(
+                linesep + re.escape(separator) + r'[ \t]*' + linesep,
+                payload[start:terminator])
             for part in parts:
                 if isdigest: 
                     if part[0] == linesep:

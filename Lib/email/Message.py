@@ -373,7 +373,7 @@ class Message:
         value = self.get('content-type', missing)
         if value is missing:
             return failobj
-        return paramre.split(value)[0].lower()
+        return paramre.split(value)[0].lower().strip()
 
     def get_main_type(self, failobj=None):
         """Return the message's main content type if present."""
@@ -428,11 +428,11 @@ class Message:
         for p in paramre.split(value):
             try:
                 name, val = p.split('=', 1)
-                name = name.rstrip()
-                val = val.lstrip()
+                name = name.strip()
+                val = val.strip()
             except ValueError:
                 # Must have been a bare attribute
-                name = p
+                name = p.strip()
                 val = ''
             params.append((name, val))
         params = Utils.decode_params(params)
