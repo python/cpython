@@ -2234,13 +2234,6 @@ list_richcompare(PyObject *v, PyObject *w, int op)
 	return PyObject_RichCompare(vl->ob_item[i], wl->ob_item[i], op);
 }
 
-/* empirically determined threshold for activating an optimisation
- * in list_fill() - 100 seems close to optimum for current CPUs and
- * compilers, as of December '03.
- * see also comment in list_fill().
- */
-#define	LISTFILL_OPT_THRESHOLD	100
-
 /* Adapted from newer code by Tim */
 static int
 list_fill(PyListObject *result, PyObject *v)
@@ -2255,23 +2248,12 @@ list_fill(PyListObject *result, PyObject *v)
 
 	n = result->ob_size;
 
-	/* Special-case list(a_list), for speed:
-	 * - if the source has 0 elements, there's nothing to copy.
-	 * - if the source has more than a threshold number of elements
-	 *   slice assignment is a faster way of filling the target
-	 *   (the exact threshold is subject to empirical determination).
-	 * Also special case any other zero length sequence, including
-	 * subclasses of list, there being nothing to copy.
-	 */
-	if (PyList_CheckExact(v)) {
-		i = PyList_GET_SIZE(v);
-		if (i == 0)
-			return 0;
-		if (i > LISTFILL_OPT_THRESHOLD)
-			return list_ass_slice(result, 0, n, v);
-	} else
-		if (PySequence_Check(v) && PySequence_Size(v) == 0)
-			return 0;
+	/* Special-case list(a_list), for speed. */
+	if (PyList_Check(v)) {
+		if (v == (PyObject *)result)
+			return 0; /* source is destination, we're done */
+		return list_ass_slice(result, 0, n, v);
+	}
 
 	/* Empty previous contents */
 	if (n != 0) {
