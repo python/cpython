@@ -202,7 +202,7 @@ my_dispose_handler(WEObjectReference objref)
 }
 
 static pascal OSErr
-my_draw_handler(Rect *destRect, WEObjectReference objref)
+my_draw_handler(const Rect *destRect, WEObjectReference objref)
 {
 	PyObject *args=NULL, *rv=NULL;
 	OSErr err;
