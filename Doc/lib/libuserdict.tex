@@ -63,3 +63,52 @@ provide the following attribute:
 A real Python list object used to store the contents of the
 \class{UserList} class.
 \end{memberdesc}
+
+
+\section{\module{UserString} ---
+         Class wrapper for string objects}
+
+\declaremodule{standard}{UserString}
+\modulesynopsis{Class wrapper for string objects.}
+\moduleauthor{Peter Funk}{pf@artcom-gmbh.de}
+\sectionauthor{Peter Funk}{pf@artcom-gmbh.de}
+
+This module defines a class that acts as a wrapper around
+string objects.  It is a useful base class for
+your own string-like classes, which can inherit from
+them and override existing methods or add new ones.  In this way one
+can add new behaviours to strings.
+
+The \module{UserString} module defines the \class{UserString} class:
+
+\begin{classdesc}{UserString}{\optional{sequence}}
+Return a class instance that simulates a string or an unicode string object.
+The instance's content is kept in a regular string or unicode string
+object, which is accessible via the
+\member{data} attribute of \class{UserString} instances.  The instance's
+contents are initially set to a copy of \var{sequence}.
+\var{sequence} can be either a regular Python string or unicode string,
+an instance of \class{UserString} (or a subclass) or an arbitrary sequence
+which can be converted into a string.
+supporting.
+\end{classdesc}
+
+In addition to supporting the methods and operations of string  or
+unicode objects (see section \ref{typesseq}), \class{UserString} instances
+provide the following attribute:
+
+\begin{memberdesc}{data}
+A real Python string or unicode object used to store the content of the
+\class{UserString} class.
+\end{memberdesc}
+
+\begin{classdesc}{MutableString}{\optional{sequence}}
+This class is derived from the \class{UserString} above and redefines
+strings to be \emph{mutable}.  Mutable strings can't be used as
+dictionary keys, because dictionaries require \emph{immutable} objects as
+keys.  The main intention of this class is to serve as an educational
+example for inheritance and necessity to remove (override) the
+\function{__hash__} method in order to trap attempts to use a
+mutable object as dictionary key, which would be otherwise very
+errorprone and hard to track down.
+\end{classdesc}
