@@ -739,11 +739,11 @@ SOURCE=..\Modules\getbuildinfo.c
 
 !IF  "$(CFG)" == "pythoncore - Win32 Release"
 
-# ADD CPP /D BUILD=30
+# ADD CPP /D BUILD=31
 
 !ELSEIF  "$(CFG)" == "pythoncore - Win32 Debug"
 
-# ADD CPP /D BUILD=30
+# ADD CPP /D BUILD=31
 
 !ELSEIF  "$(CFG)" == "pythoncore - Win32 Alpha Debug"
 
