@@ -309,7 +309,7 @@ gettmarg(PyObject *args, struct tm *p)
 			y += 2000;
 		else {
 			PyErr_SetString(PyExc_ValueError,
-					"year out of range (00-99, 1900-*)");
+					"year out of range");
 			return 0;
 		}
 	}
