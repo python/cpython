@@ -4,15 +4,15 @@ from preferences import *
 PREFNAME_NAME="PythonPreferenceFileName"
 
 # Resource IDs in the preferences file
-PATH_ID = 128
-DIR_ID = 128
-POPT_ID = 128
+PATH_ID = 228
+DIR_ID = 228
+POPT_ID = 228
 GUSI_ID = 10240
 
 # Override IDs (in the applet)
-OVERRIDE_PATH_ID = 129
-OVERRIDE_DIR_ID = 129
-OVERRIDE_POPT_ID = 129
+OVERRIDE_PATH_ID = 229
+OVERRIDE_DIR_ID = 229
+OVERRIDE_POPT_ID = 229
 OVERRIDE_GUSI_ID = 10241
 
 # version
