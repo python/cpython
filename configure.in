@@ -1852,7 +1852,7 @@ AC_CHECK_FUNCS(alarm chown clock confstr ctermid execv \
  mremap nice pathconf pause plock poll pthread_init \
  putenv readlink realpath \
  select setegid seteuid setgid \
- setlocale setregid setreuid setsid setpgid setuid setvbuf snprintf \
+ setlocale setregid setreuid setsid setpgid setpgrp setuid setvbuf snprintf \
  sigaction siginterrupt sigrelse strftime strptime \
  sysconf tcgetpgrp tcsetpgrp tempnam timegm times tmpfile tmpnam tmpnam_r \
  truncate uname unsetenv utimes waitpid wcscoll _getpty)
