@@ -41,12 +41,9 @@ def whichdb(filename):
 
     # Convert to 4-byte int in native byte order -- return "" if impossible
     try:
-	(magic,) = struct.unpack("l", s)
+	(magic,) = struct.unpack("=l", s)
     except struct.error:
-	try:
-	    (magic,) = struct.unpack("i", s)
-	except struct.error:
-	    return ""
+	return ""
 
     # Check for GNU dbm
     if magic == 0x13579ace:
