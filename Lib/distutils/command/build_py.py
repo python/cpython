@@ -26,6 +26,9 @@ class BuildPy (Command):
     def set_final_options (self):
         self.set_undefined_options ('build',
                                     ('libdir', 'dir'))
+        # 'package' is an alias option in Distribution (hmmm, we
+        # really should change to "pull" options from Distribution
+        # rather than "pushing" them out to commands...)
         if self.package is None:
             self.package = ''
 
