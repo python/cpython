@@ -347,7 +347,18 @@ instance_dealloc(inst)
 	object *del;
 	/* Call the __del__ method if it exists.  First temporarily
 	   revive the object and save the current exception, if any. */
+#ifdef TRACE_REFS
+	/* much too complicated if TRACE_REFS defined */
+	extern long ref_total;
+	inst->ob_type = &Instancetype;
+	ref_total--;		/* compensate for increment in NEWREF */
+#ifdef COUNT_ALLOCS
+	inst->ob_type->tp_alloc--; /* ditto */
+#endif
+	NEWREF(inst);
+#else
 	INCREF(inst);
+#endif /* TRACE_REFS */
 	err_fetch(&error_type, &error_value, &error_traceback);
 	if ((del = instance_getattr1(inst, "__del__")) != NULL) {
 		object *res = call_object(del, (object *)NULL);
@@ -358,8 +369,19 @@ instance_dealloc(inst)
 	/* Restore the saved exception and undo the temporary revival */
 	err_restore(error_type, error_value, error_traceback);
 	/* Can't use DECREF here, it would cause a recursive call */
-	if (--inst->ob_refcnt > 0)
+	if (--inst->ob_refcnt > 0) {
+#ifdef COUNT_ALLOCS
+		inst->ob_type->tp_free--;
+#endif
 		return; /* __del__ added a reference; don't delete now */
+	}
+#ifdef TRACE_REFS
+#ifdef COUNT_ALLOCS
+	inst->ob_type->tp_free--;	/* compensate for increment in UNREF */
+#endif
+	UNREF(inst);
+	inst->ob_type = NULL;
+#endif /* TRACE_REFS */
 	DECREF(inst->in_class);
 	XDECREF(inst->in_dict);
 	free((ANY *)inst);
