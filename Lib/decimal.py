@@ -114,10 +114,8 @@ __all__ = [
     'DefaultContext', 'BasicContext', 'ExtendedContext',
 
     # Exceptions
-    'DecimalException', 'Clamped', 'InvalidOperation', 'ConversionSyntax',
-    'DivisionByZero', 'DivisionImpossible', 'DivisionUndefined',
-    'Inexact', 'InvalidContext', 'Rounded', 'Subnormal', 'Overflow',
-    'Underflow',
+    'DecimalException', 'Clamped', 'InvalidOperation', 'DivisionByZero',
+    'Inexact', 'Rounded', 'Subnormal', 'Overflow', 'Underflow',
 
     # Constants for use in setting up contexts
     'ROUND_DOWN', 'ROUND_HALF_UP', 'ROUND_HALF_EVEN', 'ROUND_CEILING',
@@ -210,12 +208,6 @@ class InvalidOperation(DecimalException):
             if args[0] == 1: #sNaN, must drop 's' but keep diagnostics
                 return Decimal( (args[1]._sign, args[1]._int, 'n') )
         return NaN
-
-# XXX Is there a logic error in subclassing InvalidOperation?
-# Setting the InvalidOperation trap to zero does not preclude ConversionSyntax.
-# Also, incrementing Conversion syntax flag will not increment InvalidOperation.
-# Both of these issues interfere with cross-language portability because
-# code following the spec would not know about the Python subclasses.
 
 class ConversionSyntax(InvalidOperation):
     """Trying to convert badly formed string.
@@ -1032,7 +1024,7 @@ class Decimal(object):
         if ans:
             return ans
 
-        resultsign = operator.xor(self._sign, other._sign)
+        resultsign = self._sign ^ other._sign
         if self._isinfinity():
             if not other:
                 return context._raise_error(InvalidOperation, '(+-)INF * 0')
@@ -1126,7 +1118,7 @@ class Decimal(object):
             else:
                 return ans
 
-        sign = operator.xor(self._sign, other._sign)
+        sign = self._sign ^ other._sign
         if not self and not other:
             if divmod:
                 return context._raise_error(DivisionUndefined, '0 / 0', 1)
@@ -2117,8 +2109,6 @@ class Context(object):
     _clamp - If 1, change exponents if too high (Default 0)
     """
 
-    DefaultLock = threading.Lock()
-
     def __init__(self, prec=None, rounding=None,
                  trap_enablers=None, flags=None,
                  _rounding_decision=None,
@@ -2127,13 +2117,11 @@ class Context(object):
                  _ignored_flags=[]):
         if flags is None:
             flags = dict.fromkeys(Signals, 0)
-        self.DefaultLock.acquire()
         for name, val in locals().items():
             if val is None:
                 setattr(self, name, copy.copy(getattr(DefaultContext, name)))
             else:
                 setattr(self, name, val)
-        self.DefaultLock.release()
         del self.self
 
     def __repr__(self):

@@ -134,7 +134,7 @@ class DecimalTest(unittest.TestCase):
             #print line
             try:
                 t = self.eval_line(line)
-            except ConversionSyntax:
+            except InvalidOperation:
                 print 'Error in test cases:'
                 print line
                 continue
@@ -189,7 +189,7 @@ class DecimalTest(unittest.TestCase):
             ans = L[0]
             exceptions = L[1:]
         except (TypeError, AttributeError, IndexError):
-            raise ConversionSyntax
+            raise InvalidOperation
         def FixQuotes(val):
             val = val.replace("''", 'SingleQuote').replace('""', 'DoubleQuote')
             val = val.replace("'", '').replace('"', '')
