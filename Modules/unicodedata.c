@@ -12,7 +12,6 @@
    ------------------------------------------------------------------------ */
 
 #include "Python.h"
-#include "unicodedatabase.h"
 
 typedef struct {
     const unsigned char category;	/* index into
