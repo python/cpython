@@ -236,7 +236,7 @@ DESCRIPTION.crypt$(MODULE.EXT)=		Python Extension DLL implementing the crypt$(BR
 DESCRIPTION._tkinter$(MODULE.EXT)=	Python Extension DLL for access to Tcl/Tk Environment
 DESCRIPTION.mpz$(MODULE.EXT)=		Python Extension DLL for access to GNU multi-precision library
 DESCRIPTION.readline$(MODULE.EXT)=	Python Extension DLL for access to GNU ReadLine library
-DESCRIPTION.bsddb$(MODULE.EXT)=		Python Extension DLL for access to BSD DB (v1.85) library
+DESCRIPTION.bsddb185$(MODULE.EXT)=	Python Extension DLL for access to BSD DB (v1.85) library
 DESCRIPTION._curses$(MODULE.EXT)=	Python Extension DLL for access to ncurses library
 DESCRIPTION.pyexpat$(MODULE.EXT)=	Python Extension DLL for access to expat library
 
@@ -422,7 +422,7 @@ ifeq ($(GREADLINE),yes)
   HARDEXTMODULES+=	readline
 endif
 ifeq ($(BSDDB),yes)
-  HARDEXTMODULES+=	bsddb
+  HARDEXTMODULES+=	bsddb185
 endif
 ifeq ($(CURSES),yes)
   HARDEXTMODULES+=	_curses _curses_
@@ -575,7 +575,7 @@ xxsubtyp$(MODULE.EXT): xxsubtype$(MODULE.EXT)
 	cp $^ $@
 
 # - optional modules (requiring other software to be installed)
-bsddb$(MODULE.EXT): $(OUT)bsddbmodule$O $(OUT)bsddb_m.def $(PYTHON.IMPLIB)
+bsddb185$(MODULE.EXT): $(OUT)bsddbmodule$O $(OUT)bsddb185_m.def $(PYTHON.IMPLIB)
 	$(LD) $(LDFLAGS.DLL) -o $@ $(^^) $(L^) -ldb $(LIBS)
 
 crypt$(MODULE.EXT): $(OUT)cryptmodule$O $(OUT)crypt_m.def $(PYTHON.IMPLIB)
