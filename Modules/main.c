@@ -37,6 +37,10 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <unistd.h>
 #endif
 
+#ifdef MS_WINDOWS
+#include <fcntl.h>
+#endif
+
 /* Interface to getopt(): */
 extern int optind;
 extern char *optarg;
@@ -163,8 +167,8 @@ main(argc, argv)
 
 	if (unbuffered) {
 #ifdef MS_WINDOWS
-		_setmode(stdin, O_BINARY);
-		_setmode(stdout, O_BINARY);
+		_setmode(fileno(stdin), O_BINARY);
+		_setmode(fileno(stdout), O_BINARY);
 #endif
 #ifndef MPW
 		setbuf(stdout, (char *)NULL);
