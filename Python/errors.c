@@ -12,10 +12,6 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 #include "Python.h"
 
-#ifdef SYMANTEC__CFM68K__
-#pragma lib_export on
-#endif
-
 #ifdef macintosh
 extern char *PyMac_StrError(int);
 #undef strerror

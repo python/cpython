@@ -5,10 +5,6 @@
    symbols doesn't quite work...
    XXX Not sure now...  Seems to be something else going on as well... */
 
-#ifdef SYMANTEC__CFM68K__
-#pragma lib_export off
-#endif
-
 #ifndef HAVE_HYPOT
 extern double hypot(double, double);
 #ifdef MWERKS_BEFORE_PRO4
@@ -22,10 +18,6 @@ extern double hypot(double, double);
 #ifdef __MWERKS__
 #undef hypot
 #endif
-#endif
-
-#ifdef SYMANTEC__CFM68K__
-#pragma lib_export on
 #endif
 
 #if defined(USE_MSL) && defined(__MC68K__)

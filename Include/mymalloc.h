@@ -44,10 +44,6 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 extern "C" {
 #endif
 
-#ifdef SYMANTEC__CFM68K__
-#pragma lib_export on
-#endif
-
 #ifndef DL_IMPORT       /* declarations for DLL import */
 #define DL_IMPORT(RTYPE) RTYPE
 #endif
