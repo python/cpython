@@ -39,6 +39,7 @@ class SearchBinding:
         '<<find-in-files>>': ['<Alt-s>', '<Meta-s>'],
         '<<find-selection>>': ['<Control-s>'],
         '<<find>>': ['<Control-u><Control-u><Control-s>'],
+        '<<replace>>': ['<Control-r>'],
         '<<goto-line>>': ['<Alt-g>', '<Meta-g>'],
     }
 
