@@ -55,7 +55,6 @@ import __builtin__
 import imp
 import os
 import sys
-import string
 
 __all__ = ["BasicModuleLoader","Hooks","ModuleLoader","FancyModuleLoader",
            "BasicModuleImporter","ModuleImporter","install","uninstall"]
@@ -412,7 +411,7 @@ class ModuleImporter(BasicModuleImporter):
             assert globals is parent.__dict__
             return parent
         if '.' in pname:
-            i = string.rfind(pname, '.')
+            i = pname.rfind('.')
             pname = pname[:i]
             parent = self.modules[pname]
             assert parent.__name__ == pname
@@ -421,7 +420,7 @@ class ModuleImporter(BasicModuleImporter):
 
     def find_head_package(self, parent, name):
         if '.' in name:
-            i = string.find(name, '.')
+            i = name.find('.')
             head = name[:i]
             tail = name[i+1:]
         else:
@@ -443,7 +442,7 @@ class ModuleImporter(BasicModuleImporter):
     def load_tail(self, q, tail):
         m = q
         while tail:
-            i = string.find(tail, '.')
+            i = tail.find('.')
             if i < 0: i = len(tail)
             head, tail = tail[:i], tail[i+1:]
             mname = "%s.%s" % (m.__name__, head)
@@ -493,7 +492,7 @@ class ModuleImporter(BasicModuleImporter):
         name = module.__name__
         if '.' not in name:
             return self.import_it(name, name, None, force_load=1)
-        i = string.rfind(name, '.')
+        i = name.rfind('.')
         pname = name[:i]
         parent = self.modules[pname]
         return self.import_it(name[i+1:], name, parent, force_load=1)
