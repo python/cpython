@@ -353,7 +353,12 @@ oss_speed(oss_audio_t *self, PyObject *args)
 static PyObject *
 oss_sync(oss_audio_t *self, PyObject *args)
 {
-    return _do_ioctl_0(self->fd, args, "sync", SNDCTL_DSP_SYNC);
+    int rv;
+
+    Py_BEGIN_ALLOW_THREADS
+    rv = _do_ioctl_0(self->fd, args, "sync", SNDCTL_DSP_SYNC);
+    Py_END_ALLOW_THREADS
+    return rv;
 }
     
 static PyObject *
@@ -478,7 +483,9 @@ oss_close(oss_audio_t *self, PyObject *args)
         return NULL;
 
     if (self->fd >= 0) {
+        Py_BEGIN_ALLOW_THREADS
         close(self->fd);
+        Py_END_ALLOW_THREADS
         self->fd = -1;
     }
     Py_INCREF(Py_None);
