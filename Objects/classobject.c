@@ -317,7 +317,7 @@ instance_hash(inst)
 {
 	object *func;
 	object *res;
-	int outcome;
+	long outcome;
 
 	func = instance_getattr(inst, "__hash__");
 	if (func == NULL) {
@@ -325,8 +325,13 @@ instance_hash(inst)
 		   If a __cmp__ method exists, there must be a __hash__. */
 		err_clear();
 		func = instance_getattr(inst, "__cmp__");
-		if (func == NULL)
-			return (long)inst;
+		if (func == NULL) {
+			err_clear();
+			outcome = (long)inst;
+			if (outcome == -1)
+				outcome = -2;
+			return outcome;
+		}
 		err_setstr(TypeError, "unhashable instance");
 		return -1;
 	}
