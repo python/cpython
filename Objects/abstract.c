@@ -318,9 +318,9 @@ PyNumber_Check(PyObject *o)
 
 #define NB_SLOT(x) offsetof(PyNumberMethods, x)
 #define NB_BINOP(nb_methods, slot) \
-		((binaryfunc*)(& ((char*)nb_methods)[slot] ))
+		(*(binaryfunc*)(& ((char*)nb_methods)[slot]))
 #define NB_TERNOP(nb_methods, slot) \
-		((ternaryfunc*)(& ((char*)nb_methods)[slot] ))
+		(*(ternaryfunc*)(& ((char*)nb_methods)[slot]))
 
 /*
   Calling scheme used for binary operations:
@@ -352,10 +352,10 @@ binary_op1(PyObject *v, PyObject *w, const int op_slot)
 	binaryfunc slotw = NULL;
 
 	if (v->ob_type->tp_as_number != NULL && NEW_STYLE_NUMBER(v))
-		slotv = *NB_BINOP(v->ob_type->tp_as_number, op_slot);
+		slotv = NB_BINOP(v->ob_type->tp_as_number, op_slot);
 	if (w->ob_type != v->ob_type &&
 	    w->ob_type->tp_as_number != NULL && NEW_STYLE_NUMBER(w)) {
-		slotw = *NB_BINOP(w->ob_type->tp_as_number, op_slot);
+		slotw = NB_BINOP(w->ob_type->tp_as_number, op_slot);
 		if (slotw == slotv)
 			slotw = NULL;
 	}
@@ -387,7 +387,7 @@ binary_op1(PyObject *v, PyObject *w, const int op_slot)
 			PyNumberMethods *mv = v->ob_type->tp_as_number;
 			if (mv) {
 				binaryfunc slot;
-				slot = *NB_BINOP(mv, op_slot);
+				slot = NB_BINOP(mv, op_slot);
 				if (slot) {
 					PyObject *x = slot(v, w);
 					Py_DECREF(v);
@@ -466,10 +466,10 @@ ternary_op(PyObject *v,
 	mv = v->ob_type->tp_as_number;
 	mw = w->ob_type->tp_as_number;
 	if (mv != NULL && NEW_STYLE_NUMBER(v))
-		slotv = *NB_TERNOP(mv, op_slot);
+		slotv = NB_TERNOP(mv, op_slot);
 	if (w->ob_type != v->ob_type &&
 	    mv != NULL && NEW_STYLE_NUMBER(w)) {
-		slotw = *NB_TERNOP(mw, op_slot);
+		slotw = NB_TERNOP(mw, op_slot);
 		if (slotw == slotv)
 			slotw = NULL;
 	}
@@ -494,7 +494,7 @@ ternary_op(PyObject *v,
 	}
 	mz = z->ob_type->tp_as_number;
 	if (mz != NULL && NEW_STYLE_NUMBER(z)) {
-		slotz = *NB_TERNOP(mz, op_slot);
+		slotz = NB_TERNOP(mz, op_slot);
 		if (slotz == slotv || slotz == slotw)
 			slotz = NULL;
 		if (slotz) {
@@ -519,8 +519,8 @@ ternary_op(PyObject *v,
 		   treated as absent argument and not coerced. */
 		if (z == Py_None) {
 			if (v->ob_type->tp_as_number) {
-				slotz = *NB_TERNOP(v->ob_type->tp_as_number,
-						   op_slot);
+				slotz = NB_TERNOP(v->ob_type->tp_as_number,
+						  op_slot);
 				if (slotz)
 					x = slotz(v, w, z);
 				else
@@ -542,8 +542,8 @@ ternary_op(PyObject *v,
 			goto error1;
 
 		if (v1->ob_type->tp_as_number != NULL) {
-			slotv = *NB_TERNOP(v1->ob_type->tp_as_number,
-					   op_slot);
+			slotv = NB_TERNOP(v1->ob_type->tp_as_number,
+					  op_slot);
 			if (slotv)
 				x = slotv(v1, w2, z2);
 			else
@@ -673,9 +673,9 @@ binary_iop(PyObject *v, PyObject *w, const int iop_slot, const int op_slot,
 {
 	PyNumberMethods *mv = v->ob_type->tp_as_number;
 	if (mv != NULL && HASINPLACE(v)) {
-		binaryfunc *slot = NB_BINOP(mv, iop_slot);
-		if (*slot) {
-			PyObject *x = (*slot)(v, w);
+		binaryfunc slot = NB_BINOP(mv, iop_slot);
+		if (slot) {
+			PyObject *x = (slot)(v, w);
 			if (x != Py_NotImplemented) {
 				return x;
 			}
