@@ -391,6 +391,7 @@ class PimpPackage:
     def version(self): return self._dict.get('Version')
     def flavor(self): return self._dict.get('Flavor')
     def description(self): return self._dict['Description'].strip()
+    def shortdescription(self): return self.description().splitlines()[0]
     def homepage(self): return self._dict.get('Home-page')
     def downloadURL(self): return self._dict.get('Download-URL')
     
@@ -500,7 +501,7 @@ class PimpPackage:
                 if not pkg:
                     descr = "Requires unknown %s"%name
                 else:
-                    descr = pkg.description()
+                    descr = pkg.shortdescription()
             rv.append((pkg, descr))
         return rv
             
@@ -825,7 +826,7 @@ def _run(mode, verbose, force, args, prefargs):
         for pkgname in args:
             pkg = db.find(pkgname)
             if pkg:
-                description = pkg.description().split('\r\n')[0]
+                description = pkg.shortdescription()
                 pkgname = pkg.fullname()
             else:
                 description = 'Error: no such package'
@@ -837,7 +838,7 @@ def _run(mode, verbose, force, args, prefargs):
                 except KeyError:
                     pass
                 description = pkg.description()
-                description = '\n\t\t\t\t\t'.join(description.split('\r\n'))
+                description = '\n\t\t\t\t\t'.join(description.splitlines())
                 print "\tDescription:\t%s" % description
     elif mode =='status':
         if not args:
