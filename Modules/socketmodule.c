@@ -488,6 +488,8 @@ typedef struct {
 
 #ifdef USE_SSL
 
+#define X509_NAME_MAXLEN 256
+
 typedef struct {
 	PyObject_HEAD
 	PySocketSockObject *Socket;	/* Socket on which we're layered */
@@ -495,8 +497,8 @@ typedef struct {
 	SSL*     	ssl;
 	X509*    	server_cert;
 	BIO*		sbio;
-	char    	server[256];
-	char		issuer[256];
+	char    	server[X509_NAME_MAXLEN];
+	char		issuer[X509_NAME_MAXLEN];
 
 } PySSLObject;
 
@@ -2563,8 +2565,8 @@ newPySSLObject(PySocketSockObject *Sock, char *key_file, char *cert_file)
 		errstr = "newPySSLObject error";
 		goto fail;
 	}
-	memset(self->server, '\0', sizeof(char) * 256);
-	memset(self->issuer, '\0', sizeof(char) * 256);
+	memset(self->server, '\0', sizeof(char) * X509_NAME_MAXLEN);
+	memset(self->issuer, '\0', sizeof(char) * X509_NAME_MAXLEN);
 	self->server_cert = NULL;
 	self->ssl = NULL;
 	self->ctx = NULL;
@@ -2612,9 +2614,9 @@ newPySSLObject(PySocketSockObject *Sock, char *key_file, char *cert_file)
 
 	if ((self->server_cert = SSL_get_peer_certificate(self->ssl))) {
 		X509_NAME_oneline(X509_get_subject_name(self->server_cert),
-				  self->server, 256);
+				  self->server, X509_NAME_MAXLEN);
 		X509_NAME_oneline(X509_get_issuer_name(self->server_cert),
-				  self->issuer, 256);
+				  self->issuer, X509_NAME_MAXLEN);
 	}
 	self->Socket = Sock;
 	Py_INCREF(self->Socket);
@@ -2647,30 +2649,22 @@ PySocket_ssl(PyObject *self, PyObject *args)
 }
 
 static char ssl_doc[] =
-"ssl(socket, keyfile, certfile) -> sslobject";
+"ssl(socket, [keyfile, certfile]) -> sslobject";
+
+/* SSL object methods */
 
 static PyObject *
-PySSL_server(PySSLObject *self, PyObject *args)
+PySSL_server(PySSLObject *self)
 {
 	return PyString_FromString(self->server);
 }
 
 static PyObject *
-PySSL_issuer(PySSLObject *self, PyObject *args)
+PySSL_issuer(PySSLObject *self)
 {
 	return PyString_FromString(self->issuer);
 }
 
-
-/* SSL object methods */
-
-static PyMethodDef PySSLMethods[] = {
-	{"write", (PyCFunction)PySSL_SSLwrite, 1},
-	{"read", (PyCFunction)PySSL_SSLread, 1},
-	{"server", (PyCFunction)PySSL_server, 1},
-	{"issuer", (PyCFunction)PySSL_issuer, 1},
-	{NULL, NULL}
-};
 
 static void PySSL_dealloc(PySSLObject *self)
 {
@@ -2683,6 +2677,64 @@ static void PySSL_dealloc(PySSLObject *self)
 	Py_XDECREF(self->Socket);
 	PyObject_Del(self);
 }
+
+static PyObject *PySSL_SSLwrite(PySSLObject *self, PyObject *args)
+{
+	char *data;
+	int len;
+
+	if (!PyArg_ParseTuple(args, "s#:write", &data, &len))
+		return NULL;
+
+	len = SSL_write(self->ssl, data, len);
+	if (len > 0)
+		return PyInt_FromLong(len);
+	else
+		return PySSL_SetError(self->ssl, len);
+}
+
+static char PySSL_SSLwrite_doc[] =
+"write(s) -> len\n\
+\n\
+Writes the string s into the SSL object.  Returns the number\n\
+of bytes written.";
+
+static PyObject *PySSL_SSLread(PySSLObject *self, PyObject *args)
+{
+	PyObject *buf;
+	int count = 0;
+	int len = 1024;
+
+	if (!PyArg_ParseTuple(args, "|i:read", &len))
+		return NULL;
+
+	if (!(buf = PyString_FromStringAndSize((char *) 0, len)))
+		return NULL;
+
+	count = SSL_read(self->ssl, PyString_AsString(buf), len);
+ 	if (count <= 0) {
+		Py_DECREF(buf);
+		return PySSL_SetError(self->ssl, count);
+	}
+	if (count != len && _PyString_Resize(&buf, count) < 0)
+		return NULL;
+	return buf;
+}
+
+static char PySSL_SSLread_doc[] =
+"read([len]) -> string\n\
+\n\
+Read up to len bytes from the SSL socket.";
+
+static PyMethodDef PySSLMethods[] = {
+	{"write", (PyCFunction)PySSL_SSLwrite, 1,
+	          PySSL_SSLwrite_doc},
+	{"read", (PyCFunction)PySSL_SSLread, 1,
+	          PySSL_SSLread_doc},
+	{"server", (PyNoArgsFunction)PySSL_server, METH_NOARGS},
+	{"issuer", (PyNoArgsFunction)PySSL_issuer, METH_NOARGS},
+	{NULL, NULL}
+};
 
 static PyObject *PySSL_getattr(PySSLObject *self, char *name)
 {
@@ -2707,58 +2759,6 @@ staticforward PyTypeObject PySSL_Type = {
 	0,				/*tp_as_mapping*/
 	0,				/*tp_hash*/
 };
-
-
-
-static PyObject *PySSL_SSLwrite(PySSLObject *self, PyObject *args)
-{
-	char *data;
-	size_t len;
-
-	if (!PyArg_ParseTuple(args, "s#:write", &data, &len))
-		return NULL;
-
-	len = SSL_write(self->ssl, data, len);
-	return PyInt_FromLong((long)len);
-}
-
-static PyObject *PySSL_SSLread(PySSLObject *self, PyObject *args)
-{
-	PyObject *buf;
-	int count = 0;
-	int len = 1024;
-	int res;
-
-	PyArg_ParseTuple(args, "|i:read", &len);
-
-	if (!(buf = PyString_FromStringAndSize((char *) 0, len)))
-		return NULL;	/* Error object should already be set */
-
-	count = SSL_read(self->ssl, PyString_AsString(buf), len);
-	res = SSL_get_error(self->ssl, count);
-
-	switch (res) {
-	case SSL_ERROR_NONE:
-		assert(count > 0);
-		break;
-	case SSL_ERROR_ZERO_RETURN: /* normal EOF */
-		assert(count == 0);
-		break;
-	default:
-		return PyErr_SetFromErrno(PySSLErrorObject);
-	}
-
-	fflush(stderr);
-
-	if (count < 0) {
-		Py_DECREF(buf);
-		return PyErr_SetFromErrno(PySSLErrorObject);
-	}
-
-	if (count != len && _PyString_Resize(&buf, count) < 0)
-		return NULL;
-	return buf;
-}
 
 #endif /* USE_SSL */
 
