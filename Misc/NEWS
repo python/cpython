@@ -145,12 +145,6 @@ Core and builtins
   instead of going through __getitem__.  If __getitem__ access is
   preferred, then __iter__ can be overridden.
 
-- Creating an attribute on a module (i.e. a global variable created by
-  __setattr__) that causes a builtin name to be shadowed now raises a
-  DeprecationWarning.  In future versions of Python the effect may be
-  undefined (in order to allow for optimization of global and builtin
-  name lookups).
-
 - SF bug 735247: The staticmethod and super types participate in
   garbage collection. Before this change, it was possible for leaks to
   occur in functions with non-global free variables that used these types.
