@@ -149,8 +149,9 @@ PyMac_InteractiveOptions(PyMac_PrefRecord *p, int *argcp, char ***argvp)
 	SET_OPT_ITEM(OPT_DEBUGGING, debugging);
 	SET_OPT_ITEM(OPT_KEEPNORMAL, keep_normal);
 	SET_OPT_ITEM(OPT_KEEPERROR, keep_error);
-	SET_OPT_ITEM(OPT_OLDEXC, oldexc);
+	SET_OPT_ITEM(OPT_TABWARN, tabwarn);
 	SET_OPT_ITEM(OPT_NOSITE, nosite);
+	SET_OPT_ITEM(OPT_NONAVSERV, nonavservice);
 	/* The rest are not settable interactively */
 
 #undef SET_OPT_ITEM
@@ -199,8 +200,9 @@ PyMac_InteractiveOptions(PyMac_PrefRecord *p, int *argcp, char ***argvp)
 		OPT_ITEM(OPT_DEBUGGING, debugging);
 		OPT_ITEM(OPT_KEEPNORMAL, keep_normal);
 		OPT_ITEM(OPT_KEEPERROR, keep_error);
-		OPT_ITEM(OPT_OLDEXC, oldexc);
+		OPT_ITEM(OPT_TABWARN, tabwarn);
 		OPT_ITEM(OPT_NOSITE, nosite);
+		OPT_ITEM(OPT_NONAVSERV, nonavservice);
 		
 #undef OPT_ITEM
 	}
@@ -266,7 +268,7 @@ init_common(int *argcp, char ***argvp, int embedded)
 	Py_OptimizeFlag = options.optimize;
 	Py_DebugFlag = options.debugging;
 	Py_NoSiteFlag = options.nosite;
-	Py_UseClassExceptionsFlag = !(options.oldexc);
+	Py_TabcheckFlag = options.tabwarn;
 	if ( options.noargs ) {
 		/* don't process events at all without the scripts permission */
 		PyMacSchedParams scp;
@@ -311,6 +313,30 @@ run_inspect()
 	if (options.inspect && isatty((int)fileno(stdin)))
 		sts = PyRun_AnyFile(stdin, "<stdin>") != 0;
 	return sts;
+}
+
+/*
+** Import the macfsn module, which will override the Standard File
+** calls in the macfs builtin module by Navigation Services versions,
+** if available on this machine.
+*/
+static void
+PyMac_InstallNavServicesForSF()
+{
+	if ( !options.nonavservice ) {
+		PyObject *m = PyImport_ImportModule("macfsn");
+		
+		if ( m == NULL ) {
+			PySys_WriteStderr("'import macfsn' failed; ");
+			if (Py_VerboseFlag) {
+				PySys_WriteStderr("traceback:\n");
+				PyErr_Print();
+			}
+			else {
+				PySys_WriteStderr("use -v for traceback\n");
+			}
+		}
+	}
 }
 
 #ifdef USE_MAC_APPLET_SUPPORT
@@ -360,6 +386,7 @@ PyMac_InitApplet()
 	init_common(&argc, &argv, 0);
 	
 	Py_Initialize();
+	PyMac_InstallNavServicesForSF();
 	PySys_SetArgv(argc, argv);
 	
 	err = run_main_resource();
@@ -383,6 +410,7 @@ PyMac_Initialize()
 	
 	init_common(&argc, &argv, 1);
 	Py_Initialize();
+	PyMac_InstallNavServicesForSF();
 	PySys_SetArgv(argc, argv);
 }
 
@@ -448,6 +476,8 @@ Py_Main(argc, argv)
 	
 	Py_Initialize();
 	
+	PyMac_InstallNavServicesForSF();
+
 	PySys_SetArgv(argc-1, argv+1);
 
 	if (filename == NULL && isatty((int)fileno(fp))) {

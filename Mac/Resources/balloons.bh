@@ -20,7 +20,9 @@ DIALOG 231 Options
 13.3 Deselect to use new class-based standard exceptions.
 14.1 Selecting this disables the new package and site-python features.
 14.3 Deselecting this enables the new package and site-python features.
-16.1 Turn off balloon help.
+15.1 Turn off balloon help.
+16.1 Select this to keep the old behaviour for macfs Standard File calls
+16.3 Deselect this to auto-import macfsn which replaces macfs Standard File calls with Navigation Services wrappers
 END-DIALOG
 DIALOG 234
 1.1 Deleting the incorrect preference will not always work, but Python will run with standard options. 
