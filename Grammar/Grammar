@@ -74,8 +74,10 @@ factor: ('+'|'-'|'~') factor | power
 power: atom trailer* ('**' factor)*
 atom: '(' [testlist] ')' | '[' [testlist] ']' | '{' [dictmaker] '}' | '`' testlist '`' | NAME | NUMBER | STRING+
 lambdef: 'lambda' [varargslist] ':' test
-trailer: '(' [arglist] ')' | '[' subscript ']' | '.' NAME
-subscript: test (',' test)* [','] | [test] ':' [test]
+trailer: '(' [arglist] ')' | '[' subscriptlist ']' | '.' NAME
+subscriptlist: subscript (',' subscript)* [',']
+subscript: '.' '.' '.' | test | [test] ':' [test] [sliceop]
+sliceop: ':' [test]
 exprlist: expr (',' expr)* [',']
 testlist: test (',' test)* [',']
 dictmaker: test ':' test (',' test ':' test)* [',']
