@@ -605,7 +605,13 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args, struct sockaddr **addr_ret
 		char *host;
 		int port;
  		addr=(struct sockaddr_in*)&(s->sock_addr).in;
-		if (!PyArg_Parse(args, "(si)", &host, &port))
+		if (!PyTuple_Check(args)) {
+			PyErr_Format(PyExc_TypeError,
+		  "getsockaddrarg: AF_INET address must be tuple, not %.500s",
+				     args->ob_type->tp_name);
+			return 0;
+		}
+		if (!PyArg_ParseTuple(args, "si:getsockaddrarg", &host, &port))
 			return 0;
 		if (setipaddr(host, addr) < 0)
 			return 0;
