@@ -8,11 +8,18 @@
   for non-literal string matching.
 
   From: David Wayne Williams <dwwillia@iucf.indiana.edu>
+
+  Apr 29 1996 - added get_soundex method that returns the soundex of a
+                string (chrish@qnx.com)
+  May 2 1996  - added doc strings (chrish@qnx.com)
 */
 
 #include <string.h>
 #include <ctype.h>
 #include "Python.h"
+
+static char soundex_module__doc__[] =
+"Perform Soundex comparisons on strings, allowing non-literal matching.";
 
 void soundex_hash(char *str, char *result)
 {
@@ -104,6 +111,27 @@ void soundex_hash(char *str, char *result)
 }
 
 
+/* Return the actual soundex value.         */
+/* Added by Chris Herborth (chrish@qnx.com) */
+static char soundex_get_soundex__doc__[] =
+	"Return the (English) Soundex hash value for a string.";
+static PyObject *
+get_soundex(PyObject *self, PyObject *args)
+{
+	char *str;
+	int retval;
+	char sdx[7];
+
+	if(!PyArg_ParseTuple( args, "s", &str))
+	  return NULL;
+
+	soundex_hash(str, sdx);
+
+	return PyString_FromString(sdx);
+}
+
+static char soundex_sound_similar__doc__[] =
+	"Compare two strings to see if they sound similar (English).";
 static PyObject *
 sound_similar(PyObject *self, PyObject *args)
 {
@@ -127,7 +155,9 @@ sound_similar(PyObject *self, PyObject *args)
  */
 static PyMethodDef SoundexMethods[] =
 {
-    {"sound_similar", sound_similar, 1},
+	{"sound_similar", sound_similar, 1, soundex_sound_similar__doc__},
+	{"get_soundex", get_soundex, 1, soundex_get_soundex__doc__},
+
     {NULL, NULL }               /* sentinel */
 };
 
@@ -137,5 +167,9 @@ static PyMethodDef SoundexMethods[] =
 void
 initsoundex()
 {
-    (void) Py_InitModule("soundex",SoundexMethods);
+    (void) Py_InitModule4("soundex",
+			  SoundexMethods,
+			  soundex_module__doc__,
+			  (PyObject *)NULL,
+			  PYTHON_API_VERSION);
 }
