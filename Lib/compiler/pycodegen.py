@@ -193,7 +193,7 @@ class CodeGenerator:
         else:
             self.emit(prefix + '_GLOBAL', name)
 
-    def set_lineno(self, node):
+    def set_lineno(self, node, force=0):
         """Emit SET_LINENO if node has lineno attribute and it is 
         different than the last lineno emitted.
 
@@ -205,7 +205,8 @@ class CodeGenerator:
         then, this method works around missing line numbers.
         """
         lineno = getattr(node, 'lineno', None)
-        if lineno is not None and lineno != self.last_lineno:
+        if lineno is not None and (lineno != self.last_lineno
+                                   or force):
             self.emit('SET_LINENO', lineno)
             self.last_lineno = lineno
             return 1
@@ -413,9 +414,6 @@ class CodeGenerator:
     __list_count = 0
     
     def visitListComp(self, node):
-        # XXX would it be easier to transform the AST into the form it
-        # would have if the list comp were expressed as a series of
-        # for and if stmts and an explicit append?
         self.set_lineno(node)
         # setup list
         append = "$append%d" % self.__list_count
@@ -423,10 +421,10 @@ class CodeGenerator:
         self.emit('BUILD_LIST', 0)
         self.emit('DUP_TOP')
         self.emit('LOAD_ATTR', 'append')
-        self.storeName(append)
-        l = len(node.quals)
+        self.emit('STORE_FAST', append)
+        
         stack = []
-        for i, for_ in zip(range(l), node.quals):
+        for i, for_ in zip(range(len(node.quals)), node.quals):
             start, anchor = self.visit(for_)
             cont = None
             for if_ in for_.ifs:
@@ -434,8 +432,8 @@ class CodeGenerator:
                     cont = self.newBlock()
                 self.visit(if_, cont)
             stack.insert(0, (start, cont, anchor))
-            
-        self.loadName(append)
+
+        self.emit('LOAD_FAST', append)
         self.visit(node.expr)
         self.emit('CALL_FUNCTION', 1)
         self.emit('POP_TOP')
@@ -449,12 +447,11 @@ class CodeGenerator:
                 self.nextBlock(skip_one)
             self.emit('JUMP_ABSOLUTE', start)
             self.startBlock(anchor)
-        self.delName(append)
+        self.emit('DELETE_FAST', append)
         
         self.__list_count = self.__list_count - 1
 
     def visitListCompFor(self, node):
-        self.set_lineno(node)
         start = self.newBlock()
         anchor = self.newBlock()
 
@@ -468,7 +465,7 @@ class CodeGenerator:
         return start, anchor
 
     def visitListCompIf(self, node, branch):
-        self.set_lineno(node)
+        self.set_lineno(node, force=1)
         self.visit(node.test)
         self.emit('JUMP_IF_FALSE', branch)
         self.newBlock()
@@ -672,6 +669,7 @@ class CodeGenerator:
             print node
 
     def _visitAssSequence(self, node, op='UNPACK_SEQUENCE'):
+##        print >> sys.stderr, "AssSequence", op, findOp(node), node
         if findOp(node) != 'OP_DELETE':
             self.emit(op, len(node.nodes))
         for child in node.nodes:

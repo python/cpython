@@ -27,11 +27,12 @@ class FlowGraph:
         if self._debug:
             if self.current:
                 print "end", repr(self.current)
+                print "    next", self.current.next
                 print "   ", self.current.get_children()
             print repr(block)
         self.current = block
 
-    def nextBlock(self, block=None, force=0):
+    def nextBlock(self, block=None):
         # XXX think we need to specify when there is implicit transfer
         # from one block to the next.  might be better to represent this
         # with explicit JUMP_ABSOLUTE instructions that are optimized
@@ -95,12 +96,110 @@ class FlowGraph:
                 b.addNext(self.exit)
         order = dfs_postorder(self.entry, {})
         order.reverse()
+        self.fixupOrder(order, self.exit)
         # hack alert
         if not self.exit in order:
             order.append(self.exit)
 
         return order
 
+    def fixupOrder(self, blocks, default_next):
+        """Fixup bad order introduced by DFS."""
+
+        # XXX This is a total mess.  There must be a better way to get
+        # the code blocks in the right order.
+        
+        self.fixupOrderHonorNext(blocks, default_next)
+        self.fixupOrderForward(blocks, default_next)
+
+    def fixupOrderHonorNext(self, blocks, default_next):
+        """Fix one problem with DFS.
+        
+        The DFS uses child block, but doesn't know about the special
+        "next" block.  As a result, the DFS can order blocks so that a
+        block isn't next to the right block for implicit control
+        transfers.
+        """
+        index = {}
+        for i in range(len(blocks)):
+            index[blocks[i]] = i
+
+        for i in range(0, len(blocks) - 1):
+            b = blocks[i]
+            n = blocks[i + 1]
+            if not b.next or b.next[0] == default_next or b.next[0] == n:
+                continue
+            # The blocks are in the wrong order.  Find the chain of
+            # blocks to insert where they belong.
+            cur = b
+            chain = []
+            elt = cur
+            while elt.next and elt.next[0] != default_next:
+                chain.append(elt.next[0])
+                elt = elt.next[0]
+            # Now remove the blocks in the chain from the current
+            # block list, so that they can be re-inserted.
+            l = []
+            for b in chain:
+                assert index[b] > i
+                l.append((index[b], b))
+            l.sort()
+            l.reverse()
+            for j, b in l:
+                del blocks[index[b]]
+            # Insert the chain in the proper location
+            blocks[i:i + 1] = [cur] + chain
+            # Finally, re-compute the block indexes
+            for i in range(len(blocks)):
+                index[blocks[i]] = i
+
+    def fixupOrderForward(self, blocks, default_next):
+        """Make sure all JUMP_FORWARDs jump forward"""
+        index = {}
+        chains = []
+        cur = []
+        for b in blocks:
+            index[b] = len(chains)
+            cur.append(b)
+            if b.next and b.next[0] == default_next:
+                chains.append(cur)
+                cur = []
+        chains.append(cur)
+
+        while 1:
+            constraints = []
+
+            for i in range(len(chains)):
+                l = chains[i]
+                for b in l:
+                    for c in b.get_children():
+                        if index[c] < i:
+                            forward_p = 0
+                            for inst in b.insts:
+                                if inst[0] == 'JUMP_FORWARD':
+                                    if inst[1] == c:
+                                        forward_p = 1
+                            if not forward_p:
+                                continue
+                            constraints.append((index[c], i))
+
+            if not constraints:
+                break
+
+            # XXX just do one for now
+            # do swaps to get things in the right order
+            goes_before, a_chain = constraints[0]
+            assert a_chain > goes_before
+            c = chains[a_chain]
+            chains.remove(c)
+            chains.insert(goes_before, c)
+
+
+        del blocks[:]
+        for c in chains:
+            for b in c:
+                blocks.append(b)
+            
     def getBlocks(self):
         return self.blocks.elements()
 
