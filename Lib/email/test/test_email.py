@@ -1351,6 +1351,20 @@ Content-Type: text/plain
         eq(msg.get_boundary(), '    XXXX')
         eq(len(msg.get_payload()), 2)
 
+    def test_boundary_without_trailing_newline(self):
+        m = Parser().parsestr("""\
+Content-Type: multipart/mixed; boundary="===============0012394164=="
+MIME-Version: 1.0
+
+--===============0012394164==
+Content-Type: image/file1.jpg
+MIME-Version: 1.0
+Content-Transfer-Encoding: base64
+
+YXNkZg==
+--===============0012394164==--""")
+        self.assertEquals(m.get_payload(0).get_payload(), 'YXNkZg==')
+
 
 
 # Test some badly formatted messages
