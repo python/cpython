@@ -52,15 +52,27 @@ variant that assumes a zero-terminated string.  Note that none of the
 functions should be applied to nil objects.
 */
 
-/* NB The type is revealed here only because it is used in dictobject.c */
-
-/* Take this out to save 4 bytes per string object and to lose 2% speedup */
+/* Two speedup hacks.  Caching the hash saves recalculation of a
+   string's hash value.  Interning strings (which requires hash
+   caching) tries to ensure that only one string object with a given
+   value exists, so equality tests are one pointer comparison.
+   Together, these can speed the interpreter up by as much as 20%.
+   Each costs the size of a long or pointer per string object.  In
+   addition, interned strings live until the end of times.  If you are
+   concerned about memory footprint, simply comment the #define out
+   here (and rebuild everything!). */
 #define CACHE_HASH
+#ifdef CACHE_HASH
+#define INTERN_STRINGS
+#endif
 
 typedef struct {
 	PyObject_VAR_HEAD
 #ifdef CACHE_HASH
 	long ob_shash;
+#endif
+#ifdef INTERN_STRINGS
+	PyObject *ob_sinterned;
 #endif
 	char ob_sval[1];
 } PyStringObject;
@@ -77,6 +89,14 @@ extern void PyString_Concat Py_PROTO((PyObject **, PyObject *));
 extern void PyString_ConcatAndDel Py_PROTO((PyObject **, PyObject *));
 extern int _PyString_Resize Py_PROTO((PyObject **, int));
 extern PyObject *PyString_Format Py_PROTO((PyObject *, PyObject *));
+
+#ifdef INTERN_STRINGS
+extern void PyString_InternInPlace Py_PROTO((PyObject **));
+extern PyObject *PyString_InternFromString Py_PROTO((const char *));
+#else
+#define PyString_InternInPlace(p)
+#define PyString_InternFromString(cp) PyString_FromString(cp)
+#endif
 
 /* Macro, trading safety for speed */
 #define PyString_AS_STRING(op) (((PyStringObject *)(op))->ob_sval)
