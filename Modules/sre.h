@@ -46,6 +46,9 @@ typedef struct {
     void* ptr;
 } SRE_STACK;
 
+/* FIXME: <fl> shouldn't be a constant, really... */
+#define SRE_MARK_SIZE 200
+
 typedef struct {
     /* string pointers */
     void* ptr; /* current position (also end of current slice) */
@@ -56,7 +59,7 @@ typedef struct {
     int charsize;
     /* registers */
     int lastmark;
-    void* mark[64]; /* FIXME: <fl> should be dynamically allocated! */
+    void* mark[SRE_MARK_SIZE];
     /* backtracking stack */
     SRE_STACK* stack;
     int stacksize;
@@ -66,11 +69,11 @@ typedef struct {
 } SRE_STATE;
 
 typedef struct {
-    /* search helper */
+    /* scanner (internal helper object) */
     PyObject_HEAD
     PyObject* pattern;
     PyObject* string;
     SRE_STATE state;
-} CursorObject;
+} ScannerObject;
 
 #endif
