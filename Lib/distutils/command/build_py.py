@@ -55,6 +55,10 @@ class BuildPy (Command):
         # input and output filenames and checking for missing
         # input files.
 
+        # it's ok not to have *any* py files, right?
+        if not modules:
+            return
+        
         # XXX we should allow for wildcards, so eg. the Distutils setup.py
         # file would just have to say
         #   py_modules = ['distutils.*', 'distutils.command.*']
