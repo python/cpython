@@ -80,7 +80,9 @@ ASCII strings.
 
 8 bytes are added at each end of each block of N bytes requested.  The
 memory layout is like so, where p represents the address returned by a
-malloc-like or realloc-like function:
+malloc-like or realloc-like function (p[i:j] means the slice of bytes
+from *(p+i) inclusive up to *(p+j) exclusive; note that the treatment
+of negative indices differs from a Python slice):
 
 p[-8:-4]
     Number of bytes originally asked for.  4-byte unsigned integer,
@@ -104,7 +106,9 @@ p[N+4:N+8]
     4-byte unsigned integer, big-endian.
     If "bad memory" is detected later, the serial number gives an
     excellent way to set a breakpoint on the next run, to capture the
-    instant at which this block was passed out.
+    instant at which this block was passed out.  The static function
+    bumpserialno() in obmalloc.c is the only place the serial number
+    is incremented, and exists so you can set such a breakpoint easily.
 
 A malloc-like or free-like function first checks that the FORBIDDENBYTEs
 at each end are intact.  If they've been altered, diagnostic output is
@@ -124,7 +128,9 @@ Py_DEBUG
 This is what is generally meant by "a debug build" of Python.
 
 Py_DEBUG implies Py_REF_DEBUG, Py_TRACE_REFS, and PYMALLOC_DEBUG (if
-WITH_PYMALLOC is enabled).
+WITH_PYMALLOC is enabled).  In addition, C assert()s are enabled (via
+the C way:  by not defining NDEBUG), and some routines do additional
+sanity checks inside "#ifdef Py_DEBUG" blocks.
 ---------------------------------------------------------------------------
 COUNT_ALLOCS
 
