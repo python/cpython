@@ -861,14 +861,18 @@ PyObject *
 _PyObject_GC_New(PyTypeObject *tp)
 {
 	PyObject *op = _PyObject_GC_Malloc(tp, 0);
-	return PyObject_INIT(op, tp);
+	if (op != NULL)
+		op = PyObject_INIT(op, tp);
+	return op;
 }
 
 PyVarObject *
 _PyObject_GC_NewVar(PyTypeObject *tp, int nitems)
 {
 	PyVarObject *op = (PyVarObject *) _PyObject_GC_Malloc(tp, nitems);
-	return PyObject_INIT_VAR(op, tp, nitems);
+	if (op != NULL)
+		op = PyObject_INIT_VAR(op, tp, nitems);
+	return op;
 }
 
 PyVarObject *
