@@ -996,11 +996,6 @@ item: Edit Registry
   Root=2
 end
 item: Edit Registry
-  Key=Software\Python\PythonCore\%PY_VERSION%\Dll
-  New Value=%_DLLDEST_%\Python20.dll
-  Root=2
-end
-item: Edit Registry
   Key=Software\Python\PythonCore\%PY_VERSION%\Modules
   Root=2
 end
