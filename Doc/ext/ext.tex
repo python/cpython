@@ -20,11 +20,22 @@
 \begin{abstract}
 
 \noindent
-This document describes how to write modules in C or \Cpp{} to extend the
-Python interpreter.  It also describes how to use Python as an
-`embedded' language, and how extension modules can be loaded
-dynamically (at run time) into the interpreter, if the operating
-system supports this feature.
+Python is an interpreted, object-oriented programming language.  This
+document describes how to write modules in C or \Cpp{} to extend the
+Python interpreter with new modules.  Those modules can define new
+functions but also new object types and their methods.  The document
+also describes how to embed the Python interpreter in another
+application, for use as an extension language.  Finally, it shows how
+to compile and link extension modules so that they can be loaded
+dynamically (at run time) into the interpreter, if the underlying
+operating system supports this feature.
+
+This document assumes basic knowledge about Python.  For an informal
+introduction to the language, see the Python Tutorial.  The Python
+Reference Manual gives a more formal definition of the language.  The
+Python Library Reference documents the existing object types,
+functions and modules (both built-in and written in Python) that give
+the language its wide application range.
 
 \end{abstract}
 
@@ -45,46 +56,43 @@ system supports this feature.
 
 \section{Introduction}
 
-It is quite easy to add non-standard built-in modules to Python, if
-you know how to program in C.  A built-in module known to the Python
-programmer as \code{spam} is generally implemented by a file called
-\file{spammodule.c} (if the module name is very long, like
-\samp{spammify}, you can drop the \samp{module}, leaving a file name
-like \file{spammify.c}).  The standard built-in modules also adhere to
-this convention, and in fact some of them are excellent examples of
-how to create an extension.
-
-Extension modules can do two things that can't be done directly in
-Python: they can implement new data types (which are different from
-classes, by the way), and they can make system calls or call C library
-functions.
+It is quite easy to add new built-in modules to Python, if you know
+how to program in C.  Such \dfn{extension modules} can do two things
+that can't be done directly in Python: they can implement new built-in
+object types, and they can call C library functions and system calls.
 
 To support extensions, the Python API (Application Programmers
-Interface) defines many functions, macros and variables that provide
-access to almost every aspect of the Python run-time system.
-Most of the Python API is imported by including the single header file
-\code{"Python.h"}.  All user-visible symbols defined by including this
-file have a prefix of \samp{Py} or \samp{PY}, except those defined in
-standard header files --- for convenience, and since they are needed by
-the Python interpreter, \file{"Python.h"} includes a few standard
-header files: \file{<stdio.h>}, \file{<string.h>}, \file{<errno.h>},
-and \file{<stdlib.h>}.  If the latter header file does not exist on
-your system, it declares the functions \code{malloc()}, \code{free()}
-and \code{realloc()} itself.
+Interface) defines a set of functions, macros and variables that
+provide access to most aspects of the Python run-time system.  The
+Python API is incorporated in a C source file by including the header
+\code{"Python.h"}.
 
-The compilation of an extension module depends on your system setup
-and the intended use of the module; details are given in a later
-section.
-
-Note: unless otherwise mentioned, all file references in this
-document are relative to the Python toplevel directory
-(the directory that contains the \file{configure} script).
+The compilation of an extension module depends on its intended use as
+well as on your system setup; details are given in a later section.
 
 
 \section{A Simple Example}
 
-Let's create an extension module called \samp{spam}.  Create a file
-\samp{spammodule.c}.  The first line of this file can be:
+Let's create an extension module called \samp{spam} (the favorite food
+of Monty Python fans...) and let's say we want to create a Python
+interface to the C library function \code{system()}.\footnote{An
+interface for this function already exists in the standard module
+\code{os} --- it was chosen as a simple and straightfoward example.}
+This function takes a null-terminated character string as argument and
+returns an integer.  We want this function to be callable from Python
+as follows:
+
+\begin{verbatim}
+    >>> import spam
+    >>> status = spam.system("ls -l")
+\end{verbatim}
+
+Begin by creating a file \samp{spammodule.c}.  (In general, if a
+module is called \samp{spam}, the C file containing its implementation
+is called \file{spammodule.c}; if the module name is very long, like
+\samp{spammify}, the module name can be just \file{spammify.c}.)
+
+The first line of our file can be:
 
 \begin{verbatim}
     #include "Python.h"
@@ -93,21 +101,18 @@ Let's create an extension module called \samp{spam}.  Create a file
 which pulls in the Python API (you can add a comment describing the
 purpose of the module and a copyright notice if you like).
 
-Let's create a Python interface to the C library function
-\code{system()}.\footnote{An interface for this function already
-exists in the \code{posix} module --- it was chosen as a simple and
-straightfoward example.}  This function takes a zero-terminated
-character string as argument and returns an integer.  We will want
-this function to be callable from Python as follows:
-
-\begin{verbatim}
-    >>> import spam
-    >>> status = spam.system("ls -l")
-\end{verbatim}
+All user-visible symbols defined by \code{"Python.h"} have a prefix of
+\samp{Py} or \samp{PY}, except those defined in standard header files.
+For convenience, and since they are used extensively by the Python
+interpreter, \code{"Python.h"} includes a few standard header files:
+\code{<stdio.h>}, \code{<string.h>}, \code{<errno.h>}, and
+\code{<stdlib.h>}.  If the latter header file does not exist on your
+system, it declares the functions \code{malloc()}, \code{free()} and
+\code{realloc()} directly.
 
 The next thing we add to our module file is the C function that will
 be called when the Python expression \samp{spam.system(\var{string})}
-is evaluated (well see shortly how it ends up being called):
+is evaluated (we'll see shortly how it ends up being called):
 
 \begin{verbatim}
     static PyObject *
@@ -125,35 +130,32 @@ is evaluated (well see shortly how it ends up being called):
 \end{verbatim}
 
 There is a straightforward translation from the argument list in
-Python (here the single expression \code{"ls -l"}) to the arguments
-that are passed to the C function.  The C function always has two
-arguments, conventionally named \var{self} and \var{args}.
+Python (e.g.\ the single expression \code{"ls -l"}) to the arguments
+passed to the C function.  The C function always has two arguments,
+conventionally named \var{self} and \var{args}.
 
 The \var{self} argument is only used when the C function implements a
-builtin method --- this will be discussed later. In the example,
+builtin method.  This will be discussed later. In the example,
 \var{self} will always be a \code{NULL} pointer, since we are defining
 a function, not a method.  (This is done so that the interpreter
 doesn't have to understand two different types of C functions.)
 
 The \var{args} argument will be a pointer to a Python tuple object
-containing the arguments --- the length of the tuple will be the
-number of arguments.  It is necessary to do full argument type
-checking in each call, since otherwise the Python user would be able
-to cause the Python interpreter to crash (rather than raising an
-exception) by passing invalid arguments to a function in an extension
-module.  Because argument checking and converting arguments to C are
-such common tasks, there's a general function in the Python
-interpreter that combines them: \code{PyArg_ParseTuple()}.  It uses a
-template string to determine the types of the Python argument and the
-types of the C variables into which it should store the converted
-values (more about this later).
+containing the arguments.  Each item of the tuple corresponds to an
+argument in the call's argument list.  The arguments are Python
+objects -- in order to do anything with them in our C function we have
+to convert them to C values.  The function \code{PyArg_ParseTuple()}
+in the Python API checks the argument types and converts them to C
+values.  It uses a template string to determine the required types of
+the arguments as well as the types of the C variables into which to
+store the converted values.  More about this later.
 
-\code{PyArg_ParseTuple()} returns nonzero if all arguments have the
-right type and its components have been stored in the variables whose
-addresses are passed.  It returns zero if an invalid argument was
-passed.  In the latter case it also raises an appropriate exception by
-so the calling function can return \code{NULL} immediately.  Here's
-why:
+\code{PyArg_ParseTuple()} returns true (nonzero) if all arguments have
+the right type and its components have been stored in the variables
+whose addresses are passed.  It returns false (zero) if an invalid
+argument list was passed.  In the latter case it also raises an
+appropriate exception by so the calling function can return
+\code{NULL} immediately (as we saw in the example).
 
 
 \section{Intermezzo: Errors and Exceptions}
@@ -161,53 +163,56 @@ why:
 An important convention throughout the Python interpreter is the
 following: when a function fails, it should set an exception condition
 and return an error value (usually a \code{NULL} pointer).  Exceptions
-are stored in a static global variable inside the interpreter; if
-this variable is \code{NULL} no exception has occurred.  A second
-global variable stores the `associated value' of the exception
---- the second argument to \code{raise}.  A third variable contains
-the stack traceback in case the error originated in Python code.
-These three variables are the C equivalents of the Python variables
+are stored in a static global variable inside the interpreter; if this
+variable is \code{NULL} no exception has occurred.  A second global
+variable stores the ``associated value'' of the exception (the second
+argument to \code{raise}).  A third variable contains the stack
+traceback in case the error originated in Python code.  These three
+variables are the C equivalents of the Python variables
 \code{sys.exc_type}, \code{sys.exc_value} and \code{sys.exc_traceback}
---- see the section on module \code{sys} in the Library Reference
-Manual.  It is important to know about them to understand how errors
+(see the section on module \code{sys} in the Library Reference
+Manual).  It is important to know about them to understand how errors
 are passed around.
 
-The Python API defines a host of functions to set various types of
-exceptions.  The most common one is \code{PyErr_SetString()} --- its
-arguments are an exception object (e.g. \code{PyExc_RuntimeError} ---
-actually it can be any object that is a legal exception indicator),
-and a C string indicating the cause of the error (this is converted to
-a string object and stored as the `associated value' of the
-exception).  Another useful function is \code{PyErr_SetFromErrno()},
-which only takes an exception argument and constructs the associated
-value by inspection of the (\UNIX{}) global variable \code{errno}.  The
-most general function is \code{PyErr_SetObject()}, which takes two
-object arguments, the exception and its associated value.  You don't
-need to \code{Py_INCREF()} the objects passed to any of these
-functions.
+The Python API defines a number of functions to set various types of
+exceptions.
+
+The most common one is \code{PyErr_SetString()}.  Its arguments are an
+exception object and a C string.  The exception object is usually a
+predefined object like \code{PyExc_ZeroDivisionError}.  The C string
+indicates the cause of the error and is converted to a Python string
+object and stored as the ``associated value'' of the exception.
+
+Another useful function is \code{PyErr_SetFromErrno()}, which only
+takes an exception argument and constructs the associated value by
+inspection of the (\UNIX{}) global variable \code{errno}.  The most
+general function is \code{PyErr_SetObject()}, which takes two object
+arguments, the exception and its associated value.  You don't need to
+\code{Py_INCREF()} the objects passed to any of these functions.
 
 You can test non-destructively whether an exception has been set with
-\code{PyErr_Occurred()} --- this returns the current exception object,
-or \code{NULL} if no exception has occurred.  Most code never needs to
-call \code{PyErr_Occurred()} to see whether an error occurred or not,
-but relies on error return values from the functions it calls instead.
+\code{PyErr_Occurred()}.  This returns the current exception object,
+or \code{NULL} if no exception has occurred.  You normally don't need
+to call \code{PyErr_Occurred()} to see whether an error occurred in a
+function call, since you should be able to tell from the return value.
 
-When a function that calls another function detects that the called
-function fails, it should return an error value (e.g. \code{NULL} or
-\code{-1}).  It shouldn't call one of the \code{PyErr_*} functions ---
-one has already been called.  The caller is then supposed to also
-return an error indication to {\em its} caller, again {\em without}
-calling \code{PyErr_*()}, and so on --- the most detailed cause of the
-error was already reported by the function that first detected it. 
-Once the error has reached Python's interpreter main loop, this aborts
-the currently executing Python code and tries to find an exception
-handler specified by the Python programmer.
+When a function \var{f} that calls another function var{g} detects
+that the latter fails, \var{f} should itself return an error value
+(e.g. \code{NULL} or \code{-1}).  It should \emph{not} call one of the
+\code{PyErr_*()} functions --- one has already been called by \var{g}.
+\var{f}'s caller is then supposed to also return an error indication
+to \emph{its} caller, again \emph{without} calling \code{PyErr_*()},
+and so on --- the most detailed cause of the error was already
+reported by the function that first detected it.  Once the error
+reaches the Python interpreter's main loop, this aborts the currently
+executing Python code and tries to find an exception handler specified
+by the Python programmer.
 
 (There are situations where a module can actually give a more detailed
-error message by calling another \code{PyErr_*} function, and in such
-cases it is fine to do so.  As a general rule, however, this is not
-necessary, and can cause information about the cause of the error to
-be lost: most operations can fail for a variety of reasons.)
+error message by calling another \code{PyErr_*()} function, and in
+such cases it is fine to do so.  As a general rule, however, this is
+not necessary, and can cause information about the cause of the error
+to be lost: most operations can fail for a variety of reasons.)
 
 To ignore an exception set by a function call that failed, the exception
 condition must be cleared explicitly by calling \code{PyErr_Clear()}. 
@@ -216,7 +221,7 @@ want to pass the error on to the interpreter but wants to handle it
 completely by itself (e.g. by trying something else or pretending
 nothing happened).
 
-Note that a failing \code{malloc()} call must also be turned into an
+Note that a failing \code{malloc()} call must be turned into an
 exception --- the direct caller of \code{malloc()} (or
 \code{realloc()}) must call \code{PyErr_NoMemory()} and return a
 failure indicator itself.  All the object-creating functions
@@ -224,18 +229,18 @@ failure indicator itself.  All the object-creating functions
 \code{malloc()} directly this note is of importance.
 
 Also note that, with the important exception of
-\code{PyArg_ParseTuple()}, functions that return an integer status
-usually return \code{0} or a positive value for success and \code{-1}
-for failure (like \UNIX{} system calls).
+\code{PyArg_ParseTuple()} and friends, functions that return an
+integer status usually return a positive value or zero for success and
+\code{-1} for failure, like \UNIX{} system calls.
 
-Finally, be careful about cleaning up garbage (making \code{Py_XDECREF()}
+Finally, be careful to clean up garbage (by making \code{Py_XDECREF()}
 or \code{Py_DECREF()} calls for objects you have already created) when
-you return an error!
+you return an error indicator!
 
 The choice of which exception to raise is entirely yours.  There are
 predeclared C objects corresponding to all built-in Python exceptions,
 e.g. \code{PyExc_ZeroDevisionError} which you can use directly.  Of
-course, you should chose exceptions wisely --- don't use
+course, you should choose exceptions wisely --- don't use
 \code{PyExc_TypeError} to mean that a file couldn't be opened (that
 should probably be \code{PyExc_IOError}).  If something's wrong with
 the argument list, the \code{PyArg_ParseTuple()} function usually
@@ -253,25 +258,25 @@ beginning of your file, e.g.
 
 and initialize it in your module's initialization function
 (\code{initspam()}) with a string object, e.g. (leaving out the error
-checking for simplicity):
+checking for now):
 
 \begin{verbatim}
     void
     initspam()
     {
         PyObject *m, *d;
-        m = Py_InitModule("spam", spam_methods);
+        m = Py_InitModule("spam", SpamMethods);
         d = PyModule_GetDict(m);
         SpamError = PyString_FromString("spam.error");
         PyDict_SetItemString(d, "error", SpamError);
     }
 \end{verbatim}
 
-Note that the Python name for the exception object is \code{spam.error}
---- it is conventional for module and exception names to be spelled in
-lower case.  It is also conventional that the \emph{value} of the
-exception object is the same as its name, e.g.\ the string 
-\code{"spam.error"}.
+Note that the Python name for the exception object is
+\code{spam.error}.  It is conventional for module and exception names
+to be spelled in lower case.  It is also conventional that the
+\emph{value} of the exception object is the same as its name, e.g.\
+the string \code{"spam.error"}.
 
 
 \section{Back to the Example}
@@ -289,8 +294,8 @@ object pointers) if an error is detected in the argument list, relying
 on the exception set by \code{PyArg_ParseTuple()}.  Otherwise the
 string value of the argument has been copied to the local variable
 \code{command}.  This is a pointer assignment and you are not supposed
-to modify the string to which it points (so in ANSI C, the variable
-\code{command} should properly be declared as \code{const char
+to modify the string to which it points (so in Standard C, the variable
+\code{command} should properly be declared as \samp{const char
 *command}).
 
 The next statement is a call to the \UNIX{} function \code{system()},
@@ -300,9 +305,8 @@ passing it the string we just got from \code{PyArg_ParseTuple()}:
         sts = system(command);
 \end{verbatim}
 
-Our \code{spam.system()} function must return a value: the integer
-\code{sts} which contains the return value of the \UNIX{}
-\code{system()} function.  This is done using the function
+Our \code{spam.system()} function must return the value of \code{sys}
+as a Python object.  This is done using the function
 \code{Py_BuildValue()}, which is something like the inverse of
 \code{PyArg_ParseTuple()}: it takes a format string and an arbitrary
 number of C values, and returns a new Python object.  More info on
@@ -326,7 +330,7 @@ returning \code{void}), the corresponding Python function must return
 
 \code{Py_None} is the C name for the special Python object
 \code{None}.  It is a genuine Python object (not a \code{NULL}
-pointer, which means `error' in most contexts, as we have seen).
+pointer, which means ``error'' in most contexts, as we have seen).
 
 
 \section{The Module's Method Table and Initialization Function}
@@ -336,7 +340,7 @@ programs.  First, we need to list its name and address in a ``method
 table'':
 
 \begin{verbatim}
-    static PyMethodDef spam_methods[] = {
+    static PyMethodDef SpamMethods[] = {
         ...
         {"system",  spam_system, 1},
         ...
@@ -357,7 +361,7 @@ item defined in the module file):
     void
     initspam()
     {
-        (void) Py_InitModule("spam", spam_methods);
+        (void) Py_InitModule("spam", SpamMethods);
     }
 \end{verbatim}
 
@@ -375,11 +379,11 @@ so the caller doesn't need to check for errors.
 
 \section{Compilation and Linkage}
 
-There are two more things to do before you can use your new extension
-module: compiling and linking it with the Python system.  If you use
-dynamic loading, the details depend on the style of dynamic loading
-your system uses; see the chapter on Dynamic Loading for more info
-about this.
+There are two more things to do before you can use your new extension:
+compiling and linking it with the Python system.  If you use dynamic
+loading, the details depend on the style of dynamic loading your
+system uses; see the chapter on Dynamic Loading for more info about
+this.
 
 If you can't use dynamic loading, or if you want to make your module a
 permanent part of the Python interpreter, you will have to change the
@@ -411,7 +415,7 @@ be listed on the line in the \file{Setup} file as well, for instance:
 So far we have concentrated on making C functions callable from
 Python.  The reverse is also useful: calling Python functions from C.
 This is especially the case for libraries that support so-called
-`callback' functions.  If a C interface makes use of callbacks, the
+``callback'' functions.  If a C interface makes use of callbacks, the
 equivalent Python often needs to provide a callback mechanism to the
 Python programmer; the implementation will require calling the Python
 callback functions from a C callback.  Other uses are also imaginable.
@@ -476,7 +480,7 @@ parentheses.  For example:
 
 \code{PyEval_CallObject()} returns a Python object pointer: this is
 the return value of the Python function.  \code{PyEval_CallObject()} is
-`reference-count-neutral' with respect to its arguments.  In the
+``reference-count-neutral'' with respect to its arguments.  In the
 example a new tuple was created to serve as the argument list, which
 is \code{Py_DECREF()}-ed immediately after the call.
 
@@ -1134,7 +1138,7 @@ linked by the C compiler, global or static objects with constructors
 cannot be used.  All functions that will be called directly or
 indirectly (i.e. via function pointers) by the Python interpreter will
 have to be declared using \code{extern "C"}; this applies to all
-`methods' as well as to the module's initialization function.
+``methods'' as well as to the module's initialization function.
 It is unnecessary to enclose the Python header files in
 \code{extern "C" \{...\}} --- they use this form already if the symbol
 \samp{__cplusplus} is defined (all recent C++ compilers define this
@@ -1189,7 +1193,7 @@ libraries) in the module search path, and if one is found, it is
 loaded into the executing binary and executed.  Once loaded, the
 module acts just like a built-in extension module.
 
-The advantages of dynamic loading are twofold: the `core' Python
+The advantages of dynamic loading are twofold: the ``core'' Python
 binary gets smaller, and users can extend Python with their own
 modules implemented in C without having to build and maintain their
 own copy of the Python interpreter.  There are also disadvantages:
@@ -1307,12 +1311,12 @@ On SGI IRIX 5, use
     ld -shared spammodule.o -o spammodule.so
 \end{verbatim}
 
-On other systems, consult the manual page for {\em ld}(1) to find what
+On other systems, consult the manual page for \code{ld}(1) to find what
 flags, if any, must be used.
 
 If your extension module uses system libraries that haven't already
 been linked with Python (e.g. a windowing system), these must be
-passed to the {\em ld} command as \samp{-l} options after the
+passed to the \code{ld} command as \samp{-l} options after the
 \samp{.o} file.
 
 The resulting file \file{spammodule.so} must be copied into a directory
