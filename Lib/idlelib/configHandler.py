@@ -8,8 +8,7 @@ Provides access to stored idle configuration information.
 # a requested config value, a message is printed to stderr to aid in 
 # configuration problem notification and resolution. 
 
-import os
-import sys
+import os, sys, string
 from ConfigParser import ConfigParser, NoOptionError, NoSectionError
 
 class IdleConfParser(ConfigParser):
@@ -44,7 +43,7 @@ class IdleConfParser(ConfigParser):
         """
         Get an option list for given section
         """
-        if self.has_section:
+        if self.has_section(section):
             return self.options(section)
         else:  #return a default value
             return []
@@ -516,16 +515,51 @@ class IdleConf:
             '<<find>>': ['<Control-f>'],
             '<<replace>>': ['<Control-h>'],
             '<<goto-line>>': ['<Alt-g>'] }
-        
         if keySetName:
             for event in keyBindings.keys():
                 binding=self.GetKeyBinding(keySetName,event)
                 if binding: #otherwise will keep default
                     keyBindings[event]=binding
-            
         return keyBindings
 
-    
+    def GetExtraHelpSourceList(self,configSet):
+        """
+        Returns a list of tuples containing the details of any additional
+        help sources configured in the requested configSet ('user' or 'default')
+        , or an empty list if there are none. Returned tuples are of the form
+        form (menu_item , path_to_help_file , option).
+        """    
+        helpSources=[]
+        if configSet=='user':
+            cfgParser=self.userCfg['main']
+        elif configSet=='default':   
+            cfgParser=self.defaultCfg['main']
+        else:
+            raise 'Invalid configSet specified'
+        options=cfgParser.GetOptionList('HelpFiles')
+        for option in options:
+            value=cfgParser.Get('HelpFiles',option,default=';')
+            if value.find(';')==-1: #malformed config entry with no ';'
+                menuItem='' #make these empty
+                helpPath='' #so value won't be added to list
+            else: #config entry contains ';' as expected
+                value=string.split(value,';')
+                menuItem=value[0].strip()
+                helpPath=value[1].strip()
+            if menuItem and helpPath: #neither are empty strings
+                helpSources.append( (menuItem,helpPath,option) )
+        return helpSources
+
+    def GetAllExtraHelpSourcesList(self):
+        """
+        Returns a list of tuples containing the details of all additional help 
+        sources configured, or an empty list if there are none. Tuples are of
+        the format returned by GetExtraHelpSourceList.
+        """ 
+        allHelpSources=( self.GetExtraHelpSourceList('default')+ 
+                self.GetExtraHelpSourceList('user') )
+        return allHelpSources   
+        
     def LoadCfgFiles(self):
         """ 
         load all configuration files.
