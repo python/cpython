@@ -2013,6 +2013,7 @@ typedef struct {
 	int di_used;
 	int di_pos;
 	PyObject* di_result; /* reusable result tuple for iteritems */
+	long len;
 } dictiterobject;
 
 static PyObject *
@@ -2026,6 +2027,7 @@ dictiter_new(dictobject *dict, PyTypeObject *itertype)
 	di->di_dict = dict;
 	di->di_used = dict->ma_used;
 	di->di_pos = 0;
+	di->len = dict->ma_used;
 	if (itertype == &PyDictIterItem_Type) {
 		di->di_result = PyTuple_Pack(2, Py_None, Py_None);
 		if (di->di_result == NULL) {
@@ -2045,6 +2047,17 @@ dictiter_dealloc(dictiterobject *di)
 	Py_XDECREF(di->di_result);
 	PyObject_Del(di);
 }
+
+static int
+dictiter_len(dictiterobject *di)
+{
+	return di->len;
+}
+
+static PySequenceMethods dictiter_as_sequence = {
+	(inquiry)dictiter_len,		/* sq_length */
+	0,				/* sq_concat */
+};
 
 static PyObject *dictiter_iternextkey(dictiterobject *di)
 {
@@ -2074,6 +2087,7 @@ static PyObject *dictiter_iternextkey(dictiterobject *di)
 	di->di_pos = i+1;
 	if (i > mask)
 		goto fail;
+	di->len--;
 	key = ep[i].me_key;
 	Py_INCREF(key);
 	return key;
@@ -2087,7 +2101,7 @@ fail:
 PyTypeObject PyDictIterKey_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,					/* ob_size */
-	"dictionary-keyiterator",			/* tp_name */
+	"dictionary-keyiterator",		/* tp_name */
 	sizeof(dictiterobject),			/* tp_basicsize */
 	0,					/* tp_itemsize */
 	/* methods */
@@ -2098,7 +2112,7 @@ PyTypeObject PyDictIterKey_Type = {
 	0,					/* tp_compare */
 	0,					/* tp_repr */
 	0,					/* tp_as_number */
-	0,					/* tp_as_sequence */
+	&dictiter_as_sequence,			/* tp_as_sequence */
 	0,					/* tp_as_mapping */
 	0,					/* tp_hash */
 	0,					/* tp_call */
@@ -2144,6 +2158,7 @@ static PyObject *dictiter_iternextvalue(dictiterobject *di)
 	di->di_pos = i+1;
 	if (i > mask)
 		goto fail;
+	di->len--;
 	Py_INCREF(value);
 	return value;
 
@@ -2167,7 +2182,7 @@ PyTypeObject PyDictIterValue_Type = {
 	0,					/* tp_compare */
 	0,					/* tp_repr */
 	0,					/* tp_as_number */
-	0,					/* tp_as_sequence */
+	&dictiter_as_sequence,			/* tp_as_sequence */
 	0,					/* tp_as_mapping */
 	0,					/* tp_hash */
 	0,					/* tp_call */
@@ -2223,6 +2238,7 @@ static PyObject *dictiter_iternextitem(dictiterobject *di)
 		if (result == NULL) 
 			return NULL;
 	}
+	di->len--;
 	key = ep[i].me_key;
 	value = ep[i].me_value;
 	Py_INCREF(key);
@@ -2251,7 +2267,7 @@ PyTypeObject PyDictIterItem_Type = {
 	0,					/* tp_compare */
 	0,					/* tp_repr */
 	0,					/* tp_as_number */
-	0,					/* tp_as_sequence */
+	&dictiter_as_sequence,			/* tp_as_sequence */
 	0,					/* tp_as_mapping */
 	0,					/* tp_hash */
 	0,					/* tp_call */
