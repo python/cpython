@@ -606,9 +606,9 @@ class MyURLopener(urllib.FancyURLopener):
 
     def open_file(self, url):
         path = urllib.url2pathname(urllib.unquote(url))
-        if path[-1] != os.sep:
-            url = url + '/'
         if os.path.isdir(path):
+            if path[-1] != os.sep:
+                url = url + '/'
             indexpath = os.path.join(path, "index.html")
             if os.path.exists(indexpath):
                 return self.open_file(url + "index.html")
@@ -625,7 +625,7 @@ class MyURLopener(urllib.FancyURLopener):
                 s.write('<A HREF="%s">%s</A>\n' % (q, q))
             s.seek(0)
             return s
-        return urllib.FancyURLopener.open_file(self, path)
+        return urllib.FancyURLopener.open_file(self, url)
 
 
 class MyHTMLParser(sgmllib.SGMLParser):
