@@ -261,9 +261,6 @@ following mapping rules apply:
 \item \class{NodeList} objects are implemented as Python's built-in
       list type, so don't support the official API, but are much more
       ``Pythonic.''
-
-\item \class{NamedNodeMap} is implemented by the class
-      \class{AttributeList}.  This should not impact user code.
 \end{itemize}
 
 
@@ -273,9 +270,9 @@ The following interfaces have no implementation in
 \begin{itemize}
 \item DOMTimeStamp
 
-\item DocumentType (added for Python 2.1)
+\item DocumentType (added in Python 2.1)
 
-\item DOMImplementation (added for Python 2.1)
+\item DOMImplementation (added in Python 2.1)
 
 \item CharacterData
 

@@ -89,8 +89,7 @@ the strict mapping from IDL).  See section \ref{dom-conformance},
 \subsection{Objects in the DOM \label{dom-objects}}
 
 The definitive documentation for the DOM is the DOM specification from
-the W3C.  This section lists the properties and methods supported by
-\refmodule{xml.dom.minidom}.
+the W3C.
 
 Note that DOM attributes may also be manipulated as nodes instead of
 as simple strings.  It is fairly rare that you must do this, however,
@@ -98,8 +97,14 @@ so this usage is not yet documented.
 
 
 \begin{tableiii}{l|l|l}{class}{Interface}{Section}{Purpose}
+  \lineiii{DOMImplementation}{\ref{dom-implementation-objects}}
+          {Interface to the underlying implementation.}
   \lineiii{Node}{\ref{dom-node-objects}}
           {Base interface for most objects in a document.}
+  \lineiii{NodeList}{\ref{dom-nodelist-objects}}
+          {Interface for a sequence of nodes.}
+  \lineiii{DocumentType}{\ref{dom-documenttype-objects}}
+          {Information about the declarations needed to process a document.}
   \lineiii{Document}{\ref{dom-document-objects}}
           {Object which represents an entire document.}
   \lineiii{Element}{\ref{dom-element-objects}}
@@ -113,6 +118,19 @@ so this usage is not yet documented.
   \lineiii{ProcessingInstruction}{\ref{dom-pi-objects}}
           {Processing instruction representation.}
 \end{tableiii}
+
+
+\subsubsection{DOMImplementation Objects
+               \label{dom-implementation-objects}}
+
+The \class{DOMImplementation} interface provides a way for
+applications to determine the availability of particular features in
+the DOM they are using.  DOM Level 2 added the ability to create new
+\class{Document} and \class{DocumentType} objects using the
+\class{DOMImplementation} as well.
+
+\begin{methoddesc}[DOMImplementation]{hasFeature}{feature, version}
+\end{methoddesc}
 
 
 \subsubsection{Node Objects \label{dom-node-objects}}
@@ -131,7 +149,11 @@ types are on the \class{Node} object: \constant{DOCUMENT_NODE},
 \end{memberdesc}
 
 \begin{memberdesc}[Node]{parentNode}
-The parent of the current node.  \code{None} for the document node.
+The parent of the current node, or \code{None} for the document node.
+The value is always a \class{Node} object or \code{None}.  For
+\class{Element} nodes, this will be the parent element, except for the
+root element, in which case it will be the \class{Document} object.
+For \class{Attr} nodes, this is always \code{None}.
 \end{memberdesc}
 
 \begin{memberdesc}[Node]{attributes}
@@ -144,12 +166,14 @@ The node that immediately precedes this one with the same parent.  For
 instance the element with an end-tag that comes just before the
 \var{self} element's start-tag.  Of course, XML documents are made
 up of more than just elements so the previous sibling could be text, a
-comment, or something else.
+comment, or something else.  If this node is the first child of the
+parent, this attribute will be \code{None}.
 \end{memberdesc}
 
 \begin{memberdesc}[Node]{nextSibling}
 The node that immediately follows this one with the same parent.  See
-also \member{previousSibling}.
+also \member{previousSibling}.  If this is the last child of the
+parent, this attribute will be \code{None}.
 \end{memberdesc}
 
 \begin{memberdesc}[Node]{childNodes}
@@ -164,11 +188,18 @@ The first child of the node, if there are any, or \code{None}.
 The last child of the node, if there are any, or \code{None}.
 \end{memberdesc}
 
+\begin{memberdesc}[Element]{namespaceURI}
+The namespace associated with the element name.  This will be a
+string.
+\end{memberdesc}
+
 \begin{memberdesc}[Node]{nodeName}
 Has a different meaning for each node type.  See the DOM specification
 for details.  You can always get the information you would get here
 from another property such as the \member{tagName} property for
-elements or the \member{name} property for attributes.
+elements or the \member{name} property for attributes.  For all node
+types, the value of this attribute will be either a string or
+\code{None}.
 \end{memberdesc}
 
 \begin{memberdesc}[Node]{nodeValue}
@@ -213,12 +244,90 @@ DOM tree for many applications.
 
 \begin{methoddesc}[Node]{cloneNode}{deep}
 Clone this node.  Setting \var{deep} means to clone all child nodes as
-well.
-
-\strong{Warning:}  Although this method was present in the version of
-\refmodule{xml.dom.minidom} packaged with Python 2.0, it was seriously
-broken.  This has been corrected for subsequent releases.
+well.  This returns the clone.
 \end{methoddesc}
+
+
+\subsubsection{NodeList Objects \label{dom-nodelist-objects}}
+
+A \class{NodeList} represents a sequence of nodes.  These objects are
+used in two ways in the DOM Core recommendation:  the
+\class{Element} objects provides one as it's list of child nodes, and
+the \method{getElementsByTagName()} and
+\method{getElementsByTagNameNS()} methods of \class{Node} return
+objects with this interface to represent query results.
+
+The DOM Level 2 recommendation defines one method and one attribute
+for these objects:
+
+\begin{methoddesc}[NodeList]{item}{i}
+  Return the \var{i}'th item from the sequence, if there is one, or
+  \code{None}.  The index \var{i} is not allowed to be less then zero
+  or greater than or equal to the length of the sequence.
+\end{methoddesc}
+
+\begin{memberdesc}[NodeList]{length}
+  The number of nodes in the sequence.
+\end{memberdesc}
+
+In addition, the Python DOM interface requires that some additional
+support is provided to allow \class{NodeList} objects to be used as
+Python sequences.  All \class{NodeList} implementations must include
+support for \method{__len__()} and \method{__getitem__()}; this allows
+iteration over the \class{NodeList} in \keyword{for} statements and
+proper support for the \function{len()} built-in function.
+
+If a DOM implementation supports modification of the document, the
+\class{NodeList} implementation must also support the
+\method{__setitem__()} and \method{__delitem__()} methods.
+
+
+\subsubsection{DocumentType Objects \label{dom-documenttype-objects}}
+
+Information about the notations and entities declared by a document
+(including the external subset if the parser uses it and can provide
+the information) is available from a \class{DocumentType} object.  The
+\class{DocumentType} for a document is available from the
+\class{Document} object's \member{doctype} attribute.
+
+\class{DocumentType} is a specialization of \class{Node}, and adds the
+following attributes:
+
+\begin{memberdesc}[DocumentType]{publicId}
+  The public identifier for the external subset of the document type
+  definition.  This will be a string or \code{None}.
+\end{memberdesc}
+
+\begin{memberdesc}[DocumentType]{systemId}
+  The system identifier for the external subset of the document type
+  definition.  This will be a URI as a string, or \code{None}.
+\end{memberdesc}
+
+\begin{memberdesc}[DocumentType]{internalSubset}
+  A string giving the complete internal subset from the document.
+\end{memberdesc}
+
+\begin{memberdesc}[DocumentType]{name}
+  The name of the root element as given in the \code{DOCTYPE}
+  declaration, if present.  If the was no \code{DOCTYPE} declaration,
+  this will be \code{None}.
+\end{memberdesc}
+
+\begin{memberdesc}[DocumentType]{entities}
+  This is a \class{NamedNodeMap} giving the definitions of external
+  entities.  For entity names defined more than once, only the first
+  definition is provided (others are ignored as required by the XML
+  recommendation).  This may be \code{None} if the information is not
+  provided by the parser, or if no entities are defined.
+\end{memberdesc}
+
+\begin{memberdesc}[DocumentType]{notations}
+  This is a \class{NamedNodeMap} giving the definitions of notations.
+  For notation names defined more than once, only the first definition
+  is provided (others are ignored as required by the XML
+  recommendation).  This may be \code{None} if the information is not
+  provided by the parser, or if no notations are defined.
+\end{memberdesc}
 
 
 \subsubsection{Document Objects \label{dom-document-objects}}
@@ -232,50 +341,51 @@ The one and only root element of the document.
 \end{memberdesc}
 
 \begin{methoddesc}[Document]{createElement}{tagName}
-Create a new element.  The element is not inserted into the document
-when it is created.  You need to explicitly insert it with one of the
-other methods such as \method{insertBefore()} or
+Create and return a new element node.  The element is not inserted
+into the document when it is created.  You need to explicitly insert
+it with one of the other methods such as \method{insertBefore()} or
 \method{appendChild()}.
 \end{methoddesc}
 
 \begin{methoddesc}[Document]{createElementNS}{namespaceURI, tagName}
-Create a new element with a namespace.  The \var{tagName} may have a
-prefix.  The element is not inserted into the document when it is
-created.  You need to explicitly insert it with one of the other
-methods such as \method{insertBefore()} or \method{appendChild()}.
+Create and return a new element with a namespace.  The
+\var{tagName} may have a prefix.  The element is not inserted into the
+document when it is created.  You need to explicitly insert it with
+one of the other methods such as \method{insertBefore()} or
+\method{appendChild()}.
 \end{methoddesc}
 
 \begin{methoddesc}[Document]{createTextNode}{data}
-Create a text node containing the data passed as a parameter.  As with
-the other creation methods, this one does not insert the node into the
-tree.
+Create and return a text node containing the data passed as a
+parameter.  As with the other creation methods, this one does not
+insert the node into the tree.
 \end{methoddesc}
 
 \begin{methoddesc}[Document]{createComment}{data}
-Create a comment node containing the data passed as a parameter.  As
-with the other creation methods, this one does not insert the node
-into the tree.
+Create and return a comment node containing the data passed as a
+parameter.  As with the other creation methods, this one does not
+insert the node into the tree.
 \end{methoddesc}
 
 \begin{methoddesc}[Document]{createProcessingInstruction}{target, data}
-Create a processing instruction node containing the \var{target} and
-\var{data} passed as parameters.  As with the other creation methods,
-this one does not insert the node into the tree.
+Create and return a processing instruction node containing the
+\var{target} and \var{data} passed as parameters.  As with the other
+creation methods, this one does not insert the node into the tree.
 \end{methoddesc}
 
 \begin{methoddesc}[Document]{createAttribute}{name}
-Create an attribute node.  This method does not associate the
-attribute node with any particular element.  You must use
+Create and return an attribute node.  This method does not associate
+the attribute node with any particular element.  You must use
 \method{setAttributeNode()} on the appropriate \class{Element} object
 to use the newly created attribute instance.
 \end{methoddesc}
 
 \begin{methoddesc}[Document]{createAttributeNS}{namespaceURI, qualifiedName}
-Create an attribute node with a namespace.  The \var{tagName} may have
-a prefix.  This method does not associate the attribute node with any
-particular element. You must use \method{setAttributeNode()} on the
-appropriate \class{Element} object to use the newly created attribute
-instance.
+Create and return an attribute node with a namespace.  The
+\var{tagName} may have a prefix.  This method does not associate the
+attribute node with any particular element.  You must use
+\method{setAttributeNode()} on the appropriate \class{Element} object
+to use the newly created attribute instance.
 \end{methoddesc}
 
 \begin{methoddesc}[Document]{getElementsByTagName}{tagName}
@@ -297,25 +407,25 @@ attributes of that class.
 
 \begin{memberdesc}[Element]{tagName}
 The element type name.  In a namespace-using document it may have
-colons in it.
+colons in it.  The value is a string.
 \end{memberdesc}
 
 \begin{memberdesc}[Element]{localName}
 The part of the \member{tagName} following the colon if there is one,
-else the entire \member{tagName}.
+else the entire \member{tagName}.  The value is a string.
 \end{memberdesc}
 
 \begin{memberdesc}[Element]{prefix}
 The part of the \member{tagName} preceding the colon if there is one,
-else the empty string.
-\end{memberdesc}
-
-\begin{memberdesc}[Element]{namespaceURI}
-The namespace associated with the tagName.
+else the empty string.  The value is a string, or \code{None}
 \end{memberdesc}
 
 \begin{methoddesc}[Element]{getAttribute}{attname}
 Return an attribute value as a string.
+\end{methoddesc}
+
+\begin{methoddesc}[Element]{getAttributeNode}{attrname}
+Return the \class{Attr} node for the attribute named by \var{attrname}
 \end{methoddesc}
 
 \begin{methoddesc}[Element]{setAttribute}{attname, value}
@@ -439,9 +549,27 @@ This section describes the conformance requirements and relationships
 between the Python DOM API, the W3C DOM recommendations, and the OMG
 IDL mapping for Python.
 
+
 \subsubsection{Type Mapping \label{dom-type-mapping}}
 
-XXX  Explain what a \class{DOMString} maps to...
+The primitive IDL types used in the DOM specification are mapped to
+Python types according to the following table.
+
+\begin{tableii}{l|l}{code}{IDL Type}{Python Type}
+  \lineii{boolean}{\code{IntegerType} (with a value of \code{0} or \code{1})}
+  \lineii{int}{\code{IntegerType}}
+  \lineii{long int}{\code{IntegerType}}
+  \lineii{unsigned int}{\code{IntegerType}}
+\end{tableii}
+
+Additionally, the \class{DOMString} defined in the recommendation is
+mapped to a Python string or Unicode string.  Applications should
+be able to handle Unicode whenever a string is returned from the DOM.
+
+The IDL \keyword{null} value is mapped to \code{None}, which may be
+accepted or provided by the implementation whenever \keyword{null} is
+allowed by the API.
+
 
 \subsubsection{Accessor Methods \label{dom-accessor-methods}}
 
@@ -476,4 +604,5 @@ implementations.
 Additionally, the accessor functions are not required.  If provided,
 they should take the form defined by the Python IDL mapping, but
 these methods are considered unnecessary since the attributes are
-accessible directly from Python.
+accessible directly from Python.  ``Set'' accessors should never be
+provided for \keyword{readonly} attributes.
