@@ -110,6 +110,7 @@ Exception\n\
       |\n\
       +-- UserWarning\n\
       +-- DeprecationWarning\n\
+      +-- PendingDeprecationWarning\n\
       +-- SyntaxWarning\n\
       +-- OverflowWarning\n\
       +-- RuntimeWarning";
@@ -920,6 +921,11 @@ DeprecationWarning__doc__[] =
 "Base class for warnings about deprecated features.";
 
 static char
+PendingDeprecationWarning__doc__[] =
+"Base class for warnings about features which will be deprecated "
+"in the future.";
+
+static char
 SyntaxWarning__doc__[] = "Base class for warnings about dubious syntax.";
 
 static char
@@ -987,6 +993,7 @@ PyObject *PyExc_MemoryErrorInst;
 PyObject *PyExc_Warning;
 PyObject *PyExc_UserWarning;
 PyObject *PyExc_DeprecationWarning;
+PyObject *PyExc_PendingDeprecationWarning;
 PyObject *PyExc_SyntaxWarning;
 PyObject *PyExc_OverflowWarning;
 PyObject *PyExc_RuntimeWarning;
@@ -1063,6 +1070,8 @@ static struct {
  {"UserWarning", &PyExc_UserWarning, &PyExc_Warning, UserWarning__doc__},
  {"DeprecationWarning", &PyExc_DeprecationWarning, &PyExc_Warning,
   DeprecationWarning__doc__},
+ {"PendingDeprecationWarning", &PyExc_PendingDeprecationWarning, &PyExc_Warning,
+  PendingDeprecationWarning__doc__},
  {"SyntaxWarning", &PyExc_SyntaxWarning, &PyExc_Warning, SyntaxWarning__doc__},
  {"OverflowWarning", &PyExc_OverflowWarning, &PyExc_Warning,
   OverflowWarning__doc__},

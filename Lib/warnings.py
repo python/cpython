@@ -262,3 +262,4 @@ if __name__ == "__main__":
 else:
     _processoptions(sys.warnoptions)
     filterwarnings("ignore", category=OverflowWarning, append=1)
+    filterwarnings("ignore", category=PendingDeprecationWarning, append=1)
