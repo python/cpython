@@ -48,8 +48,11 @@ void GUSISetupFactories()
 #ifdef GUSISetupFactories_BeginHook
 	GUSISetupFactories_BeginHook
 #endif
-//	GUSIwithInetSockets();
+#if TARGET_API_MAC_CARBON
+	GUSIwithInetSockets();
+#else
 	GUSIwithMTInetSockets();
+#endif
 #ifdef GUSISetupFactories_EndHook
 	GUSISetupFactories_EndHook
 #endif
@@ -119,9 +122,11 @@ extern "C" void GUSISetupConfig()
    	if ( prefrh != -1) CloseResFile(prefrh);
 	UseResFile(oldrh);
 
-	config->ConfigureDefaultTypeCreator('TEXT', 'ttxt');
+	config->ConfigureDefaultTypeCreator('TEXT', 'R*ch');
+#if 0
 	config->ConfigureSuffices(
 		sizeof(sSuffices)/sizeof(GUSIConfiguration::FileSuffix)-1, sSuffices);
+#endif
 	config->ConfigureAutoInitGraf(false);
 	config->ConfigureAutoSpin(false);
 	config->ConfigureHandleAppleEvents(false);
