@@ -153,7 +153,6 @@ pwd pwdmodule.c		# pwd(3)
 grp grpmodule.c		# grp(3)
 errno errnomodule.c	# posix (UNIX) errno values
 select selectmodule.c	# select(2); not on ancient System V
-_socket socketmodule.c	# socket(2)
 
 # Memory-mapped files (also works on Win32).
 mmap mmapmodule.c
@@ -161,7 +160,11 @@ mmap mmapmodule.c
 # Dynamic readlines
 xreadlines xreadlinesmodule.c
 
-# Socket module compiled with SSL support; you must edit the SSL variable:
+# for socket(2), without SSL support.
+_socket socketmodule.c
+
+# Socket module compiled with SSL support; you must comment out the other
+# socket line above, and possibly edit the SSL variable:
 #SSL=/usr/local/ssl
 #_socket socketmodule.c \
 #	-DUSE_SSL -I$(SSL)/include -I$(SSL)/include/openssl \
