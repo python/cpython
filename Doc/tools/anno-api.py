@@ -49,7 +49,11 @@ def main():
                     sys.stderr.write("No refcount data for %s\n" % s)
                 else:
                     if info.result_type == "PyObject*":
-                        rc = info.result_refs and "New" or "Borrowed"
+                        if info.result_refs is None:
+                            rc = "Always \NULL{}"
+                        else:
+                            rc = info.result_refs and "New" or "Borrowed"
+                            rc = rc + " reference"
                         line = r"\begin{cfuncdesc}[%s]{PyObject*}{" % rc \
                                + line[prefix_len:]
             output.write(line)
