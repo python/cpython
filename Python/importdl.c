@@ -493,7 +493,7 @@ load_dynamic_module(name, pathname, fp)
 void aix_loaderror(char *pathname)
 {
 
-	char *message[8], errbuf[1024];
+	char *message[1024], errbuf[1024];
 	int i,j;
 
 	struct errtab { 
@@ -509,7 +509,7 @@ void aix_loaderror(char *pathname)
 		{L_ERROR_MEMBER,
 		 "file not an archive or does not contain requested member:"},
 		{L_ERROR_TYPE,		"symbol table mismatch:"},
-		{L_ERROR_ALIGN,		"text allignment in file is wrong."},
+		{L_ERROR_ALIGN,		"text alignment in file is wrong."},
 		{L_ERROR_SYSTEM,	"System error:"},
 		{L_ERROR_ERRNO,		NULL}
 	};
@@ -519,13 +519,15 @@ void aix_loaderror(char *pathname)
 
 	sprintf(errbuf, " from module %.200s ", pathname);
 
-	if (!loadquery(1, &message[0], sizeof(message))) 
+	if (!loadquery(1, &message[0], sizeof(message))) {
 		ERRBUF_APPEND(strerror(errno));
+		ERRBUF_APPEND("\n");
+	}
 	for(i = 0; message[i] && *message[i]; i++) {
 		int nerr = atoi(message[i]);
 		for (j=0; j<LOAD_ERRTAB_LEN ; j++) {
-		    if (nerr == load_errtab[i].errno && load_errtab[i].errstr)
-			ERRBUF_APPEND(load_errtab[i].errstr);
+		    if (nerr == load_errtab[j].errno && load_errtab[j].errstr)
+			ERRBUF_APPEND(load_errtab[j].errstr);
 		}
 		while (isdigit(*message[i])) message[i]++ ; 
 		ERRBUF_APPEND(message[i]);
