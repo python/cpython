@@ -2,6 +2,7 @@
 # (FTP), by J. Postel and J. Reynolds
 
 # Changes and improvements suggested by Steve Majewski
+# Modified by Jack to work on the mac.
 
 
 # Example:
@@ -220,11 +221,15 @@ class FTP:
 		if not user: user = 'anonymous'
 		if user == 'anonymous' and passwd in ('', '-'):
 			thishost = socket.gethostname()
-			if os.environ.has_key('LOGNAME'):
-				realuser = os.environ['LOGNAME']
-			elif os.environ.has_key('USER'):
-				realuser = os.environ['USER']
-			else:
+			try:
+				if os.environ.has_key('LOGNAME'):
+					realuser = os.environ['LOGNAME']
+				elif os.environ.has_key('USER'):
+					realuser = os.environ['USER']
+				else:
+					realuser = 'anonymous'
+			except AttributeError:
+				# Not all systems have os.environ....
 				realuser = 'anonymous'
 			passwd = passwd + realuser + '@' + thishost
 		resp = self.sendcmd('USER ' + user)
