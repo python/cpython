@@ -164,7 +164,7 @@ LIBFILES = lib.tex \
     libpprint.tex libcode.tex libmimify.tex libre.tex libmacic.tex \
     libuserdict.tex libdis.tex libxmllib.tex libqueue.tex \
     liblocale.tex libbasehttp.tex libcopyreg.tex libsymbol.tex libtoken.tex \
-    libframework.tex libminiae.tex
+    libframework.tex libminiae.tex libbinhex.tex libuu.tex libsunaudio.tex
 
 # Library document
 lib.dvi: modindex.py indfix.py $(LIBFILES)
@@ -252,6 +252,7 @@ l2h: l2hapi l2hext l2hlib l2htut
 
 l2htut: tut.dvi myformat.perl
 	$(L2H) $(L2HARGS) tut.tex
+	(cd tut; ../node2label.pl footnode.html tut.html node*.html)
 	sed 's/^<P CLASS=ABSTRACT>,/<P CLASS=ABSTRACT>/' \
 		<tut/tut.html >tut/xxx
 	mv tut/xxx tut/tut.html
@@ -259,6 +260,7 @@ l2htut: tut.dvi myformat.perl
 
 l2hext: ext.dvi myformat.perl
 	$(L2H) $(L2HARGS) ext.tex
+	(cd ext; ../node2label.pl footnode.html ext.html node*.html)
 	sed 's/^<P CLASS=ABSTRACT>,/<P CLASS=ABSTRACT>/' \
 		<ext/ext.html >ext/xxx
 	mv ext/xxx ext/ext.html
@@ -275,8 +277,10 @@ l2hlib: lib.dvi myformat.perl
 	mv lib/xxx lib/lib.html
 	ln -s lib.html lib/index.html || true
 
+# note that the node2label.pl command doesn't include a footnode.html
 l2hapi: api.dvi myformat.perl
 	$(L2H) $(L2HARGS) api.tex
+	(cd api; ../node2label.pl api.html node*.html)
 	sed 's/^<P CLASS=ABSTRACT>,/<P CLASS=ABSTRACT>/' \
 		<api/api.html >api/xxx
 	mv api/xxx api/api.html
