@@ -36,83 +36,81 @@ dl_funcptr _PyImport_GetDynLoadFunc(const char *fqname, const char *shortname,
 {
 	dl_funcptr p = NULL;
 	char funcname[258];
+	NSObjectFileImageReturnCode rc;
+	NSObjectFileImage image;
+	NSModule newModule;
+	NSSymbol theSym;
+	const char *errString;
+	char errBuf[512];
 
 	PyOS_snprintf(funcname, sizeof(funcname), "_init%.200s", shortname);
 
-	{
-		NSObjectFileImageReturnCode rc;
-		NSObjectFileImage image;
-		NSModule newModule;
-		NSSymbol theSym;
-		const char *errString;
-		char errBuf[512];
-	
 #ifdef USE_DYLD_GLOBAL_NAMESPACE
-		if (NSIsSymbolNameDefined(funcname)) {
-			theSym = NSLookupAndBindSymbol(funcname);
-			p = (dl_funcptr)NSAddressOfSymbol(theSym);
-			return p;
-		}
+	if (NSIsSymbolNameDefined(funcname)) {
+		theSym = NSLookupAndBindSymbol(funcname);
+		p = (dl_funcptr)NSAddressOfSymbol(theSym);
+		return p;
+	}
 #endif
-		rc = NSCreateObjectFileImageFromFile(pathname, &image);
-		switch(rc) {
-			default:
-			case NSObjectFileImageFailure:
-			case NSObjectFileImageFormat:
+	rc = NSCreateObjectFileImageFromFile(pathname, &image);
+	switch(rc) {
+		default:
+		case NSObjectFileImageFailure:
+		case NSObjectFileImageFormat:
 			/* for these a message is printed on stderr by dyld */
 			errString = "Can't create object file image";
-			break;
-			case NSObjectFileImageSuccess:
+		break;
+		case NSObjectFileImageSuccess:
 			errString = NULL;
 			break;
-			case NSObjectFileImageInappropriateFile:
+		case NSObjectFileImageInappropriateFile:
 			errString = "Inappropriate file type for dynamic loading";
 			break;
-			case NSObjectFileImageArch:
+		case NSObjectFileImageArch:
 			errString = "Wrong CPU type in object file";
 			break;
-			case NSObjectFileImageAccess:
+		case NSObjectFileImageAccess:
 			errString = "Can't read object file (no access)";
 			break;
-		}
-		if (errString == NULL) {
-			newModule = NSLinkModule(image, pathname, LINKOPTIONS);
-			if (newModule == NULL) {
-				int errNo;
-				char *fileName, *moreErrorStr;
-				NSLinkEditErrors c;
-				NSLinkEditError( &c, &errNo, &fileName, &moreErrorStr );
-				PyOS_snprintf(errBuf, 512, "Failure linking new module: %s: %s", 
-						fileName, moreErrorStr);
-				errString = errBuf;
-			}
-		}
-		if (errString != NULL) {
-			PyErr_SetString(PyExc_ImportError, errString);
-			return NULL;
-		}
-#ifdef USE_DYLD_GLOBAL_NAMESPACE
-		if (!NSIsSymbolNameDefined(funcname)) {
-			/* UnlinkModule() isn't implemented in current versions, but calling it does no harm */
-			NSUnLinkModule(newModule, FALSE);
-			PyErr_Format(PyExc_ImportError,
-					 "Loaded module does not contain symbol %.200s",
-					 funcname);
-			return NULL;
-		}
-		theSym = NSLookupAndBindSymbol(funcname);
-#else
-		theSym = NSLookupSymbolInModule(newModule, funcname);
-		if ( theSym == NULL ) {
-			NSUnLinkModule(newModule, FALSE);
-			PyErr_Format(PyExc_ImportError,
-					 "Loaded module does not contain symbol %.200s",
-					 funcname);
-			return NULL;
-		}
-#endif
-		p = (dl_funcptr)NSAddressOfSymbol(theSym);
 	}
+	if (errString == NULL) {
+		newModule = NSLinkModule(image, pathname, LINKOPTIONS);
+		if (newModule == NULL) {
+			int errNo;
+			char *fileName, *moreErrorStr;
+			NSLinkEditErrors c;
+			NSLinkEditError( &c, &errNo, &fileName, &moreErrorStr );
+			PyOS_snprintf(errBuf, 512, "Failure linking new module: %s: %s", 
+					fileName, moreErrorStr);
+			errString = errBuf;
+		}
+	}
+	if (errString != NULL) {
+		PyErr_SetString(PyExc_ImportError, errString);
+		return NULL;
+	}
+#ifdef USE_DYLD_GLOBAL_NAMESPACE
+	if (!NSIsSymbolNameDefined(funcname)) {
+		/* UnlinkModule() isn't implemented in current versions, but calling it does no harm */
+		NSUnLinkModule(newModule, FALSE);
+		PyErr_Format(PyExc_ImportError,
+				 "Loaded module does not contain symbol %.200s",
+				 funcname);
+		return NULL;
+	}
+	theSym = NSLookupAndBindSymbol(funcname);
+#else
+	theSym = NSLookupSymbolInModule(newModule, funcname);
+	if ( theSym == NULL ) {
+		NSUnLinkModule(newModule, FALSE);
+		PyErr_Format(PyExc_ImportError,
+				 "Loaded module does not contain symbol %.200s",
+				 funcname);
+		return NULL;
+	}
+#endif
+	p = (dl_funcptr)NSAddressOfSymbol(theSym);
+}
 
 	return p;
 }
