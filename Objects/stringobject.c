@@ -2215,11 +2215,11 @@ mymemreplace(const char *str, int len,		/* input string */
 	char *new_s;
 	int nfound, offset, new_len;
 
-	if (len == 0 || pat_len > len)
+	if (len == 0 || (pat_len == 0 && sub_len == 0) || pat_len > len)
 		goto return_same;
 
 	/* find length of output string */
-	nfound = mymemcnt(str, len, pat, pat_len);
+	nfound = (pat_len > 0) ? mymemcnt(str, len, pat, pat_len) : len + 1;
 	if (count < 0)
 		count = INT_MAX;
 	else if (nfound > count)
@@ -2242,25 +2242,38 @@ mymemreplace(const char *str, int len,		/* input string */
 			return NULL;
 		out_s = new_s;
 
-		for (; count > 0 && len > 0; --count) {
-			/* find index of next instance of pattern */
-			offset = mymemfind(str, len, pat, pat_len);
-			if (offset == -1)
-				break;
+		if (pat_len > 0) {
+			for (; nfound > 0; --nfound) {
+				/* find index of next instance of pattern */
+				offset = mymemfind(str, len, pat, pat_len);
+				if (offset == -1)
+					break;
 
-			/* copy non matching part of input string */
-			memcpy(new_s, str, offset);
-			str += offset + pat_len;
-			len -= offset + pat_len;
+				/* copy non matching part of input string */
+				memcpy(new_s, str, offset);
+				str += offset + pat_len;
+				len -= offset + pat_len;
 
-			/* copy substitute into the output string */
-			new_s += offset;
-			memcpy(new_s, sub, sub_len);
-			new_s += sub_len;
+				/* copy substitute into the output string */
+				new_s += offset;
+				memcpy(new_s, sub, sub_len);
+				new_s += sub_len;
+			}
+			/* copy any remaining values into output string */
+			if (len > 0)
+				memcpy(new_s, str, len);
 		}
-		/* copy any remaining values into output string */
-		if (len > 0)
-			memcpy(new_s, str, len);
+		else {
+			for (;;++str, --len) {
+				memcpy(new_s, sub, sub_len);
+				new_s += sub_len;
+				if (--nfound <= 0) {
+					memcpy(new_s, str, len);
+					break;
+				}
+				*new_s++ = *str;
+			}
+		}
 	}
 	*out_len = new_len;
 	return out_s;
@@ -2317,10 +2330,6 @@ string_replace(PyStringObject *self, PyObject *args)
 	else if (PyObject_AsCharBuffer(replobj, &repl, &repl_len))
 		return NULL;
 
-	if (sub_len <= 0) {
-		PyErr_SetString(PyExc_ValueError, "empty pattern string");
-		return NULL;
-	}
 	new_s = mymemreplace(str,len,sub,sub_len,repl,repl_len,count,&out_len);
 	if (new_s == NULL) {
 		PyErr_NoMemory();
