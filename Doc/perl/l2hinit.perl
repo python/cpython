@@ -485,11 +485,15 @@ sub do_cmd_textohtmlinfopage {
     $_;
 }
 
+$GENERAL_INDEX_FILE = '';
+$MODULE_INDEX_FILE = '';
+
 # $idx_mark will be replaced with the real index at the end
 sub do_cmd_textohtmlindex {
     local($_) = @_;
     $TITLE = $idx_title;
     $idxfile = $CURRENT_FILE;
+    $GENERAL_INDEX_FILE = "$CURRENT_FILE";
     if (%index_labels) { make_index_labels(); }
     if (($SHORT_INDEX) && (%index_segment)) { make_preindex(); }
     else { $preindex = ''; }
@@ -498,8 +502,6 @@ sub do_cmd_textohtmlindex {
     anchor_label('genindex',$CURRENT_FILE,$_);          # this is added
     return "<br />\n" . $pre . $_;
 }
-
-$MODULE_INDEX_FILE = '';
 
 # $idx_module_mark will be replaced with the real index at the end
 sub do_cmd_textohtmlmoduleindex {
@@ -682,12 +684,13 @@ sub make_head_and_body($$) {
                 . ' title="Contents" />')
              : ''),
             ($HAVE_GENERAL_INDEX
-             ? "\n<link rel='index' href='genindex.html' title='Index' />"
+             ? ("\n<link rel='index' href='$GENERAL_INDEX_FILE'"
+                . " title='Index' />")
              : ''),
             # disable for now -- Mozilla doesn't do well with multiple indexes
             # ($HAVE_MODULE_INDEX
-            #  ? '<link rel="index" href="modindex.html" title="Module Index"'
-            #    . " />\n"
+            #  ? ("<link rel="index" href='$MODULE_INDEX_FILE'"
+            #     . " title='Module Index' />\n")
             #  : ''),
             ($INFO
              # XXX We can do this with the Python tools since the About...
