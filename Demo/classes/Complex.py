@@ -4,16 +4,21 @@
 from math import sqrt
 
 
-def complex(re, im):
-	return Complex().init(re, im)
+class complex:
 
-
-class Complex:
-
-	def init(self, re, im):
+	def __init__(self, re, im):
 		self.re = float(re)
 		self.im = float(im)
-		return self
+
+	def __coerce__(self, other):
+		if type(other) == type(self):
+			if other.__class__ == self.__class__:
+				return self, other
+			else:
+				raise TypeError, 'cannot coerce to complex'
+		else:
+			# The cast to float() may raise an exception!
+			return self, complex(float(other), 0.0)
 
 	def __repr__(self):
 		return 'complex' + `self.re, self.im`
@@ -60,9 +65,16 @@ class Complex:
 def test():
 	a = complex(2, 0)
 	b = complex(3, 4)
-	print a, b
-	print a+b, a-b, a*b, a/b
-	print b+a, b-a, b*a, b/a
+	print a
+	print b
+	print a+b
+	print a-b
+	print a*b
+	print a/b
+	print b+a
+	print b-a
+	print b*a
+	print b/a
 	i = complex(0, 1)
 	print i, i*i, i*i*i, i*i*i*i
 	j = complex(1, 1)

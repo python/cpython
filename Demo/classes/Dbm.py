@@ -41,11 +41,11 @@ class Dbm:
 
 
 def test():
-	d = Dbm('@dbm', 'rw', 0666)
+	d = Dbm('@dbm', 'rw', 0600)
 	print d
 	while 1:
 		try:
-			key = eval(raw_input('key: '))
+			key = input('key: ')
 			if d.has_key(key):
 				value = d[key]
 				print 'currently:', value

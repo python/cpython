@@ -2,16 +2,15 @@
 
 
 def vec(*v):
-	return apply(Vec().init, v)
+	return apply(Vec, v)
 
 
 class Vec:
 
-	def init(self, *v):
+	def __init__(self, *v):
 		self.v = []
 		for x in v:
 			self.v.append(x)
-		return self
 
 
 	def fromlist(self, v):
