@@ -465,19 +465,17 @@ deque_traverse(dequeobject *deque, visitproc visit, void *arg)
 {
 	block * b = deque->leftblock;
 	int index = deque->leftindex;
-	int err;
 	PyObject *item;
 
 	while (b != deque->rightblock || index <= deque->rightindex) {
 		item = b->data[index];
 		index++;
-		if (index == BLOCKLEN && b->rightlink != NULL) {
+		if (index == BLOCKLEN ) {
+			assert(b->rightlink != NULL);
 			b = b->rightlink;
 			index = 0;
 		}
-		err = visit(item, arg);
-		if (err) 
-			return err;
+		Py_VISIT(item);
 	}
 	return 0;
 }
