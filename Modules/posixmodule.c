@@ -350,6 +350,9 @@ again:
 		{
 		DECREF( d );
 		strcat( _name, "/*.*" );
+		/* This comment is here to help the DEC alpha OSF/1 cpp
+		   (which scans for comments but not for strings in
+		   code that is #ifdef'ed out...) */
 		goto again;
 		}
 
