@@ -538,6 +538,11 @@ complex_coerce(PyObject **pv, PyObject **pw)
 		Py_INCREF(*pv);
 		return 0;
 	}
+	else if (PyComplex_Check(*pw)) {
+		Py_INCREF(*pv);
+		Py_INCREF(*pw);
+		return 0;
+	}
 	return 1; /* Can't do it */
 }
 
