@@ -28,6 +28,9 @@ print '2.2 raise class exceptions'
 class AClass: pass
 class BClass(AClass): pass
 class CClass: pass
+class DClass(AClass):
+    def __init__(self, ignore):
+	pass
 
 try: raise AClass()
 except: pass
@@ -55,9 +58,14 @@ try: raise b
 except AClass, v:
 	if v != b: raise TestFailed
 
+# not enough arguments
 try:  raise BClass, a
 except TypeError: pass
 
+try:  raise DClass, a
+except DClass, v:
+    if not isinstance(v, DClass):
+	raise TestFailed
 
 print '2.3 comparing function objects'
 
