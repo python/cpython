@@ -284,6 +284,12 @@ available as the return value of the \method{close()} method of the file
 object, except that when the exit status is zero (termination without
 errors), \code{None} is returned.
 Availability: \UNIX{}, Windows.
+
+\versionchanged[This function worked unreliably under Windows in
+  earlier versions of Python.  This was due to the use of the
+  \cfunction{_popen()} function from the libraries provided with
+  Windows.  Newer versions of Python do not use the broken
+  implementation from the Windows libraries]{2.0}
 \end{funcdesc}
 
 \begin{funcdesc}{tmpfile}{}
