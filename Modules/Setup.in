@@ -314,7 +314,7 @@ rotor rotormodule.c		# enigma-inspired encryption
 
 # Tommy Burnette's 'new' module (creates new empty objects of certain kinds):
 
-#new newmodule.c
+new newmodule.c
 
 
 # Generic (SunOS / SVR4) dynamic loading module.
