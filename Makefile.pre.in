@@ -550,7 +550,7 @@ memtest:	all platform
 		$(TESTPYTHON) $(TESTPROG) $(MEMTESTOPTS)
 
 # Install everything
-install:	altinstall bininstall maninstall idleinstall
+install:	altinstall bininstall maninstall
 
 # Install almost everything without disturbing previous versions
 altinstall:	altbininstall libinstall inclinstall libainstall \
@@ -869,18 +869,6 @@ frameworkinstallunixtools:
 	$(MAKE) -f $(srcdir)/Mac/OSX/Makefile installunixtools \
 		DIRMODE=$(DIRMODE) FILEMODE=$(FILEMODE) \
 		srcdir=$(srcdir) builddir=. DESTDIR=$(DESTDIR)
-
-# This installs IDLE
-idleinstall:
-	SRCDIR=$(srcdir) $(RUNSHARED) \
-	./$(BUILDPYTHON) $(srcdir)/Tools/idle/setup.py install \
-	--check-tkinter \
-	--prefix=$(prefix) \
-	--install-purelib=$(LIBDEST) \
-	--install-scripts=$(BINDIR) \
-	--install-platlib=$(DESTSHARED) \
-	--optimize=2 \
-	--root=/$(DESTDIR)
 
 # This installs a few of the useful scripts in Tools/scripts
 scriptsinstall:
