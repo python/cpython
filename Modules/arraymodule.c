@@ -788,9 +788,7 @@ static char pop_doc [] =
 Return the i-th element and delete it from the array. i defaults to -1.";
 
 static PyObject *
-array_extend(self, args)
-	arrayobject *self;
-	PyObject *args;
+array_extend(arrayobject *self, PyObject *args)
 {
 	int size;
         PyObject    *bb;

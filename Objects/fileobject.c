@@ -253,14 +253,11 @@ file_close(PyFileObject *f, PyObject *args)
 /* a portable fseek() function
    return 0 on success, non-zero on failure (with errno set) */
 int
-_portable_fseek(fp, offset, whence)
-	FILE* fp;
 #if defined(HAVE_LARGEFILE_SUPPORT) && SIZEOF_OFF_T < 8 && SIZEOF_FPOS_T >= 8 
-	fpos_t offset;
+_portable_fseek(FILE *fp, fpos_t offset, int whence)
 #else
-	off_t offset;
+_portable_fseek(FILE *fp, off_t offset, int whence)
 #endif
-	int whence;
 {
 #if defined(HAVE_FSEEKO)
 	return fseeko(fp, offset, whence);
@@ -302,8 +299,7 @@ fpos_t
 #else
 off_t
 #endif
-_portable_ftell(fp)
-	FILE* fp;
+_portable_ftell(FILE* fp)
 {
 #if defined(HAVE_FTELLO) && defined(HAVE_LARGEFILE_SUPPORT)
 	return ftello(fp);

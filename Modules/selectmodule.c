@@ -508,7 +508,7 @@ static PyMethodDef poll_methods[] = {
 };
 
 static pollObject *
-newPollObject()
+newPollObject(void)
 {
         pollObject *self;
 	self = PyObject_New(pollObject, &poll_Type);
