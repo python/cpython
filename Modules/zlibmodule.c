@@ -580,15 +580,15 @@ PyZlib_unflush(self, args)
 
 static PyMethodDef comp_methods[] =
 {
-        {"compress", PyZlib_objcompress, 1, comp_compress__doc__},
-        {"flush", PyZlib_flush, 0, comp_flush__doc__},
+        {"compress", (binaryfunc)PyZlib_objcompress, 1, comp_compress__doc__},
+        {"flush", (binaryfunc)PyZlib_flush, 0, comp_flush__doc__},
         {NULL, NULL}
 };
 
 static PyMethodDef Decomp_methods[] =
 {
-        {"decompress", PyZlib_objdecompress, 1, decomp_decompress__doc__},
-        {"flush", PyZlib_unflush, 0, decomp_flush__doc__},
+        {"decompress", (binaryfunc)PyZlib_objdecompress, 1, decomp_decompress__doc__},
+        {"flush", (binaryfunc)PyZlib_unflush, 0, decomp_flush__doc__},
         {NULL, NULL}
 };
 
