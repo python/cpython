@@ -1818,9 +1818,22 @@ _PyBuiltin_Init(void)
 		return NULL;
 	dict = PyModule_GetDict(mod);
 
+#ifdef Py_TRACE_REFS
+	/* __builtin__ exposes a number of statically allocated objects
+	 * that, before this code was added in 2.3, never showed up in
+	 * the list of "all objects" maintained by Py_TRACE_REFS.  As a
+	 * result, programs leaking references to None and False (etc)
+	 * couldn't be diagnosed by examining sys.getobjects(0).
+	 */
+#define ADD_TO_ALL(OBJECT) _Py_AddToAllObjects((PyObject *)(OBJECT), 0)
+#else
+#define ADD_TO_ALL(OBJECT) (void)0
+#endif
+
 #define SETBUILTIN(NAME, OBJECT) \
-	if (PyDict_SetItemString(dict, NAME, (PyObject *)OBJECT) < 0) \
-		return NULL
+	if (PyDict_SetItemString(dict, NAME, (PyObject *)OBJECT) < 0)	\
+		return NULL;						\
+	ADD_TO_ALL(OBJECT)
 
 	SETBUILTIN("None",		Py_None);
 	SETBUILTIN("Ellipsis",		Py_Ellipsis);
@@ -1864,6 +1877,7 @@ _PyBuiltin_Init(void)
 	Py_XDECREF(debug);
 
 	return mod;
+#undef ADD_TO_ALL
 #undef SETBUILTIN
 }
 

@@ -582,7 +582,7 @@ PyAPI_FUNC(void) _Py_NewReference(PyObject *);
 PyAPI_FUNC(void) _Py_ForgetReference(PyObject *);
 PyAPI_FUNC(void) _Py_Dealloc(PyObject *);
 PyAPI_FUNC(void) _Py_PrintReferences(FILE *);
-PyAPI_FUNC(void) _Py_AddToAllObjects(PyObject *);
+PyAPI_FUNC(void) _Py_AddToAllObjects(PyObject *, int force);
 
 #else
 /* Without Py_TRACE_REFS, there's little enough to do that we expand code
