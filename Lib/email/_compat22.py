@@ -9,7 +9,7 @@ from __future__ import division
 from cStringIO import StringIO
 from types import StringTypes
 
-# Python 2.2.x where x < 2 lacks True/False
+# Python 2.2.x where x < 1 lacks True/False
 try:
     True, False
 except NameError:
