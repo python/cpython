@@ -220,7 +220,7 @@ class POP3:
         Result when a message number argument is given is a
         single response: the "scan listing" for that message.
         """
-        if which:
+        if which is not None:
             return self._shortcmd('LIST %s' % which)
         return self._longcmd('LIST')
 
@@ -313,7 +313,7 @@ class POP3:
         in the form 'response mesgnum uid', otherwise result is
         the list ['response', ['mesgnum uid', ...], octets]
         """
-        if which:
+        if which is not None:
             return self._shortcmd('UIDL %s' % which)
         return self._longcmd('UIDL')
 

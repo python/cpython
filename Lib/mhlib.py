@@ -98,9 +98,9 @@ class MH:
 
     def __init__(self, path = None, profile = None):
         """Constructor."""
-        if not profile: profile = MH_PROFILE
+        if profile is None: profile = MH_PROFILE
         self.profile = os.path.expanduser(profile)
-        if not path: path = self.getprofile('Path')
+        if path is None: path = self.getprofile('Path')
         if not path: path = PATH
         if not os.path.isabs(path) and path[0] != '~':
             path = os.path.join('~', path)
@@ -665,7 +665,7 @@ class Message(mimetools.Message):
         """Constructor."""
         self.folder = f
         self.number = n
-        if not fp:
+        if fp is None:
             path = f.getmessagefilename(n)
             fp = open(path, 'r')
         mimetools.Message.__init__(self, fp)
@@ -679,7 +679,7 @@ class Message(mimetools.Message):
         argument is specified, it is used as a filter predicate to
         decide which headers to return (its argument is the header
         name converted to lower case)."""
-        if not pred:
+        if pred is None:
             return ''.join(self.headers)
         headers = []
         hit = 0
@@ -791,7 +791,7 @@ class IntSet:
         self.pairs = []
         self.sep = sep
         self.rng = rng
-        if data: self.fromstring(data)
+        if data is not None: self.fromstring(data)
 
     def reset(self):
         self.pairs = []

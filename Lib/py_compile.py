@@ -67,7 +67,7 @@ def compile(file, cfile=None, dfile=None):
             sys.stderr.write(line.replace('File "<string>"',
                                             'File "%s"' % (dfile or file)))
         return
-    if not cfile:
+    if cfile is None:
         cfile = file + (__debug__ and 'c' or 'o')
     fc = open(cfile, 'wb')
     fc.write('\0\0\0\0')
