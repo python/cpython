@@ -572,7 +572,7 @@ parsenumber(s)
 	errno = 0;
 	end = s + strlen(s) - 1;
 #ifndef WITHOUT_COMPLEX
-	imflag = *end == 'i' || *end == 'I' || *end == 'j' || *end == 'J';
+	imflag = *end == 'j' || *end == 'J';
 #endif
 	if (*end == 'l' || *end == 'L')
 		return long_scan(s, 0);
