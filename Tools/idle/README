@@ -1,3 +1,24 @@
+IDLE 0.1 - 10/16/98
+-------------------
+
+This is a *very* early preliminary release of IDLE, my own attempt at
+a Tkinter-based IDE for Python.  It currently has the following
+features:
+
+- multi-window text editor with multiple undo and Python colorizing
+- Python shell (a.k.a. interactive interpreter) window subclass
+- debugger
+
+It requires Python 1.5.2, so it is currently only usable for PSA
+members who have the latest 1.5.2 alpha release (a public beta release
+is due shortly).
+
+Please send feedback to the Python newsgroup, comp.lang.python.
+
+--Guido van Rossum (home page: http://www.python.org/~guido/)
+
+======================================================================
+
 TO DO:
 
 - "Recent documents" menu item
@@ -77,3 +98,19 @@ Comparison to PTUI
   modularize
   examine
   go
+
+======================================================================
+
+Notes after trying to run Grail
+-------------------------------
+
+- Grail does stuff to sys.path based on sys.argv[0]; you must set
+sys.argv[0] to something decent first (it is normally set to the path
+of the idle script).
+
+- Grail must be exec'ed in __main__ because that's imported by some
+other parts of Grail.
+
+- Grail uses a module called History and so does idle :-(
+
+======================================================================
