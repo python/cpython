@@ -121,7 +121,7 @@ class bdist_wininst (Command):
 
         # 'info' will be displayed in the installer's dialog box,
         # describing the items to be installed.
-        info = metadata.long_description or '' + '\n'
+        info = (metadata.long_description or '') + '\n'
 
         for name in dir (metadata):
             if (name != 'long_description'):
