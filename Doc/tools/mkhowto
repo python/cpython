@@ -47,6 +47,7 @@ import tempfile
 
 
 if not hasattr(os.path, "abspath"):
+    # Python 1.5.1 or earlier
     def abspath(path):
         """Return an absolute path."""
         if not os.path.isabs(path):
@@ -214,6 +215,8 @@ class Options:
             os.path.join(TOPDIR, "paper-" + self.paper),
             os.path.join(TOPDIR, "texinputs"),
             ] + texinputs
+        if self.builddir:
+            self.builddir = os.path.abspath(self.builddir)
 
 
 class Job:
@@ -223,7 +226,10 @@ class Job:
         self.options = options
         self.doctype = get_doctype(path)
         self.filedir, self.doc = split_pathname(path)
-        self.log_filename = self.doc + ".how"
+        self.builddir = os.path.abspath(options.builddir or self.doc)
+        if not os.path.exists(self.builddir):
+            os.mkdir(self.builddir)
+        self.log_filename = os.path.join(self.builddir, self.doc + ".how")
         if os.path.exists(self.log_filename):
             os.unlink(self.log_filename)
         if os.path.exists(self.doc + ".l2h"):
@@ -243,7 +249,7 @@ class Job:
             self.build_ps()
         if "html" in formats:
             self.require_temps()
-            self.build_html(self.options.builddir or self.doc)
+            self.build_html(self.builddir)
             if self.options.icon_server == ".":
                 pattern = os.path.join(TOPDIR, "html", "icons",
                                        "*." + self.options.image_type)
@@ -346,7 +352,7 @@ class Job:
 
     def build_html(self, builddir=None, max_split_depth=None):
         if builddir is None:
-            builddir = self.doc
+            builddir = self.builddir
         if max_split_depth is None:
             max_split_depth = self.options.max_split_depth
         texfile = None
@@ -520,7 +526,7 @@ def safe_unlink(path):
 
 
 def split_pathname(path):
-    path = os.path.normpath(os.path.join(os.getcwd(), path))
+    path = os.path.abspath(path)
     dirname, basename = os.path.split(path)
     if basename[-4:] == ".tex":
         basename = basename[:-4]
