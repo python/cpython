@@ -271,6 +271,10 @@ Mac
 
 - There are new dialogs EasyDialogs.AskFileForOpen, AskFileForSave
   and AskFolder. The old macfs.StandardGetFile and friends are deprecated.
+  
+- Most of the standard library now uses pathnames or FSRefs in preference
+  of FSSpecs, and use the underlying Carbon.File and Carbon.Folder modules
+  in stead of macfs. macfs will probably be deprecated in the future.
 
 - Type Carbon.File.FSCatalogInfo and supporting methods have been implemented.
   This also makes macfs.FSSpec.SetDates() work again.
