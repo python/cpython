@@ -64,15 +64,25 @@ COREPYTHONPATH=.:$(DESTLIB)$(TESTPATH)$(MACHDEPPATH)$(STDWINPATH)$(TKPATH)
 PYTHONPATH=$(COREPYTHONPATH)
 
 
-# If you want to build most modules as shared libraries, here are
-# a couple of lines to enable.  The modules listed here can't be
-# built as shared libraries for various reasons.
-# IF YOU ENABLE THEM HERE, DISABLE THEM LATER IN THE Setup FILE!
+# The modules listed here can't be built as shared libraries for
+# various reasons; therefore they are listed here instead of in the
+# normal order.
 
-#posix posixmodule.c		# posix (UNIX) system calls
-#signal signalmodule.c		# signal(2)
+# Some modules that are normally always on
+
+posix posixmodule.c		# posix (UNIX) system calls
+signal signalmodule.c		# signal(2)
+
+# The SGI specific GL module
+
 #gl glmodule.c -lgl -lX11	# Graphics Library -- SGI only
-#thread threadmodule.c		# threads -- see below
+
+# Thread module -- works on selected systems only, e.g. SGI IRIX and
+# on SunOS 5.x (SOLARIS) only.
+# Note that you must have configured (and built!) Python with the
+# --with-thread option passed to the configure script for this to work.
+
+#thread threadmodule.c
 
 # Uncommenting the following line tells makesetup that all following
 # modules are to be built as shared libraries (see above for more detail).
@@ -81,12 +91,10 @@ PYTHONPATH=$(COREPYTHONPATH)
 
 
 # Modules that should always be present (non UNIX dependent)
-# NB when using shared libraries, don't make posix a shared library!
 
 array arraymodule.c	# array objects
 math mathmodule.c -lm	# math library functions, e.g. sin()
 parser parsermodule.c	# raw interface to the Python parser
-posix posixmodule.c	# posix (UNIX) system calls
 regex regexmodule.c regexpr.c	# Regular expressions, GNU Emacs style
 strop stropmodule.c	# fast string operations implemented in C
 struct structmodule.c	# binary structure packing/unpacking
@@ -96,7 +104,6 @@ time timemodule.c	# time operations and variables
 # Modules with some UNIX dependencies -- on by default.
 # (If you have a really backward UNIX, select and socket may not be
 # supported...)
-# NB when using shared libraries, don't make signal a shared library!
 
 fcntl fcntlmodule.c	# fcntl(2) and ioctl(2)
 pwd pwdmodule.c		# pwd(3) 
@@ -104,7 +111,6 @@ grp grpmodule.c		# grp(3)
 crypt cryptmodule.c # -lcrypt	# crypt(3); needs -lcrypt on some systems
 select selectmodule.c	# select(2); not on ancient System V
 socket socketmodule.c	# socket(2); not on ancient System V
-signal signalmodule.c	# signal(2)
 
 
 # Some more UNIX dependent modules -- off by default, since these
@@ -126,17 +132,15 @@ rgbimg rgbimgmodule.c   # Read SGI RGB image files (but coded portably)
 # The stdwin module provides a simple, portable (between X11 and Mac)
 # windowing interface.  You need to ftp the STDWIN library, e.g. from
 # ftp://ftp.cwi.nl/pub/stdwin.  The STDWIN variable must point to the
-# STDWIN toplevel directory.  The ARCH variable must be set to the
-# architecture identifier used to build STDWIN.  NB if you combine this
-# with the gl module on an SGI IRIX 4 machine, you should replace
-# "-lX11" with "-lX11_s".
+# STDWIN toplevel directory.  NB if you combine this with the gl
+# module on an SGI IRIX 4 machine, you should replace "-lX11" with
+# "-lX11_s".
 
-#STDWIN=/ufs/guido/src/stdwin
-#ARCH=???
-#stdwin stdwinmodule.c -I$(STDWIN)/H $(STDWIN)/Build/$(ARCH)/x11/lib/lib.a -lX11
+# Add Lib/stdwin to the default module search path:
+
 #STDWINPATH=:$(DESTLIB)/stdwin
 
-# For STDWIN 0.9.9 or higher, it's a bit different:
+# Use this for STDWIN 0.9.9 or higher:
 
 #STDWIN=/ufs/guido/src/stdwin
 #LIBTEXTEDIT=$(STDWIN)/$(MACHDEP)/Packs/textedit/libtextedit.a
@@ -147,6 +151,12 @@ rgbimg rgbimgmodule.c   # Read SGI RGB image files (but coded portably)
 # Or use the following for the alphanumeric version:
 
 #stdwin stdwinmodule.c -I$(STDWIN)/H $(LIBTEXTEDIT) $(LIBALFASTDWIN) -ltermcap
+
+# Use this if you are still using stdwin 0.9.8 or older
+
+#STDWIN=/ufs/guido/src/stdwin
+#ARCH=???
+#stdwin stdwinmodule.c -I$(STDWIN)/H $(STDWIN)/Build/$(ARCH)/x11/lib/lib.a -lX11
 
 
 # The md5 module implements the RSA Data Security, Inc. MD5
@@ -176,10 +186,9 @@ md5 md5module.c md5c.c
 # SGI IRIX specific modules -- off by default.
 
 # These module work on any SGI machine.
-# NB when using shared libraries, don't make gl a shared library!
 
+# *** gl must be enabled higher up in this file ***
 #fm fmmodule.c -lfm -lgl		# Font Manager
-#gl glmodule.c -lgl -lX11		# Graphics Library
 #sgi sgimodule.c			# sgi.nap() and a few more
 
 # This module requires the header file
@@ -212,14 +221,6 @@ md5 md5module.c md5c.c
 # SunOS specific modules -- off by default
 
 #sunaudiodev sunaudiodev.c
-
-
-# Thread module -- works on SGI IRIX and on SunOS 5.x (SOLARIS) only.
-# Note that you must have configured (and built!) Python with the
-# --with-thread option passed to the configure script for this to work.
-# NB when using shared libraries, don't make thread a shared library!
-
-#thread threadmodule.c
 
 
 # GNN's timing module
