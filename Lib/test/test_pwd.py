@@ -7,6 +7,7 @@ class PwdTest(unittest.TestCase):
 
     def test_values(self):
         entries = pwd.getpwall()
+        entriesbyname = {}
         entriesbyuid = {}
 
         for e in entries:
@@ -26,17 +27,18 @@ class PwdTest(unittest.TestCase):
             self.assertEqual(e[6], e.pw_shell)
             self.assert_(isinstance(e.pw_shell, basestring))
 
-            self.assertEqual(pwd.getpwnam(e.pw_name), e)
             # The following won't work, because of duplicate entries
             # for one uid
             #    self.assertEqual(pwd.getpwuid(e.pw_uid), e)
             # instead of this collect all entries for one uid
             # and check afterwards
+            entriesbyname.setdefault(e.pw_name, []).append(e)
             entriesbyuid.setdefault(e.pw_uid, []).append(e)
 
         # check whether the entry returned by getpwuid()
         # for each uid is among those from getpwall() for this uid
         for e in entries:
+            self.assert_(pwd.getpwnam(e.pw_name) in entriesbyname[e.pw_name])
             self.assert_(pwd.getpwuid(e.pw_uid) in entriesbyuid[e.pw_uid])
 
     def test_errors(self):
