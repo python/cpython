@@ -1,9 +1,9 @@
 from test_support import verbose
 import re
-import traceback
+import sys, traceback
 
 from re_tests import *
-if verbose: print 'Running regex_tests test suite'
+if verbose: print 'Running re_tests test suite'
 
 for t in tests:
     print t
@@ -23,7 +23,7 @@ for t in tests:
 	    print '=== Syntax error:', t
     except:
 	print '*** Unexpected error ***'
-	traceback.print_exc()
+	traceback.print_exc(file=sys.stdout)
     else:
 	try:
 	    result=obj.search(s)
@@ -44,6 +44,8 @@ for t in tests:
 		for i in range(1, 100):
 		    try:
 			gi = result.group(i)
+			# Special hack because else the string concat fails:
+			if gi is None: gi = "None"
 		    except IndexError:
 			break
 		    else:
