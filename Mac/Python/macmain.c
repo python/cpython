@@ -60,13 +60,9 @@ extern char *Py_GetVersion Py_PROTO((void));
 extern char *Py_GetCopyright Py_PROTO((void));
 
 
-/* #define OBSOLETE_ARGCARGV 1		/* I think this is not needed anymore... */
-
-#ifdef OBSOLETE_ARGCARGV
 /* For Py_GetArgcArgv(); set by main() */
 static char **orig_argv;
 static int  orig_argc;
-#endif
 
 PyMac_PrefRecord options;
 
@@ -364,10 +360,8 @@ Py_Main(argc, argv)
 	char *filename = NULL;
 	FILE *fp = stdin;
 
-#ifdef OBSOLETE_ARGCARGV
 	orig_argc = argc;	/* For Py_GetArgcArgv() */
 	orig_argv = argv;
-#endif
 	filename = argv[1];
 
 	if (Py_VerboseFlag ||
@@ -447,7 +441,6 @@ PyMac_Exit(status)
 	exit(status);
 }
 
-#ifdef OBSOLETE_ARGCARGV
 /* Return the program name -- some code out there needs this. */
 
 char *
@@ -468,7 +461,6 @@ Py_GetArgcArgv(argc,argv)
 	*argc = orig_argc;
 	*argv = orig_argv;
 }
-#endif /* OBSOLETE_ARGCARGV */
 
 /* More cruft that shouldn't really be here, used in sysmodule.c */
 
