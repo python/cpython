@@ -215,9 +215,14 @@ select_select(self, args)
 	PyObject *self;
 	PyObject *args;
 {
+#ifdef MS_WINDOWS
+	/* This would be an awful lot of stack space on Windows! */
+	pylist *rfd2obj, *wfd2obj, *efd2obj;
+#else
 	pylist rfd2obj[FD_SETSIZE + 3];
 	pylist wfd2obj[FD_SETSIZE + 3];
 	pylist efd2obj[FD_SETSIZE + 3];
+#endif
 	PyObject *ifdlist, *ofdlist, *efdlist;
 	PyObject *ret = NULL;
 	PyObject *tout = Py_None;
@@ -258,6 +263,18 @@ select_select(self, args)
 		return NULL;
 	}
 
+#ifdef MS_WINDOWS
+	/* Allocate memory for the lists */
+	rfd2obj = PyMem_NEW(pylist, FD_SETSIZE + 3);
+	wfd2obj = PyMem_NEW(pylist, FD_SETSIZE + 3);
+	efd2obj = PyMem_NEW(pylist, FD_SETSIZE + 3);
+	if (rfd2obj == NULL || wfd2obj == NULL || efd2obj == NULL) {
+		PyMem_XDEL(rfd2obj);
+		PyMem_XDEL(wfd2obj);
+		PyMem_XDEL(efd2obj);
+		return NULL;
+	}
+#endif
 	/* Convert lists to fd_sets, and get maximum fd number
 	 * propagates the Python exception set in list2set()
 	 */
@@ -311,6 +328,11 @@ select_select(self, args)
 	reap_obj(rfd2obj);
 	reap_obj(wfd2obj);
 	reap_obj(efd2obj);
+#ifdef MS_WINDOWS
+	PyMem_DEL(rfd2obj);
+	PyMem_DEL(wfd2obj);
+	PyMem_DEL(efd2obj);
+#endif
 	return ret;
 }
 
