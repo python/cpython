@@ -1878,31 +1878,42 @@ verbatim
   \subsection{Working on Cygwin \label{cygwin}}
 
     Installing the required tools under Cygwin under Cygwin can be a
-    little tedious, if only because many packages are more difficult
-    to install under Cygwin.
+    little tedious.  Most of the required packages can be installed
+    using Cygwin's graphical installer, while netpbm and \LaTeX2HTML
+    must be installed from source. 
+
+    Start with a reasonably modern version of Cygwin.  If you haven't
+    upgraded for a few years, now would be a good time.
 
     Using the Cygwin installer, make sure your Cygwin installation
     includes Perl, Python, and the \TeX{} packages.  Perl and Python
-    are located under \menuselection{Interpreters} in the installer.
-    The \TeX{} packages are located in the \menuselection{Text}
-    section; installing the \code{tetex-beta}, \code{texmf},
-    \code{texmf-base}, and \code{texmf-extra} ensures that all the
-    required packages are available.  (There may be a more minimal
-    set, but I've not spent time trying to minimize the installation.)
+    are located under the \menuselection{Interpreters} heading.  The
+    \TeX{} packages are located under the \menuselection{Text}
+    heading, and are named \code{tetex-*}.  To ensure that all
+    required packages are available, install every \code{tetex}
+    package, except \code{tetex-x11}.  (There may be a more minimal
+    set, but I've not spent time trying to minimize the installation.) 
 
     The netpbm package is used by \LaTeX2HTML, and \emph{must} be
     installed before \LaTeX2HTML can be successfully installed, even
-    though they will never be used for most Python documentation.
-    References to download locations are located in the \ulink{netpbm
-    README}{http://netpbm.sourceforge.net/README}.  Install according
-    to the instructions.
+    though its features will not be used for most Python
+    documentation.  References to download locations are located in
+    the \ulink{netpbm README}{http://netpbm.sourceforge.net/README}.
+    Install from the latest stable source distribution according to
+    the instructions.  (Note that binary packages of netpbm are
+    sometimes available, but these may not work correctly with
+    \LaTeX2HTML.)
 
     \LaTeX2HTML can be installed from the source archive, but only
-    after munging one of the files in the distribution.  Edit the file
-    \file{L2hos.pm} in the top level of the unpacked distribution;
-    near the bottom of the file, change the text
-    \code{\$\textasciicircum{}O} with the text \code{'unix'}.  Proceed
-    using this command to build and install the software:
+    after munging one of the files in the distribution.  Download the
+    source archive from the \LaTeX2HTML website
+    \url{http://www.latex2html.org/} (or one of the many alternate
+    sites) and unpack it to a build directory. In the top level of
+    this build directory there will be a file named \file{L2hos.pm}.
+    Open \file{L2hos.pm} in an editor, and near the bottom of the file
+    replace the text \code{\$\textasciicircum{}O} with the text
+    \code{'unix'}.  Proceed using this command to build and install
+    the software:
 
 \begin{verbatim}
 % ./configure && make install
