@@ -209,7 +209,7 @@ AC_MSG_RESULT($EXEEXT)
 # case we give a warning if no ext is given
 AC_SUBST(BUILDEXEEXT)
 AC_MSG_CHECKING(for case-insensitive build directory)
-if test -d "python"
+if test -d "${srcdir}/python"
 then
     AC_MSG_RESULT(yes)
     BUILDEXEEXT=.exe

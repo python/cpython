@@ -1340,7 +1340,7 @@ echo "$ac_t""$EXEEXT" 1>&6
 
 echo $ac_n "checking for case-insensitive build directory""... $ac_c" 1>&6
 echo "configure:1343: checking for case-insensitive build directory" >&5
-if test -d "python"
+if test -d "${srcdir}/python"
 then
     echo "$ac_t""yes" 1>&6
     BUILDEXEEXT=.exe
