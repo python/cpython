@@ -645,9 +645,18 @@ eval_frame(PyFrameObject *f)
 
 	A successful prediction saves a trip through the eval-loop including
 	its two unpredictable branches, the HASARG test and the switch-case.
+
+        If collecting opcode statistics, turn off prediction so that 
+	statistics are accurately maintained (the predictions bypass 
+	the opcode frequency counter updates).
 */
 
+#ifdef DYNAMIC_EXECUTION_PROFILE
+#define PREDICT(op)		if (0) goto PRED_##op
+#else
 #define PREDICT(op)		if (*next_instr == op) goto PRED_##op
+#endif
+
 #define PREDICTED(op)		PRED_##op: next_instr++
 #define PREDICTED_WITH_ARG(op)	PRED_##op: oparg = (next_instr[2]<<8) + \
 				next_instr[1]; next_instr += 3
