@@ -1,0 +1,262 @@
+\section{\module{pyexpat} ---
+         Fast XML parsing using the Expat C library}
+
+\declaremodule{builtin}{pyexpat}
+\modulesynopsis{An interface to the Expat XML parser.}
+\moduleauthor{Paul Prescod}{paul@prescod.net}
+\sectionauthor{A.M. Kuchling}{amk1@bigfoot.com}
+
+The \module{pyexpat} module is a Python interface to the Expat
+non-validating XML parser.
+The module provides a single extension type, \class{xmlparser}, that
+represents the current state of an XML parser.  After an
+\class{xmlparser} object has been created, various attributes of the object 
+can be set to handler functions.  When an XML document is then fed to
+the parser, the handler functions are called for the character data
+and markup in the XML document.
+ 
+The \module{pyexpat} module contains two functions:
+
+\begin{funcdesc}{ErrorString}{errno}
+Returns an explanatory string for a given error number \var{errno}.
+\end{funcdesc}
+
+\begin{funcdesc}{ParserCreate}{\optional{encoding, namespace_separator}}
+Creates and returns a new \class{xmlparser} object.  
+\var{encoding}, if specified, must be a string naming the encoding 
+used by the XML data.  Expat doesn't support as many encodings as
+Python does, and its repertoire of encodings can't be extended; it
+supports UTF-8, UTF-16, ISO-8859-1 (Latin1), and ASCII.  
+
+% XXX pyexpat.c should only allow a 1-char string for this parameter
+Expat can optionally do XML namespace processing for you, enabled by
+providing a value for \var{namespace_separator}.  When namespace
+processing is enabled, element type names and attribute names that
+belong to a namespace will be expanded.  The element name 
+passed to the element handlers 
+\function{StartElementHandler()} and \function{EndElementHandler()}
+will be the concatenation of the namespace URI, the namespace
+separator character, and the local part of the name.  If the namespace
+separator is a zero byte (\code{chr(0)}) 
+then the namespace URI and the local part will be
+concatenated without any separator. 
+
+For example, if \var{namespace_separator} is set to 
+\samp{ }, and the following document is parsed:
+
+\begin{verbatim}
+<?xml version="1.0"?>
+<root xmlns    = "http://default-namespace.org/"
+      xmlns:py = "http://www.python.org/ns/">
+  <py:elem1 />
+  <elem2 xmlns="" />
+</root>
+\end{verbatim}
+
+\function{StartElementHandler()} will receive the following strings for each element: 
+
+\begin{verbatim}
+http://default-namespace.org/ root
+http://www.python.org/ns/ elem1
+elem2
+\end{verbatim}
+
+\end{funcdesc}
+
+\class{xmlparser} objects have the following methods:
+
+\begin{methoddesc}{Parse}{data \optional{, isfinal}}
+Parses the contents of the string \var{data}, calling the appropriate
+handler functions to process the parsed data.  \var{isfinal} must be
+true on the final call to this method.    \var{data} can be the empty string at any time.
+\end{methoddesc}
+
+\begin{methoddesc}{ParseFile}{file}
+Parse XML data reading from the object \var{file}.  \var{file} only
+needs to provide the \method{read(\var{nbytes})} method, returning the
+empty string when there's no more data.
+\end{methoddesc}
+
+\begin{methoddesc}{SetBase}{base}
+Sets the base to be used for resolving relative URIs in system identifiers in
+declarations.  Resolving relative identifiers is left to the application:
+this value will be passed through as the base argument to the
+\function{ExternalEntityRefHandler}, \function{NotationDeclHandler},
+and \function{UnparsedEntityDeclHandler} functions. 
+\end{methoddesc}
+
+\begin{methoddesc}{GetBase}{}
+Returns a string containing the base set by a previous call to
+\method{SetBase()}, or \code{None} if 
+\method{SetBase()} hasn't been called.
+\end{methoddesc}
+
+\class{xmlparser} objects have the following attributes, containing 
+values relating to the most recent error encountered by an
+\class{xmlparser} object. These attributes will only have correct
+values once a call to \method{Parse()} or \method{ParseFile()}
+has raised a \exception{pyexpat.error} exception.
+
+\begin{datadesc}{ErrorByteIndex} 
+Byte index at which an error occurred.
+\end{datadesc} 
+
+\begin{datadesc}{ErrorCode} 
+Numeric code specifying the problem.  This value can be passed to the
+\function{ErrorString()} function, or compared to one of the constants
+defined in the \module{pyexpat.errors} submodule.
+\end{datadesc}
+
+\begin{datadesc}{ErrorColumnNumber} 
+Column number at which an error occurred.
+\end{datadesc}
+
+\begin{datadesc}{ErrorLineNumber}
+Line number at which an error occurred.
+\end{datadesc}
+
+Here is the list of handlers that can be set.  To set a handler on an
+\class{xmlparser} object \var{o}, use \code{\var{o}.\var{handlername} = \var{func}}.    \var{handlername} must be taken from the following list, and \var{func} must be a callable object accepting the correct number of arguments.  The arguments are all strings, unless otherwise stated.
+
+\begin{methoddesc}{StartElementHandler}{name, attributes}
+Called for the start of every element.  \var{name} is a string
+containing the element name, and \var{attributes} is a dictionary
+mapping attribute names to their values.
+\end{methoddesc}
+
+\begin{methoddesc}{EndElementHandler}{name}
+Called for the end of every element.
+\end{methoddesc}
+
+\begin{methoddesc}{ProcessingInstructionHandler}{target, data}
+Called for every processing instruction.  
+\end{methoddesc}
+
+\begin{methoddesc}{CharacterDataHandler}{\var{data}}
+Called for character data.  
+\end{methoddesc}
+
+\begin{methoddesc}{UnparsedEntityDeclHandler}{entityName, base, systemId, publicId, notationName}
+Called for unparsed (NDATA) entity declarations.
+\end{methoddesc}
+
+\begin{methoddesc}{NotationDeclHandler}{notationName, base, systemId, publicId}
+Called for notation declarations.
+\end{methoddesc}
+
+\begin{methoddesc}{StartNamespaceDeclHandler}{prefix, uri}
+Called when an element contains a namespace declaration.
+\end{methoddesc}
+
+\begin{methoddesc}{EndNamespaceDeclHandler}{prefix}
+Called when the closing tag is reached for an element 
+that contained a namespace declaration.
+\end{methoddesc}
+
+\begin{methoddesc}{CommentHandler}{data}
+Called for comments.
+\end{methoddesc}
+
+\begin{methoddesc}{StartCdataSectionHandler}{}
+Called at the start of a CDATA section.
+\end{methoddesc}
+
+\begin{methoddesc}{EndCdataSectionHandler}{}
+Called at the end of a CDATA section.
+\end{methoddesc}
+
+\begin{methoddesc}{DefaultHandler}{data}
+Called for any characters in the XML document for
+which no applicable handler has been specified.  This means
+characters that are part of a construct which could be reported, but
+for which no handler has been supplied. 
+\end{methoddesc}
+
+\begin{methoddesc}{DefaultHandlerExpand}{data}
+This is the same as the \function{DefaultHandler}, 
+but doesn't inhibit expansion of internal entities.
+The entity reference will not be passed to the default handler.
+\end{methoddesc}
+
+\begin{methoddesc}{NotStandaloneHandler}{}
+Called if the XML document hasn't been declared as being a standalone document.
+\end{methoddesc}
+
+\begin{methoddesc}{ExternalEntityRefHandler}{context, base, systemId, publicId}
+Called for references to external entities.  
+\end{methoddesc}
+
+
+
+
+
+\subsection{\module{pyexpat.errors} -- Error constants}
+
+The following table lists the error constants in the
+\module{pyexpat.errors} submodule, available once the \module{pyexpat} module has been imported.
+
+\begin{tableii}{l|l}{code}{Constants}{}{}
+  \lineii        {XML_ERROR_ASYNC_ENTITY}
+        {XML_ERROR_ATTRIBUTE_EXTERNAL_ENTITY_REF}
+  \lineii        {XML_ERROR_BAD_CHAR_REF}
+        {XML_ERROR_BINARY_ENTITY_REF}
+  \lineii        {XML_ERROR_DUPLICATE_ATTRIBUTE}
+        {XML_ERROR_INCORRECT_ENCODING}
+  \lineii        {XML_ERROR_INVALID_TOKEN}
+        {XML_ERROR_JUNK_AFTER_DOC_ELEMENT}
+  \lineii        {XML_ERROR_MISPLACED_XML_PI}
+        {XML_ERROR_NO_ELEMENTS} 
+  \lineii        {XML_ERROR_NO_MEMORY}
+        {XML_ERROR_PARAM_ENTITY_REF}
+  \lineii        {XML_ERROR_PARTIAL_CHAR}
+        {XML_ERROR_RECURSIVE_ENTITY_REF}
+  \lineii        {XML_ERROR_SYNTAX} 
+	{XML_ERROR_TAG_MISMATCH}
+  \lineii        {XML_ERROR_UNCLOSED_TOKEN}
+        {XML_ERROR_UNDEFINED_ENTITY}
+  \lineii        {XML_ERROR_UNKNOWN_ENCODING}{}
+\end{tableii}
+
+\subsection{Example}
+
+The following program defines 3 handlers that just print out their
+arguments.
+
+\begin{verbatim}
+
+import pyexpat
+
+# 3 handler functions
+def start_element(name, attrs):
+    print 'Start element:', name, attrs
+def end_element(name):
+    print 'End element:', name
+def char_data(data):
+    print 'Character data:', repr(data)
+
+p=pyexpat.ParserCreate()
+
+p.StartElementHandler = start_element
+p.EndElementHandler   = end_element
+p.CharacterDataHandler= char_data
+
+p.Parse("""<?xml version="1.0"?>
+<parent id="top"><child1 name="paul">Text goes here</child1>
+<child2 name="fred">More text</child2>
+</parent>""")
+\end{verbatim}
+
+The output from this program is:
+
+\begin{verbatim}
+Start element: parent {'id': 'top'}
+Start element: child1 {'name': 'paul'}
+Character data: 'Text goes here'
+End element: child1
+Character data: '\012'
+Start element: child2 {'name': 'fred'}
+Character data: 'More text'
+End element: child2
+Character data: '\012'
+End element: parent
+\end{verbatim}
