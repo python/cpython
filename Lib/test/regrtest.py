@@ -20,6 +20,7 @@ Command line options:
 -h: help      -- print this text and exit
 -t: threshold -- call gc.set_threshold(N)
 -T: coverage  -- turn on code coverage using the trace module
+-L: runleaks  -- run the leaks(1) command just before exit
 
 If non-option arguments are present, they are names for tests to run,
 unless -x is given, in which case they are names for tests not to run.
@@ -41,6 +42,10 @@ line is used.  (actually tempfile.gettempdir() is used instead of
 or more test names per line.  Whitespace is ignored.  Blank lines and
 lines beginning with '#' are ignored.  This is especially useful for
 whittling down failures involving interactions among tests.
+
+-L causes the leaks(1) command to be run just before exit if it exists.
+leaks(1) is available on Mac OS X and presumably on some other
+FreeBSD-derived systems.
 
 -u is used to specify which special resource intensive tests to run,
 such as those requiring large file support or network connectivity.
@@ -118,7 +123,7 @@ def usage(code, msg=''):
 
 def main(tests=None, testdir=None, verbose=0, quiet=False, generate=False,
          exclude=False, single=False, randomize=False, fromfile=None,
-         findleaks=False, use_resources=None, trace=False):
+         findleaks=False, use_resources=None, trace=False, runleaks=False):
     """Execute a test suite.
 
     This also parses command-line options and modifies its behavior
@@ -143,10 +148,11 @@ def main(tests=None, testdir=None, verbose=0, quiet=False, generate=False,
 
     test_support.record_original_stdout(sys.stdout)
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'hvgqxsrf:lu:t:T',
+        opts, args = getopt.getopt(sys.argv[1:], 'hvgqxsrf:lu:t:TL',
                                    ['help', 'verbose', 'quiet', 'generate',
                                     'exclude', 'single', 'random', 'fromfile',
                                     'findleaks', 'use=', 'threshold=', 'trace',
+                                    'runleaks'
                                     ])
     except getopt.error, msg:
         usage(2, msg)
@@ -174,6 +180,8 @@ def main(tests=None, testdir=None, verbose=0, quiet=False, generate=False,
             fromfile = a
         elif o in ('-l', '--findleaks'):
             findleaks = True
+        elif o in ('-L', '--runleaks'):
+            runleaks = True
         elif o in ('-t', '--threshold'):
             import gc
             gc.set_threshold(int(a))
@@ -349,6 +357,9 @@ def main(tests=None, testdir=None, verbose=0, quiet=False, generate=False,
     if trace:
         r = tracer.results()
         r.write_results(show_missing=True, summary=True, coverdir=coverdir)
+
+    if runleaks:
+        os.system("leaks %d" % os.getpid())
 
     sys.exit(len(bad) > 0)
 
