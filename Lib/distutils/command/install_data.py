@@ -64,7 +64,7 @@ class install_data (Command):
                     dir = change_root(self.root, dir)
                 self.mkpath(dir)
                 for data in f[1]:
-                    data = convert_path(f[1])
+                    data = convert_path(data)
                     (out, _) = self.copy_file(data, dir)
                     self.outfiles.append(out)
 
