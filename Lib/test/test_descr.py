@@ -1364,7 +1364,7 @@ def properties():
             self.__x = value
         def delx(self):
             del self.__x
-        x = property(getx, setx, delx)
+        x = property(getx, setx, delx, doc="I'm the x property.")
     a = C()
     verify(not hasattr(a, "x"))
     a.x = 42
@@ -1377,6 +1377,32 @@ def properties():
     verify(C.x.__get__(a) == 100)
 ##    C.x.__set__(a)
 ##    verify(not hasattr(a, "x"))
+
+    raw = C.__dict__['x']
+    verify(isinstance(raw, property))
+
+    attrs = dir(raw)
+    verify("__doc__" in attrs)
+    verify("fget" in attrs)
+    verify("fset" in attrs)
+    verify("fdel" in attrs)
+
+    verify(raw.__doc__ == "I'm the x property.")
+    verify(raw.fget is C.__dict__['getx'])
+    verify(raw.fset is C.__dict__['setx'])
+    verify(raw.fdel is C.__dict__['delx'])
+
+    for attr in "__doc__", "fget", "fset", "fdel":
+        try:
+            setattr(raw, attr, 42)
+        except TypeError, msg:
+            if str(msg).find('readonly') < 0:
+                raise TestFailed("when setting readonly attr %r on a "
+                                 "property, got unexpected TypeError "
+                                 "msg %r" % (attr, str(msg)))
+        else:
+            raise TestFailed("expected TypeError from trying to set "
+                             "readonly %r attr on a property" % attr)
 
 def supers():
     if verbose: print "Testing super..."
@@ -1884,7 +1910,7 @@ def rich_comparisons():
     zz = ZZ(1.0000003)
     verify(zz == 1+0j)
     verify(1+0j == zz)
-            
+
     class classic:
         pass
     for base in (classic, int, object, list):

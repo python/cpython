@@ -873,9 +873,11 @@ PyWrapper_New(PyObject *d, PyObject *self)
 /*
     class property(object):
 
-	def __init__(self, get=None, set=None):
-	    self.__get = get
-	    self.__set = set
+	def __init__(self, fget=None, fset=None, fdel=None, doc=None):
+	    self.__get = fget
+	    self.__set = fset
+	    self.__del = fdel
+	    self.__doc__ = doc
 
 	def __get__(self, inst, type=None):
 	    if self.__get is None:
@@ -885,26 +887,42 @@ PyWrapper_New(PyObject *d, PyObject *self)
 	    return self.__get(inst)
 
 	def __set__(self, inst, value):
-	    if self.__set is None:
-		raise AttributeError, "unsettable attribute"
-	    return self.__set(inst, value)
+	    if value is None:
+	    	if self.__del is None:
+	    	    raise AttributeError, "can't delete attribute"
+	    	return self.__del(inst)
+	    else:
+	        if self.__set is None:
+	            raise AttributeError, "can't set attribute"
+	        return self.__set(inst, value)
 */
 
 typedef struct {
 	PyObject_HEAD
-	PyObject *get;
-	PyObject *set;
-	PyObject *del;
+	PyObject *prop_get;
+	PyObject *prop_set;
+	PyObject *prop_del;
+	PyObject *prop_doc;
 } propertyobject;
+
+static PyMemberDef property_members[] = {
+	{"fget", T_OBJECT, offsetof(propertyobject, prop_get), READONLY},
+	{"fset", T_OBJECT, offsetof(propertyobject, prop_set), READONLY},
+	{"fdel", T_OBJECT, offsetof(propertyobject, prop_del), READONLY},
+	{"__doc__",  T_OBJECT, offsetof(propertyobject, prop_doc), READONLY},
+	{0}
+};
+
 
 static void
 property_dealloc(PyObject *self)
 {
 	propertyobject *gs = (propertyobject *)self;
 
-	Py_XDECREF(gs->get);
-	Py_XDECREF(gs->set);
-	Py_XDECREF(gs->del);
+	Py_XDECREF(gs->prop_get);
+	Py_XDECREF(gs->prop_set);
+	Py_XDECREF(gs->prop_del);
+	Py_XDECREF(gs->prop_doc);
 	self->ob_type->tp_free(self);
 }
 
@@ -913,7 +931,7 @@ property_descr_get(PyObject *self, PyObject *obj, PyObject *type)
 {
 	propertyobject *gs = (propertyobject *)self;
 
-	if (gs->get == NULL) {
+	if (gs->prop_get == NULL) {
 		PyErr_SetString(PyExc_AttributeError, "unreadable attribute");
 		return NULL;
 	}
@@ -921,7 +939,7 @@ property_descr_get(PyObject *self, PyObject *obj, PyObject *type)
 		Py_INCREF(self);
 		return self;
 	}
-	return PyObject_CallFunction(gs->get, "(O)", obj);
+	return PyObject_CallFunction(gs->prop_get, "(O)", obj);
 }
 
 static int
@@ -931,9 +949,9 @@ property_descr_set(PyObject *self, PyObject *obj, PyObject *value)
 	PyObject *func, *res;
 
 	if (value == NULL)
-		func = gs->del;
+		func = gs->prop_del;
 	else
-		func = gs->set;
+		func = gs->prop_set;
 	if (func == NULL) {
 		PyErr_SetString(PyExc_AttributeError,
 				value == NULL ?
@@ -954,32 +972,45 @@ property_descr_set(PyObject *self, PyObject *obj, PyObject *value)
 static int
 property_init(PyObject *self, PyObject *args, PyObject *kwds)
 {
-	PyObject *get = NULL, *set = NULL, *del = NULL;
+	PyObject *get = NULL, *set = NULL, *del = NULL, *doc = NULL;
+	static char *kwlist[] = {"fget", "fset", "fdel", "doc", 0};
 	propertyobject *gs = (propertyobject *)self;
 
-	if (!PyArg_ParseTuple(args, "|OOO:property", &get, &set, &del))
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "|OOOO:property",
+	     				 kwlist, &get, &set, &del, &doc))
 		return -1;
+
 	if (get == Py_None)
 		get = NULL;
 	if (set == Py_None)
 		set = NULL;
+	if (del == Py_None)
+		del = NULL;
+
 	Py_XINCREF(get);
 	Py_XINCREF(set);
 	Py_XINCREF(del);
-	gs->get = get;
-	gs->set = set;
-	gs->del = del;
+	Py_XINCREF(doc);
+
+	gs->prop_get = get;
+	gs->prop_set = set;
+	gs->prop_del = del;
+	gs->prop_doc = doc;
+
 	return 0;
 }
 
 static char property_doc[] =
-"property([getfunc[, setfunc[, delfunc]]]) -> property attribute\n"
-"Typical use to define a managed attribute x of C instances:\n"
+"property(fget=None, fset=None, fdel=None, doc=None) -> property attribute\n"
+"\n"
+"fget is a function to be used for getting an attribute value, and likewise\n"
+"fset is a function for setting, and fdel a function for del'ing, an\n"
+"attribute.  Typical use is to define a managed attribute x:\n"
 "class C(object):\n"
 "    def getx(self): return self.__x\n"
 "    def setx(self, value): self.__x = value\n"
 "    def delx(self): del self.__x\n"
-"    x = property(getx, setx, delx)";
+"    x = property(getx, setx, delx, \"I'm the 'x' property.\")";
 
 PyTypeObject PyProperty_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
@@ -1012,7 +1043,7 @@ PyTypeObject PyProperty_Type = {
 	0,					/* tp_iter */
 	0,					/* tp_iternext */
 	0,					/* tp_methods */
-	0,					/* tp_members */
+	property_members,			/* tp_members */
 	0,					/* tp_getset */
 	0,					/* tp_base */
 	0,					/* tp_dict */
