@@ -132,6 +132,7 @@
 %
 \renewcommand*\l@section{\@dottedtocline{1}{1.5em}{2.6em}}
 \renewcommand*\l@subsection{\@dottedtocline{2}{4.1em}{3.5em}}
+\setcounter{tocdepth}{1}
 
 
 % Fix the theindex environment to add an entry to the Table of
