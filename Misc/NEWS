@@ -26,6 +26,9 @@ Core and builtins
 Extension modules
 -----------------
 
+- array.array.insert() now treats negative indices as being relative
+  to the end of the array, just like list.insert() does. (SF bug #739313)
+
 - The datetime module classes datetime, time, and timedelta are now
   properly subclassable.
 

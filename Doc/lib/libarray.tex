@@ -145,7 +145,8 @@ the first occurence of \var{x} in the array.
 
 \begin{methoddesc}[array]{insert}{i, x}
 Insert a new item with value \var{x} in the array before position
-\var{i}.
+\var{i}. Negative values are treated as being relative to the end
+of the array.
 \end{methoddesc}
 
 \begin{methoddesc}[array]{pop}{\optional{i}}
