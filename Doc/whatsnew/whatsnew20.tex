@@ -556,6 +556,22 @@ added to the \module{sys} module.  \code{sys.version_info} is a tuple
 \var{level} is a string such as \code{"alpha"}, \code{"beta"}, or
 \code{""} for a final release.
 
+Dictionaries have an odd new method, \method{setdefault(\var{key},
+\var{default})}, which behaves similarly to the existing
+\method{get()} method.  However, if the key is missing,
+\method{setdefault()} both returns the value of \var{default} as
+\method{get()} would do, and also inserts it into the dictionary as
+the value for \var{key}.  Thus, the following lines of code:
+
+\begin{verbatim}
+if dict.has_key( key ): return dict[key]
+else: 
+    dict[key] = []
+    return dict[key]
+\end{verbatim}
+
+can be reduced to a single \code{return dict.setdefault(key, [])} statement.
+
 % ======================================================================
 \section{Extending/Embedding Changes}
 
