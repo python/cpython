@@ -6,6 +6,10 @@
 # Extended file operations
 #
 # f = posixfile.open(filename, mode)
+#	will create a new posixfile object
+#
+# f = posixfile.fileopen(fileobject)
+#	will create a posixfile object from a builtin file object
 #
 # f.file()
 #	will return the original builtin file object
@@ -55,11 +59,16 @@
 #
 
 class _posixfile_:
+    states = ['open', 'closed']
+
     #
     # Internal routines
     #
     def __repr__(self):
-	return repr(self._file_)
+	file = self._file_
+	return "<%s posixfile '%s', mode '%s' at %s>" % \
+		(self.states[file.closed], file.name, file.mode, \
+		 hex(id(self))[2:])
 
     def __del__(self):
 	self._file_.close()
@@ -69,13 +78,15 @@ class _posixfile_:
     #
     def open(self, name, mode):
 	import __builtin__
+	return self.fileopen(__builtin__.open(name, mode))
 
-	self._name_ = name
-	self._mode_ = mode
-	self._file_ = __builtin__.open(name, mode)
+    def fileopen(self, file):
+	if `type(file)` != "<type 'file'>":
+	    raise TypeError, 'posixfile.fileopen() arg must be file object'
+	self._file_  = file
 	# Copy basic file methods
-	for method in self._file_.__methods__:
-	    setattr(self, method, getattr(self._file_, method))
+	for method in file.__methods__:
+	    setattr(self, method, getattr(file, method))
 	return self
 
     #
@@ -90,7 +101,7 @@ class _posixfile_:
 	try: ignore = posix.fdopen
 	except: raise AttributeError, 'dup() method unavailable'
 
-	return posix.fdopen(posix.dup(self._file_.fileno()), self._mode_)
+	return posix.fdopen(posix.dup(self._file_.fileno()), self._file_.mode)
 
     def dup2(self, fd):
 	import posix
@@ -99,32 +110,40 @@ class _posixfile_:
 	except: raise AttributeError, 'dup() method unavailable'
 
 	posix.dup2(self._file_.fileno(), fd)
-	return posix.fdopen(fd, self._mode_)
+	return posix.fdopen(fd, self._file_.mode)
 
-    def flags(self, which):
+    def flags(self, *which):
 	import fcntl, FCNTL
+
+	if which:
+	    if len(which) > 1:
+		raise TypeError, 'Too many arguments'
+	    which = which[0]
+	else: which = '?'
 
 	l_flags = 0
 	if 'n' in which: l_flags = l_flags | FCNTL.O_NDELAY
 	if 'a' in which: l_flags = l_flags | FCNTL.O_APPEND
 	if 's' in which: l_flags = l_flags | FCNTL.O_SYNC
 
+	file = self._file_
+
 	if '=' not in which:
-	    cur_fl = fcntl.fcntl(self._file_.fileno(), FCNTL.F_GETFL, 0)
+	    cur_fl = fcntl.fcntl(file.fileno(), FCNTL.F_GETFL, 0)
 	    if '!' in which: l_flags = cur_fl & ~ l_flags
 	    else: l_flags = cur_fl | l_flags
 
-	l_flags = fcntl.fcntl(self._file_.fileno(), FCNTL.F_SETFL, l_flags)
+	l_flags = fcntl.fcntl(file.fileno(), FCNTL.F_SETFL, l_flags)
 
-	if 'c' in which:
-	    arg = ('!' not in which)	# 1 is close
-	    l_flags = fcntl.fcntl(self._file_.fileno(), FCNTL.F_SETFD, arg)
+	if 'c' in which:	
+	    arg = ('!' not in which)	# 0 is don't, 1 is do close on exec
+	    l_flags = fcntl.fcntl(file.fileno(), FCNTL.F_SETFD, arg)
 
 	if '?' in which:
-	    which = ''
-	    l_flags = fcntl.fcntl(self._file_.fileno(), FCNTL.F_GETFL, 0)
+	    which = ''			# Return current flags
+	    l_flags = fcntl.fcntl(file.fileno(), FCNTL.F_GETFL, 0)
 	    if FCNTL.O_APPEND & l_flags: which = which + 'a'
-	    if fcntl.fcntl(self._file_.fileno(), FCNTL.F_GETFD, 0) & 1:
+	    if fcntl.fcntl(file.fileno(), FCNTL.F_GETFD, 0) & 1:
 		which = which + 'c'
 	    if FCNTL.O_NDELAY & l_flags: which = which + 'n'
 	    if FCNTL.O_SYNC & l_flags: which = which + 's'
@@ -172,6 +191,16 @@ class _posixfile_:
 #
 def open(name, mode):
     return _posixfile_().open(name, mode)
+
+def fileopen(file):
+    return _posixfile_().fileopen(file)
+
+#
+# Constants
+#
+SEEK_SET = 0
+SEEK_CUR = 1
+SEEK_END = 2
 
 #
 # End of posixfile.py
