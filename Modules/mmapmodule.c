@@ -65,7 +65,7 @@ mmap_object_dealloc(mmap_object * m_obj)
 
 #ifdef UNIX
 	if (m_obj->data!=NULL) {
-		msync(m_obj->data, m_obj->size, MS_SYNC | MS_INVALIDATE);
+		msync(m_obj->data, m_obj->size, MS_SYNC);
 		munmap(m_obj->data, m_obj->size);
 	}
 #endif /* UNIX */
@@ -388,7 +388,7 @@ mmap_flush_method (mmap_object * self, PyObject * args)
 		/* XXX semantics of return value? */
 		/* XXX flags for msync? */
 		if (-1 == msync(self->data + offset, size,
-				MS_SYNC | MS_INVALIDATE))
+				MS_SYNC))
 		{
 			PyErr_SetFromErrno(mmap_module_error);
 			return NULL;
