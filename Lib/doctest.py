@@ -2001,7 +2001,7 @@ class Tester:
         import new
         m = new.module(name)
         m.__test__ = d
-        return self.rundoc(m, name, module)
+        return self.rundoc(m, name)
 
     def summarize(self, verbose=None):
         return self.testrunner.summarize(verbose)
