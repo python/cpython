@@ -6,7 +6,7 @@ and HEAD requests in a fairly straightforward manner.
 """
 
 
-__version__ = "0.4"
+__version__ = "0.5"
 
 
 import os
@@ -99,6 +99,7 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             return None
         list.sort(lambda a, b: cmp(a.lower(), b.lower()))
         f = StringIO()
+        f.write("<title>Directory listing for %s</title>\n" % self.path)
         f.write("<h2>Directory listing for %s</h2>\n" % self.path)
         f.write("<hr>\n<ul>\n")
         for name in list:
@@ -107,7 +108,7 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             # Append / for directories or @ for symbolic links
             if os.path.isdir(fullname):
                 displayname = name + "/"
-                linkname = name + os.sep
+                linkname = name + "/"
             if os.path.islink(fullname):
                 displayname = name + "@"
                 # Note: a link to a directory displays with @ and links with /
