@@ -12,7 +12,7 @@ from types import *
 from glob import glob
 from distutils.core import Command
 from distutils.util import \
-     newer, remove_tree, make_tarball, make_zipfile, create_tree
+     newer, create_tree, remove_tree, make_tarball, make_zipfile, native_path
 from distutils.text_file import TextFile
 from distutils.errors import DistutilsExecError
 
@@ -317,7 +317,7 @@ class sdist (Command):
                          action)
                     continue
 
-                pattern = words[1]
+                pattern = native_path (words[1])
 
             elif action in ('recursive-include','recursive-exclude'):
                 if len (words) != 3:
@@ -327,7 +327,7 @@ class sdist (Command):
                          action)
                     continue
 
-                (dir, pattern) = words[1:3]
+                (dir, pattern) = map (native_path, words[1:3])
 
             elif action in ('graft','prune'):
                 if len (words) != 2:
@@ -337,7 +337,7 @@ class sdist (Command):
                          action)
                     continue
 
-                dir_pattern = words[1]
+                dir_pattern = native_path (words[1])
 
             else:
                 template.warn ("invalid manifest template line: " +
@@ -347,9 +347,9 @@ class sdist (Command):
             # OK, now we know that the action is valid and we have the
             # right number of words on the line for that action -- so we
             # can proceed with minimal error-checking.  Also, we have
-            # defined either 'patter', 'dir' and 'pattern', or
-            # 'dir_pattern' -- so we don't have to spend any time digging
-            # stuff up out of 'words'.
+            # defined either (pattern), (dir and pattern), or
+            # (dir_pattern) -- so we don't have to spend any time
+            # digging stuff up out of 'words'.
 
             if action == 'include':
                 print "include", pattern
