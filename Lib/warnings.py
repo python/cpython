@@ -167,14 +167,20 @@ def _getcategory(category):
     if re.match("^[a-zA-Z0-9_]+$", category):
         try:
             cat = eval(category)
-        except KeyError:
-            raise _OptionError("invalid warning category: %s" % `category`)
+        except NameError:
+            raise _OptionError("unknown warning category: %s" % `category`)
     else:
         i = category.rfind(".")
         module = category[:i]
         klass = category[i+1:]
-        m = __import__(module, None, None, [klass])
-        cat = getattr(m, klass)
+        try:
+            m = __import__(module, None, None, [klass])
+        except ImportError:
+            raise _OptionError("invalid module name: %s" % `module`)
+        try:
+            cat = getattr(m, klass)
+        except AttributeError:
+            raise _OptionError("unknown warning category: %s" % `category`)
     if (not isinstance(cat, types.ClassType) or
         not issubclass(cat, Warning)):
         raise _OptionError("invalid warning category: %s" % `category`)
