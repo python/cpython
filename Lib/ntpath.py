@@ -369,6 +369,10 @@ def normpath(path):
 
 # Return an absolute path.
 def abspath(path):
-    if not isabs(path):
-        path = join(os.getcwd(), path)
-    return normpath(path)
+    try:
+        import win32api
+        return win32api.GetFullPathName(path)
+    except ImportError:
+        if not isabs(path):
+            path = join(os.getcwd(), path)
+        return normpath(path)
