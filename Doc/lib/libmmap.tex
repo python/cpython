@@ -8,20 +8,21 @@ Memory-mapped file objects behave like both mutable strings and like
 file objects.  You can use mmap objects in most places where strings
 are expected; for example, you can use the \module{re} module to
 search through a memory-mapped file.  Since they're mutable, you can
-change a single character by doing \code{obj[ \var{index} ] = 'a'}, or
+change a single character by doing \code{obj[\var{index}] = 'a'}, or
 change a substring by assigning to a slice:
-\code{obj[ \var{i1}:\var{i2} ] = '...'}.  You can also read and write
+\code{obj[\var{i1}:\var{i2}] = '...'}.  You can also read and write
 data starting at the current file position, and \method{seek()}
 through the file to different positions.
 
 A memory-mapped file is created by the following function, which is
 different on Unix and on Windows.
 
-\begin{funcdesc}{mmap}{fileno, length \optional{, tagname} }
-(Windows version) Maps \var{length} bytes from the file specified by
-the file handle \var{fileno}, and returns a mmap object.  If you wish
-to map an existing Python file object, use its \method{fileno()}
-method to obtain the correct value for the \var{fileno} parameter.
+\begin{funcdesc}{mmap}{fileno, length\optional{, tagname}}
+\strong{(Windows version)}  Maps \var{length} bytes from the file
+specified by the file handle \var{fileno}, and returns a mmap object.
+If you wish to map an existing Python file object, use its
+\method{fileno()} method to obtain the correct value for the
+\var{fileno} parameter.
 
 \var{tagname}, if specified, is a string giving a tag name for the mapping. 
 Windows allows you to have many different mappings against the same
@@ -32,23 +33,24 @@ tag parameter will assist in keeping your code portable between Unix
 and Windows.
 \end{funcdesc}
 
-\begin{funcdesc}{mmap}{fileno, size \optional{, flags, prot}}
-(Unix version) Maps \var{length} bytes from the file specified by the
-file handle \var{fileno}, and returns a mmap object.  If you wish to
-map an existing Python file object, use its \method{fileno()} method
-to obtain the correct value for the \var{fileno} parameter.
+\begin{funcdesc}{mmap}{fileno, size\optional{, flags, prot}}
+\strong{(Unix version)}  Maps \var{length} bytes from the file
+specified by the file handle \var{fileno}, and returns a mmap object.
+If you wish to map an existing Python file object, use its
+\method{fileno()} method to obtain the correct value for the
+\var{fileno} parameter.
 
 \var{flags} specifies the nature of the mapping.  
-\code{MAP_PRIVATE} creates a private copy-on-write mapping, so
+\constant{MAP_PRIVATE} creates a private copy-on-write mapping, so
 changes to the contents of the mmap object will be private to this
-process, and \code{MAP_SHARED} creates a mapping that's shared
+process, and \constant{MAP_SHARED} creates a mapping that's shared
 with all other processes mapping the same areas of the file.
-The default value is \code{MAP_SHARED}.
+The default value is \constant{MAP_SHARED}.
 
 \var{prot}, if specified, gives the desired memory protection; the two 
-most useful values are \code{PROT_READ} and \code{PROT_WRITE}, to
-specify that the pages may be read or written.
-\var{prot} defaults to \code{PROT_READ | PROT_WRITE}.
+most useful values are \constant{PROT_READ} and \constant{PROT_WRITE},
+to specify that the pages may be read or written.
+\var{prot} defaults to \constant{PROT_READ | PROT_WRITE}.
 \end{funcdesc}
 
 Memory-mapped file objects support the following methods:
@@ -59,13 +61,13 @@ Close the file.  Subsequent calls to other methods of the object
 will result in an exception being raised.
 \end{methoddesc}
 
-\begin{methoddesc}{find}{\var{string} \optional{, \var{start}}}
-  Returns the lowest index in the object where the substring \var{string} is
-  found.  Returns \code{-1} on failure.
-  \var{start} is the index at which the search begins, and defaults to zero.
+\begin{methoddesc}{find}{string\optional{, start}}
+Returns the lowest index in the object where the substring
+\var{string} is found.  Returns \code{-1} on failure.  \var{start} is
+the index at which the search begins, and defaults to zero.
 \end{methoddesc}
 
-\begin{methoddesc}{flush}{\optional{\var{offset}, \var{size}}}
+\begin{methoddesc}{flush}{\optional{offset, size}}
 Flushes changes made to the in-memory copy of a file back to disk.
 Without use of this call there is no guarantee that changes are
 written back before the object is destroyed.  If \var{offset} and
@@ -98,12 +100,11 @@ the next newline.
 \begin{methoddesc}{resize}{\var{newsize}}
 \end{methoddesc}
 
-\begin{methoddesc}{seek}{\var{pos} \optional{, \var{whence}}}
-  Set the file's current position.
-  \var{whence} argument is optional and defaults to \code{0}
-  (absolute file positioning); other values are \code{1} (seek
-  relative to the current position) and \code{2} (seek relative to the
-  file's end).  
+\begin{methoddesc}{seek}{pos\optional{, whence}}
+Set the file's current position.
+\var{whence} argument is optional and defaults to \code{0} (absolute
+file positioning); other values are \code{1} (seek relative to the
+current position) and \code{2} (seek relative to the file's end).
 \end{methoddesc}
 
 \begin{methoddesc}{size}{}
@@ -122,8 +123,7 @@ bytes that were written.
 \end{methoddesc}
 
 \begin{methoddesc}{write_byte}{\var{byte}}
-Write the single-character string \var{byte} into memory at the current position of
-the file pointer; the file position is advanced by 1.
+Write the single-character string \var{byte} into memory at the
+current position of the file pointer; the file position is advanced by
+\code{1}.
 \end{methoddesc}
-
-
