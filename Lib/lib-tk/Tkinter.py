@@ -177,7 +177,7 @@ class Variable:
             master = _default_root
         self._master = master
         self._tk = master.tk
-        self._name = 'PY_VAR' + `_varnum`
+        self._name = 'PY_VAR' + repr(_varnum)
         _varnum = _varnum + 1
         self.set(self._default)
     def __del__(self):
@@ -1022,7 +1022,7 @@ class Misc:
         be executed. An optional function SUBST can
         be given which will be executed before FUNC."""
         f = CallWrapper(func, subst, self).__call__
-        name = `id(f)`
+        name = repr(id(f))
         try:
             func = func.im_func
         except AttributeError:
@@ -1810,7 +1810,7 @@ class BaseWidget(Misc):
             name = cnf['name']
             del cnf['name']
         if not name:
-            name = `id(self)`
+            name = repr(id(self))
         self._name = name
         if master._w=='.':
             self._w = '.' + name
@@ -1957,9 +1957,9 @@ def AtSelLast():
     return 'sel.last'
 def At(x, y=None):
     if y is None:
-        return '@' + `x`
+        return '@%r' % (x,)
     else:
-        return '@' + `x` + ',' + `y`
+        return '@%r,%r' % (x, y)
 
 class Canvas(Widget):
     """Canvas widget to display graphical elements like lines or text."""
@@ -3118,7 +3118,7 @@ class Image:
         self.tk = master.tk
         if not name:
             Image._last_id += 1
-            name = "pyimage" +`Image._last_id` # tk itself would use image<x>
+            name = "pyimage%r" % (Image._last_id,) # tk itself would use image<x>
             # The following is needed for systems where id(x)
             # can return a negative number, such as Linux/m68k:
             if name[0] == '-': name = '_' + name[1:]

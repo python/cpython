@@ -83,7 +83,7 @@ class _posixfile_:
 
     def fileopen(self, file):
         import types
-        if `type(file)` != "<type 'file'>":
+        if repr(type(file)) != "<type 'file'>":
             raise TypeError, 'posixfile.fileopen() arg must be file object'
         self._file_  = file
         # Copy basic file methods

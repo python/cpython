@@ -361,7 +361,7 @@ class BasicTestCase(unittest.TestCase):
             if set_raises_error:
                 self.fail("expected exception")
             if n != None:
-                self.fail("expected None: "+`n`)
+                self.fail("expected None: %r" % (n,))
 
         rec = c.get_both('0404', self.makeData('0404'))
         assert rec == ('0404', self.makeData('0404'))
@@ -375,7 +375,7 @@ class BasicTestCase(unittest.TestCase):
             if get_raises_error:
                 self.fail("expected exception")
             if n != None:
-                self.fail("expected None: "+`n`)
+                self.fail("expected None: %r" % (n,))
 
         if self.d.get_type() == db.DB_BTREE:
             rec = c.set_range('011')
@@ -548,7 +548,7 @@ class BasicTestCase(unittest.TestCase):
         num = d.truncate()
         assert num >= 1, "truncate returned <= 0 on non-empty database"
         num = d.truncate()
-        assert num == 0, "truncate on empty DB returned nonzero (%s)" % `num`
+        assert num == 0, "truncate on empty DB returned nonzero (%r)" % (num,)
 
 #----------------------------------------------------------------------
 
@@ -674,7 +674,7 @@ class BasicTransactionTestCase(BasicTestCase):
         num = d.truncate(txn)
         assert num >= 1, "truncate returned <= 0 on non-empty database"
         num = d.truncate(txn)
-        assert num == 0, "truncate on empty DB returned nonzero (%s)" % `num`
+        assert num == 0, "truncate on empty DB returned nonzero (%r)" % (num,)
         txn.commit()
 
     #----------------------------------------

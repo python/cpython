@@ -4,7 +4,7 @@ import W
 
 # key callback function
 def tester(char, event):
-	text = `char` + "\r" + `ord(char)` + "\r" + hex(ord(char)) + "\r" + oct(ord(char))
+	text = "%r\r%d\r%s\r%s" % (char, ord(char), hex(ord(chart)), oct(ord(char)))
 	window.keys.set(text)
 
 # close callback

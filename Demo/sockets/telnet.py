@@ -53,7 +53,7 @@ def main():
 	try:
 		s.connect((host, port))
 	except error, msg:
-		sys.stderr.write('connect failed: ' + `msg` + '\n')
+		sys.stderr.write('connect failed: ' + repr(msg) + '\n')
 		sys.exit(1)
 	#
 	pid = posix.fork()

@@ -93,10 +93,10 @@ class Unpacker(xdr.Unpacker):
 		xid = self.unpack_uint(xid)
 		temp = self.unpack_enum()
 		if temp <> CALL:
-			raise BadRPCFormat, 'no CALL but ' + `temp`
+			raise BadRPCFormat, 'no CALL but %r' % (temp,)
 		temp = self.unpack_uint()
 		if temp <> RPCVERSION:
-			raise BadRPCVerspion, 'bad RPC version ' + `temp`
+			raise BadRPCVerspion, 'bad RPC version %r' % (temp,)
 		prog = self.unpack_uint()
 		vers = self.unpack_uint()
 		proc = self.unpack_uint()
@@ -109,7 +109,7 @@ class Unpacker(xdr.Unpacker):
 		xid = self.unpack_uint()
 		mtype = self.unpack_enum()
 		if mtype <> REPLY:
-			raise RuntimeError, 'no REPLY but ' + `mtype`
+			raise RuntimeError, 'no REPLY but %r' % (mtype,)
 		stat = self.unpack_enum()
 		if stat == MSG_DENIED:
 			stat = self.unpack_enum()
@@ -117,15 +117,15 @@ class Unpacker(xdr.Unpacker):
 				low = self.unpack_uint()
 				high = self.unpack_uint()
 				raise RuntimeError, \
-				  'MSG_DENIED: RPC_MISMATCH: ' + `low, high`
+				  'MSG_DENIED: RPC_MISMATCH: %r' % ((low, high),)
 			if stat == AUTH_ERROR:
 				stat = self.unpack_uint()
 				raise RuntimeError, \
-					'MSG_DENIED: AUTH_ERROR: ' + `stat`
-			raise RuntimeError, 'MSG_DENIED: ' + `stat`
+					'MSG_DENIED: AUTH_ERROR: %r' % (stat,)
+			raise RuntimeError, 'MSG_DENIED: %r' % (stat,)
 		if stat <> MSG_ACCEPTED:
 			raise RuntimeError, \
-			  'Neither MSG_DENIED nor MSG_ACCEPTED: ' + `stat`
+			  'Neither MSG_DENIED nor MSG_ACCEPTED: %r' % (stat,)
 		verf = self.unpack_auth()
 		stat = self.unpack_enum()
 		if stat == PROG_UNAVAIL:
@@ -134,13 +134,13 @@ class Unpacker(xdr.Unpacker):
 			low = self.unpack_uint()
 			high = self.unpack_uint()
 			raise RuntimeError, \
-				'call failed: PROG_MISMATCH: ' + `low, high`
+				'call failed: PROG_MISMATCH: %r' % ((low, high),)
 		if stat == PROC_UNAVAIL:
 			raise RuntimeError, 'call failed: PROC_UNAVAIL'
 		if stat == GARBAGE_ARGS:
 			raise RuntimeError, 'call failed: GARBAGE_ARGS'
 		if stat <> SUCCESS:
-			raise RuntimeError, 'call failed: ' + `stat`
+			raise RuntimeError, 'call failed: %r' % (stat,)
 		return xid, verf
 		# Caller must get procedure-specific part of reply
 
@@ -350,8 +350,8 @@ class RawTCPClient(Client):
 		xid, verf = u.unpack_replyheader()
 		if xid <> self.lastxid:
 			# Can't really happen since this is TCP...
-			raise RuntimeError, 'wrong xid in reply ' + `xid` + \
-				' instead of ' + `self.lastxid`
+			raise RuntimeError, 'wrong xid in reply %r instead of %r' % (
+			                     xid, self.lastxid)
 
 
 # Client using UDP to a specific port
@@ -701,7 +701,7 @@ class Server:
 			self.packer.pack_uint(self.vers)
 			return self.packer.get_buf()
 		proc = self.unpacker.unpack_uint()
-		methname = 'handle_' + `proc`
+		methname = 'handle_' + repr(proc)
 		try:
 			meth = getattr(self, methname)
 		except AttributeError:
@@ -840,7 +840,7 @@ def testbcast():
 		bcastaddr = '<broadcast>'
 	def rh(reply, fromaddr):
 		host, port = fromaddr
-		print host + '\t' + `reply`
+		print host + '\t' + repr(reply)
 	pmap = BroadcastUDPPortMapperClient(bcastaddr)
 	pmap.set_reply_handler(rh)
 	pmap.set_timeout(5)
@@ -858,7 +858,7 @@ def testsvr():
 		def handle_1(self):
 			arg = self.unpacker.unpack_string()
 			self.turn_around()
-			print 'RPC function 1 called, arg', `arg`
+			print 'RPC function 1 called, arg', repr(arg)
 			self.packer.pack_string(arg + arg)
 	#
 	s = S('', 0x20000000, 1, 0)
@@ -888,4 +888,4 @@ def testclt():
 	c = C(host, 0x20000000, 1)
 	print 'making call...'
 	reply = c.call_1('hello, world, ')
-	print 'call returned', `reply`
+	print 'call returned', repr(reply)

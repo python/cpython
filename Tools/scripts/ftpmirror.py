@@ -87,17 +87,17 @@ def main():
     f.connect(host,port)
     if not nologin:
         if verbose:
-            print 'Logging in as %s...' % `login or 'anonymous'`
+            print 'Logging in as %r...' % (login or 'anonymous')
         f.login(login, passwd, account)
     if verbose: print 'OK.'
     pwd = f.pwd()
-    if verbose > 1: print 'PWD =', `pwd`
+    if verbose > 1: print 'PWD =', repr(pwd)
     if remotedir:
-        if verbose > 1: print 'cwd(%s)' % `remotedir`
+        if verbose > 1: print 'cwd(%s)' % repr(remotedir)
         f.cwd(remotedir)
         if verbose > 1: print 'OK.'
         pwd = f.pwd()
-        if verbose > 1: print 'PWD =', `pwd`
+        if verbose > 1: print 'PWD =', repr(pwd)
     #
     mirrorsubdir(f, localdir)
 
@@ -105,11 +105,11 @@ def main():
 def mirrorsubdir(f, localdir):
     pwd = f.pwd()
     if localdir and not os.path.isdir(localdir):
-        if verbose: print 'Creating local directory', `localdir`
+        if verbose: print 'Creating local directory', repr(localdir)
         try:
             makedir(localdir)
         except os.error, msg:
-            print "Failed to establish local directory", `localdir`
+            print "Failed to establish local directory", repr(localdir)
             return
     infofilename = os.path.join(localdir, '.mirrorinfo')
     try:
@@ -119,15 +119,15 @@ def mirrorsubdir(f, localdir):
     try:
         info = eval(text)
     except (SyntaxError, NameError):
-        print 'Bad mirror info in %s' % `infofilename`
+        print 'Bad mirror info in', repr(infofilename)
         info = {}
     subdirs = []
     listing = []
-    if verbose: print 'Listing remote directory %s...' % `pwd`
+    if verbose: print 'Listing remote directory %r...' % (pwd,)
     f.retrlines('LIST', listing.append)
     filesfound = []
     for line in listing:
-        if verbose > 1: print '-->', `line`
+        if verbose > 1: print '-->', repr(line)
         if mac:
             # Mac listing has just filenames;
             # trailing / means subdirectory
@@ -148,7 +148,7 @@ def mirrorsubdir(f, localdir):
             if i >= 0:
                 # words[0] had better start with 'l'...
                 if verbose > 1:
-                    print 'Found symbolic link %s' % `filename`
+                    print 'Found symbolic link %r' % (filename,)
                 linkto = filename[i+4:]
                 filename = filename[:i]
             infostuff = words[-5:-1]
@@ -157,21 +157,21 @@ def mirrorsubdir(f, localdir):
         for pat in skippats:
             if fnmatch(filename, pat):
                 if verbose > 1:
-                    print 'Skip pattern', `pat`,
-                    print 'matches', `filename`
+                    print 'Skip pattern', repr(pat),
+                    print 'matches', repr(filename)
                 skip = 1
                 break
         if skip:
             continue
         if mode[0] == 'd':
             if verbose > 1:
-                print 'Remembering subdirectory', `filename`
+                print 'Remembering subdirectory', repr(filename)
             subdirs.append(filename)
             continue
         filesfound.append(filename)
         if info.has_key(filename) and info[filename] == infostuff:
             if verbose > 1:
-                print 'Already have this version of',`filename`
+                print 'Already have this version of',repr(filename)
             continue
         fullname = os.path.join(localdir, filename)
         tempname = os.path.join(localdir, '@'+filename)
@@ -187,24 +187,20 @@ def mirrorsubdir(f, localdir):
             pass
         if mode[0] == 'l':
             if verbose:
-                print "Creating symlink %s -> %s" % (
-                        `filename`, `linkto`)
+                print "Creating symlink %r -> %r" % (filename, linkto)
             try:
                 os.symlink(linkto, tempname)
             except IOError, msg:
-                print "Can't create %s: %s" % (
-                        `tempname`, str(msg))
+                print "Can't create %r: %s" % (tempname, msg)
                 continue
         else:
             try:
                 fp = open(tempname, 'wb')
             except IOError, msg:
-                print "Can't create %s: %s" % (
-                        `tempname`, str(msg))
+                print "Can't create %r: %s" % (tempname, msg)
                 continue
             if verbose:
-                print 'Retrieving %s from %s as %s...' % \
-                          (`filename`, `pwd`, `fullname`)
+                print 'Retrieving %r from %r as %r...' % (filename, pwd, fullname)
             if verbose:
                 fp1 = LoggingFile(fp, 1024, sys.stdout)
             else:
@@ -227,9 +223,7 @@ def mirrorsubdir(f, localdir):
         try:
             os.rename(tempname, fullname)
         except os.error, msg:
-            print "Can't rename %s to %s: %s" % (`tempname`,
-                                                 `fullname`,
-                                                 str(msg))
+            print "Can't rename %r to %r: %s" % (tempname, fullname, msg)
             continue
         info[filename] = infostuff
         writedict(info, infofilename)
@@ -251,7 +245,7 @@ def mirrorsubdir(f, localdir):
         if filename not in filesfound:
             if verbose:
                 print "Removing obsolete info entry for",
-                print `filename`, "in", `localdir or "."`
+                print repr(filename), "in", repr(localdir or ".")
             del info[filename]
             deletions = deletions + 1
     if deletions:
@@ -270,8 +264,8 @@ def mirrorsubdir(f, localdir):
         for pat in skippats:
             if fnmatch(name, pat):
                 if verbose > 1:
-                    print 'Skip pattern', `pat`,
-                    print 'matches', `name`
+                    print 'Skip pattern', repr(pat),
+                    print 'matches', repr(name)
                 skip = 1
                 break
         if skip:
@@ -279,10 +273,10 @@ def mirrorsubdir(f, localdir):
         fullname = os.path.join(localdir, name)
         if not rmok:
             if verbose:
-                print 'Local file', `fullname`,
+                print 'Local file', repr(fullname),
                 print 'is no longer pertinent'
             continue
-        if verbose: print 'Removing local file/dir', `fullname`
+        if verbose: print 'Removing local file/dir', repr(fullname)
         remove(fullname)
     #
     # Recursively mirror subdirectories
@@ -290,18 +284,18 @@ def mirrorsubdir(f, localdir):
         if interactive:
             doit = askabout('subdirectory', subdir, pwd)
             if not doit: continue
-        if verbose: print 'Processing subdirectory', `subdir`
+        if verbose: print 'Processing subdirectory', repr(subdir)
         localsubdir = os.path.join(localdir, subdir)
         pwd = f.pwd()
         if verbose > 1:
-            print 'Remote directory now:', `pwd`
-            print 'Remote cwd', `subdir`
+            print 'Remote directory now:', repr(pwd)
+            print 'Remote cwd', repr(subdir)
         try:
             f.cwd(subdir)
         except ftplib.error_perm, msg:
-            print "Can't chdir to", `subdir`, ":", `msg`
+            print "Can't chdir to", repr(subdir), ":", repr(msg)
         else:
-            if verbose: print 'Mirroring as', `localsubdir`
+            if verbose: print 'Mirroring as', repr(localsubdir)
             mirrorsubdir(f, localsubdir)
             if verbose > 1: print 'Remote cwd ..'
             f.cwd('..')
@@ -329,15 +323,13 @@ def remove(fullname):
         try:
             os.rmdir(fullname)
         except os.error, msg:
-            print "Can't remove local directory %s: %s" % \
-                  (`fullname`, str(msg))
+            print "Can't remove local directory %r: %s" % (fullname, msg)
             return 0
     else:
         try:
             os.unlink(fullname)
         except os.error, msg:
-            print "Can't remove local file %s: %s" % \
-                  (`fullname`, str(msg))
+            print "Can't remove local file %r: %s" % (fullname, msg)
             return 0
     return 1
 
@@ -394,7 +386,7 @@ def writedict(dict, filename):
     fp = open(tempname, 'w')
     fp.write('{\n')
     for key, value in dict.items():
-        fp.write('%s: %s,\n' % (`key`, `value`))
+        fp.write('%r: %r,\n' % (key, value))
     fp.write('}\n')
     fp.close()
     try:

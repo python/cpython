@@ -142,7 +142,7 @@ class LastOpenBracketFinder:
         y = PyParse.Parser(self.indentwidth, self.tabwidth)
         for context in self.num_context_lines:
             startat = max(lno - context, 1)
-            startatindex = `startat` + ".0"
+            startatindex = repr(startat) + ".0"
             # rawtext needs to contain everything up to the last
             # character, which was the close paren.  the parser also
             # requires that the last line ends with "\n"

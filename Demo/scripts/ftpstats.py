@@ -60,7 +60,7 @@ def main():
 			if search and string.find(line, search) < 0:
 				continue
 			if prog.match(line) < 0:
-				print 'Bad line', lineno, ':', `line`
+				print 'Bad line', lineno, ':', repr(line)
 				continue
 			items = prog.group(1, 2, 3, 4, 5, 6)
 			(logtime, loguser, loghost, logfile, logbytes,

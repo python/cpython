@@ -244,7 +244,7 @@ class SaveFileDialog(FileDialog):
                 return
             d = Dialog(self.top,
                        title="Overwrite Existing File Question",
-                       text="Overwrite existing file %s?" % `file`,
+                       text="Overwrite existing file %r?" % (file,),
                        bitmap='questhead',
                        default=1,
                        strings=("Yes", "Cancel"))

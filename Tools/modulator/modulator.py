@@ -216,15 +216,15 @@ class UI_module:
             o.synchronize()
         onames = []
         for i in range(len(objects)):
-            oname = 'o'+`i+1`
+            oname = 'o%d' % (i+1)
             rv = rv + objects[i].gencode(oname)
             onames.append(oname)
-        rv = rv + (name+' = genmodule.module()\n')
-        rv = rv + (name+'.name = '+`self.name_entry.get()`+'\n')
-        rv = rv + (name+'.abbrev = '+`self.abbrev_entry.get()`+'\n')
-        rv = rv + (name+'.methodlist = '+`getlistlist(self.method_list)`+'\n')
-        rv = rv + (name+'.objects = ['+','.join(onames)+']\n')
-        rv = rv + ('\n')
+        rv = rv + '%s = genmodule.module()\n' % (name,)
+        rv = rv + '%s.name = %r\n' % (name, self.name_entry.get())
+        rv = rv + '%s.abbrev = %r\n' % (name, self.abbrev_entry.get())
+        rv = rv + '%s.methodlist = %r\n' % (name, getlistlist(self.method_list))
+        rv = rv + '%s.objects = [%s]\n' % (name, ','.join(onames))
+        rv = rv + '\n'
         return rv
         
 object_number = 0
@@ -235,7 +235,7 @@ class UI_object:
 
         object_number = object_number + 1
         self.num = object_number
-        self.vpref = 'o'+`self.num`+'_'
+        self.vpref = 'o%r_' % self.num
         self.frame = Toplevel(parent.objframe)
 #       self.frame.pack()
         self.frame.title('Modulator: object view')
@@ -340,16 +340,16 @@ class UI_object:
         
     def gencode(self, name):
         rv = ''
-        rv = rv + (name+' = genmodule.object()\n')
-        rv = rv + (name+'.name = '+`self.name_entry.get()`+'\n')
-        rv = rv + (name+'.abbrev = '+`self.abbrev_entry.get()`+'\n')
-        rv = rv + (name+'.methodlist = '+`getlistlist(self.method_list)`+'\n')
+        rv = rv + '%s = genmodule.object()\n' % (name,)
+        rv = rv + '%s.name = %r\n' % (name, self.name_entry.get())
+        rv = rv + '%s.abbrev = %r\n' % (name, self.abbrev_entry.get())
+        rv = rv + '%s.methodlist = %r\n' % (name, getlistlist(self.method_list))
         fl = []
         for fn in genmodule.FUNCLIST:
             vname = self.vpref + fn
             if self.f5.getvar(vname) == '1':
                 fl.append(fn)
-        rv = rv + (name+'.funclist = '+`fl`+'\n')
+        rv = rv + '%s.funclist = %r\n' % (name, fl)
 
         fl = []
         for fn in genmodule.TYPELIST:
@@ -357,9 +357,9 @@ class UI_object:
             if self.f5.getvar(vname) == '1':
                 fl.append(fn)
                 
-        rv = rv + (name+'.typelist = '+`fl`+'\n')
+        rv = rv + '%s.typelist = %r\n' % (name, fl)
 
-        rv = rv + ('\n')
+        rv = rv + '\n'
         return rv
         
 

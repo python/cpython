@@ -39,7 +39,7 @@ class Pong(Frame):
 	self.x = self.x + deltax
 	self.y = self.y + deltay
 
-	self.draw.move(self.ball,  `deltax` + "i", `deltay` + "i")
+	self.draw.move(self.ball,  "%ri" % deltax, "%ri" % deltay)
 	self.after(10, self.moveBall)
 
     def __init__(self, master=None):

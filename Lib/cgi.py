@@ -212,7 +212,7 @@ def parse_qsl(qs, keep_blank_values=0, strict_parsing=0):
         nv = name_value.split('=', 1)
         if len(nv) != 2:
             if strict_parsing:
-                raise ValueError, "bad query field: %s" % `name_value`
+                raise ValueError, "bad query field: %r" % (name_value,)
             continue
         if len(nv[1]) or keep_blank_values:
             name = urllib.unquote(nv[0].replace('+', ' '))
@@ -247,8 +247,8 @@ def parse_multipart(fp, pdict):
     if 'boundary' in pdict:
         boundary = pdict['boundary']
     if not valid_boundary(boundary):
-        raise ValueError,  ('Invalid boundary in multipart form: %s'
-                            % `boundary`)
+        raise ValueError,  ('Invalid boundary in multipart form: %r'
+                            % (boundary,))
 
     nextpart = "--" + boundary
     lastpart = "--" + boundary + "--"
@@ -361,7 +361,7 @@ class MiniFieldStorage:
 
     def __repr__(self):
         """Return printable representation."""
-        return "MiniFieldStorage(%s, %s)" % (`self.name`, `self.value`)
+        return "MiniFieldStorage(%r, %r)" % (self.name, self.value)
 
 
 class FieldStorage:
@@ -522,8 +522,8 @@ class FieldStorage:
 
     def __repr__(self):
         """Return a printable representation."""
-        return "FieldStorage(%s, %s, %s)" % (
-                `self.name`, `self.filename`, `self.value`)
+        return "FieldStorage(%r, %r, %r)" % (
+                self.name, self.filename, self.value)
 
     def __iter__(self):
         return iter(self.keys())
@@ -632,8 +632,7 @@ class FieldStorage:
         """Internal: read a part that is itself multipart."""
         ib = self.innerboundary
         if not valid_boundary(ib):
-            raise ValueError, ('Invalid boundary in multipart form: %s'
-                               % `ib`)
+            raise ValueError, 'Invalid boundary in multipart form: %r' % (ib,)
         self.list = []
         klass = self.FieldStorageClass or self.__class__
         part = klass(self.fp, {}, ib,
@@ -957,8 +956,8 @@ def print_form(form):
     for key in keys:
         print "<DT>" + escape(key) + ":",
         value = form[key]
-        print "<i>" + escape(`type(value)`) + "</i>"
-        print "<DD>" + escape(`value`)
+        print "<i>" + escape(repr(type(value))) + "</i>"
+        print "<DD>" + escape(repr(value))
     print "</DL>"
     print
 

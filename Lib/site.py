@@ -368,7 +368,7 @@ if hasattr(sys, "setdefaultencoding"):
 def _test():
     print "sys.path = ["
     for dir in sys.path:
-        print "    %s," % `dir`
+        print "    %r," % (dir,)
     print "]"
 
 if __name__ == '__main__':

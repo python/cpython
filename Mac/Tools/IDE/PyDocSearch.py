@@ -75,7 +75,7 @@ class Status:
 	
 	def set(self, path, hits):
 		self.w.searching.set(path)
-		self.w.hits.set('Hits: ' + `hits`)
+		self.w.hits.set('Hits: %r' % (hits,))
 		app.breathe()
 	
 	def close(self):

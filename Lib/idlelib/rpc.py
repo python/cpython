@@ -58,7 +58,7 @@ def pickle_code(co):
 
 #  def pickle_function(fn):
 #      assert isinstance(fn, type.FunctionType)
-#      return `fn`
+#      return repr(fn)
 
 copy_reg.pickle(types.CodeType, pickle_code, unpickle_code)
 # copy_reg.pickle(types.FunctionType, pickle_function, unpickle_function)
@@ -170,7 +170,7 @@ class SocketIO:
         except TypeError:
             return ("ERROR", "Bad request format")
         if not self.objtable.has_key(oid):
-            return ("ERROR", "Unknown object id: %s" % `oid`)
+            return ("ERROR", "Unknown object id: %r" % (oid,))
         obj = self.objtable[oid]
         if methodname == "__methods__":
             methods = {}
@@ -181,7 +181,7 @@ class SocketIO:
             _getattributes(obj, attributes)
             return ("OK", attributes)
         if not hasattr(obj, methodname):
-            return ("ERROR", "Unsupported method name: %s" % `methodname`)
+            return ("ERROR", "Unsupported method name: %r" % (methodname,))
         method = getattr(obj, methodname)
         try:
             if how == 'CALL':
@@ -321,7 +321,7 @@ class SocketIO:
         try:
             s = pickle.dumps(message)
         except pickle.PicklingError:
-            print >>sys.__stderr__, "Cannot pickle:", `message`
+            print >>sys.__stderr__, "Cannot pickle:", repr(message)
             raise
         s = struct.pack("<i", len(s)) + s
         while len(s) > 0:
@@ -377,7 +377,7 @@ class SocketIO:
             message = pickle.loads(packet)
         except pickle.UnpicklingError:
             print >>sys.__stderr__, "-----------------------"
-            print >>sys.__stderr__, "cannot unpickle packet:", `packet`
+            print >>sys.__stderr__, "cannot unpickle packet:", repr(packet)
             traceback.print_stack(file=sys.__stderr__)
             print >>sys.__stderr__, "-----------------------"
             raise

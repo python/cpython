@@ -500,15 +500,15 @@ def complexes():
         __str__ = __repr__
 
     a = Number(3.14, prec=6)
-    vereq(`a`, "3.14")
+    vereq(repr(a), "3.14")
     vereq(a.prec, 6)
 
     a = Number(a, prec=2)
-    vereq(`a`, "3.1")
+    vereq(repr(a), "3.1")
     vereq(a.prec, 2)
 
     a = Number(234.5)
-    vereq(`a`, "234.5")
+    vereq(repr(a), "234.5")
     vereq(a.prec, 12)
 
 def spamlists():
@@ -2801,8 +2801,8 @@ def pickles():
             vereq(sorteditems(x.__dict__), sorteditems(a.__dict__))
             vereq(y.__class__, b.__class__)
             vereq(sorteditems(y.__dict__), sorteditems(b.__dict__))
-            vereq(`x`, `a`)
-            vereq(`y`, `b`)
+            vereq(repr(x), repr(a))
+            vereq(repr(y), repr(b))
             if verbose:
                 print "a = x =", a
                 print "b = y =", b
@@ -2835,8 +2835,8 @@ def pickles():
     vereq(sorteditems(x.__dict__), sorteditems(a.__dict__))
     vereq(y.__class__, b.__class__)
     vereq(sorteditems(y.__dict__), sorteditems(b.__dict__))
-    vereq(`x`, `a`)
-    vereq(`y`, `b`)
+    vereq(repr(x), repr(a))
+    vereq(repr(y), repr(b))
     if verbose:
         print "a = x =", a
         print "b = y =", b
@@ -2968,13 +2968,13 @@ def binopoverride():
             else:
                 return I(pow(int(other), int(self), int(mod)))
 
-    vereq(`I(1) + I(2)`, "I(3)")
-    vereq(`I(1) + 2`, "I(3)")
-    vereq(`1 + I(2)`, "I(3)")
-    vereq(`I(2) ** I(3)`, "I(8)")
-    vereq(`2 ** I(3)`, "I(8)")
-    vereq(`I(2) ** 3`, "I(8)")
-    vereq(`pow(I(2), I(3), I(5))`, "I(3)")
+    vereq(repr(I(1) + I(2)), "I(3)")
+    vereq(repr(I(1) + 2), "I(3)")
+    vereq(repr(1 + I(2)), "I(3)")
+    vereq(repr(I(2) ** I(3)), "I(8)")
+    vereq(repr(2 ** I(3)), "I(8)")
+    vereq(repr(I(2) ** 3), "I(8)")
+    vereq(repr(pow(I(2), I(3), I(5))), "I(3)")
     class S(str):
         def __eq__(self, other):
             return self.lower() == other.lower()

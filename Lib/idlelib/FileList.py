@@ -35,7 +35,7 @@ class FileList:
         if os.path.isdir(filename):
             tkMessageBox.showerror(
                 "Is A Directory",
-                "The path %s is a directory." % `filename`,
+                "The path %r is a directory." % (filename,),
                 master=self.root)
             return None
         key = os.path.normcase(filename)
@@ -46,7 +46,7 @@ class FileList:
         if not os.path.exists(filename):
             tkMessageBox.showinfo(
                 "New File",
-                "Opening non-existent file %s" % `filename`,
+                "Opening non-existent file %r" % (filename,),
                 master=self.root)
         if action is None:
             return self.EditorWindow(self, filename, key)
@@ -102,7 +102,7 @@ class FileList:
             self.inversedict[conflict] = None
             tkMessageBox.showerror(
                 "Name Conflict",
-                "You now have multiple edit windows open for %s" % `filename`,
+                "You now have multiple edit windows open for %r" % (filename,),
                 master=self.root)
         self.dict[newkey] = edit
         self.inversedict[edit] = newkey

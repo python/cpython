@@ -288,7 +288,7 @@ class Telnet:
         """
         if IAC in buffer:
             buffer = buffer.replace(IAC, IAC+IAC)
-        self.msg("send %s", `buffer`)
+        self.msg("send %r", buffer)
         self.sock.sendall(buffer)
 
     def read_until(self, match, timeout=None):
@@ -519,7 +519,7 @@ class Telnet:
         # The buffer size should be fairly small so as to avoid quadratic
         # behavior in process_rawq() above
         buf = self.sock.recv(50)
-        self.msg("recv %s", `buf`)
+        self.msg("recv %r", buf)
         self.eof = (not buf)
         self.rawq = self.rawq + buf
 

@@ -348,7 +348,7 @@ def test1():
     s0 = "Aladdin:open sesame"
     s1 = encodestring(s0)
     s2 = decodestring(s1)
-    print s0, `s1`, s2
+    print s0, repr(s1), s2
 
 
 if __name__ == '__main__':

@@ -52,8 +52,7 @@ class ArgvCollector:
             try:
                 AE.AEProcessAppleEvent(event)
             except AE.Error, err:
-                msg = "High Level Event: %s %s" % \
-                    (`hex(message)`, `hex(h | (v<<16))`)
+                msg = "High Level Event: %r %r" % (hex(message), hex(h | (v<<16)))
                 print 'AE error: ', err
                 print 'in', msg
                 traceback.print_exc()

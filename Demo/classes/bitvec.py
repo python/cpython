@@ -20,7 +20,7 @@ def _compute_len(param):
     mant, l = math.frexp(float(param))
     bitmask = 1L << l
     if bitmask <= param:
-        raise 'FATAL', '(param, l) = ' + `param, l`
+        raise 'FATAL', '(param, l) = %r' % ((param, l),)
     while l:
         bitmask = bitmask >> 1
         if param & bitmask:
@@ -167,10 +167,10 @@ class BitVec:
 
     def __repr__(self):
         ##rprt('<bitvec class instance object>.' + '__repr__()\n')
-        return 'bitvec' + `self._data, self._len`
+        return 'bitvec(%r, %r)' % (self._data, self._len)
 
     def __cmp__(self, other, *rest):
-        #rprt(`self`+'.__cmp__'+`(other, ) + rest`+'\n')
+        #rprt('%r.__cmp__%r\n' % (self, (other,) + rest))
         if type(other) != type(self):
             other = apply(bitvec, (other, ) + rest)
         #expensive solution... recursive binary, with slicing
@@ -193,16 +193,16 @@ class BitVec:
 
 
     def __len__(self):
-        #rprt(`self`+'.__len__()\n')
+        #rprt('%r.__len__()\n' % (self,))
         return self._len
 
     def __getitem__(self, key):
-        #rprt(`self`+'.__getitem__('+`key`+')\n')
+        #rprt('%r.__getitem__(%r)\n' % (self, key))
         key = _check_key(self._len, key)
         return self._data & (1L << key) != 0
 
     def __setitem__(self, key, value):
-        #rprt(`self`+'.__setitem__'+`key, value`+'\n')
+        #rprt('%r.__setitem__(%r, %r)\n' % (self, key, value))
         key = _check_key(self._len, key)
         #_check_value(value)
         if value:
@@ -211,14 +211,14 @@ class BitVec:
             self._data = self._data & ~(1L << key)
 
     def __delitem__(self, key):
-        #rprt(`self`+'.__delitem__('+`key`+')\n')
+        #rprt('%r.__delitem__(%r)\n' % (self, key))
         key = _check_key(self._len, key)
         #el cheapo solution...
         self._data = self[:key]._data | self[key+1:]._data >> key
         self._len = self._len - 1
 
     def __getslice__(self, i, j):
-        #rprt(`self`+'.__getslice__'+`i, j`+'\n')
+        #rprt('%r.__getslice__(%r, %r)\n' % (self, i, j))
         i, j = _check_slice(self._len, i, j)
         if i >= j:
             return BitVec(0L, 0)
@@ -234,7 +234,7 @@ class BitVec:
         return BitVec(ndata, nlength)
 
     def __setslice__(self, i, j, sequence, *rest):
-        #rprt(`self`+'.__setslice__'+`(i, j, sequence) + rest`+'\n')
+        #rprt('%s.__setslice__%r\n' % (self, (i, j, sequence) + rest))
         i, j = _check_slice(self._len, i, j)
         if type(sequence) != type(self):
             sequence = apply(bitvec, (sequence, ) + rest)
@@ -247,7 +247,7 @@ class BitVec:
         self._len = self._len - j + i + sequence._len
 
     def __delslice__(self, i, j):
-        #rprt(`self`+'.__delslice__'+`i, j`+'\n')
+        #rprt('%r.__delslice__(%r, %r)\n' % (self, i, j))
         i, j = _check_slice(self._len, i, j)
         if i == 0 and j == self._len:
             self._data, self._len = 0L, 0
@@ -256,13 +256,13 @@ class BitVec:
             self._len = self._len - j + i
 
     def __add__(self, other):
-        #rprt(`self`+'.__add__('+`other`+')\n')
+        #rprt('%r.__add__(%r)\n' % (self, other))
         retval = self.copy()
         retval[self._len:self._len] = other
         return retval
 
     def __mul__(self, multiplier):
-        #rprt(`self`+'.__mul__('+`multiplier`+')\n')
+        #rprt('%r.__mul__(%r)\n' % (self, multiplier))
         if type(multiplier) != type(0):
             raise TypeError, 'sequence subscript not int'
         if multiplier <= 0:
@@ -281,7 +281,7 @@ class BitVec:
         return retval
 
     def __and__(self, otherseq, *rest):
-        #rprt(`self`+'.__and__'+`(otherseq, ) + rest`+'\n')
+        #rprt('%r.__and__%r\n' % (self, (otherseq,) + rest))
         if type(otherseq) != type(self):
             otherseq = apply(bitvec, (otherseq, ) + rest)
         #sequence is now of our own type
@@ -290,7 +290,7 @@ class BitVec:
 
 
     def __xor__(self, otherseq, *rest):
-        #rprt(`self`+'.__xor__'+`(otherseq, ) + rest`+'\n')
+        #rprt('%r.__xor__%r\n' % (self, (otherseq,) + rest))
         if type(otherseq) != type(self):
             otherseq = apply(bitvec, (otherseq, ) + rest)
         #sequence is now of our own type
@@ -299,7 +299,7 @@ class BitVec:
 
 
     def __or__(self, otherseq, *rest):
-        #rprt(`self`+'.__or__'+`(otherseq, ) + rest`+'\n')
+        #rprt('%r.__or__%r\n' % (self, (otherseq,) + rest))
         if type(otherseq) != type(self):
             otherseq = apply(bitvec, (otherseq, ) + rest)
         #sequence is now of our own type
@@ -308,13 +308,13 @@ class BitVec:
 
 
     def __invert__(self):
-        #rprt(`self`+'.__invert__()\n')
+        #rprt('%r.__invert__()\n' % (self,))
         return BitVec(~self._data & ((1L << self._len) - 1), \
                   self._len)
 
     def __coerce__(self, otherseq, *rest):
         #needed for *some* of the arithmetic operations
-        #rprt(`self`+'.__coerce__'+`(otherseq, ) + rest`+'\n')
+        #rprt('%r.__coerce__%r\n' % (self, (otherseq,) + rest))
         if type(otherseq) != type(self):
             otherseq = apply(bitvec, (otherseq, ) + rest)
         return self, otherseq

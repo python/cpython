@@ -10,5 +10,5 @@ s.bind(('', MYPORT))
 
 while 1:
 	data, wherefrom = s.recvfrom(1500, 0)
-	sys.stderr.write(`wherefrom` + '\n')
+	sys.stderr.write(repr(wherefrom) + '\n')
 	sys.stdout.write(data)

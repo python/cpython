@@ -261,7 +261,7 @@ class Pickler:
             else:
                 return LONG_BINPUT + pack("<i", i)
 
-        return PUT + `i` + '\n'
+        return PUT + repr(i) + '\n'
 
     # Return a GET (BINGET, LONG_BINGET) opcode string, with argument i.
     def get(self, i, pack=struct.pack):
@@ -271,7 +271,7 @@ class Pickler:
             else:
                 return LONG_BINGET + pack("<i", i)
 
-        return GET + `i` + '\n'
+        return GET + repr(i) + '\n'
 
     def save(self, obj):
         # Check for persistent id (defined by a subclass)
@@ -469,7 +469,7 @@ class Pickler:
                 self.write(BININT + pack("<i", obj))
                 return
         # Text pickle, or int too big to fit in signed 4-byte format.
-        self.write(INT + `obj` + '\n')
+        self.write(INT + repr(obj) + '\n')
     dispatch[IntType] = save_int
 
     def save_long(self, obj, pack=struct.pack):
@@ -481,14 +481,14 @@ class Pickler:
             else:
                 self.write(LONG4 + pack("<i", n) + bytes)
             return
-        self.write(LONG + `obj` + '\n')
+        self.write(LONG + repr(obj) + '\n')
     dispatch[LongType] = save_long
 
     def save_float(self, obj, pack=struct.pack):
         if self.bin:
             self.write(BINFLOAT + pack('>d', obj))
         else:
-            self.write(FLOAT + `obj` + '\n')
+            self.write(FLOAT + repr(obj) + '\n')
     dispatch[FloatType] = save_float
 
     def save_string(self, obj, pack=struct.pack):
@@ -499,7 +499,7 @@ class Pickler:
             else:
                 self.write(BINSTRING + pack("<i", n) + obj)
         else:
-            self.write(STRING + `obj` + '\n')
+            self.write(STRING + repr(obj) + '\n')
         self.memoize(obj)
     dispatch[StringType] = save_string
 
@@ -539,7 +539,7 @@ class Pickler:
                     obj = obj.encode('raw-unicode-escape')
                     self.write(UNICODE + obj + '\n')
                 else:
-                    self.write(STRING + `obj` + '\n')
+                    self.write(STRING + repr(obj) + '\n')
             self.memoize(obj)
         dispatch[StringType] = save_string
 
@@ -1173,12 +1173,12 @@ class Unpickler:
 
     def load_binget(self):
         i = ord(self.read(1))
-        self.append(self.memo[`i`])
+        self.append(self.memo[repr(i)])
     dispatch[BINGET] = load_binget
 
     def load_long_binget(self):
         i = mloads('i' + self.read(4))
-        self.append(self.memo[`i`])
+        self.append(self.memo[repr(i)])
     dispatch[LONG_BINGET] = load_long_binget
 
     def load_put(self):
@@ -1187,12 +1187,12 @@ class Unpickler:
 
     def load_binput(self):
         i = ord(self.read(1))
-        self.memo[`i`] = self.stack[-1]
+        self.memo[repr(i)] = self.stack[-1]
     dispatch[BINPUT] = load_binput
 
     def load_long_binput(self):
         i = mloads('i' + self.read(4))
-        self.memo[`i`] = self.stack[-1]
+        self.memo[repr(i)] = self.stack[-1]
     dispatch[LONG_BINPUT] = load_long_binput
 
     def load_append(self):

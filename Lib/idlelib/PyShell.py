@@ -335,9 +335,9 @@ class ModifiedInterpreter(InteractiveInterpreter):
         del_exitf = idleConf.GetOption('main', 'General', 'delete-exitfunc',
                                        default=False, type='bool')
         if __name__ == 'idlelib.PyShell':
-            command = "__import__('idlelib.run').run.main(" + `del_exitf` +")"
+            command = "__import__('idlelib.run').run.main(%r)" % (del_exitf,)
         else:
-            command = "__import__('run').main(" + `del_exitf` + ")"
+            command = "__import__('run').main(%r)" % (del_exitf,)
         if sys.platform[:3] == 'win' and ' ' in sys.executable:
             # handle embedded space in path by quoting the argument
             decorated_exec = '"%s"' % sys.executable
@@ -454,12 +454,12 @@ class ModifiedInterpreter(InteractiveInterpreter):
     def transfer_path(self):
         self.runcommand("""if 1:
         import sys as _sys
-        _sys.path = %s
+        _sys.path = %r
         del _sys
         _msg = 'Use File/Exit or your end-of-file key to quit IDLE'
         __builtins__.quit = __builtins__.exit = _msg
         del _msg
-        \n""" % `sys.path`)
+        \n""" % (sys.path,))
 
     active_seq = None
 
@@ -483,7 +483,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
             console = self.tkconsole.console
             if how == "OK":
                 if what is not None:
-                    print >>console, `what`
+                    print >>console, repr(what)
             elif how == "EXCEPTION":
                 if self.tkconsole.getvar("<<toggle-jit-stack-viewer>>"):
                     self.remote_stack_viewer()
@@ -589,14 +589,14 @@ class ModifiedInterpreter(InteractiveInterpreter):
     def prepend_syspath(self, filename):
         "Prepend sys.path with file's directory if not already included"
         self.runcommand("""if 1:
-            _filename = %s
+            _filename = %r
             import sys as _sys
             from os.path import dirname as _dirname
             _dir = _dirname(_filename)
             if not _dir in _sys.path:
                 _sys.path.insert(0, _dir)
             del _filename, _sys, _dirname, _dir
-            \n""" % `filename`)
+            \n""" % (filename,))
 
     def showsyntaxerror(self, filename=None):
         """Extend base class method: Add Colorizing
@@ -1333,9 +1333,9 @@ def main():
     if shell and cmd or script:
         shell.interp.runcommand("""if 1:
             import sys as _sys
-            _sys.argv = %s
+            _sys.argv = %r
             del _sys
-            \n""" % `sys.argv`)
+            \n""" % (sys.argv,))
         if cmd:
             shell.interp.execsource(cmd)
         elif script:

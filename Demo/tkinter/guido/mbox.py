@@ -253,7 +253,7 @@ def refile_message(e=None):
 def fixfocus(near, itop):
 	n = scanbox.size()
 	for i in range(n):
-		line = scanbox.get(`i`)
+		line = scanbox.get(repr(i))
 		if scanparser.match(line) >= 0:
 			num = string.atoi(scanparser.group(1))
 			if num >= near:

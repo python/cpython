@@ -761,7 +761,7 @@ class EditorWindow:
             try:
                 self.load_extension(name)
             except:
-                print "Failed to load extension", `name`
+                print "Failed to load extension", repr(name)
                 import traceback
                 traceback.print_exc()
 
@@ -937,7 +937,7 @@ class EditorWindow:
             elif key == 'context_use_ps1':
                 self.context_use_ps1 = value
             else:
-                raise KeyError, "bad option name: %s" % `key`
+                raise KeyError, "bad option name: %r" % (key,)
 
     # If ispythonsource and guess are true, guess a good value for
     # indentwidth based on file content (if possible), and if
@@ -1071,7 +1071,7 @@ class EditorWindow:
             y = PyParse.Parser(self.indentwidth, self.tabwidth)
             for context in self.num_context_lines:
                 startat = max(lno - context, 1)
-                startatindex = `startat` + ".0"
+                startatindex = repr(startat) + ".0"
                 rawtext = text.get(startatindex, "insert")
                 y.set_str(rawtext)
                 bod = y.find_good_parse_start(
@@ -1103,7 +1103,7 @@ class EditorWindow:
                     else:
                         self.reindent_to(y.compute_backslash_indent())
                 else:
-                    assert 0, "bogus continuation type " + `c`
+                    assert 0, "bogus continuation type %r" % (c,)
                 return "break"
 
             # This line starts a brand new stmt; indent relative to
@@ -1333,7 +1333,7 @@ class IndentSearcher:
         if self.finished:
             return ""
         i = self.i = self.i + 1
-        mark = `i` + ".0"
+        mark = repr(i) + ".0"
         if self.text.compare(mark, ">=", "end"):
             return ""
         return self.text.get(mark, mark + " lineend+1c")

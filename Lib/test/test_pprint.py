@@ -40,14 +40,14 @@ class QueryTestCase(unittest.TestCase):
                      self.a, self.b):
             # module-level convenience functions
             verify(not pprint.isrecursive(safe),
-                   "expected not isrecursive for " + `safe`)
+                   "expected not isrecursive for %r" % (safe,))
             verify(pprint.isreadable(safe),
-                   "expected isreadable for " + `safe`)
+                   "expected isreadable for %r" % (safe,))
             # PrettyPrinter methods
             verify(not pp.isrecursive(safe),
-                   "expected not isrecursive for " + `safe`)
+                   "expected not isrecursive for %r" % (safe,))
             verify(pp.isreadable(safe),
-                   "expected isreadable for " + `safe`)
+                   "expected isreadable for %r" % (safe,))
 
     def test_knotted(self):
         # Verify .isrecursive() and .isreadable() w/ recursion
@@ -74,14 +74,14 @@ class QueryTestCase(unittest.TestCase):
         for safe in self.a, self.b, self.d, (self.d, self.d):
             # module-level convenience functions
             verify(not pprint.isrecursive(safe),
-                   "expected not isrecursive for " + `safe`)
+                   "expected not isrecursive for %r" % (safe,))
             verify(pprint.isreadable(safe),
-                   "expected isreadable for " + `safe`)
+                   "expected isreadable for %r" % (safe,))
             # PrettyPrinter methods
             verify(not pp.isrecursive(safe),
-                   "expected not isrecursive for " + `safe`)
+                   "expected not isrecursive for %r" % (safe,))
             verify(pp.isreadable(safe),
-                   "expected isreadable for " + `safe`)
+                   "expected isreadable for %r" % (safe,))
 
     def test_unreadable(self):
         # Not recursive but not readable anyway
@@ -90,14 +90,14 @@ class QueryTestCase(unittest.TestCase):
         for unreadable in type(3), pprint, pprint.isrecursive:
             # module-level convenience functions
             verify(not pprint.isrecursive(unreadable),
-                   "expected not isrecursive for " + `unreadable`)
+                   "expected not isrecursive for %r" % (unreadable,))
             verify(not pprint.isreadable(unreadable),
-                   "expected not isreadable for " + `unreadable`)
+                   "expected not isreadable for %r" % (unreadable,))
             # PrettyPrinter methods
             verify(not pp.isrecursive(unreadable),
-                   "expected not isrecursive for " + `unreadable`)
+                   "expected not isrecursive for %r" % (unreadable,))
             verify(not pp.isreadable(unreadable),
-                   "expected not isreadable for " + `unreadable`)
+                   "expected not isreadable for %r" % (unreadable,))
 
     def test_same_as_repr(self):
         # Simple objects, small containers and classes that overwrite __repr__
@@ -174,7 +174,7 @@ class DottedPrettyPrinter(pprint.PrettyPrinter):
     def format(self, object, context, maxlevels, level):
         if isinstance(object, str):
             if ' ' in object:
-                return `object`, 1, 0
+                return repr(object), 1, 0
             else:
                 return object, 0, 0
         else:

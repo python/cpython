@@ -109,7 +109,7 @@ class MH:
 
     def __repr__(self):
         """String representation."""
-        return 'MH(%s, %s)' % (`self.path`, `self.profile`)
+        return 'MH(%r, %r)' % (self.path, self.profile)
 
     def error(self, msg, *args):
         """Routine to print an error.  May be overridden by a derived class."""
@@ -247,7 +247,7 @@ class Folder:
 
     def __repr__(self):
         """String representation."""
-        return 'Folder(%s, %s)' % (`self.mh`, `self.name`)
+        return 'Folder(%r, %r)' % (self.mh, self.name)
 
     def error(self, *args):
         """Error message handler."""
@@ -716,7 +716,7 @@ class Message(mimetools.Message):
         mf.push(bdry)
         parts = []
         while mf.next():
-            n = str(self.number) + '.' + `1 + len(parts)`
+            n = "%s.%r" % (self.number, 1 + len(parts))
             part = SubMessage(self.folder, n, mf)
             parts.append(part)
         mf.pop()
@@ -800,8 +800,7 @@ class IntSet:
         return hash(self.pairs)
 
     def __repr__(self):
-        return 'IntSet(%s, %s, %s)' % (`self.tostring()`,
-                  `self.sep`, `self.rng`)
+        return 'IntSet(%r, %r, %r)' % (self.tostring(), self.sep, self.rng)
 
     def normalize(self):
         self.pairs.sort()
@@ -817,8 +816,8 @@ class IntSet:
     def tostring(self):
         s = ''
         for lo, hi in self.pairs:
-            if lo == hi: t = `lo`
-            else: t = `lo` + self.rng + `hi`
+            if lo == hi: t = repr(lo)
+            else: t = repr(lo) + self.rng + repr(hi)
             if s: s = s + (self.sep + t)
             else: s = t
         return s
@@ -963,7 +962,7 @@ def test():
     testfolders = ['@test', '@test/test1', '@test/test2',
                    '@test/test1/test11', '@test/test1/test12',
                    '@test/test1/test11/test111']
-    for t in testfolders: do('mh.makefolder(%s)' % `t`)
+    for t in testfolders: do('mh.makefolder(%r)' % (t,))
     do('mh.listsubfolders(\'@test\')')
     do('mh.listallsubfolders(\'@test\')')
     f = mh.openfolder('@test')
@@ -975,7 +974,7 @@ def test():
     print seqs
     f.putsequences(seqs)
     do('f.getsequences()')
-    for t in reversed(testfolders): do('mh.deletefolder(%s)' % `t`)
+    for t in reversed(testfolders): do('mh.deletefolder(%r)' % (t,))
     do('mh.getcontext()')
     context = mh.getcontext()
     f = mh.openfolder(context)
@@ -986,10 +985,10 @@ def test():
                 '1:3', '1:-3', '100:3', '100:-3', '10000:3', '10000:-3',
                 'all']:
         try:
-            do('f.parsesequence(%s)' % `seq`)
+            do('f.parsesequence(%r)' % (seq,))
         except Error, msg:
             print "Error:", msg
-        stuff = os.popen("pick %s 2>/dev/null" % `seq`).read()
+        stuff = os.popen("pick %r 2>/dev/null" % (seq,)).read()
         list = map(int, stuff.split())
         print list, "<-- pick"
     do('f.listmessages()')

@@ -48,7 +48,7 @@ for prog in sys.argv[1:]:
                 msg(filename + ': not executable')
         if longlist:
             sts = os.system('ls ' + longlist + ' ' + filename)
-            if sts: msg('"ls -l" exit status: ' + `sts`)
+            if sts: msg('"ls -l" exit status: ' + repr(sts))
     if not ident:
         msg(prog + ': not found')
         sts = 1

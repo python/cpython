@@ -58,7 +58,7 @@ L = [
         (' 314', 314),
         ('314 ', 314),
         ('  \t\t  314  \t\t  ', 314),
-        (`sys.maxint`, sys.maxint),
+        (repr(sys.maxint), sys.maxint),
         ('  1x', ValueError),
         ('  1  ', 1),
         ('  1\02  ', ValueError),
@@ -480,7 +480,7 @@ class BuiltinTest(unittest.TestCase):
                     except v:
                         pass
 
-        s = `-1-sys.maxint`
+        s = repr(-1-sys.maxint)
         self.assertEqual(int(s)+1, -sys.maxint)
         # should return long
         int(s[1:])

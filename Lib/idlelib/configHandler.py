@@ -231,10 +231,11 @@ class IdleConf:
         elif self.defaultCfg[configType].has_option(section,option):
             return self.defaultCfg[configType].Get(section, option, type=type)
         else: #returning default, print warning
-            warning=('\n Warning: configHandler.py - IdleConf.GetOption -\n'+
-                       ' problem retrieving configration option '+`option`+'\n'+
-                       ' from section '+`section`+'.\n'+
-                       ' returning default value: '+`default`+'\n')
+            warning=('\n Warning: configHandler.py - IdleConf.GetOption -\n'
+                       ' problem retrieving configration option %r\n'
+                       ' from section %r.\n'
+                       ' returning default value: %r\n' % 
+                       (option, section, default))
             sys.stderr.write(warning)
             return default
 
@@ -331,10 +332,11 @@ class IdleConf:
         for element in theme.keys():
             if not cfgParser.has_option(themeName,element):
                 #we are going to return a default, print warning
-                warning=('\n Warning: configHandler.py - IdleConf.GetThemeDict'+
-                           ' -\n problem retrieving theme element '+`element`+
-                           '\n from theme '+`themeName`+'.\n'+
-                           ' returning default value: '+`theme[element]`+'\n')
+                warning=('\n Warning: configHandler.py - IdleConf.GetThemeDict'
+                           ' -\n problem retrieving theme element %r'
+                           '\n from theme %r.\n'
+                           ' returning default value: %r\n' %
+                           (element, themeName, theme[element]))
                 sys.stderr.write(warning)
             colour=cfgParser.Get(themeName,element,default=theme[element])
             theme[element]=colour
@@ -561,10 +563,11 @@ class IdleConf:
                 if binding:
                     keyBindings[event]=binding
                 else: #we are going to return a default, print warning
-                    warning=('\n Warning: configHandler.py - IdleConf.GetCoreKeys'+
-                               ' -\n problem retrieving key binding for event '+
-                               `event`+'\n from key set '+`keySetName`+'.\n'+
-                               ' returning default value: '+`keyBindings[event]`+'\n')
+                    warning=('\n Warning: configHandler.py - IdleConf.GetCoreKeys'
+                               ' -\n problem retrieving key binding for event %r'
+                               '\n from key set %r.\n'
+                               ' returning default value: %r\n' %
+                               (event, keySetName, keyBindings[event]))
                     sys.stderr.write(warning)
         return keyBindings
 

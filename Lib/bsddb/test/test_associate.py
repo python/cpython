@@ -200,7 +200,7 @@ class AssociateTestCase(unittest.TestCase):
     def getGenre(self, priKey, priData):
         assert type(priData) == type("")
         if verbose:
-            print 'getGenre key:', `priKey`, 'data:', `priData`
+            print 'getGenre key: %r data: %r' % (priKey, priData)
         genre = string.split(priData, '|')[2]
         if genre == 'Blues':
             return db.DB_DONOTINDEX
@@ -242,7 +242,7 @@ class ShelveAssociateTestCase(AssociateTestCase):
     def getGenre(self, priKey, priData):
         assert type(priData) == type(())
         if verbose:
-            print 'getGenre key:', `priKey`, 'data:', `priData`
+            print 'getGenre key: %r data: %r' % (priKey, priData)
         genre = priData[2]
         if genre == 'Blues':
             return db.DB_DONOTINDEX

@@ -178,7 +178,7 @@ def _test():
     w.close()
     got = r.read()
     if got.strip() != expected:
-        raise ValueError("wrote %s read %s" % (`teststr`, `got`))
+        raise ValueError("wrote %r read %r" % (teststr, got))
     print "testing popen3..."
     try:
         r, w, e = popen3([cmd])
@@ -188,10 +188,10 @@ def _test():
     w.close()
     got = r.read()
     if got.strip() != expected:
-        raise ValueError("wrote %s read %s" % (`teststr`, `got`))
+        raise ValueError("wrote %r read %r" % (teststr, got))
     got = e.read()
     if got:
-        raise ValueError("unexected %s on stderr" % `got`)
+        raise ValueError("unexected %r on stderr" % (got,))
     for inst in _active[:]:
         inst.wait()
     if _active:

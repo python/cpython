@@ -58,12 +58,12 @@ def test():
                 "/foo/bar/index.html",
                 "/foo/bar/",
                 "/"]:
-        print `url`, '->', `url2pathname(url)`
+        print '%r -> %r' % (url, url2pathname(url))
     print "*******************************************************"
     for path in ["SCSI::SCSI4.$.Anwendung",
                  "PythonApp:Lib",
                  "PythonApp:Lib.rourl2path/py"]:
-        print `path`, '->', `pathname2url(path)`
+        print '%r -> %r' % (path, pathname2url(path))
 
 if __name__ == '__main__':
     test()

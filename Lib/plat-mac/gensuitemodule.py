@@ -160,7 +160,7 @@ def processfile_fromresource(fullname, output=None, basepkgname=None,
             res = Get1IndResource('aeut', 1+i)
             resources.append(res)
         if verbose: 
-            print >>verbose, "\nLISTING aete+aeut RESOURCES IN", `fullname`
+            print >>verbose, "\nLISTING aete+aeut RESOURCES IN", repr(fullname)
         aetelist = []
         for res in resources:
             if verbose:
@@ -187,7 +187,7 @@ def processfile(fullname, output=None, basepkgname=None,
     if not is_scriptable(fullname) and verbose:
         print >>verbose, "Warning: app does not seem scriptable: %s" % fullname
     if verbose:
-        print >>verbose, "\nASKING FOR aete DICTIONARY IN", `fullname`
+        print >>verbose, "\nASKING FOR aete DICTIONARY IN", repr(fullname)
     try:
         aedescobj, launched = OSATerminology.GetAppTerminology(fullname)
     except MacOS.Error, arg:
@@ -333,7 +333,7 @@ def getalign(f):
     if f.tell() & 1:
         c = f.read(1)
         ##if c <> '\0':
-        ##  print 'align:', `c`
+        ##  print align:', repr(c)
 
 def getlist(f, description, getitem):
     count = getword(f)
@@ -344,9 +344,9 @@ def getlist(f, description, getitem):
     return list
 
 def alt_generic(what, f, *args):
-    print "generic", `what`, args
+    print "generic", repr(what), args
     res = vageneric(what, f, args)
-    print '->', `res`
+    print '->', repr(res)
     return res
 
 def generic(what, f, *args):
@@ -358,7 +358,7 @@ def generic(what, f, *args):
             item = apply(generic, thing[:1] + (f,) + thing[1:])
             record.append((thing[1], item))
         return record
-    return "BAD GENERIC ARGS: %s" % `what`
+    return "BAD GENERIC ARGS: %r" % (what,)
 
 getdata = [
     (getostype, "type"),
@@ -529,7 +529,7 @@ def compileaete(aete, resinfo, fname, output=None, basepkgname=None,
         fp.write("_classdeclarations = {\n")
         for codenamemapper in allprecompinfo:
             for k, v in codenamemapper.getall('class'):
-                fp.write("    %s : %s,\n" % (`k`, v))
+                fp.write("    %r : %s,\n" % (k, v))
                 if k == 'capp':
                     application_class = v
         fp.write("}\n")
@@ -540,7 +540,7 @@ def compileaete(aete, resinfo, fname, output=None, basepkgname=None,
         for code, modname in suitelist[1:]:
             fp.write(",\n        %s_Events"%modname)
         fp.write(",\n        aetools.TalkTo):\n")
-        fp.write("    _signature = %s\n\n"%`creatorsignature`)
+        fp.write("    _signature = %r\n\n"%(creatorsignature,))
         fp.write("    _moduleName = '%s'\n\n"%packagename)
         if application_class:
             fp.write("    _elemdict = %s._elemdict\n" % application_class)
@@ -655,7 +655,7 @@ class SuiteCompiler:
         
         fp.write('import aetools\n')
         fp.write('import MacOS\n\n')
-        fp.write("_code = %s\n\n"% `code`)
+        fp.write("_code = %r\n\n"% (code,))
         if self.basepackage and self.basepackage._code_to_module.has_key(code):
             # We are an extension of a baseclass (usually an application extending
             # Standard_Suite or so). Import everything from our base module
@@ -715,7 +715,7 @@ class SuiteCompiler:
         if arguments:
             fp.write("    _argmap_%s = {\n"%funcname)
             for a in arguments:
-                fp.write("        %s : %s,\n"%(`identify(a[0])`, `a[1]`))
+                fp.write("        %r : %r,\n"%(identify(a[0]), a[1]))
             fp.write("    }\n\n")
             
         #
@@ -752,8 +752,8 @@ class SuiteCompiler:
         #
         # Fiddle the args so everything ends up in 'arguments' dictionary
         #
-        fp.write("        _code = %s\n"% `code`)
-        fp.write("        _subcode = %s\n\n"% `subcode`)
+        fp.write("        _code = %r\n"% (code,))
+        fp.write("        _subcode = %r\n\n"% (subcode,))
         #
         # Do keyword name substitution
         #
@@ -780,8 +780,8 @@ class SuiteCompiler:
                 kname = a[1]
                 ename = a[2][0]
                 if ename <> '****':
-                    fp.write("        aetools.enumsubst(_arguments, %s, _Enum_%s)\n" %
-                        (`kname`, identify(ename)))
+                    fp.write("        aetools.enumsubst(_arguments, %r, _Enum_%s)\n" %
+                        (kname, identify(ename)))
                     self.enumsneeded[ename] = 1
         fp.write("\n")
         #
@@ -971,7 +971,7 @@ class ObjectCompiler:
             if self.fp:
                 self.fp.write('\nclass %s(aetools.ComponentItem):\n' % pname)
                 self.fp.write('    """%s - %s """\n' % (ascii(name), ascii(desc)))
-                self.fp.write('    want = %s\n' % `code`)
+                self.fp.write('    want = %r\n' % (code,))
         self.namemappers[0].addnamecode('class', pname, code)
         is_application_class = (code == 'capp')
         properties.sort()
@@ -998,8 +998,8 @@ class ObjectCompiler:
             if self.fp:
                 self.fp.write("class _Prop_%s(aetools.NProperty):\n" % pname)
                 self.fp.write('    """%s - %s """\n' % (ascii(name), ascii(what[1])))
-                self.fp.write("    which = %s\n" % `code`)
-                self.fp.write("    want = %s\n" % `what[0]`)
+                self.fp.write("    which = %r\n" % (code,))
+                self.fp.write("    want = %r\n" % (what[0],))
         self.namemappers[0].addnamecode('property', pname, code)
         if is_application_class and self.fp:
             self.fp.write("%s = _Prop_%s()\n" % (pname, pname))
@@ -1007,7 +1007,7 @@ class ObjectCompiler:
     def compileelement(self, elem):
         [code, keyform] = elem
         if self.fp:
-            self.fp.write("#        element %s as %s\n" % (`code`, keyform))
+            self.fp.write("#        element %r as %s\n" % (code, keyform))
 
     def fillclasspropsandelems(self, cls):
         [name, code, desc, properties, elements] = cls
@@ -1018,7 +1018,7 @@ class ObjectCompiler:
             if self.fp and (elements or len(properties) > 1 or (len(properties) == 1 and
                 properties[0][1] != 'c@#!')):
                 if self.verbose:
-                    print >>self.verbose, '** Skip multiple %s of %s (code %s)' % (cname, self.namemappers[0].findcodename('class', code)[0], `code`)
+                    print >>self.verbose, '** Skip multiple %s of %s (code %r)' % (cname, self.namemappers[0].findcodename('class', code)[0], code)
                 raise RuntimeError, "About to skip non-empty class"
             return
         plist = []
@@ -1044,7 +1044,7 @@ class ObjectCompiler:
                 superclassnames.append(superclassname)
 
         if self.fp:
-            self.fp.write("%s._superclassnames = %s\n"%(cname, `superclassnames`))
+            self.fp.write("%s._superclassnames = %r\n"%(cname, superclassnames))
 
         for elem in elements:
             [ecode, keyform] = elem
@@ -1053,7 +1053,7 @@ class ObjectCompiler:
             name, ename, module = self.findcodename('class', ecode)
             if not name:
                 if self.fp:
-                    self.fp.write("# XXXX %s element %s not found!!\n"%(cname, `ecode`))
+                    self.fp.write("# XXXX %s element %r not found!!\n"%(cname, ecode))
             else:
                 elist.append((name, ename))
                 
@@ -1091,7 +1091,7 @@ class ObjectCompiler:
     
     def compileenumerator(self, item):
         [name, code, desc] = item
-        self.fp.write("    %s : %s,\t# %s\n" % (`identify(name)`, `code`, ascii(desc)))
+        self.fp.write("    %r : %r,\t# %s\n" % (identify(name), code, ascii(desc)))
         
     def checkforenum(self, enum):
         """This enum code is used by an event. Make sure it's available"""
@@ -1113,33 +1113,33 @@ class ObjectCompiler:
         classlist = self.namemappers[0].getall('class')
         classlist.sort()
         for k, v in classlist:
-            self.fp.write("    %s : %s,\n" % (`k`, v))
+            self.fp.write("    %r : %s,\n" % (k, v))
         self.fp.write("}\n")
         
         self.fp.write("\n_propdeclarations = {\n")
         proplist = self.namemappers[0].getall('property')
         proplist.sort()
         for k, v in proplist:
-            self.fp.write("    %s : _Prop_%s,\n" % (`k`, v))
+            self.fp.write("    %r : _Prop_%s,\n" % (k, v))
         self.fp.write("}\n")
         
         self.fp.write("\n_compdeclarations = {\n")
         complist = self.namemappers[0].getall('comparison')
         complist.sort()
         for k, v in complist:
-            self.fp.write("    %s : %s,\n" % (`k`, v))
+            self.fp.write("    %r : %s,\n" % (k, v))
         self.fp.write("}\n")
         
         self.fp.write("\n_enumdeclarations = {\n")
         enumlist = self.namemappers[0].getall('enum')
         enumlist.sort()
         for k, v in enumlist:
-            self.fp.write("    %s : %s,\n" % (`k`, v))
+            self.fp.write("    %r : %s,\n" % (k, v))
         self.fp.write("}\n")
 
 def compiledata(data):
     [type, description, flags] = data
-    return "%s -- %s %s" % (`type`, `description`, compiledataflags(flags))
+    return "%r -- %r %s" % (type, description, compiledataflags(flags))
     
 def is_null(data):
     return data[0] == 'null'
@@ -1158,7 +1158,7 @@ def getdatadoc(data):
         return 'anything'
     if type == 'obj ':
         return 'an AE object reference'
-    return "undocumented, typecode %s"%`type`
+    return "undocumented, typecode %r"%(type,)
 
 dataflagdict = {15: "optional", 14: "list", 13: "enum", 12: "mutable"}
 def compiledataflags(flags):
@@ -1168,7 +1168,7 @@ def compiledataflags(flags):
             if i in dataflagdict.keys():
                 bits.append(dataflagdict[i])
             else:
-                bits.append(`i`)
+                bits.append(repr(i))
     return '[%s]' % string.join(bits)
     
 def ascii(str):

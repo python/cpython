@@ -28,7 +28,7 @@ class Test(Frame):
     def moveThing(self, *args):
 	velocity = self.speed.get()
 	str = float(velocity) / 1000.0
-	str = `str` + "i"
+	str = "%ri" % (str,)
 	self.draw.move("thing",  str, str)
 	self.after(10, self.moveThing)
 

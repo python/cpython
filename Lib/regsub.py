@@ -191,8 +191,8 @@ def test():
         fields = split(line, delpat)
         if len(fields) != 3:
             print 'Sorry, not three fields'
-            print 'split:', `fields`
+            print 'split:', repr(fields)
             continue
         [pat, repl, str] = split(line, delpat)
-        print 'sub :', `sub(pat, repl, str)`
-        print 'gsub:', `gsub(pat, repl, str)`
+        print 'sub :', repr(sub(pat, repl, str))
+        print 'gsub:', repr(gsub(pat, repl, str))

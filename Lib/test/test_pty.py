@@ -19,7 +19,7 @@ def test_basic_pty():
         debug("Calling master_open()")
         master_fd, slave_name = pty.master_open()
         debug("Got master_fd '%d', slave_name '%s'"%(master_fd, slave_name))
-        debug("Calling slave_open(%s)"%`slave_name`)
+        debug("Calling slave_open(%r)"%(slave_name,))
         slave_fd = pty.slave_open(slave_name)
         debug("Got slave_fd '%d'"%slave_fd)
     except OSError:

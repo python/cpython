@@ -88,15 +88,15 @@ if have_unicode:
 # A collection of tests on builtin sequence types
 a = range(10)
 for i in a:
-    check(i in a, "%s not in %s" % (`i`, `a`))
-check(16 not in a, "16 not in %s" % `a`)
-check(a not in a, "%s not in %s" % (`a`, `a`))
+    check(i in a, "%r not in %r" % (i, a))
+check(16 not in a, "16 not in %r" % (a,))
+check(a not in a, "%s not in %r" % (a, a))
 
 a = tuple(a)
 for i in a:
-    check(i in a, "%s not in %s" % (`i`, `a`))
-check(16 not in a, "16 not in %s" % `a`)
-check(a not in a, "%s not in %s" % (`a`, `a`))
+    check(i in a, "%r not in %r" % (i, a))
+check(16 not in a, "16 not in %r" % (a,))
+check(a not in a, "%r not in %r" % (a, a))
 
 class Deviant1:
     """Behaves strangely when compared

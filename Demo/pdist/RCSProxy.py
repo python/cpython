@@ -188,7 +188,7 @@ def test():
         if callable(attr):
             print apply(attr, tuple(sys.argv[2:]))
         else:
-            print `attr`
+            print repr(attr)
     else:
         print "%s: no such attribute" % what
         sys.exit(2)

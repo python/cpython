@@ -77,7 +77,7 @@ def test():
 		line = strip0(line)
 		name = strip0(name)
 		host = strip0(host)
-		print `name`, `host`, `line`, time, idle
+		print "%r %r %r %s %s" % (name, host, line, time, idle)
 
 def testbcast():
 	c = BroadcastRnusersClient('<broadcast>')

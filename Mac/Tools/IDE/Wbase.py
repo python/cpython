@@ -229,7 +229,7 @@ class Widget:
 	
 	def _removewidget(self, key):
 		if not self._widgetsdict.has_key(key):
-			raise KeyError, "no widget with key " + `key`
+			raise KeyError, "no widget with key %r" % (key,)
 		widget = self._widgetsdict[key]
 		for k in widget._widgetsdict.keys():
 			widget._removewidget(k)
@@ -502,8 +502,8 @@ class HorizontalPanes(Widget):
 		self._panebounds = []
 		for i in range(len(self._panesizes)):
 			panestart, paneend = self._panesizes[i]
-			boundsstring = self.boundstemplate % (`panestart`, panestart and halfgutter, 
-							`paneend`, (paneend <> 1.0) and -halfgutter)
+			boundsstring = self.boundstemplate % (repr(panestart), panestart and halfgutter, 
+							repr(paneend), (paneend <> 1.0) and -halfgutter)
 			self._panebounds.append(eval(boundsstring))
 	
 	def installbounds(self):
@@ -684,9 +684,9 @@ def CallbackCall(callback, mustfit, *args):
 		return callback()
 	else:
 		if mustfit:
-			raise TypeError, "callback accepts wrong number of arguments: " + `len(args)`
+			raise TypeError, "callback accepts wrong number of arguments: %r" % len(args)
 		else:
-			raise TypeError, "callback accepts wrong number of arguments: 0 or " + `len(args)`
+			raise TypeError, "callback accepts wrong number of arguments: 0 or %r" % len(args)
 
 
 def HasBaseClass(obj, class_):

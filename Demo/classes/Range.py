@@ -34,9 +34,9 @@ class Range:
         self.step = step
         self.len = max(0, int((self.stop - self.start) / self.step))
 
-    # implement `x` and is also used by print x
+    # implement repr(x) and is also used by print x
     def __repr__(self):
-        return 'range' + `self.start, self.stop, self.step`
+        return 'range(%r, %r, %r)' % (self.start, self.stop, self.step)
 
     # implement len(x)
     def __len__(self):

@@ -525,9 +525,9 @@ class Distribution:
                         func()
                     else:
                         raise DistutilsClassError(
-                            "invalid help function %s for help option '%s': "
+                            "invalid help function %r for help option '%s': "
                             "must be a callable object (function, etc.)"
-                            % (`func`, help_option))
+                            % (func, help_option))
 
             if help_option_found:
                 return

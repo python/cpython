@@ -386,9 +386,9 @@ for copymode in -1, +1:
         a = {}
         b = {}
         for i in range(size):
-            a[`i`] = i
+            a[repr(i)] = i
             if copymode < 0:
-                b[`i`] = i
+                b[repr(i)] = i
         if copymode > 0:
             b = a.copy()
         for i in range(size):

@@ -51,7 +51,7 @@ class _FontDialog:
 			self.lasttab, self.tabmode = tabsettings
 			self.w.tabsizetitle = W.TextBox((10, -26, leftmargin2, 14), "Tabsize:", TextEdit.teJustRight)
 			self.w.tabsizeedit = W.EditText((leftmargin, -29, 40, 20), "", self.checktab)
-			self.w.tabsizeedit.set(`self.lasttab`)
+			self.w.tabsizeedit.set(repr(self.lasttab))
 			radiobuttons = []
 			self.w.tabsizechars = W.RadioButton((leftmargin + 48, -26, 55, 14), "Spaces", 
 					radiobuttons, self.toggletabmode)
@@ -97,7 +97,7 @@ class _FontDialog:
 			else:
 				# convert spaces to pixels
 				self.lasttab = spacewidth * tabsize
-			self.w.tabsizeedit.set(`self.lasttab`)
+			self.w.tabsizeedit.set(repr(self.lasttab))
 			self.tabmode = tabmode
 			self.doit()
 	
@@ -139,7 +139,7 @@ class _FontDialog:
 			for i in range(1, len(_stylenames)):
 				if self.w[i].get():
 					style = style | 2 ** (i - 1)
-		#self.w.sample.set(`style`)
+		#self.w.sample.set(repr(style))
 		fontsettings, tabsettings = self.get()
 		self.w.sample.setfontsettings(fontsettings)
 		self.w.sample.settabsettings(tabsettings)
@@ -161,7 +161,7 @@ class _FontDialog:
 				self.doit()
 		else:
 			SysBeep(0)
-			self.w.tabsizeedit.set(`self.lasttab`)
+			self.w.tabsizeedit.set(repr(self.lasttab))
 			self.w.tabsizeedit.selectall()
 	
 	def checksize(self):
@@ -181,7 +181,7 @@ class _FontDialog:
 				self.doit()
 		else:
 			SysBeep(0)
-			self.w.sizeedit.set(`self.lastsize`)
+			self.w.sizeedit.set(repr(self.lastsize))
 			self.w.sizeedit.selectall()
 	
 	def doplain(self):

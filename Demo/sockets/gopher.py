@@ -75,10 +75,10 @@ def get_menu(selector, host, port):
 		typechar = line[0]
 		parts = string.splitfields(line[1:], TAB)
 		if len(parts) < 4:
-			print '(Bad line from server:', `line`, ')'
+			print '(Bad line from server: %r)' % (line,)
 			continue
 		if len(parts) > 4:
-			print '(Extra info from server:', parts[4:], ')'
+			print '(Extra info from server: %r)' % (parts[4:],)
 		parts.insert(0, typechar)
 		list.append(parts)
 	f.close()
@@ -154,17 +154,17 @@ def browse_menu(selector, host, port):
 	list = get_menu(selector, host, port)
 	while 1:
 		print '----- MENU -----'
-		print 'Selector:', `selector`
+		print 'Selector:', repr(selector)
 		print 'Host:', host, ' Port:', port
 		print
 		for i in range(len(list)):
 			item = list[i]
 			typechar, description = item[0], item[1]
-			print string.rjust(`i+1`, 3) + ':', description,
+			print string.rjust(repr(i+1), 3) + ':', description,
 			if typename.has_key(typechar):
 				print typename[typechar]
 			else:
-				print '<TYPE=' + `typechar` + '>'
+				print '<TYPE=' + repr(typechar) + '>'
 		print
 		while 1:
 			try:
@@ -221,7 +221,7 @@ def browse_textfile(selector, host, port):
 def browse_search(selector, host, port):
 	while 1:
 		print '----- SEARCH -----'
-		print 'Selector:', `selector`
+		print 'Selector:', repr(selector)
 		print 'Host:', host, ' Port:', port
 		print
 		try:
@@ -240,9 +240,9 @@ def browse_search(selector, host, port):
 # "Browse" telnet-based information, i.e. open a telnet session
 def browse_telnet(selector, host, port):
 	if selector:
-		print 'Log in as', `selector`
+		print 'Log in as', repr(selector)
 	if type(port) <> type(''):
-		port = `port`
+		port = repr(port)
 	sts = os.system('set -x; exec telnet ' + host + ' ' + port)
 	if sts:
 		print 'Exit status:', sts
@@ -307,18 +307,18 @@ def open_savefile():
 		try:
 			p = os.popen(cmd, 'w')
 		except IOError, msg:
-			print `cmd`, ':', msg
+			print repr(cmd), ':', msg
 			return None
-		print 'Piping through', `cmd`, '...'
+		print 'Piping through', repr(cmd), '...'
 		return p
 	if savefile[0] == '~':
 		savefile = os.path.expanduser(savefile)
 	try:
 		f = open(savefile, 'w')
 	except IOError, msg:
-		print `savefile`, ':', msg
+		print repr(savefile), ':', msg
 		return None
-	print 'Saving to', `savefile`, '...'
+	print 'Saving to', repr(savefile), '...'
 	return f
 
 # Test program

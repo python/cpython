@@ -99,7 +99,7 @@ rv = cdll_N_pp('pascal string')
 if rv == 'Was: pascal string':
 	print 'ok.'
 else:
-	print 'Failed, returned', `rv`
+	print 'Failed, returned', repr(rv)
 	
 print 'Test cdll_N_bb'
 rv = cdll_N_bb(-100)
@@ -128,5 +128,5 @@ rv = cdll_N_sH('new data', h)
 if rv == None and h.data == 'new data':
 	print 'ok.'
 else:
-	print 'Failed, rv is', rv, 'and handle data is', `rv.data`
+	print 'Failed, rv is', rv, 'and handle data is', repr(rv.data)
 sys.exit(1)

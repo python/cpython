@@ -222,10 +222,10 @@ def test():
     f.seek(len(lines[0]))
     f.write(lines[1])
     f.seek(0)
-    print 'First line =', `f.readline()`
+    print 'First line =', repr(f.readline())
     print 'Position =', f.tell()
     line = f.readline()
-    print 'Second line =', `line`
+    print 'Second line =', repr(line)
     f.seek(-len(line), 1)
     line2 = f.read(len(line))
     if line != line2:

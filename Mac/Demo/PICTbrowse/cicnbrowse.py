@@ -52,7 +52,7 @@ class CIconbrowse(FrameWork.Application):
 	def showCIcon(self, resid):
 		w = CIconwindow(self)
 		w.open(resid)
-		#EasyDialogs.Message('Show cicn '+`resid`)
+		#EasyDialogs.Message('Show cicn %r' % (resid,))
 		
 	def findcicnresources(self):
 		num = Res.CountResources('cicn')
@@ -70,7 +70,7 @@ class CIconbrowse(FrameWork.Application):
 class CIconwindow(FrameWork.Window):
 	def open(self, (resid, resname)):
 		if not resname:
-			resname = '#'+`resid`
+			resname = '#%r' % (resid,)
 		self.resid = resid
 		self.picture = Icn.GetCIcon(self.resid)
 		l, t, r, b = 0, 0, 32, 32
@@ -127,7 +127,7 @@ class MyDialog(FrameWork.DialogWindow):
 		if self.contents:
 			self.list.LAddRow(len(self.contents), 0)
 			for i in range(len(self.contents)):
-				v = `self.contents[i][0]`
+				v = repr(self.contents[i][0])
 				if self.contents[i][1]:
 					v = v + '"' + self.contents[i][1] + '"'
 				self.list.LSetCell(v, (0, i))

@@ -325,22 +325,22 @@ class AbstractWriter(NullWriter):
     """
 
     def new_alignment(self, align):
-        print "new_alignment(%s)" % `align`
+        print "new_alignment(%r)" % (align,)
 
     def new_font(self, font):
-        print "new_font(%s)" % `font`
+        print "new_font(%r)" % (font,)
 
     def new_margin(self, margin, level):
-        print "new_margin(%s, %d)" % (`margin`, level)
+        print "new_margin(%r, %d)" % (margin, level)
 
     def new_spacing(self, spacing):
-        print "new_spacing(%s)" % `spacing`
+        print "new_spacing(%r)" % (spacing,)
 
     def new_styles(self, styles):
-        print "new_styles(%s)" % `styles`
+        print "new_styles(%r)" % (styles,)
 
     def send_paragraph(self, blankline):
-        print "send_paragraph(%s)" % `blankline`
+        print "send_paragraph(%r)" % (blankline,)
 
     def send_line_break(self):
         print "send_line_break()"
@@ -349,13 +349,13 @@ class AbstractWriter(NullWriter):
         print "send_hor_rule()"
 
     def send_label_data(self, data):
-        print "send_label_data(%s)" % `data`
+        print "send_label_data(%r)" % (data,)
 
     def send_flowing_data(self, data):
-        print "send_flowing_data(%s)" % `data`
+        print "send_flowing_data(%r)" % (data,)
 
     def send_literal_data(self, data):
-        print "send_literal_data(%s)" % `data`
+        print "send_literal_data(%r)" % (data,)
 
 
 class DumbWriter(NullWriter):

@@ -33,7 +33,7 @@ def mkpath (name, mode=0777, verbose=0, dry_run=0):
     # Detect a common bug -- name is None
     if type(name) is not StringType:
         raise DistutilsInternalError, \
-              "mkpath: 'name' must be a string (got %s)" % `name`
+              "mkpath: 'name' must be a string (got %r)" % (name,)
 
     # XXX what's the better way to handle verbosity? print as we create
     # each directory in the path (the current behaviour), or only announce

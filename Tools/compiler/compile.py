@@ -35,8 +35,7 @@ def main():
                 print filename
             try:
                 if PROFILE:
-                    profile.run('compileFile(%s, %s)' % (`filename`,
-                                                         `DISPLAY`),
+                    profile.run('compileFile(%r, %r)' % (filename, DISPLAY),
                                 filename + ".prof")
                 else:
                     compileFile(filename, DISPLAY)

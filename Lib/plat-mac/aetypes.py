@@ -26,7 +26,7 @@ class Unknown:
         self.data = data
     
     def __repr__(self):
-        return "Unknown(%s, %s)" % (`self.type`, `self.data`)
+        return "Unknown(%r, %r)" % (self.type, self.data)
     
     def __aepack__(self):
         return pack(self.data, self.type)
@@ -38,7 +38,7 @@ class Enum:
         self.enum = "%-4.4s" % str(enum)
     
     def __repr__(self):
-        return "Enum(%s)" % `self.enum`
+        return "Enum(%r)" % (self.enum,)
     
     def __str__(self):
         return string.strip(self.enum)
@@ -60,7 +60,7 @@ class InsertionLoc:
         self.pos = pos
     
     def __repr__(self):
-        return "InsertionLoc(%s, %s)" % (`self.of`, `self.pos`)
+        return "InsertionLoc(%r, %r)" % (self.of, self.pos)
         
     def __aepack__(self):
         rec = {'kobj': self.of, 'kpos': self.pos}
@@ -80,7 +80,7 @@ class Boolean:
         self.bool = (not not bool)
     
     def __repr__(self):
-        return "Boolean(%s)" % `self.bool`
+        return "Boolean(%r)" % (self.bool,)
     
     def __str__(self):
         if self.bool:
@@ -105,7 +105,7 @@ class Type:
         self.type = "%-4.4s" % str(type)
     
     def __repr__(self):
-        return "Type(%s)" % `self.type`
+        return "Type(%r)" % (self.type,)
     
     def __str__(self):
         return string.strip(self.type)
@@ -128,7 +128,7 @@ class Keyword:
         self.keyword = "%-4.4s" % str(keyword)
     
     def __repr__(self):
-        return "Keyword(%s)" % `self.keyword`
+        return "Keyword(%r)" % `self.keyword`
     
     def __str__(self):
         return string.strip(self.keyword)
@@ -147,7 +147,7 @@ class Range:
         self.stop = stop
     
     def __repr__(self):
-        return "Range(%s, %s)" % (`self.start`, `self.stop`)
+        return "Range(%r, %r)" % (self.start, self.stop)
     
     def __str__(self):
         return "%s thru %s" % (nice(self.start), nice(self.stop))
@@ -167,7 +167,7 @@ class Comparison:
         self.obj2 = obj2
     
     def __repr__(self):
-        return "Comparison(%s, %s, %s)" % (`self.obj1`, `self.relo`, `self.obj2`)
+        return "Comparison(%r, %r, %r)" % (self.obj1, self.relo, self.obj2)
     
     def __str__(self):
         return "%s %s %s" % (nice(self.obj1), string.strip(self.relo), nice(self.obj2))
@@ -195,7 +195,7 @@ class Ordinal:
         self.abso = "%-4.4s" % str(abso)
     
     def __repr__(self):
-        return "Ordinal(%s)" % (`self.abso`)
+        return "Ordinal(%r)" % (self.abso,)
     
     def __str__(self):
         return "%s" % (string.strip(self.abso))
@@ -220,7 +220,7 @@ class Logical:
         self.term = term
     
     def __repr__(self):
-        return "Logical(%s, %s)" % (`self.logc`, `self.term`)
+        return "Logical(%r, %r)" % (self.logc, self.term)
     
     def __str__(self):
         if type(self.term) == ListType and len(self.term) == 2:
@@ -244,7 +244,7 @@ class StyledText:
         self.text = text
     
     def __repr__(self):
-        return "StyledText(%s, %s)" % (`self.style`, `self.text`)
+        return "StyledText(%r, %r)" % (self.style, self.text)
     
     def __str__(self):
         return self.text
@@ -264,7 +264,7 @@ class AEText:
         self.text = text
     
     def __repr__(self):
-        return "AEText(%s, %s, %s)" % (`self.script`, `self.style`, `self.text`)
+        return "AEText(%r, %r, %r)" % (self.script, self.style, self.text)
     
     def __str__(self):
         return self.text
@@ -285,7 +285,7 @@ class IntlText:
         self.text = text
     
     def __repr__(self):
-        return "IntlText(%s, %s, %s)" % (`self.script`, `self.language`, `self.text`)
+        return "IntlText(%r, %r, %r)" % (self.script, self.language, self.text)
     
     def __str__(self):
         return self.text
@@ -305,7 +305,7 @@ class IntlWritingCode:
         self.language = language
     
     def __repr__(self):
-        return "IntlWritingCode(%s, %s)" % (`self.script`, `self.language`)
+        return "IntlWritingCode(%r, %r)" % (self.script, self.language)
     
     def __str__(self):
         return "script system %d, language %d"%(self.script, self.language)
@@ -325,7 +325,7 @@ class QDPoint:
         self.h = h
     
     def __repr__(self):
-        return "QDPoint(%s, %s)" % (`self.v`, `self.h`)
+        return "QDPoint(%r, %r)" % (self.v, self.h)
     
     def __str__(self):
         return "(%d, %d)"%(self.v, self.h)
@@ -347,8 +347,7 @@ class QDRectangle:
         self.h1 = h1
     
     def __repr__(self):
-        return "QDRectangle(%s, %s, %s, %s)" % (`self.v0`, `self.h0`,
-                `self.v1`, `self.h1`)
+        return "QDRectangle(%r, %r, %r, %r)" % (self.v0, self.h0, self.v1, self.h1)
     
     def __str__(self):
         return "(%d, %d)-(%d, %d)"%(self.v0, self.h0, self.v1, self.h1)
@@ -369,7 +368,7 @@ class RGBColor:
         self.b = b
             
     def __repr__(self):
-        return "RGBColor(%s, %s, %s)" % (`self.r`, `self.g`, `self.b`)
+        return "RGBColor(%r, %r, %r)" % (self.r, self.g, self.b)
     
     def __str__(self):
         return "0x%x red, 0x%x green, 0x%x blue"% (self.r, self.g, self.b)
@@ -413,9 +412,9 @@ class ObjectSpecifier:
         self.fr = fr
     
     def __repr__(self):
-        s = "ObjectSpecifier(%s, %s, %s" % (`self.want`, `self.form`, `self.seld`)
+        s = "ObjectSpecifier(%r, %r, %r" % (self.want, self.form, self.seld)
         if self.fr:
-            s = s + ", %s)" % `self.fr`
+            s = s + ", %r)" % (self.fr,)
         else:
             s = s + ")"
         return s
@@ -439,9 +438,9 @@ class Property(ObjectSpecifier):
 
     def __repr__(self):
         if self.fr:
-            return "Property(%s, %s)" % (`self.seld.type`, `self.fr`)
+            return "Property(%r, %r)" % (self.seld.type, self.fr)
         else:
-            return "Property(%s)" % `self.seld.type`
+            return "Property(%r)" % (self.seld.type,)
     
     def __str__(self):
         if self.fr:
@@ -465,11 +464,11 @@ class NProperty(ObjectSpecifier):
                     mktype(self.which), fr)
 
     def __repr__(self):
-        rv = "Property(%s"%`self.seld.type`
+        rv = "Property(%r" % (self.seld.type,)
         if self.fr:
-            rv = rv + ", fr=%s" % `self.fr`
+            rv = rv + ", fr=%r" % (self.fr,)
         if self.want != 'prop':
-            rv = rv + ", want=%s" % `self.want`
+            rv = rv + ", want=%r" % (self.want,)
         return rv + ")"
     
     def __str__(self):
@@ -510,8 +509,8 @@ class ComponentItem(SelectableItem):
     
     def __repr__(self):
         if not self.fr:
-            return "%s(%s)" % (self.__class__.__name__, `self.seld`)
-        return "%s(%s, %s)" % (self.__class__.__name__, `self.seld`, `self.fr`)
+            return "%s(%r)" % (self.__class__.__name__, self.seld)
+        return "%s(%r, %r)" % (self.__class__.__name__, self.seld, self.fr)
     
     def __str__(self):
         seld = self.seld
@@ -549,7 +548,7 @@ class DelayedComponentItem:
         return self.compclass(which, self.fr)
         
     def __repr__(self):
-        return "%s(???, %s)" % (self.__class__.__name__, `self.fr`)
+        return "%s(???, %r)" % (self.__class__.__name__, self.fr)
         
     def __str__(self):
         return "selector for element %s of %s"%(self.__class__.__name__, str(self.fr))

@@ -146,7 +146,7 @@ class ReDemo:
                 groups = list(m.groups())
                 groups.insert(0, m.group())
                 for i in range(len(groups)):
-                    g = "%2d: %s" % (i, `groups[i]`)
+                    g = "%2d: %r" % (i, groups[i])
                     self.grouplist.insert(END, g)
             nmatches = nmatches + 1
             if self.showvar.get() == "first":

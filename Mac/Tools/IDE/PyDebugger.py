@@ -511,7 +511,7 @@ class Debugger(bdb.Bdb):
 					return self.dispatch_return(frame, arg)
 				if event == 'exception':
 					return self.dispatch_exception(frame, arg)
-				print 'bdb.Bdb.dispatch: unknown debugging event:', `event`
+				print 'bdb.Bdb.dispatch: unknown debugging event:', repr(event)
 				return self.trace_dispatch
 			finally:
 				if hasattr(MacOS, 'EnableAppswitch'):

@@ -107,9 +107,9 @@ class EnumInstance:
         return self.__value
 
     def __repr__(self):
-        return "EnumInstance(%s, %s, %s)" % (`self.__classname`,
-                                             `self.__enumname`,
-                                             `self.__value`)
+        return "EnumInstance(%r, %r, %r)" % (self.__classname,
+                                             self.__enumname,
+                                             self.__value)
 
     def __str__(self):
         return "%s.%s" % (self.__classname, self.__enumname)

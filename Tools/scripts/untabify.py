@@ -29,7 +29,7 @@ def process(filename, tabsize):
         text = f.read()
         f.close()
     except IOError, msg:
-        print "%s: I/O error: %s" % (`filename`, str(msg))
+        print "%r: I/O error: %s" % (filename, msg)
         return
     newtext = text.expandtabs(tabsize)
     if newtext == text:

@@ -531,7 +531,7 @@ def GetArgv(optionlist=None, commandlist=None, addoldfile=1, addnewfile=1, addfo
 
             for stringtoadd in stringstoadd:
                 if '"' in stringtoadd or "'" in stringtoadd or " " in stringtoadd:
-                    stringtoadd = `stringtoadd`
+                    stringtoadd = repr(stringtoadd)
                 h = d.GetDialogItemAsControl(ARGV_CMDLINE_DATA)
                 oldstr = GetDialogItemText(h)
                 if oldstr and oldstr[-1] != ' ':
@@ -791,7 +791,7 @@ def test():
     argv = GetArgv(optionlist=optionlist, commandlist=commandlist, addoldfile=0)
     Message("Command line: %s"%' '.join(argv))
     for i in range(len(argv)):
-        print 'arg[%d] = %s'%(i, `argv[i]`)
+        print 'arg[%d] = %r' % (i, argv[i])
     ok = AskYesNoCancel("Do you want to proceed?")
     ok = AskYesNoCancel("Do you want to identify?", yes="Identify", no="No")
     if ok > 0:

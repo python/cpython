@@ -47,7 +47,7 @@ if maxint == 2147483647:
         try:
             x = eval(s)
         except OverflowError:
-            print "OverflowError on huge integer literal " + `s`
+            print "OverflowError on huge integer literal " + repr(s)
 elif eval('maxint == 9223372036854775807'):
     if eval('-9223372036854775807-1 != -01000000000000000000000'):
         raise TestFailed, 'max negative int'
@@ -58,7 +58,7 @@ elif eval('maxint == 9223372036854775807'):
         try:
             x = eval(s)
         except OverflowError:
-            print "OverflowError on huge integer literal " + `s`
+            print "OverflowError on huge integer literal " + repr(s)
 else:
     print 'Weird maxint value', maxint
 

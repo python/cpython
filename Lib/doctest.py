@@ -334,8 +334,8 @@ def _extract_examples(s):
             continue
         lineno = i - 1
         if line[j] != " ":
-            raise ValueError("line " + `lineno` + " of docstring lacks "
-                "blank after " + PS1 + ": " + line)
+            raise ValueError("line %r of docstring lacks blank after %s: %s" %
+                             (lineno, PS1, line))
         j = j + 1
         blanks = m.group(1)
         nblanks = len(blanks)
@@ -348,7 +348,7 @@ def _extract_examples(s):
             if m:
                 if m.group(1) != blanks:
                     raise ValueError("inconsistent leading whitespace "
-                        "in line " + `i` + " of docstring: " + line)
+                        "in line %r of docstring: %s" % (i, line))
                 i = i + 1
             else:
                 break
@@ -367,7 +367,7 @@ def _extract_examples(s):
             while 1:
                 if line[:nblanks] != blanks:
                     raise ValueError("inconsistent leading whitespace "
-                        "in line " + `i` + " of docstring: " + line)
+                        "in line %r of docstring: %s" % (i, line))
                 expect.append(line[nblanks:])
                 i = i + 1
                 line = lines[i]
@@ -475,7 +475,7 @@ def _run_examples_inner(out, fakeout, examples, globs, verbose, name,
         failures = failures + 1
         out("*" * 65 + "\n")
         _tag_out(out, ("Failure in example", source))
-        out("from line #" + `lineno` + " of " + name + "\n")
+        out("from line #%r of %s\n" % (lineno, name))
         if state == FAIL:
             _tag_out(out, ("Expected", want or NADA), ("Got", got))
         else:
@@ -686,8 +686,7 @@ See doctest.testmod docs for the meaning of optionflags.
         if mod is None and globs is None:
             raise TypeError("Tester.__init__: must specify mod or globs")
         if mod is not None and not _ismodule(mod):
-            raise TypeError("Tester.__init__: mod must be a module; " +
-                            `mod`)
+            raise TypeError("Tester.__init__: mod must be a module; %r" % (mod,))
         if globs is None:
             globs = mod.__dict__
         self.globs = globs
@@ -775,7 +774,7 @@ See doctest.testmod docs for the meaning of optionflags.
                 name = object.__name__
             except AttributeError:
                 raise ValueError("Tester.rundoc: name must be given "
-                    "when object.__name__ doesn't exist; " + `object`)
+                    "when object.__name__ doesn't exist; %r" % (object,))
         if self.verbose:
             print "Running", name + ".__doc__"
         f, t = run_docstring_examples(object, self.globs, self.verbose, name,
@@ -893,8 +892,7 @@ See doctest.testmod docs for the meaning of optionflags.
         """
 
         if not hasattr(d, "items"):
-            raise TypeError("Tester.rundict: d must support .items(); " +
-                            `d`)
+            raise TypeError("Tester.rundict: d must support .items(); %r" % (d,))
         f = t = 0
         # Run the tests by alpha order of names, for consistency in
         # verbose-mode output.
@@ -936,7 +934,7 @@ See doctest.testmod docs for the meaning of optionflags.
                 else:
                     raise TypeError("Tester.run__test__: values in "
                             "dict must be strings, functions, methods, "
-                            "or classes; " + `v`)
+                            "or classes; %r" % (v,))
                 failures = failures + f
                 tries = tries + t
         finally:
@@ -1139,7 +1137,7 @@ def testmod(m=None, name=None, globs=None, verbose=None, isprivate=None,
         m = sys.modules.get('__main__')
 
     if not _ismodule(m):
-        raise TypeError("testmod: module required; " + `m`)
+        raise TypeError("testmod: module required; %r" % (m,))
     if name is None:
         name = m.__name__
     tester = Tester(m, globs=globs, verbose=verbose, isprivate=isprivate,
@@ -1153,7 +1151,7 @@ def testmod(m=None, name=None, globs=None, verbose=None, isprivate=None,
         if testdict:
             if not hasattr(testdict, "items"):
                 raise TypeError("testmod: module.__test__ must support "
-                                ".items(); " + `testdict`)
+                                ".items(); %r" % (testdict,))
             f, t = tester.run__test__(testdict, name + ".__test__")
             failures += f
             tries += t

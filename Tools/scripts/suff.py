@@ -17,7 +17,7 @@ def main():
     keys = suffixes.keys()
     keys.sort()
     for suff in keys:
-        print `suff`, len(suffixes[suff])
+        print repr(suff), len(suffixes[suff])
 
 def getsuffix(filename):
     suff = ''

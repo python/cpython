@@ -57,7 +57,7 @@ def test():
         if (rfd, wfd, xfd) == ([p], [], []):
             line = p.readline()
             if verbose:
-                print `line`
+                print repr(line)
             if not line:
                 if verbose:
                     print 'EOF'

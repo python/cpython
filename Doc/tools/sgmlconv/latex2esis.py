@@ -73,8 +73,8 @@ def popping(name, point, depth):
 class _Stack(list):
     def append(self, entry):
         if not isinstance(entry, str):
-            raise LaTeXFormatError("cannot push non-string on stack: "
-                                   + `entry`)
+            raise LaTeXFormatError("cannot push non-string on stack: %r"
+                                   % (entry, ))
         #dbgmsg("%s<%s>" % (" "*len(self.data), entry))
         list.append(self, entry)
 
@@ -208,8 +208,8 @@ class Conversion:
                             m = _parameter_rx.match(line)
                             if not m:
                                 raise LaTeXFormatError(
-                                    "could not extract parameter %s for %s: %s"
-                                    % (pentry.name, macroname, `line[:100]`))
+                                    "could not extract parameter %s for %s: %r"
+                                    % (pentry.name, macroname, line[:100]))
                             if entry.outputname:
                                 self.dump_attr(pentry, m.group(1))
                             line = line[m.end():]
@@ -259,7 +259,7 @@ class Conversion:
                             opened = 1
                             stack.append(entry.name)
                             self.write("(%s\n" % entry.outputname)
-                        #dbgmsg("--- text: %s" % `pentry.text`)
+                        #dbgmsg("--- text: %r" % pentry.text)
                         self.write("-%s\n" % encode(pentry.text))
                     elif pentry.type == "entityref":
                         self.write("&%s\n" % pentry.name)
@@ -326,8 +326,8 @@ class Conversion:
             extra = ""
             if len(line) > 100:
                 extra = "..."
-            raise LaTeXFormatError("could not identify markup: %s%s"
-                                   % (`line[:100]`, extra))
+            raise LaTeXFormatError("could not identify markup: %r%s"
+                                   % (line[:100], extra))
         while stack:
             entry = self.get_entry(stack[-1])
             if entry.closes:
@@ -361,7 +361,7 @@ class Conversion:
     def get_entry(self, name):
         entry = self.table.get(name)
         if entry is None:
-            dbgmsg("get_entry(%s) failing; building default entry!" % `name`)
+            dbgmsg("get_entry(%r) failing; building default entry!" % (name, ))
             # not defined; build a default entry:
             entry = TableEntry(name)
             entry.has_content = 1
@@ -486,7 +486,7 @@ class TableHandler(xml.sax.handler.ContentHandler):
     def end_macro(self):
         name = self.__current.name
         if self.__table.has_key(name):
-            raise ValueError("name %s already in use" % `name`)
+            raise ValueError("name %r already in use" % (name,))
         self.__table[name] = self.__current
         self.__current = None
 

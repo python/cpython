@@ -42,7 +42,7 @@ class echo_client(asynchat.async_chat):
         self.buffer = self.buffer + data
 
     def found_terminator(self):
-        print "Received:", `self.buffer`
+        print "Received:", repr(self.buffer)
         self.buffer = ""
         self.close()
 

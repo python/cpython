@@ -306,7 +306,7 @@ class SMTP:
 
     def send(self, str):
         """Send `str' to the server."""
-        if self.debuglevel > 0: print 'send:', `str`
+        if self.debuglevel > 0: print 'send:', repr(str)
         if self.sock:
             try:
                 self.sock.sendall(str)
@@ -345,7 +345,7 @@ class SMTP:
             if line == '':
                 self.close()
                 raise SMTPServerDisconnected("Connection unexpectedly closed")
-            if self.debuglevel > 0: print 'reply:', `line`
+            if self.debuglevel > 0: print 'reply:', repr(line)
             resp.append(line[4:].strip())
             code=line[:3]
             # Check that the error code is syntactically correct.
@@ -666,7 +666,7 @@ class SMTP:
             # Hmmm? what's this? -ddm
             # self.esmtp_features['7bit']=""
             if self.has_extn('size'):
-                esmtp_opts.append("size=" + `len(msg)`)
+                esmtp_opts.append("size=%d" % len(msg))
             for option in mail_options:
                 esmtp_opts.append(option)
 
@@ -727,7 +727,7 @@ if __name__ == '__main__':
         if not line:
             break
         msg = msg + line
-    print "Message length is " + `len(msg)`
+    print "Message length is %d" % len(msg)
 
     server = SMTP('localhost')
     server.set_debuglevel(1)

@@ -81,7 +81,7 @@ class DOMBuilder:
                 settings = self._settings[(_name_xform(name), state)]
             except KeyError:
                 raise xml.dom.NotSupportedErr(
-                    "unsupported feature: " + `name`)
+                    "unsupported feature: %r" % (name,))
             else:
                 for name, value in settings:
                     setattr(self._options, name, value)

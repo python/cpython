@@ -336,7 +336,7 @@ class condition:
 
     def broadcast(self, num = -1):
         if num < -1:
-            raise ValueError, '.broadcast called with num ' + `num`
+            raise ValueError, '.broadcast called with num %r' % (num,)
         if num == 0:
             return
         self.idlock.acquire()
@@ -418,7 +418,7 @@ class semaphore:
         self.nonzero.acquire()
         if self.count == self.maxcount:
             raise ValueError, '.v() tried to raise semaphore count above ' \
-                  'initial value ' + `maxcount`
+                  'initial value %r' % (maxcount,))
         self.count = self.count + 1
         self.nonzero.signal()
         self.nonzero.release()

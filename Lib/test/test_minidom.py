@@ -1361,7 +1361,7 @@ for name in names:
             print "Test Failed: ", name
             sys.stdout.flush()
             traceback.print_exception(*sys.exc_info())
-            print `sys.exc_info()[1]`
+            print repr(sys.exc_info()[1])
             Node.allnodes = {}
 
 if failed:

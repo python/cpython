@@ -52,7 +52,7 @@ class Bdb:
             return self.dispatch_return(frame, arg)
         if event == 'exception':
             return self.dispatch_exception(frame, arg)
-        print 'bdb.Bdb.dispatch: unknown debugging event:', `event`
+        print 'bdb.Bdb.dispatch: unknown debugging event:', repr(event)
         return self.trace_dispatch
 
     def dispatch_line(self, frame):
@@ -311,7 +311,7 @@ class Bdb:
         import linecache, repr
         frame, lineno = frame_lineno
         filename = self.canonic(frame.f_code.co_filename)
-        s = filename + '(' + `lineno` + ')'
+        s = '%s(%r)' % (filename, lineno)
         if frame.f_code.co_name:
             s = s + frame.f_code.co_name
         else:

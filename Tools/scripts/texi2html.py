@@ -257,7 +257,7 @@ class TexinfoParser:
             line = fp.readline()
             lineno = lineno + 1
         if line[:len(MAGIC)] <> MAGIC:
-            raise SyntaxError, 'file does not begin with '+`MAGIC`
+            raise SyntaxError, 'file does not begin with %r' % (MAGIC,)
         self.parserest(fp, lineno)
 
     # Parse the contents of a file, not expecting a MAGIC header
@@ -475,7 +475,7 @@ class TexinfoParser:
                 continue
             if c <> '@':
                 # Cannot happen unless spprog is changed
-                raise RuntimeError, 'unexpected funny '+`c`
+                raise RuntimeError, 'unexpected funny %r' % c
             start = i
             while i < n and text[i] in string.ascii_letters: i = i+1
             if i == start:
@@ -555,9 +555,9 @@ class TexinfoParser:
         try:
             fp = open(file, 'r')
         except IOError, msg:
-            print '*** Can\'t open include file', `file`
+            print '*** Can\'t open include file', repr(file)
             return
-        print '!'*self.debugging, '--> file', `file`
+        print '!'*self.debugging, '--> file', repr(file)
         save_done = self.done
         save_skip = self.skip
         save_stack = self.stack
@@ -568,7 +568,7 @@ class TexinfoParser:
         self.done = save_done
         self.skip = save_skip
         self.stack = save_stack
-        print '!'*self.debugging, '<-- file', `file`
+        print '!'*self.debugging, '<-- file', repr(file)
 
     # --- Special Insertions ---
 
@@ -806,7 +806,7 @@ class TexinfoParser:
         # if self.savetext <> None:
         #       print '*** Recursive footnote -- expect weirdness'
         id = len(self.footnotes) + 1
-        self.write(self.FN_SOURCE_PATTERN % {'id': `id`})
+        self.write(self.FN_SOURCE_PATTERN % {'id': repr(id))
         self.startsaving()
 
     def close_footnote(self):
@@ -817,7 +817,7 @@ class TexinfoParser:
         self.write(self.FN_HEADER)
         for id, text in self.footnotes:
             self.write(self.FN_TARGET_PATTERN
-                       % {'id': `id`, 'text': text})
+                       % {'id': repr(id), 'text': text})
         self.footnotes = []
 
     def open_file(self): self.write('<CODE>')
@@ -1162,7 +1162,7 @@ class TexinfoParser:
             self.numbering[level] = self.numbering[level] + 1
             x = ''
             for i in self.numbering:
-                x = x + `i` + '.'
+                x = x + repr(i) + '.'
             args = x + ' ' + args
             self.contents.append((level, args, self.nodename))
         self.write('<', type, '>')
@@ -1549,7 +1549,7 @@ class TexinfoParser:
         if self.whichindex.has_key(name):
             self.index(name, args)
         else:
-            print '*** No index named', `name`
+            print '*** No index named', repr(name)
 
     def do_cindex(self, args): self.index('cp', args)
     def do_findex(self, args): self.index('fn', args)
@@ -1585,7 +1585,7 @@ class TexinfoParser:
             if self.whichindex.has_key(name):
                 self.prindex(name)
             else:
-                print '*** No index named', `name`
+                print '*** No index named', repr(name)
 
     def prindex(self, name):
         iscodeindex = (name not in self.noncodeindices)

@@ -55,7 +55,7 @@ def findtemplate(template=None):
         except (Carbon.File.Error, ValueError):
             continue
     else:
-        raise BuildError, "Template %s not found on sys.path" % `template`
+        raise BuildError, "Template %r not found on sys.path" % (template,)
     file = file.as_pathname()
     return file
     

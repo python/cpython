@@ -98,7 +98,7 @@ def _test():
         def __init__(self, *args):
             print "__init__, args =", args
         def m1(self, x):
-            print "m1(x=%s)" %`x`
+            print "m1(x=%r)" % (x,)
     print C
     x = C()
     print x

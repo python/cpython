@@ -55,7 +55,7 @@ class CommandFrameWork:
 			try:
 				method = getattr(self, mname)
 			except AttributeError:
-				return self.usage("command %s unknown" % `cmd`)
+				return self.usage("command %r unknown" % (cmd,))
 			try:
 				flags = getattr(self, fname)
 			except AttributeError:
@@ -75,7 +75,7 @@ class CommandFrameWork:
 			print "-"*40
 			print "Options:"
 			for o, a in opts:
-				print 'option', o, 'value', `a`
+				print 'option', o, 'value', repr(a)
 			print "-"*40
 
 	def ready(self):
@@ -137,7 +137,7 @@ def test():
 	for t in tests:
 		print '-'*10, t, '-'*10
 		sts = x.run(t)
-		print "Exit status:", `sts`
+		print "Exit status:", repr(sts)
 
 
 if __name__ == '__main__':

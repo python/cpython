@@ -157,7 +157,7 @@ def test_poll2():
         elif flags & select.POLLIN:
             line = p.readline()
             if verbose:
-                print `line`
+                print repr(line)
             if not line:
                 if verbose:
                     print 'EOF'

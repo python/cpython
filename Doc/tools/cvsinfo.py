@@ -78,4 +78,4 @@ class RepositoryInfo:
         return fn[len(self.cvsroot_path)+1:]
 
     def __repr__(self):
-        return "<RepositoryInfo for %s>" % `self.get_cvsroot()`
+        return "<RepositoryInfo for %r>" % self.get_cvsroot()

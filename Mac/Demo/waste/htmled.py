@@ -516,7 +516,7 @@ class Wed(Application):
 		self.sizemenu = Menu(self.menubar, "Size")
 		self.sizeitems = []
 		for n in SIZES:
-			m = MenuItem(self.sizemenu, `n`, "", self.selsize)
+			m = MenuItem(self.sizemenu, repr(n), "", self.selsize)
 			self.sizeitems.append(m)
 		self.sizemenu.addseparator()
 		self.sizeitem_bigger = MenuItem(self.sizemenu, "Bigger", "+", 
@@ -670,7 +670,7 @@ class Wed(Application):
 				data = fp.read()
 				fp.close()
 			except IOError, arg:
-				EasyDialogs.Message("IOERROR: "+`arg`)
+				EasyDialogs.Message("IOERROR: %r" % (arg,))
 				return
 		else:
 			path = None
@@ -688,7 +688,7 @@ class Wed(Application):
 			try:
 				fp = open(path, 'rb') # NOTE binary, we need cr as end-of-line
 			except IOError, arg:
-				EasyDialogs.Message("IOERROR: "+`arg`)
+				EasyDialogs.Message("IOERROR: %r" % (args,))
 				return
 			self.active.menu_insert(fp)
 		else:
@@ -702,7 +702,7 @@ class Wed(Application):
 			try:
 				fp = open(path, 'r')
 			except IOError, arg:
-				EasyDialogs.Message("IOERROR: "+`arg`)
+				EasyDialogs.Message("IOERROR: %r" % (arg,))
 				return
 			self.active.menu_insert_html(fp)
 		else:

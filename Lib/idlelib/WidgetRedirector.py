@@ -69,7 +69,7 @@ class OriginalCommand:
         self.orig_and_name = (self.orig, self.name)
 
     def __repr__(self):
-        return "OriginalCommand(%s, %s)" % (`self.redir`, `self.name`)
+        return "OriginalCommand(%r, %r)" % (self.redir, self.name)
 
     def __call__(self, *args):
         return self.tk_call(self.orig_and_name + args)

@@ -394,7 +394,7 @@ class PythonIDE(Wapplication.Application):
 			if arg[0] == -50:
 				W.Message("Developer documentation not installed")
 			else:
-				W.Message("AppleHelp Error: %s" % `arg`)
+				W.Message("AppleHelp Error: %r" % (arg,))
 		
 	def domenu_lookuppython(self, *args):
 		from Carbon import AH
@@ -404,7 +404,7 @@ class PythonIDE(Wapplication.Application):
 		try:
 			AH.AHSearch("Python Documentation", searchstring)
 		except AH.Error, arg:
-			W.Message("AppleHelp Error: %s" % `arg`)
+			W.Message("AppleHelp Error: %r" % (arg,))
 			
 	def domenu_lookupcarbon(self, *args):
 		from Carbon import AH
@@ -414,7 +414,7 @@ class PythonIDE(Wapplication.Application):
 		try:
 			AH.AHSearch("Carbon", searchstring)
 		except AH.Error, arg:
-			W.Message("AppleHelp Error: %s" % `arg`)
+			W.Message("AppleHelp Error: %r" % (arg,))
 			
 	def _getsearchstring(self):
 		# First we get the frontmost window

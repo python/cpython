@@ -93,7 +93,7 @@ def wanted(name):
     return regex.match(Wanted, name) >= 0
 
 def recursedown(dirname):
-    dbg('recursedown(' + `dirname` + ')\n')
+    dbg('recursedown(%r)\n' % (dirname,))
     bad = 0
     try:
         names = os.listdir(dirname)
@@ -115,7 +115,7 @@ def recursedown(dirname):
     return bad
 
 def fix(filename):
-##  dbg('fix(' + `filename` + ')\n')
+##  dbg('fix(%r)\n' % (filename,))
     if filename == '-':
         # Filter mode
         f = sys.stdin
@@ -158,7 +158,7 @@ def fix(filename):
                 initfixline()
                 rep(filename + ':\n')
                 continue # restart from the beginning
-            rep(`lineno` + '\n')
+            rep(repr(lineno) + '\n')
             rep('< ' + line)
             rep('> ' + newline)
         if g is not None:
@@ -225,7 +225,7 @@ def initfixline():
 
 def fixline(line):
     global Program
-##  print '-->', `line`
+##  print '-->', repr(line)
     i = 0
     while i < len(line):
         i = Program.search(line, i)
@@ -293,8 +293,7 @@ def addsubst(substfile):
         if len(words) == 3 and words[0] == 'struct':
             words[:2] = [words[0] + ' ' + words[1]]
         elif len(words) <> 2:
-            err(substfile + ':' + `lineno` +
-                      ': warning: bad line: ' + line)
+            err(substfile + '%s:%r: warning: bad line: %r' % (substfile, lineno, line))
             continue
         if Reverse:
             [value, key] = words
@@ -306,11 +305,8 @@ def addsubst(substfile):
             key = key[1:]
             NotInComment[key] = value
         if Dict.has_key(key):
-            err(substfile + ':' + `lineno` +
-                      ': warning: overriding: ' +
-                      key + ' ' + value + '\n')
-            err(substfile + ':' + `lineno` +
-                      ': warning: previous: ' + Dict[key] + '\n')
+            err('%s:%r: warning: overriding: %r %r\n' % (substfile, lineno, key, value))
+            err('%s:%r: warning: previous: %r\n' % (substfile, lineno, Dict[key]))
         Dict[key] = value
     fp.close()
 
