@@ -2161,11 +2161,15 @@ class Context(object):
     """
 
     def __init__(self, prec=None, rounding=None,
-                 traps=None, flags=[],
+                 traps=None, flags=None,
                  _rounding_decision=None,
                  Emin=None, Emax=None,
                  capitals=None, _clamp=0,
-                 _ignored_flags=[]):
+                 _ignored_flags=None):
+        if flags is None:
+            flags = []
+        if _ignored_flags is None:
+            _ignored_flags = []
         if not isinstance(flags, dict):
             flags = dict([(s,s in flags) for s in _signals])
             del s
