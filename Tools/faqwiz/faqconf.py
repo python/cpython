@@ -450,7 +450,7 @@ Your changes have been committed.
 """
 
 COMMITFAILED = """
-Exit status %(sts)04x.
+Exit status %(sts)s.
 """
 
 # Add/Delete
