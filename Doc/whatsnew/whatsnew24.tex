@@ -7,7 +7,7 @@
 % to be covered.  --amk
 
 \title{What's New in Python 2.4}
-\release{1.0}
+\release{1.01}
 \author{A.M.\ Kuchling}
 \authoraddress{
 	\strong{Python Software Foundation}\\
@@ -525,10 +525,12 @@ Reading this section of the PEP is highly recommended.
 
 Python has always supported floating-point (FP) numbers, based on the
 underlying C \ctype{double} type, as a data type.  However, while most
-programming languages provide a floating-point type, most people (even
-programmers) are unaware that computing with floating-point numbers
-entails certain unavoidable inaccuracies.  The new decimal type
-provides a way to avoid these inaccuracies.
+programming languages provide a floating-point type, many people (even
+programmers) are unaware that floating-point numbers don't represent
+certain decimal fractions accurately.  The new \class{Decimal} type
+can represent these fractions accurately, up to a user-specified
+precision limit.
+
 
 \subsection{Why is Decimal needed?}
 
@@ -1726,7 +1728,7 @@ the name \samp{None} is now a syntax error.
 
 The author would like to thank the following people for offering
 suggestions, corrections and assistance with various drafts of this
-article: Hye-Shik Chang, Michael Dyck, Raymond Hettinger, Hamish Lawson,
-Fredrik Lundh.
+article: Koray Can, Hye-Shik Chang, Michael Dyck, Raymond Hettinger, 
+Brian Hurt, Hamish Lawson, Fredrik Lundh.
 
 \end{document}
