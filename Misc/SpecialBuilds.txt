@@ -62,7 +62,16 @@ sys.getobjects(max[, type])
 
 envar PYTHONDUMPREFS
     If this envar exists, Py_Finalize() arranges to print a list of
-    all still-live heap objects.
+    all still-live heap objects.  This is printed twice, in different
+    formats, before and after Py_Finalize has cleaned up everything it
+    can clean up.  The first output block produces the repr() of each
+    object so is more informative; however, a lot of stuff destined to
+    die is still alive then.  The second output block is much harder
+    to work with (repr() can't be invoked anymore -- the interpreter
+    has been torn down too far), but doesn't list any objects that will
+    die.  The tool script combinerefs.py can be run over this to combine
+    the info from both output blocks.  The second output block, and
+    combinerefs.py, were new in Python 2.3b1.
 ---------------------------------------------------------------------------
 PYMALLOC_DEBUG                                            introduced in 2.3
 

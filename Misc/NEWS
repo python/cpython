@@ -162,6 +162,9 @@ Library
 Tools/Demos
 -----------
 
+- New script combinerefs.py helps analyze new PYTHONDUMPREFS output.
+  See the module docstring for details.
+
 TBD
 
 Build
