@@ -1,194 +1,83 @@
 # pdb.py -- finally, a Python debugger!
-# See file pdb.doc for instructions.
 
-# To do:
-# - It should be possible to intercept KeyboardInterrupt
-# - Handle return events differently -- always printing the r.v. can be bad!
-# - Merge with tb, to get a single debugger for active and post-mortem usage
-# - Solve bugs in termination (e.g., 'continue' after the program
-#   is done proceeds to debug the debugger; 'quit' sometimes complains
-#   about the PdbQuit exception...)
-
+# (See pdb.doc for documentation.)
 
 import string
 import sys
 import linecache
-from cmd import Cmd
+import cmd
+import bdb
+import repr
 
 
-# A specialization of Cmd for use by the debugger
-
-PdbQuit = 'pdb.PdbQuit' # Exception to give up
-
-class Pdb(Cmd):
+class Pdb(bdb.Bdb, cmd.Cmd):
 	
 	def init(self):
-		self = Cmd.init(self)
+		self = bdb.Bdb.init(self)
+		self = cmd.Cmd.init(self)
 		self.prompt = '(Pdb) '
-		self.reset()
 		return self
 	
 	def reset(self):
-		self.quitting = 0
-		self.breaks = {}
-		self.botframe = None
-		self.stopframe = None
-		self.lastretval = None
+		bdb.Bdb.reset(self)
 		self.forget()
 	
 	def forget(self):
-		self.setup(None, None)
-	
-	def setup(self, f, t):
 		self.lineno = None
 		self.stack = []
 		self.curindex = 0
 		self.curframe = None
-		if f is None and t is None:
-			return
-		if t and t.tb_frame is f:
-			t = t.tb_next
-		while f is not None:
-			self.stack.append((f, f.f_lineno))
-			if f is self.botframe:
-				break
-			f = f.f_back
-		else:
-			print '[Weird: bottom frame not in stack trace.]'
-		self.stack.reverse()
-		self.curindex = max(0, len(self.stack) - 1)
-		while t is not None:
-			self.stack.append((t.tb_frame, t.tb_lineno))
-			t = t.tb_next
+	
+	def setup(self, f, t):
+		self.forget()
+		self.stack, self.curindex = self.get_stack(f, t)
 		self.curframe = self.stack[self.curindex][0]
 	
-	def run(self, cmd):
-		import __main__
-		dict = __main__.__dict__
-		self.runctx(cmd, dict, dict)
+	# Override Bdb methods (except user_call, for now)
 	
-	def runctx(self, cmd, globals, locals):
-		t = None
-		self.reset()
-		sys.trace = self.dispatch
-		try:
-			exec(cmd + '\n', globals, locals)
-		except PdbQuit:
-			return
-		except:
-			print '***', sys.exc_type + ':', `sys.exc_value`
-			t = sys.exc_traceback
-		finally:
-			self.trace = None
-			del self.trace
-			self.forget()
-		print '!!! Post-mortem debugging'
-		self.pmd(t)
+	def user_line(self, frame):
+		# This function is called when we stop or break at this line
+		self.interaction(frame, None)
 	
-	def pmd(self, traceback):
-		t = traceback
-		if self.botframe is not None:
-			while t is not None:
-				if t.tb_frame is not self.botframe:
-					break
-				t = t.tb_next
-			else:
-				t = sys.exc_traceback
-		try:
-			self.ask_user(self.botframe, t)
-		except PdbQuit:
-			pass
-		finally:
-			self.forget()
+	def user_return(self, frame, return_value):
+		# This function is called when a return trap is set here
+		frame.f_locals['__return__'] = return_value
+		print '--Return--'
+		self.interaction(frame, None)
 	
-	def dispatch(self, frame, event, arg):
-		if self.quitting:
-			return None
-		if event == 'line':
-			return self.dispatch_line(frame)
-		if event == 'call':
-			return self.dispatch_call(frame, arg)
-		if event == 'return':
-			return self.dispatch_return(frame, arg)
-		if event == 'exception':
-			return self.dispatch_exception(frame, arg)
-		print '*** dispatch: unknown event type', `event`
-		return self.dispatch
+	def user_exception(self, frame, (exc_type, exc_value, exc_traceback)):
+		# This function is called if an exception occurs,
+		# but only if we are to stop at or just below this level
+		frame.f_locals['__exception__'] = exc_type, exc_value
+		print exc_type + ':', repr.repr(exc_value)
+		self.interaction(frame, exc_traceback)
 	
-	def dispatch_line(self, frame):
-		if self.stop_here(frame) or self.break_here(frame):
-			self.ask_user(frame, None)
-		return self.dispatch
+	# General interaction function
 	
-	def dispatch_call(self, frame, arg):
-		if self.botframe is None:
-			# First call dispatch since reset()
-			self.botframe = frame
-			return None
-		if not (self.stop_here(frame) or self.break_anywhere(frame)):
-			return None
-		if arg is None:
-			print '[Entering non-function block.]'
-		else:
-			frame.f_locals['__args__'] = arg
-		return self.dispatch
-	
-	def dispatch_return(self, frame, arg):
-		self.lastretval = arg
-		return None
-	
-	def dispatch_exception(self, frame, arg):
-		if self.stop_here(frame):
-			print '!!!', arg[0] + ':', `arg[1]`
-			self.ask_user(frame, arg[2])
-		return self.dispatch
-	
-	def stop_here(self, frame):
-		if self.stopframe is None:
-			return 1
-		if frame is self.stopframe:
-			return 1
-		while frame is not None and frame is not self.stopframe:
-			if frame is self.botframe:
-				return 1
-			frame = frame.f_back
-		return 0
-	
-	def break_here(self, frame):
-		if not self.breaks.has_key(frame.f_code.co_filename):
-			return 0
-		if not frame.f_lineno in \
-			self.breaks[frame.f_code.co_filename]:
-			return 0
-		return 1
-	
-	def break_anywhere(self, frame):
-		return self.breaks.has_key(frame.f_code.co_filename)
-	
-	def ask_user(self, frame, traceback):
+	def interaction(self, frame, traceback):
 		self.setup(frame, traceback)
-		self.printframelineno(self.stack[self.curindex])
+		self.print_stack_entry(self.stack[self.curindex])
 		self.cmdloop()
 		self.forget()
-	
+
 	def default(self, line):
-		if not line:
-			return self.do_next('')
-		else:
-			if line[0] == '!': line = line[1:]
-			try:
-				exec(line + '\n', \
-					self.curframe.f_globals, \
-					self.curframe.f_locals)
-			except:
-				print '***', sys.exc_type				 + ':',
-				print `sys.exc_value`
+		if line[:1] == '!': line = line[1:]
+		locals = self.curframe.f_locals
+		globals = self.curframe.f_globals
+		try:
+			exec(line + '\n', globals, locals)
+		except:
+			print '***', sys.exc_type + ':', sys.exc_value
+
+	# Command definitions, called by cmdloop()
+	# The argument is the remaining string on the command line
+	# Return true to exit from the command loop 
 	
-	do_h = Cmd.do_help
+	do_h = cmd.Cmd.do_help
 	
 	def do_break(self, arg):
 		if not arg:
-			print self.breaks # XXX
+			print self.get_all_breaks() # XXX
 			return
 		try:
 			lineno = int(eval(arg))
@@ -196,17 +85,8 @@ class Pdb(Cmd):
 			print '*** Error in argument:', `arg`
 			return
 		filename = self.curframe.f_code.co_filename
-		line = linecache.getline(filename, lineno)
-		if not line:
-			print '*** That line does not exist!'
-			return
-		if not self.breaks.has_key(filename):
-			self.breaks[filename] = []
-		list = self.breaks[filename]
-		if lineno in list:
-			print '*** There is already a break there!'
-			return
-		list.append(lineno)
+		err = self.set_break(filename, lineno)
+		if err: print '***', err
 	do_b = do_break
 	
 	def do_clear(self, arg):
@@ -217,7 +97,7 @@ class Pdb(Cmd):
 				reply = 'no'
 			reply = string.lower(string.strip(reply))
 			if reply in ('y', 'yes'):
-				self.breaks = {}
+				self.clear_all_breaks()
 			return
 		try:
 			lineno = int(eval(arg))
@@ -225,17 +105,12 @@ class Pdb(Cmd):
 			print '*** Error in argument:', `arg`
 			return
 		filename = self.curframe.f_code.co_filename
-		try:
-			self.breaks[filename].remove(lineno)
-		except (ValueError, KeyError):
-			print '*** There is no break there!'
-			return
-		if not self.breaks[filename]:
-			del self.breaks[filename]
+		err = self.set_break(filename, lineno)
+		if err: print '***', err
 	do_cl = do_clear # 'c' is already an abbreviation for 'continue'
 	
 	def do_where(self, arg):
-		self.printstacktrace()
+		self.print_stack_trace()
 	do_w = do_where
 	
 	def do_up(self, arg):
@@ -244,7 +119,7 @@ class Pdb(Cmd):
 		else:
 			self.curindex = self.curindex - 1
 			self.curframe = self.stack[self.curindex][0]
-			self.printframelineno(self.stack[self.curindex])
+			self.print_stack_entry(self.stack[self.curindex])
 	do_u = do_up
 	
 	def do_down(self, arg):
@@ -253,39 +128,57 @@ class Pdb(Cmd):
 		else:
 			self.curindex = self.curindex + 1
 			self.curframe = self.stack[self.curindex][0]
-			self.printframelineno(self.stack[self.curindex])
+			self.print_stack_entry(self.stack[self.curindex])
 	do_d = do_down
 	
 	def do_step(self, arg):
-		self.stopframe = None
+		self.set_step()
 		return 1
 	do_s = do_step
 	
 	def do_next(self, arg):
-		self.stopframe = self.curframe
+		self.set_next(self.curframe)
 		return 1
 	do_n = do_next
 	
 	def do_return(self, arg):
-		self.stopframe = self.curframe.f_back
+		self.set_return(self.curframe)
 		return 1
 	do_r = do_return
 	
-	def do_retval(self, arg):
-		print self.lastretval
-	do_rv = do_retval
-	
 	def do_continue(self, arg):
-		self.stopframe = self.botframe
+		self.set_continue()
 		return 1
 	do_c = do_cont = do_continue
 	
 	def do_quit(self, arg):
-		self.quitting = 1
-		sys.trace = None; del sys.trace
-		raise PdbQuit
+		self.set_quit()
+		return 1
 	do_q = do_quit
 	
+	def do_args(self, arg):
+		if self.curframe.f_locals.has_key('__return__'):
+			print `self.curframe.f_locals['__return__']`
+		else:
+			print '*** Not arguments?!'
+	do_a = do_args
+	
+	def do_retval(self, arg):
+		if self.curframe.f_locals.has_key('__return__'):
+			print self.curframe.f_locals['__return__']
+		else:
+			print '*** Not yet returned!'
+	do_rv = do_retval
+	
+	def do_p(self, arg):
+		try:
+			value = eval(arg, self.curframe.f_globals, \
+					self.curframe.f_locals)
+		except:
+			print '***', sys.exc_type + ':', `sys.exc_value`
+			return
+		print `value`
+
 	def do_list(self, arg):
 		self.lastcmd = 'list'
 		last = None
@@ -311,10 +204,7 @@ class Pdb(Cmd):
 		if last is None:
 			last = first + 10
 		filename = self.curframe.f_code.co_filename
-		if self.breaks.has_key(filename):
-			breaklist = self.breaks[filename]
-		else:
-			breaklist = []
+		breaklist = self.get_file_breaks(filename)
 		try:
 			for lineno in range(first, last+1):
 				line = linecache.getline(filename, lineno)
@@ -334,45 +224,28 @@ class Pdb(Cmd):
 			pass
 	do_l = do_list
 	
-	def do_args(self, arg):
-		try:
-			value = eval('__args__', self.curframe.f_globals, \
-					self.curframe.f_locals)
-		except:
-			print '***', sys.exc_type + ':', `sys.exc_value`
-			return
-		print `value`
-	do_a = do_args
-	
-	def do_p(self, arg):
-		try:
-			value = eval(arg, self.curframe.f_globals, \
-					self.curframe.f_locals)
-		except:
-			print '***', sys.exc_type + ':', `sys.exc_value`
-			return
-		print `value`
-
 	# Print a traceback starting at the top stack frame.
-	# Note that the most recently entered frame is printed last;
+	# The most recently entered frame is printed last;
 	# this is different from dbx and gdb, but consistent with
 	# the Python interpreter's stack trace.
 	# It is also consistent with the up/down commands (which are
 	# compatible with dbx and gdb: up moves towards 'main()'
 	# and down moves towards the most recent stack frame).
 	
-	def printstacktrace(self):
-		for x in self.stack:
-			self.printframelineno(x)
+	def print_stack_trace(self):
+		try:
+			for frame_lineno in self.stack:
+				self.print_stack_entry(frame_lineno)
+		except KeyboardInterrupt:
+			pass
 	
-	def printframelineno(self, (frame, lineno)):
-		if frame is self.curframe: print '->',
-		code = frame.f_code
-		filename = code.co_filename
-		print filename + '(' + `lineno` + ')',
-		line = linecache.getline(filename, lineno)
-		print string.strip(line),
-		print
+	def print_stack_entry(self, frame_lineno):
+		frame, lineno = frame_lineno
+		if frame is self.curframe:
+			print '>',
+		else:
+			print ' ',
+		print self.format_stack_entry(frame_lineno)
 
 
 def run(statement):
@@ -381,69 +254,9 @@ def run(statement):
 def runctx(statement, globals, locals):
 	Pdb().init().runctx(statement, globals, locals)
 
-
-# --------------------- testing ---------------------
-
-# The Ackermann function -- a highly recursive beast
-cheat = 2
-cache = {}
-def ack(x, y):
-	key = `(long(x), long(y))`
-	if cache.has_key(key):
-		res = cache[key]
-	else:
-		if x == 0:
-			res = 1L
-		elif y == 0:
-			if x == 1:
-				res = 2L
-			else:
-				res = 2L + x
-		elif y == 1 and cheat >= 1:
-			res = 2L * x
-		elif y == 2 and cheat >= 2:
-			res = pow(2L, x)
-		else:
-			res = ack(ack(x-1, y), y-1)
-		cache[key] = res
-	return res
-
-def foo(n):
-	print 'foo', n
-	x = bar(n*2)
-	print 'bar returned', x
-	y = ack(4, 3)
-	return y
-
-def bar(a):
-	print 'bar', a
-	return a*10
-
-def melt(n):
-	print 1.0/n
-	melt(n-1)
+TESTCMD = 'import x; x.main()'
 
 def test():
+	import linecache
 	linecache.checkcache()
-	runctx('from pdb import foo; foo(12)', {}, {})
-	runctx('from pdb import melt; melt(5)', {}, {})
-
-
-# --------------------- main ---------------------
-
-import os
-
-def main():
-	if sys.argv[1:]:
-		file = sys.argv[1]
-		head, tail = os.path.split(file)
-		if tail[-3:] != '.py':
-			print 'Sorry, file arg must be a python module'
-			print '(i.e., must end in \'.py\')'
-			# XXX Or we could copy it to a temp file
-			sys.exit(2)
-		del sys.argv[0]
-		sys.path.insert(0, head)
-		run('import ' + tail[:-3])
-	else:
-		run(raw_input('Python statement to debug: '))
+	run(TESTCMD)
