@@ -503,12 +503,12 @@ item: Custom Dialog Set
     Title German=Installation von %APPTITLE%
     Title Spanish=Instalación de %APPTITLE%
     Title Italian=Installazione di %APPTITLE%
-    Width=271
-    Height=224
+    Width=339
+    Height=280
     Font Name=Helv
     Font Size=8
     item: Push Button
-      Rectangle=150 187 195 202
+      Rectangle=188 234 244 253
       Variable=DIRECTION
       Value=N
       Create Flags=01010000000000010000000000000001
@@ -519,7 +519,7 @@ item: Custom Dialog Set
       Text Italian=&Avanti >
     end
     item: Push Button
-      Rectangle=211 187 256 202
+      Rectangle=264 234 320 253
       Action=3
       Create Flags=01010000000000010000000000000000
       Text=&Cancel
@@ -529,12 +529,12 @@ item: Custom Dialog Set
       Text Italian=&Annulla
     end
     item: Static
-      Rectangle=8 180 256 181
+      Rectangle=10 225 320 226
       Action=3
       Create Flags=01010000000000000000000000000111
     end
     item: Static
-      Rectangle=86 9 258 34
+      Rectangle=108 11 323 33
       Create Flags=01010000000000000000000000000000
       Flags=0000000000000001
       Name=Times New Roman
@@ -546,7 +546,7 @@ item: Custom Dialog Set
       Text Italian=Selezionare Directory di destinazione
     end
     item: Listbox
-      Rectangle=86 50 257 175
+      Rectangle=108 58 321 219
       Variable=MAINDIR
       Enabled Color=00000000000000001111111111111111
       Create Flags=01010000100000010000000101000001
@@ -555,7 +555,7 @@ item: Custom Dialog Set
       Text=
     end
     item: Static
-      Rectangle=86 34 250 49
+      Rectangle=108 40 313 58
       Enabled Color=00000000000000001111111111111111
       Create Flags=01010000000000000000000000000000
       Text=Please select a directory for the %APPTITLE% files.
@@ -567,12 +567,12 @@ item: Custom Dialog Set
     Title German=Zielverzeichnis wählen
     Title Spanish=Seleccione el directorio de destino
     Title Italian=Selezionare Directory di destinazione
-    Width=221
-    Height=173
+    Width=276
+    Height=216
     Font Name=Helv
     Font Size=8
     item: Listbox
-      Rectangle=5 5 163 149
+      Rectangle=6 6 204 186
       Variable=MAINDIR
       Create Flags=01010000100000010000000101000000
       Flags=0000110000100010
@@ -583,7 +583,7 @@ item: Custom Dialog Set
       Text Italian=%MAINDIR%
     end
     item: Push Button
-      Rectangle=167 6 212 21
+      Rectangle=209 8 265 26
       Create Flags=01010000000000010000000000000001
       Text=OK
       Text French=OK
@@ -592,7 +592,7 @@ item: Custom Dialog Set
       Text Italian=OK
     end
     item: Push Button
-      Rectangle=167 25 212 40
+      Rectangle=209 31 265 50
       Variable=MAINDIR
       Value=%MAINDIR_SAVE%
       Create Flags=01010000000000010000000000000000
@@ -619,12 +619,12 @@ item: Custom Dialog Set
     Title Dutch=Vervangen bestanden kopiëren
     Title Norwegian=Sikkerhetskopiere erstattede filer
     Title Swedish=Säkerhetskopiera utbytta filer
-    Width=280
-    Height=224
+    Width=350
+    Height=280
     Font Name=Helv
     Font Size=8
     item: Push Button
-      Rectangle=150 187 195 201
+      Rectangle=188 234 244 251
       Variable=DIRECTION
       Value=N
       Create Flags=01010000000000010000000000000001
@@ -640,7 +640,7 @@ item: Custom Dialog Set
       Text Swedish=&Nästa >
     end
     item: Push Button
-      Rectangle=105 187 150 201
+      Rectangle=131 234 188 251
       Variable=DIRECTION
       Value=B
       Create Flags=01010000000000010000000000000000
@@ -656,7 +656,7 @@ item: Custom Dialog Set
       Text Swedish=< &Tillbaka
     end
     item: Push Button
-      Rectangle=222 187 264 201
+      Rectangle=278 234 330 251
       Action=3
       Create Flags=01010000000000010000000000000000
       Text=Cancel
@@ -671,12 +671,12 @@ item: Custom Dialog Set
       Text Swedish=Avbryt
     end
     item: Static
-      Rectangle=9 177 263 178
+      Rectangle=11 221 329 223
       Action=3
       Create Flags=01010000000000000000000000000111
     end
     item: Static
-      Rectangle=86 37 256 101
+      Rectangle=108 46 320 98
       Create Flags=01010000000000000000000000000000
       Text=This installation program can create backup copies of all files replaced during the installation. These files will be used when the software is uninstalled and a rollback is requested.  If backup copies are not created, you will only be able to uninstall the software and not roll the system back to a previous state.
       Text=
@@ -692,7 +692,7 @@ item: Custom Dialog Set
       Text Swedish=Installationsprogrammet kan skapa säkerhetskopior av alla filer som byts ut under installationen. Dessa filer kan sedan användas när programvaran avinstalleras och du begär rollback. Om du då inte har några säkerhetskopior kan du bara avinstallera programvaran, inte återskapa systemet i dess tidigare skick. Vill du göra säkerhetskopior av de ersatta filerna?
     end
     item: Radio Button
-      Rectangle=113 100 212 126
+      Rectangle=141 106 265 136
       Variable=DOBACKUP
       Create Flags=01010000000000010000000000001001
       Text=&Yes, make backups
@@ -728,7 +728,7 @@ item: Custom Dialog Set
     end
     item: Static
       Control Name=BACK2
-      Rectangle=86 138 256 166
+      Rectangle=108 173 320 208
       Action=1
       Create Flags=01010000000000000000000000000111
       Text=Backup File Destination Directory
@@ -744,7 +744,7 @@ item: Custom Dialog Set
     end
     item: Push Button
       Control Name=BACK3
-      Rectangle=212 148 254 162
+      Rectangle=265 185 318 203
       Variable=BACKUP_SAVE
       Value=%BACKUP%
       Destination Dialog=1
@@ -763,7 +763,7 @@ item: Custom Dialog Set
     end
     item: Static
       Control Name=BACK4
-      Rectangle=103 150 203 160
+      Rectangle=129 188 254 200
       Destination Dialog=2
       Create Flags=01010000000000000000000000000000
       Text=%BACKUP%
@@ -778,7 +778,7 @@ item: Custom Dialog Set
       Text Swedish=%BACKUP%
     end
     item: Static
-      Rectangle=86 9 258 29
+      Rectangle=108 11 323 36
       Create Flags=01010000000000000000000000000000
       Flags=0000000000000001
       Name=Times New Roman
@@ -823,12 +823,12 @@ item: Custom Dialog Set
     Title Dutch=Kies Doeldirectory
     Title Norwegian=Velg målkatalog
     Title Swedish=Välj destinationskalatog
-    Width=221
-    Height=173
+    Width=276
+    Height=216
     Font Name=Helv
     Font Size=8
     item: Listbox
-      Rectangle=5 2 160 149
+      Rectangle=6 3 200 186
       Variable=BACKUP
       Create Flags=01010000100000010000000101000000
       Flags=0000110000100010
@@ -854,7 +854,7 @@ item: Custom Dialog Set
       Text Swedish=
     end
     item: Push Button
-      Rectangle=167 6 212 21
+      Rectangle=209 8 265 26
       Create Flags=01010000000000010000000000000001
       Text=OK
       Text French=OK
@@ -868,7 +868,7 @@ item: Custom Dialog Set
       Text Swedish=OK
     end
     item: Push Button
-      Rectangle=167 25 212 40
+      Rectangle=209 31 265 50
       Variable=BACKUP
       Value=%BACKUP_SAVE%
       Create Flags=01010000000000010000000000000000
@@ -895,12 +895,12 @@ item: Custom Dialog Set
     Title German=Installation von %APPTITLE%
     Title Spanish=Instalación de %APPTITLE%
     Title Italian=Installazione di %APPTITLE%
-    Width=271
-    Height=224
+    Width=339
+    Height=280
     Font Name=Helv
     Font Size=8
     item: Push Button
-      Rectangle=150 187 195 202
+      Rectangle=188 234 244 253
       Variable=DIRECTION
       Value=N
       Create Flags=01010000000000010000000000000001
@@ -911,7 +911,7 @@ item: Custom Dialog Set
       Text Italian=&Avanti >
     end
     item: Push Button
-      Rectangle=105 187 150 202
+      Rectangle=131 234 188 253
       Variable=DIRECTION
       Value=B
       Create Flags=01010000000000010000000000000000
@@ -922,7 +922,7 @@ item: Custom Dialog Set
       Text Italian=< &Indietro
     end
     item: Push Button
-      Rectangle=211 187 256 202
+      Rectangle=264 234 320 253
       Action=3
       Create Flags=01010000000000010000000000000000
       Text=&Cancel
@@ -932,7 +932,7 @@ item: Custom Dialog Set
       Text Italian=&Annulla
     end
     item: Checkbox
-      Rectangle=86 55 250 127
+      Rectangle=108 66 313 156
       Variable=COMPONENTS
       Create Flags=01010000000000010000000000000011
       Flags=0000000000000110
@@ -963,7 +963,7 @@ item: Custom Dialog Set
       Text Italian=
     end
     item: Static
-      Rectangle=86 36 256 53
+      Rectangle=108 45 320 63
       Create Flags=01010000000000000000000000000000
       Text=Choose which components to install by checking the boxes below.
       Text French=Choisissez les composants que vous voulez installer en cochant les cases ci-dessous.
@@ -972,7 +972,7 @@ item: Custom Dialog Set
       Text Italian=Scegliere quali componenti installare selezionando le caselle sottostanti.
     end
     item: Push Button
-      Rectangle=150 162 215 176
+      Rectangle=188 203 269 220
       Destination Dialog=1
       Action=2
       Enabled Color=00000000000000000000000011111111
@@ -980,12 +980,12 @@ item: Custom Dialog Set
       Text=Advanced Options ...
     end
     item: Static
-      Rectangle=8 180 256 181
+      Rectangle=10 225 320 226
       Action=3
       Create Flags=01010000000000000000000000000111
     end
     item: Static
-      Rectangle=86 8 258 34
+      Rectangle=108 10 323 43
       Create Flags=01010000000000000000000000000000
       Flags=0000000000000001
       Name=Times New Roman
@@ -997,18 +997,18 @@ item: Custom Dialog Set
       Text Italian=Selezionare i componenti
     end
     item: Static
-      Rectangle=201 144 249 154
+      Rectangle=251 180 311 193
       Variable=COMPONENTS
       Value=MAINDIR
       Create Flags=01010000000000000000000000000010
     end
     item: Static
-      Rectangle=201 134 249 143
+      Rectangle=251 168 311 179
       Variable=COMPONENTS
       Create Flags=01010000000000000000000000000010
     end
     item: Static
-      Rectangle=98 134 187 145
+      Rectangle=123 168 234 181
       Create Flags=01010000000000000000000000000000
       Text=Disk Space Required:
       Text French=Espace disque requis :
@@ -1017,7 +1017,7 @@ item: Custom Dialog Set
       Text Italian=Spazio su disco necessario:
     end
     item: Static
-      Rectangle=98 144 187 154
+      Rectangle=123 180 234 193
       Create Flags=01010000000000000000000000000000
       Text=Disk Space Remaining:
       Text French=Espace disque disponible :
@@ -1026,20 +1026,20 @@ item: Custom Dialog Set
       Text Italian=Spazio su disco disponibile:
     end
     item: Static
-      Rectangle=86 126 256 157
+      Rectangle=108 158 320 196
       Action=1
       Create Flags=01010000000000000000000000000111
     end
   end
   item: Dialog
     Title=Advanced Options
-    Width=271
-    Height=186
+    Width=339
+    Height=213
     Font Name=Helv
     Font Size=8
     item: Radio Button
       Control Name=ADMIN2
-      Rectangle=9 47 72 73
+      Rectangle=11 46 90 76
       Variable=SELECT_ADMIN
       Enabled Color=00000000000000001111111111111111
       Create Flags=01010000000000010000000000001001
@@ -1048,7 +1048,7 @@ item: Custom Dialog Set
       Text=
     end
     item: Push Button
-      Rectangle=150 152 195 167
+      Rectangle=188 170 244 189
       Variable=DIRECTION
       Value=N
       Create Flags=01010000000000010000000000000001
@@ -1059,35 +1059,35 @@ item: Custom Dialog Set
       Text Italian=&Avanti >
     end
     item: Static
-      Rectangle=4 2 261 76
+      Rectangle=5 3 326 83
       Action=1
       Enabled Color=00000000000000001111111111111111
       Create Flags=01010000000000000000000000000111
     end
     item: Static
       Control Name=ADMIN1
-      Rectangle=9 9 257 42
+      Rectangle=11 11 321 45
       Enabled Color=00000000000000001111111111111111
       Create Flags=01010000000000000000000000000000
       Text=By default, the install records settings in the per-machine area of the registry (HKLM), and installs the Python and C runtime DLLs to %SYS32%.  Choose "Non-Admin install" if you would prefer settings made in the per-user registry (HKCU), and DLLs installed in %MAINDIR%.
     end
     item: Static
-      Rectangle=4 82 261 144
+      Rectangle=5 90 326 157
       Action=1
       Enabled Color=00000000000000001111111111111111
       Create Flags=01010000000000000000000000000111
     end
     item: Checkbox
-      Rectangle=9 105 194 134
+      Rectangle=11 121 243 151
       Variable=TASKS
       Enabled Color=00000000000000001111111111111111
       Create Flags=01010000000000010000000000000011
-      Text=Register file extensions (.py, .pyw, .pyo, .pyc)
+      Text=Register file extensions (.py, .pyw, .pyc, .pyo)
       Text=Create Start Menu shortcuts
       Text=
     end
     item: Static
-      Rectangle=9 90 256 105
+      Rectangle=11 103 320 121
       Enabled Color=00000000000000001111111111111111
       Create Flags=01010000000000000000000000000000
       Text=Choose tasks to perform by checking the boxes below.
@@ -1128,12 +1128,12 @@ item: Custom Dialog Set
     Title German=Installation von %APPTITLE%
     Title Spanish=Instalación de %APPTITLE%
     Title Italian=Installazione di %APPTITLE%
-    Width=271
-    Height=224
+    Width=339
+    Height=280
     Font Name=Helv
     Font Size=8
     item: Push Button
-      Rectangle=150 187 195 202
+      Rectangle=188 234 244 253
       Variable=DIRECTION
       Value=N
       Create Flags=01010000000000010000000000000001
@@ -1144,7 +1144,7 @@ item: Custom Dialog Set
       Text Italian=&Avanti >
     end
     item: Push Button
-      Rectangle=105 187 150 202
+      Rectangle=131 234 188 253
       Variable=DIRECTION
       Value=B
       Create Flags=01010000000000010000000000000000
@@ -1156,7 +1156,7 @@ item: Custom Dialog Set
       Text Italian=< &Indietro
     end
     item: Push Button
-      Rectangle=211 187 256 202
+      Rectangle=264 234 320 253
       Action=3
       Create Flags=01010000000000010000000000000000
       Text=&Cancel
@@ -1166,12 +1166,12 @@ item: Custom Dialog Set
       Text Italian=&Annulla
     end
     item: Static
-      Rectangle=8 180 256 181
+      Rectangle=10 225 320 226
       Action=3
       Create Flags=01010000000000000000000000000111
     end
     item: Static
-      Rectangle=86 8 258 42
+      Rectangle=108 10 323 53
       Create Flags=01010000000000000000000000000000
       Flags=0000000000000001
       Name=Times New Roman
@@ -1183,7 +1183,7 @@ item: Custom Dialog Set
       Text Italian=Selezionare il gruppo ProgMan
     end
     item: Static
-      Rectangle=86 44 256 68
+      Rectangle=108 35 320 65
       Create Flags=01010000000000000000000000000000
       Text=Enter the name of the Start Menu program group to which to add the %APPTITLE% icons:
       Text French=Entrez le nom du groupe du Gestionnaire de programme dans lequel vous souhaitez ajouter les icônes de %APPTITLE% :
@@ -1192,11 +1192,12 @@ item: Custom Dialog Set
       Text Italian=Inserire il nome del gruppo Program Manager per aggiungere le icone %APPTITLE% a:
     end
     item: Combobox
-      Rectangle=86 69 256 175
+      Rectangle=108 56 320 219
       Variable=GROUP
       Create Flags=01010000001000010000001100000001
       Flags=0000000000000001
       Text=%GROUP%
+      Text=
       Text French=%GROUP%
       Text German=%GROUP%
       Text Spanish=%GROUP%
@@ -1213,12 +1214,12 @@ item: Custom Dialog Set
     Title German=Installation von %APPTITLE%
     Title Spanish=Instalación de %APPTITLE%
     Title Italian=Installazione di %APPTITLE%
-    Width=271
-    Height=224
+    Width=339
+    Height=280
     Font Name=Helv
     Font Size=8
     item: Push Button
-      Rectangle=150 187 195 202
+      Rectangle=188 234 244 253
       Variable=DIRECTION
       Value=N
       Create Flags=01010000000000010000000000000001
@@ -1229,7 +1230,7 @@ item: Custom Dialog Set
       Text Italian=&Avanti >
     end
     item: Push Button
-      Rectangle=105 187 150 202
+      Rectangle=131 234 188 253
       Variable=DIRECTION
       Value=B
       Create Flags=01010000000000010000000000000000
@@ -1240,7 +1241,7 @@ item: Custom Dialog Set
       Text Italian=< &Indietro
     end
     item: Push Button
-      Rectangle=211 187 256 202
+      Rectangle=264 234 320 253
       Action=3
       Create Flags=01010000000000010000000000000000
       Text=&Cancel
@@ -1250,12 +1251,12 @@ item: Custom Dialog Set
       Text Italian=&Annulla
     end
     item: Static
-      Rectangle=8 180 256 181
+      Rectangle=10 225 320 226
       Action=3
       Create Flags=01010000000000000000000000000111
     end
     item: Static
-      Rectangle=86 8 258 42
+      Rectangle=108 10 323 53
       Create Flags=01010000000000000000000000000000
       Flags=0000000000000001
       Name=Times New Roman
@@ -1267,7 +1268,7 @@ item: Custom Dialog Set
       Text Italian=Pronto per l'installazione!
     end
     item: Static
-      Rectangle=86 34 256 54
+      Rectangle=108 40 320 62
       Create Flags=01010000000000000000000000000000
       Text=Click the Next button to install %APPTITLE%, or the Back button to change choices:
       Text French=Vous êtes maintenant prêt à installer les fichiers %APPTITLE%.
@@ -1284,10 +1285,10 @@ item: Custom Dialog Set
       Text Italian=Premere il pulsante Avanti per avviare l'installazione o il pulsante Indietro per reinserire le informazioni di installazione.
     end
     item: Editbox
-      Rectangle=86 54 259 175
+      Rectangle=108 66 324 219
       Help Context=16711681
       Enabled Color=00000000000000001111111111111111
-      Create Flags=01010000101100000001100000000100
+      Create Flags=01010000100000000001100011000100
       Text=%SUMMARY%
     end
   end
@@ -2750,12 +2751,12 @@ item: Custom Dialog Set
     Title German=Installation von %APPTITLE%
     Title Spanish=Instalación de %APPTITLE%
     Title Italian=Installazione di %APPTITLE%
-    Width=271
-    Height=224
+    Width=339
+    Height=280
     Font Name=Helv
     Font Size=8
     item: Push Button
-      Rectangle=150 187 195 202
+      Rectangle=188 234 244 253
       Variable=DIRECTION
       Value=N
       Create Flags=01010000000000010000000000000001
@@ -2766,7 +2767,7 @@ item: Custom Dialog Set
       Text Italian=&Fine
     end
     item: Push Button
-      Rectangle=211 187 256 202
+      Rectangle=264 234 320 253
       Variable=DISABLED
       Value=!
       Action=3
@@ -2778,7 +2779,7 @@ item: Custom Dialog Set
       Text Italian=&Annulla
     end
     item: Static
-      Rectangle=86 8 258 42
+      Rectangle=108 10 323 40
       Create Flags=01010000000000000000000000000000
       Flags=0000000000000001
       Name=Times New Roman
@@ -2790,7 +2791,7 @@ item: Custom Dialog Set
       Text Italian=Installazione completata!
     end
     item: Static
-      Rectangle=86 32 256 62
+      Rectangle=108 48 320 86
       Create Flags=01010000000000000000000000000000
       Text=%APPTITLE% has been successfully installed.
       Text=
@@ -2809,12 +2810,12 @@ item: Custom Dialog Set
       Text Italian=Premere il pulsante Fine per uscire dall'installazione.
     end
     item: Static
-      Rectangle=8 180 256 181
+      Rectangle=10 225 320 226
       Action=3
       Create Flags=01010000000000000000000000000111
     end
     item: Static
-      Rectangle=85 74 246 174
+      Rectangle=106 123 308 213
       Enabled Color=00000000000000001111111111111111
       Create Flags=01010000000000000000000000000000
       Text=Special Windows thanks to:
@@ -2828,7 +2829,7 @@ item: Custom Dialog Set
       Text=Mark Hammond, without whose years of freely shared Windows expertise, Python for Windows would still be Python for DOS.
     end
     item: Static
-      Rectangle=86 66 239 67
+      Rectangle=106 114 312 115
       Action=3
       Enabled Color=00000000000000001111111111111111
       Create Flags=01010000000000000000000000001001
