@@ -10,7 +10,7 @@ are always available.  They are listed here in alphabetical order.
   or long integer or a floating point number.
 \end{funcdesc}
 
-\begin{funcdesc}{apply}{function\, args}
+\begin{funcdesc}{apply}{function\, args\optional{, keywords}}
 The \var{function} argument must be a callable object (a user-defined or
 built-in function or method, or a class object) and the \var{args}
 argument must be a tuple.  The \var{function} is called with
@@ -18,6 +18,9 @@ argument must be a tuple.  The \var{function} is called with
 of the tuple.  (This is different from just calling
 \code{\var{func}(\var{args})}, since in that case there is always
 exactly one argument.)
+If the optional \var{keywords} argument is present, it must be a
+dictionary whose keys are strings.  It specifies keyword arguments to
+be added to the end of the the argument list.
 \end{funcdesc}
 
 \begin{funcdesc}{chr}{i}
