@@ -105,6 +105,22 @@ class CodeGenerator:
         else:
             self.emit(prefix + '_GLOBAL', name)
 
+    def set_lineno(self, node):
+        """Emit SET_LINENO if node has lineno attribute
+
+        Returns true if SET_LINENO was emitted.
+
+        There are no rules for when an AST node should have a lineno
+        attribute.  The transformer and AST code need to be reviewed
+        and a consistent policy implemented and documented.  Until
+        then, this method works around missing line numbers.
+        """
+        lineno = getattr(node, 'lineno', None)
+        if lineno is not None:
+            self.emit('SET_LINENO', lineno)
+            return 1
+        return 0
+
     # The first few visitor methods handle nodes that generator new
     # code objects 
 
@@ -128,7 +144,7 @@ class CodeGenerator:
 	gen = FunctionCodeGenerator(node, self.filename, isLambda)
 	walk(node.code, gen)
 	gen.finish()
-	self.emit('SET_LINENO', node.lineno)
+        self.set_lineno(node)
         for default in node.defaults:
             self.visit(default)
         self.emit('LOAD_CONST', gen.getCode())
@@ -138,7 +154,7 @@ class CodeGenerator:
         gen = ClassCodeGenerator(node, self.filename)
         walk(node.code, gen)
         gen.finish()
-        self.emit('SET_LINENO', node.lineno)
+        self.set_lineno(node)
         self.emit('LOAD_CONST', node.name)
         for base in node.bases:
             self.visit(base)
@@ -158,8 +174,7 @@ class CodeGenerator:
 	numtests = len(node.tests)
 	for i in range(numtests):
 	    test, suite = node.tests[i]
-	    if hasattr(test, 'lineno'):
-		self.emit('SET_LINENO', test.lineno)
+            self.set_lineno(test)
 	    self.visit(test)
 ## 	    if i == numtests - 1 and not node.else_:
 ## 		nextTest = end
@@ -178,7 +193,7 @@ class CodeGenerator:
 	self.nextBlock(end)
 
     def visitWhile(self, node):
-	self.emit('SET_LINENO', node.lineno)
+        self.set_lineno(node)
 
 	loop = self.newBlock()
 	else_ = self.newBlock()
@@ -189,7 +204,7 @@ class CodeGenerator:
 	self.nextBlock(loop)
 	self.loops.push(loop)
 
-	self.emit('SET_LINENO', node.lineno)
+        self.set_lineno(node)
 	self.visit(node.test)
 	self.emit('JUMP_IF_FALSE', else_ or after)
 
@@ -212,12 +227,12 @@ class CodeGenerator:
 	after = self.newBlock()
         self.loops.push(start)
 
-        self.emit('SET_LINENO', node.lineno)
+        self.set_lineno(node)
 	self.emit('SETUP_LOOP', after)
         self.visit(node.list)
         self.visit(ast.Const(0))
 	self.nextBlock(start)
-        self.emit('SET_LINENO', node.lineno)
+        self.set_lineno(node)
         self.emit('FOR_LOOP', anchor)
         self.visit(node.assign)
         self.visit(node.body)
@@ -233,7 +248,7 @@ class CodeGenerator:
 	if not self.loops:
 	    raise SyntaxError, "'break' outside loop (%s, %d)" % \
 		  (self.filename, node.lineno)
-	self.emit('SET_LINENO', node.lineno)
+        self.set_lineno(node)
 	self.emit('BREAK_LOOP')
 
     def visitContinue(self, node):
@@ -241,7 +256,7 @@ class CodeGenerator:
             raise SyntaxError, "'continue' outside loop (%s, %d)" % \
 		  (self.filename, node.lineno)
         l = self.loops.top()
-        self.emit('SET_LINENO', node.lineno)
+        self.set_lineno(node)
         self.emit('JUMP_ABSOLUTE', l)
 	self.nextBlock()
 
@@ -291,7 +306,7 @@ class CodeGenerator:
 	# XXX would be interesting to implement this via a
 	# transformation of the AST before this stage
 	end = self.newBlock()
-	self.emit('SET_LINENO', node.lineno)
+        self.set_lineno(node)
         # XXX __debug__ and AssertionError appear to be special cases
         # -- they are always loaded as globals even if there are local
         # names.  I guess this is a sort of renaming op.
@@ -309,7 +324,7 @@ class CodeGenerator:
 	self.emit('POP_TOP')
 
     def visitRaise(self, node):
-        self.emit('SET_LINENO', node.lineno)
+        self.set_lineno(node)
         n = 0
         if node.expr1:
             self.visit(node.expr1)
@@ -329,7 +344,7 @@ class CodeGenerator:
             lElse = self.newBlock()
         else:
             lElse = end
-        self.emit('SET_LINENO', node.lineno)
+        self.set_lineno(node)
         self.emit('SETUP_EXCEPT', handlers)
         self.visit(node.body)
         self.emit('POP_BLOCK')
@@ -339,8 +354,7 @@ class CodeGenerator:
         last = len(node.handlers) - 1
         for i in range(len(node.handlers)):
             expr, target, body = node.handlers[i]
-            if hasattr(expr, 'lineno'):
-                self.emit('SET_LINENO', expr.lineno)
+            self.set_lineno(expr)
             if expr:
                 self.emit('DUP_TOP')
                 self.visit(expr)
@@ -368,7 +382,7 @@ class CodeGenerator:
     
     def visitTryFinally(self, node):
         final = self.newBlock()
-        self.emit('SET_LINENO', node.lineno)
+        self.set_lineno(node)
         self.emit('SETUP_FINALLY', final)
         self.visit(node.body)
         self.emit('POP_BLOCK')
@@ -402,16 +416,16 @@ class CodeGenerator:
         self.loadName(node.name)
         
     def visitPass(self, node):
-        self.emit('SET_LINENO', node.lineno)
+        self.set_lineno(node)
 
     def visitImport(self, node):
-        self.emit('SET_LINENO', node.lineno)
+        self.set_lineno(node)
         for name in node.names:
             self.emit('IMPORT_NAME', name)
             self.storeName(name)
 
     def visitFrom(self, node):
-        self.emit('SET_LINENO', node.lineno)
+        self.set_lineno(node)
         self.emit('IMPORT_NAME', node.modname)
         for name in node.names:
             if name == '*':
@@ -426,7 +440,7 @@ class CodeGenerator:
     # next five implement assignments
 
     def visitAssign(self, node):
-        self.emit('SET_LINENO', node.lineno)
+        self.set_lineno(node)
         self.visit(node.expr)
         dups = len(node.nodes) - 1
         for i in range(len(node.nodes)):
@@ -477,8 +491,7 @@ class CodeGenerator:
     def visitCallFunc(self, node):
         pos = 0
         kw = 0
-        if hasattr(node, 'lineno'):
-            self.emit('SET_LINENO', node.lineno)
+        self.set_lineno(node)
         self.visit(node.node)
         for arg in node.args:
             self.visit(arg)
@@ -496,7 +509,7 @@ class CodeGenerator:
         self.emit(opcode, kw << 8 | pos)
 
     def visitPrint(self, node):
-        self.emit('SET_LINENO', node.lineno)
+        self.set_lineno(node)
         for child in node.nodes:
             self.visit(child)
             self.emit('PRINT_ITEM')
@@ -506,7 +519,7 @@ class CodeGenerator:
         self.emit('PRINT_NEWLINE')
 
     def visitReturn(self, node):
-        self.emit('SET_LINENO', node.lineno)
+        self.set_lineno(node)
         self.visit(node.value)
         self.emit('RETURN_VALUE')
 
@@ -637,15 +650,13 @@ class CodeGenerator:
         self.emit('BUILD_SLICE', len(node.nodes))
 
     def visitDict(self, node):
-	# XXX is this a good general strategy?  could it be done 
-	# separately from the general visitor
-	lineno = getattr(node, 'lineno', None)
-	if lineno:
-	    self.emit('SET_LINENO', lineno)
+        lineno = getattr(node, 'lineno', None)
+        if lineno:
+            set.emit('SET_LINENO', lineno)
         self.emit('BUILD_MAP', 0)
         for k, v in node.items:
 	    lineno2 = getattr(node, 'lineno', None)
-	    if lineno != lineno2:
+            if lineno2 is not None and lineno != lineno2:
 		self.emit('SET_LINENO', lineno2)
 		lineno = lineno2
             self.emit('DUP_TOP')
@@ -687,7 +698,7 @@ class FunctionCodeGenerator(CodeGenerator):
 	    self.graph.setFlag(CO_VARARGS)
 	if func.kwargs:
 	    self.graph.setFlag(CO_VARKEYWORDS)
-        self.emit('SET_LINENO', func.lineno)
+        self.set_lineno(func)
         if hasTupleArg:
             self.generateArgUnpack(func.argnames)
 
