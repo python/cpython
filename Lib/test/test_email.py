@@ -291,7 +291,7 @@ class TestLongHeaders(unittest.TestCase):
         self.assertEqual(sfp.getvalue(), """\
 From: test@dom.ain
 References: <0@dom.ain> <1@dom.ain> <2@dom.ain> <3@dom.ain> <4@dom.ain>
-	<5@dom.ain> <6@dom.ain> <7@dom.ain> <8@dom.ain> <9@dom.ain>
+\t<5@dom.ain> <6@dom.ain> <7@dom.ain> <8@dom.ain> <9@dom.ain>
 
 Test""")
 

@@ -16,7 +16,7 @@ def is_future(stmt):
 class FutureParser:
 
     features = ("nested_scopes", "generators", "division")
-    
+
     def __init__(self):
         self.found = {} # set
 
@@ -70,4 +70,3 @@ if __name__ == "__main__":
         walk(tree, v)
         print v.found
         print
-

@@ -75,7 +75,7 @@ BINDATA = ']q\x01(K\x00L1L\nG@\x00\x00\x00\x00\x00\x00\x00' + \
           '\x00\x80J\x00\x00\x00\x80(U\x03abcq\x04h\x04(c__main__\n' + \
           'C\nq\x05oq\x06}q\x07(U\x03fooq\x08K\x01U\x03barq\tK\x02ubh' + \
           '\x06tq\nh\nK\x05e.'
-    
+
 def create_data():
     c = C()
     c.foo = 1

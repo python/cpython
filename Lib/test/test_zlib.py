@@ -95,7 +95,7 @@ if decomp2 != buf:
     print "max_length decompressobj failed"
 else:
     print "max_length decompressobj succeeded"
-    
+
 # Misc tests of max_length
 deco = zlib.decompressobj(-12)
 try:

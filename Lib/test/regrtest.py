@@ -199,7 +199,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=0, generate=0,
     good.sort()
     bad.sort()
     skipped.sort()
-    
+
     if good and not quiet:
         if not bad and not skipped and len(good) > 1:
             print "All",

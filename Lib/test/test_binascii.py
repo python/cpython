@@ -113,4 +113,3 @@ else:
 
 # Verify the treatment of Unicode strings
 verify(binascii.hexlify(u'a') == '61', "hexlify failed for Unicode")
-

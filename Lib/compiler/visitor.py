@@ -78,7 +78,7 @@ class ExampleASTVisitor(ASTVisitor):
     you still have to do.
     """
     examples = {}
-    
+
     def dispatch(self, node, *args):
         self.node = node
         meth = self._cache.get(node.__class__, None)

@@ -692,14 +692,14 @@ class Transformer:
         n = Backquote(self.com_node(nodelist[1]))
         n.lineno = nodelist[0][2]
         return n
-    
+
     def atom_number(self, nodelist):
         ### need to verify this matches compile.c
         k = eval(nodelist[0][1])
         n = Const(k)
         n.lineno = nodelist[0][2]
         return n
-        
+
     def atom_string(self, nodelist):
         ### need to verify this matches compile.c
         k = ''
@@ -743,7 +743,7 @@ class Transformer:
         # here, Render it harmless. (genc discards ('discard',
         # ('const', xxxx)) Nodes)
         return Discard(Const(None))
-    
+
     def com_arglist(self, nodelist):
         # varargslist:
         #   (fpdef ['=' test] ',')* ('*' NAME [',' ('**'|'*' '*') NAME]
@@ -805,7 +805,7 @@ class Transformer:
         return node[1][1]
 
     def com_fplist(self, node):
-        # fplist: fpdef (',' fpdef)* [','] 
+        # fplist: fpdef (',' fpdef)* [',']
         if len(node) == 2:
             return self.com_fpdef(node[1])
         list = []
@@ -854,7 +854,7 @@ class Transformer:
     def com_try_finally(self, nodelist):
         # try_fin_stmt: "try" ":" suite "finally" ":" suite
         n = TryFinally(self.com_node(nodelist[2]),
-                       self.com_node(nodelist[5])) 
+                       self.com_node(nodelist[5]))
         n.lineno = nodelist[0][2]
         return n
 
@@ -922,7 +922,7 @@ class Transformer:
                             raise SyntaxError, "can't assign to operator"
                         primary = self.com_apply_trailer(primary, ch)
                     return self.com_assign_trailer(primary, node[-1],
-                                                   assigning) 
+                                                   assigning)
                 node = node[1]
             elif t == symbol.atom:
                 t = node[1][0]
@@ -1023,7 +1023,7 @@ class Transformer:
             # list_if: 'if' test [list_iter]
 
             # XXX should raise SyntaxError for assignment
-            
+
             lineno = node[1][2]
             fors = []
             while node:
@@ -1100,7 +1100,7 @@ class Transformer:
         for i in range(1, len_nodelist, 2):
             node = nodelist[i]
             if node[0] == token.STAR or node[0] == token.DOUBLESTAR:
-                    break
+                break
             kw, result = self.com_argument(node, kw)
             args.append(result)
         else:
@@ -1145,7 +1145,7 @@ class Transformer:
     def com_subscriptlist(self, primary, nodelist, assigning):
         # slicing:      simple_slicing | extended_slicing
         # simple_slicing:   primary "[" short_slice "]"
-        # extended_slicing: primary "[" slice_list "]" 
+        # extended_slicing: primary "[" slice_list "]"
         # slice_list:   slice_item ("," slice_item)* [","]
 
         # backwards compat slice for '[i:j]'
