@@ -1848,7 +1848,7 @@ listsort(PyListObject *self, PyObject *args, PyObject *kwds)
 	PyObject *result = NULL;	/* guilty until proved innocent */
 	int reverse = 0;
 	PyObject *keyfunc = NULL;
-	int i, n;
+	int i, len = 0;
 	PyObject *key, *value, *kvpair;
 	static char *kwlist[] = {"cmp", "key", "reverse", 0};
 
@@ -1871,10 +1871,11 @@ listsort(PyListObject *self, PyObject *args, PyObject *kwds)
 		Py_XINCREF(compare);
 
 	if (keyfunc != NULL) {
-		n = PyList_GET_SIZE(self);
-		for (i=0 ; i<n ; i++) {
+		len = PyList_GET_SIZE(self);
+		for (i=0 ; i < len ; i++) {
 			value = PyList_GET_ITEM(self, i);
-			key = PyObject_CallFunctionObjArgs(keyfunc, value, NULL);
+			key = PyObject_CallFunctionObjArgs(keyfunc, value, 
+							   NULL);
 			if (key == NULL)
 				goto dsu_fail;
 			kvpair = build_sortwrapper(key, value);
@@ -1967,7 +1968,7 @@ fail:
 	merge_freemem(&ms);
 
 	if (keyfunc != NULL) {
-		for (i=0 ; i<n ; i++) {
+		for (i=0 ; i < len ; i++) {
 			kvpair = PyList_GET_ITEM(self, i);
 			value = sortwrapper_getvalue(kvpair);
 			PyList_SET_ITEM(self, i, value);
