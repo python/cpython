@@ -357,49 +357,6 @@ set_iand(PySetObject *so, PyObject *other)
 }
 
 static PyObject *
-set_difference(PySetObject *so, PyObject *other)
-{
-	PySetObject *result, *otherset=NULL;
-	PyObject *otherdata, *tgtdata;
-	PyObject *key, *value;
-	int pos = 0;
-
-	result = (PySetObject *)make_new_set(so->ob_type, NULL);
-	if (result == NULL)
-		return NULL;
-	tgtdata = result->data;
-
-	if (PyDict_Check(other))
-		otherdata = other;
-	else if (PyAnySet_Check(other))
-		otherdata = ((PySetObject *)other)->data;
-	else {
-		otherset = (PySetObject *)make_new_set(so->ob_type, other);
-		if (otherset == NULL) {
-			Py_DECREF(result);
-			return NULL;
-		}
-		otherdata = otherset->data;
-	}	
-
-	while (PyDict_Next(so->data, &pos, &key, &value)) {
-		if (!PyDict_Contains(otherdata, key)) {
-			if (PyDict_SetItem(tgtdata, key, Py_True) == -1) {
-				Py_XDECREF(otherset);
-				return NULL;
-			}
-		}
-	}
-	Py_XDECREF(otherset);
-	return (PyObject *)result;
-}
-
-PyDoc_STRVAR(difference_doc,
-"Return the difference of two sets as a new set.\n\
-\n\
-(i.e. all elements that are in this set but not the other.)");
-
-static PyObject *
 set_difference_update(PySetObject *so, PyObject *other)
 {
 	PyObject *item, *tgtdata, *it;
@@ -430,6 +387,49 @@ set_difference_update(PySetObject *so, PyObject *other)
 PyDoc_STRVAR(difference_update_doc,
 "Remove all elements of another set from this set.");
 
+static PyObject *
+set_difference(PySetObject *so, PyObject *other)
+{
+	PyObject *result, *tmp;
+	PyObject *otherdata, *tgtdata;
+	PyObject *key, *value;
+	int pos = 0;
+
+	if (PyDict_Check(other))
+		otherdata = other;
+	else if (PyAnySet_Check(other))
+		otherdata = ((PySetObject *)other)->data;
+	else {
+		result = set_copy(so);
+		if (result == NULL)
+			return result;
+		tmp = set_difference_update((PySetObject *)result, other);
+		if (tmp != NULL) {
+			Py_DECREF(tmp);
+			return result;
+		}
+		Py_DECREF(result);
+		return NULL;
+	}
+	
+	result = make_new_set(so->ob_type, NULL);
+	if (result == NULL)
+		return NULL;
+	tgtdata = ((PySetObject *)result)->data;
+
+	while (PyDict_Next(so->data, &pos, &key, &value)) {
+		if (!PyDict_Contains(otherdata, key)) {
+			if (PyDict_SetItem(tgtdata, key, Py_True) == -1)
+				return NULL;
+		}
+	}
+	return result;
+}
+
+PyDoc_STRVAR(difference_doc,
+"Return the difference of two sets as a new set.\n\
+\n\
+(i.e. all elements that are in this set but not the other.)");
 static PyObject *
 set_sub(PySetObject *so, PyObject *other)
 {
