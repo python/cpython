@@ -93,10 +93,11 @@ class Message:
 	# reproduce the header exactly as it appears in the file).
 
 	def readheaders(self):
+		self.dict = {}
 		self.unixfrom = ''
 		self.headers = list = []
 		self.status = ''
-		headerseen = 0
+		headerseen = ""
 		firstline = 1
 		while 1:
 			line = self.fp.readline()
@@ -113,10 +114,16 @@ class Message:
 			elif headerseen and line[0] in ' \t':
 				# It's a continuation line.
 				list.append(line)
-			elif regex.match('^[!-9;-~]+:', line) >= 0:
+				x = (self.dict[headerseen] + "\n " +
+				     string.strip(line))
+				self.dict[headerseen] = string.strip(x)
+			elif ':' in line:
 				# It's a header line.
 				list.append(line)
-				headerseen = 1
+				i = string.find(line, ':')
+				headerseen = string.lower(line[:i])
+				self.dict[headerseen] = string.strip(
+					line[i+1:])
 			else:
 				# It's not a header line; stop here.
 				if not headerseen:
@@ -198,22 +205,25 @@ class Message:
 		return string.joinfields(list, '')
 
 
-	# Going one step further: also strip leading and trailing
-	# whitespace.
+	# The normal interface: return a stripped version of the
+	# header value with a name, or None if it doesn't exist.  This
+	# uses the dictionary version which finds the *last* such
+	# header.
 
 	def getheader(self, name):
-		text = self.getrawheader(name)
-		if text == None:
+		try:
+			return self.dict[string.lower(name)]
+		except KeyError:
 			return None
-		return string.strip(text)
 
 
 	# Retrieve a single address from a header as a tuple, e.g.
 	# ('Guido van Rossum', 'guido@cwi.nl').
 
 	def getaddr(self, name):
-		data = self.getheader(name)
-		if not data:
+		try:
+			data = self[name]
+		except KeyError:
 			return None, None
 		return parseaddr(data)
 
@@ -224,8 +234,9 @@ class Message:
 		# XXX This function is not really correct.  The split
 		# on ',' might fail in the case of commas within
 		# quoted strings.
-		data = self.getheader(name)
-		if not data:
+		try:
+			data = self[name]
+		except KeyError:
 			return []
 		data = string.splitfields(data, ',')
 		for i in range(len(data)):
@@ -236,55 +247,32 @@ class Message:
 	# with time.mktime().
 
 	def getdate(self, name):
-		data = self.getheader(name)
-		if not data:
+		try:
+			data = self[name]
+		except KeyError:
 			return None
 		return parsedate(data)
 
 
-	# Access as a dictionary (only finds first header of each type):
+	# Access as a dictionary (only finds *last* header of each type):
 
 	def __len__(self):
-		types = {}
-		for line in self.headers:
-			if line[0] in string.whitespace: continue
-			i = string.find(line, ':')
-			if i > 0:
-				name = string.lower(line[:i])
-				types[name] = None
-		return len(types)
+		return len(self.dict)
 
 	def __getitem__(self, name):
-		value = self.getheader(name)
-		if value is None: raise KeyError, name
-		return value
+		return self.dict[string.lower(name)]
 
 	def has_key(self, name):
-		value = self.getheader(name)
-		return value is not None
+		return self.dict.has_key(string.lower(name))
 
 	def keys(self):
-		types = {}
-		for line in self.headers:
-			if line[0] in string.whitespace: continue
-			i = string.find(line, ':')
-			if i > 0:
-				name = line[:i]
-				key = string.lower(name)
-				types[key] = name
-		return types.values()
+		return self.dict.keys()
 
 	def values(self):
-		values = []
-		for name in self.keys():
-			values.append(self[name])
-		return values
+		return self.dict.values()
 
 	def items(self):
-		items = []
-		for name in self.keys():
-			items.append(name, self[name])
-		return items
+		return self.dict.items()
 
 
 
