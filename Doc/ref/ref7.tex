@@ -275,7 +275,9 @@ keyword arguments is not yet documented in this manual.  See chapter
 
 \begin{verbatim}
 funcdef:        "def" funcname "(" [parameter_list] ")" ":" suite
-parameter_list: (defparameter ",")* ("*" identifier | defparameter [","])
+parameter_list: (defparameter ",")* ("*" identifier [, "**" identifier] 
+                                    | "**" identifier 
+                                    | defparameter [","])
 defparameter:   parameter ["=" condition]
 sublist:        parameter ("," parameter)* [","]
 parameter:      identifier | "(" sublist ")"
