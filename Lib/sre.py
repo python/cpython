@@ -10,8 +10,12 @@
 # other compatibility work.
 #
 
+# FIXME: change all FIXME's to XXX ;-)
+
 import sre_compile
 import sre_parse
+
+import string
 
 # flags
 I = IGNORECASE = sre_compile.SRE_FLAG_IGNORECASE
@@ -53,6 +57,9 @@ def findall(pattern, string, maxsplit=0):
 def compile(pattern, flags=0):
     return _compile(pattern, flags)
 
+def purge():
+    _cache.clear()
+
 def template(pattern, flags=0):
     return _compile(pattern, flags|T)
 
@@ -65,7 +72,7 @@ def escape(pattern):
                 s[i] = "\\000"
             else:
                 s[i] = "\\" + c
-    return pattern[:0].join(s)
+    return _join(s, pattern)
 
 # --------------------------------------------------------------------
 # internals
@@ -73,10 +80,14 @@ def escape(pattern):
 _cache = {}
 _MAXCACHE = 100
 
+def _join(seq, sep):
+    # internal: join into string having the same type as sep
+    return string.join(seq, sep[:0])
+
 def _compile(pattern, flags=0):
     # internal: compile pattern
     tp = type(pattern)
-    if tp not in (type(""), type(u"")):
+    if tp not in sre_compile.STRING_TYPES:
         return pattern
     key = (tp, pattern, flags)
     try:
@@ -88,10 +99,6 @@ def _compile(pattern, flags=0):
         _cache.clear()
     _cache[key] = p
     return p
-
-def purge():
-    # clear pattern cache
-    _cache.clear()
 
 def _sub(pattern, template, string, count=0):
     # internal: pattern.sub implementation hook
@@ -120,7 +127,7 @@ def _subn(pattern, template, string, count=0):
         i = e
         n = n + 1
     append(string[i:])
-    return string[:0].join(s), n
+    return _join(s, string[:0]), n
 
 def _split(pattern, string, maxsplit=0):
     # internal: pattern.split implementation hook
@@ -161,11 +168,19 @@ copy_reg.pickle(type(_compile("")), _pickle, _compile)
 
 class Scanner:
     def __init__(self, lexicon):
+        from sre_constants import BRANCH, SUBPATTERN, INDEX
         self.lexicon = lexicon
+        # combine phrases into a compound pattern
         p = []
+        s = sre_parse.Pattern()
         for phrase, action in lexicon:
-            p.append("(?:%s)(?P#%d)" % (phrase, len(p)))
-        self.scanner = _compile("|".join(p))
+            p.append(sre_parse.SubPattern(s, [
+                (SUBPATTERN, (None, sre_parse.parse(phrase))),
+                (INDEX, len(p))
+                ]))
+        p = sre_parse.SubPattern(s, [(BRANCH, (None, p))])
+        s.groups = len(p)
+        self.scanner = sre_compile.compile(p)
     def scan(self, string):
         result = []
         append = result.append
