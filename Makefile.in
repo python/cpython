@@ -112,8 +112,8 @@ all:		python
 
 # Build the interpreter
 python:		Makefiles
-		for i in $(SUBDIRS); do \
-			(echo $$i; cd $$i; \
+		@for i in $(SUBDIRS); do \
+			(echo Making in subdirectory $$i; cd $$i; \
 			 $(MAKE) OPT="$(OPT)" \
 			         prefix="$(prefix)" \
 				 exec_prefix="$(exec_prefix)" \
@@ -133,7 +133,7 @@ install:	bininstall libinstall maninstall inclinstall \
 
 # Install the interpreter
 bininstall:	python
-		for i in $(BINDIR); \
+		@for i in $(BINDIR); \
 		do \
 			if test ! -d $$i; then \
 				echo "Creating directory $$i"; \
@@ -149,7 +149,7 @@ bininstall:	python
 # something like find Lib -print | cpio -pacvdmu $(LIBDEST)
 LIBDEST=	$(SCRIPTDIR)/python
 libinstall:	python
-		for i in $(SCRIPTDIR) $(LIBDEST); \
+		@for i in $(SCRIPTDIR) $(LIBDEST); \
 		do \
 			if test ! -d $$i; then \
 				echo "Creating directory $$i"; \
@@ -172,7 +172,7 @@ libinstall:	python
 
 # Install the manual page
 maninstall:
-		for i in $(MANDIR) $(MANDIR)/man1; \
+		@for i in $(MANDIR) $(MANDIR)/man1; \
 		do \
 			if test ! -d $$i; then \
 				echo "Creating directory $$i"; \
@@ -187,7 +187,7 @@ maninstall:
 # Install the include files
 INCLUDEPY=	$(INCLUDEDIR)/Py
 inclinstall:
-		for i in $(INCLUDEDIR) $(INCLUDEPY); \
+		@for i in $(INCLUDEDIR) $(INCLUDEPY); \
 		do \
 			if test ! -d $$i; then \
 				echo "Creating directory $$i"; \
@@ -196,13 +196,17 @@ inclinstall:
 			else	true; \
 			fi; \
 		done
-		$(INSTALL_DATA) $(srcdir)/Include/*.h $(INCLUDEPY)
+		@for i in $(srcdir)/Include/*.h; \
+		do \
+			echo $(INSTALL_DATA) $$i $(INCLUDEPY); \
+			$(INSTALL_DATA) $$i $(INCLUDEPY); \
+		done
 
 # Install the lib*.a files and miscellaneous stuff needed by extensions
 LIBP=		$(LIBDIR)/python
 LIBPL=		$(LIBP)/lib
 libainstall:	all
-		for i in $(LIBDIR) $(LIBP) $(LIBPL); \
+		@for i in $(LIBDIR) $(LIBP) $(LIBPL); \
 		do \
 			if test ! -d $$i; then \
 				echo "Creating directory $$i"; \
@@ -211,8 +215,8 @@ libainstall:	all
 			else	true; \
 			fi; \
 		done
-		for i in $(SUBDIRS); do \
-			echo $$i; \
+		@for i in $(SUBDIRS); do \
+			echo Installing in subdirectory $$i; \
 			$(INSTALL_DATA) $$i/lib$$i.a $(LIBPL)/lib$$i.a; \
 			$(RANLIB) $(LIBPL)/lib$$i.a; \
 		done
@@ -240,8 +244,9 @@ sharedinstall:
 # Build the sub-Makefiles
 Makefiles:	config.status Modules/Makefile.pre
 		(cd Modules; $(MAKE) -f Makefile.pre Makefile)
-		for i in . $(SUBDIRS); do \
-			(echo $$i; cd $$i; $(MAKE) Makefile); \
+		@for i in . $(SUBDIRS); do \
+			(echo making Makefile in subdirectory $$i; cd $$i; \
+			 $(MAKE) Makefile); \
 		done
 
 # Build the intermediate Makefile in Modules
@@ -288,8 +293,9 @@ TAGS::
 
 # Add dependencies to sub-Makefiles
 depend:
-		for i in $(SUBDIRS); do \
-			(echo $$i; cd $$i; $(MAKE) depend); \
+		@for i in $(SUBDIRS); do \
+			(echo making depend in subdirectory $$i; cd $$i; \
+			 $(MAKE) depend); \
 		done
 
 # Sanitation targets -- clean leaves libraries, executables and tags
@@ -300,7 +306,7 @@ localclean:
 
 clean:		localclean
 		-for i in $(SUBDIRS); do \
-			(echo $$i; cd $$i; \
+			(echo making clean in subdirectory $$i; cd $$i; \
 			 if test -f Makefile; \
 			 then $(MAKE) clean; \
 			 else $(MAKE) -f Makefile.*in clean; \
@@ -309,18 +315,19 @@ clean:		localclean
 
 localclobber:	localclean
 		-rm -f tags TAGS python
-		-rm -f config.log config.cache config.h Makefile
+		-rm -f config.log config.cache config.h
 
 clobber:	localclobber
 		-for i in $(SUBDIRS); do \
-			(echo $$i; cd $$i; \
+			(echo clobbering subdirectory $$i; cd $$i; \
 			 if test -f Makefile; \
 			 then $(MAKE) clobber; \
 			 else $(MAKE) -f $(srcdir)/Makefile.in clobber; \
 			 fi); \
 		done
 
-# Make things extra clean, before making a distribution
+# Make things extra clean, before making a distribution:
+# remove all generated files, even Makefile[.pre]
 distclean:	clobber
 		-$(MAKE) -f $(srcdir)/Makefile.in \
 			SUBDIRS="$(SUBDIRSTOO)" clobber
@@ -345,7 +352,7 @@ smelly: all
 	done
 
 # Find files with funny names
-find:
+funny:
 		find $(DISTDIRS) -type d \
 			-o -name '*.[chs]' \
 			-o -name '*.py' \
@@ -363,8 +370,8 @@ find:
 			-o -name README \
 			-o -name Makefile \
 			-o -name ChangeLog \
-			-o -name RCS \
 			-o -name Repository \
+			-o -name Root \
 			-o -name Entries \
 			-o -name Tag \
 			-o -name tags \
@@ -372,8 +379,3 @@ find:
 			-o -name .cvsignore \
 			-o -name MANIFEST \
 			-o -print
-
-# Build a distribution tar file (run make distclean first)
-# (This leaves the RCS and CVS directories in :-( )
-tar:
-		tar cf - $(DIST) | gzip --best >dist.tar.gz
