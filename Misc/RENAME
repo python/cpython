@@ -364,7 +364,6 @@ getishortarraysize PyArg_GetShortArraySize
 getistringarg PyArg_GetString
 err_badarg PyErr_BadArgument
 err_badcall PyErr_BadInternalCall
-err_input PyErr_Input
 err_nomem PyErr_NoMemory
 err_errno PyErr_SetFromErrno
 err_set PyErr_SetNone
