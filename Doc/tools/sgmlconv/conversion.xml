@@ -247,7 +247,7 @@
                  subsubsection subsubsection*
                  paragraph paragraph* subparagraph subparagraph*">
     <text>
-  </text>
+</text>
     <child name="title"/>
     <content implied="yes"/>
     </macro>
@@ -257,7 +257,7 @@
                  paragraph paragraph* subparagraph subparagraph*">
     <attribute name="numbered">no</attribute>
     <text>
-  </text>
+</text>
     <child name="title"/>
     <content implied="yes"/>
     </macro>
@@ -267,7 +267,7 @@
                  subsubsection subsubsection*
                  paragraph paragraph* subparagraph subparagraph*">
     <text>
-  </text>
+</text>
     <child name="title"/>
     <content implied="yes"/>
     </macro>
@@ -277,7 +277,7 @@
                  paragraph paragraph* subparagraph subparagraph*">
     <attribute name="numbered">no</attribute>
     <text>
-  </text>
+</text>
     <child name="title"/>
     <content implied="yes"/>
     </macro>
@@ -286,7 +286,7 @@
          closes="subsection subsection* subsubsection subsubsection*
                  paragraph paragraph* subparagraph subparagraph*">
     <text>
-  </text>
+</text>
     <child name="title"/>
     <content implied="yes"/>
     </macro>
@@ -295,7 +295,7 @@
                  paragraph paragraph* subparagraph subparagraph*">
     <attribute name="numbered">no</attribute>
     <text>
-  </text>
+</text>
     <child name="title"/>
     <content implied="yes"/>
     </macro>
@@ -304,7 +304,7 @@
          closes="subsubsection subsubsection*
                  paragraph paragraph* subparagraph subparagraph*">
     <text>
-  </text>
+</text>
     <child name="title"/>
     <content implied="yes"/>
     </macro>
@@ -313,7 +313,7 @@
                  paragraph paragraph* subparagraph subparagraph*">
     <attribute name="numbered">no</attribute>
     <text>
-  </text>
+</text>
     <child name="title"/>
     <content implied="yes"/>
     </macro>
@@ -321,7 +321,7 @@
   <macro name="paragraph"
          closes="paragraph paragraph* subparagraph subparagraph*">
     <text>
-  </text>
+</text>
     <child name="title"/>
     <content implied="yes"/>
     </macro>
@@ -329,7 +329,7 @@
          closes="paragraph paragraph* subparagraph subparagraph*">
     <attribute name="numbered">no</attribute>
     <text>
-  </text>
+</text>
     <child name="title"/>
     <content implied="yes"/>
     </macro>
@@ -337,7 +337,7 @@
   <macro name="subparagraph"
          closes="subparagraph subparagraph*">
     <text>
-  </text>
+</text>
     <child name="title"/>
     <content implied="yes"/>
     </macro>
@@ -345,7 +345,7 @@
          closes="subparagraph subparagraph*">
     <attribute name="numbered">no</attribute>
     <text>
-  </text>
+</text>
     <child name="title"/>
     <content implied="yes"/>
     </macro>
