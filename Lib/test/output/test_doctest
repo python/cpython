@@ -67,6 +67,7 @@ Expecting: (0, 2)
 ok
 Trying: t.summarize()
 Expecting:
+*****************************************************************
 1 items had failures:
    1 of   2 in XYZ
 ***Test Failed*** 1 failures.
@@ -76,6 +77,7 @@ Trying: t.summarize(verbose=1)
 Expecting:
 1 items passed all tests:
    2 tests in example2
+*****************************************************************
 1 items had failures:
    1 of   2 in XYZ
 4 tests in 2 items.
