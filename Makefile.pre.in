@@ -279,7 +279,7 @@ LIBRARY_OBJS=	\
 # Rules
 
 # Default target
-all:		$(PYTHON) sharedmods
+all:		$(PYTHON) oldsharedmods sharedmods 
 
 # Build the interpreter
 $(PYTHON):	$(MAINOBJ) $(LDLIBRARY)
@@ -476,7 +476,8 @@ test:		all platform
 install:	altinstall bininstall maninstall
 
 # Install almost everything without disturbing previous versions
-altinstall:	altbininstall libinstall inclinstall libainstall sharedinstall
+altinstall:	altbininstall libinstall inclinstall libainstall \
+                sharedinstall oldsharedinstall 
 
 # Install shared libraries enabled by Setup
 DESTDIRS=	$(exec_prefix) $(LIBDIR) $(BINLIBDEST) $(DESTSHARED)
