@@ -1032,9 +1032,9 @@ vgetargskeywords(PyObject *args, PyObject *keywords, char *format,
 	char *fname, *message;
 	int min, max;
 	char *formatsave;
-	int i, len, nargs, nkeywords;
+	int i, len, nargs, nkeywords, nkwlist;
 	char *msg, *ks, **p;
-	int nkwlist, pos, match, converted;
+	int pos, match, converted;
 	PyObject *key, *value;
 
 	assert(args != NULL && PyTuple_Check(args));
@@ -1048,15 +1048,24 @@ vgetargskeywords(PyObject *args, PyObject *keywords, char *format,
 	   name <- routine name, if any (else NULL).
 	   min <- # of required arguments, or -1 if all are required.
 	   max <- most arguments (required + optional).
+	   Check that kwlist has a non-NULL entry for each arg.
 	   Raise error if a tuple arg spec is found.
 	*/
 	fname = message = NULL;
 	formatsave = format;
+	p = kwlist;
 	min = -1;
 	max = 0;
 	while ((i = *format++) != '\0') {
-		if (isalpha(i) && i != 'e')
+		if (isalpha(i) && i != 'e') {
 			max++;
+			if (*p == NULL) {
+				/* kwlist is too short */
+				PyErr_BadInternalCall();
+				return 0;
+			}
+			p++;
+		}
 		else if (i == '|')
 			min = max;
 		else if (i == ':') {
@@ -1072,13 +1081,19 @@ vgetargskeywords(PyObject *args, PyObject *keywords, char *format,
 		      "tuple found in format when using keyword arguments");
 			return 0;
 		}
-	}	
+	}
+	format = formatsave;
+	if (*p != NULL) {
+		/* kwlist is too long */
+		PyErr_BadInternalCall();
+		return 0;
+	}
 	if (min < 0) {
 		/* All arguments are required. */
 		min = max;
 	}
-	format = formatsave;
 
+	nkwlist = max;
 	nargs = PyTuple_GET_SIZE(args);
 	nkeywords = keywords == NULL ? 0 : PyDict_Size(keywords);
 
@@ -1103,9 +1118,11 @@ vgetargskeywords(PyObject *args, PyObject *keywords, char *format,
 	}
 
 	/* required arguments missing from args can be supplied by keyword 
-	   arguments */
+	   arguments; set len to the number of posiitional arguments, and,
+	   if that's less than the minimum required, add in the number of
+	   required arguments that are supplied by keywords */
 	len = nargs;
-	if (keywords && nargs < min) {
+	if (nkeywords > 0 && nargs < min) {
 		for (i = nargs; i < min; i++) {
 			if (PyDict_GetItemString(keywords, kwlist[i]))
 				len++;
@@ -1118,7 +1135,6 @@ vgetargskeywords(PyObject *args, PyObject *keywords, char *format,
 	   is a little confusing with keywords since keyword arguments
 	   which are supplied, but don't match the required arguments
 	   are not included in the "%d given" part of the message */
-
 	if (len < min || max < len) {
 		if (message == NULL) {
 			sprintf(msgbuf,
@@ -1150,18 +1166,6 @@ vgetargskeywords(PyObject *args, PyObject *keywords, char *format,
 	/* handle no keyword parameters in call  */	
 	if (nkeywords == 0)
 		return 1; 
-
-	/* make sure the number of keywords in the keyword list matches the 
-	   number of items in the format string */
-	nkwlist = 0;
-	p =  kwlist;
-	while (*p++)
-		nkwlist++;
-	if (nkwlist != max) {
-		PyErr_SetString(PyExc_SystemError,
-	  "number of items in format string and keyword list do not match");
-		return 0;
-	}	  	  
 
 	/* convert the keyword arguments; this uses the format 
 	   string where it was left after processing args */
