@@ -126,6 +126,8 @@ def makedirs(name, mode=0777):
 
     """
     head, tail = path.split(name)
+    if not tail:
+        head, tail = path.split(head)
     if head and tail and not path.exists(head):
         makedirs(head, mode)
     mkdir(name, mode)
@@ -143,6 +145,8 @@ def removedirs(name):
     """
     rmdir(name)
     head, tail = path.split(name)
+    if not tail:
+        head, tail = path.split(head)
     while head and tail:
         try:
             rmdir(head)
