@@ -1,6 +1,6 @@
 % Format this file with latex.
 
-\documentstyle[myformat]{report}
+\documentstyle[11pt,myformat]{report}
 
 \title{\bf
 	Python Reference Manual \\
@@ -23,12 +23,12 @@
 \begin{abstract}
 
 \noindent
-Python is a simple, yet powerful programming language that bridges the
-gap between C and shell programming, and is thus ideally suited for
-``throw-away programming''
-and rapid prototyping.  Its syntax is put
-together from constructs borrowed from a variety of other languages;
-most prominent are influences from ABC, C, Modula-3 and Icon.
+Python is a simple, yet powerful, interpreted programming language
+that bridges the gap between C and shell programming, and is thus
+ideally suited for ``throw-away programming'' and rapid prototyping.
+Its syntax is put together from constructs borrowed from a variety of
+other languages; most prominent are influences from ABC, C, Modula-3
+and Icon.
 
 The Python interpreter is easily extended with new functions and data
 types implemented in C.  Python is also suitable as an extension
@@ -40,10 +40,11 @@ several flavors of {\UNIX}, Amoeba, the Apple Macintosh O.S.,
 and MS-DOS.
 
 This reference manual describes the syntax and ``core semantics'' of
-the language.  It is terse, but exact and complete.  The semantics of
-non-essential built-in object types and of the built-in functions and
-modules are described in the {\em Python Library Reference}.  For an
-informal introduction to the language, see the {\em Python Tutorial}.
+the language.  It is terse, but attempts to be exact and complete.
+The semantics of non-essential built-in object types and of the
+built-in functions and modules are described in the {\em Python
+Library Reference}.  For an informal introduction to the language, see
+the {\em Python Tutorial}.
 
 \end{abstract}
 
@@ -98,18 +99,18 @@ The descriptions of lexical analysis and syntax use a modified BNF
 grammar notation.  This uses the following style of definition:
 
 \begin{verbatim}
-name:           lcletter (lcletter | "_")*
-lcletter:       "a"..."z"
+name:           lc_letter (lc_letter | "_")*
+lc_letter:      "a"..."z"
 \end{verbatim}
 
-The first line says that a \verb\name\ is an \verb\lcletter\ followed by
-a sequence of zero or more \verb\lcletter\s and underscores.  An
-\verb\lcletter\ in turn is any of the single characters `a' through `z'.
+The first line says that a \verb\name\ is an \verb\lc_letter\ followed by
+a sequence of zero or more \verb\lc_letter\s and underscores.  An
+\verb\lc_letter\ in turn is any of the single characters `a' through `z'.
 (This rule is actually adhered to for the names defined in syntax and
 grammar rules in this document.)
 
 Each rule begins with a name (which is the name defined by the rule)
-and a colon, and is wholly contained on one line.  A vertical bar
+and a colon.  A vertical bar
 (\verb\|\) is used to separate alternatives; it is the least binding
 operator in this notation.  A star (\verb\*\) means zero or more
 repetitions of the preceding item; likewise, a plus (\verb\+\) means
@@ -117,7 +118,10 @@ one or more repetitions, and a question mark (\verb\?\) zero or one
 (in other words, the preceding item is optional).  These three
 operators bind as tightly as possible; parentheses are used for
 grouping.  Literal strings are enclosed in double quotes.  White space
-is only meaningful to separate tokens.
+is only meaningful to separate tokens.  Rules are normally contained
+on a single line; rules with many alternatives may be formatted
+alternatively with each line after the first beginning with a
+vertical bar.
 
 In lexical definitions (as the example above), two more conventions
 are used: Two literal characters separated by three dots mean a choice
@@ -161,13 +165,10 @@ joined with the following forming a single logical line, deleting the
 backslash and the following end-of-line character.  For example:
 %
 \begin{verbatim}
-samplingrates =	(48000, AL.RATE_48000), \
-                (44100, AL.RATE_44100), \
-                (32000, AL.RATE_32000), \
-                (22050, AL.RATE_22050), \
-                (16000, AL.RATE_16000), \
-                (11025, AL.RATE_11025), \
-                ( 8000,  AL.RATE_8000)
+moth_names = ['Januari', 'Februari', 'Maart',     \
+              'April',   'Mei',      'Juni',      \
+              'Juli',    'Augustus', 'September', \
+              'Oktober', 'November', 'December']
 \end{verbatim}
 
 \subsection{Blank lines}
@@ -210,7 +211,6 @@ of Python code:
 
 \begin{verbatim}
 def perm(l):
-
         # Compute the list of all permutations of l
 
     if len(l) <= 1:
@@ -363,12 +363,12 @@ Although both lower case `l'and upper case `L' are allowed as suffix
 for long integers, it is strongly recommended to always use `L', since
 the letter `l' looks too much like the digit `1'.
 
-(Plain) integer decimal literals must be at most $2^{31} - 1$ (i.e., the
+Plain integer decimal literals must be at most $2^{31} - 1$ (i.e., the
 largest positive integer, assuming 32-bit arithmetic); octal and
 hexadecimal literals may be as large as $2^{32} - 1$.  There is no limit
 for long integer literals.
 
-Some examples of (plain and long) integer literals:
+Some examples of plain and long integer literals:
 
 \begin{verbatim}
 7     2147483647                        0177    0x80000000
@@ -386,7 +386,8 @@ fraction:       "." digit+
 exponent:       ("e"|"E") ["+"|"-"] digit+
 \end{verbatim}
 
-The range of floating point literals is implementation-dependent.
+The allowed range of floating point literals is
+implementation-dependent.
 
 Some examples of floating point literals:
 
@@ -453,7 +454,7 @@ matter of implementation quality how garbage collection is
 implemented, as long as no objects are collected that are still
 reachable.  (Implementation note: the current implementation uses a
 reference-counting scheme which collects most objects as soon as they
-become onreachable, but never collects garbage containing circular
+become unreachable, but never collects garbage containing circular
 references.)
 
 Note that the use of the implementation's tracing or debugging
@@ -486,13 +487,204 @@ a = 1; b = 1; c = []; d = []
 \verb\c\ and \verb\d\ are guaranteed to refer to two different, unique,
 newly created lists.
 
-\section{The standard type hierarchy}
-
-XXX None, sequences, numbers, mappings, ...
-
 \section{Execution frames, name spaces, and scopes}
 
 XXX code blocks, scopes, name spaces, name binding, exceptions
+
+\chapter{The standard type hierarchy}
+
+The following types are built into Python.  Extension modules
+written in C can define additional types.  Future versions of Python
+may also add types to the type hierarchy (e.g., rational or complex
+numbers, lists of efficiently stored integers, etc.).
+
+\begin{description}
+
+\item[None]
+This type has a single value.  There is a single object with this value.
+This object is accessed through the built-in name \verb\None\.
+It is returned from functions that don't explicitly return an object.
+
+\item[Numbers]
+These are created by numeric literals and returned as results
+by arithmetic operators and arithmetic built-in functions.
+Numeric objects are immutable; once created their value never changes.
+Python numbers are of course strongly related to mathematical numbers,
+but subject to the limitations of numerical representation in computers.
+
+Python distinguishes between integers and floating point numbers:
+
+\begin{description}
+\item[Integers]
+These represent elements from the mathematical set of whole numbers.
+
+There are two types of integers:
+
+\begin{description}
+
+\item[Plain integers]
+These represent numbers in the range $-2^{31}$ through $2^{31}-1$.
+(The range may be larger on machines with a larger natural word
+size, but not smaller.)
+When the result of an operation falls outside this range, the
+exception \verb\OverflowError\ is raised.
+For the purpose of shift and mask operations, integers are assumed to
+have a binary, 2's complement notation using 32 or more bits, and
+hiding no bits from the user (i.e., all $2^{32}$ different bit
+patterns correspond to different values).
+
+\item[Long integers]
+These represent numbers in an unlimited range, subject to avaiable
+(virtual) memory only.  For the purpose of shift and mask operations,
+a binary representation is assumed, and negative numbers are
+represented in a variant of 2's complement which gives the illusion of
+an infinite string of sign bits extending to the left.
+
+\end{description} % Integers
+
+The rules for integer representation are intended to give the most
+meaningful interpretation of shift and mask operations involving
+negative integers and the least surprises when switching between the
+plain and long integer domains.  For any operation except left shift,
+if it yields a result in the plain integer domain without causing
+overflow, it will yield the same result in the long integer domain or
+when using mixed operands.
+
+\item[Floating point numbers]
+These represent machine-level double precision floating point numbers.  
+You are at the mercy of the underlying machine architecture and
+C implementation for the accepted range and handling of overflow.
+
+\end{description} % Numbers
+
+\item[Sequences]
+These represent finite ordered sets indexed by natural numbers.
+The built-in function \verb\len()\ returns the number of elements
+of a sequence.  When this number is $n$, the index set contains
+the numbers $0, 1, \ldots, n-1$.  Element \verb\i\ of sequence
+\verb\a\ is selected by \verb\a[i]\.
+
+Sequences also support slicing: \verb\a[i:j]\ selects all elements
+with index $k$ such that $i < k < j$.  When used as an expression,
+a slice is a sequence of the same type -- this implies that the
+index set is renumbered so that it starts at 0 again.
+
+Sequences are distinguished according to their mutability:
+
+\begin{description}
+%
+\item[Immutable sequences]
+An object of an immutable sequence type cannot change once it is
+created.  (If the object contains references to other objects,
+these other objects may be mutable and may be changed; however
+the collection of objects directly referenced by an immutable object
+cannot change.)
+
+The following types are immutable sequences:
+
+\begin{description}
+
+\item[Strings]
+The elements of a string are characters.  There is no separate
+character type; a character is represented by a string of one element.
+Characters represent (at least) 8-bit bytes.  The built-in
+functions \verb\chr()\ and \verb\ord()\ convert between characters
+and nonnegative integers representing the byte values.
+Bytes with the values 0-127 represent the corresponding ASCII values.
+
+(On systems whose native character set is not ASCII, strings may use
+EBCDIC in their internal representation, provided the functions
+\verb\chr()\ and \verb\ord()\ implement a mapping between ASCII and
+EBCDIC, and string comparisons preserve the ASCII order.
+Or perhaps someone can propose a better rule?)
+
+\item[Tuples]
+The elements of a tuple are arbitrary Python objects.
+Tuples of two or more elements are formed by comma-separated lists
+of expressions.  A tuple of one element can be formed by affixing
+a comma to an expression (an expression by itself of course does
+not create a tuple).  An empty tuple can be formed by enclosing
+`nothing' in parentheses.
+
+\end{description} % Immutable sequences
+
+\item[Mutable sequences]
+Mutable sequences can be changed after they are created.
+The subscript and slice notations can be used as the target
+of assignment and \verb\del\ (delete) statements.
+
+There is currently a single mutable sequence type:
+
+\begin{description}
+
+\item[Lists]
+The elements of a list are arbitrary Python objects.
+Lists are formed by placing a comma-separated list of expressions
+in square brackets.  (Note that there are no special cases for lists
+of length 0 or 1.)
+
+\end{description} % Mutable sequences
+
+\end{description} % Sequences
+
+\item[Mapping types]
+These represent finite sets of objects indexed by arbitrary index sets.
+The subscript notation \verb\a[k]\ selects the element indexed
+by \verb\k\ from the mapping \verb\a\; this can be used in
+expressions and as the target of assignments or \verb\del\ statements.
+The built-in function \verb\len()\ returns the number of elements
+in a mapping.
+
+There is currently a single mapping type:
+
+\begin{description}
+
+\item[Dictionaries]
+These represent finite sets of objects indexed by strings.
+Dictionaries are created by the \verb\{...}\ notation (see section
+\ref{dict}).  (Implementation note: the strings used for indexing must
+not contain null bytes.)
+
+\end{description} % Mapping types
+
+\item[Callable types]
+These are the types to which the function call operation can be applied:
+
+\begin{description}
+\item[User-defined functions]
+XXX
+\item[Built-in functions]
+XXX
+\item[User-defined methods]
+XXX
+\item[Built-in methods]
+XXX
+\item[User-defined classes]
+XXX
+\end{description}
+
+\item[Modules]
+XXX
+
+\item[Class instances]
+XXX
+
+\item[Files]
+XXX
+
+\item[Internal types]
+A few types used internally by the interpreter are exposed to the user.
+Their definition may change with future versions of the interpreter,
+but they are mentioned here for completeness.
+
+\begin{description}
+\item[Code objects]
+XXX
+\item[Traceback objects]
+XXX
+\end{description} % Internal types
+
+\end{description} % Types
 
 \chapter{Expressions and conditions}
 
@@ -527,20 +719,17 @@ are the same as for \verb\othername\.
 When a description of an arithmetic operator below uses the phrase
 ``the numeric arguments are converted to a common type'',
 this both means that if either argument is not a number, a
-{\tt TypeError} exception is raised, and that otherwise
+\verb\TypeError\ exception is raised, and that otherwise
 the following conversions are applied:
 
 \begin{itemize}
-\item	First, if either argument is a floating point number,
+\item	first, if either argument is a floating point number,
 	the other is converted to floating point;
 \item	else, if either argument is a long integer,
 	the other is converted to long integer;
 \item	otherwise, both must be plain integers and no conversion
 	is necessary.
 \end{itemize}
-
-(Note: ``plain integers'' in Python are at least 32 bits in size;
-``long integers'' are arbitrary precision integers.)
 
 \section{Atoms}
 
@@ -564,7 +753,7 @@ built-in name.
 
 When the name is bound to an object, evaluation of the atom yields
 that object.  When a name is not bound, an attempt to evaluate it
-raises a {\tt NameError} exception.
+raises a \verb\NameError\ exception.
 
 \subsection{Literals}
 
@@ -588,7 +777,7 @@ the same object or a different object with the same value.
 (In the original implementation, all literals in the same code block
 with the same type and value yield the same object.)
 
-\subsection{Parenthesized form}
+\subsection{Parenthesized forms}
 
 A parenthesized form is an optional condition list enclosed in
 parentheses:
@@ -600,8 +789,8 @@ parenth_form:      "(" [condition_list] ")"
 A parenthesized condition list yields whatever that condition list
 yields.
 
-An empty pair of parentheses yields an empty tuple object (since
-tuples are immutable, the rules for literals apply here).
+An empty pair of parentheses yields an empty tuple object.  Since
+tuples are immutable, the rules for literals apply here.
 
 (Note that tuples are not formed by the parentheses, but rather by use
 of the comma operator.  The exception is the empty tuple, for which
@@ -624,7 +813,7 @@ If it has no condition list, the list object has no items.
 Otherwise, the elements of the condition list are evaluated
 from left to right and inserted in the list object in that order.
 
-\subsection{Dictionary displays}
+\subsection{Dictionary displays} \label{dict}
 
 A dictionary display is a possibly empty series of key/datum pairs
 enclosed in curly braces:
@@ -641,17 +830,14 @@ The key/datum pairs are evaluated from left to right to define the
 entries of the dictionary: each key object is used as a key into the
 dictionary to store the corresponding datum.
 
-Keys must be strings, otherwise a {\tt TypeError} exception is raised.%
-\footnote{
-This restriction may be lifted in a future version of the language.
-}
+Keys must be strings, otherwise a \verb\TypeError\ exception is raised.
 Clashes between duplicate keys are not detected; the last datum
 (textually rightmost in the display) stored for a given key value
 prevails.
 
 \subsection{String conversions}
 
-A string conversion is a condition list enclosed in {\em reverse} (or
+A string conversion is a condition list enclosed in reverse (or
 backward) quotes:
 
 \begin{verbatim}
@@ -714,12 +900,14 @@ If it is a mapping, the condition must evaluate to an object whose
 value is one of the keys of the mapping, and the subscription selects
 the value in the mapping that corresponds to that key.
 
-If it is a sequence, the condition must evaluate to a nonnegative
-plain integer smaller than the number of items in the sequence, and
-the subscription selects the item whose index is that value (counting
-from zero).
+If it is a sequence, the condition must evaluate to a plain integer.
+If this value is negative, the length of the sequence is added to it
+(so that, e.g., \verb\x[-1]\ selects the last item of \verb\x\.)
+The resulting value must be a nonnegative integer smaller than the
+number of items in the sequence, and the subscription selects the item
+whose index is that value (counting from zero).
 
-A string's  items are characters.  A character is not a separate data
+A string's items are characters.  A character is not a separate data
 type but a string of exactly one character.
 
 \subsection{Slicings}
@@ -730,7 +918,15 @@ A slicing selects a range of items in a sequence object:
 slicing:        primary "[" [condition] ":" [condition] "]"
 \end{verbatim}
 
-XXX
+The primary must evaluate to a sequence object.  The lower and upper
+bound expressions, if present, must evaluate to plain integers;
+defaults are zero and the sequence's length, respectively.  If either
+bound is negative, the sequence's length is added to it.  The slicing
+now selects all items with index $k$ such that $i <= k < j$ where $i$
+and $j$ are the specified lower and upper bounds.  This may be an
+empty sequence.  It is not an error if $i$ or $j$ lie outside the
+range of valid indexes (such items don't exist so they aren't
+selected).
 
 \subsection{Calls}
 
@@ -740,11 +936,10 @@ A call calls a function with a possibly empty series of arguments:
 call:           primary "(" [condition_list] ")"
 \end{verbatim}
 
-The primary must evaluate to a callable object.  Callable objects are
-user-defined functions, built-in functions, methods of built-in
-objects (``built-in methods''), class objects, and methods of class
-instances (``user-defined methods'').  If it is a class, the argument
-list must be empty.
+The primary must evaluate to a callable object (user-defined
+functions, built-in functions, methods of built-in objects, class
+objects, and methods of class instances are callable).  If it is a
+class, the argument list must be empty.
 
 XXX explain what happens on function call
 
@@ -757,49 +952,56 @@ Their syntax is:
 factor:         primary | "-" factor | "+" factor | "~" factor
 \end{verbatim}
 
-The unary \verb\-\ operator yields the negative of its numeric argument.
+The unary \verb\"-"\ operator yields the negative of its
+numeric argument.
 
-The unary \verb\+\ operator yields its numeric argument unchanged.
+The unary \verb\"+"\ operator yields its numeric argument unchanged.
 
-The unary \verb\~\ operator yields the bit-wise negation of its
-(plain or long) integral numerical argument, using 2's complement.
+The unary \verb\"~"\ operator yields the bit-wise negation of its
+plain or long integer argument.  The bit-wise negation negation of
+\verb\x\ is defined as \verb\-(x+1)\.
 
 In all three cases, if the argument does not have the proper type,
-a {\tt TypeError} exception is raised.
+a \verb\TypeError\ exception is raised.
 
 \section{Terms}
 
 Terms represent the most tightly binding binary operators:
-
+%
 \begin{verbatim}
 term:           factor | term "*" factor | term "/" factor | term "%" factor
 \end{verbatim}
-
-The \verb\*\ (multiplication) operator yields the product of its
+%
+The \verb\"*"\ (multiplication) operator yields the product of its
 arguments.  The arguments must either both be numbers, or one argument
 must be a plain integer and the other must be a sequence.  In the
 former case, the numbers are converted to a common type and then
 multiplied together.  In the latter case, sequence repetition is
-performed; a negative repetition factor yields the empty string.
+performed; a negative repetition factor yields an empty sequence.
 
-The \verb|"/"| (division) operator yields the quotient of its
+The \verb\"/"\ (division) operator yields the quotient of its
 arguments.  The numeric arguments are first converted to a common
-type.  (Plain or long) integer division yields an integer of the same
-type; the result is that of mathematical division with the {\em floor}
-operator applied to the result, to match the modulo operator.
-Division by zero raises a {\tt RuntimeError} exception.
+type.  Plain or long integer division yields an integer of the same
+type; the result is that of mathematical division with the `floor'
+function applied to the result.  Division by zero raises the
+\verb\ZeroDivisionError\ exception.
 
-The \verb|"%"| (modulo) operator yields the remainder from the
+The \verb\"%"\ (modulo) operator yields the remainder from the
 division of the first argument by the second.  The numeric arguments
-are first converted to a common type.  A zero right argument raises a
-{\tt RuntimeError} exception.  The arguments may be floating point
-numbers, e.g., $3.14 \% 0.7$ equals $0.34$.  The modulo operator
+are first converted to a common type.  A zero right argument raises the
+\verb\ZeroDivisionError\ exception.  The arguments may be floating point
+numbers, e.g., \verb\3.14 % 0.7\ equals \verb\0.34\.  The modulo operator
 always yields a result with the same sign as its second operand (or
 zero); the absolute value of the result is strictly smaller than the
 second operand.
 
 The integer division and modulo operators are connected by the
-following identity: $x = (x/y)*y + (x\%y)$.
+following identity: \verb\x == (x/y)*y + (x%y)\.
+Integer division and modulo are also connected with the built-in
+function \verb\divmod()\: \verb\divmod(x, y) == (x/y, x%y)\.
+These identities don't hold for floating point numbers; there a
+similar identity holds where \verb\x/y\ is replaced by
+\verb\floor(x/y)\).
 
 \section{Arithmetic expressions}
 
@@ -807,13 +1009,11 @@ following identity: $x = (x/y)*y + (x\%y)$.
 arith_expr:     term | arith_expr "+" term | arith_expr "-" term
 \end{verbatim}
 
-HIRO
-
 The \verb|"+"| operator yields the sum of its arguments.  The
-arguments must either both be numbers, or both sequences.  In the
-former case, the numbers are converted to a common type and then added
-together.  In the latter case, the sequences are concatenated
-directly.
+arguments must either both be numbers, or both sequences of the same
+type.  In the former case, the numbers are converted to a common type
+and then added together.  In the latter case, the sequences are
+concatenated.
 
 The \verb|"-"| operator yields the difference of its arguments.
 The numeric arguments are first converted to a common type.
@@ -821,16 +1021,20 @@ The numeric arguments are first converted to a common type.
 \section{Shift expressions}
 
 \begin{verbatim}
-shift_expr:     arith_expr | shift_expr "<<" arith_expr | shift_expr ">>" arith_expr
+shift_expr:     arith_expr | shift_expr ( "<<" | ">>" ) arith_expr
 \end{verbatim}
 
-These operators accept (plain) integers as arguments only.
-They shift their left argument to the left or right by the number of bits
-given by the right argument.  Shifts are ``logical"", e.g., bits shifted
-out on one end are lost, and bits shifted in are zero;
-negative numbers are shifted as if they were unsigned in C.
-Negative shift counts and shift counts greater than {\em or equal to}
-the word size yield undefined results.
+These operators accept plain or long integers as arguments.  The
+arguments are converted to a common type.  They shift the first
+argument to the left or right by the number of bits given by the
+second argument.
+
+A right shift by $n$ bits is defined as division by $2^n$.  A left
+shift by $n$ bits is defined as multiplication with $2^n$ without
+overflow check; for plain integers this drops bits if the result is
+not less than $2^{31} - 1$ in absolute value.
+
+Negative shift counts raise a \verb\ValueError\ exception.
 
 \section{Bitwise AND expressions}
 
@@ -838,8 +1042,8 @@ the word size yield undefined results.
 and_expr:       shift_expr | and_expr "&" shift_expr
 \end{verbatim}
 
-This operator yields the bitwise AND of its arguments,
-which must be (plain) integers.
+This operator yields the bitwise AND of its arguments, which must be
+plain or long integers.  The arguments are converted to a common type.
 
 \section{Bitwise XOR expressions}
 
@@ -847,8 +1051,9 @@ which must be (plain) integers.
 xor_expr:       and_expr | xor_expr "^" and_expr
 \end{verbatim}
 
-This operator yields the bitwise exclusive OR of its arguments,
-which must be (plain) integers.
+This operator yields the bitwise exclusive OR of its arguments, which
+must be plain or long integers.  The arguments are converted to a
+common type.
 
 \section{Bitwise OR expressions}
 
@@ -856,31 +1061,13 @@ which must be (plain) integers.
 or_expr:       xor_expr | or_expr "|" xor_expr
 \end{verbatim}
 
-This operator yields the bitwise OR of its arguments,
-which must be (plain) integers.
-
-\section{Expressions and expression lists}
-
-\begin{verbatim}
-expression:     or_expression
-expr_list:      expression ("," expression)* [","]
-\end{verbatim}
-
-An expression list containing at least one comma yields a new tuple.
-The length of the tuple is the number of expressions in the list.
-The expressions are evaluated from left to right.
-
-The trailing comma is required only to create a single tuple;
-it is optional in all other cases (a single expression without
-a trailing comma doesn't create a tuple, but rather yields the
-value of that expression).
-
-To create an empty tuple, use an empty pair of parentheses: \verb\()\.
+This operator yields the bitwise OR of its arguments, which must be
+plain or long integers.  The arguments are converted to a common type.
 
 \section{Comparisons}
 
 \begin{verbatim}
-comparison:     expression (comp_operator expression)*
+comparison:     or_expr (comp_operator or_expr)*
 comp_operator:  "<"|">"|"=="|">="|"<="|"<>"|"!="|"is" ["not"]|["not"] "in"
 \end{verbatim}
 
@@ -888,25 +1075,26 @@ Comparisons yield integer value: 1 for true, 0 for false.
 
 Comparisons can be chained arbitrarily,
 e.g., $x < y <= z$ is equivalent to
-$x < y$ {\tt and} $y <= z$, except that $y$ is evaluated only once
+$x < y$ \verb\and\ $y <= z$, except that $y$ is evaluated only once
 (but in both cases $z$ is not evaluated at all when $x < y$ is
 found to be false).
 
 Formally, $e_0 op_1 e_1 op_2 e_2 ...e_{n-1} op_n e_n$ is equivalent to
-$e_0 op_1 e_1$ {\tt and} $e_1 op_2 e_2$ {\tt and} ... {\tt and}
+$e_0 op_1 e_1$ \verb\and\ $e_1 op_2 e_2$ \verb\and\ ... \verb\and\
 $e_{n-1} op_n e_n$, except that each expression is evaluated at most once.
 
 Note that $e_0 op_1 e_1 op_2 e_2$ does not imply any kind of comparison
 between $e_0$ and $e_2$, e.g., $x < y > z$ is perfectly legal.
 
-The forms \verb\<>\ and \verb\!=\ are equivalent.
+The forms \verb\<>\ and \verb\!=\ are equivalent; for consistency with
+C, \verb\!=\ is preferred; where \verb\!=\ is mentioned below
+\verb\<>\ is also implied.
 
-The operators {\tt "<", ">", "==", ">=", "<="}, and {\tt "<>"} compare
+The operators {\tt "<", ">", "==", ">=", "<="}, and {\tt "!="} compare
 the values of two objects.  The objects needn't have the same type.
-If both are numbers, they are compared to a common type.
-Otherwise, objects of different types {\em always} compare unequal,
-and are ordered consistently but arbitrarily, except that
-the value \verb\None\ compares smaller than the values of any other type.
+If both are numbers, they are coverted to a common type.  Otherwise,
+objects of different types {\em always} compare unequal, and are
+ordered consistently but arbitrarily.
 
 (This unusual
 definition of comparison is done to simplify the definition of
@@ -915,29 +1103,45 @@ operations like sorting and the \verb\in\ and \verb\not in\ operators.)
 Comparison of objects of the same type depends on the type:
 
 \begin{itemize}
-\item	Numbers are compared arithmetically.
-\item	Strings are compared lexicographically using the numeric
-	equivalents (the result of the built-in function ord())
-	of their characters.
-\item	Tuples and lists are compared lexicographically
-	using comparison of corresponding items.
-\item	Dictionaries compare unequal unless they are the same object;
-	the choice whether one dictionary object is considered smaller
-	or larger than another one is made arbitrarily but
-	consistently within one execution of a program.
-\item	The latter rule is also used for most other built-in types.
+
+\item
+Numbers are compared arithmetically.
+
+\item
+Strings are compared lexicographically using the numeric equivalents
+(the result of the built-in function \verb\ord\) of their characters.
+
+\item
+Tuples and lists are compared lexicographically using comparison of
+corresponding items.
+
+\item
+Mappings (dictionaries) are compared through lexicographic
+comparison of their sorted (key, value) lists.%
+\footnote{This is expensive since it requires sorting the keys first,
+but about the only sensible definition.  It was tried to compare
+dictionaries using the following rules, but this gave surprises in
+cases like \verb|if d == {}: ...|.}
+
+\item
+Most other types compare unequal unless they are the same object;
+the choice whether one object is considered smaller or larger than
+another one is made arbitrarily but consistently within one
+execution of a program.
+
 \end{itemize}
 
-The operators \verb\in\ and \verb\not in\ test for sequence membership:
-if $y$ is a sequence, $x {\tt in} y$ is true if and only if there exists
-an index $i$ such that $x = y_i$.
-$x {\tt not in} y$ yields the inverse truth value.
-The exception {\tt TypeError} is raised when $y$ is not a sequence,
-or when $y$ is a string and $x$ is not a string of length one.
+The operators \verb\in\ and \verb\not in\ test for sequence
+membership: if $y$ is a sequence, $x ~\verb\in\~ y$ is true if and
+only if there exists an index $i$ such that $x = y[i]$.
+$x ~\verb\not in\~ y$ yields the inverse truth value.  The exception
+\verb\TypeError\ is raised when $y$ is not a sequence, or when $y$ is
+a string and $x$ is not a string of length one.%
+\footnote{The latter restriction is sometimes a nuisance.}
 
 The operators \verb\is\ and \verb\is not\ compare object identity:
-$x {\tt is} y$ is true if and only if $x$ and $y$ are the same object.
-$x {\tt is not} y$ yields the inverse truth value.
+$x ~\verb\is\~ y$ is true if and only if $x$ and $y$ are the same
+object.  $x ~\verb\is not\~ y$ yields the inverse truth value.
 
 \section{Boolean operators}
 
@@ -948,32 +1152,60 @@ and_test:       not_test | and_test "and" not_test
 not_test:       comparison | "not" not_test
 \end{verbatim}
 
-In the context of Boolean operators, and also when conditions are
-used by control flow statements, the following values are interpreted
-as false: None, numeric zero of all types, empty sequences (strings,
-tuples and lists), and empty mappings (dictionaries).
-All other values are interpreted as true.
+In the context of Boolean operators, and also when conditions are used
+by control flow statements, the following values are interpreted as
+false: \verb\None\, numeric zero of all types, empty sequences
+(strings, tuples and lists), and empty mappings (dictionaries).  All
+other values are interpreted as true.
 
 The operator \verb\not\ yields 1 if its argument is false, 0 otherwise.
 
-The condition $x {\tt and} y$ first evaluates $x$; if $x$ is false,
+The condition $x ~\verb\and\~ y$ first evaluates $x$; if $x$ is false,
 $x$ is returned; otherwise, $y$ is evaluated and returned.
 
-The condition $x {\tt or} y$ first evaluates $x$; if $x$ is true,
+The condition $x ~\verb\or\~ y$ first evaluates $x$; if $x$ is true,
 $x$ is returned; otherwise, $y$ is evaluated and returned.
 
 (Note that \verb\and\ and \verb\or\ do not restrict the value and type
 they return to 0 and 1, but rather return the last evaluated argument.
-This is sometimes useful, e.g., if $s$ is a string, which should be
-replaced by a default value if it is empty, $s {\tt or} 'foo'$
+This is sometimes useful, e.g., if \verb\s\ is a string, which should be
+replaced by a default value if it is empty, \verb\s or 'foo'\
 returns the desired value.  Because \verb\not\ has to invent a value
 anyway, it does not bother to return a value of the same type as its
-argument, so \verb\not 'foo'\ yields $0$, not $''$.)
+argument, so \verb\not 'foo'\ yields \verb\0\, not \verb\''\.)
+
+\section{Expression lists and condition lists}
+
+\begin{verbatim}
+expr_list:      or_expr ("," or_expr)* [","]
+cond_list:      condition ("," condition)* [","]
+\end{verbatim}
+
+The only difference between expression lists and condition lists is
+the lowest priority of operators that can be used in them without
+being enclosed in parentheses; condition lists allow all operators,
+while expression lists don't allow comparisons and Boolean operators
+(they do allow bitwise and shift operators though).
+
+Expression lists are used in expression statements and assignments;
+condition lists are used everywhere else.
+
+An expression (condition) list containing at least one comma yields a
+tuple.  The length of the tuple is the number of expressions
+(conditions) in the list.  The expressions (conditions) are evaluated
+from left to right.
+
+The trailing comma is required only to create a single tuple (a.k.a. a
+{\em singleton}); it is optional in all other cases.  A single
+expression (condition) without a trailing comma doesn't create a
+tuple, but rather yields the value of that expression (condition).
+
+To create an empty tuple, use an empty pair of parentheses: \verb\()\.
 
 \chapter{Simple statements}
 
 Simple statements are comprised within a single logical line.
-Several simple statements may occor on a single line separated
+Several simple statements may occur on a single line separated
 by semicolons.  The syntax for simple statements is:
 
 \begin{verbatim}
@@ -1003,20 +1235,20 @@ If the value is not \verb\None\, it is converted to a string
 using the rules for string conversions, and the resulting string
 is written to standard output on a line by itself.
 
-(The exception for \verb\None\ is made so that procedure calls,
-which are syntactically equivalent to expressions,
-do not cause any output.)
+(The exception for \verb\None\ is made so that procedure calls, which
+are syntactically equivalent to expressions, do not cause any output.
+A tuple with only \verb\None\ items is written normally.)
 
 \section{Assignments}
 
 \begin{verbatim}
-assignment:     target_list ("=" target_list)* "=" expression_list
+assignment:     (target_list "=")+ expression_list
 target_list:    target ("," target)* [","]
 target:         identifier | "(" target_list ")" | "[" target_list "]"
               | attributeref | subscription | slicing
 \end{verbatim}
 
-(See the section on primaries for the definition of the last
+(See the section on primaries for the syntax definition of the last
 three symbols.)
 
 An assignment evaluates the expression list (remember that this can
@@ -1025,15 +1257,14 @@ the latter yielding a tuple)
 and assigns the single resulting object to each of the target lists,
 from left to right.
 
-Assignment is defined recursively depending on the type of the
-target.  Where assignment is to part of a mutable object
-(through an attribute reference, subscription or slicing),
-the mutable object must ultimately perform the
-assignment and decide about its validity, raising an exception
-if the assignment is unacceptable.  The rules observed by
-various types and the exceptions raised are given with the
-definition of the object types (some of which are defined
-in the library reference).
+Assignment is defined recursively depending on the form of the target.
+When a target is part of a mutable object (an attribute reference,
+subscription or slicing), the mutable object must ultimately perform
+the assignment and decide about its validity, and may raise an
+exception if the assignment is unacceptable.  The rules observed by
+various types and the exceptions raised are given with the definition
+of the object types (some of which are defined in the library
+reference).
 
 Assignment of an object to a target list is recursively
 defined as follows.
@@ -1045,7 +1276,7 @@ the object is assigned to the single target contained in the list.
 
 \item
 If the target list contains commas (that are not in nested constructs):
-the object must be a tuple with as many items
+the object must be a tuple with the same number of items
 as the list contains targets, and the items are assigned, from left
 to right, to the corresponding targets.
 
@@ -1058,9 +1289,16 @@ target is recursively defined as follows.
 
 \item
 If the target is an identifier (name):
-the object is bound to that name
-in the current local scope.  Any previous binding of the same name
-is undone.
+\begin{itemize}
+\item
+If the name does not occur in a \verb\global\ statement in the current
+code block: the object is bound to that name in the current local
+name space.
+\item
+Otherwise: the object is bound to that name in the current global name
+space.
+\end{itemize}
+A previous binding of the same name in the same name space is undone.
 
 \item
 If the target is a target list enclosed in parentheses:
@@ -1068,7 +1306,7 @@ the object is assigned to that target list.
 
 \item
 If the target is a target list enclosed in square brackets:
-the object must be a list with as many items
+the object must be a list with the same number of items
 as the target list contains targets,
 and the list's items are assigned, from left to right,
 to the corresponding targets.
@@ -1077,116 +1315,120 @@ to the corresponding targets.
 If the target is an attribute reference:
 The primary expression in the reference is evaluated.
 It should yield an object with assignable attributes;
-if this is not the case, a {\tt TypeError} exception is raised.
+if this is not the case, \verb\TypeError\ is raised.
 That object is then asked to assign the assigned object
 to the given attribute; if it cannot perform the assignment,
 it raises an exception.
 
 \item
-If the target is a subscription:
-The primary expression in the reference is evaluated.
-It should yield either a mutable sequence object or a mapping
-(dictionary) object.
-Next, the subscript expression is evaluated.
+If the target is a subscription: The primary expression in the
+reference is evaluated.  It should yield either a mutable sequence
+(list) object or a mapping (dictionary) object.  Next, the subscript
+expression is evaluated.
 
-If the primary is a sequence object, the subscript must yield a
-nonnegative integer smaller than the sequence's length,
-and the sequence is asked to assign the assigned object
-to its item with that index.
+If the primary is a sequence object, the subscript must yield a plain
+integer.  If it is negative, the sequence's length is added to it.
+The resulting value must be a nonnegative integer less than the
+sequence's length, and the sequence is asked to assign the assigned
+object to its item with that index.  If the index is out of range,
+\verb\IndexError\ is raised (assignment to a subscripted sequence
+cannot add new items to a list).
 
-If the primary is a mapping object, the subscript must have a
-type compatible with the mapping's key type,
-and the mapping is then asked to to create a key/datum pair
-which maps the subscript to the assigned object.
-
-Various exceptions can be raised.
+If the primary is a mapping object, the subscript must have a type
+compatible with the mapping's key type, and the mapping is then asked
+to to create a key/datum pair which maps the subscript to the assigned
+object.  This can either replace an existing key/value pair with the
+same key value, or insert a new key/value pair (if no key with the
+same value existed).
 
 \item
-If the target is a slicing:
-The primary expression in the reference is evaluated.
-It should yield a mutable sequence object (currently only lists).
-The assigned object should be a sequence object of the same type.
-Next, the lower and upper bound expressions are evaluated,
-insofar they are present; defaults are zero and the sequence's length.
-The bounds should evaluate to (small) integers.
-If either bound is negative, the sequence's length is added to it (once).
-The resulting bounds are clipped to lie between zero
-and the sequence's length, inclusive.
-(XXX Shouldn't this description be with expressions?)
-Finally, the sequence object is asked to replace the items
-indicated by the slice with the items of the assigned sequence.
-This may change the sequence's length, if it allows it.
+If the target is a slicing: The primary expression in the reference is
+evaluated.  It should yield a mutable sequence (list) object.  The
+assigned object should be a sequence object of the same type.  Next,
+the lower and upper bound expressions are evaluated, insofar they are
+present; defaults are zero and the sequence's length.  The bounds
+should evaluate to (small) integers.  If either bound is negative, the
+sequence's length is added to it.  The resulting bounds are clipped to
+lie between zero and the sequence's length, inclusive.  Finally, the
+sequence object is asked to replace the items indicated by the slice
+with the items of the assigned sequence.  This may change the
+sequence's length, if it allows it.
 
 \end{itemize}
-
+	
 (In the original implementation, the syntax for targets is taken
 to be the same as for expressions, and invalid syntax is rejected
 during the code generation phase, causing less detailed error
 messages.)
 
-\section{The {\tt pass} statement}
+\section{The \verb\pass\ statement}
 
 \begin{verbatim}
 pass_stmt:      "pass"
 \end{verbatim}
 
-{\tt pass} is a null operation -- when it is executed,
-nothing happens.
+\verb\pass\ is a null operation -- when it is executed, nothing
+happens.  It is useful as a placeholder when a statement is
+required syntactically, but no code needs to be executed, for example:
 
-\section{The {\tt del} statement}
+\begin{verbatim}
+def f(arg): pass    # a no-op function
+
+class C: pass       # an empty class
+\end{verbatim}
+
+\section{The \verb\del\ statement}
 
 \begin{verbatim}
 del_stmt:       "del" target_list
 \end{verbatim}
 
-Deletion is recursively defined similar to assignment.
-
-(XXX Rather that spelling it out in full details,
-here are some hints.)
+Deletion is recursively defined very similar to the way assignment is
+defined. Rather that spelling it out in full details, here are some
+hints.
 
 Deletion of a target list recursively deletes each target,
 from left to right.
 
 Deletion of a name removes the binding of that name (which must exist)
-from the local scope.
+from the local or global name space, depending on whether the name
+occurs in a \verb\global\ statement in the same code block.
 
 Deletion of attribute references, subscriptions and slicings
 is passed to the primary object involved; deletion of a slicing
 is in general equivalent to assignment of an empty slice of the
 right type (but even this is determined by the sliced object).
 
-\section{The {\tt print} statement}
+\section{The \verb\print\ statement}
 
 \begin{verbatim}
 print_stmt:     "print" [ condition ("," condition)* [","] ]
 \end{verbatim}
 
-{\tt print} evaluates each condition in turn and writes the resulting
-object to standard output (see below).
-If an object is not a string, it is first converted to
-a string using the rules for string conversions.
-The (resulting or original) string is then written.
-A space is written before each object is (converted and) written,
-unless the output system believes it is positioned at the beginning
-of a line.  This is the case: (1) when no characters have been written
-to standard output; or (2) when the last character written to
-standard output is \verb/\n/;
-or (3) when the last I/O operation
-on standard output was not a \verb\print\ statement.
+\verb\print\ evaluates each condition in turn and writes the resulting
+object to standard output (see below).  If an object is not a string,
+it is first converted to a string using the rules for string
+conversions.  The (resulting or original) string is then written.  A
+space is written before each object is (converted and) written, unless
+the output system believes it is positioned at the beginning of a
+line.  This is the case: (1) when no characters have yet been written
+to standard output; or (2) when the last character written to standard
+output is \verb/\n/; or (3) when the last write operation on standard
+output was not a \verb\print\ statement.  (In some cases it may be
+functional to write an empty string to standard output for this
+reason.)
 
-Finally,
-a \verb/\n/ character is written at the end,
-unless the \verb\print\ statement ends with a comma.
-This is the only action if the statement contains just the keyword
-\verb\print\.
+A \verb/"\n"/ character is written at the end, unless the \verb\print\
+statement ends with a comma.  This is the only action if the statement
+contains just the keyword \verb\print\.
 
 Standard output is defined as the file object named \verb\stdout\
 in the built-in module \verb\sys\.  If no such object exists,
-or if it is not a writable file, a {\tt RuntimeError} exception is raised.
+or if it is not a writable file, a \verb\RuntimeError\ exception is raised.
 (The original implementation attempts to write to the system's original
 standard output instead, but this is not safe, and should be fixed.)
 
-\section{The {\tt return} statement}
+\section{The \verb\return\ statement}
 
 \begin{verbatim}
 return_stmt:    "return" [condition_list]
@@ -1204,9 +1446,8 @@ list (or \verb\None\) as return value.
 When \verb\return\ passes control out of a \verb\try\ statement
 with a \verb\finally\ clause, that finally clause is executed
 before really leaving the function.
-(XXX This should be made more exact, a la Modula-3.)
 
-\section{The {\tt raise} statement}
+\section{The \verb\raise\ statement}
 
 \begin{verbatim}
 raise_stmt:     "raise" condition ["," condition]
@@ -1219,7 +1460,7 @@ else \verb\None\ is substituted.
 It then raises the exception identified by the first object,
 with the second one (or \verb\None\) as its parameter.
 
-\section{The {\tt break} statement}
+\section{The \verb\break\ statement}
 
 \begin{verbatim}
 break_stmt:     "break"
@@ -1232,26 +1473,27 @@ It terminates the neares enclosing loop, skipping the optional
 \verb\else\ clause if the loop has one.
 
 If a \verb\for\ loop is terminated by \verb\break\, the loop control
-target (list) keeps its current value.
+target keeps its current value.
 
 When \verb\break\ passes control out of a \verb\try\ statement
 with a \verb\finally\ clause, that finally clause is executed
 before really leaving the loop.
 
-\section{The {\tt continue} statement}
+\section{The \verb\continue\ statement}
 
 \begin{verbatim}
 continue_stmt:  "continue"
 \end{verbatim}
 
-\verb\continue\ may only occur syntactically nested in a \verb\for\
-or \verb\while\ loop, not nested in a function or class definition,
-and {\em not nested in a \verb\try\ statement with a \verb\finally\
-clause}.
+\verb\continue\ may only occur syntactically nested in a \verb\for\ or
+\verb\while\ loop, not nested in a function or class definition, and
+not nested in the \verb\try\ clause of a \verb\try\ statement with a
+\verb\finally\ clause (it may occur nested in a \verb\except\ or
+\verb\finally\ clause of a \verb\try\ statement though).
 
 It continues with the next cycle of the nearest enclosing loop.
 
-\section{The {\tt import} statement}
+\section{The \verb\import\ statement}
 
 \begin{verbatim}
 import_stmt:    "import" identifier ("," identifier)*
@@ -1259,9 +1501,29 @@ import_stmt:    "import" identifier ("," identifier)*
               | "from" identifier "import" "*"
 \end{verbatim}
 
-(XXX To be done.)
+Import statements are executed in two steps: (1) find a module, and
+initialize it if necessary; (2) define a name or names in the local
+name space.  The first form (without \verb\from\) repeats these steps
+for each identifier in the list.
 
-\section{The {\tt global} statement}
+The system maintains a table of modules that have been initialized,
+indexed by module name.  (The current implementation makes this table
+accessible as \verb\sys.modules\.)  When a module name is found in
+this table, step (1) is finished.  If not, a search for a module
+definition is started.  This first looks for a built-in module
+definition, and if no built-in module if the given name is found, it
+searches a user-specified list of directories for a file whose name is
+the module name with extension \verb\".py"\.  (The current
+implementation uses the list of strings \verb\sys.path\ as the search
+path; it is initialized from the shell environment variable
+\verb\$PYTHONPATH\, with an installation-dependent default.)
+
+If a built-in module is found, its built-in initialization code is
+executed and step (1) is finished.  If no matching file is found,
+\ImportError\ is raised (and step (2) is never started).  If a file is
+found, it is parsed.  If a syntax error occurs, HIRO
+
+\section{The \verb\global\ statement}
 
 \begin{verbatim}
 global_stmt:    "global" identifier ("," identifier)*
@@ -1279,7 +1541,7 @@ compound_stmt:  if_stmt | while_stmt | for_stmt | try_stmt | funcdef | classdef
 suite:          statement | NEWLINE INDENT statement+ DEDENT
 \end{verbatim}
 
-\section{The {\tt if} statement}
+\section{The \verb\if\ statement}
 
 \begin{verbatim}
 if_stmt:        "if" condition ":" suite
@@ -1287,20 +1549,20 @@ if_stmt:        "if" condition ":" suite
                ["else" ":" suite]
 \end{verbatim}
 
-\section{The {\tt while} statement}
+\section{The \verb\while\ statement}
 
 \begin{verbatim}
 while_stmt:     "while" condition ":" suite ["else" ":" suite]
 \end{verbatim}
 
-\section{The {\tt for} statement}
+\section{The \verb\for\ statement}
 
 \begin{verbatim}
 for_stmt:       "for" target_list "in" condition_list ":" suite
                ["else" ":" suite]
 \end{verbatim}
 
-\section{The {\tt try} statement}
+\section{The \verb\try\ statement}
 
 \begin{verbatim}
 try_stmt:       "try" ":" suite
