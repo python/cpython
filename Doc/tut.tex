@@ -1,13 +1,11 @@
 % Format this file with latex.
-
-%\documentstyle[11pt,myformat]{article}
-\documentstyle[palatino,11pt,myformat]{article}
+ 
+\documentstyle[myformat]{report}
 
 \title{\bf
-	Python Tutorial \\
-	(DRAFT)
+	Python Tutorial
 }
-
+	
 \author{
 	Guido van Rossum \\
 	Dept. CST, CWI, Kruislaan 413 \\
@@ -25,29 +23,30 @@
 
 \noindent
 Python is a simple, yet powerful programming language that bridges the
-gap between C and shell programming, and is thus ideally suited for rapid
-prototyping.
-Its syntax is put together from constructs borrowed from a variety of other
-languages; most prominent are influences from ABC, C, Modula-3 and Icon.
+gap between C and shell programming, and is thus ideally suited for
+``throw-away programming''
+and rapid prototyping.  Its syntax is put
+together from constructs borrowed from a variety of other languages;
+most prominent are influences from ABC, C, Modula-3 and Icon.
 
 The Python interpreter is easily extended with new functions and data
-types implemented in C.
-Python is also suitable as an extension language for highly
-customizable C applications such as editors or window managers.
+types implemented in C.  Python is also suitable as an extension
+language for highly customizable C applications such as editors or
+window managers.
 
 Python is available for various operating systems, amongst which
-several flavors of \UNIX, Amoeba, and the Apple Macintosh O.S.
+several flavors of {\UNIX}, Amoeba, the Apple Macintosh O.S.,
+and MS-DOS.
 
-This tutorial introduces the reader informally to the basic concepts and
-features of the Python language and system.
-It helps to have a Python interpreter handy for hands-on experience,
-but as the examples are self-contained, the tutorial can be read
-off-line as well.
+This tutorial introduces the reader informally to the basic concepts
+and features of the Python language and system.  It helps to have a
+Python interpreter handy for hands-on experience, but as the examples
+are self-contained, the tutorial can be read off-line as well.
 
-For a description of standard objects and modules, see the Library
-Reference document.
-The Language Reference document (XXX not yet existing)
-gives a more formal definition of the language.
+For a description of standard objects and modules, see the {\em
+Library Reference} document.  The {\em Language Reference} document
+(when it is ever written)
+will give a more formal definition of the language.
 
 \end{abstract}
 
@@ -59,156 +58,148 @@ gives a more formal definition of the language.
 
 \pagenumbering{arabic}
 
-\section{Whetting Your Appetite}
+\chapter{Whetting Your Appetite}
 
-If you ever wrote a large shell script, you probably know this feeling:
-you'd love to add yet another feature, but it's already so slow, and so
-big, and so complicated; or the feature involves a system call or other
-funcion that is only accessible from C \ldots
-Usually the problem at hand isn't serious enough to warrant rewriting
-the script in C; perhaps because the problem requires variable-length
-strings or other data types (like sorted lists of file names) that
-are easy in the shell but lots of work to implement in C; or perhaps
-just because you're not sufficiently familiar with C.
+If you ever wrote a large shell script, you probably know this
+feeling: you'd love to add yet another feature, but it's already so
+slow, and so big, and so complicated; or the feature involves a system
+call or other funcion that is only accessible from C \ldots  Usually
+the problem at hand isn't serious enough to warrant rewriting the
+script in C; perhaps because the problem requires variable-length
+strings or other data types (like sorted lists of file names) that are
+easy in the shell but lots of work to implement in C; or perhaps just
+because you're not sufficiently familiar with C.
 
-In such cases, Python may be just the language for you.
-Python is simple to use, but it is a real programming language, offering
-much more structure and support for large programs than the shell has.
-On the other hand, it also offers much more error checking than C, and,
-being a
-{\em very-high-level language},
-it has high-level data types built in, such as flexible arrays and
-dictionaries that would cost you days to implement efficiently in C.
-Because of its more general data types Python is applicable to a
-much larger problem domain than
-{\em Awk}
-or even
-{\em Perl},
-yet most simple things are at least as easy in Python as in those
-languages.
+In such cases, Python may be just the language for you.  Python is
+simple to use, but it is a real programming language, offering much
+more structure and support for large programs than the shell has.  On
+the other hand, it also offers much more error checking than C, and,
+being a {\em very-high-level language}, it has high-level data types
+built in, such as flexible arrays and dictionaries that would cost you
+days to implement efficiently in C.  Because of its more general data
+types Python is applicable to a much larger problem domain than {\em
+Awk} or even {\em Perl}, yet most simple things are at least as easy
+in Python as in those languages.
 
-Python allows you to split up your program in modules that can be reused
-in other Python programs.
-It comes with a large collection of standard modules that you can use as
-the basis for your programs --- or as examples to start learning to
-program in Python.
-There are also built-in modules that provide things like file I/O,
-system calls, and even a generic interface to window systems (STDWIN).
+Python allows you to split up your program in modules that can be
+reused in other Python programs.  It comes with a large collection of
+standard modules that you can use as the basis of your programs ---
+or as examples to start learning to program in Python.  There are also
+built-in modules that provide things like file I/O, system calls, and
+even a generic interface to window systems (STDWIN).
 
 Python is an interpreted language, which saves you considerable time
 during program development because no compilation and linking is
-necessary.
-The interpreter can be used interactively, which makes it easy to
-experiment with features of the language, to write throw-away programs,
-or to test functions during bottom-up program development.
+necessary.  The interpreter can be used interactively, which makes it
+easy to experiment with features of the language, to write throw-away
+programs, or to test functions during bottom-up program development.
 It is also a handy desk calculator.
 
-Python allows writing very compact and readable programs.
-Programs written in Python are typically much shorter than equivalent C
-programs:
-No declarations are necessary (all type checking is
-dynamic); statement grouping is done by indentation instead of begin/end
-brackets; and the high-level data types allow you to express complex
-operations in a single statement.
+Python allows writing very compact and readable programs.  Programs
+written in Python are typically much shorter than equivalent C
+programs, for several reasons:
+\begin{itemize}
+\item
+the high-level data types allow you to express complex operations in a
+single statement;
+\item
+statement grouping is done by indentation instead of begin/end
+brackets;
+\item
+no variable or argument declarations are necessary.
+\end{itemize}
 
-Python is
-{\em extensible}:
-if you know how to program in C it is easy to add a new built-in module
-to the interpreter, either to perform critical operations at maximum
-speed, or to link Python programs to libraries that may be only available
-in binary form (such as a vendor-specific graphics library).
-Once you are really hooked, you can link the Python interpreter into an
-application written in C and use it as an extension or command language.
+Python is {\em extensible}: if you know how to program in C it is easy
+to add a new built-in
+function or
+module to the interpreter, either to
+perform critical operations at maximum speed, or to link Python
+programs to libraries that may only be available in binary form (such
+as a vendor-specific graphics library).  Once you are really hooked,
+you can link the Python interpreter into an application written in C
+and use it as an extension or command language.
 
-\subsection{Where From Here}
+\section{Where From Here}
 
-Now that you are all excited about Python, you'll want to examine it in
-some more detail.
-Since the best introduction to a language is using it, you are invited
-here to do so.
+Now that you are all excited about Python, you'll want to examine it
+in some more detail.  Since the best introduction to a language is
+using it, you are invited here to do so.
 
-In the next section, the mechanics of using the interpreter are
-explained.
-This is rather mundane information, but essential for trying out the
-examples shown later.
+In the next chapter, the mechanics of using the interpreter are
+explained.  This is rather mundane information, but essential for
+trying out the examples shown later.
+
 The rest of the tutorial introduces various features of the Python
-language and system though examples, beginning with simple expressions,
-statements and data types, through functions and modules, and finally
-touching upon advanced concepts like exceptions and classes.
+language and system though examples, beginning with simple
+expressions, statements and data types, through functions and modules,
+and finally touching upon advanced concepts like exceptions.
 
-\section{Using the Python Interpreter}
+When you're through with the turtorial (or just getting bored), you
+should read the Library Reference, which gives complete (though terse)
+reference material about built-in and standard types, functions and
+modules that can save you a lot of time when writing Python programs.
 
-The Python interpreter is usually installed as
-{\tt /usr/local/python}
-on those machines where it is available; putting
-{\tt /usr/local}
-in your {\UNIX} shell's search path makes it possible to start it by
+\chapter{Using the Python Interpreter}
+
+The Python interpreter is usually installed as {\tt /usr/local/python}
+on those machines where it is available; putting {\tt /usr/local} in
+your {\UNIX} shell's search path makes it possible to start it by
 typing the command
 \bcode\begin{verbatim}
 python
 \end{verbatim}\ecode
-to the shell.
-Since the choice of the directory where the interpreter lives is an
-installation option, other places instead of
-{\tt /usr/local}
-are possible; check with your local Python guru or system
-administrator.
+to the shell.  Since the choice of the directory where the interpreter
+lives is an installation option, other places are possible; check with
+your local Python guru or system administrator.
 
-The interpreter operates somewhat like the {\UNIX} shell: when called with
-standard input connected to a tty device, it reads and executes commands
-interactively; when called with a file name argument or with a file as
-standard input, it reads and executes a
-{\em script}
-from that file.%
-\footnote{
-	There is a difference between ``{\tt python file}'' and
-	``{\tt python $<$file}''.  In the latter case {\tt input()} and
-	{\tt raw\_input()} are satisfied from {\em file}, which has
-	already been read until the end by the parser, so they will read
-	EOF immediately.  In the former case (which is usually what
-	you want) they are satisfied from whatever file or device is
-	connected to standard input of the Python interpreter.
-}
+The interpreter operates somewhat like the {\UNIX} shell: when called
+with standard input connected to a tty device, it reads and executes
+commands interactively; when called with a file name argument or with
+a file as standard input, it reads and executes a {\em script} from
+that file.
+
+Note that there is a difference between ``{\tt python file}'' and
+``{\tt python $<$file}''.  In the latter case, input requests from the
+program, such as calls to {\tt input()} and {\tt raw\_input()}, are
+satisfied from {\em file}.  Since this file has already been read
+until the end by the parser before the program starts executing, the
+program will encounter EOF immediately.  In the former case (which is
+usually what you want) they are satisfied from whatever file or device
+is connected to standard input of the Python interpreter.
+
 A third possibility is ``{\tt python -c command [arg] ...}'', which
-executes the statement(s) in {\tt command}, in analogy of the shell's
-{\tt -c} option.
-When available, the script name and additional arguments thereafter are
-passed to the script in the variable
-{\tt sys.argv},
-which is a list of strings.
+executes the statement(s) in {\tt command}, analogous to the shell's
+{\tt -c} option.  Usually {\tt command} will contain spaces or other
+characters that are special to the shell, so it is best to quote it.
+
+When available, the script name and additional arguments thereafter
+are passed to the script in the variable {\tt sys.argv}, which is a
+list of strings.
 When {\tt -c command} is used, {\tt sys.argv} is set to {\tt '-c'}.
 
 When commands are read from a tty, the interpreter is said to be in
-{\em interactive\ mode}.
-In this mode it prompts for the next command with the
-{\em primary\ prompt},
-usually three greater-than signs ({\tt >>>}); for continuation lines
-it prompts with the
-{\em secondary\ prompt},
-by default three dots ({\tt ...}).
-Typing an EOF (Control-D) at the primary prompt causes the interpreter
-to exit with a zero exit status.
+{\em interactive\ mode}.  In this mode it prompts for the next command
+with the {\em primary\ prompt}, usually three greater-than signs ({\tt
+>>>}); for continuation lines it prompts with the {\em secondary\
+prompt}, by default three dots ({\tt ...}).  Typing an EOF (Control-D)
+at the primary prompt causes the interpreter to exit with a zero exit
+status.
 
 When an error occurs in interactive mode, the interpreter prints a
-message and a stack trace and returns to the primary prompt; with input
-from a file, it exits with a nonzero exit status.
-(Exceptions handled by an
-{\tt except}
-clause in a
-{\tt try}
-statement are not errors in this context.)
-Some errors are unconditionally fatal and cause an exit with a nonzero
-exit; this applies to internal inconsistencies and some cases of running
-out of memory.
-All error messages are written to the standard error stream; normal
-output from the executed commands is written to standard output.
+message and a stack trace and returns to the primary prompt; with
+input from a file, it exits with a nonzero exit status after printing
+the stack trace.  (Exceptions handled by an {\tt except} clause in a
+{\tt try} statement are not errors in this context.)  Some errors are
+unconditionally fatal and cause an exit with a nonzero exit; this
+applies to internal inconsistencies and some cases of running out of
+memory.  All error messages are written to the standard error stream;
+normal output from the executed commands is written to standard
+output.
 
 Typing an interrupt (normally Control-C or DEL) to the primary or
 secondary prompt cancels the input and returns to the primary prompt.
-Typing an interrupt while a command is being executed raises the
-{\tt KeyboardInterrupt}
-exception, which may be handled by a
-{\tt try}
+Typing an interrupt while a command is being executed raises the {\tt
+KeyboardInterrupt} exception, which may be handled by a {\tt try}
 statement.
 
 When a module named
@@ -223,79 +214,67 @@ i.e., a list of colon-separated directory names.
 When
 {\tt PYTHONPATH}
 is not set, an installation-dependent default path is used, usually
-{\tt .:/usr/local/lib/python}.%
-\footnote{
-	Modules are really searched in the list of directories given by
-	the variable {\tt sys.path} which is initialized from
-	{\tt PYTHONPATH} or from the installation-dependent default.
-	See the section on Standard Modules later.
-}
+{\tt .:/usr/local/lib/python}.
+(Modules are really searched in the list of directories given by the
+variable {\tt sys.path} which is initialized from {\tt PYTHONPATH} or
+from the installation-dependent default.  See the section on Standard
+Modules later.)
 
-As an important speed-up of the start-up time of short programs, if a
+As an important speed-up of the start-up time for short programs, if a
 file called {\tt foo.pyc} exists in the directory where {\tt foo.py}
 is found, this is assumed to contain an already-``compiled'' version
 of the module {\tt foo}.  The last modification time of {\tt foo.py}
-is recorded in {\tt foo.pyc}, and if these don't match, {\tt foo.pyc}
-is ignored.  Whenever {\tt foo.py} is successfully compiled, an
-attempt is made to write the compiled version to {\tt foo.pyc}.
+is recorded in {\tt foo.pyc}, and the file is ignored if these don't
+match.  Whenever {\tt foo.py} is successfully compiled, an attempt is
+made to write the compiled version to {\tt foo.pyc}.
 
-On BSD'ish {\UNIX} systems, Python scripts can be made directly executable,
-like shell scripts, by putting the line
+On BSD'ish {\UNIX} systems, Python scripts can be made directly
+executable, like shell scripts, by putting the line
 \bcode\begin{verbatim}
 #! /usr/local/python
 \end{verbatim}\ecode
 (assuming that's the name of the interpreter) at the beginning of the
-script and giving the file an executable mode.
-(The
-{\tt \#!}
-must be the first two characters of the file.)
+script and giving the file an executable mode.  (The {\tt \#!} must be
+the first two characters of the file.)
 
-\subsection{Interactive Input Editing and History Substitution}
+\section{Interactive Input Editing and History Substitution}
 
 Some versions of the Python interpreter support editing of the current
-input line and history substitution, similar to facilities found in the
-Korn shell and the GNU Bash shell.
-This is implemented using the
-{\em GNU\ Readline}
-library, which supports Emacs-style and vi-style editing.
-This library has its own documentation which I won't duplicate here;
-however, the basics are easily explained.
+input line and history substitution, similar to facilities found in
+the Korn shell and the GNU Bash shell.  This is implemented using the
+{\em GNU\ Readline} library, which supports Emacs-style and vi-style
+editing.  This library has its own documentation which I won't
+duplicate here; however, the basics are easily explained.
 
-If supported,%
-\footnote{
-	Perhaps the quickest check to see whether command line editing
-	is supported is typing Control-P to the first Python prompt
-	you get.  If it beeps, you have command line editing.
-	If not, you can skip the rest of this section.
-}
-input line editing is active whenever the interpreter prints a primary
-or secondary prompt.
-The current line can be edited using the conventional Emacs control
-characters.
-The most important of these are:
-C-A (Control-A) moves the cursor to the beginning of the line, C-E to
-the end, C-B moves it one position to the left, C-F to the right.
-Backspace erases the character to the left of the cursor, C-D the
-character to its right.
-C-K kills (erases) the rest of the line to the right of the cursor, C-Y
-yanks back the last killed string.
-C-underscore undoes the last change you made; it can be repeated for
-cumulative effect.
+Perhaps the quickest check to see whether command line editing is
+supported is typing Control-P to the first Python prompt you get.  If
+it beeps, you have command line editing.  If nothing appears to
+happen, or if \verb/^P/ is echoed, you can skip the rest of this
+section.
 
-History substitution works as follows.
-All non-empty input lines issued are saved in a history buffer,
-and when a new prompt is given you are positioned on a new line at the
-bottom of this buffer.
-C-P moves one line up (back) in the history buffer, C-N moves one down.
+If supported, input line editing is active whenever the interpreter
+prints a primary or secondary prompt.  The current line can be edited
+using the conventional Emacs control characters.  The most important
+of these are: C-A (Control-A) moves the cursor to the beginning of the
+line, C-E to the end, C-B moves it one position to the left, C-F to
+the right.  Backspace erases the character to the left of the cursor,
+C-D the character to its right.  C-K kills (erases) the rest of the
+line to the right of the cursor, C-Y yanks back the last killed
+string.  C-underscore undoes the last change you made; it can be
+repeated for cumulative effect.
+
+History substitution works as follows.  All non-empty input lines
+issued are saved in a history buffer, and when a new prompt is given
+you are positioned on a new line at the bottom of this buffer.  C-P
+moves one line up (back) in the history buffer, C-N moves one down.
 Any line in the history buffer can be edited; an asterisk appears in
-front of the prompt to mark a line as modified.
-Pressing the Return key passes the current line to the interpreter.
-C-R starts an incremental reverse search; C-S starts a forward search.
+front of the prompt to mark a line as modified.  Pressing the Return
+key passes the current line to the interpreter.  C-R starts an
+incremental reverse search; C-S starts a forward search.
 
 The key bindings and some other parameters of the Readline library can
 be customized by placing commands in an initialization file called
-{\tt \$HOME/.initrc}.
-Key bindings have the form
+{\tt \$HOME/.inputrc}.  Key bindings have the form
 \bcode\begin{verbatim}
 key-name: function-name
 \end{verbatim}\ecode
@@ -314,50 +293,42 @@ Meta-h: backward-kill-word
 Control-u: universal-argument
 \end{verbatim}\ecode
 Note that the default binding for TAB in Python is to insert a TAB
-instead of Readline's default filename completion function.
-If you insist, you can override this by putting
+instead of Readline's default filename completion function.  If you
+insist, you can override this by putting
 \bcode\begin{verbatim}
 TAB: complete
 \end{verbatim}\ecode
-in your
-{\tt \$HOME/.inputrc}.
-(Of course, this makes it hard to type indented continuation lines.)
+in your {\tt \$HOME/.inputrc}.  (Of course, this makes it hard to type
+indented continuation lines.)
 
-This facility is an enormous step forward compared to previous versions of
-the interpreter; however, some wishes are left:
-It would be nice if the proper indentation were suggested on
-continuation lines (the parser knows if an indent token is required
-next).
-The completion mechanism might use the interpreter's symbol table.
-A function to check (or even suggest) matching parentheses, quotes
-etc. would also be useful.
+This facility is an enormous step forward compared to previous
+versions of the interpreter; however, some wishes are left: It would
+be nice if the proper indentation were suggested on continuation lines
+(the parser knows if an indent token is required next).  The
+completion mechanism might use the interpreter's symbol table.  A
+function to check (or even suggest) matching parentheses, quotes etc.
+would also be useful.
 
-\section{An Informal Introduction to Python}
+\chapter{An Informal Introduction to Python}
 
 In the following examples, input and output are distinguished by the
 presence or absence of prompts ({\tt >>>} and {\tt ...}): to repeat the
 example, you must type everything after the prompt, when the prompt
-appears; everything on lines that do not begin with a prompt is output
-from the interpreter.
-Note that a secondary prompt on a line by itself in an example means you
-must type a blank line; this is used to end a multi-line command.
+appears;
+lines that do not begin with a prompt are output from the interpreter.
+Note that a secondary prompt on a line by itself in an example means
+you must type a blank line; this is used to end a multi-line command.
 
-\subsection{Using Python as a Calculator}
+\section{Using Python as a Calculator}
 
-Let's try some simple Python commands.
-Start the interpreter and wait for the primary prompt,
-{\tt >>>}.
-The interpreter acts as a simple calculator: you can type an expression
-at it and it will write the value.
-Expression syntax is straightforward: the operators
-{\tt +},
-{\tt -},
-{\tt *}
-and
-{\tt /}
+Let's try some simple Python commands.  Start the interpreter and wait
+for the primary prompt, {\tt >>>}.
+
+The interpreter acts as a simple calculator: you can type an
+expression at it and it will write the value.  Expression syntax is
+straightforward: the operators {\tt +}, {\tt -}, {\tt *} and {\tt /}
 work just as in most other languages (e.g., Pascal or C); parentheses
-can be used for grouping.
-For example:
+can be used for grouping.  For example:
 \bcode\begin{verbatim}
 >>> # This is a comment
 >>> 2+2
@@ -370,8 +341,8 @@ For example:
 2
 >>> 
 \end{verbatim}\ecode
-As in C, the equal sign ({\tt =}) is used to assign a value to a variable.
-The value of an assignment is not written:
+As in C, the equal sign ({\tt =}) is used to assign a value to a
+variable.  The value of an assignment is not written:
 \bcode\begin{verbatim}
 >>> width = 20
 >>> height = 5*9
@@ -379,15 +350,21 @@ The value of an assignment is not written:
 900
 >>> 
 \end{verbatim}\ecode
-There is some support for floating point, but you can't mix floating
-point and integral numbers in expression (yet):
+A value can be assigned to several variables simultaneously:
 \bcode\begin{verbatim}
->>> 10.0 / 3.3
+>>> # Zero x, y and z
+>>> x = y = z = 0
+>>>
+\end{verbatim}\ecode
+There is full support for floating point; operators with mixed type
+operands convert the integer operand to floating point:
+\bcode\begin{verbatim}
+>>> 4 * 2.5 / 3.3
 3.0303030303
 >>> 
 \end{verbatim}\ecode
-Besides numbers, Python can also manipulate strings, enclosed in single
-quotes:
+Besides numbers, Python can also manipulate strings, enclosed in
+single quotes:
 \bcode\begin{verbatim}
 >>> 'foo bar'
 'foo bar'
@@ -395,12 +372,14 @@ quotes:
 'doesn\'t'
 >>> 
 \end{verbatim}\ecode
-Strings are written inside quotes and with quotes and other funny
-characters escaped by backslashes, to show the precise value.
-(There is also a way to write strings without quotes and escapes.)
-Strings can be concatenated (glued together) with the
-{\tt +}
-operator, and repeated with~{\tt *}:
+Strings are written
+the same way as they are typed for input:
+inside quotes and with quotes and other funny characters escaped by
+backslashes, to show the precise value.  (There is also a way to write
+strings without quotes and escapes.)
+
+Strings can be concatenated (glued together) with the {\tt +}
+operator, and repeated with {\tt *}:
 \bcode\begin{verbatim}
 >>> word = 'Help' + 'A'
 >>> word
@@ -409,13 +388,12 @@ operator, and repeated with~{\tt *}:
 '<HelpAHelpAHelpAHelpAHelpA>'
 >>> 
 \end{verbatim}\ecode
-Strings can be subscripted; as in C, the first character of a string has
-subscript 0.
+Strings can be subscripted; as in C, the first character of a string
+has subscript 0.
+
 There is no separate character type; a character is simply a string of
-size one.
-As in Icon, substrings can be specified with the
-{\em slice}
-notation: two subscripts (indices) separated by a colon.
+size one.  As in Icon, substrings can be specified with the {\em
+slice} notation: two subscripts (indices) separated by a colon.
 \bcode\begin{verbatim}
 >>> word[4]
 'A'
@@ -434,8 +412,8 @@ notation: two subscripts (indices) separated by a colon.
 >>> 
 \end{verbatim}\ecode
 Degenerate cases are handled gracefully: an index that is too large is
-replaced by the string size, an upper bound smaller than the lower bound
-returns an empty string.
+replaced by the string size, an upper bound smaller than the lower
+bound returns an empty string.
 \bcode\begin{verbatim}
 >>> word[1:100]
 'elpA'
@@ -446,8 +424,7 @@ returns an empty string.
 >>> 
 \end{verbatim}\ecode
 Slice indices (but not simple subscripts) may be negative numbers, to
-start counting from the right.
-For example:
+start counting from the right.  For example:
 \bcode\begin{verbatim}
 >>> word[-2:]    # Take last two characters
 'pA'
@@ -459,14 +436,9 @@ For example:
 >>> 
 \end{verbatim}\ecode
 The best way to remember how slices work is to think of the indices as
-pointing
-{\em between}
-characters, with the left edge of the first character numbered 0.
-Then the right edge of the last character of a string of
-{\tt n}
-characters has index
-{\tt n},
-for example:
+pointing {\em between} characters, with the left edge of the first
+character numbered 0.  Then the right edge of the last character of a
+string of {\tt n} characters has index {\tt n}, for example:
 \bcode\begin{verbatim}
  +---+---+---+---+---+ 
  | H | e | l | p | A |
@@ -474,29 +446,22 @@ for example:
  0   1   2   3   4   5 
 -5  -4  -3  -2  -1
 \end{verbatim}\ecode
-The first row of numbers gives the position of the indices 0...5 in the
-string; the second row gives the corresponding negative indices.
-For nonnegative indices, the length of a slice is the difference of the
-indices, if both are within bounds,
-e.g.,
-the length of
-{\tt word[1:3]}
-is 3--1 = 2.
+The first row of numbers gives the position of the indices 0...5 in
+the string; the second row gives the corresponding negative indices.
+For nonnegative indices, the length of a slice is the difference of
+the indices, if both are within bounds, e.g., the length of {\tt
+word[1:3]} is 3--1 = 2.
 
-Finally, the built-in function {\tt len()} computes the length of a
-string:
+The built-in function {\tt len()} computes the length of a string:
 \bcode\begin{verbatim}
 >>> s = 'supercalifragilisticexpialidocious'
 >>> len(s)
 34
 >>> 
 \end{verbatim}\ecode
-Python knows a number of
-{\em compound}
-data types, used to group together other values.
-The most versatile is the
-{\em list},
-which can be written as a list of comma-separated values between square
+Python knows a number of {\em compound} data types, used to group
+together other values.  The most versatile is the {\em list}, which
+can be written as a list of comma-separated values between square
 brackets:
 \bcode\begin{verbatim}
 >>> a = ['foo', 'bar', 100, 1234]
@@ -522,9 +487,8 @@ Lists can be sliced, concatenated and so on, like strings:
 ['foo', 'bar', 100, 'foo', 'bar', 100, 'foo', 'bar', 100, 'Boe!']
 >>> 
 \end{verbatim}\ecode
-Unlike strings, which are
-{\em immutable},
-it is possible to change individual elements of a list:
+Unlike strings, which are {\em immutable}, it is possible to change
+individual elements of a list:
 \bcode\begin{verbatim}
 >>> a
 ['foo', 'bar', 100, 1234]
@@ -556,23 +520,32 @@ The built-in function {\tt len()} also applies to lists:
 4
 >>> 
 \end{verbatim}\ecode
+It is possible to nest lists (create lists containing other lists),
+for example:
+\bcode\begin{verbatim}
+>>> p = [1, [2, 3], 4]
+>>> len(p)
+3
+>>> p[1]
+[2, 3]
+>>> p[1][0]
+2
+>>> p[1].append('xtra')
+>>> p
+[1, [2, 3, 'xtra'], 4]
+>>>
+\end{verbatim}\ecode
 
-\subsection{Tuples and Sequences}
+\section{First Steps Towards Programming}
 
-XXX To Be Done.
-
-\subsection{First Steps Towards Programming}
-
-Of course, we can use Python for more complicated tasks than adding two
-and two together.
-For instance, we can write an initial subsequence of the
-{\em Fibonacci}
-series as follows:
+Of course, we can use Python for more complicated tasks than adding
+two and two together.  For instance, we can write an initial
+subsequence of the {\em Fibonacci} series as follows:
 \bcode\begin{verbatim}
 >>> # Fibonacci series:
 >>> # the sum of two elements defines the next
 >>> a, b = 0, 1
->>> while b < 100:
+>>> while b < 10:
 ...       print b
 ...       a, b = b, a+b
 ... 
@@ -582,68 +555,53 @@ series as follows:
 3
 5
 8
-13
-21
-34
-55
-89
 >>> 
 \end{verbatim}\ecode
 This example introduces several new features.
+
 \begin{itemize}
+
 \item
-The first line contains a
-{\em multiple\ assignment}:
-the variables
-{\tt a}
-and
-{\tt b}
-simultaneously get the new values 0 and 1.
-On the last line this is used again, demonstrating that the expressions
-on the right-hand side are all evaluated first before any of the
+The first line contains a {\em multiple assignment}: the variables
+{\tt a} and {\tt b} simultaneously get the new values 0 and 1.  On the
+last line this is used again, demonstrating that the expressions on
+the right-hand side are all evaluated first before any of the
 assignments take place.
+
 \item
-The
-{\tt while}
-loop executes as long as the condition (here: $b < 100$) remains true.
-In Python, as in C, any non-zero integer value is true; zero is false.
-The condition may also be a string or list value, in fact any sequence;
-anything with a non-zero length is true, empty sequences are false.
-The test used in the example is a simple comparison.
-The standard comparison operators are written as
-{\tt <},
-{\tt >},
-{\tt =},
-{\tt <=},
-{\tt >=}
-and
-{\tt <>}.%
+The {\tt while} loop executes as long as the condition (here: {\tt b <
+100}) remains true.  In Python, as in C, any non-zero integer value is
+true; zero is false.  The condition may also be a string or list value,
+in fact any sequence; anything with a non-zero length is true, empty
+sequences are false.  The test used in the example is a simple
+comparison.  The standard comparison operators are written as {\tt <},
+{\tt >}, {\tt =}, {\tt <=}, {\tt >=} and {\tt <>}.%
 \footnote{
 	The ambiguity of using {\tt =}
 	for both assignment and equality is resolved by disallowing
-	unparenthesized conditions at the right hand side of assignments.
+	unparenthesized conditions on the right hand side of assignments.
+	Parenthesized assignment is also disallowed; instead it is
+	interpreted as an equality test.
 }
+
 \item
-The
-{\em body}
-of the loop is
-{\em indented}: indentation is Python's way of grouping statements.
-Python does not (yet!) provide an intelligent input line editing
-facility, so you have to type a tab or space(s) for each indented line.
-In practice you will prepare more complicated input for Python with a
-text editor; most text editors have an auto-indent facility.
-When a compound statement is entered interactively, it must be
-followed by a blank line to indicate completion (since the parser
-cannot guess when you have typed the last line).
+The {\em body} of the loop is {\em indented}: indentation is Python's
+way of grouping statements.  Python does not (yet!) provide an
+intelligent input line editing facility, so you have to type a tab or
+space(s) for each indented line.  In practice you will prepare more
+complicated input for Python with a text editor; most text editors have
+an auto-indent facility.  When a compound statement is entered
+interactively, it must be followed by a blank line to indicate
+completion (since the parser cannot guess when you have typed the last
+line).
+
 \item
-The
-{\tt print}
-statement writes the value of the expression(s) it is given.
-It differs from just writing the expression you want to write (as we did
-earlier in the calculator examples) in the way it handles multiple
-expressions and strings.
-Strings are written without quotes and a space is inserted between
-items, so you can format things nicely, like this:
+The {\tt print} statement writes the value of the expression(s) it is
+given.  It differs from just writing the expression you want to write
+(as we did earlier in the calculator examples) in the way it handles
+multiple expressions and strings.  Strings are written without quotes,
+and a space is inserted between items, so you can format things nicely,
+like this:
 \bcode\begin{verbatim}
 >>> i = 256*256
 >>> print 'The value of i is', i
@@ -662,15 +620,16 @@ A trailing comma avoids the newline after the output:
 \end{verbatim}\ecode
 Note that the interpreter inserts a newline before it prints the next
 prompt if the last line was not completed.
+
 \end{itemize}
 
-\subsection{More Control Flow Tools}
+\chapter{More Control Flow Tools}
 
 Besides the {\tt while} statement just introduced, Python knows the
 usual control flow statements known from other languages, with some
 twists.
 
-\subsubsection{If Statements}
+\section{If Statements}
 
 Perhaps the most well-known statement type is the {\tt if} statement.
 For example:
@@ -687,21 +646,20 @@ For example:
 ... 
 \end{verbatim}\ecode
 There can be zero or more {\tt elif} parts, and the {\tt else} part is
-optional.
-The keyword `{\tt elif}' is short for `{\tt else if}', and is useful to
-avoid excessive indentation.
-An {\tt if...elif...elif...} sequence is a substitute for the
-{\em switch} or {\em case} statements found in other languages.
+optional.  The keyword `{\tt elif}' is short for `{\tt else if}', and is
+useful to avoid excessive indentation.  An {\tt if...elif...elif...}
+sequence is a substitute for the {\em switch} or {\em case} statements
+found in other languages.
 
-\subsubsection{For Statements}
+\section{For Statements}
 
 The {\tt for} statement in Python differs a bit from what you may be
-used to in C or Pascal.
-Rather than always iterating over an arithmetic progression of numbers
-(as Pascal), or leaving the user completely free in the iteration test
-and step (as C), Python's {\tt for} statement iterates over the items
-of any sequence (e.g., a list or a string).
-For example (no pun intended):
+used to in C or Pascal.  Rather than always iterating over an
+arithmetic progression of numbers (as in Pascal), or leaving the user
+completely free in the iteration test and step (as C), Python's {\tt
+for} statement iterates over the items of any sequence (e.g., a list
+or a string), in the order that they appear in the sequence.  For
+example (no pun intended):
 \bcode\begin{verbatim}
 >>> # Measure some strings:
 >>> a = ['cat', 'window', 'defenestrate']
@@ -713,23 +671,34 @@ window 6
 defenestrate 12
 >>> 
 \end{verbatim}\ecode
+It is not safe to modify the sequence being iterated over in the loop
+(this can only happen for mutable sequence types, i.e., lists).  If
+you need to modify the list you are iterating over, e.g., duplicate
+selected items, you must iterate over a copy.  The slice notation
+makes this particularly convenient:
+\bcode\begin{verbatim}
+>>> for x in a[:]: # make a slice copy of the entire list
+...    if len(x) > 6: a.insert(0, x)
+... 
+>>> a
+['defenestrate', 'cat', 'window', 'defenestrate']
+>>> 
+\end{verbatim}\ecode
 
-\subsubsection{The {\tt range()} Function}
+\section{The {\tt range()} Function}
 
 If you do need to iterate over a sequence of numbers, the built-in
-function {\tt range()} comes in handy.
-It generates lists containing arithmetic progressions,
-e.g.:
+function {\tt range()} comes in handy.  It generates lists containing
+arithmetic progressions, e.g.:
 \bcode\begin{verbatim}
 >>> range(10)
 [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 >>> 
 \end{verbatim}\ecode
-The given end point is never part of the generated list;
-{\tt range(10)} generates a list of 10 values,
-exactly the legal indices for items of a sequence of length 10.
-It is possible to let the range start at another number, or to specify a
-different increment (even negative):
+The given end point is never part of the generated list; {\tt range(10)}
+generates a list of 10 values, exactly the legal indices for items of a
+sequence of length 10.  It is possible to let the range start at another
+number, or to specify a different increment (even negative):
 \bcode\begin{verbatim}
 >>> range(5, 10)
 [5, 6, 7, 8, 9]
@@ -739,10 +708,10 @@ different increment (even negative):
 [-10, -40, -70]
 >>> 
 \end{verbatim}\ecode
-To iterate over the indices of a sequence, combine {\tt range()}
-and {\tt len()} as follows:
+To iterate over the indices of a sequence, combine {\tt range()} and
+{\tt len()} as follows:
 \bcode\begin{verbatim}
->>> a = ['Mary', 'had', 'a', 'little', 'boy']
+>>> a = ['Mary', 'had', 'a', 'little', 'lamb']
 >>> for i in range(len(a)):
 ...     print i, a[i]
 ... 
@@ -750,20 +719,23 @@ and {\tt len()} as follows:
 1 had
 2 a
 3 little
-4 boy
+4 lamb
 >>> 
 \end{verbatim}\ecode
 
-\subsubsection{Break Statements and Else Clauses on Loops}
+\section{Break and Continue Statements, and Else Clauses on Loops}
 
-The {\tt break} statement breaks out of the smallest enclosing {\tt for}
-or {\tt while} loop.
+The {\tt break} statement, like in C, breaks out of the smallest
+enclosing {\tt for} or {\tt while} loop.
+
+The {\tt continue} statement, also borrowed from C, continues with the
+next iteration of the loop.
+
 Loop statements may have an {\tt else} clause; it is executed when the
 loop terminates through exhaustion of the list (with {\tt for}) or when
-the condition becomes false (with {\tt while}) but not when the loop is
-terminated by a {\tt break} statement.
-This is exemplified by the following loop, which searches for a list
-item of value 0:
+the condition becomes false (with {\tt while}), but not when the loop is
+terminated by a {\tt break} statement.  This is exemplified by the
+following loop, which searches for a list item of value 0:
 \bcode\begin{verbatim}
 >>> for n in range(2, 10):
 ...     for x in range(2, n):
@@ -784,7 +756,7 @@ item of value 0:
 >>> 
 \end{verbatim}\ecode
 
-\subsubsection{Pass Statements}
+\section{Pass Statements}
 
 The {\tt pass} statement does nothing.
 It can be used when a statement is required syntactically but the
@@ -796,11 +768,7 @@ For example:
 ... 
 \end{verbatim}\ecode
 
-\subsubsection{Conditions Revisited}
-
-XXX To Be Done.
-
-\subsection{Defining Functions}
+\section{Defining Functions}
 
 We can create a function that writes the Fibonacci series to an
 arbitrary boundary:
@@ -816,29 +784,24 @@ arbitrary boundary:
 1 1 2 3 5 8 13 21 34 55 89 144 233 377 610 987 1597
 >>> 
 \end{verbatim}\ecode
-The keyword
-{\tt def}
-introduces a function
-{\em definition}.
-It must be followed by the function name and the parenthesized list of
-formal parameters.
-The statements that form the body of the function starts at the next
-line, indented by a tab stop.
-The
-{\em execution}
-of a function introduces a new symbol table used for the local variables
-of the function.
-More precisely, all variable assignments in a function store the value
-in the local symbol table; variable references first look in the local
-symbol table, then in the global symbol table, and then in the table of
-built-in names.
-Thus, the global symbol table is
-{\em read-only}
-within a function.
+The keyword {\tt def} introduces a function {\em definition}.  It must
+be followed by the function name and the parenthesized list of formal
+parameters.  The statements that form the body of the function starts at
+the next line, indented by a tab stop.
+
+The {\em execution} of a function introduces a new symbol table used
+for the local variables of the function.  More precisely, all variable
+assignments in a function store the value in the local symbol table;
+whereas
+ variable references first look in the local symbol table, then
+in the global symbol table, and then in the table of built-in names.
+Thus,
+global variables cannot be directly assigned to from within a
+function, although they may be referenced.
+
 The actual parameters (arguments) to a function call are introduced in
-the local symbol table of the called function when it is called;
-thus, arguments are passed using
-{\em call\ by\ value}.%
+the local symbol table of the called function when it is called; thus,
+arguments are passed using {\em call\ by\ value}.%
 \footnote{
 	 Actually, {\em call  by  object reference} would be a better
 	 description, since if a mutable object is passed, the caller
@@ -848,13 +811,14 @@ thus, arguments are passed using
 When a function calls another function, a new local symbol table is
 created for that call.
 
-A function definition introduces the function name in the global symbol
-table.
-The value has a type that is recognized by the interpreter as a
-user-defined function.
-This value can be assigned to another name which can then also be used
-as a function.
-This serves as a general renaming mechanism:
+A function definition introduces the function name in the
+current
+symbol table.  The value
+of the function name
+has a type that is recognized by the interpreter as a user-defined
+function.  This value can be assigned to another name which can then
+also be used as a function.  This serves as a general renaming
+mechanism:
 \bcode\begin{verbatim}
 >>> fib
 <function object at 10042ed0>
@@ -863,17 +827,13 @@ This serves as a general renaming mechanism:
 1 1 2 3 5 8 13 21 34 55 89
 >>> 
 \end{verbatim}\ecode
-You might object that
-{\tt fib}
-is not a function but a procedure.
-In Python, as in C, procedures are just functions that don't return a
-value.
-In fact, technically speaking, procedures do return a value, albeit a
-rather boring one.
-This value is called {\tt None} (it's a built-in name).
-Writing the value {\tt None} is normally suppressed by the interpreter
-if it would be the only value written.
-You can see it if you really want to:
+You might object that {\tt fib} is not a function but a procedure.  In
+Python, as in C, procedures are just functions that don't return a
+value.  In fact, technically speaking, procedures do return a value,
+albeit a rather boring one.  This value is called {\tt None} (it's a
+built-in name).  Writing the value {\tt None} is normally suppressed by
+the interpreter if it would be the only value written.  You can see it
+if you really want to:
 \bcode\begin{verbatim}
 >>> print fib(0)
 None
@@ -896,103 +856,339 @@ the Fibonacci series, instead of printing it:
 >>> 
 \end{verbatim}\ecode
 This example, as usual, demonstrates some new Python features:
+
 \begin{itemize}
+
 \item
-The
-{\tt return}
-statement returns with a value from a function.
-{\tt return}
-without an expression argument is used to return from the middle of a
-procedure (falling off the end also returns from a proceduce).
+The {\tt return} statement returns with a value from a function.  {\tt
+return} without an expression argument is used to return from the middle
+of a procedure (falling off the end also returns from a proceduce), in
+which case the {\tt None} value is returned.
+
 \item
-The statement
-{\tt ret.append(b)}
-calls a
-{\em method}
-of the list object
-{\tt ret}.
-A method is a function that `belongs' to an object and is named
-{\tt obj.methodname},
-where
-{\tt obj}
-is some object (this may be an expression), and
-{\tt methodname}
-is the name of a method that is defined by the object's type.
-Different types define different methods.
-Methods of different types may have the same name without causing
-ambiguity.
-See the section on classes, later, to find out how you can define your
-own object types and methods.
-The method
-{\tt append}
-shown in the example, is defined for list objects; it adds a new element
-at the end of the list.
-In this case it is equivalent to
-{\tt ret = ret + [b]},
-but more efficient.%
-\footnote{
-	There is a subtle semantic difference if the object
-	is referenced from more than one place.
-}
+The statement {\tt result.append(b)} calls a {\em method} of the list
+object {\tt result}.  A method is a function that `belongs' to an
+object and is named {\tt obj.methodname}, where {\tt obj} is some
+object (this may be an expression), and {\tt methodname} is the name
+of a method that is defined by the object's type.  Different types
+define different methods.  Methods of different types may have the
+same name without causing ambiguity.  (It is possible to define your
+own object types and methods, using {\em classes}.  This is an
+advanced feature that is not discussed in this tutorial.)
+The method {\tt append} shown in the example, is defined for
+list objects; it adds a new element at the end of the list.  In this
+example
+it is equivalent to {\tt result = result + [b]}, but more efficient.
+
 \end{itemize}
-The list object type has two more methods:
+
+\chapter{Odds and Ends}
+
+This chapter describes some things you've learned about already in
+more detail, and adds some new things as well.
+
+\section{More on Lists}
+
+The list data type has some more methods.  Here are all of the methods
+of lists objects:
+
 \begin{description}
+
 \item[{\tt insert(i, x)}]
-Inserts an item at a given position.
-The first argument is the index of the element before which to insert,
-so {\tt a.insert(0, x)} inserts at the front of the list, and
-{\tt a.insert(len(a), x)} is equivalent to {\tt a.append(x)}.
+Insert an item at a given position.  The first argument is the index of
+the element before which to insert, so {\tt a.insert(0, x)} inserts at
+the front of the list, and {\tt a.insert(len(a), x)} is equivalent to
+{\tt a.append(x)}.
+
+\item[{\tt append(x)}]
+Equivalent to {\tt a.insert(len(a), x)}.
+
+\item[{\tt index(x)}]
+Return the index in the list of the first item whose value is {\tt x}.
+It is an error if there is no such item.
+
+\item[{\tt remove(x)}]
+Remove the first item from the list whose value is {\tt x}.
+It is an error if there is no such item.
+
 \item[{\tt sort()}]
-Sorts the elements of the list.
+Sort the items of the list, in place.
+
+\item[{\tt reverse()}]
+Reverse the elements of the list, in place.
+
 \end{description}
-For example:
+
+An example that uses all list methods:
 \bcode\begin{verbatim}
->>> a = [10, 100, 1, 1000]
+>>> a = [66.6, 333, 333, 1, 1234.5]
 >>> a.insert(2, -1)
+>>> a.append(333)
 >>> a
-[10, 100, -1, 1, 1000]
+[66.6, 333, -1, 333, 1, 1234.5, 333]
+>>> a.index(333)
+1
+>>> a.remove(333)
+>>> a
+[66.6, -1, 333, 1, 1234.5, 333]
+>>> a.reverse()
+>>> a
+[333, 1234.5, 1, 333, -1, 66.6]
 >>> a.sort()
 >>> a
-[-1, 1, 10, 100, 1000]
->>> # Strings are sorted according to ASCII:
->>> b = ['Mary', 'had', 'a', 'little', 'boy']
->>> b.sort()
->>> b
-['Mary', 'a', 'boy', 'had', 'little']
+[-1, 1, 66.6, 333, 333, 1234.5]
+>>>
+\end{verbatim}\ecode
+
+\section{The {\tt del} statement}
+
+There is a way to remove an item from a list given its index instead
+of its value: the {\tt del} statement.  This can also be used to
+remove slices from a list (which we did earlier by assignment of an
+empty list to the slice).  For example:
+\bcode\begin{verbatim}
+>>> a
+[-1, 1, 66.6, 333, 333, 1234.5]
+>>> del a[0]
+>>> a
+[1, 66.6, 333, 333, 1234.5]
+>>> del a[2:4]
+>>> a
+[1, 66.6, 1234.5]
+>>>
+\end{verbatim}\ecode
+
+{\tt del} can also be used to delete entire variables:
+\bcode\begin{verbatim}
+>>> del a
+>>>
+\end{verbatim}\ecode
+Referencing the name {\tt a} hereafter is an error (at least until
+another value is assigned to it).  We'll find other uses for {\tt del}
+later.
+
+\section{Tuples and Sequences}
+
+We saw that lists and strings have many common properties, e.g.,
+subscripting and slicing operations.  They are two examples of {\em
+sequence} data types.  As Python is an evolving language, other
+sequence data types may be added.  There is also another standard
+sequence data type: the {\em tuple}.
+
+A tuple consists of a number of values separated by commas, for
+instance:
+\bcode\begin{verbatim}
+>>> t = 12345, 54321, 'hello!'
+>>> t[0]
+12345
+>>> t
+(12345, 54321, 'hello!')
+>>> # Tuples may be nested:
+>>> u = t, (1, 2, 3, 4, 5)
+>>> u
+((12345, 54321, 'hello!'), (1, 2, 3, 4, 5))
+>>>
+\end{verbatim}\ecode
+As you see, on output tuples are alway enclosed in parentheses, so
+that nested tuples are interpreted correctly; they may be input with
+or without surrounding parentheses, although often parentheses are
+necessary anyway (if the tuple is part of a larger expression).
+
+Tuples have many uses, e.g., (x, y) coordinate pairs, employee records
+from a database, etc.  Tuples, like strings, are immutable: it is not
+possible to assign to the individual items of a tuple (you can
+simulate much of the same effect with slicing and concatenation,
+though).
+
+A special problem is the construction of tuples containing 0 or 1
+items: the syntax has some extra quirks to accomodate these.  Empty
+tuples are constructed by an empty pair of parentheses; a tuple with
+one item is constructed by following a value with a comma
+(it is not sufficient to enclose a single value in parentheses).
+Ugly, but effective.  For example:
+\bcode\begin{verbatim}
+>>> empty = ()
+>>> singleton = 'hello',    # <-- note trailing comma
+>>> len(empty)
+0
+>>> len(singleton)
+1
+>>> singleton
+('hello',)
+>>>
+\end{verbatim}\ecode
+
+The statement {\tt t = 12345, 54321, 'hello!'} is an example of {\em
+tuple packing}: the values {\tt 12345}, {\tt 54321} and {\tt 'hello!'}
+are packed together in a tuple.  The reverse operation is also
+possible, e.g.:
+\bcode\begin{verbatim}
+>>> x, y, z = t
+>>>
+\end{verbatim}\ecode
+This is called, appropriately enough, {\em tuple unpacking}.  Tuple
+unpacking requires that the list of variables on the left has the same
+number of elements as the length of the tuple.  Note that multiple
+assignment is really just a combination of tuple packing and tuple
+unpacking!
+
+Occasionally, the corresponding operation on lists is useful: {\em list
+unpacking}.  This is supported by enclosing the list of variables in
+square brackets:
+\bcode\begin{verbatim}
+>>> a = ['foo', 'bar', 100, 1234]
+>>> [a1, a2, a3, a4] = a
+>>>
+\end{verbatim}\ecode
+
+\section{Dictionaries}
+
+Another useful data type built into Python is the {\em dictionary}.
+Dictionaries are sometimes found in other languages as ``associative
+memories'' or ``associative arrays''.  Unlike sequences, which are
+indexed by a range of numbers, dictionaries are indexed by {\em keys},
+which are strings.  It is best to think of a dictionary as an unordered set of
+{\em key:value} pairs, with the requirement that the keys are unique
+(within one dictionary).
+A pair of braces creates an empty dictionary: \verb/{}/.
+Placing a comma-separated list of key:value pairs within the
+braces adds initial key:value pairs to the dictionary; this is also the
+way dictionaries are written on output.
+
+The main operations on a dictionary are storing a value with some key
+and extracting the value given the key.  It is also possible to delete
+a key:value pair
+with {\tt del}.
+If you store using a key that is already in use, the old value
+associated with that key is forgotten.  It is an error to extract a
+value using a non-existant key.
+
+The {\tt keys()} method of a dictionary object returns a list of all the
+keys used in the dictionary, in random order (if you want it sorted,
+just apply the {\tt sort()} method to the list of keys).  To check
+whether a single key is in the dictionary, use the \verb/has_key()/
+method of the dictionary.
+
+Here is a small example using a dictionary:
+
+\bcode\begin{verbatim}
+>>> tel = {'jack': 4098, 'sape': 4139}
+>>> tel['guido'] = 4127
+>>> tel
+{'sape': 4139; 'guido': 4127; 'jack': 4098}
+>>> tel['jack']
+4098
+>>> del tel['sape']
+>>> tel['irv'] = 4127
+>>> tel
+{'guido': 4127; 'irv': 4127; 'jack': 4098}
+>>> tel.keys()
+['guido', 'irv', 'jack']
+>>> tel.has_key('guido')
+1
 >>> 
 \end{verbatim}\ecode
 
-\subsection{Modules}
+\section{More on Conditions}
+
+The conditions used in {\tt while} and {\tt if} statements above can
+contain other operators besides comparisons.
+
+The comparison operators {\tt in} and {\tt not in} check whether a value
+occurs (does not occur) in a sequence.  The operators {\tt is} and {\tt
+is not} compare whether two objects are really the same object; this
+only matters for mutable objects like lists.  All comparison operators
+have the same priority, which is lower than that of all numerical
+operators.
+
+Comparisons can be chained: e.g., {\tt a < b = c} tests whether {\tt a}
+is less than {\tt b} and moreover {\tt b} equals {\tt c}.
+
+Comparisons may be combined by the Boolean operators {\tt and} and {\tt
+or}, and the outcome of a comparison (or of any other Boolean
+expression) may be negated with {\tt not}.  These all have lower
+priorities than comparison operators again; between them, {\tt not} has
+the highest priority, and {\tt or} the lowest, so that
+{\tt A and not B or C} is equivalent to {\tt (A and (not B)) or C}.  Of
+course, parentheses can be used to express the desired composition.
+
+The Boolean operators {\tt and} and {\tt or} are so-called {\em
+shortcut} operators: their arguments are evaluated from left to right,
+and evaluation stops as soon as the outcome is determined.  E.g., if
+{\tt A} and {\tt C} are true but {\tt B} is false, {\tt A and B and C}
+does not evaluate the expression C.  In general, the return value of a
+shortcut operator, when used as a general value and not as a Boolean, is
+the last evaluated argument.
+
+It is possible to assign the result of a comparison or other Boolean
+expression to a variable, but you must enclose the entire Boolean
+expression in parentheses.  This is necessary because otherwise an
+assignment like \verb/a = b = c/ would be ambiguous: does it assign the
+value of {\tt c} to {\tt a} and {\tt b}, or does it compare {\tt b} to
+{\tt c} and assign the outcome (0 or 1) to {\tt a}?  As it is, the first
+meaning is what you get, and to get the latter you have to write
+\verb/a = (b = c)/.  (In Python, unlike C, assignment cannot occur
+inside expressions.)
+
+\section{Comparing Sequences and Other Types}
+
+Sequence objects may be compared to other objects with the same
+sequence type.  The comparison uses {\em lexicographical} ordering:
+first the first two items are compared, and if they differ this
+determines the outcome of the comparison; if they are equal, the next
+two items are compared, and so on, until either sequence is exhausted.
+If two items to be compared are themselves sequences of the same type,
+the lexiographical comparison is carried out recursively.  If all
+items of two sequences compare equal, the sequences are considered
+equal.  If one sequence is an initial subsequence of the other, the
+shorted sequence is the smaller one.  Lexicographical ordering for
+strings uses the ASCII ordering for individual characters.  Some
+examples of comparisons between sequences with the same types:
+\bcode\begin{verbatim}
+(1, 2, 3)              < (1, 2, 4)
+[1, 2, 3]              < [1, 2, 4]
+'ABC' < 'C' < 'Pascal' < 'Python'
+(1, 2, 3, 4)           < (1, 2, 4)
+(1, 2)                 < (1, 2, -1)
+(1, 2, 3)              = (1.0, 2.0, 3.0)
+(1, 2, ('aa', 'ab'))   < (1, 2, ('abc', 'a'), 4)
+\end{verbatim}\ecode
+
+Note that comparing objects of different types is legal.  The outcome
+is deterministic but arbitrary: the types are ordered by their name.
+Thus, a list is always smaller than a string, a string is always
+smaller than a tuple, etc.  Mixed numeric types are compared according
+to their numeric value, so 0 equals 0.0, etc.%
+\footnote{
+	The rules for comparing objects of different types should
+	not be relied upon; they may change in a future version of
+	the language.
+}
+
+\chapter{Modules}
 
 If you quit from the Python interpreter and enter it again, the
 definitions you have made (functions and variables) are lost.
 Therefore, if you want to write a somewhat longer program, you are
 better off using a text editor to prepare the input for the interpreter
-and run it with that file as input instead.
-This is known as creating a
-{\em script}.
-As your program gets longer, you may want to split it into several files
-for easier maintenance.
-You may also want to use a handy function that you've written in several
-programs without copying its definition into each program.
+and run it with that file as input instead.  This is known as creating a
+{\em script}.  As your program gets longer, you may want to split it
+into several files for easier maintenance.  You may also want to use a
+handy function that you've written in several programs without copying
+its definition into each program.
+
 To support this, Python has a way to put definitions in a file and use
 them in a script or in an interactive instance of the interpreter.
-Such a file is called a
-{\em module};
-definitions from a module can be
-{\em imported}
-into other modules or into the
-{\em main}
-module (the collection of variables that you have access to in
-a script and in calculator mode).
+Such a file is called a {\em module}; definitions from a module can be
+{\em imported} into other modules or into the {\em main} module (the
+collection of variables that you have access to in a script
+executed at the top level
+and in calculator mode).
 
-A module is a file containing Python definitions and statements.
-The file name is the module name with the suffix
-{\tt .py}
-appended.
-For instance, use your favorite text editor to create a file called
-{\tt fibo.py}
-in the current directory with the following contents:
+A module is a file containing Python definitions and statements.  The
+file name is the module name with the suffix {\tt .py} appended.  For
+instance, use your favorite text editor to create a file called {\tt
+fibo.py} in the current directory with the following contents:
 \bcode\begin{verbatim}
 # Fibonacci numbers module
 
@@ -1003,12 +1199,12 @@ def fib(n):    # write Fibonacci series up to n
           a, b = b, a+b
 
 def fib2(n): # return Fibonacci series up to n
-    ret = []
+    result = []
     a, b = 0, 1
     while b <= n:
-          ret.append(b)
+          result.append(b)
           a, b = b, a+b
-    return ret
+    return result
 \end{verbatim}\ecode
 Now enter the Python interpreter and import this module with the
 following command:
@@ -1018,7 +1214,7 @@ following command:
 \end{verbatim}\ecode
 This does not enter the names of the functions defined in
 {\tt fibo}
-directly in the symbol table; it only enters the module name
+directly in the current symbol table; it only enters the module name
 {\tt fibo}
 there.
 Using the module name you can access the functions:
@@ -1037,7 +1233,7 @@ If you intend to use a function often you can assign it to a local name:
 >>> 
 \end{verbatim}\ecode
 
-\subsubsection{More on Modules}
+\section{More on Modules}
 
 A module can contain executable statements as well as function
 definitions.
@@ -1093,26 +1289,19 @@ There is even a variant to import all names that a module defines:
 This imports all names except those beginning with an underscore
 ({\tt \_}).
 
-\subsubsection{Standard Modules}
+\section{Standard Modules}
 
 Python comes with a library of standard modules, described in a separate
-document (Python Library and Module Reference).
-Some modules are built into the interpreter; these provide access to
-operations that are not part of the core of the language but are
-nevertheless built in, either for efficiency or to provide access to
-operating system primitives such as system calls.
-The set of such modules is a configuration option; e.g., the
-{\tt amoeba}
-module is only provided on systems that somehow support Amoeba
-primitives.
-One particular module deserves some attention:
-{\tt sys},
-which is built into every Python interpreter.
-The variables
-{\tt sys.ps1}
-and
-{\tt sys.ps2}
-define the strings used as primary and secondary prompts:
+document (Python Library Reference).  Some modules are built into the
+interpreter; these provide access to operations that are not part of the
+core of the language but are nevertheless built in, either for
+efficiency or to provide access to operating system primitives such as
+system calls.  The set of such modules is a configuration option; e.g.,
+the {\tt amoeba} module is only provided on systems that somehow support
+Amoeba primitives.  One particular module deserves some attention: {\tt
+sys}, which is built into every Python interpreter.  The variables {\tt
+sys.ps1} and {\tt sys.ps2} define the strings used as primary and
+secondary prompts:
 \bcode\begin{verbatim}
 >>> import sys
 >>> sys.ps1
@@ -1143,16 +1332,140 @@ You can modify it using standard list operations, e.g.:
 >>> 
 \end{verbatim}\ecode
 
-\subsection{Errors and Exceptions}
+\section{The {\tt dir()} function}
 
-Until now error messages haven't yet been mentioned, but if you have
-tried out the examples you have probably seen some.
-There are (at least) two distinguishable kinds of errors:
-{\em syntax\ errors}
-and
-{\em exceptions}.
+The built-in function {\tt dir} is used to find out which names a module
+defines.  It returns a sorted list of strings:
+\bcode\begin{verbatim}
+>>> import fibo, sys
+>>> dir(fibo)
+['fib', 'fib2']
+>>> dir(sys)
+['argv', 'exit', 'modules', 'path', 'ps1', 'ps2', 'stderr', 'stdin', 'stdout']
+>>>
+\end{verbatim}\ecode
+Without arguments, {\tt dir()} lists the names you have defined currently:
+\bcode\begin{verbatim}
+>>> a = [1, 2, 3, 4, 5]
+>>> import fibo, sys
+>>> fib = fibo.fib
+>>> dir()
+['a', 'fib', 'fibo', 'sys']
+>>>
+\end{verbatim}\ecode
+Note that it lists all types of names: variables, modules, functions, etc.
 
-\subsubsection{Syntax Errors}
+{\tt dir()} does not list the names of built-in functions and variables.
+If you want a list of those, they are defined in the standard module
+{\tt builtin}:
+\bcode\begin{verbatim}
+>>> import builtin
+>>> dir(builtin)
+['EOFError', 'KeyboardInterrupt', 'MemoryError', 'NameError', 'None', 'Runti
+meError', 'SystemError', 'TypeError', 'abs', 'chr', 'dir', 'divmod', 'eval',
+ 'exec', 'float', 'input', 'int', 'len', 'long', 'max', 'min', 'open', 'ord'
+, 'pow', 'range', 'raw_input', 'reload', 'type']
+>>>
+\end{verbatim}\ecode
+
+\chapter{Output Formatting}
+
+So far we've encountered two ways of writing values: {\em expression
+statements} and the {\tt print} statement.  (A third way is using the
+{\tt write} method of file objects; the standard output file can be
+referenced as {\tt sys.stdout}.  See the Library Reference for more
+information on this.)
+
+Often you'll want more control over the formatting of your output than
+simply printing space-separated values.  The key to nice formatting in
+Python is to do all the string handling yourself; using string slicing
+and concatenation operations you can create any lay-out you can imagine.
+The standard module {\tt string} contains some useful operations for
+padding strings to a given column width; these will be discussed shortly.
+
+One question remains, of course: how do you convert values to strings?
+Luckily, Python has a way to convert any value to a string: just write
+the value between reverse quotes (\verb/``/).  Some examples:
+\bcode\begin{verbatim}
+>>> x = 10 * 3.14
+>>> y = 200*200
+>>> s = 'The value of x is ' + `x` + ', and y is ' + `y` + '...'
+>>> print s
+The value of x is 31.4, and y is 40000...
+>>> # Reverse quotes work on other types besides numbers:
+>>> p = [x, y]
+>>> ps = `p`
+>>> ps
+'[31.4, 40000]'
+>>> # Converting a string adds string quotes and backslashes:
+>>> hello = 'hello, world\n'
+>>> hellos = `hello`
+>>> print hellos
+'hello, world\012'
+>>> # The argument of reverse quotes may be a tuple:
+>>> `x, y, ('foo', 'bar')`
+'(31.4, 40000, (\'foo\', \'bar\'))'
+>>>
+\end{verbatim}\ecode
+
+Here is how you write a table of squares and cubes:
+\bcode\begin{verbatim}
+>>> import string
+>>> for x in range(1, 11):
+...     print string.rjust(`x`, 2), string.rjust(`x*x`, 3),
+...     # Note trailing comma on previous line
+...     print string.rjust(`x*x*x`, 4)
+...
+ 1   1    1
+ 2   4    8
+ 3   9   27
+ 4  16   64
+ 5  25  125
+ 6  36  216
+ 7  49  343
+ 8  64  512
+ 9  81  729
+10 100 1000
+>>>
+\end{verbatim}\ecode
+(Note that one space between each column was added by the way {\tt print}
+works: it always adds spaces between its arguments.)
+
+This example demonstrates the function {\tt string.rjust()}, which
+right-justifies a string in a field of a given width by padding it with
+spaces on the left.  There are similar functions {\tt string.ljust()}
+and {\tt string.center()}.  These functions do not write anything, they
+just return a new string.  If the input string is too long, they don't
+truncate it, but return it unchanged; this will mess up your column
+lay-out but that's usually better than the alternative, which would be
+lying about a value.  (If you really want truncation you can always add
+a slice operation, as in {\tt string.ljust(x,~n)[0:n]}.)
+
+There is another function, {\tt string.zfill}, which pads a numeric
+string on the left with zeros.  It understands about plus and minus
+signs:%
+\footnote{
+	Better facilities for formatting floating point numbers are
+	lacking at this moment.
+}
+\bcode\begin{verbatim}
+>>> string.zfill('12', 5)
+'00012'
+>>> string.zfill('-3.14', 7)
+'-003.14'
+>>> string.zfill('3.14159265359', 5)
+'3.14159265359'
+>>>
+\end{verbatim}\ecode
+
+\chapter{Errors and Exceptions}
+
+Until now error messages haven't been more than mentioned, but if you
+have tried out the examples you have probably seen some.  There are
+(at least) two distinguishable kinds of errors: {\em syntax\ errors}
+and {\em exceptions}.
+
+\section{Syntax Errors}
 
 Syntax errors, also known as parsing errors, are perhaps the most common
 kind of complaint you get while you are still learning Python:
@@ -1173,10 +1486,14 @@ the arrow: in the example, the error is detected at the keyword
 File name and line number are printed so you know where to look in case
 the input came from a script.
 
-\subsubsection{Exceptions}
+\section{Exceptions}
 
-Even if a statement or expression is syntactically correct, it may cause
-an error when an attempt is made to execute it:
+Even if a statement or expression is syntactically correct, it may
+cause an error when an attempt is made to execute it.
+Errors detected during execution are called {\em exceptions} and are
+not unconditionally fatal: you will soon learn how to handle them in
+Python programs.  Most exceptions are not handled by programs,
+however, and result in error messages as shown here:
 \bcode\small\begin{verbatim}
 >>> 10 * (1/0)
 Unhandled exception: run-time error: integer division by zero
@@ -1192,12 +1509,6 @@ Stack backtrace (innermost last):
   File "<stdin>", line 1
 >>> 
 \end{verbatim}\ecode
-Errors detected during execution are called
-{\em exceptions}
-and are not unconditionally fatal: you will soon learn how to handle
-them in Python programs.
-Most exceptions are not handled by programs, however, and result
-in error messages as shown here.
 
 The first line of the error message indicates what happened.
 Exceptions come in different types, and the type is printed as part of
@@ -1227,25 +1538,24 @@ errors are more serious: these are usually caused by misspelled
 identifiers.%
 \footnote{
 	The parser does not check whether names used in a program are at
-	all defined elsewhere in the program, so such checks are
+	all defined elsewhere in the program; such checks are
 	postponed until run-time.  The same holds for type checking.
 }
 The detail is the offending identifier.
 \item
-{\em Type\ errors}
-are also pretty serious: this is another case of using wrong data (or
-better, using data the wrong way), but here the error can be glanced
-from the object type(s) alone.
-The detail shows in what context the error was detected.
+{\em Type\ errors} are also pretty serious: this is another case of
+using wrong data (or better, using data the wrong way), but here the
+error can be gleaned from the object type(s) alone.  The detail shows
+in what context the error was detected.
 \end{itemize}
 
-\subsubsection{Handling Exceptions}
+\section{Handling Exceptions}
 
 It is possible to write programs that handle selected exceptions.
 Look at the following example, which prints a table of inverses of
 some floating point numbers:
 \bcode\begin{verbatim}
->>> numbers = [0.3333, 2.5, 0.0, 10.0]
+>>> numbers = [0.3333, 2.5, 0, 10]
 >>> for x in numbers:
 ...     print x,
 ...     try:
@@ -1271,10 +1581,11 @@ If no exception occurs, the
 {\em except\ clause}
 is skipped and execution of the {\tt try} statement is finished.
 \item
-If an exception occurs during execution of the try clause, and its
-type matches the exception named after the {\tt except} keyword, the
-rest of the try clause is skipped, the except clause is executed, and
-then execution continues after the {\tt try} statement.
+If an exception occurs during execution of the try clause,
+the rest of the clause is skipped.  Then if
+its type matches the exception named after the {\tt except} keyword,
+the rest of the try clause is skipped, the except clause is executed,
+and then execution continues after the {\tt try} statement.
 \item
 If an exception occurs which does not match the exception named in the
 except clause, it is passed on to outer try statements; if no handler is
@@ -1320,12 +1631,7 @@ Standard exception names are built-in identifiers (not reserved
 keywords).
 These are in fact string objects whose
 {\em object\ identity}
-(not their value!) identifies the exceptions.%
-\footnote{
-	There should really be a separate exception type; it is pure
-	laziness that exceptions are identified by strings, and this may
-	be fixed in the future.
-}
+(not their value!) identifies the exceptions.
 The string is printed as the second part of the message for unhandled
 exceptions.
 Their names and values are:
@@ -1358,7 +1664,7 @@ Handling run-time error: integer division by zero
 >>> 
 \end{verbatim}\ecode
 
-\subsubsection{Raising Exceptions}
+\section{Raising Exceptions}
 
 The {\tt raise} statement allows the programmer to force a specified
 exception to occur.
@@ -1373,7 +1679,7 @@ Stack backtrace (innermost last):
 The first argument to {\tt raise} names the exception to be raised.
 The optional second argument specifies the exception's argument.
 
-\subsubsection{User-defined Exceptions}
+\section{User-defined Exceptions}
 
 Programs may name their own exceptions by assigning a string to a
 variable.
@@ -1395,7 +1701,7 @@ Stack backtrace (innermost last):
 Many standard modules use this to report errors that may occur in
 functions they define.
 
-\subsubsection{Defining Clean-up Actions}
+\section{Defining Clean-up Actions}
 
 The {\tt try} statement has another optional clause which is intended to
 define clean-up actions that must be executed under all circumstances.
@@ -1415,141 +1721,11 @@ Stack backtrace (innermost last):
 The
 {\em finally\ clause}
 must follow the except clauses(s), if any.
-It is executed whether or not an exception occurred.
+It is executed whether or not an exception occurred,
+or whether or not an exception is handled.
 If the exception is handled, the finally clause is executed after the
 handler (and even if another exception occurred in the handler).
 It is also executed when the {\tt try} statement is left via a
 {\tt break} or {\tt return} statement.
-
-\subsection{Classes}
-
-Classes in Python make it possible to play the game of encapsulation in a
-somewhat different way than it is played with modules.
-Classes are an advanced topic and are probably best skipped on the first
-encounter with Python.
-
-\subsubsection{Prologue}
-
-Python's class mechanism is not particularly elegant, but quite powerful.
-It is a mixture of the class mechanisms found in C++ and Modula-3.
-As is true for modules, classes in Python do not put an absolute barrier
-between definition and user, but rather rely on the politeness of the
-user not to ``break into the definition.''
-The most important features of classes are retained with full power,
-however: the class inheritance mechanism allows multiple base classes,
-a derived class can override any method of its base class(es), a method
-can call the method of a base class with the same name.
-Objects can contain an arbitrary amount of private data.
-
-In C++ terminology, all class members (including data members) are
-{\em public},
-and all member functions (methods) are
-{\em virtual}.
-There are no special constructors or destructors.
-As in Modula-3, there are no shorthands for referencing the object's
-members from its methods: the method function is declared with an
-explicit first argument representing the object, which is provided
-implicitly by the call.
-As in Smalltalk, classes themselves are objects, albeit in the wider
-sense of the word: in Python, all data types are objects.
-This provides semantics for renaming or aliasing.
-But, just like in C++ or Modula-3, the built-in types cannot be used as
-base classes for extension by the user.
-Also, like Modula-3 but unlike C++, the built-in operators with special
-syntax (arithmetic operators, subscripting etc.) cannot be redefined for
-class members.%
-\footnote{
-	They can be redefined for new object types implemented in C in
-	extensions to the interpreter, however.  It would require only a
-	naming convention and a relatively small change to the
-	interpreter to allow operator overloading for classes, so
-	perhaps someday...
-}
-
-\subsubsection{A Simple Example}
-
-Consider the following example, which defines a class {\tt Set}
-representing a (finite) mathematical set with operations to add and
-remove elements, a membership test, and a request for the size of the
-set.
-\bcode\begin{verbatim}
-class Set():
-    def new(self):
-        self.elements = []
-        return self
-    def add(self, e):
-        if e not in self.elements:
-            self.elements.append(e)
-    def remove(self, e):
-        if e in self.elements:
-            for i in range(len(self.elements)):
-                if self.elements[i] = e:
-                    del self.elements[i]
-                    break
-    def is_element(self, e):
-        return e in self.elements
-    def size(self):
-        return len(self.elements)
-\end{verbatim}\ecode
-Note that the class definition looks like a big compound statement,
-with all the function definitons indented repective to the
-{\tt class}
-keyword.
-
-Let's assume that this
-{\em class\ definition}
-is the only contents of the module file
-{\tt SetClass.py}.
-We can then use it in a Python program as follows:
-\bcode\begin{verbatim}
->>> from SetClass import Set
->>> a = Set().new() # create a Set object
->>> a.add(2)
->>> a.add(3)
->>> a.add(1)
->>> a.add(1)
->>> if a.is_element(3): print '3 is in the set'
-... 
-3 is in the set
->>> if not a.is_element(4): print '4 is not in the set'
-... 
-4 is not in the set
->>> print 'a has', a.size(), 'elements'
-a has 3 elements
->>> a.remove(1)
->>> print 'now a has', a.size(), 'elements'
->>> 
-now a has 2 elements
->>> 
-\end{verbatim}\ecode
-From the example we learn in the first place that the functions defined
-in the class (e.g.,
-{\tt add})
-can be called using the
-{\em member}
-notation for the object
-{\tt a}.
-The member function is called with one less argument than it is defined:
-the object is implicitly passed as the first argument.
-Thus, the call
-{\tt a.add(2)}
-is equivalent to
-{\tt Set.add(a, 2)}.
-
-XXX This section is not complete yet!  Inheritance!
-
-\section{XXX P.M.}
-
-\begin{itemize}
-\item	The {\tt del} statement.
-\item	The {\tt dir()} function.
-\item	Tuples.
-\item	Dictionaries.
-\item	Objects and types in general.
-\item	Backquotes.
-\item	Output formatting.
-\item	And/Or/Not.
-\item	``.pyc'' files.
-\end{itemize}
 
 \end{document}
