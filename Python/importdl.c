@@ -129,7 +129,7 @@ typedef void (*dl_funcptr)();
 #endif
 #endif
 
-#if !defined(DYNAMIC_LINK) && defined(HAVE_DLFCN_H) && (defined(HAVE_DLOPEN) || defined(M_UNIX))
+#if !defined(DYNAMIC_LINK) && (defined(HAVE_DLOPEN) || defined(M_UNIX))
 #define DYNAMIC_LINK
 #define USE_SHLIB
 #endif
@@ -155,7 +155,9 @@ static void aix_loaderror(char *);
 #include <nlist.h>
 #include <link.h>
 #else
+#ifdef HAVE_DLFCN_H
 #include <dlfcn.h>
+#endif
 #endif
 #ifndef _DL_FUNCPTR_DEFINED
 typedef void (*dl_funcptr)();
