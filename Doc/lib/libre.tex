@@ -506,7 +506,8 @@ attributes:
 \begin{methoddesc}[RegexObject]{search}{string\optional{, pos}\optional{,
                                         endpos}}
   Scan through \var{string} looking for a location where this regular
-  expression produces a match.  Return \code{None} if no
+  expression produces a match, and return a
+  corresponding \class{MatchObject} instance.  Return \code{None} if no
   position in the string matches the pattern; note that this is
   different from finding a zero-length match at some point in the string.
   
