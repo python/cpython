@@ -123,6 +123,8 @@ def readmodule(module, path=[], inpackage=0):
 	module and return a dictionary with one entry for each class
 	found in the module.'''
 
+	dict = {}
+
 	i = string.rfind(module, '.')
 	if i >= 0:
 		# Dotted module name
@@ -137,7 +139,6 @@ def readmodule(module, path=[], inpackage=0):
 		return _modules[module]
 	if module in sys.builtin_module_names:
 		# this is a built-in module
-		dict = {}
 		_modules[module] = dict
 		return dict
 
@@ -153,18 +154,17 @@ def readmodule(module, path=[], inpackage=0):
 		fullpath = list(path) + sys.path
 		f, file, (suff, mode, type) = imp.find_module(module, fullpath)
 	if type == imp.PKG_DIRECTORY:
-		dict = {'__path__': [file]}
+		dict['__path__'] = [file]
 		_modules[module] = dict
-		# XXX Should we recursively look for submodules?
-		return dict
+		path = [file] + path
+		f, file, (suff, mode, type) = \
+				imp.find_module('__init__', [file])
 	if type != imp.PY_SOURCE:
 		# not Python source, can't do anything with this module
 		f.close()
-		dict = {}
 		_modules[module] = dict
 		return dict
 
-	dict = {}
 	_modules[module] = dict
 	imports = []
 	classstack = []	# stack of (class, indent) pairs
