@@ -28,27 +28,33 @@ class Application(FrameWork.Application):
 	def mainloop(self, mask=FrameWork.everyEvent, wait=None):
 		import W
 		self.quitting = 0
-		saveyield = MacOS.EnableAppswitch(-1)
+		if hasattr(MacOS, 'EnableAppswitch'):
+			saveyield = MacOS.EnableAppswitch(-1)
 		try:
 			while not self.quitting:
 				try:
 					self.do1event(mask, wait)
 				except W.AlertError, detail:
-					MacOS.EnableAppswitch(-1)
+					if hasattr(MacOS, 'EnableAppswitch'):
+						MacOS.EnableAppswitch(-1)
 					W.Message(detail)
 				except self.DebuggerQuit:
-					MacOS.EnableAppswitch(-1)
+					if hasattr(MacOS, 'EnableAppswitch'):
+						MacOS.EnableAppswitch(-1)
 				except:
-					MacOS.EnableAppswitch(-1)
+					if hasattr(MacOS, 'EnableAppswitch'):
+						MacOS.EnableAppswitch(-1)
 					import PyEdit
 					PyEdit.tracebackwindow.traceback()
 		finally:
-			MacOS.EnableAppswitch(1)
+			if hasattr(MacOS, 'EnableAppswitch'):
+				MacOS.EnableAppswitch(1)
 	
 	def debugger_mainloop(self, mask=FrameWork.everyEvent, wait=None):
 		import W
 		self.debugger_quitting = 0
-		saveyield = MacOS.EnableAppswitch(-1)
+		if hasattr(MacOS, 'EnableAppswitch'):
+			saveyield = MacOS.EnableAppswitch(-1)
 		try:
 			while not self.quitting and not self.debugger_quitting:
 				try:
@@ -59,7 +65,8 @@ class Application(FrameWork.Application):
 					import PyEdit
 					PyEdit.tracebackwindow.traceback()
 		finally:
-			MacOS.EnableAppswitch(saveyield)
+			if hasattr(MacOS, 'EnableAppswitch'):
+				MacOS.EnableAppswitch(saveyield)
 	
 	def breathe(self, wait=1):
 		import W
@@ -309,19 +316,24 @@ class Application(FrameWork.Application):
 				# exec in that window's namespace.
 				# xxx what to do when it's not saved???
 				# promt to save?
-				MacOS.EnableAppswitch(0)
+				if hasattr(MacOS, 'EnableAppswitch'):
+					MacOS.EnableAppswitch(0)
 				execfile(path, {'__name__': '__main__', '__file__': path})
 			except W.AlertError, detail:
-				MacOS.EnableAppswitch(-1)
+				if hasattr(MacOS, 'EnableAppswitch'):
+					MacOS.EnableAppswitch(-1)
 				raise W.AlertError, detail
 			except KeyboardInterrupt:
-				MacOS.EnableAppswitch(-1)
+				if hasattr(MacOS, 'EnableAppswitch'):
+					MacOS.EnableAppswitch(-1)
 			except:
-				MacOS.EnableAppswitch(-1)
+				if hasattr(MacOS, 'EnableAppswitch'):
+					MacOS.EnableAppswitch(-1)
 				import PyEdit
 				PyEdit.tracebackwindow.traceback(1)
 			else:
-				MacOS.EnableAppswitch(-1)
+				if hasattr(MacOS, 'EnableAppswitch'):
+					MacOS.EnableAppswitch(-1)
 			#os.chdir(cwd)
 	
 	def openscript(self, filename, lineno=None, charoffset=0, modname=""):

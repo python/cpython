@@ -496,7 +496,8 @@ class Debugger(bdb.Bdb):
 			self.w.panes.bottom.tracingmonitor.toggle()
 		try:
 			try:
-				MacOS.EnableAppswitch(0)
+				if hasattr(MacOS, 'EnableAppswitch'):
+					MacOS.EnableAppswitch(0)
 				if self.quitting:
 					# returning None is not enough, a former BdbQuit exception
 					# might have been eaten by the print statement
@@ -512,7 +513,8 @@ class Debugger(bdb.Bdb):
 				print 'bdb.Bdb.dispatch: unknown debugging event:', `event`
 				return self.trace_dispatch
 			finally:
-				MacOS.EnableAppswitch(-1)
+				if hasattr(MacOS, 'EnableAppswitch'):
+					MacOS.EnableAppswitch(-1)
 		except KeyboardInterrupt:
 			self.set_step()
 			return self.trace_dispatch

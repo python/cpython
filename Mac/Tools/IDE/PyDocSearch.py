@@ -122,7 +122,8 @@ def dosearch(docpath, searchstring, settings):
 	_open = open
 	hits = {}
 	try:
-		MacOS.EnableAppswitch(0)
+		if hasattr(MacOS, 'EnableAppswitch'):
+			MacOS.EnableAppswitch(0)
 		try:
 			for do, name in books:
 				if not do:
@@ -145,7 +146,8 @@ def dosearch(docpath, searchstring, settings):
 					if filehits:
 						hits[fullpath] = filehits
 		finally:
-			MacOS.EnableAppswitch(-1)
+			if hasattr(MacOS, 'EnableAppswitch'):
+				MacOS.EnableAppswitch(-1)
 			status.close()
 	except KeyboardInterrupt:
 		pass

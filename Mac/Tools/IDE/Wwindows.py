@@ -455,7 +455,8 @@ class ModalDialog(Dialog):
 		Dialog.close(self)
 	
 	def mainloop(self):
-		saveyield = MacOS.EnableAppswitch(-1)
+		if hasattr(MacOS, 'EnableAppswitch'):
+			saveyield = MacOS.EnableAppswitch(-1)
 		while not self.done:
 			#self.do1event()
 			self.do1event(	Events.keyDownMask + 
@@ -465,7 +466,8 @@ class ModalDialog(Dialog):
 						Events.mDownMask +
 						Events.mUpMask, 
 						10)
-		MacOS.EnableAppswitch(saveyield)
+		if hasattr(MacOS, 'EnableAppswitch'):
+			MacOS.EnableAppswitch(saveyield)
 	
 	def do1event(self, mask = Events.everyEvent, wait = 0):
 		ok, event = self.app.getevent(mask, wait)
