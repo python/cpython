@@ -966,7 +966,11 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
 		memcpy(addr->sun_path, path, len);
 		addr->sun_path[len] = 0;
 		*addr_ret = (struct sockaddr *) addr;
+#if defined(PYOS_OS2)
+		*len_ret = sizeof(*addr);
+#else
 		*len_ret = len + sizeof(*addr) - sizeof(addr->sun_path);
+#endif
 		return 1;
 	}
 #endif /* AF_UNIX */
