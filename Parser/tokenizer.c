@@ -591,12 +591,22 @@ PyTokenizer_Get(tok, p_start, p_end)
 	
 	/* Identifier (most frequent token!) */
 	if (isalpha(c) || c == '_') {
+		/* Process r"", u"" and ur"" */
 		switch (c) {
 		case 'r':
 		case 'R':
 			c = tok_nextc(tok);
 			if (c == '"' || c == '\'')
 				goto letter_quote;
+			break;
+		case 'u':
+		case 'U':
+			c = tok_nextc(tok);
+			if (c == 'r' || c == 'R')
+				c = tok_nextc(tok);
+			if (c == '"' || c == '\'')
+				goto letter_quote;
+			break;
 		}
 		while (isalnum(c) || c == '_') {
 			c = tok_nextc(tok);
