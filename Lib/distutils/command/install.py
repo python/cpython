@@ -90,7 +90,10 @@ class install (Command):
     # (func, command) where 'func' is a function to call that returns
     # true if 'command' (the sub-command name, a string) needs to be
     # run.  If 'func' is None, assume that 'command' must always be run.
-    sub_commands = [(None, 'install_lib')]
+    sub_commands = [(None, 'install_lib'),
+                    (None, 'install_scripts'),
+                    (None, 'install_data'),
+                   ]
 
 
     def initialize_options (self):
