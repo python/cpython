@@ -3,6 +3,9 @@ What's New in IDLE 1.1a0?
 
 *Release date: XX-XXX-2004*
 
+- New Extension: CodeContext.  Provides block structuring hints for code
+  which has scrolled above an edit window. Patch 936169 Noam Raphael.
+
 - If nulls somehow got into the strings in recent-files.lst
   EditorWindow.update_recent_files_list() was failing.  Python Bug 931336.
 

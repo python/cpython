@@ -3,7 +3,7 @@
 #
 # Each extension must have at least one section, named after the extension
 # module. This section must contain an 'enable' item (=1 to enable the
-# extension, =0 to disable it) and also contains any other general
+# extension, =0 to disable it) and also contain any other general
 # configuration items for the extension. Each extension may also define up to
 # two optional sections named ExtensionName_bindings and
 # ExtensionName_cfgBindings. If present, ExtensionName_bindings defines virtual
@@ -12,10 +12,15 @@
 # extension that may be sensibly re-configured.
 
 # Currently it is necessary to manually modify this file to change extension
-# key bindings.  Note: If a keybinding is already in use when the extension is
+# key bindings and default values. To customize, create
+# ~/.idlerc/config-extensions.cfg and append the appropriate customized
+# section(s).  Those sections will override the defaults in this file.
+
+# Note: If a keybinding is already in use when the extension is
 # loaded, the extension's virtual event's keybinding will be set to ''.
 
-# See config-keys.def for notes on specifying keys.
+# See config-keys.def for notes on specifying keys and extend.txt for
+# information on creating IDLE extensions.
 
 [FormatParagraph]
 enable=1
@@ -56,3 +61,9 @@ hilite-background= #43cd80
 [ParenMatch_bindings]
 flash-open-paren=<KeyRelease-parenright> <KeyRelease-bracketright> <KeyRelease-braceright>
 check-restore=<KeyPress>
+
+[CodeContext]
+enable=1
+numlines=3
+bgcolor=LightGray
+fgcolor=Black
