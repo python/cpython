@@ -25,13 +25,14 @@
 
 Each statement in \file{__future__.py} is of the form:
 
-\begin{verbatim}
-FeatureName = "_Feature(" OptionalRelease "," MandatoryRelease ","
-                        CompilerFlag ")"
-\end{verbatim}
+\begin{alltt}
+FeatureName = "_Feature(" \var{OptionalRelease} "," \var{MandatoryRelease} ","
+                        \var{CompilerFlag} ")"
+\end{alltt}
 
-where, normally, OptionalRelease is less then MandatoryRelease, and
-both are 5-tuples of the same form as \code{sys.version_info}:
+where, normally, \var{OptionalRelease} is less than
+\var{MandatoryRelease}, and both are 5-tuples of the same form as
+\code{sys.version_info}:
 
 \begin{verbatim}
     (PY_MAJOR_VERSION, # the 2 in 2.1.0a3; an int
@@ -42,28 +43,27 @@ both are 5-tuples of the same form as \code{sys.version_info}:
     )
 \end{verbatim}
 
-OptionalRelease records the first release in which the feature was
-accepted. 
+\var{OptionalRelease} records the first release in which the feature
+was accepted.
 
-In the case of MandatoryReleases that have not yet occurred,
-MandatoryRelease predicts the release in which the feature will become
-part of the language.
+In the case of a \var{MandatoryRelease} that has not yet occurred,
+\var{MandatoryRelease} predicts the release in which the feature will
+become part of the language.
 
-Else MandatoryRelease records when the feature became part of the
-language; in releases at or after that, modules no longer need a
+Else \var{MandatoryRelease} records when the feature became part of
+the language; in releases at or after that, modules no longer need a
 future statement to use the feature in question, but may continue to
-use such imports. 
+use such imports.
 
-MandatoryRelease may also be \code{None}, meaning that a planned
+\var{MandatoryRelease} may also be \code{None}, meaning that a planned
 feature got dropped.
 
 Instances of class \class{_Feature} have two corresponding methods,
 \method{getOptionalRelease()} and \method{getMandatoryRelease()}.
 
-CompilerFlag is the (bitfield) flag that should be passed in the
+\var{CompilerFlag} is the (bitfield) flag that should be passed in the
 fourth argument to the builtin function \function{compile()} to enable
 the feature in dynamically compiled code.  This flag is stored in the
 \member{compiler_flag} attribute on \class{_Future} instances.
 
 No feature description will ever be deleted from \module{__future__}.
-
