@@ -70,6 +70,7 @@ PyCFunction_Call(PyObject *func, PyObject *arg, PyObject *kw)
 			return (*meth)(self, arg);
 		break;
 	case METH_VARARGS | METH_KEYWORDS:
+	case METH_OLDARGS | METH_KEYWORDS:
 		return (*(PyCFunctionWithKeywords)meth)(self, arg, kw);
 	case METH_NOARGS:
 		if (kw == NULL || PyDict_Size(kw) == 0) {
@@ -104,10 +105,7 @@ PyCFunction_Call(PyObject *func, PyObject *arg, PyObject *kw)
 			return (*meth)(self, arg);
 		}
 		break;
-	case METH_OLDARGS | METH_KEYWORDS:
-		return (*(PyCFunctionWithKeywords)meth)(self, arg, kw);
 	default:
-		/* should never get here ??? */
 		PyErr_BadInternalCall();
 		return NULL;
 	}
@@ -267,7 +265,7 @@ listmethodchain(PyMethodChain *chain)
 	PyMethodDef *ml;
 	int i, n;
 	PyObject *v;
-	
+
 	n = 0;
 	for (c = chain; c != NULL; c = c->link) {
 		for (ml = c->methods; ml->ml_name != NULL; ml++)
