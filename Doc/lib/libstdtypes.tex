@@ -901,7 +901,7 @@ The following operations are defined on mutable sequence types (where
   \lineiii{\var{s}.reverse()}
 	{reverses the items of \var{s} in place}{(6)}
   \lineiii{\var{s}.sort(\optional{\var{cmpfunc}})}
-	{sort the items of \var{s} in place}{(6), (7)}
+	{sort the items of \var{s} in place}{(6), (7), (8)}
 \end{tableiii}
 \indexiv{operations on}{mutable}{sequence}{types}
 \indexiii{operations on}{sequence}{types}
@@ -947,10 +947,18 @@ Notes:
   the first argument is considered smaller than, equal to, or larger
   than the second argument.  Note that this slows the sorting process
   down considerably; e.g. to sort a list in reverse order it is much
-  faster to use calls to the methods \method{sort()} and
-  \method{reverse()} than to use the built-in function
-  \function{sort()} with a comparison function that reverses the
+  faster to call method \method{sort()} followed by
+  \method{reverse()} than to use method
+  \method{sort()} with a comparison function that reverses the
   ordering of the elements.
+
+\item[(8)] Whether the \method{sort()} method is stable is not defined by
+  the language (a sort is stable if it guarantees not to change the
+  relative order of elements that compare equal).  In the C
+  implementation of Python, sorts were stable only by accident through
+  Python 2.2.  The C implementation of Python 2.3 introduced a stable
+  \method{sort()} method, but code that intends to be portable across
+  implementations and versions must not rely on stability.
 \end{description}
 
 
