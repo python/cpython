@@ -9,13 +9,8 @@
 
 
 # Todo:
-#    Add deepcopy and pickle support for contexts
-#    Consider having a SimpleDecimal subclass implementing X3.274 semantics
-#    Improve the Context API
-#         Especially with respect to setting flags and traps
-#         Consider adding a clear_flags() method to Context
 #    Provide a clean way of attaching monetary format representations
-#    Review all exposed constants for utility vs. namespace clutter
+#    Make tests independent of DefaultContext.prec == 9
 
 
 """
@@ -139,8 +134,7 @@ __all__ = [
     # Constants for use in setting up contexts
     'ROUND_DOWN', 'ROUND_HALF_UP', 'ROUND_HALF_EVEN', 'ROUND_CEILING',
     'ROUND_FLOOR', 'ROUND_UP', 'ROUND_HALF_DOWN',
-    'NEVER_ROUND', 'ALWAYS_ROUND',
-    'ExceptionList',    # <-- Used for building trap/flag dictionaries
+    'Signals',    # <-- Used for building trap/flag dictionaries
 
     # Functions for manipulating contexts
     'setcontext', 'getcontext',
@@ -243,6 +237,12 @@ class InvalidOperation(DecimalException):
             if args[0] == 1: #sNaN, must drop 's' but keep diagnostics
                 return Decimal( (args[1]._sign, args[1]._int, 'n') )
         return NaN
+
+# XXX Is there a logic error in subclassing InvalidOperation?
+# Setting the InvalidOperation trap to zero does not preclude ConversionSyntax.
+# Also, incrementing Conversion syntax flag will not increment InvalidOperation.
+# Both of these issues interfere with cross-language portability because
+# code following the spec would not know about the Python subclasses.
 
 class ConversionSyntax(InvalidOperation):
     """Trying to convert badly formed string.
@@ -410,8 +410,8 @@ def _filterfunc(obj):
     except TypeError:
         return False
 
-#ExceptionList holds the exceptions
-ExceptionList = filter(_filterfunc, globals().values())
+#Signals holds the exceptions
+Signals = filter(_filterfunc, globals().values())
 
 del _filterfunc
 
@@ -492,7 +492,10 @@ class Decimal(object):
                 self._sign = sign
                 self._int = tuple(map(int, diag)) #Diagnostic info
                 return
-            self._convertString(value, context)
+            try:
+                self._sign, self._int, self._exp = _string2exact(value)
+            except ValueError:
+                self._sign, self._int, self._exp = context._raise_error(ConversionSyntax)
             return
 
         # tuple/list conversion (possibly from as_tuple())
@@ -593,19 +596,6 @@ class Decimal(object):
         if other is not None and other._isnan():
             return other
         return 0
-
-    def _convertString(self, value, context=None):
-        """Changes self's value to that in a string.
-
-        A bad string causes a ConversionSyntax error.
-        """
-        if context is None:
-            context = getcontext()
-        try:
-            self._sign, self._int, self._exp = _string2exact(value)
-        except ValueError:
-            self._sign, self._int, self._exp = context._raise_error(ConversionSyntax)
-        return
 
     def __nonzero__(self):
         """Is the number non-zero?
@@ -1433,8 +1423,6 @@ class Decimal(object):
 
     def __int__(self):
         """Converts self to a int, truncating if necessary."""
-        # XXX This should be implemented in terms of tested
-        # functions in the standard
         if self._isnan():
             context = getcontext()
             return context._raise_error(InvalidContext)
@@ -2115,6 +2103,8 @@ class Decimal(object):
             return self     # My components are also immutable
         return self.__class__(str(self))
 
+##### Context class ###########################################
+
 
 # get rounding method function:
 rounding_functions = [name for name in Decimal.__dict__.keys() if name.startswith('_round_')]
@@ -2152,6 +2142,8 @@ class Context(object):
                  Emin=DEFAULT_MIN_EXPONENT, Emax=DEFAULT_MAX_EXPONENT,
                  capitals=1, _clamp=0,
                  _ignored_flags=[]):
+        if flags is None:
+            flags = dict.fromkeys(Signals, 0)
         DefaultLock.acquire()
         for name, val in locals().items():
             if val is None:
@@ -2161,13 +2153,17 @@ class Context(object):
         DefaultLock.release()
         del self.self
 
+    def clear_flags(self):
+        """Reset all flags to zero"""
+        for flag in self.flags:
+            self.flag = 0
+
     def copy(self):
         """Returns a copy from self."""
         nc = Context(self.prec, self.rounding, self.trap_enablers, self.flags,
                          self._rounding_decision, self.Emin, self.Emax,
                          self.capitals, self._clamp, self._ignored_flags)
         return nc
-    __copy__ = copy
 
     def _raise_error(self, error, explanation = None, *args):
         """Handles an error
@@ -2192,7 +2188,7 @@ class Context(object):
 
     def _ignore_all_flags(self):
         """Ignore all flags, if they are raised"""
-        return self._ignore_flags(*ExceptionList)
+        return self._ignore_flags(*Signals)
 
     def _ignore_flags(self, *flags):
         """Ignore the flags, if they are raised"""
@@ -2959,20 +2955,16 @@ def isnan(num):
 
 ##### Setup Specific Contexts ################################
 
-def _zero_exceptions():
-    "Helper function mapping all exceptions to zero."
-    d = {}
-    for exception in ExceptionList:
-        d[exception] = 0
-    return d
+_basic_traps = dict.fromkeys(Signals, 1)
+_basic_traps.update({Inexact:0, Rounded:0, Subnormal:0})
 
 # The default context prototype used by Context()
 # Is mutable, so than new contexts can have different default values
 
 DefaultContext = Context(
         prec=SINGLE_PRECISION, rounding=ROUND_HALF_EVEN,
-        trap_enablers=_zero_exceptions(),
-        flags=_zero_exceptions(),
+        trap_enablers=dict.fromkeys(Signals, 0),
+        flags=None,
         _rounding_decision=ALWAYS_ROUND,
 )
 
@@ -2981,25 +2973,22 @@ DefaultContext = Context(
 # contexts and be able to reproduce results from other implementations
 # of the spec.
 
-_basic_traps = _zero_exceptions()
-_basic_traps.update({Inexact:1, Rounded:1, Subnormal:1})
-
 BasicDefaultContext = Context(
         prec=9, rounding=ROUND_HALF_UP,
         trap_enablers=_basic_traps,
-        flags=_zero_exceptions(),
+        flags=None,
         _rounding_decision=ALWAYS_ROUND,
 )
 
 ExtendedDefaultContext = Context(
         prec=SINGLE_PRECISION, rounding=ROUND_HALF_EVEN,
-        trap_enablers=_zero_exceptions(),
-        flags=_zero_exceptions(),
+        trap_enablers=dict.fromkeys(Signals, 0),
+        flags=None,
         _rounding_decision=ALWAYS_ROUND,
 )
 
 
-##### Useful Constants (internal use only######################
+##### Useful Constants (internal use only) ####################
 
 #Reusable defaults
 Inf = Decimal('Inf')
