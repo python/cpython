@@ -8,7 +8,7 @@ that name.
 import sys
 import os
 
-__all__ = ["getline","clearcache","checkcache"]
+__all__ = ["getline", "clearcache", "checkcache"]
 
 def getline(filename, lineno):
     lines = getlines(filename)
