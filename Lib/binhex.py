@@ -24,7 +24,6 @@ hexbin(inputfilename, outputfilename)
 import sys
 import os
 import struct
-import string
 import binascii
 
 __all__ = ["binhex","hexbin","Error"]
@@ -93,8 +92,7 @@ else:
         fp = open(name)
         data = open(name).read(256)
         for c in data:
-            if not c in string.whitespace \
-                and (c<' ' or ord(c) > 0177):
+            if not c.isspace() and (c<' ' or ord(c) > 0177):
                 break
         else:
             finfo.Type = 'TEXT'
