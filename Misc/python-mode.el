@@ -184,8 +184,8 @@ indentation is used as a hint for this line's indentation.  Lines that
 begin with `py-block-comment-prefix' are ignored for indentation
 purposes.
 
-When not nil or t, comment lines that begin with a `#' are used as
-indentation hints, unless the comment character is in column zero."
+When not nil or t, comment lines that begin with a single `#' are used
+as indentation hints, unless the comment character is in column zero."
   :type '(choice
 	  (const :tag "Skip all comment lines (fast)" nil)
 	  (const :tag "Single # `sets' indentation for next line" t)
@@ -1902,7 +1902,11 @@ dedenting."
 			     (and (not (eq py-honor-comment-indentation t))
 				  (save-excursion
 				    (back-to-indentation)
-				    (not (zerop (current-column)))))
+				    (and (not (looking-at prefix-re))
+					 (or (looking-at "[^#]")
+					     (not (zerop (current-column)))
+					     ))
+				    ))
 			     ))
 	      )))
 	;; if we landed inside a string, go to the beginning of that
