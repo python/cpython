@@ -36,9 +36,20 @@
 #
 # Finally, if a line contains just the word "*shared*" (without the
 # quotes but with the stars), then the following modules will not be
+# built statically.  The build process works like this:
+#
+# 1. Build all modules that are declared as static in Modules/Setup,
+#    combine them into libpythonxy.a, combine that into python.
+# 2. Build all modules that are listed as shared in Modules/Setup.
+# 3. Invoke setup.py. That builds all modules that
+#    a) are not builtin, and
+#    b) are not listed in Modules/Setup, and
+#    c) can be build on the target
+#
+# Therefore, modules declared to be shared will not be
 # included in the config.c file, nor in the list of objects to be
 # added to the library archive, and their linker options won't be
-# added to the linker options, but rules to create their .o files and
+# added to the linker options. Rules to create their .o files and
 # their shared libraries will still be added to the Makefile, and
 # their names will be collected in the Make variable SHAREDMODS.  This
 # is used to build modules as shared libraries.  (They can be
@@ -46,8 +57,9 @@
 # toplevel "make install" target.)  (For compatibility,
 # *noconfig* has the same effect as *shared*.)
 #
-# In addition, *static* reverses this effect (negating a previous
-# *shared* line).
+# In addition, *static* explicitly declares the following modules to
+# be static.  Lines containing "*static*" and "*shared*" may thus
+# alternate thoughout this file.
 
 # NOTE: As a standard policy, as many modules as can be supported by a
 # platform should be present.  The distribution comes with all modules
