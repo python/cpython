@@ -82,6 +82,10 @@ The module \module{curses} defines the following exception:
 Curses function returned an error status.
 \end{excdesc}
 
+\strong{Note:} Whenever \var{x} or \var{y} arguments to a function
+or a method are optional, they default to the current cursor location.
+Whenever \var{attr} is optional, it defaults to \constant{A_NORMAL}.
+
 The module \module{curses} defines the following functions:
 
 \begin{funcdesc}{initscr}{}
@@ -104,7 +108,9 @@ Update the screen.
 \begin{funcdesc}{newwin}{\optional{nlines, ncols,} begin_y, begin_x}
 Return a new window, whose left-upper corner is at 
 \code{(\var{begin_y}, \var{begin_x})}, and whose height/width is 
-\var{nlines}/\var{ncols}.  By default, the window will extend from the 
+\var{nlines}/\var{ncols}.  
+
+By default, the window will extend from the 
 specified position to the lower right corner of the screen.
 \end{funcdesc}
 
@@ -176,8 +182,8 @@ Window objects, as returned by \function{initscr()} and
 following methods:
 
 \begin{methoddesc}{refresh}{}
-Do refresh (sync actual screen with previous drawing/deleting 
-methods.)
+Update the display immediately (sync actual screen with previous
+drawing/deleting methods).
 \end{methoddesc}
 
 \begin{methoddesc}{nooutrefresh}{}
@@ -185,18 +191,20 @@ Mark for refresh but wait.
 \end{methoddesc}
 
 \begin{methoddesc}{mvwin}{new_y, new_x}
-Move the window so its upper-left corner is at \code{(new_y, new_x)}.
+Move the window so its upper-left corner is at \code{(\var{new_y}, \var{new_x})}.
 \end{methoddesc}
 
 \begin{methoddesc}{move}{new_y, new_x}
 Move cursor to \code{(\var{new_y}, \var{new_x})}.
 \end{methoddesc}
 
-\begin{methoddesc}{subwin}{nlines=HEIGTH-begin_y, ncols=WIDTH-begin_x,
-                           begin_y, begin_y}
+\begin{methoddesc}{subwin}{\optional{nlines, ncols,} begin_y, begin_y}
 Return a sub-window, whose upper-left corner is at
 \code{(\var{begin_y}, \var{begin_x})}, and whose width/height is
 \var{ncols}/\var{nlines}.
+
+By default, the sub-window will extend from the
+specified position to the lower right corner of the window.
 \end{methoddesc}
 
 \begin{methoddesc}{addch}{\optional{y, x,} ch\optional{, attr}}
@@ -217,7 +225,7 @@ character.
 \end{methoddesc}
 
 \begin{methoddesc}{delch}{\optional{x, y}}
-Delete any character at \code{(y,x)}.
+Delete any character at \code{(\var{y}, \var{x})}.
 \end{methoddesc}
 
 \begin{methoddesc}{echochar}{ch\optional{, attr}}
@@ -226,44 +234,59 @@ call \method{refresh}.
 \end{methoddesc}
 
 \begin{methoddesc}{addstr}{\optional{y, x,} str\optional{, attr}}
-Paint string \var{str} at \code{(y,x)} with attributes \var{attr}, overwriting
-anything previously on the display.
+Paint string \var{str} at \code{(\var{y}, \var{x})} with attributes
+\var{attr}, overwriting anything previously on the display.
 \end{methoddesc}
 
 \begin{methoddesc}{attron}{attr}
-Turn on attribute \var{attr} at current cursor location.
+Turn on attribute \var{attr}.
 \end{methoddesc}
 
 \begin{methoddesc}{attroff}{attr}
-Turn off attribute \var{attr} at current cursor location.
+Turn off attribute \var{attr}.
 \end{methoddesc}
 
 \begin{methoddesc}{setattr}{attr}
-Set the attributes at the current cursor location to \var{attr}.
+Set the current attributes to \var{attr}.
 \end{methoddesc}
 
 \begin{methoddesc}{standend}{}
-Turn off all attributes at current cusor location.
+Turn off all attributes.
 \end{methoddesc}
 
 \begin{methoddesc}{standout}{}
 Turn on attribute \var{A_STANDOUT}.
 \end{methoddesc}
 
-\begin{methoddesc}{border}{ls\code{ = ACS_VLINE}, rs\code{ = ACS_VLINE}, 
-                           ts\code{ = ACS_HLINE}, bs\code{ = ACS_HLINE}, 
-                           tl\code{ = ACS_ULCORNER}, tr\code{ = ACS_URCORNER}, 
-                           bl\code{ = ACS_BLCORNER}, br\code{ = ACS_BRCORNER}}
-Draw a border around the edges of the window. The arguments are
-respectively, the character to use for the left side, the right side
-the top side, the bottom side, the top-left corner, the top-right
-corner, the bottom-left corner and the bottom-right corner.
+\begin{methoddesc}{border}{\optional{ls\optional{, rs\optional{, ts\optional{,
+                           bs\optional{, tl\optional{, tr\optional{,
+                           bl\optional{, br}}}}}}}}}
+Draw a border around the edges of the window. Each parameter specifies 
+the character to use for a specific part of the border; see the table
+below for more details.  The characters must be specified as integers;
+using one-character strings will cause \exception{TypeError} to be
+raised.
+
+\strong{Note:} A \code{0} value for any parameter will cause the
+default character to be used for that parameter.  Keyword parameters
+can \emph{not} be used.  The defaults are listed in this table:
+
+\begin{tableiii}{l|l|l}{var}{Parameter}{Description}{Default value}
+  \lineiii{ls}{Left side}{\constant{ACS_VLINE}}
+  \lineiii{rs}{Right side}{\constant{ACS_VLINE}}
+  \lineiii{ts}{Top}{\constant{ACS_HLINE}}
+  \lineiii{bs}{Bottom}{\constant{ACS_HLINE}}
+  \lineiii{tl}{Upper-left corner}{\constant{ACS_ULCORNER}}
+  \lineiii{tr}{Upper-right corner}{\constant{ACS_URCORNER}}
+  \lineiii{bl}{Bottom-left corner}{\constant{ACS_BLCORNER}}
+  \lineiii{br}{Bottom-right corner}{\constant{ACS_BRCORNER}}
+\end{tableiii}
 \end{methoddesc}
 
-\begin{methoddesc}{box}{vertch\code{ = ACS_VLINE}, horch\code{ = ACS_HLINE}}
-Same as \method{border}, but both \var{ls} and \var{rs} are \var{vertch}
-and both \var{ts} and {bs} are \var{horch}. The corners are non-overridable
-by this function.
+\begin{methoddesc}{box}{\optional{vertch, horch}}
+Similar to \method{border()}, but both \var{ls} and \var{rs} are
+\var{vertch} and both \var{ts} and {bs} are \var{horch}.  The default
+corner characters are always used by this function.
 \end{methoddesc}
 
 \begin{methoddesc}{hline}{\optional{y, x,} ch, n}
