@@ -18,15 +18,12 @@ PySeqIter_New(PyObject *seq)
 	it->it_index = 0;
 	Py_INCREF(seq);
 	it->it_seq = seq;
-	PyObject_GC_Init(it);
 	return (PyObject *)it;
 }
 static void
 iter_dealloc(seqiterobject *it)
 {
-	PyObject_GC_Fini(it);
 	Py_DECREF(it->it_seq);
-	it = (seqiterobject *) PyObject_AS_GC(it);
 	PyObject_DEL(it);
 }
 
@@ -100,7 +97,7 @@ PyTypeObject PySeqIter_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,					/* ob_size */
 	"iterator",				/* tp_name */
-	sizeof(seqiterobject) + PyGC_HEAD_SIZE,	/* tp_basicsize */
+	sizeof(seqiterobject),			/* tp_basicsize */
 	0,					/* tp_itemsize */
 	/* methods */
 	(destructor)iter_dealloc, 		/* tp_dealloc */
@@ -118,7 +115,7 @@ PyTypeObject PySeqIter_Type = {
 	PyObject_GenericGetAttr,		/* tp_getattro */
 	0,					/* tp_setattro */
 	0,					/* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_GC,	/* tp_flags */
+	Py_TPFLAGS_DEFAULT,			/* tp_flags */
  	0,					/* tp_doc */
  	(traverseproc)iter_traverse,		/* tp_traverse */
  	0,					/* tp_clear */
@@ -154,16 +151,13 @@ PyCallIter_New(PyObject *callable, PyObject *sentinel)
 	it->it_callable = callable;
 	Py_INCREF(sentinel);
 	it->it_sentinel = sentinel;
-	PyObject_GC_Init(it);
 	return (PyObject *)it;
 }
 static void
 calliter_dealloc(calliterobject *it)
 {
-	PyObject_GC_Fini(it);
 	Py_DECREF(it->it_callable);
 	Py_DECREF(it->it_sentinel);
-	it = (calliterobject *) PyObject_AS_GC(it);
 	PyObject_DEL(it);
 }
 
@@ -218,7 +212,7 @@ PyTypeObject PyCallIter_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,					/* ob_size */
 	"callable-iterator",			/* tp_name */
-	sizeof(calliterobject) + PyGC_HEAD_SIZE,/* tp_basicsize */
+	sizeof(calliterobject),			/* tp_basicsize */
 	0,					/* tp_itemsize */
 	/* methods */
 	(destructor)calliter_dealloc, 		/* tp_dealloc */
@@ -236,7 +230,7 @@ PyTypeObject PyCallIter_Type = {
 	PyObject_GenericGetAttr,		/* tp_getattro */
 	0,					/* tp_setattro */
 	0,					/* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_GC,	/* tp_flags */
+	Py_TPFLAGS_DEFAULT,			/* tp_flags */
  	0,					/* tp_doc */
  	(traverseproc)calliter_traverse,	/* tp_traverse */
  	0,					/* tp_clear */
