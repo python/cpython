@@ -356,3 +356,5 @@ if works:
 else:
     print "\n\n\n\n************ Check for failures!"
 
+Node.debug = None # Delete debug output collected in a StringIO object
+Node._debug = 0   # And reset debug mode
