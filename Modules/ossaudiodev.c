@@ -51,7 +51,7 @@ typedef struct {
     int		x_icount;	/* Input count */
     int		x_ocount;	/* Output count */
     uint32_t	x_afmts;	/* Audio formats supported by hardware*/
-} lad_t;
+} oss_t;
 
 /* XXX several format defined in soundcard.h are not supported,
    including _NE (native endian) options and S32 options
@@ -75,14 +75,14 @@ static struct {
 
 static int n_audio_types = sizeof(audio_types) / sizeof(audio_types[0]);
 
-static PyTypeObject Ladtype;
+static PyTypeObject OSSType;
 
 static PyObject *OSSAudioError;
 
-static lad_t *
-newladobject(PyObject *arg)
+static oss_t *
+newossobject(PyObject *arg)
 {
-    lad_t *xp;
+    oss_t *xp;
     int fd, afmts, imode;
     char *basedev = NULL;
     char *mode = NULL;
@@ -134,7 +134,7 @@ newladobject(PyObject *arg)
         return NULL;
     }
     /* Create and initialize the object */
-    if ((xp = PyObject_New(lad_t, &Ladtype)) == NULL) {
+    if ((xp = PyObject_New(oss_t, &OSSType)) == NULL) {
         close(fd);
         return NULL;
     }
@@ -146,7 +146,7 @@ newladobject(PyObject *arg)
 }
 
 static void
-lad_dealloc(lad_t *xp)
+oss_dealloc(oss_t *xp)
 {
     /* if already closed, don't reclose it */
     if (xp->x_fd != -1)
@@ -173,7 +173,7 @@ lad_dealloc(lad_t *xp)
      arg = dsp.xxx(arg)
 */
 static PyObject *
-_do_ioctl_1(lad_t *self, PyObject *args, char *fname, int cmd)
+_do_ioctl_1(oss_t *self, PyObject *args, char *fname, int cmd)
 {
     char argfmt[13] = "i:";
     int arg;
@@ -191,7 +191,7 @@ _do_ioctl_1(lad_t *self, PyObject *args, char *fname, int cmd)
 /* _do_ioctl_0() is a private helper for the no-argument ioctls:
    SNDCTL_DSP_{SYNC,RESET,POST}. */
 static PyObject *
-_do_ioctl_0(lad_t *self, PyObject *args, char *fname, int cmd)
+_do_ioctl_0(oss_t *self, PyObject *args, char *fname, int cmd)
 {
     char argfmt[12] = ":";
 
@@ -208,7 +208,7 @@ _do_ioctl_0(lad_t *self, PyObject *args, char *fname, int cmd)
 
 
 static PyObject *
-lad_nonblock(lad_t *self, PyObject *args)
+oss_nonblock(oss_t *self, PyObject *args)
 {
     /* Hmmm: it doesn't appear to be possible to return to blocking
        mode once we're in non-blocking mode! */
@@ -221,13 +221,13 @@ lad_nonblock(lad_t *self, PyObject *args)
 }
 
 static PyObject *
-lad_setfmt(lad_t *self, PyObject *args)
+oss_setfmt(oss_t *self, PyObject *args)
 {
     return _do_ioctl_1(self, args, "setfmt", SNDCTL_DSP_SETFMT);
 }
 
 static PyObject *
-lad_getfmts(lad_t *self, PyObject *args)
+oss_getfmts(oss_t *self, PyObject *args)
 {
     int mask;
     if (!PyArg_ParseTuple(args, ":getfmts"))
@@ -238,31 +238,31 @@ lad_getfmts(lad_t *self, PyObject *args)
 }
 
 static PyObject *
-lad_channels(lad_t *self, PyObject *args)
+oss_channels(oss_t *self, PyObject *args)
 {
     return _do_ioctl_1(self, args, "channels", SNDCTL_DSP_CHANNELS);
 }
 
 static PyObject *
-lad_speed(lad_t *self, PyObject *args)
+oss_speed(oss_t *self, PyObject *args)
 {
     return _do_ioctl_1(self, args, "speed", SNDCTL_DSP_SPEED);
 }
 
 static PyObject *
-lad_sync(lad_t *self, PyObject *args)
+oss_sync(oss_t *self, PyObject *args)
 {
     return _do_ioctl_0(self, args, "sync", SNDCTL_DSP_SYNC);
 }
     
 static PyObject *
-lad_reset(lad_t *self, PyObject *args)
+oss_reset(oss_t *self, PyObject *args)
 {
     return _do_ioctl_0(self, args, "reset", SNDCTL_DSP_RESET);
 }
     
 static PyObject *
-lad_post(lad_t *self, PyObject *args)
+oss_post(oss_t *self, PyObject *args)
 {
     return _do_ioctl_0(self, args, "post", SNDCTL_DSP_POST);
 }
@@ -272,7 +272,7 @@ lad_post(lad_t *self, PyObject *args)
    as one convenience method, writeall(). */
 
 static PyObject *
-lad_read(lad_t *self, PyObject *args)
+oss_read(oss_t *self, PyObject *args)
 {
     int size, count;
     char *cp;
@@ -295,7 +295,7 @@ lad_read(lad_t *self, PyObject *args)
 }
 
 static PyObject *
-lad_write(lad_t *self, PyObject *args)
+oss_write(oss_t *self, PyObject *args)
 {
     char *cp;
     int rv, size;
@@ -312,7 +312,7 @@ lad_write(lad_t *self, PyObject *args)
 }
 
 static PyObject *
-lad_writeall(lad_t *self, PyObject *args)
+oss_writeall(oss_t *self, PyObject *args)
 {
     char *cp;
     int rv, size;
@@ -357,7 +357,7 @@ lad_writeall(lad_t *self, PyObject *args)
 }
 
 static PyObject *
-lad_close(lad_t *self, PyObject *args)
+oss_close(oss_t *self, PyObject *args)
 {
     if (!PyArg_ParseTuple(args, ":close"))
 	return NULL;
@@ -371,7 +371,7 @@ lad_close(lad_t *self, PyObject *args)
 }
 
 static PyObject *
-lad_fileno(lad_t *self, PyObject *args)
+oss_fileno(oss_t *self, PyObject *args)
 {
     if (!PyArg_ParseTuple(args, ":fileno")) 
 	return NULL;
@@ -383,7 +383,7 @@ lad_fileno(lad_t *self, PyObject *args)
    common task. */
 
 static PyObject *
-lad_setparameters(lad_t *self, PyObject *args)
+oss_setparameters(oss_t *self, PyObject *args)
 {
     int rate, ssize, nchannels, n, fmt, emulate=0;
 
@@ -448,7 +448,7 @@ lad_setparameters(lad_t *self, PyObject *args)
 }
 
 static int
-_ssize(lad_t *self, int *nchannels, int *ssize)
+_ssize(oss_t *self, int *nchannels, int *ssize)
 {
     int fmt;
 
@@ -484,7 +484,7 @@ _ssize(lad_t *self, int *nchannels, int *ssize)
 /* bufsize returns the size of the hardware audio buffer in number 
    of samples */
 static PyObject *
-lad_bufsize(lad_t *self, PyObject *args)
+oss_bufsize(oss_t *self, PyObject *args)
 {
     audio_buf_info ai;
     int nchannels, ssize;
@@ -505,7 +505,7 @@ lad_bufsize(lad_t *self, PyObject *args)
 /* obufcount returns the number of samples that are available in the 
    hardware for playing */
 static PyObject *
-lad_obufcount(lad_t *self, PyObject *args)
+oss_obufcount(oss_t *self, PyObject *args)
 {
     audio_buf_info ai;
     int nchannels, ssize;
@@ -528,7 +528,7 @@ lad_obufcount(lad_t *self, PyObject *args)
 /* obufcount returns the number of samples that can be played without
    blocking */
 static PyObject *
-lad_obuffree(lad_t *self, PyObject *args)
+oss_obuffree(oss_t *self, PyObject *args)
 {
     audio_buf_info ai;
     int nchannels, ssize;
@@ -548,7 +548,7 @@ lad_obuffree(lad_t *self, PyObject *args)
 }
 
 static PyObject *
-lad_getptr(lad_t *self, PyObject *args)
+oss_getptr(oss_t *self, PyObject *args)
 {
     count_info info;
     int req;
@@ -567,53 +567,53 @@ lad_getptr(lad_t *self, PyObject *args)
     return Py_BuildValue("iii", info.bytes, info.blocks, info.ptr);
 }
 
-static PyMethodDef lad_methods[] = {
+static PyMethodDef oss_methods[] = {
     /* Regular file methods */
-    { "read",		(PyCFunction)lad_read, METH_VARARGS },
-    { "write",		(PyCFunction)lad_write, METH_VARARGS },
-    { "writeall",	(PyCFunction)lad_writeall, METH_VARARGS },
-    { "close",		(PyCFunction)lad_close, METH_VARARGS },
-    { "fileno",     	(PyCFunction)lad_fileno, METH_VARARGS },
+    { "read",		(PyCFunction)oss_read, METH_VARARGS },
+    { "write",		(PyCFunction)oss_write, METH_VARARGS },
+    { "writeall",	(PyCFunction)oss_writeall, METH_VARARGS },
+    { "close",		(PyCFunction)oss_close, METH_VARARGS },
+    { "fileno",     	(PyCFunction)oss_fileno, METH_VARARGS },
 
     /* Simple ioctl wrappers */
-    { "nonblock",       (PyCFunction)lad_nonblock, METH_VARARGS },
-    { "setfmt",		(PyCFunction)lad_setfmt, METH_VARARGS },
-    { "getfmts",        (PyCFunction)lad_getfmts, METH_VARARGS },
-    { "channels",       (PyCFunction)lad_channels, METH_VARARGS },
-    { "speed",          (PyCFunction)lad_speed, METH_VARARGS },
-    { "sync", 		(PyCFunction)lad_sync, METH_VARARGS },
-    { "reset", 		(PyCFunction)lad_reset, METH_VARARGS },
-    { "post", 		(PyCFunction)lad_post, METH_VARARGS },
+    { "nonblock",       (PyCFunction)oss_nonblock, METH_VARARGS },
+    { "setfmt",		(PyCFunction)oss_setfmt, METH_VARARGS },
+    { "getfmts",        (PyCFunction)oss_getfmts, METH_VARARGS },
+    { "channels",       (PyCFunction)oss_channels, METH_VARARGS },
+    { "speed",          (PyCFunction)oss_speed, METH_VARARGS },
+    { "sync", 		(PyCFunction)oss_sync, METH_VARARGS },
+    { "reset", 		(PyCFunction)oss_reset, METH_VARARGS },
+    { "post", 		(PyCFunction)oss_post, METH_VARARGS },
 
     /* Convenience methods -- wrap a couple of ioctls together */
-    { "setparameters",	(PyCFunction)lad_setparameters, METH_VARARGS },
-    { "bufsize",	(PyCFunction)lad_bufsize, METH_VARARGS },
-    { "obufcount",	(PyCFunction)lad_obufcount, METH_VARARGS },
-    { "obuffree",	(PyCFunction)lad_obuffree, METH_VARARGS },
-    { "getptr",         (PyCFunction)lad_getptr, METH_VARARGS },
+    { "setparameters",	(PyCFunction)oss_setparameters, METH_VARARGS },
+    { "bufsize",	(PyCFunction)oss_bufsize, METH_VARARGS },
+    { "obufcount",	(PyCFunction)oss_obufcount, METH_VARARGS },
+    { "obuffree",	(PyCFunction)oss_obuffree, METH_VARARGS },
+    { "getptr",         (PyCFunction)oss_getptr, METH_VARARGS },
 
     /* Aliases for backwards compatibility */
-    { "flush",		(PyCFunction)lad_sync, METH_VARARGS },
+    { "flush",		(PyCFunction)oss_sync, METH_VARARGS },
 
     { NULL,		NULL}		/* sentinel */
 };
 
 static PyObject *
-lad_getattr(lad_t *xp, char *name)
+oss_getattr(oss_t *xp, char *name)
 {
-    return Py_FindMethod(lad_methods, (PyObject *)xp, name);
+    return Py_FindMethod(oss_methods, (PyObject *)xp, name);
 }
 
-static PyTypeObject Ladtype = {
+static PyTypeObject OSSType = {
     PyObject_HEAD_INIT(&PyType_Type)
     0,				/*ob_size*/
     "ossaudiodev.oss_audio_device", /*tp_name*/
-    sizeof(lad_t),		/*tp_size*/
+    sizeof(oss_t),		/*tp_size*/
     0,				/*tp_itemsize*/
     /* methods */
-    (destructor)lad_dealloc,	/*tp_dealloc*/
+    (destructor)oss_dealloc,	/*tp_dealloc*/
     0,				/*tp_print*/
-    (getattrfunc)lad_getattr,	/*tp_getattr*/
+    (getattrfunc)oss_getattr,	/*tp_getattr*/
     0,				/*tp_setattr*/
     0,				/*tp_compare*/
     0,				/*tp_repr*/
@@ -622,7 +622,7 @@ static PyTypeObject Ladtype = {
 static PyObject *
 ossopen(PyObject *self, PyObject *args)
 {
-    return (PyObject *)newladobject(args);
+    return (PyObject *)newossobject(args);
 }
 
 static PyMethodDef ossaudiodev_methods[] = {
