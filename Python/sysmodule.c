@@ -352,7 +352,9 @@ Static objects:\n\
 \n\
 maxint -- the largest supported integer (the smallest is -maxint-1)\n\
 builtin_module_names -- tuple of module names built into this intepreter\n\
-version -- the version of this interpreter\n\
+version -- the version of this interpreter as a string\n\
+version_info -- version information as a tuple\n\
+hexversion -- version information encoded as a single integer\n\
 copyright -- copyright notice pertaining to this interpreter\n\
 platform -- platform identifier\n\
 executable -- pathname of this Python interpreter\n\
@@ -405,6 +407,22 @@ _PySys_Init()
 	Py_XDECREF(v);
 	PyDict_SetItemString(sysdict, "hexversion",
 			     v = PyInt_FromLong(PY_VERSION_HEX));
+	Py_XDECREF(v);
+#if PY_RELEASE_LEVEL == PY_RELEASE_LEVEL_FINAL
+	v = PyString_FromStringAndSize(NULL, 0);
+#else
+	{
+	    char buff[3];
+	    buff[0] = PY_RELEASE_LEVEL - PY_RELEASE_LEVEL_ALPHA + 'a';
+	    buff[1] = PY_RELEASE_SERIAL + '0';
+	    buff[2] = '\0';
+	    v = PyString_FromString(buff);
+	}
+#endif /* PY_RELEASE_LEVEL == PY_RELEASE_LEVEL_FINAL */
+	PyDict_SetItemString(sysdict, "version_info",
+			     v = Py_BuildValue("iiiN", PY_MAJOR_VERSION,
+					       PY_MINOR_VERSION,
+					       PY_MICRO_VERSION, v));
 	Py_XDECREF(v);
 	PyDict_SetItemString(sysdict, "copyright",
 			     v = PyString_FromString(Py_GetCopyright()));
