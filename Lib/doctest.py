@@ -248,6 +248,7 @@ real_pdb_set_trace = pdb.set_trace
 #                            +---------+
 
 # Option constants.
+
 OPTIONFLAGS_BY_NAME = {}
 def register_optionflag(name):
     flag = 1 << len(OPTIONFLAGS_BY_NAME)
@@ -258,10 +259,21 @@ DONT_ACCEPT_TRUE_FOR_1 = register_optionflag('DONT_ACCEPT_TRUE_FOR_1')
 DONT_ACCEPT_BLANKLINE = register_optionflag('DONT_ACCEPT_BLANKLINE')
 NORMALIZE_WHITESPACE = register_optionflag('NORMALIZE_WHITESPACE')
 ELLIPSIS = register_optionflag('ELLIPSIS')
+
+COMPARISON_FLAGS = (DONT_ACCEPT_TRUE_FOR_1 |
+                    DONT_ACCEPT_BLANKLINE |
+                    NORMALIZE_WHITESPACE |
+                    ELLIPSIS)
+
 REPORT_UDIFF = register_optionflag('REPORT_UDIFF')
 REPORT_CDIFF = register_optionflag('REPORT_CDIFF')
 REPORT_NDIFF = register_optionflag('REPORT_NDIFF')
 REPORT_ONLY_FIRST_FAILURE = register_optionflag('REPORT_ONLY_FIRST_FAILURE')
+
+REPORTING_FLAGS = (REPORT_UDIFF |
+                   REPORT_CDIFF |
+                   REPORT_NDIFF |
+                   REPORT_ONLY_FIRST_FAILURE)
 
 # Special string markers for use in `want` strings:
 BLANKLINE_MARKER = '<BLANKLINE>'
@@ -1993,14 +2005,9 @@ class Tester:
 ######################################################################
 
 _unittest_reportflags = 0
-valid_unittest_reportflags = (
-    REPORT_CDIFF |
-    REPORT_UDIFF |
-    REPORT_NDIFF |
-    REPORT_ONLY_FIRST_FAILURE
-    )
+
 def set_unittest_reportflags(flags):
-    """Sets the unit test option flags
+    """Sets the unittest option flags.
 
     The old flag is returned so that a runner could restore the old
     value if it wished to:
@@ -2020,36 +2027,20 @@ def set_unittest_reportflags(flags):
       >>> set_unittest_reportflags(ELLIPSIS)
       Traceback (most recent call last):
       ...
-      ValueError: ('Invalid flags passed', 8)
+      ValueError: ('Only reporting flags allowed', 8)
 
       >>> set_unittest_reportflags(old) == (REPORT_NDIFF |
       ...                                   REPORT_ONLY_FIRST_FAILURE)
       True
-
     """
-
-    # extract the valid reporting flags:
-    rflags = flags & valid_unittest_reportflags
-
-    # Now remove these flags from the given flags
-    nrflags = flags ^ rflags
-
-    if nrflags:
-        raise ValueError("Invalid flags passed", flags)
-
     global _unittest_reportflags
+
+    if (flags & REPORTING_FLAGS) != flags:
+        raise ValueError("Only reporting flags allowed", flags)
     old = _unittest_reportflags
     _unittest_reportflags = flags
     return old
 
-
-class FakeModule:
-    """Fake module created by tests
-    """
-
-    def __init__(self, dict, name):
-        self.__dict__ = dict
-        self.__name__ = name
 
 class DocTestCase(unittest.TestCase):
 
@@ -2083,7 +2074,7 @@ class DocTestCase(unittest.TestCase):
         new = StringIO()
         optionflags = self._dt_optionflags
 
-        if not (optionflags & valid_unittest_reportflags):
+        if not (optionflags & REPORTING_FLAGS):
             # The option flags don't include any reporting flags,
             # so add the default reporting flags
             optionflags |= _unittest_reportflags
