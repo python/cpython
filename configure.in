@@ -270,66 +270,11 @@ LIBS="$withval $LIBS"
 ], AC_MSG_RESULT(no))
 
 AC_MSG_CHECKING(for --with(out)-readline)
-use_readline="yes"
 AC_ARG_WITH(readline,
-[--with-readline=DIRECTORY search GNU readline library in DIRECTORY
---without-readline        do not use GNU readline library],
-[AC_MSG_RESULT($withval); use_readline="$withval"],
-[AC_MSG_RESULT((default) yes)])
-if test "$use_readline" != "no"
-then
-	if test "$use_readline" != "yes"
-	then add_ldflags="-L$use_readline"
-	else add_ldflags=""
-	fi
-	# See where the termcap interface could be hiding...
-	AC_MSG_CHECKING(for readline and termcap libraries)
-	AC_CACHE_VAL(ac_cv_readline_termcap,
-		[
-		AC_MSG_RESULT(have to find out)
-		save_libs="$LIBS"
-		save_ldflags="$LDFLAGS"
-		LDFLAGS="$save_ldflags $add_ldflags"
-		rl="-lreadline"
-		first=""
-		# Hack for SGI IRIX 5.x.
-		# Both termcap and gl have an entry point clear().
-		# When linking with both shared libraries, we're in trouble.
-		# We don't need the one in termcap.
-		# By forcing a static link for termcap, we avoid
-		# linking its clear() entry point.
-		if test -f /usr/lib/libgl.so -a -f /usr/lib/libtermcap.a
-		then first="/usr/lib/libtermcap.a"
-		fi
-		for add_lib in \
-			"$first" "-ltermcap" "-ltermlib" "-lcurses" "-lncurses"
-		do
-			AC_MSG_CHECKING(for $rl $add_lib)
-			LIBS="$save_libs $rl $add_lib"
-			AC_TRY_LINK([extern char *readline();],
-			    [char *line=readline();],
-			    [AC_MSG_RESULT(yes);
-			     ac_cv_readline_termcap="$rl $add_lib"],
-			    [AC_MSG_RESULT(no)])
-			if test "$ac_cv_readline_termcap" != ""
-			then break
-			fi
-		done
-		LIBS="$save_libs"
-		LDFLAGS="$save_ldflags"
-		AC_MSG_CHECKING(result from check for readline and termcap)
-		])
-	if test "$ac_cv_readline_termcap" = ""
-	then
-		AC_MSG_RESULT(no)
-		AC_MSG_WARN(cannot link with GNU readline -- see config.log)
-	else
-		AC_MSG_RESULT($ac_cv_readline_termcap)
-		LIBS="$LIBS $ac_cv_readline_termcap"
-		LDFLAGS="$LDFLAGS $add_ldflags"
-		AC_DEFINE(WITH_READLINE)
-	fi
-fi
+[--with(out)-readline      obsolete, edit Modules/Setup instead],
+[AC_MSG_RESULT($withval)
+AC_ERROR(--with(out)-readline is obsolete, edit Modules/Setup instead)],
+[AC_MSG_RESULT(not specified.)])
 
 AC_MSG_CHECKING(for --with-dec-threads)
 AC_SUBST(LDLAST)
