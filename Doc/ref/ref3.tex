@@ -383,7 +383,7 @@ those arguments that have defaults, or \code{None} if no arguments
 have a default value; \code{func_code} is the code object representing
 the compiled function body; \code{func_globals} is (a reference to)
 the dictionary that holds the function's global variables --- it
-defines the global name space of the module in which the function was
+defines the global namespace of the module in which the function was
 defined.  Additional information about a function's definition can be
 retrieved from its code object; see the description of internal types
 below.
@@ -393,7 +393,7 @@ below.
 \ttindex{func_defaults}
 \ttindex{func_code}
 \ttindex{func_globals}
-\indexii{global}{name space}
+\indexii{global}{namespace}
 
 \item[User-defined methods]
 A user-defined method object combines a class, a class instance (or
@@ -498,7 +498,7 @@ is a shorthand for \code{x.__call__(arguments)}.
 \item[Modules]
 Modules are imported by the \keyword{import} statement (see section
 \ref{import}, ``The \keyword{import} statement'').
-A module object has a name space implemented by a dictionary object
+A module object has a namespace implemented by a dictionary object
 (this is the dictionary referenced by the func_globals attribute of
 functions defined in the module).  Attribute references are translated
 to lookups in this dictionary, e.g., \code{m.x} is equivalent to
@@ -509,11 +509,11 @@ is done).
 \stindex{import}
 \obindex{module}
 
-Attribute assignment updates the module's name space dictionary,
+Attribute assignment updates the module's namespace dictionary,
 e.g., ``\code{m.x = 1}'' is equivalent to ``\code{m.__dict__["x"] = 1}''.
 
-Special read-only attribute: \member{__dict__} is the module's name
-space as a dictionary object.
+Special read-only attribute: \member{__dict__} is the module's
+namespace as a dictionary object.
 \ttindex{__dict__}
 
 Predefined (writable) attributes: \member{__name__}
@@ -528,7 +528,7 @@ library file.
 \ttindex{__name__}
 \ttindex{__doc__}
 \ttindex{__file__}
-\indexii{module}{name space}
+\indexii{module}{namespace}
 
 \item[Classes]
 Class objects are created by class definitions (see section
@@ -564,7 +564,7 @@ below).
 
 Special attributes: \member{__name__} is the class name;
 \member{__module__} is the module name in which the class was defined;
-\member{__dict__} is the dictionary containing the class's name space;
+\member{__dict__} is the dictionary containing the class's namespace;
 \member{__bases__} is a tuple (possibly empty or a singleton)
 containing the base classes, in the order of their occurrence in the
 base class list; \code{__doc__} is the class's documentation string,
