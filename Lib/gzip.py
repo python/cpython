@@ -139,12 +139,12 @@ class GzipFile:
     def writelines(self,lines):
         self.write(string.join(lines))
 
-    def read(self, size=None):
+    def read(self, size=-1):
         if self.extrasize <= 0 and self.fileobj is None:
             return ''
 
         readsize = 1024
-        if not size:        # get the whole thing
+        if size < 0:        # get the whole thing
             try:
                 while 1:
                     self._read(readsize)
@@ -281,7 +281,7 @@ class GzipFile:
             bufs.append(c)
             readsize = readsize * 2
 
-    def readlines(self):
+    def readlines(self, ignored=None):
         buf = self.read()
         lines = string.split(buf, '\n')
         for i in range(len(lines)-1):
