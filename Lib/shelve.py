@@ -46,7 +46,7 @@ class Shelf:
 		return self.dict.keys()
 	
 	def __len__(self):
-		return self.dict.len()
+		return len(self.dict)
 	
 	def has_key(self, key):
 		return self.dict.has_key(key)
