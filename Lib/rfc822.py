@@ -417,6 +417,10 @@ def parsedate_tz(data):
 	if data[0][-1] == ',':
 		# There's a dayname here. Skip it
 		del data[0]
+	if len(data) == 3: # RFC 850 date, deprecated
+		stuff = string.split(data[0], '-')
+		if len(stuff) == 3:
+			data = stuff + data[1:]
 	if len(data) == 4:
 		s = data[3]
 		i = string.find(s, '+')
