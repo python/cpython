@@ -31,6 +31,12 @@ Core and builtins
   to clear the error when attempts to get the __getstate__ attribute
   fail caused intermittent errors and odd behavior.
 
+Library
+-------
+
+- Patch 817379: Allow absolute ftp paths in urllib2.
+
+
 What's New in Python 2.3.3 (final)?
 ===================================
 
