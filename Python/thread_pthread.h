@@ -20,63 +20,6 @@
 #include <errno.h>
 #endif
 
-
-/* try to determine what version of the Pthread Standard is installed.
- * this is important, since all sorts of parameter types changed from
- * draft to draft and there are several (incompatible) drafts in
- * common use.  these macros are a start, at least. 
- * 12 May 1997 -- david arnold <davida@pobox.com>
- */
-
-#if defined(__ultrix) && defined(__mips) && defined(_DECTHREADS_)
-/* _DECTHREADS_ is defined in cma.h which is included by pthread.h */
-#  define PY_PTHREAD_D4
-#  error Systems with PY_PTHREAD_D4 are unsupported. See README.
-
-#elif defined(__osf__) && defined (__alpha)
-/* _DECTHREADS_ is defined in cma.h which is included by pthread.h */
-#  if !defined(_PTHREAD_ENV_ALPHA) || defined(_PTHREAD_USE_D4) || defined(PTHREAD_USE_D4)
-#    define PY_PTHREAD_D4
-#    error Systems with PY_PTHREAD_D4 are unsupported. See README.
-#  else
-#    define PY_PTHREAD_STD
-#  endif
-
-#elif defined(_AIX)
-/* SCHED_BG_NP is defined if using AIX DCE pthreads
- * but it is unsupported by AIX 4 pthreads. Default
- * attributes for AIX 4 pthreads equal to NULL. For
- * AIX DCE pthreads they should be left unchanged.
- */
-#  if !defined(SCHED_BG_NP)
-#    define PY_PTHREAD_STD
-#  else
-#    define PY_PTHREAD_D7
-#    error Systems with PY_PTHREAD_D7 are unsupported. See README.
-#  endif
-
-#elif defined(__hpux) && defined(_DECTHREADS_)
-#  define PY_PTHREAD_D4
-#  error Systems with PY_PTHREAD_D4 are unsupported. See README.
-
-#else /* Default case */
-#  define PY_PTHREAD_STD
-
-#endif
-
-/* set default attribute object for different versions */
-
-#if defined(PY_PTHREAD_D4) || defined(PY_PTHREAD_D7)
-#if !defined(pthread_attr_default)
-#  define pthread_attr_default pthread_attr_default
-#endif
-#if !defined(pthread_mutexattr_default)
-#  define pthread_mutexattr_default pthread_mutexattr_default
-#endif
-#if !defined(pthread_condattr_default)
-#  define pthread_condattr_default pthread_condattr_default
-#endif
-#elif defined(PY_PTHREAD_STD)
 #if !defined(pthread_attr_default)
 #  define pthread_attr_default ((pthread_attr_t *)NULL)
 #endif
@@ -85,7 +28,6 @@
 #endif
 #if !defined(pthread_condattr_default)
 #  define pthread_condattr_default ((pthread_condattr_t *)NULL)
-#endif
 #endif
 
 
@@ -203,15 +145,6 @@ PyThread_start_new_thread(void (*func)(void *), void *arg)
 	SET_THREAD_SIGMASK(SIG_BLOCK, &newmask, &oldmask);
 
 	status = pthread_create(&th, 
-#if defined(PY_PTHREAD_D4)
-				 pthread_attr_default,
-				 (pthread_startroutine_t)func, 
-				 (pthread_addr_t)arg
-#elif defined(PY_PTHREAD_D7)
-				 pthread_attr_default,
-				 func,
-				 arg
-#elif defined(PY_PTHREAD_STD)
 #if defined(THREAD_STACK_SIZE) || defined(PTHREAD_SYSTEM_SCHED_SUPPORTED)
 				 &attrs,
 #else
@@ -219,7 +152,6 @@ PyThread_start_new_thread(void (*func)(void *), void *arg)
 #endif
 				 (void* (*)(void *))func,
 				 (void *)arg
-#endif
 				 );
 
 	/* Restore signal mask for original thread */
@@ -231,11 +163,7 @@ PyThread_start_new_thread(void (*func)(void *), void *arg)
 	if (status != 0)
             return -1;
 
-#if defined(PY_PTHREAD_D4) || defined(PY_PTHREAD_D7)
-        pthread_detach(&th);
-#elif defined(PY_PTHREAD_STD)
         pthread_detach(th);
-#endif
 
 #if SIZEOF_PTHREAD_T <= SIZEOF_LONG
 	return (long) th;
