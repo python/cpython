@@ -78,7 +78,21 @@ DataBrowserTableViewColumnIndex = UInt32
 DataBrowserPropertyType = OSType
 ControlDisclosureTriangleOrientation = UInt16
 
+DataBrowserTableViewColumnDesc = OpaqueType("DataBrowserTableViewColumnDesc",
+		"DataBrowserTableViewColumnDesc")
+DataBrowserListViewColumnDesc = OpaqueType("DataBrowserListViewColumnDesc",
+		"DataBrowserListViewColumnDesc")
+ControlButtonContentInfo = OpaqueType("ControlButtonContentInfo",
+		"ControlButtonContentInfo")
+ControlButtonContentInfoPtr = ControlButtonContentInfo_ptr = ControlButtonContentInfo
 
+ControlTabEntry_ptr = OpaqueType("ControlTabEntry", "ControlTabEntry")
+
+ControlBevelThickness = UInt16
+ControlBevelButtonBehavior = UInt16
+ControlBevelButtonMenuBehavior = UInt16
+ControlBevelButtonMenuPlacement = UInt16
+ControlPushButtonIconAlignment = UInt16
 
 includestuff = includestuff + """
 #ifdef WITHOUT_FRAMEWORKS
@@ -106,6 +120,7 @@ staticforward PyObject *CtlObj_WhichControl(ControlHandle);
 #define GetControlRect(ctl, rectp) (*(rectp) = ((*(ctl))->contrlRect))
 #endif
 
+#define MAXTABS 32  /* maximum number of tabs that we support in a tabs control */
 /*
 ** Parse/generate ControlFontStyleRec records
 */
@@ -123,7 +138,7 @@ ControlFontStyle_New(ControlFontStyleRec *itself)
 static int
 ControlFontStyle_Convert(PyObject *v, ControlFontStyleRec *itself)
 {
-	return PyArg_ParseTuple(v, "hhhhhhO&O&", &itself->flags,
+	return PyArg_Parse(v, "(hhhhhhO&O&)", &itself->flags,
 		&itself->font, &itself->size, &itself->style, &itself->mode,
 		&itself->just, QdRGB_Convert, &itself->foreColor,
 		QdRGB_Convert, &itself->backColor);
@@ -142,9 +157,50 @@ PyControlID_New(ControlID *itself)
 static int
 PyControlID_Convert(PyObject *v, ControlID *itself)
 {
-	return PyArg_ParseTuple(v, "O&l", PyMac_GetOSType, &itself->signature, &itself->id);
+	return PyArg_Parse(v, "(O&l)", PyMac_GetOSType, &itself->signature, &itself->id);
 }
 
+/*
+** generate DataBrowserListViewColumnDesc records
+*/
+static int
+DataBrowserTableViewColumnDesc_Convert(PyObject *v, DataBrowserTableViewColumnDesc *itself)
+{
+	return PyArg_Parse(v, "(lO&l)",
+	                   &itself->propertyID,
+	                   PyMac_GetOSType, &itself->propertyType,
+	                   &itself->propertyFlags);
+}
+
+static int
+ControlButtonContentInfo_Convert(PyObject *v, ControlButtonContentInfo *itself)
+{
+	return PyArg_Parse(v, "(hO&)",
+	                   &itself->contentType,
+	                   OptResObj_Convert, &itself->u.iconSuite);
+}
+
+static int
+DataBrowserListViewHeaderDesc_Convert(PyObject *v, DataBrowserListViewHeaderDesc *itself)
+{
+	itself->version = kDataBrowserListViewLatestHeaderDesc;
+	return PyArg_Parse(v, "(HHhO&HO&O&)",
+	                   &itself->minimumWidth,
+	                   &itself->maximumWidth,
+	                   &itself->titleOffset,
+	                   CFStringRefObj_Convert, &itself->titleString,
+	                   &itself->initialOrder,
+	                   ControlFontStyle_Convert, &itself->btnFontStyle,
+	                   ControlButtonContentInfo_Convert, &itself->btnContentInfo);
+}
+
+static int
+DataBrowserListViewColumnDesc_Convert(PyObject *v, DataBrowserListViewColumnDesc *itself)
+{
+	return PyArg_Parse(v, "(O&O&)",
+	                   DataBrowserTableViewColumnDesc_Convert, &itself->propertyDesc,
+	                   DataBrowserListViewHeaderDesc_Convert, &itself->headerBtnDesc);
+}
 
 /* TrackControl and HandleControlClick callback support */
 static PyObject *tracker;
@@ -664,6 +720,64 @@ return Py_None;
 f = ManualGenerator("SetPopupData", setpopupdata_body, condition="#if !TARGET_API_MAC_CARBON")
 object.add(f)
 
+
+createtabscontrol_body = """\
+OSStatus _err;
+WindowPtr window;
+Rect boundsRect;
+UInt16 size;
+UInt16 direction;
+int i;
+UInt16 numTabs;
+ControlTabEntry tabArray[MAXTABS];
+ControlHandle outControl;
+PyObject *tabArrayObj, *tabEntry;
+
+#ifndef CreateTabsControl
+PyMac_PRECHECK(CreateTabsControl);
+#endif
+if (!PyArg_ParseTuple(_args, "O&O&HHO",
+                      WinObj_Convert, &window,
+                      PyMac_GetRect, &boundsRect,
+                      &size,
+                      &direction,
+                      &tabArrayObj))
+	return NULL;
+
+i = PySequence_Length(tabArrayObj);
+if (i == -1)
+	return NULL;
+if (i > MAXTABS) {
+	PyErr_SetString(Ctl_Error, "Too many tabs");
+	return NULL;
+}
+numTabs = i;
+for (i=0; i<numTabs; i++) {
+	tabEntry = PySequence_GetItem(tabArrayObj, i);
+	if (tabEntry == NULL)
+		return NULL;
+	if (!PyArg_Parse(tabEntry, "(O&O&B)",
+	                 ControlButtonContentInfo_Convert, &tabArray[i].icon,
+	                 CFStringRefObj_Convert, &tabArray[i].name,
+	                 &tabArray[i].enabled
+	                 ))
+		return NULL;
+}
+
+_err = CreateTabsControl(window,
+                         &boundsRect,
+                         size,
+                         direction,
+                         numTabs,
+                         tabArray,
+                         &outControl);
+if (_err != noErr) return PyMac_Error(_err);
+_res = Py_BuildValue("O&",
+                     CtlObj_New, outControl);
+return _res;"""
+
+f = ManualGenerator("CreateTabsControl", createtabscontrol_body, condition="#if TARGET_API_MAC_CARBON")
+module.add(f)
 
 # generate output (open the output file as late as possible)
 SetOutputFileName(OUTPUTFILE)
