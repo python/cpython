@@ -5,10 +5,15 @@ import path
 
 
 # Changeable parameters (by clients!)...
-# XXX Should the environment variable $TMPDIR override tempdir?
 
 tempdir = '/usr/tmp'
 template = '@'
+
+# Use environment variable $TMPDIR to override default tempdir.
+
+if posix.environ.has_key('TMPDIR'):
+	# XXX Could check that it's a writable directory...
+	tempdir = posix.environ['TMPDIR']
 
 
 # Counter for generating unique names
