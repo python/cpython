@@ -12,9 +12,9 @@ symbols whose names start with "Distutils" and end with "Error"."""
 
 __rcsid__ = "$Id$"
 
-from types import *
+import types
 
-if type (RuntimeError) is ClassType:
+if type (RuntimeError) is types.ClassType:
 
     # DistutilsError is the root of all Distutils evil.
     class DistutilsError (Exception):
@@ -52,6 +52,12 @@ if type (RuntimeError) is ClassType:
     class DistutilsOptionError (DistutilsError):
         pass
 
+    # DistutilsPlatformError is raised when we find that we don't
+    # know how to do something on the current platform (but we do
+    # know how to do it on some platform).
+    class DistutilsPlatformError (DistutilsError):
+        pass
+
 # String-based exceptions
 else:
     DistutilsError = 'DistutilsError'
@@ -61,3 +67,6 @@ else:
     DistutilsArgError = 'DistutilsArgError'
     DistutilsFileError = 'DistutilsFileError'
     DistutilsOptionError = 'DistutilsOptionError'
+    DistutilsPlatformError = 'DistutilsPlatformError'
+
+del types
