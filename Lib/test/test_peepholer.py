@@ -83,6 +83,23 @@ class TestTranforms(unittest.TestCase):
             self.assert_(elem in asm)
             self.assert_('BUILD_TUPLE' not in asm)
 
+        # Bug 1053819:  Tuple of constants misidentified when presented with:
+        # . . . opcode_with_arg 100   unary_opcode   BUILD_TUPLE 1  . . .
+        # The following would segfault upon compilation
+        def crater():
+            (~[
+                0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
+                0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
+                0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
+                0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
+                0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
+                0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
+                0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
+                0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
+                0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
+                0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
+            ],)
+
     def test_elim_extra_return(self):
         # RETURN LOAD_CONST None RETURN  -->  RETURN
         def f(x):
