@@ -5,7 +5,7 @@
 #
 # Extended file operations
 #
-# f = posixfile.open(filename, mode)
+# f = posixfile.open(filename, [mode, [bufsize]])
 #	will create a new posixfile object
 #
 # f = posixfile.fileopen(fileobject)
@@ -189,8 +189,8 @@ class _posixfile_:
 #
 # Public routine to obtain a posixfile object
 #
-def open(name, mode):
-    return _posixfile_().open(name, mode)
+def open(name, mode='r', bufsize=-1):
+    return _posixfile_().open(name, mode, bufsize)
 
 def fileopen(file):
     return _posixfile_().fileopen(file)
