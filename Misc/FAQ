@@ -6,8 +6,8 @@ Reply-to: guido@cwi.nl (Guido van Rossum)
 Approved: news-answers-request@MIT.Edu
 
 Archive-name: python-faq/part1
-Version: 1.7
-Last-modified: 4 May 1994
+Version: 1.8
+Last-modified: 15 May 1994
 
 This article contains answers to Frequently Asked Questions about
 Python (an object-oriented interpreted programming language -- see
@@ -62,11 +62,12 @@ Here's an overview of the questions per chapter:
   1.2. Q. Why is it called Python?
   1.3. Q. How do I obtain a copy of the Python source?
   1.4. Q. How do I get documentation on Python?
-  1.5. Q. Is there a newsgroup or mailing list devoted to Python?
-  1.6. Q. Is there a book on Python, or will there be one out soon?
-  1.7. Q. Are there any published articles about Python that I can quote?
-  1.8. Q. How does the Python version numbering scheme work?
-  1.9. Q. Are there other ftp sites that carry Python related material?
+  1.5. Q. Are there other ftp sites that mirror the Python distribution?
+  1.6. Q. Is there a newsgroup or mailing list devoted to Python?
+  1.7. Q. Is there a book on Python, or will there be one out soon?
+  1.8. Q. Are there any published articles about Python that I can quote?
+  1.9. Q. How does the Python version numbering scheme work?
+  1.10. Q. Are there other ftp sites that carry Python related material?
 
  2. Python in the real world
   2.1. Q. How many people are using Python?
@@ -120,6 +121,7 @@ Here's an overview of the questions per chapter:
        in Python?  (Persistent == automatically saved to and restored from
        disk.)
   6.3. Q. Why isn't there a switch or case statement in Python?
+  6.4. Q. Why does Python use indentation for grouping of statements?
 
  7. Using Python on non-UNIX platforms
   7.1. Q. Is there a Mac version of Python?
@@ -194,20 +196,23 @@ standard or built-in types, functions and modules, all of which are
 described here.  PostScript for a high-level description of Python is
 in the file nluug-paper.ps.
 
-The following sites keep mirrors of the Python distribution:
+1.5. Q. Are there other ftp sites that mirror the Python distribution?
+
+A. The following sites keep mirrors of the Python distribution:
 
 Site			IP address 	Directory
 
 gatekeeper.dec.com	16.1.0.2	/pub/plan/python/cwi
 ftp.uu.net		192.48.96.9	/languages/python
 ftp.wustl.edu		128.252.135.4	/graphics/graphics/sgi-stuff/python
-ftp.funet.fi		128.214.6.100	/pub/languages/python (old?)
+ftp.funet.fi		128.214.6.100	/pub/languages/python
 ftp.fu-berlin.de	130.133.4.50	/pub/unix/languages/python (*python* only)
+ftp.sunet.se		130.238.127.3	/pub/lang/python
 
 Or try archie on e.g. python1.0 to locate the nearest copy of that
 version...
 
-1.5. Q. Is there a newsgroup or mailing list devoted to Python?
+1.6. Q. Is there a newsgroup or mailing list devoted to Python?
 
 A. There is a newsgroup, comp.lang.python, and a mailing list.  The
 newsgroup and mailing list are gatewayed into each other -- if you can
@@ -215,7 +220,7 @@ read news it is not necessary to subscribe to the mailing list.  Send
 e-mail to python-list-request@cwi.nl to (un)subscribe to the mailing
 list.
 
-1.6. Q. Is there a book on Python, or will there be one out soon?
+1.7. Q. Is there a book on Python, or will there be one out soon?
 
 A. Unfortunately, not yet.  I would like to write one but my
 obligations at CWI include too much other work to make much progress
@@ -224,7 +229,7 @@ helping the production of a book or reference manual, but so far there
 are no firm plans.  If you volunteer help, by all means drop me a
 note!
 
-1.7. Q. Are there any published articles about Python that I can quote?
+1.8. Q. Are there any published articles about Python that I can quote?
 
 A. So far the only refereed and published article that describes
 Python in some detail is:
@@ -247,7 +252,7 @@ presentation can be found in the ftp directory mentioned a few
 questions earlier, with filenames nluug-paper.ps and nluug-slides.ps,
 respectively.
 
-1.8. Q. How does the Python version numbering scheme work?
+1.9. Q. How does the Python version numbering scheme work?
 
 A. Python versions are numbered A.B.C.  A is the major version number
 -- it is only incremented for major changes in functionality or source
@@ -257,7 +262,7 @@ incremented for each new release.  Note that in the past, patches have
 added significant changes; in fact the changeover from 0.9.9 to 1.0.0
 was the first time that either A or B changed!
 
-1.9. Q. Are there other ftp sites that carry Python related material?
+1.10. Q. Are there other ftp sites that carry Python related material?
 
 A. An interesting ftp site for Python users is ftp.markv.com
 (192.122.251.1); the directory pub/python contains a growing
@@ -605,6 +610,42 @@ A. You can do this easily enough with a sequence of
 if... elif... elif... else.  There have been some proposals for switch
 statement syntax, but there is no concensus (yet) on whether and how
 to do range tests.
+
+6.4. Q. Why does Python use indentation for grouping of statements?
+
+A. Basically I believe that using indentation for grouping is
+extremely elegant and contributes a lot to the clarity of the average
+Python program.  Most people learn to love this feature after a while.
+Some arguments for it:
+
+- Since there are no begin/end brackets there cannot be a disagreement
+between grouping perceived by the parser and the human reader.  I
+remember long ago seeing a C fragment like this:
+
+	if (x <= y)
+		x++;
+		y--;
+	z++;
+
+and staring a long time at it wondering why y was being decremented
+even for x > y...  (And I wasn't a C newbie then either.)
+
+- Since there are no begin/end brackets there can be no conflicting
+coding styles.  In C there are loads of different ways to place the
+braces (including the choice whether to place braces around single
+statements in certain cases, for consistency).  If you're used to
+reading (and writing) code that uses one style, you will feel at least
+slightly uneasy when reading (or being required to write) another
+style.
+
+- Many coding styles place begin/end brackets on a line by themself.
+This makes programs considerably longer and wastes valuable screen
+space, making it harder to get a good overview over a program.
+Ideally, a function should fit on one basic tty screen (say, 20
+lines).  20 lines of Python are worth a LOT more than 20 lines of C.
+This is not solely due to the lack of begin/end brackets (the lack of
+declarations also helps, and the powerful operations of course), but
+it certainly helps!
 
 
 7. Using Python on non-UNIX platforms
