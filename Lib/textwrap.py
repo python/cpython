@@ -6,12 +6,6 @@ __revision__ = "$Id$"
 
 import string, re
 
-
-# XXX is this going to be implemented properly somewhere in 2.3?
-def islower(c):
-    return c in string.lowercase
-
-
 class TextWrapper:
     """
     Object for wrapping/filling text.  The public interface consists of
