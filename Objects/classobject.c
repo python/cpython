@@ -2019,33 +2019,6 @@ static PyMemberDef instancemethod_memberlist[] = {
 	{NULL}	/* Sentinel */
 };
 
-/* __dict__, __doc__ and __name__ are retrieved from im_func */
-
-static PyObject *
-im_get_dict(PyMethodObject *im)
-{
-	return PyObject_GetAttrString(im->im_func, "__dict__");
-}
-
-static PyObject *
-im_get_doc(PyMethodObject *im)
-{
-	return PyObject_GetAttrString(im->im_func, "__doc__");
-}
-
-static PyObject *
-im_get_name(PyMethodObject *im)
-{
-	return PyObject_GetAttrString(im->im_func, "__name__");
-}
-
-static PyGetSetDef instancemethod_getsetlist[] = {
-	{"__dict__", (getter)im_get_dict, NULL, "same as im_func.__dict__"},
-	{"__doc__", (getter)im_get_doc, NULL, "same as im_func.__doc__"},
-	{"__name__", (getter)im_get_name, NULL, "same as im_func.__name__"},
-	{NULL}  /* Sentinel */
-};
-
 /* The getattr() implementation for PyMethod objects is similar to
    PyObject_GenericGetAttr(), but instead of looking in __dict__ it
    asks im_self for the attribute.  Then the error handling is a bit
@@ -2350,7 +2323,7 @@ PyTypeObject PyMethod_Type = {
 	0,					/* tp_iternext */
 	0,					/* tp_methods */
 	instancemethod_memberlist,		/* tp_members */
-	instancemethod_getsetlist,		/* tp_getset */
+	0,					/* tp_getset */
 	0,					/* tp_base */
 	0,					/* tp_dict */
 	instancemethod_descr_get,		/* tp_descr_get */
