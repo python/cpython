@@ -719,8 +719,8 @@ class PyBuildExt(build_ext):
         # Expat was written by James Clark and is now maintained by a
         # group of developers on SourceForge; see www.libexpat.org for
         # more information.  The pyexpat module was written by Paul
-        # Prescod after a prototype by Jack Jansen.  Source of Expat
-        # 1.95.2 is included in Modules/expat/.  Usage of a system
+        # Prescod after a prototype by Jack Jansen.  The Expat source
+        # is included in Modules/expat/.  Usage of a system
         # shared libexpat.so/expat.dll is not advised.
         #
         # More information on Expat can be found at www.libexpat.org.
