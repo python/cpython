@@ -101,6 +101,7 @@ extern void initCtl();
 extern void initDlg();
 extern void initEvt();
 extern void initFm();
+extern void initHelp();
 extern void initList();
 extern void initMenu();
 extern void initQd();
@@ -203,6 +204,7 @@ struct _inittab _PyImport_Inittab[] = {
 	{"Dlg", initDlg},
 	{"Evt", initEvt},
 	{"Fm", initFm},
+	{"Help", initHelp},
 	{"Menu", initMenu},
 	{"List", initList},
 	{"Qd", initQd},
