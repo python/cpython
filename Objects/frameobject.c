@@ -1,5 +1,5 @@
 /***********************************************************
-Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Copyright 1991, 1992, 1993, 1994 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
 
                         All Rights Reserved
@@ -34,15 +34,16 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define OFF(x) offsetof(frameobject, x)
 
 static struct memberlist frame_memberlist[] = {
-	{"f_back",	T_OBJECT,	OFF(f_back)},
-	{"f_code",	T_OBJECT,	OFF(f_code)},
-	{"f_globals",	T_OBJECT,	OFF(f_globals)},
-	{"f_locals",	T_OBJECT,	OFF(f_locals)},
-	{"f_owner",	T_OBJECT,	OFF(f_owner)},
-/*	{"f_fastlocals",T_OBJECT,	OFF(f_fastlocals)}, /* XXX Unsafe */
-	{"f_localmap",	T_OBJECT,	OFF(f_localmap)},
-	{"f_lasti",	T_INT,		OFF(f_lasti)},
-	{"f_lineno",	T_INT,		OFF(f_lineno)},
+	{"f_back",	T_OBJECT,	OFF(f_back),	RO},
+	{"f_code",	T_OBJECT,	OFF(f_code),	RO},
+	{"f_globals",	T_OBJECT,	OFF(f_globals),	RO},
+	{"f_locals",	T_OBJECT,	OFF(f_locals),	RO},
+	{"f_owner",	T_OBJECT,	OFF(f_owner),	RO},
+/*	{"f_fastlocals",T_OBJECT,	OFF(f_fastlocals),RO}, /* XXX Unsafe */
+	{"f_localmap",	T_OBJECT,	OFF(f_localmap),RO},
+	{"f_lasti",	T_INT,		OFF(f_lasti),	RO},
+	{"f_lineno",	T_INT,		OFF(f_lineno),	RO},
+	{"f_trace",	T_OBJECT,	OFF(f_trace)},
 	{NULL}	/* Sentinel */
 };
 
@@ -51,7 +52,18 @@ frame_getattr(f, name)
 	frameobject *f;
 	char *name;
 {
+	if (strcmp(name, "f_locals") == 0)
+		fast_2_locals(f);
 	return getmember((char *)f, frame_memberlist, name);
+}
+
+static int
+frame_setattr(f, name, value)
+	frameobject *f;
+	char *name;
+	object *value;
+{
+	return setmember((char *)f, frame_memberlist, name, value);
 }
 
 /* Stack frames are allocated and deallocated at a considerable rate.
@@ -88,6 +100,7 @@ frame_dealloc(f)
 	XDECREF(f->f_owner);
 	XDECREF(f->f_fastlocals);
 	XDECREF(f->f_localmap);
+	XDECREF(f->f_trace);
 	f->f_back = free_list;
 	free_list = f;
 }
@@ -98,10 +111,10 @@ typeobject Frametype = {
 	"frame",
 	sizeof(frameobject),
 	0,
-	frame_dealloc,	/*tp_dealloc*/
+	(destructor)frame_dealloc, /*tp_dealloc*/
 	0,		/*tp_print*/
-	frame_getattr,	/*tp_getattr*/
-	0,		/*tp_setattr*/
+	(getattrfunc)frame_getattr, /*tp_getattr*/
+	(setattrfunc)frame_setattr, /*tp_setattr*/
 	0,		/*tp_compare*/
 	0,		/*tp_repr*/
 	0,		/*tp_as_number*/
@@ -167,6 +180,7 @@ newframeobject(back, code, globals, locals, owner, nvalues, nblocks)
 		f->f_iblock = 0;
 		f->f_lasti = 0;
 		f->f_lineno = -1;
+		f->f_trace = NULL;
 		if (f->f_valuestack == NULL || f->f_blockstack == NULL) {
 			err_nomem();
 			DECREF(f);
@@ -224,4 +238,75 @@ pop_block(f)
 	}
 	b = &f->f_blockstack[--f->f_iblock];
 	return b;
+}
+
+/* Convert between "fast" version of locals and dictionary version */
+
+void
+fast_2_locals(f)
+	frameobject *f;
+{
+	/* Merge f->f_fastlocals into f->f_locals */
+	object *locals, *fast, *map;
+	object *error_type, *error_value;
+	int j;
+	if (f == NULL)
+		return;
+	locals = f->f_locals;
+	fast = f->f_fastlocals;
+	map = f->f_localmap;
+	if (locals == NULL || fast == NULL || map == NULL)
+		return;
+	if (!is_dictobject(locals) || !is_listobject(fast) ||
+	    !is_tupleobject(map))
+		return;
+	err_get(&error_type, &error_value);
+	for (j = gettuplesize(map); --j >= 0; ) {
+		object *key = gettupleitem(map, j);
+		object *value = getlistitem(fast, j);
+		if (value == NULL) {
+			err_clear();
+			if (dict2remove(locals, key) != 0)
+				err_clear();
+		}
+		else {
+			if (dict2insert(locals, key, value) != 0)
+				err_clear();
+		}
+	}
+	err_setval(error_type, error_value);
+}
+
+void
+locals_2_fast(f, clear)
+	frameobject *f;
+	int clear;
+{
+	/* Merge f->f_locals into f->f_fastlocals */
+	object *locals, *fast, *map;
+	object *error_type, *error_value;
+	int j;
+	if (f == NULL)
+		return;
+	locals = f->f_locals;
+	fast = f->f_fastlocals;
+	map = f->f_localmap;
+	if (locals == NULL || fast == NULL || map == NULL)
+		return;
+	if (!is_dictobject(locals) || !is_listobject(fast) ||
+	    !is_tupleobject(map))
+		return;
+	err_get(&error_type, &error_value);
+	for (j = gettuplesize(map); --j >= 0; ) {
+		object *key = gettupleitem(map, j);
+		object *value = dict2lookup(locals, key);
+		if (value == NULL)
+			err_clear();
+		else
+			INCREF(value);
+		if (value != NULL || clear)
+			if (setlistitem(fast, j, value) != 0)
+				err_clear();
+	}
+	err_setval(error_type, error_value);
 }

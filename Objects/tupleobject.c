@@ -1,5 +1,5 @@
 /***********************************************************
-Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Copyright 1991, 1992, 1993, 1994 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
 
                         All Rights Reserved
@@ -180,26 +180,19 @@ static object *
 tuplerepr(v)
 	tupleobject *v;
 {
-	object *s, *t, *comma;
+	object *s, *comma;
 	int i;
 	s = newstringobject("(");
 	comma = newstringobject(", ");
 	for (i = 0; i < v->ob_size && s != NULL; i++) {
 		if (i > 0)
 			joinstring(&s, comma);
-		t = reprobject(v->ob_item[i]);
-		joinstring(&s, t);
-		XDECREF(t);
+		joinstring_decref(&s, reprobject(v->ob_item[i]));
 	}
 	DECREF(comma);
-	if (v->ob_size == 1) {
-		t = newstringobject(",");
-		joinstring(&s, t);
-		DECREF(t);
-	}
-	t = newstringobject(")");
-	joinstring(&s, t);
-	DECREF(t);
+	if (v->ob_size == 1)
+		joinstring_decref(&s, newstringobject(","));
+	joinstring_decref(&s, newstringobject(")"));
 	return s;
 }
 
@@ -365,11 +358,11 @@ tuplerepeat(a, n)
 }
 
 static sequence_methods tuple_as_sequence = {
-	tuplelength,	/*sq_length*/
-	tupleconcat,	/*sq_concat*/
-	tuplerepeat,	/*sq_repeat*/
-	tupleitem,	/*sq_item*/
-	tupleslice,	/*sq_slice*/
+	(inquiry)tuplelength, /*sq_length*/
+	(binaryfunc)tupleconcat, /*sq_concat*/
+	(intargfunc)tuplerepeat, /*sq_repeat*/
+	(intargfunc)tupleitem, /*sq_item*/
+	(intintargfunc)tupleslice, /*sq_slice*/
 	0,		/*sq_ass_item*/
 	0,		/*sq_ass_slice*/
 };
@@ -380,16 +373,16 @@ typeobject Tupletype = {
 	"tuple",
 	sizeof(tupleobject) - sizeof(object *),
 	sizeof(object *),
-	tupledealloc,	/*tp_dealloc*/
-	tupleprint,	/*tp_print*/
+	(destructor)tupledealloc, /*tp_dealloc*/
+	(printfunc)tupleprint, /*tp_print*/
 	0,		/*tp_getattr*/
 	0,		/*tp_setattr*/
-	tuplecompare,	/*tp_compare*/
-	tuplerepr,	/*tp_repr*/
+	(cmpfunc)tuplecompare, /*tp_compare*/
+	(reprfunc)tuplerepr, /*tp_repr*/
 	0,		/*tp_as_number*/
 	&tuple_as_sequence,	/*tp_as_sequence*/
 	0,		/*tp_as_mapping*/
-	tuplehash,	/*tp_hash*/
+	(hashfunc)tuplehash, /*tp_hash*/
 };
 
 /* The following function breaks the notion that tuples are immutable:

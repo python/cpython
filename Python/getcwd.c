@@ -1,5 +1,5 @@
 /***********************************************************
-Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Copyright 1991, 1992, 1993, 1994 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
 
                         All Rights Reserved
@@ -25,16 +25,20 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 /* Two PD getcwd() implementations.
    Author: Guido van Rossum, CWI Amsterdam, Jan 1991, <guido@cwi.nl>. */
 
-/* #define NO_GETWD /* Turn this on to popen pwd instead of calling getwd() */
-
 #include <stdio.h>
 #include <errno.h>
 
-#ifndef NO_GETWD
+#ifdef HAVE_GETWD
 
-/* Default: Version for BSD systems -- use getwd() */
+/* Version for BSD systems -- use getwd() */
 
-#include "sys/param.h"
+#ifdef HAVE_SYS_PARAM_H
+#include <sys/param.h>
+#endif
+
+#ifndef MAXPATHLEN
+#define MAXPATHLEN 1024
+#endif
 
 extern char *getwd();
 
@@ -63,11 +67,13 @@ getcwd(buf, size)
 	return buf;
 }
 
-#else
+#else /* !HAVE_GETWD */
 
-/* NO_GETWD defined: Version for backward UNIXes -- popen /bin/pwd */
+/* Version for really old UNIX systems -- use pipe from pwd */
 
+#ifndef PWD_CMD
 #define PWD_CMD "/bin/pwd"
+#endif
 
 char *
 getcwd(buf, size)
@@ -97,4 +103,4 @@ getcwd(buf, size)
 	return buf;
 }
 
-#endif
+#endif /* !HAVE_GETWD */

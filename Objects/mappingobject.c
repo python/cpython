@@ -1,5 +1,5 @@
 /***********************************************************
-Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Copyright 1991, 1992, 1993, 1994 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
 
                         All Rights Reserved
@@ -38,16 +38,18 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 Table of primes suitable as keys, in ascending order.
 The first line are the largest primes less than some powers of two,
 the second line is the largest prime less than 6000,
-and the third line is a selection from Knuth, Vol. 3, Sec. 6.1, Table 1.
-The final value is a sentinel and should cause the memory allocation
-of that many entries to fail (if none of the earlier values cause such
-failure already).
+the third line is a selection from Knuth, Vol. 3, Sec. 6.1, Table 1,
+and the next three lines were suggested by Steve Kirsch.
+The final value is a sentinel.
 */
-static unsigned int primes[] = {
+static long primes[] = {
 	3, 7, 13, 31, 61, 127, 251, 509, 1021, 2017, 4093,
 	5987,
 	9551, 15683, 19609, 31397,
-	0xffffffff /* All bits set -- truncation OK */
+        65521L, 131071L, 262139L, 524287L, 1048573L, 2097143L,
+        4194301L, 8388593L, 16777213L, 33554393L, 67108859L,
+        134217689L, 268435399L, 536870909L, 1073741789L,
+	0
 };
 
 /* Object used as dummy key to fill deleted entries */
@@ -207,8 +209,18 @@ mappingresize(mp)
 	register int i;
 	newsize = mp->ma_size;
 	for (i = 0; ; i++) {
+		if (primes[i] <= 0) {
+			/* Ran out of primes */
+			err_nomem();
+			return -1;
+		}
 		if (primes[i] > mp->ma_used*2) {
 			newsize = primes[i];
+			if (newsize != primes[i]) {
+				/* Integer truncation */
+				err_nomem();
+				return -1;
+			}
 			break;
 		}
 	}
@@ -406,15 +418,6 @@ mapping_print(mp, fp, flags)
 	return 0;
 }
 
-static void
-js(pv, w)
-	object **pv;
-	object *w;
-{
-	joinstring(pv, w);
-	XDECREF(w);
-}
-
 static object *
 mapping_repr(mp)
 	mappingobject *mp;
@@ -428,16 +431,16 @@ mapping_repr(mp)
 	sepa = newstringobject(", ");
 	colon = newstringobject(": ");
 	any = 0;
-	for (i = 0, ep = mp->ma_table; i < mp->ma_size; i++, ep++) {
+	for (i = 0, ep = mp->ma_table; i < mp->ma_size && v; i++, ep++) {
 		if (ep->me_value != NULL) {
 			if (any++)
 				joinstring(&v, sepa);
-			js(&v, reprobject(ep->me_key));
+			joinstring_decref(&v, reprobject(ep->me_key));
 			joinstring(&v, colon);
-			js(&v, reprobject(ep->me_value));
+			joinstring_decref(&v, reprobject(ep->me_value));
 		}
 	}
-	js(&v, newstringobject("}"));
+	joinstring_decref(&v, newstringobject("}"));
 	XDECREF(sepa);
 	XDECREF(colon);
 	return v;
@@ -483,9 +486,9 @@ mapping_ass_sub(mp, v, w)
 }
 
 static mapping_methods mapping_as_mapping = {
-	mapping_length,	/*mp_length*/
-	mapping_subscript,	/*mp_subscript*/
-	mapping_ass_sub,	/*mp_ass_subscript*/
+	(inquiry)mapping_length, /*mp_length*/
+	(binaryfunc)mapping_subscript, /*mp_subscript*/
+	(objobjargproc)mapping_ass_sub, /*mp_ass_subscript*/
 };
 
 static object *
@@ -607,7 +610,7 @@ getmappingitems(mp)
 		err_badcall();
 		return NULL;
 	}
-	return mapping_values((mappingobject *)mp, (object *)NULL);
+	return mapping_items((mappingobject *)mp, (object *)NULL);
 }
 
 static int
@@ -702,10 +705,10 @@ mapping_has_key(mp, args)
 }
 
 static struct methodlist mapp_methods[] = {
-	{"has_key",	mapping_has_key},
-	{"items",	mapping_items},
-	{"keys",	mapping_keys},
-	{"values",	mapping_values},
+	{"has_key",	(method)mapping_has_key},
+	{"items",	(method)mapping_items},
+	{"keys",	(method)mapping_keys},
+	{"values",	(method)mapping_values},
 	{NULL,		NULL}		/* sentinel */
 };
 
@@ -723,12 +726,12 @@ typeobject Mappingtype = {
 	"dictionary",
 	sizeof(mappingobject),
 	0,
-	mapping_dealloc,	/*tp_dealloc*/
-	mapping_print,		/*tp_print*/
-	mapping_getattr,	/*tp_getattr*/
+	(destructor)mapping_dealloc, /*tp_dealloc*/
+	(printfunc)mapping_print, /*tp_print*/
+	(getattrfunc)mapping_getattr, /*tp_getattr*/
 	0,			/*tp_setattr*/
-	mapping_compare,	/*tp_compare*/
-	mapping_repr,		/*tp_repr*/
+	(cmpfunc)mapping_compare, /*tp_compare*/
+	(reprfunc)mapping_repr, /*tp_repr*/
 	0,			/*tp_as_number*/
 	0,			/*tp_as_sequence*/
 	&mapping_as_mapping,	/*tp_as_mapping*/

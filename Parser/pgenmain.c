@@ -1,5 +1,5 @@
 /***********************************************************
-Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Copyright 1991, 1992, 1993, 1994 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
 
                         All Rights Reserved
@@ -32,6 +32,10 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
    Error messages and status info during the generation process are
    written to stdout, or sometimes to stderr. */
 
+/* XXX TO DO:
+   - check for duplicate definitions of names (instead of fatal err)
+*/
+
 #include "pgenheaders.h"
 #include "grammar.h"
 #include "node.h"
@@ -42,7 +46,7 @@ int debugging;
 
 /* Forward */
 grammar *getgrammar PROTO((char *filename));
-#ifdef macintosh
+#ifdef THINK_C
 int main PROTO((int, char **));
 char *askfile PROTO((void));
 #endif
@@ -64,7 +68,7 @@ main(argc, argv)
 	FILE *fp;
 	char *filename;
 	
-#ifdef macintosh
+#ifdef THINK_C
 	filename = askfile();
 #else
 	if (argc != 2) {
@@ -100,6 +104,7 @@ getgrammar(filename)
 	FILE *fp;
 	node *n;
 	grammar *g0, *g;
+	perrdetail err;
 	
 	fp = fopen(filename, "r");
 	if (fp == NULL) {
@@ -107,11 +112,27 @@ getgrammar(filename)
 		goaway(1);
 	}
 	g0 = meta_grammar();
-	n = NULL;
-	parsefile(fp, filename, g0, g0->g_start, (char *)NULL, (char *)NULL, &n);
+	n = parsefile(fp, filename, g0, g0->g_start,
+		      (char *)NULL, (char *)NULL, &err);
 	fclose(fp);
 	if (n == NULL) {
-		fprintf(stderr, "Parsing error.\n");
+		fprintf(stderr, "Parsing error %d, line %d.\n",
+			err.error, err.lineno);
+		if (err.text != NULL) {
+			int i;
+			fprintf(stderr, "%s", err.text);
+			i = strlen(err.text);
+			if (i == 0 || err.text[i-1] != '\n')
+				fprintf(stderr, "\n");
+			for (i = 0; i < err.offset; i++) {
+				if (err.text[i] == '\t')
+					putc('\t', stderr);
+				else
+					putc(' ', stderr);
+			}
+			fprintf(stderr, "^\n");
+			free(err.text);
+		}
 		goaway(1);
 	}
 	g = pgen(n);
@@ -122,7 +143,7 @@ getgrammar(filename)
 	return g;
 }
 
-#ifdef macintosh
+#ifdef THINK_C
 char *
 askfile()
 {
@@ -160,6 +181,25 @@ guesstabsize(path)
 }
 #endif
 
-/* XXX TO DO:
-   - check for duplicate definitions of names (instead of fatal err)
-*/
+/* No-nonsense my_readline() for tokenizer.c */
+
+char *
+my_readline(prompt)
+	char *prompt;
+{
+	int n = 1000;
+	char *p = malloc(n);
+	char *q;
+	if (p == NULL)
+		return NULL;
+	fprintf(stderr, "%s", prompt);
+	q = fgets(p, n, stdin);
+	if (q == NULL) {
+		*p = '\0';
+		return p;
+	}
+	n = strlen(p);
+	if (n > 0 && p[n-1] != '\n')
+		p[n-1] = '\n';
+	return realloc(p, n+1);
+}

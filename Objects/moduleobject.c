@@ -1,5 +1,5 @@
 /***********************************************************
-Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Copyright 1991, 1992, 1993, 1994 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
 
                         All Rights Reserved
@@ -162,10 +162,10 @@ typeobject Moduletype = {
 	"module",		/*tp_name*/
 	sizeof(moduleobject),	/*tp_size*/
 	0,			/*tp_itemsize*/
-	module_dealloc,		/*tp_dealloc*/
+	(destructor)module_dealloc, /*tp_dealloc*/
 	0,			/*tp_print*/
-	module_getattr,		/*tp_getattr*/
-	module_setattr,		/*tp_setattr*/
+	(getattrfunc)module_getattr, /*tp_getattr*/
+	(setattrfunc)module_setattr, /*tp_setattr*/
 	0,			/*tp_compare*/
-	module_repr,		/*tp_repr*/
+	(reprfunc)module_repr, /*tp_repr*/
 };

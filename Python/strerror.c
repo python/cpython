@@ -1,5 +1,5 @@
 /***********************************************************
-Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Copyright 1991, 1992, 1993, 1994 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
 
                         All Rights Reserved
@@ -41,7 +41,7 @@ strerror(err)
 	return buf;
 }
 
-#ifdef THINK_C
+#ifdef macintosh
 int sys_nerr = 0;
 char *sys_errlist[1] = 0;
 #endif

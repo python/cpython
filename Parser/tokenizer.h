@@ -5,7 +5,7 @@ extern "C" {
 #endif
 
 /***********************************************************
-Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Copyright 1991, 1992, 1993, 1994 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
 
                         All Rights Reserved
@@ -42,6 +42,7 @@ struct tok_state {
 	char *cur;	/* Next character in buffer */
 	char *inp;	/* End of data in buffer */
 	char *end;	/* End of input buffer if buf != NULL */
+	char *start;	/* Start of current token if not NULL */
 	int done;	/* E_OK normally, E_EOF at EOF, otherwise error code */
 	/* NB If done != E_OK, cur must be == inp!!! */
 	FILE *fp;	/* Rest of input; NULL if tokenizing a string */

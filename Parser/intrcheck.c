@@ -1,5 +1,5 @@
 /***********************************************************
-Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Copyright 1991, 1992, 1993, 1994 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
 
                         All Rights Reserved
@@ -25,17 +25,66 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 /* Check for interrupts */
 
 #ifdef THINK_C
-/* This is for THINK C 4.0.
-   For 3.0, you may have to remove the signal stuff. */
 #include <MacHeaders>
 #define macintosh
 #endif
 
-#include "PROTO.h"
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
+#include "myproto.h"
 #include "intrcheck.h"
 
 
-#ifdef MSDOS
+#ifdef QUICKWIN
+
+#include <io.h>
+
+void
+initintr()
+{
+}
+
+int
+intrcheck()
+{
+	_wyield();
+}
+
+#define OK
+
+#endif /* QUICKWIN */
+
+#ifdef _M_IX86
+#include <io.h>
+#endif
+
+#if defined(MSDOS) && !defined(QUICKWIN)
+
+#ifdef __GNUC__
+
+/* This is for DJGPP's GO32 extender.  I don't know how to trap
+ * control-C  (There's no API for ctrl-C, and I don't want to mess with
+ * the interrupt vectors.)  However, this DOES catch control-break.
+ * --Amrit
+ */
+
+#include <go32.h>
+
+void
+initintr()
+{
+	_go32_want_ctrl_break(1 /* TRUE */);
+}
+
+int
+intrcheck()
+{
+	return _go32_was_ctrl_break_hit();
+}
+
+#else /* !__GNUC__ */
 
 /* This might work for MS-DOS (untested though): */
 
@@ -55,9 +104,11 @@ intrcheck()
 	return interrupted;
 }
 
+#endif /* __GNUC__ */
+
 #define OK
 
-#endif
+#endif /* MSDOS && !QUICKWIN */
 
 
 #ifdef macintosh
@@ -65,15 +116,14 @@ intrcheck()
 #ifdef applec /* MPW */
 #include <OSEvents.h>
 #include <SysEqu.h>
-#endif
+#endif /* applec */
 
 #include <signal.h>
-#include "sigtype.h"
 
 static int interrupted;
 
-static SIGTYPE intcatcher PROTO((int));
-static SIGTYPE
+static RETSIGTYPE intcatcher PROTO((int));
+static RETSIGTYPE
 intcatcher(sig)
 	int sig;
 {
@@ -121,15 +171,19 @@ intrcheck()
 /* Default version -- for real operating systems and for Standard C */
 
 #include <stdio.h>
+#include <string.h>
 #include <signal.h>
-#include "sigtype.h"
 
 static int interrupted;
 
 /* ARGSUSED */
-static SIGTYPE
+static RETSIGTYPE
+#ifdef _M_IX86
+intcatcher(int sig)	/* So the C compiler shuts up */
+#else /* _M_IX86 */
 intcatcher(sig)
 	int sig; /* Not used by required by interface */
+#endif /* _M_IX86 */
 {
 	extern void goaway PROTO((int));
 	static char message[] =
@@ -153,7 +207,7 @@ initintr()
 {
 	if (signal(SIGINT, SIG_IGN) != SIG_IGN)
 		signal(SIGINT, intcatcher);
-#ifdef SV_INTERRUPT
+#ifdef HAVE_SIGINTERRUPT
 	/* This is for SunOS and other modern BSD derivatives.
 	   It means that system calls (like read()) are not restarted
 	   after an interrupt.  This is necessary so interrupting a
@@ -161,7 +215,7 @@ initintr()
 	   XXX On old BSD (pure 4.2 or older) you may have to do this
 	   differently! */
 	siginterrupt(SIGINT, 1);
-#endif
+#endif /* HAVE_SIGINTERRUPT */
 }
 
 int

@@ -1,5 +1,5 @@
 /***********************************************************
-Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Copyright 1991, 1992, 1993, 1994 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
 
                         All Rights Reserved
@@ -168,16 +168,22 @@ list_builtin_module_names()
 		addlistitem(list, name);
 		DECREF(name);
 	}
+	if (sortlist(list) != 0) {
+		DECREF(list);
+		list = NULL;
+	}
 	return list;
 }
 
 void
 initsys()
 {
+	extern long getmaxint PROTO((void));
+	extern char *getversion PROTO((void));
+	extern char *getcopyright PROTO((void));
 	extern int fclose PROTO((FILE *));
-	extern char version[];
-	object *v = newstringobject(version);
 	object *m = initmodule("sys", sys_methods);
+	object *v;
 	sysdict = getmoduledict(m);
 	INCREF(sysdict);
 	/* NB keep an extra ref to the std files to avoid closing them
@@ -186,17 +192,21 @@ initsys()
 	sysout = newopenfileobject(stdout, "<stdout>", "w", fclose);
 	syserr = newopenfileobject(stderr, "<stderr>", "w", fclose);
 	if (err_occurred())
-		fatal("can't create sys.* objects");
+		fatal("can't initialize sys.std{in,out,err}");
 	dictinsert(sysdict, "stdin", sysin);
 	dictinsert(sysdict, "stdout", sysout);
 	dictinsert(sysdict, "stderr", syserr);
-	dictinsert(sysdict, "version", v);
+	dictinsert(sysdict, "version", v = newstringobject(getversion()));
+	XDECREF(v);
+	dictinsert(sysdict, "copyright", v = newstringobject(getcopyright()));
+	XDECREF(v);
+	dictinsert(sysdict, "maxint", v = newintobject(getmaxint()));
+	XDECREF(v);
 	dictinsert(sysdict, "modules", get_modules());
 	dictinsert(sysdict, "builtin_module_names",
 		   list_builtin_module_names());
 	if (err_occurred())
 		fatal("can't insert sys.* objects in sys dict");
-	DECREF(v);
 }
 
 static object *

@@ -1,5 +1,5 @@
 /***********************************************************
-Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Copyright 1991, 1992, 1993, 1994 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
 
                         All Rights Reserved
@@ -35,6 +35,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include "pgenheaders.h"
 #include "grammar.h"
+#include "node.h"
 #include "token.h"
 #include "parser.h"
 
@@ -104,7 +105,7 @@ fixstate(g, s)
 			for (ibit = 0; ibit < g->g_ll.ll_nlabels; ibit++) {
 				if (testbit(d1->d_first, ibit)) {
 #ifdef applec
-#define MPW_881_bug			/* Undefine if bug below is fixed */
+#define MPW_881_BUG			/* Undefine if bug below is fixed */
 #endif
 #ifdef MPW_881_BUG
 					/* In 881 mode MPW 3.1 has a code

@@ -1,5 +1,5 @@
 /***********************************************************
-Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Copyright 1991, 1992, 1993, 1994 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
 
                         All Rights Reserved
@@ -28,10 +28,22 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "modsupport.h"
 #include "import.h"
 
+#ifdef MPW /* MPW pushes 'extended' for float and double types with varargs */
+typedef extended va_double;
+#else 
+typedef double va_double;
+#endif
+
+
+/* initmodule2() has an additional parameter, 'passthrough', which is
+   passed as 'self' to functions defined in the module.  This is used
+   e.g. by dynamically loaded modules on the Mac. */
+
 object *
-initmodule(name, methods)
+initmodule2(name, methods, passthrough)
 	char *name;
 	struct methodlist *methods;
+	object *passthrough; 
 {
 	object *m, *d, *v;
 	struct methodlist *ml;
@@ -47,7 +59,7 @@ initmodule(name, methods)
 			fatal("out of mem for method name");
 		sprintf(namebuf, "%s.%s", name, ml->ml_name);
 		v = newmethodobject(namebuf, ml->ml_meth,
-					(object *)NULL, ml->ml_varargs);
+					(object *)passthrough, ml->ml_varargs);
 		/* XXX The malloc'ed memory in namebuf is never freed */
 		if (v == NULL || dictinsert(d, ml->ml_name, v) != 0) {
 			fprintf(stderr, "initializing module: %s\n", name);
@@ -56,6 +68,16 @@ initmodule(name, methods)
 		DECREF(v);
 	}
 	return m;
+}
+
+/* The standard initmodule() passes NULL for 'self' */
+
+object *
+initmodule(name, methods)
+	char *name;
+	struct methodlist *methods;
+{
+	return initmodule2(name, methods, (object *)NULL);
 }
 
 
@@ -99,7 +121,6 @@ do_arg(arg, p_format, p_va)
 	va_list *p_va;
 {
 	char *format = *p_format;
-	va_list va = *p_va;
 	
 	if (arg == NULL)
 		return 0; /* Incomplete tuple or list */
@@ -112,7 +133,7 @@ do_arg(arg, p_format, p_va)
 			return 0;
 		n = gettuplesize(arg);
 		for (i = 0; i < n; i++) {
-			if (!do_arg(gettupleitem(arg, i), &format, &va))
+			if (!do_arg(gettupleitem(arg, i), &format, p_va))
 				return 0;
 		}
 		if (*format++ != ')')
@@ -124,65 +145,67 @@ do_arg(arg, p_format, p_va)
 		return 0;
 
 	case 'b': /* byte -- very short int */ {
-		char *p = va_arg(va, char *);
-		if (is_intobject(arg))
-			*p = getintvalue(arg);
-		else
+		char *p = va_arg(*p_va, char *);
+		long ival = getintvalue(arg);
+		if (ival == -1 && err_occurred())
 			return 0;
+		else
+			*p = ival;
 		break;
 		}
 
 	case 'h': /* short int */ {
-		short *p = va_arg(va, short *);
-		if (is_intobject(arg))
-			*p = getintvalue(arg);
-		else
+		short *p = va_arg(*p_va, short *);
+		long ival = getintvalue(arg);
+		if (ival == -1 && err_occurred())
 			return 0;
+		else
+			*p = ival;
 		break;
 		}
 	
 	case 'i': /* int */ {
-		int *p = va_arg(va, int *);
-		if (is_intobject(arg))
-			*p = getintvalue(arg);
-		else
+		int *p = va_arg(*p_va, int *);
+		long ival = getintvalue(arg);
+		if (ival == -1 && err_occurred())
 			return 0;
+		else
+			*p = ival;
 		break;
 		}
 	
 	case 'l': /* long int */ {
-		long *p = va_arg(va, long *);
-		if (is_intobject(arg))
-			*p = getintvalue(arg);
-		else
+		long *p = va_arg(*p_va, long *);
+		long ival = getintvalue(arg);
+		if (ival == -1 && err_occurred())
 			return 0;
+		else
+			*p = ival;
 		break;
 		}
 	
 	case 'f': /* float */ {
-		float *p = va_arg(va, float *);
-		if (is_floatobject(arg))
-			*p = getfloatvalue(arg);
-		else if (is_intobject(arg))
-			*p = (float)getintvalue(arg);
-		else
+		float *p = va_arg(*p_va, float *);
+		double dval = getfloatvalue(arg);
+		if (err_occurred())
 			return 0;
+		else
+			*p = dval;
 		break;
 		}
 	
 	case 'd': /* double */ {
-		double *p = va_arg(va, double *);
-		if (is_floatobject(arg))
-			*p = getfloatvalue(arg);
-		else if (is_intobject(arg))
-			*p = (double)getintvalue(arg);
-		else
+		double *p = va_arg(*p_va, double *);
+		double dval = getfloatvalue(arg);
+		if (err_occurred())
 			return 0;
+		else
+			*p = dval;
 		break;
 		}
 	
 	case 'c': /* char */ {
-		char *p = va_arg(va, char *);
+		char *p = va_arg(*p_va, char *);
 		if (is_stringobject(arg) && getstringsize(arg) == 1)
 			*p = getstringvalue(arg)[0];
 		else
@@ -191,13 +214,13 @@ do_arg(arg, p_format, p_va)
 		}
 	
 	case 's': /* string */ {
-		char **p = va_arg(va, char **);
+		char **p = va_arg(*p_va, char **);
 		if (is_stringobject(arg))
 			*p = getstringvalue(arg);
 		else
 			return 0;
 		if (*format == '#') {
-			int *q = va_arg(va, int *);
+			int *q = va_arg(*p_va, int *);
 			*q = getstringsize(arg);
 			format++;
 		}
@@ -209,7 +232,7 @@ do_arg(arg, p_format, p_va)
 		}
 	
 	case 'z': /* string, may be NULL (None) */ {
-		char **p = va_arg(va, char **);
+		char **p = va_arg(*p_va, char **);
 		if (arg == None)
 			*p = 0;
 		else if (is_stringobject(arg))
@@ -217,7 +240,7 @@ do_arg(arg, p_format, p_va)
 		else
 			return 0;
 		if (*format == '#') {
-			int *q = va_arg(va, int *);
+			int *q = va_arg(*p_va, int *);
 			if (arg == None)
 				*q = 0;
 			else
@@ -232,7 +255,7 @@ do_arg(arg, p_format, p_va)
 		}
 	
 	case 'S': /* string object */ {
-		object **p = va_arg(va, object **);
+		object **p = va_arg(*p_va, object **);
 		if (is_stringobject(arg))
 			*p = arg;
 		else
@@ -241,8 +264,37 @@ do_arg(arg, p_format, p_va)
 		}
 	
 	case 'O': /* object */ {
-		object **p = va_arg(va, object **);
-		*p = arg;
+		typeobject *type;
+		object **p;
+		if (*format == '!') {
+			format++;
+			type = va_arg(*p_va, typeobject*);
+			if (arg->ob_type != type)
+				return 0;
+			else {
+				p = va_arg(*p_va, object **);
+				*p = arg;
+			}
+		}
+		else if (*format == '?') {
+			inquiry pred = va_arg(*p_va, inquiry);
+			format++;
+			if ((*pred)(arg)) {
+				p = va_arg(*p_va, object **);
+				*p = arg;
+			}
+		}
+		else if (*format == '&') {
+			binaryfunc convert = va_arg(*p_va, binaryfunc);
+			void *addr = va_arg(*p_va, void *);
+			format++;
+			if (! (*convert)(arg, addr))
+				return 0;
+		}
+		else {
+			p = va_arg(*p_va, object **);
+			*p = arg;
+		}
 		break;
 		}
 
@@ -253,13 +305,12 @@ do_arg(arg, p_format, p_va)
 	
 	}
 	
-	*p_va = va;
 	*p_format = format;
 	
 	return 1;
 }
 
-#ifdef USE_STDARG
+#ifdef HAVE_STDARG_PROTOTYPES
 /* VARARGS2 */
 int getargs(object *arg, char *format, ...)
 #else
@@ -270,7 +321,7 @@ int getargs(va_alist) va_dcl
 	char *f;
 	int ok;
 	va_list va;
-#ifdef USE_STDARG
+#ifdef HAVE_STDARG_PROTOTYPES
 
 	va_start(va, format);
 #else
@@ -458,7 +509,7 @@ do_mkvalue(p_format, p_va)
 		
 	case 'f':
 	case 'd':
-		return newfloatobject((double)va_arg(*p_va, double));
+		return newfloatobject((double)va_arg(*p_va, va_double));
 		
 	case 'c':
 		{
@@ -517,7 +568,7 @@ do_mkvalue(p_format, p_va)
 	}
 }
 
-#ifdef USE_STDARG
+#ifdef HAVE_STDARG_PROTOTYPES
 /* VARARGS 2 */
 object *mkvalue(char *format, ...)
 #else
@@ -527,7 +578,7 @@ object *mkvalue(va_alist) va_dcl
 {
 	va_list va;
 	object* retval;
-#ifdef USE_STDARG
+#ifdef HAVE_STDARG_PROTOTYPES
 	va_start(va, format);
 #else
 	char *format;

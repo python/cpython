@@ -1,5 +1,5 @@
 /***********************************************************
-Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Copyright 1991, 1992, 1993, 1994 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
 
                         All Rights Reserved
@@ -149,16 +149,16 @@ typeobject Methodtype = {
 	"builtin_function_or_method",
 	sizeof(methodobject),
 	0,
-	meth_dealloc,	/*tp_dealloc*/
+	(destructor)meth_dealloc, /*tp_dealloc*/
 	0,		/*tp_print*/
 	0,		/*tp_getattr*/
 	0,		/*tp_setattr*/
-	meth_compare,	/*tp_compare*/
-	meth_repr,	/*tp_repr*/
+	(cmpfunc)meth_compare, /*tp_compare*/
+	(reprfunc)meth_repr, /*tp_repr*/
 	0,		/*tp_as_number*/
 	0,		/*tp_as_sequence*/
 	0,		/*tp_as_mapping*/
-	meth_hash,	/*tp_hash*/
+	(hashfunc)meth_hash, /*tp_hash*/
 };
 
 static object *listmethods PROTO((struct methodlist *)); /* Forward */
