@@ -69,7 +69,7 @@ options:
 
 where the value of \emph{yourscript} is determined at runtime (normally
 from \code{sys.argv{[}0]}).
-% $Id$ 
+% $Id: intro.txt 413 2004-09-28 00:59:13Z greg $ 
 
 
 \subsection{Background\label{optparse-background}}
@@ -175,7 +175,7 @@ prog -v --report /tmp/report.txt foo bar
 argument.  \code{"foo"} and \code{"bar"} are positional arguments.
 
 
-\subsubsection{What are options for?\label{optparse-what-are-options-for?}}
+\subsubsection{What are options for?\label{optparse-what-options-for}}
 
 Options are used to provide extra information to tune or customize the
 execution of a program.  In case it wasn't clear, options are usually
@@ -209,7 +209,7 @@ from the core mission of \code{cp}, which is to copy either one file to
 another, or several files to another directory.
 
 
-\subsubsection{What are positional arguments for?\label{optparse-what-are-positional-arguments-for?}}
+\subsubsection{What are positional arguments for?\label{optparse-what-positional-arguments-for}}
 
 Positional arguments are for those pieces of information that your
 program absolutely, positively requires to run.
@@ -232,7 +232,7 @@ more flexible your program is, and the more complicated its
 implementation becomes.  Too much flexibility has drawbacks as well, of
 course; too many options can overwhelm users and make your code much
 harder to maintain.
-% $Id$ 
+% $Id: tao.txt 413 2004-09-28 00:59:13Z greg $ 
 
 
 \subsection{Tutorial\label{optparse-tutorial}}
@@ -302,7 +302,7 @@ attributes: \member{action}, \member{type}, \member{dest} (destination), and \me
 Of these, \member{action} is the most fundamental.
 
 
-\subsubsection{Option actions\label{optparse-option-actions}}
+\subsubsection{Understanding option actions\label{optparse-understanding-option-actions}}
 
 Actions tell \module{optparse} what to do when it encounters an option on the
 command line.  There is a fixed set of actions hard-coded into \module{optparse};
@@ -314,7 +314,7 @@ attribute of \var{options}.
 If you don't specify an option action, \module{optparse} defaults to \code{store}.
 
 
-\subsubsection{The store action\label{optparse-the-store-action}}
+\subsubsection{The store action\label{optparse-store-action}}
 
 The most common option action is \code{store}, which tells \module{optparse} to take
 the next argument (or the remainder of the current argument), ensure
@@ -374,7 +374,7 @@ string: the default destination for \code{"-f"} is \code{f}.
 types is covered in section~\ref{optparse-extending}, Extending \module{optparse}.
 
 
-\subsubsection{Handling flag (boolean) options\label{optparse-handling-flag-(boolean)-options}}
+\subsubsection{Handling boolean (flag) options\label{optparse-handling-boolean-options}}
 
 Flag options{---}set a variable to true or false when a particular option
 is seen{---}are quite common.  \module{optparse} supports them with two separate
@@ -387,7 +387,7 @@ parser.add_option("-q", action="store_false", dest="verbose")
 
 Here we have two different options with the same destination, which is
 perfectly OK.  (It just means you have to be a bit careful when setting
-default values{---}see section~\ref{optparse-default-values}, Default values, below.)
+default values{---}see below.)
 
 When \module{optparse} encounters \code{"-v"} on the command line, it sets
 \code{options.verbose} to \code{True}; when it encounters \code{"-q"},
@@ -408,8 +408,7 @@ increment a counter by one
 call a specified function
 \end{description}
 
-These are covered in the section~\ref{None}, Reference Guide and section~\ref{None}, Option Callbacks
-documents.
+These are covered in section~\ref{optparse-reference-guide}, Reference Guide and section~\ref{optparse-option-callbacks}, Option Callbacks.
 
 
 \subsubsection{Default values\label{optparse-default-values}}
@@ -558,7 +557,7 @@ default value is \code{None}), \code{{\%}default} expands to \code{none}.
 \end{itemize}
 
 
-\subsubsection{Printing a version string\label{optparse-printing-a-version-string}}
+\subsubsection{Printing a version string\label{optparse-printing-version-string}}
 
 Similar to the brief usage string, \module{optparse} can also print a version string
 for your program.  You have to supply the string as the \code{version}
@@ -581,7 +580,7 @@ foo 1.0
 \end{verbatim}
 
 
-\subsubsection{Error-handling\label{optparse-error-handling}}
+\subsubsection{How \module{optparse} handles errors\label{optparse-how-optik-handles-errors}}
 
 There are two broad classes of errors that \module{optparse} has to worry about:
 programmer errors and user errors.  Programmer errors are usually
@@ -660,17 +659,17 @@ def main():
 if __name__ == "__main__":
     main()
 \end{verbatim}
-% $Id$ 
+% $Id: tutorial.txt 415 2004-09-30 02:26:17Z greg $ 
 
 
 \subsection{Reference Guide\label{optparse-reference-guide}}
 
 
-\subsubsection{Populating the parser\label{optparse-populating-the-parser}}
+\subsubsection{Populating the parser\label{optparse-populating-parser}}
 
 There are several ways to populate the parser with options.  The
 preferred way is by using \code{OptionParser.add{\_}option()}, as shown in
-section~\ref{None}, the tutorial section.  \method{add{\_}option()} can be called in one of two
+section~\ref{optparse-tutorial}, the tutorial.  \method{add{\_}option()} can be called in one of two
 ways:
 \begin{itemize}
 \item {} 
@@ -802,7 +801,7 @@ The \member{type} and \member{dest} option attributes are almost as important as
 options.
 
 
-\subsubsection{Option actions\label{optparse-option-actions}}
+\subsubsection{Standard option actions\label{optparse-standard-option-actions}}
 
 The various option actions all have slightly different requirements and
 effects.  Most actions have several relevant option attributes which you
@@ -950,7 +949,7 @@ func(option : Option,
      *args, **kwargs)
 \end{verbatim}
 
-See section~\ref{None}, Option Callbacks for more detail.
+See section~\ref{optparse-option-callbacks}, Option Callbacks for more detail.
 
 \item {} 
 \member{help}
@@ -1008,7 +1007,7 @@ constructor.  As with \member{help} options, you will rarely create
 \end{itemize}
 
 
-\subsubsection{Option types\label{optparse-option-types}}
+\subsubsection{Standard option types\label{optparse-standard-option-types}}
 
 \module{optparse} has six built-in option types: \code{string}, \code{int}, \code{long},
 \code{choice}, \code{float} and \code{complex}.  If you need to add new option
@@ -1036,7 +1035,7 @@ user-supplied option arguments against this master list and raises
 OptionValueError if an invalid string is given.
 
 
-\subsubsection{Querying and manipulating your option parser\label{optparse-querying-and-manipulating-your-option-parser}}
+\subsubsection{Querying and manipulating your option parser\label{optparse-querying-manipulating-option-parser}}
 
 Sometimes, it's useful to poke around your option parser and see what's
 there.  OptionParser provides a couple of methods to help you out:
@@ -1132,7 +1131,7 @@ options:
   -n, --noisy   be noisy
   --dry-run     new dry-run option
 \end{verbatim}
-% $Id$ 
+% $Id: reference.txt 415 2004-09-30 02:26:17Z greg $ 
 
 
 \subsection{Option Callbacks\label{optparse-option-callbacks}}
@@ -1154,7 +1153,7 @@ takes at least four arguments, as described below
 \end{itemize}
 
 
-\subsubsection{Defining a callback option\label{optparse-defining-a-callback-option}}
+\subsubsection{Defining a callback option\label{optparse-defining-callback-option}}
 
 As always, the easiest way to define a callback option is by using the
 \code{parser.add{\_}option()} method.  Apart from \member{action}, the only option
@@ -1202,7 +1201,7 @@ a dictionary of extra keyword arguments to pass to the callback
 \end{description}
 
 
-\subsubsection{How callbacks are called\label{optparse-how-callbacks-are-called}}
+\subsubsection{How callbacks are called\label{optparse-how-callbacks-called}}
 
 All callbacks are called as follows:
 \begin{verbatim}
@@ -1259,7 +1258,7 @@ is a dictionary of arbitrary keyword arguments supplied via
 \end{description}
 
 
-\subsubsection{Error handling\label{optparse-error-handling}}
+\subsubsection{Raising errors in a callback\label{optparse-raising-errors-in-callback}}
 
 The callback function should raise OptionValueError if there are any
 problems with the option or its argument(s).  \module{optparse} catches this and
@@ -1269,7 +1268,7 @@ the option at fault.  Otherwise, the user will have a hard time
 figuring out what he did wrong.
 
 
-\subsubsection{Callback example 1: trivial callback\label{optparse-callback-example-1:-trivial-callback}}
+\subsubsection{Callback example 1: trivial callback\label{optparse-callback-example-1}}
 
 Here's an example of a callback option that takes no arguments, and
 simply records that the option was seen:
@@ -1283,7 +1282,7 @@ parser.add_option("--foo", action="callback", callback=record_foo_seen)
 Of course, you could do that with the \code{store{\_}true} action.
 
 
-\subsubsection{Callback example 2: check option order\label{optparse-callback-example-2:-check-option-order}}
+\subsubsection{Callback example 2: check option order\label{optparse-callback-example-2}}
 
 Here's a slightly more interesting example: record the fact that
 \code{"-a"} is seen, but blow up if it comes after \code{"-b"} in the
@@ -1299,7 +1298,7 @@ parser.add_option("-b", action="store_true", dest="b")
 \end{verbatim}
 
 
-\subsubsection{Callback example 3: check option order (generalized)\label{optparse-callback-example-3:-check-option-order-(generalized)}}
+\subsubsection{Callback example 3: check option order (generalized)\label{optparse-callback-example-3}}
 
 If you want to re-use this callback for several similar options (set a
 flag, but blow up if \code{"-b"} has already been seen), it needs a bit of
@@ -1317,7 +1316,7 @@ parser.add_option("-c", action="callback", callback=check_order, dest='c')
 \end{verbatim}
 
 
-\subsubsection{Callback example 4: check arbitrary condition\label{optparse-callback-example-4:-check-arbitrary-condition}}
+\subsubsection{Callback example 4: check arbitrary condition\label{optparse-callback-example-4}}
 
 Of course, you could put any condition in there{---}you're not limited
 to checking the values of already-defined options.  For example, if
@@ -1338,7 +1337,7 @@ parser.add_option("--foo",
 reader.)
 
 
-\subsubsection{Callback example 5: fixed arguments\label{optparse-callback-example-5:-fixed-arguments}}
+\subsubsection{Callback example 5: fixed arguments\label{optparse-callback-example-5}}
 
 Things get slightly more interesting when you define callback options
 that take a fixed number of arguments.  Specifying that a callback
@@ -1362,7 +1361,7 @@ to integers for you; all you have to do is store them.  (Or whatever;
 obviously you don't need a callback for this example.)
 
 
-\subsubsection{Callback example 6: variable arguments\label{optparse-callback-example-6:-variable-arguments}}
+\subsubsection{Callback example 6: variable arguments\label{optparse-callback-example-6}}
 
 Things get hairy when you want an option to take a variable number of
 arguments.  For this case, you must write a callback, as \module{optparse} doesn't
@@ -1423,5 +1422,5 @@ The main weakness with this particular implementation is that negative
 numbers in the arguments following \code{"-c"} will be interpreted as
 further options (probably causing an error), rather than as arguments to
 \code{"-c"}.  Fixing this is left as an exercise for the reader.
-% $Id$ 
+% $Id: callbacks.txt 415 2004-09-30 02:26:17Z greg $ 
 
