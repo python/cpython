@@ -37,10 +37,9 @@ PERFORMANCE OF THIS SOFTWARE.
 
 #include <sys/types.h>
 #include <sys/stat.h>
-#include "rename2.h"
 
 long
-getmtime(path)
+PyOS_GetLastModificationTime(path)
 	char *path;
 {
 	struct stat st;

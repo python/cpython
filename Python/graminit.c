@@ -1445,7 +1445,7 @@ static label labels[124] = {
 	{1, "class"},
 	{312, 0},
 };
-grammar gram = {
+grammar _PyParser_Grammar = {
 	57,
 	dfas,
 	{124, labels},

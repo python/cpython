@@ -49,7 +49,7 @@ printgrammar(g, fp)
 	fprintf(fp, "#include \"grammar.h\"\n");
 	printdfas(g, fp);
 	printlabels(g, fp);
-	fprintf(fp, "grammar gram = {\n");
+	fprintf(fp, "grammar _PyParser_Grammar = {\n");
 	fprintf(fp, "\t%d,\n", g->g_ndfas);
 	fprintf(fp, "\tdfas,\n");
 	fprintf(fp, "\t{%d, labels},\n", g->g_ll.ll_nlabels);

@@ -39,8 +39,6 @@ PERFORMANCE OF THIS SOFTWARE.
 #define Py_CHARMASK(c)		((c) & 0xff)
 #endif
 
-#include "rename2.h"
-
 /* strtol and strtoul, renamed to avoid conflicts */
 
 /*
@@ -61,7 +59,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <errno.h>
 
 unsigned long
-mystrtoul(str, ptr, base)
+PyOS_strtoul(str, ptr, base)
 register char *	str;
 char **		ptr;
 int		base;
@@ -148,7 +146,7 @@ int		base;
 }
 
 long
-mystrtol(str, ptr, base)
+PyOS_strtol(str, ptr, base)
 char *	str;
 char ** ptr;
 int	base;
@@ -163,7 +161,7 @@ int	base;
 	if (sign == '+' || sign == '-')
 		str++;
 	
-	result = (long) mystrtoul(str, ptr, base);
+	result = (long) PyOS_strtoul(str, ptr, base);
 	
 	/* Signal overflow if the result appears negative,
 	   except for the largest negative integer */
