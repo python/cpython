@@ -2,6 +2,14 @@ What's New in Python 2.2.3 ?
 Release date: XX-XXX-2003
 ============================
 
+- Some horridly obscure problems were fixed involving interaction
+  between garbage collection and classes with "ambitious" getattr hooks.
+  If a class instance didn't have a __del__ method, but did have a
+  __getattr__ hook, and the instance became reachable only from an
+  unreachable cycle, and the hook resurrected or deleted unreachable
+  objects when asked to resolve "__del__", anything up to a segfault
+  could happen.  That's been repaired.
+
 - Skip locale test on Mac OS X.
 
 - Backported the "largefile" requirement for test_largefile on Mac OS X.

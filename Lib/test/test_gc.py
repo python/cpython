@@ -257,6 +257,48 @@ def test_boom2():
     expect(gc.collect(), 4, "boom2")
     expect(len(gc.garbage), garbagelen, "boom2")
 
+# boom__new and boom2_new are exactly like boom and boom2, except use
+# new-style classes.
+
+class Boom_New(object):
+    def __getattr__(self, someattribute):
+        del self.attr
+        raise AttributeError
+
+def test_boom_new():
+    a = Boom_New()
+    b = Boom_New()
+    a.attr = b
+    b.attr = a
+
+    gc.collect()
+    garbagelen = len(gc.garbage)
+    del a, b
+    expect(gc.collect(), 4, "boom_new")
+    expect(len(gc.garbage), garbagelen, "boom_new")
+
+class Boom2_New(object):
+    def __init__(self):
+        self.x = 0
+
+    def __getattr__(self, someattribute):
+        self.x += 1
+        if self.x > 1:
+            del self.attr
+        raise AttributeError
+
+def test_boom2_new():
+    a = Boom2_New()
+    b = Boom2_New()
+    a.attr = b
+    b.attr = a
+
+    gc.collect()
+    garbagelen = len(gc.garbage)
+    del a, b
+    expect(gc.collect(), 4, "boom2_new")
+    expect(len(gc.garbage), garbagelen, "boom2_new")
+
 def test_all():
     gc.collect() # Delete 2nd generation garbage
     run_test("lists", test_list)
@@ -275,6 +317,8 @@ def test_all():
     run_test("trashcan", test_trashcan)
     run_test("boom", test_boom)
     run_test("boom2", test_boom2)
+    run_test("boom_new", test_boom_new)
+    run_test("boom2_new", test_boom2_new)
 
 def test():
     if verbose:

@@ -259,7 +259,6 @@ move_root_reachable(PyGC_Head *reachable)
  * could call the class's __getattr__ hook (if any).  That could invoke
  * arbitrary Python code, mutating the object graph in arbitrary ways, and
  * that was the source of some excruciatingly subtle bugs.
- * XXX This is still broken for new-style classes.
  */
 static int
 has_finalizer(PyObject *op)
@@ -274,8 +273,7 @@ has_finalizer(PyObject *op)
 	if (PyInstance_Check(op))
 		return _PyInstance_Lookup(op, delstr) != NULL;
 	else if (PyType_HasFeature(op->ob_type, Py_TPFLAGS_HEAPTYPE))
-		/* XXX This path is still Evil. */
-		return PyObject_HasAttr(op, delstr);
+		return _PyType_Lookup(op->ob_type, delstr) != NULL;
 	else
 		return 0;
 }
@@ -284,20 +282,18 @@ has_finalizer(PyObject *op)
 static void
 move_finalizers(PyGC_Head *unreachable, PyGC_Head *finalizers)
 {
-	PyGC_Head *next;
 	PyGC_Head *gc = unreachable->gc.gc_next;
-	for (; gc != unreachable; gc=next) {
+
+	while (gc != unreachable) {
+		PyGC_Head *next = gc->gc.gc_next;
 		PyObject *op = FROM_GC(gc);
-		/* XXX has_finalizer() may result in arbitrary Python
-		   code being run. */
+
 		if (has_finalizer(op)) {
-			next = gc->gc.gc_next;
 			gc_list_remove(gc);
 			gc_list_append(gc, finalizers);
 			gc->gc.gc_refs = GC_MOVED;
 		}
-		else
-			next = gc->gc.gc_next;
+		gc = next;
 	}
 }
 
