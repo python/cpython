@@ -276,6 +276,7 @@ typedef struct Picklerobject {
 	PyObject *inst_pers_func;
 	int bin;
 	int fast; /* Fast mode doesn't save in memo, don't use if circ ref */
+        int nesting;
 	int (*write_func)(struct Picklerobject *, char *, int);
 	char *write_buf;
 	int buf_size;
@@ -1867,6 +1868,12 @@ save(Picklerobject *self, PyObject *args, int  pers_save)
 		*callable = 0, *state = 0;
 	int res = -1, tmp, size;
 
+        if (self->nesting++ > Py_GetRecursionLimit()){
+		PyErr_SetString(PyExc_RuntimeError,
+				"maximum recursion depth exceeded");
+		goto finally;
+	}
+
 	if (!pers_save && self->pers_func) {
 		if ((tmp = save_pers(self, args, self->pers_func)) != 0) {
 			res = tmp;
@@ -2092,6 +2099,7 @@ save(Picklerobject *self, PyObject *args, int  pers_save)
 	PyErr_SetObject(UnpickleableError, args);
 
   finally:
+	self->nesting--;
 	Py_XDECREF(py_ob_id);
 	Py_XDECREF(__reduce__);
 	Py_XDECREF(t);
@@ -2314,6 +2322,7 @@ newPicklerobject(PyObject *file, int bin)
 	self->write_buf = NULL;
 	self->bin = bin;
 	self->fast = 0;
+        self->nesting = 0;
 	self->fast_container = 0;
 	self->fast_memo = NULL;
 	self->buf_size = 0;
