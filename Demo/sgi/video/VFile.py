@@ -122,16 +122,18 @@ class VFile:
 		if not self.quiet:
 			sys.stderr.write('Initializing color map...')
 		self.initcmap()
+		self.clear()
 		if not self.quiet:
 			sys.stderr.write(' Done.\n')
+
+	def clear(self):
 		if self.offset == 0:
 			gl.color(0x800)
 			gl.clear()
 			self.mask = 0x7ff
 		else:
 			self.mask = 0xfff
-		gl.clear()
-
+			gl.clear()
 
 	def initcmap(self):
 		maxbits = gl.getgdesc(GL.GD_BITS_NORM_SNG_CMODE)

@@ -120,4 +120,7 @@ def process(filename):
 
 # Don't forget to call the main program
 
-main()
+try:
+	main()
+except KeyboardInterrupt:
+	print '[Interrupt]'

@@ -246,4 +246,8 @@ class Editor:
 		getattr(self, io + '_info2').label = `pos`
 		getattr(self, io + '_info3').label = `right`
 
-main()
+
+try:
+	main()
+except KeyboardInterrupt:
+	print '[Interrupt]'
