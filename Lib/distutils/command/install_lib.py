@@ -74,7 +74,7 @@ class install_lib (Command):
                     out_fn = f + (__debug__ and "c" or "o")
                     compile_msg = "byte-compiling %s to %s" % \
                                   (f, os.path.basename (out_fn))
-                    skip_msg = "byte-compilation of %s skipped" % f
+                    skip_msg = "skipping byte-compilation of %s" % f
                     self.make_file (f, out_fn, compile, (f,),
                                     compile_msg, skip_msg)
     # run ()
