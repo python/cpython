@@ -208,7 +208,9 @@ def f(): pass
 print 'hex'
 if hex(16) != '0x10': raise TestFailed, 'hex(16)'
 if hex(16L) != '0x10L': raise TestFailed, 'hex(16L)'
-if hex(-16) != '0xfffffff0': raise TestFailed, 'hex(-16)'
+if len(hex(-1)) != len(hex(sys.maxint)): raise TestFailed, 'len(hex(-1))'
+if hex(-16) not in ('0xfffffff0', '0xfffffffffffffff0'):
+    raise TestFailed, 'hex(-16)'
 if hex(-16L) != '-0x10L': raise TestFailed, 'hex(-16L)'
 
 print 'id'
