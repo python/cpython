@@ -1015,179 +1015,11 @@ over a dictionary, as often used in set algorithms.
 \end{description}
 
 
-\subsection{Other Built-in Types \label{typesother}}
+\subsection{File Objects
+            \label{bltin-file-objects}}
 
-The interpreter supports several other kinds of objects.
-Most of these support only one or two operations.
-
-
-\subsubsection{Modules \label{typesmodules}}
-
-The only special operation on a module is attribute access:
-\code{\var{m}.\var{name}}, where \var{m} is a module and \var{name}
-accesses a name defined in \var{m}'s symbol table.  Module attributes
-can be assigned to.  (Note that the \keyword{import} statement is not,
-strictly speaking, an operation on a module object; \code{import
-\var{foo}} does not require a module object named \var{foo} to exist,
-rather it requires an (external) \emph{definition} for a module named
-\var{foo} somewhere.)
-
-A special member of every module is \member{__dict__}.
-This is the dictionary containing the module's symbol table.
-Modifying this dictionary will actually change the module's symbol
-table, but direct assignment to the \member{__dict__} attribute is not
-possible (you can write \code{\var{m}.__dict__['a'] = 1}, which
-defines \code{\var{m}.a} to be \code{1}, but you can't write
-\code{\var{m}.__dict__ = \{\}}.
-
-Modules built into the interpreter are written like this:
-\code{<module 'sys' (built-in)>}.  If loaded from a file, they are
-written as \code{<module 'os' from
-'/usr/local/lib/python\shortversion/os.pyc'>}.
-
-
-\subsubsection{Classes and Class Instances \label{typesobjects}}
-\nodename{Classes and Instances}
-
-See chapters 3 and 7 of the \citetitle[../ref/ref.html]{Python
-Reference Manual} for these.
-
-
-\subsubsection{Functions \label{typesfunctions}}
-
-Function objects are created by function definitions.  The only
-operation on a function object is to call it:
-\code{\var{func}(\var{argument-list})}.
-
-There are really two flavors of function objects: built-in functions
-and user-defined functions.  Both support the same operation (to call
-the function), but the implementation is different, hence the
-different object types.
-
-The implementation adds two special read-only attributes:
-\code{\var{f}.func_code} is a function's \dfn{code
-object}\obindex{code} (see below) and \code{\var{f}.func_globals} is
-the dictionary used as the function's global namespace (this is the
-same as \code{\var{m}.__dict__} where \var{m} is the module in which
-the function \var{f} was defined).
-
-Function objects also support getting and setting arbitrary
-attributes, which can be used to, e.g. attach metadata to functions.
-Regular attribute dot-notation is used to get and set such
-attributes. \emph{Note that the current implementation only supports
-function attributes on user-defined functions.  Function attributes on
-built-in functions may be supported in the future.}
-
-Functions have another special attribute \code{\var{f}.__dict__}
-(a.k.a. \code{\var{f}.func_dict}) which contains the namespace used to
-support function attributes.  \code{__dict__} and \code{func_dict} can
-be accessed directly or set to a dictionary object.  A function's
-dictionary cannot be deleted.
-
-\subsubsection{Methods \label{typesmethods}}
-\obindex{method}
-
-Methods are functions that are called using the attribute notation.
-There are two flavors: built-in methods (such as \method{append()} on
-lists) and class instance methods.  Built-in methods are described
-with the types that support them.
-
-The implementation adds two special read-only attributes to class
-instance methods: \code{\var{m}.im_self} is the object on which the
-method operates, and \code{\var{m}.im_func} is the function
-implementing the method.  Calling \code{\var{m}(\var{arg-1},
-\var{arg-2}, \textrm{\ldots}, \var{arg-n})} is completely equivalent to
-calling \code{\var{m}.im_func(\var{m}.im_self, \var{arg-1},
-\var{arg-2}, \textrm{\ldots}, \var{arg-n})}.
-
-Class instance methods are either \emph{bound} or \emph{unbound},
-referring to whether the method was accessed through an instance or a
-class, respectively.  When a method is unbound, its \code{im_self}
-attribute will be \code{None} and if called, an explicit \code{self}
-object must be passed as the first argument.  In this case,
-\code{self} must be an instance of the unbound method's class (or a
-subclass of that class), otherwise a \code{TypeError} is raised.
-
-Like function objects, methods objects support getting
-arbitrary attributes.  However, since method attributes are actually
-stored on the underlying function object (\code{meth.im_func}),
-setting method attributes on either bound or unbound methods is
-disallowed.  Attempting to set a method attribute results in a
-\code{TypeError} being raised.  In order to set a method attribute,
-you need to explicitly set it on the underlying function object:
-
-\begin{verbatim}
-class C:
-    def method(self):
-        pass
-
-c = C()
-c.method.im_func.whoami = 'my name is c'
-\end{verbatim}
-
-See the \citetitle[../ref/ref.html]{Python Reference Manual} for more
-information.
-
-
-\subsubsection{Code Objects \label{bltin-code-objects}}
-\obindex{code}
-
-Code objects are used by the implementation to represent
-``pseudo-compiled'' executable Python code such as a function body.
-They differ from function objects because they don't contain a
-reference to their global execution environment.  Code objects are
-returned by the built-in \function{compile()} function and can be
-extracted from function objects through their \member{func_code}
-attribute.
-\bifuncindex{compile}
-\withsubitem{(function object attribute)}{\ttindex{func_code}}
-
-A code object can be executed or evaluated by passing it (instead of a
-source string) to the \keyword{exec} statement or the built-in
-\function{eval()} function.
-\stindex{exec}
-\bifuncindex{eval}
-
-See the \citetitle[../ref/ref.html]{Python Reference Manual} for more
-information.
-
-
-\subsubsection{Type Objects \label{bltin-type-objects}}
-
-Type objects represent the various object types.  An object's type is
-accessed by the built-in function \function{type()}.  There are no special
-operations on types.  The standard module \module{types} defines names
-for all standard built-in types.
-\bifuncindex{type}
-\refstmodindex{types}
-
-Types are written like this: \code{<type 'int'>}.
-
-
-\subsubsection{The Null Object \label{bltin-null-object}}
-
-This object is returned by functions that don't explicitly return a
-value.  It supports no special operations.  There is exactly one null
-object, named \code{None} (a built-in name).
-
-It is written as \code{None}.
-
-
-\subsubsection{The Ellipsis Object \label{bltin-ellipsis-object}}
-
-This object is used by extended slice notation (see the
-\citetitle[../ref/ref.html]{Python Reference Manual}).  It supports no
-special operations.  There is exactly one ellipsis object, named
-\constant{Ellipsis} (a built-in name).
-
-It is written as \code{Ellipsis}.
-
-
-\subsubsection{File Objects\obindex{file}
-               \label{bltin-file-objects}}
-
-File objects are implemented using C's \code{stdio} package and can be
-created with the built-in constructor
+File objects\obindex{file} are implemented using C's \code{stdio}
+package and can be created with the built-in constructor
 \function{file()}\bifuncindex{file} described in section 
 \ref{built-in-funcs}, ``Built-in Functions.''\footnote{\function{file()}
 is new in Python 2.2.  The older built-in \function{open()} is an
@@ -1370,6 +1202,174 @@ implemented in C will have to provide a writable
 \keyword{print} statement, but to allow the implementation of
 \keyword{print} to keep track of its internal state.}
 \end{memberdesc}
+
+
+\subsection{Other Built-in Types \label{typesother}}
+
+The interpreter supports several other kinds of objects.
+Most of these support only one or two operations.
+
+
+\subsubsection{Modules \label{typesmodules}}
+
+The only special operation on a module is attribute access:
+\code{\var{m}.\var{name}}, where \var{m} is a module and \var{name}
+accesses a name defined in \var{m}'s symbol table.  Module attributes
+can be assigned to.  (Note that the \keyword{import} statement is not,
+strictly speaking, an operation on a module object; \code{import
+\var{foo}} does not require a module object named \var{foo} to exist,
+rather it requires an (external) \emph{definition} for a module named
+\var{foo} somewhere.)
+
+A special member of every module is \member{__dict__}.
+This is the dictionary containing the module's symbol table.
+Modifying this dictionary will actually change the module's symbol
+table, but direct assignment to the \member{__dict__} attribute is not
+possible (you can write \code{\var{m}.__dict__['a'] = 1}, which
+defines \code{\var{m}.a} to be \code{1}, but you can't write
+\code{\var{m}.__dict__ = \{\}}.
+
+Modules built into the interpreter are written like this:
+\code{<module 'sys' (built-in)>}.  If loaded from a file, they are
+written as \code{<module 'os' from
+'/usr/local/lib/python\shortversion/os.pyc'>}.
+
+
+\subsubsection{Classes and Class Instances \label{typesobjects}}
+\nodename{Classes and Instances}
+
+See chapters 3 and 7 of the \citetitle[../ref/ref.html]{Python
+Reference Manual} for these.
+
+
+\subsubsection{Functions \label{typesfunctions}}
+
+Function objects are created by function definitions.  The only
+operation on a function object is to call it:
+\code{\var{func}(\var{argument-list})}.
+
+There are really two flavors of function objects: built-in functions
+and user-defined functions.  Both support the same operation (to call
+the function), but the implementation is different, hence the
+different object types.
+
+The implementation adds two special read-only attributes:
+\code{\var{f}.func_code} is a function's \dfn{code
+object}\obindex{code} (see below) and \code{\var{f}.func_globals} is
+the dictionary used as the function's global namespace (this is the
+same as \code{\var{m}.__dict__} where \var{m} is the module in which
+the function \var{f} was defined).
+
+Function objects also support getting and setting arbitrary
+attributes, which can be used to, e.g. attach metadata to functions.
+Regular attribute dot-notation is used to get and set such
+attributes. \emph{Note that the current implementation only supports
+function attributes on user-defined functions.  Function attributes on
+built-in functions may be supported in the future.}
+
+Functions have another special attribute \code{\var{f}.__dict__}
+(a.k.a. \code{\var{f}.func_dict}) which contains the namespace used to
+support function attributes.  \code{__dict__} and \code{func_dict} can
+be accessed directly or set to a dictionary object.  A function's
+dictionary cannot be deleted.
+
+\subsubsection{Methods \label{typesmethods}}
+\obindex{method}
+
+Methods are functions that are called using the attribute notation.
+There are two flavors: built-in methods (such as \method{append()} on
+lists) and class instance methods.  Built-in methods are described
+with the types that support them.
+
+The implementation adds two special read-only attributes to class
+instance methods: \code{\var{m}.im_self} is the object on which the
+method operates, and \code{\var{m}.im_func} is the function
+implementing the method.  Calling \code{\var{m}(\var{arg-1},
+\var{arg-2}, \textrm{\ldots}, \var{arg-n})} is completely equivalent to
+calling \code{\var{m}.im_func(\var{m}.im_self, \var{arg-1},
+\var{arg-2}, \textrm{\ldots}, \var{arg-n})}.
+
+Class instance methods are either \emph{bound} or \emph{unbound},
+referring to whether the method was accessed through an instance or a
+class, respectively.  When a method is unbound, its \code{im_self}
+attribute will be \code{None} and if called, an explicit \code{self}
+object must be passed as the first argument.  In this case,
+\code{self} must be an instance of the unbound method's class (or a
+subclass of that class), otherwise a \code{TypeError} is raised.
+
+Like function objects, methods objects support getting
+arbitrary attributes.  However, since method attributes are actually
+stored on the underlying function object (\code{meth.im_func}),
+setting method attributes on either bound or unbound methods is
+disallowed.  Attempting to set a method attribute results in a
+\code{TypeError} being raised.  In order to set a method attribute,
+you need to explicitly set it on the underlying function object:
+
+\begin{verbatim}
+class C:
+    def method(self):
+        pass
+
+c = C()
+c.method.im_func.whoami = 'my name is c'
+\end{verbatim}
+
+See the \citetitle[../ref/ref.html]{Python Reference Manual} for more
+information.
+
+
+\subsubsection{Code Objects \label{bltin-code-objects}}
+\obindex{code}
+
+Code objects are used by the implementation to represent
+``pseudo-compiled'' executable Python code such as a function body.
+They differ from function objects because they don't contain a
+reference to their global execution environment.  Code objects are
+returned by the built-in \function{compile()} function and can be
+extracted from function objects through their \member{func_code}
+attribute.
+\bifuncindex{compile}
+\withsubitem{(function object attribute)}{\ttindex{func_code}}
+
+A code object can be executed or evaluated by passing it (instead of a
+source string) to the \keyword{exec} statement or the built-in
+\function{eval()} function.
+\stindex{exec}
+\bifuncindex{eval}
+
+See the \citetitle[../ref/ref.html]{Python Reference Manual} for more
+information.
+
+
+\subsubsection{Type Objects \label{bltin-type-objects}}
+
+Type objects represent the various object types.  An object's type is
+accessed by the built-in function \function{type()}.  There are no special
+operations on types.  The standard module \module{types} defines names
+for all standard built-in types.
+\bifuncindex{type}
+\refstmodindex{types}
+
+Types are written like this: \code{<type 'int'>}.
+
+
+\subsubsection{The Null Object \label{bltin-null-object}}
+
+This object is returned by functions that don't explicitly return a
+value.  It supports no special operations.  There is exactly one null
+object, named \code{None} (a built-in name).
+
+It is written as \code{None}.
+
+
+\subsubsection{The Ellipsis Object \label{bltin-ellipsis-object}}
+
+This object is used by extended slice notation (see the
+\citetitle[../ref/ref.html]{Python Reference Manual}).  It supports no
+special operations.  There is exactly one ellipsis object, named
+\constant{Ellipsis} (a built-in name).
+
+It is written as \code{Ellipsis}.
 
 
 \subsubsection{Internal Objects \label{typesinternal}}
