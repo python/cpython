@@ -489,6 +489,121 @@ class CodecCallbackTest(unittest.TestCase):
                 "test.unencreplhandler"
             )
 
+    def test_badregistercall(self):
+        # enhance coverage of:
+        # Modules/_codecsmodule.c::register_error()
+        # Python/codecs.c::PyCodec_RegisterError()
+        self.assertRaises(TypeError, codecs.register_error, 42)
+        self.assertRaises(TypeError, codecs.register_error, "test.dummy", 42)
+
+    def test_unknownhandler(self):
+        # enhance coverage of:
+        # Modules/_codecsmodule.c::lookup_error()
+        self.assertRaises(LookupError, codecs.lookup_error, "test.unknown")
+
+    def test_xmlcharrefvalues(self):
+        # enhance coverage of:
+        # Python/codecs.c::PyCodec_XMLCharRefReplaceErrors()
+        # and inline implementations
+        v = (1, 5, 10, 50, 100, 500, 1000, 5000, 10000, 50000)
+        if sys.maxunicode>50000:
+             v += (100000, 500000, 1000000)
+        s = u"".join([unichr(x) for x in v])
+        codecs.register_error("test.xmlcharrefreplace", codecs.xmlcharrefreplace_errors)
+        for enc in ("ascii", "iso-8859-15"):
+            for err in ("xmlcharrefreplace", "test.xmlcharrefreplace"):
+                s.encode(enc, err)
+
+    def test_decodehelper(self):
+        # enhance coverage of:
+        # Objects/unicodeobject.c::unicode_decode_call_errorhandler()
+        # and callers
+        self.assertRaises(LookupError, "\xff".decode, "ascii", "test.unknown")
+
+        def baddecodereturn1(exc):
+            return 42
+        codecs.register_error("test.baddecodereturn1", baddecodereturn1)
+        self.assertRaises(TypeError, "\xff".decode, "ascii", "test.baddecodereturn1")
+        self.assertRaises(TypeError, "\\".decode, "unicode-escape", "test.baddecodereturn1")
+        self.assertRaises(TypeError, "\\x0".decode, "unicode-escape", "test.baddecodereturn1")
+        self.assertRaises(TypeError, "\\x0y".decode, "unicode-escape", "test.baddecodereturn1")
+        self.assertRaises(TypeError, "\\Uffffeeee".decode, "unicode-escape", "test.baddecodereturn1")
+        self.assertRaises(TypeError, "\\uyyyy".decode, "raw-unicode-escape", "test.baddecodereturn1")
+
+        def baddecodereturn2(exc):
+            return (u"?", None)
+        codecs.register_error("test.baddecodereturn2", baddecodereturn2)
+        self.assertRaises(TypeError, "\xff".decode, "ascii", "test.baddecodereturn2")
+
+        pos = [-42]
+        def negposreturn(exc):
+            pos[0] += 1 # use list to work around scoping problem
+            return (u"?", pos[0])
+        codecs.register_error("test.negposreturn", negposreturn)
+        "\xff".decode("ascii", "test.negposreturn")
+
+        def hugeposreturn(exc):
+            return (u"?", 424242)
+        codecs.register_error("test.hugeposreturn", hugeposreturn)
+        "\xff".decode("ascii", "test.hugeposreturn")
+        "\\uyyyy".decode("raw-unicode-escape", "test.hugeposreturn")
+
+        class D(dict):
+            def __getitem__(self, key):
+                raise ValueError
+        self.assertRaises(UnicodeError, codecs.charmap_decode, "\xff", "strict", {0xff: None})
+        self.assertRaises(ValueError, codecs.charmap_decode, "\xff", "strict", D())
+        self.assertRaises(TypeError, codecs.charmap_decode, "\xff", "strict", {0xff: sys.maxunicode+1})
+
+    def test_encodehelper(self):
+        # enhance coverage of:
+        # Objects/unicodeobject.c::unicode_encode_call_errorhandler()
+        # and callers
+        self.assertRaises(LookupError, u"\xff".encode, "ascii", "test.unknown")
+
+        def badencodereturn1(exc):
+            return 42
+        codecs.register_error("test.badencodereturn1", badencodereturn1)
+        self.assertRaises(TypeError, u"\xff".encode, "ascii", "test.badencodereturn1")
+
+        def badencodereturn2(exc):
+            return (u"?", None)
+        codecs.register_error("test.badencodereturn2", badencodereturn2)
+        self.assertRaises(TypeError, u"\xff".encode, "ascii", "test.badencodereturn2")
+
+        pos = [-42]
+        def negposreturn(exc):
+            pos[0] += 1 # use list to work around scoping problem
+            return (u"?", pos[0])
+        codecs.register_error("test.negposreturn", negposreturn)
+        u"\xff".encode("ascii", "test.negposreturn")
+
+        def hugeposreturn(exc):
+            return (u"?", 424242)
+        codecs.register_error("test.hugeposreturn", hugeposreturn)
+        u"\xff".encode("ascii", "test.hugeposreturn")
+
+        class D(dict):
+            def __getitem__(self, key):
+                raise ValueError
+        for err in ("strict", "replace", "xmlcharrefreplace", "backslashreplace", "test.hugeposreturn"):
+            self.assertRaises(UnicodeError, codecs.charmap_encode, u"\xff", err, {0xff: None})
+            self.assertRaises(ValueError, codecs.charmap_encode, u"\xff", err, D())
+            self.assertRaises(TypeError, codecs.charmap_encode, u"\xff", err, {0xff: 300})
+
+    def test_translatehelper(self):
+        # enhance coverage of:
+        # Objects/unicodeobject.c::unicode_encode_call_errorhandler()
+        # and callers
+        # (Unfortunately the errors argument is not directly accessible
+        # from Python, so we can't test that much)
+        class D(dict):
+            def __getitem__(self, key):
+                raise ValueError
+        self.assertRaises(ValueError, u"\xff".translate, D())
+        self.assertRaises(TypeError, u"\xff".translate, {0xff: sys.maxunicode+1})
+        self.assertRaises(TypeError, u"\xff".translate, {0xff: ()})
+
 def test_main():
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(CodecCallbackTest))
