@@ -48,7 +48,7 @@
 # Where are the various programs?
 LATEX=		latex
 BIBTEX=		bibtex
-DVIPS=		dvips -f
+DVIPS=		dvips -f -N0
 MAKEINDEX=	makeindex
 L2H=		latex2html
 L2HARGS=	-address $$USER@`domainname`
