@@ -17,8 +17,6 @@
 #   $Id$
 #
 
-__version__ = '0.3'
-
 # note: avoid importing non-builtin modules
 import imp
 import sys
