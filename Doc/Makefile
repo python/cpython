@@ -112,7 +112,7 @@ LIBFILES = lib.tex \
     libcd.tex libfl.tex libfm.tex libgl.tex libimgfile.tex libsun.tex \
     libxdrlib.tex libimghdr.tex \
     librestricted.tex librexec.tex libbastion.tex \
-    libformatter.tex liboperator.tex
+    libformatter.tex liboperator.tex libsoundex.tex
 
 # Library document
 lib.dvi: $(LIBFILES)
