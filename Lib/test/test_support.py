@@ -144,7 +144,7 @@ else:
             TESTFN_UNICODE_UNENCODEABLE = None
         else:
             # Japanese characters (I think - from bug 846133)
-            TESTFN_UNICODE_UNENCODEABLE = u"@test-\u5171\u6709\u3055\u308c\u308b"
+            TESTFN_UNICODE_UNENCODEABLE = eval('u"@test-\u5171\u6709\u3055\u308c\u308b"')
             try:
                 # XXX - Note - should be using TESTFN_ENCODING here - but for
                 # Windows, "mbcs" currently always operates as if in
