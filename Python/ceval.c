@@ -2255,7 +2255,11 @@ eval_frame(PyFrameObject *f)
 						set_exc_info(tstate,
 							     exc, val, tb);
 					}
-					PUSH(tb);
+					if (tb == NULL) {
+						Py_INCREF(Py_None);
+						PUSH(Py_None);
+					} else
+						PUSH(tb);
 					PUSH(val);
 					PUSH(exc);
 				}
