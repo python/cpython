@@ -230,7 +230,7 @@ Py_Main(argc, argv)
 	else if (Py_InteractiveFlag) {
 #ifdef MS_WINDOWS
 		/* Doesn't have to have line-buffered -- use unbuffered */
-		setvbuf(stdin,  (char *)NULL, _IONBF, BUFSIZ);
+		/* Any set[v]buf(stdin, ...) screws up Tkinter :-( */
 		setvbuf(stdout, (char *)NULL, _IONBF, BUFSIZ);
 #else /* !MS_WINDOWS */
 #ifdef HAVE_SETVBUF
