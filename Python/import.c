@@ -148,8 +148,15 @@ import_module(name)
 	char *name;
 {
 	object *m;
-	if ((m = dictlookup(modules, name)) == NULL)
-		m = load_module(name);
+	if ((m = dictlookup(modules, name)) == NULL) {
+		if (init_builtin(name)) {
+			if ((m = dictlookup(modules, name)) == NULL)
+				err_setstr(SystemError, "builtin module missing");
+		}
+		else {
+			m = load_module(name);
+		}
+	}
 	return m;
 }
 
@@ -203,4 +210,26 @@ doneimport()
 		cleardict(modules);
 	}
 	DECREF(modules);
+}
+
+
+/* Initialize built-in modules when first imported */
+
+extern struct {
+	char *name;
+	void (*initfunc)();
+} inittab[];
+
+static int
+init_builtin(name)
+	char *name;
+{
+	int i;
+	for (i = 0; inittab[i].name != NULL; i++) {
+		if (strcmp(name, inittab[i].name) == 0) {
+			(*inittab[i].initfunc)();
+			return 1;
+		}
+	}
+	return 0;
 }
