@@ -236,7 +236,7 @@ but not the object itself.  Static and class methods are defined like
 this:
 
 \begin{verbatim}
-class C:
+class C(object):
     def f(arg1, arg2):
         ...
     f = staticmethod(f)
@@ -263,7 +263,7 @@ that used this feature might be defined like this:
 \begin{verbatim}
 from eiffel import eiffelmethod
 
-class C:
+class C(object):
     def f(self, arg1, arg2):
         # The actual function
     def pre_f(self):
@@ -375,7 +375,7 @@ example, if you want to define a \member{size} attribute that's
 computed, but also settable, you could write:
 
 \begin{verbatim}
-class C:
+class C(object):
     def get_size (self):
         result = ... computation ...
         return result
@@ -1246,6 +1246,11 @@ affect you very much.
    bounds of the buffer used to protect against buffer overruns.
    (Contributed by M.-A. Lemburg.)
 
+   \item The \cfunction{_PyTuple_Resize()} function has lost an unused
+   parameter, so now it takes 2 parameters instead of 3.  The third
+   argument was never used, and can simply be discarded when porting
+   code from earlier versions to Python 2.2.
+
 \end{itemize}
 
 
@@ -1404,9 +1409,10 @@ to experiment with these modules can uncomment them manually.
 The author would like to thank the following people for offering
 suggestions, corrections and assistance with various drafts of this
 article: Fred Bremmer, Keith Briggs, Andrew Dalke, Fred~L. Drake, Jr.,
-Carel Fellinger, David Goodger, Mark Hammond, Stephen Hansen, Michael Hudson, Jack
-Jansen, Marc-Andr\'e Lemburg, Martin von L\"owis, Fredrik Lundh,
-Michael McLay, Nick Mathewson, Paul Moore, Tim Peters, Jens Quade, Tom
-Reinhardt, Neil Schemenauer, Guido van Rossum, Greg Ward.
+Carel Fellinger, David Goodger, Mark Hammond, Stephen Hansen, Michael
+Hudson, Jack Jansen, Marc-Andr\'e Lemburg, Martin von L\"owis, Fredrik
+Lundh, Michael McLay, Nick Mathewson, Paul Moore, Gustavo Niemeyer,
+Don O'Donnell, Tim Peters, Jens Quade, Tom Reinhardt, Neil
+Schemenauer, Guido van Rossum, Greg Ward.
 
 \end{document}
