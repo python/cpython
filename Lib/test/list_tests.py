@@ -232,7 +232,7 @@ class CommonTest(seq_tests.CommonTest):
         self.assertEqual(a, [])
 
         self.assertRaises(ValueError, a.remove, 0)
-        
+
         self.assertRaises(TypeError, a.remove)
 
         class BadExc(Exception):
@@ -254,7 +254,7 @@ class CommonTest(seq_tests.CommonTest):
         self.assertEqual(a.count(3), 0)
 
         self.assertRaises(TypeError, a.count)
-        
+
         class BadExc(Exception):
             pass
 
@@ -318,18 +318,18 @@ class CommonTest(seq_tests.CommonTest):
         self.assertEqual(u, [2, 1, 0, -1, -2])
         u.reverse()
         self.assertEqual(u, u2)
-        
+
         self.assertRaises(TypeError, u.reverse, 42)
 
     def test_sort(self):
         u = self.type2test([1, 0])
         u.sort()
         self.assertEqual(u, [0, 1])
-        
+
         u = self.type2test([2,1,0,-1,-2])
         u.sort()
         self.assertEqual(u, self.type2test([-2,-1,0,1,2]))
-        
+
         self.assertRaises(TypeError, u.sort, 42, 42)
 
         def revcmp(a, b):
@@ -342,14 +342,14 @@ class CommonTest(seq_tests.CommonTest):
             return cmp(x%3, y%7)
         z = self.type2test(range(12))
         z.sort(myComparison)
-        
+
         self.assertRaises(TypeError, z.sort, 2)
-        
+
         def selfmodifyingComparison(x,y):
             z.append(1)
             return cmp(x, y)
         self.assertRaises(ValueError, z.sort, selfmodifyingComparison)
-        
+
         self.assertRaises(TypeError, z.sort, lambda x, y: 's')
 
         self.assertRaises(TypeError, z.sort, 42, 42, 42, 42)
