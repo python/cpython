@@ -5,6 +5,8 @@
 #include "frameobject.h"
 #include "expat.h"
 
+#define XML_COMBINED_VERSION (10000*XML_MAJOR_VERSION+100*XML_MINOR_VERSION+XML_MICRO_VERSION)
+
 #ifndef PyDoc_STRVAR
 
 /*
@@ -47,7 +49,9 @@ enum HandlerTypes {
     XmlDecl,
     ElementDecl,
     AttlistDecl,
+#if XML_COMBINED_VERSION >= 19504
     SkippedEntity,
+#endif
     _DummyDecl
 };
 
@@ -721,12 +725,14 @@ VOID_HANDLER(AttlistDecl,
               STRING_CONV_FUNC,att_type, STRING_CONV_FUNC,dflt,
               isrequired))
 
+#if XML_COMBINED_VERSION >= 19504
 VOID_HANDLER(SkippedEntity,
              (void *userData,
               const XML_Char *entityName,
               int is_parameter_entity),
              ("Ni",
               string_intern(self, entityName), is_parameter_entity))
+#endif
 
 VOID_HANDLER(NotationDecl,
 		(void *userData,
@@ -1122,6 +1128,8 @@ xmlparse_SetParamEntityParsing(xmlparseobject *p, PyObject* args)
     return PyInt_FromLong(flag);
 }
 
+
+#if XML_COMBINED_VERSION >= 19505
 PyDoc_STRVAR(xmlparse_UseForeignDTD__doc__,
 "UseForeignDTD([flag])\n\
 Allows the application to provide an artificial external subset if one is\n\
@@ -1147,6 +1155,7 @@ xmlparse_UseForeignDTD(xmlparseobject *self, PyObject *args)
     Py_INCREF(Py_None);
     return Py_None;
 }
+#endif
 
 static struct PyMethodDef xmlparse_methods[] = {
     {"Parse",	  (PyCFunction)xmlparse_Parse,
@@ -1163,8 +1172,10 @@ static struct PyMethodDef xmlparse_methods[] = {
 		  METH_VARARGS, xmlparse_SetParamEntityParsing__doc__},
     {"GetInputContext", (PyCFunction)xmlparse_GetInputContext,
 		  METH_VARARGS, xmlparse_GetInputContext__doc__},
+#if XML_COMBINED_VERSION >= 19505
     {"UseForeignDTD", (PyCFunction)xmlparse_UseForeignDTD,
 		  METH_VARARGS, xmlparse_UseForeignDTD__doc__},
+#endif
     {NULL,	  NULL}		/* sentinel */
 };
 
@@ -1802,6 +1813,7 @@ MODULE_INITFUNC(void)
         /* Don't core dump later! */
         return;
     
+#if XML_COMBINED_VERSION > 19505
     {
         const XML_Feature *features = XML_GetFeatureList();
         PyObject *list = PyList_New(0);
@@ -1830,6 +1842,7 @@ MODULE_INITFUNC(void)
                 PyModule_AddObject(m, "features", list);
         }
     }
+#endif
 
 #define MYCONST(name) \
     PyModule_AddStringConstant(errors_module, #name, \
@@ -1969,9 +1982,11 @@ static struct HandlerInfo handler_info[] = {
     {"AttlistDeclHandler",
      (xmlhandlersetter)XML_SetAttlistDeclHandler,
      (xmlhandler)my_AttlistDeclHandler},
+#if XML_COMBINED_VERSION >= 19504
     {"SkippedEntityHandler",
      (xmlhandlersetter)XML_SetSkippedEntityHandler,
      (xmlhandler)my_SkippedEntityHandler},
+#endif
 
     {NULL, NULL, NULL} /* sentinel */
 };
