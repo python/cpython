@@ -22,6 +22,9 @@ Python at SourceForge - Frequently Asked Questions</h1></center>
 
 <li>
 <a href="#g2">Where do I find Python there?</a></li>
+
+<li>
+<a href="#g3">How can I change the pages at python.sourceforge.net?</a></li>
 </ol>
 
 <h2>
@@ -94,6 +97,23 @@ The <a href="http://sourceforge.net/projects/python">Python project page</a>
 can be found at
 <blockquote><tt><a href="http://sourceforge.net/projects/python">http://sourceforge.net/projects/python</a></tt></blockquote>
 
+<h3>
+<a NAME="g3"></a>1.3.:</h3>
+
+<h4>
+Q: How can I change the pages at python.sourceforge.net?</h4>
+
+<h4>
+A:</h4>
+First you have to be in the SourceForge group "<tt>python</tt>" (true for
+all developers). Then you can upload files using scp:
+<blockquote><tt>scp mylocalfile.html sf_username@shell.sourceforge.net:/home/groups/python/htdocs/</tt></blockquote>
+If you want to edit or remove files, you can use ssh:
+<blockquote><tt>ssh -l sf_username shell.sourceforge.net</tt>
+<br><tt>cd /home/groups/python/htdocs</tt>
+<br><tt>rm garbage.html</tt>
+<br><tt>vi changeme.html</tt></blockquote>
+
 <h1>
 <a NAME="cvs"></a>2. CVS</h1>
 
@@ -145,7 +165,8 @@ file /cvsroot/python/CVSROOT/history</tt>
 A:</h4>
 If you are not a developer, you don't have read/write access. You have
 to check out an anonymous copy. If you are a developer you have to be in
-the SourceForge group "python". You can check this with the following commands:
+the SourceForge group "<tt>python</tt>". You can check this with the following
+commands:
 <blockquote><tt>ssh -l sf_username shell.sourceforge.net</tt>
 <br><tt>groups</tt></blockquote>
 If you have just recently (&lt; 6 hours) been added to the Python project,
@@ -342,13 +363,9 @@ and you're not sure if it has been reported or fixed already, this is the
 first place to look. (There used to be a separate TODO list; we now prefer
 that you use the bugs list for suggestions and requests too.)</li>
 
-<br>&nbsp;
-<p>&nbsp;
-<br>&nbsp;
-<br>&nbsp;
-<p><b>Submit documentation patches the same way.</b> When adding the patch,
-be sure to set the "<b>Category</b>" field to "<b>documentation</b>". For
-documentation errors without patches, please use the <a href="http://www.python.org/search/search_bugs.html">Python
+<p><br><b>Submit documentation patches the same way.</b> When adding the
+patch, be sure to set the "<b>Category</b>" field to "<b>documentation</b>".
+For documentation errors without patches, please use the <a href="http://www.python.org/search/search_bugs.html">Python
 Bugs List</a> instead.
 <li>
 We like context diffs. We grudgingly accept unified diffs.
