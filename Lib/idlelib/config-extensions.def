@@ -1,13 +1,13 @@
 # IDLE reads several config files to determine user preferences.  This 
 # file is the default config file for idle extensions settings.  
 
+[FormatParagraph]
+enable=1
+
 [AutoIndent]
 enable=1
 
 [AutoExpand]
-enable=1
-
-[FormatParagraph]
 enable=1
 
 [ZoomHeight]

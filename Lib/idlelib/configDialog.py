@@ -120,8 +120,8 @@ class ConfigDialog(Toplevel):
             self.radioBg.config(state=DISABLED)
             self.fgHilite.set(1)
         else: #both fg and bg can be set
-            self.radioFg.config(state=DISABLED)
-            self.radioBg.config(state=DISABLED)
+            self.radioFg.config(state=NORMAL)
+            self.radioBg.config(state=NORMAL)
             self.fgHilite.set(1)
         self.SetColourSample()
     
@@ -496,7 +496,7 @@ class ConfigDialog(Toplevel):
             colours=idleConf.GetHighlight(theme, self.themeElements[element][0])
             if element=='Cursor': #cursor sample needs special painting
                 colours['background']=idleConf.GetHighlight(theme, 
-                        'normal-text', fgBg='bg')
+                        'normal', fgBg='bg')
             apply(self.textHighlightSample.tag_config,
                 (self.themeElements[element][0],),colours)
     
@@ -558,11 +558,8 @@ class ConfigDialog(Toplevel):
         themeNames=self.themeElements.keys()
         themeNames.sort(self.__ThemeNameIndexCompare)
         self.optMenuHighlightTarget.SetMenu(themeNames,themeNames[0])   
-        sampleBg=idleConf.GetHighlight(currentOption,
-            self.highlightTarget.get())['background']
-        self.fgHilite.set(0)
-        self.frameColourSet.config(bg=sampleBg)
         self.PaintThemeSample()
+        self.SetHighlightTarget()
     
     def __ThemeNameIndexCompare(self,a,b):
         if self.themeElements[a][1]<self.themeElements[b][1]: return -1

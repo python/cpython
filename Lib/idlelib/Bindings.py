@@ -73,11 +73,6 @@ menudefs = [
   ]),
 ]
 
-#if sys.platform == 'win32':
-#    default_keydefs = windows_keydefs
-#else:
-#    default_keydefs = unix_keydefs
-
-default_keydefs = idleConf.GetKeys(keySetName=None)
+default_keydefs = idleConf.GetKeys(keySetName=idleConf.CurrentKeys())
 
 del sys

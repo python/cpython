@@ -27,7 +27,6 @@ class IdleConfParser(ConfigParser):
         """
         Get an option value for given section/option or return default.
         If type is specified, return as type.
-        If a default is returned a warning is printed to stderr.
         """
         if type=='bool': 
             getVal=self.getboolean
@@ -125,6 +124,7 @@ class IdleConf:
         fallback to a useable passed-in default if the option isn't present in 
         either the user or the default configuration.
         configType must be one of ('main','extensions','highlight','keys')
+        If a default is returned a warning is printed to stderr.
         """
         if self.userCfg[configType].has_option(section,option):
             return self.userCfg[configType].Get(section, option, type=type)
@@ -201,14 +201,14 @@ class IdleConf:
         """
         Returns the name of the currently active theme        
         """
-        return self.GetOption('main','Theme','name')
+        return self.GetOption('main','Theme','name',default='')
         
 
     def CurrentKeys(self):
         """
         Returns the name of the currently active theme        
         """
-        return self.GetOption('main','Keys','name')
+        return self.GetOption('main','Keys','name',default='')
     
     def GetExtensions(self, activeOnly=1):
         """
@@ -230,11 +230,21 @@ class IdleConf:
         else:
             return extns        
 
+    def GetKeyBinding(self, keySetName, eventStr):
+        """
+        returns the keybinding for a specific event.
+        keySetName - string, name of key binding set
+        eventStr - string, the virtual event we want the binding for, 
+                   represented as a string, eg. '<<event>>'
+        """
+        eventName=eventStr[2:-2] #trim off the angle brackets
+        binding=self.GetOption('keys',keySetName,eventName,default='').split()
+        return binding
+
     def GetKeys(self, keySetName=None):
         """
-        returns the requested keybindings, with fallbacks if required.
+        returns the requested set of keybindings, with fallbacks if required.
         """
-        #default keybindings.
         #keybindings loaded from the config file(s) are loaded _over_ these
         #defaults, so if there is a problem getting any binding there will
         #be an 'ultimate last resort fallback' to the CUA-ish bindings
@@ -266,9 +276,19 @@ class IdleConf:
             '<<save-window>>': ['<Control-s>'],
             '<<select-all>>': ['<Alt-a>'],
             '<<toggle-auto-coloring>>': ['<Control-slash>'],
-            '<<undo>>': ['<Control-z>']}
+            '<<undo>>': ['<Control-z>'],
+            '<<find-again>>': ['<Control-g>', '<F3>'],
+            '<<find-in-files>>': ['<Alt-F3>'],
+            '<<find-selection>>': ['<Control-F3>'],
+            '<<find>>': ['<Control-f>'],
+            '<<replace>>': ['<Control-h>'],
+            '<<goto-line>>': ['<Alt-g>'] }
+        
         if keySetName:
-            pass
+            for event in keyBindings.keys():
+                binding=self.GetKeyBinding(keySetName,event)
+                if binding: #otherwise will keep default
+                    keyBindings[event]=binding
             
         return keyBindings
 

@@ -42,7 +42,6 @@ from FileList import FileList
 from ColorDelegator import ColorDelegator
 from UndoDelegator import UndoDelegator
 from OutputWindow import OutputWindow, OnDemandOutputWindow
-from IdleConf import idleconf
 from configHandler import idleConf
 import idlever
 
@@ -143,16 +142,15 @@ class ModifiedColorDelegator(ColorDelegator):
 
     tagdefs = ColorDelegator.tagdefs.copy()
     theme = idleConf.GetOption('main','Theme','name')
-    tagdefs.update({
 
-        "stdin": idleConf.GetHighlight(theme, "stdin"),
+    tagdefs.update({
+        "stdin": {'background':None,'foreground':None},
         "stdout": idleConf.GetHighlight(theme, "stdout"),
         "stderr": idleConf.GetHighlight(theme, "stderr"),
         "console": idleConf.GetHighlight(theme, "console"),
         "ERROR": idleConf.GetHighlight(theme, "error"),
         None: idleConf.GetHighlight(theme, "normal"),
     })
-
 
 class ModifiedUndoDelegator(UndoDelegator):
 
