@@ -151,7 +151,7 @@ def send_my_cookie(ui):
     then = now + COOKIE_LIFETIME
     gmt = time.gmtime(then)
     print "Set-Cookie: %s=%s; path=/cgi-bin/;" % (name, value),
-    print time.strftime("expires=%a, %d-%b-%x %X GMT", gmt)
+    print time.strftime("expires=%a, %d-%b-%y %X GMT", gmt)
 
 class MagicDict:
 
