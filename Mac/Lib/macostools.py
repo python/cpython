@@ -78,7 +78,7 @@ def touched_ae(dst):
 	dir_fss = macfs.FSSpec((vRefNum, dirID, ''))
 	f.update(dir_fss)
 	
-def copy(src, dst, createpath=0, copydates=1):
+def copy(src, dst, createpath=0, copydates=1, forcetype=None):
 	"""Copy a file, including finder info, resource fork, etc"""
 	if createpath:
 		mkdirs(os.path.split(dst)[0])
@@ -106,6 +106,8 @@ def copy(src, dst, createpath=0, copydates=1):
 	sf = srcfss.GetFInfo()
 	df = dstfss.GetFInfo()
 	df.Creator, df.Type = sf.Creator, sf.Type
+	if forcetype != None:
+		df.Type = forcetype
 	df.Flags = (sf.Flags & (kIsStationary|kNameLocked|kHasBundle|kIsInvisible|kIsAlias))
 	dstfss.SetFInfo(df)
 	if copydates:
