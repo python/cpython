@@ -191,6 +191,8 @@ class URLopener:
 		while block:
 			tfp.write(block)
 			block = fp.read(bs)
+		fp.close()
+		tfp.close()
 		del fp
 		del tfp
 		return result
