@@ -172,7 +172,7 @@ int shutdown( int, int );
 #ifdef __BEOS__
 #include <net/netdb.h>
 #else
-#ifndef macintosh
+#ifndef USE_GUSI1
 #include <arpa/inet.h>
 #endif
 #endif
@@ -192,7 +192,7 @@ int shutdown( int, int );
 #define O_NDELAY O_NONBLOCK	/* For QNX only? */
 #endif
 
-#ifdef USE_GUSI
+#ifdef USE_GUSI1
 /* fdopen() isn't declared in stdio.h (sigh) */
 #include <GUSI.h>
 #endif
@@ -664,7 +664,8 @@ static PyObject *
 BUILD_FUNC_DEF_2(PySocketSock_accept,PySocketSockObject *,s, PyObject *,args)
 {
 	char addrbuf[256];
-	int addrlen, newfd;
+	int newfd;
+	socklen_t addrlen;
 	PyObject *sock = NULL;
 	PyObject *addr = NULL;
 	PyObject *res = NULL;
@@ -808,7 +809,7 @@ BUILD_FUNC_DEF_2(PySocketSock_getsockopt,PySocketSockObject *,s, PyObject *,args
 	int optname;
 	int res;
 	PyObject *buf;
-	int buflen = 0;
+	socklen_t buflen = 0;
 
 #ifdef __BEOS__
 /* We have incomplete socket support. */
@@ -822,7 +823,7 @@ BUILD_FUNC_DEF_2(PySocketSock_getsockopt,PySocketSockObject *,s, PyObject *,args
 	
 	if (buflen == 0) {
 		int flag = 0;
-		int flagsize = sizeof flag;
+		socklen_t flagsize = sizeof flag;
 		res = getsockopt(s->sock_fd, level, optname,
 				 (ANY *)&flag, &flagsize);
 		if (res < 0)
@@ -1010,7 +1011,9 @@ static PyObject *
 BUILD_FUNC_DEF_2(PySocketSock_getsockname,PySocketSockObject *,s, PyObject *,args)
 {
 	char addrbuf[256];
-	int addrlen, res;
+	int res;
+	socklen_t addrlen;
+
 	if (!PyArg_ParseTuple(args, ":getsockname"))
 		return NULL;
 	if (!getsockaddrlen(s, &addrlen))
@@ -1038,7 +1041,9 @@ static PyObject *
 BUILD_FUNC_DEF_2(PySocketSock_getpeername,PySocketSockObject *,s, PyObject *,args)
 {
 	char addrbuf[256];
-	int addrlen, res;
+	int res;
+	socklen_t addrlen;
+
 	if (!PyArg_ParseTuple(args, ":getpeername"))
 		return NULL;
 	if (!getsockaddrlen(s, &addrlen))
@@ -1177,7 +1182,8 @@ BUILD_FUNC_DEF_2(PySocketSock_recvfrom,PySocketSockObject *,s, PyObject *,args)
 	PyObject *addr = NULL;
 	PyObject *ret = NULL;
 
-	int addrlen, len, n, flags = 0;
+	int len, n, flags = 0;
+	socklen_t addrlen;
 	if (!PyArg_ParseTuple(args, "i|i:recvfrom", &len, &flags))
 		return NULL;
 	if (!getsockaddrlen(s, &addrlen))
@@ -1882,7 +1888,7 @@ BUILD_FUNC_DEF_2(PySocket_inet_aton, PyObject *, self, PyObject *, args)
 	if (!PyArg_ParseTuple(args, "s:inet_aton", &ip_addr)) {
 		return NULL;
 	}
-#ifdef macintosh
+#ifdef USE_GUSI1
 	packed_addr = (long)inet_addr(ip_addr).s_addr;
 #else
 	packed_addr = inet_addr(ip_addr);
