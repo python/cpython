@@ -459,12 +459,13 @@ builtin_eval(PyObject *self, PyObject *args)
 		return NULL;
 	if (locals != Py_None && !PyMapping_Check(locals)) {
 		PyErr_SetString(PyExc_TypeError, "locals must be a mapping");
-			return NULL;
+		return NULL;
 	}
 	if (globals != Py_None && !PyDict_Check(globals)) {
 		PyErr_SetString(PyExc_TypeError, PyMapping_Check(globals) ? 
 			"globals must be a real dict; try eval(expr, {}, mapping)"
 			: "globals must be a dict");
+		return NULL;
 	}
 	if (globals == Py_None) {
 		globals = PyEval_GetGlobals();

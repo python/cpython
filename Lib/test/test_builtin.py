@@ -281,6 +281,7 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(eval('dir()', g, m), list('xyz'))
         self.assertEqual(eval('globals()', g, m), g)
         self.assertEqual(eval('locals()', g, m), m)
+        self.assertRaises(TypeError, eval, 'a', m)
 
         # Verify that dict subclasses work as well
         class D(dict):
