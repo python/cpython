@@ -297,10 +297,10 @@ class BaseSet(object):
 
     def _compute_hash(self):
         # Calculate hash code for a set by xor'ing the hash codes of
-        # the elements.  This algorithm ensures that the hash code
-        # does not depend on the order in which elements are added to
-        # the code.  This is not called __hash__ because a BaseSet
-        # should not be hashable; only an ImmutableSet is hashable.
+        # the elements.  This ensures that the hash code does not depend
+        # on the order in which elements are added to the set.  This is
+        # not called __hash__ because a BaseSet should not be hashable;
+        # only an ImmutableSet is hashable.
         result = 0
         for elt in self:
             result ^= hash(elt)
