@@ -1205,6 +1205,77 @@ This \UNIX\ is also followed by a space.
     \macro{modulesynopsis}.  This environment is not normally used by
     authors, but is created by the \macro{localmoduletable} macro.
 
+    Here is a small example of a table given in the documentation for
+    the \module{warnings} module; markup inside the table cells is
+    minimal so the markup for the table itself is readily discernable.
+    Here is the markup for the table:
+
+\begin{verbatim}
+\begin{tableii}{l|l}{exception}{Class}{Description}
+  \lineii{Warning}
+         {This is the base class of all warning category classes.  It
+          is a subclass of \exception{Exception}.}
+  \lineii{UserWarning}
+         {The default category for \function{warn()}.}
+  \lineii{DeprecationWarning}
+         {Base category for warnings about deprecated features.}
+  \lineii{SyntaxWarning}
+         {Base category for warnings about dubious syntactic
+          features.}
+  \lineii{RuntimeWarning}
+         {Base category for warnings about dubious runtime features.}
+\end{tableii}
+\end{verbatim}
+
+    Here is the resulting table:
+
+\begin{tableii}{l|l}{exception}{Class}{Description}
+  \lineii{Warning}
+         {This is the base class of all warning category classes.  It
+          is a subclass of \exception{Exception}.}
+  \lineii{UserWarning}
+         {The default category for \function{warn()}.}
+  \lineii{DeprecationWarning}
+         {Base category for warnings about deprecated features.}
+  \lineii{SyntaxWarning}
+         {Base category for warnings about dubious syntactic
+          features.}
+  \lineii{RuntimeWarning}
+         {Base category for warnings about dubious runtime features.}
+\end{tableii}
+
+    Note that the class names are implicitly marked using the
+    \macro{exception} macro, since that is given as the \var{col1font}
+    value for the \env{tableii} environment.  To create a table using
+    different markup for the first column, use \code{textrm} for the
+    \var{col1font} value and mark each entry individually.
+
+    To add a horizontal line between vertical sections of a table, use
+    the standard \macro{hline} macro between the rows which should be
+    separated:
+
+\begin{verbatim}
+\begin{tableii}{l|l}{constant}{Language}{Audience}
+  \lineii{APL}{Masochists.}
+  \lineii{BASIC}{First-time programmers on PC hardware.}
+  \lineii{C}{\UNIX{} \&\ Linux kernel developers.}
+    \hline
+  \lineii{Python}{Everyone!}
+\end{tableii}
+\end{verbatim}
+
+    Note that not all presentation formats are capable of displaying a
+    horizontal rule in this position.  This is how the table looks in
+    the format you're reading now:
+
+\begin{tableii}{l|l}{constant}{Language}{Audience}
+  \lineii{APL}{Masochists.}
+  \lineii{C}{\UNIX{} \&\ Linux kernel developers.}
+  \lineii{JavaScript}{Web developers.}
+    \hline
+  \lineii{Python}{Everyone!}
+\end{tableii}
+
 
   \subsection{Reference List Markup \label{references}}
 
