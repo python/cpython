@@ -3052,6 +3052,18 @@ PyType_Ready(PyTypeObject *type)
 
 	type->tp_flags |= Py_TPFLAGS_READYING;
 
+#ifdef Py_TRACE_REFS
+	/* PyType_Ready is the closest thing we have to a choke point
+	 * for type objects, so is the best place I can think of to try
+	 * to get type objects into the doubly-linked list of all objects.
+	 * Still, not all type objects go thru PyType_Ready.
+	 */
+	 if (type->_ob_next == NULL) {
+	 	assert(type->_ob_prev == NULL);
+		_Py_AddToAllObjects((PyObject *)type);
+	}
+#endif
+
 	/* Initialize tp_base (defaults to BaseObject unless that's us) */
 	base = type->tp_base;
 	if (base == NULL && type != &PyBaseObject_Type)

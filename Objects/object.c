@@ -20,6 +20,16 @@ int Py_DivisionWarningFlag;
 #ifdef Py_TRACE_REFS
 /* Head of doubly-linked list of all objects. */
 static PyObject refchain = {&refchain, &refchain};
+
+/* Insert op at the fron of the doubly-linked list of all objects. */
+void
+_Py_AddToAllObjects(PyObject *op)
+{
+	op->_ob_next = refchain._ob_next;
+	op->_ob_prev = &refchain;
+	refchain._ob_next->_ob_prev = op;
+	refchain._ob_next = op;
+}
 #endif
 
 #ifdef COUNT_ALLOCS
@@ -91,12 +101,9 @@ inc_count(PyTypeObject *tp)
 		type_list = tp;
 #ifdef Py_TRACE_REFS
 		/* Also insert in the doubly-linked list of all objects. */
-		if (tp->_ob_next == NULL) {
-			PyObject *op = (PyObject *)tp;
-			op->_ob_next = refchain._ob_next;
-			op->_ob_prev = &refchain;
-			refchain._ob_next->_ob_prev = op;
-			refchain._ob_next = op;
+		if (tp->_ob_prev == NULL) {
+			assert(tp->_ob_next == NULL);
+			_Py_AddToAllObjects((PyObject *)tp);
 		}
 #endif
 	}
@@ -1956,10 +1963,7 @@ _Py_NewReference(PyObject *op)
 {
 	_Py_INC_REFTOTAL;
 	op->ob_refcnt = 1;
-	op->_ob_next = refchain._ob_next;
-	op->_ob_prev = &refchain;
-	refchain._ob_next->_ob_prev = op;
-	refchain._ob_next = op;
+	_Py_AddToAllObjects(op);
 	_Py_INC_TPALLOCS(op);
 }
 
