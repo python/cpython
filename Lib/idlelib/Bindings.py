@@ -14,7 +14,8 @@
 
 import sys
 import string
-from keydefs import *
+#from keydefs import *
+from configHandler import idleConf
 
 menudefs = [
  # underscore prefixes character to underscore
@@ -65,9 +66,11 @@ menudefs = [
   ]),
 ]
 
-if sys.platform == 'win32':
-    default_keydefs = windows_keydefs
-else:
-    default_keydefs = unix_keydefs
+#if sys.platform == 'win32':
+#    default_keydefs = windows_keydefs
+#else:
+#    default_keydefs = unix_keydefs
+
+default_keydefs = idleConf.GetKeys(keySetName=None)
 
 del sys
