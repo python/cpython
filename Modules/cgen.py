@@ -59,7 +59,7 @@ return_types = ['void', 'short', 'long']
 
 # Allowed function argument types
 #
-arg_types = ['char', 'string', 'short', 'float', 'long', 'double']
+arg_types = ['char', 'string', 'short', 'u_short', 'float', 'long', 'double']
 
 
 # Need to classify arguments as follows
@@ -111,6 +111,8 @@ def checkarg(type, arg):
 	#
 	if type not in arg_types:
 		raise arg_error, ('bad type', type)
+	if type[:2] == 'u_':
+		type = 'unsigned ' + type[2:]
 	#
 	# Split it in the mode (first character) and the rest.
 	#
@@ -157,7 +159,7 @@ def checkarg(type, arg):
 		# size is retval -- must be a reply argument
 		if mode <> 'r':
 			raise arg_error, ('non-r mode with [retval]', mode)
-	elif sub[:3] <> 'arg' or not isnum(sub[3:]):
+	elif not isnum(sub) and (sub[:3] <> 'arg' or not isnum(sub[3:])):
 		raise arg_error, ('bad subscript', sub)
 	#
 	return type, mode, num, sub
@@ -214,10 +216,16 @@ def generate(type, func, database):
 	for i in range(len(database)):
 		a_type, a_mode, a_factor, a_sub = database[i]
 		print '\t' + a_type,
-		if a_sub:
-			print '*',
-		print 'arg' + `i+1`,
-		if a_factor and not a_sub:
+		brac = ket = ''
+		if a_sub and not isnum(a_sub):
+			if a_factor:
+				brac = '('
+				ket = ')'
+			print brac + '*',
+		print 'arg' + `i+1` + ket,
+		if a_sub and isnum(a_sub):
+			print '[', a_sub, ']',
+		if a_factor:
 			print '[', a_factor, ']',
 		print ';'
 	#
@@ -250,6 +258,10 @@ def generate(type, func, database):
 	#
 	for i in range(len(database)):
 		a_type, a_mode, a_factor, a_sub = database[i]
+		if a_type[:9] == 'unsigned ':
+			xtype = a_type[9:]
+		else:
+			xtype = a_type
 		if a_mode == 'i':
 			#
 			# Implicit argument;
@@ -258,9 +270,11 @@ def generate(type, func, database):
 			#
 			j = eval(a_sub)
 			print '\tif',
-			print '(!geti' + a_type + 'arraysize(args,',
+			print '(!geti' + xtype + 'arraysize(args,',
 			print `n_in_args` + ',',
 			print `in_pos[j]` + ',',
+			if xtype <> a_type:
+				print '('+xtype+' *)',
 			print '&arg' + `i+1` + '))'
 			print '\t\treturn NULL;'
 			if a_factor:
@@ -268,25 +282,34 @@ def generate(type, func, database):
 				print '= arg' + `i+1`,
 				print '/', a_factor + ';'
 		elif a_mode == 's':
-			if a_sub: # Allocate memory for varsize array
+			if a_sub and not isnum(a_sub):
+				# Allocate memory for varsize array
 				print '\tif ((arg' + `i+1`, '=',
-				print 'NEW(' + a_type + ',',
-				if a_factor: print a_factor, '*',
+				if a_factor:
+					print '('+a_type+'(*)['+a_factor+'])',
+				print 'NEW(' + a_type, ',',
+				if a_factor:
+					print a_factor, '*',
 				print a_sub, ')) == NULL)'
 				print '\t\treturn err_nomem();'
 			print '\tif',
 			if a_factor or a_sub: # Get a fixed-size array array
-				print '(!geti' + a_type + 'array(args,',
+				print '(!geti' + xtype + 'array(args,',
 				print `n_in_args` + ',',
 				print `in_pos[i]` + ',',
 				if a_factor: print a_factor,
 				if a_factor and a_sub: print '*',
 				if a_sub: print a_sub,
-				print ', arg' + `i+1` + '))'
+				print ',',
+				if (a_sub and a_factor) or xtype <> a_type:
+					print '('+xtype+' *)',
+				print 'arg' + `i+1` + '))'
 			else: # Get a simple variable
-				print '(!geti' + a_type + 'arg(args,',
+				print '(!geti' + xtype + 'arg(args,',
 				print `n_in_args` + ',',
 				print `in_pos[i]` + ',',
+				if xtype <> a_type:
+					print '('+xtype+' *)',
 				print '&arg' + `i+1` + '))'
 			print '\t\treturn NULL;'
 	#
@@ -314,7 +337,7 @@ def generate(type, func, database):
 	#
 	for i in range(len(database)):
 		a_type, a_mode, a_factor, a_sub = database[i]
-		if a_mode == 's' and a_sub:
+		if a_mode == 's' and a_sub and not isnum(a_sub):
 			print '\tDEL(arg' + `i+1` + ');'
 	#
 	# Return
@@ -373,12 +396,21 @@ def generate(type, func, database):
 # Subroutine to return a function call to mknew<type>object(<arg>)
 #
 def mkobject(type, arg):
+	if type[:9] == 'unsigned ':
+		type = type[9:]
+		return 'mknew' + type + 'object((' + type + ') ' + arg + ')'
 	return 'mknew' + type + 'object(' + arg + ')'
 
 
-# Open optional file argument
-if sys.argv[1:]:
-	sys.stdin = open(sys.argv[1], 'r')
+defined_archs = []
+
+# usage: cgen [ -Dmach ... ] [ file ]
+for arg in sys.argv[1:]:
+	if arg[:2] == '-D':
+		defined_archs.append(arg[2:])
+	else:
+		# Open optional file argument
+		sys.stdin = open(arg, 'r')
 
 
 # Input line number
@@ -426,9 +458,19 @@ while 1:
 					functions.append(func)
 			else:
 				print line
-	elif not words:
-		pass			# skip empty line
-	elif words[0] == '#include':
+		continue
+	if not words:
+		continue		# skip empty line
+	elif words[0] == 'if':
+		# if XXX rest
+		# if !XXX rest
+		if words[1][0] == '!':
+			if words[1][1:] in defined_archs:
+				continue
+		elif words[1] not in defined_archs:
+			continue
+		words = words[2:]
+	if words[0] == '#include':
 		print line
 	elif words[0][:1] == '#':
 		pass			# ignore comment
