@@ -249,11 +249,6 @@ def _getcategory(category):
     return cat
 
 # Module initialization
-if __name__ == "__main__":
-    import __main__
-    sys.modules['warnings'] = __main__
-    _test()
-else:
-    _processoptions(sys.warnoptions)
-    simplefilter("ignore", category=OverflowWarning, append=1)
-    simplefilter("ignore", category=PendingDeprecationWarning, append=1)
+_processoptions(sys.warnoptions)
+simplefilter("ignore", category=OverflowWarning, append=1)
+simplefilter("ignore", category=PendingDeprecationWarning, append=1)
