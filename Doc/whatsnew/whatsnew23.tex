@@ -1679,8 +1679,6 @@ Any breakage caused by this change should be reported as a bug.
 %======================================================================
 \subsection{Date/Time Type}
 
-% XXX This is out-of-date already: timetz and so on have gone away.
-
 Date and time types suitable for expressing timestamps were added as
 the \module{datetime} module.  The types don't support different
 calendars or many fancy features, and just stick to the basics of
@@ -1689,17 +1687,15 @@ representing time.
 The three primary types are: \class{date}, representing a day, month,
 and year; \class{time}, consisting of hour, minute, and second; and
 \class{datetime}, which contains all the attributes of both
-\class{date} and \class{time}.  These basic types don't understand
-time zones, but there are subclasses named \class{timetz} and
-\class{datetimetz} that do.  There's also a
-\class{timedelta} class representing a difference between two points
+\class{date} and \class{time}.  There's also a
+\class{timedelta} class representing differences between two points
 in time, and time zone logic is implemented by classes inheriting from
 the abstract \class{tzinfo} class.
 
 You can create instances of \class{date} and \class{time} by either
 supplying keyword arguments to the appropriate constructor,
 e.g. \code{datetime.date(year=1972, month=10, day=15)}, or by using
-one of a number of class methods.  For example, the \method{today()}
+one of a number of class methods.  For example, the \method{date.today()}
 class method returns the current local date.
 
 Once created, instances of the date/time classes are all immutable.
@@ -1732,7 +1728,9 @@ datetime.datetime(2001, 12, 30, 12, 15, 38, 827738)
 Instances can be compared, hashed, and converted to strings (the
 result is the same as that of \method{isoformat()}).  \class{date} and
 \class{datetime} instances can be subtracted from each other, and
-added to \class{timedelta} instances.
+added to \class{timedelta} instances.  The largest missing feature is
+that there's no support for parsing strings and getting back a
+\class{date} or \class{datetime}.
 
 For more information, refer to the \ulink{module's reference
 documentation}{..//lib/module-datetime.html}.
@@ -1823,16 +1821,17 @@ the Getopt SIG.
 %======================================================================
 \section{Specialized Object Allocator (pymalloc)\label{section-pymalloc}}
 
-An experimental feature added to Python 2.1 was pymalloc, a
-specialized object allocator written by Vladimir Marangozov.  Pymalloc
-is intended to be faster than the system \cfunction{malloc()} and
-to have less memory overhead for allocation patterns typical of Python
-programs.  The allocator uses C's \cfunction{malloc()} function to get
-large pools of memory and then fulfills smaller memory requests from
-these pools.
+Pymalloc, a specialized object allocator written by Vladimir
+Marangozov, was a feature added to Python 2.1.  Pymalloc is intended
+to be faster than the system \cfunction{malloc()} and to have less
+memory overhead for allocation patterns typical of Python programs.
+The allocator uses C's \cfunction{malloc()} function to get large
+pools of memory and then fulfills smaller memory requests from these
+pools.
 
 In 2.1 and 2.2, pymalloc was an experimental feature and wasn't
-enabled by default; you had to explicitly turn it on by providing the
+enabled by default; you had to explicitly enable it when compiling
+Python by providing the
 \longprogramopt{with-pymalloc} option to the \program{configure}
 script.  In 2.3, pymalloc has had further enhancements and is now
 enabled by default; you'll have to supply
