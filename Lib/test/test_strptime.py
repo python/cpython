@@ -280,7 +280,7 @@ class StrptimeTests(unittest.TestCase):
         if sys.platform == "mac":
             return #MacOS9 has severely broken timezone support.
         tz_name = time.tzname[0]
-        if tz_name.lower() in ("UTC", "GMT"):
+        if tz_name.upper() in ("UTC", "GMT"):
             return
         try:
             original_tzname = time.tzname
