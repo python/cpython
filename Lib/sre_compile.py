@@ -298,8 +298,14 @@ def compile(p, flags=0):
     assert p.pattern.groups <= 100,\
            "sorry, but this version only supports 100 named groups"
 
+    # map in either direction
+    groupindex = p.pattern.groupdict
+    indexgroup = [None] * p.pattern.groups
+    for k, i in groupindex.items():
+        indexgroup[i] = k
+
     return _sre.compile(
         pattern, flags,
         array.array(WORDSIZE, code).tostring(),
-        p.pattern.groups-1, p.pattern.groupdict
+        p.pattern.groups-1, groupindex, indexgroup
         )
