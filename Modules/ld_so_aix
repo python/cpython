@@ -1,0 +1,58 @@
+#!/bin/sh
+#
+#   ========================================================================
+#   FILE:           ld_so_aix
+#   TYPE:           executable, uses makexp_aix
+#   SYSTEM:         AIX
+#
+#   DESCRIPTION:    Creates a shareable .o from a pre-compiled (unshared)
+#                   .o file
+#
+#   ARGUMENTS:      Same as for "ld".  The -bM, -bE, -bI, -H, -T, and -lc
+#                   arguments of "ld" will be supplied by this script.
+#
+#   NOTES:          1.  Currently specific to the building of Python
+#                       interpreter shared objects, in that the entry
+#                       point name is hardcoded based on the object file
+#                       name (the "mathmodule.o" file will expect an
+#                       entry point of "initmath").  This could be remedied
+#                       by the support (or simple expectation) of a "-e"
+#                       argument.
+#                   2.  The resulting shared object file is left in the
+#                       current directory with the extension .so
+#                   3.  Uncommenting the "echo" lines gives detailed output
+#                       about the commands executed in the script.
+#                       
+#   HISTORY:        Jul-1-1996  -- Make sure to use /usr/ccs/bin/ld    --
+#                               -- Use makexp_aix for the export list. --
+#                   Vladimir Marangozov     (Vladimir.Marangozov@imag.fr)
+#
+#                   Manus Hand (mhand@csn.net) -- Initial code -- 6/24/96
+#   ========================================================================
+#
+
+# Variables
+objfile=$1
+shift
+filename=`echo $objfile | sed -e "s:.*/\([^/]*\)$:\1:" -e "s/\..*$//"`
+entry=init`echo $filename | sed "s/module.*//"`
+ldopts="-e$entry -bE:$filename.exp -bI:python.exp -bM:SRE -T512 -H512 -lc"
+ldargs="$objfile $*"
+
+# Export list generation
+makexp_aix $filename.exp "$objfile" $objfile
+
+# Perform the link.
+#echo "ld $ldopts $ldargs"
+/usr/ccs/bin/ld $ldopts $ldargs
+
+# Delete the module's export list file.
+# Comment this line if you need it.
+rm -f $filename.exp
+
+# Remove the exec rights on the shared module.
+#echo chmod -x `echo $objfile | sed "s/\.o$/.so/"`
+chmod -x `echo $objfile | sed "s/\.o$/.so/"`
+
+
+
