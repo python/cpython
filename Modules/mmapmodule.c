@@ -334,7 +334,7 @@ mmap_resize_method (mmap_object * self,
 #endif /* MS_WIN32 */
 
 #ifdef UNIX
-#ifndef MREMAP_MAYMOVE
+#ifndef HAVE_MREMAP 
 } else {
 	PyErr_SetString(PyExc_SystemError,
 			"mmap: resizing not available--no mremap()");
@@ -343,7 +343,11 @@ mmap_resize_method (mmap_object * self,
 } else {
 	void *newmap;
 
+#ifdef MREMAP_MAYMOVE
 	newmap = mremap(self->data, self->size, new_size, MREMAP_MAYMOVE);
+#else
+	newmap = mremap(self->data, self->size, new_size, 0);
+#endif
 	if (newmap == (void *)-1) 
 	{
 		PyErr_SetFromErrno(mmap_module_error);
@@ -353,7 +357,7 @@ mmap_resize_method (mmap_object * self,
 	self->size = new_size;
 	Py_INCREF(Py_None);
 	return Py_None;
-#endif /* MREMAP_MAYMOVE */
+#endif /* HAVE_MREMAP */
 #endif /* UNIX */
 }
 }
@@ -774,8 +778,6 @@ new_mmap_object (PyObject * self, PyObject * args, PyObject *kwdict)
 	PyObject *map_size_obj = NULL;
 	int map_size;
 	int fd, flags = MAP_SHARED, prot = PROT_WRITE | PROT_READ;
-	char * filename;
-	int namelen;
 	char *keywords[] = {"file", "size", "flags", "prot", NULL};
 
 	if (!PyArg_ParseTupleAndKeywords(args, kwdict, 
