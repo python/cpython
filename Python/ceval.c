@@ -2201,6 +2201,14 @@ call_trace(p_trace, p_newtrace, f, msg, arg)
 			Py_XDECREF(*p_newtrace);
 			*p_newtrace = NULL;
 		}
+		/* to be extra double plus sure we don't get recursive
+		 * calls inf either tracefunc or profilefunc gets an
+		 * exception, zap the global variables.
+		 */
+		Py_XDECREF(tstate->sys_tracefunc);
+		tstate->sys_tracefunc = NULL;
+		Py_XDECREF(tstate->sys_profilefunc);
+		tstate->sys_profilefunc = NULL;
 		return -1;
 	}
 	else {
