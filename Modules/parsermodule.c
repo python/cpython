@@ -338,7 +338,7 @@ parser_free(ast)
 }   /* parser_free() */
 
 
-/*  parser_ast2tuple(PyObject* self, PyObject* args)
+/*  parser_ast2tuple(PyObject* self, PyObject* args, PyObject* kw)
  *
  *  This provides conversion from a node* to a tuple object that can be
  *  returned to the Python-level caller.  The AST object is not modified.
@@ -380,9 +380,9 @@ parser_ast2tuple(self, args, kw)
 }   /* parser_ast2tuple() */
 
 
-/*  parser_ast2tuple(PyObject* self, PyObject* args)
+/*  parser_ast2list(PyObject* self, PyObject* args, PyObject* kw)
  *
- *  This provides conversion from a node* to a tuple object that can be
+ *  This provides conversion from a node* to a list object that can be
  *  returned to the Python-level caller.  The AST object is not modified.
  *
  */
@@ -2717,21 +2717,27 @@ parser__pickler(self, args)
     NOTE(ARGUNUSED(self))
     PyObject *result = NULL;
     PyObject *ast = NULL;
+    PyObject *empty_dict = NULL;
 
     if (PyArg_ParseTuple(args, "O!:_pickler", &PyAST_Type, &ast)) {
 	PyObject *newargs;
 	PyObject *tuple;
 
-	if ((newargs = Py_BuildValue("Oi", ast, 1)) == NULL)
+        if ((empty_dict = PyDict_New()) == NULL)
+            goto finally;
+        if ((newargs = Py_BuildValue("Oi", ast, 1)) == NULL)
 	    goto finally;
-	tuple = parser_ast2tuple((PyAST_Object*)NULL, newargs);
+	tuple = parser_ast2tuple((PyAST_Object*)NULL, newargs, empty_dict);
 	if (tuple != NULL) {
 	    result = Py_BuildValue("O(O)", pickle_constructor, tuple);
 	    Py_DECREF(tuple);
 	}
+        Py_DECREF(empty_dict);
 	Py_DECREF(newargs);
     }
   finally:
+    Py_XDECREF(empty_dict);
+
     return (result);
 
 }   /* parser__pickler() */
