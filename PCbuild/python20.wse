@@ -20,7 +20,7 @@ item: Global
   Patch Memory=4000
   EXE Filename=Python-2.2a1.exe
   Crystal Format=10111100101100000010001001001001
-  Step View=&Properties
+  Step View=&All
   Variable Name1=_WISE_
   Variable Description1=WISE root directory
   Variable Default1=C:\PROGRAM FILES\WISE INSTALLMASTER 8.1
@@ -47,10 +47,6 @@ item: Global
   Variable Description6=Python minor version number; the 3 in 2.3
   Variable Default6=2
   Variable Flags6=00001000
-  Variable Name7=_PYDLLBASE_
-  Variable Description7=As in python22.dll and .lib.
-  Variable Default7=python%_PYMAJOR_%%_PYMINOR_%
-  Variable Flags7=00001000
 end
 item: Set Variable
   Variable=APPTITLE
@@ -66,6 +62,18 @@ item: Remark
 end
 item: Remark
   Text=Nothing in the script below should need fiddling then.
+end
+item: Remark
+  Text=Other things that need fiddling:
+end
+item: Remark
+  Text=    The "Title:" in the upper left corner of the GUI.
+end
+item: Remark
+  Text=    Build Settings and Version Resource on step 6 (Finish) of the Installation Expert
+end
+item: Remark
+  Text=        Be sure to select Steps->All or you may not see these!
 end
 item: Remark
 end
@@ -110,7 +118,13 @@ end
 item: Remark
 end
 item: Remark
-  Text=Back off to Windows directory if System not writable.
+  Text=Wizard boilerplate; thpe "stop" on the next line is actually "pause"
+end
+item: Open/Close INSTALL.LOG
+  Flags=00000001
+end
+item: Remark
+  Text=If the destination system does not have a writable Windows\System directory, system files will be written to the Windows\ directory
 end
 item: Check if File/Dir Exists
   Pathname=%SYS%
@@ -372,32 +386,28 @@ item: Custom Dialog Set
       Flags=0000000000000110
       Text=Python interpreter, library and Tcl/Tk
       Text=Python HTML docs
-      Text=Python utility scripts (Tools\)
-      Text=Python test suite (Lib\test\)
+      Text=Python utility scripts (Tools/)
+      Text=Python test suite (Lib/test/)
       Text=
-      Text French=Python interpreter and library
-      Text French=Python Utility Scripts
-      Text French=Python Help Files
-      Text French=Python test suite
-      Text French=Tcl/Tk support
+      Text French=Python interpreter, library and Tcl/Tk
+      Text French=Python HTML docs
+      Text French=Python utility scripts (Tools/)
+      Text French=Python test suite (Lib/test/)
       Text French=
-      Text German=Python interpreter and library
-      Text German=Python Utility Scripts
-      Text German=Python Help Files
-      Text German=Python test suite
-      Text German=Tcl/Tk support
+      Text German=Python interpreter, library and Tcl/Tk
+      Text German=Python HTML docs
+      Text German=Python utility scripts (Tools/)
+      Text German=Python test suite (Lib/test/)
       Text German=
-      Text Spanish=Python interpreter and library
-      Text Spanish=Python Utility Scripts
-      Text Spanish=Python Help Files
-      Text Spanish=Python test suite
-      Text Spanish=Tcl/Tk support
+      Text Spanish=Python interpreter, library and Tcl/Tk
+      Text Spanish=Python HTML docs
+      Text Spanish=Python utility scripts (Tools/)
+      Text Spanish=Python test suite (Lib/test/)
       Text Spanish=
-      Text Italian=Python interpreter and library
-      Text Italian=Python Utility Scripts
-      Text Italian=Python Help Files
-      Text Italian=Python test suite
-      Text Italian=Tcl/Tk support
+      Text Italian=Python interpreter, library and Tcl/Tk
+      Text Italian=Python HTML docs
+      Text Italian=Python utility scripts (Tools/)
+      Text Italian=Python test suite (Lib/test/)
       Text Italian=
     end
     item: Static
