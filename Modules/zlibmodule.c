@@ -80,7 +80,7 @@ PyZlib_compress(self, args)
                       "Can't allocate memory to compress data");
       return NULL;
     }
-  zst.zalloc=(alloc_func)NULL;
+
   zst.zfree=(free_func)Z_NULL;
   zst.next_out=(Byte *)output;
   zst.next_in =(Byte *)input;
@@ -172,7 +172,7 @@ PyZlib_decompress(self, args)
 
   if (r_strlen <= 0)
       r_strlen = 1;
-  
+
   zst.avail_in=length;
   zst.avail_out=r_strlen;
   if (!(result_str = PyString_FromStringAndSize(NULL, r_strlen)))
@@ -212,6 +212,8 @@ PyZlib_decompress(self, args)
   do 
     {
       err=inflate(&zst, Z_FINISH);
+      fprintf(stderr, "err=%d avail_in=%d avail_out=%d\n", 
+	      err, zst.avail_in, zst.avail_out);
       switch(err) 
         {
         case(Z_STREAM_END):
@@ -488,8 +490,11 @@ PyZlib_objdecompress(self, args)
 }
 
 static char comp_flush__doc__[] =
-"flush() -- Return a string containing any remaining compressed data.  "
-"The compressor object can no longer be used after this call."
+"flush( [mode] ) -- Return a string containing any remaining compressed data.\n"
+"mode can be one of the constants Z_SYNC_FLUSH, Z_FULL_FLUSH, Z_FINISH; the \n"
+"default value used when mode is not specified is Z_FINISH.\n"
+"If mode == Z_FINISH, the compressor object can no longer be used after\n"
+"calling the flush() method.  Otherwise, more data can still be compressed.\n"
 ;
 
 static PyObject *
@@ -499,9 +504,19 @@ PyZlib_flush(self, args)
 {
   int length=DEFAULTALLOC, err = Z_OK;
   PyObject *RetVal;
-  
-  if (!PyArg_NoArgs(args))
+  int flushmode = Z_FINISH;
+  unsigned long start_total_out;
+
+  if (!PyArg_ParseTuple(args, "|i", &flushmode))
       return NULL;
+
+  /* Flushing with Z_NO_FLUSH is a no-op, so there's no point in
+     doing any work at all; just return an empty string. */
+  if (flushmode == Z_NO_FLUSH)
+    {
+      return PyString_FromStringAndSize(NULL, 0);
+    }
+  
   self->zst.avail_in = 0;
   self->zst.next_in = Z_NULL;
   if (!(RetVal = PyString_FromStringAndSize(NULL, length))) {
@@ -509,10 +524,14 @@ PyZlib_flush(self, args)
 		      "Can't allocate memory to compress data");
       return NULL;
   }
+  start_total_out = self->zst.total_out;
   self->zst.next_out = (unsigned char *)PyString_AsString(RetVal);
   self->zst.avail_out = length;
-  while (err == Z_OK)
-  {
+
+  /* When flushing the zstream, there's no input data.  
+     If zst.avail_out == 0, that means that more output space is
+     needed to complete the flush operation. */ 
+  do {
       err = deflate(&(self->zst), Z_FINISH);
       if (self->zst.avail_out <= 0) {
 	  if (_PyString_Resize(&RetVal, length << 1) == -1)  {
@@ -524,31 +543,34 @@ PyZlib_flush(self, args)
 	  self->zst.avail_out = length;
 	  length = length << 1;
       }
-  }
-  if (err!=Z_STREAM_END) {
+  } while (self->zst.avail_out == 0);
+
+  if (err!=Z_OK && err != Z_STREAM_END) 
+  {
       if (self->zst.msg == Z_NULL)
-	  PyErr_Format(ZlibError, "Error %i while compressing",
+	  PyErr_Format(ZlibError, "Error %i while flushing",
 		       err); 
       else
-	  PyErr_Format(ZlibError, "Error %i while compressing: %.200s",
+	  PyErr_Format(ZlibError, "Error %i while flushing: %.200s",
 		       err, self->zst.msg);  
       Py_DECREF(RetVal);
       return NULL;
-  }
-  err=deflateEnd(&(self->zst));
-  if (err!=Z_OK) {
+    }
+  if (flushmode == Z_FINISH) {
+    err=deflateEnd(&(self->zst));
+    if (err!=Z_OK) {
       if (self->zst.msg == Z_NULL)
-	  PyErr_Format(ZlibError, "Error %i while flushing compression object",
-		       err); 
+	PyErr_Format(ZlibError, "Error %i from deflateEnd()",
+		     err); 
       else
-	  PyErr_Format(ZlibError,
-		       "Error %i while flushing compression object: %.200s",
-		       err, self->zst.msg);  
+	PyErr_Format(ZlibError,
+		     "Error %i from deflateEnd(): %.200s",
+		     err, self->zst.msg);  
       Py_DECREF(RetVal);
       return NULL;
+    }
   }
-  _PyString_Resize(&RetVal,
-		   (char *)self->zst.next_out - PyString_AsString(RetVal));
+  _PyString_Resize(&RetVal, self->zst.total_out - start_total_out);
   return RetVal;
 }
 
@@ -627,7 +649,7 @@ PyZlib_unflush(self, args)
 static PyMethodDef comp_methods[] =
 {
         {"compress", (binaryfunc)PyZlib_objcompress, 1, comp_compress__doc__},
-        {"flush", (binaryfunc)PyZlib_flush, 0, comp_flush__doc__},
+        {"flush", (binaryfunc)PyZlib_flush, 1, comp_flush__doc__},
         {NULL, NULL}
 };
 
@@ -805,6 +827,12 @@ PyInit_zlib()
 	insint(d, "Z_FILTERED", Z_FILTERED);
 	insint(d, "Z_HUFFMAN_ONLY", Z_HUFFMAN_ONLY);
 	insint(d, "Z_DEFAULT_STRATEGY", Z_DEFAULT_STRATEGY);
+
+	insint(d, "Z_FINISH", Z_FINISH);
+	insint(d, "Z_NO_FLUSH", Z_NO_FLUSH);
+	insint(d, "Z_SYNC_FLUSH", Z_SYNC_FLUSH);
+	insint(d, "Z_FULL_FLUSH", Z_FULL_FLUSH);
+
 	ver = PyString_FromString(ZLIB_VERSION);
 	PyDict_SetItemString(d, "ZLIB_VERSION", ver);
 }
