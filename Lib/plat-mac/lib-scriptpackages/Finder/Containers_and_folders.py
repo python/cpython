@@ -1,7 +1,7 @@
 """Suite Containers and folders: Classes that can contain other file system items
 Level 1, version 1
 
-Generated from /Volumes/Sap/System Folder/Finder
+Generated from /Volumes/Moes/Systeemmap/Finder
 AETE/AEUT resource version 0/144, language 0, script 0
 """
 

@@ -1,7 +1,7 @@
 """Suite Obsolete terms: Terms that have been deprecated
 Level 1, version 1
 
-Generated from /Volumes/Sap/System Folder/Finder
+Generated from /Volumes/Moes/Systeemmap/Finder
 AETE/AEUT resource version 0/144, language 0, script 0
 """
 
