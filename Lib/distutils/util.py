@@ -198,10 +198,13 @@ def copy_file (src, dst,
     _copy_file_contents (src, dst)
     if preserve_mode or preserve_times:
         st = os.stat (src)
-        if preserve_mode:
-            os.chmod (dst, S_IMODE (st[ST_MODE]))
+
+        # According to David Ascher <da@ski.org>, utime() should be done
+        # before chmod() (at least under NT).
         if preserve_times:
             os.utime (dst, (st[ST_ATIME], st[ST_MTIME]))
+        if preserve_mode:
+            os.chmod (dst, S_IMODE (st[ST_MODE]))
 
     return 1
 
