@@ -22,7 +22,7 @@ extern char* vms__StdioReadline(FILE *sys_stdin, FILE *sys_stdout, char *prompt)
 
 PyThreadState* _PyOS_ReadlineTState;
 
-#if WITH_THREAD
+#ifdef WITH_THREAD
 #include "pythread.h"
 static PyThread_type_lock _PyOS_ReadlineLock = NULL;
 #endif
@@ -181,7 +181,7 @@ PyOS_Readline(FILE *sys_stdin, FILE *sys_stdout, char *prompt)
 #endif
 	}
 	
-#if WITH_THREAD
+#ifdef WITH_THREAD
 	if (_PyOS_ReadlineLock == NULL) {
 		_PyOS_ReadlineLock = PyThread_allocate_lock();		
 	}
@@ -189,7 +189,7 @@ PyOS_Readline(FILE *sys_stdin, FILE *sys_stdout, char *prompt)
 
 	_PyOS_ReadlineTState = PyThreadState_GET();
 	Py_BEGIN_ALLOW_THREADS
-#if WITH_THREAD
+#ifdef WITH_THREAD
 	PyThread_acquire_lock(_PyOS_ReadlineLock, 1);
 #endif
 
@@ -205,7 +205,7 @@ PyOS_Readline(FILE *sys_stdin, FILE *sys_stdout, char *prompt)
                                                      prompt);
 	Py_END_ALLOW_THREADS
 
-#if WITH_THREAD
+#ifdef WITH_THREAD
 	PyThread_release_lock(_PyOS_ReadlineLock);
 #endif
 
