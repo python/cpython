@@ -657,7 +657,7 @@ which will work in either \module{pickle} or \module{cPickle}.}.
 In the \module{pickle} module, you need to derive a subclass from
 \class{Unpickler}, overriding the \method{load_global()}
 method.  \method{load_global()} should read two lines from the pickle
-data stream where the first line will the the name of the module
+data stream where the first line will the name of the module
 containing the class and the second line will be the name of the
 instance's class.  It then looks up the class, possibly importing the
 module and digging out the attribute, then it appends what it finds to
