@@ -244,14 +244,14 @@ class PyBuildExt(build_ext):
 
         # Add paths specified in the environment variables LDFLAGS and
         # CPPFLAGS.
-        # Since this file tends to be executed by ``make install`` its
-        # environment variables are those that the Makefile sets and not what
-        # the shell has.  The Makefile must keep the shell's values somewhere
-        # in order to be able to reach them at execution time.
+        # We must get the values from the Makefile and not the environment
+        # directly since an inconsistently reproducible issue comes up where
+        # the environment variable is not set even though the value were passed
+        # into configure and stored in the Makefile.
         for env_var, arg_name, dir_list in (
                 ('LDFLAGS', '-L', self.compiler.library_dirs),
                 ('CPPFLAGS', '-I', self.compiler.include_dirs)):
-            env_val = os.getenv(env_var)
+            env_val = sysconfig.get_config_var(env_var)
             if env_val:
                 parser = optparse.OptionParser()
                 parser.add_option(arg_name, dest="dirs", action="append")
