@@ -35,15 +35,17 @@ PERFORMANCE OF THIS SOFTWARE.
 
 #include "config.h"
 
+#include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 
 long
-PyOS_GetLastModificationTime(path)
+PyOS_GetLastModificationTime(path, fp)
 	char *path;
+	FILE *fp;
 {
 	struct stat st;
-	if (stat(path, &st) != 0)
+	if (fstat(fileno(fp), &st) != 0)
 		return -1;
 	else
 		return st.st_mtime;

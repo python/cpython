@@ -30,11 +30,16 @@ PERFORMANCE OF THIS SOFTWARE.
 ******************************************************************/
 
 /* Definitions for dynamic loading of extension modules */
-#ifdef macintosh
-enum filetype {SEARCH_ERROR, PY_SOURCE, PY_COMPILED, C_EXTENSION, PY_RESOURCE};
-#else
-enum filetype {SEARCH_ERROR, PY_SOURCE, PY_COMPILED, C_EXTENSION};
-#endif
+enum filetype {
+	SEARCH_ERROR,
+	PY_SOURCE,
+	PY_COMPILED,
+	C_EXTENSION,
+	PY_RESOURCE, /* Mac only */
+	PKG_DIRECTORY,
+	C_BUILTIN,
+	PY_FROZEN
+};
 
 extern struct filedescr {
 	char *suffix;
