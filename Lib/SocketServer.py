@@ -118,8 +118,9 @@ BaseServer:
 
 """
 
+# Author of the BaseServer patch: Luke Kenneth Casson Leighton
 
-__version__ = "0.2"
+__version__ = "0.3"
 
 
 import socket
