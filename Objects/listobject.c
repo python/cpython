@@ -34,9 +34,15 @@ newlistobject(size)
 {
 	int i;
 	listobject *op;
+	MALLARG nbytes;
 	if (size < 0) {
 		err_badcall();
 		return NULL;
+	}
+	nbytes = size * sizeof(object *);
+	/* Check for overflow */
+	if (nbytes / sizeof(object *) != size) {
+		return err_nomem();
 	}
 	op = (listobject *) malloc(sizeof(listobject));
 	if (op == NULL) {
@@ -46,7 +52,7 @@ newlistobject(size)
 		op->ob_item = NULL;
 	}
 	else {
-		op->ob_item = (object **) malloc(size * sizeof(object *));
+		op->ob_item = (object **) malloc(nbytes);
 		if (op->ob_item == NULL) {
 			free((ANY *)op);
 			return err_nomem();
