@@ -119,6 +119,19 @@ def getboolean(s):
 	return _default_root.tk.getboolean(s)
 
 class Misc:
+	def __init__(self):
+		self._tclCommands = None
+	def destroy(self):
+		if self._tclCommands is not None:
+			for name in self._tclCommands:
+				#print '- Tkinter: deleted command', name
+				self.tk.deletecommand(name)
+			self._tclCommands = None
+	def deletecommand(self, name):
+		#print '- Tkinter: deleted command', name
+		self.tk.deletecommand(name)
+		index = self._tclCommands.index(name)
+		del self._tclCommands[index]
 	def tk_strictMotif(self, boolean=None):
 		return self.tk.getboolean(self.tk.call(
 			'set', 'tk_strictMotif', boolean))
@@ -184,11 +197,11 @@ class Misc:
 		else:
 			# XXX Disgusting hack to clean up after calling func
 			tmp = []
-			def callit(func=func, args=args, tk=self.tk, tmp=tmp):
+			def callit(func=func, args=args, self=self, tmp=tmp):
 				try:
 					apply(func, args)
 				finally:
-					tk.deletecommand(tmp[0])
+					self.deletecommand(tmp[0])
 			name = self._register(callit)
 			tmp.append(name)
 			return self.tk.call('after', ms, name)
@@ -504,6 +517,10 @@ class Misc:
 		except AttributeError:
 			pass
 		self.tk.createcommand(name, f)
+		if self._tclCommands is None:
+			self._tclCommands = []
+		self._tclCommands.append(name)
+		#print '+ Tkinter created command', name
 		return name
 	register = _register
 	def _root(self):
@@ -644,6 +661,7 @@ class Wm:
 class Tk(Misc, Wm):
 	_w = '.'
 	def __init__(self, screenName=None, baseName=None, className='Tk'):
+		Misc.__init__(self)
 		global _default_root
 		self.master = None
 		self.children = {}
@@ -685,6 +703,7 @@ class Tk(Misc, Wm):
 	def destroy(self):
 		for c in self.children.values(): c.destroy()
 		self.tk.call('destroy', self._w)
+		Misc.destroy(self)
 	def __str__(self):
 		return self._w
 	def readprofile(self, baseName, className):
@@ -888,6 +907,7 @@ class Widget(Misc, Pack, Place, Grid):
 			self.master.children[self._name].destroy()
 		self.master.children[self._name] = self
 	def __init__(self, master, widgetName, cnf={}, kw={}, extra=()):
+		Misc.__init__(self)
 		if kw:
 			cnf = _cnfmerge((cnf, kw))
 		self.widgetName = widgetName
@@ -935,6 +955,7 @@ class Widget(Misc, Pack, Place, Grid):
 		if self.master.children.has_key(self._name):
 			del self.master.children[self._name]
 		self.tk.call('destroy', self._w)
+		Misc.destroy(self)
 	def _do(self, name, args=()):
 		return apply(self.tk.call, (self._w, name) + args)
 
