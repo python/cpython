@@ -48,10 +48,17 @@ parse_and_bind(self, args)
 	PyObject *self;
 	PyObject *args;
 {
-	char *s;
+	char *s, *copy;
 	if (!PyArg_ParseTuple(args, "s", &s))
 		return NULL;
-	rl_parse_and_bind(s);
+	/* Make a copy -- rl_parse_and_bind() modifies its argument */
+	/* Bernard Herzog */
+	copy = malloc(1 + strlen(s));
+	if (copy == NULL)
+		return PyErr_NoMemory();
+	strcpy(copy, s);
+	rl_parse_and_bind(copy);
+	free(copy); /* Free the copy */
 	Py_INCREF(Py_None);
 	return Py_None;
 }
