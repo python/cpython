@@ -6,14 +6,15 @@
 #   mcast    (receivers)
 
 MYPORT = 8123
-MYGROUP_BYTES = 225, 0, 0, 250
+MYGROUP = '225.0.0.250'
 
 import sys
 import time
 import struct
+import regsub
 from socket import *
 from SOCKET import *
-from IN import *
+from IN import *			# Local module, SGI specific!!!
 
 sender = sys.argv[1:]
 
@@ -24,10 +25,7 @@ if sender:
 		s.setsockopt(SOL_SOCKET, SO_BROADCAST, 1)
 		mygroup = '<broadcast>'
 	else:
-		# Ugly: construct decimal IP address string from MYGROUP_BYTES
-		mygroup = ''
-		for byte in MYGROUP_BYTES: mygroup = mygroup + '.' + `byte`
-		mygroup = mygroup[1:]
+		mygroup = MYGROUP
 		ttl = struct.pack('b', 1)		# Time-to-live
 		s.setsockopt(IPPROTO_IP, IP_MULTICAST_TTL, ttl)
 	while 1:
@@ -42,9 +40,10 @@ else:
 	# Allow multiple copies of this program on one machine
 	s.setsockopt(SOL_SOCKET, SO_REUSEPORT, 1) # (Not strictly needed)
 
-	# Ugly: construct binary group address from MYGROUP_BYTES
+	# Ugly: construct binary group address from MYGROUP converted to bytes
+	bytes = eval(regsub.gsub('\.', ',', MYGROUP))
 	grpaddr = 0
-	for byte in MYGROUP_BYTES: grpaddr = (grpaddr << 8) | byte
+	for byte in bytes: grpaddr = (grpaddr << 8) | byte
 
 	# Construct struct mreq from grpaddr and ifaddr
 	ifaddr = INADDR_ANY
