@@ -423,6 +423,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define getcopyright Py_GetCopyright
 #define getplatform Py_GetPlatform
 #define getversion Py_GetVersion
+#define getpythonpath Py_GetPath
 
 /* Misc. Internals */
 #define askyesno _Py_AskYesNo
