@@ -848,8 +848,7 @@ class DocTestFinder:
     """
 
     def __init__(self, verbose=False, parser=DocTestParser(),
-                 recurse=True, _namefilter=None,
-                 exclude_empty=False):
+                 recurse=True, _namefilter=None, exclude_empty=True):
         """
         Create a new doctest finder.
 
@@ -862,8 +861,8 @@ class DocTestFinder:
         If the optional argument `recurse` is false, then `find` will
         only examine the given object, and not any contained objects.
 
-        If the optional argument `exclude_empty` is true, then `find`
-        will exclude tests for objects with empty docstrings.
+        If the optional argument `exclude_empty` is false, then `find`
+        will include tests for objects with empty docstrings.
         """
         self._parser = parser
         self._verbose = verbose
@@ -1836,9 +1835,10 @@ master = None
 
 def testmod(m=None, name=None, globs=None, verbose=None, isprivate=None,
             report=True, optionflags=0, extraglobs=None,
-            raise_on_error=False):
+            raise_on_error=False, exclude_empty=False):
     """m=None, name=None, globs=None, verbose=None, isprivate=None,
-       report=True, optionflags=0, extraglobs=None
+       report=True, optionflags=0, extraglobs=None, raise_on_error=False,
+       exclude_empty=False
 
     Test examples in docstrings in functions and classes reachable
     from module m (or the current module if m is not supplied), starting
@@ -1930,7 +1930,7 @@ def testmod(m=None, name=None, globs=None, verbose=None, isprivate=None,
         name = m.__name__
 
     # Find, parse, and run all tests in the given module.
-    finder = DocTestFinder(_namefilter=isprivate)
+    finder = DocTestFinder(_namefilter=isprivate, exclude_empty=exclude_empty)
 
     if raise_on_error:
         runner = DebugRunner(verbose=verbose, optionflags=optionflags)
