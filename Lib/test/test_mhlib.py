@@ -12,7 +12,7 @@ import os, StringIO
 import sys
 import mhlib
 
-if sys.platform.startswith("win") or sys.platform=="riscos":
+if sys.platform.startswith("win") or sys.platform=="riscos" or sys.platform.startswith("atheos"):
     raise TestSkipped("test_mhlib skipped on %s -- "%sys.platform +
                       "too many Unix assumptions")
 

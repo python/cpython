@@ -133,6 +133,10 @@ void PyThread_init_thread(void)
 #include "thread_plan9.h"
 #endif
 
+#ifdef ATHEOS_THREADS
+#include "thread_atheos.h"
+#endif
+
 /*
 #ifdef FOOBAR_THREADS
 #include "thread_foobar.h"

@@ -1,0 +1,68 @@
+Python for AtheOS
+
+
+Before building:
+
+    Make sure you have shared versions of the libraries you want to use
+    with Python. You will have to compile them yourself, or download
+    precompiled packages.
+
+    Recommended libraries:
+
+	ncurses-4.2
+    	readline-4.2a
+    	zlib-1.1.4
+
+Build:
+
+    $ ./configure --prefix=/usr/python
+    $ make
+
+    Python is always built as a shared library, otherwise dynamic loading
+    would not work.
+
+Testing:
+
+    $ make test
+
+Install:
+
+    # make install
+    # pkgmanager -a /usr/python
+
+
+AtheOS issues:
+
+    - large file support: due to a stdio bug in glibc/libio, access to
+        large files may not work correctly.
+        fseeko() tries to seek to a negative offset.
+        ftello() returns a negative offset, it looks like a 32->64bit
+        sign-extension issue.
+        The lowlevel functions (open, lseek, etc) are OK.
+    - sockets: AF_UNIX is defined in the C library and in Python, but
+       not implemented in the system.
+    - select: poll is available in the C library, but does not work
+      (It does not return POLLNVAL for bad fds and hangs).
+    - posix: statvfs and fstatvfs always return ENOSYS.
+    - 
+    - disabled modules:
+        - mmap: not yet implemented in AtheOS
+	- nis: broken (on an unconfigured system yp_get_default_domain()
+            returns junk instead of error)
+	- dl: dynamic loading doesn't work via dlopen()
+	- resource: getrimit and setrlimit are not yet implemented
+
+    - if you are getting segmentation faults, you probably are low on memory.
+        AtheOS doesn't handle very well an out-of-memory condition and
+        simply SEGVs the process.
+
+Tested on:
+
+    AtheOS-0.3.7
+    gcc-2.95
+    binutils-2.10
+    make-3.78
+
+
+--
+Octavian Cerna <tavy@ylabs.com>

@@ -81,6 +81,7 @@ then
 	case $MACHDEP in
 	cygwin*) MACHDEP="cygwin";;
 	darwin*) MACHDEP="darwin";;
+	atheos*) MACHDEP="atheos";;
 	'')	MACHDEP="unknown";;
 	esac
 fi
@@ -328,7 +329,7 @@ AC_ARG_ENABLE(shared,
 if test -z "$enable_shared"
 then 
   case $ac_sys_system in
-  CYGWIN*)
+  CYGWIN* | atheos*)
     enable_shared="yes";;
   *)
     enable_shared="no";;
@@ -385,6 +386,11 @@ if test $enable_shared = "yes"; then
          BLDLIBRARY='-rpath $(LIBDIR) -L. -lpython$(VERSION)'
 	  RUNSHARED=LD_LIBRARY_PATH=`pwd`:$LD_LIBRARY_PATH
 	  ;;
+    atheos*)
+	  LDLIBRARY='libpython$(VERSION).so'
+	  BLDLIBRARY='-L. -lpython$(VERSION)'
+	  RUNSHARED=DLL_PATH=`pwd`:${DLL_PATH:-/atheos/sys/libs:/atheos/autolnk/lib}
+	  ;;
   esac
   # DG/UX requires some fancy ld contortions to produce a .so from an .a
   case $MACHDEP in
@@ -417,6 +423,7 @@ if test -z "$LN" ; then
 	case $ac_sys_system in
 		BeOS*) LN="ln -s";;
 		CYGWIN*) LN="ln -s";;
+		atheos*) LN="ln -s";;
 		*) LN=ln;;
 	esac
 fi
@@ -906,6 +913,7 @@ then
 	SCO_SV*) LDSHARED="cc -G -KPIC -Ki486 -belf -Wl,-Bexport";;
 	Monterey*) LDSHARED="cc -G -dy -Bdynamic -Bexport -L/usr/lib/ia64l64";;
 	CYGWIN*) LDSHARED="gcc -shared -Wl,--enable-auto-image-base";;
+	atheos*) LDSHARED="gcc -shared";;
 	*)	LDSHARED="ld";;
 	esac
 fi
@@ -939,6 +947,7 @@ then
 		   *) CCSHARED="";;
 		   esac;;
 	CYGWIN*) CCSHARED="-DUSE_DL_IMPORT";;
+	atheos*) CCSHARED="-fPIC";;
 	esac
 fi
 AC_MSG_RESULT($CCSHARED)
@@ -1002,6 +1011,21 @@ then
 	esac
 fi
 AC_MSG_RESULT($CFLAGSFORSHARED)
+
+# SHLIBS are libraries (except -lc and -lm) to link to the python shared
+# library (with --enable-shared).
+# For platforms on which shared libraries are not allowed to have unresolved
+# symbols, this must be set to $(LIBS) (expanded by make).
+AC_SUBST(SHLIBS)
+AC_MSG_CHECKING(SHLIBS)
+case "$ac_sys_system" in
+	atheos*)
+		SHLIBS='$(LIBS)';;
+	*)
+		SHLIBS='';;
+esac
+AC_MSG_RESULT($SHLIBS)
+
 
 # checks for libraries
 AC_CHECK_LIB(dl, dlopen)	# Dynamic linking for SunOS/Solaris and SYSV
@@ -1177,6 +1201,10 @@ pthread_create (NULL, NULL, start_routine, NULL)], [
     AC_CHECK_FUNC(pthread_detach, [AC_DEFINE(WITH_THREAD)
     posix_threads=yes
     THREADOBJ="Python/thread.o"],[
+    AC_CHECK_HEADER(atheos/threads.h, [AC_DEFINE(WITH_THREAD)
+    AC_DEFINE(ATHEOS_THREADS, 1,
+    [Define this if you have AtheOS threads.])
+    THREADOBJ="Python/thread.o"],[
     AC_CHECK_HEADER(kernel/OS.h, [AC_DEFINE(WITH_THREAD)
     AC_DEFINE(BEOS_THREADS, 1,
     [Define this if you have BeOS threads.])
@@ -1202,7 +1230,7 @@ pthread_create (NULL, NULL, start_routine, NULL)], [
     LIBS="$LIBS -lcma"
     THREADOBJ="Python/thread.o"],[
     USE_THREAD_MODULE="#"])
-    ])])])])])])])])])])
+    ])])])])])])])])])])])
 
     if test "$posix_threads" = "yes"; then
       if test "$unistd_defines_pthreads" = "no"; then
@@ -1560,6 +1588,7 @@ then
 	BeOS*) DYNLOADFILE="dynload_beos.o";;
 	hp*|HP*) DYNLOADFILE="dynload_hpux.o";;
 	Darwin/*) DYNLOADFILE="dynload_next.o";;
+	atheos*) DYNLOADFILE="dynload_atheos.o";;
 	*)
 	# use dynload_shlib.c and dlopen() if we have it; otherwise stub
 	# out any dynamic loading

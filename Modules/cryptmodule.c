@@ -17,7 +17,9 @@ static PyObject *crypt_crypt(PyObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, "ss:crypt", &word, &salt)) {
 		return NULL;
 	}
-	return PyString_FromString( crypt( word, salt ) );
+	/* On some platforms (AtheOS) crypt returns NULL for an invalid
+	   salt. Return None in that case. XXX Maybe raise an exception?  */
+	return Py_BuildValue("s", crypt(word, salt));
 
 }
 

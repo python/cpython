@@ -311,6 +311,8 @@ C API
 
 New platforms
 
+- AtheOS is now supported.
+
 - GNU/Hurd is now supported.
 
 Tests
