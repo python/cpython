@@ -2361,6 +2361,15 @@ local bindings to py-newline-and-indent."))
     (set-buffer cbuf))
   (sit-for 0))
 
+;; older Emacsen don't have this function
+(if (not (fboundp 'match-string))
+    (defun match-string (n)
+      (let ((beg (match-beginning n))
+	    (end (match-end n)))
+	(if (and beg end)
+	    (buffer-substring beg end)
+	  nil))))
+
 (defun py-current-defun ()
   ;; tell add-log.el how to find the current function/method/variable
   (save-excursion
