@@ -9,6 +9,7 @@
 #include "fileobject.h"
 #include "methodobject.h"
 #include "objimpl.h"
+#include "errors.h"
 
 typedef struct {
 	OB_HEAD
@@ -248,7 +249,7 @@ filegetattr(f, name)
 			return newmethodobject(ml->ml_name, ml->ml_meth,
 				(object *)f);
 	}
-	errno = ESRCH;
+	err_setstr(NameError, name);
 	return NULL;
 }
 

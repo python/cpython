@@ -8,6 +8,7 @@
 #include "dictobject.h"
 #include "moduleobject.h"
 #include "objimpl.h"
+#include "errors.h"
 
 typedef struct {
 	OB_HEAD
@@ -94,10 +95,8 @@ modulegetattr(m, name)
 	char *name;
 {
 	object *res = dictlookup(m->md_dict, name);
-	if (res == NULL) {
-		if (errno == ENOENT)
-			errno = ESRCH;
-	}
+	if (res == NULL)
+		err_setstr(NameError, name);
 	else
 		INCREF(res);
 	return res;
