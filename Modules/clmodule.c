@@ -183,12 +183,9 @@ cl_DecompressImage(PyObject *self, PyObject *args)
 }
 
 static PyObject *
-doClose(clobject *self, PyObject *args, int (*close_func)(CL_Handle))
+doClose(clobject *self, int (*close_func)(CL_Handle))
 {
 	CheckCompressor(self);
-
-	if (!PyArg_NoArgs(args))
-		return NULL;
 
 	error_handler_called = 0;
 	if ((*close_func)(self->ob_compressorHdl) == FAILURE ||
@@ -209,15 +206,15 @@ doClose(clobject *self, PyObject *args, int (*close_func)(CL_Handle))
 }
 
 static PyObject *
-clm_CloseCompressor(PyObject *self, PyObject *args)
+clm_CloseCompressor(PyObject *self)
 {
-	return doClose(SELF, args, clCloseCompressor);
+	return doClose(SELF, clCloseCompressor);
 }
 
 static PyObject *
-clm_CloseDecompressor(PyObject *self, PyObject *args)
+clm_CloseDecompressor(PyObject *self)
 {
-	return doClose(SELF, args, clCloseDecompressor);
+	return doClose(SELF, clCloseDecompressor);
 }
 
 static PyObject *
@@ -479,7 +476,7 @@ clm_GetParamID(PyObject *self, PyObject *args)
 }
 
 static PyObject *
-clm_QueryParams(PyObject *self, PyObject *args)
+clm_QueryParams(PyObject *self)
 {
 	int bufferlength;
 	int *PVbuffer;
@@ -487,9 +484,6 @@ clm_QueryParams(PyObject *self, PyObject *args)
 	int i;
 
 	CheckCompressor(SELF);
-
-	if (!PyArg_NoArgs(args))
-		return NULL;
 
 	error_handler_called = 0;
 	bufferlength = clQueryParams(SELF->ob_compressorHdl, 0, 0);
@@ -574,13 +568,9 @@ clm_GetName(PyObject *self, PyObject *args)
 }
 
 static PyObject *
-clm_QuerySchemeFromHandle(PyObject *self, PyObject *args)
+clm_QuerySchemeFromHandle(PyObject *self)
 {
 	CheckCompressor(SELF);
-
-	if (!PyArg_NoArgs(args))
-		return NULL;
-
 	return PyInt_FromLong(clQuerySchemeFromHandle(SELF->ob_compressorHdl));
 }
 
@@ -600,8 +590,8 @@ clm_ReadHeader(PyObject *self, PyObject *args)
 }
 
 static PyMethodDef compressor_methods[] = {
-	{"close",		clm_CloseCompressor, METH_OLDARGS}, /* alias */
-	{"CloseCompressor",	clm_CloseCompressor, METH_OLDARGS},
+	{"close",		clm_CloseCompressor, METH_NOARGS}, /* alias */
+	{"CloseCompressor",	clm_CloseCompressor, METH_NOARGS},
 	{"Compress",		clm_Compress, METH_OLDARGS},
 	{"GetDefault",		clm_GetDefault, METH_OLDARGS},
 	{"GetMinMax",		clm_GetMinMax, METH_OLDARGS},
@@ -609,16 +599,16 @@ static PyMethodDef compressor_methods[] = {
 	{"GetParam",		clm_GetParam, METH_OLDARGS},
 	{"GetParamID",		clm_GetParamID, METH_OLDARGS},
 	{"GetParams",		clm_GetParams, METH_OLDARGS},
-	{"QueryParams",		clm_QueryParams, METH_OLDARGS},
-	{"QuerySchemeFromHandle",clm_QuerySchemeFromHandle, METH_OLDARGS},
+	{"QueryParams",		clm_QueryParams, METH_NOARGS},
+	{"QuerySchemeFromHandle",clm_QuerySchemeFromHandle, METH_NOARGS},
 	{"SetParam",		clm_SetParam, METH_OLDARGS},
 	{"SetParams",		clm_SetParams, METH_OLDARGS},
 	{NULL,			NULL}		/* sentinel */
 };
 
 static PyMethodDef decompressor_methods[] = {
-	{"close",		clm_CloseDecompressor, METH_OLDARGS},	/* alias */
-	{"CloseDecompressor",	clm_CloseDecompressor, METH_OLDARGS},
+	{"close",		clm_CloseDecompressor, METH_NOARGS},	/* alias */
+	{"CloseDecompressor",	clm_CloseDecompressor, METH_NOARGS},
 	{"Decompress",		clm_Decompress, METH_OLDARGS},
 	{"GetDefault",		clm_GetDefault, METH_OLDARGS},
 	{"GetMinMax",		clm_GetMinMax, METH_OLDARGS},
@@ -627,8 +617,8 @@ static PyMethodDef decompressor_methods[] = {
 	{"GetParamID",		clm_GetParamID, METH_OLDARGS},
 	{"GetParams",		clm_GetParams, METH_OLDARGS},
 	{"ReadHeader",		clm_ReadHeader, METH_OLDARGS},
-	{"QueryParams",		clm_QueryParams, METH_OLDARGS},
-	{"QuerySchemeFromHandle",clm_QuerySchemeFromHandle, METH_OLDARGS},
+	{"QueryParams",		clm_QueryParams, METH_NOARGS},
+	{"QuerySchemeFromHandle",clm_QuerySchemeFromHandle, METH_NOARGS},
 	{"SetParam",		clm_SetParam, METH_OLDARGS},
 	{"SetParams",		clm_SetParams, METH_OLDARGS},
 	{NULL,			NULL}		/* sentinel */
