@@ -14,7 +14,7 @@ int Py_TabcheckFlag;
 
 /* Forward */
 static node *parsetok(struct tok_state *, grammar *, int, perrdetail *, int);
-static void initerr(perrdetail *err_ret);
+static void initerr(perrdetail *err_ret, char* filename);
 
 /* Parse input coming from a string.  Return error code, print some errors. */
 node *
@@ -29,7 +29,7 @@ PyParser_ParseStringFlags(char *s, grammar *g, int start,
 {
 	struct tok_state *tok;
 
-	initerr(err_ret);
+	initerr(err_ret, NULL);
 
 	if ((tok = PyTokenizer_FromString(s)) == NULL) {
 		err_ret->error = E_NOMEM;
@@ -63,7 +63,7 @@ PyParser_ParseFileFlags(FILE *fp, char *filename, grammar *g, int start,
 {
 	struct tok_state *tok;
 
-	initerr(err_ret);
+	initerr(err_ret, filename);
 
 	if ((tok = PyTokenizer_FromFile(fp, ps1, ps2)) == NULL) {
 		err_ret->error = E_NOMEM;
@@ -178,10 +178,10 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
 }
 
 static void
-initerr(perrdetail *err_ret)
+initerr(perrdetail *err_ret, char* filename)
 {
 	err_ret->error = E_OK;
-	err_ret->filename = NULL;
+	err_ret->filename = filename;
 	err_ret->lineno = 0;
 	err_ret->offset = 0;
 	err_ret->text = NULL;
