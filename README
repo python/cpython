@@ -224,6 +224,28 @@ old K&R-C-only compilers is no longer possible.  ANSI C compilers are
 available for all modern systems, either in the form of updated
 compilers from the vendor, or one of the free compilers (gcc).
 
+Unsupported systems
+-------------------
+
+A number of features are not supported in Python 2.3 anymore. Some
+support code is still present, but will be removed in Python 2.4.
+If you still need to use current Python versions on these systems,
+please send a message to python-dev@python.org indicating that you
+volunteer to support this system.
+
+More specifically, the following systems are not supported any
+longer:
+- SunOS 4
+- DYNIX
+- dgux
+- Minix
+- Irix 4 and --with-sgi-dl
+- Linux 1
+- Systems defining __d6_pthread_create (configure.in)
+- Systems defining PY_PTHREAD_D4, PY_PTHREAD_D6,
+  or PY_PTHREAD_D7 in thread_pthread.h
+- Systems using --with-dl-dld
+
 Platform specific notes
 -----------------------
 
@@ -351,6 +373,7 @@ UnixWare: There are known bugs in the math library of the system, as well as
 SunOS 4.x: When using the SunPro C compiler, you may want to use the
 	'-Xa' option instead of '-Xc', to enable some needed non-ANSI
 	Sunisms.
+	THIS SYSTEM IS NO LONGER SUPPORTED.
 
 NeXT:   Not supported anymore. Start with the MacOSX/Darwin code if you
 	want to revive it.
@@ -886,7 +909,7 @@ Modules/getpath.o.
 	library) by passing --with-sgi-dl=DIRECTORY where DIRECTORY
 	is the absolute pathname of the dl library.  (Don't bother on
 	IRIX 5, it already has dynamic linking using SunOS style
-	shared libraries.)  Support for this feature is deprecated.
+	shared libraries.)  THIS OPTION IS UNSUPPORTED.
 
 --with-dl-dld: Dynamic loading of modules is rumored to be supported
 	on some other systems: VAX (Ultrix), Sun3 (SunOS 3.4), Sequent
@@ -902,8 +925,7 @@ Modules/getpath.o.
 	the absolute pathname of the dl emulation library and
 	DLD_DIRECTORY is the absolute pathname of the GNU dld library.
 	(Don't bother on SunOS 4 or 5, they already have dynamic
-	linking using shared libraries.)  Support for this feature is
-	deprecated.
+	linking using shared libraries.)  THIS OPTION IS UNSUPPORTED.
 
 --with-libm, --with-libc: It is possible to specify alternative
 	versions for the Math library (default -lm) and the C library
