@@ -661,6 +661,18 @@ sub make_head_and_body($$) {
             . ($ISO_LANGUAGE ? $ISO_LANGUAGE : $isolanguage) . "\">\n";
     }
     if ($MY_PARTIAL_HEADER eq '') {
+        my $favicon = '';
+        if ($FAVORITES_ICON) {
+            my($myname, $mydir, $myext) = fileparse($FAVORITES_ICON, '\..*');
+            my $favtype = '';
+            if ($myext eq '.gif' || $myext eq '.png') {
+                $myext =~ s/^[.]//;
+                $favtype = " type=\"image/$myext\"";
+            }
+            $favicon = (
+                "\n<link rel=\"SHORTCUT ICON\" href=\"$FAVORITES_ICON\""
+                . "$favtype />");
+        }
         $STYLESHEET = $FILE.".css" unless $STYLESHEET;
         $MY_PARTIAL_HEADER = join('',
             ($DOCTYPE ? $DTDcomment : ''),
@@ -668,9 +680,7 @@ sub make_head_and_body($$) {
             ($BASE ? "\n<base href=\"$BASE\" />" : ''),
             "\n<link rel=\"STYLESHEET\" href=\"$STYLESHEET\" type='text/css'",
             " />",
-            ($FAVORITES_ICON
-             ? ("\n<link rel=\"SHORTCUT ICON\" href=\"$FAVORITES_ICON\" />")
-             : ''),
+            $favicon,
             ($EXTERNAL_UP_LINK
              ? ("\n<link rel='start' href='" . $EXTERNAL_UP_LINK
                 . ($EXTERNAL_UP_TITLE ?
