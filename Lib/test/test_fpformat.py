@@ -32,8 +32,11 @@ class FpformatTest(unittest.TestCase):
         if isinstance(n, StringType):
             n = repr(n)
         expected = "%.*e" % (digits, float(n))
-        # add the extra 0
-        expected = expected[:-2]+'0'+expected[-2:]
+        # add the extra 0 if needed
+        num, exp = expected.split("e")
+        if len(exp) < 4:
+            exp = exp[0] + "0" + exp[1:]
+        expected = "%se%s" % (num, exp)
 
         self.assertEquals(result, expected)
 
