@@ -1,2 +1,5 @@
 *.backup
 *.lck
+*.MIF
+*.ps
+*.auto
