@@ -16,7 +16,7 @@ For support, use the optik-users@lists.sourceforge.net mailing list
 # Python developers: please do not make changes to this file, since
 # it is automatically generated from the Optik source code.
 
-__version__ = "1.5a1"
+__version__ = "1.5a2"
 
 __all__ = ['Option',
            'SUPPRESS_HELP',
@@ -76,10 +76,10 @@ def _repr(self):
 
 
 # This file was generated from:
-#   Id: option_parser.py,v 1.67 2004/07/24 23:21:21 gward Exp
-#   Id: option.py,v 1.33 2004/07/24 23:21:21 gward Exp
-#   Id: help.py,v 1.15 2004/07/24 23:21:21 gward Exp
-#   Id: errors.py,v 1.9 2004/07/24 23:21:21 gward Exp
+#   Id: option_parser.py 421 2004-10-26 00:45:16Z greg
+#   Id: option.py 422 2004-10-26 00:53:47Z greg
+#   Id: help.py 367 2004-07-24 23:21:21Z gward
+#   Id: errors.py 367 2004-07-24 23:21:21Z gward
 
 class OptParseError (Exception):
     def __init__(self, msg):
@@ -436,10 +436,15 @@ class Option:
                      "count")
 
     # The set of actions for which it makes sense to supply a value
-    # type, ie. where we expect an argument to this option.
+    # type, ie. which may consume an argument from the command line.
     TYPED_ACTIONS = ("store",
                      "append",
                      "callback")
+
+    # The set of actions which *require* a value type, ie. that
+    # always consume an argument from the command line.
+    ALWAYS_TYPED_ACTIONS = ("store",
+                            "append")
 
     # The set of known types for option parsers.  Again, listed here for
     # constructor argument validation.
@@ -557,9 +562,7 @@ class Option:
 
     def _check_type(self):
         if self.type is None:
-            # XXX should factor out another class attr here: list of
-            # actions that *require* a type
-            if self.action in ("store", "append"):
+            if self.action in self.ALWAYS_TYPED_ACTIONS:
                 if self.choices is not None:
                     # The "choices" attribute implies "choice" type.
                     self.type = "choice"
@@ -723,10 +726,10 @@ class Option:
             self.callback(self, opt, value, parser, *args, **kwargs)
         elif action == "help":
             parser.print_help()
-            sys.exit(0)
+            parser.exit()
         elif action == "version":
             parser.print_version()
-            sys.exit(0)
+            parser.exit()
         else:
             raise RuntimeError, "unknown action %r" % self.action
 
@@ -877,7 +880,7 @@ class OptionContainer:
         self.defaults = parser.defaults
 
     def set_conflict_handler(self, handler):
-        if handler not in ("ignore", "error", "resolve"):
+        if handler not in ("error", "resolve"):
             raise ValueError, "invalid conflict_resolution value %r" % handler
         self.conflict_handler = handler
 
@@ -901,14 +904,12 @@ class OptionContainer:
 
         if conflict_opts:
             handler = self.conflict_handler
-            if handler == "ignore":     # behaviour for Optik 1.0, 1.1
-                pass
-            elif handler == "error":    # new in 1.2
+            if handler == "error":
                 raise OptionConflictError(
                     "conflicting option string(s): %s"
                     % ", ".join([co[0] for co in conflict_opts]),
                     option)
-            elif handler == "resolve":  # new in 1.2
+            elif handler == "resolve":
                 for (opt, c_option) in conflict_opts:
                     if opt.startswith("--"):
                         c_option._long_opts.remove(opt)
@@ -1442,6 +1443,11 @@ class OptionParser (OptionContainer):
     def get_description(self):
         return self.expand_prog_name(self.description)
 
+    def exit(self, status=0, msg=None):
+        if msg:
+            sys.stderr.write(msg)
+        sys.exit(status)
+
     def error(self, msg):
         """error(msg : string)
 
@@ -1450,8 +1456,7 @@ class OptionParser (OptionContainer):
         should either exit or raise an exception.
         """
         self.print_usage(sys.stderr)
-        sys.stderr.write("%s: error: %s\n" % (self.get_prog_name(), msg))
-        sys.exit(2)                     # command-line usage error
+        self.exit(2, "%s: error: %s\n" % (self.get_prog_name(), msg))
 
     def get_usage(self):
         if self.usage:
