@@ -1,6 +1,6 @@
 test_zlib
--440295136 1136044692
-198574839 198574839
+0xe5c1a120 0x43b6aa94
+0xbd602f7 0xbd602f7
 expecting Bad compression level
 expecting Invalid initialization option
 expecting Invalid initialization option
