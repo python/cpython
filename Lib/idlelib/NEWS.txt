@@ -3,6 +3,10 @@ What's New in IDLE 1.0+?
 
 *Release date: XX-XXX-2003*
 
+- Keybindings with the Shift modifier now work correctly.  So do bindings which
+  use the Space key.  Limit unmodified user keybindings to the function keys.
+  Python Bug 775353, IDLEfork Bugs 755647, 761557
+
 - After an exception, run.py was not setting the exception vector. Noam
   Raphael suggested correcting this so pdb's postmortem pm() would work. 
   IDLEfork Patch 844675

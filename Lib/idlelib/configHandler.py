@@ -531,7 +531,7 @@ class IdleConf:
             '<<print-window>>': ['<Control-p>'],
             '<<redo>>': ['<Control-y>'],
             '<<remove-selection>>': ['<Escape>'],
-            '<<save-copy-of-window-as-file>>': ['<Alt-Shift-s>'],
+            '<<save-copy-of-window-as-file>>': ['<Alt-Shift-S>'],
             '<<save-window-as-file>>': ['<Alt-s>'],
             '<<save-window>>': ['<Control-s>'],
             '<<select-all>>': ['<Alt-a>'],
