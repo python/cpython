@@ -110,10 +110,10 @@ string.  It may also be modified at run time.
 \end{datadesc}
 
 \begin{datadesc}{altzone}
-The offset of the local DST timezone, in seconds west of the 0th
-meridian, if one is defined.  Negative if the local DST timezone is
-east of the 0th meridian (as in Western Europe, including the UK).
-Only use this if \code{daylight} is nonzero.
+The offset of the local DST timezone, in seconds west of UTC, if one
+is defined.  Negative if the local DST timezone is east of the 0th
+meridian (as in Western Europe, including the UK).  Only use this if
+\code{daylight} is nonzero.
 \end{datadesc}
 
 \begin{funcdesc}{asctime}{tuple}
@@ -250,9 +250,9 @@ precision than 1 second.
 \end{funcdesc}
 
 \begin{datadesc}{timezone}
-The offset of the local (non-DST) timezone, in seconds west of the 0th
-meridian (i.e. negative in most of Western Europe, positive in the US,
-zero in the UK).
+The offset of the local (non-DST) timezone, in seconds west of UTC
+(i.e. negative in most of Western Europe, positive in the US, zero in
+the UK).
 \end{datadesc}
 
 \begin{datadesc}{tzname}
