@@ -1456,8 +1456,8 @@ static PyObject *
 array_repr(arrayobject *a)
 {
 	char buf[256], typecode;
-	PyObject *s, *t, *comma, *v;
-	int i, len;
+	PyObject *s, *t, *v = NULL;
+	int len;
 
 	len = a->ob_size;
 	typecode = a->ob_descr->typecode;
@@ -1465,37 +1465,22 @@ array_repr(arrayobject *a)
 		PyOS_snprintf(buf, sizeof(buf), "array('%c')", typecode);
 		return PyString_FromString(buf);
 	}
-        
-	if (typecode == 'c' || typecode == 'u') {
-		PyOS_snprintf(buf, sizeof(buf), "array('%c', ", typecode);
-		s = PyString_FromString(buf);
+		
+	if (typecode == 'c')
+		v = array_tostring(a, NULL);
 #ifdef Py_USING_UNICODE
-		if (typecode == 'c')
+	else if (typecode == 'u')
+		v = array_tounicode(a, NULL);
 #endif
-			v = array_tostring(a, NULL);
-#ifdef Py_USING_UNICODE
-		else
-			v = array_tounicode(a, NULL);
-#endif
-		t = PyObject_Repr(v);
-		Py_XDECREF(v);
-		PyString_ConcatAndDel(&s, t);
-		PyString_ConcatAndDel(&s, PyString_FromString(")"));
-		return s;
-	}
-	PyOS_snprintf(buf, sizeof(buf), "array('%c', [", typecode);
+	else
+		v = array_tolist(a, NULL);
+	t = PyObject_Repr(v);
+	Py_XDECREF(v);
+
+	PyOS_snprintf(buf, sizeof(buf), "array('%c', ", typecode);
 	s = PyString_FromString(buf);
-	comma = PyString_FromString(", ");
-	for (i = 0; i < len && !PyErr_Occurred(); i++) {
-		if (i > 0)
-			PyString_Concat(&s, comma);
-		v = (a->ob_descr->getitem)(a, i);
-		t = PyObject_Repr(v);
-		Py_XDECREF(v);
-		PyString_ConcatAndDel(&s, t);
-	}
-	Py_XDECREF(comma);
-	PyString_ConcatAndDel(&s, PyString_FromString("])"));
+	PyString_ConcatAndDel(&s, t);
+	PyString_ConcatAndDel(&s, PyString_FromString(")"));
 	return s;
 }
 
