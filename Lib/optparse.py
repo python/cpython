@@ -2,13 +2,25 @@
 
 By Greg Ward <gward@python.net>
 
-Originally distributed as Optik.
+Originally distributed as Optik; see http://optik.sourceforge.net/ .
 
-See http://optik.sourceforge.net/
+If you have problems with this module, please do not files bugs,
+patches, or feature requests with Python; instead, use Optik's
+SourceForge project page:
+  http://sourceforge.net/projects/optik
+
+For support, use the optik-users@lists.sourceforge.net mailing list
+(http://lists.sourceforge.net/lists/listinfo/optik-users).
 """
 
+# Python developers: please do not make changes to this file, since
+# it is automatically generated from the Optik source code.
+
+
+__version__ = "1.4.1"
+
 __copyright__ = """
-Copyright (c) 2001-2002 Gregory P. Ward.  All rights reserved.
+Copyright (c) 2001-2003 Gregory P. Ward.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are
@@ -42,14 +54,13 @@ import sys, os
 import types
 import textwrap
 
-__version__ = "1.4+"
-
 class OptParseError (Exception):
     def __init__ (self, msg):
         self.msg = msg
 
     def __str__ (self):
         return self.msg
+
 
 class OptionError (OptParseError):
     """
@@ -82,6 +93,8 @@ class BadOptionError (OptParseError):
     """
     Raised if an invalid or ambiguous option is seen on the command-line.
     """
+
+
 class HelpFormatter:
 
     """
@@ -118,10 +131,7 @@ class HelpFormatter:
         self.current_indent = 0
         self.level = 0
         self.help_width = width - max_help_position
-        if short_first:
-            self.format_option_strings = self.format_option_strings_short_first
-        else:
-            self.format_option_strings = self.format_option_strings_long_first
+        self.short_first = short_first
 
     def indent (self):
         self.current_indent += self.indent_increment
@@ -198,38 +208,20 @@ class HelpFormatter:
 
     def format_option_strings (self, option):
         """Return a comma-separated list of option strings & metavariables."""
-        raise NotImplementedError(
-            "abstract method: use format_option_strings_short_first or "
-            "format_option_strings_long_first instead.")
-
-    def format_option_strings_short_first (self, option):
-        opts = []                       # list of "-a" or "--foo=FILE" strings
-        takes_value = option.takes_value()
-        if takes_value:
+        if option.takes_value():
             metavar = option.metavar or option.dest.upper()
-            for sopt in option._short_opts:
-                opts.append(sopt + metavar)
-            for lopt in option._long_opts:
-                opts.append(lopt + "=" + metavar)
+            short_opts = [sopt + metavar for sopt in option._short_opts]
+            long_opts = [lopt + "=" + metavar for lopt in option._long_opts]
         else:
-            for opt in option._short_opts + option._long_opts:
-                opts.append(opt)
-        return ", ".join(opts)
+            short_opts = option._short_opts
+            long_opts = option._long_opts
 
-    def format_option_strings_long_first (self, option):
-        opts = []                       # list of "-a" or "--foo=FILE" strings
-        takes_value = option.takes_value()
-        if takes_value:
-            metavar = option.metavar or option.dest.upper()
-            for lopt in option._long_opts:
-                opts.append(lopt + "=" + metavar)
-            for sopt in option._short_opts:
-                opts.append(sopt + metavar)
+        if self.short_first:
+            opts = short_opts + long_opts
         else:
-            for opt in option._long_opts + option._short_opts:
-                opts.append(opt)
-        return ", ".join(opts)
+            opts = long_opts + short_opts
 
+        return ", ".join(opts)
 
 class IndentedHelpFormatter (HelpFormatter):
     """Format help with indented section bodies.
@@ -267,6 +259,8 @@ class TitledHelpFormatter (HelpFormatter):
 
     def format_heading (self, heading):
         return "%s\n%s\n" % (heading, "=-"[self.level] * len(heading))
+
+
 _builtin_cvt = { "int" : (int, "integer"),
                  "long" : (long, "long integer"),
                  "float" : (float, "floating-point"),
@@ -400,7 +394,10 @@ class Option:
     # -- Constructor/initialization methods ----------------------------
 
     def __init__ (self, *opts, **attrs):
-        # Set _short_opts, _long_opts attrs from 'opts' tuple
+        # Set _short_opts, _long_opts attrs from 'opts' tuple.
+        # Have to be set now, in case no option strings are supplied.
+        self._short_opts = []
+        self._long_opts = []
         opts = self._check_opt_strings(opts)
         self._set_opt_strings(opts)
 
@@ -421,13 +418,10 @@ class Option:
         # could be None.
         opts = filter(None, opts)
         if not opts:
-            raise OptionError("at least one option string must be supplied",
-                              self)
+            raise TypeError("at least one option string must be supplied")
         return opts
 
     def _set_opt_strings (self, opts):
-        self._short_opts = []
-        self._long_opts = []
         for opt in opts:
             if len(opt) < 2:
                 raise OptionError(
@@ -569,10 +563,7 @@ class Option:
     # -- Miscellaneous methods -----------------------------------------
 
     def __str__ (self):
-        if self._short_opts or self._long_opts:
-            return "/".join(self._short_opts + self._long_opts)
-        else:
-            raise RuntimeError, "short_opts and long_opts both empty!"
+        return "/".join(self._short_opts + self._long_opts)
 
     def takes_value (self):
         return self.type is not None
@@ -609,9 +600,9 @@ class Option:
         elif action == "store_const":
             setattr(values, dest, self.const)
         elif action == "store_true":
-            setattr(values, dest, 1)
+            setattr(values, dest, True)
         elif action == "store_false":
-            setattr(values, dest, 0)
+            setattr(values, dest, False)
         elif action == "append":
             values.ensure_value(dest, []).append(value)
         elif action == "count":
@@ -632,6 +623,8 @@ class Option:
         return 1
 
 # class Option
+
+
 def get_prog_name ():
     return os.path.basename(sys.argv[0])
 
@@ -922,7 +915,10 @@ class OptionParser (OptionContainer):
       usage : string
         a usage string for your program.  Before it is displayed
         to the user, "%prog" will be expanded to the name of
-        your program (os.path.basename(sys.argv[0])).
+        your program (self.prog or os.path.basename(sys.argv[0])).
+      prog : string
+        the name of the current program (to override
+        os.path.basename(sys.argv[0])).
 
       allow_interspersed_args : boolean = true
         if true, positional arguments may be interspersed with options.
@@ -967,10 +963,12 @@ class OptionParser (OptionContainer):
                   conflict_handler="error",
                   description=None,
                   formatter=None,
-                  add_help_option=1):
+                  add_help_option=1,
+                  prog=None):
         OptionContainer.__init__(
             self, option_class, conflict_handler, description)
         self.set_usage(usage)
+        self.prog = prog
         self.version = version
         self.allow_interspersed_args = 1
         if formatter is None:
@@ -1382,3 +1380,4 @@ def _match_abbrev (s, wordmap):
 # which will become a factory function when there are many Option
 # classes.
 make_option = Option
+
