@@ -1,9 +1,9 @@
 # Module 'maccache'
 #
 # Maintain a cache of listdir(), isdir(), isfile() or exists() outcomes.
+# XXX Should merge with module statcache
 
-import mac
-import macpath
+import os
 
 
 # The cache.
@@ -15,7 +15,7 @@ cache = {}
 
 # Current working directory.
 #
-cwd = mac.getcwd()
+cwd = os.getcwd()
 
 
 # Constants.
@@ -25,14 +25,14 @@ FILE = 1
 LISTTYPE = type([])
 
 def _stat(name):
-	name = macpath.join(cwd, name)
+	name = os.path.join(cwd, name)
 	if cache.has_key(name):
 		return cache[name]
-	if macpath.isfile(name):
+	if os.path.isfile(name):
 		cache[name] = FILE
 		return FILE
 	try:
-		list = mac.listdir(name)
+		list = os.listdir(name)
 	except:
 		cache[name] = NONE
 		return NONE
