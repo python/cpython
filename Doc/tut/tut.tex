@@ -2157,7 +2157,7 @@ names, and the outermost scope (searched last) is the name space
 containing built-in names.
 
 Usually, the local scope references the local names of the (textually)
-current function.  Outside of functions, the the local scope references
+current function.  Outside of functions, the local scope references
 the same name space as the global scope: the module's name space.
 Class definitions place yet another name space in the local scope.
 
@@ -2165,7 +2165,7 @@ It is important to realize that scopes are determined textually: the
 global scope of a function defined in a module is that module's name
 space, no matter from where or by what alias the function is called.
 On the other hand, the actual search for names is done dynamically, at
-run time --- however, the the language definition is evolving towards
+run time --- however, the language definition is evolving towards
 static name resolution, at ``compile'' time, so don't rely on dynamic
 name resolution!  (In fact, local variables are already determined
 statically.)

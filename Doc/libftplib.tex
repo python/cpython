@@ -16,7 +16,7 @@ Here's a sample session using the \code{ftplib} module:
 \begin{verbatim}
 >>> from ftplib import FTP
 >>> ftp = FTP('ftp.cwi.nl')   # connect to host, default port
->>> ftp.login()               # default user anonymous, passwd user@hostname
+>>> ftp.login()               # user anonymous, passwd user@hostname
 >>> ftp.retrlines('LIST')     # list directory contents
 total 24418
 drwxrwsr-x   5 ftp-usr  pdmaint     1536 Mar 20 09:48 .

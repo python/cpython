@@ -3,57 +3,58 @@
 \bimodindex{macdnr}
 
 This module provides an interface to the Macintosh Domain Name
-Resolver. It is usually used in conjunction with the \var{mactcp} module, to
-map hostnames to IP-addresses.
+Resolver.  It is usually used in conjunction with the \var{mactcp}
+module, to map hostnames to IP-addresses.  It may not be available in
+all Mac Python versions.
 
 The \code{macdnr} module defines the following functions:
 
 \renewcommand{\indexsubitem}{(in module macdnr)}
 
 \begin{funcdesc}{Open}{\optional{filename}}
-Open the domain name resolver extension. If \var{filename} is given it
+Open the domain name resolver extension.  If \var{filename} is given it
 should be the pathname of the extension, otherwise a default is
-used. Normally, this call is not needed since the other calls will
+used.  Normally, this call is not needed since the other calls will
 open the extension automatically.
 \end{funcdesc}
 
 \begin{funcdesc}{Close}{}
-Close the resolver extension. Again, not needed for normal use.
+Close the resolver extension.  Again, not needed for normal use.
 \end{funcdesc}
 
 \begin{funcdesc}{StrToAddr}{hostname}
-Look up the IP address for \var{hostname}. This call returns a dnr
+Look up the IP address for \var{hostname}.  This call returns a dnr
 result object of the ``address'' variation.
 \end{funcdesc}
 
 \begin{funcdesc}{AddrToName}{addr}
 Do a reverse lookup on the 32-bit integer IP-address
-\var{addr}. Returns a dnr result object of the ``address'' variation.
+\var{addr}.  Returns a dnr result object of the ``address'' variation.
 \end{funcdesc}
 
 \begin{funcdesc}{AddrToStr}{addr}
 Convert the 32-bit integer IP-address \var{addr} to a dotted-decimal
-string. Returns the string.
+string.  Returns the string.
 \end{funcdesc}
 
 \begin{funcdesc}{HInfo}{hostname}
 Query the nameservers for a \code{HInfo} record for host
-\var{hostname}. These records contain hardware and software
+\var{hostname}.  These records contain hardware and software
 information about the machine in question (if they are available in
-the first place). Returns a dnr result object of the ``hinfo''
+the first place).  Returns a dnr result object of the ``hinfo''
 variety.
 \end{funcdesc}
 
 \begin{funcdesc}{MXInfo}{domain}
-Query the nameservers for a mail exchanger for \var{domain}. This is
+Query the nameservers for a mail exchanger for \var{domain}.  This is
 the hostname of a host willing to accept SMTP mail for the given
-domain. Returns a dnr result object of the ``mx'' variety.
+domain.  Returns a dnr result object of the ``mx'' variety.
 \end{funcdesc}
 
 \subsection{dnr result object}
 
 Since the DNR calls all execute asynchronously you do not get the
-results back immedeately. In stead, you get a dnr result object. You
+results back immediately.  Instead, you get a dnr result object.  You
 can check this object to see whether the query is complete, and access
 its attributes to obtain the information when it is.
 
@@ -89,23 +90,23 @@ The canonical name of the host that was queried.
 \dataline{ip1}
 \dataline{ip2}
 \dataline{ip3}
-At most four integer IP addresses for this host. Unused entries are
-zero. Valid only for address queries.
+At most four integer IP addresses for this host.  Unused entries are
+zero.  Valid only for address queries.
 \end{datadesc}
 
 \begin{datadesc}{cpuType}
 \dataline{osType}
-Textual strings giving the machine type an OS name. Valid for hinfo
+Textual strings giving the machine type an OS name.  Valid for hinfo
 queries.
 \end{datadesc}
 
 \begin{datadesc}{exchange}
-The name of a mail-exchanger host. Valid for mx queries.
+The name of a mail-exchanger host.  Valid for mx queries.
 \end{datadesc}
 
 \begin{datadesc}{preference}
-The preference of this mx record. Not too useful, since the Macintosh
-will only return a single mx record. Mx queries only.
+The preference of this mx record.  Not too useful, since the Macintosh
+will only return a single mx record.  Mx queries only.
 \end{datadesc}
 
 The simplest way to use the module to convert names to dotted-decimal

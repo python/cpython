@@ -33,9 +33,16 @@ except for a leading slash in the \var{path} component, which is
 retained if present.
 
 Example:
-\code{urlparse('http://www.cwi.nl:80/\%7eguido/Python.html')}
+
+\begin{verbatim}
+urlparse('http://www.cwi.nl:80/%7Eguido/Python.html')
+\end{verbatim}
+
 yields the tuple
-\code{('http', 'www.cwi.nl:80', '/\%7eguido/Python.html', '', '', '')}.
+
+\begin{verbatim}
+('http', 'www.cwi.nl:80', '/%7Eguido/Python.html', '', '', '')
+\end{verbatim}
 
 If the \var{default_scheme} argument is specified, it gives the
 default addressing scheme, to be used only if the URL string does not
@@ -61,9 +68,16 @@ the network location and (part of) the path, to provide missing
 components in the relative URL.
 
 Example:
-\code{urljoin('http://www.cwi.nl/\%7eguido/Python.html',}
-\code{'FAQ.html')} yields the string
-\code{'http://www.cwi.nl/\%7eguido/FAQ.html'}.
+
+\begin{verbatim}
+urljoin('http://www.cwi.nl/%7Eguido/Python.html', 'FAQ.html')
+\end{verbatim}
+
+yields the string
+
+\begin{verbatim}
+'http://www.cwi.nl/%7Eguido/FAQ.html'
+\end{verbatim}
 
 The \var{allow_fragments} argument has the same meaning as for
 \code{urlparse}.

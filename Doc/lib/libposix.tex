@@ -16,7 +16,8 @@ through the \code{os} interface.  Once \code{os} is imported, there is
 \stmodindex{os}
 
 The descriptions below are very terse; refer to the
-corresponding \UNIX{} manual entry for more information.
+corresponding \UNIX{} manual entry for more information.  Arguments
+called \var{path} refer to a pathname given as a string.
 
 Errors are reported as exceptions; the usual exceptions are given
 for type errors, while errors reported by the system calls raise
@@ -340,7 +341,7 @@ Wait for completion of a child process given by proces id, and return
 a tuple containing its pid and exit status indication (encoded as by
 \UNIX{}).  The semantics of the call are affected by the value of
 the integer options, which should be 0 for normal operation.  (If the
-system does not support waitpid(), this always raises
+system does not support \code{waitpid()}, this always raises
 \code{posix.error}.  Not on MS-DOS.)
 \end{funcdesc}
 

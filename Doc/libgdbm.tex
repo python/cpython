@@ -18,13 +18,14 @@ raised for general mapping errors like specifying an incorrect key.
 \end{excdesc}
 
 \begin{funcdesc}{open}{filename\, rwmode\, filemode}
-Open a gdbm database and return a mapping object. \var{filename} is
+Open a gdbm database and return a mapping object.  \var{filename} is
 the name of the database file, \var{rwmode} is \code{'r'}, \code{'w'},
 \code{'c'}, or \code{'n'} for reader, writer (this also gives read
 access), create (writer, but create the database if it doesn't already
-exist) and newdb (which will always create a new database). Only one
-writer may open a gdbm file and many readers may open the file. Readers
-and writers cannot open the gdbm file at the same time. Note that the
-\code{GDBM_FAST} mode of opening the database is not supported. \var{filemode} 
-is the \UNIX\ mode of the file, used only when a database is created.
+exist) and newdb (which will always create a new database).  Only one
+writer may open a gdbm file and many readers may open the file.  Readers
+and writers cannot open the gdbm file at the same time.  Note that the
+\code{GDBM_FAST} mode of opening the database is not supported.
+\var{filemode} is the \UNIX\ mode of the file, used only when a
+database is created (but to be supplied at all times).
 \end{funcdesc}
