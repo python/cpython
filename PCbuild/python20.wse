@@ -122,7 +122,10 @@ end
 item: Remark
 end
 item: Remark
-  Text=Wizard boilerplate; the "stop" on the next line is actually "pause"
+  Text=BEGIN WIZARD STUFF -----------------------------------------------------------------------------------------------------------------------------
+end
+item: Remark
+  Text=Note from Tim: the "stop" on the next line is actually "pause".
 end
 item: Open/Close INSTALL.LOG
   Flags=00000001
@@ -140,14 +143,99 @@ item: Set Variable
 end
 item: End Block
 end
-item: Remark
+item: Check Configuration
+  Flags=10111011
+end
+item: Get Registry Key Value
+  Variable=COMMON
+  Key=SOFTWARE\Microsoft\Windows\CurrentVersion
+  Default=C:\Program Files\Common Files
+  Value Name=CommonFilesDir
+  Flags=00000100
 end
 item: Get Registry Key Value
   Variable=PROGRAM_FILES
   Key=SOFTWARE\Microsoft\Windows\CurrentVersion
   Default=C:\Program Files
   Value Name=ProgramFilesDir
-  Flags=00000101
+  Flags=00000100
+end
+item: Set Variable
+  Variable=EXPLORER
+  Value=1
+end
+item: End Block
+end
+item: Remark
+  Text=Note from Tim:  doesn't seem to be a way to get the true boot drive, the Wizard hardcodes "C".
+end
+item: Set Variable
+  Variable=MAINDIR
+  Value=C:\%MAINDIR%
+  Flags=00001100
+end
+item: Remark
+  Text=BACKUP is the variable that holds the path that all backup files will be copied to when overwritten
+end
+item: Set Variable
+  Variable=BACKUP
+  Value=%MAINDIR%\BACKUP
+  Flags=10000000
+end
+item: Remark
+  Text=DOBACKUP determines if a backup will be performed.  The possible values are A (do backup) or B (do not do backup)
+end
+item: Set Variable
+  Variable=DOBACKUP
+  Value=A
+  Flags=10000000
+end
+item: Remark
+  Text=BRANDING determines if the installation will be branded with a name and company.  By default, this is written to the INST directory (installation media).
+end
+item: Set Variable
+  Variable=BRANDING
+  Value=0
+end
+item: If/While Statement
+  Variable=BRANDING
+  Value=1
+end
+item: Read INI Value
+  Variable=NAME
+  Pathname=%INST%\CUSTDATA.INI
+  Section=Registration
+  Item=Name
+end
+item: Read INI Value
+  Variable=COMPANY
+  Pathname=%INST%\CUSTDATA.INI
+  Section=Registration
+  Item=Company
+end
+item: If/While Statement
+  Variable=NAME
+end
+item: Set Variable
+  Variable=DOBRAND
+  Value=1
+end
+item: Get System Information
+  Variable=NAME
+  Flags=00000110
+end
+item: Get System Information
+  Variable=COMPANY
+  Flags=00000111
+end
+item: End Block
+end
+item: End Block
+end
+item: Remark
+  Text=END WIZARD STUFF -----------------------------------------------------------------------------------------------------------------------------
+end
+item: Remark
 end
 item: Remark
   Text=COMPONENTS values:
@@ -627,14 +715,170 @@ item: Custom Dialog Set
     end
   end
 end
+item: Remark
+  Text=This reinitializes the BACKUP directory so that it reflects the change the user made to MAINDIR
+end
+item: If/While Statement
+  Variable=DISPLAY
+  Value=Select Destination Directory
+end
+item: Set Variable
+  Variable=BACKUP
+  Value=%MAINDIR%\BACKUP
+end
+item: End Block
+end
 item: End Block
 end
 item: Remark
 end
+item: Remark
+  Text=BEGIN WIZARD STUFF -----------------------------------------------------------------------------------------------------------------------------
+end
+item: Remark
+  Text=When the BACKUP feature is enabled, the BACKUPDIR is initialized
+end
+item: If/While Statement
+  Variable=DOBACKUP
+  Value=A
+end
+item: Set Variable
+  Variable=BACKUPDIR
+  Value=%BACKUP%
+end
+item: End Block
+end
+item: Remark
+  Text=The BRANDING information is written to the INI file on the installation media.
+end
+item: If/While Statement
+  Variable=BRANDING
+  Value=1
+end
+item: If/While Statement
+  Variable=DOBRAND
+  Value=1
+end
+item: Edit INI File
+  Pathname=%INST%\CUSTDATA.INI
+  Settings=[Registration]
+  Settings=NAME=%NAME%
+  Settings=COMPANY=%COMPANY%
+  Settings=
+end
+item: End Block
+end
+item: End Block
+end
+item: Remark
+  Text=Begin writing to the INSTALL.LOG 
+end
 item: Open/Close INSTALL.LOG
+end
+item: Remark
+  Text=Check free disk space calculates free disk space as well as component sizes.
+end
+item: Remark
+  Text=It should be located before all Install File actions.
 end
 item: Check Disk Space
   Component=COMPONENTS
+end
+item: Remark
+  Text=This include script allows uninstall support
+end
+item: Include Script
+  Pathname=%_WISE_%\INCLUDE\uninstal.wse
+end
+item: Set Variable
+  Variable=COMMON
+  Value=%COMMON%
+  Flags=00010100
+end
+item: Remark
+  Text=Note from Tim: this seeming no-op on MAINDIR actually converts it to a short filename.
+end
+item: Set Variable
+  Variable=MAINDIR
+  Value=%MAINDIR%
+  Flags=00010100
+end
+item: Remark
+  Text=This IF/THEN/ELSE reads the correct registry entries for shortcut/icon placement
+end
+item: Check Configuration
+  Flags=10111011
+end
+item: Get Registry Key Value
+  Variable=STARTUPDIR
+  Key=Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders
+  Default=%WIN%\Start Menu\Programs\StartUp
+  Value Name=StartUp
+  Flags=00000010
+end
+item: Get Registry Key Value
+  Variable=DESKTOPDIR
+  Key=Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders
+  Default=%WIN%\Desktop
+  Value Name=Desktop
+  Flags=00000010
+end
+item: Get Registry Key Value
+  Variable=STARTMENUDIR
+  Key=Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders
+  Default=%WIN%\Start Menu
+  Value Name=Start Menu
+  Flags=00000010
+end
+item: Get Registry Key Value
+  Variable=GROUPDIR
+  Key=Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders
+  Default=%WIN%\Start Menu\Programs
+  Value Name=Programs
+  Flags=00000010
+end
+item: Get Registry Key Value
+  Variable=CSTARTUPDIR
+  Key=Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders
+  Default=%STARTUPDIR%
+  Value Name=Common Startup
+  Flags=00000100
+end
+item: Get Registry Key Value
+  Variable=CDESKTOPDIR
+  Key=Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders
+  Default=%DESKTOPDIR%
+  Value Name=Common Desktop
+  Flags=00000100
+end
+item: Get Registry Key Value
+  Variable=CSTARTMENUDIR
+  Key=Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders
+  Default=%STARTMENUDIR%
+  Value Name=Common Start Menu
+  Flags=00000100
+end
+item: Get Registry Key Value
+  Variable=CGROUPDIR
+  Key=Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders
+  Default=%GROUPDIR%
+  Value Name=Common Programs
+  Flags=00000100
+end
+item: Set Variable
+  Variable=CGROUP_SAVE
+  Value=%GROUP%
+end
+item: Set Variable
+  Variable=GROUP
+  Value=%GROUPDIR%\%GROUP%
+end
+item: Else Statement
+end
+item: End Block
+end
+item: Remark
+  Text=END WIZARD STUFF -----------------------------------------------------------------------------------------------------------------------------
 end
 item: Remark
 end
@@ -1530,14 +1774,6 @@ item: Remark
 end
 item: Self-Register OCXs/DLLs
   Description=Updating System Configuration, Please Wait...
-end
-item: Remark
-end
-item: Remark
-  Text=Add support for uninstaller.
-end
-item: Include Script
-  Pathname=%_WISE_%\INCLUDE\uninstal.wse
 end
 item: Remark
 end
