@@ -16,6 +16,8 @@ HTML options:
     --link		Specify the number of levels to include on each page.
     --split, -s		Specify a section level for page splitting, default: %(max_split_depth)s.
     --iconserver, -i	Specify location of icons (default: ../).
+    --image-type	Specify the image type to use in HTML output;
+                        values: gif (default), png.
 
 Other options:
     --a4		Format for A4 paper.
@@ -75,11 +77,13 @@ class Options:
     discard_temps = 1
     have_temps = 0
     icon_server = None
+    image_type = "gif"
     logging = 0
     max_link_depth = 3
     max_split_depth = 6
     paper = "letter"
     quiet = 0
+    runs = 0
     style_file = os.path.join(TOPDIR, "html", "style.css")
     #
     DEFAULT_FORMATS = ("pdf",)
@@ -97,11 +101,12 @@ class Options:
             raise KeyError, key
 
     def parse(self, args):
-        opts, args = getopt.getopt(args, "Hi:a:s:lDkq",
+        opts, args = getopt.getopt(args, "Hi:a:s:lDkqr:",
                                    ["all", "postscript", "help", "iconserver=",
                                     "address=", "a4", "l2h-config=", "letter",
                                     "link=", "split=", "logging", "debugging",
-                                    "keep", "quiet"] + list(self.ALL_FORMATS))
+                                    "keep", "quiet", "runs=", "image-type="]
+                                   + list(self.ALL_FORMATS))
         for opt, arg in opts:
             if opt == "--all":
                 self.formats = list(self.ALL_FORMATS)
@@ -130,6 +135,10 @@ class Options:
                 self.discard_temps = 0
             elif opt in ("-q", "--quiet"):
                 self.quiet = 1
+            elif opt in ("-r", "--runs"):
+                self.runs = int(arg)
+            elif opt == "--image-type":
+                self.image_type = arg
             #
             # Format specifiers:
             #
@@ -165,6 +174,8 @@ class Options:
 
 
 class Job:
+    latex_runs = 0
+
     def __init__(self, options, path):
         self.options = options
         self.doctype = get_doctype(path)
@@ -191,8 +202,14 @@ class Job:
             self.require_temps()
             self.build_html(self.doc)
             if self.options.icon_server == ".":
-                pattern = os.path.join(TOPDIR, "html", "icons", "*.gif")
-                for fn in glob.glob(pattern):
+                pattern = os.path.join(TOPDIR, "html", "icons",
+                                       "*." + self.options.image_type)
+                imgs = glob.glob(pattern)
+                if not imgs:
+                    self.warning(
+                        "Could not locate support images of type %s."
+                        % `self.options.image_type`)
+                for fn in imgs:
                     new_fn = os.path.join(self.doc, os.path.basename(fn))
                     shutil.copyfile(fn, new_fn)
         if "text" in formats:
@@ -218,7 +235,6 @@ class Job:
         os.environ["TEXINPUTS"] = string.join(texinputs, os.pathsep)
         self.message("TEXINPUTS=" + os.environ["TEXINPUTS"])
 
-    __have_temps = 0
     def build_aux(self, binary=None):
         if binary is None:
             binary = LATEX_BINARY
@@ -226,7 +242,7 @@ class Job:
         new_index("mod%s.ind" % self.doc, "modindex")
         self.run("%s %s" % (binary, self.doc))
         self.use_bibtex = check_for_bibtex(self.doc + ".aux")
-        self.__have_temps = 1
+        self.latex_runs = 1
 
     def build_dvi(self):
         self.use_latex(LATEX_BINARY)
@@ -297,7 +313,7 @@ class Job:
                 texfile = fn
                 break
         if not texfile:
-            sys.stderr.write("Could not locate %s.tex; aborting.\n" % self.doc)
+            self.warning("Could not locate %s.tex; aborting." % self.doc)
             sys.exit(1)
         # remove leading ./ (or equiv.); might avoid problems w/ dvips
         if texfile[:2] == os.curdir + os.sep:
@@ -331,7 +347,7 @@ class Job:
                  % (LYNX_BINARY, indexfile, self.doc))
 
     def require_temps(self, binary=None):
-        if not self.__have_temps:
+        if not self.latex_runs:
             self.build_aux(binary=binary)
 
     def write_l2h_aux_init_file(self):
@@ -348,9 +364,12 @@ class Job:
                      'print "\nInitializing from file: %s\";\n\n'
                      % string_to_perl(fn))
         l2hoption(fp, "ICONSERVER", options.icon_server)
+        l2hoption(fp, "IMAGE_TYPE", options.image_type)
         l2hoption(fp, "ADDRESS", options.address)
         l2hoption(fp, "MAX_LINK_DEPTH", options.max_link_depth)
         l2hoption(fp, "MAX_SPLIT_DEPTH", options.max_split_depth)
+        # this line needed in case $IMAGE_TYPE changed
+        fp.write("adjust_icon_information();\n")
         fp.write("1;\n")
         fp.close()
 
@@ -380,8 +399,8 @@ class Job:
         rc = os.system("(%s) </dev/null >>%s 2>&1"
                        % (command, self.log_filename))
         if rc:
-            sys.stderr.write(
-                "Session transcript and error messages are in %s.\n"
+            self.warning(
+                "Session transcript and error messages are in %s."
                 % self.log_filename)
             sys.exit(rc)
 
@@ -389,8 +408,16 @@ class Job:
         msg = "+++ " + msg
         if not self.options.quiet:
             print msg
+        self.log(msg + "\n")
+
+    def warning(self, msg):
+        msg = "*** %s\n" % msg
+        sys.stderr.write(msg)
+        self.log(msg)
+
+    def log(self, msg):
         fp = open(self.log_filename, "a")
-        fp.write(msg + "\n")
+        fp.write(msg)
         fp.close()
 
 
