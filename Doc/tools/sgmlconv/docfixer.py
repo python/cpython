@@ -810,6 +810,24 @@ def add_node_ids(fragment, counter=0):
     return counter + 1
 
 
+def fixup_ulink(doc, fragment):
+    for ulink in find_all_elements(fragment, "ulink"):
+        children = ulink.childNodes
+        assert len(children) == 2
+        text = children[0]
+        href = children[1]
+        href.normalize()
+        assert len(href.childNodes) == 1
+        assert href.childNodes[0].nodeType == TEXT
+        url = href.childNodes[0].data
+        ulink.setAttribute("href", url)
+        ulink.removeChild(href)
+        content = text.childNodes
+        while len(content):
+            ulink.appendChild(content[0])
+        ulink.removeChild(text)
+
+
 REFMODINDEX_ELEMENTS = ('refmodindex', 'refbimodindex',
                         'refexmodindex', 'refstmodindex')
 
@@ -976,6 +994,7 @@ def convert(ifp, ofp):
     fixup_table_structures(doc, fragment)
     fixup_rfc_references(doc, fragment)
     fixup_signatures(doc, fragment)
+    fixup_ulink(doc, fragment)
     add_node_ids(fragment)
     fixup_refmodindexes(fragment)
     fixup_bifuncindexes(fragment)
