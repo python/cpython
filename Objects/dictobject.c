@@ -973,15 +973,16 @@ dict_fromkeys(PyObject *mp, PyObject *args)
 	PyObject *cls;
 	int status;
 
-        if (!PyArg_ParseTuple(args, "OO|O:fromkeys", &cls, &seq, &value))
+	if (!PyArg_ParseTuple(args, "OO|O:fromkeys", &cls, &seq, &value))
 		return NULL;
 
 	d = PyObject_CallObject(cls, NULL);
 	if (d == NULL)
 		return NULL;
 	if (!PyDict_Check(d)) {
-		PyErr_BadInternalCall();
 		Py_DECREF(d);
+		PyErr_SetString(PyExc_TypeError,
+			"class constructor must return a subclass of dict");
 		return NULL;
 	}
 
