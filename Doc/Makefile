@@ -47,6 +47,7 @@
 
 # Where are the various programs?
 LATEX=		latex
+PDFLATEX=	pdflatex
 BIBTEX=		bibtex
 DVIPS=		dvips -f -N0
 DISTILL=	distill
@@ -96,6 +97,17 @@ api:	api.ps
 
 .ps.pdf:
 	$(DISTILL) $<
+
+# An alternate formulation of PDF creation; requires latex format with
+# pdftex.  To use this instead of the Acrobat distiller solution, comment
+# out the above .ps.pdf rule and uncomment this rule.  This was tested
+# using a pre-release of the teTeX distribution.  See
+# http://www.tug.org/tetex/ for more information on getting & using teTeX.
+# This rule avoids creation of the intermediate PostScript files and uses
+# only free software.
+#
+#.dvi.pdf:
+#	$(PDFLATEX) $*
 
 # Dependencies
 COMMONTEX=myformat.sty copyright.tex boilerplate.tex
