@@ -108,7 +108,13 @@ fcntl_ioctl(PyObject *self, PyObject *args)
 		char *arg;
 
 		if (PyTuple_Size(args) == 3) {
-			/* warning goes here in 2.4 */
+#if (PY_MAJOR_VERSION>2) || (PY_MINOR_VERSION>=5)
+#error Remove the warning, change mutate_arg to 1
+#endif
+			if (PyErr_Warn(PyExc_FutureWarning,
+       "ioctl with mutable buffer will mutate the buffer by default in 2.5"
+				    ) < 0)
+				return NULL;
 			mutate_arg = 0;
 		}
 	       	if (mutate_arg) {
