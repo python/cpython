@@ -4,6 +4,16 @@ Python News
 
 (editors: check NEWS.help for information about editing NEWS using ReST.)
 
+What's New in Python 2.3.3c1?
+===================================
+
+*Release date: XXX *
+
+Extension modules
+-----------------
+
+- Patch #813445: Add missing socket.IPPROTO_IPV6.
+
 What's New in Python 2.3.2 (final)?
 ===================================
 

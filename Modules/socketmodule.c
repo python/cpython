@@ -3749,6 +3749,9 @@ init_socket(void)
 #ifdef	IPPROTO_IPV4
 	PyModule_AddIntConstant(m, "IPPROTO_IPV4", IPPROTO_IPV4);
 #endif
+#ifdef	IPPROTO_IPV6
+	PyModule_AddIntConstant(m, "IPPROTO_IPV6", IPPROTO_IPV6);
+#endif
 #ifdef	IPPROTO_IPIP
 	PyModule_AddIntConstant(m, "IPPROTO_IPIP", IPPROTO_IPIP);
 #endif
