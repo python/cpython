@@ -86,7 +86,7 @@ printobject(op, fp, flags)
 	}
 	if (ret == 0) {
 		if (ferror(fp)) {
-			err_errno(RuntimeError);
+			err_errno(IOError);
 			clearerr(fp);
 			ret = -1;
 		}
