@@ -208,7 +208,7 @@ class bdist_pkgtool (bdist_packager.bdist_packager):
         else:
             pkg_dir = self.pkg_dir
 
-        install = self.reinitialize_command('install', reinit_subcommands=1)
+        self.reinitialize_command('install', reinit_subcommands=1)
         # build package
         log.info('Building package')
         self.run_command('build')
@@ -275,7 +275,7 @@ class bdist_pkgtool (bdist_packager.bdist_packager):
         if self.subpackages:
             self.subpackages=string.split(self.subpackages,",")
             for pkg in self.subpackages:
-                self.make_package(subpackage)
+                self.make_package(pkg)
         else:
             self.make_package()
     # run()

@@ -213,7 +213,6 @@ class CygwinCCompiler (UnixCCompiler):
 
             # generate the filenames for these files
             def_file = os.path.join(temp_dir, dll_name + ".def")
-            exp_file = os.path.join(temp_dir, dll_name + ".exp")
             lib_file = os.path.join(temp_dir, 'lib' + dll_name + ".a")
 
             # Generate .def file
@@ -229,16 +228,14 @@ class CygwinCCompiler (UnixCCompiler):
 
             # dllwrap uses different options than gcc/ld
             if self.linker_dll == "dllwrap":
-                extra_preargs.extend([#"--output-exp",exp_file,
-                                       "--output-lib",lib_file,
-                                     ])
+                extra_preargs.extend(["--output-lib", lib_file])
                 # for dllwrap we have to use a special option
                 extra_preargs.extend(["--def", def_file])
             # we use gcc/ld here and can be sure ld is >= 2.9.10
             else:
                 # doesn't work: bfd_close build\...\libfoo.a: Invalid operation
                 #extra_preargs.extend(["-Wl,--out-implib,%s" % lib_file])
-                # for gcc/ld the def-file is specified as any other object files
+                # for gcc/ld the def-file is specified as any object files
                 objects.append(def_file)
 
         #end: if ((export_symbols is not None) and

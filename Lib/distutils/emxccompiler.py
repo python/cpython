@@ -174,11 +174,11 @@ class EMXCCompiler (UnixCCompiler):
 
             # generate the filenames for these files
             def_file = os.path.join(temp_dir, dll_name + ".def")
-            lib_file = os.path.join(temp_dir, dll_name + ".lib")
        
             # Generate .def file
             contents = [
-                "LIBRARY %s INITINSTANCE TERMINSTANCE" % os.path.splitext(os.path.basename(output_filename))[0],
+                "LIBRARY %s INITINSTANCE TERMINSTANCE" % \
+                os.path.splitext(os.path.basename(output_filename))[0],
                 "DATA MULTIPLE NONSHARED",
                 "EXPORTS"]
             for sym in export_symbols:

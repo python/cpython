@@ -305,7 +305,6 @@ def expand_makefile_vars(s, vars):
     while 1:
         m = _findvar1_rx.search(s) or _findvar2_rx.search(s)
         if m:
-            name = m.group(1)
             (beg, end) = m.span()
             s = s[0:beg] + vars.get(m.group(1)) + s[end:]
         else:
