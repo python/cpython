@@ -469,8 +469,8 @@ static int unpack_iterable(PyObject *, int, PyObject **);
 
 /* for manipulating the thread switch and periodic "stuff" - used to be
    per thread, now just a pair o' globals */
-int _Py_CheckInterval = 10;
-volatile int _Py_Ticker = 10;
+int _Py_CheckInterval = 100;
+volatile int _Py_Ticker = 100;
 
 PyObject *
 PyEval_EvalCode(PyCodeObject *co, PyObject *globals, PyObject *locals)
