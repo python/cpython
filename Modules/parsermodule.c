@@ -610,7 +610,7 @@ parser_tuple2ast(PyAST_Object *self, PyObject *args, PyObject *kw)
      *  so we can DECREF it after the check.  But we really should accept
      *  lists as well as tuples at the very least.
      */
-    ok = PyObject_Length(tuple) >= 2;
+    ok = PyObject_Size(tuple) >= 2;
     if (ok) {
         temp = PySequence_GetItem(tuple, 0);
         ok = (temp != NULL) && PyInt_Check(temp);
@@ -626,7 +626,7 @@ parser_tuple2ast(PyAST_Object *self, PyObject *args, PyObject *kw)
     }
     if (ok) {
         temp = PySequence_GetItem(tuple, 1);
-        ok = (temp != NULL) && PyObject_Length(temp) >= 2;
+        ok = (temp != NULL) && PyObject_Size(temp) >= 2;
         if (ok) {
             PyObject *temp2 = PySequence_GetItem(temp, 0);
             if (temp2 != NULL) {
@@ -693,7 +693,7 @@ parser_tuple2ast(PyAST_Object *self, PyObject *args, PyObject *kw)
 static int
 check_terminal_tuple(PyObject *elem)
 {
-    int   len = PyObject_Length(elem);
+    int   len = PyObject_Size(elem);
     int   res = 1;
     char* str = "Illegal terminal symbol; bad node length.";
 
@@ -731,7 +731,7 @@ check_terminal_tuple(PyObject *elem)
 static node*
 build_node_children(PyObject *tuple, node *root, int *line_num)
 {
-    int len = PyObject_Length(tuple);
+    int len = PyObject_Size(tuple);
     int i;
 
     for (i = 1; i < len; ++i) {
@@ -771,7 +771,7 @@ build_node_children(PyObject *tuple, node *root, int *line_num)
                     (void) strcpy(strn, PyString_AS_STRING(temp));
                 Py_DECREF(temp);
 
-                if (PyObject_Length(elem) == 3) {
+                if (PyObject_Size(elem) == 3) {
                     PyObject* temp = PySequence_GetItem(elem, 2);
                     *line_num = PyInt_AsLong(temp);
                     Py_DECREF(temp);

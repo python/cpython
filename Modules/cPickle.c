@@ -1466,7 +1466,7 @@ save_inst(Picklerobject *self, PyObject *args) {
             PyObject_CallObject(getinitargs_func, empty_tuple))
             goto finally;
 
-        if ((len = PyObject_Length(class_args)) < 0)  
+        if ((len = PyObject_Size(class_args)) < 0)  
             goto finally;
 
         for (i = 0; i < len; i++) {
@@ -2874,7 +2874,7 @@ Instance_New(PyObject *cls, PyObject *args) {
   if (PyClass_Check(cls)) {
       int l;
       
-      if ((l=PyObject_Length(args)) < 0) goto err;
+      if ((l=PyObject_Size(args)) < 0) goto err;
       UNLESS (l) {
           PyObject *__getinitargs__;
 

@@ -348,7 +348,7 @@ converttuple(arg, p_format, p_va, levels, msgbuf, toplevel)
 		return msgbuf;
 	}
 	
-	if ((i = PySequence_Length(arg)) != n) {
+	if ((i = PySequence_Size(arg)) != n) {
 		levels[0] = 0;
 		sprintf(msgbuf,
 		    toplevel ? "%d arguments, %d" : "%d-sequence, %d-sequence",

@@ -1385,7 +1385,7 @@ builtin_len(self, args)
 
 	if (!PyArg_ParseTuple(args, "O:len", &v))
 		return NULL;
-	res = PyObject_Length(v);
+	res = PyObject_Size(v);
 	if (res < 0 && PyErr_Occurred())
 		return NULL;
 	return PyInt_FromLong(res);

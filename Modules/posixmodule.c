@@ -1417,7 +1417,7 @@ posix_execve(PyObject *self, PyObject *args)
 	}
 	argvlist[argc] = NULL;
 
-	i = PyMapping_Length(env);
+	i = PyMapping_Size(env);
 	envlist = PyMem_NEW(char *, i + 1);
 	if (envlist == NULL) {
 		PyErr_NoMemory();
@@ -1610,7 +1610,7 @@ posix_spawnve(PyObject *self, PyObject *args)
 	}
 	argvlist[argc] = NULL;
 
-	i = PyMapping_Length(env);
+	i = PyMapping_Size(env);
 	envlist = PyMem_NEW(char *, i + 1);
 	if (envlist == NULL) {
 		PyErr_NoMemory();

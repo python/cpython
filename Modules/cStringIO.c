@@ -367,7 +367,7 @@ O_writelines(Oobject *self, PyObject *args) {
     Py_DECREF(string_module);
   }
 
-  if (PyObject_Length(args) == -1) {
+  if (PyObject_Size(args) == -1) {
     return NULL;
   }
 
