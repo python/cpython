@@ -1,4 +1,4 @@
-"""Remote-control interfaces to common browsers."""
+"""Interfaces for launching and remotely controlling Web browsers."""
 
 import os
 import sys
@@ -94,7 +94,7 @@ if os.environ.get("TERM") or os.environ.get("DISPLAY"):
         if _iscommand("w3m"):
             register("w3m", None, GenericBrowser("w3m %s"))
 
-    # X browsers have mre in the way of options
+    # X browsers have more in the way of options
     if os.environ.get("DISPLAY"):
         # First, the Netscape series
         if _iscommand("netscape") or _iscommand("mozilla"):
@@ -111,7 +111,7 @@ if os.environ.get("TERM") or os.environ.get("DISPLAY"):
                     rc = os.system(cmd)
                     if rc:
                         import time
-                        os.system("%s -no-about-splash &" % self.name)
+                        os.system("%s &" % self.name)
                         time.sleep(PROCESS_CREATION_DELAY)
                         rc = os.system(cmd)
                     return not rc
