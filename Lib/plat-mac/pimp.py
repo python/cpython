@@ -28,6 +28,8 @@ _scriptExc_BadInstalled = "pimp._scriptExc_BadInstalled"
 
 NO_EXECUTE=0
 
+PIMP_VERSION="0.1"
+
 DEFAULT_FLAVORORDER=['source', 'binary']
 DEFAULT_DOWNLOADDIR='/tmp'
 DEFAULT_BUILDDIR='/tmp'
@@ -141,11 +143,14 @@ class PimpDatabase:
 		dict = plistlib.Plist.fromFile(fp)
 		# Test here for Pimp version, etc
 		if not included:
-			self._version = dict.get('version', '0.1')
-			self._maintainer = dict.get('maintainer', '')
-			self._description = dict.get('description', '')
-		self._appendPackages(dict['packages'])
-		others = dict.get('include', [])
+			self._version = dict.get('Version', '0.1')
+			if self._version != PIMP_VERSION:
+				sys.stderr.write("Warning: database version %s does not match %s\n" 
+					% (self._version, PIMP_VERSION))
+			self._maintainer = dict.get('Maintainer', '')
+			self._description = dict.get('Description', '')
+		self._appendPackages(dict['Packages'])
+		others = dict.get('Include', [])
 		for url in others:
 			self.appendURL(url, included=1)
 		
@@ -155,7 +160,7 @@ class PimpDatabase:
 		to our internal storage."""
 		
 		for p in packages:
-			pkg = PimpPackage(self, **dict(p))
+			pkg = PimpPackage(self, dict(p))
 			self._packages.append(pkg)
 			
 	def list(self):
@@ -168,7 +173,7 @@ class PimpDatabase:
 		
 		rv = []
 		for pkg in self._packages:
-			rv.append(_fmtpackagename(pkg))
+			rv.append(pkg.fullname())
 		return rv
 		
 	def dump(self, pathOrFile):
@@ -181,10 +186,10 @@ class PimpDatabase:
 		for pkg in self._packages:
 			packages.append(pkg.dump())
 		dict = {
-			'version': self._version,
-			'maintainer': self._maintainer,
-			'description': self._description,
-			'packages': packages
+			'Version': self._version,
+			'Maintainer': self._maintainer,
+			'Description': self._description,
+			'Packages': packages
 			}
 		plist = plistlib.Plist(**dict)
 		plist.write(pathOrFile)
@@ -215,82 +220,84 @@ class PimpDatabase:
 			else:
 				flavor = None
 		else:
-			name = ident['name']
-			version = ident.get('version')
-			flavor = ident.get('flavor')
+			name = ident['Name']
+			version = ident.get('Version')
+			flavor = ident.get('Flavor')
 		found = None
 		for p in self._packages:
-			if name == p.name and \
-					(not version or version == p.version) and \
-					(not flavor or flavor == p.flavor):
+			if name == p.name() and \
+					(not version or version == p.version()) and \
+					(not flavor or flavor == p.flavor()):
 				if not found or found < p:
 					found = p
 		return found
 		
+ALLOWED_KEYS = [
+	"Name",
+	"Version",
+	"Flavor",
+	"Description",
+	"Home-page",
+	"Download-URL",
+	"Install-test",
+	"Install-command",
+	"Pre-install-command",
+	"Post-install-command",
+	"Prerequisites",
+	"MD5Sum"
+]
+
 class PimpPackage:
 	"""Class representing a single package."""
 	
-	def __init__(self, db, name, 
-			version=None,
-			flavor=None,
-			description=None,
-			longdesc=None,
-			downloadURL=None,
-			installTest=None,
-			prerequisites=None,
-			preInstall=None,
-			postInstall=None,
-			MD5Sum=None):
+	def __init__(self, db, dict):
 		self._db = db
-		self.name = name
-		self.version = version
-		self.flavor = flavor
-		self.description = description
-		self.longdesc = longdesc
-		self.downloadURL = downloadURL
-		self._installTest = installTest
-		self._prerequisites = prerequisites
-		self._preInstall = preInstall
-		self._postInstall = postInstall
-		self._MD5Sum = MD5Sum
+		name = dict["Name"]
+		for k in dict.keys():
+			if not k in ALLOWED_KEYS:
+				sys.stderr.write("Warning: %s: unknown key %s\n" % (name, k))
+		self._dict = dict
+	
+	def __getitem__(self, key):
+		return self._dict[key]
 		
+	def name(self): return self._dict['Name']
+	def version(self): return self._dict['Version']
+	def flavor(self): return self._dict['Flavor']
+	def description(self): return self._dict['Description']
+	def homepage(self): return self._dict['Home-page']
+	def downloadURL(self): return self._dict['Download-URL']
+	
+	def fullname(self):
+		"""Return the full name "name-version-flavor" of a package.
+		
+		If the package is a pseudo-package, something that cannot be
+		installed through pimp, return the name in (parentheses)."""
+		
+		rv = self._dict['Name']
+		if self._dict.has_key('Version'):
+			rv = rv + '-%s' % self._dict['Version']
+		if self._dict.has_key('Flavor'):
+			rv = rv + '-%s' % self._dict['Flavor']
+		if not self._dict.get('Download-URL'):
+			# Pseudo-package, show in parentheses
+			rv = '(%s)' % rv
+		return rv
+	
 	def dump(self):
 		"""Return a dict object containing the information on the package."""
-		dict = {
-			'name': self.name,
-			}
-		if self.version:
-			dict['version'] = self.version
-		if self.flavor:
-			dict['flavor'] = self.flavor
-		if self.description:
-			dict['description'] = self.description
-		if self.longdesc:
-			dict['longdesc'] = self.longdesc
-		if self.downloadURL:
-			dict['downloadURL'] = self.downloadURL
-		if self._installTest:
-			dict['installTest'] = self._installTest
-		if self._prerequisites:
-			dict['prerequisites'] = self._prerequisites
-		if self._preInstall:
-			dict['preInstall'] = self._preInstall
-		if self._postInstall:
-			dict['postInstall'] = self._postInstall
-		if self._MD5Sum:
-			dict['MD5Sum'] = self._MD5Sum
-		return dict
+		return self._dict
 		
 	def __cmp__(self, other):
 		"""Compare two packages, where the "better" package sorts lower."""
 		
 		if not isinstance(other, PimpPackage):
 			return cmp(id(self), id(other))
-		if self.name != other.name:
-			return cmp(self.name, other.name)
-		if self.version != other.version:
-			return -cmp(self.version, other.version)
-		return self._db.preferences.compareFlavors(self.flavor, other.flavor)
+		if self.name() != other.name():
+			return cmp(self.name(), other.name())
+		if self.version() != other.version():
+			return -cmp(self.version(), other.version())
+		return self._db.preferences.compareFlavors(self.flavor(), other.flavor())
 		
 	def installed(self):
 		"""Test wheter the package is installed.
@@ -307,7 +314,7 @@ class PimpPackage:
 			"os": os,
 			"sys": sys,
 			}
-		installTest = self._installTest.strip() + '\n'
+		installTest = self._dict['Install-test'].strip() + '\n'
 		try:
 			exec installTest in namespace
 		except ImportError, arg:
@@ -319,7 +326,6 @@ class PimpPackage:
 		except _scriptExc_BadInstalled, arg:
 			return "bad", str(arg)
 		except:
-			print 'TEST:', repr(self._installTest)
 			return "bad", "Package install test got exception"
 		return "yes", ""
 		
@@ -333,20 +339,25 @@ class PimpPackage:
 		string should tell the user what to do."""
 		
 		rv = []
-		if not self.downloadURL:
+		if not self._dict['Download-URL']:
 			return [(None, "This package needs to be installed manually")]
-		if not self._prerequisites:
+		if not self._dict['Prerequisites']:
 			return []
-		for item in self._prerequisites:
+		for item in self._dict['Prerequisites']:
 			if type(item) == str:
 				pkg = None
 				descr = str(item)
 			else:
-				pkg = self._db.find(item)
+				name = item['Name']
+				if item.has_key('Version'):
+					name = name + '-' + item['Version']
+				if item.has_key('Flavor'):
+					name = name + '-' + item['Flavor']
+				pkg = self._db.find(name)
 				if not pkg:
-					descr = "Requires unknown %s"%_fmtpackagename(item)
+					descr = "Requires unknown %s"%name
 				else:
-					descr = pkg.description
+					descr = pkg.description()
 			rv.append((pkg, descr))
 		return rv
 			
@@ -380,7 +391,7 @@ class PimpPackage:
 		string.
 		"""
 		
-		scheme, loc, path, query, frag = urlparse.urlsplit(self.downloadURL)
+		scheme, loc, path, query, frag = urlparse.urlsplit(self._dict['Download-URL'])
 		path = urllib.url2pathname(path)
 		filename = os.path.split(path)[1]
 		self.archiveFilename = os.path.join(self._db.preferences.downloadDir, filename)			
@@ -390,7 +401,7 @@ class PimpPackage:
 			if self._cmd(output, self._db.preferences.downloadDir,
 					"curl",
 					"--output", self.archiveFilename,
-					self.downloadURL):
+					self._dict['Download-URL']):
 				return "download command failed"
 		if not os.path.exists(self.archiveFilename) and not NO_EXECUTE:
 			return "archive not found after download"
@@ -402,12 +413,12 @@ class PimpPackage:
 		
 		if not os.path.exists(self.archiveFilename):
 			return 0
-		if not self._MD5Sum:
-			sys.stderr.write("Warning: no MD5Sum for %s\n" % _fmtpackagename(self))
+		if not self._dict['MD5Sum']:
+			sys.stderr.write("Warning: no MD5Sum for %s\n" % self.fullname())
 			return 1
 		data = open(self.archiveFilename, 'rb').read()
 		checksum = md5.new(data).hexdigest()
-		return checksum == self._MD5Sum
+		return checksum == self._dict['MD5Sum']
 			
 	def unpackSinglePackage(self, output=None):
 		"""Unpack a downloaded package archive."""
@@ -433,24 +444,27 @@ class PimpPackage:
 		If output is given it should be a file-like object and it
 		will receive a log of what happened."""
 		
-		if not self.downloadURL:
+		if not self._dict['Download-URL']:
 			return "%s: This package needs to be installed manually" % _fmtpackagename(self)
 		msg = self.downloadSinglePackage(output)
 		if msg:
-			return "download %s: %s" % (_fmtpackagename(self), msg)
+			return "download %s: %s" % (self.fullname(), msg)
 		msg = self.unpackSinglePackage(output)
 		if msg:
-			return "unpack %s: %s" % (_fmtpackagename(self), msg)
-		if self._preInstall:
-			if self._cmd(output, self._buildDirname, self._preInstall):
+			return "unpack %s: %s" % (self.fullname(), msg)
+		if self._dict.has_key('Pre-install-command'):
+			if self._cmd(output, self._buildDirname, self._dict['Pre-install-command']):
 				return "pre-install %s: running \"%s\" failed" % \
-					(_fmtpackagename(self), self._preInstall)
-		if self._cmd(output, self._buildDirname, sys.executable, "setup.py install"):
-			return "install %s: running \"setup.py install\" failed" % _fmtpackagename(self)
-		if self._postInstall:
-			if self._cmd(output, self._buildDirname, self._postInstall):
+					(self.fullname(), self._dict['Pre-install-command'])
+		installcmd = self._dict.get('Install-command')
+		if not installcmd:
+			installcmd = '"%s" setup.py install' % sys.executable
+		if self._cmd(output, self._buildDirname, installcmd):
+			return "install %s: running \"%s\" failed" % self.fullname()
+		if self._dict.has_key('Post-install-command'):
+			if self._cmd(output, self._buildDirname, self._dict['Post-install-command']):
 				return "post-install %s: running \"%s\" failed" % \
-					(_fmtpackagename(self), self._postInstall)
+					(self.fullname(), self._dict['Post-install-command'])
 		return None
 
 class PimpInstaller:
@@ -524,23 +538,6 @@ class PimpInstaller:
 		return status
 		
 		
-def _fmtpackagename(dict):
-	"""Return the full name "name-version-flavor" of a package.
-	
-	If the package is a pseudo-package, something that cannot be
-	installed through pimp, return the name in (parentheses)."""
-	
-	if isinstance(dict, PimpPackage):
-		dict = dict.dump()
-	rv = dict['name']
-	if dict.has_key('version'):
-		rv = rv + '-%s' % dict['version']
-	if dict.has_key('flavor'):
-		rv = rv + '-%s' % dict['flavor']
-	if not dict.get('downloadURL'):
-		# Pseudo-package, show in parentheses
-		rv = '(%s)' % rv
-	return rv
 	
 def _run(mode, verbose, force, args):
 	"""Engine for the main program"""
@@ -560,14 +557,14 @@ def _run(mode, verbose, force, args):
 		for pkgname in args:
 			pkg = db.find(pkgname)
 			if pkg:
-				description = pkg.description
-				pkgname = _fmtpackagename(pkg)
+				description = pkg.description()
+				pkgname = pkg.fullname()
 			else:
 				description = 'Error: no such package'
 			print "%-20.20s\t%s" % (pkgname, description)
 			if verbose:
-				print "\tHome page:\t", pkg.longdesc
-				print "\tDownload URL:\t", pkg.downloadURL
+				print "\tHome page:\t", pkg.homepage()
+				print "\tDownload URL:\t", pkg.downloadURL()
 	elif mode =='status':
 		if not args:
 			args = db.listnames()
@@ -577,7 +574,7 @@ def _run(mode, verbose, force, args):
 			pkg = db.find(pkgname)
 			if pkg:
 				status, msg = pkg.installed()
-				pkgname = _fmtpackagename(pkg)
+				pkgname = pkg.fullname()
 			else:
 				status = 'error'
 				msg = 'No such package'
@@ -588,7 +585,7 @@ def _run(mode, verbose, force, args):
 					if not pkg:
 						pkg = ''
 					else:
-						pkg = _fmtpackagename(pkg)
+						pkg = pkg.fullname()
 					print "%-20.20s\tRequirement: %s %s" % ("", pkg, msg)
 	elif mode == 'install':
 		if not args:
