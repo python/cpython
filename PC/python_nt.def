@@ -207,6 +207,7 @@ EXPORTS
 	PyTraceBack_Here
 	PyTraceBack_Print
 	PyImport_AddModule
+	PyImport_Cleanup
 	PyImport_GetModuleDict
 	PyImport_GetMagicNumber
 	PyImport_ImportModule
@@ -364,6 +365,8 @@ EXPORTS
 	PyMem_Realloc
 	PyMem_Free
 	PyThreadState_New
+	PyThreadState_Get
+	PyThreadState_Swap
 	PyThreadState_Clear
 	PyThreadState_Delete
 	PyInterpreterState_New
