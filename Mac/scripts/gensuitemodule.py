@@ -409,7 +409,7 @@ def compileaete(aete, resinfo, fname, output=None, basepkgname=None,
 	fp = open(initfilename, 'w')
 	MacOS.SetCreatorAndType(initfilename, 'Pyth', 'TEXT')
 	fp.write('"""\n')
-	fp.write("Package generated from %s\n"%fname)
+	fp.write("Package generated from %s\n"%ascii(fname))
 	if resinfo:
 		fp.write("Resource %s resid %d %s\n"%(ascii(resinfo[1]), resinfo[0], ascii(resinfo[2])))
 	fp.write('"""\n')
@@ -913,7 +913,11 @@ class ObjectCompiler:
 		for superclass in superclasses:
 			superId, superDesc, dummy = superclass
 			superclassname, fullyqualifiedname, module = self.findcodename("class", superId)
-			superclassnames.append(superclassname)
+			# I don't think this is correct:
+			if superclassname == cname:
+				pass # superclassnames.append(fullyqualifiedname)
+			else:
+				superclassnames.append(superclassname)
 
 		if self.fp:
 			self.fp.write("%s._superclassnames = %s\n"%(cname, `superclassnames`))
