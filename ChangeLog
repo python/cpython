@@ -1,10 +1,93 @@
-Wed Aug 17 00:06:59 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+Tue Aug 23 00:52:32 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Modules/Setup.*: removed all except Setup.in (huh?  I thought
+	I'd done that already?!); disable gdbm by default
+
+	* Modules/makesetup: support C++ files now; these should be given
+	as file.C or file.cc or file.c++; C files can be given as file.c
+	(instead of file.o, which is still supported)
+
+	* configure.in, */Makefile*.in: OPT can now be specified in the
+	env at configure time and will then be put in all Makefiles as
+	default
+
+	* Modules/config.c.in: change mac specific things
+
+	* Python/import.c: add lost NT-specific code back in
+
+	* Parser/tokenizer.c: backup over illegal newline in string
+	literal (for "completeness" test)
+
+	* Include/node.h: make some fields short to save space during
+	parsing
+
+	* Modules/posixmodule.c: some more NT changes
+
+	* Doc/libtime.tex: get rid of references to millitime() and
+	millisleep(); document clock()
+
+Mon Aug 22 10:53:59 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Lib/linecache.py: don't crash on empty filename
+
+	* Lib/macpath.py: don't return trailing colon for dirname()
+	(XXX won't do for volume names -- but otherwise glob(':*:*.py')
+	loops forever)
+
+	* Lib/traceback.py: print SyntaxError correctly
+
+	* Lib/stat.py: moved to posixstat.py; added macstat.py which has
+	the constants for the Mac; and created new stat.py which includes
+	the right one
+
+	* Modules/signalmodule.c: added pause().
+
+	* Python/pythonrun.c (print_error): added INCREF/DECREF pair --
+	the exception returned by a syntax error (when reported) would
+	contain an object with refcnt zero!
+
+Fri Aug 19 15:35:44 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* */Makefile*.in: remove lib*.a before adding to it
+
+	* Lib/urllib.py: fix caching bug (by disabling the cache)
+
+	* Lib/sgi/flp.py: fix caching bug (always write the whole file to
+	the cache!)
+
+	* Doc/ref6.tex (section{Assignment statements}): added warning
+	about overlaps in lhs of assignment (e.g. "i, x[i] = 1, 2")
+
+	* Python/errors.c (err_clear): clear interpreter stack trace
+
+Wed Aug 17 16:10:07 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Moved patchlevel.h from Python/ to Include/, moved all code from
+	version.c to config.c and removed version.c, and changed
+	Modules/Makefile(.pre.in) to add dependencies on $(MYLIBS) for
+	config.c (so the date in the version is always current).  Also
+	changed the format of PATCHLEVEL: it is now a string containing
+	the complete version number, e.g. "1.1".
+
+	* Grammar/Grammar: Added #diagram:... comments for Kees Blom's
+	railroad diagram generator
+
+	* Doc/libstring.tex (section{Standard Module \sectcode{string}}):
+	removed references to {ato{f,i,l},index}_error
+
+	* Lib/string.py: find/rfind is now the main implementation and
+	index/rindex is a wrapper that raises index_error (which is now
+	always ValueError)
+
+	* Modules/stropmodule.c: implement find/rfind instead of
+	index/rindex (raising and catching an exception is much more
+	expensive than returning and testing -1)
 
 	* Lib/os.py: do fake "import posix" for freeze.py script
 
-	* Parser/parsetok.c (parsetok): don't call strncpy(str, NULL, 0)
-
 Tue Aug 16 23:58:30 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Parser/parsetok.c (parsetok): don't call strncpy(str, NULL, 0)
 
 	* Doc/libfuncs.tex (section{Built-in Functions}): added docs for
 	delattr()
