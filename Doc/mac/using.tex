@@ -2,7 +2,7 @@
 \sectionauthor{Bob Savage}{bobsavage@mac.com}
 
 Using Python on a Macintosh, especially on Mac OS 9 (MacPython-OSX
-includes a complete unix Python) can seem like something completely
+includes a complete \UNIX{} Python) can seem like something completely
 different than using it on a \UNIX-like or Windows system. Most of the
 Python documentation, both the ``official'' documentation and published
 books, describe only how Python is used on these systems, causing
@@ -28,11 +28,12 @@ What you get after installing is a number of things:
 \begin{itemize}
     \item A \file{MacPython-2.3} folder in your \file{Applications}
     folder. In here you find the PythonIDE Integrated Development Environment;
-    PythonLauncher, which handles double-clicking Python scripts from the Finder; and
-    the Package Manager.
+    PythonLauncher, which handles double-clicking Python scripts from
+    the Finder; and the Package Manager.
     
-    \item A fairly standard unix commandline Python interpreter in
-    \file{/usr/local/bin/python}, but without the usual \file{/usr/local/lib/python}.
+    \item A fairly standard \UNIX{} commandline Python interpreter in
+    \file{/usr/local/bin/python}, but without the usual
+    \file{/usr/local/lib/python}.
     
     \item A framework \file{/Library/Frameworks/Python.framework}, where
     all the action really is, but which you usually do not have to be aware of.
@@ -44,8 +45,8 @@ PythonIDE contains an Apple Help Viewer book called "MacPython Help"
 which you can access through its help menu. If you are completely new to
 Python you should start reading the IDE introduction in that document.
 
-If you are familiar with Python on other unix platforms you should read the
-section on running Python scripts from the unix shell.
+If you are familiar with Python on other \UNIX{} platforms you should
+read the section on running Python scripts from the \UNIX{} shell.
 
 \subsection{How to run a Python script}
 
@@ -55,14 +56,14 @@ menu when the IDE is running.
 
 If you want to run Python scripts from the Terminal window command line
 or from the Finder you first need an editor to create your script.
-Mac OS X comes with a number of standard unix command line editors,
+Mac OS X comes with a number of standard \UNIX{} command line editors,
 \program{vi} and \program{emacs} among them. If you want a more Mac-like
 editor \program{BBEdit} or \program{TextWrangler} from Bare Bones Software
-(see \url{http://www.barebones.com}) are good choices. Their freeware
-\program{BBEdit Lite} is officially discontinued but still available.
-\program{AppleWorks} or any other word processor that can save files
-in ASCII is also a possibility, but \program{TextEdit} is not: it saves in .rtf
-format only.
+(see \url{http://www.barebones.com/products/bbedit/index.shtml}) are
+good choices.  Their freeware \program{BBEdit Lite} is officially
+discontinued but still available.  \program{AppleWorks} or any other
+word processor that can save files in ASCII is also a possibility, but
+\program{TextEdit} is not: it saves in \file{.rtf} format only.
 
 To run your script from the Terminal window you must make sure that
 \file{/usr/local/bin} is in your shell search path before \file{/usr/bin},
@@ -90,8 +91,9 @@ to start such scripts.
 
 \subsection{configuration}
 
-MacPython honours all standard unix environment variables such as \envvar{PYTHONPATH},
-but setting these variables for programs started from the Finder is non-standard
+MacPython honours all standard \UNIX{} environment variables such as
+\envvar{PYTHONPATH}, but setting these variables for programs started
+from the Finder is non-standard
 as the Finder does not read your \file{.profile} or \file{.cshrc} at startup.
 You need to create a file \file{\textasciitilde /.MacOSX/environment.plist}.
 See Apple's Technical Document QA1067 for details.
@@ -103,7 +105,7 @@ Package Manager, see the MacPython Help Book for details.
 
 The most recent release version as well as possible newer experimental
 versions are best found at the MacPython page maintained by Jack
-Jansen: \url{http://www.cwi.nl/\textasciitilde jack/macpython.html}.
+Jansen: \url{http://homepages.cwi.nl/\textasciitilde jack/macpython.html}.
 
 Please refer to the \file{README} included with your distribution for
 the most up-to-date instructions.
