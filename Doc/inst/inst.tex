@@ -321,7 +321,7 @@ statements shown below, and get the output as shown, to find out my
 \filevar{prefix} and \filevar{exec-prefix}:
 
 \begin{verbatim}
-Python 1.5.2 (#1, Apr 18 1999, 16:03:16)  [GCC pgcc-2.91.60 19981201 (egcs-1.1.1  on linux2
+Python 1.5.2 (#1, Apr 18 1999, 16:03:16)  [GCC pgcc-2.91.60] on linux2
 Copyright 1991-1995 Stichting Mathematisch Centrum, Amsterdam
 >>> import sys
 >>> sys.prefix
@@ -734,8 +734,8 @@ for installing fixed versions of standard modules.)
 Paths can be absolute or relative, in which case they're relative to
 the directory containing the \file{.pth} file.  Any directories added
 to the search path will be scanned in turn for \file{.pth} files.  See
-\citetitle[http://www.python.org/dev/doc/devel/lib/module-site.html]{the
-documentation for the \module{site} module} for more information.
+\citetitle[http://www.python.org/dev/doc/devel/lib/module-site.html]
+{site module documentation} for more information.
 
 A slightly less convenient way is to edit the \file{site.py} file in
 Python's standard library, and modify \code{sys.path}.  \file{site.py}
@@ -926,7 +926,7 @@ override the usual Distutils behaviour.
 \subsection{Tweaking compiler/linker flags}
 \label{tweak-flags}
 
-Compiling a Python extension written in C or \Cpp will sometimes
+Compiling a Python extension written in C or \Cpp{} will sometimes
 require specifying custom flags for the compiler and linker in order
 to use a particular library or produce a special kind of object code.
 This is especially true if the extension hasn't been tested on your 
