@@ -66,7 +66,7 @@ dictionary.  For instance, the following code (which assumes that the
 Content-type header and blank line have already been printed) checks that 
 the fields "name" and "addr" are both set to a non-empty string:
 
-	form = FieldStorage()
+	form = cgi.FieldStorage()
 	form_ok = 0
 	if form.has_key("name") and form.has_key("addr"):
 		if form["name"].value != "" and form["addr"].value != "":
@@ -1054,7 +1054,7 @@ def print_environ():
     keys = environ.keys()
     keys.sort()
     print
-    print "<H3>Shell environment:</H3>"
+    print "<H3>Shell Environment:</H3>"
     print "<DL>"
     for key in keys:
 	print "<DT>", escape(key), "<DD>", escape(environ[key])
@@ -1066,7 +1066,7 @@ def print_form(form):
     keys = form.keys()
     keys.sort()
     print
-    print "<H3>Form contents:</H3>"
+    print "<H3>Form Contents:</H3>"
     print "<DL>"
     for key in keys:
 	print "<DT>" + escape(key) + ":",
@@ -1090,7 +1090,7 @@ def print_directory():
 
 def print_arguments():
     print
-    print "<H3>Command line Arguments:</H3>"
+    print "<H3>Command Line Arguments:</H3>"
     print
     print sys.argv
     print
