@@ -16,12 +16,12 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.search('x*', 'axx').span(), (0, 0))
         self.assertEqual(re.search('x+', 'axx').span(0), (1, 3))
         self.assertEqual(re.search('x+', 'axx').span(), (1, 3))
-        self.assertEqual(re.search('x', 'aaa') is None, True)
+        self.assertEqual(re.search('x', 'aaa'), None)
         self.assertEqual(re.match('a*', 'xxx').span(0), (0, 0))
         self.assertEqual(re.match('a*', 'xxx').span(), (0, 0))
         self.assertEqual(re.match('x*', 'xxxa').span(0), (0, 3))
         self.assertEqual(re.match('x*', 'xxxa').span(), (0, 3))
-        self.assertEqual(re.match('a+', 'xxx') is None, True)
+        self.assertEqual(re.match('a+', 'xxx'), None)
 
     def bump_num(self, matchobj):
         int_value = int(matchobj.group(0))
@@ -133,13 +133,16 @@ class ReTests(unittest.TestCase):
                                                                (":", ":"),
                                                                (":", "::")])
 
+    def test_bug_117612(self):
+        self.assertEqual(re.findall(r"(a|(b))", "aba"),
+                         [("a", ""),("b", "b"),("a", "")])
+
     def test_re_match(self):
-        # No groups at all
-        m = re.match('a', 'a')
-        self.assertEqual(m.groups(), ())
-        # A single group
-        m = re.match('(a)', 'a')
-        self.assertEqual(m.groups(), ('a',))
+        self.assertEqual(re.match('a', 'a').groups(), ())
+        self.assertEqual(re.match('(a)', 'a').groups(), ('a',))
+        self.assertEqual(re.match(r'(a)', 'a').group(0), 'a')
+        self.assertEqual(re.match(r'(a)', 'a').group(1), 'a')
+        self.assertEqual(re.match(r'(a)', 'a').group(1, 1), ('a', 'a'))
 
         pat = re.compile('((a)|(b))(c)?')
         self.assertEqual(pat.match('a').groups(), ('a', 'a', None, None))
@@ -263,6 +266,20 @@ class ReTests(unittest.TestCase):
         self.assertEqual(scanner.scan("sum = 3*foo + 312.50 + bar"),
                          (['sum', 'op=', 3, 'op*', 'foo', 'op+', 312.5,
                            'op+', 'bar'], ''))
+
+    def test_bug_448951(self):
+        # bug 448951 (similar to 429357, but with single char match)
+        # (Also test greedy matches.)
+        for op in '','?','*':
+            self.assertEqual(re.match(r'((.%s):)?z'%op, 'z').groups(),
+                             (None, None))
+            self.assertEqual(re.match(r'((.%s):)?z'%op, 'a:z').groups(),
+                             ('a:', 'a'))
+
+    def test_finditer(self):
+        iter = re.finditer(r":+", "a:b::c:::d")
+        self.assertEqual([item.group(0) for item in iter],
+                         [":", "::", ":::"])
 
 def run_re_tests():
     from test.re_tests import benchmarks, tests, SUCCEED, FAIL, SYNTAX_ERROR
