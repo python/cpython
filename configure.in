@@ -996,6 +996,12 @@ AC_CHECK_FUNCS(hypot)
 AC_REPLACE_FUNCS(hypot)
 LIBS=$LIBS_SAVE
 
+# check for rint() in math library
+LIBS_SAVE=$LIBS
+LIBS="$LIBS $LIBM"
+AC_CHECK_FUNCS(rint)
+LIBS=$LIBS_SAVE
+
 # check for getopt
 AC_MSG_CHECKING(for genuine getopt)
 AC_CACHE_VAL(ac_cv_func_getopt,
