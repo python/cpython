@@ -1,3 +1,34 @@
+"""
+Windows registry support.
+
+openKey( keyname ) 
+    open existing key object
+
+>>> key=openKey( r"HKLM\HARDWARE\DESCRIPTION\System" )
+
+createKey( keyname ) 
+    create a key if it doesn't already exist
+
+>>> key=createKey( r"HKLM\SOFTWARE\Python\Test" )
+
+deleteKey( keyname ) 
+    delete a key if it exists
+    Note: deleteKey may not be recursive on all platforms.
+
+>>> key=createKey( r"HKLM\SOFTWARE\Python\Test" )
+
+RemoteKey( machine, top_level_key ): 
+    open a key on another machine.
+    You can use the returned key as a basis for opens, creates and deletes
+    on the other machine.
+
+>>> key=RemoteKey( "somemachine", "HKLM" )
+
+For information on the key API, open a key and look at its docstring.
+
+
+"""
+
 import _winreg
 import sys
 import exceptions
@@ -6,12 +37,14 @@ from types import *
 import string
 
 class RegType:
+    "Represents one of the types that can go into the registry"
     def __init__( self, msname, friendlyname ):
         self.msname=msname
         self.friendlyname=friendlyname
         self.intval=getattr( _winreg, msname )
 
     def __repr__( self ):
+        "Return a useful representation of the type object"
         return "<RegType %d: %s %s>" % \
                         (self.intval, self.msname, self.friendlyname )
 
@@ -49,20 +82,24 @@ for constant in _typeConstants.values():
     regtypes[constant.msname]=constant
 
 class _DictBase:
+    "Base class for dictionary-type objects"
     def __init__( self, key ):
         self.key=key
 
     def clear( self ):
+        "Clear the list of keys/data values, as in dictionaries"
         keys=list( self.keys() )
         map( self.__delitem__, keys )
 
     def get( self, item, defaultVal=None ):
+        "Get a key/value by name or index"
         try:
             return self.__getitem__( item )
         except (IndexError, EnvironmentError, WindowsError):
             return defaultVal
 
     def has_key( self, item ):
+        "Check if a key/data value with a particular name exists"
         try:
             self.__getitem__( item )
             return 1
@@ -70,6 +107,7 @@ class _DictBase:
             return 0
 
     def keys( self ):
+        "Get a list of key/data value names"
         keys=[] 
         try:
             for i in xrange( 0, sys.maxint ):
@@ -80,18 +118,21 @@ class _DictBase:
         return keys
 
     def values( self ):
+        "Get a list of key objects or data values"
         values=[]  # map() doesn't use the IndexError semantics...
         for i in self:
             values.append( i )
         return values
 
     def items( self ):
+        "Get pairs of keyname/key object or valuename/value data"
         return map( None, self.keys(), self.values() )
 
     def __len__( self ):
         return len( self.keys() )
 
 def _getName( item, nameFromNum ):
+    "Helper function -- don't use it directly"
     if type( item ) == IntType:
         try:
             keyname = nameFromNum( item )
@@ -107,6 +148,7 @@ def _getName( item, nameFromNum ):
 
 
 class RegValuesDict( _DictBase ):
+    "A dictionary of registry data values"
     def _nameFromNum( self, i ):
         return self.key._nameFromNum( i )
 
@@ -124,9 +166,9 @@ class RegValuesDict( _DictBase ):
     def __delitem__( self, item ):
         valname=_getName( item, self._nameFromNum )
         self.key.deleteValue( valname )
-
     
 class RegKeysDict( _DictBase ):
+    "A dictionary of registry keys"
     def _nameFromNum( self, item ):
         return _winreg.EnumKey( self.key.handle, item )
 
@@ -139,6 +181,7 @@ class RegKeysDict( _DictBase ):
         self.key.deleteSubkey( keyname )
 
 def openKey( keyname, samFlags=None ):
+    "Open a key by name"
     lst=string.split( keyname, "\\", 1 )
     if len( lst )==2:
         hivename,path=lst
@@ -161,49 +204,61 @@ def deleteKey( keyname ):
 
 
 class RegKey:
+    "A registry key object"
+
+    def __init__( self, name, handle=None ):
+        self.name=name
+        self.handle=handle
+
     def _nameFromNum( self, item ):
+        "internal"
         (name,data,datatype)=_winreg.EnumValue( self.handle, item )
         return name
 
     def __nonzero__(self):
+        "Is the key open?"
         if self.handle:
             return 1
         else:
             return 0
 
     def __cmp__ (self, other ):
+        "Compare two keys for equality"
         if hasattr( other, "handle" ) and hasattr( other, "name" ):
             return cmp( self.name, other.name )
         else:
             return cmp( self.handle, other )
 
-    def __init__( self, name, handle=None ):
-        self.name=name
-        self.handle=handle
-
     def __repr__( self ):
         return "<Windows RegKey: %s>"% self.name
 
     def close(self ):
+        "Close the key"
         return _winreg.CloseKey( self.handle )
 
     def getSubkeyNames( self ):
+        "Get a list of subkey names"
         return self.getSubkeys().keys()
 
     def getValueNames( self ):
+        "Get a list of value names"
         return self.getValues().keys()
 
     def deleteSubkey( self, subkey ):
+        "Delete a subkey by name"
         return _winreg.DeleteKey( self.handle, subkey )
         
     def deleteValue( self, valname ):
+        "Delete a value by name"
         return _winreg.DeleteValue( self.handle, valname )
 
     def createSubkey( self, keyname ):
+        "Create a subkey by name"
         handle=_winreg.CreateKey( self.handle, keyname )
         return RegKey( self.name+"\\"+keyname, handle)
 
     def openSubkey( self, keyname, samFlags=None ):
+        "Open a named subkey"
         if samFlags:
             handle=_winreg.OpenKey( self.handle, keyname, 0, samFlags )
         else:
@@ -211,12 +266,15 @@ class RegKey:
         return RegKey( self.name+"\\"+keyname, handle )
 
     def getSubkeys( self ):
+        "Get a dictionary-like mapping of subkeys"
         return RegKeysDict( self )
 
     def getValues( self ):
+        "Get a dictionary-like mapping of data values"
         return RegValuesDict( self )
 
     def getValueNameDataAndType( self, valname ):
+        "Get a data value's name, data and type all at one time"
         try:
             if type( valname )==IntType:
                 (valname,data,datatype)=_winreg.EnumValue( self.handle, valname )
@@ -233,10 +291,12 @@ class RegKey:
         return (valname, data, _typeConstants[datatype] )
 
     def getValueData( self, valname ):
+        "Get a data value's data."
         name, data, type=self.getValueNameDataAndType( valname )
         return data
 
     def setValue( self, valname, data, regtype=None ):
+        "Set a data value's data (and optionally type)"
         if regtype:
             typeint=regtype.intval
         else:
@@ -250,16 +310,22 @@ class RegKey:
         _winreg.SetValueEx( self.handle, valname, 0, typeint, data )
 
     def flush(self ):
+        "Make sure that all changes are written to the registry. "
+        "Only use this if you know what you are doing. "
+        "It isn't usually needed."
         _winreg.FlushKey( self.keyobbj )
 
     def save( self, filename ):
+        "Save a key to a filename"
         _winreg.SaveKey( self.keyobj, filename )
 
     def load( self, subkey, filename ):
+        "Load a key from a filename"
         return _winreg.RegLoadKey( self.handle, subkey, filename )
 
 
 class RemoteKey( RegKey ):
+    "Open a key on a remote machine"
     def __init__( self, machine, topLevelKey ):
         assert topLevelKey in _hivenames 
         self.handle =  _winreg.ConnectRegistry( machine, parentKey )
