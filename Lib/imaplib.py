@@ -781,9 +781,15 @@ def Time2Internaldate(date_time):
 
 if __debug__ and __name__ == '__main__':
 
+	host = ''
+	import sys
+	if sys.argv[1:]:
+		host = sys.argv[1]
+
 	import getpass
 	USER = getpass.getuser()
-	PASSWD = getpass.getpass()
+	PASSWD = getpass.getpass(
+		"IMAP password for %s: " % (host or "localhost"))
 
 	test_seq1 = (
 	('login', (USER, PASSWD)),
@@ -815,7 +821,7 @@ if __debug__ and __name__ == '__main__':
 		return dat
 
 	Debug = 4
-	M = IMAP4()
+	M = IMAP4(host)
 	print 'PROTOCOL_VERSION = %s' % M.PROTOCOL_VERSION
 
 	for cmd,args in test_seq1:
