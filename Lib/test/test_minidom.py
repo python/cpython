@@ -1,7 +1,17 @@
-from xml.dom.minidom import parse, Node, Document, parseString
-import traceback, sys
+# test for xml.dom.minidom
 
-tstfile="test.xml"
+from xml.dom.minidom import parse, Node, Document, parseString
+
+import os.path
+import sys
+import traceback
+
+if __name__ == "__main__":
+    base = sys.argv[0]
+else:
+    base = __file__
+tstfile = os.path.join(os.path.dirname(base), "test.xml")
+del base
 
 Node._debug=1
 
