@@ -28,9 +28,10 @@
 #      Betancourt, Randall Hopper, Karl Putland, John Farrell, Greg
 #      Andruk, Just van Rossum, Thomas Heller, Mark R. Levinson, Mark
 #      Hammond, Bill Tutt, Hans Nowak, Uwe Zessin (OpenVMS support),
-#      Colin Kong, Trent Mick
+#      Colin Kong, Trent Mick, Guido van Rossum
 #
 #    History:
+#    1.0.3 - added normalization of Windows system name
 #    1.0.2 - added more Windows support
 #    1.0.1 - reformatted to make doc.py happy
 #    1.0.0 - reformatted a bit and checked into Python CVS
@@ -957,6 +958,10 @@ def uname():
         # platforms
         if use_syscmd_ver:
             system,release,version = _syscmd_ver(system)
+            # Normalize system to what win32_ver() normally returns
+            # (_syscmd_ver() tends to return the vendor name as well)
+            if system == 'Microsoft Windows':
+                system = 'Windows'
 
         # In case we still don't know anything useful, we'll try to
         # help ourselves
