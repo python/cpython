@@ -27,6 +27,11 @@ usage: %s [global_opts] cmd1 [cmd1_opts] [cmd2 [cmd2_opts] ...]
 """ % ((os.path.basename(sys.argv[0]),) * 4)
 
 
+# If DISTUTILS_DEBUG is anything other than the empty string, we run in
+# debug mode.
+DEBUG = os.environ.get('DISTUTILS_DEBUG')
+
+
 def setup (**attrs):
     """The gateway to the Distutils: do everything your setup script
        needs to do, in a highly flexible and user-driven way.  Briefly:
@@ -101,18 +106,26 @@ def setup (**attrs):
             # check for Python 1.5.2-style {IO,OS}Error exception objects
             if hasattr (exc, 'filename') and hasattr (exc, 'strerror'):
                 if exc.filename:
-                    raise SystemExit, \
-                          "error: %s: %s" % (exc.filename, exc.strerror)
+                    error = "error: %s: %s" % (exc.filename, exc.strerror)
                 else:
                     # two-argument functions in posix module don't
                     # include the filename in the exception object!
-                    raise SystemExit, \
-                          "error: %s" % exc.strerror
+                    error = "error: %s" % exc.strerror
             else:
-                raise SystemExit, "error: " + str(exc[-1])
+                error = "error: " + str(exc[-1])
+
+            if DEBUG:
+                sys.stderr.write(error + "\n")
+                raise
+            else:
+                raise SystemExit, error
+            
         except (DistutilsExecError,
                 DistutilsFileError,
                 DistutilsOptionError), msg:
-            raise SystemExit, "error: " + str(msg)
+            if DEBUG:
+                raise
+            else:
+                raise SystemExit, "error: " + str(msg)
 
 # setup ()
