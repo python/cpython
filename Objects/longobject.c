@@ -1792,12 +1792,9 @@ Else (bsize is odd and asize < bsize) ah and al each have at most shift digits,
 so ah+al has at most shift digits + 1 bit, and (ah+al)*(bh+bl) has at most
 2*shift+1 digits + 2 bits, and again 2*shift+2 digits is enough to hold it.
 
-Note that the "lazy" analysis is enough to show that there's always enough
-room to subtract al*bl and ah*bh.  al and bl each have no more than shift
-digits, so al*bl has no more than 2*shift, so there's at least one digit
-to spare in the remaining allocated digits.  The same is true for ah*bh when
-bsize is even.  When bsize is odd, ah*bh has at most 2*shift+2 digits, and
-there are at least that many remaining allocated digits when bsize is odd.
+Note that since there's always enough room for (ah+al)*(bh+bl), and that's
+clearly >= each of ah*bh and al*bl, there's always enough room to subtract
+ah*bh and al*bl too.
 */
 
 /* b has at least twice the digits of a, and a is big enough that Karatsuba
