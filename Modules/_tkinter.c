@@ -491,6 +491,10 @@ Tkapp_New(screenName, baseName, className, interactive)
 
 	v->interp = Tcl_CreateInterp();
 
+#if TKMAJORMINOR == 8001
+	TclpInitLibraryPath(baseName);
+#endif /* TKMAJORMINOR */
+
 #if defined(macintosh) && TKMAJORMINOR >= 8000
 	/* This seems to be needed since Tk 8.0 */
 	ClearMenuBar();
