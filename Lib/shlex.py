@@ -271,9 +271,11 @@ class shlex:
             raise StopIteration
         return token
 
-def split(s, posix=True, spaces=True):
-    lex = shlex(s, posix=posix)
-    lex.whitespace_split = spaces
+def split(s, comments=False):
+    lex = shlex(s, posix=True)
+    lex.whitespace_split = True
+    if not comments:
+        lex.commenters = ''
     return list(lex)
 
 if __name__ == '__main__':
