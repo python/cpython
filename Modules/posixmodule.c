@@ -1562,8 +1562,7 @@ posix_spawnv(self, args)
 		getitem = PyTuple_GetItem;
 	}
 	else {
- badarg:
-		PyErr_BadArgument();
+		PyErr_SetString(PyExc_TypeError, "argv must be tuple or list");
 		return NULL;
 	}
 
@@ -1573,7 +1572,9 @@ posix_spawnv(self, args)
 	for (i = 0; i < argc; i++) {
 		if (!PyArg_Parse((*getitem)(argv, i), "s", &argvlist[i])) {
 			PyMem_DEL(argvlist);
-			goto badarg;
+			PyErr_SetString(PyExc_TypeError, 
+					"all arguments must be strings");
+			return NULL;
 		}
 	}
 	argvlist[argc] = NULL;
