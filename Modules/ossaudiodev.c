@@ -696,7 +696,7 @@ static PyObject *
 oss_mixer_rec_channels (oss_mixer_t *self, PyObject *args)
 {
     return _do_ioctl_1_internal(self->x_fd, args, "recchannels",
-        SOUND_MIXER_READ_STEREODEVS);
+        SOUND_MIXER_READ_RECMASK);
 }
 
 static PyObject *
