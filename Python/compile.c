@@ -303,7 +303,6 @@ struct compiling {
 static void
 com_error(struct compiling *c, PyObject *exc, char *msg)
 {
-	size_t n = strlen(msg);
 	PyObject *v, *tb, *tmp;
 	c->c_errors++;
 	if (c->c_lineno <= 1) {
