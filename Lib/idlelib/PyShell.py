@@ -325,22 +325,19 @@ class ModifiedInterpreter(InteractiveInterpreter):
 
     def start_subprocess(self):
         addr = ("localhost", self.port)
-        self.spawn_subprocess()
         # Idle starts listening for connection on localhost
-        for i in range(6):
+        for i in range(3):
             time.sleep(i)
             try:
                 self.rpcclt = rpc.RPCClient(addr)
                 break
             except socket.error, err:
-                if i < 3:
-                    print>>sys.__stderr__, ". ",
-                else:
-                    print>>sys.__stderr__,"\nIdle socket error: " + err[1]\
+                print>>sys.__stderr__,"Idle socket error: " + err[1]\
                                                     + ", retrying..."
         else:
             display_port_binding_error()
             sys.exit()
+        self.spawn_subprocess()
         # Accept the connection from the Python execution server
         self.rpcclt.accept()
         self.rpcclt.register("stdin", self.tkconsole)
