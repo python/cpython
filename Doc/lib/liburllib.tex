@@ -1,5 +1,5 @@
 \section{\module{urllib} ---
-         Open an arbitrary resource by URL}
+         Open arbitrary resources by URL}
 
 \declaremodule{standard}{urllib}
 \modulesynopsis{Open an arbitrary network resource by URL (requires sockets).}
@@ -164,12 +164,14 @@ characters, where both \var{key} and \var{value} are quoted using
 \function{quote_plus()} above.
 \end{funcdesc}
 
-The public functions \function{urlopen()} and \function{urlretrieve()}
-create an instance of the \class{FancyURLopener} class and use it to perform
-their requested actions.  To override this functionality, programmers can
-create a subclass of \class{URLopener} or \class{FancyURLopener}, then
-assign that class to the \var{urllib._urlopener} variable before calling the
-desired function.  For example, applications may want to specify a different
+The public functions \function{urlopen()} and
+\function{urlretrieve()} create an instance of the
+\class{FancyURLopener} class and use it to perform their requested
+actions.  To override this functionality, programmers can create a
+subclass of \class{URLopener} or \class{FancyURLopener}, then assign
+that an instance of that class to the
+\code{urllib._urlopener} variable before calling the desired function.
+For example, applications may want to specify a different
 \code{user-agent} header than \class{URLopener} defines.  This can be
 accomplished with the following code:
 
@@ -193,7 +195,7 @@ By default, the \class{URLopener} class sends a
 \var{VVV} is the \module{urllib} version number.  Applications can
 define their own \code{user-agent} header by subclassing
 \class{URLopener} or \class{FancyURLopener} and setting the instance
-attribute \var{version} to an appropriate string value before the
+attribute \member{version} to an appropriate string value before the
 \method{open()} method is called.
 
 Additional keyword parameters, collected in \var{x509}, are used for
@@ -267,9 +269,9 @@ manipulation is in module \refmodule{urlparse}\refstmodindex{urlparse}.
 \sectionauthor{Skip Montanaro}{skip@mojam.com}
 
 \class{URLopener} and \class{FancyURLopener} objects have the
-following methods.
+following attributes.
 
-\begin{methoddesc}{open}{fullurl\optional{, data}}
+\begin{methoddesc}[URLopener]{open}{fullurl\optional{, data}}
 Open \var{fullurl} using the appropriate protocol.  This method sets 
 up cache and proxy information, then calls the appropriate open method with
 its input arguments.  If the scheme is not recognized,
@@ -277,11 +279,13 @@ its input arguments.  If the scheme is not recognized,
 has the same meaning as the \var{data} argument of \function{urlopen()}.
 \end{methoddesc}
 
-\begin{methoddesc}{open_unknown}{fullurl\optional{, data}}
+\begin{methoddesc}[URLopener]{open_unknown}{fullurl\optional{, data}}
 Overridable interface to open unknown URL types.
 \end{methoddesc}
 
-\begin{methoddesc}{retrieve}{url\optional{, filename\optional{, reporthook}}}
+\begin{methoddesc}[URLopener]{retrieve}{url\optional{,
+                                        filename\optional{,
+                                        reporthook\optional{, data}}}}
 Retrieves the contents of \var{url} and places it in \var{filename}.  The
 return value is a tuple consisting of a local filename and either a
 \class{mimetools.Message} object containing the response headers (for remote
@@ -301,6 +305,13 @@ If the \var{url} uses the \file{http:} scheme identifier, the optional
 must in standard \file{application/x-www-form-urlencoded} format;
 see the \function{urlencode()} function below.
 \end{methoddesc}
+
+\begin{memberdesc}[URLopener]{version}
+Variable that specifies the user agent of the opener object.  To get
+\refmodule{urllib} to tell servers that it is a particular user agent,
+set this in a subclass as a class variable or in the constructor
+before calling the base constructor.
+\end{memberdesc}
 
 
 \subsection{Examples}
