@@ -12,6 +12,10 @@ What's New in Python 2.4 alpha 1?
 Core and builtins
 -----------------
 
+- For str and unicode objects, the ljust(), center(), and rjust()
+  methods now accept an optional argument specifying a fill
+  character other than a space.
+
 - When method objects have an attribute that can be satisfied either
   by the function object or by the method object, the function
   object's attribute usually wins.  Christian Tismer pointed out that

@@ -60,7 +60,8 @@ class UserString:
 
     # the following methods are defined in alphabetical order:
     def capitalize(self): return self.__class__(self.data.capitalize())
-    def center(self, width): return self.__class__(self.data.center(width))
+    def center(self, width, *args):
+        return self.__class__(self.data.center(width, *args))
     def count(self, sub, start=0, end=sys.maxint):
         return self.data.count(sub, start, end)
     def decode(self, encoding=None, errors=None): # XXX improve this?
@@ -97,7 +98,8 @@ class UserString:
     def istitle(self): return self.data.istitle()
     def isupper(self): return self.data.isupper()
     def join(self, seq): return self.data.join(seq)
-    def ljust(self, width): return self.__class__(self.data.ljust(width))
+    def ljust(self, width, *args):
+        return self.__class__(self.data.ljust(width, *args))
     def lower(self): return self.__class__(self.data.lower())
     def lstrip(self, chars=None): return self.__class__(self.data.lstrip(chars))
     def replace(self, old, new, maxsplit=-1):
@@ -106,7 +108,8 @@ class UserString:
         return self.data.rfind(sub, start, end)
     def rindex(self, sub, start=0, end=sys.maxint):
         return self.data.rindex(sub, start, end)
-    def rjust(self, width): return self.__class__(self.data.rjust(width))
+    def rjust(self, width, *args):
+        return self.__class__(self.data.rjust(width, *args))
     def rstrip(self, chars=None): return self.__class__(self.data.rstrip(chars))
     def split(self, sep=None, maxsplit=-1):
         return self.data.split(sep, maxsplit)

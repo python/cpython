@@ -227,7 +227,7 @@ class CommonTest(unittest.TestCase):
         self.checkequal('abc   ', 'abc', 'ljust', 6)
         self.checkequal('abc', 'abc', 'ljust', 3)
         self.checkequal('abc', 'abc', 'ljust', 2)
-
+        self.checkequal('abc*******', 'abc', 'ljust', 10, '*')
         self.checkraises(TypeError, 'abc', 'ljust')
 
     def test_rjust(self):
@@ -235,7 +235,7 @@ class CommonTest(unittest.TestCase):
         self.checkequal('   abc', 'abc', 'rjust', 6)
         self.checkequal('abc', 'abc', 'rjust', 3)
         self.checkequal('abc', 'abc', 'rjust', 2)
-
+        self.checkequal('*******abc', 'abc', 'rjust', 10, '*')
         self.checkraises(TypeError, 'abc', 'rjust')
 
     def test_center(self):
@@ -243,7 +243,7 @@ class CommonTest(unittest.TestCase):
         self.checkequal(' abc  ', 'abc', 'center', 6)
         self.checkequal('abc', 'abc', 'center', 3)
         self.checkequal('abc', 'abc', 'center', 2)
-
+        self.checkequal('***abc****', 'abc', 'center', 10, '*')
         self.checkraises(TypeError, 'abc', 'center')
 
     def test_swapcase(self):

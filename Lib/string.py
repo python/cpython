@@ -237,37 +237,37 @@ def atol(s, base=10):
 
 
 # Left-justify a string
-def ljust(s, width):
-    """ljust(s, width) -> string
+def ljust(s, width, *args):
+    """ljust(s, width[, fillchar]) -> string
 
     Return a left-justified version of s, in a field of the
     specified width, padded with spaces as needed.  The string is
-    never truncated.
+    never truncated.  If specified the fillchar is used instead of spaces.
 
     """
-    return s.ljust(width)
+    return s.ljust(width, *args)
 
 # Right-justify a string
-def rjust(s, width):
-    """rjust(s, width) -> string
+def rjust(s, width, *args):
+    """rjust(s, width[, fillchar]) -> string
 
     Return a right-justified version of s, in a field of the
     specified width, padded with spaces as needed.  The string is
-    never truncated.
+    never truncated.  If specified the fillchar is used instead of spaces.
 
     """
-    return s.rjust(width)
+    return s.rjust(width, *args)
 
 # Center a string
-def center(s, width):
-    """center(s, width) -> string
+def center(s, width, *args):
+    """center(s, width[, fillchar]) -> string
 
     Return a center version of s, in a field of the specified
     width. padded with spaces as needed.  The string is never
-    truncated.
+    truncated.  If specified the fillchar is used instead of spaces.
 
     """
-    return s.center(width)
+    return s.center(width, *args)
 
 # Zero-fill a number, e.g., (12, 3) --> '012' and (-3, 3) --> '-03'
 # Decadent feature: the argument may be a string or a number
