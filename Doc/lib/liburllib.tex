@@ -59,13 +59,23 @@ Letters, digits, and the characters ``\code{_,.-}'' are never quoted.
 The optional \var{addsafe} parameter specifies additional characters
 that should not be quoted --- its default value is \code{'/'}.
 
-Example: \code{quote('/\~conolly/')} yields \code{'/\%7econnolly/'}.
+Example: \code{quote('/\~connolly/')} yields \code{'/\%7econnolly/'}.
+\end{funcdesc}
+
+\begin{funcdesc}{quote_plus}{string\optional{\, addsafe}}
+Like \code{quote()}, but also replaces spaces by plus signs, as
+required for quoting HTML form values.
 \end{funcdesc}
 
 \begin{funcdesc}{unquote}{string}
 Replace \samp{\%xx} escapes by their single-character equivalent.
 
 Example: \code{unquote('/\%7Econnolly/')} yields \code{'/\~connolly/'}.
+\end{funcdesc}
+
+\begin{funcdesc}{unquote_plus}{string}
+Like \code{unquote()}, but also replaces plus signs by spaces, as
+required for unquoting HTML form values.
 \end{funcdesc}
 
 Restrictions:
