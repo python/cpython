@@ -3,6 +3,7 @@
 # XXX TypeErrors on calling handlers, or on bad return values from a
 # handler, are obscure and unhelpful.
 
+import pyexpat
 from xml.parsers import expat
 
 from test_support import sortdict
