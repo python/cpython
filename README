@@ -296,6 +296,11 @@ SCO:	The following apply to SCO 3 only; Python builds out of the box
 
 		LIBS=' -lsocket -lcrypt_i'
 
+UnixWare: There are known bugs in the math library of the system, as well as
+        problems in the handling of threads (calling fork in one
+        thread may interrupt system calls in others). Therefore, test_math and
+        tests involving threads will fail until those problems are fixed.
+
 SunOS 4.x: When using the SunPro C compiler, you may want to use the
 	'-Xa' option instead of '-Xc', to enable some needed non-ANSI
 	Sunisms.
