@@ -11,11 +11,16 @@ October 24, 2002 release of the Python 2.2.2 port:
 - now setting higher number of file handles (250).
 - defaults to building with PyMalloc enabled (Python 2.3 default).
 - the port is now maintained in the Python CVS repository.
+- most standard modules are now built into the core Python DLL.
 
 Python 2.3 incorporates several changes which have resolved the 
-longstanding problems the EMX port has had with test_longexp (used 
-to be "YOU HAVE BEEN WARNED" item 1).
-  
+longstanding problems the EMX port has had with test_longexp.
+
+Python 2.3 introduces changes to the Berkeley DB support, as a result of
+the PyBSDDB3 module (for the Sleepycat DB 3.3.x/4.0.x/4.1.x library)
+being imported into Python's standard library - see "YOU HAVE BEEN WARNED"
+items 4 & 5 for more information.
+
 
 Licenses and info about Python and EMX
 --------------------------------------
@@ -58,10 +63,10 @@ The best known would be that by Jeff Rush, most recently of version
 1.5.2.  Jeff used IBM's Visual Age C++ (v3) for his ports, and his 
 patches have been included in the Python 2.3 source distribution.
 
-Andrew Zabolotny implemented a port of Python v1.5.2 using the EMX 
+Andy Zabolotny implemented a port of Python v1.5.2 using the EMX 
 development tools.  His patches against the Python v1.5.2 source 
 distribution have become the core of this port, and without his efforts 
-this port wouldn't exist.  Andrew's port also appears to have been 
+this port wouldn't exist.  Andy's port also appears to have been 
 compiled with his port of gcc 2.95.2 to EMX, which I have but have 
 chosen not to use for the binary distribution of this port (see item 21 
 of the "YOU HAVE BEEN WARNED" section below).
@@ -78,7 +83,7 @@ Previous Python port releases by me:-
  - v2.2c1 on December 16, 2001 (not uploaded to archive sites);
  - v2.2 on December 24, 2001;
  - v2.2.1c2 on March 31, 2002 (not uploaded to archive sites);
- - v2.2.1 on April 14, 2002.
+ - v2.2.1 on April 14, 2002;
  - v2.2.2 on October 24, 2002.
 
 It is possible to have these earlier ports still usable after installing 
@@ -100,14 +105,11 @@ My development system is running OS/2 v4 with fixpack 12.
 - ncurses      (see http://dickey.his.com/ for more info, v5.2)
 - GNU Readline (Kai Uwe Rommel's port available from Hobbes or LEO, v2.1)
 - GNU GDBM     (Kai Uwe Rommel's port available from Hobbes or LEO, v1.7.3)
-- zlib         (Hung-Chi Chu's port available from Hobbes or LEO, v1.1.3)
-- expat        (distributed with Python, v1.95.2)
+- zlib         (derived from Hung-Chi Chu's port of v1.1.3, v1.1.4)
+- expat        (distributed with Python, v1.95.6)
 - GNU MP       (Peter Meerwald's port available from LEO, v2.0.2)
 - GNU UFC      (Kai Uwe Rommel's port available from LEO, v2.0.4)
 
-The zlib module requires the Z.DLL to be installed - see the Installation 
-section and item 12 of the "YOU HAVE BEEN WARNED" section for more 
-information.
 
 About this port
 ---------------
@@ -119,7 +121,7 @@ Core components:
 
 Python.exe is linked as an a.out executable, ie using EMX method E1 
 to compile & link the executable.  This is so that fork() works (see 
-"YOU HAVE BEEN WARNED" item 2).
+"YOU HAVE BEEN WARNED" item 1).
 
 Python23.dll is created as a normal OMF DLL, with an OMF import 
 library and module definition file.  There is also an a.out (.a) import 
@@ -130,42 +132,50 @@ This port has been built with complete support for multithreading.
 
 Modules:
 
-As far as possible, extension modules have been made dynamically loadable 
-when the module is intended to be built this way.  I haven't yet changed 
-the building of Python's standard modules over to using the DistUtils.
+With the exception of modules that have a significant code size, or are 
+not recommended or desired for normal use, the standard modules are now 
+built into the core DLL rather than configured as dynamically loadable 
+modules.  This is for both reasons of performance (startup time) and 
+memory use (lots of small DLLs fragment the address space).
 
-See "YOU HAVE BEEN WARNED" item 5 for notes about the fcntl module, and 
-"YOU HAVE BEEN WARNED" item 14 for notes about the pwd and grp modules.
+I haven't yet changed the building of Python's dynamically loadable 
+modules over to using the DistUtils.
+
+See "YOU HAVE BEEN WARNED" item 3 for notes about the fcntl module, and 
+"YOU HAVE BEEN WARNED" item 10 for notes about the pwd and grp modules.
 
 Support for case sensitive module import semantics has been added to match 
 the Windows release.  This can be deactivated by setting the PYTHONCASEOK 
 environment variable (the value doesn't matter) - see "YOU HAVE BEEN WARNED" 
-item 16.
+item 12.
 
 Optional modules:
 
 Where I've been able to locate the required 3rd party packages already 
 ported to OS/2, I've built and included them.
 
-These include ncurses (_curses, _curses_panel), BSD DB (bsddb), 
-GNU GDBM (gdbm, dbm), zlib (zlib), GNU Readline (readline), expat 
-(pyexpat), GNU MP (mpz) and GNU UFC (crypt).
+These include ncurses (_curses, _curses_panel), BSD DB (bsddb185), 
+GNU GDBM (gdbm, dbm), zlib (zlib), GNU Readline (readline), GNU MP (mpz) 
+and GNU UFC (crypt).
+
+Expat is now included in the Python release sourceball, and is always 
+built.
 
 I have built these modules statically linked against the 3rd party 
-libraries, with the exception of zlib.  Unfortunately my attempts to use 
-the dll version of GNU readline have been a dismal failure, in that when 
-the dynamically linked readline module is active other modules 
-immediately provoke a core dump when imported.
+libraries.  Unfortunately my attempts to use the dll version of GNU 
+readline have been a dismal failure, in that when the dynamically 
+linked readline module is active other modules immediately provoke a 
+core dump when imported.
 
 Only the BSD DB package (part of the BSD package distributed with EMX) 
-needed source modifications to be used for this port, pertaining to use 
+needs source modifications to be used for this port, pertaining to use 
 of errno with multithreading.
 
 The other packages, except for ncurses and zlib, needed Makefile changes 
 for multithreading support but no source changes.
 
 The _curses_panel module is a potential problem - see "YOU HAVE BEEN 
-WARNED" item 17.
+WARNED" item 13.
 
 Upstream source patches:
 
@@ -210,9 +220,14 @@ have this port support extensions built with that compiler.
 Packaging
 ---------
 
-This port is packaged into several archives:
-- python-2.3-os2emx-bin-02????.zip   (binaries, library modules)
-- python-2.3-os2emx-src-03????.zip   (source patches and makefiles)
+This port is packaged as follows:
+- python-2.3-os2emx-bin-03????.zip  (binaries, library modules)
+- python-2.3-os2emx-src-03????      (patches+makefiles for non-Python code)
+
+As all the Python specific patches for the port are now part of the 
+Python release tarball, only the patches and makefiles involved in 
+building external libraries for optional extensions are included in 
+the source archive.
 
 Documentation for the Python language, as well as the Python 2.3 
 source distibution, can be obtained from the Python website 
@@ -225,10 +240,6 @@ Installation
 
 Obtain and install, as per the included instructions, the EMX runtime 
 package.
-
-If you wish to use the zlib module, you will need to obtain and install 
-the Z.DLL from Hung-Chi Chu's port of zlib v1.1.3 (zlib113.zip).  See also 
-"YOU HAVE BEEN WARNED" item 12 below.
 
 Unpack this archive, preserving the subdirectories, in the root directory 
 of the drive where you want Python to live.
@@ -276,12 +287,116 @@ You can execute the regression tests included with the Python 2.3 source
 distribution by changing to the Python 2.3 home directory and executing the 
 REGRTEST.CMD batch file.  The following tests are known to fail at this 
 time:
-- test_longexp (see "YOU HAVE BEEN WARNED" item 1);
 - test_mhlib (I don't know of any port of MH to OS/2);
-- test_pwd (see "YOU HAVE BEEN WARNED" item 14, probably a bug in my code);
+- test_pwd (see "YOU HAVE BEEN WARNED" item 10, probably a bug in my code);
 - test_grp (as per test_pwd);
-- test_strftime (see "YOU HAVE BEEN WARNED" item 20);
-- test_socketserver (fork() related, see "YOU HAVE BEEN WARNED" item 2).
+- test_strftime (see "YOU HAVE BEEN WARNED" item 15);
+- test_strptime (see "YOU HAVE BEEN WARNED" item 22);
+- test_whichdb (see "YOU HAVE BEEN WARNED" item 5).
+- test_socketserver (fork() related, see "YOU HAVE BEEN WARNED" item 1).
+
+Note that some of the network related tests expect the loopback interface
+(interface "lo", with IP address 127.0.0.1) to be enabled, which from my
+experience is not the default configuration.  Additionally, test_popen2
+expects the "cat" utility (such as found in ports of the GNU tools) to
+be installed.
+
+
+Building from source
+--------------------
+
+With the EMX port now checked into Python's CVS repository, the build 
+infrastructure is part of the Python release sourceball.
+
+Prerequisites
+
+First and foremost, you need an operational EMX development installation - 
+EMX v0.9d with fix04 (the latest at time of writing) & the gcc 2.8.1 
+compiler released by Eberhard Mattes is the recommended setup.
+
+If you have a different version of gcc installed, see "YOU HAVE BEEN 
+WARNED" item 16.
+
+Other items of software required:-
+
+- GNU make (I'm using v3.76.1)
+- rm, cp, mkdir from the GNU file utilities package
+- GNU find
+
+Procedure
+
+0. all changes mentioned apply to files in the PC/os2emx subdirectory 
+   of the Python release source tree.  make is also executed from this 
+   directory, so change into this directory before proceeding.
+
+1. decide if you need to change the location of the Python installation.
+   If you wish to do this, set the value of the Makefile variable LIB_DIR 
+   to the directory you wish to use for PYTHONHOME 
+   (eg /usr/local/lib/python2.3).
+
+   If you want Python to find its library without the PYTHONHOME 
+   environment variable set, set the value of the Makefile variable 
+   FIXED_PYHOME to "yes" (uncomment the appropriate line).
+
+2. If you wish the Python executables (python.exe, pythonpm.exe & pgen.exe) 
+   to be installed in a directory other than the PYTHONHOME directory, set 
+   the value of the Makefile variable EXE_DIR to the appropriate directory.
+
+3. If you wish the Python core DLL (python23.dll) to be installed in a 
+   directory other than the directory in which the Python executables are 
+   installed (by default, the PYTHONHOME directory), set the value of the 
+   Makefile variable DLL_DIR to the appropriate directory.  This DLL must 
+   be placed in a directory on the system's LIBPATH, or that gets set 
+   with BEGINLIBPATH or ENDLIBPATH.
+
+4. If you have installed any of the libraries that can be used to build 
+   optional Python modules, set the value of the relevant HAVE_<package> 
+   Makefile variable to "yes".  The Makefile currently supports:
+
+   library               Makefile variable
+   ........................................
+   zlib (1.1.4)          HAVE_ZLIB
+   GNU UltraFast Crypt   HAVE_UFC
+   Tcl/Tk                HAVE_TCLTK (not known to work)
+   GNU MP                HAVE_GMPZ
+   GNU Readline          HAVE_GREADLINE
+   BSD DB (v1.85)        HAVE_BSDDB
+   ncurses               HAVE_NCURSES
+   GNU gdbm              HAVE_GDBM
+   libbz2                HAVE_BZ2
+
+   Please note that you need to check that what you have installed 
+   is compatible with Python's build options.  In particular, the 
+   BSD DB v1.85 library needs to be rebuilt with a source patch for 
+   multithread support (doesn't change the library's reentrant status 
+   but allows it to be linked to Python which is multithreaded).  
+   Widely available binary packages of other librarys & DLLs are 
+   not built/linked with multithread support.  Beware!
+
+   Also note that the Makefile currently expects any libraries to be 
+   found with the default library search path.  You may need to add 
+   -L switches to the LDFLAGS Makefile variable if you have installed 
+   libraries in directories not in the default search path (which can 
+   be controlled by the LIBRARY_PATH environment variable used by EMX).
+
+5. make
+
+   It is usually a good idea to redirect the stdout and stderr streams 
+   of the make process to log files, so that you can review any messages. 
+
+6. make test
+
+   This runs the Python regression tests, and completion is a sign of 
+   a usable build.  You should check the list of skipped modules to 
+   ensure that any optional modules you selected have been built; 
+   checking the list of failures against the list of known failures 
+   elsewhere in this document is also prudent.
+
+7. make install
+   >>>>>> NOT YET COMPLETE <<<<<< 
+
+8. change to a directory outside the Python source tree and start Python. 
+   Check the version and build date to confirm satisfactory installation.
 
 
 YOU HAVE BEEN WARNED!!
@@ -289,65 +404,77 @@ YOU HAVE BEEN WARNED!!
 
 I know about a number of nasties in this port.
 
-{1.  Issue resolved...}
-
-2.  Eberhard Mattes, author of EMX, writes in his documentation that fork() 
+1.  Eberhard Mattes, author of EMX, writes in his documentation that fork() 
 is very inefficient in the OS/2 environment.  It also requires that the 
 executable be linked in a.out format rather than OMF.  Use the os.exec 
 and/or the os.spawn family of functions where possible.
 
-{3.  Issue resolved...}
-
-4.  In the absence of GNU Readline, terminating the interpreter requires a 
+2.  In the absence of GNU Readline, terminating the interpreter requires a 
 control-Z (^Z) followed by a carriage return.  Jeff Rush documented this 
 problem in his Python 1.5.2 port.  With Readline, a control-D (^D) works 
 as per the standard Unix environment.
 
-5.  EMX only has a partial implementation of fcntl().  The fcntl module 
+3.  EMX only has a partial implementation of fcntl().  The fcntl module 
 in this port supports what EMX supports.  If fcntl is important to you, 
 please review the EMX C Library Reference (included in .INF format in the 
 EMXVIEW.ZIP archive as part of the complete EMX development tools suite).
 Because of other side-effects I have modified the test_fcntl.py test 
 script to deactivate the exercising of the missing functionality.
 
-6.  The BSD DB module is linked against DB v1.85.  This version is widely 
-known to have bugs, although some patches have become available (and are 
-incorporated into the included bsddb module).  Unless you have problems 
-with software licenses which would rule out GDBM (and the dbm module 
-because it is linked against the GDBM library) or need it for file format 
-compatibility, you may be better off deleting it and relying on GDBM.  I 
-haven't looked at porting the version of the module supporting the later 
-SleepyCat releases of BSD DB, which would also require a port of the 
-SleepyCat DB package.
+4.  the PyBSDDB3 module has been imported into the Python standard
+library, with the intent of superceding the BSDDB 1.85 module (bsddb).
+As I don't yet have a satisfactory port of Sleepcat's more recent DB
+library (3.3.x/4.0.x/4.1.x), I haven't included a binary of this
+module.  I have left the Python part of the PyBSDDB package in this
+distribution for completeness.
 
-7.  The readline module has been linked against ncurses rather than the 
+5.  As a consequence of the PyBSDDB3 module being imported, the former 
+BSD DB (bsddb) module, linked against the DB v1.85 library from EMX, 
+has been renamed bsddb185.  The bsddb185 module will not be built by 
+default on most platforms, but in the absence of a PyBSDDB3 module I 
+have retained it in the EMX port.
+
+Version 1.85 of the DB library is widely known to have bugs, although 
+some patches have become available (and are incorporated into the 
+included bsddb185 module).  Unless you have problems with software 
+licenses which would rule out GDBM (and the dbm module because it is 
+linked against the GDBM library) or need it for file format compatibility, 
+you may be better off deleting it and relying on GDBM.
+
+Any code you have which uses the bsddb module can be modified to use the 
+renamed module by changing
+
+  import bsddb
+
+to
+
+  import bsddb185 as bsddb
+
+A side effect of these changes is that the test_whichdb regression test
+fails.
+
+6.  The readline module has been linked against ncurses rather than the 
 termcap library supplied with EMX.
 
-{8.  Workaround implemented}
-
-9.  I have configured this port to use "/" as the preferred path separator 
+7.  I have configured this port to use "/" as the preferred path separator 
 character, rather than "\" ('\\'), in line with the convention supported 
 by EMX.  Backslashes are still supported of course, and still appear in 
 unexpected places due to outside sources that don't get normalised.
 
-10. While the DistUtils components are now functional, other 
+8.  While the DistUtils components are now functional, other 
 packaging/binary handling tools and utilities such as those included in
 the Demo and Tools directories - freeze in particular - are unlikely to 
 work.  If you do get them going, I'd like to know about your success.
 
-11. I haven't set out to support the [BEGIN|END]LIBPATH functionality 
+9.  I haven't set out to support the [BEGIN|END]LIBPATH functionality 
 supported by one of the earlier ports (Rush's??).  If it works let me know.
 
-12. There appear to be several versions of Z.DLL floating around - the one 
-I have is 45061 bytes and dated January 22, 1999.  I have a report that 
-another version causes SYS3175s when the zlib module is imported.
-
-14. As a result of the limitations imposed by EMX's library routines, the 
+10. As a result of the limitations imposed by EMX's library routines, the 
 standard extension module pwd only synthesises a simple passwd database, 
 and the grp module cannot be supported at all.
 
-I have written substitutes, in Python naturally, which can process real 
-passwd and group files for those applications (such as MailMan) that 
+I have written pure Python substitutes for pwd and grp, which can process 
+real passwd and group files for those applications (such as MailMan) that 
 require more than EMX emulates.  I have placed pwd.py and grp.py in 
 Lib/plat-os2emx, which is usually before Lib/lib-dynload (which contains 
 pwd.pyd) in the PYTHONPATH.  If you have become attached to what pwd.pyd 
@@ -374,19 +501,20 @@ Example versions of passwd and group are in the Etc subdirectory.  Note
 that as of this release, this code fails the regression test.  I'm looking 
 into why, and hope to have this fixed.
 
-15. As of Python 2.1, termios support has mutated.  There is no longer a 
-platform specific TERMIOS.py containing the symbolic constants - these 
-now live in the termios module.  EMX's termios routines don't support all 
-of the functionality now exposed by the termios module - refer to the EMX 
-documentation to find out what is supported.
+Be aware that Python's pwd & group modules are for reading password and 
+group information only.
 
-16. The case sensitive import semantics introduced in Python 2.1 for other 
+11. EMX's termios routines don't support all of the functionality now 
+exposed by the termios module - refer to the EMX documentation to find 
+out what is supported.
+
+12. The case sensitive import semantics introduced in Python 2.1 for other 
 case insensitive but case preserving file/operating systems (Windows etc), 
 have been incorporated into this port, and are active by default.  Setting 
 the PYTHONCASEOK environment variable (to any value) reverts to the 
 previous (case insensitive) semantics.
 
-17. Because I am statically linking ncurses, the _curses_panel 
+13. Because I am statically linking ncurses, the _curses_panel 
 module has potential problems arising from separate library data areas.
 To avoid this, I have configured the _curses_.pyd (imported as 
 "_curses_panel") to import the ncurses symbols it needs from _curses.pyd. 
@@ -395,49 +523,43 @@ module.  As far as I can tell, the modules in the curses package do this.
 If you have problems attempting to use the _curses_panel support please 
 let me know, and I'll look into an alternative solution.
 
-18. I tried enabling the Python Object Allocator (PYMALLOC) code.  While 
-the port built this way passes the regression test, the Numpy extension 
-(I tested v19.0.0) as built with with the port's DistUtils code doesn't 
-work.  Specifically, attempting to "import Numeric" provokes a core dump.  
-Supposedly Numpy v20.1.0 contains a fix for this, but for reason outlined 
-in item 1 above, PYMALLOC is not enabled in this release.
-
-19. sys.platform now reports "os2emx" instead of "os2".  os.name still 
+14. sys.platform reports "os2emx" instead of "os2".  os.name still 
 reports "os2".  This change was to make it easier to distinguish between 
-the VAC++ build (being maintained by Michael Muller) and the EMX build 
+the VAC++ build (formerly maintained by Michael Muller) and the EMX build 
 (this port), principally for DistUtils.
 
-20. it appears that the %W substitution in the EMX strftime() routine has 
+15. it appears that the %W substitution in the EMX strftime() routine has 
 an off-by-one bug.  strftime was listed as passing the regression tests 
 in previous releases, but this fact appears to have been an oversight in 
 the regression test suite.  To fix this really requires a portable 
 strftime routine - I'm looking into using one from FreeBSD, but its not 
 ready yet.
 
-21. previous releases of my Python ports have used the GCC optimisations 
-"-O2 -fomit-frame-pointer".  After experimenting with various optimisation 
-settings, including deactivating assert()ions, I have concluded that "-O2" 
-appears the best compromise for GCC 2.8.1 on my hardware.  Curiously, 
-deactivating assert() (via defining NDEBUG) _negatively_ impacts 
-performance, allbeit only slightly, so I've chosen to leave the assert()s 
-active.
+16. I have successfully built this port with Andy Zabolotny's ports of 
+pgcc 2.95 and gcc 3.2.1, in addition to EM's gcc 2.8.1.  To use the 
+bsddb185 module with the gcc 3.2.1 build, I had to recompile the DB library 
+with gcc 3.2.1 - I don't know why, but trying to import the module built 
+against a DB library compiled with gcc 2.8.1 would result in a SYS3175 
+error.
 
-I did try using Andrew Zabolotny's (p)gcc 2.95.2 compiler, and in 
-general concluded that it produced larger objects that ran slower 
-than Mattes' gcc 2.8.1 compiler.
+I have not attempted to compile Python with any version of gcc prior to 
+v2.8.1.
 
-Pystone ratings varied from just over 2000/s (no optimisation at all) 
-to just under 3300/s (gcc 2.8.1, -O2) on my K6/2-300 system, for 
-100,000 iterations per run (rather than the default 10000).
+If you compile Python with pgcc 2.95, changing the optimisation from -O2 to 
+-O3 is worthwhile.  While more aggressive optimisation is supported by gcc, 
+a lot of benchmarking indicates that Python's performance is impeded by 
+optimisation settings beyond just -O2 (-O3 for pgcc 2.95), at least on my 
+hardware (AMD Athlon 1.4GHz, VIA C3 800MHz). 
 
-As a result of the optimisation change, the Python DLL is about 10% 
-smaller than in the 2.1 release, and many of the dynamically loadable 
-modules are smaller too.
+If you wish to compile Python with gcc 3.2.1, you will need to modify the 
+Makefile to compile Modules/_sre.c with either the -Os (recommended) or 
+-O options, with the global optimisation set to -O2 or -O3 (not much 
+difference between these with this compiler).  Alternatively, you could 
+change the global optimisation instead with a performance drop of 6-7% 
+compared to the special-case approach.
 
-[2001/08/12]
-
-22.  As of this release, os.spawnv() and os.spawnve() now expose EMX's 
-library routines rather than use the emulation in os.py.
+17.  os.spawnv() and os.spawnve() expose EMX's library routines rather 
+than use the emulation in os.py.
 
 In order to make use of some of the features this makes available in 
 the OS/2 environment, you should peruse the relevant EMX documentation 
@@ -447,9 +569,9 @@ supported by EMX, but there are combinations that either cannot be
 practically used by/in Python or have the potential to compromise your 
 system's stability.
 
-23.  pythonpm.exe in previous releases was just python.exe with the 
-WINDOWAPI linker option set in the pythonpm.def file.  In practice, 
-this turns out to do nothing useful.
+18.  pythonpm.exe used to be just python.exe with the WINDOWAPI linker 
+option set in the pythonpm.def file.  In practice, this turns out to do 
+nothing useful.
 
 I have written a replacement which wraps the Python DLL in a genuine 
 Presentation Manager application.  This version actually runs the 
@@ -485,37 +607,28 @@ PythonPM.  I would like to add a PM console capability to it, but that
 will be a non-trivial effort.  I may be able to leverage the code in 
 Illya Vaes' Tcl/Tk port, which would make it easier.
 
-[2001/08/14]
+19.  os.chdir() uses EMX's _chdir2(), which supports changing both drive 
+and directory at once.  Similarly, os.getcwd() uses EMX's _getcwd() 
+which returns drive as well as path.
 
-24.  os.chdir() now uses EMX's _chdir2(), which supports changing 
-both drive and directory at once.  Similarly, os.getcwd() now uses 
-EMX's _getcwd() which returns drive as well as path.
+20.  pyconfig.h is installed in the Include subdirectory with all 
+other include files.
 
-[2001/12/08] - 2.2 Beta 2
-
-25.  pyconfig.h (previously known as config.h) is now located in the 
-Include subdirectory with all other include files.
-
-[2001/12/16] - 2.2 Release Candidate 1
-
-[2001/12/08] - 2.2 Final
-
-[2002/03/31] - 2.2.1 Release Candidate 2
-
-[2002/04/14] - 2.2.1 Final
-
-[2002/8/18]
-
-26.  now explicitly set the number of file handles available to a 
-Python process to 250.  EMX default is 40, which is insufficient for the 
-recently checked in security improvments to the tempfile regression 
-test (test_tempfile) which tries to create 100 temporary files.
+21.  the default build explicitly sets the number of file handles 
+available to a Python process to 250.  EMX default is 40, which is 
+insufficient for the tempfile regression test (test_tempfile) which 
+tries to create 100 temporary files.
 
 This setting can be overridden via the EMXOPT environment variable:
   set EMXOPT=-h250
 is equivalent to the setting currently used.  The emxbind utility (if you 
 have it installed) can also be used to permanently change the setting in 
 python.exe - please refer to the EMX documentation for more information.
+
+22.  a pure python strptime module is now part of the Python standard
+library, superceding a platform specific extension module. This module
+leverages the strftime module, and as a result test_strptime fails
+due to the EMX strftime bug in item 20 above.
 
 ... probably other issues that I've not encountered, or don't remember :-(
 
@@ -548,12 +661,12 @@ Contact
 Constructive feedback, negative or positive, about this port is welcome 
 and should be addressed to me at the e-mail addresses below.
 
-I intend creating a private mailing list for announcements of fixes & 
-updates to this port.  If you wish to receive such e-mail announcments, 
-please send me an e-mail requesting that you be added to this list.
+I have a private mailing list for announcements of fixes & updates to 
+this port.  If you wish to receive such e-mail announcments, please send 
+me an e-mail requesting that you be added to this list.
 
 Andrew MacIntyre
 E-mail: andymac@bullseye.apana.org.au, or andymac@pcug.org.au
 Web:    http://www.andymac.org/
 
-18 August, 2001.
+18 April, 2003.
