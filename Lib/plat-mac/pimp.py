@@ -585,8 +585,8 @@ class PimpPackage:
         If output is given it should be a file-like object and it
         will receive a log of what happened."""
         
-        if not self._dict['Download-URL']:
-            return "%s: This package needs to be installed manually (no Download-URL field)" % _fmtpackagename(self)
+        if not self._dict.get('Download-URL'):
+            return "%s: This package needs to be installed manually (no Download-URL field)" % self.fullname()
         msg = self.downloadPackageOnly(output)
         if msg:
             return "%s: download: %s" % (self.fullname(), msg)
