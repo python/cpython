@@ -152,22 +152,6 @@ test(inspect.getdoc(git.abuse) ==
 test(inspect.getcomments(mod.StupidGit) == '# line 20\n',
      'getcomments(mod.StupidGit)')
 
-args, varargs, varkw, defaults = inspect.getargspec(mod.eggs)
-test(args == ['x', 'y'], 'mod.eggs args')
-test(varargs == None, 'mod.eggs varargs')
-test(varkw == None, 'mod.eggs varkw')
-test(defaults == None, 'mod.eggs defaults')
-test(inspect.formatargspec(args, varargs, varkw, defaults) ==
-     '(x, y)', 'mod.eggs formatted argspec')
-args, varargs, varkw, defaults = inspect.getargspec(mod.spam)
-test(args == ['a', 'b', 'c', 'd', ['e', ['f']]], 'mod.spam args')
-test(varargs == 'g', 'mod.spam varargs')
-test(varkw == 'h', 'mod.spam varkw')
-test(defaults == (3, (4, (5,))), 'mod.spam defaults')
-test(inspect.formatargspec(args, varargs, varkw, defaults) ==
-     '(a, b, c, d=3, (e, (f,))=(4, (5,)), *g, **h)',
-     'mod.spam formatted argspec')
-
 git.abuse(7, 8, 9)
 
 istest(inspect.istraceback, 'git.ex[2]')
@@ -365,3 +349,24 @@ test(('p', 'property', A) in attrs, 'missing property')
 test(('m', 'method', B) in attrs, 'missing plain method')
 test(('m1', 'method', D) in attrs, 'missing plain method')
 test(('datablob', 'data', A) in attrs, 'missing data')
+
+args, varargs, varkw, defaults = inspect.getargspec(mod.eggs)
+test(args == ['x', 'y'], 'mod.eggs args')
+test(varargs == None, 'mod.eggs varargs')
+test(varkw == None, 'mod.eggs varkw')
+test(defaults == None, 'mod.eggs defaults')
+test(inspect.formatargspec(args, varargs, varkw, defaults) ==
+     '(x, y)', 'mod.eggs formatted argspec')
+args, varargs, varkw, defaults = inspect.getargspec(mod.spam)
+test(args == ['a', 'b', 'c', 'd', ['e', ['f']]], 'mod.spam args')
+test(varargs == 'g', 'mod.spam varargs')
+test(varkw == 'h', 'mod.spam varkw')
+test(defaults == (3, (4, (5,))), 'mod.spam defaults')
+test(inspect.formatargspec(args, varargs, varkw, defaults) ==
+     '(a, b, c, d=3, (e, (f,))=(4, (5,)), *g, **h)',
+     'mod.spam formatted argspec')
+args, varargs, varkw, defaults = inspect.getargspec(A.m)
+test(args == ['self'], 'A.m args')
+test(varargs is None, 'A.m varargs')
+test(varkw is None, 'A.m varkw')
+test(defaults is None, 'A.m defaults')
