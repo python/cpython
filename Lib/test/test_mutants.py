@@ -215,3 +215,71 @@ print >> f, str(dict)
 f.close()
 os.unlink(TESTFN)
 del f, dict
+
+
+##########################################################################
+# And another core-dumper from Michael Hudson.
+
+dict = {}
+
+# let's force dict to malloc its table
+for i in range(1, 10):
+    dict[i] = i
+
+class Machiavelli2:
+    def __eq__(self, other):
+        dict.clear()
+        return 1
+
+    def __hash__(self):
+        return 0
+
+dict[Machiavelli2()] = Machiavelli2()
+
+try:
+    dict[Machiavelli2()]
+except KeyError:
+    pass
+
+del dict
+
+##########################################################################
+# And another core-dumper from Michael Hudson.
+
+dict = {}
+
+# let's force dict to malloc its table
+for i in range(1, 10):
+    dict[i] = i
+
+class Machiavelli3:
+    def __init__(self, id):
+        self.id = id
+
+    def __eq__(self, other):
+        if self.id == other.id:
+            dict.clear()
+            return 1
+        else:
+            return 0
+
+    def __repr__(self):
+        return "%s(%s)"%(self.__class__.__name__, self.id)
+
+    def __hash__(self):
+        return 0
+
+dict[Machiavelli3(1)] = Machiavelli3(0)
+dict[Machiavelli3(2)] = Machiavelli3(0)
+
+f = open(TESTFN, "w")
+try:
+    try:
+        print >> f, dict[Machiavelli3(2)]
+    except KeyError:
+        pass
+finally:
+    f.close()
+    os.unlink(TESTFN)
+
+del dict

@@ -255,6 +255,7 @@ lookdict(dictobject *mp, PyObject *key, register long hash)
 	register int checked_error;
 	register int cmp;
 	PyObject *err_type, *err_value, *err_tb;
+	PyObject *startkey;
 
 	i = hash & mask;
 	ep = &ep0[i];
@@ -272,11 +273,23 @@ lookdict(dictobject *mp, PyObject *key, register long hash)
 				restore_error = 1;
 				PyErr_Fetch(&err_type, &err_value, &err_tb);
 			}
-			cmp = PyObject_RichCompareBool(ep->me_key, key, Py_EQ);
-			if (cmp > 0)
-				goto Done;
+			startkey = ep->me_key;
+			cmp = PyObject_RichCompareBool(startkey, key, Py_EQ);
 			if (cmp < 0)
 				PyErr_Clear();
+			if (ep0 == mp->ma_table && ep->me_key == startkey) {
+				if (cmp > 0)
+					goto Done;
+			}
+			else {
+				/* The compare did major nasty stuff to the
+				 * dict:  start over.
+				 * XXX A clever adversary could prevent this
+				 * XXX from terminating.
+ 				 */
+ 				ep = lookdict(mp, key, hash);
+ 				goto Done;
+ 			}
 		}
 		freeslot = NULL;
 	}
@@ -302,11 +315,23 @@ lookdict(dictobject *mp, PyObject *key, register long hash)
 						    &err_tb);
 				}
 			}
-			cmp = PyObject_RichCompareBool(ep->me_key, key, Py_EQ);
-			if (cmp > 0)
-				break;
+			startkey = ep->me_key;
+			cmp = PyObject_RichCompareBool(startkey, key, Py_EQ);
 			if (cmp < 0)
 				PyErr_Clear();
+			if (ep0 == mp->ma_table && ep->me_key == startkey) {
+				if (cmp > 0)
+					break;
+			}
+			else {
+				/* The compare did major nasty stuff to the
+				 * dict:  start over.
+				 * XXX A clever adversary could prevent this
+				 * XXX from terminating.
+ 				 */
+ 				ep = lookdict(mp, key, hash);
+ 				break;
+ 			}
 		}
 		else if (ep->me_key == dummy && freeslot == NULL)
 			freeslot = ep;
