@@ -1,15 +1,13 @@
-# Copyright (C) 2001,2002 Python Software Foundation
-# Author: barry@zope.com (Barry Warsaw)
+# Copyright (C) 2001-2004 Python Software Foundation
+# Author: barry@python.org (Barry Warsaw)
 
-"""Basic message object for the email package object model.
-"""
+"""Basic message object for the email package object model."""
 
 import re
 import uu
 import binascii
 import warnings
 from cStringIO import StringIO
-from types import ListType, TupleType, StringType
 
 # Intrapackage imports
 from email import Utils
@@ -17,12 +15,6 @@ from email import Errors
 from email import Charset
 
 SEMISPACE = '; '
-
-try:
-    True, False
-except NameError:
-    True = 1
-    False = 0
 
 # Regular expression used to split header parameters.  BAW: this may be too
 # simple.  It isn't strictly RFC 2045 (section 5.1) compliant, but it catches
@@ -42,10 +34,10 @@ def _formatparam(param, value=None, quote=True):
     This will quote the value if needed or if quote is true.
     """
     if value is not None and len(value) > 0:
-        # TupleType is used for RFC 2231 encoded parameter values where items
+        # A tuple is used for RFC 2231 encoded parameter values where items
         # are (charset, language, value).  charset is a string, not a Charset
         # instance.
-        if isinstance(value, TupleType):
+        if isinstance(value, tuple):
             # Encode as per RFC 2231
             param += '*'
             value = Utils.encode_rfc2231(value[2], value[0], value[1])
@@ -77,7 +69,7 @@ def _parseparam(s):
 
 
 def _unquotevalue(value):
-    if isinstance(value, TupleType):
+    if isinstance(value, tuple):
         return value[0], value[1], Utils.unquote(value[2])
     else:
         return Utils.unquote(value)
@@ -132,7 +124,7 @@ class Message:
 
     def is_multipart(self):
         """Return True if the message consists of multiple parts."""
-        if isinstance(self._payload, ListType):
+        if isinstance(self._payload, list):
             return True
         return False
 
@@ -160,7 +152,7 @@ class Message:
                       DeprecationWarning, 2)
         if self._payload is None:
             self._payload = payload
-        elif isinstance(self._payload, ListType):
+        elif isinstance(self._payload, list):
             self._payload.append(payload)
         elif self.get_main_type() not in (None, 'multipart'):
             raise Errors.MultipartConversionError(
@@ -202,7 +194,7 @@ class Message:
         """
         if i is None:
             payload = self._payload
-        elif not isinstance(self._payload, ListType):
+        elif not isinstance(self._payload, list):
             raise TypeError, 'Expected list, got %s' % type(self._payload)
         else:
             payload = self._payload[i]
@@ -259,7 +251,7 @@ class Message:
             self.del_param('charset')
             self._charset = None
             return
-        if isinstance(charset, StringType):
+        if isinstance(charset, str):
             charset = Charset.Charset(charset)
         if not isinstance(charset, Charset.Charset):
             raise TypeError, charset
@@ -631,7 +623,7 @@ class Message:
         2231.  Optional language specifies the RFC 2231 language, defaulting
         to the empty string.  Both charset and language should be strings.
         """
-        if not isinstance(value, TupleType) and charset:
+        if not isinstance(value, tuple) and charset:
             value = (charset, language, value)
 
         if not self.has_key(header) and header.lower() == 'content-type':
@@ -725,7 +717,7 @@ class Message:
         filename = self.get_param('filename', missing, 'content-disposition')
         if filename is missing:
             return failobj
-        if isinstance(filename, TupleType):
+        if isinstance(filename, tuple):
             # It's an RFC 2231 encoded parameter
             newvalue = _unquotevalue(filename)
             return unicode(newvalue[2], newvalue[0] or 'us-ascii')
@@ -743,7 +735,7 @@ class Message:
         boundary = self.get_param('boundary', missing)
         if boundary is missing:
             return failobj
-        if isinstance(boundary, TupleType):
+        if isinstance(boundary, tuple):
             # RFC 2231 encoded, so decode.  It better end up as ascii
             charset = boundary[0] or 'us-ascii'
             return unicode(boundary[2], charset).encode('us-ascii')
@@ -794,12 +786,6 @@ class Message:
                 newheaders.append((h, v))
         self._headers = newheaders
 
-    try:
-        from email._compat22 import walk
-    except SyntaxError:
-        # Must be using Python 2.1
-        from email._compat21 import walk
-
     def get_content_charset(self, failobj=None):
         """Return the charset parameter of the Content-Type header.
 
@@ -811,7 +797,7 @@ class Message:
         charset = self.get_param('charset', missing)
         if charset is missing:
             return failobj
-        if isinstance(charset, TupleType):
+        if isinstance(charset, tuple):
             # RFC 2231 encoded, so decode it, and it better end up as ascii.
             pcharset = charset[0] or 'us-ascii'
             charset = unicode(charset[2], pcharset).encode('us-ascii')
@@ -835,3 +821,6 @@ class Message:
         message will still return a list of length 1.
         """
         return [part.get_content_charset(failobj) for part in self.walk()]
+
+    # I.e. def walk(self): ...
+    from email.Iterators import walk
