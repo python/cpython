@@ -816,9 +816,6 @@ parsenumber(co, s)
 	struct compiling *co;
 	char *s;
 {
-	extern long PyOS_strtol Py_PROTO((const char *, char **, int));
-	extern unsigned long PyOS_strtoul Py_PROTO((const char *,
-						    char **, int));
 	extern double atof Py_PROTO((const char *));
 	char *end;
 	long x;
