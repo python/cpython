@@ -170,12 +170,12 @@ as a \var{protocol} value.
 The \module{pickle} module provides the
 following functions to make this process more convenient:
 
-\begin{funcdesc}{dump}{object, file\optional{, protocol\optional{, bin}}}
-Write a pickled representation of \var{object} to the open file object
+\begin{funcdesc}{dump}{obj, file\optional{, protocol\optional{, bin}}}
+Write a pickled representation of \var{obj} to the open file object
 \var{file}.  This is equivalent to
-\code{Pickler(\var{file}, \var{protocol}, \var{bin}).dump(\var{object})}.
+\code{Pickler(\var{file}, \var{protocol}, \var{bin}).dump(\var{obj})}.
 
-If the \var{protocol} parameter is ommitted, protocol 0 is used.
+If the \var{protocol} parameter is omitted, protocol 0 is used.
 If \var{protocol} is specified as a negative value
 or \constant{HIGHEST_PROTOCOL},
 the highest protocol version will be used.
@@ -211,11 +211,11 @@ This function automatically determines whether the data stream was
 written in binary mode or not.
 \end{funcdesc}
 
-\begin{funcdesc}{dumps}{object\optional{, protocol\optional{, bin}}}
+\begin{funcdesc}{dumps}{obj\optional{, protocol\optional{, bin}}}
 Return the pickled representation of the object as a string, instead
 of writing it to a file.
 
-If the \var{protocol} parameter is ommitted, protocol 0 is used.
+If the \var{protocol} parameter is omitted, protocol 0 is used.
 If \var{protocol} is specified as a negative value
 or \constant{HIGHEST_PROTOCOL},
 the highest protocol version will be used.
@@ -266,7 +266,7 @@ more details.}, \class{Pickler} and \class{Unpickler}:
 This takes a file-like object to which it will write a pickle data
 stream.  
 
-If the \var{protocol} parameter is ommitted, protocol 0 is used.
+If the \var{protocol} parameter is omitted, protocol 0 is used.
 If \var{protocol} is specified as a negative value,
 the highest protocol version will be used.
 
@@ -286,8 +286,8 @@ object that meets this interface.
 
 \class{Pickler} objects define one (or two) public methods:
 
-\begin{methoddesc}[Pickler]{dump}{object}
-Write a pickled representation of \var{object} to the open file object
+\begin{methoddesc}[Pickler]{dump}{obj}
+Write a pickled representation of \var{obj} to the open file object
 given in the constructor.  Either the binary or \ASCII{} format will
 be used, depending on the value of the \var{bin} flag passed to the
 constructor.
