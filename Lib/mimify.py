@@ -39,7 +39,7 @@ chrset = regex.compile('^\\(content-type:.*charset="\\)\\(us-ascii\\|iso-8859-[0
 		       regex.casefold)
 he = regex.compile('^-*$')
 mime_code = regex.compile('=\\([0-9a-f][0-9a-f]\\)', regex.casefold)
-mime_head = regex.compile('=\\?iso-8859-1\\?q\\?\\([^?]+\\)\\?=',
+mime_head = regex.compile('=\\?iso-8859-1\\?q\\?\\([^? \t\n]+\\)\\?=',
 			  regex.casefold)
 repl = regex.compile('^subject:[ \t]+re: ', regex.casefold)
 
@@ -110,9 +110,11 @@ def mime_decode_header(line):
 		i = mime_head.search(line)
 		if i < 0:
 			break
-		match = mime_head.group(0, 1)
-		newline = newline + line[:i] + mime_decode(match[1])
-		line = line[i + len(match[0]):]
+		match0, match1 = mime_head.group(0, 1)
+		# convert underscores to spaces (before =XX conversion!)
+		match1 = string.join(string.split(match1, '_'), ' ')
+		newline = newline + line[:i] + mime_decode(match1)
+		line = line[i + len(match0):]
 	return newline + line
 
 def unmimify_part(ifile, ofile, decode_base64 = 0):
