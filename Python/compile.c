@@ -409,6 +409,7 @@ parsenumber(s)
 	char *s;
 {
 	extern long strtol();
+	extern unsigned long strtoul();
 	extern double strtod();
 	char *end;
 	long x;
@@ -419,7 +420,10 @@ parsenumber(s)
 		extern object *long_scan();
 		return long_scan(s, 0);
 	}
-	x = strtol(s, &end, 0);
+	if (s[0] == '0')
+		x = (long) strtoul(s, &end, 0);
+	else
+		x = strtol(s, &end, 0);
 	if (*end == '\0') {
 		if (errno != 0) {
 			err_setstr(OverflowError,
@@ -485,7 +489,9 @@ parsestr(s)
 		case 'n': *p++ = '\n'; break;
 		case 'r': *p++ = '\r'; break;
 		case 'v': *p++ = '\013'; break; /* VT */
+#if 0
 		case 'E': *p++ = '\033'; break; /* ESC, not C */
+#endif
 		case 'a': *p++ = '\007'; break; /* BEL, not classic C */
 		case '0': case '1': case '2': case '3':
 		case '4': case '5': case '6': case '7':
@@ -1962,11 +1968,13 @@ com_arglist(c, n)
 {
 	int i, nargs, op;
 	REQ(n, varargslist);
-	/* varargslist: (fpdef ',')* '+' NAME | fpdef (',' fpdef)* [','] */
+	/* varargslist:
+	   (fpdef ',')* ('+'|'*') NAME | fpdef (',' fpdef)* [','] */
 	op = UNPACK_ARG;
 	nargs = (NCH(n) + 1) / 2;
 	for (i = 0; i < NCH(n); i += 2) {
-		if (TYPE(CHILD(n, i)) == PLUS) {
+		int t = TYPE(CHILD(n, i));
+		if (t == PLUS || t == STAR) {
 			op = UNPACK_VARARG;
 			nargs = i/2;
 			break;
