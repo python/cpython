@@ -155,21 +155,6 @@ gc_list_remove(PyGC_Head *node)
 	node->gc.gc_next = NULL; /* object is not currently tracked */
 }
 
-static void
-gc_list_move(PyGC_Head *from, PyGC_Head *to)
-{
-	if (gc_list_is_empty(from)) {
-		gc_list_init(to);
-	}
-	else {
-		to->gc.gc_next = from->gc.gc_next;
-		to->gc.gc_next->gc.gc_prev = to;
-		to->gc.gc_prev = from->gc.gc_prev;
-		to->gc.gc_prev->gc.gc_next = to;
-	}
-	gc_list_init(from);
-}
-
 /* append a list onto another list, from becomes an empty list */
 static void
 gc_list_merge(PyGC_Head *from, PyGC_Head *to)
