@@ -44,7 +44,7 @@ typedef struct {
 	FILE *f_fp;
 	object *f_name;
 	object *f_mode;
-	/* XXX Should move the 'need space' on printing flag here */
+	int f_softspace; /* Flag used by 'print' command */
 } fileobject;
 
 FILE *
@@ -70,6 +70,7 @@ newopenfileobject(fp, name, mode)
 	f->f_fp = NULL;
 	f->f_name = newstringobject(name);
 	f->f_mode = newstringobject(mode);
+	f->f_softspace = 0;
 	if (f->f_name == NULL || f->f_mode == NULL) {
 		DECREF(f);
 		return NULL;
@@ -387,6 +388,7 @@ file_write(f, args)
 		err_badarg();
 		return NULL;
 	}
+	f->f_softspace = 0;
 	errno = 0;
 	n2 = fwrite(getstringvalue(args), 1, n = getstringsize(args), f->f_fp);
 	if (n2 != n) {
@@ -432,3 +434,18 @@ typeobject Filetype = {
 	0,		/*tp_compare*/
 	file_repr,	/*tp_repr*/
 };
+
+/* Interface for the 'soft space' between print items. */
+
+int
+softspace(f, newflag)
+	object *f;
+	int newflag;
+{
+	int oldflag = 0;
+	if (f != NULL && is_fileobject(f)) {
+		oldflag = ((fileobject *)f)->f_softspace;
+		((fileobject *)f)->f_softspace = newflag;
+	}
+	return oldflag;
+}
