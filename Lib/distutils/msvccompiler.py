@@ -307,7 +307,9 @@ class MSVCCompiler (CCompiler) :
             self._fix_link_args (objects, output_dir, takes_libs=1,
                                  libraries=libraries, library_dirs=library_dirs)
         
-        lib_opts = gen_lib_options (self, library_dirs, libraries)
+        lib_opts = gen_lib_options (self,
+                                    library_dirs, self.runtime_library_dirs,
+                                    libraries)
         if type (output_dir) not in (StringType, NoneType):
             raise TypeError, "'output_dir' must be a string or None"
         if output_dir is not None:
@@ -347,6 +349,10 @@ class MSVCCompiler (CCompiler) :
 
     def library_dir_option (self, dir):
         return "/LIBPATH:" + dir
+
+    def runtime_library_dir_option (self, dir):
+        raise DistutilsPlatformError, \
+              "don't know how to set runtime library search path for MSVC++"
 
     def library_option (self, lib):
         return self.library_filename (lib)

@@ -770,7 +770,7 @@ def gen_preprocess_options (macros, include_dirs):
 # gen_preprocess_options ()
 
 
-def gen_lib_options (compiler, library_dirs, libraries):
+def gen_lib_options (compiler, library_dirs, runtime_library_dirs, libraries):
     """Generate linker options for searching library directories and
        linking with specific libraries.  'libraries' and 'library_dirs'
        are, respectively, lists of library names (not filenames!) and
@@ -782,6 +782,9 @@ def gen_lib_options (compiler, library_dirs, libraries):
 
     for dir in library_dirs:
         lib_opts.append (compiler.library_dir_option (dir))
+
+    for dir in runtime_library_dirs:
+        lib_opts.append (compiler.runtime_library_dir_option (dir))
 
     # XXX it's important that we *not* remove redundant library mentions!
     # sometimes you really do have to say "-lfoo -lbar -lfoo" in order to
