@@ -63,7 +63,7 @@ must in standard \file{application/x-www-form-urlencoded} format;
 see the \function{urlencode()} function below.
 
 The \function{urlopen()} function works transparently with proxies
-whicd do not require authentication.  In a \UNIX{} or Windows
+which do not require authentication.  In a \UNIX{} or Windows
 environment, set the \envvar{http_proxy}, \envvar{ftp_proxy} or
 \envvar{gopher_proxy} environment variables to a URL that identifies
 the proxy server before starting the Python interpreter.  For example
@@ -260,6 +260,10 @@ reply header, which can be inspected by looking at the
 protocol, type information is encoded in the URL; there is currently
 no easy way to extract it.  If the returned data is HTML, you can use
 the module \refmodule{htmllib}\refstmodindex{htmllib} to parse it.
+
+\item
+This module does not support the use of proxies which require
+authentication.  This may be implemented in the future.
 
 \item
 Although the \module{urllib} module contains (undocumented) routines
