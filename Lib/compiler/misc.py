@@ -7,6 +7,8 @@ class Set:
 	return self.elts.keys()
     def has_elt(self, elt):
 	return self.elts.has_key(elt)
+    def remove(self, elt):
+        del self.elts[elt]
 
 class Stack:
     def __init__(self):
