@@ -3,7 +3,7 @@
 """Convert a LaTeX .toc file to some PDFTeX magic to create that neat outline.
 
 The output file has an extension of '.bkm' instead of '.out', since hyperref
-already uses that extension.  Let's avoid clashing.
+already uses that extension.
 """
 
 import getopt
@@ -41,6 +41,9 @@ _transition_map = {
     ('subsubsection', 'chapter'): 3,
     }
 
+INCLUDED_LEVELS = ("chapter", "section", "subsection", "subsubsection")
+
+
 def parse_toc(fp, bigpart=None):
     toc = top = []
     stack = [toc]
@@ -59,6 +62,9 @@ def parse_toc(fp, bigpart=None):
 	    if stype == level:
 		toc.append(entry)
 	    else:
+                if stype not in INCLUDED_LEVELS:
+                    # we don't want paragraphs & subparagraphs
+                    continue
 		direction = _transition_map[(level, stype)]
 		if direction == OUTER_TO_INNER:
 		    toc = toc[-1][-1]
