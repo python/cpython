@@ -72,12 +72,14 @@ class TextFile:
         self.current_line = None
 
 
-    def warn (self, msg):
+    def warn (self, msg, line=None):
+        if line is None:
+            line = self.current_line
         sys.stderr.write (self.filename + ", ")
-        if type (self.current_line) is ListType:
-            sys.stderr.write ("lines %d-%d: " % tuple (self.current_line))
+        if type (line) is ListType:
+            sys.stderr.write ("lines %d-%d: " % tuple (line))
         else:
-            sys.stderr.write ("line %d: " % self.current_line)
+            sys.stderr.write ("line %d: " % line)
         sys.stderr.write (msg + "\n")
 
 
