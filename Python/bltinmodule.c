@@ -1178,19 +1178,8 @@ builtin_tuple(self, v)
 		INCREF(v);
 		return v;
 	}
-	if (is_listobject(v)) {
-		int n = getlistsize(v);
-		object *t = newtupleobject(n);
-		if (t != NULL) {
-			int i;
-			for (i = 0; i < n; i++) {
-				object *item = getlistitem(v, i);
-				INCREF(item);
-				settupleitem(t, i, item);
-			}
-		}
-		return t;
-	}
+	if (is_listobject(v))
+		return listtuple(v);
 	if (is_stringobject(v)) {
 		int n = getstringsize(v);
 		object *t = newtupleobject(n);
