@@ -129,8 +129,15 @@ PyThread_start_new_thread(void (*func)(void *), void *arg)
 	pthread_t th;
 	int success;
 	dprintf(("PyThread_start_new_thread called\n"));
+#ifdef PTHREAD_SYSTEM_SCHED_SUPPORTED
+	pthread_attr_t attrs;
+#endif
 	if (!initialized)
 		PyThread_init_thread();
+#ifdef PTHREAD_SYSTEM_SCHED_SUPPORTED
+	pthread_attr_init(&attrs);
+	pthread_attr_setscope(&attrs, PTHREAD_SCOPE_SYSTEM);
+#endif
 
 	success = pthread_create(&th, 
 #if defined(PY_PTHREAD_D4)
@@ -146,7 +153,11 @@ PyThread_start_new_thread(void (*func)(void *), void *arg)
 				 func,
 				 arg
 #elif defined(PY_PTHREAD_STD)
+#ifdef PTHREAD_SYSTEM_SCHED_SUPPORTED
+				 &attrs,
+#else
 				 (pthread_attr_t*)NULL,
+#endif
 				 (void* (*)(void *))func,
 				 (void *)arg
 #endif

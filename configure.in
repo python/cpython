@@ -819,6 +819,7 @@ else
 	LIBOBJS="$LIBOBJS thread.o"
 	AC_DEFINE(WITH_THREAD)
 	AC_DEFINE(_POSIX_THREADS)
+	posix_threads=yes
 	USE_THREAD_MODULE=""
     else
 	if test ! -z "$with_threads" -a -d "$with_threads"
@@ -842,12 +843,15 @@ else
 	AC_MSG_RESULT(no)
 	AC_CHECK_LIB(pthread, pthread_create, [AC_DEFINE(WITH_THREAD)
 	AC_DEFINE(_POSIX_THREADS)
+	posix_threads=yes
 	LIBS="-lpthread $LIBS"
 	LIBOBJS="$LIBOBJS thread.o"],[
 	AC_CHECK_FUNC(pthread_detach, [AC_DEFINE(WITH_THREAD)
 	case $ac_sys_system in
 	  Darwin*) ;;
-	  *) AC_DEFINE(_POSIX_THREADS);;
+	  *) AC_DEFINE(_POSIX_THREADS)
+	     posix_threads=yes
+             ;;
 	esac
 	LIBOBJS="$LIBOBJS thread.o"],[
 	AC_CHECK_HEADER(kernel/OS.h, [AC_DEFINE(WITH_THREAD)
@@ -855,26 +859,51 @@ else
 	LIBOBJS="$LIBOBJS thread.o"],[
 	AC_CHECK_LIB(pthreads, pthread_create, [AC_DEFINE(WITH_THREAD)
 	AC_DEFINE(_POSIX_THREADS)
+	posix_threads=yes
 	LIBS="$LIBS -lpthreads"
 	LIBOBJS="$LIBOBJS thread.o"], [
 	AC_CHECK_LIB(c_r, pthread_create, [AC_DEFINE(WITH_THREAD)
 	AC_DEFINE(_POSIX_THREADS)
+	posix_threads=yes
 	LIBS="$LIBS -lc_r"
 	LIBOBJS="$LIBOBJS thread.o"], [
 	AC_CHECK_LIB(thread, __d6_pthread_create, [AC_DEFINE(WITH_THREAD)
 	AC_DEFINE(_POSIX_THREADS)
+	posix_threads=yes
 	LIBS="$LIBS -lthread"
 	LIBOBJS="$LIBOBJS thread.o"], [
 	AC_CHECK_LIB(pthread, __pthread_create_system, [AC_DEFINE(WITH_THREAD)
 	AC_DEFINE(_POSIX_THREADS)
+	posix_threads=yes
 	LIBS="$LIBS -lpthread"
 	LIBOBJS="$LIBOBJS thread.o"], [
 	AC_CHECK_LIB(cma, pthread_create, [AC_DEFINE(WITH_THREAD)
 	AC_DEFINE(_POSIX_THREADS)
+	posix_threads=yes
 	LIBS="$LIBS -lcma"
 	LIBOBJS="$LIBOBJS thread.o"],[
 	USE_THREAD_MODULE="#"])
 	])])])])])])])])])
+        if test "$posix_threads" = "yes"; then         
+	  AC_MSG_CHECKING(if PTHREAD_SCOPE_SYSTEM is supported)
+	  AC_CACHE_VAL(ac_cv_pthread_system_supported,
+	  [AC_TRY_RUN([#include <pthread.h>
+	  void *foo(void *parm) {
+	    return NULL;
+	  }
+	  main() {
+	    pthread_attr_t attr;
+	    if (pthread_attr_init(&attr)) exit(-1);
+	    if (pthread_attr_setscope(&attr, PTHREAD_SCOPE_SYSTEM)) exit(-1);
+	    if (pthread_create(NULL, &attr, foo, NULL)) exit(-1);
+	    exit(0);
+	  }], ac_cv_pthread_system_supported=yes, ac_cv_pthread_system_supported=no)
+	  ])
+	  AC_MSG_RESULT($ac_cv_pthread_system_supported)
+	  if test "$ac_cv_pthread_system_supported" = "yes"; then
+	    AC_DEFINE(PTHREAD_SYSTEM_SCHED_SUPPORTED)
+	  fi
+	fi
 
 	AC_CHECK_LIB(mpc, usconfig, [AC_DEFINE(WITH_THREAD)
 	LIBS="$LIBS -lmpc"

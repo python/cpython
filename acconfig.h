@@ -130,6 +130,9 @@
 /* The number of bytes in a pthread_t. */
 #undef SIZEOF_PTHREAD_T
 
+/* Defined if PTHREAD_SCOPE_SYSTEM supported. */
+#undef PTHREAD_SYSTEM_SCHED_SUPPORTED
+
 /* sizeof(void *) */
 #undef SIZEOF_VOID_P
 
