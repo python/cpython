@@ -72,13 +72,13 @@ def native_path (pathname):
         raise ValueError, "path '%s' cannot be absolute" % pathname
     if pathname[-1] == '/':
         raise ValueError, "path '%s' cannot end with '/'" % pathname
-    if os.sep != '/' and os.sep in pathname:
-        raise ValueError, \
-              "path '%s' cannot contain '%c' character" % \
-              (pathname, os.sep)
-
-        paths = string.split (pathname, '/')
-        return apply (os.path.join, paths)
+    if os.sep != '/':
+       if os.sep in pathname:
+            raise ValueError, \
+              "path '%s' cannot contain '%c' character" % (pathname, os.sep)
+       else:
+            paths = string.split (pathname, '/')
+            return apply (os.path.join, paths)
     else:
         return pathname
 
