@@ -125,9 +125,9 @@ class _tcpsocket(_socket):
 		self.stream.ActiveOpen(self.port, _ipaddress(host), port)
 		
 	def getsockname(self):
-		st = self.stream.Status()
-		host = macdnr.AddrToStr(st.localHost)
-		return host, st.localPort
+		host, port = self.stream.GetSockName()
+		host = macdnr.AddrToStr(host)
+		return host, port
 		
 	def getpeername(self):
 		st = self.stream.Status()
@@ -147,9 +147,6 @@ class _tcpsocket(_socket):
 		if not self.databuf:
 			try:
 				self.databuf, urg, mark = self.stream.Rcv(0)
-				if not self.databuf:
-					print '** socket: no data!'
-				print '** recv: got ', len(self.databuf)
 			except mactcp.error, arg:
 				if arg[0] != MACTCP.connectionClosing:
 					raise mactcp.error, arg
@@ -211,7 +208,6 @@ class _socketfile:
 			i = string.index(self.buf, '\n')
 			rv = self.buf[:i+1]
 			self.buf = self.buf[i+1:]
-		print '** Readline:',self, `rv`
 		return rv
 			
 	def write(self, buf):
