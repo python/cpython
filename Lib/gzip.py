@@ -267,12 +267,6 @@ class GzipFile:
     def flush(self):
         self.fileobj.flush()
 
-    def seek(self):
-        raise IOError, 'Random access not allowed in gzip files'
-
-    def tell(self):
-        raise IOError, 'I won\'t tell() you for gzip files'
-
     def isatty(self):
         return 0
 
