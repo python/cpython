@@ -6,9 +6,9 @@ def MDPrint(str):
     outstr = ''
     for i in str:
         o = ord(i)
-        outstr = outstr \
-                  + string.hexdigits[(o >> 4) & 0xF] \
-                  + string.hexdigits[o & 0xF]
+        outstr = (outstr 
+                  + string.hexdigits[(o >> 4) & 0xF] 
+                  + string.hexdigits[o & 0xF])
     print outstr,
 
 
@@ -97,8 +97,8 @@ def MDTestSuite():
     MDString('abc')
     MDString('message digest')
     MDString(makestr(ord('a'), ord('z')))
-    MDString(makestr(ord('A'), ord('Z')) \
-              + makestr(ord('a'), ord('z')) \
+    MDString(makestr(ord('A'), ord('Z')) 
+              + makestr(ord('a'), ord('z')) 
               + makestr(ord('0'), ord('9')))
     MDString((makestr(ord('1'), ord('9')) + '0') * 8)
 
