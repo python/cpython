@@ -393,7 +393,7 @@ PyObject *a, *el;
 		return PyUnicode_Contains(a, el);
 	if (!PyString_Check(el) || PyString_Size(el) != 1) {
 		PyErr_SetString(PyExc_TypeError,
-				"string member test needs char left operand");
+		    "'in <string>' requires character as left operand");
 		return -1;
 	}
 	c = PyString_AsString(el)[0];
