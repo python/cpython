@@ -75,11 +75,11 @@ def body_quopri_len(str):
 
 def _max_append(L, s, maxlen, extra=''):
     if not L:
-        L.append(s)
+        L.append(s.lstrip())
     elif len(L[-1]) + len(s) < maxlen:
         L[-1] += extra + s
     else:
-        L.append(s)
+        L.append(s.lstrip())
 
 
 def unquote(s):
