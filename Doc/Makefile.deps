@@ -51,7 +51,17 @@ REFFILES= $(MANSTYLES) $(INDEXSTYLES) $(COMMONTEX) \
 # LaTeX source files for the Python Library Reference
 LIBFILES= $(MANSTYLES) $(INDEXSTYLES) $(COMMONTEX) \
 	lib/lib.tex \
+	lib/asttable.tex \
+	lib/compiler.tex \
 	lib/distutils.tex \
+	lib/email.tex \
+	lib/emailencoders.tex \
+	lib/emailexc.tex \
+	lib/emailgenerator.tex \
+	lib/emailiter.tex \
+	lib/emailmessage.tex \
+	lib/emailparser.tex \
+	lib/emailutil.tex \
 	texinputs/reportingbugs.tex \
 	lib/libintro.tex \
 	lib/libobjs.tex \
