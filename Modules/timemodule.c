@@ -135,7 +135,16 @@ time_convert(when, function)
 	time_t when;
 	struct tm * (*function) PROTO((const time_t *));
 {
-	struct tm *p = function(&when);
+	struct tm *p;
+	errno = 0;
+	p = function(&when);
+	if (p == NULL) {
+#ifdef EINVAL
+		if (errno == NULL)
+			errno = EINVAL;
+#endif
+		return err_errno(IOError);
+	}
 	return mkvalue("(iiiiiiiii)",
 		       p->tm_year + 1900,
 		       p->tm_mon + 1, /* Want January == 1 */
