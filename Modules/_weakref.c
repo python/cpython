@@ -685,14 +685,11 @@ weakref_proxy(PyObject *self, PyObject *args)
  * is installed in the init_weakref() function.  It is called by the
  * tp_dealloc handler to clear weak references.
  *
- * This returns true if the object should be deallocated, and false if the
- * object is resurrected and deallocation should be aborted.
- *
  * This iterates through the weak references for 'object' and calls callbacks
- * until one resurrects the object, at which point it stops invalidating
- * weak references and returns false.
+ * for those references which have one.  It returns when all callbacks have
+ * been attempted.
  */
-static
+static void
 cleanup_helper(PyObject *object)
 {
     PyWeakReference **list;
