@@ -2154,10 +2154,18 @@ class Context(object):
         self.DefaultLock.release()
         del self.self
 
+    def __repr__(self):
+        """Show the current context in readable form, not in a form for eval()."""
+        s = []
+        s.append('Context(prec=%(prec)d, rounding=%(rounding)s, Emin=%(Emin)d, Emax=%(Emax)d' % vars(self))
+        s.append('setflags=%r' % [f.__name__ for f, v in self.flags.items() if v])
+        s.append('settraps=%r' % [t.__name__ for t, v in self.trap_enablers.items() if v])
+        return ', '.join(s) + ')'
+
     def clear_flags(self):
         """Reset all flags to zero"""
         for flag in self.flags:
-            self.flag = 0
+            self.flags[flag] = 0
 
     def copy(self):
         """Returns a copy from self."""
