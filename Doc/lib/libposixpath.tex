@@ -135,12 +135,14 @@ Return true if both pathname arguments refer to the same file or
 directory (as indicated by device number and i-node number).
 Raise an exception if a \function{os.stat()} call on either pathname
 fails.
+Availability:  Macintosh, \UNIX{}.
 \end{funcdesc}
 
 \begin{funcdesc}{sameopenfile}{fp1, fp2}
 Return true if the file objects \var{fp1} and \var{fp2} refer to the
 same file.  The two file objects may represent different file
 descriptors.
+Availability:  Macintosh, \UNIX{}.
 \end{funcdesc}
 
 \begin{funcdesc}{samestat}{stat1, stat2}
@@ -149,6 +151,7 @@ the same file.  These structures may have been returned by
 \function{fstat()}, \function{lstat()}, or \function{stat()}.  This
 function implements the underlying comparison used by
 \function{samefile()} and \function{sameopenfile()}.
+Availability:  Macintosh, \UNIX{}.
 \end{funcdesc}
 
 \begin{funcdesc}{split}{path}
