@@ -11,8 +11,8 @@
 # and millisleep from the built-in module time, or you can implement
 # simulated time by writing your own functions.  This can also be
 # used to integrate scheduling with STDWIN events; the delay function
-# is allowed to modify the queue.  Time can be expressed
-# as integers or floating point numbers, as long as it is consistent.
+# is allowed to modify the queue.  Time can be expressed as
+# integers or floating point numbers, as long as it is consistent.
 
 # Events are specified by tuples (time, priority, action, argument).
 # As in UNIX, lower priority numbers mean higher priority; in this
@@ -83,6 +83,11 @@ class scheduler():
 	# exceptions are not caught but the scheduler's state
 	# remains well-defined so run() may be called again.
 	#
+	# A questionably hack is added to allow other threads to run:
+	# just after an event is executed, a delay of 0 is executed,
+	# to avoid monopolizing the CPU when other threads are also
+	# runnable.
+	#
 	def run(self):
 		q = self.queue
 		while q:
@@ -93,4 +98,5 @@ class scheduler():
 			else:
 				del q[0]
 				void = action(argument)
+				self.delayfunc(0) # Let other threads run
 	#
