@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-""" This module tries to retrieve as much platform identifying data as
+""" This module tries to retrieve as much platform-identifying data as
     possible. It makes this information available via function APIs.
 
     If called from the command line, it prints the platform
@@ -20,7 +20,7 @@
 #    * support for Amiga and other still unsupported platforms running Python
 #    * support for additional Linux distributions
 #
-#    Many thanks to all those who helped adding platform specific
+#    Many thanks to all those who helped adding platform-specific
 #    checks (in no particular order):
 #
 #      Charles G Waldman, David Arnold, Gordon McMillan, Ben Darnell,
@@ -118,15 +118,15 @@ def libc_ver(executable=sys.executable,lib='',version='',
 
              chunksize=2048):
 
-    """ Tries to determine the libc version against which the
-        file executable (defaults to the Python interpreter) is linked.
+    """ Tries to determine the libc version that the file executable
+        (which defaults to the Python interpreter) is linked against.
 
         Returns a tuple of strings (lib,version) which default to the
         given parameters in case the lookup fails.
 
         Note that the function has intimate knowledge of how different
-        libc versions add symbols to the executable is probably only
-        useable for executables compiled using gcc.
+        libc versions add symbols to the executable and thus is probably
+        only useable for executables compiled using gcc.
 
         The file is read and scanned in chunks of chunksize bytes.
 
@@ -219,13 +219,13 @@ def dist(distname='',version='',id='',
 
          supported_dists=('SuSE','debian','redhat','mandrake')):
 
-    """ Tries to determine the name of the OS distribution name
+    """ Tries to determine the name of the Linux OS distribution name.
 
         The function first looks for a distribution release file in
         /etc and then reverts to _dist_try_harder() in case no
         suitable files are found.
 
-        Returns a tuple distname,version,id which default to the
+        Returns a tuple (distname,version,id) which default to the
         args given as parameters.
 
     """
@@ -351,7 +351,7 @@ def popen(cmd, mode='r', bufsize=None):
 
 def _norm_version(version,build=''):
 
-    """ Normalize the version and build strings and return a sinlge
+    """ Normalize the version and build strings and return a single
         vesion string using the format major.minor.build (or patchlevel).
     """
     l = string.split(version,'.')
@@ -544,8 +544,8 @@ def mac_ver(release='',versioninfo=('','',''),machine=''):
         versioninfo, machine) with versioninfo being a tuple (version,
         dev_stage, non_release_version).
 
-        Entries which cannot be determined are set to ''. All tuple
-        entries are strings.
+        Entries which cannot be determined are set to the paramter values
+        which default to ''. All tuple entries are strings.
 
         Thanks to Mark R. Levinson for mailing documentation links and
         code examples for this function. Documentation for the
@@ -595,7 +595,7 @@ def _java_getprop(name,default):
 
 def java_ver(release='',vendor='',vminfo=('','',''),osinfo=('','','')):
 
-    """ Version interface for JPython.
+    """ Version interface for Jython.
 
         Returns a tuple (release,vendor,vminfo,osinfo) with vminfo being
         a tuple (vm_name,vm_release,vm_vendor) and osinfo being a
@@ -815,9 +815,9 @@ _architecture_split = re.compile(r'[\s,]').split
 def architecture(executable=sys.executable,bits='',linkage=''):
 
     """ Queries the given executable (defaults to the Python interpreter
-        binary) for various architecture informations.
+        binary) for various architecture information.
 
-        Returns a tuple (bits,linkage) which contain information about
+        Returns a tuple (bits,linkage) which contains information about
         the bit architecture and the linkage format used for the
         executable. Both values are returned as strings.
 
@@ -828,9 +828,9 @@ def architecture(executable=sys.executable,bits='',linkage=''):
 
         The function relies on the system's "file" command to do the
         actual work. This is available on most if not all Unix
-        platforms. On some non-Unix platforms and then only if the
-        executable points to the Python interpreter defaults from
-        _default_architecture are used.
+        platforms. On some non-Unix platforms where the "file" command
+        does not exist and the executable is set to the Python interpreter
+        binary defaults from _default_architecture are used.
 
     """
     # Use the sizeof(pointer) as default number of bits if nothing
@@ -905,7 +905,7 @@ def uname():
         identifying the underlying platform.
 
         Note that unlike the os.uname function this also returns
-        possible processor information as additional tuple entry.
+        possible processor information as an additional tuple entry.
 
         Entries which cannot be determined are set to ''.
 
@@ -1013,7 +1013,8 @@ def system():
 
 def node():
 
-    """ Returns the computer's network name (may not be fully qualified !)
+    """ Returns the computer's network name (which may not be fully
+        qualified)
 
         An empty string is returned if the value cannot be determined.
 
