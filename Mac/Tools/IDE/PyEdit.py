@@ -7,6 +7,7 @@ from Wkeys import *
 import macfs
 import MACFS
 import MacOS
+import EasyDialogs
 from Carbon import Win
 from Carbon import Res
 from Carbon import Evt
@@ -67,7 +68,6 @@ class Editor(W.Window):
 		self.path = path
 		
 		if '\n' in text:
-			import EasyDialogs
 			if string.find(text, '\r\n') >= 0:
 				self._eoln = '\r\n'
 			else:
@@ -365,7 +365,6 @@ class Editor(W.Window):
 	
 	def close(self):
 		if self.editgroup.editor.changed:
-			import EasyDialogs
 			Qd.InitCursor()
 			save = EasyDialogs.AskYesNoCancel('Save window "%s" before closing?' % self.title,
 					default=1, no="Don\xd5t save")
@@ -406,11 +405,11 @@ class Editor(W.Window):
 		return self.editgroup.editor.changed or self.editgroup.editor.selchanged
 	
 	def domenu_save_as(self, *args):
-		fss, ok = macfs.StandardPutFile('Save as:', self.title)
-		if not ok: 
+		path = EasyDialogs.AskFileForSave(message='Save as:', savedFileName=self.title)
+		if not path: 
 			return 1
 		self.showbreakpoints(0)
-		self.path = fss.as_pathname()
+		self.path = path
 		self.setinfotext()
 		self.title = os.path.split(self.path)[-1]
 		self.wid.SetWTitle(self.title)
@@ -434,11 +433,11 @@ class Editor(W.Window):
 			destname = self.title[:-3]
 		else:
 			destname = self.title + ".applet"
-		fss, ok = macfs.StandardPutFile('Save as Applet:', destname)
-		if not ok: 
+		destname = EasyDialogs.AskFileForSave(message='Save as Applet:', 
+			savedFileName=destname)
+		if not destname: 
 			return 1
 		W.SetCursor("watch")
-		destname = fss.as_pathname()
 		if self.path:
 			filename = self.path
 			if filename[-3:] == ".py":
@@ -508,7 +507,6 @@ class Editor(W.Window):
 	def _run(self):
 		if self.run_with_interpreter:
 			if self.editgroup.editor.changed:
-				import EasyDialogs
 				Qd.InitCursor()
 				save = EasyDialogs.AskYesNoCancel('Save "%s" before running?' % self.title, 1)
 				if save > 0:
@@ -521,7 +519,6 @@ class Editor(W.Window):
 			self._run_with_interpreter()
 		elif self.run_with_cl_interpreter:
 			if self.editgroup.editor.changed:
-				import EasyDialogs
 				Qd.InitCursor()
 				save = EasyDialogs.AskYesNoCancel('Save "%s" before running?' % self.title, 1)
 				if save > 0:
@@ -1025,7 +1022,6 @@ class SearchEngine:
 		W.SetCursor("arrow")
 		if counter:
 			self.hide()
-			import EasyDialogs
 			from Carbon import Res
 			editor.textchanged()
 			editor.selectionchanged()
