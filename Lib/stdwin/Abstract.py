@@ -1,6 +1,14 @@
 # Abstract classes for parents and children.
+#
 # Do not use as base class -- this is for documentation only.
-# Note that the tree must be built top down.
+#
+# Note that the tree must be built top down (create the parent,
+# then add the children).
+#
+# Also note that the creation methods are not standardized --
+# these have extra parameters dependent on the widget type.
+# For historical reasons, button creation methods are called
+# define() while split creation methods are called create().
 
 class AbstractParent():
 	#
