@@ -122,7 +122,6 @@ try:
 		print 'received:', data
 	    conn.send(data)
 	conn.close()
-	os._exit(0)
     else:
 	try:
 	    # child is client
