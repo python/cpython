@@ -6,7 +6,6 @@ from Tkinter import *
 import tkMessageBox
 import SearchEngine
 from SearchDialogBase import SearchDialogBase
-import sre_parse
 
 def replace(text):
     root = text._root()
@@ -91,7 +90,7 @@ class ReplaceDialog(SearchDialogBase):
             line, m = res
             chars = text.get("%d.0" % line, "%d.0" % (line+1))
             orig = m.group()
-            new = self._expand(m, repl)
+            new = m.expand(repl)
             i, j = m.span()
             first = "%d.%d" % (line, i)
             last = "%d.%d" % (line, j)
@@ -143,7 +142,7 @@ class ReplaceDialog(SearchDialogBase):
         m = prog.match(chars, col)
         if not prog:
             return False
-        new = self._expand(m, self.replvar.get())
+        new = m.expand(self.replvar.get())
         text.mark_set("insert", first)
         text.undo_block_start()
         if m.group():
@@ -154,14 +153,6 @@ class ReplaceDialog(SearchDialogBase):
         self.show_hit(first, text.index("insert"))
         self.ok = 0
         return True
-
-    def _expand(self, m, template):
-        # XXX This code depends on internals of the regular expression
-        # engine!  There's no standard API to do a substitution when you
-        # have already found the match.  One should be added.
-        # XXX This parses the template over and over...
-        ptemplate = sre_parse.parse_template(template, m.re)
-        return sre_parse.expand_template(ptemplate, m)
 
     def show_hit(self, first, last):
         text = self.text
