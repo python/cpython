@@ -34,7 +34,6 @@
 
 import os
 import time
-import string
 import marshal
 import re
 
@@ -392,11 +391,11 @@ class Stats:
         return self
 
     def print_call_heading(self, name_size, column_title):
-        print string.ljust("Function ", name_size) + column_title
+        print "Function ".ljust(name_size) + column_title
 
 
     def print_call_line(self, name_size, source, call_dict):
-        print string.ljust(func_std_string(source), name_size),
+        print func_std_string(source).ljust(name_size),
         if not call_dict:
             print "--"
             return
@@ -414,11 +413,11 @@ class Stats:
 
 
     def print_title(self):
-        print string.rjust('ncalls', 9),
-        print string.rjust('tottime', 8),
-        print string.rjust('percall', 8),
-        print string.rjust('cumtime', 8),
-        print string.rjust('percall', 8),
+        print 'ncalls'.rjust(9),
+        print 'tottime'.rjust(8),
+        print 'percall'.rjust(8),
+        print 'cumtime'.rjust(8),
+        print 'percall'.rjust(8),
         print 'filename:lineno(function)'
 
 
@@ -427,7 +426,7 @@ class Stats:
         c = `nc`
         if nc != cc:
             c = c + '/' + `cc`
-        print string.rjust(c, 9),
+        print c.rjust(9),
         print f8(tt),
         if nc == 0:
             print ' '*8,
@@ -522,4 +521,4 @@ def count_calls(callers):
 #**************************************************************************
 
 def f8(x):
-    return string.rjust(fpformat.fix(x, 3), 8)
+    return fpformat.fix(x, 3).rjust(8)
