@@ -129,7 +129,6 @@ APPLET_INSTRUCTIONS=[
 	(buildapplet, None, [
 		":Mac:scripts:EditPythonPrefs.py",
 		":Mac:scripts:mkapplet.py",
-		":Mac:scripts:RunLibScript.py",
 		":Mac:scripts:MkPluginAliases.py"
 	])
 ]
