@@ -1,4 +1,4 @@
-# Copyright 2001-2002 by Vinay Sajip. All Rights Reserved.
+# Copyright 2001-2004 by Vinay Sajip. All Rights Reserved.
 #
 # Permission to use, copy, modify, and distribute this software and its
 # documentation for any purpose and without fee is hereby granted,
@@ -36,8 +36,8 @@ except ImportError:
 
 __author__  = "Vinay Sajip <vinay_sajip@red-dove.com>"
 __status__  = "beta"
-__version__ = "0.4.9"
-__date__    = "20 February 2004"
+__version__ = "0.4.9.1"
+__date__    = "21 February 2004"
 
 #---------------------------------------------------------------------------
 #   Miscellaneous module data
@@ -712,6 +712,7 @@ class FileHandler(StreamHandler):
         """
         Closes the stream.
         """
+        self.flush()
         self.stream.close()
         StreamHandler.close(self)
 
