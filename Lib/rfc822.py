@@ -393,8 +393,8 @@ class Message:
         del self[name] # Won't fail if it doesn't exist
         self.dict[name.lower()] = value
         text = name + ": " + value
-        self.headers.extend(text.splitlines(True))
-        self.headers.append('\n')
+        for line in text.split("\n"):
+            self.headers.append(line + "\n")
 
     def __delitem__(self, name):
         """Delete all occurrences of a specific header, if it is present."""
@@ -423,8 +423,8 @@ class Message:
             return self.dict[lowername]
         else:
             text = name + ": " + default
-            self.headers.extend(text.splitlines(True))
-            self.headers.append('\n')
+            for line in text.split("\n"):
+                self.headers.append(line + "\n")
             self.dict[lowername] = default
             return default
 
