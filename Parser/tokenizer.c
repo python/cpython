@@ -235,6 +235,7 @@ tok_nextc(tok)
 		else {
 			int done = 0;
 			int cur = 0;
+			char *pt;
 			if (tok->start == NULL) {
 				if (tok->buf == NULL) {
 					tok->buf = NEW(char, BUFSIZ);
@@ -295,6 +296,13 @@ tok_nextc(tok)
 				done = tok->inp[-1] == '\n';
 			}
 			tok->cur = tok->buf + cur;
+			/* replace "\r\n" with "\n" */
+			pt = tok->inp - 2;
+			if (pt >= tok->buf && *pt == '\r') {
+				*pt++ = '\n';
+				*pt = '\0';
+				tok->inp = pt;
+			}
 		}
 		if (tok->done != E_OK) {
 			if (tok->prompt != NULL)
