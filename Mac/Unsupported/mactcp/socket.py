@@ -216,6 +216,7 @@ class _udpsocket(_socket):
 class _socketfile:
 	
 	def __init__(self, sock, rw, bs):
+		if rw[1:] == 'b': rw = rw[:1]
 		if rw not in ('r', 'w'): raise _myerror, "mode must be 'r' or 'w'"
 		self.sock = sock
 		self.rw = rw
