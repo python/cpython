@@ -47,11 +47,13 @@ offset of the date's timezone from UTC (which is the official term
 for Greenwich Mean Time).  (Note that the sign of the timezone offset
 is the opposite of the sign of the \code{time.timezone} variable for
 the same timezone; the latter variable follows the \POSIX{} standard
-while this module follows \rfc{822}.)
+while this module follows \rfc{822}.)  If the input string has no
+timezone, the last element of the tuple returned is \code{None}.
 \end{funcdesc}
 
 \begin{funcdesc}{mktime_tz}{tuple}
 Turn a 10-tuple as returned by \code{parsedate_tz()} into a UTC timestamp.
+It the timezone item in the tuple is \code{None}, assume local time.
 Minor deficiency: this first interprets the first 8 elements as a
 local time and then compensates for the timezone difference;
 this may yield a slight error around daylight savings time
