@@ -7,6 +7,9 @@
 - mkapplet bug wrt owner resource (and, hence, trouble starting applets) fixed.
 - Compiled with CodeWarrior 7.
 - AE client modules generated with gensuitemodule.py now use keyword args.
+- img modules updated to latest version (including pbm and sgi support).
+- Everything compiled with all optimization options available. Let me know
+  if you suspect errors that are due to this.
 
 	Changes since Python 1.2 for the mac
 	------------------------------------
@@ -82,6 +85,12 @@
 - The full documentation should be ported to AppleGuide. This should be
   a fairly simple automatic translation but I am not well-versed enough in
   AppleGuide to do it. Any takers?
+- stdwin still has trouble with getting the clipboard (for cut/copy). Any
+  hints for fixing this will be looked into (but I am not going to spend
+  ages on this, especially without anyone asking me to).
+- Be careful when copy/pasting in the stdin/stdout window. If you type
+  something when you have the insertion point is not at end-of-window you
+  may experience a system hang. (thanks, Just!)
 
 
 	What will change shortly
