@@ -5137,53 +5137,58 @@ formatint(Py_UNICODE *buf,
 	  PyObject *v)
 {
     /* fmt = '%#.' + `prec` + 'l' + `type`
-       worst case length = 3 + 19 (worst len of INT_MAX on 64-bit machine)
-       + 1 + 1 = 24*/
+     * worst case length = 3 + 19 (worst len of INT_MAX on 64-bit machine)
+     *                     + 1 + 1
+     *                   = 24
+     */
     char fmt[64]; /* plenty big enough! */
     long x;
-    int use_native_c_format = 1;
 
     x = PyInt_AsLong(v);
     if (x == -1 && PyErr_Occurred())
-	return -1;
+        return -1;
     if (prec < 0)
-	prec = 1;
+        prec = 1;
+
     /* buf = '+'/'-'/'0'/'0x' + '[0-9]'*max(prec,len(x in octal))
-       worst case buf = '0x' + [0-9]*prec, where prec >= 11 */
-    if (buflen <= 13 || buflen <= (size_t)2+(size_t)prec) {
+     * worst case buf = '0x' + [0-9]*prec, where prec >= 11
+     */
+    if (buflen <= 13 || buflen <= (size_t)2 + (size_t)prec) {
         PyErr_SetString(PyExc_OverflowError,
-            "formatted integer is too long (precision too long?)");
+    	        "formatted integer is too long (precision too large?)");
         return -1;
     }
-    /* When converting 0 under %#x or %#X, C leaves off the base marker,
-     * but we want it (for consistency with other %#x conversions, and
-     * for consistency with Python's hex() function).
-     * BUG 28-Apr-2001 tim:  At least two platform Cs (Metrowerks &
-     * Compaq Tru64) violate the std by converting 0 w/ leading 0x anyway.
-     * So add it only if the platform doesn't already.
-     */
-#if defined(PYOS_OS2) && defined(PYCC_GCC)
-    if ((flags & F_ALT) && (type == 'x' || type == 'X')) {
-        /* the EMX runtime gives 0x as the base marker when we want 0X
-         * so we cover all bets by supplying our own for both cases.
+
+    if ((flags & F_ALT) &&
+        (type == 'x' || type == 'X')) {
+        /* When converting under %#x or %#X, there are a number 
+         * of issues that cause pain:
+         * - when 0 is being converted, the C standard leaves off
+         *   the '0x' or '0X', which is inconsistent with other
+         *   %#x/%#X conversions and inconsistent with Python's
+         *   hex() function
+         * - there are platforms that violate the standard and
+         *   convert 0 with the '0x' or '0X'
+         *   (Metrowerks, Compaq Tru64)
+         * - there are platforms that give '0x' when converting
+         *   under %#X, but convert 0 in accordance with the 
+         *   standard (OS/2 EMX)
+         * 
+         * We can achieve the desired consistency by inserting our
+         * own '0x' or '0X' prefix, and substituting %x/%X in place
+         * of %#x/%#X.
+         *
+         * Note that this is the same approach as used in
+         * formatint() in stringobject.c
          */
-        use_native_c_format = 0;
-        PyOS_snprintf(fmt, sizeof(fmt), "0%c%%.%dl%c", type, prec, type);
+        PyOS_snprintf(fmt, sizeof(fmt), "0%c%%.%dl%c", 
+                      type, prec, type);
     }
-#else
-    if (x == 0 && (flags & F_ALT) && (type == 'x' || type == 'X')) {
-        /* Only way to know what the platform does is to try it. */
-        PyOS_snprintf(fmt, sizeof(fmt), type == 'x' ? "%#x" : "%#X", 0);
-        if (fmt[1] != (char)type) {
-            /* Supply our own leading 0x/0X -- needed under std C */
-            use_native_c_format = 0;
-            PyOS_snprintf(fmt, sizeof(fmt), "0%c%%#.%dl%c", type, prec, type);
-        }
+    else {
+        PyOS_snprintf(fmt, sizeof(fmt), "%%%s.%dl%c",
+                      (flags&F_ALT) ? "#" : "", 
+                      prec, type);
     }
-#endif
-    if (use_native_c_format)
-         PyOS_snprintf(fmt, sizeof(fmt), "%%%s.%dl%c",
-		       (flags & F_ALT) ? "#" : "", prec, type);
     return usprintf(buf, fmt, x);
 }
 
