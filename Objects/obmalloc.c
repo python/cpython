@@ -651,9 +651,9 @@ PyObject_Malloc(size_t nbytes)
 			UNLOCK();
 			return (void *)bp;
 		}
-                /*
-                 * Allocate new pool
-                 */
+		/*
+		 * Allocate new pool
+		 */
 		if (nfreepools) {
 		commit_pool:
 			--nfreepools;
@@ -663,9 +663,9 @@ PyObject_Malloc(size_t nbytes)
 			pool->szidx = DUMMY_SIZE_IDX;
 			goto init_pool;
 		}
-                /*
-                 * Allocate new arena
-                 */
+		/*
+		 * Allocate new arena
+		 */
 #ifdef WITH_MEMORY_LIMITS
 		if (!(narenas < MAX_ARENAS)) {
 			UNLOCK();
