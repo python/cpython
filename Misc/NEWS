@@ -22,9 +22,22 @@ Build
 
 API
 
-+ XXX Say something about Neil's GC rework, and that extensions that
-  don't upgrade to the new scheme will still compile but not actually
-  participate in GC.
++ The GC API has been changed.  Extensions that use the old API will still
+  compile but will not participate in GC.  To upgrade an extension
+  module:
+
+    - rename Py_TPFLAGS_GC to PyTPFLAGS_HAVE_GC
+    
+    - use PyObject_GC_New or PyObject_GC_NewVar to allocate objects and
+      PyObject_GC_Del to deallocate them
+      
+    - rename PyObject_GC_Init to PyObject_GC_Track and PyObject_GC_Fini
+      to PyObject_GC_UnTrack
+  
+    - remove PyGC_HEAD_SIZE from object size calculations
+
+    - remove calls to PyObject_AS_GC and PyObject_FROM_GC
+
 
 New platforms
 
