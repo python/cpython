@@ -19,7 +19,7 @@ import socket
 import regex
 
 
-__version__ = '1.3b1'
+__version__ = '1.1'
 
 
 # This really consists of two pieces:
