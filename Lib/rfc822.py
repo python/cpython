@@ -444,6 +444,9 @@ class Message:
         """Determine whether a message contains the named header."""
         return name.lower() in self.dict
 
+    def __iter__(self):
+        return iter(self.dict)
+
     def keys(self):
         """Get all of a message's header field names."""
         return self.dict.keys()
