@@ -15,7 +15,7 @@ from copy import copy
 from distutils.errors import *
 from distutils import sysconfig
 from distutils.fancy_getopt import FancyGetopt, translate_longopt
-from distutils.util import check_environ, strtobool
+from distutils.util import check_environ, strtobool, rfc822_escape
 
 
 # Regex to define acceptable Distutils command names.  This is not *quite*
@@ -85,6 +85,10 @@ class Distribution:
          "print the package description"),
         ('long-description', None,
          "print the long package description"),
+        ('platforms', None,
+         "print the list of platforms"),
+        ('keywords', None,
+         "print the list of keywords"),
         ]
     display_option_names = map(lambda x: translate_longopt(x[0]),
                                display_options)
@@ -206,9 +210,7 @@ class Distribution:
                     raise DistutilsSetupError, \
                           "invalid distribution option '%s'" % key
 
-        if self.metadata.version is None:
-            raise DistutilsSetupError, \
-                  "No version number specified for distribution"
+        self.finalize_options()
         
     # __init__ ()
 
@@ -526,6 +528,28 @@ class Distribution:
     # _parse_command_opts ()
 
 
+    def finalize_options (self):
+        """Set final values for all the options on the Distribution
+        instance, analogous to the .finalize_options() method of Command
+        objects.
+        """
+
+        if self.metadata.version is None:
+            raise DistutilsSetupError, \
+                  "No version number specified for distribution"
+
+        keywords = self.metadata.keywords
+        if keywords is not None:
+            if type(keywords) is StringType:
+                keywordlist = string.split(keywords, ',')
+                self.metadata.keywords = map(string.strip, keywordlist)
+
+        platforms = self.metadata.platforms
+        if platforms is not None:
+            if type(platforms) is StringType:
+                platformlist = string.split(platforms, ',')
+                self.metadata.platforms = map(string.strip, platformlist)
+
     def _show_help (self,
                     parser,
                     global_options=1,
@@ -607,7 +631,11 @@ class Distribution:
         for (opt, val) in option_order:
             if val and is_display_option.get(opt):
                 opt = translate_longopt(opt)
-                print getattr(self.metadata, "get_"+opt)()
+                value = getattr(self.metadata, "get_"+opt)()
+                if opt in ['keywords', 'platforms']:
+                    print string.join(value, ',')
+                else:
+                    print value
                 any_display_options = 1
 
         return any_display_options
@@ -950,7 +978,38 @@ class DistributionMetadata:
         self.licence = None
         self.description = None
         self.long_description = None
+        self.keywords = None
+        self.platforms = None
         
+    def write_pkg_info (self, base_dir):
+        """Write the PKG-INFO file into the release tree.
+        """
+
+        pkg_info = open( os.path.join(base_dir, 'PKG-INFO'), 'w')
+
+        pkg_info.write('Metadata-Version: 1.0\n')
+        pkg_info.write('Name: %s\n' % self.get_name() )
+        pkg_info.write('Version: %s\n' % self.get_version() )
+        pkg_info.write('Summary: %s\n' % self.get_description() )
+        pkg_info.write('Home-page: %s\n' % self.get_url() )
+        pkg_info.write('Author: %s\n' % self.get_maintainer() )
+        pkg_info.write('Author-email: %s\n' % self.get_maintainer_email() )
+        pkg_info.write('License: %s\n' % self.get_licence() )
+
+        long_desc = rfc822_escape( self.get_long_description() )
+        pkg_info.write('Description: %s\n' % long_desc)
+
+        keywords = string.join( self.get_keywords(), ',')
+        if keywords:
+            pkg_info.write('Keywords: %s\n' % keywords )
+
+        for platform in self.get_platforms():
+            pkg_info.write('Platform: %s\n' % platform )
+
+        pkg_info.close()
+        
+    # write_pkg_info ()
+    
     # -- Metadata query methods ----------------------------------------
 
     def get_name (self):
@@ -995,6 +1054,12 @@ class DistributionMetadata:
 
     def get_long_description(self):
         return self.long_description or "UNKNOWN"
+
+    def get_keywords(self):
+        return self.keywords or []
+
+    def get_platforms(self):
+        return self.platforms or ["UNKNOWN"]
 
 # class DistributionMetadata
 
