@@ -207,7 +207,10 @@ class TCPServer:
 
     def handle_request(self):
         """Handle one request, possibly blocking."""
-        request, client_address = self.get_request()
+        try:
+            request, client_address = self.get_request()
+        except socket.error:
+            return
         if self.verify_request(request, client_address):
             try:
                 self.process_request(request, client_address)
