@@ -434,6 +434,13 @@ py-beep-if-tab-change\tring the bell if tab-width is changed"
     (run-hooks 'py-mode-hook)))
 
 
+(defun py-keep-region-active ()
+  ;; Do whatever is necessary to keep the region active in
+  ;; XEmacs 19.  This is unnecessary, but no-op in Emacs 19, so just
+  ;; ignore byte-compiler warnings you might see.
+  (and (boundp 'zmacs-region-stays)
+       (setq zmacs-region-stays t)))
+
 ;; electric characters
 (defun py-outdent-p ()
   ;; returns non-nil if the current line should outdent one level
@@ -485,43 +492,71 @@ Electric behavior is inhibited inside a string or comment."
 	    (indent-to (- indent outdent))
 	    )))))
 
-(defun py-indent-right (arg)
-  "Indent the line by one `py-indent-offset' level.
+(defun py-indent-right (start end arg)
+  "Indent lines in the region by one `py-indent-offset' level.
 With numeric arg, indent by that many levels.  You cannot indent
 farther right than the distance the line would be indented by
-\\[py-indent-line]."
-  (interactive "p")
-  (let ((col (current-indentation))
-	(want (* arg py-indent-offset))
-	(indent (py-compute-indentation))
-	(pos (- (point-max) (point)))
-	(bol (save-excursion (beginning-of-line) (point))))
-    (if (<= (+ col want) indent)
-	(progn
-	  (beginning-of-line)
-	  (delete-horizontal-space)
-	  (indent-to (+ col want))
-	  (if (> (- (point-max) pos) (point))
-	      (goto-char (- (point-max) pos)))
-	  ))))
+\\[py-indent-line].  With no active region, indent only the
+current line."
+  (interactive
+   (let ((p (point))
+	 (m (mark)))
+     (list (min p m) (max p m) (prefix-numeric-value current-prefix-arg))))
+  (let ((pos (- (point-max) (point)))
+	(end (save-excursion
+	       (goto-char (or end (1+ start)))
+	       (and (not (bolp))
+		    (forward-line 1))
+	       (set-marker (make-marker) (point))))
+	col want indent)
+    (goto-char start)
+    (beginning-of-line)
+    (unwind-protect
+	(while (< (point) end)
+	  (setq col (current-indentation)
+		want (* arg py-indent-offset)
+		indent (py-compute-indentation))
+	  (if (<= (+ col want) indent)
+	      (progn
+		(beginning-of-line)
+		(delete-horizontal-space)
+		(indent-to (+ col want))))
+	  (forward-line 1))
+      (set-marker end nil))
+    (goto-char (- (point-max) pos))
+    (py-keep-region-active)))
 
-(defun py-outdent-left (arg)
-  "Outdent the line by one `py-indent-offset' level.
+(defun py-outdent-left (start end arg)
+  "Outdent lines in the region by one `py-indent-offset' level.
 With numeric arg, outdent by that many levels.  You cannot outdent
-farther left than column zero."
-  (interactive "p")
-  (let ((col (current-indentation))
-	(want (* arg py-indent-offset))
-	(pos (- (point-max) (point)))
-	(bol (save-excursion (beginning-of-line) (point))))
-    (if (<= 0 (- col want))
-	(progn
-	  (beginning-of-line)
-	  (delete-horizontal-space)
-	  (indent-to (- col want))
-	  (if (> (- (point-max) pos) (point))
-	      (goto-char (- (point-max) pos)))
-	  ))))
+farther left than column zero.  With no active region, outdent only
+the current line."
+  (interactive
+   (let ((p (point))
+	 (m (mark)))
+     (list (min p m) (max p m) (prefix-numeric-value current-prefix-arg))))
+  (let ((pos (- (point-max) (point)))
+	(end (save-excursion
+	       (goto-char (or end (1+ start)))
+	       (and (not (bolp))
+		    (forward-line 1))
+	       (set-marker (make-marker) (point))))
+	col want)
+    (goto-char start)
+    (beginning-of-line)
+    (unwind-protect
+	(while (< (point) end)
+	  (setq col (current-indentation)
+		want (* arg py-indent-offset))
+	  (if (<= 0 (- col want))
+	      (progn
+		(beginning-of-line)
+		(delete-horizontal-space)
+		(indent-to (- col want))))
+	  (forward-line 1))
+      (set-marker end nil))
+    (goto-char (- (point-max) pos))
+    (py-keep-region-active)))
 
 
 ;;; Functions that execute Python commands in a subprocess
