@@ -45,6 +45,7 @@ import base64
 from email.Encoders import _bencode, _qencode
 
 COMMASPACE = ', '
+EMPTYSTRING = ''
 UEMPTYSTRING = u''
 CRLF = '\r\n'
 
@@ -257,3 +258,59 @@ def parseaddr(addr):
     if not addrs:
         return '', ''
     return addrs[0]
+
+
+
+# RFC2231-related functions - parameter encoding and decoding
+def decode_rfc2231(s):
+    """Decode string according to RFC 2231"""
+    import urllib
+    charset, language, s = s.split("'", 2)
+    s = urllib.unquote(s)
+    return charset, language, s
+
+
+def encode_rfc2231(s, charset=None, language=None):
+    """Encode string according to RFC 2231"""
+    import urllib
+    s = urllib.quote(s, safe='')
+    if charset is None and language is None:
+        return s
+    else:
+        return "%s'%s'%s" % (charset, language, s)
+
+
+rfc2231_continuation = re.compile(r'^(?P<name>\w+)\*((?P<num>[0-9]+)\*?)?$')
+
+def decode_params(params):
+    """Decode parameters list according to RFC 2231"""
+    new_params = []
+    # maps parameter's name to a list of continuations
+    rfc2231_params = {}
+    # params is a sequence of 2-tuples containing (content_type, string value)
+    name, value = params[0]
+    new_params.append((name, value))
+    # Cycle through each of the rest of the parameters.
+    for name, value in params[1:]:
+        value = unquote(value)
+        mo = rfc2231_continuation.match(name)
+        if mo:
+            name, num = mo.group('name', 'num')
+            if num is not None:
+                num = int(num)
+            rfc2231_param1 = rfc2231_params.setdefault(name, [])
+            rfc2231_param1.append((num, value))
+        else:
+            new_params.append((name, '"%s"' % quote(value)))
+    if rfc2231_params:
+        for name, continuations in rfc2231_params.items():
+            value = []
+            # Sort by number
+            continuations.sort()
+            # And now append all values in num order
+            for num, continuation in continuations:
+                value.append(continuation)
+            charset, language, value = decode_rfc2231(EMPTYSTRING.join(value))
+            new_params.append((name,
+                               (charset, language, '"%s"' % quote(value))))
+    return new_params
