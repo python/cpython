@@ -1,24 +1,42 @@
 test_exceptions
 5. Built-in exceptions
+spam
 AttributeError
+spam
 EOFError
+spam
 IOError
+spam
 ImportError
+spam
 IndexError
+spam
 KeyError
+spam
 KeyboardInterrupt
 (not testable in a script)
+spam
 MemoryError
 (not safe to test)
+spam
 NameError
+spam
 OverflowError
+spam
 RuntimeError
 (not used any more?)
+spam
 SyntaxError
+spam
 SystemError
 (hard to reproduce)
+spam
 SystemExit
+spam
 TypeError
+spam
 ValueError
+spam
 ZeroDivisionError
+spam
 Exception
