@@ -6,6 +6,10 @@ Type/class unification and new-style classes
 
 Core and builtins
 
+- String methods lstrip(), rstrip() and strip() now take an optional
+  argument that specifies the characters to strip.  For example,
+  "Foo!!!?!?!?".rstrip("?!") -> "Foo".
+
 - Added a new dict method pop(key).  This removes and returns the
   value corresponding to key.  [SF patch #539949]
 
