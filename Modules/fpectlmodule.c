@@ -140,6 +140,12 @@ static void fpe_reset(Sigfunc *handler)
        ld -G -o fpectlmodule.so -L/opt/SUNWspro/lib fpectlmodule.o -lsunmath -lm
      */
 #include <math.h>
+#ifndef _SUNMATH_H
+    extern void nonstandard_arithmetic(void);
+    extern int ieee_flags(const char*, const char*, const char*, char **);
+    extern long ieee_handler(const char*, const char*, sigfpe_handler_type);
+#endif
+
     char *mode="exception", *in="all", *out;
     (void) nonstandard_arithmetic();
     (void) ieee_flags("clearall",mode,in,&out);
