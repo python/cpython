@@ -1,0 +1,3 @@
+test_popen
+Test popen:
+popen seemed to process the command-line correctly
