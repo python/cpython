@@ -60,11 +60,17 @@ def gettempdir():
 
 # Function to calculate a prefix of the filename to use
 
+_pid = None
+
 def gettempprefix():
-    global template
-    if template == None:
+    global template, _pid
+    if os.name == 'posix' and _pid and _pid != os.getpid():
+        # Our pid changed; we must have forked -- zap the template
+        template = None
+    if template is None:
         if os.name == 'posix':
-            template = '@' + `os.getpid()` + '.'
+            _pid = os.getpid()
+            template = '@' + `_pid` + '.'
         elif os.name == 'nt':
             template = '~' + `os.getpid()` + '-'
         elif os.name == 'mac':
