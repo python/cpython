@@ -1,11 +1,12 @@
 #! /ufs/guido/bin/sgi/python
 #! /usr/local/python
 
-# Fix Python source files to use the new equality test operator,
-# i.e.,
-#	if x == y: ...
-# instead of
+# Fix Python source files to use the new equality test operator, i.e.,
 #	if x = y: ...
+# is changed to
+#	if x == y: ...
+# The script correctly tokenizes the Python program to reliably
+# distinguish between assignments and equality tests.
 #
 # Command line arguments are files or directories to be processed.
 # Directories are searched recursively for files whose name looks
@@ -77,7 +78,7 @@ def recursedown(dirname):
 	return bad
 
 def fix(filename):
-	dbg('fix(' + `filename` + ')\n')
+##	dbg('fix(' + `filename` + ')\n')
 	try:
 		f = open(filename, 'r')
 	except IOError, msg:
@@ -144,25 +145,39 @@ def fix(filename):
 	# Return succes
 	return 0
 
-PAT1 = '\<\(if\|elif\|while\)\>[\0-\377]*[^<>!=]\(=\)[^=][\0-\377]*[^[]:[^]]'
-#         \2                                    \3
-PAT2 = '\<return\>[\0-\377]*[^<>!=]\(=\)[^=]'
-#                                  \4
-PAT = '^[ \t]*\(' + PAT1 + '\|' + PAT2 + '\)'
-#             \1
-prog = regex.compile(PAT)
+
+from tokenize import tokenprog
+
+match = {'if':':', 'elif':':', 'while':':', 'return':'\n', \
+	 '(':')', '[':']', '{':'}', '`':'`'}
 
 def fixline(line):
-	while prog.match(line) >= 0:
-		regs = prog.regs
-		if regs[3] == (-1, -1):
-			a, b = regs[4]
-		else:
-			a, b = regs[3]
-		if not 0 < a < b < len(line):
-			dbg('Weird: ' + line)
-			break
-		line = line[:a] + '==' + line[b:]
+	# Quick check for easy case
+	if '=' not in line: return line
+	
+	i, n = 0, len(line)
+	stack = []
+	while i < n:
+		j = tokenprog.match(line, i)
+		if j < 0:
+			# A bad token; forget about the rest of this line
+			print '(Syntax error:)'
+			print line,
+			return line
+		a, b = tokenprog.regs[3] # Location of the token proper
+		token = line[a:b]
+		i = i+j
+		if stack and token == stack[-1]:
+			del stack[-1]
+		elif match.has_key(token):
+			stack.append(match[token])
+		elif token == '=' and stack:
+			line = line[:a] + '==' + line[b:]
+			i, n = a + len('=='), len(line)
+		elif token == '==' and not stack:
+			print '(Warning: \'==\' at top level:)'
+			print line,
 	return line
+
 
 main()
