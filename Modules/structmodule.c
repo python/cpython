@@ -653,11 +653,9 @@ bu_int(const char *p, const formatdef *f)
 	do {
 		x = (x<<8) | (*p++ & 0xFF);
 	} while (--i > 0);
-	i = 8*(sizeof(long) - f->size);
-	if (i) {
-		x <<= i;
-		x >>= i;
-	}
+	/* Extend the sign bit. */
+	if (SIZEOF_LONG > f->size)
+		x |= -(x & (1L << (8*f->size - 1)));
 	return PyInt_FromLong(x);
 }
 
@@ -767,11 +765,9 @@ lu_int(const char *p, const formatdef *f)
 	do {
 		x = (x<<8) | (p[--i] & 0xFF);
 	} while (i > 0);
-	i = 8*(sizeof(long) - f->size);
-	if (i) {
-		x <<= i;
-		x >>= i;
-	}
+	/* Extend the sign bit. */
+	if (SIZEOF_LONG > f->size)
+		x |= -(x & (1L << (8*f->size - 1)));
 	return PyInt_FromLong(x);
 }
 
