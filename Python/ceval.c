@@ -1349,14 +1349,24 @@ eval_frame(PyFrameObject *f)
 				err = PyFile_WriteString(" ", w);
 			if (err == 0)
 				err = PyFile_WriteObject(v, w, Py_PRINT_RAW);
-			if (err == 0 && PyString_Check(v)) {
+			if (err == 0) {
 				/* XXX move into writeobject() ? */
-				char *s = PyString_AsString(v);
-				int len = PyString_Size(v);
+			    if (PyString_Check(v)) {
+				char *s = PyString_AS_STRING(v);
+				int len = PyString_GET_SIZE(v);
 				if (len > 0 &&
 				    isspace(Py_CHARMASK(s[len-1])) &&
 				    s[len-1] != ' ')
 					PyFile_SoftSpace(w, 0);
+			    } 
+			    else if (PyUnicode_Check(v)) {
+				Py_UNICODE *s = PyUnicode_AS_UNICODE(v);
+				int len = PyUnicode_GET_SIZE(v);
+				if (len > 0 &&
+				    Py_UNICODE_ISSPACE(s[len-1]) &&
+				    s[len-1] != ' ')
+				    PyFile_SoftSpace(w, 0);
+			    }
 			}
 			Py_DECREF(v);
 			Py_XDECREF(stream);
