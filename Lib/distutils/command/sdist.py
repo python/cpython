@@ -13,9 +13,25 @@ from glob import glob
 from distutils.core import Command
 from distutils.util import \
      convert_path, create_tree, remove_tree, newer, write_file, \
-     check_archive_formats, ARCHIVE_FORMATS
+     check_archive_formats
 from distutils.text_file import TextFile
 from distutils.errors import DistutilsExecError, DistutilsOptionError
+
+
+def show_formats ():
+    """Print all possible values for the 'formats' option (used by
+    the "--help-formats" command-line option).
+    """
+    from distutils.fancy_getopt import FancyGetopt
+    from distutils.archive_util import ARCHIVE_FORMATS
+    formats=[]
+    for format in ARCHIVE_FORMATS.keys():
+        formats.append(("formats=" + format, None,
+                        ARCHIVE_FORMATS[format][2]))
+    formats.sort()
+    pretty_printer = FancyGetopt(formats)
+    pretty_printer.print_help(
+        "List of available source distribution formats:")
 
 
 class sdist (Command):
@@ -43,22 +59,6 @@ class sdist (Command):
         ]
 
 
-    # XXX ugh: this has to precede the 'help_options' list, because
-    # it is mentioned there -- also, this is not a method, even though
-    # it's defined in a class: double-ugh!
-    def show_formats ():
-        """Print all possible values for the 'formats' option -- used by
-        the "--help-formats" command-line option.
-        """
-	from distutils.fancy_getopt import FancyGetopt 
-	formats=[]
-	for format in ARCHIVE_FORMATS.keys():
-	    formats.append(("formats="+format,None,ARCHIVE_FORMATS[format][2]))
-	formats.sort()
-	pretty_printer = FancyGetopt(formats)
-	pretty_printer.print_help(
-            "List of available source distribution formats:")
-
     help_options = [
         ('help-formats', None,
          "list available distribution formats", show_formats),
@@ -68,7 +68,6 @@ class sdist (Command):
 
     default_format = { 'posix': 'gztar',
                        'nt': 'zip' }
-
 
     def initialize_options (self):
         # 'template' and 'manifest' are, respectively, the names of

@@ -14,6 +14,18 @@ from distutils.errors import *
 from distutils.util import get_platform
 
 
+def show_formats ():
+    """Print list of available formats (arguments to "--format" option).
+    """
+    from distutils.fancy_getopt import FancyGetopt 
+    formats=[]
+    for format in bdist.format_commands:
+        formats.append(("formats=" + format, None,
+                        bdist.format_command[format][1]))
+    pretty_printer = FancyGetopt(formats)
+    pretty_printer.print_help("List of available distribution formats:")
+
+
 class bdist (Command):
 
     description = "create a built (binary) distribution"
@@ -23,6 +35,11 @@ class bdist (Command):
                     ('formats=', None,
                      "formats for distribution (comma-separated list)"),
                    ]
+
+    help_options = [
+        ('help-formats', None,
+         "lists available distribution formats", show_formats),
+	]
 
     # The following commands do not take a format option from bdist
     no_format_option = ('bdist_rpm',)
@@ -38,24 +55,9 @@ class bdist (Command):
                        'ztar':  ('bdist_dumb', "compressed tar file"),
                        'tar':   ('bdist_dumb', "tar file"),
                        'zip':   ('bdist_dumb', "ZIP file"),
-		        }
-
-    def show_formats ():
-        """Print list of available formats (arguments to "--format" option).
-        """
-	from distutils.fancy_getopt import FancyGetopt 
-	formats=[]
-	for format in bdist.format_command.keys():
-	    formats.append(("formats="+format, None,
-                            bdist.format_command[format][1]))
-	formats.sort()
-	pretty_printer = FancyGetopt(formats)
-	pretty_printer.print_help("List of available distribution formats:")
-
-    help_options = [
-        ('help-formats', None,
-         "lists available distribution formats",show_formats),
-	]
+                     }
+    # establish the preferred order
+    format_commands = ['rpm', 'gztar', 'bztar', 'ztar', 'tar', 'zip']
 
 
     def initialize_options (self):
