@@ -147,8 +147,8 @@ set_key(r, key)
 	char *key;
 {
 	unsigned long k1=995, k2=576, k3=767, k4=671, k5=463;
-	int i;
-	int len = strlen(key);
+	size_t i;
+	size_t len = strlen(key);
 
 	for (i = 0; i < len; i++) {
 		unsigned short ki = Py_CHARMASK(key[i]);
