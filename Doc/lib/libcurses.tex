@@ -1304,20 +1304,22 @@ Process a single command keystroke.  Here are the supported special
 keystrokes: 
 
 \begin{tableii}{l|l}{kbd}{Keystroke}{Action}
-  \lineii{Ctrl-A}{Go to left edge of window.}
-  \lineii{Ctrl-B}{Cursor left, wrapping to previous line if appropriate.}
-  \lineii{Ctrl-D}{Delete character under cursor.}
-  \lineii{Ctrl-E}{Go to right edge (stripspaces off) or end of line
+  \lineii{Control-A}{Go to left edge of window.}
+  \lineii{Control-B}{Cursor left, wrapping to previous line if appropriate.}
+  \lineii{Control-D}{Delete character under cursor.}
+  \lineii{Control-E}{Go to right edge (stripspaces off) or end of line
                   (stripspaces on).}
-  \lineii{Ctrl-F}{Cursor right, wrapping to next line when appropriate.}
-  \lineii{Ctrl-G}{Terminate, returning the window contents.}
-  \lineii{Ctrl-H}{Delete character backward.}
-  \lineii{Ctrl-J}{Terminate if the window is 1 line, otherwise insert newline.}
-  \lineii{Ctrl-K}{If line is blank, delete it, otherwise clear to end of line.}
-  \lineii{Ctrl-L}{Refresh screen.}
-  \lineii{Ctrl-N}{Cursor down; move down one line.}
-  \lineii{Ctrl-O}{Insert a blank line at cursor location.}
-  \lineii{Ctrl-P}{Cursor up; move up one line.}
+  \lineii{Control-F}{Cursor right, wrapping to next line when appropriate.}
+  \lineii{Control-G}{Terminate, returning the window contents.}
+  \lineii{Control-H}{Delete character backward.}
+  \lineii{Control-J}{Terminate if the window is 1 line, otherwise
+                     insert newline.}
+  \lineii{Control-K}{If line is blank, delete it, otherwise clear to
+                     end of line.}
+  \lineii{Control-L}{Refresh screen.}
+  \lineii{Control-N}{Cursor down; move down one line.}
+  \lineii{Control-O}{Insert a blank line at cursor location.}
+  \lineii{Control-P}{Cursor up; move up one line.}
 \end{tableii}
 
 Move operations do nothing if the cursor is at an edge where the
@@ -1325,11 +1327,11 @@ movement is not possible.  The following synonyms are supported where
 possible:
 
 \begin{tableii}{l|l}{constant}{Constant}{Keystroke}
-  \lineii{KEY_LEFT}{\kbd{Ctrl-B}}
-  \lineii{KEY_RIGHT}{\kbd{Ctrl-F}}
-  \lineii{KEY_UP}{\kbd{Ctrl-P}}
-  \lineii{KEY_DOWN}{\kbd{Ctrl-N}}
-  \lineii{KEY_BACKSPACE}{\kbd{Ctrl-h}}
+  \lineii{KEY_LEFT}{\kbd{Control-B}}
+  \lineii{KEY_RIGHT}{\kbd{Control-F}}
+  \lineii{KEY_UP}{\kbd{Control-P}}
+  \lineii{KEY_DOWN}{\kbd{Control-N}}
+  \lineii{KEY_BACKSPACE}{\kbd{Control-h}}
 \end{tableii}
 
 All other keystrokes are treated as a command to insert the given
