@@ -37,6 +37,29 @@ static int myPyMac_GetFSSpec(PyObject *v, FSSpec *spec);
 static int myPyMac_GetFSRef(PyObject *v, FSRef *fsr);
 
 /*
+** Optional fsspec and fsref pointers. None will pass NULL
+*/
+static int
+myPyMac_GetOptFSSpecPtr(PyObject *v, FSSpec **spec)
+{
+	if (v == Py_None) {
+		*spec = NULL;
+		return 1;
+	}
+	return myPyMac_GetFSSpec(v, *spec);
+}
+
+static int
+myPyMac_GetOptFSRefPtr(PyObject *v, FSRef **ref)
+{
+	if (v == Py_None) {
+		*ref = NULL;
+		return 1;
+	}
+	return myPyMac_GetFSRef(v, *ref);
+}
+
+/*
 ** Parse/generate objsect
 */
 static PyObject *
@@ -121,13 +144,14 @@ static PyObject *Alias_ResolveAlias(AliasObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _rv;
-	FSSpec fromFile;
+	FSSpec fromFile__buf__;
+	FSSpec *fromFile = &fromFile__buf__;
 	FSSpec target;
 	Boolean wasChanged;
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      FSSpec_Convert, &fromFile))
+	                      myPyMac_GetOptFSSpecPtr, &fromFile))
 		return NULL;
-	_rv = ResolveAlias(&fromFile,
+	_rv = ResolveAlias(fromFile,
 	                   _self->ob_itself,
 	                   &target,
 	                   &wasChanged);
@@ -160,15 +184,16 @@ static PyObject *Alias_ResolveAliasWithMountFlags(AliasObject *_self, PyObject *
 {
 	PyObject *_res = NULL;
 	OSErr _rv;
-	FSSpec fromFile;
+	FSSpec fromFile__buf__;
+	FSSpec *fromFile = &fromFile__buf__;
 	FSSpec target;
 	Boolean wasChanged;
 	unsigned long mountFlags;
 	if (!PyArg_ParseTuple(_args, "O&l",
-	                      FSSpec_Convert, &fromFile,
+	                      myPyMac_GetOptFSSpecPtr, &fromFile,
 	                      &mountFlags))
 		return NULL;
-	_rv = ResolveAliasWithMountFlags(&fromFile,
+	_rv = ResolveAliasWithMountFlags(fromFile,
 	                                 _self->ob_itself,
 	                                 &target,
 	                                 &wasChanged,
@@ -184,15 +209,16 @@ static PyObject *Alias_FollowFinderAlias(AliasObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _rv;
-	FSSpec fromFile;
+	FSSpec fromFile__buf__;
+	FSSpec *fromFile = &fromFile__buf__;
 	Boolean logon;
 	FSSpec target;
 	Boolean wasChanged;
 	if (!PyArg_ParseTuple(_args, "O&b",
-	                      FSSpec_Convert, &fromFile,
+	                      myPyMac_GetOptFSSpecPtr, &fromFile,
 	                      &logon))
 		return NULL;
-	_rv = FollowFinderAlias(&fromFile,
+	_rv = FollowFinderAlias(fromFile,
 	                        _self->ob_itself,
 	                        logon,
 	                        &target,
@@ -208,15 +234,16 @@ static PyObject *Alias_FSResolveAliasWithMountFlags(AliasObject *_self, PyObject
 {
 	PyObject *_res = NULL;
 	OSErr _rv;
-	FSRef fromFile;
+	FSRef fromFile__buf__;
+	FSRef *fromFile = &fromFile__buf__;
 	FSRef target;
 	Boolean wasChanged;
 	unsigned long mountFlags;
 	if (!PyArg_ParseTuple(_args, "O&l",
-	                      FSRef_Convert, &fromFile,
+	                      myPyMac_GetOptFSRefPtr, &fromFile,
 	                      &mountFlags))
 		return NULL;
-	_rv = FSResolveAliasWithMountFlags(&fromFile,
+	_rv = FSResolveAliasWithMountFlags(fromFile,
 	                                   _self->ob_itself,
 	                                   &target,
 	                                   &wasChanged,
@@ -232,13 +259,14 @@ static PyObject *Alias_FSResolveAlias(AliasObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _rv;
-	FSRef fromFile;
+	FSRef fromFile__buf__;
+	FSRef *fromFile = &fromFile__buf__;
 	FSRef target;
 	Boolean wasChanged;
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      FSRef_Convert, &fromFile))
+	                      myPyMac_GetOptFSRefPtr, &fromFile))
 		return NULL;
-	_rv = FSResolveAlias(&fromFile,
+	_rv = FSResolveAlias(fromFile,
 	                     _self->ob_itself,
 	                     &target,
 	                     &wasChanged);
@@ -319,15 +347,39 @@ static PyGetSetDef Alias_getsetlist[] = {
 #define Alias_hash NULL
 static int Alias_tp_init(PyObject *self, PyObject *args, PyObject *kwds)
 {
-	AliasHandle itself;
-	char *kw[] = {"itself", 0};
+	AliasHandle itself = NULL;
+	char *rawdata = NULL;
+	int rawdatalen = 0;
+	Handle h;
+	char *kw[] = {"itself", "rawdata", 0};
 
-	if (PyArg_ParseTupleAndKeywords(args, kwds, "O&", kw, Alias_Convert, &itself))
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "|O&s#", kw, Alias_Convert, &itself, &rawdata, &rawdatalen))
+	return -1;
+	if (itself && rawdata)
 	{
-		((AliasObject *)self)->ob_itself = itself;
+		PyErr_SetString(PyExc_TypeError, "Only one of itself or rawdata may be specified");
+		return -1;
+	}
+	if (!itself && !rawdata)
+	{
+		PyErr_SetString(PyExc_TypeError, "One of itself or rawdata must be specified");
+		return -1;
+	}
+	if (rawdata)
+	{
+		if ((h = NewHandle(rawdatalen)) == NULL)
+		{
+			PyErr_NoMemory();
+			return -1;
+		}
+		HLock(h);
+		memcpy((char *)*h, rawdata, rawdatalen);
+		HUnlock(h);
+		((AliasObject *)self)->ob_itself = (AliasHandle)h;
 		return 0;
 	}
-	return -1;
+	((AliasObject *)self)->ob_itself = itself;
+	return 0;
 }
 
 #define Alias_tp_alloc PyType_GenericAlloc
@@ -637,24 +689,6 @@ static PyObject *FSSpec_FSpMakeFSRef(FSSpecObject *_self, PyObject *_args)
 	return _res;
 }
 
-static PyObject *FSSpec_NewAlias(FSSpecObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	OSErr _err;
-	FSSpec target;
-	AliasHandle alias;
-	if (!PyArg_ParseTuple(_args, "O&",
-	                      FSSpec_Convert, &target))
-		return NULL;
-	_err = NewAlias(&_self->ob_itself,
-	                &target,
-	                &alias);
-	if (_err != noErr) return PyMac_Error(_err);
-	_res = Py_BuildValue("O&",
-	                     Alias_New, alias);
-	return _res;
-}
-
 static PyObject *FSSpec_NewAliasMinimal(FSSpecObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -685,27 +719,6 @@ static PyObject *FSSpec_IsAliasFile(FSSpecObject *_self, PyObject *_args)
 	_res = Py_BuildValue("bb",
 	                     aliasFileFlag,
 	                     folderFlag);
-	return _res;
-}
-
-static PyObject *FSSpec_UpdateAlias(FSSpecObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	OSErr _err;
-	FSSpec target;
-	AliasHandle alias;
-	Boolean wasChanged;
-	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      FSSpec_Convert, &target,
-	                      Alias_Convert, &alias))
-		return NULL;
-	_err = UpdateAlias(&_self->ob_itself,
-	                   &target,
-	                   alias,
-	                   &wasChanged);
-	if (_err != noErr) return PyMac_Error(_err);
-	_res = Py_BuildValue("b",
-	                     wasChanged);
 	return _res;
 }
 
@@ -767,14 +780,10 @@ static PyMethodDef FSSpec_methods[] = {
 	 PyDoc_STR("(FSSpec dest) -> None")},
 	{"FSpMakeFSRef", (PyCFunction)FSSpec_FSpMakeFSRef, 1,
 	 PyDoc_STR("() -> (FSRef newRef)")},
-	{"NewAlias", (PyCFunction)FSSpec_NewAlias, 1,
-	 PyDoc_STR("(FSSpec target) -> (AliasHandle alias)")},
 	{"NewAliasMinimal", (PyCFunction)FSSpec_NewAliasMinimal, 1,
 	 PyDoc_STR("() -> (AliasHandle alias)")},
 	{"IsAliasFile", (PyCFunction)FSSpec_IsAliasFile, 1,
 	 PyDoc_STR("() -> (Boolean aliasFileFlag, Boolean folderFlag)")},
-	{"UpdateAlias", (PyCFunction)FSSpec_UpdateAlias, 1,
-	 PyDoc_STR("(FSSpec target, AliasHandle alias) -> (Boolean wasChanged)")},
 	{"as_pathname", (PyCFunction)FSSpec_as_pathname, 1,
 	 PyDoc_STR("() -> string")},
 	{"as_tuple", (PyCFunction)FSSpec_as_tuple, 1,
@@ -811,11 +820,33 @@ static PyObject * FSSpec_repr(FSSpecObject *self)
 #define FSSpec_hash NULL
 static int FSSpec_tp_init(PyObject *self, PyObject *args, PyObject *kwds)
 {
-	PyObject *v;
-	char *kw[] = {"itself", 0};
+	PyObject *v = NULL;
+	char *rawdata = NULL;
+	int rawdatalen = 0;
+	char *kw[] = {"itself", "rawdata", 0};
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O", kw, &v))
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "|Os#", kw, &v, &rawdata, &rawdatalen))
 	return -1;
+	if (v && rawdata)
+	{
+		PyErr_SetString(PyExc_TypeError, "Only one of itself or rawdata may be specified");
+		return -1;
+	}
+	if (!v && !rawdata)
+	{
+		PyErr_SetString(PyExc_TypeError, "One of itself or rawdata must be specified");
+		return -1;
+	}
+	if (rawdata)
+	{
+		if (rawdatalen != sizeof(FSSpec))
+		{
+			PyErr_SetString(PyExc_TypeError, "FSSpec rawdata incorrect size");
+			return -1;
+		}
+		memcpy(&((FSSpecObject *)self)->ob_itself, rawdata, rawdatalen);
+		return 0;
+	}
 	if (myPyMac_GetFSSpec(v, &((FSSpecObject *)self)->ob_itself)) return 0;
 	return -1;
 }
@@ -1113,24 +1144,6 @@ static PyObject *FSRef_FNNotify(FSRefObject *_self, PyObject *_args)
 }
 #endif
 
-static PyObject *FSRef_FSNewAlias(FSRefObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	OSErr _err;
-	FSRef target;
-	AliasHandle inAlias;
-	if (!PyArg_ParseTuple(_args, "O&",
-	                      FSRef_Convert, &target))
-		return NULL;
-	_err = FSNewAlias(&_self->ob_itself,
-	                  &target,
-	                  &inAlias);
-	if (_err != noErr) return PyMac_Error(_err);
-	_res = Py_BuildValue("O&",
-	                     Alias_New, inAlias);
-	return _res;
-}
-
 static PyObject *FSRef_FSNewAliasMinimal(FSRefObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -1161,27 +1174,6 @@ static PyObject *FSRef_FSIsAliasFile(FSRefObject *_self, PyObject *_args)
 	_res = Py_BuildValue("bb",
 	                     aliasFileFlag,
 	                     folderFlag);
-	return _res;
-}
-
-static PyObject *FSRef_FSUpdateAlias(FSRefObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	OSErr _err;
-	FSRef target;
-	AliasHandle alias;
-	Boolean wasChanged;
-	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      FSRef_Convert, &target,
-	                      Alias_Convert, &alias))
-		return NULL;
-	_err = FSUpdateAlias(&_self->ob_itself,
-	                     &target,
-	                     alias,
-	                     &wasChanged);
-	if (_err != noErr) return PyMac_Error(_err);
-	_res = Py_BuildValue("b",
-	                     wasChanged);
 	return _res;
 }
 
@@ -1238,14 +1230,10 @@ static PyMethodDef FSRef_methods[] = {
 	{"FNNotify", (PyCFunction)FSRef_FNNotify, 1,
 	 PyDoc_STR("(FNMessage message, OptionBits flags) -> None")},
 #endif
-	{"FSNewAlias", (PyCFunction)FSRef_FSNewAlias, 1,
-	 PyDoc_STR("(FSRef target) -> (AliasHandle inAlias)")},
 	{"FSNewAliasMinimal", (PyCFunction)FSRef_FSNewAliasMinimal, 1,
 	 PyDoc_STR("() -> (AliasHandle inAlias)")},
 	{"FSIsAliasFile", (PyCFunction)FSRef_FSIsAliasFile, 1,
 	 PyDoc_STR("() -> (Boolean aliasFileFlag, Boolean folderFlag)")},
-	{"FSUpdateAlias", (PyCFunction)FSRef_FSUpdateAlias, 1,
-	 PyDoc_STR("(FSRef target, AliasHandle alias) -> (Boolean wasChanged)")},
 	{"FSRefMakePath", (PyCFunction)FSRef_FSRefMakePath, 1,
 	 PyDoc_STR("() -> string")},
 	{"as_pathname", (PyCFunction)FSRef_as_pathname, 1,
@@ -1273,11 +1261,33 @@ static PyGetSetDef FSRef_getsetlist[] = {
 #define FSRef_hash NULL
 static int FSRef_tp_init(PyObject *self, PyObject *args, PyObject *kwds)
 {
-	PyObject *v;
-	char *kw[] = {"itself", 0};
+	PyObject *v = NULL;
+	char *rawdata = NULL;
+	int rawdatalen = 0;
+	char *kw[] = {"itself", "rawdata", 0};
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O", kw, &v))
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "|Os#", kw, &v, &rawdata, &rawdatalen))
 	return -1;
+	if (v && rawdata)
+	{
+		PyErr_SetString(PyExc_TypeError, "Only one of itself or rawdata may be specified");
+		return -1;
+	}
+	if (!v && !rawdata)
+	{
+		PyErr_SetString(PyExc_TypeError, "One of itself or rawdata must be specified");
+		return -1;
+	}
+	if (rawdata)
+	{
+		if (rawdatalen != sizeof(FSRef))
+		{
+			PyErr_SetString(PyExc_TypeError, "FSRef rawdata incorrect size");
+			return -1;
+		}
+		memcpy(&((FSRefObject *)self)->ob_itself, rawdata, rawdatalen);
+		return 0;
+	}
 	if (myPyMac_GetFSRef(v, &((FSRefObject *)self)->ob_itself)) return 0;
 	return -1;
 }
@@ -2099,6 +2109,27 @@ static PyObject *File_FNNotifyAll(PyObject *_self, PyObject *_args)
 }
 #endif
 
+static PyObject *File_NewAlias(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	FSSpec fromFile__buf__;
+	FSSpec *fromFile = &fromFile__buf__;
+	FSSpec target;
+	AliasHandle alias;
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      myPyMac_GetOptFSSpecPtr, &fromFile,
+	                      FSSpec_Convert, &target))
+		return NULL;
+	_err = NewAlias(fromFile,
+	                &target,
+	                &alias);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("O&",
+	                     Alias_New, alias);
+	return _res;
+}
+
 static PyObject *File_NewAliasMinimalFromFullPath(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -2176,6 +2207,30 @@ static PyObject *File_ResolveAliasFileWithMountFlags(PyObject *_self, PyObject *
 	return _res;
 }
 
+static PyObject *File_UpdateAlias(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	FSSpec fromFile__buf__;
+	FSSpec *fromFile = &fromFile__buf__;
+	FSSpec target;
+	AliasHandle alias;
+	Boolean wasChanged;
+	if (!PyArg_ParseTuple(_args, "O&O&O&",
+	                      myPyMac_GetOptFSSpecPtr, &fromFile,
+	                      FSSpec_Convert, &target,
+	                      Alias_Convert, &alias))
+		return NULL;
+	_err = UpdateAlias(fromFile,
+	                   &target,
+	                   alias,
+	                   &wasChanged);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("b",
+	                     wasChanged);
+	return _res;
+}
+
 static PyObject *File_ResolveAliasFileWithMountFlagsNoUI(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -2200,6 +2255,27 @@ static PyObject *File_ResolveAliasFileWithMountFlagsNoUI(PyObject *_self, PyObje
 	                     FSSpec_New, &theSpec,
 	                     targetIsFolder,
 	                     wasAliased);
+	return _res;
+}
+
+static PyObject *File_FSNewAlias(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	FSRef fromFile__buf__;
+	FSRef *fromFile = &fromFile__buf__;
+	FSRef target;
+	AliasHandle inAlias;
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      myPyMac_GetOptFSRefPtr, &fromFile,
+	                      FSRef_Convert, &target))
+		return NULL;
+	_err = FSNewAlias(fromFile,
+	                  &target,
+	                  &inAlias);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("O&",
+	                     Alias_New, inAlias);
 	return _res;
 }
 
@@ -2249,6 +2325,30 @@ static PyObject *File_FSResolveAliasFile(PyObject *_self, PyObject *_args)
 	                     FSRef_New, &theRef,
 	                     targetIsFolder,
 	                     wasAliased);
+	return _res;
+}
+
+static PyObject *File_FSUpdateAlias(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	FSRef fromFile__buf__;
+	FSRef *fromFile = &fromFile__buf__;
+	FSRef target;
+	AliasHandle alias;
+	Boolean wasChanged;
+	if (!PyArg_ParseTuple(_args, "O&O&O&",
+	                      myPyMac_GetOptFSRefPtr, &fromFile,
+	                      FSRef_Convert, &target,
+	                      Alias_Convert, &alias))
+		return NULL;
+	_err = FSUpdateAlias(fromFile,
+	                     &target,
+	                     alias,
+	                     &wasChanged);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("b",
+	                     wasChanged);
 	return _res;
 }
 
@@ -2333,18 +2433,26 @@ static PyMethodDef File_methods[] = {
 	{"FNNotifyAll", (PyCFunction)File_FNNotifyAll, 1,
 	 PyDoc_STR("(FNMessage message, OptionBits flags) -> None")},
 #endif
+	{"NewAlias", (PyCFunction)File_NewAlias, 1,
+	 PyDoc_STR("(FSSpec fromFile, FSSpec target) -> (AliasHandle alias)")},
 	{"NewAliasMinimalFromFullPath", (PyCFunction)File_NewAliasMinimalFromFullPath, 1,
 	 PyDoc_STR("(Buffer fullPath, Str32 zoneName, Str31 serverName) -> (AliasHandle alias)")},
 	{"ResolveAliasFile", (PyCFunction)File_ResolveAliasFile, 1,
 	 PyDoc_STR("(FSSpec theSpec, Boolean resolveAliasChains) -> (FSSpec theSpec, Boolean targetIsFolder, Boolean wasAliased)")},
 	{"ResolveAliasFileWithMountFlags", (PyCFunction)File_ResolveAliasFileWithMountFlags, 1,
 	 PyDoc_STR("(FSSpec theSpec, Boolean resolveAliasChains, unsigned long mountFlags) -> (FSSpec theSpec, Boolean targetIsFolder, Boolean wasAliased)")},
+	{"UpdateAlias", (PyCFunction)File_UpdateAlias, 1,
+	 PyDoc_STR("(FSSpec fromFile, FSSpec target, AliasHandle alias) -> (Boolean wasChanged)")},
 	{"ResolveAliasFileWithMountFlagsNoUI", (PyCFunction)File_ResolveAliasFileWithMountFlagsNoUI, 1,
 	 PyDoc_STR("(FSSpec theSpec, Boolean resolveAliasChains, unsigned long mountFlags) -> (FSSpec theSpec, Boolean targetIsFolder, Boolean wasAliased)")},
+	{"FSNewAlias", (PyCFunction)File_FSNewAlias, 1,
+	 PyDoc_STR("(FSRef fromFile, FSRef target) -> (AliasHandle inAlias)")},
 	{"FSResolveAliasFileWithMountFlags", (PyCFunction)File_FSResolveAliasFileWithMountFlags, 1,
 	 PyDoc_STR("(Boolean resolveAliasChains, unsigned long mountFlags) -> (FSRef theRef, Boolean targetIsFolder, Boolean wasAliased)")},
 	{"FSResolveAliasFile", (PyCFunction)File_FSResolveAliasFile, 1,
 	 PyDoc_STR("(Boolean resolveAliasChains) -> (FSRef theRef, Boolean targetIsFolder, Boolean wasAliased)")},
+	{"FSUpdateAlias", (PyCFunction)File_FSUpdateAlias, 1,
+	 PyDoc_STR("(FSRef fromFile, FSRef target, AliasHandle alias) -> (Boolean wasChanged)")},
 	{NULL, NULL, 0}
 };
 
