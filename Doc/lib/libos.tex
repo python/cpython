@@ -1808,3 +1808,11 @@ current platform.  This may be a single character, such as \code{'\e
 n'} for \POSIX{} or \code{'\e r'} for Mac OS, or multiple characters,
 for example, \code{'\e r\e n'} for Windows.
 \end{datadesc}
+
+\begin{datadesc}{devnull}
+The file path of the null device.
+For example: \code{'/dev/null'} for \POSIX{} or \code{'Dev:Nul'} for the
+Macintosh.
+Also available via \module{os.path}.
+\versionadded{2.4}
+\end{datadesc}

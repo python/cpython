@@ -12,6 +12,7 @@ This exports:
   - os.pathsep is the component separator used in $PATH etc
   - os.linesep is the line separator in text files ('\r' or '\n' or '\r\n')
   - os.defpath is the default search path for executables
+  - os.devnull is the file path of the null device ('/dev/null', etc.)
 
 Programs that import and use 'os' stand a better chance of being
 portable between different platforms.  Of course, they must then
@@ -28,7 +29,7 @@ _names = sys.builtin_module_names
 
 # Note:  more names are added to __all__ later.
 __all__ = ["altsep", "curdir", "pardir", "sep", "pathsep", "linesep",
-           "defpath", "name", "path"]
+           "defpath", "name", "path", "devnull"]
 
 def _get_exports_list(module):
     try:
@@ -129,7 +130,8 @@ else:
     raise ImportError, 'no os specific module found'
 
 sys.modules['os.path'] = path
-from os.path import curdir, pardir, sep, pathsep, defpath, extsep, altsep
+from os.path import curdir, pardir, sep, pathsep, defpath, extsep, altsep, \
+    devnull
 
 del _names
 

@@ -328,6 +328,8 @@ Extension modules
 Library
 -------
 
+- os.path.devnull has been added for all supported platforms.
+
 - Fixed #877165: distutils now picks the right C++ compiler command
   on cygwin and mingw32.
 

@@ -14,7 +14,7 @@ __all__ = ["normcase","isabs","join","splitdrive","split","splitext",
            "getatime","getctime", "islink","exists","isdir","isfile","ismount",
            "walk","expanduser","expandvars","normpath","abspath","splitunc",
            "curdir","pardir","sep","pathsep","defpath","altsep","extsep",
-           "realpath","supports_unicode_filenames"]
+           "devnull","realpath","supports_unicode_filenames"]
 
 # strings representing various path-related bits and pieces
 curdir = '.'
@@ -29,6 +29,7 @@ if 'ce' in sys.builtin_module_names:
 elif 'os2' in sys.builtin_module_names:
     # OS/2 w/ VACPP
     altsep = '/'
+devnull = 'nul'
 
 # Normalize the case of a pathname and map slashes to backslashes.
 # Other normalizations (such as optimizing '../' away) are not done
