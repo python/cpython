@@ -19,6 +19,7 @@ import re, socket, string, time, whrandom
 CRLF = '\r\n'
 Debug = 0
 IMAP4_PORT = 143
+AllowedVersions = ('IMAP4REV1', 'IMAP4')	# Most recent first
 
 #	Commands
 
@@ -133,11 +134,18 @@ class IMAP4:
 		if not self.untagged_responses.has_key(cap):
 			raise self.error('no CAPABILITY response from server')
 		self.capabilities = tuple(string.split(self.untagged_responses[cap][-1]))
-		if not 'IMAP4REV1' in self.capabilities:
-			raise self.error('server not IMAP4REV1 compliant')
 
 		if __debug__ and self.debug >= 3:
 			print '\tCAPABILITIES: %s' % `self.capabilities`
+
+		self.PROTOCOL_VERSION = None
+		for version in AllowedVersions:
+			if not version in self.capabilities:
+				continue
+			self.PROTOCOL_VERSION = version
+			break
+		if not self.PROTOCOL_VERSION:
+			raise self.error('server not IMAP4 compliant')
 
 
 	def __getattr__(self, attr):
@@ -267,7 +275,7 @@ class IMAP4:
 
 		(typ, [data]) = <instance>.list(user, password)
 		"""
-		if not 'AUTH=LOGIN' in self.capabilities:
+		if not 'AUTH-LOGIN' in self.capabilities:
 			raise self.error("server doesn't allow LOGIN authorisation")
 		typ, dat = self._simple_command('LOGIN', user, password)
 		if typ != 'OK':
@@ -406,7 +414,8 @@ class IMAP4:
 
 
 	def uid(self, command, args):
-		"""Execute "command args" with messages identified by UID, rather than message number.
+		"""Execute "command args" with messages identified by UID,
+			rather than message number.
 
 		(typ, [data]) = <instance>.uid(command, args)
 
@@ -432,7 +441,8 @@ class IMAP4:
 
 
 	def xatom(self, name, arg1=None, arg2=None):
-		"""Allow simple extension commands notified by server in CAPABILITY response.
+		"""Allow simple extension commands
+			notified by server in CAPABILITY response.
 
 		(typ, [data]) = <instance>.xatom(name, arg1=None, arg2=None)
 		"""
@@ -773,18 +783,22 @@ if __debug__ and __name__ == '__main__':
 		return dat
 
 	Debug = 4
-	M = IMAP4()
+	M = IMAP4("newcnri")
+	print 'PROTOCOL_VERSION = %s' % M.PROTOCOL_VERSION
 
 	for cmd,args in test_seq1:
 		run(cmd, args)
 
-	for ml in M.list('/tmp/', 'yy%')[1]:
+	for ml in run('list', ('/tmp/', 'yy%')):
 		path = string.split(ml)[-1]
-		print '%s %s' % M.delete(path)
+		run('delete', (path,))
 
 	for cmd,args in test_seq2:
 		dat = run(cmd, args)
 
-		if (cmd,args) == ('uid', ('SEARCH', 'ALL')):
-			uid = string.split(dat[0])[-1]
-			run('uid', ('FETCH', '%s (FLAGS INTERNALDATE RFC822.SIZE RFC822.HEADER RFC822)' % uid))
+		if (cmd,args) != ('uid', ('SEARCH', 'ALL')):
+			continue
+
+		uid = string.split(dat[0])[-1]
+		run('uid', ('FETCH',
+			'%s (FLAGS INTERNALDATE RFC822.SIZE RFC822.HEADER RFC822)' % uid))
