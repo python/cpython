@@ -64,6 +64,8 @@ tut/tut.html:  $(PAPERDIR)/tut.aux
 	$(MKHTML) tut $(L2HARGS)
 
 
+include ../Makefile.deps
+
 $(PAPERDIR)/api.aux: $(APIFILES)
 	(cd $(PAPERDIR); $(MAKE) PAPER=$(PAPER) api.dvi)
 
