@@ -127,12 +127,12 @@ class whrandom:
 			n = (istop - istart + istep - 1) / istep
 		elif istep < 0:
 			n = (istop - istart + istep + 1) / istep
- 		else:
- 			raise ValueError, "zero step for randrange()"
+		else:
+			raise ValueError, "zero step for randrange()"
 
- 		if n <= 0:
- 			raise ValueError, "empty range for randrange()"
- 		return istart + istep*int(self.random() * n)
+		if n <= 0:
+			raise ValueError, "empty range for randrange()"
+		return istart + istep*int(self.random() * n)
 
 
 # Initialize from the current time
