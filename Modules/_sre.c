@@ -20,7 +20,7 @@
  * 2000-09-02 fl  return -1 instead of None for start/end/span
  * 2000-09-20 fl  added expand method
  * 2000-09-21 fl  don't use the buffer interface for unicode strings
- * 2000-10-03 fl  fixed assert_not primitive
+ * 2000-10-03 fl  fixed assert_not primitive; support keyword arguments
  *
  * Copyright (c) 1997-2000 by Secret Labs AB.  All rights reserved.
  *
@@ -1514,7 +1514,7 @@ pattern_dealloc(PatternObject* self)
 }
 
 static PyObject*
-pattern_match(PatternObject* self, PyObject* args)
+pattern_match(PatternObject* self, PyObject* args, PyObject* kw)
 {
     SRE_STATE state;
     int status;
@@ -1522,7 +1522,9 @@ pattern_match(PatternObject* self, PyObject* args)
     PyObject* string;
     int start = 0;
     int end = INT_MAX;
-    if (!PyArg_ParseTuple(args, "O|ii:match", &string, &start, &end))
+    static char* kwlist[] = { "pattern", "pos", "endpos", NULL };
+    if (!PyArg_ParseTupleAndKeywords(args, kw, "O|ii:match", kwlist,
+                                     &string, &start, &end))
         return NULL;
 
     string = state_init(&state, self, string, start, end);
@@ -1549,7 +1551,7 @@ pattern_match(PatternObject* self, PyObject* args)
 }
 
 static PyObject*
-pattern_search(PatternObject* self, PyObject* args)
+pattern_search(PatternObject* self, PyObject* args, PyObject* kw)
 {
     SRE_STATE state;
     int status;
@@ -1557,7 +1559,9 @@ pattern_search(PatternObject* self, PyObject* args)
     PyObject* string;
     int start = 0;
     int end = INT_MAX;
-    if (!PyArg_ParseTuple(args, "O|ii:search", &string, &start, &end))
+    static char* kwlist[] = { "pattern", "pos", "endpos", NULL };
+    if (!PyArg_ParseTupleAndKeywords(args, kw, "O|ii:search", kwlist,
+                                     &string, &start, &end))
         return NULL;
 
     string = state_init(&state, self, string, start, end);
@@ -1607,12 +1611,14 @@ call(char* function, PyObject* args)
 }
 
 static PyObject*
-pattern_sub(PatternObject* self, PyObject* args)
+pattern_sub(PatternObject* self, PyObject* args, PyObject* kw)
 {
     PyObject* template;
     PyObject* string;
     PyObject* count = Py_False; /* zero */
-    if (!PyArg_ParseTuple(args, "OO|O:sub", &template, &string, &count))
+    static char* kwlist[] = { "repl", "string", "count", NULL };
+    if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|O:sub", kwlist,
+                                     &template, &string, &count))
         return NULL;
 
     /* delegate to Python code */
@@ -1620,12 +1626,14 @@ pattern_sub(PatternObject* self, PyObject* args)
 }
 
 static PyObject*
-pattern_subn(PatternObject* self, PyObject* args)
+pattern_subn(PatternObject* self, PyObject* args, PyObject* kw)
 {
     PyObject* template;
     PyObject* string;
     PyObject* count = Py_False; /* zero */
-    if (!PyArg_ParseTuple(args, "OO|O:subn", &template, &string, &count))
+    static char* kwlist[] = { "repl", "string", "count", NULL };
+    if (!PyArg_ParseTupleAndKeywords(args, kw, "OO|O:subn", kwlist,
+                                     &template, &string, &count))
         return NULL;
 
     /* delegate to Python code */
@@ -1633,11 +1641,13 @@ pattern_subn(PatternObject* self, PyObject* args)
 }
 
 static PyObject*
-pattern_split(PatternObject* self, PyObject* args)
+pattern_split(PatternObject* self, PyObject* args, PyObject* kw)
 {
     PyObject* string;
     PyObject* maxsplit = Py_False; /* zero */
-    if (!PyArg_ParseTuple(args, "O|O:split", &string, &maxsplit))
+    static char* kwlist[] = { "source", "maxsplit", NULL };
+    if (!PyArg_ParseTupleAndKeywords(args, kw, "O|O:split", kwlist,
+                                     &string, &maxsplit))
         return NULL;
 
     /* delegate to Python code */
@@ -1645,7 +1655,7 @@ pattern_split(PatternObject* self, PyObject* args)
 }
 
 static PyObject*
-pattern_findall(PatternObject* self, PyObject* args)
+pattern_findall(PatternObject* self, PyObject* args, PyObject* kw)
 {
     SRE_STATE state;
     PyObject* list;
@@ -1655,7 +1665,9 @@ pattern_findall(PatternObject* self, PyObject* args)
     PyObject* string;
     int start = 0;
     int end = INT_MAX;
-    if (!PyArg_ParseTuple(args, "O|ii:findall", &string, &start, &end))
+    static char* kwlist[] = { "source", "pos", "endpos", NULL };
+    if (!PyArg_ParseTupleAndKeywords(args, kw, "O|ii:findall", kwlist,
+                                     &string, &start, &end))
         return NULL;
 
     string = state_init(&state, self, string, start, end);
@@ -1745,14 +1757,14 @@ error:
 }
 
 static PyMethodDef pattern_methods[] = {
-    {"match", (PyCFunction) pattern_match, 1},
-    {"search", (PyCFunction) pattern_search, 1},
-    {"sub", (PyCFunction) pattern_sub, 1},
-    {"subn", (PyCFunction) pattern_subn, 1},
-    {"split", (PyCFunction) pattern_split, 1},
-    {"findall", (PyCFunction) pattern_findall, 1},
+    {"match", (PyCFunction) pattern_match, METH_VARARGS|METH_KEYWORDS},
+    {"search", (PyCFunction) pattern_search, METH_VARARGS|METH_KEYWORDS},
+    {"sub", (PyCFunction) pattern_sub, METH_VARARGS|METH_KEYWORDS},
+    {"subn", (PyCFunction) pattern_subn, METH_VARARGS|METH_KEYWORDS},
+    {"split", (PyCFunction) pattern_split, METH_VARARGS|METH_KEYWORDS},
+    {"findall", (PyCFunction) pattern_findall, METH_VARARGS|METH_KEYWORDS},
     /* experimental */
-    {"scanner", (PyCFunction) pattern_scanner, 1},
+    {"scanner", (PyCFunction) pattern_scanner, METH_VARARGS},
     {NULL, NULL}
 };
 
@@ -1914,13 +1926,14 @@ match_group(MatchObject* self, PyObject* args)
 }
 
 static PyObject*
-match_groups(MatchObject* self, PyObject* args)
+match_groups(MatchObject* self, PyObject* args, PyObject* kw)
 {
     PyObject* result;
     int index;
 
     PyObject* def = Py_None;
-    if (!PyArg_ParseTuple(args, "|O:groups", &def))
+    static char* kwlist[] = { "default", NULL };
+    if (!PyArg_ParseTupleAndKeywords(args, kw, "|O:groups", kwlist, &def))
         return NULL;
 
     result = PyTuple_New(self->groups-1);
@@ -1941,14 +1954,15 @@ match_groups(MatchObject* self, PyObject* args)
 }
 
 static PyObject*
-match_groupdict(MatchObject* self, PyObject* args)
+match_groupdict(MatchObject* self, PyObject* args, PyObject* kw)
 {
     PyObject* result;
     PyObject* keys;
     int index;
 
     PyObject* def = Py_None;
-    if (!PyArg_ParseTuple(args, "|O:groupdict", &def))
+    static char* kwlist[] = { "default", NULL };
+    if (!PyArg_ParseTupleAndKeywords(args, kw, "|O:groups", kwlist, &def))
         return NULL;
 
     result = PyDict_New();
@@ -2109,13 +2123,13 @@ match_regs(MatchObject* self)
 }
 
 static PyMethodDef match_methods[] = {
-    {"group", (PyCFunction) match_group, 1},
-    {"start", (PyCFunction) match_start, 1},
-    {"end", (PyCFunction) match_end, 1},
-    {"span", (PyCFunction) match_span, 1},
-    {"groups", (PyCFunction) match_groups, 1},
-    {"groupdict", (PyCFunction) match_groupdict, 1},
-    {"expand", (PyCFunction) match_expand, 1},
+    {"group", (PyCFunction) match_group, METH_VARARGS},
+    {"start", (PyCFunction) match_start, METH_VARARGS},
+    {"end", (PyCFunction) match_end, METH_VARARGS},
+    {"span", (PyCFunction) match_span, METH_VARARGS},
+    {"groups", (PyCFunction) match_groups, METH_VARARGS|METH_KEYWORDS},
+    {"groupdict", (PyCFunction) match_groupdict, METH_VARARGS|METH_KEYWORDS},
+    {"expand", (PyCFunction) match_expand, METH_VARARGS},
     {NULL, NULL}
 };
 
