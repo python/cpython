@@ -909,6 +909,12 @@ item: Install File
   Description=Obsolete modules
   Flags=0000000000000010
 end
+item: Install File
+  Source=%_SRC_%\Lib\site-packages\README
+  Destination=%MAINDIR%\Lib\site-packages\README.txt
+  Description=Site packages
+  Flags=0000000000000010
+end
 item: Remark
   Text=*** Other ***
 end
