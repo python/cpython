@@ -83,6 +83,12 @@ def test_newinstance():
     gc.collect()
     del a
     expect_nonzero(gc.collect(), "newinstance(2)")
+    del B, C
+    expect_nonzero(gc.collect(), "newinstance(3)")
+    A.a = A()
+    del A
+    expect_nonzero(gc.collect(), "newinstance(4)")
+    expect(gc.collect(), 0, "newinstance(5)")
 
 def test_method():
     # Tricky: self.__init__ is a bound method, it references the instance.
