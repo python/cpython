@@ -6,6 +6,19 @@ import __future__
 GOOD_SERIALS = ("alpha", "beta", "candidate", "final")
 
 features = __future__.all_feature_names
+
+# Verify that all_feature_names appears correct.
+given_feature_names = features[:]
+for name in dir(__future__):
+    obj = getattr(__future__, name, None)
+    if obj is not None and isinstance(obj, __future__._Feature):
+        verify(name in given_feature_names,
+               "%r should have been in all_feature_names" % name)
+        given_feature_names.remove(name)
+verify(len(given_feature_names) == 0,
+       "all_feature_names has too much: %r" % given_feature_names)
+del given_feature_names
+
 for feature in features:
     value = getattr(__future__, feature)
     if verbose:
