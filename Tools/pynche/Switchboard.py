@@ -12,6 +12,7 @@ conform to the following interface:
       since this would cause it to get updated twice.
 """
 
+import sys
 from types import DictType
 import marshal
 
@@ -33,7 +34,9 @@ class Switchboard:
                     fp = open(initfile)
                     self.__optiondb = marshal.load(fp)
                     if type(self.__optiondb) <> DictType:
-                        print 'Problem reading options from file:', initfile
+                        sys.stderr.write(
+                            'Problem reading options from file: %s\n' %
+                            initfile)
                         self.__optiondb = {}
                 except (IOError, EOFError):
                     pass
@@ -76,7 +79,8 @@ class Switchboard:
             try:
                 fp = open(self.__initfile, 'w')
             except IOError:
-                print 'Cannot write options to file:', file
+                sys.stderr.write('Cannot write options to file: %s\n' %
+                                 self.__initfile)
             else:
                 marshal.dump(self.__optiondb, fp)
         finally:
@@ -88,8 +92,8 @@ class Switchboard:
             if hasattr(v, 'withdraw'):
                 v.withdraw()
 
-    def canceled(self):
-        self.__canceled = 1
+    def canceled(self, flag=1):
+        self.__canceled = flag
 
     def canceled_p(self):
         return self.__canceled
