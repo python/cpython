@@ -752,9 +752,6 @@ class Distribution:
 
         Returns the reinitialized command object.
         """
-        print "reinitialize_command: command=%s" % command
-        print "  before: have_run =", self.have_run
-
         from distutils.cmd import Command
         if not isinstance(command, Command):
             command_name = command
@@ -769,11 +766,7 @@ class Distribution:
         self.have_run[command_name] = 0
         self._set_command_options(command)
 
-        print "  after:  have_run =", self.have_run
-
         if reinit_subcommands:
-            print ("  reinitializing sub-commands: %s" %
-                   command.get_sub_commands())
             for sub in command.get_sub_commands():
                 self.reinitialize_command(sub, reinit_subcommands)            
 
