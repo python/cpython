@@ -53,3 +53,4 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "malloc.h"
 
 extern char *strdup PROTO((const char *));
+extern void fatal PROTO((char *));
