@@ -787,7 +787,7 @@ PyObject *PyUnicode_DecodeUTF8(const char *s,
             *p++ = (Py_UNICODE)(0xD800 + (ch >> 10));
                     
             /*  low surrogate = bottom 10 bits added to DC00 */
-            *p++ = (Py_UNICODE)(0xDC00 + (ch & ~0xFC00));
+            *p++ = (Py_UNICODE)(0xDC00 + (ch & 0x03FF));
             break;
 
         default:
@@ -1274,7 +1274,7 @@ PyObject *PyUnicode_DecodeUnicodeEscape(const char *s,
                 /* UCS-4 character.  store as two surrogate characters */
                 chr -= 0x10000L;
                 *p++ = 0xD800 + (Py_UNICODE) (chr >> 10);
-                *p++ = 0xDC00 + (Py_UNICODE) (chr & ~0xFC00);
+                *p++ = 0xDC00 + (Py_UNICODE) (chr & 0x03FF);
             } else {
                 if (unicodeescape_decoding_error(
                     &s, &x, errors,
@@ -3260,19 +3260,19 @@ unicode_compare(PyUnicodeObject *str1, PyUnicodeObject *str2)
     
     while (len1 > 0 && len2 > 0) {
         Py_UNICODE c1, c2;     
-	long diff;
 
         c1 = *s1++;
         c2 = *s2++;
+
 	if (c1 > (1<<11) * 26)
 	    c1 += utf16Fixup[c1>>11];
 	if (c2 > (1<<11) * 26)
             c2 += utf16Fixup[c2>>11];
-        
         /* now c1 and c2 are in UTF-32-compatible order */
-        diff = (long)c1 - (long)c2;
-        if (diff)
-            return (diff < 0) ? -1 : (diff != 0);
+
+        if (c1 != c2)
+            return (c1 < c2) ? -1 : 1;
+        
         len1--; len2--;
     }
 
@@ -3293,11 +3293,14 @@ unicode_compare(PyUnicodeObject *str1, PyUnicodeObject *str2)
     len2 = str2->length;
     
     while (len1 > 0 && len2 > 0) {
-	register long diff;
+        Py_UNICODE c1, c2;     
 
-        diff = (long)*s1++ - (long)*s2++;
-        if (diff)
-            return (diff < 0) ? -1 : (diff != 0);
+        c1 = *s1++;
+        c2 = *s2++;
+
+        if (c1 != c2)
+            return (c1 < c2) ? -1 : 1;
+
         len1--; len2--;
     }
 
