@@ -105,6 +105,12 @@ class Directory(Dialog):
 
     def _fixresult(self, widget, result):
         if result:
+            # convert Tcl path objects to strings
+            try:
+                result = result.string
+            except AttributeError:
+                # it already is a string
+                pass
             # keep directory until next time
             self.options["initialdir"] = result
         self.directory = result # compatibility
