@@ -4,6 +4,7 @@ from heapq import heappush, heappop, heapify, heapreplace, nlargest, nsmallest
 import random
 import unittest
 from test import test_support
+import sys
 
 
 def heapiter(heap):
@@ -91,16 +92,28 @@ class TestHeap(unittest.TestCase):
 
     def test_nsmallest(self):
         data = [random.randrange(2000) for i in range(1000)]
-        self.assertEqual(nsmallest(data, 400), sorted(data)[:400])
-        self.assertEqual(nsmallest(data, 50), sorted(data)[:50])
+        for i in (0, 1, 2, 10, 100, 400, 999, 1000, 1100):
+            self.assertEqual(nsmallest(data, i), sorted(data)[:i])
 
     def test_largest(self):
         data = [random.randrange(2000) for i in range(1000)]
-        self.assertEqual(nlargest(data, 400), sorted(data, reverse=True)[:400])
+        for i in (0, 1, 2, 10, 100, 400, 999, 1000, 1100):
+            self.assertEqual(nlargest(data, i), sorted(data, reverse=True)[:i])
 
-def test_main():
-    test_support.run_unittest(TestHeap)
+def test_main(verbose=None):
+    test_classes = [TestHeap]
+    test_support.run_unittest(*test_classes)
+
+    # verify reference counting
+    if verbose and hasattr(sys, "gettotalrefcount"):
+        import gc
+        counts = [None] * 5
+        for i in xrange(len(counts)):
+            test_support.run_unittest(*test_classes)
+            gc.collect()
+            counts[i] = sys.gettotalrefcount()
+        print counts
 
 if __name__ == "__main__":
-    test_main()
+    test_main(verbose=True)
 
