@@ -101,8 +101,13 @@
 \newcommand{\refbimodindex}[1]{\refmodule{#1}{built-in }}
 \newcommand{\refstmodindex}[1]{\refmodule{#1}{standard }}
 
+% support for the module index
+\newwrite\modindexfile
+\openout\modindexfile=modules.idx
+
 % Add the defining entry for a module
-\newcommand{\defmodindex}[2]{\index{#1@{\tt#1} (#2module)|textbf}}
+\newcommand{\defmodindex}[2]{\index{#1@{\tt#1} (#2module)|textbf}%
+  \write\modindexfile{#1 \thepage}}
 \newcommand{\bimodindex}[1]{\defmodindex{#1}{built-in }}
 \newcommand{\stmodindex}[1]{\defmodindex{#1}{standard }}
 
@@ -238,3 +243,13 @@
 \newenvironment{seealso}[0]{{\bf See Also: }}{\par}
 \newcommand{\seemodule}[2]{\ref{module-#1}: {\tt #1} (#2)}
 \newcommand{\seetext}[1]{\par{#1}}
+
+% Fix the theindex environment to add an entry to the Table of Contents;
+% this is much nicer than just having to jump to the end of the book and
+% flip around, especially with multiple indexes.
+%
+\let\OldTheindex=\theindex
+\def\theindex{%
+  \OldTheindex%
+  \addcontentsline{toc}{chapter}{\indexname}%
+}
