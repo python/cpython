@@ -233,10 +233,8 @@ if missing: raise "Missing Types"
 		self.includepath = [':', INCLUDEDIR]
 
 	def initpatterns(self):
-#		self.head_pat = "^extern pascal[ \t]+" # XXX Mac specific!
 		self.head_pat = "^EXTERN_API[^_]"
 		self.tail_pat = "[;={}]"
-#		self.type_pat = "pascal[ \t\n]+\(<type>[a-zA-Z0-9_ \t]*[a-zA-Z0-9_]\)[ \t\n]+"
 		self.type_pat = "EXTERN_API" + \
 						"[ \t\n]*([ \t\n]*" + \
 						"\(<type>[a-zA-Z0-9_* \t]*[a-zA-Z0-9_*]\)" + \
@@ -244,8 +242,6 @@ if missing: raise "Missing Types"
 		self.name_pat = "\(<name>[a-zA-Z0-9_]+\)[ \t\n]*"
 		self.args_pat = "(\(<args>\([^(;=)]+\|([^(;=)]*)\)*\))"
 		self.whole_pat = self.type_pat + self.name_pat + self.args_pat
-#		self.sym_pat = "^[ \t]*\(<name>[a-zA-Z0-9_]+\)[ \t]*=" + \
-#		               "[ \t]*\(<defn>[-0-9'\"(][^\t\n,;}]*\),?"
 		self.sym_pat = "^[ \t]*\(<name>[a-zA-Z0-9_]+\)[ \t]*=" + \
 		               "[ \t]*\(<defn>[-0-9_a-zA-Z'\"(][^\t\n,;}]*\),?"
 		self.asplit_pat = "^\(<type>.*[^a-zA-Z0-9_]\)\(<name>[a-zA-Z0-9_]+\)$"
@@ -585,6 +581,25 @@ class Scanner_PreUH3(Scanner):
 		self.sym_pat = "^[ \t]*\(<name>[a-zA-Z0-9_]+\)[ \t]*=" + \
 		               "[ \t]*\(<defn>[-0-9'\"][^\t\n,;}]*\),?"
 		self.asplit_pat = "^\(<type>.*[^a-zA-Z0-9_]\)\(<name>[a-zA-Z0-9_]+\)$"
+
+class Scanner_OSX(Scanner):
+	"""Scanner for modern (post UH3.3) Universal Headers """
+	def initpatterns(self):
+		self.head_pat = "^EXTERN_API_C"
+		self.tail_pat = "[;={}]"
+		self.type_pat = "EXTERN_API_C" + \
+						"[ \t\n]*([ \t\n]*" + \
+						"\(<type>[a-zA-Z0-9_* \t]*[a-zA-Z0-9_*]\)" + \
+						"[ \t\n]*)[ \t\n]*"
+		self.name_pat = "\(<name>[a-zA-Z0-9_]+\)[ \t\n]*"
+		self.args_pat = "(\(<args>\([^(;=)]+\|([^(;=)]*)\)*\))"
+		self.whole_pat = self.type_pat + self.name_pat + self.args_pat
+		self.sym_pat = "^[ \t]*\(<name>[a-zA-Z0-9_]+\)[ \t]*=" + \
+		               "[ \t]*\(<defn>[-0-9_a-zA-Z'\"(][^\t\n,;}]*\),?"
+		self.asplit_pat = "^\(<type>.*[^a-zA-Z0-9_]\)\(<name>[a-zA-Z0-9_]+\)$"
+		self.comment1_pat = "\(<rest>.*\)//.*"
+		# note that the next pattern only removes comments that are wholly within one line
+		self.comment2_pat = "\(<rest1>.*\)/\*.*\*/\(<rest2>.*\)"
 
 	
 def test():
