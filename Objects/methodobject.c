@@ -130,6 +130,31 @@ typeobject Methodtype = {
 	0,		/*tp_as_mapping*/
 };
 
+object *listmethods PROTO((struct methodlist *)); /* Forward */
+
+static object *
+listmethods(ml)
+	struct methodlist *ml;
+{
+	int i, n;
+	object *v;
+	for (n = 0; ml[n].ml_name != NULL; n++)
+		;
+	v = newlistobject(n);
+	if (v != NULL) {
+		for (i = 0; i < n; i++)
+			setlistitem(v, i, newstringobject(ml[i].ml_name));
+		if (err_occurred()) {
+			DECREF(v);
+			v = NULL;
+		}
+		else {
+			sortlist(v);
+		}
+	}
+	return v;
+}
+
 /* Find a method in a module's method table.
    Usually called from an object's getattr method. */
 
@@ -139,6 +164,8 @@ findmethod(ml, op, name)
 	object *op;
 	char *name;
 {
+	if (strcmp(name, "__methods__") == 0)
+		return listmethods(ml);
 	for (; ml->ml_name != NULL; ml++) {
 		if (strcmp(name, ml->ml_name) == 0)
 			return newmethodobject(ml->ml_name, ml->ml_meth, op);
