@@ -665,9 +665,9 @@ def formatargspec(args, varargs=None, varkw=None, defaults=None,
         if defaults and i >= firstdefault:
             spec = spec + formatvalue(defaults[i - firstdefault])
         specs.append(spec)
-    if varargs:
+    if varargs is not None:
         specs.append(formatvarargs(varargs))
-    if varkw:
+    if varkw is not None:
         specs.append(formatvarkw(varkw))
     return '(' + string.join(specs, ', ') + ')'
 

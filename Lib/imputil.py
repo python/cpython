@@ -66,7 +66,7 @@ class ImportManager:
 
         # This is the Importer that we use for grabbing stuff from the
         # filesystem. It defines one more method (import_from_dir) for our use.
-        if not fs_imp:
+        if fs_imp is None:
             cls = self.clsFilesystemImporter or _FilesystemImporter
             fs_imp = cls()
         self.fs_imp = fs_imp

@@ -539,7 +539,7 @@ class IMAP4:
         # Mandated responses are ('FLAGS', 'EXISTS', 'RECENT', 'UIDVALIDITY')
         self.untagged_responses = {}    # Flush old responses.
         self.is_readonly = readonly
-        if readonly:
+        if readonly is not None:
             name = 'EXAMINE'
         else:
             name = 'SELECT'
