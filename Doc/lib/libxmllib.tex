@@ -166,8 +166,8 @@ references outside of the \ASCII{} range.
 \begin{methoddesc}{handle_comment}{comment}
 This method is called when a comment is encountered.  The
 \var{comment} argument is a string containing the text between the
-\samp{<!-\code{-}} and \samp{-\code{-}>} delimiters, but not the delimiters
-themselves.  For example, the comment \samp{<!-\code{-}text-\code{-}>} will
+\samp{<!--} and \samp{-->} delimiters, but not the delimiters
+themselves.  For example, the comment \samp{<!--text-->} will
 cause this method to be called with the argument \code{'text'}.  The
 default method does nothing.
 \end{methoddesc}
