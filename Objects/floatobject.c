@@ -352,14 +352,6 @@ float_str(PyFloatObject *v)
 	return PyString_FromString(buf);
 }
 
-static int
-float_compare(PyFloatObject *v, PyFloatObject *w)
-{
-	double i = v->ob_fval;
-	double j = w->ob_fval;
-	return (i < j) ? -1 : (i > j) ? 1 : 0;
-}
-
 static PyObject*
 float_richcompare(PyObject *v, PyObject *w, int op)
 {
@@ -852,7 +844,7 @@ PyTypeObject PyFloat_Type = {
 	(printfunc)float_print, 		/* tp_print */
 	0,					/* tp_getattr */
 	0,					/* tp_setattr */
-	(cmpfunc)float_compare, 		/* tp_compare */
+	0,			 		/* tp_compare */
 	(reprfunc)float_repr,			/* tp_repr */
 	&float_as_number,			/* tp_as_number */
 	0,					/* tp_as_sequence */
