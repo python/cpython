@@ -27,10 +27,12 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "allobjects.h"
 #include "modsupport.h"
 
-#if defined(__CHAR_UNSIGNED__) && defined(signed)
+#if defined(__CHAR_UNSIGNED__)
+#if defined(signed)
 !ERROR!; READ THE SOURCE FILE!;
 /* This module currently does not work on systems where only unsigned
    characters are available.  Take it out of Setup.  Sorry. */
+#endif
 #endif
 
 #include <math.h>

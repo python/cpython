@@ -53,10 +53,18 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 static char *argv0;
 
+/* These are made available for other modules that might need them.
+   This is rare, but it is needed by the secureware module. */
+
+static char **orig_argv;
+static int  orig_argc;
+
 main(argc, argv)
 	int argc;
 	char **argv;
 {
+	orig_argc = argc;
+	orig_argv = argv;
 	argv0 = argv[0];
 	realmain(argc, argv);
 }
@@ -65,6 +73,15 @@ char *
 getprogramname()
 {
 	return argv0;
+}
+
+void
+getargcargv(argc,argv)
+	int *argc;
+	char ***argv;
+{
+	*argc = orig_argc;
+	*argv = orig_argv;
 }
 
 #endif
