@@ -202,13 +202,9 @@ time_sleep(self, args)
 	double secs;
 	if (!PyArg_Parse(args, "d", &secs))
 		return NULL;
-	Py_BEGIN_ALLOW_THREADS
-		if (floatsleep(secs) != 0) {
-			Py_BLOCK_THREADS
-			return NULL;
-		}
-	Py_END_ALLOW_THREADS
-		Py_INCREF(Py_None);
+	if (floatsleep(secs) != 0)
+		return NULL;
+	Py_INCREF(Py_None);
 	return Py_None;
 }
 
@@ -532,23 +528,29 @@ floatsleep(double secs)
 	secs = floor(secs);
 	t.tv_sec = (long)secs;
 	t.tv_usec = (long)(frac*1000000.0);
+	Py_BEGIN_ALLOW_THREADS
 	if (select(0, (fd_set *)0, (fd_set *)0, (fd_set *)0, &t) != 0) {
+		Py_BLOCK_THREADS
 		PyErr_SetFromErrno(PyExc_IOError);
 		return -1;
 	}
+	Py_END_ALLOW_THREADS
 #else /* !HAVE_SELECT */
 #ifdef macintosh
 #define MacTicks	(* (long *)0x16A)
 	long deadline;
 	deadline = MacTicks + (long)(secs * 60.0);
 	while (MacTicks < deadline) {
+		/* XXX Should call some yielding function here */
 		if (PyErr_CheckSignals())
 			return -1;
 	}
 #else /* !macintosh */
 #ifdef __WATCOMC__
 	/* XXX Can't interrupt this sleep */
+	Py_BEGIN_ALLOW_THREADS
 	delay((int)(secs * 1000 + 0.5));  /* delay() uses milliseconds */
+	Py_END_ALLOW_THREADS
 #else /* !__WATCOMC__ */
 #ifdef MSDOS
 	struct timeb t1, t2;
@@ -568,7 +570,9 @@ floatsleep(double secs)
 	}
 	for (;;) {
 #ifdef QUICKWIN
+		Py_BEGIN_ALLOW_THREADS
 		_wyield();
+		Py_END_ALLOW_THREADS
 #endif
 		if (PyErr_CheckSignals())
 			return -1;
@@ -580,10 +584,14 @@ floatsleep(double secs)
 #else /* !MSDOS */
 #ifdef MS_WIN32
 	/* XXX Can't interrupt this sleep */
+	Py_BEGIN_ALLOW_THREADS
 	Sleep((int)(secs*1000));
+	Py_END_ALLOW_THREADS
 #else /* !MS_WIN32 */
 	/* XXX Can't interrupt this sleep */
+	Py_BEGIN_ALLOW_THREADS
 	sleep((int)secs);
+	Py_END_ALLOW_THREADS
 #endif /* !MS_WIN32 */
 #endif /* !MSDOS */
 #endif /* !__WATCOMC__ */
