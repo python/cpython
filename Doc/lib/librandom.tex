@@ -113,6 +113,7 @@ returns it.
 \end{funcdesc}
 
 \begin{funcdesc}{randint}{a, b}
+\deprecated{2.0}{Use \function{randrange()} instead.}
 Returns a random integer \var{N} such that
 \code{\var{a} <= \var{N} <= \var{b}}.
 \end{funcdesc}
@@ -120,6 +121,13 @@ Returns a random integer \var{N} such that
 \begin{funcdesc}{random}{}
 Returns the next random floating point number in the range [0.0
 ... 1.0).
+\end{funcdesc}
+
+\begin{funcdesc}{randrange}{\optional{start,} stop\optional{, step}}
+Return a randomly selected element from \code{range(\var{start},
+\var{stop}, \var{step})}.  This is equivalent to
+\code{choice(range(\var{start}, \var{stop}, \var{step}))}.
+\versionadded{1.5.2}
 \end{funcdesc}
 
 \begin{funcdesc}{uniform}{a, b}
