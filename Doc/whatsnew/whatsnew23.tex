@@ -285,13 +285,16 @@ file.  For example, a UTF-8 file can be declared with:
 \end{verbatim}
 
 Without such an encoding declaration, the default encoding used is
-ISO-8859-1, also known as Latin1.
+7-bit ASCII.  Executing or importing modules containing string
+literals with 8-bit characters and no encoding declaration will result
+in a \exception{DeprecationWarning} being signalled by Python 2.3; in
+2.4 this will be a syntax error.
 
-The encoding declaration only affects Unicode string literals; the
-text in the source code will be converted to Unicode using the
-specified encoding.  Note that Python identifiers are still restricted
-to ASCII characters, so you can't have variable names that use
-characters outside of the usual alphanumerics.
+The encoding declaration only affects Unicode string literals, which
+will be converted to Unicode using the specified encoding.  Note that
+Python identifiers are still restricted to ASCII characters, so you
+can't have variable names that use characters outside of the usual
+alphanumerics.
 
 \begin{seealso}
 
@@ -2078,6 +2081,11 @@ if \var{X} is more than one character long.
 \item The \function{int()} type constructor will now return a long
 integer instead of raising an \exception{OverflowError} when a string
 or floating-point number is too large to fit into an integer.
+
+\item If you have Unicode strings that contain 8-bit characters, you
+must declare the file's encoding (UTF-8, Latin-1, or whatever) by
+adding a comment to the top of the file.  See
+section~\ref{section-encodings} for more information.
 
 \item Calling Tcl methods through \module{_tkinter} no longer 
 returns only strings. Instead, if Tcl returns other objects those
