@@ -1,5 +1,5 @@
 /***********************************************************
-Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Copyright 1991, 1992, 1993, 1994 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
 
                         All Rights Reserved
@@ -40,6 +40,8 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include <ctype.h>
 
+extern int suppress_print; /* Declared in pythonrun.c, set in pythonmain.c */
+
 /* Turn this on if your compiler chokes on the big switch: */
 /* #define CASE_TOO_BIG 1  	/**/
 
@@ -52,9 +54,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define LLTRACE  1	/* Low-level trace feature */
 #define CHECKEXC 1	/* Double-check exception checking */
 #endif
-
-/* Global option, may be set by main() */
-int killprint;
 
 
 /* Forward declarations */
@@ -92,18 +91,15 @@ static int cmp_member PROTO((object *, object *));
 static object *cmp_outcome PROTO((int, object *, object *));
 static int import_from PROTO((object *, object *, object *));
 static object *build_class PROTO((object *, object *, object *));
-static void locals_2_fast PROTO((frameobject *, int));
-static void fast_2_locals PROTO((frameobject *));
 static int access_statement PROTO((object *, object *, frameobject *));
 static int exec_statement PROTO((object *, object *, object *));
-static void mergelocals PROTO(());
 
 
 /* Pointer to current frame, used to link new frames to */
 
 static frameobject *current_frame;
 
-#ifdef USE_THREAD
+#ifdef WITH_THREAD
 
 #include <errno.h>
 #include "thread.h"
@@ -128,7 +124,7 @@ init_save_thread()
 object *
 save_thread()
 {
-#ifdef USE_THREAD
+#ifdef WITH_THREAD
 	if (interpreter_lock) {
 		object *res;
 		res = (object *)current_frame;
@@ -144,7 +140,7 @@ void
 restore_thread(x)
 	object *x;
 {
-#ifdef USE_THREAD
+#ifdef WITH_THREAD
 	if (interpreter_lock) {
 		int err;
 		err = errno;
@@ -190,11 +186,11 @@ eval_code(co, globals, locals, owner, arg)
 	register object *t;
 	register frameobject *f; /* Current frame */
 	register listobject *fastlocals = NULL;
-	object *trace = NULL;	/* Trace function or NULL */
 	object *retval;		/* Return value iff why == WHY_RETURN */
 	char *name;		/* Name used by some instructions */
 	int needmerge = 0;	/* Set if need to merge locals back at end */
 	int defmode = 0;	/* Default access mode for new variables */
+	int ticker_count = 10;	/* Check for intr every Nth instruction */
 #ifdef LLTRACE
 	int lltrace;
 #endif
@@ -276,7 +272,7 @@ eval_code(co, globals, locals, owner, arg)
 		   depends on the situation.  The global trace function
 		   (sys.trace) is also called whenever an exception
 		   is detected. */
-		if (call_trace(&sys_trace, &trace, f, "call", arg)) {
+		if (call_trace(&sys_trace, &f->f_trace, f, "call", arg)) {
 			/* Trace function raised an error */
 			current_frame = f->f_back;
 			DECREF(f);
@@ -293,6 +289,10 @@ eval_code(co, globals, locals, owner, arg)
 			return NULL;
 		}
 	}
+
+	x = sysget("check_interval");
+	if (x != NULL && is_intobject(x))
+		ticker_count = getintvalue(x);
 	
 	next_instr = GETUSTRINGVALUE(f->f_code->co_code);
 	stack_pointer = f->f_valuestack;
@@ -312,17 +312,16 @@ eval_code(co, globals, locals, owner, arg)
 		/* Do periodic things.
 		   Doing this every time through the loop would add
 		   too much overhead (a function call per instruction).
-		   So we do it only every tenth instruction. */
+		   So we do it only every Nth instruction. */
 		
 		if (--ticker < 0) {
-			ticker = 10;
-			if (intrcheck()) {
-				err_set(KeyboardInterrupt);
+			ticker = ticker_count;
+			if (sigcheck()) {
 				why = WHY_EXCEPTION;
 				goto on_error;
 			}
 
-#ifdef USE_THREAD
+#ifdef WITH_THREAD
 			if (interpreter_lock) {
 				/* Give another thread a chance */
 
@@ -642,17 +641,15 @@ eval_code(co, globals, locals, owner, arg)
 		case PRINT_EXPR:
 			v = POP();
 			/* Print value except if procedure result */
-			if (v != None) {
+			/* Before printing, also assign to '_' */
+			if (v != None &&
+			    (err = setbuiltin("_", v)) == 0 &&
+			    !suppress_print) {
 				flushline();
 				x = sysget("stdout");
 				softspace(x, 1);
 				err = writeobject(v, x, 0);
 				flushline();
-				if (killprint) {
-					err_setstr(RuntimeError,
-					      "printing expression statement");
-					x = 0;
-				}
 			}
 			DECREF(v);
 			break;
@@ -692,7 +689,7 @@ eval_code(co, globals, locals, owner, arg)
 			v = POP();
 			w = POP();
 			/* A tuple is equivalent to its first element here */
-			while (is_tupleobject(w)) {
+			while (is_tupleobject(w) && gettuplesize(w) > 0) {
 				u = w;
 				w = gettupleitem(u, 0);
 				DECREF(u);
@@ -739,6 +736,14 @@ eval_code(co, globals, locals, owner, arg)
 			x = newfuncobject(v, f->f_globals);
 			DECREF(v);
 			PUSH(x);
+			break;
+
+		case SET_FUNC_ARGS:
+			v = POP(); /* The function */
+			w = POP(); /* The argument list */
+			err = setfuncargstuff(v, oparg, w);
+			PUSH(v);
+			DECREF(w);
 			break;
 		
 		case POP_BLOCK:
@@ -1109,8 +1114,7 @@ eval_code(co, globals, locals, owner, arg)
 			x = GETCONST(oparg);
 			if (x == None)
 				break;
-			if (x == NULL || !is_dictobject(x)) {
-				fatal("bad RESERVE_FAST");
+			if (x == NULL || !is_tupleobject(x)) {
 				err_setstr(SystemError, "bad RESERVE_FAST");
 				x = NULL;
 				break;
@@ -1119,16 +1123,15 @@ eval_code(co, globals, locals, owner, arg)
 			XDECREF(f->f_localmap);
 			INCREF(x);
 			f->f_localmap = x;
-			f->f_fastlocals = x = newlistobject(
-			    x->ob_type->tp_as_mapping->mp_length(x));
+			f->f_fastlocals = x = newlistobject(gettuplesize(x));
 			fastlocals = (listobject *) x;
 			break;
 
 		case LOAD_FAST:
 			x = GETLISTITEM(fastlocals, oparg);
 			if (x == NULL) {
-				err_setstr(NameError,
-					   "undefined local variable");
+				err_setval(NameError,
+					   gettupleitem(f->f_localmap, oparg));
 				break;
 			}
 			if (is_accessobject(x)) {
@@ -1156,12 +1159,12 @@ eval_code(co, globals, locals, owner, arg)
 		case DELETE_FAST:
 			x = GETLISTITEM(fastlocals, oparg);
 			if (x == NULL) {
-				err_setstr(NameError,
-					   "undefined local variable");
+				err_setval(NameError,
+					   gettupleitem(f->f_localmap, oparg));
 				break;
 			}
-			if (w != NULL && is_accessobject(w)) {
-				err = setaccessvalue(w, f->f_locals,
+			if (x != NULL && is_accessobject(x)) {
+				err = setaccessvalue(x, f->f_locals,
 						     (object *)NULL);
 				break;
 			}
@@ -1306,10 +1309,10 @@ eval_code(co, globals, locals, owner, arg)
 				printf("--- Line %d ---\n", oparg);
 #endif
 			f->f_lineno = oparg;
-			if (trace != NULL) {
+			if (f->f_trace != NULL) {
 				/* Trace each line of code reached */
 				f->f_lasti = INSTR_OFFSET();
-				err = call_trace(&trace, &trace,
+				err = call_trace(&f->f_trace, &f->f_trace,
 						 f, "line", None);
 			}
 			break;
@@ -1368,8 +1371,8 @@ eval_code(co, globals, locals, owner, arg)
 				f->f_lasti -= 2;
 			tb_here(f);
 
-			if (trace)
-				call_exc_trace(&trace, &trace, f);
+			if (f->f_trace)
+				call_exc_trace(&f->f_trace, &f->f_trace, f);
 			if (sys_profile)
 				call_exc_trace(&sys_profile, (object**)0, f);
 		}
@@ -1446,15 +1449,15 @@ eval_code(co, globals, locals, owner, arg)
 	if (why != WHY_RETURN)
 		retval = NULL;
 	
-	if (trace) {
+	if (f->f_trace) {
 		if (why == WHY_RETURN) {
-			if (call_trace(&trace, &trace, f, "return", retval)) {
+			if (call_trace(&f->f_trace, &f->f_trace, f,
+				       "return", retval)) {
 				XDECREF(retval);
 				retval = NULL;
 				why = WHY_EXCEPTION;
 			}
 		}
-		XDECREF(trace);
 	}
 	
 	if (sys_profile && why == WHY_RETURN) {
@@ -1465,9 +1468,6 @@ eval_code(co, globals, locals, owner, arg)
 			why = WHY_EXCEPTION;
 		}
 	}
-
-	if (fastlocals && (f->ob_refcnt > 1 || f->f_locals->ob_refcnt > 2))
-		fast_2_locals(f);
 	
 	/* Restore previous frame and release the current one */
 	
@@ -1561,7 +1561,7 @@ call_trace(p_trace, p_newtrace, f, msg, arg)
 	settupleitem(arglist, 2, arg);
 	tracing++;
 	fast_2_locals(f);
-	res = call_object(*p_trace, arglist);
+	res = call_object(*p_trace, arglist); /* May clear *p_trace! */
 	locals_2_fast(f, 1);
 	tracing--;
  cleanup:
@@ -1569,7 +1569,7 @@ call_trace(p_trace, p_newtrace, f, msg, arg)
 	if (res == NULL) {
 		/* The trace proc raised an exception */
 		tb_here(f);
-		DECREF(*p_trace);
+		XDECREF(*p_trace);
 		*p_trace = NULL;
 		if (p_newtrace) {
 			XDECREF(*p_newtrace);
@@ -1590,91 +1590,6 @@ call_trace(p_trace, p_newtrace, f, msg, arg)
 		DECREF(res);
 		return 0;
 	}
-}
-
-static void
-fast_2_locals(f)
-	frameobject *f;
-{
-	/* Merge f->f_fastlocals into f->f_locals */
-	object *locals, *fast, *map;
-	object *error_type, *error_value;
-	int pos;
-	object *key, *value;
-	if (f == NULL)
-		return;
-	locals = f->f_locals;
-	fast = f->f_fastlocals;
-	map = f->f_localmap;
-	if (locals == NULL || fast == NULL || map == NULL)
-		return;
-	if (!is_dictobject(locals) || !is_listobject(fast) ||
-	    !is_dictobject(map))
-		return;
-	err_get(&error_type, &error_value);
-	pos = 0;
-	while (mappinggetnext(map, &pos, &key, &value)) {
-		int j;
-		if (!is_intobject(value))
-			continue;
-		j = getintvalue(value);
-		value = getlistitem(fast, j);
-		if (value == NULL) {
-			err_clear();
-			if (dict2remove(locals, key) != 0)
-				err_clear();
-		}
-		else {
-			if (dict2insert(locals, key, value) != 0)
-				err_clear();
-		}
-	}
-	err_setval(error_type, error_value);
-}
-
-static void
-locals_2_fast(f, clear)
-	frameobject *f;
-	int clear;
-{
-	/* Merge f->f_locals into f->f_fastlocals */
-	object *locals, *fast, *map;
-	object *error_type, *error_value;
-	int pos;
-	object *key, *value;
-	if (f == NULL)
-		return;
-	locals = f->f_locals;
-	fast = f->f_fastlocals;
-	map = f->f_localmap;
-	if (locals == NULL || fast == NULL || map == NULL)
-		return;
-	if (!is_dictobject(locals) || !is_listobject(fast) ||
-	    !is_dictobject(map))
-		return;
-	err_get(&error_type, &error_value);
-	pos = 0;
-	while (mappinggetnext(map, &pos, &key, &value)) {
-		int j;
-		if (!is_intobject(value))
-			continue;
-		j = getintvalue(value);
-		value = dict2lookup(locals, key);
-		if (value == NULL)
-			err_clear();
-		else
-			INCREF(value);
-		if (value != NULL || clear)
-			if (setlistitem(fast, j, value) != 0)
-				err_clear();
-	}
-	err_setval(error_type, error_value);
-}
-
-static void
-mergelocals()
-{
-	locals_2_fast(current_frame, 1);
 }
 
 object *
@@ -1702,6 +1617,12 @@ getowner()
 		return NULL;
 	else
 		return current_frame->f_owner;
+}
+
+object *
+getframe()
+{
+	return (object *)current_frame;
 }
 
 void
@@ -1999,10 +1920,31 @@ call_object(func, arg)
 	object *func;
 	object *arg;
 {
-	if (is_instancemethodobject(func) || is_funcobject(func))
-		return call_function(func, arg);
+        binaryfunc call;
+        object *result;
+        
+        if (call = func->ob_type->tp_call) {
+          	int size = gettuplesize(arg);
+                if (arg) {
+			size = gettuplesize(arg);
+			if (size == 1)
+				arg = gettupleitem(arg, 0);
+			else if (size == 0)
+				arg = NULL;
+		} 
+                result = (*call)(func, arg);
+        }
+        else if (is_instancemethodobject(func) || is_funcobject(func))
+		result = call_function(func, arg);
 	else
-		return call_builtin(func, arg);
+		result = call_builtin(func, arg);
+
+        if (result == NULL && !err_occurred()) {
+		fprintf(stderr, "null result without error in call_object\n");
+		abort();
+	}
+        
+        return result;
 }
 
 static object *
@@ -2025,6 +1967,17 @@ call_builtin(func, arg)
 	if (is_classobject(func)) {
 		return newinstanceobject(func, arg);
 	}
+	if (is_instanceobject(func)) {
+	        object *res, *call = getattr(func,"__call__");
+		if (call == NULL) {
+			err_clear();
+			err_setstr(AttributeError, "no __call__ method defined");
+			return NULL;
+		}
+		res = call_object(call, arg);
+		DECREF(call);
+		return res;
+	}
 	err_setstr(TypeError, "call of non-function");
 	return NULL;
 }
@@ -2038,6 +1991,8 @@ call_function(func, arg)
 	object *newlocals, *newglobals;
 	object *class = NULL;
 	object *co, *v;
+	object *argdefs;
+	int	argcount;
 	
 	if (is_instancemethodobject(func)) {
 		object *self = instancemethodgetself(func);
@@ -2065,7 +2020,6 @@ call_function(func, arg)
 			}
 		}
 		else {
-			int argcount;
 			if (arg == NULL)
 				argcount = 0;
 			else if (is_tupleobject(arg))
@@ -2097,6 +2051,39 @@ call_function(func, arg)
 		if (!is_funcobject(func)) {
 			err_setstr(TypeError, "call of non-function");
 			return NULL;
+		}
+	}
+
+	argdefs = getfuncargstuff(func, &argcount);
+	if (argdefs != NULL && arg != NULL && is_tupleobject(arg)) {
+		int actualcount, j;
+		/* Process default arguments */
+		if (argcount & 0x4000)
+			argcount ^= 0x4000;
+		actualcount = gettuplesize(arg);
+		j = gettuplesize(argdefs) - (argcount - actualcount);
+		if (actualcount < argcount && j >= 0) {
+			int i;
+			object *v;
+			if (newarg == NULL)
+				INCREF(arg);
+			newarg = newtupleobject(argcount);
+			if (newarg == NULL) {
+				DECREF(arg);
+				return NULL;
+			}
+			for (i = 0; i < actualcount; i++) {
+				v = gettupleitem(arg, i);
+				XINCREF(v);
+				settupleitem(newarg, i, v);
+			}
+			for (; i < argcount; i++, j++) {
+				v = gettupleitem(argdefs, j);
+				XINCREF(v);
+				settupleitem(newarg, i, v);
+			}
+			DECREF(arg);
+			arg = newarg;
 		}
 	}
 	
@@ -2162,18 +2149,18 @@ loop_subscript(v, w)
 	object *v, *w;
 {
 	sequence_methods *sq = v->ob_type->tp_as_sequence;
-	int i, n;
+	int i;
 	if (sq == NULL) {
 		err_setstr(TypeError, "loop over non-sequence");
 		return NULL;
 	}
 	i = getintvalue(w);
-	n = (*sq->sq_length)(v);
-	if (n < 0)
-		return NULL; /* Exception */
-	if (i >= n)
-		return NULL; /* End of loop */
-	return (*sq->sq_item)(v, i);
+	v = (*sq->sq_item)(v, i);
+	if (v)
+		return v;
+	if (err_occurred() == IndexError)
+		err_clear();
+	return NULL;
 }
 
 static int
@@ -2300,7 +2287,7 @@ static int
 cmp_member(v, w)
 	object *v, *w;
 {
-	int i, n, cmp;
+	int i, cmp;
 	object *x;
 	sequence_methods *sq;
 	/* Special case for char in string */
@@ -2327,11 +2314,15 @@ cmp_member(v, w)
 			"'in' or 'not in' needs sequence right argument");
 		return -1;
 	}
-	n = (*sq->sq_length)(w);
-	if (n < 0)
-		return -1;
-	for (i = 0; i < n; i++) {
+	for (i = 0; ; i++) {
 		x = (*sq->sq_item)(w, i);
+		if (x == NULL) {
+			if (err_occurred() == IndexError) {
+				err_clear();
+				break;
+			}
+			return -1;
+		}
 		cmp = cmpobject(v, x);
 		XDECREF(x);
 		if (cmp == 0)
@@ -2473,17 +2464,13 @@ access_statement(name, vmode, f)
 	if (f->f_localmap == NULL)
 		value = dict2lookup(f->f_locals, name);
 	else {
-		value = dict2lookup(f->f_localmap, name);
-		if (value == NULL || !is_intobject(value))
-			value = NULL;
-		else {
-			fastind = getintvalue(value);
-			if (0 <= fastind &&
-			    fastind < getlistsize(f->f_fastlocals))
+		object *map = f->f_localmap;
+		value = NULL;
+		for (fastind = gettuplesize(map); --fastind >= 0; ) {
+			object *fname = gettupleitem(map, fastind);
+			if (cmpobject(name, fname) == 0) {
 				value = getlistitem(f->f_fastlocals, fastind);
-			else {
-				value = NULL;
-				fastind = -1;
+				break;
 			}
 		}
 	}
