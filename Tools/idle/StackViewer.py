@@ -18,9 +18,9 @@ class StackViewer:
             root = top = Tk()
         else:
             top = Toplevel(root)
-        self.top.protocol("WM_DELETE_WINDOW", self.close)
         self.root = root
         self.top = top
+        self.top.protocol("WM_DELETE_WINDOW", self.close)
         top.wm_title("Stack viewer")
         # Create help label
         self.helplabel = Label(top,
