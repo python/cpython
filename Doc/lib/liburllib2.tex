@@ -365,14 +365,13 @@ of \function{urlopen()}.
 
 OpenerDirector objects open URLs in three stages:
 
+The order in which these methods are called within each stage is
+determined by sorting the handler instances.
+
 \begin{enumerate}
   \item Every handler with a method named like
     \method{\var{protocol}_request()} has that method called to
     pre-process the request.
-
-    The order in which these methods are called is determined by
-    sorting the handler instances by the \member{.processor_order}
-    attribute.
 
   \item Handlers with a method named like
     \method{\var{protocol}_open()} are called to handle the request.
@@ -391,16 +390,10 @@ OpenerDirector objects open URLs in three stages:
     the parent \class{OpenerDirector} instance's \method{.open()} and
     \method{.error()} methods.
 
-    The order in which these methods are called is determined by
-    sorting the handler instances.
-
   \item Every handler with a method named like
     \method{\var{protocol}_response()} has that method called to
     post-process the response.
 
-    The order in which these methods are called is determined by
-    sorting the handler instances by the \member{.processor_order}
-    attribute.
 \end{enumerate}
 
 \subsection{BaseHandler Objects \label{base-handler-objects}}
