@@ -579,20 +579,32 @@ char *filename;
 	int ok;
 	Handle h;
 	
-	if ( FSMakeFSSpec(0, 0, Pstring(filename), &fss) != noErr )
-		return 0;			/* It doesn't exist */
-	if ( FSpGetFInfo(&fss, &finfo) != noErr )
-		return 0;			/* shouldn't happen, I guess */
-	oldrh = CurResFile();
-	filerh = FSpOpenResFile(&fss, fsRdPerm);
-	if ( filerh == -1 )
-		return 0;
-	UseResFile(filerh);
+	if ( strcmp(filename, PyMac_ApplicationPath) == 0 ) {
+		/*
+		** Special case: the application itself. Use a shortcut to
+		** forestall opening and closing the application numerous times
+		** (which is dead slow when running from CDROM)
+		*/
+		oldrh = CurResFile();
+		UseResFile(PyMac_AppRefNum);
+		filerh = -1;
+	} else {
+		if ( FSMakeFSSpec(0, 0, Pstring(filename), &fss) != noErr )
+			return 0;			/* It doesn't exist */
+		if ( FSpGetFInfo(&fss, &finfo) != noErr )
+			return 0;			/* shouldn't happen, I guess */
+		oldrh = CurResFile();
+		filerh = FSpOpenResFile(&fss, fsRdPerm);
+		if ( filerh == -1 )
+			return 0;
+		UseResFile(filerh);
+	}
 	SetResLoad(0);
 	h = Get1NamedResource('PYC ', Pstring(module));
 	SetResLoad(1);
 	ok = (h != NULL);
-	CloseResFile(filerh);
+	if ( filerh != -1 )
+		CloseResFile(filerh);
 	UseResFile(oldrh);
 	return ok;
 }
@@ -613,17 +625,28 @@ char *filename;
 	PyObject *m, *co;
 	long num, size;
 	
-	if ( (err=FSMakeFSSpec(0, 0, Pstring(filename), &fss)) != noErr )
-		goto error;
-	if ( (err=FSpGetFInfo(&fss, &finfo)) != noErr )
-		goto error;
-	oldrh = CurResFile();
-	filerh = FSpOpenResFile(&fss, fsRdPerm);
-	if ( filerh == -1 ) {
-		err = ResError();
-		goto error;
+	if ( strcmp(filename, PyMac_ApplicationPath) == 0 ) {
+		/*
+		** Special case: the application itself. Use a shortcut to
+		** forestall opening and closing the application numerous times
+		** (which is dead slow when running from CDROM)
+		*/
+		oldrh = CurResFile();
+		UseResFile(PyMac_AppRefNum);
+		filerh = -1;
+	} else {
+		if ( (err=FSMakeFSSpec(0, 0, Pstring(filename), &fss)) != noErr )
+			goto error;
+		if ( (err=FSpGetFInfo(&fss, &finfo)) != noErr )
+			goto error;
+		oldrh = CurResFile();
+		filerh = FSpOpenResFile(&fss, fsRdPerm);
+		if ( filerh == -1 ) {
+			err = ResError();
+			goto error;
+		}
+		UseResFile(filerh);
 	}
-	UseResFile(filerh);
 	h = Get1NamedResource('PYC ', Pstring(module));
 	if ( h == NULL ) {
 		err = ResError();
@@ -651,7 +674,8 @@ char *filename;
 		}
 	}
 	HUnlock(h);
-	CloseResFile(filerh);
+	if ( filerh != -1 )
+		CloseResFile(filerh);
 	UseResFile(oldrh);
 	if ( co ) {
 		m = PyImport_ExecCodeModule(module, co);
