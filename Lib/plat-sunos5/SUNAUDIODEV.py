@@ -36,3 +36,5 @@ LINE_OUT = 0x04				# output to line out
 
 MICROPHONE = 0x01			# input from microphone
 LINE_IN = 0x02				# input from line in
+CD = 0x04                               # input from on-board CD inputs
+INTERNAL_CD_IN = CD                     # input from internal CDROM
