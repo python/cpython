@@ -7,7 +7,9 @@
 #elif defined(MACOS_CLASSIC)
 #include "macconfig.h"
 #else
+/* Unused - MvL 
 #include <expat_config.h>
+*/
 #endif /* ndef COMPILED_FROM_DSP */
 
 #include "internal.h"
