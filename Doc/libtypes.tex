@@ -580,7 +580,14 @@ Files have the following methods:
 
 \begin{funcdesc}{readline}{}
   Read one entire line from the file.  A trailing newline character is
-  kept in the string (but may be absent when a file ends with an
+  kept in the string%
+\footnote{The advantage of leaving the newline on is that an empty string 
+	can be returned to mean \EOF{} without being ambiguous.  Another 
+	advantage is that (in cases where it might matter, e.g. if you 
+	want to make an exact copy of a file while scanning its lines) 
+	you can tell whether the last line of a file ended in a newline
+	or not (yes this happens!).}
+  (but may be absent when a file ends with an
   incomplete line).  An empty string is returned when \EOF{} is hit
   immediately.  Note: unlike \code{stdio}'s \code{fgets()}, the returned
   string contains null characters (\code{'\e 0'}) if they occurred in the

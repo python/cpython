@@ -187,6 +187,9 @@ value prevails.
 
 \subsection{String conversions}
 \indexii{string}{conversion}
+\indexii{reverse}{quotes}
+\indexii{backward}{quotes}
+\index{back-quotes}
 
 A string conversion is a condition list enclosed in reverse (or
 backward) quotes:
@@ -213,6 +216,13 @@ It is illegal to attempt to convert recursive objects (e.g. lists or
 dictionaries that contain a reference to themselves, directly or
 indirectly.)
 \obindex{recursive}
+
+The built-in function \verb@repr()@ performs exactly the same
+conversion in its argument as enclosing it it reverse quotes does.
+The built-in function \verb@str()@ performs a similar but more
+user-friendly conversion.
+\bifuncindex{repr}
+\bifuncindex{str}
 
 \section{Primaries} \label{primaries}
 \index{primary}
