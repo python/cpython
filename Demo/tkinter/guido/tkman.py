@@ -7,6 +7,9 @@ import os
 import string
 import regex
 from Tkinter import *
+
+import addpack
+addpack.addpack('/ufs/guido/src/python/Demo/tkinter')
 from ManPage import ManPage
 
 MANNDIR = '/usr/local/man/mann'
