@@ -410,6 +410,10 @@ getdoublearg(args, px)
 		*px = getintvalue(args);
 		return 1;
 	}
+	if (is_longobject(args)) {
+		*px = dgetlongvalue(args);
+		return 1;
+	}
 	return err_badarg();
 }
 
