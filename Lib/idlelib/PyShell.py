@@ -35,6 +35,7 @@ import Debugger
 import RemoteDebugger
 
 IDENTCHARS = string.ascii_letters + string.digits + "_"
+LOCALHOST = '127.0.0.1'
 
 try:
     from signal import SIGTERM
@@ -336,7 +337,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
         return [sys.executable] + w + ["-c", command, str(self.port)]
 
     def start_subprocess(self):
-        addr = ("localhost", self.port)
+        addr = (LOCALHOST, self.port)
         # Idle starts listening for connection on localhost
         for i in range(3):
             time.sleep(i)

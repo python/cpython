@@ -17,6 +17,8 @@ import interrupt
 
 import __main__
 
+LOCALHOST = '127.0.0.1'
+
 # Thread shared globals: Establish a queue between a subthread (which handles
 # the socket) and the main thread (which runs user code), plus global
 # completion and exit flags:
@@ -52,7 +54,7 @@ def main(del_exitfunc=False):
     sys.argv[:] = [""]
     sockthread = threading.Thread(target=manage_socket,
                                   name='SockThread',
-                                  args=(('localhost', port),))
+                                  args=((LOCALHOST, port),))
     sockthread.setDaemon(True)
     sockthread.start()
     while 1:

@@ -64,6 +64,7 @@ copy_reg.pickle(types.CodeType, pickle_code, unpickle_code)
 # copy_reg.pickle(types.FunctionType, pickle_function, unpickle_function)
 
 BUFSIZE = 8*1024
+LOCALHOST = '127.0.0.1'
 
 class RPCServer(SocketServer.TCPServer):
 
@@ -525,7 +526,7 @@ class RPCClient(SocketIO):
         working_sock, address = self.listening_sock.accept()
         if self.debugging:
             print>>sys.__stderr__, "****** Connection request from ", address
-        if address[0] == '127.0.0.1':
+        if address[0] == LOCALHOST:
             SocketIO.__init__(self, working_sock)
         else:
             print>>sys.__stderr__, "** Invalid host: ", address
@@ -655,7 +656,7 @@ def testClient(addr):
     # clt.remotecall("thomas","greet_this_guy",("alexander",), {})
 
 def test():
-    addr=("localhost",8833)
+    addr=(LOCALHOST, 8833)
     if len(sys.argv) == 2:
         if sys.argv[1]=='-server':
             testServer(addr)
