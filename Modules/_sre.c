@@ -94,7 +94,7 @@ static char sre_char_info[128] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 6, 2,
 0, 0, 16, 0, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24,
 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 0, 0, 0, 0, 0 };
 
-static char sre_char_tolower[128] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
+static char sre_char_lower[128] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26,
 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43,
 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60,
@@ -104,9 +104,9 @@ static char sre_char_tolower[128] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119,
 120, 121, 122, 123, 124, 125, 126, 127 };
 
-static unsigned int sre_tolower(unsigned int ch)
+static unsigned int sre_lower(unsigned int ch)
 {
-    return ((ch) < 128 ? sre_char_tolower[ch] : ch);
+    return ((ch) < 128 ? sre_char_lower[ch] : ch);
 }
 
 #define SRE_IS_DIGIT(ch)\
@@ -122,7 +122,7 @@ static unsigned int sre_tolower(unsigned int ch)
 
 /* locale-specific character predicates */
 
-static unsigned int sre_tolower_locale(unsigned int ch)
+static unsigned int sre_lower_locale(unsigned int ch)
 {
     return ((ch) < 256 ? tolower((ch)) : ch);
 }
@@ -135,7 +135,7 @@ static unsigned int sre_tolower_locale(unsigned int ch)
 /* unicode-specific character predicates */
 
 #if defined(HAVE_UNICODE)
-static unsigned int sre_tolower_unicode(unsigned int ch)
+static unsigned int sre_lower_unicode(unsigned int ch)
 {
     return (unsigned int) Py_UNICODE_TOLOWER((Py_UNICODE)(ch));
 }
@@ -497,7 +497,7 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern)
 					goto failure;
 				while (p < e) {
 					if (ptr >= end ||
-                        state->tolower(*ptr) != state->tolower(*p))
+                        state->lower(*ptr) != state->lower(*p))
 						goto failure;
 					p++; ptr++;
 				}
@@ -508,7 +508,7 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern)
 		case SRE_OP_LITERAL_IGNORE:
 			TRACE(("%8d: literal lower(%c)\n", PTR(ptr), (SRE_CHAR) *pattern));
 			if (ptr >= end ||
-                state->tolower(*ptr) != state->tolower(*pattern))
+                state->lower(*ptr) != state->lower(*pattern))
 				goto failure;
 			pattern++;
 			ptr++;
@@ -518,7 +518,7 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern)
 			TRACE(("%8d: literal not lower(%c)\n", PTR(ptr),
                    (SRE_CHAR) *pattern));
 			if (ptr >= end ||
-                state->tolower(*ptr) == state->tolower(*pattern))
+                state->lower(*ptr) == state->lower(*pattern))
 				goto failure;
 			pattern++;
 			ptr++;
@@ -527,7 +527,7 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern)
 		case SRE_OP_IN_IGNORE:
 			TRACE(("%8d: set lower(%c)\n", PTR(ptr), *ptr));
 			if (ptr >= end
-				|| !SRE_MEMBER(pattern+1, (SRE_CHAR) state->tolower(*ptr)))
+				|| !SRE_MEMBER(pattern+1, (SRE_CHAR) state->lower(*ptr)))
 				goto failure;
 			pattern += pattern[0];
 			ptr++;
@@ -611,7 +611,7 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern)
 				/* repeated literal */
 				SRE_CHAR chr = (SRE_CHAR) pattern[4];
 				while (count < (int) pattern[2]) {
-					if (ptr >= end || (SRE_CHAR) state->tolower(*ptr) != chr)
+					if (ptr >= end || (SRE_CHAR) state->lower(*ptr) != chr)
 						break;
 					ptr++;
 					count++;
@@ -631,7 +631,7 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern)
 				/* repeated non-literal */
 				SRE_CHAR chr = (SRE_CHAR) pattern[4];
 				while (count < (int) pattern[2]) {
-					if (ptr >= end || (SRE_CHAR) state->tolower(*ptr) == chr)
+					if (ptr >= end || (SRE_CHAR) state->lower(*ptr) == chr)
 						break;
 					ptr++;
 					count++;
@@ -1001,18 +1001,18 @@ sre_codesize(PyObject* self, PyObject* args)
 }
 
 static PyObject *
-sre_lower(PyObject* self, PyObject* args)
+sre_getlower(PyObject* self, PyObject* args)
 {
     int character, flags;
 	if (!PyArg_ParseTuple(args, "ii", &character, &flags))
         return NULL;
     if (flags & SRE_FLAG_LOCALE)
-        return Py_BuildValue("i", sre_tolower_locale(character));
+        return Py_BuildValue("i", sre_lower_locale(character));
 #if defined(HAVE_UNICODE)
     if (flags & SRE_FLAG_UNICODE)
-        return Py_BuildValue("i", sre_tolower_unicode(character));
+        return Py_BuildValue("i", sre_lower_unicode(character));
 #endif
-    return Py_BuildValue("i", sre_tolower(character));
+    return Py_BuildValue("i", sre_lower(character));
 }
 
 LOCAL(PyObject*)
@@ -1082,13 +1082,13 @@ state_init(SRE_STATE* state, PatternObject* pattern, PyObject* args)
 	state->stacksize = 0;
 
     if (pattern->flags & SRE_FLAG_LOCALE)
-        state->tolower = sre_tolower_locale;
+        state->lower = sre_lower_locale;
 #if defined(HAVE_UNICODE)
     else if (pattern->flags & SRE_FLAG_UNICODE)
-        state->tolower = sre_tolower_unicode;
+        state->lower = sre_lower_unicode;
 #endif
     else
-        state->tolower = sre_tolower;
+        state->lower = sre_lower;
 
 	return string;
 }
@@ -1876,7 +1876,7 @@ statichere PyTypeObject Cursor_Type = {
 static PyMethodDef _functions[] = {
 	{"compile", _compile, 1},
 	{"getcodesize", sre_codesize, 1},
-	{"getlower", sre_lower, 1},
+	{"getlower", sre_getlower, 1},
 	{NULL, NULL}
 };
 
