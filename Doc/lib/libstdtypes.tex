@@ -105,8 +105,8 @@ This table summarizes the comparison operations:
   \lineiii{>}{strictly greater than}{}
   \lineiii{>=}{greater than or equal}{}
   \lineiii{==}{equal}{}
-  \lineiii{<>}{not equal}{(1)}
   \lineiii{!=}{not equal}{(1)}
+  \lineiii{<>}{not equal}{(1)}
   \lineiii{is}{object identity}{}
   \lineiii{is not}{negated object identity}{}
 \end{tableiii}
@@ -313,7 +313,7 @@ division by \code{pow(2, \var{n})} without overflow check.
 \subsection{Sequence Types \label{typesseq}}
 
 There are six sequence types: strings, Unicode strings, lists,
-tuples, buffers, and ranges.
+tuples, buffers, and xrange objects.
 
 Strings literals are written in single or double quotes:
 \code{'xyzzy'}, \code{"frobozz"}.  See chapter 2 of the
@@ -327,9 +327,9 @@ or without enclosing parentheses, but an empty tuple must have the
 enclosing parentheses, e.g., \code{a, b, c} or \code{()}.  A single
 item tuple must have a trailing comma, e.g., \code{(d,)}.  Buffers are
 not directly support by Python syntax, but can created by calling the
-builtin function \function{buffer()}.\bifuncindex{buffer}  Ranges are
-similar to buffers in that there is no specific syntax to create them,
-but they are created using the \function{xrange()}
+builtin function \function{buffer()}.\bifuncindex{buffer}  XRanges
+objects are similar to buffers in that there is no specific syntax to
+create them, but they are created using the \function{xrange()}
 function.\bifuncindex{xrange}
 \indexii{sequence}{types}
 \indexii{string}{type}
@@ -337,6 +337,7 @@ function.\bifuncindex{xrange}
 \indexii{buffer}{type}
 \indexii{tuple}{type}
 \indexii{list}{type}
+\indexii{xrange}{type}
 
 Sequence types support the following operations.  The \samp{in} and
 \samp{not in} operations have the same priorities as the comparison
@@ -638,18 +639,18 @@ Additional string operations are defined in standard module
 \refstmodindex{re}
 
 
-\subsubsection{Range Type \label{typesseq-range}}
+\subsubsection{XRange Type \label{typesseq-xrange}}
 
-The range\indexii{range}{type} type is an immutable sequence which is
-commonly used for looping.  The advantage of the range type is that a
-range object will always take the same amount of memory, no matter the
+The xrange\indexii{xrange}{type} type is an immutable sequence which is
+commonly used for looping.  The advantage of the xrange type is that an
+xrange object will always take the same amount of memory, no matter the
 size of the range it represents.  There are no consistent performance
 advantages.
 
-Range objects behave like tuples, and offer a single method:
+XRange objects behave like tuples, and offer a single method:
 
-\begin{methoddesc}[range]{tolist}{}
-  Return a list object which represents the same values as the range
+\begin{methoddesc}[xrange]{tolist}{}
+  Return a list object which represents the same values as the xrange
   object.
 \end{methoddesc}
 
@@ -1112,8 +1113,8 @@ attribute.
 \subsubsection{Internal Objects \label{typesinternal}}
 
 See the \citetitle[../ref/ref.html]{Python Reference Manual} for this
-information.  It describes code objects, stack frame objects,
-traceback objects, and slice objects.
+information.  It describes stack frame objects, traceback objects, and
+slice objects.
 
 
 \subsection{Special Attributes \label{specialattrs}}
