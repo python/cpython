@@ -608,12 +608,12 @@ parsestr(s)
 			*p++ = c;
 			break;
 		case 'x':
-			if (isxdigit(*s)) {
+			if (isxdigit(Py_CHARMASK(*s))) {
 				sscanf(s, "%x", &c);
 				*p++ = c;
 				do {
 					s++;
-				} while (isxdigit(*s));
+				} while (isxdigit(Py_CHARMASK(*s)));
 				break;
 			}
 		/* FALLTHROUGH */

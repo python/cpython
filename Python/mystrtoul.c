@@ -26,6 +26,14 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "config.h"
 #endif
 
+/* Convert a possibly signed character to a nonnegative int */
+/* XXX This assumes characters are 8 bits wide */
+#ifdef __CHAR_UNSIGNED__
+#define Py_CHARMASK(c)		(c)
+#else
+#define Py_CHARMASK(c)		((c) & 0xff)
+#endif
+
 #include "rename2.h"
 
 /* strtol and strtoul, renamed to avoid conflicts */
@@ -70,7 +78,7 @@ int		base;
     }
 
 /* skip leading white space */
-    while (*str && isspace(*str))
+    while (*str && isspace(Py_CHARMASK(*str)))
 	str++;
 
 /* check for leading 0 or 0x for auto-base or base 16 */
@@ -99,7 +107,7 @@ int		base;
     }
 
 /* do the conversion */
-    while (c = *str)
+    while (c = Py_CHARMASK(*str))
     {
 	if (isdigit(c) && c - '0' < base)
 	    c -= '0';
@@ -143,7 +151,7 @@ int	base;
 	long result;
 	char sign;
 	
-	while (*str && isspace(*str))
+	while (*str && isspace(Py_CHARMASK(*str)))
 		str++;
 	
 	sign = *str;

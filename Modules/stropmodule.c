@@ -41,7 +41,6 @@ strop_split(self, args)
 {
 	int len, i, j, err;
 	char *s;
-	char c;
 	object *list, *item;
 
 	if (!getargs(args, "s#", &s, &len))
@@ -52,13 +51,11 @@ strop_split(self, args)
 
 	i = 0;
 	while (i < len) {
-		while (i < len &&
-		       ((c = s[i]), isspace(c))) {
+		while (i < len && isspace(Py_CHARMASK(s[i]))) {
 			i = i+1;
 		}
 		j = i;
-		while (i < len &&
-		       !((c = s[i]), isspace(c))) {
+		while (i < len && isspace(Py_CHARMASK(s[i]))) {
 			i = i+1;
 		}
 		if (j < i) {
@@ -269,20 +266,19 @@ strop_strip(self, args)
 {
 	char *s;
 	int len, i, j;
-	char c;
 
 	if (!getargs(args, "s#", &s, &len))
 		return NULL;
 
 	i = 0;
-	while (i < len && ((c = s[i]), isspace(c))) {
+	while (i < len && isspace(Py_CHARMASK(s[i]))) {
 		i++;
 	}
 
 	j = len;
 	do {
 		j--;
-	} while (j >= i &&  ((c = s[j]), isspace(c)));
+	} while (j >= i && isspace(Py_CHARMASK(s[i])));
 	j++;
 
 	if (i == 0 && j == len) {
@@ -312,7 +308,7 @@ strop_lower(self, args)
 	s_new = getstringvalue(new);
 	changed = 0;
 	for (i = 0; i < n; i++) {
-		char c = *s++;
+		int c = Py_CHARMASK(*s++);
 		if (isupper(c)) {
 			changed = 1;
 			*s_new = tolower(c);
@@ -347,7 +343,7 @@ strop_upper(self, args)
 	s_new = getstringvalue(new);
 	changed = 0;
 	for (i = 0; i < n; i++) {
-		char c = *s++;
+		int c = Py_CHARMASK(*s++);
 		if (islower(c)) {
 			changed = 1;
 			*s_new = toupper(c);
@@ -382,7 +378,7 @@ strop_swapcase(self, args)
 	s_new = getstringvalue(new);
 	changed = 0;
 	for (i = 0; i < n; i++) {
-		char c = *s++;
+		int c = Py_CHARMASK(*s++);
 		if (islower(c)) {
 			changed = 1;
 			*s_new = toupper(c);
@@ -530,7 +526,7 @@ initstrop()
 
 	/* Create 'whitespace' object */
 	n = 0;
-	for (c = 1; c < 256; c++) {
+	for (c = 0; c < 256; c++) {
 		if (isspace(c))
 			buf[n++] = c;
 	}
@@ -541,7 +537,7 @@ initstrop()
 	}
 	/* Create 'lowercase' object */
 	n = 0;
-	for (c = 1; c < 256; c++) {
+	for (c = 0; c < 256; c++) {
 		if (islower(c))
 			buf[n++] = c;
 	}
@@ -553,7 +549,7 @@ initstrop()
 
 	/* Create 'uppercase' object */
 	n = 0;
-	for (c = 1; c < 256; c++) {
+	for (c = 0; c < 256; c++) {
 		if (isupper(c))
 			buf[n++] = c;
 	}
