@@ -33,12 +33,15 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include "mymath.h"
 
+#ifndef _MSC_VER
 #ifndef __STDC__
 extern double fmod PROTO((double, double));
 extern double frexp PROTO((double, int *));
 extern double ldexp PROTO((double, int));
 extern double modf PROTO((double, double *));
-#endif
+#endif /* __STDC__ */
+#endif /* _MSC_VER */
+
 
 #if defined(HAVE_HYPOT) && !defined(NeXT)
 extern double hypot PROTO((double, double));
