@@ -211,15 +211,15 @@ class NNTP:
             raise NNTPProtocolError(resp)
         return resp
 
-    def getlongresp(self,fileHandle=None):
+    def getlongresp(self, file=None):
         """Internal: get a response plus following text from the server.
         Raise various errors if the response indicates an error."""
 
         openedFile = None
         try:
             # If a string was passed then open a file with that name
-            if isinstance(fileHandle, types.StringType):
-                openedFile = fileHandle = open(fileHandle, "w")
+            if isinstance(file, types.StringType):
+                openedFile = file = open(file, "w")
 
             resp = self.getresp()
             if resp[:3] not in LONGRESP:
@@ -231,8 +231,8 @@ class NNTP:
                     break
                 if line[:2] == '..':
                     line = line[1:]
-                if fileHandle:
-                    fileHandle.write(line + "\n")
+                if file:
+                    file.write(line + "\n")
                 else:
                     list.append(line)
         finally:
@@ -247,10 +247,10 @@ class NNTP:
         self.putcmd(line)
         return self.getresp()
 
-    def longcmd(self, line, fileHandle=None):
+    def longcmd(self, line, file=None):
         """Internal: send a command and get the response plus following text."""
         self.putcmd(line)
-        return self.getlongresp(fileHandle)
+        return self.getlongresp(file)
 
     def newgroups(self, date, time):
         """Process a NEWGROUPS command.  Arguments:
@@ -355,9 +355,9 @@ class NNTP:
         """Process a LAST command.  No arguments.  Return as for STAT."""
         return self.statcmd('LAST')
 
-    def artcmd(self, line, fileHandle=None):
+    def artcmd(self, line, file=None):
         """Internal: process a HEAD, BODY or ARTICLE command."""
-        resp, list = self.longcmd(line,fileHandle)
+        resp, list = self.longcmd(line, file)
         resp, nr, id = self.statparse(resp)
         return resp, nr, id, list
 
@@ -372,18 +372,18 @@ class NNTP:
 
         return self.artcmd('HEAD ' + id)
 
-    def body(self, id, fileHandle=None):
+    def body(self, id, file=None):
         """Process a BODY command.  Argument:
         - id: article number or message id
-        - fileHandle: Filename string or file object to store the article in
+        - file: Filename string or file object to store the article in
         Returns:
         - resp: server response if successful
         - nr: article number
         - id: message id
         - list: the lines of the article's body or an empty list
-                if fileHandle was used"""
+                if file was used"""
 
-        return self.artcmd('BODY ' + id, fileHandle)
+        return self.artcmd('BODY ' + id, file)
 
     def article(self, id):
         """Process an ARTICLE command.  Argument:
