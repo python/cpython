@@ -72,7 +72,7 @@ def parent(s):
 		if not data:
 			# EOF -- exit
 			sys.stderr.write( '(Closed by remote host)\n')
-			thread.exit_prog(1)
+			sys.exit(1)
 		cleandata = ''
 		for c in data:
 			if opt:
@@ -108,6 +108,7 @@ def child(s):
 	while 1:
 		line = sys.stdin.readline()
 ##		print 'Got:', `line`
+		if not line: break
 		s.send(line)
 
 main()
