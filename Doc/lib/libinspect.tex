@@ -1,12 +1,14 @@
 \section{\module{inspect} ---
          Inspect live objects}
+
 \declaremodule{standard}{inspect}
 \modulesynopsis{Extract information and source code from live objects.}
-\index{inspect}
+\moduleauthor{Ka-Ping Yee}{ping@lfw.org}
+\sectionauthor{Ka-Ping Yee}{ping@lfw.org}
 
 \versionadded{2.1}
 
-The \code{inspect} module provides several useful functions
+The \module{inspect} module provides several useful functions
 to help get information about live objects such as modules,
 classes, methods, functions, tracebacks, frame objects, and
 code objects.  For example, it can help you examine the
@@ -31,19 +33,16 @@ you can expect to find the following special attributes:
 \begin{tableiii}{c|l|l}{}{Type}{Attribute}{Description}
   \lineiii{module}{__doc__}{documentation string}
   \lineiii{}{__file__}{filename (missing for built-in modules)}
-  \lineiii{}{}{}
-
+  \hline
   \lineiii{class}{__doc__}{documentation string}
   \lineiii{}{__module__}{name of module in which this class was defined}
-  \lineiii{}{}{}
-
+  \hline
   \lineiii{method}{__doc__}{documentation string}
   \lineiii{}{__name__}{name with which this method was defined}
   \lineiii{}{im_class}{class object in which this method belongs}
   \lineiii{}{im_func}{function object containing implementation of method}
   \lineiii{}{im_self}{instance to which this method is bound, or \code{None}}
-  \lineiii{}{}{}
-
+  \hline
   \lineiii{function}{__doc__}{documentation string}
   \lineiii{}{__name__}{name with which this function was defined}
   \lineiii{}{func_code}{code object containing compiled function bytecode}
@@ -51,14 +50,12 @@ you can expect to find the following special attributes:
   \lineiii{}{func_doc}{(same as __doc__)}
   \lineiii{}{func_globals}{global namespace in which this function was defined}
   \lineiii{}{func_name}{(same as __name__)}
-  \lineiii{}{}{}
-
+  \hline
   \lineiii{traceback}{tb_frame}{frame object at this level}
   \lineiii{}{tb_lasti}{index of last attempted instruction in bytecode}
   \lineiii{}{tb_lineno}{current line number in Python source code}
   \lineiii{}{tb_next}{next inner traceback object (called by this level)}
-  \lineiii{}{}{}
-
+  \hline
   \lineiii{frame}{f_back}{next outer frame object (this frame's caller)}
   \lineiii{}{f_builtins}{built-in namespace seen by this frame}
   \lineiii{}{f_code}{code object being executed in this frame}
@@ -71,8 +68,7 @@ you can expect to find the following special attributes:
   \lineiii{}{f_locals}{local namespace seen by this frame}
   \lineiii{}{f_restricted}{0 or 1 if frame is in restricted execution mode}
   \lineiii{}{f_trace}{tracing function for this frame, or \code{None}}
-  \lineiii{}{}{}
-
+  \hline
   \lineiii{code}{co_argcount}{number of arguments (not including * or ** args)}
   \lineiii{}{co_code}{string of raw compiled bytecode}
   \lineiii{}{co_consts}{tuple of constants used in the bytecode}
@@ -85,8 +81,7 @@ you can expect to find the following special attributes:
   \lineiii{}{co_nlocals}{number of local variables}
   \lineiii{}{co_stacksize}{virtual machine stack space required}
   \lineiii{}{co_varnames}{tuple of names of arguments and local variables}
-  \lineiii{}{}{}
-
+  \hline
   \lineiii{builtin}{__doc__}{documentation string}
   \lineiii{}{__name__}{original name of this function or method}
   \lineiii{}{__self__}{instance to which a method is bound, or \code{None}}
@@ -151,9 +146,9 @@ you can expect to find the following special attributes:
 \end{funcdesc}
 
 \begin{funcdesc}{getfile}{object}
-  Return the name of the (text or binary) file in which an object was defined.
-  This will fail with a TypeError if the object is a built-in module,
-  class, or function.
+  Return the name of the (text or binary) file in which an object was
+  defined.  This will fail with a \exception{TypeError} if the object
+  is a built-in module, class, or function.
 \end{funcdesc}
 
 \begin{funcdesc}{getmodule}{object}
@@ -161,9 +156,9 @@ you can expect to find the following special attributes:
 \end{funcdesc}
 
 \begin{funcdesc}{getsourcefile}{object}
-  Return the name of the Python source file in which an object was defined.
-  This will fail with a TypeError if the object is a built-in module,
-  class, or function.
+  Return the name of the Python source file in which an object was
+  defined.  This will fail with a \exception{TypeError} if the object
+  is a built-in module, class, or function.
 \end{funcdesc}
 
 \begin{funcdesc}{getsourcelines}{object}
@@ -171,15 +166,15 @@ you can expect to find the following special attributes:
   The argument may be a module, class, method, function, traceback, frame,
   or code object.  The source code is returned as a list of the lines
   corresponding to the object and the line number indicates where in the
-  original source file the first line of code was found.  An IOError is
-  raised if the source code cannot be retrieved.
+  original source file the first line of code was found.  An
+  \exception{IOError} is raised if the source code cannot be retrieved.
 \end{funcdesc}
 
 \begin{funcdesc}{getsource}{object}
   Return the text of the source code for an object.
   The argument may be a module, class, method, function, traceback, frame,
   or code object.  The source code is returned as a single string.  An
-  IOError is raised if the source code cannot be retrieved.
+  \exception{IOError} is raised if the source code cannot be retrieved.
 \end{funcdesc}
 
 \subsection{Classes and functions
@@ -197,10 +192,11 @@ you can expect to find the following special attributes:
 
 \begin{funcdesc}{getargspec}{func}
   Get the names and default values of a function's arguments.
-  A tuple of four things is returned: (args, varargs, varkw, defaults).
+  A tuple of four things is returned: \code{(\var{args},
+    \var{varargs}, \var{varkw}, \var{defaults})}.
   \var{args} is a list of the argument names (it may contain nested lists).
-  \var{varargs} and \var{varkw} are the names of the * and ** arguments or
-  \code{None}.
+  \var{varargs} and \var{varkw} are the names of the \code{*} and
+  \code{**} arguments or \code{None}.
   \var{defaults} is a tuple of default argument values; if this tuple
   has \var{n} elements, they correspond to the last \var{n} elements
   listed in \var{args}.
@@ -208,31 +204,36 @@ you can expect to find the following special attributes:
 
 \begin{funcdesc}{getargvalues}{frame}
   Get information about arguments passed into a particular frame.
-  A tuple of four things is returned: (args, varargs, varkw, locals).
-  \var{args} is a list of the argument names (it may contain nested lists).
-  \var{varargs} and \var{varkw} are the names of the * and ** arguments or
-  \code{None}.
+  A tuple of four things is returned: \code{(\var{args},
+    \var{varargs}, \var{varkw}, \var{locals})}.
+  \var{args} is a list of the argument names (it may contain nested
+  lists).
+  \var{varargs} and \var{varkw} are the names of the \code{*} and
+  \code{**} arguments or \code{None}.
   \var{locals} is the locals dictionary of the given frame.
 \end{funcdesc}
 
 \begin{funcdesc}{formatargspec}{args\optional{, varargs, varkw, defaults,
-argformat, varargsformat, varkwformat, defaultformat}}
-  Format a pretty argument spec from the four values returned by getargspec.
-  The other four arguments are the corresponding optional formatting functions
-  that are called to turn names and values into strings.
+      argformat, varargsformat, varkwformat, defaultformat}}
+  
+  Format a pretty argument spec from the four values returned by
+  \function{getargspec()}.  The other four arguments are the
+  corresponding optional formatting functions that are called to turn
+  names and values into strings.
 \end{funcdesc}
 
 \begin{funcdesc}{formatargvalues}{args\optional{, varargs, varkw, locals,
-argformat, varargsformat, varkwformat, valueformat}}
-  Format a pretty argument spec from the four values returned by getargvalues.
-  The other four arguments are the corresponding optional formatting functions
-  that are called to turn names and values into strings.
+      argformat, varargsformat, varkwformat, valueformat}}
+  Format a pretty argument spec from the four values returned by
+  \function{getargvalues()}.  The other four arguments are the
+  corresponding optional formatting functions that are called to turn
+  names and values into strings.
 \end{funcdesc}
 
 \subsection{The interpreter stack
             \label{inspect-stack}}
 
-When the following functions return ``frame records'', each record
+When the following functions return ``frame records,'' each record
 is a tuple of six items: the frame object, the filename,
 the line number of the current line, the function name, a list of
 lines of context from the source code, and the index of the current
@@ -241,11 +242,13 @@ The optional \var{context} argument specifies the number of lines of
 context to return, which are centered around the current line.
 
 \begin{funcdesc}{getouterframes}{frame\optional{, context}}
-  Get a list of frame records for a frame and all higher (calling) frames.
+  Get a list of frame records for a frame and all higher (calling)
+  frames.
 \end{funcdesc}
 
 \begin{funcdesc}{getinnerframes}{traceback\optional{, context}}
-  Get a list of frame records for a traceback's frame and all lower frames.
+  Get a list of frame records for a traceback's frame and all lower
+  frames.
 \end{funcdesc}
 
 \begin{funcdesc}{currentframe}{}
@@ -253,9 +256,11 @@ context to return, which are centered around the current line.
 \end{funcdesc}
 
 \begin{funcdesc}{stack}{\optional{context}}
-  Return a list of frame records for the stack above the caller's frame.
+  Return a list of frame records for the stack above the caller's
+  frame.
 \end{funcdesc}
 
 \begin{funcdesc}{trace}{\optional{context}}
-  Return a list of frame records for the stack below the current exception.
+  Return a list of frame records for the stack below the current
+  exception.
 \end{funcdesc}
