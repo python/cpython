@@ -57,21 +57,18 @@ What happened to the Macintosh chapter of the Python Library Reference?
 -----------------------------------------------------------------------
 
 The directory mac/ contains the LaTeX sources for the "Macintosh
-Library Modules" manual; this is not currently included in the build
-system.  To build, do the following:
-
-	cd Doc/mac
-	../tools/mkhowto.sh --ps --pdf --html mac
-
-(Any combination of --ps, --pdf, and --html may be used depending on
-your needs; the default is --pdf.)
+Library Modules" manual; this is built using the standard build
+targets, so check the proper output directory for your chosen format
+and paper size.
 
 
 What tools do I need?
 ---------------------
 
 You need to install Python; some of the scripts used to produce the
-documentation are written in Python.
+documentation are written in Python.  You don't need this
+documentation to install Python; instructions are included in the
+README file in the Python distribution.
 
 The simplest way to get the rest of the tools in the configuration we
 used is to install the teTeX TeX distribution, version 0.4 or 0.9.  More
@@ -160,13 +157,20 @@ What else is in here?
 ---------------------
 
 There is a new LaTeX document class called "howto".  This is used for
-the new series of Python HOWTO documents which is being coordinated by 
-Andrew Kuchling <amk@acm.org>.  The file howto.tex is a commented
-example which may be used a template.  A script to "do the right
-thing" to format a howto document is included as tools/mkhowto.sh.
-Support for this document class is still new, but is expected to
-evolve rapidly.  Use "mkhowto.sh --help" for information on using the
-formatting tool.
+the new series of Python HOWTO documents which is being coordinated by
+Andrew Kuchling <amk@acm.org>.  The file templates/howto.tex is a
+commented example which may be used a template.  A script to "do the
+right thing" to format a howto document is included as
+tools/mkhowto.sh.  Support for this document class is still new, but
+is expected to evolve rapidly.  Use "mkhowto.sh --help" for
+information on using the formatting tool.
+
+For authors of module documentation, there is a file
+templates/module.tex which may be used as a template for a module
+section.  This may be used in conjunction with either the howto or
+manual document class.  Create the documentation for a new module by
+copying the template to lib<mymodule>.tex and editing according to the 
+instructions in the comments.
 
 
 Copyright notice
