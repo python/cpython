@@ -1,16 +1,16 @@
-"""A generic interface to all dbm clones.
+"""Generic interface to all dbm clones.
 
 Instead of
 
 	import dbm
-	d = dbm.open(file, 'rw', 0666)
+	d = dbm.open(file, 'w', 0666)
 
 use
 
 	import anydbm
 	d = anydbm.open(file)
 
-The returned object is a dbm, gdbm or (on the Mac) dbmac object,
+The returned object is a dbhash, gdbm, dbm or dumbdbm object,
 dependent on availability of the modules (tested in this order).
 
 It has the following interface (key and data are strings):
@@ -25,26 +25,27 @@ It has the following interface (key and data are strings):
 	list = d.keys()	# return a list of all existing keys (slow!)
 
 Future versions may change the order in which implementations are
-tested for existence, add interfaces to other db-like implementations
-(e.g. BSD Hash), and (in the presence of multiple implementations)
+tested for existence, add interfaces to other dbm-like
+implementations, and (in the presence of multiple implementations)
 decide which module to use based upon the extension or contents of an
 existing database file.
 
 The open function has an optional second argument.  This can be set to
-'r' to open the database for reading only.  Don't pas an explicit 'w'
-or 'rw' to open it for writing, as the different interfaces have
-different interpretation of their mode argument if it isn't 'r'.
+'r' to open the database for reading only.  The default is 'w', which
+differs from the dbm default ('r') for historic reasons.
+
 """
 
-try:
-	import dbm
-	def open(filename, mode = 'rw'):
-		return dbm.open(filename, mode, 0666)
-except ImportError:
+_names = ['dbhash', 'gdbm', 'dbm', 'dumbdbm']
+
+for _name in _names:
 	try:
-		import gdbm
-		def open(filename, mode = 'w'):
-			return gdbm.open(filename, mode, 0666)
+		exec "import %s; _mod = %s" % (_name, _name)
 	except ImportError:
-		import dbmac
-		open = dbmac.open
+		continue
+	else:
+		break
+else:
+	raise ImportError, "no dbm clone found; tried %s" % _names
+def open(file, flag = 'w', mode = 0666):
+	return _mod.open(file, flag, mode)
