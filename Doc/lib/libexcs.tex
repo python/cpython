@@ -362,7 +362,7 @@ Raised when an \keyword{assert} statement fails.
 \setindexsubitem{(built-in warning)}
 
 The following exceptions are used as warning categories; see the
-\module{warnings} module for more information.
+\refmodule{warnings} module for more information.
 
 \begin{excdesc}{Warning}
 Base class for warning categories.
@@ -386,6 +386,11 @@ Base class for warnings about dubious syntax
 
 \begin{excdesc}{RuntimeWarning}
 Base class for warnings about dubious runtime behavior.
+\end{excdesc}
+
+\begin{excdesc}{FutureWarning}
+Base class for warnings about constructs that will change semantically
+in the future.
 \end{excdesc}
 
 The class hierarchy for built-in exceptions is:
@@ -431,4 +436,5 @@ The class hierarchy for built-in exceptions is:
 	  +-- SyntaxWarning
 	  +-- OverflowWarning
 	  +-- RuntimeWarning
+	  +-- FutureWarning
 \end{verbatim}
