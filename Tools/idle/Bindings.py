@@ -44,6 +44,7 @@ menudefs = [
    ('_Go to file/line', '<<goto-file-line>>'),
    ('_Open stack viewer', '<<open-stack-viewer>>'),
    ('_Debugger toggle', '<<toggle-debugger>>'),
+   ('_JIT Stack viewer toggle', '<<toggle-jit-stack-viewer>>' ),
   ]),
  ('help', [
    ('_Help...', '<<help>>'),
