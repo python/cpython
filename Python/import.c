@@ -978,7 +978,6 @@ find_module(char *realname, PyObject *path, char *buf, size_t buflen,
 		if (strlen(buf) != len)
 			continue; /* v contains '\0' */
 #ifdef macintosh
-#ifdef INTERN_STRINGS
 		/*
 		** Speedup: each sys.path item is interned, and
 		** FindResourceModule remembers which items refer to
@@ -987,7 +986,6 @@ find_module(char *realname, PyObject *path, char *buf, size_t buflen,
 		*/
 		PyString_InternInPlace(&PyList_GET_ITEM(path, i));
 		v = PyList_GET_ITEM(path, i);
-#endif
 		if (PyMac_FindResourceModule((PyStringObject *)v, name, buf)) {
 			static struct filedescr resfiledescr =
 				{"", "", PY_RESOURCE};

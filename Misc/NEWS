@@ -89,6 +89,10 @@ Tools/Demos
 
 Build
 
+- References to the CACHE_HASH and INTERN_STRINGS preprocessor symbols
+  were eliminated.  They were always defined, and the internal features
+  they enabled stopped being experimental long ago.
+
 C API
 
 - Objects allocated using the new PyMalloc_New and PyMalloc_NewVar

@@ -480,10 +480,8 @@ PyDict_GetItem(PyObject *op, PyObject *key)
 	if (!PyDict_Check(op)) {
 		return NULL;
 	}
-#ifdef CACHE_HASH
 	if (!PyString_CheckExact(key) ||
 	    (hash = ((PyStringObject *) key)->ob_shash) == -1)
-#endif
 	{
 		hash = PyObject_Hash(key);
 		if (hash == -1) {
@@ -512,24 +510,18 @@ PyDict_SetItem(register PyObject *op, PyObject *key, PyObject *value)
 		return -1;
 	}
 	mp = (dictobject *)op;
-#ifdef CACHE_HASH
 	if (PyString_CheckExact(key)) {
-#ifdef INTERN_STRINGS
 		if (((PyStringObject *)key)->ob_sinterned != NULL) {
 			key = ((PyStringObject *)key)->ob_sinterned;
 			hash = ((PyStringObject *)key)->ob_shash;
 		}
-		else
-#endif
-		{
+		else {
 			hash = ((PyStringObject *)key)->ob_shash;
 			if (hash == -1)
 				hash = PyObject_Hash(key);
 		}
 	}
-	else
-#endif
-	{
+	else {
 		hash = PyObject_Hash(key);
 		if (hash == -1)
 			return -1;
@@ -564,11 +556,8 @@ PyDict_DelItem(PyObject *op, PyObject *key)
 		PyErr_BadInternalCall();
 		return -1;
 	}
-#ifdef CACHE_HASH
 	if (!PyString_CheckExact(key) ||
-	    (hash = ((PyStringObject *) key)->ob_shash) == -1)
-#endif
-	{
+	    (hash = ((PyStringObject *) key)->ob_shash) == -1) {
 		hash = PyObject_Hash(key);
 		if (hash == -1)
 			return -1;
@@ -844,11 +833,8 @@ dict_subscript(dictobject *mp, register PyObject *key)
 	PyObject *v;
 	long hash;
 	assert(mp->ma_table != NULL);
-#ifdef CACHE_HASH
 	if (!PyString_CheckExact(key) ||
-	    (hash = ((PyStringObject *) key)->ob_shash) == -1)
-#endif
-	{
+	    (hash = ((PyStringObject *) key)->ob_shash) == -1) {
 		hash = PyObject_Hash(key);
 		if (hash == -1)
 			return NULL;
@@ -1436,11 +1422,8 @@ dict_has_key(register dictobject *mp, PyObject *key)
 {
 	long hash;
 	register long ok;
-#ifdef CACHE_HASH
 	if (!PyString_CheckExact(key) ||
-	    (hash = ((PyStringObject *) key)->ob_shash) == -1)
-#endif
-	{
+	    (hash = ((PyStringObject *) key)->ob_shash) == -1) {
 		hash = PyObject_Hash(key);
 		if (hash == -1)
 			return NULL;
@@ -1460,11 +1443,8 @@ dict_get(register dictobject *mp, PyObject *args)
 	if (!PyArg_ParseTuple(args, "O|O:get", &key, &failobj))
 		return NULL;
 
-#ifdef CACHE_HASH
 	if (!PyString_CheckExact(key) ||
-	    (hash = ((PyStringObject *) key)->ob_shash) == -1)
-#endif
-	{
+	    (hash = ((PyStringObject *) key)->ob_shash) == -1) {
 		hash = PyObject_Hash(key);
 		if (hash == -1)
 			return NULL;
@@ -1489,11 +1469,8 @@ dict_setdefault(register dictobject *mp, PyObject *args)
 	if (!PyArg_ParseTuple(args, "O|O:setdefault", &key, &failobj))
 		return NULL;
 
-#ifdef CACHE_HASH
 	if (!PyString_CheckExact(key) ||
-	    (hash = ((PyStringObject *) key)->ob_shash) == -1)
-#endif
-	{
+	    (hash = ((PyStringObject *) key)->ob_shash) == -1) {
 		hash = PyObject_Hash(key);
 		if (hash == -1)
 			return NULL;
@@ -1725,11 +1702,8 @@ dict_contains(dictobject *mp, PyObject *key)
 {
 	long hash;
 
-#ifdef CACHE_HASH
 	if (!PyString_CheckExact(key) ||
-	    (hash = ((PyStringObject *) key)->ob_shash) == -1)
-#endif
-	{
+	    (hash = ((PyStringObject *) key)->ob_shash) == -1) {
 		hash = PyObject_Hash(key);
 		if (hash == -1)
 			return -1;
