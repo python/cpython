@@ -88,7 +88,6 @@ f = urllib2.urlopen('http://www.python.org/')
 # check digest against correct (i.e. non-apache) implementation
 
 import socket
-import UserDict
 import httplib
 import re
 import base64

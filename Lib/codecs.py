@@ -7,7 +7,7 @@ Written by Marc-Andre Lemburg (mal@lemburg.com).
 
 """#"
 
-import struct, types, __builtin__
+import struct, __builtin__
 
 ### Registry and builtin stateless codec functions
 

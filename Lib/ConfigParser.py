@@ -85,7 +85,6 @@ ConfigParser -- responsible for for parsing a list of
         write the configuration state in .ini format
 """
 
-import sys
 import string
 import re
 

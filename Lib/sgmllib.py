@@ -10,7 +10,6 @@
 
 
 import re
-import string
 
 __all__ = ["SGMLParser"]
 
