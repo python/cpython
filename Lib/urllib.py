@@ -538,8 +538,8 @@ class URLopener:
 class FancyURLopener(URLopener):
     """Derived class with handlers for errors we can handle (perhaps)."""
 
-    def __init__(self, *args):
-        apply(URLopener.__init__, (self,) + args)
+    def __init__(self, *args, **kwargs):
+        apply(URLopener.__init__, (self,) + args, kwargs)
         self.auth_cache = {}
         self.tries = 0
         self.maxtries = 10
