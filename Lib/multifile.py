@@ -86,7 +86,7 @@ class MultiFile:
 			return line
 		else:
 			# Ignore trailing whitespace on marker lines 
-			k = len(line) - 1;
+			k = len(line) - 1
 			while line[k] in string.whitespace:
 				k = k - 1
 			marker = line[:k+1]
