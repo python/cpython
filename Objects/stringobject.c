@@ -2538,7 +2538,7 @@ string_istitle(PyStringObject *self, PyObject *uncased)
 
 
 static char splitlines__doc__[] =
-"S.splitlines([keepends]]) -> list of strings\n\
+"S.splitlines([keepends]) -> list of strings\n\
 \n\
 Return a list of the lines in S, breaking at line boundaries.\n\
 Line breaks are not included in the resulting list unless keepends\n\
