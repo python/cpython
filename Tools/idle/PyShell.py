@@ -593,6 +593,9 @@ class PseudoFile:
     def writelines(self, l):
         map(self.write, l)
 
+    def flush(self):
+        pass
+
 
 def main():
     debug = 0
