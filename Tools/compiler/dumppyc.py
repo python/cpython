@@ -1,13 +1,16 @@
 #! /usr/bin/env python
 
 import marshal
+import os
 import dis
 import types
 
 def dump(obj):
     print obj
     for attr in dir(obj):
-        print "\t", attr, repr(getattr(obj, attr))
+        if attr.startswith('co_'):
+            val = getattr(obj, attr)
+            print "\t", attr, repr(val)
 
 def loadCode(path):
     f = open(path)
@@ -36,4 +39,6 @@ if __name__ == "__main__":
     else:
         filename = sys.argv[1]
         codename = None
+    if filename.endswith('.py') and os.path.exists(filename+"c"):
+        filename += "c"
     main(filename, codename)
