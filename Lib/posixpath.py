@@ -55,7 +55,7 @@ def join(a, *p):
 # Trailing '/'es are stripped from head unless it is the root.
 
 def split(p):
-    """Split a pathname.  Returns tuple "(head, tail)" where "tail" is 
+    """Split a pathname.  Returns tuple "(head, tail)" where "tail" is
     everything after the final slash.  Either part may be empty."""
     i = p.rfind('/') + 1
     head, tail = p[:i], p[i:]
@@ -93,7 +93,7 @@ def splitext(p):
 # path.  Useful on DOS/Windows/NT; on Unix, the drive is always empty.
 
 def splitdrive(p):
-    """Split a pathname into drive and path. On Posix, drive is always 
+    """Split a pathname into drive and path. On Posix, drive is always
     empty."""
     return '', p
 
@@ -220,7 +220,7 @@ def sameopenfile(fp1, fp2):
 def samestat(s1, s2):
     """Test whether two stat buffers reference the same file"""
     return s1[stat.ST_INO] == s2[stat.ST_INO] and \
-	   s1[stat.ST_DEV] == s2[stat.ST_DEV]
+           s1[stat.ST_DEV] == s2[stat.ST_DEV]
 
 
 # Is a path a mount point?
@@ -253,7 +253,7 @@ def ismount(path):
 # or to impose a different order of visiting.
 
 def walk(top, func, arg):
-    """walk(top,func,arg) calls func(arg, d, files) for each directory "d" 
+    """walk(top,func,arg) calls func(arg, d, files) for each directory "d"
     in the tree  rooted at "top" (including "top" itself).  "files" is a list
     of all the files and subdirs in directory "d".
     """
@@ -263,10 +263,10 @@ def walk(top, func, arg):
         return
     func(arg, top, names)
     for name in names:
-            name = join(top, name)
-            st = os.lstat(name)
-            if stat.S_ISDIR(st[stat.ST_MODE]):
-                walk(name, func, arg)
+        name = join(top, name)
+        st = os.lstat(name)
+        if stat.S_ISDIR(st[stat.ST_MODE]):
+            walk(name, func, arg)
 
 
 # Expand paths beginning with '~' or '~user'.
@@ -279,7 +279,7 @@ def walk(top, func, arg):
 # variable expansion.)
 
 def expanduser(path):
-    """Expand ~ and ~user constructions.  If user or $HOME is unknown, 
+    """Expand ~ and ~user constructions.  If user or $HOME is unknown,
     do nothing."""
     if path[:1] != '~':
         return path
@@ -349,7 +349,7 @@ def normpath(path):
     for comp in comps:
         if comp in ('', '.'):
             continue
-        if (comp != '..' or (not initial_slash and not new_comps) or 
+        if (comp != '..' or (not initial_slash and not new_comps) or
              (new_comps and new_comps[-1] == '..')):
             new_comps.append(comp)
         elif new_comps:

@@ -123,7 +123,7 @@ class Pickler:
             return LONG_BINGET + s
 
         return GET + `i` + '\n'
-        
+
     def save(self, object, pers_save = 0):
         memo = self.memo
 
@@ -134,7 +134,7 @@ class Pickler:
                 return
 
         d = id(object)
- 
+
         t = type(object)
 
         if ((t is TupleType) and (len(object) == 0)):
@@ -179,14 +179,14 @@ class Pickler:
                                      "tuple" % reduce
 
             l = len(tup)
-   
+
             if ((l != 2) and (l != 3)):
                 raise PicklingError, "tuple returned by %s must contain " \
                                      "only two or three elements" % reduce
 
             callable = tup[0]
             arg_tup  = tup[1]
-          
+
             if (l > 2):
                 state = tup[2]
             else:
@@ -196,7 +196,7 @@ class Pickler:
                 raise PicklingError, "Second element of tuple returned " \
                                      "by %s must be a tuple" % reduce
 
-            self.save_reduce(callable, arg_tup, state) 
+            self.save_reduce(callable, arg_tup, state)
             memo_len = len(memo)
             self.write(self.put(memo_len))
             memo[d] = (memo_len, object)
@@ -224,7 +224,7 @@ class Pickler:
         save(callable)
         save(arg_tup)
         write(REDUCE)
-        
+
         if (state is not None):
             save(state)
             write(BUILD)
@@ -317,7 +317,7 @@ class Pickler:
             if (self.bin):
                 write(POP_MARK + self.get(memo[d][0]))
                 return
-           
+
             write(POP * (len(object) + 1) + self.get(memo[d][0]))
             return
 
@@ -352,7 +352,7 @@ class Pickler:
 
         for element in object:
             save(element)
-  
+
             if (not using_appends):
                 write(APPEND)
 
@@ -542,7 +542,7 @@ class Unpickler:
 
     def load_binpersid(self):
         stack = self.stack
-         
+
         pid = stack[-1]
         del stack[-1]
 
@@ -568,7 +568,7 @@ class Unpickler:
     def load_binint2(self):
         self.append(mloads('i' + self.read(2) + '\000\000'))
     dispatch[BININT2] = load_binint2
- 
+
     def load_long(self):
         self.append(long(self.readline()[:-1], 0))
     dispatch[LONG] = load_long
@@ -710,7 +710,7 @@ class Unpickler:
         k = self.marker()
         klass = stack[k + 1]
         del stack[k + 1]
-        args = tuple(stack[k + 1:]) 
+        args = tuple(stack[k + 1:])
         del stack[k:]
         instantiated = 0
         if (not args and type(klass) is ClassType and
@@ -726,7 +726,7 @@ class Unpickler:
         if not instantiated:
             value = apply(klass, args)
         self.append(value)
-    dispatch[OBJ] = load_obj                
+    dispatch[OBJ] = load_obj
 
     def load_global(self):
         module = self.readline()[:-1]
@@ -761,8 +761,8 @@ class Unpickler:
                     safe = None
 
                 if (not safe):
-                   raise UnpicklingError, "%s is not safe for " \
-                                          "unpickling" % callable
+                    raise UnpicklingError, "%s is not safe for " \
+                                           "unpickling" % callable
 
         if arg_tup is None:
             value = callable.__basicnew__()
@@ -829,7 +829,7 @@ class Unpickler:
 
         del stack[mark:]
     dispatch[APPENDS] = load_appends
-           
+
     def load_setitem(self):
         stack = self.stack
         value = stack[-1]

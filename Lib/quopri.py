@@ -26,7 +26,7 @@ def encode(input, output, quotetabs):
 
     'input' and 'output' are files with readline() and write() methods.
     The 'quotetabs' flag indicates whether tabs should be quoted.
-	"""
+        """
     while 1:
         line = input.readline()
         if not line:

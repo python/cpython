@@ -129,7 +129,7 @@ class _posixfile_:
 
         l_flags = fcntl.fcntl(file.fileno(), FCNTL.F_SETFL, l_flags)
 
-        if 'c' in which:        
+        if 'c' in which:
             arg = ('!' not in which)    # 0 is don't, 1 is do close on exec
             l_flags = fcntl.fcntl(file.fileno(), FCNTL.F_SETFD, arg)
 
@@ -142,7 +142,7 @@ class _posixfile_:
             if FCNTL.O_NDELAY & l_flags: which = which + 'n'
             if FCNTL.O_SYNC & l_flags: which = which + 's'
             return which
-        
+
     def lock(self, how, *args):
         import struct, fcntl, FCNTL
 
@@ -176,7 +176,7 @@ class _posixfile_:
                             'freebsd2', 'freebsd3', 'freebsd4', 'freebsd5',
                             'bsdos2', 'bsdos3', 'bsdos4'):
             flock = struct.pack('lxxxxlxxxxlhh', \
-                  l_start, l_len, os.getpid(), l_type, l_whence) 
+                  l_start, l_len, os.getpid(), l_type, l_whence)
         elif sys.platform in ['aix3', 'aix4']:
             flock = struct.pack('hhlllii', \
                   l_type, l_whence, l_start, l_len, 0, 0, 0)
