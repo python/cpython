@@ -2007,6 +2007,7 @@ posix_execve(PyObject *self, PyObject *args)
 	for (i = 0; i < argc; i++) {
 		if (!PyArg_Parse((*getitem)(argv, i),
 				 "et;execve() arg 2 must contain only strings",
+				 Py_FileSystemDefaultEncoding,
 				 &argvlist[i]))
 		{
 			lastarg = i;
