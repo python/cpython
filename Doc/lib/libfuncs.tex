@@ -80,6 +80,15 @@ def my_import(name):
                    above.}
 \end{funcdesc}
 
+\begin{funcdesc}{basestring}{}
+  This abstract type is the superclass for \class{str} and \class{unicode}.
+  It cannot be called or instantiated, but it can be used to test whether
+  an object is an instance of \class{str} or \class{unicode}.
+  \code{isinstance(obj, basestring)} is equivalent to
+  \code{isinstance(obj, (str, unicode))}.
+  \versionadded{2.3}
+\end{funcdesc}
+
 \begin{funcdesc}{bool}{\optional{x}}
   Convert a value to a Boolean, using the standard truth testing
   procedure.  If \code{x} is false, this returns \code{False};
