@@ -274,7 +274,10 @@ class IOBinding:
         else:
             if self.writefile(self.filename):
                 self.set_saved(1)
-                self.editwin.store_file_breaks()
+                try:
+                    self.editwin.store_file_breaks()
+                except AttributeError:  # may be a PyShell
+                    pass
         self.text.focus_set()
         return "break"
 
@@ -284,7 +287,10 @@ class IOBinding:
             if self.writefile(filename):
                 self.set_filename(filename)
                 self.set_saved(1)
-                self.editwin.store_file_breaks()
+                try:
+                    self.editwin.store_file_breaks()
+                except AttributeError:
+                    pass
         self.text.focus_set()
         self.updaterecentfileslist(filename)
         return "break"
