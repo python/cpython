@@ -37,9 +37,6 @@ PERFORMANCE OF THIS SOFTWARE.
 extern char *Py_GetVersion();
 extern char *Py_GetCopyright();
 
-/* For Py_GetProgramName(); set by main() */
-static char *argv0;
-
 /* Main program */
 
 int
@@ -52,14 +49,6 @@ main(argc, argv)
 	int inspect = 0;
 	int unbuffered = 0;
 
-	argv0 = argv[0];
-
-	if ((p = getenv("PYTHONDEBUG")) && *p != '\0')
-		Py_DebugFlag = 1;
-	if ((p = getenv("PYTHONSUPPRESS")) && *p != '\0')
-		Py_SuppressPrintingFlag = 1;
-	if ((p = getenv("PYTHONVERBOSE")) && *p != '\0')
-		Py_VerboseFlag = 1;
 	if ((p = getenv("PYTHONINSPECT")) && *p != '\0')
 		inspect = 1;
 	if ((p = getenv("PYTHONUNBUFFERED")) && *p != '\0')
@@ -70,10 +59,13 @@ main(argc, argv)
 		setbuf(stderr, (char *)NULL);
 	}
 
+	Py_SetProgramName(argv[0]);
+	Py_Initialize();
+
 	if (Py_VerboseFlag)
 		fprintf(stderr, "Python %s\n%s\n",
 			Py_GetVersion(), Py_GetCopyright());
-	Py_Initialize();
+
 	PySys_SetArgv(argc, argv);
 
 	n = PyImport_ImportFrozenModule("__main__");
@@ -91,10 +83,4 @@ main(argc, argv)
 
 	Py_Exit(sts);
 	/*NOTREACHED*/
-}
-
-char *
-Py_GetProgramName()
-{
-	return argv0;
 }
