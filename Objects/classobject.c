@@ -174,6 +174,11 @@ class_setattr(op, name, v)
 			return -1;
 		}
 	}
+	if (getrestricted()) {
+		err_setstr(RuntimeError,
+			   "classes are read-only in restricted mode");
+		return -1;
+	}
 	ac = dictlookup(op->cl_dict, name);
 	if (ac != NULL && is_accessobject(ac))
 		return setaccessvalue(ac, getowner(), v);
