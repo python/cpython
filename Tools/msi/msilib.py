@@ -315,7 +315,7 @@ def init_database(name, schema,
         si.SetProperty(PID_TEMPLATE, "Intel64;1033")
     else:
         si.SetProperty(PID_TEMPLATE, "Intel;1033")
-    si.SetProperty(PID_REVNUMBER, ProductCode) # XXX should be package code
+    si.SetProperty(PID_REVNUMBER, gen_uuid())
     si.SetProperty(PID_WORDCOUNT, 2) # long file names, compressed, original media
     si.SetProperty(PID_PAGECOUNT, 200)
     si.SetProperty(PID_APPNAME, "Python MSI Library")
