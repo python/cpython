@@ -94,6 +94,9 @@ class Random(_random.Random):
         If a is not None or an int or long, hash(a) is used instead.
         """
 
+        if a is None:
+            import time
+            a = long(time.time() * 256) # use fractional seconds
         super(Random, self).seed(a)
         self.gauss_next = None
 
