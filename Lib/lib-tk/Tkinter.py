@@ -772,7 +772,7 @@ class Wm:
 		 widthInc=None, heightInc=None):
 		return self._getints(self.tk.call(
 			'wm', 'grid', self._w,
-			baseWidht, baseHeight, widthInc, heightInc))
+			baseWidth, baseHeight, widthInc, heightInc))
 	def group(self, pathName=None):
 		return self.tk.call('wm', 'group', self._w, pathName)
 	def iconbitmap(self, bitmap=None):
