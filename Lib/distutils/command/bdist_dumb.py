@@ -24,6 +24,8 @@ class bdist_dumb (Command):
                     ('keep-tree', 'k',
                      "keep the pseudo-installation tree around after " +
                      "creating the distribution archive"),
+                    ('dist-dir=', 'd',
+                     "directory to put final built distributions in"),
                    ]
 
     default_format = { 'posix': 'gztar',
@@ -34,6 +36,7 @@ class bdist_dumb (Command):
         self.bdist_dir = None
         self.format = None
         self.keep_tree = 0
+        self.dist_dir = None
 
     # initialize_options()
 
@@ -50,6 +53,8 @@ class bdist_dumb (Command):
                 raise DistutilsPlatformError, \
                       ("don't know how to create dumb built distributions " +
                        "on platform %s") % os.name
+
+        self.set_undefined_options('bdist', ('dist_dir', 'dist_dir'))
 
     # finalize_options()
 
@@ -71,7 +76,8 @@ class bdist_dumb (Command):
                                       get_platform())
         print "self.bdist_dir = %s" % self.bdist_dir
         print "self.format = %s" % self.format
-        self.make_archive (archive_basename, self.format,
+        self.make_archive (os.path.join(self.dist_dir, archive_basename),
+                           self.format,
                            root_dir=self.bdist_dir)
 
         if not self.keep_tree:
