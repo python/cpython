@@ -3569,16 +3569,15 @@ wrap_objobjproc(PyObject *self, PyObject *args, void *wrapped)
 {
 	objobjproc func = (objobjproc)wrapped;
 	int res;
-	PyObject *value, *ret;
+	PyObject *value;
 
 	if (!PyArg_ParseTuple(args, "O", &value))
 		return NULL;
 	res = (*func)(self, value);
 	if (res == -1 && PyErr_Occurred())
 		return NULL;
-	ret = PyObject_IsTrue(PyInt_FromLong((long)res)) ? Py_True : Py_False;
-	Py_INCREF(ret);
-	return ret;
+	else
+		return PyBool_FromLong(res);
 }
 
 static PyObject *
