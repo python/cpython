@@ -90,3 +90,9 @@ kALMLocationsFolderType		= 'fall'
 kColorSyncProfilesFolderType = 'prof'
 kThemesFolderType			= 'thme'
 kFavoritesFolderType		= 'favs'
+
+# Don't remember why this is here
+READ = 1
+WRITE = 2
+smAllScripts = -3
+
