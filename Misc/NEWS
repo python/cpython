@@ -3,6 +3,43 @@ What's New in Python 2.1 alpha 1?
 
 Core language, builtins, and interpreter
 
+- The comparison operators support "rich comparison overloading" (PEP
+  207).  C extension types can provide a rich comparison function in
+  the new tp_richcompare slot in the type object.  The cmp() function
+  and the C function PyObject_Compare() first try the new rich
+  comparison operators before trying the old 3-way comparison.  There
+  is also a new C API PyObject_RichCompare() (which also falls back on
+  the old 3-way comparison, but does not constrain the outcome of the
+  rich comparison to a Boolean result).
+
+  The rich comparison function takes two objects (at least one of
+  which is guaranteed to have the type that provided the function) and
+  an integer indicating the opcode, which can be Py_LT, Py_LE, Py_EQ,
+  Py_NE, Py_GT, Py_GE (for <, <=, ==, !=, >, >=), and returns a Python
+  object, which may be NotImplemented (in which case the tp_compare
+  slot function is used as a fallback, if defined).
+
+  Classes can overload individual comparison operators by defining one
+  or more of the methods__lt__, __le__, __eq__, __ne__, __gt__,
+  __ge__.  There are no explicit "reversed argument" versions of
+  these; instead, __lt__ and __gt__ are each other's reverse, likewise
+  for__le__ and __ge__; __eq__ and __ne__ are their own reverse
+  (similar at the C level).  No other implications are made; in
+  particular, Python does not assume that == is the inverse of !=, or
+  that < is the inverse of >=.  This makes it possible to define types
+  with partial orderings.
+
+  Classes or types that want to implement (in)equality tests but not
+  the ordering operators (i.e. unordered types) should implement ==
+  and !=, and raise an error for the ordering operators.
+
+  It is possible to define types whose comparison results are not
+  Boolean; e.g. a matrix type might want to return a matrix of bits
+  for A < B, giving elementwise comparisons.  Such types should ensure
+  that any interpretation of their value in a Boolean context raises
+  an exception, e.g. by defining __nonzero__ (or the tp_nonzero slot
+  at the C level) to always raise an exception.
+
 - Functions and methods now support getting and setting arbitrarily
   named attributes (PEP 232).  Functions have a new __dict__
   (a.k.a. func_dict) which hold the function attributes.  Methods get
@@ -69,6 +106,12 @@ Core language, builtins, and interpreter
   is considered an improvement.  Also note that __rcmp__ is no longer
   supported -- instead of calling __rcmp__, __cmp__ is called with
   reversed arguments.
+
+- In connection with the coercion changes, a new built-in singleton
+  object, NotImplemented is defined.  This can be returned for
+  operations that wish to indicate they are not implemented for a
+  particular combination of arguments.  From C, this is
+  Py_NotImplemented.
 
 - The interpreter accepts now bytecode files on the command line even
   if they do not have a .pyc or .pyo extension. On Linux, after executing
