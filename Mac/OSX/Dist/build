@@ -5,9 +5,9 @@
 # TODO:  Parameterize the versions, builddirs, etc...
 
 # Script configs
-PYVERSION=2.3b1
+PYVERSION=2.3b2
 PYVER=2.3
-BUILDNUM=1
+BUILDNUM=2
 DOCLEANUP=no
 
 PROGDIR="`dirname \"$0\"`"
