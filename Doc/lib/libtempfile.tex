@@ -28,11 +28,9 @@ arguments for clarity.
 
 The module defines the following user-callable functions:
 
-\begin{funcdesc}{TemporaryFile}{\optional{mode='w+b'}
-				\optional{, bufsize=-1}
-				\optional{, suffix}
-				\optional{, prefix}
-				\optional{, dir}}
+\begin{funcdesc}{TemporaryFile}{\optional{mode=\code{'w+b'}\optional{,
+                                bufsize=\code{-1}\optional{,
+                                suffix\optional{, prefix\optional{, dir}}}}}}
 Return a file (or file-like) object that can be used as a temporary
 storage area.  The file is created using \function{mkstemp}. It will
 be destroyed as soon as it is closed (including an implicit close when
@@ -52,11 +50,10 @@ The \var{dir}, \var{prefix} and \var{suffix} parameters are passed to
 \function{mkstemp()}.
 \end{funcdesc}
 
-\begin{funcdesc}{NamedTemporaryFile}{\optional{mode='w+b'}
-				     \optional{, bufsize=-1}
-				     \optional{, suffix}
-				     \optional{, prefix}
-				     \optional{, dir}}
+\begin{funcdesc}{NamedTemporaryFile}{\optional{mode=\code{'w+b'}\optional{,
+                                     bufsize=\code{-1}\optional{,
+                                     suffix\optional{, prefix\optional{,
+                                     dir}}}}}}
 This function operates exactly as \function{TemporaryFile()} does,
 except that the file is guaranteed to have a visible name in the file
 system (on \UNIX, the directory entry is not unlinked).  That name can
@@ -67,10 +64,8 @@ be so used on \UNIX; it cannot on Windows NT or later).
 \versionadded{2.3}
 \end{funcdesc}
 
-\begin{funcdesc}{mkstemp}{\optional{suffix}
-			  \optional{, prefix}
-			  \optional{, dir}
-			  \optional{, text=False}}
+\begin{funcdesc}{mkstemp}{\optional{suffix\optional{,
+                          prefix\optional{, dir\optional{, text}}}}}
 Creates a temporary file in the most secure manner possible.  There
 are no race conditions in the file's creation, assuming that the
 platform properly implements the \constant{O_EXCL} flag for
@@ -103,9 +98,7 @@ absolute pathname of that file, in that order.
 \versionadded{2.3}
 \end{funcdesc}
 
-\begin{funcdesc}{mkdtemp}{\optional{suffix}
-			  \optional{, prefix}
-			  \optional{, dir}}
+\begin{funcdesc}{mkdtemp}{\optional{suffix\optional{, prefix\optional{, dir}}}}
 Creates a temporary directory in the most secure manner possible.
 There are no race conditions in the directory's creation.  The
 directory is readable, writable, and searchable only by the
@@ -121,9 +114,7 @@ as for \function{mkstemp()}.
 \versionadded{2.3}
 \end{funcdesc}
 
-\begin{funcdesc}{mktemp}{\optional{suffix}
-			 \optional{, prefix}
-			 \optional{, dir}}
+\begin{funcdesc}{mktemp}{\optional{suffix\optional{, prefix\optional{, dir}}}}
 \deprecated{2.3}{Use \function{mkstemp()} instead.}
 Return an absolute pathname of a file that did not exist at the time
 the call is made.  The \var{prefix}, \var{suffix}, and \var{dir}
@@ -144,7 +135,7 @@ When set to a value other than \code{None}, this variable defines the
 default value for the \var{dir} argument to all the functions defined
 in this module.
 
-If \var{tempdir} is unset or \code{None} at any call to any of the
+If \code{tempdir} is unset or \code{None} at any call to any of the
 above functions, Python searches a standard list of directories and
 sets \var{tempdir} to the first one which the calling user can create
 files in.  The list is:
@@ -172,7 +163,7 @@ files in.  The list is:
 
 \begin{funcdesc}{gettempdir}{}
 Return the directory currently selected to create temporary files in.
-If \var{tempdir} is not None, this simply returns its contents;
+If \code{tempdir} is not \code{None}, this simply returns its contents;
 otherwise, the search described above is performed, and the result
 returned.
 \end{funcdesc}
