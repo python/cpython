@@ -53,41 +53,44 @@ class PyncheWidget(Pmw.MegaWidget):
 	interiorarg = (self.interior(),)
 
 	# create color selectors
-	group = Pmw.Group(parent, tag_text='Color Selectors')
+	group = Pmw.Group(parent, tag_text='Variations')
 	group.pack(side=TOP, expand=YES, fill=BOTH)
 	self.__reds = StripWidget(group.interior(),
 				  generator=constant_cyan_generator,
-				  axis=0)
+				  axis=0, label='Red Variations')
 	self.__reds.pack()
 	self.__blues = StripWidget(group.interior(),
 				   generator=constant_magenta_generator,
-				   axis=1)
+				   axis=1, label='Green Variations')
 	self.__blues.pack()
 	self.__greens = StripWidget(group.interior(),
 				    generator=constant_yellow_generator,
-				    axis=2)
+				    axis=2, label='Blue Variations')
 	self.__greens.pack()
 
 	# create chip window
 	group = Pmw.Group(parent, tag_text='Current Color')
-	group.pack(side=LEFT, fill=Y)
+	group.pack(side=LEFT, expand=YES, fill=BOTH)
 	self.__selected = ChipWidget(group.interior(),
 				     label_text='Selected')
 	self.__selected.grid()
 	self.__nearest = ChipWidget(group.interior(),
 				    label_text='Nearest')
 	self.__nearest.grid(row=0, column=1)
+	chip = self.__nearest.component('chip')
+	chip.bind('<ButtonRelease-1>', self.__set_color_to_chip)
 
 	# create the options window
-	group = Pmw.Group(parent, tag_text='Options')
-	group.pack(expand=YES, fill=BOTH)
 	self.__typein = TypeinWidget(group.interior())
-	self.__typein.grid()
+	self.__typein.grid(row=0, column=2)
 
 	# Check keywords and initialize options
 	self.initialiseoptions(PyncheWidget)
 
 	self.__typein.configure(delegate=self)
+	self.__reds.configure(delegate=self)
+	self.__greens.configure(delegate=self)
+	self.__blues.configure(delegate=self)
 
     #
     # PUBLIC INTERFACE
@@ -121,3 +124,8 @@ class PyncheWidget(Pmw.MegaWidget):
 
     def __set_color(self):
 	self.set_color(self, self['color'])
+
+    def __set_color_to_chip(self, event=None):
+	color = self.__nearest['color']
+	rgbtuple = self.__colordb.find_byname(color)
+	self.set_color(self, rgbtuple)
