@@ -20,28 +20,28 @@ INSTALL_SCHEMES = {
         'platlib': '$platbase/lib/python$py_version_short/site-packages',
         'headers': '$base/include/python$py_version_short/$dist_name',
         'scripts': '$base/bin',
-        'data'   : '$base/share',
+        'data'   : '$base',
         },
     'unix_home': {
         'purelib': '$base/lib/python',
         'platlib': '$base/lib/python',
         'headers': '$base/include/python/$dist_name',
         'scripts': '$base/bin',
-        'data'   : '$base/share',
+        'data'   : '$base',
         },
     'nt': {
         'purelib': '$base',
         'platlib': '$base',
         'headers': '$base\\Include\\$dist_name',
         'scripts': '$base\\Scripts',
-        'data'   : '$base\\Data',
+        'data'   : '$base',
         },
     'mac': {
         'purelib': '$base:Lib',
         'platlib': '$base:Mac:PlugIns',
         'headers': '$base:Include:$dist_name',
         'scripts': '$base:Scripts',
-        'data'   : '$base:Data',
+        'data'   : '$base',
         }
     }
 
