@@ -48,17 +48,23 @@ kwprog = regex.compile('@[a-z]+') # Keyword (embedded, usually with {} args)
 spprog = regex.compile('[\n@{}&<>]') # Special characters in running text
 miprog = regex.compile( \
 	'^\* \([^:]*\):\(:\|[ \t]*\([^\t,\n.]+\)\([^ \t\n]*\)\)[ \t\n]*')
-    # menu item (Yuck!)
+					# menu item (Yuck!)
 
 
-class Node:
-    __doc__ = """
-    Some of the parser's functionality is separated into this class.
+class HTMLNode:
+    """Some of the parser's functionality is separated into this class.
 
     A Node accumulates its contents, takes care of links to other Nodes
-    and saves itself when it is finished and all links are resolved. """
+    and saves itself when it is finished and all links are resolved.
+    """
 
-    def __init__ (self, dir, name, topname, title, next, prev, up):
+    DOCTYPE = '<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">'
+
+    type = 0
+    cont = ''
+    epilogue = '</BODY></HTML>\n'
+
+    def __init__(self, dir, name, topname, title, next, prev, up):
 	self.dirname = dir
 	self.name = name
 	if topname:
@@ -70,66 +76,105 @@ class Node:
 	self.prev = prev
 	self.up = up
 	self.lines = []
-	self.type = 0
-	self.cont = ''
 
-    def write (self, *lines):
+    def write(self, *lines):
 	map(self.lines.append, lines)
 
-    def flush (self):
-	fp = open (self.dirname + '/' + makefile(self.name), 'w')
-	fp.write (self.prologue)
-	fp.write (self.text)
-	fp.write (self.epilogue)
-	fp.close ()
+    def flush(self):
+	fp = open(self.dirname + '/' + makefile(self.name), 'w')
+	fp.write(self.prologue)
+	fp.write(self.text)
+	fp.write(self.epilogue)
+	fp.close()
 
-
-    def link(self, label, nodename):
+    def link(self, label, nodename, rel=None, rev=None):
 	if nodename:
 	    if string.lower(nodename) == '(dir)':
 		addr = '../dir.html'
+		title = ''
 	    else:
 		addr = makefile(nodename)
-	    self.write(label, ': <A HREF="', addr, '" TYPE="', \
-		       label, '">', nodename, '</A>  \n')
-
+		title = ' TITLE="%s"' % nodename
+	    self.write(label, ': <A HREF="', addr, '"', \
+		       rel and (' REL=' + rel) or "", \
+		       rev and (' REV=' + rev) or "", \
+		       title, '>', nodename, '</A>  \n')
 
     def finalize(self):
-	length = len (self.lines)
-	self.text = string.joinfields (self.lines, '')
+	length = len(self.lines)
+	self.text = string.joinfields(self.lines, '')
 	self.lines = []
-	self.write ('<HR>\n')
-	if self.cont != self.next:
-	    self.link('Cont', self.cont)
-	self.link('Next', self.next)
-	self.link('Prev', self.prev)
-	self.link('Up', self.up)
-	if self.name <> self.topname:
-	    self.link('Top', self.topname)
-	self.write ('<HR>\n')
+	self.open_links()
+	self.output_links()
+	self.close_links()
 	links = string.joinfields(self.lines, '')
 	self.lines = []
 
-	self.prologue = ('<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">\n'
-			 '<!-- Converted with texi2html and Python -->\n'
-			 '<HEAD>\n'
-			 '  <TITLE>' + self.title + '</TITLE>\n'
-			 '</HEAD><BODY>\n' + \
-			 links)
-
+	self.prologue = (
+	    self.DOCTYPE +
+	    '\n<HTML><HEAD>\n'
+	    '  <!-- Converted with texi2html and Python -->\n'
+	    '  <TITLE>' + self.title + '</TITLE>\n'
+	    '  <LINK REL=Next HREF="'
+		+ makefile(self.next) + '" TITLE="' + self.next + '">\n'
+	    '  <LINK REL=Previous HREF="'
+		+ makefile(self.prev) + '" TITLE="' + self.prev  + '">\n'
+	    '  <LINK REL=Up HREF="'
+		+ makefile(self.up) + '" TITLE="' + self.up  + '">\n'
+	    '</HEAD><BODY>\n' +
+	    links)
 	if length > 20:
-	    self.epilogue = '<P>\n%s</BODY>\n' % links
-	else:
-	    self.epilogue = '</BODY>\n'
+	    self.epilogue = '<P>\n%s</BODY></HTML>\n' % links
+
+    def open_links(self):
+	self.write('<HR>\n')
+
+    def close_links(self):
+	self.write('<HR>\n')
+
+    def output_links(self):
+	if self.cont != self.next:
+	    self.link('  Cont', self.cont)
+	self.link('  Next', self.next, rel='Next')
+	self.link('  Prev', self.prev, rel='Previous')
+	self.link('  Up', self.up, rel='Up')
+	if self.name <> self.topname:
+	    self.link('  Top', self.topname)
+
+
+class HTML3Node(HTMLNode):
+
+    DOCTYPE = '<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML Level 3//EN//3.0">'
+
+    def open_links(self):
+	self.write('<DIV>\n <HR>\n')
+
+    def close_links(self):
+	self.write(' <HR>\n</DIV>\n')
 
 
 class TexinfoParser:
+
+    COPYRIGHT_SYMBOL = "&copy;"
+    FN_ID_PATTERN = "(%(id)s)"
+    FN_SOURCE_PATTERN = '<A NAME=footnoteref%(id)s' \
+			' HREF="#footnotetext%(id)s">' \
+			+ FN_ID_PATTERN + '</A>'
+    FN_TARGET_PATTERN = '<A NAME=footnotetext%(id)s' \
+			' HREF="#footnoteref%(id)s">' \
+			+ FN_ID_PATTERN + '</A>\n%(text)s<P>\n'
+    FN_HEADER = '\n<HR NOSHADE SIZE=1 WIDTH=200>\n' \
+		'<STRONG><EM>Footnotes</EM></STRONG>\n<P>'
+
+
+    Node = HTMLNode
 
     # Initialize an instance
     def __init__(self):
 	self.unknown = {}	# statistics about unknown @-commands
 	self.filenames = {}	# Check for identical filenames
 	self.debugging = 0	# larger values produce more output
+	self.print_headers = 0	# always print headers?
 	self.nodefp = None	# open file we're writing to
 	self.nodelineno = 0	# Linenumber relative to node
 	self.links = None	# Links from current node
@@ -209,7 +254,10 @@ class TexinfoParser:
 		if accu:
 		    if not self.skip:
 			self.process(accu)
-			self.write('<P>\n')
+			if self.nofill:
+			    self.write('\n')
+			else:
+			    self.write('<P>\n')
 			accu = []
 	    else:
 		# Append the line including trailing \n!
@@ -222,21 +270,21 @@ class TexinfoParser:
 	    print '***', self.stack
 	if self.includedepth == 0:
 	    while self.nodestack:
-		self.nodestack[-1].finalize ()
-		self.nodestack[-1].flush ()
-		del self.nodestack [-1]
+		self.nodestack[-1].finalize()
+		self.nodestack[-1].flush()
+		del self.nodestack[-1]
 
     # Start saving text in a buffer instead of writing it to a file
     def startsaving(self):
 	if self.savetext <> None:
-	    self.savestack.append (self.savetext)
+	    self.savestack.append(self.savetext)
 	    # print '*** Recursively saving text, expect trouble'
 	self.savetext = ''
 
     # Return the text saved so far and start writing to file again
     def collectsavings(self):
 	savetext = self.savetext
-	if len (self.savestack) > 0:
+	if len(self.savestack) > 0:
 	    self.savetext = self.savestack[-1]
 	    del self.savestack[-1]
 	else:
@@ -255,7 +303,7 @@ class TexinfoParser:
 	elif self.nodefp:
 	    self.nodefp.write(text)
 	elif self.node:
-	    self.node.write (text)
+	    self.node.write(text)
     # Complete the current node -- write footnotes and close file
     def endnode(self):
 	if self.savetext <> None:
@@ -265,14 +313,14 @@ class TexinfoParser:
 	    self.writefootnotes()
 	if self.nodefp:
 	    if self.nodelineno > 20:
-		self.write ('<HR>\n')
+		self.write('<HR>\n')
 		[name, next, prev, up] = self.nodelinks[:4]
 		self.link('Next', next)
 		self.link('Prev', prev)
 		self.link('Up', up)
 		if self.nodename <> self.topname:
 		    self.link('Top', self.topname)
-		self.write ('<HR>\n')
+		self.write('<HR>\n')
 	    self.write('</BODY>\n')
 	    self.nodefp.close()
 	    self.nodefp = None
@@ -280,10 +328,10 @@ class TexinfoParser:
 	    if not self.cont and \
 	       (not self.node.type or \
 		(self.node.next and self.node.prev and self.node.up)):
-		self.node.finalize ()
-		self.node.flush ()
+		self.node.finalize()
+		self.node.flush()
 	    else:
-		self.nodestack.append (self.node)
+		self.nodestack.append(self.node)
 	    self.node = None
 	self.nodename = ''
 
@@ -309,7 +357,7 @@ class TexinfoParser:
 		if nodename[0] == ':': nodename = label
 		else: nodename = line[e:f]
 		punct = line[g:h]
-		self.write('<LI><A HREF="',
+		self.write('  <LI><A HREF="',
 			   makefile(nodename),
 			   '">', nodename,
 			   '</A>', punct, '\n')
@@ -333,10 +381,7 @@ class TexinfoParser:
 	    c = text[i]
 	    i = i+1
 	    if c == '\n':
-		if self.nofill > 0:
-		    self.write('<P>\n')
-		else:
-		    self.write('\n')
+		self.write('\n')
 		continue
 	    if c == '<':
 		self.write('&lt;')
@@ -477,8 +522,8 @@ class TexinfoParser:
     def open_TeX(self): self.write('TeX')
     def close_TeX(self): pass
 
-    def handle_copyright(self): self.write('(C)')
-    def open_copyright(self): self.write('(C)')
+    def handle_copyright(self): self.write(self.COPYRIGHT_SYMBOL)
+    def open_copyright(self): self.write(self.COPYRIGHT_SYMBOL)
     def close_copyright(self): pass
 
     def open_minus(self): self.write('-')
@@ -569,8 +614,8 @@ class TexinfoParser:
     def open_code(self): self.write('<CODE>')
     def close_code(self): self.write('</CODE>')
 
-    open_t = open_code
-    close_t = close_code
+    def open_t(self): self.write('<TT>')
+    def close_t(self): self.write('</TT>')
 
     def open_dfn(self): self.write('<DFN>')
     def close_dfn(self): self.write('</DFN>')
@@ -578,31 +623,25 @@ class TexinfoParser:
     def open_emph(self): self.write('<EM>')
     def close_emph(self): self.write('</EM>')
 
-    open_i = open_emph
-    close_i = close_emph
+    def open_i(self): self.write('<I>')
+    def close_i(self): self.write('</I>')
 
     def open_footnote(self):
 	# if self.savetext <> None:
 	# 	print '*** Recursive footnote -- expect weirdness'
 	id = len(self.footnotes) + 1
-	self.write('<A NAME="footnoteref', `id`, \
-		'" HREF="#footnotetext', `id`, '">(', `id`, ')</A>')
-	# self.savetext = ''
-	self.startsaving ()
+	self.write(self.FN_SOURCE_PATTERN % {'id': `id`})
+	self.startsaving()
 
     def close_footnote(self):
 	id = len(self.footnotes) + 1
-	# self.footnotes.append(`id`, self.savetext)
-	self.footnotes.append(`id`, self.collectsavings())
-	# self.savetext = None
+	self.footnotes.append(id, self.collectsavings())
 
     def writefootnotes(self):
-	self.write('\n<HR NOSHADE SIZE=1 WIDTH=200>\n'
-		   '<STRONG><EM>Footnotes</EM></STRONG>\n<P>')
+	self.write(self.FN_HEADER)
 	for id, text in self.footnotes:
-	    self.write('<A NAME="footnotetext', id, \
-		    '" HREF="#footnoteref', id, '">(', \
-		    id, ')</A>\n', text, '<P>\n')
+	    self.write(self.FN_TARGET_PATTERN
+		       % {'id': `id`, 'text': text})
 	self.footnotes = []
 
     def open_file(self): self.write('<CODE>')
@@ -623,11 +662,11 @@ class TexinfoParser:
     def open_sc(self): self.write('<SMALLCAPS>')
     def close_sc(self): self.write('</SMALLCAPS>')
 
-    def open_strong(self): self.write('<B>')
-    def close_strong(self): self.write('</B>')
+    def open_strong(self): self.write('<STRONG>')
+    def close_strong(self): self.write('</STRONG>')
 
-    open_b = open_strong
-    close_b = close_strong
+    def open_b(self): self.write('<B>')
+    def close_b(self): self.write('</B>')
 
     def open_var(self): self.write('<VAR>')
     def close_var(self): self.write('</VAR>')
@@ -715,13 +754,13 @@ class TexinfoParser:
     def end_tex(self): self.skip = self.skip - 1
 
     def do_set(self, args):
-	fields = string.splitfields (args, ' ')
+	fields = string.splitfields(args, ' ')
 	key = fields[0]
 	if len(fields) == 1:
 	    value = 1
 	else:
-	    value = string.joinfields (fields[1:], ' ')
-	self.values[key]=value
+	    value = string.joinfields(fields[1:], ' ')
+	self.values[key] = value
 	print self.values
 
     def do_clear(self, args):
@@ -755,9 +794,9 @@ class TexinfoParser:
 	self.startsaving()
 
     def close_value(self):
-	key = self.collectsavings ()
+	key = self.collectsavings()
 	if key in self.values.keys():
-	    self.write (self.values[key])
+	    self.write(self.values[key])
 	else:
 	    print '*** Undefined value: ', key
 
@@ -770,15 +809,15 @@ class TexinfoParser:
     def do_settitle(self, args):
 	print args
 	self.startsaving()
-	self.expand (args)
-	self.title = self.collectsavings ()
+	self.expand(args)
+	self.title = self.collectsavings()
 	print self.title
     def do_parskip(self, args): pass
 
     # --- Ending a file ---
 
     def do_bye(self, args):
-	self.endnode ()
+	self.endnode()
 	self.done = 1
 
     # --- Title page ---
@@ -790,8 +829,8 @@ class TexinfoParser:
     def do_center(self, args):
 	# Actually not used outside title page...
 	self.write('<H1>')
-	self.expand (args)
-	self.write ('</H1>\n')
+	self.expand(args)
+	self.write('</H1>\n')
     do_title = do_center
     do_subtitle = do_center
     do_author = do_center
@@ -835,8 +874,8 @@ class TexinfoParser:
 	if not self.topname: self.topname = name
 	title = name
 	if self.title: title = title + ' -- ' + self.title
-	self.node = Node (self.dirname, self.nodename, self.topname, \
-			  title, next, prev, up)
+	self.node = self.Node(self.dirname, self.nodename, self.topname,
+			      title, next, prev, up)
 
     def link(self, label, nodename):
 	if nodename:
@@ -844,27 +883,27 @@ class TexinfoParser:
 		addr = '../dir.html'
 	    else:
 		addr = makefile(nodename)
-	    self.write(label, ': <A HREF="', addr, '" TYPE="', \
-		    label, '">', nodename, '</A>  \n')
+	    self.write(label, ': <A HREF="', addr, '" TYPE="',
+		       label, '">', nodename, '</A>  \n')
 
     # --- Sectioning commands ---
 
-    def popstack (self, type):
+    def popstack(self, type):
 	if (self.node):
 	    self.node.type = type
 	    while self.nodestack:
 		if self.nodestack[-1].type > type:
-		    self.nodestack[-1].finalize ()
-		    self.nodestack[-1].flush ()
-		    del self.nodestack [-1]
+		    self.nodestack[-1].finalize()
+		    self.nodestack[-1].flush()
+		    del self.nodestack[-1]
 		elif self.nodestack[-1].type == type:
 		    if not self.nodestack[-1].next:
 			self.nodestack[-1].next = self.node.name
 		    if not self.node.prev:
 			self.node.prev = self.nodestack[-1].name
-		    self.nodestack[-1].finalize ()
-		    self.nodestack[-1].flush ()
-		    del self.nodestack [-1]
+		    self.nodestack[-1].finalize()
+		    self.nodestack[-1].flush()
+		    del self.nodestack[-1]
 		else:
 		    if type > 1 and not self.node.up:
 			self.node.up = self.nodestack[-1].name
@@ -872,14 +911,14 @@ class TexinfoParser:
 
     def do_chapter(self, args):
 	self.heading('H1', args, 0)
-	self.popstack (1)
+	self.popstack(1)
 
     def do_unnumbered(self, args):
 	self.heading('H1', args, -1)
-	self.popstack (1)
+	self.popstack(1)
     def do_appendix(self, args):
 	self.heading('H1', args, -1)
-	self.popstack (1)
+	self.popstack(1)
     def do_top(self, args):
 	self.heading('H1', args, -1)
     def do_chapheading(self, args):
@@ -889,39 +928,39 @@ class TexinfoParser:
 
     def do_section(self, args):
 	self.heading('H1', args, 1)
-	self.popstack (2)
+	self.popstack(2)
 
     def do_unnumberedsec(self, args):
 	self.heading('H1', args, -1)
-	self.popstack (2)
+	self.popstack(2)
     def do_appendixsec(self, args):
 	self.heading('H1', args, -1)
-	self.popstack (2)
+	self.popstack(2)
     do_appendixsection = do_appendixsec
     def do_heading(self, args):
 	self.heading('H1', args, -1)
 
     def do_subsection(self, args):
 	self.heading('H2', args, 2)
-	self.popstack (3)
+	self.popstack(3)
     def do_unnumberedsubsec(self, args):
 	self.heading('H2', args, -1)
-	self.popstack (3)
+	self.popstack(3)
     def do_appendixsubsec(self, args):
 	self.heading('H2', args, -1)
-	self.popstack (3)
+	self.popstack(3)
     def do_subheading(self, args):
 	self.heading('H2', args, -1)
 
     def do_subsubsection(self, args):
 	self.heading('H3', args, 3)
-	self.popstack (4)
+	self.popstack(4)
     def do_unnumberedsubsubsec(self, args):
 	self.heading('H3', args, -1)
-	self.popstack (4)
+	self.popstack(4)
     def do_appendixsubsubsec(self, args):
 	self.heading('H3', args, -1)
-	self.popstack (4)
+	self.popstack(4)
     def do_subsubheading(self, args):
 	self.heading('H3', args, -1)
 
@@ -939,7 +978,7 @@ class TexinfoParser:
 	self.write('<', type, '>')
 	self.expand(args)
 	self.write('</', type, '>\n')
-	if self.debugging:
+	if self.debugging or self.print_headers:
 	    print '---', args
 
     def do_contents(self, args):
@@ -987,24 +1026,19 @@ class TexinfoParser:
     # --- Line lay-out ---
 
     def do_sp(self, args):
-	# Insert <args> blank lines
-	if args:
-	    try:
-		n = string.atoi(args)
-	    except string.atoi_error:
-		n = 1
+	if self.nofill:
+	    self.write('\n')
 	else:
-	    n = 1
-	self.write('<P>\n'*max(n, 0))
+	    self.write('<P>\n')
 
     def do_hline(self, args):
-	self.write ('<HR>')
+	self.write('<HR>')
 
     # --- Function and variable definitions ---
 
     def bgn_deffn(self, args):
 	self.write('<DL>')
-	self.do_deffnx (args)
+	self.do_deffnx(args)
 
     def end_deffn(self):
 	self.write('</DL>\n')
@@ -1013,10 +1047,10 @@ class TexinfoParser:
 	self.write('<DT>')
 	words = splitwords(args, 2)
 	[category, name], rest = words[:2], words[2:]
-	self.expand('@b{' + name + '}')
+	self.expand('@b{%s}' % name)
 	for word in rest: self.expand(' ' + makevar(word))
-	self.expand(' -- ' + category)
-	self.write('<DD>\n')
+	#self.expand(' -- ' + category)
+	self.write('\n<DD>')
 	self.index('fn', name)
 
     def bgn_defun(self, args): self.bgn_deffn('Function ' + args)
@@ -1033,7 +1067,7 @@ class TexinfoParser:
 
     def bgn_defvr(self, args):
 	self.write('<DL>')
-	self.do_defvrx (args)
+	self.do_defvrx(args)
 
     end_defvr = end_deffn
 
@@ -1041,11 +1075,11 @@ class TexinfoParser:
 	self.write('<DT>')
 	words = splitwords(args, 2)
 	[category, name], rest = words[:2], words[2:]
-	self.expand('@code{' + name + '}')
+	self.expand('@code{%s}' % name)
 	# If there are too many arguments, show them
 	for word in rest: self.expand(' ' + word)
-	self.expand(' -- ' + category)
-	self.write('<DD>\n')
+	#self.expand(' -- ' + category)
+	self.write('\n<DD>')
 	self.index('vr', name)
 
     def bgn_defvar(self, args): self.bgn_defvr('Variable ' + args)
@@ -1060,7 +1094,7 @@ class TexinfoParser:
 
     def bgn_deftypefn(self, args):
 	self.write('<DL>')
-	self.do_deftypefnx (args)
+	self.do_deftypefnx(args)
 
     end_deftypefn = end_deffn
 
@@ -1068,10 +1102,10 @@ class TexinfoParser:
 	self.write('<DT>')
 	words = splitwords(args, 3)
 	[category, datatype, name], rest = words[:3], words[3:]
-	self.expand('@code{' + datatype + '} @b{' + name + '}')
+	self.expand('@code{%s} @b{%s}' % (datatype, name))
 	for word in rest: self.expand(' ' + makevar(word))
-	self.expand(' -- ' + category)
-	self.write('<DD>\n')
+	#self.expand(' -- ' + category)
+	self.write('\n<DD>')
 	self.index('fn', name)
 
 
@@ -1081,7 +1115,7 @@ class TexinfoParser:
 
     def bgn_deftypevr(self, args):
 	self.write('<DL>')
-	self.do_deftypevrx (args)
+	self.do_deftypevrx(args)
 
     end_deftypevr = end_deftypefn
 
@@ -1089,11 +1123,11 @@ class TexinfoParser:
 	self.write('<DT>')
 	words = splitwords(args, 3)
 	[category, datatype, name], rest = words[:3], words[3:]
-	self.expand('@code{' + datatype + '} @b{' + name + '}')
+	self.expand('@code{%s} @b{%s}' % (datatype, name))
 	# If there are too many arguments, show them
 	for word in rest: self.expand(' ' + word)
-	self.expand(' -- ' + category)
-	self.write('<DD>\n')
+	#self.expand(' -- ' + category)
+	self.write('\n<DD>')
 	self.index('fn', name)
 
     def bgn_deftypevar(self, args):
@@ -1114,12 +1148,12 @@ class TexinfoParser:
 	self.write('<DT>')
 	words = splitwords(args, 3)
 	[category, classname, name], rest = words[:3], words[3:]
-	self.expand('@b{' + name + '}')
+	self.expand('@b{%s}' % name)
 	# If there are too many arguments, show them
 	for word in rest: self.expand(' ' + word)
-	self.expand(' -- ' + category + ' of ' + classname)
-	self.write('<DD>\n')
-	self.index('vr', name + ' @r{of ' + classname + '}')
+	#self.expand(' -- %s of @code{%s}' % (category, classname))
+	self.write('\n<DD>')
+	self.index('vr', '%s @r{on %s}' % (name, classname))
 
     def bgn_defivar(self, args):
 	self.bgn_defcv('{Instance Variable} ' + args)
@@ -1129,7 +1163,7 @@ class TexinfoParser:
 
     def bgn_defop(self, args):
 	self.write('<DL>')
-	self.do_defopx (args)
+	self.do_defopx(args)
 
     end_defop = end_defcv
 
@@ -1137,11 +1171,11 @@ class TexinfoParser:
 	self.write('<DT>')
 	words = splitwords(args, 3)
 	[category, classname, name], rest = words[:3], words[3:]
-	self.expand('@b{' + name + '}')
+	self.expand('@b{%s}' % name)
 	for word in rest: self.expand(' ' + makevar(word))
-	self.expand(' -- ' + category + ' on ' + classname)
-	self.write('<DD>\n')
-	self.index('fn', name + ' @r{on ' + classname + '}')
+	#self.expand(' -- %s of @code{%s}' % (category, classname))
+	self.write('\n<DD>')
+	self.index('fn', '%s @r{on %s}' % (name, classname))
 
     def bgn_defmethod(self, args):
 	self.bgn_defop('Method ' + args)
@@ -1161,10 +1195,10 @@ class TexinfoParser:
 	self.write('<DT>')
 	words = splitwords(args, 2)
 	[category, name], rest = words[:2], words[2:]
-	self.expand('@b{' + name + '}')
+	self.expand('@b{%s}' % name)
 	for word in rest: self.expand(' ' + word)
-	self.expand(' -- ' + category)
-	self.write('<DD>\n')
+	#self.expand(' -- ' + category)
+	self.write('\n<DD>')
 	self.index('tp', name)
 
     # --- Making Lists and Tables
@@ -1218,7 +1252,7 @@ class TexinfoParser:
 	if self.stack and self.stack[-1] == 'table':
 	    self.write('<DT>')
 	    self.expand(args)
-	    self.write('<DD>')
+	    self.write('\n<DD>')
 	else:
 	    self.write('<LI>')
 	    self.expand(args)
@@ -1273,7 +1307,8 @@ class TexinfoParser:
     def bgn_menu(self, args):
 	self.write('<DIR>\n')
 	self.write('  <STRONG><EM>Menu</EM></STRONG><P>\n')
-    def end_menu(self): self.write('</DIR>\n')
+    def end_menu(self):
+	self.write('</DIR>\n')
 
     def bgn_cartouche(self, args): pass
     def end_cartouche(self): pass
@@ -1366,8 +1401,7 @@ class TexinfoParser:
 	    if iscodeindex: key = '@code{' + key + '}'
 	    if key != prevkey:
 		self.expand(key)
-	    self.write('<DD><A HREF="', makefile(node), \
-		       '">', node, '</A>\n')
+	    self.write('\n<DD><A HREF="%s">%s</A>\n' % (makefile(node), node))
 	    prevkey, prevnode = key, node
 	self.write('</DL>\n')
 
@@ -1380,6 +1414,45 @@ class TexinfoParser:
 	    cmds.sort()
 	    for cmd in cmds:
 		print string.ljust(cmd, 20), self.unknown[cmd]
+
+
+class TexinfoParserHTML3(TexinfoParser):
+
+    COPYRIGHT_SYMBOL = "&copy;"
+    FN_ID_PATTERN = "[%(id)s]"
+    FN_SOURCE_PATTERN = '<A ID=footnoteref%(id)s ' \
+			'HREF="#footnotetext%(id)s">' + FN_ID_PATTERN + '</A>'
+    FN_TARGET_PATTERN = '<FN ID=footnotetext%(id)s>\n' \
+			'<P><A HREF="#footnoteref%(id)s">' + FN_ID_PATTERN \
+			+ '</A>\n%(text)s</P></FN>\n'
+    FN_HEADER = '<DIV CLASS=footnotes>\n  <HR NOSHADE WIDTH=200>\n' \
+		'  <STRONG><EM>Footnotes</EM></STRONG>\n  <P>\n'
+
+    Node = HTML3Node
+
+    def bgn_quotation(self, args): self.write('<BQ>')
+    def end_quotation(self): self.write('</BQ>\n')
+
+    def bgn_example(self, args):
+	self.nofill = self.nofill + 1
+	self.write('<PRE CLASS=example>')
+
+    def bgn_flushleft(self, args):
+	self.nofill = self.nofill + 1
+	self.write('<PRE CLASS=flushleft>\n')
+
+    def bgn_flushright(self, args):
+	self.nofill = self.nofill + 1
+	self.write('<DIV ALIGN=right CLASS=flushright><ADDRESS COMPACT>\n')
+    def end_flushright(self):
+	self.write('</ADDRESS></DIV>\n')
+	self.nofill = self.nofill - 1
+
+    def bgn_menu(self, args):
+	self.write('<UL PLAIN CLASS=menu>\n')
+	self.write('  <LH>Menu</LH>\n')
+    def end_menu(self):
+	self.write('</UL>\n')
 
 
 # Put @var{} around alphabetic substrings
@@ -1463,16 +1536,35 @@ def increment(s):
 
 def test():
     import sys
-    parser = TexinfoParser()
+    debugging = 0
+    print_headers = 0
+    cont = 0
+    html3 = 0
+   
     while sys.argv[1:2] == ['-d']:
-	parser.debugging = parser.debugging + 1
+	debugging = debugging + 1
 	del sys.argv[1:2]
+    if sys.argv[1] == '-p':
+	print_headers = 1
+	del sys.argv[1]
     if sys.argv[1] == '-c':
-	parser.cont = 1
+	cont = 1
+	del sys.argv[1]
+    if sys.argv[1] == '-3':
+	html3 = 1
 	del sys.argv[1]
     if len(sys.argv) <> 3:
-	print 'usage: texi2html [-d] [-d] [-c] inputfile outputdirectory'
+	print 'usage: texi2html [-d [-d]] [-p] [-c] inputfile outputdirectory'
 	sys.exit(2)
+
+    if html3:
+	parser = TexinfoParserHTML3()
+    else:
+	parser = TexinfoParser()
+    parser.cont = cont
+    parser.debugging = debugging
+    parser.print_headers = print_headers
+
     file = sys.argv[1]
     parser.setdirname(sys.argv[2])
     if file == '-':
