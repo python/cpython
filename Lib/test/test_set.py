@@ -23,6 +23,9 @@ class TestJointOps(unittest.TestCase):
         self.s = self.thetype(word)
         self.d = dict.fromkeys(word)
 
+    def test_new_or_init(self):
+        self.assertRaises(TypeError, self.thetype, [], 2)
+
     def test_uniquification(self):
         actual = sorted(self.s)
         expected = sorted(self.d)
