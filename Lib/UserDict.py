@@ -26,3 +26,8 @@ class UserDict:
 	else:
 	    for k, v in other.items():
 		self.data[k] = v
+    def get(self, key, failobj=None):
+	if self.data.has_key(key):
+	    return self.data[key]
+	else:
+	    return failobj
