@@ -185,7 +185,7 @@ lookdict(dictobject *mp, PyObject *key, register long hash)
 		/* Cycle through GF(2^n)-{0} */
 		incr = incr << 1;
 		if (incr > mask)
-			incr ^= mp->ma_poly; /* This will implicitely clear
+			incr ^= mp->ma_poly; /* This will implicitly clear
 						the highest bit */
 	}
 }

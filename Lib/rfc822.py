@@ -193,7 +193,7 @@ class Message:
         
         You may override this method if your application wants
         to bend the rules, e.g. to strip trailing whitespace,
-        or to recognise MH template separators ('--------').
+        or to recognize MH template separators ('--------').
         For convenience (e.g. for code reading from sockets) a
         line consisting of \r\n also matches.                
         """

@@ -493,7 +493,7 @@ if ((options & ~PUBLIC_STUDY_OPTIONS) != 0)
 
 caseless = ((re->options | options) & PCRE_CASELESS) != 0;
 
-/* For an anchored pattern, or an unchored pattern that has a first char, or a
+/* For an anchored pattern, or an unanchored pattern that has a first char, or a
 multiline pattern that matches only at "line starts", no further processing at
 present. */
 
@@ -1636,8 +1636,8 @@ for (;; ptr++)
           *code++ = (repeat_min & 255);
           }
 
-        /* If the mininum is 1 and the previous item was a character string,
-        we either have to put back the item that got cancelled if the string
+        /* If the minimum is 1 and the previous item was a character string,
+        we either have to put back the item that got canceled if the string
         length was 1, or add the character back onto the end of a longer
         string. For a character type nothing need be done; it will just get
         put back naturally. Note that the final character is always going to
@@ -1649,7 +1649,7 @@ for (;; ptr++)
           }
 
         /*  For a single negated character we also have to put back the
-        item that got cancelled. */
+        item that got canceled. */
 
         else if (*previous == OP_NOT) code++;
 

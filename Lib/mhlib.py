@@ -627,7 +627,7 @@ class Folder:
                     pass
 
     def removefromallsequences(self, list):
-        """Remove one or more messages from all sequeuces (including last)
+        """Remove one or more messages from all sequences (including last)
         -- but not from 'cur'!!!"""
         if hasattr(self, 'last') and self.last in list:
             del self.last

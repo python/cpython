@@ -42,7 +42,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=0, generate=0,
          exclude=0, single=0, randomize=0):
     """Execute a test suite.
 
-    This also parses command-line options and modifies its behaviour
+    This also parses command-line options and modifies its behavior
     accordingly. 
 
     tests -- a list of strings containing test names (optional)

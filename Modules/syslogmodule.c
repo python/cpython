@@ -36,7 +36,7 @@ Revision history:
   - Changed arg parsing to use PyArg_ParseTuple.
   - Added PyErr_Clear() call(s) where needed.
   - Fix core dumps if user message contains format specifiers.
-  - Change openlog arg defaults to match normal syslog behaviour.
+  - Change openlog arg defaults to match normal syslog behavior.
   - Plug memory leak in openlog().
   - Fix setlogmask() to return previous mask value.
 

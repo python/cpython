@@ -44,7 +44,7 @@ extern DL_IMPORT(PyObject *) Py_VaBuildValue(char *, va_list);
 #define PYTHON_API_STRING "1009"
 /* The API version is maintained (independently from the Python version)
    so we can detect mismatches between the interpreter and dynamically
-   loaded modules.  These are diagnosticised by an error message but
+   loaded modules.  These are diagnosed by an error message but
    the module is still loaded (because the mismatch can only be tested
    after loading the module).  The error message is intended to
    explain the core dump a few seconds later.

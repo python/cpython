@@ -575,7 +575,7 @@ printssdfa(xx_nstates, xx_state, nbits, ll, msg)
    equivalent to another oner.  This is NOT Algorithm 3.3 from
    [Aho&Ullman 77].  It does not always finds the minimal DFA,
    but it does usually make a much smaller one...  (For an example
-   of sub-optimal behaviour, try S: x a b+ | y a b+.)
+   of sub-optimal behavior, try S: x a b+ | y a b+.)
 */
 
 static int

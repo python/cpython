@@ -58,7 +58,7 @@ def WriteTestData(root_key):
 def ReadTestData(root_key):
     # Check we can get default value for this key.
     val = QueryValue(root_key, test_key_name)
-    assert val=="Default value", "Registry didnt give back the correct value"
+    assert val=="Default value", "Registry didn't give back the correct value"
 
     key = OpenKey(root_key, test_key_name)
     # Read the sub-keys
@@ -70,9 +70,9 @@ def ReadTestData(root_key):
             data = EnumValue(sub_key, index)
         except EnvironmentError:
             break
-        assert data in test_data, "didnt read back the correct test data."
+        assert data in test_data, "Didn't read back the correct test data"
         index = index + 1
-    assert index==len(test_data), "Didnt read the correct number of items"
+    assert index==len(test_data), "Didn't read the correct number of items"
     # Check I can directly access each item
     for value_name, value_data, value_type in test_data:
         read_val, read_typ = QueryValueEx(sub_key, value_name)

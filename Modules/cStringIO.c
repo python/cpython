@@ -57,7 +57,7 @@ static char cStringIO_module_documentation[] =
 "This module provides a simple useful replacement for\n"
 "the StringIO module that is written in C.  It does not provide the\n"
 "full generality of StringIO, but it provides enough for most\n"
-"applications and is especially useful in conjuction with the\n"
+"applications and is especially useful in conjunction with the\n"
 "pickle module.\n"
 "\n"
 "Usage:\n"

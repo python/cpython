@@ -124,7 +124,7 @@ typedef struct match_state
 	/* Structure to encapsulate the stack. */
 	struct
 	{
-		/* index into the curent page.  If index == 0 and you need
+		/* index into the current page.  If index == 0 and you need
 		 * to pop an item, move to the previous page and set index
 		 * = STACK_PAGE_SIZE - 1.  Otherwise decrement index to
 		 * push a page. If index == STACK_PAGE_SIZE and you need

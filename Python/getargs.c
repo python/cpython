@@ -13,7 +13,7 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 /* XXX There are several unchecked sprintf or strcat calls in this file.
    XXX The only way these can become a danger is if some C code in the
    XXX Python source (or in an extension) uses ridiculously long names
-   XXX or riduculously deep nesting in format strings. */
+   XXX or ridiculously deep nesting in format strings. */
 
 #include "Python.h"
 

@@ -22,7 +22,7 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  * fine but a program with two threads using forms will probably crash (unless
  * the program takes precaution to ensure that only one thread can be in
  * this module at any time). This will have to be fixed some time.
- * (A fix will probably also have to synchronise with the gl module).
+ * (A fix will probably also have to synchronize with the gl module).
  */
 
 #include "Python.h"

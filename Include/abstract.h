@@ -695,7 +695,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
      DL_IMPORT(PyObject *) PySequence_Concat(PyObject *o1, PyObject *o2);
 
        /*
-	 Return the concatination of o1 and o2 on success, and NULL on
+	 Return the concatenation of o1 and o2 on success, and NULL on
 	 failure.   This is the equivalent of the Python
 	 expression: o1+o2.
 

@@ -71,7 +71,7 @@
 
 */
 
-/* Basic fuctions to manipulate cStringIO objects from C */
+/* Basic functions to manipulate cStringIO objects from C */
 
 static struct PycStringIO_CAPI {
   

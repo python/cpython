@@ -62,7 +62,7 @@ def main(use_rgbimg=1):
     image = imageop.grey2rgb(greyimage, width, height)
     
     # Convert a 8-bit deep greyscale image to a 1-bit deep image by
-    # tresholding all the pixels. The resulting image is tightly packed
+    # thresholding all the pixels. The resulting image is tightly packed
     # and is probably only useful as an argument to mono2grey. 
     if verbose:
         print 'grey2mono'

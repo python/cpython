@@ -1,7 +1,7 @@
 """Extension management for Windows.
 
 Under Windows it is unlikely the .obj files are of use, as special compiler options
-are needed (primarily to toggle the behaviour of "public" symbols.
+are needed (primarily to toggle the behavior of "public" symbols.
 
 I dont consider it worth parsing the MSVC makefiles for compiler options.  Even if
 we get it just right, a specific freeze application may have specific compiler

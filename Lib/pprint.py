@@ -4,7 +4,7 @@
 #  This is a simple little module I wrote to make life easier.  I didn't
 #  see anything quite like it in the library, though I may have overlooked
 #  something.  I wrote this when I was trying to read some heavily nested
-#  tuples with fairly non-descriptive content.  This is modelled very much
+#  tuples with fairly non-descriptive content.  This is modeled very much
 #  after Lisp/Scheme - style pretty-printing of lists.  If you find it
 #  useful, thank small children who sleep at night.
 

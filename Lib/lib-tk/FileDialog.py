@@ -36,7 +36,7 @@ class FileDialog:
     and pattern arguments, overriding the values passed in (it does
     not keep track of the default argument!).  If no key is specified,
     the dialog keeps no memory of previous state.  Note that memory is
-    kept even when the dialog is cancelled.  (All this emulates the
+    kept even when the dialog is canceled.  (All this emulates the
     behavior of the Macintosh file selection dialogs.)
 
     """

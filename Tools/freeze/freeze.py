@@ -54,7 +54,7 @@ Options:
               'console' (default), 'windows', 'service' or 'com_dll'
               
 -w:           Toggle Windows (NT or 95) behavior.
-              (For debugging only -- on a win32 platform, win32 behaviour
+              (For debugging only -- on a win32 platform, win32 behavior
               is automatic.)
 
 Arguments:

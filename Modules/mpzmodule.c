@@ -1635,8 +1635,8 @@ static const char mp_test_magic[MP_TEST_SIZE] = {'\xAA','\xAA','\xAA','\xAA'};
 static mp_test_error( location )
 	int *location;
 {
-	/* assumptions: *alloc returns address dividable by 4,
-	mpz_* routines allocate in chunks dividable by four */
+	/* assumptions: *alloc returns address divisible by 4,
+	mpz_* routines allocate in chunks divisible by four */
 	fprintf(stderr, "MP_TEST_ERROR: location holds 0x%08d\n", *location );
 	Py_FatalError("MP_TEST_ERROR");
 } /* static mp_test_error() */

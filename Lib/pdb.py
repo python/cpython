@@ -191,7 +191,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 					if bp:
 						bp.bpprint()
 			return
-		# parse arguments; comma has lowest precendence
+		# parse arguments; comma has lowest precedence
 		# and cannot occur in filename
 		filename = None
 		lineno = None

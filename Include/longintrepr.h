@@ -44,7 +44,7 @@ typedef BASE_TWODIGITS_TYPE stwodigits; /* signed variant of twodigits */
    In a normalized number, ob_digit[abs(ob_size)-1] (the most significant
    digit) is never zero.  Also, in all cases, for all valid i,
    	0 <= ob_digit[i] <= MASK.
-   The allocation fuction takes care of allocating extra memory
+   The allocation function takes care of allocating extra memory
    so that ob_digit[0] ... ob_digit[abs(ob_size)-1] are actually available. */
 
 struct _longobject {

@@ -92,7 +92,7 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  * That's it!
  *
  * Well, almost.  Once we have determined prefix and exec_prefix, the
- * preprocesor variable PYTHONPATH is used to construct a path.  Each
+ * preprocessor variable PYTHONPATH is used to construct a path.  Each
  * relative path on PYTHONPATH is prefixed with prefix.  Then the directory
  * containing the shared library modules is appended.  The environment
  * variable $PYTHONPATH is inserted in front of it all.  Finally, the

@@ -119,7 +119,7 @@ InitNotifier()
  *	None.
  *
  * Side effects:
- *	Clears the notifier intialization flag.
+ *	Clears the notifier initialization flag.
  *
  *----------------------------------------------------------------------
  */
@@ -202,7 +202,7 @@ Tcl_CreateEventSource(setupProc, checkProc, clientData)
  *	None.
  *
  * Side effects:
- *	The given event source is cancelled, so its procedure will
+ *	The given event source is canceled, so its procedure will
  *	never again be called.  If no such source exists, nothing
  *	happens.
  *

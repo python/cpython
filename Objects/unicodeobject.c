@@ -3198,7 +3198,7 @@ int PyUnicode_Compare(PyObject *left,
     if (v == NULL)
 	goto onError;
 
-    /* Shortcut for emtpy or interned objects */
+    /* Shortcut for empty or interned objects */
     if (v == u) {
 	Py_DECREF(u);
 	Py_DECREF(v);
@@ -3385,7 +3385,7 @@ unicode_expandtabs(PyUnicodeObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "|i:expandtabs", &tabsize))
 	return NULL;
 
-    /* First pass: determine size of ouput string */
+    /* First pass: determine size of output string */
     i = j = 0;
     e = self->str + self->length;
     for (p = self->str; p < e; p++)

@@ -337,7 +337,7 @@ do_cmp(PyObject *v, PyObject *w)
 
 PyObject *_PyCompareState_Key;
 
-/* _PyCompareState_nesting is incremented beforing call compare (for
+/* _PyCompareState_nesting is incremented before calling compare (for
    some types) and decremented on exit.  If the count exceeds the
    nesting limit, enable code to detect circular data structures.
 */

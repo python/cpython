@@ -20,7 +20,7 @@ for WORDSIZE in "BHil":
     if len(array.array(WORDSIZE, [0]).tostring()) == _sre.getcodesize():
         break
 else:
-    raise RuntimeError, "cannot find a useable array type"
+    raise RuntimeError, "cannot find a usable array type"
 
 def _compile(code, pattern, flags):
     # internal: compile a (sub)pattern

@@ -56,7 +56,7 @@ class Para:
 	#
 	# Tab to a given position (relative to the current left indent):
 	# remove all stretch, add fixed space up to the new indent.
-	# If the current position is already beying the tab stop,
+	# If the current position is already at the tab stop,
 	# don't add any new space (but still remove the stretch)
 	def tabto(self, tab):
 		total = 0

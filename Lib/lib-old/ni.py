@@ -64,7 +64,7 @@ assignments to sys.path).
 (2) A package's *import domain*, contained in the per-package variable
 __domain__, defines a list of *packages* that are searched (using
 their respective module search paths) to satisfy imports.  It is
-initialized to the list cosisting of the package itself, its parent
+initialized to the list consisting of the package itself, its parent
 package, its parent's parent, and so on, ending with the root package
 (the nameless package containing all top-level packages and modules,
 whose module search path is None, implying sys.path).

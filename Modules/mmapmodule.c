@@ -701,7 +701,7 @@ static PyTypeObject mmap_object_type = {
    a larger map size, there is no point because all the useful operations
    (len(), slicing(), sequence indexing) are limited by a C int.
 
-   Returns -1 on error, with an apprpriate Python exception raised. On
+   Returns -1 on error, with an appropriate Python exception raised. On
    success, the map size is returned. */
 static int
 _GetMapSize(PyObject *o)

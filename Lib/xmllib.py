@@ -143,7 +143,7 @@ class XMLParser:
         self.__seen_starttag = 0
         self.__use_namespaces = 0
         self.__namespaces = {'xml':None}   # xml is implicitly declared
-        # backward compatipibility hack: if elements not overridden,
+        # backward compatibility hack: if elements not overridden,
         # fill it in ourselves
         if self.elements is XMLParser.elements:
             self.__fixelements()

@@ -122,7 +122,7 @@ PyThread_type_lock PyThread_allocate_lock(void)
     PyThread_init_thread();
 
   DosCreateMutexSem(NULL,  /* Sem name      */
-                    &aLock, /* the semaphone */
+                    &aLock, /* the semaphore */
                     0,     /* shared ?      */
                     0);    /* initial state */  
 

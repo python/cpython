@@ -45,7 +45,7 @@ def usage():
 	print '-g bits       : greyscale (2, 4 or 8 bits)'
 	print '-G            : 2-bit greyscale dithered'
 	print '-m            : monochrome dithered'
-	print '-M value      : monochrome tresholded with value'
+	print '-M value      : monochrome thresholded with value'
 	print '-f            : Capture fields (instead of frames)'
 	print '-n number     : Capture this many frames (default 60)'
 	print '-N memsize    : Capture frames fitting in this many kbytes'

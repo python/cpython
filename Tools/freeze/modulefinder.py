@@ -25,7 +25,7 @@ IMPORT_FROM = dis.opname.index('IMPORT_FROM')
 # Modulefinder does a good job at simulating Python's, but it can not
 # handle __path__ modifications packages make at runtime.  Therefore there
 # is a mechanism whereby you can register extra paths in this map for a
-# package, and it will be honoured.
+# package, and it will be honored.
 
 # Note this is a mapping is lists of paths.
 packagePathMap = {}
@@ -365,7 +365,7 @@ class ModuleFinder:
         keys = self.badmodules.keys()
         keys.sort()
         for key in keys:
-            # ... but not if they were explicitely excluded.
+            # ... but not if they were explicitly excluded.
             if key not in self.excludes:
                 mods = self.badmodules[key].keys()
                 mods.sort()

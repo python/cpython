@@ -83,7 +83,7 @@ of FieldStorage (or MiniFieldStorage, depending on the form encoding).
 If the submitted form data contains more than one field with the same
 name, the object retrieved by form[key] is not a (Mini)FieldStorage
 instance but a list of such instances.  If you are expecting this
-possibility (i.e., when your HTML form comtains multiple fields with
+possibility (i.e., when your HTML form contains multiple fields with
 the same name), use the type() function to determine whether you have
 a single instance or a list of instances.  For example, here's code
 that concatenates any number of username fields, separated by commas:
@@ -106,7 +106,7 @@ that concatenates any number of username fields, separated by commas:
 If a field represents an uploaded file, the value attribute reads the 
 entire file in memory as a string.  This may not be what you want.  You can 
 test for an uploaded file by testing either the filename attribute or the 
-file attribute.  You can then read the data at leasure from the file 
+file attribute.  You can then read the data at leisure from the file 
 attribute:
 
         fileitem = form["userfile"]
@@ -500,7 +500,7 @@ def parse(fp=None, environ=os.environ, keep_blank_values=0, strict_parsing=0):
 
         keep_blank_values: flag indicating whether blank values in
             URL encoded forms should be treated as blank strings.  
-            A true value inicates that blanks should be retained as 
+            A true value indicates that blanks should be retained as 
             blank strings.  The default false value indicates that
             blank values are to be ignored and treated as if they were
             not included.
@@ -551,7 +551,7 @@ def parse_qs(qs, keep_blank_values=0, strict_parsing=0):
 
         keep_blank_values: flag indicating whether blank values in
             URL encoded queries should be treated as blank strings.  
-            A true value inicates that blanks should be retained as 
+            A true value indicates that blanks should be retained as 
             blank strings.  The default false value indicates that
             blank values are to be ignored and treated as if they were
             not included.
@@ -578,7 +578,7 @@ def parse_qsl(qs, keep_blank_values=0, strict_parsing=0):
 
         keep_blank_values: flag indicating whether blank values in
             URL encoded queries should be treated as blank strings.  
-            A true value inicates that blanks should be retained as 
+            A true value indicates that blanks should be retained as 
             blank strings.  The default false value indicates that
             blank values are to be ignored and treated as if they were
             not included.
@@ -806,7 +806,7 @@ class FieldStorage:
 
         keep_blank_values: flag indicating whether blank values in
             URL encoded forms should be treated as blank strings.  
-            A true value inicates that blanks should be retained as 
+            A true value indicates that blanks should be retained as 
             blank strings.  The default false value indicates that
             blank values are to be ignored and treated as if they were
             not included.

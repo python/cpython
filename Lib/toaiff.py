@@ -76,7 +76,7 @@ def _toaiff(filename, temps):
 		temps.append(fname)
 		sts = uncompress.copy(filename, fname)
 		if sts:
-			raise error, filename + ': uncomress failed'
+			raise error, filename + ': uncompress failed'
 	else:
 		fname = filename
 	try:

@@ -218,7 +218,7 @@ def execvp(file, args):
 
     Execute the executable file (which is searched for along $PATH)
     with argument list args, replacing the current process.
-    args may be a list or tupe of strings. """
+    args may be a list or tuple of strings. """
     _execvpe(file, args)
 
 def execvpe(file, args, env):
@@ -227,7 +227,7 @@ def execvpe(file, args, env):
     Execute the executable file (which is searched for along $PATH)
     with argument list args and environment env , replacing the
     current process.
-    args may be a list or tupe of strings. """    
+    args may be a list or tuple of strings. """    
     _execvpe(file, args, env)
 
 _notfound = None

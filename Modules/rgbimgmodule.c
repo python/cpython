@@ -553,7 +553,7 @@ expandrow(unsigned char *optr, unsigned char *iptr, int z)
  *	represents one pixel.  xsize and ysize specify the dimensions of
  *	the pixel array.  zsize specifies what kind of image file to
  *	write out.  if zsize is 1, the luminance of the pixels are
- *	calculated, and a sinlge channel black and white image is saved.
+ *	calculated, and a single channel black and white image is saved.
  *	If zsize is 3, an RGB image file is saved.  If zsize is 4, an
  *	RGBA image file is saved.
  *

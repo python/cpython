@@ -456,7 +456,7 @@ class HTTPRedirectHandler(BaseHandler):
     http_error_301 = http_error_302
 
     inf_msg = "The HTTP server returned a redirect error that would" \
-              "lead to an inifinte loop.\n" \
+              "lead to an infinite loop.\n" \
               "The last 302 error message was:\n"
 
 class ProxyHandler(BaseHandler):
