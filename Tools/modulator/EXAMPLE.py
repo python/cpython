@@ -3,6 +3,9 @@
 #
 # You may also have to strip some imports out of modulator to make
 # it work.
+
+import genmodule
+
 #
 # Generate code for a simple object with a method called sample
 
@@ -44,3 +47,7 @@ m.name = 'sample'
 m.abbrev = 'sample'
 m.methodlist = ['newsimple', 'newnumberish', 'newott']
 m.objects = [o, o2, o3]
+
+fp = open('EXAMPLEmodule.c', 'w')
+genmodule.write(fp, m)
+fp.close()
