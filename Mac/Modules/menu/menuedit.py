@@ -3,6 +3,10 @@ f = Function(void, 'OpenDeskAcc',
 )
 functions.append(f)
 
+f = Function(MenuHandle, 'as_Menu',
+	(Handle, 'h', InMode))
+functions.append(f)
+
 as_resource_body = """
 return ResObj_New((Handle)_self->ob_itself);
 """

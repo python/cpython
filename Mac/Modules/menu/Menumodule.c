@@ -47,6 +47,8 @@ extern PyObject *WinObj_WhichWindow(WindowPtr);
 
 #define resNotFound -192 /* Can't include <Errors.h> because of Python's "errors.h" */
 
+#define as_Menu(h) ((MenuHandle)h)
+
 static PyObject *Menu_Error;
 
 /* ------------------------ Object type Menu ------------------------ */
@@ -1455,6 +1457,22 @@ static PyObject *Menu_OpenDeskAcc(_self, _args)
 	return _res;
 }
 
+static PyObject *Menu_as_Menu(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	MenuHandle _rv;
+	Handle h;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      ResObj_Convert, &h))
+		return NULL;
+	_rv = as_Menu(h);
+	_res = Py_BuildValue("O&",
+	                     MenuObj_New, _rv);
+	return _res;
+}
+
 static PyObject *Menu_GetMenu(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
@@ -1548,6 +1566,8 @@ static PyMethodDef Menu_methods[] = {
 	 "(EventRecord inEvent) -> (UInt32 _rv)"},
 	{"OpenDeskAcc", (PyCFunction)Menu_OpenDeskAcc, 1,
 	 "(Str255 name) -> None"},
+	{"as_Menu", (PyCFunction)Menu_as_Menu, 1,
+	 "(Handle h) -> (MenuHandle _rv)"},
 	{"GetMenu", (PyCFunction)Menu_GetMenu, 1,
 	 "(short resourceID) -> (MenuHandle _rv)"},
 	{"DeleteMenu", (PyCFunction)Menu_DeleteMenu, 1,
