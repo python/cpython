@@ -237,7 +237,7 @@ def Semaphore(*args, **kwargs):
 
 class _Semaphore(_Verbose):
 
-    # After Tim Peters' semaphore class, but bnot quite the same (no maximum)
+    # After Tim Peters' semaphore class, but not quite the same (no maximum)
 
     def __init__(self, value=1, verbose=None):
         assert value >= 0, "Semaphore initial value must be >= 0"
