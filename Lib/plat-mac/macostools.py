@@ -66,6 +66,8 @@ def mkdirs(dst):
 def touched(dst):
     """Tell the finder a file has changed. No-op on MacOSX."""
     if sys.platform != 'mac': return
+    import warnings
+    warnings.filterwarnings("ignore", "macfs.*", DeprecationWarning, __name__)
     import macfs
     file_fss = macfs.FSSpec(dst)
     vRefNum, dirID, name = file_fss.as_tuple()
