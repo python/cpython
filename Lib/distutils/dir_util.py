@@ -193,9 +193,11 @@ def _build_cmdtuple(path, cmdtuples):
 
 def remove_tree (directory, verbose=0, dry_run=0):
     """Recursively remove an entire directory tree.  Any errors are ignored
-       (apart from being reported to stdout if 'verbose' is true)."""
-
+    (apart from being reported to stdout if 'verbose' is true).
+    """
+    from distutils.util import grok_environment_error
     global PATH_CREATED
+
     if verbose:
         print "removing '%s' (and everything under it)" % directory
     if dry_run:
@@ -210,8 +212,5 @@ def remove_tree (directory, verbose=0, dry_run=0):
                 del PATH_CREATED[cmd[1]]
         except (IOError, OSError), exc:
             if verbose:
-                if exc.filename:
-                    print "error removing %s: %s (%s)" % \
-                       (directory, exc.strerror, exc.filename)
-                else:
-                    print "error removing %s: %s" % (directory, exc.strerror)
+                print grok_environment_error(
+                    exc, "error removing %s: " % directory)
