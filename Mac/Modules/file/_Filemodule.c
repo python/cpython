@@ -1840,7 +1840,26 @@ static PyObject *FSRef_as_pathname(FSRefObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 
+#if TARGET_API_MAC_OSX
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
 	_res = FSRef_FSRefMakePath(_self, _args);
+#else
+	char strbuf[1024];
+	OSErr err;
+	FSSpec fss;
+
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	if ( !PyMac_GetFSSpec((PyObject *)_self, &fss))
+		return NULL;
+	err = PyMac_GetFullPathname(&fss, strbuf, sizeof(strbuf));
+	if ( err ) {
+		PyMac_Error(err);
+		return NULL;
+	}
+	_res = PyString_FromString(strbuf);
+#endif
 	return _res;
 
 }
@@ -3190,6 +3209,7 @@ int
 PyMac_GetFSRef(PyObject *v, FSRef *fsr)
 {
 	OSStatus err;
+	FSSpec fss;
 	
 	if (FSRef_Check(v)) {
 		*fsr = ((FSRefObject *)v)->ob_itself;
@@ -3208,8 +3228,13 @@ PyMac_GetFSRef(PyObject *v, FSRef *fsr)
 	/* XXXX Should try unicode here too */
 #endif
 	/* Otherwise we try to go via an FSSpec */
+#if TARGET_API_MAC_OSX
 	if (FSSpec_Check(v)) {
-		if ((err=FSpMakeFSRef(&((FSSpecObject *)v)->ob_itself, fsr)) == 0)
+		fss = ((FSSpecObject *)v)->ob_itself;
+#else
+	if (PyMac_GetFSSpec(v, &fss)) {
+#endif
+		if ((err=FSpMakeFSRef(&fss, fsr)) == 0)
 			return 1;
 		PyMac_Error(err);
 		return 0;

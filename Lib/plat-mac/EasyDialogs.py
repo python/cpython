@@ -34,6 +34,7 @@ from Carbon.ControlAccessor import *	# Also import Controls constants
 import Carbon.File
 import macresource
 import os
+import sys
 
 __all__ = ['Message', 'AskString', 'AskPassword', 'AskYesNoCancel',
 	'GetArgv', 'AskFileForOpen', 'AskFileForSave', 'AskFolder',
@@ -635,9 +636,9 @@ def AskFileForOpen(
 	if issubclass(tpwanted, Carbon.File.FSSpec):
 		return tpwanted(rr.selection[0])
 	if issubclass(tpwanted, str):
-		return tpwanted(rr.selection_fsr[0].FSRefMakePath())
+		return tpwanted(rr.selection_fsr[0].as_pathname())
 	if issubclass(tpwanted, unicode):
-		return tpwanted(rr.selection_fsr[0].FSRefMakePath(), 'utf8')
+		return tpwanted(rr.selection_fsr[0].as_pathname(), 'utf8')
 	raise TypeError, "Unknown value for argument 'wanted': %s" % repr(tpwanted)
 
 def AskFileForSave(
@@ -686,13 +687,16 @@ def AskFileForSave(
 	if issubclass(tpwanted, Carbon.File.FSSpec):
 		return tpwanted(rr.selection[0])
 	if issubclass(tpwanted, (str, unicode)):
-		# This is gross, and probably incorrect too
-		vrefnum, dirid, name = rr.selection[0].as_tuple()
-		pardir_fss = Carbon.File.FSSpec((vrefnum, dirid, ''))
-		pardir_fsr = Carbon.File.FSRef(pardir_fss)
-		pardir_path = pardir_fsr.FSRefMakePath()  # This is utf-8
-		name_utf8 = unicode(name, 'macroman').encode('utf8')
-		fullpath = os.path.join(pardir_path, name_utf8)
+		if sys.platform == 'mac':
+			fullpath = rr.selection[0].as_pathname()
+		else:
+			# This is gross, and probably incorrect too
+			vrefnum, dirid, name = rr.selection[0].as_tuple()
+			pardir_fss = Carbon.File.FSSpec((vrefnum, dirid, ''))
+			pardir_fsr = Carbon.File.FSRef(pardir_fss)
+			pardir_path = pardir_fsr.FSRefMakePath()  # This is utf-8
+			name_utf8 = unicode(name, 'macroman').encode('utf8')
+			fullpath = os.path.join(pardir_path, name_utf8)
 		if issubclass(tpwanted, unicode):
 			return unicode(fullpath, 'utf8')
 		return tpwanted(fullpath)
@@ -741,14 +745,14 @@ def AskFolder(
 	if issubclass(tpwanted, Carbon.File.FSSpec):
 		return tpwanted(rr.selection[0])
 	if issubclass(tpwanted, str):
-		return tpwanted(rr.selection_fsr[0].FSRefMakePath())
+		return tpwanted(rr.selection_fsr[0].as_pathname())
 	if issubclass(tpwanted, unicode):
-		return tpwanted(rr.selection_fsr[0].FSRefMakePath(), 'utf8')
+		return tpwanted(rr.selection_fsr[0].as_pathname(), 'utf8')
 	raise TypeError, "Unknown value for argument 'wanted': %s" % repr(tpwanted)
 	
 
 def test():
-	import time, sys, macfs
+	import time, macfs
 
 	Message("Testing EasyDialogs.")
 	optionlist = (('v', 'Verbose'), ('verbose', 'Verbose as long option'), 
