@@ -474,6 +474,57 @@ IndexError: pop from an empty deque
 >>> d
 deque(['c', 'b', 'a'])
 
+
+
+
+>>> def delete_nth(d, n):
+...     "del d[n]"
+...     d.rotate(-n)
+...     d.popleft()
+...     d.rotate(n)
+...
+>>> d = deque('abcdef')
+>>> delete_nth(d, 2)   # remove the entry at d[2]
+>>> d
+deque(['a', 'b', 'd', 'e', 'f'])
+
+
+
+>>> def roundrobin(*iterables):
+...     pending = deque(iter(i) for i in iterables)
+...     while pending:
+...         task = pending.popleft()
+...         try:
+...             yield task.next()
+...         except StopIteration:
+...             continue
+...         pending.append(task)
+...
+
+>>> for value in roundrobin('abc', 'd', 'efgh'):
+...     print value
+...
+a
+d
+e
+b
+f
+c
+g
+h
+
+
+>>> def maketree(iterable):
+...     d = deque(iterable)
+...     while len(d) > 1:
+...         pair = [d.popleft(), d.popleft()]
+...         d.append(pair)
+...     return list(d)
+...
+>>> print maketree('abcdefgh')
+[[[['a', 'b'], ['c', 'd']], [['e', 'f'], ['g', 'h']]]]
+
+
 """
 
 
