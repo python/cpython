@@ -265,6 +265,7 @@ OBJECT_OBJS=	\
 		Objects/stringobject.o \
 		Objects/tupleobject.o \
 		Objects/typeobject.o \
+		Objects/weakrefobject.o \
 		$(UNICODE_OBJS)
 
 
@@ -470,6 +471,7 @@ PYTHON_HEADERS= \
 		Include/traceback.h \
 		Include/tupleobject.h \
 		Include/unicodeobject.h \
+		Include/weakrefobject.h \
 		pyconfig.h
 
 $(LIBRARY_OBJS) $(MODOBJS) Modules/$(MAINOBJ): $(PYTHON_HEADERS)
