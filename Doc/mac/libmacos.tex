@@ -14,10 +14,20 @@ Note the capitalization of the module name; this is a historical
 artifact.
 
 \begin{datadesc}{runtimemodel}
-Either \code{'ppc'}, \code{'carbon'} or \code{'macho'}.  This
-signifies whether this Python uses the classic (InterfaceLib style)
-runtime model, the Mac OS X compatible CarbonLib style or the Mac OS
-X-only Mach-O style.
+Either\code{'carbon'} or \code{'macho'}.  This
+signifies whether this Python uses the Mac OS X and Mac OS 9 compatible 
+CarbonLib style or the Mac OS
+X-only Mach-O style. In earlier versions of Python  the value could
+also be \code{'ppc'} for the classic Mac OS 8 runtime model.
+\end{datadesc}
+
+\begin{datadesc}{linkmodel}
+The way the interpreter has been linked. As extension modules may be
+incompatible between linking models, packages could use this information to give
+more decent error messages. The value is one of \code{'static'} for a
+statically linked Python, \code{'framework'} for Python in a Mac OS X framework,
+\code{'shared'} for Python in a standard unix shared library and
+\code{'cfm'} for the Mac OS 9-compatible Python.
 \end{datadesc}
 
 \begin{excdesc}{Error}
@@ -135,4 +145,16 @@ Open the resource fork of a file. Arguments are the same as for the
 built-in function \function{open()}. The object returned has file-like
 semantics, but it is not a Python file object, so there may be subtle
 differences.
+\end{funcdesc}
+
+\begin{funcdesc}{WMAvailable}{}
+Checks wether the current process has access to the window manager.
+The method will return \code{False} if the window manager is not available,
+for instance when running on Mac OS X Server or when logged in via ssh,
+or when the current interpreter is not running from a fullblown application
+bundle. A script runs from an application bundle either when it has been
+started with \program{pythonw} in stead of \program{python} or when running 
+as an applet.
+
+On Mac OS 9 the method always returns \code{True}.
 \end{funcdesc}
