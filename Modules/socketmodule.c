@@ -331,7 +331,7 @@ const char *inet_ntop(int af, const void *src, char *dst, socklen_t size);
 #define _BT_L2_MEMB(sa, memb) ((sa)->l2cap_##memb)
 #define _BT_RC_MEMB(sa, memb) ((sa)->rfcomm_##memb)
 #else
-#define _BT_SOCKADDRMEMB(s, proto) (&((s)->sock_addr).bt_##proto)
+#define _BT_SOCKADDR_MEMB(s, proto) (&((s)->sock_addr).bt_##proto)
 #define _BT_L2_MEMB(sa, memb) ((sa)->l2_##memb)
 #define _BT_RC_MEMB(sa, memb) ((sa)->rc_##memb)
 #define _BT_SCO_MEMB(sa, memb) ((sa)->sco_##memb)
