@@ -127,6 +127,10 @@ Library
   that cooperate with the functions of the same name in the sys
   module.  A function registered with the threading module will
   be used for all threads it creates.
+  XXX Somebody forget to check these in to threading.py, although
+  XXX some other library modules call them.  This will be repaired
+  XXX before the final release.  For now, dummy settrace() and
+  XXX setprofile() functions have been added to threading.py.
 
 - copy.py: applied SF patch 707900, fixing bug 702858, by Steven
   Taschuk.  Copying a new-style class that had a reference to itself

@@ -14,7 +14,8 @@ from traceback import print_exc as _print_exc
 
 # Rename some stuff so "from threading import *" is safe
 __all__ = ['activeCount', 'Condition', 'currentThread', 'enumerate', 'Event',
-           'Lock', 'RLock', 'Semaphore', 'BoundedSemaphore', 'Thread', 'Timer']
+           'Lock', 'RLock', 'Semaphore', 'BoundedSemaphore', 'Thread',
+           'Timer', 'setprofile', 'settrace']
 
 _start_new_thread = thread.start_new_thread
 _allocate_lock = thread.allocate_lock
@@ -600,6 +601,13 @@ def enumerate():
     _active_limbo_lock.release()
     return active
 
+# XXX This needs a real defintion.
+def settrace(tracefunc):
+    pass
+
+# XXX This needs a real defintion.
+def setprofile(dispatchfunc):
+    pass
 
 # Create the main thread object
 
