@@ -57,7 +57,7 @@ class install_lib (Command):
         outfiles = self.install()
 
         # (Optionally) compile .py to .pyc
-        if outfiles is not None:
+        if outfiles is not None and self.distribution.has_pure_modules():
             self.bytecompile(outfiles)
 
     # run ()
