@@ -208,8 +208,8 @@ def _siftdown(heap, startpos, pos):
 # heappop() a lot, in accord with theory.  Here are typical results from 3
 # runs (3 just to demonstrate how small the variance is):
 #
-# Compares needed by heapify     Compares needed by 1000 heapppops
-# --------------------------     ---------------------------------
+# Compares needed by heapify     Compares needed by 1000 heappops
+# --------------------------     --------------------------------
 # 1837 cut to 1663               14996 cut to 8680
 # 1855 cut to 1659               14966 cut to 8678
 # 1847 cut to 1660               15024 cut to 8703
