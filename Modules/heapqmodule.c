@@ -1,0 +1,357 @@
+/* Drop in replacement for heapq.py 
+
+C implementation derived directly from heapq.py in Py2.3
+which was written by Kevin O'Connor, augmented by Tim Peters,
+annotated by François Pinard, and converted to C by Raymond Hettinger.
+
+*/
+
+#include "Python.h"
+
+int
+_siftdown(PyListObject *heap, int startpos, int pos)
+{
+	PyObject *newitem, *parent;
+	int cmp, parentpos;
+
+	if (pos >= PyList_GET_SIZE(heap)) {
+		PyErr_SetString(PyExc_IndexError, "index out of range");
+		return -1;
+	}
+
+	newitem = PyList_GET_ITEM(heap, pos);
+	Py_INCREF(newitem);
+	/* Follow the path to the root, moving parents down until finding
+	   a place newitem fits. */
+	while (pos > startpos){
+		parentpos = (pos - 1) >> 1;
+		parent = PyList_GET_ITEM(heap, parentpos);
+		cmp = PyObject_RichCompareBool(parent, newitem, Py_LE);
+		if (cmp == -1)
+			return -1;
+		if (cmp == 1)
+			break;
+		Py_INCREF(parent);
+		Py_DECREF(PyList_GET_ITEM(heap, pos));
+		PyList_SET_ITEM(heap, pos, parent);
+		pos = parentpos;
+	}
+	Py_DECREF(PyList_GET_ITEM(heap, pos));
+	PyList_SET_ITEM(heap, pos, newitem);
+	return 0;
+}
+
+int
+_siftup(PyListObject *heap, int pos)
+{
+	int startpos, endpos, childpos, rightpos;
+	int cmp;
+	PyObject *newitem, *tmp;
+
+	endpos = PyList_GET_SIZE(heap);
+	startpos = pos;
+	if (pos >= endpos) {
+		PyErr_SetString(PyExc_IndexError, "index out of range");
+		return -1;
+	}
+	newitem = PyList_GET_ITEM(heap, pos);
+	Py_INCREF(newitem);
+
+	/* Bubble up the smaller child until hitting a leaf. */
+	childpos = 2*pos + 1;    /* leftmost child position  */
+	while (childpos < endpos) {
+		/* Set childpos to index of smaller child.   */
+		rightpos = childpos + 1;
+		if (rightpos < endpos) {
+			cmp = PyObject_RichCompareBool(
+				PyList_GET_ITEM(heap, rightpos),
+				PyList_GET_ITEM(heap, childpos),
+				Py_LE);
+			if (cmp == -1)
+				return -1;
+			if (cmp == 1)
+				childpos = rightpos;
+		}
+		/* Move the smaller child up. */
+		tmp = PyList_GET_ITEM(heap, childpos);
+		Py_INCREF(tmp);
+		Py_DECREF(PyList_GET_ITEM(heap, pos));
+		PyList_SET_ITEM(heap, pos, tmp);
+		pos = childpos;
+		childpos = 2*pos + 1;
+	}
+
+	/* The leaf at pos is empty now.  Put newitem there, and and bubble
+	   it up to its final resting place (by sifting its parents down). */
+	Py_DECREF(PyList_GET_ITEM(heap, pos));
+	PyList_SET_ITEM(heap, pos, newitem);
+	return _siftdown(heap, startpos, pos);
+}
+
+PyObject *
+heappush(PyObject *self, PyObject *args)
+{
+	PyObject *heap, *item;
+
+	if (!PyArg_UnpackTuple(args, "heappush", 2, 2, &heap, &item))
+		return NULL;
+
+	if (!PyList_Check(heap)) {
+		PyErr_SetString(PyExc_ValueError, "heap argument must be a list");
+		return NULL;
+	}
+
+	if (PyList_Append(heap, item) == -1)
+		return NULL;
+
+	if (_siftdown((PyListObject *)heap, 0, PyList_GET_SIZE(heap)-1) == -1)
+		return NULL;
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
+PyDoc_STRVAR(heappush_doc,
+"Push item onto heap, maintaining the heap invariant.");
+
+PyObject *
+heappop(PyObject *self, PyObject *heap)
+{
+	PyObject *lastelt, *returnitem;
+	int n;
+
+	/* # raises appropriate IndexError if heap is empty */
+	n = PyList_GET_SIZE(heap);
+	if (n == 0) {
+		PyErr_SetString(PyExc_IndexError, "index out of range");
+		return NULL;
+	}
+
+	lastelt = PyList_GET_ITEM(heap, n-1) ;
+	Py_INCREF(lastelt);
+	PyList_SetSlice(heap, n-1, n, NULL);
+	n--;
+
+	if (!n) 
+		return lastelt;
+	returnitem = PyList_GET_ITEM(heap, 0);
+	PyList_SET_ITEM(heap, 0, lastelt);
+	if (_siftup((PyListObject *)heap, 0) == -1) {
+		Py_DECREF(returnitem);
+		return NULL;
+	}
+	return returnitem;
+}
+
+PyDoc_STRVAR(heappop_doc,
+"Pop the smallest item off the heap, maintaining the heap invariant.");
+
+PyObject *
+heapreplace(PyObject *self, PyObject *args)
+{
+	PyObject *heap, *item, *returnitem;
+
+	if (!PyArg_UnpackTuple(args, "heapreplace", 2, 2, &heap, &item))
+		return NULL;
+
+	if (!PyList_Check(heap)) {
+		PyErr_SetString(PyExc_ValueError, "heap argument must be a list");
+		return NULL;
+	}
+
+	if (PyList_GET_SIZE(heap) < 1) {
+		PyErr_SetString(PyExc_IndexError, "index out of range");
+		return NULL;
+	}
+
+	returnitem = PyList_GET_ITEM(heap, 0);
+	Py_INCREF(item);
+	PyList_SET_ITEM(heap, 0, item);
+	if (_siftup((PyListObject *)heap, 0) == -1) {
+		Py_DECREF(returnitem);
+		return NULL;
+	}
+	return returnitem;
+}
+
+PyDoc_STRVAR(heapreplace_doc,
+"Pop and return the current smallest value, and add the new item.\n\
+\n\
+This is more efficient than heappop() followed by heappush(), and can be\n\
+more appropriate when using a fixed-size heap.  Note that the value\n\
+returned may be larger than item!  That constrains reasonable uses of\n\
+this routine.\n");
+
+PyObject *
+heapify(PyObject *self, PyObject *heap)
+{
+	int i, n;
+
+	if (!PyList_Check(heap)) {
+		PyErr_SetString(PyExc_ValueError, "heap argument must be a list");
+		return NULL;
+	}
+
+	n = PyList_GET_SIZE(heap);
+	/* Transform bottom-up.  The largest index there's any point to
+	   looking at is the largest with a child index in-range, so must
+	   have 2*i + 1 < n, or i < (n-1)/2.  If n is even = 2*j, this is
+	   (2*j-1)/2 = j-1/2 so j-1 is the largest, which is n//2 - 1.  If
+	   n is odd = 2*j+1, this is (2*j+1-1)/2 = j so j-1 is the largest,
+	   and that's again n//2-1.
+	*/
+	for (i=n/2-1 ; i>=0 ; i--)
+		if(_siftup((PyListObject *)heap, i) == -1)
+			return NULL;
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
+PyDoc_STRVAR(heapify_doc,
+"Transform list into a heap, in-place, in O(len(heap)) time.");
+
+static PyMethodDef heapq_methods[] = {
+	{"heappush",	(PyCFunction)heappush,		
+		METH_VARARGS,	heappush_doc},
+	{"heappop",	(PyCFunction)heappop,
+		METH_O,		heappop_doc},
+	{"heapreplace",	(PyCFunction)heapreplace,
+		METH_VARARGS,	heapreplace_doc},
+	{"heapify",	(PyCFunction)heapify,
+		METH_O,		heapify_doc},
+	{NULL,		NULL}		/* sentinel */
+};
+
+PyDoc_STRVAR(module_doc,
+"Heap queue algorithm (a.k.a. priority queue).\n\
+\n\
+Heaps are arrays for which a[k] <= a[2*k+1] and a[k] <= a[2*k+2] for\n\
+all k, counting elements from 0.  For the sake of comparison,\n\
+non-existing elements are considered to be infinite.  The interesting\n\
+property of a heap is that a[0] is always its smallest element.\n\
+\n\
+Usage:\n\
+\n\
+heap = []            # creates an empty heap\n\
+heappush(heap, item) # pushes a new item on the heap\n\
+item = heappop(heap) # pops the smallest item from the heap\n\
+item = heap[0]       # smallest item on the heap without popping it\n\
+heapify(x)           # transforms list into a heap, in-place, in linear time\n\
+item = heapreplace(heap, item) # pops and returns smallest item, and adds\n\
+                               # new item; the heap size is unchanged\n\
+\n\
+Our API differs from textbook heap algorithms as follows:\n\
+\n\
+- We use 0-based indexing.  This makes the relationship between the\n\
+  index for a node and the indexes for its children slightly less\n\
+  obvious, but is more suitable since Python uses 0-based indexing.\n\
+\n\
+- Our heappop() method returns the smallest item, not the largest.\n\
+\n\
+These two make it possible to view the heap as a regular Python list\n\
+without surprises: heap[0] is the smallest item, and heap.sort()\n\
+maintains the heap invariant!\n");
+
+
+PyDoc_STRVAR(__about__,
+"Heap queues\n\
+\n\
+[explanation by François Pinard]\n\
+\n\
+Heaps are arrays for which a[k] <= a[2*k+1] and a[k] <= a[2*k+2] for\n\
+all k, counting elements from 0.  For the sake of comparison,\n\
+non-existing elements are considered to be infinite.  The interesting\n\
+property of a heap is that a[0] is always its smallest element.\n"
+"\n\
+The strange invariant above is meant to be an efficient memory\n\
+representation for a tournament.  The numbers below are `k', not a[k]:\n\
+\n\
+                                   0\n\
+\n\
+                  1                                 2\n\
+\n\
+          3               4                5               6\n\
+\n\
+      7       8       9       10      11      12      13      14\n\
+\n\
+    15 16   17 18   19 20   21 22   23 24   25 26   27 28   29 30\n\
+\n\
+\n\
+In the tree above, each cell `k' is topping `2*k+1' and `2*k+2'.  In\n\
+an usual binary tournament we see in sports, each cell is the winner\n\
+over the two cells it tops, and we can trace the winner down the tree\n\
+to see all opponents s/he had.  However, in many computer applications\n\
+of such tournaments, we do not need to trace the history of a winner.\n\
+To be more memory efficient, when a winner is promoted, we try to\n\
+replace it by something else at a lower level, and the rule becomes\n\
+that a cell and the two cells it tops contain three different items,\n\
+but the top cell \"wins\" over the two topped cells.\n"
+"\n\
+If this heap invariant is protected at all time, index 0 is clearly\n\
+the overall winner.  The simplest algorithmic way to remove it and\n\
+find the \"next\" winner is to move some loser (let's say cell 30 in the\n\
+diagram above) into the 0 position, and then percolate this new 0 down\n\
+the tree, exchanging values, until the invariant is re-established.\n\
+This is clearly logarithmic on the total number of items in the tree.\n\
+By iterating over all items, you get an O(n ln n) sort.\n"
+"\n\
+A nice feature of this sort is that you can efficiently insert new\n\
+items while the sort is going on, provided that the inserted items are\n\
+not \"better\" than the last 0'th element you extracted.  This is\n\
+especially useful in simulation contexts, where the tree holds all\n\
+incoming events, and the \"win\" condition means the smallest scheduled\n\
+time.  When an event schedule other events for execution, they are\n\
+scheduled into the future, so they can easily go into the heap.  So, a\n\
+heap is a good structure for implementing schedulers (this is what I\n\
+used for my MIDI sequencer :-).\n"
+"\n\
+Various structures for implementing schedulers have been extensively\n\
+studied, and heaps are good for this, as they are reasonably speedy,\n\
+the speed is almost constant, and the worst case is not much different\n\
+than the average case.  However, there are other representations which\n\
+are more efficient overall, yet the worst cases might be terrible.\n"
+"\n\
+Heaps are also very useful in big disk sorts.  You most probably all\n\
+know that a big sort implies producing \"runs\" (which are pre-sorted\n\
+sequences, which size is usually related to the amount of CPU memory),\n\
+followed by a merging passes for these runs, which merging is often\n\
+very cleverly organised[1].  It is very important that the initial\n\
+sort produces the longest runs possible.  Tournaments are a good way\n\
+to that.  If, using all the memory available to hold a tournament, you\n\
+replace and percolate items that happen to fit the current run, you'll\n\
+produce runs which are twice the size of the memory for random input,\n\
+and much better for input fuzzily ordered.\n"
+"\n\
+Moreover, if you output the 0'th item on disk and get an input which\n\
+may not fit in the current tournament (because the value \"wins\" over\n\
+the last output value), it cannot fit in the heap, so the size of the\n\
+heap decreases.  The freed memory could be cleverly reused immediately\n\
+for progressively building a second heap, which grows at exactly the\n\
+same rate the first heap is melting.  When the first heap completely\n\
+vanishes, you switch heaps and start a new run.  Clever and quite\n\
+effective!\n\
+\n\
+In a word, heaps are useful memory structures to know.  I use them in\n\
+a few applications, and I think it is good to keep a `heap' module\n\
+around. :-)\n"
+"\n\
+--------------------\n\
+[1] The disk balancing algorithms which are current, nowadays, are\n\
+more annoying than clever, and this is a consequence of the seeking\n\
+capabilities of the disks.  On devices which cannot seek, like big\n\
+tape drives, the story was quite different, and one had to be very\n\
+clever to ensure (far in advance) that each tape movement will be the\n\
+most effective possible (that is, will best participate at\n\
+\"progressing\" the merge).  Some tapes were even able to read\n\
+backwards, and this was also used to avoid the rewinding time.\n\
+Believe me, real good tape sorts were quite spectacular to watch!\n\
+From all times, sorting has always been a Great Art! :-)\n");
+
+PyMODINIT_FUNC
+initheapq(void)
+{
+	PyObject *m;
+
+	m = Py_InitModule3("heapq", heapq_methods, module_doc);
+	PyModule_AddObject(m, "__about__", PyString_FromString(__about__));
+}
+

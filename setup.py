@@ -322,6 +322,8 @@ class PyBuildExt(build_ext):
         exts.append( Extension("_random", ["_randommodule.c"]) )
         # fast iterator tools implemented in C
         exts.append( Extension("itertools", ["itertoolsmodule.c"]) )
+        # heapq
+        exts.append( Extension("heapq", ["heapqmodule.c"]) )
         # operator.add() and similar goodies
         exts.append( Extension('operator', ['operator.c']) )
         # Python C API test module
