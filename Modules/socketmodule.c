@@ -37,8 +37,8 @@ Module interface:
 - an AF_PACKET socket address is a tuple containing a string
   specifying the ethernet interface and an integer specifying
   the Ethernet protocol number to be received. For example:
-  ("eth0",0x1234).  Optional 3rd and 4th elements in the tuple
-  specify packet-type and ha-type -- these are ignored by
+  ("eth0",0x1234).  Optional 3rd,4th,5th elements in the tuple
+  specify packet-type and ha-type/addr -- these are ignored by
   networking code, but accepted since they are returned by the
   getsockname() method.
 
@@ -534,7 +534,7 @@ makeipaddr(struct sockaddr_in *addr)
 
 /*ARGSUSED*/
 static PyObject *
-makesockaddr(struct sockaddr *addr, int addrlen)
+makesockaddr(int sockfd, struct sockaddr *addr, int addrlen)
 {
 	if (addrlen == 0) {
 		/* No address -- may be recvfrom() from known socket */
@@ -575,20 +575,15 @@ makesockaddr(struct sockaddr *addr, int addrlen)
 		struct sockaddr_ll *a = (struct sockaddr_ll *)addr;
 		char *ifname = "";
 		struct ifreq ifr;
-		int s;
-		/* need a socket on which we can do an ioctl to look
-		 * up interface name from index, but only if index is
-		 * non-zero.
-		 */
-		if (a->sll_ifindex 
-		    && ((s = socket(AF_PACKET, SOCK_RAW, 0)) >= 0)) {
+		/* need to look up interface name give index */
+		if (a->sll_ifindex) {
 			ifr.ifr_ifindex = a->sll_ifindex;
-			if (ioctl(s, SIOCGIFNAME, &ifr) == 0)
+			if (ioctl(sockfd, SIOCGIFNAME, &ifr) == 0)
 				ifname = ifr.ifr_name;
-			close(s);
 		}
-		return Py_BuildValue("shbh", ifname, ntohs(a->sll_protocol),
-				     a->sll_pkttype, a->sll_hatype);
+		return Py_BuildValue("shbhs#", ifname, ntohs(a->sll_protocol),
+				     a->sll_pkttype, a->sll_hatype, 
+                                     a->sll_addr, a->sll_halen);
 	}
 #endif
           
@@ -612,7 +607,8 @@ makesockaddr(struct sockaddr *addr, int addrlen)
    through len_ret. */
 
 static int
-getsockaddrarg(PySocketSockObject *s, PyObject *args, struct sockaddr **addr_ret, int *len_ret)
+getsockaddrarg(PySocketSockObject *s, PyObject *args, 
+	       struct sockaddr **addr_ret, int *len_ret)
 {
 	switch (s->sock_family) {
 
@@ -671,14 +667,17 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args, struct sockaddr **addr_ret
 		int protoNumber;
 		int hatype = 0;
 		int pkttype = 0;
+		char *haddr;
 		
-		if (!PyArg_ParseTuple(args, "si|ii", &interfaceName, 
-				      &protoNumber, &pkttype, &hatype))
+		if (!PyArg_ParseTuple(args, "si|iis", &interfaceName,
+				      &protoNumber, &pkttype, &hatype, &haddr))
 			return 0;
 		strncpy(ifr.ifr_name, interfaceName, sizeof(ifr.ifr_name));
 		ifr.ifr_name[(sizeof(ifr.ifr_name))-1] = '\0';
-		if (ioctl(s->sock_fd, SIOCGIFINDEX, &ifr))
+		if (ioctl(s->sock_fd, SIOCGIFINDEX, &ifr) < 0) {
+			PyErr_SetFromErrno(PySocket_Error);
 			return 0;
+		}
 		addr = &(s->sock_addr.ll);
 		addr->sll_family = AF_PACKET;
 		addr->sll_protocol = htons((short)protoNumber);
@@ -779,11 +778,12 @@ PySocketSock_accept(PySocketSockObject *s, PyObject *args)
 		SOCKETCLOSE(newfd);
 		goto finally;
 	}
-	if (!(addr = makesockaddr((struct sockaddr *) addrbuf, addrlen)))
+	addr = makesockaddr(s->sock_fd, (struct sockaddr *)addrbuf, 
+			    addrlen);
+	if (addr == NULL)
 		goto finally;
 
-	if (!(res = Py_BuildValue("OO", sock, addr)))
-		goto finally;
+	res = Py_BuildValue("OO", sock, addr);
 
   finally:
 	Py_XDECREF(sock);
@@ -1128,7 +1128,7 @@ PySocketSock_getsockname(PySocketSockObject *s, PyObject *args)
 	Py_END_ALLOW_THREADS
 	if (res < 0)
 		return PySocket_Err();
-	return makesockaddr((struct sockaddr *) addrbuf, addrlen);
+	return makesockaddr(s->sock_fd, (struct sockaddr *) addrbuf, addrlen);
 }
 
 static char getsockname_doc[] =
@@ -1157,7 +1157,7 @@ PySocketSock_getpeername(PySocketSockObject *s, PyObject *args)
 	Py_END_ALLOW_THREADS
 	if (res < 0)
 		return PySocket_Err();
-	return makesockaddr((struct sockaddr *) addrbuf, addrlen);
+	return makesockaddr(s->sock_fd, (struct sockaddr *) addrbuf, addrlen);
 }
 
 static char getpeername_doc[] =
@@ -1319,7 +1319,7 @@ PySocketSock_recvfrom(PySocketSockObject *s, PyObject *args)
 	if (n != len && _PyString_Resize(&buf, n) < 0)
 		return NULL;
 		
-	if (!(addr = makesockaddr((struct sockaddr *)addrbuf, addrlen)))
+	if (!(addr = makesockaddr(s->sock_fd, (struct sockaddr *)addrbuf, addrlen)))
 		goto finally;
 
 	ret = Py_BuildValue("OO", buf, addr);
