@@ -69,13 +69,14 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
    XXX PROBLEM: some positive errors have a meaning for MacOS,
    but some library routines set Unix error numbers...
 */
+extern char *PyMac_StrError PROTO((int));
 #undef strerror
 #define strerror PyMac_StrError
 #endif /* macintosh */
 
-#ifndef NT
+#ifndef __STDC__
 extern char *strerror PROTO((int));
-#endif /* !NT */
+#endif
 
 /* Last exception stored by err_setval() */
 
