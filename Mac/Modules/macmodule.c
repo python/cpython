@@ -44,6 +44,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #endif
 
 #ifdef USE_GUSI
+#include <GUSI.h>
 #include <sys/types.h>
 #include <stat.h>
 #define macstat stat
@@ -52,14 +53,20 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #endif
 
 #ifdef __MWERKS__
-/* For CodeWarrior 4 also define CW4 */
 #include <unix.h>
 #else
 #include <fcntl.h>
 #endif
 
+/* Optional routines, for some compiler/runtime combinations */
 #if defined(__MWERKS__) && defined(__powerc)
 #define MALLOC_DEBUG
+#endif
+#if defined(USE_GUSI) || !defined(__MWERKS__)
+#define WEHAVE_FDOPEN
+#endif
+#if defined(MPW) || defined(USE_GUSI)
+#define WEHAVE_DUP
 #endif
 
 #include "macdefs.h"
@@ -75,27 +82,26 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* Prototypes for Unix simulation on Mac */
 
+#ifndef USE_GUSI
+
 int chdir PROTO((const char *path));
-char *getbootvol PROTO((void));
-char *getwd PROTO((char *));
-#ifdef USE_GUSI
-int mkdir PROTO((const char *path));
-DIR * opendir PROTO((const char *));
-int closedir PROTO((DIR *));
-#else
 int mkdir PROTO((const char *path, int mode));
 DIR * opendir PROTO((char *));
 void closedir PROTO((DIR *));
-#endif
 struct dirent * readdir PROTO((DIR *));
 int rmdir PROTO((const char *path));
 int sync PROTO((void));
-#if defined(THINK_C) || defined(__SC__) || defined(USE_GUSI)
+
+#if defined(THINK_C) || defined(__SC__)
 int unlink PROTO((char *));
 #else
 int unlink PROTO((const char *));
 #endif
 
+#endif /* USE_GUSI */
+
+char *getwd PROTO((char *));
+char *getbootvol PROTO((void));
 
 
 static object *MacError; /* Exception mac.error */
@@ -173,7 +179,6 @@ mac_chdir(self, args)
 	return mac_1str(args, chdir);
 }
 
-#ifndef CW4
 static object *
 mac_close(self, args)
 	object *self;
@@ -185,14 +190,16 @@ mac_close(self, args)
 	BGN_SAVE
 	res = close(fd);
 	END_SAVE
+#ifndef USE_GUSI
+	/* GUSI gives surious errors here? */
 	if (res < 0)
 		return mac_error();
+#endif
 	INCREF(None);
 	return None;
 }
-#endif /* !__MWERKS__ */
 
-#ifdef MPW
+#ifdef WEHAVE_DUP
 
 static object *
 mac_dup(self, args)
@@ -210,9 +217,9 @@ mac_dup(self, args)
 	return newintobject((long)fd);
 }
 
-#endif /* MPW */
+#endif
 
-#ifndef __MWERKS__
+#ifdef WEHAVE_FDOPEN
 static object *
 mac_fdopen(self, args)
 	object *self;
@@ -259,7 +266,11 @@ mac_getcwd(self, args)
 	if (!getnoarg(args))
 		return NULL;
 	BGN_SAVE
+#ifdef USE_GUSI
+	res = getcwd(path, sizeof path);
+#else
 	res = getwd(path);
+#endif
 	END_SAVE
 	if (res == NULL) {
 		err_setstr(MacError, path);
@@ -310,7 +321,6 @@ mac_listdir(self, args)
 	return d;
 }
 
-#ifndef CW4
 static object *
 mac_lseek(self, args)
 	object *self;
@@ -329,31 +339,15 @@ mac_lseek(self, args)
 		return mac_error();
 	return newintobject(res);
 }
-#endif /* !CW4 */
-
-#ifdef USE_GUSI
-/* GUSI mkdir doesn't accept the (dummy) mode. Grrr. */
-int _gusi_mkdir(name, mode)
-	char *name;
-	int mode;
-{
-	return mkdir(name);
-}
-#endif /* USE_GUSI */
 
 static object *
 mac_mkdir(self, args)
 	object *self;
 	object *args;
 {
-#ifdef USE_GUSI
-	return mac_strint(args, _gusi_mkdir);
-#else
 	return mac_strint(args, mkdir);
-#endif
 }
 
-#ifndef CW4
 static object *
 mac_open(self, args)
 	object *self;
@@ -394,7 +388,6 @@ mac_read(self, args)
 	resizestring(&buffer, size);
 	return buffer;
 }
-#endif /* !__MWERKS */
 
 static object *
 mac_rename(self, args)
@@ -510,7 +503,6 @@ mac_unlink(self, args)
 	return mac_1str(args, (int (*)(const char *))unlink);
 }
 
-#ifndef CW4
 static object *
 mac_write(self, args)
 	object *self;
@@ -527,7 +519,6 @@ mac_write(self, args)
 		return mac_error();
 	return newintobject((long)size);
 }
-#endif /* !__MWERKS__ */
 
 #ifdef MALLOC_DEBUG
 static object *
@@ -543,35 +534,27 @@ mac_mstats(self, args)
 
 static struct methodlist mac_methods[] = {
 	{"chdir",	mac_chdir},
-#ifndef CW4
 	{"close",	mac_close},
-#endif
-#ifdef MPW
+#ifdef WEHAVE_DUP
 	{"dup",		mac_dup},
 #endif
-#ifndef __MWERKS__
+#ifdef WEHAVE_FDOPEN
 	{"fdopen",	mac_fdopen},
 #endif
 	{"getbootvol",	mac_getbootvol}, /* non-standard */
 	{"getcwd",	mac_getcwd},
 	{"listdir",	mac_listdir, 0},
-#ifndef CW4
 	{"lseek",	mac_lseek},
-#endif
 	{"mkdir",	mac_mkdir},
-#ifndef CW4
 	{"open",	mac_open},
 	{"read",	mac_read},
-#endif
 	{"rename",	mac_rename},
 	{"rmdir",	mac_rmdir},
 	{"stat",	mac_stat},
 	{"xstat",	mac_xstat},
 	{"sync",	mac_sync},
 	{"unlink",	mac_unlink},
-#ifndef CW4
 	{"write",	mac_write},
-#endif
 #ifdef MALLOC_DEBUG
 	{"mstats",	mac_mstats},
 #endif
