@@ -25,7 +25,8 @@ class CallTip:
         tw.wm_overrideredirect(1)
         tw.wm_geometry("+%d+%d" % (x, y))
         label = Label(tw, text=self.text, justify=LEFT,
-                      background="#ffffe0", relief=SOLID, borderwidth=1)
+                      background="#ffffe0", relief=SOLID, borderwidth=1,
+                      font = self.widget['font'])
         label.pack()
                       
     def hidetip(self):
