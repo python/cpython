@@ -255,6 +255,42 @@ if tuple(xrange(5,10)) <> tuple(range(5,10)): raise TestFailed, 'xrange(5,10)'
 if tuple(xrange(0,10,2)) <> tuple(range(0,10,2)):
 	raise TestFailed, 'xrange(0,10,2)'
 
+print 'zip'
+a = (1, 2, 3)
+b = (4, 5, 6)
+t = [(1, 4), (2, 5), (3, 6)]
+if zip(a, b) <> t: raise TestFailed, 'zip(a, b) - same size, both tuples'
+b = [4, 5, 6]
+if zip(a, b) <> t: raise TestFailed, 'zip(a, b) - same size, tuple/list'
+b = (4, 5, 6, 7)
+if zip(a, b) <> t: raise TestFailed, 'zip(a, b) - b is longer'
+class I:
+	def __getitem__(self, i):
+		if i < 0 or i > 2: raise IndexError
+		return i + 4
+if zip(a, I()) <> t: raise TestFailed, 'zip(a, b) - b is instance'
+exc = 0
+try:
+	zip()
+except TypeError:
+	exc = 1
+except:
+	e = sys.exc_info()[0]
+	raise TestFailed, 'zip() - no args, expected TypeError, got', e
+if not exc:
+	raise TestFailed, 'zip() - no args, missing expected TypeError'
+
+exc = 0
+try:
+	zip(None)
+except TypeError:
+	exc = 1
+except:
+	e = sys.exc_info()[0]
+	raise TestFailed, 'zip(None) - expected TypeError, got', e
+if not exc:
+	raise TestFailed, 'zip(None) - missing expected TypeError'
+
 
 # Epilogue -- unlink the temp file
 
