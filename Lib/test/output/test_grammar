@@ -13,6 +13,8 @@ file_input
 expr_input
 eval_input
 funcdef
+lambdef
+SyntaxError expected for "lambda x: x = 2"
 simple_stmt
 expr_stmt
 print_stmt
