@@ -59,8 +59,13 @@ simple, stand alone XML-RPC servers.
   Register an object which is used to expose method names which have
   not been registered using \method{register_function()}.  If
   \var{instance} contains a \method{_dispatch()} method, it is called
-  with the requested method name and the parameters from the request;
-  the return value is returned to the client as the result.  If
+  with the requested method name and the parameters from the request.  Its
+  API is \code{def \method{_dispatch}(self, method, params)} (note tha
+  \var{params} does not represent a variable argument list).  If it calls an
+  underlying function to perform its task, that function is called as
+  \code{func(*params)}, expanding the parameter list.
+  The return value from \method{_dispatch()} is returned to the client as
+  the result.  If
   \var{instance} does not have a \method{_dispatch()} method, it is
   searched for an attribute matching the name of the requested method;
   if the requested method name contains periods, each component of the
