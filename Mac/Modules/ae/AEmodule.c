@@ -1204,9 +1204,14 @@ static PyMethodDef AE_methods[] = {
 };
 
 
+#if UNIVERSAL_INTERFACES_VERSION >= 0x0340
+typedef long refcontype;
+#else
+typedef unsigned long refcontype;
+#endif
 
 static pascal OSErr
-GenericEventHandler(const AppleEvent *request, AppleEvent *reply, unsigned long refcon)
+GenericEventHandler(const AppleEvent *request, AppleEvent *reply, refcontype refcon)
 {
 	PyObject *handler = (PyObject *)refcon;
 	AEDescObject *requestObject, *replyObject;
@@ -1244,7 +1249,7 @@ void initAE(void)
 
 
 		upp_AEIdleProc = NewAEIdleUPP(AEIdleProc);
-		upp_GenericEventHandler = NewAEEventHandlerUPP(GenericEventHandler);
+		upp_GenericEventHandler = NewAEEventHandlerUPP(&GenericEventHandler);
 		PyMac_INIT_TOOLBOX_OBJECT_NEW(AEDesc *, AEDesc_New);
 		PyMac_INIT_TOOLBOX_OBJECT_CONVERT(AEDesc, AEDesc_Convert);
 
