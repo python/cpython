@@ -132,6 +132,8 @@ Tools/Demos
 Build
 -----
 
+- patch #762934: improve detection of broken implementations of tzset().
+
 - Patch #798202: detect redhat9 Tcl/Tk in configure script.
 
 C API
