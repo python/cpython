@@ -27,7 +27,7 @@ import os
 import sys
 
 
-__version__ = '1.9'
+__version__ = '1.10'
 
 MAXFTPCACHE = 10		# Trim the ftp cache beyond this size
 
@@ -140,7 +140,6 @@ class URLopener:
 			return addinfourl(fp, headers, fullurl)
 		type, url = splittype(fullurl)
  		if not type: type = 'file'
-		self.openedurl = '%s:%s' % (type, url)
 		if self.proxies.has_key(type):
 			proxy = self.proxies[type]
 			type, proxy = splittype(proxy)
@@ -173,7 +172,6 @@ class URLopener:
 	# or (tempfilename, headers) for a remote object
 	def retrieve(self, url, filename=None):
 		url = unwrap(url)
-		self.openedurl = url
 		if self.tempcache and self.tempcache.has_key(url):
 			return self.tempcache[url]
 		type, url1 = splittype(url)
@@ -250,7 +248,7 @@ class URLopener:
 		errcode, errmsg, headers = h.getreply()
 		fp = h.getfile()
 		if errcode == 200:
-			return addinfourl(fp, headers, self.openedurl)
+			return addinfourl(fp, headers, "http:" + url)
 		else:
 			return self.http_error(url,
 					       fp, errcode, errmsg, headers)
@@ -287,7 +285,7 @@ class URLopener:
 			fp = gopherlib.send_query(selector, query, host)
 		else:
 			fp = gopherlib.send_selector(selector, host)
-		return addinfourl(fp, noheaders(), self.openedurl)
+		return addinfourl(fp, noheaders(), "gopher:" + url)
 
 	# Use local file or FTP depending on form of URL
 	def open_file(self, url):
@@ -341,8 +339,8 @@ class URLopener:
 		try:
 			if not self.ftpcache.has_key(key):
 				self.ftpcache[key] = \
-						   ftpwrapper(user, passwd,
-							      host, port, dirs)
+					ftpwrapper(user, passwd,
+						   host, port, dirs)
 			if not file: type = 'D'
 			else: type = 'I'
 			for attr in attrs:
@@ -352,7 +350,7 @@ class URLopener:
 					type = string.upper(value)
 			return addinfourl(
 				self.ftpcache[key].retrfile(file, type),
-				noheaders(), self.openedurl)
+				noheaders(), "ftp:" + url)
 		except ftperrors(), msg:
 			raise IOError, ('ftp error', msg), sys.exc_info()[2]
 
@@ -366,7 +364,7 @@ class FancyURLopener(URLopener):
 
 	# Default error handling -- don't raise an exception
 	def http_error_default(self, url, fp, errcode, errmsg, headers):
-	    return addinfourl(fp, headers, self.openedurl)
+	    return addinfourl(fp, headers, "http:" + url)
 
 	# Error 302 -- relocated (temporarily)
 	def http_error_302(self, url, fp, errcode, errmsg, headers):
