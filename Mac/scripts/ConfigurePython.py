@@ -58,6 +58,17 @@ cfm68k_goals = [
 
 	("Cm.CFM68K.slb", "qtmodules.CFM68K.slb"),
 	("Qt.CFM68K.slb", "qtmodules.CFM68K.slb"),
+
+	("imgcolormap.CFM68K.slb", "imgmodules.CFM68K.slb"),
+	("imgformat.CFM68K.slb", "imgmodules.CFM68K.slb"),
+	("imggif.CFM68K.slb", "imgmodules.CFM68K.slb"),
+	("imgjpeg.CFM68K.slb", "imgmodules.CFM68K.slb"),
+	("imgop.CFM68K.slb", "imgmodules.CFM68K.slb"),
+	("imgpbm.CFM68K.slb", "imgmodules.CFM68K.slb"),
+	("imgpgm.CFM68K.slb", "imgmodules.CFM68K.slb"),
+	("imgppm.CFM68K.slb", "imgmodules.CFM68K.slb"),
+	("imgtiff.CFM68K.slb", "imgmodules.CFM68K.slb"),
+	("imgsgi.CFM68K.slb", "imgmodules.CFM68K.slb")
 ]
 
 def gotopluginfolder():
