@@ -1,0 +1,108 @@
+\section{\module{xml.sax} ---
+         Support for SAX2 parsers}
+
+\declaremodule{standard}{xml.sax}
+\modulesynopsis{Package containing SAX2 base classes and convenience
+                functions.}
+\moduleauthor{Lars Marius Garshol}{larsga@garshol.priv.no}
+\sectionauthor{Fred L. Drake, Jr.}{fdrake@acm.org}
+
+\versionadded{2.0}
+
+
+The \module{xml.sax} package provides a number of modules which
+implement the Simple API for XML (SAX) interface for Python.  The
+package itself provides the SAX exceptions and the convenience
+functions which will be most used by users of the SAX API.
+
+The convenience functions are:
+
+\begin{funcdesc}{make_parser}{\optional{parser_list}}
+  Create and return a SAX \class{XMLReader} object.  The first parser
+  found will be used.  If \var{parser_list} is provided, it must be a
+  sequence of strings which name modules that have a function named
+  \function{create_parser()}.  Modules listed in \var{parser_list}
+  will be used before modules in the default list of parsers.
+\end{funcdesc}
+
+\begin{funcdesc}{parse}{filename_or_stream, handler\optional{, error_handler}}
+  Create a SAX parser and use it to parse a document.  The document,
+  passed in as \var{filename_or_stream}, can be a filename or a file
+  object.  The \var{handler} parameter needs to be a SAX
+  \class{ContentHandler} instance.  If \var{error_handler} is given,
+  it must be a SAX \class{ErrorHandler} instance; if omitted, 
+  \exception{SAXParseException} will be raised on all errors.  There
+  is no return value; all work must be done by the \var{handler}
+  passed in.
+\end{funcdesc}
+
+\begin{funcdesc}{parseString}{string, handler\optional{, error_handler}}
+  Similar to \function{parse()}, but parses from a buffer \var{string}
+  received as a parameter.
+\end{funcdesc}
+
+
+The SAX exceptions are also provided here:
+
+\begin{excclassdesc}{SAXException}{msg\optional{, exception}}
+  Encapsulate an XML error or warning.  This class can contain basic
+  error or warning information from either the XML parser or the
+  application: it can be subclassed to provide additional
+  functionality or to add localization.  Note that although the
+  handlers defined in the \class{ErrorHandler} interface receive
+  instances of this exception, it is not required to actually raise
+  the exception --- it is also useful as a container for information.
+
+  When instantiated, \var{msg} should be a human-readable description
+  of the error.  The optional \var{exception} parameter, if given,
+  should be \code{None} or an exception that was caught by the parsing
+  code and is being passed along as information.
+
+  This is the base class for the other SAX exception classes.
+\end{excclassdesc}
+
+\begin{excclassdesc}{SAXParseException}{msg, exception, locator}
+  Subclass of \exception{SAXException} raised on parse errors.
+  Instances of this class are passed to the methods of the SAX
+  \class{ErrorHandler} interface to provide information about the
+  parse error.  This class supports the SAX \class{Locator} interface
+  as well as the \class{SAXException} interface.
+\end{excclassdesc}
+
+\begin{excclassdesc}{SAXNotRecognizedException}{msg\optional{, exception}}
+  Subclass of \exception{SAXException} raised when a SAX
+  \class{XMLReader} is confronted with an unrecognized feature or
+  property.  SAX applications and extensions may use this class for
+  similar purposes.
+\end{excclassdesc}
+
+\begin{excclassdesc}{SAXNotSupportedException}{msg\optional{, exception}}
+  Subclass of \exception{SAXException} raised when a SAX
+  \class{XMLReader} is asked to enable a feature that is not
+  supported, or to set a property to a value that the implementation
+  does not support.  SAX applications and extensions may use this
+  class for similar purposes.
+\end{excclassdesc}
+
+
+\begin{seealso}
+  \seetitle[http://www.megginson.com/SAX/]{SAX: The Simple API for
+            XML}{This site is the focal point for the definition of
+            the SAX API.  It provides a Java implementation and online
+            documentation.  Links to implementations and historical
+            information are also available.}
+\end{seealso}
+
+
+\subsection{SAXException Objects \label{saxexception-objects}}
+
+The \class{SAXException} exception class supports the following
+methods:
+
+\begin{methoddesc}[SAXException]{getMessage}{}
+  Return a human-readable message describing the error condition.
+\end{methoddesc}
+
+\begin{methoddesc}[SAXException]{getException}{}
+  Return an encapsulated exception object, or \code{None}.
+\end{methoddesc}
