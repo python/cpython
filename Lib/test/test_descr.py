@@ -1287,6 +1287,14 @@ def classmethods():
     vereq(super(D,D).goo(), (D,))
     vereq(super(D,d).goo(), (D,))
 
+    # Verify that argument is checked for callability (SF bug 753451)
+    try:
+        classmethod(1).__get__(1)
+    except TypeError:
+        pass
+    else:
+        raise TestFailed, "classmethod should check for callability"
+
 def staticmethods():
     if verbose: print "Testing static methods..."
     class C(object):
