@@ -270,4 +270,4 @@ l2hclean:
 
 # Remove temporaries as well as final products
 clobber: clean
-	 rm -f *.dvi *.ps *.texi *.info *.info-[0-9]*
+	 rm -f *.dvi *.pdf *.ps *.texi *.info *.info-[0-9]*
