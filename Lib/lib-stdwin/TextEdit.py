@@ -25,7 +25,7 @@ class TextEdit():
 		del self.window
 	#
 	def minsize(self, m):
-		return self.cols*m.textwidth('n'), self.rows*m.lineheight()
+		return self.cols*m.textwidth('in')/2, self.rows*m.lineheight()
 	def setbounds(self, bounds):
 		self.bounds = bounds
 		if self.editor:
