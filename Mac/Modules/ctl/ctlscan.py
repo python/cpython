@@ -3,11 +3,12 @@ import addpack
 addpack.addpack(':Tools:bgen:bgen')
 
 from scantools import Scanner
+from bgenlocations import TOOLBOXDIR
 
 def main():
 	input = "Controls.h"
 	output = "ctlgen.py"
-	defsoutput = "Controls.py"
+	defsoutput = TOOLBOXDIR + "Controls.py"
 	scanner = MyScanner(input, output, defsoutput)
 	scanner.scan()
 	scanner.close()

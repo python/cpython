@@ -95,7 +95,7 @@ CtlObj_Convert(v, p_itself)
 static void CtlObj_dealloc(self)
 	ControlObject *self;
 {
-	/* Cleanup of self->ob_itself goes here */
+	SetCRefCon(self->ob_itself, (long)0); /* Make it forget about us */
 	PyMem_DEL(self);
 }
 

@@ -1,4 +1,4 @@
-# Generated from 'flap:CW8 Gold:Metrowerks CodeWarrior:MacOS Support:Headers:Universal Headers:Controls.h'
+# Generated from 'Sap:CW8 Gold:Metrowerks CodeWarrior:MacOS Support:Headers:Universal Headers:Controls.h'
 
 f = Function(ControlRef, 'NewControl',
     (WindowRef, 'theWindow', InMode),
