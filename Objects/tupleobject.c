@@ -82,8 +82,16 @@ PyTuple_New(size)
 	else
 #endif
 	{
-		op = (PyTupleObject *) malloc(
-			sizeof(PyTupleObject) + (size-1) * sizeof(PyObject *));
+		int nbytes = size * sizeof(PyObject *);
+		/* Check for overflow */
+		if (nbytes / sizeof(PyObject *) != (size_t)size ||
+		    (nbytes += sizeof(PyTupleObject) - sizeof(PyObject *))
+		    <= 0)
+		{
+			return PyErr_NoMemory();
+		}
+		;
+		op = (PyTupleObject *) malloc(nbytes);
 		if (op == NULL)
 			return PyErr_NoMemory();
 
@@ -359,13 +367,15 @@ tuplerepeat(a, n)
 	PyObject **p;
 	if (n < 0)
 		n = 0;
-	if (a->ob_size*n == a->ob_size) {
+	if (a->ob_size == 0 || n == 1) {
 		/* Since tuples are immutable, we can return a shared
 		   copy in this case */
 		Py_INCREF(a);
 		return (PyObject *)a;
 	}
 	size = a->ob_size * n;
+	if (size/n != a->ob_size)
+		return PyErr_NoMemory();
 	np = (PyTupleObject *) PyTuple_New(size);
 	if (np == NULL)
 		return NULL;
