@@ -4857,7 +4857,7 @@ Return True if the process returning 'status' was continued from a\n\
 job control stop.";
 
 static PyObject *
-posix_WCONTINUED(PyObject *self, PyObject *args)
+posix_WIFCONTINUED(PyObject *self, PyObject *args)
 {
 #ifdef UNION_WAIT
 	union wait status;
@@ -4873,7 +4873,7 @@ posix_WCONTINUED(PyObject *self, PyObject *args)
 		return NULL;
 	}
 
-	return PyBool_FromLong(WCONTINUED(status));
+	return PyBool_FromLong(WIFCONTINUED(status));
 #undef status_i
 }
 #endif /* WIFCONTINUED */
@@ -6465,6 +6465,9 @@ static PyMethodDef posix_methods[] = {
 #ifdef WCOREDUMP
         {"WCOREDUMP",	posix_WCOREDUMP, METH_VARARGS, posix_WCOREDUMP__doc__},
 #endif /* WCOREDUMP */
+#ifdef WIFCONTINUED
+        {"WIFCONTINUED",posix_WIFCONTINUED, METH_VARARGS, posix_WIFCONTINUED__doc__},
+#endif /* WIFCONTINUED */
 #ifdef WIFSTOPPED
         {"WIFSTOPPED",	posix_WIFSTOPPED, METH_VARARGS, posix_WIFSTOPPED__doc__},
 #endif /* WIFSTOPPED */
