@@ -42,14 +42,14 @@ filedict = {}
 importable = {}
 
 try:
-    searchdirs=os.environ['include'].splitfields(';')
+    searchdirs=os.environ['include'].split(';')
 except KeyError:
     try:
-        searchdirs=os.environ['INCLUDE'].splitfields(';')
+        searchdirs=os.environ['INCLUDE'].split(';')
     except KeyError:
         try:
             if  sys.platform.find("beos") == 0:
-                searchdirs=os.environ['BEINCLUDES'].splitfields(';')
+                searchdirs=os.environ['BEINCLUDES'].split(';')
             else:
                 raise KeyError
         except KeyError:
