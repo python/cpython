@@ -18,7 +18,7 @@ the beta cycle before the final release of Python 2.0.
 }
 
 A new release of Python, version 2.0, will be released some time this
-summer.  Beta versions are already available from
+autumn.  Beta versions are already available from
 \url{http://www.pythonlabs.com/products/python2.0/}.  This article
 covers the exciting new features in 2.0, highlights some other useful
 changes, and points out a few incompatible changes that may require
@@ -53,6 +53,92 @@ round of breakage within a month by moving to 2.0; you're better off
 just going straight to 2.0.  Most of the really interesting features
 described in this document are only in 2.0, because a lot of work was
 done between May and September.  
+
+% ======================================================================
+\section{New Development Process}
+
+The most important change in Python 2.0 may not be to the code at all,
+but to how Python is developed.  
+
+In May of 2000, the Python CVS tree was moved to SourceForge.
+Previously, there were roughly 7 or so people who had write access to
+the CVS tree, and all patches had to be inspected and checked in by
+one of the people on this short list.  Obviously, this wasn't very
+scalable.  By moving the CVS tree to SourceForge, it became possible
+to grant write access to more people; as of September 2000 there were
+27 people able to check in changes, a fourfold increase.  This makes
+possible large-scale changes that wouldn't be attempted if they'd have
+to be filtered through the small group of core developers.  For
+example, one day Peter Schneider-Kamp took it into his head to drop
+K\&R C compatibility and convert the C source for Python to ANSI
+C. After getting approval on the python-dev mailing list, he launched
+into a flurry of checkins that lasted about a week, other developers
+joined in to help, and the job was done.  If there were only 5 people
+with write access, probably that task would have been viewed as
+``nice, but not worth the time and effort needed'' and it wouldn't
+never have been done.
+
+SourceForge also provides tools for tracking bug and patch
+submissions, and in combination with the public CVS tree, they've
+resulted in a remarkable increase in the speed of development.
+Patches now get submitted, commented on, revised by people other than
+the original submitter, and bounced back and forth between people
+until the patch is deemed worth checking in.  This didn't come without
+a cost: developers now have more e-mail to deal with, more mailing
+lists to follow, and special tools had to be written for the new
+environment.  For example, SourceForge sends default patch and bug
+notification e-mail messages that are completely unhelpful, so Ka-Ping
+Yee wrote an HTML screen-scraper that sends more useful messages.
+
+The ease of adding code caused a few initial growing pains, such as
+code was checked in before it was ready or without getting clear
+agreement from the developer group.  The approval process that has
+emerged is somewhat similar to that used by the Apache group.
+Developers can vote +1, +0, -0, or -1 on a patch; +1 and -1 denote
+acceptance or rejection, while +0 and -0 mean the developer is mostly
+indifferent to the change, though with a slight positive or negative
+slant.  The most significant change from the Apache model is that
+Guido van Rossum, who has Benevolent Dictator For Life status, can
+ignore the votes of the other developers and approve or reject a
+change, effectively giving him a +Infinity / -Infinity vote.
+
+Producing an actual patch is the last step in adding a new feature,
+and is usually easy compared to the earlier task of coming up with a
+good design.  Discussions of new features can often explode into
+lengthy mailing list threads, making the discussion hard to follow,
+and no one can read every posting to python-dev.  Therefore, a
+relatively formal process has been set up to write Python Enhancement
+Proposals (PEPs), modelled on the Internet RFC process.  PEPs are
+draft documents that describe a proposed new feature, and are
+continually revised until the community reaches a consensus, either
+accepting or rejecting the proposal.  Quoting from the introduction to
+PEP 1, ``PEP Purpose and Guidelines'':
+
+\begin{quotation}
+    PEP stands for Python Enhancement Proposal.  A PEP is a design
+    document providing information to the Python community, or
+    describing a new feature for Python.  The PEP should provide a
+    concise technical specification of the feature and a rationale for
+    the feature.
+
+    We intend PEPs to be the primary mechanisms for proposing new
+    features, for collecting community input on an issue, and for
+    documenting the design decisions that have gone into Python.  The
+    PEP author is responsible for building consensus within the
+    community and documenting dissenting opinions.
+\end{quotation}
+
+Read the rest of PEP 1 for the details of the PEP editorial process,
+style, and format.  PEPs are kept in the Python CVS tree on
+SourceForge, though they're not part of the Python 2.0 distribution,
+and are also available in HTML form from
+\url{http://python.sourceforge.net/peps/}.  As of September 2000,
+there are 25 PEPS, ranging from PEP 201, ``Lockstep Iteration'', to
+PEP 225, ``Elementwise/Objectwise Operators''.
+
+To report bugs or submit patches for Python 2.0, use the bug tracking
+and patch manager tools available from the SourceForge project page,
+at \url{http://sourceforge.net/projects/python/}.
 
 % ======================================================================
 \section{Unicode}
