@@ -1191,7 +1191,7 @@ def getpager():
             return lambda text: pipepager(text, os.environ['PAGER'])
     if sys.platform == 'win32':
         return lambda text: tempfilepager(plain(text), 'more <')
-    if hasattr(os, 'system') and os.system('less 2>/dev/null') == 0:
+    if hasattr(os, 'system') and os.system('(less) 2>/dev/null') == 0:
         return lambda text: pipepager(text, 'less')
 
     import tempfile
