@@ -6,15 +6,16 @@ Implements the Distutils 'build_scripts' command."""
 
 __revision__ = "$Id$"
 
-import sys,os,re
+import sys, os, re
 from distutils.core import Command
+from distutils.dep_util import newer
 
 # check if Python is called on the first line with this expression
-first_line_re = re.compile(r"^#!.+python(\s-\w+)*")
+first_line_re = re.compile(r'^#!.*python(\s+.*)?')
 
 class build_scripts (Command):
 
-    description = "\"build\" scripts"
+    description = "\"build\" scripts (copy and fixup #! line)"
 
     user_options = [
         ('build-dir=', 'd', "directory to \"build\" (copy) to"),
@@ -38,34 +39,60 @@ class build_scripts (Command):
     def run (self):
         if not self.scripts:
             return
-        self._copy_files()
-        self._adjust_files()
+        self.copy_scripts()
+
         
-    def _copy_files(self):
-        """Copy all the scripts to the build dir"""
-        self.outfiles = []
+    def copy_scripts (self):
+        """Copy each script listed in 'self.scripts'; if it's marked as a
+        Python script in the Unix way (first line matches 'first_line_re',
+        ie. starts with "\#!" and contains "python"), then adjust the first
+        line to refer to the current Python intepreter as we copy.
+        """
+        outfiles = []
         self.mkpath(self.build_dir)
-        for f in self.scripts:
-            print self.build_dir
-            if self.copy_file(f, self.build_dir):
-                self.outfiles.append(os.path.join(self.build_dir, f))
-            
-    def _adjust_files(self):
-        """If the first line begins with #! and ends with python
-	   replace it with the current python interpreter"""
-        for f in self.outfiles:
-            if not self.dry_run:
-                data = open(f, "r").readlines()
-                if not data:
-                    self.warn("%s is an empty file!" % f)
+        for script in self.scripts:
+            adjust = 0
+            outfile = os.path.join(self.build_dir, script)
+
+            if not self.force and not newer(script, outfile):
+                self.announce("not copying %s (output up-to-date)" % script)
+                continue
+
+            # Always open the file, but ignore failures in dry-run mode --
+            # that way, we'll get accurate feedback if we can read the
+            # script.
+            try:
+                f = open(script, "r")
+            except IOError:
+                if not self.dry_run:
+                    raise
+                f = None
+            else:
+                first_line = f.readline()
+                if not first_line:
+                    self.warn("%s is an empty file (skipping)" % script)
                     continue
-                mo = first_line_re.match(data[0])
-                if mo:
-                    self.announce("Adjusting first line of file %s" % f)
-                    data[0] = "#!"+sys.executable
-                    # add optional command line options
-                    if mo.group(1):
-                        data[0] = data[0] + mo.group(1)
-                    else:
-                        data[0] = data[0] + "\n"
-                    open(f, "w").writelines(data)
+
+                match = first_line_re.match(first_line)
+                if match:
+                    adjust = 1
+                    post_interp = match.group(1)
+
+            if adjust:
+                self.announce("copying and adjusting %s -> %s" %
+                              (script, self.build_dir))
+                if not self.dry_run:
+                    outf = open(outfile, "w")
+                    outf.write("#!%s%s\n" % 
+                               (os.path.normpath(sys.executable), post_interp))
+                    outf.writelines(f.readlines())
+                    outf.close()
+                if f:
+                    f.close()
+            else:
+                f.close()
+                self.copy_file(script, outfile)
+
+    # copy_scripts ()
+
+# class build_scripts
