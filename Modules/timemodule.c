@@ -634,8 +634,8 @@ inittime()
 #endif
 	ins(d, "daylight", PyInt_FromLong((long)daylight));
 	ins(d, "tzname", Py_BuildValue("(zz)", tzname[0], tzname[1]));
-#else /* !HAVE_TZNAME && !__GNU_LIBRARY__ */
-#if HAVE_TM_ZONE
+#else /* !HAVE_TZNAME || __GNU_LIBRARY__ */
+#ifdef HAVE_TM_ZONE
 	{
 #define YEAR ((time_t)((365 * 24 + 6) * 3600))
 		time_t t;
@@ -683,7 +683,7 @@ inittime()
 	ins(d, "tzname", Py_BuildValue("(zz)", "", ""));
 #endif /* macintosh */
 #endif /* HAVE_TM_ZONE */
-#endif /* !HAVE_TZNAME */
+#endif /* !HAVE_TZNAME || __GNU_LIBRARY__ */
 	if (PyErr_Occurred())
 		Py_FatalError("Can't initialize time module");
 }
