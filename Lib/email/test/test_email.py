@@ -1740,6 +1740,14 @@ Here's the message body
         eq(part2a.get_type(), 'text/plain')
         neq(part2a.get_payload(), 'message 2\n')
 
+    def test_three_lines(self):
+        # A bug report by Andrew McNamara
+        lines = ['From: Andrew Person <aperson@dom.ain', 
+                 'Subject: Test',
+                 'Date: Tue, 20 Aug 2002 16:43:45 +1000']
+        msg = email.message_from_string(NL.join(lines))
+        self.assertEqual(msg['date'], 'Tue, 20 Aug 2002 16:43:45 +1000')
+
 
 
 class TestBase64(unittest.TestCase):
