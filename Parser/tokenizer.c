@@ -589,7 +589,8 @@ PyTokenizer_Get(tok, p_start, p_end)
 
 				if (newsize >= 1 && newsize <= 40) {
 					tok->tabsize = newsize;
-					PySys_WriteStderr(
+					if (Py_VerboseFlag)
+					    PySys_WriteStderr(
 						"Tab size set to %d\n",
 						newsize);
 				}
