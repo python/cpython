@@ -86,6 +86,10 @@ frozen modules. This should not be a problem in normal use.
 test_time will fail because MacPython accepts bogus values for
 mktime(), this will be fixed later (it is not a very serious problem).
 
+test_email will fail during summer (no kidding:-). Actually, it will fail
+when DST is active, because the date parsing test is GMT-centric
+and does not handle the Macintosh's localtime very well.
+
 Three tests will fail on MacOS9 with MemoryErrors:
 test_longexp, test_sha and test_zlib (on MacOSX these should pass).
 
