@@ -878,7 +878,6 @@ builtin_int(self, args)
 	PyObject *args;
 {
 	PyObject *v;
-	PyNumberMethods *nb;
 
 	if (!PyArg_ParseTuple(args, "O:int", &v))
 		return NULL;
@@ -1371,7 +1370,6 @@ builtin_tuple(self, args)
 	PyObject *args;
 {
 	PyObject *v;
-	PySequenceMethods *sqf;
 
 	if (!PyArg_ParseTuple(args, "O:tuple", &v))
 		return NULL;
