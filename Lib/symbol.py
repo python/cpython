@@ -72,12 +72,10 @@ arglist = 311
 argument = 312
 #--end constants--
 
-names = dir()
 sym_name = {}
-for name in names:
-    number = eval(name)
-    if type(number) is type(0):
-	sym_name[number] = name
+for _name, _value in globals().items():
+    if type(_value) is type(0):
+	sym_name[_value] = _name
 
 
 def main():
