@@ -1025,6 +1025,11 @@ class OptionParser (OptionContainer):
         self.largs = None
         self.values = None
 
+    def _get_prog_name(self):
+        if self.prog:
+            return self.prog
+        else:
+            return get_prog_name()
 
     # -- Simple modifier methods ---------------------------------------
 
@@ -1288,12 +1293,12 @@ class OptionParser (OptionContainer):
         should either exit or raise an exception.
         """
         self.print_usage(sys.stderr)
-        sys.exit("%s: error: %s" % (get_prog_name(), msg))
+        sys.exit("%s: error: %s" % (self._get_prog_name(), msg))
 
     def get_usage (self):
         if self.usage:
             return self.formatter.format_usage(
-                self.usage.replace("%prog", get_prog_name()))
+                self.usage.replace("%prog", self._get_prog_name()))
         else:
             return ""
 
@@ -1311,7 +1316,7 @@ class OptionParser (OptionContainer):
 
     def get_version (self):
         if self.version:
-            return self.version.replace("%prog", get_prog_name())
+            return self.version.replace("%prog", self._get_prog_name())
         else:
             return ""
 
