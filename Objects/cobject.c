@@ -36,9 +36,13 @@ PERFORMANCE OF THIS SOFTWARE.
 
 /* Declarations for objects of type PyCObject */
 
+typedef void (*destructor1) Py_PROTO((void *));
+typedef void (*destructor2) Py_PROTO((void *, void*));
+
 typedef struct {
 	PyObject_HEAD
 	void *cobject;
+        void *desc;
 	void (*destructor) Py_PROTO((void *));
 } PyCObject;
 
@@ -54,6 +58,30 @@ PyCObject_FromVoidPtr(cobj, destr)
 		return NULL;
 	self->cobject=cobj;
 	self->destructor=destr;
+	self->desc=NULL;
+	return (PyObject *)self;
+}
+
+PyObject *
+PyCObject_FromVoidPtrAndDesc(cobj, desc, destr)
+	void *cobj;
+	void *desc;
+	void (*destr) Py_PROTO((void *, void *));
+{
+	PyCObject *self;
+
+	if(!desc) {
+	        PyErr_SetString(PyExc_TypeError,
+		  "PyCObject_FromVoidPtrAndDesc called with null description");
+		return NULL;
+	}
+	
+	self = PyObject_NEW(PyCObject, &PyCObject_Type);
+	if (self == NULL)
+		return NULL;
+	self->cobject=cobj;
+	self->destructor=(destructor1)destr;
+	self->desc=desc;
 	return (PyObject *)self;
 }
 
@@ -71,6 +99,23 @@ PyCObject_AsVoidPtr(self)
 	if(! PyErr_Occurred())
 	    PyErr_SetString(PyExc_TypeError,
 			    "PyCObject_AsVoidPtr called with null pointer");
+	return NULL;
+}
+
+void *
+PyCObject_GetDesc(self)
+	PyObject *self;
+{
+        if(self)
+	  {
+	    if(self->ob_type == &PyCObject_Type)
+	      return ((PyCObject *)self)->desc;
+	    PyErr_SetString(PyExc_TypeError,
+			    "PyCObject_GetDesc with non-C-object");
+	  }
+	if(! PyErr_Occurred())
+	    PyErr_SetString(PyExc_TypeError,
+			    "PyCObject_GetDesc called with null pointer");
 	return NULL;
 }
 
@@ -99,7 +144,13 @@ static void
 PyCObject_dealloc(self)
 	PyCObject *self;
 {
-        if(self->destructor) (self->destructor)(self->cobject);
+        if(self->destructor)
+	  {
+	    if(self->desc)
+	          ((destructor2)(self->destructor))(self->cobject, self->desc);
+	    else
+	          (self->destructor)(self->cobject);
+	  }
 	PyMem_DEL(self);
 }
 

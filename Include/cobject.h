@@ -54,13 +54,26 @@ extern DL_IMPORT(PyTypeObject) PyCObject_Type;
    destroyed.
 
 */
-
 extern PyObject *
 PyCObject_FromVoidPtr Py_PROTO((void *cobj, void (*destruct)(void*)));
+
+
+/* Create a PyCObject from a pointer to a C object, a description object,
+   and an optional destrutor function.  If the third argument is non-null,
+   then it will be called with the first and second arguments if and when 
+   the PyCObject is destroyed.
+*/
+extern PyObject *
+PyCObject_FromVoidPtrAndDesc Py_PROTO((void *cobj, void *desc,
+                                       void (*destruct)(void*,void*)));
 
 /* Retrieve a pointer to a C object from a PyCObject. */
 extern void *
 PyCObject_AsVoidPtr Py_PROTO((PyObject *));
+
+/* Retrieve a pointer to a description object from a PyCObject. */
+extern void *
+PyCObject_GetDesc Py_PROTO((PyObject *));
 
 /* Import a pointer to a C object from a module using a PyCObject. */
 extern void *
