@@ -351,7 +351,7 @@ do_mkvalue(p_format, p_va)
 				 * clear that the caller knew
 				 * what she was doing. */
 				PyErr_SetString(PyExc_SystemError,
-					   "NULL object passed to mkvalue");
+					"NULL object passed to Py_BuildValue");
 			return v;
 		}
 
@@ -363,7 +363,7 @@ do_mkvalue(p_format, p_va)
 
 		default:
 			PyErr_SetString(PyExc_SystemError,
-				   "bad format char passed to mkvalue");
+				"bad format char passed to Py_BuildValue");
 			return NULL;
 
 		}
