@@ -452,9 +452,12 @@ time_asctime(self, args)
 	PyObject *self;
 	PyObject *args;
 {
+	PyObject *tup;
 	struct tm buf;
 	char *p;
-	if (!gettmarg(args, &buf))
+	if (!PyArg_ParseTuple(args, "O", &tup))
+		return NULL;
+	if (!gettmarg(tup, &buf))
 		return NULL;
 	p = asctime(&buf);
 	if (p[24] == '\n')
@@ -500,11 +503,14 @@ time_mktime(self, args)
 	PyObject *self;
 	PyObject *args;
 {
+	PyObject *tup;
 	struct tm buf;
 	time_t tt;
+	if (!PyArg_ParseTuple(args, "O", &tup))
+		return NULL;
 	tt = time(&tt);
 	buf = *localtime(&tt);
-	if (!gettmarg(args, &buf))
+	if (!gettmarg(tup, &buf))
 		return NULL;
 	tt = mktime(&buf);
 	if (tt == (time_t)(-1)) {
@@ -529,10 +535,10 @@ static PyMethodDef time_methods[] = {
 	{"sleep",	time_sleep, 0, sleep_doc},
 	{"gmtime",	time_gmtime, 0, gmtime_doc},
 	{"localtime",	time_localtime, 0, localtime_doc},
-	{"asctime",	time_asctime, 0, asctime_doc},
+	{"asctime",	time_asctime, 1, asctime_doc},
 	{"ctime",	time_ctime, 0, ctime_doc},
 #ifdef HAVE_MKTIME
-	{"mktime",	time_mktime, 0, mktime_doc},
+	{"mktime",	time_mktime, 1, mktime_doc},
 #endif
 #ifdef HAVE_STRFTIME
 	{"strftime",	time_strftime, 1, strftime_doc},
