@@ -26,9 +26,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* XXX TO DO:
    XXX how to pass arguments to call_trace?
-   XXX access stuff can probably dereference NULL locals?
-   XXX need to extend apply() to be able to pass keyword args
-   XXX need to be able to call built-in functions with keyword args
+   XXX totally get rid of access stuff
    XXX speed up searching for keywords by using a dictionary
    XXX unknown keyword shouldn't raise KeyError?
    XXX document it!
@@ -47,11 +45,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 /* Turn this on if your compiler chokes on the big switch: */
 /* #define CASE_TOO_BIG 1 */
 
-/* Turn this on if you want to debug the interpreter: */
-/* (This can be on even if NDEBUG is defined) */
-/* #define DEBUG 1 */
-
-#if defined(DEBUG) || !defined(NDEBUG)
+#ifdef DEBUG
 /* For debugging the interpreter: */
 #define LLTRACE  1	/* Low-level trace feature */
 #define CHECKEXC 1	/* Double-check exception checking */
@@ -566,7 +560,7 @@ eval_code2(co, globals, locals,
 
 		/* Extract opcode and argument */
 
-#ifdef DEBUG
+#if defined(DEBUG) || defined(LLTRACE)
 		f->f_lasti = INSTR_OFFSET();
 #endif
 		
