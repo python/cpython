@@ -1535,6 +1535,17 @@ window_setwincursor(self, args)
 	return None;
 }
 
+#ifdef CWI_HACKS
+static object *
+window_getxwindowid(self, args)
+	windowobject *self;
+	object *args;
+{
+	long wid = wgetxwindowid(self->w_win);
+	return newintobject(wid);
+}
+#endif
+
 static struct methodlist window_methods[] = {
 	{"begindrawing",window_begindrawing},
 	{"change",	window_change},
@@ -1553,6 +1564,9 @@ static struct methodlist window_methods[] = {
 	{"setwincursor",window_setwincursor},
 	{"show",	window_show},
 	{"textcreate",	window_textcreate},
+#ifdef CWI_HACKS
+	{"getxwindowid",window_getxwindowid},
+#endif
 	{NULL,		NULL}		/* sentinel */
 };
 
