@@ -1,8 +1,8 @@
 \section{Standard Module \module{xdrlib}}
 \declaremodule{standard}{xdrlib}
 
-\modulesynopsis{The External Data Representation Standard as described
-in \rfc{1014}.}
+\modulesynopsis{Encoders and decoders for the External Data
+Representation.}
 
 \index{XDR}
 \index{External Data Representation}
@@ -29,8 +29,7 @@ values from a string buffer.  The input buffer is given as
 \end{classdesc}
 
 
-\subsection{Packer Objects}
-\label{xdr-packer-objects}
+\subsection{Packer Objects \label{xdr-packer-objects}}
 
 \class{Packer} instances have the following methods:
 
@@ -112,8 +111,7 @@ is packed as in \method{pack_farray()} above.
 \end{methoddesc}
 
 
-\subsection{Unpacker Objects}
-\label{xdr-unpacker-objects}
+\subsection{Unpacker Objects \label{xdr-unpacker-objects}}
 
 The \class{Unpacker} class offers the following methods:
 
@@ -207,8 +205,7 @@ each element is unpacked as in \method{unpack_farray()} above.
 \end{methoddesc}
 
 
-\subsection{Exceptions}
-\nodename{xdr-exceptions}
+\subsection{Exceptions \label{xdr-exceptions}}
 
 Exceptions in this module are coded as class instances:
 
