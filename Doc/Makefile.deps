@@ -197,6 +197,7 @@ LIBFILES= ../lib/lib.tex \
 	../lib/libcurses.tex \
 	../lib/libpipes.tex \
 	../lib/librlcompleter.tex \
+	../lib/libsched.tex \
 	../lib/libstatvfs.tex \
 	../lib/libtty.tex \
 	../lib/libcfgparser.tex
