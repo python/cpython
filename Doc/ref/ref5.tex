@@ -55,7 +55,8 @@ categorized syntactically as atoms.  The syntax for atoms is:
              {\token{identifier} | \token{literal} | \token{enclosure}}
   \production{enclosure}
              {\token{parenth_form} | \token{list_display}}
-  \productioncont{| \token{dict_display} | \token{string_conversion}}
+  \productioncont{| \token{generator_expression | \token{dict_display}}}
+  \productioncont{| \token{string_conversion}}
 \end{productionlist}
 
 
@@ -191,6 +192,48 @@ behavior is deprecated, and relying on it will not work once this
 bug is fixed in a future release}.
 \obindex{list}
 \indexii{empty}{list}
+
+
+\subsection{Generator expressions\label{genexpr}}
+\indexii{generator}{expression}
+
+A generator expression is a compact generator notation in parentheses:
+
+\begin{productionlist}
+  \production{generator_expression}
+             {"(" \token{test} \token{genexpr_for} ")"}
+  \production{genexpr_for}
+             {"for" \token{expression_list} "in" \token{test}
+              [\token{genexpr_iter}]}
+  \production{genexpr_iter}
+             {\token{genexpr_for} | \token{genexpr_if}}
+  \production{genexpr_if}
+             {"if" \token{test} [\token{genexpr_iter}]}
+\end{productionlist}
+
+A generator expression yields a new generator object.
+\obindex{generator}
+\obindex{generator expression}
+It consists of a single expression followed by at least one
+\keyword{for} clause and zero or more \keyword{for} or \keyword{if}
+clauses.  The iterating values of the new generator are those that
+would be produced by considering each of the \keyword{for} or
+\keyword{if} clauses a block, nesting from left to right, and
+evaluating the expression to yield a value that is reached the
+innermost block for each iteration.
+
+Variables used in the generator expression are evaluated lazily
+when the \method{next()} method is called for generator object
+(in the same fashion as normal generators). However, the leftmost
+\keyword{for} clause is immediately evaluated so that error produced
+by it can be seen before any other possible error in the code that
+handles the generator expression.
+Subsequent \keyword{for} clauses cannot be evaluated immediately since
+they may depend on the previous \keyword{for} loop.
+For example: \samp{(x*y for x in range(10) for y in bar(x))}.
+
+The parentheses can be omitted on calls with only one argument.
+See section \ref{calls} for the detail.
 
 
 \subsection{Dictionary displays\label{dict}}
@@ -432,6 +475,8 @@ series of arguments:
 \begin{productionlist}
   \production{call}
              {\token{primary} "(" [\token{argument_list} [","]] ")"}
+             {\token{primary} "(" [\token{argument_list} [","] |
+	      \token{test} \token{genexpr_for} ] ")"}                                                   
   \production{argument_list}
              {\token{positional_arguments} ["," \token{keyword_arguments}]}
   \productioncont{                     ["," "*" \token{expression}]}
