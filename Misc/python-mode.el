@@ -30,6 +30,8 @@
 ;; you may need to acquire the Custom library.  Please see
 ;; <http://www.python.org/ftp/emacs/> for details.
 
+;; You will want to byte-compile this file.
+
 ;; python-mode.el is currently distributed with XEmacs 19 and XEmacs
 ;; 20.  Since this file is not GPL'd it is not distributed with Emacs,
 ;; but it is compatible with 19.34 and the current 20 series Emacsen.
@@ -80,7 +82,24 @@
 
 (require 'custom)
 (eval-when-compile
-  (require 'cl))
+  (require 'cl)
+  (require 'custom)
+  ;; Stock Emacs 19.34 has a broken/old Custom library that does more
+  ;; harm than good
+  (or (fboundp 'defcustom)
+      (error "STOP! STOP! STOP! STOP!
+
+The Custom library was not found or is out of date.  A more current
+version is required.  Please download and install the latest version
+of the Custom library from:
+
+    <http://www.dina.kvl.dk/~abraham/custom/>
+
+See the Python Mode home page for details:
+
+    <http://www.python.org/ftp/emacs/>
+")))
+
 
 
 ;; user definable variables
