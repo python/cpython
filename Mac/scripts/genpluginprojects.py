@@ -105,39 +105,31 @@ def	genallprojects(force=0):
 	genpluginproject("all", "_testcapi")
 	
 	# bgen-generated Toolbox modules
+	genpluginproject("carbon", "AE")
+	genpluginproject("ppc", "AE", libraries=["ObjectSupportLib"])
 	genpluginproject("ppc", "App", libraries=["AppearanceLib"])
 	genpluginproject("carbon", "App")
-##	genpluginproject("ppc", "Cm",
-##		libraries=["QuickTimeLib"],
-##		extraexportsymbols=[
-##			"CmpObj_New",
-##			"CmpObj_Convert",
-##			"CmpInstObj_New",
-##			"CmpInstObj_Convert",
-##		])
-##	genpluginproject("carbon", "Cm",
-##		extraexportsymbols=[
-##			"CmpObj_New",
-##			"CmpObj_Convert",
-##			"CmpInstObj_New",
-##			"CmpInstObj_Convert",
-##		])
 	genpluginproject("ppc", "Cm", libraries=["QuickTimeLib"])
 	genpluginproject("carbon", "Cm")
+	genpluginproject("carbon", "Ctl")
+	genpluginproject("ppc", "Ctl", libraries=["ControlsLib", "AppearanceLib"])
+	genpluginproject("carbon", "Dlg")
+	genpluginproject("ppc", "Dlg", libraries=["DialogsLib", "AppearanceLib"])
+	genpluginproject("carbon", "Drag")
+	genpluginproject("ppc", "Drag", libraries=["DragLib"])
+	genpluginproject("all", "Evt")
 	genpluginproject("all", "Fm")
 	genpluginproject("ppc", "Help")
 	genpluginproject("ppc", "Icn", libraries=["IconServicesLib"])
 	genpluginproject("carbon", "Icn")
 	genpluginproject("all", "List")
-##	genpluginproject("ppc", "Qt", libraries=["QuickTimeLib", "Cm.ppc.slb", "Qdoffs.ppc.slb"], 
-##			extradirs=["::Plugins"])
+	genpluginproject("carbon", "Menu")
+	genpluginproject("ppc", "Menu", libraries=["MenusLib", "ContextualMenu", "AppearanceLib"])
+	genpluginproject("all", "Qd")
 	genpluginproject("ppc", "Qt", libraries=["QuickTimeLib"])
-##	genpluginproject("carbon", "Qt", libraries=["Cm.carbon.slb", "Qdoffs.carbon.slb"],
-##			extradirs=["::Plugins"])
 	genpluginproject("carbon", "Qt")
-##	genpluginproject("all", "Qdoffs",
-##		extraexportsymbols=["GWorldObj_New", "GWorldObj_Convert"])
 	genpluginproject("all", "Qdoffs")
+	genpluginproject("all", "Res")
 	genpluginproject("all", "Scrap")
 	genpluginproject("ppc", "Snd", libraries=["SoundLib"])
 	genpluginproject("carbon", "Snd")
@@ -146,7 +138,8 @@ def	genallprojects(force=0):
 	genpluginproject("carbon", "TE")
 	genpluginproject("ppc", "Mlte", libraries=["Textension"])
 	genpluginproject("carbon", "Mlte")
-	
+	genpluginproject("carbon", "Win")
+	genpluginproject("ppc", "Win", libraries=["WindowsLib", "AppearanceLib"])
 	# Carbon Only?
 	genpluginproject("carbon", "CF")
 	
