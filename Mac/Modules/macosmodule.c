@@ -759,5 +759,14 @@ initMacOS()
 	if (PyDict_SetItemString(d, "AppearanceCompliant", 
 				Py_BuildValue("i", PyMac_AppearanceCompliant)) != 0)
 		return;
+#if TARGET_API_MAC_CARBON
+/* Will need a different name for MachO-carbon later (macho?) */
+#define PY_RUNTIMEMODEL "carbon"
+#else
+#define PY_RUNTIMEMODEL "ppc"
+#endif
+	if (PyDict_SetItemString(d, "runtimemodel", 
+				Py_BuildValue("s", PY_RUNTIMEMODEL)) != 0)
+		return;
 }
 
