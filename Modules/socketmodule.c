@@ -661,7 +661,7 @@ setipaddr(char *name, struct sockaddr *addr_ret, size_t addr_ret_size, int af)
 	}
 	if (name[0] == '<' && strcmp(name, "<broadcast>") == 0) {
 		struct sockaddr_in *sin;
-		if (af != PF_INET && af != PF_UNSPEC) {
+		if (af != AF_INET && af != AF_UNSPEC) {
 			PyErr_SetString(socket_error,
 				"address family mismatched");
 			return -1;
@@ -2350,7 +2350,7 @@ socket_gethostbyname_ex(PyObject *self, PyObject *args)
 
 	if (!PyArg_ParseTuple(args, "s:gethostbyname_ex", &name))
 		return NULL;
-	if (setipaddr(name, (struct sockaddr *)&addr, sizeof(addr), PF_INET) < 0)
+	if (setipaddr(name, (struct sockaddr *)&addr, sizeof(addr), AF_INET) < 0)
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
 #ifdef HAVE_GETHOSTBYNAME_R
@@ -2425,7 +2425,7 @@ socket_gethostbyaddr(PyObject *self, PyObject *args)
 
 	if (!PyArg_ParseTuple(args, "s:gethostbyaddr", &ip_num))
 		return NULL;
-	af = PF_UNSPEC;
+	af = AF_UNSPEC;
 	if (setipaddr(ip_num, sa, sizeof(addr), af) < 0)
 		return NULL;
 	af = sa->sa_family;
@@ -2774,7 +2774,7 @@ socket_getaddrinfo(PyObject *self, PyObject *args)
 	PyObject *single = (PyObject *)NULL;
 
 	family = socktype = protocol = flags = 0;
-	family = PF_UNSPEC;
+	family = AF_UNSPEC;
 	if (!PyArg_ParseTuple(args, "zO|iiii:getaddrinfo",
 	    &hptr, &pobj, &family, &socktype,
 			&protocol, &flags)) {
@@ -2861,7 +2861,7 @@ socket_getnameinfo(PyObject *self, PyObject *args)
 		return NULL;
 	PyOS_snprintf(pbuf, sizeof(pbuf), "%d", port);
 	memset(&hints, 0, sizeof(hints));
-	hints.ai_family = PF_UNSPEC;
+	hints.ai_family = AF_UNSPEC;
 	hints.ai_socktype = SOCK_DGRAM;	/* make numeric port happy */
 	error = getaddrinfo(hostp, pbuf, &hints, &res);
 	if (error) {
@@ -3250,7 +3250,9 @@ init_socket(void)
 /* We have incomplete socket support. */
 	PyModule_AddIntConstant(m, "SOCK_RAW", SOCK_RAW);
 	PyModule_AddIntConstant(m, "SOCK_SEQPACKET", SOCK_SEQPACKET);
+#if defined(SOCK_RDM)
 	PyModule_AddIntConstant(m, "SOCK_RDM", SOCK_RDM);
+#endif
 #endif
 
 #ifdef	SO_DEBUG
