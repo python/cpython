@@ -556,15 +556,16 @@ bsdbtopen(self, args)
     int flags = O_RDONLY;
     int mode = 0666;
     int cachesize = 0;
-    int maxkeypage;
-    int minkeypage;
-    int btflags;
-    unsigned int psize;
-    int lorder;
+    int maxkeypage = 0;
+    int minkeypage = 0;
+    int btflags = 0;
+    unsigned int psize = 0;
+    int lorder = 0;
 
     if (!newgetargs(args, "s|siiiiiii",
-		 &file, &flag, &mode,
-		 &btflags, &cachesize, &maxkeypage, &minkeypage, &psize, &lorder))
+		    &file, &flag, &mode,
+		    &btflags, &cachesize, &maxkeypage, &minkeypage,
+		    &psize, &lorder))
 	  return NULL;
     if (flag != NULL) {
 	/* XXX need a way to pass O_EXCL, O_EXLOCK, O_NONBLOCK, O_SHLOCK */
@@ -594,8 +595,10 @@ bsdbtopen(self, args)
 	}
     }
     return newdbbtobject(file, flags, mode,
-			   btflags, cachesize, maxkeypage, minkeypage, psize, lorder);
+			 btflags, cachesize, maxkeypage, minkeypage,
+			 psize, lorder);
 }
+
 static object *
 bsdrnopen(self, args)
     object *self;
@@ -606,16 +609,17 @@ bsdrnopen(self, args)
     int flags = O_RDONLY;
     int mode = 0666;
     int cachesize = 0;
-    int rnflags;
-    unsigned int psize;
-    int lorder;
-    size_t reclen;
-    char  *bval;
-    char *bfname;
+    int rnflags = 0;
+    unsigned int psize = 0;
+    int lorder = 0;
+    size_t reclen = 0;
+    char  *bval = "";
+    char *bfname = NULL;
 
     if (!newgetargs(args, "s|siiiiiiss",
-		 &file, &flag, &mode,
-		 &rnflags, &cachesize, &psize, &lorder, &reclen, &bval, &bfname))
+		    &file, &flag, &mode,
+		    &rnflags, &cachesize, &psize, &lorder,
+		    &reclen, &bval, &bfname))
 	  return NULL;
     if (flag != NULL) {
 	/* XXX need a way to pass O_EXCL, O_EXLOCK, O_NONBLOCK, O_SHLOCK */
@@ -642,6 +646,11 @@ bsdrnopen(self, args)
 	    err_setstr(BsddbError, "locking not supported on this platform");
 	    return NULL;
 #endif
+	}
+	else if (flag[1] != '\0') {
+	    err_setstr(BsddbError,
+		       "Flag char 2 should be 'l' or absent");
+	    return NULL;
 	}
     }
     return newdbrnobject(file, flags, mode,
