@@ -75,9 +75,10 @@ MKDVI=	   $(PYTHON) ../tools/mkhowto --paper=$(PAPER) --dvi
 MKHTML=	   $(PYTHON) tools/mkhowto --html --about html/stdabout.dat \
 		--address $(PYTHONDOCS) --up-link ../index.html \
 		--up-title "Python Documentation Index" \
-		--global-module-index "../modindex.html"
+		--global-module-index "../modindex.html" --dvips-safe
 MKISILOHTML=$(PYTHON) tools/mkhowto --html --about html/stdabout.dat \
-		--l2h-init perl/isilo.perl --numeric --split 1
+		--l2h-init perl/isilo.perl --numeric --split 1 \
+		--dvips-safe
 MKISILO=   iSilo386 -U -y -rCR -d0
 MKPDF=	   $(PYTHON) ../tools/mkhowto --paper=$(PAPER) --pdf
 MKPS=	   $(PYTHON) ../tools/mkhowto --paper=$(PAPER) --ps
