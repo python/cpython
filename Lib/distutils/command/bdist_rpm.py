@@ -68,7 +68,7 @@ class bdist_rpm (Command):
         ('doc-files=', None,
          "list of documentation files (space or comma-separated)"),
         ('changelog=', None,
-         "path to RPM changelog"),
+         "RPM changelog"),
         ('icon=', None,
          "name of icon file"),
         ('provides=', None,
