@@ -916,6 +916,7 @@ clobber: clean
 		tags TAGS \
 		config.cache config.log pyconfig.h Modules/config.c
 	-rm -rf build platform
+	-rm -rf $(PYTHONFRAMEWORKDIR)
 
 # Make things extra clean, before making a distribution:
 # remove all generated files, even Makefile[.pre]
