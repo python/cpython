@@ -50,6 +50,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "pgen.h"
 
 int Py_DebugFlag;
+int Py_VerboseFlag;
 
 /* Forward */
 grammar *getgrammar Py_PROTO((char *filename));
