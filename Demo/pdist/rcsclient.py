@@ -7,6 +7,7 @@ variable to enable remote operation.)
 """
 
 import string
+import os
 
 # These defaults don't belong here -- they should be taken from the
 # environment or from a hidden file in the current directory
@@ -59,7 +60,7 @@ def openrcsclient(opts = []):
 		x = RCSProxyClient(address, verbose)
 	if not directory:
 		try:
-			directory = open("CVS/Repository").readline()
+			directory = open(os.path.join("CVS", "Repository")).readline()
 		except IOError:
 			pass
 		else:
