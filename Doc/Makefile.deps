@@ -191,6 +191,10 @@ LIBFILES= ../lib/lib.tex \
 	../lib/libcmpcache.tex \
 	../lib/libstatcache.tex \
 	../lib/libwave.tex \
+	../lib/libcurses.tex \
+	../lib/libpipes.tex \
+	../lib/librlcompleter.tex \
+	../lib/libstatvfs.tex \
 	../lib/libcfgparser.tex
 
 # LaTeX source files for Macintosh Library Modules.
