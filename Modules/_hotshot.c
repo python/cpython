@@ -1181,7 +1181,7 @@ profiler_get_closed(ProfilerObject *self, void *closure)
 
 static PyGetSetDef profiler_getsets[] = {
     {"closed", (getter)profiler_get_closed, NULL,
-     "True if the profiler's output file has already been closed."},
+     PyDoc_STR("True if the profiler's output file has already been closed.")},
     {NULL}
 };
 
@@ -1250,7 +1250,8 @@ static PyMethodDef logreader_methods[] = {
 };
 
 static PyMemberDef logreader_members[] = {
-    {"info", T_OBJECT, offsetof(LogReaderObject, info), RO},
+    {"info", T_OBJECT, offsetof(LogReaderObject, info), RO,
+     PyDoc_STR("Dictionary mapping informational keys to lists of values.")},
     {NULL}
 };
 
