@@ -932,27 +932,25 @@ def multi():
         def all_method(self):
             return "D b"
 
-    class M2(object, D):
+    class M2(D, object):
         def m2method(self):
             return "M2 a"
         def all_method(self):
             return "M2 b"
 
-    vereq(M2.__mro__, (M2, object, D, C))
+    vereq(M2.__mro__, (M2, D, C, object))
     m = M2()
     vereq(m.cmethod(), "C a")
     vereq(m.dmethod(), "D a")
     vereq(m.m2method(), "M2 a")
     vereq(m.all_method(), "M2 b")
 
-    class M3(M1, object, M2):
+    class M3(M1, M2, object):
         def m3method(self):
             return "M3 a"
         def all_method(self):
             return "M3 b"
-    # XXX Expected this (the commented-out result):
-    # vereq(M3.__mro__, (M3, M1, M2, object, D, C))
-    vereq(M3.__mro__, (M3, M1, M2, D, C, object))  # XXX ?
+    vereq(M3.__mro__, (M3, M1, M2, D, C, object))
     m = M3()
     vereq(m.cmethod(), "C a")
     vereq(m.dmethod(), "D a")
@@ -993,14 +991,69 @@ def diamond():
     vereq(E().spam(), "B")
     vereq(E().boo(), "C")
     vereq(E.__mro__, (E, C, B, A, object))
-    class F(D, E): pass
-    vereq(F().spam(), "B")
-    vereq(F().boo(), "B")
-    vereq(F.__mro__, (F, D, E, B, C, A, object))
-    class G(E, D): pass
-    vereq(G().spam(), "B")
-    vereq(G().boo(), "C")
-    vereq(G.__mro__, (G, E, D, C, B, A, object))
+    # MRO order disagreement
+    try:
+        class F(D, E): pass
+    except TypeError:
+        pass
+    else:
+        raise TestFailed, "expected MRO order disagreement (F)"
+    try:
+        class G(E, D): pass
+    except TypeError:
+        pass
+    else:
+        raise TestFailed, "expected MRO order disagreement (G)"
+
+
+# see thread python-dev/2002-October/029035.html
+def ex5():
+    if verbose: print "Testing ex5 from C3 switch discussion..."
+    class A(object): pass
+    class B(object): pass
+    class C(object): pass
+    class X(A): pass
+    class Y(A): pass
+    class Z(X,B,Y,C): pass
+    vereq(Z.__mro__, (Z, X, B, Y, A, C, object))
+
+# see "A Monotonic Superclass Linearization for Dylan",
+# by Kim Barrett et al. (OOPSLA 1996)
+def monotonicity():
+    if verbose: print "Testing MRO monotonicity..."
+    class Boat(object): pass
+    class DayBoat(Boat): pass
+    class WheelBoat(Boat): pass
+    class EngineLess(DayBoat): pass
+    class SmallMultihull(DayBoat): pass
+    class PedalWheelBoat(EngineLess,WheelBoat): pass
+    class SmallCatamaran(SmallMultihull): pass
+    class Pedalo(PedalWheelBoat,SmallCatamaran): pass
+
+    vereq(PedalWheelBoat.__mro__,
+          (PedalWheelBoat, EngineLess, DayBoat, WheelBoat, Boat,
+           object))
+    vereq(SmallCatamaran.__mro__,
+          (SmallCatamaran, SmallMultihull, DayBoat, Boat, object))
+
+    vereq(Pedalo.__mro__,
+          (Pedalo, PedalWheelBoat, EngineLess, SmallCatamaran,
+           SmallMultihull, DayBoat, WheelBoat, Boat, object))
+
+# see "A Monotonic Superclass Linearization for Dylan",
+# by Kim Barrett et al. (OOPSLA 1996)
+def consistency_with_epg():
+    if verbose: print "Testing consistentcy with EPG..."
+    class Pane(object): pass
+    class ScrollingMixin(object): pass
+    class EditingMixin(object): pass
+    class ScrollablePane(Pane,ScrollingMixin): pass
+    class EditablePane(Pane,EditingMixin): pass
+    class EditableScrollablePane(ScrollablePane,EditablePane): pass
+
+    vereq(EditableScrollablePane.__mro__,
+          (EditableScrollablePane, ScrollablePane, EditablePane,
+           Pane, ScrollingMixin, EditingMixin, object))
 
 def objects():
     if verbose: print "Testing object class..."
@@ -1214,11 +1267,13 @@ def slotspecials():
     a.foo = 42
     vereq(a.__dict__, {"foo": 42})
 
-    class C3(C1, C2):
-        __slots__ = []
-
-    class C4(C2, C1):
-        __slots__ = []
+# MRO order disagreement
+#
+#    class C3(C1, C2):
+#        __slots__ = []
+#
+#    class C4(C2, C1):
+#        __slots__ = []
 
 def dynamics():
     if verbose: print "Testing class attribute propagation..."
@@ -1505,12 +1560,13 @@ def altmro():
     vereq(D.mro(), [D, B, C, A, object])
     vereq(D.__mro__, (D, B, C, A, object))
     vereq(D().f(), "C")
+
     class PerverseMetaType(type):
         def mro(cls):
             L = type.mro(cls)
             L.reverse()
             return L
-    class X(A,B,C,D):
+    class X(D,B,C,A):
         __metaclass__ = PerverseMetaType
     vereq(X.__mro__, (object, A, C, B, D, X))
     vereq(X().f(), "A")
@@ -3368,6 +3424,9 @@ def test_main():
     pymods()
     multi()
     diamond()
+    ex5()
+    monotonicity()
+    consistency_with_epg()
     objects()
     slots()
     slotspecials()
