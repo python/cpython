@@ -12,6 +12,7 @@
 # s = mh.getprofile(key)  # profile entry (None if not set)
 # path = mh.getpath()     # mailbox pathname
 # name = mh.getcontext()  # name of current folder
+# mh.setcontext(name)     # set name of current folder
 #
 # list = mh.listfolders() # names of top-level folders
 # list = mh.listallfolders() # names of all folders, including subfolders
@@ -31,6 +32,7 @@
 # list = f.listmessages() # list of messages in folder (as numbers)
 # n = f.getcurrent()      # get current message
 # f.setcurrent(n)         # set current message
+# list = f.parsesequence(seq)     # parse msgs syntax into list of messages
 # n = f.getlast()         # get last message (0 if no messagse)
 # f.setlast(n)            # set last message (internal use only)
 #
@@ -69,6 +71,7 @@ FOLDER_PROTECT = 0700
 # Imported modules
 
 import os
+import sys
 from stat import ST_NLINK
 import regex
 import string
@@ -108,7 +111,7 @@ class MH:
 
 	# Routine to print an error.  May be overridden by a derived class
 	def error(self, msg, *args):
-		sys.stderr.write('MH error: %\n' % (msg % args))
+		sys.stderr.write('MH error: %s\n' % (msg % args))
 
 	# Return a profile entry, None if not found
 	def getprofile(self, key):
@@ -124,6 +127,13 @@ class MH:
 			  'Current-Folder')
 		if not context: context = 'inbox'
 		return context
+
+	# Set the name of the current folder
+	def setcontext(self, context):
+		fn = os.path.join(self.getpath(), 'context')
+		f = open(fn, "w")
+		f.write("Current-Folder: %s\n" % context)
+		f.close()
 
 	# Return the names of the top-level folders
 	def listfolders(self):
@@ -206,7 +216,7 @@ class MH:
 	def makefolder(self, name):
 		protect = pickline(self.profile, 'Folder-Protect')
 		if protect and isnumeric(protect):
-			mode = eval('0' + protect)
+			mode = string.atoi(protect, 8)
 		else:
 			mode = FOLDER_PROTECT
 		os.mkdir(os.path.join(self.getpath(), name), mode)
@@ -275,8 +285,9 @@ class Folder:
 	def listmessages(self):
 		messages = []
 		for name in os.listdir(self.getfullname()):
-			if isnumeric(name):
-				messages.append(eval(name))
+			if name[0] != "," and \
+			   numericprog.match(name) == len(name):
+				messages.append(string.atoi(name))
 		messages.sort()
 		if messages:
 			self.last = max(messages)
@@ -329,9 +340,46 @@ class Folder:
 	def setcurrent(self, n):
 		updateline(self.getsequencesfilename(), 'cur', str(n), 0)
 
+	# Parse an MH sequence specification into a message list.
+	def parsesequence(self, seq):
+	    if seq == "all":
+		return self.listmessages()
+	    try:
+		n = string.atoi(seq, 10)
+	    except string.atoi_error:
+		n = 0
+	    if n > 0:
+		return [n]
+	    if regex.match("^last:", seq) >= 0:
+		try:
+		    n = string.atoi(seq[5:])
+		except string.atoi_error:
+		    n = 0
+		if n > 0:
+		    return self.listmessages()[-n:]
+	    if regex.match("^first:", seq) >= 0:
+		try:
+		    n = string.atoi(seq[6:])
+		except string.atoi_error:
+		    n = 0
+		if n > 0:
+		    return self.listmessages()[:n]
+	    dict = self.getsequences()
+	    if dict.has_key(seq):
+		return dict[seq]
+	    context = self.mh.getcontext()
+	    # Complex syntax -- use pick
+	    pipe = os.popen("pick +%s %s 2>/dev/null" % (self.name, seq))
+	    data = pipe.read()
+	    sts = pipe.close()
+	    self.mh.setcontext(context)
+	    if sts:
+		    raise Error, "unparseable sequence %s" % `seq`
+	    items = string.split(data)
+	    return map(string.atoi, items)
+
 	# Open a message -- returns a Message object
 	def openmessage(self, n):
-		path = self.getmessagefilename(n)
 		return Message(self, n)
 
 	# Remove one or more messages -- may raise os.error
@@ -762,7 +810,7 @@ def updateline(file, key, value, casefold = 1):
 	if value is None:
 		newline = None
 	else:
-		newline = '%s: %s' % (key, value)
+		newline = '%s: %s\n' % (key, value)
 	for i in range(len(lines)):
 		line = lines[i]
 		if prog.match(line) == len(line):
@@ -774,10 +822,12 @@ def updateline(file, key, value, casefold = 1):
 	else:
 		if newline is not None:
 			lines.append(newline)
+	tempfile = file + "~"
 	f = open(tempfile, 'w')
 	for line in lines:
 		f.write(line)
 	f.close()
+	os.rename(tempfile, file)
 
 
 # Test program
