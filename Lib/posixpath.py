@@ -230,3 +230,29 @@ def expanduser(path):
 			return path
 		userhome = pwent[5]
 	return userhome + path[i:]
+
+
+# Expand paths containing shell variable substitutions.
+# This is done by piping it through the shell.
+# Shell quoting characters (\ " ' `) are protected by a backslash.
+# NB: a future version may avoid starting a subprocess and do the
+# substitutions internally.  This may slightly change the syntax
+# for variables.
+
+def expandvars(path):
+	if '$' not in path:
+		return path
+	q = ''
+	for c in path:
+		if c in ('\\', '"', '\'', '`'):
+			c = '\\' + c
+		q = q + c
+	d = '!'
+	if q == d:
+		d = '+'
+	p = posix.popen('cat <<' + d + '\n' + q + '\n' + d + '\n', 'r')
+	res = p.read()
+	del p
+	if res[-1:] == '\n':
+		res = res[:-1]
+	return res
