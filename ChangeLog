@@ -2,6 +2,13 @@
 ==> Release 1.1 (11 Oct 1994) <==
 =================================
 
+Tue Oct 11 16:24:42 1994  Guido van Rossum  <guido@voorn.cwi.nl>
+
+	* last-minute changes for SunOS 4.1.3: test for volatile in
+	configure; add getargs.o dependency to Modules/Makefile.in; some
+	things in README and Misc/NEWS; change pathnames in
+	Demo/tkinter/guido/*.py; new date in Doc
+
 Mon Oct 10 19:00:34 1994  Guido van Rossum  <guido@voorn.cwi.nl>
 
 	* Makefile.in: apply ranlib to installed libraries
