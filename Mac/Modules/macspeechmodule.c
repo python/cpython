@@ -541,10 +541,6 @@ initmacspeech()
 
 	/* Add some symbolic constants to the module */
 	d = PyModule_GetDict(m);
-	ms_error_object = PyString_FromString("macspeech.error");
+	ms_error_object = PyErr_NewException("macspeech.error", NULL, NULL);
 	PyDict_SetItemString(d, "error", ms_error_object);
-
-	/* Check for errors */
-	if (PyErr_Occurred())
-		Py_FatalError("can't initialize module macspeech");
 }

@@ -606,13 +606,9 @@ initctb()
 	CMCONST("cmStatusListenPend", 0x2000);
 	CMCONST("cmStatusIncomingCallPresent", 0x4000);
 	
-	ErrorObject = PyString_FromString("ctb.error");
+	ErrorObject = PyErr_NewException("ctb.error", NULL, NULL);
 	PyDict_SetItemString(d, "error", ErrorObject);
 	ctbcmtype.ob_type = &PyType_Type;
 	Py_INCREF(&ctbcmtype);
 	PyDict_SetItemString(d, "CTBConnectionMgrType", (PyObject *)&ctbcmtype);
-
-	/* Check for errors */
-	if (PyErr_Occurred())
-		Py_FatalError("can't initialize module ctb");
 }

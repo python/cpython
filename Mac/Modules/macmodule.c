@@ -630,7 +630,6 @@ initmac()
 	d = PyModule_GetDict(m);
 	
 	/* Initialize mac.error exception */
-	MacError = PyString_FromString("mac.error");
-	if (MacError == NULL || PyDict_SetItemString(d, "error", MacError) != 0)
-		Py_FatalError("can't define mac.error");
+	MacError = PyErr_NewException("mac.error", NULL, NULL);
+	PyDict_SetItemString(d, "error", MacError);
 }
