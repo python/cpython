@@ -294,6 +294,34 @@ distribution, to create or maintain whole documents or sections.
     specific implementation classes, and will always require the
     \var{type name} parameter to be provided.
 
+    \begin{envdesc}{cfuncdesc}{\p{type}\p{name}\p{args}}
+      Environment used to described a C function.  The \var{type}
+      should be specified as a \keyword{typedef} name, \code{struct
+      \var{tag}}, or the name of a primitive type.  If it is a pointer
+      type, the trailing asterisk should not be preceeded by a space.
+      \var{name} should be the name of the function (or function-like
+      pre-processor macro), and \var{args} should give the types and
+      names of the parameters.  The names need to be given so they may
+      be used in the description.
+    \end{envdesc}
+
+    \begin{envdesc}{ctypedesc}{\op{tag}\p{name}}
+      Environment used to described a C type.  The \var{name}
+      parameter should be the \keyword{typedef} name.  If the type is
+      defined as a \keyword{struct} without a \keyword{typedef},
+      \var{name} should have the form \code{struct \var{tag}}.
+      \var{name} will be added to the index unless \var{tag} is
+      provided, in which case \var{tag} will be used instead.
+      \var{tag} should not be used for a \keyword{typedef} name.
+    \end{envdesc}
+
+    \begin{envdesc}{cvardesc}{\p{type}\p{name}}
+      Description of a global C variable.  \var{type} should be the
+      \keyword{typedef} name, \code{struct \var{tag}}, or the name of
+      a primitive type.  If variable has a pointer type, the trailing
+      asterisk should \emph{not} be preceeded by a space.
+    \end{envdesc}
+
     \begin{envdesc}{datadesc}{\p{name}}
       This environment is used to document global data in a module,
       including both variables and values used as ``defined
