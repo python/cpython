@@ -17,6 +17,7 @@ import mactwit_stack
 import mactwit_browser
 import mactwit_edit
 import macfs
+import string
 
 # Resource-id (for checking existence)
 ID_MODULES=512
@@ -37,6 +38,7 @@ class Twit(FrameWork.Application, TwitCore.Application, MiniAEFrame.AEServer):
 		AE.AESetInteractionAllowed(AppleEvents.kAEInteractWithAll)
 		self.installaehandler('aevt', 'odoc', self.ae_open_doc)
 		self.installaehandler('aevt', 'quit', self.do_quit)
+		self.installaehandler('pyth', 'EXEC', self.do_bbpyexec) # BBpy execute event
 
 		self.dbg_menu_bar = Menu.GetMenuBar()
 		self.setstate(sessiontype)
@@ -175,6 +177,19 @@ class Twit(FrameWork.Application, TwitCore.Application, MiniAEFrame.AEServer):
 		fss, changed = object.Resolve()
 		self.runfile(fss.as_pathname())
 		
+	def do_bbpyexec(self, object=None, NAME=None, **args):
+		if type(object) <> type(''):
+			if AE.AEInteractWithUser(AppleEvents.kAEDefaultTimeout) == 0:
+				EasyDialogs.Message('EXEC AppleEvent arg should be a string')
+			return
+		if self.state <> 'none':
+			if AE.AEInteractWithUser(AppleEvents.kAEDefaultTimeout) == 0:
+				if not self.asknewsession():
+					return
+		stuff = string.splitfields(object, '\r')
+		stuff = string.joinfields(stuff, '\n')
+		self.runstring(stuff)
+			
 	def do_run(self, *args):
 		if not self.asknewsession():
 			return
