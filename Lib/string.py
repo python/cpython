@@ -100,7 +100,6 @@ def rstrip(s):
 
 
 # Split a string into a list of space/tab-separated words
-# NB: split(s) is NOT the same as splitfields(s, ' ')!
 def split(s, sep=None, maxsplit=-1):
     """split(s [,sep [,maxsplit]]) -> list of strings
 
