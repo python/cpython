@@ -467,6 +467,7 @@ calculate_path(void)
 		strncpy(zip_path, dllpath, MAXPATHLEN);
 	else			/* use name of executable program */
 		strncpy(zip_path, progpath, MAXPATHLEN);
+	zip_path[MAXPATHLEN] = '\0';
 	len = strlen(zip_path);
 	if (len > 4) {
 		zip_path[len-3] = 'z';	/* change ending to "zip" */
