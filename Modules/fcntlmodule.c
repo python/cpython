@@ -124,7 +124,9 @@ fcntl_ioctl(PyObject *self, PyObject *args)
 
 	PyErr_Clear();
 	arg = 0;
-	if (!PyArg_ParseTuple(args, "O&i|i;ioctl requires 2 integers and optionally a third integer or a string",
+	if (!PyArg_ParseTuple(args,
+	     "O&i|i;ioctl requires a file or file descriptor,"
+	     " an integer and optionally a third integer or a string",
 			      conv_descriptor, &fd, &code, &arg)) {
 	  return NULL;
 	}
