@@ -67,6 +67,10 @@ class BaseFunctionGenerator:
 	def docstring(self):
 		return None
 
+	def __cmp__(self, other):
+		if not hasattr(other, 'name'):
+			return cmp(id(self), id(other))
+		return cmp(self.name, other.name)
 
 _stringify_map = {'\n': '\\n', '\t': '\\t', '\r': '\\r', '\b': '\\b',
                   '\e': '\\e', '\a': '\\a', '\f': '\\f', '"': '\\"'}
