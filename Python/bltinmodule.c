@@ -426,80 +426,161 @@ the effects of any future statements in effect in the code calling\n\
 compile; if absent or zero these statements do influence the compilation,\n\
 in addition to any features explicitly specified.";
 
+/* Merge the __dict__ of aclass into dict, and recursively also all
+   the __dict__s of aclass's base classes.  The order of merging isn't
+   defined, as it's expected that only the final set of dict keys is
+   interesting.
+   Return 0 on success, -1 on error.
+*/
+
+static int
+merge_class_dict(PyObject* dict, PyObject* aclass)
+{
+	PyObject *classdict;
+	PyObject *bases;
+
+	assert(PyDict_Check(dict));
+	/* XXX Class objects fail the PyType_Check check.  Don't
+	   XXX know of others. */
+	/* assert(PyType_Check(aclass)); */
+	assert(aclass);
+
+	/* Merge in the type's dict (if any). */
+	classdict = PyObject_GetAttrString(aclass, "__dict__");
+	if (classdict == NULL)
+		PyErr_Clear();
+	else {
+		int status = PyDict_Update(dict, classdict);
+		Py_DECREF(classdict);
+		if (status < 0)
+			return -1;
+	}
+
+	/* Recursively merge in the base types' (if any) dicts. */
+	bases = PyObject_GetAttrString(aclass, "__bases__");
+	if (bases != NULL) {
+		int i, n;
+		assert(PyTuple_Check(bases));
+		n = PyTuple_GET_SIZE(bases);
+		for (i = 0; i < n; i++) {
+			PyObject *base = PyTuple_GET_ITEM(bases, i);
+			if (merge_class_dict(dict, base) < 0) {
+				Py_DECREF(bases);
+				return -1;
+			}
+		}
+		Py_DECREF(bases);
+	}
+	return 0;
+}
 
 static PyObject *
 builtin_dir(PyObject *self, PyObject *args)
 {
-	static char *attrlist[] = {"__members__", "__methods__", NULL};
-	PyObject *v = NULL, *l = NULL, *m = NULL;
-	PyObject *d, *x;
-	int i;
-	char **s;
+	PyObject *arg = NULL;
+	/* Set exactly one of these non-NULL before the end. */
+	PyObject *result = NULL;	/* result list */
+	PyObject *masterdict = NULL;	/* result is masterdict.keys() */
 
-	if (!PyArg_ParseTuple(args, "|O:dir", &v))
+	if (!PyArg_ParseTuple(args, "|O:dir", &arg))
 		return NULL;
-	if (v == NULL) {
-		x = PyEval_GetLocals();
-		if (x == NULL)
+
+	/* If no arg, return the locals. */
+	if (arg == NULL) {
+		PyObject *locals = PyEval_GetLocals();
+		if (locals == NULL)
 			goto error;
-		l = PyMapping_Keys(x);
-		if (l == NULL)
+		result = PyMapping_Keys(locals);
+		if (result == NULL)
 			goto error;
 	}
+
+	/* Elif this is some form of module, we only want its dict. */
+	else if (PyObject_TypeCheck(arg, &PyModule_Type)) {
+		masterdict = PyObject_GetAttrString(arg, "__dict__");
+		if (masterdict == NULL)
+			goto error;
+	}
+
+	/* Elif some form of type, recurse. */
+	else if (PyType_Check(arg)) {
+		masterdict = PyDict_New();
+		if (masterdict == NULL)
+			goto error;
+		if (merge_class_dict(masterdict, arg) < 0)
+			goto error;
+	}
+
+	/* Else look at its dict, and the attrs reachable from its class. */
 	else {
-		d = PyObject_GetAttrString(v, "__dict__");
-		if (d == NULL)
+		PyObject *itsclass;
+		/* Create a dict to start with. */
+		masterdict = PyObject_GetAttrString(arg, "__dict__");
+		if (masterdict == NULL) {
 			PyErr_Clear();
-		else {
-			l = PyMapping_Keys(d);
-			if (l == NULL)
-				PyErr_Clear();
-			Py_DECREF(d);
-		}
-		if (l == NULL) {
-			l = PyList_New(0);
-			if (l == NULL)
+			masterdict = PyDict_New();
+			if (masterdict == NULL)
 				goto error;
 		}
-		for (s = attrlist; *s != NULL; s++) {
-			m = PyObject_GetAttrString(v, *s);
-			if (m == NULL) {
-				PyErr_Clear();
-				continue;
-			}
-			for (i = 0; ; i++) {
-				x = PySequence_GetItem(m, i);
-				if (x == NULL) {
-					PyErr_Clear();
-					break;
-				}
-				if (PyList_Append(l, x) != 0) {
-					Py_DECREF(x);
-					Py_DECREF(m);
-					goto error;
-				}
-				Py_DECREF(x);
-			}
-			Py_DECREF(m);
+		else {
+			/* The object may have returned a reference to its
+			   dict, so copy it to avoid mutating it. */
+			PyObject *temp = PyDict_Copy(masterdict);
+			if (temp == NULL)
+				goto error;
+			Py_DECREF(masterdict);
+			masterdict = temp;
+		}
+		/* Merge in attrs reachable from its class. */
+		itsclass = PyObject_GetAttrString(arg, "__class__");
+		/* XXX Sometimes this is null!  Like after "class C: pass",
+		   C.__class__ raises AttributeError.  Don't know of other
+		   cases. */
+		if (itsclass == NULL)
+			PyErr_Clear();
+		else {
+			int status = merge_class_dict(masterdict, itsclass);
+			Py_DECREF(itsclass);
+			if (status < 0)
+				goto error;
 		}
 	}
-	if (PyList_Sort(l) != 0)
+
+	assert((result == NULL) ^ (masterdict == NULL));
+	if (masterdict != NULL) {
+		/* The result comes from its keys. */
+		assert(result == NULL);
+		result = PyMapping_Keys(masterdict);
+		if (result == NULL)
+			goto error;
+	}
+
+	assert(result);
+	if (PyList_Sort(result) != 0)
 		goto error;
-	return l;
+	else
+		goto normal_return;
+
   error:
-	Py_XDECREF(l);
-	return NULL;
+	Py_XDECREF(result);
+	result = NULL;
+	/* fall through */
+  normal_return:
+  	Py_XDECREF(masterdict);
+	return result;
 }
 
 static char dir_doc[] =
-"dir([object]) -> list of strings\n\
-\n\
-Return an alphabetized list of names comprising (some of) the attributes\n\
-of the given object.  Without an argument, the names in the current scope\n\
-are listed.  With an instance argument, only the instance attributes are\n\
-returned.  With a class argument, attributes of the base class are not\n\
-returned.  For other types or arguments, this may list members or methods.";
-
+"dir([object]) -> list of strings\n"
+"\n"
+"Return an alphabetized list of names comprising (some of) the attributes\n"
+"of the given object, and of attributes reachable from it:\n"
+"\n"
+"No argument:  the names in the current scope.\n"
+"Module object:  the module attributes.\n"
+"Type object:  its attributes, and recursively the attributes of its bases.\n"
+"Otherwise:  its attributes, its class's attributes, and recursively the\n"
+"    attributes of its class's base classes.";
 
 static PyObject *
 builtin_divmod(PyObject *self, PyObject *args)

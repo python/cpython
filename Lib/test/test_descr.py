@@ -172,6 +172,54 @@ def dict_constructor():
     d = dictionary(mapping=Mapping())
     verify(d == Mapping.dict)
 
+def test_dir():
+    if verbose:
+        print "Testing dir() ..."
+    junk = 12
+    verify(dir() == ['junk'])
+    del junk
+
+    # Just make sure these don't blow up!
+    for arg in 2, 2L, 2j, 2e0, [2], "2", u"2", (2,), {2:2}, type, test_dir:
+        dir(arg)
+
+    # Check some details here because classic classes aren't working
+    # reasonably, and I want this to fail (eventually).
+    class C:
+        Cdata = 1
+        def Cmethod(self): pass
+
+    cstuff = ['Cdata', 'Cmethod', '__doc__', '__module__']
+    verify(dir(C) == cstuff)
+
+    c = C()  # c.__doc__ is an odd thing to see here; ditto c.__module__.
+    verify(dir(c) == cstuff)
+
+    c.cdata = 2
+    c.cmethod = lambda self: 0
+    verify(dir(c) == cstuff + ['cdata', 'cmethod'])
+
+    class A(C):
+        Adata = 1
+        def Amethod(self): pass
+    astuff = ['Adata', 'Amethod', '__doc__', '__module__']
+    # This isn't finding C's stuff at all.
+    verify(dir(A) == astuff)
+    # But this is!  It's because a.__class__ exists but A.__class__ doesn't.
+    a = A()
+    verify(dir(a) == astuff[:2] + cstuff)
+
+    # The story for new-style classes is quite different.
+    class C(object):
+        Cdata = 1
+        def Cmethod(self): pass
+    class A(C):
+        Adata = 1
+        def Amethod(self): pass
+    d = dir(A)
+    for expected in 'Cdata', 'Cmethod', 'Adata', 'Amethod':
+        verify(expected in d)
+
 binops = {
     'add': '+',
     'sub': '-',
@@ -1349,6 +1397,7 @@ def all():
     lists()
     dicts()
     dict_constructor()
+    test_dir()
     ints()
     longs()
     floats()

@@ -383,14 +383,8 @@ From the Iterators list, about the types of these things.
 >>> i = g()
 >>> type(i)
 <type 'generator'>
-
-XXX dir(object) *generally* doesn't return useful stuff in descr-branch.
->>> dir(i)
-[]
-
-Was hoping to see this instead:
+>>> [s for s in dir(i) if not s.startswith('_')]
 ['gi_frame', 'gi_running', 'next']
-
 >>> print i.next.__doc__
 x.next() -> the next value, or raise StopIteration
 >>> iter(i) is i
