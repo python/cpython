@@ -553,12 +553,10 @@ eval_frame(PyFrameObject *f)
 #define SECOND()	(stack_pointer[-2])
 #define THIRD() 	(stack_pointer[-3])
 #define FOURTH()	(stack_pointer[-4])
-#define FIFTH() 	(stack_pointer[-5])
 #define SET_TOP(v)	(stack_pointer[-1] = (v))
 #define SET_SECOND(v)	(stack_pointer[-2] = (v))
 #define SET_THIRD(v)	(stack_pointer[-3] = (v))
 #define SET_FOURTH(v)	(stack_pointer[-4] = (v))
-#define SET_FIFTH(v)	(stack_pointer[-5] = (v))
 #define BASIC_STACKADJ(n)	(stack_pointer += n)
 #define BASIC_PUSH(v)	(*stack_pointer++ = (v))
 #define BASIC_POP()	(*--stack_pointer)
@@ -884,39 +882,6 @@ eval_frame(PyFrameObject *f)
 				SET_TOP(x);
 				SET_SECOND(w);
 				SET_THIRD(v);
-				continue;
-			case 4:
-				x = TOP();
-				Py_INCREF(x);
-				w = SECOND();
-				Py_INCREF(w);
-				v = THIRD();
-				Py_INCREF(v);
-				u = FOURTH();
-				Py_INCREF(u);
-				STACKADJ(4);
-				SET_TOP(x);
-				SET_SECOND(w);
-				SET_THIRD(v);
-				SET_FOURTH(u);
-				continue;
-			case 5:
-				x = TOP();
-				Py_INCREF(x);
-				w = SECOND();
-				Py_INCREF(w);
-				v = THIRD();
-				Py_INCREF(v);
-				u = FOURTH();
-				Py_INCREF(u);
-				t = FIFTH();
-				Py_INCREF(t);
-				STACKADJ(5);
-				SET_TOP(x);
-				SET_SECOND(w);
-				SET_THIRD(v);
-				SET_FOURTH(u);
-				SET_FIFTH(t);
 				continue;
 			default:
 				Py_FatalError("invalid argument to DUP_TOPX"
