@@ -318,6 +318,25 @@ class ReferencesTestCase(TestBase):
         wr = weakref.ref(c, lambda ignore: gc.collect())
         del c
 
+        # There endeth the first part.  It gets worse.
+        del wr
+
+        c1 = C()
+        c1.i = C()
+        wr = weakref.ref(c1.i, lambda ignore: gc.collect())
+
+        c2 = C()
+        c2.c1 = c1
+        del c1  # still alive because c2 points to it
+
+        # Now when subtype_dealloc gets called on c2, it's not enough just
+        # that c2 is immune from gc while the weakref callbacks associated
+        # with c2 execute (there are none in this 2nd half of the test, btw).
+        # subtype_dealloc goes on to call the base classes' deallocs too,
+        # so any gc triggered by weakref callbacks associated with anything
+        # torn down by a base class dealloc can also trigger double
+        # deallocation of c2.
+        del c2
 
 class Object:
     def __init__(self, arg):

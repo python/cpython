@@ -639,10 +639,10 @@ subtype_dealloc(PyObject *self)
 	++_PyTrash_delete_nesting;
 	Py_TRASHCAN_SAFE_BEGIN(self);
 	--_PyTrash_delete_nesting;
-	/* DO NOT restore GC tracking at this point.  The weakref callback
-	 * (if any) may trigger GC, and if self is tracked at that point,
-	 * it will look like trash to GC and GC will try to delete it
-	 * again.  Double-deallocation is a subtle disaster.
+	/* DO NOT restore GC tracking at this point.  weakref callbacks
+	 * (if any, and whether directly here or indirectly in something we
+	 * call) may trigger GC, and if self is tracked at that point, it
+	 * will look like trash to GC and GC will try to delete self again.
 	 */
 
 	/* Find the nearest base with a different tp_dealloc */
@@ -658,13 +658,15 @@ subtype_dealloc(PyObject *self)
 
 	if (type->tp_weaklistoffset && !base->tp_weaklistoffset)
 		PyObject_ClearWeakRefs(self);
-	_PyObject_GC_TRACK(self); /* We'll untrack for real later */
 
 	/* Maybe call finalizer; exit early if resurrected */
 	if (type->tp_del) {
+		_PyObject_GC_TRACK(self);
 		type->tp_del(self);
 		if (self->ob_refcnt > 0)
-			goto endlabel;
+			goto endlabel;	/* resurrected */
+		else
+			_PyObject_GC_UNTRACK(self);
 	}
 
 	/*  Clear slots up to the nearest base with a different tp_dealloc */
@@ -688,11 +690,11 @@ subtype_dealloc(PyObject *self)
 		}
 	}
 
-	/* Finalize GC if the base doesn't do GC and we do */
-	if (!PyType_IS_GC(base))
-		_PyObject_GC_UNTRACK(self);
-
-	/* Call the base tp_dealloc() */
+	/* Call the base tp_dealloc(); first retrack self if
+	 * basedealloc knows about gc.
+	 */
+	if (PyType_IS_GC(base))
+		_PyObject_GC_TRACK(self);
 	assert(basedealloc);
 	basedealloc(self);
 
@@ -729,6 +731,16 @@ subtype_dealloc(PyObject *self)
 	         GC untrack
 		 trashcan begin
 		 GC track
+
+           Q. Why did the last question say "immediately GC-track again"?
+              It's nowhere near immediately.
+
+           A. Because the code *used* to re-track immediately.  Bad Idea.
+              self has a refcount of 0, and if gc ever gets its hands on it
+              (which can happen if any weakref callback gets invoked), it
+              looks like trash to gc too, and gc also tries to delete self
+              then.  But we're already deleting self.  Double dealloction is
+              a subtle disaster.
 
 	   Q. Why the bizarre (net-zero) manipulation of
 	      _PyTrash_delete_nesting around the trashcan macros?
