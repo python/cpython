@@ -868,6 +868,12 @@ yellow 5
 \item Integer operations will no longer trigger an \exception{OverflowWarning}.
 The \exception{OverflowWarning} warning will disappear in Python 2.5.
 
+\item The interpreter gained a new switch, \programopt{-m}, that
+takes a name, searches for the corresponding  module on \code{sys.path},
+and runs the module as a script.  For example, 
+you can now run the Python profiler with \code{python -m profile}.
+(Contributed by Nick Coghlan.)
+
 \item The \function{eval(\var{expr}, \var{globals}, \var{locals})}
 and \function{execfile(\var{filename}, \var{globals}, \var{locals})}
 functions and the \keyword{exec} statement now accept any mapping type
