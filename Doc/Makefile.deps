@@ -83,6 +83,7 @@ REFFILES= $(MANSTYLES) $(INDEXSTYLES) $(COMMONTEX) \
 
 # LaTeX source files for the Python Library Reference
 LIBFILES= $(MANSTYLES) $(INDEXSTYLES) $(COMMONTEX) \
+	texinputs/reportingbugs.tex \
 	lib/lib.tex \
 	lib/asttable.tex \
 	lib/compiler.tex \
@@ -95,7 +96,6 @@ LIBFILES= $(MANSTYLES) $(INDEXSTYLES) $(COMMONTEX) \
 	lib/emailmessage.tex \
 	lib/emailparser.tex \
 	lib/emailutil.tex \
-	texinputs/reportingbugs.tex \
 	lib/libintro.tex \
 	lib/libobjs.tex \
 	lib/libstdtypes.tex \
@@ -105,6 +105,7 @@ LIBFILES= $(MANSTYLES) $(INDEXSTYLES) $(COMMONTEX) \
 	lib/libsys.tex \
 	lib/libfpectl.tex \
 	lib/libgc.tex \
+	lib/libsets.tex \
 	lib/libweakref.tex \
 	lib/libinspect.tex \
 	lib/libpydoc.tex \
