@@ -4,6 +4,11 @@ Release date: dd-mmm-2002
 
 Core and builtins
 
+- When x is an object whose class implements __mul__ and __rmul__,
+  1.0*x would correctly invoke __rmul__, but 1*x would erroneously
+  invoke __mul__.  This was due to the sequence-repeat code in the int
+  type.  This has been fixed now.
+
 - If a dying instance of a new-style class got resurrected by its class's
   __del__ method, Python aborted with a fatal error.
 
