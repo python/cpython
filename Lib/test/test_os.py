@@ -9,7 +9,7 @@ import warnings
 warnings.filterwarnings("ignore", "tempnam", RuntimeWarning, __name__)
 warnings.filterwarnings("ignore", "tmpnam", RuntimeWarning, __name__)
 
-from test.test_support import TESTFN, run_unittest
+from test.test_support import TESTFN, run_suite
 
 class TemporaryFileTests(unittest.TestCase):
     def setUp(self):
@@ -186,8 +186,10 @@ class StatAttributeTests(unittest.TestCase):
             pass
 
 def test_main():
-    run_unittest(TemporaryFileTests)
-    run_unittest(StatAttributeTests)
+    suite = unittest.TestSuite()
+    suite.addTest(unittest.makeSuite(TemporaryFileTests))
+    suite.addTest(unittest.makeSuite(StatAttributeTests))
+    run_suite(suite)
 
 if __name__ == "__main__":
     test_main()
