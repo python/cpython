@@ -66,6 +66,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "allobjects.h"
 #include "modsupport.h"
 #include "ceval.h"
+#include "sysmodule.h"
 
 #ifdef macintosh
 #include ":::stdwin:H:stdwin.h"
@@ -1943,6 +1944,21 @@ typeobject Windowtype = {
 /* Stdwin methods */
 
 static object *
+stdwin_done(sw, args)
+	object *sw;
+	object *args;
+{
+	if (!getnoarg(args))
+		return NULL;
+	wdone();
+	/* XXX There is no protection against continued use of
+	   XXX stdwin functions or objects after this call is made.
+	   XXX Use at own risk */
+	INCREF(None);
+	return None;
+}
+
+static object *
 stdwin_open(sw, args)
 	object *sw;
 	object *args;
@@ -2467,6 +2483,7 @@ static struct methodlist stdwin_methods[] = {
 	{"askfile",		stdwin_askfile},
 	{"askstr",		stdwin_askstr},
 	{"askync",		stdwin_askync},
+	{"done",		stdwin_done},
 	{"fetchcolor",		stdwin_fetchcolor},
 #ifdef unix
 	{"fileno",		stdwin_connectionnumber},
@@ -2515,6 +2532,67 @@ static struct methodlist stdwin_methods[] = {
 	{NULL,			NULL}		/* sentinel */
 };
 
+static int
+checkstringlist(args, ps, pn)
+	object *args;
+	char ***ps;
+	int *pn;
+{
+	int i, n;
+	char **s;
+	if (!is_listobject(args)) {
+		err_setstr(TypeError, "list of strings expected");
+		return 0;
+	}
+	n = getlistsize(args);
+	s = NEW(char *, n+1);
+	if (s == NULL) {
+		err_nomem();
+		return 0;
+	}
+	for (i = 0; i < n; i++) {
+		object *item = getlistitem(args, i);
+		if (!is_stringobject(item)) {
+			err_setstr(TypeError, "list of strings expected");
+			return 0;
+		}
+		s[i] = getstringvalue(item);
+	}
+	s[n] = NULL; /* In case caller wants a NULL-terminated list */
+	*ps = s;
+	*pn = n;
+	return 1;
+}
+
+static int
+putbackstringlist(list, s, n)
+	object *list;
+	char **s;
+	int n;
+{
+	int oldsize = getlistsize(list);
+	object *newlist;
+	int i;
+	if (n == oldsize)
+		return 1;
+	newlist = newlistobject(n);
+	for (i = 0; i < n && newlist != NULL; i++) {
+		object *item = newstringobject(s[i]);
+		if (item == NULL) {
+			DECREF(newlist);
+			newlist = NULL;
+		}
+		else
+			setlistitem(newlist, i, item);
+	}
+	if (newlist == NULL)
+		return 0;
+	(*list->ob_type->tp_as_sequence->sq_ass_slice)
+		(list, 0, oldsize, newlist);
+	DECREF(newlist);
+	return 1;
+}
+
 void
 initstdwin()
 {
@@ -2522,7 +2600,18 @@ initstdwin()
 	static int inited = 0;
 
 	if (!inited) {
-		winit();
+		int argc = 0;
+		char **argv = NULL;
+		object *sys_argv = sysget("argv");
+		if (sys_argv != NULL) {
+			if (!checkstringlist(sys_argv, &argv, &argc))
+				err_clear();
+		}
+		winitargs(&argc, &argv);
+		if (argv != NULL) {
+			if (!putbackstringlist(sys_argv, argv, argc))
+				err_clear();
+		}
 		inited = 1;
 	}
 	m = initmodule("stdwin", stdwin_methods);
