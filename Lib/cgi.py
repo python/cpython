@@ -1316,12 +1316,14 @@ environment as well.  Here are some common variable names:
 # Utilities
 # =========
 
-def escape(s):
+def escape(s, quote=None):
     """Replace special characters '&', '<' and '>' by SGML entities."""
     import regsub
     s = regsub.gsub("&", "&amp;", s)	# Must be done first!
     s = regsub.gsub("<", "&lt;", s)
     s = regsub.gsub(">", "&gt;", s)
+    if quote:
+	s = regsub.gsub('"', "&quot;", s)
     return s
 
 
