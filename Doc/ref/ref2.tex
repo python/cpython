@@ -263,13 +263,23 @@ def       finally   in        print
 Certain classes of identifiers (besides keywords) have special
 meanings.  These are:
 
-\begin{tableii}{l|l}{code}{Form}{Meaning}
-\lineii{_*}{Not imported by \samp{from \var{module} import *}}
-\lineii{__*__}{System-defined name}
-\lineii{__*}{Class-private name mangling}
-\end{tableii}
+\begin{tableiii}{l|l|l}{code}{Form}{Meaning}{Notes}
+\lineiii{_*}{Not imported by \samp{from \var{module} import *}}{(1)}
+\lineiii{__*__}{System-defined name}{}
+\lineiii{__*}{Class-private name mangling}{}
+\end{tableiii}
 
 (XXX need section references here.)
+
+Note:
+
+\begin{description}
+\item[(1)] The special identifier \samp{_} is used in the interactive
+interpreter to store the result of the last evaluation; it is stored
+in the \module{__builtin__} module.  When not in interactive mode,
+\samp{_} has no special meaning and is not defined.
+\end{description}
+
 
 \section{Literals\label{literals}}
 
