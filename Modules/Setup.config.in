@@ -15,5 +15,5 @@
 #*shared*
 
 # bsddb module enabled by --with-libdb or presence of db.h
-@USE_BSDDB_MODULE@bsddb bsddbmodule.c -ldb
+@USE_BSDDB_MODULE@bsddb bsddbmodule.c @HAVE_LIBDB@
 

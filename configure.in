@@ -836,6 +836,13 @@ else
 fi
 AC_MSG_RESULT($with_libdb)
 
+if test "$with_libdb" = "yes"
+then
+    # check for libdb; BSD systems have the DB routines in libc  --tg
+    AC_SUBST(HAVE_LIBDB)
+    AC_CHECK_FUNC(dbopen, [HAVE_LIBDB=], AC_CHECK_LIB(db, dbopen, [HAVE_LIBDB=-ldb]))
+fi
+
 # Check for --with-wctype-functions
 AC_MSG_CHECKING(for --with-wctype-functions)
 AC_ARG_WITH(wctype-functions, 
