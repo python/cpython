@@ -24,7 +24,7 @@ usage of the same character for the same purpose in string literals;
 for example, to match a literal backslash, one might have to write
 \code{'\e\e\e\e'} as the pattern string, because the regular expression
 must be \samp{\e\e}, and each backslash must be expressed as
-\samp{\e\e} inside a regular Python string literal. 
+\samp{\e\e} inside a regular Python string literal.
 
 The solution is to use Python's raw string notation for regular
 expression patterns; backslashes are not handled in any special way in
@@ -178,8 +178,8 @@ will match any lowercase letter, and \code{[a-zA-Z0-9]} matches any
 letter or digit.  Character classes such as \code{\e w} or \code{\e S}
 (defined below) are also acceptable inside a range.  If you want to
 include a \character{]} or a \character{-} inside a set, precede it with a
-backslash, or place it as the first character.  The 
-pattern \regexp{[]]} will match \code{']'}, for example.  
+backslash, or place it as the first character.  The
+pattern \regexp{[]]} will match \code{']'}, for example.
 
 You can match the characters not within a range by \dfn{complementing}
 the set.  This is indicated by including a \character{\^} as the first
@@ -209,7 +209,7 @@ inside a character class: \regexp{[(] [)]}.
 
 \item[\code{(?...)}] This is an extension notation (a \character{?}
 following a \character{(} is not meaningful otherwise).  The first
-character after the \character{?} 
+character after the \character{?}
 determines what the meaning and further syntax of the construct is.
 Extensions usually do not create a new group;
 \regexp{(?P<\var{name}>...)} is the only exception to this rule.
@@ -231,13 +231,14 @@ the flag, the results are undefined.
 
 \item[\code{(?:...)}] A non-grouping version of regular parentheses.
 Matches whatever regular expression is inside the parentheses, but the
-substring matched by the 
+substring matched by the
 group \emph{cannot} be retrieved after performing a match or
-referenced later in the pattern. 
+referenced later in the pattern.
 
 \item[\code{(?P<\var{name}>...)}] Similar to regular parentheses, but
 the substring matched by the group is accessible via the symbolic group
-name \var{name}.  Group names must be valid Python identifiers.  A
+name \var{name}.  Group names must be valid Python identifiers, and
+each group name must be defined only once within a regular expression.  A
 symbolic group is also a numbered group, just as if the group were not
 named.  So the group named 'id' in the example above can also be
 referenced as the numbered group 1.
@@ -292,7 +293,7 @@ resulting RE will match the second character.  For example,
 \item[\code{\e \var{number}}] Matches the contents of the group of the
 same number.  Groups are numbered starting from 1.  For example,
 \regexp{(.+) \e 1} matches \code{'the the'} or \code{'55 55'}, but not
-\code{'the end'} (note 
+\code{'the end'} (note
 the space after the group).  This special sequence can only be used to
 match one of the first 99 groups.  If the first digit of \var{number}
 is 0, or \var{number} is 3 octal digits long, it will not be interpreted
@@ -300,7 +301,7 @@ as a group match, but as the character with octal value \var{number}.
 (There is a group 0, which is the entire matched pattern, but it can't
 be referenced with \regexp{\e 0}; instead, use \regexp{\e g<0>}.)
 Inside the \character{[} and \character{]} of a character class, all numeric
-escapes are treated as characters. 
+escapes are treated as characters.
 
 \item[\code{\e A}] Matches only at the start of the string.
 
@@ -387,7 +388,7 @@ The module defines the following functions and constants, and an exception:
 \begin{funcdesc}{compile}{pattern\optional{, flags}}
   Compile a regular expression pattern into a regular expression
   object, which can be used for matching using its \function{match()} and
-  \function{search()} methods, described below.  
+  \function{search()} methods, described below.
 
   The expression's behaviour can be modified by specifying a
   \var{flags} value.  Values can be any of the following variables,
@@ -424,7 +425,7 @@ current locale.
 \begin{datadesc}{L}
 \dataline{LOCALE}
 Make \regexp{\e w}, \regexp{\e W}, \regexp{\e b}, and
-\regexp{\e B} dependent on the current locale. 
+\regexp{\e B} dependent on the current locale.
 \end{datadesc}
 
 \begin{datadesc}{M}
@@ -456,7 +457,7 @@ Make \regexp{\e w}, \regexp{\e W}, \regexp{\e b}, and
 \begin{datadesc}{X}
 \dataline{VERBOSE}
 This flag allows you to write regular expressions that look nicer.
-Whitespace within the pattern is ignored, 
+Whitespace within the pattern is ignored,
 except when in a character class or preceded by an unescaped
 backslash, and, when a line contains a \character{\#} neither in a
 character class or preceded by an unescaped backslash, all characters
@@ -605,7 +606,7 @@ attributes:
   corresponding \class{MatchObject} instance.  Return \code{None} if no
   position in the string matches the pattern; note that this is
   different from finding a zero-length match at some point in the string.
-  
+
   The optional \var{pos} and \var{endpos} parameters have the same
   meaning as for the \method{match()} method.
 \end{methoddesc}
@@ -659,7 +660,7 @@ The flags argument used when the RE object was compiled, or
 \end{memberdesc}
 
 \begin{memberdesc}[RegexObject]{groupindex}
-A dictionary mapping any symbolic group names defined by 
+A dictionary mapping any symbolic group names defined by
 \regexp{(?P<\var{id}>)} to group numbers.  The dictionary is empty if no
 symbolic groups were used in the pattern.
 \end{memberdesc}
@@ -695,13 +696,13 @@ the string matching the the corresponding parenthesized group.  If a
 group number is negative or larger than the number of groups defined
 in the pattern, an \exception{IndexError} exception is raised.
 If a group is contained in a part of the pattern that did not match,
-the corresponding result is \code{None}.  If a group is contained in a 
+the corresponding result is \code{None}.  If a group is contained in a
 part of the pattern that matched multiple times, the last match is
 returned.
 
 If the regular expression uses the \regexp{(?P<\var{name}>...)} syntax,
 the \var{groupN} arguments may also be strings identifying groups by
-their group name.  If a string argument is not used as a group name in 
+their group name.  If a string argument is not used as a group name in
 the pattern, an \exception{IndexError} exception is raised.
 
 A moderately complicated example:
@@ -765,7 +766,7 @@ Note that if \var{group} did not contribute to the match, this is
 \begin{memberdesc}[MatchObject]{pos}
 The value of \var{pos} which was passed to the
 \function{search()} or \function{match()} function.  This is the index
-into the string at which the RE engine started looking for a match. 
+into the string at which the RE engine started looking for a match.
 \end{memberdesc}
 
 \begin{memberdesc}[MatchObject]{endpos}

@@ -81,8 +81,10 @@ class Pattern:
         gid = self.groups
         self.groups = gid + 1
         if name:
-            if self.groupdict.has_key(name):
-                raise error, "can only use each group name once"
+            ogid = self.groupdict.get(name, None)
+            if ogid is not None:
+                raise error, ("redefinition of group name %s as group %d; " +
+                              "was group %d") % (`name`, gid,  ogid)
             self.groupdict[name] = gid
         self.open.append(gid)
         return gid
