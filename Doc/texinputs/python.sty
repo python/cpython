@@ -867,11 +867,13 @@
 \newcommand{\citetitle}[2][URL]{\emph{#2}}
 
 
+\newcommand{\grammartoken}[1]{\texttt{#1}}
 \newenvironment{productionlist}[1][\py@badkey]{
   \def\optional##1{{\Large[}##1{\Large]}}
   \def\production##1##2{\code{##1}&::=&\code{##2}\\}
   \def\orgroup##1{{\def\or{\textbar\ }##1}}
   \def\token##1{##1}
+  \let\grammartoken=\token
   \begin{center}
     \begin{tabular}{lcl}
 }{%
