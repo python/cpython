@@ -13,11 +13,14 @@ def dump(obj):
             print "\t", attr, repr(val)
 
 def loadCode(path):
-    f = open(path)
-    f.read(8)
-    co = marshal.load(f)
-    f.close()
-    return co
+    if path[-1] == "c":
+        f = open(path)
+        f.read(8)
+        co = marshal.load(f)
+        f.close()
+        return co
+    else:
+        return compile(open(path).read(), path, "exec")
 
 def walk(co, match=None):
     if match is None or co.co_name == match:
