@@ -34,12 +34,11 @@ implementations.
 
 The open function has an optional second argument.  This can be 'r',
 for read-only access, 'w', for read-write access of an existing
-database, 'n' or 'c' for read-write access to a new database.  The
-default is 'r'.
+database, 'c' for read-write access to a new or existing database, and
+'n' for read-write access to a new database.  The default is 'r'.
 
-Note: the difference between 'w' and 'n' is that 'w' fails if the
-database doesn't already exist.  There appears to be no difference
-between 'n' and 'c'.
+Note: 'r' and 'w' fail if the database doesn't exist; 'c' creates it
+only if it doesn't exist; and 'n' always creates a new database.
 
 """
 
