@@ -1070,7 +1070,7 @@ Modifying \file{sample.h} would then cause the module to be recompiled.
 it now checks for the \envvar{CC}, \envvar{CFLAGS}, \envvar{CPP},
 \envvar{LDFLAGS}, and \envvar{CPPFLAGS} environment variables, using
 them to override the settings in Python's configuration (contributed
-by Robert Weber); the \function{get_distutils_option()} method lists
+by Robert Weber); the \function{get_distutils_options()} method lists
 recently-added extensions to Distutils.
 
 \item The \module{getopt} module gained a new function,
@@ -1159,6 +1159,12 @@ input values measured in radians. (Contributed by Raymond Hettinger.)
 \function{minor()}, and \function{mknod()}, were added to the
 \module{posix} module that underlies the \module{os} module.
 (Contributed by Gustavo Niemeyer and Geert Jansen.)
+
+\item The old and never-documented \module{linuxaudiodev} module has
+been renamed to \module{ossaudiodev}, because the OSS sound drivers
+can be used on platforms other than Linux.  The interface has also
+been tidied and brought up to date in various ways. (Contributed by
+Greg Ward.)
 
 \item The parser objects provided by the \module{pyexpat} module
 can now optionally buffer character data, resulting in fewer calls to
