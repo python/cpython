@@ -86,6 +86,16 @@ class TestBasicOps(unittest.TestCase):
             else:
                 self.fail()
 
+    def test_sample_inputs(self):
+        # SF bug #801342 -- population can be any iterable defining __len__()
+        from sets import Set
+        self.gen.sample(Set(range(20)), 2)
+        self.gen.sample(range(20), 2)
+        self.gen.sample(xrange(20), 2)
+        self.gen.sample(dict.fromkeys('abcdefghijklmnopqrst'), 2)
+        self.gen.sample(str('abcdefghijklmnopqrst'), 2)
+        self.gen.sample(tuple('abcdefghijklmnopqrst'), 2)
+
     def test_gauss(self):
         # Ensure that the seed() method initializes all the hidden state.  In
         # particular, through 2.2.1 it failed to reset a piece of state used
