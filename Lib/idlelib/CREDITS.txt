@@ -1,17 +1,30 @@
 IDLEfork Credits
 ==================
 
-Guido van Rossum, as well as being the creator of the Python language, was
-the original creator of IDLE. His great work continues as both a contributor
-to, and 'benevolent dictator for life' of Python and IDLE/IDLEfork.
+Guido van Rossum, as well as being the creator of the Python language, is
+the original creator of IDLE.  He also developed the RPC code and Remote
+Debugger extension used in IDLEfork.
 
-The main developers who have been so far active on IDLEfork version 0.8.1 
-and greater are, Guido van Rossum, Stephen M. Gava and Kurt B. Kaiser.
+The IDLEfork project was initiated and brought up to version 0.7.1 primarily
+by David Scherer, with help from Peter Schneider-Kamp and Nicholas Riley.
+Bruce Sherwood has contributed considerable time testing and suggesting
+improvements.
 
-The IDLE fork project was initiated and brought up to version 0.7.1 by
-David Scherer, Peter Schneider-Kamp and Nicholas Riley.
+Besides Guido, the main developers who have been active on IDLEfork version
+0.8.1 and later are Stephen M. Gava, who implemented the configuration GUI, and
+Kurt B. Kaiser, who continued the integration of the RPC and remote debugger,
+and made a number of usability enhancements.
 
-There are doubtless others who should be included here, especially those
-who may have contributed to IDLE versions prior ot 0.8. Please contact
-the IDLEfork coordinator to have yourself included here if you are one of
-those I have missed! (contact details at http://idlefork.sourceforge.net) 
+Other contributors include Tony Lownds (Mac integration), and Chui Tey (RPC,
+Debugger) 
+
+Neal Norwitz and Josh Robb have submitted useful patches. 
+
+There are others who should be included here, especially those who contributed
+to IDLE versions prior to 0.8, principally Mark Hammond, Tim Peters, and Moshe
+Zadka.  For additional details refer to NEWS.txt and Changelog.
+
+Please contact the IDLEfork maintainer to have yourself included here if you
+are one of those we missed! 
+
+Contact details at http://idlefork.sourceforge.net
