@@ -147,7 +147,7 @@ signal_handler(sig_num)
 		return;
 	}
 #endif
-	(void *)signal(sig_num, &signal_handler);
+	(void)signal(sig_num, &signal_handler);
 }
 
 
