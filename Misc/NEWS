@@ -37,14 +37,16 @@ Core
 
 - A new command line option, -Q<arg>, is added to control run-time
   warnings for the use of classic division.  (See PEP 238.)  Possible
-  values are -Qold, -Qwarn, and -Qnew.  The default is -Qold, meaning
-  the / operator has its classic meaning and no warnings are issued.
-  Using -Qwarn issues a run-time warning about all uses of classic
-  division for int, long, float and complex arguments.  Using -Qnew is
-  questionable; it turns on new division by default, but only in the
-  __main__ module.  You can usefully combine -Qwarn and -Qnew: this
-  gives the __main__ module new division, and warns about classic
-  division everywhere else.
+  values are -Qold, -Qwarn, -Qwarnall, and -Qnew.  The default is
+  -Qold, meaning the / operator has its classic meaning and no
+  warnings are issued.  Using -Qwarn issues a run-time warning about
+  all uses of classic division for int and long arguments; -Qwarnall
+  also warns about classic division for float and complex arguments
+  (for use with fixdiv.py).  Using -Qnew is questionable; it turns on
+  new division by default, but only in the __main__ module.  You can
+  usefully combine -Qwarn or -Qwarnall and -Qnew: this gives the
+  __main__ module new division, and warns about classic division
+  everywhere else.
 
 - Many built-in types can now be subclassed.  This applies to int,
   long, float, str, unicode, and tuple.  (The types complex, list and
@@ -114,7 +116,15 @@ Library
 
 Tools
 
+- Tools/scripts/fixdiv.py has been added which can be used to fix
+  division operators as per PEP 238.
+
 Build
+
+- If you are an adventurous person using Mac OS X you may want to look at
+  Mac/OSX. There is a Makefile there that will build Python as a real Mac
+  application, which can be used for experimenting with Carbon or Cocoa.
+  Discussion of this on pythonmac-sig, please.
 
 C API
 
