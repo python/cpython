@@ -61,6 +61,9 @@ class LabelAppearance():
 			self.recalc()
 			self.parent.change(bounds)
 	#
+	def realize(self):
+		pass
+	#
 	# Changing the state bits
 	#
 	def enable(self, flag):
