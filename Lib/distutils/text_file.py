@@ -9,7 +9,7 @@ lines, and joining lines with backslashes."""
 __revision__ = "$Id$"
 
 from types import *
-import os, string, re
+import sys, os, string, re
 
 
 class TextFile:
@@ -65,6 +65,15 @@ class TextFile:
         self.file = None
         self.filename = None
         self.current_line = None
+
+
+    def warn (self, msg):
+        sys.stderr.write (self.filename + ", ")
+        if type (self.current_line) is ListType:
+            sys.stderr.write ("lines %d-%d: " % tuple (self.current_line))
+        else:
+            sys.stderr.write ("line %d: " % self.current_line)
+        sys.stderr.write (msg + "\n")
 
 
     def readline (self):
