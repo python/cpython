@@ -133,15 +133,6 @@ class PyncheWidget(Pmw.MegaWidget):
 	self.__typein = TypeinWidget(interior)
 	self.__typein.grid(row=0, column=2)
 
-	# create the type-in color name field
-## 	self.__colorname = self.createcomponent(
-## 	    'colorname', (), None,
-## 	    Pmw.EntryField, (interior,),
-## 	    label_text='Color Name'
-##             )
-## 	self.__colorname.pack()
-## 	self.__colorname.configure(command=self.__set_color_by_name())
-
 	# Check keywords and initialize options
 	self.initialiseoptions(PyncheWidget)
 
@@ -182,11 +173,6 @@ class PyncheWidget(Pmw.MegaWidget):
 
     def __set_color(self):
 	self.set_color(self, self['color'])
-
-    def __set_color_by_name(self):
-	colorname = self.__colorname.get()
-	rgbtuple = self.__colordb.find_byname(colorname)
-	self.set_color(self, rgbtuple)
 
     def __buttonpress(self, event=None):
 	self.__chip.configure(relief=SUNKEN)
