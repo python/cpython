@@ -1,7 +1,7 @@
 \section{\module{formatter} ---
-         Generic output formatter and device interface.}
-\declaremodule{standard}{formatter}
+         Generic output formatting}
 
+\declaremodule{standard}{formatter}
 \modulesynopsis{Generic output formatter and device interface.}
 
 
@@ -31,7 +31,7 @@ interface makes available mechanisms for setting the properties which
 formatter objects manage and inserting data into the output.
 
 
-\subsection{The Formatter Interface}
+\subsection{The Formatter Interface \label{formatter-interface}}
 
 Interfaces to create formatters are dependent on the specific
 formatter class being instantiated.  The interfaces described below
@@ -182,7 +182,7 @@ output.
 \end{methoddesc}
 
 
-\subsection{Formatter Implementations}
+\subsection{Formatter Implementations \label{formatter-impls}}
 
 Two implementations of formatter objects are provided by this module.
 Most applications may use one of these classes without modification or
@@ -205,7 +205,7 @@ world-wide web browser.
 
 
 
-\subsection{The Writer Interface}
+\subsection{The Writer Interface \label{writer-interface}}
 
 Interfaces to create writers are dependent on the specific writer
 class being instantiated.  The interfaces described below are the
@@ -302,7 +302,7 @@ will only be called at the beginning of a line.
 \end{methoddesc}
 
 
-\subsection{Writer Implementations}
+\subsection{Writer Implementations \label{formatter-impls}}
 
 Three implementations of the writer object interface are provided as
 examples by this module.  Most applications will need to derive new
