@@ -264,11 +264,9 @@ int
 _PyLong_Sign(PyObject *vv)
 {
 	PyLongObject *v = (PyLongObject *)vv;
-	const int ndigits = ABS(v->ob_size);
 
 	assert(v != NULL);
 	assert(PyLong_Check(v));
-	assert(ndigits == 0 || v->ob_digit[ndigits - 1] != 0);
 
 	return v->ob_size == 0 ? 0 : (v->ob_size < 0 ? -1 : 1);
 }
@@ -278,10 +276,11 @@ _PyLong_NumBits(PyObject *vv)
 {
 	PyLongObject *v = (PyLongObject *)vv;
 	size_t result = 0;
-	int ndigits = ABS(v->ob_size);
+	int ndigits;
 
 	assert(v != NULL);
 	assert(PyLong_Check(v));
+	ndigits = ABS(v->ob_size);
 	assert(ndigits == 0 || v->ob_digit[ndigits - 1] != 0);
 	if (ndigits > 0) {
 		digit msd = v->ob_digit[ndigits - 1];
