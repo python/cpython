@@ -253,24 +253,67 @@ Note that this module cannot be imported directly until
 
 The following constants are defined:
 
-\begin{tableii}{l|l}{code}{Constants}{}
-  \lineii{XML_ERROR_ASYNC_ENTITY}
-        {XML_ERROR_ATTRIBUTE_EXTERNAL_ENTITY_REF}
-  \lineii{XML_ERROR_BAD_CHAR_REF}
-        {XML_ERROR_BINARY_ENTITY_REF}
-  \lineii{XML_ERROR_DUPLICATE_ATTRIBUTE}
-        {XML_ERROR_INCORRECT_ENCODING}
-  \lineii{XML_ERROR_INVALID_TOKEN}
-        {XML_ERROR_JUNK_AFTER_DOC_ELEMENT}
-  \lineii{XML_ERROR_MISPLACED_XML_PI}
-        {XML_ERROR_NO_ELEMENTS} 
-  \lineii{XML_ERROR_NO_MEMORY}
-        {XML_ERROR_PARAM_ENTITY_REF}
-  \lineii{XML_ERROR_PARTIAL_CHAR}
-        {XML_ERROR_RECURSIVE_ENTITY_REF}
-  \lineii{XML_ERROR_SYNTAX} 
-	{XML_ERROR_TAG_MISMATCH}
-  \lineii{XML_ERROR_UNCLOSED_TOKEN}
-        {XML_ERROR_UNDEFINED_ENTITY}
-  \lineii{XML_ERROR_UNKNOWN_ENCODING}{}
-\end{tableii}
+\begin{datadesc}{XML_ERROR_ASYNC_ENTITY}
+\end{datadesc}
+
+\begin{datadesc}{XML_ERROR_ATTRIBUTE_EXTERNAL_ENTITY_REF}
+\end{datadesc}
+
+\begin{datadesc}{XML_ERROR_BAD_CHAR_REF}
+\end{datadesc}
+
+\begin{datadesc}{XML_ERROR_BINARY_ENTITY_REF}
+\end{datadesc}
+
+\begin{datadesc}{XML_ERROR_DUPLICATE_ATTRIBUTE}
+An attribute was used more than once in a start tag.
+\end{datadesc}
+
+\begin{datadesc}{XML_ERROR_INCORRECT_ENCODING}
+\end{datadesc}
+
+\begin{datadesc}{XML_ERROR_INVALID_TOKEN}
+\end{datadesc}
+
+\begin{datadesc}{XML_ERROR_JUNK_AFTER_DOC_ELEMENT}
+Something other than whitespace occurred after the document element.
+\end{datadesc}
+
+\begin{datadesc}{XML_ERROR_MISPLACED_XML_PI}
+\end{datadesc}
+
+\begin{datadesc}{XML_ERROR_NO_ELEMENTS}
+\end{datadesc}
+
+\begin{datadesc}{XML_ERROR_NO_MEMORY}
+Expat was not able to allocate memory internally.
+\end{datadesc}
+
+\begin{datadesc}{XML_ERROR_PARAM_ENTITY_REF}
+\end{datadesc}
+
+\begin{datadesc}{XML_ERROR_PARTIAL_CHAR}
+\end{datadesc}
+
+\begin{datadesc}{XML_ERROR_RECURSIVE_ENTITY_REF}
+\end{datadesc}
+
+\begin{datadesc}{XML_ERROR_SYNTAX}
+Some unspecified syntax error was encountered.
+\end{datadesc}
+
+\begin{datadesc}{XML_ERROR_TAG_MISMATCH}
+An end tag did not match the innermost open start tag.
+\end{datadesc}
+
+\begin{datadesc}{XML_ERROR_UNCLOSED_TOKEN}
+\end{datadesc}
+
+\begin{datadesc}{XML_ERROR_UNDEFINED_ENTITY}
+A reference was made to a entity which was not defined.
+\end{datadesc}
+
+\begin{datadesc}{XML_ERROR_UNKNOWN_ENCODING}
+The document encoding is not supported by Expat.
+\end{datadesc}
+
