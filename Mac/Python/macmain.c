@@ -392,31 +392,6 @@ run_inspect(void)
 	return sts;
 }
 	
-/*
-** Import the macfsn module, which will override the Standard File
-** calls in the macfs builtin module by Navigation Services versions,
-** if available on this machine.
-*/
-static void
-PyMac_InstallNavServicesForSF(void)
-{
-	if ( !PyMac_options.nonavservice ) {
-		PyObject *m = PyImport_ImportModule("macfsn");
-		
-		if ( m == NULL ) {
-			PySys_WriteStderr("'import macfsn' failed; ");
-			if (Py_VerboseFlag) {
-				PySys_WriteStderr("traceback:\n");
-				PyErr_Print();
-			}
-			else {
-				PySys_WriteStderr("use -v for traceback\n");
-			}
-			PyErr_Clear();
-		}
-	}
-}
-
 #ifdef USE_MAC_APPLET_SUPPORT
 /* Applet support */
 
@@ -464,7 +439,6 @@ PyMac_InitApplet(void)
 	init_common(&argc, &argv, 0);
 	
 	Py_Initialize();
-	PyMac_InstallNavServicesForSF();
 	PySys_SetArgv(argc, argv);
 	
 	err = run_main_resource();
@@ -488,7 +462,6 @@ PyMac_Initialize(void)
 	
 	init_common(&argc, &argv, 1);
 	Py_Initialize();
-	PyMac_InstallNavServicesForSF();
 	PySys_SetArgv(argc, argv);
 }
 
@@ -675,8 +648,6 @@ Py_Main(int argc, char **argv, char *filename)
 	
 	PyUnicode_SetDefaultEncoding(PyMac_getscript());
 	
-	PyMac_InstallNavServicesForSF();
-
 	PySys_SetArgv(argc, argv);
 
 	if (filename == NULL && isatty((int)fileno(fp))) {
