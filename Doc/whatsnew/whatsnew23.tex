@@ -1,6 +1,9 @@
 \documentclass{howto}
 % $Id$
 
+% TODO:
+%   Go through and get the contributor's name for all the various changes
+
 \title{What's New in Python 2.3}
 \release{0.01}
 \author{A.M. Kuchling}
@@ -32,8 +35,7 @@ a particular new feature.
 
 
 %======================================================================
-\section{PEP 255: Simple Generators}
-\label{section-generators}
+\section{PEP 255: Simple Generators\label{section-generators}}
 
 In Python 2.2, generators were added as an optional feature, to be
 enabled by a \code{from __future__ import generators} directive.  In
@@ -43,15 +45,12 @@ keyword.  The rest of this section is a copy of the description of
 generators from the ``What's New in Python 2.2'' document; if you read
 it when 2.2 came out, you can skip the rest of this section.
 
-Generators are a new feature that interacts with the iterators
-introduced in Python 2.2.
-
-You're doubtless familiar with how function calls work in Python or
-C.  When you call a function, it gets a private namespace where its local
+You're doubtless familiar with how function calls work in Python or C.
+When you call a function, it gets a private namespace where its local
 variables are created.  When the function reaches a \keyword{return}
 statement, the local variables are destroyed and the resulting value
 is returned to the caller.  A later call to the same function will get
-a fresh new set of local variables.  But, what if the local variables
+a fresh new set of local variables. But, what if the local variables
 weren't thrown away on exiting a function?  What if you could later
 resume the function where it left off?  This is what generators
 provide; they can be thought of as resumable functions.
@@ -185,12 +184,12 @@ and Tim Peters, with other fixes from the Python Labs crew.}
 \section{PEP 278: Universal Newline Support}
 
 The three major operating systems used today are Microsoft Windows,
-Apple's Macintosh OS, and the various Unix derivatives.  A minor
+Apple's Macintosh OS, and the various \UNIX\ derivatives.  A minor
 irritation is that these three platforms all use different characters
-to mark the ends of lines in text files.  Unix uses character 10, the
-ASCII linefeed, MacOS uses character 13, the ASCII carriage return,
-and Windows uses a two-character sequence of carriage return plus a
-newline.
+to mark the ends of lines in text files.  \UNIX\ uses character 10,
+the ASCII linefeed, while MacOS uses character 13, the ASCII carriage
+return, and Windows uses a two-character sequence of a carriage return
+plus a newline.
 
 Python's file objects can now support end of line conventions other
 than the one followed by the platform on which Python is running.
@@ -205,9 +204,9 @@ executing a file with the \function{execfile()} function.  This means
 that Python modules can be shared between all three operating systems
 without needing to convert the line-endings.
 
-This feature can be disabled at compile-time by specifying the
+This feature can be disabled at compile-time by specifying 
 \longprogramopt{without-universal-newlines} when running Python's
-configure script.
+\file{configure} script.
 
 \begin{seealso}
 
@@ -217,8 +216,8 @@ and implemented by Jack Jansen.}
 \end{seealso}
 
 %======================================================================
-\section{PEP 285: The \class{bool} Type}
-\label{section-bool}
+\section{PEP 285: The \class{bool} Type\label{section-bool}}
+
 
 A Boolean type was added to Python 2.3.  Two new constants were added
 to the \module{__builtin__} module, \constant{True} and
@@ -241,12 +240,12 @@ Most of the standard library modules and built-in functions have been
 changed to return Booleans.
 
 \begin{verbatim}
->>> o = []
->>> hasattr(o, 'append')
+>>> obj = []
+>>> hasattr(obj, 'append')
 True
->>> isinstance(o, list)
+>>> isinstance(obj, list)
 True
->>> isinstance(o, tuple)
+>>> isinstance(obj, tuple)
 False
 \end{verbatim}
 
@@ -291,6 +290,109 @@ strings \samp{True} and \samp{False} instead of \samp{1} and \samp{0}.
 
 \end{seealso}
 
+
+%======================================================================
+\section{Other Language Changes}
+
+Here are the changes that Python 2.3 makes to the core language.
+
+\begin{itemize}
+\item The \keyword{yield} statement is now always a keyword, as
+described in section~\ref{section-generators}.
+
+\item Two new constants, \constant{True} and \constant{False} were
+added along with the built-in \class{bool} type, as described in
+section~\ref{section-bool}.
+
+\item A new built-in function, \function{enumerate()}, will make
+certain loops a bit clearer.  \code{enumerate(thing)}, where
+\var{thing} is either an iterator or a sequence, returns a iterator
+that will return \code{(0, \var{thing[0]})}, \code{(1,
+\var{thing[1]})}, \code{(2, \var{thing[2]})}, and so forth.  Fairly
+often you'll see code to change every element of a list that looks like this:
+
+\begin{verbatim}
+for i in range(len(L)):
+    item = L[i]
+    # ... compute some result based on item ...
+    L[i] = result
+\end{verbatim}
+
+This can be rewritten using \function{enumerate()} as:
+
+\begin{verbatim}
+for i, item in enumerate(L):
+    # ... compute some result based on item ...
+    L[i] = result
+\end{verbatim}
+
+\end{itemize}
+
+
+%======================================================================
+\section{Specialized Object Allocator (pymalloc)\label{section-pymalloc}}
+
+An experimental feature added to Python 2.1 was a specialized object
+allocator called pymalloc, written by Vladimir Marangozov.  Pymalloc
+was intended to be faster than the system \function{malloc()} and have
+less memory overhead.  The allocator uses C's \function{malloc()}
+function to get large pools of memory, and then fulfills smaller
+memory requests from these pools.  
+
+In 2.1 and 2.2, pymalloc was an experimental feature and wasn't
+enabled by default; you had to explicitly turn it on by providing the
+\longprogramopt{with-pymalloc} option to the \program{configure}
+script.  In 2.3, pymalloc has had further enhancements and is now
+enabled by default; you'll have to supply
+\longprogramopt{without-pymalloc} to disable it.
+
+This change is transparent to code written in Python; however,
+pymalloc may expose bugs in C extensions.  Authors of C extension
+modules should test their code with the object allocator enabled,
+because some incorrect code may cause core dumps at runtime.  There
+are a bunch of memory allocation functions in Python's C API that have
+previously been just aliases for the C library's \function{malloc()}
+and \function{free()}, meaning that if you accidentally called
+mismatched functions, the error wouldn't be noticeable.  When the
+object allocator is enabled, these functions aren't aliases of
+\function{malloc()} and \function{free()} any more, and calling the
+wrong function to free memory will get you a core dump.  For example,
+if memory was allocated using \function{PyMem_New()}, it has to be
+freed using \function{PyMem_Del()}, not \function{free()}.  A few
+modules included with Python fell afoul of this and had to be fixed;
+doubtless there are more third-party modules that will have the same
+problem.
+
+As part of this change, the confusing multiple interfaces for
+allocating memory have been consolidated down into two APIs.  
+Memory allocated with one API must not be freed with the other API.
+
+\begin{itemize}
+  \item To allocate and free an undistinguished chunk of memory, use
+  \cfunction{PyMem_Malloc()}, \cfunction{PyMem_Realloc()},
+  \cfunction{PyMem_Free()}, and the other \cfunction{PyMem_*}
+  functions.
+
+  \item To allocate and free Python objects,  
+  use \cfunction{PyObject_New()}, \cfunction{PyObject_NewVar()}, and 
+  \cfunction{PyObject_Del()}.
+\end{itemize}
+
+Thanks to lots of work by Tim Peters, pymalloc in 2.3 also provides
+debugging features to catch memory overwrites and doubled frees in
+both extension modules and in the interpreter itself.  To enable this
+support, turn on the Python interpreter's debugging code by running
+\program{configure} with \longprogramopt{with-pydebug}.  
+
+\begin{seealso}
+
+\seeurl{XXX}
+{For the full details of the pymalloc implementation, see
+the comments at the top of the file \file{Objects/obmalloc.c} in the
+Python source code.  The above link points to the file within the
+SourceForge CVS browser.}
+
+\end{seealso}
 
 %======================================================================
 \section{New and Improved Modules}
@@ -347,7 +449,7 @@ than \method{zfill()}.
 '0045'
 >>> '12345'.zfill(4)
 '12345'
->>> 'goofy'.zfill(4)
+>>> 'goofy'.zfill(6)
 '0goofy'
 \end{verbatim}
 
@@ -376,16 +478,20 @@ KeyError: pop(): dictionary is empty
 >>>
 \end{verbatim}
 
-distutils: command/bdist_packager, support for Solaris pkgtool 
-and HP-UX swinstall
-
-
 \item Two new functions, \function{killpg()} and \function{mknod()},
 were added to the \module{posix} module that underlies the \module{os}
 module.
 
-\item (XXX write this) arraymodule.c: - add Py_UNICODE arrays 
-- support +=, *=
+\item Two new binary packagers were added to the Distutils.
+\code{bdist_pkgtool} builds \file{.pkg} files to use with Solaris
+\program{pkgtool}, and \code{bdist_sdux} builds \program{swinstall}
+packages for use on HP-UX.  (Contributed by Mark Alexander.)
+
+\item The \module{array} module now supports arrays of Unicode
+characters using the \samp{u} format character.  Arrays also 
+now support using the \code{+=} assignment operator to add another array's
+contents, and the \code{*=} assignment operator to repeat an array.
+(Contributed by XXX.)
 
 \item The \module{grp} module now returns enhanced tuples:
 
@@ -403,66 +509,39 @@ functions: \function{get_history_item()},
 \end{itemize}
 
 
-New enumerate() built-in.
-
-%======================================================================
-\section{Interpreter Changes and Fixes}
-
-Here are the changes that Python 2.3 makes to the core language.
-
-\begin{itemize}
-\item The \keyword{yield} statement is now always a keyword, as
-described in section~\ref{section-generators}.
-
-\item Two new constants, \constant{True} and \constant{False} were
-added along with the built-in \class{bool} type, as described in
-section~\ref{section-bool}.
-
-\item The \class{file} type can now be subtyped.  (XXX did this not work
-before?  Thought I used it in an example in the 2.2 What's New document...)
-
-\item File objects also manage their internal string buffer
-differently by increasing it exponentially when needed.  
-This results in the benchmark tests in \file{Lib/test/test_bufio.py} 
-speeding up from 57 seconds to 1.7 seconds, according to one
-measurement.
-
-\end{itemize}
-
-
-%======================================================================
-\section{Other Changes and Fixes}
-
-XXX write this
-
-The tools used to build the documentation now work under Cygwin as
-well as \UNIX.
-
-
 % ======================================================================
 \section{Build and C API Changes}
 
-XXX write this
+Changes to Python's build process, and to the C API, include:
 
 \begin{itemize}
 
-\item Patch \#527027: Allow building python as shared library with
---enable-shared
+\item Python can now optionally be built as a shared library
+(\file{libpython2.3.so}) by supplying \longprogramopt{enable-shared}
+when running Python's \file{configure} script.  (Contributed by XXX
+Patch \#527027)
 
-pymalloc is now enabled by default (also mention debug-mode pymalloc)
+\item The \cfunction{PyArg_NoArgs()} macro is now deprecated, and code
+that
+uses it should be changed to use \code{PyArg_ParseTuple(args, "")}
+instead.
 
-Memory API reworking -- which functions are deprecated?  
-
-PyObject_DelItemString() added
-
-PyArg_NoArgs macro is now deprecated
+\item A new function, \cfunction{PyObject_DelItemString(\var{mapping},
+char *\var{key})} was added
+as shorthand for 
+\code{PyObject_DelItem(\var{mapping}, PyString_New(\var{key})}.
 
 \item The source code for the Expat XML parser is now included with
 the Python source, so the \module{pyexpat} module is no longer
 dependent on having a system library containing Expat.
 
-===
-Introduce two new flag bits that can be set in a PyMethodDef method
+\item File objects now manage their internal string buffer
+differently by increasing it exponentially when needed.  
+This results in the benchmark tests in \file{Lib/test/test_bufio.py} 
+speeding up from 57 seconds to 1.7 seconds, according to one
+measurement.
+
+\item XXX Introduce two new flag bits that can be set in a PyMethodDef method
 descriptor, as used for the tp_methods slot of a type.  These new flag
 bits are both optional, and mutually exclusive.  Most methods will not
 use either.  These flags are used to create special method types which
@@ -479,7 +558,6 @@ like that returned by the staticmethod() built-in.
 These flags may not be used in the PyMethodDef table for modules since
 these special method types are not meaningful in that case; a
 ValueError will be raised if these flags are found in that context.
-===
 
 \end{itemize}
 
@@ -487,23 +565,35 @@ ValueError will be raised if these flags are found in that context.
 
 XXX write this
 
-OS/2 EMX port
+XXX OS/2 EMX port
 
-MacOS: Weaklink most toolbox modules, improving backward
+XXX MacOS: Weaklink most toolbox modules, improving backward
 compatibility. Modules will no longer fail to load if a single routine
 is missing on the curent OS version, in stead calling the missing
 routine will raise an exception.  Should finally fix 531398. 2.2.1
 candidate.  Also blacklisted some constants with definitions that
 were not Python-compatible.
 
-Checked in Sean Reifschneider's RPM spec file and patches.
+XXX Checked in Sean Reifschneider's RPM spec file and patches.
 
+
+%======================================================================
+\section{Other Changes and Fixes}
+
+Finally, there are various miscellaneous fixes:
+
+\begin{itemize}
+
+\item The tools used to build the documentation now work under Cygwin
+as well as \UNIX.
+
+\end{itemize}
 
 %======================================================================
 \section{Acknowledgements \label{acks}}
 
 The author would like to thank the following people for offering
 suggestions, corrections and assistance with various drafts of this
-article: Fred~L. Drake, Jr.
+article: Fred~L. Drake, Jr., Detlef Lannert.
 
 \end{document}
