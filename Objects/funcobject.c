@@ -127,6 +127,7 @@ static struct memberlist func_memberlist[] = {
 	{"func_code",	T_OBJECT,	OFF(func_code),		READONLY},
 	{"func_globals",T_OBJECT,	OFF(func_globals),	READONLY},
 	{"func_name",	T_OBJECT,	OFF(func_name),		READONLY},
+	{"__name__",	T_OBJECT,	OFF(func_name),		READONLY},
 	{"func_argcount",T_INT,		OFF(func_argcount),	READONLY},
 	{"func_argdefs",T_OBJECT,	OFF(func_argdefs),	READONLY},
 	{"func_doc",	T_OBJECT,	OFF(func_doc)},
@@ -139,6 +140,11 @@ func_getattr(op, name)
 	funcobject *op;
 	char *name;
 {
+	if (name[0] != '_' && getrestricted()) {
+		err_setstr(RuntimeError,
+		  "function attributes not accessible in restricted mode");
+		return NULL;
+	}
 	return getmember((char *)op, func_memberlist, name);
 }
 
