@@ -46,3 +46,5 @@ threads		Demos that use the 'thread' module.  (Currently these
 
 tkinter		Demos using the Tk interface (including Matt Conway's
 		excellent set of demos).
+
+tix		Demos using the Tix widget set addition to Tkinter.
