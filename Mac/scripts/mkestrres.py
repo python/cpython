@@ -1,6 +1,6 @@
 """Parse sys/errno.h and Errors.h and create Estr resource"""
 
-import regex
+import re
 import macfs
 import string
 import Res
@@ -11,25 +11,25 @@ WRITE = 2
 smAllScripts = -3
 
 ERRNO_PROG="#define[ \t]+" \
-		   "\([A-Z0-9a-z_]+\)" \
+		   "([A-Z0-9a-z_]+)" \
 		   "[ \t]+" \
-		   "\([0-9]+\)" \
+		   "([0-9]+)" \
 		   "[ \t]*/\*[ \t]*" \
-		   "\(.*\)" \
+		   "(.*)" \
 		   "[ \t]*\*/"
 		   
 ERRORS_PROG="[ \t]*" \
-			"\([A-Z0-9a-z_]+\)" \
+			"([A-Z0-9a-z_]+)" \
 			"[ \t]*=[ \t]*" \
-			"\([-0-9]+\)" \
+			"([-0-9]+)" \
 			"[, \t]*/\*[ \t]*" \
-			"\(.*\)" \
+			"(.*)" \
 			"[ \t]*\*/"
 		   
 ERRORS_PROG_2="[ \t]*" \
-			"\([A-Z0-9a-z_]+\)" \
+			"([A-Z0-9a-z_]+)" \
 			"[ \t]*=[ \t]*" \
-			"\([-0-9]+\)" \
+			"([-0-9]+)" \
 			"[, \t]*"
 
 def Pstring(str):
@@ -58,12 +58,13 @@ def writepython(fp, dict):
 	
 
 def parse_errno_h(fp, dict):
-	errno_prog = regex.compile(ERRNO_PROG)
+	errno_prog = re.compile(ERRNO_PROG)
 	for line in fp.readlines():
-		if errno_prog.match(line) > 0:
-			number = string.atoi(errno_prog.group(2))
-			name = errno_prog.group(1)
-			desc = string.strip(errno_prog.group(3))
+		m = errno_prog.match(line)
+		if m:
+			number = string.atoi(m.group(2))
+			name = m.group(1)
+			desc = string.strip(m.group(3))
 			
 			if not dict.has_key(number):
 				dict[number] = desc, name
@@ -73,18 +74,20 @@ def parse_errno_h(fp, dict):
 				print '\t', (desc, name)
 								
 def parse_errors_h(fp, dict):
-	errno_prog = regex.compile(ERRORS_PROG)
-	errno_prog_2 = regex.compile(ERRORS_PROG_2)
+	errno_prog = re.compile(ERRORS_PROG)
+	errno_prog_2 = re.compile(ERRORS_PROG_2)
 	for line in fp.readlines():
 		match = 0
-		if errno_prog.match(line) > 0:
-			number = string.atoi(errno_prog.group(2))
-			name = errno_prog.group(1)
-			desc = string.strip(errno_prog.group(3))
+		m = errno_prog.match(line)
+		m2 = errno_prog_2.match(line)
+		if m:
+			number = string.atoi(m.group(2))
+			name = m.group(1)
+			desc = string.strip(m.group(3))
 			match=1
-		elif errno_prog_2.match(line) > 0:
-			number = string.atoi(errno_prog_2.group(2))
-			name = errno_prog_2.group(1)
+		elif m2:
+			number = string.atoi(m2.group(2))
+			name = m2.group(1)
 			desc = name
 			match=1
 		if match:

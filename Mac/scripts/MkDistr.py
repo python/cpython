@@ -16,7 +16,7 @@
 #
 from MkDistr_ui import *
 import fnmatch
-import regex
+import re
 import os
 import sys
 import macfs
@@ -187,7 +187,7 @@ class ExcMatcher(Matcher):
 		pat = fnmatch.translate(src)
 		if DEBUG:
 			print 'PATTERN', `src`, 'REGEX', `pat`
-		self.relist.append(regex.compile(pat))
+		self.relist.append(re.compile(pat))
 		
 	def unrebuild1(self, num, src):
 		del self.relist[num]
@@ -196,7 +196,7 @@ class ExcMatcher(Matcher):
 		comps = os.path.split(path)
 		file = comps[-1]
 		for pat in self.relist:
-			if pat and pat.match(file) == len(file):
+			if pat and pat.match(file):
 				if DEBUG:
 					print 'excmatch', file, pat
 				return 1
