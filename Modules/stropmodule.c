@@ -85,7 +85,10 @@ split_whitespace(s, len, maxsplit)
 				goto finally;
 
 			countsplit++;
-			if (maxsplit && (countsplit >= maxsplit)) {
+			while (i < len && isspace(Py_CHARMASK(s[i]))) {
+				i = i+1;
+			}
+			if (maxsplit && (countsplit >= maxsplit) && i < len) {
 				item = PyString_FromStringAndSize(
                                         s+i, (int)(len - i));
 				if (item == NULL)
