@@ -313,7 +313,7 @@ mfsi_setattr(self, name, v)
 static PyTypeObject Mfsitype = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,				/*ob_size*/
-	"FInfo object",			/*tp_name*/
+	"FInfo",			/*tp_name*/
 	sizeof(mfsiobject),		/*tp_basicsize*/
 	0,				/*tp_itemsize*/
 	/* methods */
@@ -982,6 +982,15 @@ initmacfs()
 	ErrorObject = PyString_FromString("macfs.error");
 	PyDict_SetItemString(d, "error", ErrorObject);
 
+	Mfsatype.ob_type = &PyType_Type;
+	Py_INCREF(&Mfsatype);
+	PyDict_SetItemString(d, "AliasType", (PyObject *)&Mfsatype);
+	Mfsstype.ob_type = &PyType_Type;
+	Py_INCREF(&Mfsstype);
+	PyDict_SetItemString(d, "FSSpecType", (PyObject *)&Mfsstype);
+	Mfsitype.ob_type = &PyType_Type;
+	Py_INCREF(&Mfsitype);
+	PyDict_SetItemString(d, "FInfoType", (PyObject *)&Mfsitype);
 	/* XXXX Add constants here */
 	
 	/* Check for errors */

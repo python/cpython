@@ -43,8 +43,8 @@ extern int BMObj_Convert(PyObject *, BitMapPtr *);
 extern PyObject *WinObj_WhichWindow(WindowPtr);
 
 #include <WASTE.h>
-#include <WETabs.h>
 #include <WEObjectHandlers.h>
+#include <WETabs.h>
 
 /* Exported by Qdmodule.c: */
 extern PyObject *QdRGB_New(RGBColor *);
@@ -1986,6 +1986,14 @@ void initwaste()
 	if (waste_Error == NULL ||
 	    PyDict_SetItemString(d, "Error", waste_Error) != 0)
 		Py_FatalError("can't initialize waste.Error");
+	WEO_Type.ob_type = &PyType_Type;
+	Py_INCREF(&WEO_Type);
+	if (PyDict_SetItemString(d, "WEOType", (PyObject *)&WEO_Type) != 0)
+		Py_FatalError("can't initialize WEOType");
+	waste_Type.ob_type = &PyType_Type;
+	Py_INCREF(&waste_Type);
+	if (PyDict_SetItemString(d, "wasteType", (PyObject *)&waste_Type) != 0)
+		Py_FatalError("can't initialize wasteType");
 
 		callbackdict = PyDict_New();
 		if (callbackdict == NULL || PyDict_SetItemString(d, "callbacks", callbackdict) != 0)

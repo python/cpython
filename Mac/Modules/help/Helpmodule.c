@@ -60,7 +60,7 @@ static PyObject *Help_HMGetHelpMenuHandle(_self, _args)
 	_err = HMGetHelpMenuHandle(&mh);
 	if (_err != noErr) return PyMac_Error(_err);
 	_res = Py_BuildValue("O&",
-	                     ResObj_New, mh);
+	                     MenuObj_New, mh);
 	return _res;
 }
 

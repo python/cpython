@@ -733,6 +733,10 @@ void initCtl()
 	if (Ctl_Error == NULL ||
 	    PyDict_SetItemString(d, "Error", Ctl_Error) != 0)
 		Py_FatalError("can't initialize Ctl.Error");
+	Control_Type.ob_type = &PyType_Type;
+	Py_INCREF(&Control_Type);
+	if (PyDict_SetItemString(d, "ControlType", (PyObject *)&Control_Type) != 0)
+		Py_FatalError("can't initialize ControlType");
 }
 
 /* ========================= End module Ctl ========================= */

@@ -673,6 +673,10 @@ void initList()
 	if (List_Error == NULL ||
 	    PyDict_SetItemString(d, "Error", List_Error) != 0)
 		Py_FatalError("can't initialize List.Error");
+	List_Type.ob_type = &PyType_Type;
+	Py_INCREF(&List_Type);
+	if (PyDict_SetItemString(d, "ListType", (PyObject *)&List_Type) != 0)
+		Py_FatalError("can't initialize ListType");
 }
 
 /* ======================== End module List ========================= */

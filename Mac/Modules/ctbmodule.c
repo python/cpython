@@ -478,7 +478,7 @@ ctbcm_setattr(self, name, v)
 statichere PyTypeObject ctbcmtype = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,			/*ob_size*/
-	"ctbcm",			/*tp_name*/
+	"CTBConnectionMgr",	/*tp_name*/
 	sizeof(ctbcmobject),	/*tp_basicsize*/
 	0,			/*tp_itemsize*/
 	/* methods */
@@ -608,6 +608,9 @@ initctb()
 	
 	ErrorObject = PyString_FromString("ctb.error");
 	PyDict_SetItemString(d, "error", ErrorObject);
+	ctbcmtype.ob_type = &PyType_Type;
+	Py_INCREF(&ctbcmtype);
+	PyDict_SetItemString(d, "CTBConnectionMgrType", (PyObject *)&ctbcmtype);
 
 	/* Check for errors */
 	if (PyErr_Occurred())

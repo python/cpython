@@ -1038,6 +1038,10 @@ void initMenu()
 	if (Menu_Error == NULL ||
 	    PyDict_SetItemString(d, "Error", Menu_Error) != 0)
 		Py_FatalError("can't initialize Menu.Error");
+	Menu_Type.ob_type = &PyType_Type;
+	Py_INCREF(&Menu_Type);
+	if (PyDict_SetItemString(d, "MenuType", (PyObject *)&Menu_Type) != 0)
+		Py_FatalError("can't initialize MenuType");
 }
 
 /* ======================== End module Menu ========================= */

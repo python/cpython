@@ -1034,6 +1034,10 @@ void initTE()
 	if (TE_Error == NULL ||
 	    PyDict_SetItemString(d, "Error", TE_Error) != 0)
 		Py_FatalError("can't initialize TE.Error");
+	TE_Type.ob_type = &PyType_Type;
+	Py_INCREF(&TE_Type);
+	if (PyDict_SetItemString(d, "TEType", (PyObject *)&TE_Type) != 0)
+		Py_FatalError("can't initialize TEType");
 }
 
 /* ========================= End module TE ========================== */

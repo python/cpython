@@ -4265,6 +4265,18 @@ void initQd()
 	if (Qd_Error == NULL ||
 	    PyDict_SetItemString(d, "Error", Qd_Error) != 0)
 		Py_FatalError("can't initialize Qd.Error");
+	GrafPort_Type.ob_type = &PyType_Type;
+	Py_INCREF(&GrafPort_Type);
+	if (PyDict_SetItemString(d, "GrafPortType", (PyObject *)&GrafPort_Type) != 0)
+		Py_FatalError("can't initialize GrafPortType");
+	BitMap_Type.ob_type = &PyType_Type;
+	Py_INCREF(&BitMap_Type);
+	if (PyDict_SetItemString(d, "BitMapType", (PyObject *)&BitMap_Type) != 0)
+		Py_FatalError("can't initialize BitMapType");
+	QDGlobalsAccess_Type.ob_type = &PyType_Type;
+	Py_INCREF(&QDGlobalsAccess_Type);
+	if (PyDict_SetItemString(d, "QDGlobalsAccessType", (PyObject *)&QDGlobalsAccess_Type) != 0)
+		Py_FatalError("can't initialize QDGlobalsAccessType");
 
 	{
 		PyObject *o;

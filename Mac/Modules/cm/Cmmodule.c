@@ -761,6 +761,14 @@ void initCm()
 	if (Cm_Error == NULL ||
 	    PyDict_SetItemString(d, "Error", Cm_Error) != 0)
 		Py_FatalError("can't initialize Cm.Error");
+	ComponentInstance_Type.ob_type = &PyType_Type;
+	Py_INCREF(&ComponentInstance_Type);
+	if (PyDict_SetItemString(d, "ComponentInstanceType", (PyObject *)&ComponentInstance_Type) != 0)
+		Py_FatalError("can't initialize ComponentInstanceType");
+	Component_Type.ob_type = &PyType_Type;
+	Py_INCREF(&Component_Type);
+	if (PyDict_SetItemString(d, "ComponentType", (PyObject *)&Component_Type) != 0)
+		Py_FatalError("can't initialize ComponentType");
 }
 
 /* ========================= End module Cm ========================== */
