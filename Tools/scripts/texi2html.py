@@ -32,10 +32,39 @@
 #               will have problems with long node names
 #       ...
 # Support the most recent texinfo version and take a good look at HTML 3.0
-# More debugging output (customizable) and more fexible error handling
+# More debugging output (customizable) and more flexible error handling
 # How about icons ?
 
+# rpyron 2002-05-07
+# Robert Pyron <rpyron@alum.mit.edu>
+# 1. BUGFIX: In function makefile(), strip blanks from the nodename.
+#    This is necesary to match the behavior of parser.makeref() and
+#    parser.do_node().
+# 2. BUGFIX fixed KeyError in end_ifset (well, I may have just made
+#    it go away, rather than fix it)
+# 3. BUGFIX allow @menu and menu items inside @ifset or @ifclear
+# 4. Support added for:
+#       @uref        URL reference
+#       @image       image file reference (see note below)
+#       @multitable  output an HTML table
+#       @vtable
+# 5. Partial support for accents, to match MAKEINFO output
+# 6. I added a new command-line option, '-H basename', to specify
+#    HTML Help output. This will cause three files to be created
+#    in the current directory:
+#       `basename`.hhp  HTML Help Workshop project file
+#       `basename`.hhc  Contents file for the project
+#       `basename`.hhk  Index file for the project
+#    When fed into HTML Help Workshop, the resulting file will be
+#    named `basename`.chm.
+# 7. A new class, HTMLHelp, to accomplish item 6.
+# 8. Various calls to HTMLHelp functions.
+# A NOTE ON IMAGES: Just as 'outputdirectory' must exist before
+# running this program, all referenced images must already exist
+# in outputdirectory.
+
 import os
+import sys
 import string
 import re
 
@@ -50,6 +79,11 @@ spprog = re.compile('[\n@{}&<>]')                 # Special characters in
                                                   #
                                                   # menu item (Yuck!)
 miprog = re.compile('^\* ([^:]*):(:|[ \t]*([^\t,\n.]+)([^ \t\n]*))[ \t\n]*')
+#                   0    1     1 2        3          34         42        0
+#                         -----            ----------  ---------
+#                                 -|-----------------------------
+#                    -----------------------------------------------------
+
 
 
 
@@ -182,6 +216,7 @@ class TexinfoParser:
         self.links = None       # Links from current node
         self.savetext = None    # If not None, save text head instead
         self.savestack = []     # If not None, save text head instead
+        self.htmlhelp = None    # html help data
         self.dirname = 'tmp'    # directory where files are created
         self.includedir = '.'   # directory to search @include files
         self.nodename = ''      # name of current node
@@ -202,6 +237,11 @@ class TexinfoParser:
         self.nodestack = []
         self.cont = 0
         self.includedepth = 0
+
+    # Set htmlhelp helper class
+    def sethtmlhelp(self, htmlhelp):
+        self.htmlhelp = htmlhelp
+
     # Set (output) directory name
     def setdirname(self, dirname):
         self.dirname = dirname
@@ -307,6 +347,7 @@ class TexinfoParser:
             self.nodefp.write(text)
         elif self.node:
             self.node.write(text)
+
     # Complete the current node -- write footnotes and close file
     def endnode(self):
         if self.savetext <> None:
@@ -342,11 +383,11 @@ class TexinfoParser:
     # This mostly distinguishes between menus and normal text
     def process(self, accu):
         if self.debugging > 1:
-            print self.skip, self.stack,
+            print '!'*self.debugging, 'process:', self.skip, self.stack,
             if accu: print accu[0][:30],
             if accu[0][30:] or accu[1:]: print '...',
             print
-        if self.stack and self.stack[-1] == 'menu':
+        if self.inmenu():
             # XXX should be done differently
             for line in accu:
                 mo = miprog.match(line)
@@ -368,10 +409,25 @@ class TexinfoParser:
                            makefile(nodename),
                            '">', nodename,
                            '</A>', punct, '\n')
+                self.htmlhelp.menuitem(nodename)
                 self.expand(line[end:])
         else:
             text = string.joinfields(accu, '')
             self.expand(text)
+
+    # find 'menu' (we might be inside 'ifset' or 'ifclear')
+    def inmenu(self):
+        #if 'menu' in self.stack:
+        #    print 'inmenu   :', self.skip, self.stack, self.stackinfo
+        stack = self.stack
+        while stack and stack[-1] in ('ifset','ifclear'):
+            try:
+                if self.stackinfo[len(stack)]:
+                    return 0
+            except KeyError:
+                pass
+            stack = stack[:-1]
+        return (stack and stack[-1] == 'menu')
 
     # Write a string, expanding embedded @-commands
     def expand(self, text):
@@ -502,8 +558,7 @@ class TexinfoParser:
         except IOError, msg:
             print '*** Can\'t open include file', `file`
             return
-        if self.debugging:
-            print '--> file', `file`
+        print '!'*self.debugging, '--> file', `file`
         save_done = self.done
         save_skip = self.skip
         save_stack = self.stack
@@ -514,8 +569,7 @@ class TexinfoParser:
         self.done = save_done
         self.skip = save_skip
         self.stack = save_stack
-        if self.debugging:
-            print '<-- file', `file`
+        print '!'*self.debugging, '<-- file', `file`
 
     # --- Special Insertions ---
 
@@ -537,6 +591,69 @@ class TexinfoParser:
 
     def open_minus(self): self.write('-')
     def close_minus(self): pass
+
+    # --- Accents ---
+
+    # rpyron 2002-05-07
+    # I would like to do at least as well as makeinfo when
+    # it is producing HTML output:
+    #
+    #   input               output
+    #     @"o                 @"o                umlaut accent
+    #     @'o                 'o                 acute accent
+    #     @,{c}               @,{c}              cedilla accent
+    #     @=o                 @=o                macron/overbar accent
+    #     @^o                 @^o                circumflex accent
+    #     @`o                 `o                 grave accent
+    #     @~o                 @~o                tilde accent
+    #     @dotaccent{o}       @dotaccent{o}      overdot accent
+    #     @H{o}               @H{o}              long Hungarian umlaut
+    #     @ringaccent{o}      @ringaccent{o}     ring accent
+    #     @tieaccent{oo}      @tieaccent{oo}     tie-after accent
+    #     @u{o}               @u{o}              breve accent
+    #     @ubaraccent{o}      @ubaraccent{o}     underbar accent
+    #     @udotaccent{o}      @udotaccent{o}     underdot accent
+    #     @v{o}               @v{o}              hacek or check accent
+    #     @exclamdown{}       &#161;             upside-down !
+    #     @questiondown{}     &#191;             upside-down ?
+    #     @aa{},@AA{}         &#229;,&#197;      a,A with circle
+    #     @ae{},@AE{}         &#230;,&#198;      ae,AE ligatures
+    #     @dotless{i}         @dotless{i}        dotless i
+    #     @dotless{j}         @dotless{j}        dotless j
+    #     @l{},@L{}           l/,L/              suppressed-L,l
+    #     @o{},@O{}           &#248;,&#216;      O,o with slash
+    #     @oe{},@OE{}         oe,OE              oe,OE ligatures
+    #     @ss{}               &#223;             es-zet or sharp S
+    #
+    # The following character codes and approximations have been
+    # copied from makeinfo's HTML output.
+
+    def open_exclamdown(self): self.write('&#161;')   # upside-down !
+    def close_exclamdown(self): pass
+    def open_questiondown(self): self.write('&#191;') # upside-down ?
+    def close_questiondown(self): pass
+    def open_aa(self): self.write('&#229;') # a with circle
+    def close_aa(self): pass
+    def open_AA(self): self.write('&#197;') # A with circle
+    def close_AA(self): pass
+    def open_ae(self): self.write('&#230;') # ae ligatures
+    def close_ae(self): pass
+    def open_AE(self): self.write('&#198;') # AE ligatures
+    def close_AE(self): pass
+    def open_o(self): self.write('&#248;')  # o with slash
+    def close_o(self): pass
+    def open_O(self): self.write('&#216;')  # O with slash
+    def close_O(self): pass
+    def open_ss(self): self.write('&#223;') # es-zet or sharp S
+    def close_ss(self): pass
+    def open_oe(self): self.write('oe')     # oe ligatures
+    def close_oe(self): pass
+    def open_OE(self): self.write('OE')     # OE ligatures
+    def close_OE(self): pass
+    def open_l(self): self.write('l/')      # suppressed-l
+    def close_l(self): pass
+    def open_L(self): self.write('L/')      # suppressed-L
+    def close_L(self): pass
 
     # --- Special Glyphs for Examples ---
 
@@ -606,6 +723,69 @@ class TexinfoParser:
         if file:
             href = '../' + file + '/' + href
         self.write('<A HREF="', href, '">', label, '</A>')
+
+    # rpyron 2002-05-07  uref support
+    def open_uref(self):
+        self.startsaving()
+    def close_uref(self):
+        text = self.collectsavings()
+        args = string.splitfields(text, ',')
+        n = len(args)
+        for i in range(n):
+            args[i] = string.strip(args[i])
+        while len(args) < 2: args.append('')
+        href = args[0]
+        label = args[1]
+        if not label: label = href
+        self.write('<A HREF="', href, '">', label, '</A>')
+
+    # rpyron 2002-05-07  image support
+    # GNU makeinfo producing HTML output tries `filename.png'; if
+    # that does not exist, it tries `filename.jpg'. If that does
+    # not exist either, it complains. GNU makeinfo does not handle
+    # GIF files; however, I include GIF support here because
+    # MySQL documentation uses GIF files.
+
+    def open_image(self):
+        self.startsaving()
+    def close_image(self):
+        self.makeimage()
+    def makeimage(self):
+        text = self.collectsavings()
+        args = string.splitfields(text, ',')
+        n = len(args)
+        for i in range(n):
+            args[i] = string.strip(args[i])
+        while len(args) < 5: args.append('')
+        filename = args[0]
+        width    = args[1]
+        height   = args[2]
+        alt      = args[3]
+        ext      = args[4]
+
+        # The HTML output will have a reference to the image
+        # that is relative to the HTML output directory,
+        # which is what 'filename' gives us. However, we need
+        # to find it relative to our own current directory,
+        # so we construct 'imagename'.
+        imagelocation = self.dirname + '/' + filename
+
+        if   os.path.exists(imagelocation+'.png'):
+            filename += '.png'
+        elif os.path.exists(imagelocation+'.jpg'):
+            filename += '.jpg'
+        elif os.path.exists(imagelocation+'.gif'):   # MySQL uses GIF files
+            filename += '.gif'
+        else:
+            print "*** Cannot find image " + imagelocation
+        #TODO: what is 'ext'?
+        self.write('<IMG SRC="', filename, '"',                     \
+                    width  and (' WIDTH="'  + width  + '"') or "",  \
+                    height and (' HEIGHT="' + height + '"') or "",  \
+                    alt    and (' ALT="'    + alt    + '"') or "",  \
+                    '/>' )
+        self.htmlhelp.addimage(imagelocation)
+
 
     # --- Marking Words and Phrases ---
 
@@ -704,7 +884,8 @@ class TexinfoParser:
         cmd = line[a:b]
         args = string.strip(line[b:])
         if self.debugging > 1:
-            print self.skip, self.stack, '@' + cmd, args
+            print '!'*self.debugging, 'command:', self.skip, self.stack, \
+                  '@' + cmd, args
         try:
             func = getattr(self, 'do_' + cmd)
         except AttributeError:
@@ -780,7 +961,6 @@ class TexinfoParser:
         else:
             value = string.joinfields(fields[1:], ' ')
         self.values[key] = value
-        print self.values
 
     def do_clear(self, args):
         self.values[args] = None
@@ -793,11 +973,12 @@ class TexinfoParser:
         else:
             self.stackinfo[len(self.stack)] = 0
     def end_ifset(self):
-        print self.stack
-        print self.stackinfo
-        if self.stackinfo[len(self.stack) + 1]:
-            self.skip = self.skip - 1
-        del self.stackinfo[len(self.stack) + 1]
+        try:
+            if self.stackinfo[len(self.stack) + 1]:
+                self.skip = self.skip - 1
+            del self.stackinfo[len(self.stack) + 1]
+        except KeyError:
+            print '*** end_ifset: KeyError :', len(self.stack) + 1
 
     def bgn_ifclear(self, args):
         if args in self.values.keys() \
@@ -806,8 +987,13 @@ class TexinfoParser:
             self.stackinfo[len(self.stack)] = 1
         else:
             self.stackinfo[len(self.stack)] = 0
-
-    end_ifclear = end_ifset
+    def end_ifclear(self):
+        try:
+            if self.stackinfo[len(self.stack) + 1]:
+                self.skip = self.skip - 1
+            del self.stackinfo[len(self.stack) + 1]
+        except KeyError:
+            print '*** end_ifclear: KeyError :', len(self.stack) + 1
 
     def open_value(self):
         self.startsaving()
@@ -826,11 +1012,9 @@ class TexinfoParser:
     do_setfilename = do_comment
 
     def do_settitle(self, args):
-        print args
         self.startsaving()
         self.expand(args)
         self.title = self.collectsavings()
-        print self.title
     def do_parskip(self, args): pass
 
     # --- Ending a file ---
@@ -884,7 +1068,7 @@ class TexinfoParser:
         if self.filenames.has_key(file):
             print '*** Filename already in use: ', file
         else:
-            if self.debugging: print '--- writing', file
+            if self.debugging: print '!'*self.debugging, '--- writing', file
         self.filenames[file] = 1
         # self.nodefp = open(file, 'w')
         self.nodename = name
@@ -895,6 +1079,7 @@ class TexinfoParser:
         if self.title: title = title + ' -- ' + self.title
         self.node = self.Node(self.dirname, self.nodename, self.topname,
                               title, next, prev, up)
+        self.htmlhelp.addnode(self.nodename,next,prev,up,file)
 
     def link(self, label, nodename):
         if nodename:
@@ -1256,10 +1441,17 @@ class TexinfoParser:
         self.itemindex = None
         self.end_table()
 
+    def bgn_vtable(self, args):
+        self.itemindex = 'vr'
+        self.bgn_table(args)
+    def end_vtable(self):
+        self.itemindex = None
+        self.end_table()
+
     def do_item(self, args):
         if self.itemindex: self.index(self.itemindex, args)
         if self.itemarg:
-            if self.itemarg[0] == '@' and self.itemarg[1:2] and \
+            if self.itemarg[0] == '@' and self.itemarg[1] and \
                             self.itemarg[1] in string.ascii_letters:
                 args = self.itemarg + '{' + args + '}'
             else:
@@ -1272,11 +1464,28 @@ class TexinfoParser:
             self.write('<DT>')
             self.expand(args)
             self.write('\n<DD>')
+        elif self.stack and self.stack[-1] == 'multitable':
+            self.write('<TR><TD>')
+            self.expand(args)
+            self.write('</TD>\n</TR>\n')
         else:
             self.write('<LI>')
             self.expand(args)
             self.write('  ')
     do_itemx = do_item # XXX Should suppress leading blank line
+
+    # rpyron 2002-05-07  multitable support
+    def bgn_multitable(self, args):
+        self.itemarg = None     # should be handled by columnfractions
+        self.write('<TABLE BORDER="">\n')
+    def end_multitable(self):
+        self.itemarg = None
+        self.write('</TABLE>\n<BR>\n')
+    def handle_columnfractions(self):
+        # It would be better to handle this, but for now it's in the way...
+        self.itemarg = None
+    def handle_tab(self):
+        self.write('</TD>\n    <TD>')
 
     # --- Enumerations, displays, quotations ---
     # XXX Most of these should increase the indentation somehow
@@ -1326,8 +1535,10 @@ class TexinfoParser:
     def bgn_menu(self, args):
         self.write('<DIR>\n')
         self.write('  <STRONG><EM>Menu</EM></STRONG><P>\n')
+        self.htmlhelp.beginmenu()
     def end_menu(self):
         self.write('</DIR>\n')
+        self.htmlhelp.endmenu()
 
     def bgn_cartouche(self, args): pass
     def end_cartouche(self): pass
@@ -1363,6 +1574,7 @@ class TexinfoParser:
 
     def index(self, name, args):
         self.whichindex[name].append((args, self.nodename))
+        self.htmlhelp.index(args, self.nodename)
 
     def do_synindex(self, args):
         words = string.split(args)
@@ -1394,7 +1606,8 @@ class TexinfoParser:
         index = self.whichindex[name]
         if not index: return
         if self.debugging:
-            print '--- Generating', self.indextitle[name], 'index'
+            print '!'*self.debugging, '--- Generating', \
+                  self.indextitle[name], 'index'
         #  The node already provides a title
         index1 = []
         junkprog = re.compile('^(@[a-z]+)?{')
@@ -1417,7 +1630,7 @@ class TexinfoParser:
         for sortkey, key, node in index1:
             if (key, node) == (prevkey, prevnode):
                 continue
-            if self.debugging > 1: print key, ':', node
+            if self.debugging > 1: print '!'*self.debugging, key, ':', node
             self.write('<DT>')
             if iscodeindex: key = '@code{' + key + '}'
             if key != prevkey:
@@ -1481,6 +1694,261 @@ class TexinfoParserHTML3(TexinfoParser):
         self.write('</UL>\n')
 
 
+# rpyron 2002-05-07
+class HTMLHelp:
+    """
+    This class encapsulates support for HTML Help. Node names,
+    file names, menu items, index items, and image file names are
+    accumulated until a call to finalize(). At that time, three
+    output files are created in the current directory:
+
+        `helpbase`.hhp  is a HTML Help Workshop project file.
+                        It contains various information, some of
+                        which I do not understand; I just copied
+                        the default project info from a fresh
+                        installation.
+        `helpbase`.hhc  is the Contents file for the project.
+        `helpbase`.hhk  is the Index file for the project.
+
+    When these files are used as input to HTML Help Workshop,
+    the resulting file will be named:
+
+        `helpbase`.chm
+
+    If none of the defaults in `helpbase`.hhp are changed,
+    the .CHM file will have Contents, Index, Search, and
+    Favorites tabs.
+    """
+
+    codeprog = re.compile('@code{(.*?)}')
+
+    def __init__(self,helpbase,dirname):
+        self.helpbase    = helpbase
+        self.dirname     = dirname
+        self.projectfile = None
+        self.contentfile = None
+        self.indexfile   = None
+        self.nodelist    = []
+        self.nodenames   = {}         # nodename : index
+        self.nodeindex   = {}
+        self.filenames   = {}         # filename : filename
+        self.indexlist   = []         # (args,nodename) == (key,location)
+        self.current     = ''
+        self.menudict    = {}
+        self.dumped      = {}
+
+
+    def addnode(self,name,next,prev,up,filename):
+        node = (name,next,prev,up,filename)
+        # add this file to dict
+        # retrieve list with self.filenames.values()
+        self.filenames[filename] = filename
+        # add this node to nodelist
+        self.nodeindex[name] = len(self.nodelist)
+        self.nodelist.append(node)
+        # set 'current' for menu items
+        self.current = name
+        self.menudict[self.current] = []
+
+    def menuitem(self,nodename):
+        menu = self.menudict[self.current]
+        menu.append(nodename)
+
+
+    def addimage(self,imagename):
+        self.filenames[imagename] = imagename
+
+    def index(self, args, nodename):
+        self.indexlist.append((args,nodename))
+
+    def beginmenu(self):
+        pass
+
+    def endmenu(self):
+        pass
+
+    def finalize(self):
+        if not self.helpbase:
+            return
+
+        # generate interesting filenames
+        resultfile   = self.helpbase + '.chm'
+        projectfile  = self.helpbase + '.hhp'
+        contentfile  = self.helpbase + '.hhc'
+        indexfile    = self.helpbase + '.hhk'
+
+        # generate a reasonable title
+        title        = self.helpbase
+
+        # get the default topic file
+        (topname,topnext,topprev,topup,topfile) = self.nodelist[0]
+        defaulttopic = topfile
+
+        # PROJECT FILE
+        try:
+            fp = open(projectfile,'w')
+            print>>fp, '[OPTIONS]'
+            print>>fp, 'Auto Index=Yes'
+            print>>fp, 'Binary TOC=No'
+            print>>fp, 'Binary Index=Yes'
+            print>>fp, 'Compatibility=1.1'
+            print>>fp, 'Compiled file=' + resultfile + ''
+            print>>fp, 'Contents file=' + contentfile + ''
+            print>>fp, 'Default topic=' + defaulttopic + ''
+            print>>fp, 'Error log file=ErrorLog.log'
+            print>>fp, 'Index file=' + indexfile + ''
+            print>>fp, 'Title=' + title + ''
+            print>>fp, 'Display compile progress=Yes'
+            print>>fp, 'Full-text search=Yes'
+            print>>fp, 'Default window=main'
+            print>>fp, ''
+            print>>fp, '[WINDOWS]'
+            print>>fp, ('main=,"' + contentfile + '","' + indexfile
+                        + '","","",,,,,0x23520,222,0x1046,[10,10,780,560],'
+                        '0xB0000,,,,,,0')
+            print>>fp, ''
+            print>>fp, '[FILES]'
+            print>>fp, ''
+            self.dumpfiles(fp)
+            fp.close()
+        except IOError, msg:
+            print projectfile, ':', msg
+            sys.exit(1)
+
+        # CONTENT FILE
+        try:
+            fp = open(contentfile,'w')
+            print>>fp, '<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">'
+            print>>fp, '<!-- This file defines the table of contents -->'
+            print>>fp, '<HTML>'
+            print>>fp, '<HEAD>'
+            print>>fp, ('<meta name="GENERATOR"'
+                        'content="Microsoft&reg; HTML Help Workshop 4.1">')
+            print>>fp, '<!-- Sitemap 1.0 -->'
+            print>>fp, '</HEAD>'
+            print>>fp, '<BODY>'
+            print>>fp, '   <OBJECT type="text/site properties">'
+            print>>fp, '     <param name="Window Styles" value="0x800025">'
+            print>>fp, '     <param name="comment" value="title:">'
+            print>>fp, '     <param name="comment" value="base:">'
+            print>>fp, '   </OBJECT>'
+            self.dumpnodes(fp)
+            print>>fp, '</BODY>'
+            print>>fp, '</HTML>'
+            fp.close()
+        except IOError, msg:
+            print contentfile, ':', msg
+            sys.exit(1)
+
+        # INDEX FILE
+        try:
+            fp = open(indexfile  ,'w')
+            print>>fp, '<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">'
+            print>>fp, '<!-- This file defines the index -->'
+            print>>fp, '<HTML>'
+            print>>fp, '<HEAD>'
+            print>>fp, ('<meta name="GENERATOR"'
+                        'content="Microsoft&reg; HTML Help Workshop 4.1">')
+            print>>fp, '<!-- Sitemap 1.0 -->'
+            print>>fp, '</HEAD>'
+            print>>fp, '<BODY>'
+            print>>fp, '<OBJECT type="text/site properties">'
+            print>>fp, '</OBJECT>'
+            self.dumpindex(fp)
+            print>>fp, '</BODY>'
+            print>>fp, '</HTML>'
+            fp.close()
+        except IOError, msg:
+            print indexfile  , ':', msg
+            sys.exit(1)
+
+    def dumpfiles(self, outfile=sys.stdout):
+        filelist = self.filenames.values()
+        filelist.sort()
+        for filename in filelist:
+            print>>outfile, filename
+
+    def dumpnodes(self, outfile=sys.stdout):
+        self.dumped = {}
+        if self.nodelist:
+            (nodename,None,None,None,None) = self.nodelist[0]
+            self.topnode = nodename
+
+        print>>outfile,  '<UL>'
+        for node in self.nodelist:
+            self.dumpnode(node,0,outfile)
+        print>>outfile,  '</UL>'
+
+    def dumpnode(self, node, indent=0, outfile=sys.stdout):
+        if node:
+            # Retrieve info for this node
+            (nodename,next,prev,up,filename) = node
+            self.current = nodename
+
+            # Have we been dumped already?
+            if self.dumped.has_key(nodename):
+                return
+            self.dumped[nodename] = 1
+
+            # Print info for this node
+            print>>outfile, ' '*indent,
+            print>>outfile, '<LI><OBJECT type="text/sitemap">',
+            print>>outfile, '<param name="Name" value="' + nodename +'">',
+            print>>outfile, '<param name="Local" value="'+ filename +'">',
+            print>>outfile, '</OBJECT>'
+
+            # Does this node have menu items?
+            try:
+                menu = self.menudict[nodename]
+                self.dumpmenu(menu,indent+2,outfile)
+            except KeyError:
+                pass
+
+    def dumpmenu(self, menu, indent=0, outfile=sys.stdout):
+        if menu:
+            currentnode = self.current
+            if currentnode != self.topnode:    # XXX this is a hack
+                print>>outfile, ' '*indent + '<UL>'
+                indent += 2
+            for item in menu:
+                menunode = self.getnode(item)
+                self.dumpnode(menunode,indent,outfile)
+            if currentnode != self.topnode:    # XXX this is a hack
+                print>>outfile, ' '*indent + '</UL>'
+                indent -= 2
+
+    def getnode(self, nodename):
+        try:
+            index = self.nodeindex[nodename]
+            return self.nodelist[index]
+        except KeyError:
+            return None
+        except IndexError:
+            return None
+
+    # (args,nodename) == (key,location)
+    def dumpindex(self, outfile=sys.stdout):
+        print>>outfile,  '<UL>'
+        for (key,location) in self.indexlist:
+            key = self.codeexpand(key)
+            location = makefile(location)
+            location = self.dirname + '/' + location
+            print>>outfile, '<LI><OBJECT type="text/sitemap">',
+            print>>outfile, '<param name="Name" value="' + key + '">',
+            print>>outfile, '<param name="Local" value="' + location + '">',
+            print>>outfile, '</OBJECT>'
+        print>>outfile,  '</UL>'
+
+    def codeexpand(self, line):
+        co = self.codeprog.match(line)
+        if not co:
+            return line
+        bgn, end = co.span(0)
+        a, b = co.span(1)
+        line = line[:bgn] + line[a:b] + line[end:]
+        return line
+
+
 # Put @var{} around alphabetic substrings
 def makevar(str):
     return '@var{'+str+'}'
@@ -1520,6 +1988,7 @@ def findwordend(str, i, n):
 
 # Convert a node name into a file name
 def makefile(nodename):
+    nodename = string.strip(nodename)
     return fixfunnychars(nodename) + '.html'
 
 
@@ -1568,10 +2037,11 @@ def test():
     print_headers = 0
     cont = 0
     html3 = 0
+    htmlhelp = ''
 
-    while sys.argv[1:2] == ['-d']:
+    while sys.argv[1] == ['-d']:
         debugging = debugging + 1
-        del sys.argv[1:2]
+        del sys.argv[1]
     if sys.argv[1] == '-p':
         print_headers = 1
         del sys.argv[1]
@@ -1581,8 +2051,12 @@ def test():
     if sys.argv[1] == '-3':
         html3 = 1
         del sys.argv[1]
+    if sys.argv[1] == '-H':
+        helpbase = sys.argv[2]
+        del sys.argv[1:3]
     if len(sys.argv) <> 3:
-        print 'usage: texi2html [-d [-d]] [-p] [-c] inputfile outputdirectory'
+        print 'usage: texi2hh [-d [-d]] [-p] [-c] [-3] [-H htmlhelp]', \
+              'inputfile outputdirectory'
         sys.exit(2)
 
     if html3:
@@ -1594,19 +2068,24 @@ def test():
     parser.print_headers = print_headers
 
     file = sys.argv[1]
-    parser.setdirname(sys.argv[2])
-    if file == '-':
-        fp = sys.stdin
-    else:
+    dirname  = sys.argv[2]
+    parser.setdirname(dirname)
         parser.setincludedir(os.path.dirname(file))
+
+    htmlhelp = HTMLHelp(helpbase, dirname)
+    parser.sethtmlhelp(htmlhelp)
+
         try:
             fp = open(file, 'r')
         except IOError, msg:
             print file, ':', msg
             sys.exit(1)
+
     parser.parse(fp)
     fp.close()
     parser.report()
+
+    htmlhelp.finalize()
 
 
 if __name__ == "__main__":
