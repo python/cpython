@@ -727,7 +727,7 @@ frozenset_hash(PyObject *self)
 		   use cases have many combinations of a small number of 
 		   elements with nearby hashes so that many distinct combinations
 		   collapse to only a handful of distinct hash values. */
-		hash ^= PyObject_Hash(item) * 3644798167;
+		hash ^= PyObject_Hash(item) * 3644798167u;
 		Py_DECREF(item);
 	}
 	Py_DECREF(it);
