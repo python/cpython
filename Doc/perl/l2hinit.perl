@@ -73,7 +73,7 @@ sub top_navigation_panel {
 }
 
 sub bot_navigation_panel {
-    "<div class=navigation><hr>"
+    "<p>\n<div class=navigation><hr>"
       . &make_nav_panel
       . "</div>"
 }
@@ -115,7 +115,7 @@ sub add_module_idx{
     open(MODIDXFILE, ">modindex.dat") || die "\n$!\n";
     foreach $key (keys %Modules) {
 	# dump the line in the data file; just use a dummy seqno field
-	print MODIDXFILE "$Modules{$key}\0$key###\n";
+	print MODIDXFILE "$Modules{$key}" . $IDXFILE_FIELD_SEP . "$key###\n";
     }
     close(MODIDXFILE);
     $index = `$myrootdir/tools/buildindex.py modindex.dat`;
