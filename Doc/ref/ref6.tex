@@ -458,6 +458,7 @@ identifier in the list.  The form with \keyword{from} performs step
 \indexii{importing}{module}
 \indexii{name}{binding}
 \kwindex{from}
+% XXX Need to define what ``initialize'' means here
 
 The system maintains a table of modules that have been initialized,
 indexed by module name.  This table table
@@ -548,7 +549,7 @@ names would be impossible without \keyword{global}.
 \indexiii{global}{name}{binding}
 
 Names listed in a \keyword{global} statement must not be used in the same
-code block before that \keyword{global} statement is executed.
+code block textually preceding that \keyword{global} statement.
 
 Names listed in a \keyword{global} statement must not be defined as formal
 parameters or in a \keyword{for} loop control target, \keyword{class}
