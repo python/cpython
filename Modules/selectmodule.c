@@ -268,9 +268,16 @@ select_select(PyObject *self, PyObject *args)
 	n = select(max, &ifdset, &ofdset, &efdset, tvp);
 	Py_END_ALLOW_THREADS
 
+#ifdef MS_WINDOWS
+	if (n == SOCKET_ERROR) {
+		errno = WSAGetLastError();
+		PyErr_SetFromErrno(SelectError);
+	}
+#else
 	if (n < 0) {
 		PyErr_SetFromErrno(SelectError);
 	}
+#endif
 	else if (n == 0) {
                 /* optimization */
 		ifdlist = PyList_New(0);
