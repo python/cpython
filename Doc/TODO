@@ -16,9 +16,6 @@ PYTHON DOCUMENTATION TO-DO LIST			-*- indented-text -*-
   avoid image creation, & if necessary, make sure image creation at least
   doesn't fail.
 
-* Migrate myformat.sty to a pair of classes and a shared package, to complete
-  the transition to LaTeX2e.
-
 * Figure out the texinfo indexing and function-description markup, and make
   partparse.py do the right thing.  Or toss the info conversion (again).
 
