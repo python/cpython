@@ -1,5 +1,5 @@
 /***********************************************************
-Copyright (C) 1997 Martin von Löwis
+Copyright (C) 1997 Martin von Loewis
 
 Permission to use, copy, modify, and distribute this software and its
 documentation for any purpose and without fee is hereby granted,
@@ -14,6 +14,9 @@ This software comes with no warranty. Use at your own risk.
 #include <string.h>
 #include <limits.h>
 #include "Python.h"
+#ifdef macintosh
+char *strdup Py_PROTO((char *));
+#endif
 
 static char locale__doc__[]="Support for POSIX locales.";
 
@@ -88,7 +91,7 @@ fixup_ulcase()
     if (isupper(c))
        ul[n++] = c;
   }
-  ulo=PyString_FromStringAndSize(ul,n);
+  ulo=PyString_FromStringAndSize((char *)ul,n);
   if(!ulo)return;
   if(string)
      PyDict_SetItemString(string,"uppercase",ulo);
@@ -101,7 +104,7 @@ fixup_ulcase()
     if (islower(c))
        ul[n++] = c;
   }
-  ulo=PyString_FromStringAndSize(ul,n);
+  ulo=PyString_FromStringAndSize((char *)ul,n);
   if(!ulo)return;
   if(string)
      PyDict_SetItemString(string,"lowercase",ulo);
@@ -114,7 +117,7 @@ fixup_ulcase()
     if (isalpha(c))
        ul[n++] = c;
   }
-  ulo=PyString_FromStringAndSize(ul,n);
+  ulo=PyString_FromStringAndSize((char *)ul,n);
   if(!ulo)return;
   if(string)
      PyDict_SetItemString(string,"letters",ulo);
