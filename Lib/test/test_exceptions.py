@@ -1,11 +1,16 @@
 # Python test set -- part 5, built-in exceptions
 
 from test_support import *
+from types import ClassType
 
 print '5. Built-in exceptions'
 # XXX This is not really enough, each *operation* should be tested!
 
-def r(name): print name
+def r(thing):
+    if type(thing) == ClassType:
+	print thing.__name__
+    else:
+	print thing
 
 r(AttributeError)
 import sys
