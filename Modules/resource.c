@@ -201,7 +201,7 @@ void initresource()
 
 	/* Add some symbolic constants to the module */
 	d = PyModule_GetDict(m);
-	ResourceError = PyString_FromString("resource.error");
+	ResourceError = PyErr_NewException("resource.error", NULL, NULL);
 	PyDict_SetItemString(d, "error", ResourceError);
 
 	/* insert constants */
@@ -264,8 +264,4 @@ void initresource()
 #ifdef RUSAGE_BOTH
 	ins(d, "RUSAGE_BOTH", RUSAGE_BOTH);
 #endif
-
-	/* Check for errors */
-	if (PyErr_Occurred())
-		Py_FatalError("can't initialize module resource");
 }

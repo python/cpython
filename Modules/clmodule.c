@@ -1006,7 +1006,7 @@ initcl()
 	m = Py_InitModule("cl", cl_methods);
 	d = PyModule_GetDict(m);
 
-	ClError = PyString_FromString("cl.error");
+	ClError = PyErr_NewException("cl.error", NULL, NULL);
 	(void) PyDict_SetItemString(d, "error", ClError);
 
 #ifdef CL_ADDED_ALGORITHM_ERROR
@@ -2593,11 +2593,6 @@ initcl()
 		goto error;
 	Py_DECREF(x);
 #endif
-
-	if (PyErr_Occurred()) {
-	  error:
-		Py_FatalError("can't initialize module cl");
-	}
 
 	(void) clSetErrorHandler(cl_ErrorHandler);
 }

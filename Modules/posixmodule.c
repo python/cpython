@@ -2254,73 +2254,37 @@ all_ins(d)
 }
 
 
-/* XXX The following should be more unified -- only difference left is
-   function name and module name. */
-
 #if defined(_MSC_VER) || defined(__WATCOMC__)
+#define INITFUNC initnt
+#define MODNAME "nt"
+#else
+#define INITFUNC initposix
+#define MODNAME "posix"
+#endif
+
 void
-initnt()
+INITFUNC()
 {
 	PyObject *m, *d, *v;
 	
-	m = Py_InitModule4("nt", 
+	m = Py_InitModule4(MODNAME,
 			   posix_methods,
 			   posix__doc__,
-			  (PyObject *)NULL,
-			  PYTHON_API_VERSION);
+			   (PyObject *)NULL,
+			   PYTHON_API_VERSION);
 	d = PyModule_GetDict(m);
 	
-	/* Initialize nt.environ dictionary */
+	/* Initialize environ dictionary */
 	v = convertenviron();
 	if (v == NULL || PyDict_SetItemString(d, "environ", v) != 0)
-		goto finally;
+		return;
 	Py_DECREF(v);
 	
         if (all_ins(d))
-                goto finally;
-
-	/* Initialize nt.error exception */
-	PosixError = PyString_FromString("os.error");
-	PyDict_SetItemString(d, "error", PosixError);
-
-        if (!PyErr_Occurred())
                 return;
 
-  finally:
-	/* XXX Shouldn't */
-        Py_FatalError("can't initialize NT posixmodule");
+	/* Initialize exception */
+	PosixError = PyErr_NewException("os.error", NULL, NULL);
+	if (PosixError != NULL)
+		PyDict_SetItemString(d, "error", PosixError);
 }
-#else /* not a PC port */
-void
-initposix()
-{
-	PyObject *m, *d, *v;
-	
-	m = Py_InitModule4("posix", 
-			   posix_methods,
-			   posix__doc__,
-			  (PyObject *)NULL,
-			  PYTHON_API_VERSION);
-	d = PyModule_GetDict(m);
-	
-	/* Initialize posix.environ dictionary */
-	v = convertenviron();
-	if (v == NULL || PyDict_SetItemString(d, "environ", v) != 0)
-                goto finally;
-	Py_DECREF(v);
-	
-        if (all_ins(d))
-                goto finally;
-
-	/* Initialize posix.error exception */
-	PosixError = PyString_FromString("os.error");
-	PyDict_SetItemString(d, "error", PosixError);
-
-        if (!PyErr_Occurred())
-                return;
-
-  finally:
-	/* XXX Shouldn't */
-        Py_FatalError("can't initialize posix module");
-}
-#endif /* !_MSC_VER */

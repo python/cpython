@@ -560,10 +560,9 @@ initimgfile()
 	PyObject *m, *d;
 	m = Py_InitModule("imgfile", imgfile_methods);
 	d = PyModule_GetDict(m);
-	ImgfileError = PyString_FromString("imgfile.error");
-	if ( ImgfileError == NULL
-	 || PyDict_SetItemString(d, "error", ImgfileError) )
-		Py_FatalError("can't define imgfile.error");
+	ImgfileError = PyErr_NewException("imgfile.error", NULL, NULL);
+	if (ImgfileError != NULL)
+		PyDict_SetItemString(d, "error", ImgfileError);
 }
 
 

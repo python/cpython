@@ -241,9 +241,6 @@ PyInit_termios()
 	m = Py_InitModule("termios", termios_methods);
 
 	d = PyModule_GetDict(m);
-	TermiosError = Py_BuildValue("s", "termios.error");
+	TermiosError = PyErr_NewException("termios.error", NULL, NULL);
 	PyDict_SetItemString(d, "error", TermiosError);
-
-	if (PyErr_Occurred())
-		Py_FatalError("can't initialize module termios");
 }

@@ -317,7 +317,7 @@ initdbm() {
 
 	m = Py_InitModule("dbm", dbmmodule_methods);
 	d = PyModule_GetDict(m);
-	DbmError = PyString_FromString("dbm.error");
-	if ( DbmError == NULL || PyDict_SetItemString(d, "error", DbmError) )
-		Py_FatalError("can't define dbm.error");
+	DbmError = PyErr_NewException("dbm.error", NULL, NULL);
+	if (DbmError != NULL)
+		PyDict_SetItemString(d, "error", DbmError);
 }

@@ -1070,7 +1070,7 @@ initsv()
 	m = Py_InitModule("sv", sv_methods);
 	d = PyModule_GetDict(m);
 
-	SvError = PyString_FromString("sv.error");
+	SvError = PyErr_NewException("sv.error", NULL, NULL);
 	if (SvError == NULL || PyDict_SetItemString(d, "error", SvError) != 0)
-		Py_FatalError("can't define sv.error");
+		return;
 }

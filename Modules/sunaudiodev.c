@@ -508,9 +508,7 @@ initsunaudiodev()
 
 	m = Py_InitModule("sunaudiodev", sunaudiodev_methods);
 	d = PyModule_GetDict(m);
-	SunAudioError = PyString_FromString("sunaudiodev.error");
+	SunAudioError = PyErr_NewException("sunaudiodev.error", NULL, NULL);
 	if (SunAudioError)
 		PyDict_SetItemString(d, "error", SunAudioError);
-	if (PyErr_Occurred())
-		Py_FatalError("can't initialize sunaudiodev module");
 }

@@ -1535,7 +1535,7 @@ initcurses()
 	ModDict = d; /* For PyCurses_InitScr */
 
 	/* For exception curses.error */
-	PyCursesError = PyString_FromString("curses.error");
+	PyCursesError = PyErr_NewException("curses.error", NULL, NULL);
 	PyDict_SetItemString(d, "error", PyCursesError);
 
 	/* Make the version available */
@@ -1585,8 +1585,4 @@ initcurses()
 	  SetDictInt("KEY_MIN", KEY_MIN);
 	  SetDictInt("KEY_MAX", KEY_MAX);
 	}
-
-	/* Check for errors */
-	if (PyErr_Occurred())
-		Py_FatalError("can't initialize module curses");
 }

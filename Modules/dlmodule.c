@@ -229,16 +229,18 @@ initdl()
 	PyObject *m, *d, *x;
 
 	if (sizeof(int) != sizeof(long) ||
-	    sizeof(long) != sizeof(char *))
-		Py_FatalError(
+	    sizeof(long) != sizeof(char *)) {
+		Py_Err_SetStr(
  "module dl requires sizeof(int) == sizeof(long) == sizeof(char*)");
+		return;
+	}
 
 	/* Create the module and add the functions */
 	m = Py_InitModule("dl", dl_methods);
 
 	/* Add some symbolic constants to the module */
 	d = PyModule_GetDict(m);
-	Dlerror = x = PyString_FromString("dl.error");
+	Dlerror = x = PyErr_NewException("dl.error", NULL, NULL);
 	PyDict_SetItemString(d, "error", x);
 	x = PyInt_FromLong((long)RTLD_LAZY);
 	PyDict_SetItemString(d, "RTLD_LAZY", x);
@@ -246,8 +248,4 @@ initdl()
 	x = PyInt_FromLong((long)RTLD_NOW);
 	PyDict_SetItemString(d, "RTLD_NOW", x);
 #endif
-
-	/* Check for errors */
-	if (PyErr_Occurred())
-		Py_FatalError("can't initialize module dl");
 }

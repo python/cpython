@@ -1298,10 +1298,8 @@ initstruct()
 
 	/* Add some symbolic constants to the module */
 	d = PyModule_GetDict(m);
-	StructError = PyString_FromString("struct.error");
+	StructError = PyErr_NewException("struct.error", NULL, NULL);
+	if (StructError == NULL)
+		return;
 	PyDict_SetItemString(d, "error", StructError);
-
-	/* Check for errors */
-	if (PyErr_Occurred())
-		Py_FatalError("can't initialize module struct");
 }

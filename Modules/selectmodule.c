@@ -322,8 +322,6 @@ initselect()
 	PyObject *m, *d;
 	m = Py_InitModule("select", select_methods);
 	d = PyModule_GetDict(m);
-	SelectError = PyString_FromString("select.error");
+	SelectError = PyErr_NewException("select.error", NULL, NULL);
 	PyDict_SetItemString(d, "error", SelectError);
-	if (PyErr_Occurred())
-		Py_FatalError("Cannot initialize select module");
 }

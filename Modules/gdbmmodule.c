@@ -432,7 +432,7 @@ initgdbm() {
 
 	m = Py_InitModule("gdbm", dbmmodule_methods);
 	d = PyModule_GetDict(m);
-	DbmError = PyString_FromString("gdbm.error");
-	if ( DbmError == NULL || PyDict_SetItemString(d, "error", DbmError) )
-		Py_FatalError("can't define gdbm.error");
+	DbmError = PyErr_NewException("gdbm.error", NULL, NULL);
+	if (DbmError != NULL)
+		PyDict_SetItemString(d, "error", DbmError);
 }
