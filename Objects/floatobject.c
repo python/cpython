@@ -316,38 +316,74 @@ float_divmod(v, w)
 	return mkvalue("(dd)", div, mod);
 }
 
+double powu(x, n)
+	double x;
+	long n;
+{
+	double r = 1.;
+	double p = x;
+	long mask = 1;
+	while (mask > 0 && n >= mask) {
+		if (n & mask)
+			r *= p;
+		mask <<= 1;
+		p *= p;
+	}
+	return r;
+}
+
+double powi(x, n)
+	double x;
+	long n;
+{
+	if (n > 10000 || n < -10000)
+		return pow(x, (double) n);
+	else if (n > 0)
+		return powu(x, n);
+	else
+		return 1./powu(x, -n);
+}
+
 static object *
 float_pow(v, w, z)
 	floatobject *v;
-	floatobject *w;
+	object *w;
 	floatobject *z;
 {
 	double iv, iw, ix;
-	iv = v->ob_fval;
-	iw = w->ob_fval;
+	long intw;
  /* XXX Doesn't handle overflows if z!=None yet; it may never do so :(
   * The z parameter is really only going to be useful for integers and
   * long integers.  Maybe something clever with logarithms could be done.
   * [AMK]
   */
-	/* Sort out special cases here instead of relying on pow() */
-	if (iw == 0.0) { 		/* x**0 is 1, even 0**0 */
-	 	if ((object *)z!=None) {
-		 	ix=fmod(1.0, z->ob_fval);
-		 	if (ix!=0 && z->ob_fval<0) ix+=z->ob_fval;
-		}
-	 	else ix=1.0;
-    		return newfloatobject(ix); 
+	iv = v->ob_fval;
+	iw = ((floatobject *)w)->ob_fval;
+	intw = (long)iw;
+	if (iw == intw) {
+		errno = 0;
+		ix = powi(iv, intw);
 	}
-	if (iv == 0.0) {
-		if (iw < 0.0) {
-			err_setstr(ValueError, "0.0 to a negative power");
-			return NULL;
+	else {
+		/* Sort out special cases here instead of relying on pow() */
+		if (iw == 0.0) { 		/* x**0 is 1, even 0**0 */
+		 	if ((object *)z!=None) {
+			 	ix=fmod(1.0, z->ob_fval);
+			 	if (ix!=0 && z->ob_fval<0) ix+=z->ob_fval;
+			}
+		 	else ix=1.0;
+	    		return newfloatobject(ix); 
 		}
-		return newfloatobject(0.0);
+		if (iv == 0.0) {
+			if (iw < 0.0) {
+				err_setstr(ValueError, "0.0 to a negative power");
+				return NULL;
+			}
+			return newfloatobject(0.0);
+		}
+		errno = 0;
+		ix = pow(iv, iw);
 	}
-	errno = 0;
-	ix = pow(iv, iw);
 	CHECK(ix);
 	if (errno != 0) {
 		/* XXX could it be another type of error? */
