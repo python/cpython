@@ -1076,7 +1076,7 @@ run_pyc_file(FILE *fp, char *filename, PyObject *globals, PyObject *locals,
 	if (v && flags) {
 		if (co->co_flags & CO_NESTED)
 			flags->cf_flags |= PyCF_NESTED_SCOPES;
-		if (co->co_flags & CO_GENERATOR)
+		if (co->co_flags & CO_GENERATOR_ALLOWED)
 			flags->cf_flags |= PyCF_GENERATORS;
 #if 0
 		fprintf(stderr, "run_pyc_file: nested_scopes: %d\n",
