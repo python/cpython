@@ -508,6 +508,8 @@ def runtest(test, generate, verbose, quiet, testdir=None, huntrleaks=False):
                     deltas.append(sys.gettotalrefcount() - rc - 2)
                 print >>sys.stderr
                 if max(map(abs, deltas[-huntrleaks[1]:])) > 0:
+                    print >>sys.stderr, test, 'leaked', \
+                          deltas[-huntrleaks[1]:], 'references'
                     print >>refrep, test, 'leaked', \
                           deltas[-huntrleaks[1]:], 'references'
                 # The end of the huntrleaks hackishness.
