@@ -45,7 +45,7 @@ Extension modules
   microsecond <http://www.python.org/sf/661086>.  This repairs an
   irritation most likely seen on Windows systems.
 
-  In dt.asdatetime(tz), if tz.utcoffset(dt) returns a duration,
+  In dt.astimezone(tz), if tz.utcoffset(dt) returns a duration,
   ValueError is raised if tz.dst(dt) returns None (2.3a1 treated it
   as 0 instead, but a tzinfo subclass wishing to participate in
   time zone conversion has to take a stand on whether it supports
@@ -60,11 +60,27 @@ Extension modules
   The example tzinfo class for local time had a bug.  It was replaced
   by a later example coded by Guido.
 
-  datetimetz.astimezone(tz) no longer raises an exception when the
+  datetime.astimezone(tz) no longer raises an exception when the
   input datetime has no UTC equivalent in tz.  For typical "hybrid" time
   zones (a single tzinfo subclass modeling both standard and daylight
   time), this case can arise one hour per year, at the hour daylight time
-  ends.  See new docs for details.
+  ends.  See new docs for details.  In short, the new behavior mimics
+  the local wall clock's behavior of repeating an hour in local time.
+
+  dt.astimezone() can no longer be used to convert between naive and aware
+  datetime objects.  If you merely want to attach, or remove, a tzinfo
+  object, without any conversion of date and time members, use
+  dt.replace(tzinfo=whatever) instead, where "whatever" is None or a
+  tzinfo subclass instance.
+
+  A new method tzinfo.fromutc(dt) can be overridden in tzinfo subclasses
+  to give complete control over how a UTC time is to be converted to
+  a local time.  The default astimezone() implementation calls fromutc()
+  as its last step, so a tzinfo subclass can affect that too by overriding
+  fromutc().  It's expected that the default fromutc() implementation will
+  be suitable as-is for "almost all" time zone subclasses, but the
+  creativity of political time zone fiddling appears unbounded -- fromutc()
+  allows the highly motivated to emulate any scheme expressible in Python.
 
   The constructors building a datetime from a timestamp could raise
   ValueError if the platform C localtime()/gmtime() inserted "leap

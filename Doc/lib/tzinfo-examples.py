@@ -27,7 +27,7 @@ class FixedOffset(tzinfo):
     """Fixed offset in minutes east from UTC."""
 
     def __init__(self, offset, name):
-        self.__offset = timdelta(minutes = offset)
+        self.__offset = timedelta(minutes = offset)
         self.__name = name
 
     def utcoffset(self, dt):
@@ -116,9 +116,9 @@ class USTimeZone(tzinfo):
     def dst(self, dt):
         if dt is None or dt.tzinfo is None:
             # An exception may be sensible here, in one or both cases.
-            # It depends on how you want to treat them.  The astimezone()
-            # implementation always passes a datetime with
-            # dt.tzinfo == self.
+            # It depends on how you want to treat them.  The default
+            # fromutc() implementation (called by the default astimezone()
+            # implementation) passes a datetime with dt.tzinfo is self.
             return ZERO
         assert dt.tzinfo is self
 
