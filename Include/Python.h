@@ -21,6 +21,14 @@
 #error "limits.h is required by std C -- why isn't HAVE_LIMITS_H defined?"
 #endif
 
+#ifndef UCHAR_MAX
+#error "Something's broken.  UCHAR_MAX should be defined in limits.h."
+#endif
+
+#if UCHAR_MAX != 255
+#error "Python's source code currently assumes 8-bit characters."
+#endif
+
 #if defined(__sgi) && defined(WITH_THREAD) && !defined(_SGI_MP_SOURCE)
 #define _SGI_MP_SOURCE
 #endif
