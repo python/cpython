@@ -37,10 +37,16 @@ $Header$
 #include <stdlib.h>
 #include <string.h>
 #else
+#ifdef __STDC__
+/* Don't mess around, use the standard headers */
+#include <stdlib.h>
+#include <string.h>
+#else
 char *malloc();
 void free();
 char *realloc();
-#endif
+#endif /* __STDC__ */
+#endif /* THINK_C */
 
 #define MACRO_BEGIN do {
 #define MACRO_END } while (0)
@@ -508,6 +514,7 @@ regexp_t bufp;
 	      goto normal_char;
 	  opcode = Ceol;
 	  goto store_opcode;
+	  /* NOTREACHED */
 	  break;
 	case Roptional:
 	  if (beginning_context)
@@ -1504,6 +1511,8 @@ regexp_registers_t regs;
 		     startpos, range, regs, size);
 }
 
+#ifdef UNUSED
+
 static struct re_pattern_buffer re_comp_buf;
 
 char *re_comp(s)
@@ -1531,6 +1540,8 @@ char *s;
   
   return re_search(&re_comp_buf, s, len, 0, len, (regexp_registers_t)NULL) >= 0;
 }
+
+#endif
 
 #ifdef TEST_REGEXP
 

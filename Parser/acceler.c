@@ -40,7 +40,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* Forward references */
 static void fixdfa PROTO((grammar *, dfa *));
-static void fixstate PROTO((grammar *, dfa *, state *));
+static void fixstate PROTO((grammar *, state *));
 
 void
 addaccelerators(g)
@@ -69,13 +69,12 @@ fixdfa(g, d)
 	int j;
 	s = d->d_state;
 	for (j = 0; j < d->d_nstates; j++, s++)
-		fixstate(g, d, s);
+		fixstate(g, s);
 }
 
 static void
-fixstate(g, d, s)
+fixstate(g, s)
 	grammar *g;
-	dfa *d;
 	state *s;
 {
 	arc *a;
