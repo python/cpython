@@ -249,6 +249,9 @@ class bdist_wininst (Command):
         if self.pre_install_script:
             script_data = open(self.pre_install_script, "r").read()
             cfgdata = cfgdata + script_data + "\n\0"
+        else:
+            # empty pre-install script
+            cfgdata = cfgdata + "\0"
         file.write(cfgdata)
         header = struct.pack("<iii",
                              0x1234567A,       # tag
@@ -261,8 +264,11 @@ class bdist_wininst (Command):
     # create_exe()
 
     def get_exe_bytes (self):
-        # wininst.exe is in the same directory as this file
+        from distutils.msvccompiler import get_build_version
+        # wininst-x.y.exe is in the same directory as this file
         directory = os.path.dirname(__file__)
-        filename = os.path.join(directory, "wininst.exe")
+        # we must use a wininst-x.y.exe built with the same C compiler
+        # used for python.  XXX What about mingw, borland, and so on?
+        filename = os.path.join(directory, "wininst-%s.exe" % get_build_version())
         return open(filename, "rb").read()
 # class bdist_wininst
