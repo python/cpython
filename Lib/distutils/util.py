@@ -1,7 +1,8 @@
 """distutils.util
 
 Miscellaneous utility functions -- anything that doesn't fit into
-one of the other *util.py modules."""
+one of the other *util.py modules.
+"""
 
 # created 1999/03/08, Greg Ward
 
@@ -64,9 +65,8 @@ def convert_path (pathname):
     directory separator.  Needed because filenames in the setup script are
     always supplied in Unix style, and have to be converted to the local
     convention before we can actually use them in the filesystem.  Raises
-    ValueError if 'pathname' is absolute (starts with '/') or contains
-    local directory separators (unless the local separator is '/', of
-    course).
+    ValueError on non-Unix-ish systems if 'pathname' either starts or
+    ends with a slash.
     """
     if os.sep == '/':
         return pathname
@@ -138,13 +138,12 @@ def check_environ ():
 
 def subst_vars (str, local_vars):
     """Perform shell/Perl-style variable substitution on 'string'.  Every
-    occurrence of '$' followed by a name, or a name enclosed in braces, is
-    considered a variable.  Every variable is substituted by the value
-    found in the 'local_vars' dictionary, or in 'os.environ' if it's not in
-    'local_vars'.  'os.environ' is first checked/ augmented to guarantee
-    that it contains certain values: see '_check_environ()'.  Raise
-    ValueError for any variables not found in either 'local_vars' or
-    'os.environ'.
+    occurrence of '$' followed by a name is considered a variable, and
+    variable is substituted by the value found in the 'local_vars'
+    dictionary, or in 'os.environ' if it's not in 'local_vars'.
+    'os.environ' is first checked/augmented to guarantee that it contains
+    certain values: see 'check_environ()'.  Raise ValueError for any
+    variables not found in either 'local_vars' or 'os.environ'.
     """
     check_environ()
     def _subst (match, local_vars=local_vars):
@@ -154,7 +153,10 @@ def subst_vars (str, local_vars):
         else:
             return os.environ[var_name]
 
-    return re.sub(r'\$([a-zA-Z_][a-zA-Z_0-9]*)', _subst, str)
+    try:
+        return re.sub(r'\$([a-zA-Z_][a-zA-Z_0-9]*)', _subst, str)
+    except KeyError, var:
+        raise ValueError, "invalid variable '$%s'" % var
 
 # subst_vars ()
 
