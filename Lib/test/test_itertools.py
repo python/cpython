@@ -201,7 +201,6 @@ Check 1201 is for $764.05
 Check 1202 is for $823.14
 
 >>> import operator
->>> import operator
 >>> for cube in imap(operator.pow, xrange(1,4), repeat(3)):
 ...    print cube
 ...
@@ -303,7 +302,6 @@ False
 >>> dotproduct([1,2,3], [4,5,6])
 32
 
-
 """
 
 __test__ = {'libreftest' : libreftest}
@@ -312,7 +310,6 @@ def test_main(verbose=None):
     test_support.run_unittest(TestBasicOps)
 
     # verify reference counting
-    import sys
     if verbose and hasattr(sys, "gettotalrefcount"):
         counts = [None] * 5
         for i in xrange(len(counts)):
@@ -321,8 +318,7 @@ def test_main(verbose=None):
         print counts
 
     # doctest the examples in the library reference
-    import doctest
-    doctest.testmod(sys.modules[__name__])
+    test_support.run_doctest(sys.modules[__name__], verbose)
 
 if __name__ == "__main__":
     test_main(verbose=True)
