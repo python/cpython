@@ -123,6 +123,12 @@ def main():
 	parse_errors_h(fp, dict)
 	fp.close()
 	
+	fss, ok = macfs.PromptGetFile("Where is mkestrres-MacErrors.h?")
+	if not ok: return
+	fp = open(fss.as_pathname())
+	parse_errors_h(fp, dict)
+	fp.close()
+	
 	if not dict:
 		return
 		
