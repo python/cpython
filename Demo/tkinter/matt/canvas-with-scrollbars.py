@@ -33,8 +33,8 @@ class Test(Frame):
 	self.draw.scrollY = Scrollbar(self, {"orient" : "vertical"}) 
 
 	# now tie the three together. This is standard boilerplate text
-	self.draw['xscroll'] = self.draw.scrollX.set
-	self.draw['yscroll'] = self.draw.scrollY.set
+	self.draw['xscrollcommand'] = self.draw.scrollX.set
+	self.draw['yscrollcommand'] = self.draw.scrollY.set
 	self.draw.scrollX['command'] = self.draw.xview
 	self.draw.scrollY['command'] = self.draw.yview
 
