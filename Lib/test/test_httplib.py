@@ -118,6 +118,13 @@ def _test():
         else:
             print "Expect InvalidURL"
 
+    for hp in ("[fe80::207:e9ff:fe9b]:8000", "www.python.org:80",
+               "www.python.org"):
+        try:
+            h = httplib.HTTP(hp)
+        except httplib.InvalidURL:
+            print "InvalidURL raised erroneously"
+
     # test response with multiple message headers with the same field name.
     text = ('HTTP/1.1 200 OK\r\n'
             'Set-Cookie: Customer="WILE_E_COYOTE"; Version="1"; Path="/acme"\r\n'

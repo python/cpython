@@ -524,7 +524,7 @@ class HTTPConnection:
 
     def _set_hostport(self, host, port):
         if port is None:
-            i = host.find(':')
+            i = host.rfind(':')
             if i >= 0:
                 try:
                     port = int(host[i+1:])
