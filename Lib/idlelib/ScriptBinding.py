@@ -144,8 +144,9 @@ class ScriptBinding:
             if (not _sys.argv or
                 _basename(_sys.argv[0]) != _basename(_filename)):
                 _sys.argv = [_filename]
-                del _filename, _sys, _basename
-                \n""" % `filename`)
+            del _filename, _sys, _basename
+            \n""" % `filename`)
+        interp.prepend_syspath(filename)
         interp.runcode(code)
 
     def getfilename(self):
