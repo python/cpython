@@ -1,12 +1,13 @@
-
-\section{\module{datetime} -- 
+\section{\module{datetime} ---
          Basic date and time types}
 
 \declaremodule{builtin}{datetime}
 \modulesynopsis{Basic date and time types.}
-\moduleauthor{Tim Peters}{tim@zope.com} % XXX check address
+\moduleauthor{Tim Peters}{tim@zope.com}
+\sectionauthor{Tim Peters}{tim@zope.com}
 \sectionauthor{A.M. Kuchling}{amk@amk.ca}
 
+\newcommand{\Naive}{Na\"ive}
 \newcommand{\naive}{na\"ive}
 
 The \module{datetime} module supplies classes for manipulating dates
@@ -37,135 +38,145 @@ there is no standard suitable for every app.
 The \module{datetime} module exports the following constants:
 
 \begin{datadesc}{MINYEAR}
-    The smallest year number allowed in a \class{date}, 
-    \class{datetime}, or  \class{datetimetz} 
-    object.  \constant{MINYEAR} is 1.
+  The smallest year number allowed in a \class{date},
+  \class{datetime}, or \class{datetimetz} object.  \constant{MINYEAR}
+  is \code{1}.
 \end{datadesc}
 
 \begin{datadesc}{MAXYEAR}
-    The largest year number allowed in a \class{date}, 
-    \class{datetime}, or  \class{datetimetz} 
-    object.  \constant{MAXYEAR} is 9999.
+  The largest year number allowed in a \class{date}, \class{datetime},
+  or \class{datetimetz} object.  \constant{MAXYEAR} is \code{9999}.
 \end{datadesc}
 
 
 \subsection{Available Types}
 
-\begin{classdesc}{date}{}
-    An idealized \naive\ date, assuming the current Gregorian calendar
-    always was, and always will be, in effect.
-    Attributes: \member{year}, \member{month}, and \member{day}.
-\end{classdesc}
+\begin{classdesc*}{date}
+  An idealized \naive\ date, assuming the current Gregorian calendar
+  always was, and always will be, in effect.
+  Attributes: \member{year}, \member{month}, and \member{day}.
+\end{classdesc*}
 
-\begin{classdesc}{time}{}
-    An idealized \naive\ time, independent of any particular day, assuming
-    that every day has exactly 24*60*60 seconds (there is no notion
-    of "leap seconds" here).
-    Attributes: \member{hour}, \member{minute}, \member{second}, and 
-                \member{microsecond}
-\end{classdesc}
+\begin{classdesc*}{time}
+  An idealized \naive\ time, independent of any particular day, assuming
+  that every day has exactly 24*60*60 seconds (there is no notion
+  of "leap seconds" here).
+  Attributes: \member{hour}, \member{minute}, \member{second}, and
+              \member{microsecond}
+\end{classdesc*}
 
-\begin{classdesc}{datetime}{}
-    A combination of a \naive\ date and a \naive\ time.
-    Attributes: \member{year}, \member{month}, \member{day}, 
-                \member{hour}, \member{minute}, \member{second}, 
-                and \member{microsecond}.
-\end{classdesc}
+\begin{classdesc*}{datetime}
+  A combination of a \naive\ date and a \naive\ time.
+  Attributes: \member{year}, \member{month}, \member{day},
+              \member{hour}, \member{minute}, \member{second},
+              and \member{microsecond}.
+\end{classdesc*}
 
-\begin{classdesc}{timedelta}{}
-    A duration, expressing the difference between two \class{date},
-    \class{time}, or \class{datetime} instances, to microsecond
-    resolution.
-\end{classdesc}
+\begin{classdesc*}{timedelta}
+  A duration, expressing the difference between two \class{date},
+  \class{time}, or \class{datetime} instances, to microsecond
+  resolution.
+\end{classdesc*}
 
-\begin{classdesc}{tzinfo}{}
-    An abstract base class for time zone information objects.  These
-    are used by the  \class{datetimetz}  and \class{timetz} classes to
-    provided a customizable notion of time adjustment (for example, to
-    account for time zone and/or daylight savings time).
-\end{classdesc}
+\begin{classdesc*}{tzinfo}
+  An abstract base class for time zone information objects.  These
+  are used by the  \class{datetimetz}  and \class{timetz} classes to
+  provided a customizable notion of time adjustment (for example, to
+  account for time zone and/or daylight savings time).
+\end{classdesc*}
 
-\begin{classdesc}{timetz}{}
-    An aware subclass of \class{time}, supporting a customizable notion of
-    time adjustment.
-\end{classdesc}
+\begin{classdesc*}{timetz}
+  An aware subclass of \class{time}, supporting a customizable notion of
+  time adjustment.
+\end{classdesc*}
 
-\begin{classdesc}{datetimetz}{}
-    An aware subclass of \class{datetime}, supporting a customizable notion of
-    time adjustment.
-\end{classdesc}
+\begin{classdesc*}{datetimetz}
+  An aware subclass of \class{datetime}, supporting a customizable notion of
+  time adjustment.
+\end{classdesc*}
 
 Objects of these types are immutable.
 
-Objects of the \class{date}, \class{datetime}, and
-\class{time} types are always \naive.
+Objects of the \class{date}, \class{datetime}, and \class{time} types
+are always \naive.
 
-An object \code{D} of type \class{timetz} or  \class{datetimetz}  may be
-\naive\ or aware.  \code{D} is aware if \code{D.tzinfo} is not \code{None},
-and \code{D.tzinfo.utcoffset(D)} does not return \code{None}.  If
-\code{D.tzinfo} is \code{None}, or if \code{D.tzinfo} is not
-\code{None} but \code{D.tzinfo.utcoffset(D)} returns \code{None}, \code{D} is
-\naive.
+An object \code{D} of type \class{timetz} or \class{datetimetz} may be
+\naive\ or aware.  \code{D} is aware if \code{D.tzinfo} is not
+\code{None}, and \code{D.tzinfo.utcoffset(D)} does not return
+\code{None}.  If \code{D.tzinfo} is \code{None}, or if \code{D.tzinfo}
+is not \code{None} but \code{D.tzinfo.utcoffset(D)} returns
+\code{None}, \code{D} is \naive.
 
-The distinction between \naive\ and aware doesn't apply to \code{timedelta}
-objects.
+The distinction between \naive\ and aware doesn't apply to
+\code{timedelta} objects.
 
-Subclass relationships
-======================
-% XXX latex 
-    object
-        timedelta
-        tzinfo
-        time
-            timetz
-        date
-            datetime
-                datetimetz
+Subclass relationships:
 
+\begin{verbatim}
+object
+    timedelta
+    tzinfo
+    time
+        timetz
+    date
+        datetime
+            datetimetz
+\end{verbatim}
 
 
 \subsection{\method{strftime()} Behavior}
 
-\class{date}, \class{datetime},  \class{datetimetz} , \class{time}, and 
-\class{timetz} objects all support
-a strftime(format) method, to create a string representing the time
-under the control of an explicit format string.  Broadly speaking,
-    d.strftime(fmt)
-acts like the time module's
-    time.strftime(fmt, d.timetuple())
-although not all objects support a timetuple() method.
+\class{date}, \class{datetime}, \class{datetimetz}, \class{time},
+and \class{timetz} objects all support a \code{strftime(\var{format})}
+method, to create a string representing the time under the control of
+an explicit format string.  Broadly speaking,
+\begin{verbatim}
+d.strftime(fmt)
+\end{verbatim}
+acts like the \refmodule{time} module's
+\begin{verbatim}
+time.strftime(fmt, d.timetuple())
+\end{verbatim}
+although not all objects support a \method{timetuple()} method.
 
-For time and \class{timetz} objects, format codes for year, month, and day
-should not be used, as time objects have no such values.  0 is used
-instead.
+For time and \class{timetz} objects, format codes for year, month, and
+day should not be used, as time objects have no such values.  \code{0}
+is used instead.
 
 For date objects, format codes for hours, minutes, and seconds should
-not be used, as date objects have no such values.  0 is used insted.
+not be used, as date objects have no such values.  \code{0} is used
+instead.
 
-For a \naive\ object, the %z and %Z format codes are replaced by
-empty strings.
+For a \naive\ object, the \code{\%z} and \code{\%Z} format codes are
+replaced by empty strings.
 
 For an aware object:
 
-- %z:  self.utcoffset() is transformed into a 5-character
-  string of the form +HHMM or -HHMM, where HH is a 2-digit string
-  giving the number of UTC offset hours, and MM is a 2-digit string
-  giving the number of UTC offset minutes.  For example, if
-  utcoffset() returns -180, %z is replaced with string "-0300".
+\begin{itemize}
+  \item[\code{\%z}]
+    \method{utcoffset()} is transformed into a 5-character string of
+    the form +HHMM or -HHMM, where HH is a 2-digit string giving the
+    number of UTC offset hours, and MM is a 2-digit string giving the
+    number of UTC offset minutes.  For example, if
+    \method{utcoffset()} returns -180, \code{\%z} is replaced with the
+    string \code{'-0300'}.
 
-- %Z:  If self.tzname() returns None, %Z is replaced by an empty string.
-  Else %Z is replaced by the returned value, which must be a string.
+  \item[\code{\%Z}]
+    If \method{tzname()} returns \code{None}, \code{\%Z} is replaced
+    by an empty string.  Else \code{\%Z} is replaced by the returned
+    value, which must be a string.
+\end{itemize}
 
 
-\subsection{\class{timedelta} \label{datetime-timedelta}
+\subsection{\class{timedelta} \label{datetime-timedelta}}
 
-A timedelta object represents a duration, the difference between two
-dates or times.
+A \class{timedelta} object represents a duration, the difference
+between two dates or times.
 
 Constructor:
 
     timedelta(days=0, seconds=0, microseconds=0,
-              # The following should only be used as keyword args:
+              \# The following should only be used as keyword args:
               milliseconds=0, minutes=0, hours=0, weeks=0)
 
     All arguments are optional.  Arguments may be ints, longs, or floats,
@@ -193,15 +204,16 @@ Constructor:
     are exact (no information is lost).
 
     If the normalized value of days lies outside the indicated range,
-    OverflowError is raised.
+    \exception{OverflowError} is raised.
 
     Note that normalization of negative values may be surprising at first.
     For example,
 
-    >>> d = timedelta(microseconds=-1)
-    >>> (d.days, d.seconds, d.microseconds)
-    (-1, 86399, 999999)
-    >>>
+\begin{verbatim}
+>>> d = timedelta(microseconds=-1)
+>>> (d.days, d.seconds, d.microseconds)
+(-1, 86399, 999999)
+\end{verbatim}
 
 
 Class attributes:
@@ -216,7 +228,7 @@ Class attributes:
 
     .resolution
         The smallest possible difference between non-equal timedelta
-        objects, timedelta(microseconds=1).
+        objects, \code{timedelta(microseconds=1)}.
 
     Note that, because of normalization, timedelta.max > -timedelta.min.
     -timedelta.max is not representable as a timedelta object.
@@ -229,52 +241,66 @@ Instance attributes (read-only):
 
 Supported operations:
 
-    - timedelta + timedelta -> timedelta
-      This is exact, but may overflow.  After
-          t1 = t2 + t3
-      t1-t2 == t3 and t1-t3 == t2 are true.
+\begin{itemize}
+  \item
+    timedelta + timedelta -> timedelta
+    This is exact, but may overflow.  After
+        t1 = t2 + t3
+    t1-t2 == t3 and t1-t3 == t2 are true.
 
-    - timedelta - timedelta -> timedelta
-      This is exact, but may overflow.  After
-          t1 = t2 - t3
-       t2 == t1 + t3 is true.
+  \item
+    timedelta - timedelta -> timedelta
+    This is exact, but may overflow.  After
+        t1 = t2 - t3
+     t2 == t1 + t3 is true.
 
-    - timedelta * (int or long) -> timedelta
-      (int or long) * timedelta -> timedelta
-      This is exact, but may overflow.  After
-          t1 = t2 * i
-      t1 // i == t2 is true, provided i != 0.  In general,
-          t * i == t * (i-1) + t
-      is true.
+  \item
+    timedelta * (int or long) -> timedelta
+    (int or long) * timedelta -> timedelta
+    This is exact, but may overflow.  After
+        t1 = t2 * i
+    t1 // i == t2 is true, provided i != 0.  In general,
+        t * i == t * (i-1) + t
+    is true.
 
-    - timedelta // (int or long) -> timedelta
-      The floor is computed and the remainder (if any) is thrown away.
-      Division by 0 raises ZeroDivisionError.
+  \item
+    timedelta // (int or long) -> timedelta
+    The floor is computed and the remainder (if any) is thrown away.
+    Division by 0 raises \exception{ZeroDivisionError}.
 
-    - certain additions and subtractions with date, datetime, and datimetz
-      objects (see below)
+  \item
+    certain additions and subtractions with date, datetime, and datimetz
+    objects (see below)
 
-    - +timedelta -> timedelta
-      Returns a timedelta object with the same value.
+  \item
+    +timedelta -> timedelta
+    Returns a timedelta object with the same value.
 
-    - -timedelta -> timedelta
-      -t is equivalent to timedelta(-t.days, -t.seconds, -t.microseconds),
-      and to t*-1.  This is exact, but may overflow (for example,
-      -timedelta.max is not representable as a timedelta object).
+  \item
+    -timedelta -> timedelta
+    -t is equivalent to timedelta(-t.days, -t.seconds, -t.microseconds),
+    and to t*-1.  This is exact, but may overflow (for example,
+    -timedelta.max is not representable as a timedelta object).
 
-    - abs(timedelta) -> timedelta
-      abs(t) is equivalent to +t when t.days >= 0, and to -t when
-      t.days < 0.  This is exact, and cannot overflow.
+  \item
+    abs(timedelta) -> timedelta
+    abs(t) is equivalent to +t when t.days >= 0, and to -t when
+    t.days < 0.  This is exact, and cannot overflow.
 
-    - comparison of timedelta to timedelta; the timedelta representing
-      the smaller duration is considered to be the smaller timedelta
+  \item
+    comparison of timedelta to timedelta; the timedelta representing
+    the smaller duration is considered to be the smaller timedelta
 
-    - hash, use as dict key
+  \item
+    hash, use as dict key
 
-    - efficient pickling
+  \item
+    efficient pickling
 
-    - in Boolean contexts, a timedelta object is considred to be true
-      if and only if it isn't equal to timedelta(0)
+  \item
+    in Boolean contexts, a timedelta object is considred to be true
+    if and only if it isn't equal to \code{timedelta(0)}
+\end{itemize}
 
 
 \subsection{\class{date} \label{datetime-date}}
@@ -299,7 +325,8 @@ Constructor:
         1 <= month <= 12
         1 <= day <= number of days in the given month and year
 
-    If an argument outside those ranges is given, ValueError is raised.
+    If an argument outside those ranges is given,
+    \exception{ValueError} is raised.
 
 Other constructors (class methods):
 
@@ -308,102 +335,114 @@ Other constructors (class methods):
     date.fromtimestamp(time.time()).
 
   - fromtimestamp(timestamp)
-    Return the local date corresponding to the POSIX timestamp, such as
-    is returned by time.time().  This may raise ValueError, if the
-    timestamp is out of the range of values supported by the platform C
-    localtime() function.  It's common for this to be restricted to
-    years in 1970 through 2038.
+    Return the local date corresponding to the POSIX timestamp, such
+    as is returned by \function{time.time()}.  This may raise
+    \exception{ValueError}, if the timestamp is out of the range of
+    values supported by the platform C \cfunction{localtime()}
+    function.  It's common for this to be restricted to years in 1970
+    through 2038.
 
   - fromordinal(ordinal)
     Return the date corresponding to the proleptic Gregorian ordinal,
-    where January 1 of year 1 has ordinal 1.  ValueError is raised
-    unless 1 <= ordinal <= date.max.toordinal().  For any date d,
-    date.fromordinal(d.toordinal()) == d.
+    where January 1 of year 1 has ordinal 1.  \exception{ValueError}
+    is raised unless 1 <= ordinal <= date.max.toordinal().  For any
+    date d, date.fromordinal(d.toordinal()) == d.
 
 Class attributes:
 
     .min
-        The earliest representable date, date(MINYEAR, 1, 1).
+        The earliest representable date, \code{date(MINYEAR, 1, 1)}.
 
     .max
-        The latest representable date, date(MAXYEAR, 12, 31).
+        The latest representable date, \code{date(MAXYEAR, 12, 31)}.
 
     .resolution
         The smallest possible difference between non-equal date
-        objects, timedelta(days=1).
+        objects, \code{timedelta(days=1)}.
 
 Instance attributes (read-only):
 
-    .year           between MINYEAR and MAXYEAR inclusive
+    .year           between \constant{MINYEAR} and \constant{MAXYEAR} inclusive
     .month          between 1 and 12 inclusive
     .day            between 1 and the number of days in the given month
                     of the given year
 
 Supported operations:
 
-    - date1 + timedelta -> date2
-      timedelta + date1 -> date2
-      date2 is timedelta.days days removed from the date1, moving forward
-      in time if timedelta.days > 0, or backward if timedetla.days < 0.
-      date2 - date1 == timedelta.days after.  timedelta.seconds and
-      timedelta.microseconds are ignored.  OverflowError is raised if
-      date2.year would be smaller than MINYEAR or larger than MAXYEAR.
+\begin{itemize}
+  \item
+    date1 + timedelta -> date2
+    timedelta + date1 -> date2
+    date2 is timedelta.days days removed from the date1, moving forward
+    in time if timedelta.days > 0, or backward if timedetla.days < 0.
+    date2 - date1 == timedelta.days after.  timedelta.seconds and
+    timedelta.microseconds are ignored.  \exception{OverflowError} is
+    raised if date2.year would be smaller than \constant{MINYEAR} or
+    larger than \constant{MAXYEAR}.
 
-    - date1 - timedelta -> date2
-      Computes the date2 such that date2 + timedelta == date1.  This
-      isn't quite equivalent to date1 + (-timedelta), because -timedelta
-      in isolation can overflow in cases where date1 - timedelta does
-      not.  timedelta.seconds and timedelta.microseconds are ignored.
+  \item
+    date1 - timedelta -> date2
+    Computes the date2 such that date2 + timedelta == date1.  This
+    isn't quite equivalent to date1 + (-timedelta), because -timedelta
+    in isolation can overflow in cases where date1 - timedelta does
+    not.  timedelta.seconds and timedelta.microseconds are ignored.
 
-    - date1 - date2 -> timedelta
-      This is exact, and cannot overflow.  timedelta.seconds and
-      timedelta.microseconds are 0, and date2 + timedelta == date1
-      after.
+  \item
+    date1 - date2 -> timedelta
+    This is exact, and cannot overflow.  timedelta.seconds and
+    timedelta.microseconds are 0, and date2 + timedelta == date1
+    after.
 
-    - comparison of date to date, where date1 is considered less than
-      date2 when date1 precedes date2 in time.  In other words,
-      date1 < date2 if and only if date1.toordinal() < date2.toordinal().
+  \item
+    comparison of date to date, where date1 is considered less than
+    date2 when date1 precedes date2 in time.  In other words,
+    date1 < date2 if and only if date1.toordinal() < date2.toordinal().
 
-    - hash, use as dict key
+  \item
+    hash, use as dict key
 
-    - efficient pickling
+  \item
+    efficient pickling
 
-    - in Boolean contexts, all date objects are considered to be true
+  \item
+    in Boolean contexts, all date objects are considered to be true
+\end{itemize}
 
 Instance methods:
 
   - timetuple()
-    Return a 9-element tuple of the form returned by time.localtime().
-    The hours, minutes and seconds are 0, and the DST flag is -1.
+    Return a 9-element tuple of the form returned by
+    \function{time.localtime()}.  The hours, minutes and seconds are
+    0, and the DST flag is -1.
     d.timetuple() is equivalent to
         (d.year, d.month, d.day,
-         0, 0, 0,  # h, m, s
-         d.weekday(),  # 0 is Monday
-         d.toordinal() - date(d.year, 1, 1).toordinal() + 1, # day of year
+         0, 0, 0,  \# h, m, s
+         d.weekday(),  \# 0 is Monday
+         d.toordinal() - date(d.year, 1, 1).toordinal() + 1, \# day of year
          -1)
 
   - toordinal()
     Return the proleptic Gregorian ordinal of the date, where January 1
-    of year 1 has ordinal 1.  For any date object d,
-    date.fromordinal(d.toordinal()) == d.
+    of year 1 has ordinal 1.  For any date object \var{d},
+    \code{date.fromordinal(\var{d}.toordinal()) == \var{d}}.
 
   - weekday()
     Return the day of the week as an integer, where Monday is 0 and
     Sunday is 6.  For example, date(2002, 12, 4).weekday() == 2, a
     Wednesday.
-    See also isoweekday().
+    See also \method{isoweekday()}.
 
   - isoweekday()
     Return the day of the week as an integer, where Monday is 1 and
     Sunday is 7.  For example, date(2002, 12, 4).isoweekday() == 3, a
     Wednesday.
-    See also weekday() and isocalendar().
+    See also \method{weekday()}, \method{isocalendar()}.
 
   - isocalendar()
     Return a 3-tuple, (ISO year, ISO week number, ISO weekday).
 
     The ISO calendar is a widely used variant of the Gregorian calendar.
-    See <http://www.phys.uu.nl/~vgent/calendar/isocalendar.htm>
+    See \url{http://www.phys.uu.nl/~vgent/calendar/isocalendar.htm}
     for a good explanation.
 
     The ISO year consists of 52 or 53 full weeks, and where a week starts
@@ -425,28 +464,31 @@ Instance methods:
     date(2002, 12, 4).isoformat() == '2002-12-04'.
 
   - __str__()
-    For a date d, str(d) is equivalent to d.isoformat().
+    For a date \var{d}, \code{str(\var{d})} is equivalent to
+    \code{\var{d}.isoformat()}.
 
   - ctime()
     Return a string representing the date, for example
     date(2002, 12, 4).ctime() == 'Wed Dec  4 00:00:00 2002'.
     d.ctime() is equivalent to time.ctime(time.mktime(d.timetuple()))
-    on platforms where the native C ctime() function (which time.ctime()
-    invokes, but which date.ctime() does not invoke) conforms to the
-    C standard.
+    on platforms where the native C \cfunction{ctime()} function
+    (which \function{time.ctime()} invokes, but which
+    \method{date.ctime()} does not invoke) conforms to the C standard.
 
   - strftime(format)
     Return a string representing the date, controlled by an explicit
     format string.  Format codes referring to hours, minutes or seconds
-    will see 0 values.  See the section on strftime() behavior.
+    will see 0 values.
+    See the section on \method{strftime()} behavior.
 
 
 \subsection{\class{datetime} \label{datetime-datetime}}
 
-A \class{datetime} object is a single object containing all the information from
-a date object and a time object.  Like a date object, \class{datetime} assumes
-the current Gregorian calendar extended in both directions; like a time
-object, \class{datetime} assumes there are exactly 3600*24 seconds in every day.
+A \class{datetime} object is a single object containing all the
+information from a date object and a time object.  Like a date object,
+\class{datetime} assumes the current Gregorian calendar extended in
+both directions; like a time object, \class{datetime} assumes there
+are exactly 3600*24 seconds in every day.
 
 Constructor:
 
@@ -464,56 +506,62 @@ Constructor:
         0 <= second < 60
         0 <= microsecond < 1000000
 
-    If an argument outside those ranges is given, ValueError is raised.
+    If an argument outside those ranges is given,
+    \exception{ValueError} is raised.
 
 Other constructors (class methods):
 
   - today()
     Return the current local datetime.  This is equivalent to
-    datetime.fromtimestamp(time.time()).
-    See also now(), fromtimestamp().
+    \code{datetime.fromtimestamp(time.time())}.
+    See also \method{now()}, \method{fromtimestamp()}.
 
   - now()
-    Return the current local datetime.  This is like today(), but, if
-    possible, supplies more precision than can be gotten from going
-    through a time.time() timestamp (for example, this may be possible
-    on platforms that supply the C gettimeofday() function).
-    See also today(), utcnow().
+    Return the current local datetime.  This is like \method{today()},
+    but, if possible, supplies more precision than can be gotten from
+    going through a \function{time.time()} timestamp (for example,
+    this may be possible on platforms that supply the C
+    \cfunction{gettimeofday()} function).
+    See also \method{today()}, \method{utcnow()}.
 
   - utcnow()
-    Return the current UTC datetime.  This is like now(), but returns
-    the current UTC date and time.
-    See also now().
+    Return the current UTC datetime.  This is like \method{now()}, but
+    returns the current UTC date and time.
+    See also \method{now()}.
 
   - fromtimestamp(timestamp)
-    Return the local \class{datetime} corresponding to the POSIX timestamp, such
-    as is returned by time.time().  This may raise ValueError, if the
-    timestamp is out of the range of values supported by the platform C
-    localtime() function.  It's common for this to be restricted to
-    years in 1970 through 2038.
-    See also utcfromtimestamp().
+    Return the local \class{datetime} corresponding to the \POSIX{}
+    timestamp, such as is returned by \function{time.time()}.  This
+    may raise \exception{ValueError}, if the timestamp is out of the
+    range of values supported by the platform C
+    \cfunction{localtime()} function.  It's common for this to be
+    restricted to years in 1970 through 2038.
+    See also \method{utcfromtimestamp()}.
 
   - utcfromtimestamp(timestamp)
-    Return the UTC \class{datetime} corresponding to the POSIX timestamp.
-    This may raise ValueError, if the timestamp is out of the range of
-    values supported by the platform C gmtime() function.  It's common
-    for this to be restricted to years in 1970 through 2038.
-    See also fromtimestamp().
+    Return the UTC \class{datetime} corresponding to the \POSIX{}
+    timestamp.  This may raise \exception{ValueError}, if the
+    timestamp is out of the range of values supported by the platform
+    C \cfunction{gmtime()} function.  It's common for this to be
+    restricted to years in 1970 through 2038.
+    See also \method{fromtimestamp()}.
 
   - fromordinal(ordinal)
-    Return the \class{datetime} corresponding to the proleptic Gregorian ordinal,
-    where January 1 of year 1 has ordinal 1.  ValueError is raised
-    unless 1 <= ordinal <= datetime.max.toordinal().  The hour, minute,
-    second and microsecond of the result are all 0.
+    Return the \class{datetime} corresponding to the proleptic
+    Gregorian ordinal, where January 1 of year 1 has ordinal 1.
+    \exception{ValueError} is raised unless 1 <= ordinal <=
+    datetime.max.toordinal().  The hour, minute, second and
+    microsecond of the result are all 0.
 
   - combine(date, time)
-    Return a new \class{datetime} object whose date components are equal to the
-    given date object's, and whose time components are equal to the given
-    time object's.  For any \class{datetime} object d,
-    d == datetime.combine(d.date(), d.time()).
-    If date is a \class{datetime} or \class{datetimetz} object, its time components are
-    ignored.  If date is \class{datetimetz} object, its tzinfo component is also
-    ignored.  If time is a \class{timetz} object, its tzinfo component is ignored.
+    Return a new \class{datetime} object whose date components are
+    equal to the given date object's, and whose time components are
+    equal to the given time object's.  For any \class{datetime} object
+    d, d == datetime.combine(d.date(), d.time()).
+    If date is a \class{datetime} or \class{datetimetz} object, its
+    time components are ignored.  If date is \class{datetimetz}
+    object, its \member{tzinfo} component is also ignored.  If time is
+    a \class{timetz} object, its \member{tzinfo} component is ignored.
 
 Class attributes:
 
@@ -531,7 +579,7 @@ Class attributes:
 
 Instance attributes (read-only):
 
-    .year           between MINYEAR and MAXYEAR inclusive
+    .year           between \constant{MINYEAR} and \constant{MAXYEAR} inclusive
     .month          between 1 and 12 inclusive
     .day            between 1 and the number of days in the given month
                     of the given year
@@ -542,32 +590,43 @@ Instance attributes (read-only):
 
 Supported operations:
 
-    - datetime1 + timedelta -> datetime2
-      timedelta + datetime1 -> datetime2
-      datetime2 is a duration of timedelta removed from datetime1, moving
-      forward in time if timedelta.days > 0, or backward if
-      timedelta.days < 0.  datetime2 - datetime1 == timedelta after.
-      OverflowError is raised if datetime2.year would be smaller than
-      MINYEAR or larger than MAXYEAR.
+\begin{itemize}
+  \item
+    datetime1 + timedelta -> datetime2
+    timedelta + datetime1 -> datetime2
+    datetime2 is a duration of timedelta removed from datetime1, moving
+    forward in time if timedelta.days > 0, or backward if
+    timedelta.days < 0.  datetime2 - datetime1 == timedelta after.
+    \exception{OverflowError} is raised if datetime2.year would be
+    smaller than \constant{MINYEAR} or larger than \constant{MAXYEAR}.
 
-    - datetime1 - timedelta -> datetime2
-      Computes the datetime2 such that datetime2 + timedelta == datetime1.
-      This isn't quite equivalent to datetime1 + (-timedelta), because
-      -timedelta in isolation can overflow in cases where
-      datetime1 - timedelta does not.
+  \item
+    datetime1 - timedelta -> datetime2
+    Computes the datetime2 such that datetime2 + timedelta == datetime1.
+    This isn't quite equivalent to datetime1 + (-timedelta), because
+    -timedelta in isolation can overflow in cases where
+    datetime1 - timedelta does not.
 
-    - datetime1 - datetime2 -> timedelta
-      This is exact, and cannot overflow.
-      datetime2 + timedelta == datetime1 after.
+  \item
+    datetime1 - datetime2 -> timedelta
+    This is exact, and cannot overflow.
+    datetime2 + timedelta == datetime1 after.
 
-    - comparison of \class{datetime} to datetime, where datetime1 is considered
-      less than datetime2 when datetime1 precedes datetime2 in time.
+  \item
+    comparison of \class{datetime} to datetime, where datetime1 is
+    considered less than datetime2 when datetime1 precedes datetime2
+    in time.
 
-    - hash, use as dict key
+  \item
+    hash, use as dict key
 
-    - efficient pickling
+  \item
+    efficient pickling
 
-    - in Boolean contexts, all \class{datetime} objects are considered to be true
+  \item
+    in Boolean contexts, all \class{datetime} objects are considered
+    to be true
+\end{itemize}
 
 Instance methods:
 
@@ -578,56 +637,62 @@ Instance methods:
     Return time object with same hour, minute, second and microsecond.
 
   - timetuple()
-    Return a 9-element tuple of the form returned by time.localtime().
-    The DST flag is -1.   d.timetuple() is equivalent to
+    Return a 9-element tuple of the form returned by
+    \function{time.localtime()}.
+    The DST flag is -1.   \code{d.timetuple()} is equivalent to
         (d.year, d.month, d.day,
          d.hour, d.minute, d.second,
-         d.weekday(),  # 0 is Monday
-         d.toordinal() - date(d.year, 1, 1).toordinal() + 1, # day of year
+         d.weekday(),  \# 0 is Monday
+         d.toordinal() - date(d.year, 1, 1).toordinal() + 1, \# day of year
          -1)
 
   - toordinal()
     Return the proleptic Gregorian ordinal of the date.  The same as
-    date.toordinal().
+    \method{date.toordinal()}.
 
   - weekday()
     Return the day of the week as an integer, where Monday is 0 and
-    Sunday is 6.  The same as date.weekday().
-    See also isoweekday().
+    Sunday is 6.  The same as \method{date.weekday()}.
+    See also \method{isoweekday()}.
 
   - isoweekday()
     Return the day of the week as an integer, where Monday is 1 and
-    Sunday is 7.  The same as date.isoweekday().
-    See also weekday() and isocalendar().
+    Sunday is 7.  The same as \method{date.isoweekday()}.
+    See also \method{weekday()}, \method{isocalendar()}.
 
   - isocalendar()
     Return a 3-tuple, (ISO year, ISO week number, ISO weekday).  The
-    same as date.isocalendar().
+    same as \method{date.isocalendar()}.
 
   - isoformat(sep='T')
     Return a string representing the date and time in ISO 8601 format,
         YYYY-MM-DDTHH:MM:SS.mmmmmm
     or, if self.microsecond is 0,
         YYYY-MM-DDTHH:MM:SS
-    Optional argument sep (default 'T') is a one-character separator,
-    placed between the date and time portions of the result.  For example,
+    The optional argument \var{sep} (default \code{'T'}) is a
+    one-character separator, placed between the date and time portions
+    of the result.  For example,
         datetime(2002, 12, 4, 1, 2, 3, 4).isoformat(' ') ==
         '2002-12-04 01:02:03.000004'
 
   - __str__()
-    For a \class{datetime} d, str(d) is equivalent to d.isoformat(' ').
+    For a \class{datetime} instance \var{d}, \code{str(\var{d})} is
+    equivalent to \code{\var{d}.isoformat(' ')}.
 
   - ctime()
     Return a string representing the date, for example
     datetime(2002, 12, 4, 20, 30, 40).ctime() == 'Wed Dec  4 20:30:40 2002'.
-    d.ctime() is equivalent to time.ctime(time.mktime(d.timetuple()))
-    on platforms where the native C ctime() function (which time.ctime()
-    invokes, but which datetime.ctime() does not invoke) conforms to the
-    C standard.
+    \code{d.ctime()} is equivalent to
+    \code{time.ctime(time.mktime(d.timetuple()))} on platforms where
+    the native C \cfunction{ctime()} function (which
+    \function{time.ctime()} invokes, but which
+    \method{datetime.ctime()} does not invoke) conforms to the C
+    standard.
 
   - strftime(format)
     Return a string representing the date and time, controlled by an
-    explicit format string.  See the section on strftime() behavior.
+    explicit format string.  See the section on \method{strftime()}
+    behavior.
 
 
 \subsection{\class{time} \label{datetime-time}}
@@ -647,11 +712,8 @@ Constructor:
         0 <= second < 60
         0 <= microsecond < 1000000
 
-    If an argument outside those ranges is given, ValueError is raised.
-
-Other constructors (class methods):
-
-    None
+    If an argument outside those ranges is given,
+    \exception{ValueError} is raised.
 
 Class attributes:
 
@@ -675,15 +737,21 @@ Instance attributes (read-only):
 
 Supported operations:
 
-    - comparison of time to time, where time1 is considered
-      less than time2 when time1 precedes time2 in time.
+\begin{itemize}
+  \item
+    comparison of time to time, where time1 is considered
+    less than time2 when time1 precedes time2 in time.
 
-    - hash, use as dict key
+  \item
+    hash, use as dict key
 
-    - efficient pickling
+  \item
+    efficient pickling
 
-    - in Boolean contexts, a time object is considered to be true
-      if and only if it isn't equal to time(0)
+  \item
+    in Boolean contexts, a time object is considered to be true
+    if and only if it isn't equal to time(0)
+\end{itemize}
 
 Instance methods:
 
@@ -694,46 +762,49 @@ Instance methods:
         HH:MM:SS
 
   - __str__()
-    For a time t, str(t) is equivalent to t.isoformat().
+    For a time \var{t}, \code{str(\var{t})} is equivalent to
+    \code{\var{t}.isoformat()}.
 
   - strftime(format)
     Return a string representing the time, controlled by an explicit
-    format string.  See the section on strftime() behavior.
+    format string.  See the section on \method{strftime()} behavior.
 
 
 \subsection{\class{tzinfo} \label{datetime-tzinfo}}
 
-tzinfo is an abstract base clase, meaning that objects directly of this
-class should not be instantiated.  You need to derive a concrete
-subclass, and (at least) supply implementations of the standard tzinfo
-methods needed by the \class{datetime} methods you use. The \module{datetime} module does
-not supply any concrete subclasses of tzinfo.
+\class{tzinfo} is an abstract base clase, meaning that this class
+should not be instantiated directly.  You need to derive a concrete
+subclass, and (at least) supply implementations of the standard
+\class{tzinfo} methods needed by the \class{datetime} methods you
+use. The \module{datetime} module does not supply any concrete
+subclasses of \class{tzinfo}.
 
-An instance of (a concrete subclass of) \class{tzinfo} can be passed to the
-constructors for \class{datetimetz} and \class{timetz} objects.  The latter objects
-view their fields as being in local time, and the \class{tzinfo} object supports
-methods revealing offset of local time from UTC, the name of the time
-zone, and DST offset, all relative to a date or time object passed
-to them.
+An instance of (a concrete subclass of) \class{tzinfo} can be passed
+to the constructors for \class{datetimetz} and \class{timetz} objects.
+The latter objects view their fields as being in local time, and the
+\class{tzinfo} object supports methods revealing offset of local time
+from UTC, the name of the time zone, and DST offset, all relative to a
+date or time object passed to them.
 
-A concrete subclass of \class{tzinfo} may need to implement the following
-methods.  Exactly which methods are needed depends on the uses made
-of aware \class{datetime} objects; if in doubt, simply implement all of them.
-The methods are called by a \class{datetimetz} or \class{timetz} object, passing itself
-as the argument.  A \class{tzinfo} subclass's methods should be prepared to
-accept a dt argument of type None, timetz, or datetimetz.  If is not
-None, and dt.tzinfo is not None and not equal to self, an exception
-should be raised.
+A concrete subclass of \class{tzinfo} may need to implement the
+following methods.  Exactly which methods are needed depends on the
+uses made of aware \class{datetime} objects; if in doubt, simply
+implement all of them.  The methods are called by a \class{datetimetz}
+or \class{timetz} object, passing itself as the argument.  A
+\class{tzinfo} subclass's methods should be prepared to accept a dt
+argument of \code{None} or of type \class{timetz} or
+\class{datetimetz}.  If is not \code{None}, and dt.tzinfo is not
+\code{None} and not equal to self, an exception should be raised.
 
   - utcoffset(dt)
     Return offset of local time from UTC, in minutes east of UTC.  If
     local time is west of UTC, this should be negative.  Note that this
     is intended to be the total offset from UTC; for example, if a
     \class{tzinfo} object represents both time zone and DST adjustments,
-    utcoffset() should return their sum.  If the UTC offset isn't known,
-    return None.  Else the value returned must be an int (or long), in
-    the range -1439 to 1439 inclusive (1440 = 24*60; the magnitude of
-    the offset must be less than one day).
+    \method{utcoffset()} should return their sum.  If the UTC offset
+    isn't known, return \code{None}.  Else the value returned must be
+    an integer, in the range -1439 to 1439 inclusive (1440 = 24*60;
+    the magnitude of the offset must be less than one day).
 
   - tzname(dt)
     Return the timezone name corresponding to the \class{datetime} represented
@@ -741,62 +812,26 @@ should be raised.
     \module{datetime} module, and there's no requirement that it mean anything
     in particular.  For example, "GMT", "UTC", "-500", "-5:00", "EDT",
     "US/Eastern", "America/New York" are all valid replies.  Return
-    None if a string name isn't known.  Note that this is a method
+    \code{None} if a string name isn't known.  Note that this is a method
     rather than a fixed string primarily because some \class{tzinfo} objects
     will wish to return different names depending on the specific value
     of dt passed, especially if the \class{tzinfo} class is accounting for DST.
 
   - dst(dt)
-    Return the DST offset, in minutes east of UTC, or None if DST
-    information isn't known.  Return 0 if DST is not in effect.
-    If DST is in effect, return an int (or long), in the range
-    -1439 to 1439 inclusive.  Note that DST offset, if applicable,
-    has already been added to the UTC offset returned by utcoffset(),
-    so there's no need to consult dst() unless you're interested in
-    displaying DST info separately.  For example, datetimetz.timetuple()
-    calls its \class{tzinfo} object's dst() method to determine how the tm_isdst
-    flag should be set.
+    Return the DST offset, in minutes east of UTC, or \code{None} if
+    DST information isn't known.  Return 0 if DST is not in effect.
+    If DST is in effect, return an int (or long), in the range -1439
+    to 1439 inclusive.  Note that DST offset, if applicable, has
+    already been added to the UTC offset returned by
+    \method{utcoffset()}, so there's no need to consult \method{dst()}
+    unless you're interested in displaying DST info separately.  For
+    example, \method{datetimetz.timetuple()} calls its \class{tzinfo}
+    object's \method{dst()} method to determine how the
+    \member{tm_isdst} flag should be set.
 
 Example \class{tzinfo} classes:
 
-   class UTC(tzinfo):
-        "UTC"
-        def utcoffset(self, dt):
-            return 0
-        def tzname(self, dt):
-            return "UTC"
-        def dst(self, dt):
-            return 0
-
-    class FixedOffset(tzinfo):
-        "Fixed offset in minutes east from UTC"
-        def __init__(self, offset, name):
-            self.__offset = offset
-            self.__name = name
-        def utcoffset(self, dt):
-            return self.__offset
-        def tzname(self, dt):
-            return self.__name
-        def dst(self, dt):
-            # It depends on more than we know in an example.
-            return None # Indicate we don't know
-
-    import time
-    class LocalTime(tzinfo):
-        "Local time as defined by the operating system"
-        def _isdst(self, dt):
-            t = (dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second,
-                 -1, -1, -1)
-            # XXX This may fail for years < 1970 or >= 2038
-            t = time.localtime(time.mktime(t))
-            return t.tm_isdst > 0
-        def utcoffset(self, dt):
-            if self._isdst(dt):
-                return -time.timezone/60
-            else:
-                return -time.altzone/60
-        def tzname(self, dt):
-            return time.tzname[self._isdst(dt)]
+\verbatiminput{tzinfo-examples.py}
 
 
 \subsection{\class{timetz} \label{datetime-timetz}}
@@ -808,20 +843,17 @@ Constructor:
 
     time(hour=0, minute=0, second=0, microsecond=0, tzinfo=None)
 
-    All arguments are optional.  tzinfo may be None, or an instance of
-    a \class{tzinfo} subclass.  The remaining arguments may be ints or longs, in
-    the following ranges:
+    All arguments are optional.  \var{tzinfo} may be \code{None}, or
+    an instance of a \class{tzinfo} subclass.  The remaining arguments
+    may be ints or longs, in the following ranges:
 
         0 <= hour < 24
         0 <= minute < 60
         0 <= second < 60
         0 <= microsecond < 1000000
 
-    If an argument outside those ranges is given, ValueError is raised.
-
-Other constructors (class methods):
-
-    None
+    If an argument outside those ranges is given,
+    \exception{ValueError} is raised.
 
 Class attributes:
 
@@ -843,22 +875,30 @@ Instance attributes (read-only):
     .second         in range(60)
     .microsecond    in range(1000000)
     .tzinfo         the object passed as the tzinfo argument to the
-                    \class{timetz} constructor, or None if none was passed.
+                    \class{timetz} constructor, or \code{None} if none
+                    was passed.
 
 Supported operations:
 
-    - comparison of \class{timetz} to timetz, where timetz1 is considered
-      less than timetz2 when timetz1 precedes timetz2 in time, and
-      where the \class{timetz} objects are first adjusted by subtracting
-      their UTC offsets (obtained from self.utcoffset()).
+\begin{itemize}
+  \item
+    comparison of \class{timetz} to timetz, where timetz1 is considered
+    less than timetz2 when timetz1 precedes timetz2 in time, and
+    where the \class{timetz} objects are first adjusted by subtracting
+    their UTC offsets (obtained from \method{utcoffset()}).
 
-    - hash, use as dict key
+  \item
+    hash, use as dict key
 
-    - pickling
+  \item
+    pickling
 
-    - in Boolean contexts, a \class{timetz} object is considered to be true
-      if and only if, after converting it to minutes and subtracting
-      self.utcoffset() (or 0 if that's None), the result is non-zero.
+  \item
+    in Boolean contexts, a \class{timetz} object is considered to be
+    true if and only if, after converting it to minutes and
+    subtracting \method{utcoffset()} (or \code{0} if that's
+    \code{None}), the result is non-zero.
+\end{itemize}
 
 Instance methods:
 
@@ -867,34 +907,42 @@ Instance methods:
         HH:MM:SS.mmmmmm
     or, if self.microsecond is 0
         HH:MM:SS
-    If self.utcoffset() does not return None, a 6-character string is
-    appended, giving the UTC offset in (signed) hours and minutes:
+    If \method{utcoffset()} does not return \code{None}, a 6-character
+    string is appended, giving the UTC offset in (signed) hours and
+    minutes:
         HH:MM:SS.mmmmmm+HH:MM
     or, if self.microsecond is 0
         HH:MM:SS+HH:MM
 
   - __str__()
-    For a \class{timetz} t, str(t) is equivalent to t.isoformat().
+    For a \class{timetz} \var{t}, \code{str(\var{t})} is equivalent to
+    \code{\var{t}.isoformat()}.
 
   - strftime(format)
     Return a string representing the time, controlled by an explicit
-    format string.  See the section on strftime() behavior.
+    format string.  See the section on \method{strftime()} behavior.
 
   - utcoffset()
-    If self.tzinfo is None, returns None, else self.tzinfo.utcoffset(self).
+    If \member{tzinfo} is \code{None}, returns \code{None}, else
+    \code{tzinfo.utcoffset(self)}.
 
   - tzname():
-    If self.tzinfo is None, returns None, else self.tzinfo.tzname(self).
+    If \member{tzinfo} is \code{None}, returns \code{None}, else
+    \code{tzinfo.tzname(self)}.
 
   - dst()
-    If self.tzinfo is None, returns None, else self.tzinfo.dst(self).
+    If \member{tzinfo} is \code{None}, returns \code{None}, else
+    \code{tzinfo.dst(self)}.
 
 
 
 \subsection{ \class{datetimetz}  \label{datetime-datetimetz}}
 
-XXX I think this is *still* missing some methods from the
-XXX Python implementation.
+\begin{notice}[warning]
+  I think this is \emph{still} missing some methods from the
+  Python implementation.
+\end{notice}
+
 A \class{datetimetz} object is a single object containing all the information
 from a date object and a \class{timetz} object.
 
@@ -903,9 +951,9 @@ Constructor:
     datetimetz(year, month, day,
                hour=0, minute=0, second=0, microsecond=0, tzinfo=None)
 
-    The year, month and day arguments are required.  tzinfo may be None,
-    or an instance of a \class{tzinfo} subclass.  The remaining arguments may be
-    ints or longs, in the following ranges:
+    The year, month and day arguments are required.  \var{tzinfo} may
+    be \code{None}, or an instance of a \class{tzinfo} subclass.  The
+    remaining arguments may be ints or longs, in the following ranges:
 
         MINYEAR <= year <= MAXYEAR
         1 <= month <= 12
@@ -915,7 +963,8 @@ Constructor:
         0 <= second < 60
         0 <= microsecond < 1000000
 
-    If an argument outside those ranges is given, ValueError is raised.
+    If an argument outside those ranges is given,
+    \exception{ValueError} is raised.
 
 Other constructors (class methods):
 
@@ -924,8 +973,9 @@ Other constructors (class methods):
     utcfromtimestamp(timestamp)
     fromordinal(ordinal)
 
-    These are the same as the \class{datetime} class methods of the same names,
-    except that they construct a \class{datetimetz} object, with tzinfo None.
+    These are the same as the \class{datetime} class methods of the
+    same names, except that they construct a \class{datetimetz}
+    object, with tzinfo \code{None}.
 
   - now([tzinfo=None])
     fromtimestamp(timestamp[, tzinfo=None])
@@ -935,7 +985,7 @@ Other constructors (class methods):
     construct a \class{datetimetz} object with that \class{tzinfo} object attached.
 
   - combine(date, time)
-    This is the same as datetime.combine(), except that it constructs
+    This is the same as \method{datetime.combine()}, except that it constructs
     a \class{datetimetz} object, and, if the time object is of type timetz,
     the \class{datetimetz} object has the same \class{tzinfo} object as the time object.
 
@@ -963,53 +1013,67 @@ Instance attributes (read-only):
     .minute         in range(60)
     .second         in range(60)
     .microsecond    in range(1000000)
-    .tzinfo         the object passed as the tzinfo argument to the
-                    \class{datetimetz} constructor, or None if none was passed.
+    .tzinfo         the object passed as the \var{tzinfo} argument to
+                    the \class{datetimetz} constructor, or \code{None}
+                    if none was passed.
 
 Supported operations:
 
-    - datetimetz1 + timedelta -> datetimetz2
-      timedelta + datetimetz1 -> datetimetz2
-      The same as addition of \class{datetime} objects, except that
-      datetimetz2.tzinfo is set to datetimetz1.tzinfo.
+\begin{itemize}
+  \item
+    datetimetz1 + timedelta -> datetimetz2
+    timedelta + datetimetz1 -> datetimetz2
+    The same as addition of \class{datetime} objects, except that
+    datetimetz2.tzinfo is set to datetimetz1.tzinfo.
 
-    - datetimetz1 - timedelta -> datetimetz2
-      The same as addition of \class{datetime} objects, except that
-      datetimetz2.tzinfo is set to datetimetz1.tzinfo.
+  \item
+    datetimetz1 - timedelta -> datetimetz2
+    The same as addition of \class{datetime} objects, except that
+    datetimetz2.tzinfo is set to datetimetz1.tzinfo.
 
-    - aware_datetimetz1 - aware_datetimetz2 -> timedelta
-      \naive\_datetimetz1 - \naive\_datetimetz2 -> timedelta
-      \naive\_datetimetz1 - datetime2 -> timedelta
-      datetime1 - \naive\_datetimetz2 -> timedelta
+  \item
+    aware_datetimetz1 - aware_datetimetz2 -> timedelta
+    \naive\_datetimetz1 - \naive\_datetimetz2 -> timedelta
+    \naive\_datetimetz1 - datetime2 -> timedelta
+    datetime1 - \naive\_datetimetz2 -> timedelta
 
-      Subtraction of a \class{datetime} or datetimetz, from a \class{datetime} or
-      datetimetz, is defined only if both operands are \naive, or if
-      both are aware.  If one is aware and the other is \naive, TypeError
-      is raised.
+  \item
+    Subtraction of a \class{datetime} or datetimetz, from a
+    \class{datetime} or \class{datetimetz}, is defined only if both
+    operands are \naive, or if both are aware.  If one is aware and
+    the other is \naive, \exception{TypeError} is raised.
 
-      If both are \naive, subtraction acts as for \class{datetime} subtraction.
+  \item
+    If both are \naive, subtraction acts as for \class{datetime}
+    subtraction.
 
-      If both are aware \class{datetimetz} objects, a-b acts as if a and b were
-      first converted to UTC datetimes (by subtracting a.utcoffset()
-      minutes from a, and b.utcoffset() minutes from b), and then doing
-      \class{datetime} subtraction, except that the implementation never
-      overflows.
+  \item
+    If both are aware \class{datetimetz} objects, a-b acts as if a and b were
+    first converted to UTC datetimes (by subtracting a.utcoffset()
+    minutes from a, and b.utcoffset() minutes from b), and then doing
+    \class{datetime} subtraction, except that the implementation never
+    overflows.
 
-    - Comparison of \class{datetimetz} to \class{datetime} or datetimetz.  As for
-      subtraction, comparison is defined only if both operands are
-      \naive\ or both are aware.  If both are \naive, comparison is as
-      for \class{datetime} objects with the same date and time components.
-      If both are aware, comparison acts as if both were converted to
-      UTC datetimes first, except the the implementation never
-      overflows.  If one comparand is \naive\ and the other aware,
-      TypeError is raised.
+  \item
+    Comparison of \class{datetimetz} to \class{datetime} or datetimetz.  As for
+    subtraction, comparison is defined only if both operands are
+    \naive\ or both are aware.  If both are \naive, comparison is as
+    for \class{datetime} objects with the same date and time components.
+    If both are aware, comparison acts as if both were converted to
+    UTC datetimes first, except the the implementation never
+    overflows.  If one comparand is \naive\ and the other aware,
+    \exception{TypeError} is raised.
 
-    - hash, use as dict key
+  \item
+    hash, use as dict key
 
-    - efficient pickling
+  \item
+    efficient pickling
 
-    - in Boolean contexts, all \class{datetimetz} objects are considered to be
-      true
+  \item
+    in Boolean contexts, all \class{datetimetz} objects are considered to be
+    true
+\end{itemize}
 
 Instance methods:
 
@@ -1030,55 +1094,66 @@ Instance methods:
     and tzinfo.
 
   - utcoffset()
-    If self.tzinfo is None, returns None, else self.tzinfo.utcoffset(self).
+    If \member{tzinfo} is \code{None}, returns \code{None}, else
+    \code{tzinfo.utcoffset(self)}.
 
   - tzname():
-    If self.tzinfo is None, returns None, else self.tzinfo.tzname(self).
+    If \member{tzinfo} is \code{None}, returns \code{None}, else
+    \code{tzinfo.tzname(self)}.
 
   - dst()
-    If self.tzinfo is None, returns None, else self.tzinfo.dst(self).
+    If \member{tzinfo} is \code{None}, returns \code{None}, else
+    \code{tzinfo.dst(self)}.
 
   - timetuple()
-    Like datetime.timetuple(), but sets the tm_isdst flag according to
-    the dst() method:  if self.dst() returns None, tm_isdst is set to -1;
-    else if self.dst() returns a non-zero value, tm_isdst is set to 1;
-    else tm_isdst is set to 0.
+    Like \function{datetime.timetuple()}, but sets the
+    \member{tm_isdst} flag according to the \method{dst()} method:  if
+    \method{dst()} returns \code{None}, \member{tm_isdst} is set to
+    \code{-1}; else if \method{dst()} returns a non-zero value,
+    \member{tm_isdst} is set to \code{1}; else \code{tm_isdst} is set
+    to \code{0}.
 
   - utctimetuple()
-    If \class{datetimetz} d is \naive, this is the same as d.timetuple() except
-    that tm_isdst is forced to 0 regardless of what d.dst() returns.
-    DST is never in effect for a UTC time.
+    If \class{datetimetz} instance \var{d} is \naive, this is the same as
+    \code{\var{d}.timetuple()} except that \member{tm_isdst} is forced to 0
+    regardless of what \code{d.dst()} returns.  DST is never in effect
+    for a UTC time.
 
-    If d is aware, d is normalized to UTC time, by subtracting
-    d.utcoffset() minutes, and a timetuple for the normalized time is
-    returned.  tm_isdst is forced to 0.  Note that the result's
-    tm_year field may be MINYEAR-1 or MAXYEAR+1, if d.year was MINYEAR
-    or MAXYEAR and UTC adjustment spills over a year boundary.
+    If \var{d} is aware, \var{d} is normalized to UTC time, by subtracting
+    \code{\var{d}.utcoffset()} minutes, and a timetuple for the
+    normalized time is returned.  \member{tm_isdst} is forced to 0.
+    Note that the result's \member{tm_year} field may be
+    \constant{MINYEAR}-1 or \constant{MAXYEAR}+1, if \var{d}.year was
+    \code{MINYEAR} or \code{MAXYEAR} and UTC adjustment spills over a
+    year boundary.
 
   - isoformat(sep='T')
     Return a string representing the date and time in ISO 8601 format,
         YYYY-MM-DDTHH:MM:SS.mmmmmm
-    or, if self.microsecond is 0,
+    or, if \member{microsecond} is 0,
         YYYY-MM-DDTHH:MM:SS
 
-    If self.utcoffset() does not return None, a 6-character string is
-    appended, giving the UTC offset in (signed) hours and minutes:
+    If \method{utcoffset()} does not return \code{None}, a 6-character
+    string is appended, giving the UTC offset in (signed) hours and
+    minutes:
         YYYY-MM-DDTHH:MM:SS.mmmmmm+HH:MM
-    or, if self.microsecond is 0
+    or, if \member{microsecond} is 0
         YYYY-MM-DDTHH:MM:SS+HH:MM
 
-    Optional argument sep (default 'T') is a one-character separator,
-    placed between the date and time portions of the result.  For example,
+    The optional argument \var{sep} (default \code{'T'}) is a
+    one-character separator, placed between the date and time portions
+    of the result.  For example,
 
-        >>> from \class{datetime} import *
-        >>> class TZ(tzinfo):
-        ...     def utcoffset(self, dt): return -399
-        ...
-        >>> datetimetz(2002, 12, 25, tzinfo=TZ()).isoformat(' ')
-        '2002-12-25 00:00:00-06:39'
-        >>>
+\begin{verbatim}
+>>> from datetime import *
+>>> class TZ(tzinfo):
+...     def utcoffset(self, dt): return -399
+...
+>>> datetimetz(2002, 12, 25, tzinfo=TZ()).isoformat(' ')
+'2002-12-25 00:00:00-06:39'
+\end{verbatim}
 
-    str(d) is equivalent to d.isoformat(' ').
+\code{str(\var{d})} is equivalent to \code{\var{d}.isoformat(' ')}.
 
 
 \subsection{C API}
