@@ -1142,8 +1142,9 @@ pydoc</strong> by Ka-Ping Yee &lt;ping@lfw.org&gt;</font></small></small>"""
 
     class DocServer(BaseHTTPServer.HTTPServer):
         def __init__(self, port, callback):
-            self.address = ('127.0.0.1', port)
-            self.url = 'http://127.0.0.1:%d/' % port
+            host = (sys.platform == 'mac') and '127.0.0.1' or 'localhost'
+            self.address = (host, port)
+            self.url = 'http://%s:%d/' % (host, port)
             self.callback = callback
             self.base.__init__(self, self.address, self.handler)
 
