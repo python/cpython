@@ -1575,9 +1575,14 @@ so.  If you have applications using \module{rexec}, rewrite them to
 use something else.
 
 (Sticking with Python 2.2 or 2.1 will not make your applications any
-safer, because there are known bugs in the \module{rexec} module in
+safer because there are known bugs in the \module{rexec} module in
 those versions.  I repeat, if you're using \module{rexec}, stop using
 it immediately.)
+
+\item The \module{rotor} module has been deprecated because the 
+  algorithm it uses for encryption is not believed to be secure.  If
+  you need encryption, use one of the several AES Python modules
+  that are available separately.
 
 \item The \module{shutil} module gained a \function{move(\var{src},
 \var{dest})} function that recursively moves a file or directory to a new
