@@ -88,6 +88,7 @@ clean:
 
 clobber:	clean
 		-rm -f *.a tags TAGS config.c glmodule.c Makefile.pre
+		-rm -f *.so so_locations
 
 config.c Makefile: Makefile.pre config.c.in $(MAKESETUP) Setup
 		$(SHELL) $(MAKESETUP) Setup
