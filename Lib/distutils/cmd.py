@@ -344,6 +344,11 @@ class Command:
 # class Command
 
 
+# XXX 'install_misc' class not currently used -- it was the base class for
+# both 'install_scripts' and 'install_data', but they outgrew it.  It might
+# still be useful for 'install_headers', though, so I'm keeping it around
+# for the time being.
+
 class install_misc (Command):
     """Common base class for installing some files in a subdirectory.
     Currently used by install_data and install_scripts.
