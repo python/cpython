@@ -1828,7 +1828,7 @@ PyTypeObject PyDict_Type = {
 	(initproc)dict_init,			/* tp_init */
 	PyType_GenericAlloc,			/* tp_alloc */
 	dict_new,				/* tp_new */
-	_PyObject_GC_Del,			/* tp_free */
+	PyObject_GC_Del,        		/* tp_free */
 };
 
 /* For backward compatibility with old dictionary interface */
@@ -1888,7 +1888,7 @@ static PyObject *
 dictiter_new(dictobject *dict, binaryfunc select)
 {
 	dictiterobject *di;
-	di = PyMalloc_New(dictiterobject, &PyDictIter_Type);
+	di = PyObject_New(dictiterobject, &PyDictIter_Type);
 	if (di == NULL)
 		return NULL;
 	Py_INCREF(dict);
@@ -1903,7 +1903,7 @@ static void
 dictiter_dealloc(dictiterobject *di)
 {
 	Py_DECREF(di->di_dict);
-	PyMalloc_Del(di);
+	PyObject_Del(di);
 }
 
 static PyObject *
