@@ -259,7 +259,7 @@ time_convert(when, function)
 {
 	struct tm *p;
 	errno = 0;
-#if defined(macintosh) && defined(USE_GUSI2)
+#if defined(macintosh) && defined(USE_GUSI204)
 	when = when + GUSI_TO_MSL_EPOCH;
 #endif
 	p = function(&when);
@@ -474,7 +474,7 @@ time_ctime(self, args)
 	if (!PyArg_Parse(args, "d", &dt))
 		return NULL;
 	tt = (time_t)dt;
-#if defined(macintosh) && defined(USE_GUSI2)
+#if defined(macintosh) && defined(USE_GUSI204)
 	tt = tt + GUSI_TO_MSL_EPOCH;
 #endif
 	p = ctime(&tt);
