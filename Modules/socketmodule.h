@@ -32,6 +32,13 @@
 # undef AF_UNIX
 #endif
 
+#ifdef HAVE_BLUETOOTH_BLUETOOTH_H
+#include <bluetooth/bluetooth.h>
+#include <bluetooth/rfcomm.h>
+#include <bluetooth/l2cap.h>
+#include <bluetooth/sco.h>
+#endif
+
 #ifdef HAVE_NETPACKET_PACKET_H
 # include <sys/ioctl.h>
 # include <net/if.h>
@@ -79,6 +86,11 @@ typedef struct {
 #ifdef ENABLE_IPV6
 		struct sockaddr_in6 in6;
 		struct sockaddr_storage storage;
+#endif
+#ifdef HAVE_BLUETOOTH_BLUETOOTH_H
+		struct sockaddr_l2 bt_l2;
+		struct sockaddr_rc bt_rc;
+		struct sockaddr_sco bt_sco;
 #endif
 #ifdef HAVE_NETPACKET_PACKET_H
 		struct sockaddr_ll ll;

@@ -121,6 +121,9 @@ Core and builtins
 Extension modules
 -----------------
 
+- The socket module now supports Bluetooth sockets, if the
+  system has <bluetooth/bluetooth.h>
+
 - Added a collections module containing a new datatype, deque(),
   offering high-performance, thread-safe, memory friendly appends
   and pops on either side of the deque.

@@ -37,6 +37,9 @@
 /* Define this if your time.h defines altzone. */
 #undef HAVE_ALTZONE
 
+/* Define to 1 if you have the <bluetooth/bluetooth.h> header file. */
+#undef HAVE_BLUETOOTH_BLUETOOTH_H
+
 /* Define if nice() returns success/failure instead of the new priority. */
 #undef HAVE_BROKEN_NICE
 
@@ -818,15 +821,8 @@
 /* Define _OSF_SOURCE to get the makedev macro. */
 #undef _OSF_SOURCE
 
-/* Define to 2 if the system does not provide POSIX.1 features except with
-   this defined. */
-#undef _POSIX_1_SOURCE
-
 /* Define to activate features from IEEE Stds 1003.1-2001 */
 #undef _POSIX_C_SOURCE
-
-/* Define to 1 if you need to in order for `stat' and other things to work. */
-#undef _POSIX_SOURCE
 
 /* Define if you have POSIX threads, and your system does not define that. */
 #undef _POSIX_THREADS
