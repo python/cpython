@@ -37,7 +37,7 @@ except ImportError:
 __author__  = "Vinay Sajip <vinay_sajip@red-dove.com>"
 __status__  = "beta"
 __version__ = "0.4.9.3"
-__date__    = "03 July 2004"
+__date__    = "08 July 2004"
 
 #---------------------------------------------------------------------------
 #   Miscellaneous module data
@@ -709,7 +709,9 @@ class FileHandler(StreamHandler):
         Open the specified file and use it as the stream for logging.
         """
         StreamHandler.__init__(self, open(filename, mode))
-        self.baseFilename = filename
+        #keep the absolute path, otherwise derived classes which use this
+        #may come a cropper when the current directory changes
+        self.baseFilename = os.path.abspath(filename)
         self.mode = mode
 
     def close(self):
