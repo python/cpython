@@ -968,7 +968,6 @@ _expectations = {
         test_locale
         test_mhlib
         test_mmap
-        test_mpz
         test_nis
         test_poll
         test_popen2
@@ -991,7 +990,6 @@ _expectations = {
         test_largefile
         test_linuxaudiodev
         test_locale
-        test_mpz
         test_nis
         test_ossaudiodev
         test_socketserver
@@ -1039,7 +1037,6 @@ _expectations = {
         test_locale
         test_macfs
         test_macostools
-        test_mpz
         test_nis
         test_normalization
         test_ossaudiodev
