@@ -87,10 +87,9 @@ class PyncheWidget:
         #
         # Tie them all together
         #
-        if not modal:
-            menubar.add_cascade(label='File',
-                                menu=filemenu,
-                                underline=0)
+        menubar.add_cascade(label='File',
+                            menu=filemenu,
+                            underline=0)
         menubar.add_cascade(label='View',
                             menu=viewmenu,
                             underline=0)
