@@ -79,10 +79,17 @@ TWOPI = 2.0*pi
 verify('TWOPI', 6.28318530718)
 
 def vonmisesvariate(mu, kappa):
-	# mu:    mean angle (in radians between 0 and 180 degrees)
+	# mu:    mean angle (in radians between 0 and 2*pi)
 	# kappa: concentration parameter kappa (>= 0)
-	
 	# if kappa = 0 generate uniform random angle
+
+	# Based upon an algorithm published in: Fisher, N.I.,
+	# "Statistical Analysis of Circular Data", Cambridge
+	# University Press, 1993.
+
+	# Thanks to Magnus Kessler for a correction to the
+	# implementation of step 4.
+
 	if kappa <= 1e-6:
 		return TWOPI * random()
 
@@ -104,11 +111,11 @@ def vonmisesvariate(mu, kappa):
 
 	u3 = random()
 	if u3 > 0.5:
-		theta = mu + 0.5*acos(f)
+		theta = (mu % TWOPI) + acos(f)
 	else:
-		theta = mu - 0.5*acos(f)
+		theta = (mu % TWOPI) - acos(f)
 
-	return theta % pi
+	return theta
 
 # -------------------- gamma distribution --------------------
 
