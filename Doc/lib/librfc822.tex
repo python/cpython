@@ -115,7 +115,7 @@ usable.
 
 \begin{funcdesc}{mktime_tz}{tuple}
 Turn a 10-tuple as returned by \function{parsedate_tz()} into a UTC
-timestamp.  It the timezone item in the tuple is \code{None}, assume
+timestamp.  If the timezone item in the tuple is \code{None}, assume
 local time.  Minor deficiency: this first interprets the first 8
 elements as a local time and then compensates for the timezone
 difference; this may yield a slight error around daylight savings time
