@@ -164,6 +164,55 @@ static PyObject *AEDesc_AECountItems(_self, _args)
 	return _res;
 }
 
+static PyObject *AEDesc_AEPutPtr(_self, _args)
+	AEDescObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	long index;
+	DescType typeCode;
+	char *dataPtr__in__;
+	long dataPtr__len__;
+	int dataPtr__in_len__;
+	if (!PyArg_ParseTuple(_args, "lO&s#",
+	                      &index,
+	                      PyMac_GetOSType, &typeCode,
+	                      &dataPtr__in__, &dataPtr__in_len__))
+		return NULL;
+	dataPtr__len__ = dataPtr__in_len__;
+	_err = AEPutPtr(&_self->ob_itself,
+	                index,
+	                typeCode,
+	                dataPtr__in__, dataPtr__len__);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+ dataPtr__error__: ;
+	return _res;
+}
+
+static PyObject *AEDesc_AEPutDesc(_self, _args)
+	AEDescObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	long index;
+	AEDesc theAEDesc;
+	if (!PyArg_ParseTuple(_args, "lO&",
+	                      &index,
+	                      AEDesc_Convert, &theAEDesc))
+		return NULL;
+	_err = AEPutDesc(&_self->ob_itself,
+	                 index,
+	                 &theAEDesc);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
 static PyObject *AEDesc_AEGetNthPtr(_self, _args)
 	AEDescObject *_self;
 	PyObject *_args;
@@ -250,6 +299,24 @@ static PyObject *AEDesc_AESizeOfNthItem(_self, _args)
 	_res = Py_BuildValue("O&l",
 	                     PyMac_BuildOSType, typeCode,
 	                     dataSize);
+	return _res;
+}
+
+static PyObject *AEDesc_AEDeleteItem(_self, _args)
+	AEDescObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	long index;
+	if (!PyArg_ParseTuple(_args, "l",
+	                      &index))
+		return NULL;
+	_err = AEDeleteItem(&_self->ob_itself,
+	                    index);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
 	return _res;
 }
 
@@ -652,12 +719,18 @@ static PyMethodDef AEDesc_methods[] = {
 	 "() -> (AEDesc result)"},
 	{"AECountItems", (PyCFunction)AEDesc_AECountItems, 1,
 	 "() -> (long theCount)"},
+	{"AEPutPtr", (PyCFunction)AEDesc_AEPutPtr, 1,
+	 "(long index, DescType typeCode, Buffer dataPtr) -> None"},
+	{"AEPutDesc", (PyCFunction)AEDesc_AEPutDesc, 1,
+	 "(long index, AEDesc theAEDesc) -> None"},
 	{"AEGetNthPtr", (PyCFunction)AEDesc_AEGetNthPtr, 1,
 	 "(long index, DescType desiredType, Buffer dataPtr) -> (AEKeyword theAEKeyword, DescType typeCode, Buffer dataPtr)"},
 	{"AEGetNthDesc", (PyCFunction)AEDesc_AEGetNthDesc, 1,
 	 "(long index, DescType desiredType) -> (AEKeyword theAEKeyword, AEDesc result)"},
 	{"AESizeOfNthItem", (PyCFunction)AEDesc_AESizeOfNthItem, 1,
 	 "(long index) -> (DescType typeCode, Size dataSize)"},
+	{"AEDeleteItem", (PyCFunction)AEDesc_AEDeleteItem, 1,
+	 "(long index) -> None"},
 	{"AEPutParamPtr", (PyCFunction)AEDesc_AEPutParamPtr, 1,
 	 "(AEKeyword theAEKeyword, DescType typeCode, Buffer dataPtr) -> None"},
 	{"AEPutParamDesc", (PyCFunction)AEDesc_AEPutParamDesc, 1,
@@ -818,76 +891,6 @@ static PyObject *AE_AECreateList(_self, _args)
 	_res = Py_BuildValue("O&",
 	                     AEDesc_New, &resultList);
  factoringPtr__error__: ;
-	return _res;
-}
-
-static PyObject *AE_AEPutPtr(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	OSErr _err;
-	AEDescList theAEDescList;
-	long index;
-	DescType typeCode;
-	char *dataPtr__in__;
-	long dataPtr__len__;
-	int dataPtr__in_len__;
-	if (!PyArg_ParseTuple(_args, "lO&s#",
-	                      &index,
-	                      PyMac_GetOSType, &typeCode,
-	                      &dataPtr__in__, &dataPtr__in_len__))
-		return NULL;
-	dataPtr__len__ = dataPtr__in_len__;
-	_err = AEPutPtr(&theAEDescList,
-	                index,
-	                typeCode,
-	                dataPtr__in__, dataPtr__len__);
-	if (_err != noErr) return PyMac_Error(_err);
-	_res = Py_BuildValue("O&",
-	                     AEDesc_New, &theAEDescList);
- dataPtr__error__: ;
-	return _res;
-}
-
-static PyObject *AE_AEPutDesc(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	OSErr _err;
-	AEDescList theAEDescList;
-	long index;
-	AEDesc theAEDesc;
-	if (!PyArg_ParseTuple(_args, "lO&",
-	                      &index,
-	                      AEDesc_Convert, &theAEDesc))
-		return NULL;
-	_err = AEPutDesc(&theAEDescList,
-	                 index,
-	                 &theAEDesc);
-	if (_err != noErr) return PyMac_Error(_err);
-	_res = Py_BuildValue("O&",
-	                     AEDesc_New, &theAEDescList);
-	return _res;
-}
-
-static PyObject *AE_AEDeleteItem(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	OSErr _err;
-	AEDescList theAEDescList;
-	long index;
-	if (!PyArg_ParseTuple(_args, "l",
-	                      &index))
-		return NULL;
-	_err = AEDeleteItem(&theAEDescList,
-	                    index);
-	if (_err != noErr) return PyMac_Error(_err);
-	_res = Py_BuildValue("O&",
-	                     AEDesc_New, &theAEDescList);
 	return _res;
 }
 
@@ -1064,12 +1067,6 @@ static PyMethodDef AE_methods[] = {
 	 "(DescType typeCode, Buffer dataPtr, DescType toType) -> (AEDesc result)"},
 	{"AECreateList", (PyCFunction)AE_AECreateList, 1,
 	 "(Buffer factoringPtr, Boolean isRecord) -> (AEDescList resultList)"},
-	{"AEPutPtr", (PyCFunction)AE_AEPutPtr, 1,
-	 "(long index, DescType typeCode, Buffer dataPtr) -> (AEDescList theAEDescList)"},
-	{"AEPutDesc", (PyCFunction)AE_AEPutDesc, 1,
-	 "(long index, AEDesc theAEDesc) -> (AEDescList theAEDescList)"},
-	{"AEDeleteItem", (PyCFunction)AE_AEDeleteItem, 1,
-	 "(long index) -> (AEDescList theAEDescList)"},
 	{"AECreateAppleEvent", (PyCFunction)AE_AECreateAppleEvent, 1,
 	 "(AEEventClass theAEEventClass, AEEventID theAEEventID, AEAddressDesc target, short returnID, long transactionID) -> (AppleEvent result)"},
 	{"AEProcessAppleEvent", (PyCFunction)AE_AEProcessAppleEvent, 1,
