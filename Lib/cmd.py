@@ -47,10 +47,13 @@ class Cmd:
 	identchars = IDENTCHARS
 	ruler = '='
 	lastcmd = ''
+	cmdqueue = []
 	intro = None
+	doc_leader = ""
 	doc_header = "Documented commands (type help <topic>):"
 	misc_header = "Miscellaneous help topics:"
 	undoc_header = "Undocumented commands:"
+	nohelp = "*** No help on %s"
 
 	def __init__(self): pass
 
@@ -62,20 +65,24 @@ class Cmd:
 			print self.intro
 		stop = None
 		while not stop:
-			try:
-				line = raw_input(self.prompt)
-			except EOFError:
-				line = 'EOF'
-			self.precmd()
+			if self.cmdqueue:
+				line = self.cmdqueue[0]
+				del self.cmdqueue[0]
+			else:
+				try:
+					line = raw_input(self.prompt)
+				except EOFError:
+					line = 'EOF'
+			line = self.precmd(line)
 			stop = self.onecmd(line)
-			self.postcmd()
+			stop = self.postcmd(stop, line)
 		self.postloop()
 
-	def precmd(self):
-		pass
+	def precmd(self, line):
+		return line
 
-	def postcmd(self):
-		pass
+	def postcmd(self, stop, line):
+		return stop
 
 	def preloop(self):
 		pass
@@ -108,7 +115,8 @@ class Cmd:
 			return func(arg)
 
 	def emptyline(self):
-		return self.onecmd(self.lastcmd)
+		if self.lastcmd:
+			return self.onecmd(self.lastcmd)
 
 	def default(self, line):
 		print '*** Unknown syntax:', line
@@ -119,7 +127,7 @@ class Cmd:
 			try:
 				func = getattr(self, 'help_' + arg)
 			except:
-				print '*** No help on', `arg`
+				print self.nohelp % (arg,)
 				return
 			func()
 		else:
@@ -138,7 +146,7 @@ class Cmd:
 						del help[cmd]
 					else:
 						cmds_undoc.append(cmd)
-			print 
+			print self.doc_leader
 			self.print_topics(self.doc_header,   cmds_doc,   15,80)
 			self.print_topics(self.misc_header,  help.keys(),15,80)
 			self.print_topics(self.undoc_header, cmds_undoc, 15,80)
