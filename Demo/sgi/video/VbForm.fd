@@ -9,7 +9,7 @@ Number of forms: 1
 Name: form
 Width: 350.000000
 Height: 240.000000
-Number of Objects: 17
+Number of Objects: 21
 
 --------------------
 class: 1
@@ -23,6 +23,21 @@ size: 11.000000
 lcol: 0
 label: 
 name: 
+callback: 
+argument: 
+
+--------------------
+class: 10000
+type: 0
+box: 0.000000 0.000000 0.000000 0.000000
+boxtype: 0
+colors: 0 0
+alignment: 4
+style: 0
+size: 11.000000
+lcol: 0
+label: 
+name: g_main
 callback: 
 argument: 
 
@@ -252,9 +267,39 @@ callback: cb_format
 argument: 0
 
 --------------------
+class: 20000
+type: 0
+box: 0.000000 0.000000 0.000000 0.000000
+boxtype: 0
+colors: 0 0
+alignment: 4
+style: 0
+size: 11.000000
+lcol: 0
+label: 
+name: 
+callback: 
+argument: 
+
+--------------------
+class: 10000
+type: 0
+box: 0.000000 0.000000 0.000000 0.000000
+boxtype: 0
+colors: 0 0
+alignment: 4
+style: 0
+size: 11.000000
+lcol: 0
+label: 
+name: g_stop
+callback: 
+argument: 
+
+--------------------
 class: 11
 type: 0
-box: 0.000000 0.000000 350.000000 240.000000
+box: 10.000000 10.000000 330.000000 220.000000
 boxtype: 1
 colors: 47 47
 alignment: 4
@@ -265,6 +310,21 @@ label: Stop capture
 name: b_stop
 callback: cb_stop
 argument: 0
+
+--------------------
+class: 20000
+type: 0
+box: 0.000000 0.000000 0.000000 0.000000
+boxtype: 0
+colors: 0 0
+alignment: 4
+style: 0
+size: 11.000000
+lcol: 0
+label: 
+name: 
+callback: 
+argument: 
 
 ==============================
 create_the_forms

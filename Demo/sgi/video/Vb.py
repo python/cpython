@@ -33,7 +33,7 @@ def main():
 
 StopCapture = 'StopCapture'
 
-formats = ['rgb24', 'rgb8', 'grey8', 'grey4', 'grey2', \
+formats = ['rgb8', 'grey8', 'grey4', 'grey2', \
 	   'grey2_dith', 'mono_dith', 'mono_thresh']
 formatmap = {'rgb24': 'rgb', 'grey8': 'grey'}
 
@@ -42,12 +42,12 @@ class VideoBagOfTricks:
 	def init(self):
 		formdef = flp.parse_form('VbForm', 'form')
 		flp.create_full_form(self, formdef)
+		self.g_stop.hide_object()
 		self.setdefaults()
 		self.openvideo()
 		self.makewindow()
 		self.bindvideo()
 		self.capturing = 0
-		self.b_stop.hide_object()
 		self.form.show_form(FL.PLACE_SIZE, FL.TRUE, \
 				    'Video Bag Of Tricks')
 		fl.set_event_call_back(self.do_event)
@@ -223,6 +223,7 @@ class VideoBagOfTricks:
 
 	def cb_capture(self, *args):
 		self.setwatch()
+		self.g_main.hide_object()
 		self.cb_file() # Make sure filename is OK
 		filename = self.in_file.get_input()
 		format = self.getformat()
@@ -246,6 +247,7 @@ class VideoBagOfTricks:
 				convertor = imageop.grey2grey4
 			elif greybits == -2:
 				convertor = imageop.dither2grey2
+		mono = (format == 'mono')
 		vformat = SV.RGB8_FRAMES
 		qsize = 0
 		rate = eval(self.in_rate.get_input())
@@ -254,13 +256,12 @@ class VideoBagOfTricks:
 		tpf = 50
 		self.video.InitContinuousCapture(info)
 		self.capturing = 1
+		self.g_stop.show_object()
 		self.setarrow()
-		self.b_stop.show_object()
 		while 1:
 			try:
 				void = fl.check_forms()
 			except StopCapture:
-				self.capturing = 0
 				break
 			try:
 				cd, id = self.video.GetCaptureData()
@@ -274,16 +275,27 @@ class VideoBagOfTricks:
 			t = id*tpf
 			if convertor:
 				data = convertor(data, len(data), 1)
-##			elif mono and monotreshold >= 0:
-##				data = imageop.grey2mono(data, len(data), 1,\
-##					  monotreshold)
-##			elif mono:
-##				data = imageop.dither2mono(data, len(data), 1)
-			vout.writeframe(t, data, None)
+			elif mono:
+				if self.mono_use_thresh:
+					data = imageop.grey2mono(data, \
+						  len(data), 1,\
+						  self.mono_thresh)
+				else:
+					data = imageop.dither2mono(data, \
+						  len(data), 1)
+			try:
+				vout.writeframe(t, data, None)
+			except IOError, msg:
+				if msg == (0, 'Error 0'):
+					msg = 'disk full??'
+				fl.show_message('IOError: ' + str(msg))
+				break
 		self.setwatch()
+		self.g_stop.hide_object()
+		self.capturing = 0
 		vout.close()
-		self.b_stop.hide_object()
 		self.video.EndContinuousCapture()
+		self.g_main.show_object()
 		self.setarrow()
 
 	def cb_quit(self, *args):
