@@ -19,6 +19,15 @@ Core
   constructor, with the same signature as the builtin open() function.
   file() is now the preferred way to open a file.
 
+- In 2.2a3, *for new-style classes only*, __getattr__ was called for
+  every attribute access.  This was confusing because it differed
+  significantly from the behavior of classic classes, where it was
+  only called for missing attributes.  Now, __getattr__ is called only
+  if regular attribute access raises AttributeError; to catch *all*
+  attribute access, *for new-style classes only*, you can use
+  __getattribute__.  If both are defined, __getattribute__ is called
+  first, and if it raises AttributeError, __getattr__ is called.
+
 - In 2.2a3, __new__ would only see sequential arguments passed to the
   type in a constructor call; __init__ would see both sequential and
   positional arguments.  This made no sense whatsoever any more, so
