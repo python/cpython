@@ -314,7 +314,12 @@
   \else
     \renewcommand{\py@thismodulekey}{#1}
   \fi
-  \csname py@#2IndexModule\endcsname{#3}
+  \@ifundefined{py@#2IndexModule}{%
+    \typeout{*** MACRO declaremodule called with unknown module type: `#2'}
+    \py@ModuleIndex{#3}%
+  }{%
+    \csname py@#2IndexModule\endcsname{#3}%
+  }
   \label{module-\py@thismodulekey}
 }
 \newif\ifpy@ModPlatformFileIsOpen \py@ModPlatformFileIsOpenfalse
