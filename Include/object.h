@@ -488,6 +488,13 @@ given type object has a specified feature.
 /* Objects support garbage collection (see objimp.h) */
 #define Py_TPFLAGS_HAVE_GC (1L<<14)
 
+/* Objects support special, non-recursive calls (reserved for Stackless) */
+#ifdef STACKLESS
+#define Py_TPFLAGS_HAVE_NR_THINGS (1L<<31)
+#else
+#define Py_TPFLAGS_HAVE_NR_THINGS 0
+#endif
+
 #define Py_TPFLAGS_DEFAULT  ( \
                              Py_TPFLAGS_HAVE_GETCHARBUFFER | \
                              Py_TPFLAGS_HAVE_SEQUENCE_IN | \
@@ -496,6 +503,7 @@ given type object has a specified feature.
                              Py_TPFLAGS_HAVE_WEAKREFS | \
                              Py_TPFLAGS_HAVE_ITER | \
                              Py_TPFLAGS_HAVE_CLASS | \
+                             Py_TPFLAGS_HAVE_NR_THINGS | \
                             0)
 
 #define PyType_HasFeature(t,f)  (((t)->tp_flags & (f)) != 0)
