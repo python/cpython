@@ -130,11 +130,11 @@ class MimeTypes:
         self.readfp(fp)
         fp.close()
 
-    def readfp(self):
+    def readfp(self, fp):
         """Read a single mime.types-format file."""
         map = self.types_map
         while 1:
-            line = f.readline()
+            line = fp.readline()
             if not line:
                 break
             words = line.split()
