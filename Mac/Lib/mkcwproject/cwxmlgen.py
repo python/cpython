@@ -20,6 +20,7 @@ TEMPLATELIST= [
 
 class ProjectBuilder:
 	def __init__(self, dict, templatelist=TEMPLATELIST, templatename=None):
+		self._adddefaults(dict)
 		if templatename == None:
 			if hasattr(MacOS, 'runtimemodel'):
 				templatename = 'template-%s'%MacOS.runtimemodel
@@ -43,6 +44,20 @@ class ProjectBuilder:
 				dict['prefixname'] = 'mwerks_plugin_config.h'
 		self.templatelist = templatelist
 		self.templatedir = templatedir
+	
+	def _adddefaults(self, dict):
+		# Set all suitable defaults set for values which were omitted.
+		if not dict.has_key('mac_outputdir'):
+			dict['mac_outputdir'] = ':lib:'
+		if not dict.has_key('stdlibraryflags'):
+			dict['stdlibraryflags'] = 'Debug'
+		if not dict.has_key('libraryflags'):
+			dict['libraryflags'] = 'Debug'
+		if not dict.has_key('mac_sysprefixtype'):
+			if os.path.isabs(dict['sysprefix']):
+				dict['mac_sysprefixtype'] = 'Absolute'
+			else:
+				dict['mac_sysprefixtype'] = 'Project' # XXX not sure this is right...
 		
 	def generate(self):
 		for tmpl in self.templatelist:
