@@ -1005,6 +1005,34 @@ check_case(char *buf, int len, int namelen, char *name)
 }
 #endif /* macintosh */
 
+#ifdef DJGPP
+static int
+check_case(char *buf, int len, int namelen, char *name)
+{
+	struct ffblk ffblk;
+	int done;
+
+	if (getenv("PYTHONCASEOK") != NULL)
+		return 1;
+	done = findfirst(buf, &ffblk, FA_ARCH|FA_RDONLY|FA_HIDDEN);
+	if (done) {
+		PyErr_Format(PyExc_NameError,
+		  "Can't find file for module %.100s\n(filename %.300s)",
+		  name, buf);
+		return 0;
+	}
+
+	if (strncmp(ffblk.ff_name, name, namelen) != 0) {
+		strcpy(buf+len-namelen, ffblk.ff_name);
+		PyErr_Format(PyExc_NameError,
+		  "Case mismatch for module name %.100s\n(filename %.300s)",
+		  name, buf);
+		return 0;
+	}
+	return 1;
+}
+#endif
+
 #endif CHECK_IMPORT_CASE
 
 #ifdef HAVE_STAT
