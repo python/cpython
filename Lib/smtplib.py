@@ -529,7 +529,7 @@ class SMTP:
 # Test the sendmail method, which tests most of the others.
 # Note: This always sends to localhost.
 if __name__ == '__main__':
-    import sys, rfc822
+    import sys
 
     def prompt(prompt):
         sys.stdout.write(prompt + ": ")
