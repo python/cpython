@@ -1,0 +1,1020 @@
+% Format this file with latex.
+ 
+\documentstyle[myformat]{report}
+
+\title{\bf
+	Python Reference Manual \\
+	{\em Incomplete Draft}
+}
+	
+\author{
+	Guido van Rossum \\
+	Dept. CST, CWI, Kruislaan 413 \\
+	1098 SJ Amsterdam, The Netherlands \\
+	E-mail: {\tt guido@cwi.nl}
+}
+
+\begin{document}
+
+\pagenumbering{roman}
+
+\maketitle
+
+\begin{abstract}
+
+\noindent
+Python is a simple, yet powerful programming language that bridges the
+gap between C and shell programming, and is thus ideally suited for
+``throw-away programming''
+and rapid prototyping.  Its syntax is put
+together from constructs borrowed from a variety of other languages;
+most prominent are influences from ABC, C, Modula-3 and Icon.
+
+The Python interpreter is easily extended with new functions and data
+types implemented in C.  Python is also suitable as an extension
+language for highly customizable C applications such as editors or
+window managers.
+
+Python is available for various operating systems, amongst which
+several flavors of {\UNIX}, Amoeba, the Apple Macintosh O.S.,
+and MS-DOS.
+
+This reference manual describes the syntax and ``core semantics'' of
+the language.  It is terse, but exact and complete.  The semantics of
+non-essential built-in object types and of the built-in functions and
+modules are described in the {\em Library Reference} document.  For an
+informal introduction to the language, see the {\em Tutorial}
+document.
+
+\end{abstract}
+
+\pagebreak
+
+\tableofcontents
+
+\pagebreak
+
+\pagenumbering{arabic}
+
+\chapter{Introduction}
+
+This reference manual describes the Python programming language.
+It is not intended as a tutorial.
+
+\chapter{Lexical analysis}
+
+A Python program is read by a {\em parser}.
+Input to the parser is a stream of {\em tokens}, generated
+by the {\em lexical analyzer}.
+
+\section{Line structure}
+
+A Python program is divided in a number of logical lines.
+Statements may not straddle logical line boundaries except where
+explicitly allowed by the syntax.
+To this purpose, the end of a logical line
+is represented by the token NEWLINE.
+
+\subsection{Comments}
+
+A comment starts with a hash character (\verb/#/) and ends at the end
+of the physical line.  Comments are ignored by the syntax.
+A hash character in a string literal does not start a comment.
+
+\subsection{Line joining}
+
+Physical lines may be joined into logical lines using backslash
+characters (\verb/\/), as follows.
+If a physical line ends in a backslash that is not part of a string
+literal or comment, it is joined with
+the following forming a single logical line, deleting the backslash
+and the following end-of-line character.  More than two physical
+lines may be joined together in this way.
+
+\subsection{Blank lines}
+
+A physical line that is not the continuation of the previous line
+and contains only spaces, tabs and possibly a comment, is ignored
+(i.e., no NEWLINE token is generated),
+except that during interactive input of statements, an empty
+physical line terminates a multi-line statement.
+
+\subsection{Indentation}
+
+Spaces and tabs at the beginning of a line are used to compute
+the indentation level of the line, which in turn is used to determine
+the grouping of statements.
+
+First, each tab is replaced by one to eight spaces such that the column number
+of the next character is a multiple of eight (counting from zero).
+The column number of the first non-space character then defines the
+line's indentation.
+Indentation cannot be split over multiple physical lines using
+backslashes.
+
+The indentation levels of consecutive lines are used to generate
+INDENT and DEDENT tokens, using a stack, as follows.
+
+Before the first line of the file is read, a single zero is pushed on
+the stack; this will never be popped off again.  The numbers pushed
+on the stack will always be strictly increasing from bottom to top.
+At the beginning of each logical line, the line's indentation level
+is compared to the top of the stack.
+If it is equal, nothing happens.
+If it larger, it is pushed on the stack, and one INDENT token is generated.
+If it is smaller, it {\em must} be one of the numbers occurring on the
+stack; all numbers on the stack that are larger are popped off,
+and for each number popped off a DEDENT token is generated.
+At the end of the file, a DEDENT token is generated for each number
+remaining on the stack that is larger than zero.
+
+\section{Other tokens}
+
+Besides NEWLINE, INDENT and DEDENT, the following categories of tokens
+exist: identifiers, keywords, literals, operators, and delimiters.
+Spaces and tabs are not tokens, but serve to delimit tokens.
+Where ambiguity exists, a token comprises the longest possible
+string that forms a legal token, when reading from left to right.
+
+Tokens are described using an extended regular expression notation.
+This is similar to the extended BNF notation used later, except that
+the notation <...> is used to give an informal description of a character,
+and that spaces and tabs are not to be ignored.
+
+\section{Identifiers}
+
+Identifiers are described by the following regular expressions:
+
+\begin{verbatim}
+identifier:     (letter|'_') (letter|digit|'_')*
+letter:         lowercase | uppercase
+lowercase:      'a'|'b'|...|'z'
+uppercase:      'A'|'B'|...|'Z'
+digit:          '0'|'1'|'2'|'3'|'4'|'5'|'6'|'7'|'8'|'9'
+\end{verbatim}
+
+Identifiers are unlimited in length.
+Upper and lower case letters are different.
+
+\section{Keywords}
+
+The following tokens are used as reserved words,
+or keywords of the language,
+and may not be used as ordinary identifiers.
+They must be spelled exactly as written here:
+
+{\tt
+	and
+	break
+	class
+	continue
+	def
+	del
+	elif
+	else
+	except
+	finally
+	for
+	from
+	if
+	import
+	in
+	is
+	not
+	or
+	pass
+	print
+	raise
+	return
+	try
+	while
+}
+
+\section{Literals}
+
+\subsection{String literals}
+
+String literals are described by the following regular expressions:
+
+\begin{verbatim}
+stringliteral:  '\'' stringitem* '\''
+stringitem:     stringchar | escapeseq
+stringchar:     <any character except newline or '\\' or '\''>
+escapeseq:      '\\' <any character except newline>
+\end{verbatim}
+
+String literals cannot span physical line boundaries.
+Escape sequences in strings are actually interpreted according to almost the
+same rules as used by Standard C
+(XXX which should be made explicit here),
+except that \verb/\E/ is equivalent to \verb/\033/,
+\verb/\"/ is not recognized,
+newline characters cannot be escaped, and
+{\em all unrecognized escape sequences are left in the string unchanged}.
+(The latter rule is useful when debugging: if an escape sequence is
+mistyped, the resulting output is more easily recognized as broken.
+It also helps somewhat for string literals used as regular expressions
+or otherwise passed to other modules that do their own escape handling.)
+
+\subsection{Numeric literals}
+
+There are three types of numeric literals: integers, long integers,
+and floating point numbers.
+
+Integers and long integers are described by the following regular expressions:
+
+\begin{verbatim}
+longinteger:    integer ('l'|'L')
+integer:        decimalinteger | octinteger | hexinteger
+decimalinteger: nonzerodigit digit* | '0'
+octinteger:     '0' octdigit+
+hexinteger:     '0' ('x'|'X') hexdigit+
+
+nonzerodigit:   '1'|'2'|'3'|'4'|'5'|'6'|'7'|'8'|'9'
+octdigit:       '0'|'1'|'2'|'3'|'4'|'5'|'6'|'7'
+hexdigit:        digit|'a'|'b'|'c'|'d'|'e'|'f'|'A'|'B'|'C'|'D'|'E'|'F'
+\end{verbatim}
+
+Floating point numbers are described by the following regular expressions:
+
+\begin{verbatim}
+floatnumber:    [intpart] fraction [exponent] | intpart ['.'] exponent
+intpart:        digit+
+fraction:       '.' digit+
+exponent:       ('e'|'E') ['+'|'-'] digit+
+\end{verbatim}
+
+\section{Operators}
+
+The following tokens are operators:
+
+\begin{verbatim}
++       -       *       /       %
+<<      >>      &       |       ^       ~
+<       =       ==      >       <=      <>      !=      >=
+\end{verbatim}
+
+\section{Delimiters}
+
+The following tokens are delimiters:
+
+\begin{verbatim}
+(       )       [       ]       {       }
+;       ,       :       .       `
+\end{verbatim}
+
+The following printing ASCII characters are currently not used;
+their occurrence is an unconditional error:
+
+\begin{verbatim}
+!       @       $       "       ?
+\end{verbatim}
+
+\chapter{Execution model}
+
+(XXX This chapter should explain the general model
+of the execution of Python code and
+the evaluation of expressions.
+It should introduce objects, values, code blocks, scopes, name spaces,
+name binding,
+types, sequences, numbers, mappings,
+exceptions, and other technical terms needed to make the following
+chapters concise and exact.)
+
+\chapter{Expressions and conditions}
+
+(From now on, extended BNF notation will be used to describe
+syntax, not lexical analysis.)
+(XXX Explain the notation.)
+
+This chapter explains the meaning of the elements of expressions and
+conditions.  Conditions are a superset of expressions, and a condition
+may be used where an expression is required by enclosing it in
+parentheses.  The only place where an unparenthesized condition
+is not allowed is on the right-hand side of the assignment operator,
+because this operator is the same token (\verb/'='/) as used for
+compasisons.
+
+The comma plays a somewhat special role in Python's syntax.
+It is an operator with a lower precedence than all others, but
+occasionally serves other purposes as well (e.g., it has special
+semantics in print statements).  When a comma is accepted by the
+syntax, one of the syntactic categories \verb/expression_list/
+or \verb/condition_list/ is always used.
+
+When (one alternative of) a syntax rule has the form
+
+\begin{verbatim}
+name:           othername
+\end{verbatim}
+
+and no semantics are given, the semantics of this form of \verb/name/
+are the same as for \verb/othername/.
+
+\section{Arithmetic conversions}
+
+When a description of an arithmetic operator below uses the phrase
+``the numeric arguments are converted to a common type'',
+this both means that if either argument is not a number, a
+{\tt TypeError} exception is raised, and that otherwise
+the following conversions are applied:
+
+\begin{itemize}
+\item	First, if either argument is a floating point number,
+	the other is converted to floating point;
+\item	else, if either argument is a long integer,
+	the other is converted to long integer;
+\item	otherwise, both must be short integers and no conversion
+	is necessary.
+\end{itemize}
+
+(Note: ``short integers'' in Python are at least 32 bits in size;
+``long integers'' are arbitrary precision integers.)
+
+\section{Atoms}
+
+Atoms are the most basic elements of expressions.
+Forms enclosed in reverse quotes or various types of parentheses
+or braces are also categorized syntactically as atoms.
+Syntax rules for atoms:
+
+\begin{verbatim}
+atom:           identifier | literal | parenth_form | string_conversion
+literal:        stringliteral | integer | longinteger | floatnumber
+parenth_form:   enclosure | list_display | dict_display
+enclosure:      '(' [condition_list] ')'
+list_display:   '[' [condition_list] ']'
+dict_display:   '{' [key_datum (',' key_datum)* [','] '}'
+key_datum:      condition ':' condition
+string_conversion:'`' condition_list '`'
+\end{verbatim}
+
+\subsection{Identifiers (Names)}
+
+An identifier occurring as an atom is a reference to a local, global
+or built-in name binding.  If a name can be assigned to anywhere in a code
+block, it refers to a local name throughout that code block.
+Otherwise, it refers to a global name if one exists, else to a
+built-in name.
+
+When the name is bound to an object, evaluation of the atom
+yields that object.
+When it is not bound, a {\tt NameError} exception
+is raised, with the identifier as string parameter.
+
+\subsection{Literals}
+
+Evaluation of a literal yields an object of the given type
+(string, integer, long integer, floating point number)
+with the given value.
+The value may be approximated in the case of floating point literals.
+
+All literals correspond to immutable data types, and hence the object's
+identity is less important than its value.
+Multiple evaluations of the same literal (either the same occurrence
+in the program text or a different occurrence) may
+obtain the same object or a different object with the same value.
+
+(In the original implementation, all literals in the same code block
+with the same type and value yield the same object.)
+
+\subsection{Enclosures}
+
+An empty enclosure yields an empty tuple object.
+
+An enclosed condition list yields whatever that condition list yields.
+
+(Note that, except for empty tuples, tuples are not formed by
+enclosure in parentheses, but rather by use of the comma operator.)
+
+\subsection{List displays}
+
+A list display yields a new list object.
+
+If it has no condition list, the list object has no items.
+Otherwise, the elements of the condition list are evaluated
+from left to right and inserted in the list object in that order.
+
+\subsection{Dictionary displays}
+
+A dictionary display yields a new dictionary object.
+
+The key/datum pairs are evaluated from left to right to
+define the entries of the dictionary:
+each key object is used as a key into the dictionary to store
+the corresponding datum pair.
+
+Key objects must be strings, otherwise a {\tt TypeError}
+exception is raised.
+Clashes between keys are not detected; the last datum stored for a given
+key value prevails.
+
+\subsection{String conversions}
+
+A string conversion evaluates the contained condition list and converts the
+resulting object into a string according to rules specific to its type.
+
+If the object is a string, a number, \verb/None/, or a tuple, list or
+dictionary containing only objects whose type is in this list,
+the resulting
+string is a valid Python expression which can be passed to the
+built-in function \verb/eval()/ to yield an expression with the
+same value (or an approximation, if floating point numbers are
+involved).
+
+(In particular, converting a string adds quotes around it and converts
+``funny'' characters to escape sequences that are safe to print.)
+
+It is illegal to attempt to convert recursive objects (e.g.,
+lists or dictionaries that -- directly or indirectly -- contain a reference
+to themselves.)
+
+\section{Primaries}
+
+Primaries represent the most tightly bound operations of the language.
+Their syntax is:
+
+\begin{verbatim}
+primary:        atom | attributeref | call | subscription | slicing
+attributeref:   primary '.' identifier
+call:           primary '(' [condition_list] ')'
+subscription:   primary '[' condition ']'
+slicing:        primary '[' [condition] ':' [condition] ']'
+\end{verbatim}
+
+\subsection{Attribute references}
+
+\subsection{Calls}
+
+\subsection{Subscriptions}
+
+\subsection{Slicings}
+
+\section{Factors}
+
+Factors represent the unary numeric operators.
+Their syntax is:
+
+\begin{verbatim}
+factor:         primary | '-' factor | '+' factor | '~' factor
+\end{verbatim}
+
+The unary \verb/'-'/ operator yields the negative of its numeric argument.
+
+The unary \verb/'+'/ operator yields its numeric argument unchanged.
+
+The unary \verb/'~'/ operator yields the bit-wise negation of its
+integral numerical argument.
+
+In all three cases, if the argument does not have the proper type,
+a {\tt TypeError} exception is raised.
+
+\section{Terms}
+
+Terms represent the most tightly binding binary operators:
+
+\begin{verbatim}
+term:           factor | term '*' factor | term '/' factor | term '%' factor
+\end{verbatim}
+
+The \verb/'*'/ operator yields the product of its arguments.
+The arguments must either both be numbers, or one argument must be
+a (short) integer and the other must be a string.
+In the former case, the numbers are converted to a common type
+and then multiplied together.
+In the latter case, string repetition is performed; a negative
+repetition factor yields the empty string.
+
+The \verb|'/'| operator yields the quotient of its arguments.
+The numeric arguments are first converted to a common type.
+(Short or long) integer division yields an integer of the same type,
+truncating towards zero.
+Division by zero raises a {\tt RuntimeError} exception.
+
+The \verb|'%'| operator yields the remainder from the division
+of the first argument by the second.
+The numeric arguments are first converted to a common type.
+The outcome of $x % y$ is defined as $x - y*trunc(x/y)$.
+A zero right argument raises a {\tt RuntimeError} exception.
+The arguments may be floating point numbers, e.g.,
+$3.14 % 0.7$ equals $0.34$.
+
+\section{Arithmetic expressions}
+
+\begin{verbatim}
+arith_expr:     term | arith_expr '+' term | arith_expr '-' term
+\end{verbatim}
+
+The \verb|'+'| operator yields the sum of its arguments.
+The arguments must either both be numbers, or both strings.
+In the former case, the numbers are converted to a common type
+and then added together.
+In the latter case, the strings are concatenated directly,
+without inserting a space.
+
+The \verb|'-'| operator yields the difference of its arguments.
+The numeric arguments are first converted to a common type.
+
+\section{Shift expressions}
+
+\begin{verbatim}
+shift_expr:     arith_expr | shift_expr '<<' arith_expr | shift_expr '>>' arith_expr
+\end{verbatim}
+
+These operators accept short integers as arguments only.
+They shift their left argument to the left or right by the number of bits
+given by the right argument.  Shifts are ``logical'', e.g., bits shifted
+out on one end are lost, and bits shifted in are zero;
+negative numbers are shifted as if they were unsigned in C.
+Negative shift counts and shift counts greater than {\em or equal to}
+the word size yield undefined results.
+
+\section{Bitwise AND expressions}
+
+\begin{verbatim}
+and_expr:       shift_expr | and_expr '&' shift_expr
+\end{verbatim}
+
+This operator yields the bitwise AND of its arguments,
+which must be short integers.
+
+\section{Bitwise XOR expressions}
+
+\begin{verbatim}
+xor_expr:       and_expr | xor_expr '^' and_expr
+\end{verbatim}
+
+This operator yields the bitwise exclusive OR of its arguments,
+which must be short integers.
+
+\section{Bitwise OR expressions}
+
+\begin{verbatim}
+or_expr:       xor_expr | or_expr '|' xor_expr
+\end{verbatim}
+
+This operator yields the bitwise OR of its arguments,
+which must be short integers.
+
+\section{Expressions and expression lists}
+
+\begin{verbatim}
+expression:     or_expression
+expr_list:      expression (',' expression)* [',']
+\end{verbatim}
+
+An expression list containing at least one comma yields a new tuple.
+The length of the tuple is the number of expressions in the list.
+The expressions are evaluated from left to right.
+
+The trailing comma is required only to create a single tuple;
+it is optional in all other cases (a single expression without
+a trailing comma doesn't create a tuple, but rather yields the
+value of that expression).
+
+To create an empty tuple, use an empty pair of parentheses: \verb/()/.
+
+\section{Comparisons}
+
+\begin{verbatim}
+comparison:     expression (comp_operator expression)*
+comp_operator:  '<'|'>'|'='|'=='|'>='|'<='|'<>'|'!='|['not'] 'in'|is' ['not']
+\end{verbatim}
+
+Comparisons yield integer value: 1 for true, 0 for false.
+
+Comparisons can be chained arbitrarily,
+e.g., $x < y <= z$ is equivalent to
+$x < y$ {\tt and} $y <= z$, except that $y$ is evaluated only once
+(but in both cases $z$ is not evaluated at all when $x < y$ is
+found to be false).
+
+Formally, $e_0 op_1 e_1 op_2 e_2 ...e_{n-1} op_n e_n$ is equivalent to
+$e_0 op_1 e_1$ {\tt and} $e_1 op_2 e_2$ {\tt and} ... {\tt and}
+$e_{n-1} op_n e_n$, except that each expression is evaluated at most once.
+
+Note that $e_0 op_1 e_1 op_2 e_2$ does not imply any kind of comparison
+between $e_0$ and $e_2$, e.g., $x < y > z$ is perfectly legal.
+
+For the benefit of C programmers,
+the comparison operators \verb/=/ and \verb/==/ are equivalent,
+and so are \verb/<>/ and \verb/!=/.
+Use of the C variants is discouraged.
+
+The operators {\tt '<', '>', '=', '>=', '<='}, and {\tt '<>'} compare
+the values of two objects.  The objects needn't have the same type.
+If both are numbers, they are compared to a common type.
+Otherwise, objects of different types {\em always} compare unequal,
+and are ordered consistently but arbitrarily, except that
+the value \verb\None\ compares smaller than the values of any other type.
+
+(This unusual
+definition of comparison is done to simplify the definition of
+operations like sorting and the \verb/in/ and \verb/not in/ operators.)
+
+Comparison of objects of the same type depends on the type:
+
+\begin{itemize}
+\item	Numbers are compared arithmetically.
+\item	Strings are compared lexicographically using the numeric
+	equivalents (the result of the built-in function ord())
+	of their characters.
+\item	Tuples and lists are compared lexicographically
+	using comparison of corresponding items.
+\item	Dictionaries compare unequal unless they are the same object;
+	the choice whether one dictionary object is considered smaller
+	or larger than another one is made arbitrarily but
+	consistently within one execution of a program.
+\item	The latter rule is also used for most other built-in types.
+\end{itemize}
+
+The operators \verb\in\ and \verb\not in\ test for sequence membership:
+if $y$ is a sequence, $x {\tt in} y$ is true if and only if there exists
+an index $i$ such that $x = y_i$.
+$x {\tt not in} y$ yields the inverse truth value.
+The exception {\tt TypeError} is raised when $y$ is not a sequence,
+or when $y$ is a string and $x$ is not a string of length one.
+
+The operators \verb\is\ and \verb\is not\ compare object identity:
+$x {\tt is} y$ is true if and only if $x$ and $y$ are the same object.
+$x {\tt is not} y$ yields the inverse truth value.
+
+\section{Boolean operators}
+
+\begin{verbatim}
+condition:      or_test
+or_test:        and_test | or_test 'or' and_test
+and_test:       not_test | and_test 'and' not_test
+not_test:       comparison | 'not' not_test
+\end{verbatim}
+
+In the context of Boolean operators, and also when conditions are
+used by control flow statements, the following values are interpreted
+as false: None, numeric zero of all types, empty sequences (strings,
+tuples and lists), and empty mappings (dictionaries).
+All other values are interpreted as true.
+
+The operator \verb\not\ yields 1 if its argument is false, 0 otherwise.
+
+The condition $x {\tt and} y$ first evaluates $x$; if $x$ is false,
+$x$ is returned; otherwise, $y$ is evaluated and returned.
+
+The condition $x {\tt or} y$ first evaluates $x$; if $x$ is true,
+$x$ is returned; otherwise, $y$ is evaluated and returned.
+
+(Note that \verb\and\ and \verb\or\ do not restrict the value and type
+they return to 0 and 1, but rather return the last evaluated argument.
+This is sometimes useful, e.g., if $s$ is a string, which should be
+replaced by a default value if it is empty, $s {\tt or} 'foo'$
+returns the desired value.  Because \verb\not\ has to invent a value
+anyway, it does not bother to return a value of the same type as its
+argument, so \verb\not 'foo'\ yields $0$, not $''$.)
+
+\chapter{Simple statements}
+
+Simple statements are comprised within a single logical line.
+Several simple statements may occor on a single line separated
+by semicolons.  The syntax for simple statements is:
+
+\begin{verbatim}
+stmt_list:      simple_stmt (';' simple_stmt)* [';']
+simple_stmt:    expression_stmt
+              | assignment
+              | pass_stmt
+              | del_stmt
+              | print_stmt
+              | return_stmt
+              | raise_stmt
+              | break_stmt
+              | continue_stmt
+              | import_stmt
+\end{verbatim}
+
+\section{Expression statements}
+
+\begin{verbatim}
+expression_stmt: expression_list
+\end{verbatim}
+
+An expression statement evaluates the expression list (which may
+be a single expression).
+If the value is not \verb\None\, it is converted to a string
+using the rules for string conversions, and the resulting string
+is written to standard output on a line by itself.
+
+(The exception for \verb\None\ is made so that procedure calls,
+which are syntactically equivalent to expressions,
+do not cause any output.)
+
+\section{Assignments}
+
+\begin{verbatim}
+assignment:     target_list ('=' target_list)* '=' expression_list
+target_list:    target (',' target)* [',']
+target:         identifier | '(' target_list ')' | '[' target_list ']'
+              | attributeref | subscription | slicing
+\end{verbatim}
+
+(See the section on primaries for the definition of the last
+three symbols.)
+
+An assignment evaluates the expression list (remember that this can
+be a single expression or a comma-separated list,
+the latter yielding a tuple)
+and assigns the single resulting object to each of the target lists,
+from left to right.
+
+Assignment is defined recursively depending on the type of the
+target.  Where assignment is to part of a mutable object
+(through an attribute reference, subscription or slicing),
+the mutable object must ultimately perform the
+assignment and decide about its validity, raising an exception
+if the assignment is unacceptable.  The rules observed by
+various types and the exceptions raised are given with the
+definition of the object types (some of which are defined
+in the library reference).
+
+Assignment of an object to a target list is recursively
+defined as follows.
+
+\begin{itemize}
+\item
+If the target list contains no commas (except in nested constructs):
+the object is assigned to the single target contained in the list.
+
+\item
+If the target list contains commas (that are not in nested constructs):
+the object must be a tuple with as many items
+as the list contains targets, and the items are assigned, from left
+to right, to the corresponding targets.
+
+\end{itemize}
+
+Assignment of an object to a (non-list)
+target is recursively defined as follows.
+
+\begin{itemize}
+
+\item
+If the target is an identifier (name):
+the object is bound to that name
+in the current local scope.  Any previous binding of the same name
+is undone.
+
+\item
+If the target is a target list enclosed in parentheses:
+the object is assigned to that target list.
+
+\item
+If the target is a target list enclosed in square brackets:
+the object must be a list with as many items
+as the target list contains targets,
+and the list's items are assigned, from left to right,
+to the corresponding targets.
+
+\item
+If the target is an attribute reference:
+The primary expression in the reference is evaluated.
+It should yield an object with assignable attributes;
+if this is not the case, a {\tt TypeError} exception is raised.
+That object is then asked to assign the assigned object
+to the given attribute; if it cannot perform the assignment,
+it raises an exception.
+
+\item
+If the target is a subscription:
+The primary expression in the reference is evaluated.
+It should yield either a mutable sequence object or a mapping
+(dictionary) object.
+Next, the subscript expression is evaluated.
+
+If the primary is a sequence object, the subscript must yield a
+nonnegative integer smaller than the sequence's length,
+and the sequence is asked to assign the assigned object
+to its item with that index.
+
+If the primary is a mapping object, the subscript must have a
+type compatible with the mapping's key type,
+and the mapping is then asked to to create a key/datum pair
+which maps the subscript to the assigned object.
+
+Various exceptions can be raised.
+
+\item
+If the target is a slicing:
+The primary expression in the reference is evaluated.
+It should yield a mutable sequence object (currently only lists).
+The assigned object should be a sequence object of the same type.
+Next, the lower and upper bound expressions are evaluated,
+insofar they are present; defaults are zero and the sequence's length.
+The bounds should evaluate to (small) integers.
+If either bound is negative, the sequence's length is added to it (once).
+The resulting bounds are clipped to lie between zero
+and the sequence's length, inclusive.
+(XXX Shouldn't this description be with expressions?)
+Finally, the sequence object is asked to replace the items
+indicated by the slice with the items of the assigned sequence.
+This may change the sequence's length, if it allows it.
+
+\end{itemize}
+
+(In the original implementation, the syntax for targets is taken
+to be the same as for expressions, and invalid syntax is rejected
+during the code generation phase, causing less detailed error
+messages.)
+
+\section{The {\tt pass} statement}
+
+\begin{verbatim}
+pass_stmt:      'pass'
+\end{verbatim}
+
+{\tt pass} is a null operation -- when it is executed,
+nothing happens.
+
+\section{The {\tt del} statement}
+
+\begin{verbatim}
+del_stmt:       'del' target_list
+\end{verbatim}
+
+Deletion is recursively defined similar to assignment.
+
+(XXX Rather that spelling it out in full details,
+here are some hints.)
+
+Deletion of a target list recursively deletes each target,
+from left to right.
+
+Deletion of a name removes the binding of that name (which must exist)
+from the local scope.
+
+Deletion of attribute references, subscriptions and slicings
+is passed to the primary object involved; deletion of a slicing
+is in general equivalent to assignment of an empty slice of the
+right type (but even this is determined by the sliced object).
+
+\section{The {\tt print} statement}
+
+\begin{verbatim}
+print_stmt:     'print' [ condition (',' condition)* [','] ]
+\end{verbatim}
+
+{\tt print} evaluates each condition in turn and writes the resulting
+object to standard output (see below).
+If an object is not a string, it is first converted to
+a string using the rules for string conversions.
+The (resulting or original) string is then written.
+A space is written before each object is (converted and) written,
+unless the output system believes it is positioned at the beginning
+of a line.  This is the case: (1) when no characters have been written
+to standard output; or (2) when the last character written to
+standard output is \verb/'\n'/;
+or (3) when the last I/O operation
+on standard output was not a \verb\print\ statement.
+
+Finally,
+a \verb/'\n'/ character is written at the end,
+unless the \verb\print\ statement ends with a comma.
+This is the only action if the statement contains just the keyword
+\verb\print\.
+
+Standard output is defined as the file object named \verb\stdout\
+in the built-in module \verb\sys\.  If no such object exists,
+or if it is not a writable file, a {\tt RuntimeError} exception is raised.
+(The original implementation attempts to write to the system's original
+standard output instead, but this is not safe, and should be fixed.)
+
+\section{The {\tt return} statement}
+
+\begin{verbatim}
+return_stmt:    'return' [condition_list]
+\end{verbatim}
+
+\verb\return\ may only occur syntactically nested in a function
+definition, not within a nested class definition.
+
+If a condition list is present, it is evaluated, else \verb\None\
+is substituted.
+
+\verb\return\ leaves the current function call with the condition
+list (or \verb\None\) as return value.
+
+When \verb\return\ passes control out of a \verb\try\ statement
+with a \verb\finally\ clause, that finally clause is executed
+before really leaving the function.
+(XXX This should be made more exact, a la Modula-3.)
+
+\section{The {\tt raise} statement}
+
+\begin{verbatim}
+raise_stmt:     'raise' condition [',' condition]
+\end{verbatim}
+
+\verb\raise\ evaluates its first condition, which must yield
+a string object.  If there is a second condition, this is evaluated,
+else \verb\None\ is substituted.
+
+It then raises the exception identified by the first object,
+with the second one (or \verb\None\) as its parameter.
+
+\section{The {\tt break} statement}
+
+\begin{verbatim}
+break_stmt:     'break'
+\end{verbatim}
+
+\verb\break\ may only occur syntactically nested in a \verb\for\
+or \verb\while\ loop, not nested in a function or class definition.
+
+It terminates the neares enclosing loop, skipping the optional
+\verb\else\ clause if the loop has one.
+
+If a \verb\for\ loop is terminated by \verb\break\, the loop control
+target (list) keeps its current value.
+
+When \verb\break\ passes control out of a \verb\try\ statement
+with a \verb\finally\ clause, that finally clause is executed
+before really leaving the loop.
+
+\section{The {\tt continue} statement}
+
+\begin{verbatim}
+continue_stmt:  'continue'
+\end{verbatim}
+
+\verb\continue\ may only occur syntactically nested in a \verb\for\
+or \verb\while\ loop, not nested in a function or class definition,
+and {\em not nested in a \verb\try\ statement with a \verb\finally\
+clause}.
+
+It continues with the next cycle of the nearest enclosing loop.
+
+\section{The {\tt import} statement}
+
+\begin{verbatim}
+import_stmt:    'import' identifier (',' identifier)*
+              | 'from' identifier 'import' identifier (',' identifier)*
+              | 'from' identifier 'import' '*'
+\end{verbatim}
+
+(XXX To be done.)
+
+\chapter{Compound statements}
+
+(XXX The semantic definitions of this chapter are still to be done.)
+
+\begin{verbatim}
+statement:      stmt_list NEWLINE | compound_stmt
+compound_stmt:  if_stmt | while_stmt | for_stmt | try_stmt | funcdef | classdef
+suite:          statement | NEWLINE INDENT statement+ DEDENT
+\end{verbatim}
+
+\section{The {\tt if} statement}
+
+\begin{verbatim}
+if_stmt:        'if' condition ':' suite
+               ('elif' condition ':' suite)*
+               ['else' ':' suite]
+\end{verbatim}
+
+\section{The {\tt while} statement}
+
+\begin{verbatim}
+while_stmt:     'while' condition ':' suite ['else' ':' suite]
+\end{verbatim}
+
+\section{The {\tt for} statement}
+
+\begin{verbatim}
+for_stmt:       'for' target_list 'in' condition_list ':' suite
+               ['else' ':' suite]
+\end{verbatim}
+
+\section{The {\tt try} statement}
+
+\begin{verbatim}
+try_stmt:       'try' ':' suite
+               ('except' condition [',' condition] ':' suite)*
+               ['finally' ':' suite]
+\end{verbatim}
+
+\section{Function definitions}
+
+\begin{verbatim}
+funcdef:        'def' identifier '(' [parameter_list] ')' ':' suite
+parameter_list: parameter (',' parameter)*
+parameter:      identifier | '(' parameter_list ')'
+\end{verbatim}
+
+\section{Class definitions}
+
+\begin{verbatim}
+classdef:       'class' identifier '(' ')' [inheritance] ':' suite
+inheritance:    '=' identifier '(' ')' (',' identifier '(' ')')*
+\end{verbatim}
+
+XXX Syntax for scripts, modules
+XXX Syntax for interactive input, eval, exec, input
+
+\end{document}
