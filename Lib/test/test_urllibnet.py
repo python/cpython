@@ -115,8 +115,8 @@ class urlretrieveNetworkTests(unittest.TestCase):
                         " urlretrieve is not a valid path")
         FILE = file(file_location)
         try:
-            self.assert_(FILE.read(), "reading from the file location returned "
-                                      "by urlretrieve failed")
+            self.assert_(FILE.read(), "reading from the file location returned"
+                         " by urlretrieve failed")
         finally:
             FILE.close()
             os.unlink(file_location)
