@@ -34,6 +34,8 @@ Core and builtins
 Library
 -------
 
+- bug 700055: .pth files can now have any type of line endings.
+
 - Patch 817379: Allow absolute ftp paths in urllib2.
 
 - Patch 711838: Support non-anonymous ftp URLs in urllib2.
