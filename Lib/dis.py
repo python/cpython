@@ -83,7 +83,7 @@ def disassemble(co, lasti=-1):
 				print '(' + cmp_op[oparg] + ')',
 		print
 
-disco = disassemble
+disco = disassemble			# XXX For backwards compatibility
 
 def findlabels(code):
 	"""Detect all offsets in a byte code which are jump targets.
