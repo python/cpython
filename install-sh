@@ -96,7 +96,8 @@ fi
 
 # Make a temp file name in the proper directory.
 
-dstdir=`dirname $dst`
+# Avoid dirname, which doesn't exist everywhere...
+dstdir=`echo $dst | sed 's,/[^/]*$,,'`
 dsttmp=$dstdir/#inst.$$#
 
 # Move or copy the file name to the temp name
