@@ -165,11 +165,31 @@ def islink(path):
 # Does a path exist?
 # This is false for dangling symbolic links.
 
+# In some cases, an error from stat() means the file does exist.
+
+# On a Linux with large file support (LFS) using a Python without LFS,
+# stat() will raise EOVERFLOW.  This unambiguously indicates that the
+# file exists because it only occurs when the size of the file can't
+# find into the stat struct.
+
+_errno_for_exists = []
+
+try:
+    import errno
+except ImportError:
+    pass
+else:
+    EOVERFLOW = getattr(errno, "EOVERFLOW", None)
+    if EOVERFLOW is not None:
+        _errno_for_exists.append(EOVERFLOW)
+
 def exists(path):
     """Test whether a path exists.  Returns false for broken symbolic links"""
     try:
         st = os.stat(path)
-    except os.error:
+    except os.error, err:
+        if err.errno in _errno_for_exists:
+            return 1
         return 0
     return 1
 
