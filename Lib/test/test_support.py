@@ -50,8 +50,11 @@ def forget(modname):
         except os.error:
             pass
 
+def is_resource_enabled(resource):
+    return use_resources is not None and resource in use_resources
+
 def requires(resource, msg=None):
-    if use_resources is not None and resource not in use_resources:
+    if not is_resource_enabled(resource):
         if msg is None:
             msg = "Use of the `%s' resource not enabled" % resource
         raise TestSkipped(msg)
