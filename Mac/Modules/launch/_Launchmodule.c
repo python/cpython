@@ -57,34 +57,6 @@ LSItemInfoRecord_New(LSItemInfoRecord *it)
 
 static PyObject *Launch_Error;
 
-static PyObject *Launch_LSInit(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	OSStatus _err;
-	LSInitializeFlags inFlags;
-	if (!PyArg_ParseTuple(_args, "l",
-	                      &inFlags))
-		return NULL;
-	_err = LSInit(inFlags);
-	if (_err != noErr) return PyMac_Error(_err);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
-}
-
-static PyObject *Launch_LSTerm(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	OSStatus _err;
-	if (!PyArg_ParseTuple(_args, ""))
-		return NULL;
-	_err = LSTerm();
-	if (_err != noErr) return PyMac_Error(_err);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
-}
-
 static PyObject *Launch_LSCopyItemInfoForRef(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -347,10 +319,6 @@ static PyObject *Launch_LSOpenCFURLRef(PyObject *_self, PyObject *_args)
 }
 
 static PyMethodDef Launch_methods[] = {
-	{"LSInit", (PyCFunction)Launch_LSInit, 1,
-	 PyDoc_STR("(LSInitializeFlags inFlags) -> None")},
-	{"LSTerm", (PyCFunction)Launch_LSTerm, 1,
-	 PyDoc_STR("() -> None")},
 	{"LSCopyItemInfoForRef", (PyCFunction)Launch_LSCopyItemInfoForRef, 1,
 	 PyDoc_STR("(FSRef inItemRef, LSRequestedInfo inWhichInfo) -> (LSItemInfoRecord outItemInfo)")},
 	{"LSCopyItemInfoForURL", (PyCFunction)Launch_LSCopyItemInfoForURL, 1,
