@@ -66,10 +66,10 @@ def get_python_inc(plat_specific=0, prefix=None):
     elif os.name == "nt":
         return os.path.join(prefix, "include")
     elif os.name == "mac":
-    	if plat_specific:
-    		return os.path.join(prefix, "Mac", "Include")
-    	else:
-	        return os.path.join(prefix, "Include")
+        if plat_specific:
+                return os.path.join(prefix, "Mac", "Include")
+        else:
+                return os.path.join(prefix, "Include")
     elif os.name == "os2":
         return os.path.join(prefix, "Include")
     else:
