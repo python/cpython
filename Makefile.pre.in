@@ -506,7 +506,7 @@ $(DESTSHARED):
 		do \
 			if test ! -d $$i; then \
 				echo "Creating directory $$i"; \
-				$(INSTALL) -d 755 $$i; \
+				$(INSTALL) -d -m $(DIRMODE) $$i; \
 			else    true; \
 			fi; \
 		done
@@ -527,7 +527,7 @@ altbininstall:	$(PYTHON)
 	do \
 		if test ! -d $$i; then \
 			echo "Creating directory $$i"; \
-			$(INSTALL) -d $(DIRMODE) $$i; \
+			$(INSTALL) -d -m $(DIRMODE) $$i; \
 		else	true; \
 		fi; \
 	done
@@ -547,7 +547,7 @@ maninstall:
 	do \
 		if test ! -d $$i; then \
 			echo "Creating directory $$i"; \
-			$(INSTALL) -d $(DIRMODE) $$i; \
+			$(INSTALL) -d -m $(DIRMODE) $$i; \
 		else	true; \
 		fi; \
 	done
@@ -565,7 +565,7 @@ libinstall:	python $(srcdir)/Lib/$(PLATDIR)
 	do \
 		if test ! -d $$i; then \
 			echo "Creating directory $$i"; \
-			$(INSTALL) -d $(DIRMODE) $$i; \
+			$(INSTALL) -d -m $(DIRMODE) $$i; \
 		else	true; \
 		fi; \
 	done
@@ -576,7 +576,7 @@ libinstall:	python $(srcdir)/Lib/$(PLATDIR)
 		b=$(LIBDEST)/$$d; \
 		if test ! -d $$b; then \
 			echo "Creating directory $$b"; \
-			$(INSTALL) -d $(DIRMODE) $$b; \
+			$(INSTALL) -d -m $(DIRMODE) $$b; \
 		else	true; \
 		fi; \
 	done
@@ -636,7 +636,7 @@ inclinstall:
 	do \
 		if test ! -d $$i; then \
 			echo "Creating directory $$i"; \
-			$(INSTALL) -d $(DIRMODE) $$i; \
+			$(INSTALL) -d -m $(DIRMODE) $$i; \
 		else	true; \
 		fi; \
 	done
@@ -655,7 +655,7 @@ libainstall:	all
 	do \
 		if test ! -d $$i; then \
 			echo "Creating directory $$i"; \
-			$(INSTALL) -d $(DIRMODE) $$i; \
+			$(INSTALL) -d -m $(DIRMODE) $$i; \
 		else	true; \
 		fi; \
 	done
