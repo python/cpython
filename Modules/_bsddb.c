@@ -1448,6 +1448,7 @@ DB_get(DBObject* self, PyObject* args, PyObject* kwargs)
     return retval;
 }
 
+#if (DBVER >= 33)
 static PyObject*
 DB_pget(DBObject* self, PyObject* args, PyObject* kwargs)
 {
@@ -1535,6 +1536,7 @@ DB_pget(DBObject* self, PyObject* args, PyObject* kwargs)
     RETURN_IF_ERR();
     return retval;
 }
+#endif
 
 
 /* Return size of entry */
@@ -2918,6 +2920,7 @@ DBC_get(DBCursorObject* self, PyObject* args, PyObject *kwargs)
     return retval;
 }
 
+#if (DBVER >= 33)
 static PyObject*
 DBC_pget(DBCursorObject* self, PyObject* args, PyObject *kwargs)
 {
@@ -3017,6 +3020,7 @@ DBC_pget(DBCursorObject* self, PyObject* args, PyObject *kwargs)
     }
     return retval;
 }
+#endif
 
 
 static PyObject*
@@ -4379,7 +4383,9 @@ static PyMethodDef DB_methods[] = {
     {"delete",          (PyCFunction)DB_delete,         METH_VARARGS|METH_KEYWORDS},
     {"fd",              (PyCFunction)DB_fd,             METH_VARARGS},
     {"get",             (PyCFunction)DB_get,            METH_VARARGS|METH_KEYWORDS},
+#if (DBVER >= 33)
     {"pget",            (PyCFunction)DB_pget,           METH_VARARGS|METH_KEYWORDS},
+#endif
     {"get_both",        (PyCFunction)DB_get_both,       METH_VARARGS|METH_KEYWORDS},
     {"get_byteswapped", (PyCFunction)DB_get_byteswapped,METH_VARARGS},
     {"get_size",        (PyCFunction)DB_get_size,       METH_VARARGS|METH_KEYWORDS},
@@ -4439,7 +4445,9 @@ static PyMethodDef DBCursor_methods[] = {
     {"dup",             (PyCFunction)DBC_dup,           METH_VARARGS},
     {"first",           (PyCFunction)DBC_first,         METH_VARARGS|METH_KEYWORDS},
     {"get",             (PyCFunction)DBC_get,           METH_VARARGS|METH_KEYWORDS},
+#if (DBVER >= 33)
     {"pget",            (PyCFunction)DBC_pget,          METH_VARARGS|METH_KEYWORDS},
+#endif
     {"get_recno",       (PyCFunction)DBC_get_recno,     METH_VARARGS},
     {"last",            (PyCFunction)DBC_last,          METH_VARARGS|METH_KEYWORDS},
     {"next",            (PyCFunction)DBC_next,          METH_VARARGS|METH_KEYWORDS},
