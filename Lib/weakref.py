@@ -101,6 +101,18 @@ class WeakValueDictionary(UserDict.UserDict):
             if o is not None:
                 return key, o
 
+    def pop(self, key, *args):
+        try:
+            o = self.data.pop(key)()
+        except KeyError:
+            if args:
+                return args[0]
+            raise
+        if o is None:
+            raise KeyError, key
+        else:
+            return o
+
     def setdefault(self, key, default):
         try:
             wr = self.data[key]
@@ -224,6 +236,9 @@ class WeakKeyDictionary(UserDict.UserDict):
             o = key()
             if o is not None:
                 return o, value
+
+    def pop(self, key, *args):
+        return self.data.pop(ref(key), *args)
 
     def setdefault(self, key, default):
         return self.data.setdefault(ref(key, self._remove),default)
