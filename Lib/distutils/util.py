@@ -86,22 +86,22 @@ def native_path (pathname):
 
 
 def change_root (new_root, pathname):
-
     """Return 'pathname' with 'new_root' prepended.  If 'pathname' is
     relative, this is equivalent to "os.path.join(new_root,pathname)".
     Otherwise, it requires making 'pathname' relative and then joining the
-    two, which is tricky on DOS/Windows and Mac OS."""
-
-    if not abspath (pathname):
-        return os.path.join (new_root, pathname)
-
-    elif os.name == 'posix':
-        return os.path.join (new_root, pathname[1:])
+    two, which is tricky on DOS/Windows and Mac OS.
+    """
+    if os.name == 'posix':
+        if not os.path.isabs (pathname):
+            return os.path.join (new_root, pathname)
+        else:
+            return os.path.join (new_root, pathname[1:])
 
     elif os.name == 'nt':
-        (root_drive, root_path) = os.path.splitdrive (new_root)
         (drive, path) = os.path.splitdrive (pathname)
-        raise RuntimeError, "I give up -- not sure how to do this on Windows"
+        if path[0] == '\\':
+            path = path[1:]
+        return os.path.join (new_root, path)
 
     elif os.name == 'mac':
         raise RuntimeError, "no clue how to do this on Mac OS"
