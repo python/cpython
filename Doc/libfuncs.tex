@@ -355,6 +355,18 @@ its goal is to return a printable string.
 \end{verbatim}\ecode
 \end{funcdesc}
 
+\begin{funcdesc}{vars}{}
+Without arguments, return a dictionary corresponding to the current
+local symbol table.  With a module, class or class instance object as
+argument (or anything else that has a \code{__dict__} attribute),
+returns a dictionary corresponding to the object's symbol table.
+The returned dictionary should not be modified: the effects on the
+corresponding symbol table are undefined.%
+\footnote{In the current implementation, local variable bindings
+cannot normally be affected this way, but variables retrieved from
+other scopes can be.  This may change.}
+\end{funcdesc}
+
 \begin{funcdesc}{xrange}{start\, end\, step}
 This function is very similar to \code{range()}, but returns an
 ``xrange object'' instead of a list.  This is an opaque sequence type
