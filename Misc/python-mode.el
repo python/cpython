@@ -2786,7 +2786,13 @@ local bindings to py-newline-and-indent."))
 	      (save-excursion (setq pps (parse-partial-sexp (point) here)))
 	      ;; make sure we don't land inside a triple-quoted string
 	      (setq done (or (not (nth 3 pps))
-			     (bobp))))
+			     (bobp)))
+	      ;; Just go ahead and short circuit the test back to the
+	      ;; beginning of the buffer.  This will be slow, but not
+	      ;; nearly as slow as looping through many
+	      ;; re-search-backwards.
+	      (if (not done)
+		  (goto-char (point-min))))
 	  ;; XEmacs
 	  (setq done (or (not (buffer-syntactic-context))
 			 (bobp)))
