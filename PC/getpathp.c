@@ -35,6 +35,10 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "Python.h"
 #include "osdefs.h"
 
+#ifdef MS_WIN32
+#include <windows.h>
+#endif
+
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <string.h>
@@ -149,7 +153,6 @@ static void
 get_progpath()
 {
 #ifdef MS_WIN32
-#include <windows.h>
 	if (!GetModuleFileName(NULL, progpath, MAXPATHLEN))
 		progpath[0] = '\0';	/* failure */
 #else
@@ -239,6 +242,7 @@ calculate_path()
 		if (*pt == DELIM)
 			bufsz++;	/* number of DELIM plus one */
 	bufsz *= strlen(PYTHONPATH) + strlen(prefix);  /* high estimate */
+	bufsz += strlen(argv0_path) + 1;
 
 	module_search_path = buf = malloc(bufsz);
 
@@ -251,7 +255,7 @@ calculate_path()
 	}
 	for (pt = PYTHONPATH; *pt; pt++) {
 		if (!strncmp(pt, ".\\lib", 5) &&
-			((ch = *(pt + 5)) == '\\' || ch == DELIM || !ch)){
+			((ch = *(pt + 5)) == '\\' || ch == DELIM || !ch)) {
 			pt += 4;
 			for (pt2 = prefix; *pt2; pt2++)
 				*buf++ = *pt2;
@@ -259,6 +263,9 @@ calculate_path()
 		else
 			*buf++ = *pt;
 	}
+	*buf++ = DELIM;
+	strcpy(buf, argv0_path);
+	buf += strlen(buf);
 	*buf = '\0';
 }
 
