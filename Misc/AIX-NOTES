@@ -1,7 +1,8 @@
 Subject: AIX-NOTES FOR 1.4
 From: Manus Hand <Manus.Hand@evolving.com>
-To: Guido van Rossum <guido@CNRI.Reston.VA.US>
-Date: Tue, 22 Oct 1996 16:02:07 -0600 (MDT)
+To: guido@CNRI.Reston.VA.US
+cc: Vladimir.Marangozov@imag.fr
+Date: Fri, 25 Oct 1996 15:19:23 -0600 (MDT)
 
 ==============================================================================
                               COMPILER INFORMATION
@@ -89,7 +90,7 @@ AIX shared library support was added to Python in the 1.4 release by Manus
 Hand (mhand@csn.net) and Vladimir Marangozov (Vladimir.Marangozov@imag.fr).
 
 Python modules may now be built as shared libraries on AIX using the normal
-process of uncommenting the "*noconfig*" line in Modules/Setup.in before the
+process of uncommenting the "*shared*" line in Modules/Setup.in before the
 build.  There is one additional step required, and that is to also uncomment
 the line in Modules/Setup.in which reads
     LINKCC= makexp_aix python.exp "" $(MYLIBS) $(ADDOBJS) ; $(CC)
