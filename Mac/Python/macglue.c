@@ -488,7 +488,7 @@ PyMac_GetPythonDir()
 	    	UpdateAlias(NULL, &dirspec, handle, &modified);
 	    }
 #else
-		printf("Error: no Preferences file. Attempting to limp on...\n");
+		printf("Error: corrupted Preferences file. Attempting to limp on...\n");
 		name[0] = 0;
 		getwd(name);
 		return name;
@@ -1022,8 +1022,10 @@ PyMac_InteractiveOptions(int *inspect, int *verbose, int *suppress_print,
 		return;
 
 	dialog = GetNewDialog(OPT_DIALOG, NULL, (WindowPtr)-1);
-	if ( dialog == NULL )
+	if ( dialog == NULL ) {
+		printf("Option dialog not found - cannot set options\n");
 		return;
+	}
 	while (1) {
 		handle = NULL;
 		ModalDialog(NULL, &item);
@@ -1049,5 +1051,4 @@ PyMac_InteractiveOptions(int *inspect, int *verbose, int *suppress_print,
 #undef OPT_ITEM
 	}
 	DisposDialog(dialog);
-	/*DBG*/printf("options: %d %d %d %d %d %d\n", *inspect, *verbose, *suppress_print, *unbuffered, *debugging);
 }
