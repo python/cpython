@@ -42,20 +42,9 @@ Data members:
 #include "sysmodule.h"
 #include "import.h"
 #include "modsupport.h"
+#include "osdefs.h"
 
-/* Define delimiter used in $PYTHONPATH */
-
-#ifdef macintosh
-#define DELIM ' '
-#endif
-
-#ifdef MSDOS
-#define DELIM ';'
-#endif
-
-#ifndef DELIM
-#define DELIM ':'
-#endif
+object *sys_trace, *sys_profile;
 
 static object *sysdict;
 
@@ -105,8 +94,36 @@ sys_exit(self, args)
 	return NULL;
 }
 
+static object *
+sys_settrace(self, args)
+	object *self;
+	object *args;
+{
+	if (args == None)
+		args = NULL;
+	XINCREF(args);
+	sys_trace = args;
+	INCREF(None);
+	return None;
+}
+
+static object *
+sys_setprofile(self, args)
+	object *self;
+	object *args;
+{
+	if (args == None)
+		args = NULL;
+	XINCREF(args);
+	sys_profile = args;
+	INCREF(None);
+	return None;
+}
+
 static struct methodlist sys_methods[] = {
 	{"exit",	sys_exit},
+	{"setprofile",	sys_setprofile},
+	{"settrace",	sys_settrace},
 	{NULL,		NULL}		/* sentinel */
 };
 
