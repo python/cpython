@@ -73,11 +73,13 @@ _PyBuffer_FromObject(PyObject *base, int offset, int size,
 		offset = count;
 	if ( offset + size > count )
 		size = count - offset;
-
-	/* if the base object is another buffer, then "deref" it */
-	if ( PyBuffer_Check(base) )
+	
+	/* if the base object is another buffer, then "deref" it,
+	 * except if the base of the other buffer is NULL
+	 */
+	if ( PyBuffer_Check(base) && (((PyBufferObject *)base)->b_base) )
 		base = ((PyBufferObject *)base)->b_base;
-
+	
 	return _PyBuffer_FromMemory(base, (char *)p + offset, size, readonly);
 }
 
