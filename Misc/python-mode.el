@@ -216,6 +216,17 @@ the Emacs bell is also rung as a warning."
   :type 'boolean
   :group 'python)
 
+(defcustom py-backspace-function 'backward-delete-char-untabify
+  "*Function called by `py-electric-backspace' when deleting backwards."
+  :type 'function
+  :group 'python)
+
+(defcustom py-delete-function 'delete-char
+  "*Function called by `py-electric-delete' when deleting forwards."
+  :type 'function
+  :group 'python)
+
+
 
 ;; ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 ;; NO USER DEFINABLE VARIABLES BEYOND THIS POINT
@@ -270,12 +281,6 @@ When non-nil, arguments are printed.")
 (defvar py-file-queue nil
   "Queue of Python temp files awaiting execution.
 Currently-active file is at the head of the list.")
-
-(defvar py-delete-function 'backward-delete-char-untabify
-  "*Function called by `py-delete-char' when deleting characters.")
-
-(defvar py-backspace-function 'backward-delete-char-untabify
-  "*Function called by `py-backspace-command' when deleting characters.")
 
 
 ;; Constants
@@ -380,7 +385,52 @@ Currently-active file is at the head of the list.")
 (if py-mode-map
     nil
   (setq py-mode-map (make-sparse-keymap))
-
+  ;; electric keys
+  (define-key py-mode-map ":" 'py-electric-colon)
+  ;; indentation level modifiers
+  (define-key py-mode-map "\C-c\C-l"  'py-shift-region-left)
+  (define-key py-mode-map "\C-c\C-r"  'py-shift-region-right)
+  (define-key py-mode-map "\C-c<"     'py-shift-region-left)
+  (define-key py-mode-map "\C-c>"     'py-shift-region-right)
+  ;; subprocess commands
+  (define-key py-mode-map "\C-c\C-c"  'py-execute-buffer)
+  (define-key py-mode-map "\C-c|"     'py-execute-region)
+  (define-key py-mode-map "\C-c!"     'py-shell)
+  ;; Caution!  Enter here at your own risk.  We are trying to support
+  ;; several behaviors and it gets disgusting. :-( This logic ripped
+  ;; largely from CC Mode.
+  ;;
+  ;; In XEmacs 19, Emacs 19, and Emacs 20, we use this to bind
+  ;; backwards deletion behavior to DEL, which both Delete and
+  ;; Backspace get translated to.  There's no way to separate this
+  ;; behavior in a clean way, so deal with it!  Besides, it's been
+  ;; this way since the dawn of time.
+  (if (not (boundp 'delete-key-deletes-forward))
+      (define-key py-mode-map "\177" 'py-electric-backspace)
+    ;; However, XEmacs 20 actually achieved enlightenment.  It is
+    ;; possible to sanely define both backward and forward deletion
+    ;; behavior under X separately (TTYs are forever beyond hope, but
+    ;; who cares?  XEmacs 20 does the right thing with these too).
+    (define-key py-mode-map [delete]    'py-electric-delete)
+    (define-key py-mode-map [backspace] 'py-electric-backspace))
+  ;; Miscellaneous
+  (define-key py-mode-map "\C-c:"     'py-guess-indent-offset)
+  (define-key py-mode-map "\C-c\t"    'py-indent-region)
+  (define-key py-mode-map "\C-c\C-n"  'py-next-statement)
+  (define-key py-mode-map "\C-c\C-p"  'py-previous-statement)
+  (define-key py-mode-map "\C-c\C-u"  'py-goto-block-up)
+  (define-key py-mode-map "\C-c\C-m"  'py-mark-block)
+  (define-key py-mode-map "\C-c#"     'py-comment-region)
+  (define-key py-mode-map "\C-c?"     'py-describe-mode)
+  (define-key py-mode-map "\C-c\C-hm" 'py-describe-mode)
+  (define-key py-mode-map "\e\C-a"    'beginning-of-python-def-or-class)
+  (define-key py-mode-map "\e\C-e"    'end-of-python-def-or-class)
+  (define-key py-mode-map "\e\C-h"    'mark-python-def-or-class)
+  ;; information
+  (define-key py-mode-map "\C-c\C-b" 'py-submit-bug-report)
+  (define-key py-mode-map "\C-c\C-v" 'py-version)
+  ;; py-newline-and-indent mappings
+  (define-key py-mode-map "\n" 'py-newline-and-indent)
   ;; shadow global bindings for newline-and-indent w/ the py- version.
   ;; BAW - this is extremely bad form, but I'm not going to change it
   ;; for now.
@@ -388,37 +438,6 @@ Currently-active file is at the head of the list.")
 		      (define-key
 			py-mode-map key 'py-newline-and-indent)))
    (where-is-internal 'newline-and-indent))
-
-  ;; BAW - you could do it this way, but its not considered proper
-  ;; major-mode form.
-  (mapcar (function
-	   (lambda (x)
-	     (define-key py-mode-map (car x) (cdr x))))
-	  '((":"         . py-electric-colon)
-	    ("\C-c\C-c"  . py-execute-buffer)
-	    ("\C-c|"	 . py-execute-region)
-	    ("\C-c!"	 . py-shell)
-	    ("\177"	 . py-delete-char)
-	    ("\n"	 . py-newline-and-indent)
-	    ("\C-c:"	 . py-guess-indent-offset)
-	    ("\C-c\t"	 . py-indent-region)
-	    ("\C-c\C-l"  . py-shift-region-left)
-	    ("\C-c\C-r"  . py-shift-region-right)
-	    ("\C-c<"	 . py-shift-region-left)
-	    ("\C-c>"	 . py-shift-region-right)
-	    ("\C-c\C-n"  . py-next-statement)
-	    ("\C-c\C-p"  . py-previous-statement)
-	    ("\C-c\C-u"  . py-goto-block-up)
-	    ("\C-c\C-m"  . py-mark-block)
-	    ("\C-c#"	 . py-comment-region)
-	    ("\C-c?"	 . py-describe-mode)
-	    ("\C-c\C-hm" . py-describe-mode)
-	    ("\e\C-a"	 . beginning-of-python-def-or-class)
-	    ("\e\C-e"	 . end-of-python-def-or-class)
-	    ( "\e\C-h"	 . mark-python-def-or-class)))
-  ;; should do all keybindings this way
-  (define-key py-mode-map "\C-c\C-b" 'py-submit-bug-report)
-  (define-key py-mode-map "\C-c\C-v" 'py-version)
   )
 
 (defvar py-mode-syntax-table nil
@@ -1048,34 +1067,33 @@ See the `\\[py-execute-region]' docs for an account of some subtleties."
   (py-execute-region (point-min) (point-max) async))
 
 
-;; Functions for Python style indentation
-(defun py-delete-char (count)
-  "Reduce indentation or delete character.
-
-If point is at the leftmost column, deletes the preceding newline.
-Deletion is performed by calling the function in `py-delete-function'
+;; Electric deletion
+(defun py-electric-backspace (arg)
+  "Deletes preceding character or levels of indentation.
+Deletion is performed by calling the function in `py-backspace-function'
 with a single argument (the number of characters to delete).
 
-Else if point is at the leftmost non-blank character of a line that is
-neither a continuation line nor a non-indenting comment line, or if
-point is at the end of a blank line, reduces the indentation to match
-that of the line that opened the current block of code.  The line that
-opened the block is displayed in the echo area to help you keep track
-of where you are.  With numeric count, outdents that many blocks (but
-not past column zero).
+If point is at the leftmost column, deletes the preceding newline.
 
-Else the preceding character is deleted, converting a tab to spaces if
-needed so that only a single column position is deleted.  Numeric
-argument delets that many characters."
+Otherwise, if point is at the leftmost non-whitespace character of a
+line that is neither a continuation line nor a non-indenting comment
+line, or if point is at the end of a blank line, this command reduces
+the indentation to match that of the line that opened the current
+block of code.  The line that opened the block is displayed in the
+echo area to help you keep track of where you are.  With numeric arg,
+outdents that many blocks (but not past column zero).
+
+Otherwise the preceding character is deleted, converting a tab to
+spaces if needed so that only a single column position is deleted.
+Numeric argument deletes that many preceding characters."
   (interactive "*p")
   (if (or (/= (current-indentation) (current-column))
 	  (bolp)
 	  (py-continuation-line-p)
 	  (not py-honor-comment-indentation)
 	  (looking-at "#[^ \t\n]"))	; non-indenting #
-      (funcall py-delete-function count)
+      (funcall py-backspace-function arg)
     ;; else indent the same as the colon line that opened the block
-
     ;; force non-blank so py-goto-block-up doesn't ignore it
     (insert-char ?* 1)
     (backward-char)
@@ -1083,7 +1101,7 @@ argument delets that many characters."
 	  (base-text "")		; and text of base line
 	  (base-found-p nil))
       (save-excursion
-	(while (< 0 count)
+	(while (< 0 arg)
 	  (condition-case nil		; in case no enclosing block
 	      (progn
 		(py-goto-block-up 'no-mark)
@@ -1091,17 +1109,40 @@ argument delets that many characters."
 		      base-text   (py-suck-up-leading-text)
 		      base-found-p t))
 	    (error nil))
-	  (setq count (1- count))))
+	  (setq arg (1- arg))))
       (delete-char 1)			; toss the dummy character
       (delete-horizontal-space)
       (indent-to base-indent)
       (if base-found-p
 	  (message "Closes block: %s" base-text)))))
 
-;; required for pending-del and delsel modes
-(put 'py-delete-char 'delete-selection 'supersede)
-(put 'py-delete-char 'pending-delete   'supersede)
 
+(defun py-electric-delete (arg)
+  "Deletes preceding or following character or levels of whitespace.
+
+The behavior of this function depends on the variable
+`delete-key-deletes-forward'.  If this variable is nil (or does not
+exist, as in older Emacsen), then this function behaves identical to
+\\[c-electric-backspace].
+
+If `delete-key-deletes-forward' is non-nil and is supported in your
+Emacs, then deletion occurs in the forward direction, by calling the
+function in `py-delete-function'."
+  (interactive "*p")
+  (if (and (boundp 'delete-key-deletes-forward)
+	   delete-key-deletes-forward)
+      (funcall py-delete-function arg)
+    ;; else
+    (py-electric-backspace arg)))
+
+;; required for pending-del and delsel modes
+(put 'py-electric-backspace 'delete-selection 'supersede) ;delsel
+(put 'py-electric-backspace 'pending-delete   'supersede) ;pending-del
+(put 'py-electric-delete    'delete-selection 'supersede) ;delsel
+(put 'py-electric-delete    'pending-delete   'supersede) ;pending-del
+
+
+
 (defun py-indent-line (&optional arg)
   "Fix the indentation of the current line according to Python rules.
 With \\[universal-argument], ignore outdenting rules for block
