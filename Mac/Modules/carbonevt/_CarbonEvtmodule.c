@@ -13,7 +13,15 @@
 
 #include "macglue.h"
 
-#define USE_MAC_MP_MULTITHREADING 1
+/* Macro to test whether a weak-loaded CFM function exists */
+#define PyMac_PRECHECK(rtn) do { if ( &rtn == NULL )  {\
+    	PyErr_SetString(PyExc_NotImplementedError, \
+    	"Not available in this shared library/OS version"); \
+    	return; \
+    }} while(0)
+
+
+#define USE_MAC_MP_MULTITHREADING 0
 
 #if USE_MAC_MP_MULTITHREADING
 static PyThreadState *_save;
@@ -84,11 +92,11 @@ EventHotKeyID_Convert(PyObject *v, EventHotKeyID *out)
 
 /********** end EventHotKeyID *******/
 
-/******** handlecommand ***********/
+/******** myEventHandler ***********/
 
-static EventHandlerUPP gEventHandlerUPP;
+static EventHandlerUPP myEventHandlerUPP;
 
-pascal OSStatus CarbonEvents_HandleEvent(EventHandlerCallRef handlerRef, EventRef event, void *outPyObject) {
+pascal OSStatus myEventHandler(EventHandlerCallRef handlerRef, EventRef event, void *outPyObject) {
 	PyObject *retValue;
 	int status;
 
@@ -108,7 +116,7 @@ pascal OSStatus CarbonEvents_HandleEvent(EventHandlerCallRef handlerRef, EventRe
     return status;
 }
 
-/******** end handlecommand ***********/
+/******** end myEventHandler ***********/
 
 
 static PyObject *CarbonEvents_Error;
@@ -1059,7 +1067,7 @@ static PyObject *EventTargetRef_InstallEventHandler(EventTargetRefObject *_self,
 	if (!PyArg_ParseTuple(_args, "O&O", EventTypeSpec_Convert, &inSpec, &callback))
 		return NULL;
 
-	_err = InstallEventHandler(_self->ob_itself, gEventHandlerUPP, 1, &inSpec, (void *)callback, &outRef);
+	_err = InstallEventHandler(_self->ob_itself, myEventHandlerUPP, 1, &inSpec, (void *)callback, &outRef);
 	if (_err != noErr) return PyMac_Error(_err);
 
 	return Py_BuildValue("O&", EventHandlerRef_New, outRef);
@@ -1146,7 +1154,22 @@ static void EventHotKeyRef_dealloc(EventHotKeyRefObject *self)
 	PyMem_DEL(self);
 }
 
+static PyObject *EventHotKeyRef_UnregisterEventHotKey(EventHotKeyRefObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_err = UnregisterEventHotKey(_self->ob_itself);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
 static PyMethodDef EventHotKeyRef_methods[] = {
+	{"UnregisterEventHotKey", (PyCFunction)EventHotKeyRef_UnregisterEventHotKey, 1,
+	 "() -> None"},
 	{NULL, NULL, 0}
 };
 
@@ -1366,12 +1389,84 @@ static PyObject *CarbonEvents_GetUserFocusEventTarget(PyObject *_self, PyObject 
 	return _res;
 }
 
+static PyObject *CarbonEvents_GetEventDispatcherTarget(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	EventTargetRef _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = GetEventDispatcherTarget();
+	_res = Py_BuildValue("O&",
+	                     EventTargetRef_New, _rv);
+	return _res;
+}
+
 static PyObject *CarbonEvents_QuitApplicationEventLoop(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	QuitApplicationEventLoop();
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *CarbonEvents_RunAppModalLoopForWindow(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	WindowPtr inWindow;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      WinObj_Convert, &inWindow))
+		return NULL;
+	_err = RunAppModalLoopForWindow(inWindow);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *CarbonEvents_QuitAppModalLoopForWindow(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	WindowPtr inWindow;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      WinObj_Convert, &inWindow))
+		return NULL;
+	_err = QuitAppModalLoopForWindow(inWindow);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *CarbonEvents_BeginAppModalStateForWindow(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	WindowPtr inWindow;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      WinObj_Convert, &inWindow))
+		return NULL;
+	_err = BeginAppModalStateForWindow(inWindow);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *CarbonEvents_EndAppModalStateForWindow(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	WindowPtr inWindow;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      WinObj_Convert, &inWindow))
+		return NULL;
+	_err = EndAppModalStateForWindow(inWindow);
+	if (_err != noErr) return PyMac_Error(_err);
 	Py_INCREF(Py_None);
 	_res = Py_None;
 	return _res;
@@ -1474,13 +1569,42 @@ static PyObject *CarbonEvents_GetWindowCancelButton(PyObject *_self, PyObject *_
 	return _res;
 }
 
+static PyObject *CarbonEvents_RegisterEventHotKey(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	UInt32 inHotKeyCode;
+	UInt32 inHotKeyModifiers;
+	EventHotKeyID inHotKeyID;
+	EventTargetRef inTarget;
+	OptionBits inOptions;
+	EventHotKeyRef outRef;
+	if (!PyArg_ParseTuple(_args, "llO&O&l",
+	                      &inHotKeyCode,
+	                      &inHotKeyModifiers,
+	                      EventHotKeyID_Convert, &inHotKeyID,
+	                      EventTargetRef_Convert, &inTarget,
+	                      &inOptions))
+		return NULL;
+	_err = RegisterEventHotKey(inHotKeyCode,
+	                           inHotKeyModifiers,
+	                           inHotKeyID,
+	                           inTarget,
+	                           inOptions,
+	                           &outRef);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("O&",
+	                     EventHotKeyRef_New, outRef);
+	return _res;
+}
+
 static PyObject *CarbonEvents_RunApplicationEventLoop(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 
 #if USE_MAC_MP_MULTITHREADING
 	if (MPCreateCriticalRegion(&reentrantLock) != noErr) {
-		printf("lock failure\n");
+		PySys_WriteStderr("lock failure\n");
 		return NULL;
 	}
 	_save = PyEval_SaveThread();
@@ -1527,8 +1651,18 @@ static PyMethodDef CarbonEvents_methods[] = {
 	 "() -> (EventTargetRef _rv)"},
 	{"GetUserFocusEventTarget", (PyCFunction)CarbonEvents_GetUserFocusEventTarget, 1,
 	 "() -> (EventTargetRef _rv)"},
+	{"GetEventDispatcherTarget", (PyCFunction)CarbonEvents_GetEventDispatcherTarget, 1,
+	 "() -> (EventTargetRef _rv)"},
 	{"QuitApplicationEventLoop", (PyCFunction)CarbonEvents_QuitApplicationEventLoop, 1,
 	 "() -> None"},
+	{"RunAppModalLoopForWindow", (PyCFunction)CarbonEvents_RunAppModalLoopForWindow, 1,
+	 "(WindowPtr inWindow) -> None"},
+	{"QuitAppModalLoopForWindow", (PyCFunction)CarbonEvents_QuitAppModalLoopForWindow, 1,
+	 "(WindowPtr inWindow) -> None"},
+	{"BeginAppModalStateForWindow", (PyCFunction)CarbonEvents_BeginAppModalStateForWindow, 1,
+	 "(WindowPtr inWindow) -> None"},
+	{"EndAppModalStateForWindow", (PyCFunction)CarbonEvents_EndAppModalStateForWindow, 1,
+	 "(WindowPtr inWindow) -> None"},
 	{"SetUserFocusWindow", (PyCFunction)CarbonEvents_SetUserFocusWindow, 1,
 	 "(WindowPtr inWindow) -> None"},
 	{"GetUserFocusWindow", (PyCFunction)CarbonEvents_GetUserFocusWindow, 1,
@@ -1541,6 +1675,8 @@ static PyMethodDef CarbonEvents_methods[] = {
 	 "(WindowPtr inWindow) -> (ControlHandle outControl)"},
 	{"GetWindowCancelButton", (PyCFunction)CarbonEvents_GetWindowCancelButton, 1,
 	 "(WindowPtr inWindow) -> (ControlHandle outControl)"},
+	{"RegisterEventHotKey", (PyCFunction)CarbonEvents_RegisterEventHotKey, 1,
+	 "(UInt32 inHotKeyCode, UInt32 inHotKeyModifiers, EventHotKeyID inHotKeyID, EventTargetRef inTarget, OptionBits inOptions) -> (EventHotKeyRef outRef)"},
 	{"RunApplicationEventLoop", (PyCFunction)CarbonEvents_RunApplicationEventLoop, 1,
 	 "() -> ()"},
 	{NULL, NULL, 0}
@@ -1556,7 +1692,8 @@ void init_CarbonEvt(void)
 
 
 
-	gEventHandlerUPP = NewEventHandlerUPP(CarbonEvents_HandleEvent);
+	PyMac_PRECHECK(NewEventHandlerUPP); /* This can fail if CarbonLib is too old */
+	myEventHandlerUPP = NewEventHandlerUPP(myEventHandler);
 
 
 	m = Py_InitModule("_CarbonEvt", CarbonEvents_methods);

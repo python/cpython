@@ -35,7 +35,7 @@ RefObjectTypes = ["EventRef",
 				"EventHotKeyRef",
 				]
 
-class CarbonEvents_Scanner(Scanner):
+class CarbonEvents_Scanner(Scanner_OSX):
 	def destination(self, type, name, arglist):
 		classname = "CarbonEventsFunction"
 		listname = "functions"
@@ -50,8 +50,17 @@ class CarbonEvents_Scanner(Scanner):
 				print "not method"
 		return classname, listname
 
+	def writeinitialdefs(self):
+		self.defsfile.write("def FOUR_CHAR_CODE(x): return x\n")
+		self.defsfile.write("def FOUR_CHAR_CODE(x): return x\n")
+		self.defsfile.write("false = 0\n")
+		self.defsfile.write("true = 1\n")
+		self.defsfile.write("keyAEEventClass = FOUR_CHAR_CODE('evcl')\n")
+		self.defsfile.write("keyAEEventID = FOUR_CHAR_CODE('evti')\n")
+	
 	def makeblacklistnames(self):
 		return [
+			"sHandler",
 			"MacCreateEvent",
 			"TrackMouseLocationWithOptions",
 			"TrackMouseLocation",
@@ -64,6 +73,12 @@ class CarbonEvents_Scanner(Scanner):
 			"InvokeEventHandlerUPP",
 			"InvokeEventComparatorUPP",
 			"InvokeEventLoopTimerUPP",
+			"NewEventComparatorUPP",
+			"NewEventLoopTimerUPP",
+			"NewEventHandlerUPP",
+			"DisposeEventComparatorUPP",
+			"DisposeEventLoopTimerUPP",
+			"DisposeEventHandlerUPP",
 
 			# Wrote by hand
 			"InstallEventHandler",
