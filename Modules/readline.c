@@ -32,6 +32,28 @@
 #endif
 
 
+/* Exported function to get a line from the user */
+
+static PyObject *
+py_readline(PyObject *self, PyObject *args)
+{
+	char *s = NULL;
+	char *line = NULL;
+	if (!PyArg_ParseTuple(args, "|s:readline", &s))
+		return NULL;
+	line = readline(s);
+	if (line == NULL) {
+		PyErr_SetString(PyExc_EOFError, "End of file on input");
+		return NULL;
+	}
+	return PyString_FromString(line);
+}
+
+PyDoc_STRVAR(doc_py_readline,
+"readline([prompt]) -> line\n\
+Prompt for and read a line of text.  Raise EOFError on EOF.");
+
+
 /* Exported function to send one line to readline's init file parser */
 
 static PyObject *
@@ -468,6 +490,7 @@ contents of the line buffer.");
 
 static struct PyMethodDef readline_methods[] =
 {
+	{"readline", py_readline, METH_VARARGS, doc_py_readline},
 	{"parse_and_bind", parse_and_bind, METH_VARARGS, doc_parse_and_bind},
 	{"get_line_buffer", get_line_buffer, METH_NOARGS, doc_get_line_buffer},
 	{"insert_text", insert_text, METH_VARARGS, doc_insert_text},
