@@ -4,6 +4,9 @@ Release date: dd-mmm-2002
 
 Core and builtins
 
+- u'%c' will now raise a ValueError in case the argument is an
+  integer outside the valid range of Unicode code point ordinals.
+
 - When x is an object whose class implements __mul__ and __rmul__,
   1.0*x would correctly invoke __rmul__, but 1*x would erroneously
   invoke __mul__.  This was due to the sequence-repeat code in the int
@@ -86,6 +89,9 @@ Build
   builds.  SourceForge bug 578752.
 
 C API
+
+- New C API PyUnicode_FromOrdinal() which exposes unichr() at C
+  level.
 
 Windows
 
