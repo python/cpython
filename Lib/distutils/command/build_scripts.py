@@ -52,7 +52,7 @@ class build_scripts (Command):
         self.mkpath(self.build_dir)
         for script in self.scripts:
             adjust = 0
-            outfile = os.path.join(self.build_dir, script)
+            outfile = os.path.join(self.build_dir, os.path.basename(script))
 
             if not self.force and not newer(script, outfile):
                 self.announce("not copying %s (output up-to-date)" % script)
