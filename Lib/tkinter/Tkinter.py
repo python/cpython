@@ -679,6 +679,8 @@ class Widget(Misc, Pack, Place):
 		return self._w
 	def destroy(self):
 		for c in self.children.values(): c.destroy()
+		if self.master.children.has_key(self._name):
+			del self.master.children[self._name]
 		self.tk.call('destroy', self._w)
 	def _do(self, name, args=()):
 		return apply(self.tk.call, (self._w, name) + args) 
