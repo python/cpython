@@ -218,7 +218,7 @@ class Header:
             charset = Charset(charset)
         # Normalize and check the string
         if isinstance(s, StringType):
-            # Possibly raise UnicodeError if it can't e encoded
+            # Possibly raise UnicodeError if it can't be encoded
             unicode(s, charset.get_output_charset())
         elif isinstance(s, UnicodeType):
             # Convert Unicode to byte string for later concatenation
@@ -346,27 +346,27 @@ class Header:
                 rtn.append(EMPTYSTRING.join(sublines))
         return [(chunk, charset) for chunk in rtn]
 
-    def _encode_chunks(self):
-        """MIME-encode a header with many different charsets and/or encodings.
-
-        Given a list of pairs (string, charset), return a MIME-encoded string
-        suitable for use in a header field.  Each pair may have different
-        charsets and/or encodings, and the resulting header will accurately
-        reflect each setting.
-
-        Each encoding can be email.Utils.QP (quoted-printable, for ASCII-like
-        character sets like iso-8859-1), email.Utils.BASE64 (Base64, for
-        non-ASCII like character sets like KOI8-R and iso-2022-jp), or None
-        (no encoding).
-
-        Each pair will be represented on a separate line; the resulting string
-        will be in the format:
-
-        "=?charset1?q?Mar=EDa_Gonz=E1lez_Alonso?=\n
-          =?charset2?b?SvxyZ2VuIEL2aW5n?="
-        """
+    def _encode_chunks(self, newchunks):
+        # MIME-encode a header with many different charsets and/or encodings.
+        #
+        # Given a list of pairs (string, charset), return a MIME-encoded
+        # string suitable for use in a header field.  Each pair may have
+        # different charsets and/or encodings, and the resulting header will
+        # accurately reflect each setting.
+        #
+        # Each encoding can be email.Utils.QP (quoted-printable, for
+        # ASCII-like character sets like iso-8859-1), email.Utils.BASE64
+        # (Base64, for non-ASCII like character sets like KOI8-R and
+        # iso-2022-jp), or None (no encoding).
+        #
+        # Each pair will be represented on a separate line; the resulting
+        # string will be in the format:
+        #
+        # =?charset1?q?Mar=EDa_Gonz=E1lez_Alonso?=\n
+        #  =?charset2?b?SvxyZ2VuIEL2aW5n?="
+        #
         chunks = []
-        for header, charset in self._chunks:
+        for header, charset in newchunks:
             if charset is None or charset.header_encoding is None:
                 # There's no encoding for this chunk's charsets
                 _max_append(chunks, header, self._maxlinelen)
@@ -397,5 +397,4 @@ class Header:
         newchunks = []
         for s, charset in self._chunks:
             newchunks += self._split(s, charset, True)
-        self._chunks = newchunks
-        return self._encode_chunks()
+        return self._encode_chunks(newchunks)
