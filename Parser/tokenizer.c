@@ -462,14 +462,20 @@ decoding_fgets(char *s, int size, struct tok_state *tok)
 			}
 	}
 	if (badchar) {
-		char buf[200];
-		sprintf(buf, "Non-ASCII character '\\x%.2x', "
-			"but no declared encoding", badchar);
+		char buf[500];
 		/* Need to add 1 to the line number, since this line
 		   has not been counted, yet.  */
-		PyErr_WarnExplicit(PyExc_DeprecationWarning,
-				   buf, tok->filename, tok->lineno + 1, 
-				   NULL, NULL);
+		sprintf(buf, 
+			"Non-ASCII character '\\x%.2x' "
+			"in file %.200s on line %i, "
+			"but no encoding declared; "
+			"see http://www.python.org/peps/pep-0263.html for details", 
+			badchar, tok->filename, tok->lineno + 1);
+		/* We don't use PyErr_WarnExplicit() here because
+		   printing the line in question to e.g. a log file
+		   could result in sensitive information being
+		   exposed. */
+		PyErr_Warn(PyExc_DeprecationWarning, buf);
 		tok->issued_encoding_warning = 1;
 	}
 #endif
