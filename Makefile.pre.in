@@ -288,7 +288,7 @@ platform: $(PYTHON)
 
 # Build the shared modules
 sharedmods: $(PYTHON)
-	./$(PYTHON) -E $(srcdir)/setup.py build
+	CC='$(CC)' LDSHARED='$(LDSHARED)' ./$(PYTHON) -E $(srcdir)/setup.py build
 
 # buildno should really depend on something like LIBRARY_SRC
 buildno: $(PARSER_OBJS) \
