@@ -1,0 +1,36 @@
+This directory contains files for the RISC OS port of Python.
+For more information about RISC OS see http://www.riscos.com/ .
+
+This port is currently being maintained by Dietmar Schwertberger,
+dietmar@schwertberger.de .
+
+On http://www.schwertberger.de you may find compiled versions and libraries
+as well as RISC OS specific documentation and extensions.
+
+
+==========================================================================
+Compiling:
+
+1. Extract Files from archive directory 'Python-...' to a directory named
+   '!Python'.
+2. Use a tool like Rename to change filenames from '*/[ch]' into '[ch].*'.
+3. Create missing directories with 'amu cdirs'.
+4. Build with 'amu'.
+
+I've only tested Acorn C/C++ 5.06 and amu.
+
+
+You will also need some additional libraries:
+
+  DLK
+    ftp://ftp.infc.ulst.ac.uk/pub/users/chris/
+  OSLib
+    http://www.mk-net.demon.co.uk/oslib
+  
+  zlib (optional)
+    ftp://ftp.freesoftware.com/pub/infozip/zlib/
+  sockets (optional)
+    http://www.mirror.ac.uk/sites/ftp.acorn.co.uk/pub/riscos/releases/networking/tcpip/sockets.arc
+  expat (optional)
+    http://sourceforge.net/projects/expat/
+    (makefile and config.h available from http://www.schwertberger.de/riscos_expat.zip
