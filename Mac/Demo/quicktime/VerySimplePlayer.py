@@ -57,7 +57,7 @@ def main():
 	
 	done = 0
 	while not done:
-		gotone, evt = Evt.WaitNextEvent(-1, 0)
+		gotone, evt = Evt.WaitNextEvent(0xffff, 0)
 		(what, message, when, where, modifiers) = evt
 ##		print what, message, when, where, modifiers # XXXX
 		
