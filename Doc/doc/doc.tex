@@ -1,0 +1,644 @@
+\documentclass{howto}
+\usepackage{ltxmarkup}
+
+\title{Documenting Python}
+
+\input{boilerplate}
+
+% Now override the stuff that includes author information:
+
+\author{Fred L. Drake, Jr.}
+\authoraddress{
+	Corporation for National Research Initiatives (CNRI) \\
+	1895 Preston White Drive, Reston, Va 20191, USA \\
+	E-mail: \email{fdrake@acm.org}
+}
+\date{\today}
+
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+\noindent
+The Python language documentation has a substantial body of
+documentation, much of it contributed by various authors.  The markup
+used for the Python documentation is based on \LaTeX{} and requires a
+significant set of macros written specifically for documenting Python.
+Maintaining the documentation requires substantial effort, in part
+because selecting the correct markup to use is not always easy.
+
+This document describes the document classes and special markup used
+in the Python documentation.  Authors may use this guide, in
+conjunction with the template files provided with the
+distribution, to create or maintain whole documents or sections.
+\end{abstract}
+
+\tableofcontents
+
+
+\section{Introduction}
+
+  Python's documentation has long been considered to be good for a
+  free programming language.  There are a number of reasons for this,
+  the most important being the early commitment of Python's creator,
+  Guido van Rossum, to providing documentation on the language and its
+  libraries, and the continuing involvement of the user community in
+  providing assistance for creating and maintaining documentation.
+
+  The involvement of the community takes many forms, from authoring to
+  bug reports to just plain complaining when aspects of the
+  documentation could be easier to use.  All of these forms of input
+  from the community have proved useful during the time I've been
+  involved in maintaining the documentation.
+
+  [Who is this document for?]
+
+  [What does it cover?]
+
+\section{Directory Structure}
+
+  The source distribution for the standard Python documentation
+  contains a large number of directories.  While third-party documents
+  do not need to be placed into this structure or need to be placed
+  within a similar structure, it can be helpful to know where to look
+  for examples and tools when developing new documents using the
+  Python documentation tools.  This section describes this directory
+  structure.
+
+  The documentation sources are usually placed within the Python
+  source distribution as the top-level subdirectory \file{Doc/}, but
+  is independent of the Python source distribution.
+
+  The \file{Doc/} directory contains a few files and several
+  subdirectories.  The files are mostly self-explanatory, including a
+  \file{README} and a \file{Makefile}.  The directories fall into
+  three categories:
+
+  \begin{definitions}
+    \term{Document Sources}
+	The \LaTeX{} sources for each document are placed in a
+	separate directory.  These directories are given short,
+	three-character names.
+
+    \term{Format-Specific Output}
+	Most output formats have a directory provided which contains a
+	\file{Makefile} which controls the generation of that format
+	and provides storage for the formatted documents.  The only
+	variation within this category is the Portable Document Format
+	(PDF) and PostScript versions are placed in the directories
+	\file{paper-a4/} and \file{paper-letter/}.
+
+    \term{Supplemental Files}
+	Some additional directories are used to store supplemental
+	files used for the various processes.  Directories are
+	included for the shared \LaTeX{} document classes, the
+	\LaTeX2HTML support, template files for various document
+	components, and the scripts used to perform various steps in
+	the formatting processes.
+  \end{definitions}
+
+\section{Document Classes}
+
+  Two \LaTeX{} document classes are defined specifically for use with
+  the Python documentation.  The \code{manual} class is for large
+  documents which are sectioned into chapters, and the \code{howto}
+  class is for smaller documents.
+
+  The \code{manual} documents are larger and are used for most of the
+  standard documents.  This document class is based on the standard
+  \LaTeX{} \code{report} class and is formatted very much like a long
+  technical report.
+
+  The \code{howto} documents are shorter, and don't have the large
+  structure of the \code{manual} documents.  This class is based on
+  the standard \LaTeX{} \code{article} class and is formatted somewhat
+  like the Linux Documentation Project's ``HOWTO'' series as done
+  originally using the LinuxDoc software.  The original intent for the
+  document class was that it serve a similar role as the LDP's HOWTO
+  series, but the applicability of the class turns out to be somewhat
+  more broad.  This class is used for ``how-to'' documents (this
+  document is an example) and for shorter reference manuals for small,
+  fairly cohesive module libraries.  Examples of the later use include
+  the standard \emph{Macintosh Library Modules} and \emph{Using
+  Kerberos from Python}, which contains reference material for an
+  extension package.  These documents are roughly equivalent to a
+  single chapter from a larger work.
+
+
+\section{Python-specific Markup}
+
+  \subsection{Information Units \label{info-units}}
+
+    Most of the environments should be described here: \env{excdesc},
+    \env{funcdesc}, etc.
+
+    \begin{envdesc}{datadesc}{\{\var{name}\}}
+    \end{envdesc}
+    \begin{envdesc}{datadesc}{\{\var{name}\}}
+      Like \env{datadesc}, but without creating any index entries.
+    \end{envdesc}
+
+    \begin{envdesc}{excdesc}{\{\var{name}\}}
+      Describe an exception.  This may be either a string exception or
+      a class exception.
+    \end{envdesc}
+
+    \begin{envdesc}{funcdesc}{\{\var{name}\}\{\var{parameter list}\}}
+    \end{envdesc}
+    \begin{envdesc}{funcdescni}{\{\var{name}\}\{\var{parameter list}\}}
+      Like \env{funcdesc}, but without creating any index entries.
+    \end{envdesc}
+
+    \begin{envdesc}{classdesc}{\{\var{name}\}\{\var{constructor parameter list}\}}
+    \end{envdesc}
+
+    \begin{envdesc}{memberdesc}{\{\var{name}\}}
+    \end{envdesc}
+    \begin{envdesc}{memberdescni}{\{\var{name}\}}
+      Like \env{memberdesc}, but without creating any index entries.
+    \end{envdesc}
+
+    \begin{envdesc}{methoddesc}{{[}\var{class name}{]}\{\var{name}\}\{\var{parameter list}\}}
+    \end{envdesc}
+    \begin{envdesc}{methoddescni}{{[}\var{class name}{]}\{\var{name}\}\{\var{parameter list}\}}
+      Like \env{methoddesc}, but without creating any index entries.
+    \end{envdesc}
+
+
+  \subsection{Inline Markup}
+
+    This is where to explain \macro{code}, \macro{function},
+    \macro{email}, etc.
+
+
+  \subsection{Module-specific Markup}
+
+  The markup described in this section is used to provide information
+  about a module being documented.  A typical use of this markup
+  appears at the top of the section used to document a module.  A
+  typical example might look like this:
+
+\begin{verbatim}
+\section{\module{spam} ---
+         Access to the SPAM facility}
+
+\declaremodule{extension}{spam}
+  \platform{SomeOS}
+\modulesynopsis{Access to the SPAM facility of SomeOS.}
+\moduleauthor{John Doe}{john.doe@frobnication.org}
+\end{verbatim}
+
+  \begin{macrodesc}{declaremodule}{{[}\var{key}{]}\{\var{type}\}\{\var{name}\}}
+    Requires two parameters: module type (standard, builtin,
+    extension), and the module name.  An optional parameter should be
+    given as the basis for the module's ``key'' used for linking to or
+    referencing the section.  The ``key'' should only be given if the
+    module's name contains underscores, and should be the name with the
+    underscore's stripped.  This should be the first thing after the
+    \macro{section} used to introduce the module.
+  \end{macrodesc}
+
+  \begin{macrodesc}{platform}{\{\var{specifier}\}}
+    Specifies the portability of the module.  \var{specifier} is a
+    comma-separated list of keys that specify what platforms the
+    module is available on.  The keys are short identifiers;
+    examples that are in use include \samp{IRIX}, \samp{Mac},
+    \samp{Windows}, and \samp{Unix}.  It is important to use a key
+    which has already been used when applicable.
+  \end{macrodesc}
+
+  \begin{macrodesc}{modulesynopsis}{\{\var{text}\}}
+    The \var{text} is a short, ``one line'' description of the
+    module that can be used as part of the chapter introduction.
+    This is typically placed just after \macro{declaremodule}.
+    The synopsis is used in building the contents of the table
+    inserted as the \macro{localmoduletable}.  No text is
+    produced at the point of the markup.
+  \end{macrodesc}
+
+  \begin{macrodesc}{moduleauthor}{\{\var{name}\}\{\var{email}\}}
+    This macro is used to encode information about who authored a
+    module.  This is currently not used to generate output, but can be
+    used to help determine the origin of the module.
+  \end{macrodesc}
+
+
+  \subsection{Library-level Markup}
+
+    This markup is used when describing a selection of modules.  For
+    example, the \emph{Macintosh Library Modules} document uses this
+    to help provide an overview of the modules in the collection, and
+    many chapters in the \emph{Python Library Reference} use it for
+    the same purpose.
+
+  \begin{macrodesc}{localmoduletable}{}
+    No parameters.  If a \file{.syn} file exists for the current
+    chapter (or for the entire document in \code{howto} documents), a
+    \env{synopsistable} is created with the contents loaded from the
+    \file{.syn} file.
+  \end{macrodesc}
+
+
+  \subsection{Table Markup}
+
+    There are three general-purpose table environments defined which
+    should be used whenever possible.  These environments are defined
+    to provide tables of specific widths and some convenience for
+    formatting.  These environments are not meant to be general
+    replacements for the standard \LaTeX{} table environments, but can
+    be used for an advantage when the documents are processed using
+    the tools for Python documentation processing.  In particular, the
+    generated HTML looks good!  There is also an advantage for the
+    eventual conversion of the documentation to SGML; see Section
+    \ref{futures}, ``Future Directions.''
+
+    Each environment is named \env{table\var{cols}}, where \var{cols}
+    is the number of columns in the table specified in lower-case
+    Roman numerals.  Within each of these environments, an additional
+    macro, \macro{line\var{cols}}, is defined, where \var{cols}
+    matches the \var{cols} value of the corresponding table
+    environment.  These environments are all built on top of the
+    \env{tabular} environment.
+
+    \begin{envdesc}{tableii}{\{\var{colspec}\}\{\var{col1font}\}\{\var{heading1}\}\{\var{heading2}\}}
+      Create a two-column table using the \LaTeX{} column specifier
+      \var{colspec}.  The column specifier should indicate vertical
+      bars between columns as appropriate for the specific table, but
+      should not specify vertical bars on the outside of the table
+      (that is considered a stylesheet issue).  The \var{col1font}
+      parameter is used as a stylistic treatment of the first column
+      of the table: the first column is presented as
+      \code{\e\var{col1font}\{column1\}}.  To avoid treating the first
+      column specially, \var{col1font} may be \code{textrm}.  The
+      column headings are taken from the values \var{heading1} and
+      \var{heading2}.
+    \end{envdesc}
+
+    \begin{macrodesc}{lineii}{\{\var{column1}\}\{\var{column2}\}}
+      Create a single table row within a \env{tableii} environment.
+      The text for the first column will be generated by applying the
+      macro named by the \var{col1font} value when the \env{tableii}
+      was opened.
+    \end{macrodesc}
+
+    \begin{envdesc}{tableiii}{\{\var{colspec}\}\{\var{col1font}\}\{\var{heading1}\}\{\var{heading2}\}\{\var{heading3}\}}
+      Like the \env{tableii} environment, but with a third column.
+      The heading for the third column is given by \var{heading3}.
+    \end{envdesc}
+
+    \begin{macrodesc}{lineiii}{\{\var{column1}\}\{\var{column2}\}\{\var{column3}\}}
+      Like the \macro{lineii} macro, but with a third column.  The
+      text for the third column is given by \var{column3}.
+    \end{macrodesc}
+
+    \begin{envdesc}{tableiv}{\{\var{colspec}\}\{\var{col1font}\}\{\var{heading1}\}\{\var{heading2}\}\{\var{heading3}\}\{\var{heading4}\}}
+      Like the \env{tableiii} environment, but with a fourth column.
+      The heading for the fourth column is given by \var{heading4}.
+    \end{envdesc}
+
+    \begin{macrodesc}{lineiv}{\{\var{column1}\}\{\var{column2}\}\{\var{column3}\}\{\var{column4}\}}
+      Like the \macro{lineiii} macro, but with a fourth column.  The
+      text for the fourth column is given by \var{column4}.
+    \end{macrodesc}
+
+
+    An additional table-like environment is \env{synopsistable}.  The
+    table generated by this environment contains two columns, and each
+    row is defined by an alternate definition of
+    \macro{modulesynopsis}.  This environment is not normally use by
+    the user, but is created by the \macro{localmoduletable} macro.
+
+
+  \subsection{Reference List Markup \label{references}}
+
+    Many sections include a list of references to module documentation
+    or external documents.  These lists are created using the
+    \env{seealso} environment.  This environment defines some
+    additional macros to support creating reference entries in a
+    reasonable manner.
+
+    \begin{envdesc}{seealso}{}
+      This environment creates a ``See also:'' heading and defines the
+      markup used to describe individual references.
+    \end{envdesc}
+
+    \begin{macrodesc}{seemodule}{{[}\var{key}{]}\{\var{name}\}\{\var{why}\}}
+      Refer to another module.  \var{why} should be a brief
+      explanation of why the reference may be interesting.  The module
+      name is given in \var{name}, with the link key given in
+      \var{key} if necessary.  In the HTML and PDF conversions, the
+      module name will be a hyperlink to the referred-to module.
+    \end{macrodesc}
+
+    \begin{macrodesc}{seetext}{\{\var{text}\}}
+      Add arbitrary text \var{text} to the ``See also:'' list.  This
+      can be used to refer to off-line materials or on-line materials
+      using the \macro{url} macro.
+    \end{macrodesc}
+
+
+  \subsection{Index-generating Markup \label{indexing}}
+
+    Effective index generation for technical documents can be very
+    difficult, especially for someone familliar with the topic but not
+    the creation of indexes.  Much of the difficulty arises in the
+    area of terminology: including the terms an expert would use for a
+    concept is not sufficient.  Coming up with the terms that a novice
+    would look up is fairly difficult for an author who, hopefully, is
+    an expert in the area she is writing on.
+
+    The truly difficult aspects of index generation are not something
+    which the documentation tools can help with, unfortunately.  Ease
+    of producing the index once content decisions are make is within
+    the scope of the tools.  Markup is provided which the processing
+    software is able to use to generate a variety of kinds of index
+    entry with minimal effort.  Additionally, many of the environments
+    described in Section \ref{info-units}, ``Information Units,'' will
+    generate appropriate entries into the general and module indexes.
+
+    The following macro can be used to control the generation of index
+    data, and should be used in the document prologue:
+
+    \begin{macrodesc}{makemodindex}{}
+      This should be used in the document prologue if a ``Module
+      Index'' is desired for a document containing reference material
+      on many modules.  This causes a data file
+      \code{lib\macro{jobname}.idx} to be created from the
+      \macro{declaremodule} macros.  This file can be processed by the
+      \program{makeindex} program to generate a file which can be
+      \macro{input} into the document at the desired location of the
+      module index.
+    \end{macrodesc}
+
+    There are a number of macros that are useful for adding index
+    entries for particular concepts, many of which are specific to
+    programming languages or even Python.
+
+    \begin{macrodesc}{bifuncindex}{\{\var{name}\}}
+    \end{macrodesc}
+
+    \begin{macrodesc}{exindex}{\{\var{exception}\}}
+    \end{macrodesc}
+
+    \begin{macrodesc}{kwindex}{\{\var{keyword}\}}
+    \end{macrodesc}
+
+    \begin{macrodesc}{obindex}{\{\var{object type}\}}
+    \end{macrodesc}
+
+    \begin{macrodesc}{opindex}{\{\var{operator}\}}
+    \end{macrodesc}
+
+    \begin{macrodesc}{refmodindex}{{[}\var{key}{]}\{\var{module}\}}
+      Add an index entry for module \var{module}; if \var{module}
+      contains an underscore, the optional parameter \var{key} should
+      be provided as the same string with underscores removed.  An
+      index entry ``\var{module} (module)'' will be generated.  This
+      is intended for use with non-standard modules implemented in
+      Python.
+    \end{macrodesc}
+
+    \begin{macrodesc}{refexmodindex}{{[}\var{key}{]}\{\var{module}\}}
+      As for \macro{refmodindex}, but the index entry will be
+      ``\var{module} (extension module).''  This is intended for use
+      with non-standard modules not implemented in Python.
+    \end{macrodesc}
+
+    \begin{macrodesc}{refbimodindex}{{[}\var{key}{]}\{\var{module}\}}
+      As for \macro{refmodindex}, but the index entry will be
+      ``\var{module} (built-in module).''  This is intended for use
+      with standard modules not implemented in Python.
+    \end{macrodesc}
+
+    \begin{macrodesc}{refstmodindex}{{[}\var{key}{]}\{\var{module}\}}
+      As for \macro{refmodindex}, but the index entry will be
+      ``\var{module} (standard module).''  This is intended for use
+      with standard modules implemented in Python.
+    \end{macrodesc}
+
+    \begin{macrodesc}{stindex}{\{\var{statement}\}}
+    \end{macrodesc}
+
+
+    Additional macros are provided which are useful for conveniently
+    creating general index entries which should appear at many places
+    in the index by rotating a list of words.  These are simple macros
+    that simply use \macro{index} to build some number of index
+    entries.  Index entries build using these macros contain both
+    primary and secondary text.
+
+    \begin{macrodesc}{indexii}{\{\var{word1}\}\{\var{word2}\}}
+      Build two index entries.  This is exactly equivalent to using
+      \code{\e index\{\var{word1}!\var{word2}\}} and 
+      \code{\e index\{\var{word2}!\var{word1}\}}.
+    \end{macrodesc}
+
+    \begin{macrodesc}{indexiii}{\{\var{word1}\}\{\var{word2}\}\{\var{word3}\}}
+      Build three index entries.  This is exactly equivalent to using
+      \code{\e index\{\var{word1}!\var{word2} \var{word3}\}},
+      \code{\e index\{\var{word2}!\var{word3}, \var{word1}\}}, and
+      \code{\e index\{\var{word3}!\var{word1} \var{word2}\}}.
+    \end{macrodesc}
+
+    \begin{macrodesc}{indexiv}{\{\var{word1}\}\{\var{word2}\}\{\var{word3}\}\{\var{word4}\}}
+      Build four index entries.  This is exactly equivalent to using
+      \code{\e index\{\var{word1}!\var{word2} \var{word3} \var{word4}\}},
+      \code{\e index\{\var{word2}!\var{word3} \var{word4}, \var{word1}\}},
+      \code{\e index\{\var{word3}!\var{word4}, \var{word1} \var{word2}\}},
+      and
+      \code{\e index\{\var{word4}!\var{word1} \var{word2} \var{word3}\}}.
+    \end{macrodesc}
+
+
+\section{Special Names}
+
+  Many special names are used in the Python documentation, including
+  the names of operating systems, programming languages, standards
+  bodies, and the like.  Many of these were assigned \LaTeX{} macros
+  at some point in the distant past, and these macros lived on long
+  past their usefulness.  In the current markup, these entities are
+  not assigned any special markup, but the preferred spellings are
+  given here to aid authors in maintaining the consistency of
+  presentation in the Python documentation.
+
+  \begin{description}
+    \item[POSIX]
+	The name assigned to a particular group of standards.  This is
+	always uppercase.
+
+    \item[Python]
+	The name of our favorite programming language is always
+	capitalized.
+  \end{description}
+
+
+\section{Processing Tools}
+
+  \subsection{External Tools}
+
+    Many tools are needed to be able to process the Python
+    documentation if all supported formats are required.  This
+    section lists the tools used and when each is required.
+
+    \begin{description}
+      \item[\program{dvips}]
+        This program is a typical part of \TeX{} installations.  It is
+        used to generate PostScript from the ``device independent''
+        \file{.dvi} files.  It is only needed for the conversion to
+        PostScript.
+
+      \item[\program{emacs}]
+        Emacs is the kitchen sink of programmers' editors, and a damn
+        fine kitchen sink it is.  It also comes with some of the
+        processing needed to support the proper menu structures for
+        Texinfo documents when an info conversion is desired.  This is
+        only needed for the info conversion.  Using \program{xemacs}
+        instead of FSF \program{emacs} may lead to instability in the
+        conversion, but that's because nobody seems to maintain the
+        Emacs Texinfo code in a portable manner.
+
+      \item[\program{latex}]
+        This is a world-class typesetter by Donald Knuth.  It is used
+        for the conversion to PostScript, and is needed for the HTML
+        conversion as well (\LaTeX2HTML requires one of the
+        intermediate files it creates).
+
+      \item[\program{latex2html}]
+        Probably the longest Perl script anyone ever attempted to
+        maintain.  This converts \LaTeX{} documents to HTML documents,
+        and does a pretty reasonable job.  It is required for the
+        conversions to HTML and GNU info.
+
+      \item[\program{lynx}]
+        This is a text-mode Web browser which includes an
+        HTML-to-plain text conversion.  This is used to convert
+        \code{howto} documents to text.
+
+      \item[\program{make}]
+        Just about any version should work for the standard documents,
+        but GNU \program{make} is required for the experimental
+        processes in \file{Doc/tools/sgmlconv/}, at least while
+        they're experimental.
+
+      \item[\program{makeindex}]
+        This is a standard program for converting \LaTeX{} index data
+        to a formatted index; it should be included with all \LaTeX{}
+        installations.  It is needed for the PDF and PostScript
+        conversions.
+
+      \item[\program{makeinfo}]
+        GNU \program{makeinfo} is used to convert Texinfo documents to
+        GNU info files.  Since Texinfo is used as an intermediate
+        format in the info conversion, this program is needed in that
+        conversion.
+
+      \item[\program{pdflatex}]
+        pdf\TeX{} is a relatively new variant of \TeX, and is used to
+        generate the PDF version of the manuals.  It is typically
+        installed as part of most of the large \TeX{} distributions.
+        \program{pdflatex} is PDF\TeX{} using the \LaTeX{} format.
+
+      \item[\program{perl}]
+        Perl is required for \LaTeX2HTML{} and one of the scripts used
+        to post-process \LaTeX2HTML output, as well as the
+        HTML-to-Texinfo conversion.  This is only required for
+        the HTML and GNU info conversions.
+
+      \item[\program{python}]
+        Python is used for many of the scripts in the
+        \file{Doc/tools/} directory; it is required for all
+        conversions.  This shouldn't be a problem if you're interested
+        in writing documentation for Python!
+    \end{description}
+
+
+  \subsection{Internal Tools}
+
+    This section describes the various scripts that are used to
+    implement various stages of document processing or to orchestrate
+    entire build sequences.  Most of these tools are still only useful
+    in the context of building the standard documentation, but some
+    are more general.
+
+    \begin{description}
+      \item[\program{mkhowto}]
+    \end{description}
+
+
+\section{Future Directions \label{futures}}
+
+  The history of the Python documentation is full of changes, most of
+  which have been fairly small and evolutionary.  There has been a
+  great deal of discussion about making large changes in the markup
+  languages and tools used to process the documentation.  This section
+  deals with the nature of the changes and what appears to be the most
+  likely path of future development.
+
+  \subsection{Structured Documentation \label{structured}}
+
+    Most of the small changes to the \LaTeX{} markup have been made
+    with an eye to divorcing the markup from the presentation, making
+    both a bit more maintainable.  Over the course of 1998, a large
+    number of changes were made with exactly this in mind; previously,
+    changes had been made but in a less systematic manner and with
+    more concern for not needing to update the existing content.  The
+    result has been a highly structured and semantically loaded markup
+    language implemented in \LaTeX.  With almost no basic \TeX{} or
+    \LaTeX{} markup in use, however, the markup syntax is about the
+    only evidence of \LaTeX{} in the actual document sources.
+
+    One side effect of this is that while we've been able to use
+    standard ``engines'' for manipulating the documents, such as
+    \LaTeX{} and \LaTeX2HTML, most of the actual transformations have
+    been created specifically for this documentation.  The \LaTeX{}
+    document classes and \LaTeX2HTML support are both complete
+    implementations of the specific markup designed for these
+    documents.
+
+    Combining highly customized markup with the somewhat esoteric
+    systems used to process the documents leads us to ask some
+    questions:  Can we do this more easily?  and, Can we do this
+    better?  After a great deal of discussion with the community, we
+    have determined that actively pursuing modern structured
+    documentation systems worth some investment of time.
+
+    There appear to be two real contenders in this arena: the Standard
+    General Markup Language (SGML), and the Extensible Markup Language
+    (XML).  Both of these standards have advantages and disadvantages,
+    and many advantages are shared.
+
+    SGML offers advantages which may appeal most to authors,
+    especially those using ordinary text editors.  There are also
+    additional abilities to define content models.  A number of
+    high-quality tools with demonstrated maturity is available, but
+    most are not free; for those which are, portability issues remain
+    a problem.
+
+    The advantages of XML include the availability of a large number
+    of evolving tools.  Unfortunately, many of the associated
+    standards are still evolving, and the tools will have to follow
+    along.  This means that developing a robust tool set that uses
+    more than the basic XML 1.0 recommendation is not possible in the
+    short term.  The promised availability of a wide variety of
+    high-quality tools which support some of the most important
+    related standards is not immediate.  Many tools are likely to be
+    free.
+
+    [Eventual migration to SGML/XML.]
+
+  \subsection{Discussion Forums \label{discussion}}
+
+    Discussion of the future of the Python documentation and related
+    topics takes place in the ``Doc-SIG'' special interest group.
+    Information on the group, including mailing list archives and
+    subscriptions, is available at
+    \url{http://www.python.org/sigs/doc-sig/}.  The SIG is open to all
+    interested parties.
+
+    Comments and bug reports on the standard documents should be sent
+    to \email{python-docs@python.org}.  This may include comments
+    about formatting, content, or grammatical errors.
+
+\end{document}
