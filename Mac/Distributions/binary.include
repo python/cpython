@@ -221,3 +221,4 @@
 (':pystone.py', None)
 (':setup.py', None)
 (':site-packages', None)
+(':Mac:OSX:sample_sitecustomize.py', None)

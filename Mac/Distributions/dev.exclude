@@ -11,10 +11,10 @@
 *.xMAP
 *.xSYM
 *Icon
+*~[0-9]
 .#*
 .DS_Store
 .cvsignore
 @*
 CVS
 [(]*[)]
-*~[0-9]

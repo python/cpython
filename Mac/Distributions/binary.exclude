@@ -26,6 +26,7 @@
 *.µ.exp
 *Icon
 *xMAP
+*~[0-9]
 .#*
 .DS_Store
 .cvsignore
@@ -34,4 +35,3 @@ CVS
 Makefile*
 Setup.in
 [(]*[)]
-*~[0-9]
