@@ -1024,6 +1024,8 @@ class Grid:
 	def grid_forget(self):
 		self.tk.call('grid', 'forget', self._w)
 	forget = grid_forget
+	def grid_remove(self):
+		self.tk.call('grid', 'remove', self._w)
 	def grid_info(self):
 		words = self.tk.splitlist(
 			self.tk.call('grid', 'info', self._w))
