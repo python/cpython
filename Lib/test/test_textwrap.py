@@ -11,7 +11,7 @@
 import unittest
 from test import test_support
 
-from textwrap import TextWrapper, wrap, fill
+from textwrap import TextWrapper, wrap, fill, dedent
 
 
 class BaseTestCase(unittest.TestCase):
@@ -323,7 +323,6 @@ How *do* you spell that odd word, anyways?
         self.check(result, expect)
 
 
-
 class IndentTestCases(BaseTestCase):
 
     # called before each test method
@@ -373,8 +372,74 @@ some (including a hanging indent).'''
         self.check(result, expect)
 
 
+# Despite the similar names, DedentTestCase is *not* the inverse
+# of IndentTestCase!
+class DedentTestCase(unittest.TestCase):
+
+    def test_dedent_nomargin(self):
+        # No lines indented.
+        text = "Hello there.\nHow are you?\nOh good, I'm glad."
+        self.assertEquals(dedent(text), text)
+
+        # Similar, with a blank line.
+        text = "Hello there.\n\nBoo!"
+        self.assertEquals(dedent(text), text)
+
+        # Some lines indented, but overall margin is still zero.
+        text = "Hello there.\n  This is indented."
+        self.assertEquals(dedent(text), text)
+
+        # Again, add a blank line.
+        text = "Hello there.\n\n  Boo!\n"
+        self.assertEquals(dedent(text), text)
+
+    def test_dedent_even(self):
+        # All lines indented by two spaces.
+        text = "  Hello there.\n  How are ya?\n  Oh good."
+        expect = "Hello there.\nHow are ya?\nOh good."
+        self.assertEquals(dedent(text), expect)
+
+        # Same, with blank lines.
+        text = "  Hello there.\n\n  How are ya?\n  Oh good.\n"
+        expect = "Hello there.\n\nHow are ya?\nOh good.\n"
+        self.assertEquals(dedent(text), expect)
+
+        # Now indent one of the blank lines.
+        text = "  Hello there.\n  \n  How are ya?\n  Oh good.\n"
+        expect = "Hello there.\n\nHow are ya?\nOh good.\n"
+        self.assertEquals(dedent(text), expect)
+
+    def test_dedent_uneven(self):
+        # Lines indented unevenly.
+        text = '''\
+        def foo():
+            while 1:
+                return foo
+        '''
+        expect = '''\
+def foo():
+    while 1:
+        return foo
+'''
+        self.assertEquals(dedent(text), expect)
+
+        # Uneven indentation with a blank line.
+        text = "  Foo\n    Bar\n\n   Baz\n"
+        expect = "Foo\n  Bar\n\n Baz\n"
+        self.assertEquals(dedent(text), expect)
+
+        # Uneven indentation with a whitespace-only line.
+        text = "  Foo\n    Bar\n \n   Baz\n"
+        expect = "Foo\n  Bar\n\n Baz\n"
+        self.assertEquals(dedent(text), expect)
+
+
+
 def test_main():
-    test_support.run_unittest(WrapTestCase, LongWordTestCase, IndentTestCases)
+    test_support.run_unittest(WrapTestCase,
+                              LongWordTestCase,
+                              IndentTestCases,
+                              DedentTestCase)
 
 if __name__ == '__main__':
     test_main()
