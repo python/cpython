@@ -444,6 +444,7 @@ or three, with the following semantics:
       by name.
 
 \item A tuple of arguments for the callable object, or \code{None}.
+\deprecated{2.3}{Use the tuple of arguments instead}								
 
 \item Optionally, the object's state, which will be passed to
       the object's \method{__setstate__()} method as described in
@@ -456,10 +457,13 @@ or three, with the following semantics:
 
 Upon unpickling, the callable will be called (provided that it meets
 the above criteria), passing in the tuple of arguments; it should
-return the unpickled object.  If the second item was \code{None}, then
-instead of calling the callable directly, its \method{__basicnew__()}
-method is called without arguments.  It should also return the
-unpickled object.
+return the unpickled object.
+
+If the second item was \code{None}, then instead of calling the
+callable directly, its \method{__basicnew__()} method is called
+without arguments.  It should also return the unpickled object.
+
+\deprecated{2.3}{Use the tuple of arguments instead}
 
 An alternative to implementing a \method{__reduce__()} method on the
 object to be pickled, is to register the callable with the

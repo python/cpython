@@ -862,6 +862,10 @@ class Unpickler:
                                            "unpickling" % callable
 
         if arg_tup is None:
+            import warnings
+            warnings.warn("The None return argument form of __reduce__  is "
+                          "deprecated. Return a tuple of arguments instead.",
+                          DeprecationWarning)            
             value = callable.__basicnew__()
         else:
             value = apply(callable, arg_tup)
