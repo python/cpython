@@ -10,7 +10,7 @@ import sys, os, string
 from types import *
 from distutils.core import Command
 from distutils import sysconfig
-from distutils.util import write_file, native_path, subst_vars
+from distutils.util import write_file, native_path, subst_vars, change_root
 from distutils.errors import DistutilsOptionError
 
 INSTALL_SCHEMES = {
@@ -60,6 +60,8 @@ class install (Command):
         ('install-platbase=', None,
          "base installation directory for platform-specific files " +
          "(instead of --exec-prefix or --home)"),
+        ('root=', None,
+         "install everything relative to this alternate root directory"),
 
         # Or, explicitly set the installation scheme
         ('install-purelib=', None,
@@ -104,6 +106,7 @@ class install (Command):
         # the --install-{platlib,purelib,scripts,data} options).
         self.install_base = None
         self.install_platbase = None
+        self.root = None
 
         # These options are the actual installation directories; if not
         # supplied by the user, they are filled in using the installation
@@ -183,17 +186,14 @@ class install (Command):
         # install_{purelib,platlib,lib,scripts,data,...}, and the
         # INSTALL_SCHEME dictionary above.  Phew!
 
-        from pprint import pprint
-        print "pre-finalize:"
-        pprint (self.__dict__)
+        self.dump_dirs ("pre-finalize_xxx")
 
         if os.name == 'posix':
             self.finalize_unix ()
         else:
             self.finalize_other ()
 
-        print "post-finalize:"
-        pprint (self.__dict__)
+        self.dump_dirs ("post-finalize_xxx()")
 
         # Expand configuration variables, tilde, etc. in self.install_base
         # and self.install_platbase -- that way, we can use $base or
@@ -206,14 +206,14 @@ class install (Command):
                            }
         self.expand_basedirs ()
 
-        print "post-expand_basedirs:"
-        pprint (self.__dict__)
+        self.dump_dirs ("post-expand_basedirs()")
 
         # Now define config vars for the base directories so we can expand
         # everything else.
         self.config_vars['base'] = self.install_base
         self.config_vars['platbase'] = self.install_platbase
 
+        from pprint import pprint
         print "config vars:"
         pprint (self.config_vars)
 
@@ -221,8 +221,7 @@ class install (Command):
         # directories.
         self.expand_dirs ()
 
-        print "post-expand:"
-        pprint (self.__dict__)
+        self.dump_dirs ("post-expand_dirs()")
 
         # Pick the actual directory to install all modules to: either
         # install_purelib or install_platlib, depending on whether this
@@ -242,6 +241,16 @@ class install (Command):
         self.install_libbase = self.install_lib # needed for .pth file
         self.install_lib = os.path.join (self.install_lib, self.extra_dirs)
 
+        # If a new root directory was supplied, make all the installation
+        # dirs relative to it.
+        if self.root is not None:
+            for name in ('lib', 'purelib', 'platlib', 'scripts', 'data'):
+                attr = "install_" + name
+                new_val = change_root (self.root, getattr (self, attr))
+                setattr (self, attr, new_val)
+
+        self.dump_dirs ("after prepending root")
+
         # Find out the build directories, ie. where to install from.
         self.set_undefined_options ('build',
                                     ('build_base', 'build_base'),
@@ -251,6 +260,16 @@ class install (Command):
         # documentation completely!
 
     # finalize_options ()
+
+
+    # hack for debugging output
+    def dump_dirs (self, msg):
+        from distutils.fancy_getopt import longopt_xlate
+        print msg + ":"
+        for opt in self.user_options:
+            opt_name = string.translate (opt[0][0:-1], longopt_xlate)
+            val = getattr (self, opt_name)
+            print "  %s: %s" % (opt_name, val)
 
 
     def finalize_unix (self):
@@ -339,7 +358,8 @@ class install (Command):
 
     def expand_basedirs (self):
         self._expand_attrs (['install_base',
-                             'install_platbase'])        
+                             'install_platbase',
+                             'root'])        
 
     def expand_dirs (self):
         self._expand_attrs (['install_purelib',
