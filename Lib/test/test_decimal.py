@@ -35,6 +35,9 @@ from test.test_support import TestSkipped, run_unittest, run_doctest, is_resourc
 import threading
 import random
 
+# Useful Test Constant
+Signals = getcontext().flags.keys()
+
 # Tests are built around these assumed context defaults
 DefaultContext.prec=9
 DefaultContext.rounding=ROUND_HALF_EVEN
@@ -480,7 +483,10 @@ class DecimalExplicitConstructionTest(unittest.TestCase):
         nc.prec = 3
 
         # empty
-        self.assertRaises(TypeError, nc.create_decimal)
+        d = Decimal()
+        self.assertEqual(str(d), '0')
+        d = nc.create_decimal()
+        self.assertEqual(str(d), '0')
 
         # from None
         self.assertRaises(TypeError, nc.create_decimal, None)
