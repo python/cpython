@@ -30,13 +30,13 @@ class GzipFile:
     def __init__(self, filename=None, mode=None, 
                  compresslevel=9, fileobj=None):
         if fileobj is None:
-            fileobj = self.myfileobj = __builtin__.open(filename, mode or 'r')
+            fileobj = self.myfileobj = __builtin__.open(filename, mode or 'rb')
         if filename is None:
             if hasattr(fileobj, 'name'): filename = fileobj.name
             else: filename = ''
         if mode is None:
             if hasattr(fileobj, 'mode'): mode = fileobj.mode
-            else: mode = 'r'
+            else: mode = 'rb'
 
         if mode[0:1] == 'r':
             self.mode = READ
