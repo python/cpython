@@ -1,4 +1,6 @@
-#! /usr/local/python
+#! /usr/local/bin/python
+
+# :set tabsize=4:
 
 # A STDWIN-based front end for the Python interpreter.
 #
@@ -8,6 +10,11 @@
 # It supports multiple interpreter windows, each with its own context.
 #
 # BUGS AND CAVEATS:
+#
+# I wrote this about two years ago.  There are now some features in
+# Python that make it possible to overcome some of the bugs below,
+# but I haven't the time to adapt it; it's just meant as a little
+# thing to get you started...
 #
 # Although this supports multiple windows, the whole application
 # is deaf and dumb when a command is running in one window.
@@ -150,6 +157,7 @@ def pdispatch(event):
 	type, win, detail = event
 	if type == WE_CLOSE:
 		do_close(win)
+		return
 	elif type == WE_SIZE:
 		win.editor.move((0, 0), win.getwinsize())
 	elif type == WE_COMMAND and detail == WC_RETURN:
@@ -168,7 +176,7 @@ def pdispatch(event):
 		mp.callback[item](win)
 	else:
 		void = win.editor.event(event)
-	if win.editor:
+	if win in mainloop.windows:
 		# May have been deleted by close...
 		win.setdocsize(0, win.editor.getrect()[1][1])
 		if type in (WE_CHAR, WE_COMMAND):
@@ -190,7 +198,7 @@ def replace(win, text):
 	win.editor.replace(text)
 	# Resize the window to display the text
 	win.setdocsize(0, win.editor.getrect()[1][1])	# update the size before..
-	win.editor.setfocus(win.editor.getfocus())		# move focus to the change - dml
+	win.editor.setfocus(win.editor.getfocus())		# move focus to the change
 
 
 # File menu handlers
@@ -238,12 +246,13 @@ def do_close(win):
 	except os.error:
 		pass
 	mainloop.unregister(win)
+	win.close()
 #
 def do_quit(win):
 	# Call win.dispatch instead of do_close because there
 	# may be 'alien' windows in the list.
-	for win in mainloop.windows:
-		mainloop.dispatch(WE_CLOSE, win, None)	# need to catch failed close
+	for win in mainloop.windows[:]:
+		mainloop.dispatch((WE_CLOSE, win, None)) # need to catch failed close
 
 
 # Edit menu handlers
@@ -314,14 +323,14 @@ def do_exec(win):
 	if a == b:
 		# There is no selected text, just an insert point;
 		# so execute the current line.
-		while 0 < a and alltext[a-1] <> '\n': a = a-1	# Find beginning of line.
+		while 0 < a and alltext[a-1] <> '\n': a = a-1 # Find beginning of line.
 		while b < n and alltext[b] <> '\n':		# Find end of line after b.
 			b = b+1
 		text = alltext[a:b] + '\n'
 	else:
 		# Execute exactly the selected text.
 		text = win.editor.getfocustext()
-		if text[-1:] <> '\n':					# Make sure text ends with newline.
+		if text[-1:] <> '\n':					# Make sure text ends with \n.
 			text = text + '\n'
 		while b < n and alltext[b] <> '\n':		# Find end of line after b.
 			b = b+1
@@ -502,3 +511,10 @@ def testsyntax(s):
 # Call the main program.
 #
 main()
+
+
+# This was originally coded on a Mac, so...
+# Local variables:
+# py-indent-offset: 4
+# tab-width: 4
+# end:
