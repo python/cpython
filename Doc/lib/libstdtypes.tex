@@ -933,19 +933,19 @@ arbitrary objects):
   \lineiii{\var{a}.keys()}{a copy of \var{a}'s list of keys}{(3)}
   \lineiii{\var{a}.update(\var{b})}
           {\code{for k in \var{b}.keys(): \var{a}[k] = \var{b}[k]}}
-          {(4)}
+          {}
   \lineiii{\var{a}.values()}{a copy of \var{a}'s list of values}{(3)}
   \lineiii{\var{a}.get(\var{k}\optional{, \var{x}})}
           {\code{\var{a}[\var{k}]} if \code{\var{k} in \var{a}},
            else \var{x}}
-          {(5)}
+          {(4)}
   \lineiii{\var{a}.setdefault(\var{k}\optional{, \var{x}})}
           {\code{\var{a}[\var{k}]} if \code{\var{k} in \var{a}},
            else \var{x} (also setting it)}
-          {(6)}
+          {(5)}
   \lineiii{\var{a}.popitem()}
           {remove and return an arbitrary (\var{key}, \var{value}) pair}
-          {(7)}
+          {(6)}
   \lineiii{\var{a}.iteritems()}
           {return an iterator over (\var{key}, \var{value}) pairs}
           {(2)}
@@ -972,17 +972,15 @@ correspond.  This allows the creation of \code{(\var{value},
 \var{key})} pairs using \function{zip()}: \samp{pairs =
 zip(\var{a}.values(), \var{a}.keys())}.
 
-\item[(4)] \var{b} must be of the same type as \var{a}.
-
-\item[(5)] Never raises an exception if \var{k} is not in the map,
+\item[(4)] Never raises an exception if \var{k} is not in the map,
 instead it returns \var{x}.  \var{x} is optional; when \var{x} is not
 provided and \var{k} is not in the map, \code{None} is returned.
 
-\item[(6)] \function{setdefault()} is like \function{get()}, except
+\item[(5)] \function{setdefault()} is like \function{get()}, except
 that if \var{k} is missing, \var{x} is both returned and inserted into
 the dictionary as the value of \var{k}.
 
-\item[(7)] \function{popitem()} is useful to destructively iterate
+\item[(6)] \function{popitem()} is useful to destructively iterate
 over a dictionary, as often used in set algorithms.
 \end{description}
 
