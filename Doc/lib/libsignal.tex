@@ -8,7 +8,10 @@ Some general rules for working with signals handlers:
 
 \item
 A handler for a particular signal, once set, remains installed until
-it is explicitly reset (i.e. Python uses the BSD style interface).
+it is explicitly reset (i.e. Python emulates the BSD style interface
+regardless of the underlying implementation), with the exception of
+the handler for \code{SIGCHLD}, which follows the underlying
+implementation.
 
 \item
 There is no way to ``block'' signals temporarily from critical
