@@ -254,24 +254,26 @@ strop_lower(self, args)
 	object *self; /* Not used */
 	object *args;
 {
-	char *s;
+	char *s, *s_new;
 	int i, n;
 	object *new;
 	int changed;
 
 	if (!getargs(args, "s#", &s, &n))
 		return NULL;
-	new = newsizedstringobject(s, n);
+	new = newsizedstringobject(NULL, n);
 	if (new == NULL)
 		return NULL;
-	s = getstringvalue(new);
+	s_new = getstringvalue(new);
 	changed = 0;
 	for (i = 0; i < n; i++) {
-		char c = s[i];
+		char c = *s++;
 		if (isupper(c)) {
 			changed = 1;
-			s[i] = tolower(c);
-		}
+			*s_new = tolower(c);
+		} else
+			*s_new = c;
+		s_new++;
 	}
 	if (!changed) {
 		DECREF(new);
@@ -287,24 +289,26 @@ strop_upper(self, args)
 	object *self; /* Not used */
 	object *args;
 {
-	char *s;
+	char *s, *s_new;
 	int i, n;
 	object *new;
 	int changed;
 
 	if (!getargs(args, "s#", &s, &n))
 		return NULL;
-	new = newsizedstringobject(s, n);
+	new = newsizedstringobject(NULL, n);
 	if (new == NULL)
 		return NULL;
-	s = getstringvalue(new);
+	s_new = getstringvalue(new);
 	changed = 0;
 	for (i = 0; i < n; i++) {
-		char c = s[i];
+		char c = *s++;
 		if (islower(c)) {
 			changed = 1;
-			s[i] = toupper(c);
-		}
+			*s_new = toupper(c);
+		} else
+			*s_new = c;
+		s_new++;
 	}
 	if (!changed) {
 		DECREF(new);
@@ -320,28 +324,31 @@ strop_swapcase(self, args)
 	object *self; /* Not used */
 	object *args;
 {
-	char *s;
+	char *s, *s_new;
 	int i, n;
 	object *new;
 	int changed;
 
 	if (!getargs(args, "s#", &s, &n))
 		return NULL;
-	new = newsizedstringobject(s, n);
+	new = newsizedstringobject(NULL, n);
 	if (new == NULL)
 		return NULL;
-	s = getstringvalue(new);
+	s_new = getstringvalue(new);
 	changed = 0;
 	for (i = 0; i < n; i++) {
-		char c = s[i];
+		char c = *s++;
 		if (islower(c)) {
 			changed = 1;
-			s[i] = toupper(c);
+			*s_new = toupper(c);
 		}
 		else if (isupper(c)) {
 			changed = 1;
-			s[i] = tolower(c);
+			*s_new = tolower(c);
 		}
+		else
+			*s_new = c;
+		s_new++;
 	}
 	if (!changed) {
 		DECREF(new);

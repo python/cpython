@@ -38,6 +38,7 @@ long ref_total;
 static typeobject *type_list;
 extern int tuple_zero_allocs, fast_tuple_allocs;
 extern int quick_int_allocs, quick_neg_int_allocs;
+extern int null_strings, one_strings;
 void
 dump_counts()
 {
@@ -51,6 +52,7 @@ dump_counts()
 	       tuple_zero_allocs);
 	printf("fast int allocs: pos: %d, neg: %d\n", quick_int_allocs,
 	       quick_neg_int_allocs);
+	printf("null strings: %d, 1-strings: %d\n", null_strings, one_strings);
 }
 
 void

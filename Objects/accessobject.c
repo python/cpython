@@ -232,10 +232,11 @@ isprivileged(caller)
 	object *caller;
 {
 	object *g;
-	if (caller != NULL && hasattr(caller, "__privileged__"))
+	static char privileged[] = "__privileged__";
+	if (caller != NULL && hasattr(caller, privileged))
 		return 1;
 	g = getglobals();
-	if (g != NULL && dictlookup(g, "__privileged__"))
+	if (g != NULL && dictlookup(g, privileged))
 		return 1;
 	return 0;
 }

@@ -355,13 +355,15 @@ instance_getattr(inst, name)
 {
 	register object *v;
 	classobject *class;
-	if (strcmp(name, "__dict__") == 0) {
-		INCREF(inst->in_dict);
-		return inst->in_dict;
-	}
-	if (strcmp(name, "__class__") == 0) {
-		INCREF(inst->in_class);
-		return (object *)inst->in_class;
+	if (name[0] == '_' && name[1] == '_') {
+		if (strcmp(name, "__dict__") == 0) {
+			INCREF(inst->in_dict);
+			return inst->in_dict;
+		}
+		if (strcmp(name, "__class__") == 0) {
+			INCREF(inst->in_class);
+			return (object *)inst->in_class;
+		}
 	}
 	class = NULL;
 	v = dictlookup(inst->in_dict, name);

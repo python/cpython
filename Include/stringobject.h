@@ -51,6 +51,9 @@ functions should be applied to nil objects.
 
 typedef struct {
 	OB_VARHEAD
+#ifdef CACHE_HASH
+	long ob_shash;
+#endif
 	char ob_sval[1];
 } stringobject;
 

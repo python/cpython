@@ -26,21 +26,76 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include "allobjects.h"
 
+#ifdef COUNT_ALLOCS
+int null_strings, one_strings;
+#endif
+
+#ifdef __STDC__
+#include <limits.h>
+#else
+#ifndef UCHAR_MAX
+#define UCHAR_MAX 255
+#endif
+#endif
+
+static stringobject *characters[UCHAR_MAX + 1];
+static stringobject *nullstring;
+
+/*
+   Newsizedstringobject() and newstringobject() try in certain cases
+   to share string objects.  When the size of the string is zero,
+   these routines always return a pointer to the same string object;
+   when the size is one, they return a pointer to an already existing
+   object if the contents of the string is known.  For
+   newstringobject() this is always the case, for
+   newsizedstringobject() this is the case when the first argument in
+   not NULL.
+   A common practice to allocate a string and then fill it in or
+   change it must be done carefully.  It is only allowed to change the
+   contents of the string if the obect was gotten from
+   newsizedstringobject() with a NULL first argument, because in the
+   future these routines may try to do even more sharing of objects.
+*/
 object *
 newsizedstringobject(str, size)
 	char *str;
 	int size;
 {
-	register stringobject *op = (stringobject *)
+	register stringobject *op;
+	if (size == 0 && (op = nullstring) != NULL) {
+#ifdef COUNT_ALLOCS
+		null_strings++;
+#endif
+		INCREF(op);
+		return op;
+	}
+	if (size == 1 && str != NULL && (op = characters[*str & UCHAR_MAX]) != NULL) {
+#ifdef COUNT_ALLOCS
+		one_strings++;
+#endif
+		INCREF(op);
+		return op;
+	}
+	op = (stringobject *)
 		malloc(sizeof(stringobject) + size * sizeof(char));
 	if (op == NULL)
 		return err_nomem();
 	op->ob_type = &Stringtype;
 	op->ob_size = size;
+#ifdef CACHE_HASH
+	op->ob_shash = -1;
+#endif
 	NEWREF(op);
 	if (str != NULL)
 		memcpy(op->ob_sval, str, size);
 	op->ob_sval[size] = '\0';
+	if (size == 0) {
+		nullstring = op;
+		INCREF(op);
+	} else if (size == 1 && str != NULL) {
+		characters[*str & UCHAR_MAX] = op;
+		INCREF(op);
+	}
 	return (object *) op;
 }
 
@@ -49,14 +104,39 @@ newstringobject(str)
 	char *str;
 {
 	register unsigned int size = strlen(str);
-	register stringobject *op = (stringobject *)
+	register stringobject *op;
+	if (size == 0 && (op = nullstring) != NULL) {
+#ifdef COUNT_ALLOCS
+		null_strings++;
+#endif
+		INCREF(op);
+		return op;
+	}
+	if (size == 1 && (op = characters[*str & UCHAR_MAX]) != NULL) {
+#ifdef COUNT_ALLOCS
+		one_strings++;
+#endif
+		INCREF(op);
+		return op;
+	}
+	op = (stringobject *)
 		malloc(sizeof(stringobject) + size * sizeof(char));
 	if (op == NULL)
 		return err_nomem();
 	op->ob_type = &Stringtype;
 	op->ob_size = size;
+#ifdef CACHE_HASH
+	op->ob_shash = -1;
+#endif
 	NEWREF(op);
 	strcpy(op->ob_sval, str);
+	if (size == 0) {
+		nullstring = op;
+		INCREF(op);
+	} else if (size == 1) {
+		characters[*str & UCHAR_MAX] = op;
+		INCREF(op);
+	}
 	return (object *) op;
 }
 
@@ -189,6 +269,9 @@ string_concat(a, bb)
 		return err_nomem();
 	op->ob_type = &Stringtype;
 	op->ob_size = size;
+#ifdef CACHE_HASH
+	op->ob_shash = -1;
+#endif
 	NEWREF(op);
 	memcpy(op->ob_sval, a->ob_sval, (int) a->ob_size);
 	memcpy(op->ob_sval + a->ob_size, b->ob_sval, (int) b->ob_size);
@@ -218,6 +301,9 @@ string_repeat(a, n)
 		return err_nomem();
 	op->ob_type = &Stringtype;
 	op->ob_size = size;
+#ifdef CACHE_HASH
+	op->ob_shash = -1;
+#endif
 	NEWREF(op);
 	for (i = 0; i < size; i += a->ob_size)
 		memcpy(op->ob_sval+i, a->ob_sval, (int) a->ob_size);
@@ -247,16 +333,6 @@ string_slice(a, i, j)
 	return newsizedstringobject(a->ob_sval + i, (int) (j-i));
 }
 
-#ifdef __STDC__
-#include <limits.h>
-#else
-#ifndef UCHAR_MAX
-#define UCHAR_MAX 255
-#endif
-#endif
-
-static object *characters[UCHAR_MAX + 1];
-
 static object *
 string_item(a, i)
 	stringobject *a;
@@ -269,12 +345,16 @@ string_item(a, i)
 		return NULL;
 	}
 	c = a->ob_sval[i] & UCHAR_MAX;
-	v = characters[c];
+	v = (object *) characters[c];
+#ifdef COUNT_ALLOCS
+	if (v != NULL)
+		one_strings++;
+#endif
 	if (v == NULL) {
 		v = newsizedstringobject((char *)NULL, 1);
 		if (v == NULL)
 			return NULL;
-		characters[c] = v;
+		characters[c] = (stringobject *) v;
 		((stringobject *)v)->ob_sval[0] = c;
 	}
 	INCREF(v);
@@ -287,9 +367,14 @@ string_compare(a, b)
 {
 	int len_a = a->ob_size, len_b = b->ob_size;
 	int min_len = (len_a < len_b) ? len_a : len_b;
-	int cmp = memcmp(a->ob_sval, b->ob_sval, min_len);
-	if (cmp != 0)
-		return cmp;
+	int cmp;
+	if (min_len > 0) {
+		cmp = *a->ob_sval - *b->ob_sval;
+		if (cmp == 0)
+			cmp = memcmp(a->ob_sval, b->ob_sval, min_len);
+		if (cmp != 0)
+			return cmp;
+	}
 	return (len_a < len_b) ? -1 : (len_a > len_b) ? 1 : 0;
 }
 
@@ -297,14 +382,25 @@ static long
 string_hash(a)
 	stringobject *a;
 {
-	register int len = a->ob_size;
-	register unsigned char *p = (unsigned char *) a->ob_sval;
-	register long x = *p << 7;
+	register int len;
+	register unsigned char *p;
+	register long x;
+
+#ifdef CACHE_HASH
+	if (a->ob_shash != -1)
+		return a->ob_shash;
+#endif
+	len = a->ob_size;
+	p = (unsigned char *) a->ob_sval;
+	x = *p << 7;
 	while (--len >= 0)
 		x = (x + x + x) ^ *p++;
 	x ^= a->ob_size;
 	if (x == -1)
 		x = -2;
+#ifdef CACHE_HASH
+	a->ob_shash = x;
+#endif
 	return x;
 }
 

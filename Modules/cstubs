@@ -529,21 +529,21 @@ gl_getmatrix(self, args)
 	object *self;
 	object *args;
 {
-	float arg1 [ 16 ] ;
+	Matrix arg1;
 	object *v, *w;
-	int i;
+	int i, j;
 	getmatrix( arg1 );
 	v = newlistobject(16);
 	if (v == NULL) {
 		return err_nomem();
 	}
-	for (i = 0; i < 16; i++) {
-		w = mknewfloatobject(arg1[i]);
+	for (i = 0; i < 4; i++) for (j = 0; j < 4; j++) {
+		w = mknewfloatobject(arg1[i][j]);
 		if (w == NULL) {
 			DECREF(v);
 			return NULL;
 		}
-		setlistitem(v, i, w);
+		setlistitem(v, i*4+j, w);
 	}
 	return v;
 }
@@ -559,7 +559,7 @@ gl_altgetmatrix(self, args)
 	object *self;
 	object *args;
 {
-	float arg1 [ 4 ] [ 4 ] ;
+	Matrix arg1;
 	object *v, *w;
 	int i, j;
 	getmatrix( arg1 );
@@ -742,7 +742,7 @@ gl_packrect(self, args)
 	if (packed == NULL)
 		return NULL;
 	parray = (unsigned long *) getstringvalue(unpacked);
-	p = getstringvalue(packed);
+	p = (unsigned char *) getstringvalue(packed);
 	for (y = 0; y < height; y += packfactor, parray += packfactor*width) {
 		for (x = 0; x < width; x += packfactor) {
 			pixel = parray[x];
