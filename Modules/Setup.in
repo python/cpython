@@ -292,6 +292,8 @@ TKPATH=:lib-tk
 #	-L/usr/openwin/lib \
 # *** Uncomment these for TOGL extension only:
 #	-lGL -lGLU -lXext -lXmu \
+# *** Uncomment for AIX:
+#	-lld \
 # *** Always uncomment this; X11 libraries to link with:
 #	-lX11
 
