@@ -29,9 +29,7 @@ class Tests(unittest.TestCase):
             assert vals['b'] == 2
 
 def test_main():
-    test_support.run_unittest(
-        Tests
-    )
+    test_support.run_unittest(Tests)
 
 if __name__ == "__main__":
     test_main()
