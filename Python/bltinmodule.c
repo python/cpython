@@ -1041,7 +1041,7 @@ builtin_locals(PyObject *self)
 PyDoc_STRVAR(locals_doc,
 "locals() -> dictionary\n\
 \n\
-Return the dictionary containing the current scope's local variables.");
+Update and return a dictionary containing the current scope's local variables.");
 
 
 static PyObject *
