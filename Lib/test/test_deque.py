@@ -1,6 +1,7 @@
 from collections import deque
 import unittest
 from test import test_support
+from weakref import proxy
 import copy
 import cPickle as pickle
 from cStringIO import StringIO
@@ -435,6 +436,12 @@ class TestSubclass(unittest.TestCase):
         self.assertEqual(type(d), type(e))
         self.assertEqual(list(d), list(e))
 
+    def test_weakref(self):
+        d = deque('gallahad')
+        p = proxy(d)
+        self.assertEqual(str(p), str(d))
+        d = None
+        self.assertRaises(ReferenceError, str, p)
 
 #==============================================================================
 

@@ -15,6 +15,7 @@ typedef struct {
 	PyObject_HEAD
 	PyObject *data;
 	long hash;	/* only used by frozenset objects */
+	PyObject *weakreflist; /* List of weak references */
 } PySetObject;
 
 PyAPI_DATA(PyTypeObject) PySet_Type;

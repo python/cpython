@@ -1,5 +1,6 @@
 import unittest
 from test import test_support
+from weakref import proxy
 import operator
 import copy
 import pickle
@@ -345,6 +346,13 @@ class TestSet(TestJointOps):
                 self.assert_(c in self.s)
             else:
                 self.assert_(c not in self.s)
+
+    def test_weakref(self):
+        s = self.thetype('gallahad')
+        p = proxy(s)
+        self.assertEqual(str(p), str(s))
+        s = None
+        self.assertRaises(ReferenceError, str, p)
 
 class SetSubclass(set):
     pass
