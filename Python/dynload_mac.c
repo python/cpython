@@ -114,6 +114,18 @@ dl_funcptr _PyImport_GetDynLoadFunc(const char *fqname, const char *shortname,
 	err = GetDiskFragment(&libspec, 0, 0, fragname, 
 			      kLoadCFrag, &connID, &mainAddr,
 			      errMessage);
+	if ( err == cfragImportTooOldErr || err == cfragImportTooNewErr ) {
+		/*
+		** Special-case code: if PythonCore is too old or too new this means
+		** the dynamic module was meant for a different Python.
+		*/
+		if (errMessage[0] == 10 && strncmp((char *)errMessage+1, "PythonCore", 10) == 0 ) {
+			sprintf(buf, "Dynamic module was built for %s version of MacPython",
+				(err == cfragImportTooOldErr ? "a newer" : "an older"));
+			PyErr_SetString(PyExc_ImportError, buf);
+			return NULL;
+		}
+	}
 	if ( err ) {
 		sprintf(buf, "%.*s: %.200s",
 			errMessage[0], errMessage+1,
