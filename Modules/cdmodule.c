@@ -334,7 +334,7 @@ CD_readda(self, args)
 	n = CDreadda(self->ob_cdplayer, (CDFRAME *) getstringvalue(result), numframes);
 	if (n == -1) {
 		DECREF(result);
-		err_errno(IOError); /* XXX - ??? (seems to work) */
+		err_errno(IOError);
 		return NULL;
 	}
 	if (n < numframes)
@@ -685,6 +685,11 @@ CD_removecallback(self, args)
 	if (!getargs(args, "i", &type))
 		return NULL;
 
+	if (type < 0 || type >= NCALLBACKS) {
+		err_setstr(RuntimeError, "bad type");
+		return NULL;
+	}
+
 	CDremovecallback(self->ob_cdparser, (CDDATATYPES) type);
 
 	XDECREF(self->ob_cdcallbacks[type].ob_cdcallback);
@@ -714,7 +719,7 @@ CD_resetparser(self, args)
 }
 
 static object *
-CD_setcallback(self, args)
+CD_addcallback(self, args)
 	cdparserobject *self;
 	object *args;
 {
@@ -732,7 +737,11 @@ CD_setcallback(self, args)
 		return NULL;
 	}
 
+#ifdef IRIX_405
+	CDaddcallback(self->ob_cdparser, (CDDATATYPES) type, CD_callback, (void *) self);
+#else
 	CDsetcallback(self->ob_cdparser, (CDDATATYPES) type, CD_callback, (void *) self);
+#endif
 	XDECREF(self->ob_cdcallbacks[type].ob_cdcallback);
 	INCREF(funcobject);
 	self->ob_cdcallbacks[type].ob_cdcallback = funcobject;
@@ -745,11 +754,12 @@ CD_setcallback(self, args)
 }
 
 static struct methodlist cdparser_methods[] = {
+	{"addcallback",		CD_addcallback},
 	{"deleteparser",	CD_deleteparser},
 	{"parseframe",		CD_parseframe},
 	{"removecallback",	CD_removecallback},
 	{"resetparser",		CD_resetparser},
-	{"setcallback",		CD_setcallback},
+	{"setcallback",		CD_addcallback}, /* backward compatibility */
 	{NULL,			NULL} 		/* sentinel */
 };
 
