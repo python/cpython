@@ -19,7 +19,7 @@ import socket
 import regex
 
 
-__version__ = '1.1'
+__version__ = '1.2'
 
 
 # This really consists of two pieces:
@@ -94,19 +94,25 @@ class URLopener:
 
 	# External interface
 	# Use URLopener().open(file) instead of open(file, 'r')
-	def open(self, url):
-		type, url = splittype(unwrap(url))
+	def open(self, fullurl):
+		fullurl = unwrap(fullurl)
+		type, url = splittype(fullurl)
  		if not type: type = 'file'
 		name = 'open_' + type
 		if '-' in name:
 			import regsub
 			name = regsub.gsub('-', '_', name)
 		if not hasattr(self, name):
-			raise IOError, ('url error', 'unknown url type', type)
+			return self.open_unknown(fullurl)
 		try:
 			return getattr(self, name)(url)
 		except socket.error, msg:
 			raise IOError, ('socket error', msg)
+
+	# Overridable interface to open unknown URL type
+	def open_unknown(self, fullurl):
+		type, url = splittype(fullurl)
+		raise IOError, ('url error', 'unknown url type', type)
 
 	# External interface
 	# retrieve(url) returns (filename, None) for a local object
@@ -209,10 +215,10 @@ class URLopener:
 
 	# Use local file or FTP depending on form of URL
 	def open_file(self, url):
-		try:
-			return self.open_local_file(url)
-		except IOError:
+		if url[:2] == '//':
 			return self.open_ftp(url)
+		else:
+			return self.open_local_file(url)
 
 	# Use local file
 	def open_local_file(self, url):
@@ -442,12 +448,6 @@ class addbase:
 	def __repr__(self):
 		return '<%s at %s whose fp = %s>' % (
 			  self.__class__.__name__, `id(self)`, `self.fp`)
-# Removed this __del__ because it can't work like this.  If a
-# reference is kept to self.fp or any of its methods, but no reference
-# is kept to self, we don't want to close self.fp (which would happen
-# if this __del__ still existed).
-#	def __del__(self):
-#		self.close()
 	def close(self):
 		self.read = None
 		self.readline = None
