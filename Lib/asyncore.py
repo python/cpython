@@ -82,7 +82,6 @@ def poll (timeout=0.0, map=None):
             if err[0] != EINTR:
                 raise
 
-
         if DEBUG:
             print r,w,e
 
