@@ -120,7 +120,7 @@ __all__ = [
     'Decimal', 'Context',
 
     # Contexts
-    'DefaultContext', 'BasicDefaultContext', 'ExtendedDefaultContext',
+    'DefaultContext', 'BasicContext', 'ExtendedContext',
 
     # Exceptions
     'DecimalException', 'Clamped', 'InvalidOperation', 'ConversionSyntax',
@@ -147,7 +147,6 @@ import threading
 import copy
 import math
 import operator
-xor = operator.xor
 
 #Exponent Range
 DEFAULT_MAX_EXPONENT = 999999999
@@ -162,7 +161,7 @@ ROUND_FLOOR = 'floor'
 ROUND_UP = 'up'
 ROUND_HALF_DOWN = 'half_down'
 
-#Rounding decision
+#Rounding decision (not part of the public API)
 NEVER_ROUND = 'never'    # Round in division (non-divmod), sqrt ONLY
 ALWAYS_ROUND = 'always'  # Every operation rounds at end.
 
@@ -1050,7 +1049,7 @@ class Decimal(object):
         if ans:
             return ans
 
-        resultsign = xor(self._sign, other._sign)
+        resultsign = operator.xor(self._sign, other._sign)
         if self._isinfinity():
             if not other:
                 return context._raise_error(InvalidOperation, '(+-)INF * 0')
@@ -1144,7 +1143,7 @@ class Decimal(object):
             else:
                 return ans
 
-        sign = xor(self._sign, other._sign)
+        sign = operator.xor(self._sign, other._sign)
         if not self and not other:
             if divmod:
                 return context._raise_error(DivisionUndefined, '0 / 0', 1)
@@ -2113,7 +2112,7 @@ for name in rounding_functions:
     val = globals()[globalname]
     Decimal._pick_rounding_function[val] = name
 
-DefaultLock = threading.Lock()
+del name, val, globalname, rounding_functions
 
 class Context(object):
     """Contains the context for a Decimal instance.
@@ -2135,6 +2134,9 @@ class Context(object):
                     (Defaults to 1)
     clamp - If 1, change exponents if too high (Default 0)
     """
+
+    DefaultLock = threading.Lock()
+
     def __init__(self, prec=None, rounding=None,
                  trap_enablers=None, flags=None,
                  _rounding_decision=None,
@@ -2143,13 +2145,13 @@ class Context(object):
                  _ignored_flags=[]):
         if flags is None:
             flags = dict.fromkeys(Signals, 0)
-        DefaultLock.acquire()
+        self.DefaultLock.acquire()
         for name, val in locals().items():
             if val is None:
                 setattr(self, name, copy.copy(getattr(DefaultContext, name)))
             else:
                 setattr(self, name, val)
-        DefaultLock.release()
+        self.DefaultLock.release()
         del self.self
 
     def clear_flags(self):
@@ -2163,6 +2165,7 @@ class Context(object):
                          self._rounding_decision, self.Emin, self.Emax,
                          self.capitals, self._clamp, self._ignored_flags)
         return nc
+    __copy__ = copy
 
     def _raise_error(self, error, explanation = None, *args):
         """Handles an error
@@ -2264,13 +2267,13 @@ class Context(object):
         operation on the operand. Otherwise, the result is the same as using
         the plus operation on the operand.
 
-        >>> ExtendedDefaultContext.abs(Decimal('2.1'))
+        >>> ExtendedContext.abs(Decimal('2.1'))
         Decimal("2.1")
-        >>> ExtendedDefaultContext.abs(Decimal('-100'))
+        >>> ExtendedContext.abs(Decimal('-100'))
         Decimal("100")
-        >>> ExtendedDefaultContext.abs(Decimal('101.5'))
+        >>> ExtendedContext.abs(Decimal('101.5'))
         Decimal("101.5")
-        >>> ExtendedDefaultContext.abs(Decimal('-101.5'))
+        >>> ExtendedContext.abs(Decimal('-101.5'))
         Decimal("101.5")
         """
         return a.__abs__(context=self)
@@ -2278,9 +2281,9 @@ class Context(object):
     def add(self, a, b):
         """Return the sum of the two operands.
 
-        >>> ExtendedDefaultContext.add(Decimal('12'), Decimal('7.00'))
+        >>> ExtendedContext.add(Decimal('12'), Decimal('7.00'))
         Decimal("19.00")
-        >>> ExtendedDefaultContext.add(Decimal('1E+2'), Decimal('1.01E+4'))
+        >>> ExtendedContext.add(Decimal('1E+2'), Decimal('1.01E+4'))
         Decimal("1.02E+4")
         """
         return a.__add__(b, context=self)
@@ -2302,17 +2305,17 @@ class Context(object):
         subtraction: '-1' if the result is less than zero, '0' if the result is
         zero or negative zero, or '1' if the result is greater than zero.
 
-        >>> ExtendedDefaultContext.compare(Decimal('2.1'), Decimal('3'))
+        >>> ExtendedContext.compare(Decimal('2.1'), Decimal('3'))
         Decimal("-1")
-        >>> ExtendedDefaultContext.compare(Decimal('2.1'), Decimal('2.1'))
+        >>> ExtendedContext.compare(Decimal('2.1'), Decimal('2.1'))
         Decimal("0")
-        >>> ExtendedDefaultContext.compare(Decimal('2.1'), Decimal('2.10'))
+        >>> ExtendedContext.compare(Decimal('2.1'), Decimal('2.10'))
         Decimal("0")
-        >>> ExtendedDefaultContext.compare(Decimal('3'), Decimal('2.1'))
+        >>> ExtendedContext.compare(Decimal('3'), Decimal('2.1'))
         Decimal("1")
-        >>> ExtendedDefaultContext.compare(Decimal('2.1'), Decimal('-3'))
+        >>> ExtendedContext.compare(Decimal('2.1'), Decimal('-3'))
         Decimal("1")
-        >>> ExtendedDefaultContext.compare(Decimal('-3'), Decimal('2.1'))
+        >>> ExtendedContext.compare(Decimal('-3'), Decimal('2.1'))
         Decimal("-1")
         """
         return a.compare(b, context=self)
@@ -2320,25 +2323,25 @@ class Context(object):
     def divide(self, a, b):
         """Decimal division in a specified context.
 
-        >>> ExtendedDefaultContext.divide(Decimal('1'), Decimal('3'))
+        >>> ExtendedContext.divide(Decimal('1'), Decimal('3'))
         Decimal("0.333333333")
-        >>> ExtendedDefaultContext.divide(Decimal('2'), Decimal('3'))
+        >>> ExtendedContext.divide(Decimal('2'), Decimal('3'))
         Decimal("0.666666667")
-        >>> ExtendedDefaultContext.divide(Decimal('5'), Decimal('2'))
+        >>> ExtendedContext.divide(Decimal('5'), Decimal('2'))
         Decimal("2.5")
-        >>> ExtendedDefaultContext.divide(Decimal('1'), Decimal('10'))
+        >>> ExtendedContext.divide(Decimal('1'), Decimal('10'))
         Decimal("0.1")
-        >>> ExtendedDefaultContext.divide(Decimal('12'), Decimal('12'))
+        >>> ExtendedContext.divide(Decimal('12'), Decimal('12'))
         Decimal("1")
-        >>> ExtendedDefaultContext.divide(Decimal('8.00'), Decimal('2'))
+        >>> ExtendedContext.divide(Decimal('8.00'), Decimal('2'))
         Decimal("4.00")
-        >>> ExtendedDefaultContext.divide(Decimal('2.400'), Decimal('2.0'))
+        >>> ExtendedContext.divide(Decimal('2.400'), Decimal('2.0'))
         Decimal("1.20")
-        >>> ExtendedDefaultContext.divide(Decimal('1000'), Decimal('100'))
+        >>> ExtendedContext.divide(Decimal('1000'), Decimal('100'))
         Decimal("10")
-        >>> ExtendedDefaultContext.divide(Decimal('1000'), Decimal('1'))
+        >>> ExtendedContext.divide(Decimal('1000'), Decimal('1'))
         Decimal("1000")
-        >>> ExtendedDefaultContext.divide(Decimal('2.40E+6'), Decimal('2'))
+        >>> ExtendedContext.divide(Decimal('2.40E+6'), Decimal('2'))
         Decimal("1.20E+6")
         """
         return a.__div__(b, context=self)
@@ -2346,11 +2349,11 @@ class Context(object):
     def divide_int(self, a, b):
         """Divides two numbers and returns the integer part of the result.
 
-        >>> ExtendedDefaultContext.divide_int(Decimal('2'), Decimal('3'))
+        >>> ExtendedContext.divide_int(Decimal('2'), Decimal('3'))
         Decimal("0")
-        >>> ExtendedDefaultContext.divide_int(Decimal('10'), Decimal('3'))
+        >>> ExtendedContext.divide_int(Decimal('10'), Decimal('3'))
         Decimal("3")
-        >>> ExtendedDefaultContext.divide_int(Decimal('1'), Decimal('0.3'))
+        >>> ExtendedContext.divide_int(Decimal('1'), Decimal('0.3'))
         Decimal("3")
         """
         return a.__floordiv__(b, context=self)
@@ -2367,11 +2370,11 @@ class Context(object):
         is chosen as the result. Otherwise the maximum (closer to positive
         infinity) of the two operands is chosen as the result.
 
-        >>> ExtendedDefaultContext.max(Decimal('3'), Decimal('2'))
+        >>> ExtendedContext.max(Decimal('3'), Decimal('2'))
         Decimal("3")
-        >>> ExtendedDefaultContext.max(Decimal('-10'), Decimal('3'))
+        >>> ExtendedContext.max(Decimal('-10'), Decimal('3'))
         Decimal("3")
-        >>> ExtendedDefaultContext.max(Decimal('1.0'), Decimal('1'))
+        >>> ExtendedContext.max(Decimal('1.0'), Decimal('1'))
         Decimal("1.0")
         """
         return a.max(b, context=self)
@@ -2385,11 +2388,11 @@ class Context(object):
         is chosen as the result. Otherwise the minimum (closer to negative
         infinity) of the two operands is chosen as the result.
 
-        >>> ExtendedDefaultContext.min(Decimal('3'), Decimal('2'))
+        >>> ExtendedContext.min(Decimal('3'), Decimal('2'))
         Decimal("2")
-        >>> ExtendedDefaultContext.min(Decimal('-10'), Decimal('3'))
+        >>> ExtendedContext.min(Decimal('-10'), Decimal('3'))
         Decimal("-10")
-        >>> ExtendedDefaultContext.min(Decimal('1.0'), Decimal('1'))
+        >>> ExtendedContext.min(Decimal('1.0'), Decimal('1'))
         Decimal("1.0")
         """
         return a.min(b, context=self)
@@ -2401,9 +2404,9 @@ class Context(object):
         operation minus(a) is calculated as subtract('0', a) where the '0'
         has the same exponent as the operand.
 
-        >>> ExtendedDefaultContext.minus(Decimal('1.3'))
+        >>> ExtendedContext.minus(Decimal('1.3'))
         Decimal("-1.3")
-        >>> ExtendedDefaultContext.minus(Decimal('-1.3'))
+        >>> ExtendedContext.minus(Decimal('-1.3'))
         Decimal("1.3")
         """
         return a.__neg__(context=self)
@@ -2416,15 +2419,15 @@ class Context(object):
         resulting in a number which may be as long as the sum of the lengths
         of the two operands.
 
-        >>> ExtendedDefaultContext.multiply(Decimal('1.20'), Decimal('3'))
+        >>> ExtendedContext.multiply(Decimal('1.20'), Decimal('3'))
         Decimal("3.60")
-        >>> ExtendedDefaultContext.multiply(Decimal('7'), Decimal('3'))
+        >>> ExtendedContext.multiply(Decimal('7'), Decimal('3'))
         Decimal("21")
-        >>> ExtendedDefaultContext.multiply(Decimal('0.9'), Decimal('0.8'))
+        >>> ExtendedContext.multiply(Decimal('0.9'), Decimal('0.8'))
         Decimal("0.72")
-        >>> ExtendedDefaultContext.multiply(Decimal('0.9'), Decimal('-0'))
+        >>> ExtendedContext.multiply(Decimal('0.9'), Decimal('-0'))
         Decimal("-0.0")
-        >>> ExtendedDefaultContext.multiply(Decimal('654321'), Decimal('654321'))
+        >>> ExtendedContext.multiply(Decimal('654321'), Decimal('654321'))
         Decimal("4.28135971E+11")
         """
         return a.__mul__(b, context=self)
@@ -2435,17 +2438,17 @@ class Context(object):
         Essentially a plus operation with all trailing zeros removed from the
         result.
 
-        >>> ExtendedDefaultContext.normalize(Decimal('2.1'))
+        >>> ExtendedContext.normalize(Decimal('2.1'))
         Decimal("2.1")
-        >>> ExtendedDefaultContext.normalize(Decimal('-2.0'))
+        >>> ExtendedContext.normalize(Decimal('-2.0'))
         Decimal("-2")
-        >>> ExtendedDefaultContext.normalize(Decimal('1.200'))
+        >>> ExtendedContext.normalize(Decimal('1.200'))
         Decimal("1.2")
-        >>> ExtendedDefaultContext.normalize(Decimal('-120'))
+        >>> ExtendedContext.normalize(Decimal('-120'))
         Decimal("-1.2E+2")
-        >>> ExtendedDefaultContext.normalize(Decimal('120.00'))
+        >>> ExtendedContext.normalize(Decimal('120.00'))
         Decimal("1.2E+2")
-        >>> ExtendedDefaultContext.normalize(Decimal('0.00'))
+        >>> ExtendedContext.normalize(Decimal('0.00'))
         Decimal("0")
         """
         return a.normalize(context=self)
@@ -2457,9 +2460,9 @@ class Context(object):
         operation plus(a) is calculated as add('0', a) where the '0'
         has the same exponent as the operand.
 
-        >>> ExtendedDefaultContext.plus(Decimal('1.3'))
+        >>> ExtendedContext.plus(Decimal('1.3'))
         Decimal("1.3")
-        >>> ExtendedDefaultContext.plus(Decimal('-1.3'))
+        >>> ExtendedContext.plus(Decimal('-1.3'))
         Decimal("-1.3")
         """
         return a.__pos__(context=self)
@@ -2482,33 +2485,33 @@ class Context(object):
         division into 1, the operation is not halted at that point but
         continues.
 
-        >>> ExtendedDefaultContext.power(Decimal('2'), Decimal('3'))
+        >>> ExtendedContext.power(Decimal('2'), Decimal('3'))
         Decimal("8")
-        >>> ExtendedDefaultContext.power(Decimal('2'), Decimal('-3'))
+        >>> ExtendedContext.power(Decimal('2'), Decimal('-3'))
         Decimal("0.125")
-        >>> ExtendedDefaultContext.power(Decimal('1.7'), Decimal('8'))
+        >>> ExtendedContext.power(Decimal('1.7'), Decimal('8'))
         Decimal("69.7575744")
-        >>> ExtendedDefaultContext.power(Decimal('Infinity'), Decimal('-2'))
+        >>> ExtendedContext.power(Decimal('Infinity'), Decimal('-2'))
         Decimal("0")
-        >>> ExtendedDefaultContext.power(Decimal('Infinity'), Decimal('-1'))
+        >>> ExtendedContext.power(Decimal('Infinity'), Decimal('-1'))
         Decimal("0")
-        >>> ExtendedDefaultContext.power(Decimal('Infinity'), Decimal('0'))
+        >>> ExtendedContext.power(Decimal('Infinity'), Decimal('0'))
         Decimal("1")
-        >>> ExtendedDefaultContext.power(Decimal('Infinity'), Decimal('1'))
+        >>> ExtendedContext.power(Decimal('Infinity'), Decimal('1'))
         Decimal("Infinity")
-        >>> ExtendedDefaultContext.power(Decimal('Infinity'), Decimal('2'))
+        >>> ExtendedContext.power(Decimal('Infinity'), Decimal('2'))
         Decimal("Infinity")
-        >>> ExtendedDefaultContext.power(Decimal('-Infinity'), Decimal('-2'))
+        >>> ExtendedContext.power(Decimal('-Infinity'), Decimal('-2'))
         Decimal("0")
-        >>> ExtendedDefaultContext.power(Decimal('-Infinity'), Decimal('-1'))
+        >>> ExtendedContext.power(Decimal('-Infinity'), Decimal('-1'))
         Decimal("-0")
-        >>> ExtendedDefaultContext.power(Decimal('-Infinity'), Decimal('0'))
+        >>> ExtendedContext.power(Decimal('-Infinity'), Decimal('0'))
         Decimal("1")
-        >>> ExtendedDefaultContext.power(Decimal('-Infinity'), Decimal('1'))
+        >>> ExtendedContext.power(Decimal('-Infinity'), Decimal('1'))
         Decimal("-Infinity")
-        >>> ExtendedDefaultContext.power(Decimal('-Infinity'), Decimal('2'))
+        >>> ExtendedContext.power(Decimal('-Infinity'), Decimal('2'))
         Decimal("Infinity")
-        >>> ExtendedDefaultContext.power(Decimal('0'), Decimal('0'))
+        >>> ExtendedContext.power(Decimal('0'), Decimal('0'))
         Decimal("NaN")
         """
         return a.__pow__(b, modulo, context=self)
@@ -2531,35 +2534,35 @@ class Context(object):
         Also unlike other operations, quantize will never raise Underflow, even
         if the result is subnormal and inexact.
 
-        >>> ExtendedDefaultContext.quantize(Decimal('2.17'), Decimal('0.001'))
+        >>> ExtendedContext.quantize(Decimal('2.17'), Decimal('0.001'))
         Decimal("2.170")
-        >>> ExtendedDefaultContext.quantize(Decimal('2.17'), Decimal('0.01'))
+        >>> ExtendedContext.quantize(Decimal('2.17'), Decimal('0.01'))
         Decimal("2.17")
-        >>> ExtendedDefaultContext.quantize(Decimal('2.17'), Decimal('0.1'))
+        >>> ExtendedContext.quantize(Decimal('2.17'), Decimal('0.1'))
         Decimal("2.2")
-        >>> ExtendedDefaultContext.quantize(Decimal('2.17'), Decimal('1e+0'))
+        >>> ExtendedContext.quantize(Decimal('2.17'), Decimal('1e+0'))
         Decimal("2")
-        >>> ExtendedDefaultContext.quantize(Decimal('2.17'), Decimal('1e+1'))
+        >>> ExtendedContext.quantize(Decimal('2.17'), Decimal('1e+1'))
         Decimal("0E+1")
-        >>> ExtendedDefaultContext.quantize(Decimal('-Inf'), Decimal('Infinity'))
+        >>> ExtendedContext.quantize(Decimal('-Inf'), Decimal('Infinity'))
         Decimal("-Infinity")
-        >>> ExtendedDefaultContext.quantize(Decimal('2'), Decimal('Infinity'))
+        >>> ExtendedContext.quantize(Decimal('2'), Decimal('Infinity'))
         Decimal("NaN")
-        >>> ExtendedDefaultContext.quantize(Decimal('-0.1'), Decimal('1'))
+        >>> ExtendedContext.quantize(Decimal('-0.1'), Decimal('1'))
         Decimal("-0")
-        >>> ExtendedDefaultContext.quantize(Decimal('-0'), Decimal('1e+5'))
+        >>> ExtendedContext.quantize(Decimal('-0'), Decimal('1e+5'))
         Decimal("-0E+5")
-        >>> ExtendedDefaultContext.quantize(Decimal('+35236450.6'), Decimal('1e-2'))
+        >>> ExtendedContext.quantize(Decimal('+35236450.6'), Decimal('1e-2'))
         Decimal("NaN")
-        >>> ExtendedDefaultContext.quantize(Decimal('-35236450.6'), Decimal('1e-2'))
+        >>> ExtendedContext.quantize(Decimal('-35236450.6'), Decimal('1e-2'))
         Decimal("NaN")
-        >>> ExtendedDefaultContext.quantize(Decimal('217'), Decimal('1e-1'))
+        >>> ExtendedContext.quantize(Decimal('217'), Decimal('1e-1'))
         Decimal("217.0")
-        >>> ExtendedDefaultContext.quantize(Decimal('217'), Decimal('1e-0'))
+        >>> ExtendedContext.quantize(Decimal('217'), Decimal('1e-0'))
         Decimal("217")
-        >>> ExtendedDefaultContext.quantize(Decimal('217'), Decimal('1e+1'))
+        >>> ExtendedContext.quantize(Decimal('217'), Decimal('1e+1'))
         Decimal("2.2E+2")
-        >>> ExtendedDefaultContext.quantize(Decimal('217'), Decimal('1e+2'))
+        >>> ExtendedContext.quantize(Decimal('217'), Decimal('1e+2'))
         Decimal("2E+2")
         """
         return a.quantize(b, context=self)
@@ -2576,17 +2579,17 @@ class Context(object):
         (that is, if integer division on the same two operands would fail, the
         remainder cannot be calculated).
 
-        >>> ExtendedDefaultContext.remainder(Decimal('2.1'), Decimal('3'))
+        >>> ExtendedContext.remainder(Decimal('2.1'), Decimal('3'))
         Decimal("2.1")
-        >>> ExtendedDefaultContext.remainder(Decimal('10'), Decimal('3'))
+        >>> ExtendedContext.remainder(Decimal('10'), Decimal('3'))
         Decimal("1")
-        >>> ExtendedDefaultContext.remainder(Decimal('-10'), Decimal('3'))
+        >>> ExtendedContext.remainder(Decimal('-10'), Decimal('3'))
         Decimal("-1")
-        >>> ExtendedDefaultContext.remainder(Decimal('10.2'), Decimal('1'))
+        >>> ExtendedContext.remainder(Decimal('10.2'), Decimal('1'))
         Decimal("0.2")
-        >>> ExtendedDefaultContext.remainder(Decimal('10'), Decimal('0.3'))
+        >>> ExtendedContext.remainder(Decimal('10'), Decimal('0.3'))
         Decimal("0.1")
-        >>> ExtendedDefaultContext.remainder(Decimal('3.6'), Decimal('1.3'))
+        >>> ExtendedContext.remainder(Decimal('3.6'), Decimal('1.3'))
         Decimal("1.0")
         """
         return a.__mod__(b, context=self)
@@ -2601,19 +2604,19 @@ class Context(object):
         (that is, if integer division on the same two operands would fail, the
         remainder cannot be calculated).
 
-        >>> ExtendedDefaultContext.remainder_near(Decimal('2.1'), Decimal('3'))
+        >>> ExtendedContext.remainder_near(Decimal('2.1'), Decimal('3'))
         Decimal("-0.9")
-        >>> ExtendedDefaultContext.remainder_near(Decimal('10'), Decimal('6'))
+        >>> ExtendedContext.remainder_near(Decimal('10'), Decimal('6'))
         Decimal("-2")
-        >>> ExtendedDefaultContext.remainder_near(Decimal('10'), Decimal('3'))
+        >>> ExtendedContext.remainder_near(Decimal('10'), Decimal('3'))
         Decimal("1")
-        >>> ExtendedDefaultContext.remainder_near(Decimal('-10'), Decimal('3'))
+        >>> ExtendedContext.remainder_near(Decimal('-10'), Decimal('3'))
         Decimal("-1")
-        >>> ExtendedDefaultContext.remainder_near(Decimal('10.2'), Decimal('1'))
+        >>> ExtendedContext.remainder_near(Decimal('10.2'), Decimal('1'))
         Decimal("0.2")
-        >>> ExtendedDefaultContext.remainder_near(Decimal('10'), Decimal('0.3'))
+        >>> ExtendedContext.remainder_near(Decimal('10'), Decimal('0.3'))
         Decimal("0.1")
-        >>> ExtendedDefaultContext.remainder_near(Decimal('3.6'), Decimal('1.3'))
+        >>> ExtendedContext.remainder_near(Decimal('3.6'), Decimal('1.3'))
         Decimal("-0.3")
         """
         return a.remainder_near(b, context=self)
@@ -2624,13 +2627,13 @@ class Context(object):
         The result is never affected by either the sign or the coefficient of
         either operand.
 
-        >>> ExtendedDefaultContext.same_quantum(Decimal('2.17'), Decimal('0.001'))
+        >>> ExtendedContext.same_quantum(Decimal('2.17'), Decimal('0.001'))
         False
-        >>> ExtendedDefaultContext.same_quantum(Decimal('2.17'), Decimal('0.01'))
+        >>> ExtendedContext.same_quantum(Decimal('2.17'), Decimal('0.01'))
         True
-        >>> ExtendedDefaultContext.same_quantum(Decimal('2.17'), Decimal('1'))
+        >>> ExtendedContext.same_quantum(Decimal('2.17'), Decimal('1'))
         False
-        >>> ExtendedDefaultContext.same_quantum(Decimal('Inf'), Decimal('-Inf'))
+        >>> ExtendedContext.same_quantum(Decimal('Inf'), Decimal('-Inf'))
         True
         """
         return a.same_quantum(b)
@@ -2641,25 +2644,25 @@ class Context(object):
         If the result must be inexact, it is rounded using the round-half-even
         algorithm.
 
-        >>> ExtendedDefaultContext.sqrt(Decimal('0'))
+        >>> ExtendedContext.sqrt(Decimal('0'))
         Decimal("0")
-        >>> ExtendedDefaultContext.sqrt(Decimal('-0'))
+        >>> ExtendedContext.sqrt(Decimal('-0'))
         Decimal("-0")
-        >>> ExtendedDefaultContext.sqrt(Decimal('0.39'))
+        >>> ExtendedContext.sqrt(Decimal('0.39'))
         Decimal("0.624499800")
-        >>> ExtendedDefaultContext.sqrt(Decimal('100'))
+        >>> ExtendedContext.sqrt(Decimal('100'))
         Decimal("10")
-        >>> ExtendedDefaultContext.sqrt(Decimal('1'))
+        >>> ExtendedContext.sqrt(Decimal('1'))
         Decimal("1")
-        >>> ExtendedDefaultContext.sqrt(Decimal('1.0'))
+        >>> ExtendedContext.sqrt(Decimal('1.0'))
         Decimal("1.0")
-        >>> ExtendedDefaultContext.sqrt(Decimal('1.00'))
+        >>> ExtendedContext.sqrt(Decimal('1.00'))
         Decimal("1.0")
-        >>> ExtendedDefaultContext.sqrt(Decimal('7'))
+        >>> ExtendedContext.sqrt(Decimal('7'))
         Decimal("2.64575131")
-        >>> ExtendedDefaultContext.sqrt(Decimal('10'))
+        >>> ExtendedContext.sqrt(Decimal('10'))
         Decimal("3.16227766")
-        >>> ExtendedDefaultContext.prec
+        >>> ExtendedContext.prec
         9
         """
         return a.sqrt(context=self)
@@ -2667,11 +2670,11 @@ class Context(object):
     def subtract(self, a, b):
         """Return the sum of the two operands.
 
-        >>> ExtendedDefaultContext.subtract(Decimal('1.3'), Decimal('1.07'))
+        >>> ExtendedContext.subtract(Decimal('1.3'), Decimal('1.07'))
         Decimal("0.23")
-        >>> ExtendedDefaultContext.subtract(Decimal('1.3'), Decimal('1.30'))
+        >>> ExtendedContext.subtract(Decimal('1.3'), Decimal('1.30'))
         Decimal("0.00")
-        >>> ExtendedDefaultContext.subtract(Decimal('1.3'), Decimal('2.07'))
+        >>> ExtendedContext.subtract(Decimal('1.3'), Decimal('2.07'))
         Decimal("-0.77")
         """
         return a.__sub__(b, context=self)
@@ -2699,21 +2702,21 @@ class Context(object):
         of the operand as the precision setting, except that no flags will
         be set. The rounding mode is taken from the context.
 
-        >>> ExtendedDefaultContext.to_integral(Decimal('2.1'))
+        >>> ExtendedContext.to_integral(Decimal('2.1'))
         Decimal("2")
-        >>> ExtendedDefaultContext.to_integral(Decimal('100'))
+        >>> ExtendedContext.to_integral(Decimal('100'))
         Decimal("100")
-        >>> ExtendedDefaultContext.to_integral(Decimal('100.0'))
+        >>> ExtendedContext.to_integral(Decimal('100.0'))
         Decimal("100")
-        >>> ExtendedDefaultContext.to_integral(Decimal('101.5'))
+        >>> ExtendedContext.to_integral(Decimal('101.5'))
         Decimal("102")
-        >>> ExtendedDefaultContext.to_integral(Decimal('-101.5'))
+        >>> ExtendedContext.to_integral(Decimal('-101.5'))
         Decimal("-102")
-        >>> ExtendedDefaultContext.to_integral(Decimal('10E+5'))
+        >>> ExtendedContext.to_integral(Decimal('10E+5'))
         Decimal("1.0E+6")
-        >>> ExtendedDefaultContext.to_integral(Decimal('7.89E+77'))
+        >>> ExtendedContext.to_integral(Decimal('7.89E+77'))
         Decimal("7.89E+77")
-        >>> ExtendedDefaultContext.to_integral(Decimal('-Inf'))
+        >>> ExtendedContext.to_integral(Decimal('-Inf'))
         Decimal("-Infinity")
         """
         return a.to_integral(context=self)
@@ -2974,14 +2977,14 @@ DefaultContext = Context(
 # contexts and be able to reproduce results from other implementations
 # of the spec.
 
-BasicDefaultContext = Context(
+BasicContext = Context(
         prec=9, rounding=ROUND_HALF_UP,
         trap_enablers=_basic_traps,
         flags=None,
         _rounding_decision=ALWAYS_ROUND,
 )
 
-ExtendedDefaultContext = Context(
+ExtendedContext = Context(
         prec=9, rounding=ROUND_HALF_EVEN,
         trap_enablers=dict.fromkeys(Signals, 0),
         flags=None,
