@@ -108,3 +108,8 @@ test('''To: "last, first" <userid@foo.net>
 
 test''', [('last, first', 'userid@foo.net'),
           ])
+
+test('''To: (Comment stuff) "Quoted name"@somewhere.com
+
+test''', [('Comment stuff', '"Quoted name"@somewhere.com'),
+          ])
