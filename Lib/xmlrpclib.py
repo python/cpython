@@ -688,12 +688,15 @@ class Marshaller:
         self.memo[i] = None
         dump = self.__dump
         write("<value><struct>\n")
-        for k in value.keys():
+        for k, v in value.items():
             write("<member>\n")
             if type(k) is not StringType:
-                raise TypeError, "dictionary key must be string"
+                if unicode and type(k) is UnicodeType:
+                    k = k.encode(self.encoding)
+                else:
+                    raise TypeError, "dictionary key must be string"
             write("<name>%s</name>\n" % escape(k))
-            dump(value[k], write)
+            dump(v, write)
             write("</member>\n")
         write("</struct></value>\n")
         del self.memo[i]
