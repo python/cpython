@@ -2,7 +2,7 @@
 
 ;; Copyright (C) 1992,1993,1994  Tim Peters
 
-;; Author: 1995-1997 Barry A. Warsaw
+;; Author: 1995-1998 Barry A. Warsaw
 ;;         1992-1994 Tim Peters
 ;; Maintainer: python-mode@python.org
 ;; Created:    Feb 1992
@@ -1447,10 +1447,10 @@ the new line indented."
   ;; honor-block-close-p is non-nil, statements such as return, raise,
   ;; break, continue, and pass force one level of outdenting.
   (save-excursion
+    (beginning-of-line)
     (let* ((bod (py-point 'bod))
 	   (pps (parse-partial-sexp bod (point)))
 	   (boipps (parse-partial-sexp bod (py-point 'boi))))
-      (beginning-of-line)
       (cond
        ;; are we inside a multi-line string or comment?
        ((or (and (nth 3 pps) (nth 3 boipps))
@@ -1587,10 +1587,17 @@ the new line indented."
 	;; if we landed inside a string, go to the beginning of that
 	;; string. this handles triple quoted, multi-line spanning
 	;; strings.
-	(let ((skip (nth 3 (parse-partial-sexp bod (point)))))
-	  (while skip
-	    (py-safe (search-backward (make-string 1 skip)))
-	    (setq skip (nth 3 (parse-partial-sexp bod (point))))))
+	(let* ((pps3 (nth 3 (parse-partial-sexp bod (point))))
+	       (delim (and pps3 (int-to-char pps3)))
+	       (skip (and delim (make-string 1 delim))))
+	  (when skip
+	    (save-excursion
+	      (py-safe (search-backward skip))
+	      (if (and (eq (char-before) delim)
+		       (eq (char-before (1- (point))) delim))
+		  (setq skip (make-string 3 delim))))
+	    ;; we're looking at a triple-quoted string
+	    (py-safe (search-backward skip))))
 	;; now skip backward over continued lines
 	(py-goto-initial-line)
 	(+ (current-indentation)
@@ -2494,20 +2501,32 @@ local bindings to py-newline-and-indent."))
 	(re-search-backward py-parse-state-re nil 'move)
 	(setq ci (current-indentation))
 	(beginning-of-line)
-	(save-excursion
-	  (setq pps (parse-partial-sexp (point) here)))
-	;; make sure we don't land inside a triple-quoted string
-	(setq done (or ;(zerop ci)
-		       (not (nth 3 pps))
-		       (bobp)))
-	)
+	;; In XEmacs, we have a much better way to test for whether
+	;; we're in a triple-quoted string or not.  Emacs does not
+	;; have this built-in function, which is it's loss because
+	;; without scanning from the beginning of the buffer, there's
+	;; no accurate way to determine this otherwise.
+	(if (not (fboundp 'buffer-syntactic-context))
+	    ;; Emacs
+	    (save-excursion
+	      (setq pps (parse-partial-sexp (point) here))
+	      ;; make sure we don't land inside a triple-quoted string
+	      (setq done (or ;(zerop ci)
+			  (not (nth 3 pps))
+			  (bobp))))
+	  ;; XEmacs
+	  (setq done (or (not (buffer-syntactic-context))
+			 (bobp)))
+	  (when done
+	    (setq pps (parse-partial-sexp (point) here)))
+	  ))
       pps)))
 
 ;; if point is at a non-zero nesting level, returns the number of the
 ;; character that opens the smallest enclosing unclosed list; else
 ;; returns nil.
 (defun py-nesting-level ()
-  (let ((status (py-parse-state)) )
+  (let ((status (py-parse-state)))
     (if (zerop (car status))
 	nil				; not in a nest
       (car (cdr status)))))		; char# of open bracket
