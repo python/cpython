@@ -229,12 +229,16 @@ sub do_cmd_manpage{
     return "<span class='manpage'><i>$page</i>($section)</span>" . $_;
 }
 
+sub get_rfc_url{
+    my $rfcnum = sprintf("%04d", @_[0]);
+    return "http://www.ietf.org/rfc/rfc$rfcnum.txt";
+}
+
 sub do_cmd_rfc{
     local($_) = @_;
     my $rfcnumber = next_argument();
     my $id = "rfcref-" . ++$global{'max_id'};
-    my $href =
-      "http://info.internet.isi.edu/in-notes/rfc/files/rfc$rfcnumber.txt";
+    my $href = get_rfc_url($rfcnumber);
     # Save the reference
     my $nstr = gen_index_id("RFC!RFC $rfcnumber", '');
     $index{$nstr} .= make_half_href("$CURRENT_FILE#$id");
@@ -547,7 +551,7 @@ sub do_cmd_exmodindex{ return my_module_index_helper('extension', @_); }
 sub do_cmd_stmodindex{ return my_module_index_helper('standard', @_); }
 
 sub ref_module_index_helper{
-    local($word, $ahref) = @_;
+    my($word, $ahref) = @_;
     my $str = next_argument();
     $word = "$word " if $word;
     $str = "<tt class='module'>$str</tt> (${word}module)";
@@ -1265,6 +1269,20 @@ sub do_cmd_seemodule{
       . $_;
 }
 
+sub do_cmd_seerfc{
+    local($_) = @_;
+    my $rfcnum = next_argument();
+    my $title = next_argument();
+    my $text = next_argument();
+    my $url = get_rfc_url($rfcnum);
+    return '<dl compact class="seerfc">'
+      . "\n    <dt><a href=\"$url\""
+      . "\n        title=\"$title\""
+      . "\n        >RFC $rfcnum, <em>$title</em></a>:"
+      . "\n    <dd>$text\n  </dl>"
+      . $_;
+}
+
 sub do_cmd_seetext{
     local($_) = @_;
     my $content = next_argument();
@@ -1277,8 +1295,7 @@ sub do_cmd_seetext{
 #
 
 sub do_env_definitions{
-    local($_) = @_;
-    return "<dl class='definitions'>$_</dl>\n";
+    return "<dl class='definitions'>" . @_[0] . "</dl>\n";
 }
 
 sub do_cmd_term{
