@@ -254,7 +254,7 @@ def test_trashcan():
     gc.disable()
 
 class C:
-    def __getattr__(self, attr):
+    def __getattr__(self, someattribute):
         del self.attr
         raise AttributeError
 
@@ -265,11 +265,16 @@ def test_boom():
     b.attr = a
 
     gc.collect()
+    garbagelen = len(gc.garbage)
     del a, b
-    # the collection will invoke the getattr and decref one of the
-    # object.  so they are deallocated without being reported as
-    # part of a cycle.
+    # a<->b are in a trash cycle now.  Collection will invoke C.__getattr__
+    # (to see whether a and b have __del__ methods), and __getattr__ deletes
+    # the internal "attr" attributes as a side effect.  That causes the
+    # trash cycle to get reclaimed via refcounts falling to 0, thus mutating
+    # the trash graph as a side effect of merely asking whether __del__
+    # exists.  This used to (before 2.3b1) crash Python.
     expect(gc.collect(), 0, "boom")
+    expect(len(gc.garbage), garbagelen, "boom")
 
 def test_all():
     gc.collect() # Delete 2nd generation garbage
