@@ -392,7 +392,8 @@ except AttributeError:
     def setcontext(context):
         """Set this thread's context to context."""
         if context in (DefaultContext, BasicContext, ExtendedContext):
-            context = context.copy()
+            context = copy.deepcopy(context)
+            context.clear_flags()
         threading.currentThread().__decimal_context__ = context
 
     def getcontext():
@@ -430,7 +431,8 @@ else:
     def setcontext(context, _local=local):
         """Set this thread's context to context."""
         if context in (DefaultContext, BasicContext, ExtendedContext):
-            context = context.copy()
+            context = copy.deepcopy(context)
+            context.clear_flags()
         _local.__decimal_context__ = context
 
     del threading, local        # Don't contaminate the namespace
@@ -1634,7 +1636,7 @@ class Decimal(object):
                     half = 0
                     break
         if half:
-            if self._int[prec-1] %2 == 0:
+            if self._int[prec-1] & 1 == 0:
                 return tmp
         return self._round_half_up(prec, expdiff, context, tmp)
 
@@ -1930,7 +1932,7 @@ class Decimal(object):
         tmp = Decimal(self)
 
         expadd = tmp._exp / 2
-        if tmp._exp % 2 == 1:
+        if tmp._exp & 1:
             tmp._int += (0,)
             tmp._exp = 0
         else:
@@ -1940,7 +1942,7 @@ class Decimal(object):
         flags = context._ignore_all_flags()
         firstprec = context.prec
         context.prec = 3
-        if tmp.adjusted() % 2 == 0:
+        if tmp.adjusted() & 1 == 0:
             ans = Decimal( (0, (8,1,9), tmp.adjusted()  - 2) )
             ans = ans.__add__(tmp.__mul__(Decimal((0, (2,5,9), -2)),
                                           context=context), context=context)
@@ -2075,7 +2077,7 @@ class Decimal(object):
         """Returns 1 if self is even.  Assumes self is an integer."""
         if self._exp > 0:
             return 1
-        return self._int[-1+self._exp] % 2 == 0
+        return self._int[-1+self._exp] & 1 == 0
 
     def adjusted(self):
         """Return the adjusted exponent of self"""
