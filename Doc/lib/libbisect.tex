@@ -39,7 +39,7 @@ The following functions are provided:
 \end{funcdesc}
 
 \begin{funcdesc}{bisect}{\unspecified}
-  Alias for \function{bisect_right()} for backward compatibility.
+  Alias for \function{bisect_right()}.
 \end{funcdesc}
 
 \begin{funcdesc}{insort_left}{list, item\optional{, lo\optional{, hi}}}
@@ -57,7 +57,7 @@ The following functions are provided:
 \end{funcdesc}
 
 \begin{funcdesc}{insort}{\unspecified}
-  Alias for \function{insort_right()} for backward compatibility.
+  Alias for \function{insort_right()}.
 \end{funcdesc}
 
 
@@ -65,16 +65,16 @@ The following functions are provided:
 \nodename{bisect-example}
 
 The \function{bisect()} function is generally useful for categorizing
-numeric data.  This example uses \function{bisect_right()} to look up a
+numeric data.  This example uses \function{bisect()} to look up a
 letter grade for an exam total (say) based on a set of ordered numeric
 breakpoints: 85 and up is an `A', 75..84 is a `B', etc.
 
 \begin{verbatim}
 >>> grades = "FEDCBA"
 >>> breakpoints = [30, 44, 66, 75, 85]
->>> from bisect import bisect_right
+>>> from bisect import bisect
 >>> def grade(total):
-...           return grades[bisect_right(breakpoints, total)]
+...           return grades[bisect(breakpoints, total)]
 ...
 >>> grade(66)
 'C'
