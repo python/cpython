@@ -1924,6 +1924,33 @@ def rich_comparisons():
                     verify(eval("x %s c[y]" % op) == eval("x %s y" % op),
                            "x=%d, y=%d" % (x, y))
 
+def coercions():
+    if verbose: print "Testing coercions..."
+    class I(int): pass
+    coerce(I(0), 0)
+    coerce(0, I(0))
+    class L(long): pass
+    coerce(L(0), 0)
+    coerce(L(0), 0L)
+    coerce(0, L(0))
+    coerce(0L, L(0))
+    class F(float): pass
+    coerce(F(0), 0)
+    coerce(F(0), 0L)
+    coerce(F(0), 0.)
+    coerce(0, F(0))
+    coerce(0L, F(0))
+    coerce(0., F(0))
+    class C(complex): pass
+    coerce(C(0), 0)
+    coerce(C(0), 0L)
+    coerce(C(0), 0.)
+    coerce(C(0), 0j)
+    coerce(0, C(0))
+    coerce(0L, C(0))
+    coerce(0., C(0))
+    coerce(0j, C(0))
+
 
 def all():
     lists()
@@ -1964,6 +1991,7 @@ def all():
     str_subclass_as_dict_key()
     classic_comparisons()
     rich_comparisons()
+    coercions()
 
 all()
 
