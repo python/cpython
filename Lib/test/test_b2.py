@@ -309,13 +309,13 @@ class G:
 exc = 0
 try:
     zip(a, G())
-except AttributeError:
+except TypeError:
     exc = 1
 except:
     e = sys.exc_info()[0]
     raise TestFailed, 'zip(a, b) - b instance w/o __getitem__'
 if not exc:
-    raise TestFailed, 'zip(a, b) - missing expected AttributeError'
+    raise TestFailed, 'zip(a, b) - missing expected TypeError'
 
 
 # Epilogue -- unlink the temp file

@@ -2102,7 +2102,8 @@ builtin_zip(PyObject *self, PyObject *args)
 {
 	PyObject *ret;
 	int itemsize = PySequence_Length(args);
-	int i, j;
+	int i;
+	PyObject *itlist;  /* tuple of iterators */
 
 	if (itemsize < 1) {
 		PyErr_SetString(PyExc_TypeError,
@@ -2112,35 +2113,60 @@ builtin_zip(PyObject *self, PyObject *args)
 	/* args must be a tuple */
 	assert(PyTuple_Check(args));
 
+	/* allocate result list */
 	if ((ret = PyList_New(0)) == NULL)
 		return NULL;
 
-	for (i = 0;; i++) {
-		PyObject *next = PyTuple_New(itemsize);
-		if (!next) {
-			Py_DECREF(ret);
-			return NULL;
+	/* obtain iterators */
+	itlist = PyTuple_New(itemsize);
+	if (itlist == NULL)
+		goto Fail_ret;
+	for (i = 0; i < itemsize; ++i) {
+		PyObject *item = PyTuple_GET_ITEM(args, i);
+		PyObject *it = PyObject_GetIter(item);
+		if (it == NULL) {
+			if (PyErr_ExceptionMatches(PyExc_TypeError))
+				PyErr_Format(PyExc_TypeError,
+				    "zip argument #%d must support iteration",
+				    i+1);
+			goto Fail_ret_itlist;
 		}
-		for (j = 0; j < itemsize; j++) {
-			PyObject *seq = PyTuple_GET_ITEM(args, j);
-			PyObject *item = PySequence_GetItem(seq, i);
+		PyTuple_SET_ITEM(itlist, i, it);
+	}
 
+	/* build result into ret list */
+	for (;;) {
+		int status;
+		PyObject *next = PyTuple_New(itemsize);
+		if (!next)
+			goto Fail_ret_itlist;
+
+		for (i = 0; i < itemsize; i++) {
+			PyObject *it = PyTuple_GET_ITEM(itlist, i);
+			PyObject *item = PyIter_Next(it);
 			if (!item) {
-				if (PyErr_ExceptionMatches(PyExc_IndexError)) {
-					PyErr_Clear();
-					Py_DECREF(next);
-					return ret;
+				if (PyErr_Occurred()) {
+					Py_DECREF(ret);
+					ret = NULL;
 				}
 				Py_DECREF(next);
-				Py_DECREF(ret);
-				return NULL;
+				Py_DECREF(itlist);
+				return ret;
 			}
-			PyTuple_SET_ITEM(next, j, item);
+			PyTuple_SET_ITEM(next, i, item);
 		}
-		PyList_Append(ret, next);
+
+		status = PyList_Append(ret, next);
 		Py_DECREF(next);
+		if (status < 0)
+			goto Fail_ret_itlist;
 	}
-	/* no return */
+
+Fail_ret_itlist:
+	Py_DECREF(itlist);
+Fail_ret:
+	Py_DECREF(ret);
+	return NULL;
 }
 
 
