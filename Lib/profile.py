@@ -145,7 +145,6 @@ class Profile:
 
         if not timer:
             if os.name == 'mac':
-                import MacOS
                 self.timer = MacOS.GetTicks
                 self.dispatcher = self.trace_dispatch_mac
                 self.get_time = _get_time_mac
@@ -177,6 +176,7 @@ class Profile:
                 # list (for performance).  Note that we can't assume
                 # the timer() result contains two values in all
                 # cases.
+                import operator
                 def get_time_timer(timer=timer,
                                    reduce=reduce, reducer=operator.add):
                     return reduce(reducer, timer(), 0)
