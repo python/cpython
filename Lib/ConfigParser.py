@@ -222,7 +222,7 @@ class ConfigParser:
         configuration files in the list will be read.  A single
         filename may also be given.
         """
-        if isinstance(filenames, basestring):
+        if isinstance(filenames, (str, unicode)):
             filenames = [filenames]
         for filename in filenames:
             try:
