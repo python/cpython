@@ -299,6 +299,11 @@ HP-UX:	Please read the file Misc/HPUX-NOTES for shared libraries.
 	this seems to make a difference (at least for HP-UX 10.20)
 	even though config.h defines it.
 
+HP PA-RISC 2.0: A recent bug report (http://www.python.org/sf/546117)
+	suggests that the C compiler in this 64-bit system has bugs
+	in the optimizer that break Python.  Compiling without
+	optimization solves the problems.
+
 Minix:  When using ack, use "CC=cc AR=aal RANLIB=: ./configure"!
 
 SCO:	The following apply to SCO 3 only; Python builds out of the box
