@@ -1,4 +1,4 @@
-# Generated from 'Sap:CodeWarrior6:Metrowerks C/C++:Headers:Universal Headers 2.0.1f:Resources.h'
+# Generated from 'Sap:CodeWarrior7:Metrowerks CodeWarrior:MacOS Support:Headers:Universal Headers:Resources.h'
 
 resSysHeap = 64
 resPurgeable = 32
@@ -9,5 +9,15 @@ resChanged = 2
 mapReadOnly = 128
 mapCompact = 64
 mapChanged = 32
+resSysRefBit = 7
+resSysHeapBit = 6
+resPurgeableBit = 5
+resLockedBit = 4
+resProtectedBit = 3
+resPreloadBit = 2
+resChangedBit = 1
+mapReadOnlyBit = 7
+mapCompactBit = 6
+mapChangedBit = 5
 kResFileNotOpened = -1
 kSystemResFile = 0
