@@ -299,9 +299,11 @@ class SymbolVisitor:
         scope.add_def(node.name)
 
     def visitAugAssign(self, node, scope):
-        # basically, the node is referenced and defined by the same expr
+        # If the LHS is a name, then this counts as assignment.
+        # Otherwise, it's just use.
         self.visit(node.node, scope)
-        self.visit(node.node, scope, 1)
+        if isinstance(node.node, ast.Name):
+            self.visit(node.node, scope, 1) # XXX worry about this
         self.visit(node.expr, scope)
 
     def visitAssign(self, node, scope):
