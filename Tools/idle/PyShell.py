@@ -527,6 +527,11 @@ class PyShell(OutputWindow):
             # No stdin mark -- just get the current line
             self.recall(self.text.get("insert linestart", "insert lineend"))
             return "break"
+        # If we're in the current input and there's only whitespace
+        # beyond the cursor, erase that whitespace first
+        s = self.text.get("insert", "end-1c")
+        if s and not string.strip(s):
+            self.text.delete("insert", "end-1c")
         # If we're in the current input before its last line,
         # insert a newline right at the insert point
         if self.text.compare("insert", "<", "end-1c linestart"):
