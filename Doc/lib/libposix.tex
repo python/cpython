@@ -131,6 +131,11 @@ in the parent.
 Return status for file descriptor \var{fd}, like \code{stat()}.
 \end{funcdesc}
 
+\begin{funcdesc}{ftruncate}{fd\, length}
+Truncate the file corresponding to file descriptor \var{fd}, 
+so that it is at most \var{length} bytes in size.
+\end{funcdesc}
+
 \begin{funcdesc}{getcwd}{}
 Return a string representing the current working directory.
 \end{funcdesc}
@@ -261,6 +266,19 @@ object.
 (Not on MS-DOS.)
 \end{funcdesc}
 
+\begin{funcdesc}{putenv}{varname\, value}
+Set the environment variable named \var{varname} to the string \var{value}.  
+Such changes to the environment affect
+subprocesses started with \code{os.system()}, \code{os.popen()} or
+\code{os.fork()} and \code{os.execv()}.  (Not on all systems.)
+
+When \code{putenv()} is
+supported, assignments to items in \code{os.environ} are automatically
+translated into corresponding calls to \code{os.putenv()}; however,
+calls to \code{os.putenv()} don't update \code{os.environ}, so it is
+actually preferable to assign to items of \code{os.environ}.  
+\end{funcdesc}
+
 \begin{funcdesc}{read}{fd\, n}
 Read at most \var{n} bytes from file descriptor \var{fd}.
 Return a string containing the bytes read.
@@ -281,6 +299,7 @@ points.  (On systems without symbolic links, this always raises
 
 \begin{funcdesc}{remove}{path}
 Remove the file \var{path}.  See \code{rmdir} below to remove a directory.
+This is identical to the \code{unlink} function documented below.
 \end{funcdesc}
 
 \begin{funcdesc}{rename}{src\, dst}
