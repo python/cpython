@@ -42,24 +42,12 @@ builtin_abs(self, v)
 	object *self;
 	object *v;
 {
-	/* XXX This should be a method in the as_number struct in the type */
-	if (v == NULL) {
-		/* */
+	number_methods *nm;
+	if (v == NULL || (nm = v->ob_type->tp_as_number) == NULL) {
+		err_setstr(TypeError, "abs() requires numeric argument");
+		return NULL;
 	}
-	else if (is_intobject(v)) {
-		long x = getintvalue(v);
-		if (x < 0)
-			x = -x;
-		return newintobject(x);
-	}
-	else if (is_floatobject(v)) {
-		double x = getfloatvalue(v);
-		if (x < 0)
-			x = -x;
-		return newfloatobject(x);
-	}
-	err_setstr(TypeError, "abs() argument must be float or int");
-	return NULL;
+	return (*nm->nb_absolute)(v);
 }
 
 static object *
@@ -112,47 +100,18 @@ builtin_divmod(self, v)
 	object *self;
 	object *v;
 {
-	object *x, *y;
-	long xi, yi, xdivy, xmody;
+	object *x;
+	number_methods *nm;
 	if (v == NULL || !is_tupleobject(v) || gettuplesize(v) != 2) {
-		err_setstr(TypeError, "divmod() requires 2 int arguments");
+		err_setstr(TypeError, "divmod() requires 2 arguments");
 		return NULL;
 	}
 	x = gettupleitem(v, 0);
-	y = gettupleitem(v, 1);
-	if (!is_intobject(x) || !is_intobject(y)) {
-		err_setstr(TypeError, "divmod() requires 2 int arguments");
+	if ((nm = x->ob_type->tp_as_number) == NULL) {
+		err_setstr(TypeError, "divmod() requires numeric arguments");
 		return NULL;
 	}
-	xi = getintvalue(x);
-	yi = getintvalue(y);
-	if (yi == 0) {
-		err_setstr(TypeError, "divmod() division by zero");
-		return NULL;
-	}
-	if (yi < 0) {
-		xdivy = -xi / -yi;
-	}
-	else {
-		xdivy = xi / yi;
-	}
-	xmody = xi - xdivy*yi;
-	if (xmody < 0 && yi > 0 || xmody > 0 && yi < 0) {
-		xmody += yi;
-		xdivy -= 1;
-	}
-	v = newtupleobject(2);
-	x = newintobject(xdivy);
-	y = newintobject(xmody);
-	if (v == NULL || x == NULL || y == NULL ||
-		settupleitem(v, 0, x) != 0 ||
-		settupleitem(v, 1, y) != 0) {
-		XDECREF(v);
-		XDECREF(x);
-		XDECREF(y);
-		return NULL;
-	}
-	return v;
+	return (*nm->nb_divmod)(x, gettupleitem(v, 1));
 }
 
 static object *
@@ -207,15 +166,19 @@ builtin_float(self, v)
 	if (v == NULL) {
 		/* */
 	}
-	else if (is_floatobject(v)) {
-		INCREF(v);
-		return v;
-	}
 	else if (is_intobject(v)) {
 		long x = getintvalue(v);
 		return newfloatobject((double)x);
 	}
-	err_setstr(TypeError, "float() argument must be float or int");
+	else if (is_longobject(v)) {
+		extern double dgetlongvalue();
+		return newfloatobject(dgetlongvalue(v));
+	}
+	else if (is_floatobject(v)) {
+		INCREF(v);
+		return v;
+	}
+	err_setstr(TypeError, "float() argument must be int, long or float");
 	return NULL;
 }
 
@@ -249,11 +212,18 @@ builtin_int(self, v)
 		INCREF(v);
 		return v;
 	}
+	else if (is_longobject(v)) {
+		long x;
+		x = getlongvalue(v);
+		if (x == -1 && err_occurred())
+			return NULL;
+		return newintobject(x);
+	}
 	else if (is_floatobject(v)) {
 		double x = getfloatvalue(v);
 		return newintobject((long)x);
 	}
-	err_setstr(TypeError, "int() argument must be float or int");
+	err_setstr(TypeError, "int() argument must be int, long or float");
 	return NULL;
 }
 
@@ -280,6 +250,29 @@ builtin_len(self, v)
 		return NULL;
 	}
 	return newintobject(len);
+}
+
+static object *
+builtin_long(self, v)
+	object *self;
+	object *v;
+{
+	if (v == NULL) {
+		/* */
+	}
+	else if (is_intobject(v)) {
+		return newlongobject(getintvalue(v));
+	}
+	else if (is_longobject(v)) {
+		INCREF(v);
+		return v;
+	}
+	else if (is_floatobject(v)) {
+		double x = getfloatvalue(v);
+		return newlongobject((long)x);
+	}
+	err_setstr(TypeError, "long() argument must be int, long or float");
+	return NULL;
 }
 
 static object *
@@ -364,6 +357,25 @@ builtin_ord(self, v)
 		return NULL;
 	}
 	return newintobject((long)(getstringvalue(v)[0] & 0xff));
+}
+
+static object *
+builtin_pow(self, v)
+	object *self;
+	object *v;
+{
+	object *x;
+	number_methods *nm;
+	if (v == NULL || !is_tupleobject(v) || gettuplesize(v) != 2) {
+		err_setstr(TypeError, "pow() requires 2 arguments");
+		return NULL;
+	}
+	x = gettupleitem(v, 0);
+	if ((nm = x->ob_type->tp_as_number) == NULL) {
+		err_setstr(TypeError, "pow() requires numeric arguments");
+		return NULL;
+	}
+	return (*nm->nb_power)(x, gettupleitem(v, 1));
 }
 
 static object *
@@ -476,10 +488,12 @@ static struct methodlist builtin_methods[] = {
 	{"input", builtin_input},
 	{"int", builtin_int},
 	{"len", builtin_len},
+	{"long", builtin_long},
 	{"max", builtin_max},
 	{"min", builtin_min},
 	{"open", builtin_open}, /* XXX move to OS module */
 	{"ord", builtin_ord},
+	{"pow", builtin_pow},
 	{"range", builtin_range},
 	{"raw_input", builtin_raw_input},
 	{"reload", builtin_reload},
