@@ -74,6 +74,15 @@ assert args == []
 opts, args = getopt.do_longs([], 'abc=1', ['abcd='], [])
 assert opts == [('--abcd', '1')]
 assert args == []
+opts, args = getopt.do_longs([], 'abc', ['ab', 'abc', 'abcd'], [])
+assert opts == [('--abc', '')]
+assert args == []
+# Much like the preceding, except with a non-alpha character ("-") in
+# option name that precedes "="; failed in
+# http://sourceforge.net/bugs/?func=detailbug&bug_id=126863&group_id=5470
+opts, args = getopt.do_longs([], 'foo=42', ['foo-bar', 'foo=',], [])
+assert opts == [('--foo', '42')]
+assert args == []
 expectException("opts, args = getopt.do_longs([], 'abc=1', ['abc'], [])",
                 GetoptError)
 expectException("opts, args = getopt.do_longs([], 'abc', ['abc='], [])",
