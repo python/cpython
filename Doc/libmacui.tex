@@ -31,9 +31,25 @@ hitting return is \code{0}. This can be changed with the optional
 \var{default} argument.
 \end{funcdesc}
 
+\begin{funcdesc}{ProgressBar}{\optional{label\, maxval}}
+Display a modeless progress dialog with a thermometer bar. \var{Label}
+is the textstring displayed (default ``Working...''), \var{maxval} is
+the value at which progress is complete (default 100). The returned
+object has one method, \code{set(value)}, which sets the value of the
+progress bar. The bar remains visible until the object returned is
+discarded.
+
+The progress bar has a ``cancel'' button, but it is currently
+non-functional.
+\end{funcdesc}
+
 Note that \code{EasyDialogs} does not currently use the notification
 manager. This means that displaying dialogs while the program is in
-the background will need to unexpected results and possibly crashes.
+the background will lead to unexpected results and possibly
+crashes. Also, all dialogs are modeless and hence expect to be at the
+top of the stacking order. This is true when the dialogs are created,
+but windows that pop-up later (like a console window) may also result
+in crashes.
 
 
 \section{Standard module \sectcode{FrameWork}}
@@ -143,6 +159,10 @@ Called early in the event loop to handle modeless dialog events. The
 default method simply dispatches the event to the relevant dialog (not
 through the the \code{DialogWindow} object involved). Override if you
 need special handling of dialog events (keyboard shortcuts, etc).
+\end{funcdesc}
+
+\begin{funcdesc}{idle}{}
+Called by the main event loop when no events are available.
 \end{funcdesc}
 
 \subsection{Window Objects}
