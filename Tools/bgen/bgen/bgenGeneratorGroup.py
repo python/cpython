@@ -6,7 +6,11 @@ class GeneratorGroup:
 		self.prefix = prefix
 		self.generators = []
 
-	def add(self, g):
+	def add(self, g, dupcheck=0):
+		if dupcheck:
+			if g in self.generators:
+				print 'DUP', g.name
+				return
 		g.setprefix(self.prefix)
 		self.generators.append(g)
 
