@@ -6,6 +6,7 @@ typedef struct {
 	PyObject_HEAD
 	long      en_index;        /* current index of enumeration */
 	PyObject* en_sit;          /* secondary iterator of enumeration */
+	PyObject* en_result;	   /* result tuple  */
 } enumobject;
 
 PyTypeObject PyEnum_Type;
@@ -30,6 +31,16 @@ enum_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		Py_DECREF(en);
 		return NULL;
 	}
+	en->en_result = PyTuple_New(2);
+	if (en->en_result == NULL) {
+		Py_DECREF(en->en_sit);
+		Py_DECREF(en);
+		return NULL;
+	}
+	Py_INCREF(Py_None);
+	PyTuple_SET_ITEM(en->en_result, 0, Py_None);
+	Py_INCREF(Py_None);
+	PyTuple_SET_ITEM(en->en_result, 1, Py_None);
 	return (PyObject *)en;
 }
 
@@ -38,42 +49,60 @@ enum_dealloc(enumobject *en)
 {
 	PyObject_GC_UnTrack(en);
 	Py_XDECREF(en->en_sit);
+	Py_XDECREF(en->en_result);
 	en->ob_type->tp_free(en);
 }
 
 static int
 enum_traverse(enumobject *en, visitproc visit, void *arg)
 {
-	if (en->en_sit)
-		return visit(en->en_sit, arg);
+	int err;
+
+	if (en->en_sit) {
+		err = visit(en->en_sit, arg);
+		if (err)
+			return err;
+	}
+	if (en->en_result) {
+		err = visit(en->en_result, arg);
+		if (err)
+			return err;
+	}
 	return 0;
 }
 
 static PyObject *
 enum_next(enumobject *en)
 {
-	PyObject *result;
 	PyObject *next_index;
 	PyObject *next_item;
+	PyObject *result = en->en_result;
+	PyObject *it = en->en_sit;
 
-	result = PyTuple_New(2);
-	if (result == NULL)
+	next_item = (*it->ob_type->tp_iternext)(it);
+	if (next_item == NULL)
 		return NULL;
 
 	next_index = PyInt_FromLong(en->en_index);
 	if (next_index == NULL) {
-		Py_DECREF(result);
+		Py_DECREF(next_item);
 		return NULL;
+	}
+	en->en_index++;
+
+	if (result->ob_refcnt == 1) {
+		Py_INCREF(result);
+		Py_DECREF(PyTuple_GET_ITEM(result, 0));
+		Py_DECREF(PyTuple_GET_ITEM(result, 1));
+	} else {
+		result = PyTuple_New(2);
+		if (result == NULL) {
+			Py_DECREF(next_index);
+			Py_DECREF(next_item);
+			return NULL;
+		}
 	}
 	PyTuple_SET_ITEM(result, 0, next_index);
-
-	next_item = PyIter_Next(en->en_sit);
-	if (next_item == NULL) {
-		Py_DECREF(result);
-		return NULL;
-	}
-
-	en->en_index++;
 	PyTuple_SET_ITEM(result, 1, next_item);
 	return result;
 }
