@@ -185,6 +185,7 @@ posixmodule.o: posixmodule.c
 pwdmodule.o: pwdmodule.c
 regexmodule.o: regexmodule.c
 regexpr.o: regexpr.c
+resource.o: resource.c
 rgbimgmodule.o: rgbimgmodule.c
 rotormodule.o: rotormodule.c
 selectmodule.o: selectmodule.c

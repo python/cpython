@@ -140,6 +140,7 @@ errno errnomodule.c	# posix (UNIX) errno values
 #nis nismodule.c 	# Sun yellow pages -- not everywhere
 #termios termios.c	# Steen Lumholt's termios module
 #_xdr _xdrmodule.c # -lnsl # Helper for xdrlib.py
+#resource resource.c	# Jeremy Hylton's rlimit interface
 
 
 # Multimedia modules -- on by default.
