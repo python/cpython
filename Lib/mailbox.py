@@ -137,8 +137,8 @@ class UnixMailbox(_Mailbox):
     # _search_end() may not be completely correct, because it doesn't check
     # that the two characters preceding "From " are \n\n or the beginning of
     # the file.  Fixing this would require a more extensive rewrite than is
-    # necessary.  For convenience, we've added a StrictUnixMailbox class which
-    # uses the older, more strict _fromlinepattern regular expression.
+    # necessary.  For convenience, we've added a PortableUnixMailbox class
+    # which uses the more lenient _fromlinepattern regular expression.
 
     _fromlinepattern = r"From \s*[^\s]+\s+\w\w\w\s+\w\w\w\s+\d?\d\s+" \
                        r"\d?\d:\d\d(:\d\d)?(\s+[^\s]+)?\s+\d\d\d\d\s*$"
