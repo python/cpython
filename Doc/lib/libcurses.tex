@@ -130,6 +130,27 @@ Flash the screen.
 Flush all input buffers.
 \end{funcdesc}
 
+\begin{funcdesc}{getmouse}{}
+After \method{getch()} returns \constant{KEY_MOUSE} to signal a mouse
+event, this method should be call to retrieve the queued mouse event,
+represented as a 5-tuple
+\code{(\var{id}, \var{x}, \var{y}, \var{z}, \var{bstate})}.
+\var{id} is an ID value used to distinguish multiple devices,
+and \var{x}, \var{y}, \var{z} are the event's coordinates.  (\var{z}
+is currently unused.).  \var{bstate} is an integer value whose bits
+will be set to indicate the type of event, and will be the bitwise OR
+of one or more of the following constants, where \var{n} is the button
+number from 1 to 4:
+\constant{BUTTON\var{n}_PRESSED},
+\constant{BUTTON\var{n}_RELEASED},
+\constant{BUTTON\var{n}_CLICKED},
+\constant{BUTTON\var{n}_DOUBLE_CLICKED},
+\constant{BUTTON\var{n}_TRIPLE_CLICKED},
+\constant{BUTTON_SHIFT},
+\constant{BUTTON_CTRL},
+\constant{BUTTON_ALT}.
+\end{funcdesc}
+
 \begin{funcdesc}{getsyx}{}
 Returns the current coordinates of the virtual screen cursor in y and
 x.  If leaveok is currently true, then -1,-1 is returned.
@@ -219,6 +240,23 @@ characters.  It is defined only after the call to
 \begin{funcdesc}{meta}{yes}
 If \var{yes} is 1, allow 8-bit characters. If \var{yes} is 0, 
 allow only 7-bit chars.
+\end{funcdesc}
+
+\begin{funcdesc}{mouseinterval}{interval}
+Sets the maximum time in millisecondsthat can elapse between press and
+release events in order for them to be recognized as a click, and
+returns the previous interval value.  The default value is 200 msec,
+or one fifth of a second.
+\end{funcdesc}
+
+\begin{funcdesc}{mousemask}{mousemask}
+Sets the mouse events to be reported, and returns a tuple
+\code{(\var{availmask}, \var{oldmask})}.  
+\var{availmask} indicates which of the
+specified mouse events can be reported; on complete failure it returns
+0.  \var{oldmask} is the previous value of the given window's mouse
+event mask.  If this function is never called, no mouse events are
+ever reported.
 \end{funcdesc}
 
 \begin{funcdesc}{newpad}{nlines, ncols}
@@ -368,6 +406,11 @@ are.
 Push \var{ch} so the next \method{getch()} will return it.
 \strong{Note:} only one \var{ch} can be pushed before \method{getch()}
 is called.
+\end{funcdesc}
+
+\begin{funcdesc}{ungetmouse}{id, x, y, z, bstate}
+Push a \constant{KEY_MOUSE} event onto the input queue, associating
+the given state data with it.
 \end{funcdesc}
 
 \begin{funcdesc}{use_env}{flag}
@@ -520,6 +563,13 @@ derived window.
 \begin{methoddesc}{echochar}{ch\optional{, attr}}
 Add character \var{ch} with attribute \var{attr}, and immediately 
 call \method{refresh}.
+\end{methoddesc}
+
+\begin{methoddesc}{enclose}{y, x}
+Tests whether the given pair of screen-relative character-cell
+coordinates are enclosed by the given window, returning true or
+false.  It is useful for determining what subset of the screen
+windows enclose the location of a mouse event.
 \end{methoddesc}
 
 \begin{methoddesc}{erase}{}
