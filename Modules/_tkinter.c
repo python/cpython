@@ -1265,7 +1265,7 @@ Tkapp_MainLoop(self, args)
 	       !errorInCmd)
 	{
 		int result;
-#ifdef THIS_CODE_IS_BUGGY
+#ifdef HAVE_PYTCL_WAITUNTILEVENT
 		result = Tcl_DoOneEvent(TCL_DONT_WAIT);
 		if (PyErr_CheckSignals() != 0)
 			return NULL;
@@ -1275,7 +1275,7 @@ Tkapp_MainLoop(self, args)
 		   thread-safe, but it seems *rather* safe as long as
 		   no two threads call mainloop() simultaneously. */
 		Py_BEGIN_ALLOW_THREADS
-		result = Tcl_WaitForEvent((Tcl_Time *)NULL);
+		result = PyTcl_WaitUntilEvent();
 		Py_END_ALLOW_THREADS
 #else
 		result = Tcl_DoOneEvent(0);
