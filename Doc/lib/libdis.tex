@@ -301,6 +301,12 @@ is evaluated, the locals are passed to the class definition.
 Returns with TOS to the caller of the function.
 \end{opcodedesc}
 
+\begin{opcodedesc}{IMPORT_STAR}{}
+Loads all symbols not starting with '_' directly from the module TOS
+to the local namespace. The module is popped after loading all names.
+This opcode implements 'from module import *'.
+\begin{opcodedesc}
+
 \begin{opcodedesc}{EXEC_STMT}{}
 Implements \code{exec TOS2,TOS1,TOS}.  The compiler fills
 missing optional parameters with None.
@@ -411,8 +417,9 @@ modifies the name space.
 \end{opcodedesc}
 
 \begin{opcodedesc}{IMPORT_FROM}{namei}
-Imports the attribute \code{co_names[\var{namei}]}.  The module to import
-from is found in TOS and left there.
+Loads the attribute \code{co_names[\var{namei}]} from the module found in
+TOS. The resulting object is pushed onto the stack, to be subsequently
+stored by a \code{STORE_FAST} instruction.
 \end{opcodedesc}
 
 \begin{opcodedesc}{JUMP_FORWARD}{delta}

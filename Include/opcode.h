@@ -65,7 +65,7 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 #define LOAD_LOCALS	82
 #define RETURN_VALUE	83
-
+#define IMPORT_STAR	84
 #define EXEC_STMT	85
 
 #define POP_BLOCK	87

@@ -195,7 +195,7 @@ def_op('BREAK_LOOP', 80)
 
 def_op('LOAD_LOCALS', 82)
 def_op('RETURN_VALUE', 83)
-
+def_op('IMPORT_STAR', 84)
 def_op('EXEC_STMT', 85)
 
 def_op('POP_BLOCK', 87)

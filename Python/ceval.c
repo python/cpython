@@ -66,7 +66,8 @@ static PyObject *apply_slice(PyObject *, PyObject *, PyObject *);
 static int assign_slice(PyObject *, PyObject *,
 			PyObject *, PyObject *);
 static PyObject *cmp_outcome(int, PyObject *, PyObject *);
-static int import_from(PyObject *, PyObject *, PyObject *);
+static PyObject *import_from(PyObject *, PyObject *);
+static int import_all_from(PyObject *, PyObject *);
 static PyObject *build_class(PyObject *, PyObject *, PyObject *);
 static int exec_statement(PyFrameObject *,
 			  PyObject *, PyObject *, PyObject *);
@@ -1414,18 +1415,26 @@ eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 			if (x != NULL) continue;
 			break;
 		
-		case IMPORT_FROM:
-			w = GETNAMEV(oparg);
-			v = TOP();
+		case IMPORT_STAR:
+			v = POP();
 			PyFrame_FastToLocals(f);
 			if ((x = f->f_locals) == NULL) {
 				PyErr_SetString(PyExc_SystemError,
 						"no locals");
 				break;
 			}
-			err = import_from(x, v, w);
+			err = import_all_from(x, v);
 			PyFrame_LocalsToFast(f, 0);
+			Py_DECREF(v);
 			if (err == 0) continue;
+			break;
+
+		case IMPORT_FROM:
+			w = GETNAMEV(oparg);
+			v = TOP();
+			x = import_from(v, w);
+			PUSH(x);
+			if (x != NULL) continue;
 			break;
 
 		case JUMP_FORWARD:
@@ -2647,43 +2656,51 @@ cmp_outcome(int op, register PyObject *v, register PyObject *w)
 	return v;
 }
 
-static int
-import_from(PyObject *locals, PyObject *v, PyObject *name)
+static PyObject *
+import_from(PyObject *v, PyObject *name)
 {
 	PyObject *w, *x;
 	if (!PyModule_Check(v)) {
 		PyErr_SetString(PyExc_TypeError,
 				"import-from requires module object");
+		return NULL;
+	}
+	w = PyModule_GetDict(v); /* TDB: can this not fail ? */
+	x = PyDict_GetItem(w, name);
+	if (x == NULL) {
+		PyErr_Format(PyExc_ImportError,
+			     "cannot import name %.230s",
+			     PyString_AsString(name));
+	} else
+		Py_INCREF(x);
+	return x;
+}
+
+static int
+import_all_from(PyObject *locals, PyObject *v)
+{
+	int pos = 0, err;
+	PyObject *name, *value;
+	PyObject *w;
+
+	if (!PyModule_Check(v)) {
+		PyErr_SetString(PyExc_TypeError,
+				"import-from requires module object");
 		return -1;
 	}
-	w = PyModule_GetDict(v);
-	if (PyString_AsString(name)[0] == '*') {
-		int pos, err;
-		PyObject *name, *value;
-		pos = 0;
-		while (PyDict_Next(w, &pos, &name, &value)) {
-			if (!PyString_Check(name) ||
-			    PyString_AsString(name)[0] == '_')
+	w = PyModule_GetDict(v); /* TBD: can this not fail ? */
+
+	while (PyDict_Next(w, &pos, &name, &value)) {
+		if (!PyString_Check(name) ||
+			PyString_AsString(name)[0] == '_')
 				continue;
-			Py_INCREF(value);
-			err = PyDict_SetItem(locals, name, value);
-			Py_DECREF(value);
-			if (err != 0)
-				return -1;
-		}
-		return 0;
-	}
-	else {
-		x = PyDict_GetItem(w, name);
-		if (x == NULL) {
-			PyErr_Format(PyExc_ImportError, 
-				     "cannot import name %.230s",
-				     PyString_AsString(name));
+		Py_INCREF(value);
+		err = PyDict_SetItem(locals, name, value);
+		Py_DECREF(value);
+		if (err != 0)
 			return -1;
-		}
-		else
-			return PyDict_SetItem(locals, name, x);
 	}
+	return 0;
 }
 
 static PyObject *
@@ -2825,7 +2842,7 @@ find_from_args(PyFrameObject *f, int nexti)
 	next_instr += nexti;
 
 	opcode = (*next_instr++);
-	if (opcode != IMPORT_FROM) {
+	if (opcode != IMPORT_FROM && opcode != IMPORT_STAR) {
 		Py_INCREF(Py_None);
 		return Py_None;
 	}
@@ -2833,18 +2850,28 @@ find_from_args(PyFrameObject *f, int nexti)
 	list = PyList_New(0);
 	if (list == NULL)
 		return NULL;
-	
-	do {
-		oparg = (next_instr[1]<<8) + next_instr[0];
-		next_instr += 2;
-		name = Getnamev(f, oparg);
-		if (PyList_Append(list, name) < 0) {
+
+	if (opcode == IMPORT_STAR) {
+		name = PyString_FromString("*");
+		if (!name)
 			Py_DECREF(list);
-			break;
+		else {
+			if (PyList_Append(list, name) < 0)
+				Py_DECREF(list);
+			Py_DECREF(name);
 		}
-		opcode = (*next_instr++);
-	} while (opcode == IMPORT_FROM);
-	
+	} else {
+		do {
+			oparg = (next_instr[1]<<8) + next_instr[0];
+			next_instr += 2;
+			name = Getnamev(f, oparg);
+			if (PyList_Append(list, name) < 0) {
+				Py_DECREF(list);
+				break;
+			}
+			opcode = (*next_instr++);
+		} while (opcode == IMPORT_FROM);
+	}
 	return list;
 }
 

@@ -36,3 +36,10 @@ t6.ham loading
 t6.eggs loading
 ['__all__', '__builtins__', '__doc__', '__file__', '__name__', '__path__', 'eggs', 'ham', 'spam']
 ['eggs', 'ham', 'spam', 't6']
+running test t7
+t7 loading
+['__builtins__', '__doc__', '__file__', '__name__', '__path__']
+['__builtins__', '__doc__', '__file__', '__name__', '__path__']
+t7.sub.subsub loading
+['__builtins__', '__doc__', '__file__', '__name__', '__path__', 'spam']
+t7.sub.subsub.spam = 1
