@@ -317,6 +317,39 @@ getsockaddrarg(s, args, addr_ret, len_ret)
 }
 
 
+/* Get the address length according to the socket object's address family. 
+   Return 1 if the family is known, 0 otherwise.  The length is returned
+   through len_ret. */
+
+static int
+getsockaddrlen(s, len_ret)
+	sockobject *s;
+	int *len_ret;
+{
+	switch (s->sock_family) {
+
+	case AF_UNIX:
+	{
+		*len_ret = sizeof (struct sockaddr_un);
+		return 1;
+	}
+
+	case AF_INET:
+	{
+		*len_ret = sizeof (struct sockaddr_in);
+		return 1;
+	}
+
+	/* More cases here... */
+
+	default:
+		err_setstr(SocketError, "getsockaddrarg: bad family");
+		return 0;
+
+	}
+}
+
+
 /* s.accept() method */
 
 static object *
@@ -329,7 +362,8 @@ sock_accept(s, args)
 	object *res;
 	if (!getnoarg(args))
 		return NULL;
-	addrlen = sizeof addrbuf;
+	if (!getsockaddrlen(s, &addrlen))
+		return NULL;
 	newfd = accept(s->sock_fd, (struct sockaddr *) addrbuf, &addrlen);
 	if (newfd < 0)
 		return socket_error();
