@@ -3159,6 +3159,12 @@ typedef struct {
 	PyObject *obj;
 } superobject;
 
+static struct memberlist super_members[] = {
+	{"__type__", T_OBJECT, offsetof(superobject, type), READONLY},
+	{"__obj__",  T_OBJECT, offsetof(superobject, obj), READONLY},
+	{0}
+};
+
 static void
 super_dealloc(PyObject *self)
 {
@@ -3167,6 +3173,22 @@ super_dealloc(PyObject *self)
 	Py_XDECREF(su->obj);
 	Py_XDECREF(su->type);
 	self->ob_type->tp_free(self);
+}
+
+static PyObject *
+super_repr(PyObject *self)
+{
+	superobject *su = (superobject *)self;
+
+	if (su->obj)
+		return PyString_FromFormat(
+			"<super: <type '%s'>, <%s object>>",
+			su->type ? su->type->tp_name : "NULL",
+			su->obj->ob_type->tp_name);
+	else
+		return PyString_FromFormat(
+			"<super: <type '%s'>, NULL>",
+			su->type ? su->type->tp_name : "NULL");
 }
 
 static PyObject *
@@ -3180,25 +3202,28 @@ super_getattro(PyObject *self, PyObject *name)
 		int i, n;
 
 		mro = su->obj->ob_type->tp_mro;
-		assert(mro != NULL && PyTuple_Check(mro));
-		n = PyTuple_GET_SIZE(mro);
+		if (mro == NULL)
+			n = 0;
+		else {
+			assert(PyTuple_Check(mro));
+			n = PyTuple_GET_SIZE(mro);
+		}
 		for (i = 0; i < n; i++) {
 			if ((PyObject *)(su->type) == PyTuple_GET_ITEM(mro, i))
 				break;
 		}
 		if (i >= n && PyType_Check(su->obj)) {
 			mro = ((PyTypeObject *)(su->obj))->tp_mro;
-			assert(mro != NULL && PyTuple_Check(mro));
-			n = PyTuple_GET_SIZE(mro);
+			if (mro == NULL)
+				n = 0;
+			else {
+				assert(PyTuple_Check(mro));
+				n = PyTuple_GET_SIZE(mro);
+			}
 			for (i = 0; i < n; i++) {
 				if ((PyObject *)(su->type) ==
 				    PyTuple_GET_ITEM(mro, i))
 					break;
-			}
-			if (i >= n) {
-				PyErr_SetString(PyExc_TypeError,
-						"bogus super object");
-				return NULL;
 			}
 		}
 		i++;
@@ -3292,7 +3317,7 @@ PyTypeObject PySuper_Type = {
 	0,					/* tp_getattr */
 	0,					/* tp_setattr */
 	0,					/* tp_compare */
-	0,					/* tp_repr */
+	super_repr,				/* tp_repr */
 	0,					/* tp_as_number */
 	0,					/* tp_as_sequence */
 	0,		       			/* tp_as_mapping */
@@ -3311,7 +3336,7 @@ PyTypeObject PySuper_Type = {
 	0,					/* tp_iter */
 	0,					/* tp_iternext */
 	0,					/* tp_methods */
-	0,					/* tp_members */
+	super_members,				/* tp_members */
 	0,					/* tp_getset */
 	0,					/* tp_base */
 	0,					/* tp_dict */
