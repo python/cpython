@@ -21,8 +21,10 @@ typedef struct _frame {
     PyObject *f_globals;	/* global symbol table (PyDictObject) */
     PyObject *f_locals;		/* local symbol table (PyDictObject) */
     PyObject **f_valuestack;	/* points after the last local */
-    PyObject **f_stackbottom;   /* points to the last item on the stack if
-                                  frame has yielded. */
+    /* Next free slot in f_valuestack.  Frame creation sets to f_valuestack.
+       Frame evaluation usually NULLs it, but a frame that yields sets it
+       to the current stack top. */
+    PyObject **f_stacktop;
     PyObject *f_trace;		/* Trace function */
     PyObject *f_exc_type, *f_exc_value, *f_exc_traceback;
     PyThreadState *f_tstate;
