@@ -8,13 +8,13 @@ opt_show_where = 0
 opt_show_filename = 0
 opt_show_lineno = 1
 
-def grep(pat, +files):
+def grep(pat, *files):
 	return ggrep(RE_SYNTAX_GREP, pat, files)
 
-def egrep(pat, +files):
+def egrep(pat, *files):
 	return ggrep(RE_SYNTAX_EGREP, pat, files)
 
-def emgrep(pat, +files):
+def emgrep(pat, *files):
 	return ggrep(RE_SYNTAX_EMACS, pat, files)
 
 def ggrep(syntax, pat, files):
