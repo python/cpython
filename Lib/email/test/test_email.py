@@ -1288,7 +1288,10 @@ class TestRFC2047(unittest.TestCase):
         s = '=?ISO-8859-1?Q?Andr=E9?= Pirard <pirard@dom.ain>'
         dh = decode_header(s)
         eq(dh, [('Andr\xe9', 'iso-8859-1'), ('Pirard <pirard@dom.ain>', None)])
-        hu = unicode(make_header(dh)).encode('latin-1')
+        # Python 2.1's unicode() builtin doesn't call the object's
+        # __unicode__() method.  Use the following alternative instead.
+        #hu = unicode(make_header(dh)).encode('latin-1')
+        hu = make_header(dh).__unicode__().encode('latin-1')
         eq(hu, 'Andr\xe9 Pirard <pirard@dom.ain>')
 
 
