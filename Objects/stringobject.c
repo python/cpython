@@ -673,11 +673,12 @@ string_concat(register PyStringObject *a, register PyObject *bb)
 	}
 #define b ((PyStringObject *)bb)
 	/* Optimize cases with empty left or right operand */
-	if (a->ob_size == 0) {
-		Py_INCREF(bb);
-		return bb;
-	}
-	if (b->ob_size == 0) {
+	if ((a->ob_size == 0 || b->ob_size == 0) &&
+	    PyString_CheckExact(a) && PyString_CheckExact(b)) {
+		if (a->ob_size == 0) {
+			Py_INCREF(bb);
+			return bb;
+		}
 		Py_INCREF(a);
 		return (PyObject *)a;
 	}
@@ -719,7 +720,7 @@ string_repeat(register PyStringObject *a, register int n)
 			"repeated string is too long");
 		return NULL;
 	}
-	if (size == a->ob_size) {
+	if (size == a->ob_size && PyString_CheckExact(a)) {
 		Py_INCREF(a);
 		return (PyObject *)a;
 	}
@@ -759,7 +760,8 @@ string_slice(register PyStringObject *a, register int i, register int j)
 		j = 0; /* Avoid signed/unsigned bug in next line */
 	if (j > a->ob_size)
 		j = a->ob_size;
-	if (i == 0 && j == a->ob_size) { /* It's the same as a */
+	if (i == 0 && j == a->ob_size && PyString_CheckExact(a)) {
+		/* It's the same as a */
 		Py_INCREF(a);
 		return (PyObject *)a;
 	}
@@ -1378,7 +1380,7 @@ do_strip(PyStringObject *self, int striptype)
 		j++;
 	}
 
-	if (i == 0 && j == len) {
+	if (i == 0 && j == len && PyString_CheckExact(self)) {
 		Py_INCREF(self);
 		return (PyObject*)self;
 	}
@@ -1735,7 +1737,7 @@ string_translate(PyStringObject *self, PyObject *args)
 			if (Py_CHARMASK((*output++ = table[c])) != c)
 				changed = 1;
 		}
-		if (changed)
+		if (changed || !PyString_CheckExact(input_obj))
 			return result;
 		Py_DECREF(result);
 		Py_INCREF(input_obj);
@@ -1755,7 +1757,7 @@ string_translate(PyStringObject *self, PyObject *args)
 				continue;
 		changed = 1;
 	}
-	if (!changed) {
+	if (!changed && PyString_CheckExact(input_obj)) {
 		Py_DECREF(result);
 		Py_INCREF(input_obj);
 		return input_obj;
@@ -1917,7 +1919,8 @@ string_replace(PyStringObject *self, PyObject *args)
 {
 	const char *str = PyString_AS_STRING(self), *sub, *repl;
 	char *new_s;
-	int len = PyString_GET_SIZE(self), sub_len, repl_len, out_len;
+	const int len = PyString_GET_SIZE(self);
+	int sub_len, repl_len, out_len;
 	int count = -1;
 	PyObject *new;
 	PyObject *subobj, *replobj;
@@ -1960,9 +1963,16 @@ string_replace(PyStringObject *self, PyObject *args)
 		return NULL;
 	}
 	if (out_len == -1) {
-		/* we're returning another reference to self */
-		new = (PyObject*)self;
-		Py_INCREF(new);
+		if (PyString_CheckExact(self)) {
+			/* we're returning another reference to self */
+			new = (PyObject*)self;
+			Py_INCREF(new);
+		}
+		else {
+			new = PyString_FromStringAndSize(str, len);
+			if (new == NULL)
+				return NULL;
+		}
 	}
 	else {
 		new = PyString_FromStringAndSize(new_s, out_len);
@@ -2182,11 +2192,8 @@ string_expandtabs(PyStringObject *self, PyObject *args)
     return u;
 }
 
-static
-PyObject *pad(PyStringObject *self,
-	      int left,
-	      int right,
-	      char fill)
+static PyObject *
+pad(PyStringObject *self, int left, int right, char fill)
 {
     PyObject *u;
 
@@ -2195,7 +2202,7 @@ PyObject *pad(PyStringObject *self,
     if (right < 0)
         right = 0;
 
-    if (left == 0 && right == 0) {
+    if (left == 0 && right == 0 && PyString_CheckExact(self)) {
         Py_INCREF(self);
         return (PyObject *)self;
     }
@@ -2217,10 +2224,10 @@ PyObject *pad(PyStringObject *self,
 }
 
 static char ljust__doc__[] =
-"S.ljust(width) -> string\n\
-\n\
-Return S left justified in a string of length width. Padding is\n\
-done using spaces.";
+"S.ljust(width) -> string\n"
+"\n"
+"Return S left justified in a string of length width. Padding is\n"
+"done using spaces.";
 
 static PyObject *
 string_ljust(PyStringObject *self, PyObject *args)
@@ -2229,7 +2236,7 @@ string_ljust(PyStringObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "i:ljust", &width))
         return NULL;
 
-    if (PyString_GET_SIZE(self) >= width) {
+    if (PyString_GET_SIZE(self) >= width && PyString_CheckExact(self)) {
         Py_INCREF(self);
         return (PyObject*) self;
     }
@@ -2239,10 +2246,10 @@ string_ljust(PyStringObject *self, PyObject *args)
 
 
 static char rjust__doc__[] =
-"S.rjust(width) -> string\n\
-\n\
-Return S right justified in a string of length width. Padding is\n\
-done using spaces.";
+"S.rjust(width) -> string\n"
+"\n"
+"Return S right justified in a string of length width. Padding is\n"
+"done using spaces.";
 
 static PyObject *
 string_rjust(PyStringObject *self, PyObject *args)
@@ -2251,7 +2258,7 @@ string_rjust(PyStringObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "i:rjust", &width))
         return NULL;
 
-    if (PyString_GET_SIZE(self) >= width) {
+    if (PyString_GET_SIZE(self) >= width && PyString_CheckExact(self)) {
         Py_INCREF(self);
         return (PyObject*) self;
     }
@@ -2261,10 +2268,10 @@ string_rjust(PyStringObject *self, PyObject *args)
 
 
 static char center__doc__[] =
-"S.center(width) -> string\n\
-\n\
-Return S centered in a string of length width. Padding is done\n\
-using spaces.";
+"S.center(width) -> string\n"
+"\n"
+"Return S centered in a string of length width. Padding is done\n"
+"using spaces.";
 
 static PyObject *
 string_center(PyStringObject *self, PyObject *args)
@@ -2275,7 +2282,7 @@ string_center(PyStringObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "i:center", &width))
         return NULL;
 
-    if (PyString_GET_SIZE(self) >= width) {
+    if (PyString_GET_SIZE(self) >= width && PyString_CheckExact(self)) {
         Py_INCREF(self);
         return (PyObject*) self;
     }
@@ -2286,51 +2293,11 @@ string_center(PyStringObject *self, PyObject *args)
     return pad(self, left, marg - left, ' ');
 }
 
-#if 0
-static char zfill__doc__[] =
-"S.zfill(width) -> string\n\
-\n\
-Pad a numeric string x with zeros on the left, to fill a field\n\
-of the specified width. The string x is never truncated.";
-
-static PyObject *
-string_zfill(PyStringObject *self, PyObject *args)
-{
-    int fill;
-    PyObject *u;
-    char *str;
-
-    int width;
-    if (!PyArg_ParseTuple(args, "i:zfill", &width))
-        return NULL;
-
-    if (PyString_GET_SIZE(self) >= width) {
-        Py_INCREF(self);
-        return (PyObject*) self;
-    }
-
-    fill = width - PyString_GET_SIZE(self);
-
-    u = pad(self, fill, 0, '0');
-    if (u == NULL)
-	return NULL;
-
-    str = PyString_AS_STRING(u);
-    if (str[fill] == '+' || str[fill] == '-') {
-        /* move sign to beginning of string */
-        str[0] = str[fill];
-        str[fill] = '0';
-    }
-
-    return u;
-}
-#endif
-
 static char isspace__doc__[] =
-"S.isspace() -> int\n\
-\n\
-Return 1 if there are only whitespace characters in S,\n\
-0 otherwise.";
+"S.isspace() -> int\n"
+"\n"
+"Return 1 if there are only whitespace characters in S,\n"
+"0 otherwise.";
 
 static PyObject*
 string_isspace(PyStringObject *self)
