@@ -65,12 +65,21 @@ class Class:
 	def _addmethod(self, name, lineno):
 		self.methods[name] = lineno
 
-def readmodule(module, path = []):
+def readmodule(module, path=[], inpackage=0):
 	'''Read a module file and return a dictionary of classes.
 
 	Search for MODULE in PATH and sys.path, read and parse the
 	module and return a dictionary with one entry for each class
 	found in the module.'''
+
+	i = string.rfind(module, '.')
+	if i >= 0:
+		# Dotted module name
+		package = module[:i]
+		submodule = module[i+1:]
+		parent = readmodule(package, path, inpackage)
+		child = readmodule(submodule, parent['__path__'], 1)
+		return child
 
 	if _modules.has_key(module):
 		# we've seen this module before...
@@ -83,21 +92,20 @@ def readmodule(module, path = []):
 
 	# search the path for the module
 	f = None
-	suffixes = imp.get_suffixes()
-	for dir in path + sys.path:
-		for suff, mode, type in suffixes:
-			file = os.path.join(dir, module + suff)
-			try:
-				f = open(file, mode)
-			except IOError:
-				pass
-			else:
-				# found the module
-				break
-		if f:
-			break
-	if not f:
-		raise IOError, 'module ' + module + ' not found'
+	if inpackage:
+		try:
+			f, file, (suff, mode, type) = \
+				imp.find_module(module, path)
+		except ImportError:
+			f = None
+	if f is None:
+		fullpath = path + sys.path
+		f, file, (suff, mode, type) = imp.find_module(module, fullpath)
+	if type == imp.PKG_DIRECTORY:
+		dict = {'__path__': [file]}
+		_modules[module] = dict
+		# XXX Should we recursively look for submodules?
+		return dict
 	if type != imp.PY_SOURCE:
 		# not Python source, can't do anything with this module
 		f.close()
@@ -130,7 +138,7 @@ def readmodule(module, path = []):
 				try:
 					# recursively read the
 					# imported module
-					d = readmodule(n, path)
+					d = readmodule(n, path, inpackage)
 				except:
 					print 'module',n,'not found'
 					pass
@@ -142,7 +150,7 @@ def readmodule(module, path = []):
 			names = string.splitfields(res.group('imp'), ',')
 			try:
 				# recursively read the imported module
-				d = readmodule(mod, path)
+				d = readmodule(mod, path, inpackage)
 			except:
 				print 'module',mod,'not found'
 				continue
