@@ -1,7 +1,7 @@
 What's New in IDLE 1.1b2?
 =========================
 
-*Release date: DD-MMM-2004*
+*Release date: 03-NOV-2004*
 
 - When paragraph reformat width was made configurable, a bug was
   introduced that caused reformatting of comment blocks to ignore how
