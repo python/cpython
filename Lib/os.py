@@ -201,8 +201,8 @@ def execvpe(file, args, env):
     _execvpe(file, args, env)
 
 _notfound = None
-def _execvpe(file, args, env = None):
-    if env:
+def _execvpe(file, args, env=None):
+    if env is not None:
         func = execve
         argrest = (args, env)
     else:
@@ -273,3 +273,81 @@ else:
                 self.data[key] = item
 
     environ = _Environ(environ)
+
+def getenv(key, default=None):
+    """Get an environment variable, return None if it doesn't exist.
+
+    The optional second argument can specify an alternative default."""
+    return environ.get(key, default)
+
+def _exists(name):
+    try:
+        eval(name)
+        return 1
+    except NameError:
+        return 0
+
+# Supply spawn*() (probably only for Unix)
+if _exists("fork") and not _exists("spawnv") and _exists("execv"):
+
+    P_WAIT = 0
+    P_NOWAIT = P_NOWAITO = 1
+
+    # XXX Should we support P_DETACH?  I suppose it could fork()**2
+    # and close the std I/O streams.  Also, P_OVERLAY is the same
+    # as execv*()?
+
+    def _spawnvef(mode, file, args, env, func):
+        # Internal helper; func is the exec*() function to use
+        pid = fork()
+        if not pid:
+            # Child
+            try:
+                if env is None:
+                    func(file, args)
+                else:
+                    func(file, args, env)
+            except:
+                _exit(127)
+        else:
+            # Parent
+            if mode == P_NOWAIT:
+                return pid # Caller is responsible for waiting!
+            while 1:
+                wpid, sts = waitpid(pid, 0)
+                if WIFSTOPPED(sts):
+                    continue
+                elif WIFSIGNALED(sts):
+                    return -WTERMSIG(sts)
+                elif WIFEXITED(sts):
+                    return WEXITSTATUS(sts)
+                else:
+                    raise error, "Not stopped, signaled or exited???"
+
+    def spawnv(mode, file, args):
+        return _spawnvef(mode, file, args, None, execv)
+
+    def spawnve(mode, file, args, env):
+        return _spawnvef(mode, file, args, env, execve)
+
+    # Supply the various other variants
+
+    def spawnl(mode, file, *args):
+        return spawnv(mode, file, args)
+
+    def spawnle(mode, file, *args):
+        env = args[-1]
+        return spawnve(mode, file, args[:-1], env)
+
+    def spawnlp(mode, file, *args):
+        return spawnvp(mode, file, args)
+
+    def spawnlpe(mode, file, *args):
+        env = args[-1]
+        return spawnvpe(mode, file, args[:-1], env)
+
+    def spawnvp(mode, file, args):
+        return _spawnvef(mode, file, args, None, execvp)
+
+    def spawnvpe(mode, file, args, env):
+        return _spawnvef(mode, file, args, env, execvpe)
