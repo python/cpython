@@ -12,6 +12,9 @@ What's New in Python 2.4 beta 1?
 Core and builtins
 -----------------
 
+- The bytecode optimizer now folds tuples of constants into a single
+  constant.
+
 - PyLong_AsUnsignedLong[Mask] now support int objects as well.
 
 Extension modules
