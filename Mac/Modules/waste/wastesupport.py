@@ -52,6 +52,7 @@ LongRect_ptr = LongRect
 includestuff = includestuff + """
 #include <%s>""" % MACHEADERFILE + """
 #include <WEObjectHandlers.h>
+#include <WETabs.h>
 
 /* Exported by Qdmodule.c: */
 extern PyObject *QdRGB_New(RGBColor *);
@@ -388,6 +389,13 @@ inshandler_body = """
 
 stdhand = ManualGenerator("STDObjectHandlers", stdhandlers_body)
 inshand = ManualGenerator("WEInstallObjectHandler", inshandler_body)
+
+f = Method(OSErr, 'WEInstallTabHooks', (WEReference, 'we', InMode))
+methods.append(f)
+f = Method(OSErr, 'WERemoveTabHooks', (WEReference, 'we', InMode))
+methods.append(f)
+f = Method(Boolean, 'WEIsTabHooks', (WEReference, 'we', InMode))
+methods.append(f)
 
 # add the populated lists to the generator groups
 # (in a different wordl the scan program would generate this)
