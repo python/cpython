@@ -8,7 +8,7 @@ from scantools import Scanner
 
 LONG = "QuickTime"
 SHORT = "qt"
-OBJECTS = ("Movie", "Track", "Media", "UserData", "TimeBase", "MovieController")
+OBJECTS = ("Movie", "Track", "Media", "UserData", "TimeBase", "MovieController", "IdleManager")
 
 def main():
 	input = "Movies.h"
@@ -91,6 +91,10 @@ class MyScanner(Scanner):
 			"MatrixRecord_ptr",
 			"SampleReferencePtr",
 			"QTTweener",
+			"QTErrorReplacementPtr",
+			"QTRestrictionSet",
+			"QTUUID",
+			"QTUUID_ptr",
 
 			# Routine pointers, not yet.
 			"MoviesErrorUPP",
@@ -109,6 +113,7 @@ class MyScanner(Scanner):
 			"MovieExecuteWiredActionsUPP",
 			"QTBandwidthNotificationUPP",
 			"DoMCActionUPP",
+			"QTNextTaskNeededSoonerCallbackUPP",
 			
 			"SampleReference64Ptr",	# Don't know what this does, yet
 			"QTRuntimeSpriteDescPtr",
