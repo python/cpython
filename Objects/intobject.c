@@ -231,30 +231,70 @@ int_rem(v, w)
 }
 
 static object *
+int_divmod(x, y)
+	intobject *x;
+	register object *y;
+{
+	object *v, *v0, *v1;
+	long xi, yi, xdivy, xmody;
+	if (!is_intobject(y)) {
+		err_badarg();
+		return NULL;
+	}
+	xi = x->ob_ival;
+	yi = getintvalue(y);
+	if (yi == 0)
+		return err_zdiv();
+	if (yi < 0) {
+		xdivy = -xi / -yi;
+	}
+	else {
+		xdivy = xi / yi;
+	}
+	xmody = xi - xdivy*yi;
+	if (xmody < 0 && yi > 0 || xmody > 0 && yi < 0) {
+		xmody += yi;
+		xdivy -= 1;
+	}
+	v = newtupleobject(2);
+	v0 = newintobject(xdivy);
+	v1 = newintobject(xmody);
+	if (v == NULL || v0 == NULL || v1 == NULL ||
+		settupleitem(v, 0, v0) != 0 ||
+		settupleitem(v, 1, v1) != 0) {
+		XDECREF(v);
+		XDECREF(v0);
+		XDECREF(v1);
+		v = NULL;
+	}
+	return v;
+}
+
+static object *
 int_pow(v, w)
 	intobject *v;
 	register object *w;
 {
 	register long iv, iw, ix;
-	register int neg;
 	if (!is_intobject(w)) {
 		err_badarg();
 		return NULL;
 	}
 	iv = v->ob_ival;
 	iw = ((intobject *)w)->ob_ival;
-	neg = 0;
-	if (iw < 0)
-		neg = 1, iw = -iw;
-	ix = 1;
-	for (; iw > 0; iw--)
-		ix = ix * iv;
-	if (neg) {
-		if (ix == 0)
-			return err_zdiv();
-		ix = 1/ix;
+	if (iw < 0) {
+		err_setstr(RuntimeError, "integer to the negative power");
+		return NULL;
 	}
-	/* XXX How to check for overflow? */
+	ix = 1;
+	while (--iw >= 0) {
+		long prev = ix;
+		ix = ix * iv;
+		if (iv == 0)
+			break; /* 0 to some power -- avoid ix / 0 */
+		if (ix / iv != prev)
+			return err_ovf();
+	}
 	return newintobject(ix);
 }
 
@@ -278,15 +318,27 @@ int_pos(v)
 	return (object *)v;
 }
 
+static object *
+int_abs(v)
+	intobject *v;
+{
+	if (v->ob_ival >= 0)
+		return int_pos(v);
+	else
+		return int_neg(v);
+}
+
 static number_methods int_as_number = {
-	int_add,	/*tp_add*/
-	int_sub,	/*tp_subtract*/
-	int_mul,	/*tp_multiply*/
-	int_div,	/*tp_divide*/
-	int_rem,	/*tp_remainder*/
-	int_pow,	/*tp_power*/
-	int_neg,	/*tp_negate*/
-	int_pos,	/*tp_plus*/
+	int_add,	/*nb_add*/
+	int_sub,	/*nb_subtract*/
+	int_mul,	/*nb_multiply*/
+	int_div,	/*nb_divide*/
+	int_rem,	/*nb_remainder*/
+	int_divmod,	/*nb_divmod*/
+	int_pow,	/*nb_power*/
+	int_neg,	/*nb_negative*/
+	int_pos,	/*nb_positive*/
+	int_abs,	/*nb_absolute*/
 };
 
 typeobject Inttype = {
