@@ -50,7 +50,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <Resources.h>
 #include <Memory.h>
 #include <Windows.h>
-#include <Desk.h>
 #include <Traps.h>
 #include <Processes.h>
 #include <Fonts.h>
