@@ -123,15 +123,16 @@ def	genallprojects(force=0):
 	# bgen-generated Toolbox modules
 	genpluginproject("carbon", "_AE", outputdir="::Lib:Carbon")
 	genpluginproject("ppc", "_AE", libraries=["ObjectSupportLib"], outputdir="::Lib:Carbon")
-	genpluginproject("ppc", "_App", libraries=["AppearanceLib"], outputdir="::Lib:Carbon")
+	genpluginproject("ppc", "_App", libraries=["CarbonAccessors.o", "AppearanceLib"],
+			libraryflags="Debug, WeakImport", outputdir="::Lib:Carbon")
 	genpluginproject("carbon", "_App", outputdir="::Lib:Carbon")
 	genpluginproject("ppc", "_Cm", libraries=["QuickTimeLib"], outputdir="::Lib:Carbon")
 	genpluginproject("carbon", "_Cm", outputdir="::Lib:Carbon")
 	genpluginproject("carbon", "_Ctl", outputdir="::Lib:Carbon")
-	genpluginproject("ppc", "_Ctl", libraries=["ControlsLib", "AppearanceLib"], 
+	genpluginproject("ppc", "_Ctl", libraries=["CarbonAccessors.o", "ControlsLib", "AppearanceLib"], 
 			libraryflags="Debug, WeakImport", outputdir="::Lib:Carbon")
 	genpluginproject("carbon", "_Dlg", outputdir="::Lib:Carbon")
-	genpluginproject("ppc", "_Dlg", libraries=["DialogsLib", "AppearanceLib"],
+	genpluginproject("ppc", "_Dlg", libraries=["CarbonAccessors.o", "DialogsLib", "AppearanceLib"],
 			libraryflags="Debug, WeakImport", outputdir="::Lib:Carbon")
 	genpluginproject("carbon", "_Drag", outputdir="::Lib:Carbon")
 	genpluginproject("ppc", "_Drag", libraries=["DragLib"], outputdir="::Lib:Carbon")
@@ -142,7 +143,7 @@ def	genallprojects(force=0):
 	genpluginproject("carbon", "_Icn", outputdir="::Lib:Carbon")
 	genpluginproject("all", "_List", outputdir="::Lib:Carbon")
 	genpluginproject("carbon", "_Menu", outputdir="::Lib:Carbon")
-	genpluginproject("ppc", "_Menu", libraries=["MenusLib", "ContextualMenu", "AppearanceLib"],
+	genpluginproject("ppc", "_Menu", libraries=["CarbonAccessors.o", "MenusLib", "ContextualMenu", "AppearanceLib"],
 			libraryflags="Debug, WeakImport", outputdir="::Lib:Carbon")
 	genpluginproject("all", "_Qd", outputdir="::Lib:Carbon")
 	genpluginproject("ppc", "_Qt", libraries=["QuickTimeLib"], outputdir="::Lib:Carbon")
@@ -150,10 +151,10 @@ def	genallprojects(force=0):
 	genpluginproject("all", "_Qdoffs", outputdir="::Lib:Carbon")
 	genpluginproject("all", "_Res", outputdir="::Lib:Carbon")
 	genpluginproject("all", "_Scrap", outputdir="::Lib:Carbon")
-	genpluginproject("ppc", "_Snd", libraries=["SoundLib"], outputdir="::Lib:Carbon")
+	genpluginproject("ppc", "_Snd", libraries=["CarbonAccessors.o", "SoundLib"], outputdir="::Lib:Carbon")
 	genpluginproject("carbon", "_Snd", outputdir="::Lib:Carbon")
 	genpluginproject("all", "_Sndihooks", sources=[":snd:_Sndihooks.c"], outputdir="::Lib:Carbon")
-	genpluginproject("ppc", "_TE", libraries=["DragLib"], outputdir="::Lib:Carbon")
+	genpluginproject("ppc", "_TE", libraries=["CarbonAccessors.o", "DragLib"], outputdir="::Lib:Carbon")
 	genpluginproject("carbon", "_TE", outputdir="::Lib:Carbon")
 	genpluginproject("ppc", "_Mlte", libraries=["Textension"], outputdir="::Lib:Carbon")
 	genpluginproject("carbon", "_Mlte", outputdir="::Lib:Carbon")
