@@ -1029,7 +1029,9 @@ Execute the program \var{path} in a new process.  If \var{mode} is
 \constant{P_NOWAIT}, this function returns the process ID of the new
 process; if \var{mode} is \constant{P_WAIT}, returns the process's
 exit code if it exits normally, or \code{-\var{signal}}, where
-\var{signal} is the signal that killed the process.
+\var{signal} is the signal that killed the process.  On Windows, the
+process ID will actually be the process handle, so can be used with
+the \function{waitpid()} function.
 
 The \character{l} and \character{v} variants of the
 \function{spawn*()} functions differ in how command-line arguments are
@@ -1184,7 +1186,7 @@ than \code{-1}, status is requested for any process in the process
 group \code{-\var{pid}} (the absolute value of \var{pid}).
 
 On Windows:
-Wait for completion of a process given by process id \var{pid},
+Wait for completion of a process given by process handle \var{pid},
 and return a tuple containing \var{pid},
 and its exit status shifted left by 8 bits (shifting makes cross-platform
 use of the function easier).
@@ -1194,7 +1196,7 @@ The value of integer \var{options} has no effect.
 \var{pid} can refer to any process whose id is known, not necessarily a
 child process.
 The \function{spawn()} functions called with \constant{P_NOWAIT}
-return suitable process ids.
+return suitable process handles.
 \end{funcdesc}
 
 \begin{datadesc}{WNOHANG}
