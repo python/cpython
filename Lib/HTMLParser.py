@@ -15,8 +15,7 @@ import string
 
 interesting_normal = re.compile('[&<]')
 interesting_cdata = re.compile(r'<(/|\Z)')
-incomplete = re.compile('&([a-zA-Z][-.a-zA-Z0-9]*'
-                        '|#([0-9]*|[xX][0-9a-fA-F]*))?')
+incomplete = re.compile('&[a-zA-Z#]')
 
 entityref = re.compile('&([a-zA-Z][-.a-zA-Z0-9]*)[^a-zA-Z0-9]')
 charref = re.compile('&#(?:[0-9]+|[xX][0-9a-fA-F]+)[^0-9a-fA-F]')
@@ -185,16 +184,18 @@ class HTMLParser:
                     k = self.parse_pi(i)
                 elif declopen.match(rawdata, i): # <!
                     k = self.parse_declaration(i)
-                else:
+                elif (i + 1) < n:
                     self.handle_data("<")
                     k = i + 1
+                else:
+                    break
                 if k < 0:
                     if end:
                         raise HTMLParseError("EOF in middle of construct",
                                              self.getpos())
                     break
                 i = self.updatepos(i, k)
-            elif rawdata[i] == '&':
+            elif rawdata[i:i+2] == "&#":
                 match = charref.match(rawdata, i)
                 if match:
                     name = match.group()[2:-1]
@@ -204,6 +205,9 @@ class HTMLParser:
                         k = k - 1
                     i = self.updatepos(i, k)
                     continue
+                else:
+                    break
+            elif rawdata[i] == '&':
                 match = entityref.match(rawdata, i)
                 if match:
                     name = match.group(1)
@@ -215,14 +219,21 @@ class HTMLParser:
                     continue
                 match = incomplete.match(rawdata, i)
                 if match:
+                    # match.group() will contain at least 2 chars
                     rest = rawdata[i:]
-                    if end and rest != "&" and match.group() == rest:
+                    if end and match.group() == rest:
                         raise HTMLParseError(
                             "EOF in middle of entity or char ref",
                             self.getpos())
-                    return -1 # incomplete
-                self.handle_data("&")
-                i = self.updatepos(i, i + 1)
+                    # incomplete
+                    break
+                elif (i + 1) < n:
+                    # not the end of the buffer, and can't be confused
+                    # with some other construct
+                    self.handle_data("&")
+                    i = self.updatepos(i, i + 1)
+                else:
+                    break
             else:
                 assert 0, "interesting.search() lied"
         # end while
@@ -232,14 +243,15 @@ class HTMLParser:
         self.rawdata = rawdata[i:]
 
     # Internal -- parse comment, return end or -1 if not terminated
-    def parse_comment(self, i):
+    def parse_comment(self, i, report=1):
         rawdata = self.rawdata
         assert rawdata[i:i+4] == '<!--', 'unexpected call to parse_comment()'
         match = commentclose.search(rawdata, i+4)
         if not match:
             return -1
-        j = match.start()
-        self.handle_comment(rawdata[i+4: j])
+        if report:
+            j = match.start()
+            self.handle_comment(rawdata[i+4: j])
         j = match.end()
         return j
 
@@ -257,11 +269,17 @@ class HTMLParser:
             return -1
         # in practice, this should look like: ((name|stringlit) S*)+ '>'
         n = len(rawdata)
+        decltype = None
+        extrachars = ""
         while j < n:
             c = rawdata[j]
             if c == ">":
                 # end of declaration syntax
-                self.handle_decl(rawdata[i+2:j])
+                data = rawdata[i+2:j]
+                if decltype == "doctype":
+                    self.handle_decl(data)
+                else:
+                    self.unknown_decl(data)
                 return j + 1
             if c in "\"'":
                 m = declstringlit.match(rawdata, j)
@@ -273,11 +291,241 @@ class HTMLParser:
                 if not m:
                     return -1 # incomplete
                 j = m.end()
+                if decltype is None:
+                    decltype = m.group(0).rstrip().lower()
+                    if decltype != "doctype":
+                        extrachars = "="
+            elif c == "[" and decltype == "doctype":
+                j = self.parse_doctype_subset(j + 1, i)
+                if j < 0:
+                    return j
+            elif c in extrachars:
+                j = j + 1
+                while j < n and rawdata[j] in string.whitespace:
+                    j = j + 1
+                if j == n:
+                    # end of buffer while in declaration
+                    return -1
             else:
                 raise HTMLParseError(
                     "unexpected char in declaration: %s" % `rawdata[j]`,
                     self.getpos())
+            decltype = decltype or ''
         return -1 # incomplete
+
+    # Internal -- scan past the internal subset in a <!DOCTYPE declaration,
+    # returning the index just past any whitespace following the trailing ']'.
+    def parse_doctype_subset(self, i, declstartpos):
+        rawdata = self.rawdata
+        n = len(rawdata)
+        j = i
+        while j < n:
+            c = rawdata[j]
+            if c == "<":
+                s = rawdata[j:j+2]
+                if s == "<":
+                    # end of buffer; incomplete
+                    return -1
+                if s != "<!":
+                    self.updatepos(declstartpos, j + 1)
+                    raise HTMLParseError("unexpect char in internal subset",
+                                         self.getpos())
+                if (j + 2) == n:
+                    # end of buffer; incomplete
+                    return -1
+                if (j + 4) > n:
+                    # end of buffer; incomplete
+                    return -1
+                if rawdata[j:j+4] == "<!--":
+                    j = self.parse_comment(j, report=0)
+                    if j < 0:
+                        return j
+                    continue
+                name, j = self.scan_name(j + 2, declstartpos)
+                if j == -1:
+                    return -1
+                if name not in ("attlist", "element", "entity", "notation"):
+                    self.updatepos(declstartpos, j + 2)
+                    raise HTMLParseError(
+                        "unknown declaration %s in internal subset" % `name`,
+                        self.getpos())
+                # handle the individual names
+                meth = getattr(self, "parse_doctype_" + name)
+                j = meth(j, declstartpos)
+                if j < 0:
+                    return j
+            elif c == "%":
+                # parameter entity reference
+                if (j + 1) == n:
+                    # end of buffer; incomplete
+                    return -1
+                m = declname.match(rawdata, j + 1)
+                s = m.group()
+                if s == rawdata[j+1:]:
+                    return -1
+                j = j + 1 + len(s.rstrip())
+                if rawdata[j] == ";":
+                    j = j + 1
+            elif c == "]":
+                j = j + 1
+                while j < n and rawdata[j] in string.whitespace:
+                    j = j + 1
+                if j < n:
+                    if rawdata[j] == ">":
+                        return j
+                    self.updatepos(declstartpos, j)
+                    raise HTMLParseError(
+                        "unexpected char after internal subset",
+                        self.getpos())
+                else:
+                    return -1
+            elif c in string.whitespace:
+                j = j + 1
+            else:
+                self.updatepos(declstartpos, j)
+                raise HTMLParseError("unexpected char in internal subset",
+                                     self.getpos())
+        # end of buffer reached
+        return -1
+
+    def parse_doctype_element(self, i, declstartpos):
+        rawdata = self.rawdata
+        n = len(rawdata)
+        name, j = self.scan_name(i, declstartpos)
+        if j == -1:
+            return -1
+        # style content model; just skip until '>'
+        if '>' in rawdata[j:]:
+            return string.find(rawdata, ">", j) + 1
+        return -1
+
+    def parse_doctype_attlist(self, i, declstartpos):
+        rawdata = self.rawdata
+        name, j = self.scan_name(i, declstartpos)
+        c = rawdata[j:j+1]
+        if c == "":
+            return -1
+        if c == ">":
+            return j + 1
+        while 1:
+            # scan a series of attribute descriptions; simplified:
+            #   name type [value] [#constraint]
+            name, j = self.scan_name(j, declstartpos)
+            if j < 0:
+                return j
+            c = rawdata[j:j+1]
+            if c == "":
+                return -1
+            if c == "(":
+                # an enumerated type; look for ')'
+                if ")" in rawdata[j:]:
+                    j = string.find(rawdata, ")", j) + 1
+                else:
+                    return -1
+                while rawdata[j:j+1] in string.whitespace:
+                    j = j + 1
+                if not rawdata[j:]:
+                    # end of buffer, incomplete
+                    return -1
+            else:
+                name, j = self.scan_name(j, declstartpos)
+            c = rawdata[j:j+1]
+            if not c:
+                return -1
+            if c in "'\"":
+                m = declstringlit.match(rawdata, j)
+                if m:
+                    j = m.end()
+                else:
+                    return -1
+                c = rawdata[j:j+1]
+                if not c:
+                    return -1
+            if c == "#":
+                if rawdata[j:] == "#":
+                    # end of buffer
+                    return -1
+                name, j = self.scan_name(j + 1, declstartpos)
+                if j < 0:
+                    return j
+                c = rawdata[j:j+1]
+                if not c:
+                    return -1
+            if c == '>':
+                # all done
+                return j + 1
+                
+    def parse_doctype_notation(self, i, declstartpos):
+        name, j = self.scan_name(i, declstartpos)
+        if j < 0:
+            return j
+        rawdata = self.rawdata
+        while 1:
+            c = rawdata[j:j+1]
+            if not c:
+                # end of buffer; incomplete
+                return -1
+            if c == '>':
+                return j + 1
+            if c in "'\"":
+                m = declstringlit.match(rawdata, j)
+                if not m:
+                    return -1
+                j = m.end()
+            else:
+                name, j = self.scan_name(j, declstartpos)
+                if j < 0:
+                    return j
+
+    def parse_doctype_entity(self, i, declstartpos):
+        rawdata = self.rawdata
+        if rawdata[i:i+1] == "%":
+            j = i + 1
+            while 1:
+                c = rawdata[j:j+1]
+                if not c:
+                    return -1
+                if c in string.whitespace:
+                    j = j + 1
+                else:
+                    break
+        else:
+            j = i
+        name, j = self.scan_name(j, declstartpos)
+        if j < 0:
+            return j
+        while 1:
+            c = self.rawdata[j:j+1]
+            if not c:
+                return -1
+            if c in "'\"":
+                m = declstringlit.match(rawdata, j)
+                if m:
+                    j = m.end()
+                else:
+                    return -1    # incomplete
+            elif c == ">":
+                return j + 1
+            else:
+                name, j = self.scan_name(j, declstartpos)
+                if j < 0:
+                    return j
+
+    def scan_name(self, i, declstartpos):
+        rawdata = self.rawdata
+        n = len(rawdata)
+        if i == n:
+            return None, -1
+        m = declname.match(rawdata, i)
+        if m:
+            s = m.group()
+            name = s.strip()
+            if (i + len(s)) == n:
+                return None, -1  # end of buffer
+            return name.lower(), m.end()
+        else:
+            self.updatepos(declstartpos, i)
+            raise HTMLParseError("expected name token", self.getpos())
 
     # Internal -- parse processing instr, return end or -1 if not terminated
     def parse_pi(self, i):
