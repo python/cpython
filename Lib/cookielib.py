@@ -447,7 +447,7 @@ def parse_ns_headers(ns_headers):
     for ns_header in ns_headers:
         pairs = []
         version_set = False
-        for param in re.split(r";\s*", ns_header):
+        for ii, param in enumerate(re.split(r";\s*", ns_header)):
             param = param.rstrip()
             if param == "": continue
             if "=" not in param:
@@ -459,7 +459,7 @@ def parse_ns_headers(ns_headers):
             else:
                 k, v = re.split(r"\s*=\s*", param, 1)
                 k = k.lstrip()
-            if k is not None:
+            if ii != 0:
                 lc = k.lower()
                 if lc in known_attrs:
                     k = lc

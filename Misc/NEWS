@@ -61,6 +61,8 @@ Extension Modules
 Library
 -------
 
+- Patch #1117339: Add cookielib special name tests.
+
 - Patch #1112812: Make bsddb/__init__.py more friendly for modulefinder.
 
 - Patch #1110248: SYNC_FLUSH the zlib buffer for GZipFile.flush.

@@ -103,12 +103,22 @@ class HeaderTests(TestCase):
         from cookielib import parse_ns_headers
 
         # quotes should be stripped
-        expected = [[('expires', 2209069412L), ('version', '0')]]
+        expected = [[('foo', 'bar'), ('expires', 2209069412L), ('version', '0')]]
         for hdr in [
-            'expires=01 Jan 2040 22:23:32 GMT',
-            'expires="01 Jan 2040 22:23:32 GMT"',
+            'foo=bar; expires=01 Jan 2040 22:23:32 GMT',
+            'foo=bar; expires="01 Jan 2040 22:23:32 GMT"',
             ]:
             self.assertEquals(parse_ns_headers([hdr]), expected)
+
+    def test_parse_ns_headers_special_names(self):
+        # names such as 'expires' are not special in first name=value pair
+        # of Set-Cookie: header
+        from cookielib import parse_ns_headers
+
+        # Cookie with name 'expires'
+        hdr = 'expires=01 Jan 2040 22:23:32 GMT'
+        expected = [[("expires", "01 Jan 2040 22:23:32 GMT"), ("version", "0")]]
+        self.assertEquals(parse_ns_headers([hdr]), expected)
 
     def test_join_header_words(self):
         from cookielib import join_header_words
@@ -369,6 +379,19 @@ class CookieTests(TestCase):
         spam = c._cookies["www.acme.com"]["/"]["foo"]
         self.assert_(foo.expires is None)
         self.assert_(spam.expires is None)
+
+    def test_ns_parser_special_names(self):
+        # names such as 'expires' are not special in first name=value pair
+        # of Set-Cookie: header
+        from cookielib import CookieJar
+
+        c = CookieJar()
+        interact_netscape(c, "http://www.acme.com/", 'expires=eggs')
+        interact_netscape(c, "http://www.acme.com/", 'version=eggs; spam=eggs')
+
+        cookies = c._cookies["www.acme.com"]["/"]
+        self.assert_('expires' in cookies)
+        self.assert_('version' in cookies)
 
     def test_expires(self):
         from cookielib import time2netscape, CookieJar
