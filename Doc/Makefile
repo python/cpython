@@ -83,6 +83,12 @@ all-dvi: $(DVIFILES)
 all-pdf: $(PDFFILES)
 all-ps:	 $(PSFILES)
 
+# This target gets both the PDF and PS files updated; the more specific
+# targets above don't ensure that both are done if the "alternate" rules
+# (using pdflatex) for PDF generation are used.
+#
+all-formats:  $(PSFILES) $(PDFFILES)
+
 # Individual document fake targets
 tut:	tut.ps
 lib:	lib.ps
@@ -95,8 +101,8 @@ api:	api.ps
 .dvi.ps:
 	$(DVIPS) $< >$@
 
-.ps.pdf:
-	$(DISTILL) $<
+#.ps.pdf:
+#	$(DISTILL) $<
 
 # An alternate formulation of PDF creation; requires latex format with
 # pdftex.  To use this instead of the Acrobat distiller solution, comment
@@ -106,8 +112,8 @@ api:	api.ps
 # This rule avoids creation of the intermediate PostScript files and uses
 # only free software.
 #
-#.dvi.pdf:
-#	$(PDFLATEX) $*
+.dvi.pdf:
+	$(PDFLATEX) $*
 
 # Dependencies
 COMMONTEX=myformat.sty copyright.tex boilerplate.tex
@@ -232,7 +238,7 @@ lib.info: python-lib.info
 # source of.  The prominent location makes it worth the extra step;
 # this affects the title pages!
 
-l2h: l2htut l2hext l2hlib l2hapi
+l2h: l2hapi l2hext l2hlib l2htut
 
 l2htut: tut.dvi myformat.perl
 	$(L2H) $(L2HARGS) tut.tex
