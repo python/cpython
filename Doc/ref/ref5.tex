@@ -36,7 +36,7 @@ following coercions are applied:
 	is necessary.
 \end{itemize}
 
-Some additional rules apply for certain operators (e.g. a string left
+Some additional rules apply for certain operators (e.g., a string left
 argument to the `\%' operator). Extensions can define their own
 coercions.
 \section{Atoms}
@@ -216,7 +216,7 @@ involved).
 (In particular, converting a string adds quotes around it and converts
 ``funny'' characters to escape sequences that are safe to print.)
 
-It is illegal to attempt to convert recursive objects (e.g. lists or
+It is illegal to attempt to convert recursive objects (e.g., lists or
 dictionaries that contain a reference to themselves, directly or
 indirectly.)
 \obindex{recursive}
@@ -248,7 +248,7 @@ attributeref:   primary "." identifier
 \end{verbatim}
 
 The primary must evaluate to an object of a type that supports
-attribute references, e.g. a module or a list.  This object is then
+attribute references, e.g., a module or a list.  This object is then
 asked to produce the attribute whose name is the identifier.  If this
 attribute is not available, the exception
 \exception{AttributeError}\exindex{AttributeError} is raised.
@@ -361,7 +361,7 @@ respectively, substituting \code{None} for missing expressions.
 \subsection{Calls} \label{calls}
 \index{call}
 
-A call calls a callable object (e.g. a function) with a possibly empty
+A call calls a callable object (e.g., a function) with a possibly empty
 series of arguments:
 \obindex{callable}
 
@@ -567,7 +567,7 @@ The \code{\%} (modulo) operator yields the remainder from the
 division of the first argument by the second.  The numeric arguments
 are first converted to a common type.  A zero right argument raises
 the \exception{ZeroDivisionError} exception.  The arguments may be floating
-point numbers, e.g. \code{3.14\%0.7} equals \code{0.34} (since
+point numbers, e.g., \code{3.14\%0.7} equals \code{0.34} (since
 \code{3.14} equals \code{4*0.7 + 0.34}.)  The modulo operator always
 yields a result with the same sign as its second operand (or zero);
 the absolute value of the result is strictly smaller than the second
@@ -663,7 +663,7 @@ comp_operator:  "<"|">"|"=="|">="|"<="|"<>"|"!="|"is" ["not"]|["not"] "in"
 
 Comparisons yield integer values: \code{1} for true, \code{0} for false.
 
-Comparisons can be chained arbitrarily, e.g. \code{x < y <= z} is
+Comparisons can be chained arbitrarily, e.g., \code{x < y <= z} is
 equivalent to \code{x < y and y <= z}, except that \code{y} is
 evaluated only once (but in both cases \code{z} is not evaluated at all
 when \code{x < y} is found to be false).
@@ -789,7 +789,7 @@ This is sometimes useful, e.g., if \code{s} is a string that should be
 replaced by a default value if it is empty, the expression
 \code{s or 'foo'} yields the desired value.  Because \keyword{not} has to
 invent a value anyway, it does not bother to return a value of the
-same type as its argument, so e.g. \code{not 'foo'} yields \code{0},
+same type as its argument, so e.g., \code{not 'foo'} yields \code{0},
 not \code{''}.)
 
 Lambda forms (lambda expressions) have the same syntactic position as

@@ -810,7 +810,8 @@ part of the instance, e.g., ``\code{BaseClass.__init__(self, [args...])}''.
 
 
 \item[{\tt __del__(self)}]
-Called when the instance is about to be destroyed.  If a base class
+Called when the instance is about to be destroyed.  This is also
+called a destructor\index{destructor}.  If a base class
 has a \method{__del__()} method, the derived class's \method{__del__()} method
 must explicitly call it to ensure proper deletion of the base class
 part of the instance.  Note that it is possible (though not recommended!)
@@ -1215,7 +1216,7 @@ the other type here).
 \strong{Coercion rules}: to evaluate \var{x} \var{op} \var{y}, the
 following steps are taken (where \method{__op__()} and
 \method{__rop__()} are the method names corresponding to \var{op},
-e.g. if var{op} is `\code{+}', \method{__add__()} and
+e.g., if var{op} is `\code{+}', \method{__add__()} and
 \method{__radd__()} are used).  If an exception occurs at any point,
 the evaluation is abandoned and exception handling takes over.
 

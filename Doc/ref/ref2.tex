@@ -38,7 +38,7 @@ A Python program is divided into a number of \emph{logical lines}.
 The end of
 a logical line is represented by the token NEWLINE.  Statements cannot
 cross logical line boundaries except where NEWLINE is allowed by the
-syntax (e.g. between statements in compound statements).
+syntax (e.g., between statements in compound statements).
 A logical line is constructed from one or more \emph{physical lines}
 by following the explicit or implicit \emph{line joining} rules.
 \index{logical line}
@@ -455,7 +455,7 @@ definitions:
 \begin{verbatim}
 floatnumber:    pointfloat | exponentfloat
 pointfloat:     [intpart] fraction | intpart "."
-exponentfloat:  (intpart | pointfloat) exponent
+exponentfloat:  (nonzerodigit digit* | pointfloat) exponent
 intpart:        nonzerodigit digit* | "0"
 fraction:       "." digit+
 exponent:       ("e"|"E") ["+"|"-"] digit+
@@ -487,10 +487,10 @@ An imaginary literals yields a complex number with a real part of
 0.0.  Complex numbers are represented as a pair of floating point
 numbers and have the same restrictions on their range.  To create a
 complex number with a nonzero real part, add a floating point number
-to it, e.g. \code{(3+4j)}.  Some examples of imaginary literals:
+to it, e.g., \code{(3+4j)}.  Some examples of imaginary literals:
 
 \begin{verbatim}
-3.14j   10.j    10 j    .001j   1e100j  3.14e-10j 
+3.14j   10.j    10j     .001j   1e100j  3.14e-10j 
 \end{verbatim}
 
 
