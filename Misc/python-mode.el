@@ -471,31 +471,39 @@ py-beep-if-tab-change\tring the bell if tab-width is changed"
 (defun py-electric-colon (arg)
   "Insert a colon.
 In certain cases the line is outdented appropriately.  If a numeric
-argument is provided, that many colons are inserted non-electrically."
+argument is provided, that many colons are inserted non-electrically.
+Electric behavior is inhibited inside a string or comment."
   (interactive "P")
   (self-insert-command (prefix-numeric-value arg))
-  (save-excursion
-    (let ((here (point))
-	  (outdent 0)
-	  (indent (py-compute-indentation)))
-      (if (and (not arg)
-	       (py-outdent-p)
-	       (= indent (save-excursion
-			   (forward-line -1)
-			   (py-compute-indentation)))
-	       )
-	  (setq outdent py-indent-offset))
-      ;; Don't indent, only outdent.  This assumes that any lines that
-      ;; are already outdented relative to py-compute-indentation were
-      ;; put there on purpose.  Its highly annoying to have `:' indent
-      ;; for you.  Use TAB, C-c C-l or C-c C-r to adjust.  TBD: Is
-      ;; there a better way to determine this???
-      (if (< (current-indentation) indent) nil
-	(goto-char here)
-	(beginning-of-line)
-	(delete-horizontal-space)
-	(indent-to (- indent outdent))
-	))))
+  ;; are we in a string or comment?
+  (if (save-excursion
+	(let ((pps (parse-partial-sexp (save-excursion
+					 (beginning-of-python-def-or-class)
+					 (point))
+				       (point))))
+	  (not (or (nth 3 pps) (nth 4 pps)))))
+      (save-excursion
+	(let ((here (point))
+	      (outdent 0)
+	      (indent (py-compute-indentation)))
+	  (if (and (not arg)
+		   (py-outdent-p)
+		   (= indent (save-excursion
+			       (forward-line -1)
+			       (py-compute-indentation)))
+		   )
+	      (setq outdent py-indent-offset))
+	  ;; Don't indent, only outdent.  This assumes that any lines that
+	  ;; are already outdented relative to py-compute-indentation were
+	  ;; put there on purpose.  Its highly annoying to have `:' indent
+	  ;; for you.  Use TAB, C-c C-l or C-c C-r to adjust.  TBD: Is
+	  ;; there a better way to determine this???
+	  (if (< (current-indentation) indent) nil
+	    (goto-char here)
+	    (beginning-of-line)
+	    (delete-horizontal-space)
+	    (indent-to (- indent outdent))
+	    )))))
 
 (defun py-indent-right (arg)
   "Indent the line by one `py-indent-offset' level.
