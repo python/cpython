@@ -522,7 +522,8 @@ posix_listdir(self, args)
 		return NULL;
 
 	if (_dos_findfirst(namebuf, _A_RDONLY |
-			_A_HIDDEN | _A_SYSTEM | _A_SUBDIR, &ep) != 0){
+			   _A_HIDDEN | _A_SYSTEM | _A_SUBDIR, &ep) != 0)
+        {
 		errno = ENOENT;
 		return posix_error();
 	}
@@ -718,11 +719,11 @@ posix_uname(self, args)
 	if (res < 0)
 		return posix_error();
 	return Py_BuildValue("(sssss)",
-		       u.sysname,
-		       u.nodename,
-		       u.release,
-		       u.version,
-		       u.machine);
+			     u.sysname,
+			     u.nodename,
+			     u.release,
+			     u.version,
+			     u.machine);
 }
 #endif /* HAVE_UNAME */
 
@@ -875,8 +876,9 @@ posix_execve(self, args)
 	}
 	for (i = 0; i < argc; i++) {
 		if (!PyArg_Parse((*getitem)(argv, i),
-			     "s;argv must be list of strings",
-			     &argvlist[i])) {
+				 "s;argv must be list of strings",
+				 &argvlist[i]))
+		{
 			goto fail_1;
 		}
 	}
@@ -893,7 +895,8 @@ posix_execve(self, args)
 	while (PyDict_Next(env, &pos, &key, &val)) {
 		char *p, *k, *v;
 		if (!PyArg_Parse(key, "s;non-string key in env", &k) ||
-		    !PyArg_Parse(val, "s;non-string value in env", &v)) {
+		    !PyArg_Parse(val, "s;non-string value in env", &v))
+		{
 			goto fail_2;
 		}
 		p = PyMem_NEW(char, PyString_Size(key)+PyString_Size(val) + 2);
@@ -1240,11 +1243,11 @@ posix_times(self, args)
 	if (c == (clock_t) -1)
 		return posix_error();
 	return Py_BuildValue("ddddd",
-		       (double)t.tms_utime / HZ,
-		       (double)t.tms_stime / HZ,
-		       (double)t.tms_cutime / HZ,
-		       (double)t.tms_cstime / HZ,
-		       (double)c / HZ);
+			     (double)t.tms_utime / HZ,
+			     (double)t.tms_stime / HZ,
+			     (double)t.tms_cutime / HZ,
+			     (double)t.tms_cstime / HZ,
+			     (double)c / HZ);
 }
 #endif /* HAVE_TIMES */
 #ifdef MS_WIN32
@@ -1328,7 +1331,7 @@ posix_tcsetpgrp(self, args)
 		return NULL;
 	if (tcsetpgrp(fd, pgid) < 0)
 		return posix_error();
-       Py_INCREF(Py_None);
+	Py_INCREF(Py_None);
 	return Py_None;
 }
 #endif /* HAVE_TCSETPGRP */
@@ -1344,11 +1347,9 @@ posix_open(self, args)
 	int flag;
 	int mode = 0777;
 	int fd;
-	if (!PyArg_Parse(args, "(si)", &file, &flag)) {
-		PyErr_Clear();
-		if (!PyArg_Parse(args, "(sii)", &file, &flag, &mode))
-			return NULL;
-	}
+	if (!PyArg_ParseTuple(args, "si|i", &file, &flag, &mode))
+		return NULL;
+
 	Py_BEGIN_ALLOW_THREADS
 	fd = open(file, flag, mode);
 	Py_END_ALLOW_THREADS
@@ -1489,16 +1490,16 @@ posix_fstat(self, args)
 	if (res != 0)
 		return posix_error();
 	return Py_BuildValue("(llllllllll)",
-		    (long)st.st_mode,
-		    (long)st.st_ino,
-		    (long)st.st_dev,
-		    (long)st.st_nlink,
-		    (long)st.st_uid,
-		    (long)st.st_gid,
-		    (long)st.st_size,
-		    (long)st.st_atime,
-		    (long)st.st_mtime,
-		    (long)st.st_ctime);
+			     (long)st.st_mode,
+			     (long)st.st_ino,
+			     (long)st.st_dev,
+			     (long)st.st_nlink,
+			     (long)st.st_uid,
+			     (long)st.st_gid,
+			     (long)st.st_size,
+			     (long)st.st_atime,
+			     (long)st.st_mtime,
+			     (long)st.st_ctime);
 }
 
 static PyObject *
@@ -1514,6 +1515,7 @@ posix_fdopen(self, args)
 	PyObject *f;
 	if (!PyArg_ParseTuple(args, "i|si", &fd, &mode, &bufsize))
 		return NULL;
+
 	Py_BEGIN_ALLOW_THREADS
 	fp = fdopen(fd, mode);
 	Py_END_ALLOW_THREADS
@@ -1730,7 +1732,7 @@ static PyMethodDef posix_methods[] = {
 #ifdef HAVE_TCSETPGRP
 	{"tcsetpgrp",	posix_tcsetpgrp},
 #endif /* HAVE_TCSETPGRP */
-	{"open",	posix_open},
+	{"open",	posix_open, 1},
 	{"close",	posix_close},
 	{"dup",		posix_dup},
 	{"dup2",	posix_dup2},
