@@ -220,34 +220,33 @@ place to go when nothing else makes sense.
 
 
 \begin{verbatim}
-from Tkinter import *                                                    1
-                                                                         2
-class Application(Frame):                                                3
-    def say_hi(self):                                                    4
-        print "hi there, everyone!"                                      5
-                                                                         6
-    def createWidgets(self):                                             7
-        self.QUIT = Button(self)                                         8
-        self.QUIT["text"] = "QUIT"                                       9
-        self.QUIT["fg"]   = "red"                                       10
-        self.QUIT["command"] =  self.quit                               11
-                                                                        12
-        self.QUIT.pack({"side": "left"})                                13
-                                                                        14
-        self.hi_there = Button(self)                                    15
-        self.hi_there["text"] = "Hello",                                16
-        self.hi_there["command"] = self.say_hi                          17
-                                                                        18
-        self.hi_there.pack({"side": "left"})                            19
-                                                                        20
-                                                                        21
-    def __init__(self, master=None):                                    22
-        Frame.__init__(self, master)                                    23
-        self.pack()                                                     24
-        self.createWidgets()                                            25
-                                                                        26
-app = Application()                                                     27
-app.mainloop()                                                          28
+from Tkinter import *
+
+class Application(Frame):
+    def say_hi(self):
+        print "hi there, everyone!"
+
+    def createWidgets(self):
+        self.QUIT = Button(self)
+        self.QUIT["text"] = "QUIT"
+        self.QUIT["fg"]   = "red"
+        self.QUIT["command"] =  self.quit
+
+        self.QUIT.pack({"side": "left"})
+
+        self.hi_there = Button(self)
+        self.hi_there["text"] = "Hello",
+        self.hi_there["command"] = self.say_hi
+
+        self.hi_there.pack({"side": "left"})
+
+    def __init__(self, master=None):
+        Frame.__init__(self, master)
+        self.pack()
+        self.createWidgets()
+
+app = Application()
+app.mainloop()
 \end{verbatim}
 
 
