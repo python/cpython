@@ -12,7 +12,9 @@ HTTP and HTTPS protocols.  It is normally not used directly --- the
 module \refmodule{urllib}\refstmodindex{urllib} uses it to handle URLs
 that use HTTP and HTTPS.  \note{HTTPS support is only
 available if the \refmodule{socket} module was compiled with SSL
-support.}
+support.}  \note{The \class{HTTP} class is retained only for backward
+compatibility with 1.5.2.  It should not be used in new code.  Refer to the
+online docstrings for usage.}
 
 The constants defined in this module are:
 
@@ -39,11 +41,19 @@ the server at the same host and port:
 >>> h2 = httplib.HTTPConnection('www.cwi.nl:80')
 >>> h3 = httplib.HTTPConnection('www.cwi.nl', 80)
 \end{verbatim}
+\versionadded{2.0}
 \end{classdesc}
 
 \begin{classdesc}{HTTPSConnection}{host\optional{, port}}
 A subclass of \class{HTTPConnection} that uses SSL for communication with
 secure servers.  Default port is \code{443}.
+\versionadded{2.0}
+\end{classdesc}
+
+\begin{classdesc}{HTTPResponse}{sock\optional{, debuglevel=0}\optional{, strict=0}}
+Class whose instances are returned upon successful connection.  Not
+instantiated directly by user.
+\versionadded{2.0}
 \end{classdesc}
 
 The following exceptions are raised as appropriate:
@@ -51,56 +61,64 @@ The following exceptions are raised as appropriate:
 \begin{excdesc}{HTTPException}
 The base class of the other exceptions in this module.  It is a
 subclass of \exception{Exception}.
+\versionadded{2.0}
 \end{excdesc}
 
 \begin{excdesc}{NotConnected}
 A subclass of \exception{HTTPException}.
+\versionadded{2.0}
 \end{excdesc}
 
 \begin{excdesc}{InvalidURL}
 A subclass of \exception{HTTPException}, raised if a port is given and is
 either non-numeric or empty.
+\versionadded{2.3}
 \end{excdesc}
 
 \begin{excdesc}{UnknownProtocol}
 A subclass of \exception{HTTPException}.
+\versionadded{2.0}
 \end{excdesc}
 
 \begin{excdesc}{UnknownTransferEncoding}
 A subclass of \exception{HTTPException}.
-\end{excdesc}
-
-\begin{excdesc}{IllegalKeywordArgument}
-A subclass of \exception{HTTPException}.
+\versionadded{2.0}
 \end{excdesc}
 
 \begin{excdesc}{UnimplementedFileMode}
 A subclass of \exception{HTTPException}.
+\versionadded{2.0}
 \end{excdesc}
 
 \begin{excdesc}{IncompleteRead}
 A subclass of \exception{HTTPException}.
+\versionadded{2.0}
 \end{excdesc}
 
 \begin{excdesc}{ImproperConnectionState}
 A subclass of \exception{HTTPException}.
+\versionadded{2.0}
 \end{excdesc}
 
 \begin{excdesc}{CannotSendRequest}
 A subclass of \exception{ImproperConnectionState}.
+\versionadded{2.0}
 \end{excdesc}
 
 \begin{excdesc}{CannotSendHeader}
 A subclass of \exception{ImproperConnectionState}.
+\versionadded{2.0}
 \end{excdesc}
 
 \begin{excdesc}{ResponseNotReady}
 A subclass of \exception{ImproperConnectionState}.
+\versionadded{2.0}
 \end{excdesc}
 
 \begin{excdesc}{BadStatusLine}
 A subclass of \exception{HTTPException}.  Raised if a server responds with a
 HTTP status code that we don't understand.
+\versionadded{2.0}
 \end{excdesc}
 
 
