@@ -258,7 +258,7 @@ PyCode_New(int argcount, int nlocals, int stacksize, int flags,
 /* Data structure used internally */
 
 struct compiling {
-	PyObject *c_code;		/* string */
+	PyObject *c_code;	/* string */
 	PyObject *c_consts;	/* list of objects */
 	PyObject *c_const_dict; /* inverse of c_consts */
 	PyObject *c_names;	/* list of strings (names) */
@@ -2933,7 +2933,28 @@ com_continue_stmt(struct compiling *c, node *n)
 	if (i-- > 0 && c->c_block[i] == SETUP_LOOP) {
 		com_addoparg(c, JUMP_ABSOLUTE, c->c_begin);
 	}
+	else if (i <= 0) {
+		/* at the outer level */
+		com_error(c, PyExc_SyntaxError,
+			  "'continue' not properly in loop");
+	}
 	else {
+		int j;
+		for (j = 0; j <= i; ++j) {
+			if (c->c_block[j] == SETUP_LOOP)
+				break;
+		}
+		if (j < i+1) {
+			/* there is a loop, but something interferes */
+			for (++j; j <= i; ++j) {
+				if (c->c_block[i] == SETUP_EXCEPT
+				    || c->c_block[i] == SETUP_FINALLY) {
+					com_error(c, PyExc_SyntaxError,
+			       "'continue' not supported inside 'try' clause");
+					return;
+				}
+			}
+		}
 		com_error(c, PyExc_SyntaxError,
 			  "'continue' not properly in loop");
 	}
