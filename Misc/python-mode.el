@@ -1391,16 +1391,20 @@ See the `\\[py-execute-region]' docs for an account of some subtleties."
   "Import the current buffer's file in a Python interpreter.
 
 If the file has already been imported, then do reload instead to get
-the latest version.  If the file's name does not end in \".py\", then
-do execfile instead.  If the current buffer is not visiting a file, do
-`py-execute-buffer' instead.  If the file local variable
-`py-master-file' is non-nil, import or reload the named file instead
-of the buffer's file.  The file may be saved based on the value of
-`py-execute-import-or-reload-save-p'.
+the latest version.
+
+If the file's name does not end in \".py\", then do execfile instead.
+
+If the current buffer is not visiting a file, do `py-execute-buffer'
+instead.
+
+If the file local variable `py-master-file' is non-nil, import or
+reload the named file instead of the buffer's file.  The file may be
+saved based on the value of `py-execute-import-or-reload-save-p'.
 
 See the `\\[py-execute-region]' docs for an account of some subtleties.
 
-This is may be preferable to `\\[py-execute-buffer]' because:
+This may be preferable to `\\[py-execute-buffer]' because:
 
  - Definitions stay in their module rather than appearing at top
    level, where they would clutter the global namespace and not affect
@@ -2125,6 +2129,8 @@ NOMARK is not nil."
 Searches back for the closest preceding `def'.  If you supply a prefix
 arg, looks for a `class' instead.  The docs below assume the `def'
 case; just substitute `class' for `def' for the other case.
+Programmatically, if CLASS is `either', then moves to either `class'
+or `def'.
 
 When second optional argument is given programmatically, move to the
 COUNTth start of `def'.
@@ -2142,16 +2148,16 @@ Returns t iff a `def' statement is found by these rules.
 Note that doing this command repeatedly will take you closer to the
 start of the buffer each time.
 
-If you want to mark the current `def', see `\\[py-mark-def-or-class]'."
+To mark the current `def', see `\\[py-mark-def-or-class]'."
   (interactive "P")			; raw prefix arg
   (if (not count)
       (setq count 1))
   (let ((at-or-before-p (<= (current-column) (current-indentation)))
 	(start-of-line (goto-char (py-point 'bol)))
 	(start-of-stmt (goto-char (py-point 'bos)))
-	(start-re (if class
-		      "^[ \t]*class\\>"
-		    "^[ \t]*def\\>"))
+	(start-re (cond ((eq class 'either) "^[ \t]*\\(class\\|def\\)\\>")
+			(class "^[ \t]*class\\>")
+			(t "^[ \t]*def\\>")))
 	)
     ;; searching backward
     (if (and (< 0 count)
@@ -2175,6 +2181,8 @@ If you want to mark the current `def', see `\\[py-mark-def-or-class]'."
 By default, looks for an appropriate `def'.  If you supply a prefix
 arg, looks for a `class' instead.  The docs below assume the `def'
 case; just substitute `class' for `def' for the other case.
+Programmatically, if CLASS is `either', then moves to either `class'
+or `def'.
 
 When second optional argument is given programmatically, move to the
 COUNTth end of `def'.
@@ -2195,12 +2203,14 @@ Else point is moved to the end of the buffer, and nil is returned.
 Note that doing this command repeatedly will take you closer to the
 end of the buffer each time.
 
-If you want to mark the current `def', see `\\[py-mark-def-or-class]'."
+To mark the current `def', see `\\[py-mark-def-or-class]'."
   (interactive "P")			; raw prefix arg
   (if (and count (/= count 1))
       (py-beginning-of-def-or-class (- 1 count)))
   (let ((start (progn (py-goto-initial-line) (point)))
-	(which (if class "class" "def"))
+	(which (cond ((eq class 'either) "\\(class\\|def\\)")
+		     (class "class")
+		     (t "def")))
 	(state 'not-found))
     ;; move point to start of appropriate def/class
     (if (looking-at (concat "[ \t]*" which "\\>")) ; already on one
@@ -2385,11 +2395,16 @@ documentation, to make moving and duplicating functions and classes
 pleasant."
   (interactive "P")			; raw prefix arg
   (let ((start (point))
-	(which (if class "class" "def")))
+	(which (cond ((eq class 'either) "\\(class\\|def\\)")
+		     (class "class")
+		     (t "def"))))
     (push-mark start)
     (if (not (py-go-up-tree-to-keyword which))
 	(progn (goto-char start)
-	       (error "Enclosing %s not found" which))
+	       (error "Enclosing %s not found"
+		      (if (eq class 'either)
+			  "def or class"
+			which)))
       ;; else enclosing def/class found
       (setq start (point))
       (py-goto-beyond-block)
@@ -2844,7 +2859,7 @@ local bindings to py-newline-and-indent."))
 ;; statement we need to skip over the continuation lines.  Tricky:
 ;; Again we need to be clever to avoid quadratic time behavior.
 (defun py-goto-beyond-final-line ()
-  ;; TEST ADDED BY MDE; not quite the right solution
+  ;; Not quite the right solution, but deals with multiline doc strings
   (if (looking-at (concat "[ \t]*\\(" py-stringlit-re "\\)"))
       (goto-char (match-end 0)))
   ;;
@@ -2942,11 +2957,12 @@ local bindings to py-newline-and-indent."))
       t)))
 
 ;; Go to start of statement, at or preceding point, starting with
-;; keyword KEY.  Skips blank lines and non-indenting comments upward
-;; first.  If that statement starts with KEY, done, else go back to
-;; first enclosing block starting with KEY.  If successful, leaves
-;; point at the start of the KEY line & returns t.  Else leaves point
-;; at an undefined place & returns nil.
+;; keyword (regular expression) KEY.  Skips blank lines and
+;; non-indenting comments upward first.  If that statement starts with
+;; KEY, then stop.  Otherwise go back to first enclosing block
+;; starting with KEY.  If successful, leaves point at the start of the
+;; KEY line & returns t.  Else leaves point at an undefined place &
+;; returns nil.
 (defun py-go-up-tree-to-keyword (key)
   ;; skip blanks and non-indenting #
   (py-goto-initial-line)
