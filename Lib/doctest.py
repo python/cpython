@@ -460,9 +460,6 @@ class _OutputRedirectingPdb(pdb.Pdb):
         # Restore stdout.
         sys.stdout = save_stdout
 
-    def resume(self):
-        self._resume = 1
-
 ######################################################################
 ## 2. Example & DocTest
 ######################################################################
