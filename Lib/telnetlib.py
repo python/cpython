@@ -30,11 +30,14 @@ Bugs:
 
 To do:
 - option negotiation
+- timeout should be intrinsic to the connection object instead of an
+  option on one of the read calls only
 
 """
 
 
 # Imported modules
+import sys
 import socket
 import select
 import string
@@ -371,7 +374,6 @@ class Telnet:
 
     def interact(self):
 	"""Interaction function, emulates a very dumb telnet client."""
-	import sys, select
 	while 1:
 	    rfd, wfd, xfd = select.select([self, sys.stdin], [], [])
 	    if sys.stdin in rfd:
@@ -388,6 +390,55 @@ class Telnet:
 		    sys.stdout.flush()
 	self.close()
 
+    def expect(self, list, timeout=None):
+	"""Read until one from a list of a regular expressions matches.
+
+	The first argument is a list of regular expressions, either
+	compiled (re.RegexObject instances) or uncompiled (strings).
+	The optional second argument is a timeout, in seconds; default
+	is no timeout.
+
+	Return a tuple of three items: the index in the list of the
+	first regular expression that matches; the match object
+	returned; and the text read up till and including the match.
+
+	If EOF is read and no text was read, raise EOFError.
+	Otherwise, when nothing matches, return (-1, None, text) where
+	text is the text received so far (may be the empty string if a
+	timeout happened).
+
+	If a regular expression ends with a greedy match (e.g. '.*')
+	or if more than one expression can match the same input, the
+	results are undeterministic, and may depend on the I/O timing.
+
+	"""
+	re = None
+	list = list[:]
+	indices = range(len(list))
+	for i in indices:
+	    if not hasattr(list[i], "search"):
+		if not re: import re
+		list[i] = re.compile(list[i])
+	while 1:
+	    self.process_rawq()
+	    for i in indices:
+		m = list[i].search(self.cookedq)
+		if m:
+		    e = m.end()
+		    text = self.cookedq[:e]
+		    self.cookedq = self.cookedq[e:]
+		    return (i, m, text)
+	    if self.eof:
+		break
+	    if timeout is not None:
+		r, w, x = select.select([self.fileno()], [], [], timeout)
+		if not r:
+		    break
+	    self.fill_rawq()
+	text = self.read_very_lazy()
+	if not text and self.eof:
+	    raise EOFError
+	return (-1, None, text)
 
 
 def test():
@@ -398,7 +449,6 @@ def test():
     Default host is localhost; default port is 23.
 
     """
-    import sys
     debuglevel = 0
     while sys.argv[1:] and sys.argv[1] == '-d':
 	debuglevel = debuglevel+1
