@@ -40,6 +40,7 @@ class Node(_Node):
 
     def __init__(self):
         self.childNodes = []
+        self.parentNode = None
         if Node._debug:
             index = repr(id(self)) + repr(self.__class__)
             Node.allnodes[index] = repr(self.__dict__)
@@ -98,6 +99,8 @@ class Node(_Node):
             return self.childNodes[-1]
 
     def insertBefore(self, newChild, refChild):
+        if newChild.parentNode is not None:
+            newChild.parentNode.removeChild(newChild)
         if refChild is None:
             self.appendChild(newChild)
         else:
@@ -116,6 +119,8 @@ class Node(_Node):
         return newChild
 
     def appendChild(self, node):
+        if node.parentNode is not None:
+            node.parentNode.removeChild(node)
         if self.childNodes:
             last = self.lastChild
             node.previousSibling = last
@@ -129,6 +134,8 @@ class Node(_Node):
         return node
 
     def replaceChild(self, newChild, oldChild):
+        if newChild.parentNode is not None:
+            newChild.parentNode.removeChild(newChild)
         if newChild is oldChild:
             return
         index = self.childNodes.index(oldChild)
@@ -144,6 +151,12 @@ class Node(_Node):
 
     def removeChild(self, oldChild):
         self.childNodes.remove(oldChild)
+        if oldChild.nextSibling is not None:
+            oldChild.nextSibling.previousSibling = oldChild.previousSibling
+        if oldChild.previousSibling is not None:
+            oldChild.previousSibling.nextSibling = oldChild.nextSibling            
+        oldChild.nextSibling = oldChild.previousSibling = None
+        
         if self._makeParentNodes:
             oldChild.parentNode = None
         return oldChild
@@ -606,10 +619,22 @@ class Document(Node):
     implementation = DOMImplementation()
 
     def appendChild(self, node):
+        if node.parentNode is not None:
+            node.parentNode.removeChild(node)
+
         if node.nodeType == Node.ELEMENT_NODE \
            and self._get_documentElement():
             raise TypeError, "two document elements disallowed"
         return Node.appendChild(self, node)
+
+    def removeChild(self, oldChild):
+        self.childNodes.remove(oldChild)
+        oldChild.nextSibling = oldChild.previousSibling = None
+        oldChild.parentNode = None
+        if self.documentElement is oldChild:
+            self.documentElement = None
+             
+        return oldChild
 
     def _get_documentElement(self):
         for node in self.childNodes:
