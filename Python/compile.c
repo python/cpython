@@ -536,8 +536,7 @@ optimize_code(PyObject *code, PyObject* consts, PyObject *names, PyObject *linen
 		goto exitUnchanged;
 	assert(PyList_Check(consts));
 
-	for (i=0, nops=0 ; i<codelen ; i += CODESIZE(codestr[i])) {
-		addrmap[i] = i - nops;
+	for (i=0 ; i<codelen ; i += CODESIZE(codestr[i])) {
 		opcode = codestr[i];
 
 		lastlc = cumlc;
@@ -560,7 +559,6 @@ optimize_code(PyObject *code, PyObject* consts, PyObject *names, PyObject *linen
 			SETARG(codestr, i, j);
 			codestr[i+3] = POP_TOP;
 			codestr[i+4] = NOP;
-			nops++;
 			break;
 
 		/* not a is b -->  a is not b
@@ -575,7 +573,6 @@ optimize_code(PyObject *code, PyObject* consts, PyObject *names, PyObject *linen
 				continue;
 			SETARG(codestr, i, (j^1));
 			codestr[i+3] = NOP;
-			nops++;
 			break;
 
 		/* Replace LOAD_GLOBAL/LOAD_NAME None with LOAD_CONST None */
@@ -604,7 +601,6 @@ optimize_code(PyObject *code, PyObject* consts, PyObject *names, PyObject *linen
 			    !PyObject_IsTrue(PyList_GET_ITEM(consts, j)))
 				continue;
 			memset(codestr+i, NOP, 7);
-			nops += 7;
 			break;
 
 		/* Try to fold tuples of constants.
@@ -619,7 +615,6 @@ optimize_code(PyObject *code, PyObject* consts, PyObject *names, PyObject *linen
 			    codestr[h] == LOAD_CONST  && 
 			    ISBASICBLOCK(blocks, h, 3*(j+1))  &&
 			    tuple_of_constants(&codestr[h], j, consts)) {
-				nops += 3 * j;
 				break;
 			}
 			/* Intentional fallthrough */
@@ -631,16 +626,13 @@ optimize_code(PyObject *code, PyObject* consts, PyObject *names, PyObject *linen
 				continue;
 			if (j == 1) {
 				memset(codestr+i, NOP, 6);
-				nops += 6;
 			} else if (j == 2) {
 				codestr[i] = ROT_TWO;
 				memset(codestr+i+1, NOP, 5);
-				nops += 5;
 			} else if (j == 3) {
 				codestr[i] = ROT_THREE;
 				codestr[i+1] = ROT_TWO;
 				memset(codestr+i+2, NOP, 4);
-				nops += 4;
 			}
 			break;
 
@@ -704,12 +696,16 @@ optimize_code(PyObject *code, PyObject* consts, PyObject *names, PyObject *linen
 			   !ISBASICBLOCK(blocks,i,5))
 			       continue;
 			memset(codestr+i+1, NOP, 4);
-			nops += 4;
 			break;
 		}
 	}
 
 	/* Fixup linenotab */
+	for (i=0, nops=0 ; i<codelen ; i += CODESIZE(codestr[i])) {
+		addrmap[i] = i - nops;
+		if (codestr[i] == NOP)
+			nops++;
+	}
 	cum_orig_line = 0;
 	last_line = 0;
 	for (i=0 ; i < tabsiz ; i+=2) {
@@ -749,9 +745,6 @@ optimize_code(PyObject *code, PyObject* consts, PyObject *names, PyObject *linen
 		while (adj--)
 			codestr[h++] = codestr[i++];
 	}
-	/* The following assertion detects the presence of NOPs in the input
-	   bytecode.  The compiler never produces NOPs so far; if one day it
-	   does, the way 'nops' is counted above must be changed. */
 	assert(h + nops == codelen);
 
 	code = PyString_FromStringAndSize((char *)codestr, h);
