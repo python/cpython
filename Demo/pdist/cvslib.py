@@ -6,6 +6,8 @@ import time
 import md5
 import fnmatch
 
+if not hasattr(time, 'timezone'):
+	time.timezone = 0
 
 class File:
 
@@ -282,6 +284,8 @@ class CVS:
 	def backup(self, file):
 		if os.path.isfile(file):
 			bfile = file + '~'
+			try: os.unlink(bfile)
+			except os.error: pass
 			os.rename(file, bfile)
 
 	def ignored(self, file):
