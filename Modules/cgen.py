@@ -1,6 +1,10 @@
 # Python script to parse cstubs file for gl and generate C stubs.
 # usage: python cgen.py <cstubs >glmodule.c
 #
+# NOTE: You  must first make a python binary without the "GL" option
+#	before you can run this, when building Python for the first time.
+#	See comments in the Makefile.
+#
 # XXX BUG return arrays generate wrong code
 # XXX need to change error returns into gotos to free mallocked arrays
 
