@@ -105,7 +105,7 @@ revparse_prog = None
 def revparse(rev):
     global revparse_prog
     if not revparse_prog:
-        revparse_prog = re.compile(r'^(\d{1,3})\.(\d{1-4})$')
+        revparse_prog = re.compile(r'^(\d{1,3})\.(\d{1,4})$')
     m = revparse_prog.match(rev)
     if not m:
         return None
