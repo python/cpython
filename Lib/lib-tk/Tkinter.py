@@ -712,27 +712,24 @@ class Misc:
 
 	# Support for the "event" command, new in Tk 4.2.
 	# By Case Roole.
-	# XXX Why is this using the default root?
 
-	def event_add(self,virtual, *sequences):
+	def event_add(self, virtual, *sequences):
 		args = ('event', 'add', virtual) + sequences
-		apply( _default_root.tk.call, args )
+		apply(self.tk.call, args)
 
-	def event_delete(self,virtual,*sequences):
+	def event_delete(self, virtual, *sequences):
 		args = ('event', 'delete', virtual) + sequences
-		apply( _default_root.tk.call, args )
+		apply(self.tk.call, args)
 
 	def event_generate(self, sequence, **kw):
 		args = ('event', 'generate', self._w, sequence)
-		for k,v in kw.items():
-			args = args + ('-%s' % k,str(v))
-		apply( _default_root.tk.call, args )
+		for k, v in kw.items():
+			args = args + ('-%s' % k, str(v))
+		apply(self.tk.call, args)
 
-	def event_info(self,virtual=None):
-		args = ('event', 'info')
-		if virtual is not None: args = args + (virtual,)
-		s = apply( _default_root.tk.call, args )
-		return _string.split(s)
+	def event_info(self, virtual=None):
+		return self.tk.splitlist(
+		    self.tk.call('event', 'info', virtual))
 
 
 class CallWrapper:
