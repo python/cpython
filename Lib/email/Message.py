@@ -12,11 +12,12 @@ import quopri
 from cStringIO import StringIO
 from types import ListType
 
-SEMISPACE = '; '
-
 # Intrapackage imports
 import Errors
 import Utils
+
+SEMISPACE = '; '
+paramre = re.compile(r';\s*')
 
 
 
@@ -135,7 +136,7 @@ class Message:
     # MAPPING INTERFACE (partial)
     #
     def __len__(self):
-        """Get the total number of headers, including duplicates."""
+        """Return the total number of headers, including duplicates."""
         return len(self._headers)
 
     def __getitem__(self, name):
@@ -174,7 +175,8 @@ class Message:
 
     def has_key(self, name):
         """Return true if the message contains the header."""
-        return self[name] <> None
+        missing = []
+        return self.get(name, missing) is not missing
 
     def keys(self):
         """Return a list of all the message's header field names.
@@ -267,7 +269,7 @@ class Message:
         value = self.get('content-type', missing)
         if value is missing:
             return failobj
-        return re.split(r';\s+', value)[0].lower()
+        return paramre.split(value)[0].lower()
 
     def get_main_type(self, failobj=None):
         """Return the message's main content type if present."""
@@ -291,18 +293,42 @@ class Message:
             return ctype.split('/')[1]
         return failobj
 
+    def _get_params_preserve(self, failobj, header):
+        # Like get_params() but preserves the quoting of values.  BAW:
+        # should this be part of the public interface?
+        missing = []
+        value = self.get(header, missing)
+        if value is missing:
+            return failobj
+        params = []
+        for p in paramre.split(value):
+            try:
+                name, val = p.split('=', 1)
+            except ValueError:
+                # Must have been a bare attribute
+                name = p
+                val = ''
+            params.append((name, val))
+        return params
+
     def get_params(self, failobj=None, header='content-type'):
         """Return the message's Content-Type: parameters, as a list.
+
+        The elements of the returned list are 2-tuples of key/value pairs, as
+        split on the `=' sign.  The left hand side of the `=' is the key,
+        while the right hand side is the value.  If there is no `=' sign in
+        the parameter the value is the empty string.  The value is always
+        unquoted.
 
         Optional failobj is the object to return if there is no Content-Type:
         header.  Optional header is the header to search instead of
         Content-Type:
         """
         missing = []
-        value = self.get(header, missing)
-        if value is missing:
+        params = self._get_params_preserve(missing, header)
+        if params is missing:
             return failobj
-        return re.split(r';\s+', value)[1:]
+        return [(k, Utils.unquote(v)) for k, v in params]
 
     def get_param(self, param, failobj=None, header='content-type'):
         """Return the parameter value if found in the Content-Type: header.
@@ -310,21 +336,15 @@ class Message:
         Optional failobj is the object to return if there is no Content-Type:
         header.  Optional header is the header to search instead of
         Content-Type:
+
+        Parameter keys are always compared case insensitively.  Values are
+        always unquoted.
         """
-        param = param.lower()
-        missing = []
-        params = self.get_params(missing, header=header)
-        if params is missing:
+        if not self.has_key(header):
             return failobj
-        for p in params:
-            try:
-                name, val = p.split('=', 1)
-            except ValueError:
-                # Must have been a bare attribute
-                name = p
-                val = ''
-            if name.lower() == param:
-                return Utils.unquote(val)
+        for k, v in self._get_params_preserve(failobj, header):
+            if k.lower() == param.lower():
+                return Utils.unquote(v)
         return failobj
 
     def get_filename(self, failobj=None):
@@ -361,31 +381,37 @@ class Message:
 
         HeaderParseError is raised if the message has no Content-Type: header.
         """
-        params = self.get_params()
-        if not params:
+        missing = []
+        params = self._get_params_preserve(missing, 'content-type')
+        if params is missing:
             # There was no Content-Type: header, and we don't know what type
             # to set it to, so raise an exception.
             raise Errors.HeaderParseError, 'No Content-Type: header found'
         newparams = []
         foundp = 0
-        for p in params:
-            if p.lower().startswith('boundary='):
-                newparams.append('boundary="%s"' % boundary)
+        for pk, pv in params:
+            if pk.lower() == 'boundary':
+                newparams.append(('boundary', '"%s"' % boundary))
                 foundp = 1
             else:
-                newparams.append(p)
+                newparams.append((pk, pv))
         if not foundp:
             # The original Content-Type: header had no boundary attribute.
             # Tack one one the end.  BAW: should we raise an exception
             # instead???
-            newparams.append('boundary="%s"' % boundary)
+            newparams.append(('boundary', '"%s"' % boundary))
         # Replace the existing Content-Type: header with the new value
         newheaders = []
         for h, v in self._headers:
             if h.lower() == 'content-type':
-                value = v.split(';', 1)[0]
-                newparams.insert(0, value)
-                newheaders.append((h, SEMISPACE.join(newparams)))
+                parts = []
+                for k, v in newparams:
+                    if v == '':
+                        parts.append(k)
+                    else:
+                        parts.append('%s=%s' % (k, v))
+                newheaders.append((h, SEMISPACE.join(parts)))
+
             else:
                 newheaders.append((h, v))
         self._headers = newheaders
@@ -396,12 +422,11 @@ class Message:
         The walk is performed in breadth-first order.  This method is a
         generator.
         """
+        yield self
         if self.is_multipart():
             for subpart in self.get_payload():
                 for subsubpart in subpart.walk():
                     yield subsubpart
-        else:
-            yield self
 
     def get_charsets(self, failobj=None):
         """Return a list containing the charset(s) used in this message.
