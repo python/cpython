@@ -1474,8 +1474,6 @@ Run the debugger on the docstring, and then restore sys.stdin.
 """
 
 def test_pdb_set_trace():
-    # Note: this should *not* be an r'...' string, because we need
-    # to use '\t' for the output of ...
     """Using pdb.set_trace from a doctest
 
     You can use pdb.set_trace from a doctest.  To do so, you must
