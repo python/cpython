@@ -8,7 +8,6 @@ static PyMemberDef type_members[] = {
 	{"__basicsize__", T_INT, offsetof(PyTypeObject,tp_basicsize),READONLY},
 	{"__itemsize__", T_INT, offsetof(PyTypeObject, tp_itemsize), READONLY},
 	{"__flags__", T_LONG, offsetof(PyTypeObject, tp_flags), READONLY},
-	{"__doc__", T_STRING, offsetof(PyTypeObject, tp_doc), READONLY},
 	{"__weakrefoffset__", T_LONG,
 	 offsetof(PyTypeObject, tp_weaklistoffset), READONLY},
 	{"__base__", T_OBJECT, offsetof(PyTypeObject, tp_base), READONLY},
@@ -1044,9 +1043,9 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 	}
 
 	/* Set tp_doc to a copy of dict['__doc__'], if the latter is there
-	   and is a string (tp_doc is a char* -- can't copy a general object
-	   into it).
-	   XXX What if it's a Unicode string?  Don't know -- this ignores it.
+	   and is a string.  Note that the tp_doc slot will only be used
+	   by C code -- python code will use the version in tp_dict, so
+	   it isn't that important that non string __doc__'s are ignored.
 	*/
 	{
 		PyObject *doc = PyDict_GetItemString(dict, "__doc__");
@@ -2022,6 +2021,19 @@ PyType_Ready(PyTypeObject *type)
 		PyObject *b = PyTuple_GET_ITEM(bases, i);
 		if (PyType_Check(b))
 			inherit_slots(type, (PyTypeObject *)b);
+	}
+
+	/* if the type dictionary doesn't contain a __doc__, set it from
+	   the tp_doc slot.
+	 */
+	if (PyDict_GetItemString(type->tp_dict, "__doc__") == NULL) {
+		if (type->tp_doc != NULL) {
+			PyObject *doc = PyString_FromString(type->tp_doc);
+			PyDict_SetItemString(type->tp_dict, "__doc__", doc);
+			Py_DECREF(doc);
+		} else {
+			PyDict_SetItemString(type->tp_dict, "__doc__", Py_None);
+		}
 	}
 
 	/* Some more special stuff */
