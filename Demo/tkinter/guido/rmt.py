@@ -9,6 +9,8 @@
 # defined.  We also introduce names for some unnamed code blocks in
 # the original because of restrictions on lambda forms in Python.
 
+# XXX This should be written in a more Python-like style!!!
+
 from Tkinter import *
 
 # 1. Create basic application structure: menu bar on top of
