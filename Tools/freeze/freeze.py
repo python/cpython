@@ -228,7 +228,7 @@ def main():
         config_h_dir = exec_prefix
         config_c_in = os.path.join(prefix, 'Modules', 'config.c.in')
         frozenmain_c = os.path.join(prefix, 'Python', 'frozenmain.c')
-        makefile_in = os.path.join(exec_prefix, 'Modules', 'Makefile')
+        makefile_in = os.path.join(exec_prefix, 'Makefile')
         if win:
             frozendllmain_c = os.path.join(exec_prefix, 'Pc\\frozen_dllmain.c')
     else:
@@ -461,8 +461,8 @@ def main():
     somevars = {}
     if os.path.exists(makefile_in):
         makevars = parsesetup.getmakevars(makefile_in)
-    for key in makevars.keys():
-        somevars[key] = makevars[key]
+        for key in makevars.keys():
+            somevars[key] = makevars[key]
 
     somevars['CFLAGS'] = ' '.join(cflags) # override
     somevars['CPPFLAGS'] = ' '.join(cppflags) # override
