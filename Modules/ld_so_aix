@@ -8,8 +8,15 @@
 #   DESCRIPTION:    Creates a shareable .o from a pre-compiled (unshared)
 #                   .o file
 #
-#   ARGUMENTS:      Same as for "ld".  The -bM, -bE, -bI, -H, -T, and -lc
-#                   arguments of "ld" will be supplied by this script.
+#   USAGE:          ld_so_aix [CC] [arguments]
+#
+#   ARGUMENTS:      Same as for "ld".  The -bM, -bE, -bI, -H, -T, and -lm
+#                   arguments will be supplied by this script.  The compiler
+#                   specific ("-lc" or "-lc_r", "-lpthreads", etc) arguments
+#                   will be automatically passed to "ld" according to the CC
+#                   command provided as a first argument to this script.
+#                   Usually, the same CC command was used to produce the
+#                   pre-compiled .o file.
 #
 #   NOTES:          1.  Currently specific to the building of Python
 #                       interpreter shared objects, in that the entry
@@ -23,7 +30,11 @@
 #                   3.  Uncommenting the "echo" lines gives detailed output
 #                       about the commands executed in the script.
 #                       
-#   HISTORY:        Jul-1-1996  -- Make sure to use /usr/ccs/bin/ld    --
+#   HISTORY:        Aug-6-1996  -- Take care of the compiler specific  --
+#                               -- args by leaving CC to invoke "ld".  --
+#                   Vladimir Marangozov
+#
+#                   Jul-1-1996  -- Make sure to use /usr/ccs/bin/ld    --
 #                               -- Use makexp_aix for the export list. --
 #                   Vladimir Marangozov     (Vladimir.Marangozov@imag.fr)
 #
@@ -32,19 +43,24 @@
 #
 
 # Variables
-objfile=$1
-shift
+CC=$1; shift
+
+objfile=$1; shift
 filename=`echo $objfile | sed -e "s:.*/\([^/]*\)$:\1:" -e "s/\..*$//"`
 entry=init`echo $filename | sed "s/module.*//"`
-ldopts="-e$entry -bE:$filename.exp -bI:python.exp -bM:SRE -T512 -H512 -lc"
-ldargs="$objfile $*"
+expfile="$filename.exp"
+impfile="python.exp"
+
+CCOPT="-Wl,-e$entry -Wl,-bE:$expfile -Wl,-bI:$impfile"
+CCOPT="$CCOPT -Wl,-bM:SRE -Wl,-T512 -Wl,-H512 -lm"
+CCARGS="$objfile $*"
 
 # Export list generation
 makexp_aix $filename.exp "$objfile" $objfile
 
 # Perform the link.
-#echo "ld $ldopts $ldargs"
-/usr/ccs/bin/ld $ldopts $ldargs
+#echo $CC $CCOPT $CCARGS
+$CC $CCOPT $CCARGS
 
 # Delete the module's export list file.
 # Comment this line if you need it.
@@ -53,6 +69,4 @@ rm -f $filename.exp
 # Remove the exec rights on the shared module.
 #echo chmod -x `echo $objfile | sed "s/\.o$/.so/"`
 chmod -x `echo $objfile | sed "s/\.o$/.so/"`
-
-
 
