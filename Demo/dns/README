@@ -8,9 +8,7 @@ You can also import dnslib and write your own, more sophisticated
 client code; use the test program as an example (there is currently no
 documentation :-).
 
-Anthony Baxter maintains an enhanced version of this code at
+NOTE: This code has been evolved into a much more enhanced package by
+Anthony Baxter; see the pydns project at SourceForge:
 
-    http://alumni.dgs.monash.edu.au/~anthony/python/
-
---Guido van Rossum, CWI, Amsterdam <Guido.van.Rossum@cwi.nl>
-URL:  <http://www.cwi.nl/cwi/people/Guido.van.Rossum.html>
+    http://sourceforge.net/projects/pydns/
