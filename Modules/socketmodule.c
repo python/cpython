@@ -141,9 +141,9 @@ shutdown(how) -- shut down traffic in one or both directions\n\
 #endif
 
 /* On systems on which getaddrinfo() is believed to not be thread-safe,
-   protect access with a lock. */
+   (this includes the getaddrinfo emulation) protect access with a lock. */
 #if defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__) || \
-    defined(__NetBSD__)
+    defined(__NetBSD__) || !defined(HAVE_GETADDRINFO)
 #define USE_GETADDRINFO_LOCK
 #endif
 
