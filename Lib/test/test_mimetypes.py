@@ -1,6 +1,7 @@
 import mimetypes
 import StringIO
 import unittest
+from sets import Set
 
 from test import test_support
 
@@ -46,10 +47,12 @@ class MimeTypesTestCase(unittest.TestCase):
 
     def test_guess_all_types(self):
         eq = self.assertEqual
-        # First try strict
-        all = self.db.guess_all_extensions('text/plain', strict=True)
-        all.sort()
-        eq(all, ['.bat', '.c', '.h', '.ksh', '.pl', '.txt'])
+        unless = self.failUnless
+        # First try strict.  Use a set here for testing the results because if
+        # test_urllib2 is run before test_mimetypes, global state is modified
+        # such that the 'all' set will have more items in it.
+        all = Set(self.db.guess_all_extensions('text/plain', strict=True))
+        unless(all >= Set(['.bat', '.c', '.h', '.ksh', '.pl', '.txt']))
         # And now non-strict
         all = self.db.guess_all_extensions('image/jpg', strict=False)
         all.sort()
