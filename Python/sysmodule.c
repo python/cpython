@@ -116,7 +116,7 @@ static PyObject *
 sys_excepthook(PyObject* self, PyObject* args)
 {
 	PyObject *exc, *value, *tb;
-	if (!PyArg_ParseTuple(args, "OOO:excepthook", &exc, &value, &tb))
+	if (!PyArg_UnpackTuple(args, "excepthook", 3, 3, &exc, &value, &tb))
 		return NULL;
 	PyErr_Display(exc, value, tb);
 	Py_INCREF(Py_None);
@@ -452,11 +452,8 @@ sys_mdebug(PyObject *self, PyObject *args)
 #endif /* USE_MALLOPT */
 
 static PyObject *
-sys_getrefcount(PyObject *self, PyObject *args)
+sys_getrefcount(PyObject *self, PyObject *arg)
 {
-	PyObject *arg;
-	if (!PyArg_ParseTuple(args, "O:getrefcount", &arg))
-		return NULL;
 	return PyInt_FromLong(arg->ob_refcnt);
 }
 
@@ -554,7 +551,7 @@ static PyMethodDef sys_methods[] = {
 	{"getobjects",	_Py_GetObjects, METH_VARARGS},
 	{"gettotalrefcount", (PyCFunction)sys_gettotalrefcount, METH_NOARGS},
 #endif
-	{"getrefcount",	sys_getrefcount, METH_VARARGS, getrefcount_doc},
+	{"getrefcount",	(PyCFunction)sys_getrefcount, METH_O, getrefcount_doc},
 	{"getrecursionlimit", (PyCFunction)sys_getrecursionlimit, METH_NOARGS,
 	 getrecursionlimit_doc},
 	{"_getframe", sys_getframe, METH_VARARGS, getframe_doc},
