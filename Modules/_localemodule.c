@@ -30,7 +30,7 @@ This software comes with no warranty. Use at your own risk.
 #include <windows.h>
 #endif
 
-#if __APPLE__
+#if defined(__APPLE__) || defined(__MWERKS__)
 #include "macglue.h"
 #endif
 
