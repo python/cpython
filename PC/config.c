@@ -59,6 +59,7 @@ extern void initdatetime(void);
 extern void init_multibytecodec(void);
 extern void init_codecs_cn(void);
 extern void init_codecs_hk(void);
+extern void init_codecs_iso2022(void);
 extern void init_codecs_jp(void);
 extern void init_codecs_kr(void);
 extern void init_codecs_tw(void);
@@ -132,6 +133,7 @@ struct _inittab _PyImport_Inittab[] = {
 	{"_multibytecodec", init_multibytecodec},
 	{"_codecs_cn", init_codecs_cn},
 	{"_codecs_hk", init_codecs_hk},
+	{"_codecs_iso2022", init_codecs_iso2022},
 	{"_codecs_jp", init_codecs_jp},
 	{"_codecs_kr", init_codecs_kr},
 	{"_codecs_tw", init_codecs_tw},
