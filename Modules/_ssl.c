@@ -169,6 +169,7 @@ PySSL_SetError(PySSLObject *obj, int ret)
 	PyTuple_SET_ITEM(v, 0, n);
 	PyTuple_SET_ITEM(v, 1, s);
 	PyErr_SetObject(PySSLErrorObject, v);
+	Py_DECREF(v);
 	return NULL;
 }
 
