@@ -190,6 +190,8 @@ def_op('BINARY_OR', 66)
 def_op('PRINT_EXPR', 70)
 def_op('PRINT_ITEM', 71)
 def_op('PRINT_NEWLINE', 72)
+def_op('PRINT_ITEM_TO', 73)
+def_op('PRINT_NEWLINE_TO', 74)
 
 def_op('BREAK_LOOP', 80)
 
