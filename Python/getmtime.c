@@ -16,8 +16,14 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #include "config.h"
 
 #include <stdio.h>
+#ifndef DONT_HAVE_SYS_TYPES_H
 #include <sys/types.h>
+#endif
+#ifndef DONT_HAVE_SYS_STAT_H
 #include <sys/stat.h>
+#elif defined(HAVE_STAT_H)
+#include <stat.h>
+#endif
 
 time_t
 PyOS_GetLastModificationTime(path, fp)
