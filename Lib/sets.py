@@ -259,8 +259,9 @@ class BaseSet(object):
         self._binary_sanity_check(other)
         if len(self) > len(other):  # Fast check for obvious cases
             return False
+        otherdata = other._data
         for elt in self:
-            if elt not in other:
+            if elt not in otherdata:
                 return False
         return True
 
@@ -269,8 +270,9 @@ class BaseSet(object):
         self._binary_sanity_check(other)
         if len(self) < len(other):  # Fast check for obvious cases
             return False
+        selfdata = self._data
         for elt in other:
-            if elt not in self:
+            if elt not in selfdata:
                 return False
         return True
 
