@@ -21,6 +21,12 @@ Extension modules
 
 - Bug #814613: INET_ADDRSTRLEN fix needed for all compilers on SGI
 
+Library
+-------
+
+- Bug #812202:  random.randrange() returned only even numbers
+  for range lengths above 2**53.
+
 What's New in Python 2.3.2 (final)?
 ===================================
 

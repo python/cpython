@@ -38,7 +38,7 @@ General notes on the underlying Mersenne Twister core generator:
   a single Python step, and is, therefore, threadsafe.
 
 """
-
+from types import BuiltinMethodType as _BuiltinMethodType
 from math import log as _log, exp as _exp, pi as _pi, e as _e
 from math import sqrt as _sqrt, acos as _acos, cos as _cos, sin as _sin
 from math import floor as _floor
@@ -47,12 +47,13 @@ __all__ = ["Random","seed","random","uniform","randint","choice","sample",
            "randrange","shuffle","normalvariate","lognormvariate",
            "cunifvariate","expovariate","vonmisesvariate","gammavariate",
            "stdgamma","gauss","betavariate","paretovariate","weibullvariate",
-           "getstate","setstate","jumpahead"]
+           "getstate","setstate","jumpahead", "WichmannHill"]
 
 NV_MAGICCONST = 4 * _exp(-0.5)/_sqrt(2.0)
 TWOPI = 2.0*_pi
 LOG4 = _log(4.0)
 SG_MAGICCONST = 1.0 + _log(4.5)
+BPF = 53        # Number of bits in a float
 
 # Translated by Guido van Rossum from C source provided by
 # Adrian Baddeley.  Adapted by Raymond Hettinger for use with
@@ -131,12 +132,13 @@ class Random(_random.Random):
 
 ## -------------------- integer methods  -------------------
 
-    def randrange(self, start, stop=None, step=1, int=int, default=None):
+    def randrange(self, start, stop=None, step=1, int=int, default=None,
+                  maxwidth=1L<<BPF, _BuiltinMethod=_BuiltinMethodType):
         """Choose a random item from range(start, stop[, step]).
 
         This fixes the problem with randint() which includes the
         endpoint; in Python this is usually not what you want.
-        Do not supply the 'int' and 'default' arguments.
+        Do not supply the 'int', 'default', and 'maxwidth' arguments.
         """
 
         # This code is a bit messy to make it fast for the
@@ -146,6 +148,8 @@ class Random(_random.Random):
             raise ValueError, "non-integer arg 1 for randrange()"
         if stop is default:
             if istart > 0:
+                if istart >= maxwidth and type(self.random) is _BuiltinMethod:
+                    return self._randbelow(istart)
                 return int(self.random() * istart)
             raise ValueError, "empty range for randrange()"
 
@@ -153,7 +157,8 @@ class Random(_random.Random):
         istop = int(stop)
         if istop != stop:
             raise ValueError, "non-integer stop for randrange()"
-        if step == 1 and istart < istop:
+        width = istop - istart
+        if step == 1 and width > 0:
             # Note that
             #     int(istart + self.random()*(istop - istart))
             # instead would be incorrect.  For example, consider istart
@@ -166,7 +171,9 @@ class Random(_random.Random):
             # can return a long, and then randrange() would also return
             # a long, but we're supposed to return an int (for backward
             # compatibility).
-            return int(istart + int(self.random()*(istop - istart)))
+            if width >= maxwidth and type(self.random) is _BuiltinMethod:
+                return int(istart + self._randbelow(width))
+            return int(istart + int(self.random()*width))
         if step == 1:
             raise ValueError, "empty range for randrange()"
 
@@ -175,14 +182,17 @@ class Random(_random.Random):
         if istep != step:
             raise ValueError, "non-integer step for randrange()"
         if istep > 0:
-            n = (istop - istart + istep - 1) / istep
+            n = (width + istep - 1) / istep
         elif istep < 0:
-            n = (istop - istart + istep + 1) / istep
+            n = (width + istep + 1) / istep
         else:
             raise ValueError, "zero step for randrange()"
 
         if n <= 0:
             raise ValueError, "empty range for randrange()"
+
+        if n >= maxwidth and type(self.random) is _BuiltinMethod:
+            return istart + self._randbelow(n)
         return istart + istep*int(self.random() * n)
 
     def randint(self, a, b):
@@ -190,6 +200,29 @@ class Random(_random.Random):
         """
 
         return self.randrange(a, b+1)
+
+    def _randbelow(self, n, bpf=BPF, maxwidth=1L<<BPF,
+                   long=long, _log=_log, int=int):
+        """Return a random int in the range [0,n)
+
+        Handles the case where n has more bits than returned
+        by a single call to the underlying generator.
+        """
+
+        # k is a sometimes over but never under estimate of the bits in n
+        k = int(1.00001 + _log(n-1, 2))     # 2**k > n-1 >= 2**(k-2)
+
+        random = self.random
+        r = n
+        while r >= n:
+            # In Py2.4, this section becomes:  r = self.getrandbits(k)
+            r = long(random() * maxwidth)
+            bits = bpf
+            while bits < k:
+                r = (r << bpf) | (long(random() * maxwidth))
+                bits += bpf
+            r >>= (bits - k)
+        return r
 
 ## -------------------- sequence methods  -------------------
 

@@ -220,6 +220,38 @@ class MersenneTwister_TestBasicOps(TestBasicOps):
         seed = (1L << (10000 * 8)) - 1  # about 10K bytes
         self.gen.seed(seed)
 
+    def test_53_bits_per_float(self):
+        # This should pass whenever a C double has 53 bit precision.
+        span = 2 ** 53
+        cum = 0
+        for i in xrange(100):
+            cum |= int(self.gen.random() * span)
+        self.assertEqual(cum, span-1)
+
+    def test_bigrand(self):
+        # The randrange routine should build-up the required number of bits
+        # in stages so that all bit positions are active.
+        span = 2 ** 500
+        cum = 0
+        for i in xrange(100):
+            r = self.gen.randrange(span)
+            self.assert_(0 <= r < span)
+            cum |= r
+        self.assertEqual(cum, span-1)
+
+    def test_bigrand_ranges(self):
+        for i in [40,80, 160, 200, 211, 250, 375, 512, 550]:
+            start = self.gen.randrange(2 ** i)
+            stop = self.gen.randrange(2 ** (i-2))
+            if stop <= start:
+                return
+            self.assert_(start <= self.gen.randrange(start, stop) < stop)
+
+    def test_rangelimits(self):
+        for start, stop in [(-2,0), (-(2**60)-2,-(2**60)), (2**60,2**60+2)]:
+            self.assertEqual(Set(range(start,stop)),
+                Set([self.gen.randrange(start,stop) for i in xrange(100)]))
+
 _gammacoeff = (0.9999999999995183, 676.5203681218835, -1259.139216722289,
               771.3234287757674,  -176.6150291498386, 12.50734324009056,
               -0.1385710331296526, 0.9934937113930748e-05, 0.1659470187408462e-06)
