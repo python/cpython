@@ -49,7 +49,6 @@ sophisticated high-performance network servers and clients a snap.
 import exceptions
 import select
 import socket
-import string
 import sys
 
 import os
@@ -219,7 +218,7 @@ class dispatcher:
                 status.append ('%s:%d' % self.addr)
             return '<%s %s at %x>' % (
                 self.__class__.__name__,
-                string.join (status, ' '),
+                ' '.join (status),
                 id(self)
                 )
         except:
@@ -480,13 +479,7 @@ def compact_traceback ():
     del tb
 
     file, function, line = tbinfo[-1]
-    info = '[' + string.join (
-        map (
-            lambda x: string.join (x, '|'),
-            tbinfo
-            ),
-        '] ['
-        ) + ']'
+    info = '[' + '] ['.join(map(lambda x: '|'.join(x), tbinfo)) + ']'
     return (file, function, line), t, v, info
 
 def close_all (map=None):

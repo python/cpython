@@ -102,7 +102,7 @@ else:
         dsize = fp.tell()
         fp.close()
         dir, file = os.path.split(name)
-        file = string.replace(file, ':', '-', 1)
+        file = file.replace(':', '-', 1)
         return file, finfo, dsize, 0
 
     class openrsrc:
