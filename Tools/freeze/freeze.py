@@ -287,8 +287,9 @@ def main():
         try:
             winmakemakefile.makemakefile(outfp,
                                          locals(),
-                                         [frozenmain_c, frozen_c],
-                                         target)
+                                         [frozenmain_c,
+                                          os.path.basename(frozen_c)],
+                                         os.path.basename(target))
         finally:
             outfp.close()
         return
