@@ -252,7 +252,7 @@ def _execvpe(file, args, env=None):
     if not _notfound:
         import tempfile
         # Exec a file that is guaranteed not to exist
-        try: execv(tempfile.mktemp(), ())
+        try: execv(tempfile.mktemp(), ('blah',))
         except error, _notfound: pass
     exc, arg = error, _notfound
     for dir in PATH:
