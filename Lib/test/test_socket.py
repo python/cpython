@@ -102,7 +102,7 @@ except SystemError:
 try:
     # On some versions, this crashes the interpreter.
     socket.getnameinfo(('x', 0, 0, 0), 0)
-except socket.gaierror:
+except socket.error:
     pass
 
 canfork = hasattr(os, 'fork')
