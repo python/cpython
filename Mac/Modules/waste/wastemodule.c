@@ -40,9 +40,6 @@ extern int GrafObj_Convert(PyObject *, GrafPtr *);
 extern PyObject *BMObj_New(BitMapPtr);
 extern int BMObj_Convert(PyObject *, BitMapPtr *);
 
-extern PyObject *PMObj_New(PixMapHandle);
-extern int PMObj_Convert(PyObject *, PixMapHandle *);
-
 extern PyObject *WinObj_WhichWindow(WindowPtr);
 
 #include <WASTE.h>
@@ -559,7 +556,8 @@ static PyObject *wasteObj_WEContinuousStyle(_self, _args)
 	Boolean _rv;
 	WEStyleMode mode;
 	TextStyle ts;
-	if (!PyArg_ParseTuple(_args, ""))
+	if (!PyArg_ParseTuple(_args, "h",
+	                      &mode))
 		return NULL;
 	_rv = WEContinuousStyle(&mode,
 	                        &ts,
@@ -692,9 +690,9 @@ static PyObject *wasteObj_WECopyRange(_self, _args)
 	if (!PyArg_ParseTuple(_args, "llO&O&O&",
 	                      &rangeStart,
 	                      &rangeEnd,
-	                      ResObj_Convert, &hText,
-	                      ResObj_Convert, &hStyles,
-	                      ResObj_Convert, &hSoup))
+	                      OptResObj_Convert, &hText,
+	                      OptResObj_Convert, &hStyles,
+	                      OptResObj_Convert, &hSoup))
 		return NULL;
 	_err = WECopyRange(rangeStart,
 	                   rangeEnd,
@@ -916,8 +914,8 @@ static PyObject *wasteObj_WEInsert(_self, _args)
 	WESoupHandle hSoup;
 	if (!PyArg_ParseTuple(_args, "s#O&O&",
 	                      &pText__in__, &pText__in_len__,
-	                      ResObj_Convert, &hStyles,
-	                      ResObj_Convert, &hSoup))
+	                      OptResObj_Convert, &hStyles,
+	                      OptResObj_Convert, &hSoup))
 		return NULL;
 	pText__len__ = pText__in_len__;
 	_err = WEInsert(pText__in__, pText__len__,
@@ -1344,7 +1342,7 @@ static PyMethodDef wasteObj_methods[] = {
 	{"WESetViewRect", (PyCFunction)wasteObj_WESetViewRect, 1,
 	 "(LongRect viewRect) -> None"},
 	{"WEContinuousStyle", (PyCFunction)wasteObj_WEContinuousStyle, 1,
-	 "() -> (Boolean _rv, WEStyleMode mode, TextStyle ts)"},
+	 "(WEStyleMode mode) -> (Boolean _rv, WEStyleMode mode, TextStyle ts)"},
 	{"WEGetRunInfo", (PyCFunction)wasteObj_WEGetRunInfo, 1,
 	 "(long offset) -> (WERunInfo runInfo)"},
 	{"WEGetOffset", (PyCFunction)wasteObj_WEGetOffset, 1,

@@ -24,14 +24,15 @@ from macsupport import *
 # Create the type objects
 WEReference = OpaqueByValueType("WEReference", "wasteObj")
 WEObjectReference = OpaqueByValueType("WEObjectReference", "WEOObj")
-##CharsHandle = OpaqueByValueType("CharsHandle", "ResObj")
-##Handle = OpaqueByValueType("Handle", "ResObj")
 StScrpHandle = OpaqueByValueType("StScrpHandle", "ResObj")
-##TEStyleHandle = OpaqueByValueType("TEStyleHandle", "ResObj")
 RgnHandle = OpaqueByValueType("RgnHandle", "ResObj")
 EventModifiers = Type("EventModifiers", "h")
 FlavorType = OSTypeType("FlavorType")
 WESelector = OSTypeType("WESelector")
+
+OptHandle = OpaqueByValueType("Handle", "OptResObj")
+OptSoupHandle = OpaqueByValueType("WESoupHandle", "OptResObj")
+OptStScrpHandle = OpaqueByValueType("StScrpHandle", "OptResObj")
 
 WEStyleMode = Type("WEStyleMode", "h")
 WEActionKind = Type("WEActionKind", "h")
@@ -154,7 +155,7 @@ class WEOObjectDefinition(GlobalObjectDefinition):
 # From here on it's basically all boiler plate...
 
 # Test types used for existence
-execfile(TYPETESTFILE)
+## execfile(TYPETESTFILE)
 
 # Create the generator groups and link them
 module = MacModule(MODNAME, MODPREFIX, includestuff, finalstuff, initstuff)

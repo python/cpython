@@ -18,7 +18,7 @@ def main():
 	defsoutput = TOOLBOXDIR + "WASTEconst.py"
 	scanner = MyScanner(input, output, defsoutput)
 	scanner.scan()
-	scanner.gentypetest(SHORT+"typetest.py")
+##	scanner.gentypetest(SHORT+"typetest.py")
 	scanner.close()
 	print "=== Done scanning and generating, now importing the generated code... ==="
 	exec "import " + SHORT + "support"
@@ -67,8 +67,19 @@ class MyScanner(Scanner):
 			 [("InBuffer", "*", "*")]),
 
 			# WEContinuousStyle
-			([("WEStyleMode", "mode", "OutMode"), ("TextStyle", "aStyle", "OutMode")],
-			 [("WEStyleMode", "mode", "InOutMode"), ("TextStyle", "aStyle", "InOutMode")])
+			([("WEStyleMode", "mode", "OutMode"), ("TextStyle", "ts", "OutMode")],
+			 [("WEStyleMode", "mode", "InOutMode"), ("TextStyle", "ts", "OutMode")]),
+			 
+			# WECopyRange
+			([('Handle', 'hText', 'InMode'), ('StScrpHandle', 'hStyles', 'InMode'),
+    			('WESoupHandle', 'hSoup', 'InMode')],
+    		 [('OptHandle', 'hText', 'InMode'), ('OptStScrpHandle', 'hStyles', 'InMode'),
+    			('OptSoupHandle', 'hSoup', 'InMode')]),
+			 
+			# WEInsert
+			([('StScrpHandle', 'hStyles', 'InMode'), ('WESoupHandle', 'hSoup', 'InMode')],
+    		 [('OptStScrpHandle', 'hStyles', 'InMode'), ('OptSoupHandle', 'hSoup', 'InMode')])
+
 			]
 			
 if __name__ == "__main__":
