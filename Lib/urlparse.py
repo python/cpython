@@ -54,7 +54,7 @@ def urlparse(url, scheme = '', allow_fragments = 1):
 	netloc = path = params = query = fragment = ''
 	i = find(url, ':')
 	if i > 0:
-		if url[:i] == 'http': # optimizie the common case
+		if url[:i] == 'http': # optimize the common case
 			scheme = string.lower(url[:i])
 			url = url[i+1:]
 			if url[:2] == '//':
@@ -66,16 +66,16 @@ def urlparse(url, scheme = '', allow_fragments = 1):
 			if allow_fragments:
 				i = string.rfind(url, '#')
 				if i >= 0:
-					url = url[:i]
 					fragment = url[i+1:]
+					url = url[:i]
 			i = find(url, '?')
 			if i >= 0:
-				url = url[:i]
 				query = url[i+1:]
+				url = url[:i]
 			i = find(url, ';')
 			if i >= 0:
-				url = url[:i]
 				params = url[i+1:]
+				url = url[:i]
 			tuple = scheme, netloc, url, params, query, fragment
 			_parse_cache[key] = tuple
 			return tuple
@@ -225,6 +225,9 @@ test_input = """
       g/../h     = <URL:http://a/b/c/h>
       http:g     = <URL:http://a/b/c/g>
       http:      = <URL:http://a/b/c/d>
+      http:?y         = <URL:http://a/b/c/d?y>
+      http:g?y        = <URL:http://a/b/c/g?y>
+      http:g?y/./x    = <URL:http://a/b/c/g?y/./x>
 """
 # XXX The result for //g is actually http://g/; is this a problem?
 
