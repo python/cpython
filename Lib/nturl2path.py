@@ -4,8 +4,6 @@
 
 def url2pathname(url):
 	""" Convert a URL to a DOS path...
-	Currently only works for absolute paths
-
 		///C|/foo/bar/spam.foo
 
 			becomes
@@ -13,6 +11,10 @@ def url2pathname(url):
 		C:\foo\bar\spam.foo
 	"""
 	import string
+	if not '|' in url:
+	    # No drive specifier, just convert slashes
+	    components = string.splitfields(url, '/')
+	    return string.joinfields(components, '\\')
 	comp = string.splitfields(url, '|')
 	if len(comp) != 2 or comp[0][-1] not in string.letters:
 		error = 'Bad URL: ' + url
@@ -28,8 +30,6 @@ def url2pathname(url):
 def pathname2url(p):
 
 	""" Convert a DOS path name to a file url...
-	Currently only works for absolute paths
-
 		C:\foo\bar\spam.foo
 
 			becomes
@@ -38,6 +38,10 @@ def pathname2url(p):
 	"""
 
 	import string
+	if not ':' in p:
+	    # No drive specifier, just convert slashes
+	    components = string.splitfields(p, '\\')
+	    return string.joinfields(components, '/')
 	comp = string.splitfields(p, ':')
 	if len(comp) != 2 or len(comp[0]) > 1:
 		error = 'Bad path: ' + p
