@@ -24,7 +24,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* Traceback interface */
 
-int tb_here PROTO((struct _frame *, int, int));
+int tb_here PROTO((struct _frame *));
 object *tb_fetch PROTO((void));
 int tb_store PROTO((object *));
 int tb_print PROTO((object *, FILE *));
