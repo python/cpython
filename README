@@ -1,10 +1,13 @@
-This is Python version 2.0
-==========================
+This is Python version 2.0.1, a bugfix release for Python 2.0
+=============================================================
+
+Copyright (c) 2001 Python Software Foundation.
+All rights reserved.
 
 Copyright (c) 2000 BeOpen.com.
 All rights reserved.
 
-Copyright (c) 1995-2000 Corporation for National Research Initiatives.
+Copyright (c) 1995-2001 Corporation for National Research Initiatives.
 All rights reserved.
 
 Copyright (c) 1991-1995 Stichting Mathematisch Centrum.
@@ -30,8 +33,7 @@ holders.
 What's new in this release?
 ---------------------------
 
-See the file "Misc/NEWS"; see also this URL:
-http://www.pythonlabs.com/products/python2.0/
+See the file "Misc/NEWS".
 
 If you don't read instructions
 ------------------------------
@@ -52,14 +54,7 @@ Python is an interpreted object-oriented programming language suitable
 scripting, numeric computing and system testing.  Python is often
 compared to Tcl, Perl, Java, JavaScript, Visual Basic or Scheme.  To
 find out more about what Python can do for you, point your browser to
-http://www.pythonlabs.com/.
-
-BeOpen.com offers corporate support, custom development and
-sponsorships for Python.  Contact <sales@beopen.com> for more
-information.
-
-BeOpen Python releases include pre-built Python executables for major
-platforms and are available from PythonLabs.
+http://www.python.org/.
 
 
 How do I learn Python?
@@ -95,14 +90,9 @@ Web sites
 ---------
 
 New Python releases and related technologies are published at
-http://www.pythonlabs.com/.  Come visit us!
+http://www.python.org/.  Come visit us!
 
-The present Python community web site is http://www.python.org/.
-BeOpen.com is developing a next-generation community site for Python
-and is looking for volunteers to help make this an even better
-resource than the existing community site.  If you know Python well
-and would like to volunteer to work with us on this project, please
-contact <volunteer@pythonlabs.com> with a summary of your skills.
+There's also a Python community web site at http://starship.python.net/.
 
 
 Newsgroups and Mailing Lists
@@ -144,9 +134,9 @@ Questions
 For help, if you can't find it in the manuals or on the web site, it's
 best to post to the comp.lang.python or the Python mailing list (see
 above).  If you specifically don't want to involve the newsgroup or
-mailing list, send questions to <help@python.org> (a group of
-volunteers who answer questions as they can).  The newsgroup is the
-most efficient way to ask public questions.
+mailing list, send questions to help@python.org (a group of volunteers
+who answer questions as they can).  The newsgroup is the most
+efficient way to ask public questions.
 
 
 Build instructions
@@ -227,8 +217,9 @@ Platform specific notes
 -----------------------
 
 (Some of these may no longer apply.  If you find you can build Python
-on these platforms without the special directions mentioned here, mail
-to <python@pythonlabs.com> so we can remove them!)
+on these platforms without the special directions mentioned here,
+submit a documentation bug report to SourceForge (see Bug Reports
+above) so we can remove them!)
 
 64-bit platforms: The modules audioop, imageop and rgbimg don't work.
 	Don't try to enable them in the Modules/Setup file.  They
@@ -546,10 +537,12 @@ directory given by --exec-prefix or the `exec_prefix' Make variable
 
 All subdirectories created will have Python's version number in their
 name, e.g. the library modules are installed in
-"/usr/local/lib/python2.0/" by default.  The Python binary is
-installed as "python2.0" and a hard link named "python" is created.
-The only file not installed with a version number in its name is the
-manual page, installed as "/usr/local/man/man1/python.1" by default.
+"/usr/local/lib/python<version>/" by default, where <version> is the
+<major>.<minor> release number (i.e. "2.0", even though this is Python
+2.0.1).  The Python binary is installed as "python<version>" and a
+hard link named "python" is created.  The only file not installed with
+a version number in its name is the manual page, installed as
+"/usr/local/man/man1/python.1" by default.
 
 If you have a previous installation of a pre-2.0 Python that you don't
 want to replace yet, use
@@ -557,8 +550,8 @@ want to replace yet, use
 	make altinstall
 
 This installs the same set of files as "make install" except it
-doesn't create the hard link to "python2.0" named "python" and it
-doesn't install the manual page at all.
+doesn't create the hard link to "python<version>" named "python" and
+it doesn't install the manual page at all.
 
 The only thing you may have to install manually is the Python mode for
 Emacs found in Misc/python-mode.el.  (But then again, more recent
@@ -712,7 +705,7 @@ development, join the PythonMac Special Interest Group
 pythonmac-sig-request@python.org).
 
 Of course, there are also binary distributions available for these
-platforms -- see http://www.pythonlabs.com/products/python2.0/.
+platforms -- see http://www.python.org/.
 
 To port Python to a new non-UNIX system, you will have to fake the
 effect of running the configure script manually (for Mac and PC, this
@@ -734,11 +727,11 @@ Emacs mode
 There's an excellent Emacs editing mode for Python code; see the file
 Misc/python-mode.el.  Originally written by the famous Tim Peters, it
 is now maintained by the equally famous Barry Warsaw (it's no
-coincidence that they now both work at PythonLabs).  The latest
+coincidence that they now both work on the same team).  The latest
 version, along with various other contributed Python-related Emacs
-goodies, is online at <http://www.python.org/emacs/python-mode>.  And
+goodies, is online at http://www.python.org/emacs/python-mode.  And
 if you are planning to edit the Python C code, please pick up the
-latest version of CC Mode <http://www.python.org/emacs/cc-mode>; it
+latest version of CC Mode http://www.python.org/emacs/cc-mode; it
 contains a "python" style used throughout most of the Python C source
 files.  (Newer versions of Emacs or XEmacs may already come with the
 latest version of python-mode.)
@@ -826,7 +819,7 @@ config.h        Configuration header
 config.log      Log from last configure run
 config.status   Status from last run of the configure script
 getbuildinfo.o	Object file from Modules/getbuildinfo.c
-libpython2.0.a	The library archive
+libpython<version>.a	The library archive
 python          The executable interpreter
 tags, TAGS      Tags files for vi and Emacs
 
@@ -835,4 +828,4 @@ That's all, folks!
 ------------------
 
 
---Guido van Rossum (home page: http://www.pythonlabs.com/~guido/)
+--Guido van Rossum (home page: http://www.python.org/~guido/)
