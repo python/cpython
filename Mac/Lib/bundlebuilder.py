@@ -350,16 +350,15 @@ class AppBuilder(BundleBuilder):
 			self.execpath = execpath
 
 		if self.mainprogram is not None:
-			mainname = os.path.basename(self.mainprogram)
-			self.files.append((self.mainprogram, pathjoin(resdir, mainname)))
-			# Create execve wrapper
-			mainprogram = self.mainprogram  # XXX for locals() call
+			mainprogram = os.path.basename(self.mainprogram)
+			self.files.append((self.mainprogram, pathjoin(resdir, mainprogram)))
+			# Write bootstrap script
 			executable = os.path.basename(self.executable)
 			execdir = pathjoin(self.bundlepath, self.execdir)
-			mainwrapperpath = pathjoin(execdir, self.name)
+			bootstrappath = pathjoin(execdir, self.name)
 			makedirs(execdir)
-			open(mainwrapperpath, "w").write(BOOTSTRAP_SCRIPT % locals())
-			os.chmod(mainwrapperpath, 0775)
+			open(bootstrappath, "w").write(BOOTSTRAP_SCRIPT % locals())
+			os.chmod(bootstrappath, 0775)
 
 	def postProcess(self):
 		self.addPythonModules()
