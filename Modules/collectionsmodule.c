@@ -48,7 +48,7 @@ deque_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	deque = (dequeobject *)type->tp_alloc(type, 0);
 	if (deque == NULL)
 		return NULL;
-	
+
 	b = newblock(NULL, NULL);
 	if (b == NULL) {
 		Py_DECREF(deque);
@@ -206,12 +206,12 @@ deque_extend(dequeobject *deque, PyObject *iterable)
 		deque->rightblock->data[deque->rightindex] = item;
 	}
 	Py_DECREF(it);
-	if (PyErr_Occurred()) 
+	if (PyErr_Occurred())
 		return NULL;
 	Py_RETURN_NONE;
 }
 
-PyDoc_STRVAR(extend_doc, 
+PyDoc_STRVAR(extend_doc,
 "Extend the right side of the deque with elements from the iterable");
 
 static PyObject *
@@ -246,7 +246,7 @@ deque_extendleft(dequeobject *deque, PyObject *iterable)
 	Py_RETURN_NONE;
 }
 
-PyDoc_STRVAR(extendleft_doc, 
+PyDoc_STRVAR(extendleft_doc,
 "Extend the left side of the deque with elements from the iterable");
 
 static PyObject *
@@ -289,7 +289,7 @@ deque_rotate(dequeobject *deque, PyObject *args)
 	Py_RETURN_NONE;
 }
 
-PyDoc_STRVAR(rotate_doc, 
+PyDoc_STRVAR(rotate_doc,
 "Rotate the deque n steps to the right (default n=1).  If n is negative, rotates left.");
 
 static int
@@ -354,7 +354,7 @@ deque_item(dequeobject *deque, int i)
 
 /* delitem() implemented in terms of rotate for simplicity and reasonable
    performance near the end points.  If for some reason this method becomes
-   popular, it is not hard to re-implement this using direct data movement 
+   popular, it is not hard to re-implement this using direct data movement
    (similar to code in list slice assignment) and achieve a two or threefold
    performance boost.
 */
@@ -365,7 +365,7 @@ deque_del_item(dequeobject *deque, int i)
 	PyObject *item=NULL, *minus_i=NULL, *plus_i=NULL;
 	int rv = -1;
 
-	assert (i >= 0 && i < deque->len); 
+	assert (i >= 0 && i < deque->len);
 
 	minus_i = Py_BuildValue("(i)", -i);
 	if (minus_i == NULL)
@@ -376,7 +376,7 @@ deque_del_item(dequeobject *deque, int i)
 		goto fail;
 
 	item = deque_rotate(deque, minus_i);
-	if (item == NULL) 
+	if (item == NULL)
 		goto fail;
 	Py_DECREF(item);
 
@@ -385,7 +385,7 @@ deque_del_item(dequeobject *deque, int i)
 	Py_DECREF(item);
 
 	item = deque_rotate(deque, plus_i);
-	if (item == NULL) 
+	if (item == NULL)
 		goto fail;
 
 	rv = 0;
@@ -489,7 +489,7 @@ deque_nohash(PyObject *self)
 static PyObject *
 deque_copy(PyObject *deque)
 {
-	return PyObject_CallFunctionObjArgs((PyObject *)(deque->ob_type), 
+	return PyObject_CallFunctionObjArgs((PyObject *)(deque->ob_type),
 		deque, NULL);
 }
 
@@ -582,7 +582,7 @@ deque_tp_print(PyObject *deque, FILE *fp, int flags)
 	}
 	Py_ReprLeave(deque);
 	Py_DECREF(it);
-	if (PyErr_Occurred()) 
+	if (PyErr_Occurred())
 		return -1;
 	fputs("])", fp);
 	return 0;
@@ -594,7 +594,7 @@ deque_richcompare(PyObject *v, PyObject *w, int op)
 	PyObject *it1=NULL, *it2=NULL, *x, *y;
 	int i, b, vs, ws, minlen, cmp=-1;
 
-	if (!PyObject_TypeCheck(v, &deque_type) || 
+	if (!PyObject_TypeCheck(v, &deque_type) ||
 	    !PyObject_TypeCheck(w, &deque_type)) {
 		Py_INCREF(Py_NotImplemented);
 		return Py_NotImplemented;
@@ -654,7 +654,7 @@ deque_richcompare(PyObject *v, PyObject *w, int op)
 	case Py_GT: cmp = vs >  ws; break;
 	case Py_GE: cmp = vs >= ws; break;
 	}
-	
+
 done:
 	Py_XDECREF(it1);
 	Py_XDECREF(it2);
@@ -695,31 +695,31 @@ static PySequenceMethods deque_as_sequence = {
 
 static PyObject *deque_iter(dequeobject *deque);
 static PyObject *deque_reviter(dequeobject *deque);
-PyDoc_STRVAR(reversed_doc, 
+PyDoc_STRVAR(reversed_doc,
 	"D.__reversed__() -- return a reverse iterator over the deque");
 
 static PyMethodDef deque_methods[] = {
-	{"append",		(PyCFunction)deque_append,	
+	{"append",		(PyCFunction)deque_append,
 		METH_O,		 append_doc},
-	{"appendleft",		(PyCFunction)deque_appendleft,	
+	{"appendleft",		(PyCFunction)deque_appendleft,
 		METH_O,		 appendleft_doc},
-	{"clear",		(PyCFunction)deque_clearmethod,	
+	{"clear",		(PyCFunction)deque_clearmethod,
 		METH_NOARGS,	 clear_doc},
-	{"__copy__",		(PyCFunction)deque_copy,	
+	{"__copy__",		(PyCFunction)deque_copy,
 		METH_NOARGS,	 copy_doc},
-	{"extend",		(PyCFunction)deque_extend,	
+	{"extend",		(PyCFunction)deque_extend,
 		METH_O,		 extend_doc},
-	{"extendleft",	(PyCFunction)deque_extendleft,	
+	{"extendleft",	(PyCFunction)deque_extendleft,
 		METH_O,		 extendleft_doc},
-	{"pop",			(PyCFunction)deque_pop,	
+	{"pop",			(PyCFunction)deque_pop,
 		METH_NOARGS,	 pop_doc},
-	{"popleft",		(PyCFunction)deque_popleft,	
+	{"popleft",		(PyCFunction)deque_popleft,
 		METH_NOARGS,	 popleft_doc},
-	{"__reduce__",	(PyCFunction)deque_reduce,	
+	{"__reduce__",	(PyCFunction)deque_reduce,
 		METH_NOARGS,	 reduce_doc},
-	{"__reversed__",	(PyCFunction)deque_reviter,	
+	{"__reversed__",	(PyCFunction)deque_reviter,
 		METH_NOARGS,	 reversed_doc},
-	{"rotate",		(PyCFunction)deque_rotate,	
+	{"rotate",		(PyCFunction)deque_rotate,
 		METH_VARARGS,	rotate_doc},
 	{NULL,		NULL}	/* sentinel */
 };
@@ -980,7 +980,7 @@ initcollections(void)
 	PyModule_AddObject(m, "deque", (PyObject *)&deque_type);
 
 	if (PyType_Ready(&dequeiter_type) < 0)
-		return;	
+		return;
 
 	if (PyType_Ready(&dequereviter_type) < 0)
 		return;
