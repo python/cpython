@@ -82,6 +82,15 @@ typedef struct
     int is_initialised;
 } compobject;
 
+static void
+zlib_error(z_stream zst, int err, char *msg)
+{
+    if (zst.msg == Z_NULL)
+	PyErr_Format(ZlibError, "Error %d %s", err, msg);
+    else
+	PyErr_Format(ZlibError, "Error %d %s: %.200s", err, msg, zst.msg);
+}
+
 static char compressobj__doc__[] = 
 "compressobj() -- Return a compressor object.\n"
 "compressobj(level) -- Return a compressor object, using the given compression level.\n"
@@ -175,40 +184,21 @@ PyZlib_compress(PyObject *self, PyObject *args)
 			"Bad compression level");
 	return_error = 1;
 	break;
-    default: {
-	if (zst.msg == Z_NULL)
-	    PyErr_Format(ZlibError, "Error %i while compressing data",
-			 err); 
-	else
-	    PyErr_Format(ZlibError, "Error %i while compressing data: %.200s",
-			 err, zst.msg);  
+    default:
         deflateEnd(&zst);
+	zlib_error(zst, err, "while compressing data");
 	return_error = 1;
-	}
     }
 
     if (!return_error) {
 	Py_BEGIN_ALLOW_THREADS;
-        err=deflate(&zst, Z_FINISH);
+        err = deflate(&zst, Z_FINISH);
 	Py_END_ALLOW_THREADS;
 
-	switch(err)
-	{
-	case(Z_STREAM_END):
-	    break;
-	    /* Are there other errors to be trapped here? */
-	default: {
-	    if (zst.msg == Z_NULL)
-		PyErr_Format(ZlibError, "Error %i while compressing data",
-			     err); 
-	    else
-		PyErr_Format(ZlibError, "Error %i while compressing data: %.200s",
-			     err, zst.msg);  
-
+	if (err != Z_STREAM_END) {
+	    zlib_error(zst, err, "while compressing data");
 	    deflateEnd(&zst);
-
 	    return_error = 1;
-	    }
 	}
     
 	if (!return_error) {
@@ -216,16 +206,8 @@ PyZlib_compress(PyObject *self, PyObject *args)
 	    if (err == Z_OK)
 		ReturnVal = PyString_FromStringAndSize((char *)output, 
 						       zst.total_out);
-	    else {
-		    if (zst.msg == Z_NULL)
-			PyErr_Format(ZlibError, 
-				     "Error %i while finishing compression",
-				     err); 
-		    else
-			PyErr_Format(ZlibError,
-			     "Error %i while finishing compression: %.200s",
-				     err, zst.msg);  
-	    }
+	    else 
+		zlib_error(zst, err, "while finishing compression");
 	}
     }
 
@@ -286,18 +268,10 @@ PyZlib_decompress(PyObject *self, PyObject *args)
 	PyErr_SetString(PyExc_MemoryError,
 			"Out of memory while decompressing data");
 	return_error = 1;
-    default: {
-	if (zst.msg == Z_NULL)
-	    PyErr_Format(ZlibError, "Error %i preparing to decompress data",
-			 err); 
-	else
-	    PyErr_Format(ZlibError,
-			 "Error %i while preparing to decompress data: %.200s",
-			 err, zst.msg);  
+    default:
         inflateEnd(&zst);
-
+	zlib_error(zst, err, "while preparing to decompress data");
 	return_error = 1;
-	}
     }
 
     do {
@@ -317,8 +291,7 @@ PyZlib_decompress(PyObject *self, PyObject *args)
 	     * and we get this error, assume that it means zlib cannot
 	     * process the inflate call() due to an error in the data.
 	     */
-	    if (zst.avail_out > 0)
-	    {
+	    if (zst.avail_out > 0) {
 		PyErr_Format(ZlibError, "Error %i while decompressing data",
 			     err);
 		inflateEnd(&zst);
@@ -338,33 +311,17 @@ PyZlib_decompress(PyObject *self, PyObject *args)
 	    zst.avail_out = r_strlen;
 	    r_strlen = r_strlen << 1;
 	    break;
-	default: {
-	    if (zst.msg == Z_NULL)
-		PyErr_Format(ZlibError, "Error %i while decompressing data",
-			     err); 
-	    else
-		PyErr_Format(ZlibError,
-			     "Error %i while decompressing data: %.200s",
-			     err, zst.msg);  
+	default:
 	    inflateEnd(&zst);
+	    zlib_error(zst, err, "while decompressing data");
 	    return_error = 1;
-	    }
 	}
     } while (err != Z_STREAM_END);
 
     if (!return_error) {
 	err = inflateEnd(&zst);
 	if (err != Z_OK) {
-	    if (zst.msg == Z_NULL)
-		PyErr_Format(ZlibError,
-			     "Error %i while finishing data decompression",
-			     err); 
-	    else
-		PyErr_Format(ZlibError,
-			     "Error %i while finishing data decompression: %.200s",
-			     err, zst.msg);  
-	
-	    return_error = 1;
+	    zlib_error(zst, err, "while finishing data decompression");
 	    return NULL;
 	}
     }
@@ -410,18 +367,9 @@ PyZlib_compressobj(PyObject *selfptr, PyObject *args)
                       "Invalid initialization option");
       return NULL;
     default:
-      {
-	if (self->zst.msg == Z_NULL)
-	    PyErr_Format(ZlibError,
-			 "Error %i while creating compression object",
-			 err); 
-	else
-	    PyErr_Format(ZlibError,
-			 "Error %i while creating compression object: %.200s",
-			 err, self->zst.msg);  
+	zlib_error(self->zst, err, "while creating compression object");
         Py_DECREF(self);
 	return NULL;
-      }
     }
 }
 
@@ -455,18 +403,9 @@ PyZlib_decompressobj(PyObject *selfptr, PyObject *args)
                       "Can't allocate memory for decompression object");
       return NULL;
     default:
-    {
-	if (self->zst.msg == Z_NULL)
-	    PyErr_Format(ZlibError,
-			 "Error %i while creating decompression object",
-			 err); 
-	else
-	    PyErr_Format(ZlibError,
-			 "Error %i while creating decompression object: %.200s",
-			 err, self->zst.msg);  
+	zlib_error(self->zst, err, "while creating decompression object");
         Py_DECREF(self);
 	return NULL;
-    }
   }
 }
 
@@ -851,13 +790,7 @@ PyZlib_unflush(compobject *self, PyObject *args)
 
     err = inflateEnd(&(self->zst));
     if (err != Z_OK) {
-	if (self->zst.msg == Z_NULL)
-	    PyErr_Format(ZlibError,  "Error %i from inflateEnd()",
-			 err); 
-	else
-	    PyErr_Format(ZlibError, "Error %i from inflateEnd(): %.200s",
-			 err, self->zst.msg);  
-
+	zlib_error(self->zst, err, "from inflateEnd()");
 	retval = NULL;
     } else {
 	self->is_initialised = 0;
