@@ -153,7 +153,7 @@ class SMTPChannel(asynchat.async_chat):
             method(arg)
             return
         else:
-            if self.__state <> self.DATA:
+            if self.__state != self.DATA:
                 self.push('451 Internal confusion')
                 return
             # Remove extraneous carriage returns and de-transparency according
@@ -206,7 +206,7 @@ class SMTPChannel(asynchat.async_chat):
         keylen = len(keyword)
         if arg[:keylen].upper() == keyword:
             address = arg[keylen:].strip()
-            if address[0] == '<' and address[-1] == '>' and address <> '<>':
+            if address[0] == '<' and address[-1] == '>' and address != '<>':
                 # Addresses can be in the form <person@dom.com> but watch out
                 # for null address, e.g. <>
                 address = address[1:-1]
@@ -518,7 +518,7 @@ if __name__ == '__main__':
         try:
             os.setuid(nobody)
         except OSError, e:
-            if e.errno <> errno.EPERM: raise
+            if e.errno != errno.EPERM: raise
             print >> sys.stderr, \
                   'Cannot setuid "nobody"; try running with -n option.'
             sys.exit(1)
