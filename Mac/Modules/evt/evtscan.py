@@ -39,6 +39,7 @@ class MyScanner(Scanner):
 		return [
 			"KeyTranslate",
 			"GetEventMask",		# I cannot seem to find this routine...
+			"WaitNextEvent"		# Manually generated because of optional region
 			]
 
 	def makeblacklisttypes(self):
