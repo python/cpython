@@ -57,7 +57,7 @@ Python's \code{deepcopy()} operation avoids these problems by:
 \begin{itemize}
 
 \item
-keeping a table of objects already copied during the current
+keeping a ``memo'' dictionary of objects already copied during the current
 copying pass; and
 
 \item
@@ -75,8 +75,21 @@ to control pickling: they can define methods called
 \code{__getinitargs__()}, \code{__getstate__()} and
 \code{__setstate__()}.  See the description of module \code{pickle}
 for information on these methods.
+The copy module does not use the \module{copy_reg} registration
+module.
 \refstmodindex{pickle}
 \setindexsubitem{(copy protocol)}
 \ttindex{__getinitargs__}
 \ttindex{__getstate__}
 \ttindex{__setstate__}
+
+In order for a class to define its own copy implementation, it can
+define special methods \method{__copy__()}\ttindex{__copy__} and
+\method{__deepcopy__()}\ttindex{__deepcopy__}.  The former is called to
+implement the shallow copy operation; no additional arguments are
+passed.  The latter is called to implement the deep copy operation; it
+is passed one argument, the memo dictionary.  If the
+\method{__deepcopy__()} implementation needs to make a deep copy of a
+component, it should call the \function{deepcopy()} function with the
+component as first argument and the memo dictionary as second
+argument.
