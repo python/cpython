@@ -36,16 +36,9 @@ pickle(type(1j), pickle_complex, complex)
 
 # Support for picking new-style objects
 
-_dummy_classes = {}
-
 def _reconstructor(cls, base, state):
-    dummy = _dummy_classes.get(base)
-    if dummy is None:
-        class dummy(base): pass
-        _dummy_classes[base] = dummy
-    obj = dummy(state)
-    obj._foo = 1; del obj._foo # hack to create __dict__
-    obj.__class__ = cls
+    obj = base.__new__(cls, state)
+    base.__init__(obj, state)
     return obj
 _reconstructor.__safe_for_unpickling__ = 1
 
