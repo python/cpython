@@ -49,6 +49,11 @@ class Debugger(bdb.Bdb):
 			self.tracemagic = 0
 		self.laststacksel = None
 	
+	def canonic(self, filename):
+		# override: the provided canonic() method breaks our
+		# file-less Untitled windows
+		return filename
+	
 	def reset(self):
 		self.currentframe = None
 		self.file = None
