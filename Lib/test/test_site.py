@@ -21,10 +21,10 @@ else:
 
 class HelperFunctionsTests(unittest.TestCase):
     """Tests for helper functions.
-    
+
     The setting of the encoding (set using sys.setdefaultencoding) used by
     the Unicode implementation is not tested.
-    
+
     """
 
     def setUp(self):
@@ -34,7 +34,7 @@ class HelperFunctionsTests(unittest.TestCase):
     def tearDown(self):
         """Restore sys.path"""
         sys.path = self.sys_path
-    
+
     def test_makepath(self):
         # Test makepath() have an absolute path for its first return value
         # and a case-normalized version of the absolute path for its
@@ -55,7 +55,7 @@ class HelperFunctionsTests(unittest.TestCase):
             self.failUnless(entry in dir_set,
                             "%s from sys.path not found in set returned "
                             "by _init_pathinfo(): %s" % (entry, dir_set))
-    
+
     def test_addpackage(self):
         # Make sure addpackage() imports if the line starts with 'import',
         # otherwise add a directory combined from sitedir and 'name'.
@@ -67,7 +67,7 @@ class HelperFunctionsTests(unittest.TestCase):
                     sys.path)
         finally:
             cleanuppth(dir_path, file_name, new_dir)
-    
+
     def test_addsitedir(self):
         dir_path, file_name, new_dir = createpth()
         try:
@@ -120,11 +120,14 @@ class ImportSideEffectTests(unittest.TestCase):
         # as an absolute path.
         # Handled by abs__file__()
         site.abs__file__()
-        for module in sys.modules.values():
+        for module in (sys, os, __builtin__):
             try:
-                self.failUnless(os.path.isabs(module.__file__))
+                self.failUnless(os.path.isabs(module.__file__), `module`)
             except AttributeError:
                 continue
+        # We could try everything in sys.modules; however, when regrtest.py
+        # runs something like test_frozen before test_site, then we will
+        # be testing things loaded *after* test_site did path normalization
 
     def test_no_duplicate_paths(self):
         # No duplicate paths should exist in sys.path
