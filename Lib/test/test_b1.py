@@ -53,6 +53,7 @@ class D(C):
     def __call__(self): pass
 y = D()
 if not callable(y): raise TestFailed, 'callable(y)'
+y()
 
 print 'chr'
 if chr(32) != ' ': raise TestFailed, 'chr(32)'
