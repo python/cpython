@@ -3832,6 +3832,10 @@ init_socket(void)
 	/* Multiprotocol bridge */
 	PyModule_AddIntConstant(m, "AF_BRIDGE", AF_BRIDGE);
 #endif
+#ifdef AF_ATMPVC
+	/* ATM PVCs */
+	PyModule_AddIntConstant(m, "AF_ATMPVC", AF_ATMPVC);
+#endif
 #ifdef AF_AAL5
 	/* Reserved for Werner's ATM */
 	PyModule_AddIntConstant(m, "AF_AAL5", AF_AAL5);
@@ -3846,6 +3850,62 @@ init_socket(void)
 #ifdef AF_ROSE
 	/* Amateur Radio X.25 PLP */
 	PyModule_AddIntConstant(m, "AF_ROSE", AF_ROSE);
+#endif
+#ifdef AF_DECnet
+	/* Reserved for DECnet project */
+	PyModule_AddIntConstant(m, "AF_DECnet", AF_DECnet);
+#endif
+#ifdef AF_NETBEUI
+	/* Reserved for 802.2LLC project */
+	PyModule_AddIntConstant(m, "AF_NETBEUI", AF_NETBEUI);
+#endif
+#ifdef AF_SECURITY
+	/* Security callback pseudo AF */
+	PyModule_AddIntConstant(m, "AF_SECURITY", AF_SECURITY);
+#endif
+#ifdef AF_KEY
+	/* PF_KEY key management API */
+	PyModule_AddIntConstant(m, "AF_KEY", AF_KEY);
+#endif
+#ifdef AF_NETLINK
+	/*  */
+	PyModule_AddIntConstant(m, "AF_NETLINK", AF_NETLINK);
+#endif
+#ifdef AF_ROUTE
+	/* Alias to emulate 4.4BSD */
+	PyModule_AddIntConstant(m, "AF_ROUTE", AF_ROUTE);
+#endif
+#ifdef AF_ASH
+	/* Ash */
+	PyModule_AddIntConstant(m, "AF_ASH", AF_ASH);
+#endif
+#ifdef AF_ECONET
+	/* Acorn Econet */
+	PyModule_AddIntConstant(m, "AF_ECONET", AF_ECONET);
+#endif
+#ifdef AF_ATMSVC
+	/* ATM SVCs */
+	PyModule_AddIntConstant(m, "AF_ATMSVC", AF_ATMSVC);
+#endif
+#ifdef AF_SNA
+	/* Linux SNA Project (nutters!) */
+	PyModule_AddIntConstant(m, "AF_SNA", AF_SNA);
+#endif
+#ifdef AF_IRDA
+	/* IRDA sockets */
+	PyModule_AddIntConstant(m, "AF_IRDA", AF_IRDA);
+#endif
+#ifdef AF_PPPOX
+	/* PPPoX sockets */
+	PyModule_AddIntConstant(m, "AF_PPPOX", AF_PPPOX);
+#endif
+#ifdef AF_WANPIPE
+	/* Wanpipe API Sockets */
+	PyModule_AddIntConstant(m, "AF_WANPIPE", AF_WANPIPE);
+#endif
+#ifdef AF_LLC
+	/* Linux LLC */
+	PyModule_AddIntConstant(m, "AF_LLC", AF_LLC);
 #endif
 
 #ifdef USE_BLUETOOTH
