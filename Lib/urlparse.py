@@ -112,9 +112,9 @@ def urlparse(url, scheme = '', allow_fragments = 1):
 # had redundant delimiters, e.g. a ? with an empty query (the draft
 # states that these are equivalent).
 def urlunparse((scheme, netloc, url, params, query, fragment)):
-	if netloc:
+	if netloc or (scheme in uses_netloc and url[:2] == '//'):
 		if url[:1] != '/': url = '/' + url
-		url = '//' + netloc + url
+		url = '//' + (netloc or '') + url
 	if scheme:
 		url = scheme + ':' + url
 	if params:
