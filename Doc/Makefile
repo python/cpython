@@ -71,6 +71,13 @@ RELEASE=2.4a0
 PYTHON=	   python
 DVIPS=	   dvips -N0 -t $(PAPER)
 
+PWD=$(shell pwd)
+
+# (The trailing colon in the value is needed; TeX places it's default
+# set of paths at the location of the empty string in the path list.)
+#
+TEXINPUTS=$(PWD)/commontex:
+
 # This is ugly!  The issue here is that there are two different levels
 # in the directory tree at which we execute mkhowto, so we can't
 # define it just once using a relative path (at least not with the
@@ -78,7 +85,7 @@ DVIPS=	   dvips -N0 -t $(PAPER)
 # $(shell) function here to work around that restriction by
 # identifying mkhowto using an absolute path.
 #
-MKHOWTO=   $(PYTHON) $(shell pwd)/tools/mkhowto
+MKHOWTO=   TEXINPUTS=$(TEXINPUTS) $(PYTHON) $(PWD)/tools/mkhowto
 
 MKDVI=	   $(MKHOWTO) --paper=$(PAPER) --dvi
 MKHTML=	   $(MKHOWTO) --html --about html/stdabout.dat \
