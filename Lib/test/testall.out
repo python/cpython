@@ -1,0 +1,133 @@
+test_grammar
+1. Parser
+1.1 Tokens
+1.1.1 Backslashes
+1.1.2 Numeric literals
+1.1.2.1 Plain integers
+1.1.2.2 Long integers
+1.1.2.3 Floating point
+1.2 Grammar
+single_input
+file_input
+expr_input
+eval_input
+funcdef
+simple_stmt
+expr_stmt
+1
+(1, 2, 3)
+print_stmt
+1 2 3
+1 2 3
+1 1 1
+del_stmt
+pass_stmt
+flow_stmt
+break_stmt
+continue_stmt
+return_stmt
+raise_stmt
+import_stmt
+[1]
+[2]
+[3]
+[4]
+[5]
+[6]
+global_stmt
+if_stmt
+while_stmt
+for_stmt
+[1]
+[2]
+[3]
+try_stmt
+suite
+test
+comparison
+binary mask ops
+shift ops
+additive ops
+multiplicative ops
+unary ops
+selectors
+atoms
+classdef
+test_opcodes
+2. Opcodes
+XXX Not yet fully implemented
+2.1 try inside for loop
+test_operations
+3. Operations
+XXX Not yet implemented
+test_builtin
+4. Built-in functions
+test_b1
+abs
+apply
+chr
+cmp
+coerce
+dir
+divmod
+eval
+exec
+execfile
+float
+getattr
+hex
+int
+len
+long
+max
+min
+test_b2
+oct
+open
+ord
+pow
+range
+input and raw_input
+testing
+testing
+reload
+repr
+setattr
+str
+type
+test_exceptions
+5. Built-in exceptions
+AttributeError
+EOFError
+IOError
+ImportError
+IndexError
+KeyError
+KeyboardInterrupt
+(not testable in a script)
+MemoryError
+(not safe to test)
+NameError
+OverflowError
+RuntimeError
+(not used any more?)
+SyntaxError
+SystemError
+(hard to reproduce)
+SystemExit
+TypeError
+ValueError
+ZeroDivisionError
+test_types
+6. Built-in types
+6.1 Truth value testing
+6.2 Boolean operations
+6.3 Comparisons
+6.4 Numeric types (mostly conversions)
+6.5 Sequence types
+6.5.1 Strings
+6.5.2 Tuples
+6.5.3 Lists
+6.5.3a Additional list operations
+6.6 Mappings == Dictionaries
+Passed all tests.
