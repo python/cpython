@@ -84,6 +84,7 @@ class bdist_wininst (Command):
 
         install = self.reinitialize_command('install')
         install.root = self.bdist_dir
+        install.warn_dir = 0
 
         install_lib = self.reinitialize_command('install_lib')
         # we do not want to include pyc or pyo files
@@ -98,7 +99,6 @@ class bdist_wininst (Command):
                 value = value + '/Include/$dist_name'
             setattr(install,
                     'install_' + key,
-        install.warn_dir = 0
                     value)
 
         self.announce("installing to %s" % self.bdist_dir)

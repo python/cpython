@@ -75,13 +75,13 @@ class bdist_dumb (Command):
 
         install = self.reinitialize_command('install', reinit_subcommands=1)
         install.root = self.bdist_dir
+        install.warn_dir = 0
 
         self.announce("installing to %s" % self.bdist_dir)
         self.run_command('install')
 
         # And make an archive relative to the root of the
         # pseudo-installation tree.
-        install.warn_dir = 0
         archive_basename = "%s.%s" % (self.distribution.get_fullname(),
                                       self.plat_name)
         self.make_archive(os.path.join(self.dist_dir, archive_basename),
