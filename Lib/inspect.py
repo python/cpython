@@ -267,7 +267,7 @@ def getdoc(object):
         doc = object.__doc__
     except AttributeError:
         return None
-    if not isinstance(doc, (str, unicode)):
+    if not isinstance(doc, types.StringTypes):
         return None
     try:
         lines = string.split(string.expandtabs(doc), '\n')
