@@ -18,6 +18,8 @@ aliases = {
     'utf': 'utf_8',
     'utf8': 'utf_8',
     'u8': 'utf_8',
+    'utf8@ucs2': 'utf_8',
+    'utf8@ucs4': 'utf_8',
     
     # UTF-16
     'utf16': 'utf_16',
@@ -31,6 +33,8 @@ aliases = {
     'us_ascii': 'ascii',
 
     # ISO
+    '8859': 'latin_1',
+    'iso8859': 'latin_1',
     'iso8859_1': 'latin_1',
     'iso_8859_1': 'latin_1',
     'iso_8859_10': 'iso8859_10',
@@ -47,6 +51,7 @@ aliases = {
     'iso_8859_9': 'iso8859_9',
 
     # Mac
+    'maclatin2': 'mac_latin2',
     'maccentraleurope': 'mac_latin2',
     'maccyrillic': 'mac_cyrillic',
     'macgreek': 'mac_greek',
@@ -56,5 +61,22 @@ aliases = {
 
     # MBCS
     'dbcs': 'mbcs',
+
+    # Code pages
+    '437': 'cp437',
+
+    # CJK
+    #
+    # The codecs for these encodings are not distributed with the
+    # Python core, but are included here for reference, since the
+    # locale module relies on having these aliases available.
+    #
+    'jis_7': 'jis_7',
+    'iso_2022_jp': 'jis_7',
+    'ujis': 'euc_jp',
+    'ajec': 'euc_jp',
+    'eucjp': 'euc_jp',
+    'tis260': 'tactis',
+    'sjis': 'shift_jis',
 
 }
