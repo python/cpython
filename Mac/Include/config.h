@@ -42,6 +42,9 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define macintosh
 #endif
 
+#define SIZEOF_INT 4
+#define SIZEOF_LONG 4
+
 #ifdef THINK_C
 #define HAVE_FOPENRF
 #endif
