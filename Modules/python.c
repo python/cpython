@@ -5,9 +5,7 @@
 extern DL_EXPORT(int) Py_Main();
 
 int
-main(argc, argv)
-	int argc;
-	char **argv;
+main(int argc, char **argv)
 {
 	return Py_Main(argc, argv);
 }
