@@ -1519,10 +1519,11 @@ function in `py-delete-function'.
 \\[universal-argument] (programmatically, argument ARG) specifies the
 number of characters to delete (default is 1)."
   (interactive "*p")
-  (if (and (boundp 'delete-key-deletes-forward)
-	   delete-key-deletes-forward)
+  (if (or (and (fboundp 'delete-forward-p) ;XEmacs 21
+	       (delete-forward-p))
+	  (and (boundp 'delete-key-deletes-forward) ;XEmacs 20
+	       delete-key-deletes-forward))
       (funcall py-delete-function arg)
-    ;; else
     (py-electric-backspace arg)))
 
 ;; required for pending-del and delsel modes
