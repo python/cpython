@@ -412,6 +412,24 @@ PyDoc_STRVAR(doc_get_line_buffer,
 return the current contents of the line buffer.");
 
 
+#ifdef HAVE_RL_COMPLETION_APPEND_CHARACTER
+
+/* Exported function to clear the current history */
+
+static PyObject *
+py_clear_history(PyObject *self, PyObject *noarg)
+{
+	clear_history();
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
+PyDoc_STRVAR(doc_clear_history,
+"clear_history() -> None\n\
+Clear the current readline history.");
+#endif
+
+
 /* Exported function to insert text into the line buffer */
 
 static PyObject *
@@ -483,6 +501,9 @@ static struct PyMethodDef readline_methods[] =
 #ifdef HAVE_RL_PRE_INPUT_HOOK
 	{"set_pre_input_hook", set_pre_input_hook,
 	 METH_VARARGS, doc_set_pre_input_hook},
+#endif
+#ifdef HAVE_RL_COMPLETION_APPEND_CHARACTER
+	{"clear_history", py_clear_history, METH_NOARGS, doc_clear_history},
 #endif
 	{0, 0}
 };
