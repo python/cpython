@@ -506,7 +506,7 @@ class _DummyThread(Thread):
     
     def __init__(self):
         Thread.__init__(self, name=_newname("Dummy-%d"))
-        self.__Thread_started = 1
+        self._Thread__started = 1
         _active_limbo_lock.acquire()
         _active[_get_ident()] = self
         _active_limbo_lock.release()
