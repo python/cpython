@@ -134,7 +134,7 @@ try:
 except AssertionError:
     raise TestFailed, 're module constants'
 
-for flags in [re.I, re.M, re.X, re.S]:
+for flags in [re.I, re.M, re.X, re.S, re.L]:
     try:
 	r = re.compile('^pattern$', flags)
     except:
@@ -229,4 +229,10 @@ for t in tests:
             if result==None:
                 print '=== Fails on case-insensitive match', t
 
+            # Try the match with LOCALE enabled, and check that it
+	    # still succeeds.
+            obj=re.compile(pattern, re.LOCALE)
+            result=obj.search(s)
+            if result==None:
+                print '=== Fails on locale-sensitive match', t
 
