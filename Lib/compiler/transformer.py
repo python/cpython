@@ -929,7 +929,7 @@ class Transformer:
         # loop to avoid trivial recursion
         while 1:
             t = node[0]
-            if t == symbol.exprlist or t == symbol.testlist:
+            if t == symbol.exprlist or t == symbol.testlist or t == symbol.testlist_gexp:
                 if len(node) > 2:
                     return self.com_assign_tuple(node, assigning)
                 node = node[1]
