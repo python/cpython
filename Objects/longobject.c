@@ -1201,8 +1201,8 @@ long_from_binary_base(char **str, int base)
 	bits_in_accum = 0;
 	pdigit = z->ob_digit;
 	while (--p >= start) {
-		unsigned char ch = (unsigned char)*p;
-		digit k;
+		int k;
+		char ch = *p;
 
 		if (ch <= '9')
 			k = ch - '0';
@@ -1212,8 +1212,8 @@ long_from_binary_base(char **str, int base)
 			assert(ch >= 'A');
 			k = ch - 'A' + 10;
 		}
-		assert(k < base);
-		accum |= k << bits_in_accum;
+		assert(k >= 0 && k < base);
+		accum |= (twodigits)(k << bits_in_accum);
 		bits_in_accum += bits_per_char;
 		if (bits_in_accum >= SHIFT) {
 			*pdigit++ = (digit)(accum & MASK);
