@@ -2257,18 +2257,17 @@ class TestDateTimeTZ(TestDateTime, TZInfoBase):
         self.assertRaises(TypeError, meth)
 
         # Try to make sure tz= actually does some conversion.
-        timestamp = 1000000000  #  2001-09-09 01:46:40 UTC, give or take
-        utc = FixedOffset(0, "utc", 0)
-        expected = datetime(2001, 9, 9, 1, 46, 40)
-        got = datetime.utcfromtimestamp(timestamp)
-        # We don't support leap seconds, but maybe the platfrom insists
-        # on using them, so don't demand exact equality).
-        self.failUnless(abs(got - expected) < timedelta(minutes=1))
-
-        est = FixedOffset(-5*60, "est", 0)
-        expected -= timedelta(hours=5)
-        got = datetime.fromtimestamp(timestamp, est).replace(tzinfo=None)
-        self.failUnless(abs(got - expected) < timedelta(minutes=1))
+        timestamp = 1000000000
+        utcdatetime = datetime.utcfromtimestamp(timestamp)
+        # In POSIX (epoch 1970), that's 2001-09-09 01:46:40 UTC, give or take.
+        # But on some flavor of Mac, it's nowhere near that.  So we can't have
+        # any idea here what time that actually is, we can only test that
+        # relative changes match.
+        utcoffset = timedelta(hours=-15, minutes=39) # arbitrary, but not zero
+        tz = FixedOffset(utcoffset, "tz", 0)
+        expected = utcdatetime + utcoffset
+        got = datetime.fromtimestamp(timestamp, tz)
+        self.assertEqual(expected, got.replace(tzinfo=None))
 
     def test_tzinfo_utcnow(self):
         meth = self.theclass.utcnow
