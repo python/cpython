@@ -13,22 +13,7 @@ def hardpath(path):
         pass
     return path
 
-if hasattr(os, 'spawnv'):
-
-  # Windows-ish OS: we use spawnv(), and stick quotes around arguments
-  #   in case they contains spaces, since Windows will jam all the
-  #   arguments to spawn() or exec() together into one string.  The
-  #   kill_zombies function is a noop.
-
-  def spawn(bin, *args):
-    nargs = [bin]
-    for arg in args:
-      nargs.append( '"'+arg+'"' )
-    os.spawnv( os.P_NOWAIT, bin, nargs )
-
-  def kill_zombies(): pass
-
-elif hasattr(os, 'fork'):
+if hasattr(os, 'fork'):
 
   # UNIX-ish operating system: we fork() and exec(), and we have to track
   #   the pids of our children and call waitpid() on them to avoid leaving
@@ -49,6 +34,20 @@ elif hasattr(os, 'fork'):
           stat = os.waitpid(z, os.WNOHANG)
           if stat[0]==z:
               zombies.remove(z)
+elif hasattr(os, 'spawnv'):
+
+  # Windows-ish OS: we use spawnv(), and stick quotes around arguments
+  #   in case they contains spaces, since Windows will jam all the
+  #   arguments to spawn() or exec() together into one string.  The
+  #   kill_zombies function is a noop.
+
+  def spawn(bin, *args):
+    nargs = [bin]
+    for arg in args:
+      nargs.append( '"'+arg+'"' )
+    os.spawnv( os.P_NOWAIT, bin, nargs )
+
+  def kill_zombies(): pass
 
 else:
   # If you get here, you may be able to write an alternative implementation
