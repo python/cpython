@@ -249,6 +249,12 @@ class OutputTextWidget(W.EditText):
 		f.close()
 		fss.SetCreatorType(W._signature, 'TEXT')
 	
+	def domenu_cut(self, *args):
+		self.domenu_copy(*args)
+	
+	def domenu_clear(self, *args):
+		self.set('')
+
 
 class PyOutput:
 	
