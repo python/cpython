@@ -25,6 +25,10 @@ It is always available.
   modules.)
 \end{datadesc}
 
+\begin{datadesc}{copyright}
+A string containing the copyright pertaining to the Python interpreter.
+\end{datadesc}
+
 \begin{funcdesc}{exc_info}{}
 This function returns a tuple of three values that give information
 about the exception that is currently being handled.  The information
@@ -87,6 +91,11 @@ modules are installed in
 where \var{version} is equal to \code{version[:3]}.
 \end{datadesc}
 
+\begin{datadesc}{executable}
+A string giving the name of the executable binary for the Python
+interpreter, on systems where this makes sense.
+\end{datadesc}
+
 \begin{funcdesc}{exit}{n}
   Exit from Python with numeric exit status \var{n}.  This is
   implemented by raising the \exception{SystemExit} exception, so cleanup
@@ -127,6 +136,13 @@ The meaning of the variables is the same
 as that of the return values from \function{exc_info()} above.
 (Since there is only one interactive thread, thread-safety is not a
 concern for these variables, unlike for \code{exc_type} etc.)
+\end{datadesc}
+
+\begin{datadesc}{maxint}
+The largest positive integer supported by Python's regular integer
+type.  This is at least 2**31-1.  The largest negative integer is
+\code{-maxint-1} -- the asymmetry results from the use of 2's
+complement binary arithmetic.
 \end{datadesc}
 
 \begin{datadesc}{modules}
@@ -196,14 +212,6 @@ threads.  Setting it to a value \code{<=} 0 checks every virtual instruction,
 maximizing responsiveness as well as overhead.
 \end{funcdesc}
 
-\begin{funcdesc}{settrace}{tracefunc}
-  Set the system's trace function, which allows you to implement a
-  Python source code debugger in Python.  See section ``How It Works''
-  in the chapter on the Python Debugger.
-\end{funcdesc}
-\index{trace function}
-\index{debugger}
-
 \begin{funcdesc}{setprofile}{profilefunc}
   Set the system's profile function, which allows you to implement a
   Python source code profiler in Python.  See the chapter on the
@@ -215,6 +223,14 @@ maximizing responsiveness as well as overhead.
 \end{funcdesc}
 \index{profile function}
 \index{profiler}
+
+\begin{funcdesc}{settrace}{tracefunc}
+  Set the system's trace function, which allows you to implement a
+  Python source code debugger in Python.  See section ``How It Works''
+  in the chapter on the Python Debugger.
+\end{funcdesc}
+\index{trace function}
+\index{debugger}
 
 \begin{datadesc}{stdin}
 \dataline{stdout}
@@ -236,6 +252,16 @@ maximizing responsiveness as well as overhead.
 \refstmodindex{os}
 \end{datadesc}
 
+\begin{datadesc}{__stdin__}
+\dataline{__stdout__}
+\dataline{__stderr__}
+These objects contain the original values of \code{stdin},
+\code{stderr} and \code{stdout} at the start of the program.  They are 
+used during finalization, and could be useful to restore the actual
+files to known working file objects in case they have been overwritten
+with a broken object.
+\end{datadesc}
+
 \begin{datadesc}{tracebacklimit}
 When this variable is set to an integer value, it determines the
 maximum number of levels of traceback information printed when an
@@ -245,5 +271,5 @@ exception type and value are printed.
 \end{datadesc}
 
 \begin{datadesc}{version}
-A string containing the version number of the Python interpreter.  
+A string containing the version number of the Python interpreter.
 \end{datadesc}
