@@ -36,30 +36,24 @@ PERFORMANCE OF THIS SOFTWARE.
 
 #ifdef __MWERKS__
 #ifdef USE_GUSI2
-#define HASGUSI " GUSI2"
-#else
 #define HASGUSI ""
+#else
+#define HASGUSI " WITHOUT_GUSI2"
 #endif
 
 #ifdef WITH_THREAD
-#define HASTHREAD " THREADS"
-#else
 #define HASTHREAD ""
+#else
+#define HASTHREAD " WITHOUT_THREAD"
 #endif
 
 #if TARGET_API_MAC_CARBON
-#define TARGET_API " CARBON"
+#define TARGET_API ""
 #else
 #define TARGET_API " PPC"
 #endif
 
-#ifdef WITH_CYCLE_GC
-#define HASGC " GC"
-#else
-#define HASGC ""
-#endif
-
-#define COMPILER " [CW" TARGET_API HASGUSI HASTHREAD HASGC"]"
+#define COMPILER " [CW" TARGET_API HASGUSI HASTHREAD"]"
 #endif
 
 #ifdef MPW

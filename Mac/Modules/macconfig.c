@@ -163,9 +163,7 @@ extern void init_hotshot();
 #ifdef USE_PYEXPAT
 extern void initpyexpat();
 #endif
-#ifdef WITH_CYCLE_GC
 extern void initgc();
-#endif
 
 extern void initcPickle();
 extern void initcStringIO();
@@ -295,9 +293,7 @@ struct _inittab _PyImport_Inittab[] = {
 #ifdef USE_PYEXPAT
 	{"pyexpat", initpyexpat},
 #endif
-#ifdef WITH_CYCLE_GC
 	{"gc", initgc},
-#endif
 	{"cPickle",	initcPickle},
 	{"cStringIO",	initcStringIO},
 	{"_locale", init_locale},

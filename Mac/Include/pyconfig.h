@@ -283,9 +283,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
    one supplied by Python itself. (see Include/unicodectype.h). */
 #undef WANT_WCTYPE_FUNCTIONS
 
-/* Define if you want to compile in cycle garbage collection */
-#define WITH_CYCLE_GC 1
-
 /* Define if you want cross-platform newline support for reading */
 #define WITH_UNIVERSAL_NEWLINES
 
