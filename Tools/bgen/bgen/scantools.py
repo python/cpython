@@ -580,7 +580,6 @@ class Scanner_PreUH3(Scanner):
 		self.whole_pat = self.type_pat + self.name_pat + self.args_pat
 		self.sym_pat = "^[ \t]*\(<name>[a-zA-Z0-9_]+\)[ \t]*=" + \
 		               "[ \t]*\(<defn>[-0-9'\"][^\t\n,;}]*\),?"
-		self.asplit_pat = "^\(<type>.*[^a-zA-Z0-9_]\)\(<name>[a-zA-Z0-9_]+\)$"
 
 class Scanner_OSX(Scanner):
 	"""Scanner for modern (post UH3.3) Universal Headers """
