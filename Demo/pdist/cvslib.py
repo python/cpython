@@ -14,10 +14,10 @@ class Entry:
 		self.file = words[1]
 		self.rev = words[2]
 		dates = words[3] # ctime, mtime
-		if dates[:7] == 'Initial':
+		if len(dates) != 49 or dates[:7] == 'Initial':
 			self.ctime = None
 			self.mtime = None
-			self.new = 1
+			self.new = dates[:7] == 'Initial'
 		else:
 			self.ctime = unctime(dates[:24])
 			self.mtime = unctime(dates[25:])
@@ -79,6 +79,8 @@ class CVS:
 			if not line: break
 			words = string.split(line)
 			[file, rev, hexsum] = words
+			if not self.entries.has_key(file):
+				continue
 			e = self.entries[file]
 			if e.rev == rev:
 				e.sethexsum(hexsum)
