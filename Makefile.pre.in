@@ -560,7 +560,7 @@ $(DESTSHARED):
 
 # Install the interpreter (by creating a hard link to python$(VERSION))
 bininstall:	altbininstall
-	-if test -f $(BINDIR)/$(PYTHON); \
+	-if test -f $(BINDIR)/$(PYTHON) -o -L $(BINDIR)/$(PYTHON); \
 	then rm -f $(BINDIR)/$(PYTHON); \
 	else true; \
 	fi
