@@ -125,7 +125,7 @@ def getfqdn(name=''):
 _socketmethods = (
     'bind', 'connect', 'connect_ex', 'fileno', 'listen',
     'getpeername', 'getsockname', 'getsockopt', 'setsockopt',
-    'recv', 'recvfrom', 'send', 'sendto', 'setblocking', 'shutdown')
+    'recv', 'recvfrom', 'send', 'sendall', 'sendto', 'setblocking', 'shutdown')
 
 class _socketobject:
 
