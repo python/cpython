@@ -888,7 +888,7 @@ tracer_callback(ProfilerObject *self, PyFrameObject *frame, int what,
 
     case PyTrace_LINE:
         if (self->linetimings)
-            return pack_lineno_tdelta(self, frame->f_lineno),
+            return pack_lineno_tdelta(self, frame->f_lineno,
 				      get_tdelta(self));
         else
             return pack_lineno(self, frame->f_lineno);
