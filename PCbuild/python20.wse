@@ -952,6 +952,12 @@ item: Install File
   Flags=0000000000000010
 end
 item: Install File
+  Source=%_SRC_%\Tools\scripts\pydoc
+  Destination=%MAINDIR%\pydoc
+  Description=Utility Scripts
+  Flags=0000000000000010
+end
+item: Install File
   Source=%_SRC_%\Tools\scripts\*.doc
   Destination=%MAINDIR%\Tools\Scripts
   Description=Utility Scripts
@@ -1330,6 +1336,14 @@ item: Create Shortcut
   Source=%MAINDIR%\pythonw.exe
   Destination=%GROUP%\IDLE (Python GUI).lnk
   Command Options=%MAINDIR%\Tools\idle\idle.pyw
+  Working Directory=%MAINDIR%
+  Key Type=1536
+  Flags=00000001
+end
+item: Create Shortcut
+  Source=%MAINDIR%\pythonw.exe
+  Destination=%GROUP%\Module Docs.lnk
+  Command Options=%MAINDIR%\pydoc
   Working Directory=%MAINDIR%
   Key Type=1536
   Flags=00000001
