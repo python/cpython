@@ -41,6 +41,10 @@ list2set(list, set, fd2obj)
 {
     int i, len, v, max = -1;
     object *o, *filenomethod, *fno;
+
+    for ( i=0;  i<FD_SETSIZE;  i++ ) {
+	fd2obj[i] = (object*)0;
+    }
     
     FD_ZERO(set);
     len = getlistsize(list);
@@ -70,7 +74,6 @@ list2set(list, set, fd2obj)
 	}
 	if ( v > max ) max = v;
 	FD_SET(v, set);
-	XDECREF(fd2obj[v]);
 	fd2obj[v] = o;
     }
     return max+1;
@@ -115,7 +118,7 @@ select_select(self, args)
     object *self;
     object *args;
 {
-    object *fd2obj[FD_SETSIZE];
+    object *rfd2obj[FD_SETSIZE], *wfd2obj[FD_SETSIZE], *efd2obj[FD_SETSIZE];
     object *ifdlist, *ofdlist, *efdlist;
     object *ret, *tout;
     fd_set ifdset, ofdset, efdset;
@@ -152,14 +155,12 @@ select_select(self, args)
 	return 0;
     }
 
-    memset((char *)fd2obj, '\0', sizeof(fd2obj));
-    
     /* Convert lists to fd_sets, and get maximum fd number */
-    if( (imax=list2set(ifdlist, &ifdset, fd2obj)) < 0 )
+    if( (imax=list2set(ifdlist, &ifdset, rfd2obj)) < 0 )
       return 0;
-    if( (omax=list2set(ofdlist, &ofdset, fd2obj)) < 0 )
+    if( (omax=list2set(ofdlist, &ofdset, wfd2obj)) < 0 )
       return 0;
-    if( (emax=list2set(efdlist, &efdset, fd2obj)) < 0 )
+    if( (emax=list2set(efdlist, &efdset, efd2obj)) < 0 )
       return 0;
     max = imax;
     if ( omax > max ) max = omax;
@@ -177,9 +178,9 @@ select_select(self, args)
     if ( n == 0 )
       imax = omax = emax = 0; /* Speedup hack */
 
-    ifdlist = set2list(&ifdset, imax, fd2obj);
-    ofdlist = set2list(&ofdset, omax, fd2obj);
-    efdlist = set2list(&efdset, emax, fd2obj);
+    ifdlist = set2list(&ifdset, imax, rfd2obj);
+    ofdlist = set2list(&ofdset, omax, wfd2obj);
+    efdlist = set2list(&efdset, emax, efd2obj);
     ret = mkvalue("OOO", ifdlist, ofdlist, efdlist);
     XDECREF(ifdlist);
     XDECREF(ofdlist);
