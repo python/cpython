@@ -14,14 +14,21 @@ typedef struct PyGetSetDef {
 typedef PyObject *(*wrapperfunc)(PyObject *self, PyObject *args,
 				 void *wrapped);
 
+typedef PyObject *(*wrapperfunc_kwds)(PyObject *self, PyObject *args,
+				      void *wrapped, PyObject *kwds);
+
 struct wrapperbase {
 	char *name;
 	int offset;
 	void *function;
 	wrapperfunc wrapper;
 	char *doc;
+	int flags;
 	PyObject *name_strobj;
 };
+
+/* Flags for above struct */
+#define PyWrapperFlag_KEYWORDS 1 /* wrapper function takes keyword args */
 
 /* Various kinds of descriptor objects */
 
