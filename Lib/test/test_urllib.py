@@ -19,7 +19,7 @@ class urlopen_FileTests(unittest.TestCase):
     """Test urlopen() opening a temporary file.
 
     Try to test as much functionality as possible so as to cut down on reliance
-    on connect to the Net for testing.
+    on connecting to the Net for testing.
 
     """
 
