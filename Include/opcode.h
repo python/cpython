@@ -115,7 +115,6 @@ PERFORMANCE OF THIS SOFTWARE.
 #define COMPARE_OP	106	/* Comparison operator */
 #define IMPORT_NAME	107	/* Index in name list */
 #define IMPORT_FROM	108	/* Index in name list */
-#define ACCESS_MODE	109	/* Name (mode is int on top of stack) */
 
 #define JUMP_FORWARD	110	/* Number of bytes to skip */
 #define JUMP_IF_FALSE	111	/* "" */
