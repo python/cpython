@@ -214,8 +214,7 @@ md5 md5module.c md5c.c
 
 # This module requires the header file
 # /usr/people/4Dgifts/iristools/include/izoom.h:
-
-#imgfile imgfile.c -limage -lgutil	# Image Processing Utilities
+#imgfile imgfile.c -limage -lgutil -lgl -lm	# Image Processing Utilities
 
 
 # These modules require the Multimedia Development Option (I think):
@@ -345,11 +344,8 @@ cPickle cPickle.c
 #fpetest fpetestmodule.c
 
 # Andrew Kuchling's zlib module.
-# This require zlib 1.0.4.  See http://quest.jpl.nasa.gov/zlib/
-# Edit the ZLIBHOME variable to point to the place where you built zlib.
-# If you installed libzlib.a, replace the last argument with -lz
-#ZLIBHOME=..
-#zlib zlibmodule.c -I$(ZLIBHOME) -L$(ZLIBHOME) -lz
+# This require zlib 1.0.4 (or later).  See http://quest.jpl.nasa.gov/zlib/
+#zlib zlibmodule.c -I$(prefix)/include -L$(exec_prefix)/lib -lz
 
 
 # Example -- included for reference only:
