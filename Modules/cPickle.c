@@ -2875,7 +2875,8 @@ Instance_New(PyObject *cls, PyObject *args) {
               inst->in_class=(PyClassObject*)cls;
               Py_INCREF(cls);
               UNLESS (inst->in_dict=PyDict_New()) {
-                Py_DECREF(inst);
+                inst = (PyInstanceObject *) PyObject_AS_GC(inst);
+                PyObject_DEL(inst);
                 goto err;
               }
               PyObject_GC_Init(inst);
