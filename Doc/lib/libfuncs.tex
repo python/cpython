@@ -123,7 +123,7 @@ class instances are callable if they have a \method{__call__()} method.
   Compile the \var{string} into a code object.  Code objects can be
   executed by an \keyword{exec} statement or evaluated by a call to
   \function{eval()}.  The \var{filename} argument should
-  give the file from which the code was read; pass same recognizable value
+  give the file from which the code was read; pass some recognizable value
   if it wasn't read from a file (\code{'<string>'} is commonly used).
   The \var{kind} argument specifies what kind of code must be
   compiled; it can be \code{'exec'} if \var{string} consists of a
@@ -132,7 +132,14 @@ class instances are callable if they have a \method{__call__()} method.
   interactive statement (in the latter case, expression statements
   that evaluate to something else than \code{None} will printed).
 
-  The optional arguments \var{flags} and \optional{dont_inherit}
+  When compiling multi-line statements, two caveats apply: line
+  endings must be represented by a single newline character
+  (\code{'\e n'}), and the input must be terminated by at least one
+  newline character.  If line endings are represented by
+  \code{'\e r\e n'}, use the string \method{replace()} method to
+  change them into \code{'\e n'}.
+
+  The optional arguments \var{flags} and \var{dont_inherit}
   (which are new in Python 2.2) control which future statements (see
   \pep{236}) affect the compilation of \var{string}.  If neither is
   present (or both are zero) the code is compiled with those future
